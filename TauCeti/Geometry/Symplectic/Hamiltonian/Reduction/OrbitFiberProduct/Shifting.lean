@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.Quotient
 
 import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
+import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.Split
 import TauCeti.Topology.Algebra.ProperAction.Basic
 
@@ -492,37 +493,23 @@ def orbitRelQuotientSubOrbitMapDiffeomorph :
   haveI := h.isCancelSMul_levelSubMulAction_sub_orbitMap (c := c)
   have hreg₀ := h.forall_differential_surjective_sub_orbitMap hreg
   letI := (h.sub_orbitMap c).levelSubMulActionChartedSpace 0 hreg₀ hn₀
-  letI := h.levelSubMulActionChartedSpace c hreg hn
   letI := (h.sub_orbitMap c).orbitRelQuotientChartedSpace 0 hreg₀ hn₀ d₀
   letI := h.orbitRelQuotientChartedSpace c hreg hn d
-  haveI := (h.sub_orbitMap c).isManifold_levelSubMulAction hreg₀ hn₀
-  haveI := h.isManifold_levelSubMulAction hreg hn
-  haveI := (h.sub_orbitMap c).isManifold_orbitRelQuotient hreg₀ hn₀ d₀
-  haveI := h.isManifold_orbitRelQuotient hreg hn d
-  have hsub₀ := (h.sub_orbitMap c).isSubmersion_quotientMk_levelSubMulAction hreg₀ hn₀ d₀
-  have hsub := h.isSubmersion_quotientMk_levelSubMulAction hreg hn d
-  have hemb₀ := (h.sub_orbitMap c).isSmoothEmbedding_coe_levelSubMulAction hreg₀ hn₀
-  { toFun := Quotient.lift h.levelProj fun z z' hzz' ↦
-      (h.levelProj_eq_levelProj_iff z z').2
-        (MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 hzz'))
-    invFun := Quotient.lift (fun z ↦ Quotient.mk _ (h.levelMk z)) fun z z' hzz' ↦
-      -- Both points have the orbit projection `[z] = [z']`.
-      Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit_iff.2
-        ((h.levelProj_eq_levelProj_iff _ _).1 (by
-          rw [h.levelProj_levelMk, h.levelProj_levelMk]
-          exact Quotient.sound hzz'))))
-    left_inv := Quotient.ind fun z ↦ by
-      obtain ⟨y, hy⟩ := Quotient.mk_surjective (h.levelProj z)
-      refine (congrArg _ hy.symm).trans (Quotient.sound (MulAction.orbitRel_apply.2
-        (MulAction.mem_orbit_iff.2 ((h.levelProj_eq_levelProj_iff _ _).1 ?_))))
-      rw [h.levelProj_levelMk, hy]
-    right_inv := Quotient.ind h.levelProj_levelMk
-    -- Smoothness descends along the orbit projections, which are surjective submersions.
-    contMDiff_toFun := (hsub₀.contMDiff_comp_iff Quotient.mk_surjective le_rfl).1
-      (h.isSubmersion_levelProj hreg hn hn₀ d).contMDiff
-    contMDiff_invFun := (hsub.contMDiff_comp_iff Quotient.mk_surjective le_rfl).1
-      (hsub₀.contMDiff.comp (hemb₀.contMDiff_iff_comp.2
-        ((h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff.prodMk contMDiff_const))) }
+  -- The orbit projection descends to the quotient by its fibres, the `G_0`-orbits; smoothness in
+  -- both directions descends along the surjective submersions `π₀` and `q_O`.
+  let e : MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer 0)
+      ((h.sub_orbitMap c).levelSubMulAction 0) ≃
+      MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+        (h.levelSubMulAction c) :=
+    Equiv.trans
+      (Quotient.congrRight fun z z' ↦
+        (MulAction.orbitRel_apply.trans MulAction.mem_orbit_iff).trans
+          (h.levelProj_eq_levelProj_iff z z').symm)
+      (Setoid.quotientKerEquivOfSurjective h.levelProj fun y ↦
+        Quotient.inductionOn y fun z ↦ ⟨_, h.levelProj_levelMk z⟩)
+  e.diffeomorphOfSubmersions
+    ((h.sub_orbitMap c).isSubmersion_quotientMk_levelSubMulAction hreg₀ hn₀ d₀)
+    Quotient.mk_surjective (h.isSubmersion_levelProj hreg hn hn₀ d) (funext fun _ ↦ rfl)
 
 /-- The shifting diffeomorphism sends the orbit of a point of `Ψ⁻¹(0)` to its orbit projection. -/
 private theorem orbitRelQuotientSubOrbitMapDiffeomorph_quotientMk
@@ -532,8 +519,18 @@ private theorem orbitRelQuotientSubOrbitMapDiffeomorph_quotientMk
     letI := (h.sub_orbitMap c).orbitRelQuotientChartedSpace 0
       (h.forall_differential_surjective_sub_orbitMap hreg) hn₀ d₀
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
-    h.orbitRelQuotientSubOrbitMapDiffeomorph hreg hn hn₀ d d₀ (Quotient.mk _ z) = h.levelProj z :=
-  (rfl)
+    h.orbitRelQuotientSubOrbitMapDiffeomorph hreg hn hn₀ d d₀ (Quotient.mk _ z) =
+      h.levelProj z := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have := h.isCancelSMul_levelSubMulAction_sub_orbitMap (c := c)
+  let _ := (h.sub_orbitMap c).levelSubMulActionChartedSpace 0
+    (h.forall_differential_surjective_sub_orbitMap hreg) hn₀
+  let _ := (h.sub_orbitMap c).orbitRelQuotientChartedSpace 0
+    (h.forall_differential_surjective_sub_orbitMap hreg) hn₀ d₀
+  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
+  -- `Quotient.congrRight` and `Setoid.quotientKerEquivOfSurjective` compute on `Quotient.mk` by
+  -- `Quot.lift_beta`, so the underlying equivalence sends `[z]` to `q_O z` definitionally.
+  exact Equiv.diffeomorphOfSubmersions_apply _ _ _ _ _ _
 
 /-- **The formula for the shifting diffeomorphism**: the orbit of `(x, g G_c)` is sent to the
 orbit of `g⁻¹ • x`. -/
@@ -564,8 +561,15 @@ theorem orbitRelQuotientSubOrbitMapDiffeomorph_symm_mk (z : h.levelSubMulAction 
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
     (h.orbitRelQuotientSubOrbitMapDiffeomorph hreg hn hn₀ d d₀).symm (Quotient.mk _ z) =
       Quotient.mk _ ⟨((z : M), ((1 : G) : G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)),
-        h.mk_one_mem_levelSubMulAction_sub_orbitMap z⟩ :=
-  (rfl)
+        h.mk_one_mem_levelSubMulAction_sub_orbitMap z⟩ := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have := h.isCancelSMul_levelSubMulAction_sub_orbitMap (c := c)
+  let _ := (h.sub_orbitMap c).orbitRelQuotientChartedSpace 0
+    (h.forall_differential_surjective_sub_orbitMap hreg) hn₀ d₀
+  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
+  exact (Equiv.symm_apply_eq (h.orbitRelQuotientSubOrbitMapDiffeomorph hreg hn hn₀ d d₀).toEquiv).2
+    ((h.levelProj_levelMk z).symm.trans
+      (h.orbitRelQuotientSubOrbitMapDiffeomorph_quotientMk hreg hn hn₀ d d₀ _).symm)
 
 /-- **The shifting trick for the reduced forms.** With the hypotheses of
 `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientSubOrbitMapDiffeomorph`, let `G`
