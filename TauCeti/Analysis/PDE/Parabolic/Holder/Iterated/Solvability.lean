@@ -366,52 +366,6 @@ theorem coe_euclideanInitialDataCLE_symm_of_le (hα₀ : 0 < α) (hα₁ : α < 
   exacts [initialDataL_inclusionOfLEL_fst _ _ _ _ _ _,
     coe_initialDataL_inclusionOfLEL_snd _ _ _ _ _ _]
 
-/-- At order zero, the solution in `C_{par,b}^{2+α}` has the values of the solution in
-`C_b^{2+α,1+α/2}` for coefficients and forcing with the same values. -/
-private theorem coe_euclideanInitialDataCLE_symm_eq_parabolicC2HolderSpace_zero (hα₀ : 0 < α)
-    (hα₁ : α < 1)
-    {a : ι → ι → ParabolicCkHolderSpace 0 α (EuclideanSpace ℝ ι) ℝ hT}
-    {b : ι → ParabolicCkHolderSpace 0 α (EuclideanSpace ℝ ι) ℝ hT}
-    {c : ParabolicCkHolderSpace 0 α (EuclideanSpace ℝ ι) ℝ hT}
-    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    {a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    {b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    {c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    (ha' : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a' i j p).toQuadraticForm' ξ)
-    (haa' : ∀ i j, ⇑(a' i j) = ⇑(a i j)) (hbb' : ∀ i, ⇑(b' i) = ⇑(b i)) (hcc' : ⇑c' = ⇑c)
-    {f : ParabolicCkHolderSpace 0 α (EuclideanSpace ℝ ι) ℝ hT}
-    {f' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ} (hff' : ⇑f' = ⇑f)
-    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
-    ⇑((euclideanInitialDataCLE hα₀ hα₁ a b c ha).symm (f, g)) =
-      ⇑((ParabolicC2HolderSpace.euclideanInitialDataCLE hα₀ hα₁ hT a' b' c' ha').symm (f', g)) := by
-  -- The coefficients of order two are those of order zero, read in `C_b^{α,α/2}`.
-  obtain rfl : a' = fun i j ↦ (equivHolderSpace (a i j) :) :=
-    funext fun i ↦ funext fun j ↦ HolderSpace.ext fun p ↦ by
-      rw [equivHolderSpace_apply, ← haa']
-  obtain rfl : b' = fun i ↦ (equivHolderSpace (b i) :) :=
-    funext fun i ↦ HolderSpace.ext fun p ↦ by rw [equivHolderSpace_apply, ← hbb']
-  obtain rfl : c' = (equivHolderSpace c :) :=
-    HolderSpace.ext fun p ↦ by rw [equivHolderSpace_apply, ← hcc']
-  set u := (euclideanInitialDataCLE hα₀ hα₁ a b c ha).symm (f, g)
-  -- The solution of order zero, read in `C_b^{2+α,1+α/2}`, has the data `(f', g)`.
-  have h : equivParabolicC2HolderSpace u =
-      (ParabolicC2HolderSpace.euclideanInitialDataCLE hα₀ hα₁ hT
-        (fun i j ↦ (equivHolderSpace (a i j) :)) (fun i ↦ (equivHolderSpace (b i) :))
-        (equivHolderSpace c :) ha').symm (f', g) := by
-    rw [ContinuousLinearEquiv.eq_symm_apply, ParabolicC2HolderSpace.euclideanInitialDataCLE_apply,
-      ← equivHolderSpace_euclideanParabolicOperatorL,
-      parabolicOperatorL_euclideanInitialDataCLE_symm_apply]
-    refine Prod.ext (HolderSpace.ext fun p ↦ ?_) (CkHolderSpace.ext fun x ↦ ?_)
-    · rw [equivHolderSpace_apply, hff']
-    · have hg := DFunLike.congr_fun
-        (spatialTrace_euclideanInitialDataCLE_symm_apply hα₀ hα₁ a b c ha (f, g)) x
-      rw [spatialTrace_apply] at hg
-      simpa [ParabolicC2HolderSpace.spatialTrace_apply, equivParabolicC2HolderSpace_apply] using hg
-  rw [← h]
-  exact funext fun p ↦ by simp
-
 /-- **Consistency with the solution in `C_b^{2+α,1+α/2}`.** The solution at order `k` with data
 `(f, g)` has the values of the solution of
 `TauCeti.ParabolicC2HolderSpace.euclideanInitialDataCLE` for coefficients `a'`, `b'`, `c'` in
@@ -435,14 +389,28 @@ theorem coe_euclideanInitialDataCLE_symm_eq_parabolicC2HolderSpace (hα₀ : 0 <
     ⇑((euclideanInitialDataCLE hα₀ hα₁ a b c ha).symm (f, g)) =
       ⇑((ParabolicC2HolderSpace.euclideanInitialDataCLE hα₀ hα₁ hT a' b' c' ha').symm
         (f', g')) := by
-  rw [← coe_euclideanInitialDataCLE_symm_of_le hα₀ hα₁ k.zero_le a b c ha
-    (f' := inclusionOfLEL hα₁.le k.zero_le f) (g' := g')
-    (funext fun p ↦ inclusionOfLEL_apply _ _ _ p) hgg']
-  exact coe_euclideanInitialDataCLE_symm_eq_parabolicC2HolderSpace_zero hα₀ hα₁ _ ha'
-    (fun i j ↦ (haa' i j).trans (funext fun p ↦ (inclusionOfLEL_apply _ _ _ p).symm))
-    (fun i ↦ (hbb' i).trans (funext fun p ↦ (inclusionOfLEL_apply _ _ _ p).symm))
-    (hcc'.trans (funext fun p ↦ (inclusionOfLEL_apply _ _ _ p).symm))
-    (hff'.trans (funext fun p ↦ (inclusionOfLEL_apply _ _ _ p).symm)) g'
+  -- The coefficients of order two are those of order `k`, read in `C_b^{α,α/2}`.
+  obtain rfl : a' = fun i j ↦ lower hα₁.le (a i j) :=
+    funext fun i ↦ funext fun j ↦ HolderSpace.ext fun p ↦ by simp [lower, ← haa']
+  obtain rfl : b' = fun i ↦ lower hα₁.le (b i) :=
+    funext fun i ↦ HolderSpace.ext fun p ↦ by simp [lower, ← hbb']
+  obtain rfl : c' = lower hα₁.le c := HolderSpace.ext fun p ↦ by simp [lower, ← hcc']
+  set u := (euclideanInitialDataCLE hα₀ hα₁ a b c ha).symm (f, g)
+  -- The solution of order `k`, read in `C_b^{2+α,1+α/2}`, has the data `(f', g')`.
+  have h : lowerTwo hα₁.le u =
+      (ParabolicC2HolderSpace.euclideanInitialDataCLE hα₀ hα₁ hT
+        (fun i j ↦ lower hα₁.le (a i j)) (fun i ↦ lower hα₁.le (b i)) (lower hα₁.le c)
+        ha').symm (f', g') := by
+    rw [ContinuousLinearEquiv.eq_symm_apply, ParabolicC2HolderSpace.euclideanInitialDataCLE_apply,
+      ← lower_parabolicOperatorL, parabolicOperatorL_euclideanInitialDataCLE_symm_apply]
+    refine Prod.ext (HolderSpace.ext fun p ↦ ?_) (CkHolderSpace.ext fun x ↦ ?_)
+    · simp [lower, hff']
+    · have hg := DFunLike.congr_fun
+        (spatialTrace_euclideanInitialDataCLE_symm_apply hα₀ hα₁ a b c ha (f, g)) x
+      rw [spatialTrace_apply] at hg
+      simpa [ParabolicC2HolderSpace.spatialTrace_apply, lowerTwo, hgg'] using hg
+  rw [← h]
+  exact funext fun p ↦ by simp [lowerTwo]
 
 end Initial
 
