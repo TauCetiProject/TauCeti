@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CMField
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm.Basic
-import TauCeti.RingTheory.Unramified.TraceRepresentation
 
 /-!
 # The reflex norm of the complementary type
@@ -56,16 +55,17 @@ theorem reflexNorm_star_apply (Φ : CMType E) (hk : Φ.reflexField ≤ k) (σ : 
   obtain ⟨n, ρ, hρ⟩ := Φ.exists_trace_eq_typeTrace hk
   obtain ⟨n', ρ', hρ'⟩ := (star Φ).exists_trace_eq_typeTrace (reflexField_star Φ ▸ hk)
   -- Twisted by `σ`, `V` has the type trace of `ιΦ`: `typeTrace_Φ(σ c) = typeTrace_{ιΦ}(c)`.
-  obtain ⟨e, he⟩ := exists_linearEquiv_of_trace_eq (R := ℚ) ρ'.toRatAlgHom
-    (ρ.comp σ.toRingHom).toRatAlgHom fun c ↦ Subtype.ext <|
-      (hρ' c).trans ((typeTrace_star_eq_typeTrace_apply Φ hσ c).trans (hρ (σ c)).symm)
+  obtain ⟨e, he⟩ := exists_linearEquiv_of_trace_eq_typeTrace (star Φ) k ρ' (ρ.comp σ.toRingHom)
+    hρ' fun c ↦ (hρ (σ c)).trans (typeTrace_star_eq_typeTrace_apply Φ hσ c).symm
   rw [reflexNorm_eq_smulDet_compHom Φ hk ρ hρ, reflexNorm_eq_smulDet_compHom (star Φ) _ ρ' hρ']
   -- `E` acts on `V` and `V'` through `ρ` and `ρ'`, and `e` is `σ`-semilinear for these actions.
   let := Module.compHom (Fin n → k) ρ
   have := SMul.comp.smulCommClass (α := Fin n → k) (β := k) ρ
   let := Module.compHom (Fin n' → k) ρ'
   have := SMul.comp.smulCommClass (α := Fin n' → k) (β := k) ρ'
-  exact smulDet_eq_symm_apply_of_map_smul σ e he a
+  -- Under `Module.compHom`, `c • v` is by definition `ρ' c v` on `V'` and `ρ c v` on `V`.
+  have he' : ∀ (c : E) (v : Fin n' → k), e (c • v) = σ c • e v := he
+  exact smulDet_eq_symm_apply_of_map_smul σ e he' a
 
 end FormallyUnramified
 
