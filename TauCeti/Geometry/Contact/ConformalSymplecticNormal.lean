@@ -396,6 +396,14 @@ private theorem distributionLeviForm_ofSubmodules_ofBijective {n : ℕ∞ω} {x 
   exact distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' u v
 
 omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- If `dF_x` is invertible and near `x` the inverse differentials map `D₁` into `D`, then a vector
+whose image under `dF_x` lies in `D₁ (F x)` lies in `D x`. -/
+private theorem mem_of_mfderiv_mem {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
+    (hFD' : ∀ᶠ z in 𝓝 x, ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    {u : TangentSpace I x} (hu : mfderiv I I₁ F x u ∈ D₁ (F x)) : u ∈ D x :=
+  hFx.inverse_apply_self u ▸ hFD'.self_of_nhds _ hu
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
 /-- If `dF_x` is invertible and maps `D x` into `D₁ (F x)`, while near `x` the inverse
 differentials map `D₁` into `D`, then `dF_x` maps `D x` onto `D₁ (F x)`. -/
 private theorem map_ofBijective_mfderiv_eq {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
@@ -403,8 +411,7 @@ private theorem map_ofBijective_mfderiv_eq {x : M} (hFx : (mfderiv I I₁ F x).I
     (hFD' : ∀ᶠ z in 𝓝 x, ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z) :
     (D x).map (LinearEquiv.ofBijective (mfderiv I I₁ F x).toLinearMap hFx.bijective :
       TangentSpace I x →ₗ[ℝ] TangentSpace I₁ (F x)) = D₁ (F x) :=
-  Submodule.map_equiv_eq_iff.2 fun u ↦
-    ⟨fun hu ↦ hFx.inverse_apply_self u ▸ hFD'.self_of_nhds _ hu, hFD u⟩
+  Submodule.map_equiv_eq_iff.2 fun u ↦ ⟨mem_of_mfderiv_mem hFx hFD', hFD u⟩
 
 /-- The restriction of `dF` to `D (f y) ≃ D₁ (F (f y))` carries the Levi orthogonal of the tangent
 image of `f` onto that of the tangent image of `F ∘ f`. -/
@@ -422,10 +429,8 @@ private theorem map_orthogonalBilin_ofSubmodules_ofBijective {n : ℕ∞ω}
         (D₁ ((F ∘ f) y)).subtype).orthogonalBilin (distributionLeviForm D₁ ((F ∘ f) y)) := by
   rw [← map_comap_range_mfderiv hFx (map_ofBijective_mfderiv_eq hFx hFD hFD')
     (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf]
-  -- The inverse differential carries `D₁ (F (f y))` back into `D (f y)`.
-  have hFD₁ (u) (hu : mfderiv I I₁ F (f y) u ∈ D₁ (F (f y))) : u ∈ D (f y) :=
-    hFx.inverse_apply_self u ▸ hFD'.self_of_nhds _ hu
-  exact LinearEquiv.map_orthogonalBilin _ ((Submodule.mapQ_injective_iff _ _ _ hFD).2 hFD₁)
+  exact LinearEquiv.map_orthogonalBilin _
+    ((Submodule.mapQ_injective_iff _ _ _ hFD).2 fun _ ↦ mem_of_mfderiv_mem hFx hFD')
     (distributionLeviForm_ofSubmodules_ofBijective hD hD₁ hF hn hFx hFD hFD' _) _
 
 variable (J D f y) in
