@@ -69,9 +69,11 @@ theorem _root_.Orientation.isOrientationPreservingAt_sphereDiffeomorphBoundaryCl
   rw [o.orientation_eq_orientationAt_sphereOrientation_iff, ← ha,
     Orientation.volumeForm_apply_pos_iff]
   symm
+  -- The target tangent space is definitionally `E`, so `a` is a basis of that space.
   refine (boundaryOrientation_spec_of_isOrientationPreservingAt (e x) hball
     (isOutwardPointing_closedBall_radial _ (e x).property) c a ?_).trans ?_
-  · refine ha.trans ?_
+  · simp only [mvfderiv_apply_eq_mfderiv_apply] at ha
+    refine ha.trans ?_
     rw [mfderiv_subtypeVal_closedBall_symm_apply]
     refine congrArg₂ Fin.cons (sphereDiffeomorphBoundaryClosedBall_apply_coe x).symm ?_
     funext i
@@ -81,9 +83,10 @@ theorem _root_.Orientation.isOrientationPreservingAt_sphereDiffeomorphBoundaryCl
     have hcomp : (fun y ↦ ((e y).val : E)) = Subtype.val :=
       funext sphereDiffeomorphBoundaryClosedBall_apply_coe
     rw [← hcomp]
-    exact mvfderiv_comp_apply x (hg.mdifferentiableAt one_ne_zero)
+    exact mfderiv_comp_apply x (hg.mdifferentiableAt one_ne_zero)
       ((e.contMDiff x).mdifferentiableAt (by simp)) (b i)
   · rw [Manifold.Orientation.orientationAt_model]
+    -- The two basis orientations agree definitionally because the model tangent space is `E`.
     exact Iff.rfl
 
 end TauCeti
