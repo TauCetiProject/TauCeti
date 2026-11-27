@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Asymptotics.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # Vanishing order along the real coordinates of `ℂ`
@@ -16,7 +17,8 @@ A statement about maps on `ℝ × ℝ` is often proved by reading the domain as 
 `Complex.equivRealProdCLM`. Vanishing to order `n` at `z₀`, measured by `‖z - z₀‖ⁿ`, is then
 vanishing to order `n` at the corresponding point in the complex coordinate
 (`TauCeti.isBigO_comp_equivRealProdCLM`). The discs `‖w‖ ≤ r`, read in the real coordinates, are
-compact (`TauCeti.isCompact_setOf_norm_equivRealProdCLM_symm_le`). The Euclidean norm
+compact (`TauCeti.isCompact_setOf_norm_equivRealProdCLM_symm_le`), and the plane punctured at a
+point is connected (`TauCeti.isConnected_setOf_equivRealProdCLM_symm_ne`). The Euclidean norm
 `‖w‖` of the point `w` with real coordinates `z` has `‖w‖² = z.1² + z.2²`
 (`TauCeti.sq_norm_equivRealProdCLM_symm`) and lies between the sup norm `‖z‖`
 (`TauCeti.norm_le_norm_equivRealProdCLM_symm`) and twice it
@@ -51,6 +53,18 @@ theorem isCompact_setOf_norm_equivRealProdCLM_symm_le (r : ℝ) :
     IsCompact {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ r} := by
   simpa [Metric.closedBall] using (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage).2
     (isCompact_closedBall (0 : ℂ) r)
+
+/-- The plane punctured at a point `w`, read in the real coordinates `ℝ × ℝ`, is connected. -/
+theorem isConnected_setOf_equivRealProdCLM_symm_ne (w : ℂ) :
+    IsConnected {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ w} := by
+  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ w} =
+      ({Complex.equivRealProdCLM w} : Set (ℝ × ℝ))ᶜ := by
+    ext z
+    simp [ContinuousLinearEquiv.symm_apply_eq]
+  rw [hS]
+  refine isConnected_compl_singleton_of_one_lt_rank ?_ _
+  rw [rank_prod', Module.rank_self, one_add_one_eq_two]
+  exact Cardinal.one_lt_two
 
 /-- The square of the Euclidean norm of the point of `ℂ` with real coordinates `z` is the sum
 of the squares of the coordinates. -/
