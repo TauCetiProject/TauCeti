@@ -42,7 +42,14 @@ variable {n : ℕ∞ω} {𝕜 B B' G : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace (TotalSpace G Q)] [∀ b, TopologicalSpace (Q b)] [FiberBundle G Q]
   [∀ b, MulAction Gᵐᵒᵖ (Q b)] [PrincipalBundle G Q]
 
-variable [∀ b, Nonempty (P b)] [∀ b, Nonempty (Q b)]
+/-- Supply the canonical pullback bundle instance for the charted total-space signatures.
+The group model supplies the nonempty fibres required by the canonical construction. -/
+noncomputable local instance {E : B → Type*}
+    [TopologicalSpace (TotalSpace G E)] [∀ b, TopologicalSpace (E b)] [FiberBundle G E]
+    {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B] (f : K) :
+    FiberBundle G ((f : B' → B) *ᵖ E) := by
+  have (b : B) : Nonempty (E b) := ⟨(FiberBundle.homeomorphAt G E b).symm 1⟩
+  exact FiberBundle.pullback f
 
 variable (ψ : PrincipalBundle.Equiv G P Q) (f : C^n⟮IB', B'; IB, B⟯)
   (hψ : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ ψ.toEquiv b))
@@ -52,8 +59,10 @@ Smoothness of the inverse follows from equivariance. -/
 noncomputable def diffeomorphPullback [LieGroup IG n G] :
     Diffeomorph (IB'.prod IG) (IB'.prod IG)
       (ManifoldTotalSpace G ((f : B' → B) *ᵖ P))
-      (ManifoldTotalSpace G ((f : B' → B) *ᵖ Q)) n :=
-  diffeomorphOfEquivariant (P := (f : B' → B) *ᵖ P) (Q := (f : B' → B) *ᵖ Q) G
+      (ManifoldTotalSpace G ((f : B' → B) *ᵖ Q)) n := by
+  have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
+  have (b : B) : Nonempty (Q b) := ⟨(FiberBundle.homeomorphAt G Q b).symm 1⟩
+  exact diffeomorphOfEquivariant (P := (f : B' → B) *ᵖ P) (Q := (f : B' → B) *ᵖ Q) G
     (fun b ↦ ψ.toEquiv (f b)) (fun b g p ↦ ψ.map_smul (f b) p g)
     (contMDiff_fiberwiseMap_pullback f f.contMDiff hψ)
 
@@ -129,7 +138,7 @@ theorem diffeomorphPullback_symm :
 
 variable {R : B → Type*}
   [TopologicalSpace (TotalSpace G R)] [∀ b, TopologicalSpace (R b)] [FiberBundle G R]
-  [∀ b, MulAction Gᵐᵒᵖ (R b)] [PrincipalBundle G R] [∀ b, Nonempty (R b)]
+  [∀ b, MulAction Gᵐᵒᵖ (R b)] [PrincipalBundle G R]
 
 /-- Pullback commutes with composition of smooth principal-bundle isomorphisms. -/
 theorem diffeomorphPullback_trans (φ : PrincipalBundle.Equiv G Q R)
