@@ -275,9 +275,7 @@ theorem ncard_inversions_wordProd_eq_length_of_nodup (l : List b.support) (hl : 
 `#(inversions (wordProd P b l)) = b.support.card`. -/
 theorem ncard_inversions_wordProd_eq_card_support {l : List b.support} (hl : l.Nodup)
     (hall : ∀ i, i ∈ l) : (inversions P b (wordProd P b l)).ncard = b.support.card := by
-  classical
-  rw [ncard_inversions_wordProd_eq_length_of_nodup P b l hl, ← List.toFinset_card_of_nodup hl,
-    Finset.eq_univ_iff_forall.mpr fun i ↦ List.mem_toFinset.mpr (hall i), Finset.card_univ,
-    Fintype.card_coe]
+  rw [ncard_inversions_wordProd_eq_length_of_nodup P b l hl,
+    b.length_eq_card_support_of_nodup hl hall]
 
 end TauCeti

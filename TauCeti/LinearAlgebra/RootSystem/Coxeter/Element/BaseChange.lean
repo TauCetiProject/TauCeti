@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Rational
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
+import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # Rational base-change transport for Coxeter words
@@ -70,16 +71,17 @@ theorem nodup_and_forall_mem_map_supportEquivRootPairingBaseChangeRationalModel_
     fun i ↦ (b.mem_map_supportEquivRootPairingBaseChangeRationalModel_symm_iff S l i).2
       (hall _)⟩
 
-/-- Rational base change to a characteristic-zero `ℚ`-algebra domain `S` preserves the order of
-any word in the simple reflections. -/
+/-- Rational base change to a `ℚ`-algebra domain `S` preserves the order of any word in the
+simple reflections. -/
 theorem orderOf_wordProd_rootPairingBaseChange_rationalModel [IsDomain R] (b : P.Base)
-    (S : Type*) [CommRing S] [IsDomain S] [CharZero S] [Algebra ℚ S] (l : List b.support) :
+    (S : Type*) [CommRing S] [IsDomain S] [Algebra ℚ S] (l : List b.support) :
     orderOf (wordProd P b l) =
       orderOf (wordProd (rootPairingBaseChange S b.rationalModel b.rationalModel_toLinearMap)
         (rootPairingBaseChangeBase S b.rationalModel
           b.rationalModel_toLinearMap b.rationalModelBase)
         (l.map (b.supportEquivRootPairingBaseChangeRationalModel S).symm)) := by
   classical
+  have := algebraRat.charZero S
   let bS := rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
   let e := b.supportEquivRootPairingBaseChangeRationalModel S
@@ -92,12 +94,11 @@ theorem orderOf_wordProd_rootPairingBaseChange_rationalModel [IsDomain R] (b : P
     (Matrix.reindexAlgEquiv ℤ ℤ e.symm).toRingEquiv.toMulEquiv.toMonoidHom
     (Matrix.reindexAlgEquiv ℤ ℤ e.symm).injective _).symm
 
-/-- Over any characteristic-zero `ℚ`-algebra domain `S`, the characteristic polynomial of a
-simple-reflection word on the weight space of the base-changed rational model equals the rational
-reflection-matrix characteristic polynomial with coefficients mapped into `S`. -/
+/-- Over any `ℚ`-algebra domain `S`, the characteristic polynomial of a simple-reflection word on
+the weight space of the base-changed rational model equals the rational reflection-matrix
+characteristic polynomial with coefficients mapped into `S`. -/
 theorem charpoly_weylGroupRootRep_wordProd_rootPairingBaseChange_rationalModel [DecidableEq ι]
-    (b : P.Base) (S : Type*) [CommRing S] [IsDomain S] [CharZero S] [Algebra ℚ S]
-    (l : List b.support) :
+    (b : P.Base) (S : Type*) [CommRing S] [IsDomain S] [Algebra ℚ S] (l : List b.support) :
     (((l.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℚ)).charpoly).map
         (algebraMap ℚ S) =
       ((rootPairingBaseChange S b.rationalModel b.rationalModel_toLinearMap).weylGroupRootRep
@@ -106,6 +107,7 @@ theorem charpoly_weylGroupRootRep_wordProd_rootPairingBaseChange_rationalModel [
             b.rationalModelBase)
           (l.map (b.supportEquivRootPairingBaseChangeRationalModel S).symm))).charpoly := by
   classical
+  have := algebraRat.charZero S
   let bS := rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
   let e := b.supportEquivRootPairingBaseChangeRationalModel S

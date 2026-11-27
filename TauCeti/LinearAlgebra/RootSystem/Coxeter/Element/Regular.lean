@@ -72,10 +72,11 @@ variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGrou
 
 variable [P.IsCrystallographic]
 
-/-- The value of a coroot on a real combination of the simple roots is real. -/
-private theorem coroot'_sum_algebraMap_smul_root [Algebra ℝ K] (a : b.support → ℝ) (j : ι) :
-    P.coroot' j (∑ i : b.support, algebraMap ℝ K (a i) • P.root i) =
-      algebraMap ℝ K (∑ i : b.support, a i * P.pairingIn ℤ i j) := by
+/-- The value of a coroot on an `R`-linear combination of the simple roots. -/
+theorem coroot'_sum_algebraMap_smul_root {R : Type*} [CommRing R] [Algebra R K]
+    (a : b.support → R) (j : ι) :
+    P.coroot' j (∑ i : b.support, algebraMap R K (a i) • P.root i) =
+      algebraMap R K (∑ i : b.support, a i * P.pairingIn ℤ i j) := by
   simp only [map_sum, map_smul, root_coroot'_eq_pairing, smul_eq_mul, map_mul, map_intCast,
     ← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast]
 
@@ -114,7 +115,7 @@ variable {b} {c : (coxeterMatrixOfBase P b).graph.Coloring Bool} {y : b.support 
 
 omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The two colour parts add up to the whole combination. -/
-private theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
+theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
     colorPart P b c y true + colorPart P b c y false =
       ∑ i : b.support, algebraMap ℝ K (y i) • P.root i := by
   rw [colorPart, colorPart, ← sum_add_distrib]
@@ -123,7 +124,7 @@ private theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
 
 omit [CharZero K] [Finite ι] [P.IsReduced] in
 /-- The value of a coroot on a colour part. -/
-private theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support → ℝ) (z : Bool)
+theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support → ℝ) (z : Bool)
     (i : ι) :
     P.coroot' i (colorPart P b c y z) =
       algebraMap ℝ K (∑ k : b.support, (if c k = z then y k else 0) * P.pairingIn ℤ k i) := by

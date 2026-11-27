@@ -12,8 +12,11 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Bipartite
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
+import TauCeti.Analysis.SpecialFunctions.Complex.TwoCos
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.GroupTheory.Coxeter.CoxeterElement
-import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive
+import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Bipartite
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Regular
@@ -37,8 +40,9 @@ is the order of the bipartite Coxeter element. However, those results do not ide
 primitive `h`-th root of unity corresponds to the Perron–Frobenius eigenvalue `κ` of the Cartan
 matrix.
 
-This file combines that colour-part construction with the Perron–Frobenius spectral bound
-(`Matrix.norm_le_of_mulVec_le_smul`) to identify `2 - κ = 2 * Real.cos (π / h)`, and deduces:
+This file combines that colour-part construction with the bipartite Perron–Frobenius spectral bound
+(`Matrix.norm_one_add_sq_div_le_sq_of_mulVec_eq_smul`) to identify `2 - κ = 2 * Real.cos (π / h)`,
+and deduces:
 
 ## Main results
 
@@ -69,206 +73,6 @@ open Matrix Polynomial TauCeti
 namespace RootPairing
 
 section SpectralHelpers
-
-private lemma one_add_exp_sq_div_exp_eq (h : ℕ) :
-    (1 + Complex.exp (2 * Real.pi * Complex.I / h)) ^ 2 /
-        Complex.exp (2 * Real.pi * Complex.I / h) =
-      (((2 * Real.cos (Real.pi / h)) ^ 2 : ℝ) : ℂ) := by
-  set ξ : ℂ := Complex.exp (((Real.pi / h : ℝ) : ℂ) * Complex.I)
-  have hω : Complex.exp (2 * Real.pi * Complex.I / h) = ξ ^ 2 := by
-    simp only [ξ, sq, ← Complex.exp_add]
-    congr 1
-    push_cast
-    ring
-  have hdiv : (1 + ξ ^ 2) ^ 2 / ξ ^ 2 = (ξ + ξ⁻¹) ^ 2 := by
-    field_simp [Complex.exp_ne_zero _]
-    ring
-  rw [hω, hdiv]
-  dsimp only [ξ]
-  rw [← Complex.exp_neg, ← neg_mul, ← Complex.two_cos]
-  push_cast
-  ring
-
-private lemma pi_div_le_of_exp_sq_pow_eq_one {θ : ℝ} {h : ℕ} (hθ_pos : 0 < θ) (hh_pos : 0 < h)
-    (hζ_pow : (Complex.exp ((θ : ℂ) * Complex.I) ^ 2) ^ h = 1) : Real.pi / h ≤ θ := by
-  have hh_real : (0 : ℝ) < h := Nat.cast_pos.mpr hh_pos
-  have hexp1 : Complex.exp (((2 * (h : ℝ) * θ : ℝ) : ℂ) * Complex.I) = 1 := by
-    simp only [← Complex.exp_natCast_mul] at hζ_pow
-    convert hζ_pow using 2
-    push_cast
-    ring
-  obtain ⟨m, hm⟩ := Complex.exp_eq_one_iff.1 hexp1
-  have hre : 2 * (h : ℝ) * θ = (m : ℝ) * (2 * Real.pi) := Complex.ofReal_injective
-    (mul_right_cancel₀ Complex.I_ne_zero (by simpa [mul_assoc] using hm))
-  have hm_real : (0 : ℝ) < m := by nlinarith [Real.pi_pos, mul_pos hh_real hθ_pos]
-  have hm_pos : (0 : ℤ) < m := by exact_mod_cast hm_real
-  have hm_one : (1 : ℤ) ≤ m := hm_pos
-  have hm_ge : (1 : ℝ) ≤ m := by exact_mod_cast hm_one
-  rw [div_le_iff₀ hh_real]
-  nlinarith [Real.pi_pos]
-
-private lemma eq_two_mul_cos_pi_div_of_norm_one_add_sq_div_le (lam : ℝ) {h : ℕ}
-    (hlam_nonneg : 0 ≤ lam) (hlam_lt : lam < 2) (h2le : 2 ≤ h)
-    (hζ_pow : (Complex.exp ((Real.arccos (lam / 2) : ℂ) * Complex.I) ^ 2) ^ h = 1)
-    (hbound : ‖(1 + Complex.exp (2 * Real.pi * Complex.I / h)) ^ 2 /
-      Complex.exp (2 * Real.pi * Complex.I / h)‖ ≤ lam ^ 2) :
-    lam = 2 * Real.cos (Real.pi / h) := by
-  set θ : ℝ := Real.arccos (lam / 2)
-  have hcosθ : Real.cos θ = lam / 2 := Real.cos_arccos (by linarith) (by linarith)
-  have hlam_eq : lam = 2 * Real.cos θ := by linarith
-  have hθ_pos : 0 < θ := by
-    rw [← Real.arccos_one]
-    exact Real.arccos_lt_arccos (by linarith) (by linarith) le_rfl
-  have hθ_le : θ ≤ Real.pi / 2 := by
-    rw [← Real.arccos_zero]
-    exact Real.arccos_le_arccos (by linarith : (0 : ℝ) ≤ lam / 2)
-  rw [one_add_exp_sq_div_exp_eq h, Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _)] at hbound
-  have hh_pos : 0 < h := lt_of_lt_of_le (by norm_num) h2le
-  have hh_real : (0 : ℝ) < h := Nat.cast_pos.mpr hh_pos
-  have hpi_le_θ : Real.pi / h ≤ θ := pi_div_le_of_exp_sq_pow_eq_one hθ_pos hh_pos hζ_pow
-  have hcos_le : Real.cos (Real.pi / h) ≤ Real.cos θ := by
-    have hcos_nonneg_pi : 0 ≤ Real.cos (Real.pi / h) := by
-      refine Real.cos_nonneg_of_mem_Icc
-        ⟨by linarith [Real.pi_pos, div_nonneg Real.pi_pos.le hh_real.le], ?_⟩
-      have h2 : (2 : ℝ) ≤ h := by exact_mod_cast h2le
-      rw [div_le_div_iff₀ hh_real (by norm_num)]
-      nlinarith [Real.pi_pos]
-    have : Real.cos (Real.pi / h) ^ 2 ≤ Real.cos θ ^ 2 := by
-      rw [hlam_eq] at hbound
-      nlinarith
-    nlinarith
-  have hcos_ge : Real.cos θ ≤ Real.cos (Real.pi / h) := Real.strictAntiOn_cos.antitoneOn
-    ⟨by positivity, le_trans hpi_le_θ (le_trans hθ_le (by linarith [Real.pi_pos]))⟩
-    ⟨hθ_pos.le, le_trans hθ_le (by linarith [Real.pi_pos])⟩ hpi_le_θ
-  linarith [le_antisymm hcos_ge hcos_le]
-
-private lemma mulVec_sq_map_of_bipartite_mulVec_eq_smul {n : Type*} [Fintype n]
-    (A : Matrix n n ℝ) {M₁ M₂ : Matrix n n ℂ} {col : n → Bool}
-    (hA_same : ∀ i j, col i = col j → A i j = 0)
-    (hM₁_mul : ∀ (z : n → ℂ) (i : n), (M₁ *ᵥ z) i = if col i = true then
-        -z i + ∑ j : n, (if col j = false then (A i j : ℂ) * z j else 0) else z i)
-    (hM₂_mul : ∀ (z : n → ℂ) (i : n), (M₂ *ᵥ z) i = if col i = false then
-        -z i + ∑ j : n, (if col j = true then (A i j : ℂ) * z j else 0) else z i)
-    {ω : ℂ} {z : n → ℂ} (hω : ω ≠ 0) (heig : (M₁ * M₂) *ᵥ z = ω • z) :
-    (A * A).map Complex.ofReal *ᵥ z = ((1 + ω) ^ 2 / ω) • z := by
-  classical
-  set AC : Matrix n n ℂ := A.map Complex.ofReal
-  -- Step 1: `M₁` is an involution (`M₁² = 1`), so `(M₁ * M₂) z = ω z` yields `M₂ z = ω M₁ z`.
-  have hM₁_invol : ∀ y : n → ℂ, M₁ *ᵥ (M₁ *ᵥ y) = y := fun y ↦ by
-    ext i
-    rw [hM₁_mul]
-    cases hci : col i
-    · simp [hM₁_mul, hci]
-    · have hsum : (∑ j : n, if col j = false then (A i j : ℂ) * (M₁ *ᵥ y) j else 0) =
-          ∑ j : n, if col j = false then (A i j : ℂ) * y j else 0 :=
-        Finset.sum_congr rfl fun j _ ↦ by
-          split_ifs with hcj
-          · simp [hM₁_mul, hcj]
-          · rfl
-      rw [hM₁_mul]
-      simp only [hci, ite_true, hsum]
-      ring
-  have hM₂_eq : M₂ *ᵥ z = ω • (M₁ *ᵥ z) := by
-    have h1 := congrArg (M₁ *ᵥ ·) heig
-    rwa [← mulVec_mulVec, hM₁_invol, mulVec_smul] at h1
-  -- Step 2: Split `z = z₁ + z₂` by colour; `M₂ z = ω M₁ z` decouples into two equations
-  -- `(1 + ω) z₁ = ω A z₂` and `A z₁ = (1 + ω) z₂`.
-  set z₁ : n → ℂ := fun i ↦ if col i = true then z i else 0
-  set z₂ : n → ℂ := fun i ↦ if col i = false then z i else 0
-  have hz_split : z = z₁ + z₂ := by
-    ext i
-    simp only [z₁, z₂, Pi.add_apply]
-    cases col i <;> simp
-  have hAz_color (b0 : Bool) (i : n) :
-      (AC *ᵥ fun j ↦ if col j = b0 then z j else 0) i = if col i = !b0 then
-        ∑ j : n, (if col j = b0 then (A i j : ℂ) * z j else 0) else 0 := by
-    simp only [mulVec, dotProduct, AC, Matrix.map_apply]
-    split_ifs with hci
-    · exact Finset.sum_congr rfl fun j _ ↦ by split_ifs <;> simp
-    · have hsame : col i = b0 := by cases h1 : col i <;> cases b0 <;> simp_all
-      exact Finset.sum_eq_zero fun j _ ↦ by
-        split_ifs with hcj
-        · simp [hA_same i j (hsame.trans hcj.symm)]
-        · simp
-  have heq₁ : (1 + ω) • z₁ = ω • (AC *ᵥ z₂) := by
-    ext i
-    have hi := congrFun hM₂_eq i
-    have hAz := hAz_color false i
-    simp only [Bool.not_false, z₁, z₂, Pi.smul_apply, smul_eq_mul, hM₂_mul, hM₁_mul] at hi hAz ⊢
-    rw [hAz]
-    cases hci : col i <;> simp [hci] at hi ⊢
-    linear_combination hi
-  have heq₂ : AC *ᵥ z₁ = (1 + ω) • z₂ := by
-    ext i
-    have hi := congrFun hM₂_eq i
-    have hAz := hAz_color true i
-    simp only [Bool.not_true, z₁, z₂, Pi.smul_apply, smul_eq_mul, hM₂_mul, hM₁_mul] at hi hAz ⊢
-    rw [hAz]
-    cases hci : col i <;> simp [hci] at hi ⊢
-    linear_combination hi
-  -- Step 3: Compose the two colour equations to get `ω A² z = (1 + ω)² z` and divide by `ω`.
-  have h1 : ω • (AC *ᵥ (AC *ᵥ z₁)) = (1 + ω) ^ 2 • z₁ := by
-    rw [heq₂, mulVec_smul, smul_comm, ← heq₁, smul_smul, sq]
-  have h2 : ω • (AC *ᵥ (AC *ᵥ z₂)) = (1 + ω) ^ 2 • z₂ := by
-    have := congrArg (AC *ᵥ ·) heq₁
-    rw [mulVec_smul, mulVec_smul, heq₂, smul_smul, ← sq] at this
-    exact this.symm
-  have hsum : ω • ((AC * AC) *ᵥ z) = (1 + ω) ^ 2 • z := by
-    rw [hz_split, mulVec_add, ← mulVec_mulVec, ← mulVec_mulVec, smul_add, h1, h2, ← smul_add]
-  have hA2_map : (A * A).map Complex.ofReal = AC * AC := by
-    ext i j
-    simp [AC, Matrix.mul_apply]
-  rw [hA2_map]
-  ext i
-  have hi := congrFun hsum i
-  simp only [Pi.smul_apply, smul_eq_mul] at hi ⊢
-  exact mul_left_cancel₀ hω (by rw [hi]; field_simp [hω])
-
-private lemma norm_one_add_sq_div_le_sq_of_mulVec_eq_smul {n : Type*} [Fintype n]
-    (A : Matrix n n ℝ) {M₁ M₂ : Matrix n n ℂ} {col : n → Bool} {a : n → ℝ} {r : ℝ}
-    (hA_nonneg : ∀ i j, 0 ≤ A i j) (hA_same : ∀ i j, col i = col j → A i j = 0)
-    (ha_pos : ∀ i, 0 < a i) (ha_eig : A *ᵥ a = r • a)
-    (hM₁_mul : ∀ (z : n → ℂ) (i : n), (M₁ *ᵥ z) i = if col i = true then
-        -z i + ∑ j : n, (if col j = false then (A i j : ℂ) * z j else 0) else z i)
-    (hM₂_mul : ∀ (z : n → ℂ) (i : n), (M₂ *ᵥ z) i = if col i = false then
-        -z i + ∑ j : n, (if col j = true then (A i j : ℂ) * z j else 0) else z i)
-    {ω : ℂ} {z : n → ℂ} (hω : ω ≠ 0) (hz : z ≠ 0) (heig : (M₁ * M₂) *ᵥ z = ω • z) :
-    ‖(1 + ω) ^ 2 / ω‖ ≤ r ^ 2 := by
-  have hA2_eig := mulVec_sq_map_of_bipartite_mulVec_eq_smul A hA_same hM₁_mul hM₂_mul hω heig
-  have hA2_nonneg : ∀ i j, 0 ≤ (A * A) i j := fun i j ↦ by
-    rw [Matrix.mul_apply]
-    exact Finset.sum_nonneg fun k _ ↦ mul_nonneg (hA_nonneg i k) (hA_nonneg k j)
-  exact norm_le_of_mulVec_le_smul hA2_nonneg ha_pos
-    (le_of_eq (by rw [← mulVec_mulVec, ha_eig, mulVec_smul, ha_eig, smul_smul, sq]))
-    hz hA2_eig
-
-/-- If `c = 2 * Real.cos t`, both `exp (2 * t * I)` and `(exp (2 * t * I))⁻¹` satisfy the quadratic
-`w ^ 2 + (2 - c ^ 2) * w + 1 = 0`. -/
-private lemma exp_pm_two_mul_I_quad {c t : ℝ} (hc : c = 2 * Real.cos t) :
-    let ζ : ℂ := Complex.exp (2 * (t : ℂ) * Complex.I)
-    (ζ ^ 2 + (2 - algebraMap ℝ ℂ c ^ 2) * ζ + 1 = 0) ∧
-      ((ζ⁻¹) ^ 2 + (2 - algebraMap ℝ ℂ c ^ 2) * ζ⁻¹ + 1 = 0) := by
-  let μ : ℂ := Complex.exp ((t : ℂ) * Complex.I)
-  have hμ_ne : μ ≠ 0 := Complex.exp_ne_zero _
-  have hμ_sum : μ + μ⁻¹ = (c : ℂ) := by
-    rw [show μ⁻¹ = Complex.exp (-(t : ℂ) * Complex.I) by
-      simp [μ, ← Complex.exp_neg, neg_mul], ← Complex.two_cos, ← Complex.ofReal_cos, hc]
-    push_cast; ring
-  have hζ_eq : Complex.exp (2 * (t : ℂ) * Complex.I) = μ ^ 2 := by
-    simp only [μ, sq, ← Complex.exp_add]; congr 1; ring
-  have hζ_ne : μ ^ 2 ≠ 0 := pow_ne_zero 2 hμ_ne
-  have hsum : μ ^ 2 + (μ ^ 2)⁻¹ = algebraMap ℝ ℂ c ^ 2 - 2 := by
-    have h1 : μ ^ 2 + (μ⁻¹) ^ 2 = (μ + μ⁻¹) ^ 2 - 2 := by field_simp [hμ_ne]; ring
-    rw [hμ_sum] at h1
-    simpa [inv_pow, Complex.coe_algebraMap] using h1
-  rw [hζ_eq]
-  refine ⟨?_, ?_⟩
-  · have h := congrArg (· * μ ^ 2) hsum
-    rw [add_mul, inv_mul_cancel₀ hζ_ne, ← sq] at h
-    linear_combination h
-  · have h := congrArg (· * (μ ^ 2)⁻¹) hsum
-    rw [add_mul, mul_inv_cancel₀ hζ_ne, ← sq] at h
-    linear_combination h
 
 private lemma wordProd_eq_colorClassProd_of_mem_iff
     {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
@@ -537,16 +341,15 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   have hh_pos : 0 < h := by omega
   -- Phase 2: Angle `θ = arccos ((2 - κ) / 2)` and quadratic equation for `ζ⁻¹ = exp(-2iθ)`.
   set lam : ℝ := 2 - κ
-  have hlam_nonneg : 0 ≤ lam := by linarith
-  have hlam_lt : lam < 2 := by linarith
   set θ : ℝ := Real.arccos (lam / 2)
   have hlam_cos : lam = 2 * Real.cos θ := by
     linarith [Real.cos_arccos (by linarith : (-1 : ℝ) ≤ lam / 2) (by linarith : lam / 2 ≤ 1)]
   set ζ : ℂ := Complex.exp (2 * (θ : ℂ) * Complex.I)
   have hζ_sq : Complex.exp ((θ : ℂ) * Complex.I) ^ 2 = ζ := by
     simp only [ζ, sq, ← Complex.exp_add]; congr 1; ring
-  have hζinv_quad : (ζ⁻¹) ^ 2 + (2 - algebraMap ℝ ℂ (2 - κ) ^ 2) * ζ⁻¹ + 1 = 0 :=
-    (exp_pm_two_mul_I_quad hlam_cos).2
+  have hζinv_quad : (ζ⁻¹) ^ 2 + (2 - algebraMap ℝ ℂ (2 - κ) ^ 2) * ζ⁻¹ + 1 = 0 := by
+    simpa [lam, hlam_cos, Complex.ofReal_cos, Complex.coe_algebraMap] using
+      Complex.inv_exp_two_mul_mul_I_sq_add_sub_mul_add_one (θ : ℂ)
   -- Phase 3: Transport to `rootPairingBaseChange ℂ b.rationalModel` to invoke `Regular.lean`.
   let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
   let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
@@ -612,10 +415,47 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   have hM₁C_mul := colorClassProd_matrix_mulVec P b col A (fun _ _ ↦ rfl) true hW₁_acts
   have hM₂C_mul := colorClassProd_matrix_mulVec P b col A (fun _ _ ↦ rfl) false hW₂_acts
   simp only [Bool.not_true, Bool.not_false] at hM₁C_mul hM₂C_mul
-  exact eq_two_mul_cos_pi_div_of_norm_one_add_sq_div_le lam hlam_nonneg hlam_lt h2le
-    (hζ_sq ▸ hζ_prim.pow_eq_one)
-    (norm_one_add_sq_div_le_sq_of_mulVec_eq_smul A hA_nonneg hA_same hy0 hA_eig
-      hM₁C_mul hM₂C_mul (Complex.exp_ne_zero _) hz.2 (Module.End.mem_eigenspace_iff.1 hz.1))
+  have hbound : ‖(1 + ω₀) ^ 2 / ω₀‖ ≤ lam ^ 2 :=
+    Matrix.norm_one_add_sq_div_le_sq_of_mulVec_eq_smul A hA_nonneg hA_same hy0 hA_eig
+      hM₁C_mul hM₂C_mul (Complex.exp_ne_zero _) hz.2 (Module.End.mem_eigenspace_iff.1 hz.1)
+  have hθ_pos : 0 < θ := Real.arccos_pos.2 (by linarith)
+  have hpi_le_θ : Real.pi / h ≤ θ := by
+    have hpow : Complex.exp ((θ : ℂ) * Complex.I) ^ (2 * h) = 1 := by
+      rw [pow_mul, hζ_sq]
+      exact hζ_prim.pow_eq_one
+    have h2pi := Complex.two_mul_pi_div_le_of_exp_ofReal_mul_I_pow_eq_one hθ_pos
+      (by positivity : 0 < 2 * h) hpow
+    rw [Nat.cast_mul, Nat.cast_ofNat, mul_div_mul_left _ _ two_ne_zero] at h2pi
+    exact h2pi
+  have hpi_mem : Real.pi / h ∈ Set.Icc 0 Real.pi := by
+    have hh_real : (0 : ℝ) < h := Nat.cast_pos.mpr hh_pos
+    refine ⟨div_nonneg Real.pi_pos.le hh_real.le, ?_⟩
+    exact div_le_self Real.pi_pos.le (by exact_mod_cast le_trans (by norm_num) h2le)
+  have hlam_le : lam ≤ 2 * Real.cos (Real.pi / h) := by
+    have hcos := (Real.le_arccos_iff_le_cos (by linarith) hpi_mem).1 hpi_le_θ
+    linarith
+  have hcos_le : 2 * Real.cos (Real.pi / h) ≤ lam := by
+    have hid := Complex.one_add_exp_two_mul_mul_I_sq_div ((Real.pi / h : ℝ) : ℂ)
+    have hω₀_eq : ω₀ = Complex.exp (2 * ((Real.pi / h : ℝ) : ℂ) * Complex.I) := by
+      dsimp only [ω₀]
+      congr 1
+      push_cast
+      ring
+    rw [← hω₀_eq, ← Complex.ofReal_cos] at hid
+    rw [hid] at hbound
+    have hsq : (2 * Real.cos (Real.pi / h)) ^ 2 ≤ lam ^ 2 := by
+      have hnorm : ‖(2 * (Real.cos (Real.pi / h) : ℂ)) ^ 2‖ =
+          (2 * Real.cos (Real.pi / h)) ^ 2 := by
+        norm_cast
+        rw [Real.norm_of_nonneg (sq_nonneg _)]
+      exact hnorm ▸ hbound
+    have hcos_nonneg : 0 ≤ Real.cos (Real.pi / h) :=
+      Real.cos_nonneg_of_mem_Icc ⟨by linarith [hpi_mem.1, Real.pi_pos], by
+        have hh_real : (0 : ℝ) < h := Nat.cast_pos.mpr hh_pos
+        rw [div_le_div_iff₀ hh_real (by norm_num)]
+        nlinarith [Real.pi_pos, show (2 : ℝ) ≤ h by exact_mod_cast h2le]⟩
+    nlinarith [hcos_nonneg]
+  exact le_antisymm hlam_le hcos_le
 
 /-- For a rank-1 root system, every bipartite Coxeter element has order `2`. -/
 private theorem orderOf_bipartiteCoxeterElement_eq_two_of_subsingleton
@@ -835,9 +675,15 @@ theorem exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
       have hy := P.sum_mul_pairingIn_eq_of_vecMul_eq_smul b hyC
       have hlam : 2 - κ = 2 * Real.cos (Real.pi / orderOf c) :=
         two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement P b col hy hy0 hκ hκ2
-      have hν := (exp_pm_two_mul_I_quad hlam).2
-      rw [show (2 * ((Real.pi / orderOf c : ℝ) : ℂ) * Complex.I) =
-        2 * Real.pi * Complex.I / orderOf c by push_cast; ring] at hν
+      have hν : (Complex.exp (2 * Real.pi * Complex.I / orderOf c))⁻¹ ^ 2 +
+          (2 - algebraMap ℝ ℂ (2 - κ) ^ 2) *
+            (Complex.exp (2 * Real.pi * Complex.I / orderOf c))⁻¹ + 1 = 0 := by
+        have h := Complex.inv_exp_two_mul_mul_I_sq_add_sub_mul_add_one
+          ((Real.pi / orderOf c : ℝ) : ℂ)
+        rw [show (2 * ((Real.pi / orderOf c : ℝ) : ℂ) * Complex.I) =
+            2 * Real.pi * Complex.I / orderOf c by push_cast; ring,
+          ← Complex.ofReal_cos] at h
+        simpa [Complex.coe_algebraMap, hlam] using h
       exact ⟨_, P.isRegularWeight_one_add_smul_colorPart_add_smul (c := col) hy hy0 hκ hκ2 hν,
         P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul (c := col) hy hν⟩
   obtain ⟨v, hv_reg, hv_eig⟩ := hc_eig

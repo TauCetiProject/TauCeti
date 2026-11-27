@@ -32,7 +32,7 @@ its order, the **Coxeter number**. The root-count identity `|Φ| = r h` already 
 degrees `dᵢ` and exponents `eᵢ = dᵢ - 1` of a homogeneous basic invariant system of `Sym(M*)^W`.
 
 Over an algebraically closed field `K` containing `ℝ` (such as `ℂ`), this file first proves
-the exponent bound `dᵢ - 1 < h` (deriving `|Φ| = r h` internally along the way). It then extends
+the exponent bound `dᵢ - 1 < h` (via the orbit-sum upper bound `|Φ| ≤ r h`). It then extends
 this bound and the remaining exponent theorems to arbitrary characteristic-zero fields `K` via base
 change from the rational model `b.rationalModel` to `ℂ`
 (`TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.BaseChange` and
@@ -106,18 +106,16 @@ variable {ι K M N κ : Type*} [Field K] [CharZero K] [Algebra ℝ K] [IsAlgClos
   (P : RootPairing ι K M N) [Finite ι] [Nonempty ι] [P.IsCrystallographic] [P.IsReduced]
   [P.IsIrreducible]
 
-/-- Internally over `K` containing `ℝ` and algebraically closed, `|Φ| = r h` and `eᵢ < h` for
-the bipartite Coxeter element. -/
-private theorem natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement
+/-- Internally over `K` containing `ℝ` and algebraically closed, `eᵢ < h` for the bipartite Coxeter
+element. -/
+private theorem degree_sub_one_lt_orderOf_bipartiteCoxeterElement
     [FiniteDimensional K M] [Finite κ]
     (b : P.Base) (c : (coxeterMatrixOfBase P b).graph.Coloring Bool)
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
     (hf : ∀ k, (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
       homogeneousSubmodule K (Module.Dual K M) (d k))
     (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
-    Nat.card ι =
-        Module.finrank K M * orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c) ∧
-      ∀ k, d k - 1 < orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c) := by
+    ∀ k, d k - 1 < orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c) := by
   classical
   have := Fintype.ofFinite κ
   set g := (weylCoxeterSystem P b).bipartiteCoxeterElement c
@@ -143,8 +141,8 @@ private theorem natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement
     rw [← Nat.card_eq_fintype_card,
       P.natCard_eq_finrank_of_bijective_aeval_weylGroupRootRep_dual hbij]
   have hlen : (l₁ ++ l₂).length = Module.finrank K M := by
-    rw [Module.finrank_eq_card_basis b.toWeightBasis, ← List.toFinset_card_of_nodup hnd,
-      Finset.eq_univ_iff_forall.mpr fun i ↦ List.mem_toFinset.mpr (hall i), Finset.card_univ]
+    rw [Module.finrank_eq_card_basis b.toWeightBasis, Fintype.card_coe,
+      b.length_eq_card_support_of_nodup hnd hall]
   have hle := natCard_le_orderOf_wordProd_mul_length b hnd hall
   rw [hw, hlen] at hle
   have hsum := P.sum_sub_one_eq_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual b hf hbij
@@ -156,7 +154,7 @@ private theorem natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement
   have heq : ∑ k, (d k - 1) % orderOf g = ∑ k, (d k - 1) := by
     rw [mul_comm] at hle
     linarith
-  refine ⟨by rw [mul_comm]; linarith, fun k ↦ ?_⟩
+  intro k
   have := (Finset.sum_eq_sum_iff_of_le fun k _ ↦ Nat.mod_le (d k - 1) (orderOf g)).mp heq k
     (Finset.mem_univ k)
   rw [← this]
@@ -172,7 +170,7 @@ private theorem degree_sub_one_lt_orderOf_wordProd_aux [Finite κ] (b : P.Base)
   have := P.finite_weight_of_isRootSystem
   obtain ⟨c⟩ := nonempty_coloring_graph_coxeterMatrixOfBase P b
   rw [← P.orderOf_bipartiteCoxeterElement_eq_orderOf_wordProd b c hl hl']
-  exact (P.natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement b c hf hbij).2 k
+  exact P.degree_sub_one_lt_orderOf_bipartiteCoxeterElement b c hf hbij k
 
 section ExponentsAndEigenvalues
 

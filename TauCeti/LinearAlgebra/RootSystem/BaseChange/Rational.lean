@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Basis
+import Mathlib.Algebra.CharP.Algebra
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.Matrix.Rank
 
@@ -320,15 +321,16 @@ theorem coe_supportEquivRootPairingBaseChangeRationalModel
     (b.supportEquivRootPairingBaseChangeRationalModel S i : ι) = i := by
   simp [supportEquivRootPairingBaseChangeRationalModel]
 
-/-- Base change of `b.rationalModel` to a `ℚ`-algebra domain of characteristic zero preserves the
-Cartan matrix of `b`. -/
-theorem cartanMatrix_rootPairingBaseChangeRationalModel [CharZero S]
+/-- Base change of `b.rationalModel` to a `ℚ`-algebra domain preserves the Cartan matrix of
+`b`. -/
+theorem cartanMatrix_rootPairingBaseChangeRationalModel
     (i j : (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
       b.rationalModelBase).support) :
     (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
       b.rationalModelBase).cartanMatrix i j =
       b.cartanMatrix (b.supportEquivRootPairingBaseChangeRationalModel S i)
         (b.supportEquivRootPairingBaseChangeRationalModel S j) := by
+  have := algebraRat.charZero S
   simp [supportEquivRootPairingBaseChangeRationalModel]
 
 /-- For a finite reduced irreducible crystallographic root system `P` over a characteristic-zero
