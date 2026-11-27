@@ -375,86 +375,77 @@ theorem closedRange_sInf (S : Set M.Projection) :
   ext U
   simp [closedRangeHom_apply]
 
+/-- Internal helper rewriting `(p : H →L[ℂ] H)` to the orthogonal projection onto
+`p.closedRange`, used to derive the lattice coercion lemmas from `closedRange_*`. -/
+private theorem coe_eq_starProjection_closedRange (p : M.Projection) :
+    (p : H →L[ℂ] H) = p.closedRange.toSubmodule.starProjection := by
+  simp only [toSubmodule_closedRange, starProjection_range]
+
 @[simp, norm_cast]
 theorem coe_bot : ((⊥ : M.Projection) : H →L[ℂ] H) = 0 := by
-  rw [← (⊥ : M.Projection).starProjection_range]
-  exact (Submodule.starProjection_inj.2 (by
-    rw [← toSubmodule_closedRange, closedRange_bot, ClosedSubmodule.toSubmodule_bot])).trans
-    Submodule.starProjection_bot
+  rw [coe_eq_starProjection_closedRange]
+  simp only [closedRange_bot, ClosedSubmodule.toSubmodule_bot, Submodule.starProjection_bot]
 
 @[simp, norm_cast]
 theorem coe_top : ((⊤ : M.Projection) : H →L[ℂ] H) = 1 := by
-  rw [← (⊤ : M.Projection).starProjection_range]
-  exact (Submodule.starProjection_inj.2 (by
-    rw [← toSubmodule_closedRange, closedRange_top, ClosedSubmodule.toSubmodule_top])).trans
-    Submodule.starProjection_top'
+  rw [coe_eq_starProjection_closedRange]
+  simp only [closedRange_top, ClosedSubmodule.toSubmodule_top, Submodule.starProjection_top']
 
 /-- The meet of two projections in `M` is the orthogonal projection onto the intersection of their
 closed ranges. -/
 theorem coe_inf (p q : M.Projection) :
     ((p ⊓ q : M.Projection) : H →L[ℂ] H) =
       (p.closedRange ⊓ q.closedRange).toSubmodule.starProjection := by
-  rw [← (p ⊓ q).starProjection_range]
-  exact Submodule.starProjection_inj.2 (by rw [← toSubmodule_closedRange, closedRange_inf])
+  rw [coe_eq_starProjection_closedRange, closedRange_inf]
 
 /-- The orthogonal projection onto `(ker ((1 - p) * q))ᗮ` equals `q - (p ⊓ q)`. -/
 theorem starProjection_orthogonal_ker_one_sub_mul (p q : M.Projection) :
     ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
       (q : H →L[ℂ] H) - (p ⊓ q : M.Projection) := by
-  have h : ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
-      ((1 - p.closedRange.toSubmodule.starProjection) *
-        q.closedRange.toSubmodule.starProjection).kerᗮ.starProjection := by
-    simp only [toSubmodule_closedRange, starProjection_range]
-  rw [h, Submodule.starProjection_orthogonal_ker_one_sub_mul]
-  simp only [toSubmodule_closedRange, starProjection_range, coe_inf,
-    ClosedSubmodule.toSubmodule_inf]
+  rw [coe_eq_starProjection_closedRange p, coe_eq_starProjection_closedRange q,
+    Submodule.starProjection_orthogonal_ker_one_sub_mul]
+  simp only [coe_inf, ClosedSubmodule.toSubmodule_inf]
 
 /-- The join of two projections in `M` is the orthogonal projection onto the closed span of their
 ranges. -/
 theorem coe_sup (p q : M.Projection) :
     ((p ⊔ q : M.Projection) : H →L[ℂ] H) =
       ((p : H →L[ℂ] H).range ⊔ (q : H →L[ℂ] H).range).topologicalClosure.starProjection := by
-  rw [← (p ⊔ q).starProjection_range]
-  refine Submodule.starProjection_inj.2 ?_
-  rw [← toSubmodule_closedRange, closedRange_sup, ClosedSubmodule.toSubmodule_sup,
-    Submodule.toSubmodule_closure, toSubmodule_closedRange, toSubmodule_closedRange]
+  rw [coe_eq_starProjection_closedRange]
+  simp only [closedRange_sup, ClosedSubmodule.toSubmodule_sup, Submodule.toSubmodule_closure,
+    toSubmodule_closedRange]
 
 /-- The meet of an indexed family of projections in `M` is the orthogonal projection onto the
 intersection of their closed ranges. -/
 theorem coe_iInf {ι : Sort*} (p : ι → M.Projection) :
     ((⨅ i, p i : M.Projection) : H →L[ℂ] H) =
       (⨅ i, (p i).closedRange).toSubmodule.starProjection := by
-  rw [← (⨅ i, p i).starProjection_range]
-  exact Submodule.starProjection_inj.2 (by rw [← toSubmodule_closedRange, closedRange_iInf])
+  rw [coe_eq_starProjection_closedRange, closedRange_iInf]
 
 /-- The join of an indexed family of projections in `M` is the orthogonal projection onto the closed
 span of their ranges. -/
 theorem coe_iSup {ι : Sort*} (p : ι → M.Projection) :
     ((⨆ i, p i : M.Projection) : H →L[ℂ] H) =
       (⨆ i, (p i : H →L[ℂ] H).range).topologicalClosure.starProjection := by
-  rw [← (⨆ i, p i).starProjection_range]
-  refine Submodule.starProjection_inj.2 ?_
-  simp only [← toSubmodule_closedRange, closedRange_iSup, ClosedSubmodule.toSubmodule_iSup,
-    Submodule.toSubmodule_closure]
+  rw [coe_eq_starProjection_closedRange]
+  simp only [closedRange_iSup, ClosedSubmodule.toSubmodule_iSup, Submodule.toSubmodule_closure,
+    toSubmodule_closedRange]
 
 /-- The meet of a set of projections in `M` is the orthogonal projection onto the intersection of
 their closed ranges. -/
 theorem coe_sInf (S : Set M.Projection) :
     ((sInf S : M.Projection) : H →L[ℂ] H) =
       (⨅ p ∈ S, p.closedRange).toSubmodule.starProjection := by
-  rw [← (sInf S).starProjection_range]
-  exact Submodule.starProjection_inj.2 (by
-    rw [← toSubmodule_closedRange, closedRange_sInf, sInf_image])
+  rw [coe_eq_starProjection_closedRange, closedRange_sInf, sInf_image]
 
 /-- The join of a set of projections in `M` is the orthogonal projection onto the closed span of
 their ranges. -/
 theorem coe_sSup (S : Set M.Projection) :
     ((sSup S : M.Projection) : H →L[ℂ] H) =
       (⨆ p ∈ S, (p : H →L[ℂ] H).range).topologicalClosure.starProjection := by
-  rw [← (sSup S).starProjection_range]
-  refine Submodule.starProjection_inj.2 ?_
-  simp only [← toSubmodule_closedRange, closedRange_sSup, ClosedSubmodule.toSubmodule_sSup,
-    Submodule.toSubmodule_closure, iSup_image]
+  rw [coe_eq_starProjection_closedRange]
+  simp only [closedRange_sSup, ClosedSubmodule.toSubmodule_sSup, Submodule.toSubmodule_closure,
+    iSup_image, toSubmodule_closedRange]
 
 /-! #### Orthocomplement and De Morgan's laws -/
 

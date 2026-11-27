@@ -199,10 +199,11 @@ the same von Neumann algebra as `a`. -/
 theorem adjoin_range_cfcHom (a : H →L[ℂ] H) [IsStarNormal a] :
     adjoin (Set.range (cfcHom (R := ℂ) (a := a) ‹_›)) = adjoin {a} := by
   have hrange : Set.range (cfcHom (R := ℂ) (a := a) ‹_›) =
-      (StarAlgebra.elemental ℂ a : Set (H →L[ℂ] H)) :=
-    (AlgHom.coe_range (cfcHom (R := ℂ) (a := a) ‹_›).toAlgHom).symm.trans
-      (congrArg (fun S : StarSubalgebra ℂ (H →L[ℂ] H) => (S : Set (H →L[ℂ] H)))
-        (range_cfcHom ℂ (‹_› : IsStarNormal a)))
+      (StarAlgebra.elemental ℂ a : Set (H →L[ℂ] H)) := by
+    ext x
+    rw [SetLike.mem_coe, ← range_cfcHom ℂ (‹_› : IsStarNormal a),
+      StarAlgHom.range_eq_map_top, StarSubalgebra.mem_map]
+    simp
   rw [hrange]
   refine le_antisymm (adjoin_le_iff.2 ?_) (adjoin_mono ?_)
   · exact SetLike.coe_subset_coe.2 <| StarAlgebra.elemental.le_of_mem (adjoin {a}).isClosed

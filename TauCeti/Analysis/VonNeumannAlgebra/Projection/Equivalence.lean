@@ -16,7 +16,8 @@ projections in a concrete von Neumann algebra `M`, prove that it is an equivalen
 projections in `M` preserving central supports, show that the initial and final projections of any
 operator in `M` are equivalent via its polar factor
 (`VonNeumannAlgebra.projectionEquivalent_orthogonal_ker_topologicalClosure_range`), and establish
-**Kaplansky's parallelogram law** (`VonNeumannAlgebra.parallelogram_projectionEquivalent`):
+**Kaplansky's parallelogram law** (`VonNeumannAlgebra.parallelogram_projectionEquivalent`,
+`VonNeumannAlgebra.parallelogram_projectionEquivalent'`):
 `ProjectionEquivalent M ((p ⊔ q : M.Projection) - p) (q - (p ⊓ q : M.Projection))`.
 
 ## Main declarations
@@ -32,7 +33,8 @@ operator in `M` are equivalent via its polar factor
   orthogonal additivity, and central-support invariance.
 * `VonNeumannAlgebra.projectionEquivalent_orthogonal_ker_topologicalClosure_range`: equivalence of
   initial and final projections via `x.polarFactor`.
-* `VonNeumannAlgebra.parallelogram_projectionEquivalent`: Kaplansky's parallelogram law.
+* `VonNeumannAlgebra.parallelogram_projectionEquivalent`,
+  `VonNeumannAlgebra.parallelogram_projectionEquivalent'`: Kaplansky's parallelogram law.
 
 ## References
 
@@ -230,5 +232,12 @@ theorem parallelogram_projectionEquivalent {M : VonNeumannAlgebra H} (p q : M.Pr
     abel
   rw [← hfinal, ← hinit]
   exact (projectionEquivalent_orthogonal_ker_topologicalClosure_range hx).symm
+
+/-- Symmetric form of **Kaplansky's parallelogram law** with `p` and `q` interchanged:
+`(p ⊔ q) - q` and `p - (p ⊓ q)` are Murray–von Neumann equivalent in `M`. -/
+theorem parallelogram_projectionEquivalent' {M : VonNeumannAlgebra H} (p q : M.Projection) :
+    ProjectionEquivalent M ((p ⊔ q : M.Projection) - q) (p - (p ⊓ q : M.Projection)) := by
+  rw [sup_comm, inf_comm]
+  exact parallelogram_projectionEquivalent q p
 
 end VonNeumannAlgebra
