@@ -40,6 +40,11 @@ reindexing; this is the counting step in the uniqueness of elementary divisors.
 * `Finset.sub_sum_min_eq_sum_abs_div_two`: for two families with common sum `S`, `S` minus the sum
   of their pointwise minima is half their `L¹` distance.
 * `Finset.sum_min_add_one`: the first-difference identity for truncated sums.
+* `Finset.sum_eq_sum_ite_add_card_filter`, `Finset.sum_min_add_one_eq_sum_min_ite_add_card_filter`:
+  removing one box from each of some nonempty rows of a Young diagram, counted in all columns or
+  in the first `k + 1` columns.
+* `Finset.sum_min_eq_sum_range_card_filter_lt`: a truncated sum is a sum of column lengths.
+* `Finset.sum_map_min_filter_ne_zero`: zero members do not contribute to truncated sums.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
 * `Fintype.exists_equiv_of_forall_sum_min_eq`: two finite families of positive natural numbers
   with the same truncated sums agree up to a bijection of their index types.
@@ -68,6 +73,56 @@ theorem sum_min_add_one (u : Finset α) (c : α → ℕ) (k : ℕ) :
     ∑ l ∈ u, min (k + 1) (c l) = ∑ l ∈ u, min k (c l) + #{l ∈ u | k < c l} := by
   rw [card_filter, ← sum_add_distrib]
   exact sum_congr rfl fun l _ => by split_ifs <;> omega
+
+/-- Removing one box from each row `l` with `p l` of the Young diagram with rows `c l`, all of
+them nonempty, removes `#{l ∈ u | p l}` boxes. -/
+theorem sum_eq_sum_ite_add_card_filter (u : Finset α) (c : α → ℕ) (p : α → Prop) [DecidablePred p]
+    (hp : ∀ l ∈ u, p l → 0 < c l) :
+    ∑ l ∈ u, c l = ∑ l ∈ u, (if p l then c l - 1 else c l) + #{l ∈ u | p l} := by
+  rw [card_filter, ← sum_add_distrib]
+  refine sum_congr rfl fun l hl => ?_
+  by_cases h : p l
+  · have := hp l hl h
+    simp only [h, ↓reduceIte]
+    omega
+  · simp [h]
+
+/-- Removing one box from each row `l` with `p l` of the Young diagram with rows `c l`, all of
+them nonempty, removes `#{l ∈ u | p l}` boxes from its first `k + 1` columns when every other row
+has length at most `k`; the remaining boxes of those columns lie in the first `k` columns. -/
+theorem sum_min_add_one_eq_sum_min_ite_add_card_filter (u : Finset α) (c : α → ℕ)
+    (p : α → Prop) [DecidablePred p] {k : ℕ} (hp : ∀ l ∈ u, p l → 0 < c l)
+    (hk : ∀ l ∈ u, ¬p l → c l ≤ k) :
+    ∑ l ∈ u, min (k + 1) (c l) =
+      ∑ l ∈ u, min k (if p l then c l - 1 else c l) + #{l ∈ u | p l} := by
+  rw [card_filter, ← sum_add_distrib]
+  refine sum_congr rfl fun l hl => ?_
+  by_cases h : p l
+  · have := hp l hl h
+    simp only [h, ↓reduceIte]
+    omega
+  · have := hk l hl h
+    simp only [h, ↓reduceIte]
+    omega
+
+/-- The truncated sum `∑ l, min k (c l)` is the number of boxes in the first `k` columns of the
+Young diagram with rows `c l`, the sum of the column lengths `#{l ∈ u | i < c l}` for `i < k`. -/
+theorem sum_min_eq_sum_range_card_filter_lt (u : Finset α) (c : α → ℕ) (k : ℕ) :
+    ∑ l ∈ u, min k (c l) = ∑ i ∈ range k, #{l ∈ u | i < c l} := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [sum_min_add_one, ih, sum_range_succ]
+
+/-- Zero members of a family `c` contribute nothing to its truncated sums: summing `min k` over
+the multiset of nonzero values of `c` on `s` gives `∑ l ∈ s, min k (c l)`. -/
+theorem sum_map_min_filter_ne_zero (s : Finset α) (c : α → ℕ) (k : ℕ) :
+    (((s.val.map c).filter (· ≠ 0)).map (min k)).sum = ∑ l ∈ s, min k (c l) := by
+  classical
+  rw [Multiset.filter_map, Multiset.map_map, ← Finset.filter_val, ← Finset.sum_eq_multiset_sum]
+  refine sum_filter_of_ne fun l _ h ↦ ?_
+  simp only [Function.comp_apply] at h ⊢
+  rintro hl
+  simp [hl] at h
 
 /-- For `p < q`, the second differences of the truncated sums `∑ l, min k (c l)` at `p` and `q`
 count the members of the family `c` strictly between `p` and `q`. -/
