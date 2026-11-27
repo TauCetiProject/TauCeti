@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Fredholm
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Fredholm.ContinuousFamily
+import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 
 /-!
@@ -36,7 +37,8 @@ is Fredholm. The coefficient fields of the members agree on the end, and on the 
 are jointly continuous in `(μ, z)`, so they depend continuously on `μ` in `L^∞`; the operators then
 form a continuous path of Fredholm operators, along which the index is constant
 (`Continuous.index_eq_of_preconnectedSpace`). The continuity holds for every family of almost
-complex structures indexed by a normed space, jointly `C¹` along `u` and constant on the end
+complex structures indexed by a normed space, jointly `C¹` along `u` and constant on the end,
+whose coefficient fields on conformal jets are essentially bounded
 (`TauCeti.SymplecticForm.continuous_floerConformalSobolevOperator_positive_family`).
 
 Every PSS plane is the positive plane for a rescaled Hamiltonian
@@ -165,14 +167,8 @@ theorem index_floerConformalSobolevOperator_eq_of_pssPlane_almostComplex (ω : S
         (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u).index := by
-  -- A structure compatible with `ω`, for the Cayley coordinates of the path: `J_q(t)` at a point
-  -- of `K` reached by `u` on the end.
-  obtain ⟨z₀, hz₀⟩ : ∃ z : ℝ × ℝ, r < ‖Complex.equivRealProdCLM.symm z‖ :=
-    ⟨Complex.equivRealProdCLM ((|r| + 1 : ℝ) : ℂ), by
-      rw [ContinuousLinearEquiv.symm_apply_apply, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_pos (by positivity)]
-      linarith [le_abs_self r]⟩
-  have h₀ := hJqK 0 (u z₀) (huK z₀ hz₀)
+  -- A structure compatible with `ω`, for the Cayley coordinates of the path.
+  obtain ⟨J₀, h₀⟩ := ω.exists_compatible
   -- The path `J_μ` from `J` at `μ = 0` to `J'` at `μ = 1`. On the end `J` and `J'` agree, hence
   -- so does every `J_μ`.
   have hend (μ : ℝ) (z : ℝ × ℝ) (hz : r < ‖Complex.equivRealProdCLM.symm z‖) :

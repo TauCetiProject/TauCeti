@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Homotopy
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Invariance
+import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 
 /-!
@@ -275,14 +276,8 @@ theorem detLineOrientationTransport_floerConformalSobolevOperator_pssPlane_congr
       Module.Ray.map (LinearMap.detLineCongrOfEq (by simp only [hJb])) ∘
         detLineOrientationTransport a b hT₁ hF₁ := by
   funext o
-  -- A structure compatible with `ω`, for the Cayley coordinates of the homotopy: `J_q(t)` at a
-  -- point of `K` reached by `u` on the end.
-  obtain ⟨z₀, hz₀⟩ : ∃ z : ℝ × ℝ, r < ‖Complex.equivRealProdCLM.symm z‖ :=
-    ⟨Complex.equivRealProdCLM ((|r| + 1 : ℝ) : ℂ), by
-      rw [ContinuousLinearEquiv.symm_apply_apply, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_pos (by positivity)]
-      linarith [le_abs_self r]⟩
-  have h₀ := hJqK 0 (u z₀) (huK z₀ hz₀)
+  -- A structure compatible with `ω`, for the Cayley coordinates of the homotopy.
+  obtain ⟨J₀, h₀⟩ := ω.exists_compatible
   -- The homotopy from the first path (`σ = 0`) to the second (`σ = 1`): at `(σ, μ)`, the path of
   -- almost complex structures between the two paths at `μ`, taken at `σ`.
   obtain ⟨hHc, hHF⟩ := continuousOn_and_isFredholm_pathAlmostComplex_homotopy ω hH hHs hL hK hJq
@@ -367,10 +362,7 @@ theorem detLineOrientationTransport_floerConformalSobolevOperator_pssPlane_eq_ma
     (fun p ↦ hJt (a, p.2)) hJr (fun _ ↦ hJr a) hc (fun _ _ ↦ hc a left_mem_uIcc) hu huK hF hE hnd
     (fun _ ↦ rfl) (fun z ↦ (hJab z).symm) hT hFr
     (continuousOn_const.congr fun μ _ ↦ hconst μ) (fun μ _ ↦ by rw [hconst μ]; exact hT₀)
-  have := congrFun key o
-  rw [Function.comp_apply, Function.comp_apply, detLineOrientationTransport_eq_map_of_forall_eq _ _
-    fun μ _ ↦ (hconst μ).trans (hconst a).symm] at this
-  rw [← (Equiv.symm_apply_eq _).2 this, Module.Ray.map_symm, LinearMap.detLineCongrOfEq_symm]
-  simp only [LinearMap.map_detLineCongrOfEq_map_detLineCongrOfEq]
+  exact detLineOrientationTransport_eq_map_of_comp_eq_of_forall_eq hT _ _ _
+    (fun μ _ ↦ (hconst μ).trans (hconst a).symm) _ _ key o
 
 end TauCeti.SymplecticForm
