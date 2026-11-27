@@ -79,6 +79,14 @@ theorem wedgeProd_const (φ : E [⋀^Fin k]→L[ℝ] ℝ) (m : ℕ) :
   | zero => ext v; exact (wedgeProd_zero_apply _ v).trans (wedgePow_zero_apply φ v).symm
   | succ m ih => rw [wedgeProd_succ, wedgePow_succ, ih]
 
+/-- Updating a family at `j.castSucc` and restricting it along `Fin.castSucc` updates the
+restriction at `j`. -/
+private theorem update_castSucc_comp_castSucc {m : ℕ} (α : Fin (m + 1) → E [⋀^Fin k]→L[ℝ] ℝ)
+    (j : Fin m) (z : E [⋀^Fin k]→L[ℝ] ℝ) :
+    (fun i : Fin m => Function.update α j.castSucc z i.castSucc) =
+      Function.update (fun i => α i.castSucc) j z :=
+  Function.update_comp_eq_of_injective α (Fin.castSucc_injective m) j z
+
 /-- The wedge product is additive in each factor. -/
 theorem wedgeProd_update_add {m : ℕ} (α : Fin m → E [⋀^Fin k]→L[ℝ] ℝ) (i : Fin m)
     (x y : E [⋀^Fin k]→L[ℝ] ℝ) :
@@ -92,11 +100,8 @@ theorem wedgeProd_update_add {m : ℕ} (α : Fin m → E [⋀^Fin k]→L[ℝ] �
       simp only [wedgeProd_succ, Function.update_self,
         Function.update_of_ne (Fin.castSucc_ne_last _), pairedWedge_add_right]
     | cast j =>
-      have hc (z : E [⋀^Fin k]→L[ℝ] ℝ) : (fun i : Fin m => Function.update α j.castSucc z
-          i.castSucc) = Function.update (fun i => α i.castSucc) j z :=
-        Function.update_comp_eq_of_injective α (Fin.castSucc_injective m) j z
-      simp only [wedgeProd_succ, hc, ih, Function.update_of_ne (Fin.castSucc_ne_last j).symm,
-        pairedWedge_add_left]
+      simp only [wedgeProd_succ, update_castSucc_comp_castSucc, ih,
+        Function.update_of_ne (Fin.castSucc_ne_last j).symm, pairedWedge_add_left]
 
 /-- The wedge product is homogeneous in each factor. -/
 theorem wedgeProd_update_smul {m : ℕ} (α : Fin m → E [⋀^Fin k]→L[ℝ] ℝ) (i : Fin m) (c : ℝ)
@@ -110,11 +115,8 @@ theorem wedgeProd_update_smul {m : ℕ} (α : Fin m → E [⋀^Fin k]→L[ℝ] �
       simp only [wedgeProd_succ, Function.update_self,
         Function.update_of_ne (Fin.castSucc_ne_last _), pairedWedge_smul_right]
     | cast j =>
-      have hc (z : E [⋀^Fin k]→L[ℝ] ℝ) : (fun i : Fin m => Function.update α j.castSucc z
-          i.castSucc) = Function.update (fun i => α i.castSucc) j z :=
-        Function.update_comp_eq_of_injective α (Fin.castSucc_injective m) j z
-      simp only [wedgeProd_succ, hc, ih, Function.update_of_ne (Fin.castSucc_ne_last j).symm,
-        pairedWedge_smul_left]
+      simp only [wedgeProd_succ, update_castSucc_comp_castSucc, ih,
+        Function.update_of_ne (Fin.castSucc_ne_last j).symm, pairedWedge_smul_left]
 
 /-- The wedge product of a family of `m` real alternating forms of degree `k`, as a multilinear map
 of the family. -/
@@ -136,7 +138,7 @@ theorem wedgeProdMultilinear_apply {m : ℕ} (α : Fin m → E [⋀^Fin k]→L[�
 
 /-- For forms of even degree, the wedge product of a family of `m + 2` forms is unchanged by
 exchanging the last two. -/
-theorem wedgeProd_comp_swap_last (hk : Even k) {m : ℕ}
+private theorem wedgeProd_comp_swap_last (hk : Even k) {m : ℕ}
     (α : Fin (m + 2) → E [⋀^Fin k]→L[ℝ] ℝ) :
     wedgeProd (α ∘ swap (Fin.last m).castSucc (Fin.last (m + 1))) = wedgeProd α := by
   set s := swap (Fin.last m).castSucc (Fin.last (m + 1))
@@ -148,8 +150,8 @@ theorem wedgeProd_comp_swap_last (hk : Even k) {m : ℕ}
       pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
         (α (Fin.last m).castSucc) (α (Fin.last (m + 1))) := by
     ext v
-    rw [pairedWedge_comm_of_even _ (fun a b => mul_comm a b) (hk.mul_right k)]
-    rfl
+    rw [pairedWedge_comm_of_even _ (fun a b => mul_comm a b) (hk.mul_right k), Fin.cast_refl,
+      Function.comp_id]
   ext v
   simp only [wedgeProd_succ, Function.comp_apply, hs]
   rw [pairedWedge_mul_assoc, pairedWedge_mul_assoc]
@@ -157,7 +159,7 @@ theorem wedgeProd_comp_swap_last (hk : Even k) {m : ℕ}
   rw [hcomm]
 
 /-- For forms of even degree, the wedge product is unchanged by exchanging two adjacent factors. -/
-theorem wedgeProd_comp_swap_castSucc_succ (hk : Even k) :
+private theorem wedgeProd_comp_swap_castSucc_succ (hk : Even k) :
     ∀ {m : ℕ} (i : Fin m) (α : Fin (m + 1) → E [⋀^Fin k]→L[ℝ] ℝ),
       wedgeProd (α ∘ swap i.castSucc i.succ) = wedgeProd α
   | 0, i, _ => i.elim0

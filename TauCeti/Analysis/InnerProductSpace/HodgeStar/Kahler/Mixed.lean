@@ -11,7 +11,8 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Prod
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
+import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.TopPower
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # Mixed wedge products of (1,1)-forms with powers of the Kähler form
@@ -45,8 +46,8 @@ derivative `(d/dt) σ_k(λ[β + t α]) |_{t = 0} = k M_k(α, β, …, β)`
 
 ## Main definitions
 
-* `TauCeti.AlmostComplexStructure.realOneOneForms E`: the real two-forms of type (1,1), those
-  with `α(i u, i v) = α(u, v)`, as a real subspace.
+The real (1,1)-forms are the subspace `TauCeti.AlmostComplexStructure.realOneOneForms E`.
+
 * `TauCeti.AlmostComplexStructure.mixedEsymm`: the polarization `M_k` of `σ_k ∘ λ`.
 * `TauCeti.AlmostComplexStructure.mixedEsymmMultilinear`: `M_k` as a multilinear form.
 
@@ -77,29 +78,7 @@ namespace TauCeti.AlmostComplexStructure
 
 attribute [local instance] InnerProductSpace.complexToReal
 
-variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
-/-- The real two-forms of type (1,1) on a complex vector space, those invariant under
-multiplication by `i` in both arguments: `α(i u, i v) = α(u, v)`. -/
-def realOneOneForms : Submodule ℝ (E [⋀^Fin 2]→L[ℝ] ℝ) where
-  carrier := {α | ∀ u v : E, α ![I • u, I • v] = α ![u, v]}
-  add_mem' {α β} hα hβ u v := by
-    rw [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.add_apply, hα u v, hβ u v]
-  zero_mem' _ _ := rfl
-  smul_mem' c α hα u v := by
-    rw [ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply, hα u v]
-
-variable {E}
-
-theorem mem_realOneOneForms {α : E [⋀^Fin 2]→L[ℝ] ℝ} :
-    α ∈ realOneOneForms E ↔ ∀ u v : E, α ![I • u, I • v] = α ![u, v] := Iff.rfl
-
-/-- A real (1,1)-form satisfies `α(i u, i v) = α(u, v)`. -/
-theorem realOneOneForms_apply_I_smul (α : realOneOneForms E) (u v : E) :
-    (α : E [⋀^Fin 2]→L[ℝ] ℝ) ![I • u, I • v] = (α : E [⋀^Fin 2]→L[ℝ] ℝ) ![u, v] :=
-  mem_realOneOneForms.1 α.property u v
-
-variable [FiniteDimensional ℂ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDimensional ℂ E]
 
 /-- The polarization `M_k(α₁, …, α_k)` of `α ↦ σ_k(λ[α])` on real (1,1)-forms, where `λ[α]` are
 the eigenvalues of the Hermitian form `H_α` relative to the inner product and `σ_k` is the `k`-th
@@ -111,14 +90,20 @@ def mixedEsymm {n k : ℕ} (hn : finrank ℂ E = n) (α : Fin k → realOneOneFo
       ((isSymm_hermitianSesqForm (realOneOneForms_apply_I_smul (∑ i ∈ Sᶜ, α i))).relEigenvalues hn)
       (MvPolynomial.esymm (Fin n) ℝ k)
 
+/-- Unfolding lemma for `mixedEsymm`: the polarization formula
+`M_k(α₁, …, α_k) = (1 / k!) ∑_{S ⊆ {1, …, k}} (-1)^{#S} σ_k(λ[∑_{i ∉ S} αᵢ])`. -/
+theorem mixedEsymm_def {n k : ℕ} (hn : finrank ℂ E = n) (α : Fin k → realOneOneForms E) :
+    mixedEsymm hn α = (k.factorial : ℝ)⁻¹ * ∑ S : Finset (Fin k), (-1 : ℝ) ^ #S *
+      MvPolynomial.eval
+        ((isSymm_hermitianSesqForm (realOneOneForms_apply_I_smul (∑ i ∈ Sᶜ, α i))).relEigenvalues
+          hn)
+        (MvPolynomial.esymm (Fin n) ℝ k) :=
+  (rfl)
+
 /-- `M_k` vanishes for `k > n`, since then `σ_k` vanishes on `ℝⁿ`. -/
 theorem mixedEsymm_eq_zero_of_lt {n k : ℕ} (hn : finrank ℂ E = n) (hnk : n < k)
     (α : Fin k → realOneOneForms E) : mixedEsymm hn α = 0 := by
-  have hzero : MvPolynomial.esymm (Fin n) ℝ k = 0 := by
-    rw [MvPolynomial.esymm_eq_sum_subtype]
-    exact Finset.sum_eq_zero fun t _ ↦
-      absurd (t.property ▸ Finset.card_le_univ (t : Finset (Fin n))) (by simpa using hnk.not_ge)
-  simp [mixedEsymm, hzero]
+  simp [mixedEsymm_def, MvPolynomial.esymm_eq_zero_of_card_lt (σ := Fin n) (by simpa using hnk)]
 
 /-- **The mixed form identity** `α₁ ∧ ⋯ ∧ α_k ∧ ω ^ l = (k! l! / n!) M_k(α₁, …, α_k) ω ^ n`: on
 a complex inner product space of dimension `n = k + l`, with `ω` the Kähler form of
@@ -141,30 +126,34 @@ theorem wedge_wedgeProd_wedgePow_ofComplexModule {n k l : ℕ} (hn : finrank ℂ
     ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sum_apply]
   simp only [pairedWedge_smul_left, ContinuousAlternatingMap.smul_apply, ← wedge_def,
     wedge_wedgePow_wedgePow_ofComplexModule
-      (realOneOneForms_apply_I_smul (∑ i ∈ _ᶜ, α i)) hn hkl v, mixedEsymm,
+      (realOneOneForms_apply_I_smul (∑ i ∈ _ᶜ, α i)) hn hkl v, mixedEsymm_def,
     smul_eq_mul, Finset.mul_sum, Finset.sum_mul]
   refine Finset.sum_congr rfl fun S _ ↦ ?_
   ring
 
-/-- The top power `ω ^ n` of the Kähler form does not vanish: it takes the value `n!` on the real
-frame of an orthonormal basis. -/
-theorem exists_wedgePow_kahlerForm_apply_ne_zero {n : ℕ} (hn : finrank ℂ E = n) :
-    ∃ v : Fin (2 * n) → E,
-      (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v ≠ 0 := by
-  let u : OrthonormalBasis (Fin n) ℂ E := (stdOrthonormalBasis ℂ E).reindex (finCongr hn)
-  refine ⟨(ofComplexModule E).complexRealFrame u, ?_⟩
-  rw [wedgePow_kahlerForm_apply_complexRealFrame real_inner_ofComplexModule_ofComplexModule
-    u.orthonormal.real u.orthonormal.real_inner_ofComplexModule_eq_zero]
-  positivity
-
-/-- Two scalars agree if they agree after multiplying the top power of the Kähler form. -/
-theorem eq_of_forall_mul_wedgePow_kahlerForm {n : ℕ} (hn : finrank ℂ E = n) {a b : ℝ}
+/-- For `k ≤ n`, a scalar `a` is `M_k(α₁, …, α_k)` once `α₁ ∧ ⋯ ∧ α_k ∧ ω ^ (n - k)` is
+`(k! (n - k)! / n!) a ω ^ n`; with the mixed form identity, this transfers identities between
+wedge products to `M_k`. -/
+private theorem mixedEsymm_eq_of_forall_wedge {n k : ℕ} (hn : finrank ℂ E = n) (hkn : k ≤ n)
+    {α : Fin k → realOneOneForms E} {a : ℝ}
     (h : ∀ v : Fin (2 * n) → E,
-      a * (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v =
-        b * (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v) :
-    a = b := by
-  obtain ⟨v, hv⟩ := exists_wedgePow_kahlerForm_apply_ne_zero hn
-  exact mul_right_cancel₀ hv (h v)
+      wedge (wedgeProd fun i ↦ (α i : E [⋀^Fin 2]→L[ℝ] ℝ))
+          ((alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow (n - k))
+          (v ∘ Fin.cast (by omega)) =
+        (k.factorial * (n - k).factorial / n.factorial * a) *
+          (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v) :
+    mixedEsymm hn α = a := by
+  have hc : (k.factorial * (n - k).factorial / n.factorial : ℝ) ≠ 0 := by positivity
+  refine mul_left_cancel₀ hc (eq_of_forall_mul_wedgePow_kahlerForm hn fun v ↦ ?_)
+  rw [← h v, wedge_wedgeProd_wedgePow_ofComplexModule hn (by omega)]
+
+omit [FiniteDimensional ℂ E] in
+/-- Coercing an updated family of (1,1)-forms updates the family of coerced forms. -/
+private theorem coe_update {k : ℕ} (α : Fin k → realOneOneForms E) (i : Fin k)
+    (z : realOneOneForms E) :
+    (fun j ↦ (Function.update α i z j : E [⋀^Fin 2]→L[ℝ] ℝ)) =
+      Function.update (fun j ↦ (α j : E [⋀^Fin 2]→L[ℝ] ℝ)) i z :=
+  Function.comp_update Subtype.val α i z
 
 /-- `M_k(α₁, …, α_k)`, scaled by `k! l! / n!` for `k + l = n`, is the value of
 `α₁ ∧ ⋯ ∧ α_k ∧ ω ^ l` measured against `ω ^ n`; so `M_k` is determined by the wedge product of the
@@ -173,31 +162,23 @@ theorem mixedEsymm_eq_of_wedgeProd_eq {n k : ℕ} (hn : finrank ℂ E = n) (hkn 
     {α β : Fin k → realOneOneForms E}
     (h : (wedgeProd fun i ↦ (α i : E [⋀^Fin 2]→L[ℝ] ℝ)) =
       wedgeProd fun i ↦ (β i : E [⋀^Fin 2]→L[ℝ] ℝ)) :
-    mixedEsymm hn α = mixedEsymm hn β := by
-  have hkl : k + (n - k) = n := by omega
-  have hc : (k.factorial * (n - k).factorial / n.factorial : ℝ) ≠ 0 := by positivity
-  refine mul_left_cancel₀ hc (eq_of_forall_mul_wedgePow_kahlerForm hn fun v ↦ ?_)
-  rw [← wedge_wedgeProd_wedgePow_ofComplexModule hn hkl,
-    ← wedge_wedgeProd_wedgePow_ofComplexModule hn hkl, h]
+    mixedEsymm hn α = mixedEsymm hn β :=
+  mixedEsymm_eq_of_forall_wedge hn hkn fun v ↦ by
+    rw [h, wedge_wedgeProd_wedgePow_ofComplexModule hn (by omega)]
 
 /-- **The diagonal of `M_k`**: `M_k(α, …, α) = σ_k(λ[α])`. -/
+@[simp]
 theorem mixedEsymm_const {n k : ℕ} (hn : finrank ℂ E = n) (α : realOneOneForms E) :
     mixedEsymm hn (fun _ : Fin k ↦ α) =
       MvPolynomial.eval
         ((isSymm_hermitianSesqForm (realOneOneForms_apply_I_smul α)).relEigenvalues hn)
         (MvPolynomial.esymm (Fin n) ℝ k) := by
   rcases lt_or_ge n k with hnk | hkn
-  · have hzero : MvPolynomial.esymm (Fin n) ℝ k = 0 := by
-      rw [MvPolynomial.esymm_eq_sum_subtype]
-      exact Finset.sum_eq_zero fun t _ ↦
-        absurd (t.property ▸ Finset.card_le_univ (t : Finset (Fin n))) (by simpa using hnk.not_ge)
-    rw [mixedEsymm_eq_zero_of_lt hn hnk, hzero, _root_.map_zero]
-  have hkl : k + (n - k) = n := by omega
-  have hc : (k.factorial * (n - k).factorial / n.factorial : ℝ) ≠ 0 := by positivity
-  refine mul_left_cancel₀ hc (eq_of_forall_mul_wedgePow_kahlerForm hn fun v ↦ ?_)
-  rw [← wedge_wedgeProd_wedgePow_ofComplexModule hn hkl,
-    ← wedge_wedgePow_wedgePow_ofComplexModule (realOneOneForms_apply_I_smul α) hn hkl,
-    wedgeProd_const]
+  · rw [mixedEsymm_eq_zero_of_lt hn hnk,
+      MvPolynomial.esymm_eq_zero_of_card_lt (σ := Fin n) (by simpa using hnk), _root_.map_zero]
+  exact mixedEsymm_eq_of_forall_wedge hn hkn fun v ↦ by
+    rw [wedgeProd_const,
+      wedge_wedgePow_wedgePow_ofComplexModule (realOneOneForms_apply_I_smul α) hn (by omega)]
 
 /-- **Symmetry of `M_k`**: permuting its arguments does not change its value. -/
 theorem mixedEsymm_comp_perm {n k : ℕ} (hn : finrank ℂ E = n) (α : Fin k → realOneOneForms E)
@@ -215,15 +196,11 @@ theorem mixedEsymm_update_add {n k : ℕ} (hn : finrank ℂ E = n) (α : Fin k �
   rcases lt_or_ge n k with hnk | hkn
   · simp only [mixedEsymm_eq_zero_of_lt hn hnk, add_zero]
   have hkl : k + (n - k) = n := by omega
-  have hc : (k.factorial * (n - k).factorial / n.factorial : ℝ) ≠ 0 := by positivity
-  have hcoe (z : realOneOneForms E) : (fun j ↦ (Function.update α i z j : E [⋀^Fin 2]→L[ℝ] ℝ)) =
-      Function.update (fun j ↦ (α j : E [⋀^Fin 2]→L[ℝ] ℝ)) i z :=
-    Function.comp_update Subtype.val α i z
-  refine mul_left_cancel₀ hc (eq_of_forall_mul_wedgePow_kahlerForm hn fun v ↦ ?_)
-  rw [mul_add, add_mul, ← wedge_wedgeProd_wedgePow_ofComplexModule hn hkl,
-    ← wedge_wedgeProd_wedgePow_ofComplexModule hn hkl,
-    ← wedge_wedgeProd_wedgePow_ofComplexModule hn hkl, hcoe, hcoe, hcoe, Submodule.coe_add,
-    wedgeProd_update_add, wedge_add_left, ContinuousAlternatingMap.add_apply]
+  exact mixedEsymm_eq_of_forall_wedge hn hkn fun v ↦ by
+    rw [coe_update, Submodule.coe_add, wedgeProd_update_add, wedge_add_left,
+      ContinuousAlternatingMap.add_apply, ← coe_update, ← coe_update,
+      wedge_wedgeProd_wedgePow_ofComplexModule hn hkl,
+      wedge_wedgeProd_wedgePow_ofComplexModule hn hkl, mul_add, add_mul]
 
 /-- `M_k` is homogeneous in each argument. -/
 theorem mixedEsymm_update_smul {n k : ℕ} (hn : finrank ℂ E = n) (α : Fin k → realOneOneForms E)
@@ -231,15 +208,11 @@ theorem mixedEsymm_update_smul {n k : ℕ} (hn : finrank ℂ E = n) (α : Fin k 
     mixedEsymm hn (Function.update α i (c • x)) = c * mixedEsymm hn (Function.update α i x) := by
   rcases lt_or_ge n k with hnk | hkn
   · simp only [mixedEsymm_eq_zero_of_lt hn hnk, mul_zero]
-  have hkl : k + (n - k) = n := by omega
-  have hc : (k.factorial * (n - k).factorial / n.factorial : ℝ) ≠ 0 := by positivity
-  have hcoe (z : realOneOneForms E) : (fun j ↦ (Function.update α i z j : E [⋀^Fin 2]→L[ℝ] ℝ)) =
-      Function.update (fun j ↦ (α j : E [⋀^Fin 2]→L[ℝ] ℝ)) i z :=
-    Function.comp_update Subtype.val α i z
-  refine mul_left_cancel₀ hc (eq_of_forall_mul_wedgePow_kahlerForm hn fun v ↦ ?_)
-  rw [mul_left_comm (_ / _) c, mul_assoc c, ← wedge_wedgeProd_wedgePow_ofComplexModule hn hkl,
-    ← wedge_wedgeProd_wedgePow_ofComplexModule hn hkl, hcoe, hcoe, Submodule.coe_smul,
-    wedgeProd_update_smul, wedge_smul_left, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  exact mixedEsymm_eq_of_forall_wedge hn hkn fun v ↦ by
+    rw [coe_update, Submodule.coe_smul, wedgeProd_update_smul, wedge_smul_left,
+      ContinuousAlternatingMap.smul_apply, smul_eq_mul, ← coe_update,
+      wedge_wedgeProd_wedgePow_ofComplexModule hn (by omega), mul_left_comm (_ / _) c,
+      mul_assoc c]
 
 /-- The polarization `M_k` of `α ↦ σ_k(λ[α])`, as a multilinear form on real (1,1)-forms. -/
 def mixedEsymmMultilinear {n : ℕ} (hn : finrank ℂ E = n) (k : ℕ) :
@@ -301,8 +274,7 @@ theorem hasDerivAt_esymm_relEigenvalues_add_smul {n k : ℕ} (hn : finrank ℂ E
     funext j
     by_cases hj : j = i <;> simp [Finset.piecewise, hj]
   simp only [Finset.card_singleton, Nat.cast_one, Nat.sub_self, pow_zero, mul_one, one_mul, c,
-    hpw]
-  rfl
+    hpw, f, mixedEsymmMultilinear_apply]
 
 /-- **`M_k` as a derivative**: `(m + 1) M_{m+1}(α, β, …, β)` is the derivative of
 `t ↦ σ_{m+1}(λ[β + t α])` at `0`, by symmetry of `M_{m+1}`. -/
@@ -323,9 +295,8 @@ theorem hasDerivAt_esymm_relEigenvalues_add_smul_cons {n m : ℕ} (hn : finrank 
     rcases eq_or_ne j i with rfl | hji
     · obtain ⟨j', rfl⟩ := Fin.exists_succ_eq.2 hj0
       simp [Equiv.swap_apply_right, Function.update_of_ne hj0.symm]
-    · simp [Equiv.swap_apply_of_ne_of_ne hj0 hji, Function.update_of_ne hji]
-      obtain ⟨j', rfl⟩ := Fin.exists_succ_eq.2 hj0
-      simp
+    · obtain ⟨j', rfl⟩ := Fin.exists_succ_eq.2 hj0
+      simp [Equiv.swap_apply_of_ne_of_ne hj0 hji, Function.update_of_ne hji]
   simp only [hi, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
   push_cast
   ring
