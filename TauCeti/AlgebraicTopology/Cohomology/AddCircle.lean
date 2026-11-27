@@ -205,8 +205,8 @@ private theorem exists_iso_sphere :
   set F : H.obj (TopCat.of (AddCircle p)) := fundamentalClass p
   let u : H.obj (TopCat.of (AddCircle p)) ≃+ ℤ := firstHomologyAddEquiv p
   have hu : u F = 1 := firstHomologyAddEquiv_fundamentalClass p
-  let e₀ : TopCat.sphere.{0} 1 ≅ TopCat.of (AddCircle p) := TauCeti.sphereOneIsoCircleUnlifted ≪≫
-    TopCat.isoOfHomeo (homeomorphCircle (Fact.out : 0 < p).ne').symm
+  let e₀ : TopCat.sphere.{0} 1 ≅ TopCat.of (AddCircle p) :=
+    (TopCat.isoOfHomeo (homeomorphSphere (Fact.out : 0 < p).ne')).symm
   -- the winding number `u (e₀ γ)` of the image of the generator divides `1`
   obtain ⟨r, hr⟩ := exists_eq_smul_singularHomologyTopCatSphereGenerator ℤ 0 (H.map e₀.inv F)
   have h1 : r * u (H.map e₀.hom γ) = 1 := by

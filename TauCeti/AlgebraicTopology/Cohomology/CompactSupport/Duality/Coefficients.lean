@@ -50,19 +50,24 @@ the unit of `H⁰(M; k)` pairs nontrivially against it
 (`TauCeti.HomologicalOrientation.fundamentalClassOver_ne_zero`), so on a connected `M` it is a
 fundamental class (`TauCeti.HomologicalOrientation.isFundamentalClass_fundamentalClassOver`). For
 connected `M`, the cross product `[Sᵈ⁺¹] × [M]_k` is then a fundamental class of the connected
-product (`TauCeti.IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross`),
-and every top class of the product is a unique multiple of it. So for every homological orientation
-of `Sᵈ⁺¹ × M`, whatever its manifold structure, its fundamental class over `k` is a nonzero multiple
-`c ([Sᵈ⁺¹] × [M]_k)`
-(`HomologicalOrientation.exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross`).
-Scaling the cup pairing by `c` keeps or exchanges its two indices of inertia, according to the sign
-of `c`, and these are equal. Hence both indices of inertia of the cup pairing against
-`[Sᵈ⁺¹ × M]_k` are `dim Hᵖ(M; k)`
-(`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_sphere_prod_fundamentalClassOver`,
-`TauCeti.HomologicalOrientation.sigNeg_singularCupPairing_sphere_prod_fundamentalClassOver`). For a
-closed connected oriented three-manifold `Y` with finite-dimensional real cohomology, `k = ℝ`,
-`d = 0` and `p = 1`, this is `b₂⁺(S¹ × Y) = b₂⁻(S¹ × Y) = b₁(Y)` for the real intersection form of
-either orientation of `S¹ × Y`.
+product (`TauCeti.IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross`).
+A homeomorphism `e : X ≃ₜ Sᵈ⁺¹ × M` carries it to a fundamental class of `X`
+(`TauCeti.IsFundamentalClass.map_homeomorph`), and every top class of the connected manifold `X` is
+a unique multiple of that class. So for every homological orientation of `X`, whatever its manifold
+structure, its fundamental class over `k` is a nonzero multiple `c e⁻¹_*([Sᵈ⁺¹] × [M]_k)`
+(`HomologicalOrientation.exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross`); for
+`X = Sᵈ⁺¹ × M` and `e` the identity it is `c ([Sᵈ⁺¹] × [M]_k)`. Pulling back along `e⁻¹`, which is
+an isomorphism on cohomology, identifies the quadratic form of the cup pairing against `e⁻¹_* z`
+with that of the cup pairing on `Sᵈ⁺¹ × M` against `z`
+(`TopCat.equivalent_toQuadraticMap_singularCupPairing_map`), and scaling the cup pairing by `c`
+keeps or exchanges its two indices of inertia, according to the sign of `c`, and these are equal.
+Hence both indices of inertia of the cup pairing against `[X]_k` are `dim Hᵖ(M; k)`
+(`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph`,
+`TauCeti.HomologicalOrientation.sigNeg_singularCupPairing_fundamentalClassOver_of_homeomorph`). For
+a closed connected oriented three-manifold `Y` with finite-dimensional real cohomology, `k = ℝ`,
+`d = 0` and `p = 1`, this is `b₂⁺(X) = b₂⁻(X) = b₁(Y)` for the real intersection form of either
+orientation of any manifold `X` homeomorphic to `S¹ × Y`, such as `(ℝ / Tℤ) × Y`
+(`TauCeti.AlgebraicTopology.Cohomology.AddCircle.IntersectionForm`).
 
 ## References
 
@@ -166,61 +171,48 @@ end Field
 
 section Prod
 
-/-! ### The fundamental class of `Sᵈ⁺¹ × M` -/
+/-! ### The fundamental class of a space homeomorphic to `Sᵈ⁺¹ × M` -/
 
 variable [CompactSpace M] [ConnectedSpace M] {n : ℕ} (o : HomologicalOrientation M E n)
-  (hn : finrank ℝ E = n) {k : Type} [Field k] {d N : ℕ} {E' : Type} [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [ChartedSpace E' (TopCat.sphere.{0} (d + 1) × M)]
-  (oX : HomologicalOrientation (TopCat.sphere.{0} (d + 1) × M) E' N) (hX : finrank ℝ E' = N)
-  (h : d + 1 + n = N)
+  (hn : finrank ℝ E = n) {k : Type} [Field k] {d N : ℕ} {X E' : Type} [TopologicalSpace X]
+  [T2Space X] [CompactSpace X] [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [ChartedSpace E' X] (oX : HomologicalOrientation X E' N) (hX : finrank ℝ E' = N)
+  (e : X ≃ₜ TopCat.sphere.{0} (d + 1) × M) (h : d + 1 + n = N)
 
-/-- **The fundamental class of `Sᵈ⁺¹ × M` over a field.** For a compact connected oriented manifold
-`M` of dimension `n` and any homological orientation of the product `Sᵈ⁺¹ × M`, for any manifold
-structure on it, the fundamental class `[Sᵈ⁺¹ × M]_k` over a field `k` is a nonzero multiple of the
-cross product `[Sᵈ⁺¹] × [M]_k`, read with coefficients `k` through `k ⊗ k ≅ k`. -/
+/-- **The fundamental class of a manifold homeomorphic to `Sᵈ⁺¹ × M` over a field.** For a
+compact connected oriented manifold `M` of dimension `n`, a homeomorphism `e : X ≃ₜ Sᵈ⁺¹ × M` and
+any homological orientation of the manifold `X`, the fundamental class `[X]_k` over a field `k` is
+a nonzero multiple of the image under `e⁻¹` of the cross product `[Sᵈ⁺¹] × [M]_k`, read with
+coefficients `k` through `k ⊗ k ≅ k`. For `e` the identity, `[Sᵈ⁺¹ × M]_k = c ([Sᵈ⁺¹] × [M]_k)`
+with `c ≠ 0`. -/
 theorem exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross :
     ∃ c : k, c ≠ 0 ∧ oX.fundamentalClassOver hX k =
-      c • ((singularHomologyFunctor (ModuleCat k) N).map
-        (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
-        (TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
-          (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) n N h
-          (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)) := by
-  subst h
-  -- The cross product is a fundamental class of the product.
-  have hcross : IsFundamentalClass (M := TopCat.sphere.{0} (d + 1) × M)
-      ((TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
-        (ModuleCat.of k k) (ModuleCat.of k k) (d + 1) n (d + 1 + n) rfl).hom
-        (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)) :=
-    IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross hn
-      (o.isFundamentalClass_fundamentalClassOver hn k)
-  have hz := (isFundamentalClass_singularHomologyFunctor_map_app_iff (λ_ (𝟙_ (ModuleCat k)))
-    _).2 hcross
-  -- On the connected product, every top class is a multiple of this fundamental class.
-  obtain ⟨c, hc, -⟩ := hz.existsUnique_eq_smul hX (oX.fundamentalClassOver hX k)
-  have : Nonempty (TopCat.sphere.{0} (d + 1) × M) := ConnectedSpace.toNonempty
-  refine ⟨c, ?_, hc⟩
-  rintro rfl
-  exact oX.fundamentalClassOver_ne_zero hX k (hc.trans (zero_smul k _))
-
-/-- The cup pairing against the fundamental class of `Sᵈ⁺¹ × M` is a nonzero multiple of the cup
-pairing against `[Sᵈ⁺¹] × [M]_k`. -/
-private theorem exists_ne_zero_singularCupPairing_fundamentalClassOver_eq_smul {i j : ℕ}
-    (hij : i + j = N) :
-    ∃ c : k, c ≠ 0 ∧ (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k hij
-      (oX.fundamentalClassOver hX k) =
-      c • (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k hij
+      c • ((singularHomologyFunctor (ModuleCat k) N).obj (𝟙_ (ModuleCat k))).map
+        (TopCat.ofHom (e.symm : C(TopCat.sphere.{0} (d + 1) × M, X)) :
+          TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M ⟶ TopCat.of X)
         (((singularHomologyFunctor (ModuleCat k) N).map
           (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
           (TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
             (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) n N h
             (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ
               o.fundamentalClassOver hn k))) := by
-  obtain ⟨c, hc0, hc⟩ :=
-    o.exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross hn (k := k) oX hX h
-  refine ⟨c, hc0, ?_⟩
-  rw [hc]
-  ext α β
-  simp
+  subst h
+  -- The cross product is a fundamental class of the product, and so is its image in `X`.
+  have hcross : IsFundamentalClass (M := TopCat.sphere.{0} (d + 1) × M)
+      ((TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
+        (ModuleCat.of k k) (ModuleCat.of k k) (d + 1) n (d + 1 + n) rfl).hom
+        (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)) :=
+    IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross hn
+      (o.isFundamentalClass_fundamentalClassOver hn k)
+  have hz := ((isFundamentalClass_singularHomologyFunctor_map_app_iff (λ_ (𝟙_ (ModuleCat k)))
+    _).2 hcross).map_homeomorph e.symm
+  -- On the connected manifold `X`, every top class is a multiple of this fundamental class.
+  have : ConnectedSpace X := e.symm.surjective.connectedSpace e.symm.continuous
+  obtain ⟨c, hc, -⟩ := hz.existsUnique_eq_smul hX (oX.fundamentalClassOver hX k)
+  have : Nonempty X := ConnectedSpace.toNonempty
+  refine ⟨c, ?_, hc⟩
+  rintro rfl
+  exact oX.fundamentalClassOver_ne_zero hX k (hc.trans (zero_smul k _))
 
 end Prod
 
@@ -245,8 +237,8 @@ manifold `M` of dimension `2p + d + 1` with `p + d + 1` even and an ordered fiel
 against `[Sᵈ⁺¹] × [M]_k` has positive index of inertia `dim Hᵖ(M; k)`. For a closed oriented
 three-manifold `Y` with finite-dimensional real cohomology, `k = ℝ`, `d = 0` and `p = 1`, this gives
 `b₂⁺ = b₁(Y)` for the real cup pairing of `S¹ × Y` against `[S¹] × [Y]_ℝ`; against the fundamental
-class of `S¹ × Y` this is
-`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_sphere_prod_fundamentalClassOver`. -/
+class of a manifold homeomorphic to `S¹ × Y` this is
+`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph`. -/
 theorem sigPos_singularCupPairing_sphere_fundamentalClassOver (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) (p + (d + 1)))]
@@ -271,8 +263,8 @@ theorem sigPos_singularCupPairing_sphere_fundamentalClassOver (hp : Even (p + (d
 pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × M; k)` against `[Sᵈ⁺¹] × [M]_k` has negative index of inertia
 `dim Hᵖ(M; k)`. For a closed oriented three-manifold `Y` with finite-dimensional real cohomology,
 `k = ℝ`, `d = 0` and `p = 1`, this gives `b₂⁻ = b₁(Y)` for the real cup pairing of `S¹ × Y` against
-`[S¹] × [Y]_ℝ`; against the fundamental class of `S¹ × Y` this is
-`TauCeti.HomologicalOrientation.sigNeg_singularCupPairing_sphere_prod_fundamentalClassOver`. -/
+`[S¹] × [Y]_ℝ`; against the fundamental class of a manifold homeomorphic to `S¹ × Y` this is
+`TauCeti.HomologicalOrientation.sigNeg_singularCupPairing_fundamentalClassOver_of_homeomorph`. -/
 theorem sigNeg_singularCupPairing_sphere_fundamentalClassOver (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) (p + (d + 1)))]
@@ -292,58 +284,110 @@ theorem sigNeg_singularCupPairing_sphere_fundamentalClassOver (hp : Even (p + (d
   TopCat.sigNeg_singularCupPairing_sphere_singularHomologyCross_of_injective_flip hn (by omega)
     hp _ (o.injective_flip_singularCupPairing_fundamentalClassOver hn)
 
-variable [ConnectedSpace M] {E' : Type} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  [FiniteDimensional ℝ E'] [ChartedSpace E' (TopCat.sphere.{0} (d + 1) × M)]
-  (oX : HomologicalOrientation (TopCat.sphere.{0} (d + 1) × M) E' (p + p + (d + 1) + (d + 1)))
-  (hX : finrank ℝ E' = p + p + (d + 1) + (d + 1))
+variable [ConnectedSpace M] {X E' : Type} [TopologicalSpace X] [T2Space X] [CompactSpace X]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [ChartedSpace E' X]
+  (oX : HomologicalOrientation X E' (p + p + (d + 1) + (d + 1)))
+  (hX : finrank ℝ E' = p + p + (d + 1) + (d + 1)) (e : X ≃ₜ TopCat.sphere.{0} (d + 1) × M)
 
-include o hn in
-/-- **The positive index of inertia of the intersection form of `Sᵈ⁺¹ × M`.** For a compact
-connected oriented manifold `M` of dimension `2p + d + 1` with `p + d + 1` even, an ordered field
-`k` over which `Hᵖ⁺ᵈ⁺¹(M; k)` and `Hᵖ(M; k)` are finite dimensional, and any homological orientation
-of `Sᵈ⁺¹ × M`, the cup pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × M; k)` against the fundamental class
-`[Sᵈ⁺¹ × M]_k` has positive index of inertia `dim Hᵖ(M; k)`. For a closed connected oriented
-three-manifold `Y` with finite-dimensional real cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is
-`b₂⁺(S¹ × Y) = b₁(Y)`, for either orientation of `S¹ × Y`. -/
-theorem sigPos_singularCupPairing_sphere_prod_fundamentalClassOver (hp : Even (p + (d + 1)))
+omit [LinearOrder k] [IsStrictOrderedRing k] in
+include e in
+/-- The cup pairing against the fundamental class of a manifold `X` homeomorphic to `Sᵈ⁺¹ × M`
+is, as a quadratic form, equivalent to a nonzero multiple of the cup pairing on `Sᵈ⁺¹ × M` against
+`[Sᵈ⁺¹] × [M]_k`. -/
+private theorem exists_ne_zero_equivalent_smul_singularCupPairing :
+    ∃ c : k, c ≠ 0 ∧ (LinearMap.BilinMap.toQuadraticMap
+      ((TopCat.of X).singularCupPairing k (p := p + (d + 1)) (q := p + (d + 1)) (by omega)
+        (oX.fundamentalClassOver hX k))).Equivalent
+      (c • LinearMap.BilinMap.toQuadraticMap
+        ((TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
+          (q := p + (d + 1)) (by omega)
+          (((singularHomologyFunctor (ModuleCat k) (p + p + (d + 1) + (d + 1))).map
+            (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
+            (TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
+              (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) (p + p + (d + 1))
+              (p + p + (d + 1) + (d + 1)) (by omega)
+              (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ
+                o.fundamentalClassOver hn k))))) := by
+  obtain ⟨c, hc0, hc⟩ :=
+    o.exists_ne_zero_fundamentalClassOver_eq_smul_singularHomologyCross hn (k := k) oX hX e
+      (by omega)
+  let g : TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M ≅ TopCat.of X := TopCat.isoOfHomeo e.symm
+  -- The cross product `[Sᵈ⁺¹] × [M]_k`, with coefficients `k`.
+  let z := (((singularHomologyFunctor (ModuleCat k) (p + p + (d + 1) + (d + 1))).map
+      (λ_ (𝟙_ (ModuleCat k))).hom).app (TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M)
+      (TopCat.singularHomologyCross (TopCat.sphere.{0} (d + 1)) (TopCat.of M)
+        (𝟙_ (ModuleCat k)) (𝟙_ (ModuleCat k)) (d + 1) (p + p + (d + 1))
+        (p + p + (d + 1) + (d + 1)) (by omega)
+        (TauCeti.singularHomologyTopCatSphereGenerator k d ⊗ₜ o.fundamentalClassOver hn k)))
+  -- The cup pairing against `[X]_k = c • e⁻¹_* z` is `c` times the cup pairing against `e⁻¹_* z`.
+  have hQ : LinearMap.BilinMap.toQuadraticMap
+      ((TopCat.of X).singularCupPairing k (p := p + (d + 1)) (q := p + (d + 1)) (by omega)
+        (oX.fundamentalClassOver hX k)) = c • LinearMap.BilinMap.toQuadraticMap
+      ((TopCat.of X).singularCupPairing k (p := p + (d + 1)) (q := p + (d + 1)) (by omega)
+        ((((singularHomologyFunctor (ModuleCat k) (p + p + (d + 1) + (d + 1))).obj
+          (𝟙_ (ModuleCat k))).map g.hom).hom z)) := by
+    rw [hc]
+    ext α
+    simp only [LinearMap.BilinMap.toQuadraticMap_apply, smul_apply,
+      TopCat.singularCupPairing_apply, map_smul]
+    -- `g.hom` is `e⁻¹` as a morphism of `TopCat`.
+    rfl
+  -- Pulling back along `e⁻¹` carries the cup pairing on `e⁻¹_* z` to the cup pairing on `z`.
+  obtain ⟨f⟩ := TopCat.equivalent_toQuadraticMap_singularCupPairing_map k g
+    (p := p + (d + 1)) (by omega) z
+  refine ⟨c, hc0, ?_⟩
+  rw [hQ]
+  exact ⟨{ f.toLinearEquiv with
+    map_app' := fun α ↦ by
+      rw [smul_apply, smul_apply]
+      exact congrArg (c • ·) (f.map_app α) }⟩
+
+include o hn e in
+/-- **The positive index of inertia of the intersection form of a manifold homeomorphic to
+`Sᵈ⁺¹ × M`.** For a compact connected oriented manifold `M` of dimension `2p + d + 1` with
+`p + d + 1` even, an ordered field `k` over which `Hᵖ⁺ᵈ⁺¹(M; k)` and `Hᵖ(M; k)` are finite
+dimensional, a homeomorphism `e : X ≃ₜ Sᵈ⁺¹ × M` and any homological orientation of the manifold
+`X`, the cup pairing on `Hᵖ⁺ᵈ⁺¹(X; k)` against the fundamental class `[X]_k` has positive index of
+inertia `dim Hᵖ(M; k)`. For a closed connected oriented three-manifold `Y` with
+finite-dimensional real cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁺(X) = b₁(Y)` for any
+`X` homeomorphic to `S¹ × Y`, for either orientation of `X`; for `X = (ℝ / Tℤ) × Y` it is
+`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_addCircle_prod_fundamentalClassOver`. -/
+theorem sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) (p + (d + 1)))]
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) p)] :
     sigPos (LinearMap.BilinMap.toQuadraticMap
-      ((TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
-        (q := p + (d + 1)) (by omega) (oX.fundamentalClassOver hX k))) =
+      ((TopCat.of X).singularCupPairing k (p := p + (d + 1)) (q := p + (d + 1)) (by omega)
+        (oX.fundamentalClassOver hX k))) =
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) p) := by
-  obtain ⟨c, hc0, hc⟩ :=
-    exists_ne_zero_singularCupPairing_fundamentalClassOver_eq_smul o hn (k := k) oX hX
-      (by omega) (i := p + (d + 1)) (j := p + (d + 1)) (by omega)
-  rw [hc, LinearMap.BilinMap.toQuadraticMap_smul]
+  obtain ⟨c, hc0, hc⟩ := exists_ne_zero_equivalent_smul_singularCupPairing o hn (k := k) oX hX e
+  rw [hc.sigPos_eq]
   rcases hc0.lt_or_gt with hneg | hpos
   · rw [QuadraticForm.sigPos_smul_of_neg _ hneg]
     exact o.sigNeg_singularCupPairing_sphere_fundamentalClassOver hn hp
   · rw [QuadraticForm.sigPos_smul_of_pos _ hpos]
     exact o.sigPos_singularCupPairing_sphere_fundamentalClassOver hn hp
 
-include o hn in
-/-- **The negative index of inertia of the intersection form of `Sᵈ⁺¹ × M`.** Under the
-hypotheses of
-`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_sphere_prod_fundamentalClassOver`, the
-cup pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × M; k)` against `[Sᵈ⁺¹ × M]_k` has negative index of inertia
-`dim Hᵖ(M; k)`. For a closed connected oriented three-manifold `Y` with finite-dimensional real
-cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁻(S¹ × Y) = b₁(Y)`. -/
-theorem sigNeg_singularCupPairing_sphere_prod_fundamentalClassOver (hp : Even (p + (d + 1)))
+include o hn e in
+/-- **The negative index of inertia of the intersection form of a manifold homeomorphic to
+`Sᵈ⁺¹ × M`.** Under the hypotheses of
+`TauCeti.HomologicalOrientation.sigPos_singularCupPairing_fundamentalClassOver_of_homeomorph`, for
+a manifold `X` homeomorphic to `Sᵈ⁺¹ × M`, the cup pairing on `Hᵖ⁺ᵈ⁺¹(X; k)` against `[X]_k` has
+negative index of inertia `dim Hᵖ(M; k)`. For a closed connected oriented three-manifold `Y` with
+finite-dimensional real cohomology, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁻(X) = b₁(Y)` for any
+`X` homeomorphic to `S¹ × Y`. -/
+theorem sigNeg_singularCupPairing_fundamentalClassOver_of_homeomorph (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) (p + (d + 1)))]
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) p)] :
     sigNeg (LinearMap.BilinMap.toQuadraticMap
-      ((TopCat.sphere.{0} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
-        (q := p + (d + 1)) (by omega) (oX.fundamentalClassOver hX k))) =
+      ((TopCat.of X).singularCupPairing k (p := p + (d + 1)) (q := p + (d + 1)) (by omega)
+        (oX.fundamentalClassOver hX k))) =
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) p) := by
-  obtain ⟨c, hc0, hc⟩ :=
-    exists_ne_zero_singularCupPairing_fundamentalClassOver_eq_smul o hn (k := k) oX hX
-      (by omega) (i := p + (d + 1)) (j := p + (d + 1)) (by omega)
-  rw [hc, LinearMap.BilinMap.toQuadraticMap_smul]
+  obtain ⟨c, hc0, hc⟩ := exists_ne_zero_equivalent_smul_singularCupPairing o hn (k := k) oX hX e
+  rw [hc.sigNeg_eq]
   rcases hc0.lt_or_gt with hneg | hpos
   · rw [QuadraticForm.sigNeg_smul_of_neg _ hneg]
     exact o.sigPos_singularCupPairing_sphere_fundamentalClassOver hn hp
