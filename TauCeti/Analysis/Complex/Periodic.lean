@@ -21,9 +21,7 @@ nonzero width `h` factors through its cusp function along the parameter.
 
 ## Main declarations
 
-* `TauCeti.Periodic.qParam_one`: `𝕢 1 z = exp (2 π I z)`.
 * `TauCeti.Periodic.qParam_zpow`: `𝕢 h z ^ n = exp (2 π I n z / h)`.
-* `TauCeti.Periodic.qParam_one_zpow`: `𝕢 1 z ^ n = exp (2 π I n z)`.
 * `TauCeti.Periodic.qParam_sub`: `𝕢 h (z - j) = 𝕢 h z * exp (-2 π I j / h)`.
 * `TauCeti.Periodic.qParam_add_half`: translation by half a period negates the parameter.
 * `TauCeti.Periodic.qParam_add_mul_I_pow`: along the vertical ray from `z`, the powers of the
@@ -58,19 +56,9 @@ local notation "𝕢" => Function.Periodic.qParam
 
 variable {h : ℝ}
 
-/-- At period `1`, the local parameter simplifies to `exp (2 π I z)`. -/
-theorem qParam_one (z : ℂ) : 𝕢 1 z = exp (2 * π * I * z) := by
-  simp [qParam]
-
 /-- An integer power of the local parameter `𝕢 h z` is `exp (2 π I n z / h)`. -/
 theorem qParam_zpow (z : ℂ) (n : ℤ) : 𝕢 h z ^ n = exp (2 * π * I * n * z / h) := by
   rw [qParam, ← Complex.exp_intCast_mul]
-  congr 1
-  ring
-
-/-- At period `1`, an integer power of the local parameter is `exp (2 π I n z)`. -/
-theorem qParam_one_zpow (z : ℂ) (n : ℤ) : 𝕢 1 z ^ n = exp (2 * π * I * n * z) := by
-  rw [qParam_one, ← Complex.exp_intCast_mul]
   congr 1
   ring
 

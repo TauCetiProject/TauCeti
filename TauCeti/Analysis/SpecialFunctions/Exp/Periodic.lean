@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
-import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
 
 /-!
 # The periods of `exp (π i ·)` and `exp (2 π i ·)`, and branches of the logarithm
@@ -88,9 +87,19 @@ theorem norm_exp_two_pi_mul_ofReal_mul_I (x : ℝ) : ‖cexp (2 * π * x * I)‖
 /-- `exp (-2 π i x) = 1` for real `x` if and only if `x` is an integer. -/
 theorem exp_neg_two_pi_mul_I_mul_ofReal_eq_one_iff (x : ℝ) :
     cexp (-2 * π * I * x) = 1 ↔ ∃ n : ℤ, (n : ℝ) = x := by
-  rw [show (-2 * π * I * (x : ℂ)) = 2 * π * I * ((-x : ℝ) : ℂ) by push_cast; ring,
-    ← TauCeti.expTwoPiI_def, TauCeti.expTwoPiI_eq_one_iff]
-  exact ⟨fun ⟨n, hn⟩ => ⟨-n, by push_cast; linarith⟩, fun ⟨n, hn⟩ => ⟨-n, by push_cast; linarith⟩⟩
+  rw [Complex.exp_eq_one_iff]
+  constructor
+  · rintro ⟨n, hn⟩
+    refine ⟨-n, ?_⟩
+    have hx : (x : ℂ) = (-n : ℤ) := by
+      apply mul_left_cancel₀ two_pi_I_ne_zero
+      push_cast
+      linear_combination -hn
+    exact_mod_cast hx.symm
+  · rintro ⟨n, rfl⟩
+    refine ⟨-n, ?_⟩
+    push_cast
+    ring
 
 /-- Two logarithms of the same number, divided by `2πi`, differ by an integer; so the vectors
 `(a / 2πi) • v` and `(b / 2πi) • v` differ by an integer multiple of `v`. -/

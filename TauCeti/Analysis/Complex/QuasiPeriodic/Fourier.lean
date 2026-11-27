@@ -174,7 +174,7 @@ theorem hasSum_thetaFourierCoeff {α : ℝ} {s : ℂ → ℂ} (hs : Differentiab
     simp
   rw [hrhs] at hsum
   refine hsum.congr_fun fun m => ?_
-  simp only [sub_zero, smul_eq_mul, Periodic.qParam_one_zpow]
+  simp only [sub_zero, smul_eq_mul, Periodic.qParam_zpow, ofReal_one, div_one]
   symm
   calc
     cexp (2 * π * I * α * z) * (cexp (2 * π * I * m * z) * thetaFourierCoeff α s m) =
