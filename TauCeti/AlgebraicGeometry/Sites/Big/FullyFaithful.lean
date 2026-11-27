@@ -109,6 +109,10 @@ private noncomputable def transportHom : P F ⟶ P G :=
         exact transportMap_map ψ P O e ρ he_map i.unop.le s }
     fun W r s ↦ transportMap_smul ψ P O e σ he_smul W.unop r s⟩
 
+private lemma transportHom_app (W : X.Opens) (s : Γ(P F, W)) :
+    (transportHom ψ P O e ρ σ he_smul he_map).app W s = transportMap ψ P O e W s :=
+  rfl
+
 end Transport
 
 section Restrict
@@ -131,8 +135,9 @@ noncomputable def bigRestrictHom : (pullback T.hom).obj F ⟶ (pullback T.hom).o
 @[simp]
 lemma bigOpenAddEquiv_bigRestrictHom_app (W : T.left.Opens) (s : Γ((pullback T.hom).obj F, W)) :
     bigOpenAddEquiv G T W ((bigRestrictHom ψ T).app W s) =
-      ψ.app (op (Over.mk (W.ι ≫ T.hom))) (bigOpenAddEquiv F T W s) :=
-  apply_transportMap ψ (fun M ↦ (pullback T.hom).obj M) (fun W ↦ Over.mk (W.ι ≫ T.hom))
+      ψ.app (op (Over.mk (W.ι ≫ T.hom))) (bigOpenAddEquiv F T W s) := by
+  rw [bigRestrictHom, transportHom_app]
+  exact apply_transportMap ψ (fun M ↦ (pullback T.hom).obj M) (fun W ↦ Over.mk (W.ι ≫ T.hom))
     (fun M W ↦ bigOpenAddEquiv M T W) W s
 
 /-- On global sections, the restriction of `ψ` to `(T, h)` is `ψ` on `(T, h)`. -/
@@ -160,6 +165,17 @@ lemma bigOpenAddEquiv_bigRestrictHom_pullbackSections (U : S.Opens) (s : Γ(F, U
   rw [bigOpenAddEquiv_bigRestrictHom_app, bigOpenAddEquiv_pullbackSections, ← bigPresheaf_map_apply]
   exact PresheafOfModules.naturality_apply ψ _ _
 
+/-- If `ψ : F^a ⟶ G^a` agrees with `φ : F ⟶ G` on the open subschemes of `S`, then the
+restriction of `ψ` to an `S`-scheme `(T, h)` is the pullback `h^* φ`. -/
+theorem bigRestrictHom_eq_pullback_map (φ : F ⟶ G)
+    (h : ∀ (U : S.Opens) (s : Γ(F, U)),
+      ψ.app (op (Over.mk U.ι)) (F.bigPresheafOpensAddEquiv U s) =
+        G.bigPresheafOpensAddEquiv U (φ.app U s)) :
+    bigRestrictHom ψ T = (pullback T.hom).map φ := by
+  refine pullback_hom_ext fun U s ↦ (bigOpenAddEquiv G T (T.hom ⁻¹ᵁ U)).injective ?_
+  rw [bigOpenAddEquiv_bigRestrictHom_pullbackSections, h, Hom.pullbackSections_naturality,
+    bigOpenAddEquiv_pullbackSections, bigPresheaf_map_apply]
+
 end Restrict
 
 /-- If `ψ : F^a ⟶ G^a` agrees with `φ : F ⟶ G` on the open subschemes of `S`, then `ψ = φ^a`. -/
@@ -168,13 +184,10 @@ theorem bigPresheafFunctor_map_eq (φ : F ⟶ G)
       ψ.app (op (Over.mk U.ι)) (F.bigPresheafOpensAddEquiv U s) =
         G.bigPresheafOpensAddEquiv U (φ.app U s)) :
     (bigPresheafFunctor S).map φ = ψ := by
-  have key (T : Over S) : bigRestrictHom ψ T = (pullback T.hom).map φ := by
-    refine pullback_hom_ext fun U s ↦ (bigOpenAddEquiv G T (T.hom ⁻¹ᵁ U)).injective ?_
-    rw [bigOpenAddEquiv_bigRestrictHom_pullbackSections, h, Hom.pullbackSections_naturality,
-      bigOpenAddEquiv_pullbackSections, bigPresheaf_map_apply]
   ext ⟨T⟩ s
   exact (bigPresheafFunctor_map_app_apply φ T s).trans
-    ((congr($(key T).app ⊤ s)).symm.trans (bigRestrictHom_app_top ψ T s))
+    ((congr($(bigRestrictHom_eq_pullback_map ψ T φ h).app ⊤ s)).symm.trans
+      (bigRestrictHom_app_top ψ T s))
 
 section OfHom
 
@@ -190,14 +203,20 @@ noncomputable def bigOfHom : F ⟶ G :=
 @[simp]
 lemma bigPresheafOpensAddEquiv_bigOfHom_app (U : S.Opens) (s : Γ(F, U)) :
     G.bigPresheafOpensAddEquiv U ((bigOfHom ψ).app U s) =
-      ψ.app (op (Over.mk U.ι)) (F.bigPresheafOpensAddEquiv U s) :=
-  apply_transportMap ψ (fun M ↦ M) (fun U ↦ Over.mk U.ι) bigPresheafOpensAddEquiv U s
+      ψ.app (op (Over.mk U.ι)) (F.bigPresheafOpensAddEquiv U s) := by
+  rw [bigOfHom, transportHom_app]
+  exact apply_transportMap ψ (fun M ↦ M) (fun U ↦ Over.mk U.ι) bigPresheafOpensAddEquiv U s
 
 /-- **`(bigOfHom ψ)^a = ψ`.** Every `𝒪`-linear morphism `F^a ⟶ G^a` comes from a morphism of
 `𝒪_S`-modules. -/
 @[simp]
 theorem bigPresheafFunctor_map_bigOfHom : (bigPresheafFunctor S).map (bigOfHom ψ) = ψ :=
   bigPresheafFunctor_map_eq ψ _ fun U s ↦ (bigPresheafOpensAddEquiv_bigOfHom_app ψ U s).symm
+
+/-- The restriction of `ψ` to an `S`-scheme `(T, h)` is the pullback `h^* (bigOfHom ψ)`. -/
+theorem bigRestrictHom_eq_pullback_map_bigOfHom (T : Over S) :
+    bigRestrictHom ψ T = (pullback T.hom).map (bigOfHom ψ) :=
+  bigRestrictHom_eq_pullback_map ψ T _ fun U s ↦ (bigPresheafOpensAddEquiv_bigOfHom_app ψ U s).symm
 
 /-- The morphism induced by `φ^a` is `φ`. -/
 @[simp]

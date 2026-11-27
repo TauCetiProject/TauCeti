@@ -158,15 +158,18 @@ private noncomputable def glueHom : M.bigPresheaf ⟶ N.bigPresheaf :=
         exact (bigSectionsRestrict_glue_eq_glue hR hm f.unop z).symm }
     fun W r z ↦ glue_smul hR hm W.unop r z
 
+private lemma glueHom_app (W : Over S) (z : Γ((Scheme.Modules.pullback W.hom).obj M, ⊤)) :
+    (glueHom hR hm).app (op W) z = glue hR hm W z :=
+  rfl
+
 /-- The glued morphism of modules, read off from `glueHom` on the open subschemes of `S`. -/
 private noncomputable def glued : M ⟶ N :=
   bigOfHom (glueHom hR hm)
 
 private lemma bigPresheafOpensAddEquiv_glued_app (U : S.Opens) (s : Γ(M, U)) :
     bigPresheafOpensAddEquiv N U ((glued hR hm).app U s) =
-      glue hR hm (opensOver U) (bigPresheafOpensAddEquiv M U s) :=
-  -- `glued` is `bigOfHom (glueHom hR hm)`, and `glueHom` acts by `glue` by its definition.
-  bigPresheafOpensAddEquiv_bigOfHom_app (glueHom hR hm) U s
+      glue hR hm (opensOver U) (bigPresheafOpensAddEquiv M U s) := by
+  rw [glued, bigPresheafOpensAddEquiv_bigOfHom_app, glueHom_app]
 
 private lemma pullback_map_glued {Y : Over S} (g : Y ⟶ Over.mk (𝟙 S)) (hg : R g) :
     (Scheme.Modules.pullback Y.hom).map (glued hR hm) = m g hg := by
