@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Polynomial.ShiftedLegendre
 
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 import TauCeti.RingTheory.Polynomial.ShiftedLegendre.Rodrigues
 
 /-!
@@ -30,9 +31,9 @@ circle of radius `|z² - 1|^{1/2}` it becomes Laplace's integral, which bounds `
   `Pₙ(z) = π⁻¹ ∫₀^π (z + w cos φ)ⁿ dφ` for every `z : ℂ` and either square root `w` of `z² - 1`.
 * `Complex.norm_legP_le_one`: `|Pₙ(x)| ≤ 1` for `-1 ≤ x ≤ 1` (Temme (6.52)).
 
-The names follow `TauCetiRoadmap/SpecialFunctionsLegendre`, which writes `legP n z` for
-`Pₙ(z)`; that name is an abbreviation of the roadmap, not a definition, so the statements here
-spell the evaluation out.
+In the theorem names, `legP` stands for `Pₙ(z)`, that is, for the evaluation
+`((shiftedLegendre n).map (Int.castRingHom ℂ)).eval ((1 - z) / 2)` displayed in the statements;
+it is not a separate definition.
 
 ## Attribution
 
@@ -108,7 +109,6 @@ private theorem circleIntegral_schlafli_eq (n : ℕ) {z w : ℂ} (hw : w ^ 2 = z
     (∮ t in C(z, ‖w‖), (t ^ 2 - 1) ^ n / (2 ^ n * (t - z) ^ (n + 1))) =
       2 * I * ∫ φ in (0 : ℝ)..π, (z + w * Real.cos φ) ^ n := by
   set g : ℝ → ℂ := fun ψ => (z + w * Real.cos ψ) ^ n with hg_def
-  have hg : Continuous g := by fun_prop
   have hper : Function.Periodic g (2 * π) := fun ψ => by simp only [hg_def, Real.cos_add_two_pi]
   -- the point `z + |w| e^{iθ}` of the circle is `z + w e^{i(θ - arg w)}`
   have hpt (θ : ℝ) : deriv (circleMap z ‖w‖) θ • ((circleMap z ‖w‖ θ ^ 2 - 1) ^ n /
@@ -122,15 +122,13 @@ private theorem circleIntegral_schlafli_eq (n : ℕ) {z w : ℂ} (hw : w ^ 2 = z
         _ = _ := by rw [norm_mul_exp_arg_mul_I]
     rw [deriv_circleMap, circleMap_zero, circleMap, hu, smul_eq_mul]
     exact schlafli_integrand_eq n hw hw₀ (θ - arg w)
+  have heven : Function.Even g := fun ψ => by simp only [hg_def, Real.cos_neg]
   have h₁ : ∫ x in 0 - arg w..2 * π - arg w, g x = ∫ x in -π..π, g x := by
-    have := hper.intervalIntegral_add_eq (0 - arg w) (-π)
-    rwa [show 0 - arg w + 2 * π = 2 * π - arg w by ring, show -π + 2 * π = π by ring] at this
-  have h₂ : ∫ x in -π..0, g x = ∫ x in 0..π, g x := by
-    simpa [g, Real.cos_neg] using (intervalIntegral.integral_comp_neg (a := 0) (b := π) g).symm
+    convert hper.intervalIntegral_add_eq (0 - arg w) (-π) using 2 <;> ring
   rw [circleIntegral, intervalIntegral.integral_congr (fun θ _ => hpt θ),
     intervalIntegral.integral_const_mul, intervalIntegral.integral_comp_sub_right, h₁,
-    ← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hg.intervalIntegrable _ _)
-      (hg.intervalIntegrable _ _), h₂]
+    intervalIntegral.integral_eq_two_smul_of_even heven π, real_smul]
+  push_cast
   ring
 
 /-- **Laplace's integral** for the Legendre polynomial (DLMF 14.12.7 at `m = 0`): for every
@@ -160,8 +158,11 @@ theorem norm_legP_le_one (n : ℕ) {x : ℝ} (hx₀ : -1 ≤ x) (hx₁ : x ≤ 1
   have hb : ∀ φ ∈ Set.uIoc 0 π, ‖((x : ℂ) + I * s * Real.cos φ) ^ n‖ ≤ 1 := fun φ _ => by
     rw [norm_pow]
     refine pow_le_one₀ (norm_nonneg _) ?_
-    rw [show (x : ℂ) + I * s * Real.cos φ = x + ((s * Real.cos φ : ℝ) : ℂ) * I by push_cast; ring,
-      norm_add_mul_I, Real.sqrt_le_one]
+    -- the form `a + b * I` with real `a`, `b` that `norm_add_mul_I` takes
+    have hab : (x : ℂ) + I * s * Real.cos φ = x + ((s * Real.cos φ : ℝ) : ℂ) * I := by
+      push_cast
+      ring
+    rw [hab, norm_add_mul_I, Real.sqrt_le_one]
     nlinarith [mul_le_mul_of_nonneg_left (Real.cos_sq_le_one φ) (sq_nonneg s)]
   have hi := intervalIntegral.norm_integral_le_of_norm_le_const hb
   rw [legP_eq_inv_pi_mul_integral n hw, norm_mul, norm_inv, norm_real,
