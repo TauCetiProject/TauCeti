@@ -107,6 +107,14 @@ theorem extendExtendXIso_hom {i'' : ι''} {i : ι} (hi : e''.f i = i'') :
   obtain rfl : h.choose = i := e''.injective_f (h.choose_spec.trans hi.symm)
   rfl
 
+/-- In a degree `e''.f i`, the inverse of `HomologicalComplex.extendExtendXIso` is the composite
+of the identifications of both sides with `K.X i`. -/
+theorem extendExtendXIso_inv {i'' : ι''} {i : ι} (hi : e''.f i = i'') :
+    (extendExtendXIso he K i'').inv = (K.extendXIso e'' hi).hom ≫ (K.extendXIso e rfl).inv ≫
+      ((K.extend e).extendXIso e' ((he i).trans hi)).inv := by
+  rw [← cancel_epi (extendExtendXIso he K i'').hom, Iso.hom_inv_id, extendExtendXIso_hom he K hi]
+  simp
+
 /-- **Extending along two embeddings in turn.** If `e''.f = e'.f ∘ e.f`, extending a complex along
 `e` and then along `e'` is extending it along `e''`. -/
 noncomputable def extendExtendIso : (K.extend e).extend e' ≅ K.extend e'' :=
@@ -124,6 +132,11 @@ noncomputable def extendExtendIso : (K.extend e).extend e' ≅ K.extend e'' :=
 @[simp]
 theorem extendExtendIso_hom_f (i'' : ι'') :
     (extendExtendIso he K).hom.f i'' = (extendExtendXIso he K i'').hom :=
+  (rfl)
+
+@[simp]
+theorem extendExtendIso_inv_f (i'' : ι'') :
+    (extendExtendIso he K).inv.f i'' = (extendExtendXIso he K i'').inv :=
   (rfl)
 
 end Composite
@@ -154,6 +167,12 @@ theorem extendFunctorCompRestrictionFunctorIso_hom_app_f [e.IsRelIff] (K : Homol
     ((extendFunctorCompRestrictionFunctorIso C e).hom.app K).f i = (K.extendXIso e rfl).hom :=
   (rfl)
 
+@[simp]
+theorem extendFunctorCompRestrictionFunctorIso_inv_app_f [e.IsRelIff] (K : HomologicalComplex C c)
+    (i : ι) :
+    ((extendFunctorCompRestrictionFunctorIso C e).inv.app K).f i = (K.extendXIso e rfl).inv :=
+  (rfl)
+
 variable {ι'' : Type*} {c'' : ComplexShape ι''} {e} {e' : c'.Embedding c''}
   {e'' : c.Embedding c''} (he : ∀ i, e'.f (e.f i) = e''.f i)
 include he
@@ -173,6 +192,11 @@ noncomputable def extendFunctorCompExtendFunctorIso :
 @[simp]
 theorem extendFunctorCompExtendFunctorIso_hom_app (K : HomologicalComplex C c) :
     (extendFunctorCompExtendFunctorIso C he).hom.app K = (extendExtendIso he K).hom :=
+  (rfl)
+
+@[simp]
+theorem extendFunctorCompExtendFunctorIso_inv_app (K : HomologicalComplex C c) :
+    (extendFunctorCompExtendFunctorIso C he).inv.app K = (extendExtendIso he K).inv :=
   (rfl)
 
 end ComplexShape.Embedding
