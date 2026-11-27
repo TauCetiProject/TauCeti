@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.SobolevEmbedding
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Normed.Operator.Banach
@@ -64,6 +65,14 @@ depends continuously on an element of either space, test by test, and the closed
 applies. The invariance of local `H^{s,p}` regularity under changes of variables, which needs
 `1 < p < ∞`, is the only analytic input.
 
+**The Sobolev embedding.** Let `n` be the dimension of `E`, `δ > 0`, `1 < p` and
+`1 / q = 1 / p - δ / n`. Every component of an element of `H^{s + δ, p}` lies in `H^{s, q}(E, ℂ)`
+by the Euclidean Sobolev embedding (`BesselPotentialSpace.sobolevEmbedding`), so a functional which
+is `H^{s + δ, p}` with respect to `A` is `H^{s, q}` with respect to `A`
+(`TauCeti.SquareChartPartition.MemBesselPotential.of_add_of_inv_eq`), and the Euclidean embedding
+in every component is a bounded operator `H^{s + δ, p} → H^{s, q}`
+(`TauCeti.SquareChartPartition.besselPotentialSobolevEmbedding`).
+
 ## Main declarations
 
 * `TauCeti.SquareChartPartition.MemBesselPotential`: `H^{s,p}` regularity with respect to the
@@ -79,6 +88,9 @@ applies. The invariance of local `H^{s,p}` regularity under changes of variables
 * `TauCeti.SquareChartPartition.besselPotentialInclusion`: the inclusion `H^{s,p} ⊆ H^{r,p}` for
   `r ≤ s`, and `TauCeti.SquareChartPartition.besselPotentialSpaceTwoEquivSobolevSpace`, the
   comparison with the Sobolev space for `p = 2`.
+* `TauCeti.SquareChartPartition.MemBesselPotential.of_add_of_inv_eq` and
+  `TauCeti.SquareChartPartition.besselPotentialSobolevEmbedding`: the Sobolev embedding
+  `H^{s + δ, p} ⊆ H^{s, q}` for `1 / q = 1 / p - δ / n`.
 * `TauCeti.SquareChartPartition.memBesselPotential_iff_forall_isLocallyMemSobolevAt` and
   `TauCeti.SquareChartPartition.memBesselPotential_iff_memBesselPotential`: for `1 < p < ∞`, being
   `H^{s,p}` with respect to a partition is local `H^{s,p}` regularity, and does not depend on the
@@ -101,7 +113,7 @@ public section
 noncomputable section
 
 open Bundle Set TopologicalSpace Complex ContMDiffSection TemperedDistribution
-open scoped Manifold ContDiff Distributions SchwartzMap CompactConvergenceCLM ENNReal
+open scoped Manifold ContDiff Distributions SchwartzMap CompactConvergenceCLM ENNReal NNReal
   BesselPotentialSpace
 
 namespace TauCeti
@@ -379,6 +391,39 @@ theorem norm_ofMemBesselPotential_le_iff {T : BundleTest I F V →L_c[ℝ] ℝ}
   rw [A.norm_besselPotentialSpace_le_iff hC, Prod.forall]
   simp only [ofMemBesselPotential_apply]
 
+/-! ### Componentwise maps -/
+
+/-- The componentwise application of a continuous linear map `f` between Euclidean
+Bessel-potential spaces which does not change the underlying tempered distribution, as a
+continuous linear map between the Bessel-potential spaces of `A`. -/
+private def besselPotentialMapOfToDistrEq {s' : ℝ} {p' : ℝ≥0∞} [Fact (1 ≤ p')]
+    (f : H^{s, p}(E, ℂ) →L[ℂ] H^{s', p'}(E, ℂ)) (hf : ∀ u, (f u).toDistr = u.toDistr) :
+    A.besselPotentialSpace s p →L[ℝ] A.besselPotentialSpace s' p' :=
+  (((ContinuousLinearMap.pi fun k : ι × Fin (Module.finrank ℝ F) ↦
+      f ∘L ContinuousLinearMap.proj (R := ℂ) (φ := fun _ ↦ H^{s, p}(E, ℂ)) k).restrictScalars
+      ℝ) ∘L (A.besselPotentialSpace s p).subtypeL).codRestrict (A.besselPotentialSpace s' p')
+    fun u ↦ (A.mem_besselPotentialSpace).2 fun k ↦ by simpa [hf] using u.property k
+
+private theorem besselPotentialMapOfToDistrEq_apply {s' : ℝ} {p' : ℝ≥0∞} [Fact (1 ≤ p')]
+    (f : H^{s, p}(E, ℂ) →L[ℂ] H^{s', p'}(E, ℂ)) (hf : ∀ u, (f u).toDistr = u.toDistr)
+    (u : A.besselPotentialSpace s p) (k : ι × Fin (Module.finrank ℝ F)) :
+    (A.besselPotentialMapOfToDistrEq f hf u).val k = f (u.val k) :=
+  (rfl)
+
+private theorem besselPotentialToDistribution_besselPotentialMapOfToDistrEq {s' : ℝ}
+    {p' : ℝ≥0∞} [Fact (1 ≤ p')] (f : H^{s, p}(E, ℂ) →L[ℂ] H^{s', p'}(E, ℂ))
+    (hf : ∀ u, (f u).toDistr = u.toDistr) (u : A.besselPotentialSpace s p) :
+    A.besselPotentialToDistribution s' p' (A.besselPotentialMapOfToDistrEq f hf u) =
+      A.besselPotentialToDistribution s p u := by
+  simp only [besselPotentialToDistribution_apply, besselPotentialMapOfToDistrEq_apply, hf]
+
+private theorem besselPotentialMapOfToDistrEq_injective {s' : ℝ} {p' : ℝ≥0∞} [Fact (1 ≤ p')]
+    (f : H^{s, p}(E, ℂ) →L[ℂ] H^{s', p'}(E, ℂ)) (hf : ∀ u, (f u).toDistr = u.toDistr) :
+    Function.Injective (A.besselPotentialMapOfToDistrEq f hf) := fun u u' huu' ↦
+  A.besselPotentialToDistribution_injective <| by
+    rw [← A.besselPotentialToDistribution_besselPotentialMapOfToDistrEq f hf u,
+      ← A.besselPotentialToDistribution_besselPotentialMapOfToDistrEq f hf u', huu']
+
 /-! ### The inclusions between the Bessel-potential spaces -/
 
 variable {r : ℝ}
@@ -390,12 +435,8 @@ on bundle tests
 (`TauCeti.SquareChartPartition.besselPotentialToDistribution_besselPotentialInclusion`). -/
 def besselPotentialInclusion (h : r ≤ s) :
     A.besselPotentialSpace s p →L[ℝ] A.besselPotentialSpace r p :=
-  (((ContinuousLinearMap.pi fun k : ι × Fin (Module.finrank ℝ F) ↦
-      BesselPotentialSpace.inclusion h ∘L
-        ContinuousLinearMap.proj (R := ℂ) (φ := fun _ ↦ H^{s, p}(E, ℂ)) k).restrictScalars ℝ) ∘L
-    (A.besselPotentialSpace s p).subtypeL).codRestrict (A.besselPotentialSpace r p) fun u ↦
-    (A.mem_besselPotentialSpace).2 fun k ↦ by
-      simpa [BesselPotentialSpace.toDistr_inclusion] using u.property k
+  A.besselPotentialMapOfToDistrEq (BesselPotentialSpace.inclusion h)
+    (BesselPotentialSpace.toDistr_inclusion h)
 
 @[simp]
 theorem besselPotentialInclusion_apply (h : r ≤ s) (u : A.besselPotentialSpace s p)
@@ -409,8 +450,8 @@ tests. -/
 theorem besselPotentialToDistribution_besselPotentialInclusion (h : r ≤ s)
     (u : A.besselPotentialSpace s p) :
     A.besselPotentialToDistribution r p (A.besselPotentialInclusion h u) =
-      A.besselPotentialToDistribution s p u := by
-  simp [besselPotentialToDistribution_apply]
+      A.besselPotentialToDistribution s p u :=
+  A.besselPotentialToDistribution_besselPotentialMapOfToDistrEq _ _ u
 
 @[simp]
 theorem besselPotentialInclusion_ofMemBesselPotential (h : r ≤ s)
@@ -432,10 +473,8 @@ theorem besselPotentialInclusion_besselPotentialInclusion {t : ℝ} (h₁ : r �
   A.besselPotentialToDistribution_injective (by simp)
 
 theorem besselPotentialInclusion_injective (h : r ≤ s) :
-    Function.Injective (A.besselPotentialInclusion (p := p) h) := fun u u' huu' ↦
-  A.besselPotentialToDistribution_injective <| by
-    rw [← A.besselPotentialToDistribution_besselPotentialInclusion h u,
-      ← A.besselPotentialToDistribution_besselPotentialInclusion h u', huu']
+    Function.Injective (A.besselPotentialInclusion (p := p) h) :=
+  A.besselPotentialMapOfToDistrEq_injective _ _
 
 /-! ### Comparison with the Sobolev spaces -/
 
@@ -503,6 +542,66 @@ theorem besselPotentialSpaceTwoEquivSobolevSpace_symm_ofMemSobolev
   A.besselPotentialToDistribution_injective (by simp)
 
 end BesselPotentialSpace
+
+/-! ### The Sobolev embedding -/
+
+section SobolevEmbedding
+
+variable {δ s : ℝ} {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))]
+
+variable {A} in
+/-- **The Sobolev embedding for `H^{s,p}` regularity.** For `δ > 0`, `1 < p` and
+`1 / q = 1 / p - δ / n`, where `n` is the dimension of `E`, a functional on bundle tests which is
+`H^{s + δ, p}` with respect to `A` is `H^{s, q}` with respect to `A`. -/
+theorem MemBesselPotential.of_add_of_inv_eq (hδ : 0 < δ) (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / Module.finrank ℝ E) {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemBesselPotential (s + δ) p T) : A.MemBesselPotential s q T :=
+  fun i j ↦ (hT i j).of_add_of_inv_eq hδ hp hpq
+
+variable (s) in
+/-- **The Sobolev embedding** `H^{s + δ, p} ⊆ H^{s, q}` of the Bessel-potential spaces of `A`, for
+`δ > 0`, `1 < p` and `1 / q = 1 / p - δ / n`, where `n` is the dimension of `E`: the Euclidean
+Sobolev embedding `BesselPotentialSpace.sobolevEmbedding` in every component
+(`TauCeti.SquareChartPartition.besselPotentialSobolevEmbedding_apply`). It represents the same
+functional on bundle tests
+(`TauCeti.SquareChartPartition.besselPotentialToDistribution_besselPotentialSobolevEmbedding`). -/
+def besselPotentialSobolevEmbedding (hδ : 0 < δ) (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / Module.finrank ℝ E) :
+    A.besselPotentialSpace (s + δ) p →L[ℝ] A.besselPotentialSpace s q :=
+  A.besselPotentialMapOfToDistrEq (BesselPotentialSpace.sobolevEmbedding E ℂ s hδ hp hpq)
+    (BesselPotentialSpace.toDistr_sobolevEmbedding hδ hp hpq)
+
+@[simp]
+theorem besselPotentialSobolevEmbedding_apply (hδ : 0 < δ) (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / Module.finrank ℝ E) (u : A.besselPotentialSpace (s + δ) p)
+    (k : ι × Fin (Module.finrank ℝ F)) :
+    (A.besselPotentialSobolevEmbedding s hδ hp hpq u).val k =
+      BesselPotentialSpace.sobolevEmbedding E ℂ s hδ hp hpq (u.val k) :=
+  (rfl)
+
+/-- The Sobolev embedding `H^{s + δ, p} ⊆ H^{s, q}` does not change the represented functional on
+bundle tests. -/
+@[simp]
+theorem besselPotentialToDistribution_besselPotentialSobolevEmbedding (hδ : 0 < δ) (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / Module.finrank ℝ E) (u : A.besselPotentialSpace (s + δ) p) :
+    A.besselPotentialToDistribution s q (A.besselPotentialSobolevEmbedding s hδ hp hpq u) =
+      A.besselPotentialToDistribution (s + δ) p u :=
+  A.besselPotentialToDistribution_besselPotentialMapOfToDistrEq _ _ u
+
+@[simp]
+theorem besselPotentialSobolevEmbedding_ofMemBesselPotential (hδ : 0 < δ) (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / Module.finrank ℝ E) {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemBesselPotential (s + δ) p T) :
+    A.besselPotentialSobolevEmbedding s hδ hp hpq (A.ofMemBesselPotential hT) =
+      A.ofMemBesselPotential (hT.of_add_of_inv_eq hδ hp hpq) :=
+  A.besselPotentialToDistribution_injective (by simp)
+
+theorem besselPotentialSobolevEmbedding_injective (hδ : 0 < δ) (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / Module.finrank ℝ E) :
+    Function.Injective (A.besselPotentialSobolevEmbedding s hδ hp hpq) :=
+  A.besselPotentialMapOfToDistrEq_injective _ _
+
+end SobolevEmbedding
 
 /-! ### Independence of the partition -/
 
