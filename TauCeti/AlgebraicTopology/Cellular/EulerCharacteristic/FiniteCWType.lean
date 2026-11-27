@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Field.ULift
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+public import TauCeti.Topology.CWComplex.Classical.ULift
 
 import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
 import TauCeti.Algebra.Category.ModuleCat.AB
@@ -39,6 +40,8 @@ CW type.
 * `TauCeti.eulerChar_eq_finsum_finrank_singularHomology`: `eulerChar X` is the alternating sum of
   the dimensions of the singular homology of `X` over any division ring.
 * `ContinuousMap.HomotopyEquiv.eulerChar_eq`: **homotopy invariance** of the Euler characteristic.
+* `TauCeti.eulerChar_ulift`: the Euler characteristic does not change under `ULift`, so it is the
+  same for homeomorphic spaces in different universes.
 * `TauCeti.eulerChar_of_discreteTopology` and `TauCeti.eulerChar_of_contractibleSpace`: a finite
   discrete space has Euler characteristic its cardinality, and a contractible space has Euler
   characteristic one.
@@ -55,7 +58,7 @@ noncomputable section
 
 open CategoryTheory Module Topology Topology.RelCWComplex Set AlgebraicTopology
 
-universe w
+universe v w
 
 namespace TauCeti
 
@@ -209,6 +212,18 @@ theorem _root_.ContinuousMap.HomotopyEquiv.eulerChar_eq {Y : Type w} [Topologica
 theorem _root_.Homeomorph.eulerChar_eq {Y : Type w} [TopologicalSpace Y] [FiniteCWType Y]
     (e : X ≃ₜ Y) : eulerChar X = eulerChar Y :=
   e.toHomotopyEquiv.eulerChar_eq
+
+variable (X) in
+/-- **The Euler characteristic in a higher universe.** `ULift.{v} X` has the Euler characteristic
+of `X`: lifting a finite CW model of `X` along `ULift` keeps its cells. -/
+@[simp]
+theorem eulerChar_ulift : eulerChar (ULift.{v} X) = eulerChar X := by
+  obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := ‹FiniteCWType X›.exists_homotopyEquiv
+  -- The lift of `C` to `ULift.{v} Y` is a finite CW complex with the cells of `C`.
+  let := CWComplex.ulift.{v} (C := C)
+  rw [eulerChar_eq_cwEulerChar e.ulift, eulerChar_eq_cwEulerChar e, cwEulerChar_def,
+    cwEulerChar_def]
+  exact finsum_congr fun n ↦ by rw [Nat.card_congr (CWComplex.uliftCellEquiv (C := C) n)]
 
 end
 

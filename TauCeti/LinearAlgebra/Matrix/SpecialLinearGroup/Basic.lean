@@ -70,6 +70,7 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.toGL_neg_one`, `Matrix.SpecialLinearGroup.neg_one_eq_one_iff` and
   `Matrix.SpecialLinearGroup.neg_one_eq_one_iff_dvd_two`: `-I` of `SL(n, R)` is `-I` of
   `GL(n, R)`, and it equals `I` exactly when `-1 = 1` in `R`; in `SL(2, ℤ/Nℤ)`, when `N ∣ 2`.
+* `Matrix.SpecialLinearGroup.toGL_neg`: likewise `toGL (-g) = -toGL g`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
@@ -386,8 +387,8 @@ lemma mapGL_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Co
     mapGL S (-1 : SpecialLinearGroup n R) = -1 := by
   rw [mapGL_neg, map_one]
 
+-- Not `@[simp]`: `simp` proves it from `toGL_neg` and `map_one` (`simpNF`).
 /-- `-I` of `SL(n, R)` is `-I` of `GL(n, R)`. -/
-@[simp]
 lemma toGL_neg_one {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
     [Fact (Even (Fintype.card n))] :
     toGL (-1 : SpecialLinearGroup n R) = -1 :=
@@ -405,6 +406,13 @@ lemma neg_one_eq_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [Nonempty n] 
 /-- `-I = I` in `SL(2, ℤ/Nℤ)` exactly when `N ∣ 2`. -/
 lemma neg_one_eq_one_iff_dvd_two {N : ℕ} : (-1 : SL(2, ZMod N)) = 1 ↔ N ∣ 2 := by
   rw [neg_one_eq_one_iff, ZMod.neg_one_eq_one_iff, Nat.dvd_prime Nat.prime_two]
+
+/-- The embedding `SL(n, R) → GL(n, R)` commutes with negation, when `n` has even cardinality, so
+that `-g ∈ SL(n, R)`. -/
+@[simp]
+theorem toGL_neg {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n R) : toGL (-g) = -toGL g :=
+  Units.ext <| by simp only [coe_GL_coe_matrix, coe_neg, Units.val_neg]
 
 variable {R : Type*} [CommRing R]
 

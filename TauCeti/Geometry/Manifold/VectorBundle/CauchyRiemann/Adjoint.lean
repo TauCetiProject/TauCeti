@@ -13,7 +13,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Inner
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
@@ -60,6 +60,8 @@ is of `∂`-type.
 ## Main definitions
 
 * `TauCeti.IsRealCauchyRiemannOperator.formalAdjoint`: the formal adjoint `D*`.
+* `TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjoint`: the smooth `(0,1)`-forms `η` with
+  `D* η = 0`.
 
 ## Main results
 
@@ -257,6 +259,38 @@ theorem formalAdjoint_sub {η η' : Π x : M, TangentSpace I x →L[ℝ] V x} {x
     simp only [inner_formalAdjoint, CovariantDerivative.formalAdjoint_sub _ _ hη hη',
       Pi.sub_apply, ContinuousLinearMap.hilbertSchmidtInner_sub_left, inner_sub_left]
     ring
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- **The kernel of the formal adjoint**: the real subspace of smooth `(0,1)`-forms `η` with
+`D* η = 0`. On a closed surface, with compatible metrics and a smooth metric connection, it is the
+cokernel of `D` (McDuff–Salamon, (C.1.3)). -/
+def kerFormalAdjoint : Submodule ℝ (Π x : M, TangentSpace I x →L[ℝ] V x) where
+  carrier := {η | ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (η x)) ∧
+    (∀ x, j.IsZeroOneForm (η x)) ∧ ∀ x, hD.formalAdjoint cov η x = 0}
+  add_mem' := fun {η η'} ⟨hη, hη01, hDη⟩ ⟨hη', hη'01, hDη'⟩ ↦
+    ⟨hη.add_section hη', fun x ↦ isZeroOneForm_iff.2 fun v ↦ by
+      simp only [Pi.add_apply, add_apply, isZeroOneForm_iff.1 (hη01 x),
+        isZeroOneForm_iff.1 (hη'01 x), smul_add, neg_add],
+      fun x ↦ by
+        rw [hD.formalAdjoint_add cov ((hη x).mdifferentiableAt (by simp))
+          ((hη' x).mdifferentiableAt (by simp)), hDη, hDη', add_zero]⟩
+  zero_mem' := ⟨Bundle.contMDiff_zeroSection ℝ (fun y ↦ TangentSpace I y →L[ℝ] V y),
+    fun _ ↦ isZeroOneForm_iff.2 fun _ ↦ by simp, formalAdjoint_zero hD cov⟩
+  smul_mem' := fun c {η} ⟨hη, hη01, hDη⟩ ↦
+    ⟨contMDiff_const.smul_section hη, fun x ↦ isZeroOneForm_iff.2 fun v ↦ by
+      simp only [Pi.smul_apply, smul_apply, isZeroOneForm_iff.1 (hη01 x),
+        smul_neg, smul_comm c Complex.I],
+      fun x ↦ by rw [formalAdjoint_const_smul, hDη, smul_zero]⟩
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- Membership in `TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjoint`: `η` is a smooth
+`(0,1)`-form with `D* η = 0`. -/
+theorem mem_kerFormalAdjoint :
+    η ∈ hD.kerFormalAdjoint cov ↔ ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (η x)) ∧
+        (∀ x, j.IsZeroOneForm (η x)) ∧ ∀ x, hD.formalAdjoint cov η x = 0 :=
+  Iff.rfl
 
 include hD in
 omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]

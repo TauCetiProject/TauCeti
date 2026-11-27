@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.PolarCompatible
 import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Smooth
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Symplectic.Manifold.Flat
@@ -51,7 +51,7 @@ by symplectomorphisms, averaging the pullbacks of a smooth metric
 which every action map is complex linear
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply`). The same holds for
 a compact Hausdorff topological group that is a smooth manifold, for instance a compact Lie group,
-acting smoothly by symplectomorphisms on a boundaryless manifold, averaging against the normalized
+acting smoothly by symplectomorphisms, averaging against the normalized
 Haar measure (`TauCeti.measureAverageRiemannianMetric`)
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply_of_compactSpace`).
 This invariant compatible structure is the starting point for the local normal forms of compact
@@ -86,8 +86,7 @@ inversion, each of which depends smoothly on its argument.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply`: a finite group
   acting smoothly by symplectomorphisms preserves some compatible smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply_of_compactSpace`:
-  so does a compact group, such as a compact Lie group, acting smoothly by symplectomorphisms on a
-  boundaryless manifold.
+  so does a compact group, such as a compact Lie group, acting smoothly by symplectomorphisms.
 
 ## References
 
@@ -380,12 +379,12 @@ theorem exists_compatible_mfderiv_smul_apply [T2Space M] [SigmaCompactSpace M] {
 
 /-- **Existence of invariant compatible almost complex structures for compact groups.** If a
 compact Hausdorff topological group, which is also a smooth manifold, acts smoothly on a
-boundaryless Hausdorff σ-compact manifold by maps preserving a fiberwise nondegenerate smooth
+Hausdorff σ-compact manifold by maps preserving a fiberwise nondegenerate smooth
 two-form `σ`, then `σ` admits a compatible smooth almost complex structure `J` for which every
 action map is complex linear: `d(a •)_x ∘ J_x = J_(a • x) ∘ d(a •)_x`. It is the polar
 normalization of `σ` for the Haar average of the pullbacks of a smooth Riemannian metric. -/
 theorem exists_compatible_mfderiv_smul_apply_of_compactSpace [T2Space M] [SigmaCompactSpace M]
-    [I.Boundaryless] {EG HG G : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG]
+    {EG HG G : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG]
     [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG} [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] [CompactSpace G] [T2Space G] [ChartedSpace HG G] [IsManifold IG ∞ G]
     [MulAction G M] [ContMDiffSMul IG I ∞ G M] (h : σ.IsNondegenerate)
