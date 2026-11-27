@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
+import TauCeti.Algebra.Module.LinearMap.Basic
 import TauCeti.Analysis.Pseudodifferential.Composition.Compression
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
@@ -517,8 +518,8 @@ private theorem complexChartCompression_lie_apply {m m' : ℝ}
     smul_sub, OpenPartialHomeomorph.smul_complexChartCompression_smulLeftCLM he hχφ hχ₂φ,
     OpenPartialHomeomorph.smul_complexChartCompression_smulLeftCLM he hχφ hχ₂φ, Ring.lie_def,
     Module.End.mul_eq_comp, Module.End.mul_eq_comp,
-    comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp P Q X,
-    comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp Q P X]
+    LinearMap.comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp P Q X,
+    LinearMap.comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp Q P X]
   simp only [X, map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply,
     ContMDiffMap.coe_add, ContMDiffMap.coe_sub, Pi.add_apply, Pi.sub_apply, LinearMap.comp_assoc,
     OpenPartialHomeomorph.complexChartCompression_mulLeft_comp_of_eq_one he hθφ]
