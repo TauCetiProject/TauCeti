@@ -31,7 +31,9 @@ infinite then `V` is not finitely generated over `E` and the determinant is the 
 * `TauCeti.CMType.reflexNorm Φ hk`: `N_{k,Φ}`, the determinant on the representation with the type
   trace chosen by `TauCeti.CMType.exists_trace_eq_typeTrace`.
 * `TauCeti.CMType.reflexNorm_eq_smulDet`: `N_{k,Φ}` is the determinant on any finite-dimensional
-  representation with the type trace, so it does not depend on the choice of `V`.
+  representation with the type trace, so it does not depend on the choice of `V`;
+  `TauCeti.CMType.reflexNorm_eq_smulDet_compHom` states this for `E` acting through
+  `ρ : E →+* End_k(V)`.
 * `TauCeti.CMType.exists_reflexNorm_eq_smulDet`: `N_{k,Φ}` is the determinant on a representation
   with the type trace that is finitely generated over `E` exactly when `k` has finite degree.
 * `TauCeti.CMType.reflexNorm_eq_one_of_not_finiteDimensional`: `N_{k,Φ}` is the junk value `1` if
@@ -103,6 +105,23 @@ theorem reflexNorm_eq_smulDet (Φ : CMType E) (hk : Φ.reflexField ≤ k)
   -- With these instances, `reflexNorm Φ hk` unfolds by definition to `smulDet E k (Fin n → k)`,
   -- which `smulDet_eq_smulDet_of_trace_eq` compares with `smulDet E k V`.
   refine smulDet_eq_smulDet_of_trace_eq Φ (fun c ↦ ?_) hV
+  rw [DistribSMul.toLinearMap_compHom]
+  exact hρ c
+
+/-- **The reflex norm on a representation given by a ring homomorphism.** If `ρ : E → End_k(V)`
+has trace the type trace, then `N_{k,Φ}(a) = det_E(a | V)` for the action of `E` on `V`
+through `ρ`. -/
+theorem reflexNorm_eq_smulDet_compHom (Φ : CMType E) (hk : Φ.reflexField ≤ k)
+    {V : Type*} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+    (ρ : E →+* Module.End k V)
+    (hρ : ∀ c : E, (LinearMap.trace k V (ρ c) : ℂ) = Φ.typeTrace c) :
+    Φ.reflexNorm hk =
+      letI := Module.compHom V ρ
+      haveI := SMul.comp.smulCommClass (α := V) (β := k) ρ
+      smulDet E k V := by
+  let := Module.compHom V ρ
+  have := SMul.comp.smulCommClass (α := V) (β := k) ρ
+  refine reflexNorm_eq_smulDet Φ hk V fun c ↦ ?_
   rw [DistribSMul.toLinearMap_compHom]
   exact hρ c
 
