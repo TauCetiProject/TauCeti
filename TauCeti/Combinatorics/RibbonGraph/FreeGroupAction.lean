@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Action.Concrete
 public import Mathlib.GroupTheory.FreeGroup.Basic
+public import TauCeti.CategoryTheory.Action.Concrete
 public import TauCeti.Combinatorics.RibbonGraph.Category
 import TauCeti.GroupTheory.Perm.PermCongr
 
@@ -22,9 +22,9 @@ relabeling of the edge set. The graph is connected exactly when the edge action 
 transitive, as stated in
 `TauCeti.BipartiteRibbonGraph.isConnected_iff_nonempty_and_isPretransitive_edgeFunctor_obj`.
 
-The forward action uses `FreeGroup.lift`. The inverse construction
-`Action.toBipartiteRibbonGraph` uses `Equiv.Perm.bipartiteRibbonGraph` to recover vertices
-as cycles of the generators.
+The forward action uses `FreeGroup.lift`. The inverse functor reconstructs each object with
+`Action.toBipartiteRibbonGraph`, which uses `Equiv.Perm.bipartiteRibbonGraph` to recover
+vertices as cycles of the generators.
 
 ## References
 
@@ -152,12 +152,6 @@ noncomputable def fullyFaithfulEdgeFunctor : edgeFunctor.{u}.FullyFaithful where
     (fullyFaithfulEdgeFunctor.preimage f).edge x = Δ.edgeEquiv (f.hom (Γ.edgeEquiv.symm x)) :=
   edgeFunctorPreimage_edge_apply f x
 
-/-- The permutation representation of a bundled finite action acts by its structure maps. -/
-private theorem toPermHom_apply_eq_ρ {G : Type*} [Group G] (A : Action FintypeCat.{u} G)
-    (g : G) (x : A.V) : MulAction.toPermHom G A.V g x = (A.ρ g).asHom x := by
-  simpa only [MulAction.toPermHom_apply, MulAction.toPerm_apply] using
-    (Action.ρ_apply_eq_smul A g x).symm
-
 /-- The ribbon graph whose black and white vertices are the cycles of the two generators of a
 finite free-group action. -/
 noncomputable def _root_.Action.toBipartiteRibbonGraph
@@ -169,9 +163,43 @@ noncomputable def _root_.Action.toBipartiteRibbonGraph
   exact (ρ (FreeGroup.of 0)).bipartiteRibbonGraph (ρ (FreeGroup.of 1))
 
 /-- The edges of the reconstructed graph are the elements of the original action. -/
-@[simp] theorem _root_.Action.toBipartiteRibbonGraph_E
+theorem _root_.Action.toBipartiteRibbonGraph_E
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
     A.toBipartiteRibbonGraph.E = A.V := (rfl)
+
+/-- Identify the edges of the reconstructed graph with the elements of the original action. -/
+noncomputable def _root_.Action.toBipartiteRibbonGraphEdgeEquiv
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    A.toBipartiteRibbonGraph.E ≃ A.V :=
+  Equiv.cast A.toBipartiteRibbonGraph_E
+
+/-- The black vertices of the reconstructed graph are the cycles of generator `0`. -/
+noncomputable def _root_.Action.toBipartiteRibbonGraphBlackEquiv
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    A.toBipartiteRibbonGraph.B ≃
+      Quotient (Equiv.Perm.SameCycle.setoid
+        (MulAction.toPermHom (FreeGroup (Fin 2)) A.V (FreeGroup.of 0))) :=
+  Equiv.refl _
+
+/-- The white vertices of the reconstructed graph are the cycles of generator `1`. -/
+noncomputable def _root_.Action.toBipartiteRibbonGraphWhiteEquiv
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    A.toBipartiteRibbonGraph.W ≃
+      Quotient (Equiv.Perm.SameCycle.setoid
+        (MulAction.toPermHom (FreeGroup (Fin 2)) A.V (FreeGroup.of 1))) :=
+  Equiv.refl _
+
+/-- The black endpoint is the cycle of the edge under generator `0`. -/
+@[simp] theorem _root_.Action.toBipartiteRibbonGraphBlackEquiv_blackEnd
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) (x : A.toBipartiteRibbonGraph.E) :
+    A.toBipartiteRibbonGraphBlackEquiv (A.toBipartiteRibbonGraph.blackEnd x) =
+      Quotient.mk _ (A.toBipartiteRibbonGraphEdgeEquiv x) := (rfl)
+
+/-- The white endpoint is the cycle of the edge under generator `1`. -/
+@[simp] theorem _root_.Action.toBipartiteRibbonGraphWhiteEquiv_whiteEnd
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) (x : A.toBipartiteRibbonGraph.E) :
+    A.toBipartiteRibbonGraphWhiteEquiv (A.toBipartiteRibbonGraph.whiteEnd x) =
+      Quotient.mk _ (A.toBipartiteRibbonGraphEdgeEquiv x) := (rfl)
 
 private theorem edgeRepresentation_ofAction (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
     edgeRepresentation A.toBipartiteRibbonGraph = MulAction.toPermHom (FreeGroup (Fin 2)) A.V := by
@@ -187,29 +215,29 @@ private theorem edgeRepresentation_ofAction (A : Action FintypeCat.{u} (FreeGrou
 private theorem ofAction_edgeRepresentation_apply
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) (g : FreeGroup (Fin 2))
     (x : A.toBipartiteRibbonGraph.E) :
-    Equiv.cast A.toBipartiteRibbonGraph_E (edgeRepresentation A.toBipartiteRibbonGraph g x) =
-      (A.ρ g).asHom (Equiv.cast A.toBipartiteRibbonGraph_E x) := by
+    A.toBipartiteRibbonGraphEdgeEquiv (edgeRepresentation A.toBipartiteRibbonGraph g x) =
+      (A.ρ g).asHom (A.toBipartiteRibbonGraphEdgeEquiv x) := by
   -- The edge type is definitionally the carrier, as recorded by `Action.toBipartiteRibbonGraph_E`.
   have h := congrArg (fun p : FreeGroup (Fin 2) →* Equiv.Perm A.V ↦ p g x)
     (edgeRepresentation_ofAction A)
-  exact h.trans (toPermHom_apply_eq_ρ A g x)
+  exact h.trans (A.toPermHom_apply_eq_ρ g x)
 
 /-- The black rotation of the reconstructed graph is the action of generator `0`. -/
-@[simp] theorem _root_.Action.toBipartiteRibbonGraph_rotB_apply
+@[simp] theorem _root_.Action.toBipartiteRibbonGraphEdgeEquiv_rotB_apply
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2)))
     (x : A.toBipartiteRibbonGraph.E) :
-    cast A.toBipartiteRibbonGraph_E (A.toBipartiteRibbonGraph.rotB x) =
-      (A.ρ (FreeGroup.of 0)).asHom (cast A.toBipartiteRibbonGraph_E x) := by
-  simpa only [Equiv.cast_apply, edgeRepresentation_of_apply, Matrix.cons_val_zero] using
+    A.toBipartiteRibbonGraphEdgeEquiv (A.toBipartiteRibbonGraph.rotB x) =
+      (A.ρ (FreeGroup.of 0)).asHom (A.toBipartiteRibbonGraphEdgeEquiv x) := by
+  simpa only [edgeRepresentation_of_apply, Matrix.cons_val_zero] using
     ofAction_edgeRepresentation_apply A (FreeGroup.of 0) x
 
 /-- The white rotation of the reconstructed graph is the action of generator `1`. -/
-@[simp] theorem _root_.Action.toBipartiteRibbonGraph_rotW_apply
+@[simp] theorem _root_.Action.toBipartiteRibbonGraphEdgeEquiv_rotW_apply
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2)))
     (x : A.toBipartiteRibbonGraph.E) :
-    cast A.toBipartiteRibbonGraph_E (A.toBipartiteRibbonGraph.rotW x) =
-      (A.ρ (FreeGroup.of 1)).asHom (cast A.toBipartiteRibbonGraph_E x) := by
-  simpa only [Equiv.cast_apply, edgeRepresentation_of_apply, Matrix.cons_val_one,
+    A.toBipartiteRibbonGraphEdgeEquiv (A.toBipartiteRibbonGraph.rotW x) =
+      (A.ρ (FreeGroup.of 1)).asHom (A.toBipartiteRibbonGraphEdgeEquiv x) := by
+  simpa only [edgeRepresentation_of_apply, Matrix.cons_val_one,
     Matrix.cons_val_zero] using
     ofAction_edgeRepresentation_apply A (FreeGroup.of 1) x
 
@@ -218,14 +246,14 @@ noncomputable def _root_.Action.toBipartiteRibbonGraphEdgeIso
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
     edgeFunctor.obj A.toBipartiteRibbonGraph ≅ A :=
   Action.mkIso (FintypeCat.equivEquivIso
-    (A.toBipartiteRibbonGraph.edgeEquiv.trans (Equiv.cast A.toBipartiteRibbonGraph_E)))
+    (A.toBipartiteRibbonGraph.edgeEquiv.trans A.toBipartiteRibbonGraphEdgeEquiv))
     (fun g ↦ FintypeCat.hom_ext _ _ fun x ↦ by
       simp only [FintypeCat.comp_apply, FintypeCat.equivEquivIso_apply_hom, FintypeCat.homMk_apply,
         Equiv.trans_apply]
       have h := edgeEquiv_edgeFunctor_obj_ρ_apply A.toBipartiteRibbonGraph g
         (A.toBipartiteRibbonGraph.edgeEquiv x)
       rw [Equiv.symm_apply_apply] at h
-      exact (congrArg (Equiv.cast A.toBipartiteRibbonGraph_E) h).trans
+      exact (congrArg A.toBipartiteRibbonGraphEdgeEquiv h).trans
         (ofAction_edgeRepresentation_apply A g (A.toBipartiteRibbonGraph.edgeEquiv x)))
 
 /-- The comparison with the original action sends an edge to the corresponding carrier point. -/
@@ -233,10 +261,10 @@ noncomputable def _root_.Action.toBipartiteRibbonGraphEdgeIso
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2)))
     (x : (edgeFunctor.obj A.toBipartiteRibbonGraph).V) :
     A.toBipartiteRibbonGraphEdgeIso.hom.hom x =
-      cast A.toBipartiteRibbonGraph_E (A.toBipartiteRibbonGraph.edgeEquiv x) := by
+      A.toBipartiteRibbonGraphEdgeEquiv (A.toBipartiteRibbonGraph.edgeEquiv x) := by
   unfold Action.toBipartiteRibbonGraphEdgeIso
   rw [Action.mkIso_hom_hom _ _, FintypeCat.equivEquivIso_apply_hom, FintypeCat.homMk_apply,
-    Equiv.trans_apply, Equiv.cast_apply]
+    Equiv.trans_apply]
 
 /-- Every finite action is isomorphic to the edge action of a ribbon graph, which completes the
 fully faithful edge functor to an equivalence available through typeclass inference. -/
@@ -245,13 +273,71 @@ instance : edgeFunctor.{u}.IsEquivalence where
   full := fullyFaithfulEdgeFunctor.full
   essSurj.mem_essImage A := ⟨A.toBipartiteRibbonGraph, ⟨A.toBipartiteRibbonGraphEdgeIso⟩⟩
 
-/-- Bipartite ribbon graphs are equivalent to finite actions of the free group on two generators. -/
+private noncomputable def reconstructionFunctor :
+    Action FintypeCat.{u} (FreeGroup (Fin 2)) ⥤ BipartiteRibbonGraph.{u} where
+  obj A := A.toBipartiteRibbonGraph
+  map {A B} f := fullyFaithfulEdgeFunctor.preimage
+    (A.toBipartiteRibbonGraphEdgeIso.hom ≫ f ≫ B.toBipartiteRibbonGraphEdgeIso.inv)
+  map_id A := by
+    rw [Category.id_comp, Iso.hom_inv_id, Functor.FullyFaithful.preimage_id]
+  map_comp f g := by
+    rw [← Functor.FullyFaithful.preimage_comp]
+    simp only [Category.assoc, Iso.inv_hom_id_assoc]
+
+/-- Bipartite ribbon graphs are equivalent to finite actions of the free group on two generators.
+The inverse reconstructs the graph from the cycles of the two generators. -/
 noncomputable def edgeEquivalence :
-    BipartiteRibbonGraph.{u} ≌ Action FintypeCat.{u} (FreeGroup (Fin 2)) :=
-  edgeFunctor.asEquivalence
+    BipartiteRibbonGraph.{u} ≌ Action FintypeCat.{u} (FreeGroup (Fin 2)) where
+  functor := edgeFunctor
+  inverse := reconstructionFunctor
+  unitIso := NatIso.ofComponents
+    (fun Γ ↦ fullyFaithfulEdgeFunctor.preimageIso
+      (edgeFunctor.obj Γ).toBipartiteRibbonGraphEdgeIso.symm) (by
+    intro Γ Δ f
+    apply fullyFaithfulEdgeFunctor.map_injective
+    -- The two projected maps of the reconstruction functor are fully faithful preimages.
+    dsimp only [Functor.id_map, Functor.comp_map, reconstructionFunctor]
+    simp only [Functor.map_comp, Functor.FullyFaithful.preimageIso_hom, Iso.symm_hom,
+      Functor.FullyFaithful.map_preimage, Iso.inv_hom_id_assoc])
+  counitIso := NatIso.ofComponents Action.toBipartiteRibbonGraphEdgeIso (by
+    intro A B f
+    dsimp only [Functor.comp_map, Functor.id_map, reconstructionFunctor]
+    simp only [Functor.FullyFaithful.map_preimage, Category.assoc, Iso.inv_hom_id,
+      Category.comp_id])
+  functor_unitIso_comp Γ := by
+    let e := (edgeFunctor.obj Γ).toBipartiteRibbonGraphEdgeIso
+    have h : edgeFunctor.map (fullyFaithfulEdgeFunctor.preimageIso e.symm).hom ≫ e.hom =
+        𝟙 (edgeFunctor.obj Γ) := by
+      rw [Functor.FullyFaithful.preimageIso_hom, Functor.FullyFaithful.map_preimage,
+        Iso.symm_hom, Iso.inv_hom_id]
+    exact h
 
 /-- The forward functor of the equivalence is the edge functor. -/
 @[simp] theorem edgeEquivalence_functor : edgeEquivalence.{u}.functor = edgeFunctor := (rfl)
+
+/-- The inverse functor reconstructs the graph of the two generator permutations. -/
+@[simp] theorem _root_.Action.edgeEquivalence_inverse_obj
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    edgeEquivalence.inverse.obj A = A.toBipartiteRibbonGraph := (rfl)
+
+/-- The counit compares the edge action of the reconstructed graph with the input action. -/
+@[simp] theorem _root_.Action.edgeEquivalence_counitIso_app
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    edgeEquivalence.counitIso.app A =
+      eqToIso (by
+        rw [Functor.comp_obj, edgeEquivalence_functor, Action.edgeEquivalence_inverse_obj]) ≪≫
+        A.toBipartiteRibbonGraphEdgeIso := (rfl)
+
+/-- The unit lifts the inverse of the action comparison to an isomorphism of graphs. -/
+@[simp] theorem edgeEquivalence_unitIso_app (Γ : BipartiteRibbonGraph.{u}) :
+    edgeEquivalence.unitIso.app Γ =
+      fullyFaithfulEdgeFunctor.preimageIso (edgeFunctor.obj Γ).toBipartiteRibbonGraphEdgeIso.symm ≪≫
+        eqToIso (by
+          rw [Functor.comp_obj, edgeEquivalence_functor, Action.edgeEquivalence_inverse_obj]) := by
+  -- The target object of the unit is definitionally the reconstruction of the edge action.
+  have h := CategoryTheory.Iso.trans_refl
+    (fullyFaithfulEdgeFunctor.preimageIso (edgeFunctor.obj Γ).toBipartiteRibbonGraphEdgeIso.symm)
+  exact h.symm
 
 /-- A graph is connected exactly when its edge action is nonempty and transitive. -/
 theorem isConnected_iff_nonempty_and_isPretransitive_edgeFunctor_obj
@@ -262,7 +348,7 @@ theorem isConnected_iff_nonempty_and_isPretransitive_edgeFunctor_obj
       (MulAction.toPermHom (FreeGroup (Fin 2)) (edgeFunctor.obj Γ).V) = edgeRepresentation Γ := by
     refine MonoidHom.ext fun g ↦ Equiv.ext fun x ↦ ?_
     simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe,
-      Equiv.permCongr_apply, toPermHom_apply_eq_ρ]
+      Equiv.permCongr_apply, Action.toPermHom_apply_eq_ρ]
     exact edgeEquiv_edgeFunctor_obj_ρ_apply Γ g x
   have hr : (edgeRepresentation Γ).range = Γ.rotationGroup := by
     rw [edgeRepresentation, FreeGroup.range_lift_eq_closure, Matrix.range_cons_cons_empty,

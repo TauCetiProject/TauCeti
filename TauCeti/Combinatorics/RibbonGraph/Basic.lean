@@ -403,7 +403,8 @@ theorem comp_assoc (h : Θ.Hom Ξ) (g : Δ.Hom Θ) (f : Γ.Hom Δ) :
   ext
   rfl
 
-/-- An edge map intertwining both rotations induces a morphism on their cycle quotients. -/
+/-- An edge map intertwining both rotations extends to a morphism. Compatibility with the
+endpoint maps uniquely determines the maps on black and white vertices. -/
 noncomputable def ofEdge (e : Γ.E → Δ.E) (hB : Function.Semiconj e Γ.rotB Δ.rotB)
     (hW : Function.Semiconj e Γ.rotW Δ.rotW) : Γ.Hom Δ where
   edge := e
@@ -681,8 +682,8 @@ theorem trans_assoc (f : Γ.Iso Δ) (g : Δ.Iso Θ) (h : Θ.Iso Ξ) :
   ext
   rfl
 
-/-- An edge bijection intertwining both rotations induces an isomorphism, with vertex
-equivalences on the black and white cycle quotients. -/
+/-- An edge bijection intertwining both rotations extends to an isomorphism. Compatibility
+with the endpoint maps uniquely determines the equivalences on black and white vertices. -/
 noncomputable def ofEdge (φ : Γ.E ≃ Δ.E) (hB : Function.Semiconj φ Γ.rotB Δ.rotB)
     (hW : Function.Semiconj φ Γ.rotW Δ.rotW) : Γ.Iso Δ := by
   let f := Hom.ofEdge φ hB hW
