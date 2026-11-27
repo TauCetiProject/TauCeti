@@ -8,8 +8,12 @@ module
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.FreeModule.ModN
 import Mathlib.Data.ZMod.Basic
 import TauCeti.LinearAlgebra.FreeModule.Int
+import TauCeti.LinearAlgebra.PerfectPairing.Determinant
+import TauCeti.LinearAlgebra.PerfectPairing.ModN
 
 /-!
 # The twist index of a square-zero torus
@@ -113,5 +117,68 @@ noncomputable def twistLabel [Module.Free ℤ Λ] [Module.Finite ℤ Λ] (h : fi
 theorem val_twistLabel [Module.Free ℤ Λ] [Module.Finite ℤ Λ] (h : finrank ℤ Λ = 2)
     (s : (Λ →+ ZMod 2) → SignType) :
     (twistLabel h s : ℕ) = twistIndex s := (rfl)
+
+section Intersection
+
+variable [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+
+/-- The **identification of classes modulo two with sign characters** of a lattice `Λ` of rank
+two, such as `H₁(C; ℤ)` of a torus `C`: the class of `x` in `Λ / 2Λ = H₁(C; ℤ / 2)` goes to the
+sign character `y ↦ det_b [x, y] mod 2`, for any basis `b` of `Λ`
+(`TauCeti.intersectionCharacterEquiv_mkQ_apply`). For the torus `ℝ² / Λ` the determinant in a
+positive basis is the intersection pairing of `H₁`, so this is the intersection pairing with `x`
+modulo two. It is a bijection because the determinant pairing of `b` is perfect. -/
+noncomputable def intersectionCharacterEquiv (h : finrank ℤ Λ = 2) : ModN Λ 2 ≃+ (Λ →+ ZMod 2) :=
+  ModN.pairingEquiv 2 (finBasisOfFinrankEq ℤ Λ h).detPairing
+    (LinearMap.IsPerfPair.bijective_left _)
+
+/-- The sign character of the class of `x` takes the value `det_b [x, y] mod 2` at `y`, for every
+basis `b` of `Λ`: the identification does not depend on the basis, nor on the orientation. -/
+theorem intersectionCharacterEquiv_mkQ_apply (h : finrank ℤ Λ = 2) (b : Basis (Fin 2) ℤ Λ)
+    (x y : Λ) : intersectionCharacterEquiv h (ModN.mkQ 2 x) y = (b.det ![x, y] : ZMod 2) := by
+  have hdet : ((finBasisOfFinrankEq ℤ Λ h).det b : ZMod 2) = 1 := by
+    rcases Int.isUnit_iff.1 (Basis.isUnit_det _ b) with h₁ | h₁ <;> rw [h₁] <;> decide
+  rw [intersectionCharacterEquiv, ModN.coe_pairingEquiv, ModN.pairing_mkQ_apply,
+    Basis.detPairing_eq_smul b, LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul,
+    Int.cast_mul, hdet, one_mul, Basis.detPairing_apply_eq_det]
+
+@[simp]
+theorem intersectionCharacterEquiv_mkQ_apply_self (h : finrank ℤ Λ = 2) (x : Λ) :
+    intersectionCharacterEquiv h (ModN.mkQ 2 x) x = 0 := by
+  rw [intersectionCharacterEquiv_mkQ_apply h (finBasisOfFinrankEq ℤ Λ h),
+    ← Basis.detPairing_apply_eq_det, Basis.detPairing_self, Int.cast_zero]
+
+/-- The identification is symmetric: the character of `x` at `y` is the character of `y` at `x`.
+-/
+theorem intersectionCharacterEquiv_mkQ_apply_comm (h : finrank ℤ Λ = 2) (x y : Λ) :
+    intersectionCharacterEquiv h (ModN.mkQ 2 x) y =
+      intersectionCharacterEquiv h (ModN.mkQ 2 y) x := by
+  let b := finBasisOfFinrankEq ℤ Λ h
+  rw [intersectionCharacterEquiv_mkQ_apply h b, intersectionCharacterEquiv_mkQ_apply h b,
+    ← Basis.detPairing_apply_eq_det, ← Basis.detPairing_apply_eq_det, ← LinearMap.flip_apply,
+    Basis.flip_detPairing, LinearMap.neg_apply, LinearMap.neg_apply, Int.cast_neg,
+    ZMod.neg_eq_self_mod_two]
+
+/-- On `ℤ × ℤ` the class of `x` goes to the sign character `y ↦ x₁ y₂ - x₂ y₁ mod 2`. For the
+`H₁` of an orbit torus, with the circle factor first and the orbit second, the class of the circle
+goes to the character nontrivial on the orbit only, and the class of the orbit to the character
+nontrivial on the circle only. -/
+theorem intersectionCharacterEquiv_mkQ_apply_prod (h : finrank ℤ (ℤ × ℤ) = 2) (x y : ℤ × ℤ) :
+    intersectionCharacterEquiv h (ModN.mkQ 2 x) y = ((x.1 * y.2 - x.2 * y.1 : ℤ) : ZMod 2) := by
+  rw [intersectionCharacterEquiv_mkQ_apply h (Basis.finTwoProd ℤ),
+    ← Basis.detPairing_apply_eq_det, Basis.detPairing_apply]
+  simp
+
+/-- **The twist index indexed by classes.** The twist index of signs `s` on the sign characters
+of a lattice of rank two counts the nonzero classes of `Λ / 2Λ = H₁(C; ℤ / 2)` whose intersection
+character has a negative sign. -/
+theorem twistIndex_eq_natCard_modN (h : finrank ℤ Λ = 2) (s : (Λ →+ ZMod 2) → SignType) :
+    twistIndex s =
+      Nat.card {x : ModN Λ 2 // x ≠ 0 ∧ s (intersectionCharacterEquiv h x) = -1} := by
+  rw [twistIndex_def]
+  exact Nat.card_congr ((intersectionCharacterEquiv h).toEquiv.subtypeEquiv fun x ↦ by
+    simp).symm
+
+end Intersection
 
 end TauCeti

@@ -54,9 +54,13 @@ by the orbit `γ`. The signs prescribed by the return map (`TauCeti.orbitTorusTw
 on the two sign characters that are nontrivial on `S¹`, `sgn det (1 - P)` on the trivial
 character and `sgn det (1 + P)` on the character that is nontrivial on `γ` only. Their twist index
 is `1` or `0` according as `det (1 + P)` is negative or not
-(`TauCeti.twistIndex_orbitTorusTwistSign`). The orbit traversed twice has return map `P ^ 2`, and
-its orbit torus is the double cover of `S¹ × γ` defined by the character nontrivial on `γ` only
-(that is, trivial on `S¹`). Its
+(`TauCeti.twistIndex_orbitTorusTwistSign`). Indexed instead by the classes `x₁ [S¹] + x₂ [γ]` of
+`H₁(S¹ × γ; ℤ / 2)` through the mod-two intersection pairing, the signs are `+` on the classes with
+`x₂` odd, `sgn det (1 + P)` on `[S¹]` and `sgn det (1 - P)` on `0`
+(`TauCeti.orbitTorusTwistSign_intersectionCharacterEquiv`).
+
+The orbit traversed twice has return map `P ^ 2`, and its orbit torus is the double cover of
+`S¹ × γ` defined by the character nontrivial on `γ` only (that is, trivial on `S¹`). Its
 untwisted sign is the product of the two signs of `S¹ × γ` trivial on `S¹`, since
 `1 - P ^ 2 = (1 - P) (1 + P)` (`TauCeti.orbitTorusTwistSign_sq_zero`), and its twist index is
 `0`, since `det (1 + P ^ 2) = (trace P) ^ 2` is never negative when `det P = 1`
@@ -242,6 +246,20 @@ theorem twistIndex_orbitTorusTwistSign (P : Matrix (Fin 2) (Fin 2) R) :
   have hrank : Module.finrank ℤ (ℤ × ℤ) = 2 := by simp
   rw [twistIndex_eq_of_finrank_eq_two hrank hι hχ₀ hχι]
   simp [orbitTorusTwistSign_def, ι, χ, sign_eq_neg_one_iff]
+
+omit [IsStrictOrderedRing R] in
+/-- **The signs of an orbit torus indexed by `H₁(S¹ × γ; ℤ / 2)`.** Index the sign characters of
+`S¹ × γ` by the classes `x = x₁ [S¹] + x₂ [γ]` modulo two, through the mod-two intersection
+pairing (`TauCeti.intersectionCharacterEquiv`). The classes with `x₂` odd, which meet the circle
+`S¹` an odd number of times, index the characters nontrivial on `S¹` and carry the sign `+`; the
+class `[S¹]` carries `sgn det (1 + P)`, and the class `0` carries `sgn det (1 - P)`. -/
+theorem orbitTorusTwistSign_intersectionCharacterEquiv (P : Matrix (Fin 2) (Fin 2) R)
+    (h : Module.finrank ℤ (ℤ × ℤ) = 2) (x : ℤ × ℤ) :
+    orbitTorusTwistSign P (intersectionCharacterEquiv h (ModN.mkQ 2 x)) =
+      if (x.2 : ZMod 2) = 0 then
+        if (x.1 : ZMod 2) = 0 then SignType.sign (1 - P).det else SignType.sign (1 + P).det
+      else 1 := by
+  simp [orbitTorusTwistSign_def, intersectionCharacterEquiv_mkQ_apply_prod]
 
 /-- The untwisted sign of the orbit torus of the doubled orbit, with return map `P ^ 2`, is the
 product of the signs of `det (1 - P)` and `det (1 + P)`: the signs of the two sign characters of
