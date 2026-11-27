@@ -66,6 +66,11 @@ Along a curve `t ↦ a(t)` of coefficients, `Cⁿ` at `t₀`, the same duality h
 rate `-c` of `TauCeti.Analysis.PDE.Vortex.ParameterDerivative.IteratedDeriv` gives
 `‖exp(c ρ) (Q†)ₙ g‖₂ ≤ K Mⁿ ‖exp(c ρ) g‖₂` when `‖aⱼ‖∞ ≤ Mʲ` for `1 ≤ j ≤ n`
 (`exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_adjoint_orthogonalRightInverse_le`).
+
+## References
+
+* C. H. Taubes, *Gr ⇒ SW: from pseudo-holomorphic curves to Seiberg–Witten solutions*,
+  J. Differential Geom. 51 (1999), 203–334.
 -/
 
 public section
