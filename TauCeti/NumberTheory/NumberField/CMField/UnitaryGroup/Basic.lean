@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
-import Mathlib.NumberTheory.NumberField.FiniteAdeleRing
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralGL
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
@@ -22,6 +22,8 @@ For a finite index set `ι` (of size `n`), this file defines the **finite adelic
 with the subspace topology of `GL_n(𝔸_f)`; it is the group `Matrix.unitaryGroupOf 1` of
 Tau Ceti's general theory of unitary groups, so its API applies. Then:
 
+* The component `g_w ∈ GL_n(E_w)` of `g ∈ G_f` at a finite place `w` is a group homomorphism
+  `TauCeti.finiteAdelicUnitaryGroup.proj`.
 * `K₀ = G_f ∩ GL_n(Ô)`, the intersection of `G_f` with the image of
   `IsDedekindDomain.FiniteAdeleRing.integralGL`, is the subgroup of unitary matrices with integral
   entries: the inverse `g⁻¹ = g*` of such a matrix is integral as well, since conjugation preserves
@@ -32,8 +34,9 @@ Tau Ceti's general theory of unitary groups, so its API applies. Then:
   locally compact.
 * A **level** is an open subgroup `K` of `G_f` contained in `K₀`. A level is compact, of finite
   index in `K₀`, and the levels are stable under finite intersections.
-* At a finite place `w` and its conjugate place `conj w` (`NumberField.IsCMField.conjPlace`), the
-  components of `g ∈ G_f` determine each other: `g_{conj w}` is the conjugate of the transpose of
+* At a finite place `w` and its conjugate place `conj w`
+  (`IsDedekindDomain.HeightOneSpectrum.conjPlace`), the components of `g ∈ G_f` determine each
+  other: `g_{conj w}` is the conjugate of the transpose of
   `(g_w)⁻¹`, read through the isomorphism `E_w ≃ E_{conj w}` extending the conjugation of `E`. At
   a finite place split in `E / E⁺` these are two different places.
 
@@ -44,6 +47,8 @@ an adelic frame (`TauCeti.FramedHermitianSpace`).
 ## Main definitions
 
 * `TauCeti.finiteAdelicUnitaryGroup E ι`: the group `G_f`.
+* `TauCeti.finiteAdelicUnitaryGroup.proj E ι w`: the component `G_f → GL_n(E_w)` at a finite
+  place `w`.
 * `TauCeti.integralAdelicUnitaryGroup E ι`: its subgroup `K₀ = G_f ∩ GL_n(Ô)`.
 * `TauCeti.IsUnitaryLevel K`: `K` is a level, an open subgroup of `G_f` contained in `K₀`.
 
@@ -51,9 +56,10 @@ an adelic frame (`TauCeti.FramedHermitianSpace`).
 
 * `TauCeti.mem_finiteAdelicUnitaryGroup_iff`, `TauCeti.val_inv_of_mem_finiteAdelicUnitaryGroup`:
   `g ∈ G_f` means `g* g = 1`, and then `g⁻¹ = g*`.
-* `TauCeti.val_apply_apply_eq_adicCompletionCongr`: the components of `g ∈ G_f` at a finite
-  place and at its conjugate.
-* `TauCeti.mem_integralAdelicUnitaryGroup_iff`: `K₀` is the set of `g ∈ G_f` with integral
+* `TauCeti.finiteAdelicUnitaryGroup.proj_conjPlace_apply`: the components of `g ∈ G_f` at a
+  finite place and at its conjugate.
+* `TauCeti.mem_integralAdelicUnitaryGroup_iff_mem_range_integralGL`: `K₀ = G_f ∩ GL_n(Ô)`;
+  `TauCeti.mem_integralAdelicUnitaryGroup_iff`: `K₀` is the set of `g ∈ G_f` with integral
   entries, and `TauCeti.mem_integralAdelicUnitaryGroup_iff_forall_place`: the set of `g` with
   `g_w ∈ GL_n(𝒪_w)` at every finite place `w`.
 * `TauCeti.isOpen_integralAdelicUnitaryGroup`, `TauCeti.isCompact_integralAdelicUnitaryGroup`:
@@ -83,7 +89,7 @@ public section
 noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum Matrix NumberField NumberField.IsCMField
-open scoped NumberField.AdeleRing
+open scoped NumberField.AdeleRing ComplexConjugate
 
 namespace TauCeti
 
@@ -112,18 +118,38 @@ theorem val_inv_of_mem_finiteAdelicUnitaryGroup {g : GL ι 𝔸ᶠ[E]}
     (↑g⁻¹ : Matrix ι ι 𝔸ᶠ[E]) = star (g : Matrix ι ι 𝔸ᶠ[E]) := by
   rw [val_inv_of_mem_unitaryGroupOf isUnit_one hg, inv_one, Matrix.one_mul, Matrix.mul_one]
 
+variable (E ι) in
+/-- The **component** `g ↦ g_w` of the finite adelic unitary group at a finite place `w`: the
+homomorphism `G_f → GL_n(E_w)` reading each entry of `g` at `w`. -/
+def finiteAdelicUnitaryGroup.proj (w : HeightOneSpectrum (𝓞 E)) :
+    finiteAdelicUnitaryGroup E ι →* GL ι (w.adicCompletion E) :=
+  (GeneralLinearGroup.map (FiniteAdeleRing.proj E w).toRingHom).comp
+    (finiteAdelicUnitaryGroup E ι).subtype
+
+/-- The entries of the component `g_w` are the components at `w` of the entries of `g`. -/
+@[simp]
+theorem finiteAdelicUnitaryGroup.proj_apply (w : HeightOneSpectrum (𝓞 E))
+    (g : finiteAdelicUnitaryGroup E ι) (i j : ι) :
+    (finiteAdelicUnitaryGroup.proj E ι w g : Matrix ι ι (w.adicCompletion E)) i j =
+      ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j w := by
+  simp only [finiteAdelicUnitaryGroup.proj, AlgHom.toRingHom_eq_coe, MonoidHom.coe_comp,
+    Subgroup.coe_subtype, Function.comp_apply, GeneralLinearGroup.map_apply, RingHom.coe_coe,
+    ContinuousAlgHom.coe_coe, FiniteAdeleRing.proj_apply]
+
 /-- **Components at conjugate places.** For `g ∈ G_f` and a finite place `w` with conjugate
 `conj w` (`conjPlace`), the entry `(i, j)` of the component `g_{conj w}` is the image of the entry
-`(j, i)` of `(g⁻¹)_w = (g_w)⁻¹` under the isomorphism `E_w ≃ E_{conj w}` extending the conjugation
-of `E`: `g_{conj w}` is the conjugate of the transpose of `(g_w)⁻¹`. -/
-theorem val_apply_apply_eq_adicCompletionCongr {g : GL ι 𝔸ᶠ[E]}
-    (hg : g ∈ finiteAdelicUnitaryGroup E ι) (w : HeightOneSpectrum (𝓞 E)) (i j : ι) :
-    (g : Matrix ι ι 𝔸ᶠ[E]) i j (conjPlace w) =
-      adicCompletionCongr w (conjPlace w) (complexConj E).toRingEquiv (valuation_conjPlace w)
-        ((↑g⁻¹ : Matrix ι ι 𝔸ᶠ[E]) j i w) := by
-  have h := val_inv_of_mem_finiteAdelicUnitaryGroup (inv_mem hg)
+`(j, i)` of `(g_w)⁻¹` under the isomorphism `E_w ≃ E_{conj w}` extending the conjugation of `E`:
+`g_{conj w}` is the conjugate of the transpose of `(g_w)⁻¹`. -/
+theorem finiteAdelicUnitaryGroup.proj_conjPlace_apply (g : finiteAdelicUnitaryGroup E ι)
+    (w : HeightOneSpectrum (𝓞 E)) (i j : ι) :
+    (finiteAdelicUnitaryGroup.proj E ι w.conjPlace g : Matrix ι ι (w.conjPlace.adicCompletion E))
+        i j =
+      adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w)
+        ((↑(finiteAdelicUnitaryGroup.proj E ι w g)⁻¹ : Matrix ι ι (w.adicCompletion E)) j i) := by
+  have h := val_inv_of_mem_finiteAdelicUnitaryGroup (inv_mem g.property)
   rw [inv_inv] at h
-  rw [h, star_apply, finiteAdeleRing_star_apply]
+  rw [← map_inv, finiteAdelicUnitaryGroup.proj_apply, finiteAdelicUnitaryGroup.proj_apply,
+    InvMemClass.coe_inv, h, star_apply, FiniteAdeleRing.star_apply_conjPlace]
 
 /-! ### The integral subgroup `K₀` -/
 
@@ -136,12 +162,27 @@ elements whose component at every finite place `w` lies in `GL_n(𝒪_w)`
 def integralAdelicUnitaryGroup : Subgroup (finiteAdelicUnitaryGroup E ι) :=
   (FiniteAdeleRing.integralGL E ι (R := 𝓞 E)).range.subgroupOf _
 
+variable (E ι) in
+/-- `K₀` is the trace on `G_f` of the image `GL_n(Ô)` of `integralGL`. -/
+theorem integralAdelicUnitaryGroup_def :
+    integralAdelicUnitaryGroup E ι =
+      (FiniteAdeleRing.integralGL E ι (R := 𝓞 E)).range.subgroupOf _ :=
+  (rfl)
+
+/-- `K₀ = G_f ∩ GL_n(Ô)`: an element of `G_f` lies in `K₀` exactly when it lies in `GL_n(Ô)`. -/
+theorem mem_integralAdelicUnitaryGroup_iff_mem_range_integralGL
+    {g : finiteAdelicUnitaryGroup E ι} :
+    g ∈ integralAdelicUnitaryGroup E ι ↔
+      (g : GL ι 𝔸ᶠ[E]) ∈ (FiniteAdeleRing.integralGL E ι (R := 𝓞 E)).range := by
+  rw [integralAdelicUnitaryGroup_def, Subgroup.mem_subgroupOf]
+
 /-- `K₀` consists of the elements of `G_f` with integral entries. -/
 theorem mem_integralAdelicUnitaryGroup_iff {g : finiteAdelicUnitaryGroup E ι} :
     g ∈ integralAdelicUnitaryGroup E ι ↔
       ∀ i j,
         ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j ∈ FiniteAdeleRing.integralAdeles (𝓞 E) E := by
-  rw [integralAdelicUnitaryGroup, Subgroup.mem_subgroupOf, FiniteAdeleRing.mem_range_integralGL_iff]
+  rw [mem_integralAdelicUnitaryGroup_iff_mem_range_integralGL,
+    FiniteAdeleRing.mem_range_integralGL_iff]
   refine ⟨And.left, fun h ↦ ⟨h, fun i j ↦ ?_⟩⟩
   rw [val_inv_of_mem_finiteAdelicUnitaryGroup g.property, star_apply,
     star_mem_integralAdeles_iff]
@@ -149,11 +190,14 @@ theorem mem_integralAdelicUnitaryGroup_iff {g : finiteAdelicUnitaryGroup E ι} :
 
 /-- **`K₀` is the group of elements integral at every place**: `g ∈ G_f` lies in `K₀` exactly when
 at every finite place `w` its component `g_w` lies in `GL_n(𝒪_w)`, that is the entries of `g_w`
-and of `(g_w)⁻¹ = (g⁻¹)_w` lie in the local integers `𝒪_w`. -/
+and of `(g_w)⁻¹` lie in the local integers `𝒪_w`. -/
 theorem mem_integralAdelicUnitaryGroup_iff_forall_place {g : finiteAdelicUnitaryGroup E ι} :
     g ∈ integralAdelicUnitaryGroup E ι ↔ ∀ w : HeightOneSpectrum (𝓞 E),
-      (∀ i j, ((g : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j w ∈ w.adicCompletionIntegers E) ∧
-        ∀ i j, ((g⁻¹ : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) i j w ∈ w.adicCompletionIntegers E := by
+      (∀ i j, (finiteAdelicUnitaryGroup.proj E ι w g : Matrix ι ι (w.adicCompletion E)) i j ∈
+        w.adicCompletionIntegers E) ∧
+      ∀ i j, (↑(finiteAdelicUnitaryGroup.proj E ι w g)⁻¹ : Matrix ι ι (w.adicCompletion E)) i j ∈
+        w.adicCompletionIntegers E := by
+  simp only [← map_inv, finiteAdelicUnitaryGroup.proj_apply, InvMemClass.coe_inv]
   refine ⟨fun hg w ↦ ⟨fun i j ↦ ?_, fun i j ↦ ?_⟩, fun h ↦ ?_⟩
   · exact FiniteAdeleRing.mem_integralAdeles.1 (mem_integralAdelicUnitaryGroup_iff.1 hg i j) w
   · exact FiniteAdeleRing.mem_integralAdeles.1
@@ -172,13 +216,11 @@ variable (E ι) in
 the compact set `M_n(Ô)`. -/
 theorem isCompact_integralAdelicUnitaryGroup :
     IsCompact (integralAdelicUnitaryGroup E ι : Set (finiteAdelicUnitaryGroup E ι)) := by
-  have hM : IsCompact
-      {M : Matrix ι ι 𝔸ᶠ[E] | ∀ i j, M i j ∈ FiniteAdeleRing.integralAdeles (𝓞 E) E} := by
-    exact isCompact_pi_infinite fun _ ↦ isCompact_pi_infinite fun _ ↦
-      FiniteAdeleRing.isCompact_integralAdeles (R := 𝓞 E) (K := E)
+  have hM := (FiniteAdeleRing.isCompact_integralAdeles (R := 𝓞 E) (K := E)).matrix (m := ι) (n := ι)
   convert (unitaryGroupOf.isClosedEmbedding_val (A := (1 : Matrix ι ι 𝔸ᶠ[E]))
     isUnit_one).isCompact_preimage hM using 1
   ext g
+  rw [Set.mem_preimage, Set.mem_matrix]
   exact mem_integralAdelicUnitaryGroup_iff
 
 instance : CompactSpace (integralAdelicUnitaryGroup E ι) :=

@@ -39,8 +39,11 @@ theorem componentGroup_principalLevel_one :
   refine ⟨fun h ↦ ?_, ?_⟩
   · -- Elements of `Γ_{1,K(1)}` have determinant `1` and integral entries.
     refine mem_range_mapGL_of_det_eq_one (det_eq_one_of_mem_componentGroup
-      (isCompact_principalLevel ℚ (by simp)) h) ?_
-    simpa [principalLevel_top] using (mem_componentGroup_iff.mp h).2
+      (isCompact_principalLevel ℚ (by simp)) h) fun i j ↦ ?_
+    have hγ : GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)) γ ∈
+        (integralGL ℚ (Fin 2) (R := ℤ)).range := by
+      simpa [principalLevel_top] using (mem_componentGroup_iff.mp h).2
+    simpa using (mem_range_integralGL_iff.mp hγ).1 i j
   · rintro ⟨γ, rfl⟩
     exact mapGL_mem_componentGroup_principalLevel_one_iff.mpr (by simp [Gamma_one_top])
 

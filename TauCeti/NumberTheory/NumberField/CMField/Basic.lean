@@ -42,6 +42,8 @@ Hilbert's Theorem 90, and then `x / bⁿ` is fixed by complex conjugation.
   automorphism that is the conjugation of every complex embedding is CM, without assuming that
   it is Galois over `ℚ`.
 * `NumberField.IsCMField.exists_complexConj_div_eq_iff`: Hilbert's Theorem 90 for `K / K⁺`.
+* `NumberField.IsCMField.star_eq_complexConj`: the star structure of a CM field is its complex
+  conjugation, and `NumberField.IsCMField.complexConj_trans_complexConj`: it is an involution.
 * `NumberField.IsCMField.complexConj_algebraMap`: complex conjugations of CM fields are compatible
   along field extensions.
 * `NumberField.IsCMField.div_complexConj_mul_complexConj_div_complexConj_eq_one`: for a unit `x`,
@@ -94,6 +96,19 @@ namespace NumberField.IsCMField
 variable (K : Type*) [Field K] [CharZero K] [IsCMField K] [Algebra.IsIntegral ℚ K]
 
 local notation3 "K⁺" => maximalRealSubfield K
+
+variable {K} in
+/-- The star structure of a CM field (`NumberField.IsCMField.starRing`) is its complex
+conjugation. -/
+@[simp]
+theorem star_eq_complexConj (x : K) : star x = complexConj K x :=
+  (rfl)
+
+/-- Complex conjugation of a CM field, as a ring automorphism, is an involution. -/
+@[simp]
+theorem complexConj_trans_complexConj :
+    (complexConj K).toRingEquiv.trans (complexConj K).toRingEquiv = RingEquiv.refl K :=
+  RingEquiv.ext fun x ↦ complexConj_apply_apply K x
 
 /-- **Hilbert's Theorem 90 for a CM field.** A unit `x` of a CM field satisfies
 `x * conj x = 1` if and only if `x = conj y / y` for a unit `y`. -/
