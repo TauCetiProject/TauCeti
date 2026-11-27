@@ -194,10 +194,8 @@ private theorem norm_apply_tmul_one_mul_le [NonUnitalCStarAlgebra D]
 
 /-- The `N`-th root `x ↦ ρ(x) ^ (1 / N)` of a function `0 ≤ ρ ≤ 1`, as a complex function. -/
 private def rootFun (ρ : C(X, ℝ)) (N : ℕ) : C(X, ℂ) :=
-  ⟨fun x ↦ ((ρ x ^ ((N : ℝ)⁻¹) : ℝ) : ℂ), by
-    have : Continuous fun x ↦ ρ x ^ ((N : ℝ)⁻¹) :=
-      ρ.continuous.rpow_const fun _ ↦ Or.inr (by positivity)
-    fun_prop⟩
+  ContinuousMap.realToRCLike ℂ ⟨fun x ↦ ρ x ^ ((N : ℝ)⁻¹),
+    ρ.continuous.rpow_const fun _ ↦ Or.inr (by positivity)⟩
 
 omit [CompactSpace X] [T2Space X] in
 private theorem rootFun_apply (ρ : C(X, ℝ)) (N : ℕ) (x : X) :
@@ -223,28 +221,30 @@ private theorem apply_pow_eq_sum {E : Type*} [CStarAlgebra E] (Ψ : C(X, ℂ) �
     {ι : Type*} [Fintype ι] (ρ : PartitionOfUnity ι X) (z : C(X, ℂ) ⊗[ℂ] B) {N : ℕ}
     (hN : N ≠ 0) :
     Ψ z ^ N = ∑ i, (Ψ (rootFun (ρ i) N ⊗ₜ 1) * Ψ z) ^ N := by
-  have hsum : ∑ i, (⟨fun x' ↦ ((ρ i x' : ℝ) : ℂ), by fun_prop⟩ : C(X, ℂ)) = 1 := by
-    ext x'
-    rw [ContinuousMap.coe_sum, Finset.sum_apply]
-    simp only [ContinuousMap.coe_mk, ContinuousMap.one_apply]
-    rw [← Complex.ofReal_sum, ← finsum_eq_sum_of_fintype, ρ.sum_eq_one (Set.mem_univ x'),
-      Complex.ofReal_one]
-  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero hN
-  have h1 : Ψ z ^ N = Ψ (1 ⊗ₜ 1) * Ψ z ^ N := by
-    rw [hn, pow_succ', ← mul_assoc, ← map_mul, ← Algebra.TensorProduct.one_def, one_mul]
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN
+  have hsum : ∑ i, ContinuousMap.realToRCLike ℂ (ρ i) = 1 := by
+    have h : ∑ i, ρ i = 1 := by
+      ext x'
+      rw [ContinuousMap.coe_sum, Finset.sum_apply, ← finsum_eq_sum_of_fintype,
+        ρ.sum_eq_one (Set.mem_univ x'), ContinuousMap.one_apply]
+    rw [← map_one (ContinuousMap.realToRCLikeStarAlgHom X ℂ), ← h, map_sum]
+    simp only [ContinuousMap.realToRCLikeStarAlgHom_apply]
+  have h1 : Ψ z ^ (n + 1) = Ψ (1 ⊗ₜ 1) * Ψ z ^ (n + 1) := by
+    rw [pow_succ', ← mul_assoc, ← map_mul, ← Algebra.TensorProduct.one_def, one_mul]
   rw [h1, ← hsum, sum_tmul, map_sum, Finset.sum_mul]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hroot : (⟨fun x' ↦ ((ρ i x' : ℝ) : ℂ), by fun_prop⟩ : C(X, ℂ)) ⊗ₜ[ℂ] (1 : B) =
-      (rootFun (ρ i) N ⊗ₜ[ℂ] (1 : B)) ^ N := by
+  have hroot : ContinuousMap.realToRCLike ℂ (ρ i) ⊗ₜ[ℂ] (1 : B) =
+      (rootFun (ρ i) (n + 1) ⊗ₜ[ℂ] (1 : B)) ^ (n + 1) := by
     rw [Algebra.TensorProduct.tmul_pow, one_pow]
     congr 1
     ext x'
-    rw [ContinuousMap.pow_apply, rootFun_apply, ContinuousMap.coe_mk, ← Complex.ofReal_pow,
+    rw [ContinuousMap.pow_apply, rootFun_apply, ContinuousMap.realToRCLike_apply,
+      RCLike.ofReal_eq_complex_ofReal, ← Complex.ofReal_pow,
       Real.rpow_inv_natCast_pow (ρ.nonneg i x') hN]
-  have hc : Commute (rootFun (ρ i) N ⊗ₜ[ℂ] (1 : B)) z :=
+  have hc : Commute (rootFun (ρ i) (n + 1) ⊗ₜ[ℂ] (1 : B)) z :=
     (Subalgebra.mem_center_iff.1 (Algebra.TensorProduct.includeLeft_map_center_le ℂ C(X, ℂ) B
-      ⟨rootFun (ρ i) N, by simp [Subalgebra.center_eq_top], rfl⟩) z).symm
-  rw [hroot, hn, map_pow_succ Ψ _ n, ← hn, (hc.map Ψ).mul_pow, hn]
+      ⟨rootFun (ρ i) (n + 1), by simp [Subalgebra.center_eq_top], rfl⟩) z).symm
+  rw [hroot, map_pow_succ Ψ _ n, (hc.map Ψ).mul_pow]
 
 /-- The upper estimate for elements with self-adjoint image. -/
 private theorem norm_apply_le_of_isSelfAdjoint [CStarAlgebra D] (Ψ : C(X, ℂ) ⊗[ℂ] B →⋆ₙₐ[ℂ] D)

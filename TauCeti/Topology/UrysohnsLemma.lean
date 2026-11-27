@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.RCLike.ContinuousMap
+public import Mathlib.Topology.Separation.CompletelyRegular
 public import Mathlib.Topology.UrysohnsLemma
 
 /-!
@@ -16,7 +17,7 @@ agrees on each closed subset `K ⊆ Ω` with a map continuous everywhere
 (`ContinuousOn.exists_continuous_eqOn_of_isClosed`): multiply it by a Urysohn cutoff equal to `1`
 on `K` and to `0` off an open `W ⊇ K` with `closure W ⊆ Ω`.
 
-In a normal T1 space, every point `x` of an open set `U` carries an `RCLike`-valued Urysohn
+In a completely regular space, every point `x` of an open set `U` carries an `RCLike`-valued Urysohn
 function `g` with `‖g‖ ≤ 1`, `g x = 1` and `g = 0` off `U` (`TauCeti.exists_bump_of_isOpen`).
 -/
 
@@ -44,17 +45,19 @@ theorem ContinuousOn.exists_continuous_eqOn_of_isClosed {X E : Type*} [Topologic
 namespace TauCeti
 
 /-- An Urysohn function at `x`: `‖g‖ ≤ 1`, `g x = 1`, and `g` vanishes off the open set `U ∋ x`. -/
-theorem exists_bump_of_isOpen {X 𝕜 : Type*} [TopologicalSpace X] [NormalSpace X] [T1Space X]
+theorem exists_bump_of_isOpen {X 𝕜 : Type*} [TopologicalSpace X] [CompletelyRegularSpace X]
     [RCLike 𝕜] {U : Set X} (hU : IsOpen U) {x : X} (hx : x ∈ U) :
     ∃ g : C(X, 𝕜), (∀ x', ‖g x'‖ ≤ 1) ∧ g x = 1 ∧ ∀ x', g x' ≠ 0 → x' ∈ U := by
-  obtain ⟨f, hf0, hf1, hf01⟩ := exists_continuous_zero_one_of_isClosed hU.isClosed_compl
-    isClosed_singleton (disjoint_singleton_right.2 fun h ↦ h hx)
-  refine ⟨⟨fun x' ↦ ((f x' : ℝ) : 𝕜), by fun_prop⟩, fun x' ↦ ?_, ?_, fun x' hx' ↦ ?_⟩
-  · rw [ContinuousMap.coe_mk, RCLike.norm_ofReal, abs_of_nonneg (hf01 x').1]
-    exact (hf01 x').2
-  · rw [ContinuousMap.coe_mk, hf1 (mem_singleton x), Pi.one_apply, RCLike.ofReal_one]
-  · by_contra hU'
-    apply hx'
-    rw [ContinuousMap.coe_mk, hf0 hU', Pi.zero_apply, RCLike.ofReal_zero]
+  obtain ⟨f, hf, hfx, hfU⟩ := CompletelyRegularSpace.completely_regular_isOpen x U hU hx
+  -- The bump is `1 - f`, which is `1` at `x` and `0` off `U`.
+  refine ⟨ContinuousMap.realToRCLike 𝕜 ⟨fun x' ↦ 1 - (f x' : ℝ), by fun_prop⟩, fun x' ↦ ?_, ?_,
+    fun x' hx' ↦ by_contra fun hU' ↦ hx' ?_⟩
+  · rw [ContinuousMap.realToRCLike_apply, ContinuousMap.coe_mk, RCLike.norm_ofReal,
+      abs_of_nonneg (sub_nonneg.2 (unitInterval.le_one (f x')))]
+    exact sub_le_self _ (unitInterval.nonneg (f x'))
+  · rw [ContinuousMap.realToRCLike_apply, ContinuousMap.coe_mk, hfx, Set.Icc.coe_zero, sub_zero,
+      RCLike.ofReal_one]
+  · rw [ContinuousMap.realToRCLike_apply, ContinuousMap.coe_mk, hfU hU', Pi.one_apply,
+      Set.Icc.coe_one, sub_self, RCLike.ofReal_zero]
 
 end TauCeti
