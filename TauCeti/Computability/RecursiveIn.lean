@@ -156,8 +156,8 @@ theorem exists_decoded_range {f : α → ℕ} {S : Set β} (hf : ComputableIn O 
   have hd : Computable d := Computable.decode.option_getD (Computable.const a)
   have hinv : Function.LeftInverse d (encode (α := β)) := fun x => by simp [d]
   refine ⟨d ∘ f, hd.computableIn.comp hf, ?_, ?_⟩
-  · rw [Set.range_comp, hr, Set.image_image]
-    exact (Set.image_congr fun x _ => hinv x).trans (Set.image_id' S)
+  · rw [Set.range_comp, hr]
+    exact hinv.image_image S
   · intro h m n he
     obtain ⟨x, _, hx⟩ := hr ▸ Set.mem_range_self m
     obtain ⟨y, _, hy⟩ := hr ▸ Set.mem_range_self n
