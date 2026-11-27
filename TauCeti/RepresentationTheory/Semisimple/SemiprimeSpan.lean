@@ -10,8 +10,6 @@ public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.OfGL
 public import TauCeti.RepresentationTheory.Semisimple
 import TauCeti.RingTheory.Semisimple.Semiprime
-import TauCeti.RingTheory.SimpleModule.Basic
-import TauCeti.RingTheory.SimpleModule.Subalgebra
 
 /-!
 # Semisimple representations through the semiprimeness of their span
@@ -21,7 +19,8 @@ when no nonzero `x` in its `k`-span has `x * s * x = 0` for every member `s` of 
 representation `ρ` on a finite-dimensional space this characterizes semisimplicity
 (`Representation.isSemisimpleRepresentation_iff_forall_eq_zero_of_forall_mul_mul_eq_zero`): the
 span of `ρ` is the image `A` of `k[G]` in `End_k(V)`, which is a semisimple ring exactly when `ρ` is
-semisimple, and a finite-dimensional algebra is semisimple exactly when it is semiprime.
+semisimple (`Representation.isSemisimpleRing_range_asAlgebraHom_iff`), and a finite-dimensional
+algebra is semisimple exactly when it is semiprime.
 
 The point of the semiprime formulation is that it makes sense for a homomorphism `ρ : G →* B` into
 any finite-dimensional `k`-algebra `B`, and that it passes to every representation through which
@@ -49,9 +48,6 @@ span and the character theory of semisimple modules instead.
 
 ## Main results
 
-* `Representation.isSemisimpleRepresentation_of_isSemisimpleRing_range_asAlgebraHom` and
-  `Representation.isSemisimpleRing_range_asAlgebraHom`: a representation is semisimple when the
-  image of `k[G]` is a semisimple ring, and conversely in finite dimension.
 * `Representation.eq_zero_of_mem_span_of_forall_mul_mul_eq_zero`: **a finite-dimensional
   semisimple representation has semiprime span.**
 * `MonoidHom.isSemisimpleRepresentation_comp_of_forall_eq_zero_of_forall_mul_mul_eq_zero`: **a
@@ -78,43 +74,6 @@ open scoped MonoidAlgebra
 namespace Representation
 
 variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
-
-/-- `ρ.asModule` is semisimple over `k[G]` exactly when `V` is semisimple over the image of
-`k[G]` in `End_k(V)`. -/
-private theorem isSemisimpleModule_asModule_iff_isSemisimpleModule_range_asAlgebraHom
-    (ρ : Representation k G V) :
-    IsSemisimpleModule k[G] ρ.asModule ↔ IsSemisimpleModule ρ.asAlgebraHom.range V := by
-  -- `ρ.asModule` is a type synonym for `V`; its `range`-module structure is that of `V`, through
-  -- which the action of `k[G]` on `ρ.asModule` factors.
-  let : Module ρ.asAlgebraHom.range ρ.asModule := (inferInstance : Module ρ.asAlgebraHom.range V)
-  exact RingHom.isSemisimpleModule_iff_of_surjective (M := ρ.asModule)
-    ρ.asAlgebraHom.rangeRestrict.toRingHom (AlgHom.rangeRestrict_surjective _) fun _ _ ↦ rfl
-
-/-- **A representation whose image algebra is a semisimple ring is semisimple.** No finiteness is
-needed: `V` is a module over the image `A` of `k[G]` in `End_k(V)`, semisimple because `A` is, and
-its subrepresentations are its `A`-submodules. -/
-theorem isSemisimpleRepresentation_of_isSemisimpleRing_range_asAlgebraHom
-    (ρ : Representation k G V) [IsSemisimpleRing ρ.asAlgebraHom.range] :
-    ρ.IsSemisimpleRepresentation := by
-  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule,
-    isSemisimpleModule_asModule_iff_isSemisimpleModule_range_asAlgebraHom]
-  infer_instance
-
-/-- **The image algebra of a finite-dimensional semisimple representation is a semisimple
-ring.** -/
-theorem isSemisimpleRing_range_asAlgebraHom (ρ : Representation k G V) [FiniteDimensional k V]
-    [ρ.IsSemisimpleRepresentation] : IsSemisimpleRing ρ.asAlgebraHom.range := by
-  have := (isSemisimpleModule_asModule_iff_isSemisimpleModule_range_asAlgebraHom ρ).mp <|
-    (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
-  exact Subalgebra.isSemisimpleRing_of_isSemisimpleModule _
-
-/-- A finite-dimensional representation is semisimple exactly when the image of `k[G]` in
-`End_k(V)` is a semisimple ring. -/
-theorem isSemisimpleRing_range_asAlgebraHom_iff (ρ : Representation k G V)
-    [FiniteDimensional k V] :
-    IsSemisimpleRing ρ.asAlgebraHom.range ↔ ρ.IsSemisimpleRepresentation :=
-  ⟨fun _ ↦ isSemisimpleRepresentation_of_isSemisimpleRing_range_asAlgebraHom ρ,
-    fun _ ↦ isSemisimpleRing_range_asAlgebraHom ρ⟩
 
 /-- **A finite-dimensional semisimple representation has semiprime span.** If `x` is a
 `k`-combination of the operators `ρ g` with `x * ρ g * x = 0` for every `g`, then `x = 0`. -/
