@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.GradedCochainComplex
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.Dynamics.Flow.ConnectingOrbit
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Broken.Sign
@@ -56,6 +58,13 @@ that the broken trajectories from `p` to `r` are the ends of the compact one-dim
 index-two trajectories, that the two ends of each of its arcs carry opposite signs, and that the
 arc is a homotopy between their concatenated paths, so that their transports agree.
 
+The boundary lowers the Morse index by one. So once `∂ ∘ ∂ = 0`, the families supported on the
+critical points of index `k`, placed in cohomological degree `-k`, form a cochain complex with
+differential `∂`, the **Morse complex with coefficients in `L`**
+(`TauCeti.IsAdaptedPseudoGradient.twistedMorseCochainComplex`), read in the homological grading
+`C_k = C^{-k}`. The cohomological indexing is the one of the twisted complexes of DG local
+systems, with which this complex is compared.
+
 ## Main definitions
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -65,6 +74,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `brokenTrajectoryPathClass`: the homotopy class of the concatenated path of a broken trajectory.
 * `twistedMorseBoundaryMap`: the component `L(p) → L(q)` of the twisted Morse boundary.
 * `twistedMorseBoundary`: the Morse boundary with coefficients in `L`.
+* `twistedMorseCochainComplex`: the Morse complex with coefficients in `L`, given `∂ ∘ ∂ = 0`.
 
 ## References
 
@@ -425,6 +435,102 @@ theorem twistedMorseBoundary_comp_twistedMorseBoundary_eq_zero_iff :
     simpa using h0 p r a
 
 end IsMorseSmale
+
+/-! ### The Morse complex -/
+
+/-- The twisted boundary lowers the Morse index by one: a family supported on the critical points
+of index `-n`, in the sense of the trivial gradings of the fibres, is sent to a family supported on
+the critical points of index `-(n + 1)`. -/
+private theorem twistedMorseBoundary_isHomogeneous :
+    LinearMap.IsHomogeneous (hX.twistedMorseBoundary 𝔬 L hf)
+      (fun n ↦ Submodule.pi univ fun p : criticalPoints 𝓘(ℝ, E) f ↦
+        trivialGrading R (L.obj (FundamentalGroupoid.mk (p : M)))
+          (n + (manifoldMorseIndex 𝓘(ℝ, E) f p : ℤ)))
+      (fun n ↦ Submodule.pi univ fun p : criticalPoints 𝓘(ℝ, E) f ↦
+        trivialGrading R (L.obj (FundamentalGroupoid.mk (p : M)))
+          (n + (manifoldMorseIndex 𝓘(ℝ, E) f p : ℤ))) 1 := by
+  refine LinearMap.isHomogeneous_def.2 fun n c hc ↦ ?_
+  simp only [Submodule.mem_pi, mem_univ, true_implies, mem_trivialGrading_iff] at hc ⊢
+  intro q
+  refine or_iff_not_imp_left.2 fun hq ↦ ?_
+  rw [twistedMorseBoundary_apply]
+  refine finsum_eq_zero_of_forall_eq_zero fun p ↦ ?_
+  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
+  · rcases hc p with hp | hp
+    · exact absurd (by push_cast [hpq] at hp; omega) hq
+    · rw [hp, map_zero]
+  · rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one hpq, LinearMap.zero_apply]
+
+variable (hX 𝔬 L) in
+/-- **The Morse complex with coefficients in a local system `L`**, given that the twisted boundary
+squares to zero. Its term in degree `n` is the module of families `c` with `c p ∈ L(p)` that
+vanish at every critical point `p` of index other than `-n`, and its differential is the twisted
+Morse boundary `TauCeti.IsAdaptedPseudoGradient.twistedMorseBoundary`, which lowers the index by
+one. In the homological grading `C_k = C^{-k}` this is the Morse complex of `f` with coefficients
+in `L`, with the critical points of index `k` in degree `k`. -/
+noncomputable def twistedMorseCochainComplex
+    (h : hX.twistedMorseBoundary 𝔬 L hf ∘ₗ hX.twistedMorseBoundary 𝔬 L hf = 0) :
+    CochainComplex (ModuleCat R) ℤ :=
+  gradedCochainComplex
+    (fun n ↦ Submodule.pi univ fun p : criticalPoints 𝓘(ℝ, E) f ↦
+      trivialGrading R (L.obj (FundamentalGroupoid.mk (p : M)))
+        (n + (manifoldMorseIndex 𝓘(ℝ, E) f p : ℤ)))
+    (hX.twistedMorseBoundary 𝔬 L hf) (twistedMorseBoundary_isHomogeneous hf)
+    fun _ c ↦ LinearMap.congr_fun h c
+
+variable (h : hX.twistedMorseBoundary 𝔬 L hf ∘ₗ hX.twistedMorseBoundary 𝔬 L hf = 0)
+
+variable (hX 𝔬 L) in
+/-- The degree-`n` term of the Morse complex is the module of families vanishing away from the
+critical points of index `-n`, as a linear equivalence. -/
+noncomputable def twistedMorseCochainComplexXEquiv (n : ℤ) :
+    (hX.twistedMorseCochainComplex 𝔬 L hf h).X n ≃ₗ[R]
+      Submodule.pi univ fun p : criticalPoints 𝓘(ℝ, E) f ↦
+        trivialGrading R (L.obj (FundamentalGroupoid.mk (p : M)))
+          (n + (manifoldMorseIndex 𝓘(ℝ, E) f p : ℤ)) :=
+  gradedCochainComplexXEquiv n
+
+/-- An element of the term of degree `n` of the Morse complex vanishes at every critical point of
+index other than `-n`. -/
+theorem twistedMorseCochainComplexXEquiv_apply_eq_zero {n : ℤ}
+    (c : (hX.twistedMorseCochainComplex 𝔬 L hf h).X n) {p : criticalPoints 𝓘(ℝ, E) f}
+    (hp : n + (manifoldMorseIndex 𝓘(ℝ, E) f p : ℤ) ≠ 0) :
+    (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n c : (p : criticalPoints 𝓘(ℝ, E) f) →
+      L.obj (FundamentalGroupoid.mk (p : M))) p = 0 := by
+  have hc := (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n c).property
+  simp only [Submodule.mem_pi, mem_univ, true_implies, mem_trivialGrading_iff] at hc
+  exact (hc p).resolve_left hp
+
+/-- Under `twistedMorseCochainComplexXEquiv`, the differential of the Morse complex is the twisted
+Morse boundary. -/
+theorem twistedMorseCochainComplexXEquiv_d (n : ℤ)
+    (c : (hX.twistedMorseCochainComplex 𝔬 L hf h).X n) :
+    (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h (n + 1)
+        (((hX.twistedMorseCochainComplex 𝔬 L hf h).d n (n + 1)).hom c) :
+          (p : criticalPoints 𝓘(ℝ, E) f) → L.obj (FundamentalGroupoid.mk (p : M))) =
+      hX.twistedMorseBoundary 𝔬 L hf (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n c) :=
+  gradedCochainComplexXEquiv_d n c
+
+/-- The differential of the Morse complex between any two consecutive degrees is the twisted Morse
+boundary, under `twistedMorseCochainComplexXEquiv`. -/
+theorem twistedMorseCochainComplexXEquiv_d_of_add_one_eq {p q : ℤ} (hpq : p + 1 = q)
+    (c : (hX.twistedMorseCochainComplex 𝔬 L hf h).X p) :
+    (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h q
+        (((hX.twistedMorseCochainComplex 𝔬 L hf h).d p q).hom c) :
+          (p : criticalPoints 𝓘(ℝ, E) f) → L.obj (FundamentalGroupoid.mk (p : M))) =
+      hX.twistedMorseBoundary 𝔬 L hf (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h p c) :=
+  gradedCochainComplexXEquiv_d_of_add_one_eq hpq c
+
+/-- Two cochain maps into the Morse complex with coefficients in `L` agree when they agree on
+families, under `twistedMorseCochainComplexXEquiv`. -/
+theorem twistedMorseCochainComplex_hom_ext {C : CochainComplex (ModuleCat R) ℤ}
+    {φ ψ : C ⟶ hX.twistedMorseCochainComplex 𝔬 L hf h}
+    (hφψ : ∀ n (x : C.X n),
+      (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n ((φ.f n).hom x) :
+          (p : criticalPoints 𝓘(ℝ, E) f) → L.obj (FundamentalGroupoid.mk (p : M))) =
+        hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n ((ψ.f n).hom x)) : φ = ψ := by
+  ext n x
+  exact (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n).injective (Subtype.ext (hφψ n x))
 
 end IsAdaptedPseudoGradient
 
