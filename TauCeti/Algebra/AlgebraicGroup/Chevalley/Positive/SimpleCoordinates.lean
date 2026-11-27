@@ -149,24 +149,28 @@ private theorem collect_punctured_G2 {ht : G2.Valid} (D : ChevalleyDatum G2 ht)
   have hcomm (α) (_ : α ∈ S) (β) (_ : β ∈ S) (hne : α ≠ β) :
       ⁅(X α).range, (X β).range⁆ ≤
         ⨆ γ ∈ {γ ∈ S | max α.val.val β.val.val < γ.val.val}, (X γ).range := by
-    let a : Fin 6 := ⟨α.val.val, (mem_posRoots_rational_g2_iff ht _).mp α.property⟩
-    let b : Fin 6 := ⟨β.val.val, (mem_posRoots_rational_g2_iff ht _).mp β.property⟩
-    have hab : a ≠ b := fun h => hne (Subtype.ext (Fin.ext (congrArg (fun x : Fin 6 => x.val) h)))
-    refine (commutator_range_chevalleyRootSubgroup_g2_le D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator A a b hab).trans
-      (iSup₂_le fun k hk => ?_)
+    let a := g2PositiveRootEquiv ht α
+    let b := g2PositiveRootEquiv ht β
+    have hab : a ≠ b := (g2PositiveRootEquiv ht).injective.ne hne
+    have hbound := commutator_range_chevalleyRootSubgroup_g2_le D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator A a b hab
+    rw [castAdd_g2PositiveRootEquiv, castAdd_g2PositiveRootEquiv] at hbound
+    refine hbound.trans (iSup₂_le fun k hk => ?_)
+    have hk' : max α.val.val β.val.val < k.val := by
+      simpa only [Fin.lt_def, Fin.val_max, a, b, g2PositiveRootEquiv_apply_val] using hk
     let γ : {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)} :=
       ⟨Fin.castAdd 6 k, (mem_posRoots_rational_g2_iff ht _).mpr k.isLt⟩
     have hγ : γ ≠ pin i := by
       intro heq
       have heq' := congrArg (fun x => x.val.val) heq
       have hi : i.val < 2 := i.isLt
-      have hlt : max a.val b.val < k.val := hk
-      have hne' : a.val ≠ b.val := Fin.val_injective.ne hab
+      have hne' : α.val.val ≠ β.val.val := by
+        simpa only [a, b, g2PositiveRootEquiv_apply_val] using Fin.val_injective.ne hab
       simp only [γ, pin, val_simpleIndex, Fin.val_castAdd] at heq'
       omega
     exact le_iSup_of_le γ (le_iSup_of_le
-      (Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨hγ, Finset.mem_univ _⟩, hk⟩) le_rfl)
+      (Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨hγ, Finset.mem_univ _⟩, by
+        simpa only [γ, Fin.val_castAdd] using hk'⟩) le_rfl)
   exact collect_punctured_of_commutator_bound D A i _ hcomm l hl hall g hg
 
 private theorem collect_punctured (A : Type v) [CommRing A] (i : Fin t.rank)
@@ -285,18 +289,17 @@ private theorem simpleQuotientMap_bijective (A : Type v) [CommRing A] (i : Fin t
     apply (D.rootSubgroupPoints_simpleIndex_mem_puncturedPositivePoints_iff A i u).mp
     have hq := MonoidHom.mem_ker.mp hu
     rw [simpleQuotientMap_apply] at hq
-    exact (QuotientGroup.eq_one_iff
-      (N := (D.puncturedPositivePoints A i).subgroupOf (D.positivePoints A))
-      ⟨D.rootSubgroupPoints (t.simpleIndex ht i) A u,
-        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩).mp hq
+    rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hq
+    exact hq
   · intro q
     obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective _ q
     obtain ⟨v, hv, u, h⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints A i g).mp
       g.property
     refine ⟨u, ?_⟩
     have hv' : (QuotientGroup.mk' ((D.puncturedPositivePoints A i).subgroupOf
-        (D.positivePoints A))) ⟨v, D.puncturedPositivePoints_le_positivePoints A i hv⟩ = 1 :=
-      (QuotientGroup.eq_one_iff _).mpr hv
+        (D.positivePoints A))) ⟨v, D.puncturedPositivePoints_le_positivePoints A i hv⟩ = 1 := by
+      rw [QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
+      exact hv
     have hg := lift_punctured_simple_factorization D A i g v hv u h
     rw [hg, map_mul, hv', one_mul, simpleQuotientMap_apply,
       positiveRootHom_pin_apply, QuotientGroup.mk'_apply]
@@ -367,6 +370,14 @@ theorem simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex
         D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩) = u := by
   rw [map_mul, (D.simpleRootCoordinate_eq_one_iff A i v).mpr hv, one_mul]
   exact D.simpleRootCoordinate_simpleIndex A i u
+
+private theorem simpleRootCoordinate_of_factorization (A : Type v) [CommRing A]
+    (i : Fin t.rank) (g : D.positivePoints A) (v : D.points A)
+    (hv : v ∈ D.puncturedPositivePoints A i) (u : Multiplicative A)
+    (h : (g : D.points A) = v * D.rootSubgroupPoints (t.simpleIndex ht i) A u) :
+    D.simpleRootCoordinate A i g = u := by
+  rw [lift_punctured_simple_factorization D A i g v hv u h, positiveRootHom_pin_apply]
+  exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i _ hv u
 
 /-- The coordinate vanishes on every other positive root group. -/
 @[simp]
@@ -440,14 +451,10 @@ theorem existsUnique_puncturedPositivePoints_mul_rootSubgroupPoints_simpleIndex
       (g : D.points A) = p.1 * D.rootSubgroupPoints (t.simpleIndex ht i) A p.2 := by
   obtain ⟨v, hv, u, h⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints A i g).mp
     g.property
-  have coord (w : D.puncturedPositivePoints A i) (a : Multiplicative A)
-      (hw : (g : D.points A) = w * D.rootSubgroupPoints (t.simpleIndex ht i) A a) :
-      D.simpleRootCoordinate A i g = a := by
-    have hg := lift_punctured_simple_factorization D A i g w w.property a hw
-    rw [hg, positiveRootHom_pin_apply]
-    exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i _ w.property a
   refine ⟨(⟨v, hv⟩, u), h, fun p hp => ?_⟩
-  have hu : p.2 = u := (coord p.1 p.2 hp).symm.trans (coord ⟨v, hv⟩ u h)
+  have hu : p.2 = u :=
+    (simpleRootCoordinate_of_factorization D A i g p.1 p.1.property p.2 hp).symm.trans
+      (simpleRootCoordinate_of_factorization D A i g v hv u h)
   apply Prod.ext _ hu
   apply Subtype.ext
   apply mul_right_cancel (b := D.rootSubgroupPoints (t.simpleIndex ht i) A u)
@@ -476,11 +483,7 @@ theorem simpleRootCoordinate_torusPoints_conj (A : Type v) [CommRing A] (i : Fin
         (D.simpleRootCoordinate A i g).toAdd) := by
   obtain ⟨v, hv, u, h⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints A i g).mp
     g.property
-  let v' : D.positivePoints A := ⟨v, D.puncturedPositivePoints_le_positivePoints A i hv⟩
-  have hg := lift_punctured_simple_factorization D A i g v hv u h
-  have hcoord : D.simpleRootCoordinate A i g = u := by
-    rw [hg, positiveRootHom_pin_apply]
-    exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i v' hv u
+  have hcoord := simpleRootCoordinate_of_factorization D A i g v hv u h
   have hvconj := (Subgroup.mem_normalizer_iff.mp
     (D.range_torusPoints_le_normalizer_puncturedPositivePoints A i ⟨s, rfl⟩) v).mp hv
   let w : D.positivePoints A := ⟨D.torusPoints A s * v * (D.torusPoints A s)⁻¹,
