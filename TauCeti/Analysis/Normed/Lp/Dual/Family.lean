@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Lp.Dual
 public import Mathlib.Analysis.Normed.Operator.Mul
 import TauCeti.Analysis.Normed.Lp.MapCLM
-import Mathlib.Topology.Order.IsLUB
+import TauCeti.Analysis.Normed.Operator.Norming
 
 /-!
 # Duality for dependent ℓᵖ sums
@@ -36,7 +36,7 @@ public section
 
 noncomputable section
 
-open Filter Metric
+open Filter
 open scoped ENNReal Topology
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] {E : ι → Type*}
@@ -62,17 +62,7 @@ theorem sum_norm_comp_lp_single_rpow_le (hp : p ≠ ∞)
     ∑ i ∈ s, ‖f.comp (lp.singleContinuousLinearMap 𝕜 E q i)‖ ^ p.toReal ≤
       ‖f‖ ^ p.toReal := by
   let L i := f.comp (lp.singleContinuousLinearMap 𝕜 E q i)
-  have hex i : ∃ v : ℕ → E i, (∀ n, ‖v n‖ ≤ 1) ∧
-      Tendsto (fun n ↦ ‖L i (v n)‖) atTop (𝓝 ‖L i‖) := by
-    obtain ⟨a, -, ha, hamem⟩ := exists_seq_tendsto_sSup
-      ((nonempty_closedBall.mpr zero_le_one).image (fun x ↦ ‖L i x‖))
-      ⟨‖L i‖, by
-        rintro _ ⟨x, hx, rfl⟩
-        exact (L i).unit_le_opNorm x (mem_closedBall_zero_iff.mp hx)⟩
-    choose v hv hav using hamem
-    refine ⟨v, fun n ↦ mem_closedBall_zero_iff.mp (hv n), ?_⟩
-    simpa only [hav, (L i).sSup_unitClosedBall_eq_norm] using ha
-  choose v hv hlim using hex
+  choose v hv hlim using fun i ↦ (L i).exists_seq_norm_apply_tendsto_opNorm
   have hbound n : ∑ i ∈ s, ‖L i (v i n)‖ ^ p.toReal ≤ ‖f‖ ^ p.toReal := by
     let T := lp.mapCLM q (fun i ↦ ContinuousLinearMap.toSpanSingleton 𝕜 (v i n))
       zero_le_one (fun i ↦ by simpa using hv i n)
