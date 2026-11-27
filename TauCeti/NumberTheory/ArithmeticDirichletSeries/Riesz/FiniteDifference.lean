@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Complex.Basic
 
@@ -14,7 +15,8 @@ import TauCeti.Analysis.Complex.Basic
 
 A forward difference recovers the sum of `a(n)/n` up to the original cutoff, with an error
 supported only on the integers between the two cutoffs. This separates the removal of Riesz
-smoothing from the analytic estimate for the smoothed sum.
+smoothing from the analytic estimate for the smoothed sum. If the new coefficients are bounded,
+the forward difference quotient recovers the sharp sum with an error per crossed integer.
 -/
 
 public section
@@ -59,5 +61,39 @@ theorem norm_rieszSum_sub_sub_mul_sum_div_le (a : ℕ → ℂ) {z y : ℝ} (hzy 
       rw [sub_div, sub_le_sub_iff_left]
       exact (div_le_one hn₀).mpr h₁.le
     _ = _ := by ring
+
+/-- A forward difference quotient of a first Riesz sum recovers the inclusive sharp sum up to
+an error of at most `M / z` per crossed integer, if those coefficients have norm at most `M`.
+No bound is needed on the coefficients at or below the starting cutoff. -/
+theorem norm_rieszSum_sub_div_sub_sum_div_le (a : ℕ → ℂ) {z y M : ℝ}
+    (hz : 0 < z) (hzy : z < y) (hM : ∀ n ∈ Ioc ⌊z⌋₊ ⌊y⌋₊, ‖a n‖ ≤ M) :
+    ‖(rieszSum a y - rieszSum a z) / ((y - z : ℝ) : ℂ) -
+        ∑ n ∈ Icc 1 ⌊z⌋₊, a n / n‖ ≤ ((Ioc ⌊z⌋₊ ⌊y⌋₊).card : ℝ) * (M / z) := by
+  have hstep : 0 < y - z := sub_pos.mpr hzy
+  have hstep₀ : ((y - z : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hstep.ne'
+  rw [rieszSum_sub_eq_mul_sum_div_add_sum_Ioc a hzy.le, add_div,
+    mul_div_cancel_left₀ _ hstep₀, add_sub_cancel_left, sum_div]
+  refine (norm_sum_le _ _).trans ?_
+  rw [← nsmul_eq_mul, ← sum_const]
+  refine sum_le_sum fun n hn ↦ ?_
+  obtain ⟨hnz, hny⟩ := mem_Ioc.mp hn
+  have hn0 : n ≠ 0 := by omega
+  have hzn : z < n := (Nat.floor_lt' hn0).mp hnz
+  have hny' : (n : ℝ) ≤ y := (Nat.le_floor_iff' hn0).mp hny
+  have hratio : 0 ≤ y / (n : ℝ) - 1 := sub_nonneg.mpr ((one_le_div (hz.trans hzn)).mpr hny')
+  have hcast : (y : ℂ) / n - 1 = ((y / n - 1 : ℝ) : ℂ) := by push_cast; ring
+  rw [hcast]
+  simp only [norm_div, norm_mul, Complex.norm_real, Real.norm_of_nonneg hratio,
+    Real.norm_of_nonneg hstep.le]
+  calc
+    ‖a n‖ * (y / n - 1) / (y - z) ≤ M * (y / n - 1) / (y - z) := by gcongr; exact hM n hn
+    _ ≤ M / z := by
+      rw [mul_div_assoc, ← mul_one_div M z]
+      refine mul_le_mul_of_nonneg_left ?_ ((norm_nonneg _).trans (hM n hn))
+      calc
+        (y / n - 1) / (y - z) = (y - n) / (y - z) / n := by field_simp
+        _ ≤ 1 / z := by
+          gcongr
+          exact (div_le_one hstep).mpr (by linarith)
 
 end TauCeti
