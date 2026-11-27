@@ -21,7 +21,9 @@ smooth on `s` (`TauCeti.contDiffOn_comp_graph`). The slices `(x, y) ↦ H ((p, x
 family `H` on `(P × E) × G` at a fixed parameter `p` are `Cⁿ`
 (`TauCeti.contDiff_comp_prodMap_prodMk_right`), and so are the uncurried slices `uncurry (H p)`
 of a curried family `(p, x, y) ↦ H p x y` that is `Cⁿ` on `P × E × G`
-(`TauCeti.contDiff_uncurry_apply`).
+(`TauCeti.contDiff_uncurry_apply`). A map that the slices `f p` of a jointly `Cⁿ` family equal
+eventually along a nontrivial filter is `Cⁿ`
+(`TauCeti.contDiff_of_contDiff_uncurry_of_eventually_eq`).
 
 A slice `f p` of a family `f : P → E → X` that is jointly `C^n` at `(p, x)` is `C^n` at `x`
 (`ContDiffAt.uncurry_left`).
@@ -93,6 +95,15 @@ theorem contDiff_uncurry_apply {P : Type*} [NormedAddCommGroup P] [NormedSpace �
     simp only [Function.uncurry_def, Function.comp_apply]
   rw [heq]
   exact hH.comp (contDiff_prodMk_right p)
+
+/-- **An eventual slice of a jointly smooth family is smooth**: if `(p, x) ↦ f p x` is `Cⁿ` and
+`f p = g` for `p` eventually along a nontrivial filter, then `g` is `Cⁿ`. For instance, the end
+Hamiltonian of a jointly `C²` family that is constant near `±∞` is `C²`. -/
+theorem contDiff_of_contDiff_uncurry_of_eventually_eq {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace 𝕜 P] {f : P → E → F} {g : E → F} {l : Filter P} [l.NeBot]
+    (hf : ContDiff 𝕜 n (Function.uncurry f)) (hl : ∀ᶠ p in l, f p = g) : ContDiff 𝕜 n g := by
+  obtain ⟨p, rfl⟩ := hl.exists
+  exact hf.comp (contDiff_prodMk_right p)
 
 end TauCeti
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
@@ -206,6 +207,14 @@ theorem heckeLFunctionC_toPrimitiveRayClassCharacter_eventuallyEq (ψ : Primitiv
   rw [heckeLFunctionC_toPrimitiveRayClassCharacter]
   exact ψ.character.meromorphic_LFunction.meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE
     (Set.mem_univ s)
+
+/-- A Dirichlet L-function and the Hecke L-function of the corresponding rational ray class
+character have the same zeros right of any line. -/
+@[simp] theorem zeroFreeRightOf_heckeLFunctionC_toPrimitiveRayClassCharacter_iff
+    (ψ : PrimitiveDirichletCharacter) (σ : ℝ) :
+    ZeroFreeRightOf σ (heckeLFunctionC (toPrimitiveRayClassCharacter ψ).character) ↔
+      ZeroFreeRightOf σ ψ.character.LFunction :=
+  zeroFreeRightOf_congr fun s _ ↦ ψ.heckeLFunctionC_toPrimitiveRayClassCharacter_eventuallyEq s
 
 /-- The corresponding continued L-functions agree wherever the Dirichlet L-function is analytic. -/
 theorem heckeLFunctionC_toPrimitiveRayClassCharacter_apply (ψ : PrimitiveDirichletCharacter)

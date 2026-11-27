@@ -50,7 +50,7 @@ determinant line bundle `TauCeti.DetBundle`). It has the following first propert
   section of `det E` (`TauCeti.firstChernClass_eq_zero_of_linearIndependent`); in particular it
   vanishes for a trivial bundle (`TauCeti.firstChernClass_trivial`) and in rank zero
   (`TauCeti.firstChernClass_eq_zero_of_finrank_eq_zero`), where `det E = ⋀⁰ E` is spanned by the
-  empty wedge.
+  empty wedge, and over the empty base (`TauCeti.firstChernClass_eq_zero_of_isEmpty`).
 
 ## Implementation notes
 
@@ -223,6 +223,12 @@ theorem firstChernClass_eq_zero_of_finrank_eq_zero (hF : finrank ℂ F = 0) :
   have : IsEmpty (Fin (finrank ℂ F)) := hF ▸ Fin.isEmpty'
   exact firstChernClass_eq_zero_of_linearIndependent (s := isEmptyElim) isEmptyElim
     fun _ ↦ linearIndependent_empty_type
+
+/-- **The first Chern class of a complex vector bundle over the empty base vanishes**: any family
+of sections is vacuously a global frame. -/
+theorem firstChernClass_eq_zero_of_isEmpty [IsEmpty B] : firstChernClass F E = 0 :=
+  firstChernClass_eq_zero_of_linearIndependent (s := fun _ ↦ isEmptyElim)
+    (fun _ ↦ continuous_of_discreteTopology) isEmptyElim
 
 variable (B) in
 /-- **The first Chern class of a trivial complex vector bundle vanishes**: the constant sections
