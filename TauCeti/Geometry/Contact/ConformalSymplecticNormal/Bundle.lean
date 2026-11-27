@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Contact.ConformalSymplecticNormal
 public import TauCeti.Geometry.Contact.Levi
 public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 public import TauCeti.Geometry.Manifold.VectorBundle.ConstantRank
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Quotient
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Subbundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
