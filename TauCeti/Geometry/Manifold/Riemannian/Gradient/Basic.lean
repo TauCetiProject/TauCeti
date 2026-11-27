@@ -236,6 +236,18 @@ theorem mgradient_neg : mgradient I (-f) x = -mgradient I f x := by
   rw [mgradient, mgradient, mvfderiv_neg]
   exact (rieszDual (I := I) x).toLinearEquiv.map_neg _
 
+/-- The gradient of `a - f` is the opposite of the gradient of `f`. -/
+@[simp]
+theorem mgradient_const_sub (a : ℝ) : mgradient I (fun y ↦ a - f y) x = -mgradient I f x := by
+  rw [← mgradient_neg, mgradient, mgradient, mvfderiv_neg]
+  congr 1
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
+  · rw [mvfderiv_fun_sub mdifferentiableAt_const hf, mvfderiv_const, zero_sub]
+  · have hf' : ¬MDifferentiableAt I 𝓘(ℝ) (fun y ↦ a - f y) x := fun h ↦
+      hf (by simpa [Pi.sub_def] using (mdifferentiableAt_const (c := a)).sub h)
+    simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt hf']
+
 /-- **Reversing time in a negative gradient trajectory.** If `γ` is an integral curve of `-grad f`,
 then `t ↦ γ (-t)` is an integral curve of `-grad (-f)`. -/
 theorem _root_.IsMIntegralCurve.comp_neg_neg_mgradient {γ : ℝ → M}
