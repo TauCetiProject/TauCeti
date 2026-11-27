@@ -75,26 +75,15 @@ theorem stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece_iff (g : ℤ ×
       y ∈ bigradedUnblockedHomologyPiece
         ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
           (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R g := by
-  let G' : OddComponentGridDiagram (n + 1) := ⟨G.val.stabilizeX s.castSucc
-    (G.val.X s).castSucc s, (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩
-  have he : LinearMap.IsHomogeneous (G.val.stabilizeXHomologyEquiv s R).toLinearMap
-      (G'.bigradedUnblockedHomologyGrading R).piece
-      (G.bigradedUnblockedHomologyGrading R).piece 0 := by
-    rw [LinearMap.isHomogeneous_def]
-    intro p z hz
-    rw [bigradedUnblockedHomologyGrading_piece] at hz
-    simpa only [add_zero, bigradedUnblockedHomologyGrading_piece,
-      LinearEquiv.coe_coe, GridDiagram.stabilizeXHomologyEquiv_apply] using
-      G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece s R hz
-  constructor
-  · intro hy
-    rw [← bigradedUnblockedHomologyGrading_piece,
-      ← GridDiagram.stabilizeXHomologyEquiv_apply] at hy
-    have h := he.linearEquiv_symm.map_mem hy
-    simpa only [add_zero, bigradedUnblockedHomologyGrading_piece,
-      LinearEquiv.coe_coe, ← GridDiagram.stabilizeXHomologyEquiv_apply,
-      LinearEquiv.symm_apply_apply] using h
-  · exact G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece s R
+  simpa only [GridDiagram.stabilizeXHomologyEquiv_apply] using
+    mem_bigradedUnblockedHomologyPiece_iff_of_linearEquiv
+      ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+        (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩
+      R G (G.val.stabilizeXHomologyEquiv s R)
+      (fun _ _ hy ↦ by
+        simpa only [GridDiagram.stabilizeXHomologyEquiv_apply] using
+          G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece s R hy)
+      g y
 
 /-- The specified stabilization comparison identifies each homogeneous homology piece with the
 piece of the same bidegree in the original grid. -/
@@ -103,13 +92,14 @@ noncomputable def stabilizeXHomologyPieceEquiv (g : ℤ × ℤ) :
       ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
         (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R g ≃ₗ[R]
       G.bigradedUnblockedHomologyPiece R g :=
-  (G.val.stabilizeXHomologyEquiv s R).ofSubmodules _ _ (by
-    ext y
-    rw [Submodule.mem_map_equiv]
-    have h := G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece_iff s R g
-      ((G.val.stabilizeXHomologyEquiv s R).symm y)
-    rw [← GridDiagram.stabilizeXHomologyEquiv_apply, LinearEquiv.apply_symm_apply] at h
-    exact h.symm)
+  bigradedUnblockedHomologyPieceEquivOfMem
+    ⟨G.val.stabilizeX s.castSucc (G.val.X s).castSucc s,
+      (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩
+    R G (G.val.stabilizeXHomologyEquiv s R)
+    (fun _ _ hy ↦ by
+      simpa only [GridDiagram.stabilizeXHomologyEquiv_apply] using
+        G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece s R hy)
+    g
 
 /-- On homogeneous classes, the piece equivalence is the specified homology comparison. -/
 @[simp]
@@ -119,7 +109,7 @@ theorem coe_stabilizeXHomologyPieceEquiv_apply (g : ℤ × ℤ)
         (G.val.componentCount_stabilizeX _ _ _).symm ▸ G.property⟩ R g) :
     (G.stabilizeXHomologyPieceEquiv s R g y : G.val.unblockedHomology R) =
       G.val.stabilizeXHomologyMap s R y := by
-  rw [stabilizeXHomologyPieceEquiv, LinearEquiv.ofSubmodules_apply,
+  rw [stabilizeXHomologyPieceEquiv, coe_bigradedUnblockedHomologyPieceEquivOfMem,
     GridDiagram.stabilizeXHomologyEquiv_apply]
 
 /-- The inverse piece comparison is the inverse of the specified total homology equivalence. -/
@@ -129,7 +119,8 @@ theorem coe_stabilizeXHomologyPieceEquiv_symm_apply (g : ℤ × ℤ)
     ((G.stabilizeXHomologyPieceEquiv s R g).symm y :
         (G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedHomology R) =
       (G.val.stabilizeXHomologyEquiv s R).symm y := by
-  rw [stabilizeXHomologyPieceEquiv, LinearEquiv.ofSubmodules_symm_apply]
+  rw [stabilizeXHomologyPieceEquiv]
+  exact coe_bigradedUnblockedHomologyPieceEquivOfMem_symm _ R G _ _ g y
 
 end OddComponentGridDiagram
 
