@@ -52,6 +52,8 @@ bounded in `H^s` through finitely many fixed cutoffs form a relatively compact s
   costs a constant in every norm in which localized changes of variables are bounded.
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`: changing
   the chart of a reading costs a constant in the `H^{s,p}` norm.
+* `TauCeti.smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz`: a reading through a
+  cutoff is fixed in `H^t` by multiplication by a Schwartz function equal to `1` on its support.
 * `TauCeti.exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz`: the readings
   through a cutoff are fixed in every `H^t` by multiplication by one Schwartz function.
 * `TauCeti.isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_norm_le`:
@@ -176,6 +178,27 @@ theorem exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le
     τ ψ
 
 omit [T2Space M] in
+/-- **Cutoffs equal to one on the support fix a reading.** If a Schwartz function `θ` equals `1` on
+the support of a cutoff `φ` in a chart `e`, then multiplication by `θ` fixes the reading
+`φ · (u ∘ e⁻¹)` of every smooth function `u` on `M` in `H^t(ℝⁿ)`. -/
+theorem smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {θ : 𝓢(CoordinateSpace n, ℂ)}
+    (hθ : EqOn θ 1 (tsupport φ)) (t : ℝ) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    BesselPotentialSpace.smulLeftCLM t θ
+        (SchwartzMap.toBesselPotentialSpaceCLM t 2 (e.cutoffPushforwardSchwartz he φ u)) =
+      SchwartzMap.toBesselPotentialSpaceCLM t 2 (e.cutoffPushforwardSchwartz he φ u) := by
+  refine BesselPotentialSpace.ext ?_
+  rw [BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+    TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
+  congr 1
+  ext y
+  rw [SchwartzMap.smulLeftCLM_apply_apply θ.hasTemperateGrowth, cutoffPushforwardSchwartz_apply]
+  by_cases hy : φ y = 0
+  · simp [hy]
+  · rw [hθ (subset_tsupport _ hy), Pi.one_apply, one_smul]
+
+omit [T2Space M] in
 /-- **A reading is fixed by a Schwartz cutoff.** For a cutoff `φ` in a chart `e`, there is a
 Schwartz function `χ`, independent of the function `u` on `M` and of `t`, such that multiplication
 by `χ` fixes the reading `φ · (u ∘ e⁻¹)` in every `H^t`. (The proof takes `χ` equal to `1` near the
@@ -192,16 +215,8 @@ theorem exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz
   obtain ⟨χ, hχ⟩ : ∃ χ : 𝓢(CoordinateSpace n, ℂ), ∀ y, χ y = θ y :=
     ⟨(θ.hasCompactSupport.comp_left Complex.ofReal_zero).toSchwartzMap
       (Complex.ofRealCLM.contDiff.comp θ.contDiff), HasCompactSupport.toSchwartzMap_toFun _ _⟩
-  refine ⟨χ, fun t u ↦ BesselPotentialSpace.ext ?_⟩
-  rw [BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
-    TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
-  congr 1
-  ext y
-  rw [SchwartzMap.smulLeftCLM_apply_apply χ.hasTemperateGrowth, cutoffPushforwardSchwartz_apply,
-    hχ]
-  by_cases hy : y ∈ tsupport φ
-  · simp [hθ.self_of_nhdsSet y hy]
-  · simp [image_eq_zero_of_notMem_tsupport hy]
+  exact ⟨χ, smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz he
+    fun y hy ↦ by simp [hχ, hθ.self_of_nhdsSet y hy]⟩
 
 omit [T2Space M] in
 /-- **Rellich's theorem for chart readings.** Let `φⱼ` be cutoffs in charts `eⱼ` and `gⱼ u` smooth

@@ -221,7 +221,8 @@ def chartSobolevSpaceZeroEquivLp (hμ : HasSmoothPositiveDensity (CoordinateSpac
     (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) :
     chartSobolevSpace he ψ 0 ≃L[ℂ] Lp ℂ 2 μ :=
   (LinearEquiv.refl ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯).extend
-    (toChartSobolevSpace he ψ 0) (ContMDiffMap.toL2 μ) (denseRange_toChartSobolevSpace he ψ 0)
+    (toChartSobolevSpace he ψ 0) (ContMDiffMap.toL2 μ)
+    (chartReading he ψ 0).denseRange_toRangeClosure
     (by simpa using exists_norm_toLp_le_norm_chartReading_zero he ψ hμ hψ)
     (ContMDiffMap.denseRange_toL2 μ)
     (by simpa using exists_norm_chartReading_zero_le_norm_toLp he ψ hμ)
