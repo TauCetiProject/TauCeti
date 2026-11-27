@@ -23,7 +23,8 @@ pair `(y, y')`, with uniqueness of solutions with given initial jet.
 
 For the second-order equation `P w'' + Q w' + R w = 0` on a preconnected open set `U ⊆ ℂ`, whose
 leading coefficient `P` is nonzero on a dense subset of `U`, the Wronskians of any two solutions
-satisfy Abel's identity there, so they are proportional. Hence two solutions whose Wronskian is
+satisfy Abel's identity there. Hence the Wronskian of any two solutions is a constant multiple of
+any reference Wronskian that is nonzero at some point of `U`, and two solutions whose Wronskian is
 nonzero at one point of `U` span all solutions on `U`
 (`IsOpen.exists_eq_mul_add_mul_of_secondOrderLinearEquation`). The zeros of `P`, such as the
 singular points `0` and `1` of the hypergeometric equation, may lie in `U`.
@@ -185,24 +186,23 @@ theorem _root_.IsOpen.exists_eq_mul_add_mul_of_secondOrderLinearEquation {U S : 
       (hP z hz) ((hg₁.deriv hU).differentiableAt (hU.mem_nhds hz.1))
       (hg₂.differentiableAt (hU.mem_nhds hz.1))
       ((hg₂.deriv hU).differentiableAt (hU.mem_nhds hz.1)) (hg₁' z hz) (hg₂' z hz)
-  have hW₁₂ := (hf₁.mul (hf₂.deriv hU)).sub ((hf₁.deriv hU).mul hf₂)
+  have hW₁₂ := (hf₁.fun_mul (hf₂.deriv hU)).fun_sub ((hf₁.deriv hU).fun_mul hf₂)
   have hratio {g₁ g₂ : ℂ → ℂ} (hg₁ : DifferentiableOn ℂ g₁ U) (hg₂ : DifferentiableOn ℂ g₂ U)
       (hg₁' : ∀ z ∈ U ∩ S, P z * deriv (deriv g₁) z + Q z * deriv g₁ z + R z * g₁ z = 0)
       (hg₂' : ∀ z ∈ U ∩ S, P z * deriv (deriv g₂) z + Q z * deriv g₂ z + R z * g₂ z = 0) :
       ∃ K : ℂ, ∀ z ∈ U, g₁ z * deriv g₂ z - deriv g₁ z * g₂ z =
         K * (f₁ z * deriv f₂ z - deriv f₁ z * f₂ z) :=
     hU.exists_eq_const_mul_of_hasDerivAt_mul hUc hS
-      ((hg₁.mul (hg₂.deriv hU)).sub ((hg₁.deriv hU).mul hg₂)) hW₁₂ hz₀ hW
+      ((hg₁.fun_mul (hg₂.deriv hU)).fun_sub ((hg₁.deriv hU).fun_mul hg₂)) hW₁₂ hz₀ hW
       (habel hg₁ hg₂ hg₁' hg₂') (habel hf₁ hf₂ hf₁' hf₂')
   obtain ⟨A, hA⟩ := hratio hw hf₂ hw' hf₂'
   obtain ⟨B, hB⟩ := hratio hf₁ hw hf₁' hw'
   -- `𝒲{f₁, f₂} w = 𝒲{f₁, f₂} (A f₁ + B f₂)` on `U`, so `w = A f₁ + B f₂` near `z₀`, where
   -- `𝒲{f₁, f₂}` has no zero; the identity theorem extends this to `U`.
   refine ⟨A, B, fun z hz ↦ (hw.analyticOnNhd hU).eqOn_of_preconnected_of_eventuallyEq
-    (((hf₁.const_mul A).add (hf₂.const_mul B)).analyticOnNhd hU) hUc hz₀ ?_ hz⟩
+    (((hf₁.const_mul A).fun_add (hf₂.const_mul B)).analyticOnNhd hU) hUc hz₀ ?_ hz⟩
   filter_upwards [((hW₁₂.differentiableAt (hU.mem_nhds hz₀)).continuousAt).eventually_ne hW,
     hU.mem_nhds hz₀] with z hWz hz
-  simp only [Pi.sub_apply, Pi.mul_apply, Pi.add_apply] at hWz ⊢
   apply mul_right_cancel₀ hWz
   linear_combination f₁ z * hA z hz + f₂ z * hB z hz
 

@@ -110,7 +110,7 @@ theorem _root_.IsOpen.exists_wronskian_eq_mul_cpow_mul_one_sub_cpow_of_hypergeom
   -- The power product is nonzero at `z₀`, and both sides satisfy `y′ = −p y` on `U`.
   obtain ⟨C, hC⟩ := hU.exists_eq_const_mul_of_hasDerivAt_mul hUc dense_univ
     (p := fun z => -((c - (a + b + 1) * z) / (z * (1 - z))))
-    (((hf.mul (hg.deriv hU)).sub ((hf.deriv hU).mul hg)))
+    ((hf.fun_mul (hg.deriv hU)).fun_sub ((hf.deriv hU).fun_mul hg))
     (v := fun z => z ^ (-c) * (1 - z) ^ (c - a - b - 1))
     (fun z hz => ((hasDerivAt_cpow_mul_one_sub_cpow (a := a) (b := b) (c := c) (hUs z hz).1
       (hUs z hz).2).differentiableAt.differentiableWithinAt)) hz₀

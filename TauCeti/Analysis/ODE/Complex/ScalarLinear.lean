@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
-# Proportional solutions of holomorphic first-order linear equations
+# Proportionality of holomorphic solutions of first-order linear equations
 
 Two holomorphic functions `u`, `v` on a preconnected open set `U ⊆ ℂ` that satisfy the same
 equation `y' = p y` on a dense subset of `U`, with `v` nonzero at one point of `U`, are
