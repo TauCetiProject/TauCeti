@@ -31,9 +31,10 @@ coordinates of `m ω₁ + n ω₂` in `PeriodPair.latticeBasis` are `m` and `n`
 At positive level `N`, the division point `(m ω₁ + n ω₂) / N` lies in the lattice exactly when
 `m` and `n` vanish modulo `N` (`PeriodPair.div_mem_lattice_iff_intCast_eq_zero`); for a residue
 pair `a : (ℤ/Nℤ)²` this says that its division point is a period only for `a = 0`
-(`PeriodPair.val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff`). At level two this shows that
-`ℂ / Λ` has exactly three points of order two: given three distinct ones `t`, `t'`, `t - t'`,
-every half-period is congruent to `0`, `t`, `t'` or `t - t'`
+(`PeriodPair.val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff`); at level `2`, `(m ω₁ + n ω₂) / 2` is
+a period exactly when `m` and `n` are even (`PeriodPair.div_two_mem_lattice_iff`). At level two
+this also shows that `ℂ / Λ` has exactly three points of order two: given three distinct ones `t`,
+`t'`, `t - t'`, every half-period is congruent to `0`, `t`, `t'` or `t - t'`
 (`PeriodPair.mem_lattice_or_sub_mem_lattice_of_two_mul_mem`).
 -/
 
@@ -141,6 +142,14 @@ theorem val_mul_ω₁_add_val_mul_ω₂_div_mem_lattice_iff {N : ℕ} [NeZero N]
   have h := L.div_mem_lattice_iff_intCast_eq_zero (N := N) (m := (a 0).val) (n := (a 1).val)
   simp only [Int.cast_natCast, ZMod.natCast_zmod_val] at h
   rw [h, funext_iff, Fin.forall_fin_two, Pi.zero_apply, Pi.zero_apply]
+
+/-- The division point `(m ω₁ + n ω₂) / 2` lies in the period lattice exactly when `m` and `n` are
+even. -/
+@[simp]
+theorem div_two_mem_lattice_iff (m n : ℤ) :
+    (m * L.ω₁ + n * L.ω₂) / 2 ∈ L.lattice ↔ Even m ∧ Even n := by
+  simpa [ZMod.intCast_zmod_eq_zero_iff_dvd, even_iff_two_dvd] using
+    L.div_mem_lattice_iff_intCast_eq_zero (N := 2) (m := m) (n := n)
 
 /-- **The points of order two of `ℂ / Λ`.** If `t`, `t'` and `t - t'` are half-periods outside
 the lattice, every half-period `x` is congruent modulo the lattice to `0`, `t`, `t'` or
