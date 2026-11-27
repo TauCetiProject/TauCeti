@@ -22,6 +22,8 @@ by the remainder so that they apply to the periodic indexing `m ↦ (m / n, m % 
   `m % n + 1 < n` then `(m + 1) / n = m / n` and `(m + 1) % n = m % n + 1`.
 * `Int.add_one_ediv_of_emod_add_one_eq`, `Int.add_one_emod_of_emod_add_one_eq`: if
   `m % n + 1 = n` then `(m + 1) / n = m / n + 1` (for `n ≠ 0`) and `(m + 1) % n = 0`.
+* `Int.ediv_add_sub_ediv`: the quotient by `N` rises by `0` or `1` when the numerator rises by
+  `d ∈ [0, N]`.
 * `TauCeti.natCast_mul_sub_div`: reflecting `x ↦ T - x` reflects the quotient of `b x` by `T`:
   `⌊b (T - x) / T⌋ = b - 1 - ⌊b x / T⌋` for `x ≤ T` with `T ∤ b x`.
 -/
@@ -53,6 +55,16 @@ theorem add_one_ediv_of_emod_add_one_eq (hn : n ≠ 0) (h : m % n + 1 = n) :
 /-- If the remainder of `m` modulo `n` is the last one, `m + 1` is divisible by `n`. -/
 theorem add_one_emod_of_emod_add_one_eq (h : m % n + 1 = n) : (m + 1) % n = 0 :=
   emod_eq_zero_of_dvd ⟨m / n + 1, by have := emod_add_mul_ediv m n; rw [Int.mul_add]; omega⟩
+
+/-- The quotient by `N` rises by `0` or `1` when the numerator rises by `d ∈ [0, N]`. -/
+theorem ediv_add_sub_ediv {t d N : ℤ} (hd : 0 ≤ d) (hdN : d ≤ N) :
+    (t + d) / N - t / N = 0 ∨ (t + d) / N - t / N = 1 := by
+  rcases eq_or_lt_of_le (hd.trans hdN) with hN | hN
+  · simp [← hN]
+  have h₁ : t / N ≤ (t + d) / N := Int.ediv_le_ediv hN (by omega)
+  have h₂ : (t + d) / N ≤ (t + N) / N := Int.ediv_le_ediv hN (by omega)
+  rw [show t + N = t + 1 * N by ring, Int.add_mul_ediv_right _ _ hN.ne'] at h₂
+  omega
 
 end Int
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Height
+import TauCeti.Data.Int.DivMod
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -62,7 +63,8 @@ each such `(a, b)` is realised by the floor tiling `H(x, y) = ⌊(n₂ a x + n�
 ## References
 
 * R. Kenyon, *Lectures on dimers*, IAS/Park City Math. Ser. 16 (2009), Lemma 4 (the lozenge
-  counts, for `n₁ = n₂`).
+  counts, for `n₁ = n₂`) and Section 5.4 (the floor tilings and the attainable height changes
+  `n₂ a + n₁ b ≤ n₁ n₂`).
 * V. Gorin, *Lectures on random lozenge tilings*, Cambridge Stud. Adv. Math. 193 (2021),
   Section 3.3.
 -/
@@ -172,8 +174,8 @@ theorem tilingHeight_add_mul_sub_fst (v : ℤ × ℤ) (m : ℕ) :
   | zero => simp [Prod.mk_zero_zero]
   | succ m ih =>
     have := h.tilingHeight_add_sub_eq_heightChange_fst (v + ((m : ℤ) * n₁, 0))
-    rw [show v + (((m + 1 : ℕ) : ℤ) * n₁, 0) = v + ((m : ℤ) * n₁, 0) + ((n₁ : ℤ), 0) by
-      ext <;> simp; ring]
+    rw [show v + (((m + 1 : ℕ) : ℤ) * n₁, 0) = v + ((m : ℤ) * n₁, 0) + ((n₁ : ℤ), 0) from
+      Prod.ext (by simp only [Prod.fst_add, Nat.cast_succ]; ring) (by simp)]
     push_cast
     linarith
 
@@ -185,8 +187,8 @@ theorem tilingHeight_add_mul_sub_snd (v : ℤ × ℤ) (m : ℕ) :
   | zero => simp [Prod.mk_zero_zero]
   | succ m ih =>
     have := h.tilingHeight_add_sub_eq_heightChange_snd (v + (0, (m : ℤ) * n₂))
-    rw [show v + (0, ((m + 1 : ℕ) : ℤ) * n₂) = v + (0, (m : ℤ) * n₂) + (0, (n₂ : ℤ)) by
-      ext <;> simp; ring]
+    rw [show v + (0, ((m + 1 : ℕ) : ℤ) * n₂) = v + (0, (m : ℤ) * n₂) + (0, (n₂ : ℤ)) from
+      Prod.ext (by simp) (by simp only [Prod.snd_add, Nat.cast_succ]; ring)]
     push_cast
     linarith
 
@@ -275,38 +277,15 @@ end IsTorusTiling
 
 /-! ### Attainable height changes -/
 
-/-- If `H` rises by the same amount `c` between `u` and `u + w` for every `u`, its tiling is
-invariant under the translation by `w`. -/
-theorem vadd_tilingOfHeight_of_forall {H : ℤ × ℤ → ℤ} {w : ℤ × ℤ} {c : ℤ}
-    (hH : ∀ u, H (u + w) = H u + c) : w +ᵥ tilingOfHeight H = tilingOfHeight H := by
-  ext e
-  rw [Set.mem_vadd_set_iff_neg_vadd_mem, mem_tilingOfHeight, mem_tilingOfHeight,
-    TriEdge.target_vadd, TriEdge.vadd_v]
-  have h₁ := hH (-w + e.target)
-  have h₂ := hH (-w + e.v)
-  simp only [neg_add_cancel_comm] at h₁ h₂
-  have : neutralIncrement (-w +ᵥ e) = neutralIncrement e := by
-    simp [neutralIncrement_def]
-  rw [this]
-  constructor <;> intro h' <;> linarith
-
-/-- The floor height `H(x, y) = ⌊(n₂ a x + n₁ b y) / (n₁ n₂)⌋` realising the height change
-`(a, b)` on the `n₁ × n₂` torus. -/
+/-- The floor height `H(x, y) = ⌊(n₂ a x + n₁ b y) / (n₁ n₂)⌋`, by integer division (so `0` when
+`n₁ n₂ = 0`). For `0 < n₁, n₂` and `n₂ a + n₁ b ≤ n₁ n₂` its tiling is a torus tiling with height
+change `(a, b)` (`isTorusTiling_tilingOfHeight_floorHeight`; Kenyon, *Lectures on dimers*,
+Section 5.4). -/
 def floorHeight (n₁ n₂ a b : ℕ) (v : ℤ × ℤ) : ℤ :=
   ((n₂ * a : ℕ) * v.1 + (n₁ * b : ℕ) * v.2) / (n₁ * n₂ : ℕ)
 
 theorem floorHeight_def (n₁ n₂ a b : ℕ) (v : ℤ × ℤ) : floorHeight n₁ n₂ a b v =
     ((n₂ * a : ℕ) * v.1 + (n₁ * b : ℕ) * v.2) / (n₁ * n₂ : ℕ) := (rfl)
-
-/-- Floor division by `N ≥ 0` rises by `0` or `1` when the numerator rises by `d ∈ [0, N]`. -/
-private theorem ediv_add_sub_ediv {t d N : ℤ} (hd : 0 ≤ d) (hdN : d ≤ N) :
-    (t + d) / N - t / N = 0 ∨ (t + d) / N - t / N = 1 := by
-  rcases eq_or_lt_of_le (hd.trans hdN) with hN | hN
-  · simp [← hN]
-  have h₁ : t / N ≤ (t + d) / N := Int.ediv_le_ediv hN (by linarith)
-  have h₂ : (t + d) / N ≤ (t + N) / N := Int.ediv_le_ediv hN (by linarith)
-  rw [show t + N = t + 1 * N by ring, Int.add_mul_ediv_right _ _ hN.ne'] at h₂
-  omega
 
 variable {a b : ℕ}
 
@@ -322,14 +301,14 @@ theorem isHeightFunction_floorHeight (hab : n₂ * a + n₁ * b ≤ n₁ * n₂)
     latticeDir_one, latticeDir_two, Prod.mk_add_mk, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
   · rw [show ((n₂ * a : ℕ) : ℤ) * (x + 1) + ((n₁ * b : ℕ) : ℤ) * (y + 0) =
       ((n₂ * a : ℕ) : ℤ) * x + ((n₁ * b : ℕ) : ℤ) * y + ((n₂ * a : ℕ) : ℤ) by ring]
-    exact ediv_add_sub_ediv ha (by linarith)
+    exact Int.ediv_add_sub_ediv ha (by linarith)
   · rw [show ((n₂ * a : ℕ) : ℤ) * (x + 0) + ((n₁ * b : ℕ) : ℤ) * (y + 1) =
       ((n₂ * a : ℕ) : ℤ) * x + ((n₁ * b : ℕ) : ℤ) * y + ((n₁ * b : ℕ) : ℤ) by ring]
-    exact ediv_add_sub_ediv hb (by linarith)
+    exact Int.ediv_add_sub_ediv hb (by linarith)
   · rw [show ((n₂ * a : ℕ) : ℤ) * (x + 1) + ((n₁ * b : ℕ) : ℤ) * (y + 1) =
       ((n₂ * a : ℕ) : ℤ) * x + ((n₁ * b : ℕ) : ℤ) * y +
         (((n₂ * a : ℕ) : ℤ) + ((n₁ * b : ℕ) : ℤ)) by ring]
-    exact ediv_add_sub_ediv (by linarith) hN
+    exact Int.ediv_add_sub_ediv (by linarith) hN
 
 @[simp] theorem floorHeight_zero : floorHeight n₁ n₂ a b 0 = 0 := by
   simp [floorHeight_def]
@@ -375,7 +354,8 @@ theorem isTorusTiling_tilingOfHeight_floorHeight (hn₁ : 0 < n₁) (hn₂ : 0 <
   exact Prod.ext (by exact_mod_cast h₁) (by exact_mod_cast h₂)
 
 /-- **Attainable height changes.** For `n₁, n₂ ≥ 1`, `(a, b)` is the height change of a torus
-tiling iff `n₂ a + n₁ b ≤ n₁ n₂`; each is realised by the floor tiling. -/
+tiling iff `n₂ a + n₁ b ≤ n₁ n₂`; each is realised by the floor tiling (Kenyon, *Lectures on
+dimers*, Section 5.4). -/
 theorem exists_isTorusTiling_heightChange_eq_iff (hn₁ : 0 < n₁) (hn₂ : 0 < n₂) :
     (∃ M, IsTorusTiling n₁ n₂ M ∧ heightChange n₁ n₂ M = (a, b)) ↔
       n₂ * a + n₁ * b ≤ n₁ * n₂ := by

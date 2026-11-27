@@ -49,7 +49,9 @@ is a bijection from the height functions vanishing at `0` onto the plane tilings
   `TauCeti.IsHeightFunction.tilingHeight_tilingOfHeight`).
 * `TauCeti.IsTiling.tilingHeight_vadd`: `H_{τ_w M}(v) = H_M(v − w) − H_M(−w)`, and
   `TauCeti.IsTiling.tilingHeight_add_sub_of_vadd_eq`: if `M` is invariant under the translation
-  by `w`, then `H_M(v + w) − H_M(v) = H_M(w)`.
+  by `w`, then `H_M(v + w) − H_M(v) = H_M(w)`; conversely
+  `TauCeti.vadd_tilingOfHeight_of_forall`: if `H(u + w) = H(u) + c` for all `u`, the tiling of `H`
+  is invariant under the translation by `w`.
 * `TauCeti.IsHeightFunction.sub_le_max`, `TauCeti.IsTiling.tilingHeight_sub_le_max`: the Lipschitz
   bound `H(u + (a, b)) − H(u) ≤ max(a, b, 0)`.
 * `TauCeti.IsTiling.tilingHeight_rot`: `H_{ρM}(w) = H_M(ρ⁻¹ w) + w₁`; for height functions,
@@ -335,6 +337,18 @@ theorem IsTiling.tilingHeight_add_sub_of_vadd_eq (h : IsTiling Set.univ M) {w : 
   rw [hw, add_sub_cancel_right] at hv
   rw [hw, sub_self, tilingHeight_zero] at h0
   omega
+
+/-- If `H` rises by the same amount `c` between `u` and `u + w` for every `u`, its tiling is
+invariant under the translation by `w`. -/
+theorem vadd_tilingOfHeight_of_forall {H : ℤ × ℤ → ℤ} {w : ℤ × ℤ} {c : ℤ}
+    (hH : ∀ u, H (u + w) = H u + c) : w +ᵥ tilingOfHeight H = tilingOfHeight H := by
+  ext e
+  rw [Set.mem_vadd_set_iff_neg_vadd_mem, mem_tilingOfHeight, mem_tilingOfHeight,
+    TriEdge.target_vadd, TriEdge.vadd_v, neutralIncrement_vadd]
+  have h₁ := hH (-w + e.target)
+  have h₂ := hH (-w + e.v)
+  simp only [neg_add_cancel_comm] at h₁ h₂
+  constructor <;> intro h' <;> omega
 
 /-! ### The Lipschitz bound -/
 
