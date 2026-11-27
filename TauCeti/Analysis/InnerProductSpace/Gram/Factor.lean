@@ -85,6 +85,10 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
   [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
 
+private theorem norm_toRangeClosure_apply (A : E →L[𝕜] G) (x : E) :
+    ‖(A : E →ₗ[𝕜] G).toRangeClosure x‖ = ‖A x‖ :=
+  LinearMap.norm_toRangeClosure _ x
+
 private theorem orthogonalProjectionOnto_apply_apply (A : E →L[𝕜] G)
     [A.range.topologicalClosure.HasOrthogonalProjection] (x : E) :
     A.range.topologicalClosure.orthogonalProjectionOnto (A x) =
@@ -115,7 +119,7 @@ theorem factorThru_apply_apply (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) (
     T.factorThru A (A x) = T x := by
   rw [factorThru_apply_eq, orthogonalProjectionOnto_apply_apply]
   exact LinearMap.extendOfNorm_eq ((A : E →ₗ[𝕜] G).denseRange_toRangeClosure)
-    (by simpa only [LinearMap.norm_toRangeClosure, coe_coe] using h) x
+    (by simpa only [norm_toRangeClosure_apply, coe_coe] using h) x
 
 /-- Under a norm bound `‖T x‖ ≤ C * ‖A x‖`, the operator `T` factors through `A`. -/
 theorem factorThru_comp (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) : T.factorThru A ∘L A = T := by
@@ -150,7 +154,7 @@ theorem norm_factorThru_le {C : ℝ} (hC : 0 ≤ C) (h : ∀ x, ‖T x‖ ≤ C 
     _ ≤ C * 1 := by
       gcongr
       · exact LinearMap.opNorm_extendOfNorm_le ((A : E →ₗ[𝕜] G).denseRange_toRangeClosure) hC
-          (by simpa only [LinearMap.norm_toRangeClosure, coe_coe] using h)
+          (by simpa only [norm_toRangeClosure_apply, coe_coe] using h)
       · exact Submodule.orthogonalProjectionOnto_norm_le _
     _ = C := mul_one C
 
@@ -222,8 +226,8 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜]
 the range of the factor of `T` through `A` is the closure of the range of `T`. -/
 theorem range_factorThru (h : ∀ x, ‖T x‖ = ‖A x‖) :
     (T.factorThru A).range = T.range.topologicalClosure := by
-  replace h (x : E) : ‖(T : E →ₗ[𝕜] F) x‖ = ‖(A : E →ₗ[𝕜] G).toRangeClosure x‖ := by
-    simpa only [LinearMap.norm_toRangeClosure, coe_coe] using h x
+  replace h (x : E) : ‖(T : E →ₗ[𝕜] F) x‖ = ‖(A : E →ₗ[𝕜] G).toRangeClosure x‖ :=
+    (h x).trans (norm_toRangeClosure_apply A x).symm
   let V := (T : E →ₗ[𝕜] F).extendOfIsometry ((A : E →ₗ[𝕜] G).denseRange_toRangeClosure) h
   have hfactor : (T.factorThru A).toLinearMap = V.toLinearMap.comp
       A.range.topologicalClosure.orthogonalProjectionOnto.toLinearMap := by
@@ -266,8 +270,8 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜]
 back to `A`. -/
 theorem adjoint_factorThru_comp (h : ∀ x, ‖T x‖ = ‖A x‖) : (T.factorThru A)† ∘L T = A := by
   -- The extension of `A x ↦ T x` from the range of `A` to its closure is a linear isometry.
-  replace h (x : E) : ‖(T : E →ₗ[𝕜] F) x‖ = ‖(A : E →ₗ[𝕜] G).toRangeClosure x‖ := by
-    simpa only [LinearMap.norm_toRangeClosure, coe_coe] using h x
+  replace h (x : E) : ‖(T : E →ₗ[𝕜] F) x‖ = ‖(A : E →ₗ[𝕜] G).toRangeClosure x‖ :=
+    (h x).trans (norm_toRangeClosure_apply A x).symm
   let V := (T : E →ₗ[𝕜] F).extendOfIsometry ((A : E →ₗ[𝕜] G).denseRange_toRangeClosure) h
   have hV (k) : (T : E →ₗ[𝕜] F).extendOfNorm ((A : E →ₗ[𝕜] G).toRangeClosure) k = V k :=
     (LinearMap.extendOfIsometry_apply (T : E →ₗ[𝕜] F)

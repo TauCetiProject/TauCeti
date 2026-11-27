@@ -91,16 +91,10 @@ theorem coe_toRangeClosure (u : D) : (R.toRangeClosure u : H) = R u :=
 theorem norm_toRangeClosure (u : D) : ‖R.toRangeClosure u‖ = ‖R u‖ :=
   (rfl)
 
-/-- **The values of `R` are dense** in the closure of its range. This is
-`ContinuousLinearMap.denseRange_codRestrict_topologicalClosure` for `R`, continuous for the
-discrete topology on `D`; density does not depend on the topology of `D`. -/
-theorem denseRange_toRangeClosure : DenseRange R.toRangeClosure :=
-  letI : TopologicalSpace D := ⊥
-  -- The coercion of `⟨R, continuous_bot⟩ : D →L[𝕜] H` to a linear map is `R` itself, and
-  -- `ContinuousLinearMap.codRestrict` is `LinearMap.codRestrict` of that linear map, so the
-  -- corestriction below is `R.codRestrict _ R.apply_mem_rangeClosure = R.toRangeClosure`
-  -- by unfolding definitions only.
-  ContinuousLinearMap.denseRange_codRestrict_topologicalClosure ⟨R, continuous_bot⟩
+/-- **The values of `R` are dense** in the closure of its range. -/
+theorem denseRange_toRangeClosure : DenseRange R.toRangeClosure := by
+  rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
+  exact (Submodule.topologicalClosure_coe _).le
 
 /-- A continuous linear map out of the closure of the range of `R` is determined by its values on
 the elements `R u`. -/
