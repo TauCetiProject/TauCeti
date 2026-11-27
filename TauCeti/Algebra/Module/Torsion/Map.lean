@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
-import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Exact.Ladder
 
 /-!
-# The `r`-torsion of a linear map
+# Linear maps on scalar and ideal torsion
 
 Let `r` be an element of a commutative semiring `R`. A linear map `f : M → N` carries the
 `r`-torsion `M[r] = Submodule.torsionBy R M r` into `N[r]`; its restriction
@@ -26,10 +26,14 @@ surjective and multiplication by `r` is surjective on `M₁`. Hence a surjection
 The connecting map `M₃[r] → M₁ ⧸ rM₁` of a short exact sequence, and the six-term exact sequence
 it completes, are in `TauCeti.Algebra.Module.Torsion.Snake`.
 
+For any ideal `I`, an `R`-linear map also induces an `R ⧸ I`-linear map on the submodules
+annihilated by `I`. For a maximal ideal this gives maps on socles over the residue field.
+
 ## Main definitions
 
 * `TauCeti.torsionByMap`: the restriction `M[r] →ₗ[R] N[r]` of a linear map.
 * `TauCeti.torsionByLinearMap`: `TauCeti.torsionByMap` promoted to an `R ⧸ (r)`-linear map.
+* `LinearMap.torsionByIdeal`: the induced `R ⧸ I`-linear map on `I`-torsion.
 
 ## Main results
 
@@ -157,7 +161,11 @@ theorem surjective_torsionByMap_of_surjective_smul (hfg : Exact f g) (hg : Surje
 
 end Exact
 
+end TauCeti
+
 section QuotientLinear
+
+namespace TauCeti
 
 variable {R : Type*} [CommRing R] (r : R) {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
@@ -185,7 +193,53 @@ theorem torsionByLinearMap_comp (g : M₂ →ₗ[R] M₃) (f : M₁ →ₗ[R] M�
 theorem torsionByLinearMap_zero : torsionByLinearMap r (0 : M₁ →ₗ[R] M₂) = 0 :=
   LinearMap.ext fun _ ↦ rfl
 
+end TauCeti
+
+namespace LinearMap
+
+variable {A M N P : Type*} [CommRing A] [AddCommGroup M] [Module A M]
+  [AddCommGroup N] [Module A N] [AddCommGroup P] [Module A P]
+
+/-- A linear map preserves the submodule annihilated by a set of scalars. -/
+theorem mapsTo_torsionBySet {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) (s : Set R) :
+    Set.MapsTo f (torsionBySet R M s) (torsionBySet R N s) :=
+  fun {_} hx ↦ (mem_torsionBySet_iff _ _).mpr fun a ↦ by
+    rw [← map_smul, (mem_torsionBySet_iff _ _).mp hx a, map_zero]
+
+/-- The restriction of a linear map to the submodules annihilated by an ideal, with scalars
+in the quotient ring. -/
+def torsionByIdeal (f : M →ₗ[A] N) (I : Ideal A) :
+    torsionBySet A M I →ₗ[A ⧸ I] torsionBySet A N I :=
+  extendScalarsOfSurjective Ideal.Quotient.mk_surjective <|
+    f.restrict fun _ hx ↦ f.mapsTo_torsionBySet I hx
+
+@[simp]
+theorem coe_torsionByIdeal_apply (f : M →ₗ[A] N) (I : Ideal A) (x : torsionBySet A M I) :
+    (f.torsionByIdeal I x : N) = f x := (rfl)
+
+@[simp]
+theorem torsionByIdeal_id (I : Ideal A) :
+    (LinearMap.id (R := A) (M := M)).torsionByIdeal I = LinearMap.id :=
+  LinearMap.ext fun _ ↦ rfl
+
+@[simp]
+theorem torsionByIdeal_comp (g : N →ₗ[A] P) (f : M →ₗ[A] N) (I : Ideal A) :
+    (g ∘ₗ f).torsionByIdeal I = g.torsionByIdeal I ∘ₗ f.torsionByIdeal I :=
+  LinearMap.ext fun _ ↦ rfl
+
+/-- Injectivity on ideal torsion tests whether the kernel contains any nonzero element killed
+by the ideal. -/
+theorem injective_torsionByIdeal_iff (f : M →ₗ[A] N) (I : Ideal A) :
+    Function.Injective (f.torsionByIdeal I) ↔ Disjoint (torsionBySet A M I) f.ker :=
+  injective_restrict_iff (f := f) (p := torsionBySet A M I) (q := torsionBySet A N I)
+    (fun _ hx ↦ f.mapsTo_torsionBySet I hx)
+
+end LinearMap
+
 end QuotientLinear
+
+namespace TauCeti
 
 section Lift
 

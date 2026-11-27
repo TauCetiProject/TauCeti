@@ -26,7 +26,7 @@ representations are complete for `(ϖ)` and have bounded `ϖ`-power torsion. Eac
 is imposed on the socle `(V / ϖ V)[𝔪]` over the residue field. For locally profinite groups
 smoothness means precisely that every vector is fixed by some compact open subgroup.
 
-`TauCeti.UniformizerAdmissibleRep` is the full subcategory with these objects. It has
+`TauCeti.UniformizerAdicallyAdmissibleRep` is the full subcategory with these objects. It has
 reduction functors and a residual-socle functor. For a morphism between torsion-free
 lattices that becomes bijective after inverting `ϖ`, injectivity of its image under the
 residual-socle functor detects whether it is an isomorphism.
@@ -103,28 +103,28 @@ namespace TauCeti
 
 /-- The full subcategory of uniformizer-adically admissible representations. Morphisms are
 all equivariant `A`-linear maps. -/
-abbrev UniformizerAdmissibleRep (A : Type u) [CommRing A] [IsLocalRing A]
+abbrev UniformizerAdicallyAdmissibleRep (A : Type u) [CommRing A] [IsLocalRing A]
     (G : Type v) [Group G] [TopologicalSpace G] (ϖ : A) :=
   ObjectProperty.FullSubcategory (C := Rep.{w} A G) fun V ↦ V.ρ.IsUniformizerAdicallyAdmissible ϖ
 
-namespace UniformizerAdmissibleRep
+namespace UniformizerAdicallyAdmissibleRep
 
 variable {ϖ : A}
 
 /-- The underlying action of a bundled object satisfies the admissibility conditions. -/
-instance (X : UniformizerAdmissibleRep.{w} A G ϖ) :
+instance (X : UniformizerAdicallyAdmissibleRep.{w} A G ϖ) :
     X.obj.ρ.IsUniformizerAdicallyAdmissible ϖ :=
   X.property
 
 /-- Bundle a uniformizer-adically admissible action as an object of the full subcategory. -/
 abbrev of {V : Type w} [AddCommGroup V] [Module A V] (ρ : Representation A G V) (ϖ : A)
-    [h : ρ.IsUniformizerAdicallyAdmissible ϖ] : UniformizerAdmissibleRep A G ϖ :=
+    [h : ρ.IsUniformizerAdicallyAdmissible ϖ] : UniformizerAdicallyAdmissibleRep A G ϖ :=
   ⟨Rep.of ρ, h⟩
 
 /-- Reduction modulo the `n`th power of the uniformizer, with its smooth action. -/
 @[simps! obj_obj map_hom]
 noncomputable abbrev reduction (ϖ : A) (n : ℕ) :
-    UniformizerAdmissibleRep.{w} A G ϖ ⥤ SmoothRep A G where
+    UniformizerAdicallyAdmissibleRep.{w} A G ϖ ⥤ SmoothRep A G where
   obj X := ⟨Rep.of (X.obj.ρ.quotSMulTop (ϖ ^ n)), X.property.isSmooth_quotSMulTop n⟩
   map f := ObjectProperty.homMk (Rep.ofHom (f.hom.hom.quotSMulTop (ϖ ^ n)))
   map_id _ := ObjectProperty.hom_ext _ (Rep.hom_ext (IntertwiningMap.ext (by simp)))
@@ -134,7 +134,7 @@ noncomputable abbrev reduction (ϖ : A) (n : ℕ) :
 representation has coefficients in the residue field. -/
 @[simps! obj_obj map_hom]
 noncomputable abbrev residualSocle (ϖ : A) :
-    UniformizerAdmissibleRep.{w} A G ϖ ⥤ SmoothRep (A ⧸ maximalIdeal A) G where
+    UniformizerAdicallyAdmissibleRep.{w} A G ϖ ⥤ SmoothRep (A ⧸ maximalIdeal A) G where
   obj X := ⟨Rep.of ((X.obj.ρ.quotSMulTop ϖ).torsionByIdeal (maximalIdeal A)),
     X.property.isAdmissible_socle.toIsSmooth⟩
   map f := ObjectProperty.homMk (Rep.ofHom ((f.hom.hom.quotSMulTop ϖ).torsionByIdeal _))
@@ -142,14 +142,14 @@ noncomputable abbrev residualSocle (ϖ : A) :
   map_comp _ _ := ObjectProperty.hom_ext _ (Rep.hom_ext (IntertwiningMap.ext (by simp)))
 
 /-- The residual socle has finite-dimensional invariants under every compact open subgroup. -/
-instance (X : UniformizerAdmissibleRep.{w} A G ϖ) :
+instance (X : UniformizerAdicallyAdmissibleRep.{w} A G ϖ) :
     IsAdmissible (((residualSocle ϖ).obj X).obj.ρ) :=
   X.property.isAdmissible_socle
 
 /-- An equivariant map between uniformizer-torsion-free objects which becomes bijective
 after inverting the uniformizer is an isomorphism exactly when it induces an injection on
 residual socles. -/
-theorem isIso_iff_injective_residualSocle_map {X Y : UniformizerAdmissibleRep.{w} A G ϖ}
+theorem isIso_iff_injective_residualSocle_map {X Y : UniformizerAdicallyAdmissibleRep.{w} A G ϖ}
     (f : X ⟶ Y) (hX : IsSMulRegular X.obj ϖ) (hY : IsSMulRegular Y.obj ϖ)
     {M N : Type*} [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
     (i : X.obj →ₗ[A] M) (j : Y.obj →ₗ[A] N) [IsLocalizedModule (.powers ϖ) i]
@@ -163,6 +163,6 @@ theorem isIso_iff_injective_residualSocle_map {X Y : UniformizerAdmissibleRep.{w
     IntertwiningMap.toLinearMap_quotSMulTop, LinearMap.injective_torsionByIdeal_iff]
   exact bijective_iff_disjoint_torsionBySet_ker_quotSMulTop_map i j hX hY hloc hprimary
 
-end UniformizerAdmissibleRep
+end UniformizerAdicallyAdmissibleRep
 
 end TauCeti

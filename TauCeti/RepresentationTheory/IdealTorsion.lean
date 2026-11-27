@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Torsion.IdealMap
+public import TauCeti.Algebra.Module.Torsion.Map
 public import TauCeti.RepresentationTheory.Smooth.Basic
 
 /-!
