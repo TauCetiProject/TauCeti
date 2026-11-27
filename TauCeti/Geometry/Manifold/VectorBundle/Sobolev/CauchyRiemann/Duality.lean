@@ -7,16 +7,15 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Green
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Annihilator
-import TauCeti.Geometry.Manifold.ExtChartAt.SelfModel
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.ChartSection
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
-import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.ZeroOneGram
+import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOneGram
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChartHaar
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.SemiFredholm
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.SMul
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.ExtendByZero
-import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 import TauCeti.Analysis.Normed.Module.Annihilator
 
 /-!
@@ -49,8 +48,8 @@ chart images with the support of `χᵢ` read in chart `i` inside `Q₀`
 `w ↦ ∫ θ (wᵢ(1)) dz` against a covector field `θ` that solves the adjoint equation weakly
 (`TauCeti.exists_memLp_forall_integral_eq_zero_of_annihilator`), so `θ` is smooth
 (`TauCeti.IsRealCauchyRiemannOperator.exists_contDiffOn_ae_eq_of_forall_integral_eq_zero`). In
-chart `i` the Riemannian volume is `ρ dz` for the smooth positive chart density `ρ`, up to a
-constant, and inverting the chart Gram form of the metrics
+chart `i` the Riemannian volume is `ρ dz` for the smooth positive chart density `ρ`
+(`TauCeti.chartHaarDensity`), and inverting the chart Gram form of the metrics
 (`TauCeti.FiniteBundleAtlas.exists_contDiffOn_hilbertSchmidtInner_eq`) gives a smooth
 `(0,1)`-form `ηᵢ` over `Q₁` with `ρ ⟪ηᵢ, w⟫ = θ (wᵢ(1))`. Then `η = ∑ χᵢ ηᵢ` is smooth and
 represents `Λ = ∑ Λ (χᵢ ·)`. Finally `∫ ⟪D* η, ξ⟫ dV = ∫ ⟪η, D ξ⟫ dV = Λ (D ξ) = 0` for every
@@ -83,79 +82,6 @@ namespace TauCeti
 
 open SmoothAlmostComplexStructure FiniteBundleAtlas
 
-/-! ### The Riemannian volume in a chart -/
-
-section Chart
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
-  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
-  {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] (A : FiniteBundleAtlas ℂ M F V)
-
-local instance instIsContinuousRiemannianBundleTangentDualityChart :
-    IsContinuousRiemannianBundle ℂ (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x) :=
-  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := 𝓘(ℝ, ℂ)) (n := ∞)
-
-/-- The density of the Riemannian volume read in chart `i` with respect to Lebesgue measure on
-`ℂ`: the chart volume density times the constant comparing the Haar measure of
-`Module.finBasis ℝ ℂ` with Lebesgue measure. -/
-private def chartDensity (i : Fin A.n) (z : ℂ) : ℝ :=
-  (Measure.addHaarScalarFactor (Module.finBasis ℝ ℂ).addHaar (volume : Measure ℂ) : ℝ) *
-    chartVolumeDensity (I := 𝓘(ℝ, ℂ)) (A.center i) ((A.chart i).symm z)
-
-/-- The chart density is smooth on the image of chart `i`. -/
-private theorem contDiffOn_chartDensity (i : Fin A.n) :
-    ContDiffOn ℝ ∞ (chartDensity A i) (A.image i) := by
-  have h : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞
-      (fun z ↦ chartVolumeDensity (I := 𝓘(ℝ, ℂ)) (A.center i) ((A.chart i).symm z))
-      (A.chart i).target :=
-    (contMDiffOn_chartVolumeDensity (A.center i)).comp contMDiffOn_chart_symm fun z hz ↦ by
-      rw [mem_preimage, TangentBundle.trivializationAt_baseSet]
-      exact (A.chart i).map_target hz
-  exact (contDiffOn_const.mul (contMDiffOn_iff_contDiffOn.1 h)).mono fun z hz ↦
-    (A.image_subset_target_inter_preimage_baseSet i hz).1
-
-omit [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
-/-- The chart density is positive on the image of chart `i`. -/
-private theorem chartDensity_pos {i : Fin A.n} {z : ℂ} (hz : z ∈ A.image i) :
-    0 < chartDensity A i z :=
-  mul_pos (NNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _))
-    (chartVolumeDensity_pos _ (by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        A.dom_subset_chart_source i (A.symm_mem_dom hz)))
-
-variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
-/-- **Integration in chart `i`.** If `f` vanishes off the points read in chart `i` inside an open
-subset `Q` of the chart target, its integral against the Riemannian volume is the integral over `Q`
-of `f` read in the chart, weighted by the chart density. -/
-private theorem integral_riemannianVolume_eq_setIntegral_chart {i : Fin A.n} {Q : Opens ℂ}
-    (hQt : (Q : Set ℂ) ⊆ (A.chart i).target) {f : M → ℝ}
-    (hf : ∀ x ∉ (A.chart i).symm '' Q, f x = 0) :
-    ∫ x, f x ∂riemannianVolume 𝓘(ℝ, ℂ) M =
-      ∫ z in Q, chartDensity A i z * f ((A.chart i).symm z) := by
-  have hSs : (A.chart i).symm '' Q ⊆ (A.chart i).source := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact (A.chart i).map_target (hQt hz)
-  have hSo : IsOpen ((A.chart i).symm '' Q) :=
-    (A.chart i).isOpen_image_symm_of_subset_target Q.isOpen hQt
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hf,
-    setIntegral_riemannianVolume_of_subset hSs hSo.measurableSet,
-    extChartAt_modelWithCornersSelf_eq]
-  simp only [OpenPartialHomeomorph.coe_toPartialEquiv,
-    OpenPartialHomeomorph.coe_toPartialEquiv_symm]
-  rw [show A.chart i '' ((A.chart i).symm '' Q) = Q from
-      (A.chart i).toPartialEquiv.image_symm_image_of_subset_target hQt,
-    Module.Basis.setIntegral_addHaar_congr_measurableSpace _ _ _ _ _ _
-      (inferInstance : BorelSpace ℂ),
-    Measure.isAddLeftInvariant_eq_smul (Module.finBasis ℝ ℂ).addHaar volume,
-    Measure.restrict_smul, integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul,
-    ← integral_const_mul]
-  refine setIntegral_congr_fun Q.isOpen.measurableSet fun z _ ↦ ?_
-  simp only [chartDensity, smul_eq_mul, mul_assoc]
-
-end Chart
-
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M] [T2Space M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
   [FiniteDimensional ℝ F]
@@ -181,45 +107,6 @@ local instance instIsContinuousRiemannianBundleTangentDuality :
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := 𝓘(ℝ, ℂ)) (n := ∞)
 
 /-! ### Representing an annihilator in one chart -/
-
-omit [T2Space M] [FiniteDimensional ℝ F] [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x]
-  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
-  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
-  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
-/-- At a point of the base set of the trivialization of one-forms, a one-form is recovered from its
-reading in chart `i` by the inverse of the trivialization. -/
-private theorem symmL_coord_tangentHom {i : Fin A.n} {z : ℂ}
-    (hb : (A.chart i).symm z ∈ (A.tangentHom.triv i).baseSet)
-    (t : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) :
-    (A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) (A.tangentHom.coord i t z) =
-      t ((A.chart i).symm z) := by
-  rw [Trivialization.symmL_apply _ hb]
-  exact (congrArg _ (A.tangentHom.coord_def i t z)).trans
-    (Trivialization.symm_apply_apply_mk _ hb _)
-
-omit [T2Space M] [FiniteDimensional ℝ F] [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x]
-  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
-  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
-  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
-/-- A multiple of the one-form that reads in chart `i` as the antilinear maps with values `R z` at
-`1`, and vanishes off the chart domain, is a `(0,1)`-form. -/
-private theorem isZeroOneForm_smul_chartSection {i : Fin A.n} (R : ℂ → F) (c : ℝ) (x : M) :
-    (ofComplexManifold ℂ M).IsZeroOneForm
-      (c • A.tangentHom.chartSection i (fun z ↦ antilinearOfOneL F (R z)) x) := by
-  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
-  set η := A.tangentHom.chartSection i (fun z ↦ antilinearOfOneL F (R z))
-  have hηx : (ofComplexManifold ℂ M).IsZeroOneForm (η x) := by
-    by_cases hx : x ∈ A.dom i
-    · have hy : A.chart i x ∈ A.image i := A.mem_image.2 ⟨x, hx, rfl⟩
-      have hη : A.tangentHom.coord i η (A.chart i x) = antilinearOfOneL F (R (A.chart i x)) :=
-        coord_chartSection _ (by rwa [image_tangentHom])
-      have h := (A.isZeroOneForm_iff_coord_tangentHom i η hy).2 fun v ↦ by
-        rw [hη, ContinuousLinearMap.antilinearOfOneL_apply_I_smul]
-      rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)] at h
-    · rw [show η x = 0 from chartSection_eq_zero fun h ↦ (hx h).elim]
-      exact isZeroOneForm_iff.2 fun v ↦ by simp
-  refine isZeroOneForm_iff.2 fun v ↦ ?_
-  simp only [smul_apply, isZeroOneForm_iff.1 hηx v, smul_neg, smul_comm c Complex.I]
 
 omit [T2Space M] in
 /-- **One chart of the representing form.** Let `Q₀ ⊆ Q₁` be open subsets of the image of chart
@@ -254,29 +141,36 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
   have himage := A.tangentHom.image_subset_target_inter_preimage_baseSet i
   rw [image_tangentHom] at himage
   -- The values at `1` of the representing form, in chart `i`: `g / ρ` through the Gram form.
+  have hρ (z : ℂ) (hz : z ∈ Q₁) : chartHaarDensity volume (A.center i) z ≠ 0 :=
+    (chartHaarDensity_pos volume (himage (hQ₁ hz)).1).ne'
   obtain ⟨R, hR, hRg⟩ := A.exists_contDiffOn_hilbertSchmidtInner_eq i (hQ₁.trans himage)
-    (g := fun z ↦ (chartDensity A i z)⁻¹ • g z)
-    ((((contDiffOn_chartDensity A i).mono hQ₁).inv fun z hz ↦
-      (chartDensity_pos A (hQ₁ hz)).ne').smul hg)
+    (g := fun z ↦ (chartHaarDensity volume (A.center i) z)⁻¹ • g z)
+    ((((contDiffOn_chartHaarDensity volume (A.center i)).mono
+      fun z hz ↦ (himage (hQ₁ hz)).1).inv hρ).smul hg)
   set η := A.tangentHom.chartSection i (fun z ↦ antilinearOfOneL F (R z))
+  have hchart : A.tangentHom.chart i = A.chart i :=
+    (chart_hom (A := A.tangent) i).trans (chart_ofBaseSet i)
   have hη (z : ℂ) (hz : z ∈ A.image i) : A.tangentHom.coord i η z = antilinearOfOneL F (R z) :=
     coord_chartSection _ (by rwa [image_tangentHom])
   refine ⟨fun x ↦ χ x • η x, ?_, fun x ↦ ?_, fun w s hs ↦ ?_⟩
-  · refine A.tangentHom.contMDiff_smul_chartSection_of_contDiffOn hχs Q₁.isOpen
+  · refine contMDiff_smul_chartSection hχs Q₁.isOpen
       (fun x hx ↦ ?_) ((antilinearOfOneL F).contDiff.comp_contDiffOn hR)
     obtain ⟨z, hz, rfl⟩ := hχ hx
     have hzi := hQ₁ (hQ₀₁ hz)
-    refine ⟨A.symm_mem_dom hzi, show A.chart i ((A.chart i).symm z) ∈ Q₁ from ?_⟩
-    rw [(A.chart i).right_inv (A.image_subset_target_inter_preimage_baseSet i hzi).1]
+    refine ⟨A.symm_mem_dom hzi, ?_⟩
+    rw [mem_preimage, hchart,
+      (A.chart i).right_inv (A.image_subset_target_inter_preimage_baseSet i hzi).1]
     exact hQ₀₁ hz
-  · exact isZeroOneForm_smul_chartSection A R (χ x) x
+  · exact A.isZeroOneForm_smul_chartSection
+      (fun _ _ ↦ ContinuousLinearMap.antilinearOfOneL_apply_I_smul _) (χ x) x
   · -- `w` vanishes off the points read in chart `i` inside `Q₁`, where `Λ` is represented by `θ`.
     have hmem := SobolevSection.aeZeroOff_mono (hχ.trans (image_mono hQ₀₁))
       (zeroOnePartSobolevL_mem_aeZeroOff (SobolevSection.contMDiffSMulL_mem_aeZeroOff hχs
         (w : SobolevSection A.tangentHom volume p 0)))
     have hQ₁s : (Q₁ : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
       rwa [sectionChartData_image_tangentHom]
-    rw [hrep _ hmem, integral_riemannianVolume_eq_setIntegral_chart A
+    rw [hrep _ hmem, integral_riemannianVolume_eq_setIntegral_chartHaarDensity volume
+      (α := A.center i) Q₁.isOpen
       (fun z hz ↦ (A.image_subset_target_inter_preimage_baseSet i (hQ₁ hz)).1) fun x hx ↦ by
       beta_reduce
       rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (image_mono hQ₀₁ (hχ h)), zero_smul,
@@ -293,15 +187,19 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
       ae_restrict_of_ae_restrict_of_subset hQ₁s (mem_zeroOneSobolevSections_iff.1 w.prop i),
       ae_restrict_mem Q₁.isOpen.measurableSet] with z hθz h₁ h₂ h₃ hw hz
     have hzi := hQ₁ hz
-    -- The charts of the atlas of one-forms are those of `A`, by definition.
-    have h₂' : _ = χ ((A.chart i).symm z) • _ := h₂
+    rw [hchart] at h₂
+    have hco (t : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) :
+        (A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) (A.tangentHom.coord i t z) =
+          t ((A.chart i).symm z) := by
+      have h := A.tangentHom.symmL_coord (i := i) (y := z) (hchart ▸ (himage hzi).2) t
+      rwa [hchart] at h
     rw [h₃] at hw
-    rw [hθz, h₁, h₂', h₃, map_smul, ContinuousLinearMap.complexAntilinearPartL_eq_self_iff.2 hw,
+    rw [hθz, h₁, h₂, h₃, map_smul, ContinuousLinearMap.complexAntilinearPartL_eq_self_iff.2 hw,
       ContinuousLinearMap.hilbertSchmidtInner_smul_left,
-      ← symmL_coord_tangentHom A (himage hzi).2 η, ← symmL_coord_tangentHom A (himage hzi).2 s,
+      ← hco η, ← hco s,
       hη z hzi, hRg z hz _ hw]
     simp only [smul_apply, map_smul, smul_eq_mul]
-    field_simp [(chartDensity_pos A hzi).ne']
+    field_simp [hρ z hz]
 
 /-! ### Annihilators of the range -/
 

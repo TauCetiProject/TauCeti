@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
 public import TauCeti.Analysis.Complex.OperatorNorm
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 
 /-!
@@ -94,21 +95,14 @@ theorem chartZeroOneGram_apply_apply (z : ℂ) (u v : F) :
           ((A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) (antilinearOfOneL F v)) :=
   (rfl)
 
-omit [FiniteDimensional ℝ F] in
-/-- The antilinear map with value `u` at `1` has value `u` at `1`, so `antilinearOfOneL` is
-injective. -/
-private theorem antilinearOfOneL_injective : Function.Injective (antilinearOfOneL F) :=
-  fun u v h ↦ by
-    simpa only [ContinuousLinearMap.antilinearOfOneL_apply_apply_one] using
-      congrArg (fun L : ℂ →L[ℝ] F ↦ L 1) h
-
 /-- **The chart Gram form is invertible** at every `z` read in chart `i` from a point of the base
 set of the trivialization of one-forms. -/
 theorem isInvertible_chartZeroOneGram {z : ℂ}
     (hb : (A.chart i).symm z ∈ (A.tangentHom.triv i).baseSet) :
     (A.chartZeroOneGram i z).IsInvertible := by
   have hinj : Function.Injective (A.chartZeroOneGram i z) := by
-    refine (injective_iff_map_eq_zero _).2 fun u hu ↦ antilinearOfOneL_injective ?_
+    refine (injective_iff_map_eq_zero _).2 fun u hu ↦
+      ContinuousLinearMap.antilinearOfOneL_injective ?_
     have h0 := congrArg (fun L : F →L[ℝ] ℝ ↦ L u) hu
     simp only [chartZeroOneGram_apply_apply, zero_apply,
       ContinuousLinearMap.hilbertSchmidtInner_self_eq_zero_iff] at h0
@@ -121,21 +115,6 @@ theorem isInvertible_chartZeroOneGram {z : ℂ}
 variable [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
   [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
   [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
-
-omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F]
-  [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
-  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
-/-- The one-form `y ↦ e.symm y L` that reads as the constant `L` in a trivialization `e` of the
-bundle of `V`-valued one-forms is smooth on the base set of `e`. -/
-private theorem contMDiffOn_symm_const
-    (e : Trivialization (ℂ →L[ℝ] F)
-      (π (ℂ →L[ℝ] F) (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)))
-    [MemTrivializationAtlas e] (L : ℂ →L[ℝ] F) :
-    ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ →L[ℝ] F)) ∞
-      (fun y ↦ TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) y
-        (e.symm y L)) e.baseSet :=
-  e.contMDiffOn_section_baseSet_iff.2 <|
-    contMDiffOn_const.congr fun _ hy ↦ by rw [e.apply_mk_symm hy L]
 
 /-- **The chart Gram form is smooth** on the points of the target of chart `i` read from the base
 set of the trivialization of one-forms. -/
@@ -150,8 +129,9 @@ theorem contDiffOn_chartZeroOneGram :
       (fun y ↦ (e.symm y (antilinearOfOneL F u)).hilbertSchmidtInner
         (e.symm y (antilinearOfOneL F v))) e.baseSet := fun y hy ↦
     have hy' := e.open_baseSet.mem_nhds hy
-    (((contMDiffOn_symm_const e _).contMDiffAt hy').hilbertSchmidtInner_bundle
-      ((contMDiffOn_symm_const e _).contMDiffAt hy')).contMDiffWithinAt
+    have hs (L : ℂ →L[ℝ] F) := (e.contMDiffOn_section_symm (n := ∞) e.open_baseSet subset_rfl
+      (u := fun _ ↦ L) contMDiffOn_const).contMDiffAt hy'
+    ((hs _).hilbertSchmidtInner_bundle (hs _)).contMDiffWithinAt
   rw [← contMDiffOn_iff_contDiffOn]
   refine (hφ.comp (contMDiffOn_chart_symm.mono inter_subset_left) fun z hz ↦ hz.2).congr
     fun z hz ↦ ?_
