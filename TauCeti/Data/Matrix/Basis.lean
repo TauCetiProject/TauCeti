@@ -23,7 +23,7 @@ expands a linear map on matrices along the matrix units, and
 
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
 algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
-associativity.
+associativity. `Matrix.mul_single_one_mul_apply` reads off the entries of `X * Eⱼᵣ * Y`.
 
 Two off-diagonal matrix units witness that transposition does not preserve all products.
 
@@ -164,6 +164,13 @@ theorem single_one_mul_mul_single_one [Fintype m] [Fintype n] [DecidableEq l] [D
     [DecidableEq n] [DecidableEq o] (X : Matrix m n A) (j : m) (p₀ : n) (r : l) (s : o) :
     single r j (1 : A) * (X * single p₀ s (1 : A)) = single r s (X j p₀) := by
   rw [mul_mul_single_one, single_mul_mul_single, one_mul, mul_one]
+/-- Entry `(u, v)` of `X * E_{j, r} * Y` is `X u j * Y r v`. -/
+@[simp] theorem mul_single_one_mul_apply [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+    (X : Matrix l m A) (Y : Matrix n o A) (j : m) (r : n) (u : l) (v : o) :
+    (X * single j r (1 : A) * Y) u v = X u j * Y r v := by
+  rw [Matrix.mul_apply, Finset.sum_eq_single r
+    (fun x _ hx ↦ by rw [mul_single_apply_of_ne _ _ _ _ _ hx, zero_mul]) (by simp)]
+  simp
 end NonAssoc
 
 /-- Summing `E_{r, s}(X i u) * E_{s, t}(Y u j)` over `u` places `(X * Y) i j` in `(r, t)`. -/
