@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # Local collars of a manifold with boundary
@@ -375,8 +376,8 @@ theorem contMDiffOn_normalRay {k : WithTop ℕ∞} :
 /-- At a positive parameter `r`, the normal ray is a local diffeomorphism from `ℝ` to the
 half-line: near `r` it is the identification of `ℝ` with `EuclideanSpace ℝ (Fin 1)`, read in the
 half-line. -/
-theorem isLocalDiffeomorphAt_normalRay {r : ℝ} (hr : 0 < r) :
-    IsLocalDiffeomorphAt 𝓘(ℝ) (𝓡∂ 1) ∞ normalRay r := by
+theorem isLocalDiffeomorphAt_normalRay {k : WithTop ℕ∞} {r : ℝ} (hr : 0 < r) :
+    IsLocalDiffeomorphAt 𝓘(ℝ) (𝓡∂ 1) k normalRay r := by
   let L : ℝ ≃L[ℝ] EuclideanSpace ℝ (Fin 1) := (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
   have hL {u : ℝ} (hu : 0 < u) : (normalRay u).val = L u := by
     ext i
@@ -386,7 +387,8 @@ theorem isLocalDiffeomorphAt_normalRay {r : ℝ} (hr : 0 < r) :
     continuous_normalRay.continuousAt ?_
   · rw [ModelWithCorners.IsInteriorPoint, interior_range_modelWithCornersEuclideanHalfSpace]
     simpa using hr
-  · refine (L.toDiffeomorph.isLocalDiffeomorph _).congr_of_eventuallyEq ?_
+  · refine (isLocalDiffeomorphAt_of_eqOn (Φ := L.toPartialDiffeomorph) (by simp)
+      fun _ _ ↦ by rw [L.coe_toPartialDiffeomorph]).congr_of_eventuallyEq ?_
     filter_upwards [Ioi_mem_nhds hr] with u hu
     simpa [writtenInExtChartAt] using hL hu
 
