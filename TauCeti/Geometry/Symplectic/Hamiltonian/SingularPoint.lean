@@ -608,8 +608,8 @@ theorem exists_isSymplectomorphism_of_comp_right {E' : Type*} [NormedAddCommGrou
     by simpa only [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv] using he, ?_, fun ℓ hℓ ↦ ?_⟩
   · rw [← hD]
     exact fderiv_comp y (hF.differentiableAt two_ne_zero) (hφ.differentiableAt two_ne_zero)
-  -- `e` as a continuous linear map, read as a linear map, is `e` by definition.
-  rw [ℓ.hessianQuadraticForm_comp_comp_of_comp_fderiv_eq_zero hF hφ hℓ, hD]; rfl
+  rw [ℓ.hessianQuadraticForm_comp_comp_of_comp_fderiv_eq_zero hF hφ hℓ, hD,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
 
 /-- **Invariance under canonical transformations.** Let `φ : E' → E` be `C²` at `y`, with
 differential at `y` a linear symplectomorphism `e` from `(E', ω')` to `(E, ω)`. Then `y` is a
