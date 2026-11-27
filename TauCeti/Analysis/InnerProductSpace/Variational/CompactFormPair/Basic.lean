@@ -475,9 +475,9 @@ private theorem restrictScalarsForm_apply (P : CompactFormPair 𝕜 V H) (u v : 
 with real symmetric bilinear form `(u, v) ↦ Re (P.form u v)`. -/
 def restrictScalars (P : CompactFormPair 𝕜 V H) : CompactFormPair ℝ V H where
   inclusion := P.inclusion.restrictScalars ℝ
-  injective := P.injective
-  denseRange := P.denseRange
-  isCompactOperator := P.isCompactOperator
+  injective := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.injective
+  denseRange := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.denseRange
+  isCompactOperator := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.isCompactOperator
   form := restrictScalarsForm P
   hermitian u v := by
     rw [restrictScalarsForm_apply, restrictScalarsForm_apply, star_trivial, P.re_form_symm u v]
@@ -514,10 +514,11 @@ pair with `inclusion = ContinuousLinearMap.id 𝕜 H`. -/
 def ofFiniteDimensional (a : H →L⋆[𝕜] H →L[𝕜] 𝕜) (ha : ∀ u v : H, a u v = star (a v u)) :
     CompactFormPair 𝕜 H H where
   inclusion := ContinuousLinearMap.id 𝕜 H
-  injective := Function.injective_id
-  denseRange := denseRange_id
+  injective := by rw [ContinuousLinearMap.coe_id']; exact Function.injective_id
+  denseRange := by rw [ContinuousLinearMap.coe_id']; exact denseRange_id
   isCompactOperator := by
     have : ProperSpace H := FiniteDimensional.proper_rclike 𝕜 H
+    rw [ContinuousLinearMap.coe_id']
     exact isCompactOperator_id
   form := a
   hermitian := ha

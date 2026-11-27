@@ -11,12 +11,10 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.Rayleigh
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.Analysis.Normed.Operator.DunfordPettis.Basic
-import TauCeti.Analysis.Variational.MinimizingSequence
-import TauCeti.Analysis.Variational.QuadraticEnergy
 import TauCeti.Order.Filter.Extr
 
 /-!
-# Constrained Rayleigh minima and restricted Euler–Lagrange equations
+# Constrained Rayleigh minima and compactness of minimizers
 
 This file complements `TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair` with
 additional theory for `P.energy` on the constrained unit sphere `P.unitConstraint W`:
@@ -26,16 +24,12 @@ additional theory for `P.energy` on the constrained unit sphere `P.unitConstrain
   Rayleigh-quotient equivalence
   (`CompactFormPair.isMinOn_unitConstraint_iff_isLeast_rayleighQuotient`).
 * Sequential weak-to-strong convergence
-  (`CompactFormPair.tendsto_of_tendsto_toWeakSpace_of_tendsto_energy`), reflexive-space attainment
-  (`CompactFormPair.exists_isMinOn_energy_unitConstraint_of_surjective`), and norm compactness of
-  the set of constrained minimizers (`CompactFormPair.isCompact_minimizers_unitConstraint`).
+  (`CompactFormPair.tendsto_of_tendsto_toWeakSpace_of_tendsto_energy`) and norm compactness of
+  the set of constrained minimizers (`CompactFormPair.isCompact_minimizers_unitConstraint`,
+  `CompactFormPair.isCompact_minimizers_unitConstraint_of_surjective`).
 * Over `ℝ`, identification of the constrained minimum on `P.unitConstraint ⊤` with
   `‖IsCoercive.formSolutionOperator‖⁻¹` (`CompactFormPair.energy_eq_inv_norm_formSolutionOperator`
   and `CompactFormPair.energy_add_eq_inv_norm_formSolutionOperator_shift`).
-* The restricted Euler–Lagrange equation (`CompactFormPair.equation_of_constrained_minimum`): every
-  minimizer `u` of `P.energy` on `P.unitConstraint W` satisfies
-  `P.form u v = (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜` for all `v : V` with
-  `P.inclusion v ∈ W`, without assuming `W` is closed.
 
 ## References
 
@@ -236,20 +230,6 @@ variable {𝕜 V H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
-/-- **Constrained Rayleigh minimum** (reflexive form): if `V` is reflexive and `W ≤ H` is a
-norm-closed submodule with nonempty constrained sphere `P.unitConstraint W`, then `P.energy`
-attains its minimum on `P.unitConstraint W`. -/
-theorem exists_isMinOn_energy_unitConstraint_of_surjective (P : CompactFormPair 𝕜 V H)
-    (hV : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 V))
-    (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H))
-    (hne : (P.unitConstraint W).Nonempty) :
-    ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u :=
-  exists_isMinOn_of_isSeqClosed hV hne
-    (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
-    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
-      W).seqLowerSemicontinuousOn
-    (P.hasBoundedSublevelsOn_energy_unitConstraint W)
-
 /-- Norm compactness of the set of constrained minimizers on `P.unitConstraint W` in a reflexive
 space whenever `W` is norm-closed. -/
 theorem isCompact_minimizers_unitConstraint_of_surjective (P : CompactFormPair 𝕜 V H)
@@ -264,12 +244,7 @@ theorem isCompact_minimizers_unitConstraint_of_surjective (P : CompactFormPair �
     (hu 0).2.minimizers_eq_sublevel (hu 0).1
   have hcomp :
       IsCompact (toWeakSpace 𝕜 V '' {v ∈ P.unitConstraint W | P.energy v ≤ P.energy (u 0)}) :=
-    isCompact_toWeakSpace_sublevel_of_isSeqClosed hV
-      (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
-      (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
-        W).seqLowerSemicontinuousOn
-      (P.energy (u 0))
-      ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel (P.energy (u 0)))
+    P.isCompact_toWeakSpace_sublevel_unitConstraint_of_surjective W hV hW (P.energy (u 0))
   obtain ⟨_, ⟨x, hxsub, rfl⟩, φ, hφ, hlim⟩ :=
     TauCeti.isSeqCompact_toWeakSpace_of_isCompact hcomp fun n =>
       mem_image_of_mem (toWeakSpace 𝕜 V) (hsub_eq ▸ hu n)
@@ -341,41 +316,6 @@ theorem energy_add_eq_inv_norm_formSolutionOperator_shift (P : CompactFormPair �
   simpa only [shift_energy, shift_inclusion, (mem_unitConstraint.1 hu).2, one_pow, mul_one] using h
 
 end RealComparison
-
-section EulerLagrange
-
-variable {𝕜 V H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-
-/-- **The restricted Euler–Lagrange equation**: any minimizer `u` of `P.energy` on the constrained
-sphere `P.unitConstraint W` satisfies
-`P.form u v = (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜`
-for every `v : V` with `P.inclusion v ∈ W`. No closedness of `W` is required. -/
-theorem equation_of_constrained_minimum (P : CompactFormPair 𝕜 V H)
-    (W : Submodule 𝕜 H) {u : V}
-    (hu : u ∈ P.unitConstraint W)
-    (hmin : IsMinOn P.energy (P.unitConstraint W) u) :
-    ∀ v : V, P.inclusion v ∈ W →
-      P.form u v = (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 := by
-  obtain ⟨huW, hu1⟩ := mem_unitConstraint.1 hu
-  let V₀ : Submodule 𝕜 V := W.comap P.inclusion.toLinearMap
-  let P' := (P.shift (-P.energy u)).restrict V₀
-  have hq : ∀ w : V₀, 0 ≤ RCLike.re (P'.form w w) := fun w => by
-    rw [← P'.energy_def, (P.shift (-P.energy u)).restrict_energy V₀ w, P.shift_energy]
-    linarith [P.mul_norm_sq_le_energy_of_isMinOn hmin w.property]
-  have hu₀ : RCLike.re (P'.form ⟨u, huW⟩ ⟨u, huW⟩) = 0 := by
-    rw [← P'.energy_def, (P.shift (-P.energy u)).restrict_energy V₀ ⟨u, huW⟩, P.shift_energy, hu1]
-    ring
-  have hker : P'.form ⟨u, huW⟩ = 0 :=
-    (ContinuousLinearMap.re_apply_self_eq_zero_iff P'.hermitian hq).mp hu₀
-  intro v hvW
-  have h := DFunLike.congr_fun hker ⟨v, hvW⟩
-  simp only [P', restrict_form_apply, shift_form_apply, RCLike.ofReal_neg, neg_mul,
-    zero_apply] at h
-  exact sub_eq_zero.mp (by simpa only [sub_eq_add_neg] using h)
-
-end EulerLagrange
 
 end CompactFormPair
 
