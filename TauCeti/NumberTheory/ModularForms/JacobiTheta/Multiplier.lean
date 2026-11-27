@@ -10,14 +10,11 @@ public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
-import TauCeti.Algebra.Ring.Int.Parity
+public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
 import TauCeti.Analysis.Complex.Sqrt
-import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
-import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
 import TauCeti.NumberTheory.ModularForms.Degeneracy
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.Product
 
@@ -30,7 +27,7 @@ for `d ≡ 3 (mod 4)`, and `0` for even `d`), defines the theta automorphy facto
 `thetaAutomorphy γ z = θ(γ • z) / θ(z)`, and proves its explicit formula and square law:
 * `thetaAutomorphy γ z = (thetaMultiplierPhase d)⁻¹ * (c / d) * √(c z + d)` for every
   `γ ∈ Γ₀(4)` (with the principal square root and `TauCeti.kroneckerSym`);
-* `thetaAutomorphy γ z ^ 2 = χ₋₄(d) * (c z + d)` for every `γ ∈ Γ₀(4)`.
+* `thetaAutomorphy γ z ^ 2 = χ₄(d) * (c z + d)` for every `γ ∈ Γ₀(4)`.
 
 The proof writes `θ(z) = η(2z)⁵ / (η(z)² η(4z)²)`
 (`TauCeti.jacobiTheta_two_mul_eq_eta_div`) as a level-four eta quotient
@@ -44,6 +41,7 @@ Passing from `γ` to `-γ` extends the formula from `c ≥ 0` to negative `c`.
 * `TauCeti.thetaMultiplierPhase`: the phase `ε_d` (`1` for `d ≡ 1 (mod 4)`, `i` for
   `d ≡ 3 (mod 4)`, and `0` for even `d`).
 * `TauCeti.thetaAutomorphy`: the ratio `jacobiTheta (2 * (γ • z)) / jacobiTheta (2 * z)`.
+* `TauCeti.thetaEtaExp`: the level-4 eta-quotient exponent vector for `jacobiTheta (2 * z)`.
 
 ## Main results
 
@@ -51,6 +49,9 @@ Passing from `γ` to `-γ` extends the formula from `c ≥ 0` to negative `c`.
   `ε_d² = ε_d⁻² = χ₄(d)`.
 * `TauCeti.thetaAutomorphy_ne_zero`:
   `thetaAutomorphy γ z ≠ 0` for all `γ : SL(2, ℤ)` and `z : ℍ`.
+* `TauCeti.sum_thetaEtaExp`, `TauCeti.jacobiTheta_two_mul_eq_etaQuotient`:
+  identification of `jacobiTheta (2 * τ)` with `ModularForm.etaQuotient 4 thetaEtaExp τ` of
+  exponent sum `1` (weight `1 / 2`).
 * `TauCeti.thetaAutomorphy_eq_of_mem_Gamma0`: Shimura's formula for `j(γ, z)` on `Γ₀(4)`.
 * `TauCeti.thetaAutomorphy_sq_of_mem_Gamma0`: the square law `j(γ, z)² = χ₄(d) (c z + d)`.
 
@@ -225,18 +226,20 @@ theorem thetaAutomorphy_def (γ : SL(2, ℤ)) (z : ℍ) :
       jacobiTheta (2 * ((γ • z : ℍ) : ℂ)) / jacobiTheta (2 * (z : ℂ)) :=
   (rfl)
 
+private theorem jacobiTheta_two_mul_ne_zero (z : ℍ) : jacobiTheta (2 * (z : ℂ)) ≠ 0 :=
+  jacobiTheta_ne_zero (by simpa using mul_pos two_pos z.im_pos)
+
 /-- `thetaAutomorphy γ z ≠ 0` for every `γ ∈ SL(2, ℤ)` and `z ∈ ℍ`. -/
 @[simp]
 theorem thetaAutomorphy_ne_zero (γ : SL(2, ℤ)) (z : ℍ) : thetaAutomorphy γ z ≠ 0 := by
   rw [thetaAutomorphy_def]
-  exact div_ne_zero (jacobiTheta_ne_zero (by simpa using mul_pos two_pos (γ • z).im_pos))
-    (jacobiTheta_ne_zero (by simpa using mul_pos two_pos z.im_pos))
+  exact div_ne_zero (jacobiTheta_two_mul_ne_zero (γ • z)) (jacobiTheta_two_mul_ne_zero z)
 
 /-- At the identity matrix, `j(1, z) = 1`. -/
 @[simp]
 theorem thetaAutomorphy_one (z : ℍ) : thetaAutomorphy 1 z = 1 := by
   rw [thetaAutomorphy_def, one_smul]
-  exact div_self (jacobiTheta_ne_zero (by simpa using mul_pos two_pos z.im_pos))
+  exact div_self (jacobiTheta_two_mul_ne_zero z)
 
 /-- Negating the matrix does not change the theta automorphy factor: `j(-γ, z) = j(γ, z)`. -/
 @[simp]
@@ -250,9 +253,7 @@ theorem thetaAutomorphy_mul (γ₁ γ₂ : SL(2, ℤ)) (z : ℍ) :
     thetaAutomorphy (γ₁ * γ₂) z =
       thetaAutomorphy γ₁ (γ₂ • z) * thetaAutomorphy γ₂ z := by
   simp only [thetaAutomorphy_def, mul_smul]
-  have h0 : jacobiTheta (2 * ((γ₂ • z : ℍ) : ℂ)) ≠ 0 :=
-    jacobiTheta_ne_zero (by simpa using mul_pos two_pos (γ₂ • z).im_pos)
-  rw [div_mul_div_cancel₀ h0]
+  rw [div_mul_div_cancel₀ (jacobiTheta_two_mul_ne_zero (γ₂ • z))]
 
 /-- Inversion law for the theta automorphy factor:
 `j(γ⁻¹, γ • z) = j(γ, z)⁻¹`. -/
@@ -260,20 +261,39 @@ theorem thetaAutomorphy_inv_smul (γ : SL(2, ℤ)) (z : ℍ) :
     thetaAutomorphy γ⁻¹ (γ • z) = (thetaAutomorphy γ z)⁻¹ := by
   rw [thetaAutomorphy_def, thetaAutomorphy_def, inv_smul_smul, inv_div]
 
-/-- The eta-quotient exponent vector for `θ(z) = η(2z)⁵ / (η(z)² η(4z)²)`. -/
-private def thetaEtaExp : ℕ → ℤ := fun δ ↦ if δ = 2 then 5 else -2
-
-private theorem jacobiTheta_two_mul_eq_etaQuotient (z : ℍ) :
-    jacobiTheta (2 * (z : ℂ)) = ModularForm.etaQuotient 4 thetaEtaExp z := by
+private theorem prod_divisors_four {M : Type*} [CommMonoid M] (f : ℕ → M) :
+    ∏ δ ∈ (4 : ℕ).divisors, f δ = f 1 * f 2 * f 4 := by
   have hdiv : (4 : ℕ).divisors = {1, 2, 4} := by decide
-  rw [jacobiTheta_two_mul_eq_eta_div z.im_pos, ModularForm.etaQuotient_apply, hdiv,
-    Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton]
-  simp only [thetaEtaExp, Nat.cast_one, Nat.cast_ofNat, one_mul]
+  rw [hdiv, Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton,
+    mul_assoc]
+
+private theorem sum_divisors_four {M : Type*} [AddCommMonoid M] (f : ℕ → M) :
+    ∑ δ ∈ (4 : ℕ).divisors, f δ = f 1 + f 2 + f 4 := by
+  have hdiv : (4 : ℕ).divisors = {1, 2, 4} := by decide
+  rw [hdiv, Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
+    add_assoc]
+
+/-- The level-4 eta-quotient exponent vector `r(1) = -2`, `r(2) = 5`, `r(4) = -2` for
+`θ(z) = jacobiTheta (2 * z) = η(2z)⁵ / (η(z)² η(4z)²)`. -/
+def thetaEtaExp : ℕ → ℤ := fun δ ↦ if δ = 2 then 5 else -2
+
+/-- Value of `TauCeti.thetaEtaExp` at a natural divisor `δ`. -/
+theorem thetaEtaExp_def (δ : ℕ) :
+    thetaEtaExp δ = if δ = 2 then 5 else -2 :=
+  (rfl)
+
+/-- The exponents of `thetaEtaExp` sum to `1`, corresponding to weight `1 / 2`. -/
+theorem sum_thetaEtaExp : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ = 1 := by
+  decide
+
+/-- For `τ` in the upper half-plane, `jacobiTheta (2 * τ)` equals the level-4 eta quotient
+`ModularForm.etaQuotient 4 thetaEtaExp τ`. -/
+theorem jacobiTheta_two_mul_eq_etaQuotient {τ : ℂ} (hτ : 0 < τ.im) :
+    jacobiTheta (2 * τ) = ModularForm.etaQuotient 4 thetaEtaExp τ := by
+  rw [jacobiTheta_two_mul_eq_eta_div hτ, ModularForm.etaQuotient_apply, prod_divisors_four]
+  simp only [thetaEtaExp_def, Nat.cast_one, Nat.cast_ofNat, one_mul]
   norm_num
   ring
-
-private theorem sum_thetaEtaExp : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ = 1 := by
-  decide
 
 private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
     (kroneckerSym 2 d : ℂ) * ModularForm.e24 (3 * d - 3) = (thetaMultiplierPhase d)⁻¹ := by
@@ -306,10 +326,12 @@ private theorem prod_kroneckerSym_thetaEtaExp {t d : ℤ} (ht : 0 ≤ t) (hd : O
     (hcop : IsCoprime (4 * t) d) :
     ∏ δ ∈ (4 : ℕ).divisors, (kroneckerSym ((4 / δ : ℕ) * t) d : ℂ) ^ thetaEtaExp δ =
       kroneckerSym 2 d * kroneckerSym (4 * t) d := by
-  have hdiv : (4 : ℕ).divisors = {1, 2, 4} := by decide
-  rw [hdiv, Finset.prod_insert (by decide), Finset.prod_insert (by decide), Finset.prod_singleton]
-  simp only [thetaEtaExp]
-  norm_num
+  rw [prod_divisors_four]
+  simp only [thetaEtaExp_def, show (4 / 1 : ℕ) = 4 from rfl, show (4 / 2 : ℕ) = 2 from rfl,
+    show (4 / 4 : ℕ) = 1 from rfl, Nat.cast_ofNat, Nat.cast_one, one_mul,
+    show (1 : ℕ) ≠ 2 by decide, show (4 : ℕ) ≠ 2 by decide, ↓reduceIte]
+  simp only [show (-2 : ℤ) = -(2 : ℕ) from rfl, show (5 : ℤ) = (5 : ℕ) from rfl,
+    zpow_neg, zpow_natCast]
   have hcop4 : (4 * t).gcd d = 1 := Int.isCoprime_iff_gcd_eq_one.mp hcop
   have hcopt : t.gcd d = 1 :=
     Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left (dvd_mul_left t 4))
@@ -320,7 +342,7 @@ private theorem prod_kroneckerSym_thetaEtaExp {t d : ℤ} (ht : 0 ≤ t) (hd : O
   have h2pow : (kroneckerSym (2 * t) d : ℂ) ^ 5 = (kroneckerSym (2 * t) d : ℂ) := by
     have hsq : (kroneckerSym (2 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop2
     rw [show (5 : ℕ) = 2 * 2 + 1 from rfl, pow_add, pow_mul, hsq, one_pow, pow_one, one_mul]
-  rw [h4sq, inv_one, htsq, inv_one, h2pow, mul_one, one_mul]
+  simp only [h4sq, htsq, h2pow, inv_one, one_mul]
   rcases eq_or_ne d (-1) with rfl | hd1
   · simp [kroneckerSym_neg_one_right, show ¬(4 * t < 0) by omega,
       show ¬(2 * t < 0) by omega]
@@ -330,7 +352,7 @@ private theorem prod_kroneckerSym_thetaEtaExp {t d : ℤ} (ht : 0 ≤ t) (hd : O
       have h4_eq : 4 * t = t * 2 ^ 2 := by ring
       have hcop2d : (2 : ℤ).gcd d = 1 := Nat.coprime_two_left.mpr (Int.natAbs_odd.mpr hd)
       rw [h4_eq, kroneckerSym_mul_sq two_ne_zero hcop2d]
-    rw [h2t, h4t, Int.cast_mul]
+    rw [h2t, h4t, Int.cast_mul, mul_one]
 
 private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 4) (hc : 0 ≤ γ 1 0) :
@@ -370,9 +392,8 @@ private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
       ← Finset.prod_attach (4 : ℕ).divisors (fun δ ↦ _ ^ thetaEtaExp δ)]
     exact Finset.prod_congr rfl fun δ _ ↦ by rw [hε δ δ.property]
   have hE : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ * E δ = 3 * γ 1 1 - 3 := by
-    have hdiv : (4 : ℕ).divisors = {1, 2, 4} := by decide
-    rw [hdiv, Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton]
-    simp only [thetaEtaExp, E]
+    rw [sum_divisors_four]
+    simp only [thetaEtaExp_def, E]
     norm_num
     ring
   rw [hmult, ModularForm.prod_mul_e24_zpow, hE,
@@ -388,8 +409,8 @@ private theorem thetaAutomorphy_eq_of_mem_Gamma0_of_nonneg {γ : SL(2, ℤ)} (h�
   have hsmul := ModularForm.etaQuotient_smul 4 thetaEtaExp ⟨γ, hγ⟩ z
   simp only [sum_thetaEtaExp, zpow_one,
     etaQuotientMultiplier_thetaEtaExp_of_nonneg hγ hc] at hsmul
-  rw [thetaAutomorphy_def, jacobiTheta_two_mul_eq_etaQuotient (γ • z),
-    jacobiTheta_two_mul_eq_etaQuotient z, hsmul, mul_div_assoc,
+  rw [thetaAutomorphy_def, jacobiTheta_two_mul_eq_etaQuotient (γ • z).im_pos,
+    jacobiTheta_two_mul_eq_etaQuotient z.im_pos, hsmul, mul_div_assoc,
     div_self (ModularForm.etaQuotient_ne_zero 4 thetaEtaExp z.im_pos), mul_one]
 
 /-- **Shimura's theta multiplier formula on `Γ₀(4)`** (Shimura (1973), (1.9)–(1.10); Iwaniec
@@ -434,9 +455,7 @@ theorem jacobiTheta_two_mul_smul_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ G
         Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1) * jacobiTheta (2 * (z : ℂ)) := by
   have h := thetaAutomorphy_eq_of_mem_Gamma0 hγ z
   rw [thetaAutomorphy_def] at h
-  have hθ0 : jacobiTheta (2 * (z : ℂ)) ≠ 0 :=
-    jacobiTheta_ne_zero (by simpa using mul_pos two_pos z.im_pos)
-  exact (div_eq_iff hθ0).mp h
+  exact (div_eq_iff (jacobiTheta_two_mul_ne_zero z)).mp h
 
 /-- **The theta multiplier square law** on `Γ₀(4)` (Shimura (1973), (1.11)):
 `j(γ, z)² = χ₄(d) (c z + d)` for every `γ = (a b; c d) ∈ Γ₀(4)` and `z ∈ ℍ`. -/

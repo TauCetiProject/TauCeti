@@ -420,6 +420,7 @@ theorem kroneckerSym_neg_one_left_of_odd {b : ℤ} (hb : Odd b) : kroneckerSym (
 
 /-- The second supplementary law for the Kronecker symbol: `(2 / b) = χ₈ b` for every integer `b`.
 For even `b`, both sides vanish (`kroneckerSym_eq_zero_iff` and `ZMod.χ₈_intCast_eq_zero_iff`). -/
+@[simp]
 theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
   rcases Int.even_or_odd b with hb | hb
   · obtain ⟨k, rfl⟩ := hb

@@ -36,6 +36,13 @@ absolute convergence (`TauCeti.summable_norm_tateTheta`) and quasi-periodicity
 
 * `TauCeti.hasSum_qTheta_mul_tprod_one_sub_pow`: Jacobi's triple product identity,
   `θ_q(w) ∏_{n ≥ 1} (1 - qⁿ) = ∑_{k ∈ ℤ} (-1)ᵏ q^{k(k-1)/2} wᵏ` for `‖q‖ < 1` and `w ≠ 0`.
+* `TauCeti.hasSum_neg_one_pow_mul_zpow_sq`, `TauCeti.tsum_neg_one_pow_mul_zpow_sq`,
+  `TauCeti.hasSum_neg_one_pow_mul_zpow_sq_tprod_div`,
+  `TauCeti.tsum_neg_one_pow_mul_zpow_sq_eq_tprod_div`,
+  `TauCeti.tsum_neg_one_pow_mul_zpow_sq_ne_zero`: Gauss's and Jacobi's product identities and
+  nonvanishing for `∑_{k ∈ ℤ} (-1)ᵏ q^{k²}` when `‖q‖ < 1`.
+* `TauCeti.hasSum_zpow_sq`, `TauCeti.tsum_zpow_sq`, `TauCeti.tsum_zpow_sq_ne_zero`: Gauss's
+  product identity and nonvanishing for `∑_{k ∈ ℤ} q^{k²}` when `‖q‖ < 1`.
 
 ## References
 
@@ -43,6 +50,7 @@ absolute convergence (`TauCeti.summable_norm_tateTheta`) and quasi-periodicity
   (1965), 333–334.
 * G. Gasper, M. Rahman, *Basic Hypergeometric Series*, 2nd ed., Encyclopedia of Mathematics and
   its Applications 96, Cambridge University Press, 2004, §1.6.
+* C. G. J. Jacobi, *Fundamenta Nova Theoriae Functionum Ellipticarum* (1829), §61.
 -/
 
 public section
@@ -204,5 +212,100 @@ theorem hasSum_qTheta_mul_tprod_one_sub_pow {q w : 𝕜} (hq : ‖q‖ < 1) (hw 
   have h := hasSum_tateTheta Q (Units.mk0 w hw) hq
   rw [← hw', hiter, hw'] at h
   simpa [Q] using h
+
+/-! ### Specializations to quadratic theta series -/
+
+/-- **Gauss's product identity** for the alternating theta series over any complete normed field:
+for `‖q‖ < 1`,
+`∑_{k ∈ ℤ} (-1)ᵏ q^{k²} = (∏_{n ≥ 0} (1 - q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})`. -/
+theorem hasSum_neg_one_pow_mul_zpow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
+    HasSum (fun k : ℤ ↦ (-1) ^ k * q ^ (k ^ 2))
+      ((∏' n : ℕ, (1 - q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1))) := by
+  rcases eq_or_ne q 0 with rfl | hq₀
+  · have h1 : (fun n : ℕ ↦ (1 : 𝕜) - 0 ^ (2 * n + 1)) = fun _ ↦ 1 := by
+      ext n
+      simp
+    have h2 : (fun n : ℕ ↦ (1 : 𝕜) - ((0 : 𝕜) ^ 2) ^ (n + 1)) = fun _ ↦ 1 := by
+      ext n
+      simp
+    rw [h1, h2, tprod_one, one_pow, one_mul]
+    have hsum : HasSum (fun k : ℤ ↦ (-1 : 𝕜) ^ k * (0 : 𝕜) ^ (k ^ 2))
+        ((-1 : 𝕜) ^ (0 : ℤ) * (0 : 𝕜) ^ ((0 : ℤ) ^ 2)) :=
+      hasSum_single (0 : ℤ) fun k hk ↦ mul_eq_zero_of_right _ (zero_zpow _ (pow_ne_zero 2 hk))
+    simpa using hsum
+  have h := hasSum_qTheta_mul_tprod_one_sub_pow (norm_pow_lt_one hq two_ne_zero) hq₀
+  rw [qTheta_sq_self hq] at h
+  refine h.congr_fun fun k ↦ ?_
+  have hmul : (q ^ 2) ^ (k * (k - 1) / 2) * q ^ k = q ^ (k ^ 2) := by
+    rw [← zpow_natCast, ← zpow_mul, ← zpow_add₀ hq₀, Nat.cast_ofNat,
+      Int.two_mul_mul_sub_one_ediv_two]
+    congr 1
+    ring
+  rw [mul_assoc, hmul]
+
+/-- **Gauss's product identity** for the alternating theta series in `tsum` form: for `‖q‖ < 1`,
+`∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) =`
+`(∏' n : ℕ, (1 - q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1))`. -/
+theorem tsum_neg_one_pow_mul_zpow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) =
+      (∏' n : ℕ, (1 - q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) :=
+  (hasSum_neg_one_pow_mul_zpow_sq hq).tsum_eq
+
+/-- **Jacobi's product formula** in `HasSum` form: for `‖q‖ < 1`, the series
+`∑_{k ∈ ℤ} (-1)ᵏ q^{k²}` has sum `∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ)`. -/
+theorem hasSum_neg_one_pow_mul_zpow_sq_tprod_div {q : 𝕜} (hq : ‖q‖ < 1) :
+    HasSum (fun k : ℤ ↦ (-1) ^ k * q ^ (k ^ 2))
+      (∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1))) := by
+  rw [tprod_one_sub_div_one_add_pow_eq_tprod_one_sub_pow_odd_sq_mul hq]
+  exact hasSum_neg_one_pow_mul_zpow_sq hq
+
+/-- **Jacobi's product formula**: for `‖q‖ < 1` in a complete normed field,
+`∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) = ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1))`. -/
+theorem tsum_neg_one_pow_mul_zpow_sq_eq_tprod_div {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) = ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) :=
+  (hasSum_neg_one_pow_mul_zpow_sq_tprod_div hq).tsum_eq
+
+/-- For `‖q‖ < 1`, the alternating quadratic theta series `∑_{k ∈ ℤ} (-1)ᵏ q^{k²}`
+does not vanish. -/
+theorem tsum_neg_one_pow_mul_zpow_sq_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) ≠ 0 := by
+  rw [tsum_neg_one_pow_mul_zpow_sq hq]
+  exact mul_ne_zero (pow_ne_zero 2 (tprod_one_sub_pow_odd_ne_zero hq))
+    (tprod_one_sub_pow_ne_zero (norm_pow_lt_one hq two_ne_zero))
+
+/-- **Gauss's product identity** for the theta series `∑_{k ∈ ℤ} q^{k²}`: for `‖q‖ < 1`,
+`∑_{k ∈ ℤ} q^{k²}` has sum `(∏_{n ≥ 0} (1 + q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})`. -/
+theorem hasSum_zpow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
+    HasSum (fun k : ℤ ↦ q ^ (k ^ 2))
+      ((∏' n : ℕ, (1 + q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1))) := by
+  have h := hasSum_neg_one_pow_mul_zpow_sq (q := -q) (by rwa [norm_neg])
+  simp only [one_sub_neg_pow_odd, neg_sq] at h
+  refine h.congr_fun fun k ↦ ?_
+  obtain ⟨m, hm⟩ := Int.even_mul_pred_self (-k)
+  have hpow : k ^ 2 = ((k.natAbs ^ 2 : ℕ) : ℤ) := by
+    rw [Int.natCast_pow, Int.natCast_natAbs, sq_abs]
+  rw [hpow, zpow_natCast, zpow_natCast, neg_pow, ← mul_assoc, ← zpow_natCast (-1 : 𝕜),
+    ← zpow_add₀ (by norm_num : (-1 : 𝕜) ≠ 0), ← hpow]
+  have heven : k + k ^ 2 = 2 * m := by linear_combination hm
+  rw [heven, zpow_mul, zpow_ofNat, neg_one_sq, one_zpow, one_mul]
+
+/-- For `‖q‖ < 1`,
+`∑' k : ℤ, q ^ (k ^ 2) =`
+`(∏' n : ℕ, (1 + q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1))`. -/
+theorem tsum_zpow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∑' k : ℤ, q ^ (k ^ 2) =
+      (∏' n : ℕ, (1 + q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) :=
+  (hasSum_zpow_sq hq).tsum_eq
+
+/-- For `‖q‖ < 1` in a complete normed field, the quadratic theta series
+`∑' k : ℤ, q ^ (k ^ 2)` does not vanish. -/
+theorem tsum_zpow_sq_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∑' k : ℤ, q ^ (k ^ 2) ≠ 0 := by
+  rw [tsum_zpow_sq hq]
+  have hodd : ∏' n : ℕ, (1 + q ^ (2 * n + 1)) ≠ 0 := by
+    simpa only [one_sub_neg_pow_odd] using
+      tprod_one_sub_pow_odd_ne_zero (q := -q) (by rwa [norm_neg])
+  exact mul_ne_zero (pow_ne_zero 2 hodd)
+    (tprod_one_sub_pow_ne_zero (norm_pow_lt_one hq two_ne_zero))
 
 end TauCeti
