@@ -366,8 +366,8 @@ theorem tensorMultiplicityNumerator_eq_sum_characterValues [Fintype G] [Decidabl
 
 variable [Fintype G] [Invertible (Nat.card G : k)]
 
-/-- Over a field in which the group order is invertible, the dimension of the intertwiner space
-into a tensor power is the normalized sum of the character fibre weights times the
+/-- Over a field `k` in which the group order is invertible, the dimension of the intertwiner space
+into a tensor power, cast to `k`, is the normalized sum of the character fibre weights times the
 corresponding powers of the character values. -/
 theorem finrank_hom_tensorPower_eq_sum_characterFiberSum (V X : FDRep k G) (n : ℕ) :
     (Module.finrank k (X ⟶ V.tensorPower n) : k) =
