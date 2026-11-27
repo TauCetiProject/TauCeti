@@ -10,37 +10,32 @@ public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Translate
 public import TauCeti.Algebra.Category.ModuleCat.RepresentationFinite
 public import TauCeti.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
--- Non-public: Fitting's lemma for finite-dimensional endomorphism algebras is used only in a proof.
+-- Non-public: Fitting's lemma is used only in a proof.
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
-# The quiver of irreducible morphisms of a finite-dimensional algebra
+# The quiver of irreducible morphisms of an Artin algebra
 
-Let `A` be a finite-dimensional algebra over a field `k`. This file specializes
-`TauCeti.IrreducibleMorphismQuiver` to the finitely generated `A`-modules,
-`IrreducibleMorphismQuiver k fun M : ModuleCat A ↦ Module.Finite A M`. Its vertices are the
-isomorphism classes of finitely generated indecomposable `A`-modules, and its arrows index a
-`k`-basis of `rad / rad²` between representatives. For `A = kQ/I` over an algebraically closed
-field this is the underlying quiver of the Auslander–Reiten quiver of `A`; over other fields the
-arrows count dimensions over `k`, not the valuations over the residue division rings.
+Let `A` be an Artin algebra, finite as a module over a commutative Artinian ring `R`.
+This file specializes `TauCeti.IrreducibleMorphismQuiver` to the finitely generated `A`-modules,
+`IrreducibleMorphismQuiver R fun M : ModuleCat A ↦ Module.Finite A M`. Its vertices are the
+isomorphism classes of finitely generated indecomposable `A`-modules. Representatives have local
+endomorphism rings by Fitting's lemma over an Artin algebra
+(`TauCeti.isLocalRing_end_of_indecomposable`), so the irreducible morphism spaces between them
+carry the residue division ring actions used to define their valuations.
 
-The instances here make the general API apply without further hypotheses:
-
-* the morphism spaces between representatives are finite-dimensional
-  (`ModuleCat.finite_hom_of_finite`), so every arrow set is finite;
-* representatives have local endomorphism rings
-  (`TauCeti.isLocalRing_end_of_indecomposable`, Fitting's lemma for the finite-dimensional
-  endomorphism algebra), so
-  `TauCeti.IrreducibleMorphismQuiver.nonempty_arrows_of_iff` and
-  `TauCeti.exists_isIrreducibleMorphism_irreducibleMorphismMk_eq` apply to them.
-
-Over a commutative Artinian base ring, the Auslander–Reiten translate `ModuleCat.arTranslate`
+The Auslander–Reiten translate `ModuleCat.arTranslate`
 is an Auslander–Reiten translation in the sense of `TauCeti.ARTranslation`
 (`ModuleCat.arTranslation`). On isomorphism classes, translation is undefined exactly at the
 projective vertices and bijects the non-projective vertices with the non-injective ones
 (`TauCeti.ARTranslation.existsUnique_translate_eq_some_iff`).
 
-For a field `k`, ordinary linear duality is the case where the dualizing module is `k` itself.
+When the base is a field `k`, the arrows of the unvalued quiver index a `k`-basis of `rad / rad²`
+between representatives. These spaces are finite-dimensional (`ModuleCat.finite_hom_of_finite`),
+and `TauCeti.IsRepresentationFinite.finite_irreducibleMorphismQuiver_arrows` gives finitely many
+arrows in total for a representation-finite algebra. For `A = kQ/I` over an algebraically closed
+field this is the underlying quiver of the Auslander–Reiten quiver of `A`. Ordinary linear duality
+is the case where the dualizing module is `k` itself.
 
 ## References
 

@@ -31,8 +31,8 @@ this valued quiver is a valued translation quiver. For a non-projective vertex `
 translate `[τ M]` and every vertex `[X]`, there is an arrow `[τ M] ⟶ [X]` exactly when there is an
 arrow `[X] ⟶ [M]`, and its valuation is that of `[X] ⟶ [M]` with the two entries exchanged
 (`ModuleCat.irreducibleMorphismValuation_eq_swap_of_translate_eq_some`). Both are read off the
-almost-split sequence `0 ⟶ τ M ⟶ E ⟶ M ⟶ 0` of `ModuleCat.exists_isAlmostSplit_arTranslate`,
-through the multiplicity of `X` in a decomposition of `E` into indecomposables
+almost-split sequence `0 ⟶ τ M ⟶ Y ⟶ M ⟶ 0` of `ModuleCat.exists_isAlmostSplit_arTranslate`,
+through the multiplicity of `X` in a decomposition of `Y` into indecomposables
 (`CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_snd_eq_fst`) and the
 isomorphism of the residue division rings of `τ M` and `M`
 (`CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_fst_eq_snd`).

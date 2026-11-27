@@ -11,7 +11,6 @@ public import TauCeti.CategoryTheory.AlmostSplit.Uniqueness
 public import TauCeti.CategoryTheory.AlmostSplit.Valuation
 public import TauCeti.RingTheory.Jacobson.MulOpposite
 public import TauCeti.RingTheory.LocalRing.Residue
-import TauCeti.RingTheory.Length.Free
 
 /-!
 # The residue division rings of the end terms of an almost-split sequence
@@ -56,8 +55,8 @@ valuation of `A → X` is the valuation of `X → C` with its two entries exchan
 * `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_τ₁_iff_isIso_τ₃`: an endomorphism of the
   sequence is invertible at `A` exactly when it is invertible at `C`.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.residueRingEquiv_mk`: the characterizing equation.
-* `CategoryTheory.ShortComplex.IsAlmostSplit.finrank_residue_X₁_eq_finrank_residue_X₃`: over a
-  field, the residue division rings of `A` and `C` have the same dimension.
+* `CategoryTheory.ShortComplex.IsAlmostSplit.length_residue_X₁_eq_length_residue_X₃`: the
+  residue division rings of `A` and `C` have the same length over the base ring.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_fst_eq_snd`: the first
   entry of the valuation of `Irr(X, C)` is the second entry of the valuation of `Irr(A, X)`, and
   `CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_X₁_eq_swap`: the
@@ -239,11 +238,11 @@ theorem residueAlgEquiv_apply (hS : S.IsAlmostSplit) (x : End S.X₃ ⧸ Ring.ja
   (rfl)
 
 /-- **The residue division rings of the two end terms of an almost-split sequence have the same
-dimension** over the base ring of a linear category. -/
-theorem finrank_residue_X₁_eq_finrank_residue_X₃ (hS : S.IsAlmostSplit) :
-    finrank k (End S.X₁ ⧸ Ring.jacobson (End S.X₁)) =
-      finrank k (End S.X₃ ⧸ Ring.jacobson (End S.X₃)) :=
-  (hS.residueAlgEquiv k).toLinearEquiv.finrank_eq.symm
+length** over the base ring of a linear category. -/
+theorem length_residue_X₁_eq_length_residue_X₃ (hS : S.IsAlmostSplit) :
+    length k (End S.X₁ ⧸ Ring.jacobson (End S.X₁)) =
+      length k (End S.X₃ ⧸ Ring.jacobson (End S.X₃)) :=
+  (hS.residueAlgEquiv k).toLinearEquiv.length_eq.symm
 
 end Linear
 
@@ -266,12 +265,6 @@ theorem irreducibleMorphismValuation_fst_eq_snd
     (irreducibleMorphismValuation k X S.X₃).1 = (irreducibleMorphismValuation k S.X₁ X).2 := by
   have := hS.isLeftAlmostSplit_f.isLocalRing_end
   have := hS.isRightAlmostSplit_g.isLocalRing_end
-  have hop (Y : C) :
-      (Module.length k ((End Y)ᵐᵒᵖ ⧸ Ring.jacobson (End Y)ᵐᵒᵖ)).toNat =
-        (Module.length k (End Y ⧸ Ring.jacobson (End Y))).toNat :=
-    congrArg ENat.toNat ((Ring.quotientJacobsonMulOppositeAlgEquiv (End Y) k).toLinearEquiv.trans
-      (MulOpposite.opLinearEquiv k).symm).length_eq
-  have hEnds := congrArg ENat.toNat (hS.residueAlgEquiv k).toLinearEquiv.length_eq
   have hpos : 0 < (length k (End S.X₃ ⧸ Ring.jacobson (End S.X₃))).toNat :=
     ENat.toNat_pos Module.length_pos.ne' Module.length_ne_top
   refine Nat.eq_of_mul_eq_mul_right hpos ?_
@@ -279,19 +272,18 @@ theorem irreducibleMorphismValuation_fst_eq_snd
   calc (irreducibleMorphismValuation k X S.X₃).1 * (length k (End S.X₃ ⧸ Ring.jacobson _)).toNat
       = (irreducibleMorphismValuation k X S.X₃).2 *
           (length k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson _)).toNat := by
-        rw [irreducibleMorphismValuation_fst, irreducibleMorphismValuation_snd,
-          ← Module.toNat_length_eq_finrank_mul_of_free k (End S.X₃ ⧸ Ring.jacobson _),
-          ← Module.toNat_length_eq_finrank_mul_of_free k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson _)]
+        rw [← toNat_length_irreducibleMorphismSpace_eq_fst_mul,
+          ← toNat_length_irreducibleMorphismSpace_eq_snd_mul]
     _ = (irreducibleMorphismValuation k S.X₁ X).1 * (length k (End X ⧸ Ring.jacobson _)).toNat := by
-        rw [hS.irreducibleMorphismValuation_snd_eq_fst k P e, hop X]
+        rw [hS.irreducibleMorphismValuation_snd_eq_fst k P e,
+          Ring.length_quotient_jacobson_mulOpposite]
     _ = (irreducibleMorphismValuation k S.X₁ X).2 *
           (length k ((End S.X₁)ᵐᵒᵖ ⧸ Ring.jacobson _)).toNat := by
-        rw [irreducibleMorphismValuation_fst, irreducibleMorphismValuation_snd,
-          ← Module.toNat_length_eq_finrank_mul_of_free k (End X ⧸ Ring.jacobson _),
-          ← Module.toNat_length_eq_finrank_mul_of_free k ((End S.X₁)ᵐᵒᵖ ⧸ Ring.jacobson _)]
+        rw [← toNat_length_irreducibleMorphismSpace_eq_fst_mul,
+          ← toNat_length_irreducibleMorphismSpace_eq_snd_mul]
     _ = (irreducibleMorphismValuation k S.X₁ X).2 *
           (length k (End S.X₃ ⧸ Ring.jacobson _)).toNat := by
-        rw [hop S.X₁, ← hEnds]
+        rw [Ring.length_quotient_jacobson_mulOpposite, hS.length_residue_X₁_eq_length_residue_X₃ k]
 
 /-- Under the hypotheses of `irreducibleMorphismValuation_fst_eq_snd`, the valuation of
 `Irr(A, X)` is the valuation of `Irr(X, C)` with its two entries exchanged. -/
