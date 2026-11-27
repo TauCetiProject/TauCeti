@@ -7,7 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteSupport
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.ContinuousOn
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteLimit
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.ScalarTests
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Normed.Operator.Norming
 
@@ -52,34 +54,13 @@ theorem exists_set_sigmaFinite_of_separating_tests [SeparableSpace X]
     {T : Set (StrongDual 𝕜 X)} (hsep : ∀ x : X, (∀ x' ∈ T, x' x = 0) → x = 0)
     {f : S → X} (htest : ∀ x' ∈ T, AEFinStronglyMeasurable (fun s ↦ x' (f s)) μ) :
     ∃ t, MeasurableSet t ∧ f =ᵐ[μ.restrict tᶜ] 0 ∧ SigmaFinite (μ.restrict t) := by
-  classical
   obtain ⟨T₀, hT₀T, hTc, hsep₀⟩ := exists_countable_separating_subset hsep
   have : Countable T₀ := hTc.to_subtype
-  let h (i : T₀) := htest i (hT₀T i.property)
-  let A (p : T₀ × ℕ) := Function.support ((h p.1).finStronglyMeasurable_mk.approx p.2)
-  let t := ⋃ p, A p
-  have ht : MeasurableSet t := MeasurableSet.iUnion fun p ↦
-    ((h p.1).finStronglyMeasurable_mk.approx p.2).measurableSet_support
-  refine ⟨t, ht, ?_, ?_⟩
-  · rw [EventuallyEq, ae_restrict_iff' ht.compl]
-    filter_upwards [ae_all_iff.2 fun i ↦ (h i).ae_eq_mk] with s hs hst
-    apply hsep₀
-    intro x' hx'
-    let i : T₀ := ⟨x', hx'⟩
-    have hz (n : ℕ) : (h i).finStronglyMeasurable_mk.approx n s = 0 := by
-      have hn : s ∉ A (i, n) := fun hn ↦ hst (mem_iUnion.2 ⟨(i, n), hn⟩)
-      exact Function.notMem_support.1 hn
-    have hm : (h i).mk (fun s ↦ x' (f s)) s = 0 :=
-      tendsto_nhds_unique ((h i).finStronglyMeasurable_mk.tendsto_approx s)
-        (by simpa only [hz] using (tendsto_const_nhds :
-          Tendsto (fun _ : ℕ ↦ (0 : 𝕜)) atTop (𝓝 0)))
-    exact (hs i).trans hm
-  · refine Measure.sigmaFinite_of_countable ((countable_range A).insert tᶜ) ?_
-      (by rw [sUnion_insert, sUnion_range]; exact compl_union_self t)
-    rintro _ (rfl | ⟨p, rfl⟩)
-    · simp [Measure.restrict_apply' ht]
-    · exact (Measure.restrict_le_self _).trans_lt
-        ((h p.1).finStronglyMeasurable_mk.fin_support_approx p.2)
+  obtain ⟨t, ht, hzero, hσ⟩ := AEFinStronglyMeasurable.exists_set_sigmaFinite_of_countable
+    (g := fun (i : T₀) s ↦ i.val (f s)) fun i ↦ htest i (hT₀T i.property)
+  refine ⟨t, ht, ?_, hσ⟩
+  filter_upwards [ae_all_iff.2 hzero] with s hs
+  exact hsep₀ _ fun x' hx' ↦ hs ⟨x', hx'⟩
 
 variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 
@@ -105,15 +86,14 @@ private theorem aefinStronglyMeasurable_of_subspace_tests (E : Submodule 𝕜 X)
   have hg : AEStronglyMeasurable g μ := by
     refine aestronglyMeasurable_iff_nullMeasurable_separable.2 ⟨?_, univ,
       .of_separableSpace univ, Eventually.of_forall fun _ ↦ mem_univ _⟩
-    -- Use the null-measurable sigma-algebra, keeping the domain of `g` as `S`. Both
-    -- `NullMeasurable g μ` and each `NullMeasurable (fun s ↦ y (g s)) μ` unfold by definition to
-    -- measurability for `NullMeasurableSpace S μ`, so the scalar tests feed
-    -- `measurable_evalMeasurableSpace_iff` directly and `hmeas` closes the goal.
+    -- Use the null-measurable sigma-algebra, keeping the domain of `g` as `S`. The scalar tests
+    -- enter through `NullMeasurable.measurable'`; the goal `NullMeasurable g μ` unfolds by
+    -- definition to measurability for `NullMeasurableSpace S μ`, so `hmeas` closes it.
     have hmeas : @Measurable S E
         (inferInstance : MeasurableSpace (NullMeasurableSpace S μ)) (borel E) g := by
       rw [← hB]
       exact measurable_evalMeasurableSpace_iff.2 fun y hy ↦
-        (htestg y hy).aemeasurable.nullMeasurable
+        (htestg y hy).aemeasurable.nullMeasurable.measurable'
     exact hmeas
   obtain ⟨t, ht, hzero, hσ⟩ := exists_set_sigmaFinite_of_separating_tests
     (f := g) (T := (fun x' : StrongDual 𝕜 X ↦ x'.comp E.subtypeL) '' T) (fun x hx ↦
@@ -155,9 +135,8 @@ theorem aefinStronglyMeasurable_iff_scalar_tests {f : S → X} :
     refine aefinStronglyMeasurable_of_subspace_tests E
       (T := univ) (by rw [hsurj]; exact evalMeasurableSpace_univ_eq_borel) ?_ hfE
       (fun x' _ ↦ htest x')
-    intro x _ hzero
-    obtain ⟨x', -, hx'⟩ := exists_dual_vector'' 𝕜 x
-    exact norm_eq_zero.1 <| RCLike.ofReal_eq_zero.1 (hx'.symm.trans (hzero x' (mem_univ _)))
+    exact fun x _ hzero ↦
+      SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun x' ↦ hzero x' (mem_univ _)
 
 end RCLike
 
