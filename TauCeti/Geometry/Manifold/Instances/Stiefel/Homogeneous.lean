@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
-public import TauCeti.Geometry.Manifold.Instances.Stiefel
+public import TauCeti.Geometry.Manifold.Instances.Stiefel.FrameAction.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Grassmannian.Orthonormal
@@ -148,6 +148,25 @@ theorem stiefel.finiteOrthonormalFrameHomeomorph_symm_standard (h : r ≤ N) (i 
         Fin r → EuclideanSpace ℝ (Fin N)) i =
       EuclideanSpace.single (Fin.castLE h i) 1 := by
   simp
+
+/-- Reading frame vectors in coordinates commutes with orthogonal changes of basis. -/
+@[simp]
+theorem stiefel.finiteOrthonormalFrameHomeomorph_orthogonalGroup_smul
+    (A : orthogonalGroup (Fin r) ℝ) (v : stiefel (EuclideanSpace ℝ (Fin N)) r) :
+    finiteOrthonormalFrameHomeomorph r N (A • v) =
+      A • finiteOrthonormalFrameHomeomorph r N v :=
+  Subtype.ext <| funext fun j ↦ by
+    simp [WithLp.ofLp_sum, WithLp.ofLp_smul]
+
+/-- Reading frame vectors in coordinates commutes with rotations. -/
+@[simp]
+theorem stiefel.finiteOrthonormalFrameHomeomorph_specialOrthogonalGroup_smul
+    (A : specialOrthogonalGroup (Fin r) ℝ) (v : stiefel (EuclideanSpace ℝ (Fin N)) r) :
+    finiteOrthonormalFrameHomeomorph r N (A • v) =
+      A • finiteOrthonormalFrameHomeomorph r N v := by
+  simp only [stiefel.specialOrthogonalGroup_smul_def,
+    finiteOrthonormalFrame.specialUnitaryGroup_smul_def,
+    finiteOrthonormalFrameHomeomorph_orthogonalGroup_smul]
 
 end Comparison
 

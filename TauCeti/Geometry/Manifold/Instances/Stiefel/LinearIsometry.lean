@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.Stiefel
+public import TauCeti.Geometry.Manifold.Instances.Stiefel.FrameAction.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
@@ -29,7 +29,7 @@ induced map is a homeomorphism `e.stiefelHomeomorph k : stiefel E k ≃ₜ stief
 
 public section
 
-open TauCeti Topology
+open Matrix TauCeti Topology
 
 namespace LinearIsometry
 
@@ -70,6 +70,13 @@ theorem stiefelMap_comp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace �
     (g : F →ₗᵢ[ℝ] G) :
     (g.comp f).stiefelMap k = (g.stiefelMap k).comp (f.stiefelMap k) :=
   ContinuousMap.ext fun _ ↦ rfl
+
+/-- Mapping an orthonormal frame by a linear isometry commutes with changing its basis. -/
+@[simp]
+theorem stiefelMap_orthogonalGroup_smul (A : orthogonalGroup (Fin k) ℝ) (v : stiefel E k) :
+    f.stiefelMap k (A • v) = A • f.stiefelMap k v :=
+  Subtype.ext <| funext fun j ↦ by
+    simp [map_smul, map_sum]
 
 end LinearIsometry
 
@@ -116,5 +123,19 @@ theorem stiefelProj_stiefelHomeomorph (e : E ≃ₗᵢ[ℝ] F) (k : ℕ) (i : Fi
     stiefelProj F k i (e.stiefelHomeomorph k v) =
       e.unitSphereIsometryEquiv (stiefelProj E k i v) :=
   Subtype.ext (by simp)
+
+/-- The Stiefel homeomorphism intertwines orthogonal changes of basis. -/
+@[simp]
+theorem stiefelHomeomorph_orthogonalGroup_smul (e : E ≃ₗᵢ[ℝ] F) {k : ℕ}
+    (A : orthogonalGroup (Fin k) ℝ) (v : stiefel E k) :
+    e.stiefelHomeomorph k (A • v) = A • e.stiefelHomeomorph k v :=
+  e.toLinearIsometry.stiefelMap_orthogonalGroup_smul k A v
+
+/-- The Stiefel homeomorphism intertwines rotations of the frame. -/
+@[simp]
+theorem stiefelHomeomorph_specialOrthogonalGroup_smul (e : E ≃ₗᵢ[ℝ] F) {k : ℕ}
+    (A : specialOrthogonalGroup (Fin k) ℝ) (v : stiefel E k) :
+    e.stiefelHomeomorph k (A • v) = A • e.stiefelHomeomorph k v := by
+  simp only [stiefel.specialOrthogonalGroup_smul_def, stiefelHomeomorph_orthogonalGroup_smul]
 
 end LinearIsometryEquiv

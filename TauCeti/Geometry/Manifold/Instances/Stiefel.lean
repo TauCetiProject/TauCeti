@@ -460,4 +460,36 @@ theorem contMDiff_stiefelTwoReflection [FiniteDimensional ℝ E] {r : ℕ∞ω} 
 
 end
 
+namespace stiefel
+
+open Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {k : ℕ}
+
+/-- An orthonormal frame gives an orthonormal basis of its span. A specified equality of spans
+lets two such bases be compared in the same subspace. -/
+noncomputable def orthonormalBasisOfSpanEq (v : stiefel E k) {P : Submodule ℝ E}
+    (hP : span ℝ (range v.val) = P) : OrthonormalBasis (Fin k) ℝ P := by
+  subst P
+  let hv := mem_stiefel_iff.1 v.property
+  exact (Module.Basis.span hv.linearIndependent).toOrthonormalBasis <|
+    (span ℝ (range v.val)).subtypeₗᵢ.orthonormal_comp_iff.1 <| by
+      simpa [Function.comp_def] using hv
+
+/-- The basis of the span has the vectors of the original frame. -/
+@[simp]
+theorem coe_orthonormalBasisOfSpanEq_apply (v : stiefel E k) {P : Submodule ℝ E}
+    (hP : span ℝ (range v.val) = P) (j : Fin k) :
+    (orthonormalBasisOfSpanEq v hP j : E) = v.val j := by
+  subst P
+  simp [orthonormalBasisOfSpanEq]
+
+/-- The span of an orthonormal frame has dimension equal to the number of its vectors. -/
+@[simp]
+theorem finrank_span_range (v : stiefel E k) :
+    finrank ℝ (span ℝ (range v.val)) = k := by
+  simpa using finrank_span_eq_card (mem_stiefel_iff.1 v.property).linearIndependent
+
+end stiefel
+
 end TauCeti
