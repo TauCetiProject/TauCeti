@@ -61,8 +61,10 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 /-- Conjugation by an element of the normalizer of `H` is continuous on `H`. -/
 theorem continuous_normalizerMonoidHom (H : Subgroup G) (g : normalizer (H : Set G)) :
-    Continuous (H.normalizerMonoidHom g) :=
-  ((IsTopologicalGroup.continuous_conj (g : G)).comp continuous_subtypeVal).subtype_mk _
+    Continuous (H.normalizerMonoidHom g) := by
+  refine continuous_induced_rng.2 ?_
+  simpa only [Function.comp_def, normalizerMonoidHom_apply_apply_coe] using
+    (IsTopologicalGroup.continuous_conj (g : G)).comp continuous_subtypeVal
 
 /-- Conjugation `h ↦ g * h * g⁻¹` by an element `g` of the normalizer of `H`, as a homeomorphism of
 `H` with the subspace topology. Its underlying equivalence is `H.normalizerMonoidHom g`. -/
@@ -75,11 +77,11 @@ def normalizerConjHomeomorph (H : Subgroup G) (g : normalizer (H : Set G)) : H �
 @[simp]
 theorem coe_normalizerConjHomeomorph_apply (H : Subgroup G) (g : normalizer (H : Set G)) (h : H) :
     (H.normalizerConjHomeomorph g h : G) = g * h * g⁻¹ :=
-  (rfl)
+  H.normalizerMonoidHom_apply_apply_coe g h
 
 @[simp]
 theorem coe_normalizerConjHomeomorph_symm_apply (H : Subgroup G) (g : normalizer (H : Set G))
-    (h : H) : ((H.normalizerConjHomeomorph g).symm h : G) = g⁻¹ * h * g := by
-  simp [normalizerConjHomeomorph]
+    (h : H) : ((H.normalizerConjHomeomorph g).symm h : G) = g⁻¹ * h * g :=
+  H.normalizerMonoidHom_apply_symm_apply_coe g h
 
 end Subgroup
