@@ -13,6 +13,8 @@ public import Mathlib.GroupTheory.Index
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
 -- `TauCeti.UpperTriangularGroup.map_surjective` lifts invertible upper-triangular matrices.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Lift
+-- `Matrix.exists_blockUnitriangular_mul_blockTriangular` is block row reduction.
+public import TauCeti.LinearAlgebra.Matrix.LDU
 
 /-!
 # Upper-triangular congruence subgroups
@@ -34,6 +36,13 @@ matrices lift modulo `I`; then the diagonal map is surjective, so
 `B(I) ⧸ U(I) ≃* (m → (R ⧸ I)ˣ)`, and the indices of `B(I)` and `U(I)` in `GL_m(R)` are those of
 the upper-triangular and upper-unitriangular subgroups of `GL_m(R ⧸ I)`.
 
+When `I` lies in the Jacobson radical, every `g ∈ B(I)` also has an **Iwahori factorization**
+`g = u * l`, with `u` upper unitriangular and `l` lower triangular (both then lie in `B(I)`).
+Indeed the trailing principal blocks of `g`, on the indices above a given one, are upper
+triangular with unit diagonal modulo `I`, so their determinants are units, and block row reduction
+(`Matrix.exists_blockUnitriangular_mul_blockTriangular`, for the reversed order of the indices)
+clears the entries of `g` above the diagonal by an upper-unitriangular matrix acting on the left.
+
 ## Main declarations
 
 * `TauCeti.upperTriangularCongruenceSubgroup`, `TauCeti.upperUnitriangularCongruenceSubgroup`:
@@ -51,11 +60,15 @@ the upper-triangular and upper-unitriangular subgroups of `GL_m(R ⧸ I)`.
   `[B(I) : U(I)] = #((R ⧸ I)ˣ) ^ #m`.
 * `TauCeti.index_upperTriangularCongruenceSubgroup`: `[GL_m(R) : B(I)]` is the index of the
   upper-triangular subgroup of `GL_m(R ⧸ I)`.
+* `TauCeti.exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul`: the Iwahori
+  factorization of `B(I)` for `I` in the Jacobson radical.
 
 ## References
 
 * F. Calegari and D. Geraghty, *Modularity lifting beyond the Taylor–Wiles method*, Invent. Math.
   211 (2018), §5.2.1 and §9.0.1.
+* N. Iwahori and H. Matsumoto, *On some Bruhat decomposition and the structure of the Hecke rings
+  of p-adic Chevalley groups*, Publ. Math. IHÉS 25 (1965), §2.
 -/
 
 public section
@@ -300,5 +313,33 @@ theorem index_upperUnitriangularCongruenceSubgroup (hI : I ≤ Ring.jacobson R) 
   have := isLocalHom_of_le_jacobson hI
   Subgroup.index_comap_of_surjective _
     (GeneralLinearGroup.map_surjective _ Ideal.Quotient.mk_surjective)
+
+open OrderDual in
+/-- **The Iwahori factorization.** If `I` lies in the Jacobson radical, every element `g` of the
+upper-triangular congruence subgroup modulo `I` is `u * l` with `u` upper unitriangular and
+`l = u⁻¹ * g` lower triangular. For the Iwahori subgroup of `GL_m` over the valuation ring of a
+nonarchimedean local field this writes it as the product of its upper-unitriangular and its
+lower-triangular parts. -/
+theorem exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul (hI : I ≤ Ring.jacobson R)
+    {g : GL m R} (hg : g ∈ upperTriangularCongruenceSubgroup m I) :
+    ∃ u ∈ upperUnitriangularGroup m R, ((u⁻¹ * g : GL m R) : Matrix m m R).IsLowerTriangular := by
+  have := isLocalHom_of_le_jacobson hI
+  -- The trailing principal blocks of `g` have unit determinants: modulo `I` they are upper
+  -- triangular, with the units `diag I g j` on the diagonal.
+  have hblock (i : m) :
+      IsUnit ((g : Matrix m m R).toSquareBlockProp fun j ↦ toDual j < toDual i).det :=
+    isUnit_det_of_isUpperTriangular_map (f := Ideal.Quotient.mk I) (fun a b hab ↦ by
+      rw [map_apply, toSquareBlockProp_def, of_apply, Ideal.Quotient.eq_zero_iff_mem]
+      exact mem_upperTriangularCongruenceSubgroup_iff.mp hg hab) fun a ↦ by
+      rw [toSquareBlockProp_def, of_apply,
+        ← UpperTriangularCongruenceSubgroup.diag_apply_val ⟨g, hg⟩]
+      exact Units.isUnit _
+  obtain ⟨P, hP, hPg⟩ :=
+    exists_blockUnitriangular_mul_blockTriangular (b := toDual) (g : Matrix m m R) hblock
+  have hPU : P.IsUpperUnitriangular := (isUpperUnitriangular_iff P).mpr
+    ⟨fun _ _ hji ↦ hP.blockTriangular (toDual_lt_toDual.mpr (toDual_lt_toDual.mpr hji)),
+      fun i ↦ (hP.apply_of_eq rfl).trans (one_apply_eq i)⟩
+  refine ⟨hPU.toGL⁻¹, inv_mem (UpperUnitriangularGroup.toGL_mem_upperUnitriangularGroup hPU), ?_⟩
+  rwa [inv_inv, Units.val_mul, hPU.coe_toGL]
 
 end TauCeti
