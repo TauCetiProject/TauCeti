@@ -250,17 +250,17 @@ theorem IsLocalDiffeomorphAt.isSubmersionAtOfComplement {f : M → N} {x : M}
     exact ⟨hxΘ, by rw [← hfΘ hxΘ]; exact mem_chart_source G (f x)⟩
   let L : E ≃L[𝕜] E' × PUnit.{1} := L₀.trans (ContinuousLinearEquiv.prodUnique 𝕜 E' PUnit.{1}).symm
   refine .mk_of_continuousAt hcont L φ ψ hxφ (mem_chart_source G (f x)) hφ hψ fun u hu ↦ ?_
-  have hIu : I (I.symm u) = u := I.right_inv (I.range_eq_univ.symm ▸ mem_univ u)
   have huΞ : u ∈ Ξ.target := by
-    simpa [φ, extend_target, trans_target, ModelWithCorners.interiorChart_source, hIu,
-      I.range_eq_univ] using hu
+    rwa [OpenPartialHomeomorph.extend_trans_interiorChart_symm_target] at hu
   simp only [Ξ, ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm, trans_target,
     extendTrans_target, extendTrans_symm_apply, PartialDiffeomorph.toOpenPartialHomeomorph_target,
     ContinuousLinearEquiv.coe_toHomeomorph, mem_inter_iff, mem_preimage] at huΞ
   have huΨ : L₀ u ∈ (ψ.extend J).target := by simpa [extend_target, J.range_eq_univ] using huΞ.1
   have hyΘ : (ψ.extend J).symm (L₀ u) ∈ Θ.target := by simpa using huΞ.2
   have hsymm : (φ.extend I).symm u = Θ.toPartialEquiv.symm ((ψ.extend J).symm (L₀ u)) := by
-    simp [φ, Ξ, hIu]
+    dsimp only [φ]
+    rw [OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm]
+    simp [Ξ]
   dsimp only [comp_apply]
   rw [hsymm, hfΘ (Θ.toPartialEquiv.map_target hyΘ), Θ.toPartialEquiv.right_inv hyΘ]
   exact (ψ.extend J).right_inv huΨ

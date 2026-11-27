@@ -33,6 +33,9 @@ when the model `I` itself has a boundary.
 * `OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas`: an open partial homeomorphism
   from a manifold to `E` that is `C^n` with `C^n` inverse, followed by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
+* `OpenPartialHomeomorph.extend_trans_interiorChart_symm_target`,
+  `OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm`: for boundaryless `I`, extending
+  `e.trans I.interiorChart.symm` by `I` preserves `e.target` and `e.symm`.
 * `PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas`: a partial diffeomorphism
   from a manifold to `E`, followed by a chart of the maximal atlas of `E` and by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
@@ -128,6 +131,33 @@ theorem OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas {n : ℕ
       fun y hy ↦ interior_subset (s := range I) (hsrc hy).2
   · -- As a map, the inverse chart is `e.symm ∘ I`.
     exact he'.comp I.contMDiff.contMDiffOn fun z hz ↦ htgt hz
+
+omit [ChartedSpace H M] in
+private theorem OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq [I.Boundaryless]
+    (e : OpenPartialHomeomorph M E) :
+    (e.trans I.interiorChart.symm).extend I = e.toPartialEquiv := by
+  have hIw (w : E) : I (I.symm w) = w := I.right_inv (I.range_eq_univ ▸ mem_univ w)
+  ext x
+  · exact hIw (e x)
+  · exact congrArg e.symm (hIw x)
+  · simp [I.range_eq_univ]
+
+omit [ChartedSpace H M] in
+/-- When `I` is boundaryless, extending `e.trans I.interiorChart.symm` by `I` preserves
+`e.target`. -/
+theorem OpenPartialHomeomorph.extend_trans_interiorChart_symm_target [I.Boundaryless]
+    (e : OpenPartialHomeomorph M E) :
+    ((e.trans I.interiorChart.symm).extend I).target = e.target :=
+  congrArg PartialEquiv.target (OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq e)
+
+omit [ChartedSpace H M] in
+/-- When `I` is boundaryless, the inverse of `(e.trans I.interiorChart.symm).extend I` agrees
+with `e.symm`. -/
+theorem OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm [I.Boundaryless]
+    (e : OpenPartialHomeomorph M E) :
+    (((e.trans I.interiorChart.symm).extend I).symm : E → M) = e.symm :=
+  congrArg (fun p : PartialEquiv M E ↦ (p.symm : E → M))
+    (OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq e)
 
 /-- A partial diffeomorphism from `M` to the model vector space, followed by a chart `σ` of the
 maximal atlas of the vector space and read back through the interior chart of the model, is a chart

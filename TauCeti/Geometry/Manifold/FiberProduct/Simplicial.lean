@@ -38,8 +38,10 @@ coface and codegeneracy maps `Fin.succAbove` and `Fin.predAbove` gives the Čech
 When `π` is a `C^n` submersion (`1 ≤ n`) between finite-dimensional boundaryless real manifolds and
 each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChartedSpace`:
 
-* every reindexing map `reindex α` is `C^{m'}` (`m' ≤ n`), and a bijection `α : Fin k₁ ≃ Fin k₂`
-  induces a `C^n` diffeomorphism (`TauCeti.iteratedFiberProductReindexDiffeomorph`);
+* every reindexing map `reindex α` is `C^{m'}` (`m' ≤ n`, `TauCeti.contMDiff_reindex`), and in
+  particular `mapSimplex θ` is `C^{m'}` (`TauCeti.contMDiff_mapSimplex`), while a bijection
+  `α : Fin k₁ ≃ Fin k₂` induces a `C^n` diffeomorphism
+  (`TauCeti.iteratedFiberProductReindexDiffeomorph`);
 * reindexing along any injective map `α : Fin (m₁ + 1) → Fin (m₂ + 1)` is a surjective `C^n`
   submersion (`TauCeti.isSubmersion_reindex_of_injective`); in particular, every face map `face i`
   is a surjective `C^n` submersion (`TauCeti.isSubmersion_face`,
@@ -50,7 +52,7 @@ each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChar
 * for a section `s` of `π`, prepending `s (baseProj y)` to `y` is `C^{m'}` at every `y` where `s`
   is `C^{m'}` at `baseProj y` (`TauCeti.contMDiffAt_cons_section`);
 * the diagonal inclusion `IteratedFiberProduct.const (m + 1) : Y → Y^[m + 1]` is a `C^n` smooth
-  embedding (`TauCeti.isSmoothEmbedding_constDiagonal`).
+  embedding (`TauCeti.isSmoothEmbedding_const`).
 
 ## References
 
@@ -266,6 +268,13 @@ theorem mapSimplex_id {a : ℕ} (y : IteratedFiberProduct π (a + 1)) :
 theorem mapSimplex_comp {a b c : ℕ} (θ₁ : ⦋a⦌ ⟶ ⦋b⦌) (θ₂ : ⦋b⦌ ⟶ ⦋c⦌) :
     mapSimplex (π := π) (θ₁ ≫ θ₂) = mapSimplex θ₁ ∘ mapSimplex θ₂ := by
   simp only [mapSimplex, SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, reindex_comp]
+
+/-- Pointwise form of `mapSimplex_comp`, normalizing nested `mapSimplex` applications. -/
+@[simp]
+theorem mapSimplex_mapSimplex {a b c : ℕ} (θ₁ : ⦋a⦌ ⟶ ⦋b⦌) (θ₂ : ⦋b⦌ ⟶ ⦋c⦌)
+    (y : IteratedFiberProduct π (c + 1)) :
+    mapSimplex θ₁ (mapSimplex θ₂ y) = mapSimplex (θ₁ ≫ θ₂) y := by
+  simp only [mapSimplex, SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, reindex_reindex]
 
 /-- `mapSimplex` sends `SimplexCategory.δ i` to `face i`. -/
 @[simp]
@@ -533,6 +542,26 @@ theorem contMDiff_reindex {m₁ m₂ : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n)
   simp only [IteratedFiberProduct.eval_reindex]
   exact contMDiff_eval hn hπ hm' (α i)
 
+section SimplexCategory
+
+open CategoryTheory
+open scoped Simplicial
+
+/-- Every Čech-nerve map `mapSimplex θ : Y^[b + 1] → Y^[a + 1]` is `C^{m'}` for `m' ≤ n`. -/
+theorem contMDiff_mapSimplex {a b : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    letI := iteratedFiberProductChartedSpace hn hπ b
+    letI := iteratedFiberProductChartedSpace hn hπ a
+    ContMDiff
+      𝓘(ℝ, Fin ((b + 1) * finrank ℝ EY - b * finrank ℝ EM) → ℝ)
+      𝓘(ℝ, Fin ((a + 1) * finrank ℝ EY - a * finrank ℝ EM) → ℝ) m'
+      (IteratedFiberProduct.mapSimplex θ :
+        IteratedFiberProduct π (b + 1) → IteratedFiberProduct π (a + 1)) := by
+  let := iteratedFiberProductChartedSpace hn hπ b
+  let := iteratedFiberProductChartedSpace hn hπ a
+  exact contMDiff_reindex hn hπ hm' θ.toOrderHom
+
+end SimplexCategory
+
 /-- Reindexing along an equivalence `α : Fin (m₁ + 1) ≃ Fin (m₂ + 1)` induces a `C^n`
 diffeomorphism `Y^[m₂ + 1] ≃ₘ^n Y^[m₁ + 1]`. In particular, permuting the factors of `Y^[k]` is a
 `C^n` diffeomorphism. -/
@@ -742,7 +771,7 @@ theorem isSmoothEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
 
 /-- For `m : ℕ`, the constant-tuple map `IteratedFiberProduct.const (m + 1)` is a `C^n` smooth
 embedding into `IteratedFiberProduct π (m + 1)`, with `eval 0` as a `C^n` left inverse. -/
-theorem isSmoothEmbedding_constDiagonal (m : ℕ) :
+theorem isSmoothEmbedding_const (m : ℕ) :
     letI := iteratedFiberProductChartedSpace hn hπ m
     Manifold.IsSmoothEmbedding IY
       𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) n

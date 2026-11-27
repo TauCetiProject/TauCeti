@@ -113,10 +113,8 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
       ((hf.equiv w).1 ∈ Φ₂.target ∧ Φ₂.symm (hf.equiv w).1 ∈ Ψ₁.source) ∧
       hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2) ∈ (d₁.extend I).target := by
     intro w hw
-    have hIw : I (I.symm w) = w := I.right_inv (I.range_eq_univ.symm ▸ mem_univ w)
     have hwΘ : w ∈ Θ.target := by
-      simpa [φ, extend_target, trans_target, ModelWithCorners.interiorChart_source, hIw,
-        I.range_eq_univ] using hw
+      rwa [OpenPartialHomeomorph.extend_trans_interiorChart_symm_target] at hw
     simp only [Θ, τF, Φ₁, ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
       transHomeomorph_target, trans_target, prod_target, refl_target, prod_symm, refl_symm,
       OpenPartialHomeomorph.prod_apply, refl_apply, extendTrans_target,
@@ -127,8 +125,9 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
     exact hwΘ.2
   have hφ_symm (w : E) : (φ.extend I).symm w =
       (d₁.extend I).symm (hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2)) := by
-    have hIw : I (I.symm w) = w := I.right_inv (I.range_eq_univ.symm ▸ mem_univ w)
-    simp [φ, Θ, τF, Φ₁, hIw]
+    dsimp only [φ]
+    rw [OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm]
+    simp [Θ, τF, Φ₁]
   have hmain : ∀ w ∈ (φ.extend I).target,
       (hf.equiv w).1 ∈ (ψ.extend J).target ∧
       f ((φ.extend I).symm w) = (ψ.extend J).symm (hf.equiv w).1 ∧
