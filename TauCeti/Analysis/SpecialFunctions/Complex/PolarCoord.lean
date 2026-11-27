@@ -19,7 +19,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 # The differential of the complex polar parametrization
 
 The Cartesian polar map has differential `fderivComplexPolarCoordSymm` at every real radius
-and angle. Its differential is injective at nonzero radius. The translated polar map is smooth
+and angle. Its differential is bijective at nonzero radius. The translated polar map is smooth
 even at zero radius. Its radial and angular derivative vectors give the pullback Euclidean metric
 `dr² + r² dθ²`, which is invariant under angular translations.
 -/
@@ -126,9 +126,9 @@ theorem bijective_fderivPolarCoordSymm (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
     exact hx.isUnit
   exact (Module.End.isUnit_iff _).mp hunit
 
-/-- The polar parametrization has injective differential at every nonzero radius. -/
-theorem fderivComplexPolarCoordSymm_injective (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
-    Function.Injective (fderivComplexPolarCoordSymm x) :=
-  Complex.equivRealProdCLM.symm.injective.comp (bijective_fderivPolarCoordSymm x hx).injective
+/-- The complex polar parametrization has bijective differential at every nonzero radius. -/
+theorem bijective_fderivComplexPolarCoordSymm (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
+    Function.Bijective (fderivComplexPolarCoordSymm x) :=
+  Complex.equivRealProdCLM.symm.bijective.comp (bijective_fderivPolarCoordSymm x hx)
 
 end TauCeti

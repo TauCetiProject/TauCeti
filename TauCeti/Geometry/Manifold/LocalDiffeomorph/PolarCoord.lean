@@ -33,6 +33,6 @@ theorem isLocalDiffeomorphAt_complexPolarCoord_symm (x : ℝ × ℝ) (hx : x.1 �
     isOpen_univ (Set.mem_univ x) BoundarylessManifold.isInteriorPoint hn ?_
     Complex.equivRealProdCLM.symm.toLinearEquiv.finrank_eq
   rw [mfderiv_eq_fderiv, fderiv_complexPolarCoord_symm]
-  exact fderivComplexPolarCoordSymm_injective x hx
+  exact (bijective_fderivComplexPolarCoordSymm x hx).injective
 
 end TauCeti
