@@ -838,10 +838,8 @@ private theorem classicalPrincipalSymbol_sectionEntry_of_mem_differentialOperato
     simp [C]
   -- The iterated commutators of `P` with `f` are those with `g`, so the geometric principal
   -- symbol at `df_x` is read from `C`.
-  have hgeom : (smulCommutator ℝ f ^ k) (P.restrictScalars ℝ) = C.restrictScalars ℝ := by
-    have h := smulCommutator_pow_comp_comp (R := ℝ) (a := g) (b := f) (ρ := LinearMap.id)
-      (σ := LinearMap.id) (fun u ↦ by simp [g]) (fun u ↦ by simp [g]) (P.restrictScalars ℝ) k
-    simpa [C] using h
+  have hgeom : (smulCommutator ℝ f ^ k) (P.restrictScalars ℝ) = C.restrictScalars ℝ :=
+    smulCommutator_pow_restrictScalars_ofReal P f
   have hσ := sectionPrincipalSymbol_mvfderiv (x := x) BoundarylessManifold.isInteriorPoint
     ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex hP⟩ f s
   rw [hgeom] at hσ
