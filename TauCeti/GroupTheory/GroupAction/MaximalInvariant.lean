@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Algebra.Ring.Subring.Units
-public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
 /-!
@@ -18,15 +17,15 @@ A function `M : α → β` is a *maximal invariant* of an action of `G` on `α` 
 the reduction by invariance of testing theory: an invariant test is a function of a maximal
 invariant (Ferguson, *Mathematical Statistics: A Decision Theoretic Approach*, §5.6).
 
-The duality of tests and confidence sets, which the roadmap groups with invariance, is
-`TauCeti.hasConfidenceCoverage_iff_forall_hasTestLevel` in
+Inverting a family of invariant tests gives an invariant confidence set; the duality of tests and
+confidence sets used there is `TauCeti.hasConfidenceCoverage_iff_forall_hasTestLevel` in
 `TauCeti.Statistics.Experiments.ConfidenceSets`.
 
 ## Main definitions
 
 * `MulAction.IsMaximalInvariant G M`: `M` is invariant under `G` and separates `G`-orbits.
 * `SubMulAction.posHalfPlane K`: the pairs `(x, s)` with `s > 0`, as a set stable under the
-  diagonal scaling by the positive units of an ordered field `K`.
+  diagonal scaling by the positive units of an ordered semiring `K`.
 
 ## Main results
 
@@ -95,7 +94,9 @@ end MulAction
 
 namespace SubMulAction
 
-variable (K : Type*) [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+section Semiring
+
+variable (K : Type*) [Semiring K] [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- The pairs `(x, s)` with `s > 0`, stable under the diagonal action `(x, s) ↦ (c x, c s)` of the
 positive units `c` of `K`. -/
@@ -110,6 +111,10 @@ positive. -/
 @[simp]
 theorem mem_posHalfPlane {p : K × K} : p ∈ posHalfPlane K ↔ 0 < p.2 :=
   Iff.rfl
+
+end Semiring
+
+variable {K : Type*} [Semifield K] [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- The ratio `x / s` is a maximal invariant of the scale group of positive units acting on the
 pairs `(x, s)` with `s > 0`. -/
