@@ -237,35 +237,21 @@ theorem isIso_twistedHomologyMap_diskBoundaryPairToComplDiskCenter (n : ℕ)
       ((constantFunctor _).obj M) k) := by
     have hs : IsIso (TopPair.singularHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n) M k) :=
       isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter M n k
-    have he := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (diskBoundaryPair.{v} n) _ _
-      (pullbackConstantIso (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom M).hom
-      (Iso.isIso_hom _) k
+    have he := TopPair.isIso_twistedHomologyCoefficientMap (P := diskBoundaryPair.{v} n)
+      (f := (pullbackConstantIso (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom
+        M).hom) (k := k)
     have h := TopPair.twistedHomologyConstantIso_hom_pair_naturality M
       (diskBoundaryPairToComplDiskCenter.{v} n) k
     have : IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n)
         ((constantFunctor _).obj M) k ≫
         ((TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyConstantIso
           M k).hom) :=
-      (congrArg IsIso h).mpr (@IsIso.comp_isIso _ _ _ _ _ _ _ he
-        (@IsIso.comp_isIso _ _ _ _ _ _ _ inferInstance hs))
+      (congrArg IsIso h).mpr (IsIso.comp_isIso' he (IsIso.comp_isIso' inferInstance hs))
     exact IsIso.of_isIso_comp_right _
       ((TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyConstantIso
         M k).hom
-  -- The identification of `L` with the constant system is natural in maps of pairs.
-  have := @TopPair.isIso_twistedHomologyCoefficientMap _ _
-    (TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))) _ _ φ.hom (Iso.isIso_hom _) k
-  have hp := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (diskBoundaryPair.{v} n) _ _
-    ((LocalCoefficientSystem.pullback
-      (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom).mapIso φ).hom
-    (Iso.isIso_hom _) k
-  have h := TopPair.twistedHomologyMap_naturality (diskBoundaryPairToComplDiskCenter.{v} n)
-    (η := φ.hom) (k := k)
-  have : IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n) L k ≫
-      (TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyCoefficientMap
-        φ.hom k) :=
-    (congrArg IsIso h).mpr (@IsIso.comp_isIso _ _ _ _ _ _ _ hp hc)
-  exact IsIso.of_isIso_comp_right _
-    ((TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyCoefficientMap
-      φ.hom k)
+  -- `L` is isomorphic to the constant system with fibre `M`.
+  exact (TopPair.isIso_twistedHomologyMap_iff_of_iso
+    (diskBoundaryPairToComplDiskCenter.{v} n) L φ k).2 hc
 
 end TauCeti

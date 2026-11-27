@@ -29,6 +29,8 @@ A map of pairs `f : (X, A) ⟶ (X', A')` whose ambient map lands in `A'` induces
 twisted chains and homology (`TopPair.twistedChainComplexMap_eq_zero_of_fac`,
 `TopPair.twistedHomologyMap_eq_zero_of_fac`). This is the local-coefficient form of
 `TopPair.singularHomologyMap_eq_zero_of_fac`.
+Whether a map of pairs induces isomorphisms on relative homology depends on the coefficients only
+up to isomorphism (`TopPair.isIso_twistedHomologyMap_iff_of_iso`).
 
 Together with `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, this supplies functoriality of
 twisted singular homology for maps of spaces and maps of pairs.
@@ -402,6 +404,16 @@ lemma twistedHomologyMap_comp_twistedHomologyCoefficientMap_eqToHom
           (eqToHom (congrArg (LocalCoefficientSystem.pullback (Hom.fst f).hom).obj h)) k ≫
         twistedHomologyMap f K k := by
   rw [twistedHomologyMap_naturality, eqToHom_map]
+
+/-- **Isomorphic coefficients detect the same isomorphisms.** For an isomorphism `e : L ≅ K` of
+local coefficient systems on the target pair, a map of pairs `f` induces an isomorphism on relative
+homology with coefficients in `L` exactly when it does with coefficients in `K`: the two maps are
+conjugate by the coefficient isomorphisms (`TopPair.twistedHomologyMap_naturality`). -/
+lemma isIso_twistedHomologyMap_iff_of_iso {K : LocalCoefficientSystem.{u, v, max v w} R Q.fst}
+    (e : L ≅ K) (k : ℕ) :
+    IsIso (twistedHomologyMap f L k) ↔ IsIso (twistedHomologyMap f K k) := by
+  rw [← isIso_comp_right_iff (twistedHomologyMap f L k) (Q.twistedHomologyCoefficientMap e.hom k),
+    twistedHomologyMap_naturality, isIso_comp_left_iff]
 
 /-- The quotient maps from ambient to relative twisted homology are natural in maps of
 topological pairs. -/

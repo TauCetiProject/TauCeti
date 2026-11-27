@@ -116,8 +116,7 @@ private lemma characteristicCellPairMap_fst_eq_iff {n : ℕ} (i : cell C n) (z :
   rw [coe_diskHomeomorphClosedBall_diskCenter]
   refine (map_eq_map_zero_iff i
     (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).property)).1 ?_
-  exact ((coe_characteristicCellPairMap_fst_apply C i z).trans
-    (congrArg (map n i) (coe_diskHomeomorphClosedBall_apply z).symm)).symm.trans h
+  exact (coe_characteristicCellPairMap_fst_apply_eq_map_diskHomeomorphClosedBall C i z).symm.trans h
 
 variable {n : ℕ} (i : cell C n) (x : skeletonObj C (n + 1)) (hx : (x : X) = map n i 0)
 
@@ -155,8 +154,8 @@ private lemma coe_fst_diskInteriorPairι_comp_diskComplCenterToComplSingleton_ap
     (z : diskInterior.{w} n) :
     (TopPair.Hom.fst (diskInteriorPairι n ≫ diskComplCenterToComplSingleton i x hx) z).val =
       map n i (diskHomeomorphClosedBall n z.val) := by
-  rw [TopPair.Hom.fst_comp, diskComplCenterToComplSingleton_fst, coe_diskHomeomorphClosedBall_apply]
-  exact coe_characteristicCellPairMap_fst_apply C i z.val
+  rw [TopPair.Hom.fst_comp, diskComplCenterToComplSingleton_fst]
+  exact coe_characteristicCellPairMap_fst_apply_eq_map_diskHomeomorphClosedBall C i z.val
 
 /-- On the open interior of the disk, the characteristic map of `i` is an embedding into the
 `n`-skeleton: it is a homeomorphism onto the open cell. -/
@@ -265,8 +264,7 @@ theorem twistedHomologyMap_characteristicCellPairMap_comp_skeletonPairToComplSin
     have hmem : (x : X) ∈ closedCell n k := by
       rw [← hz]
       exact ⟨_, (diskHomeomorphClosedBall n z).property,
-        ((coe_characteristicCellPairMap_fst_apply C k z).trans
-          (congrArg (map n k) (coe_diskHomeomorphClosedBall_apply z).symm)).symm⟩
+        (coe_characteristicCellPairMap_fst_apply_eq_map_diskHomeomorphClosedBall C k z).symm⟩
     exact (disjoint_closedCell_openCell_of_ne n le_rfl
       (fun h ↦ hk (eq_of_heq (Sigma.mk.inj_iff.1 h).2))).notMem_of_mem_left hmem hx
   -- The characteristic map of `k` lands in `Xⁿ ∖ {x}`, the subspace of the target pair.
@@ -362,13 +360,12 @@ theorem isIso_twistedHomologyMap_characteristicCellPairMap_comp_twistedCellularC
     (skeletonPairToComplSingleton C x (hx ▸ map_zero_notMem_skeletonLT i))
     (skeletonSystem C L (n + 1)) n, isIso_comp_left_iff] at h
   -- The pulled-back systems are typed on the ambient spaces of different pairs, so instance search
-  -- does not match the factors; the instances are supplied.
-  exact @IsIso.comp_isIso _ _ _ _ _ _ _
-    (@TopPair.isIso_twistedHomologyCoefficientMap _ _ (diskBoundaryPair.{w} n) _ _
-      ((LocalCoefficientSystem.pullback
-        (TopPair.Hom.fst (characteristicCellPairMap C i)).hom).mapIso
-          (skeletonSystemIsoPullbackComplSingleton C L x (hx ▸ map_zero_notMem_skeletonLT i))).hom
-      (Iso.isIso_hom _) n) h
+  -- does not match the factors; the instances are supplied, naming the pair.
+  exact IsIso.comp_isIso' (TopPair.isIso_twistedHomologyCoefficientMap (P := diskBoundaryPair.{w} n)
+    (f := ((LocalCoefficientSystem.pullback
+      (TopPair.Hom.fst (characteristicCellPairMap C i)).hom).mapIso
+        (skeletonSystemIsoPullbackComplSingleton C L x (hx ▸ map_zero_notMem_skeletonLT i))).hom)
+    (k := n)) h
 
 /-- **The localization at a point of an open cell vanishes on the contributions of the other
 cells.** For a point `x` of the open cell of an `n`-cell `i` and an `n`-cell `k ≠ i`, the
