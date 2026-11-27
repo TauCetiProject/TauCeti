@@ -17,7 +17,7 @@ After averaging over translates, the thick-place contribution is a sum over the 
 characters and the top places. Comparing the coset counts of the tops with the `4 : 3` profile
 replaces the kept coefficients by positive Fourier weights. The discarded characters cost
 only the norms of their remainders, and the variation and coset-count errors together fit
-in a square-root power budget. The cutoff for this comparison is uniform in the host.
+in a `4 x^(1/2+ε)` power budget. The cutoff for this comparison is uniform in the host.
 
 The normalization and bound follow Levent Alpöge's `Deduction.CharacterBalanceMoves.core`
 and `Deduction.CharacterBalanceMoves.one_char` in `ChCore.lean` of the
@@ -113,35 +113,33 @@ private theorem top_character_comparison {α ι Q : Type*} [Group Q] [Fintype Q]
   exact (mul_le_mul_of_nonneg_left (by linarith only [hvar, hcounts]) (Nat.cast_nonneg _)).trans h
 
 open scoped Classical in
-/-- An upper bound on the projected thick sum bounds the cyclic-family sum with the `4 : 3`
-weights, after charging the norms at the common scale of indices in `I \ K` and a square-root
-power error. The natural number `o` bounds the size of the quotient, and `p` assigns each top
-in `S` to its coset. The cutoff depends only on `o`, the logarithmic budget `C`, and the
-precision exponent. -/
-theorem card_mul_cyclic_riesz_sum_le_of_projection (o : ℕ) (C : ℝ) {ε : ℝ} (hε : -(1 / 2) < ε) :
+/-- The projected thick sum bounds from below the cyclic-family sum with the `4 : 3` weights,
+scaled by the number of tops, after charging the norms at the common scale of indices in
+`I \ K` and an error of `4 x^(1/2+ε)`, where `ε` is the precision exponent. The natural
+number `o` bounds the size of the quotient, and `p` assigns each top in `S` to its coset. The
+cutoff depends only on `o`, the logarithmic budget `C`, and the precision exponent. -/
+theorem card_mul_cyclic_riesz_sum_le_projection (o : ℕ) (C : ℝ) {ε : ℝ} (hε : -(1 / 2) < ε) :
     ∃ x₀ : ℝ, 3 ≤ x₀ ∧ ∀ x ≥ x₀,
       ∀ {α ι Q : Type*} [Group Q] [Fintype Q], Fintype.card Q ≤ o →
       ∀ (S : Finset α) (p : α → Q) (I K : Finset ι), K ⊆ I → I.card ≤ 4 * o →
-      ∀ (χ : ι → Q →* ℂ) (c z : ι → ℂ) (f : ι → α → ℂ) (B bound : ℝ), 0 ≤ B →
+      ∀ (χ : ι → Q →* ℂ) (c z : ι → ℂ) (f : ι → α → ℂ),
       (∀ q, |((S.filter fun a ↦ p a = q).card : ℝ) -
         ((if q = 1 then 4 else 3) / (3 * (Fintype.card Q : ℝ) + 1)) * S.card| ≤
           x ^ (-1 + ε) * S.card) →
       (∀ i ∈ I \ K, ‖c i‖ ≤ 1) → (∀ i ∈ K, c i = 1) →
       (∀ i ∈ I, ∀ a ∈ S, ‖f i a - z i‖ ≤ |C| * Real.log x) →
       (∀ i ∈ K, ‖z i‖ ≤ x * (|C| * Real.log x)) →
-      B * (∑ i ∈ I, (c i * ∑ a ∈ S, χ i (p a) * f i a).re) ≤ bound →
-      B * S.card * ((∑ i ∈ K, (if χ i = 1 then 1 else (3 * (Fintype.card Q : ℝ) + 1)⁻¹) *
+      S.card * ((∑ i ∈ K, (if χ i = 1 then 1 else (3 * (Fintype.card Q : ℝ) + 1)⁻¹) *
         (z i).re) -
-        (∑ i ∈ I \ K, ‖z i‖) - 4 * x ^ (1 / 2 + ε)) ≤ bound := by
+        (∑ i ∈ I \ K, ‖z i‖) - 4 * x ^ (1 / 2 + ε)) ≤
+        ∑ i ∈ I, (c i * ∑ a ∈ S, χ i (p a) * f i a).re := by
   obtain ⟨y, hy⟩ := eventually_atTop.mp (eventually_logarithmic_top_error_le o |C| hε)
   refine ⟨max 3 y, le_max_left .., fun x hx ↦ ?_⟩
-  intro α ι Q _ _ hQ S p I K hKI hI χ c z f B bound hB hν hc hcK hf hz hprojection
+  intro α ι Q _ _ hQ S p I K hKI hI χ c z f hν hc hcK hf hz
   have hx1 : 1 ≤ x := by linarith [le_max_left (3 : ℝ) y]
   have hcost := top_character_comparison hQ S p I K hKI hI χ c z f hν hc hcK hf hz
     (zero_le_one.trans hx1) (mul_nonneg (abs_nonneg _) (Real.log_nonneg hx1))
   have herror := hy x ((le_max_right ..).trans hx)
-  rw [mul_assoc]
-  refine (mul_le_mul_of_nonneg_left ?_ hB).trans hprojection
   exact (mul_le_mul_of_nonneg_left (by linarith only [herror]) (Nat.cast_nonneg _)).trans hcost
 
 end TauCeti
