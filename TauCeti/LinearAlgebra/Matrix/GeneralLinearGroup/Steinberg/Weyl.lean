@@ -52,6 +52,11 @@ commutator formula `⁅h_{ij}(u), h_{ik}(v)⁆ = h_{ij}(u) h_{ij}(v) h_{ij}(v u)
 * `TauCeti.IndexedSteinbergGroup.w_symm_neg_inv`: `w_{ji}(-u⁻¹) = w_{ij}(u)`.
 * `TauCeti.IndexedSteinbergGroup.commutatorElement_h_h`: the commutator of `h_{ij}(u)` and
   `h_{ik}(v)`.
+* `TauCeti.IndexedSteinbergGroup.w_mul_w_mul_inv_ki`,
+  `TauCeti.IndexedSteinbergGroup.h_mul_w_mul_inv_jk`: over a commutative ring, conjugation of
+  a Weyl element by Weyl and diagonal elements at overlapping index pairs.
+* `TauCeti.IndexedSteinbergGroup.h_neg_mul_h_neg_one_inv`: over a commutative ring,
+  `h_{ik}(-u) h_{ik}(-1)⁻¹ = h_{jk}(u⁻¹)⁻¹ h_{ij}(u)`.
 * `TauCeti.IndexedSteinbergGroup.w_mul_w_of_add_eq_one`: the identity
   `w_{ij}(u) w_{ij}(v) = w_{ij}(u v⁻¹) w_{ij}(1)` for `u + v = 1`.
 * `TauCeti.IndexedSteinbergGroup.commutatorElement_h_h_inv_of_add_eq_one`,
@@ -600,6 +605,41 @@ theorem commutatorElement_h_h_inv_of_add_eq_one {i j k : ι} (hij : i ≠ j) (hi
     (hjk : j ≠ k) {u v : Rˣ} (huv : (u : R) + v = 1) : ⁅h hij u, h hik v⁻¹⁆ = 1 := by
   rw [commutatorElement_h_h hij hik hjk, mul_comm v⁻¹ u, h_mul_h_inv_of_add_eq_one hij hik hjk huv,
     mul_inv_cancel]
+
+/-- **Conjugating a Weyl element by a Weyl element.** Over a commutative ring, for pairwise
+distinct `i, j, k`, conjugation by `w_{ij}(c)` sends `w_{ki}(u)` to `w_{kj}(-(u c))`. -/
+theorem w_mul_w_mul_inv_ki {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (c u : Rˣ) :
+    w hij c * w hik.symm u * (w hij c)⁻¹ = w hjk.symm (-(u * c)) := by
+  rw [← MulAut.conj_apply, w_def hik.symm, map_mul, map_mul, MulAut.conj_apply,
+    w_mul_x_mul_inv_ki hij hik hjk, MulAut.conj_apply, w_mul_x_mul_inv_ik hij hik hjk, w_def]
+  congr 2
+  refine x_congr rfl rfl ?_
+  simp [mul_comm]
+
+/-- **Conjugating a Weyl element by a diagonal element.** Over a commutative ring, for pairwise
+distinct `i, j, k`, conjugation by `h_{ij}(u)` sends `w_{jk}(c)` to `w_{jk}(u⁻¹ c)`. -/
+theorem h_mul_w_mul_inv_jk {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u c : Rˣ) :
+    h hij u * w hjk c * (h hij u)⁻¹ = w hjk (u⁻¹ * c) := by
+  rw [← MulAut.conj_apply, w_def hjk, map_mul, map_mul, MulAut.conj_apply,
+    h_mul_x_mul_inv_jk hij hik hjk, MulAut.conj_apply, h_mul_x_mul_inv_kj hij hik hjk, w_def]
+  congr 2
+  refine x_congr rfl rfl ?_
+  simp [mul_comm]
+
+/-- **Diagonal elements at three indices.** Over a commutative ring, for pairwise distinct
+`i, j, k`, `h_{ik}(-u) h_{ik}(-1)⁻¹ = h_{jk}(u⁻¹)⁻¹ h_{ij}(u)`: both sides are the conjugate of
+`h_{ij}(u)` by the Weyl element `w_{jk}(1)`. -/
+theorem h_neg_mul_h_neg_one_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
+    (u : Rˣ) : h hik (-u) * (h hik (-1))⁻¹ = (h hjk u⁻¹)⁻¹ * h hij u := by
+  have h₁ : w hjk 1 * h hij u * (w hjk 1)⁻¹ = h hik (-u) * (h hik (-1))⁻¹ := by
+    rw [h_def hij, ← MulAut.conj_apply, map_mul, MulAut.conj_apply, MulAut.conj_apply,
+      w_mul_w_mul_inv_ki hjk hij.symm hik.symm, w_mul_w_mul_inv_ki hjk hij.symm hik.symm, w_mul_w]
+    simp
+  have h₂ : h hij u * (w hjk 1)⁻¹ * (h hij u)⁻¹ = w hjk (-u⁻¹) := by
+    rw [w_inv, h_mul_w_mul_inv_jk hij hik hjk, mul_neg_one]
+  rw [← h₁, show w hjk 1 * h hij u * (w hjk 1)⁻¹ =
+      w hjk 1 * (h hij u * (w hjk 1)⁻¹ * (h hij u)⁻¹) * h hij u by group, h₂, w_mul_w, neg_neg,
+    h_one, one_mul]
 
 /-- Over a commutative ring, the images in `GL ι R` of any two diagonal elements commute. -/
 theorem toGL_commutatorElement_h_h [Fintype ι] [DecidableEq ι] {i j k l : ι} (hij : i ≠ j)

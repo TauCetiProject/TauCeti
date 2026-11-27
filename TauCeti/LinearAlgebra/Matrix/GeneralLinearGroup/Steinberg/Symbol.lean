@@ -36,6 +36,8 @@ matrices commute. For a field, Matsumoto's theorem presents `K₂` by these symb
   diagonal lift words `TauCeti.IndexedSteinbergGroup.h`.
 * `TauCeti.AlgebraicK2.map_steinbergSymbol`: Steinberg symbols are natural in ring
   homomorphisms.
+* `TauCeti.steinbergSymbol_of_add_eq_one`: over a commutative ring, `{u, v} = 1` when
+  `u + v = 1`.
 
 ## References
 
@@ -170,6 +172,14 @@ theorem AlgebraicK2.map_steinbergSymbol {S : Type*} [Ring S] (f : R →+* S) {u 
   rw [AlgebraicK2.coe_map_apply, coe_steinbergSymbol_eq_commutatorElement_h,
     coe_steinbergSymbol_eq_commutatorElement_h, map_commutatorElement, IndexedSteinbergGroup.map_h,
     IndexedSteinbergGroup.map_h]
+
+/-- **The Steinberg relation** `{u, v} = 1` for units `u` and `v` of a commutative ring with
+`u + v = 1`. -/
+theorem steinbergSymbol_of_add_eq_one {R : Type*} [CommRing R] {u v : Rˣ} (h : Commute u v)
+    (huv : (u : R) + v = 1) : steinbergSymbol u v h = 1 :=
+  Subtype.ext <| by
+    rw [coe_steinbergSymbol_eq_commutatorElement_h, Subgroup.coe_one]
+    exact SteinbergGroup.commutatorElement_h_h_of_add_eq_one (by decide) (by decide) (by decide) huv
 
 end Symbol
 
