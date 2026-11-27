@@ -320,9 +320,7 @@ include hK htop hconn hne
 value.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be a nonempty preconnected open set of finite measure with compact
 value map `H¹(Ω) → L²(Ω)`, on which `H¹_∅(Ω) = H¹(Ω)`. Then `λ₁(∅)`, the min–max value
 `TauCeti.PDE.mixedEigenvalue` with index `1`, is the least positive point of the spectrum of
-`-Δ_∅`. It is positive because the functions with vanishing gradient on the preconnected `Ω` are
-the constants (`TauCeti.PDE.mixedEigenvalue_laplacian_one_pos`), and every positive spectral value
-is some `λₖ(∅)` with `k ≥ 1`, because `λ₀(∅) = 0` is the eigenvalue of the constants. -/
+`-Δ_∅`. -/
 theorem isLeast_spectrum_mixedOperator_laplacian_empty_inter_Ioi_mixedEigenvalue_one :
     IsLeast ((mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) ∅).spectrum ∩ Ioi 0) (mixedEigenvalue mu Omega ∅ (fun _ ↦ 1) 0 0 1) := by
@@ -336,6 +334,7 @@ theorem isLeast_spectrum_mixedOperator_laplacian_empty_inter_Ioi_mixedEigenvalue
   obtain ⟨j, hj⟩ := hspec ▸ zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero
     (empty_disjoint _) (u := W1p.const 1) (by rw [htop]; exact ClosedSubmodule.mem_top)
     (W1p.value_const_ne_zero hne one_ne_zero) (W1p.gradient_const 1)
+  -- So `λ₀(∅) ≤ 0`, and every positive spectral value is some `λₖ(∅)` with `k ≥ 1`.
   rcases k with _ | k
   · exact absurd ((hmono j.zero_le).trans_eq hj) (not_le.2 hkpos)
   · exact hmono (Nat.succ_le_succ k.zero_le)

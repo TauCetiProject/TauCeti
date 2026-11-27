@@ -58,16 +58,17 @@ when `Ω` is moreover bounded (`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero
 (`TauCeti.PDE.mixedEigenvalue_laplacian_le_dirichletEigenvalue`). For instance, on `(0, 1)` with
 `Γ = {0}` the least Neumann, mixed and Dirichlet eigenvalues are `0`, `π² / 4` and `π²`.
 
-The **bottom of the mixed spectrum** is identified as well. When the form is coercive on
-`H¹_Γ(Ω)` with no shift, `λ₀(Γ)` is the first mixed eigenvalue `TauCeti.PDE.firstMixedEigenvalue`
+The **bottom of the mixed spectrum** is identified as well. Under the Rellich property, on a
+nonempty domain and for `Γ` missing `Ω`, when the form is symmetric and coercive on `H¹_Γ(Ω)` with
+no shift, `λ₀(Γ)` is the first mixed eigenvalue `TauCeti.PDE.firstMixedEigenvalue`
 (`TauCeti.PDE.mixedEigenvalue_zero_eq_firstMixedEigenvalue`). So for `-Δ` on a connected domain,
-isometric to a bounded Lipschitz domain, and `Γ` meeting the boundary in a set of positive surface
-measure, `λ₀(Γ) > 0` and `1 / √λ₀(Γ)` is the optimal Poincaré–Friedrichs constant. On a
-preconnected `Ω` of finite measure, for every `Γ`, `λ₁(Γ) > 0`
-(`TauCeti.PDE.mixedEigenvalue_laplacian_one_pos`): the functions of zero energy are the constants,
-which span a single line. For `Γ = ∅` this makes the Neumann eigenvalue `λ₀(∅) = 0` simple; the
-identification of `λ₁(∅)` with the least Rayleigh quotient of mean zero is in
-`TauCeti.Analysis.PDE.Neumann.SecondEigenvalue`.
+isometric to a bounded Lipschitz domain, and `Γ` missing `Ω` and meeting the boundary in a set of
+positive surface measure, `λ₀(Γ) > 0` and `1 / √λ₀(Γ)` is the optimal Poincaré–Friedrichs
+constant. Under the Rellich property, on a nonempty preconnected `Ω` of finite measure and for
+every `Γ` missing `Ω`, `λ₁(Γ) > 0` (`TauCeti.PDE.mixedEigenvalue_laplacian_one_pos`): the
+functions of zero energy are the constants, which span a single line. For `Γ = ∅` this makes the
+Neumann eigenvalue `λ₀(∅) = 0` simple; the identification of `λ₁(∅)` with the least Rayleigh
+quotient of mean zero is in `TauCeti.Analysis.PDE.Neumann.SecondEigenvalue`.
 
 ## Main declarations
 
@@ -597,11 +598,8 @@ theorem mixedEigenvalue_laplacian_empty_zero [Nonempty ι]
 
 /-- **On a connected domain the second mixed eigenvalue of `-Δ` is positive.** On a nonempty
 preconnected open set of finite measure with the Rellich property, for every `Γ` missing `Ω`,
-`λ₁(Γ) > 0`. A subspace of `H¹_Γ(Ω)` on which `∫_Ω |∇v|² ≤ 0` consists of functions with vanishing
-gradient, which are constant on the preconnected `Ω`, so its values span at most the line of the
-constants, and no such subspace is admissible in the min–max for `λ₁(Γ)`. In particular, for
-`Γ = ∅`, the Neumann eigenvalue `λ₀(∅) = 0` (`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`)
-is simple. -/
+`λ₁(Γ) > 0`. In particular, for `Γ = ∅`, the Neumann eigenvalue `λ₀(∅) = 0`
+(`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`) is simple. -/
 theorem mixedEigenvalue_laplacian_one_pos [Nonempty ι]
     [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))] (hΓ : Disjoint Γ Omega)
     (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
@@ -611,7 +609,8 @@ theorem mixedEigenvalue_laplacian_one_pos [Nonempty ι]
   refine (mixedEigenvalue_laplacian_nonneg hΓ hK hOmega 1).lt_of_ne' fun h ↦ ?_
   obtain ⟨W, hW, hC⟩ := (isLeast_mixedEigenvalue _ isCoercive_mixedForm_laplacian_one hΓ
     (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) hK hOmega 1).1
-  -- The values of `W` lie on the line of the constants.
+  -- A subspace on which `∫_Ω |∇v|² ≤ 0` consists of functions with vanishing gradient, which are
+  -- constant on the preconnected `Ω`, so its values lie on the line of the constants.
   have hle : W.map (W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := 2)
       (Γ := Γ)).toLinearMap ≤ ℝ ∙ W1p.value (W1p.const 1 : W1p mu Omega 2) := by
     rintro _ ⟨v, hv, rfl⟩
@@ -619,12 +618,10 @@ theorem mixedEigenvalue_laplacian_one_pos [Nonempty ι]
     rw [h, zero_mul, energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq] at hv'
     obtain ⟨c, hc⟩ := W1p.exists_eq_const_of_gradient_eq_zero hconn
       (norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm hv' (sq_nonneg _))))
-    refine Submodule.mem_span_singleton.2 ⟨c, Lp.ext ?_⟩
-    filter_upwards [Lp.coeFn_smul c (W1p.value (W1p.const 1 : W1p mu Omega 2)),
-      W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) 1,
-      W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) c] with x h1 h2 h3
-    rw [ContinuousLinearMap.coe_coe, W1pVanishingOn.valueL_apply, hc, h1, Pi.smul_apply, h2, h3,
-      smul_eq_mul, mul_one]
+    -- `Lp.const` is linear, so the constant `c` is `c` times the constant `1`.
+    refine Submodule.mem_span_singleton.2 ⟨c, ?_⟩
+    simpa [hc] using ((Lp.constₗ 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) ℝ).map_smul
+      c (1 : ℝ)).symm
   have hrank := (Submodule.finrank_mono hle).trans (finrank_span_le_card _)
   simp only [Set.toFinset_singleton, Finset.card_singleton] at hrank
   omega
@@ -649,10 +646,10 @@ private theorem exists_mixedEigenvalue_laplacian_zero_eq_of_isLipschitzDomainWit
       mixedEigenvalue volume Omega Γ (fun _ ↦ 1) 0 0 0 = firstMixedEigenvalue _ Γ hB := by
   -- `ι` is nonempty, since `e` identifies `ℝⁿ` with a space of positive dimension.
   have : Nonempty ι := by
-    rw [← Fintype.card_pos_iff, ← finrank_euclideanSpace (𝕜 := ℝ),
-      e.linearIsometryEquiv.toLinearEquiv.finrank_eq,
-      (WithLp.linearEquiv 2 ℝ (ℝ × E)).finrank_eq, Module.finrank_prod, Module.finrank_self]
-    omega
+    have h := e.linearIsometryEquiv.toLinearEquiv.finrank_eq
+    simp only [finrank_euclideanSpace, (WithLp.linearEquiv 2 ℝ (ℝ × E)).finrank_eq,
+      Module.finrank_prod, Module.finrank_self] at h
+    exact Fintype.card_pos_iff.1 (by omega)
   have hOmega : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty := by
     refine ne_empty_iff_nonempty.mp fun h ↦ hΓ ?_
     rw [h, frontier_empty, inter_empty, measure_empty]
