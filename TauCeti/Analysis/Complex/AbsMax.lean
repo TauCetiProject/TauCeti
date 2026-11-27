@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.AbsMax
 public import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.Analysis.Complex.OpenMapping
+import Mathlib.Topology.Algebra.Module.Cardinality
 
 /-!
 # Relative maximum-modulus bounds
@@ -31,9 +33,17 @@ The rest of the file gives three consequences of the maximum modulus principle f
 The cofactor bound removes a factor `P` that is no smaller on the boundary than at the centre,
 such as a product of linear factors over zeros near `z₀`.
 
-The file ends with the maximum modulus principle on a closed disc with the bound read as the
+The file then gives the maximum modulus principle on a closed disc with the bound read as the
 supremum of `‖f‖` over the boundary circle, and the boundedness of `‖f‖` on a sphere that makes
 this supremum usable with `le_ciSup`.
+
+Finally, the maximum principle for the real part of a holomorphic function `f` on a bounded set
+`U` allows finitely many exceptional frontier points `F`, where `f` need not extend continuously,
+provided `re ∘ f` is bounded above on `U`: if `re ∘ f ≤ 0` on `frontier U \ F`, then
+`re ∘ f ≤ 0` on `closure U \ F`. Consequently two holomorphic functions on a bounded domain whose
+imaginary parts differ by a bounded amount and agree on the frontier away from `F` differ by a real
+constant. This determines, up to a real translation, a holomorphic map into a strip from the
+boundary line to which it sends each frontier point, although such a map jumps at the corners.
 
 ## Main results
 
@@ -43,6 +53,8 @@ this supremum usable with `le_ciSup`.
 * `Complex.norm_le_of_forall_mem_sphere_norm_mul_le`
 * `ContinuousOn.bddAbove_range_norm_sphere`
 * `DiffContOnCl.norm_le_iSup_norm_sphere_of_mem_closedBall`
+* `Complex.re_nonpos_of_forall_mem_frontier_sdiff_re_nonpos`
+* `Complex.exists_eqOn_add_ofReal_of_forall_mem_frontier_im_eq`
 -/
 
 public section
@@ -156,3 +168,145 @@ theorem DiffContOnCl.norm_le_iSup_norm_sphere_of_mem_closedBall {F : Type*}
       (by rwa [closure_ball z₀ hR])
     rw [frontier_ball z₀ hR] at hw
     exact le_ciSup hbdd ⟨w, hw⟩
+
+/-! ### Finitely many exceptional boundary points -/
+
+open Complex Filter Topology
+
+private theorem natCast_mul_re (n : ℕ) (z : ℂ) : ((n : ℂ) * z).re = n * z.re := by simp
+
+/-- The auxiliary function `P w * exp (n * f w)` of the maximum principle with finitely many
+exceptional points, where `P` is entire and vanishes on the finite set `F`, is differentiable on
+`U` and continuous on `closure U`, when `f` is continuous on `closure U \ F` and `re ∘ f` is
+bounded above there: at a point of `F` the factor `P` vanishes and the exponential stays bounded. -/
+private theorem diffContOnCl_mul_exp {f P : ℂ → ℂ} {U F : Set ℂ} (hF : F.Finite)
+    (hd : DifferentiableOn ℂ f U) (hc : ContinuousOn f (closure U \ F)) {M : ℝ}
+    (hre : ∀ w ∈ closure U \ F, (f w).re ≤ M) (hPd : Differentiable ℂ P)
+    (hP0 : ∀ w ∈ F, P w = 0) (n : ℕ) :
+    DiffContOnCl ℂ (fun w => P w * cexp (n * f w)) U := by
+  refine ⟨hPd.differentiableOn.mul (hd.const_mul _).cexp, fun w hw => ?_⟩
+  by_cases hwF : w ∈ F
+  · -- `‖P‖ * exp (n M)` dominates the function on the closure and tends to `0` at `w`
+    have hdom (v : ℂ) (hv : v ∈ closure U) :
+        ‖P v * cexp (n * f v)‖ ≤ ‖P v‖ * Real.exp (n * M) := by
+      simp only [norm_mul, norm_exp, natCast_mul_re]
+      by_cases hvF : v ∈ F
+      · simp [hP0 v hvF]
+      · gcongr
+        exact hre v ⟨hv, hvF⟩
+    have hlim : Tendsto (fun v => ‖P v‖ * Real.exp (n * M)) (𝓝[closure U] w) (𝓝 0) := by
+      simpa [hP0 w hwF] using
+        ((hPd.continuous.norm.tendsto w).mul_const _).mono_left nhdsWithin_le_nhds
+    have : Tendsto (fun v => P v * cexp (n * f v)) (𝓝[closure U] w) (𝓝 0) :=
+      squeeze_zero_norm' (eventually_nhdsWithin_of_forall hdom) hlim
+    rwa [ContinuousWithinAt, hP0 w hwF, zero_mul]
+  · exact ((hPd.continuous.continuousWithinAt.mul
+      ((hc w ⟨hw, hwF⟩).const_mul _).cexp)).mono_of_mem_nhdsWithin
+      (inter_mem_nhdsWithin _ (hF.isClosed.isOpen_compl.mem_nhds hwF))
+
+/-- **Maximum principle for the real part with finitely many exceptional boundary points.** Let
+`f` be complex differentiable on a bounded set `U` and continuous on its closure away from a finite
+set `F`. If `re ∘ f` is bounded above on `U` and nonpositive on `frontier U \ F`, then it is
+nonpositive on `closure U \ F`.
+
+The bound on `U` cannot be dropped: on the unit disc the real part of `(1 + z) / (1 - z)` is
+positive, although it vanishes on the unit circle away from `1`. The proof applies the maximum
+modulus principle to `(∏ c ∈ F, (w - c)) * exp (n * f w)` and lets `n` tend to infinity. -/
+theorem Complex.re_nonpos_of_forall_mem_frontier_sdiff_re_nonpos {f : ℂ → ℂ} {U F : Set ℂ}
+    (hU : Bornology.IsBounded U) (hF : F.Finite) (hd : DifferentiableOn ℂ f U)
+    (hc : ContinuousOn f (closure U \ F)) (hb : BddAbove ((fun z => (f z).re) '' U))
+    (hfr : ∀ z ∈ frontier U \ F, (f z).re ≤ 0) {z : ℂ} (hz : z ∈ closure U \ F) :
+    (f z).re ≤ 0 := by
+  rcases (closure_eq_self_union_frontier U ▸ hz.1 : z ∈ U ∪ frontier U) with hzU | hzfr
+  swap
+  · exact hfr z ⟨hzfr, hz.2⟩
+  obtain ⟨M, hM⟩ := hb
+  -- `re ∘ f` is at most `max M 0` on the closure, away from `F`
+  have hre (w : ℂ) (hw : w ∈ closure U \ F) : (f w).re ≤ max M 0 := by
+    rcases (closure_eq_self_union_frontier U ▸ hw.1 : w ∈ U ∪ frontier U) with hwU | hwfr
+    · exact (hM ⟨w, hwU, rfl⟩).trans (le_max_left _ _)
+    · exact (hfr w ⟨hwfr, hw.2⟩).trans (le_max_right _ _)
+  set P : ℂ → ℂ := fun w => ∏ c ∈ hF.toFinset, (w - c)
+  have hPd : Differentiable ℂ P := by fun_prop
+  have hP0 (w : ℂ) (hw : w ∈ F) : P w = 0 :=
+    Finset.prod_eq_zero (hF.mem_toFinset.mpr hw) (sub_self w)
+  have hPz : P z ≠ 0 := Finset.prod_ne_zero_iff.mpr fun c hc =>
+    sub_ne_zero.mpr fun h => hz.2 (h ▸ hF.mem_toFinset.mp hc)
+  obtain ⟨B, hB⟩ := hU.isCompact_closure.exists_bound_of_continuousOn hPd.continuous.continuousOn
+  -- the maximum modulus principle bounds `‖P z‖ * exp (n * re (f z))` by `B` for every `n`
+  have hbound (n : ℕ) : ‖P z‖ * Real.exp (n * (f z).re) ≤ B := by
+    have := Complex.norm_le_of_forall_mem_frontier_norm_le hU
+      (diffContOnCl_mul_exp hF hd hc hre hPd hP0 n) (C := B) (fun w hw => ?_) (subset_closure hzU)
+    · simpa only [norm_mul, norm_exp, natCast_mul_re] using this
+    simp only [norm_mul, norm_exp, natCast_mul_re]
+    by_cases hwF : w ∈ F
+    · simpa [hP0 w hwF] using (norm_nonneg _).trans (hB z hz.1)
+    · calc ‖P w‖ * Real.exp (n * (f w).re) ≤ ‖P w‖ * 1 := by
+            gcongr
+            exact Real.exp_le_one_iff.mpr
+              (mul_nonpos_of_nonneg_of_nonpos n.cast_nonneg (hfr w ⟨hw, hwF⟩))
+        _ ≤ B := by simpa using hB w (frontier_subset_closure hw)
+  by_contra! hpos
+  have hPpos : 0 < ‖P z‖ := norm_pos_iff.mpr hPz
+  obtain ⟨n, hn⟩ := exists_nat_gt (B / (‖P z‖ * (f z).re))
+  rw [div_lt_iff₀ (mul_pos hPpos hpos)] at hn
+  have hexp := Real.add_one_le_exp (n * (f z).re)
+  nlinarith [hbound n, mul_le_mul_of_nonneg_left hexp hPpos.le]
+
+/-- **Holomorphic functions whose imaginary parts agree on the frontier differ by a real
+constant.** Let `u` and `v` be complex differentiable on a bounded, preconnected open set `U` and
+continuous on its closure away from a finite set `F`. If the difference of their imaginary parts is
+bounded on `U` and vanishes on `frontier U \ F`, then `u` and `v` differ by a real constant on
+`closure U \ F`. -/
+theorem Complex.exists_eqOn_add_ofReal_of_forall_mem_frontier_im_eq {u v : ℂ → ℂ} {U F : Set ℂ}
+    (hUo : IsOpen U) (hUc : IsPreconnected U) (hUb : Bornology.IsBounded U) (hF : F.Finite)
+    (hu : DifferentiableOn ℂ u U) (hv : DifferentiableOn ℂ v U)
+    (huc : ContinuousOn u (closure U \ F)) (hvc : ContinuousOn v (closure U \ F))
+    (hb : Bornology.IsBounded ((fun z => (u z).im - (v z).im) '' U))
+    (him : ∀ z ∈ frontier U \ F, (u z).im = (v z).im) :
+    ∃ c : ℝ, EqOn u (fun z => v z + c) (closure U \ F) := by
+  rcases U.eq_empty_or_nonempty with rfl | hne
+  · exact ⟨0, by simp⟩
+  -- `re (± I (u - v)) = ∓ (im u - im v)` satisfies the maximum principle on both sides
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hb
+  have hside (ε : ℂ) (hε : ε = I ∨ ε = -I) (z : ℂ) (hz : z ∈ closure U \ F) :
+      (ε * (u z - v z)).re ≤ 0 := by
+    have hre (w : ℂ) : (ε * (u w - v w)).re = ε.im * -((u w).im - (v w).im) := by
+      rcases hε with rfl | rfl <;> simp
+    have hε1 : |ε.im| = 1 := by rcases hε with rfl | rfl <;> simp
+    refine Complex.re_nonpos_of_forall_mem_frontier_sdiff_re_nonpos hUb hF
+      ((hu.sub hv).const_mul ε) ((huc.sub hvc).const_mul ε) ⟨C, ?_⟩ (fun w hw => ?_) hz
+    · rintro _ ⟨w, hw, rfl⟩
+      simp only [Pi.sub_apply]
+      rw [hre]
+      have := hC _ ⟨w, hw, rfl⟩
+      rw [Real.norm_eq_abs] at this
+      calc ε.im * -((u w).im - (v w).im) ≤ |ε.im * -((u w).im - (v w).im)| := le_abs_self _
+        _ = |(u w).im - (v w).im| := by rw [abs_mul, hε1, abs_neg, one_mul]
+        _ ≤ C := this
+    · simp only [Pi.sub_apply]
+      rw [hre, him w hw, sub_self, neg_zero, mul_zero]
+  have hdiff (z : ℂ) (hz : z ∈ closure U \ F) : (u z).im = (v z).im := by
+    have h1 := hside I (.inl rfl) z hz
+    have h2 := hside (-I) (.inr rfl) z hz
+    simp only [mul_re, I_re, I_im, neg_re, neg_im, sub_re, sub_im] at h1 h2
+    linarith
+  -- the imaginary parts agree on `U`, since `U \ F` is dense in `U`
+  have hcont : ContinuousOn (fun z => (u z).im - (v z).im) U :=
+    (continuous_im.comp_continuousOn hu.continuousOn).sub
+      (continuous_im.comp_continuousOn hv.continuousOn)
+  have hdense : U ⊆ closure (U ∩ Fᶜ) :=
+    (hF.countable.dense_compl ℂ).open_subset_closure_inter hUo
+  have hU0 : EqOn (fun z => (u z).im - (v z).im) 0 U :=
+    EqOn.of_subset_closure (s := U ∩ Fᶜ)
+      (fun z hz => sub_eq_zero.mpr (hdiff z ⟨subset_closure hz.1, hz.2⟩)) hcont continuousOn_const
+      inter_subset_left hdense
+  obtain ⟨c, hc⟩ := ((hu.sub hv).analyticOnNhd hUo).eq_const_add_im_mul_I_of_re_eq_const
+    (c₀ := 0) (fun z hz => by simpa using hU0 hz) hUo ⟨hne, hUc⟩
+  refine ⟨c, EqOn.of_subset_closure (s := U ∩ Fᶜ) (fun z hz => ?_) huc
+    (hvc.add continuousOn_const) (fun z hz => ⟨subset_closure hz.1, hz.2⟩) fun z hz => ?_⟩
+  · have := hc z hz.1
+    simp only [Pi.sub_apply, ofReal_zero, zero_mul, add_zero] at this
+    simp [← this]
+  · rw [inter_comm]
+    exact hF.isClosed.isOpen_compl.inter_closure ⟨hz.2, hz.1⟩
