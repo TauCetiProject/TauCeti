@@ -12,6 +12,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.InfiniteProd
+import TauCeti.Analysis.Normed.Ring.InfiniteProd.Basic
 import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
@@ -38,7 +39,8 @@ Weierstrass's general factorization theorem follows: every nonzero entire functi
 admits admissible genera `p` on its set of nonzero zeros and an entire function `g` (unique up to
 `2πiℤ`) such that
 `f z = z ^ (analyticOrderNatAt f 0) * exp (g z) * ∏' a, E_{p a}(z / a) ^ (analyticOrderNatAt f a)`,
-without any growth hypothesis on `f`.
+without any growth hypothesis on `f`. The product may equally run over all nonzero complex
+numbers, since the points where `f` does not vanish have order `0` and contribute the factor `1`.
 
 ## Main results
 
@@ -56,10 +58,14 @@ without any growth hypothesis on `f`.
   `Complex.hasProdLocallyUniformlyOn_weierstrassFactor_div_pow`,
   `Complex.analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective`,
   `Complex.divisor_tprod_weierstrassFactor_div_pow`: grouped finite multiplicity fibers.
+* `Complex.norm_tprod_weierstrassFactor_div_le_exp`: for constant genus `p` and summable
+  `‖a i‖ ^ -(p + 1)`, the product grows at most like `exp (C * ‖z‖ ^ (p + 1))`.
 * `Differentiable.analyticOrderAt_pow_mul_tprod_weierstrassFactor_div_pow`: exact analytic-order
   comparison between a nonzero entire function and its origin-plus-zero-subtype Weierstrass product.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable`:
   exponential factorization of an entire function against any admissible genus assignment `p`.
+* `Differentiable.exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow`: the same
+  factorization with the product over all nonzero complex numbers `{a : ℂ // a ≠ 0}`.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow`: Weierstrass's entire
   factorization theorem for an arbitrary nonzero entire function without growth hypotheses.
 
@@ -354,6 +360,28 @@ theorem divisor_tprod_weierstrassFactor_div_pow_of_injective (i : ι)
 
 end Weighted
 
+section Growth
+
+/-- **Growth of constant-genus primary products.** If `∑' i, ‖a i‖ ^ -(p + 1)` converges, then
+`‖∏' i, E_p(z / a i)‖ ≤ exp ((p + 1) * (∑' i, ‖a i‖ ^ -(p + 1)) * ‖z‖ ^ (p + 1))`. Indices with
+`a i = 0` contribute the factor `E_p 0 = 1` and the summand `0⁻¹ = 0`. -/
+theorem norm_tprod_weierstrassFactor_div_le_exp {ι : Type*} (p : ℕ) {a : ι → ℂ}
+    (ha : Summable fun i ↦ (‖a i‖ ^ (p + 1))⁻¹) (z : ℂ) :
+    ‖∏' i, weierstrassFactor p (z / a i)‖ ≤
+      Real.exp ((p + 1) * (∑' i, (‖a i‖ ^ (p + 1))⁻¹) * ‖z‖ ^ (p + 1)) := by
+  let c : ι → ℝ := fun i ↦ (p + 1) * ‖z‖ ^ (p + 1) * (‖a i‖ ^ (p + 1))⁻¹
+  have hc : Summable c := ha.mul_left _
+  have hfac (i : ι) : ‖weierstrassFactor p (z / a i)‖ ≤ Real.exp (c i) := by
+    refine (norm_weierstrassFactor_le_exp p _).trans_eq ?_
+    rw [norm_div, div_pow, div_eq_mul_inv, ← mul_assoc]
+  have htsum : ∑' i, c i = (p + 1) * (∑' i, (‖a i‖ ^ (p + 1))⁻¹) * ‖z‖ ^ (p + 1) := by
+    rw [tsum_mul_left]
+    ring
+  rw [← htsum]
+  exact TauCeti.norm_tprod_le_exp_of_sum_le hfac fun s ↦ hc.sum_le_tsum s fun _ _ ↦ by positivity
+
+end Growth
+
 end Complex
 
 namespace Differentiable
@@ -432,6 +460,33 @@ theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable {f
   refine ⟨g, hg, fun z ↦ ?_, fun g' hg' hfg' ↦ huniq g' hg' fun z ↦ ?_⟩
   · simpa only [F, mul_left_comm (Complex.exp (g z)), mul_assoc] using hfg z
   · simpa only [F, mul_left_comm (Complex.exp (g' z)), mul_assoc] using hfg' z
+
+/-- A nonzero entire function `f` factors as
+`f z = z ^ m₀ * exp (g z) * ∏' α, E_{p α}(z / α) ^ m_α` with `g` entire, the product running over
+all nonzero complex numbers `α` with the analytic orders `m_α` of `f` as exponents, for any genera
+`p` for which `∑' α, m_α * (R / ‖α‖) ^ (p α + 1)` converges for every `R > 0`. -/
+theorem exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow {f : ℂ → ℂ}
+    (hf : Differentiable ℂ f) (hf0 : ∃ z, f z ≠ 0) {p : {a : ℂ // a ≠ 0} → ℕ}
+    (hm : ∀ R : ℝ, 0 < R → Summable fun α : {a : ℂ // a ≠ 0} ↦
+      (analyticOrderNatAt f α : ℝ) * (R / ‖(α : ℂ)‖) ^ (p α + 1)) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ ∀ z, f z = z ^ analyticOrderNatAt f 0 * Complex.exp (g z) *
+      ∏' α : {a : ℂ // a ≠ 0}, weierstrassFactor (p α) (z / α) ^ analyticOrderNatAt f α := by
+  let ι : {a : ℂ // a ≠ 0 ∧ f a = 0} → {a : ℂ // a ≠ 0} := fun a ↦ ⟨a, a.property.1⟩
+  have hι : Function.Injective ι := fun a b h ↦ Subtype.ext (by simpa [ι] using h)
+  have hm' (R : ℝ) (hR : 0 < R) : Summable fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦
+      (analyticOrderNatAt f a : ℝ) * (R / ‖(a : ℂ)‖) ^ (p (ι a) + 1) :=
+    ((hm R hR).comp_injective hι).congr fun a ↦ by simp [ι]
+  obtain ⟨g, hg, hfg, -⟩ :=
+    hf.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable hf0 hm'
+  refine ⟨g, hg, fun z ↦ ?_⟩
+  rw [hfg z]
+  congr 1
+  -- Points where `f` does not vanish contribute the factor `1`.
+  refine hι.tprod_eq (f := fun α : {a : ℂ // a ≠ 0} ↦
+    weierstrassFactor (p α) (z / α) ^ analyticOrderNatAt f α) fun α hα ↦ ?_
+  have hord : analyticOrderNatAt f α ≠ 0 := fun h ↦ hα (by simp [h])
+  refine ⟨⟨α, α.property, by_contra fun hfα ↦ hord ?_⟩, rfl⟩
+  rw [analyticOrderNatAt, (hf.analyticAt _).analyticOrderAt_eq_zero.mpr hfα, ENat.toNat_zero]
 
 /-- **Weierstrass's entire factorization theorem** (Rudin, Theorem 15.10). Every entire function
 `f : ℂ → ℂ` that is not identically zero admits admissible genera

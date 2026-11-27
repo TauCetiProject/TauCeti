@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Height
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedAtPrime.Stalk
 
 import TauCeti.RingTheory.AdicCompletion.LocalRing
@@ -21,9 +20,7 @@ establishes comparison properties of the canonical homomorphisms `A_𝔭 → �
 * both maps induce a commutative triangle of ring isomorphisms between the maximal-ideal-adic
   completions of `A_𝔭`, `𝒪_{Spf A, p}`, and `Â_𝔭`;
 * when `A` is discrete, or when `A` is a complete local adic ring and `p` is its closed point, both
-  comparison homomorphisms are bijective;
-* when `A` is noetherian, `ringKrullDim ((Spf A).presheaf.stalk p) = ht 𝔭` (EGA I, Ch. 0,
-  7.6.15–7.6.18; Ch. I, 10.1.5–10.1.6).
+  comparison homomorphisms are bijective (EGA I, Ch. 0, 7.6.15–7.6.18; Ch. I, 10.1.5–10.1.6).
 
 ## References
 
@@ -290,19 +287,5 @@ theorem stalkToCompletedAtPrime_bijective_of_isLocalRing [IsLocalRing A]
   exact funext (stalkToCompletedAtPrime_localizationToStalk p)
 
 end SpecialCases
-
-/-! ### Dimension height for noetherian `A` -/
-
-section Noetherian
-
-/-- For noetherian `A`, the Krull dimension of the stalk `𝒪_{Spf A, p}` is the height of the prime
-ideal `𝔭`. -/
-theorem ringKrullDim_stalk_eq_height [IsNoetherianRing A] :
-    ringKrullDim ((Spf A).presheaf.stalk p) =
-      ((p : PrimeSpectrum A).asIdeal.height : WithBot ℕ∞) :=
-  (ringKrullDim_stalk p).trans
-    (IsLocalization.AtPrime.ringKrullDim_eq_height (p : PrimeSpectrum A).asIdeal _)
-
-end Noetherian
 
 end TauCeti.FormalScheme.Spf

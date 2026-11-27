@@ -13,8 +13,9 @@ public import Mathlib.Condensed.Discrete.Module
 The free condensed `R`-module on the discrete condensed set on a set `Y` is the discrete
 condensed module on the free `R`-module `Y →₀ R` (`TauCeti.locallyConstantCompFreeIso`). Both
 functors are left adjoint to taking the underlying set of the sections over the point, so they
-agree by uniqueness of left adjoints. The comparison of the two right adjoints is
-`TauCeti.underlyingCompForgetIso`.
+agree by uniqueness of left adjoints, compatibly with the units of the two adjunctions
+(`TauCeti.unit_app_comp_map_locallyConstantCompFreeIso_hom_app`). The comparison of the two right
+adjoints is `TauCeti.underlyingCompForgetIso`.
 -/
 
 public section
@@ -61,5 +62,20 @@ def locallyConstantCompFreeIso :
   ((CompHausLike.LocallyConstant.adjunction _ _).comp (freeForgetAdjunction R)).leftAdjointUniq
     (((ModuleCat.adj R).comp (CondensedMod.LocallyConstant.adjunction R)).ofNatIsoRight
       (underlyingCompForgetIso R))
+
+/-- `locallyConstantCompFreeIso` is compatible with the units of the two adjunctions it compares:
+the unit of `CondensedSet.LocallyConstant.functor ⋙ free R`, followed by the underlying map of
+`locallyConstantCompFreeIso`, is the unit of
+`ModuleCat.free R ⋙ CondensedMod.LocallyConstant.functor R`. -/
+@[reassoc]
+theorem unit_app_comp_map_locallyConstantCompFreeIso_hom_app (X : Type (u + 1)) :
+    ((CompHausLike.LocallyConstant.adjunction.{u, u + 1} _ _).comp
+        (freeForgetAdjunction R)).unit.app X ≫
+      (Condensed.forget R ⋙ (sheafSections _ _).obj _).map
+        ((locallyConstantCompFreeIso R).hom.app X) =
+    ((ModuleCat.adj R).comp (CondensedMod.LocallyConstant.adjunction R)).unit.app X := by
+  refine (Adjunction.unit_leftAdjointUniq_hom_app _ _ X).trans ?_
+  rw [← Adjunction.homEquiv_id, Adjunction.homEquiv_ofNatIsoRight_apply, Adjunction.homEquiv_id]
+  exact Category.comp_id _
 
 end TauCeti

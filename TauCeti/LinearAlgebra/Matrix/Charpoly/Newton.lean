@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.NewtonPolynomial
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 import TauCeti.LinearAlgebra.Charpoly.Nilpotent
@@ -29,6 +30,10 @@ Newton's identity for that multiset (`Multiset.mul_esymm_eq_sum`). The general c
 universal matrix `Matrix.mvPolynomialX` over `ℤ`, whose coefficient ring embeds into an
 algebraically closed field.
 
+The same reduction expresses the traces through the coefficients: `p_k` is the Newton polynomial
+`TauCeti.newtonMvPolynomial`, the universal integer polynomial giving the power sum `p_k` in terms
+of the elementary symmetric functions, evaluated at `e_j = (-1) ^ j c_j`.
+
 When division by the integers `1, …, r` is unique, the recurrence determines `c_r` from the traces
 `p_1, …, p_r`. So over a ring without additive torsion, such as a field of characteristic zero,
 the traces of the first `d` powers of a `d × d` matrix determine its characteristic polynomial.
@@ -38,6 +43,9 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
 * `Matrix.mul_coeff_charpolyRev_eq_neg_sum`: **Newton's identities** for the traces of the powers
   of a matrix over any commutative ring; `LinearMap.mul_coeff_reverse_charpoly_eq_neg_sum` is the
   same statement for an endomorphism of a finite free module.
+* `Matrix.trace_pow_eq_aeval_newtonMvPolynomial`: over any commutative ring, `tr (A ^ k)` is the
+  integer Newton polynomial `TauCeti.newtonMvPolynomial ℤ d k` evaluated at the signed
+  coefficients `(-1) ^ j c_j` of `det (1 - X A)`, for `j = 1, …, d`.
 * `Matrix.trace_pow_eq_of_charpolyRev_eq`: over any commutative ring, `det (1 - X A)` determines
   the traces of all positive powers of `A`.
 * `Matrix.trace_pow_eq_of_charpoly_eq`: over any commutative ring, the characteristic polynomial
@@ -96,7 +104,39 @@ private theorem mul_coeff_charpolyRev_eq_neg_sum_of_splits (hA : A.charpoly.Spli
     exact Odd.neg_one_pow ⟨r, by ring⟩
   rw [mul_left_comm, s.mul_esymm_eq_sum r, hsum, ← mul_assoc, hsign, neg_one_mul]
 
+/-- The traces of the powers as Newton polynomials in the coefficients, over a domain in which the
+characteristic polynomial splits; see `Matrix.trace_pow_eq_aeval_newtonMvPolynomial` for the
+general case. Any `ℤ`-algebra structure on `K` is allowed, so that the lemma applies to the
+instance found on an algebraic closure. -/
+private theorem trace_pow_eq_aeval_newtonMvPolynomial_of_splits [Algebra ℤ K]
+    (hA : A.charpoly.Splits) (k : ℕ) :
+    (A ^ k).trace = MvPolynomial.aeval
+      (fun j : Fin (Fintype.card n) ↦ (-1) ^ (j.val + 1) * A.charpolyRev.coeff (j + 1))
+      (TauCeti.newtonMvPolynomial ℤ (Fintype.card n) k) := by
+  have hcard : Multiset.card A.charpoly.roots = Fintype.card n := by
+    rw [← hA.natDegree_eq_card_roots, charpoly_natDegree_eq_dim]
+  have he (j : Fin (Fintype.card n)) : (-1) ^ (j.val + 1) * A.charpolyRev.coeff (j + 1) =
+      A.charpoly.roots.esymm (j + 1) := by
+    simp [coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits hA, ← mul_assoc, ← pow_add]
+  simp only [he, Multiset.aeval_esymm_newtonMvPolynomial _ hcard]
+  simpa using trace_aeval_eq_sum_roots_charpoly_of_splits hA (X ^ k)
+
 end Splits
+
+/-- The coefficient ring `ℤ[Xᵢⱼ]` of the universal matrix `Matrix.mvPolynomialX n n ℤ` embeds into
+an algebraically closed field, in which the characteristic polynomial of the universal matrix
+splits. Identities in the coefficients of `det (1 - X A)` and the traces of the powers of `A`
+proved in the split case pull back along this embedding, then specialise to every matrix along
+`Xᵢⱼ ↦ Aᵢⱼ` (`Matrix.mvPolynomialX_map_eval₂`). -/
+private noncomputable def universalEmbedding (n : Type*) :
+    MvPolynomial (n × n) ℤ →+* AlgebraicClosure (FractionRing (MvPolynomial (n × n) ℤ)) :=
+  (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) _).comp
+    (algebraMap (MvPolynomial (n × n) ℤ) (FractionRing (MvPolynomial (n × n) ℤ)))
+
+private theorem universalEmbedding_injective (n : Type*) :
+    Function.Injective (universalEmbedding n) :=
+  (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) _).injective.comp
+    (IsFractionRing.injective _ _)
 
 variable {n m R : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] [CommRing R]
 
@@ -106,26 +146,51 @@ the coefficients `c_r` of `det (1 - X A)` and the traces `p_j = tr (A ^ j)` sati
 theorem mul_coeff_charpolyRev_eq_neg_sum (A : Matrix n n R) (r : ℕ) :
     (r : R) * A.charpolyRev.coeff r =
       -∑ j ∈ range r, A.charpolyRev.coeff (r - (j + 1)) * (A ^ (j + 1)).trace := by
-  -- The universal matrix over `ℤ[Xᵢⱼ]`, whose coefficient ring embeds into an algebraically
-  -- closed field, where the characteristic polynomial splits.
+  -- The universal matrix over `ℤ[Xᵢⱼ]`, whose characteristic polynomial splits after
+  -- `universalEmbedding`.
   let U := mvPolynomialX n n ℤ
-  let K := AlgebraicClosure (FractionRing (MvPolynomial (n × n) ℤ))
-  let ι : MvPolynomial (n × n) ℤ →+* K :=
-    (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) K).comp
-      (algebraMap (MvPolynomial (n × n) ℤ) (FractionRing (MvPolynomial (n × n) ℤ)))
-  have hι : Function.Injective ι :=
-    (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) K).injective.comp
-      (IsFractionRing.injective _ _)
   have hU : (r : MvPolynomial (n × n) ℤ) * U.charpolyRev.coeff r =
       -∑ j ∈ range r, U.charpolyRev.coeff (r - (j + 1)) * (U ^ (j + 1)).trace := by
-    apply hι
-    have h := mul_coeff_charpolyRev_eq_neg_sum_of_splits (IsAlgClosed.splits (U.map ι).charpoly) r
+    apply universalEmbedding_injective n
+    have h := mul_coeff_charpolyRev_eq_neg_sum_of_splits
+      (IsAlgClosed.splits (U.map (universalEmbedding n)).charpoly) r
     simpa [charpolyRev_map, coeff_map, ← Matrix.map_pow, AddMonoidHom.map_trace] using h
   -- Specialise the universal identity along `Xᵢⱼ ↦ Aᵢⱼ`.
   let φ : MvPolynomial (n × n) ℤ →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R)
     fun p ↦ A p.1 p.2
   have hφ : U.map φ = A := mvPolynomialX_map_eval₂ _ A
   have h := congrArg φ hU
+  simpa [← hφ, charpolyRev_map, coeff_map, ← Matrix.map_pow, AddMonoidHom.map_trace] using h
+
+/-- **The power sums are integer polynomials in the coefficients.** Over any commutative ring, the
+trace of the `k`-th power of a `d × d` matrix `A` is the integer Newton polynomial
+`TauCeti.newtonMvPolynomial ℤ d k` evaluated at `e_j = (-1) ^ j c_j`, `j = 1, …, d`, where `c_j`
+are the coefficients of `det (1 - X A)`. Over a field in which the characteristic polynomial
+splits, `e_j` is the `j`-th elementary symmetric function of the eigenvalues. -/
+theorem trace_pow_eq_aeval_newtonMvPolynomial (A : Matrix n n R) (k : ℕ) :
+    (A ^ k).trace = MvPolynomial.aeval
+      (fun j : Fin (Fintype.card n) ↦ (-1) ^ (j.val + 1) * A.charpolyRev.coeff (j + 1))
+      (TauCeti.newtonMvPolynomial ℤ (Fintype.card n) k) := by
+  -- The universal matrix over `ℤ[Xᵢⱼ]`, whose characteristic polynomial splits after
+  -- `universalEmbedding`.
+  let U := mvPolynomialX n n ℤ
+  have hU : (U ^ k).trace = MvPolynomial.aeval
+      (fun j : Fin (Fintype.card n) ↦ (-1) ^ (j.val + 1) * U.charpolyRev.coeff (j + 1))
+      (TauCeti.newtonMvPolynomial ℤ (Fintype.card n) k) := by
+    apply universalEmbedding_injective n
+    have h := trace_pow_eq_aeval_newtonMvPolynomial_of_splits
+      (IsAlgClosed.splits (U.map (universalEmbedding n)).charpoly) k
+    -- Every ring homomorphism commutes with evaluating an integer polynomial.
+    rw [MvPolynomial.map_aeval_eq_aeval_map (RingHom.id ℤ) _ (Subsingleton.elim _ _),
+      MvPolynomial.map_id]
+    simpa [charpolyRev_map, coeff_map, ← Matrix.map_pow, AddMonoidHom.map_trace] using h
+  -- Specialise the universal identity along `Xᵢⱼ ↦ Aᵢⱼ`.
+  let φ : MvPolynomial (n × n) ℤ →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R)
+    fun p ↦ A p.1 p.2
+  have hφ : U.map φ = A := mvPolynomialX_map_eval₂ _ A
+  have h := congrArg φ hU
+  rw [MvPolynomial.map_aeval_eq_aeval_map (RingHom.id ℤ) φ (Subsingleton.elim _ _),
+    MvPolynomial.map_id] at h
   simpa [← hφ, charpolyRev_map, coeff_map, ← Matrix.map_pow, AddMonoidHom.map_trace] using h
 
 /-- Over any commutative ring, `det (1 - X A)` determines the traces of all positive powers of `A`:

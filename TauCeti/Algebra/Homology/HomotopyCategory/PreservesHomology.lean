@@ -64,4 +64,24 @@ lemma mapHomotopyCategoryCompHomologyFunctorIso_hom_app (K : HomologicalComplex 
   dsimp [Functor.associator, mapHomotopyCategoryFactors_hom_app]
   erw [Functor.map_id, Category.id_comp, Category.id_comp, Category.comp_id, Category.id_comp]
 
+/-- On a complex, the inverse of `mapHomotopyCategoryCompHomologyFunctorIso` is the inverse of
+the homological-complex comparison, up to the identifications of homology on the homotopy
+category with homology of complexes. -/
+@[simp]
+lemma mapHomotopyCategoryCompHomologyFunctorIso_inv_app (K : HomologicalComplex C c) :
+    (F.mapHomotopyCategoryCompHomologyFunctorIso c i).inv.app
+        ((HomotopyCategory.quotient C c).obj K) =
+      F.map ((HomotopyCategory.homologyFunctorFactors C c i).hom.app K) ≫
+        (F.mapHomologicalComplexCompHomologyFunctorIso c i).inv.app K ≫
+        (HomotopyCategory.homologyFunctorFactors D c i).inv.app
+          ((F.mapHomologicalComplex c).obj K) := by
+  rw [← Iso.app_inv]
+  refine Iso.inv_ext ?_
+  rw [Iso.app_hom, mapHomotopyCategoryCompHomologyFunctorIso_hom_app]
+  simp only [Category.assoc, ← F.map_comp_assoc, Iso.inv_hom_id_app, F.map_id, Category.id_comp,
+    Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_app]
+  -- the two identities are on the same object, written once through `HomotopyCategory.quotient`
+  -- applied to `F` of `K` and once through `F.mapHomotopyCategory` of the class of `K`
+  rfl
+
 end CategoryTheory.Functor

@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PushoutI
+public import Mathlib.Order.Filter.Defs
+import Mathlib.Order.Filter.Finite
+import Mathlib.Order.Filter.Map
 import TauCeti.GroupTheory.CoprodI.Word
 import TauCeti.GroupTheory.PushoutI.Reduced
 
@@ -17,11 +20,17 @@ type, with amalgamated products `Monoid.PushoutI φ` and `Monoid.PushoutI φ'`. 
 `f i : G i →* G' i` and `k : H →* H'` with `f i ∘ φ i = φ' i ∘ k` induce a homomorphism
 `Monoid.PushoutI.map f k _ : Monoid.PushoutI φ →* Monoid.PushoutI φ'`.
 
-For groups, with the `φ' i` and `k` injective, the induced homomorphism is injective as soon as
-every `f i` pulls the amalgamated subgroup `φ' i H'` back into `φ i H`
-(`Monoid.PushoutI.map_injective`). This is the usual criterion for a subamalgam, a consequence of
-the normal form theorem. The `f i` and the `φ i` need not be assumed injective: under these
-hypotheses they are.
+For groups, the normal form theorem gives a criterion for the induced homomorphisms to keep
+nonidentity elements, in an eventual form for a family of homomorphisms `map (f a) (k a) _` indexed
+by `a : α` along a filter (`Monoid.PushoutI.eventually_map_ne_one`): if the structure maps
+`φ' a i` of the targets are eventually injective, the `k a` eventually keep every nonidentity
+element of `H` and every letter of a factor outside the amalgamated subgroup is eventually mapped
+by the `f a i` outside the amalgamated subgroup of the target, then the reduced words of
+`PushoutI φ` are eventually mapped to reduced words, so every nonidentity element is eventually
+kept. For a single homomorphism this is the usual injectivity criterion for a subamalgam
+(`Monoid.PushoutI.map_injective`): the `φ' i` and `k` injective and every `f i` pulling the
+amalgamated subgroup `φ' i H'` back into `φ i H`. The `f i` and the `φ i` need not be assumed
+injective: under these hypotheses they are.
 
 ## Main definitions
 
@@ -30,6 +39,8 @@ hypotheses they are.
 
 ## Main results
 
+* `Monoid.PushoutI.eventually_map_ne_one`: the eventual criterion for a family of induced
+  homomorphisms to keep every nonidentity element.
 * `Monoid.PushoutI.map_injective`: the injectivity criterion.
 
 ## References
@@ -108,33 +119,60 @@ section Group
 variable [∀ i, Group (G i)] [∀ i, Group (G' i)] [Group H] [Group H'] {φ : ∀ i, H →* G i}
   {φ' : ∀ i, H' →* G' i}
 
+/-- **Normal form criterion, eventual form.** Let
+`map (f a) (k a) _ : PushoutI φ →* PushoutI (φ' a)` be homomorphisms of amalgamated products of
+groups indexed by `a : α`. If along a filter on `α` the structure maps `φ' a i` are eventually
+injective, the `k a` eventually keep every nonidentity element of `H`, and every element of a factor
+outside the amalgamated subgroup is eventually mapped by the `f a i` outside the amalgamated
+subgroup of the target, then the induced homomorphisms eventually keep every nonidentity
+element. -/
+theorem eventually_map_ne_one {α : Type*} {l : Filter α} {G' : α → ι → Type*} {H' : α → Type*}
+    [∀ a i, Group (G' a i)] [∀ a, Group (H' a)] {φ' : ∀ a i, H' a →* G' a i}
+    {f : ∀ a i, G i →* G' a i} {k : ∀ a, H →* H' a}
+    (hfk : ∀ a i, (f a i).comp (φ i) = (φ' a i).comp (k a))
+    (hφ' : ∀ᶠ a in l, ∀ i, Injective (φ' a i))
+    (hk : ∀ h : H, h ≠ 1 → ∀ᶠ a in l, k a h ≠ 1)
+    (hf : ∀ i (g : G i), g ∉ (φ i).range → ∀ᶠ a in l, f a i g ∉ (φ' a i).range)
+    {x : PushoutI φ} (hx : x ≠ 1) : ∀ᶠ a in l, map (f a) (k a) (hfk a) x ≠ 1 := by
+  -- Write `x = h * a₁ * ⋯ * aᵣ` with `h ∈ H` and a reduced word `a₁ ⋯ aᵣ`.
+  obtain ⟨h, w, hw, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod x
+  rcases eq_or_ne w .empty with rfl | hne
+  · -- A word with no letters: `x = h ≠ 1`, and its image `k a h` is eventually nontrivial.
+    have hh : h ≠ 1 := by
+      rintro rfl
+      simp at hx
+    filter_upwards [hk h hh, hφ'] with a ha hφa
+    simpa [map_eq_one_iff _ (base_injective hφa)] using ha
+  -- Otherwise the images of the letters eventually stay outside the amalgamated subgroup, so the
+  -- image of the word is reduced and nonempty, and its product is not in the amalgamated subgroup.
+  filter_upwards [(Filter.eventually_all_finite w.toList.finite_toSet).2 fun y hy =>
+    hf _ _ (hw y hy), hφ'] with a ha hφa h1
+  have hfw : ∀ y ∈ w.toList, f a y.1 y.2 ≠ 1 := fun y hy h1 => ha y hy (h1 ▸ one_mem _)
+  have hw' : Reduced (φ' a) (w.map (f a) hfw) := fun y hy => by
+    rw [Word.toList_map] at hy
+    obtain ⟨y₀, hy₀, rfl⟩ := List.mem_map.1 hy
+    exact ha y₀ hy₀
+  -- The image of `x` is `k a h` times the product of the image word, so that product is
+  -- `(k a h)⁻¹`, in the amalgamated subgroup.
+  rw [map_mul, map_base, map_ofCoprodI, ← Word.prod_map _ hfw] at h1
+  refine hne <| (Word.map_eq_empty_iff _ hfw).1 <|
+    hw'.eq_empty_of_mem_range hφa ⟨k a h⁻¹, ?_⟩
+  rw [map_inv, map_inv]
+  exact (eq_inv_of_mul_eq_one_right h1).symm
+
 /-- A homomorphism of amalgamated products of groups induced by homomorphisms `f i` of the factors
 and an injective homomorphism `k` of the amalgamated groups is injective if the structure maps of
 the target are injective and each `f i` pulls the amalgamated subgroup of the target back into the
 amalgamated subgroup of the source. -/
 theorem map_injective {f : ∀ i, G i →* G' i} {k : H →* H'}
     (hfk : ∀ i, (f i).comp (φ i) = (φ' i).comp k) (hφ' : ∀ i, Injective (φ' i)) (hk : Injective k)
-    (hf : ∀ i g, f i g ∈ (φ' i).range → g ∈ (φ i).range) : Injective (map f k hfk) := by
-  have hφk (i : ι) : Injective (f i ∘ φ i) := by
-    rw [← MonoidHom.coe_comp, hfk]
-    exact (hφ' i).comp hk
-  have hf1 (i : ι) (g : G i) (hg : f i g = 1) : g = 1 := by
-    obtain ⟨h, rfl⟩ := hf i g (hg ▸ one_mem _)
-    rw [hφk i (a₁ := h) (a₂ := 1) (by simpa using hg), map_one]
-  refine (injective_iff_map_eq_one _).2 fun x hx => ?_
-  obtain ⟨h, w, hw, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod x
-  have hfw : ∀ l ∈ w.toList, f l.1 l.2 ≠ 1 := fun l hl h1 => w.ne_one l hl (hf1 _ _ h1)
-  have hw' : Reduced φ' (w.map f hfw) := fun l hl => by
-    rw [Word.toList_map] at hl
-    obtain ⟨l₀, hl₀, rfl⟩ := List.mem_map.1 hl
-    exact fun hmem => hw l₀ hl₀ (hf _ _ hmem)
-  have hempty : w = .empty := (Word.map_eq_empty_iff f hfw).1 <|
-    hw'.eq_empty_of_mem_range hφ' ⟨k h⁻¹, by
-      rwa [map_inv, map_inv, eq_comm, ← mul_eq_one_iff_eq_inv', Word.prod_map,
-        ← map_ofCoprodI f k hfk, ← map_base f k hfk, ← map_mul]⟩
-  subst hempty
-  simp only [Word.prod_empty, map_one, mul_one, map_base] at hx ⊢
-  rw [(map_eq_one_iff _ hk).1 ((map_eq_one_iff _ (base_injective hφ')).1 hx), map_one]
+    (hf : ∀ i g, f i g ∈ (φ' i).range → g ∈ (φ i).range) : Injective (map f k hfk) :=
+  (injective_iff_map_eq_one _).2 fun _ hx => by_contra fun hne => Filter.eventually_pure.1
+    (eventually_map_ne_one (l := pure ()) (G' := fun _ => G') (H' := fun _ => H')
+      (φ' := fun _ => φ') (f := fun _ => f) (k := fun _ => k) (fun _ => hfk)
+      (.of_forall fun _ => hφ')
+      (fun _ hh => Filter.eventually_pure.2 ((map_ne_one_iff k hk).2 hh))
+      (fun i g hg => Filter.eventually_pure.2 (mt (hf i g) hg)) hne) hx
 
 end Group
 

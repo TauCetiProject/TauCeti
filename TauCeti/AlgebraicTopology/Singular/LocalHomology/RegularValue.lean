@@ -9,7 +9,9 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import Mathlib.Geometry.Manifold.HasGroupoid
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.ProperExtension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -68,6 +70,11 @@ compared with `F`, so Rouché's principle
   the sign of the Jacobian determinant.
 * `TauCeti.HomologicalOrientation.degree_eq_sum_sign_det`: the degree of a proper map is the signed
   count of the preimages of a regular value.
+* `TauCeti.HomologicalOrientation.degree_eq_ncard_of_det_pos`: when every preimage of a value has
+  positive Jacobian determinant, the degree is the number of preimages.
+* `TauCeti.HomologicalOrientation.degree_pos_of_hasFDerivAt`: a proper map differentiable on a set
+  containing all fibres near `G x` has positive degree if its Jacobian determinant is nonnegative
+  on that set and nonzero at `x`.
 * `TauCeti.HomologicalOrientation.localIndex_comap_eq_sign_det`,
   `TauCeti.HomologicalOrientation.degree_comap_eq_sum_sign_det`: the same for maps between open
   subsets of `E`.
@@ -258,6 +265,57 @@ theorem degree_eq_ncard_sub_ncard {f : C(E, E)} (hf : IsProperMap f) {f' : E →
   rw [Finset.sum_sub_distrib, Finset.sum_boole, Finset.sum_boole, hpos, hneg, ncard_coe_finset,
     ncard_coe_finset]
 
+/-- **The degree counts the preimages of a positively oriented regular value.** If every preimage
+of `y` under the proper map `f : E → E` is a point where `f` is differentiable with positive
+Jacobian determinant, then the degree of `f` is the number of preimages of `y`. -/
+theorem degree_eq_ncard_of_det_pos {f : C(E, E)} (hf : IsProperMap f) {f' : E → E →L[ℝ] E} {y : E}
+    (hderiv : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
+    (hpos : ∀ x ∈ f ⁻¹' {y}, 0 < (f' x).det) :
+    o.degree o hE f = (f ⁻¹' {y}).ncard := by
+  have h₁ : {x | 0 < (f' x).det} ∩ f ⁻¹' {y} = f ⁻¹' {y} := inter_eq_right.2 hpos
+  have h₂ : {x | (f' x).det < 0} ∩ f ⁻¹' {y} = ∅ :=
+    eq_empty_iff_forall_notMem.2 fun x hx ↦ (hpos x hx.2).not_gt hx.1
+  rw [o.degree_eq_ncard_sub_ncard hE hf hderiv (fun x hx ↦ (hpos x hx).ne'), h₁, h₂,
+    ncard_empty, Nat.cast_zero, sub_zero]
+
+/-- Let `G : E → E` be proper and differentiable on `U`, with derivatives `D z` of
+nonnegative determinant, such that `U` contains the fibres of all values near `G x`. If `D x` has
+nonzero determinant, then the degree of `G` is positive. -/
+theorem degree_pos_of_hasFDerivAt {G : C(E, E)} (hG : IsProperMap G) {U : Set E}
+    {D : E → E →L[ℝ] E} (hGd : ∀ z ∈ U, HasFDerivAt G (D z) z) (hdet : ∀ z ∈ U, 0 ≤ (D z).det)
+    {x : E} (hDx : (D x).det ≠ 0) (hfib : ∀ᶠ y in 𝓝 (G x), G ⁻¹' {y} ⊆ U) :
+    0 < o.degree o hE G := by
+  have hU : U ∈ 𝓝 x := (G.continuous.continuousAt.eventually hfib).mono fun _ hz ↦ hz rfl
+  have hidx : o.localIndex o G x ≠ 0 := by
+    have hpos : 0 < (D x).det := (hdet x (mem_of_mem_nhds hU)).lt_of_ne' hDx
+    rw [o.localIndex_eq_sign_det hE (hGd x (mem_of_mem_nhds hU)) hDx, sign_pos hpos,
+      SignType.coe_one]
+    exact one_ne_zero
+  have hW : G '' U ∩ {y' | G ⁻¹' {y'} ⊆ U} ∈ 𝓝 (G x) :=
+    inter_mem (o.image_mem_nhds_of_localIndex_ne_zero o hE hidx hU) hfib
+  -- By Sard's theorem the regular values of `G` on `U` are dense, so some value in the interior of
+  -- this neighbourhood has only regular preimages.
+  borelize E
+  obtain ⟨y', hy'W, hy'S⟩ := (dense_setOf_forall_surjective_fderiv (s := U) (f := G)
+    (fun z hz ↦ (hGd z hz).differentiableAt) rfl).inter_open_nonempty
+    (interior (G '' U ∩ {y' | G ⁻¹' {y'} ⊆ U})) isOpen_interior
+    ⟨G x, mem_interior_iff_mem_nhds.2 hW⟩
+  obtain ⟨⟨z₀, -, hGz₀⟩, hy'U⟩ := interior_subset hy'W
+  have hpos {z : E} (hz : z ∈ G ⁻¹' {y'}) : 0 < (D z).det := by
+    have hsurj := hy'S z (hy'U hz) hz
+    rw [(hGd z (hy'U hz)).fderiv] at hsurj
+    have hdetz : (D z).det ≠ 0 := fun h ↦
+      LinearMap.det_eq_zero_iff_ker_ne_bot.1 h
+        (LinearMap.ker_eq_bot.2 (LinearMap.injective_iff_surjective.2 hsurj))
+    exact (hdet z (hy'U hz)).lt_of_ne' hdetz
+  have hfin : (G ⁻¹' {y'}).Finite :=
+    (hG.isCompact_preimage isCompact_singleton).finite_of_hasFDerivAt
+      (fun z hz ↦ hGd z (hy'U hz)) fun z hz ↦
+        ⟨_, ((D z).toContinuousLinearEquivOfDetNeZero (hpos hz).ne').antilipschitzWith⟩
+  rw [o.degree_eq_ncard_of_det_pos hE hG (f' := D) (y := y')
+    (fun z hz ↦ hGd z (hy'U hz)) fun z hz ↦ hpos hz]
+  exact_mod_cast (ncard_pos hfin).2 ⟨z₀, hGz₀⟩
+
 end HomologicalOrientation
 
 /-! ### Changes of coordinates -/
@@ -269,9 +327,9 @@ section TargetChange
 variable {M G V : Type} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup G] [NormedSpace ℝ G]
   [FiniteDimensional ℝ G] [ChartedSpace G M] [NormedAddCommGroup V] [NormedSpace ℝ V]
   [FiniteDimensional ℝ V] {n : ℕ} (o : HomologicalOrientation M G n)
-  (o' : HomologicalOrientation V V n) (hG : finrank ℝ G = n) (hV : finrank ℝ V = n)
+  (o' : HomologicalOrientation V V n) (hV : finrank ℝ V = n)
 
-include hG hV in
+include hV in
 /-- **The local index of a difference under a change of coordinates of the target.** Let
 `F p = a p - b p` for maps `a, b : M → V` continuous at `x` with `a x = b x`, so that `x` is a
 point of `F⁻¹(0)`, such as an intersection point of two maps into `V` when `F` is their difference.
@@ -297,8 +355,7 @@ theorem localIndex_eq_sign_det_mul_of_apply_eq_sub {F G' : C(M, V)} {a b : M →
   rw [← hcomp]
   -- `G'` differs from `L ∘ F` by `o(‖F‖)`, which is small compared with `‖L ∘ F‖`, so Rouché's
   -- principle applies.
-  refine (o.localIndex_eq_of_norm_sub_le o' hG hV (c := 1 / 2) (by norm_num) ?_ ?_).symm
-  · simp [LF, hF0, hG', hab]
+  refine (o.localIndex_eq_of_norm_sub_le o' hV (c := 1 / 2) (by norm_num) ?_).symm
   set C := ‖(e.symm : V →L[ℝ] V)‖ + 1
   have hC : 0 < C := by positivity
   have hT : Tendsto (fun p ↦ (a p, b p)) (𝓝 x) (𝓝 (a x, a x)) := by
@@ -324,15 +381,19 @@ section SourceChange
 variable {E N G : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace N] [T2Space N] [NormedAddCommGroup G] [NormedSpace ℝ G]
   [FiniteDimensional ℝ G] [ChartedSpace G N] {n : ℕ} (o : HomologicalOrientation E E n)
-  (o' : HomologicalOrientation N G n) (hE : finrank ℝ E = n) (hG : finrank ℝ G = n)
+  (o' : HomologicalOrientation N G n)
 
-include hE hG in
 /-- **The local index under a change of coordinates of the source.** If `φ : E → E` is strictly
 differentiable at `x` with derivative `φ'` of nonzero determinant, then the local index of
-`F ∘ φ` at `x` is that of `F` at `φ x` times `sign (det φ')`. -/
-theorem localIndex_comp_eq_mul_sign_det {F : C(E, N)} {φ : C(E, E)} {φ' : E →L[ℝ] E} {x : E}
-    (hφ : HasStrictFDerivAt φ φ' x) (hdet : φ'.det ≠ 0) :
+`F ∘ φ` at `x` is that of `F` at `φ x` times `sign (det φ')`. Only the target dimension must equal
+`n`; the source dimension may differ. -/
+theorem localIndex_comp_eq_mul_sign_det (hG : finrank ℝ G = n) {F : C(E, N)} {φ : C(E, E)}
+    {φ' : E →L[ℝ] E} {x : E} (hφ : HasStrictFDerivAt φ φ' x) (hdet : φ'.det ≠ 0) :
     o.localIndex o' (F.comp φ) x = o.localIndex o' F (φ x) * SignType.sign φ'.det := by
+  by_cases hE : finrank ℝ E = n
+  swap
+  · rw [o.localIndex_eq_zero_of_finrank_ne o' hE hG, o.localIndex_eq_zero_of_finrank_ne o' hE hG,
+      zero_mul]
   by_cases hiso : ∀ᶠ y in 𝓝[≠] φ x, F y ≠ F (φ x)
   · rw [o.localIndex_comp o o' hG hiso, o.localIndex_eq_sign_det hE hφ.hasFDerivAt hdet]
   have hfr : ∃ᶠ y in 𝓝[≠] φ x, F y = F (φ x) := by simpa using not_eventually.1 hiso

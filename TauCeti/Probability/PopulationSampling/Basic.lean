@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Prod
+public import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
 # Sampling a random population along a random selection
@@ -26,6 +27,8 @@ respectively on the injective ones (`TauCeti.Probability.sampleWithReplacement`,
 
 * `measurable_reindexPopulation` — measurability of the joint selection/population evaluation;
 * `samplePopulation` — sample a random population along an independent random selection;
+* `samplePopulation_add_right`, `samplePopulation_smul_right` — sampling is linear in the
+  population law;
 * `samplePopulation_map` — measurable observations commute with sampling;
 * `samplePopulation_dirac_comp` — its deterministic-population composition form;
 * `samplePopulation_assoc` — iterated population sampling composes selection laws via
@@ -125,6 +128,23 @@ variable [Countable κ] [MeasurableSingletonClass κ]
 theorem measurable_readPopulation (x : κ → α) :
     Measurable (fun k : ι → κ => fun i => x (k i)) :=
   measurable_reindexPopulation.comp measurable_prodMk_right
+
+/-- Sampling a sum of population laws is the sum of the samples of each. -/
+@[simp]
+theorem samplePopulation_add_right (σ : Measure (ι → κ)) [SFinite σ] (ρ₁ ρ₂ : Measure (κ → α))
+    [SFinite ρ₁] [SFinite ρ₂] :
+    samplePopulation σ (ρ₁ + ρ₂) = samplePopulation σ ρ₁ + samplePopulation σ ρ₂ := by
+  rw [samplePopulation_def, Measure.prod_add, Measure.map_add _ _ measurable_reindexPopulation]
+  rfl
+
+/-- Sampling a scaled population law is the scaled sample. -/
+@[simp]
+theorem samplePopulation_smul_right {R : Type*} [SMul R ℝ≥0∞] [IsScalarTower R ℝ≥0∞ ℝ≥0∞]
+    (σ : Measure (ι → κ)) (c : R) (ρ : Measure (κ → α)) [SFinite ρ] :
+    samplePopulation σ (c • ρ) = c • samplePopulation σ ρ := by
+  rw [samplePopulation_def, Measure.prod_smul_right,
+    Measure.map_smul _ measurable_reindexPopulation.aemeasurable]
+  rfl
 
 /-- Sampling a deterministic population is the pushforward of the selection law by reading
 that population at the selected indices. -/

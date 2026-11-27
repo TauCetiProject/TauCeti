@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import TauCeti.Analysis.InnerProductSpace.Complex
 
@@ -40,6 +41,10 @@ the real orthonormal basis `b.complexToReal`, whose underlying basis is `b.toBas
 * `Orthonormal.complex_iff`, `Orthonormal.complex_iff_forall_im_inner_eq_zero`: an `ℝ`-orthonormal
   family is `ℂ`-orthonormal if and only if `Im ⟪v i, v j⟫_ℂ = 0` (pairwise for `i ≠ j`, or for all
   `i, j`).
+* `Orthonormal.complex_iff_forall_real_inner_I_smul_eq_zero`: equivalently, `⟪I • v i, v j⟫_ℝ = 0`
+  for all `i, j`; for a `ℂ`-orthonormal family this is `Orthonormal.real_inner_I_smul_eq_zero`,
+  or `Orthonormal.real_inner_ofComplexModule_eq_zero` with the complex structure
+  `TauCeti.AlmostComplexStructure.ofComplexModule E` in place of `I • ·`.
 * `Orthonormal.complexToReal`: the family `(v i, I • v i)` of a complex orthonormal family `v` is
   real orthonormal.
 * `OrthonormalBasis.complexToReal_apply`, `OrthonormalBasis.complexToReal_repr_apply`: the vectors
@@ -85,6 +90,25 @@ theorem complex_iff_forall_im_inner_eq_zero {v : ι → E} (hv : Orthonormal ℝ
   by_cases hij : i = j
   · subst hij; exact inner_self_im (𝕜 := ℂ) (v i)
   · exact hp hij
+
+/-- An `ℝ`-orthonormal family `v` is `ℂ`-orthonormal if and only if every `I • v i` is
+`ℝ`-orthogonal to every `v j`: the real frame `(v i, I • v i)` is then orthonormal. -/
+theorem complex_iff_forall_real_inner_I_smul_eq_zero {v : ι → E} (hv : Orthonormal ℝ v) :
+    Orthonormal ℂ v ↔ ∀ i j, ⟪Complex.I • v i, v j⟫_ℝ = 0 := by
+  rw [hv.complex_iff_forall_im_inner_eq_zero]
+  simp [TauCeti.inner_real_eq_re_inner ℂ, inner_smul_left]
+
+/-- In a `ℂ`-orthonormal family `v`, every `I • v i` is `ℝ`-orthogonal to every `v j`. -/
+theorem real_inner_I_smul_eq_zero {v : ι → E} (hv : Orthonormal ℂ v) (i j : ι) :
+    ⟪Complex.I • v i, v j⟫_ℝ = 0 :=
+  (hv.real.complex_iff_forall_real_inner_I_smul_eq_zero).1 hv i j
+
+/-- In a `ℂ`-orthonormal family `v`, the image of every `v i` under the complex structure of
+multiplication by `i` is `ℝ`-orthogonal to every `v j`. -/
+theorem real_inner_ofComplexModule_eq_zero [IsScalarTower ℝ ℂ E] {v : ι → E}
+    (hv : Orthonormal ℂ v) (i j : ι) :
+    ⟪TauCeti.AlmostComplexStructure.ofComplexModule E (v i), v j⟫_ℝ = 0 := by
+  simpa using hv.real_inner_I_smul_eq_zero i j
 
 end Complex
 

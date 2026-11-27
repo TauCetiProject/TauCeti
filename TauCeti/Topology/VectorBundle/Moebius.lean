@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
+public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 
 import TauCeti.Topology.VectorBundle.Coordinates
 
@@ -33,7 +34,8 @@ disagree on the lower half-circle, so the Möbius line bundle is not orientable
 
 ## Main results
 
-* `TauCeti.continuous_norm_moebiusCore`: the fibre norm is continuous on the total space.
+* `TauCeti.continuous_norm_moebiusCore`: the fibre norm is continuous on the total space, so the
+  Möbius line bundle is a `TauCeti.ContinuousFiberNorm` bundle.
 * `TauCeti.isEmpty_vectorBundleOrientation_moebiusCore`: the Möbius line bundle is not orientable.
 
 ## References
@@ -67,18 +69,24 @@ theorem moebiusSign_mul_self (z : Circle) : moebiusSign z * moebiusSign z = 1 :=
   unfold moebiusSign
   split_ifs <;> norm_num
 
-/-- The transition function is locally constant off the real axis. -/
-theorem continuousAt_moebiusSign {z : Circle} (hz : (z : ℂ).im ≠ 0) :
-    ContinuousAt moebiusSign z := by
+/-- A function on the circle taking one value on the open upper half-circle and another
+elsewhere is locally constant off the real axis. -/
+theorem continuousAt_ite_im_pos {α : Type*} [TopologicalSpace α] (a b : α) {z : Circle}
+    (hz : (z : ℂ).im ≠ 0) : ContinuousAt (fun w : Circle ↦ if 0 < (w : ℂ).im then a else b) z := by
   have hc : Continuous fun w : Circle ↦ (w : ℂ).im :=
     Complex.continuous_im.comp continuous_subtypeVal
   rcases hz.lt_or_gt with h | h
-  · refine continuousAt_const.congr (f := fun _ ↦ (-1 : ℝ)) ?_
+  · refine continuousAt_const.congr (f := fun _ ↦ b) ?_
     filter_upwards [hc.continuousAt.eventually (gt_mem_nhds h)] with w hw
-    exact (moebiusSign_of_neg hw).symm
-  · refine continuousAt_const.congr (f := fun _ ↦ (1 : ℝ)) ?_
+    exact (ite_eq_right hw.not_gt).symm
+  · refine continuousAt_const.congr (f := fun _ ↦ a) ?_
     filter_upwards [hc.continuousAt.eventually (lt_mem_nhds h)] with w hw
-    exact (moebiusSign_of_pos hw).symm
+    exact (ite_eq_left hw).symm
+
+/-- The transition function is locally constant off the real axis. -/
+theorem continuousAt_moebiusSign {z : Circle} (hz : (z : ℂ).im ≠ 0) :
+    ContinuousAt moebiusSign z :=
+  continuousAt_ite_im_pos 1 (-1) hz
 
 /-- The chart domains of the Möbius line bundle: the circle minus `1` for `false`, minus `-1` for
 `true`. -/
@@ -96,6 +104,13 @@ theorem mem_moebiusBaseSet {i : Bool} {z : Circle} :
 theorem im_ne_zero_of_mem_moebiusBaseSet {i j : Bool} (hij : i ≠ j) {z : Circle}
     (hi : z ∈ moebiusBaseSet i) (hj : z ∈ moebiusBaseSet j) : (z : ℂ).im ≠ 0 := fun h ↦ by
   rcases (Circle.im_coe_eq_zero_iff z).1 h with rfl | rfl <;> cases i <;> cases j <;> simp_all
+
+/-- A point off the real axis lies in both chart domains of the Möbius line bundle. -/
+theorem mem_moebiusBaseSet_of_im_ne_zero {z : Circle} (hz : (z : ℂ).im ≠ 0) (i : Bool) :
+    z ∈ moebiusBaseSet i := by
+  rw [mem_moebiusBaseSet]
+  intro h
+  cases i <;> simp_all
 
 /-- The Möbius line bundle over the circle, glued from the trivial lines over the circle minus `1`
 (chart `false`) and minus `-1` (chart `true`) by the transition `TauCeti.moebiusSign`: the
@@ -149,6 +164,16 @@ instance (z : Circle) : NormedAddCommGroup (moebiusCore.Fiber z) :=
 instance (z : Circle) : NormedSpace ℝ (moebiusCore.Fiber z) :=
   inferInstanceAs (NormedSpace ℝ ℝ)
 
+/-- The fibres of the Möbius line bundle carry the inner product of `ℝ`. -/
+instance (z : Circle) : InnerProductSpace ℝ (moebiusCore.Fiber z) :=
+  inferInstanceAs (InnerProductSpace ℝ ℝ)
+
+/-- The norm of a vector in a fibre of the Möbius line bundle is its absolute value as a real
+number. -/
+@[simp]
+theorem norm_moebiusCore_fiber {z : Circle} (u : moebiusCore.Fiber z) : ‖u‖ = (|u| : ℝ) :=
+  rfl
+
 /-- The transition functions of the Möbius line bundle preserve the norm of `ℝ`. -/
 theorem norm_moebiusCore_coordChange (i j : Bool) (z : Circle) (v : ℝ) :
     ‖moebiusCore.coordChange i j z v‖ = ‖v‖ := by
@@ -173,6 +198,9 @@ theorem continuous_norm_moebiusCore :
   simp only [Function.comp_apply, e, VectorBundleCore.localTriv_apply]
   exact norm_moebiusCore_coordChange _ _ _ _
 
+instance : ContinuousFiberNorm ℝ moebiusCore.Fiber :=
+  ⟨continuous_norm_moebiusCore⟩
+
 /-- The two chart domains of the Möbius line bundle are connected: each is the circle minus a
 point. -/
 theorem isPreconnected_moebiusBaseSet (i : Bool) : IsPreconnected (moebiusBaseSet i) := by
@@ -194,19 +222,20 @@ theorem isEmpty_vectorBundleOrientation_moebiusCore :
   let q : Circle := Circle.exp (-(π / 2))
   have hp : 0 < (p : ℂ).im := by simp [p, Circle.coe_exp]
   have hq : (q : ℂ).im < 0 := by simp [q, Circle.coe_exp]
-  have hmem {z : Circle} (hz : (z : ℂ).im ≠ 0) (i : Bool) : z ∈ moebiusBaseSet i := by
-    intro h
-    cases i <;> simp_all
   have : MemTrivializationAtlas (moebiusCore.localTriv false) := ⟨⟨false, rfl⟩⟩
   have : MemTrivializationAtlas (moebiusCore.localTriv true) := ⟨⟨true, rfl⟩⟩
   -- The coordinate change from the chart `true` to the chart `false` is `1` at `p` and `-1` at `q`.
   refine VectorBundleOrientation.isEmpty_of_det_coordChangeL_pos_of_neg hι
     (moebiusCore.localTriv true) (moebiusCore.localTriv false) (isPreconnected_moebiusBaseSet true)
-    (isPreconnected_moebiusBaseSet false) le_rfl le_rfl (hmem hp.ne' true) (hmem hp.ne' false)
-    (hmem hq.ne true) (hmem hq.ne false) ?_ ?_
-  · rw [moebiusCore.det_coordChangeL_localTriv (hmem hp.ne' true) (hmem hp.ne' false)]
+    (isPreconnected_moebiusBaseSet false) le_rfl le_rfl
+    (mem_moebiusBaseSet_of_im_ne_zero hp.ne' true) (mem_moebiusBaseSet_of_im_ne_zero hp.ne' false)
+    (mem_moebiusBaseSet_of_im_ne_zero hq.ne true) (mem_moebiusBaseSet_of_im_ne_zero hq.ne false)
+    ?_ ?_
+  · rw [moebiusCore.det_coordChangeL_localTriv (mem_moebiusBaseSet_of_im_ne_zero hp.ne' true)
+      (mem_moebiusBaseSet_of_im_ne_zero hp.ne' false)]
     simp [moebiusSign_of_pos hp]
-  · rw [moebiusCore.det_coordChangeL_localTriv (hmem hq.ne true) (hmem hq.ne false)]
+  · rw [moebiusCore.det_coordChangeL_localTriv (mem_moebiusBaseSet_of_im_ne_zero hq.ne true)
+      (mem_moebiusBaseSet_of_im_ne_zero hq.ne false)]
     simp [moebiusSign_of_neg hq]
 
 end TauCeti

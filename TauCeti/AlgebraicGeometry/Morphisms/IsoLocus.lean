@@ -55,21 +55,8 @@ variable {X Y : Scheme.{u}}
 /-- A morphism that is an isomorphism over each of a family of opens is an isomorphism over their
 union. -/
 theorem isIso_morphismRestrict_iSup (f : X ⟶ Y) {ι : Type*} (U : ι → Y.Opens)
-    (H : ∀ i, IsIso (f ∣_ U i)) : IsIso (f ∣_ iSup U) := by
-  let W := iSup U
-  -- Cover `W` by the preimages of the `U i` under its inclusion.
-  have hU : iSup (fun i ↦ W.ι ⁻¹ᵁ U i) = ⊤ := by
-    refine W.ι.image_injective ?_
-    simp only [Scheme.Hom.image_iSup, Scheme.Hom.image_top_eq_opensRange,
-      Scheme.Opens.opensRange_ι, Scheme.Hom.image_preimage_eq_opensRange_inf]
-    exact iSup_congr fun i ↦ inf_eq_right.mpr (le_iSup U i)
-  refine IsZariskiLocalAtTarget.of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme) _ hU
-    fun i ↦ ?_
-  have he : W.ι ''ᵁ (W.ι ⁻¹ᵁ U i) = U i := by
-    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-    exact inf_eq_right.mpr (le_iSup U i)
-  exact ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
-    (morphismRestrictRestrict f W _ ≪≫ morphismRestrictEq f he)).mpr (H i)
+    (H : ∀ i, IsIso (f ∣_ U i)) : IsIso (f ∣_ iSup U) :=
+  IsZariskiLocalAtTarget.restrict_iSup (MorphismProperty.isomorphisms Scheme) H
 
 /-- The *iso locus* of `f : X ⟶ Y`: the largest open of `Y` over which `f` is an isomorphism. -/
 def isoLocus (f : X ⟶ Y) : Y.Opens :=

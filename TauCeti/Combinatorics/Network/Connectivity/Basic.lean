@@ -43,8 +43,6 @@ endpoints coincide the empty path may fill every index.
   allowed, and then contribute one-arrow paths.
 * `TauCeti.IsVertexStrong.isArcStrong` and `TauCeti.vertexStrongConnectivity_le_arcConnectivity`:
   the directed Whitney inequality.
-* `TauCeti.arcConnectivity_le_card_out` and `TauCeti.arcConnectivity_le_card_in`: on at least two
-  vertices, arc connectivity is at most every out-degree and every in-degree.
 * `TauCeti.isArcStrong_iff_le_arcConnectivity` and
   `TauCeti.isVertexStrong_iff_le_vertexStrongConnectivity`: the invariants record exactly the
   thresholds at which the predicates hold, the latter on a nonempty vertex type. On the empty type
@@ -397,33 +395,5 @@ the arc connectivity. -/
 theorem vertexStrongConnectivity_le_arcConnectivity :
     vertexStrongConnectivity Q ≤ arcConnectivity Q :=
   iSup₂_le fun k hk ↦ (isArcStrong_iff_le_arcConnectivity k).1 hk.isArcStrong
-
-/-- On at least two vertices, the arc connectivity is at most the number of arrows leaving any
-vertex, loops included. -/
-theorem arcConnectivity_le_card_out [Nontrivial V] (v : V) [Fintype (Σ w, Q v w)] :
-    arcConnectivity Q ≤ Fintype.card (Σ w, Q v w) := by
-  obtain ⟨w, hwv⟩ := exists_ne v
-  refine iSup₂_le fun k hk ↦ Nat.cast_le.2 ?_
-  have := (hk.isArcReachable v w).le_card (C := {v}) rfl hwv
-    (F := univ.map ⟨Sigma.mk v, sigma_mk_injective⟩) fun x y e hx _ ↦ by
-      subst hx
-      exact mem_map.2 ⟨⟨y, e⟩, mem_univ _, rfl⟩
-  simpa using this
-
-/-- On at least two vertices, the arc connectivity is at most the number of arrows entering any
-vertex, loops included. -/
-theorem arcConnectivity_le_card_in [Nontrivial V] (v : V) [Fintype (Σ w, Q w v)] :
-    arcConnectivity Q ≤ Fintype.card (Σ w, Q w v) := by
-  obtain ⟨w, hwv⟩ := exists_ne v
-  refine iSup₂_le fun k hk ↦ Nat.cast_le.2 ?_
-  have hinj : Function.Injective fun a : Σ w, Q w v ↦ (⟨a.1, v, a.2⟩ : Σ x y, Q x y) := by
-    rintro ⟨a, e⟩ ⟨b, f⟩ ⟨⟩
-    rfl
-  have := (hk.isArcReachable w v).le_card (C := {v}ᶜ) hwv (by simp)
-    (F := univ.map ⟨_, hinj⟩) fun x y e _ hy ↦ by
-      rw [Set.mem_compl_iff, not_not, Set.mem_singleton_iff] at hy
-      subst hy
-      exact mem_map.2 ⟨⟨x, e⟩, mem_univ _, rfl⟩
-  simpa using this
 
 end TauCeti

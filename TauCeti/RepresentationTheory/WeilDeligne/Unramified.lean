@@ -56,8 +56,8 @@ def unramified (hdeg : Continuous deg) (A : GeneralLinearGroup E V) :
     WeilDeligneParameter E W V deg q where
   r := (Units.coeHom _).comp ((zpowersHom _ A).comp deg)
   isOpen_ker := by
-    rw [← MonoidHom.comp_assoc, ← MonoidHom.comap_ker, Subgroup.coe_comap]
-    exact hdeg.isOpen_preimage _ (isOpen_discrete _)
+    rw [← MonoidHom.comp_assoc]
+    exact isOpen_ker_comp_deg hdeg _
   N := 0
   isNilpotent_N := .zero
   conj_N _ := by simp

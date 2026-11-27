@@ -18,7 +18,8 @@ compatible additive maps on sections that respect scalar multiplication by germs
 map from the stalk. Over commutative coefficients, `germSemilinear` bundles the germ map of
 sections as a map semilinear along the ring germ map, and `stalkMapCommRing` is the stalk map of a
 morphism, linear over the commutative-ring stalk. As a function it is the stalk map of the
-underlying morphism of abelian presheaves (`coe_stalkMapCommRing`).
+underlying morphism of abelian presheaves (`coe_stalkMapCommRing`). It is functorial, so an
+isomorphism induces the linear stalk equivalence `stalkLinearEquivCommRing`.
 It also constructs the stalk map of a morphism defined on a neighborhood, for use with
 local morphisms such as sections of an internal Hom.
 -/
@@ -160,6 +161,44 @@ theorem stalkMapCommRing_germ (f : N ⟶ N') (U : Opens X) (hx : x ∈ U) (m : N
   N.stalkLiftCommRing_germ x (stalkMapCommRingSection x f)
     (stalkMapCommRingSection_res x f) (stalkMapCommRingSection_smul x f) U hx m
 
+/-- The stalk map of the identity is the identity. -/
+@[simp]
+theorem stalkMapCommRing_id : stalkMapCommRing x (𝟙 N) = LinearMap.id := by
+  ext t
+  obtain ⟨U, hx, t, rfl⟩ := TopCat.Presheaf.exists_germ_eq _ t
+  exact stalkMapCommRing_germ x (𝟙 N) U hx t
+
+/-- The stalk map of a composite is the composite of the stalk maps. -/
+theorem stalkMapCommRing_comp {N'' : PresheafOfModules.{u} (S ⋙ forget₂ CommRingCat RingCat.{u})}
+    (f : N ⟶ N') (g : N' ⟶ N'') :
+    stalkMapCommRing x (f ≫ g) = stalkMapCommRing x g ∘ₗ stalkMapCommRing x f := by
+  ext t
+  obtain ⟨U, hx, t, rfl⟩ := TopCat.Presheaf.exists_germ_eq _ t
+  exact (stalkMapCommRing_germ x (f ≫ g) U hx t).trans
+    ((stalkMapCommRing_germ x g U hx _).symm.trans
+      (congrArg _ (stalkMapCommRing_germ x f U hx t).symm))
+
+/-- An isomorphism of presheaves of modules over a presheaf of commutative rings induces a
+linear equivalence of stalks over the commutative-ring stalk. -/
+def stalkLinearEquivCommRing (e : N ≅ N') :
+    ↑(TopCat.Presheaf.stalk N.presheaf x) ≃ₗ[S.stalk x] ↑(TopCat.Presheaf.stalk N'.presheaf x) :=
+  LinearEquiv.ofLinearMap (stalkMapCommRing x e.hom) (stalkMapCommRing x e.inv)
+    (by rw [← stalkMapCommRing_comp, e.inv_hom_id, stalkMapCommRing_id])
+    (by rw [← stalkMapCommRing_comp, e.hom_inv_id, stalkMapCommRing_id])
+
+/-- The stalk equivalence of an isomorphism is the stalk map of its forward morphism. -/
+@[simp]
+theorem stalkLinearEquivCommRing_apply (e : N ≅ N') (t : ↑(TopCat.Presheaf.stalk N.presheaf x)) :
+    stalkLinearEquivCommRing x e t = stalkMapCommRing x e.hom t :=
+  (rfl)
+
+/-- The inverse of the stalk equivalence of an isomorphism is the stalk map of its inverse. -/
+@[simp]
+theorem stalkLinearEquivCommRing_symm_apply (e : N ≅ N')
+    (t : ↑(TopCat.Presheaf.stalk N'.presheaf x)) :
+    (stalkLinearEquivCommRing x e).symm t = stalkMapCommRing x e.inv t :=
+  (rfl)
+
 /-- As a function, the stalk map of a morphism of presheaves of modules is the stalk map of the
 underlying morphism of presheaves of abelian groups. -/
 theorem coe_stalkMapCommRing (f : N ⟶ N') :
@@ -169,6 +208,14 @@ theorem coe_stalkMapCommRing (f : N ⟶ N') :
   obtain ⟨U, hx, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq N.presheaf s
   exact (stalkMapCommRing_germ x f U hx m).trans
     (TopCat.Presheaf.stalkFunctor_map_germ_apply U x hx ((toPresheaf _).map f) m).symm
+
+/-- A linear stalk map over the commutative-ring stalk is bijective exactly when the stalk map
+of the underlying presheaves of abelian groups is an isomorphism. -/
+theorem bijective_stalkMapCommRing_iff_isIso (f : N ⟶ N') :
+    Function.Bijective (stalkMapCommRing x f) ↔
+      IsIso ((TopCat.Presheaf.stalkFunctor AddCommGrpCat x).map ((toPresheaf _).map f)) := by
+  rw [coe_stalkMapCommRing]
+  exact (ConcreteCategory.isIso_iff_bijective _).symm
 
 end CommRing
 

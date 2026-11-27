@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.CommSq
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Topology.Sheaves.KSheaf.Basic
 
 /-!
@@ -30,7 +31,8 @@ cone is, in degree `n`, `F(K₂ ∪ K₃)ⁿ⁺² ⊕ (F(K₂) ⊞ F(K₃))ⁿ�
 of the three-term sequence up to a shift and the signs of the differential. A morphism of cochain
 complexes in an abelian category is a quasi-isomorphism exactly when its mapping cone is acyclic,
 so the total complex is acyclic exactly when this map is a quasi-isomorphism, which is the form
-of the axiom used here.
+of the axiom used here. The map `mayerVietorisDesc` is natural with respect to morphisms of
+K-presheaves (`TopCat.KPresheaf.mappingConeMap_comp_mayerVietorisDesc`).
 
 In Pardon's construction of virtual fundamental cycles, the virtual cochain complexes of implicit
 atlases are homotopy K-sheaves, and their cohomology is related to sheaf cohomology through the
@@ -51,9 +53,15 @@ that every compact set has a compact neighbourhood.
 
 * `TopCat.KPresheaf.IsHomotopyKSheaf.quasiIso_desc`: in a homotopy K-sheaf, the map to `F(K)`
   from any colimit over the compact neighbourhoods of `K` is a quasi-isomorphism.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.of_iso`: a K-presheaf isomorphic to a homotopy K-sheaf is a
+  homotopy K-sheaf.
 * `TopCat.KPresheaf.isPullback_homologyMap`: where `mayerVietorisDesc` is a quasi-isomorphism,
   the cohomology squares are pullbacks in the degree above a degree where `F(K₂ ∩ K₃)` has no
   cohomology.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.exactAt_of_bicartSq`: the Mayer–Vietoris step for vanishing
+  cohomology.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.exactAt_of_forall_mem_nhds`: vanishing of cohomology below a
+  degree on compact sets is local.
 * `TopCat.KPresheaf.nonempty_isColimit_coconeOfCompacts_homology`: the colimit axiom passes to
   cohomology.
 * `TopCat.KPresheaf.IsHomotopyKSheaf.isKSheaf_homology`: the cohomology of a homotopy K-sheaf in
@@ -68,7 +76,7 @@ that every compact set has a compact neighbourhood.
 
 public section
 
-open CategoryTheory Limits Opposite TopologicalSpace HomologicalComplex CochainComplex
+open CategoryTheory Limits Opposite TopologicalSpace HomologicalComplex CochainComplex Topology
 
 universe w v u
 
@@ -120,6 +128,28 @@ theorem inl_mayerVietorisDesc {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.Bi
       0 :=
   mappingCone.inl_desc ..
 
+/-- **Naturality of the Mayer–Vietoris map.** A morphism `τ : F ⟶ G` of K-presheaves of cochain
+complexes induces a map between the mapping cones of the restrictions
+`F(K₂ ∪ K₃) ⟶ F(K₂) ⊞ F(K₃)` and `G(K₂ ∪ K₃) ⟶ G(K₂) ⊞ G(K₃)`, and the Mayer–Vietoris maps
+`mappingCone _ ⟶ F(K₂ ∩ K₃)` and `mappingCone _ ⟶ G(K₂ ∩ K₃)` commute with it and with
+`τ_(K₂ ∩ K₃)`. -/
+@[reassoc]
+theorem mappingConeMap_comp_mayerVietorisDesc {F G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
+    {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) :
+    mappingCone.map (biprod.lift (F.map (opHomOfLE h.le₂₄)) (F.map (opHomOfLE h.le₃₄)))
+      (biprod.lift (G.map (opHomOfLE h.le₂₄)) (G.map (opHomOfLE h.le₃₄))) (τ.app (op K₄))
+      (biprod.map (τ.app (op K₂)) (τ.app (op K₃))) (by apply biprod.hom_ext <;> simp) ≫
+        G.mayerVietorisDesc h =
+      F.mayerVietorisDesc h ≫ τ.app (op K₁) := by
+  have hdesc : biprod.map (τ.app (op K₂)) (τ.app (op K₃)) ≫
+      biprod.desc (G.map (opHomOfLE h.le₁₂)) (-G.map (opHomOfLE h.le₁₃)) =
+      biprod.desc (F.map (opHomOfLE h.le₁₂)) (-F.map (opHomOfLE h.le₁₃)) ≫ τ.app (op K₁) := by
+    apply biprod.hom_ext' <;> simp
+  ext n
+  apply mappingCone.ext_from _ (n + 1) n rfl
+  · simp
+  · simpa using HomologicalComplex.congr_hom hdesc n
+
 /-- A K-presheaf `F` of cochain complexes is a *homotopy K-sheaf* (Pardon, Definition A.2.5) if
 `F(∅)` is acyclic, the total complex of `F(K₂ ∪ K₃) ⟶ F(K₂) ⊞ F(K₃) ⟶ F(K₂ ∩ K₃)` is acyclic for
 all compact `K₂` and `K₃`, and for every compact `K` the map to `F(K)` from a colimit of the
@@ -140,6 +170,30 @@ theorem IsHomotopyKSheaf.quasiIso_desc (hF : F.IsHomotopyKSheaf) (K : Compacts X
   obtain ⟨c', hc', _⟩ := hF.exists_isColimit_quasiIso_desc K
   rw [← hc.coconePointUniqueUpToIso_hom_desc hc']
   infer_instance
+
+/-- A K-presheaf isomorphic to a homotopy K-sheaf is a homotopy K-sheaf. -/
+theorem IsHomotopyKSheaf.of_iso {F G : KPresheaf (CochainComplex C ℤ) X} (e : F ≅ G)
+    (hF : F.IsHomotopyKSheaf) : G.IsHomotopyKSheaf where
+  acyclic_bot i := (exactAt_iff_of_quasiIsoAt (e.hom.app (op ⊥)) i).1 (hF.acyclic_bot i)
+  quasiIso_mayerVietorisDesc {K₁ K₂ K₃ K₄} h := by
+    have := hF.quasiIso_mayerVietorisDesc h
+    -- `mayerVietorisDesc` is natural (`mappingConeMap_comp_mayerVietorisDesc`)
+    exact quasiIso_of_arrow_mk_iso (F.mayerVietorisDesc h) (G.mayerVietorisDesc h)
+      (Arrow.isoMk (mappingCone.mapIso (e.app (op K₄))
+          (biprod.mapIso (e.app (op K₂)) (e.app (op K₃))) (by apply biprod.hom_ext <;> simp))
+        (e.app (op K₁)) (mappingConeMap_comp_mayerVietorisDesc e.hom h))
+  exists_isColimit_quasiIso_desc K := by
+    obtain ⟨c, hc, _⟩ := hF.exists_isColimit_quasiIso_desc K
+    -- transport the colimit cocone of `F` along `e`
+    let α := Functor.isoWhiskerLeft (Set.mono_coe K.compactNhds).functor.op e
+    let hc' := (IsColimit.precomposeInvEquiv α c).symm hc
+    refine ⟨(Cocone.precompose α.inv).obj c, hc', ?_⟩
+    have : hc'.desc (G.coconeOfCompacts K) = hc.desc (F.coconeOfCompacts K) ≫ e.hom.app (op K) :=
+      hc'.hom_ext fun L ↦ by
+        rw [IsColimit.fac, ← cancel_epi (α.hom.app L)]
+        simp [α]
+    rw [this]
+    infer_instance
 
 /-- If the map `mappingCone φ ⟶ F(K₁)` of a bicartesian square is a quasi-isomorphism and `F(K₁)`
 has vanishing cohomology in degree `i`, then the square of cohomology groups in degree `i + 1` is
@@ -192,6 +246,54 @@ theorem isPullback_homologyMap {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.B
         simp [S, he, ψ, ← homologyMap_comp, biprod.desc_eq, homologyMap_add]))).1
     ⟨hex, hφ⟩
   exact IsPullback.of_isLimit (sq.isLimitEquivIsLimitKernelFork.symm hS.fIsKernel)
+
+section Vanishing
+
+variable {F}
+
+/-- In a homotopy K-sheaf, if the cohomology of `F(K₂ ∩ K₃)` vanishes in degree `i` and that of
+`F(K₂)` and `F(K₃)` vanishes in degree `i + 1`, then that of `F(K₂ ∪ K₃)` vanishes in degree
+`i + 1`. -/
+theorem IsHomotopyKSheaf.exactAt_of_bicartSq (hF : F.IsHomotopyKSheaf)
+    {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) {i j : ℤ} (hij : i + 1 = j)
+    (h₁ : (F.obj (op K₁)).ExactAt i) (h₂ : (F.obj (op K₂)).ExactAt j)
+    (h₃ : (F.obj (op K₃)).ExactAt j) : (F.obj (op K₄)).ExactAt j := by
+  have := hF.quasiIso_mayerVietorisDesc h
+  rw [exactAt_iff_isZero_homology] at h₂ h₃ ⊢
+  exact (IsZero.iff_id_eq_zero _).2 <|
+    (F.isPullback_homologyMap h hij h₁).hom_ext (h₂.eq_of_tgt _ _) (h₃.eq_of_tgt _ _)
+
+/-- In a homotopy K-sheaf, vanishing of cohomology in degrees `≤ n` on compact sets is local: if
+every point has a neighbourhood `U` such that the cohomology of `F(K)` vanishes in degrees `≤ n`
+for every compact `K ⊆ U`, then the cohomology of `F(K)` vanishes in degrees `≤ n` for every
+compact `K`. -/
+theorem IsHomotopyKSheaf.exactAt_of_forall_mem_nhds (hF : F.IsHomotopyKSheaf) {n : ℤ}
+    (hloc : ∀ x : X, ∃ U ∈ 𝓝 x, ∀ K : Compacts X, (K : Set X) ⊆ U → ∀ i ≤ n,
+      (F.obj (op K)).ExactAt i)
+    (K : Compacts X) {i : ℤ} (hi : i ≤ n) : (F.obj (op K)).ExactAt i := by
+  classical
+  choose U hU hUK using hloc
+  -- `K` is a finite union of compact sets `L x`, each inside the interior of `U x`
+  obtain ⟨t, -, hKt⟩ := K.isCompact.elim_nhds_subcover (fun x ↦ interior (U x))
+    (fun x _ ↦ interior_mem_nhds.2 (hU x))
+  obtain ⟨L, hL, hLU, hKL⟩ := K.isCompact.finite_compact_cover t _ (fun _ _ ↦ isOpen_interior) hKt
+  let L' (x : X) : Compacts X := ⟨L x, hL x⟩
+  have hL' (x : X) (K' : Compacts X) (hK' : K' ≤ L' x) {i : ℤ} (hi : i ≤ n) :
+      (F.obj (op K')).ExactAt i :=
+    hUK x K' ((SetLike.coe_subset_coe.2 hK').trans ((hLU x).trans interior_subset)) i hi
+  -- the cohomology vanishes on every finite union of the `L x`
+  have key (s : Finset X) : ∀ i ≤ n, (F.obj (op (s.sup L'))).ExactAt i := by
+    induction s using Finset.induction_on with
+    | empty => exact fun i _ ↦ hF.acyclic_bot i
+    | insert a s _ ih =>
+      intro i hi
+      rw [Finset.sup_insert]
+      exact hF.exactAt_of_bicartSq ⟨rfl, rfl⟩ (sub_add_cancel i 1)
+        (hL' a _ inf_le_left (by omega)) (hL' a _ le_rfl hi) (ih i hi)
+  have hK : K = t.sup L' := Compacts.ext <| by simp [Compacts.coe_finset_sup, L', hKL]
+  exact hK ▸ key t i hi
+
+end Vanishing
 
 section Colimit
 

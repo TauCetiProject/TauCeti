@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -13,6 +15,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
 # Calculus in the charts of a manifold modelled on its own model space
@@ -32,7 +35,8 @@ open set.
 
 * `TauCeti.mfderiv_eq_fderiv_comp_of_eqOn`: `df_y = dh_{e y} ∘ de_y` where `f = h ∘ e`.
 * `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
-  invertible, and so is the derivative of its inverse (`TauCeti.isInvertible_mfderiv_chart_symm`).
+  invertible, and so is the derivative of its inverse (`TauCeti.isInvertible_mfderiv_chart_symm`)
+  and the derivative read in the model space (`TauCeti.isInvertible_mvfderiv_chart`).
 * `TauCeti.hasMFDerivAt_iff_hasFDerivAt_comp_chartAt_symm`: a map into a normed space has a given
   derivative if and only if its expression in the preferred chart does.
 * `TauCeti.contDiffAt_symm_trans_of_mem_maximalAtlas`: a transition map between two charts of the
@@ -57,6 +61,23 @@ open set.
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
   nonzero form an open set.
+* `TauCeti.toDual_symm_comp_inverse_mvfderiv`: on a manifold modelled on a real Hilbert space, the
+  frequency in a chart `e₂` of the covector `⟪η, ·⟫ ∘ de₁_x` read in a chart `e₁` is the image of
+  `η` under the inverse adjoint of the derivative of the transition `e₂ ∘ e₁⁻¹`, the
+  transformation law of covectors; and
+  `TauCeti.innerSL_toDual_symm_comp_inverse_mvfderiv`: a covector `ξ ∈ T*ₓM` is `⟪η, ·⟫ ∘ de_x`
+  for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`, which is nonzero when `ξ` is
+  (`TauCeti.toDual_symm_comp_inverse_mvfderiv_ne_zero`).
+* `TauCeti.toDual_symm_mvfderiv_comp_inverse_eq_gradient`: the frequency dual to the differential
+  `df_x` read in a chart `e` is the gradient of `f ∘ e⁻¹` at `e x`.
+* `TauCeti.adjoint_ringInverse_fderiv_comp_symm_eq_one`: the inverse adjoint of the derivative of
+  the transition from a chart to itself is the identity on the chart target.
+* `OpenPartialHomeomorph.toDual_symm_comp_mfderiv_symm_eq_zero_iff`: in an open partial
+  homeomorphism `c` into a real Hilbert space, smooth with smooth inverse, a covector at a point of
+  the source is read as zero exactly when it is zero.
+* `OpenPartialHomeomorph.adjoint_fderiv_toDual_symm_comp_mfderiv_symm`: for a map `f` read in
+  open partial homeomorphisms `c`, `c'` into real Hilbert spaces, the transpose of the derivative of
+  `c' ∘ f ∘ c⁻¹` pulls a covector `η` read in `c'` back to `η ∘ df` read in `c`.
 -/
 
 public section
@@ -117,6 +138,15 @@ theorem isInvertible_mfderiv_chart_symm (he : e ∈ IsManifold.maximalAtlas 𝓘
   have := isInvertible_mfderivWithin_extend_symm he (y := z) (by simpa using hz)
   have hext : ((e.extend 𝓘(𝕜, E)).symm : E → M) = e.symm := by ext w; simp
   rwa [hext, modelWithCornersSelf_coe, range_id, mfderivWithin_univ] at this
+
+/-- The derivative of a chart of the `C^1` maximal atlas of a manifold modelled on its own model
+space, read in the model space, is invertible at every point of the chart source. -/
+theorem isInvertible_mvfderiv_chart (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
+    {y : M} (hy : y ∈ e.source) : (mvfderiv 𝓘(𝕜, E) e y).IsInvertible := by
+  -- `mvfderiv` is `mfderiv` followed by `fromTangentSpace`; both factors are invertible.
+  unfold mvfderiv
+  exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e y), rfl⟩
+    (isInvertible_mfderiv_chart he hy)
 
 /-- Where `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, the differential of
 `f` vanishes at `y` in the source if and only if the Fréchet derivative of `h` vanishes at `e y`. -/
@@ -378,4 +408,163 @@ theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F)
 
 end Preferred
 
+section Dual
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+
+/-- **The transformation law of covectors under a change of chart.** The frequency in the chart
+`e₂` of the covector `⟪η, ·⟫ ∘ de₁_x` is the image of `η` under the inverse adjoint of the
+derivative of the transition `e₂ ∘ e₁⁻¹` at `e₁ x`. -/
+theorem toDual_symm_comp_inverse_mvfderiv {e₁ e₂ : OpenPartialHomeomorph M E}
+    (he₁ : e₁ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M)
+    (he₂ : e₂ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M)
+    {x : M} (hx₁ : x ∈ e₁.source) (hx₂ : x ∈ e₂.source) (η : E) :
+    (InnerProductSpace.toDual ℝ E).symm
+        (((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, E) e₁ x)).comp (mvfderiv 𝓘(ℝ, E) e₂ x).inverse) =
+      ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ (e₁.symm.trans e₂) (e₁ x))) η := by
+  have hxκ : e₁ x ∈ (e₁.symm.trans e₂).source := by
+    simp [e₁.map_source hx₁, e₁.left_inv hx₁, hx₂]
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans one_ne_zero he₁ he₂ hxκ
+  -- The chain rule: `de₂_x = A ∘ de₁_x`.
+  have hD : ∀ w, A (mvfderiv 𝓘(ℝ, E) e₁ x w) = mvfderiv 𝓘(ℝ, E) e₂ x w := fun w ↦ by
+    have h := OpenPartialHomeomorph.mvfderiv_eq_fderiv_symm_trans_comp hxκ
+      (by rw [e₁.left_inv hx₁]; exact mdifferentiableAt_of_mem_maximalAtlas he₁ hx₁)
+      hA.differentiableAt
+    rw [e₁.left_inv hx₁, hA.fderiv] at h
+    exact (DFunLike.congr_fun h w).symm
+  rw [hA.fderiv, ContinuousLinearMap.ringInverse_eq_inverse, ContinuousLinearMap.inverse_equiv,
+    LinearIsometryEquiv.symm_apply_eq]
+  ext v
+  simp only [InnerProductSpace.toDual_apply_apply, ContinuousLinearMap.adjoint_inner_left,
+    ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+  congr 1
+  refine A.injective ?_
+  simpa using (hD _).trans ((isInvertible_mvfderiv_chart he₂ hx₂).self_apply_inverse v)
+
+omit [ChartedSpace E M] in
+/-- The inverse adjoint of the derivative of the transition `e ∘ e⁻¹` from a chart to itself is the
+identity at every point of the chart target. -/
+theorem adjoint_ringInverse_fderiv_comp_symm_eq_one {e : OpenPartialHomeomorph M E} {y : E}
+    (hy : y ∈ e.target) :
+    ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ (e ∘ e.symm) y)) = 1 := by
+  have hid : (e ∘ e.symm : E → E) =ᶠ[𝓝 y] id := e.eventually_right_inverse hy
+  rw [hid.fderiv_eq, fderiv_id, ← ContinuousLinearMap.one_def, Ring.inverse_one,
+    ContinuousLinearMap.adjoint_one]
+
+omit [CompleteSpace E] in
+/-- The covector `⟪η, ·⟫ ∘ de_x` read through a chart `e` at `x` vanishes exactly when `η = 0`,
+since `de_x` is invertible. -/
+theorem innerSL_comp_mvfderiv_eq_zero_iff {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) {x : M} (hx : x ∈ e.source) {η : E} :
+    (innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, E) e x) = 0 ↔ η = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  have h' := DFunLike.congr_fun h ((mvfderiv 𝓘(ℝ, E) e x).inverse η)
+  simpa [(isInvertible_mvfderiv_chart he hx).self_apply_inverse] using h'
+
+/-- A covector `ξ ∈ T*ₓM` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`. -/
+theorem innerSL_toDual_symm_comp_inverse_mvfderiv {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) {x : M} (hx : x ∈ e.source)
+    (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    (innerSL ℝ ((InnerProductSpace.toDual ℝ E).symm
+      (ξ.comp (mvfderiv 𝓘(ℝ, E) e x).inverse))).comp (mvfderiv 𝓘(ℝ, E) e x) = ξ := by
+  ext v
+  simp [InnerProductSpace.toDual_symm_apply, (isInvertible_mvfderiv_chart he hx).inverse_apply_self]
+
+/-- The frequency `η` dual to `ξ ∘ (de_x)⁻¹` of a nonzero covector `ξ ∈ T*ₓM` is nonzero. -/
+theorem toDual_symm_comp_inverse_mvfderiv_ne_zero {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) {x : M} (hx : x ∈ e.source)
+    {ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ} (hξ : ξ ≠ 0) :
+    (InnerProductSpace.toDual ℝ E).symm (ξ.comp (mvfderiv 𝓘(ℝ, E) e x).inverse) ≠ 0 :=
+  fun h0 ↦ hξ <| by
+    rw [← innerSL_toDual_symm_comp_inverse_mvfderiv he hx ξ, h0]
+    simp
+
+/-- **The differential of a function read in a chart is a gradient.** If `h` agrees with `f ∘ e⁻¹`
+near `e x`, the frequency dual to `df_x ∘ (de_x)⁻¹` is the gradient of `h` at `e x`. -/
+theorem toDual_symm_mvfderiv_comp_inverse_eq_gradient {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M) {x : M} (hx : x ∈ e.source) {f : M → ℝ}
+    {h : E → ℝ} (hh : h =ᶠ[𝓝 (e x)] fun y ↦ f (e.symm y)) :
+    (InnerProductSpace.toDual ℝ E).symm
+        ((mvfderiv 𝓘(ℝ, E) f x).comp (mvfderiv 𝓘(ℝ, E) e x).inverse) = gradient h (e x) := by
+  have hD : mvfderiv 𝓘(ℝ, E) f x =
+      (fderiv ℝ (fun y ↦ f (e.symm y)) (e x)).comp (mvfderiv 𝓘(ℝ, E) e x) := by
+    -- `mvfderiv` is `mfderiv` followed by the identification of the tangent space of `ℝ` at
+    -- `f x` with `ℝ`, which is the identity.
+    simp only [mvfderiv, mfderiv_eq_fderiv_comp_of_eqOn he
+      (fun q hq ↦ by simp [e.left_inv hq] : EqOn f ((fun y ↦ f (e.symm y)) ∘ e) e.source) hx]
+    rfl
+  rw [hD, ContinuousLinearMap.comp_assoc, (isInvertible_mvfderiv_chart he hx).self_comp_inverse,
+    ContinuousLinearMap.comp_id, ← hh.fderiv_eq, gradient]
+
+end Dual
+
 end TauCeti
+
+namespace OpenPartialHomeomorph
+
+section Adjoint
+
+open InnerProductSpace
+open scoped InnerProduct
+
+variable {H H' M N : Type*} [TopologicalSpace H] [TopologicalSpace H']
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
+  {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℝ W] [CompleteSpace W]
+  {IV : ModelWithCorners ℝ V H} {IW : ModelWithCorners ℝ W H'}
+
+/-- In an open partial homeomorphism `c` into a real Hilbert space, smooth on its source with
+smooth inverse on its target, a covector `ξ` at `x ∈ c.source` is read as the zero vector of `V`
+exactly when it is zero. -/
+theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff (c : OpenPartialHomeomorph M V)
+    (hc : ContMDiffOn IV 𝓘(ℝ, V) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, V) IV ∞ c.symm c.target)
+    {x : M} (hx : x ∈ c.source) {ξ : TangentSpace IV x →L[ℝ] ℝ} :
+    (toDual ℝ V).symm (ξ ∘L mfderiv 𝓘(ℝ, V) IV c.symm (c x)) = 0 ↔ ξ = 0 := by
+  have hcx : MDifferentiableAt IV 𝓘(ℝ, V) c x :=
+    (hc.mdifferentiableOn (by simp) x hx).mdifferentiableAt (c.open_source.mem_nhds hx)
+  have hcsx : MDifferentiableAt 𝓘(ℝ, V) IV c.symm (c x) :=
+    (hcs.mdifferentiableOn (by simp) _ (c.map_source hx)).mdifferentiableAt
+      (c.open_target.mem_nhds (c.map_source hx))
+  refine (toDual ℝ V).symm.map_eq_zero_iff.trans ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
+    fun h ↦ by subst h; exact ContinuousLinearMap.zero_comp _⟩
+  rw [← c.mfderiv_symm_apply_mfderiv_apply hx hcx hcsx v]
+  exact congr($h (mfderiv IV 𝓘(ℝ, V) c x v))
+
+/-- **Covectors along a map, read in charts.** For a map `f : M → N`, open partial homeomorphisms
+`c` at `x` and `c'` at `f x` into real Hilbert spaces, and a covector `η` at `f x`, the transpose of
+the derivative of the coordinate expression `Φ = c' ∘ f ∘ c⁻¹` of `f` sends `η` read in `c'` to the
+pulled back covector `η ∘ df_x` read in `c`, provided `f`, `c'`, and the inverses `c⁻¹`, `c'⁻¹`
+are differentiable at the corresponding points. -/
+theorem adjoint_fderiv_toDual_symm_comp_mfderiv_symm {c : OpenPartialHomeomorph M V}
+    {c' : OpenPartialHomeomorph N W} {f : M → N} {x : M} (hx : x ∈ c.source)
+    (hfx : f x ∈ c'.source) (hcs : MDifferentiableAt 𝓘(ℝ, V) IV c.symm (c x))
+    (hf : MDifferentiableAt IV IW f x) (hc' : MDifferentiableAt IW 𝓘(ℝ, W) c' (f x))
+    (hc's : MDifferentiableAt 𝓘(ℝ, W) IW c'.symm (c' (f x)))
+    (η : TangentSpace IW (f x) →L[ℝ] ℝ) :
+    ((fderiv ℝ (c' ∘ f ∘ c.symm) (c x))†)
+        ((toDual ℝ W).symm (η ∘L mfderiv 𝓘(ℝ, W) IW c'.symm (c' (f x)))) =
+      (toDual ℝ V).symm ((η ∘L mfderiv IV IW f x) ∘L mfderiv 𝓘(ℝ, V) IV c.symm (c x)) := by
+  -- The chain rule for `Φ = c' ∘ f ∘ c⁻¹` at `c x`.
+  have hf' : HasMFDerivAt IV IW f (c.symm (c x)) (mfderiv IV IW f x) := by
+    rw [c.left_inv hx]
+    exact hf.hasMFDerivAt
+  have hc'f : HasMFDerivAt IW 𝓘(ℝ, W) c' (f (c.symm (c x))) (mfderiv IW 𝓘(ℝ, W) c' (f x)) := by
+    rw [c.left_inv hx]
+    exact hc'.hasMFDerivAt
+  have hΦ : HasMFDerivAt 𝓘(ℝ, V) 𝓘(ℝ, W) (c' ∘ f ∘ c.symm) (c x)
+      ((mfderiv IW 𝓘(ℝ, W) c' (f x)).comp ((mfderiv IV IW f x).comp
+        (mfderiv 𝓘(ℝ, V) IV c.symm (c x)))) :=
+    hc'f.comp (c x) (hf'.comp (c x) hcs.hasMFDerivAt)
+  have key : fderiv ℝ (c' ∘ f ∘ c.symm) (c x) = (mfderiv IW 𝓘(ℝ, W) c' (f x)).comp
+      ((mfderiv IV IW f x).comp (mfderiv 𝓘(ℝ, V) IV c.symm (c x))) :=
+    HasFDerivAt.fderiv hΦ.hasFDerivAt
+  apply (toDual ℝ V).injective
+  ext w
+  rw [LinearIsometryEquiv.apply_symm_apply, toDual_apply_apply,
+    ContinuousLinearMap.adjoint_inner_left, toDual_symm_apply, key]
+  exact congrArg η (c'.mfderiv_symm_apply_mfderiv_apply hfx hc' hc's _)
+
+end Adjoint
+
+end OpenPartialHomeomorph

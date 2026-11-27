@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Homology
-public import TauCeti.Topology.VectorBundle.Thom.TwistedHomology
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Descent
 
 /-!
 # The shifted homology of the critical submanifold across a Morse–Bott level
@@ -34,17 +34,18 @@ base, shifted up by the index.
   and for every field when `V` is oriented
   (`nonempty_singularHomology_sublevelPair_iso_singularHomology_of_vectorBundleOrientation`).
 * For a non-orientable negative bundle the shifted homology of the base must be taken with
-  coefficients twisted by the orientation local system `o(V)`: if `2` is invertible in a
-  commutative ring `K`, for instance `K = ℚ`, then `Hₚ₊ᵣ(M_{c+ε}, M_{c-ε}; K) ≅ Hₚ(B; o(V) ⊗ K)`
-  with no orientation of `V`
-  (`TauCeti.nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSystem`).
+  coefficients twisted by the orientation local system `o(V)`: for every commutative ring `K`,
+  `ℤ` included, `Hₚ₊ᵣ(M_{c+ε}, M_{c-ε}; K) ≅ Hₚ(B; o(V) ⊗ K)` with no orientation of `V`
+  (`TauCeti.nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSystem`). For a
+  Möbius negative line over a critical circle and `K = ℤ`, the circle contributes
+  `H₀(S¹; o(V)) ≅ ℤ/2` in degree `1`, where constant coefficients would give `ℤ`
+  (`TauCeti.not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv`).
 
-Together with the case of characteristic two, this computes the contribution of a critical
-submanifold over every field of characteristic two and over every commutative ring in which `2` is
-invertible, whether or not its negative bundle is orientable. The homology Thom isomorphisms used
-here (`TauCeti.homologyThomIso` and
-`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`) hold in every
-rank and over any base, so neither the rank nor compactness of `B` is restricted.
+The twisted identification follows from the twisted Thom isomorphism, which holds over any base
+(`nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`, in the namespace
+`TauCeti.VectorBundleOrientationCover`). That isomorphism holds with the base, the fibres and the
+ring in any common universe, so every statement here takes the manifold, the base, the model fibre
+and the ring in one universe `u`.
 
 ## References
 
@@ -207,8 +208,8 @@ submanifold twisted by the orientation of the negative bundle.** In the setting 
 quadratic normal form `f = c - s + t` be parametrized by the disc bundle of a real vector bundle
 `V → B` of rank `r`, orientable or not, with orientation local system `o(V)`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). Then
-`H_{p + r}({f ≤ c + ε}, {f ≤ c - ε}; K) ≅ Hₚ(B; o(V) ⊗ K)` for every commutative ring `K` in which
-`2` is invertible, for instance `ℚ`, and every degree `p`. -/
+`H_{p + r}({f ≤ c + ε}, {f ≤ c - ε}; K) ≅ Hₚ(B; o(V) ⊗ K)` for every commutative ring `K`, for
+instance `ℤ`, and every degree `p`. -/
 theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSystem
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W) (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W)
     (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hs₀ : ∀ x ∈ W, 0 ≤ s x) (ht₀ : ∀ x ∈ W, 0 ≤ t x)
@@ -225,17 +226,17 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSyst
     (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
     (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
     (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
-    {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (K : Type u) [CommRing K]
-    [Invertible (2 : K)] (p : ℕ) :
+    {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (K : Type u) [CommRing K] (p : ℕ) :
     Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology
         (ModuleCat.of K K) (finrank ℝ F + p) ≅
       LocalCoefficientSystem.twistedHomology
         (VectorBundleOrientationCover.signLocalSystem F V K hι) p) := by
   obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir φ
     hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) (finrank ℝ F + p)
-  obtain ⟨e'⟩ :=
-    VectorBundleOrientationCover.nonempty_singularHomology_thomPair_linearEquiv_twistedHomology F V
-      hι K rfl
-  exact ⟨e ≪≫ e'.toModuleIso⟩
+  -- The twisted Thom isomorphism computes the homology of the Thom pair over every ring.
+  obtain ⟨e'⟩ := open VectorBundleOrientationCover in
+    nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem (F := F) (E := V) hι K p
+  rw [Nat.add_comm] at e'
+  exact ⟨e ≪≫ e'⟩
 
 end TauCeti

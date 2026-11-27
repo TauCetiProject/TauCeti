@@ -22,8 +22,8 @@ with uniformly bounded variances is needed, with no independence between matrice
 sizes. For unit off-diagonal second absolute moments and a common diagonal second moment, the mean
 tends to one, so the second empirical spectral moment tends almost surely to one.
 
-For general order `k`, under independent centered entries in `L^(2k)` with uniformly bounded
-`2k`-th absolute moments, the `O((n + 1)⁻²)` variance bound from
+For general order `k`, under independent entries in `L^(2k)` with centered off-diagonal coordinates
+and uniformly bounded `2k`-th absolute moments, the `O((n + 1)⁻²)` variance bound from
 `TauCeti.Probability.RandomMatrix.SpectralMoment.Variance` gives almost-sure vanishing of all
 empirical spectral moment fluctuations (and simultaneously for all `k` when every even moment is
 uniformly bounded). Combined with the `O((n + 1)⁻¹/²)` expected odd-moment bound, every odd
@@ -147,12 +147,12 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
 /-- **Almost-sure vanishing of empirical spectral moment fluctuations.** If the entries of the
-Wigner array are independent, centered, in `L^(2k)`, and have `2k`-th absolute moments uniformly
-bounded by `B`, then the `k`-th empirical spectral moment minus its expectation converges almost
-surely to zero as `n → ∞`. -/
+Wigner array are independent, in `L^(2k)`, have centered off-diagonal coordinates, and have `2k`-th
+absolute moments uniformly bounded by `B`, then the `k`-th empirical spectral moment minus its
+expectation converges almost surely to zero as `n → ∞`. -/
 theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     {k : ℕ} {B : ℝ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P)
     (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
@@ -181,16 +181,17 @@ theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] :=
     Summable.of_nonneg_of_le (fun n ↦ variance_nonneg _ _)
       (fun n ↦ variance_integral_pow_spectralMeasure_wignerMatrix_le
-        hindep hξzero hηzero hξp hηp hξ hη n) hs
+        (iIndepFun_sumElim_ofReal_subtype_lt hindep) (fun ij _ ↦ hξzero ij)
+        (fun ij _ ↦ hξp ij) (fun i _ ↦ hηp i) (fun ij _ ↦ hξ ij) (fun i _ ↦ hη i)) hs
   exact ae_tendsto_sub_integral_of_summable_variance hmem hvar
 
 /-- **Simultaneous almost-sure vanishing of all empirical spectral moment fluctuations.** When every
-even moment order `2k` of the independent centered entries is uniformly bounded across the array by
-`B k`, on a single full-measure event the fluctuations of all empirical spectral moments around
-their expectations vanish as `n → ∞`. -/
+even moment order `2k` of the independent entries with centered off-diagonal coordinates is
+uniformly bounded across the array by `B k`, on a single full-measure event the fluctuations of all
+empirical spectral moments around their expectations vanish as `n → ∞`. -/
 theorem ae_forall_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     {B : ℕ → ℝ}
     (hξp : ∀ k ij, MemLp (ξ ij) (2 * k : ℕ) P)
     (hηp : ∀ k i, MemLp (η i) (2 * k : ℕ) P)
@@ -203,14 +204,15 @@ theorem ae_forall_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
         (wignerMatrix_isHermitian ξ η ω' (n + 1)) : Measure ℝ)) ∂P)
       atTop (𝓝 0) :=
   ae_all_iff.2 fun k ↦ ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
-    hindep hξzero hηzero (hξp k) (hηp k) (hξ k) (hη k)
+    hindep hξzero (hξp k) (hηp k) (hξ k) (hη k)
 
 /-- **Almost-sure convergence of odd empirical spectral moments to zero.** Under independent
-centered entries in `L^(4m + 2)` with `(4m + 2)`-th absolute moments uniformly bounded by `B`, the
-`(2m + 1)`-st empirical spectral moment of `Hₙ₊₁` converges almost surely to zero as `n → ∞`. -/
+entries in `L^(4m + 2)` with centered off-diagonal coordinates and `(4m + 2)`-th absolute moments
+uniformly bounded by `B`, the `(2m + 1)`-st empirical spectral moment of `Hₙ₊₁` converges almost
+surely to zero as `n → ∞`. -/
 theorem ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     {m : ℕ} {B : ℝ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * (2 * m + 1) : ℕ) P)
     (hηp : ∀ i, MemLp (η i) (2 * (2 * m + 1) : ℕ) P)
@@ -223,24 +225,25 @@ theorem ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
   have := hindep.isProbabilityMeasure
   have hle : ((2 * m + 1 : ℕ) : ℝ≥0∞) ≤ (2 * (2 * m + 1) : ℕ) := by exact_mod_cast (by omega)
   have hmean := tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
-    (fun _ ↦ hindep) (fun _ ↦ hξzero) (fun _ ↦ hηzero)
-    (fun _ ij ↦ (hξp ij).mono_exponent hle) (fun _ i ↦ (hηp i).mono_exponent hle)
-    (fun _ ij ↦ ((hξp ij).integrable_norm_pow'
+    (fun _ ↦ iIndepFun_sumElim_ofReal_subtype_lt hindep) (fun _ ij _ ↦ hξzero ij)
+    (fun _ ij _ ↦ (hξp ij).mono_exponent hle) (fun _ i _ ↦ (hηp i).mono_exponent hle)
+    (fun _ ij _ ↦ ((hξp ij).integrable_norm_pow'
       |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
         (Real.sqrt_le_sqrt (hξ ij)))
-    (fun _ i ↦ ((hηp i).integrable_norm_pow'
+    (fun _ i _ ↦ ((hηp i).integrable_norm_pow'
       |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
         (Real.sqrt_le_sqrt (hη i)))
   filter_upwards [ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
-    hindep hξzero hηzero hξp hηp hξ hη] with ω hω
+    hindep hξzero hξp hηp hξ hη] with ω hω
   simpa only [sub_add_cancel, zero_add] using hω.add hmean
 
 /-- **Simultaneous almost-sure convergence of all odd empirical spectral moments to zero.** When
-every `(4m + 2)`-th absolute moment of the independent centered entries is uniformly bounded by
-`B m`, on a single full-measure event all odd empirical spectral moments converge to zero. -/
+every `(4m + 2)`-th absolute moment of the independent entries with centered off-diagonal
+coordinates is uniformly bounded by `B m`, on a single full-measure event all odd empirical
+spectral moments converge to zero. -/
 theorem ae_forall_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     {B : ℕ → ℝ}
     (hξp : ∀ m ij, MemLp (ξ ij) (2 * (2 * m + 1) : ℕ) P)
     (hηp : ∀ m i, MemLp (η i) (2 * (2 * m + 1) : ℕ) P)
@@ -251,7 +254,7 @@ theorem ae_forall_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMat
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ))
       atTop (𝓝 0) :=
   ae_all_iff.2 fun m ↦ ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
-    hindep hξzero hηzero (hξp m) (hηp m) (hξ m) (hη m)
+    hindep hξzero (hξp m) (hηp m) (hξ m) (hη m)
 
 end GeneralOrder
 
