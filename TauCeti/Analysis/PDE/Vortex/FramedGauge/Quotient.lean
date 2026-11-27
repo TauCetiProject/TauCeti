@@ -126,6 +126,11 @@ theorem toFramedFieldSpace_smul (u : SobolevTopologicalGaugeGroup hs)
   Subtype.ext (by rw [coe_toFramedFieldSpace, coe_smul, coe_sobolevGaugeGroup_smul,
     coe_toFramedFieldSpace])
 
+/-- A gauge of `G_(k+1)` preserves the norm of the section of a field. -/
+theorem norm_sectionValue_smul (u : SobolevTopologicalGaugeGroup hs) (x : SobolevFieldSpace f m k)
+    (z : ℂ) : ‖sectionValue ⇑(u • x) z‖ = ‖sectionValue x z‖ := by
+  rw [coe_smul, sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
+
 /-- **The action of `G_(k+1)` on the continuous fields of `A_m^k`**, for an integer `k > 1`, by the
 charge-one transformation `(a, α) ↦ (a - u⁻¹ du, u α)`. -/
 instance instMulAction : MulAction (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k) where

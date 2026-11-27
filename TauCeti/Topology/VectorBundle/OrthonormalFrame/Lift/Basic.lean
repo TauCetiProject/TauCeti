@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Principal.Basic
+public import TauCeti.Topology.FiberBundle.Principal.Equiv
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Isometry
 
 /-!
@@ -26,8 +27,9 @@ lands in `SO(n)`, each fibre of `P` is a `G`-torsor, so its image is one `ρG`-o
 contained in one `SO(n)`-orbit, which singles out an orientation of `E`. There is no numerability
 field; on paracompact Hausdorff bases every principal bundle is numerable.
 
-An *equivalence* of lifts (`TauCeti.OrthonormalFrameLift.Equiv`) is a family of equivariant
-bijections between the fibres of the two principal bundles, inducing a homeomorphism of total
+An *equivalence* of lifts (`TauCeti.OrthonormalFrameLift.Equiv`) is an equivalence of the two
+principal bundles (`TauCeti.PrincipalBundle.Equiv`), a family of equivariant bijections between
+their fibres, inducing a homeomorphism of total
 spaces (`TauCeti.OrthonormalFrameLift.Equiv.toHomeomorph`) and commuting with the frame maps.
 Equivalences have identities, inverses and composites.
 
@@ -220,22 +222,12 @@ theorem toFrame_smul_of_map_eq_one (s : OrthonormalFrameLift F E n G ρ) {g : G}
 
 /-! ### Equivalences -/
 
-/-- An **equivalence of lifts** `s ≃ t` on the same bundle: a family of bijections
-between the fibres of their principal bundles, equivariant for the right action of `G`,
-inducing continuous maps of total spaces in both directions, and commuting with the maps to the
-orthonormal frame bundle. -/
-structure Equiv (s t : OrthonormalFrameLift F E n G ρ) where
-  /-- The bijection between fibres. -/
-  toEquiv : ∀ x, s.P x ≃ t.P x
-  /-- The induced map of total spaces is continuous. -/
-  continuous_toFun : Continuous fun p : TotalSpace G s.P ↦
-    (⟨p.proj, toEquiv p.proj p.snd⟩ : TotalSpace G t.P)
-  /-- The inverse map of total spaces is continuous. -/
-  continuous_invFun : Continuous fun p : TotalSpace G t.P ↦
-    (⟨p.proj, (toEquiv p.proj).symm p.snd⟩ : TotalSpace G s.P)
-  /-- The bijection is equivariant. -/
-  map_smul : ∀ (x : X) (p : s.P x) (g : G),
-    toEquiv x (op g • p) = op g • toEquiv x p
+/-- An **equivalence of lifts** `s ≃ t` on the same bundle: an equivalence of their principal
+`G`-bundles (`TauCeti.PrincipalBundle.Equiv`), that is a family of bijections between the fibres,
+equivariant for the right action of `G` and inducing continuous maps of total spaces in both
+directions, commuting with the maps to the orthonormal frame bundle. -/
+structure Equiv (s t : OrthonormalFrameLift F E n G ρ) extends
+    toPrincipalBundleEquiv : PrincipalBundle.Equiv G s.P t.P where
   /-- The bijection commutes with the maps to frames. -/
   toFrame_map : ∀ (x : X) (p : s.P x), t.toFrame ⟨x, toEquiv x p⟩ = s.toFrame ⟨x, p⟩
 
@@ -243,13 +235,7 @@ namespace Equiv
 
 variable {s t u : OrthonormalFrameLift F E n G ρ}
 
-attribute [simp] map_smul toFrame_map
-
-/-- The inverse of the bijection of an equivalence is equivariant. -/
-@[simp]
-theorem map_smul_symm (φ : s.Equiv t) (x : X) (p : t.P x) (g : G) :
-    (φ.toEquiv x).symm (op g • p) = op g • (φ.toEquiv x).symm p := by
-  rw [_root_.Equiv.symm_apply_eq, φ.map_smul, _root_.Equiv.apply_symm_apply]
+attribute [simp] toFrame_map
 
 /-- The inverse of the bijection of an equivalence commutes with the maps to frames. -/
 @[simp]
@@ -263,8 +249,7 @@ theorem ext {φ ψ : s.Equiv t} (h : ∀ x p, φ.toEquiv x p = ψ.toEquiv x p) :
   obtain ⟨φ, _⟩ := φ
   obtain ⟨ψ, _⟩ := ψ
   congr
-  funext x
-  exact _root_.Equiv.ext (h x)
+  exact PrincipalBundle.Equiv.ext h
 
 /-- Equivalences between equal lifts are heterogeneously equal when their bijections are,
 fibre by fibre. This compares equivalences whose source and target lifts agree only
@@ -336,31 +321,22 @@ theorem toHomeomorph_symm_smul (φ : s.Equiv t) (g : Gᵐᵒᵖ)
 /-- The identity equivalence of a lift. -/
 @[refl]
 def refl (s : OrthonormalFrameLift F E n G ρ) : s.Equiv s where
-  toEquiv _ := _root_.Equiv.refl _
-  continuous_toFun := continuous_id
-  continuous_invFun := continuous_id
-  map_smul _ _ _ := rfl
+  toPrincipalBundleEquiv := .refl G s.P
   toFrame_map _ _ := rfl
 
 /-- The inverse of an equivalence of lifts. -/
 @[symm]
 def symm (φ : s.Equiv t) : t.Equiv s where
-  toEquiv x := (φ.toEquiv x).symm
-  continuous_toFun := φ.continuous_invFun
-  continuous_invFun := φ.continuous_toFun
-  map_smul := φ.map_smul_symm
+  toPrincipalBundleEquiv := φ.toPrincipalBundleEquiv.symm
   toFrame_map := φ.toFrame_map_symm
 
 /-- The composite of two equivalences of lifts. -/
 @[trans]
 def trans (φ : s.Equiv t) (ψ : t.Equiv u) : s.Equiv u where
-  toEquiv x := (φ.toEquiv x).trans (ψ.toEquiv x)
-  continuous_toFun := ψ.continuous_toFun.comp φ.continuous_toFun
-  continuous_invFun := φ.continuous_invFun.comp ψ.continuous_invFun
-  map_smul x p g := by
-    simp only [_root_.Equiv.trans_apply, φ.map_smul, ψ.map_smul]
+  toPrincipalBundleEquiv := φ.toPrincipalBundleEquiv.trans ψ.toPrincipalBundleEquiv
   toFrame_map x p := by
-    simp only [_root_.Equiv.trans_apply, ψ.toFrame_map, φ.toFrame_map]
+    simp only [PrincipalBundle.Equiv.trans_toEquiv, _root_.Equiv.trans_apply, ψ.toFrame_map,
+      φ.toFrame_map]
 
 @[simp]
 theorem refl_toEquiv (s : OrthonormalFrameLift F E n G ρ) (x : X) :
@@ -375,6 +351,19 @@ theorem symm_toEquiv (φ : s.Equiv t) (x : X) : φ.symm.toEquiv x = (φ.toEquiv 
 theorem trans_toEquiv (φ : s.Equiv t) (ψ : t.Equiv u) (x : X) :
     (φ.trans ψ).toEquiv x = (φ.toEquiv x).trans (ψ.toEquiv x) :=
   (rfl)
+
+/-- If `φ` sends `z` to `w` and `ψ` sends `w` to `r`, then `φ.trans ψ` sends `z` to `r`. The values
+are taken as hypotheses, so that they can be supplied when the fibres are only definitionally equal
+to the expected ones, where `rw` cannot rewrite. -/
+theorem trans_toEquiv_apply_of_eq (φ : s.Equiv t) (ψ : t.Equiv u) {x : X} {z : s.P x}
+    {w : t.P x} {r : u.P x} (hz : φ.toEquiv x z = w) (hw : ψ.toEquiv x w = r) :
+    (φ.trans ψ).toEquiv x z = r := by
+  rw [trans_toEquiv, _root_.Equiv.trans_apply, hz, hw]
+
+/-- If `φ` sends `w` to `z`, then `φ.symm` sends `z` to `w`. -/
+theorem symm_toEquiv_apply_of_eq (φ : s.Equiv t) {x : X} {z : t.P x} {w : s.P x}
+    (h : φ.toEquiv x w = z) : φ.symm.toEquiv x z = w := by
+  rw [symm_toEquiv, _root_.Equiv.symm_apply_eq, h]
 
 @[simp]
 theorem symm_symm (φ : s.Equiv t) : φ.symm.symm = φ :=

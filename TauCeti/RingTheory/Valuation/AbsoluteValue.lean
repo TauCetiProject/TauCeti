@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.AbsoluteValue.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+public import Mathlib.Basic.NNReal.Defs
 public import Mathlib.RingTheory.Valuation.Basic
 
 /-!
@@ -17,9 +18,14 @@ monoid-with-zero homomorphism. The valuation must vanish only at zero, as it doe
 ring when the value monoid is nontrivial. The construction also applies to valuations with trivial
 support on general rings. When the codomain is linearly ordered, the resulting absolute value is
 nonarchimedean.
+
+In the other direction, a nonarchimedean real absolute value is a valuation with values in `ℝ≥0`
+(`AbsoluteValue.toValuation`).
 -/
 
 public section
+
+open scoped NNReal
 
 namespace Valuation
 
@@ -76,3 +82,22 @@ theorem isNonarchimedean_toAbsoluteValue (v : Valuation K Γ₀) (f : Γ₀ →*
 end IsNonarchimedean
 
 end Valuation
+
+namespace AbsoluteValue
+
+/-- A nonarchimedean real absolute value, as a valuation with values in `ℝ≥0`. -/
+def toValuation {R : Type*} [Ring R] [Nontrivial R] {w : AbsoluteValue R ℝ}
+    (hw : IsNonarchimedean w) : Valuation R ℝ≥0 where
+  toFun x := .mk (w x) (w.nonneg x)
+  map_zero' := NNReal.eq w.map_zero
+  map_one' := NNReal.eq w.map_one
+  map_mul' x y := NNReal.eq (w.map_mul x y)
+  map_add_le_max' x y := by exact_mod_cast hw x y
+
+/-- The valuation attached to `w` takes the values of `w`. -/
+@[simp]
+theorem coe_toValuation_apply {R : Type*} [Ring R] [Nontrivial R] {w : AbsoluteValue R ℝ}
+    (hw : IsNonarchimedean w) (x : R) : (w.toValuation hw x : ℝ) = w x :=
+  NNReal.coe_mk _ _
+
+end AbsoluteValue

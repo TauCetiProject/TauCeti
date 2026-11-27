@@ -9,11 +9,12 @@ public import Mathlib.GroupTheory.NoncommPiCoprod
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
+public import TauCeti.Geometry.Symplectic.Manifold.Opens
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import TauCeti.Geometry.Manifold.ContMDiff.Pi
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Hamiltonian flows are symplectic, and Poisson-commuting flows commute
@@ -70,7 +71,11 @@ restricts to the flow of `Fᵢ` on the `i`-th coordinate axis, preserves `σ` an
 is itself a Hamiltonian flow: `t ↦ (t • v) • x` is the flow line through `x` of the combination
 `v ⬝ᵥ F = ∑ i, vᵢ Fᵢ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.flowOf_hamiltonianVectorField_dotProduct`), so `v` acts by
-the time-one map of that flow. More generally, for maps
+the time-one map of that flow. On an open subset `V` where the restrictions of the `Fᵢ` still
+have complete Hamiltonian vector fields, the flow action of the restricted family is the
+restriction of the flow action of `F`
+(`TauCeti.SmoothTwoForm.IsSymplectic.coe_hamiltonianFlowAction_mpullback_subtype_val_apply`). More
+generally, for maps
 `h : N → (ι → ℝ)` and `g : N → M` the map `n ↦ h n • g n` pulls `σ` back to
 `g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`
 (`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`), since each `h n`
@@ -119,6 +124,9 @@ connected regular fibre with a torus.
 * `TauCeti.SmoothTwoForm.IsSymplectic.isMIntegralCurve_hamiltonianFlowAction_smul` and
   `TauCeti.SmoothTwoForm.IsSymplectic.flowOf_hamiltonianVectorField_dotProduct`: the action of
   `t • v` is the time-`t` map of the Hamiltonian flow of `v ⬝ᵥ F`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.coe_hamiltonianFlowAction_mpullback_subtype_val_apply`: on
+  an open subset where the restricted flows are complete, the flow action of the restricted family
+  is the restriction of the flow action.
 * `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_comp` and
   `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`: the derivative of
   a map `n ↦ h n • g n`, and its pullback `(h • g)^* σ = g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`.
@@ -220,7 +228,7 @@ theorem IsHamiltonianVectorField.mpullback_flowOf_apply (hX : σ.IsHamiltonianVe
 
 omit [BoundarylessManifold I M] in
 /-- **Time-dependent Hamiltonian flows are symplectic, where they are defined.** Let `σ` be a
-closed two-form and `X` a jointly `C²` time-dependent vector field such that, at every time `u`
+closed two-form and `X` a jointly `C¹` time-dependent vector field such that, at every time `u`
 between `s` and `t`, `X u` is a Hamiltonian vector field of a `C²` function `H u`. If the flow from
 `(s, x)` is defined up to time `t`, then `(φ_{s,t}^* σ)ₓ = σₓ`, since every `ι_{X u} σ = d(H u)` is
 closed. Neither completeness nor nondegeneracy is needed. -/
@@ -228,7 +236,7 @@ theorem mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField {H : ℝ
     {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}
     (hX : ∀ u ∈ Set.uIcc s t, σ.IsHamiltonianVectorField (H u) (X u)) (hσ : σ.IsClosed)
     (hH : ∀ u ∈ Set.uIcc s t, ContMDiff I 𝓘(ℝ) 2 (H u))
-    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) {x : M}
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.val x = σ.val x :=
@@ -249,7 +257,7 @@ theorem eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ
     {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}
     (hX : ∀ u ∈ Set.uIcc s t, σ.IsHamiltonianVectorField (H u) (X u)) (hσ : σ.IsClosed)
     (hH : ∀ u ∈ Set.uIcc s t, ContMDiff I 𝓘(ℝ) 2 (H u))
-    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) {x : M}
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) (a b : TangentSpace I x) :
     σ.eval₂ (timeDependentFlowOf X s t x) (mfderiv I I (timeDependentFlowOf X s t) x a)
@@ -261,7 +269,7 @@ theorem eval₂_mfderiv_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ
 
 omit [BoundarylessManifold I M] in
 /-- **Time-dependent Hamiltonian flows are symplectic.** For a closed two-form `σ` and a jointly
-`C²` time-dependent vector field `X` with complete suspension, such that each `X t` is a
+`C¹` time-dependent vector field `X` with complete suspension, such that each `X t` is a
 Hamiltonian vector field of a `C²` function `H t`, the time-dependent flow satisfies
 `φ_{s,t}^* σ = σ` for all times `s` and `t`, since every `ι_{X t} σ = d(H t)` is closed. No
 nondegeneracy is needed. -/
@@ -269,7 +277,7 @@ theorem mpullback_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ → M
     {X : ℝ → (x : M) → TangentSpace I x} (hX : ∀ t, σ.IsHamiltonianVectorField (H t) (X t))
     (hσ : σ.IsClosed) (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
     (hc : IsCompleteVectorField (timeDependentSuspensionField X))
-    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) (s t : ℝ) :
     TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.val = σ.val :=
   funext fun _ ↦ mpullback_timeDependentFlowOf_apply_of_isHamiltonianVectorField
@@ -284,20 +292,20 @@ variable (hσ : σ.IsSymplectic)
 include hσ
 
 /-- **The linearized Hamiltonian flow is symplectic.** For a symplectic form `σ` and a jointly
-`C²` field of Hamiltonian vector fields with complete suspension, every differential
+`C¹` field of Hamiltonian vector fields with complete suspension, every differential
 `dφ_{s, t}(x) : T_x M → T_{φ_{s, t} x} M` of the time-dependent flow is a linear
 symplectomorphism. -/
 theorem isSymplectomorphism_timeDependentFlowMFDerivEquiv {H : ℝ → M → ℝ}
     (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
     (hc : IsCompleteVectorField
       (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (x : M) :
     SymplecticForm.IsSymplectomorphism (hσ.isNondegenerate.symplecticFormAt x)
       (hσ.isNondegenerate.symplecticFormAt
         (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv := by
+      (timeDependentFlowMFDerivEquiv hc le_rfl hX s t x).toLinearEquiv := by
   refine SymplecticForm.isSymplectomorphism_iff.2 fun a b ↦ ?_
   simpa only [IsNondegenerate.symplecticFormAt_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
     timeDependentFlowMFDerivEquiv_apply] using
@@ -312,14 +320,14 @@ theorem tames_transport_timeDependentFlowMFDerivEquiv_symm {H : ℝ → M → �
     (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
     (hc : IsCompleteVectorField
       (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (x : M)
     {J : AlmostComplexStructure (TangentSpace I
       (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
     (hJ : (hσ.isNondegenerate.symplecticFormAt _).Tames J) :
     (hσ.isNondegenerate.symplecticFormAt x).Tames (J.transport
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
+      (timeDependentFlowMFDerivEquiv hc le_rfl hX s t x).toLinearEquiv.symm) :=
   SymplecticForm.isSymplectomorphism_iff_transport_eq.1
     (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
 
@@ -330,14 +338,14 @@ theorem compatible_transport_timeDependentFlowMFDerivEquiv_symm {H : ℝ → M �
     (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
     (hc : IsCompleteVectorField
       (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (x : M)
     {J : AlmostComplexStructure (TangentSpace I
       (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
     (hJ : (hσ.isNondegenerate.symplecticFormAt _).Compatible J) :
     (hσ.isNondegenerate.symplecticFormAt x).Compatible (J.transport
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
+      (timeDependentFlowMFDerivEquiv hc le_rfl hX s t x).toLinearEquiv.symm) :=
   SymplecticForm.isSymplectomorphism_iff_transport_eq.1
     (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
 
@@ -754,6 +762,39 @@ theorem flowOf_hamiltonianVectorField_dotProduct (v : ι → ℝ) (t : ℝ) (x :
   have h := flowOf_eq_of_isMIntegralCurve hv
     (hσ.isMIntegralCurve_hamiltonianFlowAction_smul hF hcomm hc v x) t
   rwa [zero_smul, hσ.hamiltonianFlowAction_zero_apply] at h
+
+/-! ### Restriction to open subsets -/
+
+/-- **The Hamiltonian flow action restricts to open subsets.** Let `V` be an open subset of `M`
+on which the restrictions of the `Fᵢ` have complete Hamiltonian vector fields for the restriction
+of `σ`, as when `V` is a union of level sets of `F`. Then the flow action of the restricted family
+on `V` is the restriction of the flow action of `F`: each `v : ι → ℝ` moves a point of `V` as it
+moves it in `M`. -/
+theorem coe_hamiltonianFlowAction_mpullback_subtype_val_apply {V : TopologicalSpace.Opens M}
+    (hF' : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ (F ∘ Subtype.val : V → ι → ℝ))
+    (hcomm' : ∀ i j x, poissonBracket (SmoothForm.mpullback (Subtype.val : V → M)
+      contMDiff_subtypeVal σ) ((F ∘ Subtype.val) · i) ((F ∘ Subtype.val) · j) x = 0)
+    (hc' : ∀ i, IsCompleteVectorField (hamiltonianVectorField (SmoothForm.mpullback
+      (Subtype.val : V → M) contMDiff_subtypeVal σ) ((F ∘ Subtype.val) · i)))
+    (v : ι → ℝ) (y : V) :
+    (((hσ.mpullback_subtype_val V).hamiltonianFlowAction hF' hcomm' hc' v).toMul y : M) =
+      (hσ.hamiltonianFlowAction hF hcomm hc v).toMul y := by
+  -- The orbit `t ↦ (t • v) • y` in `V`, read in `M`, is an integral curve of `X_(v ⬝ᵥ F)`, since
+  -- the inclusion of `V` carries Hamiltonian vector fields of restrictions to those on `M`.
+  have hγ : IsMIntegralCurve (fun t : ℝ ↦ (((hσ.mpullback_subtype_val V).hamiltonianFlowAction
+      hF' hcomm' hc' (t • v)).toMul y : M)) (σ.hamiltonianVectorField fun z ↦ v ⬝ᵥ F z) :=
+    -- The combination `v ⬝ᵥ (F ∘ val)` is the restriction of `v ⬝ᵥ F` to `V`.
+    isMIntegralCurve_iff_isMIntegralCurveOn.2 <|
+      (((hσ.mpullback_subtype_val V).isMIntegralCurve_hamiltonianFlowAction_smul hF' hcomm' hc' v
+        y).isMIntegralCurveOn Set.univ).coe_of_hamiltonianVectorField_mpullback_subtype_val
+          (f := fun z ↦ v ⬝ᵥ F z)
+  have hX : ContMDiff I I.tangent 1
+      (fun z ↦ (⟨z, σ.hamiltonianVectorField (fun z ↦ v ⬝ᵥ F z) z⟩ : TangentBundle I M)) :=
+    hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (by simp)
+      (contMDiff_const.dotProduct (hF.of_le (by simp)))
+  have h₁ := flowOf_eq_of_isMIntegralCurve hX hγ 1
+  rw [zero_smul, hamiltonianFlowAction_zero_apply, one_smul] at h₁
+  rw [← h₁, hσ.flowOf_hamiltonianVectorField_dotProduct hF hcomm hc, one_smul]
 
 /-! ### Moving a map by the Hamiltonian flow action -/
 

@@ -44,6 +44,8 @@ is the point work over an infinite field.
   determinant is a rational function.
 * `TauCeti.Matrix.GeneralLinearGroup.entry_inv_mem_rationalFunctions`: so is every entry of the
   inverse matrix.
+* `TauCeti.Matrix.GeneralLinearGroup.comp_inv_mem_rationalFunctions`: the rational functions are
+  stable under inversion `g ↦ g⁻¹`.
 * `TauCeti.Matrix.GeneralLinearGroup.exists_forall_det_pow_mul_eq_of_forall_mem_rationalFunctions`
   and its field form
   `TauCeti.Matrix.GeneralLinearGroup.exists_forall_eq_inv_mul_of_forall_mem_rationalFunctions`: a
@@ -202,6 +204,39 @@ theorem exists_forall_det_pow_mul_eq_of_forall_mem_rationalFunctions {ι : Type 
   have hle : m i ≤ Finset.univ.sup m := Finset.le_sup (Finset.mem_univ i)
   rw [map_mul, map_pow, RingHom.map_det, _root_.Matrix.mvPolynomialX_mapMatrix_eval]
   simp [← hPm i g, ← mul_assoc, ← pow_add, Nat.sub_add_cancel hle]
+
+/-- A polynomial in the entries of `g⁻¹` is a rational function of `g`, since the entries of `g⁻¹`
+are (`TauCeti.Matrix.GeneralLinearGroup.entry_inv_mem_rationalFunctions`). -/
+theorem eval_inv_mem_rationalFunctions (P : MvPolynomial (Fin n × Fin n) k) :
+    (fun g : GL (Fin n) k ↦ MvPolynomial.eval
+      (fun p ↦ ((g⁻¹ : GL (Fin n) k) : Matrix (Fin n) (Fin n) k) p.1 p.2) P) ∈
+        rationalFunctions k n := by
+  induction P using MvPolynomial.induction_on with
+  | C c =>
+    simp only [eval_C]
+    exact (rationalFunctions k n).algebraMap_mem c
+  | add p q hp hq =>
+    simp only [map_add]
+    exact add_mem hp hq
+  | mul_X p i hp =>
+    simp only [map_mul, eval_X]
+    exact mul_mem hp (entry_inv_mem_rationalFunctions i.1 i.2)
+
+/-- **Rational functions are stable under inversion**: if `f` is a rational function on `GL n k`,
+so is `g ↦ f g⁻¹`. If `det g ^ m * f g = P(g)`, then `f g⁻¹ = det g ^ m * P(g⁻¹)`
+(`TauCeti.Matrix.GeneralLinearGroup.eval_inv_mem_rationalFunctions`). -/
+theorem comp_inv_mem_rationalFunctions {f : GL (Fin n) k → k} (hf : f ∈ rationalFunctions k n) :
+    (fun g ↦ f g⁻¹) ∈ rationalFunctions k n := by
+  obtain ⟨P, m, hP⟩ := mem_rationalFunctions.mp hf
+  have hdet := pow_mem (polynomialFunctions_le_rationalFunctions
+    (det_mem_polynomialFunctions (k := k) (n := n))) m
+  convert mul_mem hdet (eval_inv_mem_rationalFunctions P) using 1
+  funext g
+  have hdet1 :
+      (g : Matrix (Fin n) (Fin n) k).det ^ m * (↑g⁻¹ : Matrix (Fin n) (Fin n) k).det ^ m = 1 := by
+    rw [← mul_pow, ← det_mul, ← Units.val_mul]
+    simp
+  grind [Pi.mul_apply, Pi.pow_apply]
 
 end CommRing
 

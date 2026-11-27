@@ -9,10 +9,9 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Delta
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
 public import TauCeti.Analysis.Semigroups.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
-import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
-import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # The heat semigroup on Besov spaces
@@ -115,41 +114,6 @@ namespace TauCeti
 
 open TemperedDistribution
 
-/-- **The gain of the heat flow on the weights.** For `σ ≥ 0` and `c > 0` there is `A` with
-`(4^j)^σ exp(-c (4^j - 1) t) ≤ A max 1 (t^{-σ})` for every `j` and every `t > 0`. -/
-private theorem exists_rpow_mul_exp_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c) :
-    ∃ A, 0 ≤ A ∧ ∀ (j : ℕ) {t : ℝ}, 0 < t →
-      ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t))) ≤ A * max 1 (t ^ (-σ)) := by
-  obtain ⟨M, hM0, hM⟩ := exists_rpow_mul_exp_neg_mul_le hσ hc
-  refine ⟨rexp c * M, by positivity, fun j t ht ↦ ?_⟩
-  have h4 : (1 : ℝ) ≤ 4 ^ j := one_le_pow₀ (by norm_num)
-  rcases le_total t 1 with h1 | h1
-  · -- For `t ≤ 1`, write `(4^j)^σ = (4^j t)^σ t^{-σ}` and use the bound at `x = 4^j t`.
-    have hx : ((4 : ℝ) ^ j) ^ σ = (4 ^ j * t) ^ σ * t ^ (-σ) := by
-      rw [mul_rpow (by positivity) ht.le, mul_assoc, ← rpow_add ht, add_neg_cancel, rpow_zero,
-        mul_one]
-    have he : -(c * ((4 ^ j - 1) * t)) = c * t + -(c * (4 ^ j * t)) := by ring
-    calc ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))
-        = rexp (c * t) * ((4 ^ j * t) ^ σ * rexp (-(c * (4 ^ j * t)))) * t ^ (-σ) := by
-          rw [hx, he, exp_add]
-          ring
-      _ ≤ rexp c * M * t ^ (-σ) := by
-          have hct : rexp (c * t) ≤ rexp c := exp_le_exp.2 (by nlinarith)
-          have hMx := hM (4 ^ j * t) (by positivity)
-          gcongr
-      _ ≤ rexp c * M * max 1 (t ^ (-σ)) := by gcongr; exact le_max_right _ _
-  · -- For `t ≥ 1` the exponential only decreases in `t`, so use the bound at `x = 4^j`.
-    have he : -(c * ((4 ^ j - 1) * 1)) = c + -(c * 4 ^ j) := by ring
-    calc ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))
-        ≤ ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * 1))) := by
-          gcongr
-      _ = rexp c * (((4 : ℝ) ^ j) ^ σ * rexp (-(c * 4 ^ j))) := by
-          rw [he, exp_add]
-          ring
-      _ ≤ rexp c * M := by gcongr; exact hM _ (by positivity)
-      _ ≤ rexp c * M * max 1 (t ^ (-σ)) := le_mul_of_one_le_right (by positivity)
-          (le_max_left _ _)
-
 namespace BesovSpace
 
 variable [CompleteSpace F] {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -167,29 +131,17 @@ private theorem exists_littlewoodPaleyBlock_heatSemigroup_eq_and_rpow_mul_norm_l
             2 ^ (s' * j) * ‖g‖ ≤ C * max 1 ((t : ℝ) ^ (-σ)) * (2 ^ (s * j) * ‖f‖) := by
   obtain ⟨C, c, hC1, hc, hCc⟩ :=
     exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le (F := F) φ
-  obtain ⟨A, hA0, hA⟩ := exists_rpow_mul_exp_le hσ hc
+  obtain ⟨A, hA0, hA⟩ := exists_two_rpow_mul_exp_neg_le hσ hc
   have hC0 : 0 ≤ C := zero_le_one.trans hC1
   refine ⟨C * A, mul_nonneg hC0 hA0, fun {s s' p} _ hs' t ht j u f hf ↦ ?_⟩
   obtain ⟨g, hg, hgn⟩ := hCc j t u f hf
   refine ⟨g, hg, ?_⟩
-  -- Raising the order from `s` to `s + 2σ` multiplies the weight `2^{js}` by `(4^j)^σ`.
-  have h4 : (4 : ℝ) ^ j = 2 ^ (2 * j : ℝ) := by
-    rw [rpow_mul zero_le_two, rpow_natCast, rpow_two]
-    norm_num
-  have hw : (2 : ℝ) ^ ((s + 2 * σ) * j) = ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) := by
-    rw [h4, ← rpow_mul zero_le_two, ← rpow_add two_pos]
-    ring_nf
-  have hs'j : (2 : ℝ) ^ (s' * j) ≤ ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) :=
-    (rpow_le_rpow_of_exponent_le one_le_two
-      (mul_le_mul_of_nonneg_right hs' j.cast_nonneg)).trans_eq hw
   calc 2 ^ (s' * j) * ‖g‖
-      ≤ ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) * (C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖) :=
-        mul_le_mul hs'j hgn (norm_nonneg _) (by positivity)
-    _ = C * (((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))) * (2 ^ (s * j) * ‖f‖) := by
-        ring
-    _ ≤ C * (A * max 1 ((t : ℝ) ^ (-σ))) * (2 ^ (s * j) * ‖f‖) :=
-        mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_left (hA j (by positivity)) hC0) (by positivity)
+      ≤ 2 ^ (s' * j) * (C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖) := by gcongr
+    _ = C * (2 ^ (s' * j) * rexp (-(c * ((4 ^ j - 1) * t)))) * ‖f‖ := by ring
+    _ ≤ C * (A * max 1 ((t : ℝ) ^ (-σ)) * 2 ^ (s * j)) * ‖f‖ :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
+          (hA hs' j (NNReal.coe_pos.2 (pos_iff_ne_zero.2 ht))) hC0) (norm_nonneg _)
     _ = C * A * max 1 ((t : ℝ) ^ (-σ)) * (2 ^ (s * j) * ‖f‖) := by ring
 
 /-- **The heat flow preserves Besov membership.** If `u ∈ B^s_{p,q}`, then `e^{tΔ} u ∈ B^s_{p,q}`
@@ -435,21 +387,11 @@ theorem tendsto_heatSemigroup (hq : q ≠ ⊤) (u : BesovSpace F φ s p q) :
   have hq0 : 0 < q.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq
   rw [tendsto_iff_norm_sub_tendsto_zero]
   simp_rw [norm_eq_tsum_rpow hq]
-  -- Dominated convergence for the sum of the `q`-th powers of the weighted blocks.
-  have hsum : Tendsto (fun t : ℝ≥0 ↦ ∑' j : ℕ,
-      (2 ^ (s * j) * ‖(heatSemigroup F φ s p q t u - u).block j‖) ^ q.toReal) (𝓝 0)
-      (𝓝 (∑' _ : ℕ, (0 : ℝ))) := by
-    refine tendsto_tsum_of_dominated_convergence (bound := fun j ↦
-      2 ^ q.toReal * (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal)
-      ((hasSum_norm hq u).summable.mul_left _) (fun j ↦ ?_) (.of_forall fun t j ↦ ?_)
-    · have h := (tendsto_rpow_mul_norm_block_heatSemigroup_sub u j).rpow_const (Or.inr hq0.le)
-      rwa [Real.zero_rpow hq0.ne'] at h
-    · rw [Real.norm_of_nonneg (by positivity), ← Real.mul_rpow zero_le_two (by positivity)]
-      exact Real.rpow_le_rpow (by positivity) (rpow_mul_norm_block_heatSemigroup_sub_le t u j)
-        hq0.le
-  rw [tsum_zero] at hsum
-  have h := hsum.rpow_const (Or.inr (one_div_pos.2 hq0).le)
-  rwa [Real.zero_rpow (one_div_pos.2 hq0).ne'] at h
+  refine TauCeti.tendsto_tsum_rpow_rpow_of_dominated hq0 (fun t j ↦ by positivity)
+    (fun t j ↦ rpow_mul_norm_block_heatSemigroup_sub_le t u j)
+    (tendsto_rpow_mul_norm_block_heatSemigroup_sub u)
+    (((hasSum_norm hq u).summable.mul_left (2 ^ q.toReal)).congr fun j ↦ ?_)
+  rw [Real.mul_rpow zero_le_two (by positivity)]
 
 /-- If the heat flow of `u ∈ B^s_{p,∞}` tends to `u`, the weighted blocks of `u` vanish at high
 frequency, because those of `e^{tΔ} u`, `t > 0`, do and this is a closed condition. -/
@@ -472,23 +414,11 @@ tends to `u`: the high blocks are small uniformly in time, and each low block co
 private theorem tendsto_heatSemigroup_of_tendsto_rpow_mul_norm_block {u : BesovSpace F φ s p ∞}
     (ha : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)) :
     Tendsto (fun t ↦ heatSemigroup F φ s p ∞ t u) (𝓝 0) (𝓝 u) := by
-  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  -- High blocks are small for every `t`, and the finitely many low blocks converge.
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 ha (ε / 4) (by positivity)
-  have hlow : ∀ᶠ t in 𝓝 (0 : ℝ≥0), ∀ j ∈ Finset.range N,
-      2 ^ (s * j) * ‖(heatSemigroup F φ s p ∞ t u - u).block j‖ < ε / 2 :=
-    (Finset.range N).eventually_all.2 fun j _ ↦
-      (tendsto_rpow_mul_norm_block_heatSemigroup_sub u j).eventually (gt_mem_nhds (half_pos hε))
-  filter_upwards [hlow] with t ht
-  rw [dist_eq_norm]
-  refine lt_of_le_of_lt ?_ (half_lt_self hε)
-  rw [norm_eq_ciSup]
-  refine ciSup_le fun j ↦ ?_
-  rcases lt_or_ge j N with hj | hj
-  · exact (ht j (Finset.mem_range.2 hj)).le
-  · have hNj := hN j hj
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg (by positivity)] at hNj
-    linarith [rpow_mul_norm_block_heatSemigroup_sub_le t u j]
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  simp_rw [norm_eq_ciSup]
+  exact TauCeti.tendsto_iSup_of_dominated (fun t j ↦ by positivity)
+    (fun t j ↦ rpow_mul_norm_block_heatSemigroup_sub_le t u j)
+    (tendsto_rpow_mul_norm_block_heatSemigroup_sub u) (by simpa using ha.const_mul 2)
 
 /-- **Strong continuity of the heat semigroup on `B^s_{p,∞}`.** For `u ∈ B^s_{p,∞}`,
 `e^{tΔ} u → u` in `B^s_{p,∞}` as `t → 0` exactly when the weighted blocks of `u` vanish at high

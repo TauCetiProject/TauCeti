@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Rat
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.NumberTheory.Chebyshev.Mertens
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
@@ -457,12 +458,10 @@ theorem isBigO_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub :
     (fun x : ℝ ↦ (∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
         Real.log (Real.log x) - Real.eulerMascheroniConstant)
       =O[atTop] fun x ↦ (Real.log x)⁻¹ := by
-  obtain ⟨C, hC⟩ := exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le
-  refine IsBigO.of_bound C ?_
-  filter_upwards [eventually_ge_atTop 2] with x hx
-  have hlog : 0 < Real.log x := Real.log_pos (by linarith)
-  rw [Real.norm_eq_abs, Real.norm_of_nonneg (inv_nonneg.mpr hlog.le), ← div_eq_mul_inv]
-  exact hC x hx
+  refine (LFunctions.isBigO_primeSummatory_neg_log_one_sub_inv_absNorm_sub_log_log_sub ℚ).congr_left
+    fun x ↦ ?_
+  rw [primeSummatory_rat_eq_sum_primesLE (fun n ↦ -Real.log (1 - (n : ℝ)⁻¹)),
+    dedekindZeta_residue_rat, Real.log_one, add_zero]
 
 /-- **Logarithmic Euler-product form of Mertens's theorem, limit form:**
 `∑_{p ≤ x} -log (1 - p⁻¹) - log log x → γ` as `x → ∞`. -/
@@ -474,27 +473,24 @@ theorem tendsto_sum_primesLE_neg_log_one_sub_inv_sub_log_log :
     (Real.tendsto_log_atTop.inv_tendsto_atTop)).add_const Real.eulerMascheroniConstant
   simpa using h
 
+private theorem sum_Icc_two_vonMangoldt_div_mul_log (N : ℕ) :
+    ∑ n ∈ Icc 2 N, Λ n / ((n : ℝ) * Real.log n) =
+      ∑ n ∈ Icc 1 N, Λ n / ((n : ℝ) * Real.log n) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simp
+  · rw [← insert_Icc_add_one_left_eq_Icc (Nat.one_le_iff_ne_zero.mpr hN), sum_insert (by simp)]
+    simp
+
 /-- Exact prime-power regrouping of the weighted von Mangoldt sum:
 `∑_{2 ≤ n ≤ N} Λ(n) / (n log n) = ∑_{p ≤ N} ∑_{1 ≤ k ≤ log_p N} 1 / (k p ^ k)`. -/
 theorem sum_Icc_vonMangoldt_div_mul_log_eq (N : ℕ) :
     ∑ n ∈ Icc 2 N, Λ n / (n * Real.log n) =
       ∑ p ∈ Nat.primesLE N, ∑ k ∈ Icc 1 (p.log N), 1 / ((k : ℝ) * (p : ℝ) ^ k) := by
-  have h12 : ∑ n ∈ Icc 2 N, Λ n / (n * Real.log n) =
-      ∑ n ∈ Icc 1 N, Λ n / (n * Real.log n) := by
-    rcases eq_or_ne N 0 with rfl | hN
-    · simp
-    · rw [← insert_Icc_add_one_left_eq_Icc (Nat.one_le_iff_ne_zero.mpr hN),
-        sum_insert (by simp)]
-      simp
-  rw [h12, Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log
+  rw [sum_Icc_two_vonMangoldt_div_mul_log, Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log
     (fun n hn ↦ by rw [ArithmeticFunction.vonMangoldt_eq_zero_iff.mpr hn, zero_div])]
-  refine sum_congr rfl fun p hp ↦ sum_congr rfl fun k hk ↦ ?_
-  have hp_prime := Nat.prime_of_mem_primesLE hp
-  have hk0 : k ≠ 0 := Nat.one_le_iff_ne_zero.mp (mem_Icc.mp hk).1
-  have hlogp : Real.log p ≠ 0 := (Real.log_pos (mod_cast hp_prime.one_lt)).ne'
-  rw [ArithmeticFunction.vonMangoldt_apply_pow hk0,
-    ArithmeticFunction.vonMangoldt_apply_prime hp_prime, Nat.cast_pow, Real.log_pow]
-  field_simp [hlogp]
+  refine sum_congr rfl fun p hp ↦ sum_congr rfl fun k _ ↦ ?_
+  rw [ArithmeticFunction.vonMangoldt.div_mul_log_prime_pow (Nat.prime_of_mem_primesLE hp)]
+  simp [div_eq_mul_inv, mul_comm]
 
 /-- The weighted von Mangoldt sum never exceeds the logarithmic Euler-product sum up to `x`. -/
 theorem sum_Icc_vonMangoldt_div_mul_log_le_sum_primesLE_neg_log_one_sub_inv (x : ℝ) :
@@ -660,10 +656,10 @@ theorem isBigO_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log :
     (fun x : ℝ ↦ (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) -
         Real.exp Real.eulerMascheroniConstant * Real.log x)
       =O[atTop] fun _ ↦ (1 : ℝ) := by
-  obtain ⟨C, hC⟩ := exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le
-  refine IsBigO.of_bound C ?_
-  filter_upwards [eventually_ge_atTop 2] with x hx
-  simpa [Real.norm_eq_abs] using hC x hx
+  refine (LFunctions.isBigO_prod_one_sub_inv_absNorm_sub_mul_log ℚ).congr_left fun x ↦ ?_
+  rw [finprod_ite_le_eq_prod_normLE,
+    prod_primesLE_rat_eq_prod_primesLE (fun n ↦ (1 - (n : ℝ)⁻¹)⁻¹),
+    dedekindZeta_residue_rat, mul_one]
 
 /-- **Mertens's third theorem, asymptotic ratio form.** As `x → ∞`,
 `(∏_{p ≤ x} (1 - p⁻¹)⁻¹) / log x` tends to `e^γ`. -/
