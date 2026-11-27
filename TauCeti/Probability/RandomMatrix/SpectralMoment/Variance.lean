@@ -27,10 +27,11 @@ triangular arrays on varying probability spaces. Combined with the `O((n + 1)⁻
 bound for odd traces, every odd empirical spectral moment converges to zero in probability; combined
 with the general expected-moment convergence in
 `TauCeti.Probability.RandomMatrix.SpectralMoment.Expected`, every `k`-th empirical spectral moment
-converges in probability to the `k`-th moment of `semicircleReal 0 s` when both diagonal and
-strictly upper-triangular entry families lie in `L^(2k)` in each corner with uniformly bounded
-`2k`-th absolute moment integrals, while the strictly upper-triangular entries are centered with
-common second absolute moment `s` across all corners.
+converges in probability to the `k`-th moment of `semicircleReal 0 s` when the diagonal and
+strictly upper-triangular entries are jointly independent within each corner, both entry families
+lie in `L^(2k)` in each corner with uniformly bounded `2k`-th absolute moment integrals, and the
+strictly upper-triangular entries are centered with common second absolute moment `s` across all
+corners.
 Almost-sure convergence on a fixed probability space via summability of `∑ (n + 1)⁻²` and the
 Borel--Cantelli lemma is established in
 `TauCeti.Probability.RandomMatrix.SpectralMoment.AlmostSure`.
@@ -44,16 +45,18 @@ Borel--Cantelli lemma is established in
   `tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability`: Chebyshev tail bound
   and convergence in probability of moment fluctuations to zero, allowing varying spaces.
 * `tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix`: convergence to
-  zero of expected odd empirical spectral moments under corner-local `(2m + 1)`-st moment
-  assumptions alone, from the `O((n + 1)⁻¹/²)` bound
+  zero of expected odd empirical spectral moments under within-corner independence, centered
+  off-diagonal entries, and corner-local `(2m + 1)`-st moment bounds (with no moments of higher
+  order required), from the `O((n + 1)⁻¹/²)` bound
   `TauCeti.Probability.abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le`.
 * `tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_probability`: convergence in
   probability of odd empirical spectral moments to zero under corner-local hypotheses, allowing
   varying spaces.
 * `tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_semicircleReal_probability`: convergence in
   probability of the `k`-th empirical spectral moment to `∫ x, x ^ k ∂semicircleReal 0 s` when
+  the diagonal and strictly upper-triangular entries are jointly independent within each corner,
   both entry families lie in `L^(2k)` in each corner with uniformly bounded `2k`-th absolute moment
-  integrals and the strictly upper-triangular entries are centered with common second absolute
+  integrals, and the strictly upper-triangular entries are centered with common second absolute
   moment `s`.
 
 ## References
