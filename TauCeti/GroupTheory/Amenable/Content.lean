@@ -119,19 +119,23 @@ theorem toContent_map (m : Mean G) (φ : G →ₜ* H) :
     (m.map φ).toContent = m.toContent.map φ (fun _ _ => mem_univ _) := by
   rw [← mapOfDiscrete_coe, toContent_mapOfDiscrete]
 
+/-- A mean on a discrete group is left invariant exactly when its content is invariant under
+left translation of sets. -/
+theorem isLeftInvariant_iff_toContent_smul (m : Mean G) :
+    m.IsLeftInvariant ↔ ∀ (g : G) (s : Set G), m.toContent (g • s) = m.toContent s := by
+  -- Left multiplication by `g⁻¹` is the left regular action of `g⁻¹`.
+  have hg (g : G) : ContinuousMap.mulLeft g⁻¹ = ⟨(g⁻¹ • ·), continuous_of_discreteTopology⟩ :=
+    ContinuousMap.ext fun x => (smul_eq_mul g⁻¹ x).symm
+  simp only [isLeftInvariant_iff_boundedContinuousFunction, hg,
+    PositiveLinearMap.forall_apply_compContinuous_smul_iff_toAddContent_smul, toContent,
+    AddContent.ofReal_apply]
+  exact forall₂_congr fun g s => (ENNReal.ofReal_eq_ofReal_iff
+    (PositiveLinearMap.toAddContent_nonneg _ _) (PositiveLinearMap.toAddContent_nonneg _ _)).symm
+
 /-- A left-invariant mean assigns equal content to a set and each of its left translates. -/
 theorem IsLeftInvariant.toContent_smul {m : Mean G} (hm : m.IsLeftInvariant)
-    (g : G) (s : Set G) : m.toContent (g • s) = m.toContent s := by
-  have h : (UCB.discreteAlgEquiv G).symm
-      (BoundedContinuousFunction.indicator (g • s) (isClopen_discrete _)) =
-      UCB.leftTranslation g ((UCB.discreteAlgEquiv G).symm
-        (BoundedContinuousFunction.indicator s (isClopen_discrete _))) := by
-    apply UCB.ext
-    intro x
-    simp only [UCB.leftTranslation_apply, UCB.coe_discreteAlgEquiv_symm,
-      BoundedContinuousFunction.indicator_apply]
-    by_cases hx : x ∈ g • s <;> simp_all [mem_smul_set_iff_inv_smul_mem]
-  simp only [toContent_apply, h, hm.apply_leftTranslation]
+    (g : G) (s : Set G) : m.toContent (g • s) = m.toContent s :=
+  (isLeftInvariant_iff_toContent_smul m).1 hm g s
 
 /-- The content of evaluation at `x` is the Dirac probability at `x`. -/
 @[simp]
@@ -186,21 +190,6 @@ theorem toContent_contentEquiv_symm
 /-- A mean on a discrete group is determined by its content. -/
 theorem toContent_injective : Function.Injective (toContent : Mean G → _) :=
   fun _ _ h => (contentEquiv G).injective (Subtype.ext h)
-
-/-- A mean on a discrete group is left invariant exactly when its content is invariant under
-left translation of sets. -/
-theorem isLeftInvariant_iff_toContent_smul (m : Mean G) :
-    m.IsLeftInvariant ↔ ∀ (g : G) (s : Set G), m.toContent (g • s) = m.toContent s := by
-  refine ⟨fun hm => hm.toContent_smul, fun h => isLeftInvariant_iff.2 fun g f => ?_⟩
-  -- Pushing `m` forward along `x ↦ g⁻¹ * x` translates its content by `g`, so fixes it.
-  have hmap : m.mapOfDiscrete (g⁻¹ * ·) = m := by
-    refine toContent_injective (AddContent.ext fun s => ?_)
-    -- The left regular action `g⁻¹ • x` is multiplication `g⁻¹ * x`.
-    have hs : (g⁻¹ * ·) ⁻¹' s = g • s := preimage_smul_inv g s
-    rw [toContent_mapOfDiscrete, AddContent.map_apply, hs, h]
-  have hf : UCB.compRightAlgHomOfDiscrete (g⁻¹ * ·) f = UCB.leftTranslation g f :=
-    UCB.ext fun x => by simp [UCB.compRightAlgHomOfDiscrete_apply, UCB.leftTranslation_apply]
-  rw [← hf, ← mapOfDiscrete_apply, hmap]
 
 end Mean
 
