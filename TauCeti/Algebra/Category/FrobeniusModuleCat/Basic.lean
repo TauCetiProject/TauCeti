@@ -63,7 +63,7 @@ monoidal: the tensor product of two linearized Frobenius modules has Frobenius
 
 public section
 
-open CategoryTheory MonoidalCategory TensorProduct
+open CategoryTheory MonoidalCategory TensorProduct ChangeOfRings
 
 universe u
 
@@ -185,6 +185,13 @@ theorem linearization_hom_tmul (s : S) (m : M.carrier) :
   -- lemma is applied with `exact` rather than rewritten.
   rw [linearization_hom_eq]
   exact ModuleCat.extendScalarsHomEquivSemilinearMap_symm_apply_tmul σ M.frobenius s m
+
+/-- The inverse of the linearization sends `F m` to `1 ⊗ m`. -/
+@[simp]
+theorem linearization_inv_frobenius (m : M.carrier) :
+    M.linearization.inv.hom (M.frobenius m) = (1 : S) ⊗ₜ[S,σ] m := by
+  rw [frobenius_apply]
+  exact M.linearization.hom_inv_id_apply _
 
 /-- The image of the Frobenius spans the module: the linearization is surjective. -/
 theorem span_range_frobenius : Submodule.span S (Set.range M.frobenius) = ⊤ := by
@@ -448,6 +455,12 @@ theorem tensor_frobenius_tmul (M N : FrobeniusModuleCat σ) (m : M.carrier) (n :
   exact (frobenius_apply (M ⊗ N) (m ⊗ₜ n)).trans
     (congrArg (M.linearization.hom ⊗ₘ N.linearization.hom)
       (ModuleCat.extendScalars_δ_tmul σ M.carrier N.carrier m n))
+
+/-- The Frobenius of a tensor product is the semilinear tensor product `F ⊗ F` of the Frobenii. -/
+theorem tensor_frobenius (M N : FrobeniusModuleCat σ) :
+    (M ⊗ N).frobenius = TensorProduct.map M.frobenius N.frobenius :=
+  TensorProduct.ext' fun m n ↦
+    (tensor_frobenius_tmul M N m n).trans (TensorProduct.map_tmul _ _ _ _).symm
 
 /-- The Frobenius of the unit linearized Frobenius module `S` is `σ`. -/
 @[simp]

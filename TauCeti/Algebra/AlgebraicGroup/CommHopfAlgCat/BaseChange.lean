@@ -38,6 +38,8 @@ evaluated on `K`-algebras.
 * `CommHopfAlgCat.baseChangeMap_surjective_of_iso`: surjectivity in isomorphic presentations.
 * `CommHopfAlgCat.baseChangeMap_injective`: flat base change preserves injectivity.
 * `CommHopfAlgCat.baseChangeFunctor`: functorial base change on commutative Hopf algebras.
+* `CommHopfAlgCat.baseChangeTowerIso` and `CommHopfAlgCat.baseChangeSelfIso`: base change
+  composes in stages and is trivial along the identity.
 * `CommHopfAlgCat.baseChangePointsMulEquiv`: the inherited point equivalence
   `(K ⊗[k] H →ₐ[K] A) ≃* (H →ₐ[k] A)`.
 * `CommHopfAlgCat.baseChangeIsoPointsMulEquiv`: the same equivalence for a Hopf `K`-algebra
@@ -251,6 +253,14 @@ lemma baseChangeTowerIso_inv_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (h 
     (baseChangeTowerIso k K H).inv.hom (s ⊗ₜ[k] h) = s ⊗ₜ[E] (1 ⊗ₜ[k] h) :=
   TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul k E H K s h
 
+/-- The tower comparison of coordinate Hopf algebras is the bialgebra equivalence
+`Bialgebra.TensorProduct.baseChangeTowerBialgEquiv`. -/
+lemma hom_baseChangeTowerIso_hom (H : _root_.CommHopfAlgCat.{v} k) :
+    (baseChangeTowerIso (E := E) k K H).hom.hom =
+      (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k E H K :
+        K ⊗[E] (E ⊗[k] H) →ₐc[K] K ⊗[k] H) :=
+  (rfl)
+
 /-- The tower comparison sends `1 ⊗ x` to the base change of `x ∈ E ⊗[k] H` along `E → K`. -/
 lemma baseChangeTowerIso_hom_one_tmul (H : _root_.CommHopfAlgCat.{v} k) (x : E ⊗[k] H) :
     (baseChangeTowerIso k K H).hom.hom ((1 : K) ⊗ₜ[E] x) =
@@ -258,6 +268,34 @@ lemma baseChangeTowerIso_hom_one_tmul (H : _root_.CommHopfAlgCat.{v} k) (x : E �
   _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul k E H K x
 
 end Tower
+
+section Self
+
+/-- **Base change along the identity is trivial**: `k ⊗[k] H ≅ H`. -/
+noncomputable def _root_.CommHopfAlgCat.baseChangeSelfIso (H : _root_.CommHopfAlgCat.{u} k) :
+    TauCeti.CommHopfAlgCat.baseChange (K := k) H ≅ H :=
+  _root_.CommHopfAlgCat.isoMk (_root_.Bialgebra.TensorProduct.lid k H)
+
+/-- The identification `k ⊗[k] H ≅ H` multiplies the two factors. -/
+@[simp]
+lemma _root_.CommHopfAlgCat.baseChangeSelfIso_hom_apply (H : _root_.CommHopfAlgCat.{u} k) (c : k)
+    (h : H) : H.baseChangeSelfIso.hom.hom (c ⊗ₜ[k] h) = c • h :=
+  _root_.Bialgebra.TensorProduct.lid_tmul c h
+
+/-- The inverse of the identification `k ⊗[k] H ≅ H` is `h ↦ 1 ⊗ h`. -/
+@[simp]
+lemma _root_.CommHopfAlgCat.baseChangeSelfIso_inv_apply (H : _root_.CommHopfAlgCat.{u} k)
+    (h : H) : H.baseChangeSelfIso.inv.hom h = (1 : k) ⊗ₜ[k] h :=
+  _root_.Bialgebra.TensorProduct.lid_symm_apply h
+
+/-- The inverse of the identification `k ⊗[k] H ≅ H` is the inverse of the bialgebra equivalence
+`Bialgebra.TensorProduct.lid`. -/
+lemma _root_.CommHopfAlgCat.hom_baseChangeSelfIso_inv (H : _root_.CommHopfAlgCat.{u} k) :
+    H.baseChangeSelfIso.inv.hom =
+      ((_root_.Bialgebra.TensorProduct.lid k H).symm : H →ₐc[k] k ⊗[k] H) :=
+  (rfl)
+
+end Self
 
 variable (A : CommAlgCat.{x} K)
 

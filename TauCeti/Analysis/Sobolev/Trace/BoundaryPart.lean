@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.Trace.Kernel
 public import TauCeti.Analysis.Sobolev.Trace.Multiplication
 public import TauCeti.Analysis.Sobolev.Trace.Translation
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
-import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.SpecialFunctions.LinearCutoff
 import TauCeti.Analysis.Sobolev.Wkp.Translation
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -78,41 +77,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-! ### Restricted test functions supported away from `closure Γ` -/
-
-/-- A whole-space Sobolev function multiplied by a smooth cutoff whose support is disjoint from
-`closure Γ` restricts to an element of `W^{1,p}_Γ(H)`. -/
-private theorem restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) {a : ℝ}
-    {Γ : Set (WithLp 2 (ℝ × E))} {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) {M : ℝ}
-    (hM : 0 ≤ M) (hχM : ∀ x, |χ x| ≤ M) (hgradM : ∀ x, ‖∇ χ x‖ ≤ M)
-    (hχΓ : Disjoint (tsupport χ) (closure Γ))
-    (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p) :
-    W1p.restrictL le_top (W1p.contDiffSMul χ hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) w) ∈
-      w1pVanishingOnSubmodule volume (normalHalfSpace a) p Γ := by
-  let F := (W1p.restrictL (U := normalHalfSpace (E := E) a) le_top).comp
-    (W1p.contDiffSMulL χ hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) :
-      W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p →L[ℝ] _)
-  suffices key : F w ∈ w1pVanishingOnSubmodule volume (normalHalfSpace a) p Γ by
-    simpa only [F, ContinuousLinearMap.coe_comp, Function.comp_apply,
-      W1p.contDiffSMulL_apply] using key
-  refine (W1p.denseRange_ofTestFunctionₗ_top hp).induction_on (p := fun w => F w ∈ _) w
-    ((w1pVanishingOnSubmodule volume (normalHalfSpace a) p Γ).isClosed.preimage F.continuous)
-    fun ψ => ?_
-  have heq : W1p.restrictL le_top
-      (W1p.ofTestFunctionₗ volume ⊤ p (TestFunction.smulLeftCLM hχ ψ)) =
-        F (W1p.ofTestFunctionₗ volume ⊤ p ψ) :=
-    congrArg _ (W1p.ext_value (Lp.ext ?_))
-  · rw [← heq]
-    exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
-      (hχΓ.mono_left ((TestFunction.tsupport_smulLeftCLM_subset hχ ψ).trans inter_subset_left))
-  filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := p)
-      (TestFunction.smulLeftCLM hχ ψ),
-    W1p.value_contDiffSMul_ae (mu := volume) (Omega := ⊤) hχ hM (fun x _ => hχM x)
-      (fun x _ => hgradM x) (W1p.ofTestFunctionₗ volume ⊤ p ψ),
-    W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := p) ψ] with x h₁ h₂ h₃
-  rw [h₁, ContinuousLinearMap.coe_coe, W1p.contDiffSMulL_apply, h₂, h₃,
-    TestFunction.smulLeftCLM_apply]
 
 /-! ### Tangential translation -/
 
@@ -241,7 +205,8 @@ private theorem restrictL_mem_w1pVanishingOnSubmodule_of_ae_eq_zero (hp : p ≠ 
       tsupport_linearCutoff_subset L (by positivity : (0 : ℝ) ≤ 3 / τ) (c + τ / 3) hx
     linarith [hxK.2]
   -- The cutoff part is the restriction of `χ w`.
-  have hχv := restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule (a := a) hp hχ hM hχM hgradM hχK w
+  have hχv := W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule
+    (Omega := normalHalfSpace (E := E) a) hp hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) hχK w
   rw [W1p.restrictL_contDiffSMul] at hχv
   have hsub : v = (v - χv) + χv := (sub_add_cancel v χv).symm
   rw [hsub]

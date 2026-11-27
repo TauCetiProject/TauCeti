@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Generator
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
+public import TauCeti.FieldTheory.FunctionField.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Separation
 
@@ -31,7 +32,9 @@ pole of order exactly `k + 1` at `x` and no other pole
   valuation, and different points have different orders;
 * for a finite holomorphic map `β : X → ℙ¹`, the field `M(X)` has degree exactly `deg β` over the
   rational functions `ℂ(t)` pulled back along `β`, and is generated over `ℂ(t)` by a single
-  meromorphic function, since the points of an unbranched fibre are pairwise separated.
+  meromorphic function, since the points of an unbranched fibre are pairwise separated. As every
+  compact connected Riemann surface carries such a map, `M(X)` is an algebraic function field over
+  `ℂ`.
 
 ## Main results
 
@@ -47,6 +50,8 @@ pole of order exactly `k + 1` at `x` and no other pole
   extension of `ℂ(t)`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.finrank_ratFunc_eq_degree`: the degree theorem
   `[M(X) : ℂ(t)] = deg β`.
+* `TauCeti.RiemannSurface.MeromorphicFunction.isFunctionField`: `M(X)` is an algebraic function
+  field over `ℂ`.
 
 ## References
 
@@ -169,6 +174,24 @@ theorem finrank_ratFunc_eq_degree
   exact finrank_ratFunc_eq_degree_of_pairwise_separated_fiber β h hy₀
     fun _ _ _ _ hxx' ↦ exists_apply_ne_apply_of_ne hxx'
 
+/-- For the `ℂ(t)`-algebra structure on `M(X)` given by pullback along `β`, the field `M(X)` is
+finite-dimensional over `ℂ(t)`. -/
+theorem finiteDimensional_ratFunc
+    (h : algebraMap (RatFunc ℂ) (MeromorphicFunction X) =
+      ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom) :
+    FiniteDimensional (RatFunc ℂ) (MeromorphicFunction X) :=
+  Module.finite_of_finrank_pos (by rw [finrank_ratFunc_eq_degree β h]; exact degree_pos β)
+
 end RatFunc
+
+/-- **The field of meromorphic functions is an algebraic function field over `ℂ`.** A compact
+connected Riemann surface carries a finite holomorphic map `β` to the sphere, and `M(X)` is finite
+over the rational functions pulled back along `β`. -/
+theorem isFunctionField : IsFunctionField ℂ (MeromorphicFunction X) := by
+  obtain ⟨β, -⟩ := exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one (X := X)
+  let := ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom.toAlgebra
+  have := isScalarTower_ratFunc β rfl
+  have := finiteDimensional_ratFunc β rfl
+  exact (IsFunctionField.ratFunc ℂ).finite_extension
 
 end TauCeti.RiemannSurface.MeromorphicFunction

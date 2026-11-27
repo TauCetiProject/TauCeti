@@ -16,6 +16,7 @@ import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Asymptotics.Volterra
+import TauCeti.Analysis.ODE.SecondOrder.Linear
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
@@ -366,19 +367,9 @@ private lemma liouvilleGreen_solution {f ξ : ℝ → ℝ} {g Φ ε T I : ℝ �
     hasDerivAt_variationOfParameters hf hf0 hξ hx (hΦ x hx) (hT x hx) (hI x hx) (hε x hx)
   have hw1 (x : ℝ) (hx : x ∈ Ioi a) : HasDerivAt w (W' x) x :=
     (hW x hx).1.congr_of_eventuallyEq (eventually_of_mem (isOpen_Ioi.mem_nhds hx) hwW)
-  have hw2 (x : ℝ) (hx : x ∈ Ioi a) : HasDerivAt (deriv w) ((f x + g x) * w x) x := by
-    rw [hwW x hx]
-    refine (hW x hx).2.congr_of_eventuallyEq ?_
-    filter_upwards [isOpen_Ioi.mem_nhds hx] with t ht using (hw1 t ht).deriv
-  refine ⟨?_, fun x hx ↦ by rw [iteratedDeriv_succ, iteratedDeriv_one]; exact (hw2 x hx).deriv⟩
-  rw [show (2 : WithTop ℕ∞) = 1 + 1 by norm_num, contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioi]
-  refine ⟨fun x hx ↦ (hw1 x hx).differentiableAt.differentiableWithinAt, by simp, ?_⟩
-  rw [show (1 : WithTop ℕ∞) = 0 + 1 by norm_num, contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioi]
-  refine ⟨fun x hx ↦ (hw2 x hx).differentiableAt.differentiableWithinAt, by simp, ?_⟩
-  rw [contDiffOn_zero]
-  refine ContinuousOn.congr ?_ fun x hx ↦ (hw2 x hx).deriv
-  exact ((Complex.continuous_ofReal.comp_continuousOn hf.continuousOn).add hg).mul
-    fun x hx ↦ (hw1 x hx).continuousAt.continuousWithinAt
+  exact contDiffOn_two_of_hasDerivAt (q := fun x ↦ ↑(f x) + g x) isOpen_Ioi
+    ((Complex.continuous_ofReal.comp_continuousOn hf.continuousOn).add hg) hw1
+    fun x hx ↦ hwW x hx ▸ (hW x hx).2
 
 /-- The relative error `ε = e^{2ξ} I / 2 - T / 2` has derivative `f^{1/2} e^{2ξ} I`. -/
 private lemma hasDerivAt_liouvilleGreen_error {f ξ : ℝ → ℝ} {Φ ε T I : ℝ → ℂ} {a x : ℝ}

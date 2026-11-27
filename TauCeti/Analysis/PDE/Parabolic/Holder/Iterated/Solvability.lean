@@ -560,16 +560,6 @@ private theorem exists_eq_sum_mul_and_norm_le (hα : α ≤ 1) {j : ℕ} {T : �
   linarith
 
 omit [DecidableEq ι] in
-/-- Reading a map of order `k + 1` at order `k` costs at most `8 (k + 1)²`. -/
-private theorem norm_inclusionOfLEL_succ_le (hα : α ≤ 1) {k : ℕ} {T : ℝ≥0} {hT : (0 : ℝ) < T}
-    (f : ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT) :
-    ‖inclusionOfLEL hα k.le_succ f‖ ≤ 8 * (k + 1) ^ 2 * ‖f‖ := by
-  have h := norm_inclusionOfLEL_le (E := EuclideanSpace ℝ ι) (F := ℝ) (hab := hT) hα k.le_succ
-  rw [show k.succ - k = 1 by omega, pow_one] at h
-  push_cast at h
-  exact ContinuousLinearMap.le_of_opNorm_le _ h f
-
-omit [DecidableEq ι] in
 /-- The inclusion of consecutive orders, applied to a scalar map on `ℝⁿ`. -/
 private theorem norm_inclusionL_apply_le (hα : α ≤ 1) {m : ℕ} {T : ℝ≥0} {hT : (0 : ℝ) < T}
     (f : ParabolicCkHolderSpace (m + 1) α (EuclideanSpace ℝ ι) ℝ hT) :
@@ -891,15 +881,17 @@ private theorem schauderBound_succ (hα₁ : α < 1) {lam : ℝ} {k : ℕ}
   have est' := est T hT hTT₀ (fun i j ↦ inclusionOfLEL hα₁.le k.le_succ (a i j))
     (fun i ↦ inclusionOfLEL hα₁.le k.le_succ (b i)) (inclusionOfLEL hα₁.le k.le_succ c)
     (by simpa only [inclusionOfLEL_apply] using ha)
-    (fun i j ↦ (norm_inclusionOfLEL_succ_le hα₁.le _).trans (by push_cast; gcongr; exact hak i j))
-    (fun i ↦ (norm_inclusionOfLEL_succ_le hα₁.le _).trans (by push_cast; gcongr; exact hbk i))
-    ((norm_inclusionOfLEL_succ_le hα₁.le _).trans (by push_cast; gcongr))
+    (fun i j ↦ (norm_inclusionOfLEL_succ_apply_le hα₁.le _).trans
+      (by push_cast; gcongr; exact hak i j))
+    (fun i ↦ (norm_inclusionOfLEL_succ_apply_le hα₁.le _).trans
+      (by push_cast; gcongr; exact hbk i))
+    ((norm_inclusionOfLEL_succ_apply_le hα₁.le _).trans (by push_cast; gcongr))
   -- It bounds `u` read at order `k + 2`, and the directional derivatives of `u`.
   have hv : ‖v‖ ≤ D₁ * (‖f‖ + ‖g‖) := by
     have h := est' v
     rw [← inclusionOfLEL_euclideanSecondOrderCoeff, ← inclusionOfLEL_euclideanFirstOrderCoeff,
       ← inclusionOfLEL_euclideanZerothOrderCoeff, ← inclusionOfLEL_parabolicOperatorL] at h
-    have h₁ := norm_inclusionOfLEL_succ_le hα₁.le f
+    have h₁ := norm_inclusionOfLEL_succ_apply_le hα₁.le f
     have h₂ := norm_spatialTrace_inclusionOfLEL_le hα₁.le u ⟨0, left_mem_Icc.2 hT.le⟩
     refine h.trans ?_
     calc C₁ * (_ + _) ≤ C₁ * (8 * (k + 1) ^ 2 * ‖f‖ + (k + 6) * ‖g‖) := by gcongr

@@ -39,6 +39,8 @@ moment maps of Hamiltonian group actions are equivariant.
   trivial.
 * `TauCeti.Lie.coadjointRepresentation_apply_comp_tangentAd`: the translate `Ad*_g ν` pulls back
   along the adjoint automorphism `Ad_g` to `ν`.
+* `TauCeti.Lie.continuous_adjointRepresentation_apply`: for a smooth real Lie group, the adjoint
+  action `(g, X) ↦ Ad_g X` on `𝔤` is jointly continuous.
 * `TauCeti.Lie.contMDiff_coadjointRepresentation_apply`: for a smooth real Lie group with
   finite-dimensional model, each component `g ↦ (Ad*_g ν) ξ` of the coadjoint action is smooth.
 * `TauCeti.Lie.mvfderiv_coadjointRepresentation_apply_one`: the derivative at the identity of
@@ -122,8 +124,7 @@ theorem coadjointRepresentation_apply_comp_tangentAd (g : G)
   ext X
   simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, tangentAd_apply,
     coadjointRepresentation_apply]
-  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
-    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+  rw [adjointContinuousLinearMap_inv_adjointContinuousLinearMap]
 
 end TangentAd
 
@@ -134,6 +135,15 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+
+omit [FiniteDimensional ℝ E] in
+/-- **The adjoint action on the tangent Lie algebra is jointly continuous.** For a smooth real Lie
+group, `(g, X) ↦ Ad_g X` is continuous on `G × 𝔤`. -/
+theorem continuous_adjointRepresentation_apply :
+    Continuous fun p : G × GroupLieAlgebra I G ↦ adjointRepresentation ℝ I G p.1 p.2 := by
+  simp only [adjointRepresentation_apply]
+  exact ((contMDiff_adjointContinuousLinearMap (I := I) (G := G)).continuous.comp
+    continuous_fst).clm_apply continuous_snd
 
 /-- Each component `g ↦ (Ad*_g ν) ξ = ν (Ad_{g⁻¹} ξ)` of the coadjoint action of a smooth real Lie
 group with finite-dimensional model is smooth. -/

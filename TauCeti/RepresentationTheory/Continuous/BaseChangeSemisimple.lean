@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.BaseChange.Semisimple
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 
 /-!
 # Semisimple continuous representations stay semisimple under base change

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothSingular.Chains
+public import TauCeti.Geometry.Manifold.SmoothSingular.Stokes
+public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import Mathlib.Topology.Instances.AddCircle.Real
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
@@ -26,6 +28,13 @@ curvature of a differential character. The hypothesis `p ≥ 1` is needed, since
 integral over a point is evaluation, and a nonzero constant integer function has integer integrals.
 The comparison modulo `ℤ` uses that a real number vanishes in `ℝ/ℤ` exactly when it is an integer
 (`UnitAddCircle.coe_eq_zero_iff`).
+
+The smooth forms with **integral periods**, whose integral over every smooth singular integral
+cycle is an integer, form the subgroup `TauCeti.integralPeriodForms`. On a boundaryless manifold
+such a form is closed (`TauCeti.mem_closedForms_of_mem_integralPeriodForms`): by Stokes' theorem the
+integral of its derivative over a smooth simplex is its integral over the boundary cycle, an
+integer, so the derivative vanishes. Integral periods are preserved by pullback along smooth maps
+(`TauCeti.mpullback_mem_integralPeriodForms`).
 
 ## Implementation notes
 
@@ -199,5 +208,77 @@ theorem SmoothForm.eq_of_forall_coe_integrationCochain_eq {p : ℕ} (hp : p ≠ 
     ← sub_eq_add_neg]
 
 end Uniqueness
+
+section IntegralPeriods
+
+variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+variable (I M) in
+/-- The smooth real `k`-forms with **integral periods**: those whose integral over every smooth
+singular integral `k`-cycle is an integer. The curvatures of differential characters of degree `k`
+are exactly the forms with integral periods of degree `k + 1`
+(`TauCeti.differentialCharacters.range_curvature`). -/
+def integralPeriodForms (k : ℕ) : AddSubgroup (SmoothForm I M ℝ k) where
+  carrier := {φ | ∀ z : ((smoothSingularSubcomplex I M : SSet).chainComplex
+      (ModuleCat.of ℤ ℤ)).cycles k, ∃ n : ℤ, (integrationCochain φ.val).hom
+        (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles k z) = n}
+  zero_mem' _ := ⟨0, by simp⟩
+  add_mem' := by
+    rintro φ ψ hφ hψ z
+    obtain ⟨m, hm⟩ := hφ z
+    obtain ⟨n, hn⟩ := hψ z
+    refine ⟨m + n, ?_⟩
+    rw [SmoothForm.integrationCochain_add]
+    simp [hm, hn]
+  neg_mem' := by
+    rintro φ hφ z
+    obtain ⟨n, hn⟩ := hφ z
+    exact ⟨-n, by simp [hn]⟩
+
+/-- A form has integral periods when its integral over every smooth singular integral cycle is an
+integer. -/
+theorem mem_integralPeriodForms_iff {k : ℕ} {φ : SmoothForm I M ℝ k} :
+    φ ∈ integralPeriodForms I M k ↔
+      ∀ z : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k,
+        ∃ n : ℤ, (integrationCochain φ.val).hom
+          (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles k z) =
+            n :=
+  Iff.rfl
+
+/-- **Forms with integral periods are closed.** On a boundaryless manifold, by Stokes' theorem the
+integral of `dφ` over every smooth singular simplex is the integral of `φ` over its boundary
+cycle, an integer, so the continuous form `dφ` vanishes. -/
+theorem mem_closedForms_of_mem_integralPeriodForms [IsManifold I ∞ M] [BoundarylessManifold I M]
+    {k : ℕ} {φ : SmoothForm I M ℝ k} (hφ : φ ∈ integralPeriodForms I M k) :
+    φ ∈ closedForms I M k := by
+  rw [mem_closedForms]
+  have hd : IsSmoothForm I 0 (mextDeriv φ.val) := by
+    simpa only [mextDerivₗ_apply] using
+      (mextDerivₗ I k φ).isSmoothForm.of_le (m := 0) (by simp)
+  refine RoughForm.eq_zero_of_forall_integral_eq_intCast k.succ_ne_zero hd fun σ ↦ ?_
+  let c := ((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℤ) σ).hom 1
+  obtain ⟨n, hn⟩ := hφ (((smoothSingularSubcomplex I M : SSet).chainComplex
+    (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k c)
+  rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply,
+    integrationCochain_d_apply (φ.isSmoothForm.of_le (by simp)),
+    integrationCochain_ιChainComplex, one_smul] at hn
+  exact ⟨n, hn⟩
+
+/-- **Integral periods pull back.** The pullback of a form with integral periods along a smooth map
+`f` has integral periods: its integral over a cycle `z` is the integral of the form over the cycle
+`f_* z`. -/
+theorem mpullback_mem_integralPeriodForms {E' H' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type}
+    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {f : M → N}
+    (hf : ContMDiff I J ∞ f) {k : ℕ} {φ : SmoothForm J N ℝ k}
+    (hφ : φ ∈ integralPeriodForms J N k) :
+    SmoothForm.mpullback f hf φ ∈ integralPeriodForms I M k := fun z ↦ by
+  obtain ⟨n, hn⟩ := hφ (HomologicalComplex.cyclesMap
+    (SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)) k z)
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
+    integrationCochain_chainComplexMap_apply hf] at hn
+  exact ⟨n, by rw [SmoothForm.coe_mpullback, hn]⟩
+
+end IntegralPeriods
 
 end TauCeti

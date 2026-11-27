@@ -56,6 +56,7 @@ For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` 
 factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
 For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`: a weight of
 nonpositive regularity at a larger index absorbs the inverse weight at a smaller one.
+For `0 < b` the weights cancel exactly: `b ^ (-s x) b ^ (s x) = 1`.
 For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`, the form of the
 off-diagonal decay `2 ^ (-M |j - k|)` between dyadic indices `j` and `k`.
 
@@ -152,6 +153,10 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
 * `Real.eq_zero_of_forall_rpow_le`: `e = 0` when `c ^ e ≤ K` for all `c > 0`.
+* `Real.eq_zero_of_forall_zpow_rpow_le`: `e = 0` when `(b ^ k) ^ e ≤ K` for all `k ∈ ℤ` and some
+  `b > 1`.
+* `Real.rpow_sub_le_div_of_ofReal_rpow_mul_le`: `x ^ (a - b) ≤ C B / Φ` in `ℝ` from
+  `x ^ a Φ ≤ C (x ^ b B)` in `ℝ≥0∞`, for `x > 0`, `Φ ≠ 0` and `B < ∞`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
@@ -340,6 +345,16 @@ theorem rpow_mul_mul_rpow_neg_mul_le_one {b : ℝ} (hb : 1 ≤ b) {s : ℝ} (hs 
   refine rpow_le_one_of_one_le_of_nonpos hb ?_
   nlinarith
 
+/-- For `0 < b`, the dyadic weights `b ^ (-s x)` and `b ^ (s x)` cancel. -/
+theorem rpow_neg_mul_mul_rpow_mul {b : ℝ} (hb : 0 < b) (s x : ℝ) :
+    b ^ (-s * x) * b ^ (s * x) = 1 := by
+  rw [← rpow_add hb, neg_mul, neg_add_cancel, rpow_zero]
+
+/-- For `0 < b`, the dyadic weights `b ^ (s x)` and `b ^ (-s x)` cancel. -/
+theorem rpow_mul_mul_rpow_neg_mul {b : ℝ} (hb : 0 < b) (s x : ℝ) :
+    b ^ (s * x) * b ^ (-s * x) = 1 := by
+  rw [mul_comm, rpow_neg_mul_mul_rpow_mul hb]
+
 /-- For `0 < b`, the geometric weight `(b ^ (-s)) ^ d` turns the dyadic weight `b ^ (s (d + k))`
 back into `b ^ (s k)`. -/
 theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (d k : ℕ) :
@@ -428,6 +443,50 @@ theorem eq_zero_of_forall_rpow_le {e K : ℝ} (h : ∀ c : ℝ, 0 < c → c ^ e 
   have := h ((K + 1) ^ e⁻¹) (rpow_pos_of_pos hK _)
   rw [← rpow_mul hK.le, inv_mul_cancel₀ he, rpow_one] at this
   linarith
+
+/-- If `(b ^ k) ^ e` is bounded over all integers `k` for some `b > 1`, then `e = 0`:
+`(b ^ k) ^ e = (b ^ e) ^ k` is unbounded as `k → ∞` when `e > 0` and as `k → -∞` when `e < 0`.
+This pins an exponent by a scaling argument that only has the dilations by the powers of `b`, such
+as the dyadic dilations. -/
+theorem eq_zero_of_forall_zpow_rpow_le {b e K : ℝ} (hb : 1 < b) (h : ∀ k : ℤ, (b ^ k) ^ e ≤ K) :
+    e = 0 := by
+  have hb0 : 0 ≤ b := zero_le_one.trans hb.le
+  have hk : ∀ k : ℤ, (b ^ k) ^ e = (b ^ e) ^ k := fun k ↦ by
+    rw [← rpow_intCast, ← rpow_intCast, ← rpow_mul hb0, ← rpow_mul hb0, mul_comm]
+  by_contra he
+  rcases lt_or_gt_of_ne he with he | he
+  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt K (one_lt_inv_iff₀.2
+      ⟨rpow_pos_of_pos (zero_lt_one.trans hb) e, rpow_lt_one_of_one_lt_of_neg hb he⟩)
+    have := h (-n)
+    rw [hk, zpow_neg, zpow_natCast, ← inv_pow] at this
+    linarith
+  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt K (one_lt_rpow hb he)
+    have := h n
+    rw [hk, zpow_natCast] at this
+    linarith
+
+open scoped ENNReal NNReal in
+/-- **A scaling estimate in real terms.** If `x ^ a Φ ≤ C (x ^ b B)` in `ℝ≥0∞` for some `x > 0`,
+with `Φ ≠ 0` and `B < ∞`, then `Φ` is finite and `x ^ (a - b) ≤ C B / Φ` in `ℝ`. Applied to every
+scale `x`, this turns a scaling estimate, whose two sides are powers of the scale times fixed
+quantities, into a bound on `x ^ (a - b)` that pins the exponent `a - b`
+(`Real.eq_zero_of_forall_rpow_le`, `Real.eq_zero_of_forall_zpow_rpow_le`). -/
+theorem rpow_sub_le_div_of_ofReal_rpow_mul_le {x a b : ℝ} (hx : 0 < x) {Φ B : ℝ≥0∞} {C : ℝ≥0}
+    (hΦ : Φ ≠ 0) (hB : B ≠ ∞) (h : ENNReal.ofReal (x ^ a) * Φ ≤ C * (ENNReal.ofReal (x ^ b) * B)) :
+    x ^ (a - b) ≤ C * B.toReal / Φ.toReal := by
+  have hR : (C : ℝ≥0∞) * (ENNReal.ofReal (x ^ b) * B) ≠ ∞ :=
+    ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hB)
+  have hΦt : Φ ≠ ∞ := fun hΦt ↦ hR <| top_le_iff.1 <| h.trans_eq' <| by
+    rw [hΦt, ENNReal.mul_top (ENNReal.ofReal_pos.2 (rpow_pos_of_pos hx a)).ne']
+  have hreal := ENNReal.toReal_mono hR h
+  simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal (rpow_nonneg hx.le _)]
+    at hreal
+  rw [le_div_iff₀ (ENNReal.toReal_pos hΦ hΦt)]
+  refine le_of_mul_le_mul_left ?_ (rpow_pos_of_pos hx b)
+  calc x ^ b * (x ^ (a - b) * Φ.toReal) = x ^ a * Φ.toReal := by
+        rw [← mul_assoc, ← rpow_add hx, add_sub_cancel]
+    _ ≤ C * (x ^ b * B.toReal) := hreal
+    _ = x ^ b * (C * B.toReal) := mul_left_comm _ _ _
 
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :
