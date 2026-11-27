@@ -181,6 +181,23 @@ theorem chartQuantization_eq_add (φ ψ : 𝓓(⟨e.target, e.open_target⟩, �
       chartQuantization_apply_of_notMem he φ ψ b u hp,
       chartQuantization_apply_of_notMem he φ ψ c u hp, add_zero]
 
+/-- The chart quantization is homogeneous in the full symbol, also for classical symbols of
+different orders: if the full symbol of `a` is `c` times that of `b`, then
+`Op_e(a) = c • Op_e(b)`. -/
+theorem chartQuantization_eq_smul (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {m₁ : ℝ}
+    {a : ClassicalSymbol n ℂ ℂ m} {b : ClassicalSymbol n ℂ ℂ m₁} (c : ℂ)
+    (h : a.toSymbol.coefficient = c • b.toSymbol.coefficient) :
+    e.chartQuantization he φ ψ a = c • e.chartQuantization he φ ψ b := by
+  ext u p
+  rw [LinearMap.smul_apply, ContMDiffMap.complex_smul_apply]
+  by_cases hp : p ∈ e.source
+  · rw [chartQuantization_apply_of_mem he φ ψ a u (cutoffPushforwardSchwartz_apply he ψ u) hp,
+      chartQuantization_apply_of_mem he φ ψ b u (cutoffPushforwardSchwartz_apply he ψ u) hp, h,
+      quantizeSchwartzValue_smul_left, smul_eq_mul, Complex.real_smul, Complex.real_smul]
+    ring
+  · rw [chartQuantization_apply_of_notMem he φ ψ a u hp,
+      chartQuantization_apply_of_notMem he φ ψ b u hp, mul_zero]
+
 /-- The chart quantization is supported in the image of the support of `φ` under the inverse of
 the chart. -/
 theorem tsupport_chartQuantization_subset (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))

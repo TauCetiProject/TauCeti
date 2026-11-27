@@ -71,6 +71,8 @@ symbol with compact spatial support
   `H^s(M) → H^t(M)` for `t ≤ s - m`.
 * `TauCeti.isCompactOperator_chartSobolevExtension_of_mem`: the extension is compact for
   `t < s - m`.
+* `TauCeti.chartSobolevExtension_sum_of_mem`: the extension of a finite sum is the sum of the
+  extensions.
 
 ## References
 
@@ -273,6 +275,20 @@ theorem chartSobolevExtension_comp_of_mem {c'' : ν → OpenPartialHomeomorph M 
       chartSobolevExtension hc ψ hc'' χ (P ∘ₗ Q) s r :=
   chartSobolevExtension_comp (exists_norm_chartReading_apply_le hP hφ hr)
     (exists_norm_chartReading_apply_le hQ hψ ht)
+
+/-- **Extensions of finite sums.** The extension to `H^s(M) → H^t(M)`, `t ≤ s - m`, of a finite
+sum of classical pseudodifferential operators of order `m` is the sum of their extensions. -/
+theorem chartSobolevExtension_sum_of_mem {α : Type*} (S : Finset α)
+    {A : α → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hA : ∀ k ∈ S, A k ∈ classicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (ht : t ≤ s - m) :
+    chartSobolevExtension hc ψ hc' φ (∑ k ∈ S, A k) s t =
+      ∑ k ∈ S, chartSobolevExtension hc ψ hc' φ (A k) s t :=
+  chartSobolevExtension_eq _ fun u ↦ by
+    rw [sum_apply, LinearMap.sum_apply, map_sum]
+    exact Finset.sum_congr rfl fun k hk ↦
+      chartSobolevExtension_toChartSobolevSpace_of_mem (hA k hk) hψ ht u
 
 end Extension
 
