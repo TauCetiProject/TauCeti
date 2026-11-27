@@ -20,8 +20,8 @@ that is `f • y = d x` for some `y`. When multiplication by `f` is injective on
 the element `y` is unique, it is again in `E_f(C)ⁿ⁺¹`, and `x ↦ y` is an `R`-linear map `δ`,
 the *divided differential*, with `δ ∘ δ = 0`. The resulting complex `E_f(C)` is the *principal
 décalage* of `C`. Multiplication by `fⁿ` in degree `n` identifies it with the subcomplex
-`η_f C ⊆ C[1/f]`, `(η_f C)ⁿ = {x ∈ fⁿ Cⁿ | d x ∈ fⁿ⁺¹ Cⁿ⁺¹}`; this file works with `E_f(C)` only,
-which avoids the localization and treats negative degrees like positive ones.
+`η_f C ⊆ C[1/f]`, `(η_f C)ⁿ = {x ∈ fⁿ Cⁿ | d x ∈ fⁿ⁺¹ Cⁿ⁺¹}`; the comparison in all integer
+degrees is constructed in `TauCeti.Algebra.Homology.ModuleCat.Decalage.Localization`.
 
 A cocycle of `E_f(C)` is the same as a cocycle of `C`, and a cocycle `z` is a coboundary of
 `E_f(C)` exactly when `f • z` is a coboundary of `C`. So sending the class of a cocycle of `C` to
