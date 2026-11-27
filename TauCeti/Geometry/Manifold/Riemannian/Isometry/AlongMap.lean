@@ -19,10 +19,11 @@ covariant differentiation of tangent fields along `γ` commutes with the tangent
 
 where `df V : p ↦ df_{γ p} (V p)` is the transported field along `f ∘ γ`, `v ∈ T_pP`, and both
 sides use Levi-Civita connections. This is the along-map form of the naturality of the Levi-Civita
-connection, and contains the along-curve form of `Isometry/AlongCurve.lean` as the case
-`P = ℝ`. It applies to fields along `γ` that are not restrictions of vector fields on `M`, such as
-the differential `df Y` of an immersion or a normal field along it, and so transports the
-submanifold geometry of an immersion `γ` into `M` to that of `f ∘ γ`.
+connection, and specialises at `P = ℝ` to the unrestricted along-curve form
+`TauCeti.IsLocalRiemannianIsometry.mfderiv_alongCurve`. It applies to fields along `γ` that are
+not restrictions of vector fields on `M`, such as the differential `df Y` of an immersion or a
+normal field along it, and so transports the submanifold geometry of an immersion `γ` into `M` to
+that of `f ∘ γ`.
 
 ## Main results
 

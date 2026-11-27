@@ -48,8 +48,11 @@ variable
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {HP : Type*} [TopologicalSpace HP] {K : ModelWithCorners 𝕜 G HP}
   {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
-  [IsManifold I 2 M] [IsManifold J 2 N] {f : M → N} {n : WithTop ℕ∞}
-  {γ : P → M} {V : ∀ p, TangentSpace I (γ p)}
+  {f : M → N} {n : WithTop ℕ∞} {γ : P → M} {V : ∀ p, TangentSpace I (γ p)}
+
+section
+
+variable [IsManifold I 1 M] [IsManifold J 1 N]
 
 /-- The differential of a map `f` which is `C^n` at `γ t`, with `2 ≤ n`, carries a tangent field
 along `γ` which is differentiable within `s` at `t` as a map into the tangent bundle to a tangent
@@ -78,10 +81,13 @@ theorem _root_.ContMDiffAt.mdifferentiableAt_totalSpace_mfderiv {t : P}
   rw [← mdifferentiableWithinAt_univ] at hV ⊢
   exact hf.mdifferentiableWithinAt_totalSpace_mfderiv hn hV
 
+end
+
 /-- The differential of a map `f` which is `C^n` at `γ t`, with `2 ≤ n`, carries a tangent field
 along `γ` whose coordinate reading is differentiable at `t` to a tangent field along `f ∘ γ` whose
 coordinate reading is differentiable at `t`. -/
-theorem _root_.ContMDiffAt.mdifferentiableAt_sectionCoord_mfderiv {t : P}
+theorem _root_.ContMDiffAt.mdifferentiableAt_sectionCoord_mfderiv
+    [IsManifold I 2 M] [IsManifold J 2 N] {t : P}
     (hf : ContMDiffAt I J n f (γ t)) (hn : 2 ≤ n) (hγ : MDifferentiableAt K I γ t)
     (hV : MDifferentiableAt K 𝓘(𝕜, E) (sectionCoord 𝕜 (F := E) γ V (γ t)) t) :
     MDifferentiableAt K 𝓘(𝕜, F)
@@ -95,7 +101,8 @@ theorem _root_.ContMDiffAt.mdifferentiableAt_sectionCoord_mfderiv {t : P}
 /-- For a map `f` which is `C^n` at `x`, with `2 ≤ n`, and a vector field `Y` on `M`
 differentiable at `x`, the field `y ↦ df_y (Y y)` along `f` has a coordinate reading which is
 differentiable at `x`. -/
-theorem _root_.ContMDiffAt.mdifferentiableAt_sectionCoord_mfderiv_of_mdifferentiableAt {x : M}
+theorem _root_.ContMDiffAt.mdifferentiableAt_sectionCoord_mfderiv_of_mdifferentiableAt
+    [IsManifold I 1 M] [IsManifold J 2 N] {x : M}
     (hf : ContMDiffAt I J n f x) (hn : 2 ≤ n) {Y : Π y : M, TangentSpace I y}
     (hY : MDiffAt (T% Y) x) :
     MDifferentiableAt I 𝓘(𝕜, F)
