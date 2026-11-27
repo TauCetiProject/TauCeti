@@ -328,6 +328,8 @@ theorem finrank_quotientModelSpace_stabilizer_specialOrthogonalGroup {c : Module
       ((Lie.coadjointRepresentation ℝ (Matrix.specialUnitaryGroup.model (Fin 3) ℝ)
         (Matrix.specialOrthogonalGroup (Fin 3) ℝ)).stabilizer c)) = 2 := by
   have h := c.finrank_quotientModelSpace_add_finrank_lieAnnihilator
+  -- Mathlib defines `GroupLieAlgebra I G` as an `abbrev` for the tangent space at `1`, so its
+  -- dimension is that of the model space.
   have hT : finrank ℝ 𝔰𝔬₃ = _ :=
     finrank_tangentSpace (1 : Matrix.specialOrthogonalGroup (Fin 3) ℝ)
   obtain ⟨m, rfl⟩ := specialOrthogonalThreeDualEquiv.surjective c

@@ -99,11 +99,6 @@ theorem finrank_prod_quotientModelSpace_sub_finrank_specialOrthogonalGroup
 variable (h : (symplecticForm 𝓘(ℝ, Fin 3 → ℝ) (Fin 3 → ℝ)).IsEquivariantMomentMap
   (momentMap I₃ SO₃))
 
-/-- A nonzero value of the angular momentum is a regular value. -/
-private theorem forall_differential_surjective_of_ne_zero {c : Module.Dual ℝ 𝔰𝔬₃} (hc : c ≠ 0) :
-    ∀ z, momentMap I₃ SO₃ z = c → Function.Surjective (h.differential z) := fun _ hz ↦
-  differential_surjective_momentMap_specialOrthogonalGroup h (by rwa [hz])
-
 /-- **The zero level of the shifting moment map is five-dimensional.** For `c ≠ 0` and a point
 `(x, o)` of `T*ℝ³ × SO(3) ⧸ G_c` with `μ(x) = ι_O(o)`, the tangent space `ker dΨ` of the level
 `Ψ⁻¹(0)` of `Ψ(x, o) = μ(x) - ι_O(o)` has dimension `8 - 3 = 5`. -/
@@ -113,7 +108,7 @@ theorem finrank_ker_differential_prod_neg_coadjointOrbitForm_specialOrthogonalGr
     (hp : momentMap I₃ SO₃ p.1 = (Lie.coadjointRepresentation ℝ I₃ SO₃).orbitMap c p.2) :
     finrank ℝ (LinearMap.ker ((h.prod_neg_coadjointOrbitForm c).differential p)) = 5 := by
   have hsurj := h.forall_differential_surjective_prod_neg_coadjointOrbitForm
-    (forall_differential_surjective_of_ne_zero h hc) p (sub_eq_zero.2 hp)
+    (forall_differential_surjective_momentMap_specialOrthogonalGroup h hc) p (sub_eq_zero.2 hp)
   have hrn := LinearMap.finrank_range_add_finrank_ker
     ((h.prod_neg_coadjointOrbitForm c).differential p)
   rw [LinearMap.range_eq_top.2 hsurj, finrank_top, Subspace.dual_finrank_eq,
@@ -144,17 +139,12 @@ theorem finrank_quotientModelSpace_prod_neg_coadjointOrbitForm_specialOrthogonal
   have hΨ := h.prod_neg_coadjointOrbitForm c
   have hsum := hΨ.finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm
-      (forall_differential_surjective_of_ne_zero h hc)) hn₀ d₀
+      (forall_differential_surjective_momentMap_specialOrthogonalGroup h hc)) hn₀ d₀
     (isSymplectic_symplecticForm.isNondegenerate.prod
       c.isSymplectic_coadjointOrbitForm.isNondegenerate.neg) p
   -- The coadjoint stabilizer of `0` is all of `𝔰𝔬(3)`.
-  have h0 : finrank ℝ (lieAnnihilator ℝ 𝔰𝔬₃ (0 : Module.Dual ℝ 𝔰𝔬₃)) = finrank ℝ 𝔰𝔬₃ := by
-    have htop := (lieAnnihilator_eq_top_iff ℝ 𝔰𝔬₃).2 fun x ↦
-      lie_zero (M := Module.Dual ℝ 𝔰𝔬₃) x
-    -- A Lie subalgebra has the dimension of its underlying submodule.
-    calc _ = finrank ℝ (lieAnnihilator ℝ 𝔰𝔬₃ (0 : Module.Dual ℝ 𝔰𝔬₃)).toSubmodule := rfl
-      _ = _ := by rw [htop, LieSubalgebra.top_toSubmodule, finrank_top]
-  rw [h0, finrank_groupLieAlgebra_specialOrthogonalGroup_fin_three,
+  rw [lieAnnihilator_zero, LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq] at hsum
+  rw [finrank_groupLieAlgebra_specialOrthogonalGroup_fin_three,
     finrank_prod_quotientModelSpace_specialOrthogonalGroup hc] at hsum
   omega
 
