@@ -270,6 +270,20 @@ theorem mem_componentOSet {q : G.Components} {p : Fin n × Fin n} :
     p ∈ G.componentOSet q ↔ G.O p.1 = p.2 ∧ G.componentOfColumn p.1 = q := by
   simp [componentOSet]
 
+/-- A sum over the `X`-markings of a component is a sum over its columns. -/
+theorem sum_componentXSet {M : Type*} [AddCommMonoid M] (q : G.Components)
+    (f : Fin n × Fin n → M) :
+    ∑ p ∈ G.componentXSet q, f p = ∑ c ∈ G.componentColumns q, f (c, G.X c) := by
+  rw [componentXSet_def, Finset.sum_filter, XSet_def, GridState.sum_pointSet, componentColumns_def,
+    Finset.sum_filter]
+
+/-- A sum over the `O`-markings of a component is a sum over its columns. -/
+theorem sum_componentOSet {M : Type*} [AddCommMonoid M] (q : G.Components)
+    (f : Fin n × Fin n → M) :
+    ∑ p ∈ G.componentOSet q, f p = ∑ c ∈ G.componentColumns q, f (c, G.O c) := by
+  rw [componentOSet_def, Finset.sum_filter, OSet_def, GridState.sum_pointSet, componentColumns_def,
+    Finset.sum_filter]
+
 /-- The `X`-marking and the `O`-marking of a row lie on the same component: the component
 permutation carries the column of the `O`-marking to the column of the `X`-marking. -/
 theorem componentOfColumn_X_transpose (r : Fin n) :
@@ -280,11 +294,30 @@ theorem componentOfColumn_X_transpose (r : Fin n) :
   rw [← h, componentOfColumn_eq_iff]
   exact (Equiv.Perm.sameCycle_apply_left.mpr (Equiv.Perm.SameCycle.refl _ _))
 
+/-- The component permutation stays on a component. -/
+theorem componentOfColumn_componentPerm_apply (c : Fin n) :
+    G.componentOfColumn (G.componentPerm c) = G.componentOfColumn c :=
+  G.componentOfColumn_eq_iff.mpr (Equiv.Perm.sameCycle_apply_left.mpr (.refl _ _))
+
+/-- The `X`-markings and the `O`-markings of a component occupy the same rows: a function of the
+row has the same sum over the `X`-markings of a component as over its `O`-markings. -/
+theorem sum_componentColumns_X_eq_sum_O {M : Type*} [AddCommMonoid M] (q : G.Components)
+    (f : Fin n → M) :
+    ∑ c ∈ G.componentColumns q, f (G.X c) = ∑ c ∈ G.componentColumns q, f (G.O c) :=
+  (Finset.sum_equiv G.componentPerm
+    (fun c => by
+      rw [mem_componentColumns, mem_componentColumns, componentOfColumn_componentPerm_apply])
+    fun c _ => by rw [X_componentPerm_apply]).symm
+
+/-- A sum over the columns of every component is a sum over all columns. -/
+theorem sum_sum_componentColumns {M : Type*} [AddCommMonoid M] (f : Fin n → M) :
+    ∑ q, ∑ c ∈ G.componentColumns q, f c = ∑ c, f c := by
+  simp only [componentColumns_def]
+  exact Finset.sum_fiberwise _ _ _
+
 /-- The component grid sizes `n_q` add up to the grid size. -/
 theorem sum_card_componentColumns : ∑ q, (G.componentColumns q).card = n := by
-  simp only [componentColumns_def]
-  rw [← Finset.card_eq_sum_card_fiberwise (fun c _ => Finset.mem_univ _), Finset.card_univ,
-    Fintype.card_fin]
+  simpa using G.sum_sum_componentColumns fun _ => (1 : ℕ)
 
 /-- A grid diagram represents a knot when its component permutation has exactly one cycle. -/
 def IsKnot : Prop :=
