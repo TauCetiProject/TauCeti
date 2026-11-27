@@ -216,7 +216,7 @@ theorem IsAdmissible.map {I : GlobalFormInvariants K} (hI : I.IsAdmissible) :
   finiteHasse_eq_one_of_rank_eq_two hn w hd := by
     rw [finiteHasse_map]
     refine hI.finiteHasse_eq_one_of_rank_eq_two hn _ ?_
-    let τ := adicCompletionCongr _ w e (valuation_eq_valuation_equivOfRingEquiv_symm e w)
+    let τ := adicCompletionCongr _ w e (e.valuation_eq_valuation_equivOfRingEquiv_symm w)
     rw [discrAtFinitePlace_map e I τ.toRingHom (adicCompletionCongr_algebraMap _),
       RingEquiv.toRingHom_eq_coe] at hd
     apply RingEquiv.squareClassMap_injective τ
@@ -277,8 +277,8 @@ theorem exists_map (hL : I.IsLocalRealization U R) (e : K ≃+* L) :
       (R' : {w : InfinitePlace L // w.IsReal} → _root_.QuadraticForm ℝ (Fin (I.map e).rank → ℝ)),
       (I.map e).IsLocalRealization U' R' := by
   exact ⟨_, _, hL.map (fun w ↦ adicCompletionCongr _ w e
-    (valuation_eq_valuation_equivOfRingEquiv_symm e w))
-    fun w ↦ adicCompletionCongr_algebraMap (valuation_eq_valuation_equivOfRingEquiv_symm e w)⟩
+    (e.valuation_eq_valuation_equivOfRingEquiv_symm w))
+    fun w ↦ adicCompletionCongr_algebraMap (e.valuation_eq_valuation_equivOfRingEquiv_symm w)⟩
 
 end IsLocalRealization
 

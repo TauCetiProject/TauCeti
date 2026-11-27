@@ -58,6 +58,9 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
 * `IsConj.orderOf_eq`, and its additive counterpart: conjugate elements of a monoid have the same
   order.
+* `Commute.eq_of_mul_eq_mul_of_coprime`: in a commuting factorisation `x = a * u` with
+  `a ^ m = 1`, `u ^ n = 1` and `m` prime to `n`, the factor `a` is determined by `x`, since it is
+  the power `x ^ k` for `k ≡ 1 [MOD m]`, `k ≡ 0 [MOD n]`.
 * `IsCoprime.orderOf_zpow`, and its additive counterpart: an integer exponent coprime to the order
   of `x` preserves it.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
@@ -162,6 +165,19 @@ theorem IsConj.orderOf_eq {G : Type*} [Monoid G] {a b : G} (h : IsConj a b) :
   orderOf_eq_orderOf_iff.2 fun n ↦ by
     rw [← isConj_one_right, ← isConj_one_right (a := b ^ n)]
     exact ⟨fun h' ↦ h'.trans (h.pow n), fun h' ↦ h'.trans (h.pow n).symm⟩
+
+/-- **Commuting factorisations with coprime exponents are unique.** If `a * u = b * v`, where
+`a` commutes with `u` and `b` with `v`, both `a` and `b` are killed by the `m`-th power map, both
+`u` and `v` by the `n`-th, and `m` is prime to `n`, then `a = b`. For `k ≡ 1 [MOD m]` and
+`k ≡ 0 [MOD n]`, both `a` and `b` are the `k`-th power of the common product. -/
+theorem Commute.eq_of_mul_eq_mul_of_coprime {M : Type*} [Monoid M] {a u b v : M} {m n : ℕ}
+    (hau : Commute a u) (hbv : Commute b v) (hmn : m.Coprime n) (ha : a ^ m = 1)
+    (hb : b ^ m = 1) (hu : u ^ n = 1) (hv : v ^ n = 1) (h : a * u = b * v) : a = b := by
+  obtain ⟨k, hk1, hk0⟩ := Nat.chineseRemainder hmn 1 0
+  have key {x y : M} (hxy : Commute x y) (hx : x ^ m = 1) (hy : y ^ n = 1) : (x * y) ^ k = x := by
+    rw [hxy.mul_pow, pow_eq_pow_of_modEq hk1 hx, pow_eq_pow_of_modEq hk0 hy, pow_one, pow_zero,
+      mul_one]
+  rw [← key hau ha hu, h, key hbv hb hv]
 
 /-- An integer exponent coprime to the order of `x` preserves it. This is Mathlib's
 `Nat.Coprime.orderOf_pow` for integer exponents. -/

@@ -393,19 +393,21 @@ section Balanced
 
 variable {H} [Fintype Basepoint]
 
-/-- When distinct basepoints lie in distinct components of `Σ - α`, the domains of the components
-of the basepoints, weighted by the multiplicities of a domain `E` at the basepoints, have the
-multiplicities of `E` at the basepoints. -/
-theorem sum_smul_alphaComponentDomain_basepoint_apply_basepoint
-    (hz : ∀ z z', H.SameAlphaComponent (H.basepoint z) (H.basepoint z') → z = z')
-    (E : Region → ℤ) (z' : Basepoint) :
-    (∑ z, E (H.basepoint z) • H.alphaComponentDomain (H.basepoint z)) (H.basepoint z') =
-      E (H.basepoint z') := by
+omit [Fintype Basepoint] in
+/-- When the basepoints picked out by `ι` lie in distinct components of `Σ - α`, the domains of the
+components of these basepoints, weighted by the multiplicities of a domain `E` at them, have the
+multiplicities of `E` at these basepoints. -/
+theorem sum_smul_alphaComponentDomain_basepoint_apply_basepoint {W : Type*} [Fintype W]
+    {ι : W → Basepoint}
+    (hι : ∀ i j, H.SameAlphaComponent (H.basepoint (ι i)) (H.basepoint (ι j)) → i = j)
+    (E : Region → ℤ) (j : W) :
+    (∑ i, E (H.basepoint (ι i)) • H.alphaComponentDomain (H.basepoint (ι i))) (H.basepoint (ι j)) =
+      E (H.basepoint (ι j)) := by
   simp only [Finset.sum_apply]
-  rw [sum_eq_single z' (fun z _ hzz' => by
+  rw [sum_eq_single j (fun i _ hij => by
       rw [Pi.smul_apply,
-        alphaComponentDomain_of_not_sameAlphaComponent fun h => hzz' (hz _ _ h).symm, smul_zero])
-    (fun h => absurd (mem_univ z') h), Pi.smul_apply, alphaComponentDomain_self, smul_eq_mul,
+        alphaComponentDomain_of_not_sameAlphaComponent fun h => hij (hι _ _ h).symm, smul_zero])
+    (fun h => absurd (mem_univ j) h), Pi.smul_apply, alphaComponentDomain_self, smul_eq_mul,
     mul_one]
 
 /-- **Domains from a generator to itself in a multipointed diagram.** When distinct basepoints lie

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Cochain
+public import TauCeti.Combinatorics.Tiling.Lozenge.HexGraph
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Fin
 
@@ -21,6 +22,11 @@ edges of `R` with the same sums round faces; the signed sum of these over the fa
 telescopes to a sum over the boundary edges of `Q`, all of which are edges of `R`, so it vanishes,
 while it is `±1`.
 
+Consequently the complement of a simply connected region is connected through shared edges when
+the region is finite: every component of the faces outside `R` is infinite, since a finite one
+would be a hole, and for finite `R` the faces far from `R` all lie in one component, the only
+infinite one (`TauCeti.hexGraph_existsUnique_infinite_supp_of_finite`).
+
 ## Main definitions
 
 * `TauCeti.rayCochain q`: the cochain dual to the ray of faces to the right of the face `q`.
@@ -34,6 +40,10 @@ while it is `±1`.
   cochain of `q` sums to zero round every face other than `q`, and its circulation round `q` is
   `1`.
 * `TauCeti.not_isSimplyConnectedRegion_of_hole`: a region with a hole is not simply connected.
+* `TauCeti.IsSimplyConnectedRegion.infinite_supp`: every component of the graph of faces outside a
+  simply connected region is infinite.
+* `TauCeti.IsSimplyConnectedRegion.connected_induce_compl`: for finite simply connected `R`, the
+  faces outside `R` are connected through shared edges.
 
 ## References
 
@@ -146,5 +156,33 @@ theorem not_isSimplyConnectedRegion_of_hole {Q : Finset TriFace} (hQ : Q.Nonempt
   rw [Finset.sum_eq_single_of_mem q₀ hq₀ fun f _ hf => by
     rw [faceSum_rayCochain_of_ne hf, mul_zero], faceSign_mul_faceSum_rayCochain_self] at hzero
   exact one_ne_zero hzero
+
+/-! ### The complement of a simply connected region -/
+
+/-- **Components outside a simply connected region are infinite.** Every connected component of
+the graph of faces outside a simply connected region `R`, adjacent when they share an edge, is
+infinite: a finite one would be a hole. -/
+theorem IsSimplyConnectedRegion.infinite_supp (hR : IsSimplyConnectedRegion R)
+    (c : hexGraph.ComponentCompl R) : c.supp.Infinite := by
+  intro hfin
+  refine not_isSimplyConnectedRegion_of_hole (Q := hfin.toFinset) (hfin.toFinset_nonempty.2
+    c.nonempty) (fun q hq => SimpleGraph.ComponentCompl.notMem_of_mem (hfin.mem_toFinset.1 hq))
+    (fun q hq g e hq' hg' => ?_) hR
+  by_cases hgR : g ∈ R
+  · exact Or.inr hgR
+  by_cases hgq : q = g
+  · exact Or.inl (hgq ▸ hq)
+  exact Or.inl (hfin.mem_toFinset.2 (SimpleGraph.ComponentCompl.mem_of_adj q g
+    (hfin.mem_toFinset.1 hq) hgR (hexGraph_adj.2 ⟨hgq, e, hq', hg'⟩)))
+
+/-- **The complement of a finite simply connected region is connected.** For finite simply
+connected `R`, the faces outside `R` are connected through shared edges. -/
+theorem IsSimplyConnectedRegion.connected_induce_compl (hR : IsSimplyConnectedRegion R)
+    (hfin : R.Finite) : (hexGraph.induce Rᶜ).Connected := by
+  obtain ⟨c, -, huniq⟩ := hexGraph_existsUnique_infinite_supp_of_finite hfin
+  have hall : ∀ c' : hexGraph.ComponentCompl R, c' = c := fun c' => huniq c' (hR.infinite_supp c')
+  obtain ⟨v, hv, -⟩ := c.nonempty
+  rw [SimpleGraph.connected_iff_exists_forall_reachable]
+  exact ⟨⟨v, hv⟩, fun w => SimpleGraph.ConnectedComponent.exact ((hall _).trans (hall _).symm)⟩
 
 end TauCeti
