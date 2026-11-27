@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
-public import TauCeti.Algebra.HopfAlgebra.Subalgebra
+public import TauCeti.Algebra.HopfAlgebra.Descent
 import Mathlib.RingTheory.Finiteness.Descent
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.FiniteType
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
@@ -19,6 +19,7 @@ import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Components
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Descent
 import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
+import TauCeti.LinearAlgebra.TensorProduct.Descent
 import TauCeti.LinearAlgebra.TensorProduct.Range
 import TauCeti.RingTheory.TensorProduct.Maps
 
@@ -33,13 +34,12 @@ finite quotients, that is, of finite-dimensional Hopf subalgebras other than `�
 * In characteristic zero, a connected affine group has no nontrivial finite quotient. A
   finite-dimensional Hopf algebra in characteristic zero is reduced (Cartier), and a finite,
   reduced, connected affine group is trivial.
-* Over a perfect field, in particular over a field of characteristic zero or an algebraically
-  closed field, an affine group without nontrivial finite quotients is connected. A nontrivial
-  idempotent lies in a finite-type Hopf subalgebra `L`. Over a perfect field the identity
-  component of `Spec L` is defined over the base field, by Galois descent from the algebraic
-  closure, and the functions on `Spec L` invariant under it form a finite-dimensional Hopf
-  subalgebra containing every idempotent: after base change they are the functions on the finite
-  component group.
+* Over every field, an affine group without nontrivial finite quotients is connected. Over a
+  perfect field the functions invariant under the identity component form a finite-dimensional
+  Hopf subalgebra containing every idempotent of a finite-type Hopf algebra. For an arbitrary
+  field, extend scalars to the algebraic closure and pull such a subalgebra back. Contractions
+  by scalar-extended linear functionals prove stability under comultiplication, and faithful
+  flatness descends finite dimensionality.
 
 Together they characterize connectedness over any field of characteristic zero, and geometric
 connectedness over such a field by base change to an algebraically closed extension.
@@ -58,11 +58,12 @@ the universe of the base field.
 
 * `Subalgebra.IsHopfSubalgebra.eq_bot_of_connectedSpace`: in characteristic zero, a
   finite-dimensional Hopf subalgebra of a Hopf algebra with connected spectrum is `⊥`.
-* `IsIdempotentElem.exists_isHopfSubalgebra_finiteDimensional_mem`: over a perfect field, every
+* `IsIdempotentElem.exists_isHopfSubalgebra_finiteDimensional_mem`: over every field, every
   idempotent lies in a finite-dimensional Hopf subalgebra.
-* `TauCeti.HopfAlgebra.connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot`: over a
-  perfect field, a Hopf algebra whose only finite-dimensional Hopf subalgebra is `⊥` has
-  connected spectrum.
+* `TauCeti.HopfAlgebra.connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot`: a Hopf
+  algebra whose only finite-dimensional Hopf subalgebra is `⊥` has connected spectrum.
+* `TauCeti.HopfAlgebra.exists_isHopfSubalgebra_finiteDimensional_ne_bot_of_not_connectedSpace`:
+  a disconnected spectrum gives a nontrivial finite-dimensional Hopf subalgebra.
 * `TauCeti.HopfAlgebra.connectedSpace_primeSpectrum_iff_forall_isHopfSubalgebra_eq_bot`: the
   resulting characterization over a field of characteristic zero.
 * `TauCeti.geometricallyConnectedCommHopfAlgProperty_iff_forall_isHopfSubalgebra_eq_bot`: in
@@ -120,7 +121,7 @@ of a commutative Hopf algebra `H` lies in a finite-dimensional Hopf subalgebra.
 For `H` of finite type, this is the algebra of functions invariant under the identity component.
 That component is defined over `k` by Galois descent from the algebraic closure, and after base
 change its invariant functions are the functions on the finite component group. -/
-theorem _root_.IsIdempotentElem.exists_isHopfSubalgebra_finiteDimensional_mem [PerfectField k]
+private theorem exists_isHopfSubalgebra_finiteDimensional_mem_of_perfectField [PerfectField k]
     {H : Type u} [CommRing H] [_root_.HopfAlgebra k H] {e : H} (he : IsIdempotentElem e) :
     ∃ A : Subalgebra k H, A.IsHopfSubalgebra ∧ FiniteDimensional k A ∧ e ∈ A := by
   -- Reduce to a finite-type Hopf algebra `L` embedded in `H` through `e`.
@@ -165,11 +166,25 @@ theorem _root_.IsIdempotentElem.exists_isHopfSubalgebra_finiteDimensional_mem [P
     ((i.hom : L →ₐ[k] H).subalgebraMap I.coinvariants).toLinearMap
     ((i.hom : L →ₐ[k] H).subalgebraMap_surjective _)
 
-/-- **An affine group without nontrivial finite quotients is connected.** Over a perfect field
-`k`, for instance a field of characteristic zero or an algebraically closed field, a commutative
-Hopf algebra whose only finite-dimensional Hopf subalgebra is `⊥` has connected prime spectrum.
+variable (k) in
+/-- **Idempotents factor through finite quotients over every field.** Every idempotent of a
+commutative Hopf algebra belongs to a finite-dimensional Hopf subalgebra. -/
+theorem _root_.IsIdempotentElem.exists_isHopfSubalgebra_finiteDimensional_mem
+    {H : Type u} [CommRing H] [_root_.HopfAlgebra k H] {e : H} (he : IsIdempotentElem e) :
+    ∃ A : Subalgebra k H, A.IsHopfSubalgebra ∧ FiniteDimensional k A ∧ e ∈ A := by
+  let Ω := AlgebraicClosure k
+  obtain ⟨D, hD, hfin, heD⟩ :=
+    exists_isHopfSubalgebra_finiteDimensional_mem_of_perfectField Ω
+      (he.map (Algebra.TensorProduct.includeRight : H →ₐ[k] Ω ⊗[k] H))
+  let := hfin
+  exact ⟨(D.restrictScalars k).comap Algebra.TensorProduct.includeRight,
+    hD.comap_includeRight, D.toSubmodule.finiteDimensional_comap_mk_one, heD⟩
+
+/-- **An affine group without nontrivial finite quotients is connected.** Over any field `k`, a
+commutative Hopf algebra whose only finite-dimensional Hopf subalgebra is `⊥` has connected prime
+spectrum.
 No finite-type hypothesis is needed. -/
-theorem connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot [PerfectField k]
+theorem connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot
     {H : Type u} [CommRing H] [_root_.HopfAlgebra k H]
     (h : ∀ A : Subalgebra k H, A.IsHopfSubalgebra → FiniteDimensional k A → A = ⊥) :
     ConnectedSpace (PrimeSpectrum H) := by
@@ -182,6 +197,15 @@ theorem connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot [PerfectF
   rcases IsIdempotentElem.iff_eq_zero_or_one.mp hc with rfl | rfl
   · exact .inl (map_zero _)
   · exact .inr (map_one _)
+
+/-- A disconnected affine group over any field admits a nontrivial finite quotient, expressed
+as a finite-dimensional Hopf subalgebra other than the scalar subalgebra. -/
+theorem exists_isHopfSubalgebra_finiteDimensional_ne_bot_of_not_connectedSpace
+    {H : Type u} [CommRing H] [_root_.HopfAlgebra k H]
+    (h : ¬ ConnectedSpace (PrimeSpectrum H)) :
+    ∃ A : Subalgebra k H, A.IsHopfSubalgebra ∧ FiniteDimensional k A ∧ A ≠ ⊥ := by
+  contrapose! h
+  exact connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot h
 
 /-- **Connectedness by finite quotients.** Over a field of characteristic zero, a commutative Hopf
 algebra has connected prime spectrum exactly when its only finite-dimensional Hopf subalgebra is
