@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import TauCeti.GroupTheory.TrivialIntersection
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 import TauCeti.GroupTheory.OrderOfElement.Basic
+import TauCeti.GroupTheory.Subgroup.ConjugatesOfSet
 
 /-!
 # Dade data and the Dade support
@@ -112,11 +113,6 @@ and `u ∈ H a`, the union over `a ∈ A` of the Dade supports `(a H_a)^G` at si
 def dadeSupport (A : Set G) (H : G → Subgroup G) : Set G :=
   Group.conjugatesOfSet (⋃ a ∈ A, a • (H a : Set G))
 
-/-- An element of the conjugates of a coset `a • K` is a conjugate of some `a * u`, `u ∈ K`. -/
-theorem mem_conjugatesOfSet_smul_iff {a x : G} {K : Subgroup G} :
-    x ∈ Group.conjugatesOfSet (a • (K : Set G)) ↔ ∃ u ∈ K, IsConj (a * u) x := by
-  simp [Group.mem_conjugatesOfSet_iff, Set.mem_smul_set]
-
 /-- Membership in the Dade support. -/
 theorem mem_dadeSupport_iff {A : Set G} {H : G → Subgroup G} {x : G} :
     x ∈ dadeSupport A H ↔ ∃ a ∈ A, ∃ u ∈ H a, IsConj (a * u) x := by
@@ -132,6 +128,12 @@ variable {L : Subgroup G} {A : Set G} {H : G → Subgroup G} {a b : G}
 theorem mem_inf_centralizer (hD : DadeDatum L A H) (ha : a ∈ A) :
     a ∈ L ⊓ centralizer {a} :=
   mem_inf.2 ⟨(hD.subset ha).1, mem_centralizer_singleton_iff.2 (Commute.refl a)⟩
+
+/-- An element of both `H a` and `C_L(a)` is `1`. -/
+theorem eq_one_of_mem_of_mem_inf (hD : DadeDatum L A H) (ha : a ∈ A) {x : G} (hxH : x ∈ H a)
+    (hxC : x ∈ L ⊓ centralizer {a}) : x = 1 := by
+  have hx := mem_inf.2 ⟨hxH, hxC⟩
+  rwa [hD.inf_eq_bot a ha, mem_bot] at hx
 
 /-- **A conjugate of `a * u` determines the conjugate of `a`.** For `a, b ∈ A`, `u ∈ H a` and
 `v ∈ H b`, conjugation by `g` takes `a * u` to `b * v` exactly when it takes `a` to `b` and `u` to
@@ -170,9 +172,7 @@ theorem le_of_coprime (hD : DadeDatum L A H) (hb : b ∈ A) {K : Subgroup G}
   rw [← SetLike.mem_coe, ← hD.mul_eq_centralizer b hb] at hkC
   obtain ⟨h, hh, c, hc, rfl⟩ := Set.mem_mul.1 hkC
   suffices hcH : c ∈ H b by
-    have hc1 : c = 1 := by
-      simpa [hD.inf_eq_bot b hb] using (mem_inf.2 ⟨hcH, hc⟩ : c ∈ H b ⊓ (L ⊓ centralizer {b}))
-    simpa [hc1] using hh
+    simpa [hD.eq_one_of_mem_of_mem_inf hb hcH hc] using hh
   have := hD.normal b hb
   let N := (H b).subgroupOf (centralizer {b})
   let c' : centralizer {b} := ⟨c, (mem_inf.1 hc).2⟩
@@ -206,9 +206,7 @@ theorem eq_of_mul_eq_centralizer (hD : DadeDatum L A H) (ha : a ∈ A) {K : Subg
   rw [← hmul] at hhC
   obtain ⟨k, hk, c, hc, rfl⟩ := Set.mem_mul.1 hhC
   have hcH : c ∈ H a := by simpa using (H a).mul_mem ((H a).inv_mem (hKH hk)) hh
-  have hc1 : c = 1 := by
-    simpa [hD.inf_eq_bot a ha] using (mem_inf.2 ⟨hcH, hc⟩ : c ∈ H a ⊓ (L ⊓ centralizer {a}))
-  simpa [hc1] using hk
+  simpa [hD.eq_one_of_mem_of_mem_inf ha hcH hc] using hk
 
 /-- The conjugate of `H a` by `l ∈ L` lies in the complement at `l * a * l⁻¹`. -/
 theorem conj_smul_le (hD : DadeDatum L A H) (ha : a ∈ A) {l : G} (hl : l ∈ L) :
@@ -236,7 +234,7 @@ theorem conjugatesOfSet_conj_smul (hD : DadeDatum L A H) (ha : a ∈ A) {l : G} 
     Group.conjugatesOfSet ((l * a * l⁻¹) • (H (l * a * l⁻¹) : Set G)) =
       Group.conjugatesOfSet (a • (H a : Set G)) := by
   ext x
-  simp only [mem_conjugatesOfSet_smul_iff, hD.conj_eq ha hl, mem_smul_pointwise_iff_exists,
+  simp only [Group.mem_conjugatesOfSet_smul_iff, hD.conj_eq ha hl, mem_smul_pointwise_iff_exists,
     MulAut.smul_def, MulAut.conj_apply]
   constructor
   · rintro ⟨_, ⟨u, hu, rfl⟩, hx⟩
@@ -255,10 +253,10 @@ theorem disjoint_conjugatesOfSet_iff (hD : DadeDatum L A H) (ha : a ∈ A) (hb :
   · rintro hdis ⟨l, hl, rfl⟩
     rw [hD.conjugatesOfSet_conj_smul ha hl, disjoint_self, Set.bot_eq_empty] at hdis
     exact (Set.eq_empty_iff_forall_notMem.1 hdis) a
-      (mem_conjugatesOfSet_smul_iff.2 ⟨1, one_mem _, by simpa using IsConj.refl a⟩)
+      (Group.mem_conjugatesOfSet_smul_iff.2 ⟨1, one_mem _, by simpa using IsConj.refl a⟩)
   · refine fun hnot => Set.disjoint_left.2 fun x hxa hxb => hnot ?_
-    obtain ⟨u, hu, hux⟩ := mem_conjugatesOfSet_smul_iff.1 hxa
-    obtain ⟨v, hv, hvx⟩ := mem_conjugatesOfSet_smul_iff.1 hxb
+    obtain ⟨u, hu, hux⟩ := Group.mem_conjugatesOfSet_smul_iff.1 hxa
+    obtain ⟨v, hv, hvx⟩ := Group.mem_conjugatesOfSet_smul_iff.1 hxb
     obtain ⟨g, hg⟩ := isConj_iff.1 (hux.trans hvx.symm)
     exact hD.fusion a ha b hb (isConj_iff.2 ⟨g, ((hD.conj_mul_eq_mul_iff ha hb hu hv g).1 hg).1⟩)
 
@@ -307,13 +305,11 @@ theorem one_notMem_dadeSupport (hD : DadeDatum L A H) : (1 : G) ∉ dadeSupport 
   rw [mem_dadeSupport_iff]
   rintro ⟨a, ha, u, hu, hau⟩
   have hau1 : a = u⁻¹ := eq_inv_of_mul_eq_one_left (isConj_one_left.1 hau)
-  have hmem : a ∈ H a ⊓ (L ⊓ centralizer {a}) :=
-    mem_inf.2 ⟨hau1 ▸ (H a).inv_mem hu, hD.mem_inf_centralizer ha⟩
-  rw [hD.inf_eq_bot a ha, mem_bot] at hmem
-  exact (hD.subset ha).2 hmem
+  exact (hD.subset ha).2
+    (hD.eq_one_of_mem_of_mem_inf ha (hau1 ▸ (H a).inv_mem hu) (hD.mem_inf_centralizer ha))
 
 /-- When the complement at `a` is trivial, the centralizer of `a` lies in `L`. -/
-theorem centralizer_le (hD : DadeDatum L A H) (ha : a ∈ A) (hH : H a = ⊥) :
+theorem centralizer_singleton_le (hD : DadeDatum L A H) (ha : a ∈ A) (hH : H a = ⊥) :
     centralizer {a} ≤ L := fun g hg => by
   rw [← SetLike.mem_coe, ← hD.mul_eq_centralizer a ha, hH, coe_bot, Set.singleton_one,
     one_mul] at hg
@@ -331,7 +327,7 @@ theorem isTISet (hD : DadeDatum L A H) (hH : ∀ a ∈ A, H a = ⊥) : IsTISet A
         _ = x := by rw [← hlx]; group
     have hc : l⁻¹ * g ∈ centralizer {x} :=
       mem_centralizer_singleton_iff.2 (mul_inv_eq_iff_eq_mul.1 hfix)
-    simpa using L.mul_mem hl (hD.centralizer_le hx (hH x hx) hc)
+    simpa using L.mul_mem hl (hD.centralizer_singleton_le hx (hH x hx) hc)
 
 /-- **A nonempty set carrying Dade data with trivial complements has normalizer `L`**
 (Peterfalvi (2.3)). Nonemptiness is needed: every element normalizes `∅`. -/
@@ -397,13 +393,11 @@ private noncomputable def supportedClassFunctionsEquiv :
       ({c : ConjClasses L // ∀ x ∈ c.carrier, (x : G) ∈ A} → k) := by
   classical
   exact
-  { toFun f c := ClassFunction.toConjClasses f.val c.val
-    map_add' f g := funext fun c => by
-      obtain ⟨x, hx⟩ := ConjClasses.mk_surjective c.val
-      simp [← hx]
-    map_smul' r f := funext fun c => by
-      obtain ⟨x, hx⟩ := ConjClasses.mk_surjective c.val
-      simp [← hx]
+  { toFun f c := ClassFunction.equivConjClasses f.val c.val
+    map_add' f g := funext fun c =>
+      congrFun (map_add ClassFunction.equivConjClasses f.val g.val) c.val
+    map_smul' r f := funext fun c =>
+      congrFun (map_smul ClassFunction.equivConjClasses r f.val) c.val
     invFun g := ⟨ClassFunction.ofConjClasses fun c =>
         if h : ∀ x ∈ c.carrier, (x : G) ∈ A then g ⟨c, h⟩ else 0, fun x hx => by
       rw [ClassFunction.ofConjClasses_apply]
@@ -412,18 +406,16 @@ private noncomputable def supportedClassFunctionsEquiv :
       · rfl⟩
     left_inv f := by
       ext x
-      simp only [ClassFunction.ofConjClasses_apply, ClassFunction.toConjClasses_mk]
+      simp only [ClassFunction.ofConjClasses_apply, ClassFunction.equivConjClasses_apply,
+        ClassFunction.toConjClasses_mk]
       split_ifs with h
       · rfl
       · obtain ⟨y, hy, hyA⟩ := not_forall₂.1 h
         rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mk_eq_mk_iff_isConj] at hy
         rw [← ClassFunction.eq_of_isConj f.val hy, f.property y hyA]
     right_inv g := funext fun ⟨c, hc⟩ => by
-      obtain ⟨x, rfl⟩ := ConjClasses.mk_surjective c
-      simp only [ClassFunction.toConjClasses_mk, ClassFunction.ofConjClasses_apply]
-      split_ifs with h
-      · rfl
-      · exact absurd hc h }
+      simp only [ClassFunction.equivConjClasses_apply, ClassFunction.toConjClasses_ofConjClasses]
+      exact dite_eq_left hc }
 
 /-- **The dimension of `CF(L, A)`** is the number of conjugacy classes of `L` contained in `A`,
 when `L` has finitely many conjugacy classes. -/

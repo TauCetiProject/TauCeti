@@ -34,6 +34,8 @@ triangular matrices, which has infinite index.
 
 * `Subgroup.conjugatesOfSet_eq_univ_iff`: the conjugates of a finite-index subgroup `H` cover
   the group if and only if `H = ⊤`.
+* `Group.mem_conjugatesOfSet_smul_iff`: the conjugates of a coset `a • K` are the conjugates of
+  the elements `a * u`, `u ∈ K`.
 
 ## References
 
@@ -95,3 +97,16 @@ theorem conjugatesOfSet_eq_univ_iff {H : Subgroup G} [H.FiniteIndex] :
   rwa [comap_map_eq, QuotientGroup.ker_mk', sup_eq_left.mpr H.normalCore_le, comap_top] at this
 
 end Subgroup
+
+namespace Group
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G]
+
+/-- An element of the conjugates of a coset `a • K` is a conjugate of some `a * u`, `u ∈ K`. -/
+theorem mem_conjugatesOfSet_smul_iff {a x : G} {K : Subgroup G} :
+    x ∈ conjugatesOfSet (a • (K : Set G)) ↔ ∃ u ∈ K, IsConj (a * u) x := by
+  simp [mem_conjugatesOfSet_iff, Set.mem_smul_set]
+
+end Group
