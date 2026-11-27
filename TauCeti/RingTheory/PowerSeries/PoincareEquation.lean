@@ -12,6 +12,7 @@ import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.Data.Nat.Pow
+import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Dvd
 import TauCeti.RingTheory.PowerSeries.Order
@@ -112,11 +113,9 @@ private theorem coeff_mem_range_of_rescale_eq [IsLocalRing O] {π : O} (hπ : π
       exact h
     rw [map_sub, map_pow, sub_mul, hπR h']
     ring
-  have hv : IsUnit (π ^ (n - 1) - coeff 1 G) := by
-    refine (isUnit_or_isUnit_of_isUnit_add (a := π ^ (n - 1) - coeff 1 G) (b := -π ^ (n - 1))
-      ((show -coeff 1 G = π ^ (n - 1) - coeff 1 G + -π ^ (n - 1) by ring) ▸ hG.neg)).resolve_right
-      fun hu ↦ ?_
-    exact (mem_maximalIdeal _).mp (neg_mem (Ideal.pow_mem_of_mem _ hπ _ (by omega))) hu
+  have hv : IsUnit (π ^ (n - 1) - coeff 1 G) :=
+    TauCeti.isUnit_sub_of_not_isUnit_of_isUnit
+      ((mem_maximalIdeal _).mp (Ideal.pow_mem_of_mem _ hπ _ (by omega))) hG
   refine ⟨↑hv.unit⁻¹ * coeff n (G.subst H), ?_⟩
   rw [map_mul, ← key, ← mul_assoc, ← map_mul, hv.val_inv_mul, map_one, one_mul]
 

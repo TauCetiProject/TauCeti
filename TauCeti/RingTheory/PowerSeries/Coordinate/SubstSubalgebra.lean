@@ -245,8 +245,8 @@ theorem exists_constantCoeff_eq_zero_subst_eq {f : R⟦X⟧} (hf : f ∈ φ.subs
   rw [constantCoeff_subst_of_constantCoeff_zero' φ.constantCoeff_toPowerSeries] at hf₀
   -- removing the constant term of `G` changes `G(φ)` by its image in `R`, which is zero
   refine ⟨G - C (constantCoeff G), by simp, ?_⟩
-  rw [subst_sub φ.hasSubst, C_eq_algebraMap, ← coe_substAlgHom φ.hasSubst, AlgHom.commutes,
-    MvPowerSeries.algebraMap_apply, hf₀, map_zero, sub_zero]
+  rw [subst_sub φ.hasSubst, C_eq_algebraMap, ← coe_substAlgHom φ.hasSubst, AlgHom.commutes]
+  simp [PowerSeries.algebraMap_apply, hf₀]
 
 /-- **Stability under substitution.** If a substitution `f ↦ f(a)`, for any `a` of nilpotent
 constant coefficient, maps `φ` to a power series in `φ` with coefficients in `O`, then it maps
