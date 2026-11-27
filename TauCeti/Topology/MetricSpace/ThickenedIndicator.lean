@@ -30,8 +30,8 @@ theorem lipschitzWith_one_mul_thickenedIndicator (hδ : 0 < δ) (F : Set X) :
   have hnorm : ‖δ‖₊ = δ.toNNReal := by
     apply NNReal.coe_injective
     simp [Real.norm_of_nonneg hδ.le, hδ.le]
-  simpa only [LipschitzWith, hnorm, one_mul, mul_inv_cancel₀ (Real.toNNReal_pos.mpr hδ).ne',
-    Function.comp_apply, smul_eq_mul] using h
+  refine h.weaken (le_of_eq ?_)
+  simp only [hnorm, one_mul, mul_inv_cancel₀ (Real.toNNReal_pos.mpr hδ).ne']
 
 /-- The norm of a thickened indicator multiplied by its radius is bounded by that radius. -/
 theorem norm_mul_thickenedIndicator_le (hδ : 0 < δ) (F : Set X) (x : X) :

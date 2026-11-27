@@ -188,8 +188,9 @@ variable [PolishSpace X] [BorelSpace X] {ι : Type*} {l : Filter ι} {μs : ι �
 bounded Lipschitz distance. -/
 theorem tendsto_boundedLipschitzDist_iff_tendsto :
     Tendsto (fun i ↦ boundedLipschitzDist (μs i : Measure X) μ) l (𝓝 0) ↔
-      Tendsto μs l (𝓝 μ) :=
-  (TauCeti.tendsto_probabilityMeasure_iff_iSup_abs_integral_sub_integral_boundedLipschitz
+      Tendsto μs l (𝓝 μ) := by
+  simp_rw [boundedLipschitzDist_def]
+  exact (TauCeti.tendsto_probabilityMeasure_iff_iSup_abs_integral_sub_integral_boundedLipschitz
     one_pos).symm
 
 end ProbabilityMeasure
