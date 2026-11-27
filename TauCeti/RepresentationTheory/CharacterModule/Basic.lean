@@ -33,10 +33,16 @@ variable {R G M N P : Type*} [CommRing R] [Group G]
 `(g • η)(m) = η(g⁻¹ • m)`. -/
 def characterDual (ρ : Representation R G M) : Representation R G (CharacterModule M) where
   toFun g := CharacterModule.dual (ρ g⁻¹)
-  map_one' := by ext η m; simp only [inv_one, map_one]; rfl
+  map_one' := by
+    ext η m
+    -- The character-module FunLike instance hides additive-map evaluation from simp.
+    change η (ρ (1 : G)⁻¹ m) = η m
+    simp
   map_mul' g h := by
-    rw [mul_inv_rev, map_mul, Module.End.mul_eq_comp, CharacterModule.dual_comp]
-    rfl
+    ext η m
+    -- State precomposition on elements to cross the character-module FunLike coercion.
+    change η (ρ (g * h)⁻¹ m) = η (ρ h⁻¹ (ρ g⁻¹ m))
+    simp [mul_apply_eq_comp]
 
 /-- Each operator on the character dual is precomposition with the inverse operator. -/
 theorem characterDual_apply (ρ : Representation R G M) (g : G) :
@@ -67,7 +73,9 @@ def characterDual (f : IntertwiningMap ρ σ) : IntertwiningMap σ.characterDual
   toLinearMap := CharacterModule.dual f.toLinearMap
   isIntertwining' g := by
     ext η m
-    exact congrArg η (DFunLike.congr_fun (f.isIntertwining' g⁻¹) m).symm
+    -- State precomposition on elements to cross the character-module FunLike coercion.
+    change η (σ g⁻¹ (f m)) = η (f (ρ g⁻¹ m))
+    exact congrArg η (f.isIntertwining ρ σ g⁻¹ m).symm
 
 /-- The character-dual coefficient map is precomposition. -/
 @[simp]

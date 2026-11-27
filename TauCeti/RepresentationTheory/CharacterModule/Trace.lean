@@ -21,6 +21,7 @@ The comparison is the existing `CharacterModule.IsMatlisGenerator.dualEquiv`, bu
 equivalence of representations. The underlying linear equivalence retains the existing
 naturality and unit-scaling API, so the choice of trace and coefficient maps can be compared
 without additional representation-specific formulas.
+Apply `Representation.Equiv.charTwist` to obtain the comparison with any common character twist.
 
 This file concerns the coefficient representations. Identifying the twisted additive characters
 with homomorphisms into roots of unity, and transporting arithmetic cup products, require the
@@ -40,35 +41,32 @@ variable {R G M : Type*} [CommRing R] [Finite R] [Group G]
   [AddCommGroup M] [Module R M]
   {ℓ : CharacterModule R}
 
-/-- A Matlis trace compares the linear and additive contragredient duals equivariantly,
-including any common character twist. -/
-def matlisDualEquiv (ρ : Representation R G M) (hℓ : ℓ.IsMatlisGenerator) (χ : G →* Rˣ) :
-    (charTwist χ ρ.dual).Equiv (charTwist χ ρ.characterDual) :=
-  .mk (hℓ.dualEquiv M) fun g ↦
-    (comp_charTwist_eq_charTwist_comp_iff χ _ g).mpr (by
-      rw [characterDual_apply, dual_apply]
-      exact hℓ.dualEquiv_comp_dualMap (ρ g⁻¹))
+/-- A Matlis trace compares the linear and additive contragredient duals equivariantly. -/
+def matlisDualEquiv (ρ : Representation R G M) (hℓ : ℓ.IsMatlisGenerator) :
+    ρ.dual.Equiv ρ.characterDual :=
+  .mk (hℓ.dualEquiv M) fun g ↦ by
+    rw [characterDual_apply, dual_apply]
+    exact hℓ.dualEquiv_comp_dualMap (ρ g⁻¹)
 
 /-- The equivariant comparison sends a linear functional to its trace character. -/
 @[simp]
 theorem matlisDualEquiv_apply (ρ : Representation R G M) (hℓ : ℓ.IsMatlisGenerator)
-    (χ : G →* Rˣ) (f : Module.Dual R M) (m : M) :
-    ρ.matlisDualEquiv hℓ χ f m = ℓ (f m) :=
+    (f : Module.Dual R M) (m : M) :
+    ρ.matlisDualEquiv hℓ f m = ℓ (f m) :=
   hℓ.dualEquiv_apply f m
 
 /-- The inverse equivariant comparison is the inverse trace comparison on modules. -/
 @[simp]
 theorem matlisDualEquiv_symm_apply (ρ : Representation R G M) (hℓ : ℓ.IsMatlisGenerator)
-    (χ : G →* Rˣ) (η : CharacterModule M) :
-    (ρ.matlisDualEquiv hℓ χ).symm η = (hℓ.dualEquiv M).symm η :=
+    (η : CharacterModule M) :
+    (ρ.matlisDualEquiv hℓ).symm η = (hℓ.dualEquiv M).symm η :=
   (rfl)
 
 /-- Forgetting equivariance recovers the module trace comparison, so its naturality and
 unit-scaling API apply directly. -/
 @[simp]
-theorem matlisDualEquiv_toLinearEquiv (ρ : Representation R G M) (hℓ : ℓ.IsMatlisGenerator)
-    (χ : G →* Rˣ) :
-    (ρ.matlisDualEquiv hℓ χ).toLinearEquiv = hℓ.dualEquiv M :=
+theorem matlisDualEquiv_toLinearEquiv (ρ : Representation R G M) (hℓ : ℓ.IsMatlisGenerator) :
+    (ρ.matlisDualEquiv hℓ).toLinearEquiv = hℓ.dualEquiv M :=
   (rfl)
 
 end Representation
