@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 public import Mathlib.RepresentationTheory.Invariants
+import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.Rep.Colimits
 
 /-!
@@ -57,19 +58,23 @@ noncomputable def sigmaInvariantsMap :
 theorem coe_sigmaInvariantsMap_lof (j : α) (v : (f j).ρ.invariants) :
     (sigmaInvariantsMap f (lof k α (fun j ↦ (f j).ρ.invariants) j v)).val =
       (Sigma.ι f j).hom v.val := by
-  simp [sigmaInvariantsMap]
-  rfl
+  rw [sigmaInvariantsMap, toModule_lof, invariantsFunctor_map_hom_apply_coe]
+
+@[simp]
+theorem coe_sigmaInvariantsMap_of (j : α) (v : (f j).ρ.invariants) :
+    (sigmaInvariantsMap f (DirectSum.of (fun j ↦ (f j).ρ.invariants) j v)).val =
+      (Sigma.ι f j).hom v.val := by
+  rw [← lof_eq_of k, coe_sigmaInvariantsMap_lof]
 
 /-- The coproduct projections recover the components: the `i`-th projection of the image of `d`
 is the `i`-th component of `d`. -/
+@[simp]
 theorem sigma_π_sigmaInvariantsMap (d : ⨁ j, (f j).ρ.invariants) (i : α) :
     (Sigma.π f i).hom (sigmaInvariantsMap f d).val = (d i).val := by
   induction d using DirectSum.induction_on with
   | zero => simp
   | of j v =>
-    have h := coe_sigmaInvariantsMap_lof f j v
-    rw [lof_eq_of] at h
-    rw [h, ← Rep.comp_apply, Sigma.ι_π]
+    rw [coe_sigmaInvariantsMap_of, ← Rep.comp_apply, Sigma.ι_π]
     by_cases hji : j = i
     · subst hji
       simp
@@ -81,37 +86,36 @@ theorem sigmaInvariantsMap_injective : Function.Injective (sigmaInvariantsMap f)
   refine (injective_iff_map_eq_zero _).2 fun d hd ↦ DFinsupp.ext fun i ↦ Subtype.ext ?_
   simpa [hd] using (sigma_π_sigmaInvariantsMap f d i).symm
 
+omit [DecidableEq α] in
+/-- On the summands indexed by `t`, the endomorphism `∑ j ∈ t, π_j ≫ ι_j` of a coproduct is the
+identity. -/
+private theorem sigma_ι_comp_sum_π_comp_ι {C : Type*} [Category* C] [Preadditive C]
+    {β : Type*} [DecidableEq β] (g : β → C) [HasCoproduct g] {t : Finset β} {i : β}
+    (hi : i ∈ t) : Sigma.ι g i ≫ ∑ j ∈ t, Sigma.π g j ≫ Sigma.ι g j = Sigma.ι g i := by
+  rw [Preadditive.comp_sum, Finset.sum_eq_single_of_mem i hi]
+  · simp
+  · intro j _ hj
+    rw [Sigma.ι_π_of_ne_assoc _ (Ne.symm hj), zero_comp]
+
 theorem sigmaInvariantsMap_surjective : Function.Surjective (sigmaInvariantsMap f) := by
   rintro ⟨x, hx⟩
   -- The components of an invariant vector are invariant, by equivariance of the projections.
   have hπ (j : α) : (Sigma.π f j).hom x ∈ (f j).ρ.invariants := fun g ↦ by
     rw [← Rep.hom_comm_apply, hx g]
   -- `x` lies in the span of finitely many summands.
-  have hmem : x ∈ ⨆ j : Discrete α, LinearMap.range (Rep.Hom.hom (B := ∐ f)
-      ((Cofan.mk (∐ f) (Sigma.ι f)).ι.app j)).toLinearMap := by
-    rw [TauCeti.Rep.iSup_range_eq_top_of_isColimit (coproductIsCoproduct f)]
-    trivial
-  obtain ⟨s, hs⟩ := Submodule.mem_iSup_iff_exists_finset.1 hmem
+  have htop : ⨆ j : Discrete α, LinearMap.range (Sigma.ι f j.as).hom.toLinearMap = ⊤ :=
+    TauCeti.Rep.iSup_range_eq_top_of_isColimit (coproductIsCoproduct f)
+  obtain ⟨s, hs⟩ := Submodule.mem_iSup_iff_exists_finset.1 <| htop.ge (Submodule.mem_top (x := x))
   set t := s.image Discrete.as
   -- On those summands, `∑ j ∈ t, π_j ≫ ι_j` is the identity.
-  have hle : (⨆ i ∈ s, LinearMap.range (Rep.Hom.hom (B := ∐ f)
-      ((Cofan.mk (∐ f) (Sigma.ι f)).ι.app i)).toLinearMap) ≤
-      LinearMap.ker (𝟙 (∐ f) - ∑ j ∈ t, Sigma.π f j ≫ Sigma.ι f j).hom.toLinearMap := by
-    refine iSup₂_le fun i hi ↦ ?_
+  have hx' : x ∈ LinearMap.ker (𝟙 (∐ f) - ∑ j ∈ t, Sigma.π f j ≫ Sigma.ι f j).hom.toLinearMap := by
+    refine IsConcreteLE.le_iff.1 (iSup₂_le fun i hi ↦ ?_) hs
     rintro _ ⟨y, rfl⟩
-    have h0 : Sigma.ι f i.as ≫ (𝟙 (∐ f) - ∑ j ∈ t, Sigma.π f j ≫ Sigma.ι f j) = 0 := by
-      rw [Preadditive.comp_sub, Preadditive.comp_sum, Category.comp_id,
-        Finset.sum_eq_single i.as]
-      · simp
-      · intro j _ hj
-        rw [Sigma.ι_π_of_ne_assoc _ (Ne.symm hj), zero_comp]
-      · intro h
-        exact absurd (Finset.mem_image_of_mem _ hi) h
-    rw [LinearMap.mem_ker]
-    change (Sigma.ι f i.as ≫ (𝟙 (∐ f) - ∑ j ∈ t, Sigma.π f j ≫ Sigma.ι f j)).hom y = 0
-    rw [h0]
-    rfl
-  have hx' := hle hs
+    rw [LinearMap.mem_ker, Representation.IntertwiningMap.toLinearMap_apply,
+      Representation.IntertwiningMap.toLinearMap_apply, ← Rep.comp_apply, Preadditive.comp_sub,
+      Category.comp_id, sigma_ι_comp_sum_π_comp_ι f (Finset.mem_image_of_mem Discrete.as hi),
+      sub_self]
+    simp
   rw [LinearMap.mem_ker] at hx'
   simp only [sub_hom, sum_hom, hom_comp, hom_id] at hx'
   refine ⟨∑ j ∈ t, lof k α (fun j ↦ (f j).ρ.invariants) j ⟨_, hπ j⟩, Subtype.ext ?_⟩
@@ -129,6 +133,14 @@ noncomputable def sigmaInvariantsEquiv : (⨁ j, (f j).ρ.invariants) ≃ₗ[k] 
 theorem sigmaInvariantsEquiv_apply (d : ⨁ j, (f j).ρ.invariants) :
     sigmaInvariantsEquiv f d = sigmaInvariantsMap f d :=
   LinearEquiv.ofBijective_apply _ _
+
+/-- The components of the preimage of an invariant vector `x` of `∐ f` are its images under the
+coproduct projections. -/
+@[simp]
+theorem coe_sigmaInvariantsEquiv_symm_apply (x : (∐ f).ρ.invariants) (i : α) :
+    ((sigmaInvariantsEquiv f).symm x i).val = (Sigma.π f i).hom x.val := by
+  conv_rhs => rw [← (sigmaInvariantsEquiv f).apply_symm_apply x]
+  rw [sigmaInvariantsEquiv_apply, sigma_π_sigmaInvariantsMap]
 
 /-- The `G`-invariants of a coproduct form a coproduct of the `G`-invariants of the summands. -/
 noncomputable def isColimitInvariantsCofan :

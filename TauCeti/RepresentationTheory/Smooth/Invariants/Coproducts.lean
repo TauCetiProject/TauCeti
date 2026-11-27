@@ -20,14 +20,11 @@ coproducts, that is, `(⨁ i, V i)^U = ⨁ i, (V i)^U`. No hypothesis on `U` is 
 The functor is the inclusion into `Rep A G`, which preserves colimits
 (`TauCeti.SmoothRep.preservesColimitsOfSize_ι`), followed by restriction to `U`, a left adjoint,
 and Mathlib's invariants functor, which preserves coproducts by
-`Rep.preservesColimitsOfShape_discrete_invariantsFunctor`. Together with
+`Rep.preservesColimitsOfShape_discrete_invariantsFunctor`. Since `invariantsFunctor A U` is an
+abbreviation for this composite, instance search finds the coproduct preservation from these
+instances, with no further declaration; the `example` below records it. Together with
 `TauCeti.SmoothRep.preservesFilteredColimits_invariantsFunctor` (for compact `U`) this is the
 statement that invariants commute with direct sums and filtered colimits.
-
-## Main results
-
-* `TauCeti.SmoothRep.preservesColimitsOfShape_discrete_invariantsFunctor`: `invariantsFunctor A U`
-  preserves coproducts indexed by any type in the universe of the representations.
 
 ## References
 
@@ -50,7 +47,7 @@ variable {A : Type u} [CommRing A] {G : Type v} [Group G] [TopologicalSpace G]
 
 /-- **Invariants commute with direct sums**: for any subgroup `U`, the functor of `U`-invariants
 on smooth representations preserves coproducts. -/
-instance preservesColimitsOfShape_discrete_invariantsFunctor (α : Type w) (U : Subgroup G) :
+example (α : Type w) (U : Subgroup G) :
     PreservesColimitsOfShape (Discrete α) (invariantsFunctor.{w} A U) :=
   inferInstance
 
