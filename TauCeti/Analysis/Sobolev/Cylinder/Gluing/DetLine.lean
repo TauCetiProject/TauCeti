@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Gluing
-public import TauCeti.Analysis.Sobolev.Cylinder.Glued.Index
+public import TauCeti.Analysis.Sobolev.Cylinder.Gluing.Index
 
 /-!
 # The determinant line of glued operators on the cylinder

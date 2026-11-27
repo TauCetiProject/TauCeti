@@ -165,8 +165,7 @@ theorem rightInverse_smul_add_smul {R E F : Type*} [CommSemiring R] [AddCommMono
     [AddCommMonoid F] [Module R F] [TopologicalSpace F] {f : E →L[R] F} {s s' : F →L[R] E}
     (hs : Function.RightInverse s f) (hs' : Function.RightInverse s' f) {a b : R}
     (hab : a + b = 1) : Function.RightInverse (a • s + b • s') f := fun y ↦ by
-  rw [add_apply, smul_apply, smul_apply, map_add, map_smul, map_smul, hs y, hs' y, ← add_smul,
-    hab, one_smul]
+  simp [hs y, hs' y, ← add_smul, hab]
 
 end ContinuousLinearMap
 

@@ -137,10 +137,9 @@ theorem detLineGluingEquiv_apply_eq_det_smul (h : Function.Surjective (D.coprod 
     induction y using TensorProduct.inductionOn with
     | add y z hy hz => rw [LinearEquiv.map_add, LinearEquiv.map_add, hy, hz, smul_add]
     | tmul a φ =>
-      conv_lhs => rw [hg]
-      rw [LinearEquiv.rTensor_tmul, LinearEquiv.rTensor_tmul, LinearEquiv.detLineCongr_trans,
-        LinearEquiv.trans_apply, LinearEquiv.detLineCongr_apply_eq_det_smul,
-        TensorProduct.smul_tmul']
+      conv_lhs => rw [hg, LinearEquiv.detLineCongr_trans]
+      simp only [LinearEquiv.rTensor_tmul, LinearEquiv.trans_apply,
+        LinearEquiv.detLineCongr_apply_eq_det_smul, TensorProduct.smul_tmul']
   simp only [detLineGluingEquiv, LinearEquiv.trans_apply, key, LinearEquiv.map_smul]
 
 variable [FiniteDimensional 𝕜 D.ker]
@@ -161,9 +160,7 @@ theorem detLineGluingEquiv_detLineStabilizationEquiv (h : Function.Surjective (D
         (LinearEquiv.rTensor _ g.detLineCongr
           (TauCeti.detLineTensorDualProdEquiv 𝕜 _ _ _ _ (x₁ ⊗ₜ x₂)))) =
       detLineStabilizationEquiv D₁ ι₁ h₁ x₁ ⊗ₜ detLineStabilizationEquiv D₂ ι₂ h₂ x₂ := by
-  simp only [detLineGluingEquiv, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
-  rw [← LinearEquiv.detLineCongr_symm, ← LinearEquiv.symm_rTensor, LinearEquiv.symm_apply_apply,
-    LinearEquiv.symm_apply_apply, TensorProduct.congr_tmul]
+  simp [detLineGluingEquiv, ← LinearEquiv.detLineCongr_symm, ← LinearEquiv.symm_rTensor]
 
 section Real
 

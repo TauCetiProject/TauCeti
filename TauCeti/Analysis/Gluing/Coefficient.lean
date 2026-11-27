@@ -15,8 +15,8 @@ neck of length `2 R` gives the coefficient `TauCeti.gluedCoeff A₁ A₂ R`, equ
 `s < 0` and to `A₂ (s - R)` for `s ≥ 0`. With translation by `a` meaning `f ↦ f (· + a)`, it is
 `A₁` translated by `R` on `(-∞, 0)` and `A₂` translated by `-R` on `[0, ∞)`. It is the coefficient
 of the glued operators in `TauCeti.Analysis.ODE.TrajectoryOperator.Gluing` and
-`TauCeti.Analysis.Sobolev.Cylinder.Gluing`, whose right inverses are spliced with the neck cutoffs
-`TauCeti.neckCutoff`.
+`TauCeti.Analysis.Sobolev.Cylinder.Gluing.Basic`, whose right inverses are spliced with the neck
+cutoffs `TauCeti.neckCutoff`.
 
 ## Main declarations
 
