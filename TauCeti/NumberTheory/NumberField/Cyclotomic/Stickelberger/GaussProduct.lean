@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.AddCharacter.Trace
 public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
-public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
+public import TauCeti.NumberTheory.Cyclotomic.Stickelberger.Ideal
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Compositum
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.RootsOfUnity
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.Stickelberger.Basic
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Basic
 public import TauCeti.RingTheory.Ideal.Pointwise
 
@@ -113,12 +113,12 @@ private theorem galEquivProd_symm_tau_gaussSum {m : ℕ} [NeZero m]
           (gaussSum
             ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
               ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-            (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one)) =
+            (AddChar.traceChar (𝓞 K ⧸ P) hζ)) =
         algebraMap K L (algebraMap (𝓞 K) K ω) *
           gaussSum
             ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
               ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-            (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one) := by
+            (AddChar.traceChar (𝓞 K ⧸ P) hζ) := by
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   let _ := Ideal.Quotient.field P
   let τ := (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm (1, b)
@@ -127,7 +127,7 @@ private theorem galEquivProd_symm_tau_gaussSum {m : ℕ} [NeZero m]
   let u_b : (𝓞 K ⧸ P)ˣ := Units.map (algebraMap (ZMod p) (𝓞 K ⧸ P)).toMonoidHom b
   refine ⟨Ideal.powerResidueSymbol P m (u_b : 𝓞 K ⧸ P),
     Ideal.powerResidueSymbol_pow_eq_one u_b.ne_zero, ?_⟩
-  have hact := map_gaussSum_traceAddChar hζ.pow_eq_one χ τ.toRingHom b
+  have hact := map_gaussSum_traceChar hζ χ τ.toRingHom b
     (fun t ↦ by simp [τ, χ, f])
     (IsCyclotomicExtension.galEquivProd_symm_zeta ℚ K L p hcop hζ (1, b))
   have hχinv : χ⁻¹ = (Ideal.powerResidueSymbol P m).ringHomComp f := by
@@ -152,21 +152,21 @@ private theorem galEquivProd_symm_tau_prod_gaussSum {m : ℕ} [NeZero m]
               (gaussSum
                 ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
                   ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-                (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one))) ^ x.coeff a) =
+                (AddChar.traceChar (𝓞 K ⧸ P) hζ))) ^ x.coeff a) =
       ∏ a : (ZMod m)ˣ,
         ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm
           ((galEquivZMod m K).symm a, 1)
             (gaussSum
               ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
                 ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-              (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one))) ^ x.coeff a := by
+              (AddChar.traceChar (𝓞 K ⧸ P) hζ))) ^ x.coeff a := by
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   let σ : (ZMod m)ˣ → Gal(L/ℚ) := fun a ↦
     (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm ((galEquivZMod m K).symm a, 1)
   let τ := (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).symm (1, b)
   let f : 𝓞 K →+* L := (algebraMap K L).comp (algebraMap (𝓞 K) K)
   let g : L := gaussSum ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp f)
-    (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one)
+    (AddChar.traceChar (𝓞 K ⧸ P) hζ)
   have hστ (a : (ZMod m)ˣ) : τ * σ a = σ a * τ :=
     (IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ).injective
       (by simp only [σ, τ, map_mul, MulEquiv.apply_symm_apply, Prod.mk_mul_mk, one_mul, mul_one])
@@ -214,14 +214,14 @@ theorem prod_galEquivProd_gaussSum_eq_of_isPrimitiveRoot (m : ℕ) [NeZero m]
           (gaussSum
             ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
               ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-            (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one))) ^ x.coeff a =
+            (AddChar.traceChar (𝓞 K ⧸ P) hζ))) ^ x.coeff a =
     ∏ a : (ZMod m)ˣ,
       ((IsCyclotomicExtension.galEquivProd ℚ K L p hcop hζ').symm
         ((galEquivZMod m K).symm a, 1)
           (gaussSum
             ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
               ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-            (traceAddChar p (𝓞 K ⧸ P) hζ'.pow_eq_one))) ^ x.coeff a := by
+            (AddChar.traceChar (𝓞 K ⧸ P) hζ'))) ^ x.coeff a := by
   have : NeZero p := ⟨hp.out.ne_zero⟩
   obtain ⟨k, hk_lt, hζk⟩ := hζ.eq_pow_of_pow_eq_one hζ'.pow_eq_one
   have hk_ne : k ≠ 0 := by
@@ -252,16 +252,16 @@ theorem prod_galEquivProd_gaussSum_eq_of_isPrimitiveRoot (m : ℕ) [NeZero m]
       τ (gaussSum
           ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
             ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-          (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one)) =
+          (AddChar.traceChar (𝓞 K ⧸ P) hζ)) =
         gaussSum
           ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
             ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-          (traceAddChar p (𝓞 K ⧸ P) hζ'.pow_eq_one) := by
+          (AddChar.traceChar (𝓞 K ⧸ P) hζ') := by
     simp only [gaussSum, map_sum, map_mul]
     refine Finset.sum_congr rfl fun t _ ↦ congrArg₂ (· * ·) ?_ ?_
     · simp only [MulChar.ringHomComp_apply, RingHom.comp_apply, τ,
         IsCyclotomicExtension.galEquivProd_symm_algebraMap, AlgEquiv.one_apply]
-    · rw [traceAddChar_apply, traceAddChar_apply, map_pow, hτζ]
+    · rw [AddChar.traceChar_apply, AddChar.traceChar_apply, map_pow, hτζ]
   refine (galEquivProd_symm_tau_prod_gaussSum P hcop hζ b hx).symm.trans ?_
   rw [map_prod]
   refine Finset.prod_congr rfl fun a _ ↦ ?_
@@ -300,14 +300,14 @@ private theorem exists_algEquiv_map_prod_galEquivProd_gaussSum {m : ℕ} [NeZero
               (gaussSum
                 ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
                   ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-                (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one))) ^ x.coeff a) =
+                (AddChar.traceChar (𝓞 K ⧸ P) hζ))) ^ x.coeff a) =
         ∏ a : (ZMod m)ˣ,
           ((IsCyclotomicExtension.galEquivProd ℚ K' L' p hcop' hζ').symm
             ((galEquivZMod m K').symm a, 1)
               (gaussSum
                 ((Ideal.powerResidueSymbol P' m)⁻¹.ringHomComp
                   ((algebraMap K' L').comp (algebraMap (𝓞 K') K')))
-                (traceAddChar p (𝓞 K' ⧸ P') hζ'.pow_eq_one))) ^ x.coeff a := by
+                (AddChar.traceChar (𝓞 K' ⧸ P') hζ'))) ^ x.coeff a := by
   have : NeZero p := ⟨hp.out.ne_zero⟩
   let _ : Algebra K L' := RingHom.toAlgebra ((algebraMap K' L').comp e.toRingHom)
   have hcyc : IsCyclotomicExtension {p} K L' := by
@@ -378,11 +378,11 @@ private theorem exists_algEquiv_map_prod_galEquivProd_gaussSum {m : ℕ} [NeZero
       eL (gaussSum
           ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
             ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-          (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one)) =
+          (AddChar.traceChar (𝓞 K ⧸ P) hζ)) =
         gaussSum
           ((Ideal.powerResidueSymbol P' m)⁻¹.ringHomComp
             ((algebraMap K' L').comp (algebraMap (𝓞 K') K')))
-          (traceAddChar p (𝓞 K' ⧸ P') hζ₀.pow_eq_one) := by
+          (AddChar.traceChar (𝓞 K' ⧸ P') hζ₀) := by
     rw [gaussSum, gaussSum, map_sum]
     refine Fintype.sum_equiv eQ.toEquiv _ _ fun t ↦ ?_
     rw [map_mul]
@@ -416,7 +416,7 @@ private theorem exists_algEquiv_map_prod_galEquivProd_gaussSum {m : ℕ} [NeZero
       simp only [MulChar.ringHomComp_apply, RingHom.comp_apply]
       rw [heO_L, hinv]
       rfl
-    · rw [traceAddChar_apply, traceAddChar_apply, map_pow,
+    · rw [AddChar.traceChar_apply, AddChar.traceChar_apply, map_pow,
         show eQ.toEquiv t = eQ_alg t from rfl, Algebra.trace_eq_of_algEquiv eQ_alg t]
   rw [map_prod]
   refine (Finset.prod_congr rfl fun a _ ↦ ?_).trans
@@ -447,7 +447,7 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
               (gaussSum
                 ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
                   ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-                (traceAddChar p (𝓞 K ⧸ P) hζp.pow_eq_one))) ^
+                (AddChar.traceChar (𝓞 K ⧸ P) hζp))) ^
             (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a := by
   classical
   let p : ℕ := Ideal.absNorm (Ideal.under ℤ P)
@@ -468,7 +468,7 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   let gx : L := ∏ a : (ZMod m)ˣ,
     (σ a (gaussSum ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
         ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-      (traceAddChar p (𝓞 K ⧸ P) hζp.pow_eq_one))) ^
+      (AddChar.traceChar (𝓞 K ⧸ P) hζp))) ^
       (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a
   have hcard : (Fintype.card (𝓞 K ⧸ P) : L) ≠ 0 := by
     rw [← map_natCast (algebraMap K L)]
@@ -476,7 +476,7 @@ private theorem exists_stickelbergerGaussProduct (m : ℕ) [NeZero m]
       (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
   have hgx_ne : gx ≠ 0 := Finset.prod_ne_zero_iff.mpr fun a _ ↦ zpow_ne_zero _ <|
     (map_ne_zero_iff (σ a) (σ a).injective).mpr
-      (gaussSum_ne_zero hcard _ (isPrimitive_traceAddChar (𝓞 K ⧸ P) hζp))
+      (gaussSum_ne_zero hcard _ (AddChar.isPrimitive_traceChar hζp))
   have hfixed (ρ : Gal(L/K)) : ρ gx = gx := by
     rw [← AlgEquiv.restrictScalars_apply ℚ ρ gx,
       IsCyclotomicExtension.restrictScalars_eq_galEquivProd_symm_one ℚ K L p hcop hζp ρ]
@@ -527,7 +527,7 @@ noncomputable def stickelbergerGaussProduct (m : ℕ) [NeZero m]
             (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
         exact zpow_add₀ ((map_ne_zero_iff _ (AlgEquiv.injective _)).mpr
           (gaussSum_ne_zero hcard _
-            (isPrimitive_traceAddChar (𝓞 K ⧸ P) (IsCyclotomicExtension.zeta_spec p K L)))) _ _ }
+            (AddChar.isPrimitive_traceChar (IsCyclotomicExtension.zeta_spec p K L)))) _ _ }
 
 /-- **Image of `stickelbergerGaussProduct` in any compositum.** For any compositum `L = K(ζ_p)`
 over `K`, any prime `p` below `P`, and any primitive `p`-th root of unity `ζ : L`,
@@ -550,7 +550,7 @@ theorem algebraMap_stickelbergerGaussProduct (m : ℕ) [NeZero m]
             (gaussSum
               ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp
                 ((algebraMap K L).comp (algebraMap (𝓞 K) K)))
-              (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one))) ^
+              (AddChar.traceChar (𝓞 K ⧸ P) hζ))) ^
           (x : MonoidAlgebra ℤ (ZMod m)ˣ).coeff a := by
   classical
   have hp_eq : Ideal.absNorm (Ideal.under ℤ P) = p := by
@@ -630,18 +630,18 @@ theorem inv_powerResidueSymbol_algebraMap_eq_of_zpowers {m : ℕ} [NeZero m]
 
 /-- **Split-prime comparison for the native Gauss sum.** If `(Ideal.powerResidueSymbol P m)⁻¹`
 agrees with `χ : MulChar (ZMod p) (𝓞 K)` on `algebraMap (ZMod p) (𝓞 K ⧸ P)` and
-`Ideal.absNorm P = p`, then the native Gauss sum over `𝓞 K ⧸ P` against `traceAddChar` equals the
-Gauss sum of `χ` over `ZMod p` against `AddChar.zmodChar`. -/
+`Ideal.absNorm P = p`, then the native Gauss sum over `𝓞 K ⧸ P` against `AddChar.traceChar`
+equals the Gauss sum of `χ` over `ZMod p` against `AddChar.zmodChar`. -/
 theorem gaussSum_inv_powerResidueSymbol_eq_of_eq {m : ℕ} [NeZero m]
     {K : Type*} [Field K] [NumberField K] [HasEnoughRootsOfUnity (𝓞 K) m]
     (P : Ideal (𝓞 K)) [P.IsMaximal] {p : ℕ} [hp : Fact p.Prime]
     [Fintype (𝓞 K ⧸ P)] [Algebra (ZMod p) (𝓞 K ⧸ P)]
     (hNP : Ideal.absNorm P = p) {χ : MulChar (ZMod p) (𝓞 K)}
-    {L : Type*} [CommRing L] (f : 𝓞 K →+* L) {ζ : L} (hζ : ζ ^ p = 1)
+    {L : Type*} [CommRing L] (f : 𝓞 K →+* L) {ζ : L} (hζ : IsPrimitiveRoot ζ p)
     (hχ : ∀ t : ZMod p,
       (Ideal.powerResidueSymbol P m)⁻¹ (algebraMap (ZMod p) (𝓞 K ⧸ P) t) = χ t) :
-    gaussSum ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp f) (traceAddChar p (𝓞 K ⧸ P) hζ) =
-      gaussSum (χ.ringHomComp f) (AddChar.zmodChar p hζ) := by
+    gaussSum ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp f) (AddChar.traceChar (𝓞 K ⧸ P) hζ) =
+      gaussSum (χ.ringHomComp f) (AddChar.zmodChar p hζ.pow_eq_one) := by
   let _ := Ideal.Quotient.field P
   have hcard : Fintype.card (𝓞 K ⧸ P) = p := by
     rw [← Nat.card_eq_fintype_card, ← Ideal.absNorm_eq_natCard, hNP]
@@ -654,7 +654,7 @@ theorem gaussSum_inv_powerResidueSymbol_eq_of_eq {m : ℕ} [NeZero m]
   rw [gaussSum, gaussSum]
   refine (Fintype.sum_equiv eQ.toEquiv _ _ fun t ↦ ?_).symm
   simp only [MulChar.ringHomComp_apply, AlgEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
-    heQ, hχ t, traceAddChar_apply, AddChar.zmodChar_apply]
+    heQ, hχ t, AddChar.traceChar_apply, AddChar.zmodChar_apply]
   rw [← heQ, Algebra.trace_eq_of_algEquiv eQ t, Algebra.trace_self, LinearMap.id_apply]
 
 /-- **Split-prime compositum formula for `stickelbergerGaussProduct`.** Under the hypotheses of
@@ -686,7 +686,7 @@ theorem algebraMap_stickelbergerGaussProduct_of_zpowers (m : ℕ) [NeZero m]
   let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
   rw [algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ x]
   refine Finset.prod_congr rfl fun a _ ↦ ?_
-  rw [gaussSum_inv_powerResidueSymbol_eq_of_eq P hNP _ hζ.pow_eq_one
+  rw [gaussSum_inv_powerResidueSymbol_eq_of_eq P hNP _ hζ
     (inv_powerResidueSymbol_algebraMap_eq_of_zpowers P hP hNP hg hχm hχP)]
 
 /-- **Compatibility with field embeddings.** Any ring homomorphism `e : K →+* K'` between `m`-th
@@ -819,8 +819,8 @@ theorem pow_stickelbergerGaussProduct (m : ℕ) [NeZero m]
     (algebraMap K L).injective.comp (FaithfulSMul.algebraMap_injective _ _)
   have hg_pow :
       (gaussSum ((Ideal.powerResidueSymbol P m)⁻¹.ringHomComp f)
-        (traceAddChar p (𝓞 K ⧸ P) hζ.pow_eq_one)) ^ m = f (Ideal.stickelbergerPhi P m) :=
-    (Ideal.stickelbergerPhi_prime P hP hm hf (isPrimitive_traceAddChar (𝓞 K ⧸ P) hζ)).symm
+        (AddChar.traceChar (𝓞 K ⧸ P) hζ)) ^ m = f (Ideal.stickelbergerPhi P m) :=
+    (Ideal.stickelbergerPhi_prime P hP hm hf (AddChar.isPrimitive_traceChar hζ)).symm
   apply (algebraMap K L).injective
   rw [map_pow, algebraMap_stickelbergerGaussProduct m K hm P hP hcop hζ x, map_prod,
     ← Finset.prod_pow]

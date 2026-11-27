@@ -51,10 +51,6 @@ that its order, as a monoid hom out of `Multiplicative (ZMod n)`, is the order o
   finite group sum to zero as soon as `φ b - 1` is a non-zero-divisor for one `b`. This drops the
   domain hypothesis of Mathlib's `AddChar.sum_eq_zero_of_ne_one`, which is the case where every
   nonzero `φ b - 1` qualifies.
-* `TauCeti.traceAddChar`, `TauCeti.traceAddChar_apply`, `TauCeti.isPrimitive_traceAddChar`: the
-  canonical additive character `t ↦ ζ ^ Tr(t)` on an algebra `F / ZMod p`, its evaluation lemma,
-  and its primitivity when `p` is prime, `F` is a finite field, and `ζ` is a primitive `p`-th root
-  of unity.
 -/
 
 public section
@@ -140,33 +136,3 @@ theorem sum_eq_zero_of_sub_one_mem_nonZeroDivisors {A S : Type*} [AddGroup A] [F
   rw [← mul_left_mem_nonZeroDivisors_eq_zero_iff hb, sub_mul, one_mul, h, sub_self]
 
 end AddChar
-
-namespace TauCeti
-
-/-- The canonical additive character `t ↦ ζ ^ Tr(t)` on an algebra `F / ZMod p` attached to a
-`p`-th root of unity `ζ`. -/
-noncomputable def traceAddChar (p : ℕ) [NeZero p] (F : Type*) {L : Type*} [CommRing F]
-    [Algebra (ZMod p) F] [CommMonoid L] {ζ : L} (hζ : ζ ^ p = 1) :
-    AddChar F L :=
-  (AddChar.zmodChar p hζ).compAddMonoidHom (Algebra.trace (ZMod p) F).toAddMonoidHom
-
-/-- Evaluation of `TauCeti.traceAddChar`. -/
-@[simp]
-theorem traceAddChar_apply (p : ℕ) [NeZero p] (F : Type*) {L : Type*} [CommRing F]
-    [Algebra (ZMod p) F] [CommMonoid L] {ζ : L} (hζ : ζ ^ p = 1) (t : F) :
-    traceAddChar p F hζ t = ζ ^ (Algebra.trace (ZMod p) F t).val := by
-  simp [traceAddChar, AddChar.zmodChar_apply]
-
-/-- For a prime `p` and a primitive `p`-th root of unity `ζ`, the trace character `t ↦ ζ ^ Tr(t)`
-on a finite field of characteristic `p` is primitive. -/
-theorem isPrimitive_traceAddChar {p : ℕ} [Fact p.Prime] (F : Type*) {L : Type*} [Field F]
-    [Finite F] [Algebra (ZMod p) F] [CommMonoidWithZero L] {ζ : L}
-    (hζ : IsPrimitiveRoot ζ p) :
-    (traceAddChar p F hζ.pow_eq_one).IsPrimitive := by
-  refine AddChar.IsPrimitive.of_ne_one fun h ↦ ?_
-  obtain ⟨t, ht⟩ := Algebra.trace_surjective (ZMod p) F 1
-  have hval := traceAddChar_apply p F hζ.pow_eq_one t
-  rw [h, one_apply, ht, ZMod.val_one, pow_one] at hval
-  exact hζ.ne_one (Fact.out : p.Prime).one_lt hval.symm
-
-end TauCeti

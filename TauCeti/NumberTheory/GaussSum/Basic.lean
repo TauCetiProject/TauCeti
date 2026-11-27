@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.SModEq.Basic
+public import Mathlib.NumberTheory.AddCharacter.Trace
 public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.RingTheory.Trace.Defs
-public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 import Mathlib.Algebra.CharP.Quotient
 import TauCeti.Algebra.Group.AddChar.Basic
 
@@ -67,8 +67,8 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
   characteristic `p`, `q = p ^ n` and `χ ^ q = χ`.
 * `TauCeti.apply_pow_char_of_trace`: `ψ (x ^ p) = ψ x` when `ψ` factors through the trace to
   `𝔽_p`.
-* `TauCeti.map_gaussSum_traceAddChar`: an endomorphism fixing `χ` and sending `ζ ↦ ζ ^ b` scales
-  `g(χ, traceAddChar p F hζ)` by `χ⁻¹ b`.
+* `TauCeti.map_gaussSum_traceChar`: an endomorphism fixing `χ` and sending `ζ ↦ ζ ^ b` scales
+  `g(χ, AddChar.traceChar F hζ)` by `χ⁻¹ b`.
 * `MulChar.gaussSum_ringHomComp`: `g(f ∘ χ, f ∘ ψ) = f (g(χ, ψ))` for a ring homomorphism `f` of
   the coefficients.
 * `MulChar.gaussSum_pow_eq_sum`: `g(χ, ψ) ^ k = ∑_{x : Fin k → R} χ (∏ xᵢ) ψ (∑ xᵢ)`.
@@ -241,26 +241,23 @@ theorem apply_pow_char_of_trace {p : ℕ} [Fact p.Prime] [Algebra (ZMod p) F]
 
 omit [Field F] [Fintype F] in
 /-- Any ring endomorphism `τ` of `L` fixing the values of `χ` and sending `ζ ↦ ζ ^ b` scales the
-Gauss sum `g(χ, traceAddChar p F hζ)` by `χ⁻¹ b`. -/
-theorem map_gaussSum_traceAddChar {p : ℕ} [NeZero p] {F L : Type*} [CommRing F] [Fintype F]
-    [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : ζ ^ p = 1) (χ : MulChar F L) (τ : L →+* L)
-    (b : (ZMod p)ˣ) (hτχ : ∀ t, τ (χ t) = χ t) (hτζ : τ ζ = ζ ^ (b : ZMod p).val) :
-    τ (gaussSum χ (traceAddChar p F hζ)) =
-      χ⁻¹ (algebraMap (ZMod p) F b) * gaussSum χ (traceAddChar p F hζ) := by
+Gauss sum `g(χ, AddChar.traceChar F hζ)` by `χ⁻¹ b`. -/
+theorem map_gaussSum_traceChar {p : ℕ} [NeZero p] {F L : Type*} [CommRing F] [Fintype F]
+    [Algebra (ZMod p) F] [CommRing L] {ζ : L} (hζ : IsPrimitiveRoot ζ p) (χ : MulChar F L)
+    (τ : L →+* L) (b : (ZMod p)ˣ) (hτχ : ∀ t, τ (χ t) = χ t)
+    (hτζ : τ ζ = ζ ^ (b : ZMod p).val) :
+    τ (gaussSum χ (AddChar.traceChar F hζ)) =
+      χ⁻¹ (algebraMap (ZMod p) F b) * gaussSum χ (AddChar.traceChar F hζ) := by
   let u_b : Fˣ := Units.map (algebraMap (ZMod p) F).toMonoidHom b
-  have hτψ (t : F) : τ (traceAddChar p F hζ t) = ((traceAddChar p F hζ).mulShift (u_b : F)) t := by
-    rw [traceAddChar_apply, map_pow, hτζ, ← pow_mul, AddChar.mulShift_apply, traceAddChar_apply]
-    have htr : Algebra.trace (ZMod p) F ((u_b : F) * t) =
-        (b : ZMod p) * Algebra.trace (ZMod p) F t := by
-      have hsmul : (u_b : F) * t = (b : ZMod p) • t := by
-        simp [u_b, Algebra.smul_def]
-      rw [hsmul, LinearMap.map_smul, smul_eq_mul]
-    rw [htr, ZMod.val_mul]
-    exact (pow_eq_pow_of_modEq (Nat.mod_modEq _ p) hζ).symm
-  have hτgs : τ (gaussSum χ (traceAddChar p F hζ)) =
-      gaussSum χ ((traceAddChar p F hζ).mulShift (u_b : F)) := by
+  have hub : ((b : ZMod p).val : F) = (u_b : F) := by
+    simp [u_b, ← map_natCast (algebraMap (ZMod p) F)]
+  have hτψ (t : F) : τ (AddChar.traceChar F hζ t) =
+      ((AddChar.traceChar F hζ).mulShift (u_b : F)) t := by
+    rw [AddChar.map_traceChar_apply_eq_mulShift hζ hτζ, hub]
+  have hτgs : τ (gaussSum χ (AddChar.traceChar F hζ)) =
+      gaussSum χ ((AddChar.traceChar F hζ).mulShift (u_b : F)) := by
     simp only [gaussSum, map_sum, map_mul, hτχ, hτψ]
-  rw [hτgs, gaussSum_mulShift_eq χ (traceAddChar p F hζ) u_b]
+  rw [hτgs, gaussSum_mulShift_eq χ (AddChar.traceChar F hζ) u_b]
   simp only [u_b, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 end TauCeti

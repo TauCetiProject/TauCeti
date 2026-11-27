@@ -184,11 +184,11 @@ theorem char_eq_invPowerResidueMulChar (d : SplitPrimeGaussData m K p)
 `d.char`. -/
 theorem gaussSum_inv_powerResidueSymbol_eq (d : SplitPrimeGaussData m K p)
     [Fintype (𝓞 K ⧸ d.P)] [Algebra (ZMod p) (𝓞 K ⧸ d.P)]
-    {L : Type*} [CommRing L] (f : 𝓞 K →+* L) {ζ : L} (hζ : ζ ^ p = 1) :
+    {L : Type*} [CommRing L] (f : 𝓞 K →+* L) {ζ : L} (hζ : IsPrimitiveRoot ζ p) :
     letI := d.isMaximal
     gaussSum ((Ideal.powerResidueSymbol d.P m)⁻¹.ringHomComp f)
-        (traceAddChar p (𝓞 K ⧸ d.P) hζ) =
-      gaussSum (d.char.ringHomComp f) (AddChar.zmodChar p hζ) :=
+        (AddChar.traceChar (𝓞 K ⧸ d.P) hζ) =
+      gaussSum (d.char.ringHomComp f) (AddChar.zmodChar p hζ.pow_eq_one) :=
   have := d.isMaximal
   gaussSum_inv_powerResidueSymbol_eq_of_eq d.P d.absNorm_eq f hζ
     d.inv_powerResidueSymbol_algebraMap_eq
