@@ -29,10 +29,10 @@ operator with smooth coefficients in `r`:
 (`TauCeti.FiniteBundleAtlas.coord_formalAdjoint_eq`), where `λᵢ` is the conformal factor of the
 metric in chart `i` (`TauCeti.FiniteBundleAtlas.chartConformalFactor`, the squared length of the
 tangent vector read as `1`) and `Kᵢ` is the zeroth-order term
-(`TauCeti.FiniteBundleAtlas.chartAdjointZeroOrder`), the reading of `D*` on the chart frame of
+(`TauCeti.FiniteBundleAtlas.chartZeroOneZeroOrder`), the reading of `D*` on the chart frame of
 `(0,1)`-forms (`TauCeti.FiniteBundleAtlas.zeroOneFrame`). Both coefficients are smooth where the
 trivialization of one-forms is defined (`TauCeti.FiniteBundleAtlas.contDiffOn_chartConformalFactor`,
-`TauCeti.FiniteBundleAtlas.contDiffOn_chartAdjointZeroOrder`), a neighbourhood of the closure of
+`TauCeti.FiniteBundleAtlas.contDiffOn_chartZeroOneZeroOrder`), a neighbourhood of the closure of
 the chart image, and `λᵢ` is positive there. This is the chart form McDuff–Salamon use to put `D*`
 in the form of a Cauchy–Riemann operator of `∂`-type.
 
@@ -46,8 +46,8 @@ in the direction read as `1`, its reading is `λᵢ⁻¹ (∂ₛ rₖ - ∂ₜ r
 ## Main definitions
 
 * `TauCeti.FiniteBundleAtlas.zeroOneFrame`: the chart frame of `(0,1)`-forms.
-* `TauCeti.FiniteBundleAtlas.chartAdjointZeroOrder`: the zeroth-order term of an operator on
-  one-forms in chart `i`.
+* `TauCeti.FiniteBundleAtlas.chartZeroOneZeroOrder`: the zeroth-order term in chart `i` of an
+  operator from one-forms to sections, read on the chart frame of `(0,1)`-forms.
 * `TauCeti.FiniteBundleAtlas.chartConformalFactor`: the conformal factor of the metric in chart `i`.
 
 ## Main results
@@ -60,10 +60,12 @@ in the direction read as `1`, its reading is `λᵢ⁻¹ (∂ₛ rₖ - ∂ₜ r
   in a chart.
 * `TauCeti.FiniteBundleAtlas.coord_tangentHom_eq_antilinearOfOneL`: a `(0,1)`-form reads as the
   antilinear map with its value at `1`.
-* `TauCeti.FiniteBundleAtlas.contDiffOn_chartAdjointZeroOrder`,
+* `TauCeti.FiniteBundleAtlas.contDiffOn_chartZeroOneZeroOrder`,
   `TauCeti.FiniteBundleAtlas.contDiffOn_chartConformalFactor`,
   `TauCeti.FiniteBundleAtlas.chartConformalFactor_pos`: the coefficients are smooth, and the
   conformal factor is positive.
+* `TauCeti.FiniteBundleAtlas.inner_eq_chartConformalFactor_mul`: for an orthogonal almost complex
+  structure the metric reads as `λᵢ |dz|²`.
 
 ## References
 
@@ -96,46 +98,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(
 local instance instVectorBundleRealZeroOneAdjoint : VectorBundle ℝ F V :=
   VectorBundle.restrictScalars ℝ ℂ F V
 
-/-- The tangent trivialization at the centre of a chart of a complex manifold intertwines the almost
-complex structure with multiplication by `i` on the chart source. -/
-private theorem tangent_continuousLinearMapAt_ofComplexManifold {c x : M}
-    (hx : x ∈ (chartAt ℂ c).source) (w : TangentSpace 𝓘(ℝ, ℂ) x) :
-    (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) c).continuousLinearMapAt ℝ x
-        (ofComplexManifold ℂ M x w) =
-      Complex.I • (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) c).continuousLinearMapAt
-        ℝ x w := by
-  set T := (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) c)
-  have hb : x ∈ T.baseSet := by rwa [TangentBundle.trivializationAt_baseSet]
-  have h := DFunLike.congr_fun (inTangentCoordinates_ofComplexManifold (M := M) hx)
-    (T.continuousLinearMapAt ℝ x w)
-  rw [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id, id,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    T.symmL_continuousLinearMapAt hb] at h
-  simpa using h
-
-/-- **The chain rule through a chart.** The derivative at `x` of a function read in the chart at `c`
-is the derivative of its reading at the chart point, applied to the tangent vector read in the
-tangent trivialization at `c`. -/
-private theorem mvfderiv_comp_chartAt_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {g : ℂ → G} {c x : M} (hx : x ∈ (chartAt ℂ c).source)
-    (hg : DifferentiableAt ℝ g (chartAt ℂ c x)) (w : TangentSpace 𝓘(ℝ, ℂ) x) :
-    mvfderiv 𝓘(ℝ, ℂ) (fun x' ↦ g (chartAt ℂ c x')) x w =
-      fderiv ℝ g (chartAt ℂ c x)
-        ((trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) c).continuousLinearMapAt ℝ x
-          w) := by
-  have : IsManifold 𝓘(ℝ, ℂ) ∞ M := IsManifold.restrictScalars ℝ ‹_›
-  have hfun : (fun x' ↦ g (chartAt ℂ c x')) = g ∘ extChartAt 𝓘(ℝ, ℂ) c := by
-    funext x'
-    simp
-  have hch : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) c) x :=
-    mdifferentiableAt_extChartAt hx
-  have hg' : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, G) g (extChartAt 𝓘(ℝ, ℂ) c x) := by
-    simpa using hg.mdifferentiableAt
-  rw [hfun, mvfderiv_comp_apply x hg' hch, mvfderiv_eq_fderiv,
-    TangentBundle.continuousLinearMapAt_trivializationAt hx]
-  -- `NormedSpace.fromTangentSpace` identifies the tangent space of `ℂ` with `ℂ`, by definition.
-  rfl
-
 variable [RiemannianBundle V] [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
   (A : FiniteBundleAtlas ℂ M F V) (i : Fin A.n)
 
@@ -145,21 +107,33 @@ basis `Module.finBasis ℝ F` at `1`, and which vanishes off the base set of tha
 def zeroOneFrame (k : Fin (finrank ℝ F)) : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x :=
   fun x ↦ (A.tangentHom.triv i).symmL ℝ x (antilinearOfOneL F (finBasis ℝ F k))
 
+omit [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)] in
+theorem zeroOneFrame_def (k : Fin (finrank ℝ F)) (x : M) :
+    A.zeroOneFrame i k x =
+      (A.tangentHom.triv i).symmL ℝ x (antilinearOfOneL F (finBasis ℝ F k)) := by
+  rw [zeroOneFrame]
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)] in
+/-- The chart frame forms vanish off the base set of the trivialization of one-forms. -/
+theorem zeroOneFrame_of_notMem (k : Fin (finrank ℝ F)) {x : M}
+    (hx : x ∉ (A.tangentHom.triv i).baseSet) : A.zeroOneFrame i k x = 0 := by
+  rw [zeroOneFrame_def, Trivialization.symmL_apply_of_notMem _ hx]
+
 /-- **The zeroth-order term of an operator on one-forms in chart `i`.** For an operator `P` from
 `V`-valued one-forms to sections of `V`, the map sending `v = ∑ₖ vᵏ bₖ` to `∑ₖ vᵏ • (P eₖ)ᵢ z`,
 where `eₖ` is the chart frame of `(0,1)`-forms (`TauCeti.FiniteBundleAtlas.zeroOneFrame`) and
 `(P eₖ)ᵢ` the reading of `P eₖ` in chart `i`. -/
-def chartAdjointZeroOrder (P : (Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) → Π x : M, V x)
+def chartZeroOneZeroOrder (P : (Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) → Π x : M, V x)
     (z : ℂ) : F →L[ℝ] F :=
   ∑ k, (LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord k)).smulRight
     (A.coord i (P (A.zeroOneFrame i k)) z)
 
 omit [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)] in
-theorem chartAdjointZeroOrder_apply
+theorem chartZeroOneZeroOrder_apply
     (P : (Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) → Π x : M, V x) (z : ℂ) (v : F) :
-    A.chartAdjointZeroOrder i P z v =
+    A.chartZeroOneZeroOrder i P z v =
       ∑ k, (finBasis ℝ F).coord k v • A.coord i (P (A.zeroOneFrame i k)) z := by
-  simp [chartAdjointZeroOrder]
+  simp [chartZeroOneZeroOrder]
 
 omit [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)] in
 /-- The chart frame of `(0,1)`-forms reads as the antilinear map with value `bₖ` at `1` at the
@@ -177,19 +151,17 @@ theorem contMDiffOn_zeroOneFrame [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] 
       (fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x
         (A.zeroOneFrame i k x)) (A.tangentHom.triv i).baseSet :=
   ((A.tangentHom.triv i).contMDiffOn_section_symm (A.tangentHom.triv i).open_baseSet subset_rfl
-    contMDiffOn_const).congr fun x hx ↦ by rw [zeroOneFrame, Trivialization.symmL_apply _ hx]
+    contMDiffOn_const).congr fun x hx ↦ by rw [zeroOneFrame_def, Trivialization.symmL_apply _ hx]
 
 omit [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)] in
 /-- The chart frame of `(0,1)`-forms consists of `(0,1)`-forms. -/
 theorem isZeroOneForm_zeroOneFrame (k : Fin (finrank ℝ F)) (x : M) :
     (ofComplexManifold ℂ M).IsZeroOneForm (A.zeroOneFrame i k x) := by
   by_cases hx : x ∉ (A.tangentHom.triv i).baseSet
-  · -- Off the base set the frame form vanishes.
-    rw [zeroOneFrame, Trivialization.symmL_apply_of_notMem _ hx]
+  · rw [A.zeroOneFrame_of_notMem i k hx]
     exact isZeroOneForm_iff.2 fun v ↦ by simp
   rw [not_not] at hx
-  have hx' := hx
-  simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet] at hx'
+  have hx' := A.mem_tangentHom_triv_baseSet_iff.1 hx
   have hxy : (A.chart i).symm (A.chart i x) = x := (A.chart i).left_inv hx'.1
   have hc := A.coord_tangentHom i (A.zeroOneFrame i k) (A.chart i x)
   rw [hxy, coord_zeroOneFrame A i k (hxy.symm ▸ hx)] at hc
@@ -206,8 +178,7 @@ theorem coord_tangentHom_eq_antilinearOfOneL {θ : Π x : M, TangentSpace 𝓘(�
     {y : ℂ} (hy : (A.chart i).symm y ∈ (A.tangentHom.triv i).baseSet)
     (hθ : (ofComplexManifold ℂ M).IsZeroOneForm (θ ((A.chart i).symm y))) :
     A.tangentHom.coord i θ y = antilinearOfOneL F (A.tangentHom.coord i θ y 1) := by
-  have hy' := hy
-  simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet] at hy'
+  have hy' := A.mem_tangentHom_triv_baseSet_iff.1 hy
   have hc := A.coord_tangentHom i θ y
   refine (ContinuousLinearMap.antilinearOfOneL_apply_eq_of_antilinear _ fun v ↦ ?_).symm
   rw [hc]
@@ -223,8 +194,7 @@ theorem eq_sum_smul_zeroOneFrame {θ : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x �
     (hθ : (ofComplexManifold ℂ M).IsZeroOneForm (θ x)) (hx : x ∈ (A.tangentHom.triv i).baseSet) :
     θ x = (∑ k, (fun x' ↦ (finBasis ℝ F).coord k (A.tangentHom.coord i θ (A.chart i x') 1)) •
       A.zeroOneFrame i k) x := by
-  have hx' := hx
-  simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet] at hx'
+  have hx' := A.mem_tangentHom_triv_baseSet_iff.1 hx
   have hxy : (A.chart i).symm (A.chart i x) = x := (A.chart i).left_inv hx'.1
   calc θ x = (A.tangentHom.triv i).symmL ℝ x (A.tangentHom.coord i θ (A.chart i x)) :=
         (A.tangentHom.symmL_coord_chart (i := i) hx'.1 hx θ).symm
@@ -233,7 +203,7 @@ theorem eq_sum_smul_zeroOneFrame {θ : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x �
         congrArg _ (coord_tangentHom_eq_antilinearOfOneL A i (hxy.symm ▸ hx) (hxy.symm ▸ hθ))
     _ = _ := by
         rw [Finset.sum_apply]
-        simp only [Pi.smul_apply', zeroOneFrame, ← map_smul, ← map_sum, Basis.coord_apply]
+        simp only [Pi.smul_apply', zeroOneFrame_def, ← map_smul, ← map_sum, Basis.coord_apply]
         exact congrArg _ (congrArg _ ((finBasis ℝ F).sum_repr _).symm)
 
 /-- **The conformal factor of the metric in chart `i`.** At `z`, the squared length of the tangent
@@ -245,17 +215,81 @@ def chartConformalFactor (z : ℂ) : ℝ :=
 omit [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F]
   [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [VectorBundle ℂ F V] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, AddCommGroup (V x)] in
+theorem chartConformalFactor_def (z : ℂ) :
+    A.chartConformalFactor i z =
+      ‖(trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ)) (A.center i)).symmL ℝ ((A.chart i).symm z)
+        1‖ ^ 2 := by
+  rw [chartConformalFactor]
+
+omit [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [VectorBundle ℂ F V] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, AddCommGroup (V x)]
+  [RiemannianBundle V] [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)] in
+/-- The points read from the chart target lie in the base set of the tangent trivialization at the
+centre. -/
+private theorem symm_mem_tangent_baseSet {z : ℂ} (hz : z ∈ (A.chart i).target) :
+    (A.chart i).symm z ∈
+      (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) (A.center i)).baseSet := by
+  rw [TangentBundle.trivializationAt_baseSet]
+  exact (A.chart i).map_target hz
+
+omit [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [VectorBundle ℂ F V] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, AddCommGroup (V x)] in
 /-- The conformal factor is positive on the target of chart `i`. -/
 theorem chartConformalFactor_pos {z : ℂ} (hz : z ∈ (A.chart i).target) :
     0 < A.chartConformalFactor i z := by
   set e := trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) (A.center i)
-  have hb : (A.chart i).symm z ∈ e.baseSet := by
-    rw [TangentBundle.trivializationAt_baseSet]
-    exact (A.chart i).map_target hz
+  have hb : (A.chart i).symm z ∈ e.baseSet := A.symm_mem_tangent_baseSet i hz
   refine pow_pos (norm_pos_iff.2 fun h ↦ (one_ne_zero : (1 : ℂ) ≠ 0) ?_) 2
   have h1 := e.continuousLinearMapAt_symmL (R := ℝ) hb (1 : ℂ)
   rw [h, map_zero] at h1
   exact h1.symm
+
+omit [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [VectorBundle ℂ F V] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, AddCommGroup (V x)]
+  [RiemannianBundle V] in
+/-- **The metric is conformal in a chart.** If the almost complex structure is orthogonal at the
+point read at `z` in the chart target, the metric there is `λᵢ z` times the flat metric of the
+readings in the tangent trivialization at the centre of chart `i`: it reads as `λᵢ z |dz|²`. -/
+theorem inner_eq_chartConformalFactor_mul {z : ℂ} (hz : z ∈ (A.chart i).target)
+    (hJ : ∀ u v : TangentSpace 𝓘(ℝ, ℂ) ((A.chart i).symm z),
+      ⟪ofComplexManifold ℂ M _ u, ofComplexManifold ℂ M _ v⟫ = ⟪u, v⟫)
+    (u w : TangentSpace 𝓘(ℝ, ℂ) ((A.chart i).symm z)) :
+    ⟪u, w⟫ = A.chartConformalFactor i z *
+      ⟪(trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) (A.center i)).continuousLinearMapAt
+          ℝ ((A.chart i).symm z) u,
+        (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) (A.center i)).continuousLinearMapAt
+          ℝ ((A.chart i).symm z) w⟫ := by
+  set e := trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) (A.center i)
+  have hb : (A.chart i).symm z ∈ e.baseSet := A.symm_mem_tangent_baseSet i hz
+  have hxs : (A.chart i).symm z ∈ (chartAt ℂ (A.center i)).source := (A.chart i).map_target hz
+  set a : TangentSpace 𝓘(ℝ, ℂ) ((A.chart i).symm z) := e.symmL ℝ ((A.chart i).symm z) 1
+  set ja : TangentSpace 𝓘(ℝ, ℂ) ((A.chart i).symm z) := ofComplexManifold ℂ M _ a
+  -- The readings `1` and `i` come from `a` and `j a`, which are orthogonal of the same length.
+  have hja : e.symmL ℝ ((A.chart i).symm z) Complex.I = ja := by
+    rw [← e.symmL_continuousLinearMapAt (R := ℝ) hb ja,
+      continuousLinearMapAt_trivializationAt_ofComplexManifold hxs,
+      e.continuousLinearMapAt_symmL (R := ℝ) hb, smul_eq_mul, mul_one]
+  have hsymm (c : ℂ) : e.symmL ℝ ((A.chart i).symm z) c = c.re • a + c.im • ja := by
+    have hc : c = c.re • (1 : ℂ) + c.im • Complex.I := by
+      apply Complex.ext <;> simp
+    conv_lhs => rw [hc]
+    rw [map_add, map_smul, map_smul, hja]
+  have hjj : ⟪ja, ja⟫ = ⟪a, a⟫ := hJ a a
+  have hjja : ofComplexManifold ℂ M _ ja = -a := by
+    simp [ja]
+  have hperp : ⟪a, ja⟫ = 0 := by
+    have h := hJ a ja
+    rw [hjja, inner_neg_right, real_inner_comm] at h
+    linarith
+  conv_lhs => rw [← e.symmL_continuousLinearMapAt (R := ℝ) hb u,
+    ← e.symmL_continuousLinearMapAt (R := ℝ) hb w, hsymm, hsymm]
+  rw [chartConformalFactor_def, ← real_inner_self_eq_norm_sq, Complex.inner]
+  simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right, hjj,
+    hperp, real_inner_comm a ja, Complex.mul_re, Complex.conj_re, Complex.conj_im]
+  ring
 
 variable [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x)]
 
@@ -273,14 +307,10 @@ theorem contDiffOn_chartConformalFactor :
       (u := fun _ ↦ (1 : ℂ)) contMDiffOn_const).contMDiffAt (e.open_baseSet.mem_nhds hx)
     (hs.inner_bundle hs).contMDiffWithinAt
   rw [← contMDiffOn_iff_contDiffOn]
-  refine (hφ.comp contMDiffOn_chart_symm fun z hz ↦ ?_).congr fun z hz ↦ ?_
-  · rw [TangentBundle.trivializationAt_baseSet]
-    exact (A.chart i).map_target hz
-  · have hb : (A.chart i).symm z ∈ e.baseSet := by
-      rw [TangentBundle.trivializationAt_baseSet]
-      exact (A.chart i).map_target hz
-    simp only [chartConformalFactor, Function.comp_apply, real_inner_self_eq_norm_sq]
-    rw [Trivialization.symmL_apply _ hb]
+  refine (hφ.comp contMDiffOn_chart_symm fun z hz ↦ A.symm_mem_tangent_baseSet i hz).congr
+    fun z hz ↦ ?_
+  simp only [chartConformalFactor_def, Function.comp_apply, real_inner_self_eq_norm_sq]
+  rw [Trivialization.symmL_apply _ (A.symm_mem_tangent_baseSet i hz)]
 
 /-! ### The formal adjoint in a chart -/
 
@@ -305,6 +335,46 @@ theorem differentiableAt_coord_apply_one {η : Π x : M, TangentSpace 𝓘(ℝ, 
   (((A.tangentHom.contDiffOn_coord hη i).clm_apply
     (contDiffOn_const (c := (1 : ℂ)))).differentiableOn (by simp)).differentiableAt
       (((A.chart i).isOpen_inter_preimage_symm (A.tangentHom.triv i).open_baseSet).mem_nhds hy)
+
+omit [IsManifold 𝓘(ℂ) ∞ M] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [T2Space M] [FiniteDimensional ℝ F] [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
+  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
+  [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] [RiemannianBundle V]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
+/-- The trivialization of `V` of chart `i` is complex linear over its base set. -/
+private theorem continuousLinearMapAt_I_smul {x : M} (hx : x ∈ (A.triv i).baseSet) (u : V x) :
+    (A.triv i).continuousLinearMapAt ℝ x (Complex.I • u) =
+      Complex.I • (A.triv i).continuousLinearMapAt ℝ x u := by
+  have hR (u : V x) : (A.triv i).continuousLinearMapAt ℝ x u =
+      (A.triv i).continuousLinearMapAt ℂ x u := by
+    rw [(A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) hx,
+      (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℂ) hx]
+  rw [hR, hR, map_smul]
+
+omit [T2Space M] [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
+  [∀ x, ContinuousSMul ℂ (V x)] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
+  [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
+/-- At the point read at `y` in the chart image, the chart frame form `eₖ` applied to a tangent
+vector `w` reads as `conj (wᵢ) • bₖ`, `wᵢ` the reading of `w` in the tangent trivialization. -/
+private theorem continuousLinearMapAt_zeroOneFrame_apply {y : ℂ} (hy : y ∈ A.image i)
+    (k : Fin (finrank ℝ F)) (w : TangentSpace 𝓘(ℝ, ℂ) ((A.chart i).symm y)) :
+    (A.triv i).continuousLinearMapAt ℝ ((A.chart i).symm y) (A.zeroOneFrame i k _ w) =
+      antilinearOfOneL F (finBasis ℝ F k)
+        ((trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) (A.center i)).continuousLinearMapAt
+          ℝ ((A.chart i).symm y) w) := by
+  have hx : (A.chart i).symm y ∈ A.dom i := A.symm_mem_dom hy
+  have h := A.coord_tangentHom_apply i (A.zeroOneFrame i k) (fun _ ↦ w) hy
+  have h1 : A.tangent.coord i (fun _ ↦ w) y =
+      (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : M → Type _) (A.center i)).continuousLinearMapAt
+        ℝ ((A.chart i).symm y) w :=
+    A.tangent.coord_eq_continuousLinearMapAt (i := i)
+      (A.symm_mem_tangent_baseSet i (A.image_subset_target_inter_preimage_baseSet i hy).1) _
+  have h2 : A.coord i (fun x' ↦ A.zeroOneFrame i k x' w) y =
+      (A.triv i).continuousLinearMapAt ℝ ((A.chart i).symm y) (A.zeroOneFrame i k _ w) :=
+    A.coord_eq_continuousLinearMapAt (i := i) (A.dom_subset_baseSet i hx) _
+  rw [coord_zeroOneFrame A i k (A.tangentHom.dom_subset_baseSet i hx), h1, h2] at h
+  exact h.symm
 
 omit [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)]
   [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
@@ -343,21 +413,8 @@ theorem continuousLinearMapAt_zeroOneFrame_mgradient
   have hTv : Tt.continuousLinearMapAt ℝ x v = ((‖a‖⁻¹ : ℝ) : ℂ) := by
     rw [map_smul, hTa, Complex.real_smul, mul_one]
   clear_value v
-  -- Readings of the frame form on a tangent vector, and of multiplication by `i`.
-  have hE (w : TangentSpace 𝓘(ℝ, ℂ) x) : L (A.zeroOneFrame i k x w) =
-      antilinearOfOneL F (finBasis ℝ F k) (Tt.continuousLinearMapAt ℝ x w) := by
-    have h := A.coord_tangentHom_apply i (A.zeroOneFrame i k) (fun _ ↦ w) hy
-    have h1 : A.tangent.coord i (fun _ ↦ w) y = Tt.continuousLinearMapAt ℝ x w :=
-      A.tangent.coord_eq_continuousLinearMapAt (i := i) hxT _
-    have h2 : A.coord i (fun x' ↦ A.zeroOneFrame i k x' w) y = L (A.zeroOneFrame i k x w) :=
-      A.coord_eq_continuousLinearMapAt (i := i) hxV _
-    rw [coord_zeroOneFrame A i k hxe, h1, h2] at h
-    exact h.symm
-  have hI (u : V x) : L (Complex.I • u) = Complex.I • L u := by
-    have hR (u : V x) : L u = (A.triv i).continuousLinearMapAt ℂ x u := by
-      rw [(A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) hxV,
-        (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℂ) hxV]
-    rw [hR, hR, map_smul]
+  have hE := continuousLinearMapAt_zeroOneFrame_apply A i hy k
+  have hI := continuousLinearMapAt_I_smul A i hxV
   -- The derivatives of `g` through the chart.
   have hg' : DifferentiableAt ℝ g (chartAt ℂ (A.center i) x) := by rwa [← hyx] at hg
   have hd (w : TangentSpace 𝓘(ℝ, ℂ) x) :
@@ -371,14 +428,14 @@ theorem continuousLinearMapAt_zeroOneFrame_mgradient
     rw [hd, hTv, show ((‖a‖⁻¹ : ℝ) : ℂ) = ‖a‖⁻¹ • (1 : ℂ) by simp, map_smul, smul_eq_mul]
   have h2 : mvfderiv 𝓘(ℝ, ℂ) (fun x' ↦ g (A.chart i x')) x (ofComplexManifold ℂ M x v) =
       ‖a‖⁻¹ * fderiv ℝ g y Complex.I := by
-    rw [hd, tangent_continuousLinearMapAt_ofComplexManifold hxs, hTv,
+    rw [hd, continuousLinearMapAt_trivializationAt_ofComplexManifold hxs, hTv,
       show Complex.I • ((‖a‖⁻¹ : ℝ) : ℂ) = ‖a‖⁻¹ • Complex.I by
         rw [Complex.real_smul, smul_eq_mul, mul_comm], map_smul, smul_eq_mul]
   have h3 : L (A.zeroOneFrame i k x v) = ‖a‖⁻¹ • finBasis ℝ F k := by
     rw [hE, hTv]
     simp only [ContinuousLinearMap.antilinearOfOneL_apply_apply, Complex.conj_ofReal]
     exact algebraMap_smul ℂ (‖a‖⁻¹ : ℝ) (finBasis ℝ F k)
-  rw [hgrad, h1, h2, map_sub, map_smul, map_smul, hI, h3, chartConformalFactor, smul_sub,
+  rw [hgrad, h1, h2, map_sub, map_smul, map_smul, hI, h3, chartConformalFactor_def, smul_sub,
     smul_comm Complex.I (‖a‖⁻¹ : ℝ), smul_smul, smul_smul, smul_smul, smul_smul]
   congr 2 <;> ring
 
@@ -399,8 +456,7 @@ theorem formalAdjoint_eq_sum_zeroOneFrame {η : Π x : M, TangentSpace 𝓘(ℝ,
   have : IsManifold 𝓘(ℝ, ℂ) ∞ M := IsManifold.restrictScalars ℝ ‹_›
   set R : Fin (finrank ℝ F) → M → ℝ :=
     fun k x' ↦ (finBasis ℝ F).coord k (A.tangentHom.coord i η (A.chart i x') 1)
-  have hx' := hx
-  simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet] at hx'
+  have hx' := A.mem_tangentHom_triv_baseSet_iff.1 hx
   -- The coordinates are differentiable at `x`, read through the chart.
   have hyU :
       A.chart i x ∈ (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.tangentHom.triv i).baseSet :=
@@ -431,7 +487,7 @@ image of chart `i`, with `r z = ηᵢ(z)(1)` the values at `1` of the readings o
 `(D* η)ᵢ(y) = Kᵢ(y) (r y) - λᵢ(y)⁻¹ (∂ₛ r(y) - i ∂ₜ r(y))`,
 
 where `Kᵢ` is the zeroth-order term of `D*` in chart `i`
-(`TauCeti.FiniteBundleAtlas.chartAdjointZeroOrder`) and `λᵢ` the conformal factor of the metric
+(`TauCeti.FiniteBundleAtlas.chartZeroOneZeroOrder`) and `λᵢ` the conformal factor of the metric
 (`TauCeti.FiniteBundleAtlas.chartConformalFactor`). -/
 theorem coord_formalAdjoint_eq
     (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
@@ -441,7 +497,7 @@ theorem coord_formalAdjoint_eq
       TotalSpace.mk' (ℂ →L[ℝ] F) (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
     (hη01 : ∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (η x)) {y : ℂ} (hy : y ∈ A.image i) :
     A.coord i (hD.formalAdjoint cov η) y =
-      A.chartAdjointZeroOrder i (hD.formalAdjoint cov) y (A.tangentHom.coord i η y 1) -
+      A.chartZeroOneZeroOrder i (hD.formalAdjoint cov) y (A.tangentHom.coord i η y 1) -
         (A.chartConformalFactor i y)⁻¹ •
           (fderiv ℝ (fun z ↦ A.tangentHom.coord i η z 1) y 1 -
             Complex.I • fderiv ℝ (fun z ↦ A.tangentHom.coord i η z 1) y Complex.I) := by
@@ -480,7 +536,7 @@ theorem coord_formalAdjoint_eq
     exact congrArg _ hgrad
   rw [A.coord_eq_continuousLinearMapAt (i := i) hxV _,
     A.formalAdjoint_eq_sum_zeroOneFrame i hD cov hη hη01 hxe, map_sum,
-    Finset.sum_congr rfl fun k _ ↦ hterm k, Finset.sum_sub_distrib, chartAdjointZeroOrder_apply,
+    Finset.sum_congr rfl fun k _ ↦ hterm k, Finset.sum_sub_distrib, chartZeroOneZeroOrder_apply,
     ← Finset.smul_sum, Finset.sum_sub_distrib]
   simp only [Basis.coord_apply, b.sum_repr]
   conv_rhs => rw [← b.sum_repr (fderiv ℝ r y Complex.I), Finset.smul_sum]
@@ -490,18 +546,17 @@ theorem coord_formalAdjoint_eq
 the zeroth-order term of the formal adjoint of a smooth real Cauchy–Riemann operator in chart `i` is
 smooth on the points of the chart target read from the base set of the trivialization of
 one-forms, an open set containing the closure of the chart image. -/
-theorem contDiffOn_chartAdjointZeroOrder
+theorem contDiffOn_chartZeroOneZeroOrder
     [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞]
     (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
     (hJ : ∀ x (u v : TangentSpace 𝓘(ℝ, ℂ) x),
       ⟪ofComplexManifold ℂ M x u, ofComplexManifold ℂ M x v⟫ = ⟪u, v⟫)
     (hV : ∀ x (u v : V x), ⟪Complex.I • u, Complex.I • v⟫ = ⟪u, v⟫) :
-    ContDiffOn ℝ ∞ (A.chartAdjointZeroOrder i (hD.formalAdjoint cov))
+    ContDiffOn ℝ ∞ (A.chartZeroOneZeroOrder i (hD.formalAdjoint cov))
       ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.tangentHom.triv i).baseSet) := by
   have : IsManifold 𝓘(ℝ, ℂ) ∞ M := IsManifold.restrictScalars ℝ ‹_›
   refine ContDiffOn.sum fun k _ ↦ contDiffOn_const.smulRight ?_
   intro y₀ hy₀
-  set B := (A.tangentHom.triv i).baseSet
   -- Cut the frame form off near the point; `D*` of the cut-off form is smooth, and agrees with
   -- `D*` of the frame form near the point.
   obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := 𝓘(ℝ, ℂ))
@@ -512,19 +567,13 @@ theorem contDiffOn_chartAdjointZeroOrder
     ρ.contMDiff.contMDiffOn.smul_section_of_tsupport (A.tangentHom.triv i).open_baseSet hρ
       (A.contMDiffOn_zeroOneFrame i k)
   have hη₀01 (x : M) : (ofComplexManifold ℂ M).IsZeroOneForm (η₀ x) := by
-    by_cases hx : x ∈ B
-    · refine isZeroOneForm_iff.2 fun v ↦ ?_
-      simp only [η₀, Pi.smul_apply', smul_apply,
-        isZeroOneForm_iff.1 (A.isZeroOneForm_zeroOneFrame i k x) v, smul_neg,
-        smul_comm (ρ x) Complex.I]
-    · have hρx : (ρ : M → ℝ) x = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx (hρ h)
-      refine isZeroOneForm_iff.2 fun v ↦ ?_
-      simp [η₀, hρx]
+    refine isZeroOneForm_iff.2 fun v ↦ ?_
+    simp only [η₀, Pi.smul_apply', smul_apply,
+      isZeroOneForm_iff.1 (A.isZeroOneForm_zeroOneFrame i k x) v, smul_neg,
+      smul_comm (ρ x) Complex.I]
   have hc := A.contDiffOn_coord (hD.contMDiff_formalAdjoint cov hDs hJ hV hη₀ hη₀01) i
-  have hb : (A.chart i).symm y₀ ∈ (A.triv i).baseSet := by
-    -- The base set of the trivialization of one-forms is the intersection of those of the
-    -- tangent bundle and of `V` (`hom_trivializationAt_baseSet`, by definition).
-    exact hy₀.2.2
+  have hb : (A.chart i).symm y₀ ∈ (A.triv i).baseSet :=
+    (A.mem_tangentHom_triv_baseSet_iff.1 hy₀.2).2
   have hU : (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet ∈ 𝓝 y₀ :=
     ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).mem_nhds ⟨hy₀.1, hb⟩
   have hsymm := ((A.chart i).continuousAt_symm hy₀.1).tendsto

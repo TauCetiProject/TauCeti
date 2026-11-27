@@ -309,6 +309,14 @@ theorem transition_tangentHom (i i' : Fin A.n) :
     A.tangentHom.transition i i' = A.transition i i' :=
   (transition_ofBaseSet (A := A.tangent) i i').trans (transition_ofBaseSet i i')
 
+/-- The base set of the trivialization of one-forms of chart `i` consists of the points of the chart
+source in the base set of the trivialization of `V`. -/
+theorem mem_tangentHom_triv_baseSet_iff {i : Fin A.n} {x : M} :
+    x ∈ (A.tangentHom.triv i).baseSet ↔ x ∈ (A.chart i).source ∧ x ∈ (A.triv i).baseSet := by
+  simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet, mem_inter_iff]
+  -- The centres of the one-form atlas are those of `A`, by definition.
+  exact Iff.rfl
+
 /-- A `V`-valued one-form read in a chart of `A.tangentHom` is its value at the corresponding point
 of `M` expressed in the preferred trivializations of the tangent bundle and of `V` at the centre
 of the chart. -/
