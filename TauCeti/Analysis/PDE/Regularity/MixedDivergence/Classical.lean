@@ -32,35 +32,16 @@ local notation "E'" => EuclideanSpace ℝ (ι ⊕ Unit)
 local notation "e" => EuclideanSpace.basisFun ι ℝ
 local notation "e'" => EuclideanSpace.basisFun (ι ⊕ Unit) ℝ
 
-@[simp]
-private theorem horizontal_basis_inl (i : ι) : horizontal (e' (Sum.inl i)) = e i := by
-  classical
-  ext j
-  simp [EuclideanSpace.basisFun_apply, EuclideanSpace.single, PiLp.single_apply]
-
-@[simp]
-private theorem horizontal_basis_inr : horizontal (e' (Sum.inr ())) = 0 := by
-  classical
-  ext j
-  simp [EuclideanSpace.basisFun_apply, EuclideanSpace.single]
-
-@[simp]
-private theorem vertical_basis_inl (i : ι) : vertical (e' (Sum.inl i)) = 0 := by
-  classical
-  simp [vertical_apply, EuclideanSpace.basisFun_apply, EuclideanSpace.single]
-
-@[simp]
-private theorem vertical_basis_inr : vertical (e' (Sum.inr ())) = 1 := by
-  classical
-  simp [vertical_apply, EuclideanSpace.basisFun_apply, EuclideanSpace.single]
-
-private theorem fderiv_lift_apply {u : E → ℝ} {x : E'}
+/-- The derivative of the exponential extension in any lifted direction. -/
+theorem fderiv_lift_apply {u : E → ℝ} {x : E'}
     (hu : DifferentiableAt ℝ u (horizontal x)) (d : E') :
     fderiv ℝ (lift u) x d =
       rexp (vertical x) * (fderiv ℝ u (horizontal x) (horizontal d) +
         u (horizontal x) * vertical d) := by
   have h := hu.hasFDerivAt.comp x horizontal.hasFDerivAt
-  have hl : lift u = fun w ↦ rexp (vertical w) • (u ∘ horizontal) w := rfl
+  have hl : lift u = fun w ↦ rexp (vertical w) • (u ∘ horizontal) w := by
+    funext w
+    simp [lift_apply, smul_eq_mul]
   rw [hl]
   simpa only [Function.comp_apply, smul_eq_mul, h.fderiv, ContinuousLinearMap.comp_apply,
     mul_comm (vertical d)] using
@@ -83,12 +64,35 @@ theorem vertical_gradient_lift {u : E → ℝ} {x : E'}
   classical
   rw [vertical_apply, gradient_apply_eq_fderiv_apply_single, ← EuclideanSpace.basisFun_apply,
     fderiv_lift_apply hu, horizontal_basis_inr, vertical_basis_inr]
-  simp [lift]
+  simp [lift_apply]
 
 /-- The divergence of the flux `a ∇u + b u` in the original coordinates. -/
-@[expose]
 def divMixedGradient (a : E → Matrix ι ι ℝ) (b : E → E) (u : E → ℝ) (x : E) : ℝ :=
   ∑ i, lineDeriv ℝ (fun y ↦ matrixBilinearForm (a y) (e i) (∇ u y) + b y i * u y) x (e i)
+
+/-- The mixed divergence is the sum of the coordinate derivatives of the flux `a ∇u + b u`. -/
+theorem divMixedGradient_def (a : E → Matrix ι ι ℝ) (b : E → E) (u : E → ℝ) (x : E) :
+    divMixedGradient a b u x =
+      ∑ i, lineDeriv ℝ (fun y ↦ matrixBilinearForm (a y) (e i) (∇ u y) + b y i * u y) x
+        (e i) := (rfl)
+
+/-- Along a horizontal direction the exponential weight is constant. This formula holds
+also when the base function has no line derivative, using the total derivative convention. -/
+theorem lineDeriv_lift_horizontal (g : E → ℝ) (x : E') (v : E) :
+    lineDeriv ℝ (lift g) x (liftPoint v 0) =
+      rexp (vertical x) * lineDeriv ℝ g (horizontal x) v := by
+  -- Restriction to this line keeps its height fixed; constant multiplication also preserves
+  -- the zero value of the total derivative at nondifferentiable points.
+  simp [lineDeriv, lift_apply, map_add, map_smul, deriv_const_mul_field]
+
+/-- Along the vertical direction the exponential extension differentiates to itself,
+without a regularity assumption on the base function. -/
+theorem lineDeriv_lift_vertical (g : E → ℝ) (x : E') :
+    lineDeriv ℝ (lift g) x (liftPoint 0 1) = lift g x := by
+  have h : HasLineDerivAt ℝ (lift g) (lift g x) x (liftPoint 0 1) := by
+    simpa [HasLineDerivAt, lift_apply, map_add, map_smul] using
+      (((hasDerivAt_id (0 : ℝ)).const_add (vertical x)).exp.mul_const (g (horizontal x)))
+  exact h.lineDeriv
 
 private theorem liftFlux_horizontal (a : E → Matrix ι ι ℝ) (b : E → E) {u : E → ℝ}
     {x : E'} (hu : DifferentiableAt ℝ u (horizontal x)) (i : ι) :
@@ -99,7 +103,7 @@ private theorem liftFlux_horizontal (a : E → Matrix ι ι ℝ) (b : E → E) {
   classical
   rw [matrixBilinearForm_skewBlock, horizontal_basis_inl, vertical_basis_inl,
     horizontal_gradient_lift hu, vertical_gradient_lift hu]
-  simp [lift, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
+  simp [lift_apply, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
   ring
 
 private theorem liftFlux_vertical (a : E → Matrix ι ι ℝ) (b : E → E) {u : E → ℝ}
@@ -109,7 +113,7 @@ private theorem liftFlux_vertical (a : E → Matrix ι ι ℝ) (b : E → E) {u 
         (u (horizontal x) - ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ) := by
   rw [matrixBilinearForm_skewBlock, horizontal_basis_inr, vertical_basis_inr,
     horizontal_gradient_lift hu, vertical_gradient_lift hu]
-  simp [lift, real_inner_smul_right]
+  simp [lift_apply, real_inner_smul_right]
   ring
 
 private theorem lineDeriv_liftFlux_horizontal (a : E → Matrix ι ι ℝ) (b : E → E)
@@ -119,11 +123,13 @@ private theorem lineDeriv_liftFlux_horizontal (a : E → Matrix ι ι ℝ) (b : 
       (e' (Sum.inl i)) = rexp (vertical x) * lineDeriv ℝ
       (fun y ↦ matrixBilinearForm (a y) (e i) (∇ u y) + b y i * u y) (horizontal x) (e i) := by
   have h : (fun y ↦ matrixBilinearForm (skewBlock (a (horizontal y)) (b (horizontal y)))
-      (e' (Sum.inl i)) (∇ (lift u) y)) =ᶠ[𝓝 x] _ :=
-    hu.mono fun _ hy ↦ liftFlux_horizontal a b hy i
-  rw [h.lineDeriv_eq]
-  simp only [lineDeriv, map_add, map_smul, horizontal_basis_inl, vertical_basis_inl, smul_zero,
-    add_zero, deriv_const_mul_field]
+      (e' (Sum.inl i)) (∇ (lift u) y)) =ᶠ[𝓝 x]
+      lift (fun y ↦ matrixBilinearForm (a y) (e i) (∇ u y) + b y i * u y) :=
+    hu.mono fun _ hy ↦ by simpa only [lift_apply] using liftFlux_horizontal a b hy i
+  rw [h.lineDeriv_eq, ← liftPoint_horizontal_vertical (e' (Sum.inl i)),
+    horizontal_basis_inl, vertical_basis_inl]
+  exact lineDeriv_lift_horizontal
+    (fun y ↦ matrixBilinearForm (a y) (e i) (∇ u y) + b y i * u y) x (e i)
 
 private theorem lineDeriv_liftFlux_vertical (a : E → Matrix ι ι ℝ) (b : E → E)
     {u : E → ℝ} {x : E'} (hu : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ u (horizontal y)) :
@@ -132,14 +138,12 @@ private theorem lineDeriv_liftFlux_vertical (a : E → Matrix ι ι ℝ) (b : E 
       (e' (Sum.inr ())) = rexp (vertical x) *
       (u (horizontal x) - ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ) := by
   have h : (fun y ↦ matrixBilinearForm (skewBlock (a (horizontal y)) (b (horizontal y)))
-      (e' (Sum.inr ())) (∇ (lift u) y)) =ᶠ[𝓝 x] _ :=
-    hu.mono fun _ hy ↦ liftFlux_vertical a b hy
-  rw [h.lineDeriv_eq]
-  simp only [lineDeriv, map_add, map_smul, horizontal_basis_inr, vertical_basis_inr, smul_zero,
-    add_zero, smul_eq_mul, mul_one, Real.exp_add, mul_assoc, deriv_const_mul_field]
-  have hexp := (Real.hasDerivAt_exp 0).mul_const
-    (u (horizontal x) - ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ)
-  rw [hexp.deriv, Real.exp_zero, one_mul]
+      (e' (Sum.inr ())) (∇ (lift u) y)) =ᶠ[𝓝 x]
+      lift (fun y ↦ u y - ⟪b y, ∇ u y⟫_ℝ) :=
+    hu.mono fun _ hy ↦ by simpa only [lift_apply] using liftFlux_vertical a b hy
+  rw [h.lineDeriv_eq, ← liftPoint_horizontal_vertical (e' (Sum.inr ())),
+    horizontal_basis_inr, vertical_basis_inr]
+  simpa only [lift_apply] using lineDeriv_lift_vertical (fun y ↦ u y - ⟪b y, ∇ u y⟫_ℝ) x
 
 /-- The lifted divergence includes the original mixed flux, drift and a single extra
 zeroth-order term. -/
@@ -153,7 +157,7 @@ theorem divMatrixGradient_lift (a : E → Matrix ι ι ℝ) (b : E → E)
   rw [divMatrixGradient_def, Fintype.sum_sum_type, Fintype.sum_unique (ι := Unit)]
   simp only [Subsingleton.elim (default : Unit) (), lineDeriv_liftFlux_horizontal a b h,
     lineDeriv_liftFlux_vertical a b h]
-  rw [← Finset.mul_sum, divMixedGradient]
+  rw [← Finset.mul_sum, divMixedGradient_def]
   ring
 
 /-- The lifted principal divergence equation is equivalent to the original mixed
@@ -167,7 +171,7 @@ theorem divMatrixGradient_lift_eq_iff (a : E → Matrix ι ι ℝ) (b : E → E)
         ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ + c (horizontal x) * u (horizontal x) -
           f (horizontal x) := by
   rw [divMatrixGradient_lift a b hu]
-  simp only [lift]
+  simp only [lift_apply]
   constructor
   · intro h
     have h' := h.trans (show _ = rexp (vertical x) *

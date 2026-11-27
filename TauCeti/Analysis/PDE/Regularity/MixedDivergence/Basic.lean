@@ -47,8 +47,52 @@ omit [Fintype ι] in
 theorem vertical_apply (x : E') : vertical x = x (Sum.inr ()) := by
   simp [vertical]
 
+@[simp]
+theorem horizontal_basis_inl (i : ι) :
+    horizontal (EuclideanSpace.basisFun (ι ⊕ Unit) ℝ (Sum.inl i)) =
+      EuclideanSpace.basisFun ι ℝ i := by
+  classical
+  ext j
+  simp [EuclideanSpace.basisFun_apply, EuclideanSpace.single, PiLp.single_apply]
+
+@[simp]
+theorem horizontal_basis_inr :
+    horizontal (EuclideanSpace.basisFun (ι ⊕ Unit) ℝ (Sum.inr ())) = 0 := by
+  classical
+  ext j
+  simp [EuclideanSpace.basisFun_apply, EuclideanSpace.single]
+
+@[simp]
+theorem vertical_basis_inl (i : ι) :
+    vertical (EuclideanSpace.basisFun (ι ⊕ Unit) ℝ (Sum.inl i)) = 0 := by
+  classical
+  simp [vertical_apply, EuclideanSpace.basisFun_apply, EuclideanSpace.single]
+
+@[simp]
+theorem vertical_basis_inr :
+    vertical (EuclideanSpace.basisFun (ι ⊕ Unit) ℝ (Sum.inr ())) = 1 := by
+  classical
+  simp [vertical_apply, EuclideanSpace.basisFun_apply, EuclideanSpace.single]
+
 /-- The point with prescribed horizontal and vertical coordinates. -/
 def liftPoint (x : E) (t : ℝ) : E' := WithLp.toLp 2 (Sum.elim x fun _ ↦ t)
+
+omit [Fintype ι] in
+@[simp]
+theorem liftPoint_apply_inl (x : E) (t : ℝ) (i : ι) : liftPoint x t (Sum.inl i) = x i := (rfl)
+
+omit [Fintype ι] in
+@[simp]
+theorem liftPoint_apply_inr (x : E) (t : ℝ) : liftPoint x t (Sum.inr ()) = t := (rfl)
+
+@[simp]
+theorem liftPoint_horizontal_vertical (z : E') : liftPoint (horizontal z) (vertical z) = z := by
+  apply PiLp.ext
+  intro i
+  rcases i with i | t
+  · simp
+  · cases t
+    simp [vertical_apply]
 
 @[simp]
 theorem horizontal_liftPoint (x : E) (t : ℝ) : horizontal (liftPoint x t) = x := by
@@ -95,11 +139,33 @@ theorem inner_liftPoint_right (v : E') (x : E) (t : ℝ) :
     ⟪v, liftPoint x t⟫_ℝ = ⟪horizontal v, x⟫_ℝ + vertical v * t := by
   simp [PiLp.inner_apply, Fintype.sum_sum_type, liftPoint, vertical_apply, mul_comm]
 
-/-- The principal matrix of the lifted equation. -/
-@[expose]
+/-- The principal matrix `[[a, b], [-bᵀ, 1]]` of the lifted equation, with `b` as the
+top-right column and its negative transpose as the bottom-left row. -/
 def skewBlock (a : Matrix ι ι ℝ) (b : E) : Matrix (ι ⊕ Unit) (ι ⊕ Unit) ℝ :=
   Matrix.fromBlocks a (fun i _ ↦ b i) (fun _ j ↦ -b j) (fun _ _ ↦ 1)
 
+omit [Fintype ι] in
+@[simp]
+theorem skewBlock_apply_inl_inl (a : Matrix ι ι ℝ) (b : E) (i j : ι) :
+    skewBlock a b (Sum.inl i) (Sum.inl j) = a i j := (rfl)
+
+omit [Fintype ι] in
+@[simp]
+theorem skewBlock_apply_inl_inr (a : Matrix ι ι ℝ) (b : E) (i : ι) (t : Unit) :
+    skewBlock a b (Sum.inl i) (Sum.inr t) = b i := (rfl)
+
+omit [Fintype ι] in
+@[simp]
+theorem skewBlock_apply_inr_inl (a : Matrix ι ι ℝ) (b : E) (t : Unit) (j : ι) :
+    skewBlock a b (Sum.inr t) (Sum.inl j) = -b j := (rfl)
+
+omit [Fintype ι] in
+@[simp]
+theorem skewBlock_apply_inr_inr (a : Matrix ι ι ℝ) (b : E) (t s : Unit) :
+    skewBlock a b (Sum.inr t) (Sum.inr s) = 1 := (rfl)
+
+/-- The lifted bilinear form is the horizontal `a` form plus
+`⟪x_h, b⟫ y_t - x_t ⟪b, y_h⟫ + x_t y_t`. -/
 theorem matrixBilinearForm_skewBlock (a : Matrix ι ι ℝ) (b : E) (x y : E') :
     matrixBilinearForm (skewBlock a b) x y =
       matrixBilinearForm a (horizontal x) (horizontal y) +
@@ -178,13 +244,15 @@ theorem uniformlyEllipticOn_skewBlock [DecidableEq ι] {X : Type*} {s : Set X}
     gcongr
     exact (hb x hx).trans (le_max_left M 0)
 
-/-- The lifted function with trace `u` at height zero. -/
-@[expose]
+/-- The exponential extension `(x, t) ↦ exp t * u x`, whose trace at `t = 0` is `u`. -/
 def lift (u : E → ℝ) (x : E') : ℝ := rexp (vertical x) * u (horizontal x)
+
+theorem lift_apply (u : E → ℝ) (x : E') :
+    lift u x = rexp (vertical x) * u (horizontal x) := (rfl)
 
 @[simp]
 theorem lift_liftPoint_zero (u : E → ℝ) (x : E) : lift u (liftPoint x 0) = u x := by
-  simp [lift]
+  simp [lift_apply]
 
 theorem contDiffOn_lift {k : WithTop ℕ∞} {u : E → ℝ} {s : Set E}
     (hu : ContDiffOn ℝ k u s) : ContDiffOn ℝ k (lift u) (horizontal ⁻¹' s) :=
@@ -197,8 +265,13 @@ theorem continuousOn_lift {u : E → ℝ} {s : Set E} (hu : ContinuousOn u s) :
     (hu.comp horizontal.continuous.continuousOn (mapsTo_preimage horizontal s))
 
 /-- The full open cylinder over a base domain. -/
-@[expose]
 def liftDomain (U : Opens E) : Opens E' :=
   Opens.comap ⟨horizontal, horizontal.continuous⟩ U
+
+@[simp]
+theorem mem_liftDomain_iff (U : Opens E) (x : E') :
+    x ∈ liftDomain U ↔ horizontal x ∈ U := (Iff.rfl)
+
+theorem coe_liftDomain (U : Opens E) : (liftDomain U : Set E') = horizontal ⁻¹' U := (rfl)
 
 end TauCeti.PDE.MixedDivergence
