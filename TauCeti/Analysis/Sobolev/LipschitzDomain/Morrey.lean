@@ -80,6 +80,51 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
+section Representative
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [MeasurableSpace F]
+  [BorelSpace F]
+  {Ω : Opens F} {mu : Measure F} [mu.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)] {γ : ℝ≥0}
+
+/-- A bounded linear map into `C^{0,γ}(closure Ω)` whose values agree almost everywhere on `Ω`
+with those of `W1p.value` gives a compact operator into `C^{0,β}(closure Ω)` for every `β < γ`,
+when `closure Ω` is compact. -/
+private theorem W1p.exists_isCompactOperator_holder_of_ae_eq
+    (hc : IsCompact (closure (Ω : Set F)))
+    {T : W1p mu Ω p →L[ℝ] HolderSpace γ (closure (Ω : Set F)) ℝ}
+    (hT : ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x)
+    {β : ℝ≥0} (hβ : β < γ) :
+    ∃ T : W1p mu Ω p →L[ℝ] HolderSpace β (closure (Ω : Set F)) ℝ,
+      IsCompactOperator T ∧
+        ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
+  have : CompactSpace (closure (Ω : Set F)) := isCompact_iff_compactSpace.1 hc
+  refine ⟨(HolderSpace.inclusionL hβ.le).comp T,
+    (HolderSpace.isCompactOperator_inclusionL hβ).comp_clm T, fun u => ?_⟩
+  filter_upwards [hT u] with x hx hxΩ
+  rw [ContinuousLinearMap.comp_apply, HolderSpace.inclusionL_apply, hx hxΩ]
+
+/-- A bounded linear map into `C^{0,γ}(closure Ω)` whose values agree almost everywhere on `Ω`
+with those of `W1p.value` gives every `u ∈ W^{1,p}(Ω)` a representative continuous on
+`closure Ω`. -/
+private theorem W1p.exists_continuousOn_closure_ae_eq_of_ae_eq
+    {T : W1p mu Ω p →L[ℝ] HolderSpace γ (closure (Ω : Set F)) ℝ}
+    (hT : ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x)
+    (u : W1p mu Ω p) :
+    ∃ f : F → ℝ, ContinuousOn f (closure (Ω : Set F)) ∧
+      W1p.value u =ᵐ[mu.restrict (Ω : Set F)] f := by
+  classical
+  refine ⟨fun x => if hx : x ∈ closure (Ω : Set F) then T u ⟨x, hx⟩ else 0, ?_, ?_⟩
+  · rw [continuousOn_iff_continuous_domRestrict]
+    convert (T u).continuous using 1
+    ext x
+    exact dite_eq_left x.property
+  · refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
+    filter_upwards [hT u] with x hx hxΩ
+    rw [dite_eq_left (subset_closure hxΩ)]
+    exact (hx hxΩ).symm
+
+end Representative
+
 section ModelSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -127,13 +172,8 @@ theorem W1p.exists_isCompactOperator_holder_of_isLipschitzDomainWith
     ∃ T : W1p volume Ω p →L[ℝ] HolderSpace β (closure (Ω : Set (WithLp 2 (ℝ × E)))) ℝ,
       IsCompactOperator T ∧
         ∀ u, ∀ᵐ x ∂volume, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
-  have : CompactSpace (closure (Ω : Set (WithLp 2 (ℝ × E)))) :=
-    isCompact_iff_compactSpace.1 hb.isCompact_closure
   obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith hp hΩ hb
-  refine ⟨(HolderSpace.inclusionL hβ.le).comp T,
-    (HolderSpace.isCompactOperator_inclusionL hβ).comp_clm T, fun u => ?_⟩
-  filter_upwards [hT u] with x hx hxΩ
-  rw [ContinuousLinearMap.comp_apply, HolderSpace.inclusionL_apply, hx hxΩ]
+  exact W1p.exists_isCompactOperator_holder_of_ae_eq hb.isCompact_closure hT hβ
 
 /-- **Continuous representatives up to the boundary.** If `Ω ⊆ ℝ × E` is a bounded Lipschitz
 domain of dimension `n` and `n < p < ∞`, then every `u ∈ W^{1,p}(Ω)` agrees almost everywhere on
@@ -144,18 +184,8 @@ theorem W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomainWith
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω p) :
     ∃ f : WithLp 2 (ℝ × E) → ℝ, ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))) ∧
       W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f := by
-  classical
   obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith hp hΩ hb
-  refine ⟨fun x => if hx : x ∈ closure (Ω : Set (WithLp 2 (ℝ × E))) then T u ⟨x, hx⟩ else 0,
-    ?_, ?_⟩
-  · rw [continuousOn_iff_continuous_domRestrict]
-    convert (T u).continuous using 1
-    ext x
-    exact dite_eq_left x.property
-  · refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-    filter_upwards [hT u] with x hx hxΩ
-    rw [dite_eq_left (subset_closure hxΩ)]
-    exact (hx hxΩ).symm
+  exact W1p.exists_continuousOn_closure_ae_eq_of_ae_eq hT u
 
 /-- **The trace is the boundary value of the continuous representative.** If `Ω ⊆ ℝ × E` is a
 bounded Lipschitz domain of dimension `n` and `n < p < ∞`, then every `u ∈ W^{1,p}(Ω)` agrees
@@ -289,12 +319,8 @@ theorem W1p.exists_isCompactOperator_holder_of_isLipschitzDomain (hp : (finrank 
     ∃ T : W1p mu Ω p →L[ℝ] HolderSpace β (closure (Ω : Set F)) ℝ,
       IsCompactOperator T ∧
         ∀ u, ∀ᵐ x ∂mu, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
-  have : CompactSpace (closure (Ω : Set F)) := isCompact_iff_compactSpace.1 hb.isCompact_closure
   obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomain (mu := mu) hp hΩ hb
-  refine ⟨(HolderSpace.inclusionL hβ.le).comp T,
-    (HolderSpace.isCompactOperator_inclusionL hβ).comp_clm T, fun u => ?_⟩
-  filter_upwards [hT u] with x hx hxΩ
-  rw [ContinuousLinearMap.comp_apply, HolderSpace.inclusionL_apply, hx hxΩ]
+  exact W1p.exists_isCompactOperator_holder_of_ae_eq hb.isCompact_closure hT hβ
 
 /-- **Continuous representatives up to the boundary of a Euclidean Lipschitz domain.** If `Ω` is a
 bounded Lipschitz domain in a nontrivial finite-dimensional real inner product space of dimension
@@ -305,17 +331,8 @@ theorem W1p.exists_continuousOn_closure_ae_eq_of_isLipschitzDomain
     (hb : IsBounded (Ω : Set F)) (u : W1p mu Ω p) :
     ∃ f : F → ℝ, ContinuousOn f (closure (Ω : Set F)) ∧
       W1p.value u =ᵐ[mu.restrict (Ω : Set F)] f := by
-  classical
   obtain ⟨T, hT⟩ := W1p.exists_morreyEmbeddingL_of_isLipschitzDomain (mu := mu) hp hΩ hb
-  refine ⟨fun x => if hx : x ∈ closure (Ω : Set F) then T u ⟨x, hx⟩ else 0, ?_, ?_⟩
-  · rw [continuousOn_iff_continuous_domRestrict]
-    convert (T u).continuous using 1
-    ext x
-    exact dite_eq_left x.property
-  · refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-    filter_upwards [hT u] with x hx hxΩ
-    rw [dite_eq_left (subset_closure hxΩ)]
-    exact (hx hxΩ).symm
+  exact W1p.exists_continuousOn_closure_ae_eq_of_ae_eq hT u
 
 /-- **The trace on a Euclidean Lipschitz domain is the boundary value of the continuous
 representative.** If `Ω` is a bounded Lipschitz domain in a nontrivial finite-dimensional real
