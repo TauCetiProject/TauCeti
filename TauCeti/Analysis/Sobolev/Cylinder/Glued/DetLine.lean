@@ -36,8 +36,10 @@ middle map of the exact sequence
 (`TauCeti.CylinderSobolev.exact_gluingKerInclusion_gluingObstruction`). Its four-term isomorphism
 `det (E₁ × E₂) ⊗ (det (S₁ × S₂))^* ≃ det D_R` (`TauCeti.detLineFourTermEquiv`) is the gluing
 isomorphism read through the stabilizations of the pieces, up to an explicit sign
-(`gluingDetLineEquiv_detLineStabilizationEquiv_tmul_eq_detLineFourTermEquiv`). So the gluing
-isomorphism is determined by the projection of the glued kernel to the stabilizers.
+(`gluingDetLineEquiv_detLineStabilizationEquiv_tmul_eq_detLineFourTermEquiv`). So up to sign the
+gluing isomorphism is the four-term isomorphism of this sequence, whose middle map is the
+obstruction map `b_R` and whose first map sends `ξ ∈ ker D_R` to the preimage of `(ξ, 0)` under
+the gluing map.
 
 **Independence of the right inverse.** The gluing map depends on the right inverse `Q`. If for a
 bound `C` every right inverse of norm at most `C` gives a bijective gluing map, as it does for long

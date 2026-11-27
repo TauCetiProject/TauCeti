@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Cylinder.Gluing
+public import TauCeti.Analysis.Sobolev.Cylinder.Glued.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
