@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import TauCeti.Geometry.Manifold.ContMDiff.Pi
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Hamiltonian flows are symplectic, and Poisson-commuting flows commute
@@ -71,7 +71,15 @@ restricts to the flow of `Fᵢ` on the `i`-th coordinate axis, preserves `σ` an
 is itself a Hamiltonian flow: `t ↦ (t • v) • x` is the flow line through `x` of the combination
 `v ⬝ᵥ F = ∑ i, vᵢ Fᵢ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.flowOf_hamiltonianVectorField_dotProduct`), so `v` acts by
-the time-one map of that flow. On an open subset `V` where the restrictions of the `Fᵢ` still
+the time-one map of that flow. In particular every combination `v ⬝ᵥ F` has a complete
+Hamiltonian vector field, and any two combinations Poisson-commute
+(`TauCeti.SmoothTwoForm.IsSymplectic.isCompleteVectorField_hamiltonianVectorField_dotProduct`,
+`TauCeti.SmoothTwoForm.poissonBracket_dotProduct_eq_zero`). So the flow action only
+depends on the functions through their linear combinations: if a second such family `G` satisfies
+`w ⬝ᵥ G = v ⬝ᵥ F`, then `w` acts through `G` as `v` acts through `F`, and for a linear
+recombination `G = A F` by a matrix `A` the vector `w` acts through `G` as `w A` acts through `F`
+(`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_of_eq_mulVec`). On an open
+subset `V` where the restrictions of the `Fᵢ` still
 have complete Hamiltonian vector fields, the flow action of the restricted family is the
 restriction of the flow action of `F`
 (`TauCeti.SmoothTwoForm.IsSymplectic.coe_hamiltonianFlowAction_mpullback_subtype_val_apply`). More
@@ -124,6 +132,9 @@ connected regular fibre with a torus.
 * `TauCeti.SmoothTwoForm.IsSymplectic.isMIntegralCurve_hamiltonianFlowAction_smul` and
   `TauCeti.SmoothTwoForm.IsSymplectic.flowOf_hamiltonianVectorField_dotProduct`: the action of
   `t • v` is the time-`t` map of the Hamiltonian flow of `v ⬝ᵥ F`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_eq_of_dotProduct_eq` and
+  `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_of_eq_mulVec`: two families with
+  a common linear combination act alike, so `w` acts through `A F` as `w A` acts through `F`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.coe_hamiltonianFlowAction_mpullback_subtype_val_apply`: on
   an open subset where the restricted flows are complete, the flow action of the restricted family
   is the restriction of the flow action.
@@ -763,6 +774,43 @@ theorem flowOf_hamiltonianVectorField_dotProduct (v : ι → ℝ) (t : ℝ) (x :
     (hσ.isMIntegralCurve_hamiltonianFlowAction_smul hF hcomm hc v x) t
   rwa [zero_smul, hσ.hamiltonianFlowAction_zero_apply] at h
 
+/-! ### Linear recombinations of the functions -/
+
+include hF hcomm hc in
+/-- **Linear combinations of the functions have complete Hamiltonian vector fields.** The
+Hamiltonian flow of `v ⬝ᵥ F` is the action of the line through `v`, defined at all times. -/
+theorem isCompleteVectorField_hamiltonianVectorField_dotProduct (v : ι → ℝ) :
+    IsCompleteVectorField (σ.hamiltonianVectorField fun y ↦ v ⬝ᵥ F y) :=
+  isCompleteVectorField_of_forall_exists_isMIntegralCurve fun x ↦
+    ⟨_, by rw [zero_smul, hσ.hamiltonianFlowAction_zero_apply],
+      hσ.isMIntegralCurve_hamiltonianFlowAction_smul hF hcomm hc v x⟩
+
+variable {κ : Type*} [Fintype κ] {G : M → κ → ℝ} (hG : ContMDiff I 𝓘(ℝ, κ → ℝ) ∞ G)
+  (hcommG : ∀ i j x, σ.poissonBracket (G · i) (G · j) x = 0)
+  (hcG : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (G · i)))
+
+/-- **Two families with a common linear combination.** Let `G : M → (κ → ℝ)` be a second smooth
+family of pairwise Poisson-commuting functions with complete Hamiltonian vector fields. If
+`w ⬝ᵥ G = v ⬝ᵥ F`, then `w` acts through `G` as `v` acts through `F`: both act by the time-one map
+of the Hamiltonian flow of this common function. -/
+theorem hamiltonianFlowAction_apply_eq_of_dotProduct_eq {v : ι → ℝ} {w : κ → ℝ}
+    (h : ∀ y, w ⬝ᵥ G y = v ⬝ᵥ F y) (x : M) :
+    (hσ.hamiltonianFlowAction hG hcommG hcG w).toMul x =
+      (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x := by
+  have h₁ := hσ.flowOf_hamiltonianVectorField_dotProduct hG hcommG hcG w 1 x
+  simp only [h, hσ.flowOf_hamiltonianVectorField_dotProduct hF hcomm hc v 1 x, one_smul] at h₁
+  exact h₁.symm
+
+/-- **The flow action of a linear recombination of the functions.** If `G = A F` for a matrix
+`A`, that is `Gₖ = ∑ᵢ Aₖᵢ Fᵢ`, then `w` acts through `G` as `w A`, the vector `Aᵀ w`, acts through
+`F`. -/
+theorem hamiltonianFlowAction_apply_of_eq_mulVec (A : Matrix κ ι ℝ) (hGF : ∀ y, G y = A *ᵥ F y)
+    (w : κ → ℝ) (x : M) :
+    (hσ.hamiltonianFlowAction hG hcommG hcG w).toMul x =
+      (hσ.hamiltonianFlowAction hF hcomm hc (w ᵥ* A)).toMul x :=
+  hσ.hamiltonianFlowAction_apply_eq_of_dotProduct_eq hF hcomm hc hG hcommG hcG
+    (fun y ↦ by rw [hGF, Matrix.dotProduct_mulVec]) x
+
 /-! ### Restriction to open subsets -/
 
 /-- **The Hamiltonian flow action restricts to open subsets.** Let `V` be an open subset of `M`
@@ -783,14 +831,11 @@ theorem coe_hamiltonianFlowAction_mpullback_subtype_val_apply {V : TopologicalSp
   -- the inclusion of `V` carries Hamiltonian vector fields of restrictions to those on `M`.
   have hγ : IsMIntegralCurve (fun t : ℝ ↦ (((hσ.mpullback_subtype_val V).hamiltonianFlowAction
       hF' hcomm' hc' (t • v)).toMul y : M)) (σ.hamiltonianVectorField fun z ↦ v ⬝ᵥ F z) :=
+    -- The combination `v ⬝ᵥ (F ∘ val)` is the restriction of `v ⬝ᵥ F` to `V`.
     isMIntegralCurve_iff_isMIntegralCurveOn.2 <|
       (((hσ.mpullback_subtype_val V).isMIntegralCurve_hamiltonianFlowAction_smul hF' hcomm' hc' v
-        y).isMIntegralCurveOn Set.univ).map_of_mfderiv_eq
-        (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) fun _ _ ↦ by
-          -- The combination `v ⬝ᵥ (F ∘ val)` is the restriction of `v ⬝ᵥ F` to `V`.
-          rw [Manifold.mfderiv_subtype_val_apply, show (fun y : V ↦ v ⬝ᵥ (F ∘ Subtype.val) y) =
-            (fun z ↦ v ⬝ᵥ F z) ∘ Subtype.val from rfl, hamiltonianVectorField_comp_subtype_val,
-            Manifold.tangentSpaceOpenEquiv_symm_apply]
+        y).isMIntegralCurveOn Set.univ).coe_of_hamiltonianVectorField_mpullback_subtype_val
+          (f := fun z ↦ v ⬝ᵥ F z)
   have hX : ContMDiff I I.tangent 1
       (fun z ↦ (⟨z, σ.hamiltonianVectorField (fun z ↦ v ⬝ᵥ F z) z⟩ : TangentBundle I M)) :=
     hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (by simp)

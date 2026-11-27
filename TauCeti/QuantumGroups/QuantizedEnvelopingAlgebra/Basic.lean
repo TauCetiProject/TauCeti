@@ -40,6 +40,7 @@ The quotient is defined for every `q : K` (forcing `Eᵢ = Fᵢ = 0` at `q = 0`)
   universal property and generator induction.
 * `TauCeti.QuantizedEnvelopingAlgebra.rescale`, `chevalleyInvolution`, `map`: diagonal rescaling,
   Chevalley involution, and functoriality along `CartanDatum.Hom`.
+* `TauCeti.cartanBraiding`: the symmetric bicharacter `χ i j = qᵢ^(aᵢⱼ)` on the simple roots.
 
 ## References
 
@@ -852,5 +853,33 @@ theorem map_comp (ψ : CartanDatum.Hom D' D'') (φ : CartanDatum.Hom D D') (q : 
 end Functoriality
 
 end QuantizedEnvelopingAlgebra
+
+/-! ### The bicharacter of a Cartan datum -/
+
+section CartanBraiding
+
+variable {ι X Y K : Type*} [AddCommGroup X] [AddCommGroup Y] [Field K]
+
+/-- The bicharacter `χ(αᵢ, αⱼ) = qᵢ^(aᵢⱼ) = q^(dᵢ aᵢⱼ)` on the simple roots of a Cartan datum.
+It is symmetric by symmetrizability (`TauCeti.cartanBraiding_symm`), and the positive part of the
+quantized enveloping algebra is the free algebra modulo the radical of Lusztig's form for it. -/
+def cartanBraiding (D : CartanDatum ι X Y) (q : K) (i j : ι) : K :=
+  (q ^ D.symmetrizer i) ^ D.cartan i j
+
+@[simp]
+theorem cartanBraiding_apply (D : CartanDatum ι X Y) (q : K) (i j : ι) :
+    cartanBraiding D q i j = (q ^ D.symmetrizer i) ^ D.cartan i j := (rfl)
+
+/-- The bicharacter of a Cartan datum is symmetric: `qᵢ^(aᵢⱼ) = qⱼ^(aⱼᵢ)`. -/
+theorem cartanBraiding_symm (D : CartanDatum ι X Y) (q : K) (i j : ι) :
+    cartanBraiding D q i j = cartanBraiding D q j i :=
+  QuantizedEnvelopingAlgebra.zpow_symmetrizer_cartan_comm D q i j
+
+/-- On the diagonal, the bicharacter of a Cartan datum is `qᵢ²`. -/
+theorem cartanBraiding_self (D : CartanDatum ι X Y) (q : K) (i : ι) :
+    cartanBraiding D q i i = (q ^ D.symmetrizer i) ^ 2 := by
+  simp
+
+end CartanBraiding
 
 end TauCeti

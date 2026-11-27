@@ -221,6 +221,13 @@ theorem criticalHessian_neg : criticalHessian I (-f) x = -criticalHessian I f x 
   -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
   rfl
 
+/-- The critical Hessian of a constant function vanishes. -/
+@[simp]
+theorem criticalHessian_const (c : ℝ) : criticalHessian I (fun _ : M ↦ c) x = 0 := by
+  have h : fderiv ℝ (fderiv ℝ (fun _ : E ↦ c)) (extChartAt I x x) = 0 := by simp
+  -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
+  exact h
+
 /-- At an interior local minimum of a `C¹` function, the critical Hessian is nonnegative
 on the diagonal. No metric, finite dimensionality, or global smooth atlas is required. -/
 theorem _root_.ContMDiffAt.criticalHessian_self_nonneg_of_isLocalMin

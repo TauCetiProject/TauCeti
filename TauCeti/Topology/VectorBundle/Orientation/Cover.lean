@@ -74,6 +74,9 @@ in a trivialization have locally constant determinant sign.
   and only if its orientation double cover is a product with `Fin 2` over the base.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_not_connectedSpace`: over a connected base, a
   bundle is orientable if and only if its orientation double cover is disconnected.
+* `TauCeti.VectorBundleOrientation.isEmpty_of_continuous_of_eq_deck`: a bundle is not orientable
+  when a continuous family of fibre orientations over a preconnected space reaches both
+  orientations of one fibre.
 
 ## References
 
@@ -649,6 +652,23 @@ theorem nonempty_iff_exists_section (hι : Fintype.card ι = finrank ℝ F) :
   convert hs using 1
   exact funext fun b ↦ key (s b) b (hproj b)
 
+/-- The deck involution exchanges the points of the orientation double cover lying on the section
+given by an orientation `o` with the points not lying on it, provided `ι` has cardinality the rank
+of the bundle. -/
+theorem deck_mem_setOf_orientation_eq_iff (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (p : VectorBundleOrientationCover F E ι) :
+    VectorBundleOrientationCover.deck p ∈ {q | q.orientation = o q.proj} ↔
+      p ∉ {q : VectorBundleOrientationCover F E ι | q.orientation = o q.proj} := by
+  obtain ⟨b, o'⟩ := p
+  simp only [VectorBundleOrientationCover.deck_apply, mem_ofPred_eq]
+  rcases VectorBundleOrientationCover.eq_or_eq_deck hι (p := ⟨b, o b⟩) (q := ⟨b, o'⟩) rfl
+    with h | h
+  · obtain rfl : o' = o b := VectorBundleOrientationCover.mk_eq_mk_iff.1 h
+    exact iff_of_false (fun h' ↦ Module.Ray.ne_neg_self _ h'.symm) (· rfl)
+  · rw [VectorBundleOrientationCover.deck_apply] at h
+    obtain rfl : o' = -o b := VectorBundleOrientationCover.mk_eq_mk_iff.1 h
+    exact iff_of_true (neg_neg (G := Orientation ℝ (E b) ι) _) (Module.Ray.ne_neg_self _).symm
+
 /-- The points of the orientation double cover lying on the section given by an orientation `o`
 form a clopen set, provided `ι` has cardinality the rank of the bundle. -/
 theorem isClopen_setOf_orientation_eq (hι : Fintype.card ι = finrank ℝ F)
@@ -658,16 +678,32 @@ theorem isClopen_setOf_orientation_eq (hι : Fintype.card ι = finrank ℝ F)
   have hcompl : {p : VectorBundleOrientationCover F E ι | p.orientation = o p.proj}ᶜ =
       {p | p.orientation = (-o) p.proj} := by
     ext ⟨b, o'⟩
-    simp only [mem_compl_iff, mem_ofPred_eq, neg_apply]
-    rcases VectorBundleOrientationCover.eq_or_eq_deck hι (p := ⟨b, o b⟩) (q := ⟨b, o'⟩) rfl
-      with h | h
-    · obtain rfl : o' = o b := VectorBundleOrientationCover.mk_eq_mk_iff.1 h
-      exact iff_of_false (· rfl) (Module.Ray.ne_neg_self _)
-    · rw [VectorBundleOrientationCover.deck_apply] at h
-      obtain rfl : o' = -o b := VectorBundleOrientationCover.mk_eq_mk_iff.1 h
-      exact iff_of_true (fun h' ↦ Module.Ray.ne_neg_self _ h'.symm) rfl
+    rw [mem_compl_iff, ← o.deck_mem_setOf_orientation_eq_iff hι,
+      VectorBundleOrientationCover.deck_apply]
+    exact neg_eq_iff_eq_neg (G := Orientation ℝ (E b) ι)
   exact ⟨isOpen_compl_iff.1 (hcompl ▸ (-o).isOpen_setOf_orientation_eq),
     o.isOpen_setOf_orientation_eq⟩
+
+/-- **Reversed orientations along a connected family obstruct orientability.** Let `δ` be a
+continuous family of points of the orientation double cover, parametrized by a preconnected space,
+which passes through a point `δ x` and through its opposite `deck (δ x)`. Then the bundle has no
+orientation: the points of the cover on the section of an orientation form a clopen set, which
+would contain exactly one of `δ x` and `δ y`. For a loop in the base along which a continuously
+varying orientation of the fibres returns reversed, this says that orientation-reversing monodromy
+makes a bundle non-orientable. -/
+theorem isEmpty_of_continuous_of_eq_deck (hι : Fintype.card ι = finrank ℝ F) {X : Type*}
+    [TopologicalSpace X] [PreconnectedSpace X] {δ : X → VectorBundleOrientationCover F E ι}
+    (hδ : Continuous δ) {x y : X} (hxy : δ y = VectorBundleOrientationCover.deck (δ x)) :
+    IsEmpty (VectorBundleOrientation F E ι) := by
+  refine ⟨fun o ↦ ?_⟩
+  set S := {p : VectorBundleOrientationCover F E ι | p.orientation = o p.proj}
+  -- Exactly one of a point of the cover and its opposite lies on the section given by `o`.
+  have hdeck := o.deck_mem_setOf_orientation_eq_iff hι
+  rcases isClopen_iff.1 ((o.isClopen_setOf_orientation_eq hι).preimage hδ) with h | h
+  · have hy : δ y ∉ S := fun hy ↦ h.subset hy
+    exact hy (hxy ▸ (hdeck (δ x)).2 fun hx ↦ h.subset hx)
+  · have hx : δ x ∈ S := h.symm.subset (mem_univ x)
+    exact (hdeck (δ x)).1 (hxy ▸ h.symm.subset (mem_univ y)) hx
 
 /-- An orientation trivializes the orientation double cover: sheet `0` carries the chosen
 orientation and sheet `1` its opposite. The homeomorphism commutes with projection to the base,

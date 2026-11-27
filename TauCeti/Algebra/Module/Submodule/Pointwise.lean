@@ -10,7 +10,10 @@ public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.Algebra.Module.Submodule.Map
+import Mathlib.Algebra.Order.Group.Action
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
 import TauCeti.GroupTheory.Index.Exact
 
@@ -25,9 +28,12 @@ negation, and when `I` has finite quotient `M ⧸ I`, finiteness of `a • (I �
 of `a • D`. A unit of a ring stabilizes an additive subgroup, viewed as a `ℤ`-submodule, exactly
 when multiplication by the unit and by its inverse both preserve it.
 
-Membership in a pointwise translate under a group action is tested by the inverse action.
+Membership in a pointwise translate under a group action is tested by the inverse action, and a
+group acts on submodules by order automorphisms. Pointwise actions of commuting monoids on
+submodules commute, and commute with multiplication by an ideal.
 For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
-`s⁻¹ t` is a unit of `C`.
+`s⁻¹ t` is a unit of `C`. In a scalar tower, an `M`-regular scalar restricts to an injective
+self-map of any finite submodule `N`, hence surjects onto `N` and satisfies `a • N = N`.
 
 Let `S` be a subring of a commutative ring `A`, `M` an `A`-module and `M₀` an `S`-submodule of
 `M`. This file collects the elementary facts about the family `rⁿ • M₀`, for `r : S`, in
@@ -42,8 +48,23 @@ this file to restate both.
 
 * `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
   membership of `g⁻¹ • x` in `N`.
+* `Submodule.comap_restrictScalars_units_smul`: pulling back along a `K`-linear map commutes with
+  the homothety by `t ∈ Kˣ`.
 * `Submodule.finite_pointwise_smul_of_finite_quotient`: if `M ⧸ I` and `a • (I ⊓ D)` are finite,
   then `a • D` is finite.
+* `Submodule.smul_eq_self_of_finite`: an `M`-regular scalar in a tower fixes any finite submodule
+  `N`, `a • N = N`.
+* `Submodule.pointwise_smul_le_pointwise_smul_iff`,
+  `Submodule.pointwise_smul_lt_pointwise_smul_iff`: a group acts on submodules by order
+  automorphisms.
+* `Submodule.pointwiseSMulCommClass`: pointwise actions of commuting monoids on submodules
+  commute.
+* `Submodule.ideal_smul_pointwise_smul`: multiplying by an ideal commutes with a linear
+  translation.
+* `Submodule.units_smul_eq_smul_of_val_eq`: a unit of an `R`-algebra coming from `c : R`
+  translates submodules as `c` does.
+* `Submodule.zpow_smul_le_zpow_smul`: translates of a submodule by powers of such a unit shrink
+  as the exponent grows.
 * `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
   units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
@@ -69,6 +90,24 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
     {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
   rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
+
+/-- Pulling back along a `K`-linear map commutes with homotheties: `f⁻¹(tS) = t · f⁻¹(S)` for an
+`O`-submodule `S` and `t ∈ Kˣ`. -/
+theorem comap_restrictScalars_units_smul {O K V V' : Type*} [CommRing O] [Field K]
+    [Algebra O K] [AddCommGroup V] [Module K V] [Module O V] [IsScalarTower O K V]
+    [AddCommGroup V'] [Module K V'] [Module O V'] [IsScalarTower O K V'] (f : V' →ₗ[K] V)
+    (t : Kˣ) (S : Submodule O V) :
+    (t • S).comap (f.restrictScalars O) = t • S.comap (f.restrictScalars O) := by
+  ext x
+  -- `t • S` is the action of the scalar `(t : K)`; test membership with its preimage `(t : K)⁻¹`.
+  simp only [Units.smul_def, mem_comap, mem_smul_pointwise_iff_exists,
+    LinearMap.restrictScalars_apply]
+  constructor
+  · rintro ⟨s, hs, hsx⟩
+    refine ⟨(t : K)⁻¹ • x, ?_, smul_inv_smul₀ t.ne_zero x⟩
+    rwa [map_smul, ← hsx, inv_smul_smul₀ t.ne_zero]
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨f y, hy, (map_smul f _ y).symm⟩
 
 /-- If `I` has finite quotient `M ⧸ I` and `a • (I ⊓ D)` is finite, then `a • D` is finite:
 `D ⧸ (I ⊓ D)` embeds into `M ⧸ I` and surjects onto `(a • D) ⧸ (a • (I ⊓ D))`. -/
@@ -99,6 +138,70 @@ theorem finite_pointwise_smul_of_finite_quotient {α R M : Type*} [Monoid α] [R
       (LinearMap.range_eq_top.mp ((Submodule.range_liftQ K π₀ hK_le).trans
         (LinearMap.range_eq_top.mpr hπ₀_surj)))
   exact (LinearMap.exact_subtype_mkQ U).finite
+
+/-- If scalar multiplication by `a` is injective on `M` and `N` is a finite submodule of `M`, then
+`a • N = N`: an injective self-map of the finite type `N` is surjective. -/
+theorem smul_eq_self_of_finite {α R M : Type*} [Monoid α] [Semiring R] [AddCommMonoid M]
+    [Module R M] [SMul α R] [DistribMulAction α M] [SMulCommClass α R M] [IsScalarTower α R M]
+    (N : Submodule R M) [Finite N] {a : α} (ha : IsSMulRegular M a) : a • N = N := by
+  have hle : N.map (DistribSMul.toLinearMap R M a) ≤ N := by
+    rw [← pointwise_smul_def]
+    exact N.smul_le_self_of_tower a
+  rw [pointwise_smul_def]
+  exact N.map_eq_self_of_finite (fun _ _ h ↦ ha h) hle
+
+/-- A group acts on submodules by order automorphisms: translating two submodules by the same
+element preserves and reflects inclusion. -/
+@[simp]
+theorem pointwise_smul_le_pointwise_smul_iff {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
+    {g : G} {S T : Submodule R M} : g • S ≤ g • T ↔ S ≤ T :=
+  ⟨fun h => by simpa using smul_le_smul_left g⁻¹ h, smul_le_smul_left g⟩
+
+/-- Translating two submodules by the same element of a group preserves and reflects strict
+inclusion. -/
+@[simp]
+theorem pointwise_smul_lt_pointwise_smul_iff {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
+    {g : G} {S T : Submodule R M} : g • S < g • T ↔ S < T := by
+  simp only [lt_iff_le_not_ge, pointwise_smul_le_pointwise_smul_iff]
+
+/-- The pointwise actions on submodules of two monoids acting by commuting linear maps
+commute. -/
+instance pointwiseSMulCommClass {R M α β : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Monoid α] [Monoid β] [DistribMulAction α M] [DistribMulAction β M] [SMulCommClass α R M]
+    [SMulCommClass β R M] [SMulCommClass α β M] : SMulCommClass α β (Submodule R M) :=
+  ⟨fun a b S => by
+    simp only [pointwise_smul_def, ← map_comp]
+    congr 1
+    ext x
+    exact smul_comm a b x⟩
+
+/-- Multiplying by an ideal commutes with translating by an element acting linearly. -/
+theorem ideal_smul_pointwise_smul {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Monoid G] [DistribMulAction G M] [SMulCommClass G R M] (I : Ideal R) (g : G)
+    (N : Submodule R M) : I • (g • N) = g • (I • N) := by
+  simp only [pointwise_smul_def, map_smul'']
+
+/-- Translating a submodule by a unit of an `R`-algebra `A` which comes from `c : R` is
+multiplying it by `c`. -/
+theorem units_smul_eq_smul_of_val_eq {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {a : Aˣ} {c : R}
+    (h : (a : A) = algebraMap R A c) (N : Submodule R M) : a • N = c • N := by
+  ext x
+  simp only [mem_smul_pointwise_iff_exists, Units.smul_def, h, algebraMap_smul]
+
+/-- If `a` is the image in `Aˣ` of `c : R`, the translates `aⁿ N` of a submodule `N` shrink as the
+exponent `n` grows: `a ^ n • N ≤ a ^ m • N` for `m ≤ n`. -/
+theorem zpow_smul_le_zpow_smul {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {a : Aˣ} {c : R}
+    (h : (a : A) = algebraMap R A c) {m n : ℤ} (hmn : m ≤ n) (N : Submodule R M) :
+    a ^ n • N ≤ a ^ m • N := by
+  obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 hmn)
+  rw [show n = m + k by omega, zpow_add, mul_smul, zpow_natCast]
+  refine pointwise_smul_le_pointwise_smul_iff.2 ?_
+  rw [units_smul_eq_smul_of_val_eq (c := c ^ k) (by rw [Units.val_pow_eq_pow_val, h, map_pow])]
+  exact N.smul_le_self_of_tower _
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 

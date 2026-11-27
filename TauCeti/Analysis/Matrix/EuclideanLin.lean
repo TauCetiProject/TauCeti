@@ -89,9 +89,11 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 * the actions of the unitary and special unitary groups on the unit sphere of Euclidean space by
   matrix-vector multiplication (`Matrix.UnitaryGroup.coe_smul_unitSphere`,
   `Matrix.coe_specialUnitaryGroup_smul_unitSphere`), which are jointly continuous;
-* `Matrix.toEuclideanCLM_apply_apply` — the coordinate formula for the continuous linear map of
-  a matrix, which depends continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and
-  conversely (`Matrix.continuous_toEuclideanCLM_symm`);
+* `Matrix.toEuclideanCLM_apply_apply`, `Matrix.toEuclideanLin_single_basisFun`,
+  `Matrix.toEuclideanCLM_single_basisFun` — the coordinate and matrix-unit formulas for the
+  continuous linear map of a matrix, whose columns have squared norms
+  `Matrix.norm_toEuclideanCLM_single_sq`, and which depends continuously on the matrix
+  (`Matrix.continuous_toEuclideanCLM`) and conversely (`Matrix.continuous_toEuclideanCLM_symm`);
 * `Matrix.toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply` — the map of an invertible
   matrix undoes the map of its inverse;
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
@@ -282,6 +284,31 @@ theorem toEuclideanCLM_apply_single (A : Matrix ι ι 𝕜) (j : ι) :
       WithLp.toLp 2 (fun i => A i j) := by
   rw [toEuclideanCLM_apply, toLpLin_apply, PiLp.ofLp_single,
     Matrix.mulVec_single_one, Matrix.col_apply']
+
+/-- The column `A e_j` of a matrix has squared norm `∑ᵢ ‖Aᵢⱼ‖²`. -/
+theorem norm_toEuclideanCLM_single_sq (A : Matrix ι ι 𝕜) (j : ι) :
+    ‖toEuclideanCLM (𝕜 := 𝕜) A (EuclideanSpace.single j 1)‖ ^ 2 = ∑ i, ‖A i j‖ ^ 2 := by
+  rw [toEuclideanCLM_apply_single, EuclideanSpace.norm_sq_eq]
+
+/-- The Euclidean linear map of a matrix unit `Matrix.single i j c` sends the standard orthonormal
+basis vector `e_k` to `c • e_i` when `k = j` and `0` otherwise. -/
+theorem toEuclideanLin_single_basisFun (i : κ) (j k : ι) (c : 𝕜) :
+    toEuclideanLin (single i j c) (EuclideanSpace.basisFun ι 𝕜 k) =
+      if k = j then c • EuclideanSpace.basisFun κ 𝕜 i else 0 := by
+  apply (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).injective
+  ext w
+  split_ifs with hk
+  · subst hk
+    simp [EuclideanSpace.basisFun_apply, EuclideanSpace.single, PiLp.ofLp_single,
+      single_apply, Pi.single_apply, eq_comm]
+  · simp [EuclideanSpace.basisFun_apply, EuclideanSpace.single, PiLp.ofLp_single, Ne.symm hk]
+
+/-- The continuous linear map of a square matrix unit `Matrix.single i j c` sends the standard
+orthonormal basis vector `e_k` to `c • e_i` when `k = j` and `0` otherwise. -/
+theorem toEuclideanCLM_single_basisFun (i j k : ι) (c : 𝕜) :
+    toEuclideanCLM (n := ι) (𝕜 := 𝕜) (single i j c) (EuclideanSpace.basisFun ι 𝕜 k) =
+      if k = j then c • EuclideanSpace.basisFun ι 𝕜 i else 0 := by
+  rw [toEuclideanCLM_apply, toEuclideanLin_single_basisFun]
 
 /-- The continuous linear map of a matrix depends continuously on the matrix. -/
 theorem continuous_toEuclideanCLM :
