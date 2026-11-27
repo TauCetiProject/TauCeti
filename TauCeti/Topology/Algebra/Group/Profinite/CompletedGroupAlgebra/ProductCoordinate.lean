@@ -154,14 +154,7 @@ theorem prodPowerSeriesCoordinate_map_singleOneRingHom (φ : PowerSeries ℤ_[p]
     prodPowerSeriesCoordinate C hΓ hγ
         (PowerSeries.map (MonoidAlgebra.singleOneRingHom : ℤ_[p] →+* MonoidAlgebra ℤ_[p] C) φ) =
       map ℤ_[p] (MonoidHom.inr C Γ) (continuous_inr C Γ) (powerSeriesCoordinate hΓ hγ φ) := by
-  have h : MonoidAlgebra.mapAlgEquiv ℤ_[p] C (powerSeriesCoordinate hΓ hγ)
-      (MonoidAlgebra.single 1 φ) =
-        MonoidAlgebra.single 1 (powerSeriesCoordinate hΓ hγ φ) := by
-    rw [MonoidAlgebra.mapAlgEquiv_apply]
-    exact MonoidAlgebra.mapAlgHom_single (powerSeriesCoordinate hΓ hγ).toAlgHom 1 φ
-  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    MonoidAlgebra.powerSeriesAlgEquiv_symm_map_singleOneRingHom, h,
-    coe_monoidAlgebraProdEquiv, monoidAlgebraProdHom_single_one]
+  simp [prodPowerSeriesCoordinate]
 
 /-- The product coordinate sends the binomial series `(1 + X) ^ u` over `ℤ_p[C]` to the group
 element `(1, γ ^ u)` in `ℤ_p[[C × Γ]]`. -/
@@ -170,9 +163,8 @@ theorem prodPowerSeriesCoordinate_binomialSeries (u : ℤ_[p]) :
     prodPowerSeriesCoordinate C hΓ hγ (PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] C) u) =
       of ℤ_[p] (C × Γ) (1, hΓ.padicPow γ u) := by
   rw [← PowerSeries.map_algHom_binomialSeries
-      (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p]) (M := C)),
-    MonoidAlgebra.toRingHom_singleOneAlgHom, prodPowerSeriesCoordinate_map_singleOneRingHom,
-    powerSeriesCoordinate_binomialSeries, map_of, MonoidHom.inr_apply]
+      (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p]) (M := C))]
+  simp [prodPowerSeriesCoordinate_map_singleOneRingHom]
 
 /-- The inverse coordinate sends the group element `(c, 1)` to the group element `c` of the
 group ring. -/

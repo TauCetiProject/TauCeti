@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Complex.Basic
-public import TauCeti.NumberTheory.Padics.Measure.Topology.Amice
+public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra.Amice
 public import TauCeti.NumberTheory.Padics.Measure.Units.WeightIntegral
 public import TauCeti.NumberTheory.Padics.WeightSpace.PadicComplex
 public import TauCeti.NumberTheory.Padics.WeightSpace.Specialization
@@ -66,8 +66,43 @@ theorem toCompletedGroupAlgebra_unitsPrincipal
           (amiceTransformₐ
             ((unitsPrincipalLogEquiv p :
               unitsPrincipal p (padicUnitsDepth p) →ₜ* Multiplicative ℤ_[p]).mapAlgHom μ))) := by
-  rw [powerSeriesCoordinate_amiceTransformₐ, toCompletedGroupAlgebra_continuousMulEquiv,
-    ← completedGroupAlgebra.domCongr_symm, AlgEquiv.symm_apply_apply]
+  let f : C(unitsPrincipal p (padicUnitsDepth p), ℤ_[p]) :=
+    ⟨fun u ↦ (unitsPrincipalLogEquiv p u).toAdd,
+      continuous_toAdd.comp (unitsPrincipalLogEquiv p).continuous⟩
+  have hdom (ψ : PowerSeries ℤ_[p]) :
+      completedGroupAlgebra.domCongr ℤ_[p] (unitsPrincipalLogEquiv p).symm
+          (completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
+            (topologicallyGenerates_ofAdd_one_padicInt p) ψ) =
+        completedGroupAlgebra.powerSeriesCoordinate
+          (isProP_unitsPrincipal p (padicUnitsDepth_pos p))
+          topologicallyGenerates_padicUnitsGenerator ψ := by
+    have hcomp := congrArg (· ψ) <| PowerSeries.comp_aeval
+      (completedGroupAlgebra.isTopologicallyNilpotent_of_sub_one
+        (isProP_multiplicative_padicInt p) (.ofAdd 1))
+      (T := completedGroupAlgebra ℤ_[p] (unitsPrincipal p (padicUnitsDepth p)))
+      (ε := completedGroupAlgebra.map ℤ_[p]
+        ((unitsPrincipalLogEquiv p).symm : Multiplicative ℤ_[p] →* _)
+        (map_continuous (unitsPrincipalLogEquiv p).symm))
+      (completedGroupAlgebra.continuous_map ℤ_[p] _ _)
+    simp only [completedGroupAlgebra.coe_powerSeriesCoordinate,
+      completedGroupAlgebra.coe_domCongr, AlgHom.comp_apply] at hcomp ⊢
+    convert hcomp
+    simp [completedGroupAlgebra.map_of, unitsPrincipalLogEquiv_symm_ofAdd_one]
+  have hamice :
+      amiceTransformₐ ((unitsPrincipalLogEquiv p :
+          unitsPrincipal p (padicUnitsDepth p) →ₜ* Multiplicative ℤ_[p]).mapAlgHom μ) =
+        amiceTransformEquiv (map f μ) := by
+    refine PowerSeries.ext fun n ↦ ?_
+    rw [coeff_amiceTransformₐ, ContinuousMonoidHom.mapAlgHom_apply, amiceTransformEquiv_apply,
+      coeff_amiceTransform, AbstractMeasure.map_apply, AbstractMeasure.map_apply]
+    exact congrArg μ (ContinuousMap.ext fun u ↦ by simp [f, mulMahler_apply])
+  rw [hdom, hamice, powerSeriesCoordinate_unitsPrincipal_amiceTransformEquiv,
+    completedGroupAlgebraEquiv_apply, AbstractMeasure.map_map]
+  have hid : (ContinuousMap.mk (fun a ↦ (unitsPrincipalLogEquiv p).symm (.ofAdd a))
+      ((unitsPrincipalLogEquiv p).symm.continuous.comp continuous_ofAdd)).comp f =
+      ContinuousMap.id (unitsPrincipal p (padicUnitsDepth p)) :=
+    ContinuousMap.ext fun _ ↦ by simp [f]
+  rw [hid, AbstractMeasure.map_id]
 
 section MeasureFunComparison
 
@@ -77,8 +112,7 @@ variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDis
 /-- **Compatibility of `specializeRingHom` with `measureFun`.** -/
 @[simp] theorem WeightSpace.specializeRingHom_toCompletedGroupAlgebra (ν : D(ℤ_[p]ˣ, ℤ_[p]))
     (κ : WeightSpace p K) : κ.specializeRingHom (toCompletedGroupAlgebra ν) = measureFun K ν κ := by
-  let : NontriviallyNormedField K :=
-    { ‹NormedField K› with non_trivial := exists_one_lt_norm_of_normedAlgebra ℚ_[p] K }
+  let : NontriviallyNormedField K := NormedAlgebra.nontriviallyNormedField ℚ_[p] K
   let : TopologicalSpace D(ℤ_[p]ˣ, ℤ_[p]) := WeakTopology
   let Φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K :=
     (Pi.evalRingHom (fun _ : WeightSpace p K ↦ K) κ).comp
@@ -96,8 +130,7 @@ variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [IsUltrametricDis
 /-- Every field-valued weight specialisation takes values in the closed unit ball of `K`. -/
 theorem WeightSpace.norm_specializeRingHom_le_one (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ)
     (κ : WeightSpace p K) : ‖κ.specializeRingHom x‖ ≤ 1 := by
-  let : NontriviallyNormedField K :=
-    { ‹NormedField K› with non_trivial := exists_one_lt_norm_of_normedAlgebra ℚ_[p] K }
+  let : NontriviallyNormedField K := NormedAlgebra.nontriviallyNormedField ℚ_[p] K
   rw [← toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm x,
     WeightSpace.specializeRingHom_toCompletedGroupAlgebra]
   exact norm_measureFun_le_one _ κ

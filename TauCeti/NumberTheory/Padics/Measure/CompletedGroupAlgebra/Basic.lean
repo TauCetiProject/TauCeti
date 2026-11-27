@@ -562,6 +562,31 @@ variable {Γ K : Type*} [CommGroup Γ] [TopologicalSpace Γ] [IsTopologicalGroup
   [CompactSpace Γ] [TotallyDisconnectedSpace Γ]
   [CommRing K] [IsDomain K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
 
+/-- Inflate a character of a finite open-normal quotient `Γ ⧸ U` to a continuous character
+of `Γ`. -/
+private def inflate {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousMul Γ]
+    [CommMonoid R] [TopologicalSpace R] {U : OpenNormalSubgroup Γ}
+    (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) : Γ →ₜ* Rˣ where
+  toMonoidHom := ψ.comp U.toSubgroup.quotientMkContinuousMonoidHom.toMonoidHom
+  continuous_toFun :=
+    (continuous_of_discreteTopology (f := ⇑ψ)).comp
+      U.toSubgroup.quotientMkContinuousMonoidHom.continuous
+
+private theorem inflate_apply {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousMul Γ]
+    [CommMonoid R] [TopologicalSpace R] {U : OpenNormalSubgroup Γ}
+    (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) (x : Γ) :
+    inflate ψ x = ψ (x : Γ ⧸ U.toSubgroup) := by
+  simp [inflate]
+
+private theorem isOfFinOrder_inflate {Γ R : Type*} [Group Γ] [TopologicalSpace Γ]
+    [CompactSpace Γ] [ContinuousMul Γ] [CommMonoid R] [TopologicalSpace R] [ContinuousMul R]
+    {U : OpenNormalSubgroup Γ} (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) :
+    IsOfFinOrder (inflate ψ) :=
+  isOfFinOrder_iff_pow_eq_one.mpr
+    ⟨Monoid.exponent (Γ ⧸ U.toSubgroup), Monoid.ExponentExists.of_finite.exponent_pos, by
+      ext x
+      simp [inflate_apply, ← map_pow, Monoid.pow_exponent_eq_one]⟩
+
 /-- Integrating a continuous character that factors through a finite quotient `Γ ⧸ U` against `μ`
 equals evaluating `ψ.charEval` on the finite projection of `μ` at level `U`. -/
 private theorem characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection
@@ -570,20 +595,17 @@ private theorem characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjec
     [IsTopologicalRing R]
     {U : OpenNormalSubgroup Γ} (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) (μ : D(Γ, R)) :
     (ContinuousMonoidHom.comp ⟨Units.coeHom R, Units.continuous_val⟩
-      ⟨ψ.comp U.toSubgroup.quotientMkContinuousMonoidHom.toMonoidHom,
-        (continuous_of_discreteTopology (f := ⇑ψ)).comp
-          U.toSubgroup.quotientMkContinuousMonoidHom.continuous⟩).characterIntegralAlgHom μ =
+      (inflate ψ)).characterIntegralAlgHom μ =
       ψ.charEval (U.toSubgroup.quotientMkContinuousMonoidHom.finiteProjectionAlgHom μ) := by
   let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
   rw [ψ.charEval_eq_sum, ← proj_toCompletedGroupAlgebra,
     ContinuousMonoidHom.characterIntegralAlgHom_apply,
     apply_eq_sum_coeff_proj_toCompletedGroupAlgebra (R := R) (U := U) μ
-      (F := ((ContinuousMonoidHom.comp ⟨Units.coeHom R, Units.continuous_val⟩
-        ⟨ψ.comp U.toSubgroup.quotientMkContinuousMonoidHom.toMonoidHom,
-          (continuous_of_discreteTopology (f := ⇑ψ)).comp
-            U.toSubgroup.quotientMkContinuousMonoidHom.continuous⟩) : C(Γ, R)))
-      (g := fun a ↦ (ψ a : R)) (funext fun x ↦ congrArg (fun y ↦ (ψ y : R))
-        (Subgroup.quotientMkContinuousMonoidHom_apply U.toSubgroup x).symm)]
+      (g := fun a ↦ (ψ a : R))
+      (funext fun x ↦ by
+        simp only [Function.comp_apply, ContinuousMap.coe_mk, ContinuousMonoidHom.comp_toFun]
+        rw [inflate_apply]
+        exact (Units.coeHom_apply _).symm)]
   exact Finset.sum_congr rfl fun a _ ↦ mul_comm _ _
 
 /-- A measure on a profinite commutative group valued in a Hausdorff domain with enough roots of
@@ -603,18 +625,9 @@ theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq
   rw [proj_toCompletedGroupAlgebra, proj_toCompletedGroupAlgebra]
   have := hroots U
   refine TauCeti.eq_of_forall_charEval_eq fun ψ ↦ ?_
-  let q := U.toSubgroup.quotientMkContinuousMonoidHom
-  let κ : Γ →ₜ* Kˣ :=
-    ⟨ψ.comp q.toMonoidHom,
-      (continuous_of_discreteTopology (f := ⇑ψ)).comp q.continuous⟩
-  have hfin : IsOfFinOrder κ :=
-    isOfFinOrder_iff_pow_eq_one.mpr
-      ⟨Monoid.exponent (Γ ⧸ U.toSubgroup), Monoid.ExponentExists.of_finite.exponent_pos, by
-        ext x
-        simp [κ, q, ← map_pow, Monoid.pow_exponent_eq_one]⟩
   rw [← characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection ψ μ,
     ← characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection ψ ν]
-  exact h κ hfin
+  exact h (inflate ψ) (isOfFinOrder_inflate ψ)
 
 end CharacterSeparation
 

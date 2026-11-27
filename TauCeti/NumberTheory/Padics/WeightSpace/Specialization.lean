@@ -76,10 +76,10 @@ private theorem liftPS_of (x : ℤ_[p]ˣ) :
       η (padicIntUnitsEquivZModUnitsProd p x).1 *
         ε (PowerSeries.binomialSeries ℤ_[p] (padicIntUnitsEquivZModUnitsProd p x).2.toAdd) := by
   rw [← (padicUnitsCoordinate p).apply_symm_apply (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x),
-    padicUnitsCoordinate_symm_of, ← PowerSeries.map_algHom_binomialSeries
+    padicUnitsCoordinate_symm_of]
+  simp [-padicUnitsCoordinate_C_single, ← PowerSeries.map_algHom_binomialSeries
       (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p]) (M := _)),
-    MonoidAlgebra.toRingHom_singleOneAlgHom, map_mul, map_mul, liftPS_C_single,
-    liftPS_map_singleOne, map_one, one_mul]
+    liftPS_C_single, liftPS_map_singleOne]
 
 variable {ε}
 
@@ -307,7 +307,7 @@ theorem continuous_normedSpecialize (κ : WeightSpace p R) : Continuous κ.norme
   continuous_liftPS κ.finiteChar (continuous_padicPowerSeriesEval p κ.tendsto_coord_pow)
 @[simp] theorem normedSpecialize_of (κ : WeightSpace p R) (x : ℤ_[p]ˣ) :
     κ.normedSpecialize (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) = κ x := by
-  rw [normedSpecialize, liftPS_of, padicPowerSeriesEval_binomialSeries,
+  simp only [normedSpecialize, liftPS_of, padicPowerSeriesEval_binomialSeries,
     ← κ.principalChar_eq_addChar_of_value_at_one, ← κ.apply_eq_finiteChar_mul_principalChar]
 @[simp] theorem normedSpecialize_coord (κ : WeightSpace p R) :
     κ.normedSpecialize (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) =

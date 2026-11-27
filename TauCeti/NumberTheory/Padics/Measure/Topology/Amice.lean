@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.PiTopology
-public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra.Basic
 public import TauCeti.NumberTheory.Padics.Measure.PhiPsi
-public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.PowerSeries
+public import Mathlib.RingTheory.PowerSeries.PiTopology
 import TauCeti.NumberTheory.Padics.Measure.Norm
 import Mathlib.Topology.UniformSpace.UniformApproximation
 
@@ -25,15 +23,8 @@ pass continuity from finite Mahler combinations to every continuous test. Conseq
 psi and the projector onto `pℤ_p`, transported to power series, are continuous in these
 coordinates. This permits identities on polynomials to pass to integral power series.
 
-For the multiplicative group `Multiplicative ℤ_p`, the multiplicative Amice transform
-`AbstractMeasure.amiceTransformₐ` is likewise weakly continuous
-(`AbstractMeasure.continuous_amiceTransformₐ_weak`), and composing it with
-`TauCeti.completedGroupAlgebra.powerSeriesCoordinate` at `ofAdd 1` recovers
-`AbstractMeasure.toCompletedGroupAlgebra` (`TauCeti.powerSeriesCoordinate_amiceTransformₐ`).
-
 ## References
 
-* P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §II.2.
 * Rodrigues Jacinto and Williams, *An introduction to p-adic L-functions*,
   Definitions 3.5 and 3.8, Theorem 3.25 and §3.5.3–5.
 
@@ -64,18 +55,6 @@ theorem continuous_amiceTransformEquiv_weak :
   intro n
   simpa only [coeff_amiceTransformEquiv, ContinuousAt, Function.comp_def] using
     ((continuous_apply (mahler n : C(ℤ_[p], ℤ_[p]))).comp heval).continuousAt (x := μ)
-
-/-- The multiplicative Amice transform is weakly continuous to `PowerSeries.WithPiTopology`. -/
-theorem continuous_amiceTransformₐ_weak {R : Type*} [NormedCommRing R] [Algebra ℤ_[p] R]
-    [ContinuousSMul ℤ_[p] R] :
-    @Continuous _ _ (WeakTopology (X := Multiplicative ℤ_[p]) (R := R) (E := R)) _
-      (amiceTransformₐ (p := p) (R := R)) := by
-  let : TopologicalSpace D(Multiplicative ℤ_[p], R) := WeakTopology
-  refine continuous_iff_continuousAt.mpr fun μ ↦
-    (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto R _ _ _).mpr fun n ↦ ?_
-  simpa only [coeff_amiceTransformₐ, ContinuousAt, Function.comp_def] using
-    ((continuous_apply (mulMahler n : C(Multiplicative ℤ_[p], R))).comp
-      (continuous_induced_dom : Continuous fun ν : D(Multiplicative ℤ_[p], R) ↦ ⇑ν)).continuousAt
 
 /-- Evaluation of the inverse integral Amice transform at a fixed test function is
 continuous for the coefficientwise p-adic topology. -/
@@ -147,44 +126,5 @@ theorem continuous_subst_psiSeries :
   exact hcont.congr fun F ↦ by
     simp only [Function.comp_apply, ← phiMeasure_eq_map, amiceTransformEquiv_apply,
       amiceTransform_phiMeasure, psiSeries_apply]
-
-/-- **Compatibility of the Amice transform with `powerSeriesCoordinate`.** On
-`D(Multiplicative ℤ_p, ℤ_p)`, `powerSeriesCoordinate` at `ofAdd 1` composed with `amiceTransformₐ`
-equals `toCompletedGroupAlgebra`. -/
-theorem powerSeriesCoordinate_amiceTransformₐ (μ : D(Multiplicative ℤ_[p], ℤ_[p])) :
-    completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
-        (topologicallyGenerates_ofAdd_one_padicInt p) (amiceTransformₐ μ) =
-      toCompletedGroupAlgebra μ := by
-  let : TopologicalSpace D(Multiplicative ℤ_[p], ℤ_[p]) := WeakTopology
-  let coord := completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
-    (topologicallyGenerates_ofAdd_one_padicInt p)
-  let eqv := completedGroupAlgebraEquiv (Γ := Multiplicative ℤ_[p]) (p := p)
-  let φ : completedGroupAlgebra ℤ_[p] (Multiplicative ℤ_[p]) →ₐ[ℤ_[p]]
-      completedGroupAlgebra ℤ_[p] (Multiplicative ℤ_[p]) :=
-    coord.toAlgHom.comp (amiceTransformₐ.comp eqv.symm.toAlgHom)
-  have hφ : Continuous φ :=
-    (completedGroupAlgebra.continuous_powerSeriesCoordinate _ _).comp <|
-      continuous_amiceTransformₐ_weak.comp <|
-        continuous_completedGroupAlgebraEquiv_symm_weak (Γ := Multiplicative ℤ_[p])
-  have hEq : φ = AlgHom.id ℤ_[p] _ :=
-    completedGroupAlgebra.algHom_ext_of_continuous hφ continuous_id fun g ↦ by
-      simp only [φ, coord, eqv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.id_apply,
-        completedGroupAlgebraEquiv_symm_of, amiceTransformₐ_dirac,
-        completedGroupAlgebra.powerSeriesCoordinate_binomialSeries,
-        IsProP.padicPow_ofAdd_one_padicInt, ofAdd_toAdd]
-  have hμ := AlgHom.congr_fun hEq (eqv μ)
-  simp only [φ, coord, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.id_apply,
-    AlgEquiv.symm_apply_apply] at hμ
-  simpa only [eqv, completedGroupAlgebraEquiv_apply] using hμ
-
-/-- Inverse `powerSeriesCoordinate` at `ofAdd 1` on `toCompletedGroupAlgebra μ` is
-`amiceTransformₐ μ`. -/
-@[simp] theorem powerSeriesCoordinate_symm_toCompletedGroupAlgebra
-    (μ : D(Multiplicative ℤ_[p], ℤ_[p])) :
-    (completedGroupAlgebra.powerSeriesCoordinate (isProP_multiplicative_padicInt p)
-      (topologicallyGenerates_ofAdd_one_padicInt p)).symm (toCompletedGroupAlgebra μ) =
-        amiceTransformₐ μ :=
-  (completedGroupAlgebra.powerSeriesCoordinate _ _).symm_apply_eq.mpr
-    (powerSeriesCoordinate_amiceTransformₐ μ).symm
 
 end TauCeti

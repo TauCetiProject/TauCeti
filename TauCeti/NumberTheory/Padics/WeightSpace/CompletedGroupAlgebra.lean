@@ -68,19 +68,13 @@ noncomputable def padicUnitsCoordinateAt (u : ℤ_[p]ˣ) :
 @[simp] theorem padicUnitsCoordinateAt_X (u : ℤ_[p]ˣ) :
     padicUnitsCoordinateAt p u PowerSeries.X = completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ
       ((unitsPrincipalLogEquiv p).symm (.ofAdd (u : ℤ_[p]))) - 1 := by
-  rw [padicUnitsCoordinateAt, AlgEquiv.trans_apply,
-    completedGroupAlgebra.prodPowerSeriesCoordinate_X, map_sub,
-    map_one (completedGroupAlgebra.domCongr ℤ_[p] _), completedGroupAlgebra.domCongr_of,
-    padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, one_mul]
+  simp [padicUnitsCoordinateAt]
 @[simp] theorem padicUnitsCoordinateAt_C_single (u : ℤ_[p]ˣ) (δ : (ZMod (p ^ padicUnitsDepth p))ˣ)
     (a : ℤ_[p]) :
     padicUnitsCoordinateAt p u (PowerSeries.C (MonoidAlgebra.single δ a)) =
       algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) a *
         completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ) := by
-  rw [padicUnitsCoordinateAt, AlgEquiv.trans_apply,
-    completedGroupAlgebra.prodPowerSeriesCoordinate_C_single, map_mul, AlgEquiv.commutes,
-    completedGroupAlgebra.domCongr_of, padicIntUnitsEquivZModUnitsProd_symm_apply, map_one,
-    OneMemClass.coe_one, mul_one]
+  simp [padicUnitsCoordinateAt]
 
 /-- **The weight power-series coordinate of `ℤ_p[[ℤ_pˣ]]`.** Writing `q = p ^ padicUnitsDepth p`
 and `Δ = (ℤ/qℤ)ˣ`, `ℤ_pˣ ≃ₜ* Δ × ℤ_p` identifies `ℤ_p[[ℤ_pˣ]]` with `(ℤ_p[Δ])⟦X⟧`, sending `X` to
@@ -116,10 +110,8 @@ theorem padicUnitsCoordinate_C_single_one (δ : (ZMod (p ^ padicUnitsDepth p))ˣ
     padicUnitsCoordinate p
         (PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) s) =
       completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ ((unitsPrincipalLogEquiv p).symm (.ofAdd s)) := by
-  rw [← padicUnitsCoordinateAt_one, padicUnitsCoordinateAt, AlgEquiv.trans_apply,
-    completedGroupAlgebra.prodPowerSeriesCoordinate_binomialSeries, Units.val_one,
-    IsProP.padicPow_ofAdd_one_padicInt, completedGroupAlgebra.domCongr_of,
-    padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, one_mul]
+  simp [padicUnitsCoordinate, padicUnitsCoordinateAt, IsProP.padicPow_ofAdd_one_padicInt,
+    completedGroupAlgebra.domCongr_of]
 
 /-- **Expansion of group elements in weight coordinates.** The inverse of `padicUnitsCoordinate`
 sends `[x]` (`x ∈ ℤ_pˣ`) to `[x mod q] · (1 + X) ^ (log (x / ω(x mod q)) / q)`. -/
@@ -129,9 +121,10 @@ theorem padicUnitsCoordinate_symm_of (x : ℤ_[p]ˣ) :
         PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)
           (padicIntUnitsEquivZModUnitsProd p x).2.toAdd := by
   apply (padicUnitsCoordinate p).injective
-  rw [AlgEquiv.apply_symm_apply, map_mul, padicUnitsCoordinate_C_single_one,
-    padicUnitsCoordinate_binomialSeries, ← map_mul, ofAdd_toAdd,
-    ← padicIntUnitsEquivZModUnitsProd_symm_apply, ContinuousMulEquiv.symm_apply_apply]
+  simp only [AlgEquiv.apply_symm_apply, map_mul, padicUnitsCoordinate_C_single_one,
+    padicUnitsCoordinate_binomialSeries, ofAdd_toAdd]
+  rw [← map_mul, ← padicIntUnitsEquivZModUnitsProd_symm_apply,
+    ContinuousMulEquiv.symm_apply_apply]
 @[simp] theorem padicUnitsCoordinate_symm_of_padicUnitsSection
     (δ : (ZMod (p ^ padicUnitsDepth p))ˣ) :
     (padicUnitsCoordinate p).symm (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ)) =

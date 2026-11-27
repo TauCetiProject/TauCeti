@@ -83,7 +83,7 @@ theorem continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm {R A M B : Type*} [Comm
       (hε.comp (continuous_coeff_powerSeriesAlgEquiv_symm m)).mul continuous_const).congr fun ψ ↦ by
     rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, MonoidAlgebra.coe_liftNCAlgHom,
       MonoidAlgebra.liftNC_eq_sum (ε : PowerSeries A →+ B) η]
-    rfl
+    simp only [AlgHom.coe_toAddMonoidHom]
 
 /-- For a finite monoid `M`, if `ε : A⟦X⟧ →+ B` evaluates power series via convergent sums
 `∑ n, f (φ.coeff n) * t ^ n` where `t` commutes with every `η m`, then `MonoidAlgebra.liftNC ε η`

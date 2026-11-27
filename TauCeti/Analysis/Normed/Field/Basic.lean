@@ -237,3 +237,10 @@ theorem exists_one_lt_norm_of_normedAlgebra (𝕜 : Type*) [NontriviallyNormedFi
   exact ⟨algebraMap 𝕜 K c, by rwa [norm_algebraMap']⟩
 
 end TauCeti
+
+/-- Every normed field `K` that is a normed algebra over a nontrivially normed field `𝕜` is
+nontrivially normed. -/
+@[expose, instance_reducible]
+def NormedAlgebra.nontriviallyNormedField (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+    (K : Type*) [hK : NormedField K] [NormedAlgebra 𝕜 K] : NontriviallyNormedField K :=
+  { hK with non_trivial := TauCeti.exists_one_lt_norm_of_normedAlgebra 𝕜 K }
