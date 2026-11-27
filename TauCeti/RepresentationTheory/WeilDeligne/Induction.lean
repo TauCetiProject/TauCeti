@@ -41,8 +41,8 @@ to parameters with monodromy.
 
 ## Main results
 
-* `TauCeti.WeilDeligneParameter.coind_mul_indN`: the conjugation relation for the induced
-  monodromy.
+* `TauCeti.WeilDeligneParameter.coind_mul_indN_mul_coind_inv`: the conjugation relation for the
+  induced monodromy.
 
 ## References
 
@@ -105,8 +105,7 @@ theorem indN_pow_apply (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (k : ℕ
   induction k generalizing F with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ, mul_apply_eq_comp, ih, indN_apply, pow_succ, pow_succ,
-      mul_apply_eq_comp, map_smul, smul_smul]
+    simp [pow_succ, mul_apply_eq_comp, ih, smul_smul]
 
 /-- The induced monodromy is nilpotent. -/
 theorem isNilpotent_indN (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) :
@@ -117,7 +116,7 @@ theorem isNilpotent_indN (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) :
   simp
 
 /-- The induced monodromy satisfies the conjugation relation for `q`. -/
-theorem coind_mul_indN (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (x : W) :
+theorem coind_mul_indN_mul_coind_inv (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (x : W) :
     coind ι D'.r x * indN ι f hf hq D' * coind ι D'.r x⁻¹ =
       (q : E) ^ (deg x).toAdd • indN ι f hf hq D' := by
   refine LinearMap.ext fun F ↦ Subtype.ext (funext fun w ↦ ?_)
@@ -130,7 +129,7 @@ theorem coind_mul_indN (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (x : W) 
 
 section Topology
 
-variable [TopologicalSpace W] [ContinuousMul W]
+variable [TopologicalSpace W] [SeparatelyContinuousMul W]
 
 /-- The **induced parameter** of a raw Weil–Deligne parameter `(V', r', N')` for `W'` and
 `q ^ f` along `ι : W' →* W` with `deg (ι w) = f · deg' w`, for `ι` an open map with image of
@@ -144,7 +143,7 @@ def ind (ι : W' →* W) (f : ℕ) (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w
   isOpen_ker := isOpen_ker_coind hι D'.r D'.isOpen_ker
   N := indN ι f hf hq D'
   isNilpotent_N := isNilpotent_indN D'
-  conj_N := coind_mul_indN D'
+  conj_N := coind_mul_indN_mul_coind_inv D'
 
 variable {hι : IsOpenMap ι} [ι.range.FiniteIndex]
 
@@ -157,6 +156,14 @@ theorem ind_r (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) :
 theorem ind_N (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) :
     (ind ι f hf hq hι D').N = indN ι f hf hq D' :=
   (rfl)
+
+/-- A morphism into the induced parameter is determined by its values at `1`:
+`(Ψ (r(w) v))(1) = (Ψ v)(w)`. -/
+@[simp]
+theorem Hom.map_r_apply_val_one {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W' V' deg' (q ^ f)} (Ψ : Hom D (ind ι f hf hq hι D')) (w : W)
+    (v : V) : (Ψ (D.r w v)).val 1 = (Ψ v).val w := by
+  rw [Ψ.map_r_apply, ind_r, coind_apply_coe_apply, one_mul]
 
 variable (hι) (hιc : Continuous ι)
 
@@ -196,7 +203,7 @@ def Hom.ofInd {D : WeilDeligneParameter E W V deg q}
     refine LinearMap.ext fun v ↦ ?_
     simp only [LinearMap.comp_apply, LinearMap.proj_apply, Submodule.subtype_apply,
       restrict_r_apply, IntertwiningMap.toLinearMap_apply, Hom.coe_toIntertwiningMap]
-    rw [Ψ.map_r_apply, ind_r, coind_apply_coe_apply, one_mul]
+    rw [Ψ.map_r_apply_val_one]
     simpa using (Ψ v).property g 1
   comp_N := by
     refine LinearMap.ext fun v ↦ ?_
@@ -222,8 +229,7 @@ def restrictIndHomEquiv (D : WeilDeligneParameter E W V deg q)
   right_inv Ψ := by
     ext v w
     simp only [IntertwiningMap.toLinearMap_apply, Hom.coe_toIntertwiningMap]
-    rw [Hom.toInd_apply_val, Hom.ofInd_apply, Ψ.map_r_apply, ind_r, coind_apply_coe_apply,
-      one_mul]
+    rw [Hom.toInd_apply_val, Hom.ofInd_apply, Ψ.map_r_apply_val_one]
 
 @[simp]
 theorem restrictIndHomEquiv_apply (D : WeilDeligneParameter E W V deg q)

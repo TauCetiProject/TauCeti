@@ -109,7 +109,7 @@ end Apply
 section OpenKernel
 
 variable {k G H V : Type*} [Semiring k] [Group G] [Group H] [AddCommMonoid V] [Module k V]
-  [TopologicalSpace G] [TopologicalSpace H] [ContinuousMul H]
+  [TopologicalSpace G] [TopologicalSpace H] [SeparatelyContinuousMul H]
 
 /-- **The coinduced action has open kernel.** If `φ : G →* H` is an open map whose image has
 finite index and `ρ` has open kernel, the coinduced representation has open kernel: it contains
@@ -120,7 +120,8 @@ theorem isOpen_ker_coind {φ : G →* H} (hφ : IsOpenMap φ) [φ.range.FiniteIn
   have : Finite (H ⧸ φ.range) := Subgroup.finite_quotient_of_finiteIndex
   let t : H ⧸ φ.range → H := fun c ↦ (Quotient.out c)⁻¹
   let S : Set H := ⋂ c, (fun x ↦ t c * x * (t c)⁻¹) ⁻¹' (φ '' (ρ.ker : Set G))
-  have hS : IsOpen S := isOpen_iInter_of_finite fun c ↦ (hφ _ hρ).preimage (by fun_prop)
+  have hS : IsOpen S := isOpen_iInter_of_finite fun c ↦
+    (hφ _ hρ).preimage ((continuous_mul_const _).comp (continuous_const_mul _))
   have h1 : (1 : H) ∈ S := Set.mem_iInter.mpr fun c ↦ ⟨1, ρ.ker.one_mem, by simp⟩
   have hSK : S ⊆ (coind φ ρ).ker := by
     intro x hx
