@@ -424,6 +424,23 @@ theorem coefficient_principal_eq_zero_of_forall {x : CoordinateSpace n}
     (tendsto_id.prodMk tendsto_const_nhds)) ?_
   simp [Function.comp_def, h]
 
+variable {a b} in
+/-- Two classical symbols whose full symbols at the position `x` differ by a symbol of lower order
+have the same principal symbol at `x`. -/
+theorem coefficient_principal_eq_of_forall_coefficient_eq_add {m' : ℝ} (hm : m' < m)
+    {t : Symbol n V W m'} {x : CoordinateSpace n}
+    (h : ∀ η, a.toSymbol.coefficient (x, η) = b.toSymbol.coefficient (x, η) + t.coefficient (x, η))
+    (ξ : CoordinateSpace n) :
+    a.principal.coefficient (x, ξ) = b.principal.coefficient (x, ξ) := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · rw [a.principal.zero_covector, b.principal.zero_covector]
+  have hx : Tendsto (fun s : ℝ ↦ (s, (x, ξ))) atTop (atTop ×ˢ 𝓝 (x, ξ)) :=
+    tendsto_id.prodMk tendsto_const_nhds
+  refine tendsto_nhds_unique ((a.tendsto_rpow_neg_smul_coefficient_smul hξ).comp hx) ?_
+  simpa [Function.comp_def, h, smul_add] using
+    ((b.tendsto_rpow_neg_smul_coefficient_smul hξ).comp hx).add
+      ((t.tendsto_rpow_neg_smul_coefficient_smul_zero hm hξ).comp hx)
+
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
   castDegree_zero _

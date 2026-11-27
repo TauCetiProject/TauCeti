@@ -72,8 +72,9 @@ depends on the cutoffs only through their values at the point.
 * `TauCeti.chartClassicalPrincipalSymbol m P e`: the principal symbol read in a chart `e`, as a
   function of a position and a frequency in `ℝⁿ`; near each point of the chart target it is the
   principal symbol of the chart symbols of `P`
-  (`TauCeti.eventuallyEq_chartClassicalPrincipalSymbol`), and it is smooth away from the zero
-  frequency (`TauCeti.contDiffOn_chartClassicalPrincipalSymbol`).
+  (`TauCeti.eventuallyEq_chartClassicalPrincipalSymbol`), and so are its derivatives
+  (`TauCeti.fderiv_chartClassicalPrincipalSymbol`); it is smooth away from the zero frequency
+  (`TauCeti.contDiffOn_chartClassicalPrincipalSymbol`).
 * `TauCeti.homogeneousCotangentSymbols m`: the smooth positively homogeneous functions of degree
   `m` on the cotangent bundle, read in charts. Every principal symbol lies there
   (`TauCeti.classicalPrincipalSymbol_mem_homogeneousCotangentSymbols`), and
@@ -856,6 +857,31 @@ theorem eventuallyEq_chartClassicalPrincipalSymbol (hP : P ∈ classicalPseudodi
     (e.map_target hp.2) p.2
   rw [e.right_inv hp.2, hp.1.1, hp.1.2] at h
   simp [h, chartClassicalPrincipalSymbol_apply]
+
+/-- **Derivatives of the principal symbol in a chart.** Let `a` be the symbol of the chart
+compression of `P` by cutoffs `φ` and `ψ` equal to `1` near a point `y` of the chart target. At
+`(y, η)` with `η ≠ 0`, the derivatives of the principal symbol of `P` read in the chart are those of
+the principal symbol of `a`, read at `1`. -/
+theorem fderiv_chartClassicalPrincipalSymbol (hP : P ∈ classicalPseudodifferentialOperators m)
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {a : ClassicalSymbol n ℂ ℂ m}
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
+    {y : CoordinateSpace n} (hy : y ∈ e.target) (hφ : ∀ᶠ z in 𝓝 y, φ z = 1)
+    (hψ : ∀ᶠ z in 𝓝 y, ψ z = 1) {η : CoordinateSpace n} (hη : η ≠ 0)
+    (w : CoordinateSpace n × CoordinateSpace n) :
+    fderiv ℝ (chartClassicalPrincipalSymbol m P e) (y, η) w =
+      fderiv ℝ a.principal.coefficient (y, η) w 1 := by
+  set ev := (ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).restrictScalars ℝ
+  have hd : HasFDerivAt (fun p ↦ a.principal.coefficient p 1)
+      (ev.comp (fderiv ℝ a.principal.coefficient (y, η))) (y, η) :=
+    ev.hasFDerivAt.comp (y, η)
+      (a.principal.differentiableAt_coefficient (p := (y, η)) hη).hasFDerivAt
+  rw [← (eventuallyEq_chartClassicalPrincipalSymbol hP he ha hy hφ hψ η).fderiv_eq, hd.fderiv]
+  simp only [ev, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.apply_apply]
 
 /-! ### The principal symbol map -/
 

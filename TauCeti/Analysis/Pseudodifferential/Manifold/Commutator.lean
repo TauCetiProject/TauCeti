@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 import TauCeti.Analysis.Pseudodifferential.Composition.Compression
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
-import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -72,9 +71,9 @@ to `1` on the support of `φ`, and let `c` be the symbol of the chart compressio
 `u ↦ h Op(c) (φ u) - φ Op(c) (h u)`, the quantization of the difference `h (c # φ) - φ (c # h)` of
 two compressions (`TauCeti.Symbol.compress`). Their expansions to second order
 (`TauCeti.Symbol.exists_coefficient_compress_eq`) leave `i ∑ₖ ∂ₖh ∂_{ξₖ} c` at `e x`, up to a symbol
-of order `m - 2`, and the principal symbol is the high-frequency limit of the full symbol
-(`TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul`). Reading the frequency
-derivative of `σ(c)(e x, ·)` on `T*ₓM` gives the formula.
+of order `m - 2`, which does not change the principal symbol at `e x`
+(`TauCeti.ClassicalSymbol.coefficient_principal_eq_of_forall_coefficient_eq_add`). Reading the
+frequency derivative of `σ(c)(e x, ·)` on `T*ₓM` gives the formula.
 
 ## Main results
 
@@ -120,7 +119,7 @@ private theorem coefficient_principal_eq_of_coefficient_eq_compress_sub
     (hh : ContDiff ℝ ∞ h) (hhc : HasCompactSupport h)
     (hs : ∀ p, s.toSymbol.coefficient p = (c.toSymbol.compress h φ hh hφ hφc).coefficient p -
       (c.toSymbol.compress φ h hφ hh hhc).coefficient p)
-    {y : CoordinateSpace n} (hφy : φ =ᶠ[𝓝 y] fun _ ↦ 1) {η : CoordinateSpace n} (hη : η ≠ 0) :
+    {y : CoordinateSpace n} (hφy : φ =ᶠ[𝓝 y] fun _ ↦ 1) (η : CoordinateSpace n) :
     s.principal.coefficient (y, η) = Complex.I • ∑ k, coordinateDeriv [k] h y •
       (c.principal.frequencyDeriv (EuclideanSpace.single k 1)).coefficient (y, η) := by
   obtain ⟨r₁, hr₁⟩ := c.toSymbol.exists_coefficient_compress_eq hh hφ hφc
@@ -129,31 +128,22 @@ private theorem coefficient_principal_eq_of_coefficient_eq_compress_sub
   have hdφ (k : Fin n) : coordinateDeriv [k] φ y = 0 := by
     rw [coordinateDeriv_singleton, hφy.fderiv_eq]
     simp
-  -- Along the ray through `η`, `s = i ∑ₖ ∂ₖh(y) ∂_{ξₖ} c + (r₁ - r₂)` with `r₁ - r₂` of order
-  -- `m - 2`.
+  -- At `y`, `s = i ∑ₖ ∂ₖh(y) ∂_{ξₖ} c + (r₁ - r₂)` with `r₁ - r₂` of order `m - 2`.
+  set c' : ClassicalSymbol n ℂ ℂ (m - 1) :=
+    Complex.I • ∑ k, ((coordinateDeriv [k] h y : ℝ) : ℂ) • ClassicalSymbol.frequencyDeriv k c
   have hcoef (ζ : CoordinateSpace n) : s.toSymbol.coefficient (y, ζ) =
-      Complex.I • ∑ k, coordinateDeriv [k] h y •
-        (Symbol.frequencyDeriv k c.toSymbol).coefficient (y, ζ) + (r₁ - r₂).coefficient (y, ζ) := by
+      c'.toSymbol.coefficient (y, ζ) + (r₁ - r₂).coefficient (y, ζ) := by
+    simp_rw [c', ClassicalSymbol.toSymbol_smul, ClassicalSymbol.toSymbol_sum,
+      ClassicalSymbol.toSymbol_smul, ClassicalSymbol.toSymbol_frequencyDeriv,
+      Symbol.coefficient_smul, Symbol.coefficient_sum, Symbol.coefficient_smul]
     rw [hs, hr₁, hr₂, Symbol.coefficient_sub]
     simp only [hφ1, hdφ, mul_one, one_mul, mul_zero, zero_smul, Finset.sum_const_zero, smul_zero,
-      sub_zero, Pi.sub_apply]
+      sub_zero, Pi.sub_apply, Pi.smul_apply, Finset.sum_apply, Complex.coe_smul]
     abel
-  have ht : Tendsto (fun t : ℝ ↦ (t, (y, η))) atTop (atTop ×ˢ 𝓝 (y, η)) :=
-    tendsto_id.prodMk tendsto_const_nhds
-  refine tendsto_nhds_unique ((s.tendsto_rpow_neg_smul_coefficient_smul hη).comp ht) ?_
-  have hk (k : Fin n) :=
-    ((ClassicalSymbol.frequencyDeriv k c).tendsto_rpow_neg_smul_coefficient_smul hη).comp ht
-  have hr := ((r₁ - r₂).tendsto_rpow_neg_smul_coefficient_smul_zero (m := m - 1) (by linarith)
-    hη).comp ht
-  have hlim := ((tendsto_finsetSum Finset.univ fun k _ ↦
-    (hk k).const_smul (coordinateDeriv [k] h y)).const_smul Complex.I).add hr
-  simp only [ClassicalSymbol.principal_frequencyDeriv, add_zero] at hlim
-  refine hlim.congr fun t ↦ ?_
-  simp only [Function.comp_apply, hcoef, ClassicalSymbol.toSymbol_frequencyDeriv, smul_add,
-    Finset.smul_sum]
-  congr 1
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [smul_comm (t ^ _) Complex.I, smul_comm (t ^ _) (coordinateDeriv [k] h y)]
+  rw [ClassicalSymbol.coefficient_principal_eq_of_forall_coefficient_eq_add (by linarith) hcoef]
+  simp_rw [c', ClassicalSymbol.principal_smul, ClassicalSymbol.principal_sum,
+    ClassicalSymbol.principal_smul, ClassicalSymbol.principal_frequencyDeriv]
+  simp [Complex.coe_smul]
 
 /-- Let `c` and `s` be classical symbols of order `m`, `φ` a compactly supported smooth real
 function with `φ = 1` near `y`, and `d` a symbol of order `m - 1`. If `s` has the coefficient
@@ -163,27 +153,18 @@ private theorem coefficient_principal_eq_of_coefficient_eq_compress_add
     {φ : CoordinateSpace n → ℝ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ)
     (hs : ∀ p, s.toSymbol.coefficient p =
       (c.toSymbol.compress φ φ hφ hφ hφc).coefficient p + d.coefficient p)
-    {y : CoordinateSpace n} (hφy : φ =ᶠ[𝓝 y] fun _ ↦ 1) {η : CoordinateSpace n} (hη : η ≠ 0) :
+    {y : CoordinateSpace n} (hφy : φ =ᶠ[𝓝 y] fun _ ↦ 1) (η : CoordinateSpace n) :
     s.principal.coefficient (y, η) = c.principal.coefficient (y, η) := by
   obtain ⟨r, hr⟩ := c.toSymbol.exists_coefficient_compress_eq hφ hφ hφc
   have hφ1 : φ y = 1 := hφy.self_of_nhds
   have hdφ (k : Fin n) : coordinateDeriv [k] φ y = 0 := by
     rw [coordinateDeriv_singleton, hφy.fderiv_eq]
     simp
-  -- Along the ray through `η`, `s = c + (r + d)` with `r + d` of order `m - 1`.
-  set t : Symbol n ℂ ℂ (m - 1) := Symbol.inclusion (by linarith) r + d
-  have hcoef (ζ : CoordinateSpace n) :
-      s.toSymbol.coefficient (y, ζ) = c.toSymbol.coefficient (y, ζ) + t.coefficient (y, ζ) := by
-    rw [hs, hr]
-    simp [t, hφ1, hdφ, add_assoc]
-  have ht : Tendsto (fun t : ℝ ↦ (t, (y, η))) atTop (atTop ×ˢ 𝓝 (y, η)) :=
-    tendsto_id.prodMk tendsto_const_nhds
-  refine tendsto_nhds_unique ((s.tendsto_rpow_neg_smul_coefficient_smul hη).comp ht) ?_
-  have hlim := ((c.tendsto_rpow_neg_smul_coefficient_smul hη).comp ht).add
-    ((t.tendsto_rpow_neg_smul_coefficient_smul_zero (m := m) (by linarith) hη).comp ht)
-  rw [add_zero] at hlim
-  refine hlim.congr fun t ↦ ?_
-  simp only [Function.comp_apply, hcoef, smul_add]
+  -- At `y`, `s = c + (r + d)` with `r + d` of order `m - 1`.
+  refine ClassicalSymbol.coefficient_principal_eq_of_forall_coefficient_eq_add (m' := m - 1)
+    (by linarith) (t := Symbol.inclusion (by linarith) r + d) (fun ζ ↦ ?_) η
+  rw [hs, hr]
+  simp [hφ1, hdφ, add_assoc]
 
 /-- Let `a` and `b` be classical symbols of compact spatial support and `c₀` the classical symbol
 of order `m' + m - 1` of their commutator `a # b - b # a`. If a classical symbol `s` quantizes to
@@ -254,8 +235,6 @@ private theorem complexChartCompression_lie_mulLeft_ofReal_apply {m : ℝ}
         φ y • quantizeSchwartzValue c.toSymbol.coefficient
           (SchwartzMap.smulLeftCLM ℂ ⇑(e.cutoffPushforward he φ f) u) y := by
   set h := e.cutoffPushforward he φ f
-  have hφt : (⇑φ : CoordinateSpace n → ℝ).HasTemperateGrowth :=
-    φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
   have hh : (⇑h : CoordinateSpace n → ℝ) = fun y ↦ φ y * f (e.symm y) :=
     funext (e.cutoffPushforward_apply he φ f)
   have hht : (⇑h : CoordinateSpace n → ℝ).HasTemperateGrowth :=
@@ -264,15 +243,8 @@ private theorem complexChartCompression_lie_mulLeft_ofReal_apply {m : ℝ}
   set g := e.complexCutoffPullback he φ (ContMDiffMap.ofContDiff u (u.smooth ⊤))
   -- Read on `M` through `χ`, the inputs `φ u` and `h u` are `g` and `f g`.
   have h₁ : e.complexCutoffPullback he χ (ContMDiffMap.ofContDiff
-      (SchwartzMap.smulLeftCLM ℂ ⇑φ u) (SchwartzMap.smooth _ ⊤)) = g := by
-    ext q
-    by_cases hq : q ∈ e.source
-    · simp only [g, OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he _ _ hq,
-        ContMDiffMap.coe_ofContDiff, SchwartzMap.smulLeftCLM_apply_apply hφt]
-      by_cases hφq : φ (e q) = 0
-      · simp [hφq]
-      · rw [hχ _ (subset_tsupport _ hφq), one_smul]
-    · simp [g, OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he _ _ hq]
+      (SchwartzMap.smulLeftCLM ℂ ⇑φ u) (SchwartzMap.smooth _ ⊤)) = g :=
+    e.complexCutoffPullback_ofContDiff_smulLeftCLM he hχ u
   have h₂ : e.complexCutoffPullback he χ (ContMDiffMap.ofContDiff
       (SchwartzMap.smulLeftCLM ℂ ⇑h u) (SchwartzMap.smooth _ ⊤)) = ContMDiffMap.ofReal f * g := by
     ext q
@@ -462,8 +434,7 @@ theorem classicalPrincipalSymbol_lie_mulLeft_ofReal {m : ℝ}
   rw [hφ1, mul_one, Complex.ofReal_one, one_mul] at hL'
   rw [← hL', coefficient_principal_eq_of_coefficient_eq_compress_sub c s φ.contDiff
     φ.hasCompactSupport hhd hhc (coefficient_eq_compress_sub_of_lie_mulLeft_ofReal he hχ1 hc f hs
-      hhd hhc) hφx (toDual_symm_comp_inverse_mvfderiv_ne_zero
-        (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx hξ),
+      hhd hhc) hφx,
     deriv_classicalPrincipalSymbol_eq_sum_coefficient_frequencyDeriv hP he hc hx hχx hξ f hhe,
     smul_apply, smul_eq_mul]
 
@@ -479,64 +450,9 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
 
 include he
 
-/-- **Compressing a chart compression.** If `χ` and `χ₂` equal `1` on the support of `φ`, then
-`φ · Cχ,χ₂(D) (φ u)` is the chart compression of `D` by `φ` and `φ`, where `Cχ,χ₂(D)` is the
-compression of `D` by `χ` and `χ₂`. -/
-private theorem smul_complexChartCompression_smulLeftCLM
-    {φ χ χ₂ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ : ∀ y ∈ tsupport φ, χ y = 1)
-    (hχ₂ : ∀ y ∈ tsupport φ, χ₂ y = 1)
-    (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n) :
-    φ y • e.complexChartCompression he χ χ₂ D (ContMDiffMap.ofContDiff
-        (SchwartzMap.smulLeftCLM ℂ ⇑φ u) (SchwartzMap.smooth _ ⊤)) y =
-      e.complexChartCompression he φ φ D (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y := by
-  have hφt : (⇑φ : CoordinateSpace n → ℝ).HasTemperateGrowth :=
-    φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  -- Read on `M` through `χ₂`, the input `φ u` is the pullback of `u` by `φ`.
-  have h : e.complexCutoffPullback he χ₂ (ContMDiffMap.ofContDiff
-      (SchwartzMap.smulLeftCLM ℂ ⇑φ u) (SchwartzMap.smooth _ ⊤)) =
-      e.complexCutoffPullback he φ (ContMDiffMap.ofContDiff u (u.smooth ⊤)) := by
-    ext q
-    by_cases hq : q ∈ e.source
-    · simp only [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he _ _ hq,
-        ContMDiffMap.coe_ofContDiff, SchwartzMap.smulLeftCLM_apply_apply hφt]
-      by_cases hφq : φ (e q) = 0
-      · simp [hφq]
-      · rw [hχ₂ _ (subset_tsupport _ hφq), one_smul]
-    · simp [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he _ _ hq]
-  rw [OpenPartialHomeomorph.complexChartCompression_apply,
-    OpenPartialHomeomorph.complexChartCompression_apply, h]
-  by_cases hφy : φ y = 0
-  · simp [hφy]
-  rw [hχ _ (subset_tsupport _ hφy), one_smul]
-
 variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
   {P Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-
-/-- Let `a` be the symbol of the chart compression of `P` by cutoffs `φ` and `ψ` equal to `1` near
-`y`. At `(y, η)` with `η ≠ 0`, the derivatives of the principal symbol of `P` read in the chart are
-those of the principal symbol of `a`, read at `1`. -/
-private theorem fderiv_chartClassicalPrincipalSymbol {m : ℝ}
-    (hP : P ∈ classicalPseudodifferentialOperators m) {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
-    {a : ClassicalSymbol n ℂ ℂ m}
-    (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
-      quantizeSchwartzValue a.toSymbol.coefficient u y =
-        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
-    {y : CoordinateSpace n} (hy : y ∈ e.target) (hφ : ∀ᶠ z in 𝓝 y, φ z = 1)
-    (hψ : ∀ᶠ z in 𝓝 y, ψ z = 1) {η : CoordinateSpace n} (hη : η ≠ 0)
-    (w : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ (chartClassicalPrincipalSymbol m P e) (y, η) w =
-      fderiv ℝ a.principal.coefficient (y, η) w 1 := by
-  set ev := (ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).restrictScalars ℝ
-  have hd : HasFDerivAt (fun p ↦ a.principal.coefficient p 1)
-      (ev.comp (fderiv ℝ a.principal.coefficient (y, η))) (y, η) :=
-    ev.hasFDerivAt.comp (y, η)
-      (a.principal.differentiableAt_coefficient (p := (y, η)) hη).hasFDerivAt
-  rw [← (eventuallyEq_chartClassicalPrincipalSymbol hP he ha hy hφ hψ η).fderiv_eq, hd.fderiv]
-  simp only [ev, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearMap.apply_apply]
 
 /-- **The commutator away from the diagonal.** With `X = χ` and `Θ = θ` read on `M` and `χ = 1`
 near the support of `θ`, the parts `Θ P (1 - X) Q` and `Θ Q (1 - X) P` of `Θ ⁅P, Q⁆` have order
@@ -604,9 +520,9 @@ private theorem complexChartCompression_lie_apply {m m' : ℝ}
     rw [← LinearMap.comp_add, ← LinearMap.add_comp, hid, LinearMap.id_comp]
   rw [quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_mulLeft_comp he hχ₂χ ha hb,
     quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_mulLeft_comp he hχ₂χ hb ha,
-    smul_sub, smul_complexChartCompression_smulLeftCLM he hχφ hχ₂φ,
-    smul_complexChartCompression_smulLeftCLM he hχφ hχ₂φ, Ring.lie_def, Module.End.mul_eq_comp,
-    Module.End.mul_eq_comp, hsplit P Q, hsplit Q P]
+    smul_sub, OpenPartialHomeomorph.smul_complexChartCompression_smulLeftCLM he hχφ hχ₂φ,
+    OpenPartialHomeomorph.smul_complexChartCompression_smulLeftCLM he hχφ hχ₂φ, Ring.lie_def,
+    Module.End.mul_eq_comp, Module.End.mul_eq_comp, hsplit P Q, hsplit Q P]
   simp only [X, map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply,
     ContMDiffMap.coe_add, ContMDiffMap.coe_sub, Pi.add_apply, Pi.sub_apply, LinearMap.comp_assoc,
     OpenPartialHomeomorph.complexChartCompression_mulLeft_comp_of_eq_one he hθφ]
@@ -646,8 +562,8 @@ private theorem exists_inclusion_eq_sharpCommutator_and_coefficient_principal_eq
     rw [mul_comm, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
   rw [hσ₀]
   simp only [smul_apply, sum_apply, sub_apply, ContinuousLinearMap.comp_apply, smul_eq_mul,
-    fderiv_chartClassicalPrincipalSymbol he hP ha hy hχ hχ₂ hη,
-    fderiv_chartClassicalPrincipalSymbol he hQ hb hy hχ hχ₂ hη,
+    fderiv_chartClassicalPrincipalSymbol hP he ha hy hχ hχ₂ hη,
+    fderiv_chartClassicalPrincipalSymbol hQ he hb hy hχ hχ₂ hη,
     HomogeneousSymbol.coefficient_frequencyDeriv_eq_fderiv _ _ hη,
     HomogeneousSymbol.coefficient_spatialDeriv_eq_fderiv]
   refine congrArg _ (Finset.sum_congr rfl fun k _ ↦ ?_)
@@ -706,7 +622,7 @@ theorem chartClassicalPrincipalSymbol_lie {m m' : ℝ}
   have hσ := coefficient_principal_eq_of_coefficient_eq_compress_add c₀ s d.toSymbol φ.contDiff
     φ.hasCompactSupport (coefficient_eq_compress_add_of_sharpCommutator hc₀ φ.contDiff
       φ.hasCompactSupport fun u z ↦ by
-      rw [hs, complexChartCompression_lie_apply he hθφ hχφ hχ₂χ hχ₂φ ha hb, hd]) hφy hη
+      rw [hs, complexChartCompression_lie_apply he hθφ hχφ hχ₂χ hχ₂φ ha hb, hd]) hφy η
   have hL : s.principal.coefficient (y, η) 1 =
       chartClassicalPrincipalSymbol (m' + m - 1) ⁅P, Q⁆ e (y, η) :=
     (eventuallyEq_chartClassicalPrincipalSymbol hPQ he hs hy hφy hφy η).self_of_nhds
