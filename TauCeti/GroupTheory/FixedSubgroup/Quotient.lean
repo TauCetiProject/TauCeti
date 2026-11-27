@@ -20,7 +20,8 @@ Lang defect `g⁻¹ * F g` lies in `J` (`MonoidHom.quotientMap_mk_eq_self_iff`).
 The canonical map `G^F ⧸ J^F ↪ (G ⧸ J)^F` is injective
 (`MonoidHom.fixedSubgroupQuotientEmbedding`), and surjectivity of the Lang map `z ↦ z⁻¹ * F z`
 on `J` upgrades it to a bijection `G^F ⧸ J^F ≃ (G ⧸ J)^F`
-(`MonoidHom.fixedSubgroupQuotientEquiv`), via `MonoidHom.exists_fixed_mul_of_surjective_inv_mul`.
+(`MonoidHom.fixedSubgroupQuotientEquiv`), via
+`MonoidHom.exists_fixed_inv_mul_of_surjective_commutatorMap`.
 
 ## Main definitions
 
@@ -92,10 +93,23 @@ theorem fixedSubgroupQuotientEmbedding_surjective (F : G →* G) {J : Subgroup G
   rintro ⟨q, hq⟩
   obtain ⟨h, rfl⟩ := QuotientGroup.mk_surjective q
   have hh : h⁻¹ * F h ∈ J := (F.mem_fixedPoints_quotientMap_mk_iff hJF h).mp hq
-  obtain ⟨z, hzJ, hfix⟩ := F.exists_fixed_mul_of_surjective_inv_mul J hJ hh
-  refine ⟨QuotientGroup.mk ⟨h * z, TauCeti.mem_fixedSubgroup.mpr hfix⟩, Subtype.ext ?_⟩
+  let f : J →* J := (F.comp J.subtype).codRestrict J fun z => hJF z.property
+  have hf : Function.Surjective (fun t : J ↦ t / f t) :=
+    (surjective_inv_mul_iff_surjective_commutatorMap f).mp fun d => by
+      obtain ⟨z, hzJ, hz⟩ := hJ d d.property
+      exact ⟨⟨z, hzJ⟩, Subtype.ext hz⟩
+  have hn : h⁻¹ / F h⁻¹ ∈ J.subtype.range := by
+    rw [Subgroup.range_subtype]
+    simpa only [div_eq_mul_inv, map_inv, inv_inv] using hh
+  obtain ⟨z, hz⟩ :=
+    J.subtype.exists_fixed_inv_mul_of_surjective_commutatorMap f F (fun _ => rfl) hf hn
+  have hfix : F (h * (z : G)) = h * (z : G) := by
+    dsimp only [Subgroup.coe_subtype] at hz
+    have hz' : F (((z : G)⁻¹ * h⁻¹)⁻¹) = ((z : G)⁻¹ * h⁻¹)⁻¹ := by rw [map_inv, hz]
+    simpa only [mul_inv_rev, inv_inv] using hz'
+  refine ⟨QuotientGroup.mk ⟨h * (z : G), TauCeti.mem_fixedSubgroup.mpr hfix⟩, Subtype.ext ?_⟩
   rw [coe_fixedSubgroupQuotientEmbedding_mk, QuotientGroup.eq]
-  simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel, mul_one] using J.inv_mem hzJ
+  simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel, mul_one] using J.inv_mem z.property
 
 /-- **Non-normal fixed-coset bijection**: if `J ≤ G` is an `F`-invariant subgroup (not necessarily
 normal) on which `z ↦ z⁻¹ * F z` is surjective, then `G^F ⧸ J^F ≃ (G ⧸ J)^F`. -/
