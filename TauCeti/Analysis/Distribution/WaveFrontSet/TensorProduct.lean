@@ -71,6 +71,9 @@ in the directions `(ξ, 0)` with `ξ ≠ 0`.
   `c ≠ 0`.
 * `Distribution.waveFrontSet_transportCLM_tensorProduct_delta_ofFun_one`: the example
   `δ_{x₀} ⊗ 1`.
+* `Distribution.transportCLM_withLpProdComm_transportCLM_tensorProduct`,
+  `TauCeti.preimage_withLpProdComm_tensorCone`: swapping the factors of the Euclidean product
+  carries `T ⊗ S` to `S ⊗ T` and the cone `Γ₂ ⊠ Γ₁` to `Γ₁ ⊠ Γ₂`.
 
 ## Implementation notes
 
@@ -487,6 +490,19 @@ theorem isOpen_diff_tensorCone {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)} {Ω
   exact (hW.prod isOpen_univ).inter
     ((hΓ₁.preimage (by fun_prop)).union (hΓ₂.preimage (by fun_prop)))
 
+/-- Swapping the factors of the Euclidean product exchanges `Γ₂ ⊠ Γ₁` and `Γ₁ ⊠ Γ₂`: a covector
+`((x, y), (ξ, η))` lies in `Γ₁ ⊠ Γ₂` exactly when `((y, x), (η, ξ))` lies in `Γ₂ ⊠ Γ₁`. -/
+theorem preimage_withLpProdComm_tensorCone [NormedSpace ℝ E] [NormedSpace ℝ D]
+    (Γ₁ : Set (E × E)) (Γ₂ : Set (D × D)) :
+    Prod.map (LinearIsometryEquiv.withLpProdComm 2 ℝ E D)
+        (LinearIsometryEquiv.withLpProdComm 2 ℝ E D) ⁻¹' tensorCone Γ₂ Γ₁ =
+      tensorCone Γ₁ Γ₂ := by
+  ext ⟨p, ζ⟩
+  simp only [mem_preimage, Prod.map_apply, mem_tensorCone, ne_eq,
+    LinearIsometryEquiv.map_eq_zero_iff]
+  simp only [LinearIsometryEquiv.withLpProdComm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+  tauto
+
 end TauCeti
 
 namespace Distribution
@@ -513,5 +529,25 @@ theorem waveFrontSet_transportCLM_tensorProduct_subset_tensorCone {Γ₁ : Set (
   · rcases h₂ with h | ⟨-, h⟩
     · exact Or.inr (hT h)
     · exact Or.inl h
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
+/-- **Commutativity of the tensor product on the Euclidean product.** Swapping the factors of
+`WithLp 2 (E × D)` carries `T ⊗ S`, on `W' ⊆ WithLp 2 (D × E)`, to `S ⊗ T` on `W`. -/
+theorem transportCLM_withLpProdComm_transportCLM_tensorProduct {V' : Opens (D × E)}
+    {W' : Opens (WithLp 2 (D × E))} (hV' : (V' : Set (D × E)) = (O : Set D) ×ˢ (Ω : Set E))
+    (hW' : MapsTo (prodContinuousLinearEquiv 2 ℝ D E) W' V')
+    (h : MapsTo (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv W W') :
+    transportCLM (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv h
+        (transportCLM (prodContinuousLinearEquiv 2 ℝ D E) hW' (T.tensorProduct S hV'.subset)) =
+      transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW (S.tensorProduct T hV.subset) := by
+  have hc : MapsTo (ContinuousLinearEquiv.prodComm ℝ E D) V V' := by
+    rw [hV, hV']
+    exact fun p hp ↦ ⟨hp.2, hp.1⟩
+  rw [← transportCLM_prodComm_tensorProduct S T hV hV' hc]
+  ext φ
+  simp only [transportCLM_apply]
+  congr 1
+  ext p
+  simp [Prod.swap]
 
 end Distribution
