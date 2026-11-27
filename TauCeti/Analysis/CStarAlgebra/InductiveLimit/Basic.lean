@@ -303,29 +303,26 @@ instance : StarOrderedRing (CStarInductiveLimit A f) :=
 variable (A f) in
 /-- The completion map of the algebraic direct limit into the C⋆-inductive limit, as a
 ⋆-homomorphism. -/
-def toCompletion : CStarSeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f where
-  toFun z := (z : Completion (CStarSeminormedDirectLimit A f))
-  map_smul' c z := Completion.coe_smul c z
-  map_zero' := Completion.coe_zero
-  map_add' := Completion.coe_add
-  map_mul' := Completion.coe_mul'
-  map_star' := Completion.coe_star
+def toCompletion : CStarSeminormedDirectLimit A f →⋆ₙₐ[ℂ] CStarInductiveLimit A f :=
+  Completion.coeNonUnitalStarAlgHom ℂ
 
 /-- The completion map `toCompletion` is the coercion of the algebraic direct limit into its
 completion, of which `CStarInductiveLimit A f` is a type synonym. -/
 private theorem toCompletion_apply (z : CStarSeminormedDirectLimit A f) :
     toCompletion A f z = (z : Completion (CStarSeminormedDirectLimit A f)) :=
-  (rfl)
+  congrFun (Completion.coe_coeNonUnitalStarAlgHom ℂ) z
 
 /-- The completion map preserves the C⋆-seminorm of the algebraic direct limit. -/
 @[simp]
-theorem norm_toCompletion (z : CStarSeminormedDirectLimit A f) : ‖toCompletion A f z‖ = ‖z‖ :=
-  Completion.norm_coe z
+theorem norm_toCompletion (z : CStarSeminormedDirectLimit A f) : ‖toCompletion A f z‖ = ‖z‖ := by
+  rw [toCompletion_apply]
+  exact Completion.norm_coe z
 
 variable (A f) in
 /-- The completion map of the algebraic direct limit has dense range. -/
-theorem denseRange_toCompletion : DenseRange (toCompletion A f) :=
-  Completion.denseRange_coe
+theorem denseRange_toCompletion : DenseRange (toCompletion A f) := by
+  rw [show ⇑(toCompletion A f) = ((↑) : _ → Completion _) from funext toCompletion_apply]
+  exact Completion.denseRange_coe
 
 variable (A f) in
 /-- The canonical ⋆-homomorphism from a stage into the C⋆-inductive limit. -/
@@ -503,8 +500,9 @@ def liftCLM : CStarInductiveLimit A f →L[ℂ] E :=
 /-- On the completion map, the induced continuous linear map is `liftCLMAux`, of which it is the
 extension to the completion. -/
 private theorem liftCLM_toCompletion (z : CStarSeminormedDirectLimit A f) :
-    liftCLM g hg hC (toCompletion A f z) = liftCLMAux g hg hC z :=
-  (liftCLMAux g hg hC).fromCompletion_apply_coe z
+    liftCLM g hg hC (toCompletion A f z) = liftCLMAux g hg hC z := by
+  rw [toCompletion_apply]
+  exact (liftCLMAux g hg hC).fromCompletion_apply_coe z
 
 /-- The induced continuous linear map extends each `g i`. -/
 @[simp]

@@ -38,6 +38,8 @@ universal C⋆-seminorm pass to the universal C⋆-algebra.
   the completion.
 * `UniformSpace.Completion.cstarRing`: the completion of a seminormed ⋆-ring whose seminorm
   satisfies the C⋆-identity is a C⋆-ring.
+* `UniformSpace.Completion.coeNonUnitalStarAlgHom`: the embedding of a seminormed ⋆-algebra into
+  its completion, as a ⋆-homomorphism.
 * `NonUnitalStarAlgHom.fromCompletion`, `StarAlgHom.fromCompletion`: the extension of a continuous
   ⋆-homomorphism to the completion of its domain.
 -/
@@ -67,6 +69,26 @@ theorem UniformSpace.Completion.cstarRing {E : Type*} [NonUnitalSeminormedRing E
       simpa only [← Completion.coe_star, ← Completion.coe_mul', Completion.norm_coe] using h a
 
 noncomputable section
+
+namespace UniformSpace.Completion
+
+variable (𝕜 : Type*) {E : Type*} [NormedField 𝕜] [NonUnitalSeminormedRing E] [NormedSpace 𝕜 E]
+  [StarRing E] [ContinuousStar E]
+
+/-- The embedding of a seminormed ⋆-algebra into its completion, as a ⋆-homomorphism. -/
+def coeNonUnitalStarAlgHom : E →⋆ₙₐ[𝕜] Completion E where
+  toFun := (↑)
+  map_smul' := coe_smul
+  map_zero' := coe_zero
+  map_add' := coe_add
+  map_mul' := coe_mul'
+  map_star' := coe_star
+
+@[simp]
+theorem coe_coeNonUnitalStarAlgHom : ⇑(coeNonUnitalStarAlgHom 𝕜 : E →⋆ₙₐ[𝕜] Completion E) = (↑) :=
+  (rfl)
+
+end UniformSpace.Completion
 
 namespace NonUnitalStarAlgHom
 
