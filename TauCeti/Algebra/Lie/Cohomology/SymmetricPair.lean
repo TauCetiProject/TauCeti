@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Cohomology.Relative
+public import TauCeti.Algebra.Lie.Cohomology.Relative.Basic
 
 /-!
 # Relative cochains of symmetric Lie algebra pairs
