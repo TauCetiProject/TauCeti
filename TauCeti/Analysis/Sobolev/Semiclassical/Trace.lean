@@ -216,9 +216,7 @@ theorem mixedSemiclassicalSobolevNorm_hyperplane_le (hu : ContDiff ℝ (j + 1) u
     have he := (W.normalDilationEquiv hh.ne').toHomeomorph.isClosedEmbedding
     rw [ContinuousLinearEquiv.coe_toHomeomorph, coeFn_normalDilationEquiv] at he
     exact hsupp.comp_isClosedEmbedding he
-  have hb : p.normalDilation h b = a := by
-    rw [← ContinuousLinearMap.comp_apply, ← normalDilation_mul, mul_inv_cancel₀ hh.ne',
-      normalDilation_one, ContinuousLinearMap.id_apply]
+  have hb : p.normalDilation h b = a := p.normalDilation_normalDilation_inv hh.ne' a
   -- Dilating the restriction normally along `V` restricts the dilation of `u` to `{b} × E`.
   have hdil : (fun y : E ↦ u (WithLp.toLp 2 (a, y))) ∘ V.normalDilation h =
       fun y ↦ U (WithLp.toLp 2 (b, y)) := by

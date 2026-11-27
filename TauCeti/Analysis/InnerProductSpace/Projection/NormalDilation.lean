@@ -81,6 +81,12 @@ theorem normalDilation_mul (s t : ℝ) :
     normalDilation_starProjection_orthogonal, normalDilation_starProjection, smul_smul,
     normalDilation_apply, mul_comm]
 
+/-- The normal dilation by `t ≠ 0` undoes the normal dilation by `t⁻¹`. -/
+theorem normalDilation_normalDilation_inv {t : ℝ} (ht : t ≠ 0) (x : E) :
+    V.normalDilation t (V.normalDilation t⁻¹ x) = x := by
+  rw [← ContinuousLinearMap.comp_apply, ← normalDilation_mul, mul_inv_cancel₀ ht,
+    normalDilation_one, ContinuousLinearMap.id_apply]
+
 /-- For `t ≠ 0` the normal dilation by `t` is a linear automorphism, with inverse the normal
 dilation by `t⁻¹`. -/
 def normalDilationEquiv {t : ℝ} (ht : t ≠ 0) : E ≃L[ℝ] E :=
@@ -108,8 +114,7 @@ theorem normalDilationEquiv_symm {t : ℝ} (ht : t ≠ 0) :
     (V.normalDilationEquiv ht).symm = V.normalDilationEquiv (inv_ne_zero ht) := by
   ext x
   rw [ContinuousLinearEquiv.symm_apply_eq, normalDilationEquiv_apply, normalDilationEquiv_apply,
-    ← ContinuousLinearMap.comp_apply, ← normalDilation_mul, mul_inv_cancel₀ ht, normalDilation_one,
-    ContinuousLinearMap.id_apply]
+    normalDilation_normalDilation_inv V ht]
 
 /-- **The determinant of the normal dilation** by `t` is `t ^ dim V`. -/
 theorem det_normalDilation [FiniteDimensional ℝ E] (t : ℝ) :
