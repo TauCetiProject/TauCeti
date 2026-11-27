@@ -119,7 +119,7 @@ theorem isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwa
       ≤ B}
   choose C hC using fun j ↦
     exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum hP (he j) (φ j)
-      he' ψ hψ s
+      he' ψ hψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s
   -- The readings of `P u` in `H^{s - m}`, for `u ∈ U`, in the chart `eⱼ`, are bounded.
   let S (j : κ) : Set H^{s - m}(CoordinateSpace n, ℂ) := (fun u ↦
     SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 ((e j).cutoffPushforwardSchwartz (he j) (φ j)
@@ -208,10 +208,10 @@ an elliptic classical pseudodifferential operator of order `m` on the smooth fun
 manifold, the smooth functions `u` with `P u = 0` form a finite-dimensional complex vector space.
 -/
 theorem IsClassicalElliptic.finiteDimensional_ker [CompactSpace M]
-    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P) :
+    (hPe : IsClassicalElliptic m P) :
     FiniteDimensional ℂ (LinearMap.ker P) := by
   -- For a parametrix `Q`, the kernel lies in the eigenspace of `1 - Q P`, of order `-1`, at `1`.
-  obtain ⟨Q, -, -, hQP⟩ := hPe.exists_comp_sub_id_mem_classicalPseudodifferentialOperators hP 1
+  obtain ⟨Q, -, -, hQP⟩ := hPe.exists_comp_sub_id_mem_classicalPseudodifferentialOperators 1
   have hR : LinearMap.id - Q ∘ₗ P ∈ classicalPseudodifferentialOperators (-1) := by
     simpa using neg_mem hQP
   have := finiteDimensional_eigenspace_of_mem_classicalPseudodifferentialOperators hR
@@ -234,6 +234,5 @@ theorem IsClassicalElliptic.finiteDimensional_ker_of_forall_integral_inner_eq [C
       HasCompactSupport v → ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ) :
     FiniteDimensional ℂ (LinearMap.ker Q) :=
   ((isClassicalElliptic_iff_of_forall_integral_inner_eq hμ hP hQ hPQ).2 hPe).finiteDimensional_ker
-    (mem_classicalPseudodifferentialOperators_of_forall_integral_inner_eq hμ hP hQ hPQ)
 
 end TauCeti

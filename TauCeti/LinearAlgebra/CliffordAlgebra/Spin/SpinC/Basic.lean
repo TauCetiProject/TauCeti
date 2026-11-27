@@ -346,6 +346,11 @@ theorem ofCircle_mul_mulCircle (z : Circle) (a : spinCGroup Q hQ) (w : Circle) :
   rw [mulCircle_apply, mulCircle_apply, ← mul_assoc,
     ← Subgroup.mem_center_iff.1 (ofCircle_mem_center Q hQ z) a, mul_assoc, map_mul]
 
+/-- Multiplying by the trivial circle element changes nothing: `(a, 1) ↦ a [1, 1] = a`. -/
+theorem mulCircle_comp_inl :
+    (mulCircle Q hQ).comp (MonoidHom.inl _ _) = MonoidHom.id _ :=
+  MonoidHom.noncommCoprod_comp_inl _ _ _
+
 /-- Multiplication by the central circle does not change the rotation. -/
 @[simp]
 theorem toSpecialOrthogonal_mulCircle (g : spinCGroup Q hQ × Circle) :

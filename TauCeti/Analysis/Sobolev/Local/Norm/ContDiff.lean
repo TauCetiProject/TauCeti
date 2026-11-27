@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Calculus.ContDiff.Integrable
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 
 /-!
@@ -29,15 +30,6 @@ namespace TauCeti
 
 variable {p : ℝ≥0∞}
 
-/-- The `Lᵖ` norm of a function `Cᵐ` on an open set `S` is that of its zeroth derivative. -/
-private theorem eLpNorm_eq_eLpNorm_iteratedFDeriv_zero {S : Set ℂ} (hS : IsOpen S) {m : ℕ}
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ℂ → F}
-    (hf : ContDiffOn ℝ m f S) :
-    eLpNorm f p (volume.restrict S) = eLpNorm (iteratedFDeriv ℝ 0 f) p (volume.restrict S) :=
-  eLpNorm_congr_norm_ae (hf.continuousOn.aestronglyMeasurable hS.measurableSet)
-    (hf.aestronglyMeasurable_iteratedFDeriv hS (Nat.zero_le m))
-    (ae_of_all _ fun _ ↦ (norm_iteratedFDeriv_zero).symm)
-
 /-- **The `W^{k,p}` norm of a `Cᵏ` function.** On an open set `S`, the `W^{k,p}(S)` norm of a
 function that is `Cᵏ` on `S` is the sum of the `Lᵖ(S)` norms of its classical iterated derivatives
 of orders `0` through `k`. -/
@@ -47,7 +39,7 @@ theorem eLpNormWkp_eq_sum_eLpNorm_iteratedFDeriv {S : Set ℂ} (hS : IsOpen S) (
     eLpNormWkp p S k f =
       ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l f) p (volume.restrict S) := by
   induction k generalizing F f with
-  | zero => rw [eLpNormWkp_zero, Finset.sum_range_one, eLpNorm_eq_eLpNorm_iteratedFDeriv_zero hS hf]
+  | zero => rw [eLpNormWkp_zero, Finset.sum_range_one, ← eLpNorm_iteratedFDeriv_zero (𝕜 := ℝ)]
   | succ k ih =>
     have hD : HasWeakFDerivOn volume (⟨S, hS⟩ : TopologicalSpace.Opens ℂ) f (fderiv ℝ f) :=
       (hf.of_le (by exact_mod_cast Nat.le_add_left 1 k)).hasWeakFDerivOn_fderiv
@@ -56,7 +48,7 @@ theorem eLpNormWkp_eq_sum_eLpNorm_iteratedFDeriv {S : Set ℂ} (hS : IsOpen S) (
     have h := eLpNormWkp_succ_eq_of_hasWeakFDerivOn (p := p) (k := k) hD
     rw [TopologicalSpace.Opens.coe_mk] at h
     rw [h, ih hf', Finset.sum_range_succ' _ (k + 1), add_comm,
-      eLpNorm_eq_eLpNorm_iteratedFDeriv_zero hS hf]
+      ← eLpNorm_iteratedFDeriv_zero (𝕜 := ℝ)]
     congr 1
     refine Finset.sum_congr rfl fun l hl ↦ eLpNorm_congr_norm_ae
       (hf'.aestronglyMeasurable_iteratedFDeriv hS (Finset.mem_range_succ_iff.1 hl))

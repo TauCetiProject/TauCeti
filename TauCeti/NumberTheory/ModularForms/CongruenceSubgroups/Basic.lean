@@ -158,6 +158,9 @@ infrastructure independent of the diamond operators.
   and `0 < k`.
 * `CongruenceSubgroup.Gamma0_prime_power_index`: `[SL₂(ℤ) : Γ₀(pᵏ)] = p^(k-1) * (p + 1)` for
   prime `p` and `k ≥ 1`.
+* `CongruenceSubgroup.Gamma0_four_index`: `[SL₂(ℤ) : Γ₀(4)] = 6`.
+* `CongruenceSubgroup.Gamma0_index_dvd_of_dvd`: `M ∣ N` implies
+  `[SL₂(ℤ) : Γ₀(M)] ∣ [SL₂(ℤ) : Γ₀(N)]`.
 * `CongruenceSubgroup.Gamma_gcd_eq_sup`: `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` — Shimura's Lemma 3.28,
   the Chinese remainder theorem for `SL₂`.
 * `CongruenceSubgroup.intCast_mul_apply_one_zero_eq_zero_of_mem_Gamma0_div` and
@@ -953,6 +956,15 @@ theorem Gamma0_prime_power_index (p : ℕ) (hp : Nat.Prime p) (k : ℕ) (hk : 0 
       ← Subgroup.relIndex_mul_index (Gamma0_le_Gamma0_of_dvd (pow_dvd_pow p m.le_succ)),
       Gamma0_relIndex_pow_succ p hp.pos m hm, ih, ← mul_assoc, ← pow_succ',
       Nat.sub_add_cancel hm]
+
+/-- `[SL₂(ℤ) : Γ₀(4)] = 2 · 3 = 6`. -/
+theorem Gamma0_four_index : (Gamma0 4).index = 6 := by
+  simpa using Gamma0_prime_power_index 2 Nat.prime_two 2 (by norm_num)
+
+/-- The index of `Γ₀` is monotone for divisibility of the level: if `M ∣ N`, then
+`[SL₂(ℤ) : Γ₀(M)]` divides `[SL₂(ℤ) : Γ₀(N)]`. -/
+theorem Gamma0_index_dvd_of_dvd {M N : ℕ} (h : M ∣ N) : (Gamma0 M).index ∣ (Gamma0 N).index :=
+  Subgroup.index_dvd_of_le (Gamma0_le_Gamma0_of_dvd h)
 
 /-! ### The Chinese-remainder decomposition `Γ(gcd a b) = Γ(a) ⊔ Γ(b)` -/
 

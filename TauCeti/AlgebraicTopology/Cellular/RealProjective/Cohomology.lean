@@ -148,23 +148,17 @@ private lemma finrank_singularCohomology_eq_one [Nontrivial k]
     finrank k ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k
       (ModuleCat.of k k) d) = 1 := by
   have := projective_singularHomology (N := N) h2
-  rw [((TopCat.of (RealProjectiveSpace N)).singularKroneckerEquivOfProjectiveHomology
-    (ModuleCat.of k k) (ModuleCat.of k k) d ≪≫ₗ ModuleCat.homLinearEquiv ≪≫ₗ
-    e.arrowCongr (LinearEquiv.refl k k) ≪≫ₗ LinearMap.ringLmapEquivSelf k k k).finrank_eq,
-    finrank_self]
+  rw [((TopCat.of (RealProjectiveSpace N)).singularKroneckerLinearEquivOfProjectiveHomology
+    (ModuleCat.of k k) (ModuleCat.of k k) d ≪≫ₗ e.arrowCongr (LinearEquiv.refl k k) ≪≫ₗ
+    LinearMap.ringLmapEquivSelf k k k).finrank_eq, finrank_self]
 
-/-- If `2 = 0` or `2` is a unit in `k` and `H_d(RPᴺ; k) = 0`, then `Hᵈ(RPᴺ; k, M) = 0`. -/
-private lemma subsingleton_singularCohomology_of_isZero (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
-    (M : ModuleCat.{0} k) {d : ℕ}
-    (h : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) d).obj
-      (ModuleCat.of k k)).obj (TopCat.of (RealProjectiveSpace N)))) :
+/-- If `2 = 0` or `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes above degree `N`. -/
+theorem subsingleton_singularCohomology_of_lt (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
+    (M : ModuleCat.{0} k) {d : ℕ} (hd : N < d) :
     Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
-      d) := by
-  have := projective_singularHomology (N := N) h2
-  have : Subsingleton (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) d).obj
-      (ModuleCat.of k k)).obj (TopCat.of (RealProjectiveSpace N)) ⟶ M) := ⟨h.eq_of_src⟩
-  exact ((TopCat.of (RealProjectiveSpace N)).singularKroneckerEquivOfProjectiveHomology
-    (ModuleCat.of k k) M d).toEquiv.subsingleton
+      d) :=
+  ModuleCat.subsingleton_of_isZero <| TopCat.isZero_singularCohomology_of_projective_homology_lt _ M
+    (fun j _ ↦ projective_singularHomology h2 j) (isZero_singularHomology_of_lt k hd)
 
 /-- **Cohomology of real projective space in characteristic two.** If `2 = 0` in the nontrivial
 commutative ring `k`, then `finrank k Hᵈ(RPᴺ; k)` is `1` for `d ≤ N` and `0` for `d > N`. -/
@@ -174,16 +168,9 @@ theorem finrank_singularCohomology_of_two_eq_zero [Nontrivial k] (h2 : (2 : k) =
   split_ifs with hd
   · exact finrank_singularCohomology_eq_one (.inl h2)
       (nonempty_singularHomology_linearEquiv_of_two_eq_zero h2 hd).some
-  · have := subsingleton_singularCohomology_of_isZero (.inl h2) (ModuleCat.of k k)
-      (isZero_singularHomology_of_lt (N := N) k (Nat.lt_of_not_le hd))
+  · have := subsingleton_singularCohomology_of_lt (N := N) (.inl h2) (ModuleCat.of k k)
+      (Nat.lt_of_not_le hd)
     exact finrank_zero_of_subsingleton
-
-/-- If `2 = 0` or `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes above degree `N`. -/
-theorem subsingleton_singularCohomology_of_lt (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
-    (M : ModuleCat.{0} k) {d : ℕ} (hd : N < d) :
-    Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
-      d) :=
-  subsingleton_singularCohomology_of_isZero h2 M (isZero_singularHomology_of_lt k hd)
 
 /-- If `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes in every positive degree `d`, except in
 degree `N` when `N` is odd. -/
@@ -191,7 +178,8 @@ theorem subsingleton_singularCohomology_of_isUnit_two (h2 : IsUnit (2 : k)) (M :
     {d : ℕ} (hd : d ≠ 0) (hdN : d = N → Even N) :
     Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
       d) :=
-  subsingleton_singularCohomology_of_isZero (.inr h2) M
+  ModuleCat.subsingleton_of_isZero <| TopCat.isZero_singularCohomology_of_projective_homology_lt _ M
+    (fun j _ ↦ projective_singularHomology (.inr h2) j)
     (isZero_singularHomology_of_isUnit_two h2 hd hdN)
 
 /-- **Cohomology of real projective space away from characteristic two.** If `2` is a unit in the
