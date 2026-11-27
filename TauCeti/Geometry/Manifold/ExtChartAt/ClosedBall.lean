@@ -41,6 +41,9 @@ coordinate expressions converge uniformly near that point together with their de
 * `IsCompact.exists_closedBall_tendstoUniformlyOn_extChartAt_comp`: for such maps converging in
   `C¹` in a chart, the coordinate expressions converge uniformly with their derivatives on a closed
   ball near each point.
+* `TauCeti.contMDiffOn_and_tendstoLocallyUniformlyOn_fderiv_extChartAt_comp_of_forall_exists_ball`:
+  `C¹` regularity of a limit and convergence of the derivatives in the charts are local, so they
+  follow from the corresponding statements on balls about each point.
 
 ## References
 
@@ -236,5 +239,48 @@ theorem _root_.IsCompact.exists_closedBall_tendstoUniformlyOn_extChartAt_comp {K
       (hχv.continuousOn_fderiv_of_isOpen isOpen_ball le_rfl))).mono
       (hC.trans (ball_subset_ball (half_le_self hr.le))),
     hc.mono hC, hd.mono (hC.trans ball_subset_closedBall)⟩
+
+end TauCeti
+
+namespace TauCeti
+
+open Filter Function
+
+variable {𝕜 E H M G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **`C¹` convergence read in charts is local.** Let `v` be continuous on an open set `S` of a
+normed space, with values in a set `K` of a manifold. Suppose that near every `y ∈ S`, in the chart
+at every `α ∈ K` whose source contains `v y`, there is a ball about `y` on which `v` takes values in
+the chart source, its coordinate expression is `C¹`, and the derivatives of the coordinate
+expressions of maps `Q i` converge to its derivative locally uniformly. Then `v` is `C¹` on `S`,
+and for every `α ∈ K` the derivatives converge locally uniformly on the points of `S` at which `v`
+lies in the source of the chart at `α`. -/
+theorem contMDiffOn_and_tendstoLocallyUniformlyOn_fderiv_extChartAt_comp_of_forall_exists_ball
+    {ι : Type*} {l : Filter ι} {S : Set G} (hS : IsOpen S) {v : G → M} (hv : ContinuousOn v S)
+    {K : Set M} (hvK : MapsTo v S K) {Q : ι → G → M}
+    (hloc : ∀ α ∈ K, ∀ y ∈ S, v y ∈ (extChartAt I α).source → ∃ r > 0,
+      MapsTo v (ball y r) (extChartAt I α).source ∧
+      ContDiffOn 𝕜 1 (extChartAt I α ∘ v) (ball y r) ∧
+      TendstoLocallyUniformlyOn (fun i ↦ fderiv 𝕜 (extChartAt I α ∘ Q i))
+        (fderiv 𝕜 (extChartAt I α ∘ v)) l (ball y r)) :
+    ContMDiffOn 𝓘(𝕜, G) I 1 v S ∧
+      ∀ α ∈ K, TendstoLocallyUniformlyOn (fun i ↦ fderiv 𝕜 (extChartAt I α ∘ Q i))
+        (fderiv 𝕜 (extChartAt I α ∘ v)) l (S ∩ v ⁻¹' (extChartAt I α).source) := by
+  refine ⟨fun y hy ↦ ?_, fun α hα ↦ ?_⟩
+  · -- `v` is `C¹` near `y`, read in the chart at its value.
+    set χ := extChartAt I (v y)
+    obtain ⟨r, hr, hvα, hv1, -⟩ := hloc _ (hvK hy) y hy (mem_extChartAt_source (v y))
+    have hvB : ContMDiffOn 𝓘(𝕜, G) I 1 v (ball y r) :=
+      ((contMDiffOn_extChartAt_symm (n := 1) (v y)).comp (contMDiffOn_iff_contDiffOn.2 hv1)
+        fun z hz ↦ χ.map_source (hvα hz)).congr fun z hz ↦ (χ.left_inv (hvα hz)).symm
+    exact (hvB.contMDiffAt (ball_mem_nhds y hr)).contMDiffWithinAt
+  · -- The convergence of the derivatives is local.
+    rw [(hv.isOpen_inter_preimage hS
+      (isOpen_extChartAt_source α)).tendstoLocallyUniformlyOn_iff_forall_tendsto]
+    rintro y ⟨hy, hyα⟩
+    obtain ⟨r, hr, -, -, hd⟩ := hloc α hα y hy hyα
+    exact isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto.1 hd y (mem_ball_self hr)
 
 end TauCeti

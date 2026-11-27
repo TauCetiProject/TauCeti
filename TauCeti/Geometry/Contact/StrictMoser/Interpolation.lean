@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.StrictMoser
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Topology.LocalAtTarget
 import TauCeti.Geometry.Contact.Interpolation
 import TauCeti.Geometry.Contact.Pullback
@@ -410,9 +410,7 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_isContactFormAt_of_apply_mfder
     (isOpen_setOf_forall_pos_apply_reebVectorField (β := β) hN hcN) (fun x hx ↦ hcN x hx.1)
     (fun s hs u hu ⟨w, hw⟩ ↦ ?_) (fun x hx ↦ ⟨hKN hx, fun t _ ↦ hKV x hx t⟩) hKι hval
   -- `β` kills the tangent images of the slice but not the Reeb vectors.
-  obtain ⟨t, ht, rfl⟩ : u ∈ Real.smoothTransition '' Icc (0 : ℝ) 1 :=
-    intermediate_value_Icc zero_le_one Real.smoothTransition.continuous.continuousOn
-      (by simpa [Real.smoothTransition.zero, Real.smoothTransition.one] using hu)
+  obtain ⟨t, ht, rfl⟩ := Real.smoothTransition.surjOn_Icc hu
   have h0 := hβι s w
   rw [ContinuousLinearMap.coe_coe] at hw
   rw [hw] at h0

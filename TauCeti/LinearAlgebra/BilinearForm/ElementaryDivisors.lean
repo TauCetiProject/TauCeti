@@ -13,8 +13,11 @@ import Mathlib.LinearAlgebra.Projection
 import Mathlib.RingTheory.Noetherian.Defs
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.Data.Fin.Sum
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 import TauCeti.LinearAlgebra.Matrix.Determinant.FromBlocks
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
+import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
 # Elementary divisors of alternating forms over a principal ideal domain
@@ -53,13 +56,25 @@ finishes the proof.
   form** `[[0, D, 0], [-D, 0, 0], [0, 0, 0]]` of an alternating form on a finite free module over a
   principal ideal domain.
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate`: the normal form
-  `[[0, D], [-D, 0]]` of a nondegenerate alternating form.
+  `[[0, D], [-D, 0]]` of a nondegenerate alternating form, and
+  `LinearMap.BilinForm.IsAlt.even_finrank_of_isPrincipalIdealRing`: the module then has even rank.
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate`: over an
   ordered principal ideal domain, such as `ℤ`, the elementary divisors can be taken positive.
 * `LinearMap.BilinForm.det_toMatrix_eq_prod_sq_of_toMatrix_eq_fromBlocks`: over `ℤ` the
   determinant of the form in every basis is the square of the product of its elementary divisors.
+* `LinearMap.BilinForm.eq_of_toMatrix_eq_fromBlocks`: over `ℤ` **the elementary divisors are
+  unique**: two nonnegative divisibility chains `d`, `d'` for which `B` has matrices
+  `[[0, D], [-D, 0]]` and `[[0, D'], [-D', 0]]` in two bases are equal.
+* `LinearMap.BilinForm.IsAlt.polarizationType`: **the type** `(d₁, …, d_g)` of a nondegenerate
+  alternating form on a finite free `ℤ`-module of rank `2g`, with `IsAlt.polarizationType_eq`
+  (any nonnegative divisibility chain giving the normal form is the type) and
+  `IsAlt.det_toMatrix_eq_prod_polarizationType_sq` (`det B = (d₁ ⋯ d_g)²`).
 
-The uniqueness of the elementary divisors up to units is not proved here.
+The uniqueness over `ℤ` reduces to that of the Smith normal form
+(`Matrix.smith_normal_form_unique`): `[[0, D], [-D, 0]]` is `-J` times `diag(D, D)`, where `J`
+is the standard symplectic matrix `Matrix.J`, a change of basis makes `diag(D, D)` and
+`diag(D', D')` equivalent under `GL(ℤ)`, and interleaving the two copies
+(`TauCeti.finSumFinInterleaveEquiv`), `diag(d₁, d₁, …, d_g, d_g)`, gives divisibility chains.
 
 ## References
 
@@ -289,6 +304,15 @@ theorem IsAlt.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate {M : Type*} [
   rw [toMatrix_apply, Basis.reindex_apply, Basis.reindex_apply, hbv]
   rcases x with x | x <;> rcases y with y | y <;> simp
 
+/-- A finite free module over a principal ideal domain carrying a nondegenerate alternating form
+has even rank. -/
+theorem IsAlt.even_finrank_of_isPrincipalIdealRing {M : Type*} [AddCommGroup M] [Module R M]
+    [Module.Free R M] [Module.Finite R M] {B : BilinForm R M} (hB : B.IsAlt)
+    (hnd : B.Nondegenerate) : Even (finrank R M) := by
+  obtain ⟨g, b, -⟩ := hB.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate hnd
+  rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]
+  exact ⟨g, rfl⟩
+
 end PID
 
 section Ordered
@@ -342,6 +366,129 @@ theorem det_toMatrix_eq_prod_sq_of_toMatrix_eq_fromBlocks {g : ℕ} {b : Basis (
     rw [← mul_pow]
     simp
   linear_combination (∏ i, d i) ^ 2 * h
+
+/-- **Uniqueness of the elementary divisors of an integral alternating form.** If `B` has matrix
+`[[0, D], [-D, 0]]` in one basis and `[[0, D'], [-D', 0]]` in another, where `D = diag(d₁, …, d_g)`
+and `D' = diag(d'₁, …, d'_g)` are nonnegative divisibility chains, then `d = d'`. The number `g`
+is half the rank of the module in either case. -/
+theorem eq_of_toMatrix_eq_fromBlocks {g : ℕ} {b b' : Basis (Fin g ⊕ Fin g) ℤ M} {d d' : Fin g → ℤ}
+    (hd : ∀ i, 0 ≤ d i) (hd' : ∀ i, 0 ≤ d' i) (hdd : ∀ i j, i ≤ j → d i ∣ d j)
+    (hdd' : ∀ i j, i ≤ j → d' i ∣ d' j)
+    (hb : BilinForm.toMatrix b B = fromBlocks 0 (diagonal d) (-diagonal d) 0)
+    (hb' : BilinForm.toMatrix b' B = fromBlocks 0 (diagonal d') (-diagonal d') 0) : d = d' := by
+  classical
+  -- `[[0, D], [-D, 0]] = -J * diag(D, D)`.
+  have hJ (f : Fin g → ℤ) : fromBlocks 0 (diagonal f) (-diagonal f) 0 =
+      -J (Fin g) ℤ * diagonal (Sum.elim f f) := by
+    rw [← fromBlocks_diagonal, neg_mul, J_mul_fromBlocks_zero₁₂_zero₂₁, fromBlocks_neg, neg_neg,
+      neg_zero]
+  -- With `P = b.toMatrix b'`, `diag(D', D') = (J Pᵀ (-J)) diag(D, D) P`.
+  have hmain : J (Fin g) ℤ * (b.toMatrix b')ᵀ * -J (Fin g) ℤ * diagonal (Sum.elim d d) *
+      b.toMatrix b' = diagonal (Sum.elim d' d') := by
+    have h := LinearMap.BilinForm.toMatrix_mul_basis_toMatrix b b' B
+    rw [hb, hb', hJ, hJ] at h
+    calc _ = J (Fin g) ℤ * ((b.toMatrix b')ᵀ * (-J (Fin g) ℤ * diagonal (Sum.elim d d)) *
+          b.toMatrix b') := by
+          simp only [Matrix.mul_assoc]
+      _ = _ := by rw [h, ← Matrix.mul_assoc, J_mul_neg_J, Matrix.one_mul]
+  have hP : IsUnit (b.toMatrix b') := .of_mul_eq_one _ (b.toMatrix_mul_toMatrix_flip b')
+  have hL : IsUnit (J (Fin g) ℤ * (b.toMatrix b')ᵀ * -J (Fin g) ℤ) :=
+    ((isUnit_J _ _).mul ((isUnit_transpose _).2 hP)).mul (isUnit_J _ _).neg
+  -- Interleave the two copies to get divisibility chains, then use Smith normal form uniqueness.
+  let φ := Matrix.reindexAlgEquiv ℤ ℤ (TauCeti.finSumFinInterleaveEquiv g)
+  have hφ (f : Fin g → ℤ) : φ (diagonal (Sum.elim f f)) =
+      diagonal (Sum.elim f f ∘ (TauCeti.finSumFinInterleaveEquiv g).symm) := by
+    simp only [φ, Matrix.coe_reindexAlgEquiv, Matrix.reindex_apply, submatrix_diagonal_equiv]
+  have hpos (f : Fin g → ℤ) (hf : ∀ i, 0 ≤ f i) (k : Fin (2 * g)) :
+      0 ≤ (Sum.elim f f ∘ (TauCeti.finSumFinInterleaveEquiv g).symm) k := by
+    obtain ⟨x, rfl⟩ := (TauCeti.finSumFinInterleaveEquiv g).surjective k
+    rcases x with i | i <;> simpa using hf i
+  have hchain (f : Fin g → ℤ) (hf : ∀ i j, i ≤ j → f i ∣ f j) ⦃k l : Fin (2 * g)⦄ (hkl : k ≤ l) :
+      (Sum.elim f f ∘ (TauCeti.finSumFinInterleaveEquiv g).symm) k ∣
+        (Sum.elim f f ∘ (TauCeti.finSumFinInterleaveEquiv g).symm) l := by
+    obtain ⟨x, rfl⟩ := (TauCeti.finSumFinInterleaveEquiv g).surjective k
+    obtain ⟨y, rfl⟩ := (TauCeti.finSumFinInterleaveEquiv g).surjective l
+    rw [Fin.le_def] at hkl
+    rcases x with i | i <;> rcases y with j | j <;>
+      simp only [Function.comp_apply, Equiv.symm_apply_apply, Sum.elim_inl, Sum.elim_inr,
+        TauCeti.val_finSumFinInterleaveEquiv_inl, TauCeti.val_finSumFinInterleaveEquiv_inr]
+        at hkl ⊢ <;>
+      exact hf _ _ (Fin.le_def.2 (by omega))
+  have hsmith := Matrix.smith_normal_form_unique (hpos d hd) (hpos d' hd') (hchain d hdd)
+    (hchain d' hdd') (hL.map φ).unit (hP.map φ).unit <| by
+      rw [IsUnit.unit_spec, IsUnit.unit_spec, ← hφ d, ← map_mul φ, ← map_mul φ, hmain, hφ]
+  funext i
+  simpa using congrFun hsmith (TauCeti.finSumFinInterleaveEquiv g (.inl i))
+
+section PolarizationType
+
+variable [Module.Free ℤ M] [Module.Finite ℤ M]
+
+/-- **Elementary divisor normal form indexed by half the rank.** A nondegenerate alternating form
+on a finite free `ℤ`-module `M` has, in a basis indexed by `Fin (finrank ℤ M / 2) ⊕
+Fin (finrank ℤ M / 2)`, the matrix `[[0, D], [-D, 0]]` with `D = diag(d₁, …, d_g)`, every `dᵢ > 0`
+and `d₁ ∣ ⋯ ∣ d_g`. This is `IsAlt.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate` with
+`g` identified as `finrank ℤ M / 2`. -/
+private theorem IsAlt.exists_basis_toMatrix_eq_fromBlocks_finrank (hB : B.IsAlt)
+    (hnd : B.Nondegenerate) :
+    ∃ (b : Basis (Fin (finrank ℤ M / 2) ⊕ Fin (finrank ℤ M / 2)) ℤ M)
+      (d : Fin (finrank ℤ M / 2) → ℤ), (∀ i, 0 < d i) ∧ (∀ i j, i ≤ j → d i ∣ d j) ∧
+        BilinForm.toMatrix b B = fromBlocks 0 (diagonal d) (-diagonal d) 0 := by
+  obtain ⟨g, b, d, hd, hdd, hb⟩ := hB.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate hnd
+  have hg : finrank ℤ M / 2 = g := by
+    rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]
+    omega
+  rw [hg]
+  exact ⟨b, d, hd, hdd, hb⟩
+
+/-- **The type of a nondegenerate alternating form** on a finite free `ℤ`-module `M` of rank
+`2g`: the elementary divisors `d₁ ∣ d₂ ∣ ⋯ ∣ d_g`, all positive, for which `B` has matrix
+`[[0, D], [-D, 0]]`, `D = diag(d₁, …, d_g)`, in some basis. They are unique
+(`IsAlt.polarizationType_eq`). For the Riemann form of a polarization on the period lattice of a
+complex abelian variety this is the type of the polarization. -/
+noncomputable def IsAlt.polarizationType (hB : B.IsAlt) (hnd : B.Nondegenerate) :
+    Fin (finrank ℤ M / 2) → ℤ :=
+  (hB.exists_basis_toMatrix_eq_fromBlocks_finrank hnd).choose_spec.choose
+
+/-- The form has the matrix `[[0, D], [-D, 0]]` with `D` the diagonal of its type, in some basis. -/
+theorem IsAlt.exists_basis_toMatrix_eq_polarizationType (hB : B.IsAlt) (hnd : B.Nondegenerate) :
+    ∃ b : Basis (Fin (finrank ℤ M / 2) ⊕ Fin (finrank ℤ M / 2)) ℤ M,
+      BilinForm.toMatrix b B = fromBlocks 0 (diagonal (hB.polarizationType hnd))
+        (-diagonal (hB.polarizationType hnd)) 0 :=
+  ⟨_, (hB.exists_basis_toMatrix_eq_fromBlocks_finrank hnd).choose_spec.choose_spec.2.2⟩
+
+/-- The entries of the type of a form are positive. -/
+theorem IsAlt.polarizationType_pos (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    (i : Fin (finrank ℤ M / 2)) : 0 < hB.polarizationType hnd i :=
+  (hB.exists_basis_toMatrix_eq_fromBlocks_finrank hnd).choose_spec.choose_spec.1 i
+
+/-- The entries of the type of a form form a divisibility chain. -/
+theorem IsAlt.polarizationType_dvd (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    {i j : Fin (finrank ℤ M / 2)} (hij : i ≤ j) :
+    hB.polarizationType hnd i ∣ hB.polarizationType hnd j :=
+  (hB.exists_basis_toMatrix_eq_fromBlocks_finrank hnd).choose_spec.choose_spec.2.1 i j hij
+
+/-- **The type is the unique elementary divisor chain**: if `B` has matrix `[[0, D], [-D, 0]]` in
+a basis indexed by `Fin g ⊕ Fin g`, with `D = diag(d₁, …, d_g)` a nonnegative divisibility chain,
+then `d` is the type of `B`, read along `finrank ℤ M / 2 = g`. -/
+theorem IsAlt.polarizationType_eq (hB : B.IsAlt) (hnd : B.Nondegenerate) {g : ℕ}
+    (hg : finrank ℤ M / 2 = g) {b : Basis (Fin g ⊕ Fin g) ℤ M} {d : Fin g → ℤ}
+    (hd : ∀ i, 0 ≤ d i) (hdd : ∀ i j, i ≤ j → d i ∣ d j)
+    (hb : BilinForm.toMatrix b B = fromBlocks 0 (diagonal d) (-diagonal d) 0) :
+    hB.polarizationType hnd = d ∘ Fin.cast hg := by
+  subst hg
+  obtain ⟨b', hb'⟩ := hB.exists_basis_toMatrix_eq_polarizationType hnd
+  exact eq_of_toMatrix_eq_fromBlocks (fun i ↦ (hB.polarizationType_pos hnd i).le) hd
+    (fun _ _ ↦ hB.polarizationType_dvd hnd) hdd hb' hb
+
+/-- **The determinant of the form is the square of the product of its type**, in every basis. -/
+theorem IsAlt.det_toMatrix_eq_prod_polarizationType_sq (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (c : Basis ι ℤ M) :
+    (BilinForm.toMatrix c B).det = (∏ i, hB.polarizationType hnd i) ^ 2 :=
+  det_toMatrix_eq_prod_sq_of_toMatrix_eq_fromBlocks
+    (hB.exists_basis_toMatrix_eq_polarizationType hnd).choose_spec c
+
+end PolarizationType
 
 end Int
 

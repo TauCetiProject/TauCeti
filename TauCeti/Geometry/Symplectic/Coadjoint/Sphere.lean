@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.CoadjointOrbit
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.UnitSphere
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
@@ -53,7 +54,9 @@ along `x ↦ r x`. Since the unit sphere has area `4π`
 with its outward-normal orientation is `4π r` (`TauCeti.integralTopForm_smul_sphereAreaForm`). For
 `r > 0` this is the KKS area of the coadjoint sphere of radius `r`, not its Euclidean area `4π r²`:
 read on that sphere, the KKS form is `1 / r` times its Euclidean area form. For `r ≤ 0` the
-integral is a signed value. Its unsigned total Liouville measure `4π |r|` is computed in
+integral is a signed value. Since an exact top form integrates to zero over the closed manifold
+`S²`, no nonzero multiple of `σ` is exact (`TauCeti.smul_sphereAreaForm_notMem_exactForms`).
+The unsigned total Liouville measure `4π |r|` of `r σ` is computed in
 `TauCeti.Geometry.Symplectic.Manifold.Sphere.Area`
 (`Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ`).
 
@@ -74,6 +77,7 @@ integral is a signed value. Its unsigned total Liouville measure `4π |r|` is co
 * `TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`: `r σ` is the KKS form on generators.
 * `TauCeti.integralTopForm_smul_sphereAreaForm`: `r σ` integrates to `4π r` over `S²`, the KKS area
   of the coadjoint sphere of radius `r > 0`.
+* `TauCeti.smul_sphereAreaForm_notMem_exactForms`: `r σ` is not exact for `r ≠ 0`.
 
 ## References
 
@@ -303,5 +307,14 @@ theorem integralTopForm_smul_sphereAreaForm (r : ℝ) :
       (r • sphereAreaForm).val = 4 * Real.pi * r := by
   rw [Submodule.coe_smul, integralTopForm_smul, sphereAreaForm_eq_sphereVolumeForm,
     Orientation.integralTopForm_sphereOrientation_sphereVolumeForm, mul_comm]
+
+/-- **No nonzero multiple of the area form of `S²` is exact.** For `r ≠ 0`, the form `r σ` is not
+exact, so `σ` represents a nonzero class in the second de Rham cohomology of `S²`. -/
+theorem smul_sphereAreaForm_notMem_exactForms {r : ℝ} (hr : r ≠ 0) :
+    r • sphereAreaForm ∉ exactForms (𝓡 2) S² 2 := fun h ↦ by
+  have h0 := integralTopForm_eq_zero_of_mem_exactForms
+    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation h
+  rw [integralTopForm_smul_sphereAreaForm] at h0
+  exact hr (by simpa [Real.pi_ne_zero] using h0)
 
 end TauCeti

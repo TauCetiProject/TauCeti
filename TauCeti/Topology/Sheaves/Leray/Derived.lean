@@ -206,7 +206,6 @@ end Ring
 section Derived
 
 variable [CompactSpace X] [NormalSpace X] {R : Type u} [CommRing R]
-  [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
 
 /-- **Leray covers compute derived global sections on compact Hausdorff spaces.** Let `U` be a
 finite open cover of a compact normal space `X` such that the underlying abelian sheaf of the sheaf

@@ -5,20 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import Mathlib.Analysis.Complex.Isometry
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.RigidMotion
 import TauCeti.Analysis.Fredholm.OrthogonalSplitting
+import TauCeti.Analysis.Normed.Affine.Isometry.Basic
+import TauCeti.Analysis.PDE.Vortex.FramedGauge.Linearization
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.AffineIsometry
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
-# Rigid motions of the plane and the `H¹` realization of the vortex operator
+# Rigid motions, changes of line frame and the `H¹` realization of the vortex operator
 
 The orientation-preserving isometries `z ↦ u z + a` of the plane, `u` on the unit circle, act on
 plane vortex fields by `rotateField u ∘ translateField a`
@@ -64,13 +67,29 @@ those at the moved coefficient are the conjugates `π' (g·y) = g·(π y)` and `
 `a = 0` this is their uniqueness. No linearity of `π` or `Q` is assumed. Both laws are instances
 of the equivariance of orthogonal kernel projections and right inverses
 (`ContinuousLinearMap.apply_eq_of_ker_projection_conj`,
-`ContinuousLinearMap.apply_eq_of_rightInverse_conj`).
+`ContinuousLinearMap.apply_eq_of_rightInverse_conj`). For the canonical choices
+`ContinuousLinearMap.orthogonalKerProjection` and `ContinuousLinearMap.orthogonalRightInverse`
+the laws are identities of operators, with no Fredholm hypothesis
+(`TauCeti.Vortex.orthogonalKerProjection_sobolevGaugeFixedOperator_coefficientMotion`,
+`TauCeti.Vortex.orthogonalRightInverse_sobolevGaugeFixedOperator_coefficientMotion`).
+
+**Changes of the line frame.** A constant gauge `c` on the unit circle acts on fields by the gauge
+frame `gaugeFrame c` at every point, fixing the connection coordinates and rotating the section
+coordinates by `c`. It acts on the `L∞` coefficients and on the `L²` targets by the pointwise
+isometry `(gaugeFrame c).compLpₗᵢ`, and on `H¹(ℂ)⁴` by `TauCeti.Vortex.variationFrame c`. The
+realization is covariant, `L_{c·a} (c·y) = c·(L_a y)`
+(`TauCeti.Vortex.sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_apply`), so the orthogonal kernel
+projections and right inverses at the coefficient in the changed frame are the conjugates of those
+at `a` (`TauCeti.Vortex.orthogonalKerProjection_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame`,
+`TauCeti.Vortex.orthogonalRightInverse_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame`). The
+constant gauge `u⁻ᵐ` restoring the end framing after a rotation is such a change of frame.
 
 ## Main definitions
 
 * `TauCeti.Vortex.coefficientMotion`, `TauCeti.Vortex.variationMotion`,
   `TauCeti.Vortex.targetMotion`, `TauCeti.Vortex.fieldMotion`: the motion `z ↦ u z + a` on
   coefficients, variations, targets and the `L²` values of variations.
+* `TauCeti.Vortex.variationFrame`: the change of line frame on variations.
 
 ## Main results
 
@@ -91,6 +110,13 @@ of the equivariance of orthogonal kernel projections and right inverses
 * `TauCeti.Vortex.apply_variationMotion_eq_variationMotion_apply_of_ker_projection`,
   `TauCeti.Vortex.apply_targetMotion_eq_variationMotion_apply_of_rightInverse`: the rigid-motion
   laws of the `L²`-orthogonal kernel projections and right inverses.
+* `TauCeti.Vortex.orthogonalKerProjection_sobolevGaugeFixedOperator_coefficientMotion`,
+  `TauCeti.Vortex.orthogonalRightInverse_sobolevGaugeFixedOperator_coefficientMotion`: the same
+  laws as identities of the canonical operators.
+* `TauCeti.Vortex.sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_apply`,
+  `TauCeti.Vortex.orthogonalKerProjection_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame`,
+  `TauCeti.Vortex.orthogonalRightInverse_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame`: the
+  line-frame laws of the realization, its kernel projections and its right inverses.
 
 ## References
 
@@ -557,5 +583,167 @@ theorem apply_targetMotion_eq_variationMotion_apply_of_rightInverse (u : Circle)
     (sobolevGaugeFixedOperator_coefficientMotion_apply u a c)
     (variationMotion_mem_ker_sobolevGaugeFixedOperator_coefficientMotion_iff u a c)
     (inner_sobolevFieldValues_variationMotion u a) hQ hQo hQ' hQ'o f
+
+/-- **Rigid motions conjugate the orthogonal kernel projections.** The projection of `H¹(ℂ)⁴`
+onto the kernel of the realization at the coefficient moved by `z ↦ u z + a`, along the
+`L²`-orthogonal complement of the kernel, is the projection at `c` conjugated by the motion of
+variations. No Fredholm property of the realization is assumed. -/
+theorem orthogonalKerProjection_sobolevGaugeFixedOperator_coefficientMotion (u : Circle) (a : ℂ)
+    (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
+    ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+        (sobolevGaugeFixedOperator (coefficientMotion u a c)) =
+      (variationMotion u a : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+        ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+          (sobolevGaugeFixedOperator c) ∘L
+        ((variationMotion u a).symm : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) :=
+  ContinuousLinearMap.orthogonalKerProjection_conj (variationMotion u a)
+    (variationMotion_mem_ker_sobolevGaugeFixedOperator_coefficientMotion_iff u a c)
+    (inner_sobolevFieldValues_variationMotion u a) sobolevFieldValues_injective
+
+/-- **Rigid motions conjugate the orthogonal right inverses.** The right inverse of the
+realization at the coefficient moved by `z ↦ u z + a` with values `L²`-orthogonal to its kernel
+is the right inverse at `c` conjugated by the motions of targets and variations. No Fredholm
+property of the realization is assumed. -/
+theorem orthogonalRightInverse_sobolevGaugeFixedOperator_coefficientMotion (u : Circle) (a : ℂ)
+    (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
+    ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+        (sobolevGaugeFixedOperator (coefficientMotion u a c)) =
+      (variationMotion u a : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+        ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+          (sobolevGaugeFixedOperator c) ∘L
+        ((targetMotion u a).symm.toContinuousLinearEquiv :
+          Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] _) :=
+  ContinuousLinearMap.orthogonalRightInverse_conj (variationMotion u a)
+    (targetMotion u a).toContinuousLinearEquiv
+    (sobolevGaugeFixedOperator_coefficientMotion_apply u a c)
+    (inner_sobolevFieldValues_variationMotion u a) sobolevFieldValues_injective
+
+/-! ### Changes of the line frame -/
+
+/-- **The change of line frame `c` on `H¹` variations.** A constant gauge `c` on the unit circle
+acts on the four coordinates in `H¹(ℂ) = W^{1,2}(ℂ)` as the gauge frame `gaugeFrame c` acts on
+their values (`value_variationFrame_ae`): the connection coordinates are fixed and the section
+coordinates are rotated by `c`. -/
+def variationFrame (c : Circle) :
+    (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) ≃L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :=
+  w1pMotionEquiv (gaugeFrame c) (.refl ℝ ℂ)
+
+/-- The values of a variation in the line frame changed by `c` are the values in the gauge frame
+of `c`. -/
+theorem value_variationFrame_ae (c : Circle) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    ∀ᵐ z ∂μ⊤, (WithLp.toLp 2 fun j ↦ W1p.value (variationFrame c y j) z :
+      EuclideanSpace ℝ (Fin 4)) = gaugeFrame c (WithLp.toLp 2 fun j ↦ W1p.value (y j) z) := by
+  filter_upwards [value_w1pMotion_ae (gaugeFrame c) (.refl ℝ ℂ) y] with z hz
+  rw [variationFrame, w1pMotionEquiv_apply, hz, AffineIsometryEquiv.coe_refl, id]
+
+/-- The weak gradients of a variation in the line frame changed by `c`: the gradients of the
+coordinates are mixed by the gauge frame of `c`. -/
+theorem gradient_variationFrame_ae (c : Circle) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    ∀ᵐ z ∂μ⊤, ∀ i, W1p.gradient (variationFrame c y i) z =
+      ∑ k, gaugeFrame c (EuclideanSpace.single k 1) i • W1p.gradient (y k) z := by
+  filter_upwards [gradient_w1pMotion_ae (gaugeFrame c) (.refl ℝ ℂ) y] with z hz i
+  rw [variationFrame, w1pMotionEquiv_apply, hz i, ← AffineIsometryEquiv.linearIsometryEquiv_symm,
+    AffineIsometryEquiv.symm_refl, AffineIsometryEquiv.linearIsometryEquiv_refl,
+    LinearIsometryEquiv.coe_refl, AffineIsometryEquiv.coe_refl]
+  simp only [id]
+
+@[simp]
+theorem variationFrame_one : variationFrame 1 = ContinuousLinearEquiv.refl ℝ _ :=
+  ContinuousLinearEquiv.ext <| funext fun y ↦ by
+    rw [variationFrame, w1pMotionEquiv_apply, gaugeFrame_one, w1pMotion_refl,
+      ContinuousLinearEquiv.refl_apply]
+
+/-- Changing the line frame by `d` and then by `c` is changing it by `c * d`. -/
+@[simp]
+theorem variationFrame_variationFrame (c d : Circle) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    variationFrame c (variationFrame d y) = variationFrame (c * d) y := by
+  rw [variationFrame, variationFrame, variationFrame, w1pMotionEquiv_apply, w1pMotionEquiv_apply,
+    w1pMotionEquiv_apply, w1pMotion_w1pMotion, gaugeFrame_mul, AffineIsometryEquiv.trans_refl]
+
+/-- The inverse of the change of line frame by `c` is the change by `c⁻¹`. -/
+@[simp]
+theorem variationFrame_symm (c : Circle) : (variationFrame c).symm = variationFrame c⁻¹ := by
+  rw [variationFrame, variationFrame, w1pMotionEquiv_symm, gaugeFrame_symm,
+    AffineIsometryEquiv.symm_refl]
+
+/-- **Changes of the line frame intertwine the `L²` values of variations.** -/
+theorem sobolevFieldValues_variationFrame (c : Circle)
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevFieldValues (variationFrame c y) =
+      (gaugeFrame c).compLpₗᵢ 2 μ⊤ (sobolevFieldValues y) := by
+  refine Lp.ext ?_
+  filter_upwards [sobolevFieldValues_ae_eq (variationFrame c y), value_variationFrame_ae c y,
+    (gaugeFrame c).coeFn_compLpₗᵢ (sobolevFieldValues y), sobolevFieldValues_ae_eq y]
+    with z h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄]
+
+/-- **Changes of the line frame preserve the `L²` pairing of variations.** -/
+theorem inner_sobolevFieldValues_variationFrame (c : Circle)
+    (y y' : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    ⟪sobolevFieldValues (variationFrame c y), sobolevFieldValues (variationFrame c y')⟫_ℝ =
+      ⟪sobolevFieldValues y, sobolevFieldValues y'⟫_ℝ := by
+  rw [sobolevFieldValues_variationFrame, sobolevFieldValues_variationFrame,
+    LinearIsometryEquiv.inner_map_map]
+
+/-- **Changes of the line frame intertwine the `H¹` realization of `L_x`.** Changing the line
+frame of the coefficient and of the variation by `c` changes the line frame of the image:
+`L_{c·a} (c·y) = c·(L_a y)`, where `c` acts pointwise by the gauge frame on coefficients and
+targets, and by `variationFrame` on variations. -/
+theorem sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_apply (c : Circle)
+    (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevGaugeFixedOperator ((gaugeFrame c).compLpₗᵢ ∞ μ⊤ a) (variationFrame c y) =
+      (gaugeFrame c).compLpₗᵢ 2 μ⊤ (sobolevGaugeFixedOperator a y) := by
+  refine Lp.ext ?_
+  filter_upwards [sobolevGaugeFixedOperator_apply_ae ((gaugeFrame c).compLpₗᵢ ∞ μ⊤ a)
+      (variationFrame c y), (gaugeFrame c).coeFn_compLpₗᵢ a,
+    (gaugeFrame c).coeFn_compLpₗᵢ (sobolevGaugeFixedOperator a y),
+    sobolevGaugeFixedOperator_apply_ae a y, value_variationFrame_ae c y,
+    gradient_variationFrame_ae c y] with z h₁ h₂ h₃ h₄ h₅ h₆
+  rw [h₁, h₂, h₃, h₄, h₅, map_add, ← gaugeFixedZerothOrder_gaugeFrame,
+    ← gaugeFixedFirstOrder_gaugeFrame, funext h₆]
+
+/-- A variation in the line frame changed by `c` lies in the kernel of the realization at the
+coefficient in the changed frame exactly when the variation lies in the kernel at `a`. -/
+theorem variationFrame_mem_ker_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_iff (c : Circle)
+    (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    variationFrame c y ∈ (sobolevGaugeFixedOperator ((gaugeFrame c).compLpₗᵢ ∞ μ⊤ a)).ker ↔
+      y ∈ (sobolevGaugeFixedOperator a).ker := by
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_apply, LinearIsometryEquiv.map_eq_zero_iff]
+
+/-- **Changes of the line frame conjugate the orthogonal kernel projections.** The projection
+onto the kernel of the realization at the coefficient in the line frame changed by `c`, along the
+`L²`-orthogonal complement of the kernel, is the projection at `a` conjugated by the change of
+frame of variations. -/
+theorem orthogonalKerProjection_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame (c : Circle)
+    (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
+    ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+        (sobolevGaugeFixedOperator ((gaugeFrame c).compLpₗᵢ ∞ μ⊤ a)) =
+      (variationFrame c : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+        ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+          (sobolevGaugeFixedOperator a) ∘L
+        ((variationFrame c).symm : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) :=
+  ContinuousLinearMap.orthogonalKerProjection_conj (variationFrame c)
+    (variationFrame_mem_ker_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_iff c a)
+    (inner_sobolevFieldValues_variationFrame c) sobolevFieldValues_injective
+
+/-- **Changes of the line frame conjugate the orthogonal right inverses.** The right inverse of the
+realization at the coefficient in the line frame changed by `c`, with values `L²`-orthogonal to
+its kernel, is the right inverse at `a` conjugated by the changes of frame of targets and
+variations. -/
+theorem orthogonalRightInverse_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame (c : Circle)
+    (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
+    ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+        (sobolevGaugeFixedOperator ((gaugeFrame c).compLpₗᵢ ∞ μ⊤ a)) =
+      (variationFrame c : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) ∘L
+        ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+          (sobolevGaugeFixedOperator a) ∘L
+        (((gaugeFrame c⁻¹).compLpₗᵢ 2 μ⊤).toContinuousLinearEquiv :
+          Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] _) := by
+  rw [← gaugeFrame_symm, ← LinearIsometryEquiv.compLpₗᵢ_symm]
+  exact ContinuousLinearMap.orthogonalRightInverse_conj (variationFrame c)
+    ((gaugeFrame c).compLpₗᵢ 2 μ⊤).toContinuousLinearEquiv
+    (sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_apply c a)
+    (inner_sobolevFieldValues_variationFrame c) sobolevFieldValues_injective
 
 end TauCeti.Vortex

@@ -57,8 +57,12 @@ complex character that is an integer combination of characters of representation
   its forward direction.
 * `TauCeti.mul_mem_virtualCharacters` and `TauCeti.one_mem_virtualCharacters`: the lattice is
   closed under the pointwise product and contains the constant `1`.
+* `TauCeti.neg_one_pow_smul_mem_virtualCharacters`: the lattice is closed under multiplication by
+  the signs `(-1) ^ n`.
 * `TauCeti.comp_mem_virtualCharacters`: pulling back along a monoid homomorphism preserves virtual
   characters.
+* `TauCeti.irreducibleCharacters_subset_virtualCharacters`: every irreducible character is a
+  virtual character.
 * `TauCeti.virtualCharacters_le_classFunction`: a virtual character is a class function, and
   `TauCeti.conj_apply_of_mem_virtualCharacters`: over `ℂ` inverting the argument conjugates the
   value, `conj (f g) = f g⁻¹`.
@@ -194,6 +198,13 @@ theorem mul_mem_virtualCharacters {f g : G → k} (hf : f ∈ virtualCharacters 
   | neg_left x y hx hy ih => rw [neg_mul]; exact AddSubgroup.neg_mem _ ih
   | neg_right x y hx hy ih => rw [mul_neg]; exact AddSubgroup.neg_mem _ ih
 
+/-- Virtual characters are closed under multiplication by the signs `(-1) ^ n`. -/
+theorem neg_one_pow_smul_mem_virtualCharacters (n : ℕ) {f : G → k}
+    (hf : f ∈ virtualCharacters k G) : ((-1 : k) ^ n • f) ∈ virtualCharacters k G := by
+  rcases Nat.even_or_odd n with h | h
+  · simpa [h.neg_one_pow] using hf
+  · simpa [h.neg_one_pow] using neg_mem hf
+
 /-- **The constant function `1` is a virtual character**, being the character of the trivial
 one-dimensional representation. -/
 @[simp]
@@ -290,6 +301,12 @@ theorem irreducibleCharacters_subset_range :
   obtain ⟨n, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
   exact ⟨FDRep.of ρ, rfl⟩
 
+/-- **Every irreducible character is a virtual character.** -/
+theorem irreducibleCharacters_subset_virtualCharacters :
+    irreducibleCharacters k G ⊆ virtualCharacters k G := fun _ hf => by
+  obtain ⟨V, rfl⟩ := irreducibleCharacters_subset_range hf
+  exact character_mem_virtualCharacters V
+
 end Irreducible
 
 section Lattice
@@ -336,9 +353,8 @@ theorem virtualCharacters_eq_closure_irreducibleCharacters :
 /-- **An irreducible character is a virtual character.** -/
 @[simp]
 theorem irreducibleCharacter_mem_virtualCharacters (i : Fin (Nat.card (ConjClasses G))) :
-    irreducibleCharacter k i ∈ virtualCharacters k G := by
-  rw [virtualCharacters_eq_closure_irreducibleCharacters]
-  exact AddSubgroup.subset_closure (irreducibleCharacter_mem k i)
+    irreducibleCharacter k i ∈ virtualCharacters k G :=
+  irreducibleCharacters_subset_virtualCharacters (irreducibleCharacter_mem k i)
 
 /-- **A function `G → k` is a virtual character exactly when it is an integer combination of the
 irreducible characters.**

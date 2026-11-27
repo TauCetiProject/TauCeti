@@ -27,8 +27,9 @@ We prove the basic properties of `K` from Bergh–Löfström, §3.1:
   on `(0, ∞)` (`continuousOn_kFunctional`), and `K(t, u) ≤ max 1 (t / s) * K(s, u)` for `s > 0`;
 * elements of `X₀`, `X₁` and the intersection satisfy `K(t, x₀) ≤ ‖x₀‖`, `K(t, x₁) ≤ t ‖x₁‖`
   and `K(t, x) ≤ min 1 t * ‖x‖`;
-* a linear map of sum spaces restricting to maps `X₀ → Y₀`, `X₁ → Y₁` bounded by `M₀ > 0`
-  and `M₁` satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)` (`kFunctional_map_le`);
+* an additive map of sum spaces restricting to maps `X₀ → Y₀`, `X₁ → Y₁` bounded by `M₀ > 0`
+  and `M₁`, for instance a linear map or a real-linear map from a couple of complex spaces,
+  satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)` (`kFunctional_map_le`);
 * for the couple `(X, X)`, `K(t, u) = min 1 t * ‖u‖` (`kFunctional_refl`);
 * every `x` in the intersection has a dyadic decomposition `x = ∑ⱼ uⱼ`, `j ∈ ℤ`, with
   `‖uⱼ‖_{X₀} ≤ 4 K(2 ^ j, x)` and `2 ^ j ‖uⱼ‖_{X₁} ≤ 6 K(2 ^ j, x)`
@@ -394,14 +395,14 @@ end Dyadic
 
 section Map
 
-variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace 𝕜 Y₀] [NormedAddCommGroup Y₁]
-  [NormedSpace 𝕜 Y₁] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [ContinuousAdd W]
-  {D : CompatibleCouple 𝕜 Y₀ Y₁ W}
+variable {𝕜' Y₀ Y₁ W : Type*} [NormedField 𝕜'] [NormedAddCommGroup Y₀] [NormedSpace 𝕜' Y₀]
+  [NormedAddCommGroup Y₁] [NormedSpace 𝕜' Y₁] [AddCommGroup W] [Module 𝕜' W] [TopologicalSpace W]
+  [ContinuousAdd W] {D : CompatibleCouple 𝕜' Y₀ Y₁ W}
 
-/-- A linear map `T` between the sum spaces of two couples that restricts to maps
-`T₀ : X₀ → Y₀` and `T₁ : X₁ → Y₁` with `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖`, where `M₀ > 0`,
-satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)`. -/
-theorem kFunctional_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁}
+/-- An additive map `T` between the sum spaces of two couples, possibly over different scalar
+fields, that restricts to maps `T₀ : X₀ → Y₀` and `T₁ : X₁ → Y₁` with `‖T₀ x‖ ≤ M₀ ‖x‖` and
+`‖T₁ x‖ ≤ M₁ ‖x‖`, where `M₀ > 0`, satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)`. -/
+theorem kFunctional_map_le (T : C.SumSpace →+ D.SumSpace) {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁}
     (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
     (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀)
     (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (ht : 0 ≤ t)

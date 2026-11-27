@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -26,6 +27,8 @@ finite measure.
   measurable `B ⊆ B(x₀, ρ)`.
 * `TauCeti.MeasureTheory.setIntegral_ball_norm_sub_sq_le_of_holderOnWith`:
   `∫_{B(x₀, ρ)} ‖G x₀ - G‖² ≤ μ(B(x₀, ρ)) (K ρ^α)²`.
+* `HolderOnWith.memLp_top`: a function Hölder with positive exponent on a bounded set `s` is
+  essentially bounded on every measurable `t ⊆ s`, for any measure.
 -/
 
 public section
@@ -75,3 +78,15 @@ theorem setIntegral_ball_norm_sub_sq_le_of_holderOnWith {x₀ : X} {ρ : ℝ} {�
 end MeasureTheory
 
 end TauCeti
+
+open MeasureTheory in
+/-- A function `α`-Hölder on a bounded set `s`, with `α > 0`, is continuous and bounded on `s`,
+so it is essentially bounded on every measurable `t ⊆ s`, for any measure `μ`. -/
+theorem HolderOnWith.memLp_top {X E : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [NormedAddCommGroup E] [SecondCountableTopologyEither X E]
+    {μ : Measure X} {K α : ℝ≥0} {f : X → E} {s t : Set X} (hf : HolderOnWith K α f s)
+    (hα : 0 < α) (hs : Bornology.IsBounded s) (ht : MeasurableSet t) (hts : t ⊆ s) :
+    MemLp f ⊤ (μ.restrict t) := by
+  obtain ⟨M, hM⟩ := (hf.isBounded_image hs).exists_norm_le
+  exact ((hf.continuousOn hα).mono hts).memLp_top_restrict_of_bound ht M
+    fun x hx => hM _ (mem_image_of_mem f (hts hx))

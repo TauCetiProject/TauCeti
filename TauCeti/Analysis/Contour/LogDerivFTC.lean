@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.Contour.ArcFTC
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Log
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
@@ -72,11 +73,10 @@ the argument principle above all — into a statement about how often an image c
   difference of principal logarithms.
 * `TauCeti.Contour.integral_deriv_div_eq_log_sub_log` — the slit-plane logarithmic-derivative FTC in
   general `f' / f` form.
-* `TauCeti.Contour.integral_deriv_div_sub_eq_log` — its contour specialization to
-  `f t = (γ t - w) / (γ a - w)`, the per-segment step for evaluating the winding-number integral as
-  a sum of `Complex.log` argument increments.
-* `TauCeti.Contour.integral_inv_sub_mul_deriv_eq_log` — the `deriv γ` form with the winding-integral
-  integrand `(γ t - w)⁻¹ * deriv γ t`, ready for the downstream winding sum.
+* `AbsolutelyContinuousOnInterval.integral_inv_sub_mul_deriv_eq_log` — the contour form along an
+  absolutely continuous slit-plane arc, with the winding integrand `(γ t - w)⁻¹ * deriv γ t`: the
+  per-segment step for evaluating the winding-number integral as a sum of `Complex.log` argument
+  increments.
 * `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_logDeriv` — interval-integrability
   of the argument-principle integrand `deriv γ • (logDeriv h ∘ γ)` along an absolutely continuous
   curve on which `h` is analytic and zero-free.
@@ -120,43 +120,26 @@ theorem integral_deriv_div_eq_log_sub_log {f f' : ℝ → ℂ} {a b : ℝ} {P : 
     (hf_cont.clog h_slit)
     (fun t ht ↦ (hf_diff t ht).clog_real (h_slit t (Ioo_subset_Icc_self ht.1))) h_int
 
-/-- **FTC for a contour logarithmic-derivative integrand.** The `f t = (γ t - w) / (γ a - w)`
-specialization of `integral_deriv_div_eq_log_sub_log`: for `γ` continuous on `[a, b]` and
-differentiable off a countable set `P`, with the normalized ratio in `Complex.slitPlane` throughout
-`[a, b]` and `t ↦ γ' t / (γ t - w)` interval-integrable, the integral of that integrand over `a..b`
-equals `Complex.log ((γ b - w) / (γ a - w))`. -/
-theorem integral_deriv_div_sub_eq_log {γ γ' : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
-    (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
-    (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, HasDerivAt γ (γ' t) t)
-    (h_slit : ∀ t ∈ uIcc a b, (γ t - w) / (γ a - w) ∈ slitPlane)
-    (h_int : IntervalIntegrable (fun t ↦ γ' t / (γ t - w)) volume a b) :
-    ∫ t in a..b, γ' t / (γ t - w) = Complex.log ((γ b - w) / (γ a - w)) := by
-  have h_a_ne : γ a - w ≠ 0 := by
-    intro h0
-    have h1 := h_slit a left_mem_uIcc
-    rw [h0, div_zero] at h1
-    exact zero_notMem_slitPlane h1
-  have hfun : (fun t ↦ γ' t / (γ a - w) / ((γ t - w) / (γ a - w)))
-      = fun t ↦ γ' t / (γ t - w) := funext fun t ↦ div_div_div_cancel_right₀ h_a_ne _ _
-  have hgen := integral_deriv_div_eq_log_sub_log (f := fun t ↦ (γ t - w) / (γ a - w))
-    (f' := fun t ↦ γ' t / (γ a - w)) hP ((hγ_cont.sub continuousOn_const).div_const _)
-    (fun t ht ↦ ((hγ_diff t ht).sub_const w).div_const _) h_slit (by rw [hfun]; exact h_int)
-  rwa [hfun, div_self h_a_ne, Complex.log_one, sub_zero] at hgen
-
-/-- **Winding-integrand form of the contour log-derivative FTC.** The `γ' = deriv γ` specialization
-of `integral_deriv_div_sub_eq_log`, stated with the winding-integral integrand
-`(γ t - w)⁻¹ * deriv γ t` in both the integrability hypothesis and the conclusion (matching the
-`g (γ t) * deriv γ t` shape of the winding API), so a downstream winding sum can apply it per
-segment without rearranging the integrand. -/
-theorem integral_inv_sub_mul_deriv_eq_log {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
-    (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
-    (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
-    (h_slit : ∀ t ∈ uIcc a b, (γ t - w) / (γ a - w) ∈ slitPlane)
-    (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
+/-- **FTC for the winding integrand on a slit-plane arc.** For an absolutely continuous curve `γ`
+on the oriented interval with endpoints `a`, `b` whose normalized ratio `(γ t - w) / (γ a - w)`
+stays in `Complex.slitPlane` throughout `[[a, b]]`, the winding integrand
+`(γ t - w)⁻¹ * deriv γ t` integrates to the principal logarithm of the endpoint ratio,
+`Complex.log ((γ b - w) / (γ a - w))`. This is the per-segment step for evaluating the winding
+number integral as a sum of `Complex.log` argument increments. -/
+theorem _root_.AbsolutelyContinuousOnInterval.integral_inv_sub_mul_deriv_eq_log
+    {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (h_slit : ∀ t ∈ uIcc a b, (γ t - w) / (γ a - w) ∈ slitPlane) :
     ∫ t in a..b, (γ t - w)⁻¹ * deriv γ t = Complex.log ((γ b - w) / (γ a - w)) := by
-  simp only [inv_mul_eq_div]
-  exact integral_deriv_div_sub_eq_log (γ' := deriv γ) hP hγ_cont
-    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) h_slit (by simpa only [inv_mul_eq_div] using h_int)
+  have hc : γ a - w ≠ 0 := fun h0 ↦
+    zero_notMem_slitPlane (by simpa [h0] using h_slit a left_mem_uIcc)
+  have hconst (c : ℂ) : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ c) a b :=
+    (LipschitzWith.const c).lipschitzOnWith.absolutelyContinuousOnInterval
+  -- The curve `γ - w` against the constant curve `γ a - w`, whose logarithmic derivative is `0`.
+  have h := (hγ.fun_sub (hconst w)).integral_deriv_div_sub_integral_deriv_div_eq_log_div_sub_log_div
+    (hconst (γ a - w)) h_slit
+  rw [div_self hc, Complex.log_one, sub_zero] at h
+  simpa only [deriv_sub_const, deriv_const, zero_div, intervalIntegral.integral_zero, sub_zero,
+    div_eq_inv_mul, mul_zero] using h
 
 /-- The argument-principle integrand `deriv γ • (logDeriv h ∘ γ)` is interval-integrable along an
 absolutely continuous curve `γ` on which `h` is analytic and zero-free. This supplies the

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 public import TauCeti.RingTheory.Polynomial.Roots
 import Mathlib.RingTheory.Coprime.Lemmas
 

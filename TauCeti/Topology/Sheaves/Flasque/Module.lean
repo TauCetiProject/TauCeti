@@ -110,8 +110,6 @@ sequence of sheaves of `R`-modules with `F₁` flasque, then
 theorem map_Γ_of_isFlasque
     [TopCat.Presheaf.IsFlasque S.X₁.obj] :
     (S.map (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))).ShortExact := by
-  have : (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive :=
-    Functor.additive_of_preserves_binary_products _
   obtain ⟨h, hm⟩ := (Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono
     (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))).1 inferInstance S hS
   refine ShortComplex.ShortExact.mk' h hm ?_

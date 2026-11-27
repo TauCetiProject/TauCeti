@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Constructions
+public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import Mathlib.Geometry.Manifold.Notation
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
@@ -32,6 +34,11 @@ a set to `C^n` sections of `Hom(TM, V)` there.
   terms of smooth real Cauchy–Riemann operators.
 * `TauCeti.contMDiffCovariantDerivativeOn_sectionComplexLinearPart`: the complex linear part of a
   smooth operator is smooth.
+* `TauCeti.contMDiffCovariantDerivativeOn_sectionTransport`: the transport of a smooth operator
+  along a smooth bundle isomorphism (`TauCeti.sectionTransport`) is smooth, and
+  `ContMDiff.mdifferentiableAt_clm_bundle_symm_apply` gives the differentiability hypothesis of
+  `TauCeti.IsRealCauchyRiemannOperator.transport`
+  (`TauCeti.IsRealCauchyRiemannOperator.transport_of_contMDiff`).
 
 ## References
 
@@ -123,5 +130,71 @@ theorem IsRealCauchyRiemannOperator.contMDiffOn_antilinearPart [NormedSpace ℂ 
   rw [antilinearPart_eq_difference]
   exact hD.contMDiffOn_difference hD.isRealCauchyRiemannOperator_sectionComplexLinearPart hn hDs
     (contMDiffCovariantDerivativeOn_sectionComplexLinearPart hn hDs)
+
+/-! ### Transport along smooth bundle isomorphisms -/
+
+section Transport
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle G W] [∀ x, AddCommGroup (W x)] [∀ x, Module ℂ (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
+  [VectorBundle ℝ F V] [VectorBundle ℝ G W] [CompleteSpace F] {Φ : ∀ x, V x ≃L[ℂ] W x}
+
+omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- The inverse of a `Cⁿ` complex bundle isomorphism, `n ≠ 0`, preserves differentiability of
+sections. -/
+theorem _root_.ContMDiff.mdifferentiableAt_clm_bundle_symm_apply {n : WithTop ℕ∞}
+    (hΦ : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n fun x ↦
+      TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x
+        ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x)) (hn : n ≠ 0) {σ : ∀ x, W x} {x : M}
+    (hσ : MDifferentiableAt I (I.prod 𝓘(ℝ, G)) (fun y ↦ TotalSpace.mk' G y (σ y)) x) :
+    MDifferentiableAt I (I.prod 𝓘(ℝ, F)) (fun y ↦ TotalSpace.mk' F y ((Φ y).symm (σ y))) x := by
+  simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_restrictScalars'_symm]
+    using ((hΦ.clm_bundle_equiv_symm x).mdifferentiableAt hn).clm_bundle_apply hσ
+
+omit [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- **Transport preserves smoothness.** If an operator `D` sends sections of `V` that are
+`C^(k + 1)` on a set `u` to `V`-valued one-forms that are `Cᵏ` on `u`, then its transport along a
+`C^(k + 1)` bundle isomorphism `Φ` does the same for `W`. -/
+theorem contMDiffCovariantDerivativeOn_sectionTransport {k : WithTop ℕ∞} {u : Set M}
+    (hΦ : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) (k + 1) fun x ↦
+      TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x
+        ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x))
+    (hDs : ContMDiffCovariantDerivativeOn F k D u) :
+    ContMDiffCovariantDerivativeOn G k (sectionTransport Φ D) u where
+  contMDiff {σ} hσ := by
+    have hτ := ContMDiffOn.clm_bundle_apply hΦ.clm_bundle_equiv_symm.contMDiffOn hσ
+    simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_restrictScalars'_symm]
+      at hτ
+    have hDτ := hDs.contMDiff hτ
+    simp only [ContinuousLinearEquiv.toContinuousLinearMap_restrictScalars'] at hΦ
+    simp only [sectionTransport_apply]
+    exact fun x hx ↦ ((hΦ x).of_le le_self_add).contMDiffWithinAt.clm_bundle_comp (hDτ x hx)
+
+omit [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- The transport of a `Cᵏ` operator along a smooth bundle isomorphism is `Cᵏ`, for every
+`k : ℕ∞`; the case of `contMDiffCovariantDerivativeOn_sectionTransport` for smooth `Φ`. -/
+theorem _root_.ContMDiffCovariantDerivativeOn.sectionTransport_of_contMDiff {k : ℕ∞} {u : Set M}
+    (hDs : ContMDiffCovariantDerivativeOn F k D u)
+    (hΦ : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞ fun x ↦
+      TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x
+        ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x)) :
+    ContMDiffCovariantDerivativeOn G k (sectionTransport Φ D) u :=
+  contMDiffCovariantDerivativeOn_sectionTransport (hΦ.of_le (by exact_mod_cast le_top)) hDs
+
+omit [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- The transport of a real Cauchy–Riemann operator along a smooth bundle isomorphism is a real
+Cauchy–Riemann operator: `IsRealCauchyRiemannOperator.transport`, with the differentiability of
+`Φ⁻¹` on sections supplied by `ContMDiff.mdifferentiableAt_clm_bundle_symm_apply`. -/
+theorem IsRealCauchyRiemannOperator.transport_of_contMDiff
+    (hD : IsRealCauchyRiemannOperator F j D)
+    (hΦ : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞ fun x ↦
+      TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x
+        ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x)) :
+    IsRealCauchyRiemannOperator G j (sectionTransport Φ D) :=
+  hD.transport fun _ _ ↦ hΦ.mdifferentiableAt_clm_bundle_symm_apply (by simp)
+
+end Transport
 
 end TauCeti

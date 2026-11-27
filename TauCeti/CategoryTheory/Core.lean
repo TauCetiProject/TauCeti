@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Core
+public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.CategoryTheory.Skeletal
 
 /-!
@@ -18,7 +19,8 @@ core `Core C`, the groupoid of objects of `C` and isomorphisms between them. Mat
 The inclusion `Core C ⥤ C` is essentially surjective, and it is an equivalence when `C` is a
 groupoid. Since two objects are isomorphic in `Core C` exactly when they are isomorphic in `C`,
 the inclusion identifies the isomorphism classes `Skeleton (Core C)` with `Skeleton C`
-(`CategoryTheory.Core.skeletonEquiv`).
+(`CategoryTheory.Core.skeletonEquiv`), and the automorphism group of an object of `Core C` with
+that of the underlying object of `C` (`CategoryTheory.Core.autMulEquiv`).
 
 The core functor `F.core : Core C ⥤ Core D` preserves faithfulness, and preserves fullness when `F`
 is fully faithful: a full functor that is not faithful need not lift isomorphisms to isomorphisms,
@@ -98,6 +100,25 @@ lemma skeletonEquiv_toSkeleton (X : Core C) : skeletonEquiv (toSkeleton X) = toS
 lemma skeletonEquiv_symm_toSkeleton (X : C) :
     skeletonEquiv.symm (toSkeleton X) = toSkeleton (⟨X⟩ : Core C) :=
   skeletonEquiv.symm_apply_eq.2 (skeletonEquiv_toSkeleton _).symm
+
+/-- The automorphisms of an object of `Core C` are the automorphisms of the underlying object
+of `C`. -/
+def autMulEquiv (X : Core C) : Aut X ≃* Aut X.of where
+  toFun e := .of e.asIso.hom.iso
+  invFun e := .of (isoMk e.asIso)
+  left_inv _ := Aut.ext (Iso.ext (hom_ext rfl))
+  right_inv _ := Aut.ext (Iso.ext rfl)
+  map_mul' _ _ := Aut.ext (Iso.ext rfl)
+
+@[simp]
+lemma autMulEquiv_apply_asIso (X : Core C) (e : Aut X) :
+    (autMulEquiv X e).asIso = e.asIso.hom.iso :=
+  (rfl)
+
+@[simp]
+lemma autMulEquiv_symm_apply_asIso (X : Core C) (e : Aut X.of) :
+    ((autMulEquiv X).symm e).asIso = isoMk e.asIso :=
+  (rfl)
 
 end Core
 
