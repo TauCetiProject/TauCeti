@@ -75,11 +75,8 @@ private theorem toFun_one_add_X_smul_eq
     dsimp only [F, MonoidHom.coe_mk, OneHom.coe_mk, TensorProduct.mk_apply]
     rw [smul_tmul', smul_eq_mul, mul_one, Algebra.TensorProduct.one_def, add_comm (1 ⊗ₜ[A] (1 : R)),
       D.toFun_tmul_add_tmul_one, E.toFun_tmul_add_tmul_one]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have hi' : i ≤ d := by simpa using hi
-    have he := congrArg (fun p : A[X] ↦ p.coeff (d - i)) (h hb)
-    simp only [coeff_charpoly, ite_eq_left (Nat.sub_le _ _), Nat.sub_sub_self hi'] at he
-    rw [(isUnit_neg_one.pow i).isRegular.left he]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [(D.charpoly_eq_iff_charCoeff_eq E).mp (h hb) i]
   rw [← PolynomialLaw.isCompat_apply, ← PolynomialLaw.isCompat_apply] at he
   simpa only [LinearMap.rid_rTensor_apply, AlgHom.toLinearMap_apply, q, z,
     AlgHom.restrictScalars_apply, AdjoinRoot.coe_mkₐ] using congrArg (TensorProduct.rid A T) he
