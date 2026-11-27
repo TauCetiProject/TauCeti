@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.FreeProbability.Topology
 public import TauCeti.Probability.FreeProbability.StarIndependence
 public import TauCeti.Analysis.VonNeumannAlgebra.Adjoin
+public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
 
@@ -100,15 +101,12 @@ theorem isFreelyIndependent_vonNeumannAlgebra_adjoin_iff
     (hcont : Continuous (fun T : H →WOT[ℂ] H => φ T.toCLM)) :
     IsFreelyIndependent φ (fun i => (VonNeumannAlgebra.adjoin (s i)).toSubalgebra) ↔
       IsFreelyIndependent φ (fun i => (StarAlgebra.adjoin ℂ (s i)).toSubalgebra) := by
-  have he : (((ContinuousLinearMapWOT.algEquiv ℂ).symm : (H →L[ℂ] H) ≃ₐ[ℂ] (H →WOT[ℂ] H)) :
-      (H →L[ℂ] H) → (H →WOT[ℂ] H)) = ContinuousLinearMapWOT.ofCLM :=
-    funext fun T => by rw [AlgEquiv.symm_apply_eq]; ext x; simp
   have hcl : (fun i => ((StarAlgebra.adjoin ℂ (s i)).toSubalgebra.map
         (ContinuousLinearMapWOT.algEquiv ℂ).symm.toAlgHom).topologicalClosure) =
       fun i => (VonNeumannAlgebra.adjoin (s i)).toSubalgebra.map
         (ContinuousLinearMapWOT.algEquiv ℂ).symm.toAlgHom := funext fun i =>
     SetLike.coe_injective <| by
-      simp [he, ← VonNeumannAlgebra.image_ofCLM_adjoin_eq_closure]
+      simp [← VonNeumannAlgebra.image_ofCLM_adjoin_eq_closure]
   have hcomp : (φ.comp (ContinuousLinearMapWOT.algEquiv ℂ).toLinearMap).comp
       (ContinuousLinearMapWOT.algEquiv ℂ).symm.toAlgHom.toLinearMap = φ := by ext T; simp
   rw [← isFreelyIndependent_weakOperatorClosure_iff

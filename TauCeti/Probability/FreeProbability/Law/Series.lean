@@ -22,16 +22,29 @@ recovers the series of a selfadjoint element `a`. For compactly supported probab
 measure, and for any square-integrable real random variable the linear coefficient of its formal
 R-series equals its variance.
 
+## Main definitions
+
+* `MeasureTheory.Measure.freeCumulant`: the `n`-th free cumulant `κₙ(μ)` of a real Borel
+  measure `μ`.
+
 ## Main results
 
 * `PositiveLinearMap.map_ofReal_momentSeries_integral_law`,
   `PositiveLinearMap.map_ofReal_freeCumulantSeries_integral_law`,
   `PositiveLinearMap.ofReal_freeCumulant_integral_law`,
+  `PositiveLinearMap.ofReal_freeCumulant_law`,
   `PositiveLinearMap.map_ofReal_rSeries_integral_law`: agreement of scalar-measure formal series and
   free cumulants of `φ.law a` with those of a selfadjoint element `a`.
+* `MeasureTheory.Measure.freeCumulant_eq_coeff_freeCumulantSeries`,
+  `MeasureTheory.Measure.freeCumulant_succ_eq_coeff_rSeries`,
+  `MeasureTheory.Measure.freeCumulant_zero`,
+  `MeasureTheory.Measure.freeCumulant_one`,
+  `MeasureTheory.Measure.freeCumulant_two_eq_variance`,
+  `MeasureTheory.Measure.freeCumulant_integral_const_eq`: coefficient, special-value, and
+  constant-word formulas for `MeasureTheory.Measure.freeCumulant`.
 * `MeasureTheory.Measure.ext_of_rSeries_integral_eq`,
   `MeasureTheory.Measure.eq_iff_rSeries_integral_eq`,
-  `MeasureTheory.Measure.eq_iff_forall_freeCumulant_integral_eq`,
+  `MeasureTheory.Measure.eq_iff_forall_freeCumulant_eq`,
   `MeasureTheory.Measure.coeff_one_rSeries_integral_eq_variance`: R-series/cumulant determinacy and
   variance.
 
@@ -49,6 +62,52 @@ noncomputable section
 
 open Finset MeasureTheory PowerSeries ProbabilityTheory
 open scoped ComplexOrder
+
+namespace MeasureTheory.Measure
+
+/-- The `n`-th **free cumulant** `κₙ(μ)` of a real Borel measure `μ` (`κ₀(μ) = 1`,
+`κ₁(μ) = ∫ x, x ∂μ`, and `κ₂(μ) = variance id μ` for probability measures with finite second
+moment). -/
+def freeCumulant (μ : Measure ℝ) (n : ℕ) : ℝ :=
+  TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ) (fun _ : Fin n => (id : ℝ → ℝ)) univ
+
+/-- `μ.freeCumulant n` is the `n`-th coefficient of the formal free cumulant series of `μ`. -/
+theorem freeCumulant_eq_coeff_freeCumulantSeries (μ : Measure ℝ) (n : ℕ) :
+    μ.freeCumulant n =
+      PowerSeries.coeff n (TauCeti.freeCumulantSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id) :=
+  (TauCeti.coeff_freeCumulantSeries _ _ n).symm
+
+/-- `μ.freeCumulant (n + 1)` is the `n`-th coefficient of the formal R-series of `μ`. -/
+theorem freeCumulant_succ_eq_coeff_rSeries (μ : Measure ℝ) (n : ℕ) :
+    μ.freeCumulant (n + 1) =
+      PowerSeries.coeff n (TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id) :=
+  (TauCeti.coeff_rSeries _ _ n).symm
+
+/-- The zeroth free cumulant of any real Borel measure is `1`. -/
+@[simp] theorem freeCumulant_zero (μ : Measure ℝ) : μ.freeCumulant 0 = 1 := by
+  rw [freeCumulant_eq_coeff_freeCumulantSeries, PowerSeries.coeff_zero_eq_constantCoeff_apply,
+    TauCeti.constantCoeff_freeCumulantSeries]
+
+/-- The first free cumulant of any real Borel measure is its mean `∫ x, x ∂μ`. -/
+@[simp] theorem freeCumulant_one (μ : Measure ℝ) : μ.freeCumulant 1 = ∫ x, x ∂μ := by
+  rw [freeCumulant_eq_coeff_freeCumulantSeries, TauCeti.coeff_one_freeCumulantSeries]; rfl
+
+/-- The second free cumulant of a probability measure with finite second moment is its variance. -/
+theorem freeCumulant_two_eq_variance {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : MemLp (id : ℝ → ℝ) 2 μ) : μ.freeCumulant 2 = variance id μ := by
+  rw [freeCumulant_eq_coeff_freeCumulantSeries, TauCeti.coeff_two_freeCumulantSeries]
+  exact (variance_eq_sub hμ).symm
+
+/-- Any constant-`id` integral free cumulant along a finite linear order reduces to
+`μ.freeCumulant #s`. -/
+theorem freeCumulant_integral_const_eq (μ : Measure ℝ) {α : Type*} [LinearOrder α]
+    (s : Finset α) :
+    TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ) (fun _ : α => (id : ℝ → ℝ)) s =
+      μ.freeCumulant #s := by
+  rw [TauCeti.freeCumulant_const_eq_coeff_freeCumulantSeries,
+    freeCumulant_eq_coeff_freeCumulantSeries]
+
+end MeasureTheory.Measure
 
 namespace PositiveLinearMap
 
@@ -81,13 +140,18 @@ theorem ofReal_freeCumulant_integral_law {a : A} (ha : IsSelfAdjoint a) {α : Ty
     TauCeti.freeCumulant_const_eq_coeff_freeCumulantSeries,
     ← φ.map_ofReal_freeCumulantSeries_integral_law ha, coeff_map, Complex.ofRealHom_eq_coe]
 
+/-- For selfadjoint `a`, the `n`-th free cumulant of `φ.law a` matches `κₙ(a, …, a)` under `φ`. -/
+theorem ofReal_freeCumulant_law {a : A} (ha : IsSelfAdjoint a) (n : ℕ) :
+    ((φ.law a).freeCumulant n : ℂ) = TauCeti.freeCumulant φ (fun _ : Fin n => a) univ :=
+  φ.ofReal_freeCumulant_integral_law ha univ
+
 /-- Mapping the real formal R-series of `φ.law a` into `ℂ` gives the formal R-series of `a`. -/
 theorem map_ofReal_rSeries_integral_law {a : A} (ha : IsSelfAdjoint a) :
     PowerSeries.map (Complex.ofRealHom : ℝ →+* ℂ)
         (TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂φ.law a) id) = TauCeti.rSeries φ a := by
   ext n
   rw [coeff_map, TauCeti.coeff_rSeries, TauCeti.coeff_rSeries, Complex.ofRealHom_eq_coe]
-  exact φ.ofReal_freeCumulant_integral_law ha (univ : Finset (Fin (n + 1)))
+  exact φ.ofReal_freeCumulant_law ha (n + 1)
 
 end PositiveLinearMap
 
@@ -119,16 +183,14 @@ theorem eq_iff_rSeries_integral_eq {μ ν : Measure ℝ} [IsProbabilityMeasure �
   ⟨fun h => h ▸ rfl, ext_of_rSeries_integral_eq hμ hν⟩
 
 /-- **Free cumulant determinacy of compactly supported probability measures.** -/
-theorem eq_iff_forall_freeCumulant_integral_eq {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
+theorem eq_iff_forall_freeCumulant_eq {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
-    μ = ν ↔ ∀ n : ℕ, n ≠ 0 →
-      TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ) (fun _ : Fin n => (id : ℝ → ℝ)) univ =
-        TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂ν)
-          (fun _ : Fin n => (id : ℝ → ℝ)) univ := by
+    μ = ν ↔ ∀ n : ℕ, n ≠ 0 → μ.freeCumulant n = ν.freeCumulant n := by
   rw [eq_iff_rSeries_integral_eq hμ hν, PowerSeries.ext_iff]
   refine ⟨fun h n hn => ?_, fun h n => ?_⟩
-  · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn; simpa [TauCeti.coeff_rSeries] using h k
-  · simpa [TauCeti.coeff_rSeries] using h (n + 1) n.succ_ne_zero
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+    simpa [freeCumulant_succ_eq_coeff_rSeries] using h k
+  · simpa [freeCumulant_succ_eq_coeff_rSeries] using h (n + 1) n.succ_ne_zero
 
 /-- The linear coefficient of the formal R-series of a square-integrable real random variable `X`
 equals its variance. -/

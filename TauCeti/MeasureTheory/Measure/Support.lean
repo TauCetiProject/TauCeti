@@ -53,8 +53,6 @@ global continuity is unnecessary for this inclusion.
 * `MeasureTheory.Measure.isOpenPosMeasure_comap_support` — in a hereditarily Lindelöf space with
   measurable open sets, pulling a measure back to its support yields a measure positive on nonempty
   open sets.
-* `MeasureTheory.Measure.compactSpace_support_cond` — Boolean selection between compactly
-  supported measures preserves compact support.
 * `MeasureTheory.Measure.IsCompactProbabilityMeasure` — predicate for probability measures with
   compact topological support.
 * `MeasureTheory.Measure.isCompact_support_map_homeomorph_iff` and
@@ -198,13 +196,6 @@ instance isOpenPosMeasure_comap_support {X : Type*} [TopologicalSpace X]
       Subtype.image_preimage_coe, Set.inter_comm,
       measure_inter_conull (Measure.measure_compl_support (μ := μ))]
     exact ((mem_support_iff_forall (x : X)).mp x.property O (hO.mem_nhds hx)).ne'
-
-/-- Selecting between two measures with compact support via `cond` gives a `CompactSpace`
-instance on the resulting support. -/
-instance compactSpace_support_cond {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    {μ ν : Measure X} [hμ : CompactSpace μ.support] [hν : CompactSpace ν.support] (b : Bool) :
-    CompactSpace (cond b μ ν).support :=
-  Bool.rec hν hμ b
 
 /-- A measure on a topological measurable space is a compactly supported probability measure if it
 is a probability measure and its topological support is compact. -/

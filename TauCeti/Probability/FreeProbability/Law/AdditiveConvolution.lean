@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Probability.FreeProbability.Law.Realization
 import TauCeti.MeasureTheory.Measure.Dirac
 
@@ -144,25 +145,25 @@ private theorem exists_pair (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsP
 /-- `freeConv μ ν` is the zero measure unless `μ` and `ν` are both compactly supported
 probability measures. -/
 theorem freeConv_of_not {μ ν : Measure ℝ}
-    (h : ¬(IsProbabilityMeasure μ ∧ IsCompact μ.support ∧ IsProbabilityMeasure ν ∧
-      IsCompact ν.support)) :
+    (h : ¬μ.IsCompactProbabilityMeasure ∨ ¬ν.IsCompactProbabilityMeasure) :
     μ.freeConv ν = 0 := by
   rw [freeConv, dite_eq_right]
   rintro ⟨ρ, A, _, _, _, φ, a, hφ, ha, -, rfl, rfl, -⟩
-  exact h ⟨isProbabilityMeasure_law φ hφ (ha 0), isCompact_support_law φ (a 0),
-    isProbabilityMeasure_law φ hφ (ha 1), isCompact_support_law φ (a 1)⟩
+  exact h.elim
+    (fun hμ => hμ ⟨isProbabilityMeasure_law φ hφ (ha 0), isCompact_support_law φ (a 0)⟩)
+    (fun hν => hν ⟨isProbabilityMeasure_law φ hφ (ha 1), isCompact_support_law φ (a 1)⟩)
 
 /-- `freeConv μ ν` is the zero measure unless `μ` is a compactly supported probability
 measure. -/
 theorem freeConv_of_not_left {μ ν : Measure ℝ}
-    (h : ¬(IsProbabilityMeasure μ ∧ IsCompact μ.support)) : μ.freeConv ν = 0 :=
-  freeConv_of_not fun ⟨h1, h2, _⟩ => h ⟨h1, h2⟩
+    (h : ¬μ.IsCompactProbabilityMeasure) : μ.freeConv ν = 0 :=
+  freeConv_of_not (Or.inl h)
 
 /-- `freeConv μ ν` is the zero measure unless `ν` is a compactly supported probability
 measure. -/
 theorem freeConv_of_not_right {μ ν : Measure ℝ}
-    (h : ¬(IsProbabilityMeasure ν ∧ IsCompact ν.support)) : μ.freeConv ν = 0 :=
-  freeConv_of_not fun ⟨_, _, hν⟩ => h hν
+    (h : ¬ν.IsCompactProbabilityMeasure) : μ.freeConv ν = 0 :=
+  freeConv_of_not (Or.inr h)
 
 /-- The free convolution with the zero measure is zero. -/
 @[simp]
@@ -185,13 +186,12 @@ theorem isProbabilityMeasure_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasur
 
 /-- The free convolution of two measures has compact support. -/
 theorem isCompact_support_freeConv (μ ν : Measure ℝ) : IsCompact (μ.freeConv ν).support := by
-  by_cases h : IsProbabilityMeasure μ ∧ IsCompact μ.support ∧ IsProbabilityMeasure ν ∧
-      IsCompact ν.support
-  · obtain ⟨_, hμ, _, hν⟩ := h
+  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
+  · obtain ⟨⟨_, hμ⟩, ⟨_, hν⟩⟩ := h
     obtain ⟨A, _, _, _, φ, a, hφ, ha, hfree, rfl, rfl, -⟩ := exists_pair μ ν hμ hν
     rw [freeConv_law_law hφ ha hfree]
     exact isCompact_support_law φ _
-  · simp [freeConv_of_not h]
+  · simp [freeConv_of_not (not_and_or.mp h)]
 
 /-- **Support bound.** If `μ` is supported in `[α, β]` and `ν` in `[γ, δ]`, then `μ ⊞ ν` is
 supported in `[α + γ, β + δ]`. -/
@@ -224,12 +224,12 @@ theorem support_freeConv_subset_Icc {μ ν : Measure ℝ} {α β γ δ : ℝ}
 
 /-- Free convolution is commutative. -/
 theorem freeConv_comm (μ ν : Measure ℝ) : μ.freeConv ν = ν.freeConv μ := by
-  by_cases h : IsProbabilityMeasure μ ∧ IsCompact μ.support ∧ IsProbabilityMeasure ν ∧
-      IsCompact ν.support
-  · obtain ⟨_, hμ, _, hν⟩ := h
+  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
+  · obtain ⟨⟨_, hμ⟩, ⟨_, hν⟩⟩ := h
     obtain ⟨A, _, _, _, φ, a, hφ, ha, hfree, rfl, rfl, -⟩ := exists_pair μ ν hμ hν
     rw [freeConv_law_law hφ ha hfree, ← hfree.law_add hφ one_ne_zero (ha 1) (ha 0), add_comm]
-  · rw [freeConv_of_not h, freeConv_of_not fun ⟨h1, h2, h3, h4⟩ => h ⟨h3, h4, h1, h2⟩]
+  · rw [freeConv_of_not (not_and_or.mp h),
+      freeConv_of_not (not_and_or.mp fun ⟨h1, h2⟩ => h ⟨h2, h1⟩)]
 
 /-- Free convolution is associative. -/
 theorem freeConv_assoc (μ ν ρ : Measure ℝ) :

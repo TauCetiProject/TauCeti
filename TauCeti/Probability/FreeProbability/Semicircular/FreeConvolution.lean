@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 # Free additive convolution of Wigner semicircle laws
 
 The location-scale Wigner semicircle laws `TauCeti.Probability.semicircleReal m v` on `ℝ` form a
-two-parameter semigroup under `MeasureTheory.Measure.freeConv` (`⊞`): both centres and variances
+two-parameter semigroup under `MeasureTheory.Measure.freeConv`: both centres and variances
 add, including in the degenerate zero-variance Dirac cases. Consequently, taking the `n`-fold free
 additive convolution power scales both the centre and the variance by `n`, including `n = 0`.
 
@@ -49,23 +49,15 @@ namespace TauCeti.Probability
       semicircleReal (m₁ + m₂) (v₁ + v₂) := by
   have hcentred : (semicircleReal 0 v₁).freeConv (semicircleReal 0 v₂) =
       semicircleReal 0 (v₁ + v₂) := by
-    have := isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 v₁)
-    have := isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 v₂)
-    let φ := FreeLawRealization.state (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂))
-    let g := FreeLawRealization.generator (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂))
-    have hg1 := FreeLawRealization.isSelfAdjoint_generator
-      (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂)) true
-    have hg2 := FreeLawRealization.isSelfAdjoint_generator
-      (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂)) false
+    obtain ⟨A, _, _, _, φ, g, _, hfree, hg1, hg2, _, _, hlaw1, hlaw2, hadd⟩ :=
+      Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv
+        (isCompact_support_semicircleReal 0 v₁) (isCompact_support_semicircleReal 0 v₂)
     have hsum : IsSemicircular φ.toLinearMap (g true + g false) (((v₁ + v₂ : ℝ≥0) : ℝ) : ℂ) := by
       simpa [NNReal.coe_add] using
-        (FreeLawRealization.isFreelyIndependentElements_generator
-          (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂))).isSemicircular_add
-          Bool.false_ne_true.symm
-          ((φ.law_eq_semicircleReal_iff hg1 v₁).mp (FreeLawRealization.law_generator _ true))
-          ((φ.law_eq_semicircleReal_iff hg2 v₂).mp (FreeLawRealization.law_generator _ false))
-    exact (FreeLawRealization.law_add_generator _ Bool.false_ne_true.symm).symm.trans <|
-      (φ.law_eq_semicircleReal_iff (hg1.add hg2) _).mpr hsum
+        hfree.isSemicircular_add Bool.false_ne_true.symm
+          ((φ.law_eq_semicircleReal_iff hg1 v₁).mp hlaw1)
+          ((φ.law_eq_semicircleReal_iff hg2 v₂).mp hlaw2)
+    exact hadd.symm.trans <| (φ.law_eq_semicircleReal_iff (hg1.add hg2) _).mpr hsum
   have hshift (m : ℝ) (v : ℝ≥0) :
       semicircleReal m v = (semicircleReal 0 v).map fun x => m + 1 * x := by
     simpa using (map_affine_semicircleReal 0 m 1 v).symm
