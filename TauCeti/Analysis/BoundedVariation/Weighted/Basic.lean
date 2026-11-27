@@ -53,7 +53,9 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
 * `TauCeti.weightedMeasure W`: the measure `e^{−W} · volume`, absolutely continuous with
   respect to `volume` (`TauCeti.weightedMeasure_absolutelyContinuous`), and, for an almost
   everywhere measurable weight, conversely
-  (`TauCeti.volume_absolutelyContinuous_weightedMeasure`).
+  (`TauCeti.volume_absolutelyContinuous_weightedMeasure`); when it is finite and `E` is
+  nontrivial, the measure of a ball is strictly increasing in the radius
+  (`TauCeti.strictMonoOn_weightedMeasure_ball`).
 * `LinearIsometryEquiv.gaussianWeight_apply`, `LinearIsometryEquiv.gaussianWeight_comp`: the
   Gaussian weight is invariant under linear isometry equivalences.
 * `TauCeti.weightedVariation_eq_iSup_trace_fderiv`: for a differentiable weight, the weighted
@@ -253,6 +255,30 @@ theorem volume_absolutelyContinuous_weightedMeasure (hW : AEMeasurable W volume)
   rw [weightedMeasure_def]
   exact withDensity_absolutelyContinuous' hW.neg.exp.ennreal_ofReal
     (.of_forall fun x => (ENNReal.ofReal_pos.2 (Real.exp_pos _)).ne')
+
+/-- In dimension at least one, for an almost everywhere measurable weight with finite measure, the
+measure of the ball `B(x, r)` is strictly increasing in `r ≥ 0`: the shell between two radii
+contains a nonempty open set, which has positive measure since `e^{−W} > 0`. -/
+theorem strictMonoOn_weightedMeasure_ball [Nontrivial E] (hW : AEMeasurable W volume)
+    [IsFiniteMeasure (weightedMeasure W)] (x : E) :
+    StrictMonoOn (fun r => weightedMeasure W (Metric.ball x r)) (Ici 0) := by
+  intro r hr r' _ hrr
+  obtain ⟨y, hy⟩ := exists_norm_eq E (show 0 ≤ (r + r') / 2 by simp only [mem_Ici] at hr; linarith)
+  have hne : (Metric.ball x r' \ Metric.closedBall x r).Nonempty :=
+    ⟨x + y, by rw [Metric.mem_ball, dist_self_add_left, hy]; linarith,
+      by rw [Metric.mem_closedBall, dist_self_add_left, hy]; intro h; linarith⟩
+  have hpos : weightedMeasure W (Metric.ball x r' \ Metric.closedBall x r) ≠ 0 := fun h =>
+    (Metric.isOpen_ball.sdiff Metric.isClosed_closedBall).measure_ne_zero volume hne
+      (volume_absolutelyContinuous_weightedMeasure hW h)
+  calc weightedMeasure W (Metric.ball x r)
+      < weightedMeasure W (Metric.ball x r) +
+          weightedMeasure W (Metric.ball x r' \ Metric.closedBall x r) :=
+        ENNReal.lt_add_right (measure_ne_top _ _) hpos
+    _ = weightedMeasure W (Metric.ball x r ∪ (Metric.ball x r' \ Metric.closedBall x r)) :=
+        (measure_union (disjoint_sdiff_right.mono_left Metric.ball_subset_closedBall)
+          (measurableSet_ball.diff measurableSet_closedBall)).symm
+    _ ≤ weightedMeasure W (Metric.ball x r') :=
+        measure_mono (union_subset (Metric.ball_subset_ball hrr.le) sdiff_subset)
 
 /-! ### Admissible fields -/
 

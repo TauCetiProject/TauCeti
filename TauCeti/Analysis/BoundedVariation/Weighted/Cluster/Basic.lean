@@ -15,10 +15,15 @@ Let `E` be a finite-dimensional real inner product space and `W : E → ℝ` a w
 (`TauCeti.Cluster W q`) is a `q`-tuple `(Ω_1, …, Ω_q)` of Lebesgue-measurable cells that are
 pairwise disjoint, cover `E` up to a `volume`-null set, and have finite weighted perimeter. Cells
 may be empty or disconnected. Its **total perimeter** is `P_μ(Ω) = ½ Σᵢ P_μ(Ω_i)`
-(`TauCeti.Cluster.perimeter`), each interface being counted once, and when `μ(E) = 1` the measures
-of its cells form a point of the probability simplex (`TauCeti.Cluster.sum_weightedMeasure_cell`).
+(`TauCeti.Cluster.perimeter`), each interface being counted once. The measure of a union of
+cells is the sum of their measures (`TauCeti.Cluster.weightedMeasure_biUnion_cell`), so when
+`μ(E) = 1` the measures of the cells form a point of the probability simplex
+(`TauCeti.Cluster.sum_weightedMeasure_cell`).
 Two clusters are equivalent when corresponding cells agree up to null sets
-(`TauCeti.Cluster.IsEquivalent`).
+(`TauCeti.Cluster.IsEquivalent`). Conversely, for an almost everywhere measurable weight whose
+measure `μ` is finite, measurable sets of finite weighted perimeter that pairwise meet in null sets
+and whose measures add up to `μ(E)` agree up to null sets with the cells of a cluster
+(`TauCeti.exists_cluster_ae_eq`).
 
 * Equivalent clusters have the same total perimeter and the same cell measures.
 * Permuting the cells gives a cluster with the same total perimeter (`TauCeti.Cluster.permute`).
@@ -73,6 +78,34 @@ structure Cluster (W : E → ℝ) (q : ℕ) where
 
 variable {W : E → ℝ} {p q : ℕ}
 
+/-- **A null modification of almost disjoint cells is a cluster.** For an almost everywhere
+measurable weight with finite measure, measurable sets `t i` that pairwise meet in null sets, whose
+measures add up to `μ(E)` and which have finite weighted perimeters, agree up to null sets with
+the cells of a cluster. -/
+theorem exists_cluster_ae_eq (hW : AEMeasurable W volume)
+    [IsFiniteMeasure (weightedMeasure W)] {t : Fin q → Set E} (ht : ∀ i, MeasurableSet (t i))
+    (hdisj : Pairwise fun i j => volume (t i ∩ t j) = 0)
+    (hsum : ∑ i, weightedMeasure W (t i) = weightedMeasure W univ)
+    (hP : ∀ i, weightedPerimeter W ⊤ (t i) < ⊤) :
+    ∃ Ω : Cluster W q, ∀ i, Ω.cell i =ᵐ[volume] t i := by
+  -- Measurable, pairwise disjoint sets agreeing with the `t i` up to null sets.
+  obtain ⟨u, -, htu, hm, hud⟩ :=
+    exists_subordinate_pairwise_disjoint (μ := volume) (fun i => (ht i).nullMeasurableSet) hdisj
+  have hae (i : Fin q) : u i =ᵐ[volume] t i := (htu i).symm
+  have hμ (i : Fin q) : weightedMeasure W (u i) = weightedMeasure W (t i) :=
+    measure_congr (weightedMeasure_absolutelyContinuous.ae_le (hae i))
+  -- The union of the cells has full measure.
+  have hcov : weightedMeasure W (⋃ i, u i)ᶜ = 0 := by
+    rw [measure_compl (.iUnion hm) (measure_ne_top _ _), measure_iUnion hud hm, tsum_fintype]
+    simp [hμ, hsum]
+  exact ⟨{ cell := u
+           nullMeasurableSet_cell := fun i => (hm i).nullMeasurableSet
+           pairwise_disjoint := hud
+           volume_compl_iUnion := volume_absolutelyContinuous_weightedMeasure hW hcov
+           weightedPerimeter_lt_top := fun i => by
+             rw [weightedPerimeter_congr_ae (by simpa using hae i)]
+             exact hP i }, hae⟩
+
 namespace Cluster
 
 /-- The **total perimeter** `P_μ(Ω) = ½ Σᵢ P_μ(Ω_i)` of a cluster, each interface counted
@@ -90,17 +123,20 @@ theorem perimeter_lt_top (Ω : Cluster W q) : Ω.perimeter < ⊤ :=
   ENNReal.div_lt_top (ENNReal.sum_ne_top.2 fun i _ => (Ω.weightedPerimeter_lt_top i).ne)
     two_ne_zero
 
+/-- The measure of a union of cells of a cluster for `μ = e^{−W} · volume` is the sum of their
+measures. -/
+theorem weightedMeasure_biUnion_cell (Ω : Cluster W q) (t : Finset (Fin q)) :
+    weightedMeasure W (⋃ i ∈ t, Ω.cell i) = ∑ i ∈ t, weightedMeasure W (Ω.cell i) :=
+  measure_biUnion_finset₀ (fun _ _ _ _ hij => (Ω.pairwise_disjoint hij).aedisjoint)
+    fun i _ => (Ω.nullMeasurableSet_cell i).mono_ac weightedMeasure_absolutelyContinuous
+
 /-- **The cell measures add up to `μ(E)`.** The measures of the cells of a cluster for
 `μ = e^{−W} · volume` add up to `μ(E)`, so they lie on the probability simplex when `μ(E) = 1`. -/
 theorem sum_weightedMeasure_cell (Ω : Cluster W q) :
     ∑ i, weightedMeasure W (Ω.cell i) = weightedMeasure W univ := by
-  have hac : weightedMeasure W ≪ volume := weightedMeasure_absolutelyContinuous
-  have h := measure_biUnion_finset₀ (μ := weightedMeasure W) (s := Finset.univ) (f := Ω.cell)
-    (fun i _ j _ hij => (Ω.pairwise_disjoint hij).aedisjoint)
-    fun i _ => (Ω.nullMeasurableSet_cell i).mono_ac hac
-  simp only [Finset.mem_univ, iUnion_true] at h
-  rw [← h]
-  exact measure_congr (ae_eq_univ.2 (hac Ω.volume_compl_iUnion))
+  rw [← Ω.weightedMeasure_biUnion_cell Finset.univ]
+  simp only [Finset.mem_univ, iUnion_true]
+  exact measure_congr (ae_eq_univ.2 (weightedMeasure_absolutelyContinuous Ω.volume_compl_iUnion))
 
 /-- There are no `0`-clusters: the empty family does not cover `E`. -/
 instance instIsEmptyZero : IsEmpty (Cluster W 0) :=
