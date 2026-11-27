@@ -22,7 +22,6 @@ public section
 namespace Nonneg
 
 /-- Nonnegative integers are order-additively equivalent to natural numbers via `Int.toNat`. -/
-@[expose]
 def intOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
   let e : ℕ ≃+o Nonneg ℤ :=
     {
@@ -38,11 +37,11 @@ def intOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
 @[simp]
 theorem intOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
     intOrderAddMonoidIsoNat n = n.val.toNat :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem intOrderAddMonoidIsoNat_symm_apply (n : ℕ) :
     intOrderAddMonoidIsoNat.symm n = (Nat.cast n : Nonneg ℤ) :=
-  rfl
+  (rfl)
 
 end Nonneg
