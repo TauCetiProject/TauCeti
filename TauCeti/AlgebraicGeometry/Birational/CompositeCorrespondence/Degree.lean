@@ -45,14 +45,14 @@ variable {S X Y Z : Scheme.{u}} (sX : X ⟶ S) (sY : Y ⟶ S) (sZ : Z ⟶ S)
   [S.IsSeparated] [f.IsOver sX sY] [(f.comp g).IsOver sX sZ]
 
 /-- **The topological degree of `(q_Y, q_Z)`.** Let `f : X ⤏ Y` be dominant and `g : Y ⤏ Z` a
-rational map over a separated base `S`, with `X`, `Y` integral and `X`, `Y`, `Z` proper over `S`.
+rational map over a separated base `S`, with `X`, `Y` integral and `Y`, `Z` proper over `S`.
 Assume the inclusion of the open `U = compositeDomain f g` on which `g ∘ f` is defined, the
 inclusions of the domains of definition of `f` and `g`, and `γ_f`, `γ_g` quasi-compact (all of
 this holds for `X` and `Y` Noetherian). Then
 `(q_Y, q_Z) : W_{f,g} → Γ_g` has topological degree `e(f)`. -/
-theorem topologicalDegree_compositeCorrespondenceToGraphYZ [IsProper sX] [IsProper sY]
-    [IsProper sZ] [QuasiCompact (compositeDomain f g).ι] [QuasiCompact f.domain.ι]
-    [QuasiCompact g.domain.ι] [QuasiCompact (graphLift f)] [QuasiCompact (graphLift g)] :
+theorem topologicalDegree_compositeCorrespondenceToGraphYZ [IsProper sY] [IsProper sZ]
+    [QuasiCompact (compositeDomain f g).ι] [QuasiCompact f.domain.ι] [QuasiCompact g.domain.ι]
+    [QuasiCompact (graphLift f)] [QuasiCompact (graphLift g)] :
     (compositeCorrespondenceToGraphYZ sX sY sZ f g).toRationalMap.topologicalDegree =
       f.topologicalDegree := by
   have := isModification_compositeCorrespondenceToGraphXY sX sY sZ f g
