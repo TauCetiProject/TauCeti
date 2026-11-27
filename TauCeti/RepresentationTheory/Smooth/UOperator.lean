@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.HeckeOperator
 public import TauCeti.RepresentationTheory.Smooth.Averaging
 import TauCeti.Algebra.Module.NatInt
 import TauCeti.GroupTheory.GroupAction.ConjAct
-import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 
 /-!
 # The operators `U_t = e_C ∘ ρ(t)` at a compact subgroup
@@ -29,9 +28,9 @@ representatives `q` of `C ⧸ (C ∩ t C t⁻¹)`. The double coset operator `[C
 The operators `U_t` are not multiplicative in general. They are when `C` splits along `t` and `t'`:
 if every `c ∈ C` factors as `c = a * b` with `t a t⁻¹ ∈ C` and `t'⁻¹ b t' ∈ C`, then
 `U_t ∘ U_{t'} = U_{t t'}` on `V^C` (`Representation.uOperator_uOperator_apply`). The reason is
-that averaging `ρ(t') v` over `C` is averaging it over the elements `a` alone, since the `b` fix
-`ρ(t') v`, and `ρ(t)` conjugates these `a` into `C`
-(`Representation.smoothAverage_apply_smoothAverage_of_forall_exists`). For the pro-`p` Iwahori
+that `U_t` is constant on the `C`-orbit of `ρ(t') v`, since the `b` fix `ρ(t') v` and `ρ(t)`
+conjugates the `a` into `C`, so it does not see the average `U_{t'} v` of that orbit
+(`Representation.map_smoothAverage_of_forall_apply_eq`). For the pro-`p` Iwahori
 subgroup `C = I₁` of `GL_N` over a nonarchimedean local field and dominant diagonal `t`, `t'`, the
 Iwahori factorisation of `I₁` into upper and lower triangular factors gives such splittings, and
 `t ↦ U_t` is then a homomorphism from the dominant diagonal monoid to the endomorphisms of
@@ -47,9 +46,6 @@ Iwahori factorisation of `I₁` into upper and lower triangular factors gives su
 
 ## Main results
 
-* `Representation.smoothAverage_apply_smoothAverage_of_forall_exists`:
-  `e_C (ρ(t) (e_C y)) = e_C (ρ(t) y)` when every `c ∈ C` is `a * b` with `t a t⁻¹ ∈ C` and `b`
-  fixing `y`.
 * `Representation.uOperator_uOperator_apply`: `U_t (U_{t'} v) = U_{t t'} v` for `v ∈ V^C`, when
   `C` splits along `t` and `t'`.
 * `Representation.uOperator_mul_mul_apply_of_mem`, `Representation.uOperator_apply_of_forall_mem`:
@@ -81,48 +77,6 @@ namespace Representation
 variable {A G V : Type*} [CommRing A] [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   [AddCommGroup V] [Module A V] (ρ : Representation A G V) [IsSmooth ρ]
   (C : Subgroup G) [CompactSpace C] (hC : TauCeti.HasUnitProOrder A C)
-
-/-! ### Averages of translates -/
-
-/-- Right translation by an element `a` with `t a t⁻¹ ∈ C` does not change the average over `C` of
-a translate by `t`: `e_C (ρ(t a) y) = e_C (ρ(t) y)`. -/
-theorem smoothAverage_apply_mul_of_mul_mul_inv_mem {t a : G} (ha : t * a * t⁻¹ ∈ C) (y : V) :
-    smoothAverage (ρ.comp C.subtype) hC (ρ (t * a) y) =
-      smoothAverage (ρ.comp C.subtype) hC (ρ t y) := by
-  -- `ρ(t a) y = ρ(t a t⁻¹) (ρ(t) y)`, and `e_C` does not see the action of `t a t⁻¹ ∈ C`.
-  have h : ρ (t * a) y = (ρ.comp C.subtype) ⟨t * a * t⁻¹, ha⟩ (ρ t y) := by
-    simp [← mul_apply_eq_comp, ← map_mul]
-  rw [h, smoothAverage_apply_apply]
-
-/-- **Averaging before a translation.** If every `c ∈ C` factors as `c = a * b` with `t a t⁻¹ ∈ C`
-and `ρ(b) y = y`, then averaging `y` over `C` before translating by `t` does not change the average
-over `C`: `e_C (ρ(t) (e_C y)) = e_C (ρ(t) y)`. -/
-theorem smoothAverage_apply_smoothAverage_of_forall_exists {t : G} {y : V}
-    (h : ∀ c ∈ C, ∃ a b : G, c = a * b ∧ t * a * t⁻¹ ∈ C ∧ ρ b y = y) :
-    smoothAverage (ρ.comp C.subtype) hC (ρ t (smoothAverage (ρ.comp C.subtype) hC y)) =
-      smoothAverage (ρ.comp C.subtype) hC (ρ t y) := by
-  -- Average `y` over the cosets of its stabilizer `H` in `C`; each translate `ρ(c) y` is
-  -- `ρ(a) y` with `t a t⁻¹ ∈ C`, so each term contributes `e_C (ρ(t) y)`.
-  set σ := ρ.comp C.subtype
-  have hH := IsSmooth.isOpen_stabilizer (ρ := σ) y
-  have : Finite (C ⧸ stabilizer σ y) := (stabilizer σ y).quotient_finite_of_isOpen hH
-  have : Fintype (C ⧸ stabilizer σ y) := Fintype.ofFinite _
-  have h_term (q : C ⧸ stabilizer σ y) :
-      smoothAverage σ hC (ρ t (σ q.out y)) = smoothAverage σ hC (ρ t y) := by
-    obtain ⟨a, b, hc, ha, hb⟩ := h q.out q.out.property
-    -- `σ q.out y = ρ(a) (ρ(b) y) = ρ(a) y`
-    have : σ q.out y = ρ a y := by
-      rw [MonoidHom.comp_apply, Subgroup.coe_subtype, hc, map_mul, mul_apply_eq_comp, hb]
-    rw [this, ← smoothAverage_apply_mul_of_mul_mul_inv_mem ρ C hC ha y, map_mul,
-      mul_apply_eq_comp]
-  -- the `[C : H]` terms of the average each contribute `e_C (ρ(t) y)`
-  have hsum : smoothAverage σ hC (ρ t (∑ᶠ q : C ⧸ stabilizer σ y, σ q.out y)) =
-      (stabilizer σ y).index • smoothAverage σ hC (ρ t y) := by
-    simp only [finsum_eq_sum_of_fintype, map_sum, h_term, Finset.sum_const, Finset.card_univ,
-      Subgroup.index, Nat.card_eq_fintype_card]
-  -- and `[C : H]` is invertible in `A`
-  rw [smoothAverage_apply_of_le σ hC hH le_rfl, map_smul, map_smul, hsum,
-    Ring.inverse_natCast_smul_nsmul (hC.isUnit_index hH)]
 
 /-! ### The operators `U_t` -/
 
@@ -168,8 +122,9 @@ theorem uOperator_mul_mul_apply_of_mem {c c' : G} (hc : c ∈ C) (hc' : c' ∈ C
 average can be dropped. -/
 theorem uOperator_apply_of_forall_mem {t : G} (ht : ∀ c ∈ C, t⁻¹ * c * t ∈ C) {v : V}
     (hv : v ∈ invariants (ρ.comp C.subtype)) : ρ.uOperator C hC t v = ρ t v := by
-  have hle : C ≤ C.map (MulAut.conj t) := fun c hc ↦
-    Subgroup.mem_map.2 ⟨t⁻¹ * c * t, ht c hc, by simp [mul_assoc]⟩
+  have hle : C ≤ C.map (MulAut.conj t) := fun c hc ↦ by
+    rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
+    exact ht c hc
   have hmem : ρ t v ∈ invariants (ρ.comp (C.map (MulAut.conj t)).subtype) := by
     rw [← ρ.map_invariants_comp_subtype t C]
     exact Submodule.mem_map_of_mem hv
@@ -194,15 +149,22 @@ theorem uOperator_uOperator_apply {t t' : G}
     (h : ∀ c ∈ C, ∃ a b : G, c = a * b ∧ t * a * t⁻¹ ∈ C ∧ t'⁻¹ * b * t' ∈ C) {v : V}
     (hv : v ∈ invariants (ρ.comp C.subtype)) :
     ρ.uOperator C hC t (ρ.uOperator C hC t' v) = ρ.uOperator C hC (t * t') v := by
-  rw [uOperator_apply, uOperator_apply, uOperator_apply,
-    smoothAverage_apply_smoothAverage_of_forall_exists ρ C hC fun c hc ↦ ?_, map_mul,
-    mul_apply_eq_comp]
-  -- `b` fixes `ρ(t') v`, since `t'⁻¹ b t' ∈ C` and `v ∈ V^C`
-  obtain ⟨a, b, hcab, ha, hb⟩ := h c hc
-  refine ⟨a, b, hcab, ha, mem_stabilizer.1 ?_⟩
-  rw [stabilizer_conj]
-  exact Subgroup.mem_map.2 ⟨t'⁻¹ * b * t', mem_invariants_comp_subtype_iff.1 hv hb,
-    by simp [mul_assoc]⟩
+  -- `U_t` takes the same value at `ρ(t') v` and at its average `U_{t'} v`
+  rw [uOperator_apply ρ C hC t', map_smoothAverage_of_forall_apply_eq _ hC _ fun c ↦ ?_,
+    uOperator_apply, uOperator_apply, map_mul, mul_apply_eq_comp]
+  -- `c = a b`, where `b` fixes `ρ(t') v` since `t'⁻¹ b t' ∈ C` and `v ∈ V^C`
+  obtain ⟨a, b, hcab, ha, hb⟩ := h c c.property
+  have hb' : ρ b (ρ t' v) = ρ t' v := by
+    apply mem_stabilizer.1
+    rw [stabilizer_conj, ← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv,
+      MulAut.conj_symm_apply]
+    exact mem_invariants_comp_subtype_iff.1 hv hb
+  -- and `U_t ρ(a) = U_{(t a t⁻¹) t} = U_t` since `t a t⁻¹ ∈ C`
+  have hta : ρ.uOperator C hC (t * a) = ρ.uOperator C hC t := by
+    rw [← uOperator_mul_left_of_mem ρ C hC ha t, inv_mul_cancel_right]
+  rw [MonoidHom.comp_apply, Subgroup.coe_subtype, hcab, map_mul, mul_apply_eq_comp, hb']
+  conv_rhs => rw [← hta]
+  rw [uOperator_apply, uOperator_apply, map_mul, mul_apply_eq_comp]
 
 /-! ### The operators `U_t` on the invariants -/
 
@@ -260,10 +222,10 @@ theorem uOperator_apply_eq_inverse_relIndex_smul_finsum {t : G}
     fun c hc ↦ by
       rw [mem_stabilizer, MonoidHom.comp_apply, Subgroup.coe_subtype]
       apply mem_stabilizer.1
-      rw [stabilizer_conj]
-      exact Subgroup.mem_map.2 ⟨t⁻¹ * c * t, mem_invariants_comp_subtype_iff.1 hv
-        (Subgroup.mem_conjAct_smul_iff.1 (Subgroup.mem_subgroupOf.1 hc)),
-        by simp [mul_assoc]⟩
+      rw [stabilizer_conj, ← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv,
+        MulAut.conj_symm_apply]
+      exact mem_invariants_comp_subtype_iff.1 hv
+        (Subgroup.mem_conjAct_smul_iff.1 (Subgroup.mem_subgroupOf.1 hc))
   rw [uOperator_apply, smoothAverage_apply_of_le _ hC hopen hstab, Subgroup.relIndex]
   simp [← mul_apply_eq_comp, ← map_mul]
 
@@ -276,10 +238,6 @@ theorem doubleCosetOperator_apply_eq_relIndex_smul_uOperator {t : G}
     (hv : v ∈ invariants (ρ.comp C.subtype)) :
     ρ.doubleCosetOperator C t v = (ConjAct.toConjAct t • C).relIndex C • ρ.uOperator C hC t v := by
   have hu : IsUnit ((ConjAct.toConjAct t • C).relIndex C : A) := hC.isUnit_index hopen
-  have : Finite (C ⧸ (ConjAct.toConjAct t • C).subgroupOf C) :=
-    Subgroup.quotient_finite_of_isOpen _ hopen
-  have : ((ConjAct.toConjAct t • C).subgroupOf C).FiniteIndex :=
-    Subgroup.finiteIndex_of_finite_quotient
   rw [uOperator_apply_eq_inverse_relIndex_smul_finsum ρ C hC hopen hv, smul_comm,
     Ring.inverse_natCast_smul_nsmul hu,
     doubleCosetOperator_apply_eq_finsum t (by rwa [weightSpace_one])]
