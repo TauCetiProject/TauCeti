@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace.Approximation
 public import TauCeti.Analysis.CStarAlgebra.State.TraceKernel
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Matrix
-import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace.Approximation
 
 /-!
 # Amenable, quasidiagonal and uniform amenable traces
@@ -41,8 +39,10 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
 
 ## Main results
 
-* `PositiveContinuousLinearMap.isAmenableTrace_iff` and its siblings unfold the three predicates,
-  and `PositiveContinuousLinearMap.isAmenableTrace_iff_exists_superset` and its siblings record
+* `PositiveContinuousLinearMap.isAmenableTrace_iff` and its siblings unfold the three predicates;
+  `PositiveContinuousLinearMap.isAmenableTrace_iff_approxBy` and its siblings express them through
+  the shared matrix approximation predicate; and
+  `PositiveContinuousLinearMap.isAmenableTrace_iff_exists_superset` and its siblings record
   their monotonicity: a witness for `(F', ε')` is a witness for every `F ⊆ F'` and `ε ≥ ε'`.
 * `PositiveContinuousLinearMap.IsQuasidiagonalTrace.isAmenableTrace` and
   `PositiveContinuousLinearMap.IsUniformAmenableTrace.isAmenableTrace`: quasidiagonal and uniform
@@ -154,29 +154,24 @@ theorem isUniformAmenableTrace_iff : τ.IsUniformAmenableTrace ↔
       ∀ a, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ ≤ ε * ‖a‖ :=
   Iff.rfl
 
-private theorem isAmenableTrace_iff_approxBy : τ.IsAmenableTrace ↔ ∀ (F : Finset A) (ε : ℝ),
-    0 < ε → ApproxBy (fun _ => CStarMatrix.normalizedTwoNorm) (RecoverOn τ) F ε :=
-  Iff.rfl
+/-- Matrix approximation characterization of `IsAmenableTrace`. -/
+theorem isAmenableTrace_iff_approxBy : τ.IsAmenableTrace ↔ ∀ (F : Finset A) (ε : ℝ),
+    0 < ε → ApproxBy (fun _ => CStarMatrix.normalizedTwoNorm) (RecoverOn τ) F ε := by
+  rw [isAmenableTrace_iff]
+  simp only [TauCeti.approxBy_iff, TauCeti.recoverOn_iff]
 
-private theorem isQuasidiagonalTrace_iff_approxBy : τ.IsQuasidiagonalTrace ↔
-    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ApproxBy (fun _ => norm) (RecoverOn τ) F ε :=
-  Iff.rfl
+/-- Matrix approximation characterization of `IsQuasidiagonalTrace`. -/
+theorem isQuasidiagonalTrace_iff_approxBy : τ.IsQuasidiagonalTrace ↔
+    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ApproxBy (fun _ => norm) (RecoverOn τ) F ε := by
+  rw [isQuasidiagonalTrace_iff]
+  simp only [TauCeti.approxBy_iff, TauCeti.recoverOn_iff]
 
-private theorem isUniformAmenableTrace_iff_approxBy : τ.IsUniformAmenableTrace ↔
+/-- Matrix approximation characterization of `IsUniformAmenableTrace`. -/
+theorem isUniformAmenableTrace_iff_approxBy : τ.IsUniformAmenableTrace ↔
     ∀ (F : Finset A) (ε : ℝ), 0 < ε →
-      ApproxBy (fun _ => CStarMatrix.normalizedTwoNorm) (RecoverUniform τ) F ε :=
-  Iff.rfl
-
-/-- An approximant for `(F', ε')` is one for every `F ⊆ F'` and `ε' ≤ ε`, as soon as the recovery
-clause is antitone in the finite set and monotone in the error. -/
-private theorem ApproxBy.mono {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
-    {R : Finset A → ℝ → ∀ k : ℕ, (A →CP CStarMatrix (Fin k) (Fin k) ℂ) → Prop}
-    (hR : ∀ ⦃F F' : Finset A⦄ ⦃ε ε' : ℝ⦄ ⦃k : ℕ⦄ ⦃φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ⦄,
-      F ⊆ F' → ε' ≤ ε → R F' ε' k φ → R F ε k φ)
-    {F F' : Finset A} {ε ε' : ℝ} (hF : F ⊆ F') (hε : ε' ≤ ε) (h : ApproxBy d R F' ε') :
-    ApproxBy d R F ε := by
-  obtain ⟨k, φ, hφ, hmul, hrec⟩ := h
-  exact ⟨k, φ, hφ, fun a ha b hb => (hmul a (hF ha) b (hF hb)).trans_le hε, hR hF hε hrec⟩
+      ApproxBy (fun _ => CStarMatrix.normalizedTwoNorm) (RecoverUniform τ) F ε := by
+  rw [isUniformAmenableTrace_iff]
+  simp only [TauCeti.approxBy_iff, TauCeti.recoverUniform_iff]
 
 /-- The monotonicity of `ApproxBy`, in the form of the `_iff_exists_superset` lemmas. -/
 private theorem forall_approxBy_iff_exists_superset
@@ -189,7 +184,7 @@ private theorem forall_approxBy_iff_exists_superset
         ApproxBy d R F' ε' :=
   ⟨fun h F ε hε => ⟨F, subset_rfl, ε, le_rfl, h F ε hε⟩, fun h F ε hε => by
     obtain ⟨F', hF, ε', hε', h'⟩ := h F ε hε
-    exact ApproxBy.mono hR hF hε' h'⟩
+    exact h'.mono hR hF hε'⟩
 
 /-- **Monotonicity of amenability.** A witness for `(F', ε')` is a witness for every `F ⊆ F'`
 and `ε ≥ ε'`, so it suffices to find, for each `(F, ε)`, a witness for some larger finite set
@@ -198,8 +193,12 @@ theorem isAmenableTrace_iff_exists_superset : τ.IsAmenableTrace ↔
     ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ F' : Finset A, F ⊆ F' ∧ ∃ ε' ≤ ε,
       ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ), (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
       (∀ a ∈ F', ∀ b ∈ F', CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b) < ε') ∧
-      ∀ a ∈ F', ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε' :=
-  forall_approxBy_iff_exists_superset fun _ _ _ _ _ _ hF hε h a ha => (h a (hF ha)).trans_le hε
+      ∀ a ∈ F', ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε' := by
+  rw [isAmenableTrace_iff_approxBy]
+  simpa only [TauCeti.approxBy_iff, TauCeti.recoverOn_iff] using
+    (forall_approxBy_iff_exists_superset (d := fun _ => CStarMatrix.normalizedTwoNorm)
+      (R := RecoverOn τ) fun _ _ _ _ _ _ hF hε h => TauCeti.recoverOn_iff.2 fun a ha =>
+        (TauCeti.recoverOn_iff.1 h a (hF ha)).trans_le hε)
 
 /-- **Monotonicity of quasidiagonality.** A witness for `(F', ε')` is a witness for every
 `F ⊆ F'` and `ε ≥ ε'`. -/
@@ -207,8 +206,12 @@ theorem isQuasidiagonalTrace_iff_exists_superset : τ.IsQuasidiagonalTrace ↔
     ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ F' : Finset A, F ⊆ F' ∧ ∃ ε' ≤ ε,
       ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ), (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
       (∀ a ∈ F', ∀ b ∈ F', ‖φ (a * b) - φ a * φ b‖ < ε') ∧
-      ∀ a ∈ F', ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε' :=
-  forall_approxBy_iff_exists_superset fun _ _ _ _ _ _ hF hε h a ha => (h a (hF ha)).trans_le hε
+      ∀ a ∈ F', ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε' := by
+  rw [isQuasidiagonalTrace_iff_approxBy]
+  simpa only [TauCeti.approxBy_iff, TauCeti.recoverOn_iff] using
+    (forall_approxBy_iff_exists_superset (d := fun _ => norm)
+      (R := RecoverOn τ) fun _ _ _ _ _ _ hF hε h => TauCeti.recoverOn_iff.2 fun a ha =>
+        (TauCeti.recoverOn_iff.1 h a (hF ha)).trans_le hε)
 
 /-- **Monotonicity of uniform amenability.** A witness for `(F', ε')` is a witness for every
 `F ⊆ F'` and `ε ≥ ε'`. -/
@@ -216,9 +219,13 @@ theorem isUniformAmenableTrace_iff_exists_superset : τ.IsUniformAmenableTrace �
     ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ F' : Finset A, F ⊆ F' ∧ ∃ ε' ≤ ε,
       ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ), (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
       (∀ a ∈ F', ∀ b ∈ F', CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b) < ε') ∧
-      ∀ a, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ ≤ ε' * ‖a‖ :=
-  forall_approxBy_iff_exists_superset fun _ _ _ _ _ _ _ hε h a =>
-    (h a).trans (mul_le_mul_of_nonneg_right hε (norm_nonneg a))
+      ∀ a, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ ≤ ε' * ‖a‖ := by
+  rw [isUniformAmenableTrace_iff_approxBy]
+  simpa only [TauCeti.approxBy_iff, TauCeti.recoverUniform_iff] using
+    (forall_approxBy_iff_exists_superset (d := fun _ => CStarMatrix.normalizedTwoNorm)
+      (R := RecoverUniform τ) fun _ _ _ _ _ _ _ hε h => TauCeti.recoverUniform_iff.2 fun a =>
+        (TauCeti.recoverUniform_iff.1 h a).trans
+          (mul_le_mul_of_nonneg_right hε (norm_nonneg a)))
 
 /-- A quasidiagonal trace is amenable, since `‖x‖₂ ≤ ‖x‖` on matrix algebras. -/
 theorem IsQuasidiagonalTrace.isAmenableTrace (hτ : τ.IsQuasidiagonalTrace) :
@@ -249,21 +256,6 @@ section Pullback
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] {σ : B →P[ℂ] ℂ}
 
-/-- Composing an approximant `φ` for `(S.image f, ε)` with a star homomorphism `f : A → B` gives an
-approximant for `(S, ε)`, for any measure `d` of the multiplicativity defect, as soon as the
-recovery clause passes from `φ` on `S.image f` to `φ ∘ f` on `S`. -/
-private theorem ApproxBy.comp {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
-    {RA : Finset A → ℝ → ∀ k : ℕ, (A →CP CStarMatrix (Fin k) (Fin k) ℂ) → Prop}
-    {RB : Finset B → ℝ → ∀ k : ℕ, (B →CP CStarMatrix (Fin k) (Fin k) ℂ) → Prop}
-    [DecidableEq B] (f : F) {S : Finset A} {ε : ℝ}
-    (hR : ∀ ⦃k : ℕ⦄ ⦃φ : B →CP CStarMatrix (Fin k) (Fin k) ℂ⦄,
-      RB (S.image f) ε k φ → RA S ε k (φ.comp (f : A →CP B)))
-    (h : ApproxBy d RB (S.image f) ε) : ApproxBy d RA S ε := by
-  refine h.transport f le_rfl fun k φ hφ hrec => ⟨k, φ.comp (f : A →CP B),
-    fun a => by simpa using (hφ (f a)).trans (NonUnitalStarAlgHom.norm_apply_le f a),
-    fun a b => by simp,
-    hR hrec⟩
-
 /-- **Pullback of amenable traces.** If `σ` is an amenable trace of `B`, then so is its composite
 with any star homomorphism `f : A → B`: an approximant `φ` of `σ` gives the approximant
 `φ ∘ f` of `σ ∘ f`. The composite is a tracial state only under a norm condition, see
@@ -272,7 +264,10 @@ theorem IsAmenableTrace.comp (hσ : σ.IsAmenableTrace) (f : F) :
     (σ.comp (.ofClass f)).IsAmenableTrace := by
   classical
   refine isAmenableTrace_iff_approxBy.2 fun S ε hε =>
-    ApproxBy.comp f (fun _ _ h a ha => ?_) (isAmenableTrace_iff_approxBy.1 hσ (S.image f) ε hε)
+    (isAmenableTrace_iff_approxBy.1 hσ (S.image f) ε hε).comp f ?_
+  intro k φ h
+  rw [TauCeti.recoverOn_iff] at h ⊢
+  intro a ha
   simpa using h (f a) (Finset.mem_image_of_mem f ha)
 
 /-- **Pullback of quasidiagonal traces** along any star homomorphism `f : A → B`. -/
@@ -280,7 +275,10 @@ theorem IsQuasidiagonalTrace.comp (hσ : σ.IsQuasidiagonalTrace) (f : F) :
     (σ.comp (.ofClass f)).IsQuasidiagonalTrace := by
   classical
   refine isQuasidiagonalTrace_iff_approxBy.2 fun S ε hε =>
-    ApproxBy.comp f (fun _ _ h a ha => ?_) (isQuasidiagonalTrace_iff_approxBy.1 hσ (S.image f) ε hε)
+    (isQuasidiagonalTrace_iff_approxBy.1 hσ (S.image f) ε hε).comp f ?_
+  intro k φ h
+  rw [TauCeti.recoverOn_iff] at h ⊢
+  intro a ha
   simpa using h (f a) (Finset.mem_image_of_mem f ha)
 
 /-- **Pullback of uniform amenable traces** along any star homomorphism `f : A → B`; the
@@ -289,7 +287,10 @@ theorem IsUniformAmenableTrace.comp (hσ : σ.IsUniformAmenableTrace) (f : F) :
     (σ.comp (.ofClass f)).IsUniformAmenableTrace := by
   classical
   refine isUniformAmenableTrace_iff_approxBy.2 fun S ε hε =>
-    ApproxBy.comp f (fun _ _ h a => ?_) (isUniformAmenableTrace_iff_approxBy.1 hσ (S.image f) ε hε)
+    (isUniformAmenableTrace_iff_approxBy.1 hσ (S.image f) ε hε).comp f ?_
+  intro k φ h
+  rw [TauCeti.recoverUniform_iff] at h ⊢
+  intro a
   simpa using (h (f a)).trans
     (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f a) hε.le)
 
@@ -479,11 +480,14 @@ private theorem forall_approxBy_recoverOn_of_apply_eq
   intro F ε hε
   set M := ∑ a ∈ F, (‖τ₁ a‖ + ‖τ₂ a‖)
   have hM : 0 ≤ M := by positivity
-  obtain ⟨k₁, φ₁, c₁, m₁, r₁⟩ := h₁ F (ε / 2) (half_pos hε)
-  obtain ⟨k₂, φ₂, c₂, m₂, r₂⟩ := h₂ F (ε / 2) (half_pos hε)
+  obtain ⟨k₁, φ₁, c₁, m₁, r₁⟩ := TauCeti.approxBy_iff.1 (h₁ F (ε / 2) (half_pos hε))
+  obtain ⟨k₂, φ₂, c₂, m₂, r₂⟩ := TauCeti.approxBy_iff.1 (h₂ F (ε / 2) (half_pos hε))
+  rw [TauCeti.recoverOn_iff] at r₁ r₂
+  rw [TauCeti.approxBy_iff]
   obtain ⟨K, Φ, c, m, r⟩ := hd φ₁ φ₂ c₁ c₂ (ε / (2 * (M + 1))) (by positivity)
   refine ⟨K, Φ, c, fun a ha b hb => (m a b).trans_lt
-    ((max_lt (m₁ a ha b hb) (m₂ a ha b hb)).trans (half_lt_self hε)), fun a ha => (r a).trans_lt ?_⟩
+    ((max_lt (m₁ a ha b hb) (m₂ a ha b hb)).trans (half_lt_self hε)),
+    TauCeti.recoverOn_iff.2 fun a ha => (r a).trans_lt ?_⟩
   have hMa : ‖τ₁ a‖ + ‖τ₂ a‖ ≤ M :=
     Finset.single_le_sum (f := fun b => ‖τ₁ b‖ + ‖τ₂ b‖) (fun _ _ => by positivity) ha
   have hη : ε / (2 * (M + 1)) * (‖τ₁ a‖ + ‖τ₂ a‖) < ε / 2 := by
@@ -497,18 +501,21 @@ private theorem forall_approxBy_recoverOn_of_apply_eq
 private theorem IsAmenableTrace.of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ} (h₁ : τ₁.IsAmenableTrace)
     (h₂ : τ₂.IsAmenableTrace) {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1)
     (hτ : ∀ a, τ a = θ * τ₁ a + (1 - θ) * τ₂ a) : τ.IsAmenableTrace :=
-  forall_approxBy_recoverOn_of_apply_eq (fun φ₁ φ₂ c₁ c₂ _ hη =>
+  isAmenableTrace_iff_approxBy.2 <| forall_approxBy_recoverOn_of_apply_eq (fun φ₁ φ₂ c₁ c₂ _ hη =>
     let ⟨K, Φ, c, m, _, r⟩ := exists_approximant_of_apply_eq hθ₀ hθ₁ hτ φ₁ φ₂ c₁ c₂ hη
-    ⟨K, Φ, c, m, r⟩) h₁ h₂
+    ⟨K, Φ, c, m, r⟩)
+    (isAmenableTrace_iff_approxBy.1 h₁) (isAmenableTrace_iff_approxBy.1 h₂)
 
 /-- **Convex combinations of quasidiagonal traces.** If `τ₁` and `τ₂` are quasidiagonal traces
 and `τ = θ τ₁ + (1 - θ) τ₂` with `θ ∈ [0, 1]`, then `τ` is quasidiagonal. -/
 private theorem IsQuasidiagonalTrace.of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ}
     (h₁ : τ₁.IsQuasidiagonalTrace) (h₂ : τ₂.IsQuasidiagonalTrace) {θ : ℝ} (hθ₀ : 0 ≤ θ)
     (hθ₁ : θ ≤ 1) (hτ : ∀ a, τ a = θ * τ₁ a + (1 - θ) * τ₂ a) : τ.IsQuasidiagonalTrace :=
-  forall_approxBy_recoverOn_of_apply_eq (d := fun _ => norm) (fun φ₁ φ₂ c₁ c₂ _ hη =>
+  isQuasidiagonalTrace_iff_approxBy.2 <|
+    forall_approxBy_recoverOn_of_apply_eq (d := fun _ => norm) (fun φ₁ φ₂ c₁ c₂ _ hη =>
     let ⟨K, Φ, c, _, n, r⟩ := exists_approximant_of_apply_eq hθ₀ hθ₁ hτ φ₁ φ₂ c₁ c₂ hη
-    ⟨K, Φ, c, n, r⟩) h₁ h₂
+    ⟨K, Φ, c, n, r⟩)
+    (isQuasidiagonalTrace_iff_approxBy.1 h₁) (isQuasidiagonalTrace_iff_approxBy.1 h₂)
 
 /-- **Convex combinations of uniform amenable traces.** If `τ₁` and `τ₂` are uniform amenable
 traces and `τ = θ τ₁ + (1 - θ) τ₂` with `θ ∈ [0, 1]`, then `τ` is uniform amenable; the extra
@@ -591,21 +598,13 @@ theorem isTracialState_normalizedTraceMap [Nonempty n] :
     (normalizedTraceMap n).IsTracialState :=
   isTracialState_iff.2 ⟨norm_normalizedTraceMap n, normalizedTraceMap_mul_comm⟩
 
-/-- On `M_k` the identity map is an exact approximant: it is a contraction, its multiplicativity
-defect is `d k 0`, and it satisfies any recovery clause that holds for it. -/
-private theorem approxBy_id {k : ℕ} {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
-    {R : Finset (CStarMatrix (Fin k) (Fin k) ℂ) → ℝ →
-      ∀ l : ℕ, (CStarMatrix (Fin k) (Fin k) ℂ →CP CStarMatrix (Fin l) (Fin l) ℂ) → Prop}
-    {F : Finset (CStarMatrix (Fin k) (Fin k) ℂ)} {ε : ℝ} (hd : d k 0 < ε)
-    (hR : R F ε k (CompletelyPositiveMap.id _)) : ApproxBy d R F ε :=
-  ⟨k, CompletelyPositiveMap.id _, fun _ => by simp, fun _ _ _ _ => by simpa using hd, hR⟩
-
 /-- The normalized trace of a matrix algebra is a quasidiagonal trace: on `M_k` the identity map
 is an exact approximant, and a general finite index type is reindexed to `Fin k`. -/
 theorem isQuasidiagonalTrace_normalizedTraceMap : (normalizedTraceMap n).IsQuasidiagonalTrace := by
   have hfin (k : ℕ) : (normalizedTraceMap (Fin k)).IsQuasidiagonalTrace :=
     isQuasidiagonalTrace_iff_approxBy.2 fun _ ε hε =>
-      approxBy_id (by simpa using hε) fun _ _ => by simpa using hε
+      ApproxBy.id (by simpa using hε) (TauCeti.recoverOn_iff.2
+        fun _ _ => by simpa using hε)
   rw [← normalizedTraceMap_comp_reindexₐ (Fintype.equivFin n)]
   exact (hfin _).comp _
 
@@ -615,7 +614,8 @@ theorem isUniformAmenableTrace_normalizedTraceMap :
     (normalizedTraceMap n).IsUniformAmenableTrace := by
   have hfin (k : ℕ) : (normalizedTraceMap (Fin k)).IsUniformAmenableTrace :=
     isUniformAmenableTrace_iff_approxBy.2 fun _ ε hε =>
-      approxBy_id (by simpa using hε) fun _ => by simpa using mul_nonneg hε.le (norm_nonneg _)
+      ApproxBy.id (by simpa using hε) (TauCeti.recoverUniform_iff.2
+        fun _ => by simpa using mul_nonneg hε.le (norm_nonneg _))
   rw [← normalizedTraceMap_comp_reindexₐ (Fintype.equivFin n)]
   exact (hfin _).comp _
 
@@ -782,8 +782,12 @@ private theorem of_mem_closure_image_toWeakDual {d : ∀ k : ℕ, CStarMatrix (F
   have hτU : StrongDual.toWeakDual (τ : A →L[ℂ] ℂ) ∈ U :=
     mem_iInter₂.2 fun a _ => by simpa using half_pos hε
   obtain ⟨_, hyU, σ, ⟨-, hσ⟩, rfl⟩ := mem_closure_iff.1 hτ U hU hτU
-  obtain ⟨k, φ, hφ, hm, hr⟩ := (hP σ).1 hσ F (ε / 2) (half_pos hε)
-  refine ⟨k, φ, hφ, fun a ha b hb => (hm a ha b hb).trans (half_lt_self hε), fun a ha => ?_⟩
+  obtain ⟨k, φ, hφ, hm, hr⟩ :=
+    TauCeti.approxBy_iff.1 ((hP σ).1 hσ F (ε / 2) (half_pos hε))
+  rw [TauCeti.recoverOn_iff] at hr
+  rw [TauCeti.approxBy_iff]
+  refine ⟨k, φ, hφ, fun a ha b hb => (hm a ha b hb).trans (half_lt_self hε),
+    TauCeti.recoverOn_iff.2 fun a ha => ?_⟩
   have hστ : ‖σ a - τ a‖ < ε / 2 := by simpa using mem_iInter₂.1 hyU a ha
   calc ‖CStarMatrix.normalizedTrace (φ a) - τ a‖
       ≤ ‖CStarMatrix.normalizedTrace (φ a) - σ a‖ + ‖σ a - τ a‖ :=

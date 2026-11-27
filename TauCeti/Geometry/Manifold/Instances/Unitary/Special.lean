@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Geometry.Lie.Subgroup.Transport
 public import TauCeti.Geometry.Manifold.Instances.Unitary
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -60,8 +62,11 @@ structure, `open scoped Matrix.Norms.L2Operator` and enable
   smoothness of maps into the special unitary group, tested after coercion to the matrices.
 * `Matrix.specialUnitaryGroup.isSmoothEmbedding_inclusion_unitaryGroup`: the inclusion into the
   unitary group is a smooth embedding.
+* `Matrix.specialUnitaryGroup.contMDiff_fromBlocksOne`: the block embedding
+  `B ↦ diag(1_r, B)` of `SU(m)` into `SU(r + m)` is smooth.
+* `Matrix.instContMDiffSMulMulVec`: the matrices act smoothly on column vectors `n → 𝕜`.
 * `Matrix.specialUnitaryGroup.instContMDiffSMul`: a smooth action of the matrices restricts to the
-  special unitary group.
+  special unitary group; in particular the special unitary group acts smoothly on `n → 𝕜`.
 
 ## References
 
@@ -203,6 +208,16 @@ theorem isSmoothEmbedding_inclusion_unitaryGroup :
     .of_comp (continuous_inclusion specialUnitaryGroup_le_unitaryGroup) continuous_subtypeVal
       .subtypeVal⟩
 
+/-- The matrices act smoothly on column vectors, `A • v = A *ᵥ v` (`Matrix.smul_eq_mulVec`): the
+action is a real bilinear map of finite-dimensional spaces. -/
+instance _root_.Matrix.instContMDiffSMulMulVec {k : ℕ∞ω} :
+    ContMDiffSMul 𝓘(ℝ, Matrix n n 𝕜) 𝓘(ℝ, n → 𝕜) k (Matrix n n 𝕜) (n → 𝕜) where
+  contMDiff_smul := by
+    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
+    -- The action is the real bilinear map `(A, v) ↦ A *ᵥ v`.
+    exact (Matrix.mulVecBilin ℝ ℝ : Matrix n n 𝕜 →ₗ[ℝ] (n → 𝕜) →ₗ[ℝ] (n → 𝕜))
+      |>.toContinuousBilinearMap.isBoundedBilinearMap.contDiff.contMDiff
+
 /-- Any `C^k` action (`k ≤ ∞`) of the matrices on a manifold restricts to a `C^k` action of the
 special unitary group. -/
 instance instContMDiffSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -213,5 +228,26 @@ instance instContMDiffSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
     ContMDiffSMul (model n 𝕜) I k (specialUnitaryGroup n 𝕜) M :=
   MulAction.contMDiffSMul_compHom (f := (specialUnitaryGroup n 𝕜).subtype)
     (contMDiff_val.of_le ENat.LEInfty.out)
+
+/-- The block embedding `B ↦ diag(1_r, B)` of `SU(m)` into `SU(r + m)` is smooth: on matrices it is
+the sum of a constant and a real linear map. -/
+theorem contMDiff_fromBlocksOne (r m : ℕ) :
+    ContMDiff (model (Fin m) 𝕜) (model (Fin (r + m)) 𝕜) ∞ (fromBlocksOne 𝕜 r m) := by
+  rw [contMDiff_iff]
+  let B₀ : Matrix (Fin m) (Fin m) 𝕜 →ₗ[ℝ] Matrix (Fin r ⊕ Fin m) (Fin r ⊕ Fin m) 𝕜 :=
+    { toFun M := fromBlocks 0 0 0 M
+      map_add' M N := by simp [fromBlocks_add]
+      map_smul' c M := by simp [fromBlocks_smul] }
+  let L := (reindexLinearEquiv ℝ 𝕜 finSumFinEquiv finSumFinEquiv).toLinearMap ∘ₗ B₀
+  have h (B : specialUnitaryGroup (Fin m) 𝕜) : (fromBlocksOne 𝕜 r m B : Matrix _ _ 𝕜) =
+      reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 0) +
+        L (B : Matrix (Fin m) (Fin m) 𝕜) := by
+    have hB : fromBlocks (1 : Matrix (Fin r) (Fin r) 𝕜) 0 0 (B : Matrix (Fin m) (Fin m) 𝕜) =
+        fromBlocks 1 0 0 0 + fromBlocks 0 0 0 (B : Matrix (Fin m) (Fin m) 𝕜) := by
+      simp [fromBlocks_add]
+    rw [coe_fromBlocksOne, hB, ← coe_reindexLinearEquiv ℝ, map_add]
+    simp [L, B₀]
+  simp only [h]
+  exact contMDiff_const.add (L.toContinuousLinearMap.contDiff.contMDiff.comp contMDiff_val)
 
 end Matrix.specialUnitaryGroup

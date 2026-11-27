@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Order.Interval.Set.OrdConnected
@@ -72,6 +73,10 @@ Lie-algebra theory.
   entries strictly above the diagonal.
 * `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
   map preserves upper unitriangularity.
+* `Matrix.isUnit_det_of_isUpperTriangular_map` — a matrix whose image under a local ring
+  homomorphism is upper triangular with unit diagonal has a unit determinant.
+* `Matrix.exists_isUpperUnitriangular_mul_apply` — subtracting a combination of later rows
+  from each row is left multiplication by an upper-unitriangular matrix.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
 * `Matrix.IsUpperUnitriangular.diagonal_mul_mul_diagonal` — conjugation by an invertible diagonal
   matrix preserves upper-unitriangular matrices.
@@ -199,6 +204,17 @@ theorem IsUpperUnitriangular.isUnit_det [Fintype m] [DecidableEq m] [LinearOrder
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) : IsUnit M.det := by
   rw [hM.det_eq_one]
   exact isUnit_one
+
+/-- A square matrix whose image under a local ring homomorphism `f` is upper triangular, with
+units on the diagonal, has a unit determinant. -/
+theorem isUnit_det_of_isUpperTriangular_map {n : Type*} [Fintype n] [DecidableEq n]
+    [LinearOrder n] {R S : Type*} [CommRing R] [CommRing S] {f : R →+* S} [IsLocalHom f]
+    {M : Matrix n n R}
+    (htri : (M.map f).IsUpperTriangular)
+    (hdiag : ∀ i, IsUnit (f (M i i))) : IsUnit M.det := by
+  rw [← _root_.isUnit_map_iff f, RingHom.map_det, RingHom.mapMatrix_apply,
+    det_of_isUpperTriangular htri, IsUnit.prod_univ_iff]
+  exact hdiag
 
 /-- The identity matrix is upper unitriangular. -/
 @[simp]
@@ -419,6 +435,16 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hB hki, mul_zero]
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
+
+/-- An upper-triangular matrix keeps a column vector zero from an index on: if `w` vanishes at
+every index `≥ j`, then so does `A *ᵥ w` at `j`. -/
+theorem IsUpperTriangular.mulVec_apply_eq_zero (hA : A.IsUpperTriangular) {w : n → R} {j : n}
+    (hw : ∀ k, j ≤ k → w k = 0) : (A *ᵥ w) j = 0 := by
+  simp only [mulVec, dotProduct]
+  refine Finset.sum_eq_zero fun k _ ↦ ?_
+  rcases lt_or_ge k j with hkj | hjk
+  · rw [hA hkj, zero_mul]
+  · rw [hw k hjk, mul_zero]
 
 /-- An entry of a product of lower- and upper-triangular matrices only involves the indices
 `k ≤ min i j`. -/
@@ -897,3 +923,31 @@ theorem isUpperUnitriangular_unitDiagonalMatrixOfEntries [Preorder ι] (P : ι �
 end UnitDiagonalMatrixOfEntries
 
 end TauCeti
+
+namespace Matrix
+
+open Classical in
+/-- Subtracting from each row of `G` a combination of the rows below it is multiplication on the
+left by an upper-unitriangular matrix. -/
+theorem exists_isUpperUnitriangular_mul_apply {R m n : Type*} [Ring R] [Fintype m] [Preorder m]
+    (G : Matrix m n R) {w : m → n → R}
+    (hw : ∀ i, w i ∈ Submodule.span R (G.row '' ↑(Finset.univ.filter fun j ↦ i < j))) :
+    ∃ U : Matrix m m R, U.IsUpperUnitriangular ∧ ∀ i l, (U * G) i l = G i l - w i l := by
+  classical
+  choose c hc using fun i ↦ (Submodule.mem_span_image_finset_iff_exists_fun' R).mp (hw i)
+  let U := TauCeti.unitDiagonalMatrixOfEntries (fun p : m × m ↦ p.1 < p.2)
+    (fun p ↦ -c p.val.1 p.val.2)
+  refine ⟨U, TauCeti.isUpperUnitriangular_unitDiagonalMatrixOfEntries _ (fun _ h ↦ h) _,
+    fun i l ↦ ?_⟩
+  have hterm (j : m) : U i j * G j l =
+      (if i = j then G j l else 0) - (if i < j then c i j * G j l else 0) := by
+    by_cases hij : i = j
+    · subst j
+      simp [U, TauCeti.unitDiagonalMatrixOfEntries_apply_self]
+    · by_cases hlt : i < j
+      · simp [U, TauCeti.unitDiagonalMatrixOfEntries_apply_of_mem, hij, hlt]
+      · simp [U, TauCeti.unitDiagonalMatrixOfEntries_apply_of_notMem, hij, hlt]
+  rw [← hc i]
+  simp [Matrix.mul_apply, hterm, Finset.sum_sub_distrib, Finset.sum_filter, Finset.sum_apply]
+
+end Matrix

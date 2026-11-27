@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace.Basic
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Matrix
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Unitization
-import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace.Approximation
 import TauCeti.Analysis.CStarAlgebra.Unitization
 
 /-!
@@ -60,33 +59,42 @@ private theorem exists_matrixUnitization {k : ℕ}
   · intro x
     simp [unitization_apply, hτ, htr]
 
-/-- Transfer matrix witnesses to the unitization for either defect norm and any recovery condition
-that transports along the algebra coordinate. -/
-private theorem approxBy_unitization {measure : ℝ × ℝ → ℝ}
+/-- Transfer matrix witnesses to the unitization for a defect measure determined by the
+normalized two-norm and operator norm, with a recovery clause transported by the trace equation. -/
+private theorem approxBy_unitization {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
     [DecidableEq A] {F : Finset A⁺¹} {δ ε : ℝ}
-    {R : (A → ℝ) → Prop} {S : (A⁺¹ → ℝ) → Prop}
+    {RA : Finset A → ℝ → ∀ k : ℕ, (A →CP CStarMatrix (Fin k) (Fin k) ℂ) → Prop}
+    {RB : Finset A⁺¹ → ℝ → ∀ k : ℕ, (A⁺¹ →CP CStarMatrix (Fin k) (Fin k) ℂ) → Prop}
+    (hd : ∀ {k l : ℕ} (m : CStarMatrix (Fin k) (Fin k) ℂ)
+      (n : CStarMatrix (Fin l) (Fin l) ℂ),
+      CStarMatrix.normalizedTwoNorm m = CStarMatrix.normalizedTwoNorm n →
+      ‖m‖ = ‖n‖ → d k m = d l n)
     (hτ : ‖(τ : A →L[ℂ] ℂ)‖ = 1) (hδε : δ ≤ ε)
-    (hR : ∀ e : A → ℝ, R e → S (fun x => e x.snd))
-    (h : ApproxBy (fun _ m => measure (CStarMatrix.normalizedTwoNorm m, ‖m‖))
-      (fun _ _ _ φ => R (fun a => ‖CStarMatrix.normalizedTrace (φ a) - τ a‖))
-      (F.image (fun x : A⁺¹ => x.snd)) δ) :
-    ApproxBy (fun _ m => measure (CStarMatrix.normalizedTwoNorm m, ‖m‖))
-      (fun _ _ _ ψ => S (fun x => ‖CStarMatrix.normalizedTrace (ψ x) - τ.unitization x‖)) F ε := by
+    (hR : ∀ {k l : ℕ} (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ)
+      (ψ : A⁺¹ →CP CStarMatrix (Fin l) (Fin l) ℂ),
+      (∀ x, CStarMatrix.normalizedTrace (ψ x) - τ.unitization x =
+        CStarMatrix.normalizedTrace (φ x.snd) - τ x.snd) →
+      RA (F.image (fun x : A⁺¹ => x.snd)) δ k φ → RB F ε l ψ)
+    (h : ApproxBy d RA (F.image (fun x : A⁺¹ => x.snd)) δ) : ApproxBy d RB F ε := by
   refine h.transport (fun x : A⁺¹ => x.snd) hδε fun k φ hφ hrec => ?_
   obtain ⟨l, ψ, hψ, htwo, hnorm, htrace⟩ := exists_matrixUnitization φ hφ hτ
-  refine ⟨l, ψ, hψ, fun x y => ?_, ?_⟩
-  · rw [htwo, hnorm]
-  · simpa only [htrace] using hR _ hrec
+  exact ⟨l, ψ, hψ, fun x y => (hd _ _ (htwo x y) (hnorm x y)).le, hR φ ψ htrace hrec⟩
 
-private theorem approxBy_unitization_recoverOn {measure : ℝ × ℝ → ℝ}
-    [DecidableEq A] {F : Finset A⁺¹} {ε : ℝ} (hτ : ‖(τ : A →L[ℂ] ℂ)‖ = 1)
-    (h : ApproxBy (fun _ m => measure (CStarMatrix.normalizedTwoNorm m, ‖m‖))
-      (RecoverOn τ) (F.image (fun x : A⁺¹ => x.snd)) ε) :
-    ApproxBy (fun _ m => measure (CStarMatrix.normalizedTwoNorm m, ‖m‖))
-      (RecoverOn τ.unitization) F ε :=
-  approxBy_unitization (R := fun e => ∀ a ∈ F.image (fun x : A⁺¹ => x.snd), e a < ε)
-    (S := fun e => ∀ x ∈ F, e x < ε) hτ le_rfl
-    (fun _ he x hx => he x.snd (Finset.mem_image_of_mem _ hx)) h
+private theorem approxBy_unitization_recoverOn
+    {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
+    [DecidableEq A] {F : Finset A⁺¹} {ε : ℝ}
+    (hd : ∀ {k l : ℕ} (m : CStarMatrix (Fin k) (Fin k) ℂ)
+      (n : CStarMatrix (Fin l) (Fin l) ℂ),
+      CStarMatrix.normalizedTwoNorm m = CStarMatrix.normalizedTwoNorm n →
+      ‖m‖ = ‖n‖ → d k m = d l n)
+    (hτ : ‖(τ : A →L[ℂ] ℂ)‖ = 1)
+    (h : ApproxBy d (RecoverOn τ) (F.image (fun x : A⁺¹ => x.snd)) ε) :
+    ApproxBy d (RecoverOn τ.unitization) F ε := by
+  refine approxBy_unitization hd hτ le_rfl (fun φ ψ htrace hrec => ?_) h
+  rw [TauCeti.recoverOn_iff] at hrec ⊢
+  intro x hx
+  rw [htrace]
+  exact hrec x.snd (Finset.mem_image_of_mem _ hx)
 
 /-- A norm-one positive functional is amenable exactly when its extension to the unitization
 is amenable (Brown, Proposition 3.5.10). -/
@@ -96,9 +104,10 @@ theorem isAmenableTrace_unitization_iff (hτ : ‖(τ : A →L[ℂ] ℂ)‖ = 1)
   refine ⟨fun h => ?_, fun h => ?_⟩
   · simpa using h.comp (Unitization.inrNonUnitalStarAlgHom ℂ A)
   · classical
-    rw [isAmenableTrace_iff] at h ⊢
+    rw [isAmenableTrace_iff_approxBy] at h ⊢
     intro F ε hε
-    exact approxBy_unitization_recoverOn (measure := Prod.fst) hτ
+    exact approxBy_unitization_recoverOn (d := fun _ => CStarMatrix.normalizedTwoNorm)
+      (fun _ _ htwo _ => htwo) hτ
       (h (F.image (fun x : A⁺¹ => x.snd)) ε hε)
 
 /-- A norm-one positive functional is quasidiagonal exactly when its extension to the
@@ -109,9 +118,10 @@ theorem isQuasidiagonalTrace_unitization_iff (hτ : ‖(τ : A →L[ℂ] ℂ)‖
   refine ⟨fun h => ?_, fun h => ?_⟩
   · simpa using h.comp (Unitization.inrNonUnitalStarAlgHom ℂ A)
   · classical
-    rw [isQuasidiagonalTrace_iff] at h ⊢
+    rw [isQuasidiagonalTrace_iff_approxBy] at h ⊢
     intro F ε hε
-    exact approxBy_unitization_recoverOn (measure := Prod.snd) hτ
+    exact approxBy_unitization_recoverOn (d := fun _ => norm)
+      (fun _ _ _ hnorm => hnorm) hτ
       (h (F.image (fun x : A⁺¹ => x.snd)) ε hε)
 
 /-- A norm-one positive functional is uniformly amenable exactly when its extension to the
@@ -122,12 +132,16 @@ theorem isUniformAmenableTrace_unitization_iff (hτ : ‖(τ : A →L[ℂ] ℂ)�
   refine ⟨fun h => ?_, fun h => ?_⟩
   · simpa using h.comp (Unitization.inrNonUnitalStarAlgHom ℂ A)
   · classical
-    rw [isUniformAmenableTrace_iff] at h ⊢
+    rw [isUniformAmenableTrace_iff_approxBy] at h ⊢
     intro F ε hε
-    refine approxBy_unitization (measure := Prod.fst)
-      (R := fun e => ∀ a, e a ≤ ε / 2 * ‖a‖) (S := fun e => ∀ x, e x ≤ ε * ‖x‖)
-      hτ (by linarith) (fun _ he x => (he x.snd).trans ?_)
+    refine approxBy_unitization (d := fun _ => CStarMatrix.normalizedTwoNorm)
+      (RA := RecoverUniform τ) (RB := RecoverUniform τ.unitization)
+      (fun _ _ htwo _ => htwo) hτ (by linarith) (fun φ ψ htrace hrec => ?_)
       (h (F.image (fun x : A⁺¹ => x.snd)) (ε / 2) (by positivity))
+    rw [TauCeti.recoverUniform_iff] at hrec ⊢
+    intro x
+    rw [htrace]
+    refine (hrec x.snd).trans ?_
     calc
       ε / 2 * ‖x.snd‖ ≤ ε / 2 * (2 * ‖x‖) := by
         gcongr

@@ -45,6 +45,8 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
 * `DirichletCharacter.entireLFunction`, with `DirichletCharacter.entireLFunction_one` and
   `DirichletCharacter.entireLFunction_of_ne_one`: the entire function `E_χ`, which is `χ.LFunction`
   for `χ ≠ 1` and `LFunctionTrivChar₁ N` for `χ = 1`.
+* `DirichletCharacter.LFunctionTrivChar₁_eq_of_primeFactors_eq`: the pole-removed principal
+  functions agree at levels with the same prime factors, including at `s = 1`.
 * `DirichletCharacter.meromorphicOrderAt_LFunction_ne_top`,
   `DirichletCharacter.analyticOrderAt_LFunction_ne_top`,
   `DirichletCharacter.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt`,
@@ -71,6 +73,10 @@ The order lemmas are adapted, with the hypothesis `χ ≠ 1` weakened, from chri
 file `LFunction/Order.lean` in
 https://github.com/TauCetiProject/TauCeti/pull/45143
 (feat: prove Layer 6 zero-free regions over Q).
+
+The equal-prime-factor comparison for the pole-removed principal function is used in
+`New.exists_regularL_eq_of_sq_eq_one` in `grh/src/Lib/Analytic/Primes.lean` of
+https://github.com/lsernau/grh-lean (rev. `72fead1`).
 -/
 
 public section
@@ -84,6 +90,15 @@ namespace DirichletCharacter
 theorem LFunctionTrivChar₁_apply_of_ne_one (N : ℕ) [NeZero N] {s : ℂ} (hs : s ≠ 1) :
     LFunctionTrivChar₁ N s = (s - 1) * LFunctionTrivChar N s :=
   Function.update_of_ne hs ..
+
+/-- The entire pole-cleared L-functions of principal characters agree at levels with the same
+prime factors, including their residue values at `1`. -/
+theorem LFunctionTrivChar₁_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZero N]
+    (h : N.primeFactors = M.primeFactors) : LFunctionTrivChar₁ N = LFunctionTrivChar₁ M := by
+  funext s
+  rcases eq_or_ne s 1 with rfl | hs
+  · simp only [LFunctionTrivChar₁, Function.update_self, h]
+  · simp only [LFunctionTrivChar₁_apply_of_ne_one _ hs, LFunctionTrivChar_eq_mul_riemannZeta hs, h]
 
 /-- Away from `s = 1`, Mathlib's pole-removed zeta function is `(s - 1) ζ(s)`. -/
 theorem LFunctionTrivChar₁_one_apply_of_ne_one {s : ℂ} (hs : s ≠ 1) :
@@ -274,6 +289,15 @@ theorem meromorphicOrderAt_LFunction_eq_natCast_iff {s : ℂ} {n : ℕ} (hn : n 
 theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h : χ.LFunction s = 0) :
     s.re < 1 :=
   not_le.mp fun hs ↦ χ.LFunction_ne_zero_of_one_le_re h1.symm hs h
+
+/-- The natural analytic order of a Dirichlet L-function vanishes throughout `1 ≤ re s`,
+including at the principal character's pole, which is not counted as a zero. -/
+@[simp] theorem analyticOrderNatAt_LFunction_eq_zero_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
+    analyticOrderNatAt χ.LFunction s = 0 := by
+  apply Nat.eq_zero_of_not_pos
+  intro h
+  obtain ⟨hz, hg⟩ := χ.one_le_analyticOrderNatAt_LFunction_iff.mp h
+  exact (χ.re_lt_one_of_LFunction_eq_zero hg hz).not_ge hs
 
 /-- **A Dirichlet character is determined by its `L`-function.** Two Dirichlet characters of the
 same level whose `L`-functions agree on `Re s > 1` are equal, since a Dirichlet series determines

@@ -24,7 +24,14 @@ Limit cones are unique up to equivalence: every cone has a morphism to a limit c
 (`SSet.slice.IsLimit.nonempty_edge`), and every morphism between limit cones is an equivalence of
 `C_{/p}` (`SSet.slice.IsLimit.isEquivalence`), and dually for colimit cocones. Colimits in `C` are
 limits in the opposite simplicial set `Cᵒᵖ` (`SSet.coslice.isColimit_iff_isLimit_op`), since the
-coslice `C_{p/}` is the opposite of the slice `Cᵒᵖ_{/pᵒᵖ}`. For the empty diagram, the slice and
+coslice `C_{p/}` is the opposite of the slice `Cᵒᵖ_{/pᵒᵖ}`; hence a diagram has a colimit cocone
+exactly when its opposite has a limit cone (`SSet.coslice.exists_isColimit_iff_exists_isLimit_op`),
+and a cocone pushed forward along a map is a colimit cocone exactly when the opposite cone pushed
+forward along the opposite map is a limit cone (`SSet.coslice.isColimit_map_iff_isLimit_op`).
+Having a limit cone or a colimit cocone is invariant under isomorphisms of diagrams
+(`SSet.slice.exists_isLimit_iff_of_isIso`, `SSet.coslice.exists_isColimit_iff_of_isIso`), and
+pushing cones forward commutes with restricting them along an isomorphism of indexing simplicial
+sets (`SSet.slice.isLimit_map_map_iff`). For the empty diagram, the slice and
 the coslice are `C` itself, so that its limits are the terminal vertices of `C`
 (`SSet.slice.isLimit_iff_isTerminalVertex_π`) and its colimits the initial vertices
 (`SSet.coslice.isColimit_iff_isInitialVertex_π`). In the nerve of a category these are the
@@ -112,6 +119,29 @@ variable (p) in
 /-- In a terminal simplicial set, such as `Δ[0]`, every cone is a limit cone. -/
 lemma isLimit_of_isTerminal (hC : IsTerminal C) (c : (slice p) _⦋0⦌) : IsLimit p c :=
   isTerminalVertex_of_isTerminal (isTerminal p hC) c
+
+/-- Having a limit cone is invariant under isomorphisms of diagrams: if `q` is obtained from `p` by
+precomposing and postcomposing with isomorphisms `i` and `g`, then `q` has a limit cone exactly
+when `p` has one. -/
+lemma exists_isLimit_iff_of_isIso {L D : SSet.{u}} {q : L ⟶ D} (i : L ⟶ K) [IsIso i] (g : C ⟶ D)
+    [IsIso g] (h : i ≫ p ≫ g = q) : (∃ c, IsLimit q c) ↔ ∃ c, IsLimit p c :=
+  ⟨fun ⟨c, hc⟩ ↦ ⟨(asIso (map i g h)).inv.app _ c,
+      (isTerminalVertex_iff_of_iso (asIso (map i g h)).symm c).2 hc⟩,
+    fun ⟨c, hc⟩ ↦ ⟨(map i g h).app _ c, (isTerminalVertex_iff_of_iso (asIso (map i g h)) c).2 hc⟩⟩
+
+/-- Pushing cones forward along `g` commutes with restricting them along an isomorphism `i` of
+indexing simplicial sets. Hence a cone pushed forward along `g` is a limit cone exactly when its
+restriction along `i` is. -/
+lemma isLimit_map_map_iff {L D : SSet.{u}} {q : K ⟶ D} {p' : L ⟶ C} {q' : L ⟶ D} (i : L ⟶ K)
+    [IsIso i] (g : C ⟶ D) (hp : i ≫ p ≫ 𝟙 C = p') (h : 𝟙 K ≫ p ≫ g = q)
+    (h' : 𝟙 L ≫ p' ≫ g = q') (c : (slice p) _⦋0⦌) :
+    IsLimit q' ((map (𝟙 L) g h').app _ ((map i (𝟙 C) hp).app _ c)) ↔
+      IsLimit q ((map (𝟙 K) g h).app _ c) := by
+  have hq : i ≫ q ≫ 𝟙 D = q' := by simp [← h, ← h', ← hp]
+  have e : map i (𝟙 C) hp ≫ map (𝟙 L) g h' = map (𝟙 K) g h ≫ map i (𝟙 D) hq := by simp
+  rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, e, NatTrans.comp_app,
+    ConcreteCategory.comp_apply]
+  exact isTerminalVertex_iff_of_iso (asIso (map i (𝟙 D) hq)) _
 
 end slice
 
@@ -211,6 +241,39 @@ variable (p) in
 /-- In a terminal simplicial set, such as `Δ[0]`, every cocone is a colimit cocone. -/
 lemma isColimit_of_isTerminal (hC : IsTerminal C) (c : (coslice p) _⦋0⦌) : IsColimit p c :=
   isInitialVertex_of_isTerminal (isTerminal p hC) c
+
+variable (p) in
+/-- A diagram `p` has a colimit cocone exactly when the opposite diagram `pᵒᵖ` has a limit cone in
+`Cᵒᵖ`. -/
+lemma exists_isColimit_iff_exists_isLimit_op :
+    (∃ c, IsColimit p c) ↔ ∃ c, slice.IsLimit (opFunctor.map p) c :=
+  ⟨fun ⟨c, hc⟩ ↦ ⟨_, (isColimit_iff_isLimit_op c).1 hc⟩, fun ⟨c, hc⟩ ↦
+    ⟨(opSliceIso p).inv.app _ ((slice (opFunctor.map p)).opObjEquiv.symm c),
+      (isColimit_iff_isLimit_op _).2 (by simpa using hc)⟩⟩
+
+/-- Having a colimit cocone is invariant under isomorphisms of diagrams: if `q` is obtained from
+`p` by precomposing and postcomposing with isomorphisms `i` and `g`, then `q` has a colimit cocone
+exactly when `p` has one. -/
+lemma exists_isColimit_iff_of_isIso {L D : SSet.{u}} {q : L ⟶ D} (i : L ⟶ K) [IsIso i]
+    (g : C ⟶ D) [IsIso g] (h : i ≫ p ≫ g = q) : (∃ c, IsColimit q c) ↔ ∃ c, IsColimit p c := by
+  rw [exists_isColimit_iff_exists_isLimit_op q, exists_isColimit_iff_exists_isLimit_op p]
+  exact slice.exists_isLimit_iff_of_isIso (opFunctor.map i) (opFunctor.map g) (by simp [← h])
+
+/-- A cocone pushed forward along maps `i` and `g` is a colimit cocone exactly when the
+corresponding cone in `Cᵒᵖ`, pushed forward along `iᵒᵖ` and `gᵒᵖ`, is a limit cone. The maps `i'`
+and `g'` are any maps equal to `iᵒᵖ` and `gᵒᵖ`, such as `𝟙 Lᵒᵖ` for `i = 𝟙 L`. -/
+lemma isColimit_map_iff_isLimit_op {L D : SSet.{u}} {q : L ⟶ D} (i : L ⟶ K) (g : C ⟶ D)
+    (h : i ≫ p ≫ g = q) {i' : L.op ⟶ K.op} {g' : C.op ⟶ D.op} (hi : opFunctor.map i = i')
+    (hg : opFunctor.map g = g') (c : (coslice p) _⦋0⦌) :
+    IsColimit q ((map i g h).app _ c) ↔ slice.IsLimit (opFunctor.map q)
+      ((slice.map i' g' (by simp [← hi, ← hg, ← h])).app _
+        ((slice (opFunctor.map p)).opObjEquiv ((opSliceIso p).hom.app _ c))) := by
+  rw [isColimit_iff_isLimit_op]
+  -- Evaluate the identification of maps of coslices with opposite maps of slices at `c`.
+  have e := congr_arg (fun f ↦ f.app _ ((opSliceIso p).hom.app _ c))
+    (opSliceIso_inv_comp_map i g h hi hg)
+  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, Iso.hom_inv_id_app_apply] at e
+  rw [e, Iso.inv_hom_id_app_apply, opFunctor_map, Equiv.apply_symm_apply]
 
 end coslice
 
