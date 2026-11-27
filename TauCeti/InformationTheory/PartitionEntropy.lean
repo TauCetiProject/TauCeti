@@ -44,7 +44,9 @@ of two labels `a`, `b` is the pair label `x ↦ (a x, b x)`.
 * `TauCeti.countablePartitionEntropy_comp_of_measurePreserving`,
   `TauCeti.conditionalPartitionEntropy_comp_of_measurePreserving`: pulling labels back along a
   measure-preserving map does not change their entropy or conditional entropy.
-* `TauCeti.countablePartitionEntropy_pair_of_indepFun`: independent labels have additive entropy.
+* `TauCeti.countablePartitionEntropy_pair_of_indepFun`: independent labels have additive entropy;
+  `TauCeti.countablePartitionEntropy_prod` is the case of a label on each factor of a product of
+  probability measures, `H_{μ × ν}((a, b)) = H_μ(a) + H_ν(b)`.
 * `TauCeti.countablePartitionEntropy_comp_of_injective`: relabeling by an injection, for instance
   embedding a countable alphabet into `ℕ`, does not change the entropy;
   `TauCeti.conditionalPartitionEntropy_comp_right_of_injective` is the same for the conditioning
@@ -494,5 +496,20 @@ theorem tendsto_conditionalPartitionEntropy_min [IsZeroOrProbabilityMeasure μ] 
   rw [countablePartitionEntropy_def] at hfin
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (ENNReal.tendsto_sum_nat_add g hfin) (fun _ ↦ zero_le) hbound
+
+/-- **Product labels.** Under a product of probability measures, the entropy of the product of a
+measurable countable label on each factor is the sum of their entropies. -/
+theorem countablePartitionEntropy_prod {Y : Type*} [MeasurableSpace Y] {ν : Measure Y}
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] [MeasurableSpace ι]
+    [MeasurableSingletonClass ι] [Countable ι] [MeasurableSpace κ] [MeasurableSingletonClass κ]
+    [Countable κ] {a : X → ι} {b : Y → κ} (ha : Measurable a) (hb : Measurable b) :
+    countablePartitionEntropy (μ.prod ν) (fun p ↦ (a p.1, b p.2)) =
+      countablePartitionEntropy μ a + countablePartitionEntropy ν b := by
+  refine (countablePartitionEntropy_pair_of_indepFun (a := fun p : X × Y ↦ a p.1)
+    (b := fun p : X × Y ↦ b p.2) (ha.comp measurable_fst) (hb.comp measurable_snd)
+    (indepFun_prod ha hb)).trans ?_
+  exact congrArg₂ (· + ·)
+    (countablePartitionEntropy_comp_of_measurePreserving (measurePreserving_fst) ha)
+    (countablePartitionEntropy_comp_of_measurePreserving (measurePreserving_snd) hb)
 
 end TauCeti
