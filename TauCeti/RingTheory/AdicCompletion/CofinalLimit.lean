@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Limit
 public import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.AdicCompletion.Algebra
 
 /-!
 # Cofinal quotient systems of an adic completion
@@ -17,7 +18,8 @@ with `K n ≤ I ^ n`, provided each `K n` contains a power of `I`. This applies,
 to the sums of the separately extended powers of two ideals in a tensor product.
 
 We first construct the projection of the completion onto any quotient by an ideal containing
-a power of `I`. These projections form a limit cone for such a sequence `K`, and when a power of
+a power of `I`. For finitely generated `I`, `ker_toQuotient` identifies its kernel with the
+extension of the quotient ideal. These projections form a limit cone, and when a power of
 `I` lies in `J` they assemble into an `R`-algebra homomorphism `AdicCompletion I R →ₐ[R]
 AdicCompletion J R` (`AdicCompletion.ofPowLe`), giving an isomorphism `AdicCompletion.equivOfPowLe`
 whenever `I` and `J` have mutually cofinal powers (for instance when they share a finitely
@@ -49,6 +51,22 @@ theorem toQuotient_eq {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) {n : ℕ} (h
   unfold toQuotient
   simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
   rw [← h₁, ← h₂, Ideal.Quotient.factor_comp_apply, Ideal.Quotient.factor_comp_apply]
+
+/-- For finitely generated `I` and any ideal `K` containing a power of `I`, the kernel of
+the projection `AdicCompletion I R →+* R ⧸ K` is the extension of `K` to the completion. -/
+theorem ker_toQuotient {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) (hfg : I.FG) :
+    RingHom.ker (toQuotient I hK) = K.map (algebraMap R (AdicCompletion I R)) := by
+  obtain ⟨n, hn⟩ := hK
+  have hcomp : (evalₐ I n).toRingHom.comp (algebraMap R (AdicCompletion I R)) =
+      Ideal.Quotient.mk (I ^ n) :=
+    RingHom.ext (evalₐ_of I n)
+  have hker : RingHom.ker (evalₐ I n).toRingHom =
+      (I ^ n).map (algebraMap R (AdicCompletion I R)) :=
+    ker_evalₐ_eq_map_pow hfg n
+  -- Pull back the factor kernel along evaluation and absorb the extended power of `I`.
+  rw [toQuotient_eq I _ hn, ← RingHom.comap_ker, Ideal.Quotient.factor_ker, ← hcomp,
+    ← Ideal.map_map, Ideal.comap_map_of_surjective (evalₐ I n).toRingHom (surjective_evalₐ I n),
+    ← RingHom.ker_eq_comap_bot, hker, sup_eq_left.mpr (Ideal.map_mono hn)]
 
 /-- On elements of the original ring, projection to a quotient is the quotient map. -/
 @[simp]
