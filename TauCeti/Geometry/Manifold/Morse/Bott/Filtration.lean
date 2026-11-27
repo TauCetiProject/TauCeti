@@ -15,6 +15,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.OrdConnected
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The critical-value filtration of the Bott complex
@@ -42,7 +43,13 @@ studies its spectral sequence, for any such data.
   components with value in `s` escapes `s`, which gives the Bott complex
   `TauCeti.BottChainData.complexOn` of the components with value in `s`. For `a ≤ b` the
   sublevel `Iic a`, the sublevel `Iic b` and the band `Ioc a b` give the short exact sequence
-  `0 → C(Iic a) → C(Iic b) → C(Ioc a b) → 0` (`TauCeti.BottChainData.bandSequence_shortExact`).
+  `0 → C(Iic a) → C(Iic b) → C(Ioc a b) → 0` (`TauCeti.BottChainData.bandSequence_shortExact`),
+  and two adjacent bands give the short exact sequence
+  `0 → C(Ioc a b) → C(Ioc a c) → C(Ioc b c) → 0`
+  (`TauCeti.BottChainData.adjacentBandSequence_shortExact`). The connecting map of the sequence of
+  a lower part `p` and its complement `r` sends the class of a cycle `x` of `r` to the class of the
+  part on `p` of its Bott differential, the correspondences `F_CD (x C)` from `r` to `p`
+  (`TauCeti.BottChainData.chainComplexOnShortComplex_δ_homologyπ`).
 * **The critical-value spectral sequence.** For a monotone sequence `a : ℤ → ℝ` of cut values,
   the complexes of the sublevels `Iic (a q)` form an increasing filtration of the Bott complex
   (`TauCeti.BottChainData.filtration`), regraded as a cochain complex along `n ↦ -n`. On the
@@ -83,8 +90,12 @@ manifold by sublevel sets, are not attempted here.
   `TauCeti.BottChainData.chainComplexOnRestriction`: inclusions of lower parts and restrictions
   to upper parts.
 * `TauCeti.BottChainData.chainComplexOnShortComplex_shortExact`,
-  `TauCeti.BottChainData.bandSequence_shortExact`: the short exact sequences of a lower part and
-  its complement, and of two sublevels and the band between them.
+  `TauCeti.BottChainData.bandSequence_shortExact`,
+  `TauCeti.BottChainData.adjacentBandSequence_shortExact`: the short exact sequences of a lower
+  part and its complement, of two sublevels and the band between them, and of two adjacent bands.
+* `TauCeti.BottChainData.chainComplexOnShortComplex_δ_homologyπ`: the connecting map of a lower
+  part and its complement sends the class of a cycle of the complement to the class of its
+  correspondences to the lower part.
 * `TauCeti.BottChainData.filtration`, `TauCeti.BottChainData.spectralSequence`: the
   critical-value filtration of the Bott complex and its spectral sequence.
 * `TauCeti.BottChainData.spectralSequenceFirstPageXIso`,
@@ -558,10 +569,10 @@ theorem pushforward_eq_zero_of_compl (C D : ι) (hC : q C) (hD : r D) (hC' : ¬r
 /-- **The sequence of a lower part and its complement.** If `q` is the disjoint union of a lower
 part `p` and its complement `r`, the short complex `C(p) → C(q) → C(r)` of the inclusion of the
 Bott complex of `p` into that of `q` and the restriction of the latter to `r`. -/
--- The body is exposed so that the maps of the sequence compute to the inclusion and the
--- restriction, which `chainComplexOnShortComplex_shortExact` unfolds.
-@[expose]
-noncomputable def chainComplexOnShortComplex : ShortComplex (ChainComplex (ModuleCat R) ℤ) :=
+-- This is an abbreviation so that the terms of the sequence reduce to the Bott complexes of `p`,
+-- `q` and `r`, which the band sequences are composed with, and its maps compute to the inclusion
+-- and the restriction, which `chainComplexOnShortComplex_shortExact` unfolds.
+noncomputable abbrev chainComplexOnShortComplex : ShortComplex (ChainComplex (ModuleCat R) ℤ) :=
   ShortComplex.mk (B.chainComplexOnInclusion p hp hboundary hpushforward hq hpq hlow)
     (B.chainComplexOnRestriction r hr hboundary hpushforward hq hrq
       (B.pushforward_eq_zero_of_compl p hrq hpr hlow)) <| by
@@ -625,6 +636,89 @@ theorem chainComplexOnShortComplex_shortExact :
     · simp [restrictGrading_of_neg S hC, hx' C hC]
   · rintro ⟨y, rfl⟩
     exact ShortComplex.moduleCat_zero_apply _ y
+
+include hpq hrq hpr in
+/-- **The Bott differential of a cycle of the complement.** Let `q` be the disjoint union of a
+lower part `p` and its complement `r`, and let `x` be a chain on the components of `r` whose Bott
+differential in `r` vanishes. Then the Bott differential of `x` in `q` is the part on `p` of its
+Bott differential: the correspondences from the components of `r` to those of `p`. -/
+theorem restrict_differential_eq_restrictProj_differential {x : ∀ C, M C}
+    (hx : ∀ C, ¬r C → x C = 0) (hdx : (B.restrict r hr).differential x = 0) :
+    (B.restrict q hq).differential x = restrictProj R p (B.differential x) := by
+  funext D
+  rw [restrict_differential_apply, restrictProj_apply]
+  by_cases hD : p D
+  · -- On a component of `p` the chain vanishes, and only the correspondences out of `r` remain.
+    have hxD : x D = 0 := hx D fun h ↦ (hpr D (hpq D hD)).1 h hD
+    simp only [hD, ite_true]
+    rw [differential_apply, hxD, map_zero, smul_zero, zero_add, zero_add]
+    refine Finset.sum_congr rfl fun C _ ↦ ?_
+    by_cases hC : r C
+    · simp [hrq C hC, hpq D hD]
+    · simp [hx C hC]
+  · simp only [hD, ite_false]
+    by_cases hqD : q D
+    · -- On a component of `r` this is the Bott differential in `r`, which vanishes.
+      have hrD : r D := (hpr D hqD).2 hD
+      refine Eq.trans ?_ (congrFun hdx D)
+      rw [restrict_differential_apply]
+      congr 1
+      refine Finset.sum_congr rfl fun C _ ↦ ?_
+      by_cases hC : r C
+      · simp [hC, hrD, hrq C hC, hqD]
+      · simp [hx C hC]
+    · simp [hx D fun h ↦ hqD (hrq D h), hqD]
+
+omit [DecidablePred q] in
+include hq hpq hrq hpr hlow in
+/-- The part on the lower part `p` of the Bott differential of a cycle of the complement `r` is a
+cycle of `p`. -/
+theorem restrict_differential_restrictProj_differential_eq_zero {x : ∀ C, M C}
+    (hx : ∀ C, ¬r C → x C = 0) (hdx : (B.restrict r hr).differential x = 0) :
+    (B.restrict p hp).differential (restrictProj R p (B.differential x)) = 0 := by
+  classical
+  rw [← B.restrict_differential_eq_of_lower p hp hq hpq hlow fun C hC ↦ by simp [hC],
+    ← B.restrict_differential_eq_restrictProj_differential p hq hr hpq hrq hpr hx hdx]
+  exact (B.restrict q hq).differential_differential x
+
+/-- **The connecting map of a lower part and its complement.** Let `q` be the disjoint union of a
+lower part `p` and its complement `r`. The connecting map `H_(k+1)(C(r)) → H_k(C(p))` of the short
+exact sequence `C(p) → C(q) → C(r)` sends the class of a cycle `x` of `r` to the class of the part
+on `p` of its Bott differential, that is of the chain `∑_C F_CD (x C)` on the components `D` of
+`p`, summed over the components `C` of `r`. The cycle `z'` of `p` is given with this chain as
+underlying chain. -/
+theorem chainComplexOnShortComplex_δ_homologyπ (k : ℤ)
+    (z : (B.chainComplexOn r hr hboundary hpushforward).cycles (k + 1))
+    (z' : (B.chainComplexOn p hp hboundary hpushforward).cycles k)
+    (hz' : (((B.chainComplexOn p hp hboundary hpushforward).iCycles k).hom z' :
+        (B.restrict p hp).totalDegree (restrictGrading p S) k).val =
+      restrictProj R p (B.differential
+        (((B.chainComplexOn r hr hboundary hpushforward).iCycles (k + 1)).hom z :
+          (B.restrict r hr).totalDegree (restrictGrading r S) (k + 1)).val)) :
+    ((B.chainComplexOnShortComplex_shortExact p hp hboundary hpushforward hq hr hpq hrq hpr
+        hlow).δ (k + 1) k (by simp)).hom
+        (((B.chainComplexOn r hr hboundary hpushforward).homologyπ (k + 1)).hom z) =
+      ((B.chainComplexOn p hp hboundary hpushforward).homologyπ k).hom z' := by
+  -- the underlying cycle of `z`, a chain on the components of `r`
+  set x : (B.restrict r hr).totalDegree (restrictGrading r S) (k + 1) :=
+    ((B.chainComplexOn r hr hboundary hpushforward).iCycles (k + 1)).hom z
+  have hxr : ∀ C, ¬r C → x.val C = 0 := fun C hC ↦
+    B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hC
+  have hdx : (B.restrict r hr).differential x.val = 0 := by
+    rw [← chainComplexOn_d_apply]
+    exact congrArg Subtype.val (HomologicalComplex.moduleCat_d_iCycles_apply _ _ _ z)
+  -- the lift of `x` to the chains of `q`
+  refine (B.chainComplexOnShortComplex_shortExact p hp hboundary hpushforward hq hr hpq hrq hpr
+    hlow).moduleCat_δ_homologyπ (k + 1) k (by simp) z
+      (Submodule.inclusion (B.restrict_totalDegree_le r hr hq hrq (k + 1)) x)
+      (Subtype.ext ?_) z' (Subtype.ext ?_)
+  · -- `x` is its own projection to `r`
+    exact B.restrictProj_eq_self r hr x.property
+  · -- the differential of the lift is the part on `p` of the Bott differential of `x`
+    refine hz'.trans ?_
+    rw [← B.restrict_differential_eq_restrictProj_differential p hq hr hpq hrq hpr hxr hdx]
+    exact (chainComplexOn_d_apply B q hq hboundary hpushforward k
+      (Submodule.inclusion (B.restrict_totalDegree_le r hr hq hrq (k + 1)) x)).symm
 
 end ShortComplex
 
@@ -757,6 +851,79 @@ theorem restrictionMap_sublevelInclusion_comp_filtrationι {b c : ℝ} (hbc : b 
       B.filtrationι v hv hboundary hpushforward b := by
   rw [filtrationι, filtrationι, ← restrictionMap_comp, chainComplexOnInclusion_comp_chainComplexOnι]
 
+section AdjacentBands
+
+variable {b₀ b₁ b₂ : ℝ} (h₀₁ : b₀ ≤ b₁) (h₁₂ : b₁ ≤ b₂)
+
+/-- **The sequence of two adjacent bands.** For `b₀ ≤ b₁ ≤ b₂`, the short complex
+`C(Ioc b₀ b₁) → C(Ioc b₀ b₂) → C(Ioc b₁ b₂)` including the Bott complex of the components with
+value in the lower band into that of the components with value in the union of the two bands, and
+restricting the latter to the components with value in the upper band. -/
+noncomputable abbrev adjacentBandSequence :
+    ShortComplex (ChainComplex (ModuleCat R) ℤ) :=
+  B.chainComplexOnShortComplex (fun C ↦ v C ∈ Ioc b₀ b₁)
+    (B.pushforward_comp_pushforward_eq_zero_of_ordConnected v hv _) hboundary hpushforward
+    (B.pushforward_comp_pushforward_eq_zero_of_ordConnected v hv (Ioc b₀ b₂))
+    (B.pushforward_comp_pushforward_eq_zero_of_ordConnected v hv (Ioc b₁ b₂))
+    (fun _ hC ↦ ⟨hC.1, hC.2.trans h₁₂⟩) (fun _ hC ↦ ⟨h₀₁.trans_lt hC.1, hC.2⟩)
+    (fun _ hC ↦ ⟨fun h h' ↦ not_le.2 h.1 h'.2, fun h ↦ ⟨not_le.1 fun h' ↦ h ⟨hC.1, h'⟩, hC.2⟩⟩)
+    (fun C D hC hD hD' ↦ hv C D (hC.2.trans (not_le.1 fun h ↦ hD' ⟨hD.1, h⟩).le))
+
+/-- **The sequence of two adjacent bands is short exact.** -/
+theorem adjacentBandSequence_shortExact :
+    (B.adjacentBandSequence v hv hboundary hpushforward h₀₁ h₁₂).ShortExact :=
+  B.chainComplexOnShortComplex_shortExact ..
+
+/-- Restricting the chains with value at most `b₁` to the band `Ioc b₀ b₁` and including them into
+the union `Ioc b₀ b₂` of two adjacent bands is restricting them to the union. -/
+theorem bandSequence_g_comp_adjacentBandSequence_f :
+    (B.bandSequence v hv hboundary hpushforward h₀₁).g ≫
+        (B.adjacentBandSequence v hv hboundary hpushforward h₀₁ h₁₂).f =
+      B.sublevelInclusion v hv hboundary hpushforward h₁₂ ≫
+        (B.bandSequence v hv hboundary hpushforward (h₀₁.trans h₁₂)).g := by
+  ext k x : 3
+  refine Subtype.ext (funext fun C ↦ ?_)
+  -- The terms of the complexes are the total-degree pieces only after unfolding
+  -- `chainComplexOn`, so `change` states the goal on the chains: both maps project onto a band.
+  change restrictProj R (fun C ↦ v C ∈ Ioc b₀ b₁) x.val C =
+    restrictProj R (fun C ↦ v C ∈ Ioc b₀ b₂) x.val C
+  by_cases hC : v C ≤ b₁
+  · simp [hC, hC.trans h₁₂]
+  · simp [hC, B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hC]
+
+/-- Restricting the chains with value at most `b₂` to the union `Ioc b₀ b₂` of two adjacent bands,
+and then to the upper band `Ioc b₁ b₂`, is restricting them to the upper band. -/
+theorem bandSequence_g_comp_adjacentBandSequence_g :
+    (B.bandSequence v hv hboundary hpushforward (h₀₁.trans h₁₂)).g ≫
+        (B.adjacentBandSequence v hv hboundary hpushforward h₀₁ h₁₂).g =
+      (B.bandSequence v hv hboundary hpushforward h₁₂).g := by
+  ext k x : 3
+  refine Subtype.ext (funext fun C ↦ ?_)
+  -- As above, `change` states the goal on the chains.
+  change restrictProj R (fun C ↦ v C ∈ Ioc b₁ b₂)
+      (restrictProj R (fun C ↦ v C ∈ Ioc b₀ b₂) x.val) C =
+    restrictProj R (fun C ↦ v C ∈ Ioc b₁ b₂) x.val C
+  by_cases hC : v C ∈ Ioc b₁ b₂
+  · simp only [restrictProj_apply, hC, ite_true,
+      show v C ∈ Ioc b₀ b₂ from ⟨h₀₁.trans_lt hC.1, hC.2⟩]
+  · simp only [restrictProj_apply, hC, ite_false]
+
+/-- Restricting the chains with value at most `b₀` to the union `Ioc b₀ b₂` of two bands above
+`b₀` gives zero. -/
+theorem sublevelInclusion_comp_bandSequence_g_eq_zero :
+    B.sublevelInclusion v hv hboundary hpushforward h₀₁ ≫
+        B.sublevelInclusion v hv hboundary hpushforward h₁₂ ≫
+          (B.bandSequence v hv hboundary hpushforward (h₀₁.trans h₁₂)).g = 0 := by
+  ext k x : 3
+  refine Subtype.ext (funext fun C ↦ ?_)
+  -- As above, `change` states the goal on the chains.
+  change restrictProj R (fun C ↦ v C ∈ Ioc b₀ b₂) x.val C = 0
+  by_cases hC : v C ≤ b₀
+  · simp [hC]
+  · simp [B.apply_eq_zero_of_mem_restrict_totalDegree _ _ x.property hC]
+
+end AdjacentBands
+
 variable {a : ℤ → ℝ}
 
 /-- The critical-value filtration grows with the cut values. -/
@@ -867,6 +1034,21 @@ noncomputable def spectralSequenceFirstPageXIso (pq : ℤ × ℤ) (n : ℤ) (hn 
     HomologicalComplex.restrictionHomologyIso _ _ (pq.1 + pq.2 - 1) (pq.1 + pq.2)
       (pq.1 + pq.2 + 1) (by simp) (by simp) (i' := n + 1) (k' := n - 1) (by simp; omega)
       (by simp; omega) (by simp; omega) (by simp) (by simp)
+
+/-- The identification of the first page of the critical-value spectral sequence with the homology
+of a band is that of the first page of a filtered complex with the homology of its graded piece
+(`CochainComplex.spectralSequenceFirstPageXIsoCokernel`), followed by the identification of the
+graded piece with the band complex (`TauCeti.BottChainData.filtrationCokernelIso`) and the
+regrading along `n ↦ -n`. -/
+theorem spectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) (n : ℤ) (hn : pq.1 + pq.2 = -n) :
+    B.spectralSequenceFirstPageXIso v hv hboundary hpushforward ha pq n hn =
+      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
+        (homologyFunctor _ _ _).mapIso
+          (B.filtrationCokernelIso v hv hboundary hpushforward ha pq.2) ≪≫
+        HomologicalComplex.restrictionHomologyIso _ _ (pq.1 + pq.2 - 1) (pq.1 + pq.2)
+          (pq.1 + pq.2 + 1) (by simp) (by simp) (i' := n + 1) (k' := n - 1) (by simp; omega)
+          (by simp; omega) (by simp; omega) (by simp) (by simp) :=
+  (rfl)
 
 /-- **The abutment of the critical-value spectral sequence** in degree `-n` is the homology in
 total degree `n` of the Bott complex. -/
