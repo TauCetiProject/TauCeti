@@ -185,7 +185,7 @@ theorem existsUnique_mem_eval_entryCode_iff (O : ℕ → ℕ) (c : Code) (x : �
   simp only [eval_entryCode]
   rw [existsUnique_mem_entryAt_iff (monotone_serializedStage _) (serializedStage_zero _)
     (card_fresh_serializedStage_le_one _), stageLimit_serializedStage, stageLimit_domStage_total]
-  rfl
+  simp only [PFun.Dom, Set.mem_ofPred_eq]
 
 /-- The range of the entry program is the entire source domain, even when it is finite. -/
 @[simp]
@@ -238,19 +238,23 @@ private theorem exists_eval_indicator_dom {A : Set ℕ} (hA : IsSigma Z 1 (· �
   ext x
   simpa only [PFun.Dom, Set.mem_ofPred_eq, encode_nat, Set.oracle_eq_indicator Z] using (hc x).symm
 
+private theorem computableIn_of_indicator_eval_eq_some {c : Code} {f : ℕ → ℕ}
+    (heval : ∀ n, Code.eval ↑(Z.indicator 1 : ℕ → ℕ) c n = Part.some (f n)) :
+    ComputableIn {Z.oracle} f := by
+  rw [Set.oracle_eq_indicator]
+  exact RecursiveIn.iff_nat.2 ((Code.recursiveIn_eval _ c).of_eq heval)
+
 private theorem exists_computableIn_range_nat {A : Set ℕ} (hA : IsSigma Z 1 (· ∈ A))
     (hne : A.Nonempty) : ∃ f : ℕ → ℕ, ComputableIn {Z.oracle} f ∧ Set.range f = A := by
   obtain ⟨c, hdom⟩ := exists_eval_indicator_dom hA
   obtain ⟨a, ha⟩ := hne
   let O : ℕ → ℕ := Z.indicator 1
-  have hO : Z.oracle = (O : ℕ →. ℕ) := Set.oracle_eq_indicator Z
   let f (n : ℕ) :=
     if n.unpair.1 ∈ c.domStage (fun z => some (O z)) n.unpair.2 then n.unpair.1 else a
   have heval (n : ℕ) : Code.eval (O : ℕ →. ℕ) (c.rangeCode a) n = Part.some (f n) :=
     Code.eval_rangeCode O c a n
-  have hf : ComputableIn {Z.oracle} f := RecursiveIn.iff_nat.2
-    (hO ▸ (Code.recursiveIn_eval (O : ℕ →. ℕ) (c.rangeCode a)).of_eq heval)
-  have hmem : a ∈ (Code.eval (O : ℕ →. ℕ) c).Dom := hdom.symm ▸ ha
+  have hf : ComputableIn {Z.oracle} f := computableIn_of_indicator_eval_eq_some heval
+  have hmem : a ∈ (Code.eval (O : ℕ →. ℕ) c).Dom := by rwa [hdom]
   have hr := Code.ran_eval_rangeCode O c a
   have heq : Code.eval (O : ℕ →. ℕ) (c.rangeCode a) = (f : ℕ →. ℕ) := funext heval
   rw [heq, PFun.ran_coe, Set.insert_eq_of_mem hmem, hdom] at hr
@@ -261,21 +265,21 @@ private theorem exists_injective_computableIn_range_nat {A : Set ℕ}
     ∃ f : ℕ → ℕ, ComputableIn {Z.oracle} f ∧ Set.range f = A ∧ Function.Injective f := by
   obtain ⟨c, hdom⟩ := exists_eval_indicator_dom hA
   let O : ℕ → ℕ := Z.indicator 1
-  have hO : Z.oracle = (O : ℕ →. ℕ) := Set.oracle_eq_indicator Z
   let p := Code.eval (O : ℕ →. ℕ) c.entryCode
   have hp (n : ℕ) : (p n).Dom :=
-    (c.forall_dom_eval_entryCode_iff O).2 (hdom.symm ▸ hinf) n
+    (c.forall_dom_eval_entryCode_iff O).2 (by rwa [hdom]) n
   let f (n : ℕ) := (p n).get (hp n)
   have heval (n : ℕ) : Code.eval (O : ℕ →. ℕ) c.entryCode n = Part.some (f n) :=
     (Part.some_get (hp n)).symm
-  have hf : ComputableIn {Z.oracle} f := RecursiveIn.iff_nat.2
-    (hO ▸ (Code.recursiveIn_eval (O : ℕ →. ℕ) c.entryCode).of_eq heval)
+  have hf : ComputableIn {Z.oracle} f := computableIn_of_indicator_eval_eq_some heval
   have hr := c.ran_eval_entryCode O
   have heq : p = (f : ℕ →. ℕ) := funext heval
   have hrange : Set.range f = A := by
     simpa only [← hdom, ← PFun.ran_coe, ← heq] using hr
   refine ⟨f, hf, hrange, fun m n hmn => ?_⟩
-  have hx : f m ∈ (Code.eval (O : ℕ →. ℕ) c).Dom := hdom.symm ▸ hrange ▸ Set.mem_range_self m
+  have hx : f m ∈ (Code.eval (O : ℕ →. ℕ) c).Dom := by
+    rw [hdom, ← hrange]
+    exact Set.mem_range_self m
   have huniq := (c.existsUnique_mem_eval_entryCode_iff O (f m)).2 hx
   exact huniq.unique (by rw [heval m]; exact Part.mem_some _) (by rwa [heval n, Part.mem_some_iff])
 
