@@ -88,6 +88,17 @@ theorem Matrix.comp_equiv_symm_dotProduct_reindex_mulVec {I J α : Type*} [Finty
     u ∘ e.symm ⬝ᵥ M.reindex e e *ᵥ (v ∘ e.symm) = u ⬝ᵥ M *ᵥ v := by
   simp [submatrix_mulVec_equiv, Function.comp_assoc]
 
+/-- An entry of `Aᴴ * M * B` pairs the corresponding columns of `A` and `B` through `M`. -/
+theorem Matrix.conjTranspose_mul_mul_apply {k l m n R : Type*} [Fintype k] [Fintype l]
+    [NonUnitalSemiring R] [Star R] (A : Matrix k m R) (M : Matrix k l R) (B : Matrix l n R)
+    (i : m) (j : n) : (Aᴴ * M * B) i j = star (A.col i) ⬝ᵥ (M *ᵥ B.col j) := by
+  rw [Matrix.mul_assoc]
+  calc
+    (Aᴴ * (M * B)) i j = (Aᴴ i) ⬝ᵥ (M * B).col j := Matrix.mul_apply'
+    _ = star (A.col i) ⬝ᵥ (M *ᵥ B.col j) := by
+      rw [Matrix.col_mul_eq_mulVec_col]
+      rfl
+
 /-- The sesquilinear form of a compression `Aᴴ * M * A` is the form of `M` pulled back along `A`:
 `star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y)`. -/
 theorem Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec {k l α : Type*} [Fintype k]
