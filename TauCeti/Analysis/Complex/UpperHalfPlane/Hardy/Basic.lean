@@ -109,6 +109,34 @@ theorem MemUpperHalfPlaneHardy.of_eLpNorm_le (hF : DifferentiableOn ℂ F upperH
     MemUpperHalfPlaneHardy p F :=
   ⟨hF, (upperHalfPlaneHardyNorm_le_iff.2 h).trans_lt hC⟩
 
+/-- The Hardy norm depends only on the values of `F` on the upper half-plane. -/
+theorem upperHalfPlaneHardyNorm_congr {G : ℂ → ℂ} (h : EqOn F G upperHalfPlaneSet) :
+    upperHalfPlaneHardyNorm p F = upperHalfPlaneHardyNorm p G := by
+  simp only [upperHalfPlaneHardyNorm_def]
+  refine iSup_congr fun y ↦ iSup_congr fun hy ↦
+    congrArg (fun g : ℝ → ℂ ↦ eLpNorm g p) (funext fun x ↦ h ?_)
+  simpa using hy
+
+/-- Membership in `H^p(ℂ₊)` depends only on the values of `F` on the upper half-plane. -/
+theorem MemUpperHalfPlaneHardy.congr {G : ℂ → ℂ} (hF : MemUpperHalfPlaneHardy p F)
+    (h : EqOn F G upperHalfPlaneSet) : MemUpperHalfPlaneHardy p G :=
+  ⟨hF.differentiableOn.congr fun _ hz ↦ (h hz).symm,
+    upperHalfPlaneHardyNorm_congr h ▸ hF.upperHalfPlaneHardyNorm_lt_top⟩
+
+/-- Functions agreeing on the upper half-plane are in `H^p(ℂ₊)` together. -/
+theorem memUpperHalfPlaneHardy_congr {G : ℂ → ℂ} (h : EqOn F G upperHalfPlaneSet) :
+    MemUpperHalfPlaneHardy p F ↔ MemUpperHalfPlaneHardy p G :=
+  ⟨fun hF ↦ hF.congr h, fun hG ↦ hG.congr h.symm⟩
+
+/-- The Hardy norm of the zero function is zero. -/
+@[simp]
+theorem upperHalfPlaneHardyNorm_zero (p : ℝ≥0∞) : upperHalfPlaneHardyNorm p 0 = 0 :=
+  le_antisymm (upperHalfPlaneHardyNorm_le_iff.2 fun _ _ ↦ by simp) bot_le
+
+/-- The zero function is in `H^p(ℂ₊)`. -/
+theorem memUpperHalfPlaneHardy_zero (p : ℝ≥0∞) : MemUpperHalfPlaneHardy p 0 :=
+  ⟨differentiableOn_const 0, by simp⟩
+
 /-- On every horizontal line `Im z = y > 0`, `∫ |F(x + iy)|^p dx ≤ ‖F‖_p^p`. -/
 theorem lintegral_rpow_eNorm_le_upperHalfPlaneHardyNorm_rpow {p : ℝ} (hp : 0 < p) {y : ℝ}
     (hy : 0 < y) :
@@ -136,7 +164,7 @@ private theorem rpow_norm_le_of_lt {p : ℝ} (hp : 1 ≤ p)
   -- the closed disc lies in the half-plane, and the open disc in the strip `|Im w - Im z| < r`
   have hball : closedBall z r ⊆ upperHalfPlaneSet := fun w hw ↦ by
     have : |w.im - z.im| ≤ r := (abs_im_le_norm (w - z)).trans (by simpa [dist_eq_norm] using hw)
-    change 0 < w.im
+    rw [UpperHalfPlane.upperHalfPlaneSet, mem_ofPred_eq]
     linarith [abs_le.1 this]
   have hballS : ball z r ⊆ univ ×ℂ Ioo (z.im - r) (z.im + r) := fun w hw ↦ by
     have : |w.im - z.im| < r := (abs_im_le_norm (w - z)).trans_lt (by simpa [dist_eq_norm] using hw)
