@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.RingTheory.MilnorK.Homogeneous
 public import TauCeti.RingTheory.MilnorK.MatsumotoGroup
-import Mathlib.Tactic.FinCases
 import TauCeti.LinearAlgebra.TensorSquare
 
 /-!
@@ -103,8 +102,8 @@ private theorem mapTensorPower_mem_steinbergRelations (f : R →+* S) (n : ℕ)
     (Submodule.mem_map_of_mem (steinbergRelations_eq_span R n ▸ ht))
   rintro _ ⟨g, i, hi, hab, rfl⟩
   rw [mapTensorPower, PiTensorProduct.map_tprod]
-  change (PiTensorProduct.tprod ℤ fun k ↦ Additive.ofMul (Units.map f.toMonoidHom (g k))) ∈
-    steinbergRelations S n
+  simp only [AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply,
+    toMul_ofMul]
   refine tprod_mem_steinbergRelations _ i hi ?_
   simpa [Units.map] using (map_add f _ _).symm.trans ((congrArg f hab).trans (map_one f))
 
@@ -147,15 +146,17 @@ private theorem quotient_linearMap_ext {A : Type*} [AddCommGroup A] {n : ℕ}
 @[simp]
 theorem mapQuotient_id (n : ℕ) : mapQuotient (RingHom.id R) n = LinearMap.id :=
   quotient_linearMap_ext fun x ↦ by
-    simp only [mapQuotient_mk_tprod, RingHom.toMonoidHom_eq_coe, LinearMap.id_apply]
-    congr 2
+    simp only [mapQuotient_mk_tprod, RingHom.toMonoidHom_eq_coe, RingHom.toMonoidHom_id,
+      Units.map_id, MonoidHom.id_apply, ofMul_toMul, LinearMap.id_apply]
 
 /-- `MilnorK.mapQuotient` preserves composition of ring homomorphisms. -/
 theorem mapQuotient_comp {T : Type*} [CommRing T] (g : S →+* T) (f : R →+* S) (n : ℕ) :
     mapQuotient (g.comp f) n = (mapQuotient g n).comp (mapQuotient f n) :=
   quotient_linearMap_ext fun x ↦ by
-    simp only [LinearMap.comp_apply, mapQuotient_mk_tprod, toMul_ofMul, RingHom.toMonoidHom_eq_coe]
-    congr 2
+    have hcomp : (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
+      MonoidHom.ext (RingHom.comp_apply g f)
+    simp only [LinearMap.comp_apply, mapQuotient_mk_tprod, toMul_ofMul, hcomp, Units.map_comp,
+      MonoidHom.comp_apply]
 
 /-- `degreeEquiv` intertwines `mapQuotient f n` and `mapDegree f n`. -/
 theorem mapDegree_degreeEquiv (f : R →+* S) (n : ℕ)
@@ -166,7 +167,8 @@ theorem mapDegree_degreeEquiv (f : R →+* S) (n : ℕ)
     (g := (degreeEquiv S n).toLinearMap.comp (mapQuotient f n))
     (quotient_linearMap_ext fun x ↦ Subtype.ext ?_) q
   have hx : PiTensorProduct.tprod ℤ x =
-      PiTensorProduct.tprod ℤ fun k ↦ Additive.ofMul (Additive.toMul (x k)) := rfl
+      PiTensorProduct.tprod ℤ fun k ↦ Additive.ofMul (Additive.toMul (x k)) := by
+    simp only [ofMul_toMul]
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, mapDegree_apply, coe_degreeEquiv_mk,
     mapQuotient_mk_tprod]
   rw [hx, ofTensorPower_tprod, ofTensorPower_tprod, map_symbol]
@@ -184,6 +186,10 @@ end QuotientFunctoriality
 section DegreeTwo
 
 variable (R : Type*) [CommRing R]
+
+private theorem ofMul_vecCons (a b : Rˣ) :
+    (fun k ↦ Additive.ofMul (![a, b] k)) = ![Additive.ofMul a, Additive.ofMul b] :=
+  funext <| Fin.forall_fin_two.mpr (by simp)
 
 @[simp]
 private theorem tensorProductEquivTensorSquare_symm_int_tprod (x : Fin 2 → Additive Rˣ) :
@@ -208,9 +214,7 @@ private theorem map_steinbergRelations_two :
     rintro _ ⟨a, b, hab, rfl⟩
     rw [SetLike.mem_coe, Submodule.mem_map]
     refine ⟨PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b], ?_, ?_⟩
-    · have h : (fun k ↦ Additive.ofMul (![a, b] k)) = ![Additive.ofMul a, Additive.ofMul b] := by
-        ext k; fin_cases k <;> rfl
-      rw [← h]
+    · rw [← ofMul_vecCons]
       exact tprod_mem_steinbergRelations ![a, b] 0 (by omega) (by simpa using hab)
     · rw [LinearEquiv.coe_coe, tensorProductEquivTensorSquare_symm_int_tprod]
       simp
@@ -244,10 +248,7 @@ theorem degreeTwoEquivMatsumotoGroup_symbol_pair (a b : Rˣ) :
       degreeEquiv R 2 (Submodule.Quotient.mk
         (PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b])) := by
     apply Subtype.ext
-    rw [coe_degreeEquiv_mk]
-    have h : (fun k ↦ Additive.ofMul (![a, b] k)) = ![Additive.ofMul a, Additive.ofMul b] := by
-      ext k; fin_cases k <;> rfl
-    rw [← h, ofTensorPower_tprod]
+    rw [coe_degreeEquiv_mk, ← ofMul_vecCons, ofTensorPower_tprod]
     simp [List.ofFn_succ]
   rw [hsub, degreeTwoEquivMatsumotoGroup_degreeEquiv_mk]
   simp

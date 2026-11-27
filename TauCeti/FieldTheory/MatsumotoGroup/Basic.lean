@@ -69,10 +69,6 @@ theorem symbol_add_symbol_swap (x y : Fˣ) : symbol x y + symbol y x = 0 := by
 theorem symbol_self (x : Fˣ) : symbol x x = symbol x (-1) :=
   isSteinbergPairing_symbol.map_self x
 
-/-- The symbol `{x, -1}` has order dividing two. -/
-theorem two_nsmul_symbol_neg_one (x : Fˣ) : 2 • symbol x (-1) = 0 := by
-  rw [← symbol_pow_right, neg_one_sq, symbol_one_right]
-
 /-- The symbol `{x, x}` has order dividing two. -/
 theorem two_nsmul_symbol_self (x : Fˣ) : 2 • symbol x x = 0 :=
   isSteinbergPairing_symbol.two_nsmul_map_self x

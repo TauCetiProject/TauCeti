@@ -33,9 +33,9 @@ submodules, and the identifications of degree zero with `ℤ` and of degree one 
 field, the degree-one classes anticommute, so swapping two adjacent entries negates a symbol, and
 `{a, a} = {a, -1}`. These classes need not vanish, so the Milnor ring is not an exterior algebra.
 The grade involution `σ`, which is `(-1) ^ n` in degree `n`, records the resulting graded
-commutativity `x y = (-1) ^ (m n) y x`. Additional field-specific identities (permutation-sign
-rules, repeated-entry torsion, and finite-field vanishing) live in
-`TauCeti.FieldTheory.MilnorK.Basic`.
+commutativity `x y = (-1) ^ (m n) y x`. Permutation-sign rules and general repeated-entry
+torsion live in `TauCeti.RingTheory.MilnorK.Permutation`, while characteristic-`2` / finite-field
+corollaries and finite-field vanishing live in `TauCeti.FieldTheory.MilnorK.Basic`.
 
 ## Main definitions
 
