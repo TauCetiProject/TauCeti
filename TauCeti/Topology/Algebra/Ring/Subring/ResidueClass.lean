@@ -36,7 +36,7 @@ theorem mem_residueClass (g : Aˣ) (x₀ x : ι → A) :
     x ∈ R.residueClass g x₀ ↔ ∀ i, (↑g⁻¹ : A) * (x i - x₀ i) ∈ R := Iff.rfl
 
 /-- Membership in a class is equivalent to an integral displacement. -/
-theorem mem_residueClass_iff (g : Aˣ) (x₀ x : ι → A) :
+theorem mem_residueClass_iff_exists (g : Aˣ) (x₀ x : ι → A) :
     x ∈ R.residueClass g x₀ ↔ ∃ y : ι → R, x = x₀ + g • (fun i ↦ (y i : A)) := by
   constructor
   · intro hx
