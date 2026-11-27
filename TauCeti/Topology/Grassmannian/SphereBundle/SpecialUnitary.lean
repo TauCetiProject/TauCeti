@@ -116,16 +116,6 @@ theorem specialUnitarySphereMap_eq_specialUnitarySphereMap_iff
     (finiteOrthonormalFrame.sphereHomeomorph 𝕜 (1 + n)).injective.eq_iff,
     specialUnitaryFrameMap_eq_specialUnitaryFrameMap_iff]
 
-/-- Left multiplication preserves the fibres of `A ↦ A e₀`: if `B` and `C` have the same first
-column, then so do `A B` and `A C`. -/
-theorem specialUnitarySphereMap_mul_eq_specialUnitarySphereMap_mul_of_eq
-    (A : specialUnitaryGroup (Fin (1 + n)) 𝕜)
-    {B C : specialUnitaryGroup (Fin (1 + n)) 𝕜}
-    (h : specialUnitarySphereMap n B = specialUnitarySphereMap n C) :
-    specialUnitarySphereMap n (A * B) = specialUnitarySphereMap n (A * C) :=
-  Subtype.ext (WithLp.ofLp_injective 2 (by
-    rw [ofLp_specialUnitarySphereMap_mul, ofLp_specialUnitarySphereMap_mul, h]))
-
 /-- The fibre of `A ↦ A e₀` over `e₀` is the block subgroup `diag(1, SU(n))`. -/
 theorem specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff
     {A : specialUnitaryGroup (Fin (1 + n)) 𝕜} :
@@ -195,9 +185,11 @@ theorem isPathConnected_specialUnitarySphereMap_preimage_singleton
   constructor
   · intro hB
     refine ⟨A⁻¹ * B, ?_, mul_inv_cancel_left A B⟩
-    rw [specialUnitarySphereMap_mul_eq_specialUnitarySphereMap_mul_of_eq A⁻¹ hB, inv_mul_cancel]
+    rw [eq_comm, specialUnitarySphereMap_eq_specialUnitarySphereMap_iff, inv_one, one_mul]
+    exact specialUnitarySphereMap_eq_specialUnitarySphereMap_iff.1 hB.symm
   · rintro ⟨C, hC, rfl⟩
-    rw [specialUnitarySphereMap_mul_eq_specialUnitarySphereMap_mul_of_eq A hC, mul_one]
+    rw [eq_comm, specialUnitarySphereMap_eq_specialUnitarySphereMap_iff, inv_mul_cancel_left]
+    simpa using specialUnitarySphereMap_eq_specialUnitarySphereMap_iff.1 hC.symm
 
 /-! ### Local triviality -/
 
