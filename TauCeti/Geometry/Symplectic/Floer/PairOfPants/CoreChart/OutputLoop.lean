@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CoreChart
 -- definitions of these rays and of the angles of the lobes, not only the API of the core chart.
 import all TauCeti.Geometry.Symplectic.Floer.PairOfPants.CoreChart
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # The output loop of the core of the pair of pants
