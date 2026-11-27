@@ -88,6 +88,30 @@ namespace BipartiteRibbonGraph
 
 attribute [instance] fintypeE fintypeB fintypeW decidableEqE decidableEqB decidableEqW
 
+/-- The graph on `α` whose black and white vertices are the cycle quotients of `σ` and `τ`.
+Its projections compute so that the finite invariants can be evaluated. -/
+abbrev _root_.Equiv.Perm.bipartiteRibbonGraph {α : Type u} [Fintype α] [DecidableEq α]
+    (σ τ : Perm α) : BipartiteRibbonGraph :=
+  let decσ : DecidableRel (Perm.SameCycle σ) := inferInstance
+  let decτ : DecidableRel (Perm.SameCycle τ) := inferInstance
+  { E := α
+    B := Quotient (Perm.SameCycle.setoid σ)
+    W := Quotient (Perm.SameCycle.setoid τ)
+    fintypeE := inferInstance
+    fintypeB := @Quotient.fintype _ _ _ decσ
+    fintypeW := @Quotient.fintype _ _ _ decτ
+    decidableEqE := inferInstance
+    decidableEqB := @Quotient.decidableEq _ _ decσ
+    decidableEqW := @Quotient.decidableEq _ _ decτ
+    blackEnd := Quotient.mk (Perm.SameCycle.setoid σ)
+    whiteEnd := Quotient.mk (Perm.SameCycle.setoid τ)
+    rotB := σ
+    rotW := τ
+    blackEnd_surjective := Quotient.mk_surjective
+    whiteEnd_surjective := Quotient.mk_surjective
+    isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk σ
+    isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk τ }
+
 variable (Γ : BipartiteRibbonGraph.{u})
 
 /-- The black rotation preserves black endpoints. -/

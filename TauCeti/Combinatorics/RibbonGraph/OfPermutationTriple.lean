@@ -64,24 +64,7 @@ variable {n : ℕ} (t : PermutationTriple n)
 black and white vertices are the cycles of `σ0` and of `σ1`, and the cyclic orders around them
 are `σ0` and `σ1` themselves. For a connected triple this is the dessin d'enfants of the
 associated three-point cover. -/
-@[expose] def ribbonGraph : BipartiteRibbonGraph where
-  E := Fin n
-  B := Quotient (SameCycle.setoid t.σ0)
-  W := Quotient (SameCycle.setoid t.σ1)
-  fintypeE := inferInstance
-  fintypeB := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ0)))
-  fintypeW := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ1)))
-  decidableEqE := inferInstance
-  decidableEqB := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ0)))
-  decidableEqW := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ1)))
-  blackEnd := Quotient.mk (SameCycle.setoid t.σ0)
-  whiteEnd := Quotient.mk (SameCycle.setoid t.σ1)
-  rotB := t.σ0
-  rotW := t.σ1
-  blackEnd_surjective := Quotient.mk_surjective
-  whiteEnd_surjective := Quotient.mk_surjective
-  isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk t.σ0
-  isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk t.σ1
+@[expose] def ribbonGraph : BipartiteRibbonGraph := t.σ0.bipartiteRibbonGraph t.σ1
 
 /-- The cyclic order of the sheets around a black vertex is `σ0`. -/
 @[simp] theorem rotB_ribbonGraph : t.ribbonGraph.rotB = t.σ0 := (rfl)
