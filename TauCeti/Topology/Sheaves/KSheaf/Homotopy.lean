@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.CommSq
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Topology.Sheaves.KSheaf.Basic
 
 /-!
@@ -30,7 +31,8 @@ cone is, in degree `n`, `F(K₂ ∪ K₃)ⁿ⁺² ⊕ (F(K₂) ⊞ F(K₃))ⁿ�
 of the three-term sequence up to a shift and the signs of the differential. A morphism of cochain
 complexes in an abelian category is a quasi-isomorphism exactly when its mapping cone is acyclic,
 so the total complex is acyclic exactly when this map is a quasi-isomorphism, which is the form
-of the axiom used here.
+of the axiom used here. The map `mayerVietorisDesc` is natural with respect to morphisms of
+K-presheaves (`TopCat.KPresheaf.mappingConeMap_comp_mayerVietorisDesc`).
 
 In Pardon's construction of virtual fundamental cycles, the virtual cochain complexes of implicit
 atlases are homotopy K-sheaves, and their cohomology is related to sheaf cohomology through the
@@ -51,6 +53,8 @@ that every compact set has a compact neighbourhood.
 
 * `TopCat.KPresheaf.IsHomotopyKSheaf.quasiIso_desc`: in a homotopy K-sheaf, the map to `F(K)`
   from any colimit over the compact neighbourhoods of `K` is a quasi-isomorphism.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.of_iso`: a K-presheaf isomorphic to a homotopy K-sheaf is a
+  homotopy K-sheaf.
 * `TopCat.KPresheaf.isPullback_homologyMap`: where `mayerVietorisDesc` is a quasi-isomorphism,
   the cohomology squares are pullbacks in the degree above a degree where `F(K₂ ∩ K₃)` has no
   cohomology.
@@ -124,6 +128,28 @@ theorem inl_mayerVietorisDesc {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.Bi
       0 :=
   mappingCone.inl_desc ..
 
+/-- **Naturality of the Mayer–Vietoris map.** A morphism `τ : F ⟶ G` of K-presheaves of cochain
+complexes induces a map between the mapping cones of the restrictions
+`F(K₂ ∪ K₃) ⟶ F(K₂) ⊞ F(K₃)` and `G(K₂ ∪ K₃) ⟶ G(K₂) ⊞ G(K₃)`, and the Mayer–Vietoris maps
+`mappingCone _ ⟶ F(K₂ ∩ K₃)` and `mappingCone _ ⟶ G(K₂ ∩ K₃)` commute with it and with
+`τ_(K₂ ∩ K₃)`. -/
+@[reassoc]
+theorem mappingConeMap_comp_mayerVietorisDesc {F G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
+    {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) :
+    mappingCone.map (biprod.lift (F.map (opHomOfLE h.le₂₄)) (F.map (opHomOfLE h.le₃₄)))
+      (biprod.lift (G.map (opHomOfLE h.le₂₄)) (G.map (opHomOfLE h.le₃₄))) (τ.app (op K₄))
+      (biprod.map (τ.app (op K₂)) (τ.app (op K₃))) (by apply biprod.hom_ext <;> simp) ≫
+        G.mayerVietorisDesc h =
+      F.mayerVietorisDesc h ≫ τ.app (op K₁) := by
+  have hdesc : biprod.map (τ.app (op K₂)) (τ.app (op K₃)) ≫
+      biprod.desc (G.map (opHomOfLE h.le₁₂)) (-G.map (opHomOfLE h.le₁₃)) =
+      biprod.desc (F.map (opHomOfLE h.le₁₂)) (-F.map (opHomOfLE h.le₁₃)) ≫ τ.app (op K₁) := by
+    apply biprod.hom_ext' <;> simp
+  ext n
+  apply mappingCone.ext_from _ (n + 1) n rfl
+  · simp
+  · simpa using HomologicalComplex.congr_hom hdesc n
+
 /-- A K-presheaf `F` of cochain complexes is a *homotopy K-sheaf* (Pardon, Definition A.2.5) if
 `F(∅)` is acyclic, the total complex of `F(K₂ ∪ K₃) ⟶ F(K₂) ⊞ F(K₃) ⟶ F(K₂ ∩ K₃)` is acyclic for
 all compact `K₂` and `K₃`, and for every compact `K` the map to `F(K)` from a colimit of the
@@ -144,6 +170,30 @@ theorem IsHomotopyKSheaf.quasiIso_desc (hF : F.IsHomotopyKSheaf) (K : Compacts X
   obtain ⟨c', hc', _⟩ := hF.exists_isColimit_quasiIso_desc K
   rw [← hc.coconePointUniqueUpToIso_hom_desc hc']
   infer_instance
+
+/-- A K-presheaf isomorphic to a homotopy K-sheaf is a homotopy K-sheaf. -/
+theorem IsHomotopyKSheaf.of_iso {F G : KPresheaf (CochainComplex C ℤ) X} (e : F ≅ G)
+    (hF : F.IsHomotopyKSheaf) : G.IsHomotopyKSheaf where
+  acyclic_bot i := (exactAt_iff_of_quasiIsoAt (e.hom.app (op ⊥)) i).1 (hF.acyclic_bot i)
+  quasiIso_mayerVietorisDesc {K₁ K₂ K₃ K₄} h := by
+    have := hF.quasiIso_mayerVietorisDesc h
+    -- `mayerVietorisDesc` is natural (`mappingConeMap_comp_mayerVietorisDesc`)
+    exact quasiIso_of_arrow_mk_iso (F.mayerVietorisDesc h) (G.mayerVietorisDesc h)
+      (Arrow.isoMk (mappingCone.mapIso (e.app (op K₄))
+          (biprod.mapIso (e.app (op K₂)) (e.app (op K₃))) (by apply biprod.hom_ext <;> simp))
+        (e.app (op K₁)) (mappingConeMap_comp_mayerVietorisDesc e.hom h))
+  exists_isColimit_quasiIso_desc K := by
+    obtain ⟨c, hc, _⟩ := hF.exists_isColimit_quasiIso_desc K
+    -- transport the colimit cocone of `F` along `e`
+    let α := Functor.isoWhiskerLeft (Set.mono_coe K.compactNhds).functor.op e
+    let hc' := (IsColimit.precomposeInvEquiv α c).symm hc
+    refine ⟨(Cocone.precompose α.inv).obj c, hc', ?_⟩
+    have : hc'.desc (G.coconeOfCompacts K) = hc.desc (F.coconeOfCompacts K) ≫ e.hom.app (op K) :=
+      hc'.hom_ext fun L ↦ by
+        rw [IsColimit.fac, ← cancel_epi (α.hom.app L)]
+        simp [α]
+    rw [this]
+    infer_instance
 
 /-- If the map `mappingCone φ ⟶ F(K₁)` of a bicartesian square is a quasi-isomorphism and `F(K₁)`
 has vanishing cohomology in degree `i`, then the square of cohomology groups in degree `i + 1` is

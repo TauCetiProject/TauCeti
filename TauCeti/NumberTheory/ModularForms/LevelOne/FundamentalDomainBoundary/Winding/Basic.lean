@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Modular
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Containment
 
-import Mathlib.Analysis.Complex.Convex
 import TauCeti.Analysis.Complex.HalfPlaneUnbounded
-import TauCeti.Analysis.Contour.Winding.UnboundedComponent
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedComponent
 
 /-!
 # Winding of the fundamental-domain boundary: the exterior
@@ -70,7 +69,8 @@ private lemma windingNumber_fdBoundary_eq_zero_of_mem_preconnected {S : Set ℂ}
     (hconn : IsPreconnected S) (hdisj : S ⊆ (fdBoundary H '' uIcc (0 : ℝ) 5)ᶜ)
     (hunb : ∀ R : ℝ, ∃ z ∈ S, R < ‖z‖) {w : ℂ} (hw : w ∈ S) :
     windingNumber (fdBoundary H) 0 5 w = 0 := by
-  refine (isPiecewiseC1On_fdBoundary H).windingNumber_eq_zero_of_unbounded_component
+  refine AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_unbounded_component
+    (isPiecewiseC1On_fdBoundary H).absolutelyContinuousOnInterval
     (fdBoundary_closed H).symm fun hbdd => ?_
   obtain ⟨r, hr⟩ := hbdd.subset_closedBall 0
   obtain ⟨z, hzS, hzr⟩ := hunb r

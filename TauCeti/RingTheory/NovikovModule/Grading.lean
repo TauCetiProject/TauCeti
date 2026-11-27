@@ -23,14 +23,17 @@ coefficients at generators of degree `k`; it is a linear projection onto the pie
 that vanishes on the pieces of every other degree. It is the analogue for completed combinations
 of Mathlib's `MvPowerSeries.homogeneousComponent`.
 
-A supported kernel with a fixed degree shift extends to a map with that same shift on
-homogeneous completed combinations, and likewise a supported bilinear kernel extends to a
-product with that shift. On a homogeneous first input of degree `k` the product only depends on
-the kernel at generators of degree `k`. The coordinate matrix of a product kernel has the
-corresponding reference-degree shifts. These results apply to the supported kernel constructions
-`TauCeti.NovikovModule.kernelMap` and `TauCeti.NovikovModule.kernelProduct`; they do not require
-discrete or injective periods. A diagonal kernel whose coefficient depends only on the degree
-acts on each homogeneous piece as a scalar.
+A supported kernel with a fixed degree shift extends to a map with that same shift on homogeneous
+completed combinations, and likewise a supported bilinear kernel extends to a product with that
+shift. Conversely, the shift of every nonzero coefficient can be read off from the action on
+generators, so a supported map or product shifts degrees by `ε` exactly when its kernel does
+(`TauCeti.NovikovModule.forall_kernelMap_mem_gradeBy_iff`,
+`TauCeti.NovikovModule.forall_kernelProduct_mem_gradeBy_iff`). On a homogeneous first input of
+degree `k` the product only depends on the kernel at generators of degree `k`. The coordinate matrix
+of a product kernel has the corresponding reference-degree shifts. These results apply to the
+supported kernel constructions `TauCeti.NovikovModule.kernelMap` and
+`TauCeti.NovikovModule.kernelProduct`; they do not require discrete or injective periods. A diagonal
+kernel whose coefficient depends only on the degree acts on each homogeneous piece as a scalar.
 
 If degrees change by even amounts within each orbit of a finite union of torsors, then a
 combination of degree `e` has nonzero coordinates only in orbits whose reference generator has the
@@ -321,6 +324,19 @@ theorem kernelMap_mem_gradeBy (hd : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → d₀ p�
     exact hp₀ (finsum_eq_zero_of_forall_eq_zero h)
   rw [hd p₁ p₀ (right_ne_zero_of_mul hp), ha p₁ (left_ne_zero_of_mul hp)]
 
+/-- A supported kernel map shifts the degree of every homogeneous completed combination by `ε`
+exactly when every nonzero coefficient of its kernel does: the map sends a generator to its row
+of the kernel. -/
+theorem forall_kernelMap_mem_gradeBy_iff :
+    (∀ k (a : NovikovModule R F₁), a ∈ gradeBy R F₁ d₁ k →
+      kernelMap hm hmfin a ∈ gradeBy R F₀ d₀ (k + ε)) ↔
+      ∀ p₁ p₀, m p₁ p₀ ≠ 0 → d₀ p₀ = d₁ p₁ + ε := by
+  classical
+  refine ⟨fun h p₁ p₀ hp => ?_, fun hd _ _ ha => kernelMap_mem_gradeBy hm hmfin hd ha⟩
+  have h₁ := h (d₁ p₁) (ofFinsupp F₁ (Finsupp.single p₁ 1))
+    (by rw [ofFinsupp_single]; exact single_mem_gradeBy d₁ p₁ 1)
+  exact mem_gradeBy_iff.1 h₁ p₀ (by rwa [kernelMap_ofFinsupp_single_val])
+
 end Map
 
 section Diagonal
@@ -368,6 +384,22 @@ theorem kernelProduct_mem_gradeBy
   rw [hd p₁ p₂ p₀ (right_ne_zero_of_mul hp),
     ha p₁ (left_ne_zero_of_mul (left_ne_zero_of_mul hp)),
     hb p₂ (right_ne_zero_of_mul (left_ne_zero_of_mul hp))]
+
+/-- A supported product shifts degrees by `ε` on all homogeneous completed inputs exactly when
+every nonzero coefficient of its kernel does: the product of two generators is the corresponding
+entry of the kernel. -/
+theorem forall_kernelProduct_mem_gradeBy_iff :
+    (∀ j k (a : NovikovModule R F₁) (b : NovikovModule R F₂), a ∈ gradeBy R F₁ d₁ j →
+      b ∈ gradeBy R F₂ d₂ k → kernelProduct hn hfin a b ∈ gradeBy R F₀ d₀ (j + k + ε)) ↔
+      ∀ p₁ p₂ p₀, n p₁ p₂ p₀ ≠ 0 → d₀ p₀ = d₁ p₁ + d₂ p₂ + ε := by
+  classical
+  refine ⟨fun h p₁ p₂ p₀ hp => ?_,
+    fun hd _ _ _ _ ha hb => kernelProduct_mem_gradeBy hn hfin hd ha hb⟩
+  have h₁ := h (d₁ p₁) (d₂ p₂) (ofFinsupp F₁ (Finsupp.single p₁ 1))
+    (ofFinsupp F₂ (Finsupp.single p₂ 1))
+    (by rw [ofFinsupp_single]; exact single_mem_gradeBy d₁ p₁ 1)
+    (by rw [ofFinsupp_single]; exact single_mem_gradeBy d₂ p₂ 1)
+  exact mem_gradeBy_iff.1 h₁ p₀ (by rwa [kernelProduct_ofFinsupp_single_val])
 
 omit [Add D] in
 /-- On a homogeneous first input of degree `k`, the product only depends on the kernel at

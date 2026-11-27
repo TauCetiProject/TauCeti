@@ -52,6 +52,8 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
 * `Module.mem_freeLocus_of_surjective_of_ker_le_torsion`: if a surjection has torsion kernel, the
   free locus of its source is contained in the free locus of its target.
 * `Module.rankAtStalk_fin_fun`: the free module `R^k` has rank `k` at every prime.
+* `Module.rankAtStalk_prod_of_subsingleton`: adding a module that vanishes at `p` does not change
+  the rank at `p`.
 * `Module.exists_isIdempotentElem_basicOpen_eq_rankAtStalk_preimage`: the locus where the rank of
   a finitely presented flat module lies in a given set is the basic open set of an idempotent.
 * `Module.exists_isIdempotentElem_basicOpen_eq_support`: the support of a finitely presented flat
@@ -163,6 +165,19 @@ theorem rankAtStalk_fin_fun {R : Type*} [CommRing R] (k : ℕ) (p : PrimeSpectru
     rankAtStalk (R := R) (Fin k → R) p = k := by
   have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp ⟨p⟩
   simp
+
+/-- Adding a module whose localization at `p` vanishes does not change the rank at `p`. -/
+theorem rankAtStalk_prod_of_subsingleton {R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] {p : PrimeSpectrum R}
+    [Subsingleton (LocalizedModule p.asIdeal.primeCompl N)] :
+    rankAtStalk (R := R) (M × N) p = rankAtStalk M p := by
+  have : Unique (LocalizedModule p.asIdeal.primeCompl N) := uniqueOfSubsingleton 0
+  let e : LocalizedModule p.asIdeal.primeCompl (M × N) ≃ₗ[Localization.AtPrime p.asIdeal]
+      LocalizedModule p.asIdeal.primeCompl M × LocalizedModule p.asIdeal.primeCompl N :=
+    IsLocalizedModule.linearEquiv p.asIdeal.primeCompl (LocalizedModule.mkLinearMap _ _)
+      (.prodMap (LocalizedModule.mkLinearMap _ M) (LocalizedModule.mkLinearMap _ N))
+      |>.extendScalarsOfIsLocalization p.asIdeal.primeCompl _
+  exact (e ≪≫ₗ LinearEquiv.prodUnique).finrank_eq
 
 /-- The locus where the rank of a finitely presented flat module lies in a given set of ranks is
 cut out by an idempotent: it is a preimage under the locally constant rank function, hence

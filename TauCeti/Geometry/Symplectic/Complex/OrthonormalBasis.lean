@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
@@ -69,7 +70,6 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
 * `TauCeti.AlmostComplexStructure.orthonormal_of_norm_eq_one_of_inner_eq_zero`: unit vectors
   `ξ`, `η` with `η` orthogonal to `ξ` and `J ξ` give the orthonormal family `(ξ, J ξ, η, J η)`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one`,
-  `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis`,
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`, and
   `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`:
   existence of oriented unitary frames and completion of a unit vector in dimension four.
@@ -80,6 +80,8 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   unitary frame, the complex coordinates `OrthonormalBasis.complexCoords` turn `J` into
   multiplication by `i`, and they are the coordinates of the complex basis `(e₀, e₂)` of `(V, J)`,
   hence a `ℂ`-linear equivalence from the complex vector space `(V, J)` to `ℂ²`.
+  `OrthonormalBasis.complexCoords_two_unitary_apply` is the first statement for an orthogonal
+  complex structure `J₀ : unitary (V →L[ℝ] V)`.
 * `TauCeti.AlmostComplexStructure.unitaryGroupFrameEquiv`: for such a unitary frame and the form
   `Q v = -‖v‖²`, the isomorphism `U(2) ≃* U(V, J)` sending a unitary matrix to the rotation acting
   as that matrix in the complex coordinates (`complexCoords_unitaryGroupFrameEquiv_apply`,
@@ -443,16 +445,6 @@ theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructu
   · simp [he]
   · simp [he, K]
   · simp [he, hr, hη_norm, K]
-
-/-- Given an orthogonal almost complex structure `J` on a four-dimensional real inner product space
-`V`, there exists a unitary orthonormal basis `e` with `J (e 0) = e 1` and `J (e 2) = e 3`. -/
-theorem exists_unitary_orthonormalBasis {J : AlmostComplexStructure V}
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) :
-    ∃ e : OrthonormalBasis (Fin 4) ℝ V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  have hv : finrank ℝ V = 4 := Fact.out
-  obtain ⟨e, -, h₀, h₂⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ
-    ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by omega⟩)
-  exact ⟨e, h₀, h₂⟩
 
 /-- **Every pair `(ω, J)` whose associated bilinear form `ω(·, J ·)` is the inner product induces
 an oriented unitary orthonormal frame extending any given unit vector `ξ`.** -/
@@ -1007,17 +999,29 @@ private theorem complexCoordsMatrix_eq {A : V →L[ℝ] V} {U : Matrix (Fin 2) (
   rw [complexCoordsMatrix, Matrix.of_apply, hU, LinearEquiv.apply_symm_apply,
     Matrix.mulVec_single_one, Matrix.col_apply]
 
+/-- `J₀` as an almost complex structure on `V`. -/
+private noncomputable def almostComplexStructureOfUnitary : TauCeti.AlmostComplexStructure V :=
+  ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
+
+include hJ₀ h₀ h₂ in
+/-- In the complex coordinates `OrthonormalBasis.complexCoords` of a unitary frame `e` of an
+orthogonal complex structure `J₀`, `J₀ e₀ = e₁` and `J₀ e₂ = e₃`, the complex structure `J₀` is
+multiplication by `i`. -/
+theorem complexCoords_two_unitary_apply (v : V) :
+    e.complexCoords 2 ((J₀ : V →L[ℝ] V) v) = Complex.I • e.complexCoords 2 v :=
+  complexCoords_two_almostComplexStructure_apply (J := almostComplexStructureOfUnitary hJ₀) h₀ h₂
+    v
+
 include hJ₀ h₀ h₂ in
 /-- An orthogonal transformation commuting with `J₀` acts as a unitary matrix in the complex
 coordinates of a unitary frame `e`. -/
 private theorem exists_complexCoords_apply_eq_mulVec (g : Subgroup.centralizer {J₀}) :
     ∃ U : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2 (((g : unitary (V →L[ℝ] V)) :
       V →L[ℝ] V) v) = (U : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v := by
-  let J : TauCeti.AlmostComplexStructure V :=
-    ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
   have hg := Subgroup.mem_centralizer_singleton_iff.1 g.property
-  exact TauCeti.AlmostComplexStructure.exists_complexCoords_apply_eq_mulVec_of_norm_map (J := J)
-    h₀ h₂ ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V).toLinearMap (Unitary.norm_map _)
+  exact TauCeti.AlmostComplexStructure.exists_complexCoords_apply_eq_mulVec_of_norm_map
+    (J := almostComplexStructureOfUnitary hJ₀) h₀ h₂
+    ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V).toLinearMap (Unitary.norm_map _)
     fun v ↦ congrArg (fun A : unitary (V →L[ℝ] V) ↦ (A : V →L[ℝ] V) v) hg
 
 include hJ₀ h₀ h₂ in
@@ -1069,6 +1073,18 @@ theorem coe_centralizerToUnitaryGroup_apply (g : Subgroup.centralizer {J₀}) (i
   rw [complexCoords_centralizerToUnitaryGroup_apply, LinearEquiv.apply_symm_apply,
     Matrix.mulVec_single_one, Matrix.col_apply]
 
+/-- The entry `(i, j)` of the matrix `centralizerToUnitaryGroup g` is
+`⟪e (2i), g (e (2j))⟫ + i ⟪e (2i + 1), g (e (2j))⟫`. -/
+theorem coe_centralizerToUnitaryGroup_apply_eq_inner (g : Subgroup.centralizer {J₀})
+    (i j : Fin 2) :
+    (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g : Matrix (Fin 2) (Fin 2) ℂ) i j =
+      (inner ℝ (e ⟨2 * i.val, by omega⟩) (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V)
+          (e ⟨2 * j.val, by omega⟩)) : ℂ) +
+        Complex.I * inner ℝ (e ⟨2 * i.val + 1, by omega⟩) (((g : unitary (V →L[ℝ] V)) :
+          V →L[ℝ] V) (e ⟨2 * j.val, by omega⟩)) := by
+  rw [coe_centralizerToUnitaryGroup_apply, complexCoords_two_symm_apply, complexCoords_two_apply]
+  fin_cases i <;> fin_cases j <;> simp [mul_comm]
+
 /-- The matrix of a complex rotation depends continuously on it, for the operator norm. -/
 @[fun_prop]
 theorem continuous_centralizerToUnitaryGroup :
@@ -1079,6 +1095,19 @@ theorem continuous_centralizerToUnitaryGroup :
     ((e.complexCoords 2).toLinearMap.continuous_of_finiteDimensional.comp
       ((continuous_subtypeVal.comp continuous_subtypeVal).clm_apply continuous_const))).congr
     fun g ↦ (e.coe_centralizerToUnitaryGroup_apply hJ₀ h₀ h₂ g i j).symm
+
+/-- `OrthonormalBasis.centralizerToUnitaryGroup`, the unitary matrices of the orthogonal
+transformations commuting with `J₀` in the complex coordinates of `e`, as a continuous
+homomorphism. -/
+noncomputable def centralizerToUnitaryGroupContinuousMonoidHom :
+    Subgroup.centralizer {J₀} →ₜ* Matrix.unitaryGroup (Fin 2) ℂ :=
+  ⟨e.centralizerToUnitaryGroup hJ₀ h₀ h₂, e.continuous_centralizerToUnitaryGroup hJ₀ h₀ h₂⟩
+
+@[simp]
+theorem centralizerToUnitaryGroupContinuousMonoidHom_apply (g : Subgroup.centralizer {J₀}) :
+    e.centralizerToUnitaryGroupContinuousMonoidHom hJ₀ h₀ h₂ g =
+      e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g :=
+  (rfl)
 
 end CentralizerUnitaryGroup
 

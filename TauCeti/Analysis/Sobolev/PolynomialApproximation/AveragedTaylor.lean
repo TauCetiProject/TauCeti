@@ -222,7 +222,7 @@ theorem tsupport_averagedTaylorKernel_subset (φ : EuclideanSpace ℝ ι → ℝ
   unfold averagedTaylorKernelTerm kernelTestTerm
   exact Finset.sum_eq_zero fun j _ ↦ mul_eq_zero_of_right _ (Finset.sum_eq_zero fun I _ ↦
     image_eq_zero_of_notMem_tsupport fun h ↦
-      hyφ ((tsupport_iteratedFDerivAlong_subset _ _).trans tsupport_mul_subset_right h))
+      hyφ ((tsupport_iteratedFDerivAlong_subset ℝ _ _).trans tsupport_mul_subset_right h))
 
 /-- Compact support of `φ` passes to `y ↦ averagedTaylorKernel φ m x y` for every `x`. -/
 theorem hasCompactSupport_averagedTaylorKernel {φ : EuclideanSpace ℝ ι → ℝ}
@@ -275,7 +275,7 @@ private theorem hasCompactSupport_kernelMonomialWeight {φ : EuclideanSpace ℝ 
     (hsupp : HasCompactSupport φ) {j : ℕ} (I : Fin j → ι) (S : Finset (Fin j)) :
     HasCompactSupport (kernelMonomialWeight φ I S) := by
   unfold kernelMonomialWeight kernelMonomialTerm
-  exact (hsupp.mul_left).iteratedFDerivAlong (coordDirections I)
+  exact (hsupp.mul_left).iteratedFDerivAlong ℝ (coordDirections I)
 
 /-- Monomial expansion of `averagedTaylorKernel φ m x y` separating the `x`-monomials from the
 `y`-weights. -/
@@ -498,8 +498,8 @@ private theorem integrable_mul_iteratedFDerivAlong_kernelTestTerm
     (hcont.iteratedFDerivAlong (m := 0) (coordDirections I)
       (by rw [length_coordDirections, zero_add]; exact_mod_cast hj)).continuous
       |>.integrable_smul_of_continuousOn
-      (hsupp.mul_left.iteratedFDerivAlong _)
-      ((tsupport_iteratedFDerivAlong_subset _ _).trans tsupport_mul_subset_right)
+      (hsupp.mul_left.iteratedFDerivAlong ℝ _)
+      ((tsupport_iteratedFDerivAlong_subset ℝ _ _).trans tsupport_mul_subset_right)
       fun y hy ↦ (hu y hy).continuousAt.continuousWithinAt
 
 private theorem integrable_iteratedFDeriv_mul_kernelTestTerm

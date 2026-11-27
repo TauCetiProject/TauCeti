@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+import TauCeti.Algebra.Module.LinearMap.CompHom
 
 /-!
 # Lifting semilinear maps out of a projective module
@@ -44,11 +45,12 @@ theorem projective_lifting_property_semilinear [Module.Projective R P] (F : M �
   -- Restrict the scalars of `M` and `N` along `σ`, so that `F` and `g` become `R`-linear.
   let : Module R M := Module.compHom M σ
   let : Module R N := Module.compHom N σ
-  obtain ⟨h, hh⟩ := projective_lifting_property
-    ({ F.toAddMonoidHom with map_smul' := fun r m ↦ F.map_smul (σ r) m } : M →ₗ[R] N)
-    ({ g.toAddMonoidHom with map_smul' := g.map_smulₛₗ } : P →ₗ[R] N) hF
+  have : LinearMap.CompatibleSMul M N R S :=
+    .of_compHom (σ := σ) (fun _ _ ↦ rfl) fun _ _ ↦ rfl
+  obtain ⟨h, hh⟩ := projective_lifting_property (F.restrictScalars R)
+    (g.toLinearMapOfCompHom fun _ _ ↦ rfl) (by rwa [LinearMap.coe_restrictScalars])
   exact ⟨{ h.toAddMonoidHom with map_smul' := h.map_smul },
-    LinearMap.ext fun p ↦ LinearMap.congr_fun hh p⟩
+    LinearMap.ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
 
 /-- **A presentation with projective kernel transports along a semilinear equivalence.** Let
 `Φ : R ≃+* R'` be a ring isomorphism and `e : M ≃ₛₗ[Φ] M'` a `Φ`-semilinear equivalence. If `M'` is

@@ -69,6 +69,7 @@ degree over `A` has a root in `A`. The positive-degree restriction excludes the 
 have no root in a nontrivial ring; the zero ring qualifies vacuously, since no polynomial over it
 has positive degree. See `IsAbsolutelyIntegrallyClosed.splits` for the equivalent formulation
 that every monic polynomial is a product of linear factors. -/
+@[stacks 0DCL "in the equivalent form of 0DCM (2)"]
 class IsAbsolutelyIntegrallyClosed (A : Type*) [CommRing A] : Prop where
   /-- Every monic polynomial of positive degree has a root. -/
   exists_root (p : A[X]) (hp : p.Monic) (hdeg : 0 < p.natDegree) : ∃ x, p.IsRoot x
@@ -107,6 +108,7 @@ theorem of_subsingleton [Subsingleton A] : IsAbsolutelyIntegrallyClosed A where
 
 /-- The image of an absolutely integrally closed ring under a surjective ring homomorphism is
 absolutely integrally closed. -/
+@[stacks 0DCN "first assertion"]
 theorem of_surjective [IsAbsolutelyIntegrallyClosed A] (f : A →+* B)
     (hf : Function.Surjective f) : IsAbsolutelyIntegrallyClosed B where
   exists_root q hq hdeg := by
@@ -122,6 +124,7 @@ instance quotient [IsAbsolutelyIntegrallyClosed A] (I : Ideal A) :
   of_surjective _ Ideal.Quotient.mk_surjective
 
 /-- A localization of an absolutely integrally closed ring is absolutely integrally closed. -/
+@[stacks 0DCN "second assertion"]
 theorem of_isLocalization [IsAbsolutelyIntegrallyClosed A] [Algebra A B] (M : Submonoid A)
     [IsLocalization M B] : IsAbsolutelyIntegrallyClosed B where
   exists_root q hq hdeg := by

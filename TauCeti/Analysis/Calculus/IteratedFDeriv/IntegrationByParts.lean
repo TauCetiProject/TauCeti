@@ -70,9 +70,9 @@ theorem integral_bilinear_iteratedFDerivAlong_eq
     set g' : E → V' := iteratedFDerivAlong ℝ ws g
     have hg'1 : ContDiff ℝ 1 g' :=
       hg.iteratedFDerivAlong ws (by simp [List.length_cons, add_comm])
-    have hg'supp : HasCompactSupport g' := hsupp.iteratedFDerivAlong ws
+    have hg'supp : HasCompactSupport g' := hsupp.iteratedFDerivAlong ℝ ws
     have hf' : ∀ x ∈ tsupport g', ContDiffAt ℝ 1 f x := fun x hx ↦
-      (hf x (tsupport_iteratedFDerivAlong_subset ws g hx)).of_le
+      (hf x (tsupport_iteratedFDerivAlong_subset ℝ ws g hx)).of_le
         (by exact_mod_cast Nat.succ_pos ws.length)
     have step1 := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport
       (μ := μ) B hf' hg'1 hg'supp v
@@ -119,7 +119,7 @@ theorem setIntegral_bilinear_iteratedFDerivAlong_eq
       (-1 : ℝ) ^ vs.length • ∫ x in s, B (iteratedFDerivAlong ℝ vs.reverse f x) (g x) ∂μ := by
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hxs ↦ by
       simp [image_eq_zero_of_notMem_tsupport
-        fun h ↦ hxs (hs (tsupport_iteratedFDerivAlong_subset vs g h))],
+        fun h ↦ hxs (hs (tsupport_iteratedFDerivAlong_subset ℝ vs g h))],
     setIntegral_eq_integral_of_forall_compl_eq_zero fun x hxs ↦ by
       simp [image_eq_zero_of_notMem_tsupport fun h ↦ hxs (hs h)]]
   exact integral_bilinear_iteratedFDerivAlong_eq B vs hf hg hsupp

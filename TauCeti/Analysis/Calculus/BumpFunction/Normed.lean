@@ -34,6 +34,9 @@ and `ρ`.
 The measure `f.normedMeasure μ` with density `f.normed μ` against `μ` is a probability measure
 concentrated on that closed ball, and integrating against it is integrating against `f.normed μ`.
 
+As the outer radius tends to zero, the value of the normalized bump at its centre tends to
+infinity, since its integral is one over a ball of vanishing measure.
+
 ## Main declarations
 
 * `ContDiffBump.integrable_normed_smul`: bump-weighted continuous functions are integrable.
@@ -42,7 +45,10 @@ concentrated on that closed ball, and integrating against it is integrating agai
 * `ContDiffBump.integral_closedBall_normed_smul_const`: over that closed ball, the normalized bump
   averages a constant to itself.
 * `ContDiffBump.normedMeasure`: the probability measure with density `f.normed μ`, with
-  `ContDiffBump.integral_normedMeasure` and `ContDiffBump.ae_mem_closedBall_normedMeasure`.
+  `ContDiffBump.integral_normedMeasure`, `ContDiffBump.integrable_normedMeasure_iff` and
+  `ContDiffBump.ae_mem_closedBall_normedMeasure`.
+* `ContDiffBump.tendsto_normed_center_atTop`: normalized bumps with outer radii tending to zero
+  tend to infinity at their centre.
 * `ContDiffBump.setIntegral_normed`: for a locally finite measure `μ` positive on nonempty open
   sets, integrating `f.normed μ` over any superset of `Metric.closedBall c f.rOut` yields `1`.
 * `ContDiffBump.setIntegral_normed_halfSpace`: integrating `f.normed μ` (for `f` centered at `0`)
@@ -59,7 +65,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Metric Module Set
+open Filter MeasureTheory Metric Module Set
 open scoped ContDiff Topology
 
 namespace ContDiffBump
@@ -124,12 +130,42 @@ theorem integral_normedMeasure (g : E → G) :
     (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   simp [f.nonneg_normed]
 
+omit [FiniteDimensional ℝ E] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- A function is integrable against `f.normedMeasure μ` exactly when its product with the density
+`f.normed μ` is integrable against `μ`. -/
+theorem integrable_normedMeasure_iff {g : E → G} :
+    Integrable g (f.normedMeasure μ) ↔ Integrable (fun x ↦ f.normed μ x • g x) μ := by
+  rw [normedMeasure, integrable_withDensity_iff_integrable_smul'
+    f.continuous_normed.measurable.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp [f.nonneg_normed]
+
 /-- The measure `f.normedMeasure μ` is concentrated on the closed ball of radius `f.rOut`. -/
 theorem ae_mem_closedBall_normedMeasure : ∀ᵐ x ∂f.normedMeasure μ, x ∈ closedBall c f.rOut :=
   (ae_withDensity_iff f.continuous_normed.measurable.ennreal_ofReal).2
     (ae_of_all _ fun x hx ↦ ball_subset_closedBall <| by
       rw [← f.support_normed_eq (μ := μ)]
       exact fun h ↦ hx (by simp [h]))
+
+omit [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- **Normalized bumps blow up at their centre.** In a nontrivial space, as the outer radii of
+bumps `σ i` centred at `c` tend to zero, the values `(σ i).normed μ c` at the centre tend to
+infinity: the bumps are one at `c`, and their integrals are at most the measures of the closed
+balls of radius `(σ i).rOut`, which tend to zero. -/
+theorem tendsto_normed_center_atTop [Nontrivial E] [μ.IsAddHaarMeasure] {ι : Type*}
+    {l : Filter ι} {σ : ι → ContDiffBump c} (hσ : Tendsto (fun i ↦ (σ i).rOut) l (𝓝 0)) :
+    Tendsto (fun i ↦ (σ i).normed μ c) l atTop := by
+  have hval (i : ι) : (σ i).normed μ c = (∫ x, σ i x ∂μ)⁻¹ := by
+    rw [normed_def, (σ i).one_of_mem_closedBall (mem_closedBall_self (σ i).rIn_pos.le), one_div]
+  have hd : Module.finrank ℝ E ≠ 0 := Module.finrank_pos.ne'
+  have hlim : Tendsto (fun i ↦ (σ i).rOut ^ Module.finrank ℝ E * μ.real (ball 0 1)) l (𝓝 0) := by
+    simpa [zero_pow hd] using (hσ.pow (Module.finrank ℝ E)).mul_const (μ.real (ball 0 1))
+  have hint : Tendsto (fun i ↦ ∫ x, σ i x ∂μ) l (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.2 ⟨squeeze_zero (fun i ↦ (σ i).integral_pos.le)
+      (fun i ↦ ((σ i).integral_le_measure_closedBall μ).trans_eq
+        (μ.addHaar_real_closedBall c (σ i).rOut_pos.le)) hlim,
+      Eventually.of_forall fun i ↦ (σ i).integral_pos⟩
+  simp_rw [hval]
+  exact tendsto_inv_nhdsGT_zero.comp hint
 
 end
 

@@ -7,7 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Algebra.Ring.Idempotent.Basic
 
 /-!
 # Basic determinant formulas
@@ -34,6 +37,10 @@ differences of the remaining columns.
 
 * `Matrix.det_updateRow_updateRow_swap`: exchanging the vectors in two prescribed rows reverses
   the determinant.
+* `Matrix.det_updateRow_one`: replacing row `k` of the identity matrix by `v` produces determinant
+  `v k`.
+* `Matrix.det_eq_add_of_row_eq_add`: additivity of the determinant in one row, for matrices that
+  agree in every other row.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
 * `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
@@ -43,12 +50,24 @@ differences of the remaining columns.
   sum, over the choices of one summand in each row, of the determinants of the resulting matrices.
 * `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
   is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
+* `Matrix.isUnit_det_mul_add_one_sub`: for an idempotent `P` commuting with an invertible `g`,
+  the matrix `P * g + 1 - P` has invertible determinant.
 * `Matrix.isUnit_det_map_intCast`: an integer matrix with nonzero determinant has unit
   determinant over every field of characteristic zero.
+* `Matrix.intCast_det_one_sub`: the determinant of `1 - M` for an integer matrix `M`, cast to a
+  commutative ring, is the determinant of `1 - M` over that ring.
 * `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
   homomorphism to a nontrivial commutative ring has nonzero determinant.
+* `RingHom.det_map_eq_one`: the image of a matrix of determinant one under a ring homomorphism has
+  determinant one.
 * `Matrix.isUnit_det_one_add_smul`: a matrix congruent to `1` modulo an element of the Jacobson
   radical has unit determinant.
+
+## Provenance
+
+`Matrix.det_eq_add_of_row_eq_add` is adapted from the Lean project grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/New/Spanning/Bessel/Basic.lean`, declaration `New.det_eq_add_of_row_eq_add`.
 -/
 
 public section
@@ -136,6 +155,17 @@ theorem det_updateRow_updateRow_swap {ι R : Type*} [Fintype ι] [DecidableEq ι
   rw [← he, Matrix.det_permute]
   simp [M, Equiv.Perm.sign_swap h]
 
+/-- The determinant of a square matrix whose row `i` is the sum of the rows `i` of two matrices
+that agree with it in every other row is the sum of their determinants. -/
+theorem det_eq_add_of_row_eq_add {m R : Type*} [Fintype m] [DecidableEq m] [CommRing R]
+    {A B C : Matrix m m R} (i : m)
+    (h_row : A i = B i + C i) (hB : ∀ j ≠ i, B j = A j) (hC : ∀ j ≠ i, C j = A j) :
+    A.det = B.det + C.det := by
+  have h_update (X : Matrix m m R) (hX : ∀ j ≠ i, X j = A j) : A.updateRow i (X i) = X := by
+    ext j k
+    by_cases hj : j = i <;> simp [updateRow_apply, hj, hX]
+  conv_lhs => rw [← updateRow_eq_self A i, h_row, det_updateRow_add, h_update B hB, h_update C hC]
+
 /-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
 columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`
 is needed: the image of the minor of `A` is the minor of `A.map f` (`RingHom.map_det_submatrix`). -/
@@ -159,6 +189,12 @@ theorem isUnit_det_map_intCast {n K : Type*} [Fintype n] [DecidableEq n] [Field 
   rw [← Int.cast_det]
   exact (Int.cast_ne_zero.2 hA).isUnit
 
+/-- The determinant of `1 - M` for an integer matrix `M`, cast to a commutative ring `R`, is the
+determinant of `1 - M` computed over `R`. -/
+theorem intCast_det_one_sub {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (M : Matrix n n ℤ) : (((1 - M).det : ℤ) : R) = (1 - M.map (Int.castRingHom R)).det := by
+  rw [← eq_intCast (Int.castRingHom R), RingHom.map_det, map_sub, map_one, RingHom.mapMatrix_apply]
+
 /-- **Multilinearity of the determinant in all rows at once.** The determinant of a matrix whose
 `i`-th row is a sum over a finite set `A i` is the sum, over the choices of one summand in each
 row, of the determinants of the resulting matrices. -/
@@ -174,6 +210,14 @@ theorem det_of_sum_rows {ι R : Type*} {κ : ι → Type*} [Fintype ι] [Decidab
   rw [hrow] at key
   exact key
 
+/-- For an idempotent matrix `P` commuting with an invertible matrix `g`, the matrix
+`P * g + 1 - P`, which acts as `g` on the range of `P` and as the identity on that of `1 - P`, has
+invertible determinant. -/
+theorem isUnit_det_mul_add_one_sub {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    {P g : Matrix n n R} (hP : IsIdempotentElem P) (hg : IsUnit g) (hPg : Commute P g) :
+    IsUnit (P * g + 1 - P).det :=
+  (isUnit_iff_isUnit_det _).1 (hP.isUnit_mul_add_one_sub hg hPg)
+
 /-- A matrix congruent to `1` modulo an element of the Jacobson radical is invertible. -/
 theorem isUnit_det_one_add_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] {r : R}
     (hr : r ∈ Ring.jacobson R) (D : Matrix n n R) : IsUnit (1 + r • D).det := by
@@ -181,6 +225,13 @@ theorem isUnit_det_one_add_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommR
   rw [det_one_add_smul, add_assoc, add_sub_cancel_left]
   exact (Ring.jacobson R).add_mem (Ideal.mul_mem_left _ _ hr)
     (Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ hr 2 two_pos))
+
+/-- Replacing row `k` of the identity matrix by `v` produces determinant `v k`. -/
+@[simp]
+theorem det_updateRow_one {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (k : n) (v : n → R) :
+    ((1 : Matrix n n R).updateRow k v).det = v k := by
+  rw [← Matrix.cramer_transpose_apply, Matrix.transpose_one, Matrix.cramer_one, one_apply_eq_self]
 
 end Matrix
 
@@ -193,5 +244,10 @@ theorem det_map_ne_zero_of_isUnit_det {ι R K : Type*} [Fintype ι] [DecidableEq
     (A.map f).det ≠ 0 := by
   rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
   exact (hdet.map _).ne_zero
+
+/-- The image of a matrix of determinant one under a ring homomorphism has determinant one. -/
+theorem det_map_eq_one {ι R S : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [CommRing S]
+    (f : R →+* S) {A : Matrix ι ι R} (hdet : A.det = 1) : (A.map f).det = 1 := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hdet, map_one]
 
 end RingHom

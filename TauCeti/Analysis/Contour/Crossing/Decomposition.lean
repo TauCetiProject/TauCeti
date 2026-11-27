@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Contour.Crossing.FiniteExcision
 public import TauCeti.Analysis.Contour.Winding.Number.Concat
-import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 
 /-!
 # Winding-number accounting for finitely many crossing excisions
@@ -393,8 +394,9 @@ theorem exists_int_windingNumber_eq_add_windingNumber_sub_angle_div_two_pi
     exact havoid l ⟨hal.le, by linarith⟩ (fun h => lt_irrefl _ h.1) (by simp [hθ])
   have hab : a ≤ b := by linarith
   have hE := hγ.exciseCrossing hlu hθ hθ'
-  obtain ⟨k, hk⟩ := hE.exists_int_windingNumber (exciseCrossing_closed hal hub hclosed θ θ')
-    (fun t ht => exciseCrossing_ne_center hr θ θ' havoid t ((uIcc_of_le hab) ▸ ht))
+  obtain ⟨k, hk⟩ := hE.absolutelyContinuousOnInterval.exists_int_windingNumber
+    (exciseCrossing_closed hal hub hclosed θ θ')
+    fun ⟨t, ht, h⟩ => exciseCrossing_ne_center hr θ θ' havoid t ((uIcc_of_le hab) ▸ ht) h
   exact ⟨k, by rw [windingNumber_eq_exciseCrossing_add hγ hal hlu hub hr havoid hpv, hk]⟩
 
 end TauCeti.Contour

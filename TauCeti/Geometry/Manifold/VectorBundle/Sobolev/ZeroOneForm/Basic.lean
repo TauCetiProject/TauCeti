@@ -61,6 +61,8 @@ which lifts the pointwise `(0,1)`-projection
   everywhere in every chart.
 * `TauCeti.isClosed_zeroOneSobolevSections`, `TauCeti.zeroOneSobolevSections.instCompleteSpace`:
   the subspace is closed and complete.
+* `TauCeti.zeroOneSobolevSections.instNormedAddCommGroup`,
+  `TauCeti.zeroOneSobolevSections.instNormedSpace`: the subspace is a normed space.
 * `TauCeti.zeroOnePartSobolevL_coe`, `TauCeti.closedComplemented_zeroOneSobolevSections`: the
   projection fixes `(0,1)`-forms, and the subspace is complemented.
 * `TauCeti.chartValueL_zeroOnePartSobolevL_ae`, `TauCeti.zeroOnePartSobolevL_eq_zero_iff`: the
@@ -280,6 +282,18 @@ instance zeroOneSobolevSections.instCompleteSpace :
     CompleteSpace (zeroOneSobolevSections A μ p k) :=
   isClosed_zeroOneSobolevSections.completeSpace_coe
 
+/-- The Sobolev `(0,1)`-forms are a normed group, with the norm of `W^{k,p}` of one-forms. This is
+`Submodule.normedAddCommGroup`, given directly: nested instance search for it, for instance below
+the operator norm of a functional, fails to unfold `SobolevSection`. -/
+instance zeroOneSobolevSections.instNormedAddCommGroup :
+    NormedAddCommGroup (zeroOneSobolevSections A μ p k) :=
+  Submodule.normedAddCommGroup _
+
+/-- The Sobolev `(0,1)`-forms are a real normed space, given directly for the same reason. -/
+instance zeroOneSobolevSections.instNormedSpace :
+    NormedSpace ℝ (zeroOneSobolevSections A μ p k) :=
+  Submodule.normedSpace _
+
 /-! ### The `(0,1)`-projection -/
 
 variable (A μ p k) in
@@ -346,6 +360,16 @@ theorem chartValueL_zeroOnePartSobolevL_ae (w : SobolevSection A.tangentHom μ p
       =ᵐ[μ.restrict (A.tangentHom.sectionChartData.image i)]
         fun y ↦ complexAntilinearPartL (A.tangentHom.sectionChartData.chartValueL μ p k i w y) :=
   chartValueL_zeroOnePartEnd_ae w i
+
+/-- The chart data of the zero `(0,1)`-form vanish almost everywhere on the chart image. -/
+theorem chartValueL_zero_zeroOneSobolevSections_ae (i : Fin A.n) :
+    A.tangentHom.sectionChartData.chartValueL μ p k i
+        (((0 : zeroOneSobolevSections A μ p k) : SobolevSection A.tangentHom μ p k) :
+          A.tangentHom.sectionChartData.SobolevData μ p k)
+      =ᵐ[μ.restrict (A.image i)] 0 := by
+  simp only [ZeroMemClass.coe_zero, map_zero]
+  exact (FiniteBundleAtlas.ae_image_tangentHom_iff A μ i).1
+    (Lp.coeFn_zero (ℂ →L[ℝ] F) p (μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ)))
 
 /-- The `(0,1)`-projection of `w` vanishes exactly when the chart data of `w` are complex linear
 almost everywhere on the image of every chart. -/
