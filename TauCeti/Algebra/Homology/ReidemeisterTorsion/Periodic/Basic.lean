@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Two
-import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
@@ -654,26 +653,21 @@ theorem parityTorsion_eq_mul_of_shortExact (hS : S.ShortExact) (h₁ : S.X₁.Ac
         finrank F (LinearMap.range (S.X₃.d 1 0).hom) *
           finrank F (LinearMap.range (S.X₁.d 0 1).hom)) *
       (S.X₁.parityTorsion c₁ * S.X₃.parityTorsion c₃) := by
-  have hS' := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS
-  have hf (i : ZMod 2) : Function.Injective (S.f.f i).hom := (hS' i).moduleCat_injective_f
-  have hfg (i : ZMod 2) : Function.Exact (S.f.f i).hom (S.g.f i).hom :=
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 (hS' i).exact
-  have hg (i : ZMod 2) : Function.Surjective (S.g.f i).hom := (hS' i).moduleCat_surjective_g
+  have hf := hS.moduleCat_injective_f_f
+  have hfg := hS.moduleCat_exact_f_f
+  have hg := hS.moduleCat_surjective_g_f
   -- Give the boundaries of `C₂` into degree `j` the basis made of the chosen boundary basis of `C₁`
   -- followed by the boundaries of lifts `t i j` of the chosen lifts of `C₃` from degree `i`.
-  let t (i j : ZMod 2) (k : Fin (finrank F (LinearMap.range (S.X₃.d i j).hom))) : S.X₂.X i :=
-    Function.surjInv (hg i) (chosenBoundaryLift S.X₃ c₃ i j k)
-  have ht (i j : ZMod 2) (k) : (S.X₃.d i j).hom ((S.g.f i).hom (t i j k)) =
-      chosenBoundaryBasis S.X₃ c₃ i j k := by
-    rw [Function.surjInv_eq (hg i), chosenBoundaryLift_spec]
+  let t := shortExactBoundaryLift hg c₃
+  have ht := shortExactBoundaryLift_spec hg c₃
   let β (i j : ZMod 2) (hij : (ComplexShape.up (ZMod 2)).next i = j) :=
     shortExactBoundaryBasis hf hfg hg hij (h₃ i) (chosenBoundaryBasis S.X₁ c₁ i j)
       (chosenBoundaryBasis S.X₃ c₃ i j) (t i j) (ht i j)
   let s (i j : ZMod 2) :=
     Fin.append (fun k ↦ (S.f.f i).hom (chosenBoundaryLift S.X₁ c₁ i j k)) (t i j)
-  have hs (i j : ZMod 2) (hij) (k) : (S.X₂.d i j).hom (s i j k) = β i j hij k := by
-    rw [congrFun (coe_shortExactBoundaryBasis hf hfg hg hij (h₃ i) _ _ _ (ht i j)) k]
-    induction k using Fin.addCases <;> simp [s, Hom.comm_apply, chosenBoundaryLift_spec]
+  have hs (i j : ZMod 2) (hij) : ∀ k, (S.X₂.d i j).hom (s i j k) = β i j hij k :=
+    d_append_shortExactBoundaryBasis hf hfg hg hij (h₃ i) _ _ _ (ht i j) _
+      (chosenBoundaryLift_spec S.X₁ c₁ i j)
   rw [parityTorsion_eq (hS.acyclic_X₂ h₁ h₃) (β 1 0 next_zmod_two_one) (β 0 1 next_zmod_two_zero)
       (s 0 1) (hs 0 1 _) (s 1 0) (hs 1 0 _),
     parityTorsion_eq h₁ (chosenBoundaryBasis S.X₁ c₁ 1 0) (chosenBoundaryBasis S.X₁ c₁ 0 1)

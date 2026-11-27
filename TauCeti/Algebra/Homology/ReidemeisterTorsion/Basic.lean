@@ -452,6 +452,32 @@ theorem coe_shortExactBoundaryBasis (hij : cs.next i = j) (h'' : C''.ExactAt i)
   ext k
   induction k using Fin.addCases <;> simp [shortExactBoundaryBasis]
 
+/-- The differentials of the images of lifts `s'` of `b'` followed by the lifts `t` are the vectors
+of `shortExactBoundaryBasis`. -/
+theorem d_append_shortExactBoundaryBasis (hij : cs.next i = j) (h'' : C''.ExactAt i)
+    (b' : Basis (Fin p') F (LinearMap.range (C'.d i j).hom))
+    (b'' : Basis (Fin p'') F (LinearMap.range (C''.d i j).hom)) (t : Fin p'' → C.X i)
+    (ht : ∀ k, (C''.d i j).hom ((g.f i).hom (t k)) = b'' k) (s' : Fin p' → C'.X i)
+    (hs' : ∀ k, (C'.d i j).hom (s' k) = b' k) (k : Fin (p' + p'')) :
+    (C.d i j).hom (Fin.append (fun k ↦ (f.f i).hom (s' k)) t k) =
+      shortExactBoundaryBasis hf hfg hg hij h'' b' b'' t ht k := by
+  rw [congrFun (coe_shortExactBoundaryBasis hf hfg hg hij h'' b' b'' t ht) k]
+  induction k using Fin.addCases <;> simp [Hom.comm_apply, hs']
+
+/-- Lifts to `Cᵢ`, through the degreewise surjection `g`, of the lifts
+`chosenBoundaryLift C'' c'' i j` of the chosen basis of the boundaries of `C''` into degree `j`,
+chosen by `Function.surjInv`. -/
+def shortExactBoundaryLift {n'' : ι → ℕ} (c'' : ∀ i, Basis (Fin (n'' i)) F (C''.X i)) (i j : ι)
+    (k : Fin (finrank F (LinearMap.range (C''.d i j).hom))) : C.X i :=
+  Function.surjInv (hg i) (chosenBoundaryLift C'' c'' i j k)
+
+/-- The lifts `shortExactBoundaryLift` are mapped by `g` and the differential of `C''` to the
+chosen basis of the boundaries of `C''`. -/
+theorem shortExactBoundaryLift_spec {n'' : ι → ℕ} (c'' : ∀ i, Basis (Fin (n'' i)) F (C''.X i))
+    (i j : ι) (k) : (C''.d i j).hom ((g.f i).hom (shortExactBoundaryLift hg c'' i j k)) =
+      chosenBoundaryBasis C'' c'' i j k := by
+  rw [shortExactBoundaryLift, Function.surjInv_eq (hg i), chosenBoundaryLift_spec]
+
 variable {n' n'' : ι → ℕ} {c' : ∀ i, Basis (Fin (n' i)) F (C'.X i)}
   {c'' : ∀ i, Basis (Fin (n'' i)) F (C''.X i)} {c : ∀ i, Basis (Fin (n' i + n'' i)) F (C.X i)}
   (hc' : ∀ i k, c i (Fin.castAdd (n'' i) k) = (f.f i).hom (c' i k))
@@ -475,18 +501,17 @@ theorem torsionBracket_shortExactBoundaryBasis {k : ι} (hi : cs.prev j = i) (hk
     (b'₀ : Basis (Fin q') F (LinearMap.range (C'.d j k).hom))
     (b''₀ : Basis (Fin q'') F (LinearMap.range (C''.d j k).hom))
     (t₀ : Fin q'' → C.X j) (ht₀ : ∀ l, (C''.d j k).hom ((g.f j).hom (t₀ l)) = b''₀ l)
-    (s' : Fin q' → C'.X j) (hs' : ∀ l, (C'.d j k).hom (s' l) = b'₀ l)
-    (hS : ∀ l, (C.d j k).hom (Fin.append (fun l ↦ (f.f j).hom (s' l)) t₀ l) =
-      shortExactBoundaryBasis hf hfg hg hk h''₀ b'₀ b''₀ t₀ ht₀ l) :
+    (s' : Fin q' → C'.X j) (hs' : ∀ l, (C'.d j k).hom (s' l) = b'₀ l) :
     torsionBracket c hi hk hC (shortExactBoundaryBasis hf hfg hg hij h''₁ b'₁ b''₁ t₁ ht₁)
         (shortExactBoundaryBasis hf hfg hg hk h''₀ b'₀ b''₀ t₀ ht₀)
-        (Fin.append (fun l ↦ (f.f j).hom (s' l)) t₀) hS =
+        (Fin.append (fun l ↦ (f.f j).hom (s' l)) t₀)
+        (d_append_shortExactBoundaryBasis hf hfg hg hk h''₀ b'₀ b''₀ t₀ ht₀ s' hs') =
       (-1) ^ (p'' * q') * (torsionBracket c' hi hk h' b'₁ b'₀ s' hs' *
         torsionBracket c'' hi hk h''₀ b''₁ b''₀ (fun l ↦ (g.f j).hom (t₀ l)) ht₀) := by
   have hn' := eq_add_of_exactAt c' hi hk h' b'₁ b'₀
   have hn'' := eq_add_of_exactAt c'' hi hk h''₀ b''₁ b''₀
   have hN : n' j + n'' j = p' + q' + (p'' + q'') := by omega
-  rw [torsionBracket_eq_det_append c _ _ hC _ _ _ hS (by omega), coe_shortExactBoundaryBasis,
+  rw [torsionBracket_eq_det_append c _ _ hC _ _ _ _ (by omega), coe_shortExactBoundaryBasis,
     torsionBracket_eq_det_append c' _ _ h' b'₁ b'₀ s' hs' hn',
     torsionBracket_eq_det_append c'' _ _ h''₀ b''₁ b''₀ _ ht₀ hn'']
   -- Exchange the boundaries of the lifts of `B''ⱼ` with the lifts of `B'ₖ`; the resulting family is
@@ -848,26 +873,20 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
     hn.subset fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega
   have hn₃ : {i | n₃ i ≠ 0}.Finite :=
     hn.subset fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega
-  have hS' := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS
-  have hf (i : ℤ) : Function.Injective (S.f.f i).hom := (hS' i).moduleCat_injective_f
-  have hfg (i : ℤ) : Function.Exact (S.f.f i).hom (S.g.f i).hom :=
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 (hS' i).exact
-  have hg (i : ℤ) : Function.Surjective (S.g.f i).hom := (hS' i).moduleCat_surjective_g
+  have hf := hS.moduleCat_injective_f_f
+  have hfg := hS.moduleCat_exact_f_f
+  have hg := hS.moduleCat_surjective_g_f
   -- Compute the torsion of `C₂` with the boundary bases `shortExactBoundaryBasis` built from the
   -- chosen boundary bases of `C₁` and `C₃`, and lifts `t` of the chosen lifts of `C₃`.
-  let t (j : ℤ) (k : Fin (finrank F (LinearMap.range (S.X₃.d (j + 1) j).hom))) :
-      S.X₂.X (j + 1) :=
-    Function.surjInv (hg (j + 1)) (chosenBoundaryLift S.X₃ c₃ (j + 1) j k)
-  have ht (j : ℤ) (k) : (S.X₃.d (j + 1) j).hom ((S.g.f (j + 1)).hom (t j k)) =
-      chosenBoundaryBasis S.X₃ c₃ (j + 1) j k := by
-    rw [Function.surjInv_eq (hg (j + 1)), chosenBoundaryLift_spec]
+  let t (j : ℤ) := shortExactBoundaryLift hg c₃ (j + 1) j
+  have ht (j : ℤ) := shortExactBoundaryLift_spec hg c₃ (j + 1) j
   let β (j : ℤ) := shortExactBoundaryBasis hf hfg hg (by simp) (h₃ (j + 1))
     (chosenBoundaryBasis S.X₁ c₁ (j + 1) j) (chosenBoundaryBasis S.X₃ c₃ (j + 1) j) (t j) (ht j)
   let s (j : ℤ) :=
     Fin.append (fun k ↦ (S.f.f (j + 1)).hom (chosenBoundaryLift S.X₁ c₁ (j + 1) j k)) (t j)
-  have hs (j : ℤ) (k) : (S.X₂.d (j + 1) j).hom (s j k) = β j k := by
-    rw [congrFun (coe_shortExactBoundaryBasis hf hfg hg _ (h₃ (j + 1)) _ _ _ (ht j)) k]
-    induction k using Fin.addCases <;> simp [s, Hom.comm_apply, chosenBoundaryLift_spec]
+  have hs (j : ℤ) : ∀ k, (S.X₂.d (j + 1) j).hom (s j k) = β j k :=
+    d_append_shortExactBoundaryBasis hf hfg hg _ (h₃ (j + 1)) _ _ _ (ht j) _
+      (chosenBoundaryLift_spec S.X₁ c₁ (j + 1) j)
   have hτ₁ := hasFiniteMulSupport_torsionBracket (c := c₁) hn₁ h₁
     (fun j ↦ chosenBoundaryBasis S.X₁ c₁ (j + 1) j)
     (fun j ↦ chosenBoundaryLift S.X₁ c₁ (j + 1) j)
