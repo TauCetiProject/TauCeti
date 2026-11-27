@@ -91,6 +91,16 @@ theorem prime_dvd_of_dvd_natAbs_discr (E : Type*) [Field E] [NumberField E] (m :
       pow_pos (Nat.prime_of_mem_primeFactors hq).pos _)]
   exact dvd_mul_left _ _
 
+/-- The discriminant of an `m`-th cyclotomic field is coprime to every integer coprime to `m`. -/
+theorem isCoprime_discr_of_coprime_level (E : Type*) [Field E] [NumberField E] {m : ℕ}
+    [IsCyclotomicExtension {m} ℚ E] {D : ℤ} (h : m.Coprime D.natAbs) :
+    IsCoprime (NumberField.discr E) D := by
+  rw [Int.isCoprime_iff_nat_coprime]
+  by_contra hn
+  obtain ⟨p, hp, hpd, hpD⟩ := Nat.Prime.not_coprime_iff_dvd.mp hn
+  exact hp.not_dvd_one (h.gcd_eq_one ▸ Nat.dvd_gcd
+    (prime_dvd_of_dvd_natAbs_discr E m hp hpd) hpD)
+
 end Rat
 
 /-- **The cyclotomic degree over a number field base.** If `M / K` is an `m`-th cyclotomic
@@ -123,15 +133,8 @@ theorem finrank_eq_totient (K M : Type*) [Field K] [NumberField K] [Field M]
   have hdiscrK₂ : NumberField.discr K₂ = NumberField.discr K :=
     (NumberField.discr_eq_discr_of_ringEquiv (f := eK₂)).symm
   have hcoprime : IsCoprime (NumberField.discr K₁) (NumberField.discr K₂) := by
-    rw [hdiscrK₂, Int.isCoprime_iff_gcd_eq_one, Int.gcd]
-    by_contra hne
-    obtain ⟨p, hp, hpdvd⟩ := Nat.exists_prime_and_dvd hne
-    rw [Nat.dvd_gcd_iff] at hpdvd
-    obtain ⟨hpa, hpb⟩ := hpdvd
-    have hpm : p ∣ m := Rat.prime_dvd_of_dvd_natAbs_discr K₁ m hp hpa
-    have hpgcd : p ∣ Nat.gcd (NumberField.discr K).natAbs m := Nat.dvd_gcd hpb hpm
-    rw [hcop] at hpgcd
-    exact hp.one_lt.ne' (Nat.dvd_one.mp hpgcd)
+    rw [hdiscrK₂]
+    exact Rat.isCoprime_discr_of_coprime_level K₁ hcop.symm
   have hld : K₁.LinearDisjoint K₂ :=
     NumberField.linearDisjoint_of_isGalois_isCoprime_discr (L := M) K₁ K₂ hcoprime
   have hfr : Module.finrank K₂ M = Module.finrank ℚ K₁ := hld.finrank_right_eq_finrank hsup

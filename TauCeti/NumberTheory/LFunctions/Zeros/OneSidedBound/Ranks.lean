@@ -60,12 +60,13 @@ theorem exists_admissible_ranks {x : ℕ} (hx : 1 < x) :
 
 /-- A dyadic tower bounded by `2 ^ 22 * x ^ 11` has exponent at most `32 log x` once
 `log x ≥ 6`. -/
-private theorem towerExponent_le {x s : ℕ} (hlog : 6 ≤ log (x : ℝ))
-    (hs : 2 ^ s ≤ 2 ^ 22 * x ^ 11) : (s : ℝ) ≤ 32 * log (x : ℝ) := by
-  have hx : 0 < x := Nat.pos_of_ne_zero fun h ↦ by norm_num [h, log_zero] at hlog
-  have h := log_le_log (x := (2 : ℝ) ^ s) (by positivity)
-    (by exact_mod_cast hs : (2 : ℝ) ^ s ≤ 2 ^ 22 * (x : ℝ) ^ 11)
-  simp only [log_mul (by positivity : (2 : ℝ) ^ 22 ≠ 0) (by positivity : (x : ℝ) ^ 11 ≠ 0),
+theorem towerExponent_le {x : ℝ} {s : ℕ} (hlog : 6 ≤ log x)
+    (hs : (2 : ℝ) ^ s ≤ 2 ^ 22 * x ^ 11) : (s : ℝ) ≤ 32 * log x := by
+  have hodd : Odd (11 : ℕ) := by decide
+  have hx : 0 < x := hodd.pow_pos_iff.mp
+    (pos_of_mul_pos_right ((by positivity : (0 : ℝ) < 2 ^ s).trans_le hs) (by positivity))
+  have h := log_le_log (by positivity) hs
+  simp only [log_mul (by positivity : (2 : ℝ) ^ 22 ≠ 0) (by positivity : x ^ 11 ≠ 0),
     log_pow, Nat.cast_ofNat] at h
   have hslope : (s : ℝ) / 2 ≤ s * log 2 := by
     calc
@@ -153,7 +154,8 @@ theorem eventually_exists_admissible_ranks (q₀ d : ℕ) (hq₀ : 0 < q₀) :
   let l₀ : ℕ := 3 ^ (Nat.log 3 s + 4)
   have hdyadic : x ^ 11 ≤ 2 ^ s ∧ 2 ^ s ≤ 2 ^ 22 * x ^ 11 :=
     dyadicTower_bounds (by exact_mod_cast hm.1.2) (by exact_mod_cast hm₂.le)
-  have hslog := towerExponent_le hlog hdyadic.2
+  have hslog := towerExponent_le hlog (by exact_mod_cast hdyadic.2 :
+    (2 : ℝ) ^ s ≤ 2 ^ 22 * (x : ℝ) ^ 11)
   have hl₀ : l₀ ≤ 81 * s := by
     have h := Nat.pow_log_le_self 3 (x := s) (by dsimp [s]; omega)
     simpa [l₀, pow_add, Nat.mul_comm] using Nat.mul_le_mul_left 81 h
