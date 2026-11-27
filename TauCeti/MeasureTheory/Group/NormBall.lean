@@ -113,12 +113,15 @@ theorem measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant
   have hdim : finrank ℝ Eᵐᵒᵖ = finrank ℝ E := (opLinearEquiv ℝ (M := E)).finrank_eq.symm
   let e : S ≃ᵐ Sᵐᵒᵖ := ⟨opEquiv, measurable_mul_op, measurable_mul_unop⟩
   let νOp : Measure Sᵐᵒᵖ := Measure.map op ν
-  let : νOp.IsMulLeftInvariant := ⟨fun g ↦ by
-    change Measure.map (g * ·) (Measure.map op ν) = Measure.map op ν
-    rw [Measure.map_map (measurable_const_mul g) measurable_mul_op]
-    change Measure.map (op ∘ fun s : S ↦ s * unop g) ν = Measure.map op ν
-    rw [← Measure.map_map measurable_mul_op (measurable_mul_const (unop g)),
-      map_mul_right_eq_self]⟩
+  let : νOp.IsMulLeftInvariant := by
+    refine ⟨fun g ↦ ?_⟩
+    have hcomp : (g * ·) ∘ op = op ∘ (· * unop g) := by
+      funext s
+      rw [Function.comp_apply, Function.comp_apply, MulOpposite.op_mul, op_unop]
+    simp only [νOp]
+    rw [Measure.map_map (measurable_const_mul g) measurable_mul_op, hcomp,
+      ← Measure.map_map measurable_mul_op (measurable_mul_const (unop g)),
+      map_mul_right_eq_self]
   have hmap (A : Set Sᵐᵒᵖ) : νOp A = ν (op ⁻¹' A) :=
     e.measurableEmbedding.map_apply ν A
   let unitsOp : Eˣᵐᵒᵖ ≃* (Eᵐᵒᵖ)ˣ := Units.opEquiv.symm
@@ -128,7 +131,10 @@ theorem measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant
     (unitsOp.map_mul (op y) (op (j s))).symm
   have h :=
     measure_setOf_norm_le_and_norm_inv_le_le νOp jOp yOp (R := R) (R' := R') hε
+  have hjOp (s : S) : jOp (op s) = unitsOp (op (j s)) := rfl
   simp only [hmap, Set.preimage_ofPred_eq, hdim, hprod] at h
-  exact h
+  simpa only [hjOp, ← map_inv,
+    ← op_inv, unitsOp, Units.coe_opEquiv_symm, unop_op, ← MulOpposite.op_one,
+    ← MulOpposite.op_sub, MulOpposite.norm_op] using h
 
 end MeasureTheory

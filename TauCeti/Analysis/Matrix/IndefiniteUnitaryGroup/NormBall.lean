@@ -44,7 +44,8 @@ norm is integrable. The threshold `2 d` comes from the crude covering argument a
   to the units of a finite-dimensional normed algebra.
 * `Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le`: for a unitary Gram matrix `J`,
   `ν {s | ‖y * j s‖ ≤ R} ≤ (1 + 2 R² / ε) ^ d * ν {s | ‖j s - 1‖ ≤ ε}`.
-* `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le`: for continuous `j` and `A > 2 d`,
+* `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le`: for an almost-everywhere
+  measurable norm and A > 2 d,
   `∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`.
 * `Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le_of_isMulRightInvariant` and
   `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant`: the
@@ -168,6 +169,25 @@ theorem lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant
   exact lintegral_norm_rpow_neg_le_of_cover ν hJ (fun s ↦ j s * y) hm
     (fun _ _ ↦ measure_setOf_norm_mul_le_le_of_isMulRightInvariant ν hJ j y one_pos) hA
 
+/-- **Inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary matrix, `ν` a
+left-invariant measure on a group `S`, and `j : S →* unitaryGroupOf J`. Suppose the
+operator norm
+of y * j s is almost everywhere measurable. Let A > 2 d, where d is the real dimension
+of the matrices. Then
+
+`∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`
+
+in the operator norm. The bound does not depend on `y`. -/
+theorem lintegral_norm_mul_rpow_neg_le (ν : Measure S) [ν.IsMulLeftInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) (j : S →* unitaryGroupOf J) (y : unitaryGroupOf J)
+    (hm : AEMeasurable (fun s ↦ ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖) ν)
+    {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    ∫⁻ s, ENNReal.ofReal (‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ∂ν ≤
+      ENNReal.ofReal (3 ^ finrank ℝ (Matrix n n 𝕜) * A / (A - 2 * finrank ℝ (Matrix n n 𝕜))) *
+        ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} := by
+  exact lintegral_norm_rpow_neg_le_of_cover ν hJ (fun s ↦ y * j s) hm
+    (fun _ _ ↦ measure_setOf_norm_mul_le_le ν hJ j y one_pos) hA
+
 variable [TopologicalSpace S]
 
 omit [MeasurableSpace S] [MeasurableMul S] in
@@ -178,23 +198,6 @@ private theorem continuous_norm_val_mul {j : S →* unitaryGroupOf J} (hj : Cont
   (Units.continuous_val.comp (continuous_subtypeVal.comp (continuous_const.mul hj))).norm
 
 variable [OpensMeasurableSpace S]
-
-/-- **Inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary matrix, `ν` a
-left-invariant measure on a topological group `S`, `j : S →* unitaryGroupOf J` continuous and
-`y ∈ unitaryGroupOf J`. For a real `A > 2 d`, where `d` is the real dimension of the matrices,
-
-`∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`
-
-in the operator norm. The bound does not depend on `y`. -/
-theorem lintegral_norm_mul_rpow_neg_le (ν : Measure S) [ν.IsMulLeftInvariant]
-    (hJ : J ∈ unitary (Matrix n n 𝕜)) {j : S →* unitaryGroupOf J} (hj : Continuous j)
-    (y : unitaryGroupOf J) {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
-    ∫⁻ s, ENNReal.ofReal (‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ∂ν ≤
-      ENNReal.ofReal (3 ^ finrank ℝ (Matrix n n 𝕜) * A / (A - 2 * finrank ℝ (Matrix n n 𝕜))) *
-        ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} := by
-  exact lintegral_norm_rpow_neg_le_of_cover ν hJ (fun s ↦ y * j s)
-    (continuous_norm_val_mul hj y).aemeasurable
-    (fun _ _ ↦ measure_setOf_norm_mul_le_le ν hJ j y one_pos) hA
 
 /-- **Integrability of inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary
 matrix, `ν` a left-invariant measure on a topological group `S` and `j : S →* unitaryGroupOf J`
@@ -208,7 +211,8 @@ theorem integrable_norm_mul_rpow_neg (ν : Measure S) [ν.IsMulLeftInvariant]
     Integrable (fun s ↦ ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ν := by
   refine ⟨((continuous_norm_val_mul hj y).aemeasurable.pow_const _).aestronglyMeasurable, ?_⟩
   rw [hasFiniteIntegral_iff_ofReal (.of_forall fun s ↦ Real.rpow_nonneg (norm_nonneg _) _)]
-  exact (lintegral_norm_mul_rpow_neg_le ν hJ hj y hA).trans_lt (by finiteness)
+  exact (lintegral_norm_mul_rpow_neg_le ν hJ j y
+    (continuous_norm_val_mul hj y).aemeasurable hA).trans_lt (by finiteness)
 
 end Covering
 
