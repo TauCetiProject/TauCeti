@@ -19,10 +19,11 @@ Two basic examples of the trace-class and Hilbert–Schmidt ideals.
 
 **Diagonal operators.** On `ℓ²(ℕ, 𝕜)`, the diagonal operator with decreasing nonnegative
 coefficients `cₙ` has approximation numbers `cₙ` (`lp.singularValue_diagonalCLM_ofAntitone`). It
-is therefore trace class exactly when `∑ cₙ < ∞`, and Hilbert–Schmidt exactly when
-`∑ cₙ² < ∞`. For `cₙ = 1 / (n + 1)` the second series converges and the first does not, so this
-diagonal operator is Hilbert–Schmidt but not trace class: the trace-class ideal is strictly
-smaller than the Hilbert–Schmidt ideal.
+is therefore trace class exactly when `∑ cₙ < ∞`. More generally, a diagonal operator with
+bounded coefficients `dᵢ` is Hilbert–Schmidt exactly when `∑ ‖dᵢ‖² < ∞`, with no ordering needed.
+For `cₙ = 1 / (n + 1)` the second series converges and the first does not, so this diagonal
+operator is Hilbert–Schmidt but not trace class: the trace-class ideal is strictly smaller than
+the Hilbert–Schmidt ideal.
 
 **Orthogonal projections.** The orthogonal projection onto a subspace of finite dimension `r` has
 approximation numbers `1` below `r` and `0` from `r` on, so its trace norm is `r`. It is the sum
@@ -33,8 +34,8 @@ approximation numbers `1` below `r` and `0` from `r` on, so its trace norm is `r
 
 * `lp.diagonalCLM_ofAntitone_mem_traceClass_iff`: a decreasing diagonal operator on `ℓ²` is
   trace class iff its coefficients are summable.
-* `lp.diagonalCLM_ofAntitone_mem_hilbertSchmidt_iff`: it is Hilbert–Schmidt iff their squares are
-  summable.
+* `lp.diagonalCLM_mem_hilbertSchmidt_iff`: a bounded diagonal operator on `ℓ²` is Hilbert–Schmidt
+  iff the squared norms of its coefficients are summable.
 * `lp.diagonalCLM_one_div_add_one_mem_hilbertSchmidt` and
   `lp.diagonalCLM_one_div_add_one_notMem_traceClass`: the diagonal operator with coefficients
   `1 / (n + 1)` is Hilbert–Schmidt and not trace class.
@@ -70,23 +71,28 @@ theorem diagonalCLM_ofAntitone_mem_traceClass_iff :
     show (diagonalCLM (p := 2) (ofAntitone 𝕜 hc)).singularValue = c from
       funext (singularValue_diagonalCLM_ofAntitone hc)]
 
-/-- A diagonal operator on `ℓ²(ℕ, 𝕜)` with decreasing nonnegative coefficients `cₙ` is
-Hilbert–Schmidt exactly when `∑ cₙ² < ∞`. -/
-theorem diagonalCLM_ofAntitone_mem_hilbertSchmidt_iff :
-    diagonalCLM (p := 2) (ofAntitone 𝕜 hc) ∈
-        ((hilbertSchmidt.{u, u, u} 𝕜).operatorGauge ℓ²(ℕ, 𝕜) ℓ²(ℕ, 𝕜)).finiteSubmodule ↔
-      Summable fun n ↦ c n ^ 2 := by
-  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 ℓ²(ℕ, 𝕜)
-  rw [mem_finiteSubmodule_hilbertSchmidt_iff _ b,
-    ← ContinuousLinearMap.tsum_singularValue_sq_eq_hilbertSchmidtEnergy]
-  simp_rw [singularValue_diagonalCLM_ofAntitone hc, ← ENNReal.coe_pow]
-  exact ENNReal.tsum_coe_ne_top_iff_summable
+/-- A diagonal operator on `ℓ²(ι, 𝕜)` with bounded coefficients `dᵢ` is Hilbert–Schmidt exactly
+when `∑ ‖dᵢ‖² < ∞`: its Hilbert–Schmidt energy in the coordinate basis is `∑ ‖dᵢ‖²`. -/
+theorem diagonalCLM_mem_hilbertSchmidt_iff {ι : Type*} (d : ℓ^∞(ι, 𝕜)) :
+    diagonalCLM (p := 2) d ∈
+        ((hilbertSchmidt 𝕜).operatorGauge ℓ²(ι, 𝕜) ℓ²(ι, 𝕜)).finiteSubmodule ↔
+      Summable fun i ↦ ‖d i‖ ^ 2 := by
+  classical
+  have hb (i : ι) : (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) i = lp.single 2 i 1 := by
+    rw [← HilbertBasis.repr_symm_single]
+    rfl
+  rw [mem_finiteSubmodule_hilbertSchmidt_iff _ (default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)),
+    ContinuousLinearMap.hilbertSchmidtEnergy_def]
+  simp_rw [hb, diagonalCLM_single, mul_one, ← ofReal_norm, lp.norm_single two_pos, ofReal_norm,
+    eNorm_eq_nnNorm, ← ENNReal.coe_pow, ENNReal.tsum_coe_ne_top_iff_summable,
+    ← NNReal.summable_coe, NNReal.coe_pow, coe_nnNorm]
 
 /-- **The diagonal operator `diag(1 / (n + 1))` is Hilbert–Schmidt**, since `∑ 1 / (n + 1)² < ∞`. -/
 theorem diagonalCLM_one_div_add_one_mem_hilbertSchmidt :
     diagonalCLM (p := 2) (ofAntitone 𝕜 antitone_one_div_add_one) ∈
       ((hilbertSchmidt.{u, u, u} 𝕜).operatorGauge ℓ²(ℕ, 𝕜) ℓ²(ℕ, 𝕜)).finiteSubmodule := by
-  rw [diagonalCLM_ofAntitone_mem_hilbertSchmidt_iff, ← NNReal.summable_coe]
+  rw [diagonalCLM_mem_hilbertSchmidt_iff]
+  simp_rw [norm_ofAntitone_apply]
   push_cast
   simpa [inv_pow] using (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
 
