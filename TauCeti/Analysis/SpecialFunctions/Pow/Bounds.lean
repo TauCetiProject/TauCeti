@@ -111,6 +111,8 @@ for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a
   for `α ≤ 0`.
 * `Real.add_rpow_le_max_two_rpow_mul`: `(x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β` for `0 ≤ t ≤ x`
   and every real `β`.
+* `Real.rpow_add_le_mul_rpow_add_rpow`: `(a + b) ^ p ≤ 2 ^ (p - 1) (a ^ p + b ^ p)` for
+  `0 ≤ a, b` and `1 ≤ p`.
 * `Real.rpow_sub_rpow_neg_le`: `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε` for `0 < b` and `0 ≤ ε ≤ 1`.
 * `Real.natCast_rpow_le_max_one_rpow`: `n ^ p ≤ max 1 (x ^ p)` for a natural number `n ≤ x` and
   every real `p`.
@@ -413,6 +415,17 @@ theorem log_add_one_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (hε�
     simpa using rpow_add_le_add_rpow hx zero_le_one hε.le hε₁
   rw [le_div_iff₀ hε, mul_comm, ← log_rpow (by linarith)]
   linarith [log_le_sub_one_of_pos (rpow_pos_of_pos (by linarith : 0 < x + 1) ε)]
+
+
+/-- The unweighted mean inequality for two nonnegative reals and a real exponent `p ≥ 1`:
+`(a + b) ^ p ≤ 2 ^ (p - 1) (a ^ p + b ^ p)`. This is `NNReal.rpow_add_le_mul_rpow_add_rpow` for
+real numbers. -/
+theorem rpow_add_le_mul_rpow_add_rpow {a b p : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hp : 1 ≤ p) :
+    (a + b) ^ p ≤ 2 ^ (p - 1) * (a ^ p + b ^ p) := by
+  have h := NNReal.coe_le_coe.2
+    (NNReal.rpow_add_le_mul_rpow_add_rpow a.toNNReal b.toNNReal hp)
+  push_cast [Real.coe_toNNReal _ ha, Real.coe_toNNReal _ hb] at h
+  exact h
 
 end Real
 
