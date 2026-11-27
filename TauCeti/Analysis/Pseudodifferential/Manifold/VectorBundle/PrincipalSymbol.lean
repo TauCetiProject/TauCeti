@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Elliptic
+import TauCeti.Algebra.Module.LinearMap.UnitSMul
 import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Topology.FiberBundle.Trivialization
+import TauCeti.Topology.VectorBundle.FiniteDimensional
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -109,6 +111,8 @@ pseudodifferential operators between bundles applies to elliptic differential op
   `TauCeti.sectionClassicalPrincipalSymbol_zero`, `TauCeti.sectionClassicalPrincipalSymbol_neg`,
   `TauCeti.sectionClassicalPrincipalSymbol_sub`, `TauCeti.sectionClassicalPrincipalSymbol_sum`:
   linearity in the operator.
+* `TauCeti.sectionClassicalPrincipalSymbol_smul_of_ne_zero`: a nonzero scalar factor multiplies
+  the principal symbol, whatever the order of the operator.
 * `TauCeti.sectionClassicalPrincipalSymbol_eq_zero_iff`: the principal symbol of an operator of
   order `m` vanishes exactly when the operator has order `m - 1`.
 * `TauCeti.sectionClassicalPrincipalSymbol_zero_covector`,
@@ -531,6 +535,20 @@ theorem sectionClassicalPrincipalSymbol_smul
     ← coord_sectionClassicalPrincipalSymbol hP,
     LinearMap.smul_apply, map_smul, map_smul, smul_eq_mul]
 
+/-- Multiplying by a nonzero complex number multiplies the principal symbol, whether or not `P`
+is of order `m`. -/
+theorem sectionClassicalPrincipalSymbol_smul_of_ne_zero {c : ℂ} (hc : c ≠ 0) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    sectionClassicalPrincipalSymbol m (c • P) x ξ =
+      c • sectionClassicalPrincipalSymbol m P x ξ := by
+  by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
+  · exact sectionClassicalPrincipalSymbol_smul hP c x ξ
+  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
+    have hcP : c • P ∉ sectionClassicalPseudodifferentialOperators m :=
+      (Submodule.smul_mem_iff _ hc).not.2 hP
+    rw [sectionClassicalPrincipalSymbol_of_notMem hP, sectionClassicalPrincipalSymbol_of_notMem hcP,
+      smul_zero]
+
 /-- The principal symbol of the zero operator is `0`. -/
 @[simp]
 theorem sectionClassicalPrincipalSymbol_zero (x : M)
@@ -769,15 +787,8 @@ theorem isSectionClassicalElliptic_add_iff
 @[simp]
 theorem isSectionClassicalEllipticAt_smul_iff {c : ℂ} (hc : c ≠ 0) {x : M} :
     IsSectionClassicalEllipticAt m (c • P) x ↔ IsSectionClassicalEllipticAt m P x := by
-  by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
-  · refine forall₂_congr fun ξ _ ↦ ?_
-    rw [sectionClassicalPrincipalSymbol_smul hP, LinearMap.coe_smul]
-    exact (MulAction.bijective (Units.mk0 c hc)).of_comp_iff' _
-  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
-    have hcP : c • P ∉ sectionClassicalPseudodifferentialOperators m := fun h ↦ hP <| by
-      simpa [smul_smul, inv_mul_cancel₀ hc] using Submodule.smul_mem _ c⁻¹ h
-    simp [isSectionClassicalEllipticAt_iff, sectionClassicalPrincipalSymbol_of_notMem hP,
-      sectionClassicalPrincipalSymbol_of_notMem hcP]
+  refine forall₂_congr fun ξ _ ↦ ?_
+  rw [sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.bijective_smul_iff hc.isUnit]
 
 /-- Multiplying by a nonzero complex number does not change ellipticity. -/
 @[simp]
@@ -791,11 +802,7 @@ covector is a linear isomorphism between the fibres. -/
 theorem IsSectionClassicalEllipticAt.finrank_eq [Nontrivial (CoordinateSpace n)] {x : M}
     (hPx : IsSectionClassicalEllipticAt m P x) : finrank ℂ V = finrank ℂ W := by
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
-  rw [← ((trivializationAt V E x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt V E x)).toLinearEquiv.finrank_eq,
-    ← ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt W F x)).toLinearEquiv.finrank_eq]
-  exact (LinearEquiv.ofBijective _ (hPx _ hξ)).finrank_eq
+  exact finrank_eq_of_bijective_fiber (hPx _ hξ)
 
 /-- **Ellipticity forces the order.** Over a manifold of positive dimension, an operator between
 bundles elliptic at some point is a classical pseudodifferential operator of order `m` unless both
@@ -808,16 +815,7 @@ theorem IsSectionClassicalEllipticAt.mem_or_subsingleton [Nontrivial (Coordinate
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
   have h0 := isSectionClassicalEllipticAt_iff.1 hPx _ hξ
   rw [sectionClassicalPrincipalSymbol_of_notMem hP] at h0
-  -- The zero map `E_x → F_x` is bijective, so both fibres are trivial.
-  have hE : Subsingleton (E x) := ⟨fun u v ↦ h0.1 (by simp)⟩
-  have hF : Subsingleton (F x) := ⟨fun u v ↦ by
-    obtain ⟨u', rfl⟩ := h0.2 u
-    obtain ⟨v', rfl⟩ := h0.2 v
-    simp⟩
-  exact ⟨((trivializationAt V E x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt V E x)).symm.toEquiv.subsingleton,
-    ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt W F x)).symm.toEquiv.subsingleton⟩
+  exact subsingleton_of_bijective_zero_fiber x h0
 
 /-- In dimension zero every covector vanishes, so every operator between bundles is elliptic at
 every point, whatever the ranks of the bundles. -/

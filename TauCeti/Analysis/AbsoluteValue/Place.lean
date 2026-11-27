@@ -240,6 +240,12 @@ theorem under_under (M : Type*) [Field M] [CharZero M] [Algebra K M] [Algebra M 
     [IsScalarTower K M L] (w : Place L) : (w.under M).under K = w.under K :=
   Subtype.ext <| AbsoluteValue.under_under K M w.val
 
+/-- The restriction of an infinite place to a subfield is an infinite place. -/
+theorem not_isNonarchimedean_under {w : Place L} (hw : ¬ IsNonarchimedean w.val) :
+    ¬ IsNonarchimedean (w.under K).val := by
+  rw [not_isNonarchimedean_iff] at hw ⊢
+  rwa [← val_under, under_under, val_under]
+
 end under
 
 /-! ### Restriction along a field embedding -/
