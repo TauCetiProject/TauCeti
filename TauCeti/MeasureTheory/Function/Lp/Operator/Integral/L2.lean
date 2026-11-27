@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.L2.Product
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Star
@@ -257,9 +258,8 @@ private def adjointKernelₗᵢ : Lp 𝕜 2 (ν.prod μ) →ₗᵢ⋆[𝕜] Lp �
 private theorem adjointKernelₗᵢ_apply (K : Lp 𝕜 2 (ν.prod μ)) :
     adjointKernelₗᵢ K = adjointKernel K := by
   rw [adjointKernelₗᵢ, LinearIsometry.coe_comp, Function.comp_apply,
-    LinearIsometryEquiv.coe_toLinearIsometry, starₗᵢ_apply, adjointKernel]
-  exact congrArg star <| Subtype.ext <| by
-    rw [compMeasurePreservingₗᵢ_apply_coe, compMeasurePreserving_val]
+    LinearIsometryEquiv.coe_toLinearIsometry, starₗᵢ_apply, compMeasurePreservingₗᵢ_apply,
+    adjointKernel]
 
 /-- The conjugate transpose preserves the `L²` norm: `‖K⋆‖ = ‖K‖`. -/
 @[simp]
