@@ -102,14 +102,6 @@ theorem contraction_smul (c : ℝ) (A : Matrix (Fin n) (Fin n) ℝ) :
   ext H
   simp [mul_assoc, Finset.mul_sum]
 
-/-- Contraction with the identity matrix is the trace. -/
-theorem contraction_one :
-    contraction (1 : Matrix (Fin n) (Fin n) ℝ) = traceCLM ℝ (EuclideanSpace ℝ (Fin n)) := by
-  ext H
-  rw [contraction_apply, TauCeti.traceCLM_apply,
-    LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
-  simp [Matrix.one_apply, real_inner_comm]
-
 /-- The contraction of `H` with `A` is the trace of `A ∘ H`, with `A` acting on Euclidean space:
 `∑ᵢⱼ Aᵢⱼ ⟪H eᵢ, eⱼ⟫ = tr (A ∘ H)`. -/
 theorem contraction_apply_eq_traceCLM (A : Matrix (Fin n) (Fin n) ℝ)
@@ -120,6 +112,13 @@ theorem contraction_apply_eq_traceCLM (A : Matrix (Fin n) (Fin n) ℝ)
     LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
   refine Finset.sum_congr rfl fun i _ => ?_
   simp [real_inner_comm, EuclideanSpace.inner_single_left, Matrix.mulVec, dotProduct]
+
+/-- Contraction with the identity matrix is the trace. -/
+theorem contraction_one :
+    contraction (1 : Matrix (Fin n) (Fin n) ℝ) = traceCLM ℝ (EuclideanSpace ℝ (Fin n)) := by
+  ext H
+  rw [contraction_apply_eq_traceCLM]
+  simp [Module.End.one_eq_id]
 
 /-- If every entry of `M` is at most `ε` in absolute value, then
 `|∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫| ≤ n² ε ‖H‖`. -/

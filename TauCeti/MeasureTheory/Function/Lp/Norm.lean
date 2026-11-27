@@ -428,24 +428,27 @@ theorem Lp.integral_norm_rpow_eq_norm_rpow {alpha F : Type*} [MeasurableSpace al
     lpNorm_eq_integral_norm_rpow_toReal hp0 hp (Lp.aestronglyMeasurable f),
     ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (ENNReal.toReal_pos hp0 hp).ne', Real.rpow_one]
 
-/-- For `1 ≤ p ≤ ∞`, a bound `‖f‖ ≤ C ‖g‖` between the norms of two `Lᵖ` functions bounds the
-integrals of the `p`-th powers of their pointwise norms: `∫ ‖f‖^p ≤ C^p ∫ ‖g‖^p`, where the power
-`p.toReal` is `0` for `p = ∞`. -/
+/-- A bound `‖f‖ ≤ C ‖g‖` between the norms of two `Lᵖ` functions bounds the integrals of the
+`p`-th powers of their pointwise norms: `∫ ‖f‖^p ≤ C^p ∫ ‖g‖^p`, where the power `p.toReal` is `0`
+for `p = 0` and `p = ∞`. -/
 theorem Lp.integral_norm_rpow_le_of_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] {p : ℝ≥0∞}
     {f : Lp F p m} {g : Lp G p m} {C : ℝ} (hC : 0 ≤ C) (hfg : ‖f‖ ≤ C * ‖g‖) :
     ∫ x, ‖f x‖ ^ p.toReal ∂m ≤ C ^ p.toReal * ∫ x, ‖g x‖ ^ p.toReal ∂m := by
   rcases eq_or_ne p ∞ with rfl | hp
   · simp
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp
   rw [Lp.integral_norm_rpow_eq_norm_rpow hp0 hp, Lp.integral_norm_rpow_eq_norm_rpow hp0 hp,
-    ← Real.mul_rpow hC (norm_nonneg g)]
-  exact Real.rpow_le_rpow (norm_nonneg f) hfg ENNReal.toReal_nonneg
+    ← Real.mul_rpow hC (ENNReal.toReal_nonneg.trans_eq (Lp.norm_def g).symm)]
+  exact Real.rpow_le_rpow (ENNReal.toReal_nonneg.trans_eq (Lp.norm_def f).symm) hfg
+    ENNReal.toReal_nonneg
 
-/-- For `1 ≤ p ≤ ∞`, a bound `‖f‖ ≤ C ‖g‖` between the norms of two `Lᵖ` functions bounds the
-averages of the `p`-th powers of their pointwise norms: `⨍ ‖f‖^p ≤ C^p ⨍ ‖g‖^p`. -/
+/-- A bound `‖f‖ ≤ C ‖g‖` between the norms of two `Lᵖ` functions bounds the averages of the
+`p`-th powers of their pointwise norms: `⨍ ‖f‖^p ≤ C^p ⨍ ‖g‖^p`, where the power `p.toReal` is `0`
+for `p = 0` and `p = ∞`. -/
 theorem Lp.average_norm_rpow_le_of_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] {p : ℝ≥0∞}
     {f : Lp F p m} {g : Lp G p m} {C : ℝ} (hC : 0 ≤ C) (hfg : ‖f‖ ≤ C * ‖g‖) :
     ⨍ x, ‖f x‖ ^ p.toReal ∂m ≤ C ^ p.toReal * ⨍ x, ‖g x‖ ^ p.toReal ∂m := by
   simp only [average_eq, smul_eq_mul]
