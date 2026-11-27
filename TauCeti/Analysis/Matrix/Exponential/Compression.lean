@@ -234,7 +234,7 @@ private theorem norm_trace_mul_exp_sub_le {Q : Matrix n n ℂ} (hQ : IsStarProje
     rw [e, norm_mul, norm_inv, RCLike.norm_natCast, div_eq_inv_mul]
     gcongr
     rw [pow_succ' ‖A‖ (k + 2)]
-    exact (norm_trace_mul_le _ _).trans (mul_le_mul
+    exact (frobenius_norm_trace_mul_le _ _).trans (mul_le_mul
       (frobenius_norm_mul_le_of_isStarProjection A hQ) (norm_pow_le' A (by omega))
       (norm_nonneg _) (norm_nonneg _))
   simp only [trQ, LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp,
@@ -308,10 +308,10 @@ private theorem prod_exp_trace_bound {Q : Matrix n n ℂ} (hQ : IsStarProjection
     have e2 := norm_exp_sub_one_sub_le A
     have e3 := norm_trace_mul_exp_sub_le hQ A
     have t1 : ‖(Q * (exp A - 1 - A) * (M - 1)).trace‖ ≤ ‖exp A - 1 - A‖ * ‖M - 1‖ :=
-      (norm_trace_mul_le _ _).trans (mul_le_mul_of_nonneg_right
+      (frobenius_norm_trace_mul_le _ _).trans (mul_le_mul_of_nonneg_right
         (frobenius_norm_mul_le_of_isStarProjection _ hQ) (norm_nonneg _))
     have t2 : ‖(Q * A * (M - 1 - S)).trace‖ ≤ ‖A‖ * ‖M - 1 - S‖ :=
-      (norm_trace_mul_le _ _).trans (mul_le_mul_of_nonneg_right
+      (frobenius_norm_trace_mul_le _ _).trans (mul_le_mul_of_nonneg_right
         (frobenius_norm_mul_le_of_isStarProjection _ hQ) (norm_nonneg _))
     have p1 := mul_le_mul e2 h1 (norm_nonneg _) ((norm_nonneg _).trans e2)
     have p2 := mul_le_mul_of_nonneg_left h2 (norm_nonneg A)
@@ -330,10 +330,12 @@ private theorem norm_trace_quadratic_sub_le {Q : Matrix n n ℂ} (hQ : IsStarPro
     ‖(Q * (X - S) * (Q * X)).trace + (Q * S * (Q * (X - S))).trace‖ ≤
       ‖X - S‖ * ‖X‖ + ‖S‖ * ‖X - S‖ :=
   (norm_add_le _ _).trans (add_le_add
-    ((norm_trace_mul_le _ _).trans (mul_le_mul (frobenius_norm_mul_le_of_isStarProjection _ hQ)
-      (frobenius_norm_mul_le_of_isStarProjection _ hQ) (norm_nonneg _) (norm_nonneg _)))
-    ((norm_trace_mul_le _ _).trans (mul_le_mul (frobenius_norm_mul_le_of_isStarProjection _ hQ)
-      (frobenius_norm_mul_le_of_isStarProjection _ hQ) (norm_nonneg _) (norm_nonneg _))))
+    ((frobenius_norm_trace_mul_le _ _).trans
+      (mul_le_mul (frobenius_norm_mul_le_of_isStarProjection _ hQ)
+        (frobenius_norm_mul_le_of_isStarProjection _ hQ) (norm_nonneg _) (norm_nonneg _)))
+    ((frobenius_norm_trace_mul_le _ _).trans
+      (mul_le_mul (frobenius_norm_mul_le_of_isStarProjection _ hQ)
+        (frobenius_norm_mul_le_of_isStarProjection _ hQ) (norm_nonneg _) (norm_nonneg _))))
 
 /-- **The compression of a product of exponentials to second order.** For an orthogonal
 projection `Q` and a list `L = [A₁, …, Aₘ]` of complex matrices with `s = ∑ ‖Aᵢ‖ ≤ 3 / 8`
@@ -443,7 +445,7 @@ private theorem det_one_add_mul_conj_sub_one (hU : U * U = 1) {Q : Matrix n n �
       _ = U * U + Q * U * (M - 1) * U := by rw [hQU.eq]
       _ = U * U + Q * (U * M * U - U * U) := by noncomm_ring
       _ = 1 + Q * (U * M * U - 1) := by rw [hU]
-  rw [e, det_mul, det_mul, mul_right_comm, ← det_mul, hU, det_one, one_mul]
+  rw [e, det_conj_of_mul_eq_one hU hU]
 
 end Conj
 

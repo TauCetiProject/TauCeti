@@ -63,7 +63,7 @@ and the inner product together.
 * `Matrix.frobenius_norm_sq_of_mem_unitaryGroup` — a unitary matrix has squared norm `card ι`.
 * `Matrix.UnitaryGroup.frobenius_norm_mul_left` and `Matrix.UnitaryGroup.frobenius_norm_mul_right`
   — left and right unitary multiplication preserve the Frobenius norm.
-* `Matrix.norm_trace_mul_le` — `‖tr (A * B)‖ ≤ ‖A‖ * ‖B‖`, independently of the size.
+* `Matrix.frobenius_norm_trace_mul_le` — `‖tr (A * B)‖ ≤ ‖A‖ * ‖B‖`, independently of the size.
 * `Matrix.frobenius_norm_mul_le_of_isStarProjection` — left multiplication by an orthogonal
   projection does not increase the Frobenius norm.
 * `Matrix.abs_apply_le_sqrt_trace_mul_transpose` — each entry of a real matrix is bounded in
@@ -395,7 +395,7 @@ theorem UnitaryGroup.frobenius_norm_mul_right [DecidableEq n]
 
 /-- **The trace pairing is bounded by the Frobenius norms**: `‖tr (A * B)‖ ≤ ‖A‖ * ‖B‖`. Unlike a
 bound through the operator norm, it does not depend on the size of the matrices. -/
-theorem norm_trace_mul_le (A : Matrix m n 𝕜) (B : Matrix n m 𝕜) :
+theorem frobenius_norm_trace_mul_le (A : Matrix m n 𝕜) (B : Matrix n m 𝕜) :
     ‖(A * B).trace‖ ≤ ‖A‖ * ‖B‖ := by
   have h := frobenius_inner_eq_trace_conjTranspose_mul Aᴴ B
   rw [conjTranspose_conjTranspose] at h

@@ -97,9 +97,8 @@ private theorem exists_det_one_add_eq_exp_sum_trace_pow_aux [LinearOrder n] (Y :
   -- `t` lists the eigenvalues of `Y`, the diagonal entries of `T`
   set t : n → ℂ := fun i ↦ T i i
   have hTnorm : ‖T‖ = ‖Y‖ := by
-    have h := frobenius_norm_sq_conj_unitary U.val Y U.property
-    rw [← star_eq_conjTranspose] at h
-    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp h
+    rw [UnitaryGroup.frobenius_norm_mul_right U, ← Unitary.coe_star,
+      UnitaryGroup.frobenius_norm_mul_left]
   have hti (i : n) : ‖t i‖ ≤ ‖Y‖ := hTnorm ▸ norm_apply_le_frobenius_norm T i i
   have hsq : ∑ i, ‖t i‖ ^ 2 ≤ ‖Y‖ ^ 2 := by
     rw [← hTnorm, frobenius_norm_sq_eq_sum_norm_sq]
@@ -108,17 +107,11 @@ private theorem exists_det_one_add_eq_exp_sum_trace_pow_aux [LinearOrder n] (Y :
   have hdet : (1 + Y).det = ∏ i, (1 + t i) := by
     have h1 : 1 + Y = U.val * (1 + T) * star U.val := by
       rw [Matrix.mul_add, Matrix.add_mul, Matrix.mul_one, hUU', ← hY']
-    rw [h1, det_mul, det_mul, mul_right_comm, ← det_mul, hUU', det_one, one_mul,
-      det_of_isUpperTriangular (blockTriangular_one.add hT)]
+    rw [h1, det_conj_of_mul_eq_one hUU' hUU, det_of_isUpperTriangular (blockTriangular_one.add hT)]
     simp [t]
   have htr (j : ℕ) : (Y ^ j).trace = ∑ i, t i ^ j := by
-    have hpow : Y ^ j = U.val * T ^ j * star U.val := by
-      induction j with
-      | zero => simp [hUU']
-      | succ j ih =>
-        rw [pow_succ, ih, hY', pow_succ]
-        simp only [Matrix.mul_assoc]
-        rw [← Matrix.mul_assoc (star U.val) U.val, hUU, Matrix.one_mul]
+    have hpow : Y ^ j = U.val * T ^ j * star U.val :=
+      hY' ▸ Units.conj_pow ⟨U.val, star U.val, hUU', hUU⟩ T j
     rw [hpow, trace_mul_cycle, hUU, Matrix.one_mul]
     simp [trace, t, pow_apply_diag_of_isUpperTriangular hT]
   refine ⟨∑ i, (log (1 + t i) - logTaylor (k + 1) (t i)), ?_, ?_⟩
