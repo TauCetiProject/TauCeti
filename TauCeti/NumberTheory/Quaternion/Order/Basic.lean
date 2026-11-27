@@ -51,6 +51,10 @@ coordinates.
 * `TauCeti.QuaternionAlgebra.toSubmodule_standardOrder`: `R⟨i, j⟩` is the `R`-span of
   `1, i, j, k`.
 * `TauCeti.QuaternionAlgebra.isOrder_standardOrder`: `R⟨i, j⟩` is an order.
+* `TauCeti.QuaternionAlgebra.mem_standardOrder_int_iff`: a quaternion lies in the Lipschitz order
+  `ℤ⟨i, j⟩` of `ℍ[ℚ,-1,-1]` exactly when its four coordinates are integers.
+* `TauCeti.QuaternionAlgebra.omega_notMem_standardOrder`: `(1 + i + j + k) / 2` does not lie in the
+  Lipschitz order.
 
 ## References
 
@@ -240,6 +244,25 @@ end StandardOrder
 
 section Lipschitz
 
+/-- A quaternion lies in the Lipschitz order `ℤ⟨i, j⟩` of `ℍ[ℚ,-1,-1]` exactly when its four
+coordinates are integers. -/
+theorem mem_standardOrder_int_iff {x : ℍ[ℚ,-1,-1]} :
+    x ∈ standardOrder ℤ (-1 : ℚ) 0 (-1) ↔ ∃ a b c d : ℤ, x = ⟨a, b, c, d⟩ := by
+  rw [mem_standardOrder_iff ⟨-1, by simp⟩ ⟨0, by simp⟩ ⟨-1, by simp⟩]
+  constructor
+  · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨d, hd⟩⟩
+    exact ⟨a, b, c, d, by ext <;> simp [← ha, ← hb, ← hc, ← hd]⟩
+  · rintro ⟨a, b, c, d, rfl⟩
+    exact ⟨⟨a, by simp⟩, ⟨b, by simp⟩, ⟨c, by simp⟩, ⟨d, by simp⟩⟩
+
+/-- The Hurwitz quaternion `ω = (1 + i + j + k) / 2` does not lie in the Lipschitz order. -/
+theorem omega_notMem_standardOrder :
+    (⟨1 / 2, 1 / 2, 1 / 2, 1 / 2⟩ : ℍ[ℚ,-1,-1]) ∉ standardOrder ℤ (-1 : ℚ) 0 (-1) := by
+  rintro h
+  obtain ⟨a, _, _, _, heq⟩ := mem_standardOrder_int_iff.1 h
+  have hden := congrArg (fun x : ℍ[ℚ,-1,-1] => x.re.den) heq
+  simp at hden
+
 /-- The Lipschitz order `ℤ⟨i, j⟩` of `ℍ[ℚ,-1,-1]` is a `ℤ`-order. -/
 example : IsOrder ℚ (standardOrder ℤ (-1 : ℚ) 0 (-1)) :=
   isOrder_standardOrder ⟨-1, by simp⟩ ⟨0, by simp⟩ ⟨-1, by simp⟩
@@ -253,12 +276,9 @@ example {x : ℍ[ℚ,-1,-1]} (hx : x ∈ standardOrder ℤ (-1 : ℚ) 0 (-1)) :
 is integral over `ℤ`, although it does not lie in the Lipschitz order. -/
 example : IsIntegral ℤ (⟨1 / 2, 1 / 2, 1 / 2, 1 / 2⟩ : ℍ[ℚ,-1,-1]) ∧
     (⟨1 / 2, 1 / 2, 1 / 2, 1 / 2⟩ : ℍ[ℚ,-1,-1]) ∉ standardOrder ℤ (-1 : ℚ) 0 (-1) := by
-  refine ⟨isIntegral_iff_mem_range.2 ⟨⟨1, by norm_num⟩, ⟨1, ?_⟩⟩, fun h => ?_⟩
-  · rw [normForm_apply_coordinates]
-    norm_num
-  · obtain ⟨⟨n, hn⟩, -⟩ := (mem_standardOrder_iff ⟨-1, by simp⟩ ⟨0, by simp⟩ ⟨-1, by simp⟩).1 h
-    have hden := congrArg Rat.den hn
-    simp at hden
+  refine ⟨isIntegral_iff_mem_range.2 ⟨⟨1, by norm_num⟩, ⟨1, ?_⟩⟩, omega_notMem_standardOrder⟩
+  rw [normForm_apply_coordinates]
+  norm_num
 
 end Lipschitz
 

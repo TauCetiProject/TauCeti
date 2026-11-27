@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import TauCeti.NumberTheory.Quaternion.Order.Basic
 public import TauCeti.RingTheory.IntegralOrder.Maximal
+import TauCeti.Data.Int.SumSquares
 -- `round` on `ℚ`, used only in proofs.
 import Mathlib.Data.Rat.Floor
 
@@ -110,7 +111,7 @@ theorem mem_hurwitzOrder_iff {x : ℍ[ℚ,-1,-1]} :
     · exact ⟨2 * a + 1, b - a, c - a, d - a, by ext <;> push_cast <;> ring⟩
 
 /-- The Hurwitz quaternion `ω = (1 + i + j + k) / 2` lies in the Hurwitz order. -/
-theorem half_mem_hurwitzOrder : (⟨1 / 2, 1 / 2, 1 / 2, 1 / 2⟩ : ℍ[ℚ,-1,-1]) ∈ hurwitzOrder :=
+theorem omega_mem_hurwitzOrder : (⟨1 / 2, 1 / 2, 1 / 2, 1 / 2⟩ : ℍ[ℚ,-1,-1]) ∈ hurwitzOrder :=
   ⟨1, 0, 0, 0, by ext <;> simp⟩
 
 /-- The quaternion `i` lies in the Hurwitz order. -/
@@ -138,7 +139,7 @@ theorem toSubmodule_hurwitzOrder :
 theorem hurwitzOrder_le_iff {Λ : Subalgebra ℤ ℍ[ℚ,-1,-1]} :
     hurwitzOrder ≤ Λ ↔
       ⟨0, 1, 0, 0⟩ ∈ Λ ∧ ⟨0, 0, 1, 0⟩ ∈ Λ ∧ ⟨1 / 2, 1 / 2, 1 / 2, 1 / 2⟩ ∈ Λ := by
-  refine ⟨fun h => ⟨h i_mem_hurwitzOrder, h j_mem_hurwitzOrder, h half_mem_hurwitzOrder⟩, ?_⟩
+  refine ⟨fun h => ⟨h i_mem_hurwitzOrder, h j_mem_hurwitzOrder, h omega_mem_hurwitzOrder⟩, ?_⟩
   rintro ⟨hi, hj, hω⟩ x hx
   rw [← Subalgebra.mem_toSubmodule, toSubmodule_hurwitzOrder] at hx
   -- `k = i * j`, so all four spanning vectors lie in `Λ`
@@ -157,7 +158,7 @@ theorem adjoin_eq_hurwitzOrder :
   refine le_antisymm ?_ (hurwitzOrder_le_iff.2 ⟨?_, ?_, ?_⟩)
   · rw [Algebra.adjoin_le_iff, Set.insert_subset_iff, Set.insert_subset_iff,
       Set.singleton_subset_iff]
-    exact ⟨i_mem_hurwitzOrder, j_mem_hurwitzOrder, half_mem_hurwitzOrder⟩
+    exact ⟨i_mem_hurwitzOrder, j_mem_hurwitzOrder, omega_mem_hurwitzOrder⟩
   all_goals exact Algebra.subset_adjoin (by simp)
 
 /-- The **Lipschitz order** `ℤ⟨i, j⟩` lies in the Hurwitz order. -/
@@ -165,30 +166,11 @@ theorem standardOrder_le_hurwitzOrder :
     standardOrder ℤ (-1 : ℚ) 0 (-1) ≤ hurwitzOrder :=
   standardOrder_le_iff.2 ⟨i_mem_hurwitzOrder, j_mem_hurwitzOrder⟩
 
-/-- A quaternion lies in the Lipschitz order `ℤ⟨i, j⟩` of `ℍ[ℚ,-1,-1]` exactly when its four
-coordinates are integers. -/
-private theorem mem_lipschitz_iff {x : ℍ[ℚ,-1,-1]} :
-    x ∈ standardOrder ℤ (-1 : ℚ) 0 (-1) ↔ ∃ a b c d : ℤ, x = ⟨a, b, c, d⟩ := by
-  rw [mem_standardOrder_iff ⟨-1, by simp⟩ ⟨0, by simp⟩ ⟨-1, by simp⟩]
-  constructor
-  · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩, ⟨d, hd⟩⟩
-    exact ⟨a, b, c, d, by ext <;> simp [← ha, ← hb, ← hc, ← hd]⟩
-  · rintro ⟨a, b, c, d, rfl⟩
-    exact ⟨⟨a, by simp⟩, ⟨b, by simp⟩, ⟨c, by simp⟩, ⟨d, by simp⟩⟩
-
-/-- The Hurwitz quaternion `ω = (1 + i + j + k) / 2` does not lie in the Lipschitz order. -/
-private theorem half_notMem_lipschitz :
-    (⟨1 / 2, 1 / 2, 1 / 2, 1 / 2⟩ : ℍ[ℚ,-1,-1]) ∉ standardOrder ℤ (-1 : ℚ) 0 (-1) := by
-  rintro h
-  obtain ⟨a, _, _, _, heq⟩ := mem_lipschitz_iff.1 h
-  have hden := congrArg (fun x : ℍ[ℚ,-1,-1] => x.re.den) heq
-  simp at hden
-
 /-- The Lipschitz order `ℤ⟨i, j⟩` is properly contained in the Hurwitz order. -/
 theorem standardOrder_lt_hurwitzOrder :
     standardOrder ℤ (-1 : ℚ) 0 (-1) < hurwitzOrder :=
   IsConcreteLE.lt_iff_le_and_exists.2
-    ⟨standardOrder_le_hurwitzOrder, _, half_mem_hurwitzOrder, half_notMem_lipschitz⟩
+    ⟨standardOrder_le_hurwitzOrder, _, omega_mem_hurwitzOrder, omega_notMem_standardOrder⟩
 
 /-- **The Lipschitz order has index `2` in the Hurwitz order**: every Hurwitz quaternion lies in
 `ℤ⟨i, j⟩` or differs from an element of it by `ω = (1 + i + j + k) / 2`. -/
@@ -196,8 +178,9 @@ theorem relIndex_standardOrder_hurwitzOrder :
     (Subalgebra.toSubmodule (standardOrder ℤ (-1 : ℚ) 0 (-1))).toAddSubgroup.relIndex
       (Subalgebra.toSubmodule hurwitzOrder).toAddSubgroup = 2 := by
   refine AddSubgroup.relIndex_eq_two_iff_exists_notMem_and.2
-    ⟨_, half_mem_hurwitzOrder, half_notMem_lipschitz, fun x hx => ?_⟩
-  simp only [Submodule.mem_toAddSubgroup, Subalgebra.mem_toSubmodule, mem_lipschitz_iff] at hx ⊢
+    ⟨_, omega_mem_hurwitzOrder, omega_notMem_standardOrder, fun x hx => ?_⟩
+  simp only [Submodule.mem_toAddSubgroup, Subalgebra.mem_toSubmodule,
+    mem_standardOrder_int_iff] at hx ⊢
   rcases mem_hurwitzOrder_iff.1 hx with ⟨a, b, c, d, rfl⟩ | ⟨a, b, c, d, rfl⟩
   · exact .inr ⟨a, b, c, d, rfl⟩
   · exact .inl ⟨a + 1, b + 1, c + 1, d + 1, by ext <;> simp <;> ring⟩
@@ -208,20 +191,6 @@ theorem isOrder_hurwitzOrder : IsOrder ℚ hurwitzOrder := by
     Module.Finite.iff_fg.2 (toSubmodule_hurwitzOrder ▸ fg_span (Set.finite_range _))
   exact (isOrder_standardOrder ⟨-1, by simp⟩ ⟨0, by simp⟩ ⟨-1, by simp⟩).of_le
     standardOrder_le_hurwitzOrder
-
-/-- If the squares of four integers sum to a multiple of `4`, the four integers have the same
-parity. -/
-private theorem exists_eq_add_two_mul_of_sum_sq {A B C D n : ℤ}
-    (h : A ^ 2 + B ^ 2 + C ^ 2 + D ^ 2 = 4 * n) :
-    ∃ b c d : ℤ, B = A + 2 * b ∧ C = A + 2 * c ∧ D = A + 2 * d := by
-  -- `X ^ 2 ≡ X (mod 2)` and `X ^ 2 ≡ 0, 1 (mod 4)`, so `X ^ 2 % 4 = X % 2`
-  have hsq (X : ℤ) : X ^ 2 % 4 = X % 2 := by
-    obtain ⟨k, rfl | rfl⟩ := Int.even_or_odd' X <;> ring_nf <;> omega
-  have := hsq A
-  have := hsq B
-  have := hsq C
-  have := hsq D
-  exact ⟨(B - A) / 2, (C - A) / 2, (D - A) / 2, by omega, by omega, by omega⟩
 
 /-- **Every order containing the Lipschitz order lies in the Hurwitz order.** If `α` lies in a
 `ℤ`-order `Λ` containing `ℤ⟨i, j⟩`, the reduced traces of `α`, `α i`, `α j` and `α k` show that the
@@ -247,7 +216,8 @@ theorem le_hurwitzOrder_of_standardOrder_le {Λ : Subalgebra ℤ ℍ[ℚ,-1,-1]}
       rw [hA, hB, hC, hD, hn]
       ring
     exact_mod_cast this
-  obtain ⟨b, c, d, rfl, rfl, rfl⟩ := exists_eq_add_two_mul_of_sum_sq hsum
+  obtain ⟨b, c, d, rfl, rfl, rfl⟩ :=
+    exists_eq_add_two_mul_of_four_dvd_sq_add_sq_add_sq_add_sq ⟨n, hsum⟩
   refine ⟨A, -b - A, -c - A, -d - A, ?_⟩
   ext <;> push_cast at hB hC hD ⊢ <;> linarith
 
@@ -259,8 +229,8 @@ theorem eq_hurwitzOrder_of_standardOrder_lt {Λ : Subalgebra ℤ ℍ[ℚ,-1,-1]}
   -- `x` has half-integral coordinates, so `ω` differs from `x` by a Lipschitz quaternion
   rcases mem_hurwitzOrder_iff.1 (le_hurwitzOrder_of_standardOrder_le hΛ hlt.le hxΛ) with
     ⟨a, b, c, d, rfl⟩ | ⟨a, b, c, d, rfl⟩
-  · exact absurd (mem_lipschitz_iff.2 ⟨a, b, c, d, rfl⟩) hxL
-  have hy := hlt.le (mem_lipschitz_iff.2 ⟨a, b, c, d, rfl⟩)
+  · exact absurd (mem_standardOrder_int_iff.2 ⟨a, b, c, d, rfl⟩) hxL
+  have hy := hlt.le (mem_standardOrder_int_iff.2 ⟨a, b, c, d, rfl⟩)
   have hω : (⟨1 / 2, 1 / 2, 1 / 2, 1 / 2⟩ : ℍ[ℚ,-1,-1]) ∈ Λ := by
     convert Λ.sub_mem hxΛ hy using 1
     ext <;> simp
@@ -318,11 +288,8 @@ theorem exists_mem_hurwitzOrder_eq_mul_add_normForm_lt {α β : ℍ[ℚ,-1,-1]}
       normForm (-1 : ℚ) 0 (-1) ρ < normForm (-1 : ℚ) 0 (-1) β := by
   have hpos : 0 < normForm (-1 : ℚ) 0 (-1) β :=
     posDef_normForm_of_neg (by norm_num) (by norm_num) β hβ₀
-  -- `γ = β⁻¹ α = nrd(β)⁻¹ (star β) α` satisfies `β γ = α`
-  set γ := (normForm (-1 : ℚ) 0 (-1) β)⁻¹ • (star β * α)
-  have hγ : β * γ = α := by
-    rw [mul_smul_comm, ← mul_assoc, mul_star_eq_coe, ← normForm_apply, coe_mul_eq_smul, smul_smul,
-      inv_mul_cancel₀ hpos.ne', one_smul]
+  set γ := β⁻¹ * α
+  have hγ : β * γ = α := mul_inv_cancel_left₀ hβ₀ α
   obtain ⟨μ, hμ, hle⟩ := exists_mem_hurwitzOrder_normForm_sub_le_half γ
   refine ⟨μ, hμ, α - β * μ, sub_mem hα (mul_mem hβ hμ), (add_sub_cancel _ _).symm, ?_⟩
   rw [← hγ, ← mul_sub, normForm_mul]
