@@ -59,6 +59,8 @@ hyperplanes and coordinate-equality hyperplanes one at a time, factoring `g` int
   Chapter 11.
 * M. Göbel, *A constructive description of SAGBI bases for polynomial invariants of permutation
   groups*, J. Symbolic Comput. **26** (1998).
+* Z. Reichstein, *SAGBI bases in rings of multiplicative invariants*, Comment. Math. Helv. **78**
+  (2003), 185–202.
 * N. M. Thiéry, S. Thomassé, *Convex cones and SAGBI bases of permutation invariants*, in
   *Invariant Theory in All Characteristics*, CRM Proc. Lecture Notes 35, AMS, 2004.
 -/

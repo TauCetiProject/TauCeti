@@ -652,8 +652,7 @@ public theorem mem_coordEq_iff {R ι : Type*} [Ring R] (a b : ι) (v : ι → R)
     v ∈ coordEq R a b ↔ v a = v b := by
   simp [coordEq, sub_eq_zero]
 
-/-- Distinct pairs of indices define distinct coordinate-equality hyperplanes over a nontrivial
-ring (up to swapping the pair). -/
+/-- If `coordEq R a b = coordEq R c d` with `c ≠ d`, then `c` is `a` or `b`. -/
 public theorem eq_or_eq_of_coordEq_eq {R ι : Type*} [Ring R] [Nontrivial R] {a b c d : ι}
     (hcd : c ≠ d) (heq : coordEq R a b = coordEq R c d) : c = a ∨ c = b := by
   classical
