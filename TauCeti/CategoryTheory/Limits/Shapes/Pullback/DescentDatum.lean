@@ -126,7 +126,8 @@ theorem act_comp_hom_comp {X : Over S'} (D : DescentDatum p X) :
   rw [D.act_hom_assoc, pullback.condition]
 
 /-- Acting by `π x` undoes the action by `s`: `π x · (s · x) = x`, where `π = X.hom`. So every
-point of `X` is in the image of the action of any point of `S'` with the same image in `S`. -/
+point `x` of `X` is obtained by acting with `π x` on the point `s · x` in the fibre over any `s`
+with the same image in `S`. -/
 @[reassoc (attr := simp)]
 theorem lift_act_comp_act {X : Over S'} (D : DescentDatum p X) :
     pullback.lift (pullback.snd p (X.hom ≫ p) ≫ X.hom) D.act
