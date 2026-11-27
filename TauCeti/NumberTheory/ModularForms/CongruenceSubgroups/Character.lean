@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
-# Quadratic characters on congruence subgroups
+# Dirichlet characters on congruence subgroups
+
+A Dirichlet character modulo `N` with values in a normed field has norm `1` on the lower-right
+entry of any matrix in `Γ₀(N)`, since that entry is a unit modulo `N`. This makes the absolute
+value of a function automorphic with nebentypus invariant under `Γ₀(N)`.
 
 A quadratic Dirichlet character modulo `N` takes equal values on the two diagonal entries of
 any matrix in `Γ₀(N)`: their product is one modulo `N`, and a quadratic character is its own
@@ -19,6 +23,17 @@ inverse. This identifies the upper-left and lower-right character factors in the
 public section
 
 open scoped MatrixGroups
+
+namespace DirichletCharacter
+
+/-- A Dirichlet character with values in a normed field has norm `1` on the lower-right entry of
+a matrix in `Γ₀(N)`, which is a unit modulo `N`. -/
+theorem norm_apply_one_one_of_mem_Gamma0 {F : Type*} [NormedField F] {N : ℕ}
+    (χ : DirichletCharacter F N) {γ : SL(2, ℤ)} (hγ : γ ∈ CongruenceSubgroup.Gamma0 N) :
+    ‖χ ((γ 1 1 : ℤ) : ZMod N)‖ = 1 :=
+  χ.unit_norm_eq_one (CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0 hγ).unit
+
+end DirichletCharacter
 
 namespace MulChar.IsQuadratic
 

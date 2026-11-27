@@ -12,7 +12,7 @@ public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 public import TauCeti.RingTheory.WittVector.Frobenius
 
 /-!
-# Frobenius-fixed Witt vectors are the `p`-adic integers
+# `p`-adic and finite constants in Witt vectors
 
 Let `k` be a domain of characteristic `p` (for instance a field). The inclusion `𝔽_p ⊆ k`
 induces a ring homomorphism `ι_k : ℤ_[p] ≅ W(𝔽_p) → W(k)`, the *`p`-adic constants* of
@@ -20,6 +20,10 @@ induces a ring homomorphism `ι_k : ℤ_[p] ≅ W(𝔽_p) → W(k)`, the *`p`-ad
 fixed by the Witt-vector Frobenius `σ`: since `σ` raises every Witt coordinate to its `p`-th
 power, `σ x = x` says that every coordinate of `x` is a root of `X ^ p - X`, that is, lies in
 `𝔽_p`.
+
+For every ring `k` of characteristic `p`, reduction gives canonical finite constants
+`ℤ/p^n → W(k)/p^n`. This map is injective because the `p`-adic constants reflect divisibility
+by `p^n`, and its image is fixed by the induced Witt Frobenius.
 
 As an application, if a matrix `T` over `W(k)` is conjugate to `σ(T)` over some faithful
 `W(k)`-algebra `L` (for instance `L = W(k)[1/p]`), then its characteristic polynomial is fixed by
@@ -36,6 +40,11 @@ polynomial of `F^a` has coefficients in `ℤ_p`.
   `TauCeti.WittVector.padicConstants_injective`, the naturality
   `TauCeti.WittVector.map_padicConstants` and the identification
   `TauCeti.WittVector.padicConstants_zmod` of `ι_{𝔽_p}` with `W(𝔽_p) ≅ ℤ_[p]`.
+* `TauCeti.WittVector.constantsMod`: the canonical finite constants `ℤ/p^n → W(k)/p^n`, with
+  reduction formula `TauCeti.WittVector.constantsMod_toZModPow` and Frobenius invariance
+  `TauCeti.WittVector.frobeniusMod_constantsMod`.
+* `TauCeti.WittVector.padicConstants_mem_span_pow_iff`: the `p`-adic constants reflect
+  divisibility by `p^n`, yielding `TauCeti.WittVector.constantsMod_injective`.
 * `TauCeti.WittVector.frobenius_eq_self_iff` and `TauCeti.WittVector.range_padicConstants`:
   the Frobenius-fixed Witt vectors are exactly the `p`-adic constants.
 * `TauCeti.WittVector.map_frobenius_eq_self_iff_mem_lifts`: the same for polynomials.
@@ -131,6 +140,77 @@ theorem frobenius_padicConstants (z : ℤ_[p]) :
   rw [frobenius_eq_self_iff_forall_coeff]
   intro n
   rw [padicConstants_apply, map_coeff, ← map_pow, ZMod.pow_card]
+
+section FiniteConstants
+
+variable (p k)
+
+local notation "W" => _root_.WittVector p k
+
+/-- The canonical finite constants `ℤ/p^n → W(k)/p^n`, obtained by reducing the p-adic constants.
+This definition also applies to `n = 0`. -/
+def constantsMod (n : ℕ) : ZMod (p ^ n) →+* W ⧸ Ideal.span {(p : W) ^ n} :=
+  (Ideal.Quotient.lift (RingHom.ker (PadicInt.toZModPow n))
+    ((Ideal.Quotient.mk _).comp (padicConstants p k)) <| by
+      intro z hz
+      rw [PadicInt.ker_toZModPow, Ideal.mem_span_singleton] at hz
+      simpa only [RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem,
+        Ideal.mem_span_singleton, map_pow, map_natCast] using
+        map_dvd (padicConstants p k) hz).comp
+    (RingHom.quotientKerEquivOfSurjective
+      (ZMod.ringHom_surjective (PadicInt.toZModPow n))).symm.toRingHom
+
+/-- Finite constants commute with reduction of p-adic integers. -/
+@[simp]
+theorem constantsMod_toZModPow (n : ℕ) (z : ℤ_[p]) :
+    constantsMod p k n (PadicInt.toZModPow n z) =
+      Ideal.Quotient.mk _ (padicConstants p k z) := by
+  simp [constantsMod, RingHom.quotientKerEquivOfSurjective_symm_apply,
+    Ideal.Quotient.lift_mk]
+
+/-- Frobenius fixes the canonical finite constants. -/
+@[simp]
+theorem frobeniusMod_constantsMod (n : ℕ) (z : ZMod (p ^ n)) :
+    frobeniusMod p k n (constantsMod p k n z) = constantsMod p k n z := by
+  obtain ⟨z, rfl⟩ := ZMod.ringHom_surjective (PadicInt.toZModPow n) z
+  simp
+
+variable {p k}
+
+/-- A p-adic constant is divisible by `p^n` in `W(k)` exactly when it is divisible by `p^n`
+in `ℤ_p`. -/
+theorem padicConstants_mem_span_pow_iff (n : ℕ) (z : ℤ_[p]) :
+    padicConstants p k z ∈ Ideal.span {(p : W) ^ n} ↔
+      z ∈ Ideal.span {(p : ℤ_[p]) ^ n} := by
+  have : Nontrivial k := CharP.nontrivial_of_char_ne_one (Fact.out : p.Prime).ne_one
+  constructor
+  · intro hz
+    have he : (equiv p).symm z ∈ Ideal.span {(p : _root_.WittVector p (ZMod p)) ^ n} := by
+      obtain ⟨u, hu⟩ := Ideal.mem_span_singleton'.mp hz
+      rw [mem_span_p_pow_iff_le_coeff_eq_zero]
+      intro i hi
+      apply (ZMod.castHom dvd_rfl k).injective
+      have hz := mul_pow_charP_coeff_zero u hi
+      rw [hu] at hz
+      simpa only [padicConstants_apply, map_coeff, map_zero] using hz
+    obtain ⟨y, hy⟩ := Ideal.mem_span_singleton.mp he
+    rw [Ideal.mem_span_singleton]
+    exact ⟨equiv p y, by simpa using congrArg (equiv p) hy⟩
+  · intro hz
+    simpa only [Ideal.mem_span_singleton, map_pow, map_natCast] using
+      map_dvd (padicConstants p k) (Ideal.mem_span_singleton.mp hz)
+
+/-- Over a ring of characteristic `p`, the finite constants embed in `W(k)/p^n`. -/
+theorem constantsMod_injective (n : ℕ) :
+    Function.Injective (constantsMod p k n) := by
+  apply (injective_iff_map_eq_zero _).2
+  intro z hz
+  obtain ⟨z, rfl⟩ := ZMod.ringHom_surjective (PadicInt.toZModPow n) z
+  rw [constantsMod_toZModPow, Ideal.Quotient.eq_zero_iff_mem,
+    padicConstants_mem_span_pow_iff] at hz
+  rwa [← PadicInt.ker_toZModPow, RingHom.mem_ker] at hz
+
+end FiniteConstants
 
 variable [IsDomain k]
 

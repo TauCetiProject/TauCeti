@@ -87,6 +87,7 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   the canonical real-descent equivalence identifies tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
+* `LinearMap.map_real_smul`: a conjugate-linear map is real-linear.
 * `LinearEquiv.conjugationOfComplexification_apply_apply`: the transported conjugation sends
   `e u` to `e (tmulConj W u)`.
 * `LinearEquiv.conjugationOfComplexification_eq_self_iff`,
@@ -320,6 +321,15 @@ theorem _root_.LinearMap.liftBaseChange_complex_injective_of_conj (f : W →ₗ[
   simp
 
 end LiftBaseChange
+
+/-- A conjugate-linear map is real-linear, for any real structures compatible with the complex
+ones. -/
+@[simp]
+theorem _root_.LinearMap.map_real_smul {E F : Type*} [AddCommMonoid E] [Module ℂ E] [Module ℝ E]
+    [IsScalarTower ℝ ℂ E] [AddCommMonoid F] [Module ℂ F] [Module ℝ F] [IsScalarTower ℝ ℂ F]
+    (K : E →ₛₗ[starRingEnd ℂ] F) (r : ℝ) (x : E) : K (r • x) = r • K x := by
+  rw [← algebraMap_smul ℂ r x, K.map_smulₛₗ, ← algebraMap_smul ℂ r (K x), Complex.coe_algebraMap,
+    starRingEnd_apply, Complex.star_def, Complex.conj_ofReal]
 
 /-! ### The complexification of the real points -/
 

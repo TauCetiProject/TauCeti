@@ -126,7 +126,7 @@ private theorem decompositionPointsEquiv_mapValue (l : H →ₐc[R] LaurentPolyn
         ⟨l.unipotentPointsIso.hom.app A (AffineGroup.Product.pointsMulEquiv f).1,
           (leviPointsIso l).hom.app A (AffineGroup.Product.pointsMulEquiv f).2⟩))
   rw [AffineGroup.Product.pointsMulEquiv_mapValue, hU, hZ, ← hP,
-    mapParabolic_leviDecompositionMulEquiv_apply, leviSemidirectMap_apply]
+    mapParabolic_leviDecompositionMulEquiv_apply, leviSemidirectFunctor_map_apply]
 
 /-- The Levi factorization as a bijection between algebra-category hom sets. -/
 private noncomputable def decompositionHomEquiv (l : H →ₐc[R] LaurentPolynomial R)

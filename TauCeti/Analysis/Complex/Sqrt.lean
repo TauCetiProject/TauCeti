@@ -19,8 +19,9 @@ involving sums of principal roots. The file also records the values `√i = e^{�
 for real `r ≥ 0` and the identification of the real square root of `x ≥ 0` with the complex
 half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative real, cast to `ℂ`,
 squares back to it, and packages the principal square root of a nonzero complex number as a unit,
-`Complex.sqrtUnit`. A complex unit of absolute value one has a square root of absolute value one,
-`Complex.exists_sq_eq_and_star_mul_self_eq_one`.
+`Complex.sqrtUnit`. On the open upper half-plane the principal square root lies in the open
+first quadrant (`Complex.sqrt_re_pos_iff`, `Complex.sqrt_im_pos`). A complex unit of absolute
+value one has a square root of absolute value one, `Complex.exists_sq_eq_and_star_mul_self_eq_one`.
 
 The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
 real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
@@ -91,6 +92,11 @@ theorem sqrt_re_nonneg (z : ℂ) : 0 ≤ (sqrt z).re := by
 theorem sqrt_im_nonneg {z : ℂ} (h : 0 ≤ z.im) : 0 ≤ (sqrt z).im := by
   rw [sqrt, cpow_inv_two_im_eq_sqrt h]
   exact Real.sqrt_nonneg _
+
+/-- The principal square root has positive imaginary part when the input does. -/
+theorem sqrt_im_pos {z : ℂ} (h : 0 < z.im) : 0 < (sqrt z).im := by
+  rw [sqrt, cpow_inv_two_im_eq_sqrt h.le, Real.sqrt_pos]
+  linarith [le_abs_self z.re, abs_re_lt_norm.2 h.ne']
 
 /-- The principal square root has positive real part exactly on the slit plane. -/
 @[simp]

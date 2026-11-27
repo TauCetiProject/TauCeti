@@ -43,6 +43,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.pow_card_mul_prod_induction`: a property of pairs of an ideal and an element, stable
   under multiplication, passes from the factors of a finite product to the product with any
   cofactor, at the power `J ^ card ι`.
+* `Ideal.pow_smul_eq_span_prod_smul`: `I ^ n • N` is spanned by the vectors `(a₁ ⋯ aₙ) • y` with
+  `aᵢ ∈ I` and `y ∈ N`.
 * `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • ⊤ = ⊤` as a
   module over `R`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
@@ -111,6 +113,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal left
   ideal additively span the ambient algebra, and the subalgebra contains a generator of the
   ideal, then the same holds with the ideal replaced by any power.
+* `Ideal.span_setOf_mul_eq_mul_eq_top`: if `I * J` is generated as a left ideal by `c` in a ring,
+  the elements `u` with `u * c = a * b` for some `a ∈ I` and `b ∈ J` generate the unit left ideal.
 -/
 
 public section
@@ -316,6 +320,42 @@ theorem pow_card_mul_prod_induction [Fintype ι] {J : Ideal S} (P : Ideal S → 
 
 end Prod
 
+section PowSMul
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- **Generators of `I ^ n • N`.** The submodule `I ^ n • N` is spanned by the vectors
+`(a₁ ⋯ aₙ) • y` with `a₁, …, aₙ ∈ I` and `y ∈ N`. -/
+theorem pow_smul_eq_span_prod_smul (I : Ideal R) (n : ℕ) (N : Submodule R M) :
+    I ^ n • N =
+      Submodule.span R {y | ∃ a : Fin n → R, (∀ i, a i ∈ I) ∧ ∃ z ∈ N, (∏ i, a i) • z = y} := by
+  refine le_antisymm ?_ (Submodule.span_le.2 ?_)
+  · induction n with
+    | zero =>
+      rw [pow_zero, one_eq_top, Submodule.top_smul]
+      exact fun z hz ↦ Submodule.subset_span ⟨Fin.elim0, fun i ↦ i.elim0, z, hz, by simp⟩
+    | succ n ih =>
+      rw [pow_succ', Submodule.mul_smul]
+      refine Submodule.smul_le.2 fun a ha t ht ↦ ?_
+      replace ht := ih ht
+      -- Multiplying a generator by `a ∈ I` gives a generator with one more factor.
+      induction ht using Submodule.span_induction with
+      | mem t hgen =>
+        obtain ⟨b, hb, z, hz, rfl⟩ := hgen
+        refine Submodule.subset_span ⟨Fin.cons a b, fun i ↦ ?_, z, hz, ?_⟩
+        · cases i using Fin.cases with
+          | zero => simpa using ha
+          | succ i => simpa using hb i
+        · rw [Fin.prod_cons, mul_smul]
+      | zero => simp
+      | add t u _ _ ht hu => rw [smul_add]; exact add_mem ht hu
+      | smul c t _ ht => rw [smul_comm]; exact Submodule.smul_mem _ c ht
+  · rintro _ ⟨a, ha, z, hz, rfl⟩
+    refine Submodule.smul_mem_smul ?_ hz
+    simpa using prod_mem_prod (s := Finset.univ) (I := fun _ ↦ I) fun i _ ↦ ha i
+
+end PowSMul
+
 end Ideal
 
 namespace Submodule
@@ -339,6 +379,22 @@ theorem mem_span_algebraMap_smul_iff (N : Submodule A V) (x : R) {v : V} :
   · rintro ⟨w, hw, rfl⟩
     rw [← algebraMap_smul A]
     exact smul_mem_smul (Ideal.mem_span_singleton_self _) hw
+
+omit [AddCommMonoid V] [Module R V] [Module A V] [IsScalarTower R A V] in
+/-- For an `R`-algebra `A`, possibly noncommutative, and a scalar `x : R`, a vector `v : ι → A` lies
+in `x A • (ι → A)` exactly when each of its coordinates lies in the left ideal `x A`. -/
+theorem mem_span_algebraMap_smul_top_pi_iff {ι : Type*} (x : R) {v : ι → A} :
+    v ∈ Ideal.span {algebraMap R A x} • (⊤ : Submodule A (ι → A)) ↔
+      ∀ i, v i ∈ Ideal.span {algebraMap R A x} := by
+  rw [mem_span_algebraMap_smul_iff]
+  simp only [mem_top, true_and]
+  constructor
+  · rintro ⟨w, rfl⟩ i
+    rw [Pi.smul_apply, Algebra.smul_def, Algebra.commutes]
+    exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
+  · intro hv
+    choose w hw using fun i ↦ Ideal.mem_span_singleton'.mp (hv i)
+    exact ⟨w, funext fun i ↦ by rw [Pi.smul_apply, Algebra.smul_def, Algebra.commutes, hw]⟩
 
 end Submodule
 
@@ -689,6 +745,22 @@ theorem Ideal.span_pair_sq_eq_span_singleton_of_isCoprime {R : Type*} [CommSemir
     have h := add_mem (Ideal.mul_mem_left _ u (Ideal.pow_mem_pow hzI 2))
       (Ideal.mul_mem_left _ v (Ideal.pow_mem_pow hxI 2))
     rwa [← hz, ← Ideal.span_singleton_le_iff_mem] at h
+
+/-- If `I * J` is generated as a left ideal by `c` in a ring `R`, the elements `u` with
+`u * c = a * b` for some `a ∈ I` and `b ∈ J` generate the unit left ideal. -/
+theorem Ideal.span_setOf_mul_eq_mul_eq_top {R : Type*} [Ring R] {I J : Ideal R} {c : R}
+    (hIJ : I * J = Ideal.span {c}) :
+    Ideal.span {u : R | ∃ a ∈ I, ∃ b ∈ J, u * c = a * b} = ⊤ := by
+  set S := Ideal.span {u : R | ∃ a ∈ I, ∃ b ∈ J, u * c = a * b}
+  have hle : I * J ≤ Submodule.map (LinearMap.mulRight R c) S :=
+    Submodule.mul_le.mpr fun a ha b hb ↦ by
+      obtain ⟨u, hu⟩ := Ideal.mem_span_singleton'.mp (hIJ ▸ Ideal.mul_mem_mul ha hb)
+      exact ⟨u, Ideal.subset_span ⟨a, ha, b, hb, hu⟩, hu⟩
+  obtain ⟨z, hz, hzc⟩ := hle (hIJ ▸ Ideal.mem_span_singleton_self c)
+  rw [LinearMap.mulRight_apply] at hzc
+  have h1z : 1 - z ∈ S := Ideal.subset_span ⟨0, I.zero_mem, 0, J.zero_mem, by
+    rw [sub_mul, one_mul, hzc, sub_self, mul_zero]⟩
+  exact (Ideal.eq_top_iff_one _).mpr (add_sub_cancel z 1 ▸ S.add_mem hz h1z)
 
 /-- In a commutative semiring, a factor coprime to the first generator of a two-generator ideal
 cancels from a product in the second generator: if `IsCoprime x y`, then

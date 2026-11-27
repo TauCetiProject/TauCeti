@@ -26,7 +26,8 @@ index, counts every entry `k` times (`Fin.sum_sum_succAbove`, multiplicatively
 `Fin.prod_prod_succAbove`).
 The equivalence omitting the last index also reindexes sums by the preceding indices, and a
 filtered product over `Fin (n + 1)` splits off its first index; when two such products agree and
-so do their first factors, the products over the remaining indices agree.
+so do their first factors, the products over the remaining indices agree. In particular a
+product over the indices below `k.succ` splits off its first index (`Fin.prod_Iio_succ`).
 
 Along a divisibility chain `d₀ ∣ d₁ ∣ ⋯`, the product of the first `k` entries divides the
 product of the entries at any `k` distinct positions. This is what makes the leading `k × k`
@@ -193,6 +194,13 @@ theorem prod_filter_univ_succ {M : Type*} [CommMonoid M] {n : ℕ} (P : Fin (n +
     [DecidablePred P] (f : Fin (n + 1) → M) :
     ∏ i with P i, f i = (if P 0 then f 0 else 1) * ∏ i : Fin n with P i.succ, f i.succ := by
   rw [Finset.prod_filter, prod_univ_succ, Finset.prod_filter]
+
+/-- A product over the indices of `Fin (n + 1)` below `k.succ` splits off the first index. -/
+@[to_additive /-- A sum over the indices of `Fin (n + 1)` below `k.succ` splits off the first
+index. -/]
+theorem prod_Iio_succ {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) (k : Fin n) :
+    ∏ i ∈ Finset.Iio k.succ, f i = f 0 * ∏ i ∈ Finset.Iio k, f i.succ := by
+  simp [← Finset.filter_gt_eq_Iio, prod_filter_univ_succ]
 
 /-- If two filtered products over `Fin (n + 1)` agree, and their first factors are nonzero and
 equal whenever the first index is selected, then the filtered products over the remaining indices

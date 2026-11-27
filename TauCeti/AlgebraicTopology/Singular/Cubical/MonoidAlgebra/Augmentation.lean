@@ -64,6 +64,7 @@ so it also applies to the chains of a space with a left action alone.
   the orbits is linear over the augmentation.
 * `TauCeti.cubicalChainModuleAugmentation_smul`: `ε (a · m) = ε(a) ε(m)` for a left action.
 * `TauCeti.cubicalChainModuleAugmentation_surjective`: `ε` is onto when `Y` has a point.
+* `TauCeti.cubicalChainModuleAugmentation_linearMap`: `ε` is natural for push-forwards of chains.
 * `TauCeti.cubicalChainPoint_smul_cubicalChainModulePoint`: for a left action,
   `[g] · [y] = [g • y]`.
 * `TauCeti.op_cubicalChainPoint_smul_cubicalChainModulePoint`: for a right action,
@@ -150,6 +151,21 @@ theorem cubicalChainModuleAugmentation_surjective (y : Y) :
   ⟨cubicalChainModuleLof Y G R 0 (r • ofCube Y R (SingularCube.point y)), by
     rw [cubicalChainModuleAugmentation_lof_zero, map_smul, augment_ofCube, smul_eq_mul,
       _root_.mul_one]⟩
+
+/-- **Pushing chains forward preserves their augmentation**: `ε (f_* m) = ε m`. -/
+@[simp]
+theorem cubicalChainModuleAugmentation_linearMap {Y' G' : Type*} [TopologicalSpace Y']
+    (f : C(Y, Y')) (m : cubicalChainModule Y G R) :
+    cubicalChainModuleAugmentation Y' G' R (cubicalChainModuleLinearMap R f m) =
+      cubicalChainModuleAugmentation Y G R m := by
+  induction m using cubicalChainModule.induction_on with
+  | add m m' hm hm' => simp only [map_add, hm, hm']
+  | lof n c =>
+    rw [cubicalChainModuleLinearMap_lof]
+    rcases n with _ | k
+    · rw [cubicalChainModuleAugmentation_lof_zero, cubicalChainModuleAugmentation_lof_zero,
+        ← LinearMap.comp_apply, augment_map]
+    · simp
 
 end Augmentation
 

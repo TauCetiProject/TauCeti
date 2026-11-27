@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 
 /-!
 # Banach representations

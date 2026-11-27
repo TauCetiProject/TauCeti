@@ -38,7 +38,10 @@ an isomorphism (`IsQuotientCoveringMap.isIso_associatedLocalSystemMapOver_id`).
 The identification lets equivariant chain maps compute twisted homology. The action on `E` is free,
 so the relative chains are projective representations (`TopPair.projective_singularChainsRep_X`),
 and a quasi-isomorphism between `ℕ`-graded complexes of projectives is a chain homotopy equivalence
-(`ChainComplex.quasiIso_iff_of_projective`), which every additive functor preserves. So an
+(`ChainComplex.quasiIso_iff_of_projective`), which every additive functor preserves: the tensor
+coinvariants of an equivariant quasi-isomorphism `C(E, E₀; k) ⟶ K` to a complex of projective
+representations are a chain homotopy equivalence
+(`TopPair.homotopyEquivalences_coinvariantsTensor_map`). So an
 equivariant quasi-isomorphism `C(E, E₀; k) ⟶ K` to a complex of projective representations
 identifies the relative twisted homology `Hₙ(B, A; L_D)` with the homology of `(D ⊗ K)_G`
 (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`).
@@ -166,6 +169,26 @@ theorem singularChainsRepπ_coinvariantsTensorSingularChainsRepIsoTwisted_hom :
   rw [coinvariantsTensorSingularChainsRepIsoTwisted, Iso.trans_hom, Iso.trans_hom, reassoc_of% h₁,
     cokernel.mapIso_hom, cokernel.π_desc_assoc, Category.assoc, h₃]
 
+/-- **Tensor coinvariants of an equivariant quasi-isomorphism are a chain homotopy equivalence.**
+Let `G` act on a pair `(E, E₀)` with an equivariant embedding, and let a map of pairs
+`(E, E₀) ⟶ (B, A)` restrict to quotient covering maps `E ⟶ B` and `E₀ ⟶ A`. If
+`f : C(E, E₀; k) ⟶ K` is an equivariant quasi-isomorphism to a complex of projective
+representations, then for every representation `D` the induced map `(D ⊗ C(E, E₀; k))_G ⟶ (D ⊗ K)_G`
+is a chain homotopy equivalence: the action on `E` is free, so `f` is a quasi-isomorphism between
+complexes of projectives, hence a chain homotopy equivalence, which the additive functor of tensor
+coinvariants preserves. -/
+theorem homotopyEquivalences_coinvariantsTensor_map {K : ChainComplex (Rep.{u} k G) ℕ}
+    [∀ n, Projective (K.X n)] (f : haveI := hfst.toContinuousConstSMul
+      haveI := hsnd.toContinuousConstSMul
+      P'.singularChainsRep k G hP ⟶ K) [QuasiIso f] :
+    HomologicalComplex.homotopyEquivalences _ _
+      ((((Rep.coinvariantsTensor k G).obj D).mapHomologicalComplex _).map f) := by
+  have := hfst.toContinuousConstSMul
+  have := hsnd.toContinuousConstSMul
+  have := hfst.isCancelSMul
+  exact Functor.homotopyEquivalences_mapHomologicalComplex_map _ f
+    ((ChainComplex.quasiIso_iff_of_projective f).1 ‹_›)
+
 /-- **Equivariant quasi-isomorphisms compute relative twisted homology.** Let `G` act on a pair
 `(E, E₀)` with an equivariant embedding, and let a map of pairs `(E, E₀) ⟶ (B, A)` restrict to
 quotient covering maps `E ⟶ B` and `E₀ ⟶ A`. If `f : C(E, E₀; k) ⟶ K` is an equivariant
@@ -179,13 +202,10 @@ def twistedHomologyIsoHomologyCoinvariantsTensorObj {K : ChainComplex (Rep.{u} k
     P.twistedHomology (hfst.associatedLocalSystem k D) n ≅ (K.coinvariantsTensorObj D).homology n :=
   haveI := hfst.toContinuousConstSMul
   haveI := hsnd.toContinuousConstSMul
-  haveI := hfst.isCancelSMul
-  -- A quasi-isomorphism of complexes of projectives is a chain homotopy equivalence, so it stays a
-  -- quasi-isomorphism after applying the additive functor of tensor coinvariants.
+  -- The tensor coinvariants of `f` are a chain homotopy equivalence, hence a quasi-isomorphism.
   haveI : QuasiIso ((((Rep.coinvariantsTensor k G).obj D).mapHomologicalComplex _).map f) :=
     homotopyEquivalences_le_quasiIso _ _ _
-      (Functor.homotopyEquivalences_mapHomologicalComplex_map _ f
-        ((ChainComplex.quasiIso_iff_of_projective f).1 ‹_›))
+      (P'.homotopyEquivalences_coinvariantsTensor_map k hfst hsnd hP D f)
   (HomologicalComplex.homologyFunctor _ _ n).mapIso
       (P'.coinvariantsTensorSingularChainsRepIsoTwisted k hfst hsnd hP D).symm ≪≫
     asIso (HomologicalComplex.homologyMap

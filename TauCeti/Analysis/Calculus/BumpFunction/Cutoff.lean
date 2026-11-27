@@ -32,7 +32,9 @@ finite-dimensional real normed space. The cutoff is equal to one on a neighborho
 set and has topological support in a prescribed open set, which is the localization step used for
 compact exhaustions in domain arguments; between the sublevel sets `{ν ≤ a}` and `{ν ≥ b}` of a
 continuous function with compact sublevel set `{ν ≤ a}` it gives a cutoff whose derivative vanishes
-where `ν > b` (`IsCompact.exists_contDiff_cutoff_sublevel`). A compact set covered by open sets
+where `ν > b` (`IsCompact.exists_contDiff_cutoff_sublevel`), and its complement `1 - ψ` is a
+cutoff onto `{ν ≥ b}` vanishing near `{ν ≤ a}` (`IsCompact.exists_contDiff_cutoff_superlevel`).
+A compact set covered by open sets
 carries a finite smooth partition of unity by nonnegative compactly supported functions, each with
 topological support in a member of the cover, whose sum is at most one everywhere and one on the
 compact set (`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`). Taking differences of
@@ -47,8 +49,10 @@ agrees, at positions near a compact subset of `U`, with a function `C^k` on the 
 which keeps its periods in the second coordinate
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
-(`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
-functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`). In particular the
+(`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`), and a `C¹` cutoff supported in `P`
+multiplies a map dominated with its derivative by a jet `J` into a map whose derivative is bounded
+in `Lᵖ` by `J` on `P` (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`). Locally finite sums
+of smooth functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`). In particular the
 integer translates `(x, t) ↦ f (x, t + n)` of a compactly supported map are locally finite
 (`TauCeti.exists_finset_eventually_eq_zero_add_intCast`), so its periodization `Σₙ f (x, t + n)`
 is `C^k` when `f` is (`TauCeti.contDiff_tsum_add_intCast`); it has period one in `t`
@@ -189,6 +193,24 @@ theorem _root_.IsCompact.exists_contDiff_cutoff_sublevel [NormedSpace ℝ E] [Fi
   refine ⟨ψ, hψ, fun x ↦ hψ01 (mem_range_self x), hψ1, hψ0, fun x hx ↦ ?_⟩
   rw [(hψ0 x hx.le).fderiv_eq]
   simp
+
+/-- **A cutoff between superlevel sets.** Let `ν : E → ℝ` be continuous with compact sublevel set
+`{ν ≤ a}`, and let `a < b`. There is a smooth function `β` with values in `[0, 1]`, equal to `0`
+near every point where `ν ≤ a` and to `1` near every point where `ν ≥ b`, whose derivative
+vanishes wherever `ν > b`. It is `1 - ψ` for the cutoff `ψ` of
+`IsCompact.exists_contDiff_cutoff_sublevel`. -/
+theorem _root_.IsCompact.exists_contDiff_cutoff_superlevel [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {ν : E → ℝ} {a b : ℝ} (hK : IsCompact {x | ν x ≤ a})
+    (hν : Continuous ν) (hab : a < b) :
+    ∃ β : E → ℝ, ContDiff ℝ ∞ β ∧ (∀ x, β x ∈ Icc 0 1) ∧
+      (∀ x, ν x ≤ a → β =ᶠ[𝓝 x] 0) ∧ (∀ x, b ≤ ν x → β =ᶠ[𝓝 x] 1) ∧
+        ∀ x, b < ν x → fderiv ℝ β x = 0 := by
+  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ := hK.exists_contDiff_cutoff_sublevel hν hab
+  refine ⟨fun x ↦ 1 - ψ x, contDiff_const.sub hψ,
+    fun x ↦ ⟨by simp [(hψ01 x).2], by simp [(hψ01 x).1]⟩,
+    fun x hx ↦ (hψ1 x hx).mono fun y h ↦ by simp [h],
+    fun x hx ↦ (hψ0 x hx).mono fun y h ↦ by simp [h], fun x hx ↦ ?_⟩
+  rw [fderiv_const_sub, hψK x hx, neg_zero]
 
 /-- **A finite smooth partition of unity on a compact set.** A compact subset `K` of a
 finite-dimensional real normed space covered by open sets `U i` carries smooth, compactly
@@ -348,6 +370,42 @@ theorem eLpNorm_fderiv_restrict_le_of_subset_interior [NormedSpace ℝ E] [Measu
     simp [hy1]
   rw [MeasureTheory.eLpNorm_congr_ae heq]
   exact MeasureTheory.eLpNorm_mono_measure _ MeasureTheory.Measure.restrict_le_self
+
+open MeasureTheory in
+/-- **The derivative of a cut-off map in `Lᵖ`.** Let `χ` be a `C¹` cutoff with `|χ| ≤ 1` and
+`‖Dχ‖ ≤ C` whose topological support lies in a measurable set `P`, and let `u` be a `C¹` map
+dominated by a jet `J`, in the sense that `‖u‖ ≤ ‖J‖` and `‖Du‖ ≤ c ‖J‖`. Then the derivative of
+`χ u` is bounded in `Lᵖ(μ)` by `C + c` times the `Lᵖ(P)` norm of `J`. -/
+theorem eLpNorm_fderiv_smul_le_of_tsupport_subset [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [OpensMeasurableSpace E] {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] {μ : Measure E} {χ : E → ℝ} {C c : ℝ}
+    (hχ : ContDiff ℝ 1 χ) (hχ1 : ∀ x, |χ x| ≤ 1) (hC : ∀ x, ‖fderiv ℝ χ x‖ ≤ C) {P : Set E}
+    (hP : MeasurableSet P) (hχP : tsupport χ ⊆ P) {u : E → F} (hu : ContDiff ℝ 1 u) {J : E → G}
+    (hJ : ∀ x, ‖u x‖ ≤ ‖J x‖) (hdJ : ∀ x, ‖fderiv ℝ u x‖ ≤ c * ‖J x‖) (p : ENNReal) :
+    eLpNorm (fderiv ℝ fun x ↦ χ x • u x) p μ ≤
+      ENNReal.ofReal (C + c) * eLpNorm J p (μ.restrict P) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  have hpt : ∀ x, ‖fderiv ℝ (fun x ↦ χ x • u x) x‖ ≤ (C + c) * ‖P.indicator J x‖ := by
+    intro x
+    by_cases hx : x ∈ P
+    · rw [indicator_of_mem hx,
+        fderiv_fun_smul (hχ.differentiable one_ne_zero x) (hu.differentiable one_ne_zero x)]
+      calc _ ≤ ‖χ x‖ * ‖fderiv ℝ u x‖ + ‖fderiv ℝ χ x‖ * ‖u x‖ := by
+            refine (norm_add_le _ _).trans ?_
+            rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
+        _ ≤ 1 * (c * ‖J x‖) + C * ‖J x‖ := by
+            gcongr
+            exacts [(Real.norm_eq_abs _).trans_le (hχ1 x), hdJ x, hC x, hJ x]
+        _ = (C + c) * ‖J x‖ := by ring
+    · have h0 : (fun x ↦ χ x • u x) =ᶠ[𝓝 x] 0 := by
+        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hx (hχP h)] with y hy
+        simp [hy]
+      rw [h0.fderiv_eq, indicator_of_notMem hx]
+      simp
+  rw [← eLpNorm_indicator_eq_eLpNorm_restrict hP.nullMeasurableSet]
+  exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+    ((hχ.smul hu).continuous_fderiv one_ne_zero).aestronglyMeasurable
+    (Filter.Eventually.of_forall hpt) p
 
 /-- A compactly supported `C¹` function is bounded, and Hölder continuous with every exponent
 `α ≤ 1`, with one constant `C` for both: it is Lipschitz and of bounded oscillation. -/
@@ -668,19 +726,28 @@ private theorem smoothTransition_radial_cutoff [InnerProductSpace ℝ E] {r R : 
       tsupport (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) ⊆
         Metric.closedBall x₀ R := by
   have hD0 : 0 < R ^ 2 - r ^ 2 := by nlinarith
-  refine ⟨Real.smoothTransition.contDiff.comp ((contDiff_const.sub
-    ((contDiff_id.sub contDiff_const).norm_sq ℝ)).div_const _), ?_, fun x hx => ?_, ?_⟩
+  -- The profile is the radial cutoff `ψ(a + b ‖x - x₀‖²)` with `a = R² / D`, `b = -1 / D`.
+  have hf : (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) =
+      fun x => Real.smoothTransition
+        (R ^ 2 / (R ^ 2 - r ^ 2) + -1 / (R ^ 2 - r ^ 2) * ‖x - x₀‖ ^ 2) := by
+    funext x
+    congr 1
+    ring
+  refine ⟨hf ▸ Real.smoothTransition.contDiff_add_mul_norm_sub_sq x₀ _ _, ?_, fun x hx => ?_,
+    (hf ▸ Real.smoothTransition.tsupport_add_mul_norm_sub_sq_subset x₀ _ _).trans
+      fun x hx => ?_⟩
   · rintro _ ⟨x, rfl⟩
     exact ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
   · rw [Metric.mem_closedBall, dist_eq_norm] at hx
     refine Real.smoothTransition.one_of_one_le ?_
     rw [le_div_iff₀ hD0]
     nlinarith [norm_nonneg (x - x₀)]
-  · refine closure_minimal (fun x hx => ?_) Metric.isClosed_closedBall
+  · have hx' : 0 ≤ (R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2) := by
+      rw [Set.mem_ofPred_eq] at hx
+      convert hx using 1
+      ring
     rw [Metric.mem_closedBall, dist_eq_norm]
-    by_contra h
-    exact hx (Real.smoothTransition.zero_of_nonpos
-      (div_nonpos_of_nonpos_of_nonneg (by nlinarith [norm_nonneg (x - x₀)]) hD0.le))
+    nlinarith [norm_nonneg (x - x₀), (le_div_iff₀ hD0).1 hx']
 
 /-- **Radial cutoffs with quantitative derivative bounds.** There is a universal constant `c`
 such that for every centre `x₀` and radii `0 ≤ r < R`, some smooth `ψ` with values in `[0, 1]`
