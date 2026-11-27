@@ -14,10 +14,12 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.FlatBoundary
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
+import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.MeasureTheory.Function.PreciseRepresentative.HalfSpace
 
 /-!
@@ -50,7 +52,11 @@ derivatives of `u` have `α`-Hölder precise representatives up to the boundary 
   vanishes on `∂Ω ∩ B(y₀, r)`, with regularity and ellipticity hypotheses on `a` and `f` only on
   `B(y₀, r)` and `f ∈ L²(Ω)`: every `∂_w u` lies in `H¹(Ω ∩ B(y₀, r / 16))`, with gradient equal
   almost everywhere there to a field that is `α`-Hölder on `closedBall y₀ (r / 16) ∩ {c₀ ≤ ⟪y, ν⟫}`
-  (`exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`).
+  (`exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`). In Sobolev form, `u`
+  restricted to `Ω ∩ B(y₀, r / 16)` is the first-order part of an element of `W^{2,2}` there whose
+  weak Hessian and weak gradient agree almost everywhere with fields that are `α`-Hölder on the
+  closed half-ball
+  (`exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_inter_ball_eq`).
 
 This is the boundary counterpart of interior `C^{2,α}` regularity for divergence-form equations
 with `C^{1,α}` coefficients
@@ -114,6 +120,9 @@ coefficients on a half-space.
 * `exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`: all second derivatives
   of a solution vanishing on a flat portion of the boundary of a general domain are `α`-Hölder up
   to that portion.
+* `exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_inter_ball_eq`: the same
+  in Sobolev form, with a `W^{2,2}` element whose weak gradient and weak Hessian have `α`-Hölder
+  representatives up to that portion.
 
 ## References
 
@@ -947,6 +956,91 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq
     (W1p.gradient_ae_eq_preciseRepresentative_restrict d isOpen_ball inter_subset_right)]
     with x h1 h2
   rw [h1, h2]
+
+/-- **Hölder second derivatives up to a flat boundary portion, in Sobolev form.** Under the
+hypotheses of `exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`, the
+restriction of `v` to the half-ball `Ω' ∩ B(y₀, r / 16)` is the first-order part of an element of
+`W^{2,2}` there whose weak Hessian and weak gradient agree almost everywhere with fields that are
+`α`-Hölder on the closed half-ball `closure (H ∩ B(y₀, r / 16))`. -/
+theorem exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_inter_ball_eq
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+    {H Ω' : Opens E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {y₀ : E}
+    (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
+    (hΩ' : (Ω' : Set E) ∩ ball y₀ r = (H : Set E) ∩ ball y₀ r)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hell : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Ω'))
+    (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
+    {v : W1p volume Ω' 2}
+    (hv : ∀ w : W1p0 volume Ω' 2, energyFormH1 a 0 0 v (w : W1p volume Ω' 2) =
+      ∫ x in Ω', f x * W1p.value (w : W1p volume Ω' 2) x)
+    (hv0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ ball y₀ r →
+      ∃ w : W1p0 volume Ω' 2,
+        W1p.value (w : W1p volume Ω' 2) =ᵐ[volume.restrict Ω'] fun x => ψ x * W1p.value v x) :
+    ∃ V : Wkp volume (Ω' ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ : Opens E) 2 2,
+      Wkp.lowerOrder 1 V = W1p.restrictL inf_le_left v ∧
+      ∃ (Gv : E → E →L[ℝ] E) (P : E → E),
+        (∃ C : ℝ≥0, HolderOnWith C α Gv (closure ((H : Set E) ∩ ball y₀ (r / 16)))) ∧
+        (∃ C : ℝ≥0, HolderOnWith C α P (closure ((H : Set E) ∩ ball y₀ (r / 16)))) ∧
+        (Wkp.iteratedGradient 1 V : E → E →L[ℝ] E)
+          =ᵐ[volume.restrict ((Ω' : Set E) ∩ ball y₀ (r / 16))] Gv ∧
+        (W1p.gradient (W1p.restrictL (inf_le_left :
+            (Ω' ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ : Opens E) ≤ Ω') v) : E → E)
+          =ᵐ[volume.restrict ((Ω' : Set E) ∩ ball y₀ (r / 16))] P := by
+  let Ω'' : Opens E := Ω' ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩
+  have hΩ''H : ((Ω'' : Opens E) : Set E) = (H : Set E) ∩ ball y₀ (r / 16) := by
+    have hball : ball y₀ (r / 16) ⊆ ball y₀ r := ball_subset_ball (by linarith)
+    -- Unfold the coercion of `Ω''` first, so that the rewrites do not reach inside the `Opens`.
+    rw [show ((Ω'' : Opens E) : Set E) = (Ω' : Set E) ∩ ball y₀ (r / 16) from Opens.coe_inf _ _,
+      ← inter_eq_right.2 hball, ← inter_assoc, hΩ', inter_assoc, inter_eq_right.2 hball]
+  set S₀ := closure ((H : Set E) ∩ ball y₀ (r / 16))
+  have hS₀ : S₀ ⊆ closedBall y₀ (r / 16) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ} :=
+    closure_minimal (fun y hy => ⟨ball_subset_closedBall hy.2, ((hH y).1 hy.1).le⟩)
+      (isClosed_closedBall.inter (isClosed_le continuous_const
+        (continuous_id.inner continuous_const)))
+  have hΩ''conv : Convex ℝ ((Ω'' : Opens E) : Set E) := by
+    rw [hΩ''H, show (H : Set E) = {x | c₀ < ⟪x, ν⟫_ℝ} from Set.ext hH]
+    exact (convex_halfSpace_gt (IsLinearMap.mk (fun x y => inner_add_left x y ν)
+      (fun c x => real_inner_smul_left x ν c)) c₀).inter (convex_ball y₀ (r / 16))
+  -- Second derivatives in every direction, from the flat theorem.
+  have hflat := fun w : E => exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq
+    hα hα1 hν hH hy₀ hr hΩ' ha hell hda hf hfH hv hv0 w
+  choose d hd G hG hGd using hflat; choose CG hCG using hG
+  let b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  have hvv : W1p.value (W1p.restrictL (inf_le_left : Ω'' ≤ Ω') v)
+      =ᵐ[volume.restrict (Ω'' : Set E)] W1p.value v := W1p.value_restrictL_ae inf_le_left v
+  obtain ⟨V, hV, hhess⟩ :=
+    W1p.exists_lowerOrder_eq_and_iteratedGradient_ae_eq_of_forall_hasWeakLineDerivOn _ d
+      fun w => (hd w).congr_ae hvv.symm
+  -- A Hölder representative of each component of `∇v` up to the flat boundary.
+  have hP (j : Fin (n + 1)) : ∃ g : E → ℝ, (∃ C : ℝ≥0, HolderOnWith C α g S₀) ∧
+      (fun x => ⟪W1p.gradient (W1p.restrictL (inf_le_left : Ω'' ≤ Ω') v) x, b j⟫_ℝ)
+        =ᵐ[volume.restrict (Ω'' : Set E)] g := by
+    obtain ⟨g, hgH, hg⟩ := W1p.exists_holderOnWith_closure_ae_eq_of_gradient_ae_eq hα hα1.le
+      hΩ''conv (by rw [hΩ''H]; exact isBounded_ball.subset inter_subset_right) (d (b j))
+      (by rw [hΩ''H]; exact (hCG (b j)).mono hS₀) (hGd (b j))
+    exact ⟨g, by rwa [hΩ''H] at hgH, (((W1p.hasWeakLineDerivOn_inner_gradient _ (b j)).congr_ae
+      hvv).ae_eq (hd (b j))).trans hg⟩
+  choose g hgH hg using hP; choose Cg hCg using hgH
+  refine ⟨V, hV, fun y => ∑ i, (innerSL ℝ (b i)).smulRight (G (b i) y),
+    fun y => ∑ j, g j y • b j, ⟨_, HolderOnWith.sum fun i _ =>
+      (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E E (innerSL ℝ (b i))).lipschitzWith.comp_holderOnWith
+        ((hCG (b i)).mono hS₀)⟩, ⟨_, HolderOnWith.sum fun j _ =>
+      (ContinuousLinearMap.toSpanSingleton ℝ (b j)).lipschitzWith.comp_holderOnWith (hCg j)⟩,
+    ?_, ?_⟩
+  · filter_upwards [ae_all_iff.2 fun i => (hhess (b i)).and (hGd (b i))] with x hx
+    refine ContinuousLinearMap.ext fun h => ?_
+    conv_lhs => rw [← b.sum_repr' h]
+    simp only [map_sum, map_smul, sum_apply, ContinuousLinearMap.smulRight_apply,
+      innerSL_apply_apply]
+    exact Finset.sum_congr rfl fun i _ => by rw [(hx i).1, (hx i).2]
+  · filter_upwards [ae_all_iff.2 hg] with x hx
+    conv_lhs => rw [← b.sum_repr' (W1p.gradient _ x)]
+    exact Finset.sum_congr rfl fun j _ => by rw [real_inner_comm, hx j]
 
 end PDE
 

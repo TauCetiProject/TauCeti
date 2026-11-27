@@ -51,8 +51,9 @@ For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with 
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
 Postcomposition with an isometry keeps the constant and the exponent, and postcomposition with a
-`K`-Lipschitz map keeps the exponent and multiplies the constant by `K`. A function bounded by `M`
-is Hölder of exponent zero with constant `2 M`.
+`K`-Lipschitz map keeps the exponent and multiplies the constant by `K`; precomposition with a
+`K`-Lipschitz map keeps the exponent `r` and multiplies the constant by `K ^ r`. A function bounded
+by `M` is Hölder of exponent zero with constant `2 M`.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -107,6 +108,8 @@ positive exponent, is equicontinuous on that set
   `K`-Lipschitz map keeps the exponent and multiplies the Hölder constant by `K`.
 * `HolderWith.comp_lipschitzWith_one`: precomposition with a `1`-Lipschitz map keeps the Hölder
   constant and exponent.
+* `HolderOnWith.comp_lipschitzOnWith`: precomposition with a `K`-Lipschitz map keeps the exponent
+  and multiplies the Hölder constant by `K ^ r`.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.congr`: Hölder continuity on a set transfers to a function agreeing there.
 * `HolderOnWith.prodMk`: a pair of Hölder functions with a common exponent is Hölder.
@@ -262,6 +265,14 @@ theorem HolderWith.comp_lipschitzWith_one {X Y Z : Type*} [PseudoEMetricSpace X]
     (hg : HolderWith C r g) (hf : LipschitzWith 1 f) : HolderWith C r (g ∘ f) := by
   have h := hg.comp (holderWith_one.2 hf)
   rwa [mul_one, NNReal.one_rpow, mul_one] at h
+
+/-- An `r`-Hölder function on `t` after a map that is `K`-Lipschitz on `s` and maps `s` into `t`
+is `r`-Hölder on `s`, with constant `C K ^ r`. -/
+theorem HolderOnWith.comp_lipschitzOnWith {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {C r K : ℝ≥0} {g : Y → Z} {t : Set Y}
+    (hg : HolderOnWith C r g t) {f : X → Y} {s : Set X} (hf : LipschitzOnWith K f s)
+    (hst : MapsTo f s t) : HolderOnWith (C * K ^ (r : ℝ)) r (g ∘ f) s := by
+  simpa only [mul_one] using hg.comp hf.holderOnWith hst
 
 /-- Postcomposition with an isometry neither creates nor destroys a global Hölder bound: `g ∘ f`
 is Hölder with constant `C` and exponent `r` exactly when `f` is. -/

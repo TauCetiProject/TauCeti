@@ -30,13 +30,15 @@ with `C¹` derivative on a compact convex `K` (`TauCeti.hasHolderFDerivOn_comp`)
 variables, which are sums of products of such compositions, are shown to have Hölder derivatives.
 
 The composition step uses that a Hölder function after a Lipschitz map is Hölder with the same
-exponent (`HolderOnWith.comp_lipschitzOnWith`).
+exponent (`HolderOnWith.comp_lipschitzOnWith`, in `TauCeti.Topology.MetricSpace.Holder`).
 
 ## Main declarations
 
-* `HolderOnWith.comp_lipschitzOnWith`: an `r`-Hölder function after a `K`-Lipschitz map is
-  `r`-Hölder.
 * `TauCeti.HasHolderFDerivOn`: differentiable with a derivative, both `α`-Hölder on a set.
+* `TauCeti.hasHolderFDerivOn_iff`, `TauCeti.hasHolderFDerivOn_const`,
+  `TauCeti.HasHolderFDerivOn.mono`, `TauCeti.HasHolderFDerivOn.hasFDerivAt`,
+  `TauCeti.HasHolderFDerivOn.exists_holderOnWith`: the definition unfolded, constants, smaller
+  sets, the derivative and the Hölder bound on the function.
 * `TauCeti.HasHolderFDerivOn.comp₂`, `TauCeti.HasHolderFDerivOn.add`,
   `TauCeti.HasHolderFDerivOn.sum`, `TauCeti.HasHolderFDerivOn.clm_comp`: bilinear products, sums
   and continuous linear maps.
@@ -51,14 +53,6 @@ noncomputable section
 open Set
 open scoped NNReal
 
-/-- An `r`-Hölder function on `t` after a map that is `K`-Lipschitz on `s` and maps `s` into `t`
-is `r`-Hölder on `s`, with constant `C K ^ r`. -/
-theorem HolderOnWith.comp_lipschitzOnWith {X Y Z : Type*} [PseudoEMetricSpace X]
-    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {C r K : ℝ≥0} {g : Y → Z} {t : Set Y}
-    (hg : HolderOnWith C r g t) {f : X → Y} {s : Set X} (hf : LipschitzOnWith K f s)
-    (hst : MapsTo f s t) : HolderOnWith (C * K ^ (r : ℝ)) r (g ∘ f) s := by
-  simpa only [mul_one] using hg.comp hf.holderOnWith hst
-
 namespace TauCeti
 
 variable {E E' F A B G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -68,9 +62,37 @@ variable {E E' F A B G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- `f` is differentiable at the points of `s` with a derivative `f'`, and both `f` and `f'` are
 `α`-Hölder on `K`. -/
-def HasHolderFDerivOn (α : ℝ≥0) (s K : Set E) (f : E → F) : Prop :=
+@[expose] def HasHolderFDerivOn (α : ℝ≥0) (s K : Set E) (f : E → F) : Prop :=
   ∃ f' : E → E →L[ℝ] F, (∀ y ∈ s, HasFDerivAt f (f' y) y) ∧ (∃ C, HolderOnWith C α f K) ∧
     ∃ C, HolderOnWith C α f' K
+
+/-- Unfolding `HasHolderFDerivOn`: a derivative on `s`, with the function and the derivative
+`α`-Hölder on `K`. -/
+theorem hasHolderFDerivOn_iff {s K : Set E} {f : E → F} :
+    HasHolderFDerivOn α s K f ↔ ∃ f' : E → E →L[ℝ] F, (∀ y ∈ s, HasFDerivAt f (f' y) y) ∧
+      (∃ C, HolderOnWith C α f K) ∧ ∃ C, HolderOnWith C α f' K :=
+  Iff.rfl
+
+/-- A constant function has `HasHolderFDerivOn` on any sets. -/
+theorem hasHolderFDerivOn_const (s K : Set E) (c : F) : HasHolderFDerivOn α s K fun _ => c :=
+  ⟨0, fun y _ => hasFDerivAt_const c y, ⟨0, fun x _ y _ => by simp⟩, ⟨0, fun x _ y _ => by simp⟩⟩
+
+/-- `HasHolderFDerivOn` passes to smaller sets. -/
+theorem HasHolderFDerivOn.mono {s s' K K' : Set E} {f : E → F} (hf : HasHolderFDerivOn α s K f)
+    (hs : s' ⊆ s) (hK : K' ⊆ K) : HasHolderFDerivOn α s' K' f := by
+  obtain ⟨f', hf', ⟨C, hC⟩, ⟨C', hC'⟩⟩ := hf
+  exact ⟨f', fun y hy => hf' y (hs hy), ⟨C, hC.mono hK⟩, ⟨C', hC'.mono hK⟩⟩
+
+/-- A function with `HasHolderFDerivOn α s K` has derivative `fderiv ℝ f y` at each `y ∈ s`. -/
+theorem HasHolderFDerivOn.hasFDerivAt {s K : Set E} {f : E → F} (hf : HasHolderFDerivOn α s K f)
+    {y : E} (hy : y ∈ s) : HasFDerivAt f (fderiv ℝ f y) y := by
+  obtain ⟨f', hf', -, -⟩ := hf
+  exact (hf' y hy).differentiableAt.hasFDerivAt
+
+/-- A function with `HasHolderFDerivOn α s K` is `α`-Hölder on `K`. -/
+theorem HasHolderFDerivOn.exists_holderOnWith {s K : Set E} {f : E → F}
+    (hf : HasHolderFDerivOn α s K f) : ∃ C, HolderOnWith C α f K :=
+  hf.choose_spec.2.1
 
 /-- Bilinear products preserve `HasHolderFDerivOn` on a compact set, for a positive exponent. -/
 theorem HasHolderFDerivOn.comp₂ (L : A →L[ℝ] B →L[ℝ] G) (hα : 0 < α) {s K : Set E}
@@ -99,9 +121,7 @@ theorem HasHolderFDerivOn.sum {ι : Type*} (t : Finset ι) {s K : Set E} {f : ι
     HasHolderFDerivOn α s K fun z => ∑ i ∈ t, f i z := by
   classical
   induction t using Finset.induction_on with
-  | empty =>
-    exact ⟨0, fun y _ => by simpa using hasFDerivAt_const (0 : F) y,
-      ⟨0, fun x _ y _ => by simp⟩, ⟨0, fun x _ y _ => by simp⟩⟩
+  | empty => simpa using hasHolderFDerivOn_const s K (0 : F)
   | insert i t hi ih =>
     simp only [Finset.sum_insert hi]
     exact (hf i (Finset.mem_insert_self i t)).add

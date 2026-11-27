@@ -125,8 +125,9 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
   the transformed principal coefficient are `Cⁿ` where `Φ` is `Cⁿ`, `Ψ` is `Cⁿ⁺¹` and the entries
   of `a` are `Cⁿ`.
 * `TauCeti.PDE.exists_holderOnWith_fderiv_pullbackPrincipal`: for mutually inverse changes of
-  variables of order two with Jacobian determinant one and `α`-Hölder `D²Ψ`, the entries of the
-  transformed principal coefficient are locally `C^{1,α}` where those of `a` are.
+  variables of order two with Jacobian determinant one and `α`-Hölder `D²Ψ`, the first derivatives
+  of the entries of the transformed principal coefficient are locally `α`-Hölder where those of
+  `a` are.
 * `TauCeti.PDE.exists_forall_energyFormH1_compL_restrictL_eq`: a weak solution, restricted to an
   open subset and carried by a change of variables with an inverse, solves the transformed
   equation, with bounded lower-order coefficients and square-integrable right-hand side.
@@ -1081,11 +1082,12 @@ private theorem exists_hasHolderFDerivOn_pullbackPrincipal_sum (hα : 0 < α) (h
     fun l _ => ((hTe i k).comp₂ (ContinuousLinearMap.mul ℝ ℝ) hα (isCompact_closedBall x ρ)
       (hA k l)).comp₂ (ContinuousLinearMap.mul ℝ ℝ) hα (isCompact_closedBall x ρ) (hTe j l)⟩
 
-/-- **The pulled-back principal coefficient is `C^{1,α}`.** Let `Φ` and `Ψ` be mutually inverse
-changes of variables of order two with Jacobian determinant one, with `D²Ψ` `α`-Hölder on `U`,
-`0 < α ≤ 1`. If the entries of `a` are `C¹` on an open set `W` with first derivatives locally
-`α`-Hölder there, then near every point `x ∈ U'` with `Φ x ∈ W` the first derivatives of the entries
-of the pulled-back principal coefficient `DΨ(Φ ·) a(Φ ·) DΨ(Φ ·)ᵀ` are `α`-Hölder. -/
+/-- **The pulled-back principal coefficient has Hölder first derivatives.** Let `Φ` and `Ψ` be
+mutually inverse changes of variables of order two with Jacobian determinant one, with `D²Ψ`
+`α`-Hölder on `U`, `0 < α ≤ 1`. If the entries of `a` are `C¹` on an open set `W` with first
+derivatives locally `α`-Hölder there, then near every point `x ∈ U'` with `Φ x ∈ W` the first
+derivatives of the entries of the pulled-back principal coefficient `DΨ(Φ ·) a(Φ ·) DΨ(Φ ·)ᵀ` are
+`α`-Hölder. That these entries are `C¹` there is `contDiffOn_pullbackPrincipal_apply`. -/
 theorem exists_holderOnWith_fderiv_pullbackPrincipal (hα : 0 < α) (hα1 : α ≤ 1)
     (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' 1)
     (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U) {KT : ℝ≥0}

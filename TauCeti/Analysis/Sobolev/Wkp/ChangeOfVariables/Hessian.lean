@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.Rademacher
-import TauCeti.Analysis.Holder.FDeriv
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.Sobolev.Leibniz
@@ -65,6 +64,9 @@ theorem (`TauCeti.Wkp.exists_norm_le_of_forall_exists_value_ae_eq`).
 * `TauCeti.Wkp.inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL`: the chain rule for the weak
   Hessian along a change of variables with locally Lipschitz derivative.
 * `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: its case of a change of variables of order two.
+* `TauCeti.Wkp.exists_holderOnWith_gradient_firstOrder_compL`: along a change of variables with
+  Hölder derivative, a weak gradient with a Hölder representative gives a weak gradient of `u ∘ Φ`
+  with a Hölder representative.
 * `TauCeti.Wkp.exists_holderOnWith_iteratedGradient_compL`: along a change of variables of order
   two with Hölder derivatives, a weak Hessian and weak gradient with Hölder representatives give a
   weak Hessian of `u ∘ Φ` with a Hölder representative.
@@ -235,6 +237,27 @@ theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (
   -- `DΦ` is `C¹` on the open set `U`, hence locally Lipschitz there.
   exact inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL (h.mono one_le_two)
     (h.contDiffOn_fderiv.locallyLipschitzOn_of_isOpen U.isOpen) hp u (firstOrder_compL h hp u)
+
+/-- **A Hölder weak gradient along a change of variables.** Let `Φ` be a change of variables of
+order `k + 1` from `U` into `V` and let `u ∈ W^{k+1,p}(V)` have the weak gradient of its first-order
+part equal almost everywhere on `V` to a field `P` that is `α`-Hölder on a set `S`, `0 < α`. If `Φ`
+maps a compact set `K` into `S`, is Lipschitz on `K` and has `α`-Hölder derivative on `K`, then the
+weak gradient of the first-order part of `u ∘ Φ` agrees almost everywhere on `U` with a field that
+is `α`-Hölder on `K`: by the chain rule `gradient_firstOrder_compL_ae`, it is `DΦ† P(Φ ·)`. -/
+theorem exists_holderOnWith_gradient_firstOrder_compL {α : ℝ≥0} (hα : 0 < α) {k : ℕ}
+    (h : IsChangeOfVariables (k + 1) U V Φ L c) (u : Wkp mu V p (k + 1)) {S K : Set E}
+    (hK : IsCompact K) (hΦK : MapsTo Φ K S) {LΦ : ℝ≥0} (hΦL : LipschitzOnWith LΦ Φ K)
+    {CD : ℝ≥0} (hDΦ : HolderOnWith CD α (fderiv ℝ Φ) K) {P : E → E} {CP : ℝ≥0}
+    (hP : HolderOnWith CP α P S)
+    (hPae : (W1p.gradient (firstOrder k u) : E → E) =ᵐ[mu.restrict V] P) :
+    ∃ Q : E → E, (∃ C : ℝ≥0, HolderOnWith C α Q K) ∧
+      (W1p.gradient (firstOrder k (compL h u)) : E → E) =ᵐ[mu.restrict U] Q := by
+  obtain ⟨C, hC⟩ := (ContinuousLinearMap.id ℝ (E →L[ℝ] E)).exists_holderOnWith_comp₂_of_isCompact
+    hK hα (ContinuousLinearMap.adjoint.isometry.comp_holderOnWith hDΦ)
+    (hP.comp_lipschitzOnWith hΦL hΦK)
+  refine ⟨fun x => (fderiv ℝ Φ x).adjoint (P (Φ x)), ⟨C, hC⟩, ?_⟩
+  filter_upwards [gradient_firstOrder_compL_ae h u, h.ae_comp hPae] with x h1 h2
+  rw [h1, h2]
 
 /-- **A Hölder weak Hessian along a change of variables.** Let `Φ` be a change of variables of
 order two from `U` into `V`, `1 ≤ p < ∞`, and let `u ∈ W^{2,p}(V)` have weak Hessian and weak
