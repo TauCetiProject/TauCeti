@@ -102,6 +102,7 @@ variable {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {b : F.AbelianBanding
 /-- **Self transport commutes with restriction.** For `e : x ≅ x'`, transporting along `e` and
 then restricting along `f` is restricting along `f` and then transporting along the pullback
 `F(f) e`. -/
+@[reassoc]
 theorem selfTransportActionIso_restriction (X : HomCategory b b) (e : x ≅ x') :
     (selfTransportActionIso X e).hom ≫ fiberIsomRestriction f b X.obj x' x' =
       fiberIsomRestriction f b X.obj x x ≫
@@ -126,6 +127,7 @@ variable [∀ U : C, IsGroupoid (F.obj (.mk (op U)))]
 transport along `e` followed by the restriction transformation at `x'` is the restriction
 transformation at `x` followed by the natural self transport along `F(f) e`, restricted along
 `A(U) → A(V)`. -/
+@[reassoc]
 theorem selfTransportNatIso_restriction (e : x ≅ x') :
     (selfTransportNatIso e).hom ≫ fiberIsomRestrictionNatTrans f b b x' x' =
       fiberIsomRestrictionNatTrans f b b x x ≫
