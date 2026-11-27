@@ -183,27 +183,24 @@ private theorem surjective_ratioFDeriv {i : Fin (n + 1)} {v : Fin (n + 1) → �
 /-- At a vector `v` with `v i ≠ 0` the derivative of the projection is the derivative of the
 affine coordinates of the chart at `i` followed by the derivative of the inverse chart. -/
 private theorem mfderivMk_eq_comp {i : Fin (n + 1)} {v : Fin (n + 1) → 𝕜} (hvi : v i ≠ 0) :
-    mfderivMk v = (mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜)
-      (affineOpenPartialHomeomorph (K := 𝕜) i).symm
+    mfderivMk v = (mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) (affineChart (K := 𝕜) i).symm
       (fun k ↦ v (i.succAbove k) / v i) : (Fin n → 𝕜) →L[𝕜] Fin n → 𝕜).comp
         (ratioFDeriv i v) := by
   have hchart := ((contMDiff_affineChart_symm (𝕜 := 𝕜) i 1).mdifferentiableAt one_ne_zero
     (x := fun k ↦ v (i.succAbove k) / v i)).hasMFDerivAt
-  rw [← coe_affineOpenPartialHomeomorph_symm] at hchart
   refine ((hchart.comp v (hasFDerivAt_ratio hvi).hasMFDerivAt).congr_of_eventuallyEq ?_).mfderiv
   have hv : v ≠ 0 := fun h ↦ hvi (by simp [h])
   filter_upwards [eventually_dite_eq_mk hv,
     (continuous_apply i).continuousAt.eventually_ne hvi] with w ⟨hw, hgw⟩ hwi
-  rw [hgw, comp_apply, coe_affineOpenPartialHomeomorph_symm, affineChart_symm_apply, eq_comm,
-    mk_eq_mk_iff']
+  rw [hgw, comp_apply, affineChart_symm_apply, eq_comm, mk_eq_mk_iff']
   exact ⟨(w i)⁻¹, (Fin.insertNth_one_div_eq_inv_smul i w hwi).symm⟩
 
 /-- The inverse `z ↦ [Fin.insertNth i 1 z]` of the standard affine chart at `i` of projective
 space has an invertible derivative at every point. -/
 theorem isInvertible_mfderiv_affineChart_symm (i : Fin (n + 1)) (z : Fin n → 𝕜) :
-    (mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) (affineOpenPartialHomeomorph (K := 𝕜) i).symm
-      z).IsInvertible :=
-  TauCeti.isInvertible_mfderiv_chart_symm
+    (mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) (affineChart (K := 𝕜) i).symm z).IsInvertible := by
+  rw [← coe_affineOpenPartialHomeomorph_symm]
+  exact TauCeti.isInvertible_mfderiv_chart_symm
     (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(𝕜, Fin n → 𝕜)) (r := 1) i) (by simp)
 
 /-- **The kernel of the derivative of the projection.** At `v ≠ 0` the derivative of `w ↦ [w]`
