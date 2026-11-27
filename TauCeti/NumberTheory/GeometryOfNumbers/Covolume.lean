@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.PosSemidef.GramBounds
+public import TauCeti.Analysis.Matrix.PosSemidef.Determinant
+
+import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 
 /-!
 # Covolume bounds for complex families in rational coordinates
@@ -65,13 +67,13 @@ theorem CovolumeLE.fromCols [Fintype p] [DecidableEq p] {B : Matrix m p ℂ} {d 
     (hG : (G.map (algebraMap ℚ ℂ)).PosSemidef) : (fromCols A B).CovolumeLE G (c + d) := by
   refine covolumeLE_iff.mpr fun σ ↦ ?_
   rw [fromCols_map, Real.exp_add]
-  exact (hG.norm_det_fromCols_gram_le _ _).trans
+  exact (hG.norm_det_conjTranspose_fromCols_mul_mul_fromCols_le _ _).trans
     (mul_le_mul (covolumeLE_iff.mp hA σ) (covolumeLE_iff.mp hB σ)
       (norm_nonneg _) (Real.exp_nonneg _))
 
 /-- The covolume bound controls every field conjugate of the original Gram determinant.
 The two factors of the Gram pairing transform by `σ` and by `conj ∘ σ ∘ conj`, respectively. -/
-theorem CovolumeLE.norm_map_det_gram_le (hA : A.CovolumeLE G c)
+theorem CovolumeLE.norm_map_det_conjTranspose_mul_mul_le (hA : A.CovolumeLE G c)
     (hG : (G.map (algebraMap ℚ ℂ)).PosSemidef) (σ : ℂ ≃+* ℂ) :
     ‖σ (Aᴴ * G.map (algebraMap ℚ ℂ) * A).det‖ ≤ Real.exp c := by
   let τ : ℂ ≃+* ℂ := ((starRingAut : ℂ ≃+* ℂ).trans σ).trans starRingAut

@@ -10,6 +10,8 @@ public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 
+import TauCeti.Analysis.Matrix.GramFactorization
+
 /-!
 # Hadamard's inequality for Gram determinants
 
@@ -66,6 +68,8 @@ Gram/covolume calculation of J.-M. Couveignes, *Enumerating number fields*, Ann.
 * `Matrix.norm_det_le_prod_norm_toLp`, `Matrix.abs_det_le_prod_norm_toLp`,
   `Matrix.norm_det_eq_prod_norm_toLp_iff`, `Matrix.abs_det_eq_prod_norm_toLp_iff`: Hadamard's
   inequality and its equality case for a square matrix, in terms of the Euclidean rows.
+* `Matrix.PosSemidef.norm_det_le_prod_norm_diag`: for a positive semidefinite matrix, the
+  determinant norm is at most the product of the norms of the diagonal entries.
 
 ## References
 
@@ -399,5 +403,22 @@ theorem abs_det_eq_prod_norm_toLp_iff (A : Matrix ι ι ℝ) :
     |A.det| = ∏ i, ‖WithLp.toLp 2 (A i)‖ ↔
       (∃ i, A i = 0) ∨ Pairwise fun i j ↦ ⟪WithLp.toLp 2 (A i), WithLp.toLp 2 (A j)⟫_ℝ = 0 :=
   norm_det_eq_prod_norm_toLp_iff A
+
+/-- The determinant norm of a positive semidefinite matrix is at most the product of the
+norms of its diagonal entries. -/
+theorem PosSemidef.norm_det_le_prod_norm_diag {A : Matrix ι ι 𝕜} (hA : A.PosSemidef) :
+    ‖A.det‖ ≤ ∏ i, ‖A i i‖ := by
+  obtain ⟨X, rfl⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp hA
+  let v : ι → EuclideanSpace 𝕜 ι := fun j ↦ WithLp.toLp 2 (fun i ↦ X i j)
+  have hv : gram 𝕜 v = Xᴴ * X := by
+    have hX : (of fun i j ↦ (EuclideanSpace.basisFun ι 𝕜).repr (v j) i) = X :=
+      Matrix.ext fun i j ↦ calc
+        _ = (EuclideanSpace.basisFun ι 𝕜).repr (v j) i := of_apply _ _ _
+        _ = v j i := EuclideanSpace.basisFun_repr ι 𝕜 (v j) i
+        _ = X i j := PiLp.toLp_apply 2 (fun _ ↦ 𝕜) (fun k ↦ X k j) i
+    rw [gram_eq_conjTranspose_mul (EuclideanSpace.basisFun ι 𝕜) v, hX]
+  rw [← hv, ← RCLike.ofReal_le_ofReal (K := 𝕜),
+    RCLike.norm_of_nonneg' (posSemidef_gram 𝕜 v).det_nonneg]
+  simpa [map_prod, gram_apply, inner_self_eq_norm_sq_to_K] using det_gram_le_prod_norm_sq (𝕜 := 𝕜) v
 
 end Matrix
