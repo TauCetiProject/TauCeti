@@ -431,61 +431,6 @@ end Linearity
 
 section Continuity
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- A finite sum `∑ₑ cₑ Gₑ(a)` with nonnegative coefficients, over a list of indices, of functions
-`Gₑ` of the symbols `a` vanishing at positions outside `K`, each of which is at most a constant
-times finitely many seminorms of `a` on `K`, is itself at most a constant times finitely many
-seminorms of `a` on `K`. -/
-private theorem exists_listSum_le_sum_seminorm {ι : Type*} (K : Compacts (CoordinateSpace n))
-    (l : List ι) (c : ι → ℝ) (hc : ∀ e ∈ l, 0 ≤ c e)
-    (G : ι → {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0} → ℝ)
-    (hG : ∀ e ∈ l, ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
-      ∀ a, G e a ≤ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a.val) :
-    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
-      ∀ a, (l.map fun e ↦ c e * G e a).sum ≤ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a.val := by
-  classical
-  induction l with
-  | nil => exact ⟨∅, 0, le_rfl, fun a ↦ by simp⟩
-  | cons e l ih =>
-    obtain ⟨s, C, hC0, hC⟩ := hG e List.mem_cons_self
-    obtain ⟨t, D, hD0, hD⟩ := ih (fun e' he' ↦ hc e' (List.mem_cons_of_mem e he'))
-      fun e' he' ↦ hG e' (List.mem_cons_of_mem e he')
-    have hce := hc e List.mem_cons_self
-    refine ⟨s ∪ t, c e * C + D, by positivity, fun a ↦ ?_⟩
-    have hs : ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a.val ≤
-        ∑ i ∈ s ∪ t, Symbol.seminorm K i.1 i.2 a.val :=
-      Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left fun _ _ _ ↦ apply_nonneg _ _
-    have ht : ∑ i ∈ t, Symbol.seminorm K i.1 i.2 a.val ≤
-        ∑ i ∈ s ∪ t, Symbol.seminorm K i.1 i.2 a.val :=
-      Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_right fun _ _ _ ↦ apply_nonneg _ _
-    rw [List.map_cons, List.sum_cons, add_mul, mul_assoc]
-    exact add_le_add
-      (mul_le_mul_of_nonneg_left ((hC a).trans (mul_le_mul_of_nonneg_left hs hC0)) hce)
-      ((hD a).trans (mul_le_mul_of_nonneg_left ht hD0))
-
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- Composition on the left with a fixed symbol `b` preserves seminorm estimates: if every
-seminorm on `L` of `x(a)` is at most a constant times finitely many seminorms of `a` on `K`, for
-the symbols `a` vanishing at positions outside `K`, then so is every seminorm on `L` of
-`b ∘ x(a)`, by the Leibniz estimate `TauCeti.Symbol.seminorm_comp_le`. -/
-private theorem exists_seminorm_comp_le_sum_seminorm {E F G' : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G']
-    [NormedSpace ℂ G'] {m₁ m₂ : ℝ} (K L : Compacts (CoordinateSpace n)) (b : Symbol n F G' m₂)
-    (x : {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0} → Symbol n E F m₁)
-    (hx : ∀ γ δ : List (Fin n), ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
-      ∀ a, Symbol.seminorm L γ δ (x a) ≤ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a.val)
-    (α β : List (Fin n)) :
-    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
-      ∀ a, Symbol.seminorm L α β (b.comp (x a)) ≤ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a.val := by
-  obtain ⟨s, C, hC0, hC⟩ := exists_listSum_le_sum_seminorm K β.sublists'.revzip (fun _ ↦ 1)
-    (fun _ _ ↦ zero_le_one)
-    (fun t a ↦ (α.sublists'.revzip.map fun s ↦
-      Symbol.seminorm L s.1 t.1 b * Symbol.seminorm L s.2 t.2 (x a)).sum)
-    fun t _ ↦ exists_listSum_le_sum_seminorm K α.sublists'.revzip
-      (fun s ↦ Symbol.seminorm L s.1 t.1 b) (fun _ _ ↦ apply_nonneg _ _)
-      (fun s a ↦ Symbol.seminorm L s.2 t.2 (x a)) fun s _ ↦ hx s.2 t.2
-  exact ⟨s, C, hC0, fun a ↦ (seminorm_comp_le L α β b (x a)).trans (by simpa using hC a)⟩
-
 variable (hg : ContDiff ℝ ∞ g) (hgi : ∀ x, (g x).IsInvertible) (hk : ContDiff ℝ ∞ k)
 
 /-- Seminorm estimates pass from an operation `F` on symbols of order `0 + m` to
@@ -513,21 +458,22 @@ private theorem exists_seminorm_inverseWeight_comp_le {m₁ : ℝ} (K : Compacts
       a.val.HasCompactSpatialSupport :=
     hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, a.property⟩
   -- The seminorms of `k† a` on `K` are controlled by those of `a`.
-  have hw := exists_seminorm_comp_le_sum_seminorm (m := m) K K (ofSpatial _ hk.clm_adjoint)
-    (fun a : {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0} ↦ a.val)
+  have hw := exists_seminorm_comp_le_sum_seminorm K K (ofSpatial _ hk.clm_adjoint)
+    (fun a : {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0} ↦ a.val) Subtype.val
     fun γ δ ↦ ⟨{(γ, δ)}, 1, zero_le_one, fun a ↦ by simp⟩
   -- Hence so are the seminorms of `F(k† a)`.
   have hFw (γ δ : List (Fin n)) : ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
       ∀ a, Symbol.seminorm L γ δ (F (weightComp hk a.val) ((hsupp a).weightComp hk)) ≤
         C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a.val := by
     obtain ⟨s, C, hC0, hC⟩ := hF L γ δ
-    obtain ⟨t, D, hD0, hD⟩ := exists_listSum_le_sum_seminorm K s.toList (fun _ ↦ C)
+    obtain ⟨t, D, hD0, hD⟩ := exists_listSum_le_sum_seminorm K Subtype.val s.toList (fun _ ↦ C)
       (fun _ _ ↦ hC0) (fun i a ↦ Symbol.seminorm K i.1 i.2 (weightComp hk a.val))
       fun i _ ↦ hw i.1 i.2
     refine ⟨t, D, hD0, fun a ↦ (hC _ _ (hvan a)).trans ?_⟩
     simpa [Finset.mul_sum, Finset.sum_toList] using hD a
   obtain ⟨s, C, hC0, hC⟩ := exists_seminorm_comp_le_sum_seminorm K L (inverseWeight hg hgi)
-    (fun a ↦ F (weightComp hk a.val) ((hsupp a).weightComp hk)) hFw α β
+    (fun a : {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0} ↦
+      F (weightComp hk a.val) ((hsupp a).weightComp hk)) Subtype.val hFw α β
   exact ⟨s, C, hC0, fun a _ haK ↦ hC ⟨a, haK⟩⟩
 
 /-- **Seminorm estimate for the remainder of the weighted adjoint expansion.** For smooth weights
