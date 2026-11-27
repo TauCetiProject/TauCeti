@@ -545,24 +545,35 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
       (trivializationAt F E (f k)).pullback f :=
     FiberBundle.pullback_trivializationAt' (F := F) (E := E) f k
   dsimp only [pullback, ofLinearEquiv]; congr
-  funext i j x
-  refine congrArg (e.arrowCongr e) (ContinuousLinearMap.ext fun v ↦ ?_)
-  set eᵢ := trivializationAt F E (f i); set eⱼ := trivializationAt F E (f j)
-  set pᵢ := trivializationAt F ((⇑f) *ᵖ E) i; set pⱼ := trivializationAt F ((⇑f) *ᵖ E) j
-  have hpᵢ : pᵢ = eᵢ.pullback f := htriv i
-  have hpⱼ : pⱼ = eⱼ.pullback f := htriv j
-  by_cases hx : x ∈ pᵢ.baseSet ∩ pⱼ.baseSet
-  · have hfx : f x ∈ eᵢ.baseSet ∩ eⱼ.baseSet := by
-      rw [hpᵢ, hpⱼ, Trivialization.pullback_baseSet, Trivialization.pullback_baseSet] at hx
-      exact ⟨hx.1, hx.2⟩
-    simp only [ContinuousLinearEquiv.coe_coe]
-    rw [Trivialization.coordChangeL_apply' eᵢ eⱼ hfx,
-      Trivialization.coordChangeL_apply' pᵢ pⱼ hx, hpᵢ, hpⱼ]
-    exact (eᵢ.coordChange_pullback eⱼ f hfx.1 v).symm
-  · have hfx : f x ∉ eᵢ.baseSet ∩ eⱼ.baseSet := by
-      rw [hpᵢ, hpⱼ, Trivialization.pullback_baseSet, Trivialization.pullback_baseSet] at hx
-      exact fun h ↦ hx ⟨h.1, h.2⟩
-    rw [eᵢ.coordChangeL_of_notMem 𝕜 eⱼ hfx, pᵢ.coordChangeL_of_notMem 𝕜 pⱼ hx]
+  · funext i
+    rw [VectorBundleCore.baseSet_congrModel, VectorBundleCore.baseSet_congrModel]
+    change ⇑f ⁻¹' ((pointIndexedCore 𝕜 F E).localTriv (f i)).baseSet =
+      ((pointIndexedCore 𝕜 F ((⇑f) *ᵖ E)).localTriv i).baseSet
+    rw [pointIndexedCore_localTriv_baseSet, pointIndexedCore_localTriv_baseSet, htriv i,
+      Trivialization.pullback_baseSet]
+  · funext x
+    exact ((VectorBundleCore.indexAt_congrModel _ _ x).trans
+      (pointIndexedCore_indexAt 𝕜 F ((⇑f) *ᵖ E) x)).symm
+  · funext i j x
+    rw [VectorBundleCore.coordChange_congrModel, VectorBundleCore.coordChange_congrModel,
+      pointIndexedCore_coordChange, pointIndexedCore_coordChange]
+    refine congrArg (e.arrowCongr e) (ContinuousLinearMap.ext fun v ↦ ?_)
+    set eᵢ := trivializationAt F E (f i); set eⱼ := trivializationAt F E (f j)
+    set pᵢ := trivializationAt F ((⇑f) *ᵖ E) i; set pⱼ := trivializationAt F ((⇑f) *ᵖ E) j
+    have hpᵢ : pᵢ = eᵢ.pullback f := htriv i
+    have hpⱼ : pⱼ = eⱼ.pullback f := htriv j
+    by_cases hx : x ∈ pᵢ.baseSet ∩ pⱼ.baseSet
+    · have hfx : f x ∈ eᵢ.baseSet ∩ eⱼ.baseSet := by
+        rw [hpᵢ, hpⱼ, Trivialization.pullback_baseSet, Trivialization.pullback_baseSet] at hx
+        exact ⟨hx.1, hx.2⟩
+      simp only [ContinuousLinearEquiv.coe_coe]
+      rw [Trivialization.coordChangeL_apply' eᵢ eⱼ hfx,
+        Trivialization.coordChangeL_apply' pᵢ pⱼ hx, hpᵢ, hpⱼ]
+      exact (eᵢ.coordChange_pullback eⱼ f hfx.1 v).symm
+    · have hfx : f x ∉ eᵢ.baseSet ∩ eⱼ.baseSet := by
+        rw [hpᵢ, hpⱼ, Trivialization.pullback_baseSet, Trivialization.pullback_baseSet] at hx
+        exact fun h ↦ hx ⟨h.1, h.2⟩
+      rw [eᵢ.coordChangeL_of_notMem 𝕜 eⱼ hfx, pᵢ.coordChangeL_of_notMem 𝕜 pⱼ hx]
 
 /-- Reconstruction of `(ofLinearEquiv e E).pullback f` is homeomorphic to Mathlib's pullback
 bundle `TotalSpace F ((⇑f) *ᵖ E)`, acting via `ofLinearEquivFiberEquiv e E` at `f x`. -/

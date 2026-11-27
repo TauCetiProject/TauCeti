@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.FiniteRank
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Topology.VectorBundle.Dual
 
 /-!
 # Finite-rank cotangent bundle cores and duality with the tangent core

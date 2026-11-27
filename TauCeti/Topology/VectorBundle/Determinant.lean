@@ -14,6 +14,7 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.ExteriorPower
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Pullback
 import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.Topology.VectorBundle.FiniteRank.Determinant
 
 /-!
 # The determinant line bundle of a vector bundle
@@ -809,13 +810,6 @@ variable [TopologicalSpace B] [CompleteSpace 𝕜] {n : ℕ} [∀ x, Topological
   [VectorBundle 𝕜 (Fin n → 𝕜) E]
 
 omit [CompleteSpace 𝕜] in
-/-- The single coordinate of the model fibre of the determinant line of a finite-rank core, which
-has rank one. -/
-private def detCoord (A : FiniteRankBundleCore 𝕜 B) : (Fin A.det.rank → 𝕜) ≃L[𝕜] 𝕜 :=
-  (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr A.rank_det)).trans
-    (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜)
-
-omit [CompleteSpace 𝕜] in
 variable (E) in
 /-- The fibre of the reconstructed determinant core of
 `FiniteRankBundleCore.ofLinearEquiv (.refl 𝕜 (Fin n → 𝕜)) E` over `x` is identified with the fibre
@@ -824,7 +818,8 @@ def ofLinearEquivDetFiberEquiv (x : B) :
     (FiniteRankBundleCore.ofLinearEquiv
       (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E).det.core.Fiber x ≃L[𝕜]
       DetBundle 𝕜 (Fin n → 𝕜) E x :=
-  (detCoord (FiniteRankBundleCore.ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E)).trans
+  (FiniteRankBundleCore.detScalarEquiv
+    (FiniteRankBundleCore.ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E)).trans
     (chartCoord (trivializationAt (Fin n → 𝕜) E x)
       (mem_baseSet_trivializationAt (Fin n → 𝕜) E x)).symm.toContinuousLinearEquivOfIsModuleTopology
 
@@ -835,13 +830,13 @@ private theorem ofLinearEquivDetFiberEquiv_apply (x : B)
     ofLinearEquivDetFiberEquiv (𝕜 := 𝕜) (n := n) E x v =
       (chartCoord (trivializationAt (Fin n → 𝕜) E x)
         (mem_baseSet_trivializationAt (Fin n → 𝕜) E x)).symm
-        (detCoord (FiniteRankBundleCore.ofLinearEquiv
+        (FiniteRankBundleCore.detScalarEquiv (FiniteRankBundleCore.ofLinearEquiv
           (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E) v) := by
   -- The core fibre is an opaque alias for its model space; `trans_apply` cannot synthesize its
   -- module instance before this conversion unfolds the continuous-linear composition.
   change (chartCoord (trivializationAt (Fin n → 𝕜) E x)
     (mem_baseSet_trivializationAt (Fin n → 𝕜) E x)).symm.toContinuousLinearEquivOfIsModuleTopology
-      (detCoord (FiniteRankBundleCore.ofLinearEquiv
+      (FiniteRankBundleCore.detScalarEquiv (FiniteRankBundleCore.ofLinearEquiv
         (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E) v) = _
   rw [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
 
@@ -859,9 +854,10 @@ def ofLinearEquivDetHomeomorph :
     set A := FiniteRankBundleCore.ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E
     refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
     refine ⟨A.det.core.localTriv p.proj,
-      trivializationAt 𝕜 (DetBundle 𝕜 (Fin n → 𝕜) E) p.proj, fun _ ↦ detCoord A,
+      trivializationAt 𝕜 (DetBundle 𝕜 (Fin n → 𝕜) E) p.proj,
+      fun _ ↦ FiniteRankBundleCore.detScalarEquiv A,
       A.det.mem_baseSet_self p.proj, mem_baseSet_trivializationAt 𝕜 _ p.proj,
-      (detCoord A).continuous.continuousAt.comp
+      (FiniteRankBundleCore.detScalarEquiv A).continuous.continuousAt.comp
         ((A.det.core.localTriv p.proj).continuousOn.continuousAt
           ((A.det.core.localTriv p.proj).open_source.mem_nhds
             ((A.det.core.mem_localTriv_source _ _).2 (A.det.mem_baseSet_self p.proj)))).snd, ?_⟩
@@ -869,7 +865,8 @@ def ofLinearEquivDetHomeomorph :
       (hx' : x ∈ (trivializationAt (Fin n → 𝕜) E p.proj).baseSet)
     simp only [trivializationAt_eq]
     have hsmul (c : 𝕜) (w : Fin A.det.rank → 𝕜) :
-        detCoord A ((c • ContinuousLinearMap.id 𝕜 _) w) = c * detCoord A w := by
+        FiniteRankBundleCore.detScalarEquiv A ((c • ContinuousLinearMap.id 𝕜 _) w) =
+          c * FiniteRankBundleCore.detScalarEquiv A w := by
       simp
     -- Reconstructed-core fibres are aliases of the model; expose them for the coordinate formula.
     erw [trivialization_apply_mk _ hx', VectorBundleCore.localTriv_apply, A.det.indexAt_eq,

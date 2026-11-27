@@ -63,14 +63,6 @@ theorem detScalarEquiv_coordChange_det (A : FiniteRankBundleCore 𝕜 B) (i j x 
       (A.core.coordChange i j x).det * detScalarEquiv A v := by
   rw [coordChange_det]; simp [detScalarEquiv_apply]
 
-/-- The determinant core keeps the same chart domains as the original core. -/
-theorem baseSet_det (A : FiniteRankBundleCore 𝕜 B) (i : B) :
-    A.det.core.baseSet i = A.core.baseSet i :=
-  localTriv_baseSet_det A i
-
-private theorem baseSet_exteriorPower_obj (j : ℕ) (A : FiniteRankBundleCore 𝕜 B) (i : B) :
-    ((exteriorPower 𝕜 B j).obj A).core.baseSet i = A.core.baseSet i := (rfl)
-
 /-- Identifying `Fin A.det.rank → 𝕜` with `Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜` via
 `detScalarEquiv A` and `ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr` intertwines the
 transitions of `A.det` and `(exteriorPower 𝕜 B r).obj A`. -/
@@ -96,14 +88,14 @@ theorem coordChange_comp_detExteriorPower (A : FiniteRankBundleCore 𝕜 B) {r :
 power `(exteriorPower 𝕜 B r).obj A`, preserving scalar coordinates. -/
 noncomputable def detExteriorPowerIso (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) :
     A.det ≅ (exteriorPower 𝕜 B r).obj A :=
-  constIso (fun i ↦ (baseSet_det A i).le)
+  constIso (fun i ↦ (localTriv_baseSet_det A i).le)
     ((detScalarEquiv A).trans (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).symm)
     fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x
 
 /-- Definitional presentation of `detExteriorPowerIso` as a constant-equivalence isomorphism. -/
 theorem detExteriorPowerIso_def (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) :
     detExteriorPowerIso A hr =
-      constIso (D := (exteriorPower 𝕜 B r).obj A) (fun i ↦ (baseSet_det A i).le)
+      constIso (D := (exteriorPower 𝕜 B r).obj A) (fun i ↦ (localTriv_baseSet_det A i).le)
         ((detScalarEquiv A).trans (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).symm)
         fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x := (rfl)
 
@@ -338,8 +330,8 @@ preserving scalar coordinates. -/
 noncomputable def dualDetIso (A : FiniteRankBundleCore 𝕜 B) :
     A.dual.det ≅ A.det.dual :=
   constIso
-    (fun i ↦ ((baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
-      ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm))).le)
+    (fun i ↦ ((localTriv_baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
+      ((localTriv_baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm))).le)
     ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm)
     fun i j x _ _ ↦ coordChange_comp_dualDet A i j x
 
@@ -347,8 +339,8 @@ noncomputable def dualDetIso (A : FiniteRankBundleCore 𝕜 B) :
 theorem dualDetIso_def (A : FiniteRankBundleCore 𝕜 B) :
     dualDetIso A =
       constIso (D := A.det.dual)
-        (fun i ↦ ((baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
-          ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm))).le)
+        (fun i ↦ ((localTriv_baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
+          ((localTriv_baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm))).le)
         ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm)
         fun i j x _ _ ↦ coordChange_comp_dualDet A i j x := (rfl)
 
@@ -490,11 +482,13 @@ theorem continuous_dualDetTopFormFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
       TotalSpace.mk' ((Fin A.rank → 𝕜) [⋀^Fin A.rank]→L[𝕜] 𝕜)
         (E := fun x ↦ A.core.Fiber x [⋀^Fin A.rank]→L[𝕜] 𝕜) p.proj
         (dualDetTopFormFiberEquiv A p.proj p.snd) :=
-  continuous_of_localTriv_snd_of_mem_baseSet A.dual.det _ (fun _ ↦ rfl)
+  continuous_of_localTriv_snd A.dual.det _ (fun _ ↦ rfl)
     ((detScalarEquiv A.dual).trans
       (Pi.basisFun 𝕜 (Fin A.rank)).topFormEquiv.symm).toContinuousLinearMap
     fun b ⟨x, u⟩ hx ↦
-      dualDetTopFormFiberEquiv_inCoordinates A b x (by simpa [baseSet_det] using hx) u
+      dualDetTopFormFiberEquiv_inCoordinates A b x
+        (by simpa only [VectorBundleCore.baseSet_at, localTriv_baseSet_det,
+          localTriv_baseSet_dual] using hx) u
 
 /-- The reconstructed total space of `A.dual.det` is canonically homeomorphic over `B` to Mathlib's
 bundle of top-degree scalar-valued continuous alternating forms on `A.core.Fiber`. -/

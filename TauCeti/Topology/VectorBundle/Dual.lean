@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.Constructions
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Dual vector-bundle charts
@@ -51,5 +52,35 @@ theorem dual_trivializationAt_symm_apply (a : M) {x : M}
     Trivialization.symmL_apply _ hdual] at hφ
   -- The scalar target chart is the identity, so evaluating this equality at v gives the claim.
   simpa [Trivial.eq_trivialization, hx] using congrArg (fun f : StrongDual 𝕜 F ↦ f v) hφ
+
+/-- On the base set of `trivializationAt F V i`, the inverse dual trivialization at `x`
+precomposes a model functional with `(trivializationAt F V i).continuousLinearMapAt 𝕜 x`. -/
+theorem trivializationAt_dual_symm_eq {i x : M}
+    (hi : x ∈ (trivializationAt F V i).baseSet) (p : F →L[𝕜] 𝕜) :
+    (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).symm x p =
+      p.comp ((trivializationAt F V i).continuousLinearMapAt 𝕜 x) := by
+  have hdi : x ∈ (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).baseSet := by simp [hi]
+  rw [← Trivialization.symmL_apply (R := 𝕜) _ hdi]
+  exact (Bundle.Trivialization.continuousLinearMap_symmL (trivializationAt F V i)
+    (trivializationAt 𝕜 (Bundle.Trivial M 𝕜) i) x p).trans (by simp [Trivial.eq_trivialization M 𝕜])
+
+/-- On the overlap of two chart domains, the transition of the dual bundle `fun y ↦ V y →L[𝕜] 𝕜`
+from `i` to `j` at `x` precomposes a model functional with the reverse transition of `V`. -/
+theorem trivializationAt_dual_coordChangeL {i j x : M}
+    (hi : x ∈ (trivializationAt F V i).baseSet)
+    (hj : x ∈ (trivializationAt F V j).baseSet) (p : F →L[𝕜] 𝕜) :
+    (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).coordChangeL 𝕜
+        (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) j) x p =
+      p.comp ((trivializationAt F V j).coordChangeL 𝕜 (trivializationAt F V i) x : F →L[𝕜] F) := by
+  rw [Trivialization.coordChangeL_apply _ _ ⟨by simp [hi], by simp [hj]⟩,
+    trivializationAt_dual_symm_eq V hi p, hom_trivializationAt_apply]
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
+    ContinuousLinearMap.comp_apply]
+  rw [Trivialization.continuousLinearMapAt_apply_of_mem _ _ hi,
+    Trivialization.symmL_apply (R := 𝕜) _ hj,
+    ← Trivialization.coordChangeL_apply (R := 𝕜) _ _ ⟨hj, hi⟩,
+    ContinuousLinearEquiv.coe_coe]
 
 end TauCeti

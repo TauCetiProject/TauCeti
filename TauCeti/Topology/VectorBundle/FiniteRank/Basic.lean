@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Core.Basic
+public import TauCeti.Topology.VectorBundle.Core.Congr
 public import TauCeti.Topology.VectorBundle.Descent
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -172,7 +173,7 @@ theorem operator_self (f : A ⟶ D) (x : B) :
 /-- A map from `E.core.TotalSpace` into the total space of a fibre bundle `V` covering the
 identity of `B` whose fibre coordinate in each preferred trivialization over its chart domain is a
 fixed continuous linear map `L` of the chart coordinate in `E` is continuous. -/
-theorem continuous_of_localTriv_snd_of_mem_baseSet {F : Type*} [NormedAddCommGroup F]
+theorem continuous_of_localTriv_snd {F : Type*} [NormedAddCommGroup F]
     [NormedSpace 𝕜 F] {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
     [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
     (E : FiniteRankBundleCore 𝕜 B) (f : E.core.TotalSpace → TotalSpace F V)
@@ -194,7 +195,7 @@ theorem continuous_of_localTriv_snd_of_mem_baseSet {F : Type*} [NormedAddCommGro
 identity of `B` whose chart coordinate in `E` at each base point over its trivialization domain is
 a fixed continuous linear map `L` of the fibre coordinate in the preferred trivialization of `V` is
 continuous. -/
-theorem continuous_of_trivializationAt_snd_of_mem_baseSet {F : Type*} [NormedAddCommGroup F]
+theorem continuous_of_trivializationAt_snd {F : Type*} [NormedAddCommGroup F]
     [NormedSpace 𝕜 F] {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
     [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
     (E : FiniteRankBundleCore 𝕜 B) (f : TotalSpace F V → E.core.TotalSpace)
@@ -379,24 +380,10 @@ noncomputable def ofLinearEquiv {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V
     [FiberBundle F V] [VectorBundle 𝕜 F V] :
     FiniteRankBundleCore 𝕜 B where
   rank := r
-  core :=
-    { baseSet := fun b ↦ (trivializationAt F V b).baseSet
-      isOpen_baseSet := fun b ↦ (trivializationAt F V b).open_baseSet
-      indexAt := id
-      mem_baseSet_at := fun b ↦ mem_baseSet_trivializationAt F V b
-      coordChange := fun b c x ↦
-        e.arrowCongr e ((trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x)
-      coordChange_self := fun b x hx u ↦ by
-        simp [Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx, hx⟩]
-      continuousOn_coordChange := fun b c ↦
-        (e.arrowCongr e).continuous.comp_continuousOn (continuousOn_coordChange 𝕜 _ _)
-      coordChange_comp := fun b c d x hx u ↦ by
-        simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_apply_apply,
-          ContinuousLinearEquiv.coe_coe, Trivialization.coe_coordChangeL _ _ ⟨hx.1.1, hx.1.2⟩,
-          Trivialization.coe_coordChangeL _ _ ⟨hx.1.2, hx.2⟩,
-          Trivialization.coe_coordChangeL _ _ ⟨hx.1.1, hx.2⟩,
-          LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] }
-  indexAt_eq := fun _ ↦ rfl
+  core := (pointIndexedCore 𝕜 F V).congrModel e
+  indexAt_eq := fun x ↦
+    (VectorBundleCore.indexAt_congrModel (pointIndexedCore 𝕜 F V) e x).trans
+      (pointIndexedCore_indexAt 𝕜 F V x)
 
 section Basic
 
@@ -408,15 +395,18 @@ variable {r : ℕ} (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type z)
 @[simp] theorem rank_ofLinearEquiv : (ofLinearEquiv e V).rank = r := (rfl)
 
 theorem baseSet_ofLinearEquiv (b : B) :
-    (ofLinearEquiv e V).core.baseSet b = (trivializationAt F V b).baseSet := (rfl)
+    (ofLinearEquiv e V).core.baseSet b = (trivializationAt F V b).baseSet :=
+  (VectorBundleCore.baseSet_congrModel _ _ _).trans (pointIndexedCore_localTriv_baseSet 𝕜 F V b)
 
 @[simp] theorem localTriv_baseSet_ofLinearEquiv (b : B) :
-    ((ofLinearEquiv e V).core.localTriv b).baseSet = (trivializationAt F V b).baseSet := (rfl)
+    ((ofLinearEquiv e V).core.localTriv b).baseSet = (trivializationAt F V b).baseSet :=
+  baseSet_ofLinearEquiv e V b
 
 @[simp] theorem coordChange_ofLinearEquiv (b c x : B) :
     (ofLinearEquiv e V).core.coordChange b c x =
       e.arrowCongr e ((trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x) :=
-  (rfl)
+  (VectorBundleCore.coordChange_congrModel _ _ _ _ _).trans
+    (congrArg (e.arrowCongr e) (pointIndexedCore_coordChange 𝕜 F V b c x))
 
 /-- The continuous linear equivalence identifying the reconstructed fibre of `ofLinearEquiv e V` at
 `x` with `V x`, via `e.symm` followed by the inverse of `trivializationAt F V x`. -/
@@ -430,74 +420,58 @@ noncomputable def ofLinearEquivFiberEquiv (x : B) :
 @[simp] theorem ofLinearEquivFiberEquiv_symm_apply (x : B) (v : V x) :
     (ofLinearEquivFiberEquiv e V x).symm v = e ((trivializationAt F V x ⟨x, v⟩).2) := (rfl)
 
-private noncomputable def ofLinearEquivTotalEquiv :
-    (ofLinearEquiv e V).core.TotalSpace ≃ TotalSpace F V where
-  toFun p := ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.snd⟩
-  invFun p := ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.snd⟩
-  left_inv p := by dsimp only; rw [ContinuousLinearEquiv.symm_apply_apply]
-  right_inv p := by dsimp only; rw [ContinuousLinearEquiv.apply_symm_apply]
-
-private theorem trivializationAt_ofLinearEquivTotalEquiv (b : B)
-    (p : (ofLinearEquiv e V).core.TotalSpace) (hp : p.proj ∈ (trivializationAt F V b).baseSet) :
-    (trivializationAt F V b) (ofLinearEquivTotalEquiv e V p) =
-      (p.proj, e.symm (((ofLinearEquiv e V).core.localTriv b p).2)) := by
-  refine ((trivializationAt F V p.proj).mk_coordChangeL (R := 𝕜) (trivializationAt F V b)
-    ⟨mem_baseSet_trivializationAt F V p.proj, hp⟩ (e.symm p.snd)).symm.trans (Prod.ext rfl ?_)
-  rw [VectorBundleCore.localTriv_apply]
-  exact (e.symm_apply_apply _).symm
-
-private theorem localTriv_ofLinearEquivTotalEquiv_symm (b : B)
-    (q : TotalSpace F V) (hq : q.proj ∈ (trivializationAt F V b).baseSet) :
-    ((ofLinearEquiv e V).core.localTriv b ((ofLinearEquivTotalEquiv e V).symm q)).2 =
-      e ((trivializationAt F V b q).2) := by
-  have htriv := congrArg (fun z ↦ e z.2) (trivializationAt_ofLinearEquivTotalEquiv e V b
-    ((ofLinearEquivTotalEquiv e V).symm q) hq)
-  rw [Equiv.apply_symm_apply] at htriv
-  exact (e.apply_symm_apply _).symm.trans htriv.symm
-
-private theorem continuous_ofLinearEquivTotalEquiv : Continuous (ofLinearEquivTotalEquiv e V) :=
-  continuous_of_localTriv_snd_of_mem_baseSet (ofLinearEquiv e V) (ofLinearEquivTotalEquiv e V)
-    (fun _ ↦ rfl) e.symm.toContinuousLinearMap fun b p hp ↦
-      congrArg Prod.snd (trivializationAt_ofLinearEquivTotalEquiv e V b p hp)
-
-private theorem continuous_ofLinearEquivTotalEquiv_symm :
-    Continuous (ofLinearEquivTotalEquiv e V).symm :=
-  continuous_of_trivializationAt_snd_of_mem_baseSet (ofLinearEquiv e V)
-    (ofLinearEquivTotalEquiv e V).symm (fun _ ↦ rfl) e.toContinuousLinearMap fun b q hq ↦
-      localTriv_ofLinearEquivTotalEquiv_symm e V b q hq
-
 /-- The reconstructed total space of `ofLinearEquiv e V` is homeomorphic to `TotalSpace F V` over
 the identity of `B`, acting on each fibre by `ofLinearEquivFiberEquiv e V`. -/
 noncomputable def ofLinearEquivTotalSpaceHomeomorph :
-    (ofLinearEquiv e V).core.TotalSpace ≃ₜ TotalSpace F V where
-  toEquiv := ofLinearEquivTotalEquiv e V
-  continuous_toFun := continuous_ofLinearEquivTotalEquiv e V
-  continuous_invFun := continuous_ofLinearEquivTotalEquiv_symm e V
+    (ofLinearEquiv e V).core.TotalSpace ≃ₜ TotalSpace F V :=
+  ((pointIndexedCore 𝕜 F V).congrModelHomeomorph e).symm.trans (pointIndexedCoreHomeomorph 𝕜 F V)
 
 @[simp] theorem ofLinearEquivTotalSpaceHomeomorph_apply
     (p : (ofLinearEquiv e V).core.TotalSpace) :
     ofLinearEquivTotalSpaceHomeomorph e V p =
-      ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.snd⟩ := (rfl)
+      ⟨p.proj, ofLinearEquivFiberEquiv e V p.proj p.snd⟩ := by
+  rw [ofLinearEquivTotalSpaceHomeomorph, Homeomorph.trans_apply,
+    VectorBundleCore.congrModelHomeomorph_symm_apply, pointIndexedCoreHomeomorph_apply]
+  exact congrArg (TotalSpace.mk' F p.proj)
+    ((pointIndexedCoreFiberEquiv_apply 𝕜 F V p.proj (e.symm p.snd)).trans
+      (ofLinearEquivFiberEquiv_apply e V p.proj p.snd).symm)
 
 @[simp] theorem ofLinearEquivTotalSpaceHomeomorph_symm_apply (p : TotalSpace F V) :
     (ofLinearEquivTotalSpaceHomeomorph e V).symm p =
-      ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.snd⟩ := (rfl)
+      ⟨p.proj, (ofLinearEquivFiberEquiv e V p.proj).symm p.snd⟩ := by
+  rw [ofLinearEquivTotalSpaceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
+    pointIndexedCoreHomeomorph_symm_apply, VectorBundleCore.congrModelHomeomorph_apply,
+    pointIndexedCoreFiberEquiv_symm_apply, ofLinearEquivFiberEquiv_symm_apply]
 
 /-- Over `b`'s chart domain, `ofLinearEquivTotalSpaceHomeomorph` intertwines the core chart at `b`
 with `trivializationAt F V b` through `e.symm` on the fibre coordinate. -/
 theorem trivializationAt_ofLinearEquivTotalSpaceHomeomorph (b : B)
     (p : (ofLinearEquiv e V).core.TotalSpace) (hp : p.proj ∈ (trivializationAt F V b).baseSet) :
     (trivializationAt F V b) (ofLinearEquivTotalSpaceHomeomorph e V p) =
-      (p.proj, e.symm (((ofLinearEquiv e V).core.localTriv b p).2)) :=
-  trivializationAt_ofLinearEquivTotalEquiv e V b p hp
+      (p.proj, e.symm (((ofLinearEquiv e V).core.localTriv b p).2)) := by
+  rw [ofLinearEquivTotalSpaceHomeomorph, Homeomorph.trans_apply,
+    VectorBundleCore.congrModelHomeomorph_symm_apply,
+    trivializationAt_pointIndexedCoreHomeomorph 𝕜 F V b _ hp]
+  have h := congrArg (fun z ↦ e.symm z.2)
+    ((pointIndexedCore 𝕜 F V).localTriv_congrModel_congrModelHomeomorph e b
+      (((pointIndexedCore 𝕜 F V).congrModelHomeomorph e).symm p))
+  rw [Homeomorph.apply_symm_apply, VectorBundleCore.congrModelHomeomorph_symm_apply] at h
+  dsimp only at h
+  rw [e.symm_apply_apply] at h
+  exact Prod.ext rfl h.symm
 
 /-- Over `b`'s chart domain, `(ofLinearEquivTotalSpaceHomeomorph e V).symm` sends the
 trivialization coordinate in `V` to its `e`-image in `(ofLinearEquiv e V).core.localTriv b`. -/
 theorem localTriv_ofLinearEquivTotalSpaceHomeomorph_symm (b : B)
     (q : TotalSpace F V) (hq : q.proj ∈ (trivializationAt F V b).baseSet) :
     ((ofLinearEquiv e V).core.localTriv b ((ofLinearEquivTotalSpaceHomeomorph e V).symm q)).2 =
-      e ((trivializationAt F V b q).2) :=
-  localTriv_ofLinearEquivTotalEquiv_symm e V b q hq
+      e ((trivializationAt F V b q).2) := by
+  have htriv := congrArg (fun z ↦ e z.2)
+    (trivializationAt_ofLinearEquivTotalSpaceHomeomorph e V b
+      ((ofLinearEquivTotalSpaceHomeomorph e V).symm q)
+      (by simpa only [ofLinearEquivTotalSpaceHomeomorph_symm_apply] using hq))
+  rw [Homeomorph.apply_symm_apply] at htriv
+  exact (e.apply_symm_apply _).symm.trans htriv.symm
 
 end Basic
 

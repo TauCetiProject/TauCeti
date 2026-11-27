@@ -287,7 +287,7 @@ theorem coordChange_ofLinearEquiv_det (b c x : B) :
           (trivializationAt F V c) x : F →L[𝕜] F).det •
         ContinuousLinearMap.id 𝕜 (Fin (ofLinearEquiv e V).det.rank → 𝕜) := by
   rw [coordChange_det, coordChange_ofLinearEquiv]
-  exact congrArg (· • ContinuousLinearMap.id 𝕜 _) (e.det_arrowCongr_self _)
+  exact congrArg (· • ContinuousLinearMap.id 𝕜 _) (ContinuousLinearMap.det_conj _ e)
 
 end OfLinearEquiv
 

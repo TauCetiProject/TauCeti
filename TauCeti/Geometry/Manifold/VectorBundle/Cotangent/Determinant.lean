@@ -69,7 +69,7 @@ theorem coordChange_cotangentCore_det (b : Basis (Fin r) 𝕜 E) {x₀ x₁ x : 
         ContinuousLinearMap.id 𝕜 (Fin (cotangentCore I b M).det.rank → 𝕜) := by
   rw [FiniteRankBundleCore.coordChange_det, coordChange_cotangentCore b hx₀ hx₁]
   exact congrArg (· • ContinuousLinearMap.id 𝕜 _)
-    ((ContinuousLinearMap.det_piTranspose _).trans (b.equivFunL.det_arrowCongr_self _))
+    ((ContinuousLinearMap.det_piTranspose _).trans (ContinuousLinearMap.det_conj _ b.equivFunL))
 
 /-- Determinant isomorphism `(tangentCore I b M).dual.det ≅ (cotangentCore I b M).det` induced by
 `tangentDualCotangentIso I b M`. -/
@@ -194,11 +194,14 @@ theorem detScalarEquiv_fiberMap_cotangentDetChangeBasisIso_inv
 
 end CotangentDeterminant
 
+end TauCeti
+
 /-! ### Comparison of `(cotangentCore I b M).det` with `CanonicalBundle I M` -/
 
-section CanonicalComparison
+namespace Module.Basis
 
-variable {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- Scalar coordinate equivalence on the model fibre `E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜` of
 `CanonicalBundle I M`, evaluating a model top-degree form on `b` in `Fin 1 → 𝕜`. -/
@@ -206,26 +209,35 @@ noncomputable def canonicalModelCoords (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
     (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) ≃L[𝕜] (Fin 1 → 𝕜) :=
   b.topFormEquiv.trans (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm
 
-/-- `canonicalModelCoords b` evaluates a model top-degree alternating form on the basis `b`. -/
+/-- `b.canonicalModelCoords` evaluates a model top-degree alternating form on the basis `b`. -/
 @[simp] theorem canonicalModelCoords_apply (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
     (η : E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (i : Fin 1) :
-    canonicalModelCoords b η i = η b :=
+    b.canonicalModelCoords η i = η b :=
   b.topFormEquiv_apply η
 
-/-- The inverse of `canonicalModelCoords b` scales `b.continuousDet` by the unique coordinate. -/
+/-- The inverse of `b.canonicalModelCoords` scales `b.continuousDet` by the unique coordinate. -/
 @[simp] theorem canonicalModelCoords_symm_apply (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
     (u : Fin 1 → 𝕜) :
-    (canonicalModelCoords b).symm u = u 0 • b.continuousDet :=
+    b.canonicalModelCoords.symm u = u 0 • b.continuousDet :=
   b.topFormEquiv_symm_eq_smul (u 0)
 
-variable [IsManifold I 1 M]
+end Module.Basis
 
-/-- The finite-rank line core presenting `CanonicalBundle I M` in `canonicalModelCoords b`. -/
+namespace TauCeti
+
+section CanonicalComparison
+
+variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I 1 M]
+
+/-- The finite-rank line core presenting `CanonicalBundle I M` in `b.canonicalModelCoords`. -/
 noncomputable def canonicalCore (I : ModelWithCorners 𝕜 E H)
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (M : Type*) [TopologicalSpace M] [ChartedSpace H M]
     [IsManifold I 1 M] :
     FiniteRankBundleCore 𝕜 M :=
-  FiniteRankBundleCore.ofLinearEquiv (canonicalModelCoords b) (CanonicalBundle I M)
+  FiniteRankBundleCore.ofLinearEquiv b.canonicalModelCoords (CanonicalBundle I M)
 
 /-- The canonical line core has rank one. -/
 @[simp] theorem rank_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) :
@@ -250,15 +262,16 @@ theorem coordChange_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x�
     (canonicalCore I b M).core.coordChange x₀ x₁ x =
       LinearMap.det (tangentCoordChange I x₁ x₀ x : E →ₗ[𝕜] E) •
         ContinuousLinearMap.id 𝕜 (Fin (canonicalCore I b M).rank → 𝕜) := by
-  refine (FiniteRankBundleCore.coordChange_ofLinearEquiv (canonicalModelCoords b)
+  refine (FiniteRankBundleCore.coordChange_ofLinearEquiv b.canonicalModelCoords
     (CanonicalBundle I M) x₀ x₁ x).trans ?_
   ext (u : Fin 1 → 𝕜) (i : Fin 1)
   let F := E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜
   have hb₀ : x ∈ (trivializationAt F (CanonicalBundle I M) x₀).baseSet := by simpa [F] using hx₀
   rw [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe,
-    canonicalModelCoords_apply, Trivialization.coordChangeL_apply _ _ ⟨hb₀, by simpa [F] using hx₁⟩,
+    Basis.canonicalModelCoords_apply,
+    Trivialization.coordChangeL_apply _ _ ⟨hb₀, by simpa [F] using hx₁⟩,
     CanonicalBundle.trivializationAt_apply_snd_basis_eq_det_mul hx₀ hx₁ _ b,
-    Trivialization.apply_mk_symm _ hb₀, canonicalModelCoords_symm_apply]
+    Trivialization.apply_mk_symm _ hb₀, Basis.canonicalModelCoords_symm_apply]
   obtain rfl : i = 0 := Subsingleton.elim i 0
   simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul, b.continuousDet_apply, b.det_self,
     mul_one]
@@ -269,7 +282,8 @@ theorem coordChange_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x�
 private theorem baseSet_cotangentCore_det_eq_canonicalCore
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x₀ : M) :
     (cotangentCore I b M).det.core.baseSet x₀ = (canonicalCore I b M).core.baseSet x₀ := by
-  rw [FiniteRankBundleCore.baseSet_det, baseSet_cotangentCore, baseSet_canonicalCore]
+  rw [VectorBundleCore.baseSet_at, FiniteRankBundleCore.localTriv_baseSet_det,
+    baseSet_cotangentCore, baseSet_canonicalCore]
 
 /-- Scalar-coordinate equivalence from `(cotangentCore I b M).det` to `canonicalCore I b M`,
 reading both rank-one cores at index `0`. -/
@@ -294,7 +308,8 @@ private theorem coordChange_comp_cotangentDetCanonicalCore
         ((cotangentCore I b M).det.core.coordChange x₀ x₁ x)) =
       ((canonicalCore I b M).core.coordChange x₀ x₁ x).comp
         (cotangentDetCanonicalCoords (I := I) (M := M) b).toContinuousLinearMap := by
-  rw [FiniteRankBundleCore.baseSet_det, baseSet_cotangentCore] at hx₀ hx₁
+  rw [VectorBundleCore.baseSet_at, FiniteRankBundleCore.localTriv_baseSet_det,
+    baseSet_cotangentCore] at hx₀ hx₁
   let e := cotangentDetCanonicalCoords (I := I) (M := M) b
   ext u : 1
   refine (congrArg e (DFunLike.congr_fun (coordChange_cotangentCore_det b hx₀ hx₁) u)).trans ?_
@@ -325,7 +340,7 @@ noncomputable def canonicalCoreTotalSpaceDiffeomorph
       I.prod 𝓘(𝕜, E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)⟯
         TotalSpace (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) :=
   FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph
-    (canonicalModelCoords b) (CanonicalBundle I M) I k
+    b.canonicalModelCoords (CanonicalBundle I M) I k
 
 /-- At `p.proj`, `canonicalCoreTotalSpaceDiffeomorph` scales `CanonicalBundle.coordForm I p.proj b
 p.proj` by the unique coordinate of `p.snd`. -/
@@ -337,12 +352,12 @@ p.proj` by the unique coordinate of `p.snd`. -/
         CanonicalBundle.coordForm I p.proj b p.proj⟩ := by
   let F := E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜
   refine (FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph_apply
-    (canonicalModelCoords b) (CanonicalBundle I M) (I := I) (n := k) p).trans ?_
+    b.canonicalModelCoords (CanonicalBundle I M) (I := I) (n := k) p).trans ?_
   refine congrArg (TotalSpace.mk' F p.proj) ?_
   refine (FiniteRankBundleCore.ofLinearEquivFiberEquiv_apply
-    (canonicalModelCoords b) (CanonicalBundle I M) p.proj p.snd).trans ?_
+    b.canonicalModelCoords (CanonicalBundle I M) p.proj p.snd).trans ?_
   refine (congrArg (VectorBundle.continuousLinearEquivAt 𝕜 F (CanonicalBundle I M) p.proj).symm
-    (canonicalModelCoords_symm_apply b p.snd)).trans ?_
+    (Basis.canonicalModelCoords_symm_apply b p.snd)).trans ?_
   rw [map_smul, CanonicalBundle.continuousLinearEquivAt_symm_continuousDet]
   exact congrArg (· • CanonicalBundle.coordForm I p.proj b p.proj)
     (congrArg p.snd (Subsingleton.elim (0 : Fin 1)
@@ -358,12 +373,12 @@ chart basis vectors `(trivializationAt E (TangentSpace I) p.proj).symmL 𝕜 p.p
         (trivializationAt E (TangentSpace I) p.proj).symmL 𝕜 p.proj (b i)⟩ := by
   rcases p with ⟨x, η⟩
   refine (FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph_symm_apply
-    (canonicalModelCoords b) (CanonicalBundle I M) (I := I) (n := k) ⟨x, η⟩).trans ?_
+    b.canonicalModelCoords (CanonicalBundle I M) (I := I) (n := k) ⟨x, η⟩).trans ?_
   refine congrArg (TotalSpace.mk' _ x) ?_
   refine (FiniteRankBundleCore.ofLinearEquivFiberEquiv_symm_apply
-    (canonicalModelCoords b) (CanonicalBundle I M) x η).trans ?_
+    b.canonicalModelCoords (CanonicalBundle I M) x η).trans ?_
   refine funext fun i ↦ ?_
-  exact (canonicalModelCoords_apply b _ i).trans
+  exact (Basis.canonicalModelCoords_apply b _ i).trans
     (CanonicalBundle.trivializationAt_apply_snd_basis x η b)
 
 /-- Core-level isomorphism in `FiniteRankBundleCore 𝕜 M` between `(cotangentCore I b M).det` and
@@ -575,7 +590,7 @@ theorem cotangentDetCanonicalFiberEquiv_changeBasis
       cotangentDetCanonicalFiberEquiv I b₁ M x u := by
   rw [cotangentDetCanonicalFiberEquiv_apply, cotangentDetCanonicalFiberEquiv_apply,
     detScalarEquiv_fiberMap_cotangentDetChangeBasisIso_hom,
-    CanonicalBundle.coordForm_basis_change x b₁ b₂ x, smul_smul, mul_comm]
+    CanonicalBundle.coordForm_eq_basis_det_smul_coordForm x b₁ b₂ x, smul_smul, mul_comm]
 
 end CanonicalComparison
 

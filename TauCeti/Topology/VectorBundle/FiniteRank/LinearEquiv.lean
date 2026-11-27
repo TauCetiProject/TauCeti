@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Dual
 public import TauCeti.Topology.VectorBundle.Hom
+import TauCeti.Topology.VectorBundle.Dual
 
 /-!
 # Coordinate changes and duals for `FiniteRankBundleCore.ofLinearEquiv`
@@ -54,16 +55,19 @@ theorem coordChange_comp_ofLinearEquiv_change (b c x : B) :
         ((ofLinearEquiv e₁ V).core.coordChange b c x)) =
       ((ofLinearEquiv e₂ V).core.coordChange b c x).comp
         (e₁.symm.trans e₂).toContinuousLinearMap :=
-  ContinuousLinearMap.ext fun u ↦
-    let T := (trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x
-    congrArg e₂ ((e₁.symm_apply_apply (T (e₁.symm u))).trans
-      (congrArg T (e₂.symm_apply_apply (e₁.symm u)).symm))
+  ContinuousLinearMap.ext fun u ↦ by
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+      coordChange_ofLinearEquiv, coordChange_ofLinearEquiv]
+    dsimp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.arrowCongr_apply,
+      ContinuousLinearEquiv.trans_apply]
+    rw [e₁.symm_apply_apply, e₂.symm_apply_apply]
 
 /-- Changing the model-fibre coordinate equivalence from `e₁` to `e₂` induces a constant-matrix
 isomorphism of finite-rank cores with fibre map `e₁.symm.trans e₂`. -/
 noncomputable def ofLinearEquivChangeIso :
     ofLinearEquiv e₁ V ≅ ofLinearEquiv e₂ V :=
-  constIso (fun _ ↦ subset_rfl) (e₁.symm.trans e₂) fun b c x _ _ ↦
+  constIso (fun i ↦ ((baseSet_ofLinearEquiv e₁ V i).trans (baseSet_ofLinearEquiv e₂ V i).symm).le)
+    (e₁.symm.trans e₂) fun b c x _ _ ↦
     coordChange_comp_ofLinearEquiv_change e₁ e₂ V b c x
 
 @[simp] theorem fiberMap_ofLinearEquivChangeIso_hom (x : B) :
@@ -201,7 +205,7 @@ theorem coordChange_comp_ofLinearEquiv_dual_symm {i j x : B}
 noncomputable def ofLinearEquivDualIso :
     (ofLinearEquiv e V).dual ≅ ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜) :=
   constIso (fun i ↦ ((baseSet_ofLinearEquiv_dual e V i).trans
-      (by simp)).le)
+      (by rw [baseSet_ofLinearEquiv]; simp)).le)
     (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜))
     fun _ _ _ hi hj ↦ coordChange_comp_ofLinearEquiv_dual e V hi hj
 

@@ -53,7 +53,7 @@ theorem contMDiff_totalSpaceMap_detExteriorPowerIso_inv (A : FiniteRankBundleCor
       (detExteriorPowerIso A hr).inv.totalSpaceMap := by
   rw [detExteriorPowerIso_def]
   exact contMDiff_totalSpaceMap_constIso_inv (I := I) (D := (exteriorPower 𝕜 B r).obj A)
-    (fun i ↦ baseSet_det A i) _ _
+    (fun i ↦ localTriv_baseSet_det A i) _ _
 
 /-- For `r = A.rank`, `detExteriorPowerIso A hr` induces a `C^n` diffeomorphism of total spaces
 between `A.det` and `(exteriorPower 𝕜 B r).obj A`. -/
@@ -122,8 +122,8 @@ theorem contMDiff_totalSpaceMap_dualDetIso_inv (A : FiniteRankBundleCore 𝕜 B)
       (I.prod 𝓘(𝕜, Fin A.dual.det.rank → 𝕜)) n (dualDetIso A).inv.totalSpaceMap := by
   rw [dualDetIso_def]
   exact contMDiff_totalSpaceMap_constIso_inv (I := I) (D := A.det.dual)
-    (fun i ↦ (baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
-      ((baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm))) _ _
+    (fun i ↦ (localTriv_baseSet_det A.dual i).trans ((localTriv_baseSet_dual A i).trans
+      ((localTriv_baseSet_det A i).symm.trans (localTriv_baseSet_dual A.det i).symm))) _ _
 
 /-- Over a complete scalar field, `(A.dual).det` and `(A.det).dual` are `C^n` diffeomorphic on
 total spaces, upgrading `dualDetIso A` without smoothness assumptions on `A`. -/
@@ -156,7 +156,9 @@ theorem contMDiff_dualDetTopFormFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
     ((detScalarEquiv A.dual).trans
       (Pi.basisFun 𝕜 (Fin A.rank)).topFormEquiv.symm).toContinuousLinearMap
     fun b ⟨x, u⟩ hx ↦
-      dualDetTopFormFiberEquiv_inCoordinates A b x (by simpa [baseSet_det] using hx) u
+      dualDetTopFormFiberEquiv_inCoordinates A b x
+        (by simpa only [VectorBundleCore.baseSet_at, localTriv_baseSet_det,
+          localTriv_baseSet_dual] using hx) u
 
 /-- The reconstructed total space of `A.dual.det` is `C^n` diffeomorphic over `B` to Mathlib's
 bundle of top-degree scalar-valued continuous alternating forms on `A.core.Fiber`. -/
