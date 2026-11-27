@@ -68,9 +68,10 @@ by induction on `m`, with two changes.
   at most `m + 1` are bounded, as the half-space theorem requires.
 * The forcing of the equation for `ψ u`,
   `ψ F - ⟨∇u, a' ∇ψ⟩ - ⟨∇ψ, a' ∇u⟩ - u div(a' ∇ψ)`, must now lie in `W^{m+1,2}(H)` when
-  `F ∈ W^{m+1,2}(Ω)`. It is a combination of `F`, the first derivatives of `u` and `u` with smooth
-  compactly supported multipliers, so it lies in `W^{m+1,2}(Ω ∩ W)` because `u` is already
-  `W^{m+2,2}` there by the induction hypothesis, applied on `W`
+  `F ∈ W^{m+1,2}(Ω)`. It is a combination of `F`, the first derivatives of `u` and `u` with
+  compactly supported multipliers of class `C^{m+1}` (that of `u` is `div(a' ∇ψ)`, which costs one
+  derivative of `a'`), so it lies in `W^{m+1,2}(Ω ∩ W)` because `u` is already `W^{m+2,2}` there
+  by the induction hypothesis, applied on `W`
   (`TauCeti.PDE.exists_value_ae_eq_localizedForcing`). It vanishes off `tsupport ψ`, and
   `tsupport ψ ∩ H ⊆ Ω ∩ W`, so its extension by zero lies in `W^{m+1,2}(H)`
   (`TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`).
@@ -382,8 +383,8 @@ private theorem exists_value_eq_value_restrictL_of_eqOn_one {Ω₁ : Opens (Eucl
     ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 hx
   rw [h1, h2, indicator_of_mem (hVΩ₁ hx), hψV x hx.2, one_mul, h3, h4]
 
-/-- **Local `H^{m+2}` regularity near a flat part of the boundary, for a smooth field on the whole
-space.** The case of
+/-- **Local `H^{m+2}` regularity near a flat part of the boundary, for a `C^{m+1}` field on the
+whole space.** The case of
 `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo` in which
 the coefficient field is defined on the whole space, uniformly elliptic on `H`, with entries whose
 derivatives of order at most `m + 1` are bounded, and bounded Lipschitz bilinear forms.

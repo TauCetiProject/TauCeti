@@ -231,7 +231,7 @@ private theorem exists_lipschitzWith_contDiff_smul_add_one_sub_smul {k : ℕ} (h
       (∀ i j, BddDerivOn ℝ k (fun x => (χ x • a x + (1 - χ x) • c) i j) univ) ∧
       ∀ x, ‖matrixBilinearForm (χ x • a x + (1 - χ x) • c)‖ ≤ M := by
   set a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ := fun x => χ x • a x + (1 - χ x) • c
-  -- Each entry of `a'` is a constant plus the smooth compactly supported `χ (aᵢⱼ - cᵢⱼ)`.
+  -- Each entry of `a'` is a constant plus the compactly supported `Cᵏ` function `χ (aᵢⱼ - cᵢⱼ)`.
   set g : ι → ι → EuclideanSpace ℝ ι → ℝ := fun i j x => χ x • (a x i j - c i j)
   have hg : ∀ i j, ContDiff ℝ k (g i j) := fun i j =>
     ((hsmooth i j).sub contDiffOn_const).contDiff_smul_of_tsupport_subset U.isOpen
@@ -272,7 +272,7 @@ and its bilinear forms are bounded and Lipschitz.
 As in `TauCeti.PDE.UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter`, `C` need not lie in `S`:
 typically `S = Ω ∩ U` for a domain `Ω` and a half-space `T` with `Ω ∩ U = T ∩ U`. One may take
 `a' = χ a + (1 - χ) λ I` for a smooth cutoff `χ` equal to one near `C` and supported in `U`; then
-`a' - λ I` has compact support, which bounds every derivative. -/
+`a' - λ I` has compact support, which bounds its derivatives of order at most `k`. -/
 theorem UniformlyEllipticOn.exists_contDiff_eqOn_inter [DecidableEq ι] {lam Lam : ℝ}
     {S T C : Set (EuclideanSpace ℝ ι)} {U : Opens (EuclideanSpace ℝ ι)}
     (ha : UniformlyEllipticOn S a lam Lam) {k : ℕ} (hk : k ≠ 0)
