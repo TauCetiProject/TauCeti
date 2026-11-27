@@ -261,11 +261,11 @@ theorem sphereIntegral_fubiniStudyForm_eq_one_of_sum_eq_one
     {i : ι} (hi : ¬ ∀ z z', u i z = u i z') :
     sphereIntegral (fubiniStudyForm (n + 1)).val (u i OnePoint.infty)
       (HomotopyGroup.map ⟨u i, (hu i).continuous⟩ rfl ⟦riemannSphereSquare⟧) = 1 := by
-  obtain ⟨j, hj, -⟩ := exists_eq_one_and_forall_ne_eq_zero hu hhol hsum
-  obtain ⟨_, -, huniq⟩ := existsUnique_not_forall_eq_of_sum_sphereIntegral_eq_one hu hhol hsum
-  obtain rfl : j = i := (huniq j fun h ↦ one_ne_zero (hj.symm.trans
-    ((sphereIntegral_fubiniStudyForm_eq_zero_iff (hu j) (hhol j)).2 h))).trans (huniq i hi).symm
-  exact hj
+  -- Every sphere other than the one of area `1` has area `0`, so it is constant.
+  obtain ⟨j, hj, h0⟩ := exists_eq_one_and_forall_ne_eq_zero hu hhol hsum
+  by_cases hij : i = j
+  · exact hij ▸ hj
+  · exact absurd ((sphereIntegral_fubiniStudyForm_eq_zero_iff (hu i) (hhol i)).1 (h0 i hij)) hi
 
 end Family
 
