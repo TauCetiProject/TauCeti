@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.AdicCompletion.Principal
 public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 public import TauCeti.RingTheory.Perfect.Basic
 public import TauCeti.RingTheory.Perfectoid.FontaineTheta
-import TauCeti.RingTheory.Perfectoid.PreTilt.Map
 
 /-!
 # Integral perfectoid rings
@@ -64,7 +63,6 @@ makes it bijective, so `A` is reduced with surjective Frobenius.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_bijective_frobeniusModPow`: if `A` is `π`-adically
   complete for a nonzerodivisor `π` with `π ^ p ∣ p` and bijective relative Frobenius
   `A ⧸ (π) → A ⧸ (π ^ p)`, then `A` is integral perfectoid (Bhatt–Morrow–Scholze, Lemma 3.10(ii)).
-* `TauCeti.Perfectoid.IsIntegralPerfectoid.of_ringEquiv`: transport along a ring isomorphism.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_perfectRing`: a perfect ring of characteristic `p`
   is integral perfectoid; the kernel of `θ` is `(p)` (`WittVector.ker_fontaineTheta_eq_span_p`).
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.perfectRing`,
@@ -236,44 +234,6 @@ theorem of_bijective_frobeniusModPow {π : A} {hdvd : π ^ p ∣ (p : A)}
     obtain ⟨ξ, -, -, hker⟩ :=
       WittVector.exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta hreg hbij
     exact ⟨⟨ξ, hker⟩⟩
-
-variable {A} in
-/-- **Transport of integral perfectoid rings along a ring isomorphism.** -/
-theorem of_ringEquiv {B : Type*} [CommRing B] [IsIntegralPerfectoid p A] (e : A ≃+* B) :
-    IsIntegralPerfectoid p B := by
-  have heMod_eq : span {(p : B)} = (span {(p : A)}).map (e : A →+* B) := by
-    rw [Ideal.map_span, Set.image_singleton, RingEquiv.coe_toRingHom, map_natCast]
-  let eMod : ModP A p ≃+* ModP B p := Ideal.quotientEquiv _ _ e heMod_eq
-  refine ⟨?_, ?_, ?_⟩
-  · obtain ⟨π, hdvd, hc⟩ := exists_adic_element (p := p) (A := A)
-    have hmap : (span {π}).map (e : A →+* B) = span {e π} := by
-      rw [Ideal.map_span, Set.image_singleton, RingEquiv.coe_toRingHom]
-    exact ⟨e π, map_pow e π p ▸ map_natCast e p ▸ map_dvd e hdvd,
-      hmap ▸ (IsAdicComplete.congr_ringEquiv (span {π}) e).mpr hc⟩
-  · intro y
-    obtain ⟨x, hx⟩ := frobenius_surjective (p := p) (eMod.symm y)
-    dsimp only at hx ⊢
-    exact ⟨eMod x, by rw [← map_pow, hx, eMod.apply_symm_apply]⟩
-  · intro hpB hcB
-    have hpA : ¬IsUnit (p : A) := fun h ↦ hpB (by simpa using h.map e)
-    let : Fact (¬IsUnit (p : A)) := ⟨hpA⟩
-    let : Fact (¬IsUnit (p : B)) := ⟨hpB⟩
-    let : IsAdicComplete (span {(p : B)}) B := hcB
-    let f : WittVector p (PreTilt A p) →+* WittVector p (PreTilt B p) :=
-      WittVector.map (PreTilt.map p (e : A →+* B))
-    have hf_surj : Function.Surjective f := WittVector.map_surjective _ fun x ↦
-      ⟨PreTilt.map p (e.symm : B →+* A) x, by
-        have hid : (e : A →+* B).comp (e.symm : B →+* A) = RingHom.id B :=
-          RingHom.ext e.apply_symm_apply
-        rw [← RingHom.comp_apply, ← PreTilt.map_comp, hid, PreTilt.map_id, RingHom.id_apply]⟩
-    have hker : RingHom.ker (WittVector.fontaineTheta B p) =
-        (RingHom.ker (WittVector.fontaineTheta A p)).map f := by
-      rw [← RingHom.ker_comp_of_injective (WittVector.fontaineTheta A p)
-          (f := (e : A →+* B)) e.injective, ← WittVector.theta_natural_comp (e : A →+* B),
-        ← RingHom.comap_ker]
-      exact (Ideal.map_comap_of_surjective _ hf_surj _).symm
-    obtain ⟨ξ, hξ⟩ := isPrincipal_ker_fontaineTheta (p := p) (A := A)
-    exact ⟨⟨f ξ, by rw [hker, hξ, Ideal.map_span, Set.image_singleton]⟩⟩
 
 end IsIntegralPerfectoid
 

@@ -17,6 +17,7 @@ import TauCeti.RingTheory.Huber.Perfect
 import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 import TauCeti.RingTheory.Perfect.Basic
 import TauCeti.RingTheory.Perfectoid.Away
+import TauCeti.RingTheory.Perfectoid.Integral.Map
 import TauCeti.RingTheory.WittVector.Primitive.Quotient
 
 /-!
@@ -203,7 +204,7 @@ theorem isIntegralPerfectoid_quotient (hξ : ξ.IsPrimitive) :
 theorem isIntegralPerfectoid_untiltPlus (hξ : ξ.IsPrimitive) :
     IsIntegralPerfectoid p (untiltPlus p P (Ideal.span {ξ})) :=
   have := isIntegralPerfectoid_quotient hξ
-  IsIntegralPerfectoid.of_ringEquiv p (quotientEquivUntiltPlus hξ)
+  IsIntegralPerfectoid.of_ringEquiv (quotientEquivUntiltPlus hξ)
 
 /-- The canonical map `R → uniformTilt p (untilt p P (Ideal.span {ξ}))`,
 `x ↦ (sharp (x ^ (1 / p ^ n)))_n`. -/
