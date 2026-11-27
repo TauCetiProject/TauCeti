@@ -8,10 +8,8 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Integral
 public import TauCeti.NumberTheory.LocalField.MassFormula.Ore.Basic
 import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
-import TauCeti.Data.Set.Function
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
-import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard
 
 /-!
@@ -269,31 +267,19 @@ private theorem sum_oreBoxExponent (n j : ℕ) (hn : 0 < n) :
   exact ite_eq_right (by omega : h ≠ 0)
 
 /-- Membership in the base Eisenstein subbox attached to `oreBoxExponent K n j`. -/
-private theorem mem_pi_oreBoxExponent_sdiff_iff {n j : ℕ} (hn : 0 < n) {a : Fin n → K} :
-    a ∈ (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreBoxExponent K n j i)) \
-        (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) ''
-          ↑(𝓂[K] ^ Function.update (oreBoxExponent K n j) ⟨0, hn⟩
-            (oreBoxExponent K n j ⟨0, hn⟩ + 1) i)) ↔
+private theorem mem_idealBoxSdiff_oreBoxExponent_iff {n j : ℕ} (hn : 0 < n) {a : Fin n → K} :
+    a ∈ idealBoxSdiff K (oreBoxExponent K n j) ⟨0, hn⟩ ↔
       a ∈ eisensteinSet K n ∧
         ∀ i : Fin n, 1 ≤ (i : ℕ) →
           a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreCoefficientDepth 𝒪[K] n j i) := by
   set i₀ : Fin n := ⟨0, hn⟩
   set e := oreBoxExponent K n j
   have he₀ : e i₀ + 1 = 2 := by simp [e, oreBoxExponent, i₀]
-  simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m))]
-  rw [Set.mem_univ_pi_sdiff_update_iff, eisensteinSet_eq_sdiff hn]
-  have heis_iff :
-      a ∈ (Set.univ.pi fun _ ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K]) \
-          (Set.univ.pi fun i ↦
-            ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update (fun _ ↦ 1) i₀ 2 i)) ↔
-        (∀ i, a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (1 : ℕ))) ∧
-          a i₀ ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ 2) := by
-    have h := Set.mem_univ_pi_sdiff_update_iff (fun _ : Fin n ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K])
-      i₀ (((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ 2)) (x := a)
-    simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m)),
-      pow_one]
-    exact h
-  rw [heis_iff, he₀]
+  have heis : eisensteinSet K n = idealBoxSdiff K (fun _ : Fin n ↦ 1) i₀ := by
+    rw [eisensteinSet_eq_sdiff hn, idealBoxSdiff_def]
+    simp only [pow_one]
+    rfl
+  rw [mem_idealBoxSdiff, heis, mem_idealBoxSdiff, he₀]
   refine ⟨fun ⟨hae, ha0⟩ ↦ ⟨⟨fun i ↦ ?_, ha0⟩, fun i hipos ↦ ?_⟩,
     fun ⟨⟨ha1, ha0⟩, hlow⟩ ↦ ⟨fun i ↦ ?_, ha0⟩⟩
   · have h1 : 1 ≤ e i := by
@@ -311,13 +297,9 @@ private theorem mem_pi_oreBoxExponent_sdiff_iff {n j : ℕ} (hn : 0 < n) {a : Fi
 /-- Box-difference presentation of `eisensteinBox K n j` when `j % n = 0`. -/
 private theorem eisensteinBox_eq_sdiff_of_mod_eq_zero {n j : ℕ} (hadm : IsOreAdmissible 𝒪[K] n j)
     (hmod : j % n = 0) :
-    eisensteinBox K n j =
-      (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ oreBoxExponent K n j i)) \
-        Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) ''
-          ↑(𝓂[K] ^ Function.update (oreBoxExponent K n j) ⟨0, hadm.pos⟩
-            (oreBoxExponent K n j ⟨0, hadm.pos⟩ + 1) i) := by
+    eisensteinBox K n j = idealBoxSdiff K (oreBoxExponent K n j) ⟨0, hadm.pos⟩ := by
   ext a
-  rw [mem_eisensteinBox, mem_pi_oreBoxExponent_sdiff_iff hadm.pos]
+  rw [mem_eisensteinBox, mem_idealBoxSdiff_oreBoxExponent_iff hadm.pos]
   simp [hadm, hmod]
 
 /-- Box-difference presentation of `eisensteinBox K n j` when `0 < j % n`. -/
@@ -327,12 +309,7 @@ private theorem eisensteinBox_eq_sdiff_of_mod_pos {n j : ℕ} (hadm : IsOreAdmis
     let i₀ : Fin n := ⟨0, hadm.pos⟩
     let ib : Fin n := ⟨j % n, Nat.mod_lt j hadm.pos⟩
     let e₂ := Function.update e ib (e ib + 1)
-    eisensteinBox K n j =
-      ((Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) \
-          Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update e i₀ (e i₀ + 1) i)) \
-        ((Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e₂ i)) \
-          Set.univ.pi fun i ↦
-            ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update e₂ i₀ (e₂ i₀ + 1) i)) := by
+    eisensteinBox K n j = idealBoxSdiff K e i₀ \ idealBoxSdiff K e₂ i₀ := by
   dsimp only
   set e := oreBoxExponent K n j
   set i₀ : Fin n := ⟨0, hadm.pos⟩
@@ -341,12 +318,9 @@ private theorem eisensteinBox_eq_sdiff_of_mod_pos {n j : ℕ} (hadm : IsOreAdmis
   have hib0 : ib ≠ i₀ := fun h ↦ hmod.ne' (congrArg Fin.val h)
   have heb : e ib = oreCoefficientDepth 𝒪[K] n j ib := ite_eq_right hmod.ne'
   ext a
-  have hbase := mem_pi_oreBoxExponent_sdiff_iff (K := K) (j := j) hadm.pos (a := a)
-  simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m))]
-    at hbase ⊢
-  rw [Set.mem_sdiff, Set.mem_univ_pi_sdiff_update_iff, Set.mem_univ_pi_sdiff_update_iff]
-  rw [Set.mem_univ_pi_sdiff_update_iff] at hbase
-  rw [mem_eisensteinBox, ← and_assoc (a := a ∈ eisensteinSet K n), ← hbase]
+  have hbase := mem_idealBoxSdiff_oreBoxExponent_iff (K := K) (j := j) hadm.pos (a := a)
+  rw [Set.mem_sdiff, mem_idealBoxSdiff, mem_idealBoxSdiff]
+  rw [mem_eisensteinBox, ← and_assoc (a := a ∈ eisensteinSet K n), ← hbase, mem_idealBoxSdiff]
   simp only [hadm, true_and, he₂, Function.update_of_ne hib0.symm]
   refine and_congr_right fun ⟨hae, ha0⟩ ↦ ⟨fun hcrit ⟨hae₂, _⟩ ↦ ?_, fun hnot i hi _ hmem ↦ ?_⟩
   · have hb_mem := hae₂ ib
@@ -372,13 +346,9 @@ theorem measurableSet_eisensteinBox {n j : ℕ} [MeasurableSpace (Fin n → K)]
   by_cases hadm : IsOreAdmissible 𝒪[K] n j
   · rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
     · rw [eisensteinBox_eq_sdiff_of_mod_eq_zero hadm hmod]
-      exact (measurableSet_univ_pi_image_maximalIdeal_pow _).diff
-        (measurableSet_univ_pi_image_maximalIdeal_pow _)
+      exact measurableSet_idealBoxSdiff _ _
     · rw [eisensteinBox_eq_sdiff_of_mod_pos hadm hmod]
-      exact ((measurableSet_univ_pi_image_maximalIdeal_pow _).diff
-        (measurableSet_univ_pi_image_maximalIdeal_pow _)).diff
-          ((measurableSet_univ_pi_image_maximalIdeal_pow _).diff
-            (measurableSet_univ_pi_image_maximalIdeal_pow _))
+      exact (measurableSet_idealBoxSdiff _ _).diff (measurableSet_idealBoxSdiff _ _)
   · rw [eisensteinBox_of_not_isOreAdmissible hadm]
     exact MeasurableSet.empty
 
@@ -417,44 +387,37 @@ theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible 𝒪[K] n j)
   set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
   have hsum : ∑ i, e i = N := sum_oreBoxExponent (K := K) n j hn
   rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
-  · -- Case `j % n = 0`: `eisensteinBox K n j` is a single ideal-box difference `S e`.
+  · -- Case `j % n = 0`: `eisensteinBox K n j` is a single ideal-box difference.
     rw [eisensteinBox_eq_sdiff_of_mod_eq_zero hadm hmod, ite_eq_left hmod, mul_one,
-      Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ e i₀, hμ, mul_one, hsum]
-  · -- Case `0 < j % n`: `eisensteinBox K n j = S e \ S e₂`, where `e₂` deepens coordinate `j % n`
-    -- by `1` and scales the volume of `S e` by `q⁻¹`.
+      Measure.measure_idealBoxSdiff μ e i₀, hμ, mul_one, hsum]
+  · -- Case `0 < j % n`: `eisensteinBox K n j = idealBoxSdiff K e i₀ \ idealBoxSdiff K e₂ i₀`,
+    -- where `e₂` deepens coordinate `j % n` by `1` and scales the volume by `q⁻¹`.
     set ib : Fin n := ⟨j % n, Nat.mod_lt j hn⟩
     set e₂ := Function.update e ib (e ib + 1)
     have hib0 : ib ≠ i₀ := fun h ↦ hmod.ne' (congrArg Fin.val h)
     have hsum₂ : ∑ i, e₂ i = N + 1 := by
       rw [Finset.sum_update_add_of_mem (Finset.mem_univ ib) e 1, hsum]
-    let S (d : Fin n → ℕ) : Set (Fin n → K) :=
-      (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
-        Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d i₀ (d i₀ + 1) i)
-    have hbox : eisensteinBox K n j = S e \ S e₂ := eisensteinBox_eq_sdiff_of_mod_pos hadm hmod
-    have hYX : S e₂ ⊆ S e := fun a ha ↦ by
-      dsimp only [S] at ha ⊢
-      simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m))]
-        at ha ⊢
-      rw [Set.mem_univ_pi_sdiff_update_iff] at ha ⊢
+    have hbox : eisensteinBox K n j = idealBoxSdiff K e i₀ \ idealBoxSdiff K e₂ i₀ :=
+      eisensteinBox_eq_sdiff_of_mod_pos hadm hmod
+    have hYX : idealBoxSdiff K e₂ i₀ ⊆ idealBoxSdiff K e i₀ := fun a ha ↦ by
+      rw [mem_idealBoxSdiff] at ha ⊢
       have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := e) (e := e₂)
         (le_update_iff.2 ⟨Nat.le_succ _, fun _ _ ↦ le_rfl⟩) (Set.mem_univ_pi.mpr ha.1)
       exact ⟨Set.mem_univ_pi.mp hsub, by simpa [e₂, Function.update_of_ne hib0.symm] using ha.2⟩
     have hq : q ≠ 0 := by simp [q, Nat.card_pos.ne']
     have hqt : q ≠ ∞ := ENNReal.natCast_ne_top _
-    have hY_vol : μ (S e₂) = (1 / q ^ N * (1 - 1 / q)) * (1 / q) := by
-      rw [Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ e₂ i₀, hμ, mul_one,
-        hsum₂]
+    have hY_vol : μ (idealBoxSdiff K e₂ i₀) = (1 / q ^ N * (1 - 1 / q)) * (1 / q) := by
+      rw [Measure.measure_idealBoxSdiff μ e₂ i₀, hμ, mul_one, hsum₂]
       simp only [one_div]
       rw [pow_succ, ENNReal.mul_inv (.inl (pow_ne_zero _ hq)) (.inl (ENNReal.pow_ne_top hqt))]
       ring
     have hfin_base : 1 / q ^ N * (1 - 1 / q) ≠ ∞ :=
       one_div_natCard_residueField_pow_mul_one_sub_ne_top
-    have hY_fin : μ (S e₂) ≠ ∞ := hY_vol ▸ ENNReal.mul_ne_top hfin_base
+    have hY_fin : μ (idealBoxSdiff K e₂ i₀) ≠ ∞ := hY_vol ▸ ENNReal.mul_ne_top hfin_base
       (ENNReal.div_ne_top ENNReal.one_ne_top hq)
-    rw [hbox, ite_eq_right hmod.ne', measure_sdiff hYX
-      ((measurableSet_univ_pi_image_maximalIdeal_pow _).diff
-        (measurableSet_univ_pi_image_maximalIdeal_pow _)).nullMeasurableSet hY_fin,
-      Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ e i₀, hμ, mul_one, hsum,
+    rw [hbox, ite_eq_right hmod.ne',
+      measure_sdiff hYX (measurableSet_idealBoxSdiff e₂ i₀).nullMeasurableSet hY_fin,
+      Measure.measure_idealBoxSdiff μ e i₀, hμ, mul_one, hsum,
       hY_vol, ENNReal.mul_sub fun _ _ ↦ hfin_base, mul_one]
 
 /-- **Roots of polynomials in `eisensteinBox K n j` generate extensions of wild exponent `j`.** For

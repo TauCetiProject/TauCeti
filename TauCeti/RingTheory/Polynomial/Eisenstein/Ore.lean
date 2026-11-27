@@ -384,6 +384,13 @@ private theorem le_addVal_Eisenstein_top_iff {n j : ℕ} (hn : 0 < n) {f : R[X]}
         have : n * (j / n + 2) = n * (j / n + 1) + n := by ring
         omega
 
+/-- Any index `i : Fin n` other than the last index `n - 1` satisfies `(i : ℕ) + 1 < n`. -/
+private theorem val_add_one_lt_of_ne_last {n : ℕ} (hn : 0 < n) {i : Fin n}
+    (hi : i ≠ ⟨n - 1, by omega⟩) : (i : ℕ) + 1 < n := by
+  have := Fin.val_ne_of_ne hi
+  dsimp at this
+  omega
+
 /-- Core algebraic equivalence: for an Eisenstein polynomial `f : R[X]` of positive degree `n`,
 the shifted derivative infimum `⨅ i : Fin n, (n • v_R(f_{i+1} * (i+1)) + (i+1))` equals `j + n`
 if and only if `IsOreAdmissible R n j` holds and the coefficients of `f` satisfy the Ore depth
@@ -404,6 +411,12 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
     n • (addVal R (f.coeff ((i : ℕ) + 1)) + addVal R (((i : ℕ) + 1 : ℕ) : R)) +
       ((i : ℕ) + 1 : ℕ∞)
   let iTop : Fin n := ⟨n - 1, by omega⟩
+  have hT_sub {h : ℕ} (hh1 : 1 ≤ h) (hhn : h < n) :
+      T ⟨h - 1, by omega⟩ =
+        n • (addVal R (f.coeff h) + addVal R (h : R)) + (h : ℕ∞) := by
+    have hsub : ((⟨h - 1, by omega⟩ : Fin n) : ℕ) + 1 = h := by dsimp; omega
+    dsimp only [T]
+    rw [← Nat.cast_add_one (⟨h - 1, by omega⟩ : Fin n).val, hsub]
   have hinf :
       (⨅ i : Fin n, n • addVal R (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞)) =
         ⨅ i : Fin n, T i := by
@@ -429,20 +442,15 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
   · -- Forward direction: extract the lower-coefficient Ore depth bounds from `hle`, then split on
     -- whether the infimum is attained at the top index `iTop` or a lower index.
     have hcoeff : ∀ h, 1 ≤ h → h < n →
-        (oreCoefficientDepth R n j h : ℕ∞) ≤ addVal R (f.coeff h) := fun h hh1 hhn ↦ by
-      let k : Fin n := ⟨h - 1, by omega⟩
-      have hk : (k : ℕ) + 1 = h := by dsimp [k]; omega
-      have hm1 : 1 ≤ addVal R (f.coeff h) := hf.one_le_addVal_coeff (by omega)
-      exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hhn hm1).mp
-        (by simpa only [T, ← Nat.cast_add_one (k : ℕ), hk] using hle k)
+        (oreCoefficientDepth R n j h : ℕ∞) ≤ addVal R (f.coeff h) := fun h hh1 hhn ↦
+      (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hhn
+        (hf.one_le_addVal_coeff (hdeg ▸ hhn))).mp (hT_sub hh1 hhn ▸ hle ⟨h - 1, by omega⟩)
     rcases eq_or_ne i iTop with rfl | hi_ne
     · have hi' := hT_top_eq.mp hi
       exact ⟨⟨hn, .inl hi'⟩, hcoeff, fun hb ↦ absurd hi'.1 hb.ne'⟩
-    · have hiLow : (i : ℕ) + 1 < n := by
-        have := Fin.val_ne_of_ne hi_ne; dsimp [iTop] at this; omega
-      have hm1 : 1 ≤ addVal R (f.coeff ((i : ℕ) + 1)) :=
-        hf.one_le_addVal_coeff (hdeg ▸ hiLow)
-      obtain ⟨hmod, hvb, heq_m⟩ := (nsmul_add_eq_iff (j := j) hn hiLow hm1).mp hi
+    · have hiLow := val_add_one_lt_of_ne_last hn hi_ne
+      obtain ⟨hmod, hvb, heq_m⟩ := (nsmul_add_eq_iff (j := j) hn hiLow
+        (hf.one_le_addVal_coeff (hdeg ▸ hiLow))).mp hi
       have hb_pos : 0 < j % n := by omega
       rcases hle_T_top.mp (hle iTop) with ⟨h0, -⟩ | ⟨-, hvn⟩
       · exact absurd h0 hb_pos.ne'
@@ -452,21 +460,16 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
     refine ⟨?_, fun i ↦ ?_⟩
     · rcases hadm.2 with ⟨h0, heq⟩ | ⟨hb_pos, hvb, -⟩
       · exact ⟨iTop, hT_top_eq.mpr ⟨h0, heq⟩⟩
-      · let ib : Fin n := ⟨j % n - 1, by omega⟩
-        have hib : (ib : ℕ) + 1 = j % n := by dsimp [ib]; omega
-        have hm1 : 1 ≤ addVal R (f.coeff (j % n)) := hf.one_le_addVal_coeff (by omega)
-        refine ⟨ib, ?_⟩
-        dsimp only [T]
-        rw [← Nat.cast_add_one (ib : ℕ), hib]
-        exact (nsmul_add_eq_iff (j := j) hn hlt_b hm1).mpr ⟨rfl, hvb, hcrit hb_pos⟩
+      · refine ⟨⟨j % n - 1, by omega⟩, ?_⟩
+        rw [hT_sub hb_pos hlt_b]
+        exact (nsmul_add_eq_iff (j := j) hn hlt_b
+          (hf.one_le_addVal_coeff (hdeg ▸ hlt_b))).mpr ⟨rfl, hvb, hcrit hb_pos⟩
     · rcases eq_or_ne i iTop with rfl | hi_ne
       · exact hle_T_top.mpr
           (hadm.2.imp (fun ⟨h0, heq⟩ ↦ ⟨h0, heq.le⟩) fun ⟨hp, _, hvn⟩ ↦ ⟨hp, hvn⟩)
-      · have hiLow : (i : ℕ) + 1 < n := by
-          have := Fin.val_ne_of_ne hi_ne; dsimp [iTop] at this; omega
-        have hm1 : 1 ≤ addVal R (f.coeff ((i : ℕ) + 1)) :=
-          hf.one_le_addVal_coeff (hdeg ▸ hiLow)
-        exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hiLow hm1).mpr
+      · have hiLow := val_add_one_lt_of_ne_last hn hi_ne
+        exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hiLow
+          (hf.one_le_addVal_coeff (hdeg ▸ hiLow))).mpr
           (hcoeff ((i : ℕ) + 1) (Nat.succ_pos _) hiLow)
 
 /-- For a polynomial `f : R[X]` of positive degree `n` over a discrete valuation ring `R`, the

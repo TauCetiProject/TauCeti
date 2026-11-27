@@ -51,6 +51,8 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
 * `TauCeti.integerBox K ι`: the integer box `∏ i, 𝒪[K]` in `ι → K`.
 * `TauCeti.scaledIntegerBox ι ϖ k`: the scaled integer box `{x | ϖ ^ k • x ∈ integerBox K ι}`,
   an additive subgroup of `ι → K`.
+* `TauCeti.idealBoxSdiff K d k`: the ideal-power box with exponents `d` minus its subbox where
+  coordinate `k` is deepened by `1`.
 
 ## Main results
 
@@ -61,18 +63,20 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
   integer boxes are compact, and for a uniformizer `ϖ` they exhaust `ι → K`.
 * `TauCeti.univ_pi_image_maximalIdeal_pow_subset`,
   `TauCeti.isClosed_univ_pi_image_maximalIdeal_pow`,
-  `TauCeti.measurableSet_univ_pi_image_maximalIdeal_pow`: boxes of ideal powers shrink as the
-  exponents grow, and are closed and measurable.
+  `TauCeti.measurableSet_univ_pi_image_maximalIdeal_pow`,
+  `TauCeti.mem_idealBoxSdiff`, `TauCeti.measurableSet_idealBoxSdiff`: boxes of ideal powers shrink
+  as the exponents grow, are closed and measurable, and coordinatewise membership in
+  `idealBoxSdiff` characterizes the single-coordinate deepening difference.
 
 * `MeasureTheory.Measure.measure_image_mulVec_integerBox`: for a left-invariant `μ`,
   the image of the integer box has measure `q ^ (-k)` times that of the box.
 * `MeasureTheory.Measure.measure_image_mulVec_vadd_smul_integerBox`: the same for every
   ball `x +ᵥ c • ∏ i, 𝒪[K]` with `c ≠ 0`.
 * `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow`,
-  `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one`: for a
-  left-invariant `μ`, the box with factors `𝓂[K] ^ e i` has `q ^ (-∑ i, e i)` times the volume of
-  the integer box; deepening one coordinate by `1` gives an inner box of `q⁻¹` times the original
-  volume and a set difference of `(1 - q⁻¹)` times the original volume.
+  `MeasureTheory.Measure.measure_idealBoxSdiff`: for a left-invariant `μ`, the box with factors
+  `𝓂[K] ^ e i` has `q ^ (-∑ i, e i)` times the volume of the integer box; deepening one
+  coordinate by `1` gives a set difference `idealBoxSdiff` of `q ^ (-∑ i, d i) * (1 - q⁻¹)` times
+  the original volume.
 * `MeasureTheory.Measure.measure_integerBox_inter_coord_eq_zero`: a coordinate hyperplane
   inside an integer box of finite measure is null.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a Haar measure `μ`,
@@ -112,6 +116,30 @@ theorem univ_pi_image_maximalIdeal_pow_subset {ι : Type*} {e e' : ι → ℕ} (
     (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) ⊆
       univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e' i) :=
   pi_mono fun i _ ↦ image_mono <| Ideal.pow_le_pow_right (h i)
+
+variable (K) in
+/-- The ideal-power box with exponents `d` minus its subbox where coordinate `k` is deepened by
+`1`. -/
+noncomputable def idealBoxSdiff {ι : Type*} [DecidableEq ι] (d : ι → ℕ) (k : ι) : Set (ι → K) :=
+  (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
+    univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d k (d k + 1) i)
+
+/-- Unfolding `TauCeti.idealBoxSdiff`. -/
+theorem idealBoxSdiff_def {ι : Type*} [DecidableEq ι] (d : ι → ℕ) (k : ι) :
+    idealBoxSdiff K d k =
+      (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
+        univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d k (d k + 1) i) :=
+  by rw [idealBoxSdiff]
+
+/-- Membership in `TauCeti.idealBoxSdiff`: every coordinate `i` lies in `𝓂[K] ^ d i` and
+coordinate `k` lies outside `𝓂[K] ^ (d k + 1)`. -/
+theorem mem_idealBoxSdiff {ι : Type*} [DecidableEq ι] {d : ι → ℕ} {k : ι} {a : ι → K} :
+    a ∈ idealBoxSdiff K d k ↔
+      (∀ i, a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) ∧
+        a k ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (d k + 1)) := by
+  rw [idealBoxSdiff_def]
+  simp_rw [Function.apply_update (fun (_ : ι) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m))]
+  exact Set.mem_univ_pi_sdiff_update_iff _ k _
 
 /-- The scaled integer box `{x | ϖ ^ k • x ∈ integerBox K ι}`, an additive subgroup of
 `ι → K`. -/
@@ -193,6 +221,13 @@ theorem measurableSet_univ_pi_image_maximalIdeal_pow [MeasurableSpace (ι → K)
     [OpensMeasurableSpace (ι → K)] (e : ι → ℕ) :
     MeasurableSet (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) :=
   (isClosed_univ_pi_image_maximalIdeal_pow e).measurableSet
+
+/-- A difference of ideal-power boxes is measurable. -/
+theorem measurableSet_idealBoxSdiff [DecidableEq ι] [MeasurableSpace (ι → K)]
+    [OpensMeasurableSpace (ι → K)] (d : ι → ℕ) (k : ι) :
+    MeasurableSet (idealBoxSdiff K d k) :=
+  (measurableSet_univ_pi_image_maximalIdeal_pow d).diff
+    (measurableSet_univ_pi_image_maximalIdeal_pow _)
 
 end TauCeti
 
@@ -281,10 +316,9 @@ theorem measure_univ_pi_image_maximalIdeal_pow (μ : Measure (ι → K)) [μ.IsA
 /-- For a left-invariant measure on `ι → K`, removing from an ideal box the subbox where coordinate
 `k` is deepened by `1` leaves `q ^ (-∑ i, d i) * (1 - q⁻¹)` times the volume of the integer box,
 where `q = Nat.card 𝓀[K]`. -/
-theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one (μ : Measure (ι → K))
-    [μ.IsAddLeftInvariant] (d : ι → ℕ) (k : ι) :
-    μ ((univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
-        univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d k (d k + 1) i)) =
+theorem measure_idealBoxSdiff (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+    (d : ι → ℕ) (k : ι) :
+    μ (idealBoxSdiff K d k) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (∑ i, d i) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) *
         μ (integerBox K ι) := by
   set d' := Function.update d k (d k + 1)
@@ -306,13 +340,10 @@ theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one (μ : Measur
       exact_mod_cast Nat.not_succ_le_self (d k)
     let v : ι → K := Function.update 0 k ((ϖ ^ d k : 𝒪[K]) : K)
     have hv_sub :
-        v +ᵥ (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d' i)) ⊆
-          (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
-            univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d' i) := by
+        v +ᵥ (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d' i)) ⊆ idealBoxSdiff K d k := by
       rintro _ ⟨x, hx, rfl⟩
       obtain ⟨c, hc, hcx⟩ := hx k (mem_univ k)
-      simp_rw [d', Function.apply_update (fun (_ : ι) (n : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ n))]
-      rw [Set.mem_univ_pi_sdiff_update_iff]
+      rw [mem_idealBoxSdiff]
       refine ⟨fun i ↦ ?_, fun ⟨y, hy, hyx⟩ ↦ hϖ_notMem ?_⟩
       · rcases eq_or_ne i k with rfl | hik
         · have hc' : c ∈ 𝓂[K] ^ (d i + 1) := by simpa [d'] using hc
@@ -329,8 +360,9 @@ theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one (μ : Measur
     rw [top_le_iff.mp (hv_top.symm.trans_le (measure_mono hv_sub)), hμ,
       ENNReal.mul_top one_div_natCard_residueField_pow_mul_one_sub_ne_zero]
   · -- When `μ (integerBox K ι) ≠ ∞`, subtract the two finite box volumes directly.
-    rw [measure_sdiff hsub (measurableSet_univ_pi_image_maximalIdeal_pow d').nullMeasurableSet
-      (h₂ ▸ ENNReal.mul_ne_top (ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)) hμ),
+    rw [idealBoxSdiff_def,
+      measure_sdiff hsub (measurableSet_univ_pi_image_maximalIdeal_pow d').nullMeasurableSet
+        (h₂ ▸ ENNReal.mul_ne_top (ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)) hμ),
       h₁, h₂, ← ENNReal.sub_mul fun _ _ ↦ hμ]
     congr 1
     simp only [one_div]

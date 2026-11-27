@@ -206,58 +206,6 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure {n j : 
             (1 / q ^ (n + j) * (1 - 1 / q))) := by ring
     _ = n * q ^ (n + j) * μ (eisensteinBox K n j) := by rw [hid]; ring
 
-/-- Auxiliary weighted equality after cancelling `1 - q⁻¹` on an Ore-admissible stratum. -/
-private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreAdmissible 𝒪[K] n j) :
-    ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) *
-        (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n + j)) =
-      (n : ℝ≥0∞) *
-        (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^
-          (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h)) *
-        (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-  let : MeasurableSpace (Fin n → K) := borel _
-  have : BorelSpace (Fin n → K) := ⟨rfl⟩
-  obtain ⟨μ, _, hμ⟩ := exists_addHaarMeasure_integerBox_eq_one K (Fin n)
-  have hid := ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure (j := j) μ hμ
-  rw [measure_eisensteinBox hadm μ hμ] at hid
-  set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
-  have hpow : q ^ (n + j) / q ^ (n + j) = 1 :=
-    ENNReal.div_self (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
-      (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))
-  have hsub : (1 - 1 / q) / (1 - 1 / q) = 1 :=
-    ENNReal.div_self (by simpa [one_div] using one_sub_inv_natCard_residueField_ne_zero K)
-      (ENNReal.sub_ne_top ENNReal.one_ne_top)
-  rw [hid]
-  calc
-    n * q ^ (n + j) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) *
-        (1 - 1 / q) * (if j % n = 0 then 1 else 1 - 1 / q)) / (1 - 1 / q) * (1 / q ^ (n + j))
-      = n * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h)) *
-          (if j % n = 0 then 1 else 1 - 1 / q) * (q ^ (n + j) / q ^ (n + j)) *
-          ((1 - 1 / q) / (1 - 1 / q)) := by
-          simp only [div_eq_mul_inv]; ring
-    _ = _ := by rw [hpow, hsub, mul_one, mul_one]
-
-private theorem natCast_ncard_wildExponent_eq_div_pow_real {n j : ℕ}
-    (hadm : IsOreAdmissible 𝒪[K] n j) :
-    ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ) /
-        (Nat.card 𝓀[K] : ℝ) ^ (n + j) =
-      (n : ℝ) /
-        (Nat.card 𝓀[K] : ℝ) ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) *
-        (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ)) := by
-  have h := congrArg ENNReal.toReal (ncard_wildExponent_eq_mul_one_div_pow hadm)
-  have hite :
-      (if j % n = 0 then (1 : ℝ≥0∞) else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)).toReal =
-        if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ) := by
-    split_ifs
-    · exact ENNReal.toReal_one
-    · rw [ENNReal.toReal_sub_of_le
-        (by rw [one_div]; exact ENNReal.inv_le_one.mpr (by exact_mod_cast Nat.card_pos))
-        ENNReal.one_ne_top, ENNReal.toReal_one, ENNReal.toReal_div, ENNReal.toReal_one,
-        ENNReal.toReal_natCast]
-  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_div,
-    ENNReal.toReal_div, hite] at h
-  simpa only [ENNReal.toReal_one, ENNReal.toReal_pow, ENNReal.toReal_natCast,
-    div_eq_mul_inv, one_mul] using h
-
 /-- Exact `ℕ` clearing-denominators identity for `{E ∈ σ_K(n) | E.wildExponent = j}.ncard` when
 `IsOreAdmissible 𝒪[K] n j`. -/
 theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow {n j : ℕ}
@@ -266,19 +214,34 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow {n j : ℕ}
       Nat.card 𝓀[K] ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) =
       n * Nat.card 𝓀[K] ^ (n + j) *
         (if j % n = 0 then Nat.card 𝓀[K] else Nat.card 𝓀[K] - 1) := by
-  have hR := natCast_ncard_wildExponent_eq_div_pow_real hadm
-  have hq0 : (Nat.card 𝓀[K] : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  apply Nat.cast_injective (R := ℝ)
-  push_cast
-  have hexp : 2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h =
-      (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h) + 1 := by omega
-  rw [hexp, pow_succ]
-  split_ifs at hR ⊢
-  · field_simp at hR ⊢
-    exact hR
-  · rw [Nat.cast_sub Finite.one_lt_card.le, Nat.cast_one]
-    field_simp at hR ⊢
-    linear_combination hR
+  let : MeasurableSpace (Fin n → K) := borel _
+  have : BorelSpace (Fin n → K) := ⟨rfl⟩
+  obtain ⟨μ, _, hμ⟩ := exists_addHaarMeasure_integerBox_eq_one K (Fin n)
+  have hid := ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure (j := j) μ hμ
+  rw [measure_eisensteinBox hadm μ hμ] at hid
+  set S := ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth 𝒪[K] n j h
+  set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
+  have hq0 : q ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hqt : q ≠ ∞ := ENNReal.natCast_ne_top _
+  have hsub0 : 1 - 1 / q ≠ 0 := by simpa [one_div] using one_sub_inv_natCard_residueField_ne_zero K
+  have hsubt : 1 - 1 / q ≠ ∞ := ENNReal.sub_ne_top ENNReal.one_ne_top
+  have hq_sub : q * (1 - 1 / q) = q - 1 := by
+    rw [ENNReal.mul_sub fun _ _ ↦ hqt, mul_one, one_div, ENNReal.mul_inv_cancel hq0 hqt]
+  have hpowS : q ^ (2 + S) = q * q ^ (1 + S) := by
+    rw [show 2 + S = 1 + (1 + S) by omega, pow_add, pow_one]
+  have hpow_cancel : q ^ (1 + S) * (1 / q ^ (1 + S)) = 1 := by
+    rw [one_div, ENNReal.mul_inv_cancel (pow_ne_zero _ hq0) (ENNReal.pow_ne_top hqt)]
+  apply Nat.cast_injective (R := ℝ≥0∞)
+  push_cast [Nat.cast_sub Finite.one_lt_card.le]
+  calc ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) * q ^ (2 + S)
+      = (n * q ^ (n + j) * (1 / q ^ (1 + S) * (if j % n = 0 then 1 else 1 - 1 / q)) *
+          (1 - 1 / q) / (1 - 1 / q)) * q ^ (2 + S) := by rw [hid]; ring_nf
+    _ = n * q ^ (n + j) * (q ^ (1 + S) * (1 / q ^ (1 + S))) *
+          (if j % n = 0 then q else q * (1 - 1 / q)) := by
+          rw [ENNReal.mul_div_cancel_right hsub0 hsubt, hpowS]
+          split_ifs <;> ring
+    _ = n * q ^ (n + j) * (if j % n = 0 then q else q - 1) := by
+          rw [hpow_cancel, mul_one, hq_sub]
 
 /-- **Krasner's discriminant-refined count**: for all `n` and `j`, the number of totally ramified
 degree-`n` subextensions of `SeparableClosure K` with wild exponent `j` equals

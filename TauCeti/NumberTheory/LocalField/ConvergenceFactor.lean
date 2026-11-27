@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.NumberTheory.LocalField.Padic
-public import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard
 import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 import TauCeti.NumberTheory.LocalField.Topology
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.ConvergenceFactor
 public import TauCeti.NumberTheory.LocalField.Units.Haar
 import TauCeti.NumberTheory.LocalField.Topology
+import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard
 
 /-!
 # The form measure on the units of a local field

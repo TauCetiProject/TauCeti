@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Eisenstein.LocalRing
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
-import TauCeti.Data.Set.Function
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
@@ -171,13 +170,15 @@ theorem eisensteinSet_eq_sdiff {n : ℕ} (hn : 0 < n) :
     eisensteinSet K n = (Set.univ.pi fun _ ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K]) \
       Set.univ.pi fun i ↦
         ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update (fun _ ↦ 1) ⟨0, hn⟩ 2 i) := by
+  have hbox :
+      ((Set.univ.pi fun _ ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K]) \
+        Set.univ.pi fun i ↦
+          ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update (fun _ ↦ 1) ⟨0, hn⟩ 2 i)) =
+        idealBoxSdiff K (fun _ : Fin n ↦ 1) ⟨0, hn⟩ := by
+    simp [idealBoxSdiff_def]
   ext a
-  have h := Set.mem_univ_pi_sdiff_update_iff (fun _ : Fin n ↦ ((↑) : 𝒪[K] → K) '' ↑𝓂[K])
-    ⟨0, hn⟩ (((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ 2)) (x := a)
-  simp_rw [Function.apply_update (fun (_ : Fin n) (m : ℕ) ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m)),
-    pow_one]
-  rw [h, mem_eisensteinSet, coeff_monicOfCoeff a ⟨0, hn⟩]
-  simp only [← valuation_lt_one_iff_mem_image_maximalIdeal]
+  rw [hbox, mem_idealBoxSdiff, mem_eisensteinSet, coeff_monicOfCoeff a ⟨0, hn⟩]
+  simp only [pow_one, ← valuation_lt_one_iff_mem_image_maximalIdeal]
   refine and_congr_right fun ha ↦ (forall_valuation_le_iff_notMem_maximalIdeal_sq
     (c := ⟨a ⟨0, hn⟩, (Valuation.mem_integer_iff _ _).2 (ha _).le⟩)).trans
     (not_congr Subtype.coe_injective.mem_set_image.symm)
@@ -206,9 +207,8 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
     (hμ : μ (integerBox K (Fin n)) = 1) :
     μ (eisensteinSet K n) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-  have h := Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ
-    (fun _ : Fin n ↦ 1) ⟨0, hn⟩
-  simpa [eisensteinSet_eq_sdiff hn, hμ] using h
+  have h := Measure.measure_idealBoxSdiff μ (fun _ : Fin n ↦ 1) ⟨0, hn⟩
+  simpa [eisensteinSet_eq_sdiff hn, idealBoxSdiff_def, hμ] using h
 
 /-- The Eisenstein region has finite volume for every measure that is finite on compact sets,
 since it lies in the compact integer box. -/
