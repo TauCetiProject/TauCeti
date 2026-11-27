@@ -38,8 +38,9 @@ characterized by containment in the radical when the submodule lattice is coatom
   with it is onto is itself onto. This is the minimality that makes a projective cover a
   projective cover. Both directions need differences, so they are stated for modules over a
   semiring that are additive groups.
-* `TauCeti.IsSuperfluous.le_coatom` and `TauCeti.IsSuperfluous.le_jacobson`: a superfluous
-  submodule lies in every coatom, hence in the radical `Module.jacobson R M`.
+* `TauCeti.IsSuperfluous.le_jacobson` places every superfluous submodule in the radical
+  `Module.jacobson R M` by applying `TauCeti.IsSuperfluous.le_coatom` from
+  `TauCeti.Order.Superfluous`.
 * `TauCeti.isSuperfluous_iff_le_jacobson`: over a module whose submodule lattice is coatomic — in
   particular over a finitely generated module — the converse holds, so the superfluous submodules
   are exactly the submodules of the radical, and

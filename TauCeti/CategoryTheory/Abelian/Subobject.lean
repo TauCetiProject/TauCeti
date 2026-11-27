@@ -31,6 +31,9 @@ of a subquotient back to the ambient object.
   image of a subobject of `Y` containing the kernel of `p` is that subobject.
 * `CategoryTheory.Subobject.pullback_exists_eq_kernelSubobject_sup`: for an arbitrary subobject,
   taking its image and then its preimage joins it with the kernel.
+* `CategoryTheory.epi_comp_iff_kernelSubobject_sup_imageSubobject_eq_top` says that for an
+  epimorphism `p`, the composite `f ≫ p` is epic exactly when
+  `kernelSubobject p ⊔ imageSubobject f = ⊤`.
 * `CategoryTheory.Limits.kernelSubobject_cokernel_π`: the kernel of the cokernel of a
   monomorphism `f` is the subobject represented by `f`.
 * `CategoryTheory.ShortComplex.Exact.imageSubobject_comp_inv_eq_kernelSubobject_hom_comp`: the
