@@ -426,25 +426,6 @@ theorem integral_neg_add_mul_I {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   conv_rhs => rw [← integral_neg_eq_self]
   exact integral_congr_ae (Eventually.of_forall fun y ↦ by simp only [neg_contour_eq, neg_neg])
 
-private lemma norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {σ y r₀ r₁ α' α C R : ℝ} {w : ℂ} {v : E} (hr₀ : 0 < r₀) (hw_lo : r₀ ≤ ‖w‖)
-    (hw_hi : ‖w‖ ≤ r₁) (hw_arg : |w.arg| ≤ α')
-    (hv : ‖v‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
-    ‖(((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)) • v‖ ≤
-      (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1)) * C) *
-        ((1 + |y|) ^ (R + 1) * Real.exp (-((α - α') * |y|))) := by
-  have hmul : ‖((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)‖ ≤
-      (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))) * (1 + |y|) ^ (1 : ℝ) *
-        Real.exp (α' * |y|) := by
-    simpa [Real.rpow_one, mul_assoc] using
-      Complex.norm_mul_cpow_sub_one_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I)
-  rw [norm_smul]
-  refine (mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) hmul hv).trans_eq ?_
-  rw [mul_assoc]
-  congr 2
-  · congr 1; ring
-  · congr 1; ring
-
 /-- If `g : ℝ → E` is strongly measurable and satisfies
 `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `y ↦ w ^ (σ + i y) • g y` is
 integrable on `ℝ` for every `σ : ℝ` and every `w : ℂ` with `|arg w| < α`. -/
@@ -522,7 +503,7 @@ theorem hasDerivAt_integral_cpow_smul {E : Type*} [NormedAddCommGroup E]
     hF'_meas ?_ ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (R + 1) hδ).const_mul _) ?_).2
   · filter_upwards [hg] with y hgy w hw
     obtain ⟨_, hw_lo, hw_hi, hw_arg⟩ := hU_bounds w hw
-    exact norm_cpow_deriv_smul_le hr₀ hw_lo hw_hi hw_arg hgy
+    exact Complex.norm_cpow_deriv_smul_le hr₀ hw_lo hw_hi hw_arg hgy
   · exact Eventually.of_forall fun y w hw ↦
       (Complex.hasStrictDerivAt_cpow_const (hU_bounds w hw).1).hasDerivAt.smul_const (g y)
 

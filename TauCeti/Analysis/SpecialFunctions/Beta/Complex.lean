@@ -29,7 +29,7 @@ for expansions of Stieltjes transforms.
 
 On `(0, 1) × ℝ`, a Beta kernel `t ^ (u y - 1) * (1 - t) ^ (v y - 1)` whose exponent functions
 `u, v : ℝ → ℂ` are continuous with constant positive real parts `u₀, v₀` combines with any
-continuous integrable function `g : ℝ → ℂ` into a product-integrable kernel
+integrable function `g : ℝ → ℂ` into a product-integrable kernel
 `Complex.integrable_beta_mul_profile`, justifying Fubini swaps in Beta-weighted vertical
 integrals.
 
@@ -47,7 +47,7 @@ so the identity theorem extends it there.
   2.6.4).
 * `Complex.integrable_beta_mul_profile`: product integrability on `(0, 1) × ℝ` of
   `t ^ (u y - 1) * (1 - t) ^ (v y - 1) * g y` when `Re (u y) = u₀ > 0`, `Re (v y) = v₀ > 0`,
-  and `g` is continuous and integrable on `ℝ`.
+  and `g` is integrable on `ℝ`.
 * `Complex.integral_cpow_neg_mul_inv_add`: the Stieltjes transform of `t ^ (-α)` on the slit plane.
 
 ## References
@@ -121,11 +121,11 @@ theorem integral_cpow_mul_add_cpow {a b : ℂ} {x : ℝ}
 
 /-- Product integrability on `(0, 1) × ℝ` of a Beta-weighted kernel
 `(t, y) ↦ t ^ (u y - 1) * (1 - t) ^ (v y - 1) * g y`, where `u, v : ℝ → ℂ` are continuous with
-constant positive real parts `u₀, v₀` and `g : ℝ → ℂ` is continuous and integrable on `ℝ`. -/
+constant positive real parts `u₀, v₀` and `g : ℝ → ℂ` is integrable on `ℝ`. -/
 theorem integrable_beta_mul_profile {u₀ v₀ : ℝ} {u v : ℝ → ℂ} {g : ℝ → ℂ}
     (hu_cont : Continuous u) (hv_cont : Continuous v)
     (hu_re : ∀ y, (u y).re = u₀) (hv_re : ∀ y, (v y).re = v₀)
-    (hu₀ : 0 < u₀) (hv₀ : 0 < v₀) (hg_cont : Continuous g) (hg_int : Integrable g) :
+    (hu₀ : 0 < u₀) (hv₀ : 0 < v₀) (hg_int : Integrable g) :
     Integrable
       (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
       ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
@@ -141,8 +141,8 @@ theorem integrable_beta_mul_profile {u₀ v₀ : ℝ} {u v : ℝ → ℂ} {g : �
       (by simpa using hv₀)
     rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hb_conv
     exact (hb_conv.mono_set Ioo_subset_Ioc_self).norm
-  have hF_meas : AEStronglyMeasurable
-      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
+  have hbeta_meas : AEStronglyMeasurable
+      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1))
       ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
     rw [hmeas_oo]
     refine ContinuousOn.aestronglyMeasurable (fun ⟨t, y⟩ ⟨⟨ht0, ht1⟩, _⟩ ↦ ?_)
@@ -150,11 +150,14 @@ theorem integrable_beta_mul_profile {u₀ v₀ : ℝ} {u v : ℝ → ℂ} {g : �
     have h1t_slit : 1 - (t : ℂ) ∈ slitPlane := by
       rw [← ofReal_one, ← ofReal_sub]
       exact ofReal_mem_slitPlane.2 (sub_pos.2 ht1)
-    exact (((ContinuousAt.cpow (by fun_prop) ((hu_cont.sub continuous_const).continuousAt.comp
+    exact ((ContinuousAt.cpow (by fun_prop) ((hu_cont.sub continuous_const).continuousAt.comp
         continuousAt_snd) (ofReal_mem_slitPlane.2 ht0)).mul
       (ContinuousAt.cpow (by fun_prop) ((hv_cont.sub continuous_const).continuousAt.comp
-        continuousAt_snd) h1t_slit)).mul
-      (hg_cont.continuousAt.comp continuousAt_snd)).continuousWithinAt
+        continuousAt_snd) h1t_slit)).continuousWithinAt
+  have hF_meas : AEStronglyMeasurable
+      (fun p : ℝ × ℝ ↦ (p.1 : ℂ) ^ (u p.2 - 1) * (1 - (p.1 : ℂ)) ^ (v p.2 - 1) * g p.2)
+      ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) :=
+    hbeta_meas.mul hg_int.aestronglyMeasurable.comp_snd
   refine (hφ.mul_prod hg_int.norm).mono' hF_meas ?_
   rw [hmeas_oo]
   filter_upwards [ae_restrict_mem (measurableSet_Ioo.prod MeasurableSet.univ)] with

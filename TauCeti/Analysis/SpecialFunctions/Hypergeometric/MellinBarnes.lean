@@ -19,7 +19,6 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Exp.Decay
-import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Mellin–Barnes integrals for the Gauss hypergeometric function
@@ -359,9 +358,6 @@ private theorem integrable_beta_mul_mellinBarnes {a w : ℂ} {σ u₀ v₀ : ℝ
         (Gamma (a + (σ + p.2 * I)) * Gamma (-(σ + p.2 * I)) * w ^ ((σ : ℂ) + p.2 * I)))
       ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
   exact integrable_beta_mul_profile hu_cont hv_cont hu_re hv_re hu₀ hv₀
-    (((continuous_Gamma_add_contour haσ_ne).mul
-      (continuous_Gamma_neg_contour (by simpa using hσ_ne))).mul
-      (continuous_const.cpow (by fun_prop) (fun _ ↦ hw)))
     (integrable_Gamma_add_mul_Gamma_neg_mul_cpow hσ_ne haσ_ne hw)
 
 /-- Shared Fubini swap and inner Beta evaluation for Euler–Mellin–Barnes identities: if on `(0, 1)`
@@ -587,42 +583,6 @@ theorem analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_mul_one_sub_c
   ext y
   simp only [smul_eq_mul]; ring
 
-/-- Rescaling `(1 - z * t) ^ s = (1 - t) ^ s * (1 + (t / (1 - t)) * (1 - z)) ^ s` for `t < 1`. -/
-private theorem one_sub_mul_cpow_eq_one_sub_cpow_mul {z s : ℂ} {t : ℝ} (ht1 : t < 1) :
-    (1 - z * (t : ℂ)) ^ s =
-      (1 - (t : ℂ)) ^ s * (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ s := by
-  have h1t : 0 < 1 - t := sub_pos.2 ht1
-  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast ht1.ne')
-  have hfact : 1 - z * (t : ℂ) = ((1 - t : ℝ) : ℂ) * (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) := by
-    push_cast
-    field_simp [h1t_ne]
-    ring
-  simpa [hfact] using ofReal_mul_cpow h1t.le (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) s
-
-/-- Power-splitting for `t / (1 - t)` inside the Euler integrand on `(0, 1)`:
-`t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (1 - t) ^ (-a) * ((t / (1 - t)) * w) ^ s =
-  t ^ (b + s - 1) * (1 - t) ^ (c - a - b - s - 1) * w ^ s`. -/
-private theorem mul_cpow_one_sub_cpow_mul_div_cpow {a b c s w : ℂ} {t : ℝ}
-    (ht0 : 0 < t) (ht1 : t < 1) :
-    (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a) *
-        (((t / (1 - t) : ℝ) : ℂ) * w) ^ s =
-      (t : ℂ) ^ (b + s - 1) * (1 - (t : ℂ)) ^ (c - a - b - s - 1) * w ^ s := by
-  have h1t : 0 < 1 - t := sub_pos.2 ht1
-  have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht0.ne'
-  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast ht1.ne')
-  have hq_pow : ((t / (1 - t) : ℝ) : ℂ) ^ s = (t : ℂ) ^ s * (1 - (t : ℂ)) ^ (-s) := by
-    rw [ofReal_div, div_cpow_ofReal_nonneg ht0.le h1t.le, div_eq_mul_inv, ← cpow_neg]
-    simp
-  have hpow_t : (t : ℂ) ^ (b - 1) * (t : ℂ) ^ s = (t : ℂ) ^ (b + s - 1) := by
-    rw [← cpow_add _ _ ht_ne]
-    ring_nf
-  have hpow_1t : (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a) * (1 - (t : ℂ)) ^ (-s) =
-      (1 - (t : ℂ)) ^ (c - a - b - s - 1) := by
-    rw [← cpow_add _ _ h1t_ne, ← cpow_add _ _ h1t_ne]
-    ring_nf
-  rw [ofReal_mul_cpow (div_pos ht0 h1t).le, hq_pow, ← hpow_t, ← hpow_1t]
-  ring
-
 /-- Pointwise Mellin–Barnes expansion of the Euler integrand in powers of `1 - z` for `t ∈ (0, 1)`
 and `1 - z ∈ Complex.slitPlane`, used in the Fubini proof of DLMF 15.6.7. -/
 private theorem mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub {a b c z : ℂ} {σ t : ℝ}
@@ -632,6 +592,7 @@ private theorem mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub {a b c z : �
         (1 - (t : ℂ)) ^ (c - a - b - (σ + y * I) - 1) *
           (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (1 - z) ^ (σ + y * I)) := by
   have hq : 0 < t / (1 - t) := div_pos ht0 (sub_pos.2 ht1)
+  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast ht1.ne')
   have hmb := integral_Gamma_add_mul_Gamma_neg_mul_cpow hσ haσ
     (TauCeti.ofReal_mul_mem_slitPlane hq hz)
   calc Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a))
@@ -650,9 +611,11 @@ private theorem mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub {a b c z : �
                 (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
                   (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ (σ + y * I))
               = Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
-                  ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a) *
+                  ((t : ℂ) ^ (b - 1) * ((1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
                     (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ ((σ : ℂ) + y * I)) := by ring
-            _ = _ := by rw [mul_cpow_one_sub_cpow_mul_div_cpow ht0 ht1]; ring
+            _ = _ := by
+                rw [← cpow_add _ _ h1t_ne, mul_cpow_one_sub_cpow_mul_div_cpow ht0 ht1]
+                ring_nf
 
 /-- **Mellin–Barnes integral for Euler's hypergeometric integral in `1 - z` (DLMF 15.6.7).**
 On the entire cut plane `1 - z ∈ Complex.slitPlane`, for any vertical line `Re s = σ` separating

@@ -19,6 +19,7 @@ import TauCeti.Analysis.Calculus.Deriv.Mobius
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.RingTheory.Binomial
 
@@ -129,6 +130,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `0 < r₀ ≤ ‖w‖ ≤ r₁` and `|arg w| ≤ α`.
 * `Complex.norm_mul_cpow_sub_one_le_max_rpow_mul_exp` -- uniform upper bound on `‖s * w ^ (s - 1)‖`
   when `0 < r₀ ≤ ‖w‖ ≤ r₁` and `|arg w| ≤ α`.
+* `Complex.norm_cpow_deriv_smul_le` -- norm bound for `((σ + y * I) * w ^ (σ + y * I - 1)) • v`
+  under polynomial–exponential decay on `v`.
 * `Complex.norm_ofReal_cpow_sub_ofReal_cpow_le` -- for `b ≥ 1` and exponents with `re ≤ M`,
   `‖b ^ z - b ^ w‖ ≤ log b · b ^ M · ‖z - w‖`.
 * `Complex.hasDerivAt_add_cpow_mul_exp_mul` -- the derivative of `w ↦ (w + c) ^ b e^{k w}` where
@@ -136,6 +139,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
+* `Complex.one_sub_mul_cpow_eq_one_sub_cpow_mul`,
+  `Complex.mul_cpow_one_sub_cpow_mul_div_cpow` -- rescaling `(1 - z * t) ^ s` and splitting
+  powers of `t / (1 - t)` on `(0, 1)`.
 * `Complex.norm_cpow_le_mul_exp` -- `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
 * `Complex.norm_cpow_le_of_mem_closedBall` -- for `w ≠ 0`, a bound on `‖w ^ b‖` uniform for `b`
   in a closed ball.
@@ -959,6 +965,30 @@ theorem norm_mul_cpow_sub_one_le_max_rpow_mul_exp {w : ℂ} {r₀ r₁ α : ℝ}
     _ = max |s.re| 1 * max (r₀ ^ (s.re - 1)) (r₁ ^ (s.re - 1)) * (1 + |s.im|) *
           Real.exp (α * |s.im|) := by ring
 
+/-- If `0 < r₀ ≤ ‖w‖ ≤ r₁`, `|arg w| ≤ α'`, and `‖v‖ ≤ C * (1 + |y|) ^ R * exp (-α * |y|)`,
+then `‖((σ + y * I) * w ^ (σ + y * I - 1)) • v‖` is bounded by
+`(max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1)) * C) *`
+`((1 + |y|) ^ (R + 1) * exp (-((α - α') * |y|)))`. -/
+theorem norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {σ y r₀ r₁ α' α C R : ℝ} {w : ℂ} {v : E} (hr₀ : 0 < r₀) (hw_lo : r₀ ≤ ‖w‖)
+    (hw_hi : ‖w‖ ≤ r₁) (hw_arg : |w.arg| ≤ α')
+    (hv : ‖v‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
+    ‖(((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)) • v‖ ≤
+      (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1)) * C) *
+        ((1 + |y|) ^ (R + 1) * Real.exp (-((α - α') * |y|))) := by
+  have hmul : ‖((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)‖ ≤
+      (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))) * (1 + |y|) ^ (1 : ℝ) *
+        Real.exp (α' * |y|) := by
+    simpa [Real.rpow_one, mul_assoc] using
+      norm_mul_cpow_sub_one_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I)
+  rw [norm_smul]
+  refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _)
+    hmul hv).trans_eq ?_
+  rw [mul_assoc]
+  congr 2
+  · congr 1; ring
+  · congr 1; ring
+
 /-- For a real base `b ≥ 1`, the principal power `b ^ z` is Lipschitz in the exponent on each
 half-plane `re z ≤ M`, with constant `log b · b ^ M`:
 `‖b ^ z - b ^ w‖ ≤ log b · b ^ M · ‖z - w‖` when `re z ≤ M` and `re w ≤ M`. -/
@@ -1011,6 +1041,38 @@ theorem inv_cpow_half_cpow (z w : ℂ) : (z ^ (1 / 2 : ℂ))⁻¹ ^ w = z ^ (-w 
   rw [← cpow_neg, ← cpow_mul _ (by rw [him]; linarith [arg_le_pi z, Real.pi_pos])
     (by rw [him]; linarith [neg_pi_lt_arg z, Real.pi_pos])]
   congr 1
+  ring
+
+/-- Rescaling `(1 - z * t) ^ s = (1 - t) ^ s * (1 + (t / (1 - t)) * (1 - z)) ^ s` for `t < 1`. -/
+theorem one_sub_mul_cpow_eq_one_sub_cpow_mul {z s : ℂ} {t : ℝ} (ht1 : t < 1) :
+    (1 - z * (t : ℂ)) ^ s =
+      (1 - (t : ℂ)) ^ s * (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ s := by
+  have h1t : 0 < 1 - t := sub_pos.2 ht1
+  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast ht1.ne')
+  have hfact : 1 - z * (t : ℂ) = ((1 - t : ℝ) : ℂ) * (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) := by
+    push_cast
+    field_simp [h1t_ne]
+    ring
+  simpa [hfact] using
+    TauCeti.ofReal_mul_cpow h1t.le (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) s
+
+/-- Power-splitting for `t / (1 - t)` on `(0, 1)`:
+`t ^ u * (1 - t) ^ v * ((t / (1 - t)) * w) ^ s = t ^ (u + s) * (1 - t) ^ (v - s) * w ^ s`. -/
+theorem mul_cpow_one_sub_cpow_mul_div_cpow {u v s w : ℂ} {t : ℝ}
+    (ht0 : 0 < t) (ht1 : t < 1) :
+    (t : ℂ) ^ u * (1 - (t : ℂ)) ^ v * (((t / (1 - t) : ℝ) : ℂ) * w) ^ s =
+      (t : ℂ) ^ (u + s) * (1 - (t : ℂ)) ^ (v - s) * w ^ s := by
+  have h1t : 0 < 1 - t := sub_pos.2 ht1
+  have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht0.ne'
+  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast ht1.ne')
+  have hq_pow : ((t / (1 - t) : ℝ) : ℂ) ^ s = (t : ℂ) ^ s * (1 - (t : ℂ)) ^ (-s) := by
+    rw [ofReal_div, div_cpow_ofReal_nonneg ht0.le h1t.le, div_eq_mul_inv, ← cpow_neg]
+    simp
+  have hpow_t : (t : ℂ) ^ u * (t : ℂ) ^ s = (t : ℂ) ^ (u + s) :=
+    (cpow_add u s ht_ne).symm
+  have hpow_1t : (1 - (t : ℂ)) ^ v * (1 - (t : ℂ)) ^ (-s) = (1 - (t : ℂ)) ^ (v - s) := by
+    rw [← cpow_add _ _ h1t_ne, ← sub_eq_add_neg]
+  rw [TauCeti.ofReal_mul_cpow (div_pos ht0 h1t).le, hq_pow, ← hpow_t, ← hpow_1t]
   ring
 
 /-- For any complex base `w` and exponent `d`, `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π * |d.im|)`. -/
