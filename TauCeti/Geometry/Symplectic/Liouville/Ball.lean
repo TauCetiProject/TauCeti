@@ -181,7 +181,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- **The opposite radial primitive is excluded.** On a nonzero symplectic vector space, no set is
 a Liouville domain for the constant form `ω` with the primitive `-λ`, `λₓ(v) = ω(x, v) / 2`: its
 differential is `-ω`. For `ω = Σⱼ dqⱼ ∧ dpⱼ` this primitive is `½ Σⱼ (pⱼ dqⱼ - qⱼ dpⱼ)`, so the
-standard ball `D²ⁿ` is a Liouville domain for `½ Σⱼ (qⱼ dpⱼ - pⱼ dqⱼ)` only. -/
+standard ball `D²ⁿ` is a Liouville domain for `½ Σⱼ (qⱼ dpⱼ - pⱼ dqⱼ)` but not for its negative
+`½ Σⱼ (pⱼ dqⱼ - qⱼ dpⱼ)`. -/
 theorem not_isLiouvilleDomain_neg_radialPrimitive (W : Set V) :
     ¬ IsLiouvilleDomain ω.constSmooth (-ω.radialPrimitive) W :=
   not_isLiouvilleDomain_neg_of_mextDeriv_eq ω.mextDeriv_radialPrimitive W
