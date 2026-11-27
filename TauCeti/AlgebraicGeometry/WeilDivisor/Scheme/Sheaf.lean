@@ -610,26 +610,32 @@ section Mul
 variable [IsNoetherian X]
 variable (g : Additive X.functionFieldˣ)
 
+omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
+/-- The order bound behind multiplying `𝒪_X(D)` into `𝒪_X(D - div g)`: the coefficient of
+`(D - div g) - D` at `y` is `-ord g y`, so the bound holds with equality. -/
+private lemma ord_bound_sheafMul (D : SchemeWeilDivisor X) (y : CodimensionOnePoint X) :
+    ((Additive.toMul g : X.functionFieldˣ) : X.functionField) = 0 ∨
+      -WeilDivisor.coeff ((D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) - D) y ≤
+        X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) y := by
+  refine Or.inr ?_
+  rw [WeilDivisor.coeff_sub, WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
+  omega
+
 /-- Multiplying a section of `𝒪_X(D)` by a nonzero rational function `g` gives a section of
 `𝒪_X(D - div g)`: multiplying by `g` shifts every order of vanishing by `ord g`. -/
 lemma rationalFunctionsMul_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
     {s : Γ(Scheme.rationalFunctions X, U)} (hs : s ∈ sections D U) :
     Scheme.Modules.Hom.app
         (Scheme.rationalFunctionsMul X ((Additive.toMul g : X.functionFieldˣ) : X.functionField))
-        U s ∈ sections (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) U := by
-  refine rationalFunctionsMul_mem_sections_of_le_ord (fun y _ ↦ Or.inr ?_) hs
-  rw [WeilDivisor.coeff_sub, WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
-    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
-  omega
+        U s ∈ sections (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) U :=
+  rationalFunctionsMul_mem_sections_of_le_ord (fun y _ ↦ ord_bound_sheafMul g D y) hs
 
 /-- Multiplication by `g`, as a morphism `𝒪_X(D) ⟶ 𝒪_X(D - div g)`. -/
 def sheafMul (D : SchemeWeilDivisor X) :
     sheaf D ⟶ sheaf (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) :=
-  sheafHomOfMul ((Additive.toMul g : X.functionFieldˣ) : X.functionField) fun y ↦ Or.inr <| by
-    rw [WeilDivisor.coeff_sub, WeilDivisor.coeff_sub,
-      WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
-      orderAt_apply]
-    omega
+  sheafHomOfMul ((Additive.toMul g : X.functionFieldˣ) : X.functionField)
+    (ord_bound_sheafMul g D)
 
 @[reassoc (attr := simp)]
 lemma sheafMul_ι (D : SchemeWeilDivisor X) :
