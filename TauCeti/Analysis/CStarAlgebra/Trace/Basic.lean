@@ -354,6 +354,14 @@ theorem toTrace_apply (ω : PositiveTracialFunctional B) (x : B) :
     ω.toTrace x = ENNReal.ofReal (ω x).re :=
   (rfl)
 
+/-- On `B₊`, a positive tracial functional is the real number `Re ω(x)`, which its trace records:
+`ω(x) = (ω.toTrace x).toReal`. -/
+theorem apply_eq_toReal_toTrace (ω : PositiveTracialFunctional B) {x : B} (hx : 0 ≤ x) :
+    ω x = ((ω.toTrace x).toReal : ℂ) := by
+  have hω := map_nonneg ω hx
+  rw [toTrace_apply, ENNReal.toReal_ofReal (Complex.nonneg_iff.mp hω).1]
+  exact Complex.eq_re_of_ofReal_le hω
+
 /-- The trace of a positive tracial functional is finite everywhere. -/
 theorem toTrace_lt_top (ω : PositiveTracialFunctional B) (x : B) : ω.toTrace x < ∞ :=
   ENNReal.ofReal_lt_top

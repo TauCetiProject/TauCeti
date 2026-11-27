@@ -49,6 +49,10 @@ continuous reference inner products on the fibres.
   subset of the total space.
 * `IsCompact.norm_le_bundle_of_continuous`: the same for a continuous fiber norm with locally
   bounded trivializations.
+* `Bundle.RiemannianMetric.ext`: bare Riemannian metrics are equal when their fibrewise inner
+  products agree.
+* `Bundle.RiemannianMetric.inner_riemannianBundle`: the inner product induced by
+  `[RiemannianBundle]` is `RiemannianBundle.g.inner`.
 * `Bundle.RiemannianMetric.isSymm_toBilinForm_inner`: the inner product of a Riemannian metric
   on a fiber is a symmetric bilinear form.
 * `Bundle.RiemannianMetric.inner_self_nonneg`: the diagonal values `g(v, v)` of a metric are
@@ -209,6 +213,24 @@ namespace Bundle.RiemannianMetric
 
 variable {B : Type*} {E : B → Type*} [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)]
+
+/-- Bare Riemannian metrics are equal when all their fibrewise inner products agree. -/
+@[ext]
+theorem ext {g h : RiemannianMetric E} (heq : ∀ b v w, g.inner b v w = h.inner b v w) :
+    g = h := by
+  cases g
+  cases h
+  congr 1
+  funext b
+  ext v w
+  exact heq b v w
+
+/-- The inner product induced by `[RiemannianBundle E]` is given by `RiemannianBundle.g.inner`. -/
+theorem inner_riemannianBundle [RiemannianBundle E]
+    [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)]
+    (b : B) (v w : E b) :
+    Inner.inner ℝ v w = (RiemannianBundle.g (E := E)).inner b v w :=
+  rfl
 
 /-- The inner product of a Riemannian metric on a fiber is a symmetric bilinear form. -/
 theorem isSymm_toBilinForm_inner (g : RiemannianMetric E) (b : B) :

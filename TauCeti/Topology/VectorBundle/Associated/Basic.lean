@@ -152,6 +152,12 @@ theorem mk_smul_scalar {b : B} (p : P b) (r : 𝕜) (v : F) :
   by simpa only [mkContinuousLinearEquiv_apply] using
     (mkContinuousLinearEquiv 𝕜 G p).map_smul r v
 
+/-- With scalar model fibre, the class of `r` in a fixed principal frame is `r` times the class
+of `1`. -/
+theorem mk_eq_smul_mk_one [DistribMulAction G 𝕜] [SMulCommClass G 𝕜 𝕜] [ContinuousSMul G 𝕜]
+    {b : B} (p : P b) (r : 𝕜) : mk G p r = r • mk G p (1 : 𝕜) := by
+  rw [← mk_smul_scalar, smul_eq_mul, mul_one]
+
 /-- The zero class is independent of the principal frame. -/
 @[simp]
 theorem mk_zero {b : B} (p : P b) : mk G p (0 : F) = 0 := by

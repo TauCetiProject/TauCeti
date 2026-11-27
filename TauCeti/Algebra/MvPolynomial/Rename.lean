@@ -42,10 +42,15 @@ discarding `X a` and renaming back.
   renaming is killed by `killCompl`.
 * `MvPolynomial.killCompl_eq_zero_iff_X_dvd`: when the range of the renaming is the complement of
   a single variable `X a`, discarding that variable kills exactly the multiples of `X a`.
+<<<<<<< HEAD
 * `MvPolynomial.modMonomial_single_one_eq_rename_killCompl`: when the range of the renaming is the
   complement of a single variable `X a`, the remainder modulo `X a` is `rename f (p.killCompl hf)`.
 * `MvPolynomial.killCompl_monomial_of_apply_zero`: discarding coordinate `0` from a monomial whose
   `0`-th exponent is zero drops coordinate `0`.
+=======
+* `MvPolynomial.linearCombination_rename_eq_of_comp`: relates `Finsupp.linearCombination` on the
+  support of `rename τ P` to that on the support of `P` when `b ∘ τ = a`.
+>>>>>>> origin/main
 * `MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq`: a ring homomorphism moving the points
   along a map of indices carries the value of an integral polynomial to that of its renaming.
 * `Polynomial.map_eval_map_rename`: for a polynomial family with coefficients in `MvPolynomial`,
@@ -137,6 +142,16 @@ theorem modMonomial_single_one_eq_rename_killCompl (ha : Set.range f = {a}ᶜ)
   · rw [coeff_modMonomial_of_le _ (Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero hγ))]
     exact (coeff_rename_eq_zero f _ γ fun u hu ↦
       False.elim (hγ (hu ▸ Finsupp.mapDomain_of_notMem_range u a (by simp [ha])))).symm
+
+/-- For any monomial `w` in the support of `rename τ P`, if `b ∘ τ = a`, then `w` has the same
+`b`-linear combination as some monomial `u` in the support of `P` under `a`. -/
+theorem linearCombination_rename_eq_of_comp {α β R M : Type*}
+    [CommSemiring R] [AddCommMonoid M]
+    {τ : α → β} {a : α → M} {b : β → M} (hcomp : b ∘ τ = a)
+    {P : MvPolynomial α R} {w : β →₀ ℕ} (hw : w ∈ (rename τ P).support) :
+    ∃ u ∈ P.support, Finsupp.linearCombination ℕ b w = Finsupp.linearCombination ℕ a u := by
+  obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hw)
+  exact ⟨u, mem_support_iff.2 hu, by rw [Finsupp.linearCombination_mapDomain, hcomp]⟩
 
 /-- A ring homomorphism `φ` that moves a family of points along a map of indices,
 `φ ∘ x = y ∘ π`, carries the value at `x` of an integral polynomial `Ψ` to the value at `y` of `Ψ`

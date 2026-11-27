@@ -15,6 +15,7 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Sets.Opens
 public import Mathlib.Topology.LocallyFinite
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
@@ -29,8 +30,8 @@ A trivial action, fixing every point, is jointly continuous for any topologies.
 A continuous monoid action on a Hausdorff space has closed fixed sets, both of single elements and
 of the whole monoid, and a group action with continuous orbit maps on a `T₁` space has closed
 point stabilisers. A continuous action of a compact monoid has compact orbits. If every orbit of
-a group action is open, then every orbit is also closed, and the orbits of the points of a set
-meeting only finitely many orbits, all closed, are open and closed in that set.
+a group action is open, then every orbit is also closed, and if a set meets only finitely many
+orbits, all closed, then every orbit is open and closed in that set.
 Scaling by a nonzero element of a group with zero commutes with taking the frontier.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action, and the `ℕ`-action `IterateMulAct f` of a continuous map is by
@@ -61,13 +62,15 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
   points whose whole orbit lies in an open set form an open set.
+* `TopologicalSpace.Opens.invariantCore`: the largest invariant open subset of an open set, under
+  a continuous action of a compact monoid, together with the restricted action on it.
 * `TauCeti.isCompact_orbit`: every orbit of a continuous action of a compact monoid is compact.
 * `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
   space is closed.
 * `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
   then every orbit is closed.
 * `TauCeti.isClopen_preimage_val_orbit_of_finite`: if a set meets finitely many orbits, all
-  closed, then each of these orbits is open and closed in the set.
+  closed, then every orbit is open and closed in the set.
 * `TauCeti.frontier_smul₀`: `frontier (c • s) = c • frontier s` for `c ≠ 0`.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
@@ -152,29 +155,34 @@ theorem isClosed_orbit_of_forall_isOpen_orbit {G X : Type*} [Group G] [MulAction
   exact MulAction.mem_orbit_self z
 
 /-- If a set `s` meets only finitely many orbits of a group action, and the orbits of its points
-are closed, then the orbit of each point of `s` is open and closed in `s`: inside `s`, its
-complement is the union of the finitely many other orbits. -/
+are closed, then every orbit is open and closed in `s`: inside `s`, its complement is the union
+of the finitely many other orbits meeting `s`, and it is empty or the orbit of a point of `s`. -/
 theorem isClopen_preimage_val_orbit_of_finite {G X : Type*} [Group G] [MulAction G X]
     [TopologicalSpace X] {s : Set X} (hfin : (MulAction.orbit G '' s).Finite)
-    (hclosed : ∀ y ∈ s, IsClosed (MulAction.orbit G y)) (x : s) :
-    IsClopen ((↑) ⁻¹' MulAction.orbit G (x : X) : Set s) := by
-  refine ⟨(hclosed x x.property).preimage continuous_subtypeVal, ?_⟩
-  have hU : IsClosed (⋃ O ∈ MulAction.orbit G '' s \ {MulAction.orbit G (x : X)}, O) :=
+    (hclosed : ∀ y ∈ s, IsClosed (MulAction.orbit G y)) (x : X) :
+    IsClopen ((↑) ⁻¹' MulAction.orbit G x : Set s) := by
+  refine ⟨?_, ?_⟩
+  · -- The orbit of `x` misses `s`, or it is the orbit of a point of `s`.
+    by_cases h : ∃ y : s, (y : X) ∈ MulAction.orbit G x
+    · obtain ⟨y, hy⟩ := h
+      rw [← MulAction.orbit_eq_iff.2 hy]
+      exact (hclosed y y.property).preimage continuous_subtypeVal
+    · convert isClosed_empty
+      exact Set.eq_empty_of_forall_notMem fun y hy ↦ h ⟨y, hy⟩
+  have hD : IsClosed (⋃ O ∈ MulAction.orbit G '' s \ {MulAction.orbit G x}, O) :=
     hfin.sdiff.isClosed_biUnion fun _ hO ↦ by
-      obtain ⟨y, hy, rfl⟩ := hO.1
-      exact hclosed y hy
-  convert (hU.preimage continuous_subtypeVal).isOpen_compl using 1
-  ext y
-  simp only [Set.mem_preimage, Set.mem_compl_iff, Set.mem_iUnion, Set.mem_sdiff, Set.mem_image,
-    Set.mem_singleton_iff, exists_prop, not_exists, not_and]
-  refine ⟨fun hyx ↦ ?_, fun h ↦ ?_⟩
+      obtain ⟨q, hq, rfl⟩ := hO.1
+      exact hclosed q hq
+  convert hD.isOpen_compl.preimage continuous_subtypeVal using 1
+  ext ⟨y, hy⟩
+  refine ⟨fun hyx hyD ↦ ?_, fun hyD ↦ by_contra fun hyx ↦ hyD ?_⟩
   · -- A point of the orbit of `x` lies in no other orbit.
-    rintro _ ⟨⟨z, -, rfl⟩, hzx⟩ hyz
-    exact hzx (by rw [← MulAction.orbit_eq_iff.2 hyz, MulAction.orbit_eq_iff.2 hyx])
+    obtain ⟨_, ⟨⟨q, -, rfl⟩, hne⟩, hyq⟩ := Set.mem_iUnion₂.mp hyD
+    exact hne (by rw [Set.mem_singleton_iff, ← MulAction.orbit_eq_iff.mpr hyq,
+      MulAction.orbit_eq_iff.mpr hyx])
   · -- Otherwise the orbit of `y` would be another orbit containing `y`.
-    by_contra hyx
-    exact h _ ⟨⟨y, y.property, rfl⟩, fun e ↦ hyx (e ▸ MulAction.mem_orbit_self (y : X))⟩
-      (MulAction.mem_orbit_self (y : X))
+    exact Set.mem_biUnion ⟨Set.mem_image_of_mem _ hy, fun h' ↦
+      hyx (Set.mem_singleton_iff.mp h' ▸ MulAction.mem_orbit_self y)⟩ (MulAction.mem_orbit_self y)
 
 /-- Scaling by a nonzero element of a group with zero commutes with taking the frontier, as
 Mathlib's `interior_smul₀` and `closure_smul₀'` do for interior and closure. -/
@@ -565,3 +573,67 @@ theorem isClosed_iUnion_smul_of_isCompact (hS : IsCompact S) (hS' : IsClosed S) 
 end IsClosedIUnion
 
 end TauCeti
+
+namespace TopologicalSpace.Opens
+
+section SMul
+
+variable (G : Type*) {X : Type*} [TopologicalSpace G] [CompactSpace G] [TopologicalSpace X]
+  [SMul G X] [ContinuousSMul G X]
+
+/-- The **invariant core** of an open set `U` under a jointly continuous action of a compact space
+`G`: the open set of points whose whole orbit lies in `U`. For a monoid action it is the largest
+invariant open subset of `U` (`TopologicalSpace.Opens.invariantCore_le`,
+`TopologicalSpace.Opens.smul_mem_invariantCore`, `TopologicalSpace.Opens.le_invariantCore_iff`),
+and the monoid acts on it. -/
+def invariantCore (U : Opens X) : Opens X :=
+  ⟨{x | ∀ g : G, g • x ∈ U}, TauCeti.isOpen_setOf_forall_smul_mem U.isOpen⟩
+
+variable {G}
+
+@[simp]
+theorem mem_invariantCore {U : Opens X} {x : X} : x ∈ U.invariantCore G ↔ ∀ g : G, g • x ∈ U :=
+  Iff.rfl
+
+/-- An open set lies in the invariant core of `U` exactly when every translate of it lies in `U`. -/
+theorem le_invariantCore_iff {U V : Opens X} :
+    V ≤ U.invariantCore G ↔ ∀ g : G, ∀ x ∈ V, g • x ∈ U :=
+  ⟨fun h g _ hx ↦ mem_invariantCore.1 (h hx) g, fun h _ hx ↦ mem_invariantCore.2 fun g ↦ h g _ hx⟩
+
+/-- Taking invariant cores preserves inclusions of open sets. -/
+theorem invariantCore_mono : Monotone (invariantCore G : Opens X → Opens X) :=
+  fun _ _ h ↦ le_invariantCore_iff.2 fun g _ hx ↦ h (mem_invariantCore.1 hx g)
+
+end SMul
+
+variable {G X : Type*} [Monoid G] [TopologicalSpace G] [CompactSpace G] [TopologicalSpace X]
+  [MulAction G X] [ContinuousSMul G X]
+
+variable (G) in
+/-- The invariant core of an open set is contained in it. -/
+theorem invariantCore_le (U : Opens X) : U.invariantCore G ≤ U := fun x hx ↦ by
+  simpa using mem_invariantCore.1 hx 1
+
+/-- The invariant core of an open set is invariant. -/
+theorem smul_mem_invariantCore {U : Opens X} {x : X} (hx : x ∈ U.invariantCore G) (g : G) :
+    g • x ∈ U.invariantCore G :=
+  mem_invariantCore.2 fun h ↦ by simpa [smul_smul] using mem_invariantCore.1 hx (h * g)
+
+/-- An open set equals its invariant core exactly when it is invariant. -/
+theorem invariantCore_eq_self_iff {U : Opens X} :
+    U.invariantCore G = U ↔ ∀ g : G, ∀ x ∈ U, g • x ∈ U :=
+  (invariantCore_le G U).ge_iff_eq.symm.trans le_invariantCore_iff
+
+/-- A monoid acting continuously on `X` acts on the invariant core of every open subset. -/
+instance (U : Opens X) : MulAction G (U.invariantCore G) where
+  smul g x := ⟨g • (x : X), smul_mem_invariantCore x.property g⟩
+  one_smul x := Subtype.ext (one_smul G (x : X))
+  mul_smul g h x := Subtype.ext (mul_smul g h (x : X))
+
+/-- The action on the invariant core is the restriction of the action on `X`. -/
+@[simp, norm_cast]
+theorem coe_smul_invariantCore (U : Opens X) (g : G) (x : U.invariantCore G) :
+    ((g • x : U.invariantCore G) : X) = g • (x : X) :=
+  rfl
+
+end TopologicalSpace.Opens

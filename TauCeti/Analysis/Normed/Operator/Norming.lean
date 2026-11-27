@@ -16,6 +16,8 @@ import TauCeti.Analysis.Normed.Operator.Basic
 Finite-dimensional subspaces of continuous linear maps admit finite norming sets in the
 domain unit ball, with any prescribed loss greater than one. Norm-separable sets
 of maps admit countable sets in that ball which recover their norms exactly.
+For a separable domain, a single sequence in its unit ball norms all continuous linear maps,
+even when their family is not norm-separable.
 Dually, on a separable normed space every norming set of functionals, and every set of
 functionals separating points, contains a countable subset with the same property
 (`TauCeti.exists_countable_norming_subset`, `TauCeti.exists_countable_separating_subset`).
@@ -30,9 +32,10 @@ bidual, these evaluations are weak-star continuous. Such norming sets are used i
 separable reductions for weak compactness.
 
 The operator results use Mathlib's operator-norm supremum formulas and compactness of the
-finite-dimensional unit sphere; no separability or completeness of the domain
-is required. The countable subsets of functionals are extracted from a dense sequence and
-from the Lindelöf property of the separable space.
+finite-dimensional unit sphere. The finite-dimensional and norm-separable-family results
+require neither separability nor completeness of the domain. The countable subsets of
+functionals are extracted from a dense sequence and from the Lindelöf property of the
+separable space.
 
 ## References
 
@@ -156,6 +159,40 @@ theorem TopologicalSpace.IsSeparable.exists_countable_norming
     exact f.unit_le_opNorm x (htunit x hx)))
 
 end Countable
+
+section SeparableDomain
+
+variable {𝕜 E F : Type*} [DenselyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On a separable domain, one sequence in the closed unit ball recovers the norm of
+every continuous linear map, with no separability assumption on the family of maps. -/
+theorem ContinuousLinearMap.exists_seq_norming [SeparableSpace E] :
+    ∃ v : ℕ → E, (∀ n, ‖v n‖ ≤ 1) ∧
+      ∀ f : E →L[𝕜] F, IsLUB (range fun n ↦ ‖f (v n)‖) ‖f‖ := by
+  let B := closedBall (0 : E) 1
+  let : Nonempty B := ⟨⟨0, by simp [B]⟩⟩
+  let u := denseSeq B
+  refine ⟨fun n ↦ (u n : E), fun n ↦ mem_closedBall_zero_iff.mp (u n).property, ?_⟩
+  intro f
+  have hb : BddAbove ((fun x ↦ ‖f x‖) '' B) := by
+    refine ⟨‖f‖, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩
+    exact f.unit_le_opNorm x (mem_closedBall_zero_iff.mp hx)
+  have hsup : IsLUB ((fun x ↦ ‖f x‖) '' B) ‖f‖ := by
+    rw [← f.sSup_unitClosedBall_eq_norm]
+    exact isLUB_csSup ((nonempty_closedBall.mpr zero_le_one).image _) hb
+  have hrange : (range fun x : B ↦ ‖f (x : E)‖) = (fun x ↦ ‖f x‖) '' B := by
+    ext r
+    simp
+  have hdense : Dense (range u) := denseRange_denseSeq B
+  have hd := hdense.upperBounds_image
+    (f.continuous.comp continuous_subtypeVal).norm
+  simp only [← range_comp, Function.comp_def, hrange] at hd
+  exact (isLUB_congr hd).mpr hsup
+
+end SeparableDomain
 
 namespace TauCeti
 

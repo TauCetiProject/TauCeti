@@ -16,6 +16,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 public import Mathlib.Topology.UnitInterval
+public import TauCeti.Topology.MetricSpace.Antilipschitz
 
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.MetricSpace.IsometricSMul
@@ -64,6 +65,10 @@ and adds companion statements used for compactness and finite approximation of f
   compact subset of `C(X, Y)` when the closed `(C * dist x x₀)`-thickening of `K` is compact for
   every `x`, in particular when `Y` is proper and `K` is compact. For paths on `I`, compactness
   of the closed `C`-thickening suffices; for `K = {y}` this is the closed ball about `y`.
+* For a compact target `Y` the condition at `x₀` can be dropped: the `C`-Lipschitz maps form a
+  compact subset of `C(X, Y)`. When `X` is compact too, the pairs of such a map and a point from
+  which it is antilipschitz with a fixed constant (`TauCeti.AntilipschitzWithFrom`, the global
+  self-point floor at an anchor) form a compact set.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
 is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
@@ -113,6 +118,10 @@ endpoints `eₙ` stay at distance at least `1` from each other
   `TauCeti.isCompact_setOf_lipschitzWith_apply_mem_of_forall_isCompact_cthickening` its form for
   a closed set with compact closed thickenings and
   `TauCeti.isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening` its interval form.
+* `TauCeti.isCompact_setOfPred_lipschitzWith`: the uniformly Lipschitz maps into a compact space
+  form a compact set, and
+  `TauCeti.isCompact_setOfPred_lipschitzWith_antilipschitzWithFrom` adds an anchor with a
+  fixed antilipschitz constant.
 * `TauCeti.isCompact_setOf_lipschitzWith_apply_eq`: for a proper target, uniformly Lipschitz
   maps with a common value at a fixed point form a compact set, with
   `TauCeti.isCompact_setOf_lipschitzWith_apply_eq_of_isCompact_closedBall` its interval form for
@@ -526,6 +535,29 @@ section Lipschitz
 
 open ContinuousMap
 open scoped NNReal unitInterval
+
+/-- **Arzelà–Ascoli for Lipschitz maps.** The `C`-Lipschitz maps into a compact space form a
+compact subset of `C(X, Y)`. -/
+theorem isCompact_setOfPred_lipschitzWith {X Y : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [CompactSpace Y] (C : ℝ≥0) :
+    IsCompact {f : C(X, Y) | LipschitzWith C f} := by
+  set A := {f : C(X, Y) | LipschitzWith C f}
+  have hA : IsClosed A := (isClosed_setOfPred_lipschitzWith C).preimage continuous_coeFun
+  have hrange := ArzelaAscoli.isCompact_closure_range_of_equicontinuous
+    (LipschitzWith.uniformEquicontinuous (fun f : A ↦ ⇑(f : C(X, Y))) C
+      fun f ↦ f.property).equicontinuous
+    fun _ ↦ ⟨univ, isCompact_univ, fun _ ↦ mem_univ _⟩
+  rw [Subtype.range_coe] at hrange
+  exact hrange.of_isClosed_subset hA subset_closure
+
+/-- Between compact spaces, the continuous maps that are `C`-Lipschitz and antilipschitz from an
+anchor point with constant `L` form, together with that point, a compact set. -/
+theorem isCompact_setOfPred_lipschitzWith_antilipschitzWithFrom {X Y : Type*}
+    [PseudoEMetricSpace X] [PseudoEMetricSpace Y] [CompactSpace X] [CompactSpace Y] (C L : ℝ≥0) :
+    IsCompact {p : C(X, Y) × X | LipschitzWith C p.1 ∧ AntilipschitzWithFrom L p.1 p.2} := by
+  simpa [ofPred_and, prod_univ] using
+    ((isCompact_setOfPred_lipschitzWith (X := X) (Y := Y) C).prod isCompact_univ).inter_right
+      (isClosed_setOfPred_antilipschitzWithFrom L)
 
 /-- The `C`-Lipschitz maps whose value at `x₀` lies in a closed set `K` form a compact subset
 of `C(X, Y)` when the closed `(C * dist x x₀)`-thickening of `K` is compact for every `x`. -/

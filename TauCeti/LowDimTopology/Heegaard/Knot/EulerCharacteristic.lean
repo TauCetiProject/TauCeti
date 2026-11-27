@@ -58,8 +58,9 @@ here. The Maslov shift is not fixed by symmetry; on a diagram of `S³` it is fix
 `HF̂(S³)` in degree zero.
 
 Since the hat differential lowers `M` by one and preserves `A`, the graded Euler characteristic
-of the chain group is also that of the hat knot Floer homology; the comparison of the two is not
-formalized here.
+of the chain group is also that of the hat knot Floer homology
+(`TauCeti.HeegaardRegionSystem.IsKnotGrading.finsum_finrank_hatHomologyGrading_piece_smul`, in
+`TauCeti.LowDimTopology.Heegaard.Knot.Homology`).
 
 ## Main definitions
 

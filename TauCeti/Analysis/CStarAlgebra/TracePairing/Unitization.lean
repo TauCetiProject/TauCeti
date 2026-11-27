@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.TracialFunctional
-public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.TracePairing
+public import TauCeti.Analysis.CStarAlgebra.TracePairing.Basic
+public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.UnitalTracePairing
 
 /-!
 # The pairing of positive tracial functionals with the nonunital `K₀`-group
@@ -23,7 +23,10 @@ of `K₀(A)`, for projections `e` over `A⁺` and `p` over `ℂ`, it is the real
 `e − p` over `A`
 (`TauCeti.PositiveTracialFunctional.unitizationKZeroPairing_of_mk_sub_inl_of_mk`), so neither
 positivity of `τ⁺` nor a bound on `‖τ‖` enters. It is natural for star homomorphisms
-(`TauCeti.PositiveTracialFunctional.unitizationKZeroPairing_comp`).
+(`TauCeti.PositiveTracialFunctional.unitizationKZeroPairing_comp`). For unital `A`, it is the
+pairing `TauCeti.PositiveTracialFunctional.kZeroPairing` with the projection `K₀`-group under
+the isomorphism `K₀(A) ≃+ K₀ᵖ(A)` of `TauCeti.UnitizationKZero.unitalEquiv`
+(`TauCeti.PositiveTracialFunctional.kZeroPairing_unitalEquiv`).
 
 ## References
 
@@ -40,6 +43,8 @@ open Matrix Algebra
 namespace TauCeti
 
 namespace PositiveTracialFunctional
+
+section NonUnital
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -80,6 +85,22 @@ theorem unitizationKZeroPairing_comp (τ : PositiveTracialFunctional B) (φ : A 
     ← UnitizationKZero.tracePairing_comp_map]
   congr 1
   exact UnitizationKZero.tracePairing_congr (AddMonoidHom.ext fun a ↦ by simp) _ _
+
+end NonUnital
+
+section Unital
+
+variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  (τ : PositiveTracialFunctional A)
+
+/-- **Agreement with the operator `K₀`-group.** For unital `A`, the pairing of `τ` with
+`K₀(A) = ker (K₀(A⁺) → K₀(ℂ))` is `τ_*` composed with `K₀(A) ≃+ K₀ᵖ(A)`. -/
+theorem kZeroPairing_unitalEquiv (x : UnitizationKZero ℂ A) :
+    τ.kZeroPairing (UnitizationKZero.unitalEquiv ℂ A x) = τ.unitizationKZeroPairing x := by
+  rw [kZeroPairing_apply, unitizationKZeroPairing_apply,
+    UnitizationKZero.tracePairing_unitalEquiv]
+
+end Unital
 
 end PositiveTracialFunctional
 

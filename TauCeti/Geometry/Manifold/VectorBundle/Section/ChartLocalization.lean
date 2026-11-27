@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.PartitionOfUnity.ChartCutoffs
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 
 /-!
 # Chart localization of bundle tests
@@ -53,9 +54,14 @@ The converse direction of the universal property is
   the chart recovers `ψ • s`.
 * `TauCeti.ChartCutoffs.sum_chartTestSection_chartLocalization`: a section supported in a compact
   set is the sum of the chart extensions of its localizations along chart cutoffs.
+* `TauCeti.baseSetChart`: the chart at a point restricted to the base set of the trivialization
+  there and read in the model space, with `TauCeti.coe_baseSetChart`.
 * `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, every point lies in a
   smooth chart into the model space with smooth inverse, inside the base set of the trivialization
   at that point.
+* `TauCeti.exists_mem_maximalAtlas_source_subset_baseSet`: every point lies in the source of a
+  chart of the maximal atlas inside the base sets of the trivializations at that point of two
+  fiber bundles.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
   inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
 * `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
@@ -294,7 +300,7 @@ theorem sum_chartTestSection_chartLocalization (A : ChartCutoffs I M n ι)
 
 end TauCeti.ChartCutoffs
 
-section TestChart
+namespace TauCeti
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -305,21 +311,29 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable (I F) in
 /-- The chart at `x`, restricted to the base set of the trivialization at `x` and read in the model
 space: an open partial homeomorphism onto an open subset of `E` since the model is boundaryless. -/
-private def testChart (x : M) : OpenPartialHomeomorph M E :=
+def baseSetChart (x : M) : OpenPartialHomeomorph M E :=
   ((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I (Homeomorph.refl E)
 
-private theorem testChart_source (x : M) :
-    (testChart F I V x).source = (chartAt H x).source ∩ (trivializationAt F V x).baseSet := by
-  rw [testChart, OpenPartialHomeomorph.extendTrans_source,
+/-- The source of `baseSetChart F I V x` is the part of the chart source over the base set. -/
+theorem baseSetChart_source (x : M) :
+    (baseSetChart F I V x).source = (chartAt H x).source ∩ (trivializationAt F V x).baseSet := by
+  rw [baseSetChart, OpenPartialHomeomorph.extendTrans_source,
     OpenPartialHomeomorph.restr_source' _ _ (trivializationAt F V x).open_baseSet]
 
-private theorem mem_testChart_source (x : M) : x ∈ (testChart F I V x).source := by
-  rw [testChart_source]
+/-- As a function, `baseSetChart F I V x` is the extended chart at `x`. -/
+theorem coe_baseSetChart (x : M) : ⇑(baseSetChart F I V x) = extChartAt I x := by
+  rw [baseSetChart, OpenPartialHomeomorph.coe_extendTrans_refl, OpenPartialHomeomorph.extend_coe,
+    extChartAt_coe, OpenPartialHomeomorph.restr_apply]
+
+/-- The point `x` lies in the source of `baseSetChart F I V x`. -/
+theorem mem_baseSetChart_source (x : M) : x ∈ (baseSetChart F I V x).source := by
+  rw [baseSetChart_source]
   exact ⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x⟩
 
-private theorem testChart_source_subset (x : M) :
-    (testChart F I V x).source ⊆ (trivializationAt F V x).baseSet := by
-  rw [testChart_source]
+/-- The source of `baseSetChart F I V x` lies in the base set of the trivialization at `x`. -/
+theorem baseSetChart_source_subset (x : M) :
+    (baseSetChart F I V x).source ⊆ (trivializationAt F V x).baseSet := by
+  rw [baseSetChart_source]
   exact inter_subset_right
 
 omit [I.Boundaryless] in
@@ -328,26 +342,44 @@ private theorem restr_chartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M]
   restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
     (trivializationAt F V x).open_baseSet
 
-private theorem contMDiffOn_testChart {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    ContMDiffOn I 𝓘(ℝ, E) n (testChart F I V x) (testChart F I V x).source :=
+/-- `baseSetChart F I V x` is smooth on its source. -/
+theorem contMDiffOn_baseSetChart {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ContMDiffOn I 𝓘(ℝ, E) n (baseSetChart F I V x) (baseSetChart F I V x).source :=
   OpenPartialHomeomorph.contMDiffOn_extendTrans _ (restr_chartAt_mem_maximalAtlas V x) contDiff_id
 
-private theorem contMDiffOn_testChart_symm {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    ContMDiffOn 𝓘(ℝ, E) I n (testChart F I V x).symm (testChart F I V x).target :=
+/-- The inverse of `baseSetChart F I V x` is smooth on its target. -/
+theorem contMDiffOn_baseSetChart_symm {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ContMDiffOn 𝓘(ℝ, E) I n (baseSetChart F I V x).symm (baseSetChart F I V x).target :=
   OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ (restr_chartAt_mem_maximalAtlas V x)
     contDiff_id
 
 variable (I F) in
 /-- On a manifold without boundary, every point `x` lies in the source of a smooth chart into the
 model space with smooth inverse, whose source lies in the base set of the trivialization at `x`. -/
-theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+theorem exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M] (x : M) :
     ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
       ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
       x ∈ c.source :=
-  ⟨testChart F I V x, contMDiffOn_testChart V x, contMDiffOn_testChart_symm V x,
-    testChart_source_subset V x, mem_testChart_source V x⟩
+  ⟨baseSetChart F I V x, contMDiffOn_baseSetChart V x, contMDiffOn_baseSetChart_symm V x,
+    baseSetChart_source_subset V x, mem_baseSetChart_source V x⟩
 
-end TestChart
+omit [I.Boundaryless] in
+variable (I F) in
+/-- Every point `x` lies in the source of a chart of the maximal atlas whose source lies in the
+base sets of the trivializations at `x` of two fiber bundles `V` and `W`. -/
+theorem exists_mem_maximalAtlas_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M]
+    (F' : Type*) [TopologicalSpace F'] (W : M → Type*) [∀ x, TopologicalSpace (W x)]
+    [TopologicalSpace (TotalSpace F' W)] [FiberBundle F' W] (x : M) :
+    ∃ c : OpenPartialHomeomorph M H, c ∈ IsManifold.maximalAtlas I n M ∧ x ∈ c.source ∧
+      c.source ⊆ (trivializationAt F V x).baseSet ∧
+        c.source ⊆ (trivializationAt F' W x).baseSet := by
+  obtain ⟨c, he, hxc, hVW⟩ := OpenPartialHomeomorph.exists_mem_maximalAtlas_source_subset
+    (I := I) (n := n)
+    ((trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet)
+    ⟨FiberBundle.mem_baseSet_trivializationAt' x, FiberBundle.mem_baseSet_trivializationAt' x⟩
+  exact ⟨c, he, hxc, hVW.trans inter_subset_left, hVW.trans inter_subset_right⟩
+
+end TauCeti
 
 namespace ContMDiffSection
 
@@ -412,10 +444,10 @@ indices. -/
 private theorem exists_chartCutoffs_source_subset :
     ∃ A : TauCeti.ChartCutoffs I M n M,
       ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet := by
-  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_chart_eq (testChart F I V)
-    (contMDiffOn_testChart (n := n) V) (contMDiffOn_testChart_symm (n := n) V)
-    (mem_testChart_source V)
-  exact ⟨A, hA ▸ testChart_source_subset V⟩
+  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_chart_eq (TauCeti.baseSetChart F I V)
+    (TauCeti.contMDiffOn_baseSetChart (n := n) V)
+    (TauCeti.contMDiffOn_baseSetChart_symm (n := n) V) (TauCeti.mem_baseSetChart_source V)
+  exact ⟨A, hA ▸ TauCeti.baseSetChart_source_subset V⟩
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [SigmaCompactSpace M] [IsManifold I ∞ M] in
 /-- Every section supported in the compact set `K` is a finite sum of chart extensions of its

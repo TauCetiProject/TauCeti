@@ -14,6 +14,8 @@ import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Topology.Constructions.SumProd
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
 # Changes of frame on the Sobolev space of the cylinder
@@ -46,6 +48,9 @@ together, with equal indices
 `TauCeti.CylinderSobolev.index_jetOperator_firstOrderJetCoeff_frame`). The multiplication by `Ψ` on
 `L²` used for the target is invertible by
 `MeasureTheory.Lp.isInvertible_operatorMultiplication_of_comp_eq_id`.
+A `C¹` frame of invertible maps that, far out on each end, does not depend on `s` is bounded
+together with its derivative and its inverses
+(`TauCeti.CylinderSobolev.exists_forall_norm_le_of_eq_comp_snd`), as these bounds require.
 
 For a linearized Floer operator `∂s + J ∂t + C` written in a trivialization along a cylinder, this
 says that its Fredholm property and index do not depend on the trivialization. For a loop of
@@ -72,7 +77,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter Function
+open MeasureTheory Filter Function Topology
 open scoped ENNReal
 
 namespace TauCeti.CylinderSobolev
@@ -103,7 +108,7 @@ include hΦ in
 section `w ↦ Φ w (ξ w)`. -/
 theorem jetOperator_frameJetCoeff_jetLp (hN : MemLp (frameJetCoeff Φ) ∞ stripMeasure)
     (ξ : testSection V) :
-    jetOperator stripMeasure (frameJetCoeff Φ) (jetLp 2 (testSection V) ξ) =
+    jetOperator 2 stripMeasure (frameJetCoeff Φ) (jetLp 2 (testSection V) ξ) =
       jetLp 2 (testSection W) ⟨_, frame_mem_testSection hΦ hΦp ξ.property⟩ := by
   have hξd : Differentiable ℝ (ξ : ℝ × ℝ → V) :=
     (mem_testSection_iff.1 ξ.property).1.differentiable (by norm_num)
@@ -120,11 +125,11 @@ bounded, `TauCeti.StripSobolev.memLp_frameJetCoeff`), the operator of `frameJetC
 a section in the frame `Φ`, maps `H1 V` into `H1 W`. -/
 theorem jetOperator_frameJetCoeff_mem_H1 (hN : MemLp (frameJetCoeff Φ) ∞ stripMeasure)
     {f : Lp (V × V × V) 2 stripMeasure} (hf : f ∈ H1 V) :
-    jetOperator stripMeasure (frameJetCoeff Φ) f ∈ H1 W := by
+    jetOperator 2 stripMeasure (frameJetCoeff Φ) f ∈ H1 W := by
   refine jetClosure_subset_of_isClosed
-    (s := jetOperator stripMeasure (frameJetCoeff Φ) ⁻¹'
+    (s := jetOperator 2 stripMeasure (frameJetCoeff Φ) ⁻¹'
       (H1 W : Set (Lp (W × W × W) 2 stripMeasure)))
-    ((isClosed_jetClosure 2 _).preimage (jetOperator stripMeasure _).continuous) ?_ hf
+    ((isClosed_jetClosure 2 _).preimage (jetOperator 2 stripMeasure _).continuous) ?_ hf
   rintro _ ⟨ξ, rfl⟩
   simp only [Set.mem_preimage, SetLike.mem_coe, jetOperator_frameJetCoeff_jetLp hΦ hΦp hN ξ]
   exact jetLp_mem_jetClosure _
@@ -133,7 +138,7 @@ theorem jetOperator_frameJetCoeff_mem_H1 (hN : MemLp (frameJetCoeff Φ) ∞ stri
 operator `H1 V →L[ℝ] H1 W`: the operator of the coefficient field `frameJetCoeff Φ`, restricted to
 `H1 V` (`TauCeti.CylinderSobolev.coe_frameL`). -/
 def frameL : H1 V →L[ℝ] H1 W :=
-  ((jetOperator stripMeasure (frameJetCoeff Φ)).comp (H1 V).subtypeL).codRestrict (H1 W) fun x ↦
+  ((jetOperator 2 stripMeasure (frameJetCoeff Φ)).comp (H1 V).subtypeL).codRestrict (H1 W) fun x ↦
     jetOperator_frameJetCoeff_mem_H1 hΦ hΦp (memLp_frameJetCoeff (hΦ.of_le one_le_two) hΦB hΦ'B)
       x.property
 
@@ -141,7 +146,7 @@ def frameL : H1 V →L[ℝ] H1 W :=
 @[simp]
 theorem coe_frameL (x : H1 V) :
     (frameL hΦ hΦp hΦB hΦ'B x : Lp (W × W × W) 2 stripMeasure) =
-      jetOperator stripMeasure (frameJetCoeff Φ) (x : Lp (V × V × V) 2 stripMeasure) :=
+      jetOperator 2 stripMeasure (frameJetCoeff Φ) (x : Lp (V × V × V) 2 stripMeasure) :=
   (rfl)
 
 /-- **First-order operators in a frame.** A first-order operator with coefficient field `M`,
@@ -149,8 +154,8 @@ composed with the change of frame by `Φ`, is the first-order operator with coef
 `M ∘ frameJetCoeff Φ`. -/
 theorem jetOperator_comp_subtypeL_comp_frameL {M : ℝ × ℝ → W × W × W →L[ℝ] U}
     (hM : MemLp M ∞ stripMeasure) :
-    ((jetOperator stripMeasure M).comp (H1 W).subtypeL).comp (frameL hΦ hΦp hΦB hΦ'B) =
-      (jetOperator stripMeasure fun z ↦ (M z).comp (frameJetCoeff Φ z)).comp (H1 V).subtypeL := by
+    ((jetOperator 2 stripMeasure M).comp (H1 W).subtypeL).comp (frameL hΦ hΦp hΦB hΦ'B) =
+      (jetOperator 2 stripMeasure fun z ↦ (M z).comp (frameJetCoeff Φ z)).comp (H1 V).subtypeL := by
   ext1 x
   simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, coe_frameL,
     ← jetOperator_comp_jetOperator hM (memLp_frameJetCoeff (hΦ.of_le one_le_two) hΦB hΦ'B)]
@@ -221,7 +226,7 @@ theorem coe_frameEquiv (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.
 theorem coe_frameEquiv_apply (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.id ℝ V)
     (hΦΨ : ∀ z, (Φ z).comp (Ψ z) = ContinuousLinearMap.id ℝ W) (x : H1 V) :
     (frameEquiv hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ x : Lp (W × W × W) 2 stripMeasure) =
-      jetOperator stripMeasure (frameJetCoeff Φ) (x : Lp (V × V × V) 2 stripMeasure) :=
+      jetOperator 2 stripMeasure (frameJetCoeff Φ) (x : Lp (V × V × V) 2 stripMeasure) :=
   (rfl)
 
 /-- The inverse of `frameEquiv` is reading sections in the inverse frame `Ψ`: as an `L²` jet, it is
@@ -230,10 +235,46 @@ the operator of the coefficient field `frameJetCoeff Ψ`. -/
 theorem coe_frameEquiv_symm_apply (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = ContinuousLinearMap.id ℝ V)
     (hΦΨ : ∀ z, (Φ z).comp (Ψ z) = ContinuousLinearMap.id ℝ W) (y : H1 W) :
     ((frameEquiv hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ).symm y : Lp (V × V × V) 2 stripMeasure) =
-      jetOperator stripMeasure (frameJetCoeff Ψ) (y : Lp (W × W × W) 2 stripMeasure) :=
+      jetOperator 2 stripMeasure (frameJetCoeff Ψ) (y : Lp (W × W × W) 2 stripMeasure) :=
   (rfl)
 
 end Inverse
+
+/-- A `C¹` family `Φ` of invertible maps on the cylinder, of period one in `t`, which for `s ≤ -R`
+and for `s ≥ R` does not depend on `s`, is bounded together with its derivative and its inverses. -/
+theorem exists_forall_norm_le_of_eq_comp_snd [CompleteSpace V] {Φ : ℝ × ℝ → V →L[ℝ] W}
+    (hΦ : ContDiff ℝ 1 Φ) (hΦi : ∀ z, (Φ z).IsInvertible)
+    (hΦp : ∀ s t, Φ (s, t + 1) = Φ (s, t)) {R : ℝ} (hm : ∀ s ≤ -R, ∀ t, Φ (s, t) = Φ (-R, t))
+    (hp : ∀ s, R ≤ s → ∀ t, Φ (s, t) = Φ (R, t)) :
+    ∃ B B' D : ℝ, (∀ z, ‖Φ z‖ ≤ B) ∧ (∀ z, ‖fderiv ℝ Φ z‖ ≤ B') ∧
+      ∀ z, ‖(Φ z).inverse‖ ≤ D := by
+  have hevm := eventually_atBot.2 ⟨-R, fun s hs t ↦ hm s hs t⟩
+  have hevp := eventually_atTop.2 ⟨R, fun s hs t ↦ hp s hs t⟩
+  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_periodic_of_eventually_eq hΦ.continuous hΦp hevm hevp
+  obtain ⟨D, hD⟩ := exists_forall_norm_le_of_periodic_of_eventually_eq
+    (hΦ.clm_inverse hΦi).continuous
+    (gm := fun t ↦ (Φ (-R, t)).inverse) (gp := fun t ↦ (Φ (R, t)).inverse)
+    (fun s t ↦ by simp only [hΦp]) (hevm.mono fun s hs t ↦ by simp only [hs t])
+    (hevp.mono fun s hs t ↦ by simp only [hs t])
+  -- Far out, `dΦ` is the derivative of a function of `t` alone; it has period one in `t`.
+  have hd (b : ℝ) (z : ℝ × ℝ) (hz : Φ =ᶠ[𝓝 z] fun w ↦ Φ (b, w.2)) :
+      fderiv ℝ Φ z = fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (b, w.2)) (0, z.2) := by
+    rw [hz.fderiv_eq, ← Function.comp_def (fun t ↦ Φ (b, t)) Prod.snd, fderiv_comp_snd,
+      fderiv_comp_snd]
+  have hshift : (fun z : ℝ × ℝ ↦ Φ (z + (0, 1))) = Φ := funext fun ⟨s, t⟩ ↦ by
+    simpa using hΦp s t
+  obtain ⟨B', hB'⟩ := exists_forall_norm_le_of_periodic_of_eventually_eq
+    (hΦ.continuous_fderiv one_ne_zero)
+    (gm := fun t ↦ fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (-R, w.2)) (0, t))
+    (gp := fun t ↦ fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (R, w.2)) (0, t))
+    (fun s t ↦ by
+      calc fderiv ℝ Φ (s, t + 1) = fderiv ℝ Φ ((s, t) + (0, 1)) := by simp
+        _ = fderiv ℝ Φ (s, t) := by rw [← fderiv_comp_add_right, hshift])
+    (eventually_atBot.2 ⟨-R - 1, fun s hs t ↦
+      hd (-R) (s, t) (eventuallyEq_comp_snd_of_lt hm (by simp only; linarith))⟩)
+    (eventually_atTop.2 ⟨R + 1, fun s hs t ↦
+      hd R (s, t) (eventuallyEq_comp_snd_of_gt hp (by simp only; linarith))⟩)
+  exact ⟨B, B', D, hB, hB', hD⟩
 
 /-! ### Fredholm operators in a frame -/
 
@@ -252,9 +293,9 @@ include hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ hM in
 `M` on `W^{1,2}(ℝ × S¹, W)` is Fredholm exactly when the operator with coefficient field
 `M ∘ frameJetCoeff Φ` on `W^{1,2}(ℝ × S¹, V)`, its reading in the frame `Φ`, is Fredholm. -/
 theorem isFredholm_jetOperator_comp_frameJetCoeff_iff :
-    ((jetOperator stripMeasure fun z ↦ (M z).comp (frameJetCoeff Φ z)).comp
+    ((jetOperator 2 stripMeasure fun z ↦ (M z).comp (frameJetCoeff Φ z)).comp
         (H1 V).subtypeL).IsFredholm ↔
-      ((jetOperator stripMeasure M).comp (H1 W).subtypeL).IsFredholm := by
+      ((jetOperator 2 stripMeasure M).comp (H1 W).subtypeL).IsFredholm := by
   rw [← jetOperator_comp_subtypeL_comp_frameL hΦ hΦp hΦB hΦ'B hM,
     ← coe_frameEquiv hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ,
     ContinuousLinearMap.isFredholm_comp_equiv]
@@ -264,8 +305,9 @@ include hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ hM in
 on `W^{1,2}(ℝ × S¹, W)` and its reading in the frame `Φ`, the operator with coefficient field
 `M ∘ frameJetCoeff Φ` on `W^{1,2}(ℝ × S¹, V)`, have the same index. -/
 theorem index_jetOperator_comp_frameJetCoeff :
-    ((jetOperator stripMeasure fun z ↦ (M z).comp (frameJetCoeff Φ z)).comp (H1 V).subtypeL).index =
-      ((jetOperator stripMeasure M).comp (H1 W).subtypeL).index := by
+    ((jetOperator 2 stripMeasure fun z ↦ (M z).comp (frameJetCoeff Φ z)).comp
+        (H1 V).subtypeL).index =
+      ((jetOperator 2 stripMeasure M).comp (H1 W).subtypeL).index := by
   rw [← jetOperator_comp_subtypeL_comp_frameL hΦ hΦp hΦB hΦ'B hM,
     ← coe_frameEquiv hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ,
     ContinuousLinearMap.index_comp_equiv]
@@ -289,11 +331,11 @@ include hΨΦ hAC in
 /-- The operator `∂s + A ∂t + C` read in the frame `Φ`, with `Ψ` applied to its values, factors as
 multiplication by `Ψ` after `∂s + A ∂t + C` after the change of frame. -/
 private theorem jetOperator_firstOrderJetCoeff_frame_eq (hΨL : MemLp Ψ ∞ stripMeasure) :
-    (jetOperator stripMeasure fun z ↦ firstOrderJetCoeff ((Ψ z).comp ((A z).comp (Φ z)))
+    (jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff ((Ψ z).comp ((A z).comp (Φ z)))
         ((Ψ z).comp ((C z).comp (Φ z) + fderiv ℝ Φ z (1, 0) +
           (A z).comp (fderiv ℝ Φ z (0, 1))))).comp (H1 V).subtypeL =
       (Lp.operatorMultiplication 2 (hΨL.toLp Ψ)).comp
-        (((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (A z) (C z)).comp
+        (((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (A z) (C z)).comp
           (H1 W).subtypeL).comp (frameL hΦ hΦp hΦB hΦ'B)) := by
   rw [jetOperator_comp_subtypeL_comp_frameL hΦ hΦp hΦB hΦ'B hAC, ← ContinuousLinearMap.comp_assoc,
     ← jetOperator_comp_eq_operatorMultiplication_comp hΨL
@@ -308,11 +350,11 @@ include hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ hAC in
 isomorphisms on both sides. -/
 private theorem exists_jetOperator_firstOrderJetCoeff_frame_eq_comp :
     ∃ (e : Lp W 2 stripMeasure ≃L[ℝ] Lp V 2 stripMeasure) (e' : H1 V ≃L[ℝ] H1 W),
-      (jetOperator stripMeasure fun z ↦ firstOrderJetCoeff ((Ψ z).comp ((A z).comp (Φ z)))
+      (jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff ((Ψ z).comp ((A z).comp (Φ z)))
           ((Ψ z).comp ((C z).comp (Φ z) + fderiv ℝ Φ z (1, 0) +
             (A z).comp (fderiv ℝ Φ z (0, 1))))).comp (H1 V).subtypeL =
         (e : Lp W 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure).comp
-          (((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (A z) (C z)).comp
+          (((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (A z) (C z)).comp
             (H1 W).subtypeL).comp (e' : H1 V →L[ℝ] H1 W)) := by
   have hΦL : MemLp Φ ∞ stripMeasure :=
     memLp_top_of_bound hΦ.continuous.aestronglyMeasurable B (ae_of_all _ hΦB)
@@ -328,10 +370,10 @@ include hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ hAC in
 frame `Ψ`, the operator `∂s + A ∂t + C` on `W^{1,2}(ℝ × S¹, W)` is Fredholm exactly when its
 reading in the frame, `∂s + (Ψ A Φ) ∂t + Ψ (C Φ + ∂s Φ + A ∂t Φ)` on `W^{1,2}(ℝ × S¹, V)`, is. -/
 theorem isFredholm_jetOperator_firstOrderJetCoeff_frame_iff :
-    ((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff ((Ψ z).comp ((A z).comp (Φ z)))
+    ((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff ((Ψ z).comp ((A z).comp (Φ z)))
         ((Ψ z).comp ((C z).comp (Φ z) + fderiv ℝ Φ z (1, 0) +
           (A z).comp (fderiv ℝ Φ z (0, 1))))).comp (H1 V).subtypeL).IsFredholm ↔
-      ((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (A z) (C z)).comp
+      ((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (A z) (C z)).comp
         (H1 W).subtypeL).IsFredholm := by
   obtain ⟨e, e', h⟩ := exists_jetOperator_firstOrderJetCoeff_frame_eq_comp hΦ hΦp hΦB hΦ'B hΨ hΨB
     hΨΦ hΦΨ hAC
@@ -342,10 +384,10 @@ include hΦ hΦp hΦB hΦ'B hΨ hΨB hΨΦ hΦΨ hAC in
 frame `Ψ`, the operator `∂s + A ∂t + C` on `W^{1,2}(ℝ × S¹, W)` and its reading in the frame,
 `∂s + (Ψ A Φ) ∂t + Ψ (C Φ + ∂s Φ + A ∂t Φ)` on `W^{1,2}(ℝ × S¹, V)`, have the same index. -/
 theorem index_jetOperator_firstOrderJetCoeff_frame :
-    ((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff ((Ψ z).comp ((A z).comp (Φ z)))
+    ((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff ((Ψ z).comp ((A z).comp (Φ z)))
         ((Ψ z).comp ((C z).comp (Φ z) + fderiv ℝ Φ z (1, 0) +
           (A z).comp (fderiv ℝ Φ z (0, 1))))).comp (H1 V).subtypeL).index =
-      ((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (A z) (C z)).comp
+      ((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (A z) (C z)).comp
         (H1 W).subtypeL).index := by
   obtain ⟨e, e', h⟩ := exists_jetOperator_firstOrderJetCoeff_frame_eq_comp hΦ hΦp hΦB hΦ'B hΨ hΨB
     hΨΦ hΦΨ hAC
@@ -363,9 +405,11 @@ variable [CompleteSpace V] {Φ : ℝ → V →L[ℝ] W} (hΦ : ContDiff ℝ 2 Φ
 
 omit [CompleteSpace V] in
 include hΦi hJ in
-/-- Reading `∂s + J_t (∂t - S)` in a loop of frames `Φ_t` intertwining `J₀_t` with `J_t` gives
-`∂s + J₀_t (∂t - S_Φ)`, with `S_Φ = Φ⁻¹ (S Φ - Φ')` the trivialized coefficient. -/
-private theorem firstOrderJetCoeff_frame_loop_eq (z : ℝ × ℝ) :
+/-- **Cylinder operators in a loop of frames.** Reading `∂s + J_t (∂t - S)` in a loop of frames
+`Φ_t` intertwining `J₀_t` with `J_t` gives `∂s + J₀_t (∂t - S_Φ)`, with `S_Φ = Φ⁻¹ (S Φ - Φ')` the
+trivialized coefficient: the coefficient field of
+`TauCeti.StripSobolev.comp_firstOrderJetCoeff_comp_frameJetCoeff` for the frame `(s, t) ↦ Φ_t`. -/
+theorem firstOrderJetCoeff_frame_loop_eq (z : ℝ × ℝ) :
     firstOrderJetCoeff ((Φ z.2).inverse.comp ((J z.2).comp (Φ z.2)))
         ((Φ z.2).inverse.comp ((-(J z.2).comp (S z)).comp (Φ z.2) +
           fderiv ℝ (fun w : ℝ × ℝ ↦ Φ w.2) z (1, 0) +
@@ -392,10 +436,11 @@ on both sides. -/
 private theorem exists_jetOperator_firstOrderJetCoeff_trivializedCoeff_eq_comp
     (hM : MemLp (fun z ↦ firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))) ∞ stripMeasure) :
     ∃ (e : Lp W 2 stripMeasure ≃L[ℝ] Lp V 2 stripMeasure) (e' : H1 V ≃L[ℝ] H1 W),
-      (jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (J₀ z.2)
+      (jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (J₀ z.2)
           (-(J₀ z.2).comp (trivializedCoeff Φ (fun t ↦ S (z.1, t)) z.2))).comp (H1 V).subtypeL =
         (e : Lp W 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure).comp
-          (((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))).comp
+          (((jetOperator 2 stripMeasure fun z ↦
+              firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))).comp
             (H1 W).subtypeL).comp (e' : H1 V →L[ℝ] H1 W)) := by
   have hΨ : ContDiff ℝ 2 fun t ↦ (Φ t).inverse := hΦ.clm_inverse hΦi
   have hΨp : Periodic (fun t ↦ (Φ t).inverse) 1 := fun t ↦ by simp only [hΦp t]
@@ -417,10 +462,10 @@ operator `∂s + J₀_t (∂t - S_Φ(s, t))` on `W^{1,2}(ℝ × S¹, V)` is, whe
 (`TauCeti.trivializedCoeff`). -/
 theorem isFredholm_jetOperator_firstOrderJetCoeff_trivializedCoeff_iff
     (hM : MemLp (fun z ↦ firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))) ∞ stripMeasure) :
-    ((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (J₀ z.2)
+    ((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (J₀ z.2)
         (-(J₀ z.2).comp (trivializedCoeff Φ (fun t ↦ S (z.1, t)) z.2))).comp
           (H1 V).subtypeL).IsFredholm ↔
-      ((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))).comp
+      ((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))).comp
         (H1 W).subtypeL).IsFredholm := by
   obtain ⟨e, e', h⟩ :=
     exists_jetOperator_firstOrderJetCoeff_trivializedCoeff_eq_comp hΦ hΦp hΦi hJ hM
@@ -434,10 +479,10 @@ invertible maps `V → W` of period one, intertwining loops of operators `J₀_t
 the trivialization of `S(s, ·)` along `Φ` (`TauCeti.trivializedCoeff`), have the same index. -/
 theorem index_jetOperator_firstOrderJetCoeff_trivializedCoeff
     (hM : MemLp (fun z ↦ firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))) ∞ stripMeasure) :
-    ((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (J₀ z.2)
+    ((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (J₀ z.2)
         (-(J₀ z.2).comp (trivializedCoeff Φ (fun t ↦ S (z.1, t)) z.2))).comp
           (H1 V).subtypeL).index =
-      ((jetOperator stripMeasure fun z ↦ firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))).comp
+      ((jetOperator 2 stripMeasure fun z ↦ firstOrderJetCoeff (J z.2) (-(J z.2).comp (S z))).comp
         (H1 W).subtypeL).index := by
   obtain ⟨e, e', h⟩ :=
     exists_jetOperator_firstOrderJetCoeff_trivializedCoeff_eq_comp hΦ hΦp hΦi hJ hM
