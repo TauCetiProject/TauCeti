@@ -24,7 +24,7 @@ Let `E` be a finite-dimensional real inner product space, `F` a real Banach spac
   domain, and `λ - Δ` maps the domain onto `Lᵖ`.
 * The contraction semigroup that the Lumer–Phillips theorem builds from `Δ`, the limit of the
   exponentials of the Yosida approximations, is the heat semigroup
-  (`TauCeti.yosidaLimitSemigroup_weakLaplacianLp`).
+  (`TauCeti.yosidaLimitSemigroup_weakLaplacianLp_eq_heatSemigroup`).
 * For functions with values in a real inner product space, dissipativity takes its classical
   integral form: every `u` in the domain satisfies
 
@@ -80,13 +80,12 @@ theorem isMDissipative_weakLaplacianLp (hp : p ≠ ∞) :
 semigroup on `Lᵖ` that the Lumer–Phillips theorem builds from the densely defined m-dissipative
 Laplacian, the limit of the exponentials of its Yosida approximations, is the heat semigroup
 `e^{tΔ}`. -/
-theorem yosidaLimitSemigroup_weakLaplacianLp (hp : p ≠ ∞) :
+theorem yosidaLimitSemigroup_weakLaplacianLp_eq_heatSemigroup (hp : p ≠ ∞) :
     (isMDissipative_weakLaplacianLp (E := E) (F := F) hp).yosidaLimitSemigroup
-      (dense_domain_weakLaplacianLp hp) = heatSemigroup hp := by
-  have h := StronglyContinuousSemigroup.eq_of_generator_eq
+      (dense_domain_weakLaplacianLp hp) = heatSemigroup hp :=
+  ContractionSemigroup.eq_of_generator_eq
     (((isMDissipative_weakLaplacianLp (E := E) (F := F) hp).yosidaLimitSemigroup_generator
       (dense_domain_weakLaplacianLp hp)).trans (generator_heatSemigroup_eq_weakLaplacianLp hp).symm)
-  exact ContractionSemigroup.ext fun t ↦ congrArg (fun S ↦ S t) h
 
 /-- **Dissipativity of the Laplacian on `Lᵖ` in integral form.** For `1 ≤ p < ∞`, every `u ∈ Lᵖ`
 with values in a real inner product space whose distributional Laplacian lies in `Lᵖ` satisfies
