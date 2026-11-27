@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Descent.MorphismProperty
 public import TauCeti.CategoryTheory.EffectiveEpi.Refinement
 import Mathlib.AlgebraicGeometry.Morphisms.Descent
 import Mathlib.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.Morphisms.Affine.BaseChange
 
 /-!
 # Descent of schemes affine over the cover along fpqc morphisms
@@ -89,14 +90,10 @@ relative to `p` on a scheme affine over `S'` is isomorphic to the canonical desc
 base change of a scheme affine over `S`. -/
 theorem exists_isAffineHom_baseChange_hom_isIso_of_quasiCompact [IsAffineHom X.hom] :
     ∃ X₀ : Over S, IsAffineHom X₀.hom ∧ ∃ f : Hom (baseChange p X₀) D, IsIso f.hom := by
-  obtain ⟨X₀, f, hf⟩ := exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong fun U ↦ by
+  obtain ⟨X₀, f, hf⟩ := exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong
+    fun (U : S.affineOpens) ↦ by
     -- Over an affine open `U`, the base change of `D` acts on a scheme affine over `U ×_S S'`,
     -- relative to the flat quasi-compact morphism `U ×_S S' ⟶ U` with affine target.
-    have : IsAffineHom (pullbackAlongObj (p := p) U.val.ι X).hom := by
-      simp only [pullbackAlongObj, Over.pullback_obj_hom]
-      -- Mathlib has no instance for base changes of affine morphisms, so stability under base
-      -- change is applied by name.
-      exact isAffineHom_isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
     have : IsAffine U.val.toScheme := U.property
     obtain ⟨Y₀, -, f, hf⟩ :=
       exists_isAffine_baseChange_hom_isIso_of_quasiCompact (D.pullbackAlong U.val.ι)
