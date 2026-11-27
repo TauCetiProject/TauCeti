@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.GaussValuation
+public import TauCeti.RingTheory.Polynomial.GaussValuation.Additive
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.WithTop
@@ -13,8 +13,9 @@ import Mathlib.Algebra.BigOperators.WithTop
 /-!
 # Counting roots of specified additive valuations
 
-For a polynomial with integral coefficients, a weighted coefficient bounds the total
-multiplicity of roots at any finite set of distinct real valuations bounded by the radius.
+For a polynomial with integral coefficients, a weighted coefficient bounds the sum of each
+radius times the number of roots of that valuation, counted with multiplicity, over any finite
+set of distinct real valuations bounded by a nonnegative radius.
 This is the counting input for selecting radii at which evaluation loses little against the
 Gauss valuation.
 
@@ -47,35 +48,23 @@ theorem sum_max_min_valuation_roots_le (g : K[X])
     (hcoeff : ∀ i, 0 ≤ v (g.coeff i)) {ρ : ℝ} (hρ : 0 ≤ ρ) (d : ℕ) :
     (g.roots.map fun a ↦ max 0 (min (ρ : WithTop ℝ) (v a))).sum ≤
       v (g.coeff d) + d • (ρ : WithTop ℝ) := by
-  let w := v.toValuation
-  let r : Multiplicative (WithTop ℝ)ᵒᵈ := .ofAdd (.toDual ρ)
   obtain ⟨q, hg, _, _⟩ := g.exists_prod_multiset_X_sub_C_mul
-  have hformula (t : Multiplicative (WithTop ℝ)ᵒᵈ) :
-      g.gaussValuation w t =
-        (g.roots.map fun a ↦ max t (w a)).prod * q.gaussValuation w t := by
+  have hformula (t : ℝ) : g.addGaussValuation v t =
+      (g.roots.map fun a ↦ min (t : WithTop ℝ) (v a)).sum + q.addGaussValuation v t := by
     conv_lhs => rw [← hg]
-    rw [gaussValuation_mul, gaussValuation_multiset_prod, Multiset.map_map]
-    simp only [Function.comp_def, gaussValuation_X_sub_C]
-  have hzero : g.gaussValuation w 1 ≤ 1 :=
-    (gaussValuation_le_iff w 1).2 fun i ↦ by rw [one_pow, mul_one]; exact hcoeff i
-  have hmono : q.gaussValuation w r ≤ q.gaussValuation w 1 := by
-    refine (gaussValuation_le_iff w r).2 fun i ↦ ?_
-    have hr : r ≤ 1 := WithTop.coe_le_coe.2 hρ
-    calc
-      w (q.coeff i) * r ^ i ≤ w (q.coeff i) * 1 :=
-        mul_le_mul' le_rfl (pow_le_one₀ zero_le hr)
-      _ ≤ q.gaussValuation w 1 := by
-        simpa only [one_pow, mul_one] using le_gaussValuation w 1 q i
+    rw [addGaussValuation_mul, addGaussValuation_multiset_prod, Multiset.map_map]
+    simp only [Function.comp_def, addGaussValuation_X_sub_C]
+  have hzero : 0 ≤ g.addGaussValuation v 0 :=
+    (le_addGaussValuation_iff v 0).2 fun i ↦ by simpa using hcoeff i
+  have hmono := q.addGaussValuation_mono v hρ
   have hbase : 0 ≤ (g.roots.map fun a ↦ min 0 (v a)).sum +
-      (q.gaussValuation w r).toAdd.ofDual := by
-    rw [hformula 1] at hzero
-    have H := (mul_le_mul' (le_refl ((g.roots.map fun a ↦ max 1 (w a)).prod)) hmono).trans hzero
-    exact H
+      q.addGaussValuation v ρ := by
+    rw [hformula 0, WithTop.coe_zero] at hzero
+    exact hzero.trans (add_le_add_right hmono _)
   have H : (g.roots.map fun a ↦ min (ρ : WithTop ℝ) (v a)).sum +
-      (q.gaussValuation w r).toAdd.ofDual ≤ v (g.coeff d) + d • (ρ : WithTop ℝ) := by
-    have H := le_gaussValuation w r g d
-    rw [hformula r] at H
-    exact H
+      q.addGaussValuation v ρ ≤ v (g.coeff d) + d • (ρ : WithTop ℝ) := by
+    rw [← hformula ρ]
+    exact g.addGaussValuation_le_coeff v ρ d
   have hsplit : (g.roots.map fun a ↦ min (ρ : WithTop ℝ) (v a)).sum =
       (g.roots.map fun a ↦ min 0 (v a)).sum +
         (g.roots.map fun a ↦ max 0 (min (ρ : WithTop ℝ) (v a))).sum := by
@@ -89,14 +78,15 @@ theorem sum_max_min_valuation_roots_le (g : K[X])
     exact H.symm
   rw [hsplit] at H
   have H' : ((g.roots.map fun a ↦ min 0 (v a)).sum +
-      (q.gaussValuation w r).toAdd.ofDual) +
+      q.addGaussValuation v ρ) +
         (g.roots.map fun a ↦ max 0 (min (ρ : WithTop ℝ) (v a))).sum ≤
           v (g.coeff d) + d • (ρ : WithTop ℝ) := by
     simpa only [add_right_comm] using H
   exact (le_add_of_nonneg_left hbase).trans H'
 
-/-- A weighted coefficient bounds the total multiplicity at distinct root
-valuations at most `ρ`. No bound on the degree or the size of the set of radii is required. -/
+/-- For integral coefficients and `0 ≤ ρ`, the sum over `r ∈ s` of `r` times the number of
+roots of valuation `r`, counted with multiplicity, is at most `v (g.coeff d) + d • ρ`.
+Every radius in `s` is at most `ρ`; no degree or cardinality bound is required. -/
 theorem sum_card_roots_valuation_mul_le (g : K[X])
     (hcoeff : ∀ i, 0 ≤ v (g.coeff i)) {ρ : ℝ} (hρ : 0 ≤ ρ)
     (s : Finset ℝ) (hs : ∀ r ∈ s, r ≤ ρ) (d : ℕ) :

@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Algebra.GroupWithZero.Basic
 public import Mathlib.Algebra.Order.WithTop.Untop0
+public import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Algebra.Order.Monoid.WithTop
 
 /-!
 # Scaling elements of `WithTop`
 
 Left multiplication by `c` acts on `WithTop α` through `WithTop.map (c * ·)`, fixing `⊤`.
 This file records how this scaling interacts with `WithTop.untop₀` and that scaling by a
-nonzero `c` in a group with zero is undone by scaling by `c⁻¹`.
+nonzero `c` in a group with zero is undone by scaling by `c⁻¹`. A positive natural-multiple
+bound by a finite field element can also be divided by that natural number, excluding `⊤`.
 
 ## Main results
 
@@ -41,5 +44,18 @@ theorem map_mul_map_inv_mul {α : Type*} [GroupWithZero α] {c : α} (hc : c ≠
 theorem map_inv_mul_map_mul {α : Type*} [GroupWithZero α] {c : α} (hc : c ≠ 0)
     (x : WithTop α) : (x.map (c * ·)).map (c⁻¹ * ·) = x := by
   cases x <;> simp [hc]
+
+/-- A positive natural multiple is bounded by a finite value exactly when its argument is
+bounded by the quotient. In particular such a bound excludes infinity. -/
+theorem nsmul_le_coe_iff {F : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
+    {n : ℕ} (hn : 0 < n) {x : WithTop F} {b : F} :
+    n • x ≤ (b : WithTop F) ↔ x ≤ ((b / n : F) : WithTop F) := by
+  induction x using WithTop.recTopCoe with
+  | top =>
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+    simp [succ_nsmul]
+  | coe x =>
+    rw [← coe_nsmul, coe_le_coe, coe_le_coe, nsmul_eq_mul,
+      le_div_iff₀ (Nat.cast_pos.2 hn), mul_comm]
 
 end WithTop

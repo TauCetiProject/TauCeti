@@ -8,12 +8,11 @@ module
 public import TauCeti.RingTheory.Polynomial.GaussValuation.RootCounting
 public import Mathlib.Data.NNRat.BigOperators
 public import Mathlib.Analysis.PSeries
-public import Mathlib.Data.Nat.Totient
+public import TauCeti.Data.Nat.Totient
 public import Mathlib.Data.NNRat.Floor
-public import TauCeti.NumberTheory.Padics.PadicAlgCl.Valuation
+public import TauCeti.NumberTheory.Padics.AlgebraicClosure.Valuation
 import TauCeti.RingTheory.RootsOfUnity.ValuationAverage
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
-import TauCeti.RingTheory.Valuation.Polynomial
 import TauCeti.RingTheory.Valuation.AddValuation
 import TauCeti.Algebra.Order.BigOperators.WithTop
 
@@ -28,8 +27,8 @@ many multivariable polynomial values up to any prescribed positive loss.
 
 ## Provenance
 
-`Polynomial.exists_isPrimitiveRoot_padicAlgClRealValuation_eval_le_gaussValuation_add` and
-`TauCeti.exists_rootsOfUnity_padicAlgClRealValuation_eval_le_add` adapt
+`Polynomial.exists_isPrimitiveRoot_ofNorm_eval_le_addGaussValuation_add` and
+`TauCeti.exists_rootsOfUnity_ofNorm_eval_le_add` adapt
 `New.Selmer.exists_rootOfUnity_eval_le_gaussVal_add` and
 `New.Selmer.exists_rootsOfUnity_ellVal_eval_le_add` in
 `src/New/Congruences/Selmer/RootsOfUnity.lean` in grh-lean
@@ -40,9 +39,10 @@ selection, tied-root correction and coordinate induction follow the correspondin
 `exists_lt_mul_sum_radiusExponents`, `exists_card_rootsOfValuation_mul_le`,
 `ellVal_eval_add_card_mul`, `freeCoordinate`, `eval_freeCoordinate`,
 `exists_ellVal_eval_update_le_add` and `exists_ellVal_eval_piecewise_le_add` in that namespace.
-The implementation uses the native multiplicative Gauss valuation and the untruncated
-normalized real valuation on `PadicAlgCl`; these agree with the additive quantities on
-integral inputs. The general root-counting and averaging results are in their own modules.
+The implementation uses the additive reading of the native Gauss valuation and the existing
+`AddValuation.ofNorm` at base `p` on `PadicAlgCl`; on integral inputs this is the usual
+nonnegative normalized valuation. The general root-counting and averaging results are in their
+own modules.
 
 ## References
 
@@ -50,7 +50,9 @@ integral inputs. The general root-counting and averaging results are in their ow
 * L. C. Washington, *Introduction to Cyclotomic Fields*, 2nd ed., GTM 83, Chapters 1–2.
 -/
 
-@[expose] public section
+public section
+
+universe u v
 
 open scoped NNReal NNRat
 
@@ -68,10 +70,25 @@ variable (ℓ) in
 the valuation `v(ζ - 1)`, normalised by `v ℓ = 1`, for `ζ` of order `ℓ ^ h`. -/
 def primePowerRootRadius (h : ℕ) : ℚ≥0 := (Nat.totient (ℓ ^ h) : ℚ≥0)⁻¹
 
-private lemma strictMono_totient_pow_succ : StrictMono fun k : ℕ ↦ Nat.totient (ℓ ^ (k + 1)) := by
-  have hℓ : ℓ.Prime := Fact.out
-  simp only [Nat.totient_prime_pow_succ hℓ]
-  exact (pow_right_strictMono₀ hℓ.one_lt).mul_const (Nat.sub_pos_of_lt hℓ.one_lt)
+omit [Fact ℓ.Prime] in
+/-- The real value of the prime-power root radius. -/
+@[simp]
+lemma coe_primePowerRootRadius (h : ℕ) :
+    (primePowerRootRadius ℓ h : ℝ) = ((ℓ ^ h).totient : ℝ)⁻¹ := by
+  simp only [primePowerRootRadius, NNRat.cast_inv, NNRat.cast_natCast]
+
+/-- Every prime-power root radius is positive. -/
+lemma primePowerRootRadius_pos (h : ℕ) : 0 < (primePowerRootRadius ℓ h : ℝ) := by
+  rw [coe_primePowerRootRadius]
+  exact inv_pos.2 (Nat.cast_pos.2 (Nat.totient_pos.2
+    (pow_pos (Fact.out : ℓ.Prime).pos h)))
+
+/-- A shifted primitive root has valuation equal to its prime-power root radius. -/
+lemma ofNorm_sub_one_eq_primePowerRootRadius {h : ℕ} (hh : 1 ≤ h) {ζ : PadicAlgCl ℓ}
+    (hζ : IsPrimitiveRoot ζ (ℓ ^ h)) :
+    AddValuation.ofNorm (ℓ : ℝ) (Nat.one_lt_cast.2 (Fact.out : ℓ.Prime).one_lt) (ζ - 1) =
+      ((primePowerRootRadius ℓ h : ℝ) : WithTop ℝ) := by
+  rw [coe_primePowerRootRadius, PadicAlgCl.ofNorm_sub_one ℓ hh hζ]
 
 /-- The radii `primePowerRootRadius ℓ h` with `h ≥ 1` are distinct. -/
 lemma primePowerRootRadius_injOn : Set.InjOn (primePowerRootRadius ℓ) (Set.Ici 1) := by
@@ -79,7 +96,9 @@ lemma primePowerRootRadius_injOn : Set.InjOn (primePowerRootRadius ℓ) (Set.Ici
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hh
   obtain ⟨k', rfl⟩ := Nat.exists_eq_add_of_le' hh'
   exact congrArg (· + 1)
-    (strictMono_totient_pow_succ.injective (by simpa [primePowerRootRadius] using h_eq))
+    ((Nat.strictMono_totient_prime_pow_succ (Fact.out : ℓ.Prime)).injective (by
+      have H := congrArg (fun r : ℚ≥0 ↦ (r : ℝ)) h_eq
+      simpa only [coe_primePowerRootRadius, inv_inj, Nat.cast_inj] using H))
 
 /-- For `ρ > 0`, all large `h` have `primePowerRootRadius ℓ h = 1 / φ(ℓ ^ h) ≤ ρ`. -/
 lemma eventually_primePowerRootRadius_le {ρ : ℚ≥0} (hρ : 0 < ρ) :
@@ -87,8 +106,12 @@ lemma eventually_primePowerRootRadius_le {ρ : ℚ≥0} (hρ : 0 < ρ) :
   filter_upwards [eventually_ge_atTop (⌈ρ⁻¹⌉₊ + 1)] with h hh
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' (le_of_add_le_right hh)
   have h_totient : ⌈ρ⁻¹⌉₊ ≤ Nat.totient (ℓ ^ (k + 1)) :=
-    (Nat.le_of_succ_le_succ hh).trans strictMono_totient_pow_succ.le_apply
-  exact inv_le_of_inv_le₀ hρ ((Nat.le_ceil _).trans (Nat.cast_le.2 h_totient))
+    (Nat.le_of_succ_le_succ hh).trans
+      (Nat.strictMono_totient_prime_pow_succ (Fact.out : ℓ.Prime)).le_apply
+  apply (NNRat.cast_le (K := ℝ)).1
+  rw [coe_primePowerRootRadius]
+  apply inv_le_of_inv_le₀ (NNRat.cast_pos.2 hρ)
+  exact_mod_cast (Nat.le_ceil (ρ⁻¹)).trans (Nat.cast_le.2 h_totient)
 
 variable (ℓ) in
 /-- The exponents `h` with `1 ≤ h ≤ h₀` and `ρ_h ≤ ρ`, where `ρ_h = primePowerRootRadius ℓ h`. -/
@@ -133,9 +156,9 @@ open scoped NNReal NNRat
 variable {K : Type*} [CommRing K] [IsDomain K] {ℓ : ℕ} [Fact ℓ.Prime]
   {v : AddValuation K (WithTop ℝ)}
 
-/-- Harmonic averaging finds an admissible prime-power radius with few roots. The bound on a
-weighted coefficient is an additive Gauss bound expressed without a new valuation interface.
-There is no degree bound and `δ` need not be less than one. -/
+/-- For integral coefficients, a weighted coefficient bounded by `B`, and the stated harmonic
+inequality, some admissible `h` has the number of roots of valuation `ρ_h`, counted with
+multiplicity, times `ρ_h` at most `δ / (h + 1)`. -/
 theorem exists_card_roots_valuation_mul_le (g : K[X])
     (hcoeff : ∀ i, 0 ≤ v (g.coeff i)) {ρ : ℚ≥0} {h₀ : ℕ} {B δ : ℝ≥0}
     (h_harmonic : B < δ * ∑ h ∈ primePowerRadiusExponents ℓ ρ h₀, ((h : ℝ≥0) + 1)⁻¹)
@@ -187,7 +210,9 @@ variable {p : ℕ} [Fact p.Prime]
 
 -- Local names for the field and its fixed normalized valuation.
 local notation "K" => PadicAlgCl p
-local notation "V" => padicAlgClRealValuation p
+local notation "V" =>
+  AddValuation.ofNorm (R := PadicAlgCl p) (p : ℝ)
+    (Nat.one_lt_cast.mpr (Nat.Prime.one_lt (Fact.out : p.Prime)))
 
 private lemma eval_add_card_tied_roots (g : K[X]) {r : ℝ} {y : K}
     (hy : V y = (r : WithTop ℝ)) :
@@ -208,7 +233,7 @@ private lemma eval_add_card_tied_roots (g : K[X]) {r : ℝ} {y : K}
     rw [(Multiset.mem_filter.1 ha).2, min_self]
   have heval : V (g.eval y) =
       V g.leadingCoeff + (g.roots.map fun a ↦ V (y - a)).sum :=
-    valuation_eval_eq_mul_prod_roots (V).toValuation g (IsAlgClosed.splits _) y
+    g.addValuation_eval_eq_add_sum_roots V (IsAlgClosed.splits _) y
   have heval' : V (g.eval y) = V g.leadingCoeff +
       ((R.map fun a ↦ V (y - a)).sum + (R'.map fun a ↦ min (r : WithTop ℝ) (V a)).sum) := by
     conv_lhs => rw [heval, hsplit]
@@ -221,53 +246,49 @@ private lemma eval_add_card_tied_roots (g : K[X]) {r : ℝ} {y : K}
   rw [heval', hgauss]
   ac_rfl
 
-private lemma exists_isPrimitiveRoot_eval_le_gauss_add
+end TauCeti
+
+namespace Polynomial
+
+open Finset TauCeti
+variable {p : ℕ} [Fact p.Prime]
+local notation "K" => PadicAlgCl p
+local notation "V" =>
+  AddValuation.ofNorm (R := PadicAlgCl p) (p : ℝ)
+    (Nat.one_lt_cast.mpr (Nat.Prime.one_lt (Fact.out : p.Prime)))
+
+/-- The harmonic-sum estimate: an integral polynomial with bounded additive Gauss valuation has
+an admissible level `h` and a primitive `p ^ h`-th root `ζ` such that evaluation at `ζ - 1`
+loses at most `δ` against its additive Gauss valuation at `primePowerRootRadius p h`. -/
+theorem exists_isPrimitiveRoot_ofNorm_eval_le_addGaussValuation_add (g : K[X])
     {ρ : ℚ≥0} {h₀ : ℕ} {B δ : ℝ≥0} (hδ : δ < 1)
     (h_harmonic : B < δ * ∑ h ∈ primePowerRadiusExponents p ρ h₀, ((h : ℝ≥0) + 1)⁻¹)
-    (g : K[X]) (hcoeff : ∀ i, 0 ≤ V (g.coeff i))
-    (hG : (g.gaussValuation (V).toValuation
-      (.ofAdd (.toDual ((ρ : ℝ) : WithTop ℝ)))).toAdd.ofDual ≤ (B : ℝ)) :
+    (hcoeff : ∀ i, 0 ≤ V (g.coeff i))
+    (hG : g.addGaussValuation V (ρ : ℝ) ≤ (B : ℝ)) :
     ∃ h ∈ primePowerRadiusExponents p ρ h₀, ∃ ζ : K, IsPrimitiveRoot ζ (p ^ h) ∧
-      V (g.eval (ζ - 1)) ≤ (g.gaussValuation (V).toValuation
-        (.ofAdd (.toDual ((primePowerRootRadius p h : ℝ) : WithTop ℝ)))).toAdd.ofDual +
+      V (g.eval (ζ - 1)) ≤ g.addGaussValuation V (primePowerRootRadius p h : ℝ) +
           (δ : ℝ) := by
   classical
   have : NeZero (p : K) := ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
-  let r : Multiplicative (WithTop ℝ)ᵒᵈ := .ofAdd (.toDual ((ρ : ℝ) : WithTop ℝ))
-  have hne : g.gaussValuation (V).toValuation r ≠ 0 := by
-    intro hz
-    have H := hG
-    dsimp only [r] at hz
-    rw [hz] at H
-    exact (WithTop.not_top_le_coe _) H
-  obtain ⟨d, _, hd⟩ := exists_eq_gaussValuation (V).toValuation r hne
-  have hbound : ∃ d, V (g.coeff d) + d • ((ρ : ℝ) : WithTop ℝ) ≤ (B : ℝ) := by
-    refine ⟨d, ?_⟩
-    rw [← hd] at hG
-    exact hG
+  have hbound : ∃ d, V (g.coeff d) + d • ((ρ : ℝ) : WithTop ℝ) ≤ (B : ℝ) :=
+    (g.addGaussValuation_le_iff V (ρ : ℝ)).1 hG
   obtain ⟨h, hh, hfew⟩ := g.exists_card_roots_valuation_mul_le (v := V)
     hcoeff h_harmonic hbound
   let R := g.roots.filter fun a ↦ V a = ((primePowerRootRadius p h : ℝ) : WithTop ℝ)
-  have hrpos : 0 < (primePowerRootRadius p h : ℝ) := by
-    simp only [primePowerRootRadius, NNRat.cast_inv, NNRat.cast_natCast]
-    exact inv_pos.2 (Nat.cast_pos.2 (Nat.totient_pos.2
-      (pow_pos (Fact.out : p.Prime).pos _)))
+  have hrpos := primePowerRootRadius_pos (ℓ := p) h
   have hcost : (R.card : ℝ) * (Nat.totient (p ^ h) : ℝ)⁻¹ * (h + 1) ≤ (δ : ℝ) := by
     have H := (le_div_iff₀ (by positivity : (0 : ℝ) < h + 1)).1 hfew
-    simpa only [R, primePowerRootRadius, NNRat.cast_inv, NNRat.cast_natCast] using H
-  obtain ⟨ζ, hζ, hsum⟩ := (V).exists_isPrimitiveRoot_sum_sub_le (padicAlgClRealValuation_p p) h
+    simpa only [R, coe_primePowerRootRadius] using H
+  obtain ⟨ζ, hζ, hsum⟩ := (V).exists_isPrimitiveRoot_sum_sub_le (PadicAlgCl.ofNorm_p p) h
     (by exact_mod_cast hδ) hcost
-  have hy : V (ζ - 1) = ((primePowerRootRadius p h : ℝ) : WithTop ℝ) :=
-    by
-      simpa only [primePowerRootRadius, NNRat.cast_inv, NNRat.cast_natCast] using
-        padicAlgClRealValuation_sub_one p (mem_primePowerRadiusExponents.1 hh).1 hζ
+  have hy := ofNorm_sub_one_eq_primePowerRootRadius
+    (mem_primePowerRadiusExponents.1 hh).1 hζ
   refine ⟨h, hh, ζ, hζ, ?_⟩
-  have htied := eval_add_card_tied_roots g hy
-  have hgauss : (g.gaussValuation (V).toValuation
-      (.ofAdd (.toDual ((primePowerRootRadius p h : ℝ) : WithTop ℝ)))).toAdd.ofDual =
+  have htied := TauCeti.eval_add_card_tied_roots g hy
+  have hgauss : g.addGaussValuation V (primePowerRootRadius p h : ℝ) =
         V g.leadingCoeff + (g.roots.map fun a ↦
           min ((primePowerRootRadius p h : ℝ) : WithTop ℝ) (V a)).sum :=
-    gaussValuation_eq_mul_prod_roots (V).toValuation g (IsAlgClosed.splits _) _
+    g.addGaussValuation_eq_add_sum_roots V _ (IsAlgClosed.splits _)
   rw [hgauss]
   calc
     V (g.eval (ζ - 1)) ≤ V (g.eval (ζ - 1)) + R.card •
@@ -280,35 +301,42 @@ private lemma exists_isPrimitiveRoot_eval_le_gauss_add
           min ((primePowerRootRadius p h : ℝ) : WithTop ℝ) (V a)).sum + (δ : ℝ) := by
       exact add_le_add le_rfl hsum
 
+end Polynomial
+
+namespace TauCeti
+
+open Finset Polynomial
+variable {p : ℕ} [Fact p.Prime]
+local notation "K" => PadicAlgCl p
+local notation "V" =>
+  AddValuation.ofNorm (R := PadicAlgCl p) (p : ℝ)
+    (Nat.one_lt_cast.mpr (Nat.Prime.one_lt (Fact.out : p.Prime)))
+
 private lemma exists_integer_root_eval_le_gauss_add
     {ρ : ℚ≥0} {h₀ : ℕ} {B δ : ℝ≥0} (hδ : δ < 1)
     (h_harmonic : B < δ * ∑ h ∈ primePowerRadiusExponents p ρ h₀, ((h : ℝ≥0) + 1)⁻¹)
     (g : (V).toValuation.valuationSubring[X])
-    (hG : ((g.map (V).toValuation.valuationSubring.subtype).gaussValuation (V).toValuation
-      (.ofAdd (.toDual ((ρ : ℝ) : WithTop ℝ)))).toAdd.ofDual ≤ (B : ℝ)) :
+    (hG : (g.map (V).toValuation.valuationSubring.subtype).addGaussValuation V (ρ : ℝ) ≤ (B : ℝ)) :
     ∃ h ∈ primePowerRadiusExponents p ρ h₀, ∃ ζ : (V).toValuation.valuationSubring,
       ζ ^ p ^ h₀ = 1 ∧
       V ((ζ - 1 : (V).toValuation.valuationSubring) : K) =
         ((primePowerRootRadius p h : ℝ) : WithTop ℝ) ∧
       V (↑(g.eval (ζ - 1)) : K) ≤
-        ((g.map (V).toValuation.valuationSubring.subtype).gaussValuation (V).toValuation
-          (.ofAdd (.toDual ((primePowerRootRadius p h : ℝ) : WithTop ℝ)))).toAdd.ofDual +
-            (δ : ℝ) := by
+        (g.map (V).toValuation.valuationSubring.subtype).addGaussValuation V
+          (primePowerRootRadius p h : ℝ) + (δ : ℝ) := by
   let O := (V).toValuation.valuationSubring
   let e : O →+* K := O.subtype
   have hcoeff : ∀ k, 0 ≤ V ((g.map e).coeff k) := by
     intro k
     rw [coeff_map]
-    exact (g.coeff k).property
+    exact ((V).mem_toValuation_valuationSubring_iff _).1 (g.coeff k).property
   obtain ⟨h, hh, ξ, hξ, hbound⟩ :=
-    exists_isPrimitiveRoot_eval_le_gauss_add hδ h_harmonic (g.map e) hcoeff hG
+    (g.map e).exists_isPrimitiveRoot_ofNorm_eval_le_addGaussValuation_add hδ h_harmonic hcoeff hG
   obtain ⟨hone, hh₀, _⟩ := mem_primePowerRadiusExponents.1 hh
-  have hy : V (ξ - 1) = ((primePowerRootRadius p h : ℝ) : WithTop ℝ) := by
-    simpa only [primePowerRootRadius, NNRat.cast_inv, NNRat.cast_natCast] using
-      padicAlgClRealValuation_sub_one p hone hξ
-  let y : O := ⟨ξ - 1, by
-    have H : 0 ≤ V (ξ - 1) := by rw [hy]; exact_mod_cast (primePowerRootRadius p h).coe_nonneg
-    exact H⟩
+  have hy := ofNorm_sub_one_eq_primePowerRootRadius hone hξ
+  let y : O := ⟨ξ - 1, ((V).mem_toValuation_valuationSubring_iff _).2 (by
+    rw [hy]
+    exact_mod_cast (primePowerRootRadius p h).coe_nonneg)⟩
   let ζ : O := 1 + y
   have hζ : (ζ : K) = ξ := by simp [ζ, y]
   have hζy : ζ - 1 = y := by simp [ζ]
@@ -338,20 +366,13 @@ private lemma exists_root_eval_family_le_add {ι : Type*} [Fintype ι]
   let O := (V).toValuation.valuationSubring
   let e : O →+* K := O.subtype
   let G (r : ℚ≥0) (P : O[X]) : WithTop ℝ :=
-    ((P.map e).gaussValuation (V).toValuation
-      (.ofAdd (.toDual ((r : ℝ) : WithTop ℝ)))).toAdd.ofDual
+    (P.map e).addGaussValuation V (r : ℝ)
   have hprod (r : ℚ≥0) : G r (∏ i, g i) = ∑ i, G r (g i) := by
-    dsimp only [G]
-    rw [Polynomial.map_prod, Finset.prod_eq_multiset_prod, gaussValuation_multiset_prod]
-    simp only [Finset.sum_eq_multiset_sum, Multiset.map_map, Function.comp_def]
-    rfl
+    simp only [G, Polynomial.map_prod, addGaussValuation_prod]
   have heval (r : ℚ≥0) (P : O[X]) (y : O)
       (hy : ((r : ℝ) : WithTop ℝ) ≤ V (y : K)) : G r P ≤ V (↑(P.eval y) : K) := by
-    have H := valuation_eval_le_gaussValuation (V).toValuation
-      (.ofAdd (.toDual ((r : ℝ) : WithTop ℝ))) (P.map e) hy
     have heval' : (P.map e).eval (y : K) = (↑(P.eval y) : K) := eval_map_apply e y
-    rw [heval'] at H
-    exact H
+    simpa only [heval'] using (P.map e).addGaussValuation_le_valuation_eval V (r : ℝ) hy
   have hG : G ρ (∏ i, g i) ≤ (B : ℝ) := by
     rw [hprod]
     exact (sum_le_sum fun i _ ↦ heval ρ (g i) (x i) (hx i)).trans hP
@@ -433,9 +454,7 @@ private lemma exists_root_eval_piecewise_le_add {σ ι : Type*}
     have hloss : (t.card * δ : ℝ≥0) ≤ 1 :=
       (mul_le_mul_left (Nat.cast_le.2 (card_le_univ t)) δ).trans hσ
     have hloss' : t.card • ((δ : ℝ) : WithTop ℝ) ≤ 1 := by
-      rw [← WithTop.coe_nsmul]
-      norm_cast
-      simpa only [nsmul_eq_mul] using hloss
+      exact (WithTop.nsmul_coe_nnreal_le_iff t.card δ 1).2 hloss
     have hbelow : ∑ i, V (↑(MvPolynomial.eval (y i) (P i)) : K) ≤ ((β + 1 : ℝ≥0) : ℝ) := by
       simpa only [NNReal.coe_add, NNReal.coe_one, WithTop.coe_add, WithTop.coe_one] using
         hsum.trans (add_le_add (le_refl ((β : ℝ) : WithTop ℝ)) hloss')
@@ -461,14 +480,19 @@ private lemma exists_root_eval_piecewise_le_add {σ ι : Type*}
     · simp only [hpoint, hcard, ← add_assoc]
       exact hsumstep.trans (add_le_add hsum le_rfl)
 
-private lemma exists_roots_eval_le_add
+/-- Given inputs `x i j` of valuation at least `ρ` and a bound on the sum of input polynomial
+valuations, choose an order bound before the finite polynomial family. There are roots `ζ j`
+with `ζ j ^ p ^ h₀ = 1` and `v (ζ j - 1) ≤ ρ` such that evaluation at `(ζ j - 1)_j` loses at
+most `ε` against the value at `x i`, for every polynomial `i`. Here `v` is the base-`p`
+valuation `AddValuation.ofNorm`. -/
+theorem exists_rootsOfUnity_ofNorm_eval_le_add
     (s₀ : ℕ) {ρ : ℚ≥0} (hρ : 0 < ρ) (β : ℝ≥0) {ε : ℝ≥0} (hε : 0 < ε) :
-    ∃ h₀ : ℕ, ∀ (σ ι : Type) [Fintype σ] [Fintype ι]
+    ∃ h₀ : ℕ, ∀ (σ : Type u) (ι : Type v) [Fintype σ] [Fintype ι]
       (P : ι → MvPolynomial σ (V).toValuation.valuationSubring)
-      (x : ι → σ → (V).toValuation.valuationSubring),
-      Fintype.card σ ≤ s₀ →
-      (∀ i j, ((ρ : ℝ) : WithTop ℝ) ≤ V (x i j : K)) →
-      ∑ i, V (↑(MvPolynomial.eval (x i) (P i)) : K) ≤ (β : ℝ) →
+      (x : ι → σ → (V).toValuation.valuationSubring)
+      (_hσ : Fintype.card σ ≤ s₀)
+      (_hx : ∀ i j, ((ρ : ℝ) : WithTop ℝ) ≤ V (x i j : K))
+      (_hP : ∑ i, V (↑(MvPolynomial.eval (x i) (P i)) : K) ≤ (β : ℝ)),
       ∃ ζ : σ → (V).toValuation.valuationSubring,
         (∀ j, ζ j ^ p ^ h₀ = 1) ∧
         (∀ j, V ((ζ j - 1 : (V).toValuation.valuationSubring) : K) ≤ (ρ : ℝ)) ∧
@@ -489,9 +513,7 @@ private lemma exists_roots_eval_le_add
       _ = min ε 1 := mul_div_cancel₀ (min ε 1) hpos.ne'
   obtain ⟨hlossε, hlossone⟩ := le_min_iff.1 hloss
   have hloss' : Fintype.card σ • ((δ : ℝ) : WithTop ℝ) ≤ (ε : ℝ) := by
-    rw [← WithTop.coe_nsmul]
-    norm_cast
-    simpa only [nsmul_eq_mul] using hlossε
+    exact (WithTop.nsmul_coe_nnreal_le_iff (Fintype.card σ) δ ε).2 hlossε
   obtain ⟨ζ, hpow, hval, heach, _⟩ :=
     exists_root_eval_piecewise_le_add hδ hharmonic hlossone P hx hP univ
   refine ⟨ζ, fun j ↦ hpow j (mem_univ j), fun j ↦ hval j (mem_univ j), fun i ↦ ?_⟩
@@ -500,54 +522,3 @@ private lemma exists_roots_eval_le_add
   exact H.trans (add_le_add le_rfl hloss')
 
 end TauCeti
-
-namespace TauCeti
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- Given a bound on the number of variables, a positive rational input radius, a bound on the
-sum of the input valuations, and a positive error, choose one bound on the orders of roots of
-unity before the finite polynomial family is given. One tuple of roots of those bounded orders
-loses at most the specified error against every given polynomial value. -/
-theorem exists_rootsOfUnity_padicAlgClRealValuation_eval_le_add (s₀ : ℕ) {ρ : ℚ≥0}
-    (hρ : 0 < ρ) (β : ℝ≥0) {ε : ℝ≥0} (hε : 0 < ε) :
-    let v := padicAlgClRealValuation p
-    let O := v.toValuation.valuationSubring
-    ∃ h₀ : ℕ, ∀ (σ ι : Type) [Fintype σ] [Fintype ι]
-      (P : ι → MvPolynomial σ O) (x : ι → σ → O),
-      Fintype.card σ ≤ s₀ →
-      (∀ i j, ((ρ : ℝ) : WithTop ℝ) ≤ v (x i j : PadicAlgCl p)) →
-      ∑ i, v (↑(MvPolynomial.eval (x i) (P i)) : PadicAlgCl p) ≤ (β : ℝ) →
-      ∃ ζ : σ → O,
-        (∀ j, ζ j ^ p ^ h₀ = 1) ∧
-        (∀ j, v ((ζ j - 1 : O) : PadicAlgCl p) ≤ (ρ : ℝ)) ∧
-        ∀ i, v (↑(MvPolynomial.eval (fun j ↦ ζ j - 1) (P i)) : PadicAlgCl p) ≤
-          v (↑(MvPolynomial.eval (x i) (P i)) : PadicAlgCl p) + (ε : ℝ) := by
-  exact exists_roots_eval_le_add s₀ hρ β hε
-
-end TauCeti
-
-namespace Polynomial
-
-open TauCeti
-variable {p : ℕ} [Fact p.Prime]
-
-/-- The harmonic-sum estimate: an integral polynomial with bounded Gauss valuation has a
-primitive root of unity at an admissible level where evaluation at the root minus one loses
-at most `δ` against the Gauss valuation at that level. Both Gauss valuations use the native
-multiplicative API, read additively by `toAdd.ofDual`. -/
-theorem exists_isPrimitiveRoot_padicAlgClRealValuation_eval_le_gaussValuation_add
-    (g : (PadicAlgCl p)[X]) {ρ : ℚ≥0} {h₀ : ℕ} {B δ : ℝ≥0} (hδ : δ < 1)
-    (h_harmonic : B < δ * ∑ h ∈ primePowerRadiusExponents p ρ h₀, ((h : ℝ≥0) + 1)⁻¹) :
-    let v := padicAlgClRealValuation p
-    (∀ i, 0 ≤ v (g.coeff i)) →
-    (g.gaussValuation v.toValuation
-      (.ofAdd (.toDual ((ρ : ℝ) : WithTop ℝ)))).toAdd.ofDual ≤ (B : ℝ) →
-    ∃ h ∈ primePowerRadiusExponents p ρ h₀, ∃ ζ : PadicAlgCl p,
-      IsPrimitiveRoot ζ (p ^ h) ∧ v (g.eval (ζ - 1)) ≤
-        (g.gaussValuation v.toValuation
-          (.ofAdd (.toDual ((primePowerRootRadius p h : ℝ) : WithTop ℝ)))).toAdd.ofDual +
-          (δ : ℝ) := by
-  exact TauCeti.exists_isPrimitiveRoot_eval_le_gauss_add hδ h_harmonic g
-
-end Polynomial

@@ -86,3 +86,13 @@ theorem pow_dvd_totient_pow_succ (ℓ m : ℕ) : ℓ ^ m ∣ (ℓ ^ (m + 1)).tot
     simpa only [pow_succ'] using mul_dvd_mul_left ℓ ih
 
 end TauCeti.Nat
+
+namespace Nat
+
+/-- The totients of the positive powers of a prime are strictly increasing. -/
+theorem strictMono_totient_prime_pow_succ {p : ℕ} (hp : p.Prime) :
+    StrictMono fun k : ℕ ↦ (p ^ (k + 1)).totient := by
+  simp only [totient_prime_pow_succ hp]
+  exact (pow_right_strictMono₀ hp.one_lt).mul_const (Nat.sub_pos_of_lt hp.one_lt)
+
+end Nat

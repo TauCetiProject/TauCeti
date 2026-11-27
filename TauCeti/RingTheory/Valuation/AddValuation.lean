@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.RingTheory.Valuation.Basic
+public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
@@ -21,7 +21,7 @@ formulas, have at least the valuation of `x`. For an additive valuation which is
 the whole ring, such as the valuation of a discrete valuation ring, units have valuation zero and
 valuations increase along divisibility. It also records that an additive valuation taking integer
 values on nonzero elements, such as a discrete valuation normalised at a uniformiser, is infinite
-only at zero.
+only at zero. Membership in the associated valuation subring is nonnegativity.
 
 ## Main results
 
@@ -102,5 +102,12 @@ theorem eq_zero_of_eq_top_of_forall_ne_zero
   exact WithTop.coe_ne_top (hn.symm.trans hx)
 
 end Ring
+
+/-- Membership in the valuation subring is nonnegativity of the additive valuation. -/
+theorem mem_toValuation_valuationSubring_iff {K Γ : Type*} [Field K]
+    [LinearOrderedAddCommGroupWithTop Γ] (v : AddValuation K Γ) (x : K) :
+    x ∈ v.toValuation.valuationSubring ↔ 0 ≤ v x := by
+  rw [Valuation.mem_valuationSubring_iff, toValuation_apply]
+  rfl
 
 end AddValuation

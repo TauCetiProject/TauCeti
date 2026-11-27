@@ -8,13 +8,15 @@ module
 public import TauCeti.RingTheory.Polynomial.GaussValuation.RootCounting
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 import TauCeti.RingTheory.Valuation.Basic
+import TauCeti.Algebra.Order.WithTop.Untop0
 import Mathlib.Algebra.Polynomial.Coeff
 
 /-!
 # Averaging distances from primitive roots of unity
 
-For a real additive valuation normalized at `p`, the primitive `p ^ h`-th roots cannot all be
-very close to a given finite multiset of points. The estimates are independent of the
+For a real additive valuation normalized at `p`, the shifted primitive `p ^ h`-th roots
+`ζ - 1` cannot all be very close to a given finite multiset of points. The estimates do not depend
+on the
 number of points and form the averaging step in polynomial evaluation bounds.
 
 ## Provenance
@@ -151,25 +153,11 @@ theorem exists_isPrimitiveRoot_sum_max_min_sub_le (h : ℕ)
       _ ≤ ∑ η ∈ μ, f η := sum_le_sum fun η hη ↦ hmin η hη
       _ ≤ _ := htotal
   have hcard : 0 < μ.card := card_pos.2 hμ
-  have hfinite : f ζ ≠ ⊤ := by
-    intro ht
-    obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero hcard.ne'
-    rw [hm, succ_nsmul, ht, WithTop.add_top] at H
-    exact (WithTop.not_top_le_coe _ ) H
-  lift f ζ to ℝ using hfinite with y hy
-  norm_cast at H
-  rw [nsmul_eq_mul] at H
   have hμcard : μ.card = Nat.totient (p ^ h) := hζ₀.card_primitiveRoots
   refine ⟨ζ, isPrimitiveRoot_of_mem_primitiveRoots hζ, ?_⟩
-  have Hgoal : f ζ ≤
-      ((R.card : ℝ) * (Nat.totient (p ^ h) : ℝ)⁻¹ * (h + 1) : ℝ) := by
-    rw [← hy]
-    norm_cast
-    rw [← hμcard]
-    apply (mul_le_mul_iff_right₀ (show (0 : ℝ) < μ.card by exact_mod_cast hcard)).1
-    simpa [mul_assoc, mul_comm, mul_left_comm,
-      (Nat.cast_ne_zero.2 hcard.ne' : (μ.card : ℝ) ≠ 0)] using H
-  exact Hgoal
+  have hquot := (WithTop.nsmul_le_coe_iff hcard).1 H
+  rw [hμcard] at hquot
+  simpa only [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using hquot
 
 include hp in
 /-- If the average clipped distance bound is less than one, some primitive root satisfies the
