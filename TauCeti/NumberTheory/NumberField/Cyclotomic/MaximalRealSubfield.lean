@@ -314,28 +314,15 @@ private theorem adjoin_add_inv_eq_top_of_mem [NeZero n] (hζ : IsPrimitiveRoot �
 
 variable [NumberField K]
 
-/-- If `ζ` generates `K = k(μₙ)` and does not lie in `k(ζ + ζ⁻¹)`, then `K` is quadratic over
-`k(ζ + ζ⁻¹)`. -/
-private theorem finrank_adjoin_add_inv_eq_two_of_notMem [NeZero n] (hζ : IsPrimitiveRoot ζ n)
-    (h : ζ ∉ k⟮ζ + ζ⁻¹⟯) : finrank k⟮ζ + ζ⁻¹⟯ K = 2 := by
-  have hgen : k⟮ζ⟯ = ⊤ := adjoin_eq_top_of_algebra _ _
-    (_root_.IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ)
-  refine le_antisymm (TauCeti.IntermediateField.finrank_adjoin_add_inv_le_two hgen) ?_
-  have : Module.Finite k⟮ζ + ζ⁻¹⟯ K := .of_restrictScalars_finite ℚ _ K
-  have hpos : 0 < finrank k⟮ζ + ζ⁻¹⟯ K := finrank_pos
-  have hne : finrank k⟮ζ + ζ⁻¹⟯ K ≠ 1 := fun h1 ↦ h <| by
-    refine IntermediateField.mem_bot_iff_mem.1 ?_
-    rw [bot_eq_top_iff_finrank_eq_one.2 h1]
-    exact mem_top
-  omega
-
 variable [IsTotallyReal k]
 
 /-- **`k(ζₙ)` is quadratic over `k(ζ + ζ⁻¹)`** for `n > 2`, over a totally real base `k`. -/
 theorem finrank_adjoin_add_inv_eq_two (hn : 2 < n) (hζ : IsPrimitiveRoot ζ n) :
     finrank k⟮ζ + ζ⁻¹⟯ K = 2 := by
   have : NeZero n := ⟨by omega⟩
-  exact finrank_adjoin_add_inv_eq_two_of_notMem hζ fun h ↦ hζ.notMem_maximalRealSubfield hn
+  exact (TauCeti.IntermediateField.finrank_adjoin_add_inv_eq_two_iff (adjoin_eq_top_of_algebra _ _
+    (_root_.IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ))).2
+    fun h ↦ hζ.notMem_maximalRealSubfield hn
     (toSubfield_adjoin_add_inv_le_maximalRealSubfield (NeZero.ne n) hζ.pow_eq_one
       ((mem_toSubfield _ _).2 h))
 
@@ -394,7 +381,8 @@ theorem adjoin_adjoin_add_inv_eq_top [NeZero n] (hζ : IsPrimitiveRoot ζ n) {m 
     rw [adjoin_add_inv_eq_top_of_mem hζ h]
     exact mem_top
   have := isSimpleOrder_of_finrank_prime k⟮ζ + ζ⁻¹⟯ K
-    (finrank_adjoin_add_inv_eq_two_of_notMem hζ hζ' ▸ Nat.prime_two)
+    ((TauCeti.IntermediateField.finrank_adjoin_add_inv_eq_two_iff (adjoin_eq_top_of_algebra _ _
+      (_root_.IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ))).2 hζ' ▸ Nat.prime_two)
   refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦
     hη (IntermediateField.mem_bot_iff_mem.1 ?_)
   rw [← hbot]
