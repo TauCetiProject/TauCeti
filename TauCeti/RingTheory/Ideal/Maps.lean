@@ -52,7 +52,8 @@ theorem radical_map_radical {R S F : Type*} [CommSemiring R] [CommSemiring S]
 along `σ'`; compare `Ideal.comap_symm`. -/
 theorem comap_eq_map_of_ringHomInvPair {R S : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
     {σ' : S →+* R} [RingHomInvPair σ σ'] (I : Ideal S) : I.comap σ = I.map σ' :=
-  comap_symm (RingHomInvPair.toRingEquiv σ σ').symm
+  le_antisymm (comap_le_map_of_inverse σ σ' I fun _ ↦ RingHomInvPair.comp_apply_eq)
+    (map_le_comap_of_inverse σ' σ I fun _ ↦ RingHomInvPair.comp_apply_eq₂)
 
 /-- Pullback along a ring equivalence commutes with products of ideals. -/
 @[simp]

@@ -255,7 +255,8 @@ private theorem _root_.LinearEquiv.map_torsion_le {S : Type*} [CommSemiring S] [
   rintro _ ⟨x, hx, rfl⟩
   obtain ⟨a, ha⟩ := (_root_.Submodule.mem_torsion_iff x).mp hx
   have hσa : σ a ∈ S⁰ := by
-    rw [← MulEquivClass.map_nonZeroDivisors (RingHomInvPair.toRingEquiv σ σ')]
+    rw [← RingHomInvPair.toRingEquiv_apply σ σ',
+      ← MulEquivClass.map_nonZeroDivisors (RingHomInvPair.toRingEquiv σ σ')]
     exact Submonoid.mem_map_of_mem _ a.property
   have h := congrArg e ha
   rw [Submonoid.smul_def, e.map_smulₛₗ, map_zero] at h

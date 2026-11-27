@@ -127,6 +127,22 @@ theorem _root_.LinearEquiv.muInvariant_eq_of_comap_verticalPrime
   rw [muInvariant_def, muInvariant_def,
     ← (e.ofSubmodules _ _ e.map_torsion).charDivisor_apply_comap, hσ]
 
+/-- Pullback along an automorphism of `O⟦X⟧` fixing the vertical prime `(ϖ)` fixes the factor
+`ϖ ^ n` of a principal ideal. -/
+private theorem comap_span_C_mul_of_comap_verticalPrime
+    {σ σ' : O⟦X⟧ →+* O⟦X⟧} [RingHomInvPair σ σ']
+    (hσ : PrimeSpectrum.comap σ (verticalPrime O) = verticalPrime O) {ϖ : O} (hϖ : Irreducible ϖ)
+    (n : ℕ) (F : O⟦X⟧) :
+    (Ideal.span {C (ϖ ^ n) * F}).comap σ = Ideal.span {C ϖ ^ n} * (Ideal.span {F}).comap σ := by
+  -- Read `σ` as the ring automorphism `τ`, along which pullback commutes with `*` and `^`.
+  let τ := RingHomInvPair.toRingEquiv σ σ'
+  have hτ : (τ : O⟦X⟧ →+* O⟦X⟧) = σ := RingHom.ext (RingHomInvPair.toRingEquiv_apply σ σ')
+  have hV : (verticalPrime O).asIdeal.comap τ = (verticalPrime O).asIdeal := by
+    rw [← Ideal.comap_coe, hτ, ← PrimeSpectrum.comap_asIdeal, hσ]
+  rw [← hτ, Ideal.comap_coe, Ideal.comap_coe, ← Ideal.span_singleton_mul_span_singleton,
+    Ideal.comap_mul_of_ringEquiv, map_pow, ← Ideal.span_singleton_pow,
+    ← verticalPrime_asIdeal_eq_span hϖ, Ideal.comap_pow_of_ringEquiv, hV]
+
 /-- **The characteristic polynomial under a change of variable.** Let `O` be a complete discrete
 valuation ring, `σ` a ring automorphism of `O⟦X⟧` fixing the vertical prime `(ϖ)`, and `e : N ≃ M`
 a `σ`-semilinear equivalence of `O⟦X⟧`-modules. Then the characteristic polynomials generate ideals
@@ -140,20 +156,11 @@ theorem _root_.LinearEquiv.span_charPoly_eq_comap [IsAdicComplete (maximalIdeal 
   -- Compare the characteristic ideals `(ϖ ^ μ F)` of the torsion submodules, then cancel the
   -- common factor `(ϖ) ^ μ`, which `σ` fixes.
   have h := (e.ofSubmodules _ _ e.map_torsion).charIdeal_eq_comap
-  -- Read `σ` as the ring automorphism `τ`, along which pullback commutes with `*` and `^`.
-  let τ := RingHomInvPair.toRingEquiv σ σ'
-  have hτ : (τ : O⟦X⟧ →+* O⟦X⟧) = σ := rfl
-  have hV : (verticalPrime O).asIdeal.comap τ = (verticalPrime O).asIdeal :=
-    congrArg PrimeSpectrum.asIdeal hσ
   rw [charIdeal_eq_span_C_pow_mul_charPoly (M := torsion O⟦X⟧ N) hϖ torsion_isTorsion,
     charIdeal_eq_span_C_pow_mul_charPoly (M := torsion O⟦X⟧ M) hϖ torsion_isTorsion] at h
   rw [charPoly_torsion, charPoly_torsion, muInvariant_torsion, muInvariant_torsion,
-    e.muInvariant_eq_of_comap_verticalPrime hσ] at h
-  have ha : Ideal.span {C ϖ ^ muInvariant O M} = (verticalPrime O).asIdeal ^ muInvariant O M := by
-    rw [verticalPrime_asIdeal_eq_span hϖ, Ideal.span_singleton_pow]
-  rw [← Ideal.span_singleton_mul_span_singleton, ← Ideal.span_singleton_mul_span_singleton, map_pow,
-    ha, ← hτ, Ideal.comap_coe, Ideal.comap_mul_of_ringEquiv, Ideal.comap_pow_of_ringEquiv, hV,
-    ← ha] at h
+    e.muInvariant_eq_of_comap_verticalPrime hσ, comap_span_C_mul_of_comap_verticalPrime hσ hϖ,
+    ← Ideal.span_singleton_mul_span_singleton, map_pow] at h
   exact (Ideal.span_singleton_mul_right_inj (pow_ne_zero _ (prime_C_iff.mpr hϖ.prime).ne_zero)).mp h
 
 /-- **Invariance of `λ` under a change of variable.** Let `O` be a complete discrete valuation ring,
@@ -181,6 +188,9 @@ theorem _root_.LinearEquiv.lambdaInvariant_eq_of_comap_verticalPrime
 example {σ σ' : O⟦X⟧ →+* O⟦X⟧} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] {P Q : Type}
     [AddCommGroup P] [Module O⟦X⟧ P] [AddCommGroup Q] [Module O⟦X⟧ Q] (e : P ≃ₛₗ[σ] Q) :
     Module.rank O⟦X⟧ P = Module.rank O⟦X⟧ Q :=
-  rank_eq_of_equiv_equiv σ e.toAddEquiv (RingHomInvPair.toRingEquiv σ σ').bijective e.map_smulₛₗ
+  rank_eq_of_equiv_equiv σ e.toAddEquiv
+    (Function.bijective_iff_has_inverse.mpr
+      ⟨σ', fun _ ↦ RingHomInvPair.comp_apply_eq, fun _ ↦ RingHomInvPair.comp_apply_eq₂⟩)
+    e.map_smulₛₗ
 
 end TauCeti.Iwasawa
