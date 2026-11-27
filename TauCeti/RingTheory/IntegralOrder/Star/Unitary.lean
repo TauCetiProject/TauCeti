@@ -87,8 +87,7 @@ theorem unitarySubgroup_isFiniteRelIndex {K : Type*} [Field K] [Algebra R K]
   have hsub : ((inclusion x : Γ) : E) - 1 ∈ Λ := by
     rw [← Subalgebra.coe_one Γ, ← Subalgebra.coe_sub, ← hy]
     exact hrΓ y y.property
-  apply (mem_unitarySubgroup O).mpr
-  change (x.val : E) ∈ Λ
-  simpa [inclusion] using Λ.add_mem hsub Λ.one_mem
+  refine (mem_unitarySubgroup O).2 (mem_toSubalgebra.mp ?_)
+  simpa [inclusion, Λ] using Λ.add_mem hsub Λ.one_mem
 
 end TauCeti.IntegralOrder.StarOrder
