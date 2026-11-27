@@ -112,7 +112,7 @@ theorem setIntegral_exp_I_mul_sum_sub_of_locally_martingale [IsFiniteMeasure P] 
   obtain ⟨Y, hYp, hYM, hYc, hYl, hQp, hQY⟩ :=
     exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (A := fun i j t _ ↦ C i j * (t : ℝ)) hM hQ
-      (fun i j ↦ (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst) hcont
+      (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont
       (fun _ _ ↦ ae_of_all P fun _ _ ↦ rfl)
   have hYv_l := Finset.locally_martingale_sum (Finset.univ : Finset ι)
     (fun i _ ↦ by simpa only [smul_eq_mul] using (hYl i).martingale_smul (v i))
@@ -152,15 +152,15 @@ theorem condExp_exp_I_mul_sum_sub_of_locally_martingale [IsFiniteMeasure P] {ι 
     (v : ι → ℝ) {s t : ℝ≥0} (hst : s ≤ t) :
     P[fun ω ↦ exp (I * ∑ i, v i * (M i t ω - M i s ω)) | ℱ s] =ᵐ[P]
       fun _ ↦ exp (-((∑ i, ∑ j, v i * v j * C i j) * ((t : ℝ) - s) / 2 : ℝ)) := by
-  have hsm : AEMeasurable (fun ω i ↦ M i t ω - M i s ω) P := aemeasurable_pi_iff.2 fun i ↦
-    ((hM i).aestronglyMeasurable_sub (fun _ h ↦ h.stronglyAdapted) s t).aemeasurable
   let e := MeasurableEquiv.toLp 2 (ι → ℝ)
   have hint : Integrable (fun ω ↦ exp (I * ∑ i, v i * (M i t ω - M i s ω))) P := by
-    convert (e.measurable.comp_aemeasurable hsm).integrable_exp_inner_mul_I (e v) using 1
+    convert (e.measurable.comp_aemeasurable (aemeasurable_pi_iff.2 fun i ↦
+      ((hM i).aestronglyMeasurable_sub (fun _ h ↦ h.stronglyAdapted) s t).aemeasurable))
+      |>.integrable_exp_inner_mul_I (e v) using 1
     ext ω; exact (TauCeti.exp_inner_toLp_mul_I (fun i ↦ M i t ω - M i s ω) (e v)).symm
-  refine (TauCeti.MeasureTheory.condExp_ae_eq_const_iff (ℱ.le s) hint _).2 fun A hA _ ↦ ?_
-  rw [Measure.real, Complex.real_smul,
-    setIntegral_exp_I_mul_sum_sub_of_locally_martingale hM hQ hcont v hst hA]
+  exact (TauCeti.MeasureTheory.condExp_ae_eq_const_iff (ℱ.le s) hint _).2 fun A hA _ ↦ by
+    rw [Measure.real, Complex.real_smul,
+      setIntegral_exp_I_mul_sum_sub_of_locally_martingale hM hQ hcont v hst hA]
 
 /-- **Joint increment independence from the past for vector continuous local martingales.**
 If `M : ι → ℝ≥0 → Ω → ℝ` is a family of almost-surely continuous local martingales on `ℱ`
@@ -218,10 +218,9 @@ theorem hasLaw_sub_pi_gaussianReal_of_locally_martingale [IsProbabilityMeasure P
     e.measurable.aemeasurable.map_map_of_aemeasurable hX,
     charFun_map_eq_integral (e.measurable.comp_aemeasurable hX) v]
   simp_rw [e, Function.comp_apply, TauCeti.exp_inner_toLp_mul_I, hset, charFun_gaussianReal,
-    ← exp_sum]
-  congr 1; simp only [mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte,
-    NNReal.coe_mul, NNReal.coe_sub hst, ofReal_zero, zero_mul, zero_sub,
-    Finset.sum_neg_distrib, ← Finset.sum_div]
+    ← exp_sum]; congr 1
+  simp only [mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, NNReal.coe_mul,
+    NNReal.coe_sub hst, ofReal_zero, zero_mul, zero_sub, Finset.sum_neg_distrib, ← Finset.sum_div]
   push_cast; rw [Finset.sum_mul, Finset.sum_div, Finset.sum_div]
   congr 1; exact Finset.sum_congr rfl fun i _ ↦ by ring
 
@@ -272,7 +271,7 @@ theorem iIndepFun_sub_initialValue_of_locally_martingale [IsProbabilityMeasure P
   obtain ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
     exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (A := fun i j t _ ↦ (if i = j then (c i : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun _ _ ↦ (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst) hcont
+      (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont
       (fun _ _ ↦ ae_of_all P fun _ _ ↦ by simp)
   have hYm i t : Measurable (Y i t) :=
     ((hYp i).isStronglyProgressive.stronglyAdapted t).measurable.mono (ℱ.le t) le_rfl
@@ -282,9 +281,8 @@ theorem iIndepFun_sub_initialValue_of_locally_martingale [IsProbabilityMeasure P
   have h0T : (0 : ℝ≥0) ∈ T := Finset.mem_insert_self 0 _
   let e : Fin (T.card - 1 + 1) ≃o T :=
     T.orderIsoOfFin (Nat.sub_add_cancel (Finset.card_pos.2 ⟨0, h0T⟩)).symm
-  let idx (i : S) (t : J i) : Fin (T.card - 1 + 1) :=
-    e.symm ⟨t.val,
-      Finset.mem_insert_of_mem (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, t.property⟩)⟩
+  let idx (i : S) (t : J i) : Fin (T.card - 1 + 1) := e.symm ⟨t.val,
+    Finset.mem_insert_of_mem (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, t.property⟩)⟩
   let g (i : S) (d : Fin (T.card - 1) → ℝ) (t : J i) : ℝ :=
     Fin.cases 0 (fun k ↦ ∑ j ∈ Finset.Iic k, d j) (idx i t)
   convert (iIndepFun_grid_increments hYp hYc hYl hQY S fun _ _ h ↦ e.monotone h).comp g
@@ -316,7 +314,7 @@ theorem iIndepFun_of_locally_martingale [IsProbabilityMeasure P] {ι : Type*} [D
   obtain ⟨Y, _, hYM, hYc, hYl, _, hQY⟩ :=
     exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (A := fun i j t _ ↦ (if i = j then (c i : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun _ _ ↦ (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst) hcont
+      (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont
       (fun i j ↦ (h0 i).mp ((h0 j).mono fun _ h0j h0i _ ↦ by simp [h0i, h0j]))
   exact (iIndepFun_sub_initialValue_of_locally_martingale hYl
     (fun i j ↦ by simpa only [ite_mul, zero_mul] using hQY i j) hYc).process_congr fun i t ↦
@@ -346,7 +344,7 @@ theorem exists_isStronglyPredictable_indist_isBrownianVector_of_locally_martinga
   obtain ⟨W, hWp, hWM, hWc, hWl, _, hQW⟩ :=
     exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (A := fun i j t _ ↦ (if i = j then (1 : ℝ) else 0) * (t : ℝ)) hM hQ
-      (fun _ _ ↦ (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst) hcont
+      (fun _ _ ↦ ℱ.isStronglyPredictable_const_mul_coe _) hcont
       (fun i j ↦ (h0 i).mp ((h0 j).mono fun _ h0j h0i _ ↦ by simp [h0i, h0j]))
   have hW0 i : ∀ᵐ ω ∂P, W i 0 ω = 0 := (h0 i).mp <| (hWM i).mono fun _ heq h0ω ↦ by rw [heq 0, h0ω]
   have hWa i := (hWp i).isStronglyProgressive.stronglyAdapted.adapted
@@ -382,10 +380,10 @@ theorem exists_isStronglyPredictable_indist_pi_isBrownianVector_of_locally_marti
       (∀ s t, s ≤ t → Indep (.comap (fun ω i ↦ W t ω i - W s ω i) inferInstance) (ℱ s) P) := by
   obtain ⟨W, hWp, hWM, hBW, hFB, hind⟩ :=
     exists_isStronglyPredictable_indist_isBrownianVector_of_locally_martingale hM hQ h0 hcont
-  refine ⟨fun t ω i ↦ W i t ω, ?_, ?_, hBW, hFB, hind⟩
-  · exact (@measurable_pi_iff (ℝ≥0 × Ω) ι (fun _ ↦ ℝ) ℱ.predictable _ _ |>.2
-      fun i ↦ (hWp i).measurable).stronglyMeasurable
-  · exact (ae_all_iff.2 hWM).mono fun ω hω t ↦ funext fun i ↦ hω i t
+  exact ⟨fun t ω i ↦ W i t ω,
+    (@measurable_pi_iff (ℝ≥0 × Ω) ι (fun _ ↦ ℝ) ℱ.predictable _ _ |>.2
+      fun i ↦ (hWp i).measurable).stronglyMeasurable,
+    (ae_all_iff.2 hWM).mono fun ω hω t ↦ funext fun i ↦ hω i t, hBW, hFB, hind⟩
 
 /-- **Vector Lévy characterization (law form, started at zero, no literal adaptation).**
 If `M : ι → ℝ≥0 → Ω → ℝ` is a family of almost-surely continuous local martingales on `ℱ` with
@@ -446,12 +444,10 @@ theorem isBrownianVector_and_isFilteredPreBrownianReal_of_locally_martingale
     exists_isStronglyPredictable_indist_isBrownianVector_of_locally_martingale hM hQ h0 hcont
   refine ⟨hBW.congr_indist hWM, fun i ↦ (hFB i).congr (hA i) fun t ↦ (hWM i).mono fun _ hω ↦ hω t,
     fun s t hst ↦ ?_⟩
-  have h1 : @IndepFun Ω (ι → ℝ) Ω mΩ MeasurableSpace.pi (ℱ s)
-      (fun ω i ↦ W i t ω - W i s ω) id P := by
-    simpa only [IndepFun_iff_Indep, @MeasurableSpace.comap_id _ (ℱ s)] using hind s t hst
-  have h2 := @IndepFun.process_congr_left ι Ω mΩ P (fun _ ↦ ℝ) Ω _ (ℱ s)
-    (fun i ω ↦ W i t ω - W i s ω) (fun i ω ↦ M i t ω - M i s ω) id h1
-    (fun i ↦ (hWM i).mono fun _ hω ↦ by simp [hω t, hω s])
-  simpa only [IndepFun_iff_Indep, @MeasurableSpace.comap_id _ (ℱ s)] using h2
+  simpa only [IndepFun_iff_Indep, @MeasurableSpace.comap_id _ (ℱ s)] using
+    @IndepFun.process_congr_left ι Ω mΩ P (fun _ ↦ ℝ) Ω _ (ℱ s)
+      (fun i ω ↦ W i t ω - W i s ω) (fun i ω ↦ M i t ω - M i s ω) id
+      (by simpa only [IndepFun_iff_Indep, @MeasurableSpace.comap_id _ (ℱ s)] using hind s t hst)
+      (fun i ↦ (hWM i).mono fun _ hω ↦ by simp [hω t, hω s])
 
 end TauCeti.Probability

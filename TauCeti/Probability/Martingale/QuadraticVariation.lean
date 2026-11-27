@@ -73,8 +73,7 @@ theorem setIntegral_sq_sub_eq_quadraticSum [SigmaFiniteFiltration μ ℱ] {Y : �
     ← integral_finsetSum Finset.univ
       (f := fun (i : Fin n) ω ↦ Y (g i.succ) ω ^ 2 - Y (g i.castSucc) ω ^ 2)
       fun i _ ↦ hsub_int i]
-  congr 1; ext ω
-  rw [Fin.sum_univ_succ_sub_castSucc (fun i ↦ Y (g i) ω ^ 2), hg0, hgl]
+  congr 1; ext ω; rw [Fin.sum_univ_succ_sub_castSucc (fun i ↦ Y (g i) ω ^ 2), hg0, hgl]
 
 /-- For a real `L²` martingale `Y` whose compensated square `Y ^ 2 - A` is a martingale with
 `c`-Lipschitz increments `A v - A u ≤ c * (v - u)`, multiplying `(Y v - Y u) ^ 2` by any bounded
@@ -99,18 +98,14 @@ theorem integral_mul_increment_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω 
       have hmul : Integrable (fun ω ↦ (Y v ω - Y u ω) * Y u ω) μ := by
         convert (hYv.sub hYu).integrable_mul hYu
       simpa only [smul_eq_mul, mul_assoc] using (hmul.mul_bdd hW_asm hW_nbd).integrableOn)
-  have hmul_eq (ω : Ω) :
-      ((Y v ω - Y u ω) ^ 2 - (A v ω - A u ω)) • W ω =
-        W ω * (Y v ω - Y u ω) ^ 2 - W ω * (A v ω - A u ω) := by
-    simp only [smul_eq_mul]; ring
+  have hmul_eq (ω : Ω) : ((Y v ω - Y u ω) ^ 2 - (A v ω - A u ω)) • W ω =
+      W ω * (Y v ω - Y u ω) ^ 2 - W ω * (A v ω - A u ω) := by simp only [smul_eq_mul]; ring
   simp_rw [Measure.restrict_univ, hmul_eq] at h0
   rw [integral_sub (hd.bdd_mul hW_asm hW_nbd) (ha.bdd_mul hW_asm hW_nbd), sub_eq_zero] at h0
   rw [h0, ← integral_const_mul]
   exact integral_mono_ae (ha.bdd_mul hW_asm hW_nbd)
     (((integrable_const C).mono' hW_asm hW_nbd).const_mul _) ((hA_step u v huv).mono fun ω hω ↦ by
-      dsimp only
-      rw [mul_comm (c * _)]
-      exact mul_le_mul_of_nonneg_left hω.2 (hW_nn ω))
+      dsimp only; rw [mul_comm (c * _)]; exact mul_le_mul_of_nonneg_left hω.2 (hW_nn ω))
 
 /-- Unweighted second-moment bound for the increment of a real `L²` martingale `Y` whose
 compensated square `Y ^ 2 - A` is a martingale with `c`-Lipschitz increments. -/
@@ -128,9 +123,8 @@ private lemma integral_quadraticSum_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → �
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
     {n : ℕ} {g : Fin (n + 1) → ℝ≥0} (hg : Monotone g) (hmem : ∀ k, MemLp (Y (g k)) 2 μ) :
     ∫ ω, quadraticSum Y g ω ∂μ ≤ c * ((g (Fin.last n) : ℝ) - g 0) * μ.real Set.univ := by
-  have hd_le (i : Fin n) :
-      ∫ ω, (Y (g i.succ) ω - Y (g i.castSucc) ω) ^ 2 ∂μ ≤
-        c * ((g i.succ : ℝ) - g i.castSucc) * μ.real Set.univ :=
+  have hd_le (i : Fin n) : ∫ ω, (Y (g i.succ) ω - Y (g i.castSucc) ω) ^ 2 ∂μ ≤
+      c * ((g i.succ : ℝ) - g i.castSucc) * μ.real Set.univ :=
     hY.integral_increment_sq_le hQ hA_step (hg (Fin.castSucc_le_succ i))
       (hmem i.castSucc) (hmem i.succ)
   rw [quadraticSum_def, integral_finsetSum _ fun j _ ↦ by
@@ -138,20 +132,22 @@ private lemma integral_quadraticSum_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → �
   refine (Finset.sum_le_sum fun j _ ↦ hd_le j).trans_eq ?_
   rw [← Finset.sum_mul, ← Finset.mul_sum, Fin.sum_univ_succ_sub_castSucc (fun k ↦ (g k : ℝ))]
 
+private lemma castSucc_last_le_last {α : Type*} [Preorder α] {n : ℕ}
+    {g : Fin (n + 2) → α} (hg : Monotone g) :
+    g (Fin.last n).castSucc ≤ g (Fin.last (n + 1)) := by
+  simpa [Fin.succ_last] using hg (Fin.castSucc_le_succ (Fin.last n))
+
 private lemma integral_quadraticSum_mul_last_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ}
     {R c : ℝ} (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
-    (hc : 0 ≤ c) {n : ℕ} {g : Fin (n + 2) → ℝ≥0} (hg : Monotone g)
-    (hYR : ∀ k, ∀ᵐ ω ∂μ, |Y (g k) ω| ≤ R)
-    (hmem : ∀ k, MemLp (Y (g k)) 2 μ) :
+    (hc : 0 ≤ c) {n : ℕ} {g : Fin (n + 2) → ℝ≥0} (hg' : Monotone (g ∘ Fin.castSucc))
+    (hstep_le : g (Fin.last n).castSucc ≤ g (Fin.last (n + 1)))
+    (hYR : ∀ k, ∀ᵐ ω ∂μ, |Y (g k) ω| ≤ R) (hmem : ∀ k, MemLp (Y (g k)) 2 μ) :
     ∫ ω, quadraticSum Y (g ∘ Fin.castSucc) ω *
         (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2 ∂μ ≤
       c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) *
         (c * ((g (Fin.last n).castSucc : ℝ) - g 0) * μ.real Set.univ) := by
   let g' : Fin (n + 1) → ℝ≥0 := g ∘ Fin.castSucc
-  have hg' : Monotone g' := fun _ _ hij ↦ hg (Fin.castSucc_le_castSucc_iff.mpr hij)
-  have hstep_le : (g (Fin.last n).castSucc : ℝ≥0) ≤ g (Fin.last (n + 1)) := by
-    simpa [Fin.succ_last] using hg (Fin.castSucc_le_succ (Fin.last n))
   refine (hY.integral_mul_increment_sq_le hQ hA_step hstep_le
     (hmem (Fin.last n).castSucc) (hmem (Fin.last (n + 1)))
     (hY.stronglyAdapted.stronglyMeasurable_quadraticSum hg')
@@ -165,27 +161,22 @@ private lemma integral_quadraticSum_mul_last_sq_le [IsFiniteMeasure μ] {Y A : �
 private lemma integral_last_increment_pow_four_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ}
     {R c : ℝ} (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
-    {n : ℕ} {g : Fin (n + 2) → ℝ≥0} (hg : Monotone g)
-    (hYR : ∀ k, ∀ᵐ ω ∂μ, |Y (g k) ω| ≤ R)
-    (hmem : ∀ k, MemLp (Y (g k)) 2 μ) :
+    {n : ℕ} {g : Fin (n + 2) → ℝ≥0}
+    (hstep_le : g (Fin.last n).castSucc ≤ g (Fin.last (n + 1)))
+    (hYR : ∀ k, ∀ᵐ ω ∂μ, |Y (g k) ω| ≤ R) (hmem : ∀ k, MemLp (Y (g k)) 2 μ)
+    (hd_lp : MemLp (fun ω ↦ (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2)
+      2 μ) :
     ∫ ω, ((Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2) ^ 2 ∂μ ≤
       4 * R ^ 2 * (c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) *
         μ.real Set.univ) := by
   let d (ω : Ω) : ℝ := (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2
   have hd_bd : ∀ᵐ ω ∂μ, d ω ≤ (2 * R) ^ 2 :=
     ae_sq_sub_le (hYR (Fin.last (n + 1))) (hYR (Fin.last n).castSucc)
-  have hd_lp : MemLp d 2 μ :=
-    memLp_sub_sq_of_bound 2 (hmem (Fin.last (n + 1))).aestronglyMeasurable
-      (hmem (Fin.last n).castSucc).aestronglyMeasurable
-      (hYR (Fin.last (n + 1))) (hYR (Fin.last n).castSucc)
-  have hstep_le : (g (Fin.last n).castSucc : ℝ≥0) ≤ g (Fin.last (n + 1)) := by
-    simpa [Fin.succ_last] using hg (Fin.castSucc_le_succ (Fin.last n))
   have hd_last : ∫ ω, d ω ∂μ ≤
       c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) * μ.real Set.univ :=
     hY.integral_increment_sq_le hQ hA_step hstep_le
       (hmem (Fin.last n).castSucc) (hmem (Fin.last (n + 1)))
-  have h4R : (2 * R) ^ 2 = 4 * R ^ 2 := by ring
-  rw [← h4R]
+  rw [show (4 * R ^ 2 : ℝ) = (2 * R) ^ 2 by ring]
   refine ((integral_mono_ae hd_lp.integrable_sq
     ((hd_lp.integrable one_le_two).const_mul ((2 * R) ^ 2)) (hd_bd.mono fun _ hω ↦ by
       dsimp only; rw [sq]; exact mul_le_mul_of_nonneg_right hω (sq_nonneg _))).trans_eq
@@ -209,40 +200,33 @@ theorem integral_quadraticSum_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω �
     -- Split `S_{n+1} = S_n + d` and control `E[S_n^2]`, `E[S_n d]`, and `E[d^2]`.
     let g' : Fin (n + 1) → ℝ≥0 := g ∘ Fin.castSucc
     have hg' : Monotone g' := fun _ _ hij ↦ hg (Fin.castSucc_le_castSucc_iff.mpr hij)
+    have hstep_le := castSucc_last_le_last hg
     have hmem (k : Fin (n + 2)) : MemLp (Y (g k)) 2 μ :=
       MemLp.of_bound ((hY.stronglyAdapted (g k)).mono (ℱ.le _)).aestronglyMeasurable R
         ((hYR k).mono fun _ hω ↦ by rwa [Real.norm_eq_abs])
     let d (ω : Ω) : ℝ := (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2
-    have hd_lp : MemLp d 2 μ :=
-      memLp_sub_sq_of_bound 2 (hmem (Fin.last (n + 1))).aestronglyMeasurable
-        (hmem (Fin.last n).castSucc).aestronglyMeasurable
-        (hYR (Fin.last (n + 1))) (hYR (Fin.last n).castSucc)
-    have hS'_lp : MemLp (quadraticSum Y g') 2 μ :=
-      memLp_quadraticSum_of_bound 2 g' (fun k ↦ (hmem k.castSucc).aestronglyMeasurable)
-        (fun k ↦ hYR k.castSucc)
+    have hd_lp : MemLp d 2 μ := memLp_sub_sq_of_bound 2
+      (hmem _).aestronglyMeasurable (hmem _).aestronglyMeasurable (hYR _) (hYR _)
+    have hS'_lp : MemLp (quadraticSum Y g') 2 μ := memLp_quadraticSum_of_bound 2 g'
+      (fun k ↦ (hmem k.castSucc).aestronglyMeasurable) (fun k ↦ hYR k.castSucc)
     have ih' := ih hg' fun k ↦ hYR k.castSucc
-    have hcross := integral_quadraticSum_mul_last_sq_le hY hQ hA_step hc hg hYR hmem
-    have hquart := integral_last_increment_pow_four_le hY hQ hA_step hg hYR hmem
-    have hS_sq (ω : Ω) : quadraticSum Y g ω ^ 2 =
-        quadraticSum Y g' ω ^ 2 + 2 * (quadraticSum Y g' ω * d ω) + d ω ^ 2 := by
-      rw [quadraticSum_castSucc_add Y g ω]; ring
+    have hcross := integral_quadraticSum_mul_last_sq_le hY hQ hA_step hc hg' hstep_le hYR hmem
+    have hquart := integral_last_increment_pow_four_le hY hQ hA_step hstep_le hYR hmem hd_lp
+    have hS_sq (ω : Ω) : quadraticSum Y g ω ^ 2 = quadraticSum Y g' ω ^ 2 +
+        2 * (quadraticSum Y g' ω * d ω) + d ω ^ 2 := by rw [quadraticSum_castSucc_add Y g ω]; ring
+    have h2S : Integrable (fun ω ↦ 2 * (quadraticSum Y g' ω * d ω)) μ :=
+      (hS'_lp.integrable_mul hd_lp).const_mul 2
     simp_rw [hS_sq]
     rw [integral_add (f := fun ω ↦ quadraticSum Y g' ω ^ 2 + 2 * (quadraticSum Y g' ω * d ω))
-        (hS'_lp.integrable_sq.add ((hS'_lp.integrable_mul hd_lp).const_mul 2))
-        hd_lp.integrable_sq,
-      integral_add (g := fun ω ↦ 2 * (quadraticSum Y g' ω * d ω)) hS'_lp.integrable_sq
-        ((hS'_lp.integrable_mul hd_lp).const_mul 2),
-      integral_const_mul]
+        (hS'_lp.integrable_sq.add h2S) hd_lp.integrable_sq,
+      integral_add hS'_lp.integrable_sq h2S, integral_const_mul]
     simp only [g', Function.comp_apply, Fin.castSucc_zero] at ih'
-    have hstep_le : (g (Fin.last n).castSucc : ℝ≥0) ≤ g (Fin.last (n + 1)) := by
-      simpa [Fin.succ_last] using hg (Fin.castSucc_le_succ (Fin.last n))
     have hL0 : 0 ≤ c * ((g (Fin.last n).castSucc : ℝ) - g 0) :=
       mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 (hg (Fin.zero_le _))))
     have hδ0 : 0 ≤ c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) :=
       mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hstep_le))
-    have hsplit : (g (Fin.last (n + 1)) : ℝ) - g 0 =
-        ((g (Fin.last n).castSucc : ℝ) - g 0) +
-          ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) := by ring
+    have hsplit : (g (Fin.last (n + 1)) : ℝ) - g 0 = ((g (Fin.last n).castSucc : ℝ) - g 0) +
+        ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) := by ring
     have hμ0 : 0 ≤ μ.real Set.univ := ENNReal.toReal_nonneg
     nlinarith [ih', hcross, hquart, hsplit, mul_nonneg (mul_nonneg hL0 hδ0) hμ0,
       mul_nonneg (sq_nonneg (c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc))) hμ0]

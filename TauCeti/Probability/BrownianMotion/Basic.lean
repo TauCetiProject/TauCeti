@@ -82,8 +82,8 @@ theorem IsPreBrownianReal.const_mul_add_const_mul_of_indepFun {B₁ B₂ : ℝ�
         gaussianReal_add_gaussianReal_of_indepFun (hind.comp
           (measurable_const.mul (measurable_pi_apply t))
           (measurable_const.mul (measurable_pi_apply t))) h1 h2⟩
-  · let Δ (c : Bool) (k : Fin n) (ω : Ω) : ℝ :=
-      _root_.cond c (B₂ (g k.succ) ω - B₂ (g k.castSucc) ω) (B₁ (g k.succ) ω - B₁ (g k.castSucc) ω)
+  · let Δ (c : Bool) (k : Fin n) (ω : Ω) : ℝ := _root_.cond c
+      (B₂ (g k.succ) ω - B₂ (g k.castSucc) ω) (B₁ (g k.succ) ω - B₁ (g k.castSucc) ω)
     have hm : Measurable (fun (f : ℝ≥0 → ℝ) (k : Fin n) ↦ f (g k.succ) - f (g k.castSucc)) :=
       measurable_pi_iff.2 fun _ ↦ (measurable_pi_apply _).sub (measurable_pi_apply _)
     have hbool : iIndepFun (fun c ω k ↦ Δ c k ω) P := (iIndepFun_iff _ _ _).2 fun s f hf ↦ by
@@ -107,7 +107,7 @@ theorem IsBrownianReal.const_mul_add_const_mul_of_indepFun {B₁ B₂ : ℝ≥0 
     (hind : IndepFun (fun ω t ↦ B₁ t ω) (fun ω t ↦ B₂ t ω) P) {a b : ℝ} (hab : a ^ 2 + b ^ 2 = 1) :
     IsBrownianReal (fun t ω ↦ a * B₁ t ω + b * B₂ t ω) P :=
   ⟨hB₁.toIsPreBrownianReal.const_mul_add_const_mul_of_indepFun hB₂.toIsPreBrownianReal hind hab,
-    hB₁.cont.mp (hB₂.cont.mono fun _ h₂ h₁ ↦
+    (hB₁.cont.mp <| hB₂.cont.mono fun _ h₂ h₁ ↦
       (continuous_const.mul h₁).add (continuous_const.mul h₂))⟩
 
 end ProbabilityTheory

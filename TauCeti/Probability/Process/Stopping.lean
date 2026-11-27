@@ -117,8 +117,7 @@ theorem MeasureTheory.stoppedProcess_indicator_path {ι Ω E : Type*} [LinearOrd
     [Zero E] (X : ι → Ω → E) (s : Set Ω) (τ : Ω → WithTop ι) (ω : Ω) [Decidable (ω ∈ s)] :
     (fun t ↦ MeasureTheory.stoppedProcess (fun u ↦ s.indicator (X u)) τ t ω) =
       if ω ∈ s then (fun t ↦ MeasureTheory.stoppedProcess X τ t ω) else 0 := by
-  ext t
-  by_cases h : ω ∈ s <;> simp [MeasureTheory.stoppedProcess_indicator_comm, h]
+  ext t; by_cases h : ω ∈ s <;> simp [MeasureTheory.stoppedProcess_indicator_comm, h]
 
 /-- Stopping preserves continuity of a path, without any measurability or stopping-time
 assumption on the random time. At an infinite stopping time the path is unchanged. -/
@@ -224,9 +223,7 @@ theorem stoppedProcess_indicator_pos_smul {R ι Ω E : Type*} [LinearOrder ι] [
     [Zero E] [SMulZeroClass R E] (a : R) (X : ι → Ω → E) (τ : Ω → WithTop ι) :
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ a • X t ω)) τ =
       fun t ω ↦ a • stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω := by
-  ext t ω
-  simp only [stoppedProcess_indicator_pos_apply]
-  split_ifs <;> simp
+  ext t ω; simp only [stoppedProcess_indicator_pos_apply]; split_ifs <;> simp
 
 /-- Pointwise addition commutes with stopping on `{⊥ < τ}`. -/
 @[simp]
@@ -235,9 +232,7 @@ theorem stoppedProcess_indicator_pos_add {ι Ω E : Type*} [LinearOrder ι] [Ord
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω + Y t ω)) τ =
       fun t ω ↦ stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω +
         stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (Y t)) τ t ω := by
-  ext t ω
-  simp only [stoppedProcess_indicator_pos_apply]
-  split_ifs <;> simp
+  ext t ω; simp only [stoppedProcess_indicator_pos_apply]; split_ifs <;> simp
 
 /-- Pointwise subtraction commutes with stopping on `{⊥ < τ}`. -/
 @[simp]
@@ -246,9 +241,7 @@ theorem stoppedProcess_indicator_pos_sub {ι Ω E : Type*} [LinearOrder ι] [Ord
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω - Y t ω)) τ =
       fun t ω ↦ stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω -
         stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (Y t)) τ t ω := by
-  ext t ω
-  simp only [stoppedProcess_indicator_pos_apply]
-  split_ifs <;> simp
+  ext t ω; simp only [stoppedProcess_indicator_pos_apply]; split_ifs <;> simp
 
 /-- Pointwise multiplication commutes with stopping on `{⊥ < τ}`. -/
 @[simp]
@@ -257,9 +250,7 @@ theorem stoppedProcess_indicator_pos_mul {ι Ω E : Type*} [LinearOrder ι] [Ord
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun ω ↦ X t ω * Y t ω)) τ =
       fun t ω ↦ stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ t ω *
         stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (Y t)) τ t ω := by
-  ext t ω
-  simp only [stoppedProcess_indicator_pos_apply]
-  split_ifs <;> simp
+  ext t ω; simp only [stoppedProcess_indicator_pos_apply]; split_ifs <;> simp
 
 /-- Squaring minus another process commutes with stopping on `{⊥ < τ}`. -/
 theorem stoppedProcess_indicator_pos_sq_sub {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
@@ -278,8 +269,7 @@ theorem stoppedProcess_indicator_pos_of_map_bot {ι Ω E : Type*} [LinearOrder �
   rw [stoppedProcess_indicator_pos_apply]
   split_ifs with h
   · rfl
-  · rw [not_lt, le_bot_iff] at h
-    rw [h, min_eq_right bot_le, WithTop.untopA_bot, hf]
+  · rw [not_lt, le_bot_iff] at h; rw [h, min_eq_right bot_le, WithTop.untopA_bot, hf]
 
 /-- At the initial time, stopping leaves any process unchanged. -/
 @[simp]
@@ -322,13 +312,10 @@ theorem stoppedProcess_indicator_pos_stoppedProcess_of_le {ι Ω E : Type*} [Lin
       else 0 := by
   by_cases hω : (⊥ : WithTop ι) < τ ω
   · have hσω : (⊥ : WithTop ι) < σ ω := lt_of_lt_of_le hω (hle ω)
-    have hmin_coe :
-        ((min (t : WithTop ι) (τ ω)).untopA : WithTop ι) = min (t : WithTop ι) (τ ω) := by
-      rw [WithTop.untopA_eq_untop (ne_top_of_le_ne_top WithTop.coe_ne_top (min_le_left _ _)),
-        WithTop.coe_untop]
     have hmin_le : min ((min (t : WithTop ι) (τ ω)).untopA : WithTop ι) (σ ω) =
         min (t : WithTop ι) (τ ω) := by
-      rw [hmin_coe, min_eq_left ((min_le_right _ _).trans (hle ω))]
+      rw [WithTop.untopA_eq_untop (ne_top_of_le_ne_top WithTop.coe_ne_top (min_le_left _ _)),
+        WithTop.coe_untop, min_eq_left ((min_le_right _ _).trans (hle ω))]
     simp only [stoppedProcess_indicator_pos_apply, hω, ↓reduceIte, hσω, hmin_le]
   · simp [stoppedProcess_indicator_pos_apply, hω]
 
@@ -339,8 +326,7 @@ theorem stoppedProcess_indicator_pos_of_le {ι Ω E : Type*} [LinearOrder ι] [O
     stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ =
       stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator
         (stoppedProcess (fun u ↦ {ω | (⊥ : WithTop ι) < σ ω}.indicator (X u)) σ t)) τ := by
-  ext t ω
-  by_cases hω : (⊥ : WithTop ι) < τ ω
+  ext t ω; by_cases hω : (⊥ : WithTop ι) < τ ω
   · rw [stoppedProcess_indicator_pos_stoppedProcess_of_le X hle t ω]
     simp only [stoppedProcess_indicator_pos_apply, hω, ↓reduceIte]
   · simp [stoppedProcess_indicator_pos_apply, hω]
@@ -375,8 +361,7 @@ theorem IsStronglyProgressive.stoppedProcess_indicator_pos
   have hpos : MeasurableSet[ℱ T] {ω | (⊥ : WithTop ι) < τ ω} :=
     ℱ.mono bot_le _ (hτ.measurableSet_gt ⊥)
   convert ((hX.stoppedProcess hτ) T).indicator (MeasurableSet.univ.prod hpos) using 1
-  ext ⟨t, ω⟩
-  rw [stoppedProcess_indicator_comm]
+  ext ⟨t, ω⟩; rw [stoppedProcess_indicator_comm]
   by_cases hω : (⊥ : WithTop ι) < τ ω <;> simp [hω]
 
 open scoped NNReal
@@ -396,9 +381,8 @@ theorem stoppedProcess_indicator_linear {Ω : Type*} (c : ℝ) (τ : Ω → With
 theorem integrable_untopA_const_min {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
     [IsFiniteMeasure P] {τ : Ω → WithTop ℝ≥0} (hτ : AEMeasurable τ P) (T : ℝ≥0) :
     Integrable (fun ω ↦ ((min (T : WithTop ℝ≥0) (τ ω)).untopA : ℝ)) P :=
-  Integrable.of_bound
-    ((measurable_subtypeVal.comp
-      (measurable_const.min hτ.measurable_mk).untopA).aestronglyMeasurable.congr
+  Integrable.of_bound ((measurable_subtypeVal.comp
+    (measurable_const.min hτ.measurable_mk).untopA).aestronglyMeasurable.congr
       (hτ.ae_eq_mk.symm.fun_comp fun x : WithTop ℝ≥0 ↦ ((min (T : WithTop ℝ≥0) x).untopA : ℝ))) T
     (.of_forall fun ω ↦ by
       rw [Real.norm_eq_abs, abs_of_nonneg (NNReal.coe_nonneg _), NNReal.coe_le_coe]

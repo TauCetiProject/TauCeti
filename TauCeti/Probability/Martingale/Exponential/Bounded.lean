@@ -68,18 +68,14 @@ private lemma exists_norm_expRem_le (α R : ℝ) {L : ℝ} (hL : 0 ≤ L) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {D x a : ℝ}, |x| ≤ 2 * R → |x| ≤ D → 0 ≤ a → a ≤ L →
       ‖expRem α x a‖ ≤ K * (D * x ^ 2 + D * a + a ^ 2) := by
   let Ke := Real.exp (2 * |α| * R + α ^ 2 / 2 * L)
-  let c₃ := |α| ^ 3 / 2
-  let c₄ := |α| ^ 4 / 8
-  let c₁ := 4 * |α| ^ 3 * Ke
-  let c₂ := 4 * (α ^ 2 / 2) ^ 3 * L * Ke
+  let c₃ := |α| ^ 3 / 2; let c₄ := |α| ^ 4 / 8
+  let c₁ := 4 * |α| ^ 3 * Ke; let c₂ := 4 * (α ^ 2 / 2) ^ 3 * L * Ke
   refine ⟨c₁ + c₂ + c₃ + c₄, by positivity, fun {D x a} hxR hxD ha0 haL ↦ ?_⟩
   let w : ℂ := I * α * x + ((α ^ 2 / 2 * a : ℝ) : ℂ)
-  let u := |α| * |x|
-  let v := α ^ 2 / 2 * a
+  let u := |α| * |x|; let v := α ^ 2 / 2 * a
   have hw : ‖w‖ ≤ u + v := (norm_add_le _ _).trans_eq <| by simp [u, v, ha0]
   have huv : 0 ≤ u + v := by positivity
-  have hrem : ‖exp w - ∑ j ∈ Finset.range 3, w ^ j / j.factorial‖ ≤
-      4 * (u ^ 3 + v ^ 3) * Ke :=
+  have hrem : ‖exp w - ∑ j ∈ Finset.range 3, w ^ j / j.factorial‖ ≤ 4 * (u ^ 3 + v ^ 3) * Ke :=
     (Complex.norm_exp_sub_sum_le_norm_mul_exp w 3).trans <| (mul_le_mul
       (pow_le_pow_left₀ (norm_nonneg _) hw 3) (Real.exp_le_exp.2 (hw.trans (by
         dsimp only [u, v]; nlinarith [abs_nonneg α, sq_nonneg α]))) (Real.exp_pos _).le
@@ -91,7 +87,7 @@ private lemma exists_norm_expRem_le (α R : ℝ) {L : ℝ} (hL : 0 ≤ L) :
   have hexp : expRem α x a = (exp w - ∑ j ∈ Finset.range 3, w ^ j / j.factorial) +
       (I * ((α ^ 3 / 2 * x * a : ℝ) : ℂ) + ((α ^ 4 / 8 * a ^ 2 : ℝ) : ℂ)) := by
     simp only [Finset.sum_range_succ, Finset.sum_range_zero, Nat.factorial, expRem, w]
-    push_cast; ring_nf; simp [I_sq]; ring
+    push_cast; linear_combination ((α * x : ℂ) ^ 2 / 2) * I_sq
   rw [hexp]
   have hD0 : 0 ≤ D := (abs_nonneg x).trans hxD
   have hx3 : |x| ^ 3 ≤ D * x ^ 2 := by rw [pow_succ, sq_abs, mul_comm]; gcongr
@@ -125,30 +121,23 @@ private lemma exists_ae_norm_sum_expRem_le {X A : ℝ≥0 → Ω → ℝ} {R c :
       ‖∑ k : Fin (m + 1),
         remTerm X A α (uniformGridFin s t m k.castSucc) (uniformGridFin s t m k.succ) ω‖ ≤
       Real.exp (α ^ 2 / 2 * (c * (t : ℝ))) * K * remBound X c s t m ω := by
-  let L := c * ((t : ℝ) - s)
-  let Mz := Real.exp (α ^ 2 / 2 * (c * (t : ℝ)))
+  let L := c * ((t : ℝ) - s); let Mz := Real.exp (α ^ 2 / 2 * (c * (t : ℝ)))
   have hL : 0 ≤ L := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hst))
   obtain ⟨K, hK0, hK⟩ := exists_norm_expRem_le α R hL
   refine ⟨K, hK0, fun m ↦ ?_⟩
   let g := uniformGridFin s t m
   filter_upwards [ae_all_iff.2 fun k : Fin (m + 1) ↦
-      (ae_norm_sub_le (f := X (g k.succ)) (g := X (g k.castSucc)) (R₁ := R) (R₂ := R)
-        ((hXR _).mono fun _ h ↦ by rwa [Real.norm_eq_abs])
-        ((hXR _).mono fun _ h ↦ by rwa [Real.norm_eq_abs])).mono fun _ h ↦ by
-        simpa only [Real.norm_eq_abs, ← two_mul] using h,
+      ae_abs_sub_le_two_mul (hXR (g k.succ)) (hXR (g k.castSucc)),
     ae_all_iff.2 fun k : Fin (m + 1) ↦
       (hA_step _ _ (uniformGridFin_monotone s t m (Fin.castSucc_le_succ k))).mono fun _ hω ↦ by
-        rw [coe_uniformGridFin_succ_sub_castSucc hst m k, ← mul_div_assoc] at hω
-        exact hω,
+        rw [coe_uniformGridFin_succ_sub_castSucc hst m k, ← mul_div_assoc] at hω; exact hω,
     ae_all_iff.2 fun k : Fin (m + 1) ↦
       (ae_norm_expProc_le (X := X) hA0 hA_step α (g k.castSucc)).mono fun _ hω ↦
         hω.trans (Real.exp_le_exp.2 <| mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
           (NNReal.coe_le_coe.2 (uniformGridFin_mem_Icc hst m k.castSucc).2) hc) (by positivity))]
     with ω hXω hAω hZω
-  let D := maxInc X s t m ω
-  have hD0 := maxInc_nonneg X s t m ω
-  have hMz : 0 ≤ Mz := (Real.exp_pos _).le
-  have hmne : (m : ℝ) + 1 ≠ 0 := by positivity
+  let D := maxInc X s t m ω; have hD0 := maxInc_nonneg X s t m ω
+  have hMz : 0 ≤ Mz := (Real.exp_pos _).le; have hmne : (m : ℝ) + 1 ≠ 0 := by positivity
   refine (norm_sum_le _ _).trans <| (Finset.sum_le_sum (g := fun k : Fin (m + 1) ↦ Mz * K *
       (D * (X (g k.succ) ω - X (g k.castSucc) ω) ^ 2 +
         D * (L / (m + 1 : ℝ)) + (L / (m + 1 : ℝ)) ^ 2)) fun k hk ↦ ?_).trans_eq ?_
@@ -159,14 +148,10 @@ private lemma exists_ae_norm_sum_expRem_le {X A : ℝ≥0 → Ω → ℝ} {R c :
       (h2.trans (div_le_self hL (by linarith [Nat.cast_nonneg (α := ℝ) m])))
     exact ((norm_mul _ _).trans_le (mul_le_mul (hZω k) hrem (norm_nonneg _) hMz)).trans
       (by rw [mul_assoc]; gcongr)
-  · rw [← Finset.mul_sum]
-    congr 1
+  · rw [← Finset.mul_sum]; congr 1
     simp only [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
       nsmul_eq_mul, ← Finset.mul_sum]
-    push_cast
-    rw [remBound_eq, quadraticSum_def]
-    dsimp only [L, g, D]
-    field_simp [hmne]
+    push_cast; rw [remBound_eq, quadraticSum_def]; dsimp only [L, g, D]; field_simp [hmne]
 
 variable [IsFiniteMeasure P] {ℱ : Filtration ℝ≥0 mΩ}
 
@@ -203,10 +188,8 @@ private lemma setIntegral_expProc_step (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0) (α : 
       ((α ^ 2 / 2 : ℝ) : ℂ) * (((X v ω - X u ω) ^ 2 - (A v ω - A u ω)) • expProc X A α u ω) := by
     have hexp_mul : expProc X A α u ω *
         exp (I * α * ((X v ω - X u ω : ℝ) : ℂ) + ((α ^ 2 / 2 * (A v ω - A u ω) : ℝ) : ℂ)) =
-        expProc X A α v ω := by
-      rw [← Complex.exp_add]; congr 1; push_cast; ring
-    dsimp only [remTerm, expRem]
-    rw [mul_sub, mul_sub, mul_one, hexp_mul]
+        expProc X A α v ω := by rw [← Complex.exp_add]; congr 1; push_cast; ring
+    dsimp only [remTerm, expRem]; rw [mul_sub, mul_sub, mul_one, hexp_mul]
     simp [Complex.real_smul]; ring
   have hZs1 : IntegrableOn (fun ω ↦ (expProc X A α v ω - expProc X A α u ω) -
       (I * (α : ℂ)) * ((X v ω - X u ω) • expProc X A α u ω)) E P := hZs.sub h1
@@ -229,10 +212,8 @@ private lemma integral_maxInc_remBound_le (hc : 0 ≤ c) {s t : ℝ≥0} (hst : 
       (√((4 * R ^ 2 * L + 2 * L ^ 2) * P.real univ) + L * √(P.real univ)) *
         √(∫ ω, maxInc X s t m ω ^ 2 ∂P) + L ^ 2 * P.real univ / (m + 1 : ℝ) := by
   intro L
-  let g := uniformGridFin s t m
-  let D := maxInc X s t m
+  let g := uniformGridFin s t m; let D := maxInc X s t m; let S := quadraticSum X g
   have hXa := hX.stronglyAdapted
-  let S := quadraticSum X g
   have hL : 0 ≤ L := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hst))
   have hD_lp := memLp_maxInc 2 s t m (fun k ↦ ((hXa (g k)).mono (ℱ.le _)).aestronglyMeasurable)
     (fun _ ↦ hXR _)
@@ -249,8 +230,7 @@ private lemma integral_maxInc_remBound_le (hc : 0 ≤ c) {s t : ℝ≥0} (hst : 
   have hD1 : ∫ ω, D ω ∂P ≤ √(∫ ω, D ω ^ 2 ∂P) * √(P.real univ) := by
     simpa only [Measure.restrict_univ] using (le_abs_self _).trans
       (abs_setIntegral_le_sqrt_integral_sq_mul_sqrt_measureReal hD_lp (measure_ne_top P univ))
-  have hDS := hD_lp.integrable_mul hS_lp
-  have hLD := (hD_lp.integrable one_le_two).const_mul L
+  have hDS := hD_lp.integrable_mul hS_lp; have hLD := (hD_lp.integrable one_le_two).const_mul L
   have hterm : P.real univ * (L ^ 2 / (m + 1 : ℝ)) = L ^ 2 * P.real univ / (m + 1 : ℝ) := by ring
   have hrem_fn : remBound X c s t m = fun ω ↦ D ω * S ω + L * D ω + L ^ 2 / (m + 1 : ℝ) :=
     funext (remBound_eq X c s t m)
@@ -265,8 +245,7 @@ private lemma exists_norm_setIntegral_expProc_sub_le (hc : 0 ≤ c) (hA0 : ∀�
     {E : Set Ω} (hE : MeasurableSet[ℱ s] E) :
     ∃ C₁ C₂ : ℝ, ∀ m : ℕ, ‖∫ ω in E, (expProc X A α t ω - expProc X A α s ω) ∂P‖ ≤
       C₁ * √(∫ ω, maxInc X s t m ω ^ 2 ∂P) + C₂ / (m + 1 : ℝ) := by
-  let L := c * ((t : ℝ) - s)
-  let Mz := Real.exp (α ^ 2 / 2 * (c * (t : ℝ)))
+  let L := c * ((t : ℝ) - s); let Mz := Real.exp (α ^ 2 / 2 * (c * (t : ℝ)))
   obtain ⟨K, hK0, hK⟩ := exists_ae_norm_sum_expRem_le hXR hA0 hA_step hc α hst
   refine ⟨Mz * K * (√((4 * R ^ 2 * L + 2 * L ^ 2) * P.real univ) + L * √(P.real univ)),
     Mz * K * (L ^ 2 * P.real univ), fun m ↦ ?_⟩
@@ -282,20 +261,15 @@ private lemma exists_norm_setIntegral_expProc_sub_le (hc : 0 ≤ c) (hA0 : ∀�
       ← integral_finsetSum Finset.univ
         (f := fun (k : Fin (m + 1)) ω ↦ expProc X A α (g k.succ) ω - expProc X A α (g k.castSucc) ω)
         fun _ _ ↦ ((hZ_int _).sub (hZ_int _)).integrableOn]
-    congr 1; ext ω
-    rw [Fin.sum_univ_succ_sub_castSucc (fun k : Fin (m + 2) ↦ expProc X A α (g k) ω)]
-    dsimp only [g]
-    rw [uniformGridFin_zero, uniformGridFin_last hst]
+    congr 1; ext ω; rw [Fin.sum_univ_succ_sub_castSucc (fun k ↦ expProc X A α (g k) ω)]
+    dsimp only [g]; rw [uniformGridFin_zero, uniformGridFin_last hst]
   rw [htele]
   refine ((norm_integral_le_integral_norm _).trans ((integral_mono_ae
     (integrable_finsetSum _ fun k _ ↦ (hstepk k).1).norm (hf_int.const_mul (Mz * K)).integrableOn
     (ae_restrict_of_ae (hK m))).trans (setIntegral_le_integral (hf_int.const_mul (Mz * K))
       (ae_of_all P fun ω ↦ by
-        dsimp only [Pi.zero_apply]
-        have hinc_nn := maxInc_nonneg X s t m ω
-        have hqs_nn := quadraticSum_nonneg X g ω
-        rw [remBound_eq]
-        positivity)))).trans ?_
+        have hinc_nn := maxInc_nonneg X s t m ω; have hqs_nn := quadraticSum_nonneg X g ω
+        dsimp only [Pi.zero_apply]; rw [remBound_eq]; positivity)))).trans ?_
   rw [integral_const_mul]
   exact (mul_le_mul_of_nonneg_left hf_le (by positivity)).trans_eq (by ring)
 

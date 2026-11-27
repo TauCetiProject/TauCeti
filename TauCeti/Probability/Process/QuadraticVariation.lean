@@ -61,9 +61,7 @@ theorem quadraticSum_def {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω → ℝ)
 /-- A grid with no intervals has zero quadratic sum. -/
 @[simp]
 theorem quadraticSum_zero {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (t : Fin 1 → ℝ≥0) :
-    quadraticSum B t = 0 := by
-  ext ω
-  simp [quadraticSum_def]
+    quadraticSum B t = 0 := by ext ω; simp [quadraticSum_def]
 
 /-- Quadratic sums are nonnegative, independently of the order of the grid. -/
 theorem quadraticSum_nonneg {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω → ℝ)
@@ -82,24 +80,23 @@ theorem quadraticSum_castSucc_add {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω →
 
 /-- Under a finite measure, the quadratic sum of a process whose grid values are measurable and
 almost surely bounded by `R` lies in `Lᵖ` for every `p`. -/
-theorem memLp_quadraticSum_of_bound {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+theorem memLp_quadraticSum_of_bound {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsFiniteMeasure μ] {X : ℝ≥0 → Ω → ℝ} {R : ℝ} (p : ℝ≥0∞) {n : ℕ}
     (t : Fin (n + 1) → ℝ≥0) (hX : ∀ k, AEStronglyMeasurable (X (t k)) μ)
     (hXR : ∀ k, ∀ᵐ ω ∂μ, |X (t k) ω| ≤ R) :
-    MemLp (quadraticSum X t) p μ := by
-  rw [quadraticSum_def]
-  exact memLp_finsetSum _ fun k _ ↦
+    MemLp (quadraticSum X t) p μ :=
+  quadraticSum_def X t ▸ memLp_finsetSum _ fun k _ ↦
     memLp_sub_sq_of_bound p (hX k.succ) (hX k.castSucc) (hXR k.succ) (hXR k.castSucc)
 
 /-- If the grid values of `X` are almost surely bounded in absolute value by `R`, then the
 quadratic sum along `t : Fin (n + 1) → ℝ≥0` is almost surely at most `n * (2 * R) ^ 2`. -/
-theorem ae_quadraticSum_le_of_bound {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+theorem ae_quadraticSum_le_of_bound {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
     {X : ℝ≥0 → Ω → ℝ} {R : ℝ} {n : ℕ} (t : Fin (n + 1) → ℝ≥0)
     (hXR : ∀ k, ∀ᵐ ω ∂μ, |X (t k) ω| ≤ R) :
-    ∀ᵐ ω ∂μ, quadraticSum X t ω ≤ (n : ℝ) * (2 * R) ^ 2 := by
-  rw [quadraticSum_def]
-  refine (ae_all_iff.2 fun k : Fin n ↦ ae_sq_sub_le (hXR k.succ) (hXR k.castSucc)).mono
-    fun ω hω ↦ (Finset.sum_le_sum fun k _ ↦ hω k).trans_eq (by simp)
+    ∀ᵐ ω ∂μ, quadraticSum X t ω ≤ (n : ℝ) * (2 * R) ^ 2 :=
+  quadraticSum_def X t ▸
+    (ae_all_iff.2 fun k : Fin n ↦ ae_sq_sub_le (hXR k.succ) (hXR k.castSucc)).mono
+      fun _ hω ↦ (Finset.sum_le_sum fun k _ ↦ hω k).trans_eq (by simp)
 
 end TauCeti.Probability
 
@@ -108,9 +105,8 @@ strongly measurable at the final grid date. -/
 theorem MeasureTheory.StronglyAdapted.stronglyMeasurable_quadraticSum {Ω : Type*}
     {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {Y : ℝ≥0 → Ω → ℝ}
     (hY : StronglyAdapted ℱ Y) {n : ℕ} {g : Fin (n + 1) → ℝ≥0} (hg : Monotone g) :
-    StronglyMeasurable[ℱ (g (Fin.last n))] (TauCeti.Probability.quadraticSum Y g) := by
-  rw [TauCeti.Probability.quadraticSum_def]
-  exact Finset.stronglyMeasurable_fun_sum _ fun j _ ↦
+    StronglyMeasurable[ℱ (g (Fin.last n))] (TauCeti.Probability.quadraticSum Y g) :=
+  TauCeti.Probability.quadraticSum_def Y g ▸ Finset.stronglyMeasurable_fun_sum _ fun j _ ↦
     (((hY (g j.succ)).mono (ℱ.mono (hg (Fin.le_last _)))).sub
       ((hY (g j.castSucc)).mono (ℱ.mono (hg (Fin.le_last _))))).pow 2
 

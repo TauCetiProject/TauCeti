@@ -400,11 +400,9 @@ theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}
     [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
     [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
-    (ℱ : Filtration ι m) : Measurable[ℱ.predictable] (Prod.fst : ι × Ω → ι) := by
-  apply measurable_of_Ioi
-  intro t
-  simpa only [Set.prod_univ] using
-    measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := t) MeasurableSet.univ
+    (ℱ : Filtration ι m) : Measurable[ℱ.predictable] (Prod.fst : ι × Ω → ι) :=
+  measurable_of_Ioi fun t ↦ by
+    simpa only [Set.prod_univ] using measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := t) .univ
 
 /-- A strongly measurable function of calendar time alone defines a strongly predictable
 process. -/
@@ -424,15 +422,19 @@ theorem Continuous.isStronglyPredictable_fst {ι Ω E : Type*} {m : MeasurableSp
     IsStronglyPredictable ℱ (fun t _ ↦ f t) :=
   hf.stronglyMeasurable.isStronglyPredictable_fst
 
+/-- A linear deterministic drift `t ↦ c * (t : ℝ)` defines a strongly predictable process. -/
+theorem MeasureTheory.Filtration.isStronglyPredictable_const_mul_coe {Ω : Type*}
+    {m : MeasurableSpace Ω} (ℱ : Filtration ℝ≥0 m) (c : ℝ) :
+    IsStronglyPredictable ℱ (fun t _ ↦ c * (t : ℝ)) :=
+  (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst
+
 /-- The sample-space projection is measurable from the predictable sigma-algebra to `ℱ ⊥`. -/
 theorem MeasureTheory.Filtration.measurable_snd_bot_predictable {ι Ω : Type*}
     {m : MeasurableSpace Ω} [PartialOrder ι] [OrderBot ι] (ℱ : Filtration ι m) :
     @Measurable (ι × Ω) Ω ℱ.predictable (ℱ ⊥) Prod.snd := by
   intro A hA
-  have hpre : (Prod.snd : ι × Ω → Ω) ⁻¹' A = ({⊥} ×ˢ A) ∪ (Ioi ⊥ ×ˢ A) := by
-    ext ⟨t, ω⟩
-    by_cases ht : t = ⊥ <;> simp [ht, bot_lt_iff_ne_bot]
-  rw [hpre]
+  rw [show (Prod.snd : ι × Ω → Ω) ⁻¹' A = ({⊥} ×ˢ A) ∪ (Ioi ⊥ ×ˢ A) from by
+    ext ⟨t, ω⟩; by_cases ht : t = ⊥ <;> simp [ht, bot_lt_iff_ne_bot]]
   exact (MeasurableSpace.measurableSet_generateFrom (Or.inl ⟨A, hA, rfl⟩)).union
     (MeasurableSpace.measurableSet_generateFrom (Or.inr ⟨⊥, A, hA, rfl⟩))
 

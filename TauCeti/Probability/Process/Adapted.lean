@@ -28,10 +28,7 @@ theorem of_sub {ι Ω E : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω} {ℱ :
     [AddCommGroup E] [TopologicalSpace E] [ContinuousSub E]
     {Y A : ι → Ω → E} (hY : StronglyAdapted ℱ Y)
     (hQ : StronglyAdapted ℱ (fun u ω ↦ Y u ω - A u ω)) :
-    StronglyAdapted ℱ A := fun u ↦ by
-  convert (hY u).sub (hQ u) using 1
-  ext ω
-  simp
+    StronglyAdapted ℱ A := fun u ↦ by convert (hY u).sub (hQ u) using 1; ext ω; simp
 
 /-- If `X` and `X ^ 2 - A` are strongly adapted real processes, then `A` is strongly adapted. -/
 theorem of_sq_sub {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ}

@@ -62,11 +62,8 @@ theorem ae_maxInc_le {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
     (hXR : ∀ k : Fin (m + 2), ∀ᵐ ω ∂P, |X (uniformGridFin s t m k) ω| ≤ R) :
     ∀ᵐ ω ∂P, maxInc X s t m ω ≤ 2 * R :=
   (ae_all_iff.2 fun k : Fin (m + 1) ↦
-    ae_norm_sub_le (f := X (uniformGridFin s t m k.succ))
-      (g := X (uniformGridFin s t m k.castSucc)) (R₁ := R) (R₂ := R)
-      ((hXR k.succ).mono fun _ h ↦ by rwa [Real.norm_eq_abs])
-      ((hXR k.castSucc).mono fun _ h ↦ by rwa [Real.norm_eq_abs])).mono fun _ h ↦
-    Finset.sup'_le _ _ fun k _ ↦ by simpa only [Real.norm_eq_abs, two_mul] using h k
+    ae_abs_sub_le_two_mul (hXR k.succ) (hXR k.castSucc)).mono fun _ h ↦
+      Finset.sup'_le _ _ fun k _ ↦ h k
 
 /-- Under a finite measure, the maximal uniform-grid increment of a process whose grid values are
 a.e. strongly measurable and almost surely bounded by `R` lies in `Lᵖ` for every `p`. -/
@@ -80,13 +77,9 @@ theorem memLp_maxInc {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω} [IsF
     ext ω; simp [maxInc_apply]
   rw [hm_eq]
   refine memLp_finset_sup' Finset.univ_nonempty fun k _ ↦ MemLp.of_bound
-    (continuous_abs.comp_aestronglyMeasurable ((hX k.succ).sub (hX k.castSucc))) (2 * R) ?_
-  filter_upwards [ae_norm_sub_le (f := X (uniformGridFin s t m k.succ))
-    (g := X (uniformGridFin s t m k.castSucc)) (R₁ := R) (R₂ := R)
-    ((hXR k.succ).mono fun _ h ↦ by rwa [Real.norm_eq_abs])
-    ((hXR k.castSucc).mono fun _ h ↦ by rwa [Real.norm_eq_abs])] with ω hω
-  rw [Real.norm_eq_abs, abs_abs]
-  simpa only [Real.norm_eq_abs, two_mul] using hω
+    (continuous_abs.comp_aestronglyMeasurable ((hX k.succ).sub (hX k.castSucc))) (2 * R)
+    ((ae_abs_sub_le_two_mul (hXR k.succ) (hXR k.castSucc)).mono fun _ hω ↦ by
+      rwa [Real.norm_eq_abs, abs_abs])
 
 /-- For a real process almost surely continuous and pointwise bounded on `[s, t]` (`s ≤ t`) under a
 finite measure, the second moment of its maximal uniform-grid increment tends to `0`. -/
@@ -100,14 +93,11 @@ theorem tendsto_integral_maxInc_sq {Ω : Type*} {_ : MeasurableSpace Ω} {P : Me
     (F := fun m ω ↦ maxInc X s t m ω ^ 2) (f := fun _ ↦ (0 : ℝ)) (fun _ ↦ (2 * R) ^ 2)
     (fun m ↦ (memLp_maxInc 2 s t m (fun k ↦ hX _ (uniformGridFin_mem_Icc hst m k))
       (fun k ↦ hXR _ (uniformGridFin_mem_Icc hst m k))).aestronglyMeasurable.pow 2)
-    (integrable_const _)
-    (fun m ↦ (ae_maxInc_le s t m (fun k ↦ hXR _ (uniformGridFin_mem_Icc hst m k))).mono
-      fun ω h ↦ by
+    (integrable_const _) (fun m ↦ (ae_maxInc_le s t m
+      (fun k ↦ hXR _ (uniformGridFin_mem_Icc hst m k))).mono fun ω h ↦ by
         rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
         exact pow_le_pow_left₀ (maxInc_nonneg X s t m ω) h 2)
-    (hcont.mono fun ω hω ↦ by
-      rw [← zero_pow two_ne_zero]
-      simpa only [maxInc_apply, Real.dist_eq] using
-        (tendsto_sup'_dist_uniformGridFin hst hω).pow 2)
+    (hcont.mono fun ω hω ↦ by rw [← zero_pow two_ne_zero]; simpa only [maxInc_apply,
+      Real.dist_eq] using (tendsto_sup'_dist_uniformGridFin hst hω).pow 2)
 
 end TauCeti.Probability

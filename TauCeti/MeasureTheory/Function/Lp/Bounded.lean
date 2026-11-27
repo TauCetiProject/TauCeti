@@ -11,9 +11,9 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 # Almost-sure difference bounds and `Lᵖ` membership of bounded squared differences
 
 Two functions almost surely bounded in norm have an almost surely bounded difference
-(`MeasureTheory.ae_norm_sub_le`) and pointwise scalar product (`MeasureTheory.ae_norm_smul_le`),
-yielding an almost-sure bound on squared differences of real functions
-(`MeasureTheory.ae_sq_sub_le`) and `Lᵖ` membership on finite measure spaces
+(`MeasureTheory.ae_norm_sub_le`, `MeasureTheory.ae_abs_sub_le_two_mul`) and pointwise scalar
+product (`MeasureTheory.ae_norm_smul_le`), yielding an almost-sure bound on squared differences of
+real functions (`MeasureTheory.ae_sq_sub_le`) and `Lᵖ` membership on finite measure spaces
 (`MeasureTheory.memLp_sub_sq_of_bound`).
 -/
 
@@ -31,6 +31,15 @@ theorem ae_norm_sub_le {Ω E : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
     ∀ᵐ ω ∂μ, ‖f ω - g ω‖ ≤ R₁ + R₂ :=
   hf.mp <| hg.mono fun _ h2 h1 ↦ (norm_sub_le _ _).trans (add_le_add h1 h2)
 
+/-- If two real functions are almost surely bounded in absolute value by `R`, then their
+difference is almost surely bounded in absolute value by `2 * R`. -/
+theorem ae_abs_sub_le_two_mul {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    {f g : Ω → ℝ} {R : ℝ} (hf : ∀ᵐ ω ∂μ, |f ω| ≤ R) (hg : ∀ᵐ ω ∂μ, |g ω| ≤ R) :
+    ∀ᵐ ω ∂μ, |f ω - g ω| ≤ 2 * R := by
+  simpa only [Real.norm_eq_abs, ← two_mul] using
+    ae_norm_sub_le (f := f) (g := g) (R₁ := R) (R₂ := R)
+      (hf.mono fun _ h ↦ by rwa [Real.norm_eq_abs]) (hg.mono fun _ h ↦ by rwa [Real.norm_eq_abs])
+
 /-- If two functions are almost surely bounded in norm by `R₁` and `R₂`, then their pointwise
 scalar product is almost surely bounded in norm by `max R₁ 0 * max R₂ 0`. -/
 theorem ae_norm_smul_le {Ω 𝕜 E : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
@@ -47,12 +56,7 @@ difference is almost surely bounded by `(2 * R) ^ 2`. -/
 theorem ae_sq_sub_le {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
     {f g : Ω → ℝ} {R : ℝ} (hf : ∀ᵐ ω ∂μ, |f ω| ≤ R) (hg : ∀ᵐ ω ∂μ, |g ω| ≤ R) :
     ∀ᵐ ω ∂μ, (f ω - g ω) ^ 2 ≤ (2 * R) ^ 2 :=
-  (ae_norm_sub_le (f := f) (g := g) (R₁ := R) (R₂ := R)
-      (hf.mono fun _ h ↦ by rwa [Real.norm_eq_abs])
-      (hg.mono fun _ h ↦ by rwa [Real.norm_eq_abs])).mono fun _ hω ↦ by
-    rw [Real.norm_eq_abs, ← two_mul] at hω
-    rw [← sq_abs]
-    gcongr
+  (ae_abs_sub_le_two_mul hf hg).mono fun _ hω ↦ by rw [← sq_abs]; gcongr
 
 /-- Under a finite measure, the squared difference of two almost-surely bounded measurable real
 functions lies in `Lᵖ` for every `p`. -/
@@ -61,8 +65,7 @@ theorem memLp_sub_sq_of_bound {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measur
     (hf_m : AEStronglyMeasurable f μ) (hg_m : AEStronglyMeasurable g μ)
     (hf_bd : ∀ᵐ ω ∂μ, |f ω| ≤ R) (hg_bd : ∀ᵐ ω ∂μ, |g ω| ≤ R) :
     MemLp (fun ω ↦ (f ω - g ω) ^ 2) p μ :=
-  MemLp.of_bound ((hf_m.sub hg_m).pow 2) ((2 * R) ^ 2)
-    ((ae_sq_sub_le hf_bd hg_bd).mono fun _ hω ↦ by
-      rwa [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)])
+  MemLp.of_bound ((hf_m.sub hg_m).pow 2) ((2 * R) ^ 2) ((ae_sq_sub_le hf_bd hg_bd).mono fun _ hω ↦
+    by rwa [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)])
 
 end MeasureTheory

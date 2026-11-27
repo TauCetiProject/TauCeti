@@ -107,8 +107,7 @@ theorem indep_comap_of_setIntegral_exp_inner_mul_I [IsZeroOrProbabilityMeasure P
   have hφ (t : E) : charFun (P.map X) t = φ t := by
     simpa [charFun_map_eq_integral hX t] using h t Set.univ MeasurableSet.univ
   exact (indep_comap_iff_forall_setIntegral_exp_inner_mul_I hm hX).2 fun t A hA ↦ by
-    rw [hφ t]
-    exact h t A hA
+    rw [hφ t]; exact h t A hA
 
 /-- A random variable in a complete second-countable real inner product space is independent
 of a sub-sigma-algebra `m` if and only if its conditional characteristic function given `m`
@@ -116,10 +115,9 @@ almost surely equals its unconditional characteristic function. -/
 theorem indep_comap_iff_forall_condExp_exp_inner_mul_I [IsZeroOrProbabilityMeasure P] (hm : m ≤ mΩ)
     {X : Ω → E} (hX : AEMeasurable X P) : Indep (.comap X inferInstance) m P ↔
       ∀ t : E, P[fun ω ↦ exp ((⟪X ω, t⟫ : ℂ) * I) | m] =ᵐ[P] fun _ ↦ charFun (P.map X) t := by
-  rw [indep_comap_iff_forall_setIntegral_exp_inner_mul_I hm hX]
-  refine forall_congr' fun t ↦ ?_
-  rw [TauCeti.MeasureTheory.condExp_ae_eq_const_iff hm (hX.integrable_exp_inner_mul_I t)]
-  simp only [Measure.real, Complex.real_smul, measure_lt_top, true_implies]
+  simp only [indep_comap_iff_forall_setIntegral_exp_inner_mul_I hm hX,
+    TauCeti.MeasureTheory.condExp_ae_eq_const_iff hm (hX.integrable_exp_inner_mul_I _),
+    Measure.real, Complex.real_smul, measure_lt_top, true_implies]
 
 /-- If the conditional characteristic function of `X` given `m` is almost surely equal to a
 deterministic function `φ`, then `X` is independent of `m`. -/

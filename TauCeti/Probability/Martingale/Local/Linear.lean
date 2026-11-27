@@ -68,10 +68,8 @@ theorem martingale_add {X Y : ℝ≥0 → Ω → E}
     hYp hYc (hY.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
     (fun _ ↦ min_le_right _ _)
   convert hXn.add hYn using 1
-  ext t ω
-  have hadd := stoppedProcess_indicator_pos_add X Y ((hX.localSeq ⊓ hY.localSeq) n)
-  rw [bot_eq_zero] at hadd
-  exact congrFun (congrFun hadd t) ω
+  ext t ω; have hadd := stoppedProcess_indicator_pos_add X Y ((hX.localSeq ⊓ hY.localSeq) n)
+  rw [bot_eq_zero] at hadd; exact congrFun (congrFun hadd t) ω
 
 /-- The difference of two strongly progressive, almost-surely right-continuous native local
 martingales on a finite measure space is a native local martingale. -/
@@ -113,9 +111,8 @@ theorem Finset.locally_martingale_sum {κ Ω E : Type*} {mΩ : MeasurableSpace �
         (fun k hk ↦ hrc k (Finset.mem_insert_of_mem hk))
       have hap := hprog a (Finset.mem_insert_self a s)
       have hac := hrc a (Finset.mem_insert_self a s)
-      have hal := hloc a (Finset.mem_insert_self a s)
       simp_rw [Finset.sum_insert ha]
       exact ⟨fun T ↦ (hap T).add (hsp T),
         hac.mp (hsc.mono fun _ hs' ha' t ↦ (ha' t).add (hs' t)),
-        hal.martingale_add hsl hap hsp hac hsc⟩
+        (hloc a (Finset.mem_insert_self a s)).martingale_add hsl hap hsp hac hsc⟩
   exact hmain.2.2

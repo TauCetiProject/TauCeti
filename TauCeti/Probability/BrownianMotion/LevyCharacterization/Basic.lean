@@ -130,11 +130,9 @@ theorem exists_isStronglyPredictable_indist_sub_initialValue_isFilteredPreBrowni
   have hFW : IsFilteredPreBrownianReal ℱ (fun t ω ↦ Y t ω - Y 0 ω) P :=
     isFilteredPreBrownianReal_sub_initialValue hYl hQY hYc
       hYp.isStronglyProgressive.stronglyAdapted.adapted
-  have hWc : ∀ᵐ ω ∂P, Continuous (fun t ↦ Y t ω - Y 0 ω) :=
-    hYc.mono fun _ h ↦ h.sub continuous_const
   exact ⟨Y 0, fun t ω ↦ Y t ω - Y 0 ω, hYp.stronglyAdapted 0, hWp,
     hYM.mono fun _ hω t ↦ by simp [hω t], hYM.mono fun _ hω t ↦ by simp [hω t, hω 0],
-    ⟨hFW.toIsPreBrownianReal, hWc⟩, hFW⟩
+    ⟨hFW.toIsPreBrownianReal, hYc.mono fun _ h ↦ h.sub continuous_const⟩, hFW⟩
 
 /-- **Lévy's characterization (law form, arbitrary start, no literal adaptation).**
 If `M` is an almost-surely continuous real local martingale on a probability space and
@@ -143,10 +141,10 @@ motion. -/
 theorem isBrownianReal_sub_initialValue [IsProbabilityMeasure P] {M : ℝ≥0 → Ω → ℝ}
     (hM : Locally (fun Y ↦ Martingale Y ℱ P) ℱ M P)
     (hQ : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ M t ω ^ 2 - M 0 ω ^ 2 - (t : ℝ)) P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (M · ω)) : IsBrownianReal (fun t ω ↦ M t ω - M 0 ω) P := by
-  obtain ⟨_, W, _, _, _, hWM, hBW, _⟩ :=
+    (hcont : ∀ᵐ ω ∂P, Continuous (M · ω)) : IsBrownianReal (fun t ω ↦ M t ω - M 0 ω) P :=
+  let ⟨_, _, _, _, _, hWM, hBW, _⟩ :=
     exists_isStronglyPredictable_indist_sub_initialValue_isFilteredPreBrownianReal hM hQ hcont
-  exact ⟨hBW.toIsPreBrownianReal.congr fun t ↦ hWM.mono fun _ hω ↦ hω t,
+  ⟨hBW.toIsPreBrownianReal.congr fun t ↦ hWM.mono fun _ hω ↦ hω t,
     hcont.mono fun _ hω ↦ hω.sub continuous_const⟩
 
 /-- **Predictable Brownian version under bare native locality.**

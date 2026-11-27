@@ -67,11 +67,9 @@ theorem exists_isStronglyPredictable_indist_locally_martingale_of_ae_isLeftConti
     ∃ Y : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ Y ∧ Y ≡ᵐ[P] X ∧
       Locally (fun U ↦ Martingale U ℱ P) ℱ Y P := by
   obtain ⟨Z, hZ, hZX⟩ := hX.exists_stronglyAdapted_ae_eq fun _ h ↦ h.stronglyAdapted
-  have hcZ : ∀ᵐ ω ∂P, IsLeftContinuous (fun t ↦ Z t ω) := by
-    filter_upwards [hc, hZX] with ω hω heq
-    simpa only [funext heq] using hω
-  obtain ⟨Y, hY, hYZ⟩ :=
-    hZ.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous hcZ
+  have hcZ : ∀ᵐ ω ∂P, IsLeftContinuous (fun t ↦ Z t ω) :=
+    hc.mp (hZX.mono fun _ heq hω ↦ by simpa only [funext heq] using hω)
+  obtain ⟨Y, hY, hYZ⟩ := hZ.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous hcZ
   have hYX : Y ≡ᵐ[P] X := hYZ.trans hZX
   exact ⟨Y, hY, hYX, hY.isStronglyProgressive.locally_martingale_of_indist hX hYX.symm⟩
 
@@ -110,11 +108,8 @@ theorem TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initial
   choose Y hYp hYc hYM hYl using fun i ↦
     (hM i).exists_isStronglyPredictable_indist_locally_martingale_of_ae_continuous (hcont i)
   have hQp i j : IsStronglyPredictable ℱ
-      (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω - A i j t ω) := by
-    have hmul_sub : IsStronglyPredictable ℱ
-        (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω) := by
-      simpa only [bot_eq_zero] using ((hYp i).mul (hYp j)).sub_initialValue
-    exact StronglyMeasurable.sub hmul_sub (hA i j)
+      (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω - A i j t ω) :=
+    StronglyMeasurable.sub (NNReal.bot_eq_zero ▸ ((hYp i).mul (hYp j)).sub_initialValue) (hA i j)
   exact ⟨Y, hYp, hYM, hYc, hYl, hQp, fun i j ↦
     (hQp i j).isStronglyProgressive.locally_martingale_of_indist (hQ i j) <|
       (hYM i).mp <| (hYM j).mp <| (hQM i j).mono fun _ hq hj hi t ↦ by
@@ -134,13 +129,13 @@ theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_sq_sub_ini
     ∃ Y : ℝ≥0 → Ω → ℝ, IsStronglyPredictable ℱ Y ∧ Y ≡ᵐ[P] M ∧ (∀ᵐ ω ∂P, Continuous (Y · ω)) ∧
       Locally (fun U ↦ Martingale U ℱ P) ℱ Y P ∧
       IsStronglyPredictable ℱ (fun t ω ↦ Y t ω ^ 2 - Y 0 ω ^ 2 - A t ω) ∧
-      Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦ Y t ω ^ 2 - Y 0 ω ^ 2 - A t ω) P := by
-  obtain ⟨Y, hYp, hYM, hYc, hYl, hQp, hQY⟩ :=
+      Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦ Y t ω ^ 2 - Y 0 ω ^ 2 - A t ω) P :=
+  let ⟨Y, hYp, hYM, hYc, hYl, hQp, hQY⟩ :=
     TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initialValue_sub
       (ι := Unit) (M := fun _ ↦ M) (A := fun _ _ ↦ A) (Q := fun _ _ ↦ Q)
       (fun _ ↦ hM) (fun _ _ ↦ hQ) (fun _ _ ↦ hA) (fun _ ↦ hcont)
       (fun _ _ ↦ by simpa only [sq] using hQM)
-  exact ⟨Y (), hYp (), hYM (), hYc (), hYl (), by simpa only [sq] using hQp () (),
+  ⟨Y (), hYp (), hYM (), hYc (), hYl (), by simpa only [sq] using hQp () (),
     by simpa only [sq] using hQY () ()⟩
 
 /-- An almost-surely continuous real native local martingale `M` on a finite measure space whose
@@ -166,18 +161,16 @@ theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_centered_s
   have hNp : IsStronglyPredictable ℱ (fun t ω ↦ Y t ω - Y 0 ω) := by
     simpa only [bot_eq_zero] using hYp.sub_initialValue
   have hNAp : IsStronglyPredictable ℱ (fun t ω ↦ (Y t ω - Y 0 ω) ^ 2 - A t ω) := by
-    simp_rw [sq]; exact StronglyMeasurable.sub (hNp.mul hNp) hA
+    simp_rw [sq]; exact (hNp.mul hNp).sub hA
   refine ⟨fun t ω ↦ Y t ω - Y 0 ω, hNp, fun _ ↦ sub_self _,
     hYM.mono fun _ hω t ↦ by simp [hω t, hω 0], hYc.mono fun _ h ↦ h.sub continuous_const,
     hYl.martingale_sub_initialValue, hNAp, ?_⟩
   have h2Y0' : StronglyMeasurable[ℱ 0] (fun ω ↦ 2 * Y 0 ω) :=
     stronglyMeasurable_const.mul (hYp.stronglyAdapted 0)
-  have h2Y0 : StronglyMeasurable[ℱ ⊥] (fun ω ↦ 2 * Y 0 ω) := by
-    simpa only [← bot_eq_zero] using h2Y0'
   convert hQY.martingale_sub (by simpa only [smul_eq_mul, bot_eq_zero] using
       hYl.martingale_sub_initialValue.martingale_smul_initial h2Y0') hQp.isStronglyProgressive
-    (h2Y0.isStronglyPredictable_snd.mul hNp).isStronglyProgressive
+    ((NNReal.bot_eq_zero ▸ h2Y0').isStronglyPredictable_snd.mul hNp).isStronglyProgressive
     (hYc.mp (hAc.mono fun _ hAω hYω t ↦
       (((hYω.pow 2).sub continuous_const).isRightContinuous t).sub (hAω t)))
     (hYc.mono fun _ h ↦ (by fun_prop : Continuous _).isRightContinuous) using 1
-  ext t ω; ring
+  ext t ω; simp only [NNReal.bot_eq_zero]; ring
