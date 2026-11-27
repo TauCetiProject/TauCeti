@@ -53,30 +53,27 @@ open Complex hiding exp continuous_exp
 
 namespace Complex
 
-/-- Multiplying `Complex.Gamma` by a function `w` analytic at `-n` scales the residue at `-n` by
-`w (-n)`. -/
-theorem residue_Gamma_mul_neg_nat (n : ℕ) {w : ℂ → ℂ} (hw : AnalyticAt ℂ w (-(n : ℂ))) :
-    TauCeti.Contour.residue (fun s ↦ Gamma s * w s) (-(n : ℂ)) =
-      (-1) ^ n / (n.factorial : ℂ) * w (-(n : ℂ)) := by
-  refine TauCeti.Contour.residue_eq_of_tendsto_sub_mul ((Meromorphic.Gamma _).mul hw.meromorphicAt)
-    ?_
-  have hlim := (tendsto_add_natCast_mul_Gamma n).mul
-    (hw.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
-  refine hlim.congr fun s ↦ ?_
-  ring
-
-/-- Multiplying `Complex.Gamma` by a function `w` analytic at `0` gives residue `w 0` at `0`. -/
-theorem residue_Gamma_mul_zero {w : ℂ → ℂ} (hw : AnalyticAt ℂ w 0) :
-    TauCeti.Contour.residue (fun s ↦ Gamma s * w s) 0 = w 0 := by
-  simpa using residue_Gamma_mul_neg_nat 0 (by simpa using hw)
-
 /-- The residue of `Complex.Gamma` at the nonpositive integer `-n` is `(-1)^n / n!`. -/
 -- Deliberately not `@[simp]`: `simp` rewrites the LHS to `meromorphicTrailingCoeffAt Gamma (-n)`
 -- via `residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one` and
 -- `meromorphicOrderAt_Gamma_neg_nat`, then closes via `meromorphicTrailingCoeffAt_Gamma_neg_nat`.
 theorem residue_Gamma_neg_nat (n : ℕ) :
-    TauCeti.Contour.residue Gamma (-(n : ℂ)) = (-1) ^ n / (n.factorial : ℂ) := by
-  simpa only [mul_one] using residue_Gamma_mul_neg_nat n (analyticAt_const (v := 1))
+    TauCeti.Contour.residue Gamma (-(n : ℂ)) = (-1) ^ n / (n.factorial : ℂ) :=
+  TauCeti.Contour.residue_eq_of_tendsto_sub_mul (Meromorphic.Gamma _)
+    (by simpa only [sub_neg_eq_add] using tendsto_add_natCast_mul_Gamma n)
+
+/-- Multiplying `Complex.Gamma` by a function `w` analytic at `-n` scales the residue at `-n` by
+`w (-n)`. -/
+theorem residue_Gamma_mul_neg_nat (n : ℕ) {w : ℂ → ℂ} (hw : AnalyticAt ℂ w (-(n : ℂ))) :
+    TauCeti.Contour.residue (fun s ↦ Gamma s * w s) (-(n : ℂ)) =
+      (-1) ^ n / (n.factorial : ℂ) * w (-(n : ℂ)) := by
+  rw [TauCeti.Contour.residue_mul_of_neg_one_le (Meromorphic.Gamma _)
+    (meromorphicOrderAt_Gamma_neg_nat n).ge hw, residue_Gamma_neg_nat]
+
+/-- Multiplying `Complex.Gamma` by a function `w` analytic at `0` gives residue `w 0` at `0`. -/
+theorem residue_Gamma_mul_zero {w : ℂ → ℂ} (hw : AnalyticAt ℂ w 0) :
+    TauCeti.Contour.residue (fun s ↦ Gamma s * w s) 0 = w 0 := by
+  simpa using residue_Gamma_mul_neg_nat 0 (by simpa using hw)
 
 /-- The residue of `Complex.Gamma` at `0` is `1`. -/
 @[simp]
