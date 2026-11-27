@@ -84,10 +84,6 @@ theorem halfTwistProfile_eq_zero_iff {k : ℤ} {z : ℂ} :
   · rw [halfTwistProfile_of_nonneg hk, h]
   · rw [halfTwistProfile_of_neg hk, map_eq_zero, h]
 
-private theorem norm_cpow_inv_two_of_norm_eq_one {a : ℂ} (ha : ‖a‖ = 1) :
-    ‖a ^ (2⁻¹ : ℂ)‖ = 1 := by
-  rw [show (2⁻¹ : ℂ) = ((2⁻¹ : ℝ) : ℂ) by push_cast; rfl, norm_cpow_real, ha, Real.one_rpow]
-
 /-- **The half-twist profile divided by the frame is real on the circle**: for `‖a‖ = 1`,
 `a^{-k/2}` times the profile at `a` is `(r + r⁻¹)^e` with `r = a^{1/2}` and `e = |k| mod 2`, a real
 number since `r⁻¹ = conj r`. -/
@@ -96,7 +92,7 @@ theorem cpow_inv_mul_halfTwistProfile (k : ℤ) {a : ℂ} (ha : ‖a‖ = 1) :
       (a ^ (2⁻¹ : ℂ) + (a ^ (2⁻¹ : ℂ))⁻¹) ^ (k.natAbs % 2) := by
   set r := a ^ (2⁻¹ : ℂ)
   have hr2 : r ^ 2 = a := cpow_nat_inv_pow a two_ne_zero
-  have hrn : ‖r‖ = 1 := norm_cpow_inv_two_of_norm_eq_one ha
+  have hrn : ‖r‖ = 1 := by simpa [ha] using norm_cpow_inv_nat a 2
   have hr0 : r ≠ 0 := fun h ↦ by simp [h] at hrn
   have hconj : conj r = r⁻¹ := (inv_eq_conj hrn).symm
   have hk : a ^ ((k : ℂ) / 2) = r ^ k := by
@@ -128,7 +124,7 @@ theorem cpow_inv_mul_halfTwistProfile (k : ℤ) {a : ℂ} (ha : ‖a‖ = 1) :
 theorem conj_cpow_inv_mul_halfTwistProfile (k : ℤ) {a : ℂ} (ha : ‖a‖ = 1) :
     conj ((a ^ ((k : ℂ) / 2))⁻¹ * halfTwistProfile k a) =
       (a ^ ((k : ℂ) / 2))⁻¹ * halfTwistProfile k a := by
-  have hr : ‖a ^ (2⁻¹ : ℂ)‖ = 1 := norm_cpow_inv_two_of_norm_eq_one ha
+  have hr : ‖a ^ (2⁻¹ : ℂ)‖ = 1 := by simpa [ha] using norm_cpow_inv_nat a 2
   rw [cpow_inv_mul_halfTwistProfile k ha, map_pow, map_add, map_inv₀, ← inv_eq_conj hr, inv_inv,
     add_comm]
 
