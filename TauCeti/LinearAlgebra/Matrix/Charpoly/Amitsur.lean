@@ -56,8 +56,9 @@ product `c * r` of a column of blocks `c` and a row of blocks `r` with `r * c = 
 
 ## Provenance
 
-The reduction of the block form to matrices with a single nonzero row, factored as a column of
-blocks times a row of blocks, follows `New.amitsur_charpoly_comp_coeff_mem_range` (file
+The reduction of the block form to matrices with a single nonzero entry (`Matrix.single i j w`),
+factored as a column of blocks times a row of blocks, follows
+`New.amitsur_charpoly_comp_coeff_mem_range` (file
 `src/New/Congruences/FirstOrder/RibetMethod.lean`) in grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/

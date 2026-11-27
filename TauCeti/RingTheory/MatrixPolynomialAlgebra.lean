@@ -17,6 +17,12 @@ retaining compatibility with scalars over the polynomial ring.
 `TauCeti.matrixPolynomialMulRightAction` lifts the polynomial action by right multiplication
 to vectors, using the equivalence between matrices of endomorphisms and vector endomorphisms.
 Together these constructions transport polynomial matrix relations to algebra elements.
+
+## Provenance
+
+The coefficientwise extension and matrix action over `Λ[X]` follow
+`New.Selmer.exists_ribet_polynomial` (file `src/New/Congruences/FirstOrder/RibetMethod.lean`) in
+grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section

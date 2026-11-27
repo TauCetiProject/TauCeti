@@ -15,6 +15,12 @@ public import TauCeti.RingTheory.MatrixPolynomialAlgebra
 in the image of the scalar ring remain so after extending a matrix-valued algebra homomorphism
 to polynomials. This allows Amitsur's theorem to be used over a polynomial base ring, as needed
 for polynomial matrix relations in Ribet's argument.
+
+## Provenance
+
+The step applying Amitsur's theorem over `R[X]` follows `New.Selmer.exists_ribet_polynomial`
+(file `src/New/Congruences/FirstOrder/RibetMethod.lean`) in grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
