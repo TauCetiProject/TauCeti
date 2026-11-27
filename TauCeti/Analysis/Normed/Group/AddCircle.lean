@@ -13,14 +13,18 @@ public import Mathlib.Analysis.Normed.Group.AddCircle
 On `AddCircle p` the norm is the distance to the nearest multiple of the period, so it is at most
 `|p| / 2`. Multiplying a point `x` by `n` multiplies its norm by `n` as long as `n * ‖x‖` stays
 at most `|p| / 2`. Consequently, if `x ≠ 0` and `2 ^ n • x = 0`, the repeated doublings of `x`
-cannot all stay small: some `2 ^ k • x` with `k < n` has norm at least `|p| / 4`. This is the
-expansion estimate behind the topological entropy of the doubling map.
+cannot all stay small: some `2 ^ k • x` with `k < n` has norm at least `|p| / 4`. Without the
+torsion hypothesis, every `x ≠ 0` still has some doubling `2 ^ k • x` of norm at least `|p| / 4`.
+These are the expansion estimates behind the topological entropy and the positive expansiveness
+of the doubling map.
 
 ## Main results
 
 * `AddCircle.norm_nsmul_of_mul_norm_le`: `‖n • x‖ = n * ‖x‖` when `n * ‖x‖ ≤ |p| / 2`.
 * `AddCircle.exists_le_norm_two_pow_nsmul`: a nonzero point killed by `2 ^ n` has a multiple
   `2 ^ k • x`, `k < n`, of norm at least `|p| / 4`.
+* `AddCircle.exists_le_norm_two_pow_nsmul_of_ne_zero`: every nonzero point has a multiple
+  `2 ^ k • x` of norm at least `|p| / 4`.
 -/
 
 public section
@@ -46,23 +50,39 @@ theorem norm_nsmul_of_mul_norm_le {x : AddCircle p} {n : ℕ} (h : n * ‖x‖ �
   · exact norm_eq_of_zero
   · exact (norm_coe_eq_abs_iff p hp).mpr h
 
+/-- If the doublings `2 ^ k • x`, `k < n`, all have norm less than a quarter of the period,
+then `‖2 ^ k • x‖ = 2 ^ k * ‖x‖` for every `k ≤ n`. -/
+theorem norm_two_pow_nsmul_of_forall_lt {x : AddCircle p} {n : ℕ}
+    (h : ∀ k < n, ‖2 ^ k • x‖ < |p| / 4) : ∀ k ≤ n, ‖2 ^ k • x‖ = 2 ^ k * ‖x‖ := by
+  intro k hk
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ, mul_nsmul, norm_nsmul_of_mul_norm_le (by push_cast; linarith [h k (by omega)]),
+      ih (by omega)]
+    push_cast
+    ring
+
 /-- If `x ≠ 0` and `2 ^ n • x = 0`, then some `2 ^ k • x` with `k < n` has norm at least a
 quarter of the period. -/
 theorem exists_le_norm_two_pow_nsmul {x : AddCircle p} (hx : x ≠ 0) {n : ℕ}
     (hn : 2 ^ n • x = 0) : ∃ k < n, |p| / 4 ≤ ‖2 ^ k • x‖ := by
   by_contra! h
-  have key : ∀ k ≤ n, ‖2 ^ k • x‖ = 2 ^ k * ‖x‖ := by
-    intro k hk
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [pow_succ, mul_nsmul, norm_nsmul_of_mul_norm_le (by push_cast; linarith [h k (by omega)]),
-        ih (by omega)]
-      push_cast
-      ring
-  have := key n le_rfl
+  have := norm_two_pow_nsmul_of_forall_lt h n le_rfl
   rw [hn, norm_zero] at this
   exact hx (norm_eq_zero.mp
     ((mul_eq_zero.mp this.symm).resolve_left (pow_ne_zero n two_ne_zero)))
+
+/-- Every nonzero point `x` of the circle has a doubling `2 ^ k • x` of norm at least a quarter of
+the period: doubling a point of norm less than `|p| / 4` doubles its norm, which cannot go on
+forever. -/
+theorem exists_le_norm_two_pow_nsmul_of_ne_zero {x : AddCircle p} (hx : x ≠ 0) :
+    ∃ k, |p| / 4 ≤ ‖2 ^ k • x‖ := by
+  by_contra! h
+  have hx' : 0 < ‖x‖ := norm_pos_iff.mpr hx
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (|p| / 4 / ‖x‖) one_lt_two
+  have key := norm_two_pow_nsmul_of_forall_lt (fun k _ ↦ h k) n le_rfl
+  rw [div_lt_iff₀ hx', ← key] at hn
+  exact (h n).not_gt hn
 
 end AddCircle
