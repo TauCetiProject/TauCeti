@@ -38,6 +38,10 @@ Concrete circle and torus examples are respectively in
   of type `K(G, 1)`.
 * `TauCeti.IsAspherical.of_basepoint`, `TauCeti.IsEilenbergMacLaneSpaceOne.of_basepoint`:
   neither property depends on the base point.
+* `TauCeti.isAspherical_iff_of_bijective_homotopyGroupMap`: asphericity of the target of a map
+  bijective on higher homotopy groups.
+* `TauCeti.IsAspherical.surjective_pow_homotopyGroup`: every power map is surjective on the
+  higher homotopy groups of an aspherical space.
 * `TauCeti.IsAspherical.prod`, `TauCeti.IsAspherical.pi`,
   `TauCeti.IsEilenbergMacLaneSpaceOne.prod`, `TauCeti.IsEilenbergMacLaneSpaceOne.pi`:
   closure under products.
@@ -84,6 +88,13 @@ protected theorem subsingleton_homotopyGroup (h : IsAspherical X x) (n : ℕ) :
     Subsingleton (π_ (n + 2) X x) :=
   h.2 n
 
+/-- **Every power map is surjective on the higher homotopy groups of an aspherical space**, since
+they are trivial. -/
+theorem surjective_pow_homotopyGroup (h : IsAspherical X x) (n d : ℕ) :
+    Function.Surjective fun a : π_ (n + 2) X x ↦ a ^ d :=
+  have := h.subsingleton_homotopyGroup n
+  fun b ↦ ⟨b, Subsingleton.elim _ _⟩
+
 /-- **Asphericity does not depend on the base point.** An aspherical space is path connected, so
 its homotopy groups at any two points are isomorphic. -/
 theorem of_basepoint (h : IsAspherical X x) (x' : X) : IsAspherical X x' := by
@@ -114,6 +125,23 @@ theorem pi (h : ∀ i, IsAspherical (Z i) (z i)) :
   exact inferInstance
 
 end IsAspherical
+
+/-- **Asphericity along a map bijective on higher homotopy groups.** If `f : Y → X` induces
+bijections `π_(n + 2)(Y, y) → π_(n + 2)(X, f y)` for every `n`, then `X` is aspherical exactly when
+it is path connected and every homotopy group of `Y` at `y` of dimension at least two is
+trivial. -/
+theorem isAspherical_iff_of_bijective_homotopyGroupMap {X : Type u} {Y : Type v}
+    [TopologicalSpace X] [TopologicalSpace Y] {f : C(Y, X)} {y : Y}
+    (hf : ∀ n : ℕ,
+      Function.Bijective (HomotopyGroup.map (N := Fin (n + 2)) f (rfl : f y = f y)))
+    (x : X) :
+    IsAspherical X x ↔ PathConnectedSpace X ∧ ∀ n : ℕ, Subsingleton (π_ (n + 2) Y y) := by
+  refine ⟨fun h ↦ ⟨h.pathConnectedSpace, fun n ↦ ?_⟩, fun ⟨hX, h⟩ ↦ ?_⟩
+  · have := (h.of_basepoint (f y)).subsingleton_homotopyGroup n
+    exact (Equiv.ofBijective _ (hf n)).subsingleton
+  · refine IsAspherical.of_basepoint (IsAspherical.mk (x := f y) hX fun n ↦ ?_) x
+    have := h n
+    exact (Equiv.ofBijective _ (hf n)).symm.subsingleton
 
 /-- A based space is an Eilenberg--Mac Lane space of type `K(G, 1)` when it is aspherical
 and its fundamental group is isomorphic to `G`. -/
