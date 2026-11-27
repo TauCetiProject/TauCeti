@@ -320,6 +320,10 @@ lemma weylVector_def : weylVector P b = ⅟(2 : R) • twoWeylVector P b := by
 lemma two_smul_weylVector : (2 : R) • weylVector P b = twoWeylVector P b := by
   rw [weylVector, smul_smul, mul_invOf_self, one_smul]
 
+/-- `n` times the sum of the positive roots is the multiple `2 n` of the Weyl vector. -/
+theorem nsmul_twoWeylVector (n : ℕ) : n • twoWeylVector P b = (2 * n) • weylVector P b := by
+  rw [← two_smul_weylVector, two_smul, ← two_nsmul, smul_smul, mul_comm]
+
 /-- **A Weyl-group element moves the Weyl vector by minus the inversions of its inverse**:
 `w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`. In particular `w ρ - ρ` is a sum of roots, whether or not
 `ρ` is. -/

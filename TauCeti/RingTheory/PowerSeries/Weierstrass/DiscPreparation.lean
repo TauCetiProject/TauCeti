@@ -359,20 +359,14 @@ omit [IsUltrametricDist K] in
 in degree `0` with polynomial factor `1`. -/
 theorem isDiscPreparation_zero (hf0 : constantCoeff f = 1) :
     IsDiscPreparation 0 0 f 1 f := by
-  have hgn0 (g : PowerSeries K) : g.gaussNorm norm 0 = ‖constantCoeff g‖ := by
-    rw [gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_]
-    · simp
-    · rcases eq_or_ne m 0 with rfl | hm
-      · rfl
-      · simp [zero_pow hm]
   have hf : f.IsRestricted 0 := by
     rw [isRestricted_iff']
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [eventually_ge_atTop 1] with n hn
     simp [zero_pow (by omega : n ≠ 0)]
-  refine ⟨⟨by simp [hgn0, hf0], fun n hn ↦ by simp [zero_pow hn.ne', hgn0, hf0]⟩,
+  refine ⟨⟨by simp [hf0], fun n hn ↦ by simp [zero_pow hn.ne', hf0]⟩,
     Polynomial.natDegree_one, AddMonoidAlgebra.coeff_one_zero, hf, hf0,
-    by simp [hgn0, hf0], by simp⟩
+    by simp [hf0], by simp⟩
 
 variable {ι : Type*} {l : Filter ι} {ρ : ι → ℝ} {D : ι → ℕ}
   {p : ι → Polynomial K} {u : ι → PowerSeries K}

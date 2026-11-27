@@ -529,7 +529,7 @@ theorem exists_morseBox_of_broken_of_isSliceChart (hX : IsAdaptedPseudoGradient 
       y₂ ∈ hX.flow (-T₂) ⁻¹' Z ∧
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow (-T₂) ⁻¹' Z) y₂) ⊔
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y₂) = ⊤ := by
-  obtain ⟨r, -, hyr⟩ := hX.exists_mem_stableSet hf y
+  obtain ⟨r, -, hyr⟩ := hX.exists_mem_stableSet y
   have hqr : q ≠ r := by
     rintro rfl
     exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hy, hyr⟩)

@@ -28,6 +28,8 @@ function `ord(x) = sup {r : x ∈ 𝔪ʳ}` on a regular local ring.
 
 * `TauCeti.IsRegularLocalRing.associatedGradedEquiv`: for a regular system of parameters, the
   isomorphism `κ[X₁, …, X_d] ≃ₐ[κ] gr_𝔪 R`.
+* `TauCeti.IsRegularLocalRing.map_residue_eq_zero_iff_eval_mem_pow_succ`: a homogeneous form of
+  degree `ν` reduces to zero modulo `𝔪` iff its value on the parameters lies in `𝔪 ^ (ν + 1)`.
 * `TauCeti.IsRegularLocalRing.isDomain_associatedGraded`: `gr_𝔪 R` is a domain.
 * `TauCeti.IsRegularLocalRing.mul_notMem_maximalIdeal_pow_succ`: initial forms multiply.
 
@@ -176,6 +178,17 @@ theorem associatedGradedEquiv_symm_mk_eval {rs : List R}
         F.map (residue R) := by
   rw [associatedGradedEquiv_def]
   exact IsWeaklyRegular.associatedGradedEquiv_symm_mk_eval _ hspan hF
+
+/-- A homogeneous polynomial of degree `ν` in a regular system of parameters reduces to zero
+modulo `𝔪` if and only if its evaluation at the parameters lies in `𝔪 ^ (ν + 1)`. -/
+theorem map_residue_eq_zero_iff_eval_mem_pow_succ {rs : List R}
+    (hspan : ofList rs = maximalIdeal R) (hlen : rs.length ≤ (maximalIdeal R).spanFinrank)
+    {ν : ℕ} {F : MvPolynomial (Fin rs.length) R} (hF : F.IsHomogeneous ν) :
+    F.map (residue R) = 0 ↔
+      F.eval (fun i : Fin rs.length ↦ rs[(i : ℕ)]) ∈ maximalIdeal R ^ (ν + 1) := by
+  rw [← associatedGradedEquiv_symm_mk_eval hspan hlen hF,
+    map_eq_zero_iff _ (associatedGradedEquiv hspan hlen).symm.injective,
+    AssociatedGraded.mk_eq_zero_iff]
 
 /-- The associated graded ring of the maximal ideal of a regular local ring is a domain. -/
 instance isDomain_associatedGraded : IsDomain (maximalIdeal R).AssociatedGraded := by

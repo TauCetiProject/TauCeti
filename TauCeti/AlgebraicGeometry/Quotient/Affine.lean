@@ -34,6 +34,7 @@ The finite-group properties of the projection are developed in
 
 * `existsUnique_desc` and `hom_ext`: the affine-target universal property.
 * `projection_specAlgebraMap`: the projection lies over every invariant base ring.
+* `specComap_specAlgebraMap`: so do the contravariant spectrum maps of the action.
 * `specComap_base_apply`: the point map of a group element is the inverse spectrum action.
 
 ## References
@@ -117,6 +118,13 @@ theorem specComap_projection (g : G) :
     specComap A G g ≫ projection A G = projection A G := by
   rw [specComap_def, projection_def, ← Spec.map_comp]
   exact congrArg Spec.map (by ext a; exact a.property g)
+
+/-- The contravariant spectrum maps lie over every invariant base ring. -/
+@[reassoc (attr := simp)]
+theorem specComap_specAlgebraMap (R : Type u) [CommRing R] [Algebra R A] [SMulCommClass G R A]
+    (g : G) : specComap A G g ≫ Spec.algebraMap R A = Spec.algebraMap R A := by
+  rw [specComap_def, ← Spec.map_comp]
+  exact congrArg Spec.map (by ext r; exact smul_algebraMap g r)
 
 section ActionMap
 

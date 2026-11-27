@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
+public import TauCeti.Topology.Algebra.Group.Units
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
@@ -510,10 +510,9 @@ private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
   rw [Pi.mul_apply, Function.comp_apply, ← hU_eq _ hy, ← ideleNormAux_mul, mul_inv_cancel_left]
 
 /-- The idele norm is continuous. -/
-theorem continuous_ideleNorm : Continuous (ideleNorm (K := K)) := by
-  have h : Continuous fun x : IdeleGroup (𝓞 K) K ↦ (ideleNorm x : ℝ≥0) :=
+theorem continuous_ideleNorm : Continuous (ideleNorm (K := K)) :=
+  (MonoidHom.continuous_iff_continuous_val _).2 <|
     continuous_real_toNNReal.comp continuous_ideleNormAux
-  exact Units.continuous_iff.mpr ⟨h, (h.comp continuous_inv).congr fun x ↦ by simp⟩
 
 /-- The idele norm is surjective: every positive real number is the idele norm of an idele
 concentrated at a single infinite place. -/

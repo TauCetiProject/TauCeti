@@ -78,6 +78,15 @@ theorem coeff_laguerre_of_le (α : R) {n k : ℕ} (h : k ≤ n) :
         (ascPochhammer R (n - k)).smeval (α + k + 1)) := by
   simp [coeff_laguerre, h]
 
+/-- The coefficient of `Xᵏ` in `Lₙ^{(α)}` for `k ≤ n`, with the rational factor written through
+`algebraMap` and the rising factorial through `eval`, the shape used by coefficient
+comparisons. -/
+theorem coeff_laguerre_of_le_eq_algebraMap_mul_eval (α : R) {n k : ℕ} (h : k ≤ n) :
+    (laguerre α n).coeff k =
+      (-1 : R) ^ k * algebraMap ℚ R (1 / ((n - k).factorial * k.factorial)) *
+        (ascPochhammer R (n - k)).eval (α + k + 1) := by
+  rw [coeff_laguerre_of_le α h, Algebra.smul_def, eval_eq_smeval, mul_assoc]
+
 /-- The coefficients of `Lₙ^{(α)}` vanish above degree `n`. -/
 @[simp]
 theorem coeff_laguerre_of_lt (α : R) {n k : ℕ} (h : n < k) : (laguerre α n).coeff k = 0 := by

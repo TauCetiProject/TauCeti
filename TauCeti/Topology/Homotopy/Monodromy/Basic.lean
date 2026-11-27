@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Index
 public import TauCeti.Topology.Homotopy.Covering
 
 import Mathlib.Data.Finite.Perm
+import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 
 /-!
 # The subgroup a cover recovers from a chosen lift of the basepoint
@@ -63,6 +64,9 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
 * `IsCoveringMap.joined_monodromy` and `IsCoveringMap.pathConnectedSpace_iff`: conversely a
   point is joined to its image under monodromy, so over a path-connected base the total space is
   path connected exactly when monodromy is transitive on a nonempty fibre.
+* `IsCoveringMap.exists_section_iff_forall_monodromy_eq`: over a path-connected, locally
+  path-connected base, a continuous section through a lift of the basepoint exists exactly when
+  monodromy around every loop fixes that lift.
 * `IsCoveringMap.fiberEquivQuotientRange` and
   `IsCoveringMap.card_fiber_eq_index`: the fibre is the coset space of the recovered
   subgroup, so the number of sheets is its index.
@@ -252,6 +256,25 @@ theorem _root_.IsCoveringMap.pathConnectedSpace_iff [PathConnectedSpace X] (hp :
       rw [← hγ]
       exact hp.joined_monodromy γ.toPath f
     exact (hf.trans hff').trans hf'.symm
+
+/-! ### Sections -/
+
+/-- **A covering map has a section through a lift exactly when monodromy fixes that lift.** Over
+a path-connected, locally path-connected base, there is a continuous section `s` of `p` with
+`s x = e` if and only if monodromy around every loop at `x` fixes `e`. -/
+theorem _root_.IsCoveringMap.exists_section_iff_forall_monodromy_eq [PathConnectedSpace X]
+    [LocallyPathConnectedSpace X] (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
+    (∃ s : C(X, E), s x = e ∧ p ∘ s = id) ↔
+      ∀ γ : FundamentalGroup X x, hp.monodromy γ.toPath e = e := by
+  constructor
+  · rintro ⟨s, hsx, hps⟩ γ
+    have h := hp.monodromy_section s.continuous (fun y ↦ congrFun hps y) γ.toPath
+    rwa [show (⟨s x, congrFun hps x⟩ : p ⁻¹' {x}) = e from Subtype.ext hsx] at h
+  · intro h
+    obtain ⟨s, ⟨hsx, hps⟩, -⟩ := hp.existsUnique_continuousMap_lifts_of_range_le_subgroup
+      (f := ContinuousMap.id X) (a₀ := x) (e₀ := e) e.property ⊤ le_top
+      fun γ _ ↦ (hp.monodromy_eq_self_iff_mem_range e γ).1 (h γ)
+    exact ⟨s, hsx, hps⟩
 
 /-! ### The fibre as a coset space -/
 

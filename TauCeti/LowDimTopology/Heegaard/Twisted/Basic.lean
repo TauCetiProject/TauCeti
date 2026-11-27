@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.SMul
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.Homology.SquareZero
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Units
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 
@@ -45,6 +46,15 @@ choices with the same reference generators differ at each generator `x` by the p
 diagonal map `x ↦ t^{a(x)} x` is an isomorphism of `R`-modules intertwining the two twisted
 differentials.
 
+Changing the reference generators reduces to this. If `x₀` is the reference generator of `x` for
+`r`, replacing each reference domain `D_x` of `r` by `D'_{x₀} + D_x`, which starts at the reference
+generator of `x` for another choice `r'`, gives reference domains with the reference generators of
+`r'` (`TauCeti.HeegaardRegionSystem.ReferenceDomains.rebase`). This adds the same domain at both
+ends of every counted domain, whose ends lie in one class, so the labels, the twisted coefficients
+and the twisted differential are unchanged. Hence for any two choices of reference data the
+twisted complexes are isomorphic by a diagonal map `x ↦ t^{a(x)} x`, one squares to zero exactly
+when the other does, and their homologies are isomorphic as `R`-modules.
+
 As for the hat differential, `TauCeti.HeegaardRegionSystem.hatDomains` counts the domains of the
 supplied incidence data, and that this is the count of holomorphic disks is a theorem only for
 genuine nice diagrams; neither that nor the vanishing of the square of the differential is
@@ -60,6 +70,10 @@ formalized here.
 * `TauCeti.HeegaardRegionSystem.twistedHatDifferential`: the twisted hat differential.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.changeEquiv`: the diagonal isomorphism
   `x ↦ t^{a(x)} x` between the twisted complexes of two choices of reference domains.
+* `TauCeti.HeegaardRegionSystem.ReferenceDomains.rebase`: reference domains moved to the reference
+  generators of another choice.
+* `TauCeti.HeegaardRegionSystem.twistedHatHomologyEquiv`: the isomorphism between the twisted
+  homologies of any two choices of reference data.
 
 ## Main results
 
@@ -69,10 +83,18 @@ formalized here.
 * `TauCeti.HeegaardRegionSystem.augmentation_twistedHatCoefficient` and
   `TauCeti.HeegaardRegionSystem.mapRange_augmentation_twistedHatDifferential`: the augmentation
   of the twisted differential is the hat differential.
+* `TauCeti.HeegaardRegionSystem.sum_twistedHatCoefficient_mul_twistedHatCoefficient_eq_zero`: if
+  the twisted hat differential squares to zero, so does the matrix of its coefficients.
 * `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_eq_single_mul`: the coefficients for two
   choices of reference domains differ by the monomials `t^{a(x) - a(y)}`.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.changeEquiv_twistedHatDifferential`: the diagonal
   isomorphism intertwines the two twisted differentials.
+* `TauCeti.HeegaardRegionSystem.twistedHatDifferential_rebase`: moving the reference generators
+  does not change the twisted differential.
+* `TauCeti.HeegaardRegionSystem.ReferenceDomains.changeEquiv_rebase_twistedHatDifferential`: for
+  any two choices of reference data, a diagonal isomorphism intertwines the twisted differentials.
+* `TauCeti.HeegaardRegionSystem.twistedHatDifferential_comp_self_eq_zero_iff`: whether the twisted
+  differential squares to zero does not depend on the reference data.
 
 ## References
 
@@ -85,7 +107,8 @@ formalized here.
   coefficients).
 * P. Ozsváth, A. Stipsicz and Z. Szabó, *Combinatorial Heegaard Floer homology and nice Heegaard
   diagrams*, Adv. Math. **231** (2012), [arXiv:0912.0830](https://arxiv.org/abs/0912.0830),
-  §10 (twisted coefficients for nice diagrams with several basepoints).
+  §9 (the twisted complex of a nice diagram with several basepoints, and its independence of the
+  reference generators and domains in Theorem 9.4) and §10 (twisted coefficients).
 -/
 
 public section
@@ -262,6 +285,43 @@ theorem changeEquiv_apply (h : r.base = r'.base)
     · rw [hy]
     · rw [mul_zero]
 
+/-- A reference generator has the reference generator of its class for any other choice of
+reference domains. -/
+@[simp]
+theorem base_base (r r' : H.ReferenceDomains) (x : H.Generator) :
+    r'.base (r.base x) = r'.base x :=
+  r'.base_eq_base (r.isDomainBetween_domain x) (r.domain_basepoint x)
+
+/-- The reference domains `r` moved to the reference generators of `r'`. The reference domain of
+`x` is `D'_{x₀} + D_x`, where `x₀` is the reference generator of `x` for `r`: the reference domain
+of `r'` from the new reference generator of `x` to `x₀`, followed by that of `r` from `x₀` to `x`.
+Its twisted hat differential is that of `r`
+(`TauCeti.HeegaardRegionSystem.twistedHatDifferential_rebase`), and its reference generators are
+those of `r'`, so `changeEquiv` compares it with `r'`. -/
+def rebase (r r' : H.ReferenceDomains) : H.ReferenceDomains where
+  base := r'.base
+  domain x := r'.domain (r.base x) + r.domain x
+  isDomainBetween_domain x := by
+    simpa using (r'.isDomainBetween_domain (r.base x)).add (r.isDomainBetween_domain x)
+  domain_basepoint x z := by simp [r.domain_basepoint, r'.domain_basepoint]
+  base_eq_base := r'.base_eq_base
+
+@[simp]
+theorem rebase_base (r r' : H.ReferenceDomains) : (r.rebase r').base = r'.base :=
+  (rfl)
+
+@[simp]
+theorem rebase_domain (r r' : H.ReferenceDomains) (x : H.Generator) :
+    (r.rebase r').domain x = r'.domain (r.base x) + r.domain x :=
+  (rfl)
+
+/-- Moving the reference generators does not change the label of a domain between generators
+with the same reference generator. -/
+theorem label_rebase (r r' : H.ReferenceDomains) {x y : H.Generator} (h : r.base x = r.base y)
+    (D : Region → ℤ) : (r.rebase r').label x y D = r.label x y D := by
+  rw [label_def, label_def, rebase_domain, rebase_domain, h]
+  abel
+
 end ReferenceDomains
 
 end ReferenceDomains
@@ -315,6 +375,26 @@ theorem twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty (h : H.hatDomains �
     H.twistedHatCoefficient r χ x y = 0 := by
   have : IsEmpty (H.hatDomains χ x y) := by rw [h]; infer_instance
   exact finsum_of_isEmpty _
+
+/-- When exactly two distinct domains `D₁` and `D₂` are counted, the twisted coefficient is the
+sum of the two monomials of their labels. -/
+theorem twistedHatCoefficient_of_hatDomains_eq_pair {D₁ D₂ : Region → ℤ}
+    (h : H.hatDomains χ x y = {D₁, D₂}) (hne : D₁ ≠ D₂) :
+    H.twistedHatCoefficient r χ x y =
+      single (Multiplicative.ofAdd ⟨r.label x y D₁, r.label_mem_periodicDomains_of_mem_hatDomains
+        (h ▸ Set.mem_insert D₁ {D₂})⟩) 1 +
+      single (Multiplicative.ofAdd ⟨r.label x y D₂, r.label_mem_periodicDomains_of_mem_hatDomains
+        (h ▸ Set.mem_insert_of_mem D₁ rfl)⟩) 1 := by
+  classical
+  have := (show (H.hatDomains χ x y).Finite from h ▸ Set.toFinite _).fintype
+  have hD₁ : D₁ ∈ H.hatDomains χ x y := h ▸ Set.mem_insert D₁ {D₂}
+  have hD₂ : D₂ ∈ H.hatDomains χ x y := h ▸ Set.mem_insert_of_mem D₁ rfl
+  have huniv : (Finset.univ : Finset (H.hatDomains χ x y)) = {⟨D₁, hD₁⟩, ⟨D₂, hD₂⟩} := by
+    ext ⟨D, hD⟩
+    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, Subtype.mk.injEq,
+      true_iff]
+    rwa [h] at hD
+  rw [twistedHatCoefficient_eq_sum, huniv, Finset.sum_pair (by simpa using hne)]
 
 /-- In a weakly admissible diagram the twisted hat differential has no diagonal terms. -/
 @[simp]
@@ -387,6 +467,23 @@ theorem twistedHatDifferential_apply
     H.twistedHatDifferential r χ c y = c.sum fun x a => a * H.twistedHatCoefficient r χ x y := by
   simp [twistedHatDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
 
+/-- The coefficient of `y` in the twisted hat differential of a chain `c`, as a sum over all
+generators. -/
+theorem twistedHatDifferential_apply_eq_sum
+    (c : H.Generator →₀ MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains))
+    (y : H.Generator) :
+    H.twistedHatDifferential r χ c y = ∑ x, c x * H.twistedHatCoefficient r χ x y := by
+  rw [twistedHatDifferential_apply, Finsupp.sum_fintype _ _ (by simp)]
+
+/-- If the twisted hat differential squares to zero, then so does the matrix of its coefficients:
+`∑_y c(x, y) c(y, z) = 0` for all generators `x` and `z`. -/
+theorem sum_twistedHatCoefficient_mul_twistedHatCoefficient_eq_zero
+    (hd : H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0) (x z : H.Generator) :
+    ∑ y, H.twistedHatCoefficient r χ x y * H.twistedHatCoefficient r χ y z = 0 := by
+  have h := congr($hd (Finsupp.single x 1) z)
+  rw [LinearMap.comp_apply, twistedHatDifferential_apply_eq_sum] at h
+  simpa using h
+
 /-- **The augmentation of the twisted hat differential is the hat differential.** Applying the
 augmentation `t^P ↦ 1` to the coefficients of chains turns the twisted hat differential into the
 hat differential. -/
@@ -448,7 +545,90 @@ theorem changeEquiv_twistedHatDifferential
 
 end ReferenceDomains
 
+/-- Moving the reference generators does not change the twisted coefficients: a counted domain
+joins two generators with the same reference generator, and its label is unchanged. -/
+@[simp]
+theorem twistedHatCoefficient_rebase (r r' : H.ReferenceDomains) (x y : H.Generator) :
+    H.twistedHatCoefficient (r.rebase r') χ x y = H.twistedHatCoefficient r χ x y := by
+  rw [twistedHatCoefficient_def, twistedHatCoefficient_def]
+  refine finsum_congr fun D => congrArg (fun P => single (Multiplicative.ofAdd P) (1 : ZMod 2))
+    (Subtype.ext ?_)
+  obtain ⟨hD, hz, -⟩ := mem_hatDomains_iff.mp D.property
+  exact ReferenceDomains.label_rebase r r' (r.base_eq_base hD hz) D
+
+/-- Moving the reference generators does not change the twisted hat differential. -/
+@[simp]
+theorem twistedHatDifferential_rebase (r r' : H.ReferenceDomains) :
+    H.twistedHatDifferential (r.rebase r') χ = H.twistedHatDifferential r χ :=
+  Finsupp.lhom_ext fun x a => Finsupp.ext fun y => by simp
+
+namespace ReferenceDomains
+
+/-- **Change of reference generators and domains.** For any two choices `r` and `r'` of reference
+data, the diagonal map `x ↦ t^{a(x)} x` with `a(x) = D_x - D_{x₀'} - D'_x`, where `x₀'` is the
+reference generator of `x` for `r'`, carries the twisted hat differential for `r` to the one for
+`r'`. It is `changeEquiv` between `r'` moved to the reference generators of `r` and `r`. -/
+theorem changeEquiv_rebase_twistedHatDifferential (r r' : H.ReferenceDomains)
+    (c : H.Generator →₀ MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains)) :
+    changeEquiv (rebase_base r' r) (H.twistedHatDifferential r χ c) =
+      H.twistedHatDifferential r' χ (changeEquiv (rebase_base r' r) c) := by
+  rw [changeEquiv_twistedHatDifferential, twistedHatDifferential_rebase]
+
+end ReferenceDomains
+
+/-- Whether the twisted hat differential squares to zero does not depend on the choice of
+reference generators and reference domains. -/
+theorem twistedHatDifferential_comp_self_eq_zero_iff (r r' : H.ReferenceDomains) :
+    H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0 ↔
+      H.twistedHatDifferential r' χ ∘ₗ H.twistedHatDifferential r' χ = 0 := by
+  suffices h : ∀ r r' : H.ReferenceDomains,
+      H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0 →
+        H.twistedHatDifferential r' χ ∘ₗ H.twistedHatDifferential r' χ = 0 from
+    ⟨h r r', h r' r⟩
+  intro r r' hd
+  rw [((ReferenceDomains.changeEquiv (ReferenceDomains.rebase_base r' r)).eq_conjRingEquiv_apply_iff
+    (H.twistedHatDifferential r χ) (e := H.twistedHatDifferential r' χ)).mpr
+      (LinearMap.ext (ReferenceDomains.changeEquiv_rebase_twistedHatDifferential r r')).symm]
+  exact (ReferenceDomains.changeEquiv _).conjRingEquiv_apply_comp_self hd
+
 end Change
+
+section Homology
+
+variable {χ : Region → ℤ}
+
+/-- **The twisted homology does not depend on the reference data.** For any two choices `r` and
+`r'` of reference generators and reference domains for which the twisted hat differentials square
+to zero (one does exactly when the other does,
+`TauCeti.HeegaardRegionSystem.twistedHatDifferential_comp_self_eq_zero_iff`), the diagonal map of
+`TauCeti.HeegaardRegionSystem.ReferenceDomains.changeEquiv_rebase_twistedHatDifferential` induces
+an isomorphism of their twisted homologies, as modules over the group ring of the periodic
+domains. -/
+noncomputable def twistedHatHomologyEquiv (r r' : H.ReferenceDomains)
+    (hd : H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0)
+    (hd' : H.twistedHatDifferential r' χ ∘ₗ H.twistedHatDifferential r' χ = 0) :
+    (H.twistedHatDifferential r χ).homology hd ≃ₗ[
+      MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains)]
+      (H.twistedHatDifferential r' χ).homology hd' :=
+  (ReferenceDomains.changeEquiv (ReferenceDomains.rebase_base r' r)).homologyEquiv hd hd'
+    (LinearMap.ext (ReferenceDomains.changeEquiv_rebase_twistedHatDifferential r r'))
+
+/-- The isomorphism of twisted homologies sends the class of a cycle `z` to the class of its image
+under the diagonal map. -/
+@[simp]
+theorem twistedHatHomologyEquiv_mk (r r' : H.ReferenceDomains)
+    (hd : H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0)
+    (hd' : H.twistedHatDifferential r' χ ∘ₗ H.twistedHatDifferential r' χ = 0)
+    (z : LinearMap.ker (H.twistedHatDifferential r χ)) :
+    twistedHatHomologyEquiv r r' hd hd' (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ⟨ReferenceDomains.changeEquiv (ReferenceDomains.rebase_base r' r) z,
+        LinearMap.map_mem_ker_of_comp_eq
+          (ReferenceDomains.changeEquiv (ReferenceDomains.rebase_base r' r)).toLinearMap
+          (LinearMap.ext (ReferenceDomains.changeEquiv_rebase_twistedHatDifferential r r'))
+          z.property⟩ :=
+  LinearEquiv.homologyEquiv_mk _ hd hd' _ z
+
+end Homology
 
 end HeegaardRegionSystem
 
