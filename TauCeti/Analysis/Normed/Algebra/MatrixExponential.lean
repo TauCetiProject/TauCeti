@@ -426,16 +426,8 @@ theorem hasDerivAt_exp_mulVec
     (f : (m → 𝕜) →ₗ[ℝ] E) (A : Matrix m m 𝕜) (v : m → 𝕜) :
     HasDerivAt (fun t : ℝ ↦ f (NormedSpace.exp (t • A) *ᵥ v)) (f (A *ᵥ v)) 0 := by
   let _ : CompleteSpace 𝕜 := FiniteDimensional.completeSpace ℝ 𝕜
-  let fLin : Matrix m m 𝕜 →ₗ[ℝ] E :=
-    f.comp
-      ({ toFun := fun M ↦ M *ᵥ v
-         map_add' := fun M N ↦ Matrix.add_mulVec M N v
-         map_smul' := fun c M ↦ by
-           ext i
-           simp [Matrix.mulVec, dotProduct, Finset.smul_sum] } :
-        Matrix m m 𝕜 →ₗ[ℝ] (m → 𝕜))
   let fCLM : Matrix m m 𝕜 →L[ℝ] E :=
-    ContinuousLinearMap.mk fLin fLin.continuous_of_finiteDimensional
+    LinearMap.toContinuousLinearMap (f.comp ((Matrix.mulVecBilin ℝ ℝ).flip v))
   have hfCLM (M : Matrix m m 𝕜) : fCLM M = f (M *ᵥ v) := rfl
   have h := fCLM.hasFDerivAt.comp_hasDerivAt 0 (hasDerivAt_exp_smul_const A (0 : ℝ))
   simpa only [Function.comp_def, hfCLM, zero_smul, NormedSpace.exp_zero, one_mul] using h

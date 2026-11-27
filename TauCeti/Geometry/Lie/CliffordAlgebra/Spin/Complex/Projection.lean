@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.BaseChange.Basic
 public import TauCeti.Algebra.Lie.SkewAdjoint
 public import TauCeti.Geometry.Lie.AutomaticSmoothness
-public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Basic
 public import TauCeti.Geometry.Lie.Subgroup.SpecialOrthogonal
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitsRange

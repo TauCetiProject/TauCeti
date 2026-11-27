@@ -62,8 +62,8 @@ homomorphisms on the closed unit-range carriers in `(CliffordAlgebra (realCliffo
   `TauCeti.isClosedEmbedding_realCliffordSpecialOrthogonalBlockSum`, and
   `TauCeti.isEmbedding_realCliffordSpecialOrthogonalBlockSum`: continuity and
   closed-embedding properties of `SO(p) × SO(q) → SO(p + q)`.
-* `TauCeti.realCliffordSpinToSpecialOrthogonalRange_comp_firstInclusion` and
-  `TauCeti.realCliffordSpinToSpecialOrthogonalRange_comp_blockSum`: compatibility
+* `TauCeti.spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_comp_firstInclusion` and
+  `TauCeti.spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_comp_blockSum`: compatibility
   of the unit-range stabilization and block-sum homomorphisms with the native Spin-to-`SO` carrier
   projection.
 
@@ -344,7 +344,7 @@ theorem realCliffordSpecialOrthogonalRangeFirstInclusion_apply_equiv (n : ℕ)
 
 /-- **First-coordinate stabilization commutes with `spinToSpecialOrthogonalUnitsRange`.** -/
 @[simp]
-theorem realCliffordSpinToSpecialOrthogonalRange_comp_firstInclusion (n : ℕ) :
+theorem spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_comp_firstInclusion (n : ℕ) :
     (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero (n + 1))).comp
         (realCliffordSpinUnitsRangeFirstInclusion n) =
       (realCliffordSpecialOrthogonalRangeFirstInclusion n).comp
@@ -434,7 +434,7 @@ theorem realCliffordSpecialOrthogonalRangeBlockSum_apply_equiv (p q : ℕ)
 
 /-- **Block sum commutes with `spinToSpecialOrthogonalUnitsRange`.** -/
 @[simp]
-theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
+theorem spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_comp_blockSum (p q : ℕ) :
     (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero (p + q))).comp
         (realCliffordSpinUnitsRangeBlockSum p q) =
       (realCliffordSpecialOrthogonalRangeBlockSum p q).comp

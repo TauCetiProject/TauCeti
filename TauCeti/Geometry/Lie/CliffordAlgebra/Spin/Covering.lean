@@ -18,7 +18,7 @@ the chosen rotation, and each section passes through its labeling point. These a
 lifts used for smooth transitions of spin bundles.
 
 The topological covering is
-`TauCeti.CliffordAlgebra.isCoveringMap_realCliffordSpinToSpecialOrthogonalRange`;
+`TauCeti.CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero`;
 local smooth invertibility is
 `TauCeti.CliffordAlgebra.isLocalDiffeomorph_realCliffordSpinToSpecialOrthogonalSmoothRange`.
 We keep their native units-range carriers and select the matrix operator topology explicitly.
@@ -82,10 +82,10 @@ theorem exists_realCliffordSpinSmoothCoveringTrivialization (n : ℕ)
   have hcover : IsCoveringMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) := by
     rw [hmap]
     -- The operator norm preserves the product topology, including on units and subgroups.
-    exact isCoveringMap_realCliffordSpinToSpecialOrthogonalRange n
+    exact isCoveringMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero n
   have hsurj : Function.Surjective (realCliffordSpinToSpecialOrthogonalSmoothRange n) := by
     rw [hmap]
-    exact realCliffordSpinToSpecialOrthogonalRange_surjective n
+    exact spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_surjective n
   exact hcover.exists_trivialization_contMDiffOn_symm
     (isLocalDiffeomorph_realCliffordSpinToSpecialOrthogonalSmoothRange n) (hsurj y)
 

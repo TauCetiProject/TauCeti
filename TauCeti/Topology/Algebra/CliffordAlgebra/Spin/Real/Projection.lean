@@ -36,10 +36,10 @@ unit-group carriers that serve as frame structure groups.
 
 ## Main results
 
-* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_surjective` proves that the
-  carrier homomorphism is onto.
-* `TauCeti.CliffordAlgebra.isCoveringMap_realCliffordSpinToSpecialOrthogonalRange` proves that it
-  is a covering map.
+* `TauCeti.CliffordAlgebra.spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_surjective`
+  proves that the carrier homomorphism is onto.
+* `TauCeti.CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero`
+  proves that it is a covering map.
 
 ## References
 
@@ -58,18 +58,18 @@ noncomputable section
 
 /-- The continuous homomorphism between the closed real Spin and special-orthogonal carriers is
 surjective. -/
-theorem realCliffordSpinToSpecialOrthogonalRange_surjective (n : ℕ) :
+theorem spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_surjective (n : ℕ) :
     Function.Surjective (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) := by
   rintro ⟨g, y, rfl⟩
   obtain ⟨x, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
     (realCliffordForm n 0) (posDef_realCliffordForm_zero n) y
   exact ⟨⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩, by
-    rw [spinToSpecialOrthogonalUnitsRange_apply, spinGroupContinuousMulEquivUnitsRange_symm_apply,
+    rw [spinToSpecialOrthogonalUnitsRange_apply_toUnits,
       QuadraticMap.specialOrthogonalContinuousMulEquivRange_apply]⟩
 
 /-- The projection between the closed real Spin and special-orthogonal carriers is a covering
 map. -/
-theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
+theorem isCoveringMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero (n : ℕ) :
     IsCoveringMap (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) := by
   obtain rfl | hn := n.eq_zero_or_pos
   · -- In dimension zero both carriers are points.
@@ -79,7 +79,7 @@ theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
       (Set.subsingleton_coe _).mpr (MonoidHom.subsingleton_coe_range _)
     have : Subsingleton (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
         (realCliffordFormZero 0))) :=
-      (realCliffordSpinToSpecialOrthogonalRange_surjective 0).subsingleton
+      (spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_surjective 0).subsingleton
     exact .of_discreteTopology _
   have : NeZero n := ⟨hn.ne'⟩
   have h : ⇑(spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) =

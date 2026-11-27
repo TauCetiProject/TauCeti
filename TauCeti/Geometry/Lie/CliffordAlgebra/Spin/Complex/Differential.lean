@@ -31,7 +31,7 @@ differential is taken over `ℝ`, it commutes with complex scalar multiplication
 it upgrades to `ℂ`-linear Lie algebra equivalences
 `complexSpinToSpecialOrthogonalPolarComplexLieEquiv` and
 `complexSpinToSpecialOrthogonalComplexLieEquiv`. For a spin polarization `P`, the `ℂ`-linear Fock
-differential `P.complexSpinSmoothMatrixComplexLieHom b` (constructed in
+differential `P.complexSpinMatrixLieHom b` (constructed in
 `TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Representation`) intertwines with the `SO(Q)`
 differential on Clifford vector operators.
 
@@ -49,8 +49,8 @@ differential on Clifford vector operators.
   `TauCeti.CliffordAlgebra`): exact agreement with the algebraic quadratic realizations.
 * `TauCeti.CliffordAlgebra.lieMap_complexSpinToSpecialOrthogonalSmoothRange_bijective`: the
   abstract real Lie map of the complex `Spin(Q) → SO(Q)` carrier projection is bijective.
-* `TauCeti.SpinPolarizationData.lie_complexSpinSmoothMatrixComplexLieHom_ι_eq` and
-  `TauCeti.SpinPolarizationData.lie_complexSpinSmoothMatrixComplexLieHom_ι_eq_mulVec`: the
+* `TauCeti.SpinPolarizationData.lie_complexSpinMatrixLieHom_ι_eq` and
+  `TauCeti.SpinPolarizationData.lie_complexSpinMatrixLieHom_ι_eq_mulVec`: the
   intertwining identities between the `ℂ`-linear differential of the Fock representation and the
   `SO(Q)` differential in endomorphism and matrix coordinates.
 
@@ -290,9 +290,9 @@ variable {n : ℕ} {Q : QuadraticForm ℂ (Fin n → ℂ)} (P : SpinPolarization
 representation `d(spinRep)(x)` with the Fock operator of a vector `v` produces the Fock operator of
 `d(spinToSpecialOrthogonal)(x) v`, where both differentials are computed from the smooth complex
 group homomorphisms. -/
-theorem lie_complexSpinSmoothMatrixComplexLieHom_ι_eq
+theorem lie_complexSpinMatrixLieHom_ι_eq
     (x : quadraticLieSubalgebra Q) (v : Fin n → ℂ) :
-    ⁅P.complexSpinSmoothMatrixComplexLieHom b x,
+    ⁅P.complexSpinMatrixLieHom b x,
         LinearMap.toMatrix b b (spinAction Q P (ι Q v))⁆ =
       LinearMap.toMatrix b b
         (spinAction Q P
@@ -305,20 +305,20 @@ theorem lie_complexSpinSmoothMatrixComplexLieHom_ι_eq
       LinearMap.toMatrixAlgEquiv_eq_toMatrix]
   have hlie : ⁅φ x, φ (ι Q v)⁆ = φ ⁅(x : CliffordAlgebra Q), ι Q v⁆ :=
     (φ.toLieHom.map_lie (x : CliffordAlgebra Q) (ι Q v)).symm
-  rw [complexSpinSmoothMatrixComplexLieHom_apply, hφ, hφ, hφ, hlie,
+  rw [complexSpinMatrixLieHom_apply, hφ, hφ, hφ, hlie,
     complexSpinToSpecialOrthogonalPolarComplexLieEquiv_lie_ι]
 
-/-- Matrix-coordinate form of `lie_complexSpinSmoothMatrixComplexLieHom_ι_eq`. -/
-theorem lie_complexSpinSmoothMatrixComplexLieHom_ι_eq_mulVec
+/-- Matrix-coordinate form of `lie_complexSpinMatrixLieHom_ι_eq`. -/
+theorem lie_complexSpinMatrixLieHom_ι_eq_mulVec
     (x : quadraticLieSubalgebra Q) (v : Fin n → ℂ) :
-    ⁅P.complexSpinSmoothMatrixComplexLieHom b x,
+    ⁅P.complexSpinMatrixLieHom b x,
         LinearMap.toMatrix b b (spinAction Q P (ι Q v))⁆ =
       LinearMap.toMatrix b b
         (spinAction Q P
           (ι Q (((complexSpinToSpecialOrthogonalComplexLieEquiv (Q := Q) x :
             skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin)) :
               Matrix (Fin n) (Fin n) ℂ) *ᵥ v))) := by
-  rw [lie_complexSpinSmoothMatrixComplexLieHom_ι_eq,
+  rw [lie_complexSpinMatrixLieHom_ι_eq,
     complexSpinToSpecialOrthogonalPolarComplexLieEquiv_apply,
     complexSpinToSpecialOrthogonalComplexLieEquiv_apply,
     coe_complexSpinToSpecialOrthogonalPolarCoordinateLieHom_apply_apply]

@@ -24,10 +24,10 @@ For a polarization and any finite basis of its exterior spinor module, we apply 
 to the matrix form of the native Fock action. The resulting smooth homomorphism is the native
 `spinRep` in that basis, and its differential is the matrix of the same quadratic Fock operator.
 The `ℂ`-linear Lie algebra homomorphism
-`TauCeti.SpinPolarizationData.complexSpinSmoothMatrixComplexLieHom` packages the Fock
+`TauCeti.SpinPolarizationData.complexSpinMatrixLieHom` packages the Fock
 representation on `quadraticLieSubalgebra Q`, characterized pointwise by
-`complexSpinSmoothMatrixComplexLieHom_apply` and identified with the real manifold differential by
-`complexSpinSmoothMatrixComplexLieHom_eq_unitsLieAlgebraLieEquiv_lieMap`.
+`complexSpinMatrixLieHom_apply` and identified with the real manifold differential by
+`complexSpinMatrixLieHom_eq_unitsLieAlgebraLieEquiv_lieMap`.
 Both even and odd ambient dimensions, including dimensions zero and one, are covered.
 The smooth structures require `[Fact Q.Nondegenerate]`. For a polarization `P`, obtain it with
 `letI : Fact Q.Nondegenerate := ⟨P.nondegenerate (.of_ne_zero two_ne_zero)⟩`.
@@ -174,30 +174,30 @@ end Smooth
 /-- The `ℂ`-linear Fock Lie algebra representation on `quadraticLieSubalgebra Q` in the chosen
 spinor basis `b`. Under the real quadratic coordinate equivalence, this agrees with the
 differential of `P.complexSpinSmoothMatrixHom b`. -/
-def complexSpinSmoothMatrixComplexLieHom :
+def complexSpinMatrixLieHom :
     quadraticLieSubalgebra Q →ₗ⁅ℂ⁆ Matrix ι ι ℂ :=
   (((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)).toLieHom).comp
     (quadraticLieSubalgebra Q).incl
 
-/-- In the chosen spinor basis `b`, `P.complexSpinSmoothMatrixComplexLieHom b` acts by the matrix of
+/-- In the chosen spinor basis `b`, `P.complexSpinMatrixLieHom b` acts by the matrix of
 `spinAction Q P x`. -/
 @[simp]
-theorem complexSpinSmoothMatrixComplexLieHom_apply (x : quadraticLieSubalgebra Q) :
-    P.complexSpinSmoothMatrixComplexLieHom b x = LinearMap.toMatrix b b (spinAction Q P x) := by
-  simp only [complexSpinSmoothMatrixComplexLieHom, LieHom.comp_apply, LieSubalgebra.coe_incl,
+theorem complexSpinMatrixLieHom_apply (x : quadraticLieSubalgebra Q) :
+    P.complexSpinMatrixLieHom b x = LinearMap.toMatrix b b (spinAction Q P x) := by
+  simp only [complexSpinMatrixLieHom, LieHom.comp_apply, LieSubalgebra.coe_incl,
     AlgHom.toLieHom_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     LinearMap.toMatrixAlgEquiv_eq_toMatrix]
 
-/-- Under the quadratic coordinate equivalence, `P.complexSpinSmoothMatrixComplexLieHom b`
+/-- Under the quadratic coordinate equivalence, `P.complexSpinMatrixLieHom b`
 agrees with the real manifold differential `lieMap (P.complexSpinSmoothMatrixHom b)`. -/
-theorem complexSpinSmoothMatrixComplexLieHom_eq_unitsLieAlgebraLieEquiv_lieMap
+theorem complexSpinMatrixLieHom_eq_unitsLieAlgebraLieEquiv_lieMap
     [Fact Q.Nondegenerate] (x : quadraticLieSubalgebra Q) :
-    P.complexSpinSmoothMatrixComplexLieHom b x =
+    P.complexSpinMatrixLieHom b x =
       TauCeti.Lie.unitsLieAlgebraLieEquiv
         (lieMap (P.complexSpinSmoothMatrixHom b)
           ((complexSpinLieEquivQuadratic (Q := Q)).symm
             ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))) := by
-  rw [complexSpinSmoothMatrixComplexLieHom_apply,
+  rw [complexSpinMatrixLieHom_apply,
     unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom, LieEquiv.apply_symm_apply,
     AddEquiv.apply_symm_apply]
 

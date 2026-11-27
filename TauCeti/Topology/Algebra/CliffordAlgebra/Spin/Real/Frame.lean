@@ -97,7 +97,7 @@ theorem coe_realCliffordSpinFrameProjection_apply (x : spinGroup Q) :
 /-- The frame projection is onto the special-orthogonal carrier. -/
 theorem realCliffordSpinFrameProjection_surjective :
     Function.Surjective (b.realCliffordSpinFrameProjection hQ) :=
-  (realCliffordSpinToSpecialOrthogonalRange_surjective n).comp
+  (spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_surjective n).comp
     ((b.isometryEquivRealCliffordFormZero hQ).spinGroupContinuousMulEquiv.trans
       (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0))).surjective
 
@@ -141,7 +141,7 @@ theorem exists_realCliffordSpinFrameProjection_eq_conj
 /-- The frame projection is a covering map. -/
 theorem isCoveringMap_realCliffordSpinFrameProjection :
     IsCoveringMap (b.realCliffordSpinFrameProjection hQ) :=
-  (isCoveringMap_realCliffordSpinToSpecialOrthogonalRange n).comp_homeomorph
+  (isCoveringMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero n).comp_homeomorph
     ((b.isometryEquivRealCliffordFormZero hQ).spinGroupContinuousMulEquiv.trans
       (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0))).toHomeomorph
 

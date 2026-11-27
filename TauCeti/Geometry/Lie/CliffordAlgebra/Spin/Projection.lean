@@ -38,8 +38,8 @@ Lie homomorphism from quadratic Clifford elements to skew-symmetric matrices.
   projection.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalCoordinateLieHom` is its
   differential in quadratic-Clifford and skew-matrix coordinates.
-* `TauCeti.CliffordAlgebra.isQuotientMap_realCliffordSpinToSpecialOrthogonalRange` records the
-  quotient property of the continuous carrier projection.
+* `TauCeti.CliffordAlgebra.isQuotientMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero`
+  records the quotient property of the continuous carrier projection.
 
 ## References
 
@@ -286,7 +286,7 @@ theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply (n : ℕ)
 
 /-- The continuous projection between the closed real Spin and special-orthogonal carriers is a
 quotient map. -/
-theorem isQuotientMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
+theorem isQuotientMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero (n : ℕ) :
     Topology.IsQuotientMap (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) := by
   let p : SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) :=
     spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)
@@ -296,7 +296,7 @@ theorem isQuotientMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
     Homeomorph.compactSpace
       (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).toHomeomorph
   apply Topology.IsQuotientMap.of_surjective_continuous
-  · exact realCliffordSpinToSpecialOrthogonalRange_surjective n
+  · exact spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_surjective n
   · exact p.continuous
 
 end TauCeti.CliffordAlgebra
