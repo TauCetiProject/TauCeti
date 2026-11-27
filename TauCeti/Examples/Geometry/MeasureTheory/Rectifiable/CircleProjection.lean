@@ -83,7 +83,7 @@ theorem tangentialJacobian_re_circleMap (θ : ℝ) :
       ((1 : ℝ →L[ℝ] ℝ).smulRight (-sin θ)) s θ := by
     have h := (Complex.reCLM.hasFDerivAt.comp_hasDerivAt θ (hasDerivAt_circleMap 0 1 θ))
     have hre : Complex.reCLM v = -sin θ := by
-      simp [v, circleMap, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
+      simp [v, circleMap_zero_im]
     rw [hre] at h
     exact h.hasFDerivAt.hasFDerivWithinAt
   have h := hf.tangentialJacobian_mul_normDet hinj hi hθ hsub hdens hdiff hgf
@@ -116,9 +116,8 @@ theorem lintegral_tangentialJacobian_re :
   rw [← ofReal_integral_eq_lintegral_ofReal (f := fun θ ↦ |sin θ|)
     ((by fun_prop : Continuous fun θ : ℝ ↦ |sin θ|).integrableOn_Icc)
     (.of_forall fun θ ↦ abs_nonneg _), integral_Icc_eq_integral_Ioc,
-    ← intervalIntegral.integral_of_le (by positivity), ← zero_add (2 * π),
-    integral_abs_sin_add_two_pi]
-  norm_num
+    ← intervalIntegral.integral_of_le two_pi_pos.le]
+  simpa using congrArg ENNReal.ofReal (integral_abs_sin_add_two_pi 0)
 
 /-- The fibre of the real part over `t` on the unit circle consists of the points `t + is` with
 `s² = 1 - t²`. -/
@@ -195,7 +194,6 @@ theorem normDet_reCLM : Complex.reCLM.toLinearMap.normDet = 0 :=
 length `2π`, not `4`. -/
 theorem lintegral_norm_reCLM :
     ∫⁻ _ in sphere (0 : ℂ) 1, ‖Complex.reCLM‖ₑ ∂μHE[1] = ENNReal.ofReal (2 * π) := by
-  rw [setLIntegral_const, Complex.euclideanHausdorffMeasure_sphere, ← ofReal_norm,
-    Complex.reCLM_norm, ENNReal.ofReal_one, one_mul, mul_one]
+  simp [Complex.euclideanHausdorffMeasure_sphere]
 
 end TauCeti.Examples.CircleProjection

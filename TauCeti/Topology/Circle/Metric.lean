@@ -290,7 +290,7 @@ theorem exists_abs_sub_lt_and_circleMap_eq_of_mem_sphere_of_dist_lt (ζ : ℂ) {
     refine ⟨(z - ζ).arg, ?_⟩
     have h := circleMap_zero_norm_arg (z - ζ)
     rw [mem_sphere_iff_norm.1 hz] at h
-    rw [circleMap, ← circleMap_zero, h, add_sub_cancel]
+    exact sub_left_injective ((circleMap_sub_center ζ ρ _).trans h)
   obtain ⟨φ, ⟨hφ₁, hφ₂⟩, rfl⟩ := hz'
   refine ⟨φ, lt_of_not_ge fun h ↦ hd.not_ge ?_, rfl⟩
   have hφ : |φ - θ| ≤ π := abs_le.2 ⟨by linarith, by linarith⟩
