@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
@@ -30,6 +31,8 @@ abelian subalgebra.
 
 * The pairing of a form `δ` with `γ^∨` is `δ(γ^∨) = 2 δ(a) / B(a, a)`
   (`LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq`).
+* The reflection `δ - δ(γ^∨) γ` of a nonzero form `δ` in a nonzero form `γ` is nonzero
+  (`LinearMap.BilinForm.sub_smul_ne_zero`).
 * A nonzero form is recovered from its coroot `c` as `γ = (2 / B(c, c)) B(c, ·)`
   (`LinearMap.BilinForm.apply_eq_div_mul_of_ne_zero`), so the coroot map is injective on nonzero
   forms (`LinearMap.BilinForm.coroot_injOn`).
@@ -93,6 +96,19 @@ theorem apply_coroot {γ : Dual K t} (hγ : γ ≠ 0) : γ (B.coroot hB γ) = 2 
   obtain ⟨a, ha⟩ := exists_forall_apply_eq hB γ
   rw [apply_coroot_eq_of_forall_apply_eq hB ha, ← ha,
     mul_div_cancel_right₀ _ (apply_self_ne_zero_of_forall_apply_eq hB hγ ha)]
+
+/-- **The reflection of a nonzero form is nonzero.** For `γ ≠ 0` and `δ ≠ 0`, the reflection
+`δ - δ(γ^∨) γ` is nonzero: evaluated at `γ^∨` it is `-δ(γ^∨)`, so if it vanished then
+`δ(γ^∨) = 0` and `δ` would be `0`. -/
+theorem sub_smul_ne_zero {γ δ : Dual K t} (hγ : γ ≠ 0) (hδ : δ ≠ 0) :
+    δ - δ (B.coroot hB γ) • γ ≠ 0 := by
+  intro h
+  have hc : δ (B.coroot hB γ) = 0 := by
+    have := LinearMap.congr_fun h (B.coroot hB γ)
+    rw [LinearMap.sub_apply, LinearMap.smul_apply, apply_coroot hγ, smul_eq_mul,
+      LinearMap.zero_apply] at this
+    linear_combination -this
+  exact hδ (by rwa [hc, zero_smul, sub_zero] at h)
 
 variable [NeZero (2 : K)]
 

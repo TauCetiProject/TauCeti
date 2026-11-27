@@ -109,30 +109,29 @@ theorem exists_eq_or_eq_neg_of_isRootPlane (hD : IsRootPlaneDecomposition B t α
   have hww : B w w = 0 := hle (hD.sup_eq_top ▸ Submodule.mem_top)
   exact hw0 (hBa w hww)
 
-end Field
-
-variable {L ι : Type*} [LieRing L] [LieAlgebra ℝ L] [FiniteDimensional ℝ L]
-  {B : LinearMap.BilinForm ℝ L} {t : Submodule ℝ L} {α : ι → Dual ℝ t} {E : ι → Submodule ℝ L}
-  {J : ∀ i, Module.End ℝ (E i)}
-
-omit [FiniteDimensional ℝ L] in
 /-- Each real root `±α_i` is the root of a nonzero root plane: `E_i` with the rotation `±J_i`. -/
 theorem exists_isRootPlane_of_mem (hD : IsRootPlaneDecomposition B t α E J)
-    (hE : ∀ i, E i ≠ ⊥) {γ : Dual ℝ t} (hγ : γ ∈ range α ∪ -range α) :
-    ∃ (E' : Submodule ℝ L) (J' : Module.End ℝ E'), IsRootPlane B t γ E' J' ∧ E' ≠ ⊥ := by
+    (hE : ∀ i, E i ≠ ⊥) {γ : Dual K t} (hγ : γ ∈ range α ∪ -range α) :
+    ∃ (E' : Submodule K L) (J' : Module.End K E'), IsRootPlane B t γ E' J' ∧ E' ≠ ⊥ := by
   rcases hγ with ⟨i, rfl⟩ | ⟨i, hi⟩
   · exact ⟨E i, J i, hD.isRootPlane i, hE i⟩
   · rw [← neg_neg γ, ← hi]
     exact ⟨E i, -J i, (hD.isRootPlane i).neg, hE i⟩
 
-omit [FiniteDimensional ℝ L] in
+omit [PartialOrder K] in
 /-- The real roots are nonzero when the roots `α_i` are. -/
-private theorem ne_zero_of_mem (hα : ∀ i, α i ≠ 0) {γ : Dual ℝ t} (hγ : γ ∈ range α ∪ -range α) :
+private theorem ne_zero_of_mem (hα : ∀ i, α i ≠ 0) {γ : Dual K t} (hγ : γ ∈ range α ∪ -range α) :
     γ ≠ 0 := by
   rcases hγ with ⟨i, rfl⟩ | ⟨i, hi⟩
   · exact hα i
   · rintro rfl
     exact hα i (by simpa using hi)
+
+end Field
+
+variable {L ι : Type*} [LieRing L] [LieAlgebra ℝ L] [FiniteDimensional ℝ L]
+  {B : LinearMap.BilinForm ℝ L} {t : Submodule ℝ L} {α : ι → Dual ℝ t} {E : ι → Submodule ℝ L}
+  {J : ∀ i, Module.End ℝ (E i)}
 
 /-- **The real roots are closed under the root reflections.** For a symmetric positive definite
 invariant form and a root-plane decomposition with nonzero planes and nonzero roots, the reflection
@@ -147,21 +146,9 @@ theorem sub_smul_mem (hD : IsRootPlaneDecomposition B t α E J) (hBs : B.IsSymm)
   obtain ⟨a, ha⟩ := LinearMap.BilinForm.exists_forall_apply_eq hBp.anisotropic γ
   obtain ⟨E', J', hE', hE'0⟩ := hEγ.exists_isRootPlane_sub_smul hEδ hBs hBp hB
     (fun z hz ↦ hD.mem_of_forall_lie_eq_zero hα hz) hEγ0 hEδ0 ha
-  rw [LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq hBp.anisotropic ha, ha]
-  -- The reflection of the nonzero `δ` is nonzero.
-  have hne : δ - (2 * δ a / γ a) • γ ≠ 0 := by
-    intro h0
-    have hγa : γ a ≠ 0 := by
-      rw [← ha]
-      exact LinearMap.BilinForm.apply_self_ne_zero_of_forall_apply_eq hBp.anisotropic
-        (ne_zero_of_mem hα hγ) ha
-    have hδ' : δ = (2 * δ a / γ a) • γ := sub_eq_zero.mp h0
-    have h2 : δ a = 2 * δ a := by
-      conv_lhs => rw [hδ']
-      rw [LinearMap.smul_apply, smul_eq_mul]
-      field_simp
-    have hδa : δ a = 0 := by linarith
-    exact ne_zero_of_mem hα hδ (by rw [hδ', hδa]; simp)
+  have hne := LinearMap.BilinForm.sub_smul_ne_zero (hB := hBp.anisotropic) (ne_zero_of_mem hα hγ)
+    (ne_zero_of_mem hα hδ)
+  rw [LinearMap.BilinForm.apply_coroot_eq_of_forall_apply_eq hBp.anisotropic ha, ha] at hne ⊢
   obtain ⟨i, hi | hi⟩ := hD.exists_eq_or_eq_neg_of_isRootPlane hB hBp.anisotropic hE' hE'0 hne
   · exact Or.inl ⟨i, hi.symm⟩
   · exact Or.inr ⟨i, by simp [hi]⟩
