@@ -128,23 +128,22 @@ theorem restrictionIso_comp {W : C} (g : W ⟶ V) (X : F ⟶ G) (x : F.obj (.mk 
   rw [StrongTrans.naturalityObjIso_hom_comp' X f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc rfl x]
   simp [restrictionIso, ← Functor.map_comp, ← Functor.map_comp_assoc]
 
-variable {bF : F.AbelianBanding J A} {bG : G.AbelianBanding J A}
-
-/-- **Modifications commute with the restriction comparisons**, on morphisms: for `m : X ⟶ Y`,
-pulling back the component of `m` at `x` along `f` and comparing with `Y` is comparing with `X` and
-then taking the component of `m` at `F(f) x`. -/
+/-- **Modifications commute with the restriction comparisons**, on morphisms: for a modification
+`Γ : X ⟶ Y` of strong transformations, pulling back the component of `Γ` at `x` along `f` and
+comparing with `Y` is comparing with `X` and then taking the component of `Γ` at `F(f) x`. -/
 @[reassoc]
-theorem restrictionIso_hom_modification {X Y : HomCategory bF bG} (m : X ⟶ Y)
-    (x : F.obj (.mk (op U))) :
-    (G.map f.op.toLoc).toFunctor.map ((m.hom.as.app (.mk (op U))).toNatTrans.app x) ≫
-        (restrictionIso f Y.obj x).hom =
-      (restrictionIso f X.obj x).hom ≫
-        (m.hom.as.app (.mk (op V))).toNatTrans.app ((F.map f.op.toLoc).toFunctor.obj x) := by
-  -- Evaluate the naturality of `m` along `f` at `x` and move the comparisons across.
-  have h := congrArg (fun φ ↦ φ.toNatTrans.app x) (m.hom.as.naturality f.op.toLoc)
+theorem restrictionIso_hom_modification {X Y : F ⟶ G} (Γ : X ⟶ Y) (x : F.obj (.mk (op U))) :
+    (G.map f.op.toLoc).toFunctor.map ((Γ.as.app (.mk (op U))).toNatTrans.app x) ≫
+        (restrictionIso f Y x).hom =
+      (restrictionIso f X x).hom ≫
+        (Γ.as.app (.mk (op V))).toNatTrans.app ((F.map f.op.toLoc).toFunctor.obj x) := by
+  -- Evaluate the naturality of `Γ` along `f` at `x` and move the comparisons across.
+  have h := congrArg (fun φ ↦ φ.toNatTrans.app x) (Γ.as.naturality f.op.toLoc)
   simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
-  rw [← cancel_epi ((X.obj.naturality f.op.toLoc).hom.toNatTrans.app x)]
+  rw [← cancel_epi ((X.naturality f.op.toLoc).hom.toNatTrans.app x)]
   simp [← reassoc_of% h]
+
+variable {bF : F.AbelianBanding J A} {bG : G.AbelianBanding J A}
 
 /-- **Modifications commute with the restriction comparisons**: for `m : X ⟶ Y`, pulling back the
 component of `m` at `x` along `f` and comparing with `Y` is comparing with `X` and then taking the
@@ -155,7 +154,7 @@ theorem restrictionIso_modification [∀ U : C, IsGroupoid (G.obj (.mk (op U)))]
     (G.map f.op.toLoc).toFunctor.mapIso (componentIso m U x) ≪≫ restrictionIso f Y.obj x =
       restrictionIso f X.obj x ≪≫ componentIso m V ((F.map f.op.toLoc).toFunctor.obj x) :=
   Iso.ext (by simpa only [Iso.trans_hom, Functor.mapIso_hom, componentIso_hom] using
-    restrictionIso_hom_modification f m x)
+    restrictionIso_hom_modification f m.hom x)
 
 variable (bG)
 

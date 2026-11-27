@@ -34,8 +34,8 @@ Remark 31.5).
 
 In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 
-* `mapComp'_hom_restrictionIso_hom_modification`: modifications commute with the comparison
-  `k(X_U x) ≫ G(t) (restrictionIso f X x)` after `p`.
+* `mapComp'_hom_restrictionIso_hom_modification`: modifications of strong transformations
+  commute with the comparison `k(X_U x) ≫ G(t) (restrictionIso f X x)` after `p`.
 * `fiberHomBaseChangeIso f x y X`, with `fiberHomBaseChangeIso_hom_app`,
   `fiberHomBaseChangeIso_inv_app`, `fiberHomBaseChangeIso_modification` and
   `fiberHomBaseChangeIso_equivariant`.
@@ -62,23 +62,23 @@ variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   {bF : F.AbelianBanding J A} {bG : G.AbelianBanding J A}
   {U V : C} (f : V ⟶ U) (x : F.obj (.mk (op U))) (y : G.obj (.mk (op U)))
 
-/-- **Modifications commute with the comparison after a section**: for `m : X ⟶ Y` and
-`t : W ⟶ V`, pulling back `m_U x` along `t ≫ f` and then applying `k(Y_U x)` and
-`G(t) (restrictionIso f Y x)` is applying `k(X_U x)` and `G(t) (restrictionIso f X x)` and then
-pulling back `m_V (F(f) x)` along `t`, where `k` is the composition isomorphism
-`G(t ≫ f) ≅ G(t) ∘ G(f)`. -/
+/-- **Modifications commute with the comparison after a section**: for a modification `Γ : X ⟶ Y`
+of strong transformations and `t : W ⟶ V`, pulling back `Γ_U x` along `t ≫ f` and then applying
+`k(Y_U x)` and `G(t) (restrictionIso f Y x)` is applying `k(X_U x)` and
+`G(t) (restrictionIso f X x)` and then pulling back `Γ_V (F(f) x)` along `t`, where `k` is the
+composition isomorphism `G(t ≫ f) ≅ G(t) ∘ G(f)`. -/
 @[reassoc]
-theorem mapComp'_hom_restrictionIso_hom_modification {W : C} (t : W ⟶ V)
-    {X Y : HomCategory bF bG} (m : X ⟶ Y) :
-    (G.map (t ≫ f).op.toLoc).toFunctor.map ((m.hom.as.app (.mk (op U))).toNatTrans.app x) ≫
+theorem mapComp'_hom_restrictionIso_hom_modification {W : C} (t : W ⟶ V) {X Y : F ⟶ G}
+    (Γ : X ⟶ Y) :
+    (G.map (t ≫ f).op.toLoc).toFunctor.map ((Γ.as.app (.mk (op U))).toNatTrans.app x) ≫
         (G.mapComp' f.op.toLoc t.op.toLoc (t ≫ f).op.toLoc).hom.toNatTrans.app
-          ((Y.obj.app (.mk (op U))).toFunctor.obj x) ≫
-        (G.map t.op.toLoc).toFunctor.map (restrictionIso f Y.obj x).hom =
+          ((Y.app (.mk (op U))).toFunctor.obj x) ≫
+        (G.map t.op.toLoc).toFunctor.map (restrictionIso f Y x).hom =
       (G.mapComp' f.op.toLoc t.op.toLoc (t ≫ f).op.toLoc).hom.toNatTrans.app
-          ((X.obj.app (.mk (op U))).toFunctor.obj x) ≫
-        (G.map t.op.toLoc).toFunctor.map (restrictionIso f X.obj x).hom ≫
+          ((X.app (.mk (op U))).toFunctor.obj x) ≫
+        (G.map t.op.toLoc).toFunctor.map (restrictionIso f X x).hom ≫
         (G.map t.op.toLoc).toFunctor.map
-          ((m.hom.as.app (.mk (op V))).toNatTrans.app ((F.map f.op.toLoc).toFunctor.obj x)) := by
+          ((Γ.as.app (.mk (op V))).toNatTrans.app ((F.map f.op.toLoc).toFunctor.obj x)) := by
   rw [reassoc_of% (G.mapComp' f.op.toLoc t.op.toLoc (t ≫ f).op.toLoc).hom.toNatTrans.naturality]
   simp only [Cat.Hom.comp_toFunctor, Functor.comp_map, ← Functor.map_comp,
     restrictionIso_hom_modification]
@@ -172,7 +172,7 @@ theorem fiberHomBaseChangeIso_modification {X Y : HomCategory bF bG} (m : X ⟶ 
   -- `fiberHomBaseChangeIso_hom_app`, `Category.assoc` and the `_assoc` form of the tail lemma
   -- do not rewrite around `p`, whose fibre matches only up to unfolding `Over.map`.
   exact (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
-    (congrArg (p ≫ ·) (mapComp'_hom_restrictionIso_hom_modification f x T.unop.hom m)).trans <|
+    (congrArg (p ≫ ·) (mapComp'_hom_restrictionIso_hom_modification f x T.unop.hom m.hom)).trans <|
       (congrArg (p ≫ ·) (Category.assoc _ _ _).symm).trans (Category.assoc _ _ _).symm)).trans
     (Category.assoc _ _ _).symm
 
