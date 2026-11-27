@@ -20,19 +20,20 @@ function** with boundary log-modulus `h` is `O_h = exp (S[h])`, where
 
 ## Main results
 
-* `TauCeti.differentiableOn_upperHalfPlaneSchwarzIntegralFun_ofReal`: `S[h]` is holomorphic on
-  `ℂ₊` for real `h ∈ L¹(Π)`, through the Schwarz integrals of the measures `h⁺ dx` and `h⁻ dx`.
 * `TauCeti.differentiableOn_upperHalfPlaneOuter`, `TauCeti.upperHalfPlaneOuter_ne_zero`: `O_h` is
   holomorphic and zero-free on `ℂ₊`.
 * `TauCeti.norm_upperHalfPlaneOuter`: `|O_h| = exp P[h]`.
-* `TauCeti.ae_tendsto_norm_upperHalfPlaneOuter`: by Fatou's theorem, `|O_h(z)| → e^{h(x)}` as
-  `z → x` nontangentially, for almost every `x`.
+* `TauCeti.ae_tendsto_nontangentialFilter_norm_upperHalfPlaneOuter`: by Fatou's theorem,
+  `|O_h(z)| → e^{h(x)}` as `z → x` nontangentially, for almost every `x`.
 * `TauCeti.upperHalfPlaneOuter_add`, `TauCeti.upperHalfPlaneOuter_zero`: `O_{h + k} = O_h O_k`
   and `O_0 = 1`.
 * `TauCeti.norm_upperHalfPlaneOuter_le`: if `h ≤ M` almost everywhere then `|O_h| ≤ e^M`.
 
 ## References
 
+* J. B. Garnett, *Bounded Analytic Functions*, revised 1st ed., Springer (2007), Chapter II, §4.
+* L. Mauth, *On pointwise convergence of the non-linear Fourier transform*, arXiv:2210.12286
+  (2022), Lemma 8.
 * A. Poltoratski, *Pointwise convergence of the non-linear Fourier transform*, Ann. of Math. **200**
   (2024), Section 2.
 -/
@@ -48,51 +49,6 @@ open UpperHalfPlane (upperHalfPlaneSet)
 namespace TauCeti
 
 variable {h k : ℝ → ℝ}
-
-/-- A real `L¹(Π)` function is a complex `L¹(Π)` function. -/
-private theorem integrable_ofReal (hh : Integrable h upperHalfPlanePoissonMeasure) :
-    Integrable (fun x ↦ (h x : ℂ)) upperHalfPlanePoissonMeasure :=
-  hh.ofReal
-
-/-! ### Holomorphy of the Schwarz integral of a real function -/
-
-/-- The Schwarz integral of a real function is the difference of the Schwarz integrals of its
-positive and negative parts. -/
-private theorem upperHalfPlaneSchwarzIntegralFun_ofReal_eq_sub
-    (hh : Integrable h upperHalfPlanePoissonMeasure) {z : ℂ} (hz : z.im ≠ 0) :
-    upperHalfPlaneSchwarzIntegralFun (fun x ↦ (h x : ℂ)) z =
-      upperHalfPlaneSchwarzIntegralFun (fun x ↦ (((h x).toNNReal : ℝ) : ℂ)) z -
-        upperHalfPlaneSchwarzIntegralFun (fun x ↦ (((-h x).toNNReal : ℝ) : ℂ)) z := by
-  have hp : Integrable (fun x ↦ (((h x).toNNReal : ℝ) : ℂ)) upperHalfPlanePoissonMeasure :=
-    hh.pos_part.ofReal
-  have hn : Integrable (fun x ↦ (((-h x).toNNReal : ℝ) : ℂ)) upperHalfPlanePoissonMeasure :=
-    hh.neg_part.ofReal
-  rw [upperHalfPlaneSchwarzIntegralFun_def, upperHalfPlaneSchwarzIntegralFun_def,
-    upperHalfPlaneSchwarzIntegralFun_def, ← mul_sub, ← integral_sub
-      (integrable_subtractedResolventKernel_mul hp hz)
-      (integrable_subtractedResolventKernel_mul hn hz)]
-  congr 2
-  funext x
-  rw [← mul_sub]
-  congr 1
-  simp only [Real.coe_toNNReal']
-  rw [← ofReal_sub, max_zero_sub_max_neg_zero_eq_self]
-
-/-- **The Schwarz integral of a real `L¹(Π)` function is holomorphic** on `ℂ₊`. -/
-theorem differentiableOn_upperHalfPlaneSchwarzIntegralFun_ofReal
-    (hh : Integrable h upperHalfPlanePoissonMeasure) :
-    DifferentiableOn ℂ (upperHalfPlaneSchwarzIntegralFun fun x ↦ (h x : ℂ)) upperHalfPlaneSet := by
-  have hm := (aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure hh).aemeasurable
-  refine ((differentiableOn_upperHalfPlaneSchwarzIntegral
-    (volume.withDensity fun x ↦ ((h x).toNNReal : ℝ≥0∞))).sub
-    (differentiableOn_upperHalfPlaneSchwarzIntegral
-    (volume.withDensity fun x ↦ ((-h x).toNNReal : ℝ≥0∞)))).congr fun z hz ↦ ?_
-  rw [upperHalfPlaneSchwarzIntegralFun_ofReal_eq_sub hh (ne_of_gt hz),
-    upperHalfPlaneSchwarzIntegralFun_eq_upperHalfPlaneSchwarzIntegral_withDensity
-      (h := fun x ↦ (h x).toNNReal) (by fun_prop),
-    upperHalfPlaneSchwarzIntegralFun_eq_upperHalfPlaneSchwarzIntegral_withDensity
-      (h := fun x ↦ (-h x).toNNReal) (by fun_prop)]
-  rfl
 
 /-! ### Outer functions -/
 
@@ -113,47 +69,42 @@ theorem upperHalfPlaneOuter_ne_zero (h : ℝ → ℝ) (z : ℂ) : upperHalfPlane
 /-- **Outer functions are holomorphic** on `ℂ₊`. -/
 theorem differentiableOn_upperHalfPlaneOuter (hh : Integrable h upperHalfPlanePoissonMeasure) :
     DifferentiableOn ℂ (upperHalfPlaneOuter h) upperHalfPlaneSet :=
-  (differentiableOn_upperHalfPlaneSchwarzIntegralFun_ofReal hh).cexp
+  (differentiableOn_upperHalfPlaneSchwarzIntegralFun hh.ofReal).cexp
 
 /-- **The modulus of an outer function**: `|O_h(z)| = exp P[h](z) = exp ∫ P(z, x) h(x) dx`. -/
 theorem norm_upperHalfPlaneOuter (hh : Integrable h upperHalfPlanePoissonMeasure) (z : ℂ) :
     ‖upperHalfPlaneOuter h z‖ = Real.exp (∫ x, upperHalfPlanePoissonKernel z x * h x) := by
   rw [upperHalfPlaneOuter_def, norm_exp, re_upperHalfPlaneSchwarzIntegralFun hh,
-    re_upperHalfPlanePoissonIntegralFun (integrable_ofReal hh)]
+    re_upperHalfPlanePoissonIntegralFun (h := fun x ↦ (h x : ℂ)) hh.ofReal]
   simp only [ofReal_re]
 
 /-- **Boundary modulus of an outer function.** For almost every `x ∈ ℝ`, `|O_h(z)| → e^{h(x)}` as
-`z → x` nontangentially, through cones of every aperture. -/
-theorem ae_tendsto_norm_upperHalfPlaneOuter (hh : Integrable h upperHalfPlanePoissonMeasure) :
+`z → x` nontangentially, through cones of every aperture (Mauth, Lemma 8). -/
+theorem ae_tendsto_nontangentialFilter_norm_upperHalfPlaneOuter
+    (hh : Integrable h upperHalfPlanePoissonMeasure) :
     ∀ᵐ x, ∀ α : ℝ, Tendsto (fun z ↦ ‖upperHalfPlaneOuter h z‖) (nontangentialFilter α x)
       (𝓝 (Real.exp (h x))) := by
-  filter_upwards
-    [ae_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegralFun (integrable_ofReal hh)]
-    with x hx α
+  filter_upwards [ae_tendsto_nontangentialFilter_upperHalfPlanePoissonIntegralFun
+    (h := fun x ↦ (h x : ℂ)) hh.ofReal] with x hx α
   have hre := (Real.continuous_exp.tendsto _).comp ((continuous_re.tendsto _).comp (hx α))
   rw [ofReal_re] at hre
   refine hre.congr fun z ↦ ?_
   simp only [Function.comp_apply, norm_upperHalfPlaneOuter hh,
-    re_upperHalfPlanePoissonIntegralFun (integrable_ofReal hh), ofReal_re]
+    re_upperHalfPlanePoissonIntegralFun (h := fun x ↦ (h x : ℂ)) hh.ofReal, ofReal_re]
 
 /-- **Outer functions are multiplicative**: `O_{h + k} = O_h O_k` off the real axis. -/
 theorem upperHalfPlaneOuter_add (hh : Integrable h upperHalfPlanePoissonMeasure)
     (hk : Integrable k upperHalfPlanePoissonMeasure) {z : ℂ} (hz : z.im ≠ 0) :
     upperHalfPlaneOuter (h + k) z = upperHalfPlaneOuter h z * upperHalfPlaneOuter k z := by
-  rw [upperHalfPlaneOuter_def, upperHalfPlaneOuter_def, upperHalfPlaneOuter_def, ← exp_add,
-    upperHalfPlaneSchwarzIntegralFun_def, upperHalfPlaneSchwarzIntegralFun_def,
-    upperHalfPlaneSchwarzIntegralFun_def, ← mul_add, ← integral_add
-      (integrable_subtractedResolventKernel_mul (integrable_ofReal hh) hz)
-      (integrable_subtractedResolventKernel_mul (integrable_ofReal hk) hz)]
-  congr 3
-  funext x
-  simp only [Pi.add_apply, ofReal_add, mul_add]
+  simp only [upperHalfPlaneOuter_def, Pi.add_apply, ofReal_add,
+    upperHalfPlaneSchwarzIntegralFun_add (h := fun x ↦ (h x : ℂ)) (g := fun x ↦ (k x : ℂ))
+      hh.ofReal hk.ofReal hz, exp_add]
 
 /-- The outer function of `0` is `1`. -/
 @[simp]
 theorem upperHalfPlaneOuter_zero : upperHalfPlaneOuter 0 = 1 := by
   funext z
-  simp [upperHalfPlaneOuter_def, upperHalfPlaneSchwarzIntegralFun_def]
+  simp [upperHalfPlaneOuter_def]
 
 /-- **Bounded outer functions.** If `h ≤ M` almost everywhere, then `|O_h| ≤ e^M` on `ℂ₊`. -/
 theorem norm_upperHalfPlaneOuter_le (hh : Integrable h upperHalfPlanePoissonMeasure) {M : ℝ}
@@ -165,9 +116,7 @@ theorem norm_upperHalfPlaneOuter_le (hh : Integrable h upperHalfPlanePoissonMeas
   calc ∫ x, upperHalfPlanePoissonKernel z x * h x
       ≤ ∫ x, upperHalfPlanePoissonKernel z x * M := by
         refine integral_mono_ae hP ?_ (hM.mono fun x hx ↦ ?_)
-        · exact (integrable_upperHalfPlanePoissonKernel_smul
-            (integrable_const M : Integrable (fun _ ↦ M) upperHalfPlanePoissonMeasure) z).congr
-            (.of_forall fun x ↦ by simp [smul_eq_mul])
+        · exact (isPoissonFinite_volume.integrable_upperHalfPlanePoissonKernel z).mul_const M
         · exact mul_le_mul_of_nonneg_left hx (upperHalfPlanePoissonKernel_nonneg hz.le x)
     _ = M := by rw [integral_mul_const, integral_upperHalfPlanePoissonKernel hz, one_mul]
 
