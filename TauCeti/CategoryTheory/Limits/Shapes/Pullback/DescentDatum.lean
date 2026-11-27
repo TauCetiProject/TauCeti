@@ -172,6 +172,11 @@ def Hom.id : Hom D D where
 theorem Hom.id_hom : (Hom.id D).hom = 𝟙 X :=
   (rfl)
 
+/-- The underlying morphism of the identity of a descent datum is an isomorphism. -/
+instance Hom.isIso_id_hom : IsIso (Hom.id D).hom := by
+  rw [Hom.id_hom]
+  infer_instance
+
 variable {D} in
 /-- The composite of two morphisms of descent data. -/
 def Hom.comp (g : Hom E F) (f : Hom D E) : Hom D F where
@@ -243,6 +248,18 @@ theorem Hom.inv_comp_self : f.inv.comp f = Hom.id D :=
 @[simp]
 theorem Hom.comp_inv_self : f.comp f.inv = Hom.id E :=
   Hom.ext (IsIso.inv_hom_id _)
+
+/-- Cancellation of a morphism of descent data against its inverse, reassociated. -/
+@[simp]
+theorem Hom.inv_comp_self_comp {W : Over S'} {G : DescentDatum p W} (g : Hom G D) :
+    f.inv.comp (f.comp g) = g := by
+  rw [← Hom.comp_assoc, Hom.inv_comp_self, Hom.id_comp]
+
+/-- Cancellation of the inverse of a morphism of descent data against it, reassociated. -/
+@[simp]
+theorem Hom.comp_inv_self_comp {W : Over S'} {G : DescentDatum p W} (g : Hom G E) :
+    f.comp (f.inv.comp g) = g := by
+  rw [← Hom.comp_assoc, Hom.comp_inv_self, Hom.id_comp]
 
 end Inv
 

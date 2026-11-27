@@ -365,9 +365,6 @@ theorem Hom.exists_baseChange_hom_isIso_of_isOpenImmersion {X₀ : Over S}
     ∃ (U₀ : X₀.left.Opens) (g : Hom (baseChange p (Over.mk (U₀.ι ≫ X₀.hom))) D),
       IsIso g.hom ∧ f.comp g = baseChangeHom p (Over.homMk U₀.ι) := by
   have hV := f.isStable_opensRange
-  have : IsIso (Hom.id (baseChange p X₀)).hom := by
-    rw [Hom.id_hom]
-    infer_instance
   obtain ⟨U₀, g, hg, hgf⟩ := exists_baseChange_hom_isIso_restrict (Hom.id _) hV
   -- `f` identifies `D` with the restriction of the canonical descent datum to the image of `f`.
   have hf : Set.range f.hom.left = f.hom.left.opensRange := (Scheme.Hom.coe_opensRange _).symm
@@ -378,9 +375,7 @@ theorem Hom.exists_baseChange_hom_isIso_of_isOpenImmersion {X₀ : Over S}
   refine ⟨U₀, e.inv.comp g, by rw [Hom.comp_hom]; infer_instance, ?_⟩
   calc f.comp (e.inv.comp g)
       = (((baseChange p X₀).restrictHom _ hV).comp e).comp (e.inv.comp g) := by rw [he]
-    _ = _ := by
-      rw [Hom.comp_assoc, ← Hom.comp_assoc e e.inv g, Hom.comp_inv_self, Hom.id_comp, hgf,
-        Hom.id_comp]
+    _ = _ := by simp [hgf]
 
 end Effective
 
