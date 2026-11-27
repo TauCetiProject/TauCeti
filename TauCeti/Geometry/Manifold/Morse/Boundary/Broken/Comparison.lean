@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
 public import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Frame
+import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Crossing
 
 /-!
 # Comparison maps near a broken trajectory
@@ -27,13 +28,15 @@ through `z₀`. Write `A = C_{pr}(y₀)` and `B = (B₁, B₂) = C_{rq}(z₀)`. 
 
 (`TauCeti.IsAdaptedPseudoGradient.tendsto_trajectoryComparison_of_broken`), for points `yₙ` of
 `W^u(p) ∩ W^s(q)` tending to `y₀` whose orbits reach points `zₙ` tending to `z₀` at times
-`Tₙ → ∞`, crossing the Morse chart of `r` linearly in between. This is the convergence used in
-`TauCeti.LinearAlgebra.Orientation.Breaking`, which computes the orientation of the kernel of
-`(id × B₂) ∘ A` from those of the kernels of `A` and `B`: when `ind p = ind r + 1 = ind q + 2`, the
-line `ker ((id × B₂) ∘ A)` is oriented by `-ε(u) ε(v)` times the gluing direction, where `ε(u)` and
-`ε(v)` are the signs of the two trajectories. It is the analytic input for comparing the boundary
-orientation of the compactified space of index-two trajectories at a broken end with the sign of
-the broken trajectory, which the integral `∂ ∘ ∂ = 0` needs.
+`Tₙ → ∞`. Such orbits cross the Morse chart of `r` along its linear flow
+(`TauCeti.IsAdaptedPseudoGradient.eventually_forall_linearFlow_mem_target_of_broken`). This is the
+convergence used in `TauCeti.LinearAlgebra.Orientation.Breaking`, which computes the orientation of
+the kernel of `(id × B₂) ∘ A` from those of the kernels of `A` and `B`: when
+`ind p = ind r + 1 = ind q + 2`, the line `ker ((id × B₂) ∘ A)` is oriented by `-ε(u) ε(v)` times
+the gluing direction, where `ε(u)` and `ε(v)` are the signs of the two trajectories. It is the
+analytic input for comparing the boundary orientation of the compactified space of index-two
+trajectories at a broken end with the sign of the broken trajectory, which the integral
+`∂ ∘ ∂ = 0` needs.
 
 No rescaling is needed: along the flow the unstable frame of `p` is multiplied by `e^{-t}` and the
 normal coordinates of `W^s(q)` by `e^{t}`, so the second component of `C_{pq}` is the same at `yₙ`
@@ -93,13 +96,11 @@ of `TauCeti.IsAdaptedPseudoGradient.tendsto_trajectoryComparison_of_broken`, the
 of `W^s(q)` along the unstable frame of `W^u(p)` at `yₙ`, the second component of the comparison
 map `C_{pq}(yₙ)`, tend to `N_q(z₀) ∘ F_r(z₀) ∘ N_r(y₀) ∘ F_p(y₀)`. -/
 theorem tendsto_stableNormal_comp_unstableFrame_of_broken (hf : IsMorse 𝓘(ℝ, E) f) {y₀ z₀ : M}
-    {a b : ℝ} (hy₀ : y₀ ∈ hX.flow.unstableSet p) (ha : a ∈ hX.linearForwardTimes φr y₀)
+    {a b : ℝ} (hy₀ : y₀ ∈ hX.flow.unstableSet p) (hy₀r : y₀ ∈ hX.flow.stableSet r)
+    (ha : a ∈ hX.linearForwardTimes φr y₀) (hz₀r : z₀ ∈ hX.flow.unstableSet r)
     (hb : b ∈ hX.linearBackwardTimes φr z₀) (hz₀ : z₀ ∈ hX.flow.stableSet q)
     {ι : Type*} {l : Filter ι} {y : ι → M} {T : ι → ℝ} (hy : Tendsto y l (𝓝 y₀))
     (hyl : ∀ᶠ n in l, y n ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (hT : Tendsto T l atTop)
-    (hcross : ∀ᶠ n in l, ∀ t ∈ Icc 0 (T n - a - b),
-      φr.coord.symm (φr.linearFlow t (φr.coord (φr.toChart (hX.flow a (y n))))) ∈
-        φr.toChart.target)
     (hz : Tendsto (fun n ↦ hX.flow (T n) (y n)) l (𝓝 z₀)) :
     Tendsto (fun n ↦ (hX.stableNormal φq (y n)).comp (hX.unstableFrame φp (y n))) l
       (𝓝 ((hX.stableNormal φq z₀).comp ((hX.unstableFrame φr z₀).comp
@@ -111,7 +112,8 @@ theorem tendsto_stableNormal_comp_unstableFrame_of_broken (hf : IsMorse 𝓘(ℝ
   have hc₀ : c ∈ hX.linearForwardTimes φq z₀ := hc.self_of_nhds hz₀
   have hlam := hX.tendsto_mvfderiv_comp_unstableFrame_flow hφp hφr hf hy₀ ha hb
     ((contMDiffAt_toChart_comp_flow ((hX.mem_linearForwardTimes φq).1 hc₀).1).of_le
-      (by norm_cast)) hy (hyl.mono fun _ h ↦ h.1) hT hcross hz
+      (by norm_cast)) hy (hyl.mono fun _ h ↦ h.1) hT
+      (eventually_forall_linearFlow_mem_target_of_broken hφr hf hy₀r ha hz₀r hb hy hz) hz
   rw [stableNormal_eq_comp_mvfderiv hφq hc₀, ContinuousLinearMap.comp_assoc]
   refine ((isBoundedBilinearMap_comp.continuous.tendsto _).comp
     (tendsto_const_nhds.prodMk_nhds hlam)).congr' ?_
@@ -121,24 +123,21 @@ theorem tendsto_stableNormal_comp_unstableFrame_of_broken (hf : IsMorse 𝓘(ℝ
   rw [comp_apply, ← stableNormal_comp_unstableFrame_flow hφp hφq hf hn (T n),
     stableNormal_eq_comp_mvfderiv hφq (hcn hzq), ContinuousLinearMap.comp_assoc]
 
-/-- **Comparison maps near a broken trajectory.** Let `y₀` be a point of `W^u(p)` with a time `a`
-of linear forward flow in the Morse chart `φr` of `r`, on a trajectory from `p` to `r`, and `z₀` a
-point of `W^s(q)` with a time `b` of linear backward flow in `φr`, on a trajectory from `r` to
-`q`. Let `yₙ ∈ W^u(p) ∩ W^s(q)` tend to `y₀`, and `Tₙ → ∞` with `Φ_{Tₙ} yₙ → z₀`, the orbits
-crossing the chart of `r` linearly between the times `a` and `Tₙ - b`. Then the comparison maps
-`C_{pq}(yₙ)` tend to
+/-- **Comparison maps near a broken trajectory.** Let `y₀` be a point of `W^u(p) ∩ W^s(r)`, on a
+trajectory from `p` to `r`, with a time `a` of linear forward flow in the Morse chart `φr` of `r`,
+and `z₀` a point of `W^u(r) ∩ W^s(q)`, on a trajectory from `r` to `q`, with a time `b` of linear
+backward flow in `φr`. Let `yₙ ∈ W^u(p) ∩ W^s(q)` tend to `y₀`, and `Tₙ → ∞` with
+`Φ_{Tₙ} yₙ → z₀`. Then the comparison maps `C_{pq}(yₙ)` tend to
 
 `(id × B₂) ∘ C_{pr}(y₀)`,
 
 where `B₂ = N_q(z₀) ∘ F_r(z₀)` is the second component of the comparison map `C_{rq}(z₀)`. -/
 theorem tendsto_trajectoryComparison_of_broken (hf : IsMorse 𝓘(ℝ, E) f) {y₀ z₀ : M} {a b : ℝ}
-    (hy₀ : y₀ ∈ hX.flow.unstableSet p) (ha : a ∈ hX.linearForwardTimes φr y₀)
+    (hy₀ : y₀ ∈ hX.flow.unstableSet p) (hy₀r : y₀ ∈ hX.flow.stableSet r)
+    (ha : a ∈ hX.linearForwardTimes φr y₀) (hz₀r : z₀ ∈ hX.flow.unstableSet r)
     (hb : b ∈ hX.linearBackwardTimes φr z₀) (hz₀ : z₀ ∈ hX.flow.stableSet q)
     {ι : Type*} {l : Filter ι} {y : ι → M} {T : ι → ℝ} (hy : Tendsto y l (𝓝 y₀))
     (hyl : ∀ᶠ n in l, y n ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (hT : Tendsto T l atTop)
-    (hcross : ∀ᶠ n in l, ∀ t ∈ Icc 0 (T n - a - b),
-      φr.coord.symm (φr.linearFlow t (φr.coord (φr.toChart (hX.flow a (y n))))) ∈
-        φr.toChart.target)
     (hz : Tendsto (fun n ↦ hX.flow (T n) (y n)) l (𝓝 z₀)) :
     Tendsto (fun n ↦ hX.trajectoryComparison φp φq (y n)) l
       (𝓝 (((ContinuousLinearMap.id ℝ ℝ).prodMap
@@ -151,8 +150,8 @@ theorem tendsto_trajectoryComparison_of_broken (hf : IsMorse 𝓘(ℝ, E) f) {y�
     (hX.continuousWithinAt_mvfderiv_comp_unstableFrame hφp hf
       (hf.contMDiff.contMDiffAt.of_le (by norm_cast)) hy₀).tendsto.comp
         (tendsto_nhdsWithin_iff.2 ⟨hy, hyl.mono fun _ h ↦ h.1⟩)
-  have h₂ := tendsto_stableNormal_comp_unstableFrame_of_broken hφp hφr hφq hf hy₀ ha hb hz₀ hy hyl
-    hT hcross hz
+  have h₂ := tendsto_stableNormal_comp_unstableFrame_of_broken hφp hφr hφq hf hy₀ hy₀r ha hz₀r hb
+    hz₀ hy hyl hT hz
   -- Both the comparison maps and the limit are pairings of two components by
   -- `ContinuousLinearMap.prodL`.
   have hlim : ((ContinuousLinearMap.id ℝ ℝ).prodMap
