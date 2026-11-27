@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.WittVector.Complete
 public import TauCeti.RingTheory.WittVector.Ideal
 
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 
 /-!
@@ -173,15 +174,6 @@ theorem intCast_pow_mul_eq_iterate_verschiebung (n : ℕ) (d : ℤ) :
   push_cast
   ring
 
-omit [PerfectRing K p] in
-/-- For a proper ideal `𝔪` of a subring `O` of a ring of characteristic `p`, the quotient
-`O ⧸ 𝔪` has characteristic `p`. -/
-private theorem charP_quotient (h𝔪 : 𝔪 ≠ ⊤) : CharP (O ⧸ 𝔪) p :=
-  have := Ideal.Quotient.nontrivial_iff.mpr h𝔪
-  (CharP.charP_iff_prime_eq_zero hp.out).mpr <| by
-    rw [← map_natCast (Ideal.Quotient.mk 𝔪), Ideal.Quotient.eq_zero_iff_mem]
-    exact (Subtype.ext (by simp) : (p : O) = 0) ▸ 𝔪.zero_mem
-
 /-- **The constants modulo `W(𝔪)`.** For a proper ideal `𝔪`, an integer `c` lies in
 `W(𝔪) + p^n W(K)` exactly when `p^n ∣ c`. -/
 theorem intCast_mem_idealModPow_iff (h𝔪 : 𝔪 ≠ ⊤) {n : ℕ} {c : ℤ} :
@@ -196,7 +188,9 @@ theorem intCast_mem_idealModPow_iff (h𝔪 : 𝔪 ≠ ⊤) {n : ℕ} {c : ℤ} :
       obtain ⟨a, ha, hac⟩ := mem_idealModPow_one_iff.mp (idealModPow_antitone (by omega) hc)
       have hac : a = (c : O) := Subtype.ext <| by
         rw [Subring.coe_intCast, hac, ← constantCoeff_apply, map_intCast]
-      have := charP_quotient h𝔪
+      have := Ideal.Quotient.nontrivial_iff.mpr h𝔪
+      have := O.subtype.charP O.subtype_injective p
+      have := charP_of_ringHom_of_prime (Ideal.Quotient.mk 𝔪) p
       rwa [← CharP.intCast_eq_zero_iff (O ⧸ 𝔪) p, ← map_intCast (Ideal.Quotient.mk 𝔪),
         Ideal.Quotient.eq_zero_iff_mem, ← hac]
     obtain ⟨d, rfl⟩ := hpc
@@ -205,18 +199,6 @@ theorem intCast_mem_idealModPow_iff (h𝔪 : 𝔪 ≠ ⊤) {n : ℕ} {c : ℤ} :
       verschiebung_mem_idealModPow_succ_iff] at hc
     rw [pow_succ']
     exact mul_dvd_mul_left _ (ih hc)
-
-omit [PerfectRing K p] in
-/-- The residue step: if `z ^ p - z ∈ 𝔪` with `O` closed under Artin–Schreier roots and `𝔪`
-prime, then `z` is congruent modulo `𝔪` to a natural number. -/
-private theorem exists_natCast_sub_mem [𝔪.IsPrime] (hO : ∀ z : K, z ^ p - z ∈ O → z ∈ O)
-    {z : K} {a : O} (ha : a ∈ 𝔪) (haz : (a : K) = z ^ p - z) :
-    ∃ d : ℕ, ∃ b ∈ 𝔪, (b : K) = z - d := by
-  have hz : z ∈ O := hO z (haz ▸ a.property)
-  have := charP_quotient (p := p) (Ideal.IsPrime.ne_top ‹_›)
-  have hza : (⟨z, hz⟩ : O) ^ p - ⟨z, hz⟩ = a := Subtype.ext (by simpa using haz.symm)
-  obtain ⟨d, hd⟩ := Ideal.exists_natCast_sub_mem_of_pow_sub_self_mem (p := p) (hza ▸ ha)
-  exact ⟨d, _, hd, by simp⟩
 
 /-- **The Artin–Schreier sequence modulo `W(𝔪)`.** Let `K` be a perfect ring of characteristic
 `p`, `O ⊆ K` a subring that contains every root `z ∈ K` of an equation `z ^ p - z = a` with
@@ -248,8 +230,16 @@ theorem exists_sub_intCast_mem_idealModPow [𝔪.IsPrime] (hO : ∀ z : K, z ^ p
       rwa [hφ, add_sub_cancel_left, add_comm] at this
     rw [iterate_verschiebung_mem_idealModPow_add_iff, mem_idealModPow_one_iff] at hVz
     obtain ⟨a, ha, haz⟩ := hVz
-    obtain ⟨d, b, hb, hbz⟩ := exists_natCast_sub_mem hO ha (by
-      simpa [coeff_frobenius_charP] using haz.trans (map_sub constantCoeff (frobenius z) z))
+    -- the residue step: `z₀ ^ p - z₀ ∈ 𝔪`, so `z₀ ∈ O` is congruent modulo `𝔪` to some `d : ℕ`
+    have haz : (a : K) = z.coeff 0 ^ p - z.coeff 0 := by
+      simpa [coeff_frobenius_charP] using haz.trans (map_sub constantCoeff (frobenius z) z)
+    have hz : z.coeff 0 ∈ O := hO _ (haz ▸ a.property)
+    have := O.subtype.charP O.subtype_injective p
+    have := charP_of_ringHom_of_prime (Ideal.Quotient.mk 𝔪) p
+    have hza : (⟨z.coeff 0, hz⟩ : O) ^ p - ⟨z.coeff 0, hz⟩ = a :=
+      Subtype.ext (by simpa using haz.symm)
+    obtain ⟨d, hd⟩ := Ideal.exists_natCast_sub_mem_of_pow_sub_self_mem (p := p) (hza ▸ ha)
+    obtain ⟨b, hb, hbz⟩ : ∃ b ∈ 𝔪, (b : K) = z.coeff 0 - d := ⟨_, hd, by simp⟩
     refine ⟨c + p ^ n * d, ?_⟩
     -- `p^n d = V^n d`, so `x - (c + p^n d) = u + V^n (z - d)`
     have hpd := intCast_pow_mul_eq_iterate_verschiebung (K := K) n d
