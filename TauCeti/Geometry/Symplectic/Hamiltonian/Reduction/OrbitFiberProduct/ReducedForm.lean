@@ -344,7 +344,7 @@ theorem isSubmersion_orbitFiberProductProj :
   have := h.isManifold_orbitFiberProduct hreg b
   have hq := BalancedProduct.isSubmersion_orbitProj_rightTranslation (I := I) (F := F)
     (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d)
-  -- `q_W = q_Y ∘ Φ⁻¹`, and precomposing with a diffeomorphism keeps the differentials onto.
+  -- `q_W = q_Y ∘ Φ⁻¹` is a submersion precomposed with a diffeomorphism.
   set Φ := h.orbitFiberProductDiffeomorph hreg hn d b
   have hqΦ : h.orbitFiberProductProj c b = BalancedProduct.orbitProj ∘ Φ.symm :=
     funext fun p ↦ by
@@ -352,10 +352,7 @@ theorem isSubmersion_orbitFiberProductProj :
         ← h.orbitFiberProductProj_orbitFiberProductDiffeomorph hreg hn d b (Φ.symm p),
         Φ.apply_symm_apply]
   rw [hqΦ]
-  refine (ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv
-    (hq.contMDiff.comp Φ.symm.contMDiff) (by simp) fun p ↦ ?_).isSubmersion
-  exact LinearMap.range_eq_top.1 ((Φ.symm.range_mfderiv_comp_diffeomorph (by simp) _ p).trans
-    (LinearMap.range_eq_top.2 (hq.surjective_mfderiv (by simp) _)))
+  exact hq.comp_diffeomorph Φ.symm (by simp)
 
 /-- **The orbit-reduction identity on the orbit fibre product.** Let `G` act smoothly and properly
 on `M`, preserving `σ`, with coadjoint-equivariant moment map `μ`, let `c` be a regular value of

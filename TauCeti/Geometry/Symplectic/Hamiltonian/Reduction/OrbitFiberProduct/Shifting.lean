@@ -351,11 +351,7 @@ private theorem isSubmersion_levelProj :
   set φ := (h.orbitFiberProductDiffeomorphLevelSubMulAction hreg b hn₀).symm
   have hq := h.isSubmersion_orbitFiberProductProj hreg hn d b
   rw [h.levelProj_eq_comp hreg hn₀]
-  -- Precomposing the submersion `q_W` with the diffeomorphism `φ` keeps the differentials onto.
-  refine (ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv
-    (hq.contMDiff.comp φ.contMDiff) (by simp) fun z ↦ ?_).isSubmersion
-  exact LinearMap.range_eq_top.1 ((φ.range_mfderiv_comp_diffeomorph (by simp) _ z).trans
-    (LinearMap.range_eq_top.2 (hq.surjective_mfderiv (by simp) _)))
+  exact hq.comp_diffeomorph φ (by simp)
 
 /-- **The reduced form on the zero level of the shifting moment map.** With the hypotheses of the
 Marsden–Weinstein–Meyer theorem, give the level `Ψ⁻¹(0)` of the shifting moment map
