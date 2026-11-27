@@ -36,29 +36,6 @@ open Finset Matrix
 
 namespace TauCeti.PrimePadicIso
 
-/-- The subring of complex numbers that are integral at the given prime-adic embedding. -/
-noncomputable def integers (ι : PrimePadicIso) : Subring ℂ :=
-  (Valued.v.comap ι.iso.toRingHom).integer
-
-/-- Integrality at a prime-adic embedding means that the image has norm at most one. -/
-@[simp]
-theorem mem_integers {ι : PrimePadicIso} {z : ℂ} : z ∈ ι.integers ↔ ‖ι.iso z‖ ≤ 1 := by
-  rw [integers, Valuation.mem_integer_iff, Valuation.comap_apply, ← PadicAlgCl.valuation_coe,
-    NNReal.coe_le_one]
-  simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
-
-/-- A local integer is a unit exactly when its image has norm one. -/
-@[simp]
-theorem isUnit_iff_norm_iso_eq_one {ι : PrimePadicIso} {z : ι.integers} :
-    IsUnit z ↔ ‖ι.iso (z : ℂ)‖ = 1 := by
-  have h : (Valued.v.comap ι.iso.toRingHom).Integers ι.integers := by
-    unfold integers
-    exact Valuation.integer.integers _
-  rw [h.isUnit_iff_valuation_eq_one, Valuation.comap_apply, ← PadicAlgCl.valuation_coe,
-    NNReal.coe_eq_one]
-  simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    Algebra.algebraMap_ofSubsemiring_apply]
-
 universe u
 
 variable {V : Type*} [AddCommMonoid V] [Module ℂ V]
