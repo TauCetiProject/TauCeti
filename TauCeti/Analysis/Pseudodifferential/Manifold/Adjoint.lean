@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Weighted
-public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Basic
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
+import TauCeti.Analysis.Pseudodifferential.Manifold.FormalAdjoint
+import TauCeti.Analysis.Pseudodifferential.Manifold.PatchedQuantization
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 
 /-!
@@ -36,6 +38,23 @@ exactly where `P` is (`TauCeti.isClassicalEllipticAt_iff_of_forall_integral_inne
 Proper support of `Q` is a hypothesis, not a consequence: the adjoint identity only involves the
 values of `Q` on compactly supported functions, while membership in
 `TauCeti.classicalPseudodifferentialOperators` constrains `Q` on all smooth functions.
+
+On a compact manifold of positive dimension, with `μ` finite, every classical pseudodifferential
+operator `P` of order `m` has a formal adjoint, which is a classical pseudodifferential operator of
+order `m` with conjugate principal symbol
+(`TauCeti.exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq`), and this
+formal adjoint is unique
+(`TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`). Indeed `P` is a
+finite sum of chart quantizations (`TauCeti.exists_eq_sum_chartQuantization`), `μ` reads in each
+of their charts as a smooth positive density
+(`TauCeti.HasSmoothPositiveDensity.exists_map_restrict_source_eq_withDensity`), and a finite sum of
+chart quantizations has such a formal adjoint
+(`TauCeti.exists_mem_classicalPseudodifferentialOperators_integral_inner_sum_chartQuantization_eq`).
+Uniqueness holds because `μ` is positive on nonempty open sets, so a smooth function orthogonal to
+itself vanishes. In particular the formal adjoint of an elliptic operator is elliptic
+(`TauCeti.IsClassicalElliptic.exists_isClassicalElliptic_forall_integral_inner_eq`). In the
+Fredholm theory of elliptic operators on compact manifolds, the kernel of the formal adjoint
+describes the cokernel of `P`.
 
 ## The argument
 
@@ -67,6 +86,13 @@ classical symbol of order `m` (`TauCeti.ClassicalSymbol.weightedAdjoint`) with p
 * `TauCeti.isClassicalEllipticAt_iff_of_forall_integral_inner_eq`,
   `TauCeti.isClassicalElliptic_iff_of_forall_integral_inner_eq`: a properly supported formal
   adjoint is elliptic exactly where the operator is.
+* `TauCeti.exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq`: on a compact
+  manifold of positive dimension, every classical pseudodifferential operator has a formal adjoint
+  of the same order with conjugate principal symbol.
+* `TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`: on a compact
+  manifold, formal adjoints for a finite measure positive on open sets are unique.
+* `TauCeti.IsClassicalElliptic.exists_isClassicalElliptic_forall_integral_inner_eq`: on a compact
+  manifold of positive dimension, the formal adjoint of an elliptic operator is elliptic.
 
 ## References
 
@@ -371,5 +397,88 @@ theorem isClassicalElliptic_iff_of_forall_integral_inner_eq
     IsClassicalElliptic m Q ↔ IsClassicalElliptic m P := by
   simp only [isClassicalElliptic_iff,
     isClassicalEllipticAt_iff_of_forall_integral_inner_eq hμ hP hQ hPQ]
+
+/-! ### Existence and uniqueness on a compact manifold -/
+
+section Compact
+
+variable [BorelSpace M] [CompactSpace M] [IsFiniteMeasure μ]
+
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- **Formal adjoints are unique.** On a compact manifold with a finite measure `μ` that is positive
+on nonempty open sets, for instance a finite measure with a smooth positive density
+(`TauCeti.HasSmoothPositiveDensity.isPositiveDensityMeasure`), an operator `P` on the
+complex-valued smooth functions has at most one formal adjoint: if
+`∫ ⟪P u, v⟫ dμ = ∫ ⟪u, Q₁ v⟫ dμ = ∫ ⟪u, Q₂ v⟫ dμ` for all smooth `u` and `v`, then `Q₁ = Q₂`. -/
+theorem eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq [μ.IsOpenPosMeasure]
+    {Q₁ Q₂ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (h₁ : ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q₁ v x) ∂μ)
+    (h₂ : ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q₂ v x) ∂μ) :
+    Q₁ = Q₂ := by
+  refine LinearMap.ext fun v ↦ ?_
+  -- `w = Q₁ v - Q₂ v` is orthogonal to every smooth function, in particular to itself.
+  set w := Q₁ v - Q₂ v
+  have hint : ∀ f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      Integrable (fun x ↦ inner ℂ (f x) (g x)) μ := fun f g ↦
+    (f.contMDiff.continuous.inner g.contMDiff.continuous).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
+  have hw : ∫ x, ((‖w x‖ ^ 2 : ℝ) : ℂ) ∂μ = 0 := by
+    rw [← sub_eq_zero.2 ((h₁ w v).symm.trans (h₂ w v)), ← integral_sub (hint _ _) (hint _ _)]
+    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
+    dsimp only
+    rw [← inner_sub_right, ← Pi.sub_apply, ← ContMDiffMap.coe_sub]
+    simp [w, inner_self_eq_norm_sq_to_K]
+  rw [integral_complex_ofReal, Complex.ofReal_eq_zero] at hw
+  ext x
+  by_contra hx
+  refine (Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero (μ := μ) (x := x)
+    (w.contMDiff.continuous.norm.pow 2) (HasCompactSupport.of_compactSpace _)
+    (fun _ ↦ sq_nonneg _) ?_).ne' hw
+  simpa [w, sub_eq_zero] using hx
+
+/-- **Classical pseudodifferential operators on a compact manifold have formal adjoints.** Let `M`
+be a compact manifold modelled on `ℝⁿ` with `n ≠ 0`, and `μ` a finite measure on `M` with a smooth
+positive density. A classical pseudodifferential operator `P` of
+order `m` has a formal adjoint `Q` for `μ`,
+
+`∫ ⟪P u, v⟫ dμ = ∫ ⟪u, Q v⟫ dμ`
+
+for all smooth `u` and `v`, which is a classical pseudodifferential operator of order `m` with
+principal symbol `σ_m(Q)(x, ξ) = conj σ_m(P)(x, ξ)`. It is unique
+(`TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`), since `μ` is
+positive on nonempty open sets. -/
+theorem exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq [NeZero n]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hP : P ∈ classicalPseudodifferentialOperators m) :
+    ∃ Q ∈ classicalPseudodifferentialOperators m,
+      (∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+        ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ) ∧
+      ∀ x ξ, classicalPrincipalSymbol m Q x ξ = conj (classicalPrincipalSymbol m P x ξ) := by
+  -- `P` is a finite sum of chart quantizations, and `μ` has a smooth density in each chart.
+  obtain ⟨k, e, he, φ, ψ, a, rfl⟩ := exists_eq_sum_chartQuantization hP
+  choose ρ hρ hρ0 hρμ using fun i ↦ hμ.exists_map_restrict_source_eq_withDensity (he i)
+  exact exists_mem_classicalPseudodifferentialOperators_integral_inner_sum_chartQuantization_eq
+    Finset.univ he (fun i _ ↦ hρ i) (fun i _ ↦ hρ0 i) (fun i _ ↦ hρμ i) φ ψ a
+
+/-- **The formal adjoint of an elliptic operator is elliptic.** On a compact manifold modelled on
+`ℝⁿ` with `n ≠ 0`, with a finite measure `μ` that has a smooth positive density, the formal adjoint
+of an elliptic classical pseudodifferential operator `P` of order `m`
+(`TauCeti.exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq`) is an elliptic
+classical pseudodifferential operator of order `m`. -/
+theorem IsClassicalElliptic.exists_isClassicalElliptic_forall_integral_inner_eq [NeZero n]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P) :
+    ∃ Q ∈ classicalPseudodifferentialOperators m, IsClassicalElliptic m Q ∧
+      ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+        ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ := by
+  obtain ⟨Q, hQ, hPQ, hσ⟩ :=
+    exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq hμ hP
+  refine ⟨Q, hQ, isClassicalElliptic_iff.2 fun x ↦ isClassicalEllipticAt_iff.2 fun ξ hξ ↦ ?_, hPQ⟩
+  simpa [hσ] using isClassicalEllipticAt_iff.1 (isClassicalElliptic_iff.1 hPe x) ξ hξ
+
+end Compact
 
 end TauCeti

@@ -63,6 +63,8 @@ and no flatness of `G` is needed.
   torsor.
 * `TauCeti.GroupScheme.exists_isTorsor_nonempty_toTorsor_iso`: for `G` affine over `S`, every
   torsor under the sheaf of points of `G` is the torsor of points of a `G`-torsor affine over `S`.
+* `TauCeti.GroupScheme.isAffineHom_of_isTorsor`: for `G` affine over `S`, every `G`-torsor is
+  affine over `S`.
 * `TauCeti.GroupScheme.isEquivalence_toTorsorFunctor`: for `G` affine over `S`, the functor of
   points is an equivalence from `G`-torsors to torsors under the sheaf of points of `G`.
 
@@ -269,6 +271,24 @@ theorem exists_isTorsor_nonempty_toTorsor_iso
     (GrothendieckTopology.uliftYonedaGrpObjRepresentableBy G)
   exact ⟨X, P.modObjOfRepresentableBy e, P.isTorsor_of_representableBy e, hX,
     ⟨P.toTorsorIsoOfRepresentableBy e⟩⟩
+
+/-- A torsor under a group scheme affine over `S` is affine over `S`: its torsor of points is
+represented by a scheme affine over `S`, which is then isomorphic to it. -/
+theorem isAffineHom_of_isTorsor (h : (Scheme.fppfTopology.over S).IsTorsor G X) :
+    IsAffineHom X.hom := by
+  obtain ⟨X₀, _, ⟨e⟩⟩ := (h.toTorsor.{u}).exists_isAffineHom_nonempty_representableBy
+    (GrothendieckTopology.uliftYonedaGrpObjRepresentableBy G)
+  let e' : (h.toTorsor.{u}).sheaf.obj.RepresentableBy X :=
+    (Functor.RepresentableBy.equivUliftYonedaIso _ X).symm
+      ((sheafToPresheaf _ _).mapIso (eqToIso h.toTorsor_sheaf.symm))
+  rw [← Over.w (e'.uniqueUpToIso e).hom]
+  infer_instance
+
+/-- An object of the category of `G`-torsors, for `G` affine over `S`, is affine over `S`. -/
+instance isAffineHom_torsorProperty
+    (X : ((Scheme.fppfTopology.over S).torsorProperty G).FullSubcategory) :
+    IsAffineHom X.obj.X.hom :=
+  isAffineHom_of_isTorsor X.property
 
 /-- For a group scheme `G` affine over `S`, the functor of points from `G`-torsors to torsors under
 the sheaf of points of `G` on the big fppf site of `S` is essentially surjective. -/

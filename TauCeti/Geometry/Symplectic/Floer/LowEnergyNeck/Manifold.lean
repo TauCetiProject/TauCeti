@@ -161,9 +161,8 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- The pushforward by `e` of the Hamiltonian vector field of the zero Hamiltonian is bounded by
 `max B 0`, for every `B`. -/
 private theorem norm_mvfderiv_hamiltonianVectorField_zero_le (B : ℝ) (x : M) :
-    ‖mvfderiv I e x (ω.hamiltonianVectorField (fun _ ↦ 0) x)‖ ≤ max B 0 := by
-  rw [hamiltonianVectorField_const, Pi.zero_apply, map_zero, norm_zero]
-  exact le_max_right B 0
+    ‖mvfderiv I e x (ω.hamiltonianVectorField (fun _ ↦ 0) x)‖ ≤ max B 0 :=
+  (norm_mvfderiv_hamiltonianVectorField_zero_le_zero ω e x).trans (le_max_right B 0)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [IsManifold I (⊤ : ℕ∞) M] in
 /-- For `s₀ ∈ [a + 1, b - 1]`, the translation by `(s₀, 0)` maps the window
@@ -265,7 +264,7 @@ private theorem IsNondegenerate.integrableOn_and_setIntegral_floerEnergyDensity_
   exact integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
     ((ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt isOpen_ball
       (hv.of_le (by norm_num))
-      (fun α ↦ by rw [hamiltonianVectorFieldInChartAt_zero]; exact continuousOn_const)
+      (fun α ↦ (contDiffOn_hamiltonianVectorFieldInChartAt_zero ω α (n := 0)).continuousOn)
       (fun α ↦ (hX α).mono (prod_mono (subset_univ _) le_rfl))).aestronglyMeasurable
       measurableSet_ball) hnonneg subset_rfl (by positivity) hint
 
@@ -311,7 +310,7 @@ theorem IsNondegenerate.exists_pos_forall_floerEnergyDensity_le_of_setLIntegral_
     isOpen_univ isCompact_univ (isCompact_closedBall ((0 : ℝ), (1 / 2 : ℝ)) 1) (subset_univ _)
     (fun α ↦ Floer.contDiffOn_almostComplexInChartAt_uncurry_const (hJ α) (hπ α))
     (fun α ↦ contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const
-      (by rw [hamiltonianVectorFieldInChartAt_zero]; exact contDiffOn_const) (hπ α))
+      (contDiffOn_hamiltonianVectorFieldInChartAt_zero ω α) (hπ α))
     (fun α ↦ contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const (hX α) (hπ α))
     (fun _ _ z _ x ↦ hJt z.2 x) hc (fun _ _ z _ x v ↦ hJc z.2 x v) (B := max B 0)
     (fun _ _ _ _ x ↦ norm_mvfderiv_hamiltonianVectorField_zero_le B x)

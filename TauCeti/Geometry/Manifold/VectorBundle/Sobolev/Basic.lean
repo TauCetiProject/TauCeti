@@ -116,9 +116,12 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   `TauCeti.FiniteBundleAtlas.sectionChartData_overlap_tangentHom`,
   `TauCeti.FiniteBundleAtlas.sectionChartData_transition_tangentHom`: one-form chart data share
   the images, overlaps and transitions of the original atlas.
-* `TauCeti.FiniteBundleAtlas.ae_image_tangentHom_iff`,
-  `TauCeti.FiniteBundleAtlas.ae_overlap_tangentHom_iff`: the corresponding almost-everywhere
-  statements agree for an arbitrary measure on the model.
+* `TauCeti.FiniteBundleAtlas.ae_image_ofBaseSet_iff`,
+  `TauCeti.FiniteBundleAtlas.ae_image_tangentHom_iff`,
+  `TauCeti.FiniteBundleAtlas.ae_overlap_tangentHom_iff`,
+  `TauCeti.FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff`: the corresponding
+  almost-everywhere statements agree for an arbitrary measure on the model, also for one-forms
+  with values in a second bundle read on the same charts.
 * `TauCeti.FiniteBundleAtlas.sectionChartData_coordChange_tangentHom_apply`: one-form chart
   readings change by composition with the fibre coordinate change and chart derivative.
 * `TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`: continuous linear maps
@@ -784,6 +787,11 @@ theorem lowerOrdersL_eqRec_eq_lowerToZeroL (w : C.sobolevSections μ p k) :
   apply C.chartValuesL_injective μ p 0
   rw [chartValuesL_lowerOrdersL, chartValuesL_eqRec, chartValuesL_lowerToZeroL]
 
+/-- Forgetting all derivatives is injective. -/
+theorem lowerToZeroL_injective : Function.Injective (C.lowerToZeroL μ p k) := fun w w' h ↦
+  C.chartValuesL_injective μ p k <| by
+    rw [← chartValuesL_lowerToZeroL, h, chartValuesL_lowerToZeroL]
+
 section ConstMap
 
 /-- Applies the constant matrix of a linear map `L` of the model fibre, in the basis
@@ -1106,6 +1114,15 @@ is read off from the function of any chart containing the point. -/
 theorem sectionChartData_image (i : Fin A.n) : A.sectionChartData.image i = A.image i :=
   rfl
 
+/-- The chart images of the section chart data of the atlas `A'.ofBaseSet h` of `V`, built on the
+charts of an atlas `A'` of a second fibre bundle, are those of `A'`. -/
+theorem sectionChartData_image_ofBaseSet {F' : Type*} [TopologicalSpace F'] {V' : M → Type*}
+    [TopologicalSpace (TotalSpace F' V')] [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V']
+    (A' : FiniteBundleAtlas E M F' V')
+    (h : ∀ i, closure (A'.dom i) ⊆ (trivializationAt F V (A'.center i)).baseSet) (i : Fin A'.n) :
+    ((A'.ofBaseSet h).sectionChartData.image i : Set E) = A'.image i :=
+  congrArg SetLike.coe (image_ofBaseSet (A := A') (h := h) i)
+
 @[simp]
 theorem sectionChartData_overlap (i i' : Fin A.n) :
     A.sectionChartData.overlap i i' = A.overlap i i' :=
@@ -1142,6 +1159,19 @@ theorem ae_eq_sectionChartData_coord_iff [MeasurableSpace E] [OpensMeasurableSpa
       f =ᵐ[μ.restrict (A.image i)] A.coord i s :=
   ⟨fun h ↦ h.trans (A.sectionChartData_coord_ae_eq μ i s),
     fun h ↦ h.trans (A.sectionChartData_coord_ae_eq μ i s).symm⟩
+
+omit [NormedSpace ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
+/-- Almost everywhere on a chart image of the section chart data of a second bundle `V'` read on
+the charts of `A` is almost everywhere on the corresponding chart image of `A`. -/
+theorem ae_image_ofBaseSet_iff [MeasurableSpace E] (μ : Measure E) {F' : Type*}
+    [NormedAddCommGroup F'] [NormedSpace ℝ F'] {V' : M → Type*}
+    [TopologicalSpace (TotalSpace F' V')] [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)]
+    [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V'] [VectorBundle ℝ F' V']
+    (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet) (i : Fin A.n)
+    {P : E → Prop} :
+    (∀ᵐ y ∂μ.restrict ((A.ofBaseSet h).sectionChartData.image i), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [(A.ofBaseSet h).sectionChartData_image i, image_ofBaseSet]
 
 section FiniteMeasure
 
@@ -1180,6 +1210,16 @@ theorem sectionChartData_image_tangentHom (i : Fin A.n) :
     (A.tangentHom.sectionChartData.image i : Set E) = A.image i :=
   congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom A i))
 
+/-- The chart images of the section chart data of `V`-valued one-forms on the atlas `A'.ofBaseSet h`
+of `V`, built on the charts of an atlas `A'` of a second fibre bundle, are those of `A'`. -/
+theorem sectionChartData_image_tangentHom_ofBaseSet {F' : Type*} [TopologicalSpace F']
+    {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')] [∀ x, TopologicalSpace (V' x)]
+    [FiberBundle F' V'] (A' : FiniteBundleAtlas E M F' V')
+    (h : ∀ i, closure (A'.dom i) ⊆ (trivializationAt F V (A'.center i)).baseSet) (i : Fin A'.n) :
+    ((A'.ofBaseSet h).tangentHom.sectionChartData.image i : Set E) = A'.image i :=
+  ((A'.ofBaseSet h).sectionChartData_image_tangentHom i).trans
+    (congrArg SetLike.coe (image_ofBaseSet (A := A') (h := h) i))
+
 /-- The chart overlaps of the section chart data of `V`-valued one-forms are those of `A`. -/
 theorem sectionChartData_overlap_tangentHom (i i' : Fin A.n) :
     A.tangentHom.sectionChartData.overlap i i' = A.overlap i i' :=
@@ -1216,6 +1256,23 @@ instance isFiniteMeasure_restrict_sectionChartData_image_tangentHom [MeasurableS
     IsFiniteMeasure (μ.restrict (A.tangentHom.sectionChartData.image i : Set E)) := by
   rw [sectionChartData_image_tangentHom]
   infer_instance
+
+omit [NormedSpace ℝ F] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
+/-- Almost everywhere on a chart image of the section chart data of one-forms with values in a
+second bundle `V'`, read on the charts of `A`, is almost everywhere on the corresponding chart
+image of `A`. This covers the product atlas `A.prod h`, which is an instance of `A.ofBaseSet`. -/
+theorem ae_image_tangentHom_ofBaseSet_iff [MeasurableSpace E] (μ : Measure E)
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] {V' : M → Type*}
+    [TopologicalSpace (TotalSpace F' V')] [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)]
+    [∀ x, TopologicalSpace (V' x)] [∀ x, IsTopologicalAddGroup (V' x)]
+    [∀ x, ContinuousSMul ℝ (V' x)] [FiberBundle F' V'] [VectorBundle ℝ F' V']
+    (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet) (i : Fin A.n)
+    {P : E → Prop} :
+    (∀ᵐ y ∂μ.restrict ((A.ofBaseSet h).tangentHom.sectionChartData.image i : Set E), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [((A.ofBaseSet h).sectionChartData_image_tangentHom i).trans
+    (congrArg SetLike.coe (image_ofBaseSet i))]
 
 /-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
 one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
+import Mathlib.AlgebraicGeometry.PullbackCarrier
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
@@ -41,6 +42,8 @@ global functions of the base change.
   restricts to an isomorphism over every open contained in its range.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_resLE_of_eq`: the restriction of `f` to an open `U`
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
+* `AlgebraicGeometry.Scheme.Hom.range_pullbackFst_resLE`: the base change of `r : T ⟶ U` along the
+  restriction `f ⁻¹ᵁ U ⟶ U` of `f` has image the part of `T` over the range of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_morphismRestrict_homOfLE`: for opens `V ≤ U`, `f ∣_ V`
   is the pullback of `f ∣_ U` along the inclusion `V ⟶ U`.
 * `AlgebraicGeometry.Scheme.Hom.exists_dense_open_of_comp_iso`: a property respecting isomorphisms
@@ -130,6 +133,27 @@ theorem Scheme.Hom.isPullback_resLE_of_eq (U : Y.Opens) {V : X.Opens} (h : V = f
     IsPullback (f.resLE U V h.le) V.ι U.ι f := by
   subst h
   simpa [Scheme.Hom.resLE_eq_morphismRestrict] using isPullback_morphismRestrict f U
+
+/-- Let `U` be an open of the target of `f : X ⟶ Y` and `r : T ⟶ U` a morphism. The base change
+of `r` along the restriction `f ⁻¹ᵁ U ⟶ U` of `f` maps into `T` with image the part of `T` over
+the range of `f`. -/
+theorem Scheme.Hom.range_pullbackFst_resLE {T : Scheme.{u}} (U : Y.Opens) (r : T ⟶ U.toScheme) :
+    Set.range (Limits.pullback.fst r (f.resLE U (f ⁻¹ᵁ U) le_rfl)) =
+      (r ≫ U.ι) ⁻¹' Set.range f := by
+  set g := f.resLE U (f ⁻¹ᵁ U) le_rfl
+  have hg (o : (f ⁻¹ᵁ U).toScheme) : U.ι (g o) = f ((f ⁻¹ᵁ U).ι o) := by
+    rw [← Scheme.Hom.comp_apply, f.resLE_comp_ι, Scheme.Hom.comp_apply]
+  ext v
+  rw [Scheme.Pullback.range_fst, Set.mem_preimage, Set.mem_preimage, Scheme.Hom.comp_apply]
+  refine ⟨?_, fun hv ↦ ?_⟩
+  · rintro ⟨o, ho⟩
+    rw [← ho, hg]
+    exact ⟨_, rfl⟩
+  · obtain ⟨x, hx⟩ := hv
+    have hxO : x ∈ f ⁻¹ᵁ U := by
+      rw [Scheme.Hom.mem_preimage, hx]
+      exact (r v).property
+    exact ⟨(⟨x, hxO⟩ : (f ⁻¹ᵁ U).toScheme), U.ι.isOpenEmbedding.injective ((hg _).trans hx)⟩
 
 /-- For opens `V ≤ U` of the target, restricting `f` over `V` is the pullback of restricting it
 over `U` along the inclusion `V ⟶ U`. -/
