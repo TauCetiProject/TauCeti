@@ -329,7 +329,7 @@ theorem π_X_last_sq_mul_jacobian_of_explicitInverse
         algebraMap A C (ϖ ^ (2 * k')) := by
     intro N F π hN' hF' hπ
     subst hN'
-    have hFeq : F = explicitInverseSystem A ϖ F' k' := hF'
+    have hFeq : F = explicitInverseSystem A ϖ F' k' := (cast_eq _ _).symm.trans hF'
     rw [hFeq] at hπ ⊢
     exact map_last_sq_mul_jacobian_explicitInverseSystem π hπ
   exact h_aux Q.F Q.π hN hF (Q.π_F _)
@@ -548,8 +548,8 @@ private theorem ker_withInverseHom_le (P : StandardEtalePresentation Aplus ϖ Cp
             _ = Ideal.Quotient.mk K' (tateSeries.X (P.N + 1) A (Fin.last P.N)) * (uQ : _) := by
                   rw [hψ_π, AlgHom.commutes, ← hlast, huQ]
         exact uQ.mul_left_inj.mp hmul
-      · have hi : i.castSucc = Fin.castSuccEmb i := rfl
-        rw [hi, ← tateSeries.renameAlgHom_X Fin.castSuccEmb, withInverseHom_castSuccAlgHom, hψ_π]
+      · rw [← Fin.castSuccEmb_apply i, ← tateSeries.renameAlgHom_X Fin.castSuccEmb,
+          withInverseHom_castSuccAlgHom, hψ_π]
   intro f hf
   exact Ideal.Quotient.eq_zero_iff_mem.mp
     (by rw [← hcomp]; simp [RingHom.comp_apply, RingHom.mem_ker.mp hf])

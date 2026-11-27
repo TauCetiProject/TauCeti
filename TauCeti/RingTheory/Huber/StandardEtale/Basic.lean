@@ -175,27 +175,6 @@ theorem continuous_algebraMap (P : StandardEtalePresentation Aplus ϖ Cplus) :
   rw [hcomp]
   exact P.continuous_π.comp (continuous_weightedC isWeightFamily_one_weight)
 
-/-- A standard étale presentation carries `A⁺` into `C⁺` along `algebraMap A C`. -/
-theorem algebraMap_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus) {a : A}
-    (ha : a ∈ Aplus.plus) : algebraMap A C a ∈ Cplus.plus := by
-  rw [← P.π.commutes a, P.mem_plus_iff]
-  let R := (tateSeriesPlus P.N A Aplus.plus).map (P.π : tateSeries P.N A →+* C)
-  exact isIntegral_algebraMap (R := R) (x := ⟨P.π (algebraMap A (tateSeries P.N A) a),
-    Subring.mem_map.mpr ⟨algebraMap A (tateSeries P.N A) a,
-      algebraMap_mem_tateSeriesPlus_iff.mpr ha, rfl⟩⟩)
-
-/-- The structure morphism `(A, A⁺) → (C, C⁺)` of Huber pairs induced by a standard étale
-presentation. -/
-def toBasePairHom (P : StandardEtalePresentation Aplus ϖ Cplus) : Pair.Hom Aplus Cplus where
-  toRingHom := algebraMap A C
-  continuous_toRingHom := P.continuous_algebraMap
-  map_mem_plus _ ha := P.algebraMap_mem_plus ha
-
-@[simp]
-theorem toBasePairHom_toRingHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    P.toBasePairHom.toRingHom = algebraMap A C :=
-  (rfl)
-
 /-- The presenting quotient morphism `(tateSeriesPair P.N A Aplus) → Cplus` of Huber pairs. -/
 noncomputable def toPairHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
     Pair.Hom (tateSeriesPair P.N A Aplus) Cplus where
@@ -210,6 +189,25 @@ noncomputable def toPairHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
 @[simp]
 theorem toPairHom_toRingHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
     P.toPairHom.toRingHom = (P.π : tateSeries P.N A →+* C) :=
+  (rfl)
+
+/-- A standard étale presentation carries `A⁺` into `C⁺` along `algebraMap A C`. -/
+theorem algebraMap_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus) {a : A}
+    (ha : a ∈ Aplus.plus) : algebraMap A C a ∈ Cplus.plus := by
+  rw [← P.π.commutes a, ← AlgHom.coe_toRingHom, ← P.toPairHom_toRingHom]
+  exact P.toPairHom.map_mem_plus _
+    (by rw [tateSeriesPair_plus]; exact algebraMap_mem_tateSeriesPlus_iff.mpr ha)
+
+/-- The structure morphism `(A, A⁺) → (C, C⁺)` of Huber pairs induced by a standard étale
+presentation. -/
+def toBasePairHom (P : StandardEtalePresentation Aplus ϖ Cplus) : Pair.Hom Aplus Cplus where
+  toRingHom := algebraMap A C
+  continuous_toRingHom := P.continuous_algebraMap
+  map_mem_plus _ ha := P.algebraMap_mem_plus ha
+
+@[simp]
+theorem toBasePairHom_toRingHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
+    P.toBasePairHom.toRingHom = algebraMap A C :=
   (rfl)
 
 /-- The presenting morphism `P.toPairHom` is a quotient mapping of Huber pairs. -/
@@ -373,7 +371,10 @@ theorem toRingHom_lift_π (P : StandardEtalePresentation Aplus ϖ Cplus)
     (f : tateSeries P.N A) :
     (P.lift z u hu hFu).toRingHom (P.π f) =
       weightedEval z.toRingHom u (f : MvPowerSeries (Fin P.N) A) := by
-  simp [lift]
+  dsimp only [lift]
+  rw [Pair.Hom.toRingHom_comp, RingHom.comp_apply, P.targetToQuotient_π,
+    Pair.Hom.toRingHom_quotientLift, Ideal.Quotient.lift_mk]
+  exact coe_weightedEvalHom _ _ _ f
 
 /-- On the `i`-th coordinate `P.π (tateSeries.X P.N A i)`, `P.lift z u hu hFu` takes the value
 `u i`. -/

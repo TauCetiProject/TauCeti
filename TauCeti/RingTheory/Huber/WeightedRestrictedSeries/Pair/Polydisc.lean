@@ -74,6 +74,8 @@ of `(Pair.powerBounded K).polydisc n` over a nontrivially normed ultrametric fie
   closure of `A⁺[T₁, …, Tₙ]` in `A⟨T₁, …, Tₙ⟩`.
 * `TauCeti.Huber.Pair.map_polydiscPlus_equiv`: `restrictedMvPowerSeriesCompletionEquiv` maps
   `S.polydiscPlus n` onto `A⁺⟨T₁, …, Tₙ⟩`.
+* `TauCeti.Huber.isWeightBounded_one_weight_of_mem_plus`: every tuple in a plus ring is unit-weight
+  bounded along any ring homomorphism.
 * `TauCeti.Huber.Pair.polydisc.existsUnique_hom`: universal property of `S.polydisc n` for
   morphisms into complete Hausdorff Huber pairs.
 
@@ -342,19 +344,20 @@ theorem Pair.polydisc.hom_ext {C : Type*} [CommRing C] [TopologicalSpace C] [IsT
     Pair.Hom.toRingHom_weightedCompletionHom,
     algebraMap_completion_weightedRestrictedSubring_apply] using ha
 
+omit [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] in
+/-- A tuple of elements in the plus ring `Bplus.plus` is unit-weight bounded along any ring
+homomorphism `φ : A →+* B`. -/
+theorem isWeightBounded_one_weight_of_mem_plus {N : ℕ} {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] (φ : A →+* B) (Bplus : Pair B)
+    {u : Fin N → B} (hu : ∀ i, u i ∈ Bplus.plus) :
+    IsWeightBounded φ (fun _ : Fin N ↦ ({1} : Set A)) u :=
+  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun i ↦
+    Bplus.isRingOfIntegralElements.isPowerBounded_of_mem (hu i)
+
 section UniversalProperty
 
 variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
   [IsHuberRing C] [CompleteSpace C] [T0Space C]
-
-omit [IsUniformAddGroup C] [CompleteSpace C] [T0Space C] in
-/-- Auxiliary weight-boundedness witness: every tuple in `U.plus` is weight-bounded for the trivial
-weight `{1}`. -/
-private theorem isWeightBounded_of_mem_plus {S : Pair A} {U : Pair C} (z : Pair.Hom S U) {n : ℕ}
-    (t : Fin n → U.plus) :
-    IsWeightBounded z.toRingHom (fun _ : Fin n ↦ ({1} : Set A)) (fun i ↦ (t i : C)) :=
-  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun i ↦
-    U.isRingOfIntegralElements.isPowerBounded_of_mem (t i).property
 
 /-- **Evaluation of `S.polydisc n` at a tuple `t : Fin n → U.plus`** along a base morphism
 `z : Pair.Hom S U` into a complete Hausdorff Huber pair `U`. -/
@@ -362,12 +365,15 @@ noncomputable def Pair.polydisc.evalHom {S : Pair A} {U : Pair C}
     (z : Pair.Hom S U) {n : ℕ} (t : Fin n → U.plus) :
     Pair.Hom (S.polydisc n) U where
   toRingHom := weightedEvalHomCompletion isWeightFamily_one_weight
-    z.continuous_toRingHom.continuousAt (isWeightBounded_of_mem_plus z t)
+    z.continuous_toRingHom.continuousAt
+    (isWeightBounded_one_weight_of_mem_plus z.toRingHom U fun i ↦ (t i).property)
   continuous_toRingHom := continuous_weightedEvalHomCompletion isWeightFamily_one_weight
-    z.continuous_toRingHom.continuousAt (isWeightBounded_of_mem_plus z t)
+    z.continuous_toRingHom.continuousAt
+    (isWeightBounded_one_weight_of_mem_plus z.toRingHom U fun i ↦ (t i).property)
   map_mem_plus := S.weighted_completion_plus_le_comap isWeightFamily_one_weight U
     (continuous_weightedEvalHomCompletion isWeightFamily_one_weight
-      z.continuous_toRingHom.continuousAt (isWeightBounded_of_mem_plus z t))
+      z.continuous_toRingHom.continuousAt
+      (isWeightBounded_one_weight_of_mem_plus z.toRingHom U fun i ↦ (t i).property))
     (fun a ha ↦ by
       rw [weightedEvalHomCompletion_coe, weightedEvalHom_weightedC]
       exact z.map_mem_plus a ha)

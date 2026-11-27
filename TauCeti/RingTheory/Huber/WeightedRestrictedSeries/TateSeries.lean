@@ -55,9 +55,8 @@ Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
   `tateSeriesPlus`.
 * `TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`: comparison with `S.polydiscPlus N`.
 * `TauCeti.Huber.exists_pow_smul_mem_tateSeriesPlus`: rescaling into an open subring by `ϖ ^ m`.
-* `TauCeti.Huber.isWeightBounded_one_weight_of_mem_plus` and
-  `TauCeti.Huber.tateSeriesPlus_map_le_of_continuous`: weight-boundedness of tuples in a plus ring
-  and preservation of `tateSeriesPlus` under continuous ring homomorphisms.
+* `TauCeti.Huber.tateSeriesPlus_map_le_of_continuous`: preservation of `tateSeriesPlus` under
+  continuous ring homomorphisms.
 
 ## References
 
@@ -510,16 +509,6 @@ theorem map_symm_tateSeriesPlus_eq_polydiscPlus (N : ℕ) (S : Pair A)
   dsimp only [tateSeriesPlus]
   rw [← S.map_polydiscPlus_equiv N, Subring.map_map]
   ext x; simp
-
-omit [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] in
-/-- A tuple of elements in the plus ring `Bplus.plus` is unit-weight bounded along any ring
-homomorphism `φ : A →+* B`. -/
-theorem isWeightBounded_one_weight_of_mem_plus {N : ℕ} {B : Type*} [CommRing B]
-    [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] (φ : A →+* B) (Bplus : Pair B)
-    {u : Fin N → B} (hu : ∀ i, u i ∈ Bplus.plus) :
-    IsWeightBounded φ (fun _ : Fin N ↦ ({1} : Set A)) u :=
-  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun i ↦
-    Bplus.isRingOfIntegralElements.isPowerBounded_of_mem (hu i)
 
 /-- A continuous ring homomorphism `tateSeries N A →+* B` mapping `Aplus.plus` (via constants) and
 every coordinate `tateSeries.X N A i` into `Bplus.plus` carries all of

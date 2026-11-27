@@ -318,10 +318,11 @@ contains the closure of `Ideal.span (Set.range F)`. -/
 theorem Ideal.closure_span_le_ker_of_continuous {R S ι : Type*} [Ring R] [TopologicalSpace R]
     [IsTopologicalRing R] [Semiring S] [TopologicalSpace S] [T1Space S]
     {F : ι → R} {φ : R →+* S} (hφ : Continuous φ) (hF : ∀ i, φ (F i) = 0) :
-    (Ideal.span (Set.range F)).closure ≤ RingHom.ker φ :=
-  (isClosed_singleton.preimage hφ).closure_subset_iff.mpr
-    (SetLike.coe_subset_coe.mpr (Ideal.span_le.mpr (Set.forall_mem_range.mpr hF)) :
-      (Ideal.span (Set.range F) : Set R) ⊆ (RingHom.ker φ : Set R))
+    (Ideal.span (Set.range F)).closure ≤ RingHom.ker φ := by
+  rw [← SetLike.coe_subset_coe, Ideal.coe_closure]
+  exact closure_minimal
+    (SetLike.coe_subset_coe.mpr (Ideal.span_le.mpr (Set.forall_mem_range.mpr hF)))
+    (RingHom.isClosed_ker hφ)
 
 end Closure
 

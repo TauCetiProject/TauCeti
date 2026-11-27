@@ -11,7 +11,8 @@ public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedEval.Map
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PDeriv
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
-import Mathlib.RingTheory.Jacobson.Ideal
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
@@ -276,28 +277,6 @@ theorem existsUnique_weightedEval_eq_zero [T0Space C] (hϖ : IsPseudoUniformizer
     (fun i ↦ (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp (ht i))
     fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ.isUnit x x' hx n hn hxx'
 
-/-- A square matrix over a `ϖ`-adically complete ring that reduces to `1` modulo `ϖ` has unit
-determinant. -/
-private theorem isUnit_det_of_map_quotient_eq_one {R : Type*} [CommRing R] {N : ℕ} {ϖ : R}
-    (hcomp : IsAdicComplete (Ideal.span ({ϖ} : Set R)) R) {U : Matrix (Fin N) (Fin N) R}
-    (hUq : U.map (Ideal.Quotient.mk (Ideal.span ({ϖ} : Set R))) = 1) :
-    IsUnit U.det := by
-  refine Ideal.isUnit_of_sub_one_mem_jacobson U.det
-    (IsAdicComplete.le_jacobson (Ideal.span ({ϖ} : Set R)) ?_)
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, RingHom.map_det,
-    RingHom.mapMatrix_apply, hUq, det_one, sub_self]
-
-/-- Any left `c`-scaled inverse of a square matrix is also a right `c`-scaled inverse when `c` is
-regular. -/
-private theorem mul_eq_smul_one_of_mul_eq_smul_one {R : Type*} [CommRing R] {N : ℕ} {c : R}
-    (hc : IsRegular c) {A B : Matrix (Fin N) (Fin N) R}
-    (hAB : A * B = c • (1 : Matrix (Fin N) (Fin N) R)) :
-    B * A = c • (1 : Matrix (Fin N) (Fin N) R) :=
-  (Matrix.isLeftRegular_iff_mulVec_injective.mpr
-    (Matrix.mulVec_injective_of_mul_eq_smul_one hc.left hAB)) (by
-    dsimp only
-    rw [← Matrix.mul_assoc, hAB, Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul, Matrix.mul_one])
-
 /-- **Stability of the `ϖ ^ k`-scaled Jacobian inverse under `ϖ ^ (k + 1)`-perturbations:** if
 `M * J(t) = ϖ ^ k • 1` and `u ≡ t mod ϖ ^ (k + 1)` in `A₀^N`, then there is an integral matrix
 `M' ≡ M mod ϖ` satisfying both `M' * J(u) = ϖ ^ k • 1` and `J(u) * M' = ϖ ^ k • 1`. -/
@@ -322,7 +301,7 @@ theorem exists_mul_jacobian_eq_pow_smul_of_dvd [T0Space C]
           (MvPowerSeries.pderiv j (F i))) *
         M'.map ((↑) : P.ringOfDefinition → C) =
         (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) := by
-  have hcomp := P.isAdicComplete_span_singleton ϖ hϖ
+  have := P.isAdicComplete_span_singleton ϖ hϖ
   -- Stage 1: Perturbation of `J`: `J₀ u = J₀ t + ϖ ^ (k + 1) • Δ`, so `M * J₀ u = ϖ ^ k • U`.
   let J₀ := jacobianOD P hF₀
   have hJdiff (i j) : ϖ ^ (k + 1) ∣ J₀ u i j - J₀ t i j :=
@@ -343,13 +322,10 @@ theorem exists_mul_jacobian_eq_pow_smul_of_dvd [T0Space C]
     rw [hJu_eq, Matrix.mul_add, hMJt, Matrix.mul_smul, pow_succ, mul_comm (ϖ ^ k) ϖ,
       ← smul_smul, smul_add]; simp [smul_smul, mul_comm]
   -- Stage 2: Invertibility of `U` over the `ϖ`-adically complete ring `A₀`.
-  have hUdet : IsUnit U.det := by
-    refine isUnit_det_of_map_quotient_eq_one hcomp ?_
-    have hqϖ : Ideal.Quotient.mk (Ideal.span ({ϖ} : Set P.ringOfDefinition)) ϖ = 0 :=
-      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self ϖ)
-    ext i j; simp only [U, Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply,
-      Matrix.one_apply, smul_eq_mul, map_add, map_mul, hqϖ, zero_mul, add_zero]
-    split_ifs <;> simp
+  have hUdet : IsUnit U.det :=
+    Matrix.isUnit_det_one_add_smul
+      (IsAdicComplete.le_jacobson (Ideal.span ({ϖ} : Set P.ringOfDefinition))
+        (Ideal.mem_span_singleton_self ϖ)) _
   -- Stage 3: Corrected left inverse `M' := U⁻¹ * M` and congruence `M' ≡ M mod ϖ`.
   let M' : Matrix (Fin N) (Fin N) P.ringOfDefinition := U⁻¹ * M
   have hUM' : U * M' = M := by
@@ -373,7 +349,9 @@ theorem exists_mul_jacobian_eq_pow_smul_of_dvd [T0Space C]
     simp only [jacobianOD_apply] at hij
     convert hij; split_ifs <;> simp
   -- Stage 4: Two-sidedness of the `ϖ ^ k`-scaled inverse.
-  exact ⟨M', hM'mod, hleft, mul_eq_smul_one_of_mul_eq_smul_one (hϖ.isUnit.pow k).isRegular hleft⟩
+  exact ⟨M', hM'mod, hleft,
+    (Matrix.mul_eq_smul_one_comm
+      (isRegular_iff_mem_nonZeroDivisors.mp (hϖ.isUnit.pow k).isRegular)).mp hleft⟩
 
 /-- **Uniqueness of zeros in `t + ϖ ^ (k + 1) A₀^N`:** any two zeros `u, u' ∈ A₀^N` of `F`
 congruent to `t` modulo `ϖ ^ (k + 1)` are equal, provided the Jacobian of `F` at `t` has an
