@@ -371,7 +371,6 @@ theorem isoperimetricConstant_cycleGraph {n : ℕ} (hn : 3 ≤ n) :
       rw [cycleGraph_degree_three_le]
       exact even_two) hS hne
     have hSm : #S ≤ n / 2 := by rw [Fintype.card_fin] at hS'; omega
-    have := hS.card_pos
     calc (2 : ℝ) / (n / 2 : ℕ) ≤ 2 / #S := by gcongr
       _ ≤ #((cycleGraph n).edgeBoundary S) / #S := by gcongr; exact_mod_cast h2
 
