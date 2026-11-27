@@ -11,14 +11,11 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.RingTheory.Valuation.Center
 
 import Mathlib.NumberTheory.Padics.Complex
-import Mathlib.RingTheory.Algebraic.Integral
-import Mathlib.RingTheory.Valuation.LocalSubring
-import Mathlib.RingTheory.UniqueFactorizationDomain.Ideal
 import TauCeti.NumberTheory.NumberField.PlacesOver.Galois
 import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
 import TauCeti.NumberTheory.NumberField.PlacesOver.Place
+import TauCeti.RingTheory.Valuation.CharZero
 import TauCeti.RingTheory.Valuation.InfiniteGalois
-import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
@@ -36,11 +33,13 @@ conjugacy of the places above a given place.
   (`AbsoluteValue.Place.eq_of_isEquiv`).
 * **Surjectivity.** A valuation subring `A ≠ L` meets `ℤ` in a nonzero prime `pℤ`: if every nonzero
   integer were a unit of `A`, then `A` would contain `ℚ` and every element of `L`, since a nonzero
-  integer multiple of an algebraic element is integral over `ℤ`. Embed `L` into `ℚ^alg` over `ℚ`
+  integer multiple of an algebraic element is integral over `ℤ`
+  (`ValuationSubring.exists_prime_natCast_mem_nonunits`). Embed `L` into `ℚ^alg` over `ℚ`
   and extend `A` to a valuation subring `A'` of `ℚ^alg` (`ValuationSubring.exists_comap_eq`). The
   norm of `PadicAlgCl p` pulled back along a `ℚ`-embedding of `ℚ^alg` is a place `w₀` above `p`
   (`AbsoluteValue.Place.exists_under_eq_padic`). Both `A'` and `A_{w₀}` meet `ℚ` in the
-  localization of `ℤ` at `p`, so they are conjugate under `Gal(ℚ^alg/ℚ)`
+  localization of `ℤ` at `p` (`ValuationSubring.comap_algebraMap_rat_eq_of_natCast_mem_nonunits`),
+  so they are conjugate under `Gal(ℚ^alg/ℚ)`
   (`ValuationSubring.exists_algEquiv_smul_eq_of_comap_eq_of_isGalois`); so `A'` is the valuation
   subring of a conjugate of `w₀`, and `A` that of its restriction to `L`.
 * **Places above a place.** For fields `K ⊆ L` with `L` algebraic over `ℚ`, every place of `K` is
@@ -88,80 +87,6 @@ public section
 open scoped Pointwise
 
 namespace AbsoluteValue.Place
-
-/-! ### The centre of a valuation subring on `ℤ` -/
-
-section Center
-
-variable {L : Type*} [Field L]
-
-private theorem valuation_intCast_le_one (A : ValuationSubring L) (n : ℤ) :
-    A.valuation (algebraMap ℤ L n) ≤ 1 :=
-  (A.valuation_le_one_iff _).mpr (by simp)
-
-/-- The prime ideal of `ℤ` at which a valuation subring of `L` is centred. -/
-private noncomputable abbrev intCenter (A : ValuationSubring L) : Ideal ℤ :=
-  A.valuation.centerIdeal ℤ (valuation_intCast_le_one A)
-
-private theorem isPrime_intCenter (A : ValuationSubring L) : (intCenter A).IsPrime :=
-  Valuation.isPrime_centerIdeal _
-
-/-- Two prime ideals of `ℤ` containing the same prime number are equal. -/
-private theorem intCenter_eq_of_mem {A A' : ValuationSubring L} {p : ℕ} (hp : p.Prime)
-    (h : (p : ℤ) ∈ intCenter A) (h' : (p : ℤ) ∈ intCenter A') : intCenter A = intCenter A' := by
-  have hmax := PrincipalIdealRing.isMaximal_of_irreducible
-    (Nat.prime_iff_prime_int.mp hp).irreducible
-  rw [← hmax.eq_of_le (isPrime_intCenter A).ne_top ((Ideal.span_singleton_le_iff_mem _).mpr h),
-    hmax.eq_of_le (isPrime_intCenter A').ne_top ((Ideal.span_singleton_le_iff_mem _).mpr h')]
-
-variable [CharZero L]
-
-/-- Two valuation subrings of `L` with the same centre on `ℤ` meet `ℚ` in the same valuation
-subring. -/
-private theorem comap_eq_of_intCenter_eq {A A' : ValuationSubring L}
-    (h : intCenter A = intCenter A') :
-    A.comap (algebraMap ℚ L) = A'.comap (algebraMap ℚ L) := by
-  have hc (B : ValuationSubring L) : (B.comap (algebraMap ℚ L)).IsCenteredAt (intCenter B) :=
-    ⟨fun n ↦ by
-      rw [ValuationSubring.mem_comap, ← IsScalarTower.algebraMap_apply]
-      exact (B.valuation_le_one_iff _).mp (valuation_intCast_le_one B n),
-    fun n ↦ by
-      rw [ValuationSubring.mem_nonunits_comap, ← IsScalarTower.algebraMap_apply,
-        Valuation.mem_centerIdeal, ValuationSubring.mem_nonunits_iff]⟩
-  have := isPrime_intCenter A
-  exact (hc A).eq (h ▸ hc A')
-
-/-- A valuation subring of a field algebraic over `ℚ` other than the whole field contains a prime
-number among its nonunits. -/
-private theorem exists_prime_mem_intCenter [Algebra.IsAlgebraic ℚ L] {A : ValuationSubring L}
-    (hA : A ≠ ⊤) : ∃ p : ℕ, p.Prime ∧ (p : ℤ) ∈ intCenter A := by
-  have hne : intCenter A ≠ ⊥ := by
-    intro hbot
-    refine hA (eq_top_iff.mpr fun x _ ↦ ?_)
-    have : Algebra.IsAlgebraic ℤ L :=
-      (IsFractionRing.comap_isAlgebraic_iff (K := ℚ)).mpr inferInstance
-    obtain ⟨y, hy0, hy⟩ :=
-      IsAlgebraic.exists_integral_multiple (Algebra.IsAlgebraic.isAlgebraic (R := ℤ) x)
-    -- `y • x` is integral over `ℤ`, so it lies in `A`, and `y` is a unit of `A`
-    have hyA : y • x ∈ A :=
-      Subring.isIntegrallyClosed_iff.mp inferInstance (hy.tower_top (A := A))
-    have hy1 : A.valuation (algebraMap ℤ L y) = 1 := by
-      refine le_antisymm (valuation_intCast_le_one A y) (not_lt.mp fun hlt ↦ hy0 ?_)
-      have : y ∈ intCenter A := Valuation.mem_centerIdeal.mpr hlt
-      rwa [hbot, Ideal.mem_bot] at this
-    have hyinv : (algebraMap ℤ L y)⁻¹ ∈ A :=
-      (A.valuation_le_one_iff _).mp (by rw [map_inv₀, hy1, inv_one])
-    have hy0' : (algebraMap ℤ L y) ≠ 0 := by simpa using hy0
-    have := mul_mem hyinv hyA
-    rwa [zsmul_eq_mul, ← eq_intCast (algebraMap ℤ L), inv_mul_cancel_left₀ hy0'] at this
-  obtain ⟨x, hx, hxp⟩ := (isPrime_intCenter A).exists_mem_prime_of_ne_bot hne
-  refine ⟨x.natAbs, Int.prime_iff_natAbs_prime.mp hxp, ?_⟩
-  rw [Int.natCast_natAbs]
-  rcases abs_choice x with h | h <;> rw [h]
-  · exact hx
-  · exact (intCenter A).neg_mem hx
-
-end Center
 
 /-! ### Finite places and valuation subrings -/
 
@@ -211,25 +136,26 @@ theorem exists_valuationSubring_eq [Algebra.IsAlgebraic ℚ L] {A : ValuationSub
   let f : L →ₐ[ℚ] M := IsAlgClosed.lift
   obtain ⟨A', hA'⟩ := A.exists_comap_eq (f : L →+* M)
   have hA'top : A' ≠ ⊤ := by rintro rfl; exact hA (hA' ▸ rfl)
-  obtain ⟨p, hp, hpA'⟩ := exists_prime_mem_intCenter hA'top
+  obtain ⟨p, hp, hpA'⟩ := ValuationSubring.exists_prime_natCast_mem_nonunits hA'top
   have : Fact p.Prime := ⟨hp⟩
   -- a place `w₀` of `ℚ^alg` above `p`, and its valuation subring `A₀`
   obtain ⟨w₀, hw₀⟩ := exists_under_eq_padic (L := M) p
   have hw₀n : IsNonarchimedean w₀.val := w₀.isNonarchimedean_iff.mpr ⟨p, inferInstance, hw₀⟩
-  have hpA₀ : (p : ℤ) ∈ intCenter (w₀.val.valuationSubring hw₀n) := by
-    rw [Valuation.mem_centerIdeal, ← ValuationSubring.mem_nonunits_iff,
-      mem_nonunits_valuationSubring_iff, map_natCast]
+  have hpA₀ : (p : M) ∈ (w₀.val.valuationSubring hw₀n).nonunits := by
+    rw [mem_nonunits_valuationSubring_iff]
     exact apply_natCast_lt_one_of_under_eq_padic hw₀
   -- `A₀` and `A'` meet `ℚ` in the same valuation subring, so they are conjugate
   obtain ⟨σ, hσ⟩ := ValuationSubring.exists_algEquiv_smul_eq_of_comap_eq_of_isGalois
-    (comap_eq_of_intCenter_eq (intCenter_eq_of_mem hp hpA₀ hpA'))
+    (ValuationSubring.comap_algebraMap_rat_eq_of_natCast_mem_nonunits hp hpA₀ hpA')
   have hσn : IsNonarchimedean (σ • w₀).val := by rwa [val_smul, isNonarchimedean_smul_iff]
-  have hcomap := val_comap (σ • w₀) (f : L →+* M)
-  refine ⟨(σ • w₀).comap (f : L →+* M),
-    hcomap ▸ isNonarchimedean_comp hσn (f : L →+* M).injective, ?_⟩
+  have hn : IsNonarchimedean ((σ • w₀).comap (f : L →+* M)).val := by
+    rw [val_comap]
+    exact isNonarchimedean_comp hσn (f : L →+* M).injective
+  refine ⟨(σ • w₀).comap (f : L →+* M), hn, ?_⟩
   rw [← hA', ← hσ, ← valuationSubring_smul_eq σ w₀ hw₀n hσn,
     ← valuationSubring_comp hσn (f : L →+* M).injective]
   congr 1
+  exact val_comap ..
 
 variable (L) in
 /-- **Finite places are proper valuation subrings.** For `L` algebraic over `ℚ`, `w ↦ A_w` is a

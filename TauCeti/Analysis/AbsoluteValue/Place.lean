@@ -43,7 +43,8 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
 
 * `AbsoluteValue.Place L`: the `ℚ`-normalised absolute values of a field `L` of characteristic zero.
 * `AbsoluteValue.Place.under K`: the restriction of a place to a subfield `K`.
-* `AbsoluteValue.Place.comap`: the restriction of a place along a field embedding.
+* `AbsoluteValue.Place.comap`: the restriction of a place along a field embedding; restriction
+  to a subfield is the case of its inclusion (`AbsoluteValue.Place.comap_algebraMap`).
 * `AbsoluteValue.Place.instMulAction`: the action `(g • w) x = w (g⁻¹ • x)` of a group acting on `L`
   by ring automorphisms.
 
@@ -223,14 +224,17 @@ section comap
 
 variable {M : Type*} [Field M] [CharZero M]
 
+/-- Pulling an absolute value back along a ring embedding of fields of characteristic zero does
+not change its restriction to `ℚ`. -/
+theorem _root_.AbsoluteValue.under_rat_comp (v : AbsoluteValue M ℝ) {f : L →+* M}
+    (hf : Function.Injective f) : (v.comp hf).under ℚ = v.under ℚ := by
+  ext q
+  simp [AbsoluteValue.under_apply, comp_apply]
+
 /-- The restriction of a place of `M` along a field embedding `f : L →+* M` is a place of `L`. -/
 def comap (w : Place M) (f : L →+* M) : Place L :=
   ⟨w.val.comp f.injective, by
-    have : (w.val.comp f.injective).under ℚ = w.val.under ℚ :=
-      AbsoluteValue.ext fun q ↦ by
-        rw [AbsoluteValue.under_apply, AbsoluteValue.under_apply, comp_apply,
-          eq_ratCast (algebraMap ℚ L), map_ratCast f, eq_ratCast (algebraMap ℚ M)]
-    rw [this]
+    rw [AbsoluteValue.under_rat_comp]
     exact w.isStandard_under⟩
 
 @[simp]
@@ -239,11 +243,26 @@ theorem val_comap (w : Place M) (f : L →+* M) : (w.comap f).val = w.val.comp f
 @[simp]
 theorem comap_apply (w : Place M) (f : L →+* M) (x : L) : w.comap f x = w (f x) := (rfl)
 
+@[simp]
+theorem comap_id (w : Place M) : w.comap (RingHom.id M) = w :=
+  ext fun x ↦ by rw [comap_apply, RingHom.id_apply]
+
+@[simp]
+theorem comap_comap {K : Type*} [Field K] [CharZero K] (w : Place M) (f : L →+* M)
+    (g : K →+* L) : (w.comap f).comap g = w.comap (f.comp g) :=
+  ext fun x ↦ by rw [comap_apply, comap_apply, comap_apply, RingHom.comp_apply]
+
+/-- Restriction to a subfield is restriction along its inclusion. -/
+@[simp]
+theorem comap_algebraMap (K : Type*) [Field K] [CharZero K] [Algebra K M] (w : Place M) :
+    w.comap (algebraMap K M) = w.under K :=
+  ext fun x ↦ by rw [comap_apply, under_apply]
+
 /-- Restricting along a field embedding does not change the restriction to `ℚ`. -/
 @[simp]
-theorem under_comap (w : Place M) (f : L →+* M) : (w.comap f).under ℚ = w.under ℚ :=
-  ext fun q ↦ by rw [under_apply, under_apply, comap_apply, eq_ratCast (algebraMap ℚ L),
-    map_ratCast f, eq_ratCast (algebraMap ℚ M)]
+theorem under_comap (w : Place M) (f : L →+* M) : (w.comap f).under ℚ = w.under ℚ := by
+  rw [← comap_algebraMap, ← comap_algebraMap, comap_comap,
+    Subsingleton.elim (f.comp (algebraMap ℚ L)) (algebraMap ℚ M)]
 
 end comap
 
