@@ -82,6 +82,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   trajectory from `p` to `r` lie on their levels, strictly between the values at `r` and `p`.
 * `morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords`: unbroken trajectories are broken
   trajectories with one component.
+* `mem_morseTrajectoryRecords_of_chain_one`: conversely, a broken trajectory with one component is
+  unbroken.
+* `morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords_of_forall_notMem`: when no critical
+  value lies strictly between `f r` and `f p`, every broken trajectory from `p` to `r` is unbroken.
 * `exists_tendsto_mem_morseBrokenTrajectoryRecords`: broken convergence of trajectories gives
   convergence of their records.
 * `IsMorseSmale.closure_morseTrajectoryRecords_subset`: the limits of records of trajectories are
@@ -209,6 +213,45 @@ theorem morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords {p r : M}
   refine ⟨1, ![p, r], ![y], rfl, rfl, fun j ↦ ?_, fun j ↦ ?_, fun j ↦ ?_, fun i ↦
     ⟨(hw i).1, 0, (hw i).2⟩⟩ <;> fin_cases j
   exacts [hp, hr, hpr, hy]
+
+/-- **A broken trajectory with one component is unbroken.** The record of a broken trajectory from
+`p` to `r` whose chain of critical points is `p, r` is the record of the trajectory from `p` to `r`
+through its single component. -/
+theorem mem_morseTrajectoryRecords_of_chain_one {p r : M} {c : ι → ℝ} {w : ι → M}
+    {x : Fin 2 → M} {z : Fin 1 → M} (hx0 : x 0 = p) (hx1 : x (Fin.last 1) = r)
+    (hz : ∀ j : Fin 1, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ))
+    (hw : ∀ i, f (w i) = c i ∧ ∃ j t, hX.flow t (z j) = w i) :
+    w ∈ hX.morseTrajectoryRecords p r c := by
+  refine ⟨z 0, ?_, fun i ↦ ⟨(hw i).1, ?_⟩⟩
+  · rw [← hx0, ← hx1]
+    exact hz 0
+  · obtain ⟨-, j, t, ht⟩ := hw i
+    exact ⟨t, by rwa [Fin.fin_one_eq_zero j] at ht⟩
+
+/-- **Without an intermediate critical value broken trajectories are unbroken.** If no critical
+point of `f` takes a value strictly between `f r` and `f p`, every broken trajectory from `p` to
+`r` has a single component: `f` decreases strictly along its chain of critical points, so the
+critical point after a first step would take such a value. Its records are those of the unbroken
+trajectories from `p` to `r`. -/
+theorem morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords_of_forall_notMem {p r : M}
+    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) (hpr : p ≠ r)
+    (hcrit : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → f y ∉ Ioo (f r) (f p)) (c : ι → ℝ) :
+    hX.morseBrokenTrajectoryRecords p r c = hX.morseTrajectoryRecords p r c := by
+  refine Subset.antisymm ?_
+    (hX.morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords hp hr hpr c)
+  rintro w ⟨k, x, z, hx0, hxk, hxc, hxne, hz, hw⟩
+  have hanti : StrictAnti fun j ↦ f (x j) := Fin.strictAnti_iff_succ_lt.2 fun j ↦
+    (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)).1.trans
+      (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)).2
+  obtain _ | _ | k := k
+  · exact absurd (hx0.symm.trans hxk) hpr
+  · exact hX.mem_morseTrajectoryRecords_of_chain_one hx0 hxk hz hw
+  · -- The critical point `x 1` would take a value strictly between `f r` and `f p`.
+    refine absurd ⟨?_, ?_⟩ (hcrit (x 1) (hxc 1))
+    · rw [← hxk]
+      exact hanti (Fin.lt_last_iff_ne_last.2 (by simp [Fin.ext_iff]))
+    · rw [← hx0]
+      exact hanti Fin.zero_lt_one
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- Along a chain of critical points from `p` to `r`, every regular level strictly between `f r`
@@ -388,11 +431,7 @@ theorem morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords (h : hX.IsMorseSm
   -- A chain without steps would make `p = r`, and one with two steps would drop the index by two.
   obtain _ | _ | k := k
   · exact absurd (hx0.symm.trans hxk) hpr
-  · refine ⟨z 0, ?_, fun i ↦ ⟨(hw i).1, ?_⟩⟩
-    · rw [← hx0, ← hxk]
-      exact hz 0
-    · obtain ⟨-, j, t, ht⟩ := hw i
-      exact ⟨t, by rwa [Fin.fin_one_eq_zero j] at ht⟩
+  · exact hX.mem_morseTrajectoryRecords_of_chain_one hx0 hxk hz hw
   · omega
 
 end IsMorseSmale

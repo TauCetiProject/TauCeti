@@ -62,6 +62,12 @@ empty unless `y` has smaller index than `x`
   critical points of consecutive index, a trajectory space is made of the records of unbroken
   trajectories, has empty boundary, is finite, and, when some level of `c` lies strictly between
   the values at its ends, has as many points as there are unparametrized trajectories.
+* `IsAdaptedPseudoGradient.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem`,
+  `IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_eq_empty_of_forall_notMem`,
+  `IsAdaptedPseudoGradient.exists_homeomorph_morseBrokenTrajectorySpace_of_forall_notMem`: when no
+  critical value lies strictly between the values at its ends, a trajectory space is made of the
+  records of unbroken trajectories, has empty boundary, and is a copy of the level slice
+  `W^u(x) ∩ W^s(y) ∩ {f = c}` on any of its levels `c`.
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp_assoc`,
   `IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary`:
   the composition maps of the trajectory spaces are associative and land in the boundary.
@@ -232,6 +238,50 @@ theorem IsMorseSmale.finite_morseBrokenTrajectorySpace (h : hX.IsMorseSmale)
         ((c ⁻¹' Ioo (f y) (f x)).domRestrict c i₀)).to_subtype
       .of_equiv _ Φ.toEquiv.symm
     exact Set.toFinite _
+
+/-- **Without an intermediate critical value a trajectory space is made of unbroken trajectories.**
+If no critical point of `f` takes a value strictly between `f y` and `f x`, the trajectory space
+from `x` to `y` is the set of records of the unbroken trajectories from `x` to `y`
+(`IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords_of_forall_notMem`).
+-/
+theorem morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem {x y : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0) (hxy : x ≠ y)
+    (hcrit : ∀ z, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → f z ∉ Ioo (f y) (f x)) :
+    hX.morseBrokenTrajectorySpace c x y =
+      hX.morseTrajectoryRecords x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c) := by
+  ext w
+  rw [mem_morseBrokenTrajectorySpace,
+    hX.morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords_of_forall_notMem hx hy hxy hcrit,
+    and_iff_right hxy]
+
+/-- **Without an intermediate critical value a trajectory space has empty boundary.** If no
+critical point of `f` takes a value strictly between `f y` and `f x`, every broken trajectory from
+`x` to `y` is unbroken. -/
+theorem morseBrokenTrajectorySpaceBoundary_eq_empty_of_forall_notMem {x y : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0)
+    (hcrit : ∀ z, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → f z ∉ Ioo (f y) (f x)) :
+    hX.morseBrokenTrajectorySpaceBoundary c x y = ∅ :=
+  eq_empty_of_forall_notMem fun w hw ↦ hw <|
+    (morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem hx hy w.property.1
+      hcrit).subset w.property
+
+/-- **Without an intermediate critical value a trajectory space is a level slice.** If no critical
+point of `f` takes a value strictly between `f y` and `f x`, reading off the point on a level
+`c i₀` of the family identifies the trajectory space from `x` to `y` with the level slice
+`W^u(x) ∩ W^s(y) ∩ {f = c i₀}`. -/
+theorem exists_homeomorph_morseBrokenTrajectorySpace_of_forall_notMem {x y : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0) (hxy : x ≠ y)
+    (hcrit : ∀ z, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → f z ∉ Ioo (f y) (f x))
+    (i₀ : c ⁻¹' Ioo (f y) (f x)) :
+    ∃ Φ : hX.morseBrokenTrajectorySpace c x y ≃ₜ
+        ↥(hX.flow.unstableSet x ∩ hX.flow.stableSet y ∩ {z | f z = c i₀}),
+      ∀ w, (Φ w : M) = (w : c ⁻¹' Ioo (f y) (f x) → M) i₀ := by
+  obtain ⟨Φ, hΦ⟩ := hX.exists_homeomorph_morseTrajectoryRecords hxy
+    (c := (c ⁻¹' Ioo (f y) (f x)).domRestrict c) (fun i ↦ i.property) i₀
+  -- `Homeomorph.setCongr` is `Set.equivOfEq`, which keeps the underlying record.
+  exact ⟨(Homeomorph.setCongr
+    (morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem hx hy hxy hcrit)).trans
+      Φ, fun w ↦ hΦ _⟩
 
 variable {x z y : M}
 

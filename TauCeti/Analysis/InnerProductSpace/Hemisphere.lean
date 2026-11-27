@@ -51,6 +51,8 @@ and then the latitude map reaches no point.
   over the point `u` of the equator, with `t` clamped to `[-1, 1]`.
 * `TauCeti.latitudeHomeomorphComplPair p`: `TauCeti.latitude p` as a homeomorphism from
   `S((ℝ ∙ p)ᗮ) × (-1, 1)` onto the complement of `{p, -p}` in `S(E)`.
+* `TauCeti.latitudeHomeomorphParallel p ht`: for `t ∈ (-1, 1)`, `TauCeti.latitude p · t` as a
+  homeomorphism from `S((ℝ ∙ p)ᗮ)` onto the parallel `{z | ⟪z, p⟫ = t}` of `S(E)`.
 
 ## Main results
 
@@ -448,6 +450,55 @@ theorem coe_snd_latitudeHomeomorphComplPair_symm_apply
     (((latitudeHomeomorphComplPair p).symm z).2 : ℝ) =
       ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ :=
   (rfl)
+
+/-- A point of the parallel `{⟪z, p⟫ = t}`, for `t ∈ (-1, 1)`, is not a pole. -/
+private theorem notMem_pair_of_inner_eq {t : ℝ} (ht : t ∈ Ioo (-1 : ℝ) 1) {z : sphere (0 : E) 1}
+    (hz : ⟪(z : E), (p : E)⟫ = t) : z ∉ ({p, -p} : Set (sphere (0 : E) 1)) :=
+  (inner_mem_Ioo_iff_notMem_pair p).1 (hz ▸ ht)
+
+/-- **The parallels of the unit sphere are copies of the equator.** For `t ∈ (-1, 1)`, the latitude
+map at height `t`, `u ↦ √(1 - t²) • u + t • p`, is a homeomorphism from the unit sphere of
+`(ℝ ∙ p)ᗮ` onto the parallel `{z | ⟪z, p⟫ = t}` of `S(E)`. -/
+def latitudeHomeomorphParallel {t : ℝ} (ht : t ∈ Ioo (-1 : ℝ) 1) :
+    sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ≃ₜ {z : sphere (0 : E) 1 | ⟪(z : E), (p : E)⟫ = t} where
+  toFun u := ⟨latitude p u t, by
+    rw [mem_ofPred_eq, inner_latitude, projIcc_of_mem _ (Ioo_subset_Icc_self ht)]⟩
+  invFun z :=
+    ((latitudeHomeomorphComplPair p).symm ⟨z, notMem_pair_of_inner_eq p ht z.property⟩).1
+  left_inv u := by
+    have h := (latitudeHomeomorphComplPair p).symm_apply_apply (u, ⟨t, ht⟩)
+    exact congrArg Prod.fst h
+  right_inv z := by
+    -- The inverse of `latitudeHomeomorphComplPair p` recovers the height `t` of `z`.
+    have hz : ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ = t := z.property
+    have h := congrArg Subtype.val ((latitudeHomeomorphComplPair p).apply_symm_apply
+      ⟨z, notMem_pair_of_inner_eq p ht z.property⟩)
+    simp only [coe_latitudeHomeomorphComplPair_apply,
+      coe_snd_latitudeHomeomorphComplPair_symm_apply, hz] at h
+    exact Subtype.ext h
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    exact continuous_latitude p continuous_id continuous_const
+  continuous_invFun := by
+    refine continuous_fst.comp ((latitudeHomeomorphComplPair p).symm.continuous.comp ?_)
+    exact continuous_subtypeVal.subtype_mk _
+
+/-- `TauCeti.latitudeHomeomorphParallel p ht` evaluates the latitude map at height `t`. -/
+@[simp]
+theorem coe_latitudeHomeomorphParallel_apply {t : ℝ} (ht : t ∈ Ioo (-1 : ℝ) 1)
+    (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
+    (latitudeHomeomorphParallel p ht u : sphere (0 : E) 1) = latitude p u t :=
+  (rfl)
+
+/-- The inverse of `TauCeti.latitudeHomeomorphParallel p ht` rescales the orthogonal projection of
+`z` onto `(ℝ ∙ p)ᗮ` to unit length. -/
+@[simp]
+theorem coe_latitudeHomeomorphParallel_symm_apply {t : ℝ} (ht : t ∈ Ioo (-1 : ℝ) 1)
+    (z : {z : sphere (0 : E) 1 | ⟪(z : E), (p : E)⟫ = t}) :
+    (((latitudeHomeomorphParallel p ht).symm z : (ℝ ∙ (p : E))ᗮ) : E) =
+      (√(1 - t ^ 2))⁻¹ • (((z : sphere (0 : E) 1) : E) - t • (p : E)) := by
+  have hz : ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ = t := z.property
+  exact (coe_fst_latitudeHomeomorphComplPair_symm_apply p _).trans (by simp only [hz])
 
 end Latitude
 
