@@ -13,6 +13,7 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Matrix
 public import TauCeti.Analysis.CStarAlgebra.Module.Unitary
 
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 import TauCeti.Analysis.CStarAlgebra.Module.Adjointable.Order
 
 /-!

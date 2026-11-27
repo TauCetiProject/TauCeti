@@ -26,7 +26,9 @@ nonnegative in `ℂ`. Consequently the C⋆-norm of such an operator matrix is i
 `Hⁿ`: `‖M‖ ≤ C` if and only if `∑ₖ ‖∑ₗ Mₖₗ ξₗ‖² ≤ C² ∑ₗ ‖ξₗ‖²` for all `ξ`
 (`CStarMatrix.norm_le_iff_forall_sum_norm_sq_le`, `CStarMatrix.sum_norm_sq_le`).
 
-A complex C⋆-matrix has finite real spectrum (`CStarMatrix.finite_real_spectrum`).
+A complex C⋆-matrix has finite real spectrum (`CStarMatrix.finite_real_spectrum`), and scalar
+lower bounds `algebraMap ℝ (CStarMatrix n n A) r ≤ M` over a unital C⋆-algebra `A` are
+characterized by quadratic forms (`CStarMatrix.algebraMap_le_iff_forall_sum_le`).
 -/
 
 public section
@@ -127,5 +129,20 @@ theorem finite_real_spectrum {n : Type*} [Fintype n] [DecidableEq n] (x : CStarM
   simp only [AlgEquiv.coe_restrictScalars, StarAlgEquiv.coe_toAlgEquiv,
     ← ofMatrix_eq_ofMatrixStarAlgEquiv, Equiv.apply_symm_apply] at h
   exact h ▸ (ofMatrix.symm x).finite_real_spectrum
+
+/-- Over a unital C⋆-algebra, a matrix `M : CStarMatrix n n A` satisfies
+`algebraMap ℝ (CStarMatrix n n A) r ≤ M` if and only if every finite quadratic form
+`∑ i, ∑ j, star (a i) * M i j * a j` dominates `r • ∑ i, star (a i) * a i`. -/
+theorem algebraMap_le_iff_forall_sum_le {n A : Type*} [Fintype n] [DecidableEq n]
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {r : ℝ} {M : CStarMatrix n n A} :
+    algebraMap ℝ (CStarMatrix n n A) r ≤ M ↔
+      ∀ a : n → A, r • ∑ i, star (a i) * a i ≤ ∑ i, ∑ j, star (a i) * M i j * a j := by
+  rw [← sub_nonneg, Algebra.algebraMap_eq_smul_one, nonneg_iff_forall_sum_nonneg]
+  refine forall_congr' fun a ↦ ?_
+  have hone :
+      ∑ i, ∑ j, star (a i) * (r • (1 : CStarMatrix n n A)) i j * a j =
+        r • ∑ i, star (a i) * a i := by
+    simp [one_apply, ite_mul, mul_ite, ← Finset.smul_sum]
+  simp_rw [sub_apply, mul_sub, sub_mul, Finset.sum_sub_distrib, hone, sub_nonneg]
 
 end CStarMatrix

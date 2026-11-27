@@ -137,8 +137,6 @@ embeddings into block-diagonal matrices.
   block matrix into the top-left corner and extracting the bottom-right block preserve positivity.
 * `CStarMatrix.norm_sq_smul_sub_mulLeft_nonneg`: positivity of the matrix
   `(‖c‖ ^ 2 • (star (a i) * a j) - star (c * a i) * (c * a j))`.
-* `CStarMatrix.algebraMap_le_iff_forall_sum_le`: the quadratic-form criterion for scalar
-  lower bounds `algebraMap ℝ (CStarMatrix n n A) r ≤ M` over a unital C⋆-algebra.
 * `WithCStarModule.norm_equiv_symm_pi_smul`: the vector `(vᵢ a)ᵢ` of the Hilbert `A`-module `Aᵐ`
   has norm `‖v‖ ‖a‖`.
 * `WithCStarModule.norm_sq_eq_sum`: `‖v‖ ^ 2 = ∑ i, ‖vᵢ‖ ^ 2` for `v` in the Hilbert space `ℂᵐ`.
@@ -1399,25 +1397,6 @@ theorem norm_ofMatrix_blockDiagonal' {ι : Type*} [Fintype ι] [DecidableEq ι] 
   NonUnitalStarAlgHom.norm_map _ (blockDiagonalNonUnitalStarAlgHom_injective (R := ℂ) (B := A)) x
 
 end DiagonalNorm
-
-section OrderBounds
-
-/-- Over a unital C⋆-algebra, a matrix `M : CStarMatrix n n A` satisfies
-`algebraMap ℝ (CStarMatrix n n A) r ≤ M` if and only if every finite quadratic form
-`∑ i, ∑ j, star (a i) * M i j * a j` dominates `r • ∑ i, star (a i) * a i`. -/
-theorem algebraMap_le_iff_forall_sum_le {n A : Type*} [Fintype n] [DecidableEq n]
-    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {r : ℝ} {M : CStarMatrix n n A} :
-    algebraMap ℝ (CStarMatrix n n A) r ≤ M ↔
-      ∀ a : n → A, r • ∑ i, star (a i) * a i ≤ ∑ i, ∑ j, star (a i) * M i j * a j := by
-  rw [← sub_nonneg, Algebra.algebraMap_eq_smul_one, nonneg_iff_forall_sum_nonneg]
-  refine forall_congr' fun a ↦ ?_
-  have hone :
-      ∑ i, ∑ j, star (a i) * (r • (1 : CStarMatrix n n A)) i j * a j =
-        r • ∑ i, star (a i) * a i := by
-    simp [one_apply, ite_mul, mul_ite, ← Finset.smul_sum]
-  simp_rw [sub_apply, mul_sub, sub_mul, Finset.sum_sub_distrib, hone, sub_nonneg]
-
-end OrderBounds
 
 /-- The inverse of `CStarMatrix.ofMatrixL` agrees with `CStarMatrix.ofMatrix.symm`. -/
 @[simp]
