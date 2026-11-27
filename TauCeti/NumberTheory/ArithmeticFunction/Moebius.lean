@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 import Mathlib.Algebra.Order.Ring.Abs
+import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 
 /-!
@@ -45,6 +46,9 @@ squares sum to at most `M - L` (`ArithmeticFunction.sum_Ioc_moebius_sq_le`), the
 energy of bilinear estimates. Since `|μ(n)| ≤ 1`, multiplying by `μ(n)` never increases an
 absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
 
+Specializing weighted hyperbola sums (`ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`) to
+`μ * ζ = 1` yields hyperbola Möbius inversion (`ArithmeticFunction.sum_moebius_smul_sum_div`).
+
 ## Main results
 
 * `ArithmeticFunction.moebius_mul_moebius_mul_coe_sigma_zero`,
@@ -63,6 +67,8 @@ absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
 * `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_smul_of_dvd`,
   `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_mul_of_dvd`: specialization to the
   divisors of a fixed nonzero integer `N`.
+* `ArithmeticFunction.sum_moebius_smul_sum_div`:
+  `∑_{1≤d≤N} μ(d) • ∑_{1≤m≤N/d} g(dm) = if 1 ≤ N then g 1 else 0`.
 * `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
 * `ArithmeticFunction.sum_Ioc_moebius_sq_le`: `∑_{L<m≤M} μ(m)² ≤ M - L`.
 * `ArithmeticFunction.abs_moebius_mul_le`: `|μ(n) a| ≤ |a|` in a ring whose linear order is
@@ -322,5 +328,32 @@ theorem IsMultiplicative.moebius_sq_mul_nonneg [CommRing R] [PartialOrder R]
       ← hf.prod_primeFactors hn]
     exact prod_nonneg fun p hp ↦ hf0 p (prime_of_mem_primeFactors hp)
   · simp [moebius_eq_zero_of_not_squarefree hn]
+
+/-! ### Hyperbola Möbius inversion -/
+
+/-- Hyperbola Möbius inversion: for an additive commutative group `A`, `g : ℕ → A`, and `N : ℕ`,
+`∑ d ∈ Icc 1 N, μ d • ∑ m ∈ Icc 1 (N / d), g (d * m)` equals `g 1` when `1 ≤ N`, and `0`
+when `N = 0`. -/
+theorem sum_moebius_smul_sum_div {A : Type*} [AddCommGroup A] (N : ℕ) (g : ℕ → A) :
+    ∑ d ∈ Icc 1 N, μ d • ∑ m ∈ Icc 1 (N / d), g (d * m) =
+      if 1 ≤ N then g 1 else 0 := by
+  have h := sum_Ioc_mul_smul_eq_sum_sum (μ : ArithmeticFunction ℤ) (ζ : ArithmeticFunction ℤ) g N
+  rw [moebius_mul_coe_zeta] at h
+  simp_rw [← Icc_add_one_left_eq_Ioc, zero_add] at h
+  have hzeta : ∀ d ∈ Icc 1 N,
+      ∑ m ∈ Icc 1 (N / d), (ζ : ArithmeticFunction ℤ) m • g (d * m) =
+        ∑ m ∈ Icc 1 (N / d), g (d * m) := fun d _ ↦
+    Finset.sum_congr rfl fun m hm ↦ by
+      rw [natCoe_apply, zeta_apply_ne (Nat.pos_iff_ne_zero.mp (Finset.mem_Icc.mp hm).1),
+        Nat.cast_one, one_zsmul]
+  rw [Finset.sum_congr rfl fun d hd ↦ congrArg (μ d • ·) (hzeta d hd)] at h
+  rw [← h]
+  by_cases hN : 1 ≤ N
+  · simp only [hN, ↓reduceIte]
+    rw [Finset.sum_eq_single_of_mem 1 (Finset.mem_Icc.mpr ⟨le_rfl, hN⟩)
+      fun n _ hn ↦ by simp [ArithmeticFunction.one_apply_ne hn]]
+    simp
+  · obtain rfl : N = 0 := Nat.lt_one_iff.mp (not_le.mp hN)
+    simp
 
 end ArithmeticFunction

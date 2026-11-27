@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Algebra.Order.Floor.Semifield
-import TauCeti.NumberTheory.ArithmeticFunction.Misc
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 import TauCeti.NumberTheory.ZetaValues
 
 /-!

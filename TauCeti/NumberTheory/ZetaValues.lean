@@ -21,7 +21,7 @@ relates to the Bernoulli polynomial over `ℚ`, and how the even ones compare wi
 
 * `TauCeti.bernoulliFun_ratCast`: `bernoulliFun` at a rational point is the Bernoulli polynomial
   over `ℚ` evaluated there, mapped into `ℝ`.
-* `TauCeti.bernoulliFun_eval_one_add`, `TauCeti.bernoulliFun_eval_add_one`: the difference equation
+* `TauCeti.bernoulliFun_eval_add_one`: the difference equation
   `B_k(x + 1) = B_k(x) + k x^(k-1)`.
 * `TauCeti.bernoulliFun_three`, `TauCeti.bernoulliFun_four`: explicit formulas for `B₃` and `B₄`.
 * `TauCeti.continuous_bernoulliFun_fract`: for `k ≠ 1`, the periodized Bernoulli function
@@ -72,16 +72,11 @@ theorem bernoulliFun_ratCast (k : ℕ) (x : ℚ) :
     Polynomial.eval₂_at_apply]
   norm_cast
 
-/-- The difference equation for Bernoulli polynomials: `B_k(1 + x) = B_k(x) + k * x ^ (k - 1)`. -/
-theorem bernoulliFun_eval_one_add (k : ℕ) (x : ℝ) :
-    bernoulliFun k (1 + x) = bernoulliFun k x + k * x ^ (k - 1) := by
-  simpa [bernoulliFun, Polynomial.aeval_comp]
-    using congr($(Polynomial.bernoulli_comp_one_add_X k).aeval x)
-
 /-- The difference equation for Bernoulli polynomials: `B_k(x + 1) = B_k(x) + k * x ^ (k - 1)`. -/
 theorem bernoulliFun_eval_add_one (k : ℕ) (x : ℝ) :
     bernoulliFun k (x + 1) = bernoulliFun k x + k * x ^ (k - 1) := by
-  rw [add_comm, bernoulliFun_eval_one_add]
+  simpa [bernoulliFun, Polynomial.aeval_comp, add_comm]
+    using congr($(Polynomial.bernoulli_comp_one_add_X k).aeval x)
 
 /-- Explicit formula for `bernoulliFun 3`. -/
 @[simp]

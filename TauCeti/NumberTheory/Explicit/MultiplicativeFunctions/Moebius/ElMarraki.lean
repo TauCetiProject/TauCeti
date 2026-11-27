@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.Basi
 import Mathlib.Algebra.Order.Floor.Semifield
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.NumberTheory.AbelSummation
-import TauCeti.NumberTheory.ArithmeticFunction.Misc
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
 # El Marraki's identities and conversion inequalities
@@ -50,10 +50,12 @@ open scoped ArithmeticFunction.Moebius
 
 namespace TauCeti
 
-private theorem one_le_of_mem_uIoc {D t : ℝ} (hD : 1 ≤ D) (ht : t ∈ Set.uIoc 1 D) : 1 ≤ t := by
-  have h := Set.uIoc_subset_uIcc ht
-  rw [Set.uIcc_of_le hD] at h
-  exact h.1
+/-- Pointwise change-of-variables identity for `u = D / t` in El Marraki's integral. -/
+private theorem div_sq_smul_moebiusSum_div_natFloor_div {D t : ℝ} (hD0 : D ≠ 0) (ht0 : t ≠ 0) :
+    (D / t ^ 2) • (moebiusSum (D / (D / t)) * ((⌊D / t⌋₊ : ℝ) / (D / t))) =
+      (⌊D / t⌋₊ : ℝ) * moebiusSum t / t := by
+  rw [smul_eq_mul, div_div_eq_mul_div, mul_div_cancel_left₀ t hD0]
+  field_simp
 
 /-- Integrability of the three El Marraki integrands on `1..D`. -/
 private theorem intervalIntegrable_elMarraki_pieces {D : ℝ} (hD : 1 ≤ D) :
@@ -61,25 +63,23 @@ private theorem intervalIntegrable_elMarraki_pieces {D : ℝ} (hD : 1 ≤ D) :
       IntervalIntegrable (fun t ↦ (⌊D / t⌋₊ : ℝ) * moebiusSum t / t) volume 1 D ∧
       IntervalIntegrable (fun t ↦ (D / t - ⌊D / t⌋₊) * moebiusSum t / t) volume 1 D := by
   have hD0 : 0 < D := zero_lt_one.trans_le hD
-  have h0 : (0 : ℝ) ∉ Set.uIcc 1 D := by
-    rw [Set.uIcc_of_le hD]
-    exact fun h ↦ by linarith [h.1]
   have h1 : IntervalIntegrable (fun t ↦ moebiusSum t / t ^ 2) volume 1 D :=
     intervalIntegrable_moebiusSum_div_sq 1 D
-  have hsub := (TauCeti.intervalIntegral.intervalIntegrable_div_sq_smul_comp_div_iff (c := D) h0
+  have hsub := (TauCeti.intervalIntegral.intervalIntegrable_div_sq_smul_comp_div_iff (c := D)
+    (by rw [Set.uIcc_of_le hD]; rintro ⟨h, -⟩; linarith)
     (fun u ↦ moebiusSum (D / u) * ((⌊u⌋₊ : ℝ) / u))).mpr <| by
       rw [div_self hD0.ne', div_one]
       exact intervalIntegrable_moebiusSum_div_mul hD (intervalIntegrable_natFloor_div 1 D)
   have h2 :
       IntervalIntegrable (fun t ↦ (⌊D / t⌋₊ : ℝ) * moebiusSum t / t) volume 1 D := by
     refine (intervalIntegrable_congr fun t ht ↦ ?_).mp hsub
-    have ht0 : t ≠ 0 := (zero_lt_one.trans_le (one_le_of_mem_uIoc hD ht)).ne'
-    rw [smul_eq_mul, div_div_eq_mul_div, mul_div_cancel_left₀ t hD0.ne']
-    field_simp
+    have ht1 : 1 ≤ t := (Set.uIcc_of_le hD ▸ Set.uIoc_subset_uIcc ht).1
+    exact div_sq_smul_moebiusSum_div_natFloor_div hD0.ne' (zero_lt_one.trans_le ht1).ne'
   have h3 :
       IntervalIntegrable (fun t ↦ (D / t - ⌊D / t⌋₊) * moebiusSum t / t) volume 1 D := by
     refine (intervalIntegrable_congr fun t ht ↦ ?_).mp ((h1.const_mul D).sub h2)
-    have ht0 : t ≠ 0 := (zero_lt_one.trans_le (one_le_of_mem_uIoc hD ht)).ne'
+    have ht1 : 1 ≤ t := (Set.uIcc_of_le hD ▸ Set.uIoc_subset_uIcc ht).1
+    have ht0 : t ≠ 0 := (zero_lt_one.trans_le ht1).ne'
     field_simp
   exact ⟨h1, h2, h3⟩
 
@@ -88,11 +88,9 @@ private theorem intervalIntegrable_elMarraki_pieces {D : ℝ} (hD : 1 ≤ D) :
 theorem integral_natFloor_div_mul_moebiusSum_div {D : ℝ} (hD : 1 ≤ D) :
     ∫ t in (1 : ℝ)..D, (⌊D / t⌋₊ : ℝ) * moebiusSum t / t = Real.log D := by
   have hD0 : 0 < D := zero_lt_one.trans_le hD
-  have h0 : (0 : ℝ) ∉ Set.uIcc 1 D := by
-    rw [Set.uIcc_of_le hD]
-    exact fun h ↦ by linarith [h.1]
   -- Change variables `u = D / t` and swap the integral with the sum defining `M(D / u)`.
-  have hsub := TauCeti.intervalIntegral.integral_div_sq_smul_comp_div (c := D) h0
+  have hsub := TauCeti.intervalIntegral.integral_div_sq_smul_comp_div (c := D)
+    (by rw [Set.uIcc_of_le hD]; rintro ⟨h, -⟩; linarith)
     (fun u ↦ moebiusSum (D / u) * ((⌊u⌋₊ : ℝ) / u))
   rw [div_self hD0.ne', div_one] at hsub
   have hcongr :
@@ -101,9 +99,8 @@ theorem integral_natFloor_div_mul_moebiusSum_div {D : ℝ} (hD : 1 ≤ D) :
           (D / t ^ 2) • (moebiusSum (D / (D / t)) * ((⌊D / t⌋₊ : ℝ) / (D / t))) := by
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
     rw [Set.uIcc_of_le hD] at ht
-    have ht0 : t ≠ 0 := (zero_lt_one.trans_le ht.1).ne'
-    rw [smul_eq_mul, div_div_eq_mul_div, mul_div_cancel_left₀ t hD0.ne']
-    field_simp
+    exact (div_sq_smul_moebiusSum_div_natFloor_div hD0.ne'
+      (zero_lt_one.trans_le ht.1).ne').symm
   rw [hcongr, hsub, integral_moebiusSum_div_mul hD (intervalIntegrable_natFloor_div 1 D)]
   -- Evaluate the inner integral `∫_1^{D/n} ⌊u⌋₊ / u du` and apply Meissel & hyperbola inversion.
   have hlog :

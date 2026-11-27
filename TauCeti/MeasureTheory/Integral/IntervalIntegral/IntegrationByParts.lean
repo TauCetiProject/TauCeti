@@ -64,6 +64,12 @@ private theorem hasDerivAt_const_div_of_mem_Ioo {a b c : ℝ} (h0 : (0 : ℝ) �
   refine ((hasDerivAt_const t c).div (hasDerivAt_id' t) ht0).congr_deriv ?_
   ring
 
+private theorem neg_div_sq_smul_comp_div_eq {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (c : ℝ) (f : ℝ → E) :
+    (fun t : ℝ ↦ (-c / t ^ 2) • (f ∘ fun t ↦ c / t) t) =
+      fun t ↦ -((c / t ^ 2) • f (c / t)) :=
+  funext fun t ↦ by simp [neg_div, neg_smul]
+
 /-- **Substitution `u = c / t` for interval integrability.** Whenever `0 ∉ uIcc a b`,
 `(c / t ^ 2) • f (c / t)` is interval integrable on `a..b` if and only if `f` is interval
 integrable on `(c / b)..(c / a)`. -/
@@ -76,10 +82,7 @@ theorem intervalIntegrable_div_sq_smul_comp_div_iff {E : Type*} [NormedAddCommGr
   have hneg :
       (IntervalIntegrable (fun t ↦ (-c / t ^ 2) • (f ∘ fun t ↦ c / t) t) volume a b ↔
           IntervalIntegrable (fun t ↦ (c / t ^ 2) • f (c / t)) volume a b) := by
-    have heq : (fun t ↦ (-c / t ^ 2) • (f ∘ fun t ↦ c / t) t) =
-        fun t ↦ -((c / t ^ 2) • f (c / t)) := funext fun t ↦ by
-      simp [neg_div, neg_smul]
-    rw [heq]
+    rw [neg_div_sq_smul_comp_div_eq]
     exact ⟨fun h ↦ h.neg.congr fun t _ ↦ by simp, fun h ↦ h.neg⟩
   rw [← hneg]
   rcases le_total 0 c with hc | hc
@@ -101,10 +104,7 @@ theorem integral_div_sq_smul_comp_div {E : Type*} [NormedAddCommGroup E] [Normed
   have hneg :
       ∫ t in a..b, (-c / t ^ 2) • (f ∘ fun t ↦ c / t) t =
         -∫ t in a..b, (c / t ^ 2) • f (c / t) := by
-    have heq : (fun t ↦ (-c / t ^ 2) • (f ∘ fun t ↦ c / t) t) =
-        fun t ↦ -((c / t ^ 2) • f (c / t)) := funext fun t ↦ by
-      simp [neg_div, neg_smul]
-    rw [heq, _root_.intervalIntegral.integral_neg]
+    rw [neg_div_sq_smul_comp_div_eq, _root_.intervalIntegral.integral_neg]
   rcases le_total 0 c with hc | hc
   · have h := _root_.intervalIntegral.integral_deriv_smul_comp_of_deriv_nonpos (g := f)
       hcont hderiv fun t _ ↦ div_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr hc) (sq_nonneg t)
