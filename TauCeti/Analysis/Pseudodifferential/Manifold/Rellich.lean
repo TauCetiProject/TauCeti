@@ -117,9 +117,12 @@ theorem isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwa
   set U := {u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ | ∑ i,
     ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖
       ≤ B}
+  have := compactSpace_of_forall_sum_cutoffPullback_eq_one he' ψ hψ
+  choose L _ hL using fun j ↦
+    IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum
+      (isProperlySupported_of_compactSpace P) (he j) (φ j)
   choose C hC using fun j ↦
-    exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum hP (he j) (φ j)
-      he' ψ hψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s
+    hL j he' ψ (fun x _ ↦ hψ x) m hP 2 ENNReal.one_lt_two ENNReal.ofNat_ne_top s
   -- The readings of `P u` in `H^{s - m}`, for `u ∈ U`, in the chart `eⱼ`, are bounded.
   let S (j : κ) : Set H^{s - m}(CoordinateSpace n, ℂ) := (fun u ↦
     SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 ((e j).cutoffPushforwardSchwartz (he j) (φ j)
