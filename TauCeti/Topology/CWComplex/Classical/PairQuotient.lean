@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Category.TopPair.Quotient
-public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.Pushout
 public import TauCeti.Topology.CWComplex.Classical.Subcomplex
+import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 
 /-!
 # The CW structure on the quotient of a CW complex by a subcomplex
@@ -26,10 +26,10 @@ is a pointed CW complex based at a `0`-cell. When `A` is empty, `X/A` is `X` wit
 basepoint `X₊`, and its cells are those of `X` together with the added point. When `X` is finite,
 so is `X/A`.
 
-This makes `A → X → X/A` a sequence of CW complexes for every CW pair `(X, A)`. Reduced
-cohomology theories on pointed CW complexes are required to turn it into an exact sequence, and the
-relative groups of a CW pair are compared with the reduced groups of `X/A`; both need `X/A` to be a
-CW complex of the same kind as `X` and `A`.
+This gives the cofiber `X/A` in `A → X → X/A` a CW structure for every CW pair `(X, A)`. Reduced
+cohomology theories on pointed CW complexes are required to turn this sequence into an exact
+sequence, and the relative groups of a CW pair are compared with the reduced groups of `X/A`; both
+need `X/A` to be a CW complex of the same kind as `X`.
 
 The structure is obtained by gluing. The subcomplex `A` makes `X` a CW complex relative to `A`
 (`Topology.RelCWComplex.Subcomplex.relCWComplex`), whose cells are the cells of `X` not in `A`.
