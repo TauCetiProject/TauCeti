@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Probability.RandomMatrix.ResolventReplacement
 
-import TauCeti.Analysis.Matrix.L2OpNorm.Single
+import Mathlib.LinearAlgebra.Matrix.Rank
+import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Data.Matrix.Basis
-import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.MeasureTheory.Integral.TruncatedMoment
 
 /-!
@@ -38,26 +38,18 @@ open scoped ComplexConjugate ComplexOrder Matrix.Norms.L2Operator Topology
 namespace Matrix
 
 private theorem fromBlocks_add_sum_complexPerturbation_single
-    {k : Type*} [Fintype k] [DecidableEq k] (D : Matrix k k ℂ)
-    (a : ℝ) (x : k × k → ℂ) :
+    {n : Type*} [Fintype n] [DecidableEq n] (D : Matrix n n ℂ)
+    (a : ℝ) (x : n × n → ℂ) :
     fromBlocks 0 D Dᴴ 0 +
-        ∑ i : k × k, (x i • single (Sum.inl i.1) (Sum.inr i.2) (a : ℂ) +
+        ∑ i : n × n, (x i • single (Sum.inl i.1) (Sum.inr i.2) (a : ℂ) +
           conj (x i) • (single (Sum.inl i.1) (Sum.inr i.2) (a : ℂ))ᴴ) =
       fromBlocks 0 (D + a • Matrix.of (fun i j ↦ x (i, j)))
         (D + a • Matrix.of (fun i j ↦ x (i, j)))ᴴ 0 := by
-  have hsum :
-      ∑ i : k × k, (x i • single (Sum.inl i.1) (Sum.inr i.2) (a : ℂ) +
-        conj (x i) • (single (Sum.inl i.1) (Sum.inr i.2) (a : ℂ))ᴴ) =
-        fromBlocks 0 (a • Matrix.of (fun i j ↦ x (i, j)))
-          (a • Matrix.of (fun i j ↦ x (i, j)))ᴴ 0 := by
-    ext (i | i) (j | j)
-    · simp [Matrix.sum_apply, conjTranspose_single]
-    · simp [Matrix.sum_apply, conjTranspose_single, Matrix.single_apply,
-        Complex.real_smul, mul_comm, ← Prod.mk.injEq]
-    · simp [Matrix.sum_apply, conjTranspose_single, Matrix.single_apply,
-        Complex.real_smul, mul_comm, ← Prod.mk.injEq, and_comm]
-    · simp [Matrix.sum_apply, conjTranspose_single]
-  simp only [hsum, fromBlocks_add, conjTranspose_add, zero_add]
+  have h := (fromBlocks_zero_conjTranspose_zero_eq_sum_single
+    (a • Matrix.of (fun i j ↦ x (i, j)))).symm
+  simp only [Matrix.smul_apply, of_apply, Complex.real_smul] at h
+  simp_rw [starRingEnd_apply, ← conjTranspose_smul, smul_single, smul_eq_mul, mul_comm _ (a : ℂ)]
+  rw [h, fromBlocks_add, conjTranspose_add, zero_add]
 
 private theorem normalized_rank_factor (k : ℕ) (b : ℝ) :
     ‖((2 : ℂ) * (k + 1))⁻¹‖ * ((k + 1 : ℝ) ^ 2 * 2) *
@@ -72,7 +64,10 @@ private theorem normalized_rank_factor (k : ℕ) (b : ℝ) :
   field_simp
   ring
 
-private theorem norm_sub_integral_normalized_trace_inv_fromBlocks_le
+/-- A finite-size bound on the difference of expected normalized resolvent traces for shifted
+Hermitian dilations under two i.i.d. entry laws with matching mixed moments through degree two.
+The bound uses only truncated squared moments of the entries. -/
+theorem _root_.MeasureTheory.Measure.norm_integral_normalized_trace_inv_fromBlocks_sub_integral_le
     (μ ν : Measure ℂ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) μ)
     (hν : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) ν)
@@ -97,8 +92,8 @@ private theorem norm_sub_integral_normalized_trace_inv_fromBlocks_le
       Matrix (Fin (k + 1) ⊕ Fin (k + 1)) (Fin (k + 1) ⊕ Fin (k + 1)) ℂ :=
     single (Sum.inl i.1) (Sum.inr i.2) (a : ℂ)
   let A := fromBlocks 0 D Dᴴ 0
-  have hA : A.IsHermitian := by simp [A, IsHermitian, fromBlocks_conjTranspose]
-  have h := hA.norm_integral_pi_trace_inv_add_sum_smul_add_conj_smul_sub_le
+  have hA : A.IsHermitian := IsHermitian.fromBlocks isHermitian_zero rfl isHermitian_zero
+  have h := hA.norm_integral_pi_trace_inv_add_sum_smul_add_conj_smul_sub_smul_one_sub_integral_pi_le
     B hz (fun _ ↦ μ) (fun _ ↦ ν) (fun _ ↦ hμ) (fun _ ↦ hν)
     (fun _ ↦ hmean) (fun _ ↦ hsq) (fun _ ↦ habs)
   have hnorm (i) : ‖B i‖ = a := by
@@ -150,7 +145,7 @@ open Matrix
 match through degree two, the expected normalized resolvent traces of their Hermitian
 dilations have vanishing difference. The matrices are scaled by the reciprocal square root
 of their dimension before adding the same arbitrary deterministic matrix. -/
-theorem tendsto_sub_integral_normalized_trace_inv_fromBlocks
+theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_integral
     (μ ν : Measure ℂ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) μ)
     (hν : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) ν)
@@ -166,7 +161,8 @@ theorem tendsto_sub_integral_normalized_trace_inv_fromBlocks
       ∫ x, f k x ∂Measure.pi (fun _ ↦ ν)) atTop (𝓝 0) := by
   apply tendsto_zero_iff_norm_tendsto_zero.mpr
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun k ↦
-    norm_sub_integral_normalized_trace_inv_fromBlocks_le μ ν hμ hν hmean hsq habs k (D k) hz) ?_
+    μ.norm_integral_normalized_trace_inv_fromBlocks_sub_integral_le ν hμ hν
+      hmean hsq habs k (D k) hz) ?_
   have hc : Tendsto (fun k : ℕ ↦ (Real.sqrt ((k : ℝ) + 1))⁻¹) atTop (𝓝 0) :=
     tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp
       (tendsto_atTop_add_const_right atTop 1 tendsto_natCast_atTop_atTop))
@@ -182,14 +178,14 @@ theorem tendsto_sub_integral_normalized_trace_inv_fromBlocks
 
 end MeasureTheory.Measure
 
-namespace ProbabilityTheory.HasLaw
+namespace TauCeti
 
-open Matrix
+open Matrix ProbabilityTheory
 
 /-- Finite-variance replacement for the expected normalized resolvent traces of shifted
 Hermitian dilations on arbitrary sample spaces. The joint product laws encode independence
 of the entries within each matrix, with no restriction on coupling across dimensions. -/
-theorem tendsto_sub_integral_normalized_trace_inv_fromBlocks
+theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_integral_of_hasLaw
     {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
     {μ ν : Measure ℂ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     {X : (k : ℕ) → Ω → (Fin (k + 1) × Fin (k + 1) → ℂ)}
@@ -215,12 +211,13 @@ theorem tendsto_sub_integral_normalized_trace_inv_fromBlocks
     let H x := fromBlocks 0 (Z k x) (Z k x)ᴴ 0
     have hH : Continuous H :=
       continuous_const.matrix_fromBlocks hZ hZ.matrix_conjTranspose continuous_const
-    have hh (x) : (H x).IsHermitian := by simp [H, IsHermitian, fromBlocks_conjTranspose]
-    exact continuous_const.mul (hH.matrix_trace_inv_sub_smul_one hh hz)
+    have hh (x) : (H x).IsHermitian :=
+      IsHermitian.fromBlocks isHermitian_zero rfl isHermitian_zero
+    exact continuous_const.mul (hH.matrix_inv_sub_smul_one hh hz).matrix_trace
   have hx (k) := (hX k).integral_comp (hc k).aestronglyMeasurable
   have hy (k) := (hY k).integral_comp (hc k).aestronglyMeasurable
   simp only [Function.comp_def] at hx hy
   simp_rw [hx, hy]
-  exact μ.tendsto_sub_integral_normalized_trace_inv_fromBlocks ν hμ hν hmean hsq habs D hz
+  exact μ.tendsto_integral_normalized_trace_inv_fromBlocks_sub_integral ν hμ hν hmean hsq habs D hz
 
-end ProbabilityTheory.HasLaw
+end TauCeti

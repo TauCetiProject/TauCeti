@@ -29,7 +29,8 @@ private theorem norm_sq_mul_min_mul_one_le {r c : ℝ} (hr : 0 ≤ r) (hc : 0 �
   rw [Real.norm_of_nonneg (by positivity)]
   exact mul_le_of_le_one_right (sq_nonneg _) (min_le_right _ _)
 
-/-- The truncated squared norm is integrable when the squared norm is integrable. -/
+/-- For a nonnegative scale, the truncated squared norm is integrable when the squared norm is
+integrable. -/
 theorem norm_sq_mul_min_mul_one (h : Integrable (fun x ↦ ‖f x‖ ^ 2) μ) {c : ℝ} (hc : 0 ≤ c) :
     Integrable (fun x ↦ ‖f x‖ ^ 2 * min (c * ‖f x‖) 1) μ := by
   have hm : AEMeasurable (fun x ↦ ‖f x‖) μ := by

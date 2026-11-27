@@ -141,33 +141,10 @@ theorem abs_integral_prod_sub_integral_prod_le {μ ν : Measure ℝ}
     (hM : ∀ w t, |iteratedDeriv (r + 1) (fun s ↦ g (s, w)) t| ≤ M) :
     |∫ p, g p ∂(μ.prod κ) - ∫ p, g p ∂(ν.prod κ)| ≤
       M / (r + 1)! * (∫ t, |t| ^ (r + 1) ∂μ + ∫ t, |t| ^ (r + 1) ∂ν) := by
-  rw [integral_prod_symm _ hμg, integral_prod_symm _ hνg,
-    ← integral_sub hμg.integral_prod_right hνg.integral_prod_right]
-  rw [← Real.norm_eq_abs]
-  refine le_trans (norm_integral_le_of_norm_le_const
-    (C := M / (r + 1)! *
-      (∫ t, |t| ^ (r + 1) ∂μ + ∫ t, |t| ^ (r + 1) ∂ν))
-    (Filter.Eventually.of_forall fun w ↦ ?_)) (by simp)
-  exact abs_integral_sub_integral_le (μ := μ) (ν := ν)
-    (g := fun t ↦ g (t, w)) (M := M) (r := r) (hsm w) (hM w) hμ hν hmom
-
-/-- Integrability under a mixed product measure with first factor `ν 0` or `μ 0`, from
-integrability under every hybrid product measure on `Fin (n + 1) → ℝ`. -/
-private lemma integrable_cons_prod_ite {n : ℕ} (μ ν : Fin (n + 1) → Measure ℝ)
-    [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
-    {f : (Fin (n + 1) → ℝ) → ℝ}
-    (hfi : ∀ s : Fin (n + 1) → Bool,
-      Integrable f (Measure.pi fun i ↦ if s i then ν i else μ i))
-    (b : Bool) (s : Fin n → Bool) :
-    Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
-      ((if b then ν 0 else μ 0).prod
-        (Measure.pi fun i : Fin n ↦ if s i then ν i.succ else μ i.succ)) := by
-  let bs : Fin (n + 1) → Bool := Fin.cons b s
-  let ρ : Fin (n + 1) → Measure ℝ := fun i ↦ if bs i = true then ν i else μ i
-  have h := integrable_pi_succ ρ (hfi bs)
-  simpa [ρ, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
-    Fin.zero_succAbove, bs, Fin.cons_zero, Fin.cons_succ, Function.comp_def,
-    Fin.consEquiv_apply] using h
+  rw [← Real.norm_eq_abs, ← integral_prod_swap (μ := μ) g, ← integral_prod_swap (μ := ν) g]
+  refine norm_integral_prod_sub_integral_prod_le_of_ae hμg.swap hνg.swap (ae_of_all _ fun w ↦ ?_)
+  rw [Real.norm_eq_abs]
+  exact abs_integral_sub_integral_le (hsm w) (hM w) hμ hν hmom
 
 /-- **Lindeberg replacement.** Let `μ i` and `ν i` be probability measures on `ℝ` with finite
 absolute moments of order `r + 1` and the same moments up to order `r`. If `f` is integrable under
@@ -190,53 +167,23 @@ theorem abs_integral_pi_sub_integral_pi_le {r n : ℕ} (μ ν : Fin n → Measur
     (hM : ∀ z i t, |iteratedDeriv (r + 1) (fun s ↦ f (Function.update z i s)) t| ≤ M i) :
     |∫ z, f z ∂Measure.pi μ - ∫ z, f z ∂Measure.pi ν| ≤
       ∑ i, M i / (r + 1)! * (∫ t, |t| ^ (r + 1) ∂μ i + ∫ t, |t| ^ (r + 1) ∂ν i) := by
-  induction n with
-  | zero => rw [Measure.pi_of_empty μ, Measure.pi_of_empty ν]; simp
-  | succ n ih =>
-    have hprod := integrable_cons_prod_ite μ ν hfi
-    rw [integral_pi_succ μ, integral_pi_succ ν]
-    simp only [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
-      Fin.zero_succAbove]
-    set μ' : Fin n → Measure ℝ := fun i ↦ μ i.succ with hμ'
-    set ν' : Fin n → Measure ℝ := fun i ↦ ν i.succ with hν'
-    -- Change the first marginal, then apply induction to the remaining coordinates.
-    have h1 := abs_integral_prod_sub_integral_prod_le (μ := μ 0) (ν := ν 0)
-      (κ := Measure.pi μ') (M := M 0)
-      (hμg := hprod false fun _ ↦ false) (hνg := hprod true fun _ ↦ false)
-      (hμ := hμ 0) (hν := hν 0) (hmom := hmom 0)
-      (hsm := fun w ↦ by simpa [Fin.update_cons_zero] using hsm (Fin.cons 0 w) 0)
-      (hM := fun w t ↦ by
-        simpa [Fin.update_cons_zero] using hM (Fin.cons 0 w) 0 t)
-    have h2 :
-        |∫ p : ℝ × (Fin n → ℝ),
-            f (Fin.cons p.1 p.2) ∂((ν 0).prod (Measure.pi μ')) -
-          ∫ p : ℝ × (Fin n → ℝ),
-            f (Fin.cons p.1 p.2) ∂((ν 0).prod (Measure.pi ν'))| ≤
-        ∑ i : Fin n, M i.succ / (r + 1)! *
-          (∫ t, |t| ^ (r + 1) ∂μ i.succ + ∫ t, |t| ^ (r + 1) ∂ν i.succ) := by
-      have hμmix : Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
-          ((ν 0).prod (Measure.pi μ')) := by
-        simpa [hμ'] using hprod true fun _ ↦ false
-      have hνmix : Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
-          ((ν 0).prod (Measure.pi ν')) := by
-        simpa [hν'] using hprod true fun _ ↦ true
-      have htail_all : ∀ᵐ t ∂ν 0, ∀ s : Fin n → Bool,
-          Integrable (fun w : Fin n → ℝ ↦ f (Fin.cons t w))
-            (Measure.pi fun i ↦ if s i then ν i.succ else μ i.succ) :=
-        ae_all_iff.2 fun s ↦ (hprod true s).prod_right_ae
-      refine abs_integral_prod_sub_integral_prod_le_of_ae hμmix hνmix ?_
-      filter_upwards [htail_all] with t ht
-      have h := ih μ' ν' (fun i ↦ hμ i.succ) (fun i ↦ hν i.succ)
-        (fun i ↦ hmom i.succ)
-        (f := fun w ↦ f (Fin.cons t w)) (fun s ↦ ht s)
-        (M := fun i ↦ M i.succ) (fun z i ↦ ?_) (fun z i s ↦ ?_)
-      · exact h
-      · simpa [Fin.cons_update] using hsm (Fin.cons t z) i.succ
-      · simpa [Fin.cons_update] using hM (Fin.cons t z) i.succ s
-    rw [Fin.sum_univ_succ]
-    calc _ ≤ _ := abs_sub_le _ (∫ p : ℝ × (Fin n → ℝ), f (Fin.cons p.1 p.2)
-        ∂((ν 0).prod (Measure.pi μ'))) _
-      _ ≤ _ := add_le_add h1 h2
+  rw [← Real.norm_eq_abs]
+  refine norm_integral_pi_sub_integral_pi_le_of_splitAt (α := fun _ ↦ ℝ) μ ν
+    (fun s ↦ ?_) _ (fun _ i _ ↦ ae_of_all _ fun x ↦ ?_)
+  · simpa only [decide_eq_true_eq] using hfi (fun i ↦ decide (i ∈ s))
+  let e := MeasurableEquiv.piSplitAt i (fun _ : Fin n ↦ ℝ)
+  let w := e.symm (0, x)
+  have hslice (t : ℝ) : e.symm (t, x) = Function.update w i t := by
+    funext j
+    by_cases hj : j = i
+    · subst j
+      simp [e]
+    · rw [Function.update_of_ne hj]
+      simp only [e, w, MeasurableEquiv.piSplitAt_symm_apply_ne i _ j hj]
+  change ‖(∫ t, f (e.symm (t, x)) ∂μ i) - ∫ t, f (e.symm (t, x)) ∂ν i‖ ≤ _
+  simp only [hslice]
+  simpa only [← Real.norm_eq_abs] using
+    abs_integral_sub_integral_le (hsm w i) (hM w i) (hμ i) (hν i) (hmom i)
 
 /-- The Lindeberg replacement inequality for bounded continuous test functions. Boundedness and
 continuity imply the integrability hypothesis of `abs_integral_pi_sub_integral_pi_le`. -/

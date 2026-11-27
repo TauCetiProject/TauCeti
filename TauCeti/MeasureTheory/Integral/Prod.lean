@@ -32,7 +32,7 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   conditional laws by any bound the integrand satisfies on the rectangle conditioned on. Use it to
   estimate an integral against two independently conditioned coordinates when the integrand is
   controlled only on the pair of sets being conditioned on.
-* `TauCeti.abs_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
+* `TauCeti.norm_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
   differ by at most `C` for almost every point of a probability first factor, the integrals over
   the product measures differ by at most `C`.
 * `TauCeti.integrable_prod_restrict_of_continuous`: a continuous function on `α × β` vanishing on
@@ -279,15 +279,14 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
 /-- If two integrals over the second factor of a product measure with a probability first factor
 differ by at most `C` for almost every point of the first factor, then the two integrals over the
 product measures differ by at most `C`. -/
-theorem abs_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbabilityMeasure ρ]
-    {κ₁ κ₂ : Measure β} [SFinite κ₁] [SFinite κ₂] {F : α × β → ℝ} {C : ℝ}
+theorem norm_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbabilityMeasure ρ]
+    {κ₁ κ₂ : Measure β} [SFinite κ₁] [SFinite κ₂] {F : α × β → E} {C : ℝ}
     (h₁ : Integrable F (ρ.prod κ₁)) (h₂ : Integrable F (ρ.prod κ₂))
-    (h : ∀ᵐ t ∂ρ, |∫ w, F (t, w) ∂κ₁ - ∫ w, F (t, w) ∂κ₂| ≤ C) :
-    |∫ p, F p ∂(ρ.prod κ₁) - ∫ p, F p ∂(ρ.prod κ₂)| ≤ C := by
+    (h : ∀ᵐ t ∂ρ, ‖(∫ w, F (t, w) ∂κ₁) - ∫ w, F (t, w) ∂κ₂‖ ≤ C) :
+    ‖(∫ p, F p ∂(ρ.prod κ₁)) - ∫ p, F p ∂(ρ.prod κ₂)‖ ≤ C := by
   rw [integral_prod _ h₁, integral_prod _ h₂,
-    ← integral_sub h₁.integral_prod_left h₂.integral_prod_left, ← Real.norm_eq_abs]
-  exact le_trans (norm_integral_le_of_norm_le_const (C := C)
-    (by simpa only [Real.norm_eq_abs] using h)) (by simp)
+    ← integral_sub h₁.integral_prod_left h₂.integral_prod_left]
+  exact (norm_integral_le_of_norm_le_const h).trans (by simp)
 
 omit [NormedSpace ℝ E] in
 /-- A continuous function on `α × β` that vanishes on `(α \ K) × D`, for compact sets `K` and

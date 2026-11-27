@@ -45,7 +45,8 @@ uniform version for uniformly continuous maps (`UniformContinuous.exists_pos_for
 
 Over a topological field, the inverse of a matrix-valued function that is continuous at a point
 with invertible value is continuous there (`ContinuousAt.matrix_inv`), and so are its entries
-(`ContinuousAt.matrix_inv_apply`).
+(`ContinuousAt.matrix_inv_apply`). For an everywhere invertible family, inversion preserves
+continuity (`Continuous.matrix_inv`).
 
 Square matrices over a commutative topological ring `R` with open units again have open units
 (`Matrix.instIsOpenUnits`). The invertible matrices are the preimage of the open set of units of
@@ -277,6 +278,12 @@ continuous and its value is invertible. -/
 theorem ContinuousAt.matrix_inv (hA : ContinuousAt A x) (hdet : (A x).det ≠ 0) :
     ContinuousAt (fun y ↦ (A y)⁻¹) x :=
   (continuousAt_matrix_inv _ (by rw [Ring.inverse_eq_inv']; exact continuousAt_inv₀ hdet)).comp hA
+
+/-- The inverse of a continuous matrix-valued function with everywhere nonzero determinant
+is continuous. -/
+theorem Continuous.matrix_inv (hA : Continuous A) (hdet : ∀ x, (A x).det ≠ 0) :
+    Continuous (fun x ↦ (A x)⁻¹) :=
+  continuous_iff_continuousAt.2 fun x ↦ hA.continuousAt.matrix_inv (hdet x)
 
 /-- The entries of the inverse of a matrix-valued function are continuous at every point where the
 function is continuous and its value is invertible. -/

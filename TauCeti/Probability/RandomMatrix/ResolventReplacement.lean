@@ -12,7 +12,6 @@ public import Mathlib.Probability.HasLaw
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Matrix.Resolvent.Expansion
 import TauCeti.LinearAlgebra.Matrix.Rank
-import TauCeti.MeasureTheory.Integral.Pi.Replacement
 import TauCeti.MeasureTheory.Integral.TruncatedMoment
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -68,13 +67,7 @@ private theorem resolvent_test_continuous (hA : A.IsHermitian)
   have hH (x : ι → ℝ) : (A + ∑ i, x i • B i).IsHermitian :=
     hA.add (isSelfAdjoint_sum univ fun i _ ↦ (hB i).smul (by simp [IsSelfAdjoint]))
   have hc : Continuous (fun x : ι → ℝ ↦ A + ∑ i, x i • B i) := by fun_prop
-  have hi : Continuous (fun x : ι → ℝ ↦ (A + ∑ i, x i • B i - z • 1)⁻¹) := by
-    refine continuous_iff_continuousAt.2 fun x ↦ ?_
-    simpa only [Function.comp_def] using
-      (Matrix.contDiffAt_inv_sub_smul_one
-        ((hH x).isUnit_sub_smul_one_of_im_ne_zero hz) 0).continuousAt.comp
-        (f := fun y : ι → ℝ ↦ A + ∑ i, y i • B i) (x := x) hc.continuousAt
-  exact continuous_const.mul hi.matrix_trace
+  exact continuous_const.mul (hc.matrix_inv_sub_smul_one hH hz).matrix_trace
 
 private theorem resolvent_test_coordinate [DecidableEq ι] (hA : A.IsHermitian)
     (hB : ∀ i, (B i).IsHermitian) (l : ℂ →L[ℝ] ℝ) {z : ℂ} (hz : z.im ≠ 0)
@@ -311,7 +304,16 @@ private theorem norm_trace_resolvent_quadratic_remainder {A : Matrix n n ℂ}
       dsimp only [replacementWeight, b, c]
       ring
 
-private theorem norm_integral_trace_resolvent_sub_le
+private theorem integrable_trace_resolvent {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {ρ : Measure X} [IsFiniteMeasure ρ]
+    {H : X → Matrix n n ℂ} (hc : Continuous H) (hH : ∀ x, (H x).IsHermitian)
+    {z : ℂ} (hz : z.im ≠ 0) : Integrable (fun x ↦ (H x - z • 1)⁻¹.trace) ρ := by
+  refine Integrable.of_bound (hc.matrix_inv_sub_smul_one hH hz).matrix_trace.aestronglyMeasurable
+    (Fintype.card n * |z.im|⁻¹) (ae_of_all _ fun x ↦ ?_)
+  exact (norm_trace_le_card_mul_l2_opNorm _).trans
+    (mul_le_mul_of_nonneg_left ((hH x).l2_opNorm_inv_sub_smul_one_le hz) (by positivity))
+
+private theorem norm_integral_trace_resolvent_sub_integral_le
     {A : Matrix n n ℂ} (hA : A.IsHermitian) (B : Matrix n n ℂ) {z : ℂ} (hz : z.im ≠ 0)
     {μ ν : Measure ℂ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) μ)
@@ -335,12 +337,8 @@ private theorem norm_integral_trace_resolvent_sub_le
   let K : ℝ := (2 * B.rank) * b ^ 3 * c ^ 2
   have hh (w : ℂ) := hA.add (isHermitian_complexPerturbation B w)
   have hcont := (continuous_const (y := A)).add (continuous_complexPerturbation B)
-  have hf (ρ : Measure ℂ) [IsProbabilityMeasure ρ] : Integrable f ρ := by
-    refine Integrable.of_bound
-      (hcont.matrix_trace_inv_sub_smul_one hh hz).aestronglyMeasurable (Fintype.card n * b)
-      (Filter.Eventually.of_forall fun w ↦ ?_)
-    exact (norm_trace_le_card_mul_l2_opNorm _).trans
-      (mul_le_mul_of_nonneg_left ((hh w).l2_opNorm_inv_sub_smul_one_le hz) (by positivity))
+  have hf (ρ : Measure ℂ) [IsFiniteMeasure ρ] : Integrable f ρ :=
+    integrable_trace_resolvent hcont hh hz
   obtain ⟨hTμ, hTν, hT⟩ := integral_trace_quadratic_eq hμ hν hmean hsq habs R B
   have hrest (ρ : Measure ℂ) (hρ : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) ρ) :
       ‖∫ w, f w - T w ∂ρ‖ ≤ K * ∫ w, replacementWeight b c w ∂ρ := by
@@ -357,11 +355,13 @@ private theorem norm_integral_trace_resolvent_sub_le
   rw [heq]
   exact (norm_sub_le _ _).trans (by rw [mul_add]; exact add_le_add (hrest μ hμ) (hrest ν hν))
 
+namespace IsHermitian
+
 /-- Replacing each complex coordinate of an affine Hermitian matrix by a law with matching
 mixed moments through degree two changes the expected resolvent trace by at most the sum
 of the truncated squared-moment errors. Coordinates are independent under each product law.
 The Euclidean operator norms and ranks are those of the coefficient matrices. -/
-theorem IsHermitian.norm_integral_pi_trace_inv_add_sum_smul_add_conj_smul_sub_le
+theorem norm_integral_pi_trace_inv_add_sum_smul_add_conj_smul_sub_smul_one_sub_integral_pi_le
     {ι : Type*} [Fintype ι] {A : Matrix n n ℂ} (hA : A.IsHermitian)
     (B : ι → Matrix n n ℂ) {z : ℂ} (hz : z.im ≠ 0)
     (μ ν : ι → Measure ℂ) [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
@@ -385,32 +385,30 @@ theorem IsHermitian.norm_integral_pi_trace_inv_add_sum_smul_add_conj_smul_sub_le
   have hcont : Continuous H :=
     continuous_const.add (continuous_finsetSum _ fun i _ ↦
       (continuous_complexPerturbation (B i)).comp (continuous_apply i))
-  have hf : Continuous f := hcont.matrix_trace_inv_sub_smul_one hH hz
   have hint (s : Finset ι) : Integrable f (Measure.pi fun i ↦ if i ∈ s then ν i else μ i) := by
     have (i : ι) : IsProbabilityMeasure (if i ∈ s then ν i else μ i) := by split <;> infer_instance
-    refine Integrable.of_bound hf.aestronglyMeasurable (Fintype.card n * |z.im|⁻¹)
-      (Filter.Eventually.of_forall fun x ↦ ?_)
-    exact (norm_trace_le_card_mul_l2_opNorm _).trans
-      (mul_le_mul_of_nonneg_left ((hH x).l2_opNorm_inv_sub_smul_one_le hz) (by positivity))
-  refine norm_integral_pi_sub_integral_pi_le_of_splitAt (α := fun _ ↦ ℂ) μ ν hint _ fun i x ↦ ?_
-  let e := Equiv.piSplitAt i (fun _ : ι ↦ ℂ)
-  let C := A + ∑ j ∈ univ.erase i, complexPerturbation (B j) (e.symm (0, x) j)
+    exact integrable_trace_resolvent hcont hH hz
+  refine TauCeti.norm_integral_pi_sub_integral_pi_le_of_splitAt (α := fun _ ↦ ℂ) μ ν hint _
+    (fun _ i _ ↦ ae_of_all _ fun x ↦ ?_)
+  let C := A + ∑ j ∈ univ.erase i, complexPerturbation (B j)
+    (if hj : j ≠ i then x ⟨j, hj⟩ else 0)
   have hC : C.IsHermitian :=
     hA.add (isSelfAdjoint_sum _ fun j _ ↦ isHermitian_complexPerturbation (B j) _)
-  have hx (t : ℂ) : e.symm (t, x) i = t := congrArg Prod.fst (e.apply_symm_apply (t, x))
-  have hx' (t : ℂ) (j : {j // j ≠ i}) : e.symm (t, x) j = x j :=
-    congrFun (congrArg Prod.snd (e.apply_symm_apply (t, x))) j
   have hsplit (t : ℂ) :
-      H ((Equiv.piSplitAt i (fun _ : ι ↦ ℂ)).symm (t, x)) = C + complexPerturbation (B i) t := by
+      H ((MeasurableEquiv.piSplitAt i (fun _ : ι ↦ ℂ)).symm (t, x)) =
+        C + complexPerturbation (B i) t := by
     unfold H C
-    rw [← sum_erase_add _ _ (mem_univ i), ← add_assoc, hx]
+    rw [← sum_erase_add _ _ (mem_univ i), ← add_assoc, MeasurableEquiv.piSplitAt_symm_apply_self]
     congr 2
     apply sum_congr rfl
     intro j hj
     have hji := ne_of_mem_erase hj
-    rw [hx' t ⟨j, hji⟩, hx' 0 ⟨j, hji⟩]
+    simp only [dite_eq_left hji, MeasurableEquiv.piSplitAt_symm_apply_ne i _ j hji]
   simpa only [f, hsplit, replacementWeight] using
-    norm_integral_trace_resolvent_sub_le hC (B i) hz (hμ i) (hν i) (hmean i) (hsq i) (habs i)
+    norm_integral_trace_resolvent_sub_integral_le hC (B i) hz (hμ i) (hν i)
+      (hmean i) (hsq i) (habs i)
+
+end IsHermitian
 
 end Matrix
 

@@ -30,6 +30,7 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.opNorm_toEuclideanLin`: the operator-norm unitarily invariant seminorm of
   `A.toEuclideanLin` equals the scoped `ℓ²` operator norm of `A`.
 * `Matrix.norm_apply_le_l2_opNorm`: an entrywise bound, including rectangular matrices.
+* `Matrix.l2_opNorm_single`: the norm of a rectangular matrix unit.
 * `Matrix.l2_opNorm_one_le`: an identity bound that also applies to empty matrices.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
   trace and normalized trace bounds.
@@ -329,5 +330,17 @@ theorem l2_opNorm_map_ofReal (S : Matrix m n ℝ) : ‖S.map ((↑) : ℝ → �
     rw [← hSx, ← hx]
     exact l2_opNorm_mulVec _ xc
 end OfReal
+
+/-- The Euclidean operator norm of a matrix with a single possibly nonzero entry is the norm
+of that entry. -/
+@[simp]
+theorem l2_opNorm_single {m n 𝕜 : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [RCLike 𝕜]
+    (i : m) (j : n) (a : 𝕜) : ‖single i j a‖ = ‖a‖ := by
+  have hs : ‖single i j a‖ * ‖single i j a‖ = ‖a‖ * ‖a‖ := by
+    rw [← l2_opNorm_conjTranspose_mul_self, conjTranspose_single, single_mul_single_same,
+      ← diagonal_single, l2_opNorm_diagonal]
+    rw [Pi.norm_single, norm_mul, norm_star]
+  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp (by simpa [pow_two] using hs)
 
 end Matrix

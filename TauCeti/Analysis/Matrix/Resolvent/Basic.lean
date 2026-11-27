@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Matrix.Spectrum
 
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Resolvents of Hermitian matrices
@@ -44,7 +45,7 @@ entries back into diagonal entries. The resolvent identities specialize Mathlib'
   at `z` is the resolvent at `conj z`;
 * `Matrix.IsHermitian.notMem_spectrum_of_im_ne_zero` — a non-real scalar lies outside the spectrum
   of a Hermitian matrix;
-* `Continuous.matrix_trace_inv_sub_smul_one` — at a fixed non-real parameter, the resolvent trace
+* `Continuous.matrix_inv_sub_smul_one` — at a fixed non-real parameter, the resolvent
   of a continuous Hermitian matrix family is continuous;
 * `Matrix.IsHermitian.notMem_spectrum_of_forall_eigenvalues_lt` — a real number above every
   eigenvalue lies outside the real spectrum of a Hermitian matrix;
@@ -335,17 +336,13 @@ theorem im_inv_sub_smul_one_apply_self_pos {z : 𝕜} (hz : 0 < RCLike.im z) (i 
 
 end Matrix.IsHermitian
 
-/-- The trace of the resolvent of a continuous Hermitian matrix family is continuous at a
+/-- The resolvent of a continuous Hermitian matrix family is continuous at a
 fixed nonreal spectral parameter. -/
-theorem Continuous.matrix_trace_inv_sub_smul_one {X n 𝕜 : Type*} [TopologicalSpace X]
+theorem Continuous.matrix_inv_sub_smul_one {X n 𝕜 : Type*} [TopologicalSpace X]
     [Fintype n] [DecidableEq n] [RCLike 𝕜] {A : X → Matrix n n 𝕜}
     (hc : Continuous A) (hA : ∀ x, (A x).IsHermitian)
     {z : 𝕜} (hz : RCLike.im z ≠ 0) :
-    Continuous (fun x ↦ (A x - z • 1)⁻¹.trace) := by
-  apply Continuous.matrix_trace
-  refine continuous_iff_continuousAt.2 fun x ↦ ?_
-  have hdet := isUnit_iff_ne_zero.mp ((Matrix.isUnit_iff_isUnit_det _).mp
-    ((hA x).isUnit_sub_smul_one_of_im_ne_zero hz))
-  refine (continuousAt_matrix_inv _ ?_).comp (hc.sub continuous_const).continuousAt
-  rw [Ring.inverse_eq_inv']
-  exact continuousAt_inv₀ hdet
+    Continuous (fun x ↦ (A x - z • 1)⁻¹) :=
+  (hc.sub continuous_const).matrix_inv fun x ↦
+    isUnit_iff_ne_zero.mp ((Matrix.isUnit_iff_isUnit_det _).mp
+      ((hA x).isUnit_sub_smul_one_of_im_ne_zero hz))

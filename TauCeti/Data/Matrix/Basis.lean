@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
@@ -24,6 +25,9 @@ expands a linear map on matrices along the matrix units, and
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
 algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
 associativity.
+
+`Matrix.fromBlocks_zero_conjTranspose_zero_eq_sum_single` expands the off-diagonal blocks
+of a matrix in pairs of conjugate-transposed matrix units.
 
 Two off-diagonal matrix units witness that transposition does not preserve all products.
 
@@ -99,6 +103,23 @@ public theorem Matrix.not_forall_transpose_mul (n R : Type*) [Fintype n] [Nontri
 
 public section
 namespace Matrix
+
+/-- A matrix with off-diagonal blocks `A` and `Aᴴ` and zero diagonal blocks is a sum of
+pairs of conjugate-transposed matrix units. The block `A` may be rectangular. -/
+theorem fromBlocks_zero_conjTranspose_zero_eq_sum_single {m n R : Type*}
+    [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+    [AddCommMonoid R] [StarAddMonoid R] (A : Matrix m n R) :
+    fromBlocks 0 A Aᴴ 0 = ∑ i : m × n,
+      (single (Sum.inl i.1) (Sum.inr i.2) (A i.1 i.2) +
+        (single (Sum.inl i.1) (Sum.inr i.2) (A i.1 i.2))ᴴ) := by
+  have h := matrix_eq_sum_single (fromBlocks (0 : Matrix m m R) A 0 (0 : Matrix n n R))
+  simp only [Fintype.sum_sum_type, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
+    fromBlocks_apply₂₁, fromBlocks_apply₂₂, Matrix.zero_apply, single_zero,
+    Finset.sum_const_zero, zero_add, add_zero] at h
+  rw [← Fintype.sum_prod_type'] at h
+  simpa only [fromBlocks_conjTranspose, conjTranspose_zero, fromBlocks_add, add_zero, zero_add,
+    conjTranspose_sum, ← Finset.sum_add_distrib] using
+    congrArg (fun M : Matrix (m ⊕ n) (m ⊕ n) R ↦ M + Mᴴ) h
 
 section SingleCorner
 variable (R : Type*) {n A : Type*} [NonUnitalNonAssocSemiring A] [Fintype n] [DecidableEq n]
