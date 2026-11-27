@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 
 /-!
@@ -26,6 +27,10 @@ A *closed class* (`CategoryTheory.ObjectProperty.IsClosedClass`) is a property t
 zero objects and, in a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` with `X₁` in it, holds for
 `X₂` exactly when it holds for `X₃`. A closed class is closed under extensions
 (`CategoryTheory.ObjectProperty.IsClosedClass.isClosedUnderExtensions`).
+
+A property closed under extensions which holds for a zero object and is closed under isomorphisms,
+for instance a Serre class, is closed under finite coproducts
+(`CategoryTheory.ObjectProperty.isClosedUnderFiniteCoproducts_of_isClosedUnderExtensions`).
 
 ## References
 
@@ -94,5 +99,29 @@ class IsClosedClass (P : ObjectProperty C) : Prop where
 instance IsClosedClass.isClosedUnderExtensions (P : ObjectProperty C) [P.IsClosedClass] :
     P.IsClosedUnderExtensions where
   prop_X₂_of_shortExact hS h₁ h₃ := (IsClosedClass.prop_X₂_iff_prop_X₃ hS h₁).2 h₃
+
+end CategoryTheory.ObjectProperty
+
+namespace CategoryTheory.ObjectProperty
+
+open Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject C] [HasFiniteBiproducts C]
+
+/-- **A property closed under extensions is closed under finite coproducts.** In a preadditive
+category with a zero object and finite biproducts, for instance an abelian category, a property
+which holds for some zero object, is closed under isomorphisms and is closed under extensions holds
+for every finite coproduct of objects satisfying it: a binary coproduct is the biproduct `X ⊞ Y`,
+an extension of `Y` by `X`. This applies to every Serre class. -/
+instance isClosedUnderFiniteCoproducts_of_isClosedUnderExtensions (P : ObjectProperty C)
+    [P.ContainsZero] [P.IsClosedUnderIsomorphisms] [P.IsClosedUnderExtensions] :
+    P.IsClosedUnderFiniteCoproducts := by
+  have := hasBinaryBiproducts_of_finite_biproducts C
+  have : P.IsClosedUnderBinaryCoproducts := IsClosedUnderColimitsOfShape.mk' <| by
+    rintro _ ⟨F, hF⟩
+    exact P.prop_of_iso ((BinaryBiproduct.isColimit _ _).coconePointsIsoOfNatIso
+      (colimit.isColimit F) (diagramIsoPair F).symm)
+      (P.prop_biprod (hF ⟨.left⟩) (hF ⟨.right⟩))
+  exact .mk'
 
 end CategoryTheory.ObjectProperty

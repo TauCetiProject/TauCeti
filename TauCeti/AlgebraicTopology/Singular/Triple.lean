@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
@@ -30,8 +31,9 @@ functorial as well, and the connecting morphism is natural for morphisms of trip
 
 The short exact sequence and its connecting morphism use an abelian coefficient category.  The
 zero composite and the degree-zero epimorphism also hold for preadditive coefficients with
-coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
-to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when the connecting morphism
+coproducts and homology.  Exactness at `Hₙ(X, B)` propagates membership in a Serre class from
+`(A, B)` and `(X, A)` to `(X, B)` (`TopTriple.prop_singularHomology_totalPair`), in particular
+vanishing (`TopTriple.isZero_singularHomology_totalPair`), and when the connecting morphism
 `H_{d+1}(X, A) ⟶ H_d(A, B)` vanishes (for instance when `H_{d+1}(X, A) = 0`) it propagates
 projectivity, provided the cokernel of `H_d(X, B) ⟶ H_d(X, A)` has projective dimension at most
 one, for instance over hereditary coefficient categories
@@ -271,13 +273,23 @@ theorem isIso_singularHomologyδ_of_isZero (n m : ℕ)
     IsIso (T.singularHomologyδ R n m h) :=
   (T.shortExact_singularChainComplexShortComplex R).isIso_δ n m (by simpa) hn hm
 
+/-- **Serre classes pass from the inner and outer pairs to the total pair**: if `Hₙ(A, B)` and
+`Hₙ(X, A)` lie in a Serre class `P`, for instance the torsion groups, so does `Hₙ(X, B)`, by
+exactness at `Hₙ(X, B)`. -/
+theorem prop_singularHomology_totalPair (P : ObjectProperty A) [P.IsSerreClass] (n : ℕ)
+    (hinner : P ((innerPair.obj T).singularHomology R n))
+    (houter : P ((outerPair.obj T).singularHomology R n)) :
+    P ((totalPair.obj T).singularHomology R n) :=
+  P.prop_X₂_of_exact (T.singularHomology_exact_total R n) hinner houter
+
 /-- **Vanishing passes from the inner and outer pairs to the total pair**: if `Hₙ(A, B)` and
-`Hₙ(X, A)` vanish, so does `Hₙ(X, B)`. -/
+`Hₙ(X, A)` vanish, so does `Hₙ(X, B)`. This is `TopTriple.prop_singularHomology_totalPair` for the
+Serre class of zero objects. -/
 theorem isZero_singularHomology_totalPair (n : ℕ)
     (hinner : IsZero ((innerPair.obj T).singularHomology R n))
     (houter : IsZero ((outerPair.obj T).singularHomology R n)) :
     IsZero ((totalPair.obj T).singularHomology R n) :=
-  (T.singularHomology_exact_total R n).isZero_of_both_isZero hinner houter
+  T.prop_singularHomology_totalPair R IsZero n hinner houter
 
 /-- **Enlarging the subspace by an acyclic pair**: if `Hₙ(A, B)` vanishes, and so does `Hₘ(A, B)`
 for `m + 1 = n`, then `Hₙ(X, B) ⟶ Hₙ(X, A)` is an isomorphism. -/
