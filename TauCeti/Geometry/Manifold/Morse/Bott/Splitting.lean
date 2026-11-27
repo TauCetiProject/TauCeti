@@ -69,8 +69,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
   Morse–Bott submanifold the normal space is the direct sum of the negative normal space for one
   fibre metric and the positive normal space for any other.
 * `IsNondegenerateCriticalSubmanifold.negativeNormalProjection`: the projection onto the negative
-  normal space along the positive one, along which the normal Hessian splits
-  (`normalHessian_apply_eq_normalHessian_negativeNormalProjection_add`, in the same namespace).
+  normal space along the positive one, along which the normal Hessian and the fibre metric split
+  (`normalHessian_apply_eq_normalHessian_negativeNormalProjection_add` and
+  `inner_eq_inner_negativeNormalProjection_add`, in the same namespace).
 * `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
   Morse indices of `f` and of `-f`.
@@ -384,6 +385,25 @@ theorem normalHessian_apply_eq_normalHessian_negativeNormalProjection_add {s : S
   set P := h.negativeNormalProjection hn g s
   conv_lhs => rw [← add_sub_cancel (P v) v, ← add_sub_cancel (P w) w]
   simp only [map_add, LinearMap.add_apply, h₁, h₂]
+  ring
+
+/-- **The fibre metric splits along the negative and positive normal spaces**: it is the sum of
+its values on the negative components and on the positive components, the cross terms vanishing
+by `IsCriticalSubmanifold.inner_eq_zero_of_mem_negativeNormalSpace`. -/
+theorem inner_eq_inner_negativeNormalProjection_add {s : S}
+    (v w : i.isImmersion.NormalSpace s hn) :
+    g.inner s v w =
+      g.inner s (h.negativeNormalProjection hn g s v) (h.negativeNormalProjection hn g s w) +
+        g.inner s (v - h.negativeNormalProjection hn g s v)
+          (w - h.negativeNormalProjection hn g s w) := by
+  have h₁ := h.inner_eq_zero_of_mem_negativeNormalSpace hn g
+    (h.negativeNormalProjection_apply_mem hn g v) (h.sub_negativeNormalProjection_apply_mem hn g w)
+  have h₂ := h.inner_eq_zero_of_mem_negativeNormalSpace hn g
+    (h.negativeNormalProjection_apply_mem hn g w) (h.sub_negativeNormalProjection_apply_mem hn g v)
+  rw [g.symm] at h₂
+  set P := h.negativeNormalProjection hn g s
+  conv_lhs => rw [← add_sub_cancel (P v) v, ← add_sub_cancel (P w) w]
+  simp only [map_add, add_apply, h₁, h₂]
   ring
 
 /-- **The negative normal spaces for two fibre metrics are isomorphic.** The negative normal
