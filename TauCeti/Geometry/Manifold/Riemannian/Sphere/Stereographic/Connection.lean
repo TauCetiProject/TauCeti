@@ -41,17 +41,24 @@ theorem chartMetric_eq (p : S) :
   intro u
   apply ContinuousLinearMap.ext
   intro v
-  have ht : y ∈ (extChartAt (𝓡 n) p).target := by rw [extChartAt_sphere]; simp
+  have ht : y ∈ (extChartAt (𝓡 n) p).target := by
+    rw [extChartAt_target, chartAt_sphere]
+    simp
   have hs := (extChartAt (𝓡 n) p).map_target ht
   have hc : (extChartAt (𝓡 n) p).symm y ∈ (chartAt V p).source := by
     simpa only [extChartAt_source] using hs
+  have hinv (w : V) :
+      (trivializationAt V (TangentSpace (𝓡 n)) p).symm ((extChartAt (𝓡 n) p).symm y) w =
+        mfderivWithin (𝓡 n) (𝓡 n) (extChartAt (𝓡 n) p).symm (range (𝓡 n))
+          (extChartAt (𝓡 n) p ((extChartAt (𝓡 n) p).symm y)) w := by
+    rw [← (trivializationAt V (TangentSpace (𝓡 n)) p).symmL_apply (R := ℝ) hc w]
+    exact congrArg (fun f ↦ f w) (TangentBundle.symmL_trivializationAt (I := 𝓡 n) hc)
   rw [ContMDiffNondegenerateMetric.chartMetric_apply _ ht,
-    ContMDiffNondegenerateMetric.ofRiemannianBundle_apply,
-    ← (trivializationAt V (TangentSpace (𝓡 n)) p).symmL_apply (R := ℝ) hc u,
-    ← (trivializationAt V (TangentSpace (𝓡 n)) p).symmL_apply (R := ℝ) hc v,
-    TangentBundle.symmL_trivializationAt hc, (extChartAt (𝓡 n) p).right_inv ht]
+    ContMDiffNondegenerateMetric.ofRiemannianBundle_apply]
+  simp only [hinv]
   have hr : range (𝓡 n) = (univ : Set V) := by simp
-  rw [hr, mfderivWithin_univ, extChartAt_sphere]
+  rw [(extChartAt (𝓡 n) p).right_inv ht, hr, mfderivWithin_univ, extChartAt_sphere,
+    OpenPartialHomeomorph.coe_toPartialEquiv_symm]
   exact (metric_two_apply_eq_inner_mfderiv (-p) y u v).symm
 
 /-- The native Levi-Civita Christoffel map in the preferred stereographic chart.
@@ -71,7 +78,7 @@ theorem christoffelMap_eq (p q : S) (u v : V) :
     rw [christoffelMap_of_notMem _ _ hs, extChartAt_sphere_apply_neg]
     simp
   have hs : q ∈ (extChartAt (𝓡 n) p).source := by
-    rw [extChartAt_sphere]
+    rw [extChartAt_source, chartAt_sphere]
     simpa only [stereographic'_source, mem_compl_iff, mem_singleton_iff] using hq
   have hLC :=
     ContMDiffNondegenerateMetric.isLeviCivitaConnection_ofRiemannianBundle_leviCivitaConnection

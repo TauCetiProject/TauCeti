@@ -345,7 +345,7 @@ theorem stereographic'_apply_neg (v : sphere (0 : E) 1) : stereographic' n v (-v
 /-- The total extension of the preferred sphere chart sends its projection pole `-v`, outside
 the chart source, to the origin. -/
 theorem extChartAt_sphere_apply_neg (v : sphere (0 : E) 1) : extChartAt (𝓡 n) v (-v) = 0 := by
-  rw [extChartAt_sphere]
+  rw [extChartAt_sphere, OpenPartialHomeomorph.coe_toPartialEquiv]
   exact stereographic'_apply_self (-v)
 
 /-- Away from the centre `v` of projection, stereographic projection from `v` sends exactly the
