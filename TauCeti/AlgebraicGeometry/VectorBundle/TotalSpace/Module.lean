@@ -56,7 +56,7 @@ theorem smul_totalSpaceScheme :
     γ[𝔸(PUnit.{u + 1}; X).asOver X,
         (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj E)] =
       relativeSpecSymmetricAlgebraSMul ((toQuasicoherent X).obj (dual E)) :=
-  (rfl)
+  smul_relativeSpecSymmetricAlgebra _
 
 /-- Scalar multiplication on total-space points is multiplication of their sections by the
 corresponding regular function on the test scheme. -/
