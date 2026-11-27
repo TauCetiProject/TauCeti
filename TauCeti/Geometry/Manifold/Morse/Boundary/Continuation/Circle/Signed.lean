@@ -30,10 +30,12 @@ pseudo-gradient these manifolds are open arcs of length `π`
 `TauCeti.IsAdaptedPseudoGradient.coe_mem_unstableSet_circleCosTwo_of_mem_Ioo`).
 
 Let `n` be an integer and `c = r₁ - r₀ - n π`, so that rotation by `c` carries the critical points
-of `f₀` to those of `f₁`, preserving their indices. Suppose that `Φ` moves each minimum `p` of `f₀`
-to within `π / 2` of `p + c`, and `Φ⁻¹` moves each maximum `q` of `f₁` to within `π / 2` of `q - c`.
-Then the coefficient of `q` in the image of `p` is the product of the signs of `p` and `q` when
-`q = p + c`, and `0` otherwise
+of `f₀` to those of `f₁`, preserving their indices. Suppose that `δ₀, δ₁ > 0`, that `Φ` moves each
+minimum `p` of `f₀` to `p + c + e` and `Φ⁻¹` moves each maximum `q` of `f₁` to `q - c - e`, for
+some `e` (depending on the point) with `|e| < π / 2`, and that `Φ` preserves an orientation `oM` of
+the circle at these preimages `Φ⁻¹ q` of the maxima. Then the coefficient of `q` in the image of
+`p` is the product of the signs of `p` and `q` when `q = p + c`, and `0` otherwise, where the sign
+of a minimum is its augmentation sign and the sign of a maximum is its fundamental sign for `oM`
 (`TauCeti.IsAdaptedPseudoGradient.signedContinuationCoeff_circleCosTwo`).
 This has the shape of the mod-two count `TauCeti.morseContinuationCoeff_circleCylinderField` of
 the circle continuation examples. For the half-turn `r₁ = r₀ + π` with `δ₁ = δ₀`, where
