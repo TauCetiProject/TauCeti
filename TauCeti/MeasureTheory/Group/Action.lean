@@ -26,7 +26,9 @@ have the same invariant measure (`measure_ball_eq_measure_ball`), and on a finit
 measurable singletons every atom has a finite orbit (`finite_orbit_of_measure_singleton_ne_zero`).
 For a countable group, pushing forward a measure without atoms to the orbit space gives a measure
 without atoms (`nullSingletonClass_map_quotientMk`). The product of two s-finite invariant
-measures is invariant under the diagonal action (`Measure.prod.instSMulInvariantMeasure`).
+measures is invariant under the diagonal action (`Measure.prod.instSMulInvariantMeasure`), and the
+diagonal action on a product of jointly measurable actions is jointly measurable
+(`Prod.instMeasurableSMul₂Diagonal`).
 
 For a monoid `G` carrying a right-invariant probability measure `μ`, such as normalized Haar
 measure on a compact group, the law `μ.map (· • x)` of the orbit map at `x` is the same for all
@@ -196,6 +198,17 @@ instance Measure.prod.instSMulInvariantMeasure [SFinite μ] [SFinite ν]
   ⟨fun c _ hs ↦
     ((measurePreserving_smul c μ).prod (measurePreserving_smul c ν)).measure_preimage
       hs.nullMeasurableSet⟩
+
+/-- The diagonal action on a product of spaces with jointly measurable actions is jointly
+measurable. -/
+@[to_additive _root_.Prod.instMeasurableVAdd₂Diagonal /-- The diagonal additive action on a
+product of spaces with jointly measurable additive actions is jointly measurable. -/]
+instance _root_.Prod.instMeasurableSMul₂Diagonal {M X Y : Type*} [MeasurableSpace M]
+    [MeasurableSpace X] [MeasurableSpace Y] [SMul M X] [SMul M Y] [MeasurableSMul₂ M X]
+    [MeasurableSMul₂ M Y] : MeasurableSMul₂ M (X × Y) where
+  measurable_smul :=
+    (measurable_fst.smul (measurable_fst.comp measurable_snd)).prodMk
+      (measurable_fst.smul (measurable_snd.comp measurable_snd))
 
 end Prod
 

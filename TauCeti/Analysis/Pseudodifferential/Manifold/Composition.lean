@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Pseudodifferential.Composition.Classical
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
+import TauCeti.Algebra.Module.LinearMap.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Pseudodifferential.Composition.Classical
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 
@@ -502,7 +503,7 @@ omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
 and `b` are the symbols of the compressions of `P` by `φ`, `χ₂` and of `Q` by `χ`, `ψ`, then `a # b`
 is the symbol of the compression of `P ∘ X Q` by `φ` and `ψ`: the factor `X` keeps the output of
 `Q` inside the chart, where it is read off by `Op(b)`. -/
-private theorem quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_mulLeft_comp
+theorem quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_mulLeft_comp
     {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     {φ ψ χ χ₂ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ₂ : ∀ y ∈ tsupport χ, χ₂ y = 1)
@@ -565,13 +566,9 @@ private theorem classicalPrincipalSymbol_comp_mulLeft_one_sub_comp_eq_zero
         e.complexChartCompression he φ φ
           ((LinearMap.mulLeft ℂ Θ ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (1 - X)) ∘ₗ Q)
           (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y := by
-    rw [hc, OpenPartialHomeomorph.complexChartCompression_apply,
-      OpenPartialHomeomorph.complexChartCompression_apply]
-    by_cases hy : φ y = 0
-    · simp [hy]
-    have hyt : y ∈ e.target := φ.tsupport_subset (subset_tsupport _ hy)
-    simp [Θ, e.complexCutoffPullback_apply_of_mem he _ _ (e.map_target hyt), e.right_inv hyt,
-      hθφ y (subset_tsupport _ hy)]
+    rw [hc]
+    simp only [Θ, LinearMap.comp_assoc,
+      OpenPartialHomeomorph.complexChartCompression_mulLeft_comp_of_eq_one he hθφ]
   have h₁ := coefficient_principal_apply_eq_classicalPrincipalSymbol hPXQ he φ φ hc hx ξ
   have h₂ := coefficient_principal_apply_eq_classicalPrincipalSymbol
     (classicalPseudodifferentialOperators_le 1 (by simp) hS) he φ φ hc' hx ξ
@@ -604,16 +601,11 @@ theorem classicalPrincipalSymbol_comp (hP : P ∈ classicalPseudodifferentialOpe
   set X := e.complexCutoffPullback he χ 1
   have hPXQ := comp_mem_classicalPseudodifferentialOperators hP
     (mulLeft_comp_mem_classicalPseudodifferentialOperators hQ X)
-  have hsplit : P ∘ₗ Q = P ∘ₗ LinearMap.mulLeft ℂ X ∘ₗ Q +
-      P ∘ₗ LinearMap.mulLeft ℂ (1 - X) ∘ₗ Q := by
-    have hid : LinearMap.mulLeft ℂ X + LinearMap.mulLeft ℂ (1 - X) = LinearMap.id := by
-      ext f q
-      simp [sub_mul]
-    rw [← LinearMap.comp_add, ← LinearMap.add_comp, hid, LinearMap.id_comp]
   -- `P X Q` is seen in the chart, as `Op(a # b)` for the chart symbols `a` of `P` and `b` of `Q`.
   obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he φ χ₂
   obtain ⟨b, hb⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hQ).2 e he χ φ
-  rw [hsplit, classicalPrincipalSymbol_add hPXQ (comp_mem_classicalPseudodifferentialOperators hP
+  rw [LinearMap.comp_eq_comp_mulLeft_comp_add_comp_mulLeft_one_sub_comp P Q X,
+    classicalPrincipalSymbol_add hPXQ (comp_mem_classicalPseudodifferentialOperators hP
       (mulLeft_comp_mem_classicalPseudodifferentialOperators hQ (1 - X))),
     classicalPrincipalSymbol_eq_mul_of_eq_sharp hPXQ hP hQ he hχφ hχ₂ _ ha hb
       (quantizeSchwartzValue_sharp_eq_complexChartCompression_comp_mulLeft_comp he hχ₂ ha hb) hx

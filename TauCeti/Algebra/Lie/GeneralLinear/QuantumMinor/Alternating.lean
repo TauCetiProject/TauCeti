@@ -42,17 +42,29 @@ def HasMatrixUnitLieRelations (E : Matrix ι ι A) : Prop :=
   ∀ a b c d, E a b * E c d - E c d * E a b =
     (if b = c then E a d else 0) - (if d = a then E c b else 0)
 
+/-- The entrywise characterization of the matrix-unit relations. -/
+theorem hasMatrixUnitLieRelations_iff {E : Matrix ι ι A} : E.HasMatrixUnitLieRelations ↔
+    ∀ a b c d, E a b * E c d - E c d * E a b =
+      (if b = c then E a d else 0) - (if d = a then E c b else 0) :=
+  (Iff.rfl)
+
+/-- A family multiplying like matrix units, `E i j * E k l = δ_{jk} E i l`, satisfies the
+matrix-unit relations. -/
+theorem HasMatrixUnitLieRelations.of_mul_eq_ite {E : Matrix ι ι A}
+    (h : ∀ i j k l, E i j * E k l = if j = k then E i l else 0) :
+    E.HasMatrixUnitLieRelations := by
+  intro a b c d
+  rw [h a b c d, h c d a b]
+
 /-- The matrix units `single i j 1` satisfy the matrix-unit relations. -/
 theorem hasMatrixUnitLieRelations_single [Fintype ι] (R : Type*) [Ring R] :
     HasMatrixUnitLieRelations (of fun i j ↦ (single i j 1 : Matrix ι ι R)) := by
-  have key (a b c d : ι) :
-      (single a b 1 : Matrix ι ι R) * single c d 1 = if b = c then single a d 1 else 0 := by
-    split_ifs with h
-    · subst h
-      simp
-    · exact single_mul_single_of_ne (h := h) ..
-  intro a b c d
-  simp only [of_apply, key]
+  refine .of_mul_eq_ite fun a b c d ↦ ?_
+  simp only [of_apply]
+  split_ifs with h
+  · subst h
+    simp
+  · exact single_mul_single_of_ne (h := h) ..
 
 /-- The matrix-unit relations pass to the image under any additive map carrying ring commutators
 to ring commutators, such as the map of `𝔤𝔩ₙ` into its universal enveloping algebra. -/
@@ -70,6 +82,37 @@ theorem HasMatrixUnitLieRelations.map {B F : Type*} [Ring B] [FunLike F A B]
     [RingHomClass F A B] {E : Matrix ι ι A} (hE : E.HasMatrixUnitLieRelations) (f : F) :
     (E.map f).HasMatrixUnitLieRelations :=
   hE.map_of_commutator f fun x y ↦ by simp only [map_sub, map_mul]
+
+/-- Negative transpose preserves the matrix-unit commutator relations. -/
+theorem HasMatrixUnitLieRelations.neg_transpose {E : Matrix ι ι A}
+    (hE : E.HasMatrixUnitLieRelations) : (-Eᵀ).HasMatrixUnitLieRelations := by
+  intro a b c d
+  simp only [Matrix.neg_apply, transpose_apply, neg_mul_neg]
+  rw [hE b a d c]
+  simp only [eq_comm (a := a) (b := d), eq_comm (a := c) (b := b)]
+  split_ifs <;> simp [sub_eq_add_neg, add_comm]
+
+/-- Adding a diagonal with constant entry `c` preserves the matrix-unit relations when `c`
+commutes with each generator. -/
+theorem HasMatrixUnitLieRelations.add_diagonal {E : Matrix ι ι A}
+    (hE : E.HasMatrixUnitLieRelations) (c : A) (hc : ∀ i j, Commute (E i j) c) :
+    (E + diagonal (fun _ ↦ c)).HasMatrixUnitLieRelations := by
+  rw [hasMatrixUnitLieRelations_iff] at hE ⊢
+  intro i j k l
+  have hcomm (a b d e : ι) : Commute (E a b) (diagonal (fun _ : ι ↦ c) d e) := by
+    by_cases h : d = e <;> simp [h, hc]
+  have hdiag (a b d e : ι) :
+      Commute (diagonal (fun _ : ι ↦ c) a b) (diagonal (fun _ : ι ↦ c) d e) := by
+    by_cases h : a = b <;> by_cases h' : d = e <;> simp [h, h', Commute.refl]
+  -- The mixed terms cancel on the left, and the two diagonal corrections cancel on the right.
+  have hm : (E i j + diagonal (fun _ ↦ c) i j) * (E k l + diagonal (fun _ ↦ c) k l) -
+      (E k l + diagonal (fun _ ↦ c) k l) * (E i j + diagonal (fun _ ↦ c) i j) =
+      E i j * E k l - E k l * E i j := by
+    simp only [add_mul, mul_add, (hcomm i j k l).eq, (hcomm k l i j).eq, (hdiag i j k l).eq]
+    abel
+  simp only [Matrix.add_apply, hm, hE]
+  by_cases h : j = k <;> by_cases h' : i = l <;>
+    simp [h, h', Ne.symm]
 
 section Alternation
 
