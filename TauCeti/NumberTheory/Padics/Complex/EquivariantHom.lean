@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
-public import TauCeti.NumberTheory.Padics.Complex.GaloisAction
-public import TauCeti.RepresentationTheory.Continuous.BanachRep.Basic
+public import TauCeti.NumberTheory.Padics.Complex.TateTwist
 
-import TauCeti.NumberTheory.Padics.Complex.TateTwist
 import TauCeti.NumberTheory.Padics.UnitsCharacter
-import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 
 /-!
 # Equivariant maps between distinct Tate twists of `ℂ_p`
@@ -21,12 +17,11 @@ map `ℂ_p(i) → ℂ_p(j)` is zero when `i ≠ j`. On an algebraic element `x`,
 Galois group of `K(x)`: the image of `x` is an invariant in the nonzero twist `j - i`, so
 Tate's theorem makes it zero. Density of the algebraic closure then finishes the proof.
 
-## Main definitions and results
+The Tate twists and their characteristic action equations are defined in
+`TauCeti.NumberTheory.Padics.Complex.TateTwist` for arbitrary intermediate fields `K`.
 
-* `TauCeti.padicAlgClContinuousCyclotomicCharacter`: the continuous cyclotomic character on
-  the native Galois group `Gal(PadicAlgCl p / K)`.
-* `TauCeti.padicComplexTateTwistContinuousRep`: the twist on the fixed carrier `ℂ_p`.
-* `TauCeti.padicComplexTateTwist`: the associated bundled Banach representation.
+## Main results
+
 * `TauCeti.PadicComplex.continuousLinearMap_eq_zero_of_tateTwist_equivariant`: vanishing of
   continuous linear equivariant maps between distinct twists for finite `K/ℚ_p`.
 * `TauCeti.padicComplexTateTwist_hom_eq_zero`: the corresponding vanishing of morphisms of
@@ -94,53 +89,6 @@ end TauCeti.PadicComplex
 namespace TauCeti
 
 variable (p : ℕ) [Fact p.Prime] (K : IntermediateField ℚ_[p] (PadicAlgCl p))
-
-/-- The continuous cyclotomic character on the native Galois group `Gal(PadicAlgCl p / K)`. -/
-noncomputable def padicAlgClContinuousCyclotomicCharacter :
-    (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) →ₜ* ℤ_[p]ˣ :=
-  ⟨(cyclotomicCharacter (PadicAlgCl p) p).comp
-    (MulSemiringAction.toRingAut (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (PadicAlgCl p)),
-    cyclotomicCharacter.continuous p K (PadicAlgCl p)⟩
-
-/-- The continuous cyclotomic character is Mathlib's character of the underlying automorphism. -/
-@[simp]
-theorem padicAlgClContinuousCyclotomicCharacter_apply
-    (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) :
-    padicAlgClContinuousCyclotomicCharacter p K σ =
-      cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv := by
-  simp [padicAlgClContinuousCyclotomicCharacter]
-
-/-- The Tate twist `ℂ_p(i)` as a continuous representation on the fixed carrier `ℂ_p`. -/
-noncomputable def padicComplexTateTwistContinuousRep (i : ℤ) :
-    ContinuousRep (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) ℚ_[p] ℂ_[p] :=
-  (ContinuousRep.ofDistribMulAction _ ℚ_[p] ℂ_[p]).twist
-    ((padicIntUnitsInclusion p).comp (padicAlgClContinuousCyclotomicCharacter p K ^ i))
-
-/-- The action on the fixed carrier `ℂ_p` is the Galois action multiplied by `χ(σ)^i`. -/
-@[simp]
-theorem padicComplexTateTwistContinuousRep_apply (i : ℤ)
-    (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (x : ℂ_[p]) :
-    padicComplexTateTwistContinuousRep p K i σ x =
-      (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ i : ℤ_[p]ˣ) : ℤ_[p]) :
-        ℚ_[p]) • (σ • x) := by
-  simp only [padicComplexTateTwistContinuousRep, ContinuousRep.twist_apply,
-    ContinuousRep.ofDistribMulAction_apply, ContinuousMonoidHom.comp_toFun,
-    ContinuousMonoidHom.zpow_apply, coe_padicIntUnitsInclusion_apply,
-    padicAlgClContinuousCyclotomicCharacter_apply]
-
-/-- The Tate twist `ℂ_p(i)` as a Banach representation of `G_K` over `ℚ_p`. -/
-noncomputable abbrev padicComplexTateTwist (i : ℤ) :
-    BanachRep.{0} ℚ_[p] (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) :=
-  BanachRep.of (padicComplexTateTwistContinuousRep p K i)
-
-/-- The action in the Tate twist is the Galois action multiplied by `χ(σ)^i`.
-Simplification uses `padicComplexTateTwistContinuousRep_apply` on the underlying action. -/
-theorem padicComplexTateTwist_ρ_apply (i : ℤ)
-    (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (x : ℂ_[p]) :
-    (padicComplexTateTwist p K i).ρ σ x =
-      (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ i : ℤ_[p]ˣ) : ℤ_[p]) :
-        ℚ_[p]) • (σ • x) :=
-  padicComplexTateTwistContinuousRep_apply p K i σ x
 
 /-- Let `K` be a finite extension of `ℚ_p` inside `PadicAlgCl p`. There are no nonzero morphisms
 between distinct Tate twists of `ℂ_p` in the category of Banach representations of `G_K`. -/
