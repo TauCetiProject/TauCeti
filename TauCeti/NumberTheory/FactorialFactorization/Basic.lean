@@ -30,9 +30,11 @@ the count is the junk value `0`. When `n ≤ B` the factors `1, 2, …, n` show 
 most `n`. Every factorization gives `n! ≤ B ^ t`, so `log n! ≤ t log B`, and the elementary
 lower bound `n log n - n ≤ log n!` turns this into the lower halves of both asymptotics, with no
 error term: for `n ≥ 2`, `n - n / log n ≤ factorialFactorCount n n` and
-`n / 2 - n / (2 log n) ≤ factorialFactorCount (n ^ 2) n`. The count is antitone in the bound,
-and pairing the factors gives `factorialFactorCount (B ^ 2) n ≤ ⌈factorialFactorCount B n / 2⌉`,
-which reduces the upper bound for the bound `n ^ 2` to that for the bound `n`.
+`n / 2 - n / (2 log n) ≤ factorialFactorCount (n ^ 2) n`. The count is antitone in the bound on
+`B ≥ n` (more generally, once a factorization exists), and when every prime `p ≤ n` satisfies
+`p ≤ B`, pairing the factors gives
+`factorialFactorCount (B ^ 2) n ≤ ⌈factorialFactorCount B n / 2⌉`, which reduces the upper bound
+for the bound `n ^ 2` to that for the bound `n`.
 
 ## Main definitions
 
@@ -47,14 +49,15 @@ which reduces the upper bound for the bound `n ^ 2` to that for the bound `n`.
 * `Nat.factorialFactorCount_eq_zero_iff`: the count vanishes exactly for `n ≤ 1` and for the
   junk value.
 * `Nat.factorialFactorCount_le_self`: the count is at most `n` when `n ≤ B`.
-* `Nat.log_factorial_le_factorialFactorCount_mul_log`: `log n! ≤ factorialFactorCount B n * log B`.
+* `Nat.log_factorial_le_factorialFactorCount_mul_log`: `log n! ≤ factorialFactorCount B n * log B`
+  when every prime `p ≤ n` satisfies `p ≤ B`.
 * `Nat.sub_div_log_le_factorialFactorCount_self` and
   `Nat.div_two_sub_div_log_le_factorialFactorCount_sq`: the lower bounds
   `n - n / log n ≤ factorialFactorCount n n` and
   `n / 2 - n / (2 log n) ≤ factorialFactorCount (n ^ 2) n`.
 * `Nat.antitoneOn_factorialFactorCount`: the count is antitone in the bound on `B ≥ n`.
 * `Nat.factorialFactorCount_sq_le`: pairing, `factorialFactorCount (B ^ 2) n ≤ (t + 1) / 2` for
-  `t = factorialFactorCount B n`.
+  `t = factorialFactorCount B n`, when every prime `p ≤ n` satisfies `p ≤ B`.
 
 ## References
 
