@@ -54,6 +54,8 @@ theorem polydisc_eq_bot_iff {c : ι → ℂ} {r : ι → ℝ} :
 /-- Increasing the radii gives an inclusion of concentric polydiscs. -/
 theorem polydisc_mono {c : ι → ℂ} {r' r : ι → ℝ} (h : r' ≤ r) :
     polydisc c r' ≤ polydisc c r := by
+  apply SetLike.coe_subset_coe.1
+  rw [coe_polydisc, coe_polydisc]
   exact Set.pi_mono fun i _ ↦ Metric.ball_subset_ball (h i)
 
 end TauCeti

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Polydisc.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Polydisc
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Leibniz
-import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Opens
+import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Opens.Contraction
 
 /-!
 # Local exactness for smooth forms of type `(p,q)`
@@ -283,24 +283,15 @@ private theorem IsOfType.exists_delBar_eq_of_polydisc_zero {c : ι → ℂ} {r :
         ⟨z, hmem.1 hz⟩ hI, hclosed]
       -- The value of the zero form is zero.
       rfl
-  -- Assemble the solution into the form `∑_J u_J d(conj z)_J` on the polydisc.
-  have hf₀ : ContDiffOn ℝ ∞ (fun z ↦ conjCoeffForm q fun J ↦ u J z) (polydisc c r) := by
-    rw [coe_polydisc]
-    exact contDiffOn_conjCoeffForm fun J _ ↦ hu J
-  let f₀ : RoughForm 𝓘(ℝ, ι → ℂ) (polydisc c r) F q := fun z ↦ conjCoeffForm q fun J ↦ u J z
-  have hf₀val (z : polydisc c r) : f₀ z = conjCoeffForm q (fun J ↦ u J z) := rfl
-  let f : SmoothForm 𝓘(ℝ, ι → ℂ) (polydisc c r) F q :=
-    ⟨f₀, ((isSmoothForm_opens_iff hf₀val).2 hf₀).mem_smoothBundleForms⟩
-  have hfval (z : polydisc c r) : f.val z = conjCoeffForm q (fun J ↦ u J z) := hf₀val z
-  have hf : f.IsOfType (ofComplexManifold (ι → ℂ) (polydisc c r)) 0 q :=
-    isOfType_iff_forall.2 ⟨zero_add q, fun z ↦ by
-      rw [toEndomorphism_ofComplexManifold]
-      exact isOfType_conjCoeffForm _⟩
+  obtain ⟨f, hf, hfval⟩ := exists_isOfType_conjCoeff_eq_of_opens
+    (U := polydisc c r) (u := u) (fun J _ ↦ by rw [coe_polydisc]; exact hu J)
   refine ⟨f, hf, Subtype.ext (funext fun z ↦ ?_)⟩
   -- Both sides have type `(0,q+1)` at `z`, and their coefficients agree.
   have h₁ := hf.delBar.apply z
   have h₂ := hη.apply z
   rw [toEndomorphism_ofComplexManifold] at h₁ h₂
+  -- The tangent and coefficient fibres at `z` are definitionally the model spaces;
+  -- explicitly type both values so coefficient extensionality uses these identifications.
   let A : (ι → ℂ) [⋀^Fin (q + 1)]→L[ℝ] F :=
     ((ofComplexManifold (ι → ℂ) (polydisc c r)).delBar f).val z
   let B : (ι → ℂ) [⋀^Fin (q + 1)]→L[ℝ] F := η.val z
@@ -308,8 +299,9 @@ private theorem IsOfType.exists_delBar_eq_of_polydisc_zero {c : ι → ℂ} {r :
     fun I hI ↦ ?_
   rw [ContinuousAlternatingMap.conjCoeff_of_card_eq _ hI,
     ContinuousAlternatingMap.conjCoeff_of_card_eq _ hI]
-  refine (delBar_val_apply_orderEmbOfFin_of_opens (φ := f) hfval (a := u)
-    (fun J hJ y _ ↦ (conjCoeffForm_apply_orderEmbOfFin (fun J ↦ u J y) hJ).symm) z hI).trans ?_
+  obtain ⟨f₀, _, hf₀⟩ := f.isSmoothForm.exists_contDiffOn_opens
+  refine (delBar_val_apply_orderEmbOfFin_of_opens (φ := f) hf₀ (a := u)
+    (fun J hJ y hy ↦ by rw [← hf₀ ⟨y, hy⟩]; exact (hfval J hJ ⟨y, hy⟩).symm) z hI).trans ?_
   rw [hua z (hmem.2 z.property) I hI, ha hI, ← hη₀]
 
 /-- **The Dolbeault–Grothendieck lemma on polydiscs.** A smooth `∂bar`-closed form of type

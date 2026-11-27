@@ -32,6 +32,17 @@ open SmoothAlmostComplexStructure
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] {k : ℕ}
 
+/-- Restriction to the whole open domain preserves the value of `∂bar`. The tangent and
+coefficient fibres at `⟨z, mem_univ z⟩` identify definitionally with their model spaces. -/
+theorem delBar_val_eq_mpullback_top (η : SmoothForm 𝓘(ℝ, E) E F k) (z : E) :
+    ((ofComplexManifold E E).delBar η).val z =
+      ((ofComplexManifold E (⊤ : TopologicalSpace.Opens E)).delBar
+        (mpullback (Subtype.val : (⊤ : TopologicalSpace.Opens E) → E)
+          contMDiff_subtypeVal η)).val ⟨z, mem_univ z⟩ := by
+  rw [← mpullback_delBar _ _
+    (isPseudoholomorphic_ofComplexManifold_subtype_val (⊤ : TopologicalSpace.Opens E)),
+    coe_mpullback_subtype_val_apply]
+
 /-- On a form of pure type, `∂bar` is the alternation of the conjugate-linear part of the
 real derivative of its coefficient field. -/
 private theorem delBar_eq_alternatizeUncurryFin_of_isOfType {p q : ℕ}
