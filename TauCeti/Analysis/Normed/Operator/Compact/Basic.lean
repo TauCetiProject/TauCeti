@@ -50,6 +50,9 @@ the compact perturbations of Fredholm modules.
   arbitrarily small after quotienting its target by a finite-dimensional subspace.
 * `isCompactOperator_iff_totallyBounded_image_closedBall`: a linear map into a complete space is
   compact exactly when it maps a closed ball of positive radius to a totally bounded set.
+* `isCompactOperator_of_denseRange_of_forall_exists_dist_le`: an operator into a complete space
+  is compact when, for every `ε > 0`, its values on the points of norm less than `1` of a dense
+  family lie within `ε` of a totally bounded set.
 -/
 
 public section
@@ -237,5 +240,47 @@ theorem exists_finiteDimensional_quotient_norm_le (K : E →L[𝕜] F)
   field_simp
 
 end ContinuousLinearMap
+
+section DenseApproximation
+
+open Metric Set
+
+variable {𝕜 E F α : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- **Compactness from approximation on a dense family.** Let `j` have dense range in `E`. If, for
+every `ε > 0`, the values `T (j a)` at the points `j a` of norm less than `1` all lie within `ε` of
+one totally bounded set, then `T` is a compact operator. This is the shape of Rellich-type
+arguments: classical functions are dense, and their values are approximated, up to an error
+controlled by the norm, by a family that is totally bounded by an Arzelà–Ascoli or
+Fréchet–Kolmogorov criterion. -/
+theorem isCompactOperator_of_denseRange_of_forall_exists_dist_le (T : E →L[𝕜] F) {j : α → E}
+    (hj : DenseRange j)
+    (h : ∀ ε > 0, ∃ t : Set F, TotallyBounded t ∧ ∀ a, ‖j a‖ < 1 → ∃ y ∈ t, dist (T (j a)) y ≤ ε) :
+    IsCompactOperator T := by
+  -- The values at the points `j a` of norm less than `1` are totally bounded.
+  have hS : TotallyBounded ((fun a ↦ T (j a)) '' {a | ‖j a‖ < 1}) := by
+    refine Metric.totallyBounded_iff.2 fun ε hε ↦ ?_
+    obtain ⟨t, ht, happrox⟩ := h (ε / 2) (by positivity)
+    obtain ⟨c, hc, hcover⟩ := Metric.totallyBounded_iff.1 ht (ε / 2) (by positivity)
+    refine ⟨c, hc, ?_⟩
+    rintro _ ⟨a, ha, rfl⟩
+    obtain ⟨y, hy, hdist⟩ := happrox a ha
+    obtain ⟨z, hz, hyz⟩ := mem_iUnion₂.1 (hcover hy)
+    refine mem_iUnion₂.2 ⟨z, hz, ?_⟩
+    rw [mem_ball] at hyz ⊢
+    linarith [dist_triangle (T (j a)) y z]
+  refine (isCompactOperator_iff_exists_mem_nhds_image_subset_compact _).2
+    ⟨ball 0 1, ball_mem_nhds 0 one_pos, _, hS.closure.isCompact_of_isClosed isClosed_closure, ?_⟩
+  rintro _ ⟨x, hx, rfl⟩
+  -- A point of the open unit ball is a limit of points `j a` of norm less than `1`.
+  have hxc : x ∈ closure (j '' {a | ‖j a‖ < 1}) := by
+    refine closure_mono ?_ (isOpen_ball.inter_closure ⟨hx, hj x⟩)
+    rintro _ ⟨hb, a, rfl⟩
+    exact ⟨a, by simpa using hb, rfl⟩
+  have himage := image_closure_subset_closure_image T.continuous ⟨x, hxc, rfl⟩
+  rwa [image_image] at himage
+
+end DenseApproximation
 
 end

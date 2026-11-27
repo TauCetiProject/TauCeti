@@ -12,9 +12,12 @@ public import Mathlib.Topology.Algebra.Polynomial
 public import TauCeti.RingTheory.Polynomial.SymmetricPower
 public import TauCeti.Topology.Algebra.Polynomial.Basic
 public import TauCeti.Topology.Sym.Disjoint
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Polynomial
+import Mathlib.Topology.Algebra.MvPolynomial
+import TauCeti.Analysis.Polynomial.Monic.RootBound
 
 /-!
 # The elementary symmetric chart is a homeomorphism
@@ -41,14 +44,20 @@ Both halves are elementary, but neither is formal:
 * `TauCeti.Polynomial.analyticAt_coeff_prod_X_sub_C` and
   `Sym.analyticAt_coeffEquiv_ofFn`: the same forward coefficient map is analytic over any
   nontrivially normed field.
+* `Sym.continuous_esymm`: the elementary symmetric functions of an unordered tuple depend
+  continuously on it, over any topological semiring.
+* `Sym.continuous_sum_map_mul_esymm_erase`: so does the weighted sum
+  `∑_{w ∈ s} f(w) e_k(s ∖ w)`, for a continuous weight `f`, over any topological ring.
 * `Sym.norm_le_norm_coeffEquiv_ofFn_add_one`: Cauchy's bound on the symmetric power, that
   an ordered tuple is bounded by one more than the norm of its coefficient tuple.
 * `Sym.isProperMap_coeffEquiv_comp_ofFn`: consequently the coefficient map
   `(Fin n → K) → (Fin n → K)` is proper.
 * `Sym.coeffHomeomorph`: the **elementary symmetric chart** `Sym K n ≃ₜ (Fin n → K)`.
-* `Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`: its inverse read on ordered tuples,
-  that nearby coefficient tuples come from ordered tuples close coordinate by coordinate; this is
-  continuity of roots with multiplicity, stated for polynomials in
+* `Sym.continuous_ofEsymm`: the unordered tuple with prescribed elementary symmetric functions
+  depends continuously on them.
+* `Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`: the inverse of `Sym.coeffHomeomorph` read on
+  ordered tuples, that nearby coefficient tuples come from ordered tuples close coordinate by
+  coordinate; this is continuity of roots with multiplicity, stated for polynomials in
   `TauCeti/Analysis/Polynomial/ContinuityOfRoots/Basic.lean`.
 * `Sym.isOpenEmbedding_coeffEquiv_comp_map`: the chart induced by an open coordinate
   embedding, whose symmetric power is an open subspace of affine space.
@@ -168,6 +177,33 @@ theorem analyticAt_coeffEquiv_ofFn (v₀ : Fin n → 𝕜) :
 
 end Analyticity
 
+/-- The elementary symmetric functions of an unordered tuple depend continuously on it: read on an
+ordered tuple `f`, the `k`-th one is the value at `f` of the elementary symmetric polynomial
+`MvPolynomial.esymm (Fin n) R k`. -/
+@[continuity, fun_prop]
+theorem continuous_esymm {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] {n : ℕ} (k : ℕ) :
+    Continuous fun s : Sym R n => (s : Multiset R).esymm k := by
+  rw [continuous_iff_comp_ofFn]
+  have h : (fun s : Sym R n => (s : Multiset R).esymm k) ∘ ofFn =
+      fun f : Fin n → R => MvPolynomial.eval f (MvPolynomial.esymm (Fin n) R k) := by
+    funext f
+    rw [Function.comp_apply, coe_ofFn, ← Fin.univ_val_map,
+      ← MvPolynomial.aeval_esymm_eq_multiset_esymm (Fin n) R k f, MvPolynomial.aeval_eq_eval]
+  rw [h]
+  exact MvPolynomial.continuous_eval _
+
+/-- For a continuous weight `f`, the sum `∑_{w ∈ s} f(w) e_k(s ∖ w)` over the points of an
+unordered tuple `s` depends continuously on `s`. -/
+@[continuity, fun_prop]
+theorem continuous_sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R]
+    [TopologicalSpace R] [IsTopologicalRing R] {n : ℕ} {f : R → R} (hf : Continuous f) (k : ℕ) :
+    Continuous fun s : Sym R n =>
+      ((s : Multiset R).map fun w => f w * ((s : Multiset R).erase w).esymm k).sum := by
+  simp_rw [Multiset.sum_map_mul_esymm_erase]
+  exact continuous_finsetSum _ fun i _ => (continuous_const.mul (continuous_esymm _)).mul
+    (continuous_sum_map ((continuous_pow i).mul hf))
+
 section Chart
 
 variable {K : Type*} [NormedField K] [IsAlgClosed K] {n : ℕ}
@@ -191,18 +227,10 @@ theorem norm_le_norm_coeffEquiv_ofFn_add_one (f : Fin n → K) :
   have hmonic : (toMonic (Sym.ofFn f) : K[X]).Monic := monic_toMonic _
   have hroot : (toMonic (Sym.ofFn f) : K[X]).IsRoot (f j) :=
     mem_iff_isRoot.1 (Sym.mem_coe.2 (Sym.mem_ofFn.2 ⟨j, rfl⟩))
-  have hcauchy := hroot.norm_lt_cauchyBound hmonic.ne_zero
-  have hbound : cauchyBound (toMonic (Sym.ofFn f) : K[X]) ≤ ‖coeffEquiv K n (Sym.ofFn f)‖₊ + 1 := by
-    have hsup : ((Finset.range n).sup fun i => ‖(toMonic (Sym.ofFn f) : K[X]).coeff i‖₊)
-        ≤ ‖coeffEquiv K n (Sym.ofFn f)‖₊ := by
-      refine Finset.sup_le fun i hi => ?_
-      rw [Finset.mem_range] at hi
-      have hcoord := nnNorm_le_pi_nnNorm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
-      rwa [coeffEquiv_apply_eq_coeff] at hcoord
-    rw [cauchyBound, hmonic.leadingCoeff, nnNorm_one, div_one, natDegree_toMonic]
-    exact add_le_add hsup le_rfl
-  have : ‖f j‖₊ < ‖coeffEquiv K n (Sym.ofFn f)‖₊ + 1 := hcauchy.trans_le hbound
-  simpa using (NNReal.coe_lt_coe.2 this).le
+  refine (hroot.norm_lt_add_one hmonic fun i hi => ?_).le
+  rw [natDegree_toMonic] at hi
+  have hcoord := norm_le_pi_norm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
+  rwa [coeffEquiv_apply_eq_coeff] at hcoord
 
 variable [ProperSpace K]
 
@@ -252,6 +280,19 @@ theorem coeffHomeomorph_symm_apply (f : Fin n → K) :
   simp [coeffHomeomorph]
 
 variable {K n}
+
+/-- The unordered tuple with prescribed elementary symmetric functions depends continuously on
+them: the roots of a monic polynomial depend continuously on its coefficients. -/
+@[continuity, fun_prop]
+theorem continuous_ofEsymm : Continuous fun d : Fin n → K => ofEsymm d := by
+  have h : (fun d : Fin n → K => ofEsymm d) =
+      fun d => (coeffHomeomorph K n).symm fun i : Fin n => (-1) ^ (n - (i : ℕ)) * d i.rev :=
+    funext fun d => by
+      rw [coeffHomeomorph_symm_apply, Equiv.eq_symm_apply]
+      exact funext (coeffEquiv_ofEsymm d)
+  rw [h]
+  exact (coeffHomeomorph K n).symm.continuous.comp <|
+    continuous_pi fun i => continuous_const.mul (continuous_apply i.rev)
 
 /-- **Continuity of roots on ordered tuples.** Every coefficient tuple close enough to that of the
 ordered tuple `a` is the coefficient tuple of an ordered tuple `b` with each `b i` close to `a i`.

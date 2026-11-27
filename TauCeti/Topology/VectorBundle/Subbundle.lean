@@ -174,6 +174,42 @@ theorem coe_subbundleTotalSpaceHomeomorph_symm_apply {F' : Type*} (V : Π x, Sub
       ⟨x.val.proj, ⟨x.val.snd, hA' x.val x.property⟩⟩ :=
   (rfl)
 
+omit [TopologicalSpace B] in
+/-- The total spaces of a family `V` of subspaces of the fibres of `E` for two model-fibre
+parameters `F₁` and `F₂`, both with the topology of a subspace of the total space of `E`, are
+homeomorphic by the identity on vectors. This relabels the model fibre, for instance to move it to
+another universe. -/
+def subbundleTotalSpaceModelHomeomorph (F₁ F₂ : Type*) (V : Π x, Submodule 𝕜 (E x)) :
+    letI := subbundleTopology F (F' := F₁) V
+    letI := subbundleTopology F (F' := F₂) V
+    TotalSpace F₁ (fun x ↦ V x) ≃ₜ TotalSpace F₂ (fun x ↦ V x) :=
+  letI := subbundleTopology F (F' := F₁) V
+  letI := subbundleTopology F (F' := F₂) V
+  { toFun v := ⟨v.proj, v.snd⟩
+    invFun v := ⟨v.proj, v.snd⟩
+    left_inv _ := rfl
+    right_inv _ := rfl
+    continuous_toFun := continuous_induced_rng.2 continuous_induced_dom
+    continuous_invFun := continuous_induced_rng.2 continuous_induced_dom }
+
+omit [TopologicalSpace B] in
+@[simp]
+theorem subbundleTotalSpaceModelHomeomorph_apply (F₁ F₂ : Type*) (V : Π x, Submodule 𝕜 (E x))
+    (v : TotalSpace F₁ fun x ↦ V x) :
+    letI := subbundleTopology F (F' := F₁) V
+    letI := subbundleTopology F (F' := F₂) V
+    subbundleTotalSpaceModelHomeomorph F F₁ F₂ V v = ⟨v.proj, v.snd⟩ :=
+  (rfl)
+
+omit [TopologicalSpace B] in
+@[simp]
+theorem subbundleTotalSpaceModelHomeomorph_symm (F₁ F₂ : Type*) (V : Π x, Submodule 𝕜 (E x)) :
+    letI := subbundleTopology F (F' := F₁) V
+    letI := subbundleTopology F (F' := F₂) V
+    (subbundleTotalSpaceModelHomeomorph F F₁ F₂ V).symm =
+      subbundleTotalSpaceModelHomeomorph F F₂ F₁ V :=
+  (rfl)
+
 variable [TopologicalSpace F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 
 /-- The projection of the total space of a family of subspaces of the fibres of `E` is
@@ -218,6 +254,15 @@ theorem mono (hX : IsSubbundleFrameOn F V X U) (hU : U' ⊆ U) : IsSubbundleFram
   continuousOn i := (hX.continuousOn i).mono hU
   linearIndependent hx := hX.linearIndependent (hU hx)
   span_eq hx := hX.span_eq (hU hx)
+
+/-- A local frame of `V` on `U` reindexed along an equivalence is a local frame of `V` on `U`. -/
+theorem comp_equiv {ι' : Type*} (hX : IsSubbundleFrameOn F V X U) (e : ι' ≃ ι) :
+    IsSubbundleFrameOn F V (X ∘ e) U where
+  continuousOn i := hX.continuousOn (e i)
+  linearIndependent hx := (hX.linearIndependent hx).comp e e.injective
+  span_eq {x} hx := by
+    rw [← hX.span_eq hx]
+    exact congrArg (Submodule.span 𝕜) (e.surjective.range_comp fun i ↦ X i x)
 
 /-- Every member of a local frame of `V` on `U` takes values in `V` on `U`. -/
 theorem apply_mem (hX : IsSubbundleFrameOn F V X U) (i : ι) {x : B} (hx : x ∈ U) : X i x ∈ V x :=
@@ -304,6 +349,15 @@ theorem HasLocalSubbundleFrames.finrank_eq [StrongRankCondition 𝕜] [Fintype �
     finrank 𝕜 (V x) = Fintype.card ι := by
   obtain ⟨U, -, hx, X, hX⟩ := hV x
   exact hX.finrank_eq hx
+
+variable {F} in
+/-- Local frames indexed by `ι` give local frames indexed by any type equivalent to `ι`, such as
+`ULift ι` in a larger universe. -/
+theorem HasLocalSubbundleFrames.of_equiv {ι' : Type*} {V : Π x, Submodule 𝕜 (E x)}
+    (hV : HasLocalSubbundleFrames F ι V) (e : ι ≃ ι') : HasLocalSubbundleFrames F ι' V := by
+  intro x
+  obtain ⟨U, hU, hx, X, hX⟩ := hV x
+  exact ⟨U, hU, hx, X ∘ e.symm, hX.comp_equiv e.symm⟩
 
 end Frame
 

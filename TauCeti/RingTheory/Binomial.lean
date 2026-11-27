@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Binomial
+public import Mathlib.Data.Nat.Choose.Central
 public import TauCeti.Algebra.Ring.Subgroup
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.RingTheory.Polynomial.Pochhammer
@@ -80,6 +81,8 @@ span. This gives independence of integral toral constructions from a choice of l
   in the integer span of a commuting set.
 * `TauCeti.exists_forall_sum_mul_choose_eq`: prescribed integer values on an initial segment are
   attained by an integral combination of binomial coefficients.
+* `TauCeti.Ring.multichoose_inv_two`: the multiset coefficients of one half are the normalized
+  central binomial coefficients `(2n choose n) / 4 ^ n`, the coefficients of `(1 - y) ^ (-1/2)`.
 
 ## References
 
@@ -657,6 +660,27 @@ theorem choose_eq_inv_factorial_mul_eval_descPochhammer {R : Type*} [Field R] [C
     _root_.Ring.choose x n = (n.factorial : R)⁻¹ * (descPochhammer R n).eval x := by
   rw [_root_.Ring.choose_eq_smul, smul_eq_mul, ← Polynomial.aeval_eq_smeval,
     ← descPochhammer_map (algebraMap ℤ R), Polynomial.aeval_def, Polynomial.eval_map]
+
+/-- The multiset coefficients of one half are the normalized central binomial coefficients:
+`(1/2 multichoose n) = (2n choose n) / 4 ^ n`, because
+`(1/2) (3/2) ⋯ ((2n - 1)/2) / n! = (2n)! / (4 ^ n (n!) ^ 2)`. -/
+theorem multichoose_inv_two {R : Type*} [DivisionRing R] [CharZero R] (n : ℕ) :
+    _root_.Ring.multichoose (2⁻¹ : R) n = n.centralBinom / 4 ^ n := by
+  have hℚ : _root_.Ring.multichoose (2⁻¹ : ℚ) n = n.centralBinom / 4 ^ n := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have h := add_one_nsmul_multichoose_add_one (2⁻¹ : ℚ) n
+      have hc : ((n + 1 : ℕ) : ℚ) * (n + 1).centralBinom =
+          2 * (2 * n + 1) * n.centralBinom := by
+        exact_mod_cast Nat.succ_mul_centralBinom_succ n
+      rw [nsmul_eq_mul, ih] at h
+      apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr n.succ_ne_zero : ((n + 1 : ℕ) : ℚ) ≠ 0)
+      rw [h, ← mul_div_assoc, hc, pow_succ]
+      field_simp
+      ring
+  rw [show (2⁻¹ : R) = Rat.castHom R 2⁻¹ by simp, ← _root_.Ring.map_multichoose, hℚ, map_div₀,
+    map_pow, map_natCast, map_ofNat]
 
 /-! ## The coefficients of one -/
 

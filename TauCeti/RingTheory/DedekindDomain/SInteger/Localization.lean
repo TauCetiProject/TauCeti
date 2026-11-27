@@ -29,6 +29,9 @@ presentations over `R` through Mathlib's `IsLocalization.algEquiv`. The criterio
 always have a solution: for `S = {v}` with the class of `v` of infinite order, no nonzero element
 of `R` has `v` as its only prime factor, so the `{v}`-integers are no localization of `R` at all
 (see the module docstring of `TauCeti/RingTheory/DedekindDomain/SInteger/Basic.lean`).
+Conversely, every localization of `R` at a submonoid `M` without zero is a ring of `S`-integers,
+for `S` the set of primes meeting `M`
+(`IsDedekindDomain.integer_setOf_exists_mem_isLocalization`).
 
 When the class group is torsion, Mathlib's instance `IsDedekindDomain.isLocalizationSInteger`
 shows that the full candidate monoid works for every `S`. The criterion then shows that each
@@ -176,6 +179,16 @@ theorem integer_isLocalization_iff (M : Submonoid R) :
       exact Set.disjoint_left.1 hPM hmP hmM
     obtain ⟨s, hs⟩ := (Algebra.mem_denIdeal_iff K).1 hmD
     exact ⟨(s, ⟨m, hmM⟩), Subtype.ext (by simpa [mul_comm] using hs)⟩
+
+/-- **Every localization of a Dedekind domain is a ring of `S`-integers.** Inverting a submonoid
+`M` without zero gives the ring of `S`-integers for `S` the set of height-one primes meeting `M`.
+For instance, inverting the powers of a nonzero `r` gives the `S`-integers for the primes dividing
+`r`. -/
+theorem integer_setOf_exists_mem_isLocalization (M : Submonoid R) (hM : M ≤ R⁰) :
+    IsLocalization M ({v : HeightOneSpectrum R | ∃ m ∈ M, m ∈ v.asIdeal}.integer K) :=
+  (integer_isLocalization_iff K _ M).2
+    ⟨fun m hm ↦ (Localization.mem_submonoid_iff _).2 ⟨fun _ hv hmv ↦ hv ⟨m, hm, hmv⟩, hM hm⟩,
+      fun _ hv ↦ hv⟩
 
 /-- When the class group is torsion, every prime of `S` contains a candidate denominator for the
 `S`-integers: some nonzero element of `v` lies in no prime outside `S`. For `S = {v}` this is an

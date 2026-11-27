@@ -406,7 +406,7 @@ theorem mgradient_sq_scaledLineMetric (x : WithMetric (scaledLineMetric ha)) :
   field_simp
 
 /-- For the metric `a dx²`, the negative gradient of `x ↦ x²` at `x` is `-2 x / a`. -/
-private theorem neg_mgradient_sq_scaledLineMetric_apply (x : WithMetric (scaledLineMetric ha)) :
+theorem neg_mgradient_sq_scaledLineMetric_apply (x : WithMetric (scaledLineMetric ha)) :
     (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2)) x =
       (-(2 / a * x.ofWithMetric) : ℝ) := by
   rw [Pi.neg_apply, mgradient_sq_scaledLineMetric ha]

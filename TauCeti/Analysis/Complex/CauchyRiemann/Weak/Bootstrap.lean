@@ -52,6 +52,11 @@ structure need not be `W^{2,∞}` (`TauCeti.not_memWkpLoc_two_top_graph_logLogEx
   `p > 2` lies in `W^{ℓ+1,p}_loc(Ω)`.
 * `TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`: a weak solution for `C^ℓ` data, `ℓ ≤ ∞`, and any
   `p > 2` is of class `C^ℓ` on `Ω`.
+* `TauCeti.contDiffOn_of_isWeakCauchyRiemannOn_of_sq_eq_neg_one`: for a structure `J` depending
+  only on the target, with `J(u)² = -1` along the image, a weak solution of `∂ₛu + J(u) ∂ₜu = 0` is
+  of class `C^ℓ` when `J` is.
+* `TauCeti.contDiffOn_of_fderiv_apply_I_eq`: a `C¹` solution of `∂ₜu = J(u) ∂ₛu` for such a
+  structure is of class `C^ℓ` when `J` is.
 
 ## References
 
@@ -129,6 +134,8 @@ private theorem memWkpLoc_add_two {V : Type*} [NormedAddCommGroup V] [NormedSpac
 
 /-! ### Bootstrapping -/
 
+section Bootstrapping
+
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {Ω : Opens ℂ} {W : Set (ℂ × V)} {J : ℂ → V → V →L[ℝ] V} {η : ℂ → V → V} {u : ℂ → V}
 
@@ -181,5 +188,68 @@ theorem contDiffOn_of_isWeakCauchyRiemannOn {p : ℝ≥0∞} (hp : 2 < p) {ℓ :
   induction ℓ using ENat.recTopCoe with
   | top => exact contDiffOn_infty.2 fun n => hC n le_top
   | coe n => exact_mod_cast hC n le_rfl
+
+/-- **Regularity of classical solutions.** Let `J` and `η` be of class `C^ℓ`, `ℓ ≤ ∞`, jointly in
+`(z, x)` on an open set `W` containing the graph of `u` over `Ω`, with `J(z, u z)² = -1` on `Ω`
+(stated pointwise, `J(z, u z) (J(z, u z) v) = -v`).
+A map `u` of class `C¹` on `Ω` solving `∂ₛu + J(z, u) ∂ₜu = η(z, u)` pointwise on `Ω` is of class
+`C^ℓ` on `Ω`. -/
+theorem contDiffOn_of_cauchyRiemann {ℓ : ℕ∞} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ ℓ (fun x : ℂ × V => J x.1 x.2) W)
+    (hη : ContDiffOn ℝ ℓ (fun x : ℂ × V => η x.1 x.2) W) (huW : ∀ z ∈ Ω, (z, u z) ∈ W)
+    (hJ2 : ∀ z ∈ Ω, ∀ v, J z (u z) (J z (u z) v) = -v) (hu : ContDiffOn ℝ 1 u Ω)
+    (h : ∀ z ∈ (Ω : Set ℂ), fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z)) :
+    ContDiffOn ℝ ℓ u Ω :=
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  contDiffOn_of_isWeakCauchyRiemannOn (p := ⊤) (by simp) hW hJ hη huW
+    ((ae_restrict_iff' Ω.isOpen.measurableSet).2
+      (.of_forall fun z hz ↦ ContinuousLinearMap.ext fun v ↦ by simp [hJ2 z hz v]))
+    (isWeakCauchyRiemannOn_of_contDiffOn hu h)
+
+end Bootstrapping
+
+/-! ### Structures depending only on the target -/
+
+section Autonomous
+
+open Set
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Regularity of weak pseudoholomorphic maps.** Let `p > 2` and let `J` be of class `C^ℓ` on
+an open set `W ⊆ V`, as a map into `V →L[ℝ] V`. A weak solution `u` of `∂ₛu + J(u) ∂ₜu = 0` on an
+open set `Ω ⊆ ℂ`, with values in `W` and such that `J(u z)` is a complex structure at every point
+of `Ω`, is of class `C^ℓ` on `Ω`. -/
+theorem contDiffOn_of_isWeakCauchyRiemannOn_of_sq_eq_neg_one {p : ℝ≥0∞} (hp : 2 < p)
+    {J : V → V →L[ℝ] V} {Ω : Opens ℂ} {W : Set V} {u : ℂ → V} {ℓ : ℕ∞} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ ℓ J W) (huW : MapsTo u Ω W)
+    (hJsq : ∀ z ∈ Ω, ∀ v, J (u z) (J (u z) v) = -v)
+    (h : IsWeakCauchyRiemannOn p Ω (fun _ ↦ J) 0 u) : ContDiffOn ℝ ℓ u Ω :=
+  contDiffOn_of_isWeakCauchyRiemannOn (J := fun _ ↦ J) (η := 0) hp (isOpen_univ.prod hW)
+    (hJ.comp contDiff_snd.contDiffOn fun q hq ↦ (mem_prod.1 hq).2) contDiffOn_const
+    (fun z hz ↦ ⟨mem_univ _, huW hz⟩)
+    ((ae_restrict_iff' Ω.isOpen.measurableSet).2 <| .of_forall fun z hz ↦
+      ContinuousLinearMap.ext fun v ↦ by simp [hJsq z hz])
+    h
+
+/-- **Regularity of `C¹` pseudoholomorphic maps, in the complex coordinate.** Let `J` be of class
+`C^ℓ` on an open set `W ⊆ V`, as a map into `V →L[ℝ] V`. A map `u` of class `C¹` on an open set
+`Ω ⊆ ℂ`, with values in `W`, such that `J(u z)` is a complex structure and
+`∂ₜu = J(u) ∂ₛu` at every point of `Ω`, is of class `C^ℓ` on `Ω`. -/
+theorem contDiffOn_of_fderiv_apply_I_eq {J : V → V →L[ℝ] V} {Ω : Set ℂ} {W : Set V}
+    {u : ℂ → V} {ℓ : ℕ∞} (hΩ : IsOpen Ω) (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W)
+    (hu : ContDiffOn ℝ 1 u Ω) (huW : MapsTo u Ω W)
+    (hJsq : ∀ z ∈ Ω, ∀ v, J (u z) (J (u z) v) = -v)
+    (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) :
+    ContDiffOn ℝ ℓ u Ω := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  -- With `J² = -1`, the equation `∂ₜu = J(u) ∂ₛu` is `∂ₛu + J(u) ∂ₜu = 0`.
+  have hweak := isWeakCauchyRiemannOn_of_contDiffOn (Ω := ⟨Ω, hΩ⟩) (p := ⊤)
+    (J := fun _ ↦ J) (η := fun _ _ ↦ 0) hu fun z hz ↦ by simp [hCR z hz, hJsq z hz]
+  exact contDiffOn_of_isWeakCauchyRiemannOn_of_sq_eq_neg_one (Ω := ⟨Ω, hΩ⟩) (by simp) hW hJ huW
+    hJsq hweak
+
+
+end Autonomous
 
 end TauCeti

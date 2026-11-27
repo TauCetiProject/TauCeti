@@ -52,6 +52,8 @@ finite free module `F`, `LinearMap.det φ` multiplies `⋀[R]^r F` into
 * `Matrix.compound_zero`, `Matrix.compound_one`, `Matrix.compound_diagonal`,
   `Matrix.compound_zero_right`, `Matrix.compound_ofSingleton`, `Matrix.compound_two_eq_pairMinor`,
   `Matrix.compound_card`: the zero, unit, and diagonal rules and the cases `r = 0, 1, 2, #ι`.
+* `Matrix.trace_compound`: the trace of the `r`-th compound matrix is the sum of the `r × r`
+  principal minors.
 * `Matrix.sum_sign_compound_mul_compound_compl`, `Matrix.sum_compound_mul_compound_compl`,
   `Matrix.det_eq_sum_compound_mul_compound_compl`,
   `Matrix.sum_compound_mul_compound_compl_eq_zero`: the generalised Laplace expansion along an
@@ -300,6 +302,19 @@ theorem compound_self_fin_apply {m : ℕ} (A : Matrix (Fin m) (Fin m) R)
 theorem compound_self_fin {m : ℕ} (A : Matrix (Fin m) (Fin m) R) :
     A.compound m = A.det • 1 :=
   compound_eq_det_smul_one_of_card_eq (Fintype.card_fin m).symm A
+
+/-- **The trace of a compound matrix** is the sum of the principal minors of the same size. -/
+theorem trace_compound [Fintype ι] (A : Matrix ι ι R) (r : ℕ) :
+    (A.compound r).trace = ∑ s ∈ Finset.univ.powersetCard r,
+      (A.submatrix (Subtype.val : s → ι) Subtype.val).det := by
+  rw [trace, Finset.sum_subtype (Finset.univ.powersetCard r)
+    (p := (· ∈ Set.powersetCard ι r)) (by simp [Set.powersetCard])]
+  refine Fintype.sum_congr _ _ fun S ↦ ?_
+  -- the increasing enumeration of `S` is the inclusion of `S` after an order isomorphism
+  rw [diag_apply, compound_apply, ofFinEmbEquiv_symm_apply,
+    ← det_submatrix_equiv_self (S.val.orderIsoOfFin S.prop).toEquiv, submatrix_submatrix]
+  exact congrArg (fun g ↦ (A.submatrix g g).det)
+    (funext fun a ↦ (Finset.coe_orderIsoOfFin_apply S.val S.prop a).symm)
 
 -- Check: `C_1(A)_{{i},{k}} = A i k` for a `2 × 3` matrix.
 example (A : Matrix (Fin 2) (Fin 3) R) (i : Fin 2) (k : Fin 3) :

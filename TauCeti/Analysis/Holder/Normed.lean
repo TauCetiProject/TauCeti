@@ -33,6 +33,11 @@ parallel notion of Hölder continuity.
   with the canonical seminorm, and with the Hölder-space norm.
 * `TauCeti.HolderSpace.holderOnWith_of_apply_eq`: a function agreeing on `s` with an element of
   the Hölder space of `s` is Hölder on `s` with constant its Hölder-space norm.
+* `TauCeti.HolderSpace.exists_holderOnWith_closure`: for a positive exponent and a complete
+  codomain, an element of the Hölder space of `s` extends to a function Hölder on the closure of
+  `s`, with constant its Hölder-space norm.
+  `TauCeti.HolderSpace.exists_holderOnWith_closure_and_norm_le` adds that the extension is bounded
+  on the closure by that norm.
 * `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set, which is
   closed (`TauCeti.isClosed_supportedHolderSubmodule`) and hence complete for a complete codomain.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
@@ -42,7 +47,9 @@ parallel notion of Hölder continuity.
   at most `max 1 (K ^ α)`, and `TauCeti.HolderSpace.compIsometryEquivLIE`, precomposition with an
   isometric equivalence, as a linear isometric equivalence.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
-  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
+  norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry; an element of
+  `HolderSpace α X (ι → Y)` is determined by its coordinates
+  (`TauCeti.HolderSpace.ext_compLeftL_proj`).
 * `TauCeti.HolderSpace.norm_le_mul_norm_of_apply_eq`: an element whose values are those of `g`
   followed by a continuous linear map `L` has norm at most `‖L‖ * ‖g‖`.
 * `TauCeti.HolderSpace.norm_le_norm_of_apply_comp`: an element whose values are those of `F` along
@@ -444,6 +451,33 @@ theorem holderOnWith_of_apply_eq {s : Set X} {g : X → Y} (f : HolderSpace α s
   rw [he]
   exact f.holderWith_nnnorm
 
+/-- An element `f` of the Hölder space of a set `s`, with a positive exponent and complete values,
+extends to a function on `X` which is `α`-Hölder on the closure of `s` with constant the
+Hölder-space norm of `f`. -/
+theorem exists_holderOnWith_closure [CompleteSpace Y] (hα : 0 < α) {s : Set X}
+    (f : HolderSpace α s Y) :
+    ∃ g : X → Y, (∀ x : s, g x = f x) ∧ HolderOnWith ‖f‖₊ α g (closure s) := by
+  set g₀ : X → Y := Function.extend Subtype.val f 0
+  have hg₀ (x : s) : g₀ x = f x := Subtype.val_injective.extend_apply _ _ x
+  obtain ⟨g, hgg₀, hg⟩ :=
+    (f.holderOnWith_of_apply_eq fun x ↦ (hg₀ x).symm).exists_eqOn_holderOnWith_closure hα
+  exact ⟨g, fun x ↦ (hgg₀ x.property).trans (hg₀ x), hg⟩
+
+/-- An element `f` of the Hölder space of a set `s`, with a positive exponent and complete values,
+extends to a function on `X` which is `α`-Hölder on the closure of `s` with constant the
+Hölder-space norm of `f`, and bounded there by that norm. -/
+theorem exists_holderOnWith_closure_and_norm_le [CompleteSpace Y] (hα : 0 < α) {s : Set X}
+    (f : HolderSpace α s Y) :
+    ∃ g : X → Y, (∀ x : s, g x = f x) ∧ HolderOnWith ‖f‖₊ α g (closure s) ∧
+      ∀ x ∈ closure s, ‖g x‖ ≤ ‖f‖ := by
+  obtain ⟨g, hg, hgH⟩ := f.exists_holderOnWith_closure hα
+  refine ⟨g, hg, hgH, fun x hx ↦ ?_⟩
+  -- The bound passes from `s` to its closure by continuity.
+  refine le_on_closure (f := fun x ↦ ‖g x‖) (g := fun _ ↦ ‖f‖) (fun y hy ↦ ?_)
+    (hgH.continuousOn hα).norm continuousOn_const hx
+  rw [hg ⟨y, hy⟩]
+  exact f.norm_apply_le _
+
 /-- A constant function as an element of the bounded Hölder space. -/
 def const (c : Y) : HolderSpace α X Y :=
   ofBoundedContinuousFunction (BoundedContinuousFunction.const X c) memHolder_const
@@ -708,6 +742,13 @@ theorem norm_le_mul_norm_of_apply_eq (L : Y →L[ℝ] Y') {f : HolderSpace α X 
     {g : HolderSpace α X Y} (h : ∀ x, f x = L (g x)) : ‖f‖ ≤ ‖L‖ * ‖g‖ := by
   rw [show f = compLeftL L g from ext fun x ↦ by rw [h, compLeftL_apply]]
   exact (compLeftL L).le_of_opNorm_le (norm_compLeftL_le L) g
+
+/-- An element of `HolderSpace α X (ι → Y)` is determined by its coordinates. -/
+theorem ext_compLeftL_proj {ι : Type*} [Fintype ι] {f f' : HolderSpace α X (ι → Y)}
+    (h : ∀ i, compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i) f =
+      compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ Y) i) f') :
+    f = f' :=
+  ext fun x ↦ funext fun i ↦ by simpa using congrArg (· x) (h i)
 
 end compLeft
 

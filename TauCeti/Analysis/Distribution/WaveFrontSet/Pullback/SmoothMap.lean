@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.FDeriv.AddSnd
+public import TauCeti.Analysis.Distribution.TestFunction.Convolution
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Basic
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Submersion
-import TauCeti.Analysis.Distribution.TestFunction.Convolution
 
 /-!
 # Pulling distributions back along smooth maps
@@ -53,6 +53,23 @@ test functions `(x, y) ↦ ψ x ρₙ y` for shrinking normalized bumps `ρₙ`
 (`Distribution.tendsto_pullbackInl`). Their fibre integrals along `g` are the mollifications
 `ρₙ ⋆ f_♯ ψ` of the fibre integral of `ψ` along `f`, which tend to `f_♯ ψ` as test functions.
 
+## Composition and locality
+
+The same test functions give the functoriality of the pullback with respect to a submersion `k`
+from an open set `Ω₀` into `Ω`: `(f ∘ k)^* T = k^* (f^* T)`, where `k^*` is the pullback by
+integration over the fibres of `k`. Pairing `(f ∘ k)^* T` with `ψ ⊗ ρₙ` and `f^* T` with
+`k_♯ ψ ⊗ ρₙ`, for the same bumps `ρₙ`, the fibre integrals of these two test functions along
+`(w, y) ↦ f (k w) + y` and `(x, y) ↦ f x + y` coincide: both pair a test function `u` with
+`∫ ψ(w) ∫ ρₙ(y) u(f (k w) + y) dy dw`, by Fubini's theorem and the defining identity of `k_♯`.
+Taking for `k` the inclusion of an open set `U ≤ Ω`, along which the pullback is the restriction to
+`U` (`Distribution.compCLMOfSubmersion_id`), shows that `f^* T` restricts to the pullback along `f`
+on `U`. Locality in the target is the same comparison for `ψ ⊗ ρₙ` on the two domains
+`{(x, y) | f x + y ∈ Ω''}` and `{(x, y) | f x + y ∈ Ω'}`. These results give locality and
+invariance under changes of coordinates in the source only; changes of coordinates in the target
+need composition with maps that are not submersions, which is
+`Distribution.pullback_eq_pullback_compCLMOfSubmersion` in
+`TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Comp`.
+
 ## Main declarations
 
 * `Distribution.pullback`: the pullback `f^* T` under the wave front hypothesis.
@@ -69,8 +86,19 @@ test functions `(x, y) ↦ ψ x ρₙ y` for shrinking normalized bumps `ρₙ`
   of `f` nor that of `f ∘ k`, then `WF(f^* T)` does not meet the normal set of `k`.
 * `Distribution.adjoint_fderiv_apply_ne_zero_of_surjective`: the hypothesis holds for every
   distribution when `f` is a submersion.
+* `Distribution.tendsto_addSndPullback_pullback`: `f^* T ψ` is the limit of the values of the
+  pullback along `(x, y) ↦ f x + y` at `ψ ⊗ ρₙ`, for normalized bumps `ρₙ` of radii tending to zero.
+* `Distribution.mollify_fiberIntegralCLM_apply`: the mollification of the fibre integral `f_♯ ψ`
+  by a normalized bump `ρ` is `z ↦ ∫ ψ(x) ρ(z - f x) dx`.
 * `Distribution.pullback_eq_compCLMOfSubmersion`: along a submersion, `f^*` is the pullback
   `Distribution.compCLMOfSubmersion` by integration over the fibres.
+* `Distribution.pullback_eq_compCLMOfSubmersion_pullback`,
+  `Distribution.pullback_comp_of_surjective`: for a submersion `k`, `(f ∘ k)^* T = k^* (f^* T)`.
+* `Distribution.adjoint_fderiv_apply_ne_zero_comp_of_surjective`: for a submersion `k`, the
+  hypothesis for `f` gives the hypothesis for `f ∘ k`.
+* `Distribution.restrictCLM_pullback`, `Distribution.pullback_restrictCLM`,
+  `Distribution.pullback_congr`: the pullback is local in the source and in the target, and only
+  depends on `f` on `Ω`.
 
 ## References
 
@@ -338,9 +366,22 @@ theorem adjoint_fderiv_apply_ne_zero_of_comp {E₀ : Type*} [NormedAddCommGroup 
 
 section Submersion
 
+/-- The values `g^* T (ψ ⊗ ρₙ)` of the pullback along `g (x, y) = f x + y` at the tensor products of
+`ψ` with normalized bumps `ρₙ` of radii tending to zero tend to `f^* T ψ`. -/
+theorem tendsto_addSndPullback_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
+    {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) (ψ : 𝓓(Ω, ℝ))
+    {σ : ℕ → ContDiffBump (0 : E')} (hσ0 : Tendsto (fun n ↦ (σ n).rOut) atTop (𝓝 0))
+    {G : ℕ → 𝓓(addSndDomain hf.continuousOn Ω', ℝ)}
+    (hG : ∀ n p, G n p = ψ p.fst * (σ n).normed volume p.snd) :
+    Tendsto (fun n ↦ addSndPullback hf T (G n)) atTop (𝓝 (T.pullback f hf hfΩ h ψ)) := by
+  rw [pullback_eq_pullbackInl hf hfΩ h rfl (notMem_waveFrontSet_addSndPullback hf h)]
+  exact tendsto_pullbackInl_bump _ (mapsTo_inl_addSndDomain hf.continuousOn hfΩ) _ ψ hσ0
+    (Eventually.of_forall hG)
+
 /-- Mollifying the fibre integral `f_♯ ψ` by the normalized bump `ρ` of `σ` gives
 `z ↦ ∫ ψ(x) ρ(z - f x) dx`. -/
-private theorem mollify_fiberIntegralCLM_apply (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
+theorem mollify_fiberIntegralCLM_apply (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
     (hsurj : ∀ x ∈ Ω, Surjective (fderiv ℝ f x)) (ψ : 𝓓(Ω, ℝ)) (σ : ContDiffBump (0 : E'))
     (hσ : closedBall (0 : E') σ.rOut +
       tsupport (fiberIntegralCLM volume volume f hf hfΩ hsurj ψ) ⊆ (Ω' : Set E')) (z : E') :
@@ -386,11 +427,17 @@ private theorem integrable_mul_add (hf : ContinuousOn f Ω) (ψ : 𝓓(Ω, ℝ))
       continuous_snd)).continuousOn.mul (hh.comp_continuousOn
         ((hf.comp continuous_fst.continuousOn (mapsTo_preimage _ _)).add
           continuous_snd.continuousOn))
-  · rcases not_and_or.1 hq with hq | hq
-    · simp [image_eq_zero_of_notMem_tsupport hq]
-    · have hρ : σ.normed volume q.2 = 0 := notMem_support.1 fun h ↦ hq (ball_subset_closedBall
-        ((σ.support_normed_eq (μ := volume)).subset h))
-      simp [hρ]
+  · rw [mul_normed_eq_zero_of_notMem ψ σ hq, zero_mul]
+
+/-- **Fubini for tensor products.** Integrating `(x, y) ↦ ψ(x) ρ(y) u(f x + y)` first in `y`. -/
+private theorem integral_mul_addSnd_eq (hf : ContinuousOn f Ω) (ψ : 𝓓(Ω, ℝ))
+    (σ : ContDiffBump (0 : E')) {u : E' → ℝ} (hu : Continuous u) :
+    ∫ p : WithLp 2 (E × E'), ψ p.fst * σ.normed volume p.snd * u (f p.fst + p.snd) =
+      ∫ x, ψ x * ∫ y, σ.normed volume y * u (f x + y) := by
+  rw [← (volume_preserving_symm_measurableEquiv_toLp_prod E E').symm.integral_comp']
+  simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
+  rw [Measure.volume_eq_prod, integral_prod _ (integrable_mul_add hf ψ σ hu)]
+  simp only [← integral_const_mul, mul_assoc]
 
 /-- **The fibre integral of `ψ ⊗ ρ` along `g`** is the mollification of `f_♯ ψ` by `ρ`: both are
 `z ↦ ∫ ψ(x) ρ(z - f x) dx`. -/
@@ -406,17 +453,13 @@ private theorem fiberIntegralCLM_eq_mollify (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ
   refine ((eq_fiberIntegralCLM_iff volume volume _ _ _).2 fun h hh hhc _ ↦ ?_).symm
   -- Both sides are `∫ x, ∫ z, ψ x * ρ (z - f x) * h z`.
   have hint₁ := integrable_uncurry_mul_sub hf.continuousOn ψ σ hh.continuous hhc
-  have hint₂ := integrable_mul_add hf.continuousOn ψ σ hh.continuous
   simp_rw [mollify_fiberIntegralCLM_apply hf hfΩ hsurj ψ σ hσ, smul_eq_mul, ← integral_mul_const,
     hF, addSnd_apply]
-  rw [integral_integral_swap hint₁,
-    ← (volume_preserving_symm_measurableEquiv_toLp_prod E E').symm.integral_comp']
-  simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
-  rw [Measure.volume_eq_prod, integral_prod _ hint₂]
+  rw [integral_integral_swap hint₁, integral_mul_addSnd_eq hf.continuousOn ψ σ hh.continuous]
   refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
   dsimp only
   conv_rhs => rw [← integral_sub_right_eq_self _ (f x)]
-  simp only [add_sub_cancel]
+  simp only [add_sub_cancel, ← integral_const_mul, mul_assoc]
 
 /-- **Agreement with the pullback along a submersion.** When `f` is a submersion, every
 distribution `T` satisfies the hypothesis of `Distribution.pullback`
@@ -436,16 +479,8 @@ theorem pullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : M
     obtain ⟨x, hx, rfl⟩ := tsupport_fiberIntegralCLM_subset volume volume hf hfΩ hsurj ψ hw
     simpa [add_comm] using (mem_addSndDomain.1 (hσW n x hx y hy)).2
   -- The values of `g^* T` at `ψ ⊗ ρ n` tend both to the pullback at `ψ` and to `T (f_♯ ψ)`.
-  have hT := notMem_waveFrontSet_addSndPullback hf
-    (adjoint_fderiv_apply_ne_zero_of_surjective hsurj T)
-  have h₁ := tendsto_pullbackInl (addSndPullback hf T) hU hT ψ (l := atTop)
-    (ρ := fun n ↦ (σ n).normed volume) (r := fun n ↦ (σ n).rOut) (M := 1) (f := F)
-    (Eventually.of_forall fun n ↦ by
-      simp_rw [abs_of_nonneg ((σ n).nonneg_normed _), (σ n).integral_normed, le_refl])
-    (by simp_rw [ContDiffBump.integral_normed, tendsto_const_nhds])
-    (Eventually.of_forall fun n ↦ by
-      simpa only [(σ n).support_normed_eq] using ball_subset_closedBall)
-    hσ0 (Eventually.of_forall hF)
+  have h₁ := tendsto_addSndPullback_pullback hf hfΩ
+    (adjoint_fderiv_apply_ne_zero_of_surjective hsurj T) ψ hσ0 hF
   have h₂ : Tendsto (fun n ↦ addSndPullback hf T (F n)) atTop
       (𝓝 (compCLMOfSubmersion volume volume f hf hfΩ hsurj T ψ)) := by
     rw [compCLMOfSubmersion_apply]
@@ -453,9 +488,152 @@ theorem pullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : M
       fun n ↦ ?_
     rw [Function.comp_apply, addSndPullback_apply,
       fiberIntegralCLM_eq_mollify hf hfΩ hsurj ψ (σ n) (hF n) (hσφ n)]
-  rw [pullback_eq_pullbackInl hf hfΩ _ rfl hT]
   exact tendsto_nhds_unique h₁ h₂
 
 end Submersion
+
+/-! ### Composition with submersions and locality -/
+
+section Comp
+
+variable {E₀ : Type*} [NormedAddCommGroup E₀] [InnerProductSpace ℝ E₀] [FiniteDimensional ℝ E₀]
+  [MeasurableSpace E₀] [BorelSpace E₀] {Ω₀ : Opens E₀} {k : E₀ → E}
+
+omit [FiniteDimensional ℝ E₀] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E']
+  [BorelSpace E'] [MeasurableSpace E₀] [BorelSpace E₀] in
+/-- If the wave front set of `T` does not meet the normal set of `f`, then it does not meet the
+normal set of `f ∘ k` for a submersion `k` either, since the transpose of `Dk(x)` is injective. -/
+theorem adjoint_fderiv_apply_ne_zero_comp_of_surjective [CompleteSpace E₀]
+    (hf : DifferentiableOn ℝ f Ω) (hk : DifferentiableOn ℝ k Ω₀) (hkΩ : MapsTo k Ω₀ Ω)
+    (hksurj : ∀ x ∈ Ω₀, Surjective (fderiv ℝ k x)) {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
+    ∀ x ∈ Ω₀, ∀ η, ((f ∘ k) x, η) ∈ T.waveFrontSet → (fderiv ℝ (f ∘ k) x).adjoint η ≠ 0 := by
+  intro x hx η hη h0
+  have hkx : DifferentiableAt ℝ k x := (hk x hx).differentiableAt (Ω₀.isOpen.mem_nhds hx)
+  have hfkx : DifferentiableAt ℝ f (k x) :=
+    (hf _ (hkΩ hx)).differentiableAt (Ω.isOpen.mem_nhds (hkΩ hx))
+  rw [fderiv_comp x hfkx hkx, ContinuousLinearMap.adjoint_comp] at h0
+  exact h (k x) (hkΩ hx) η hη <| (ContinuousLinearMap.adjoint_injective_iff_denseRange.2
+    (hksurj x hx).denseRange) (h0.trans (map_zero _).symm)
+
+/-- **Pulling back along a submersion after a smooth map.** Let `k` be a submersion from `Ω₀`
+into `Ω`, and let `g` be smooth on `Ω₀`, with values in `Ω'`, and equal to `f ∘ k` there. If the
+wave front set of `T` meets neither the normal set of `f` nor that of `g`, then the pullback of `T`
+along `g` is the pullback of `f^* T` along `k` by integration over the fibres of `k`:
+`g^* T = k^* (f^* T)`. -/
+theorem pullback_eq_compCLMOfSubmersion_pullback (hf : ContDiffOn ℝ ∞ f Ω)
+    (hfΩ : MapsTo f Ω Ω') (hk : ContDiffOn ℝ ∞ k Ω₀) (hkΩ : MapsTo k Ω₀ Ω)
+    (hksurj : ∀ x ∈ Ω₀, Surjective (fderiv ℝ k x)) {g : E₀ → E'} (hg : ContDiffOn ℝ ∞ g Ω₀)
+    (hgΩ : MapsTo g Ω₀ Ω') (hgfk : EqOn g (f ∘ k) Ω₀) {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0)
+    (hT : ∀ x ∈ Ω₀, ∀ η, (g x, η) ∈ T.waveFrontSet → (fderiv ℝ g x).adjoint η ≠ 0) :
+    T.pullback g hg hgΩ hT =
+      compCLMOfSubmersion volume volume k hk hkΩ hksurj (T.pullback f hf hfΩ h) := by
+  ext ψ
+  rw [compCLMOfSubmersion_apply]
+  -- Pair `g^* T` with `ψ ⊗ ρₙ`, and `f^* T` with `k_♯ ψ ⊗ ρₙ`, for the same bumps `ρₙ`.
+  obtain ⟨σ, G, hσ0, hσW, hG⟩ :=
+    exists_seq_tensor_mollifier (mapsTo_inl_addSndDomain hg.continuousOn hgΩ) ψ
+  have hW (n : ℕ) : ∀ x ∈ tsupport (fiberIntegralCLM volume volume k hk hkΩ hksurj ψ),
+      ∀ y ∈ closedBall (0 : E') (σ n).rOut, toLp 2 (x, y) ∈ addSndDomain hf.continuousOn Ω' := by
+    intro x hx y hy
+    obtain ⟨w, hw, rfl⟩ := tsupport_fiberIntegralCLM_subset volume volume hk hkΩ hksurj ψ hx
+    have hwy := hσW n w hw y hy
+    simp only [mem_addSndDomain, toLp_fst, toLp_snd] at hwy ⊢
+    refine ⟨hkΩ hwy.1, ?_⟩
+    rw [← comp_apply (f := f), ← hgfk hwy.1]
+    exact hwy.2
+  refine tendsto_nhds_unique (tendsto_addSndPullback_pullback hg hgΩ hT ψ hσ0 hG)
+    ((tendsto_addSndPullback_pullback hf hfΩ h _ hσ0 (G := fun n ↦ tensorBump _ (σ n) (hW n))
+      fun _ ↦ tensorBump_apply _ _ _).congr fun n ↦ ?_)
+  rw [addSndPullback_apply, addSndPullback_apply]
+  congr 1
+  -- Both fibre integrals pair a test function `u` with `∫ ψ(w) ∫ ρₙ(y) u(f (k w) + y) dy dw`.
+  refine (eq_fiberIntegralCLM_iff volume volume _ _ _).2 fun u hu _ _ ↦ ?_
+  -- `z ↦ ∫ ρₙ(y) u(z + y) dy` is the convolution `ρₙ ⋆ u`, as `ρₙ` is even.
+  have hc : Continuous fun z ↦ ∫ y, (σ n).normed volume y * u (z + y) :=
+    (((σ n).hasCompactSupport_normed (μ := volume)).continuous_convolution_left
+      (ContinuousLinearMap.lsmul ℝ ℝ) (σ n).continuous_normed
+      (hu.continuous.locallyIntegrable (μ := volume))).congr fun z ↦ by
+        rw [convolution_def, ← integral_neg_eq_self]
+        simp [(σ n).normed_neg, sub_eq_add_neg]
+  rw [integral_fiberIntegralCLM_smul volume volume _ _ _ _ hu.continuous.continuousOn]
+  simp only [smul_eq_mul, addSnd_apply, tensorBump_apply, hG]
+  rw [integral_mul_addSnd_eq hf.continuousOn _ (σ n) hu.continuous,
+    integral_mul_addSnd_eq hg.continuousOn ψ (σ n) hu.continuous]
+  have hk_int := integral_fiberIntegralCLM_smul volume volume hk hkΩ hksurj ψ
+    (hc.comp_continuousOn hf.continuousOn)
+  simp only [smul_eq_mul, comp_apply] at hk_int
+  rw [hk_int]
+  refine integral_congr_ae (Eventually.of_forall fun w ↦ ?_)
+  dsimp only
+  by_cases hw : w ∈ Ω₀
+  · rw [hgfk hw, comp_apply]
+  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hw (ψ.tsupport_subset h), zero_mul, zero_mul]
+
+/-- **Composition with a submersion.** If `k` is a submersion from `Ω₀` into `Ω` and the wave front
+set of `T` does not meet the normal set of `f`, then `(f ∘ k)^* T = k^* (f^* T)`. -/
+theorem pullback_comp_of_surjective (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
+    (hk : ContDiffOn ℝ ∞ k Ω₀) (hkΩ : MapsTo k Ω₀ Ω)
+    (hksurj : ∀ x ∈ Ω₀, Surjective (fderiv ℝ k x)) {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
+    T.pullback (f ∘ k) (hf.comp hk hkΩ) (hfΩ.comp hkΩ)
+        (adjoint_fderiv_apply_ne_zero_comp_of_surjective (hf.differentiableOn (by simp))
+          (hk.differentiableOn (by simp)) hkΩ hksurj h) =
+      (T.pullback f hf hfΩ h).pullback k hk hkΩ
+        (adjoint_fderiv_apply_ne_zero_of_surjective hksurj _) := by
+  rw [pullback_eq_compCLMOfSubmersion hk hkΩ hksurj]
+  exact pullback_eq_compCLMOfSubmersion_pullback hf hfΩ hk hkΩ hksurj _ _ (fun _ _ ↦ rfl) h _
+
+/-- **Locality of the pullback in the source.** Restricting `f^* T` to an open set `U ≤ Ω` gives
+the pullback of `T` along `f` on `U`. -/
+@[simp]
+theorem restrictCLM_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω') {U : Opens E}
+    (hU : U ≤ Ω) {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
+    (restrictCLM (T.pullback f hf hfΩ h) : 𝓓'(U, ℂ)) =
+      T.pullback f (hf.mono hU) (hfΩ.mono_left hU) fun x hx ↦ h x (hU hx) := by
+  have hUΩ : MapsTo (id : E → E) U Ω := fun _ hx ↦ hU hx
+  rw [pullback_eq_compCLMOfSubmersion_pullback hf hfΩ contDiffOn_id hUΩ
+    (fun x _ ↦ by simpa using surjective_id) (hf.mono hU) (hfΩ.mono_left hU) (fun _ _ ↦ rfl) h,
+    compCLMOfSubmersion_id]
+
+/-- **The pullback only depends on the map on `Ω`.** -/
+theorem pullback_congr (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω') {f₂ : E → E'}
+    (hff₂ : EqOn f f₂ Ω) {hf₂ : ContDiffOn ℝ ∞ f₂ Ω} {hf₂Ω : MapsTo f₂ Ω Ω'} {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0)
+    {h₂ : ∀ x ∈ Ω, ∀ η, (f₂ x, η) ∈ T.waveFrontSet → (fderiv ℝ f₂ x).adjoint η ≠ 0} :
+    T.pullback f₂ hf₂ hf₂Ω h₂ = T.pullback f hf hfΩ h := by
+  rw [pullback_eq_compCLMOfSubmersion_pullback hf hfΩ contDiffOn_id (mapsTo_id (Ω : Set E))
+    (fun x _ ↦ by simpa using surjective_id) hf₂ hf₂Ω (fun _ hx ↦ (hff₂ hx).symm) h,
+    compCLMOfSubmersion_id, restrictCLM_self]
+
+/-- **Locality of the pullback in the target.** If `f` maps `Ω` into an open set `Ω'' ≤ Ω'`, the
+pullback of the restriction of `T` to `Ω''` is the pullback of `T`. -/
+theorem pullback_restrictCLM (hf : ContDiffOn ℝ ∞ f Ω) {Ω'' : Opens E'} (hΩ'' : Ω'' ≤ Ω')
+    (hfΩ'' : MapsTo f Ω Ω'') {T : 𝓓'(Ω', ℂ)}
+    (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
+    (restrictCLM T : 𝓓'(Ω'', ℂ)).pullback f hf hfΩ''
+        (fun x hx η hη ↦ h x hx η ((waveFrontSet_restrictCLM hΩ'' T).subset hη).1) =
+      T.pullback f hf (hfΩ''.mono_right hΩ'') h := by
+  ext ψ
+  -- Pair both pullbacks with `ψ ⊗ ρₙ`, a test function on the smaller and the larger domain.
+  obtain ⟨σ, G, hσ0, hσW, hG⟩ :=
+    exists_seq_tensor_mollifier (mapsTo_inl_addSndDomain hf.continuousOn hfΩ'') ψ
+  have hW (n : ℕ) : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : E') (σ n).rOut,
+      toLp 2 (x, y) ∈ addSndDomain hf.continuousOn Ω' := fun x hx y hy ↦
+    have hxy := mem_addSndDomain.1 (hσW n x hx y hy)
+    mem_addSndDomain.2 ⟨hxy.1, hΩ'' hxy.2⟩
+  refine tendsto_nhds_unique (tendsto_addSndPullback_pullback hf hfΩ'' _ ψ hσ0 hG)
+    ((tendsto_addSndPullback_pullback hf _ h ψ hσ0 (G := fun n ↦ tensorBump ψ (σ n) (hW n))
+      fun _ ↦ tensorBump_apply _ _ _).congr fun n ↦ ?_)
+  rw [addSndPullback_apply, addSndPullback_apply, restrictCLM_apply]
+  congr 1
+  refine ((eq_fiberIntegralCLM_iff volume volume _ _ _).2 fun u hu _ _ ↦ ?_).symm
+  simp only [monoCLM_apply, hΩ'', le_refl, and_self, ↓reduceIte]
+  rw [integral_fiberIntegralCLM_smul volume volume _ _ _ _ hu.continuous.continuousOn]
+  simp only [hG, tensorBump_apply]
+
+end Comp
 
 end Distribution

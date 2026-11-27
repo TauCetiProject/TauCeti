@@ -20,7 +20,8 @@ for `p = ∞`.
 
 The file also records exhaustion of an extended nonnegative function by its positive level sets,
 and the absorption step of elliptic estimates: a finite quantity bounded by `b` plus half of itself
-is at most `2 b`.
+is at most `2 b`. Finally, an upper bound `x ≤ y` may be checked against the finite values above
+`y`, dually to Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 
 ## Main declarations
 
@@ -60,6 +61,8 @@ is at most `2 b`.
 * `ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one`: truncates `a < p ≤ ∞` above a
   finite `r ≤ p` while preserving `p₀⁻¹ + q⁻¹ < 1`.
 * `ENNReal.inv_add_inv_two_lt_one_iff`: `p⁻¹ + 2⁻¹ < 1 ↔ 2 < p`.
+* `ENNReal.le_of_forall_nnreal_gt`: `x ≤ y` follows from `x ≤ r` for every finite `r > y`, the
+  dual of Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 -/
 
 public section
@@ -335,5 +338,13 @@ theorem inv_add_inv_two_lt_one_iff {p : ℝ≥0∞} : p⁻¹ + 2⁻¹ < 1 ↔ 2 
       two_ne_zero)).1 (h.trans_eq ENNReal.inv_two_add_inv_two.symm)),
     fun hp => (ENNReal.add_lt_add_right (ENNReal.inv_ne_top.2 two_ne_zero)
       (ENNReal.inv_lt_inv.2 hp)).trans_eq ENNReal.inv_two_add_inv_two⟩
+
+/-- An upper bound in `ℝ≥0∞` may be checked against the finite values above it: `x ≤ y` follows
+from `x ≤ r` for every `r : ℝ≥0` with `y < r`. This is the dual of
+`ENNReal.le_of_forall_nnreal_lt`. -/
+theorem le_of_forall_nnreal_gt {x y : ℝ≥0∞} (h : ∀ r : ℝ≥0, y < r → x ≤ r) : x ≤ y :=
+  le_of_forall_gt_imp_ge_of_dense fun b hb ↦ by
+    obtain ⟨r, hyr, hrb⟩ := lt_iff_exists_nnreal_btwn.1 hb
+    exact (h r hyr).trans hrb.le
 
 end ENNReal

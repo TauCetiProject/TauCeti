@@ -7,12 +7,14 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.InnerProductSpace.Laplacian.DerivativeDecay
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.PDE.Regularity.PlanarGradientEstimate
 import TauCeti.Analysis.PDE.Regularity.PlanarPoisson
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Exponential decay of the derivatives of a plane vortex
@@ -30,13 +32,12 @@ The argument works with `ℓ = log |α|²` outside a large disc, where it solves
 (`TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`). For a translation `h`, the
 difference `D = ℓ - ℓ (· + h)` therefore satisfies the linear equation `Δ D = V D`, where
 `V = (exp ℓ - exp ℓ (· + h)) / (4 (ℓ - ℓ (· + h)))` is a difference quotient of `exp / 4`. It is
-at least the smaller of the values of `|α|² / 4` at the two points
-(`Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log`), so `V ≥ c²` outside a large disc. Both `D` and
-`-D` are then subsolutions of `-Δ + V`, and the exterior comparison principle with a variable
-potential (`TauCeti.le_mul_exp_of_mul_le_laplacian`) bounds `|D|` by its values on a circle times
-`exp (-c |z|)`. On that circle `|D| ≤ L |h|` by the mean value inequality, so dividing by `|h|`
-bounds the gradient of `ℓ`. Only `C²` regularity of the section is used: no third derivative
-and no commutation of `Δ` with a derivative is needed.
+at least the smaller of the values of `|α|² / 4` at the two points, so `V ≥ c²` outside a large
+disc. Both `D` and `-D` are then subsolutions of `-Δ + V`, and the exterior comparison principle
+with a variable potential bounds `|D|` by its values on a circle times `exp (-c |z|)`
+(`TauCeti.abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one`). On that circle `|D| ≤ L |h|` by the
+mean value inequality, so dividing by `|h|` bounds the gradient of `ℓ`. Only `C²` regularity of
+the section is used: no third derivative and no commutation of `Δ` with a derivative is needed.
 
 The covariant derivative is controlled by the gradient of `|α|²`. Since `∂bar_a α = 0`, the
 covariant derivative is complex linear, `d_a α (v) = v · d_a α (1)`
@@ -52,14 +53,23 @@ For a vortex with `C²` section the same holds at every order: every iterated de
 `TauCeti.Vortex.isBigO_iteratedFDeriv_normSq_sub_one`). These follow from the general estimate
 for decaying solutions of `Δ ℓ = κ (exp ℓ - 1)` with `c² < κ`
 (`TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one`), here with `κ = 1 / 4`; its
-hypotheses are the decay of `log |α|²`, which is controlled by the modulus defect, the bound on
-its gradient proved above, and smoothness of `log |α|²` near infinity. Wherever `α ≠ 0`, the
+hypotheses are the decay of `log |α|²`, which is controlled by the modulus defect, and
+smoothness of `log |α|²` near infinity. Wherever `α ≠ 0`, the
 `C²` function `log |α|²` solves the scalar equation, hence by Green's identity weakly, so it is
 smooth there by planar elliptic regularity
 (`TauCeti.Vortex.contDiffAt_log_normSq_of_equation_eq_zero`, via
 `TauCeti.contDiffOn_succ_of_forall_integral_laplacian_mul_eq_comp`). In particular the second
 derivative of `log |α|²` decays
 (`TauCeti.Vortex.exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp`).
+
+The same comparison applies to two vortices `x` and `y` whose moduli exceed `2 c` outside a disc:
+their logarithmic moduli solve the scalar equation there, so their difference is bounded by its
+largest value on the boundary circle times `exp (-c (|z| - R))`
+(`TauCeti.Vortex.abs_log_normSq_sub_log_normSq_le_mul_exp`). Since `|α| ≤ 1`, the exponential is
+`1`-Lipschitz on the values of `ℓ`, so `u = ℓ_x - ℓ_y` has `|Δ u| ≤ |u| / 4`, and the interior
+gradient estimate for Poisson's equation
+(`TauCeti.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le`) bounds `D u` by the
+same exponential (`TauCeti.Vortex.norm_fderiv_log_normSq_sub_log_normSq_le_mul_exp`).
 
 These are gauge-invariant estimates for classical solutions. The decay of the connection
 coefficients themselves depends on a choice of gauge, such as the winding-`m` end trivialization,
@@ -76,10 +86,16 @@ and is not treated here.
 * `TauCeti.Vortex.exists_energyDensity_le_mul_exp`: the energy density is bounded by
   `K exp (-c |z|)` for every `c < 1`.
 * `TauCeti.Vortex.contDiffAt_log_normSq_of_equation_eq_zero`: `log |α|²` is smooth wherever
-  `α ≠ 0`, for a vortex with `C²` section.
+  `α ≠ 0`, for a vortex with `C²` section; `TauCeti.Vortex.contDiffAt_log_normSq_of_pos` is its
+  global case.
 * `TauCeti.Vortex.isBigO_iteratedFDeriv_log_normSq`,
   `TauCeti.Vortex.isBigO_iteratedFDeriv_normSq_sub_one`: every iterated derivative of `log |α|²`
   and of `|α|² - 1` is `O(exp (-c |z|))` for every `c < 1 / 2`.
+* `TauCeti.Vortex.abs_log_normSq_sub_log_normSq_le_mul_exp`,
+  `TauCeti.Vortex.norm_fderiv_log_normSq_sub_log_normSq_le_mul_exp`: two vortices with moduli
+  above `2 c` outside the disc of radius `R`, whose logarithmic moduli are within `M` of each other
+  on its boundary, have `|ℓ_x(z) - ℓ_y(z)| ≤ M exp (-c (|z| - R))` and
+  `‖D (ℓ_x - ℓ_y)(z)‖ ≤ 93 M exp (-c (|z| - (R + 3)))` for `|z| ≥ R + 3`.
 * `TauCeti.Vortex.exists_eventually_norm_fderiv_fderiv_log_normSq_le_mul_exp`: outside a compact
   set, the second derivative of `log |α|²` is at most `K exp (-c |z|)`.
 
@@ -102,36 +118,16 @@ open scoped ContDiff
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- Where `|α|² > 0` at `w` and at `w + h`, the difference `D = ℓ - ℓ (· + h)` of `ℓ = log |α|²`
-satisfies `Δ D (w) = (|α|²(w) - |α|²(w + h)) / 4`, by the scalar equation at both points. -/
-private theorem laplacian_log_normSq_sub_comp_add_right
-    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0) {w h : ℂ} (hw : 0 < 4 * (x w 2 ^ 2 + x w 3 ^ 2))
-    (hwh : 0 < 4 * (x (w + h) 2 ^ 2 + x (w + h) 3 ^ 2)) :
-    Δ (fun y ↦ Real.log (4 * (x y 2 ^ 2 + x y 3 ^ 2)) -
-        Real.log (4 * (x (y + h) 2 ^ 2 + x (y + h) 3 ^ 2))) w =
-      (4 * (x w 2 ^ 2 + x w 3 ^ 2) - 4 * (x (w + h) 2 ^ 2 + x (w + h) 3 ^ 2)) / 4 := by
-  set ℓ : ℂ → ℝ := fun y ↦ Real.log (4 * (x y 2 ^ 2 + x y 3 ^ 2))
-  have hscd := contDiff_normSq hp hq
-  have hshift : ContDiffAt ℝ 2 (fun y ↦ ℓ (y + h)) w :=
-    (hscd.contDiffAt.log hwh.ne').comp w (contDiffAt_id.add contDiffAt_const)
-  rw [show (fun y ↦ ℓ y - ℓ (y + h)) = ℓ - fun y ↦ ℓ (y + h) from rfl,
-    (hscd.contDiffAt.log hw.ne').laplacian_sub hshift, congrFun (laplacian_comp_add_right ℓ h) w,
-    laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt
-      (right_ne_zero_of_mul hw.ne') (Eventually.of_forall hsol),
-    laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt
-      hq.contDiffAt (right_ne_zero_of_mul hwh.ne') (Eventually.of_forall hsol)]
-  ring
-
 /-- **Exterior decay of the translation differences of `ℓ = log |α|²`.** Suppose that
 `|α|² > 0` and `|α|² ≥ 4 c²` on `R - 1 ≤ |w|`, and that `|ℓ (z + h) - ℓ z| ≤ L |h|` on the circle
-`|z| = R`. Then `|ℓ z - ℓ (z + h)| ≤ L |h| exp (-c (|z| - R))` for `|z| ≥ R`. The difference
-solves `Δ D = V D` for a potential `V ≥ c²`, so `D` and `-D` are subsolutions of `-Δ + V`. -/
+`|z| = R`. Then `|ℓ z - ℓ (z + h)| ≤ L |h| exp (-c (|z| - R))` for `|z| ≥ R`: `ℓ` and its
+translate `ℓ (· + h)` both solve the scalar equation there
+(`TauCeti.abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one`). -/
 private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c R L : ℝ}
-    (hc₀ : 0 ≤ c) (hR : 0 < R) (hL : 0 ≤ L)
+    (hc₀ : 0 ≤ c) (hR : 0 < R)
     (hpos : ∀ w : ℂ, R - 1 ≤ ‖w‖ → 0 < 4 * (x w 2 ^ 2 + x w 3 ^ 2))
     (hc4 : ∀ w : ℂ, R - 1 ≤ ‖w‖ → 4 * c ^ 2 ≤ 4 * (x w 2 ^ 2 + x w 3 ^ 2))
     (hmv : ∀ z h : ℂ, ‖z‖ = R → ‖h‖ ≤ 1 →
@@ -141,57 +137,31 @@ private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
     |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) - Real.log (4 * (x (z + h) 2 ^ 2 + x (z + h) 3 ^ 2))| ≤
       L * ‖h‖ * Real.exp (-(c * (‖z‖ - R))) := by
   set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
-  set D : ℂ → ℝ := fun w ↦ Real.log (s w) - Real.log (s (w + h))
+  set ℓ : ℂ → ℝ := fun w ↦ Real.log (s w)
   have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
   have hw₁ : ∀ w : ℂ, R ≤ ‖w‖ → R - 1 ≤ ‖w‖ := fun w hw ↦ by linarith
   have hwh : ∀ w : ℂ, R ≤ ‖w‖ → R - 1 ≤ ‖w + h‖ := fun w hw ↦ by
     have := abs_norm_sub_norm_le (w + h) w
     rw [add_sub_cancel_left, abs_le] at this
     linarith
-  have hDcd : ∀ w : ℂ, R ≤ ‖w‖ → ContDiffAt ℝ 2 D w := fun w hw ↦
-    (hscd.contDiffAt.log (hpos w (hw₁ w hw)).ne').sub
-      ((hscd.contDiffAt.log (hpos (w + h) (hwh w hw)).ne').comp w
-        (contDiffAt_id.add contDiffAt_const))
-  have hΔD : ∀ w : ℂ, R ≤ ‖w‖ → Δ D w = (s w - s (w + h)) / 4 := fun w hw ↦
-    laplacian_log_normSq_sub_comp_add_right hp hq hsol (hpos w (hw₁ w hw))
-      (hpos (w + h) (hwh w hw))
-  -- The potential `V = Δ D / D` is a difference quotient of `exp / 4`, hence at least `c²`.
-  set V : ℂ → ℝ := fun w ↦ if D w = 0 then c ^ 2 else Δ D w / D w with hV
-  have hVD : ∀ w : ℂ, R ≤ ‖w‖ → V w * D w = Δ D w := fun w hw ↦ by
-    by_cases h₀ : D w = 0
-    · have hss : s w = s (w + h) := Real.log_injOn_pos (Set.mem_Ioi.mpr (hpos w (hw₁ w hw)))
-        (Set.mem_Ioi.mpr (hpos (w + h) (hwh w hw))) (sub_eq_zero.mp h₀)
-      rw [hΔD w hw, hss, h₀]
-      simp
-    · simp only [hV, h₀, ↓reduceIte]
-      field_simp
-  have hVc : ∀ w : ℂ, R < ‖w‖ → c ^ 2 ≤ V w := fun w hw ↦ by
-    by_cases h₀ : D w = 0
-    · simp [hV, h₀]
-    · simp only [hV, h₀, ↓reduceIte]
-      rw [hΔD w hw.le, div_right_comm]
-      linarith [Real.le_sub_div_log_sub_log (hpos w (hw₁ w hw.le))
-        (hpos (w + h) (hwh w hw.le)) (hc4 w (hw₁ w hw.le)) (hc4 (w + h) (hwh w hw.le)) h₀]
-  -- Both `D` and `-D` tend to zero at infinity and are bounded by `L |h|` on the circle.
-  have hcont : ContinuousOn D {w | R ≤ ‖w‖} := fun w hw ↦
-    (hDcd w hw).continuousAt.continuousWithinAt
-  have hℓlim : Tendsto (fun w ↦ Real.log (s w)) (cocompact ℂ) (𝓝 0) := by
+  -- Off the zeros, `ℓ` solves the scalar equation `Δ ℓ = (exp ℓ - 1) / 4`.
+  have hΔ (w : ℂ) (hw : R - 1 ≤ ‖w‖) : Δ ℓ w = (Real.exp (ℓ w) - 1) / 4 :=
+    laplacian_log_normSq_eq_exp hp.contDiffAt hq.contDiffAt (hpos w hw) (Eventually.of_forall hsol)
+  have hℓlim : Tendsto ℓ (cocompact ℂ) (𝓝 0) := by
     have h := (Real.continuousAt_log one_ne_zero).tendsto.comp hlim
     rw [Real.log_one] at h
     exact h
-  have hDlim : Tendsto D (cocompact ℂ) (𝓝 0) := by
-    have := hℓlim.sub (hℓlim.comp (Homeomorph.addRight h).isClosedEmbedding.tendsto_cocompact)
-    simpa [Function.comp_def] using this
-  have hM : 0 ≤ L * ‖h‖ := mul_nonneg hL (norm_nonneg _)
-  have hup := le_mul_exp_of_mul_le_laplacian hR hc₀ hM hcont (fun w hw ↦ hDcd w hw.le) hVc
-    (fun w hw ↦ (hVD w hw.le).le)
-    (fun w hw ↦ (le_abs_self _).trans ((abs_sub_comm _ _).trans_le (hmv w h hw hh))) hDlim hz
-  have hdown := le_mul_exp_of_mul_le_laplacian (u := -D) hR hc₀ hM hcont.neg
-    (fun w hw ↦ (hDcd w hw.le).neg) hVc
-    (fun w hw ↦ by rw [laplacian_neg, Pi.neg_apply, Pi.neg_apply, mul_neg, hVD w hw.le])
-    (fun w hw ↦ (neg_le_abs _).trans ((abs_sub_comm _ _).trans_le (hmv w h hw hh)))
-    (by have h' := hDlim.neg; rw [neg_zero] at h'; exact h') hz
-  exact abs_le.mpr ⟨by simp only [Pi.neg_apply] at hdown; linarith, hup⟩
+  -- Compare `ℓ` with its translate `ℓ (· + h)`, which solves the same equation.
+  exact abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one (ℓ₂ := fun w ↦ ℓ (w + h)) (κ := 1 / 4) hR
+    hc₀ (fun w hw ↦ hscd.contDiffAt.log (hpos w (hw₁ w hw)).ne')
+    (fun w hw ↦ (hscd.contDiffAt.log (hpos (w + h) (hwh w hw)).ne').comp w
+      (contDiffAt_id.add contDiffAt_const))
+    (fun w hw ↦ by rw [hΔ w (hw₁ w hw)]; ring)
+    (fun w hw ↦ by rw [congrFun (laplacian_comp_add_right ℓ h) w, hΔ (w + h) (hwh w hw)]; ring)
+    (fun w hw ↦ by rw [Real.exp_log (hpos w (hw₁ w hw))]; linarith [hc4 w (hw₁ w hw)])
+    (fun w hw ↦ by rw [Real.exp_log (hpos (w + h) (hwh w hw))]; linarith [hc4 (w + h) (hwh w hw)])
+    hℓlim (hℓlim.comp (Homeomorph.addRight h).isClosedEmbedding.tendsto_cocompact)
+    (fun w hw ↦ (abs_sub_comm _ _).trans_le (hmv w h hw hh)) hz
 
 /-- The case `0 ≤ c` of `exists_eventually_norm_fderiv_log_normSq_le_mul_exp`, with a
 nonnegative constant. -/
@@ -249,8 +219,8 @@ private theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg
   have hle := hd.le_of_lip' hC (by
     filter_upwards [closedBall_mem_nhds z one_pos] with y hy
     rw [mem_closedBall, dist_eq_norm] at hy
-    have h := abs_log_normSq_sub_log_normSq_add_le_mul_exp hp hq hsol hlim hc₀ hR₀'
-      (le_max_right _ _) hpos (fun w hw ↦ (le_max_left _ _).trans (hsR w hw).le) hmv hy hz
+    have h := abs_log_normSq_sub_log_normSq_add_le_mul_exp hp hq hsol hlim hc₀ hR₀' hpos
+      (fun w hw ↦ (le_max_left _ _).trans (hsR w hw).le) hmv hy hz
     rw [add_sub_cancel] at h
     rw [Real.norm_eq_abs, abs_sub_comm]
     exact h.trans_eq (by ring))
@@ -401,6 +371,16 @@ theorem contDiffAt_log_normSq_of_equation_eq_zero {z : ℂ}
         · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (φ.tsupport_subset h)]
   exact hsmooth.contDiffAt (htopen.mem_nhds hzt)
 
+/-- **Smoothness of `log |α|²` where `|α|² > 0`.** For a solution of the vortex equations on the
+whole plane with `C²` section, `log |α|²` is smooth near every point where the squared modulus is
+positive: the global case of `TauCeti.Vortex.contDiffAt_log_normSq_of_equation_eq_zero`. -/
+theorem contDiffAt_log_normSq_of_pos (hp : ContDiff ℝ 2 (fun w ↦ x w 2))
+    (hq : ContDiff ℝ 2 (fun w ↦ x w 3)) (hsol : ∀ z, equation x z = 0)
+    {z : ℂ} (hz : 0 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
+    ContDiffAt ℝ ∞ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z :=
+  contDiffAt_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt
+    (right_ne_zero_of_mul hz.ne') (Eventually.of_forall hsol)
+
 /-- The hypotheses of `TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one` for
 `ℓ = log |α|²` and `κ = 1 / 4`, at some positive rate `c' ≥ c` with `c' < 1 / 2`, given a rate
 `c < 1 / 2`. -/
@@ -413,10 +393,8 @@ private theorem laplacian_log_normSq_hypotheses
       (∀ᶠ z in cocompact ℂ, ContDiffAt ℝ ∞ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z) ∧
       (∀ᶠ z in cocompact ℂ, Δ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z =
         1 / 4 * (Real.exp (Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) - 1)) ∧
-      ((fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
-        fun z ↦ Real.exp (-(c' * ‖z‖))) ∧
-      fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
-        fun _ ↦ (1 : ℝ) := by
+      (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
+        fun z ↦ Real.exp (-(c' * ‖z‖)) := by
   -- It suffices to treat a positive rate `c' ≥ c`.
   set c' := max c (1 / 4)
   have hc'pos : 0 < c' := lt_max_of_lt_right (by norm_num)
@@ -431,10 +409,10 @@ private theorem laplacian_log_normSq_hypotheses
   -- Where `|α|² > 1 / 2`, `ℓ` solves `Δ ℓ = (exp ℓ - 1) / 4`.
   have hΔ : ∀ z, 1 / 2 < s z →
       Δ (fun w ↦ Real.log (s w)) z = 1 / 4 * (Real.exp (Real.log (s z)) - 1) := fun z hz ↦ by
-    rw [laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt (hα z hz)
-      (Eventually.of_forall hsol), Real.exp_log (by linarith)]
+    rw [laplacian_log_normSq_eq_exp hp.contDiffAt hq.contDiffAt ((one_half_pos).trans hz)
+      (Eventually.of_forall hsol)]
     ring
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
   · filter_upwards [hpos] with z hz
     exact contDiffAt_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt (hα z hz)
       (Eventually.of_forall hsol)
@@ -446,11 +424,6 @@ private theorem laplacian_log_normSq_hypotheses
     filter_upwards [hpos] with z hz
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
     exact (Real.abs_log_le_two_mul_one_sub hz.le (hs₁ z)).trans (by linarith [hK z])
-  · obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hp hq hsol hlim
-      (c := 0) (by norm_num)
-    refine IsBigO.of_bound K ?_
-    filter_upwards [hK] with z hz
-    simpa using hz
 
 /-- **Exponential decay of all derivatives of `log |α|²`.** For a plane vortex with `C²` section
 whose section satisfies `|α| → 1` at infinity, every iterated derivative of `log |α|²` is
@@ -462,9 +435,9 @@ theorem isBigO_iteratedFDeriv_log_normSq
     (hc : c < 1 / 2) (n : ℕ) :
     iteratedFDeriv ℝ n (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd, hℓ'⟩ :=
+  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd⟩ :=
     laplacian_log_normSq_hypotheses hp hq hsol hlim hc
-  exact (isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one hc'pos hc'κ hsmooth heq hℓd hℓ'
+  exact (isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one hc'pos hc'κ hsmooth heq hℓd
     n).trans (isBigO_exp_neg_mul_norm_of_le hcc' _)
 
 /-- **Exponential decay of the second derivative of `log |α|²`.** For a plane vortex with `C²`
@@ -494,10 +467,10 @@ theorem isBigO_iteratedFDeriv_normSq_sub_one
     (hc : c < 1 / 2) (n : ℕ) :
     iteratedFDeriv ℝ n (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2) - 1) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd, hℓ'⟩ :=
+  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd⟩ :=
     laplacian_log_normSq_hypotheses hp hq hsol hlim hc
   have h := isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one hc'pos hc'κ hsmooth
-    heq hℓd hℓ' n
+    heq hℓd n
   -- Near infinity `exp (log |α|²) = |α|²`.
   have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
     hlim.eventually (lt_mem_nhds (by norm_num))
@@ -508,5 +481,124 @@ theorem isBigO_iteratedFDeriv_normSq_sub_one
   refine Filter.EventuallyEq.eq_of_nhds (Filter.EventuallyEq.iteratedFDeriv ℝ ?_ n)
   filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
   rw [Real.exp_log (by linarith [hR (Set.mem_ofPred.mpr hw.le)])]
+
+/-! ### Two vortices with nonvanishing sections outside a disc -/
+
+section TwoVortices
+
+variable {y : ℂ → EuclideanSpace ℝ (Fin 4)} {R c M : ℝ}
+
+/-- Where `|α|² > 4 c²`, the logarithmic modulus `ℓ = log |α|²` of a vortex is smooth, solves the
+scalar equation `Δ ℓ = (exp ℓ - 1) / 4` and has `exp ℓ / 4 ≥ c²`: the hypotheses of
+`TauCeti.abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one` with `κ = 1 / 4`. -/
+private theorem log_normSq_spec_of_lt (hp : ContDiff ℝ 2 (fun w ↦ x w 2))
+    (hq : ContDiff ℝ 2 (fun w ↦ x w 3)) (hsol : ∀ z, equation x z = 0) {z : ℂ}
+    (hz : 4 * c ^ 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
+    ContDiffAt ℝ ∞ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z ∧
+      Δ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z =
+        1 / 4 * (Real.exp (Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) - 1) ∧
+      c ^ 2 ≤ 1 / 4 * Real.exp (Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) := by
+  have hpos := (by positivity : (0 : ℝ) ≤ 4 * c ^ 2).trans_lt hz
+  refine ⟨contDiffAt_log_normSq_of_pos hp hq hsol hpos, ?_, ?_⟩
+  · rw [laplacian_log_normSq_eq_exp hp.contDiffAt hq.contDiffAt hpos (.of_forall hsol)]
+    ring
+  · rw [Real.exp_log hpos]
+    linarith
+
+/-- **The logarithmic moduli of two vortices converge to each other outside a disc.** Let `x` and
+`y` be solutions of the vortex equations with `C²` sections and `|α|² → 1` at infinity, let
+`0 < R` and `0 ≤ c`, and suppose that both moduli satisfy `|α|² > 4 c²` outside the disc of
+radius `R` and that their logarithmic moduli `ℓ = log |α|²` differ by at most `M` on its boundary
+circle. Then `|ℓ_x(z) - ℓ_y(z)| ≤ M exp (-c (|z| - R))` outside the disc: the case of
+`TauCeti.abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one` for vortices. -/
+theorem abs_log_normSq_sub_log_normSq_le_mul_exp
+    (hxp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hxq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
+    (hxs : ∀ z, equation x z = 0) (hys : ∀ z, equation y z = 0)
+    (hxl : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hyl : Tendsto (fun z ↦ 4 * (y z 2 ^ 2 + y z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hR : 0 < R) (hc : 0 ≤ c)
+    (hxR : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2))
+    (hyR : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 < 4 * (y z 2 ^ 2 + y z 3 ^ 2))
+    (hbd : ∀ z, ‖z‖ = R → |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) -
+      Real.log (4 * (y z 2 ^ 2 + y z 3 ^ 2))| ≤ M) {z : ℂ} (hz : R ≤ ‖z‖) :
+    |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) - Real.log (4 * (y z 2 ^ 2 + y z 3 ^ 2))| ≤
+      M * Real.exp (-(c * (‖z‖ - R))) := by
+  have hx (w : ℂ) (hw : R ≤ ‖w‖) := log_normSq_spec_of_lt hxp hxq hxs (hxR w hw)
+  have hy (w : ℂ) (hw : R ≤ ‖w‖) := log_normSq_spec_of_lt hyp hyq hys (hyR w hw)
+  exact abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one hR hc
+    (fun w hw ↦ (hx w hw).1.of_le (by simp)) (fun w hw ↦ (hy w hw).1.of_le (by simp))
+    (fun w hw ↦ (hx w hw).2.1) (fun w hw ↦ (hy w hw).2.1)
+    (fun w hw ↦ (hx w hw).2.2) (fun w hw ↦ (hy w hw).2.2)
+    (by simpa using hxl.log one_ne_zero) (by simpa using hyl.log one_ne_zero) hbd hz
+
+/-- **The gradients of two vortices converge to each other outside a disc.** Let `x` and `y` be
+solutions of the vortex equations with `C²` sections and `|α|² → 1` at infinity, let `0 < R` and
+`0 ≤ c`, and suppose that both moduli satisfy `|α|² > 4 c²` outside the disc of radius `R` and
+that their logarithmic moduli `ℓ = log |α|²` differ by at most `M` on its boundary circle. Then at
+distance at least `3` from the disc,
+
+`‖D (ℓ_x - ℓ_y)(z)‖ ≤ 93 M exp (-c (|z| - (R + 3)))`. -/
+theorem norm_fderiv_log_normSq_sub_log_normSq_le_mul_exp
+    (hxp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hxq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
+    (hxs : ∀ z, equation x z = 0) (hys : ∀ z, equation y z = 0)
+    (hxl : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hyl : Tendsto (fun z ↦ 4 * (y z 2 ^ 2 + y z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hR : 0 < R) (hc : 0 ≤ c)
+    (hxR : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2))
+    (hyR : ∀ z, R ≤ ‖z‖ → 4 * c ^ 2 < 4 * (y z 2 ^ 2 + y z 3 ^ 2))
+    (hbd : ∀ z, ‖z‖ = R → |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) -
+      Real.log (4 * (y z 2 ^ 2 + y z 3 ^ 2))| ≤ M) {z : ℂ} (hz : R + 3 ≤ ‖z‖) :
+    ‖fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) -
+      Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2))) z‖ ≤ 93 * M * Real.exp (-(c * (‖z‖ - (R + 3)))) := by
+  set ℓx : ℂ → ℝ := fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))
+  set ℓy : ℂ → ℝ := fun w ↦ Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2))
+  set u : ℂ → ℝ := ℓx - ℓy
+  obtain ⟨ε, hε⟩ : ∃ ε, ε = M * Real.exp (-(c * (‖z‖ - (R + 3)))) := ⟨_, rfl⟩
+  have hM := nonneg_of_forall_norm_eq_abs_le hR.le hbd
+  -- Every point within `3` of `z` lies outside the disc, where `|u| ≤ ε`.
+  have hfar (w : ℂ) (hw : w ∈ closedBall z 3) : ‖z‖ - 3 ≤ ‖w‖ := by
+    have := norm_sub_norm_le z w
+    rw [mem_closedBall, dist_eq_norm, ← norm_neg, neg_sub] at hw
+    linarith
+  have hfarR (w : ℂ) (hw : w ∈ closedBall z 3) : R ≤ ‖w‖ := by linarith [hfar w hw]
+  have hu (w : ℂ) (hw : w ∈ closedBall z 3) : |ℓx w - ℓy w| ≤ ε := by
+    rw [hε]
+    refine (abs_log_normSq_sub_log_normSq_le_mul_exp hxp hxq hyp hyq hxs hys hxl hyl hR hc hxR
+      hyR hbd (hfarR w hw)).trans (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) hM)
+    nlinarith [mul_nonneg hc (by linarith [hfar w hw] : (0 : ℝ) ≤ ‖w‖ - (‖z‖ - 3))]
+  have hx (w : ℂ) (hw : R ≤ ‖w‖) := log_normSq_spec_of_lt hxp hxq hxs (hxR w hw)
+  have hy (w : ℂ) (hw : R ≤ ‖w‖) := log_normSq_spec_of_lt hyp hyq hys (hyR w hw)
+  -- Outside the disc `Δ u = (exp ℓx - exp ℓy) / 4`, by the scalar equation for both vortices.
+  have hΔu (w : ℂ) (hw : R ≤ ‖w‖) : Δ u w = 1 / 4 * (Real.exp (ℓx w) - Real.exp (ℓy w)) :=
+    laplacian_sub_eq_of_laplacian_eq_exp_sub_one ((hx w hw).1.of_le (by simp))
+      ((hy w hw).1.of_le (by simp)) (hx w hw).2.1 (hy w hw).2.1
+  -- Since `ℓx, ℓy ≤ 0`, the exponential is `1`-Lipschitz on their values, so `|Δ u| ≤ |u| / 4`.
+  have hΔ (w : ℂ) (hw : w ∈ closedBall z 3) : |Δ u w| ≤ ε / 4 := by
+    have h : |Real.exp (ℓx w) - Real.exp (ℓy w)| ≤ Real.exp 0 * |ℓx w - ℓy w| :=
+      Real.abs_exp_sub_exp_le (log_normSq_nonpos hxp hxq hxs hxl w)
+        (log_normSq_nonpos hyp hyq hys hyl w)
+    rw [hΔu w (hfarR w hw), abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 4)]
+    rw [Real.exp_zero, one_mul] at h
+    linarith [hu w hw]
+  -- The interior gradient estimate for Poisson's equation on the disc of radius `3` about `z`.
+  have hgrad := norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_laplacian_le (n := 0)
+    (x := z) (ρ := 1) (u := u)
+    (fun w hw ↦ ((hx w (hfarR w (by simpa using hw))).1.sub
+      (hy w (hfarR w (by simpa using hw))).1).of_le (by simp)) one_pos
+    (fun w hw ↦ by
+      rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs]
+      exact hu w (ball_subset_closedBall (ball_subset_ball (by norm_num) hw)))
+    (fun w hw ↦ by
+      rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs]
+      exact hΔ w (ball_subset_closedBall (by simpa using hw)))
+  rw [zero_add, norm_iteratedFDeriv_one] at hgrad
+  -- The estimate reads `‖D u (z)‖ ≤ 8 ε / ρ + 340 K ρ` with `ρ = 1` and `K = ε / 4`; this is
+  -- `(8 + 85) ε = 93 ε`.
+  calc ‖fderiv ℝ u z‖ ≤ 8 * ε / 1 + 340 * (ε / 4) * 1 := hgrad
+    _ = 93 * M * Real.exp (-(c * (‖z‖ - (R + 3)))) := by rw [hε]; ring
+
+end TwoVortices
 
 end TauCeti.Vortex

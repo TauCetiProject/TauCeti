@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Tensor
 public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
@@ -29,16 +29,14 @@ locus of a section of an invertible sheaf.
 
 The monoidal tensor product `F ⊗ N` is the sheafification of the sectionwise tensor product, and
 `t ⊗ e` is the image of the pure tensor under the sheafification unit. Its stalk at `x` is the
-tensor product `F_x ⊗ N_x` over `𝒪_{X,x}` (`Scheme.Modules.tensorStalkEquiv`), under which the
-germ of `s ⊗ t` is `s_x ⊗ t_x`; nonvanishing loci of tensor products of sections are computed
-from this.
+tensor product `F_x ⊗ N_x` over `𝒪_{X,x}` under `TauCeti.SheafOfModules.tensorStalkEquivMonoidal`.
+The germ of `s ⊗ t` corresponds to `s_x ⊗ t_x`, which computes nonvanishing loci of tensor products
+of sections.
 
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Modules.tmulRight`: the linear map `t ↦ t ⊗ e` on sections.
 * `AlgebraicGeometry.Scheme.Modules.tensorPowSection`: the tensor powers `eⁿ ∈ Γ(Lⁿ, U)`.
-* `AlgebraicGeometry.Scheme.Modules.tensorStalkEquiv`: the stalk of `F ⊗ N` is the tensor product
-  of the stalks.
 
 ## Main results
 
@@ -46,8 +44,7 @@ from this.
   `AlgebraicGeometry.Scheme.Modules.tensorUnderlyingIso_hom_comp_app_tmulRight`: under the
   comparison with the sheafification of the sectionwise tensor product, `t ⊗ e` is the image of
   the pure tensor under the sheafification unit.
-* `AlgebraicGeometry.Scheme.Modules.tensorStalkEquiv_germ_tmulRight` and
-  `AlgebraicGeometry.Scheme.Modules.tensorStalkEquiv_symm_tmul_germ`: the germ of `s ⊗ t`
+* `AlgebraicGeometry.Scheme.Modules.tensorStalkEquiv_germ_tmulRight`: the germ of `s ⊗ t`
   corresponds to `s_x ⊗ t_x`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight` and
   `AlgebraicGeometry.Scheme.Modules.bijective_tmulRight_tensorPowSection`: `t ↦ t ⊗ eⁿ` is bijective
@@ -114,62 +111,15 @@ theorem tensorUnderlyingIso_hom_comp_app_tmulRight {P : X.Modules}
   rw [Hom.comp_app (φ := (F.tensorUnderlyingIso L).hom) (ψ := p), ConcreteCategory.comp_apply,
     tensorUnderlyingIso_hom_app_tmulRight]
 
-/-- The stalk of the monoidal tensor product is the tensor product of the stalks over the
-structure-sheaf stalk. -/
-def tensorStalkEquiv (N : X.Modules) (x : X) :
-    (F ⊗ N).presheaf.stalk x ≃ₗ[X.presheaf.stalk x]
-      F.presheaf.stalk x ⊗[X.presheaf.stalk x] N.presheaf.stalk x :=
-  -- Both equivalences are linear over the stalk of `X.sheaf.obj`; restate them over the defeq
-  -- scheme stalk `X.presheaf.stalk x`, where the composite is stated.
-  (show _ ≃ₗ[X.presheaf.stalk x] _ from
-    PresheafOfModules.stalkLinearEquivCommRing (S := X.sheaf.obj) x
-      ((_root_.SheafOfModules.forget _).mapIso (F.tensorUnderlyingIso N ≪≫
-        (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm))).trans
-    (show _ ≃ₗ[X.presheaf.stalk x] _ from TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x)
-
-/-- The monoidal tensor-stalk equivalence transports through the canonical sheafification
-comparison before applying the sheaf tensor-stalk equivalence. -/
-theorem tensorStalkEquiv_apply (N : X.Modules) (x : X) (t : (F ⊗ N).presheaf.stalk x) :
-    F.tensorStalkEquiv N x t = TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x
-      (PresheafOfModules.stalkMapCommRing (S := X.sheaf.obj) x
-        (F.tensorUnderlyingIso N ≪≫
-          (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm).hom.val t) := by
-  rw [tensorStalkEquiv]
-  -- `LinearEquiv.trans` applies its factors in turn, and `(forget _).mapIso e` has forward
-  -- morphism `e.hom.val`.
-  exact congrArg (TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x)
-    (PresheafOfModules.stalkLinearEquivCommRing_apply x _ t)
-
 /-- The germ of a tensor of sections of the monoidal product is the tensor of their germs. -/
 @[simp]
 theorem tensorStalkEquiv_germ_tmulRight {N : X.Modules} {U : X.Opens}
     (s : Γ(F, U)) (t : Γ(N, U)) {x : X} (hx : x ∈ U) :
-    F.tensorStalkEquiv N x ((F ⊗ N).presheaf.germ U x hx (tmulRight F t s)) =
+    TauCeti.SheafOfModules.tensorStalkEquivMonoidal X.sheaf F N x
+        ((F ⊗ N).presheaf.germ U x hx (tmulRight F t s)) =
       F.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t := by
-  rw [tensorStalkEquiv_apply]
-  let e := F.tensorUnderlyingIso N ≪≫
-    (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).symm
-  have hg := PresheafOfModules.stalkMapCommRing_germ (S := X.sheaf.obj) x e.hom.val
-    U hx (tmulRight F t s)
-  have hs := F.tensorUnderlyingIso_hom_comp_app_tmulRight
-    (TauCeti.SheafOfModules.tensorProductIso X.sheaf F N).inv t s
-  refine (congrArg (TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x) hg).trans ?_
-  refine (congrArg (fun z ↦ TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf F N x
-    (TopCat.Presheaf.germ
-      (TauCeti.SheafOfModules.tensorProduct X.sheaf F N).val.presheaf U x hx z)) hs).trans ?_
-  exact (TauCeti.SheafOfModules.tensorStalkEquiv_apply X.sheaf F N x _).trans
-    (TauCeti.SheafOfModules.tensorStalkComparison_germ_unit_tmul X.sheaf F N x U hx s t)
-
-/-- The inverse tensor-stalk equivalence sends a tensor of germs to the germ of the
-tensor of sections. -/
-@[simp]
-theorem tensorStalkEquiv_symm_tmul_germ {N : X.Modules} {U : X.Opens}
-    (s : Γ(F, U)) (t : Γ(N, U)) {x : X} (hx : x ∈ U) :
-    (F.tensorStalkEquiv N x).symm
-        (F.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t) =
-      (F ⊗ N).presheaf.germ U x hx (tmulRight F t s) := by
-  apply (F.tensorStalkEquiv N x).injective
-  simp
+  rw [tmulRight_apply]
+  exact TauCeti.SheafOfModules.tensorStalkEquivMonoidal_germ X.sheaf F N x U hx s t
 
 /-- Tensoring with `e` is linear in `e`. -/
 @[simp]
