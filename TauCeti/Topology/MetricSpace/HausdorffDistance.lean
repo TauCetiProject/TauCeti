@@ -29,9 +29,11 @@ every limit of points `y i ∈ A i` lies in `Z` (`Metric.mem_of_tendsto_hausdorf
 
 The distance functions to two sets with finite Hausdorff extended distance differ pointwise by at
 most their Hausdorff distance (`Metric.abs_infDist_sub_infDist_le_hausdorffDist`). For nonempty
-sets `A` and `B` the bound is sharp: `⨆ x, |infDist x A - infDist x B| = hausdorffDist A B`
-(`Metric.iSup_abs_infDist_sub_eq_hausdorffDist`), so the Hausdorff distance is the uniform distance
-between the distance functions.
+sets `A` and `B`, `⨆ x, |infDist x A - infDist x B| = hausdorffDist A B`
+(`Metric.iSup_abs_infDist_sub_eq_hausdorffDist`). When `hausdorffEDist A B` is finite, the bound
+is therefore sharp and the Hausdorff distance is the uniform distance between the distance
+functions. When it is infinite, the difference is unbounded and both sides are `0`, by the
+conventions for `hausdorffDist` and for the real supremum of an unbounded family.
 
 A `K`-Lipschitz map with `K ≠ 0` multiplies the extended distance from a point to a set, and the
 Hausdorff extended distance between two sets, by at most `K`
