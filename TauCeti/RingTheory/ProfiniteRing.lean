@@ -125,6 +125,16 @@ theorem ultralim_eq [IsProfiniteRing R] {x : ℕ → R} {L : R}
 theorem ultralim_const [IsProfiniteRing R] (r : R) : ultralim (fun _ ↦ r) = r :=
   ultralim_eq fun _ _ ↦ .of_forall fun _ ↦ by simp
 
+/-- The ultralimit of the zero sequence is zero. -/
+@[simp]
+theorem ultralim_zero [IsProfiniteRing R] : ultralim (0 : ℕ → R) = 0 :=
+  ultralim_const 0
+
+/-- The ultralimit of the constant sequence one is one. -/
+@[simp]
+theorem ultralim_one [IsProfiniteRing R] : ultralim (1 : ℕ → R) = 1 :=
+  ultralim_const 1
+
 /-- The ultralimit of a sum is the sum of the ultralimits. -/
 @[simp]
 theorem ultralim_add [IsProfiniteRing R] (x y : ℕ → R) :
@@ -134,6 +144,19 @@ theorem ultralim_add [IsProfiniteRing R] (x y : ℕ → R) :
     convert dvd_add hx hy using 1
     simp only [Pi.add_apply]
     ring
+
+/-- The ultralimit of a negated sequence is the negation of its ultralimit. -/
+@[simp]
+theorem ultralim_neg [IsProfiniteRing R] (x : ℕ → R) : ultralim (-x) = -ultralim x := by
+  have h := ultralim_add (-x) x
+  rw [neg_add_cancel, ultralim_zero] at h
+  exact eq_neg_of_add_eq_zero_left h.symm
+
+/-- The ultralimit of a difference is the difference of the ultralimits. -/
+@[simp]
+theorem ultralim_sub [IsProfiniteRing R] (x y : ℕ → R) :
+    ultralim (x - y) = ultralim x - ultralim y := by
+  simp only [sub_eq_add_neg, ultralim_add, ultralim_neg]
 
 /-- The ultralimit of a product is the product of the ultralimits. -/
 @[simp]
@@ -241,6 +264,18 @@ theorem _root_.RingHom.map_ultralimRingHom [IsProfiniteRing R] [IsProfiniteRing 
   intro N
   conv_rhs => rw [← Function.surjInv_eq Ideal.Quotient.mk_surjective (a N)]
   rw [Function.comp_apply, Ideal.quotientMap_mk]
+
+/-- Iterates of a ring endomorphism commute with `ultralimRingHom`, acting on the factorial
+quotients componentwise. -/
+theorem _root_.RingHom.iterate_ultralimRingHom [IsProfiniteRing R] (σ : R →+* R) (i : ℕ)
+    (a : ∀ N : ℕ, R ⧸ Ideal.span {(N.factorial : R)}) :
+    σ^[i] (ultralimRingHom a) = ultralimRingHom fun N ↦
+      (Ideal.quotientMap _ σ Ideal.span_natCast_le_comap)^[i] (a N) := by
+  induction i generalizing a with
+  | zero => rfl
+  | succ i ih =>
+    simp only [Function.iterate_succ_apply']
+    rw [ih, RingHom.map_ultralimRingHom]
 
 /-- A compact topological ring in which the ideals `M R`, `M ≠ 0`, are neighbourhoods of `0` and
 only `0` is divisible by every nonzero integer is profinite. -/

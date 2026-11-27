@@ -70,16 +70,6 @@ private theorem isArtinianRing_quotient (N : ℕ) : IsArtinianRing (FacQuot R N)
   have := finite_quotient (R := R) N.factorial_ne_zero
   isArtinian_of_finite
 
-/-- The powers of `σ` commute with `ultralimRingHom`, acting componentwise through `quotSigma`. -/
-private theorem iterate_ultralimRingHom (i : ℕ)
-    (a : ∀ N : ℕ, FacQuot R N) :
-    σ^[i] (ultralimRingHom a) = ultralimRingHom fun N ↦ (quotSigma σ N)^[i] (a N) := by
-  induction i generalizing a with
-  | zero => rfl
-  | succ i ih =>
-    simp only [Function.iterate_succ_apply']
-    rw [ih, RingHom.map_ultralimRingHom]
-
 /-- Hilbert's Theorem 90 for `GL n` over each quotient `R ⧸ N! R`. -/
 private theorem exists_mul_map_eq_of_twistedNorm_eq_one_quotient {n : Type*} [Fintype n]
     [DecidableEq n] (h_tame : IsTameAtLevel σ p m) (c : GL n R) {Y : Matrix n n R}
@@ -202,7 +192,7 @@ theorem IsTameAtLevel.exists_prod_range_pow_eq_of_isProfiniteRing (h_tame : IsTa
   · simpa only [← Pi.inv_def, map_inv] using dvd_ultralimUnitsHom_sub_one hz_inv
   · calc ∏ i ∈ range p, (σ ^ i) (Z : R)
         = Λ (∏ i ∈ range p, fun N ↦ (quotSigma σ N)^[i] (z N : FacQuot R N)) := by
-          simp only [RingHom.coe_pow, hZ, Λ, iterate_ultralimRingHom, map_prod]
+          simp only [RingHom.coe_pow, hZ, Λ, RingHom.iterate_ultralimRingHom, map_prod]
       _ = Λ (fun N ↦ facMk N (x : R)) := by
           congr 1
           funext N
