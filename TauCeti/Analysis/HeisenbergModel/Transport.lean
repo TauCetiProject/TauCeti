@@ -68,16 +68,6 @@ open scoped ComplexConjugate
 
 namespace TauCeti.ReproducingModel
 
-/-- An isometric ring endomorphism of `ℂ` (the identity or complex conjugation) fixes the values
-of a vacuum. -/
-theorem map_vacuum_comp {W W' : Type*} [AddCommGroup W'] [TopologicalSpace W']
-    [MeasurableSpace W'] {β' : HeisenbergDatum W'} {μ' : Measure W'} {e : W → ℂ} {e' : W' → ℂ}
-    (he' : β'.IsVacuum μ' e') {σ : ℂ →+* ℂ} [RingHomIsometric σ] {φ : W' → W}
-    (hφ : ∀ x, e (φ x) = e' x) (x : W') : σ (e (φ x)) = e' x := by
-  rcases Complex.ringHom_eq_id_or_conj_of_continuous σ.isometry.continuous with rfl | rfl
-  · simp [hφ]
-  · simp [hφ, he'.conj_apply]
-
 /-- The Heisenberg matching condition for `φ` gives the matching condition for `φ.symm`, as
 needed for transport along `φ.symm`. -/
 theorem symm_matching_heisenberg {W W' : Type*} [AddCommGroup W] [TopologicalSpace W]
@@ -129,7 +119,7 @@ private def transportFun (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y) (hφ :
       -- Apply `σ` to the reproducing identity of `v` at `φ x` and substitute `φ`.
       have h_pt (y : W') : σ (v (φ y) * (β (φ y) (φ x) * e (φ x - φ y))) =
           σ (v (φ y)) * (β' y x * e' (x - y)) := by
-        rw [map_mul, map_mul, hβ, ← map_sub, map_vacuum_comp he' hφ]
+        rw [map_mul, map_mul, hβ, ← map_sub, hφ, he'.map_apply]
       simp_rw [← h_pt]
       rw [← v.integral_mul_kernel (φ x), ← (measurePreserving_of_vacuum (β := β) (β' := β') μ μ'
         hφ).integral_comp φ.toHomeomorph.measurableEmbedding, Complex.map_integral_of_isometric]
@@ -177,8 +167,7 @@ omit [SecondCountableTopology W'] in
 @[simp]
 theorem transport_vacuum : transport μ μ' hβ hφ vacuum = vacuum := by
   ext x
-  rw [transport_apply, vacuum_apply, vacuum_apply]
-  exact map_vacuum_comp he' hφ x
+  rw [transport_apply, vacuum_apply, vacuum_apply, hφ, he'.map_apply]
 
 /-- Transport intertwines Heisenberg translation by `φ y` with translation by `y`. -/
 @[simp]
@@ -258,7 +247,7 @@ private theorem integral_kernel_transport (v : ReproducingModel β μ e) (x : W'
       ∫ y, transport μ μ' hβ hφ v y * (β' (g' • y) x * e' (x - g' • y)) ∂μ' := by
   rw [← (measurePreserving_of_vacuum (β := β) (β' := β') μ μ' hφ).integral_comp
     φ.toHomeomorph.measurableEmbedding, Complex.map_integral_of_isometric]
-  simp only [map_mul, hact, hβ, ← map_sub, map_vacuum_comp he' hφ, transport_apply]
+  simp only [map_mul, hact, hβ, ← map_sub, hφ, he'.map_apply, transport_apply]
 
 include hact in
 /-- Transport intertwines Weil operators up to any scalar `c` with `σ (Δ g) = c * Δ' g'`, which is
