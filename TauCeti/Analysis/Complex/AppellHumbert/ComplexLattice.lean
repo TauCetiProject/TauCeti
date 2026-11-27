@@ -81,6 +81,11 @@ and `ZLattice.im_hermitianForm_basis_eq_one_or_eq_neg_one` are adapted from
 Apache 2.0, Copyright 2026 Anthropic, PBC). There the objects are attached to a period pair and
 the area is `|Im (conj(ω₁) ω₂)|`; here they are attached to the lattice, with the area its
 covolume. The isogenies of that file are in `TauCeti.Algebra.Module.ZLattice.Complex`.
+`ZLattice.mem_of_forall_im_hermitianForm_eq_intCast` is adapted from
+`New.riemannForm_periods_mul_eq_sub` and the second half of the proof of
+`New.addSubgroupOf_dualLattice_nsmul_eq_range`, and
+`ZLattice.comp_neg_mem_thetaSpace_sigmaSignData` from `New.comp_neg_mem_thetaSpace`, in the same
+file.
 
 ## References
 
