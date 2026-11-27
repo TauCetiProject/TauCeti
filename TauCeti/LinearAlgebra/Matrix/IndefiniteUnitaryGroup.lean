@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
@@ -140,10 +141,8 @@ theorem specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf :
     A.specialIsometryGroup (starRingEnd R) =
       (unitaryGroupOf A).comap SpecialLinearGroup.toGL :=
   Subgroup.ext fun g => by
-    have h : ((g : Matrix n n R).map (starRingEnd R))ᵀ = star (g : Matrix n n R) := by
-      ext; simp [starRingEnd_apply]
     rw [mem_specialIsometryGroup_iff, Subgroup.mem_comap, mem_unitaryGroupOf_iff,
-      SpecialLinearGroup.coe_GL_coe_matrix, h]
+      SpecialLinearGroup.coe_GL_coe_matrix, transpose_map_starRingEnd, ← star_eq_conjTranspose]
 
 /-- For invertible `A`, membership in `unitaryGroupOf A` is equivalent to the equation
 `g * A⁻¹ * star g = A⁻¹`. -/
