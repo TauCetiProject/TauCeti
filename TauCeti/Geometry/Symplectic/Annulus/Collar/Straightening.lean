@@ -16,10 +16,11 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.Normed.Operator.Prod
-import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Topology.UnitInterval
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Straightening a map of the strip near a boundary line
@@ -161,8 +162,7 @@ theorem mapsTo_stripCollarStraightening (hh : MapsTo h (univ ×ˢ Icc 0 1) (univ
     (hχ : ∀ u, χ u ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
     MapsTo (stripCollarStraightening h χ ε t) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) :=
   fun _ hp ↦ (convex_univ.prod (convex_Icc 0 1)).add_smul_sub_mem hp (hh hp)
-    ⟨sub_nonneg.2 ((mul_le_of_le_one_left (hχ _).1 ht.2).trans (hχ _).2),
-      sub_le_self _ (mul_nonneg ht.1 (hχ _).1)⟩
+    (Icc.one_sub_mem (unitInterval.mul_mem ht (hχ _)))
 
 /-! ### Estimates near the line -/
 
@@ -177,20 +177,17 @@ private theorem exists_pos_forall_norm_fderiv_sub_id_lt (hh : ContDiff ℝ 1 h)
   set U := {p : ℝ × ℝ | ‖fderiv ℝ h p - ContinuousLinearMap.id ℝ (ℝ × ℝ)‖ < κ}
   have hU : IsOpen U := isOpen_lt
     ((hh.continuous_fderiv one_ne_zero).sub continuous_const).norm continuous_const
-  obtain ⟨η, hη, hsub⟩ := (isCompact_Icc.prod isCompact_singleton :
-      IsCompact (Icc (0 : ℝ) 1 ×ˢ {(0 : ℝ)})).exists_thickening_subset_open hU
+  have hUper (x y : ℝ) (k : ℤ) (hxy : (x, y) ∈ U) : (x + k, y) ∈ U := by
+    have hk := periodic_fderiv_of_apply_add_eq_add (𝕜 := ℝ) (fun q ↦ hper q k) (x, y)
+    simp only [Prod.mk_add_mk, add_zero] at hk
+    simpa [U, hk] using hxy
+  obtain ⟨η, hη, hsub⟩ := isCompact_singleton.exists_univ_prod_thickening_subset_open hU hUper
     fun p hp ↦ by
       obtain ⟨x, y⟩ := p
       obtain rfl : y = 0 := hp.2
       simpa [U, hedge] using hκ
-  refine ⟨η, hη, fun p hp ↦ ?_⟩
-  -- Translate `p` by an integer so that its first coordinate lies in `[0, 1]`.
-  have hdist : dist (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)) ((p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1, 0) < η := by
-    simpa [Prod.dist_eq, hη] using hp
-  have hv : ‖fderiv ℝ h (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)) - ContinuousLinearMap.id ℝ (ℝ × ℝ)‖ < κ :=
-    hsub <| Metric.mem_thickening_iff.2
-      ⟨((p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1, 0), ⟨fst_add_neg_floor_mem p, mem_singleton 0⟩, hdist⟩
-  rwa [periodic_fderiv_of_apply_add_eq_add (fun q ↦ hper q (-⌊p.1⌋)) p] at hv
+  refine ⟨η, hη, fun p hp ↦ hsub ⟨mem_univ _, ?_⟩⟩
+  rwa [Metric.thickening_singleton, Metric.mem_ball, Real.dist_0_eq_abs]
 
 /-- A map fixing the line `y = 0` pointwise, whose derivative is within `κ` of the identity on a
 band `|y| < η`, moves each point `p` of the band by at most `κ |p.2|`. -/
@@ -232,20 +229,10 @@ private theorem exists_hasFDerivAt_sub_id (hh : ContDiff ℝ 1 h) (hχ : ContDif
   · have hs : ‖snd‖ ≤ 1 := ContinuousLinearMap.norm_snd_le ℝ ℝ ℝ
     refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
     · simp [norm_smul]
-    · rw [ContinuousLinearMap.norm_smulRight_apply, norm_neg, norm_smul, norm_smul, norm_smul]
-      simp only [Real.norm_eq_abs, abs_inv]
-      calc |t| * (|deriv χ (p.2 / ε)| * (|ε|⁻¹ * ‖snd‖)) * ‖h p - p‖
-          ≤ |t| * (|deriv χ (p.2 / ε)| * (|ε|⁻¹ * 1)) * ‖h p - p‖ := by gcongr
-        _ = |t| * |deriv χ (p.2 / ε)| * |ε|⁻¹ * ‖h p - p‖ := by ring
-
-/-- For `t ∈ [0, 1]` and a profile value in `[0, 1]`, the weight `1 - t χ` of `h - id` lies in
-`[0, 1]`. -/
-private theorem abs_one_sub_mul_le_one {u : ℝ} (hu : u ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
-    |1 - t * u| ≤ 1 := by
-  have h₀ := mul_nonneg ht.1 hu.1
-  have h₁ := (mul_le_of_le_one_left hu.1 ht.2).trans hu.2
-  rw [abs_le]
-  constructor <;> linarith
+    · simp only [ContinuousLinearMap.norm_smulRight_apply, norm_neg, norm_smul,
+        Real.norm_eq_abs, abs_inv, mul_assoc, Pi.sub_apply, id_eq]
+      gcongr
+      exact mul_le_of_le_one_left (norm_nonneg _) hs
 
 /-- On a band `|y| < η` on which the derivative of `h` is within `κ` of the identity, the
 derivative of `H_t - id` is at most `κ (1 + B)`, where `B` bounds `|u| |χ'(u)|`. The factor `1 / ε`
@@ -271,7 +258,8 @@ private theorem exists_hasFDerivAt_sub_id_norm_le (hh : ContDiff ℝ 1 h) (hχ :
         |t| * |deriv χ (p.2 / ε)| * |ε|⁻¹ * ‖h p - p‖
       ≤ 1 * κ + 1 * |deriv χ (p.2 / ε)| * |ε|⁻¹ * (κ * |p.2|) := by
         gcongr
-        · exact abs_one_sub_mul_le_one (hχ01 _) ht
+        · have hw := Icc.one_sub_mem (unitInterval.mul_mem ht (hχ01 (p.2 / ε)))
+          exact (abs_of_nonneg hw.1).trans_le hw.2
         · exact hκ p hp
     _ = κ + κ * (|deriv χ (p.2 / ε)| * |ε|⁻¹ * |p.2|) := by ring
     _ ≤ κ * (1 + B) := by nlinarith
@@ -337,7 +325,8 @@ private theorem abs_snd_stripCollarStraightening_le (hh : ContDiff ℝ 1 h)
     rw [Prod.smul_snd, smul_eq_mul, abs_mul]
     calc |1 - t * χ (p.2 / ε)| * |(h p - p).2| ≤ 1 * (κ * |p.2|) := by
           gcongr
-          · exact abs_one_sub_mul_le_one (hχ01 _) ht
+          · have hw := Icc.one_sub_mem (unitInterval.mul_mem ht (hχ01 (p.2 / ε)))
+            exact (abs_of_nonneg hw.1).trans_le hw.2
           · exact (norm_snd_le (h p - p)).trans hdisp
       _ ≤ 1 * (1 * |p.2|) := by gcongr
       _ = |p.2| := by ring

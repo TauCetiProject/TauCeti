@@ -56,7 +56,9 @@ On the real line, the terms of an injective two-sided sequence tending to `-∞`
 ends have pairwise disjoint closed intervals around them forming a locally finite family
 (`TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`). An open subset of `X × ℝ` containing
 a vertical line contains a tube around it, whose radius is locally bounded below by positive
-constants (`IsOpen.exists_tube_subset`).
+constants (`IsOpen.exists_tube_subset`). An open subset of `ℝ × X` invariant under the integer
+translations of the first coordinate and containing `ℝ × K`, for a compact `K`, contains a band
+`ℝ × thickening δ K` (`IsCompact.exists_univ_prod_thickening_subset_open`).
 
 For an open set `s` with nonempty complement and `δ → 0`, the sets `{y | δ < infDist y sᶜ}`
 exhaust `s` from the inside, eventually containing a ball around each point of `s`
@@ -390,6 +392,26 @@ theorem IsOpen.exists_tube_subset {X : Type*} [PseudoMetricSpace X] {c : X}
       (Int.lt_floor_add_one t).le⟩, ?_⟩
     rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
     exact hut.trans_lt (half_lt_self (hδ _))
+
+/-- **Thickening a periodic band.** If an open subset `W` of `ℝ × X` is invariant under the
+translations `(x, y) ↦ (x + k, y)`, `k ∈ ℤ`, and contains `ℝ × K` for a compact set `K`, then it
+contains `ℝ × thickening δ K` for some `δ > 0`. This is the periodic counterpart, for the
+noncompact band `ℝ × K`, of `IsCompact.exists_thickening_subset_open`. -/
+theorem IsCompact.exists_univ_prod_thickening_subset_open {X : Type*} [PseudoMetricSpace X]
+    {K : Set X} (hK : IsCompact K) {W : Set (ℝ × X)} (hW : IsOpen W)
+    (hper : ∀ (x : ℝ) (y : X) (k : ℤ), (x, y) ∈ W → (x + k, y) ∈ W) (hKW : univ ×ˢ K ⊆ W) :
+    ∃ δ > 0, univ ×ˢ thickening δ K ⊆ W := by
+  -- A thickening of the compact piece `[0, 1] × K` lies in `W`; translate it by integers.
+  obtain ⟨δ, hδ, hsub⟩ := (isCompact_Icc.prod hK : IsCompact (Icc (0 : ℝ) 1 ×ˢ K))
+    |>.exists_thickening_subset_open hW fun p hp ↦ hKW ⟨mem_univ _, hp.2⟩
+  refine ⟨δ, hδ, ?_⟩
+  rintro ⟨x, y⟩ ⟨-, hy⟩
+  obtain ⟨z, hz, hyz⟩ := mem_thickening_iff.1 hy
+  have h : (Int.fract x, y) ∈ W := hsub <| mem_thickening_iff.2
+    ⟨(Int.fract x, z), ⟨⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩, hz⟩, by
+      rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
+      exact hyz⟩
+  simpa using hper _ _ ⌊x⌋ h
 
 /-- **Interior exhaustion by the distance to the complement.** If `δ` tends to `0`, then every
 point `z` of an open set `s` with nonempty complement has a closed ball around it which eventually
