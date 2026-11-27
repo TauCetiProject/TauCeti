@@ -16,7 +16,10 @@ The relative slice map of an inner fibration along a monomorphism is a right fib
 coslice map is a left fibration (`SSet.coslice.leftFibration_restrictionMap`). Along a left
 anodyne extension the relative slice map is a trivial fibration (`SSet.slice.rlp_restrictionMap`),
 and along a right anodyne extension so is the relative coslice map
-(`SSet.coslice.rlp_restrictionMap`).
+(`SSet.coslice.rlp_restrictionMap`). For a right fibration `p : X ⟶ S` and a vertex `x` of `X`, the
+map of slices `X_{/x} ⟶ S_{/p x}` is a trivial fibration (`SSet.slice.rlp_map_of_rightFibration`),
+since `∂Δ[n] ⋆ Δ[0] ⟶ Δ[n] ⋆ Δ[0]` is the horn `Λ[n + 1, n + 1]`; dually, for a left fibration,
+so is the map of coslices `X_{x/} ⟶ S_{p x/}` (`SSet.coslice.rlp_map_of_leftFibration`).
 
 Through the universal properties of slices and coslices, lifting problems, ranging over all
 diagrams, correspond to extension problems along the pushout-join of `j : A ⟶ B` and
@@ -130,7 +133,90 @@ lemma rlp_restrictionMap (i : L ⟶ K) (hi : leftAnodyneExtensions i) (p : X ⟶
 
 end slice
 
+/-! ### Slices of right fibrations over a vertex -/
+
+namespace join
+
+variable (n : ℕ)
+
+/-- **The inclusion `∂Δ[n] ⋆ Δ[0] ⟶ Δ[n] ⋆ Δ[0]` is right anodyne**: under
+`Δ[n] ⋆ Δ[0] ≅ Δ[n + 0 + 1]`, it is the inclusion of the horn `Λ[n + 0 + 1, n + 1]` opposite to the
+last vertex (`SSet.join.preimage_range_map_boundary_ι_id`). -/
+lemma rightAnodyneExtensions_map_boundary_ι_id :
+    rightAnodyneExtensions (map ∂Δ[n].ι (𝟙 (Δ[0] : SSet.{u}))) := by
+  have h : rightAnodyneExtensions (Subcomplex.range (map ∂Δ[n].ι (𝟙 (Δ[0] : SSet.{u})))).ι :=
+    (Subcomplex.morphismProperty_ι_iff_of_preimage_eq _ (stdSimplexIso n 0)
+      (preimage_range_map_boundary_ι_id n)).2 (rightAnodyneExtensions.horn_ι (Fin.last_pos))
+  rw [← Subcomplex.toRange_ι (map ∂Δ[n].ι (𝟙 _))]
+  exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _) h
+
+/-- **The inclusion `Δ[0] ⋆ ∂Δ[n] ⟶ Δ[0] ⋆ Δ[n]` is left anodyne**: under
+`Δ[0] ⋆ Δ[n] ≅ Δ[0 + n + 1]`, it is the inclusion of the horn `Λ[0 + n + 1, 0]` opposite to the
+initial vertex (`SSet.join.preimage_range_map_id_boundary_ι`). -/
+lemma leftAnodyneExtensions_map_id_boundary_ι :
+    leftAnodyneExtensions (map (𝟙 (Δ[0] : SSet.{u})) ∂Δ[n].ι) := by
+  have h : leftAnodyneExtensions (Subcomplex.range (map (𝟙 (Δ[0] : SSet.{u})) ∂Δ[n].ι)).ι :=
+    (Subcomplex.morphismProperty_ι_iff_of_preimage_eq _ (stdSimplexIso 0 n)
+      (preimage_range_map_id_boundary_ι n)).2
+        (leftAnodyneExtensions.horn_ι (Fin.lt_def.2 (by simp)))
+  rw [← Subcomplex.toRange_ι (map (𝟙 _) ∂Δ[n].ι)]
+  exact MorphismProperty.comp_mem _ _ _ (MorphismProperty.of_isIso _ _) h
+
+end join
+
+namespace slice
+
+/-- For a right fibration `p : X ⟶ S` and a vertex `x : Δ[0] ⟶ X`, **the map of slices
+`X_{/x} ⟶ S_{/x ≫ p}` is a trivial fibration**: it has the right lifting property with respect to
+every monomorphism. Through the universal property of the slice, a lifting problem against
+`∂Δ[n] ⟶ Δ[n]` is one against `∂Δ[n] ⋆ Δ[0] ⟶ Δ[n] ⋆ Δ[0]`, which is right anodyne
+(`SSet.join.rightAnodyneExtensions_map_boundary_ι_id`). -/
+lemma rlp_map_of_rightFibration (p : X ⟶ S) [RightFibration p] (x : Δ[0] ⟶ X) {y : Δ[0] ⟶ S}
+    (h : 𝟙 Δ[0] ≫ x ≫ p = y) : (monomorphisms SSet.{u}).rlp (map (𝟙 Δ[0]) p h) := by
+  rw [rlp_monomorphisms]
+  rintro _ _ _ ⟨n⟩
+  refine ⟨fun {a b} sq ↦ ?_⟩
+  -- The square is a map `∂Δ[n] ⋆ Δ[0] ⟶ X` over the restriction of a map `Δ[n] ⋆ Δ[0] ⟶ S`.
+  have hw : (homEquiv a).val ≫ p = join.map ∂Δ[n].ι (𝟙 _) ≫ (homEquiv b).val := by
+    have := congrArg (fun F ↦ (homEquiv F).val) sq.w
+    rwa [homEquiv_comp_map_coe, join.map_id, Category.id_comp, homEquiv_comp_coe] at this
+  have := (join.rightAnodyneExtensions_map_boundary_ι_id n).hasLiftingProperty p
+  have sq' : CommSq (homEquiv a).val (join.map ∂Δ[n].ι (𝟙 _)) p (homEquiv b).val := ⟨hw⟩
+  refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext ?_, hom_ext ?_⟩⟩⟩
+  · calc join.inr _ _ ≫ sq'.lift = join.inr _ _ ≫ join.map ∂Δ[n].ι (𝟙 _) ≫ sq'.lift := by
+          rw [join.inr_map_assoc, Category.id_comp]
+      _ = x := by rw [sq'.fac_left, (homEquiv a).property]
+  · rw [homEquiv_comp_coe, Equiv.apply_symm_apply, sq'.fac_left]
+  · rw [homEquiv_comp_map_coe, Equiv.apply_symm_apply, join.map_id, Category.id_comp,
+      sq'.fac_right]
+
+end slice
+
 namespace coslice
+
+/-- For a left fibration `p : X ⟶ S` and a vertex `x : Δ[0] ⟶ X`, **the map of coslices
+`X_{x/} ⟶ S_{x ≫ p/}` is a trivial fibration**: it has the right lifting property with respect to
+every monomorphism. Through the universal property of the coslice, a lifting problem against
+`∂Δ[n] ⟶ Δ[n]` is one against `Δ[0] ⋆ ∂Δ[n] ⟶ Δ[0] ⋆ Δ[n]`, which is left anodyne
+(`SSet.join.leftAnodyneExtensions_map_id_boundary_ι`). -/
+lemma rlp_map_of_leftFibration (p : X ⟶ S) [LeftFibration p] (x : Δ[0] ⟶ X) {y : Δ[0] ⟶ S}
+    (h : 𝟙 Δ[0] ≫ x ≫ p = y) : (monomorphisms SSet.{u}).rlp (map (𝟙 Δ[0]) p h) := by
+  rw [rlp_monomorphisms]
+  rintro _ _ _ ⟨n⟩
+  refine ⟨fun {a b} sq ↦ ?_⟩
+  -- The square is a map `Δ[0] ⋆ ∂Δ[n] ⟶ X` over the restriction of a map `Δ[0] ⋆ Δ[n] ⟶ S`.
+  have hw : (homEquiv a).val ≫ p = join.map (𝟙 _) ∂Δ[n].ι ≫ (homEquiv b).val := by
+    have := congrArg (fun F ↦ (homEquiv F).val) sq.w
+    rwa [homEquiv_comp_map_coe, join.map_id, Category.id_comp, homEquiv_comp_coe] at this
+  have := (join.leftAnodyneExtensions_map_id_boundary_ι n).hasLiftingProperty p
+  have sq' : CommSq (homEquiv a).val (join.map (𝟙 _) ∂Δ[n].ι) p (homEquiv b).val := ⟨hw⟩
+  refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext ?_, hom_ext ?_⟩⟩⟩
+  · calc join.inl _ _ ≫ sq'.lift = join.inl _ _ ≫ join.map (𝟙 _) ∂Δ[n].ι ≫ sq'.lift := by
+          rw [join.inl_map_assoc, Category.id_comp]
+      _ = x := by rw [sq'.fac_left, (homEquiv a).property]
+  · rw [homEquiv_comp_coe, Equiv.apply_symm_apply, sq'.fac_left]
+  · rw [homEquiv_comp_map_coe, Equiv.apply_symm_apply, join.map_id, Category.id_comp,
+      sq'.fac_right]
 
 /-- The relative coslice map of an inner fibration along a right anodyne extension is a trivial
 fibration. -/

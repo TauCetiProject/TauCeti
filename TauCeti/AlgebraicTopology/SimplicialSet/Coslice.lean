@@ -291,6 +291,14 @@ lemma homEquiv_comp_map_coe (F : X ⟶ coslice p) (i : L ⟶ K) (g : C ⟶ D) (h
     ← join.map_comp_assoc, ← join.map_comp_assoc]
   simp
 
+/-- The map of coslices induced by `i` and `g` sends a simplex `σ : K ⋆ Δ[n] ⟶ C` to its
+restriction along `i ⋆ Δ[n]`, composed with `g`. -/
+@[simp]
+lemma objEquiv_map_app_coe {n : SimplexCategory} (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q)
+    (σ : (coslice p).obj (op n)) :
+    (objEquiv ((map i g h).app _ σ)).val = join.map i (𝟙 _) ≫ (objEquiv σ).val ≫ g := by
+  rw [objEquiv_apply, ← yonedaEquiv_symm_comp, homEquiv_comp_map_coe, ← objEquiv_apply]
+
 /-- The map of coslices induced by identities is the identity. -/
 @[simp]
 lemma map_id (h : 𝟙 K ≫ p ≫ 𝟙 C = p) : map (𝟙 K) (𝟙 C) h = 𝟙 (coslice p) :=
