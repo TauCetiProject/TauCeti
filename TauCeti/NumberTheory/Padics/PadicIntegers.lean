@@ -534,12 +534,7 @@ instance padicInt (p : ℕ) [Fact p.Prime] : IsProfiniteRing ℤ_[p] := by
     exact hy.le
   refine of_compactSpace (fun M hM ↦ ?_) fun z hz ↦ ?_
   · obtain ⟨n, u, hu, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hM p (Fact.out : p.Prime).ne_one
-    have h_unit : IsUnit (u : ℤ_[p]) := by
-      have h_lt : ¬ ‖((u : ℤ) : ℤ_[p])‖ < 1 := by
-        rw [PadicInt.norm_int_lt_one_iff_dvd]
-        exact_mod_cast hu
-      rw [PadicInt.isUnit_iff]
-      simpa using le_antisymm (PadicInt.norm_le_one _) (not_lt.mp h_lt)
+    have h_unit : IsUnit (u : ℤ_[p]) := PadicInt.isUnit_natCast_iff.mpr hu
     refine Filter.mem_of_superset (h_span n) fun y hy ↦ ?_
     rw [SetLike.mem_coe, Ideal.mem_span_singleton] at hy ⊢
     rw [Nat.cast_mul, Nat.cast_pow]

@@ -24,6 +24,12 @@ the inverse limit of the finite rings `R ⧸ M R` by a limit operation on arbitr
 is how it is used: a statement proved over the finite quotients `R ⧸ N! R` passes to `R` by taking
 the ultralimit of lifts of solutions, and the solutions over the quotients need not be compatible.
 
+Equivalently, the quotients `R ⧸ M R`, `M ≠ 0`, are finite and `R` is their inverse limit, that is,
+`R` is complete and separated for the topology defined by the ideals `M R` (the `ℤ̂`-adic
+topology). This is stronger than being a compact, Hausdorff, totally disconnected ring: the ring
+`𝔽_p[[t]]` of power series is profinite in that topological sense but is not an instance, since
+`p = 0` in it, so the sequence `t ^ N` has no ultralimit.
+
 The main results are:
 
 * `TauCeti.isProfiniteRing_iff`: `R` is profinite if and only if every sequence has an ultralimit
@@ -41,6 +47,16 @@ The main results are:
   `M ≠ 0`, are neighbourhoods of `0` and have intersection `0` is profinite. Finite rings and the
   `p`-adic integers `ℤ_[p]` are profinite, the latter in
   `TauCeti.NumberTheory.Padics.PadicIntegers`.
+
+## References
+
+* The definition of `IsProfiniteRing` follows `New.IsProfiniteRing` in L. Alpöge and L. Sernau,
+  Lean formalization of the Riemann Hypothesis for Dirichlet L-functions
+  (`https://github.com/lsernau/grh-lean`, commit `72fead1`),
+  `grh/src/Lib/GaloisRep/BaseChange/Defs.lean`. The ultralimit and the retraction
+  `ultralimRingHom` from the product of the quotients `R ⧸ N! R` follow that formalization's
+  reduction to finite quotients, `New.IsProfiniteRing.exists_algHom_semiconj` in
+  `grh/src/Lib/GaloisRep/Hilbert90/TameActions.lean`.
 -/
 
 public section
@@ -51,7 +67,11 @@ namespace TauCeti
 
 /-- A commutative ring `R` is **profinite** if every sequence `x : ℕ → R` has exactly one
 ultralimit for divisibility by nonzero integers along `Filter.hyperfilter ℕ`: exactly one `L : R`
-such that, for every nonzero `M : ℕ`, `(M : R) ∣ x N - L` for `hyperfilter`-almost all `N`. -/
+such that, for every nonzero `M : ℕ`, `(M : R) ∣ x N - L` for `hyperfilter`-almost all `N`.
+
+Equivalently, the quotients `R ⧸ M R`, `M ≠ 0`, are finite and `R` is their inverse limit
+(complete and separated for the `ℤ̂`-adic topology). This is stronger than being a compact,
+Hausdorff, totally disconnected ring: `𝔽_p[[t]]` is not an instance, since `p = 0` in it. -/
 class IsProfiniteRing (R : Type*) [CommRing R] : Prop where
   /-- Every sequence has exactly one ultralimit. -/
   existsUnique_ultralim (x : ℕ → R) :
