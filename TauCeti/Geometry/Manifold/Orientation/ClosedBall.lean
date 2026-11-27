@@ -57,6 +57,18 @@ theorem map_orientationAt_closedBall (o : _root_.Orientation ℝ V (Fin n))
   exact (map_orientationAt_pullback _ _ _ _ x _
     (coe_subtypeValClosedBallTangentEquiv (n := n) x)).trans (orientationAt_model o _ (x : V))
 
+/-- The inclusion of the closed unit ball preserves its induced orientation at every point. -/
+theorem _root_.Orientation.isOrientationPreservingAt_subtypeVal_closedBall
+    (o : _root_.Orientation ℝ V (Fin n)) (x : Metric.closedBall (0 : V) 1) :
+    have : FiniteDimensional ℝ V :=
+      Module.finite_of_finrank_pos ((Fact.out : Module.finrank ℝ V = n) ▸ Nat.pos_of_neZero n)
+    IsOrientationPreservingAt (closedBall o)
+      (model (I := 𝓘(ℝ, V)) o (by simp [(Fact.out : Module.finrank ℝ V = n)])) Subtype.val x := by
+  have : FiniteDimensional ℝ V :=
+    Module.finite_of_finrank_pos ((Fact.out : Module.finrank ℝ V = n) ▸ Nat.pos_of_neZero n)
+  rw [closedBall]
+  exact isOrientationPreservingAt_pullback _ _ _ _ x
+
 end TauCeti.Manifold.Orientation
 
 namespace TauCeti

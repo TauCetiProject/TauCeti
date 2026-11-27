@@ -58,19 +58,12 @@ theorem _root_.Orientation.isOrientationPreservingAt_sphereDiffeomorphBoundaryCl
   have ha : ⇑a = Fin.cons (x : E) (fun i ↦
       mvfderiv (𝓡 n) (Subtype.val : sphere (0 : E) 1 → E) x (b i)) :=
     coe_basisOfLinearIndependentOfCardEqFinrank _ _
-  have hball : Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.closedBall o)
-      (Manifold.Orientation.model (I := 𝓘(ℝ, E)) o hdim) Subtype.val (e x).val := by
-    apply (Manifold.Orientation.isOrientationPreservingAt_iff ..).2
-    refine ⟨subtypeValClosedBallTangentEquiv (n := n + 1) (e x).val, ?_, ?_⟩
-    · -- The target tangent space is identified with the ambient normed space.
-      exact subtypeValClosedBallTangentEquiv_toContinuousLinearMap (n := n + 1) (e x).val
-    · exact (Manifold.Orientation.map_orientationAt_closedBall o _).trans
-        (Manifold.Orientation.orientationAt_model o hdim _).symm
   rw [o.orientation_eq_orientationAt_sphereOrientation_iff, ← ha,
     Orientation.volumeForm_apply_pos_iff]
   symm
   -- The target tangent space is definitionally `E`, so `a` is a basis of that space.
-  refine (boundaryOrientation_spec_of_isOrientationPreservingAt (e x) hball
+  refine (boundaryOrientation_spec_of_isOrientationPreservingAt (e x)
+    (o.isOrientationPreservingAt_subtypeVal_closedBall (e x).val)
     (isOutwardPointing_closedBall_radial _ (e x).property) c a ?_).trans ?_
   · simp only [mvfderiv_apply_eq_mfderiv_apply] at ha
     refine ha.trans ?_
