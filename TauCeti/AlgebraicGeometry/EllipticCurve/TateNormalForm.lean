@@ -731,6 +731,38 @@ theorem toUniversalTate_ulift_a₃ :
   ext
   simp [baseChange]
 
+/-- The classifying homomorphism of an elliptic Tate normal form with `a = 1`, on the
+universe-lifted universal coefficient ring `ULift.{u} ℤ[B, (B(1 - 16B))⁻¹]`. -/
+noncomputable def liftULift {R : Type*} [CommRing R] {b : R} (h : IsUnit (tateNormalForm 1 b).Δ) :
+    ULift.{u} Ring →+* R :=
+  (lift h).comp ULift.ringEquiv.toRingHom
+
+/-- The lifted classifying homomorphism is the classifying homomorphism on the underlying element of
+`ℤ[B, (B(1 - 16B))⁻¹]`. -/
+@[simp]
+theorem liftULift_apply {R : Type*} [CommRing R] {b : R} (h : IsUnit (tateNormalForm 1 b).Δ)
+    (x : ULift.{u} Ring) : liftULift h x = lift h x.down :=
+  (rfl)
+
+/-- Two ring homomorphisms out of `ULift.{u} ℤ[B, (B(1 - 16B))⁻¹]` are equal as soon as they agree
+on `.up param`. -/
+theorem ringHom_ext_uLift {S : Type*} [Semiring S] {f g : ULift.{u} Ring →+* S}
+    (h : f (.up param) = g (.up param)) : f = g := by
+  have h' : f.comp (ULift.ringEquiv.symm : Ring ≃+* ULift.{u} Ring).toRingHom =
+      g.comp (ULift.ringEquiv.symm : Ring ≃+* ULift.{u} Ring).toRingHom := by
+    ext
+    exact h
+  ext x
+  exact RingHom.congr_fun h' x.down
+
+/-- Composing `liftULift h` with `toUniversalTate.ulift` recovers `UniversalTate.liftULift h`. -/
+@[simp]
+theorem liftULift_comp_toUniversalTate_ulift {R : Type*} [CommRing R] {b : R}
+    (h : IsUnit (tateNormalForm 1 b).Δ) :
+    (liftULift.{u} h).comp toUniversalTate.ulift = UniversalTate.liftULift h := by
+  ext x
+  exact RingHom.congr_fun (lift_comp_toUniversalTate h) x.down
+
 end UniversalGammaOneFour
 
 end WeierstrassCurve

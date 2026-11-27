@@ -501,7 +501,6 @@ instance mono_yOneι_base : Mono (yOneι B N).base := by
 
 /-- The structure morphism of `Y₁(N)` is its inclusion in `B × Spec ℤ[A, B][Δ⁻¹]` followed by the
 first projection. -/
-@[simp]
 theorem yOne_structureMap : (yOne B N).structureMap = (yOneι B N).base ≫ prod.fst := by
   rw [yOneι_base]
   exact (baseChangeFunctor_obj_structureMap (universalTate B) _).trans
@@ -952,7 +951,7 @@ theorem yOneBaseIsoProd_hom_fst :
 
 /-- Under `(yOneBaseIsoProd B N).inv`, the structure morphism of `yOne B N` is the first
 projection. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem yOneBaseIsoProd_inv_structureMap :
     (yOneBaseIsoProd B N).inv ≫ (yOne B N).structureMap = prod.fst := by
   rw [← yOneBaseIsoProd_hom_fst, Iso.inv_hom_id_assoc]
@@ -988,7 +987,7 @@ theorem yOneBaseMap_comp {B'' B' B : Scheme.{u}} (f : B'' ⟶ B') (g : B' ⟶ B)
   simp [yOneBaseMap]
 
 /-- `yOneBaseMap g N` lies over `g : B' ⟶ B`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem yOneBaseMap_structureMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
     yOneBaseMap g N ≫ (yOne B N).structureMap = (yOne B' N).structureMap ≫ g := by
   rw [yOneBaseMap, Category.assoc, Category.assoc, yOneBaseIsoProd_inv_structureMap, prod.map_fst,
