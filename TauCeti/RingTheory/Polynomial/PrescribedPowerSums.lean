@@ -40,7 +40,8 @@ Each `b_k` is a polynomial in `M₁, …, M_k`, so it depends continuously on `M
 ## Main results
 
 * `TauCeti.mul_newtonCoeff_eq_sum`: the defining recursion, in the form of
-  `Multiset.mul_esymm_eq_sum`.
+  `Multiset.mul_esymm_eq_sum`; `TauCeti.newtonCoeff_one` and `TauCeti.two_mul_newtonCoeff_two`
+  are its first two steps.
 * `TauCeti.newtonCoeff_sum_map_pow`: the Newton coefficients of the power sums of a multiset are
   its elementary symmetric functions.
 * `TauCeti.continuous_newtonCoeff`: `b_k` depends continuously on `M`.
@@ -93,6 +94,13 @@ theorem newtonCoeff_of_ne_zero (M : ℕ → K) {k : ℕ} (hk : k ≠ 0) :
       ∑ a ∈ antidiagonal k with a.1 < k, (-1) ^ a.1 * newtonCoeff M a.1 * M a.2) := by
   rw [newtonCoeff, ite_eq_right_of_eq_false _ _ (eq_false hk),
     sum_attach _ fun a : ℕ × ℕ => (-1) ^ a.1 * newtonCoeff M a.1 * M a.2]
+
+/-- The first Newton coefficient is the first power sum: `b₁ = M₁`. -/
+@[simp]
+theorem newtonCoeff_one (M : ℕ → K) : newtonCoeff M 1 = M 1 := by
+  rw [newtonCoeff_of_ne_zero M one_ne_zero,
+    show ({a ∈ antidiagonal 1 | a.1 < 1} : Finset (ℕ × ℕ)) = {(0, 1)} by decide]
+  simp
 
 /-- Each Newton coefficient is a continuous function of the sequence, for the product topology. -/
 theorem continuous_newtonCoeff [TopologicalSpace K] [IsTopologicalRing K] (k : ℕ) :
@@ -148,6 +156,15 @@ theorem mul_newtonCoeff_eq_sum (M : ℕ → K) (k : ℕ) :
   rcases eq_or_ne k 0 with rfl | hk
   · simp
   rw [newtonCoeff_of_ne_zero M hk, ← mul_assoc, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hk), one_mul]
+
+/-- Newton's recursion at `k = 2`: `2 b₂ = b₁ M₁ - M₂`. -/
+theorem two_mul_newtonCoeff_two (M : ℕ → K) :
+    2 * newtonCoeff M 2 = newtonCoeff M 1 * M 1 - M 2 := by
+  have h := mul_newtonCoeff_eq_sum M 2
+  rw [show ({a ∈ antidiagonal 2 | a.1 < 2} : Finset (ℕ × ℕ)) = {(0, 2), (1, 1)} by decide] at h
+  norm_num at h
+  rw [h, newtonCoeff_one]
+  ring
 
 /-- The Newton coefficients of the power sums of a multiset are its elementary symmetric
 functions. -/
