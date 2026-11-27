@@ -63,6 +63,8 @@ transitivity.
   ramification index and inertia degree of the upstairs ideal.
 * `Ideal.natCard_smul_eq_eq_ramificationIdx_mul_inertiaDeg`: for primes `P` and `Q` over the same
   base prime, the number of `g ∈ G` with `g • P = Q` is `P.ramificationIdx R * P.inertiaDeg R`.
+* `Ideal.inertiaDeg_eq_natCard_iff_forall_smul_eq`: a prime unramified over the base has inertia
+  degree `|G|` exactly when `G` fixes it.
 * `Ideal.card_inertia_eq_ramificationIdx`: the un-`In` form of the inertia count.
 * `Ideal.isUnramifiedAt_pointwise_smul_iff`: unramifiedness is invariant under translation by
   an algebra automorphism.
@@ -213,6 +215,17 @@ theorem natCard_smul_eq_eq_ramificationIdx_mul_inertiaDeg (P Q : Ideal S) [P.IsP
     Nat.card_congr ((Equiv.mulLeft σ⁻¹).subtypeEquiv fun g ↦ by
       rw [mem_stabilizer_iff, Equiv.coe_mulLeft, mul_smul, inv_smul_eq_iff])
   rw [heq, card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (R := R) (G := G) P]
+
+/-- **Inertia degree `|G|` means `G` fixes the prime.** A prime `P` of `S` unramified over `R` has
+inertia degree `|G|` exactly when every element of `G` fixes `P`: its decomposition group then has
+order its inertia degree. -/
+theorem inertiaDeg_eq_natCard_iff_forall_smul_eq (P : Ideal S) [P.IsPrime]
+    (he : P.ramificationIdx R = 1) : P.inertiaDeg R = Nat.card G ↔ ∀ g : G, g • P = P := by
+  have := IsGaloisGroup.finite G R S
+  have h := card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (R := R) (G := G) P
+  rw [he, one_mul] at h
+  rw [← h, Subgroup.card_eq_iff_eq_top, Subgroup.eq_top_iff']
+  simp only [mem_stabilizer_iff]
 
 end DecompositionGroup
 
