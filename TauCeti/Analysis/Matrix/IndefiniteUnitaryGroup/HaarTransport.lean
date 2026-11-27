@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup.Haar
 import Mathlib.MeasureTheory.Group.Measure
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Haar.Matrix.SkewAdjoint
 import Mathlib.RingTheory.Complex
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -213,21 +213,16 @@ theorem cayleyDensity_congrSkew (hA : IsUnit A) (ht : t ≠ 0)
   rw [cayleyDensity_def, cayleyDensity_def, one_sub_smul_inv_mul_congrSkew hA ht hb,
     det_conj' b.isUnit]
 
-/-- A form congruent to a Hermitian form up to a real scalar is Hermitian. -/
-theorem isHermitian_of_congr (hA : A.IsHermitian)
-    (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') :
-    A'.IsHermitian := by
-  rw [← hb, IsHermitian]
-  simp [conjTranspose_mul, hA.eq, Matrix.mul_assoc, star_eq_conjTranspose]
-
 /-- **The group-valued Cayley chart intertwines the congruence with conjugation.** -/
 theorem cayleyChartUnitary_congr (hA : A.IsHermitian) (hA' : IsUnit A) (ht : t ≠ 0)
     (hb : star (b : Matrix n n ℂ) * (t • A) * b = A') (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     cayleyChartUnitary A' (congrSkew b t S) = conjHom hb (cayleyChartUnitary A S) := by
+  have hA'' : A'.IsHermitian :=
+    hb ▸ isHermitian_conjTranspose_mul_mul (b : Matrix n n ℂ) (hA.smul (IsSelfAdjoint.all t))
   by_cases hS : S ∈ cayleyChartSource A
   · apply unitaryGroupOf.ext
     rw [coe_conjHom_apply, coe_cayleyChartUnitary hA hS,
-      coe_cayleyChartUnitary (isHermitian_of_congr hA hb)
+      coe_cayleyChartUnitary hA''
         ((congrSkew_mem_cayleyChartSource_iff hA' ht hb).2 hS), cayleyChart_congr hA' ht hb]
   · rw [cayleyChartUnitary_of_notMem hS, map_one, cayleyChartUnitary_of_notMem
       (mt (congrSkew_mem_cayleyChartSource_iff hA' ht hb).1 hS)]
@@ -258,21 +253,6 @@ end Chart
 
 section Measure
 
-omit [Fintype n] [DecidableEq n] in
-open scoped Matrix.Norms.Frobenius in
-/-- Change of variables along a linear automorphism of the skew-Hermitian matrices, for an
-additive Haar measure of the topology of entries. -/
-private theorem lintegral_comp_linearMap_skewAdjoint [Finite n]
-    (μ : Measure (skewAdjoint.submodule ℝ (Matrix n n ℂ))) [μ.IsAddHaarMeasure]
-    {f : skewAdjoint.submodule ℝ (Matrix n n ℂ) →ₗ[ℝ] skewAdjoint.submodule ℝ (Matrix n n ℂ)}
-    (hf : LinearMap.det f ≠ 0) (g : skewAdjoint.submodule ℝ (Matrix n n ℂ) → ℝ≥0∞) :
-    ∫⁻ S, g (f S) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ S, g S ∂μ := by
-  have := Fintype.ofFinite n
-  have := Matrix.borelSpace_skewAdjoint_frobenius (n := n)
-  have := μ.isAddHaarMeasure_skewAdjoint_frobenius
-  exact lintegral_comp_linearMap μ hf g
-
-
 variable (μ : Measure (skewAdjoint.submodule ℝ (Matrix n n ℂ))) [μ.IsAddHaarMeasure]
   [MeasurableSpace (unitaryGroupOf A)] [BorelSpace (unitaryGroupOf A)]
   [MeasurableSpace (unitaryGroupOf A')] [BorelSpace (unitaryGroupOf A')]
@@ -286,7 +266,8 @@ theorem map_transport_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) (ht : 
     (hab : a * b ∈ unitaryGroupOf A') :
     (cayleyMeasure A μ).map (transport hb hab) =
       ENNReal.ofReal ((‖A.det‖ / ‖A'.det‖) ^ Fintype.card n) • cayleyMeasure A' μ := by
-  have hA'' : A'.IsHermitian := isHermitian_of_congr hA hb
+  have hA'' : A'.IsHermitian :=
+    hb ▸ isHermitian_conjTranspose_mul_mul (b : Matrix n n ℂ) (hA.smul (IsSelfAdjoint.all t))
   have hAd : A.det ≠ 0 := ((isUnit_iff_isUnit_det _).1 hA').ne_zero
   have hA'd : A'.det ≠ 0 := by
     rw [← hb, det_mul, det_mul, det_smul_of_tower]
@@ -309,7 +290,7 @@ theorem map_transport_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) (ht : 
     ext S
     rw [cayleyDensity_congrSkew hA' ht hb, cayleyChartUnitary_congr hA hA' ht hb]
     rfl
-  have hL := lintegral_comp_linearMap_skewAdjoint μ hdet
+  have hL := μ.lintegral_comp_linearMap_skewAdjoint hdet
     fun S ↦ cayleyDensity A' S * F (c * cayleyChartUnitary A' S)
   rw [hG] at hL
   rw [lintegral_map hF hmeas, lintegral_smul_measure,
