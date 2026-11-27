@@ -13,10 +13,10 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 /-!
 # Reduction to the moduli of the one-sided prime sum bound
 
-At each positive multiple `q₀` of `18480`, the designated class `q₀ / 2 - 1` is reduced and
-congruent to `7` modulo `8` by `Nat.div_two_sub_one_modEq_of_mul_dvd`. Dirichlet's theorem gives
-arbitrarily large primes in this class, so the possible parameter moduli are exactly the positive
-multiples of `18480`.
+At each positive multiple `q₀` of `18480`, the designated class `q₀ / 2 - 1` is reduced
+(`coprime_div_two_sub_one_of_dvd`) and congruent to `7` modulo `8` (`div_two_sub_one_modEq_seven`).
+Dirichlet's theorem gives arbitrarily large primes in this class, so the possible parameter moduli
+are exactly the positive multiples of `18480`.
 
 The reduction `forall_zeroFreeRightOf_LFunction_iff_forall_parameters` shows that it is enough
 to establish pointwise nonvanishing off `s = 1` at these moduli, for every open half-plane with
@@ -37,11 +37,8 @@ open DirichletCharacter
 larger than any specified bound. -/
 theorem Parameters.exists_q₀_eq_and_lt_d {q₀ : ℕ} (hq₀ : q₀ ≠ 0) (hq : 18480 ∣ q₀) (B : ℕ) :
     ∃ P : Parameters, P.q₀ = q₀ ∧ B < P.d := by
-  have hcop : (q₀ / 2 - 1).Coprime q₀ :=
-    (Nat.coprime_div_two_sub_one_iff (even_iff_two_dvd.mpr ((by norm_num : 2 ∣ 18480).trans hq))
-      hq₀).mpr ((by norm_num : 4 ∣ 18480).trans hq)
-  obtain ⟨d, hd, hprime, hmod⟩ :=
-    Filter.frequently_atTop'.mp (Nat.frequently_atTop_prime_and_modEq hq₀ hcop) B
+  obtain ⟨d, hd, hprime, hmod⟩ := Filter.frequently_atTop'.mp
+    (Nat.frequently_atTop_prime_and_modEq hq₀ (coprime_div_two_sub_one_of_dvd hq₀ hq)) B
   exact ⟨Parameters.ofModEq hq hprime hmod, Parameters.ofModEq_q₀ hq hprime hmod,
     (Parameters.ofModEq_d hq hprime hmod).symm ▸ hd⟩
 
