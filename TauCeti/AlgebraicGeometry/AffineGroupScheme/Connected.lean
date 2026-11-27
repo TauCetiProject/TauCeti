@@ -131,21 +131,8 @@ theorem geometricallyConnected_hopfSpec_iff_connectedSpace
     (k : Type u) [Field k] (H : CommHopfAlgCat.{u} k) :
     GeometricallyConnected
         (((hopfSpec (CommRingCat.of k)).obj (Opposite.op H)).X.hom) ↔
-      ConnectedSpace (PrimeSpectrum H) := by
-  constructor
-  · intro h
-    exact geometricallyConnectedCommHopfAlgProperty.connectedSpace
-      ((geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec k H).2 h)
-  · intro h
-    have : ConnectedSpace (Spec (CommRingCat.of H) : Scheme) := h
-    rw [hopfSpec_obj_X_hom, MorphismProperty.cancel_left_of_respectsIso
-      (P := @GeometricallyConnected) (eqToHom (hopfSpec_obj_X_left k H))]
-    apply geometricallyConnected_of_section
-      (s := Spec.map (CommRingCat.ofHom (Bialgebra.counitAlgHom k H)))
-    have hs : CommRingCat.ofHom (algebraMap k H) ≫
-        CommRingCat.ofHom (Bialgebra.counitAlgHom k H) = 𝟙 (CommRingCat.of k) := by
-      ext x
-      exact (Bialgebra.counitAlgHom k H).commutes x
-    rw [← Spec.map_comp, hs, Spec.map_id]
+      ConnectedSpace (PrimeSpectrum H) :=
+  (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec k H).symm.trans
+    (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k H)
 
 end TauCeti

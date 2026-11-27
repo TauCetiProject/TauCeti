@@ -29,13 +29,8 @@ H ⊗[k] K → H ⊗[k] Ω
 is injective because `H` is flat over the field `k`. Connectedness of the target therefore
 descends to the source by the idempotent characterization of connected affine spectra.
 
-Over an algebraically closed ground field, ordinary connectedness is already geometric
-connectedness; no finite-type hypothesis is required.
-
 ## Main declarations
 
-* `TauCeti.geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace`: over an algebraically
-  closed field, geometric connectedness is equivalent to ordinary connectedness.
 * `TauCeti.geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClosed`:
   geometric connectedness is equivalent to connectedness after every algebraically closed field
   extension.
@@ -79,18 +74,6 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClo
     have hf : Function.Injective f :=
       Module.Flat.lTensor_preserves_injective_linearMap g.toLinearMap hg
     exact f.toRingHom.connectedSpace_primeSpectrum_of_injective hf
-
-/-- Over an algebraically closed field, a commutative Hopf algebra is geometrically connected
-exactly when its prime spectrum is connected. No finite-type assumption is needed. -/
-theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace
-    (k : Type u) [Field k] [IsAlgClosed k] (H : CommHopfAlgCat.{v} k) :
-    geometricallyConnectedCommHopfAlgProperty k H ↔ ConnectedSpace (PrimeSpectrum H) := by
-  constructor
-  · exact geometricallyConnectedCommHopfAlgProperty.connectedSpace
-  · intro h
-    rw [geometricallyConnectedCommHopfAlgProperty_iff]
-    intro K _ _
-    exact connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed k H K
 
 namespace HopfAlgebra
 

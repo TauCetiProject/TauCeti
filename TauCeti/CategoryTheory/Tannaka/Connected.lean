@@ -94,9 +94,8 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff_forall_not_tensorLE_subquo
     geometricallyConnectedCommHopfAlgProperty K (CommHopfAlgCat.of K B) ↔
       ∀ X : C, ¬ IsSumOfUnits X →
         ¬ (subquotientHull X).TensorLE (subquotientHull X) (subquotientHull X) :=
-  (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec K
-    (CommHopfAlgCat.of K B)).trans
-      (geometricallyConnected_hopfSpec_iff_forall_not_tensorLE_subquotientHull K B E)
+  (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace K (CommHopfAlgCat.of K B)).trans
+    (connectedSpace_primeSpectrum_iff_forall_not_tensorLE_subquotientHull K B E)
 
 /-- Over a perfect field, the hull criterion gives geometric connectedness of the Hopf
 spectrum, using its identity section. -/
@@ -118,8 +117,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_of_forall_not_tensorLE_subquot
     (h : ∀ X : C, ¬ IsSumOfUnits X →
       ¬ (subquotientHull X).TensorLE (subquotientHull X) (subquotientHull X)) :
     geometricallyConnectedCommHopfAlgProperty K (CommHopfAlgCat.of K B) :=
-  (geometricallyConnectedCommHopfAlg_iff_geometricallyConnected_hopfSpec K
-    (CommHopfAlgCat.of K B)).2
-      (geometricallyConnected_hopfSpec_of_forall_not_tensorLE_subquotientHull K B E h)
+  (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace K (CommHopfAlgCat.of K B)).2
+    (connectedSpace_primeSpectrum_of_forall_not_tensorLE_subquotientHull K B E h)
 
 end TauCeti.Tannaka
