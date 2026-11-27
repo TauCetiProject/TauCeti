@@ -111,14 +111,8 @@ theorem map_shift_one_dirac_evenConfig_ne :
     (Measure.dirac evenConfig).map (fun ω e => ω ((shift 1)⁻¹ • e)) ≠
       Measure.dirac evenConfig := by
   rw [Measure.map_dirac' (Measurable.of_eval fun e => measurable_pi_apply _)]
-  simp only [evenConfig_shift_inv_smul_of_odd odd_one]
-  intro h
-  have hs : MeasurableSet
-      {ω : (nnGraph ℤ).edgeSet → Bool | ω (DimerConfiguration.edge 0) = true} :=
-    measurableSet_eq_fun (measurable_pi_apply _) measurable_const
-  have := congrArg (fun μ : Measure ((nnGraph ℤ).edgeSet → Bool) => μ
-    {ω | ω (DimerConfiguration.edge 0) = true}) h
-  simp [Measure.dirac_apply' _ hs] at this
+  simpa only [evenConfig_shift_inv_smul_of_odd odd_one] using
+    dirac_ne_dirac evenConfig_ne_oddConfig.symm
 
 /-! ### A finite-group counterexample to the face property -/
 
