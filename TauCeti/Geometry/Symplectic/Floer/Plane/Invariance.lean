@@ -20,14 +20,15 @@ end `‖w‖ > r` of the plane, asymptotic to nondegenerate one-periodic orbits 
 almost complex structures `J` that are compatible with `ω` along `u` on the disc `‖w‖ ≤ r` and equal
 on the end to a fixed family `J_q(t)`
 (`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_of_finite_energy_positive`). This
-file proves that its index does not depend on that choice
+file proves that its index is the same for any two such choices that moreover tame `ω` everywhere
+and are `C³` along `u`
 (`TauCeti.SymplecticForm.index_floerConformalSobolevOperator_eq_of_pssPlane_almostComplex`). So the
 index of a PSS plane may be computed for any convenient structure over the disc, one step toward
 expressing it through the asymptotic data of the plane.
 
 This is the PSS-plane counterpart of the invariance under the data for the pair of pants
 (`TauCeti.SymplecticForm.index_floerConformalSobolevOperator_eq_of_pairOfPants_data`), and the proof
-follows the same route. Two choices `J` and `J'` are joined by the path of almost complex
+follows the same route. Two such choices `J` and `J'` are joined by the path of almost complex
 structures `J_μ` whose Cayley coordinates relative to a fixed compatible structure run along the
 segment between those of `J` and `J'` (`TauCeti.Floer.pathAlmostComplex`). Every `J_μ` is
 compatible along `u` on the disc and equal to `J_q(t)` on the end, so the operator of every `J_μ`
