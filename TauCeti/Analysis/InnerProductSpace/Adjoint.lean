@@ -805,6 +805,7 @@ theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     LinearMap.adjoint_toContinuousLinearMap]
 
 /-- Forgetting the continuity of an operator on a finite-dimensional space preserves its adjoint. -/
+@[simp, norm_cast]
 theorem _root_.ContinuousLinearMap.toLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
     (T : E →L[𝕜] E) : ((star T : E →L[𝕜] E) : E →ₗ[𝕜] E) = star (T : E →ₗ[𝕜] E) := by

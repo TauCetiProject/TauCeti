@@ -43,7 +43,7 @@ and `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.add_const_iff_eq_zero_of_finra
 So for `ν ≠ 0` the shift `μ + ν` is infinitesimally equivariant and equivariant on the identity
 component, and it is the equivariance of a reflection, the component condition, that fails. For
 the cotangent lift to `T*V` this is
-`TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap_add_const_iff_of_finrank_eq_two`.
+`TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap_add_const_iff_eq_zero_of_finrank_eq_two`.
 
 ## References
 
@@ -122,8 +122,8 @@ a constant `ν ∈ so(V)*`, is coadjoint-equivariant exactly when `ν = 0`, alth
 vanishes for every `ν`. This is
 `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.add_const_iff_eq_zero_of_finrank_eq_two`
 applied to `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`. -/
-theorem isEquivariantMomentMap_momentMap_add_const_iff_of_finrank_eq_two (hV : finrank ℝ V = 2)
-    (ν : Module.Dual ℝ 𝔬(V)) :
+theorem isEquivariantMomentMap_momentMap_add_const_iff_eq_zero_of_finrank_eq_two
+    (hV : finrank ℝ V = 2) (ν : Module.Dual ℝ 𝔬(V)) :
     (symplecticForm 𝓘(ℝ, V) V).IsEquivariantMomentMap
         (fun z ↦ momentMap (Unitary.model (V →L[ℝ] V)) O(V) z + ν) ↔ ν = 0 :=
   have : Nonempty (CotangentBundle 𝓘(ℝ, V) V) := ⟨⟨(0 : V), 0⟩⟩

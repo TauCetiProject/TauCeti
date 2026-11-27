@@ -57,13 +57,13 @@ theorem det_eq_one_or_eq_neg_one (g : unitary (V →L[ℝ] V)) :
 
 variable (V) in
 /-- The determinant of the orthogonal transformations of `V`, as a monoid homomorphism. -/
-@[expose] def detHom : unitary (V →L[ℝ] V) →* ℝ :=
+def detHom : unitary (V →L[ℝ] V) →* ℝ :=
   LinearMap.det.comp (ContinuousLinearMap.toLinearMapRingHom.toMonoidHom.comp (unitary _).subtype)
 
 /-- `Unitary.detHom V` sends an orthogonal transformation to its determinant. -/
 @[simp]
 theorem detHom_apply (g : unitary (V →L[ℝ] V)) : detHom V g = (g : V →L[ℝ] V).det :=
-  rfl
+  (rfl)
 
 /-- An orthogonal transformation and its inverse have the same determinant `±1`. -/
 theorem det_inv_eq_det (g : unitary (V →L[ℝ] V)) :
