@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Group.Prod
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Metrizable.Urysohn
+import TauCeti.Algebra.Algebra.Basic
 import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 
@@ -60,7 +61,7 @@ translation anticommutes with `T ^ k`. On functions invariant under the radical,
 by `r₀` agrees at each point `x` with left translation by any `x * b * x⁻¹` with the same `c`,
 and functions reproduced by `e` are uniformly continuous under small right translations, so left
 translation by `r₀` is within `1 / 2` of the identity on `V`. An operator anticommuting with one so
-close to the identity vanishes (`TauCeti.eq_zero_of_norm_sub_one_lt_one_of_mul_eq_neg_mul`), so
+close to the identity vanishes (`TauCeti.apply_eq_zero_of_mul_eq_neg_mul`), so
 `T ^ k = 0` on `V`, and injectivity gives `V = 0`. Only the idempotence `e ⋆ e = e` of the
 kernel enters; neither its continuity nor its symmetry nor the rank-one identity is used.
 
@@ -73,7 +74,8 @@ kernel enters; neither its continuity nor its symmetry nor the rank-one identity
 ## Main results
 
 * `TauCeti.rightRegularIntegral_apply`, `TauCeti.norm_rightRegularIntegral_le`: the defining
-  integral and the bound `‖ρ(e)‖ ≤ ∫ ‖e‖`.
+  integral and the bound `‖ρ(e)‖ ≤ ∫ ‖e‖`; `TauCeti.rightRegularIntegral_of_not_integrable`: the
+  operator is `0` for non-integrable `e`.
 * `TauCeti.rightRegularIntegral_compContinuous_mulLeft`: `ρ(e)` commutes with left translations.
 * `TauCeti.rightRegularIntegral_rightRegularIntegral_apply`: `ρ(e) ∘ ρ(e')` is integration
   against the convolution of `e` and `e'`.
@@ -119,6 +121,12 @@ section RightRegularIntegral
 variable [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [MeasurableSpace G] [BorelSpace G]
   {e : G → ℂ} {μ : Measure G}
 
+omit [Group G] [IsTopologicalGroup G] [MeasurableSpace G] [BorelSpace G] in
+/-- The pointwise bound `‖a * F y‖ ≤ ‖a‖ * ‖F‖` for a bounded continuous `F`. -/
+private theorem norm_mul_apply_le (a : ℂ) (F : G →ᵇ ℂ) (y : G) : ‖a * F y‖ ≤ ‖a‖ * ‖F‖ := by
+  rw [norm_mul]
+  exact mul_le_mul_of_nonneg_left (F.norm_coe_le_norm _) (norm_nonneg _)
+
 /-- For integrable `e` and bounded continuous `F`, the integrand `g ↦ e g * F (x * g)` is
 integrable. -/
 private theorem integrable_mul_apply_mul (he : Integrable e μ) (F : G →ᵇ ℂ) (x : G) :
@@ -130,19 +138,16 @@ omit [IsTopologicalGroup G] [BorelSpace G] in
 private theorem norm_integral_mul_apply_mul_le (he : Integrable e μ) (F : G →ᵇ ℂ) (x : G) :
     ‖∫ g, e g * F (x * g) ∂μ‖ ≤ (∫ g, ‖e g‖ ∂μ) * ‖F‖ := by
   rw [← integral_mul_const]
-  refine norm_integral_le_of_norm_le (he.norm.mul_const _) (Eventually.of_forall fun g => ?_)
-  rw [norm_mul]
-  exact mul_le_mul_of_nonneg_left (F.norm_coe_le_norm _) (norm_nonneg _)
+  exact norm_integral_le_of_norm_le (he.norm.mul_const _)
+    (Eventually.of_forall fun g => norm_mul_apply_le (e g) F (x * g))
 
 private theorem continuous_integral_mul_apply_mul [FirstCountableTopology G]
     (he : Integrable e μ) (F : G →ᵇ ℂ) : Continuous fun x => ∫ g, e g * F (x * g) ∂μ :=
   continuous_of_dominated (bound := fun g => ‖e g‖ * ‖F‖)
     (fun x => (integrable_mul_apply_mul he F x).aestronglyMeasurable)
-    (fun x => Eventually.of_forall fun g => by
-      rw [norm_mul]
-      exact mul_le_mul_of_nonneg_left (F.norm_coe_le_norm _) (norm_nonneg _))
+    (fun x => Eventually.of_forall fun g => norm_mul_apply_le (e g) F (x * g))
     (he.norm.mul_const _)
-    (Eventually.of_forall fun g =>
+    (Eventually.of_forall fun _ =>
       continuous_const.mul (F.continuous.comp (continuous_id.mul continuous_const)))
 
 /-- The bounded continuous function `x ↦ ∫ g, e g * F (x * g) ∂μ`, for integrable `e`. -/
@@ -153,6 +158,23 @@ private def rightRegularIntegralAux [FirstCountableTopology G] (he : Integrable 
 
 variable [FirstCountableTopology G]
 
+/-- The linear map `F ↦ (x ↦ ∫ g, e g * F (x * g) ∂μ)`, for integrable `e`. -/
+private def rightRegularIntegralₗ (he : Integrable e μ) : (G →ᵇ ℂ) →ₗ[ℂ] G →ᵇ ℂ where
+  toFun := rightRegularIntegralAux he
+  map_add' F F' := by
+    ext x
+    simp [rightRegularIntegralAux, mul_add,
+      integral_add (integrable_mul_apply_mul he F x) (integrable_mul_apply_mul he F' x)]
+  map_smul' c F := by
+    ext x
+    simp [rightRegularIntegralAux, mul_left_comm _ c, integral_const_mul]
+
+private theorem norm_rightRegularIntegralₗ_apply_le (he : Integrable e μ) (F : G →ᵇ ℂ) :
+    ‖rightRegularIntegralₗ he F‖ ≤ (∫ g, ‖e g‖ ∂μ) * ‖F‖ :=
+  BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _
+    (mul_nonneg (integral_nonneg fun _ => norm_nonneg _) (norm_nonneg _))
+    (norm_integral_mul_apply_mul_le he F)
+
 open scoped Classical in
 variable (e μ) in
 /-- **The right regular representation integrated against `e`**: the operator
@@ -162,26 +184,21 @@ commutes with left translations, and for a left-invariant measure composition co
 convolution (`TauCeti.rightRegularIntegral_rightRegularIntegral_apply`). -/
 def rightRegularIntegral : (G →ᵇ ℂ) →L[ℂ] G →ᵇ ℂ :=
   if he : Integrable e μ then
-    LinearMap.mkContinuous
-      { toFun := rightRegularIntegralAux he
-        map_add' := fun F F' => by
-          ext x
-          simp [rightRegularIntegralAux, mul_add,
-            integral_add (integrable_mul_apply_mul he F x) (integrable_mul_apply_mul he F' x)]
-        map_smul' := fun c F => by
-          ext x
-          simp [rightRegularIntegralAux, mul_left_comm _ c, integral_const_mul] }
-      (∫ g, ‖e g‖ ∂μ) fun F =>
-        BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _
-          (mul_nonneg (integral_nonneg fun _ => norm_nonneg _) (norm_nonneg _))
-          (norm_integral_mul_apply_mul_le he F)
+    (rightRegularIntegralₗ he).mkContinuous (∫ g, ‖e g‖ ∂μ) (norm_rightRegularIntegralₗ_apply_le he)
   else 0
+
+/-- `ρ(e)` is `0` when `e` is not integrable. -/
+@[simp]
+theorem rightRegularIntegral_of_not_integrable (he : ¬Integrable e μ) :
+    rightRegularIntegral e μ = 0 := by
+  simp [rightRegularIntegral, he]
 
 /-- The value of `ρ(e) F` at `x` is `∫ g, e g * F (x * g) ∂μ`. -/
 theorem rightRegularIntegral_apply (he : Integrable e μ) (F : G →ᵇ ℂ) (x : G) :
     rightRegularIntegral e μ F x = ∫ g, e g * F (x * g) ∂μ := by
-  simp only [rightRegularIntegral, he, ↓reduceDIte]
-  rfl
+  simp only [rightRegularIntegral, he, ↓reduceDIte, LinearMap.mkContinuous_apply,
+    rightRegularIntegralₗ, LinearMap.coe_mk, AddHom.coe_mk, rightRegularIntegralAux,
+    BoundedContinuousFunction.coe_ofNormedAddCommGroup]
 
 /-- The operator norm of `ρ(e)` is at most `∫ ‖e‖`. -/
 theorem norm_rightRegularIntegral_le : ‖rightRegularIntegral e μ‖ ≤ ∫ g, ‖e g‖ ∂μ := by
@@ -191,7 +208,7 @@ theorem norm_rightRegularIntegral_le : ‖rightRegularIntegral e μ‖ ≤ ∫ g
       (BoundedContinuousFunction.norm_le (mul_nonneg h0 (norm_nonneg _))).2 fun x => ?_
     rw [rightRegularIntegral_apply he]
     exact norm_integral_mul_apply_mul_le he F x
-  · simpa [rightRegularIntegral, he] using h0
+  · simpa [rightRegularIntegral_of_not_integrable he] using h0
 
 /-- `ρ(e)` commutes with left translations. -/
 @[simp]
@@ -201,7 +218,7 @@ theorem rightRegularIntegral_compContinuous_mulLeft (F : G →ᵇ ℂ) (r : G) :
   by_cases he : Integrable e μ
   · ext x
     simp [rightRegularIntegral_apply he, mul_assoc]
-  · simp [rightRegularIntegral, he]
+  · simp [rightRegularIntegral_of_not_integrable he]
 
 variable [μ.IsMulLeftInvariant]
 
@@ -328,6 +345,19 @@ private theorem norm_phase_mul_sub_le [Group G] {ℓ : G → ℝ}
     _ = |t| * |H (z * g) - H z| := by rw [Real.norm_eq_abs, abs_mul]
     _ ≤ |t| * ℓ g := mul_le_mul_of_nonneg_left (hHℓ z g) (abs_nonneg t)
 
+omit [TopologicalSpace G] in
+/-- A bound `ℓ` on the right variation of `H` is nonnegative. -/
+private theorem nonneg_of_forall_abs_sub_le [Group G] {ℓ : G → ℝ}
+    (hHℓ : ∀ x g : G, |H (x * g) - H x| ≤ ℓ g) (g : G) : 0 ≤ ℓ g :=
+  (abs_nonneg _).trans (hHℓ 1 g)
+
+omit [TopologicalSpace G] in
+/-- For a bound `ℓ` on the right variation of `H`, `∫ ‖e‖ * ℓ` is nonnegative. -/
+private theorem integral_norm_mul_nonneg [Group G] [MeasurableSpace G] {μ : Measure G}
+    {e : G → ℂ} {ℓ : G → ℝ} (hHℓ : ∀ x g : G, |H (x * g) - H x| ≤ ℓ g) :
+    0 ≤ ∫ g, ‖e g‖ * ℓ g ∂μ :=
+  integral_nonneg fun g => mul_nonneg (norm_nonneg _) (nonneg_of_forall_abs_sub_le hHℓ g)
+
 /-- An element `(r, c)` of `D` multiplies the phase by `exp (-i t log ‖c‖)`. -/
 private theorem phase_mul_left [Group G] {D : Subgroup (G × ℂˣ)}
     (hD_shift : ∀ p ∈ D, ∀ g : G, H (p.1 * g) = H g - Real.log ‖(p.2 : ℂ)‖)
@@ -342,32 +372,6 @@ private theorem phase_mul_left [Group G] {D : Subgroup (G × ℂˣ)}
 end Phase
 
 section Vanishing
-
-/-- If `S` and `A` preserve a submodule `V`, `S` anticommutes with `A`, and `S` moves every
-element of `V` by at most `δ < 1` times its norm, then `A` vanishes on `V`. -/
-private theorem apply_eq_zero_of_mul_eq_neg_mul {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] {V : Submodule ℂ E} {S A : E →L[ℂ] E} (hS : ∀ x ∈ V, S x ∈ V)
-    (hA : ∀ x ∈ V, A x ∈ V) (h : S * A = -(A * S)) {δ : ℝ} (hδ : δ < 1)
-    (hSV : ∀ x ∈ V, ‖S x - x‖ ≤ δ * ‖x‖) {x : E} (hx : x ∈ V) : A x = 0 := by
-  have hcomm : S.restrict hS * A.restrict hA = -(A.restrict hA * S.restrict hS) := by
-    ext y
-    simpa using congrArg (fun T : E →L[ℂ] E => T y) h
-  have hnear : ‖S.restrict hS - 1‖ < 1 := by
-    refine lt_of_le_of_lt (ContinuousLinearMap.opNorm_le_bound _ (le_max_right δ 0) fun y => ?_)
-      (max_lt hδ one_pos)
-    simpa using (hSV y y.property).trans
-      (mul_le_mul_of_nonneg_right (le_max_left δ 0) (norm_nonneg y))
-  have h0 := eq_zero_of_norm_sub_one_lt_one_of_mul_eq_neg_mul (A := V →L[ℂ] V) hnear hcomm
-  simpa using congrArg (fun T : V →L[ℂ] V => (T ⟨x, hx⟩ : E)) h0
-
-/-- If `a * b = z • (b * a)`, then `a * b ^ n = z ^ n • (b ^ n * a)`. -/
-private theorem mul_pow_eq_smul {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    {a b : A} {z : R} (h : a * b = z • (b * a)) (n : ℕ) : a * b ^ n = z ^ n • (b ^ n * a) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, h, mul_smul_comm, smul_smul,
-      ← mul_assoc, ← pow_succ]
 
 variable [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [SecondCountableTopology G]
   [MeasurableSpace G] [BorelSpace G] {e : G → ℂ} {μ : Measure G} [μ.IsMulLeftInvariant]
@@ -462,28 +466,20 @@ private theorem norm_compContinuous_mulLeft_sub_le (he : Integrable e μ) {W : S
   have h₁ : F (r₀ * z) = F (z * b) := by
     rw [← hF.2 _ hρ (z * b)]
     group
-  have hint : Integrable (fun g => e (b⁻¹ * g) * F (z * g)) μ :=
-    (he.comp_mul_left b⁻¹).mul_bdd
-      (F.continuous.comp (continuous_const.mul continuous_id)).aestronglyMeasurable
-      (Eventually.of_forall fun g => F.norm_coe_le_norm _)
   have h₂ : F (z * b) - F z = ∫ g, (e (b⁻¹ * g) - e g) * F (z * g) ∂μ := by
     have hb' : F (z * b) = ∫ g, e (b⁻¹ * g) * F (z * g) ∂μ := by
       rw [← rightRegularIntegral_apply_mul he, hF.1]
     have hz : F z = ∫ g, e g * F (z * g) ∂μ := by
       rw [← rightRegularIntegral_apply he, hF.1]
-    rw [hb', hz, ← integral_sub hint (integrable_mul_apply_mul he F z)]
+    rw [hb', hz, ← integral_sub (integrable_mul_apply_mul (he.comp_mul_left b⁻¹) F z)
+      (integrable_mul_apply_mul he F z)]
     simp_rw [sub_mul]
   rw [sub_apply,
     BoundedContinuousFunction.compContinuous_apply,
     ContinuousMap.coe_mulLeft, h₁, h₂]
-  calc _ ≤ ∫ g, ‖e (b⁻¹ * g) - e g‖ * ‖F‖ ∂μ :=
-        norm_integral_le_of_norm_le (((he.comp_mul_left b⁻¹).sub he).norm.mul_const _)
-          (Eventually.of_forall fun g => by
-            rw [norm_mul]
-            exact mul_le_mul_of_nonneg_left (F.norm_coe_le_norm _) (norm_nonneg _))
-    _ ≤ δ * ‖F‖ := by
-        rw [integral_mul_const]
-        exact mul_le_mul_of_nonneg_right (hW b hbW) (norm_nonneg F)
+  exact (norm_integral_mul_apply_mul_le (e := fun g => e (b⁻¹ * g) - e g)
+    ((he.comp_mul_left b⁻¹).sub he) F z).trans
+    (mul_le_mul_of_nonneg_right (hW b hbW) (norm_nonneg F))
 
 omit [μ.IsMulLeftInvariant] in
 /-- **The twisted operator is injective on reproduced functions** for small `t`: it is within
@@ -493,8 +489,7 @@ private theorem norm_mul_one_sub_le_norm_twisted (he : Integrable e μ)
     (t : ℝ) {F : G →ᵇ ℂ} (hF : rightRegularIntegral e μ F = F) :
     ‖F‖ * (1 - |t| * ∫ g, ‖e g‖ * ℓ g ∂μ) ≤ ‖twisted e μ hH t F‖ := by
   set C := ∫ g, ‖e g‖ * ℓ g ∂μ
-  have hC : 0 ≤ C := integral_nonneg fun g =>
-    mul_nonneg (norm_nonneg _) ((abs_nonneg _).trans (hHℓ 1 g))
+  have hC : 0 ≤ C := integral_norm_mul_nonneg hHℓ
   suffices h : ‖F‖ ≤ ‖twisted e μ hH t F‖ + |t| * C * ‖F‖ by linarith
   refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun z => ?_
   have hφF : Integrable (fun g => e g * (phase hH t * F) (z * g)) μ :=
@@ -513,7 +508,7 @@ private theorem norm_mul_one_sub_le_norm_twisted (he : Integrable e μ)
     rw [norm_mul, norm_mul]
     have h₁ := norm_phase_mul_sub_le hH hHℓ t z g
     have h₂ := F.norm_coe_le_norm (z * g)
-    have h₃ : 0 ≤ ℓ g := (abs_nonneg _).trans (hHℓ 1 g)
+    have h₃ : 0 ≤ ℓ g := nonneg_of_forall_abs_sub_le hHℓ g
     calc _ ≤ ‖e g‖ * (|t| * ℓ g) * ‖F‖ := by gcongr
       _ = _ := by ring
   have hle : ‖twisted e μ hH t F z - phase hH t z * F z‖ ≤ |t| * C * ‖F‖ := by
@@ -528,24 +523,6 @@ private theorem norm_mul_one_sub_le_norm_twisted (he : Integrable e μ)
         norm_sub_le _ _
     _ ≤ _ := add_le_add ((twisted e μ hH t F).norm_coe_le_norm z) hle
 
-omit [SecondCountableTopology G] [BorelSpace G] in
-/-- The left translates of an integrable function converge to it in `L¹`:
-`∫ ‖e (b⁻¹ * ·) - e‖ → 0` as `b → 1`. -/
-private theorem tendsto_integral_norm_comp_inv_mul_sub [BorelSpace G] [IsLocallyFiniteMeasure μ]
-    [μ.InnerRegularCompactLTTop] (he : Integrable e μ) :
-    Tendsto (fun b => ∫ g, ‖e (b⁻¹ * g) - e g‖ ∂μ) (𝓝 1) (𝓝 0) := by
-  have hinv : Tendsto (fun b : G => b⁻¹) (𝓝 1) (𝓝 1) := by
-    simpa using (continuous_inv (G := G)).tendsto 1
-  have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-    (((memLp_one_iff_integrable.2 he).tendsto_eLpNorm_comp_mul_left_sub
-      ENNReal.one_ne_top).comp hinv)
-  rw [ENNReal.toReal_zero] at h
-  refine h.congr fun b => ?_
-  have hm : AEStronglyMeasurable (fun x => e (b⁻¹ * x) - e x) μ :=
-    ((he.comp_mul_left b⁻¹).sub he).aestronglyMeasurable
-  simp only [Function.comp_apply]
-  rw [eLpNorm_one_eq_lintegral_eNorm hm, ← integral_norm_eq_lintegral_eNorm hm]
-
 /-- A twist `t` and a power `k` with `|t| * C < 1` and `exp (-i t L) ^ k = -1`, for `0 ≤ C`
 and `L ≠ 0`. -/
 private theorem exists_abs_mul_lt_one_and_exp_pow_eq_neg_one {C L : ℝ} (hC : 0 ≤ C)
@@ -555,9 +532,10 @@ private theorem exists_abs_mul_lt_one_and_exp_pow_eq_neg_one {C L : ℝ} (hC : 0
   have hk0 : (0 : ℝ) < k := lt_of_le_of_lt (by positivity) hk
   set t := Real.pi / (k * L) with ht
   refine ⟨k, t, ?_, ?_⟩
-  · rw [ht, abs_div, abs_mul, abs_of_pos Real.pi_pos, Nat.abs_cast, div_mul_eq_mul_div,
-      div_lt_one (by positivity)]
-    rwa [div_lt_iff₀ (abs_pos.2 hL)] at hk
+  · have habs : |t| = Real.pi / (k * |L|) := by
+      simp [ht, abs_div, abs_mul, abs_of_pos Real.pi_pos]
+    calc |t| * C = Real.pi * C / |L| / k := by rw [habs]; ring
+      _ < 1 := (div_lt_one hk0).2 hk
   · have htL : (k : ℝ) * (t * L) = Real.pi := by
       rw [ht]
       field_simp
@@ -616,9 +594,9 @@ theorem rightRegularIntegral_eq_zero [LocallyCompactSpace G] [μ.IsHaarMeasure]
       ∀ x : G, ∃ b ∈ W, (x * b * x⁻¹, c) ∈ D)
     {f : G →ᵇ ℂ} (hf : ∀ r : G, (r, (1 : ℂˣ)) ∈ D → ∀ g : G, f (r * g) = f g) :
     rightRegularIntegral e μ f = 0 := by
-  by_cases he : ¬Integrable e μ
-  · simp [rightRegularIntegral, he]
-  rw [not_not] at he
+  by_cases he : Integrable e μ
+  swap
+  · simp [rightRegularIntegral_of_not_integrable he]
   -- It suffices that the space `V` of reproduced radical-invariant functions is `0`.
   suffices hV : ∀ F ∈ reproducing e μ D, F = 0 from
     hV _ (rightRegularIntegral_mem_reproducing he he_idem hf)
@@ -626,16 +604,17 @@ theorem rightRegularIntegral_eq_zero [LocallyCompactSpace G] [μ.IsHaarMeasure]
   -- A dilation `(b₀, c)` with `log ‖c‖ ≠ 0` whose conjugates `x * b * x⁻¹` carrying the same
   -- `c` have `b` so close to `1` that right translation by `b` moves `V` by at most `1 / 2`.
   obtain ⟨c, hc, hcD⟩ := hD_near _
-    ((tendsto_integral_norm_comp_inv_mul_sub he).eventually (gt_mem_nhds one_half_pos))
+    ((he.tendsto_integral_norm_comp_inv_mul_sub).eventually (gt_mem_nhds one_half_pos))
   obtain ⟨b₀, -, hb₀⟩ := hcD 1
   rw [one_mul, inv_one, mul_one] at hb₀
   -- A twist `t` for which `T ^ k` anticommutes with left translation by `b₀`, and `|t| C < 1`.
   obtain ⟨k, t, htC, hζ⟩ := exists_abs_mul_lt_one_and_exp_pow_eq_neg_one
-    (integral_nonneg fun g => mul_nonneg (norm_nonneg (e g)) ((abs_nonneg _).trans (hHℓ 1 g))) hc
+    (integral_norm_mul_nonneg (μ := μ) (e := e) hHℓ) hc
   have hST : BoundedContinuousFunction.compContinuousCLM ℂ ℂ (ContinuousMap.mulLeft b₀) *
       twisted e μ hH t ^ k = -(twisted e μ hH t ^ k *
         BoundedContinuousFunction.compContinuousCLM ℂ ℂ (ContinuousMap.mulLeft b₀)) := by
-    rw [mul_pow_eq_smul (compContinuousCLM_mul_twisted hH hD_shift hb₀ t) k, hζ, neg_one_smul]
+    rw [mul_pow_of_mul_eq_smul_mul (compContinuousCLM_mul_twisted hH hD_shift hb₀ t) k, hζ,
+      neg_one_smul]
   -- So `T ^ k` vanishes on `V`, while `‖T ^ k F‖ ≥ (1 - |t| C) ^ k ‖F‖`.
   have hzero := apply_eq_zero_of_mul_eq_neg_mul
     (fun F hF => compContinuous_mulLeft_mem_reproducing hb₀ hF)
@@ -663,7 +642,7 @@ theorem IsIdempotentKernel.integral_mul_comp_mul_left_eq_zero [Group G] [Topolog
     (f : G →ᵇ ℂ) (hf : ∀ r : G, (r, (1 : ℂˣ)) ∈ D → ∀ g : G, f (r * g) = f g) (x : G) :
     ∫ g, e g * f (x * g) ∂μ = 0 := by
   rw [← rightRegularIntegral_apply he.integrable, rightRegularIntegral_eq_zero hH
-    (Eventually.of_forall he.integral_mul_inv_mul) hHℓ hℓ hD_shift hD_near hf]
-  rfl
+    (Eventually.of_forall he.integral_mul_inv_mul) hHℓ hℓ hD_shift hD_near hf,
+    FunLike.coe_zero, Pi.zero_apply]
 
 end TauCeti

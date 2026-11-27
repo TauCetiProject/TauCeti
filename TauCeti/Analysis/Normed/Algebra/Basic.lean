@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Equiv
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Module.Basic
+import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
 # Basic lemmas for normed algebras
@@ -18,6 +20,8 @@ This file collects basic constructions and lemmas for normed algebras:
   that makes every real normed algebra a normed `ℚ`-algebra so files can enable it locally.
 * `TauCeti.eq_zero_of_norm_sub_one_lt_one_of_mul_eq_neg_mul`: in a normed ring that is a real
   normed space, an element anticommuting with an element within distance `< 1` of `1` vanishes.
+  `TauCeti.apply_eq_zero_of_mul_eq_neg_mul` is its form for operators on a complex normed space
+  restricted to a common invariant submodule.
 * `AlgEquiv.norm_map` and `AlgEquiv.isometry`: every `𝕜`-algebra equivalence `F ≃ₐ[𝕜] 𝕜` from a
   seminormed `𝕜`-algebra with `‖1‖ = 1` to its base normed field preserves the norm and is an
   isometry.
@@ -55,6 +59,26 @@ theorem eq_zero_of_norm_sub_one_lt_one_of_mul_eq_neg_mul {A : Type*} [NormedRing
         exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) (norm_mul_le _ _))
       _ = 2 * (‖s - 1‖ * ‖a‖) := by ring
   exact norm_eq_zero.mp <| le_antisymm (by nlinarith [norm_nonneg a]) (norm_nonneg a)
+
+/-- **An operator anticommuting with one close to the identity on an invariant submodule vanishes
+there.** If the bounded operators `S` and `A` on a complex normed space preserve a submodule `V`,
+`S * A = -(A * S)`, and `S` moves every element of `V` by at most `δ < 1` times its norm, then
+`A` vanishes on `V`: the restrictions to `V` satisfy
+`TauCeti.eq_zero_of_norm_sub_one_lt_one_of_mul_eq_neg_mul`. -/
+theorem apply_eq_zero_of_mul_eq_neg_mul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {V : Submodule ℂ E} {S A : E →L[ℂ] E} (hS : ∀ x ∈ V, S x ∈ V) (hA : ∀ x ∈ V, A x ∈ V)
+    (h : S * A = -(A * S)) {δ : ℝ} (hδ : δ < 1) (hSV : ∀ x ∈ V, ‖S x - x‖ ≤ δ * ‖x‖) {x : E}
+    (hx : x ∈ V) : A x = 0 := by
+  have hcomm : S.restrict hS * A.restrict hA = -(A.restrict hA * S.restrict hS) := by
+    ext y
+    simpa using congrArg (fun T : E →L[ℂ] E => T y) h
+  have hnear : ‖S.restrict hS - 1‖ < 1 := by
+    refine lt_of_le_of_lt (ContinuousLinearMap.opNorm_le_bound _ (le_max_right δ 0) fun y => ?_)
+      (max_lt hδ one_pos)
+    simpa using (hSV y y.property).trans
+      (mul_le_mul_of_nonneg_right (le_max_left δ 0) (norm_nonneg y))
+  have h0 := eq_zero_of_norm_sub_one_lt_one_of_mul_eq_neg_mul (A := V →L[ℂ] V) hnear hcomm
+  simpa using congrArg (fun T : V →L[ℂ] V => (T ⟨x, hx⟩ : E)) h0
 
 end TauCeti
 

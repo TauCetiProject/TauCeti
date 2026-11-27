@@ -7,10 +7,9 @@ module
 
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 import Mathlib.Analysis.CStarAlgebra.Basic
-import Mathlib.Analysis.InnerProductSpace.Adjoint
-import Mathlib.Analysis.Normed.Lp.Matrix
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.Matrix.EuclideanLin.Projection
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
@@ -34,8 +33,8 @@ under which idempotent kernels kill the functions invariant under the unipotent 
 (`TauCeti.rightRegularIntegral_eq_zero`).
 
 The element `y` is written down from the orthogonal projector `P` onto the column space of
-`B = x⁻¹ * A` and from `Q = J * P * J`, the orthogonal projector onto the image of that space
-under `J`:
+`B = x⁻¹ * A` (`Matrix.exists_isStarProjection_mul_eq_self_and_eq_mul`) and from
+`Q = J * P * J`, the orthogonal projector onto the image of that space under `J`:
 
 ```text
 y = 1 + c • P - (c / (1 + c)) • Q.
@@ -68,29 +67,6 @@ namespace Matrix
 
 variable {𝕜 n m : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
-omit [DecidableEq n] in
-/-- The orthogonal projector onto the column space of `B`: a star projection `P` with
-`P * B = B` and `P = B * M` for some `M`. -/
-private theorem exists_isStarProjection_mul_eq_self [Fintype m] (B : Matrix n m 𝕜) :
-    ∃ P : Matrix n n 𝕜, ∃ M : Matrix m n 𝕜, IsStarProjection P ∧ P * B = B ∧ P = B * M := by
-  classical
-  set K : Submodule 𝕜 (EuclideanSpace 𝕜 n) := LinearMap.range (toEuclideanLin B)
-  set P : Matrix n n 𝕜 := (toEuclideanCLM (n := n) (𝕜 := 𝕜)).symm K.starProjection
-  have hP : ∀ x : n → 𝕜, P *ᵥ x = ofLp (K.starProjection (toLp 2 x)) := fun x => by
-    simpa [P] using (ofLp_toEuclideanCLM P (toLp 2 x)).symm
-  have hBK : ∀ v : m → 𝕜, toLp 2 (B *ᵥ v) ∈ K := fun v => ⟨toLp 2 v, rfl⟩
-  have hM : ∀ i, ∃ a : m → 𝕜, B *ᵥ a = P *ᵥ Pi.single i 1 := fun i => by
-    obtain ⟨a, ha⟩ := K.starProjection_apply_mem (toLp 2 (Pi.single i 1))
-    exact ⟨ofLp a, by rw [hP, ← ha]; rfl⟩
-  choose a ha using hM
-  refine ⟨P, of fun j i => a i j, isStarProjection_starProjection.map toEuclideanCLM.symm,
-    ext_iff_mulVec.2 fun v => ?_, ext_of_mulVec_single fun i => ?_⟩
-  · rw [← mulVec_mulVec, hP, Submodule.starProjection_eq_self_iff.2 (hBK v), ofLp_toLp]
-  · rw [← mulVec_mulVec, ← ha i]
-    congr 1
-    ext j
-    simp
-
 variable {J : Matrix n n 𝕜}
 
 /-- The dilation `1 + c • P - (c / (1 + c)) • (J * P * J)` along the range of `P`. -/
@@ -106,12 +82,16 @@ private theorem isStarProjection_mul_mul (hJ : J.IsHermitian) (hJJ : J * J = 1) 
   have hJJ' : ∀ X : Matrix n n 𝕜, J * (J * X) = X := fun X => by rw [← mul_assoc, hJJ, one_mul]
   have hPP' : ∀ X : Matrix n n 𝕜, P * (P * X) = P * X := fun X => by
     rw [← mul_assoc, hP.isIdempotentElem.eq]
+  -- `P * J * P = 0` in right-associated form.
+  have hPJP₀ : P * (J * P) = 0 := by rw [← mul_assoc, hPJP]
+  have hPJP' : ∀ X : Matrix n n 𝕜, P * (J * (P * X)) = 0 := fun X => by
+    rw [← mul_assoc, ← mul_assoc, hPJP, zero_mul]
   refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
   · rw [IsIdempotentElem]
     simp only [mul_assoc, hJJ', hPP']
   · rw [IsSelfAdjoint, star_mul, star_mul, hJs, hP.isSelfAdjoint.star_eq, mul_assoc]
-  · rw [← mul_assoc, ← mul_assoc, hPJP, zero_mul]
-  · rw [mul_assoc (J * P) J P, mul_assoc J P (J * P), ← mul_assoc P J P, hPJP, mul_zero]
+  · simp only [mul_assoc, hPJP']
+  · simp only [mul_assoc, hPJP₀, mul_zero]
 
 /-- The dilation preserves the form of `J`: `star y * J * y = J`. -/
 private theorem star_dilation_mul_mul (hJ : J.IsHermitian) (hJJ : J * J = 1) {P : Matrix n n 𝕜}
@@ -181,7 +161,7 @@ private theorem exists_star_mul_mul_eq_and_norm_sub_one_le [Finite m] (hJ : J.Is
       ∀ v w : n → 𝕜, (Bᴴ * J) *ᵥ v = 0 → (Bᴴ * J) *ᵥ w = 0 →
         star w ⬝ᵥ J *ᵥ (Y *ᵥ v) = star w ⬝ᵥ J *ᵥ v := by
   have := Fintype.ofFinite m
-  obtain ⟨P, M, hP, hPB, hPM⟩ := exists_isStarProjection_mul_eq_self B
+  obtain ⟨P, M, hP, hPB, hPM⟩ := exists_isStarProjection_mul_eq_self_and_eq_mul B
   have hPM' : P = Mᴴ * Bᴴ := by
     rw [← hP.isSelfAdjoint.star_eq, star_eq_conjTranspose, hPM, conjTranspose_mul]
   have hPJP : P * J * P = 0 :=
@@ -255,8 +235,8 @@ theorem exists_norm_sub_one_le_and_conj_dilates [Finite m] (hJ : J.IsHermitian) 
         one_mulVec]
   refine ⟨ofMatrix (isUnit_iff_exists_inv.2 ⟨J, hJJ⟩) Y hY, by simpa using hYn, ?_,
     fun v w hv hw => ?_⟩
-  · rw [hg, Matrix.mul_assoc, Matrix.mul_assoc, hYB, Matrix.mul_smul, ← Matrix.mul_assoc, hXX',
-      Matrix.one_mul]
+  · have hXA : X * (X' * A) = A := by rw [← Matrix.mul_assoc, hXX', Matrix.one_mul]
+    simp only [hg, Matrix.mul_assoc, hYB, Matrix.mul_smul, hXA]
   · have h₁ : (X * Y * X') *ᵥ v = X *ᵥ (Y *ᵥ (X' *ᵥ v)) := by
       simp only [mulVec_mulVec, Matrix.mul_assoc]
     have h₂ : X *ᵥ (X' *ᵥ v) = v := by rw [mulVec_mulVec, hXX', one_mulVec]

@@ -53,8 +53,10 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
   with left translation.
 * `MeasureTheory.Lp.continuous_leftTranslation_apply`: for `p < ∞`, `g ↦ L_g f` is continuous.
 * `MeasureTheory.Lp.tendsto_leftTranslation_apply_nhds_one`: for `p < ∞`, `L_g f → f` as `g → 1`.
-* `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_left_sub`: for `p < ∞`, the left translation
+* `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_left_sub`: for `1 ≤ p < ∞`, the left translation
   increments `‖f (g * ·) - f‖_p` of an `Lᵖ` function tend to `0` as `g → 1`.
+* `MeasureTheory.Integrable.tendsto_integral_norm_comp_inv_mul_sub`: the case `p = 1`, as
+  `∫ ‖f (g⁻¹ * ·) - f‖ → 0` as `g → 1` for an integrable function.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
 -/
@@ -210,6 +212,26 @@ theorem _root_.MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_left_sub [Topologica
     with x h₁ h₂ h₃ h₄
   rw [h₁, Pi.sub_apply, h₂, h₃]
   simpa using h₄
+
+open Topology in
+/-- **Continuity of left translation in `L¹`**: the left translates of an integrable function
+converge to it, `∫ ‖f (g⁻¹ * ·) - f‖ → 0` as `g → 1`, for a left-invariant measure that is
+locally finite and inner regular for compact sets, such as a regular left Haar measure. -/
+theorem _root_.MeasureTheory.Integrable.tendsto_integral_norm_comp_inv_mul_sub
+    [TopologicalSpace G] [IsTopologicalGroup G] [BorelSpace G] [IsLocallyFiniteMeasure μ]
+    [μ.InnerRegularCompactLTTop] {f : G → E} (hf : Integrable f μ) :
+    Tendsto (fun g => ∫ x, ‖f (g⁻¹ * x) - f x‖ ∂μ) (𝓝 1) (𝓝 0) := by
+  have hinv : Tendsto (fun g : G => g⁻¹) (𝓝 1) (𝓝 1) := by
+    simpa using (continuous_inv (G := G)).tendsto 1
+  have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (((memLp_one_iff_integrable.2 hf).tendsto_eLpNorm_comp_mul_left_sub
+      ENNReal.one_ne_top).comp hinv)
+  rw [ENNReal.toReal_zero] at h
+  refine h.congr fun g => ?_
+  have hm : AEStronglyMeasurable (fun x => f (g⁻¹ * x) - f x) μ :=
+    ((hf.comp_mul_left g⁻¹).sub hf).aestronglyMeasurable
+  simp only [Function.comp_apply]
+  rw [eLpNorm_one_eq_lintegral_eNorm hm, ← integral_norm_eq_lintegral_eNorm hm]
 
 end MeasureTheory.Lp
 
