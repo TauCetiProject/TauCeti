@@ -243,6 +243,12 @@ theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
     firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) :=
   (rfl)
 
+/-- The first-order part preserves subtraction. Unlike `value_sub` it is not `@[simp]`: the
+simpNF linter finds that its left-hand side does not simplify with it. -/
+theorem firstOrder_sub (k : ℕ) (u v : Wkp mu Omega p (k + 1)) :
+    firstOrder k (u - v) = firstOrder k u - firstOrder k v :=
+  map_sub (firstOrderL k) u v
+
 /-- The continuous projection to the highest weak derivative of a positive-order Sobolev
 function.  For `W^{k+1,p}` its target is `Lᵖ(Ω; IteratedGradient E k)`. -/
 def iteratedGradientL (k : ℕ) : Wkp mu Omega p (k + 1) →L[ℝ]
@@ -258,6 +264,12 @@ def iteratedGradient (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
 theorem iteratedGradientL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     iteratedGradientL k u = iteratedGradient k u :=
   (rfl)
+
+/-- The highest weak derivative preserves subtraction. Unlike `value_sub` it is not `@[simp]`: the
+simpNF linter finds that its left-hand side does not simplify with it. -/
+theorem iteratedGradient_sub (k : ℕ) (u v : Wkp mu Omega p (k + 1)) :
+    iteratedGradient k (u - v) = iteratedGradient k u - iteratedGradient k v :=
+  map_sub (iteratedGradientL k) u v
 
 /-- The continuous projection of a Sobolev function to its `Lᵖ` value component. -/
 def valueL : (k : ℕ) → Wkp mu Omega p k →L[ℝ] Lp ℝ p (mu.restrict Omega)
@@ -322,10 +334,39 @@ theorem value_neg_ae (k : ℕ) (u : Wkp mu Omega p k) :
     ⇑(value k (-u)) =ᵐ[mu.restrict Omega] -⇑(value k u) := by
   simpa only [value_neg] using Lp.coeFn_neg (value k u)
 
+/-- Negating a doubly indexed family of Sobolev functions with given values negates their values
+almost everywhere, simultaneously over finitely many indices. -/
+theorem ae_forall_value_neg_eq {ι κ : Type*} {k : ℕ} {Y : ι → κ → Wkp mu Omega p k}
+    {c : ι → κ → E → ℝ} (hY : ∀ i j, ⇑(value k (Y i j)) =ᵐ[mu.restrict Omega] c i j)
+    (s : Finset ι) (t : Finset κ) :
+    ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, value k (-Y i j) x = -c i j x :=
+  s.eventually_all.2 fun i _ => t.eventually_all.2 fun j _ => by
+    filter_upwards [value_neg_ae k (Y i j), hY i j] with x h₁ h₂
+    rw [h₁, Pi.neg_apply, h₂]
+
+/-- The highest weak derivative preserves negation. (Not `@[simp]`: the `simpNF` linter reports
+that `simp` cannot use it to rewrite its own left-hand side.) -/
+theorem iteratedGradient_neg (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    iteratedGradient k (-u) = -iteratedGradient k u :=
+  map_neg (iteratedGradientL k) u
+
+/-- The highest weak derivative of the negation of a Sobolev function is almost everywhere the
+negation of its highest weak derivative. -/
+theorem iteratedGradient_neg_ae (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
+    ⇑(iteratedGradient k (-u)) =ᵐ[mu.restrict Omega] -⇑(iteratedGradient k u) := by
+  rw [iteratedGradient_neg]
+  exact Lp.coeFn_neg (iteratedGradient k u)
+
 /-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
 theorem value_add_ae (k : ℕ) (u v : Wkp mu Omega p k) :
     ⇑(value k (u + v)) =ᵐ[mu.restrict Omega] ⇑(value k u) + ⇑(value k v) := by
   simpa only [value_add] using Lp.coeFn_add (value k u) (value k v)
+
+/-- The value of a difference of two Sobolev functions is almost everywhere the difference of their
+values. -/
+theorem value_sub_ae (k : ℕ) (u v : Wkp mu Omega p k) :
+    ⇑(value k (u - v)) =ᵐ[mu.restrict Omega] ⇑(value k u) - ⇑(value k v) := by
+  simpa only [value_sub] using Lp.coeFn_sub (value k u) (value k v)
 
 /-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
 of its value. -/

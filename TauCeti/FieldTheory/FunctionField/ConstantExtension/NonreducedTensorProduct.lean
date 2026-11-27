@@ -22,7 +22,7 @@ import TauCeti.FieldTheory.Separable.Regular
 
 Let `k` be a field of characteristic `p > 0` and let `a, b ∈ k` be `p`-independent: the
 monomials `a ^ i * b ^ j` with `i, j < p` are linearly independent over the subfield `k ^ p` of
-`p`-th powers (`TauCeti.IsPIndependentPair`); for instance, independent indeterminates `a` and
+`p`-th powers (`TauCeti.IsPIndependent p ![a, b]`); for instance, independent indeterminates `a` and
 `b` over `𝔽_p`. Let `F = k(x, y)` with `x` transcendental over `k` and
 
 `y ^ p = a + b x ^ p`.
@@ -91,7 +91,7 @@ variable {k : Type u} [Field k] {p : ℕ} [hp : Fact p.Prime] [CharP k p] {a b :
 
 section PIndependent
 
-variable (hab : IsPIndependentPair p a b)
+variable (hab : IsPIndependent p ![a, b])
 
 include hab
 
@@ -123,7 +123,7 @@ private theorem eq_zero_of_sum_pow_mul_C_add_C_mul_X_pow_eq
     ring
   -- Hence every coefficient `Q m j` is the constant multiple `ε m j` of `h`.
   have hQh : ∀ m < p, ∀ j < p, Q m j = C (ε m j) * h := by
-    refine fun m hm j hj ↦ sub_eq_zero.mp <| hab.eq_zero_of_sum_pow_mul_C_eq_zero
+    refine fun m hm j hj ↦ sub_eq_zero.mp <| hab.eq_zero_of_sum_pow_mul_C_pair
       (P := fun m j ↦ Q m j - C (ε m j) * h) ?_ hm hj
     simp only [sub_pow_char, sub_mul, sum_sub_distrib, sub_eq_zero]
     rw [H, ← he, map_sum, sum_mul]
@@ -255,7 +255,7 @@ theorem not_isReduced_tensorProduct_of_pow_eq_add_mul_X_pow {y : F}
 
 section PIndependent
 
-variable (hab : IsPIndependentPair p a b)
+variable (hab : IsPIndependent p ![a, b])
 
 include hab
 

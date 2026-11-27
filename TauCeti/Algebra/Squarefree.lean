@@ -28,10 +28,20 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   holding `ha : Squarefree a` and `hu : ¬ IsUnit a` can write `ha.not_isSquare hu`.
 * `Squarefree.neg`: negation preserves squarefreeness in any ring with distributive negation.
 * `TauCeti.squarefree_map_iff`: a multiplicative equivalence preserves and reflects squarefreeness.
+* `TauCeti.squarefree_mul_iff`: in any commutative decomposition monoid, a product `x * y` is
+  squarefree iff `x` and `y` are relatively prime and individually squarefree, generalizing
+  Mathlib's `squarefree_mul_iff` without zero or cancellation.
+* `Finset.squarefree_prod_iff`: in any commutative decomposition monoid, a finite product is
+  squarefree iff its factors are pairwise relatively prime and individually squarefree,
+  generalizing Mathlib's `Finset.squarefree_prod_of_pairwise_isCoprime` (in both directions)
+  without zero or cancellation.
 * `not_isSquare_intCast_of_squarefree_of_ne_one`: a squarefree integer other than `1` is not a
   rational square.
 * `isSquare_mul_sq_iff`: in a commutative group with zero, multiplying by a nonzero square does
   not change squareness — the statement that squareness depends only on the square class.
+* `Squarefree.associated_of_sq_mul_eq_sq_mul`: in a unique factorization monoid the factors of a
+  square times squarefree decomposition are unique up to associates, the uniqueness half of
+  Mathlib's `exists_sq_mul_squarefree`.
 * `Int.exists_squarefree_mul_sq` and `Rat.exists_squarefree_int_mul_sq`: the **squarefree part**.
   Every nonzero integer, and every nonzero rational, is a squarefree *integer* times a nonzero
   square. Mathlib's `exists_sq_mul_squarefree` proves the underlying factorization in a unique
@@ -142,6 +152,40 @@ theorem TauCeti.squarefree_map_iff {F M N : Type*} [Monoid M] [Monoid N] [EquivL
   rw [← map_mul, map_dvd_iff] at hy
   exact (h x hy).map f
 
+/-- In a commutative decomposition monoid, `x * y` is squarefree if and only if `x` and `y` are
+relatively prime and each is squarefree. This drops the zero and cancellation assumptions of
+Mathlib's `squarefree_mul_iff`. -/
+theorem TauCeti.squarefree_mul_iff {M : Type*} [CommMonoid M] [DecompositionMonoid M] {x y : M} :
+    Squarefree (x * y) ↔ IsRelPrime x y ∧ Squarefree x ∧ Squarefree y := by
+  refine ⟨fun h ↦ ⟨IsRelPrime.of_squarefree_mul h, h.of_mul_left, h.of_mul_right⟩,
+    fun ⟨hxy, hx, hy⟩ d hd ↦ ?_⟩
+  obtain ⟨a, b, ha, hb, rfl⟩ := exists_dvd_and_dvd_of_dvd_mul ((dvd_mul_left d d).trans hd)
+  have hax : IsRelPrime a y := hxy.of_dvd_left ha
+  have hby : IsRelPrime x b := hxy.of_dvd_right hb
+  have ha' : IsUnit a := hx a ((hax.mul_left hax).dvd_of_dvd_mul_right
+    ((mul_dvd_mul (dvd_mul_right a b) (dvd_mul_right a b)).trans hd))
+  have hb' : IsUnit b := hy b ((hby.mul_right hby).symm.dvd_of_dvd_mul_left
+    ((mul_dvd_mul (dvd_mul_left b a) (dvd_mul_left b a)).trans hd))
+  exact ha'.mul hb'
+
+open scoped Function in
+/-- In a commutative decomposition monoid, a finite product is squarefree if and only if its factors
+are pairwise relatively prime and individually squarefree. The backward direction generalizes
+Mathlib's `Finset.squarefree_prod_of_pairwise_isCoprime` by dropping zero and cancellation. -/
+theorem Finset.squarefree_prod_iff {ι M : Type*} [CommMonoid M] [DecompositionMonoid M]
+    {s : Finset ι} {f : ι → M} :
+    Squarefree (∏ i ∈ s, f i) ↔
+      (s : Set ι).Pairwise (IsRelPrime on f) ∧ ∀ i ∈ s, Squarefree (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih =>
+    rw [Finset.prod_cons, TauCeti.squarefree_mul_iff, IsRelPrime.prod_right_iff, ih,
+      Finset.coe_cons, Set.pairwise_insert, Finset.forall_mem_cons]
+    exact ⟨fun ⟨hrel, ha', hp, hs⟩ ↦
+        ⟨⟨hp, fun i hi _ ↦ ⟨hrel i hi, (hrel i hi).symm⟩⟩, ha', hs⟩,
+      fun ⟨⟨hp, hrel⟩, ha', hs⟩ ↦
+        ⟨fun i hi ↦ (hrel i hi fun h ↦ ha (h ▸ hi)).1, ha', hp, hs⟩⟩
+
 /-- A squarefree integer other than `1` is not a rational square. -/
 theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
     (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare ((n : ℤ) : ℚ) := by
@@ -157,6 +201,46 @@ theorem isSquare_mul_sq_iff {G₀ : Type*} [CommGroupWithZero G₀] {x y : G₀}
   refine ⟨fun h => ?_, fun h => h.mul (IsSquare.sq y)⟩
   have h' := h.mul (IsSquare.sq y⁻¹)
   rwa [mul_assoc, ← mul_pow, mul_inv_cancel₀ hy, one_pow, mul_one] at h'
+
+/-- **Uniqueness of the square times squarefree factorization.** In a unique factorization monoid,
+if `e₁ ^ 2 * d₁ = e₂ ^ 2 * d₂` with `e₁ ≠ 0` and `d₁`, `d₂` squarefree, then the square roots `e₁`
+and `e₂` are associated, and so are the squarefree parts `d₁` and `d₂`. This is the uniqueness
+complementing Mathlib's existence statement `exists_sq_mul_squarefree`. -/
+theorem Squarefree.associated_of_sq_mul_eq_sq_mul {R : Type*} [CommMonoidWithZero R]
+    [UniqueFactorizationMonoid R] {e₁ e₂ d₁ d₂ : R} (hd₁ : Squarefree d₁) (hd₂ : Squarefree d₂)
+    (he₁ : e₁ ≠ 0) (h : e₁ ^ 2 * d₁ = e₂ ^ 2 * d₂) : Associated e₁ e₂ ∧ Associated d₁ d₂ := by
+  classical
+  let _ := UniqueFactorizationMonoid.strongNormalizationMonoid (α := R)
+  have : Nontrivial R := nontrivial_of_ne e₁ 0 he₁
+  have hd₁0 := hd₁.ne_zero
+  have hd₂0 := hd₂.ne_zero
+  have he₂ : e₂ ≠ 0 := by
+    rintro rfl
+    simp [he₁, hd₁0] at h
+  have key := congrArg UniqueFactorizationMonoid.normalizedFactors h
+  rw [UniqueFactorizationMonoid.normalizedFactors_mul (pow_ne_zero 2 he₁) hd₁0,
+    UniqueFactorizationMonoid.normalizedFactors_mul (pow_ne_zero 2 he₂) hd₂0,
+    UniqueFactorizationMonoid.normalizedFactors_pow,
+    UniqueFactorizationMonoid.normalizedFactors_pow] at key
+  have hn₁ := (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hd₁0).1 hd₁
+  have hn₂ := (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hd₂0).1 hd₂
+  -- Comparing multiplicities: `2 a₁ + b₁ = 2 a₂ + b₂` with `b₁, b₂ ≤ 1` forces `a₁ = a₂` and
+  -- `b₁ = b₂`.
+  have hcount : ∀ p,
+      (UniqueFactorizationMonoid.normalizedFactors e₁).count p =
+          (UniqueFactorizationMonoid.normalizedFactors e₂).count p ∧
+        (UniqueFactorizationMonoid.normalizedFactors d₁).count p =
+          (UniqueFactorizationMonoid.normalizedFactors d₂).count p := by
+    intro p
+    have hc := congrArg (Multiset.count p) key
+    simp only [Multiset.count_add, Multiset.count_nsmul] at hc
+    have := Multiset.nodup_iff_count_le_one.1 hn₁ p
+    have := Multiset.nodup_iff_count_le_one.1 hn₂ p
+    omega
+  exact ⟨(UniqueFactorizationMonoid.associated_iff_normalizedFactors_eq_normalizedFactors he₁
+      he₂).2 (Multiset.ext.2 fun p => (hcount p).1),
+    (UniqueFactorizationMonoid.associated_iff_normalizedFactors_eq_normalizedFactors hd₁0
+      hd₂0).2 (Multiset.ext.2 fun p => (hcount p).2)⟩
 
 /-- **The squarefree part of an integer.** Every nonzero integer is a squarefree integer times the
 square of a nonzero integer. This specializes Mathlib's unique-factorization-monoid theorem

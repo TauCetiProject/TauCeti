@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Ideal.AffineBlowup
+public import TauCeti.RingTheory.Ideal.AffineBlowup.Basic
 public import TauCeti.RingTheory.Node.Flat
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 

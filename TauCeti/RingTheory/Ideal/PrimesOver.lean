@@ -19,6 +19,9 @@ without requiring either ring to be Dedekind or the extension to be integral.
 For an integral extension of domains, `TauCeti.sigmaPrimesOverEquivPrimesAbove` assembles these
 fibres into the canonical carrier of primes above a set; its forward map keeps the top prime,
 and its inverse indexes that prime by its contraction.
+
+An isomorphism of `R`-algebras `S ≃ₐ[R] T` matches the primes of `S` and of `T` above an ideal
+of `R`, so the two have equally many: `Ideal.ncard_primesOver_congr`.
 -/
 
 public section
@@ -103,3 +106,26 @@ theorem sigmaPrimesOverEquivPrimesAbove_symm_apply_snd (S : Set (HeightOneSpectr
   (rfl)
 
 end TauCeti
+
+namespace Ideal
+
+variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] [Algebra R S] [Algebra R T]
+
+/-- An isomorphism of `R`-algebras `S ≃ₐ[R] T` matches the primes above an ideal `p` of `R`: there
+are as many primes of `T` above `p` as there are of `S`. Pulling back along the isomorphism is
+the bijection. -/
+theorem ncard_primesOver_congr (e : S ≃ₐ[R] T) (p : Ideal R) :
+    (p.primesOver T).ncard = (p.primesOver S).ncard := by
+  refine Set.ncard_congr (fun Q _ ↦ Q.comap e) (fun Q hQ ↦ ?_) (fun Q Q' _ _ h ↦ ?_)
+    fun Q hQ ↦ ⟨Q.comap e.symm, ?_, ?_⟩
+  · have := hQ.1
+    have := hQ.2
+    exact ⟨inferInstance, inferInstance⟩
+  · exact comap_injective_of_surjective e e.surjective h
+  · have := hQ.1
+    have := hQ.2
+    exact ⟨inferInstance, inferInstance⟩
+  · ext x
+    simp
+
+end Ideal

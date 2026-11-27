@@ -23,8 +23,7 @@ sequence of solutions `uₖ` is read along the end at heights `Rₖ`, through th
 `vₖ(s, t) = uₖ(φ(s + Rₖ, t))`,
 
 where `φ(s, t) = exp (2π (s + i t))` is the end lift of the positive plane in real coordinates.
-These windows are where Floer cylinders break off when `Rₖ → ∞`; showing that the limits of the
-`vₖ` are such cylinders is not done here.
+These windows are where Floer cylinders break off when `Rₖ → ∞`.
 
 Both planes are read in the coordinates of the positive plane: the perturbation of a plane `p`
 with end sign `ε` given by `H` is the perturbation of the positive plane given by the Hamiltonian
@@ -34,10 +33,10 @@ finitely many bubbling points, uniformly in the heights, from two facts.
 
 * **One equation for all heights.** Beyond `s = 2` the perturbation of the positive plane pulls
   back to the cylindrical datum `H'(t) dt` along `φ`
-  (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive`). It does
-  not depend on `s`, so if the almost complex structures `J` are cylindrical far out on the end,
-  `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`, every translated end `vₖ` solves the same Floer
-  equation for `H'(t) dt` and `J_∞`, whatever the height.
+  (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift`).
+  It does not depend on `s`, so if the almost complex structures `J` are cylindrical far out on
+  the end, `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`, every translated end `vₖ` solves the same
+  Floer equation for `H'(t) dt` and `J_∞`, whatever the height.
 * **Energy.** The energy of a translated end over a window of angular width one is the energy of
   `uₖ ∘ φ` over the translated window, so it is at most the energy of `uₖ` over the plane
   (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_positive_add_le`).
@@ -59,14 +58,27 @@ half-cylinder.
   translated ends map `Ω` into a compact subset `C` of the source of a symplectic chart; the
   coordinate maps converge locally uniformly off `Z`, and the maps converge pointwise in `M`
   (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add` in
-  the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`).
+  the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`). In a manifold, the two facts above are
+  `contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add` in the same
+  namespace, which also gives the version in a closed manifold with no condition on the images
+  (`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.Closed`).
+
+For smooth solutions the convergence holds in `C¹` off `Z`, and the limit `v` is a `C¹` solution
+on `Ω \ Z` of the Floer equation for the cylindrical datum
+`ε H(ε t) dt` and the structures `J_∞(t)`, with energy over `Ω \ Z` at most `E`. In a symplectic
+chart the coordinate maps and their derivatives converge. These are
+`exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_comp_realChart_positive_add`
+in the namespaces `TauCeti.SymplecticForm` and `TauCeti.SmoothTwoForm.IsNondegenerate`. They follow
+from the `C¹` compactness theorems for fixed data,
+`exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset` in the same two namespaces,
+applied to the translated ends.
 
 For solutions whose end loops have actions converging to `aₖ` with `ε aₖ ≤ A`, and `|H| ≤ b`, the
 energy is at most `A + b`
 (`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_pssPlanePerturbation_le` and
 `TauCeti.SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_pssPlanePerturbation_le`).
-The regularity of the limit, the bubbles at the points of `Z`, and the assembly of the levels into
-a broken configuration are not treated here.
+The bubbles at the points of `Z`, and the assembly of the levels into a broken configuration, are
+not treated here.
 
 ## References
 
@@ -92,6 +104,25 @@ open Floer Floer.PSSPlane
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {H : ℝ → V → ℝ}
+
+omit [FiniteDimensional ℝ V] in
+/-- **The end datum of a PSS plane.** The Hamiltonian `ε H(ε t)` of the end of `p`, for which `p`
+is the positive plane, is `C³`, and so is its cylindrical datum `ε H(ε t) dt`. -/
+private theorem contDiff_uncurry_endSign_mul_and_contDiff_uncurry_snd (p : PSSPlane)
+    (hHs : ContDiff ℝ 3 (uncurry H)) :
+    ContDiff ℝ 3 (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) ∧
+      ContDiff ℝ 3 (uncurry fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x) := by
+  have hHs' : ContDiff ℝ 3 (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
+    contDiff_const.mul (hHs.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
+  exact ⟨hHs', hHs'.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)⟩
+
+omit [FiniteDimensional ℝ V] in
+/-- A translated end `v(z) = u(φ(z + (R, 0)))` of the positive plane is `Cⁿ` when `u` is. -/
+private theorem contDiff_comp_realChart_positive_add {n : WithTop ℕ∞} {u : ℝ × ℝ → V} (R : ℝ)
+    (hu : ContDiff ℝ n u) :
+    ContDiff ℝ n (fun z ↦ u (realChart positive.cylindricalEndLift (z + (R, 0)))) :=
+  hu.comp ((contDiff_realChart positive.contDiff_cylindricalEndLift).comp
+    (contDiff_id.add contDiff_const))
 
 /-- **A translated end of the positive plane.** Let `u` be a `C³` solution on the plane of the
 Floer equation for the perturbation of the positive plane given by `H`, with energy at most `E`,
@@ -126,17 +157,18 @@ private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_p
         (fun z ↦ u (realChart positive.cylindricalEndLift (z + (R, 0)))) z ≤ E := by
   set e := realChart positive.cylindricalEndLift
   set v : ℝ × ℝ → V := fun z ↦ u (e (z + (R, 0)))
-  have hvC : ContDiff ℝ 3 v :=
-    hu.comp ((contDiff_realChart positive.contDiff_cylindricalEndLift).comp
-      (contDiff_id.add contDiff_const))
+  have hvC : ContDiff ℝ 3 v := contDiff_comp_realChart_positive_add R hu
   -- Beyond `T₀` the structure is `J_∞(t)` and beyond `2` the datum is `H(t) dt`, so `v` solves the
   -- cylindrical equation.
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (Jend z.2 (v z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) v z : ℝ × ℝ →ₗ[ℝ] V) := by
     obtain ⟨h₁, -⟩ := hΩT z hz
-    have h := ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive hH
-      (hHs.of_le (by norm_num)) ((le_max_right _ _).trans (mem_Ioi.1 h₁).le)
-      (hu.differentiable (by norm_num) _) (hfl (e (z + (R, 0))))
+    have h := isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift (T₀ := 2)
+      (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x) hH
+      (by simpa using (le_max_right _ _).trans (mem_Ioi.1 h₁).le)
+      (hu.differentiable (by norm_num) _)
+      (((hHs.differentiable (by norm_num)).comp
+        (differentiable_const _ |>.prodMk differentiable_id)) _) (hfl (e (z + (R, 0))))
     rw [hJ _ _ _ ((le_max_left _ _).trans (mem_Ioi.1 h₁).le)] at h
     have heq := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) (u ∘ e) (R, 0) z
     simp only [Prod.snd_add, add_zero, comp_apply] at heq
@@ -202,12 +234,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) B ∧
         TendstoLocallyUniformlyOn (fun n z ↦ u (ψ n) (realChart positive.cylindricalEndLift
           (z + (R (ψ n), 0)))) v atTop (Ω \ ↑Z) := by
-  -- The plane `p` is the positive plane for the Hamiltonian `ε H(ε t)`.
-  have hHs' : ContDiff ℝ 3 (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
-    contDiff_const.mul (hHs.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
-  -- The cylindrical datum `ε H(ε t) dt` and the structures `J_∞(t)` of the end are smooth.
-  have hKt : ContDiff ℝ 3 (uncurry fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x) :=
-    hHs'.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  -- The plane `p` is the positive plane for the Hamiltonian `ε H(ε t)`, and the cylindrical datum
+  -- `ε H(ε t) dt` of the end is smooth.
+  obtain ⟨hHs', hKt⟩ := contDiff_uncurry_endSign_mul_and_contDiff_uncurry_snd p hHs
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jend z.2) hW contDiffOn_const hKt.contDiffOn hJend hD hB
     hDBW hJt
@@ -223,6 +252,78 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
       (hE k) (huB k)
   exact hconv hΩ hΩD (fun k ↦ (h k).1.contDiffOn) (fun k ↦ (h k).2.1) huB (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
+
+/-- **The translated ends of smooth PSS planes converge in `C¹` off finitely many bubbling points to
+a solution of the cylindrical Floer equation on `Ω \ Z`.** Under the hypotheses of
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add`, there
+is a threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions on the plane of
+the Floer equation for `J(z, u)` and the perturbation of `p` given by `H`, with energy at most
+`E ≥ 0`, let `Rₖ ≥ 0` be heights, and let the translated ends `vₖ(z) = uₖ(φ(z + (Rₖ, 0)))` map an
+open `Ω ⊆ D` into `B`. Then there are a subsequence `ψ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`,
+and a map `v : Ω \ Z → B` such that along `ψ` every disc about a point of `Z` eventually carries
+energy at least `δ` for the cylindrical datum `ε H(ε t) dt`, `v_{ψ n} → v` and `dv_{ψ n} → dv`
+locally uniformly on `Ω \ Z`, `v` is a `C¹` solution on `Ω \ Z` of the Floer equation for the datum
+`ε H(ε t) dt` and the structures `J_∞(t)`, and the energy of `v` over `Ω \ Z` is finite and at most
+`E`. -/
+theorem
+    exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_comp_realChart_positive_add
+    (ω : SymplecticForm V) (p : PSSPlane) (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {T₀ : ℝ} {Jend : ℝ → V → AlmostComplexStructure V}
+    (hJ : ∀ s t x, T₀ ≤ s → J (realChart positive.cylindricalEndLift (s, t)) x = Jend t x)
+    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {B : Set V} {t₀ : ℝ}
+    (hJt : ∀ z ∈ D, ∀ x ∈ B, ω.Tames (Jend z.2 x)) (hW : IsOpen W)
+    (hJend : ContDiffOn ℝ 2
+      (fun q : (ℝ × ℝ) × V ↦ (Jend q.1.2 q.2).toLinearMap.toContinuousLinearMap) W)
+    (hD : IsCompact D) (hDT : D ⊆ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1)) (hB : IsCompact B)
+    (hDBW : D ×ˢ B ⊆ W) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
+      IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) → (∀ k, ContDiff ℝ (⊤ : ℕ∞) (u k)) →
+      (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
+        (ω.perturbedFDeriv (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x I) (u k) z
+          : ℝ × ℝ →ₗ[ℝ] V)) →
+      0 ≤ E →
+      (∀ k, ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x I) (u k) z) ≤
+          ENNReal.ofReal E) →
+      (∀ k, MapsTo (fun z ↦ u k (realChart positive.cylindricalEndLift (z + (R k, 0)))) Ω B) →
+      ∃ (ψ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono ψ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+          (fun _ _ ↦ 0) (fun w x ↦ p.endSign * H (p.endSign * w.2) x)
+          (fun z ↦ u (ψ n) (realChart positive.cylindricalEndLift (z + (R (ψ n), 0)))) y) ∧
+        ContDiffOn ℝ 1 v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) B ∧
+        TendstoLocallyUniformlyOn (fun n z ↦ u (ψ n) (realChart positive.cylindricalEndLift
+          (z + (R (ψ n), 0)))) v atTop (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ fun z ↦ u (ψ n)
+          (realChart positive.cylindricalEndLift (z + (R (ψ n), 0)))) (fderiv ℝ v) atTop
+          (Ω \ ↑Z) ∧
+        (∀ z ∈ Ω \ ↑Z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jend z.2 (v z))
+          (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w x ↦ p.endSign * H (p.endSign * w.2) x) v z
+            : ℝ × ℝ →ₗ[ℝ] V)) ∧
+        IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0)
+          (fun w x ↦ p.endSign * H (p.endSign * w.2) x) v) (Ω \ ↑Z) ∧
+        ∫ z in Ω \ ↑Z, ω.floerEnergyDensity (fun _ _ ↦ 0)
+          (fun w x ↦ p.endSign * H (p.endSign * w.2) x) v z ≤ E := by
+  -- The plane `p` is the positive plane for the Hamiltonian `ε H(ε t)`, and the cylindrical datum
+  -- `ε H(ε t) dt` of the end is smooth.
+  obtain ⟨hHs', hKt⟩ := contDiff_uncurry_endSign_mul_and_contDiff_uncurry_snd p hHs
+  obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
+    (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jend z.2) hW contDiffOn_const hKt.contDiffOn hJend hD hB
+    hDBW hJt
+  refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huB ↦ ?_⟩
+  rw [perturbation_eq_positive p H] at hfl hE
+  -- The translated windows lie in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` of the end.
+  have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
+      z + (R k, 0) ∈ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1) :=
+    add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
+  have h (k : ℕ) :=
+    contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add ω
+      (p.periodic_endSign_mul hH) hHs' hJ (fun z hz ↦ hJt z (hΩD hz)) hΩ (hΩT k)
+      ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k) (huB k)
+  exact hconv hΩ hΩD (fun k ↦ (contDiff_comp_realChart_positive_add (R k) (hu k)).contDiffOn)
+    (fun k ↦ (h k).2.1) huB (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
 
 end SymplecticForm
 
@@ -241,6 +342,15 @@ variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [FiniteDimensional 
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
 
+omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] in
+/-- A translated end `v(z) = u(φ(z + (R, 0)))` of the positive plane in a manifold is `Cⁿ` when `u`
+is. -/
+private theorem contMDiff_comp_realChart_positive_add {n : WithTop ℕ∞} {u : ℝ × ℝ → M} (R : ℝ)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (fun z ↦ u (realChart positive.cylindricalEndLift (z + (R, 0)))) :=
+  hu.comp ((contDiff_realChart positive.contDiff_cylindricalEndLift).comp
+    (contDiff_id.add contDiff_const)).contMDiff
+
 /-- **A translated end of the positive plane in a manifold.** Let `u` be a `C³` solution on the
 plane of the Floer equation for the perturbation of the positive plane given by `H`, with energy at
 most `E`, for structures `J` with `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`. If the translate by
@@ -248,7 +358,7 @@ most `E`, for structures `J` with `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀
 `v(z) = u(φ(z + (R, 0)))` maps `Ω` into a set on which `J_∞(t)` is tamed by `ω` for `(s, t) ∈ Ω`,
 then `v` is `C³`, solves the Floer equation for `H(t) dt` and `J_∞` on `Ω`, and its energy density
 is integrable on `Ω` with integral at most `E`. -/
-private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add
+theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add
     (hω : ω.IsNondegenerate) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry H)) {T₀ : ℝ}
     {Jend : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
@@ -280,9 +390,7 @@ private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_
   set e := realChart positive.cylindricalEndLift
   set v : ℝ × ℝ → M := fun z ↦ u (e (z + (R, 0)))
   have hHs₁ : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H) := hHs.of_le (by norm_num)
-  have hvC : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 v :=
-    hu.comp ((contDiff_realChart positive.contDiff_cylindricalEndLift).comp
-      (contDiff_id.add contDiff_const)).contMDiff
+  have hvC : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 v := contMDiff_comp_realChart_positive_add R hu
   -- Beyond `T₀` the structure is `J_∞(t)` and beyond `2` the datum is `H(t) dt`, so `v` solves the
   -- cylindrical equation.
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
@@ -316,6 +424,34 @@ private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_
   exact ⟨hvC, hvfl, ω.integrableOn_and_setIntegral_floerEnergyDensity_le hΩ hΩ.measurableSet
     subset_rfl (hvC.of_le (by norm_num)).contMDiffOn (hX contMDiff_const) (hX hH₂)
     (fun z hz ↦ floerEnergyDensity_nonneg (u := v) hω (hJt z hz _ (huC hz)) (hvfl z hz)) hE0 hlin⟩
+
+omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] in
+/-- **The end datum of a PSS plane read in a chart.** The Hamiltonian `ε H(ε t)` of the end of
+`p`, for which `p` is the positive plane, is `C³`; read in a chart `φ`, its cylindrical datum
+`ε H(ε t) dt` is `C³` on an open set containing `D × φ(C)` on which the structures `J'` are `C²`. -/
+private theorem contMDiff_and_exists_isOpen_and_contDiffOn_comp_symm (p : PSSPlane)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry H))
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {W : Set ((ℝ × ℝ) × V)}
+    {D : Set (ℝ × ℝ)} {C : Set M} (hW : IsOpen W)
+    (hJ' : ContDiffOn ℝ 2
+      (fun q : (ℝ × ℝ) × V ↦ (J' q.1 q.2).toLinearMap.toContinuousLinearMap) W)
+    (hCφ : C ⊆ φ.source) (hDCW : D ×ˢ (φ '' C) ⊆ W) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) ∧
+      ∃ W' : Set ((ℝ × ℝ) × V), IsOpen W' ∧ D ×ˢ (φ '' C) ⊆ W' ∧
+        ContDiffOn ℝ 3 (fun q : (ℝ × ℝ) × V ↦ p.endSign * H (p.endSign * q.1.2) (φ.symm q.2)) W' ∧
+        ContDiffOn ℝ 2
+          (fun q : (ℝ × ℝ) × V ↦ (J' q.1 q.2).toLinearMap.toContinuousLinearMap) W' := by
+  have hHs' := contMDiff_uncurry_const_mul_comp_const_mul p.endSign hHs
+  -- The datum is `C³` on `ℝ² × φ(U)`, which contains `D × φ(C)`.
+  refine ⟨hHs', W ∩ univ ×ˢ φ.target, hW.inter (isOpen_univ.prod φ.open_target), ?_,
+    (φ.contDiffOn_comp_symm_of_contMDiffOn
+      (K := fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x)
+      isOpen_univ (hHs'.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk
+        contMDiff_snd)).contMDiffOn (WithTop.coe_le_coe.2 le_top)).mono inter_subset_right,
+    hJ'.mono inter_subset_left⟩
+  refine subset_inter hDCW (prod_mono (subset_univ D) ?_)
+  rintro _ ⟨x, hx, rfl⟩
+  exact φ.toPartialEquiv.map_source (hCφ hx)
 
 /-- **The translated ends of PSS planes in a symplectic chart of a manifold converge off finitely
 many bubbling points.** Let `p` be a PSS plane with end sign `ε`, `H` a period-one `C³`
@@ -376,26 +512,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
           (realChart positive.cylindricalEndLift (z + (R (ψ n), 0)))) (φ ∘ v) atTop (Ω \ ↑Z) ∧
         ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n)
           (realChart positive.cylindricalEndLift (y + (R (ψ n), 0)))) atTop (𝓝 (v y)) := by
-  -- The plane `p` is the positive plane for the Hamiltonian `ε H(ε t)`.
-  have hHs' : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3
-      (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
-    (contDiff_const.mul contDiff_id).contMDiff.comp (hHs.comp
-      (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
-  -- Read in the chart, the cylindrical datum `ε H(ε t) dt` is `C³` on `ℝ² × φ(U)`, which contains
-  -- `D × φ(C)`.
-  have hW' : IsOpen (W ∩ univ ×ˢ φ.target) := hW.inter (isOpen_univ.prod φ.open_target)
-  have hDCW' : D ×ˢ (φ '' C) ⊆ W ∩ univ ×ˢ φ.target := by
-    refine subset_inter hDCW (prod_mono (subset_univ D) ?_)
-    rintro _ ⟨x, hx, rfl⟩
-    exact φ.toPartialEquiv.map_source (hCφ hx)
+  obtain ⟨hHs', W', hW', hDCW', hKt, hJ''⟩ :=
+    contMDiff_and_exists_isOpen_and_contDiffOn_comp_symm p hHs φ hW hJ' hCφ hDCW
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset φ
     (Ks := fun _ _ ↦ 0) (Kt := fun w x ↦ p.endSign * H (p.endSign * w.2) x)
-    (J := fun z ↦ Jend z.2) hφ hJJ' hW' contDiffOn_const
-    ((φ.contDiffOn_comp_symm_of_contMDiffOn
-      (K := fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x)
-      isOpen_univ (hHs'.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)).contMDiffOn (WithTop.coe_le_coe.2 le_top)).mono inter_subset_right)
-    (hJ'.mono inter_subset_left) hD hC hCφ hDCW' hJt
+    (J := fun z ↦ Jend z.2) hφ hJJ' hW' contDiffOn_const hKt hJ'' hD hC hCφ hDCW' hJt
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huC ↦ ?_⟩
   rw [perturbation_eq_positive p H] at hfl hE
   -- The translated windows lie in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` of the end.
@@ -408,6 +529,84 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
       (hE k) (huC k)
   exact hconv hΩ hΩD (fun k ↦ (h k).1.contMDiffOn) (fun k ↦ (h k).2.1) huC
     (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
+
+/-- **The translated ends of smooth PSS planes in a symplectic chart of a manifold converge in `C¹`
+off finitely many bubbling points to a solution of the cylindrical Floer equation on `Ω \ Z`.**
+Under the hypotheses of
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add`, there
+is a threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions on the plane of
+the Floer equation for `J(z, u)` and the perturbation of `p` given by `H`, with energy at most
+`E ≥ 0`, let `Rₖ ≥ 0` be heights, and let the translated ends `vₖ(z) = uₖ(e(z + (Rₖ, 0)))` map an
+open `Ω ⊆ D` into `C`. Then there are a subsequence `ψ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`,
+and a map `v` with values in `C` on `Ω \ Z` such that along `ψ` every disc about a point of `Z`
+eventually carries energy at least `δ` for the cylindrical datum `ε H(ε t) dt`, the coordinate maps
+`φ ∘ v_{ψ n}` and their derivatives converge to `φ ∘ v` and its derivative locally uniformly on
+`Ω \ Z`, `v` is a `C¹` solution on `Ω \ Z` of the Floer equation for the datum `ε H(ε t) dt` and the
+structures `J_∞(t)`, and the energy of `v` over `Ω \ Z` is finite and at most `E`. -/
+theorem
+    exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_comp_realChart_positive_add
+    (hω : ω.IsNondegenerate) (p : PSSPlane) (hH : Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry H)) {T₀ : ℝ}
+    {Jend : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hJ : ∀ s t x, T₀ ≤ s → J (realChart positive.cylindricalEndLift (s, t)) x = Jend t x)
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
+    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {C : Set M} {t₀ : ℝ}
+    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jend z.2 x))
+    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
+      IsComplexLinearMap (Jend z.2 x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap) (hW : IsOpen W)
+    (hJ' : ContDiffOn ℝ 2
+      (fun q : (ℝ × ℝ) × V ↦ (J' q.1 q.2).toLinearMap.toContinuousLinearMap) W)
+    (hD : IsCompact D) (hDT : D ⊆ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1)) (hC : IsCompact C)
+    (hCφ : C ⊆ φ.source) (hDCW : D ×ˢ (φ '' C) ⊆ W) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
+      IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) → (∀ k, ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (u k)) →
+      (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
+        (ω.perturbedMFDeriv (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x Complex.I) (u k)
+          z).toLinearMap) →
+      0 ≤ E →
+      (∀ k, ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x Complex.I) (u k) z) ≤
+          ENNReal.ofReal E) →
+      (∀ k, MapsTo (fun z ↦ u k (realChart positive.cylindricalEndLift (z + (R k, 0)))) Ω C) →
+      ∃ (ψ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M), StrictMono ψ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+          (fun _ _ ↦ 0) (fun w x ↦ p.endSign * H (p.endSign * w.2) x)
+          (fun z ↦ u (ψ n) (realChart positive.cylindricalEndLift (z + (R (ψ n), 0)))) y) ∧
+        ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) C ∧
+        TendstoLocallyUniformlyOn (fun n ↦ φ ∘ fun z ↦ u (ψ n)
+          (realChart positive.cylindricalEndLift (z + (R (ψ n), 0)))) (φ ∘ v) atTop (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (φ ∘ fun z ↦ u (ψ n)
+          (realChart positive.cylindricalEndLift (z + (R (ψ n), 0))))) (fderiv ℝ (φ ∘ v)) atTop
+          (Ω \ ↑Z) ∧
+        (∀ z ∈ Ω \ ↑Z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jend z.2 (v z))
+          (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w x ↦ p.endSign * H (p.endSign * w.2) x) v
+            z).toLinearMap) ∧
+        IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0)
+          (fun w x ↦ p.endSign * H (p.endSign * w.2) x) v) (Ω \ ↑Z) ∧
+        ∫ z in Ω \ ↑Z, ω.floerEnergyDensity (fun _ _ ↦ 0)
+          (fun w x ↦ p.endSign * H (p.endSign * w.2) x) v z ≤ E := by
+  obtain ⟨hHs', W', hW', hDCW', hKt, hJ''⟩ :=
+    contMDiff_and_exists_isOpen_and_contDiffOn_comp_symm p hHs φ hW hJ' hCφ hDCW
+  obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
+    φ (Ks := fun _ _ ↦ 0) (Kt := fun w x ↦ p.endSign * H (p.endSign * w.2) x)
+    (J := fun z ↦ Jend z.2) hφ hJJ' hW' contDiffOn_const hKt hJ'' hD hC hCφ hDCW' hJt
+  refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huC ↦ ?_⟩
+  rw [perturbation_eq_positive p H] at hfl hE
+  -- The translated windows lie in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` of the end.
+  have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
+      z + (R k, 0) ∈ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1) :=
+    add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
+  have h (k : ℕ) :=
+    contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add hω
+      (p.periodic_endSign_mul hH) hHs' hJ (fun z hz ↦ hJt z (hΩD hz)) hΩ (hΩT k)
+      ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k) (huC k)
+  exact hconv hΩ hΩD (fun k ↦ (contMDiff_comp_realChart_positive_add (R k) (hu k)).contMDiffOn)
+    (fun k ↦ (h k).2.1) huC (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
 
 end SmoothTwoForm.IsNondegenerate
 

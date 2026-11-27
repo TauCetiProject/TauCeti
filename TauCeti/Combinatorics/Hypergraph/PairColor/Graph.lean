@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Combinatorics.SimpleGraph.Regularity.Uniform
+public import TauCeti.Combinatorics.SimpleGraph.Density
 import TauCeti.Combinatorics.SimpleGraph.Regularity.Uniform
 import TauCeti.Data.Finset.Basic
 
@@ -29,6 +30,8 @@ diagonal blocks, which `Finpartition.IsUniform` ignores.
 * `SimpleGraph.toPairColorSystem`: the edge/non-edge coloring of a simple graph.
 * `SimpleGraph.pairColorDensity_toPairColorSystem_true`: the edge color has the edge density
   between disjoint sets.
+* `SimpleGraph.pairColorDensity_toPairColorSystem_decide`: between disjoint nonempty sets, the
+  two colors have the edge and nonedge densities `SimpleGraph.patternDensity`.
 * `SimpleGraph.IsUniform.isRegularPair_ofGraph`, `TauCeti.PairColorSystem.IsRegularPair.isUniform`:
   uniform and regular pairs of disjoint sets agree up to the strictness of the bound.
 * `TauCeti.PairSkeleton3.IsPairColorRegular.isUniform`: a pair-color regular skeleton of
@@ -90,6 +93,20 @@ theorem pairColorDensity_toPairColorSystem_false [DecidableEq V] (hst : Disjoint
   rw [pairColorDensity_def, filter_ne_product_of_disjoint hst, SimpleGraph.edgeDensity_def,
     SimpleGraph.interedges_def, card_product, Nat.cast_mul]
   simp
+
+/-- Between disjoint nonempty sets, the color `decide e` has the pattern density of `G`: the edge
+density if `e` holds and the nonedge density otherwise. -/
+theorem pairColorDensity_toPairColorSystem_decide {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
+    (e : Prop) [Decidable e] (hs : s.Nonempty) (ht : t.Nonempty) (hst : Disjoint s t) :
+    (pairColorDensity G.toPairColorSystem (decide e) s t : 𝕜) = G.patternDensity e s t := by
+  classical
+  by_cases he : e
+  · rw [decide_eq_true he, G.pairColorDensity_toPairColorSystem_true hst,
+      G.patternDensity_of_pos he]
+  · rw [decide_eq_false he, G.pairColorDensity_toPairColorSystem_false hst,
+      G.patternDensity_of_neg he,
+      eq_sub_of_add_eq' (G.edgeDensity_add_edgeDensity_compl hs ht hst)]
+    norm_cast
 
 end SimpleGraph
 

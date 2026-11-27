@@ -44,7 +44,9 @@ The second basis vector does not depend on `(h, j)`, while the first one varies 
 through the period and the rotation angle. Continuing the first one around the focus–focus value
 `(1, 0)` of `F` along a continuous lift of `Θ`, which decreases by `2π` once around that value
 (`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`), is the classical
-computation of the Hamiltonian monodromy of the pendulum; that transport is not carried out here.
+computation of the Hamiltonian monodromy of the pendulum. What it forces on continuous sections of
+the period lattices is derived in
+`TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Monodromy`.
 
 ## Main results
 
@@ -328,10 +330,12 @@ private theorem injOn_heightMomentum {h j z₀ : ℝ} (hj : j ≠ 0) (hz₀ : z�
         ((sphericalPendulumFlowAction (Pi.single 0 w)).toMul x :
           EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) : False := by
     rcases le_or_gt w t₂ with hw₂ | hw₂
-    · exact (strictMonoOn_fst_apply_two_of_isMIntegralCurve_sphericalPendulum hγ hpos
+    · exact (strictMonoOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
+      (hγ.isMIntegralCurveOn _) hpos
         ⟨hv.1, (hvw.trans_le hw₂).le⟩ ⟨hv.1.trans hvw.le, hw₂⟩ hvw).ne hz
     rcases le_or_gt t₂ v with hv₂ | hv₂
-    · exact (strictAntiOn_fst_apply_two_of_isMIntegralCurve_sphericalPendulum hγ hneg
+    · exact (strictAntiOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
+      (hγ.isMIntegralCurveOn _) hneg
         ⟨hv₂, hvw.le.trans hw.2.le⟩ ⟨hv₂.trans hvw.le, hw.2.le⟩ hvw).ne' hz
     have hpw := hneg w ⟨hw₂, hw.2⟩
     rcases hv.1.eq_or_lt with rfl | hv₁
@@ -433,6 +437,21 @@ theorem hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure {h 
   · simp [hm]
   · have hv₁ : v 1 = m * -sphericalPendulumRotationAngle h j + n * (2 * π) := by linarith
     simp [hv₁]
+
+/-- **The period lattice of the spherical pendulum** on the domain of distinct nonpolar turning
+points: `TauCeti.hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure` for a value
+`(h, j)` in `TauCeti.sphericalPendulumTurningPointDomain`. -/
+theorem hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure_of_mem {h j : ℝ}
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain)
+    {x : sphericalPendulumPhaseSpace} (hx : sphericalPendulumEnergyMomentum x = (h, j)) :
+    isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowStabilizer
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
+        isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec x =
+      AddSubgroup.closure
+        {![sphericalPendulumPeriod h j, -sphericalPendulumRotationAngle h j], ![0, 2 * π]} :=
+  let ⟨hj, _, hz₀, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hc
+  hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure hj hz₀ hV hx
 
 end PeriodLattice
 

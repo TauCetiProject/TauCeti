@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 import TauCeti.Data.Set.Function
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -51,13 +52,22 @@ normal vector and an offset.
   `TauCeti.hyperplaneReflection_mem_closedBall_iff`: open and closed balls centred on the
   hyperplane are invariant.
 * `TauCeti.closure_setOf_lt_inner_subset`: the closure of the open half-space `{x | c < ⟪x, ν⟫}`
-  lies in the closed half-space `{x | c ≤ ⟪x, ν⟫}`.
+  lies in the closed half-space `{x | c ≤ ⟪x, ν⟫}`, and
+  (`TauCeti.closure_thickening_inter_setOf_lt_inner_subset`) the closure of the part of an open
+  `R`-thickening in it lies in the part of the closed `R`-thickening in the closed half-space.
+* `TauCeti.mem_closure_setOf_lt_inner_inter`: conversely, a point of the closed half-space in an
+  open set `V` lies in the closure of the part of `V` in the open half-space.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
   `{y | c ≤ ⟪y, ν⟫}` is at least as close to another such point as to its mirror image, and so
   (`TauCeti.mem_thickening_of_hyperplaneReflection_mem_thickening`) a point of that half-space
   whose mirror image lies in a thickening of a set in the half-space lies in it too.
+* `TauCeti.lipschitzWith_one_ite_hyperplaneReflection`: folding across the hyperplane, the map
+  that fixes the closed half-space `{y | c ≤ ⟪y, ν⟫}` and reflects the other side onto it, is
+  `1`-Lipschitz. It lands in that half-space (`TauCeti.le_inner_ite_hyperplaneReflection`) and maps
+  every ball centred on the hyperplane into itself
+  (`TauCeti.mapsTo_ite_hyperplaneReflection_ball`).
 * `TauCeti.exists_opens_mapsTo_hyperplaneReflection`: a bounded reflection-invariant open set
   around a thickening of a bounded set of the closed half-space, whose points in the open
   half-space lie in that thickening.
@@ -73,6 +83,11 @@ normal vector and an offset.
   `x ↦ 1_H f x - 1_H g (ρ x)` built from two functions `f`, `g` given on one side `H` of the
   hyperplane lies in `Lᵖ` with norm at most `‖f‖_p + ‖g‖_p`. For `g = f` this is the odd
   reflection of `f`, of norm at most twice that of `f`.
+* `TauCeti.memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection`: for a
+  linear isometry `T`, the field `1_H G - 1_H (T ∘ G) ∘ ρ` lies in `Lᵖ` with norm at
+  most twice that of `G`; for `T` the linear part of `ρ` this is the odd reflection of a field.
+* `TauCeti.sub_comp_hyperplaneReflection_ae_eq_indicator`: for `f` vanishing off `H`, the odd
+  reflection `f - T (f ∘ ρ)` is `1_H f - 1_H (T ∘ f) ∘ ρ`.
 * `TauCeti.setIntegral_inner_reflection_comp_hyperplaneReflection`: the reflection moves across a
   pairing, `∫_U ⟪G, R (v ∘ ρ)⟫ = ∫_U ⟪R (G ∘ ρ), v⟫`.
 -/
@@ -174,6 +189,29 @@ theorem closure_setOf_lt_inner_subset (ν : F) (c : ℝ) :
     closure {x : F | c < ⟪x, ν⟫_ℝ} ⊆ {x | c ≤ ⟪x, ν⟫_ℝ} :=
   closure_lt_subset_le continuous_const (continuous_id.inner continuous_const)
 
+/-- A point of the closed half-space `{x | c ≤ ⟪x, ν⟫}` lying in an open set `V` is a limit of
+points of the open half-space `{x | c < ⟪x, ν⟫}` in `V`. -/
+theorem mem_closure_setOf_lt_inner_inter {ν y : F} (hν : ν ≠ 0) {c : ℝ} (hy : c ≤ ⟪y, ν⟫_ℝ)
+    {V : Set F} (hV : IsOpen V) (hyV : y ∈ V) : y ∈ closure ({x | c < ⟪x, ν⟫_ℝ} ∩ V) := by
+  have hT : Filter.Tendsto (fun t : ℝ => y + t • ν) (nhdsWithin 0 (Set.Ioi 0)) (nhds y) := by
+    have hc : Continuous fun t : ℝ => y + t • ν := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  refine mem_closure_of_tendsto hT ?_
+  filter_upwards [self_mem_nhdsWithin, hT.eventually (hV.mem_nhds hyV)] with t (ht : 0 < t) htV
+  refine ⟨?_, htV⟩
+  have hν2 : 0 < ‖ν‖ ^ 2 := by positivity
+  simp only [Set.mem_ofPred_eq, inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
+  nlinarith
+
+/-- The closure of the part in the open half-space `{x | c < ⟪x, ν⟫}` of the open `R`-thickening of
+a set `S` lies in the part in the closed half-space `{x | c ≤ ⟪x, ν⟫}` of the closed
+`R`-thickening. -/
+theorem closure_thickening_inter_setOf_lt_inner_subset (R : ℝ) (S : Set F) (ν : F) (c : ℝ) :
+    closure (Metric.thickening R S ∩ {x | c < ⟪x, ν⟫_ℝ}) ⊆
+      Metric.cthickening R S ∩ {x | c ≤ ⟪x, ν⟫_ℝ} :=
+  (closure_inter_subset_inter_closure _ _).trans (Set.inter_subset_inter
+    (Metric.closure_thickening_subset_cthickening R S) (closure_setOf_lt_inner_subset ν c))
+
 /-- Points of the closure of an open half-space `H = {x | c < ⟪x, ν⟫}` outside `H` lie on the
 hyperplane, where the reflection is the identity. -/
 theorem hyperplaneReflection_eq_self_of_mem_closure {ν : F} {c : ℝ} {H : Set F}
@@ -228,6 +266,50 @@ theorem dist_le_dist_hyperplaneReflection {ν : F} {c : ℝ} {x z : F} (hx : c �
     positivity
   rw [dist_eq_norm, dist_eq_norm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), hid]
   linarith
+
+/-- **Folding across a hyperplane is `1`-Lipschitz.** The map that fixes the closed half-space
+`{y | c ≤ ⟪y, ν⟫}` and reflects the other side onto it in the hyperplane `{y | ⟪y, ν⟫ = c}` does
+not increase distances. Composing with it extends a function given on the closed half-space to
+the whole space, keeping Hölder and Lipschitz constants. -/
+theorem lipschitzWith_one_ite_hyperplaneReflection (ν : F) (c : ℝ) :
+    LipschitzWith 1 fun x => if c ≤ ⟪x, ν⟫_ℝ then x else hyperplaneReflection ν c x := by
+  refine LipschitzWith.of_dist_le_mul fun x y => ?_
+  rw [NNReal.coe_one, one_mul]
+  rcases eq_or_ne ν 0 with rfl | hν
+  · by_cases hc : c ≤ 0 <;> simp [hc]
+  -- A point and the mirror image of a point on the other side.
+  have hmix {x y : F} (hx : c ≤ ⟪x, ν⟫_ℝ) (hy : ¬c ≤ ⟪y, ν⟫_ℝ) :
+      dist x (hyperplaneReflection ν c y) ≤ dist x y := by
+    have hρy : c ≤ ⟪hyperplaneReflection ν c y, ν⟫_ℝ := by
+      rw [inner_hyperplaneReflection hν]
+      linarith [not_le.1 hy]
+    simpa [hyperplaneReflection_hyperplaneReflection] using
+      dist_le_dist_hyperplaneReflection hx hρy
+  split_ifs with hx hy hy
+  · exact le_rfl
+  · exact hmix hx hy
+  · rw [dist_comm, dist_comm x]
+    exact hmix hy hx
+  · exact ((hyperplaneReflection ν c).dist_map x y).le
+
+/-- Folding across the hyperplane `{y | ⟪y, ν⟫ = c}` lands in the closed half-space
+`{y | c ≤ ⟪y, ν⟫}`. -/
+theorem le_inner_ite_hyperplaneReflection {ν : F} (hν : ν ≠ 0) (c : ℝ) (x : F) :
+    c ≤ ⟪if c ≤ ⟪x, ν⟫_ℝ then x else hyperplaneReflection ν c x, ν⟫_ℝ := by
+  split_ifs with hx
+  · exact hx
+  · rw [inner_hyperplaneReflection hν]
+    linarith [not_le.1 hx]
+
+/-- Folding across the hyperplane `{y | ⟪y, ν⟫ = c}` maps every ball centred on the hyperplane
+into itself. -/
+theorem mapsTo_ite_hyperplaneReflection_ball {ν z : F} {c : ℝ} (hz : ⟪z, ν⟫_ℝ = c) (r : ℝ) :
+    Set.MapsTo (fun x => if c ≤ ⟪x, ν⟫_ℝ then x else hyperplaneReflection ν c x)
+      (Metric.ball z r) (Metric.ball z r) := fun x hx => by
+  dsimp only
+  split_ifs
+  · exact hx
+  · exact mapsTo_hyperplaneReflection_ball hz r hx
 
 /-- **Reflection does not bring a point closer to a set on its side.** If `S` lies in the closed
 half-space `{y | c ≤ ⟪y, ν⟫}` and `x` lies in that half-space with its mirror image in the open
@@ -403,6 +485,44 @@ theorem eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (hp : 1 ≤
         eLpNorm_sub_le hp
     _ = eLpNorm f p (μ.restrict (U ∩ H)) + eLpNorm g p (μ.restrict (U ∩ H)) := by
         rw [eLpNorm_comp_measurePreserving hg' hρ, hnorm, hnorm]
+
+/-- **The odd reflection of a vector field.** Let `U` be a measurable set mapped into itself by
+the hyperplane reflection `ρ`, let `H` be measurable, let `1 ≤ p` and let `T` be a linear isometry
+of `E`, such as the linear part of `ρ`. If `G ∈ Lᵖ(U ∩ H)`, then
+`x ↦ 1_H G x - 1_H (T ∘ G) (ρ x)` lies in `Lᵖ(U)`, with norm at most `2 ‖G‖_{Lᵖ(U ∩ H)}`. -/
+theorem memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection
+    [NormedSpace ℝ E] (hp : 1 ≤ p) (hHm : MeasurableSet H) (hUm : MeasurableSet U)
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) (T : E →ₗᵢ[ℝ] E)
+    (hf : MemLp f p (μ.restrict (U ∩ H))) :
+    MemLp (fun x => H.indicator f x - H.indicator (fun y => T (f y)) (hyperplaneReflection ν c x))
+        p (μ.restrict U) ∧
+      eLpNorm (fun x => H.indicator f x -
+        H.indicator (fun y => T (f y)) (hyperplaneReflection ν c x)) p (μ.restrict U) ≤
+          2 * eLpNorm f p (μ.restrict (U ∩ H)) := by
+  refine ⟨memLp_indicator_sub_indicator_comp_hyperplaneReflection hHm hUm hU hf
+    (T.toContinuousLinearMap.comp_memLp' hf), ?_⟩
+  refine (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le hp hHm hUm hU).trans_eq ?_
+  rw [LinearIsometry.eLpNorm_comp, two_mul]
+
+/-- **The odd reflection in indicator form.** Let `U` be a measurable set mapped into itself by
+the hyperplane reflection `ρ`, and let `f` vanish almost everywhere on `U ∖ H`. For a map `T` with
+`T 0 = 0`, the function `x ↦ f x - T (f (ρ x))` is almost everywhere on `U` the function
+`x ↦ 1_H f x - 1_H (T ∘ f) (ρ x)`. -/
+theorem sub_comp_hyperplaneReflection_ae_eq_indicator (hUm : MeasurableSet U)
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) {T : E → E} (hT : T 0 = 0)
+    (hf : ∀ᵐ x ∂μ.restrict U, x ∉ H → f x = 0) :
+    (fun x => f x - T (f (hyperplaneReflection ν c x))) =ᵐ[μ.restrict U]
+      fun x => H.indicator f x - H.indicator (fun y => T (f y)) (hyperplaneReflection ν c x) := by
+  filter_upwards [hf,
+    (measurePreserving_restrict_hyperplaneReflection hU hUm).quasiMeasurePreserving.ae hf]
+    with x h1 h2
+  congr 1
+  · by_cases hx : x ∈ H
+    · rw [Set.indicator_of_mem hx]
+    · rw [Set.indicator_of_notMem hx, h1 hx]
+  · by_cases hx : hyperplaneReflection ν c x ∈ H
+    · rw [Set.indicator_of_mem hx]
+    · rw [Set.indicator_of_notMem hx, h2 hx, hT]
 
 /-- **Moving the reflection across a pairing.** Let `U` be a measurable set mapped into itself by
 the hyperplane reflection `ρ`, with linear part `R = (ℝ ∙ ν)ᗮ.reflection`. For vector fields `G`

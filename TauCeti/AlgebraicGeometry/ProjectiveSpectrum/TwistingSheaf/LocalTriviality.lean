@@ -165,6 +165,17 @@ theorem toTwistingSheaf_eq_smul_chartGenerator (n : ℕ) (r : 𝒜 n)
   apply Localization.r_of_eq
   simp [mul_comm]
 
+/-- On an open inside the chart `D₊(f)` of an element `f` of degree one, the section `f / 1` of
+`𝒪(1)` is the standard basis section. -/
+theorem toTwistingSheaf_eq_chartGenerator_one :
+    toTwistingSheaf 𝒜 Nat.cast_one U ⟨f, hf⟩ = chartGenerator 1 f hf U hU := by
+  refine ext fun x ↦ ?_
+  let := x.val.isPrime
+  rw [toTwistingSheaf_apply_apply, chartGenerator_apply]
+  apply Localization.mk_eq_mk_iff.mpr
+  apply Localization.r_of_eq
+  simp
+
 /-- The forward chart coordinate map is multiplication by `fⁿ` in each localization. -/
 @[simp]
 theorem chartSectionsLinearEquiv_apply_apply (a : Γ(Proj 𝒜, U)) (x : U) :

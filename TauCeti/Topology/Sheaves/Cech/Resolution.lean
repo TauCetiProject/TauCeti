@@ -110,8 +110,7 @@ private lemma isLimitSucc_lift (n : ℕ) :
 private def isLimitZero :
     IsLimit (KernelFork.ofι ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
       (CochainComplex.fromSingle₀Equiv K F ι).val)
-      (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
-        Functor.map_zero]) :
+      (Functor.map_fromSingle₀Equiv_val_comp_d _ ι) :
         KernelFork ((((Sheaf.Γ (Opens.grothendieckTopology X)
           (ModuleCat.{u} R)).mapHomologicalComplex _).obj K).sc' 0 0 1).g) :=
   KernelFork.mapIsLimit _ (CochainComplex.exact_f_zero_of_quasiIsoAt ι).fIsKernel _
@@ -138,9 +137,7 @@ private abbrev leftHomologyDataZero :
   i := (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
     (CochainComplex.fromSingle₀Equiv K F ι).val
   π := (sectionsIsoCechZero F).hom
-  wi := by
-    dsimp
-    rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property, Functor.map_zero]
+  wi := Functor.map_fromSingle₀Equiv_val_comp_d _ ι
   hi := isLimitZero ι
   wπ := isLimitZero_lift_comp ι
   hπ := ((ShortComplex.exact_iff_mono (ShortComplex.mk _ _ (isLimitZero_lift_comp ι))
@@ -161,8 +158,7 @@ private lemma leftHomologyDataZero_cyclesIso_inv :
       (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
         K).liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
           (CochainComplex.fromSingle₀Equiv K F ι).val) 1 (by simp)
-          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
-            Functor.map_zero]) := by
+          (Functor.map_fromSingle₀Equiv_val_comp_d _ ι) := by
   rw [← cancel_mono (HomologicalComplex.iCycles _ _), Category.assoc,
     HomologicalComplex.cyclesIsoSc'_inv_iCycles,
     ShortComplex.LeftHomologyData.cyclesIso_inv_comp_iCycles, HomologicalComplex.liftCycles_i]
@@ -354,8 +350,7 @@ theorem cechCohomologyObjIsoOfIsFlasque_zero_hom :
       (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
         K).liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
           (CochainComplex.fromSingle₀Equiv K F ι).val) 1 (by simp)
-          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
-            Functor.map_zero]) ≫
+          (Functor.map_fromSingle₀Equiv_val_comp_d _ ι) ≫
         (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
           K).homologyπ 0 := by
   rw [cechCohomologyObjIsoOfIsFlasque, Iso.trans_hom, Iso.symm_hom, Iso.symm_hom,

@@ -19,6 +19,8 @@ probability measures to be stated without rebuilding the probability-measure str
 
 * `TauCeti.MeasureTheory.isProbabilityMeasure_smul_add_smul` proves that the underlying measure
   has total mass one.
+* `TauCeti.MeasureTheory.measureReal_smul_add_smul_apply` evaluates the real-valued mass of a
+  combination `a • μ + b • ν` with finite weights on a set of finite `μ`- and `ν`-measure.
 * `TauCeti.MeasureTheory.exists_mem_eq_smul_sum`: a set of probability measures closed under
   binary mixtures contains the uniform mixture of any finitely many of its members.
 * `MeasureTheory.ProbabilityMeasure.toMeasure_convexComb` identifies the underlying measure.
@@ -27,6 +29,7 @@ probability measures to be stated without rebuilding the probability-measure str
   `MeasureTheory.ProbabilityMeasure.convexComb_zero_right`, and
   `MeasureTheory.ProbabilityMeasure.convexComb_self` simplify degenerate combinations.
 * `MeasureTheory.ProbabilityMeasure.convexComb_comm` exchanges the measures and their weights.
+* `MeasureTheory.ProbabilityMeasure.map_convexComb`: push-forward along a measurable map is affine.
 -/
 
 public section
@@ -49,6 +52,16 @@ arbitrary elements of `ℝ≥0∞` summing to `1`; no separate nonnegativity con
 theorem isProbabilityMeasure_smul_add_smul {a b : ℝ≥0∞} (hab : a + b = 1) (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] : IsProbabilityMeasure (a • μ + b • ν) :=
   ⟨by simp [hab]⟩
+
+/-- **Real mass of a combination.** For finite weights `a`, `b` and a set `s` of finite `μ`- and
+`ν`-measure, the real-valued mass of `s` under `a • μ + b • ν` is `a μ(s) + b ν(s)`. -/
+theorem measureReal_smul_add_smul_apply {a b : ℝ≥0∞} {μ ν : Measure α} {s : Set α}
+    (ha : a ≠ ∞ := by finiteness) (hb : b ≠ ∞ := by finiteness) (hμ : μ s ≠ ∞ := by finiteness)
+    (hν : ν s ≠ ∞ := by finiteness) :
+    (a • μ + b • ν).real s = a.toReal * μ.real s + b.toReal * ν.real s := by
+  rw [measureReal_add_apply (by simp [ENNReal.mul_eq_top, ha, hμ])
+      (by simp [ENNReal.mul_eq_top, hb, hν]),
+    measureReal_ennreal_smul_apply, measureReal_ennreal_smul_apply]
 
 /-- **Uniform finite mixtures.** In a set `C` of probability measures closed under binary
 mixtures `a • P + (1 - a) • Q`, `0 ≤ a ≤ 1`, the uniform mixture `(#s)⁻¹ • ∑ i ∈ s, Q i` of finitely
@@ -138,6 +151,15 @@ theorem convexComb_comm {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : ProbabilityM
     convexComb hab P Q = convexComb ((add_comm b a).trans hab) Q P := by
   apply toMeasure_injective
   simp [add_comm]
+
+/-- **Push-forward is affine.** The push-forward of a convex combination of probability measures
+along a measurable map is the convex combination of the push-forwards. -/
+@[simp]
+theorem map_convexComb {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {f : α → β}
+    (hf : Measurable f) {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : ProbabilityMeasure α) :
+    (convexComb hab P Q).map f = convexComb hab (P.map f) (Q.map f) := by
+  apply toMeasure_injective
+  simp [Measure.map_add _ _ hf, Measure.map_smul _ hf.aemeasurable]
 
 end ProbabilityMeasure
 

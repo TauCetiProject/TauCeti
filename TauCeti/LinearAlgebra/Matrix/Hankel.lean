@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Support
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 
 /-!
 # Hankel matrices and Hankel determinants
@@ -30,6 +32,8 @@ coefficient `a 0` does not appear, is `hankelDet (fun k => a (k + 1)) n`.
 
 * `TauCeti.hankelMatrix m n`: the Hankel matrix `(m (i + j))_{i,j<n}`.
 * `TauCeti.hankelDet m n`: its determinant.
+* `TauCeti.rieszFunctional m`: the Riesz functional `L_m : R[X] →ₗ[R] R` of a sequence `m`, the
+  linear functional with `L_m (X ^ k) = m k`.
 
 ## Main results
 
@@ -44,6 +48,12 @@ coefficient `a 0` does not appear, is `hankelDet (fun k => a (k + 1)) n`.
 * `TauCeti.det_apply_mul_eq_prod_coeff_mul_hankelDet`,
   `TauCeti.det_apply_mul_eq_hankelDet_of_monic`: the invariance of the Hankel determinant under a
   triangular, respectively monic, change of basis.
+* `TauCeti.rieszFunctional_moments`: every linear functional on `R[X]` is the Riesz functional of
+  its moments.
+* `TauCeti.dotProduct_hankelMatrix_mulVec`: the Hankel form `ξ ⬝ᵥ (hankelMatrix m n *ᵥ η)` is the
+  value `L_m (p_ξ * p_η)` of the Riesz functional, for the polynomials `p_ξ = ∑_{i<n} ξᵢ Xⁱ`.
+* `TauCeti.hankelDet_eq_zero_of_recurrence`: if `m` satisfies a linear recurrence of order `r`,
+  the Hankel determinants of size greater than `r` vanish.
 
 ## References
 
@@ -79,6 +89,19 @@ theorem hankelMatrix_transpose (m : ℕ → R) (n : ℕ) : (hankelMatrix m n)ᵀ
 
 theorem isSymm_hankelMatrix (m : ℕ → R) (n : ℕ) : (hankelMatrix m n).IsSymm :=
   IsSymm.ext fun i j => by simp [add_comm]
+
+/-- Over a ring with trivial star, a Hankel section is Hermitian. -/
+theorem isHermitian_hankelMatrix [Star R] [TrivialStar R] (m : ℕ → R) (n : ℕ) :
+    (hankelMatrix m n).IsHermitian :=
+  isHermitian_iff_isSymm.mpr (isSymm_hankelMatrix m n)
+
+/-- The section of size `n` of the infinite Hankel matrix `(m (i + j))_{i,j ∈ ℕ}` is
+`hankelMatrix m n`. -/
+@[simp]
+theorem submatrix_hankel_eq_hankelMatrix (m : ℕ → R) (n : ℕ) :
+    (Matrix.of fun i j : ℕ => m (i + j)).submatrix (fun i : Fin n => (i : ℕ))
+      (fun i : Fin n => (i : ℕ)) = hankelMatrix m n :=
+  (rfl)
 
 @[simp]
 theorem hankelMatrix_map {S : Type*} (m : ℕ → R) (n : ℕ) (f : R → S) :
@@ -182,5 +205,108 @@ theorem det_apply_mul_eq_hankelDet_of_monic {p q : Fin n → R[X]} (hp : ∀ i, 
   simp [hp1, hq1]
 
 end ChangeOfBasis
+
+section Riesz
+
+variable [CommSemiring R]
+
+/-- The Riesz functional `L_m` of a sequence `m`: the linear functional on `R[X]` sending `X ^ k`
+to `m k`, that is `L_m (∑ₖ aₖ Xᵏ) = ∑ₖ aₖ m k`. -/
+noncomputable def rieszFunctional (m : ℕ → R) : R[X] →ₗ[R] R :=
+  Polynomial.lsum fun k => LinearMap.mulRight R (m k)
+
+theorem rieszFunctional_apply (m : ℕ → R) (p : R[X]) :
+    rieszFunctional m p = p.sum fun k a => a * m k := by
+  simp [rieszFunctional]
+
+@[simp]
+theorem rieszFunctional_monomial (m : ℕ → R) (k : ℕ) (a : R) :
+    rieszFunctional m (monomial k a) = a * m k := by
+  rw [rieszFunctional_apply, sum_monomial_index a (fun k a => a * m k) (zero_mul _)]
+
+@[simp]
+theorem rieszFunctional_C (m : ℕ → R) (a : R) : rieszFunctional m (C a) = a * m 0 := by
+  rw [← monomial_zero_left, rieszFunctional_monomial]
+
+@[simp]
+theorem rieszFunctional_X_pow (m : ℕ → R) (k : ℕ) : rieszFunctional m (X ^ k) = m k := by
+  rw [← monomial_one_right_eq_X_pow, rieszFunctional_monomial, one_mul]
+
+@[simp]
+theorem rieszFunctional_one (m : ℕ → R) : rieszFunctional m 1 = m 0 := by
+  simpa using rieszFunctional_X_pow m 0
+
+@[simp]
+theorem rieszFunctional_X (m : ℕ → R) : rieszFunctional m X = m 1 := by
+  simpa using rieszFunctional_X_pow m 1
+
+/-- Every linear functional on `R[X]` is the Riesz functional of its moments `L (X ^ k)`. -/
+@[simp]
+theorem rieszFunctional_moments (L : R[X] →ₗ[R] R) :
+    rieszFunctional (fun k => L (X ^ k)) = L := by
+  ext k
+  simp [monomial_one_right_eq_X_pow]
+
+/-- The Hankel form of the section of size `n` is a value of the Riesz functional:
+`ξ ⬝ᵥ (hankelMatrix m n *ᵥ η) = L_m (p_ξ * p_η)` with `p_ξ = ∑_{i<n} ξᵢ Xⁱ`. -/
+theorem dotProduct_hankelMatrix_mulVec (m : ℕ → R) {n : ℕ} (ξ η : Fin n → R) :
+    ξ ⬝ᵥ (hankelMatrix m n *ᵥ η) =
+      rieszFunctional m ((∑ i : Fin n, monomial i (ξ i)) * ∑ j : Fin n, monomial j (η j)) := by
+  rw [Finset.sum_mul_sum]
+  simp only [dotProduct, mulVec, hankelMatrix_apply, Finset.mul_sum, map_sum,
+    monomial_mul_monomial, rieszFunctional_monomial]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  ring
+
+end Riesz
+
+section Recurrence
+
+variable [CommRing R]
+
+/-- If `m (i + r) = ∑_{l < r} c l * m (i + l)` for every `i < n`, and `r < n`, then the Hankel
+determinant `hankelDet m n` vanishes. -/
+theorem hankelDet_eq_zero_of_recurrence {m : ℕ → R} {r n : ℕ} (hrn : r < n) (c : ℕ → R)
+    (h : ∀ i < n, m (i + r) = ∑ l ∈ Finset.range r, c l * m (i + l)) :
+    hankelDet m n = 0 := by
+  -- the coefficients of the dependence between the first `r + 1` columns
+  let w : ℕ → R := fun j => if j < r then c j else if j = r then -1 else 0
+  have hw_lt (j : ℕ) (hj : j < r) : w j = c j := ite_eq_left hj
+  have hw_eq : w r = -1 := by simp [w]
+  have hw_gt (j : ℕ) (hj : r < j) : w j = 0 := by simp [w, hj.not_gt, hj.ne']
+  have hv : hankelMatrix m n *ᵥ (fun j => w j) = 0 := by
+    ext i
+    simp only [mulVec, dotProduct, hankelMatrix_apply, Pi.zero_apply]
+    have hIco : ∑ j ∈ Finset.Ico (r + 1) n, m (i + j) * w j = 0 :=
+      Finset.sum_eq_zero fun j hj => by rw [hw_gt j (Finset.mem_Ico.mp hj).1, mul_zero]
+    have hrange : ∑ j ∈ Finset.range r, m (i + j) * w j = ∑ j ∈ Finset.range r, c j * m (i + j) :=
+      Finset.sum_congr rfl fun j hj => by rw [hw_lt j (Finset.mem_range.mp hj), mul_comm]
+    rw [Fin.sum_univ_eq_sum_range (fun j => m (i + j) * w j) n,
+      ← Finset.sum_range_add_sum_Ico _ (Nat.succ_le_of_lt hrn), hIco, Finset.sum_range_succ,
+      hrange, hw_eq, ← h i i.isLt]
+    ring
+  rw [← det_hankelMatrix]
+  exact det_eq_zero_of_mulVec_eq_zero_of_mem_nonZeroDivisors hv (i := ⟨r, hrn⟩)
+    (by simpa [hw_eq] using isUnit_one.neg.mem_nonZeroDivisors)
+
+end Recurrence
+
+/-! ### Checks for the shifted determinant `D_n(a) = hankelDet (fun k => a (k + 1)) n` -/
+
+/-- For `a j = 2 ^ j`, `D_1(a) = 2` and `D_2(a) = 0`. -/
+example : hankelDet (fun k => (2 : ℤ) ^ (k + 1)) 1 = 2 ∧
+    hankelDet (fun k => (2 : ℤ) ^ (k + 1)) 2 = 0 := by
+  norm_num [hankelDet_two]
+
+/-- For `a 1 = 2`, `a 2 = 3`, `a 3 = 5`, `D_2(a) = 1`, whatever `a 0` is. -/
+example (a : ℕ → ℤ) (h₁ : a 1 = 2) (h₂ : a 2 = 3) (h₃ : a 3 = 5) :
+    hankelDet (fun k => a (k + 1)) 2 = 1 := by
+  norm_num [hankelDet_two, h₁, h₂, h₃]
+
+/-- One vanishing determinant does not force the next one to vanish: for `a 1 = 0`, `a 2 = 1`,
+`a 3 = 0`, `D_1(a) = 0` but `D_2(a) = -1`. -/
+example : hankelDet (fun k => if k + 1 = 2 then (1 : ℤ) else 0) 1 = 0 ∧
+    hankelDet (fun k => if k + 1 = 2 then (1 : ℤ) else 0) 2 = -1 := by
+  norm_num [hankelDet_two]
 
 end TauCeti

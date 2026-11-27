@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # The Sobolev wave front set of a derivative
@@ -94,8 +94,8 @@ private theorem weight_mul_norm_two_mul_pi_mul_I_mul_inner_le (s : ℝ) (v η : 
   have hn : ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * |⟪v, η⟫| := by
     simp [abs_of_pos pi_pos]
   -- `⟨η⟩ ^ (s - 1) ‖η‖ ≤ ⟨η⟩ ^ s`.
-  have hw := TauCeti.one_add_norm_sq_rpow_mul_norm_le η (s - 1)
-  rw [sub_add_cancel] at hw
+  have hw := Real.one_add_sq_rpow_mul_abs_le ‖η‖ (s - 1)
+  rw [abs_norm, sub_add_cancel] at hw
   rw [hn]
   calc (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (2 * π * |⟪v, η⟫|)
       ≤ (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (2 * π * (‖v‖ * ‖η‖)) := by
@@ -270,11 +270,8 @@ theorem IsMicrolocallySobolevAt.sum_smul_smulLeftCLM_iteratedLineDerivOp {s : �
     (m : ∀ i, Fin (n i) → E) {k : ℕ} (hk : ∀ i ∈ t, n i ≤ k) :
     (∑ i ∈ t, c i • Distribution.smulLeftCLM (hg i) (∂^{m i} T)).IsMicrolocallySobolevAt
       (s - k) x ξ :=
-  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsMicrolocallySobolevAt (s - k) x ξ)
-    (fun _ _ ↦ IsMicrolocallySobolevAt.add)
-    (zero_smul ℂ T ▸ (h.mono (sub_le_self _ k.cast_nonneg)).smul 0)
-    fun i hi ↦ (((h.iteratedLineDerivOp (m i)).mono (by gcongr; exact hk i hi)).smulLeftCLM
-      (hg i)).smul (c i)
+  IsMicrolocallySobolevAt.sum t h.mem fun i hi ↦
+    (((h.iteratedLineDerivOp (m i)).mono (by gcongr; exact hk i hi)).smulLeftCLM (hg i)).smul (c i)
 
 /-- **Differential operators shift the Sobolev wave front set by their order.** A linear
 differential operator `P = ∑ i ∈ t, c i g i ∂^{m i}` of order at most `k`, with smooth real

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.ODE.InwardSemiflow.Existence
 import TauCeti.Analysis.Calculus.ContDiff.FDeriv.Within
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.ODE.DysonSeries
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Integrable
 
 /-!
 # Smoothness of inward forward semiflows

@@ -17,10 +17,11 @@ two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`, stated for
 class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
 A `⋆`-homomorphism between complex C⋆-algebras is contractive, so it bundles as a continuous
 linear map `NonUnitalStarAlgHom.toContinuousLinearMap` of norm at most `1`.
-A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), so it
-bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv` and as a linear
-isometric equivalence `StarAlgEquiv.toLinearIsometryEquiv`, whose restriction to self-adjoint
-elements is the real-linear isometric equivalence `StarAlgEquiv.selfAdjointLinearIsometryEquiv`.
+A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), and so
+preserves the extended norm (`StarAlgEquiv.eNorm_map`). It therefore bundles as a continuous
+linear equivalence `StarAlgEquiv.toContinuousLinearEquiv` and as a linear isometric equivalence
+`StarAlgEquiv.toLinearIsometryEquiv`, whose restriction to self-adjoint elements is the
+real-linear isometric equivalence `StarAlgEquiv.selfAdjointLinearIsometryEquiv`.
 
 Since `⋆`-homomorphisms between C⋆-algebras are contractive, any family of them is
 equicontinuous. Pointwise convergence of such a family to a `⋆`-homomorphism, along any filter,
@@ -32,6 +33,12 @@ pointwise Cauchy on a dense set converges pointwise to a `⋆`-homomorphism
 (`NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq`), and that pointwise convergence passes to
 convergent arguments (`NonUnitalStarAlgHom.tendsto_apply_of_tendsto`).
 These are the limit steps of approximate intertwining arguments.
+
+If a `⋆`-homomorphism `Φ` carries a `⋆`-algebra `X` bijectively onto a C⋆-algebra, then every
+`⋆`-homomorphism `Ψ` from `X` into a C⋆-algebra satisfies `‖Ψ x‖ ≤ ‖Φ x‖`
+(`NonUnitalStarAlgHom.norm_apply_le_of_bijective`), with equality when `Ψ` is injective
+(`NonUnitalStarAlgHom.norm_apply_eq_of_bijective`): `Ψ ∘ Φ⁻¹` is a `⋆`-homomorphism between
+C⋆-algebras, hence contractive, and isometric when injective.
 -/
 
 public section
@@ -99,6 +106,11 @@ end NonUnitalStarAlgHom
 namespace StarAlgEquiv
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- A star-algebra equivalence between C⋆-algebras preserves the extended norm. -/
+theorem eNorm_map {F : Type*} [EquivLike F A B] [NonUnitalAlgEquivClass F ℂ A B]
+    [StarHomClass F A B] (φ : F) (a : A) : ‖φ a‖ₑ = ‖a‖ₑ := by
+  simp only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map]
 
 /-- A star-algebra equivalence of C⋆-algebras as a continuous linear equivalence. Both directions
 are continuous because star-algebra equivalences of C⋆-algebras are isometric. -/
@@ -252,5 +264,30 @@ theorem tendsto_apply_of_tendsto {ι : Type*} {l : Filter ι} {f : ι → F} {g 
     _ ≤ dist (x i) a + dist (f i a) (g a) := by
         gcongr
         exact dist_apply_le (f i) (x i) a
+
+end NonUnitalStarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {X C D : Type*} [NonUnitalNonAssocSemiring X] [DistribMulAction ℂ X] [Star X]
+  [NonUnitalCStarAlgebra C] [NonUnitalCStarAlgebra D] {Φ : X →⋆ₙₐ[ℂ] D}
+
+/-- If a `⋆`-homomorphism `Φ` carries `X` bijectively onto a C⋆-algebra, every `⋆`-homomorphism
+`Ψ` from `X` into a C⋆-algebra satisfies `‖Ψ x‖ ≤ ‖Φ x‖`: `Ψ ∘ Φ⁻¹` is contractive. -/
+theorem norm_apply_le_of_bijective (Ψ : X →⋆ₙₐ[ℂ] C) (hΦ : Function.Bijective Φ) (x : X) :
+    ‖Ψ x‖ ≤ ‖Φ x‖ := by
+  let e := StarAlgEquiv.ofBijective Φ hΦ
+  have hg : (ofClass e.symm : D →⋆ₙₐ[ℂ] X) (Φ x) = x := e.symm_apply_apply x
+  simpa only [comp_apply, hg] using norm_apply_le (Ψ.comp (ofClass e.symm)) (Φ x)
+
+/-- If a `⋆`-homomorphism `Φ` carries `X` bijectively onto a C⋆-algebra, every injective
+`⋆`-homomorphism `Ψ` from `X` into a C⋆-algebra satisfies `‖Ψ x‖ = ‖Φ x‖`: `Ψ ∘ Φ⁻¹` is
+isometric. -/
+theorem norm_apply_eq_of_bijective {Ψ : X →⋆ₙₐ[ℂ] C} (hΨ : Function.Injective Ψ)
+    (hΦ : Function.Bijective Φ) (x : X) : ‖Ψ x‖ = ‖Φ x‖ := by
+  let e := StarAlgEquiv.ofBijective Φ hΦ
+  have hg : (ofClass e.symm : D →⋆ₙₐ[ℂ] X) (Φ x) = x := e.symm_apply_apply x
+  simpa only [comp_apply, hg] using
+    norm_map (Ψ.comp (ofClass e.symm)) (hΨ.comp e.symm.injective) (Φ x)
 
 end NonUnitalStarAlgHom

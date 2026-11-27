@@ -36,6 +36,9 @@ permutes and rescales its entries: `Mat_.isoOfEquiv_hom_comp_apply` and
 The file also records the entries of the zero matrix (`Mat_.zero_apply`) and of the one-by-one
 matrices `(Mat_.embedding C).map f` (`Mat_.embedding_map_apply`), with the indices typed as those of
 the one-term families `(Mat_.embedding C).obj X`, whose index types are singletons.
+
+Finally, `CategoryTheory.Mat_.ext_hom_app` gives the components of the isomorphism `Mat_.ext α` of
+additive functors out of `Mat_ C`.
 -/
 
 public section
@@ -173,5 +176,31 @@ theorem isoOfEquiv_symm (e : M.ι ≃ N.ι) (φ : ∀ i, M.X i ≅ N.X (e i)) :
   · subst h
     simp [isoOfEquiv_hom_apply, isoOfEquiv_inv_apply]
   · simp [isoOfEquiv_hom_apply, isoOfEquiv_inv_apply, h, e.symm_apply_eq, Ne.symm h]
+
+section Ext
+
+open Limits
+
+variable {E : Type u} [Category.{v} E] [Preadditive E] [HasFiniteBiproducts E]
+
+/-- The components of `Mat_.ext α`: on `M`, decompose `G M` as the biproduct of the `G` of the
+entries of `M`, apply `α` entrywise, and reassemble. -/
+theorem ext_hom_app {G G' : Mat_ C ⥤ E} [G.Additive] [G'.Additive]
+    (α : embedding C ⋙ G ≅ embedding C ⋙ G') (M : Mat_ C) :
+    (ext α).hom.app M = (additiveObjIsoBiproduct G M).hom ≫
+      biproduct.map (fun i ↦ α.hom.app (M.X i)) ≫ (additiveObjIsoBiproduct G' M).inv := by
+  simp only [ext, liftUnique, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app, Iso.trans_inv, Iso.symm_inv,
+    Category.assoc, Iso.inv_hom_id_assoc, Iso.hom_inv_id_assoc, Iso.cancel_iso_hom_left]
+  simp only [biproduct.mapIso_hom, biproduct.mapIso_inv, Iso.app_hom, Iso.app_inv, Iso.refl_inv,
+    NatTrans.id_app]
+  -- The remaining middle factor is the biproduct of identities.
+  congr 1
+  conv_rhs => rw [← Category.id_comp (additiveObjIsoBiproduct G' M).inv]
+  congr 1
+  ext j
+  simp
+
+end Ext
 
 end CategoryTheory.Mat_
