@@ -20,7 +20,8 @@ vertex is the cycle of the corresponding component through them. For a connected
 result is a dessin d'enfants; disconnected triples give disconnected graphs, and
 `TauCeti.PermutationTriple.isConnected_ribbonGraph` is the equivalence.
 
-* `TauCeti.PermutationTriple.ribbonGraph`: the construction.
+* `TauCeti.PermutationTriple.ribbonGraph`: the construction, the case `E = Fin n` of the general
+  ribbon graph `TauCeti.BipartiteRibbonGraph.ofPerms` of two permutations of a finite type.
 * `TauCeti.PermutationTriple.facePerm_ribbonGraph`: the face permutation of the graph is the
   third component `σinf` of the triple, so the faces of the graph are the cycles of `σinf`.
 * `TauCeti.PermutationTriple.isConnected_ribbonGraph`: the graph is connected exactly when the
@@ -38,9 +39,10 @@ fields of `TauCeti.BipartiteRibbonGraph`, so a consumer cannot so much as state 
 `t.ribbonGraph` is a sheet of `t` without reducing those fields; the lemmas below then read off
 the remaining fields.
 
-The black and white vertex types are quotients of `Fin n`. Their `Fintype` and `DecidableEq`
-instances decide `Equiv.Perm.SameCycle` by iterating the permutation, so the cell counts of the
-graph of a concrete triple evaluate by `decide` and `#eval`.
+The black and white vertex types are the `Equiv.Perm.SameCycle` quotients of the edge type
+`Fin n`, as for every `TauCeti.BipartiteRibbonGraph.ofPerms`. Their `Fintype` and `DecidableEq`
+instances decide `SameCycle` by iterating the permutation, so the cell counts of the graph of a
+concrete triple evaluate by `decide` and `#eval`.
 
 ## References
 
@@ -57,33 +59,6 @@ universe u
 public section
 
 namespace TauCeti
-
-namespace BipartiteRibbonGraph
-
-/-- The finite bipartite ribbon graph with edges `E` and rotations `σ` and `τ`: its black and
-white vertices are the cycles of `σ` and of `τ`, the cyclic orders around them being `σ` and `τ`
-themselves. -/
-@[expose] def ofPerms (E : Type u) [Fintype E] [DecidableEq E] (σ τ : Perm E) :
-    BipartiteRibbonGraph.{u} where
-  E := E
-  B := Quotient (SameCycle.setoid σ)
-  W := Quotient (SameCycle.setoid τ)
-  fintypeE := inferInstance
-  fintypeB := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle σ)))
-  fintypeW := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle τ)))
-  decidableEqE := inferInstance
-  decidableEqB := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle σ)))
-  decidableEqW := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle τ)))
-  blackEnd := Quotient.mk (SameCycle.setoid σ)
-  whiteEnd := Quotient.mk (SameCycle.setoid τ)
-  rotB := σ
-  rotW := τ
-  blackEnd_surjective := Quotient.mk_surjective
-  whiteEnd_surjective := Quotient.mk_surjective
-  isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk σ
-  isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk τ
-
-end BipartiteRibbonGraph
 
 namespace PermutationTriple
 

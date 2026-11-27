@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.RibbonGraph.OfPermutationTriple
+public import TauCeti.Combinatorics.RibbonGraph.Basic
 public import Mathlib.CategoryTheory.Action.Concrete
 public import Mathlib.GroupTheory.FreeGroup.Basic
 
@@ -26,9 +26,9 @@ The edge functor is an equivalence of categories (`TauCeti.BipartiteRibbonGraph.
   (`TauCeti.BipartiteRibbonGraph.blackEnd_eq_blackEnd_iff`,
   `TauCeti.BipartiteRibbonGraph.whiteEnd_eq_whiteEnd_iff`), so an equivariant map of edges
   induces the maps of vertices;
-* it is essentially surjective, since every finite set with two permutations is the edge set of
-  the ribbon graph whose vertices are the cycles of those permutations
-  (`TauCeti.BipartiteRibbonGraph.ofPerms`), the empty set included.
+* it is essentially surjective, since every finite `FreeGroup (Fin 2)`-set `A` is the edge set of
+  the ribbon graph `TauCeti.BipartiteRibbonGraph.ofAction A` whose vertices are the cycles of the
+  two generators (`TauCeti.BipartiteRibbonGraph.edgesOfActionIso`), the empty set included.
 
 The requirement that every vertex is the end of an edge is what makes the functor full: a graph
 with no edges and one black vertex has the same, empty, edge set as the empty graph but no
@@ -38,6 +38,8 @@ morphism to it.
 
 * `TauCeti.BipartiteRibbonGraph.edgeAction`: the action of `FreeGroup (Fin 2)` on the edges.
 * `TauCeti.BipartiteRibbonGraph.edgeFunctor`: the edge functor.
+* `TauCeti.BipartiteRibbonGraph.ofAction`: the ribbon graph of a finite `FreeGroup (Fin 2)`-set,
+  built by `TauCeti.BipartiteRibbonGraph.ofPerms` from the two generators.
 * `TauCeti.BipartiteRibbonGraph.edgeEquivalence`: **finite bipartite ribbon graphs are finite
   `FreeGroup (Fin 2)`-sets.**
 
@@ -101,9 +103,17 @@ theorem edgeAction_of_one : Γ.edgeAction (FreeGroup.of 1) = Γ.rotW := by
   simp [edgeAction]
 
 /-- The edges of a ribbon graph, with the action of `FreeGroup (Fin 2)` by the rotations. -/
+-- Exposed so that the underlying finite set of `Γ.edges` is `Γ.E` by definition: the statements
+-- of `edges_ρ_apply`, `edgesMap_hom_apply` and `homOfEdgesMap_edge` need it.
 @[expose] def edges : Action FintypeCat.{u} (FreeGroup (Fin 2)) :=
   letI : MulAction (FreeGroup (Fin 2)) Γ.E := MulAction.compHom Γ.E Γ.edgeAction
   Action.FintypeCat.ofMulAction (FreeGroup (Fin 2)) (FintypeCat.of Γ.E)
+
+/-- A group element acts on the edges through `edgeAction`. -/
+@[simp]
+theorem edges_ρ_apply (g : FreeGroup (Fin 2)) (e : Γ.edges.V) :
+    ConcreteCategory.hom (Γ.edges.ρ g).asHom e = Γ.edgeAction g e :=
+  (rfl)
 
 variable {Γ} {Δ : BipartiteRibbonGraph.{u}}
 
@@ -125,10 +135,11 @@ theorem edgeAction_semiconj {φ : Γ.E → Δ.E} (hB : Function.Semiconj φ Γ.r
     exact ihg.comp_right ihh
 
 /-- The equivariant map of edges induced by a morphism of ribbon graphs. -/
+-- Exposed, like `edgeFunctor` which is built from it, so that `edgeFunctor_map` holds by `rfl`.
 @[expose] def edgesMap (f : Γ ⟶ Δ) : Γ.edges ⟶ Δ.edges where
   hom := FintypeCat.homMk f.edge
   comm g := FintypeCat.hom_ext _ _ fun e ↦ by
-    change f.edge (Γ.edgeAction g e) = Δ.edgeAction g (f.edge e)
+    simp only [ConcreteCategory.comp_apply, edges_ρ_apply]
     exact edgeAction_semiconj f.map_rotB f.map_rotW g e
 
 @[simp]
@@ -140,8 +151,11 @@ variable (Γ Δ) in
 the cycles of the rotations, so the map of edges induces the maps of vertices. -/
 def homOfEdgesMap (φ : Γ.edges ⟶ Δ.edges) : Γ ⟶ Δ :=
   have hφ (g : FreeGroup (Fin 2)) (e : Γ.E) :
-      φ.hom (Γ.edgeAction g e) = Δ.edgeAction g (φ.hom e) :=
-    congrArg (fun k ↦ k e) (congrArg (⇑) (φ.comm g))
+      φ.hom (Γ.edgeAction g e) = Δ.edgeAction g (φ.hom e) := by
+    -- `φ.comm g` evaluated at `e`: each side's action is `edgeAction` by `edges_ρ_apply`, which
+    -- holds by definition. It cannot be rewritten here, since `Γ.E` and the carrier of `Γ.edges`
+    -- agree only up to unfolding `edges`.
+    exact ConcreteCategory.congr_hom (φ.comm g) e
   have hB : Function.Semiconj φ.hom Γ.rotB Δ.rotB := fun e ↦ by
     simpa using hφ (FreeGroup.of 0) e
   have hW : Function.Semiconj φ.hom Γ.rotW Δ.rotW := fun e ↦ by
@@ -168,12 +182,20 @@ theorem homOfEdgesMap_edge (φ : Γ.edges ⟶ Δ.edges) : (homOfEdgesMap Γ Δ �
 
 /-- The **edge functor**: a ribbon graph goes to its edges, with the action of `FreeGroup (Fin 2)`
 by the black and white rotations. -/
+-- Exposed so that the values of the functor are `edges` and `edgesMap` by definition: the
+-- statements of `edgeFunctor_obj` and `edgeFunctor_map` need it.
 @[expose] def edgeFunctor :
     BipartiteRibbonGraph.{u} ⥤ Action FintypeCat.{u} (FreeGroup (Fin 2)) where
   obj := edges
   map := edgesMap
   map_id Γ := Action.Hom.ext (FintypeCat.hom_ext _ _ fun e ↦ Hom.id_edge_apply (Γ := Γ) e)
   map_comp f g := Action.Hom.ext (FintypeCat.hom_ext _ _ fun e ↦ Hom.comp_edge_apply g f e)
+
+@[simp] theorem edgeFunctor_obj (Γ : BipartiteRibbonGraph.{u}) : edgeFunctor.obj Γ = Γ.edges :=
+  (rfl)
+
+@[simp] theorem edgeFunctor_map (f : Γ ⟶ Δ) : edgeFunctor.map f = edgesMap f :=
+  (rfl)
 
 /-- The edge functor is fully faithful. -/
 def edgeFunctorFullyFaithful : edgeFunctor.{u}.FullyFaithful where
@@ -187,23 +209,57 @@ instance : edgeFunctor.{u}.Faithful := edgeFunctorFullyFaithful.faithful
 
 /-- The ribbon graph of a finite `FreeGroup (Fin 2)`-set: its edges are the points, and its black
 and white vertices are the cycles of the generators `0` and `1`. -/
-def ofAction (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) : BipartiteRibbonGraph.{u} :=
+-- Exposed so that the edges of `ofAction A` are the points of `A` by definition: the statements
+-- of `edgeAction_ofAction` and `edgesOfActionIso_hom_hom_apply` need it.
+@[expose] def ofAction (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    BipartiteRibbonGraph.{u} :=
   letI := Fintype.ofFinite A.V
   letI := Classical.decEq A.V
   ofPerms A.V (MulAction.toPerm (FreeGroup.of 0 : FreeGroup (Fin 2)))
     (MulAction.toPerm (FreeGroup.of 1 : FreeGroup (Fin 2)))
 
+variable (A : Action FintypeCat.{u} (FreeGroup (Fin 2)))
+
+/-- The edges of the ribbon graph of a finite `FreeGroup (Fin 2)`-set are its points. -/
+theorem ofAction_E : (ofAction A).E = A.V :=
+  (rfl)
+
+/-- The black rotation of the ribbon graph of a finite `FreeGroup (Fin 2)`-set is the action of
+the generator `0`. -/
+@[simp] theorem rotB_ofAction :
+    (ofAction A).rotB = (MulAction.toPerm (FreeGroup.of 0 : FreeGroup (Fin 2)) : Perm A.V) :=
+  (rfl)
+
+/-- The white rotation of the ribbon graph of a finite `FreeGroup (Fin 2)`-set is the action of
+the generator `1`. -/
+@[simp] theorem rotW_ofAction :
+    (ofAction A).rotW = (MulAction.toPerm (FreeGroup.of 1 : FreeGroup (Fin 2)) : Perm A.V) :=
+  (rfl)
+
+/-- The action on the edges of the ribbon graph of a finite `FreeGroup (Fin 2)`-set is the given
+action. -/
+@[simp] theorem edgeAction_ofAction :
+    (ofAction A).edgeAction = MulAction.toPermHom (FreeGroup (Fin 2)) A.V :=
+  FreeGroup.ext_hom _ _ fun i ↦ by
+    fin_cases i
+    · exact (edgeAction_of_zero _).trans ((rotB_ofAction A).trans
+        (MulAction.toPermHom_apply _ _ _).symm)
+    · exact (edgeAction_of_one _).trans ((rotW_ofAction A).trans
+        (MulAction.toPermHom_apply _ _ _).symm)
+
 /-- The edges of the ribbon graph of a finite `FreeGroup (Fin 2)`-set are that set. -/
-def edgesOfActionIso (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) : (ofAction A).edges ≅ A :=
+def edgesOfActionIso : (ofAction A).edges ≅ A :=
   Action.mkIso (FintypeCat.equivEquivIso (Equiv.refl A.V)) fun g ↦
     FintypeCat.hom_ext _ _ fun e ↦ by
-      -- The action on the edges is the lift of the two generators, which is the given action.
-      have h : (ofAction A).edgeAction = MulAction.toPermHom (FreeGroup (Fin 2)) A.V :=
-        FreeGroup.ext_hom _ _ fun i ↦ by
-          fin_cases i
-          · exact (edgeAction_of_zero _).trans rfl
-          · exact (edgeAction_of_one _).trans rfl
-      exact congrArg (fun k : FreeGroup (Fin 2) →* Perm A.V ↦ k g e) h
+      simp only [ConcreteCategory.comp_apply, edges_ρ_apply, edgeAction_ofAction]
+      -- Both sides are `g • e` for Mathlib's `Action.instMulAction` on `A.V`, which is `A.ρ g`
+      -- applied to `e` by definition, and `edgesOfActionIso` is the identity on points.
+      rfl
+
+/-- The isomorphism `edgesOfActionIso` is the identity on points. -/
+@[simp] theorem edgesOfActionIso_hom_hom_apply (e : A.V) :
+    ConcreteCategory.hom (edgesOfActionIso A).hom.hom e = e :=
+  (rfl)
 
 instance : edgeFunctor.{u}.EssSurj where
   mem_essImage A := ⟨ofAction A, ⟨edgesOfActionIso A⟩⟩
@@ -214,6 +270,9 @@ instance : edgeFunctor.{u}.IsEquivalence where
 equivalence of categories. -/
 def edgeEquivalence : BipartiteRibbonGraph.{u} ≌ Action FintypeCat.{u} (FreeGroup (Fin 2)) :=
   edgeFunctor.asEquivalence
+
+@[simp] theorem edgeEquivalence_functor : edgeEquivalence.{u}.functor = edgeFunctor :=
+  (rfl)
 
 end BipartiteRibbonGraph
 
