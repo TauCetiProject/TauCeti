@@ -1,0 +1,196 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Split
+public import TauCeti.Algebra.Lie.Symplectic.Killing
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
+
+/-!
+# The real symplectic Lie algebra is split
+
+On the symplectic Lie algebra `𝔰𝔭(2n, K)` = `LieAlgebra.Symplectic.sp l K` over an ordered field,
+with the Cartan involution `θ X = -Xᵀ` (`LieAlgebra.Symplectic.cartanInvolution`), the diagonal
+matrices `𝔞 = {diag(D, -D)}` (`LieAlgebra.Symplectic.diagonalSubalgebra`) form a maximal abelian
+subspace of the `-1`-eigenspace `𝔭` (the symmetric matrices). For `H ∈ 𝔞` the bracket `[H, X]` has
+`(a, b)` entry `(H a a - H b b) X a b`, and the elements
+`H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞` separate the indices of `l ⊕ l`, so:
+
+* the centralizer `𝔤_0` of `𝔞` is `𝔞` itself, and `𝔪 = 𝔤_0 ∩ 𝔨 = 0`;
+* `𝔞` is a Cartan subalgebra of `𝔰𝔭(2n, K)`: **`𝔰𝔭(2n, ℝ)` is split**, in the sense of
+  `LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`.
+
+The centralizer computation, the maximality of `𝔞` and `𝔪 = 0` hold over every field of
+characteristic other than two; only the Cartan subalgebra criterion uses the order.
+
+## Main results
+
+* `LieAlgebra.Symplectic.diagonalSubalgebra`: the diagonal matrices in `sp l R`.
+* `LieAlgebra.Symplectic.restrictedRootSpace_zero_diagonalSubalgebra`: `𝔤_0 = 𝔞`.
+* `LieAlgebra.Symplectic.isMaximalAbelianInP_diagonalSubalgebra`: `𝔞` is maximal abelian in `𝔭`.
+* `LieAlgebra.Symplectic.restrictedRootSpace_zero_inf_fixedSubalgebra_diagonalSubalgebra`:
+  `𝔪 = 0`.
+* `LieAlgebra.Symplectic.isCartanSubalgebra_diagonalSubalgebra`: `𝔞` is a Cartan subalgebra.
+
+## References
+
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Chapter VI, §§5–6.
+-/
+
+public section
+
+open LieAlgebra Matrix Module Submodule
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+namespace LieAlgebra.Symplectic
+
+variable {l : Type*} [Fintype l] [DecidableEq l]
+
+section CommRing
+
+variable (l) (R : Type*) [CommRing R]
+
+/-- The diagonal matrices in the symplectic Lie algebra `sp l R`, that is, the matrices
+`diag(D, -D)`. They form an abelian Lie subalgebra. -/
+def diagonalSubalgebra : LieSubalgebra R (sp l R) where
+  carrier := {X | (X : Matrix (l ⊕ l) (l ⊕ l) R).IsDiag}
+  zero_mem' := isDiag_zero
+  add_mem' hX hY := hX.add hY
+  smul_mem' c _ hX := hX.smul c
+  lie_mem' {X Y} hX hY := by
+    have h : ⁅X, Y⁆ = 0 := Subtype.ext <| by
+      rw [LieSubalgebra.coe_bracket, Ring.lie_def, ← hX.diagonal_diag, ← hY.diagonal_diag,
+        diagonal_mul_diagonal, diagonal_mul_diagonal, ZeroMemClass.coe_zero, sub_eq_zero]
+      exact congrArg diagonal (funext fun _ ↦ mul_comm _ _)
+    simpa only [h, Set.mem_ofPred_eq, ZeroMemClass.coe_zero] using isDiag_zero
+
+variable {l R}
+
+/-- Membership in `LieAlgebra.Symplectic.diagonalSubalgebra`. -/
+@[simp]
+theorem mem_diagonalSubalgebra {X : sp l R} :
+    X ∈ diagonalSubalgebra l R ↔ (X : Matrix (l ⊕ l) (l ⊕ l) R).IsDiag :=
+  Iff.rfl
+
+/-- Diagonal symplectic Lie matrices commute. -/
+theorem lie_eq_zero_of_mem_diagonalSubalgebra {X Y : sp l R} (hX : X ∈ diagonalSubalgebra l R)
+    (hY : Y ∈ diagonalSubalgebra l R) : ⁅X, Y⁆ = 0 :=
+  Subtype.ext <| by
+    rw [LieSubalgebra.coe_bracket, Ring.lie_def, ← (mem_diagonalSubalgebra.mp hX).diagonal_diag,
+      ← (mem_diagonalSubalgebra.mp hY).diagonal_diag, diagonal_mul_diagonal,
+      diagonal_mul_diagonal, ZeroMemClass.coe_zero, sub_eq_zero]
+    exact congrArg diagonal (funext fun _ ↦ mul_comm _ _)
+
+/-- The entries of `[H, X]` for a diagonal `H`: `[H, X] a b = (H a a - H b b) X a b`. -/
+theorem lie_apply_of_mem_diagonalSubalgebra {H : sp l R} (hH : H ∈ diagonalSubalgebra l R)
+    (X : sp l R) (a b : l ⊕ l) :
+    (⁅H, X⁆ : sp l R).val a b =
+      ((H : Matrix (l ⊕ l) (l ⊕ l) R) a a - (H : Matrix (l ⊕ l) (l ⊕ l) R) b b) *
+        (X : Matrix (l ⊕ l) (l ⊕ l) R) a b := by
+  rw [LieSubalgebra.coe_bracket, Ring.lie_def, Matrix.sub_apply,
+    ← (mem_diagonalSubalgebra.mp hH).diagonal_diag]
+  simp only [diagonal_mul, mul_diagonal, diagonal_apply_eq, diag_apply, sub_mul, mul_comm]
+
+/-- The element `H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞`. -/
+def diagonalBasisElement (i : l) : diagonalSubalgebra l R :=
+  ⟨⟨single (.inl i) (.inl i) 1 - single (.inr i) (.inr i) 1,
+    single_inl_inl_sub_single_inr_inr_mem_sp i i⟩, by
+      simp only [mem_diagonalSubalgebra]
+      intro a b hab
+      simp only [Matrix.sub_apply, single_apply]
+      grind⟩
+
+/-- The diagonal entries of `H_i = E_(i, i) - E_(n + i, n + i)`. -/
+theorem diagonalBasisElement_apply (i : l) (a : l ⊕ l) :
+    (((diagonalBasisElement (R := R) i : sp l R) : Matrix (l ⊕ l) (l ⊕ l) R) a a) =
+      (if a = .inl i then 1 else 0) - if a = .inr i then 1 else 0 := by
+  simp [diagonalBasisElement, Matrix.sub_apply, single_apply, eq_comm]
+
+/-- `𝔞` lies in the `-1`-eigenspace `𝔭` of `θ X = -Xᵀ`: diagonal matrices are symmetric. -/
+theorem diagonalSubalgebra_le_cartanP :
+    (diagonalSubalgebra l R).toSubmodule ≤ (cartanInvolution l R).cartanP := fun X hX ↦
+  LieEquiv.mem_cartanP.mpr ((cartanInvolution_eq_neg_iff X).mpr
+    (mem_diagonalSubalgebra.mp hX).isSymm.eq)
+
+end CommRing
+
+section Field
+
+variable {K : Type*} [Field K] [NeZero (2 : K)]
+
+/-- The elements `H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞` separate the indices of `l ⊕ l`:
+for `a ≠ b` some `H_i` has different diagonal entries at `a` and `b`. -/
+theorem exists_diagonalBasisElement_apply_ne {a b : l ⊕ l} (hab : a ≠ b) :
+    ∃ i : l, ((diagonalBasisElement (R := K) i : sp l K) : Matrix (l ⊕ l) (l ⊕ l) K) a a ≠
+      ((diagonalBasisElement (R := K) i : sp l K) : Matrix (l ⊕ l) (l ⊕ l) K) b b := by
+  have h2 : (1 : K) ≠ -1 := fun h ↦ two_ne_zero (α := K) (by linear_combination h)
+  rcases a with i | i
+  · refine ⟨i, ?_⟩
+    rcases b with j | j
+    · simp_all [diagonalBasisElement_apply, eq_comm]
+    · by_cases hij : j = i
+      · subst hij; simpa [diagonalBasisElement_apply] using h2
+      · simp [diagonalBasisElement_apply, hij]
+  · refine ⟨i, ?_⟩
+    rcases b with j | j
+    · by_cases hij : j = i
+      · subst hij; simpa [diagonalBasisElement_apply] using h2.symm
+      · simp [diagonalBasisElement_apply, hij]
+    · simp_all [diagonalBasisElement_apply, eq_comm]
+
+/-- **The centralizer `𝔤_0` of `𝔞` in `𝔰𝔭(2n, K)` is `𝔞` itself**: an element commuting with
+every `H_i` is diagonal. -/
+theorem restrictedRootSpace_zero_diagonalSubalgebra :
+    (diagonalSubalgebra l K).toSubmodule.restrictedRootSpace 0 =
+      (diagonalSubalgebra l K).toSubmodule := by
+  refine le_antisymm (fun X hX ↦ ?_) (Submodule.le_restrictedRootSpace_zero
+    fun _ hX _ hY ↦ lie_eq_zero_of_mem_diagonalSubalgebra hX hY)
+  rw [mem_restrictedRootSpace_zero] at hX
+  rw [LieSubalgebra.mem_toSubmodule, mem_diagonalSubalgebra]
+  intro a b hab
+  obtain ⟨i, hi⟩ := exists_diagonalBasisElement_apply_ne (K := K) hab
+  have h := congrArg (fun Y : sp l K ↦ (Y : Matrix (l ⊕ l) (l ⊕ l) K) a b)
+    (hX ⟨_, (diagonalBasisElement i).property⟩)
+  simp only [ZeroMemClass.coe_zero, Matrix.zero_apply] at h
+  rw [lie_apply_of_mem_diagonalSubalgebra (diagonalBasisElement i).property] at h
+  exact (mul_eq_zero.mp h).resolve_left (sub_ne_zero.mpr hi)
+
+/-- **The diagonal matrices are a maximal abelian subspace of `𝔭`** in `𝔰𝔭(2n, K)`, over any field
+of characteristic other than two. -/
+theorem isMaximalAbelianInP_diagonalSubalgebra :
+    (cartanInvolution l K).IsMaximalAbelianInP (diagonalSubalgebra l K).toSubmodule := by
+  refine LieEquiv.isMaximalAbelianInP_iff.mpr ⟨⟨diagonalSubalgebra_le_cartanP,
+    fun _ hX _ hY ↦ lie_eq_zero_of_mem_diagonalSubalgebra hX hY⟩, fun 𝔟 h𝔟 hle Y hY ↦ ?_⟩
+  rw [← restrictedRootSpace_zero_diagonalSubalgebra, mem_restrictedRootSpace_zero]
+  exact fun H ↦ h𝔟.2 _ (hle H.property) Y hY
+
+/-- **`𝔪 = 0`** for `𝔰𝔭(2n, K)`: no nonzero element of the fixed subalgebra `𝔨` (the
+skew-symmetric matrices) centralizes `𝔞`. -/
+theorem restrictedRootSpace_zero_inf_fixedSubalgebra_diagonalSubalgebra :
+    (diagonalSubalgebra l K).toSubmodule.restrictedRootSpace 0 ⊓
+      (cartanInvolution l K).toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
+  rw [restrictedRootSpace_zero_diagonalSubalgebra, ← disjoint_iff]
+  exact ((cartanInvolution l K).isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit
+    cartanInvolution_cartanInvolution).disjoint.symm.mono_left
+      diagonalSubalgebra_le_cartanP
+
+end Field
+
+section OrderedField
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+
+/-- **`𝔰𝔭(2n, K)` is split**: the diagonal matrices, maximal abelian in `𝔭` for `θ X = -Xᵀ`, form
+a Cartan subalgebra, since `𝔪 = 0`. -/
+theorem isCartanSubalgebra_diagonalSubalgebra : (diagonalSubalgebra l K).IsCartanSubalgebra :=
+  (isMaximalAbelianInP_diagonalSubalgebra.isCartanSubalgebra_iff
+    isCartanInvolution_cartanInvolution).mpr
+    restrictedRootSpace_zero_inf_fixedSubalgebra_diagonalSubalgebra
+
+end OrderedField
+
+end LieAlgebra.Symplectic
