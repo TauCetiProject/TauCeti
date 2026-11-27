@@ -40,6 +40,14 @@ only finitely many rounded families have entries in `[-R, R]`.
   its fractional part `Int.fract t`.
 * `TauCeti.apply_eq_apply_zero_of_forall_mem_Icc_intCast_sub_one`: a function constant on every
   interval `[i - 1, i]` with `i : ℤ` is constant.
+* `Int.fract_sub_eq_sub_iff`, `Int.fract_sub_eq_sub_add_one_iff`: the fractional part of
+  `a - b` is `fract a - fract b` exactly when `fract b ≤ fract a`, and `fract a - fract b + 1`
+  exactly when `fract a < fract b`.
+* `Int.fract_natCast_sub_mul_of_le`, `Int.fract_natCast_sub_mul_of_lt`,
+  `Int.fract_natCast_add_mul_of_lt`, `Int.fract_natCast_add_mul_of_le`: the fractional part of
+  the natural multiple `(j - i) * a` or `(i + j) * a`, in terms of those of `i * a` and `j * a`.
+* `TauCeti.fst_add_neg_floor_mem`: translating `p` by `-⌊p.1⌋` in the first coordinate moves
+  that coordinate into `[0, 1]`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
@@ -76,6 +84,72 @@ theorem exists_eq_natCast_add_of_mem_Ico {R : Type*} [Ring R] [LinearOrder R]
 theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrder R]
     [FloorRing R] {f : R → β} (hf : Function.Periodic f 1) (t : R) : f (Int.fract t) = f t := by
   simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
+
+/-- The fractional part of a difference is the difference of the fractional parts exactly when
+the fractional part of the term taken away is at most the other one. -/
+theorem _root_.Int.fract_sub_eq_sub_iff {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a b : R} :
+    Int.fract (a - b) = Int.fract a - Int.fract b ↔ Int.fract b ≤ Int.fract a := by
+  refine ⟨fun h => sub_nonneg.1 (by rw [← h]; exact Int.fract_nonneg _), fun h =>
+    Int.fract_eq_iff.2 ⟨sub_nonneg.2 h,
+      (sub_le_self _ (Int.fract_nonneg b)).trans_lt (Int.fract_lt_one a), ⌊a⌋ - ⌊b⌋, ?_⟩⟩
+  unfold Int.fract
+  push_cast
+  abel
+
+/-- The fractional part of a difference is the difference of the fractional parts plus one
+exactly when the fractional part of the term taken away is the larger one. -/
+theorem _root_.Int.fract_sub_eq_sub_add_one_iff {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a b : R} :
+    Int.fract (a - b) = Int.fract a - Int.fract b + 1 ↔ Int.fract a < Int.fract b := by
+  refine ⟨fun h => sub_neg.1 ((add_lt_iff_neg_right 1).1 (by rw [← h]; exact Int.fract_lt_one _)),
+    fun h => Int.fract_eq_iff.2 ⟨?_, (add_lt_iff_neg_right 1).2 (sub_neg.2 h), ⌊a⌋ - ⌊b⌋ - 1, ?_⟩⟩
+  · rw [sub_add_eq_add_sub, sub_nonneg]
+    exact (Int.fract_lt_one b).le.trans (le_add_of_nonneg_left (Int.fract_nonneg a))
+  · unfold Int.fract
+    push_cast
+    abel
+
+/-- For natural numbers `i ≤ j`, if the fractional part of `i * a` is at most that of `j * a`,
+then their difference is the fractional part of `(j - i) * a`. -/
+theorem _root_.Int.fract_natCast_sub_mul_of_le {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
+    (h : Int.fract (i * a) ≤ Int.fract (j * a)) :
+    Int.fract (↑(j - i) * a) = Int.fract (j * a) - Int.fract (i * a) := by
+  rw [Nat.cast_sub hij, sub_mul, Int.fract_sub_eq_sub_iff.2 h]
+
+/-- For natural numbers `i ≤ j`, if the fractional part of `j * a` is less than that of `i * a`,
+then their difference plus one is the fractional part of `(j - i) * a`. -/
+theorem _root_.Int.fract_natCast_sub_mul_of_lt {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
+    (h : Int.fract (j * a) < Int.fract (i * a)) :
+    Int.fract (↑(j - i) * a) = Int.fract (j * a) - Int.fract (i * a) + 1 := by
+  rw [Nat.cast_sub hij, sub_mul, Int.fract_sub_eq_sub_add_one_iff.2 h]
+
+/-- For natural numbers `i` and `j`, if the fractional parts of `i * a` and `j * a` sum to less
+than `1`, then their sum is the fractional part of `(i + j) * a`. -/
+theorem _root_.Int.fract_natCast_add_mul_of_lt {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ}
+    (h : Int.fract (i * a) + Int.fract (j * a) < 1) :
+    Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) := by
+  rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_iff.2 h]
+
+/-- For natural numbers `i` and `j`, if the fractional parts of `i * a` and `j * a` sum to at
+least `1`, then their sum minus one is the fractional part of `(i + j) * a`. -/
+theorem _root_.Int.fract_natCast_add_mul_of_le {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ}
+    (h : 1 ≤ Int.fract (i * a) + Int.fract (j * a)) :
+    Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) - 1 := by
+  rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_sub_one_iff.2 h]
+
+/-- Translating a pair `p` by `-⌊p.1⌋` in the first coordinate moves that coordinate into
+`[0, 1]`, since it becomes the fractional part of `p.1`. This brings a point of `R × M` into the
+fundamental domain `[0, 1] × M` of the translations `(x, y) ↦ (x + k, y)`, `k ∈ ℤ`. -/
+theorem fst_add_neg_floor_mem {R M : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorRing R] [AddZeroClass M] (p : R × M) :
+    (p + (((-⌊p.1⌋ : ℤ) : R), 0)).1 ∈ Set.Icc (0 : R) 1 := by
+  simp only [Prod.fst_add, Int.cast_neg, ← sub_eq_add_neg, Int.self_sub_floor]
+  exact ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
 
 /-- In an ordered ring with a natural ceiling, a natural number lies strictly below `a` exactly
 when it is at most `⌈a⌉₊ - 1`. This turns a strict cutoff into an inclusive one. -/

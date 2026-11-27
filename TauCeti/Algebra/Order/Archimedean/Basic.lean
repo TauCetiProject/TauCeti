@@ -23,7 +23,9 @@ Hölder inequality is iterated.
 
 Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ, n > 0` there is
 an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`. Covering arguments with dyadic cubes use it to fit
-a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`.
+a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`. A bound
+`a ^ (2 ^ j) ≤ m * R ^ (2 ^ j)` for every `j` forces `a ≤ R`, since the constant `m` is eventually
+dominated by the powers of `a / R`.
 
 Beyond ordered semifields, in an Archimedean linearly ordered additive group the integer
 multiples `k • ℓ` of a nonzero element `ℓ` are unbounded above, whatever the sign of `ℓ`. For maps
@@ -41,6 +43,8 @@ lines, and that the inverse of a positive twist lift twists negatively.
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
+* `TauCeti.le_of_forall_pow_two_pow_le`: if `a ^ (2 ^ j) ≤ m * R ^ (2 ^ j)` for every `j` and
+  `0 < R`, then `a ≤ R`.
 * `TauCeti.exists_lt_zsmul`: in an Archimedean linearly ordered additive group, the integer
   multiples of a nonzero element are unbounded above.
 -/
@@ -106,6 +110,18 @@ theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : L} (hρ : 0 < ρ) (hn : 0
   rw [le_div_iff₀ (by positivity)] at hk1
   rw [div_lt_iff₀ (by positivity), zpow_add_one₀ two_ne_zero] at hk2
   exact ⟨k, by linarith, by linarith⟩
+
+/-- If `a ^ (2 ^ j) ≤ m * R ^ (2 ^ j)` for every `j`, with `0 < R`, then `a ≤ R`. -/
+theorem le_of_forall_pow_two_pow_le {a R m : L} (hR : 0 < R)
+    (h : ∀ j : ℕ, a ^ 2 ^ j ≤ m * R ^ 2 ^ j) : a ≤ R := by
+  by_contra hlt
+  push Not at hlt
+  have hq : 1 < a / R := (one_lt_div hR).2 hlt
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt m hq
+  have h2n : (a / R) ^ n ≤ (a / R) ^ 2 ^ n := pow_le_pow_right₀ hq.le Nat.lt_two_pow_self.le
+  have := h n
+  rw [← div_le_iff₀ (pow_pos hR _), ← div_pow] at this
+  linarith
 
 end Field
 

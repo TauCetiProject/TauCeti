@@ -110,6 +110,8 @@ homology isomorphism directly, without requiring Poincaré duality.
 * `TauCeti.uliftIntHomologyIso`, `TopPair.uliftIntSingularHomologyIso`: the coefficients `ULift ℤ`
   of fundamental classes and the coefficient ring `ℤ` give naturally isomorphic absolute and
   relative singular homology.
+* `TauCeti.localHomologyMap_uliftInt_eq_smul_iff`: a self-map acts on integral local homology by
+  an integer scalar exactly when it does so with coefficients `ULift ℤ`.
 * `TauCeti.isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top`: read with
   coefficients `ℤ`, the local orientations are the generators of the local homology.
 * `TauCeti.IsLocalOrientation.span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top`:
@@ -861,6 +863,24 @@ theorem singularHomologyMap_comp_uliftIntSingularHomologyIso_hom {P P' : TopPair
 end TopPair
 
 namespace TauCeti
+
+/-- **Integral local homology and `ULift ℤ` coefficients.** A continuous self-map acts on the
+local homology `Hₙ(M, M ∖ S; ULift ℤ)` as multiplication by an integer `c` exactly when it acts on
+`Hₙ(M, M ∖ S; ℤ)` as multiplication by `c`: the change of coefficients
+`TopPair.uliftIntSingularHomologyIso` is natural. -/
+theorem localHomologyMap_uliftInt_eq_smul_iff {M : Type} [TopologicalSpace M] (j : C(M, M))
+    {S : Set M} (h : j ⁻¹' S ⊆ S) (n : ℕ) (c : ℤ) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j h n = c • 𝟙 _ ↔
+      localHomologyMap (ModuleCat.of ℤ ℤ) j h n = c • 𝟙 _ := by
+  rw [localHomologyMap_def, localHomologyMap_def]
+  have hnat := TopPair.singularHomologyMap_comp_uliftIntSingularHomologyIso_hom
+    (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of M) (B := Sᶜ) (B' := Sᶜ)
+      (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) n
+  refine ⟨fun hU ↦ ?_, fun hZ ↦ ?_⟩
+  · rw [← cancel_epi (TopPair.uliftIntSingularHomologyIso _ n).hom, ← hnat, hU]
+    simp
+  · rw [← cancel_mono (TopPair.uliftIntSingularHomologyIso _ n).hom, hnat, hZ]
+    simp
 
 /-- A class of the integral local homology `Hₙ(M, M ∖ {x}; ULift ℤ)` is a local orientation exactly
 when, read with coefficients `ℤ`, it generates `Hₙ(M, M ∖ {x}; ℤ)`. -/

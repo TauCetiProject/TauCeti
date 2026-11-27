@@ -60,6 +60,10 @@ the elementary estimate converting coverings by sets of small diameter into meas
 Combined with the diameter bound for Lipschitz images, it bounds the measure of the closure of
 the image of a set under a Lipschitz map.
 
+In a nontrivial finite-dimensional real normed space, the additive Haar measure of the ball of
+radius `r` about any point tends to `∞` as `r → ∞`
+(`MeasureTheory.Measure.tendsto_addHaar_ball_atTop`).
+
 An element of finite order acting linearly on a finite-dimensional real space preserves every
 additive Haar measure, because its determinant has finite order and so absolute value one
 (`MeasureTheory.Measure.addHaar_preimage_smul_of_isOfFinOrder`). Hence a finite group acting
@@ -273,6 +277,26 @@ theorem addHaar_closure_le_mul_ediam_pow (μ : Measure E) [μ.IsAddHaarMeasure] 
         ENNReal.ofReal_pow Metric.diam_nonneg, Metric.diam, ENNReal.ofReal_toReal hs]
 
 end Diameter
+
+section BallAtTop
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+
+open Filter Topology in
+/-- In a nontrivial finite-dimensional real normed space, the additive Haar measure `μ (ball x r)`
+of a ball tends to `∞` as its radius `r` tends to `∞`. -/
+theorem tendsto_addHaar_ball_atTop (μ : Measure E) [μ.IsAddHaarMeasure] (x : E) :
+    Tendsto (fun r : ℝ ↦ μ (ball x r)) atTop (𝓝 ∞) := by
+  have h₁ : Tendsto (fun r : ℝ ↦ ENNReal.ofReal (r ^ Module.finrank ℝ E)) atTop (𝓝 ∞) :=
+    ENNReal.tendsto_ofReal_atTop.comp (tendsto_pow_atTop Module.finrank_pos.ne')
+  have h₂ := ENNReal.Tendsto.mul_const h₁ (b := μ (ball 0 1)) (Or.inl ENNReal.top_ne_zero)
+  rw [ENNReal.top_mul (measure_ball_pos μ 0 one_pos).ne'] at h₂
+  refine h₂.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with r hr
+  rw [addHaar_ball_of_pos _ _ hr]
+
+end BallAtTop
 
 section FiniteOrder
 

@@ -165,6 +165,16 @@ theorem eq_starProjection_range {P : E →L[𝕜] E}
     ∃ (_ : P.range.HasOrthogonalProjection), P = P.range.starProjection :=
   isStarProjection_iff_eq_starProjection_range.1 hP.1
 
+/-- Two points of the Grassmannian with the same plane are equal: each is the orthogonal
+projection onto its range. -/
+theorem ext_range {P Q : grassmannian 𝕜 E k}
+    (h : (P : E →L[𝕜] E).range = (Q : E →L[𝕜] E).range) : P = Q := by
+  obtain ⟨_, hP⟩ := eq_starProjection_range P.property
+  obtain ⟨_, hQ⟩ := eq_starProjection_range Q.property
+  refine Subtype.ext ?_
+  rw [hP, hQ]
+  simp_rw [h]
+
 variable (𝕜) in
 /-- The line `span {w}`, for `w ≠ 0`, as a point of `G(E, 1)`: the orthogonal projection onto
 it. -/
