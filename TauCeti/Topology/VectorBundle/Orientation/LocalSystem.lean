@@ -37,6 +37,9 @@ in which Thom and Euler classes of bundles without a chosen orientation live; a 
 identifies cohomology twisted by it with ordinary cohomology. Independently of orientability,
 `TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso` identifies its tensor square
 with the constant coefficient system: evaluate both factors at either orientation and multiply.
+For any local system `K`, evaluating the second factor at an orientation `o` of `E_b` likewise
+identifies the fibre over `b` of `K ⊗ o(E)` with that of `K`
+(`TauCeti.VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv`).
 If `2 = 0` in `R`, as for `R = 𝔽₂`, the system itself is constant without any orientation
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`): evaluation at either
 orientation of a fibre gives the same value, since `-1 = 1` in `R`.
@@ -508,6 +511,31 @@ theorem signLocalSystemTensorIso_inv_app_mul {x : B} (o : Orientation ℝ (E x) 
     (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι)
     (FundamentalGroupoid.mk x)
     (⟨⟨x, o⟩, rfl⟩ : (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι))) a b
+
+variable (K : LocalCoefficientSystem.{max uB uE uι, uB, max uB uE uι} S (TopCat.of B))
+
+/-- For a local system `K`, evaluation of the second factor at an orientation `o` of `E_b`
+identifies the fibre over `b` of `K ⊗ o(E)` with the fibre of `K`. -/
+def tensorSignLocalSystemFiberEquiv {b : B} (o : Orientation ℝ (E b) ι) :
+    (K ⊗ signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b) ≃ₗ[S]
+      K.obj (FundamentalGroupoid.mk b) :=
+  (LocalCoefficientSystem.tensorObjEquiv K (signLocalSystem F E S hι) _ ≪≫ₗ
+    TensorProduct.congr (LinearEquiv.refl S _) (signLocalSystemFiberEquiv hι o)) ≪≫ₗ
+      TensorProduct.rid S _
+
+omit [FiniteDimensional ℝ F] in
+/-- The identification of `K ⊗ o(E)` with `K` at an orientation `o` sends `a ⊗ s` to `a` scaled by
+the value of `s` at `o`. -/
+theorem tensorSignLocalSystemFiberEquiv_tensorObjEquiv_symm_tmul {b : B}
+    (o : Orientation ℝ (E b) ι) (a : K.obj (FundamentalGroupoid.mk b))
+    (s : (signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b)) :
+    tensorSignLocalSystemFiberEquiv hι K o
+        ((LocalCoefficientSystem.tensorObjEquiv K (signLocalSystem F E S hι) _).symm
+          (a ⊗ₜ[S] s)) =
+      signLocalSystemFiberEquiv hι o s • a := by
+  rw [tensorSignLocalSystemFiberEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply, TensorProduct.congr_tmul, LinearEquiv.refl_apply,
+    TensorProduct.rid_tmul]
 
 end Tensor
 
