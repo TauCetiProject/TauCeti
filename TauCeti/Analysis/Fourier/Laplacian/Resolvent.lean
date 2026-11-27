@@ -180,8 +180,8 @@ theorem laplacianResolventCLM_sub_laplacianMulResolventCLM :
     laplacianResolventCLM (E := E) F - laplacianMulResolventCLM F = 1 := by
   rw [laplacianResolventCLM_eq_fourierMultiplierCLM,
     laplacianMulResolventCLM_eq_fourierMultiplierCLM, ← fourierMultiplierCLM_sub,
-    ← MemLp.toLp_sub, fourierMultiplierCLM_of_ae_eq_const (c := 1), one_smul]
-  · rfl
+    ← MemLp.toLp_sub, fourierMultiplierCLM_of_ae_eq_const (c := 1), one_smul,
+    ContinuousLinearMap.one_def]
   filter_upwards [((memLp_laplacianResolventSymbol (E := E)).sub
     memLp_laplacianMulResolventSymbol).coeFn_toLp] with ξ h
   rw [h, Pi.sub_apply, ← Complex.ofReal_sub,
