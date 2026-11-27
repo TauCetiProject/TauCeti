@@ -228,8 +228,11 @@ theorem addHaar_setOf_det_add_eq_zero (μ : Measure E) [μ.IsAddHaarMeasure] (M 
   obtain ⟨S₀, hS₀⟩ := h
   have key := MvPolynomial.measure_setOf_eval_ofReal_eq_zero (μ.map e) P
     ⟨e S₀, by simpa [hP] using hS₀⟩
-  rw [show μ.map e = μ.map e.toHomeomorph.toMeasurableEquiv from rfl,
-    MeasurableEquiv.map_apply] at key
+  have hm : MeasurableSet {x : Fin (Module.finrank ℝ E) → ℝ |
+      MvPolynomial.eval (fun i ↦ (x i : ℂ)) P = 0} :=
+    (isClosed_eq ((MvPolynomial.continuous_eval (p := P)).comp
+      (by fun_prop)) continuous_const).measurableSet
+  rw [Measure.map_apply e.continuous.measurable hm] at key
   convert key using 2
   ext S
   simp [hP]

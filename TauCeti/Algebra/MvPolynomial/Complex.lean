@@ -27,23 +27,17 @@ formed from the real parts of its coefficients. -/
 theorem re_eval_ofReal (P : MvPolynomial σ ℂ) (x : σ → ℝ) :
     (eval (fun i ↦ (x i : ℂ)) P).re =
       eval x (∑ d ∈ P.support, monomial d (P.coeff d).re) := by
-  have hmon (d : σ →₀ ℕ) :
-      ∏ i ∈ d.support, (x i : ℂ) ^ d i = ((∏ i ∈ d.support, x i ^ d i : ℝ) : ℂ) := by
-    simp only [Complex.ofReal_prod, Complex.ofReal_pow]
   rw [eval_eq]
-  simp only [hmon, Complex.re_sum, Complex.re_mul_ofReal, _root_.map_sum, eval_monomial,
-    Finsupp.prod]
+  simp only [← Complex.ofReal_pow, ← Complex.ofReal_prod, Complex.re_sum,
+    Complex.re_mul_ofReal, _root_.map_sum, eval_monomial, Finsupp.prod]
 
 /-- At a real point, the imaginary part of a complex polynomial is the evaluation of the
 polynomial formed from the imaginary parts of its coefficients. -/
 theorem im_eval_ofReal (P : MvPolynomial σ ℂ) (x : σ → ℝ) :
     (eval (fun i ↦ (x i : ℂ)) P).im =
       eval x (∑ d ∈ P.support, monomial d (P.coeff d).im) := by
-  have hmon (d : σ →₀ ℕ) :
-      ∏ i ∈ d.support, (x i : ℂ) ^ d i = ((∏ i ∈ d.support, x i ^ d i : ℝ) : ℂ) := by
-    simp only [Complex.ofReal_prod, Complex.ofReal_pow]
   rw [eval_eq]
-  simp only [hmon, Complex.im_sum, Complex.im_mul_ofReal, _root_.map_sum, eval_monomial,
-    Finsupp.prod]
+  simp only [← Complex.ofReal_pow, ← Complex.ofReal_prod, Complex.im_sum,
+    Complex.im_mul_ofReal, _root_.map_sum, eval_monomial, Finsupp.prod]
 
 end MvPolynomial

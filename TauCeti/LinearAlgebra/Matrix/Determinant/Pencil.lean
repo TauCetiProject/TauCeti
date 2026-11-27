@@ -30,6 +30,8 @@ a small integral matrix (`TauCeti.LinearAlgebra.Matrix.ReductionKernel`).
 
 ## Main results
 
+* `Matrix.finite_setOf_det_smul_one_add_smul_eq_zero`: the pencil `(1 - z) • 1 + (1 + z) • a`
+  has only finitely many singular parameters if `2 ≠ 0`.
 * `Polynomial.eval_det_X_add_C`: `det (X • A + B)`, evaluated at `t`, is `det (t • A + B)`.
 * `Submodule.eq_span_singleton_of_mem_of_det_ne_zero`: over a field with more than `n` elements,
   a subspace of `n × n` matrices whose invertible elements are the nonzero multiples of one
@@ -54,6 +56,32 @@ theorem eval_det_X_add_C (A B : Matrix n n R) (t : R) :
   simp [mul_comm (A i j)]
 
 end Polynomial
+
+namespace Matrix
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [IsDomain R]
+  [NeZero (2 : R)]
+
+/-- Over a domain in which `2 ≠ 0`, only finitely many parameters make the pencil
+`(1 - z) • 1 + (1 + z) • a` singular. At `z = -1` it is the nonsingular scalar matrix `2`. -/
+theorem finite_setOf_det_smul_one_add_smul_eq_zero (a : Matrix n n R) :
+    {z : R | ((1 - z) • (1 : Matrix n n R) + (1 + z) • a).det = 0}.Finite := by
+  let q : Polynomial R := (((1 : Polynomial R) - X) • (1 : Matrix n n (Polynomial R)) +
+    ((1 : Polynomial R) + X) • a.map C).det
+  have hq (z : R) : q.eval z = ((1 - z) • (1 : Matrix n n R) + (1 + z) • a).det := by
+    rw [← coe_evalRingHom, RingHom.map_det]
+    congr 1
+    ext i j
+    by_cases h : i = j <;> simp [h]
+  have hq0 : q ≠ 0 := fun h ↦ by
+    have h1 := hq (-1)
+    rw [h, eval_zero] at h1
+    simp only [sub_neg_eq_add, one_add_one_eq_two, add_neg_cancel, zero_smul, add_zero,
+      det_smul, det_one, mul_one] at h1
+    exact pow_ne_zero _ (NeZero.ne (2 : R)) h1.symm
+  simpa only [Polynomial.IsRoot.def, hq] using finite_setOfPred_isRoot hq0
+
+end Matrix
 
 namespace Submodule
 

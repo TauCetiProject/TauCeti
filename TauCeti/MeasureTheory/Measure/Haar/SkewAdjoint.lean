@@ -66,7 +66,7 @@ theorem isAddHaarMeasure_skewAdjoint_frobenius :
 omit [Fintype n] in
 open scoped Matrix.Norms.Frobenius in
 /-- An additive Haar measure on the skew-Hermitian matrices is invariant under negation. -/
-theorem isNegInvariant_skewAdjoint [Finite n] : μ.IsNegInvariant := by
+instance isNegInvariant_skewAdjoint [Finite n] : μ.IsNegInvariant := by
   have := Fintype.ofFinite n
   have := Matrix.borelSpace_skewAdjoint_frobenius (n := n)
   have := μ.isAddHaarMeasure_skewAdjoint_frobenius
