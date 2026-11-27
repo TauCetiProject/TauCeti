@@ -8,18 +8,19 @@ module
 public import Mathlib.Analysis.Asymptotics.Theta
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
+import TauCeti.Analysis.SpecialFunctions.Pow.Sector
+
 /-!
 # The real part on a closed sector about the positive real axis
 
-On the closed sector `|arg z| ≤ θ`, with `θ ≤ π`, the real part is at least `‖z‖ cos θ`, since
-`re z = ‖z‖ cos (arg z)` and the cosine decreases on `[0, π]`. For `θ < π / 2` the constant
-`cos θ` is positive, so on the sector the real part and the norm are comparable, and the real
-part tends to `+∞` as `z → ∞` in the sector. This is how a Laplace integral `∫ e^{-zt} q(t) dt`,
+On the closed sector `|arg z| ≤ θ`, with `0 ≤ θ ≤ π`, the real part is at least `‖z‖ cos θ`
+(`TauCeti.arg_mem_Icc_iff_norm_mul_cos_le_re`). For `θ < π / 2` the constant `cos θ` is
+positive, so on the sector the real part and the norm are comparable, and the real part tends to
+`+∞` as `z → ∞` in the sector. This is how a Laplace integral `∫ e^{-zt} q(t) dt`,
 whose estimates are in terms of `re z`, is controlled in a sector.
 
 ## Main results
 
-* `Complex.norm_mul_cos_le_re_of_abs_arg_le`: `‖z‖ cos θ ≤ re z` if `|arg z| ≤ θ ≤ π`.
 * `Complex.isTheta_re_norm_principal_abs_arg_le`: for `θ < π / 2`, `re z = Θ(‖z‖)` on the sector
   `|arg z| ≤ θ`.
 * `Complex.tendsto_re_cobounded_inf_principal_abs_arg_le`: for `θ < π / 2`, `re z → +∞` as
@@ -36,13 +37,6 @@ open Filter Asymptotics Bornology Real
 
 namespace Complex
 
-/-- On the closed sector `|arg z| ≤ θ`, with `θ ≤ π`, the real part is at least `‖z‖ cos θ`. -/
-theorem norm_mul_cos_le_re_of_abs_arg_le {z : ℂ} {θ : ℝ} (hz : |arg z| ≤ θ) (hθ : θ ≤ π) :
-    ‖z‖ * Real.cos θ ≤ z.re := by
-  rw [← norm_mul_cos_arg z, ← Real.cos_abs (arg z)]
-  exact mul_le_mul_of_nonneg_left (cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hθ hz)
-    (norm_nonneg z)
-
 /-- On the closed sector `|arg z| ≤ θ` with `θ < π / 2`, the real part is comparable to the
 norm: `re z = Θ(‖z‖)`. -/
 theorem isTheta_re_norm_principal_abs_arg_le {θ : ℝ} (hθ : θ < π / 2) :
@@ -52,7 +46,8 @@ theorem isTheta_re_norm_principal_abs_arg_le {θ : ℝ} (hθ : θ < π / 2) :
   have hcos : 0 < Real.cos (max θ 0) :=
     cos_pos_of_mem_Ioo ⟨by linarith [le_max_right θ 0, pi_pos], hθ'⟩
   have hre (z : ℂ) (hz : |arg z| ≤ θ) : ‖z‖ * Real.cos (max θ 0) ≤ z.re :=
-    norm_mul_cos_le_re_of_abs_arg_le (hz.trans (le_max_left θ 0)) (by linarith [pi_pos])
+    (TauCeti.arg_mem_Icc_iff_norm_mul_cos_le_re ⟨le_max_right θ 0, by linarith [pi_pos]⟩).mp
+      (abs_le.mp (hz.trans (le_max_left θ 0)))
   refine ⟨IsBigO.of_bound 1 (Eventually.of_forall fun z => ?_),
     IsBigO.of_bound (Real.cos (max θ 0))⁻¹ (eventually_principal.mpr fun z hz => ?_)⟩
   · simpa using abs_re_le_norm z
