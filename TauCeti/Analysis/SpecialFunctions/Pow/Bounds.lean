@@ -85,7 +85,10 @@ all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the s
 
 For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. Unlike Mathlib's `Real.log_le_rpow_div`
 for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a coefficient bound
-`log (n + 1)` becomes a power bound `n ^ ε / ε` at every `n ≥ 0`.
+`log (n + 1)` becomes a power bound `n ^ ε / ε` at every `n ≥ 0`. Applying `Real.log_le_rpow_div`
+at exponent `ε / p` and raising both sides to the `p`-th power bounds the powers of the logarithm
+on `x ≥ 1`: `(log x) ^ p ≤ (p / ε) ^ p * x ^ ε` for every `p ≥ 0`. The condition `1 ≤ x` is needed
+both for `0 ≤ log x` and for the case `p = 0`, where the statement reduces to `1 ≤ x ^ ε`.
 
 ## Main results
 
@@ -115,6 +118,10 @@ for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a
 * `Real.natCast_rpow_le_max_one_rpow`: `n ^ p ≤ max 1 (x ^ p)` for a natural number `n ≤ x` and
   every real `p`.
 * `Real.log_add_one_le_rpow_div`: `log (x + 1) ≤ x ^ ε / ε` for `0 ≤ x` and `0 < ε ≤ 1`.
+* `TauCeti.log_rpow_le_div_rpow_mul_rpow` and `TauCeti.log_pow_le_div_pow_mul_rpow`:
+  `(log x) ^ p ≤ (p / ε) ^ p * x ^ ε` for `1 ≤ x`, `0 < ε` and a real `p ≥ 0` or a natural `p`.
+* `TauCeti.sqrt_mul_log_sq_le_div_sq_mul_rpow`: `√x * (log x) ^ 2 ≤ (2 / ε) ^ 2 * x ^ (1 / 2 + ε)`
+  for `1 ≤ x` and `0 < ε`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -417,6 +424,42 @@ theorem log_add_one_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (hε�
 end Real
 
 namespace TauCeti
+
+/-- For `1 ≤ x`, `0 < ε`, and `0 ≤ p`, the `p`-th real power of `log x` is bounded by
+`(p / ε) ^ p * x ^ ε`. -/
+theorem log_rpow_le_div_rpow_mul_rpow {x ε p : ℝ} (hx : 1 ≤ x) (hε : 0 < ε) (hp : 0 ≤ p) :
+    Real.log x ^ p ≤ (p / ε) ^ p * x ^ ε := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simpa using Real.one_le_rpow hx hε.le
+  · have hx0 : 0 ≤ x := zero_le_one.trans hx
+    have hlog : Real.log x ≤ x ^ (ε / p) / (ε / p) :=
+      Real.log_le_rpow_div hx0 (div_pos hε hp)
+    have hdiv : x ^ (ε / p) / (ε / p) = p / ε * x ^ (ε / p) := by
+      field_simp
+    calc
+      Real.log x ^ p ≤ (p / ε * x ^ (ε / p)) ^ p :=
+        Real.rpow_le_rpow (Real.log_nonneg hx) (hdiv ▸ hlog) hp.le
+      _ = (p / ε) ^ p * (x ^ (ε / p)) ^ p :=
+        Real.mul_rpow (div_nonneg hp.le hε.le) (Real.rpow_nonneg hx0 _)
+      _ = (p / ε) ^ p * x ^ ε := by
+        rw [← Real.rpow_mul hx0, div_mul_cancel₀ ε hp.ne']
+
+/-- For `1 ≤ x`, `0 < ε`, and `k : ℕ`, `(log x) ^ k ≤ (k / ε) ^ k * x ^ ε`. -/
+theorem log_pow_le_div_pow_mul_rpow {x ε : ℝ} (hx : 1 ≤ x) (hε : 0 < ε) (k : ℕ) :
+    Real.log x ^ k ≤ ((k : ℝ) / ε) ^ k * x ^ ε := by
+  simpa only [Real.rpow_natCast] using
+    log_rpow_le_div_rpow_mul_rpow hx hε (Nat.cast_nonneg k)
+
+/-- For `1 ≤ x` and `0 < ε`, `√x * (log x) ^ 2 ≤ (2 / ε) ^ 2 * x ^ (1 / 2 + ε)`. -/
+theorem sqrt_mul_log_sq_le_div_sq_mul_rpow {x ε : ℝ} (hx : 1 ≤ x) (hε : 0 < ε) :
+    √x * Real.log x ^ 2 ≤ (2 / ε) ^ 2 * x ^ ((1 / 2 : ℝ) + ε) := by
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  calc
+    √x * Real.log x ^ 2 ≤ x ^ (1 / 2 : ℝ) * (((2 : ℝ) / ε) ^ 2 * x ^ ε) := by
+      rw [← Real.sqrt_eq_rpow]
+      exact mul_le_mul_of_nonneg_left (log_pow_le_div_pow_mul_rpow hx hε 2) (Real.sqrt_nonneg x)
+    _ = (2 / ε) ^ 2 * (x ^ (1 / 2 : ℝ) * x ^ ε) := by ring
+    _ = (2 / ε) ^ 2 * x ^ ((1 / 2 : ℝ) + ε) := by rw [← Real.rpow_add hx0]
 
 /-- The weight `(1 + ‖x‖) ^ s` is subadditive up to a constant: for `s ≥ 0`,
 `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`. -/

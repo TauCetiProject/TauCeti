@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
+import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 import TauCeti.Topology.Algebra.Order.Field
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -447,40 +448,25 @@ theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
       c ^ (a + 1) * (1 - (a + 1) * Real.log c) / (a + 1) ^ 2 := by
   have ha1 : a + 1 ≠ 0 := by linarith
   have hd : ∀ t ∈ Ici c,
-      HasDerivAt (fun x : ℝ ↦ x ^ (a + 1) * ((a + 1) * Real.log x - 1) / (a + 1) ^ 2)
-        (t ^ a * Real.log t) t := by
-    intro t (ht : c ≤ t)
-    have ht0 : 0 < t := hc.trans_le ht
-    have h1 := Real.hasDerivAt_rpow_const (p := a + 1) (Or.inl ht0.ne')
-    have h2 := ((Real.hasDerivAt_log ht0.ne').const_mul (a + 1)).sub_const 1
-    convert (h1.mul h2).div_const ((a + 1) ^ 2) using 1
+      HasDerivAt (fun x : ℝ ↦ ((a + 1) * (x ^ (a + 1) * Real.log x) - x ^ (a + 1)) / (a + 1) ^ 2)
+        (t ^ a * Real.log t) t := fun t (ht : c ≤ t) ↦ by
+    have ht0 : t ≠ 0 := (hc.trans_le ht).ne'
+    refine ((((Real.hasDerivAt_rpow_mul_log (a + 1) ht0).const_mul (a + 1)).sub
+      (Real.hasDerivAt_rpow_const (p := a + 1) (Or.inl ht0))).div_const
+      ((a + 1) ^ 2)).congr_deriv ?_
     rw [add_sub_cancel_right]
-    have ht_mul : t ^ (a + 1) * t⁻¹ = t ^ a := by
-      rw [← Real.rpow_neg_one, ← Real.rpow_add ht0, add_neg_cancel_right]
-    calc
-      t ^ a * Real.log t = (a + 1) ^ 2 * (t ^ a * Real.log t) / (a + 1) ^ 2 := by field_simp
-      _ = ((a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
-            t ^ (a + 1) * ((a + 1) * t⁻¹)) / (a + 1) ^ 2 := by
-          congr 1
-          calc
-            (a + 1) ^ 2 * (t ^ a * Real.log t)
-                = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) + (a + 1) * t ^ a := by ring
-            _ = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
-                  t ^ (a + 1) * ((a + 1) * t⁻¹) := by rw [← ht_mul]; ring
+    field_simp
+    ring
   have hlim_log : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * Real.log t) atTop (𝓝 0) := by
     refine (isLittleO_log_rpow_atTop (by linarith : 0 < -(a + 1))).tendsto_div_nhds_zero.congr' ?_
     filter_upwards [eventually_gt_atTop 0] with t ht
     rw [div_eq_mul_inv, ← Real.rpow_neg ht.le, neg_neg, mul_comm]
   have hlim_rpow : Tendsto (fun t : ℝ ↦ t ^ (a + 1)) atTop (𝓝 0) :=
     by simpa only [neg_neg] using tendsto_rpow_neg_atTop (by linarith : 0 < -(a + 1))
-  have ht : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * ((a + 1) * Real.log t - 1) / (a + 1) ^ 2)
+  have ht : Tendsto
+      (fun t : ℝ ↦ ((a + 1) * (t ^ (a + 1) * Real.log t) - t ^ (a + 1)) / (a + 1) ^ 2)
       atTop (𝓝 0) := by
-    have h0 : (((a + 1) * 0 - 0) / (a + 1) ^ 2 : ℝ) = 0 := by simp
-    rw [← h0]
-    refine (((hlim_log.const_mul (a + 1)).sub hlim_rpow).div_const ((a + 1) ^ 2)).congr' ?_
-    filter_upwards with t
-    congr 1
-    ring
+    simpa using ((hlim_log.const_mul (a + 1)).sub hlim_rpow).div_const ((a + 1) ^ 2)
   rw [integral_Ioi_of_hasDerivAt_of_tendsto' hd (integrableOn_Ioi_rpow_mul_log_of_lt ha hc) ht]
   ring
 
