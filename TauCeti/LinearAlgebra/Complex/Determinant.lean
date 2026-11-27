@@ -121,6 +121,11 @@ theorem linearIndependent_pair_iff_im_conj_mul_ne_zero {ω₁ ω₂ : ℂ} :
       linear_combination ω₁.re * hi - ω₁.im * hre
     exact ⟨by simpa [hω] using h0, by simpa [hω] using h1⟩
 
+/-- Swapping which factor is conjugated negates the imaginary part:
+`Im (u conj v) = -Im (conj u v)`. -/
+theorem im_mul_conj_eq_neg_im_conj_mul (u v : ℂ) : (u * conj v).im = -(conj u * v).im := by
+  rw [← conj_im, map_mul, conj_conj]
+
 /-- **The orientation of a sublattice basis.** For integers `a, b, c, d`,
 `Im (conj (a ω₁ + b ω₂) (c ω₁ + d ω₂)) = (a d - b c) Im (conj ω₁ ω₂)`. -/
 theorem im_conj_intCast_mul_add_mul_intCast_mul_add {ω₁ ω₂ : ℂ} (a b c d : ℤ) :

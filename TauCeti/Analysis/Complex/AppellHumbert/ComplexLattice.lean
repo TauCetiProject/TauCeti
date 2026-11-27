@@ -62,7 +62,9 @@ the theta functions, are the same in both conventions.
 * `ZLattice.IsAppellHumbertMultiplier`, `ZLattice.appellHumbertData`: Appell–Humbert multipliers
   for `H` and their data.
 * `ZLattice.sigmaSign`, `ZLattice.isAppellHumbertMultiplier_sigmaSign`, `ZLattice.sigmaSignData`:
-  the sign `ε` and the datum `(H, ε)`.
+  the sign `ε` and the datum `(H, ε)`, whose semicharacter, form, Riemann form and factor are
+  `simp` lemmas (`ZLattice.semichar_sigmaSignData`, `ZLattice.form_sigmaSignData_apply`,
+  `ZLattice.riemannForm_sigmaSignData_apply`, `ZLattice.factor_sigmaSignData`).
 
 ## Provenance
 
@@ -129,10 +131,7 @@ theorem im_hermitianForm_basis_eq_one_or_eq_neg_one (b : Basis (Fin 2) ℤ Λ) :
   -- The numerator `Im (b 0 conj (b 1))` and the covolume `|Im (conj (b 0) b 1)|` agree up to sign.
   have hA := covolume_eq_abs_im Λ b
   have hpos := covolume_pos Λ
-  have him : ((b 0 : ℂ) * conj (b 1 : ℂ)).im = -(conj (b 0 : ℂ) * b 1).im := by
-    simp only [mul_im, conj_re, conj_im]
-    ring
-  rw [im_hermitianForm, him, hA]
+  rw [im_hermitianForm, TauCeti.im_mul_conj_eq_neg_im_conj_mul, hA]
   rw [hA] at hpos
   rcases abs_cases (conj (b 0 : ℂ) * b 1).im with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] at hpos ⊢
   · exact Or.inr (by rw [neg_div, div_self hpos.ne'])
@@ -143,11 +142,9 @@ private theorem im_hermitianForm_periods (L : PeriodPair) (a b c d : ℤ) :
     (hermitianForm L.lattice (a * L.ω₁ + b * L.ω₂) (c * L.ω₁ + d * L.ω₂)).im = (a * d - b * c : ℤ) ∨
       (hermitianForm L.lattice (a * L.ω₁ + b * L.ω₂) (c * L.ω₁ + d * L.ω₂)).im =
         (-(a * d - b * c) : ℤ) := by
-  have hflip (u v : ℂ) : (u * conj v).im = -(conj u * v).im := by
-    simp only [mul_im, conj_re, conj_im]
-    ring
-  rw [im_hermitianForm, hflip, TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add, ← mul_neg,
-    ← hflip, mul_div_assoc]
+  rw [im_hermitianForm, TauCeti.im_mul_conj_eq_neg_im_conj_mul,
+    TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add, ← mul_neg,
+    ← TauCeti.im_mul_conj_eq_neg_im_conj_mul, mul_div_assoc]
   rcases im_hermitianForm_basis_eq_one_or_eq_neg_one L.lattice L.latticeBasis with hk | hk <;>
     rw [PeriodPair.latticeBasis_zero, PeriodPair.latticeBasis_one, im_hermitianForm] at hk <;>
     rw [hk]
@@ -326,5 +323,28 @@ variable (Λ) in
 @[simp]
 theorem semichar_sigmaSignData : (sigmaSignData Λ).semichar = sigmaSign Λ := by
   rw [sigmaSignData_def, semichar_appellHumbertData]
+
+variable (Λ) in
+/-- The form of the datum `(H, ε)` is `B (l, z) = (π / A) conj(l) z`. -/
+@[simp]
+theorem form_sigmaSignData_apply (l z : ℂ) :
+    (sigmaSignData Λ).form l z = π / covolume Λ * (conj l * z) := by
+  rw [sigmaSignData_def, form_appellHumbertData_apply]
+
+variable (Λ) in
+/-- The Riemann form of the datum `(H, ε)` is `E (u, v) = Im (u conj(v)) / A`. -/
+@[simp]
+theorem riemannForm_sigmaSignData_apply (u v : ℂ) :
+    (sigmaSignData Λ).riemannForm u v = (u * conj v).im / covolume Λ := by
+  rw [sigmaSignData_def, riemannForm_appellHumbertData_apply]
+
+variable (Λ) in
+/-- The factor of automorphy of the datum `(H, ε)` is
+`e_l (z) = ε (l) exp (π (z conj(l) + |l|² / 2) / A)`. -/
+@[simp]
+theorem factor_sigmaSignData (l : Λ) (z : ℂ) :
+    (sigmaSignData Λ).factor l z =
+      sigmaSign Λ l * exp (π * (z * conj (l : ℂ) + ‖(l : ℂ)‖ ^ 2 / 2) / covolume Λ) := by
+  rw [sigmaSignData_def, factor_appellHumbertData]
 
 end ZLattice
