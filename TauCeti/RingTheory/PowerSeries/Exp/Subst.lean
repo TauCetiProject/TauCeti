@@ -29,7 +29,8 @@ The universal case `exp (X₀ + X₁) = exp X₀ * exp X₁` in two variables is
 Adapted from `New.expSubst_add` in `src/Lib/General/Algebra/IntegralPowerSeries.lean` of the Lean
 proof of the Riemann hypothesis by Levent Alpöge with Claude, as published under Apache 2.0 at
 https://github.com/leanprover-community/riemann-hypothesis (commit `3ad0b4b58709`), where the
-coefficients are in `ℂ_[p]`. Here they are in any commutative `ℚ`-algebra.
+coefficients are in `ℂ_[p]` and the series have no constant term. Here the coefficients are in any
+commutative `ℚ`-algebra and the constant terms need only be nilpotent.
 -/
 
 public section

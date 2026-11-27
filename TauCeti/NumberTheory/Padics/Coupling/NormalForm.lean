@@ -48,6 +48,10 @@ has **normal form** `HasNormalForm p S pr ϖ l F` if
 * L. Alpöge, `New.coupling`, `New.couplingSum`, and `New.HasNormalForm` in
   `src/New/Derivatives/Divisibility/NormalForm.lean`,
   <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
+* L. Alpöge, `New.HasNormalForm.of_dvd_sub` in the same file, adapted as
+  `MvPowerSeries.HasNormalForm.of_norm_coeff_sub_le`; there divisibility by `π` in the valuation
+  ring of `ℂ_[p]`, here a bound `r` on the norms of the coefficients,
+  <https://github.com/leanprover-community/riemann-hypothesis/tree/3ad0b4b58709>.
 -/
 
 public section

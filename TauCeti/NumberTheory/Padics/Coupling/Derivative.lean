@@ -50,7 +50,8 @@ in `src/New/Derivatives/Divisibility/NormalForm.lean` of the Lean proof of the R
 by Levent Alpöge with Claude, as published under Apache 2.0 at
 https://github.com/leanprover-community/riemann-hypothesis (commit `3ad0b4b58709`). There the
 coefficients are in the valuation ring of `ℂ_[p]` and the statements are divisibility by `p` and
-congruences in the residue field; here they are norm bounds over any ultrametric normed field.
+congruences in the residue field; here they are norm bounds over any ultrametric normed commutative
+ring with `‖1‖ = 1`.
 -/
 
 public section
