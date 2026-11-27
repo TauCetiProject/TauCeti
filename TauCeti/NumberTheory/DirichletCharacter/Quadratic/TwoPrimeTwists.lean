@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LegendreTwist
 import Mathlib.Algebra.Group.Prod
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 
 /-!
@@ -65,17 +66,14 @@ theorem exists_eq_changeLevel_mul_of_coprime {M N : ℕ} (χ : DirichletCharacte
   let f := χ.toUnitHom.comp e.symm.toMonoidHom
   refine ⟨MulChar.ofUnitHom (f.comp (MonoidHom.inl _ _)),
     MulChar.ofUnitHom (f.comp (MonoidHom.inr _ _)), MulChar.ext fun u ↦ ?_⟩
-  have he : e u = (ZMod.unitsMap (dvd_mul_right M N) u, ZMod.unitsMap (dvd_mul_left N M) u) :=
-    ZMod.prodUnits_mapEquiv_chineseRemainder hMN u
-  have hu : e.symm (ZMod.unitsMap (dvd_mul_right M N) u, 1) *
-      e.symm (1, ZMod.unitsMap (dvd_mul_left N M) u) = u := by
-    rw [← map_mul, Prod.mk_mul_mk, mul_one, one_mul, ← he, e.symm_apply_apply]
-  rw [MulChar.mul_apply, changeLevel_def, changeLevel_def, MulChar.ofUnitHom_coe,
-    MulChar.ofUnitHom_coe]
-  simp only [MonoidHom.coe_comp, Function.comp_apply, MonoidHom.inl_apply,
-    MonoidHom.inr_apply, MulChar.ofUnitHom_coe, f, MulEquiv.coe_toMonoidHom]
-  rw [← Units.val_mul, ← map_mul, hu]
-  rfl
+  have hu : ((ZMod.unitsMap (dvd_mul_right M N) u, 1) : _ × _) *
+      (1, ZMod.unitsMap (dvd_mul_left N M) u) = e u := by
+    rw [Prod.mk_mul_mk, mul_one, one_mul]
+    exact (ZMod.prodUnits_mapEquiv_chineseRemainder hMN u).symm
+  rw [MulChar.mul_apply, changeLevel_apply_unitsMap, changeLevel_apply_unitsMap,
+    MulChar.ofUnitHom_coe, MulChar.ofUnitHom_coe, ← Units.val_mul, MonoidHom.comp_apply f,
+    MonoidHom.comp_apply f, MonoidHom.inl_apply, MonoidHom.inr_apply, ← map_mul, hu,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, e.symm_apply_apply, MulChar.coe_toUnitHom]
 
 /-- At a product of coprime levels, a character of order dividing two splits as the product
 of lifts of characters of order dividing two from the two levels. -/
@@ -85,16 +83,13 @@ theorem exists_eq_changeLevel_mul_of_coprime_of_sq_eq_one {M N : ℕ}
       ψ ^ 2 = 1 ∧ φ ^ 2 = 1 ∧
         χ = ψ.changeLevel (dvd_mul_right M N) * φ.changeLevel (dvd_mul_left N M) := by
   obtain ⟨ψ, φ, rfl⟩ := χ.exists_eq_changeLevel_mul_of_coprime hMN
-  have hchange {K : ℕ} (hK : K ∣ M * N) (ξ : DirichletCharacter R K) (u : (ZMod (M * N))ˣ) :
-      ξ.changeLevel hK u = ξ (ZMod.unitsMap hK u) := by
-    rw [changeLevel_def, MulChar.ofUnitHom_coe]
-    rfl
   have hsq (v : (ZMod M)ˣ) (w : (ZMod N)ˣ) : (ψ v * φ w) ^ 2 = 1 := by
     obtain ⟨u, hv, hw⟩ := ZMod.exists_unitsMap_eq_and_unitsMap_eq hMN v w
     have := congr($(hχ) (u : ZMod (M * N)))
-    rwa [MulChar.pow_apply_coe, MulChar.one_apply_coe, MulChar.mul_apply, hchange, hchange,
+    rwa [MulChar.pow_apply_coe, MulChar.one_apply_coe, MulChar.mul_apply,
+      changeLevel_apply_unitsMap, changeLevel_apply_unitsMap,
       hv, hw] at this
-  refine ⟨MulChar.ext fun v ↦ ?_, MulChar.ext fun w ↦ ?_, rfl⟩
+  refine ⟨ψ, φ, MulChar.ext fun v ↦ ?_, MulChar.ext fun w ↦ ?_, rfl⟩
   · simpa only [MulChar.pow_apply_coe, MulChar.one_apply_coe, Units.val_one, MulChar.map_one,
       mul_one] using hsq v 1
   · simpa only [MulChar.pow_apply_coe, MulChar.one_apply_coe, Units.val_one, MulChar.map_one,
