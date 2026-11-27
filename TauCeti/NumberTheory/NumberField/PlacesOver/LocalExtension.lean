@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Mult
 public import TauCeti.NumberTheory.NumberField.PlacesOver.FinitePlace
-public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 
 /-!

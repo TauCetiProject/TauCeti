@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.EReal.Lemmas
+import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Extended-real limits, `limsup`, and lower semicontinuity lemmas
@@ -20,6 +21,8 @@ semicontinuity lemmas for `EReal`-valued families:
   to `1` preserves its `limsup`.
 * `EReal.limsup_coe_add`, `EReal.liminf_coe_add`: adding a real constant commutes with `limsup`
   and `liminf`.
+* `EReal.tendsto_natCeil_mul_div_atTop`: `⌈a * n⌉₊ / n → a` in `EReal` for real `a ≥ 0`, the
+  `EReal` form of Mathlib's `tendsto_nat_ceil_mul_div_atTop`.
 * `LowerSemicontinuous.ereal_add`: sums of lower semicontinuous extended-real functions are lower
   semicontinuous.
 -/
@@ -52,6 +55,13 @@ theorem tendsto_coe_mul_add_coe_mul_sub {ι : Type*} {l : Filter ι}
     (tendsto_const_nhds (x := ((-r : ℝ) : EReal)))
     (EReal.add_ne_top hsa htb) (EReal.coe_ne_top _)
   simpa only [EReal.coe_neg, ← sub_eq_add_neg] using hR
+
+/-- For real `a ≥ 0`, the ratios `⌈a * n⌉₊ / n` tend to `a` in `EReal`. -/
+theorem tendsto_natCeil_mul_div_atTop {a : ℝ} (ha : 0 ≤ a) :
+    Tendsto (fun n : ℕ ↦ ((⌈a * n⌉₊ : ℕ) : EReal) / n) atTop (𝓝 (a : EReal)) := by
+  refine ((continuous_coe_real_ereal.tendsto a).comp
+    ((tendsto_nat_ceil_mul_div_atTop ha).comp tendsto_natCast_atTop_atTop)).congr fun n ↦ ?_
+  simp [Function.comp_def, EReal.coe_div]
 
 /-- Multiplying an `EReal`-valued family by factors converging to `1` preserves its `limsup`. -/
 theorem limsup_mul_eq_of_tendsto_one {ι : Type*} {l : Filter ι} {u b : ι → EReal}

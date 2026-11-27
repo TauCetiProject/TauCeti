@@ -54,8 +54,8 @@ with `F = (K^(2q' - 1) ⨍_{B_r⁺} θ)^(1/q') (⨍_{B_r⁺} ‖∇u‖^(2q))^(1
 average of `a` over `B_r⁺`, `⨍_{B_r⁺} θ` is a mean oscillation of `a`. So at boundary points, as
 in the interior, the gradient of a solution whose coefficients have small mean oscillation
 oscillates like that of a solution of a constant-coefficient equation, up to the data and a small
-multiple of a higher average of `‖∇u‖`. The frozen matrix `A` is arbitrary: unlike the reflection
-argument behind `TauCeti.PDE.exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le`, nothing
+multiple of a higher average of `‖∇u‖`. The frozen matrix `A` is arbitrary: unlike an argument
+reflecting the coefficients across the hyperplane (`TauCeti.PDE.reflectPrincipal`), nothing
 requires the coefficients near the boundary to be close to a matrix invariant under the reflection
 in the hyperplane, which coefficients of vanishing mean oscillation need not be.
 
