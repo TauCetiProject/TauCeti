@@ -14,15 +14,15 @@ import TauCeti.MeasureTheory.Measure.MapRestrictDensity
 /-!
 # Regression functions for binary classification
 
-For a joint law of features and Boolean labels, a regression function gives the conditional
-probability of the label `true` as a function of the feature. Its integrals over feature sets
-recover the positive-label rectangle masses, and integrating its complement recovers the
-negative-label masses. These identities allow classification risk to be evaluated on the
-feature marginal.
+For a finite joint measure of features and Boolean labels, a regression function gives the
+conditional probability of the label `true` as a function of the feature. Its integrals over feature
+sets recover the positive-label rectangle masses, and integrating its complement recovers the
+negative-label masses. These identities allow classification risk to be evaluated on the feature
+marginal.
 
 A finite joint measure admits a regression function, unique almost everywhere for its feature
-marginal. For a joint law given by a Markov kernel, the kernel's mass at `true` is such a
-function.
+marginal. For a finite feature measure and a Markov kernel, the kernel's mass at `true` is a
+regression function for the resulting joint measure.
 
 ## References
 
@@ -40,10 +40,10 @@ namespace TauCeti
 
 variable {X : Type*} [MeasurableSpace X]
 
-/-- A version of the conditional probability of label `true` given the feature. It is measurable,
-takes values in `[0, 1]`, and integrates against the feature marginal over each measurable
-feature set to give the mass of that set with label `true`. -/
-structure IsRegressionFunction (P : Measure (X × Bool)) (η : X → ℝ) : Prop where
+/-- A version of the conditional probability of label `true` given the feature under a finite
+joint measure. It is measurable, takes values in `[0, 1]`, and integrates against the feature
+marginal over each measurable feature set to give the mass of that set with label `true`. -/
+structure IsRegressionFunction (P : Measure (X × Bool)) [IsFiniteMeasure P] (η : X → ℝ) : Prop where
   /-- The regression function is measurable. -/
   measurable : Measurable η
   /-- The regression function takes values in the unit interval at every feature. -/
@@ -52,10 +52,10 @@ structure IsRegressionFunction (P : Measure (X × Bool)) (η : X → ℝ) : Prop
   measureReal_prod_true : ∀ ⦃A : Set X⦄, MeasurableSet A →
     P.real (A ×ˢ {true}) = ∫ x in A, η x ∂(P.map Prod.fst)
 
-variable {P : Measure (X × Bool)} {η η' : X → ℝ}
+variable {P : Measure (X × Bool)} [IsFiniteMeasure P] {η η' : X → ℝ}
 
 /-- A regression function is integrable for the feature marginal of a finite measure. -/
-theorem IsRegressionFunction.integrable [IsFiniteMeasure P] (hη : IsRegressionFunction P η) :
+theorem IsRegressionFunction.integrable (hη : IsRegressionFunction P η) :
     Integrable η (P.map Prod.fst) :=
   Integrable.of_bound hη.measurable.aestronglyMeasurable 1
     (ae_of_all _ fun x ↦ by
@@ -63,8 +63,8 @@ theorem IsRegressionFunction.integrable [IsFiniteMeasure P] (hη : IsRegressionF
       exact (hη.mem_Icc x).2)
 
 /-- The complement of a regression function integrates to the negative-label mass. -/
-theorem IsRegressionFunction.measureReal_prod_false [IsFiniteMeasure P]
-    (hη : IsRegressionFunction P η) {A : Set X} (hA : MeasurableSet A) :
+theorem IsRegressionFunction.measureReal_prod_false (hη : IsRegressionFunction P η)
+    {A : Set X} (hA : MeasurableSet A) :
     P.real (A ×ˢ {false}) = ∫ x in A, (1 - η x) ∂(P.map Prod.fst) := by
   have hdisj : Disjoint (A ×ˢ ({false} : Set Bool)) (A ×ˢ {true}) :=
     disjoint_prod.mpr (Or.inr (by simp))
@@ -87,14 +87,20 @@ theorem IsRegressionFunction.congr (hη : IsRegressionFunction P η)
 
 /-- Two regression functions for the same finite joint measure agree almost everywhere with
 respect to its feature marginal. -/
-theorem IsRegressionFunction.ae_eq [IsFiniteMeasure P] (hη : IsRegressionFunction P η)
+theorem IsRegressionFunction.ae_eq (hη : IsRegressionFunction P η)
     (hη' : IsRegressionFunction P η') : η =ᵐ[P.map Prod.fst] η' :=
   hη.integrable.ae_eq_of_forall_setIntegral_eq η η' hη'.integrable
     (fun _ hA _ ↦ (hη.measureReal_prod_true hA).symm.trans (hη'.measureReal_prod_true hA))
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {X : Type*} [MeasurableSpace X]
+
 /-- Every finite joint measure of features and Boolean labels admits a regression function. -/
 theorem exists_isRegressionFunction (P : Measure (X × Bool)) [IsFiniteMeasure P] :
-    ∃ η : X → ℝ, IsRegressionFunction P η := by
+    ∃ η : X → ℝ, TauCeti.IsRegressionFunction P η := by
   let s : Set (X × Bool) := univ ×ˢ {true}
   let μ := P.map Prod.fst
   let η := mapRestrictDensity Prod.fst P μ s
@@ -115,10 +121,10 @@ theorem exists_isRegressionFunction (P : Measure (X × Bool)) [IsFiniteMeasure P
       rw [← integral_indicator hA]
       simp only [← indicator_mul_right, Pi.one_apply, mul_one]
 
-/-- If a Markov kernel generates the labels, its probability of `true` is a regression function
+/-- For a finite feature measure, a Markov kernel's probability of `true` is a regression function
 of the resulting joint measure. -/
-theorem isRegressionFunction_compProd (μ : Measure X) [SFinite μ] (κ : Kernel X Bool)
-    [IsMarkovKernel κ] : IsRegressionFunction (μ ⊗ₘ κ) (fun x ↦ (κ x).real {true}) := by
+theorem isRegressionFunction_compProd (μ : Measure X) [IsFiniteMeasure μ] (κ : Kernel X Bool)
+    [IsMarkovKernel κ] : TauCeti.IsRegressionFunction (μ ⊗ₘ κ) (fun x ↦ (κ x).real {true}) := by
   have hm := κ.measurable_coe (measurableSet_singleton true)
   refine ⟨hm.ennreal_toReal, fun x ↦ ⟨measureReal_nonneg, measureReal_le_one⟩, fun A hA ↦ ?_⟩
   have hfst : (μ ⊗ₘ κ).map Prod.fst = μ := Measure.fst_compProd μ κ
@@ -126,4 +132,4 @@ theorem isRegressionFunction_compProd (μ : Measure X) [SFinite μ] (κ : Kernel
   exact (integral_toReal hm.aemeasurable
     (ae_of_all _ fun x ↦ measure_lt_top (κ x) {true})).symm
 
-end TauCeti
+end MeasureTheory.Measure
