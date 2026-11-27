@@ -826,22 +826,15 @@ theorem Lp.eLpNorm_smul_sum_nsmul_le {R ι : Type*} [Monoid R] [DistribMulAction
     {p : ℝ≥0∞} (hp : 1 ≤ p) (w : X → R) (s : Finset ι) (C : ι → ℕ) (g : ι → Lp F p μ) :
     eLpNorm (fun x ↦ w x • (∑ i ∈ s, C i • g i) x) p μ ≤
       ∑ i ∈ s, (C i : ℝ≥0∞) * eLpNorm (fun x ↦ w x • g i x) p μ := by
-  classical
   have h0 : eLpNorm (fun x ↦ w x • (0 : Lp F p μ) x) p μ = 0 := by
     rw [eLpNorm_congr_ae ((Lp.coeFn_zero _ p μ).mono fun x hx ↦ by
       rw [hx, Pi.zero_apply, smul_zero])]
     exact eLpNorm_zero
-  induction s using Finset.induction_on with
-  | empty => rw [Finset.sum_empty, Finset.sum_empty, h0]
-  | insert i s hi ih =>
-    rw [Finset.sum_insert hi, Finset.sum_insert hi]
-    refine (Lp.eLpNorm_smul_add_le hp _ _ _).trans (add_le_add ?_ ih)
-    generalize C i = n
-    induction n with
-    | zero => rw [zero_smul, Nat.cast_zero, zero_mul, h0]
-    | succ n ihn =>
-      rw [succ_nsmul, Nat.cast_succ, add_one_mul]
-      exact (Lp.eLpNorm_smul_add_le hp _ _ _).trans (add_le_add_left ihn _)
+  refine (Finset.le_sum_of_subadditive (fun g : Lp F p μ ↦ eLpNorm (fun x ↦ w x • g x) p μ)
+    h0.le (Lp.eLpNorm_smul_add_le hp w) s fun i ↦ C i • g i).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  simpa only [Finset.sum_const, Finset.card_range, nsmul_eq_mul] using
+    Finset.le_sum_of_subadditive (fun g : Lp F p μ ↦ eLpNorm (fun x ↦ w x • g x) p μ)
+      h0.le (Lp.eLpNorm_smul_add_le hp w) (Finset.range (C i)) fun _ ↦ g i
 
 end Smul
 
