@@ -273,7 +273,7 @@ private theorem positiveEndChart_inf_add_add_mem_thricePuncturedSphereReal (hc�
     positiveEndChart inf (ζ + (1, 0)) + (c, 0) ∈ thricePuncturedSphereReal := by
   refine mem_thricePuncturedSphereReal_of_two_le_norm ?_
   have h := abs_le.1 (abs_norm_positiveEndChart_inf_add_add_sub_le hc₀ hc₁ ζ)
-  have := two_mul_exp_add_one_le ζ.1 (by linarith)
+  have := two_mul_exp_two_pi_mul_add_one_le ζ.1 (by linarith)
   have := one_le_exp (by positivity : 0 ≤ 2 * π * ζ.1)
   linarith
 
@@ -283,7 +283,7 @@ private theorem le_fst_positiveEndCoord_positiveEndChart_inf_add_add (hc₀ : 0 
     {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) :
     ζ.1 ≤ (positiveEndCoord inf (positiveEndChart inf (ζ + (1, 0)) + (c, 0))).1 := by
   have h := abs_le.1 (abs_norm_positiveEndChart_inf_add_add_sub_le hc₀ hc₁ ζ)
-  have h₁ := two_mul_exp_add_one_le ζ.1 (by linarith)
+  have h₁ := two_mul_exp_two_pi_mul_add_one_le ζ.1 (by linarith)
   have h₀ : Complex.equivRealProdCLM.symm (positiveEndChart inf (ζ + (1, 0)) + (c, 0)) ≠ 0 :=
     norm_pos_iff.1 (by linarith [exp_pos (2 * π * ζ.1)])
   refine le_of_forall_lt fun r hr ↦ (lt_fst_positiveEndCoord_inf_iff h₀).2 ?_
@@ -299,7 +299,7 @@ private theorem fst_positiveEndCoord_positiveEndChart_inf_add_add_le (hc₀ : 0 
   refine not_lt.1 fun hlt ↦ ?_
   rw [lt_fst_positiveEndCoord_inf_iff h₀] at hlt
   have h := abs_le.1 (abs_norm_positiveEndChart_inf_add_add_sub_le hc₀ hc₁ ζ)
-  have h₁ := two_mul_exp_add_one_le (R + 1) (by linarith)
+  have h₁ := two_mul_exp_two_pi_mul_add_one_le (R + 1) (by linarith)
   have := exp_le_exp.2 (by nlinarith [pi_pos] : 2 * π * (ζ.1 + 1) ≤ 2 * π * (R + 1))
   rw [show R + 1 + 1 = R + 2 by ring] at h₁
   linarith
