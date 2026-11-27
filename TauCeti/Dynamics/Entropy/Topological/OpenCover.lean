@@ -40,7 +40,8 @@ open-cover entropy with the entropy of that uniformity.
 
 ## Main results
 
-* `TauCeti.openCoverMincard_finite_iff`, `TauCeti.openCoverMincard_eq_zero_iff`, and
+* `TauCeti.openCoverMincard_finite_iff`, `TauCeti.openCoverMincard_eq_zero_iff`,
+  `TauCeti.openCoverMincard_antitone`, `TauCeti.openCoverMincard_monotone_time`, and
   `TauCeti.le_openCoverEntropy`: the basic API of these definitions.
 * `TauCeti.openCoverEntropy_le_coverEntropy`, `TauCeti.coverEntropy_le_openCoverEntropy`, and
   `TauCeti.openCoverEntropy_eq_coverEntropy`: on a compact uniform space the open-cover entropy
@@ -107,6 +108,36 @@ theorem openCoverMincard_finite_iff :
 /-- `openCoverMincard` vanishes exactly on an empty space. -/
 theorem openCoverMincard_eq_zero_iff : openCoverMincard T 𝒰 n = 0 ↔ IsEmpty X := by
   simp [openCoverMincard_def, ENat.iInf_eq_zero, isEmpty_iff]
+
+/-- `openCoverMincard` is positive exactly on a nonempty space. -/
+theorem one_le_openCoverMincard_iff : 1 ≤ openCoverMincard T 𝒰 n ↔ Nonempty X := by
+  simp [Order.one_le_iff_ne_zero, openCoverMincard_eq_zero_iff]
+
+/-- The empty word alone covers a nonempty space, so the `0`-fold join needs one cylinder. -/
+theorem openCoverMincard_zero [Nonempty X] : openCoverMincard T 𝒰 0 = 1 := by
+  refine le_antisymm ?_ (one_le_openCoverMincard_iff.2 ‹_›)
+  simpa using openCoverMincard_le_card (T := T) (𝒰 := 𝒰) (s := {Fin.elim0}) (by simp) (by simp)
+
+/-- Enlarging the cover can only decrease `openCoverMincard`. -/
+theorem openCoverMincard_antitone :
+    Antitone fun 𝒰 : Set (Set X) ↦ openCoverMincard T 𝒰 n :=
+  fun _ _ h𝒰 ↦ biInf_mono fun _ hs w hw k ↦ h𝒰 (hs w hw k)
+
+/-- Truncating the words of a covering family of the longer join shows that `openCoverMincard`
+is monotone in time. -/
+theorem openCoverMincard_monotone_time : Monotone fun n : ℕ ↦ openCoverMincard T 𝒰 n := by
+  classical
+  intro m n hmn
+  refine le_iInf₂ fun s hs ↦ le_iInf fun hcov ↦ ?_
+  let r : (Fin n → Set X) → Fin m → Set X := fun w k ↦ w (Fin.castLE hmn k)
+  refine (openCoverMincard_le_card (s := s.image r) ?_ ?_).trans
+    (by exact_mod_cast Finset.card_image_le)
+  · simp only [Finset.mem_image]
+    rintro _ ⟨w, hw, rfl⟩ k
+    exact hs w hw _
+  · intro x
+    obtain ⟨w, hw, hxw⟩ := hcov x
+    exact ⟨r w, Finset.mem_image_of_mem r hw, fun k ↦ hxw _⟩
 
 /-- The open-cover entropy is at least the growth rate of `openCoverMincard` for any open cover. -/
 theorem le_openCoverEntropy [TopologicalSpace X] (hopen : ∀ U ∈ 𝒰, IsOpen U)
