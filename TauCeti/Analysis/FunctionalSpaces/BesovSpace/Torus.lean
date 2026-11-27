@@ -57,7 +57,9 @@ coefficients are recovered from the blocks: `c(n) = ∑_{j ≤ N} (Δⱼ c)^(n)`
 ## Main declarations
 
 * `TauCeti.UnitAddTorus.littlewoodPaleyBlockLp`: the block `Δⱼ c` as an element of `Lᵖ(𝕋ᵈ)`, with
-  Fourier coefficients `ψⱼ(n) c(n)` (`TauCeti.UnitAddTorus.mFourierCoeff_littlewoodPaleyBlockLp`).
+  Fourier coefficients `ψⱼ(n) c(n)` (`TauCeti.UnitAddTorus.mFourierCoeff_littlewoodPaleyBlockLp`)
+  and integrals `∫ (Δⱼ c) g = ∑ₙ ψⱼ(n) c(n) ĝ(-n)` against `g ∈ Lʳ(𝕋ᵈ)`
+  (`TauCeti.UnitAddTorus.integral_littlewoodPaleyBlockLp_mul`).
 * `TauCeti.UnitAddTorus.MemBesov φ s p q c`: the predicate `c ∈ B^s_{p,q}(𝕋ᵈ)`, closed under the
   linear operations; trigonometric polynomials lie in every periodic Besov space
   (`TauCeti.UnitAddTorus.memBesov_of_finite_support`), and the scale is monotone
@@ -68,7 +70,9 @@ coefficients are recovered from the blocks: `c(n) = ∑_{j ≤ N} (Δⱼ c)^(n)`
   `TauCeti.UnitAddTorus.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and
   `TauCeti.UnitAddTorus.BesovSpace.norm_eq_ciSup` (`q = ∞`).
 * `TauCeti.UnitAddTorus.BesovSpace.norm_le_mul_norm_of_forall_rpow_mul_norm_le`: a bound on the
-  weighted blocks of one element by a multiple of those of another bounds the norms.
+  weighted blocks of one element by a multiple of those of another bounds the norms, and
+  `TauCeti.UnitAddTorus.BesovSpace.norm_le_of_forall_rpow_mul_norm_le_sum_Ico`: a bound on them by
+  window sums `K ∑_{j - L ≤ k < j + L} ‖bₖ‖` of some `b ∈ ℓ^q` gives `‖v‖ ≤ K (2 L) ‖b‖`.
 * `TauCeti.UnitAddTorus.BesovSpace.coeffCLM`: each Fourier coefficient is a continuous linear
   functional on `B^s_{p,q}(𝕋ᵈ)`, bounded by `TauCeti.UnitAddTorus.BesovSpace.norm_coeff_le`.
 * The instance `CompleteSpace (TauCeti.UnitAddTorus.BesovSpace φ s p q)`: `B^s_{p,q}(𝕋ᵈ)` is a
@@ -101,7 +105,8 @@ coefficients are recovered from the blocks: `c(n) = ∑_{j ≤ N} (Δⱼ c)^(n)`
   in `s` and `q` (`TauCeti.UnitAddTorus.BesovSpace.exists_norm_inclusionOfExponentLE_le`).
 
 As in `TauCeti.UnitAddTorus.littlewoodPaleyBlock`, `Lᵖ(𝕋ᵈ)` is taken for the product of the Haar
-probability measures on the circle factors.
+probability measures on the circle factors; `TauCeti.UnitAddTorus.isProbabilityMeasure_volume`
+records that it is a probability measure.
 
 ## References
 
@@ -130,6 +135,8 @@ variable {d : Type*} [Fintype d]
 -- here so that the Besov spaces are built on that same space.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
+attribute [local instance] isProbabilityMeasure_volume
+
 variable (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
 
 /-! ### The blocks of a formal Fourier series -/
@@ -157,6 +164,20 @@ theorem inhomogeneousLittlewoodPaley_eq_zero_of_notMem (j : ℕ) {n : d → ℤ}
     φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 := by
   simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] at hn
   exact φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn.le
+
+/-- The products `ψⱼ(n) c(n)` vanish outside the finite set of frequencies of norm at most
+`2^j φ.rOut`. -/
+theorem support_inhomogeneousLittlewoodPaley_mul_subset (j : ℕ) (c : (d → ℤ) → ℂ) :
+    Function.support (fun n ↦ (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n) ⊆
+      (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset :=
+  fun n hn ↦ by_contra fun h ↦ hn (by
+    simp only [inhomogeneousLittlewoodPaley_eq_zero_of_notMem j h, Complex.ofReal_zero, zero_mul])
+
+/-- The pieces `ψⱼ` of the Littlewood–Paley partition are even on the lattice. -/
+theorem inhomogeneousLittlewoodPaley_latticePoint_neg (j : ℕ) (n : d → ℤ) :
+    φ.inhomogeneousLittlewoodPaley j (latticePoint (-n)) =
+      φ.inhomogeneousLittlewoodPaley j (latticePoint n) := by
+  rw [latticePoint_neg, φ.inhomogeneousLittlewoodPaley_neg]
 
 /-- The block `Δⱼ c` is the sum of `ψⱼ(n) c(n) eₙ` over any finite set of frequencies outside of
 which `ψⱼ` vanishes. -/
@@ -218,6 +239,32 @@ theorem coeFn_littlewoodPaleyBlockLp_ae_eq (p r : ℝ≥0∞) [Fact (1 ≤ p)] [
     littlewoodPaleyBlockLp φ p j c =ᵐ[volume] littlewoodPaleyBlockLp φ r j c := by
   have hs := fun n ↦ inhomogeneousLittlewoodPaley_eq_zero_of_notMem (φ := φ) j (n := n)
   exact (coeFn_littlewoodPaleyBlockLp hs c).trans (coeFn_littlewoodPaleyBlockLp hs c).symm
+
+/-- **Integrating a block against a function.** For `g ∈ Lʳ(𝕋ᵈ)`,
+`∫ (Δⱼ c) g = ∑ₙ ψⱼ(n) c(n) ĝ(-n)`, where the sum has finitely many nonzero terms. -/
+theorem integral_littlewoodPaleyBlockLp_mul {p r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ r)]
+    (j : ℕ) (c : (d → ℤ) → ℂ) (g : Lp ℂ r (volume : Measure (UnitAddTorus d))) :
+    ∫ x, littlewoodPaleyBlockLp φ p j c x * g x =
+      ∑' n, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n *
+        mFourierCoeff g (-n) := by
+  set S := (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset
+  have hS (n : d → ℤ) (hn : n ∉ S) : φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 :=
+    inhomogeneousLittlewoodPaley_eq_zero_of_notMem j hn
+  have hg : Integrable g volume := (Lp.memLp g).integrable Fact.out
+  have hint (n : d → ℤ) : Integrable (fun x ↦ mFourier n x * g x) volume :=
+    hg.bdd_mul (c := 1) (mFourier n).continuous.aestronglyMeasurable
+      (Eventually.of_forall fun x ↦ (norm_mFourier_apply n x).le)
+  rw [tsum_eq_sum (s := S) fun n hn ↦ by rw [hS n hn, Complex.ofReal_zero, zero_mul, zero_mul]]
+  have hae : (fun x ↦ littlewoodPaleyBlockLp φ p j c x * g x) =ᵐ[volume] fun x ↦
+      ∑ n ∈ S, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n *
+        (mFourier n x * g x) := by
+    filter_upwards [coeFn_littlewoodPaleyBlockLp (p := p) hS c] with x hx
+    rw [hx, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun n _ ↦ by ring
+  rw [integral_congr_ae hae, integral_finsetSum _ fun n _ ↦ (hint n).const_mul _]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [integral_const_mul, mFourierCoeff, neg_neg]
+  simp only [smul_eq_mul]
 
 /-- On `L²(𝕋ᵈ)` the block of the Fourier coefficients of `f` is the periodic Littlewood–Paley
 block `Δⱼ f`. -/
@@ -389,7 +436,7 @@ theorem exists_norm_littlewoodPaleyBlockLp_mFourierCoeff_le :
 
 /-- `ψⱼ` vanishes at the lattice points `n` with `2^j max 1 φ.rOut < ‖n‖`, for the supremum norm
 of `n : ℤᵈ`, which is at most the Euclidean norm of `n`. -/
-private theorem inhomogeneousLittlewoodPaley_latticePoint_eq_zero {j : ℕ} {n : d → ℤ}
+theorem inhomogeneousLittlewoodPaley_latticePoint_eq_zero {j : ℕ} {n : d → ℤ}
     (hn : 2 ^ j * max 1 φ.rOut < ‖n‖) :
     φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 := by
   refine φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_
@@ -419,11 +466,9 @@ theorem exists_norm_littlewoodPaleyBlockLp_le_of_le :
   -- Nikol'skii's inequality at the radius `R = 2^j M ≥ 1`, beyond which `f̂` vanishes. It is
   -- stated for the global volume on the torus; `volume_eq_pi_haarAddCircle` rewrites that to
   -- `Measure.pi fun _ ↦ haarAddCircle`, which is by definition the file-local `volume` given by
-  -- `instMeasureSpaceUnitAddCircle`. The instance, the integrability side goal and `h` below
-  -- use this definitional identification.
+  -- `instMeasureSpaceUnitAddCircle`. The integrability side goal and `h` below use this
+  -- definitional identification.
   have hR : 1 ≤ 2 ^ j * M := one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hM
-  have : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
-    inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
   have h := hN (p := p) (q := r) Fact.out hpr hR (f := (f : UnitAddTorus d → ℂ))
     (by rw [volume_eq_pi_haarAddCircle]; exact (Lp.memLp f).integrable Fact.out)
     fun n hn ↦ by
@@ -671,6 +716,12 @@ def coeffₗ : BesovSpace φ s p q →ₗ[ℂ] (d → ℤ) → ℂ where
 @[simp]
 theorem coeffₗ_apply (u : BesovSpace φ s p q) : coeffₗ φ s p q u = u.coeff := (rfl)
 
+/-- The Fourier coefficients of a finite sum are the sums of the Fourier coefficients. -/
+@[simp]
+theorem coeff_sum {ι : Type*} (t : Finset ι) (u : ι → BesovSpace φ s p q) :
+    (∑ i ∈ t, u i).coeff = ∑ i ∈ t, (u i).coeff :=
+  map_sum (coeffₗ φ s p q) u t
+
 /-- The weighted blocks `(2^{js} Δⱼ u)ⱼ` of an element `u` of `B^s_{p,q}(𝕋ᵈ)`, an `ℓ^q` sequence of
 `Lᵖ` functions. -/
 def weightedBlocks (u : BesovSpace φ s p q) :
@@ -855,6 +906,28 @@ instance : CompleteSpace (BesovSpace φ s p q) := by
   rw [completeSpace_iff_isComplete_range (weightedBlocksₗᵢ φ s p q).isometry.isUniformInducing]
   exact isClosed_range_weightedBlocks.isComplete
 
+/-- **Window bounds by an `ℓ^q` sequence.** If every weighted block `2^{js} ‖Δⱼ v‖_p` of
+`v ∈ B^s_{p,q}(𝕋ᵈ)` is at most `K` times the sum of the `‖bₖ‖` over the window
+`j - L ≤ k < j + L`, for some `b ∈ ℓ^q`, then `‖v‖ ≤ K (2 L) ‖b‖`. -/
+theorem norm_le_of_forall_rpow_mul_norm_le_sum_Ico {K : ℝ} (hK : 0 ≤ K) {L : ℕ}
+    (v : BesovSpace φ s p q) (b : lp (fun _ : ℕ ↦ ℝ) q)
+    (h : ∀ j : ℕ, 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j v.coeff‖ ≤
+      K * ∑ k ∈ Finset.Ico (j - L) (j + L), ‖b k‖) :
+    ‖v‖ ≤ K * (2 * L) * ‖b‖ := by
+  -- The window sums of the `‖bₖ‖`, as an element of `ℓ^q`.
+  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le (lp.normSeq b) L
+  rw [← norm_weightedBlocks]
+  calc ‖v.weightedBlocks‖ ≤ ‖K • w‖ :=
+        lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
+          rw [norm_weightedBlocks_apply, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
+          simp only [lp.normSeq_apply]
+          exact (h j).trans (Real.le_norm_self _)
+    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
+    _ ≤ K * (2 * L * ‖b‖) := by
+        gcongr
+        exact hwn.trans_eq (by rw [lp.norm_normSeq])
+    _ = K * (2 * L) * ‖b‖ := by ring
+
 /-- **Window bounds.** If each weighted block `2^{js} ‖Δ'ⱼ v‖` of `v`, taken in a periodic Besov
 space built from a bump function `φ'`, is at most `K` times the sum of the weighted blocks
 `2^{ks} ‖Δₖ u‖` of `u` over the window `j - L ≤ k < j + L`, then `‖v‖ ≤ K (2 L) ‖u‖`. -/
@@ -863,18 +936,10 @@ theorem norm_le_of_rpow_mul_norm_le_sum_Ico {φ' : ContDiffBump (0 : EuclideanSp
     (h : ∀ j : ℕ, 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ' p j v.coeff‖ ≤
       K * ∑ k ∈ Finset.Ico (j - L) (j + L), 2 ^ (s * k) * ‖littlewoodPaleyBlockLp φ p k u.coeff‖) :
     ‖v‖ ≤ K * (2 * L) * ‖u‖ := by
-  -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
-  set b := lp.normSeq u.weightedBlocks
-  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
-  rw [← norm_weightedBlocks]
-  calc ‖v.weightedBlocks‖
-      ≤ ‖K • w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-        rw [norm_weightedBlocks_apply, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
-        refine (h j).trans ((le_of_eq ?_).trans (Real.le_norm_self _))
-        simp only [b, lp.normSeq_apply, norm_weightedBlocks_apply]
-    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
-    _ ≤ K * (2 * L * ‖b‖) := by gcongr
-    _ = K * (2 * L) * ‖u‖ := by rw [lp.norm_normSeq, norm_weightedBlocks, mul_assoc K]
+  refine (norm_le_of_forall_rpow_mul_norm_le_sum_Ico hK v (lp.normSeq u.weightedBlocks)
+    fun j ↦ ?_).trans_eq (by rw [lp.norm_normSeq, norm_weightedBlocks])
+  simp only [lp.normSeq_apply, norm_norm]
+  simpa only [norm_weightedBlocks_apply] using h j
 
 /-- The norms of `B^s_{p,q}(𝕋ᵈ)` built from two bump functions are comparable: there is `C`,
 depending only on `φ`, `φ'` and `s`, with `‖u‖_{B'} ≤ C ‖u‖_B` for all `1 ≤ p, q ≤ ∞`. -/

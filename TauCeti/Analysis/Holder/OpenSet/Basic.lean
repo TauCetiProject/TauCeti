@@ -450,6 +450,26 @@ theorem norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpa
   · exact (BoundedContinuousFunction.norm_le (hM0 i)).2 (hM i)
   · exact_mod_cast hK.nnholderNorm_le
 
+/-- An element `f` of `C^{k,α}(Ω)` agreeing on `Ω` with a function `g` whose derivatives of order at
+most `k` are bounded by `N` on `Ω`, and whose `k`-th derivative is `α`-Hölder on `Ω` with constant
+`N`, has norm at most `(k + 2) N`. -/
+theorem norm_le_of_forall_norm_iteratedFDeriv_le {f : CkHolderSpaceOn k α Ω F} {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) {N : ℝ≥0}
+    (hN : ∀ i ≤ k, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ N)
+    (hH : HolderOnWith N α (_root_.iteratedFDeriv ℝ k g) Ω) : ‖f‖ ≤ (k + 2) * N := by
+  have he : (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) =
+      (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) :=
+    funext fun x ↦ f.iteratedFDeriv_eq hg (Fin.last k) x
+  have h := hH.holderWith
+  rw [he] at h
+  refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith (M := fun _ ↦ (N : ℝ))
+    (fun _ ↦ N.property) (fun i x ↦ ?_) h).trans_eq ?_
+  · rw [← f.iteratedFDeriv_eq hg i x]
+    exact hN i (Nat.lt_succ_iff.1 i.isLt) x
+  · simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    ring
+
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields on `Ω`.
 It is bounded by the `C^{k,α}(Ω)` norm pointwise, by `CkHolderSpaceOn.norm_iteratedFDeriv_le`. -/
 def iteratedFDerivL (i : Fin (k + 1)) :
@@ -556,14 +576,17 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) : ⇑(c • f) = c �
 theorem coe_sub (f g : CkHolderSpaceOn k α Ω F) : ⇑(f - g) = f - g := by
   rw [eq_sub_iff_add_eq, ← coe_add, sub_add_cancel]
 
+/-- The underlying function of a finite sum is the sum of the underlying functions. -/
+@[simp]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum (⟨⟨(⇑), coe_zero⟩, coe_add⟩ : CkHolderSpaceOn k α Ω F →+ Ω → F) f s
+
 /-- The value of a finite sum at a point is the sum of the values. -/
 @[simp]
 theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) (x : Ω) :
     (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+  rw [coe_sum, Finset.sum_apply]
 
 /-- The derivative field of order zero has the norm of the underlying function at each point. -/
 theorem norm_iteratedFDeriv_zero (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
@@ -611,6 +634,11 @@ theorem extend_apply_of_notMem (f : CkHolderSpaceOn k α Ω F) {x : E} (hx : x �
 on `Ω`. -/
 theorem contDiffOn_extend (f : CkHolderSpaceOn k α Ω F) : ContDiffOn ℝ k f.extend Ω :=
   f.contDiffOn f.extend_apply
+
+/-- From order one on, the extension by zero is differentiable at each point of `Ω`. -/
+theorem differentiableAt_extend (f : CkHolderSpaceOn (k + 1) α Ω F) {x : E} (hx : x ∈ Ω) :
+    DifferentiableAt ℝ f.extend x :=
+  (f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hx)
 
 /-- The iterated derivatives of the extension by zero at points of `Ω` are the derivative fields. -/
 theorem iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) (x : Ω) :

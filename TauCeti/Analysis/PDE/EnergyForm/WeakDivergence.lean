@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 
 import TauCeti.Analysis.Sobolev.W1p.Multiplication
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
