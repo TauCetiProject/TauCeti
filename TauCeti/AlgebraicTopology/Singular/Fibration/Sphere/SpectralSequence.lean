@@ -24,8 +24,9 @@ indexing `E^r_{k,q}`, with `E¹_{k,q} = Hq+k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); R)
   `E¹_{0,q} ≅ Hq(p⁻¹(x₀); R)` (`TauCeti.TopCat.sphereSerreSpectralSequenceFirstPageXIsoPole`) while,
   for a Serre fibration, `E¹_{n,q} ≅ Hq(p⁻¹(x₁); R)`
   (`TauCeti.TopCat.sphereSerreSpectralSequenceFirstPageXIsoTopCell`);
-* a differential `d^r` moves `r` columns to the left
-  (`TauCeti.TopCat.isZero_sphereSerreSpectralSequence_page_two_X_of_rel`), so the two columns
+* a differential `d^r` moves `r` columns to the left (`ComplexShape.snd_eq_of_up'_rel`), so before
+  the page `n + 1` the differentials join the two columns only to empty columns
+  (`TauCeti.TopCat.isZero_sphereSerreSpectralSequence_page_two_X_of_rel`), and the two columns
   survive unchanged up to `Eⁿ` (`TauCeti.TopCat.sphereSerreSpectralSequencePageXIsoFirstPageX`); in
   particular `E² = E¹` when `n ≥ 2`;
 * the only differential that can be nonzero from then on is the transgression
