@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Data.Nat.Choose.Sum
 
 /-!
 # Iterated derivatives of the orthogonal kernel projections and right inverses
@@ -215,8 +216,7 @@ theorem IsFredholm.sub_orthogonalKerProjection_iteratedDeriv_orthogonalRightInve
           (iteratedDeriv i (fun t ↦ orthogonalRightInverse ι (T t)) t₀ y)) := by
   have h := hT.sum_iteratedDeriv_apply_iteratedDeriv_orthogonalRightInverse_apply
     hι hsurj hd hn y
-  rw [Finset.sum_range_succ, Nat.choose_self, one_smul, Nat.sub_self, iteratedDeriv_zero]
-    at h
+  rw [Finset.sum_range_succ_choose_nsmul, Nat.sub_self, iteratedDeriv_zero] at h
   rw [hT.sub_orthogonalKerProjection_apply hι hsurj, eq_neg_of_add_eq_zero_right h, map_neg]
 
 /-- **The kernel pairings of the iterated derivatives of the right inverses.** In the setting of
@@ -235,7 +235,7 @@ theorem IsFredholm.inner_iteratedDeriv_orthogonalRightInverse_apply (hι : Injec
   have h :=
     hT.sum_inner_iteratedDeriv_orthogonalRightInverse_orthogonalKerProjection
       hι hsurj hd y k
-  rw [Finset.sum_range_succ, Nat.choose_self, one_smul, Nat.sub_self, iteratedDeriv_zero,
+  rw [Finset.sum_range_succ_choose_nsmul, Nat.sub_self, iteratedDeriv_zero,
     (isOrthogonalKerProjection_orthogonalKerProjection hι (T t₀)).apply_of_mem_ker hι hk] at h
   exact eq_neg_of_add_eq_zero_right h
 
@@ -256,8 +256,7 @@ theorem IsFredholm.sub_orthogonalKerProjection_iteratedDeriv_orthogonalKerProjec
           (iteratedDeriv i (fun t ↦ orthogonalKerProjection ι (T t)) t₀ e)) := by
   have h := hT.sum_iteratedDeriv_apply_iteratedDeriv_orthogonalKerProjection_apply
     hι hsurj hd e
-  rw [Finset.sum_range_succ, Nat.choose_self, one_smul, Nat.sub_self, iteratedDeriv_zero]
-    at h
+  rw [Finset.sum_range_succ_choose_nsmul, Nat.sub_self, iteratedDeriv_zero] at h
   rw [hT.sub_orthogonalKerProjection_apply hι hsurj, eq_neg_of_add_eq_zero_right h, map_neg]
 
 /-- **The kernel component of the iterated derivatives of the kernel projections on the
@@ -282,7 +281,7 @@ theorem IsFredholm.orthogonalKerProjection_iteratedDeriv_orthogonalKerProjection
       hι hsurj hd k
   -- The top term `π_(m+1) (π₀ k) = π_(m+1) k` cancels the right side, and the bottom term is
   -- `π₀ (π_(m+1) k)`.
-  rw [Finset.sum_range_succ, Nat.choose_self, one_smul, Nat.sub_self, iteratedDeriv_zero,
+  rw [Finset.sum_range_succ_choose_nsmul, Nat.sub_self, iteratedDeriv_zero,
     (isOrthogonalKerProjection_orthogonalKerProjection hι (T t₀)).apply_of_mem_ker hι hk,
     add_eq_right, Finset.sum_range_succ', Nat.choose_zero_right, one_smul, Nat.sub_zero,
     iteratedDeriv_zero] at h

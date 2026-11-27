@@ -126,6 +126,9 @@ bounds.
 * `MeasureTheory.Lp.eLpNorm_smul_add_le` and `MeasureTheory.Lp.eLpNorm_smul_neg`: for any weight
   `w`, the weighted seminorm `‖w g‖_p` of `g ∈ Lᵖ` is subadditive for `1 ≤ p` and invariant under
   negation.
+* `MeasureTheory.Lp.eLpNorm_smul_const_smul` and `MeasureTheory.Lp.eLpNorm_smul_sum_nsmul_le`:
+  the weighted seminorm scales by `‖a‖` under `g ↦ a g`, and for `1 ≤ p` it is at most
+  `∑ᵢ Cᵢ ‖w gᵢ‖_p` on a finite sum `∑ᵢ Cᵢ gᵢ` with multiplicities `Cᵢ ∈ ℕ`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
 * `MeasureTheory.memLp_top_inv_of_ae_le_norm` and
@@ -806,6 +809,39 @@ theorem Lp.eLpNorm_smul_neg {R : Type*} [Monoid R] [DistribMulAction R F] {p : �
     eLpNorm (fun x ↦ w x • (-g) x) p μ = eLpNorm (fun x ↦ w x • g x) p μ := by
   rw [eLpNorm_congr_ae ((Lp.coeFn_neg g).mono fun x hx ↦ by rw [hx, Pi.neg_apply, smul_neg])]
   exact eLpNorm_neg (fun x ↦ w x • g x) p μ
+
+/-- **Weighted seminorms of scalar multiples on `Lᵖ`.** For any weight `w` and scalar `a`, the
+class `g ∈ Lᵖ` satisfies `‖w (a g)‖_p = ‖a‖ ‖w g‖_p`. -/
+theorem Lp.eLpNorm_smul_const_smul {R 𝕜 : Type*} [Monoid R] [DistribMulAction R F]
+    [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F] [SMulCommClass R 𝕜 F] {p : ℝ≥0∞}
+    (w : X → R) (a : 𝕜) (g : Lp F p μ) :
+    eLpNorm (fun x ↦ w x • (a • g) x) p μ = ‖a‖ₑ * eLpNorm (fun x ↦ w x • g x) p μ := by
+  rw [eLpNorm_congr_ae (g := a • fun x ↦ w x • g x) ((Lp.coeFn_smul a g).mono fun x hx ↦ by
+    rw [hx, Pi.smul_apply, Pi.smul_apply, smul_comm]), eLpNorm_const_smul]
+
+/-- **Weighted seminorms of finite sums on `Lᵖ`.** For any weight `w` and `1 ≤ p`, the classes
+`gᵢ ∈ Lᵖ` and multiplicities `Cᵢ ∈ ℕ` satisfy `‖w (∑ᵢ Cᵢ gᵢ)‖_p ≤ ∑ᵢ Cᵢ ‖w gᵢ‖_p`, where either
+side may be infinite. -/
+theorem Lp.eLpNorm_smul_sum_nsmul_le {R ι : Type*} [Monoid R] [DistribMulAction R F]
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (w : X → R) (s : Finset ι) (C : ι → ℕ) (g : ι → Lp F p μ) :
+    eLpNorm (fun x ↦ w x • (∑ i ∈ s, C i • g i) x) p μ ≤
+      ∑ i ∈ s, (C i : ℝ≥0∞) * eLpNorm (fun x ↦ w x • g i x) p μ := by
+  classical
+  have h0 : eLpNorm (fun x ↦ w x • (0 : Lp F p μ) x) p μ = 0 := by
+    rw [eLpNorm_congr_ae ((Lp.coeFn_zero _ p μ).mono fun x hx ↦ by
+      rw [hx, Pi.zero_apply, smul_zero])]
+    exact eLpNorm_zero
+  induction s using Finset.induction_on with
+  | empty => rw [Finset.sum_empty, Finset.sum_empty, h0]
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi]
+    refine (Lp.eLpNorm_smul_add_le hp _ _ _).trans (add_le_add ?_ ih)
+    generalize C i = n
+    induction n with
+    | zero => rw [zero_smul, Nat.cast_zero, zero_mul, h0]
+    | succ n ihn =>
+      rw [succ_nsmul, Nat.cast_succ, add_one_mul]
+      exact (Lp.eLpNorm_smul_add_le hp _ _ _).trans (add_le_add_left ihn _)
 
 end Smul
 

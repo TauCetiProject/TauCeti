@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.ParameterDerivative
 import TauCeti.Analysis.Fredholm.OrthogonalSplitting.IteratedDeriv
+import TauCeti.Data.ENNReal.Mul
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -74,33 +75,7 @@ open scoped ENNReal NNReal Topology RealInnerProductSpace ContDiff BesselPotenti
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
 
-/-! ### The weighted norm of sums and of the derivatives of the realization -/
-
-/-- The weighted norm of a natural multiple: `‖exp(c ρ) (r g)‖₂ = r ‖exp(c ρ) g‖₂`. -/
-private theorem eLpNorm_exp_mul_smul_natCast_smul (c : ℝ) (r : ℕ)
-    (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • ((r : ℝ) • g) z) 2 μ⊤ =
-      r * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤ := by
-  rw [eLpNorm_congr_ae (g := (r : ℝ) • fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z)
-    ((Lp.coeFn_smul (r : ℝ) g).mono fun z hz ↦ by
-      rw [hz, Pi.smul_apply, Pi.smul_apply, smul_comm]), eLpNorm_const_smul]
-  simp
-
-/-- The weighted norm of a sum is at most the sum of the weighted norms, with multiplicities. -/
-private theorem eLpNorm_exp_mul_smul_sum_le (c : ℝ) (s : Finset ℕ) (C : ℕ → ℕ)
-    (g : ℕ → Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • (∑ i ∈ s, C i • g i) z) 2 μ⊤ ≤
-      ∑ i ∈ s, (C i : ℝ≥0∞) * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g i z) 2 μ⊤ := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    rw [Finset.sum_empty, eLpNorm_congr_ae ((Lp.coeFn_zero _ 2 μ⊤).mono fun z hz ↦ by
-      rw [hz, Pi.zero_apply, smul_zero])]
-    simp
-  | insert i s hi ih =>
-    rw [Finset.sum_insert hi, Finset.sum_insert hi]
-    refine (Lp.eLpNorm_smul_add_le one_le_two _ _ _).trans (add_le_add (le_of_eq ?_) ih)
-    rw [← Nat.cast_smul_eq_nsmul ℝ, eLpNorm_exp_mul_smul_natCast_smul]
+/-! ### The weighted norm of the derivatives of the realization -/
 
 /-- **The complement component.** If `Q` costs at most `q` in the weighted norm at the rate `c`,
 `‖bⱼ‖∞ ≤ Mʲ` for `1 ≤ j ≤ N` and `‖exp(c ρ) yᵢ‖₂ ≤ Gᵢ Mⁱ N₀` for `i < N`, then
@@ -123,22 +98,13 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_sum_holderL_le {c : ℝ}
       ((∑ i ∈ Finset.range N, N.choose i * (q * ‖gaugeFixedZerothOrder‖₊ * G i)) * M ^ N : ℝ≥0) *
         N₀ := by
   simp only [map_sum, map_nsmul]
-  refine (eLpNorm_exp_mul_smul_sum_le c _ _ _).trans ?_
-  rw [Finset.sum_mul, ENNReal.ofNNReal_finsetSum, Finset.sum_mul]
-  refine Finset.sum_le_sum fun i hi ↦ ?_
+  refine (Lp.eLpNorm_smul_sum_nsmul_le one_le_two _ _ _ _).trans
+    (ENNReal.sum_natCast_mul_le_coe_mul _ (N - ·) (fun i ↦ i) (fun i hi ↦ ?_) fun i hi ↦ ?_)
+  · exact Nat.sub_add_cancel (Finset.mem_range.1 hi).le
   have hi' := Finset.mem_range.1 hi
-  have hbi : ‖b (N - i)‖₊ ≤ M ^ (N - i) := hb _ (Finset.mem_Icc.2 ⟨by omega, by omega⟩)
-  calc _ ≤ (N.choose i : ℝ≥0∞) *
-        ((q * ‖gaugeFixedZerothOrder‖₊ * ‖b (N - i)‖₊ * (G i * M ^ i) : ℝ≥0) * N₀) := by
-        gcongr
-        exact eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQ _ (hy i hi')
-    _ ≤ (N.choose i : ℝ≥0∞) *
-        ((q * ‖gaugeFixedZerothOrder‖₊ * M ^ (N - i) * (G i * M ^ i) : ℝ≥0) * N₀) := by
-        gcongr
-    _ = _ := by
-        rw [← pow_sub_mul_pow M hi'.le]
-        push_cast
-        ring
+  refine (eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQ _ (hy i hi')).trans ?_
+  gcongr
+  exact hb _ (Finset.mem_Icc.2 ⟨by omega, by omega⟩)
 
 /-! ### The induction step -/
 
@@ -206,18 +172,12 @@ private theorem eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalKerProjection_le_of
     fun i hi ↦ hK i (by omega) k)
   -- The kernel component, through the derivatives of lower order.
   simp only [map_sum, map_nsmul]
-  refine (eLpNorm_exp_mul_smul_sum_le s _ _ _).trans ?_
-  rw [Finset.sum_mul, ENNReal.ofNNReal_finsetSum, Finset.sum_mul]
-  refine Finset.sum_le_sum fun i hi ↦ ?_
+  refine (Lp.eLpNorm_smul_sum_nsmul_le one_le_two _ _ _ _).trans
+    (ENNReal.sum_natCast_mul_le_coe_mul _ (· + 1) (N - ·) (fun i hi ↦ ?_) fun i hi ↦ ?_)
+  · have := Finset.mem_range.1 hi
+    omega
   have hi' := Finset.mem_range.1 hi
-  calc _ ≤ ((N + 1).choose (i + 1) : ℝ≥0∞) *
-        ((K (i + 1) * M ^ (i + 1) : ℝ≥0) * ((K (N - i) * M ^ (N - i) : ℝ≥0) * N₀)) := by
-        gcongr
-        exact (hK _ (by omega) _).trans (by gcongr; exact hK _ (by omega) _)
-    _ = _ := by
-        rw [show M ^ (N + 1) = M ^ (i + 1) * M ^ (N - i) by rw [← pow_add]; congr 1; omega]
-        push_cast
-        ring
+  exact (hK _ (by omega) _).trans (ENNReal.coe_mul_le_coe_mul (hK _ (by omega) _))
 
 /-- **The derivatives of the right inverses.** At a parameter `t₀` where the realization
 `L_(a t₀)` is Fredholm and onto, with `‖aⱼ‖∞ ≤ Mʲ` for `1 ≤ j ≤ N`, `N ≠ 0`, suppose that the
@@ -274,7 +234,7 @@ private theorem eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalRightInverse_le_of_
     (A := fun i ↦ sobolevFieldValues (Q i f)) (fun k hk i hi ↦ ?_) (Q N f)
     fun k hk ↦ ?_).trans ?_
   · have hi' := Finset.mem_range.1 hi
-    rw [eLpNorm_exp_mul_smul_natCast_smul]
+    rw [Lp.eLpNorm_smul_const_smul, Real.eNorm_natCast]
     calc _ ≤ (N.choose i : ℝ≥0∞) * ((B * M ^ (N - i) : ℝ≥0) *
           (kn * eLpNorm (sobolevFieldValues k) 2 μ⊤)) := by
           gcongr

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
+public import Mathlib.Basic.ENNReal.BigOperators
 public import Mathlib.Basic.ENNReal.Operations
 import Mathlib.Basic.ENNReal.Inv
 
@@ -24,8 +25,9 @@ This is the shape of estimates such as `‖B(f, g)‖ ≤ C ‖B‖ ‖f‖ ‖g
   positive factor in a natural power.
 * `ENNReal.eq_zero_of_forall_le_mul`: a quantity bounded by a fixed finite multiple of every
   positive `ε` vanishes.
-* `ENNReal.add_le_coe_mul`, `ENNReal.coe_mul_le_coe_mul`, `ENNReal.le_coe_mul_of_le_mul_mul`:
-  bookkeeping for linear bounds `x ≤ c A` with coefficients in `ℝ≥0`.
+* `ENNReal.add_le_coe_mul`, `ENNReal.coe_mul_le_coe_mul`, `ENNReal.le_coe_mul_of_le_mul_mul`,
+  `ENNReal.sum_natCast_mul_le_coe_mul`: bookkeeping for linear bounds `x ≤ c A` with coefficients
+  in `ℝ≥0`.
 
 ## References
 
@@ -110,5 +112,22 @@ theorem le_coe_mul_of_le_mul_mul {x a b A : ℝ≥0∞} {C M c : ℝ≥0} (h : x
   rw [show (↑(C * M * c) : ℝ≥0∞) * A = C * M * (c * A) by push_cast; ring]
   gcongr
 
+/-- Adding up termwise bounds `xᵢ ≤ (Aᵢ Mᵃⁱ Bᵢ Mᵇⁱ) A₀` whose exponents satisfy `aᵢ + bᵢ = N`,
+with multiplicities `Cᵢ ∈ ℕ`, into the linear bound `∑ᵢ Cᵢ xᵢ ≤ ((∑ᵢ Cᵢ Aᵢ Bᵢ) Mᴺ) A₀` with
+coefficients in `ℝ≥0`. -/
+theorem sum_natCast_mul_le_coe_mul {ι : Type*} {s : Finset ι} (C : ι → ℕ) {x : ι → ℝ≥0∞}
+    {A B : ι → ℝ≥0} {M : ℝ≥0} {N : ℕ} (a b : ι → ℕ) {A₀ : ℝ≥0∞}
+    (hab : ∀ i ∈ s, a i + b i = N)
+    (h : ∀ i ∈ s, x i ≤ ↑(A i * M ^ a i * (B i * M ^ b i)) * A₀) :
+    ∑ i ∈ s, (C i : ℝ≥0∞) * x i ≤ ↑((∑ i ∈ s, C i * (A i * B i)) * M ^ N) * A₀ := by
+  rw [Finset.sum_mul, ofNNReal_finsetSum, Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  calc (C i : ℝ≥0∞) * x i ≤ C i * (↑(A i * M ^ a i * (B i * M ^ b i)) * A₀) := by
+        gcongr
+        exact h i hi
+    _ = _ := by
+        rw [← hab i hi, pow_add]
+        push_cast
+        ring
 
 end ENNReal
