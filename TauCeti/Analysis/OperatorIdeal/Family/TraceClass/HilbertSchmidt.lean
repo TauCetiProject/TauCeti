@@ -20,13 +20,13 @@ operators `T : E → F` and `S : F → G` is trace class, with
 Expanding the middle space in a Hilbert basis `(cᵢ)` writes the composite as the nuclear series
 `S T = ∑ᵢ ⟪T† cᵢ, ·⟫ S cᵢ`, and Cauchy–Schwarz bounds `∑ᵢ ‖T† cᵢ‖ ‖S cᵢ‖` by the square roots of
 the Hilbert–Schmidt energies of `T†` and `S`. The trace of a product of two Hilbert–Schmidt
-operators `S : F → E`, `T : E → F` is then the absolutely convergent sum
+operators `S : F → E`, `T : E → F` is then the sum
 
 `Tr (S T) = ∑ᵢ ⟪T† cᵢ, S cᵢ⟫ = ∑ⱼ ⟪S† eⱼ, T eⱼ⟫`
 
-along any Hilbert basis `(cᵢ)` of `F` or `(eⱼ)` of `E`, and `Tr (S T) = Tr (T S)`. For
-`S, T : E → F` the trace `Tr (S† T) = ∑ⱼ ⟪S eⱼ, T eⱼ⟫` is the Hilbert–Schmidt pairing, and
-`Tr (T† T) = ‖T‖_HS²`.
+along any Hilbert basis `(cᵢ)` of `F` or `(eⱼ)` of `E`, the second sum converging absolutely, and
+`Tr (S T) = Tr (T S)`. For `S, T : E → F` the trace `Tr (S† T) = ∑ⱼ ⟪S eⱼ, T eⱼ⟫` is the
+Hilbert–Schmidt pairing, and `Tr (T† T) = ‖T‖_HS²`.
 
 ## Main results
 
@@ -41,10 +41,11 @@ along any Hilbert basis `(cᵢ)` of `F` or `(eⱼ)` of `E`, and `Tr (S T) = Tr (
 * `ContinuousLinearMap.toReal_nuclearENorm_comp_le`: `‖S T‖₁ ≤ ‖S‖_HS ‖T‖_HS`.
 * `TauCeti.hilbertSchmidtCompL`: composition as a bounded bilinear map from the normed
   Hilbert–Schmidt carriers into the normed trace-class carrier, of norm at most `1`.
-* `ContinuousLinearMap.hasSum_inner_adjoint_apply_apply_trace_comp`:
+* `ContinuousLinearMap.hasSum_inner_adjoint_apply_apply_trace_comp_right`:
   `Tr (S T) = ∑ᵢ ⟪T† cᵢ, S cᵢ⟫` along a Hilbert basis of the middle space.
-* `ContinuousLinearMap.hasSum_inner_adjoint_apply_trace_comp`: `Tr (S T) = ∑ⱼ ⟪S† eⱼ, T eⱼ⟫`,
-  and `ContinuousLinearMap.summable_norm_inner_adjoint_apply`: the sum converges absolutely.
+* `ContinuousLinearMap.hasSum_inner_adjoint_apply_apply_trace_comp_left`:
+  `Tr (S T) = ∑ⱼ ⟪S† eⱼ, T eⱼ⟫`, and `ContinuousLinearMap.summable_norm_inner_adjoint_apply_apply`:
+  the sum converges absolutely.
 * `ContinuousLinearMap.trace_comp_comm_of_mem_hilbertSchmidt`: `Tr (S T) = Tr (T S)`, and
   `ContinuousLinearMap.norm_trace_comp_le`: `|Tr (S T)| ≤ ‖S‖_HS ‖T‖_HS`.
 * `ContinuousLinearMap.hasSum_inner_apply_apply_trace_adjoint_comp`: the Hilbert–Schmidt pairing
@@ -233,9 +234,8 @@ variable {E : Type v} {F : Type w}
   {S : F →L[𝕜] E} {T : E →L[𝕜] F}
 
 /-- **The trace of a product through the middle space.** For Hilbert–Schmidt operators `T : E → F`
-and `S : F → E` and any Hilbert basis `(cᵢ)` of `F`, `Tr (S T) = ∑ᵢ ⟪T† cᵢ, S cᵢ⟫`, and the sum
-converges absolutely. -/
-theorem hasSum_inner_adjoint_apply_apply_trace_comp
+and `S : F → E` and any Hilbert basis `(cᵢ)` of `F`, `Tr (S T) = ∑ᵢ ⟪T† cᵢ, S cᵢ⟫`. -/
+theorem hasSum_inner_adjoint_apply_apply_trace_comp_right
     (hS : S ∈ ((hilbertSchmidt.{u, w, v} 𝕜).operatorGauge F E).finiteSubmodule)
     (hT : T ∈ ((hilbertSchmidt.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule)
     (c : HilbertBasis κ 𝕜 F) :
@@ -249,8 +249,8 @@ theorem hasSum_inner_adjoint_apply_apply_trace_comp
 /-- **The trace of a product of Hilbert–Schmidt operators.** For Hilbert–Schmidt operators
 `T : E → F` and `S : F → E` and any Hilbert basis `(eⱼ)` of `E`,
 `Tr (S T) = ∑ⱼ ⟪S† eⱼ, T eⱼ⟫`. The sum converges absolutely by
-`ContinuousLinearMap.summable_norm_inner_adjoint_apply`. -/
-theorem hasSum_inner_adjoint_apply_trace_comp
+`ContinuousLinearMap.summable_norm_inner_adjoint_apply_apply`. -/
+theorem hasSum_inner_adjoint_apply_apply_trace_comp_left
     (hS : S ∈ ((hilbertSchmidt.{u, w, v} 𝕜).operatorGauge F E).finiteSubmodule)
     (hT : T ∈ ((hilbertSchmidt.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule)
     (b : HilbertBasis ι 𝕜 E) :
@@ -258,7 +258,7 @@ theorem hasSum_inner_adjoint_apply_trace_comp
   simpa [adjoint_inner_left] using hasSum_inner_apply_trace b (comp_mem_traceClass hS hT)
 
 /-- The sum `∑ⱼ ⟪S† eⱼ, T eⱼ⟫` computing `Tr (S T)` converges absolutely. -/
-theorem summable_norm_inner_adjoint_apply
+theorem summable_norm_inner_adjoint_apply_apply
     (hS : S ∈ ((hilbertSchmidt.{u, w, v} 𝕜).operatorGauge F E).finiteSubmodule)
     (hT : T ∈ ((hilbertSchmidt.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule)
     (b : HilbertBasis ι 𝕜 E) :
@@ -275,7 +275,7 @@ theorem trace_comp_comm_of_mem_hilbertSchmidt
     (hT : T ∈ ((hilbertSchmidt.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule) :
     (S ∘L T).trace = (T ∘L S).trace := by
   obtain ⟨_, c, -⟩ := exists_hilbertBasis 𝕜 F
-  refine (hasSum_inner_adjoint_apply_apply_trace_comp hS hT c).unique ?_
+  refine (hasSum_inner_adjoint_apply_apply_trace_comp_right hS hT c).unique ?_
   simpa [adjoint_inner_left] using hasSum_inner_apply_trace c (comp_mem_traceClass hT hS)
 
 /-- The trace of a product of Hilbert–Schmidt operators is bounded by the product of their
@@ -298,7 +298,8 @@ theorem hasSum_inner_apply_apply_trace_adjoint_comp
     (hT : T ∈ ((hilbertSchmidt.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule)
     (b : HilbertBasis ι 𝕜 E) :
     HasSum (fun j ↦ ⟪S (b j), T (b j)⟫_𝕜) (adjoint S ∘L T).trace := by
-  simpa using hasSum_inner_adjoint_apply_trace_comp (adjoint_mem_hilbertSchmidt hS) hT b
+  simpa using
+    hasSum_inner_adjoint_apply_apply_trace_comp_left (adjoint_mem_hilbertSchmidt hS) hT b
 
 /-- The sum `∑ⱼ ⟪S eⱼ, T eⱼ⟫` of the Hilbert–Schmidt pairing converges absolutely. -/
 theorem summable_norm_inner_apply_apply
@@ -306,7 +307,7 @@ theorem summable_norm_inner_apply_apply
     (hT : T ∈ ((hilbertSchmidt.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule)
     (b : HilbertBasis ι 𝕜 E) :
     Summable fun j ↦ ‖⟪S (b j), T (b j)⟫_𝕜‖ := by
-  simpa using summable_norm_inner_adjoint_apply (adjoint_mem_hilbertSchmidt hS) hT b
+  simpa using summable_norm_inner_adjoint_apply_apply (adjoint_mem_hilbertSchmidt hS) hT b
 
 /-- **The trace of `T† T`** is the squared Hilbert–Schmidt norm of `T`. -/
 theorem trace_adjoint_comp_self
