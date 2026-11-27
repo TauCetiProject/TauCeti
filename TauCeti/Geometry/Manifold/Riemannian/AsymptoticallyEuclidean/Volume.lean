@@ -101,6 +101,20 @@ variable {M : Type*} [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
   {φ : EuclideanSpace ℝ (Fin n) → M}
 
+/-- In a nontrivial finite-dimensional real normed space, the Haar measure `μ (ball x r)` of a ball
+tends to `∞` as its radius `r` tends to `∞`. -/
+private theorem tendsto_addHaar_ball_atTop {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [Nontrivial F] [MeasurableSpace F] [BorelSpace F] (μ : Measure F)
+    [μ.IsAddHaarMeasure] (x : F) :
+    Tendsto (fun r : ℝ ↦ μ (ball x r)) atTop (𝓝 ∞) := by
+  have h₁ : Tendsto (fun r : ℝ ↦ ENNReal.ofReal (r ^ Module.finrank ℝ F)) atTop (𝓝 ∞) :=
+    ENNReal.tendsto_ofReal_atTop.comp (tendsto_pow_atTop Module.finrank_pos.ne')
+  have h₂ := ENNReal.Tendsto.mul_const h₁ (b := μ (ball 0 1)) (Or.inl ENNReal.top_ne_zero)
+  rw [ENNReal.top_mul (measure_ball_pos μ 0 one_pos).ne'] at h₂
+  refine h₂.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with r hr
+  rw [Measure.addHaar_ball_of_pos _ _ hr]
+
 /-- For `0 < q < 1`, the metric ball `B_r(p)` has volume at least `q ^ (n + 1) ωₙ rⁿ`, up to an
 additive constant: it contains the image of the annulus `{a < ‖x‖ < q r}`, on which the volume
 density is at least `q`. -/
@@ -177,21 +191,14 @@ theorem eventually_mul_volume_ball_le_riemannianVolume_ball
     rw [← ENNReal.ofReal_toReal hc.ne_top]
     exact (ENNReal.ofReal_lt_ofReal_iff (pow_pos hq₀.1 _)).2 hqc
   -- The Euclidean ball volume `ωₙ rⁿ` tends to infinity, so it eventually absorbs `K`.
-  have hω : volume (ball (0 : EuclideanSpace ℝ (Fin n)) 1) ≠ 0 :=
-    (measure_ball_pos volume 0 one_pos).ne'
   have hlim : Tendsto (fun r : ℝ ↦ (d - c) * volume (ball (0 : EuclideanSpace ℝ (Fin n)) r))
       atTop (𝓝 ⊤) := by
-    have hn : n ≠ 0 := h.dim_pos.ne'
-    have h₁ : Tendsto (fun r : ℝ ↦ ENNReal.ofReal (r ^ n)) atTop (𝓝 ⊤) :=
-      ENNReal.tendsto_ofReal_atTop.comp (tendsto_pow_atTop hn)
-    have h₂ := ENNReal.Tendsto.mul_const h₁ (b := volume (ball (0 : EuclideanSpace ℝ (Fin n)) 1))
+    have : Nontrivial (EuclideanSpace ℝ (Fin n)) := by
+      have : Nonempty (Fin n) := ⟨⟨0, h.dim_pos⟩⟩
+      infer_instance
+    simpa [ENNReal.mul_top (tsub_pos_of_lt hcd).ne'] using ENNReal.Tendsto.const_mul (a := d - c)
+      (tendsto_addHaar_ball_atTop volume (0 : EuclideanSpace ℝ (Fin n)))
       (Or.inl ENNReal.top_ne_zero)
-    rw [ENNReal.top_mul hω] at h₂
-    have h₃ := ENNReal.Tendsto.const_mul h₂ (a := d - c) (Or.inl ENNReal.top_ne_zero)
-    rw [ENNReal.mul_top (tsub_pos_of_lt hcd).ne'] at h₃
-    refine h₃.congr' ?_
-    filter_upwards [eventually_gt_atTop 0] with r hr
-    rw [Measure.addHaar_ball_of_pos _ _ hr, finrank_euclideanSpace_fin]
   filter_upwards [hlim.eventually (lt_mem_nhds hK.lt_top)] with r hr
   refine ENNReal.le_of_add_le_add_right hK ?_
   calc c * volume (ball (0 : EuclideanSpace ℝ (Fin n)) r) + K
