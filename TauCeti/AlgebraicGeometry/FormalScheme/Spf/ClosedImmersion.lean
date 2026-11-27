@@ -66,20 +66,17 @@ theorem range_map_quotientMk_base :
   rw [Ideal.mk_ker (I := J)] at hrange
   rw [map_base]
   ext p
+  simp only [← hrange]
   refine ⟨?_, ?_⟩
   · rintro ⟨q, rfl⟩
-    have hq : PrimeSpectrum.comap φ q.val ∈ PrimeSpectrum.zeroLocus (J : Set A) :=
-      hrange ▸ Set.mem_range_self q.val
-    have hq' : (comap φ hφ q : PrimeSpectrum A) ∈ PrimeSpectrum.zeroLocus (J : Set A) :=
-      (coe_comap_apply φ hφ q).symm ▸ hq
-    exact Set.mem_preimage.mpr hq'
-  · intro hp
-    obtain ⟨q, hq⟩ := hrange.symm ▸ hp
+    exact ⟨q.val, (coe_comap_apply φ hφ q).symm⟩
+  · rintro ⟨q, hq⟩
     have hopen : q ∈ carrier (A ⧸ J) := by
       apply (mem_carrier (p := q)).mpr
       apply (QuotientRing.isOpenQuotientMap_mk J).isQuotientMap.isOpen_preimage.mp
-      have hs : IsOpen ((PrimeSpectrum.comap φ q).asIdeal : Set A) :=
-        hq.symm ▸ mem_carrier.mp p.property
+      have hs : IsOpen ((PrimeSpectrum.comap φ q).asIdeal : Set A) := by
+        rw [hq]
+        exact mem_carrier.mp p.property
       simpa only [PrimeSpectrum.comap_asIdeal, Ideal.coe_comap] using hs
     exact ⟨⟨q, hopen⟩, Subtype.ext ((coe_comap_apply φ hφ ⟨q, hopen⟩).trans hq)⟩
 
@@ -136,11 +133,11 @@ theorem map_quotientMk_stalkMap_surjective (q : Spf (A ⧸ J)) :
     ((Spf (A ⧸ J)).presheaf.map (homOfLE hbU).op t)
   refine ⟨(Spf A).presheaf.germ (basicOpen f) p hp s, ?_⟩
   have hpre := (map_quotientMk_preimage_basicOpen J f).ge
-  have happ := ConcreteCategory.congr_hom
-    (PresheafedSpace.Hom.appLE_def (qmap).toHom _ _ hpre) s
-  exact (LocallyRingedSpace.stalkMap_germ_apply (qmap) (basicOpen f) q hp s).trans <|
-    ((Spf (A ⧸ J)).presheaf.germ_res_apply (homOfLE hpre) q hb _).symm.trans <|
-    (congrArg (fun r ↦ (Spf (A ⧸ J)).presheaf.germ _ q hb r) (happ.symm.trans hs)).trans
-    ((Spf (A ⧸ J)).presheaf.germ_res_apply (homOfLE hbU) q hb t)
+  erw [LocallyRingedSpace.stalkMap_germ_apply (qmap) (basicOpen f) q hp s,
+    ← (Spf (A ⧸ J)).presheaf.germ_res_apply (homOfLE hpre) q hb,
+    ← CommRingCat.comp_apply ((qmap).c.app (op (basicOpen f)))
+      ((Spf (A ⧸ J)).presheaf.map (homOfLE hpre).op) s,
+    ← PresheafedSpace.Hom.appLE_def (qmap).toHom (basicOpen f) (basicOpen _) hpre, hs]
+  exact (Spf (A ⧸ J)).presheaf.germ_res_apply (homOfLE hbU) q hb t
 
 end TauCeti.FormalScheme.Spf

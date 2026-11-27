@@ -27,66 +27,86 @@ open Topology
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [IsAdicRing A] [IsNoetherianRing A] (J : Ideal A) (f : A)
 
+private noncomputable def quotientForward :
+    (CompletedAway A f ⧸ J.map (algebraMap A (CompletedAway A f))) →+*
+      CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f) := by
+  let u := (algebraMap (A ⧸ J) (CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f))).comp
+    (Ideal.Quotient.mk J)
+  have hu : Continuous u := (continuous_algebraMap _ _).comp
+    (QuotientRing.isOpenQuotientMap_mk J).continuous
+  have huf : IsUnit (u f) := isUnit_algebraMap_self _ _
+  refine Ideal.Quotient.lift _ (lift u hu huf) fun a ha ↦ ?_
+  have hJ : J.map (algebraMap A (CompletedAway A f)) ≤ RingHom.ker (lift u hu huf) :=
+    Ideal.map_le_iff_le_comap.mpr fun b hb ↦ RingHom.mem_ker.mpr (by
+      rw [lift_algebraMap]
+      simp only [u, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem.mpr hb, map_zero])
+  exact RingHom.mem_ker.mp (hJ ha)
+
+private theorem continuous_quotientForward : Continuous (quotientForward J f) :=
+  (QuotientRing.isOpenQuotientMap_mk _).isQuotientMap.continuous_iff.mpr
+    (continuous_lift _ _ _)
+
+private theorem quotientForward_algebraMap (a : A) :
+    quotientForward J f (Ideal.Quotient.mk _ (algebraMap A (CompletedAway A f) a)) =
+      algebraMap (A ⧸ J) (CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f))
+        (Ideal.Quotient.mk J a) := by
+  simp only [quotientForward, Ideal.Quotient.lift_mk, lift_algebraMap, RingHom.comp_apply]
+
+private noncomputable local instance : UniformSpace
+    (CompletedAway A f ⧸ J.map (algebraMap A (CompletedAway A f))) :=
+  IsTopologicalAddGroup.rightUniformSpace _
+
+private local instance : IsUniformAddGroup
+    (CompletedAway A f ⧸ J.map (algebraMap A (CompletedAway A f))) :=
+  isUniformAddGroup_of_addCommGroup
+
+private noncomputable def quotientBackward :
+    CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f) →+*
+      (CompletedAway A f ⧸ J.map (algebraMap A (CompletedAway A f))) :=
+  lift (Ideal.quotientMap _ (algebraMap A (CompletedAway A f)) Ideal.le_comap_map)
+    ((QuotientRing.isOpenQuotientMap_mk J).isQuotientMap.continuous_iff.mpr
+      ((QuotientRing.isOpenQuotientMap_mk _).continuous.comp (continuous_algebraMap A f)))
+    (by
+      rw [Ideal.quotientMap_mk]
+      exact (isUnit_algebraMap_self A f).map (Ideal.Quotient.mk _))
+
+private theorem continuous_quotientBackward : Continuous (quotientBackward J f) :=
+  continuous_lift _ _ _
+
+private theorem quotientBackward_algebraMap (a : A) :
+    quotientBackward J f
+        (algebraMap (A ⧸ J) (CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f))
+          (Ideal.Quotient.mk J a)) =
+      Ideal.Quotient.mk _ (algebraMap A (CompletedAway A f) a) := by
+  rw [quotientBackward, lift_algebraMap, Ideal.quotientMap_mk]
+
 /-- Completing the localization of `A ⧸ J` away from the image of `f` gives the quotient of
 the completed localization of `A` at `f` by the extension of `J`. -/
 noncomputable def quotientEquiv :
     (CompletedAway A f ⧸ J.map (algebraMap A (CompletedAway A f))) ≃+*
-      CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f) := by
-  let S := CompletedAway A f
-  let T := CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f)
-  let π : S →+* S ⧸ J.map (algebraMap A S) := Ideal.Quotient.mk _
-  let u : A →+* T := (algebraMap (A ⧸ J) T).comp (Ideal.Quotient.mk J)
-  have hu : Continuous u := (continuous_algebraMap _ _).comp
-    (QuotientRing.isOpenQuotientMap_mk J).continuous
-  have huf : IsUnit (u f) := isUnit_algebraMap_self _ _
-  let g := lift u hu huf
-  have hJ : J.map (algebraMap A S) ≤ RingHom.ker g :=
-    Ideal.map_le_iff_le_comap.mpr fun a ha ↦ RingHom.mem_ker.mpr (by
-      rw [lift_algebraMap, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem.mpr ha, map_zero])
-  let gQuot : S ⧸ J.map (algebraMap A S) →+* T :=
-    Ideal.Quotient.lift _ g fun _ hx ↦ RingHom.mem_ker.mp (hJ hx)
-  have hgQuot : Continuous gQuot :=
-    (QuotientRing.isOpenQuotientMap_mk _).isQuotientMap.continuous_iff.mpr
-      (continuous_lift u hu huf)
-  let v : A ⧸ J →+* S ⧸ J.map (algebraMap A S) :=
-    Ideal.quotientMap _ (algebraMap A S) Ideal.le_comap_map
-  have hπ : Continuous π := (QuotientRing.isOpenQuotientMap_mk _).continuous
-  have hv : Continuous v := (QuotientRing.isOpenQuotientMap_mk J).isQuotientMap.continuous_iff.mpr
-    (hπ.comp (continuous_algebraMap A f))
-  have hvf : IsUnit (v (Ideal.Quotient.mk J f)) :=
-    (isUnit_algebraMap_self A f).map π
-  letI := IsTopologicalAddGroup.rightUniformSpace (S ⧸ J.map (algebraMap A S))
-  letI : IsUniformAddGroup (S ⧸ J.map (algebraMap A S)) :=
-    isUniformAddGroup_of_addCommGroup
-  let h := lift v hv hvf
-  have hh := continuous_lift v hv hvf
-  have hforward (a : A) : gQuot (π (algebraMap A S a)) = u a :=
-    (Ideal.Quotient.lift_mk _ _ _).trans (lift_algebraMap u hu huf a)
-  have hback (a : A) : h (algebraMap (A ⧸ J) T (Ideal.Quotient.mk J a)) =
-      π (algebraMap A S a) :=
-    (lift_algebraMap v hv hvf _).trans Ideal.quotientMap_mk
-  refine RingEquiv.ofRingHom gQuot h ?_ ?_
-  · apply ringHom_ext (A ⧸ J) (Ideal.Quotient.mk J f) (hgQuot.comp hh) continuous_id
+      CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f) :=
+  RingEquiv.ofRingHom (quotientForward J f) (quotientBackward J f) (by
+    apply ringHom_ext (A ⧸ J) (Ideal.Quotient.mk J f)
+      ((continuous_quotientForward J f).comp (continuous_quotientBackward J f)) continuous_id
     apply Ideal.Quotient.ringHom_ext
-    exact RingHom.ext fun a ↦ (congrArg gQuot (hback a)).trans (hforward a)
-  · apply Ideal.Quotient.ringHom_ext
-    apply ringHom_ext A f ((hh.comp hgQuot).comp hπ) hπ
-    exact RingHom.ext fun a ↦ (congrArg h (hforward a)).trans (hback a)
+    exact RingHom.ext fun a ↦ by
+      simp only [RingHom.comp_apply, quotientBackward_algebraMap, quotientForward_algebraMap,
+        RingHom.id_apply]) (by
+    have hπ := (QuotientRing.isOpenQuotientMap_mk
+      (J.map (algebraMap A (CompletedAway A f)))).continuous
+    apply Ideal.Quotient.ringHom_ext
+    apply ringHom_ext A f
+      (((continuous_quotientBackward J f).comp (continuous_quotientForward J f)).comp hπ) hπ
+    exact RingHom.ext fun a ↦ by
+      simp only [RingHom.comp_apply, quotientForward_algebraMap, quotientBackward_algebraMap])
 
 /-- The forward quotient comparison is continuous for the quotient topology. -/
-theorem continuous_quotientEquiv : Continuous (quotientEquiv J f) := by
-  unfold quotientEquiv
-  exact (QuotientRing.isOpenQuotientMap_mk _).isQuotientMap.continuous_iff.mpr
-    (continuous_lift _ _ _)
+theorem continuous_quotientEquiv : Continuous (quotientEquiv J f) :=
+  continuous_quotientForward J f
 
 /-- The inverse quotient comparison is continuous. -/
-theorem continuous_quotientEquiv_symm : Continuous (quotientEquiv J f).symm := by
-  let S := CompletedAway A f
-  let := IsTopologicalAddGroup.rightUniformSpace (S ⧸ J.map (algebraMap A S))
-  let : IsUniformAddGroup (S ⧸ J.map (algebraMap A S)) :=
-    isUniformAddGroup_of_addCommGroup
-  unfold quotientEquiv
-  exact continuous_lift _ _ _
+theorem continuous_quotientEquiv_symm : Continuous (quotientEquiv J f).symm :=
+  continuous_quotientBackward J f
 
 /-- The quotient comparison takes the class of a coefficient to its image in the completed
 localization of the quotient. -/
@@ -96,9 +116,17 @@ theorem quotientEquiv_algebraMap (a : A) :
         (algebraMap A (CompletedAway A f ⧸ J.map (algebraMap A (CompletedAway A f))) a) =
       algebraMap (A ⧸ J) (CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f))
         (Ideal.Quotient.mk J a) := by
-  unfold quotientEquiv
-  rw [← Ideal.Quotient.mk_algebraMap, RingEquiv.ofRingHom_apply, Ideal.Quotient.lift_mk,
-    lift_algebraMap]
-  rfl
+  rw [← Ideal.Quotient.mk_algebraMap]
+  exact quotientForward_algebraMap J f a
+
+/-- The inverse quotient comparison takes a localized coefficient to its class in the quotient
+of the completed localization. -/
+@[simp]
+theorem quotientEquiv_symm_algebraMap (a : A) :
+    (quotientEquiv J f).symm
+        (algebraMap (A ⧸ J) (CompletedAway (A ⧸ J) (Ideal.Quotient.mk J f))
+          (Ideal.Quotient.mk J a)) =
+      algebraMap A (CompletedAway A f ⧸ J.map (algebraMap A (CompletedAway A f))) a :=
+  (RingEquiv.symm_apply_eq _).2 (quotientEquiv_algebraMap J f a).symm
 
 end TauCeti.AdicRing.CompletedAway
