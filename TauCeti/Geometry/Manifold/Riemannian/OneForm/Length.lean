@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.OneForm.Pullback
 public import TauCeti.Geometry.Manifold.Riemannian.OneForm.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.ArcLength
-import Mathlib.Topology.Order.Compact
 
 /-!
 # Length of negative-dual trajectories away from zeros
@@ -37,16 +36,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
-  {α : RoughForm I M ℝ 1} {f : M → ℝ} {U K : Set M} {γ : ℝ → M}
+  {α : RoughForm I M ℝ 1} {f : M → ℝ} {U : Set M} {γ : ℝ → M}
   {s T : Set ℝ} {a b c : ℝ}
-
-/-- A continuous one-form has a uniformly positive dual norm on any compact region without
-zeros, including the empty region. -/
-theorem IsSmoothForm.exists_pos_le_norm_metricDual (hα : IsSmoothForm I 0 α)
-    (hK : IsCompact K) (hne : ∀ x ∈ K, α x ≠ 0) :
-    ∃ c : ℝ, 0 < c ∧ ∀ x ∈ K, c ≤ ‖α.metricDual x‖ := by
-  exact hK.exists_forall_le' hα.continuous_norm_metricDual.continuousOn fun x hx ↦
-    norm_pos_iff.mpr (mt RoughForm.metricDual_eq_zero_iff.mp (hne x hx))
 
 /-- On any measurable selection of interior times where the dual norm is at least `c > 0`,
 the length of a negative-dual trajectory is bounded by its total potential drop divided by `c`.

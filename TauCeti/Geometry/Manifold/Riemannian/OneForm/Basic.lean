@@ -166,6 +166,16 @@ theorem IsSmoothForm.continuous_norm_metricDual
   exact (continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp
     hα.contMDiff_metricDual.continuous
 
+/-- A continuous one-form has a uniformly positive dual norm on any compact region without
+zeros, including the empty region. -/
+theorem IsSmoothForm.exists_pos_le_norm_metricDual
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+    {α : RoughForm I M ℝ 1} {K : Set M} (hα : IsSmoothForm I 0 α)
+    (hK : IsCompact K) (hne : ∀ x ∈ K, α x ≠ 0) :
+    ∃ c : ℝ, 0 < c ∧ ∀ x ∈ K, c ≤ ‖α.metricDual x‖ := by
+  exact hK.exists_forall_le' hα.continuous_norm_metricDual.continuousOn fun x hx ↦
+    norm_pos_iff.mpr (mt RoughForm.metricDual_eq_zero_iff.mp (hne x hx))
+
 /-- The negative metric dual has the same regularity as the form and metric. -/
 theorem IsSmoothForm.contMDiff_neg_metricDual {n : ℕ∞ω} [IsManifold I (n + 1) M]
     [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
