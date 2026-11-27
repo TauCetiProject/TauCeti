@@ -59,6 +59,8 @@ complete field they hold in particular when `p`, `φ` are analytic at `z` and `F
   `TauCeti.deriv_deriv_comp_mul_left` its second derivative.
 * `TauCeti.deriv_deriv_fun_add`, `TauCeti.deriv_deriv_fun_sub`: the second derivative of a sum and
   of a difference of functions that are `C²` at the point.
+* `TauCeti.hasDerivAt_deriv_sum_of_eventuallyEq`: the second derivative of a function locally
+  equal to a finite sum.
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
 * `TauCeti.deriv_const_add_smul`, `TauCeti.iteratedDeriv_two_const_add_smul`: the first and
   second derivatives of the affine line `t ↦ a + t • b`.
@@ -124,6 +126,19 @@ theorem deriv_deriv_fun_add (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2
 theorem deriv_deriv_fun_sub (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2 g x) :
     deriv (deriv fun y ↦ f y - g y) x = deriv (deriv f) x - deriv (deriv g) x := by
   simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using iteratedDeriv_fun_sub hf hg
+
+/-- If `f` agrees near `u` with a finite sum `∑ i ∈ t, g i`, each `g i` is differentiable near
+`u`, and each `deriv (g i)` has derivative `d i` at `u`, then `deriv f` has derivative
+`∑ i ∈ t, d i` at `u`. -/
+theorem hasDerivAt_deriv_sum_of_eventuallyEq {ι : Type*} {t : Finset ι} {g : ι → 𝕜 → F}
+    {d : ι → F} {u : 𝕜} (heq : f =ᶠ[𝓝 u] fun s ↦ ∑ i ∈ t, g i s)
+    (hd₁ : ∀ i ∈ t, ∀ᶠ s in 𝓝 u, DifferentiableAt 𝕜 (g i) s)
+    (hd₂ : ∀ i ∈ t, HasDerivAt (deriv (g i)) (d i) u) :
+    HasDerivAt (deriv f) (∑ i ∈ t, d i) u := by
+  have hdeq : deriv f =ᶠ[𝓝 u] fun s ↦ ∑ i ∈ t, deriv (g i) s := by
+    filter_upwards [heq.deriv, (Filter.eventually_all_finset t).mpr hd₁] with s hs hds
+    rw [hs, deriv_fun_sum hds]
+  exact (HasDerivAt.fun_sum hd₂).congr_of_eventuallyEq hdeq
 
 end AddSub
 

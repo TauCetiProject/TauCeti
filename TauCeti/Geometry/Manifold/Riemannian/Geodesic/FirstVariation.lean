@@ -51,6 +51,9 @@ boundary point of the submanifold, where only one-sided variations are available
 
 ## Main definitions and results
 
+* `TauCeti.Manifold.IsGeodesicCurveOn.integral_inner_acceleration_eq_zero`: along a geodesic on a
+  set containing `uIoo a b`, any field paired with the covariant acceleration integrates to zero
+  over `[a, b]`.
 * `TauCeti.Manifold.IsGeodesicCurveOn.isEnergyCritical`: **geodesics are critical points of the
   energy** among `C^n` variations with fixed endpoints, for every `2 ≤ n`.
 * `TauCeti.Manifold.IsEnergyCritical.isGeodesicCurveOn`: **critical points of the energy are
@@ -95,6 +98,19 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
+/-- Along a geodesic on a parameter set `s` containing `uIoo a b`, the integral over `[a, b]` of
+the inner product of any field along the curve with its covariant acceleration vanishes. -/
+theorem IsGeodesicCurveOn.integral_inner_acceleration_eq_zero {s : Set ℝ}
+    (hγ : IsGeodesicCurveOn I γ s) (hab : uIoo a b ⊆ s) (V : ∀ t, TangentSpace I (γ t)) :
+    ∫ t in a..b, inner ℝ (V t) (acceleration (leviCivitaConnection I M) γ t) = 0 := by
+  refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
+    intervalIntegral.integral_zero
+  have hacc : acceleration (leviCivitaConnection I M) γ t = 0 := by
+    rw [← accelerationWithin_of_mem_nhds (leviCivitaConnection I M) γ
+      (mem_of_superset (isOpen_Ioo.mem_nhds ht) hab)]
+    exact hγ.accelerationWithin_eq_zero t (hab ht)
+  simp only [hacc, inner_zero_right]
+
 /-- **Geodesics are critical points of the energy.** For `2 ≤ n`, a geodesic on the open interval
 between `a` and `b` which is `C^n` at every point of `[a, b]` is a critical point of the energy
 between `a` and `b` among `C^n` variations with fixed endpoints. -/
@@ -103,9 +119,7 @@ theorem IsGeodesicCurveOn.isEnergyCritical {n : WithTop ℕ∞} (hn : 2 ≤ n)
     IsEnergyCritical I n γ a b := by
   refine (isEnergyCritical_iff_integral_inner_eq_zero hn hγ).mpr fun F hF0 _ ↦ ?_
   subst hF0
-  refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-    intervalIntegral.integral_zero
-  simp only [((isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).mp h).2 t ht, inner_zero_right]
+  exact h.integral_inner_acceleration_eq_zero subset_rfl (variationField I F)
 
 end EnergyCritical
 
@@ -256,12 +270,8 @@ theorem hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn (hab : a ≤ b)
     HasDerivAt (fun s ↦ (Manifold.pathELength I (F s) a b).toReal)
       ((⟪variationField I F b, curveVelocity I (F 0) b⟫_ℝ -
         ⟪variationField I F a, curveVelocity I (F 0) a⟫_ℝ) / C) 0 := by
-  have hacc : ∫ t in a..b, ⟪variationField I F t,
-      acceleration (leviCivitaConnection I M) (F 0) t⟫_ℝ = 0 := by
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    rw [uIoo_of_le hab] at ht
-    simp only [((isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).mp hgeo).2 t ht, inner_zero_right]
+  have hacc := hgeo.integral_inner_acceleration_eq_zero (by rw [uIoo_of_le hab])
+    (variationField I F)
   simpa only [hacc, sub_zero] using hasDerivAt_toReal_pathELength hab hF hC hγ
 
 /-- **The first variation at a local extremum of length.** Let `F` be a two-parameter family which

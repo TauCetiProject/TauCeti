@@ -26,6 +26,8 @@ factor `1 / C`, this is the first variation of energy `TauCeti.Manifold.hasDeriv
 
 ## Main results
 
+* `TauCeti.Manifold.eventually_pathELength_ne_top`: curves in a `C¹` family have finite length
+  near `s = 0`.
 * `TauCeti.Manifold.hasDerivAt_norm_curveVelocity`: the transverse derivative of the speed at a
   regular parameter.
 * `TauCeti.Manifold.exists_isOpen_contDiffOn_norm_curveVelocity`: near a regular segment the speed
@@ -51,6 +53,31 @@ open Bundle CovariantDerivative Filter MeasureTheory Set
 open scoped ContDiff Manifold Topology InnerProductSpace
 
 namespace TauCeti.Manifold
+
+section FiniteLength
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {F : ℝ → ℝ → M}
+
+/-- If a two-parameter family `F` is `C¹` at every point of `{0} × uIcc a b`, then the curves
+`F s` have finite Riemannian length between `a` and `b` for all `s` near `0`. -/
+theorem eventually_pathELength_ne_top [IsManifold I 1 M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] {a b : ℝ}
+    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 1 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
+    ∀ᶠ s in 𝓝 (0 : ℝ), Manifold.pathELength I (F s) a b ≠ ⊤ := by
+  obtain ⟨U, V, hUo, _, h0U, hV, hfUV⟩ :=
+    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hF
+  filter_upwards [hUo.mem_nhds h0U] with s hs
+  have hγs : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (F s) V :=
+    hfUV.comp (contDiff_prodMk_right s).contMDiff.contMDiffOn fun t ht ↦ ⟨hs, ht⟩
+  rw [hγs.pathELength_eq_ofReal_integral_norm_curveVelocityWithin (Icc_subset_uIcc.trans hV)]
+  exact ENNReal.ofReal_ne_top
+
+end FiniteLength
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
