@@ -60,9 +60,10 @@ private theorem a5FourthD4BlockRotationFin_eq :
   Equiv.ext fun _ ↦ Fin.ext rfl
 
 private theorem orderOf_a5FourthD4BlockRotationFin : orderOf a5FourthD4BlockRotationFin = 3 := by
-  change orderOf ((finCongr (length_eq_of_mem_gluePatterns
-    cyclic_mem_gluePatterns_a5FourthD4)).symm.permCongrHom a5FourthD4BlockRotation) = 3
-  rw [MulEquiv.orderOf_eq, orderOf_a5FourthD4BlockRotation]
+  -- Both `(GluePattern.cyclic [2] [0, 2, 4] [0]).length` and `a5FourthD4.components.length`
+  -- reduce definitionally to `5`.
+  rw [a5FourthD4BlockRotationFin_eq]
+  exact orderOf_a5FourthD4BlockRotation
 
 private theorem mem_symmetries_cyclic_a5FourthD4_iff_mem_zpowers
     (g : Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length)) :
