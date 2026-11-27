@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Basic
+public import Mathlib.Algebra.Category.Grp.Limits
 public import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
 public import Mathlib.CategoryTheory.Sites.Over
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Sites.Whiskering
 
 /-!
 # Abelian bandings of gerbes and band-preserving transformations
@@ -161,6 +162,22 @@ theorem aut_mul_comm {U : C} {x : F.obj (.mk (op U))} (g h : Aut x) : g * h = h 
   obtain ⟨a, rfl⟩ := (b.mulEquiv U x).surjective g
   ext
   simp [b.mulEquiv_hom_comp h.asIso a]
+
+include b in
+/-- Automorphisms in a banded pseudofunctor are determined on a covering sieve, because their
+coefficients are sections of a sheaf. No prestack hypothesis is needed. -/
+theorem aut_ext {U : C} {x : F.obj (.mk (op U))} {R : Sieve U} (hR : R ∈ J U)
+    {s t : Aut x} (h : ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      (F.map f.op.toLoc).toFunctor.mapAut x s = (F.map f.op.toLoc).toFunctor.mapAut x t) :
+    s = t := by
+  obtain ⟨a, rfl⟩ := (b.mulEquiv U x).surjective s
+  obtain ⟨a', rfl⟩ := (b.mulEquiv U x).surjective t
+  apply congrArg (b.mulEquiv U x)
+  apply Multiplicative.toAdd.injective
+  refine ((A.isSheaf_obj_comp (forget AddCommGrpCat)).isSeparated R hR).ext fun V f hf ↦ ?_
+  have h' := h f hf
+  rw [b.mapAut_mulEquiv, b.mapAut_mulEquiv] at h'
+  exact congrArg Multiplicative.toAdd ((b.mulEquiv V _).injective h')
 
 /-- The restriction of an `A`-banding of `F` to the slice site `(Over U, J.over U)`: the
 `A.over U`-banding of the restriction `F.over U` that identifies, for `X : Over U` and an object
