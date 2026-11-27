@@ -62,8 +62,9 @@ associated to the chosen embedding of the value group. -/
 theorem normAddValuation_apply_of_ne_zero {x : R} (hx : v x ≠ 0) :
     v.normAddValuation x = ((-Real.log (v.norm x) : ℝ) : WithTop ℝ) := by
   have hnorm : 0 < v.norm x := v.norm_pos_iff_valuation_pos.mpr (pos_iff_ne_zero.mpr hx)
+  rw [Valuation.norm_def] at hnorm
   have h : RankLeOne.hom' v (v.restrict x) ≠ 0 :=
-    (NNReal.coe_pos.mp (v.norm_def ▸ hnorm)).ne'
+    (NNReal.coe_pos.mp hnorm).ne'
   rw [normAddValuation_apply, Real.expOrderMonoidIsoWithZero_symm_apply_of_ne_zero h,
     WithZero.negLog_exp, Valuation.norm_def]
 

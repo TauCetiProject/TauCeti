@@ -24,17 +24,25 @@ namespace Real
 
 /-- On finite exponents the map is the exponential, and the adjoined zero maps to zero. -/
 noncomputable def expOrderMonoidIsoWithZero : WithZero (Multiplicative ℝ) ≃*o ℝ≥0 :=
+  let toUnits : Set.Ioi (0 : ℝ) ≃ ℝ≥0ˣ := (Nonneg.unitsEquivPos ℝ).symm.toEquiv
+  let f : Multiplicative ℝ ≃ ℝ≥0ˣ :=
+    Multiplicative.toAdd.trans (Real.expOrderIso.toEquiv.trans toUnits)
+  have hUnits (r : Set.Ioi (0 : ℝ)) : ((toUnits r).val : ℝ) = (r : ℝ) :=
+    Nonneg.val_unitsEquivPos_symm_apply_coe ℝ r
+  have hf (x : Multiplicative ℝ) : ((f x).val : ℝ) = Real.exp x.toAdd := by
+    simp only [f, Equiv.trans_apply, OrderIso.coe_toEquiv, hUnits, Real.coe_expOrderIso_apply]
   let e : Multiplicative ℝ ≃*o ℝ≥0ˣ :=
     { toMulEquiv :=
-        { toEquiv :=
-            (Multiplicative.ofAdd : ℝ ≃ Multiplicative ℝ).symm.trans
-              (Real.expOrderIso.toEquiv.trans (Nonneg.unitsEquivPos ℝ).symm.toEquiv)
+        { toEquiv := f
           map_mul' x y := by
             apply Units.ext
             apply NNReal.eq
-            exact Real.exp_add x.toAdd y.toAdd }
-      map_le_map_iff' := fun {x y} ↦ by
-        exact Real.exp_le_exp }
+            simp only [Units.val_mul, NNReal.coe_mul, Equiv.toFun_as_coe, hf, toAdd_mul,
+              Real.exp_add] }
+      map_le_map_iff' := by
+        intro x y
+        simp only [← Units.val_le_val, ← NNReal.coe_le_coe, Equiv.toFun_as_coe, hf, Real.exp_le_exp,
+          Multiplicative.toAdd_le] }
   e.withZero.trans OrderMonoidIso.withZeroUnits
 
 /-- The scalar evaluation rule for the extended exponential on finite exponents. This projection
