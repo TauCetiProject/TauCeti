@@ -468,7 +468,8 @@ theorem regionUnion_mono (h : R ⊆ S) : regionUnion R ⊆ regionUnion S :=
   Set.biUnion_subset_biUnion_left h
 
 /-- The vertices of `R`, as points of `ℝ²`, lie in `F(R)`. -/
-theorem mk_mem_regionUnion (hu : u ∈ regionVertices R) : latticeToReal u ∈ regionUnion R := by
+theorem latticeToReal_mem_regionUnion (hu : u ∈ regionVertices R) :
+    latticeToReal u ∈ regionUnion R := by
   obtain ⟨f, hf, hu⟩ := hu
   exact Set.mem_biUnion hf (TriFace.latticeToReal_mem_triangle hu)
 

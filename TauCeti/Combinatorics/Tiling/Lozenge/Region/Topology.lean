@@ -66,35 +66,25 @@ theorem mem_triangle_iff {f : TriFace} {p : ℝ × ℝ} :
       exact (convex_halfSpace_ge h1 _).inter <| (convex_halfSpace_le h1 _).inter <|
         (convex_halfSpace_ge h2 _).inter <| (convex_halfSpace_le h2 _).inter <|
         (convex_halfSpace_ge h3 _).inter (convex_halfSpace_le h3 _)
-  · -- `p` is an explicit convex combination of the three vertices
-    obtain ⟨⟨a, b⟩, c⟩ := f
-    obtain ⟨x, y⟩ := p
-    obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
-    cases c
-    · simp only [diagIndex_mk_false, Int.cast_sub, Int.cast_one] at h1 h2 h3 h4 h5 h6
-      have := (convex_triangle ⟨(a, b), false⟩).sum_mem (t := Finset.univ)
-        (w := ![1 - (y - b), (y - b) - (x - a), x - a])
-        (z := ![latticeToReal (a, b), latticeToReal ((a, b) + (0, 1)),
-          latticeToReal ((a, b) + (1, 1))])
-        (fun i _ => by fin_cases i <;> simp <;> linarith)
-        (by simp [Fin.sum_univ_three])
-        (by simp only [Finset.mem_univ, forall_const, Fin.forall_fin_succ]
-            refine ⟨?_, ?_, ?_, fun i => i.elim0⟩ <;>
-            exact latticeToReal_mem_triangle (by simp))
-      convert this using 1
-      ext <;> simp [Fin.sum_univ_three] <;> ring
-    · simp only [diagIndex_mk_true, Int.cast_sub] at h1 h2 h3 h4 h5 h6
-      have := (convex_triangle ⟨(a, b), true⟩).sum_mem (t := Finset.univ)
-        (w := ![1 - (x - a), (x - a) - (y - b), y - b])
-        (z := ![latticeToReal (a, b), latticeToReal ((a, b) + (1, 0)),
-          latticeToReal ((a, b) + (1, 1))])
-        (fun i _ => by fin_cases i <;> simp <;> linarith)
-        (by simp [Fin.sum_univ_three])
-        (by simp only [Finset.mem_univ, forall_const, Fin.forall_fin_succ]
-            refine ⟨?_, ?_, ?_, fun i => i.elim0⟩ <;>
-            exact latticeToReal_mem_triangle (by simp))
-      convert this using 1
-      ext <;> simp [Fin.sum_univ_three] <;> ring
+  · -- `p` is an explicit convex combination `∑ wᵢ • zᵢ` of the three vertices
+    obtain ⟨w, z, hw, hz, rfl⟩ : ∃ (w : Fin 3 → ℝ) (z : Fin 3 → ℤ × ℤ),
+        ((∀ i, 0 ≤ w i) ∧ ∑ i, w i = 1) ∧ (∀ i, z i ∈ f.vertices) ∧
+        ∑ i, w i • latticeToReal (z i) = p := by
+      obtain ⟨⟨a, b⟩, c⟩ := f
+      obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+      cases c <;> simp only [diagIndex_mk_true, diagIndex_mk_false, Int.cast_sub,
+        Int.cast_one] at h1 h2 h3 h4 h5 h6
+      on_goal 1 => refine ⟨![1 - (p.2 - b), (p.2 - b) - (p.1 - a), p.1 - a],
+        ![(a, b), (a, b) + (0, 1), (a, b) + (1, 1)], ?_⟩
+      on_goal 2 => refine ⟨![1 - (p.1 - a), (p.1 - a) - (p.2 - b), p.2 - b],
+        ![(a, b), (a, b) + (1, 0), (a, b) + (1, 1)], ?_⟩
+      all_goals
+        refine ⟨⟨fun i => ?_, by simp [Fin.sum_univ_three]⟩, fun i => ?_, ?_⟩
+        · fin_cases i <;> simp <;> linarith
+        · fin_cases i <;> simp
+        · ext <;> simp [Fin.sum_univ_three] <;> ring
+    exact (convex_triangle f).sum_mem (fun i _ => hw.1 i) hw.2
+      fun i _ => latticeToReal_mem_triangle (hz i)
 
 /-- **Meeting triangles share a vertex.** If the triangles of two faces meet, the faces have a
 common vertex. -/
@@ -194,9 +184,9 @@ theorem IsConnectedRegion.of_isPreconnected_regionUnion {R : Set TriFace}
   have hfB : f ∈ B := ⟨hf, fun w hw hw' =>
     hne (hw'.trans (reachable_of_mem_vertices hf hw huf))⟩
   obtain ⟨p, -, hpA, hpB⟩ := isPreconnected_closed_iff.1 hR _ _ (hclosed A) (hclosed B) hsub
-    ⟨latticeToReal u₀, mk_mem_regionUnion hu₀,
+    ⟨latticeToReal u₀, latticeToReal_mem_regionUnion hu₀,
       mem_biUnion (x := f₀) ⟨hf₀, u₀, hu₀f, .refl _⟩ (TriFace.latticeToReal_mem_triangle hu₀f)⟩
-    ⟨latticeToReal u, mk_mem_regionUnion hu,
+    ⟨latticeToReal u, latticeToReal_mem_regionUnion hu,
       mem_biUnion hfB (TriFace.latticeToReal_mem_triangle huf)⟩
   obtain ⟨g, ⟨hgR, w, hw, hwr⟩, hpg⟩ := mem_iUnion₂.1 hpA
   obtain ⟨g', ⟨-, hg'B⟩, hpg'⟩ := mem_iUnion₂.1 hpB
