@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
+public import TauCeti.Analysis.InnerProductSpace.Variational.EigenExpansion
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenspace
 import TauCeti.Analysis.InnerProductSpace.Variational.Spectrum
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
@@ -37,6 +38,19 @@ the multiplicity of each eigenvalue in the basis is the dimension of its eigensp
   (`TauCeti.Manifold.SobolevH1.finrank_weakEigenspace_eq_ncard`). So a weak eigenspace is nonzero
   exactly when its eigenvalue occurs in the basis, as `0` does for the constants: `Δ⁺` has pure
   point spectrum with finite multiplicities.
+* **`H¹(M)` in an eigenbasis.** With `cᵢ = ⟪bᵢ, f⟫_{L²}` the coordinates of `f ∈ L²(M)` in such a
+  basis, `f` lies in `H¹(M)` exactly when `∑ (μᵢ + 1) cᵢ² < ∞`
+  (`TauCeti.Manifold.SobolevH1.mem_range_toLp_iff_summable`), that is, exactly when it lies in
+  the domain of the diagonal operator `S` with entries `√(μᵢ + 1)` in the basis
+  (`TauCeti.Manifold.SobolevH1.range_toLp_eq_diagonalPMap_sqrt_domain`). For a `C¹` metric, the
+  eigenfunction expansion `w = ∑ cᵢ uᵢ` of `w ∈ H¹(M)` converges in `H¹(M)`
+  (`TauCeti.Manifold.SobolevH1.hasSum_inner_toLp_smul`), and the `H¹` norm and the Dirichlet form
+  are diagonal: `‖w‖²_{H¹} = ∑ (μᵢ + 1) cᵢ² = ‖S w‖²_{L²}` and
+  `D(w, v) = ∑ μᵢ cᵢ(w) cᵢ(v)` (`TauCeti.Manifold.SobolevH1.hasSum_norm_sq`,
+  `TauCeti.Manifold.SobolevH1.norm_diagonalPMap_sqrt`,
+  `TauCeti.Manifold.SobolevH1.hasSum_dirichletForm`). Informally, `S` is `(Δ⁺ + 1)^{1/2}`, so
+  these say that `H¹(M)` is the form domain of `Δ⁺` with the same norm; the identification of `S`
+  with a power of `TauCeti.Manifold.SobolevH1.negLaplacian` is not proved here.
 
 ## The argument
 
@@ -46,7 +60,9 @@ the value map `J : H¹(M) → L²(M)` is compact, and its range is dense
 (`TauCeti.Manifold.SobolevH1.denseRange_toLp`). So the variational spectral theorem
 (`IsCoercive.exists_hilbertBasis_forall_apply_eq_smul_inner`) gives a Hilbert basis of `L²(M)`
 of values `J u` of solutions of `⟪u, v⟫_{H¹} = κ ⟪J u, J v⟫_{L²}`, that is of weak eigenfunctions
-with eigenvalue `μ = κ - 1`. For a smooth metric, weak eigenfunctions are smooth
+with eigenvalue `μ = κ - 1`. The description of `H¹(M)` in the basis is the abstract one of the
+energy space of a coercive form (`IsCoercive.mem_range_iff_summable_mul_inner_sq`,
+`IsCoercive.hasSum_mul_inner_mul_inner`). For a smooth metric, weak eigenfunctions are smooth
 (`TauCeti.Manifold.SobolevH1.weakEigenspaceEquiv`). Weak eigenfunctions of distinct eigenvalues
 are orthogonal in `L²(M)` (`TauCeti.Manifold.SobolevH1.inner_toLp_eq_zero_of_mem_weakEigenspace`),
 since `D` is symmetric, so the basis expansion of the value of a weak `ν`-eigenfunction only
@@ -198,6 +214,87 @@ theorem finrank_weakEigenspace_eq_ncard (hu : ∀ i, toLp (u i) = b i)
   exact ncard_image_of_injective _ hb.injective
 
 end HilbertBasis
+
+/-! ### `H¹(M)` in an eigenbasis -/
+
+section EnergySpace
+
+variable {ι : Type*} {b : HilbertBasis ι ℝ (Lp ℝ 2 (riemannianVolume I M))}
+  {u : ι → SobolevH1 I M} {μ : ι → ℝ}
+
+/-- **`H¹(M)` in an eigenbasis.** If a Hilbert basis `b` of `L²(M)` consists of the values of weak
+eigenfunctions `uᵢ` with eigenvalues `μᵢ`, then `f ∈ L²(M)` is the value of some `w ∈ H¹(M)` if
+and only if its coordinates satisfy `∑ (μᵢ + 1) ⟪bᵢ, f⟫² < ∞`. -/
+theorem mem_range_toLp_iff_summable (hu : ∀ i, toLp (u i) = b i)
+    (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) {f : Lp ℝ 2 (riemannianVolume I M)} :
+    f ∈ Set.range (toLp (I := I) (M := M)) ↔
+      Summable fun i ↦ (μ i + 1) * ⟪b i, f⟫_ℝ ^ 2 :=
+  isCoercive_innerSL.mem_range_iff_summable_mul_inner_sq
+    (fun v w ↦ real_inner_comm w v) hu fun i ↦ innerSL_apply_eq_of_mem_weakEigenspace (hμ i)
+
+/-- **`H¹(M)` is the domain of the diagonal operator `√(μᵢ + 1)`.** If a Hilbert basis `b` of
+`L²(M)` consists of the values of weak eigenfunctions `uᵢ` with eigenvalues `μᵢ`, then the values
+of `H¹(M)` form the domain of the diagonal operator with entries `√(μᵢ + 1)` in the basis `b`. -/
+theorem range_toLp_eq_diagonalPMap_sqrt_domain (hu : ∀ i, toLp (u i) = b i)
+    (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) :
+    Set.range (toLp (I := I) (M := M)) = (b.diagonalPMap fun i ↦ √(μ i + 1)).domain :=
+  isCoercive_innerSL.range_eq_diagonalPMap_sqrt_domain
+    (fun v w ↦ real_inner_comm w v) hu fun i ↦ innerSL_apply_eq_of_mem_weakEigenspace (hμ i)
+
+section C1
+
+variable [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The eigenfunction expansion converges in `H¹(M)`.** For a `C¹` metric, if a Hilbert basis
+`b` of `L²(M)` consists of the values of weak eigenfunctions `uᵢ`, then every `w ∈ H¹(M)` is the
+sum `∑ ⟪bᵢ, w⟫_{L²} uᵢ`, converging in `H¹(M)`. -/
+theorem hasSum_inner_toLp_smul (hu : ∀ i, toLp (u i) = b i)
+    (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) (w : SobolevH1 I M) :
+    HasSum (fun i ↦ ⟪b i, toLp w⟫_ℝ • u i) w :=
+  isCoercive_innerSL.hasSum_inner_smul (fun v w ↦ real_inner_comm w v) toLp_injective hu
+    (fun i ↦ innerSL_apply_eq_of_mem_weakEigenspace (hμ i)) w
+
+/-- **The `H¹` norm in an eigenbasis.** For a `C¹` metric, if a Hilbert basis `b` of `L²(M)`
+consists of the values of weak eigenfunctions `uᵢ` with eigenvalues `μᵢ`, then
+`‖w‖²_{H¹} = ∑ (μᵢ + 1) ⟪bᵢ, w⟫²_{L²}` for every `w ∈ H¹(M)`. -/
+theorem hasSum_norm_sq (hu : ∀ i, toLp (u i) = b i)
+    (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) (w : SobolevH1 I M) :
+    HasSum (fun i ↦ (μ i + 1) * ⟪b i, toLp w⟫_ℝ ^ 2) (‖w‖ ^ 2) := by
+  have h := isCoercive_innerSL.hasSum_mul_inner_sq (fun v w ↦ real_inner_comm w v)
+    toLp_injective hu (fun i ↦ innerSL_apply_eq_of_mem_weakEigenspace (hμ i)) w
+  rwa [innerSL_apply_apply, real_inner_self_eq_norm_sq] at h
+
+/-- **The Dirichlet form in an eigenbasis.** For a `C¹` metric, if a Hilbert basis `b` of `L²(M)`
+consists of the values of weak eigenfunctions `uᵢ` with eigenvalues `μᵢ`, then
+`D(w, v) = ∑ μᵢ ⟪bᵢ, w⟫_{L²} ⟪bᵢ, v⟫_{L²}` for all `w, v ∈ H¹(M)`. -/
+theorem hasSum_dirichletForm (hu : ∀ i, toLp (u i) = b i)
+    (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) (w v : SobolevH1 I M) :
+    HasSum (fun i ↦ μ i * ⟪b i, toLp w⟫_ℝ * ⟪b i, toLp v⟫_ℝ) (dirichletForm w v) := by
+  have h := (isCoercive_innerSL.hasSum_mul_inner_mul_inner (fun v w ↦ real_inner_comm w v)
+    toLp_injective hu (fun i ↦ innerSL_apply_eq_of_mem_weakEigenspace (hμ i)) w v).sub
+    (b.hasSum_inner_mul_inner (toLp w) (toLp v))
+  rw [innerSL_apply_apply, ← dirichletForm_apply] at h
+  convert h using 2 with i
+  rw [real_inner_comm (b i)]
+  ring
+
+/-- **The diagonal operator `√(μᵢ + 1)` measures the `H¹` norm.** For a `C¹` metric, if a
+Hilbert basis `b` of `L²(M)` consists of the values of weak eigenfunctions `uᵢ` with eigenvalues
+`μᵢ`, then the diagonal operator with entries `√(μᵢ + 1)` in the basis `b` sends the value of
+`w ∈ H¹(M)` to a vector of norm `‖w‖_{H¹}`. -/
+theorem norm_diagonalPMap_sqrt (hu : ∀ i, toLp (u i) = b i)
+    (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) (w : SobolevH1 I M)
+    (hw : toLp w ∈ (b.diagonalPMap fun i ↦ √(μ i + 1)).domain) :
+    ‖b.diagonalPMap (fun i ↦ √(μ i + 1)) ⟨toLp w, hw⟩‖ = ‖w‖ := by
+  have h := isCoercive_innerSL.norm_diagonalPMap_sqrt_sq (fun v w ↦ real_inner_comm w v)
+    toLp_injective hu (fun i ↦ innerSL_apply_eq_of_mem_weakEigenspace (hμ i)) w hw
+  rw [innerSL_apply_apply, real_inner_self_eq_norm_sq] at h
+  exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h
+
+end C1
+
+end EnergySpace
 
 /-! ### Existence of an eigenbasis -/
 

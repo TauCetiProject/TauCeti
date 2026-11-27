@@ -263,8 +263,9 @@ loops `xₖ q` as `R → ∞`, whose Floer energy and symplectic area densities 
 and whose topological energy `∫_S uₖ^*ω + ∑ q, ±∫₀¹ H_q(t, xₖ q t) dt` is at most `A`. Then there
 are a subsequence `φ`, a limit `p₀ ∈ C` of the parameters `p_{φ n}`, a finite set `Z ⊆ S` with
 `#Z * δ ≤ A + ∑ q, (B_q + Δ_q)` and a map `v`, continuous on `S \ Z`, such that along `φ` every
-disc about a point of `Z` eventually carries energy at least `δ`, and the solutions converge to `v`
-on `S \ Z`, locally uniformly after applying `e` and pointwise in `M`. Over the compact window `C`
+disc about a point of `Z` eventually carries energy at least `δ`, the energy densities are
+eventually bounded near every point of `S \ Z`, and the solutions converge to `v` on `S \ Z`,
+locally uniformly after applying `e` and pointwise in `M`. Over the compact window `C`
 the necks stay below a fixed height, beyond which the perturbations are the cylindrical data
 `H_q(t) dt` of the outer Hamiltonians, so the family is cylindrical on the ends with data
 independent of `p`. -/
@@ -327,6 +328,13 @@ exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pants
             (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p (φ n)))
               (equivRealProdCLM.symm z) x Complex.I)
             (u (φ n)) y) ∧
+        (∀ y ∈ thricePuncturedSphereReal \ ↑Z, ∃ N ∈ 𝓝 y, ∃ A', ∀ᶠ n in atTop, ∀ w ∈ N,
+          ω.floerEnergyDensity
+            (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p (φ n)))
+              (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p (φ n)))
+              (equivRealProdCLM.symm z) x Complex.I)
+            (u (φ n)) w ≤ A') ∧
         ContinuousOn v (thricePuncturedSphereReal \ ↑Z) ∧
         TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop
           (thricePuncturedSphereReal \ ↑Z) ∧

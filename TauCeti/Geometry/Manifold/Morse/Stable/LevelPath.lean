@@ -91,6 +91,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   its closure.
 * `morseLevelPath_apply`, `length_morseLevelPath`, `source_morseLevelPath`,
   `target_morseLevelPath`: the Moore path of a record.
+* `morseLevelPath_injective`: a record is determined by its Moore path.
 * `morseLevelPoint_concatLevelRecords_of_le`, `morseLevelPoint_concatLevelRecords_of_ge`: the
   points of a concatenation at `q` are those of the first broken trajectory above the level of `q`,
   and of the second below.
@@ -712,6 +713,17 @@ theorem source_morseLevelPath : (hX.morseLevelPath hf hdense w).source = p := by
 theorem target_morseLevelPath : (hX.morseLevelPath hf hdense w).target = r := by
   rw [MoorePath.target_def, morseLevelPath_apply, length_morseLevelPath,
     hX.morseLevelPoint_of_le_apply w.property (sub_le_comm.1 (Real.le_coe_toNNReal (f p - f r)))]
+
+/-- **A recorded broken trajectory is determined by its Moore path**: the recorded point on the
+level `c i` is the point of the path at time `f p - c i`. -/
+theorem morseLevelPath_injective : Injective (hX.morseLevelPath hf hdense) := fun w w' h ↦
+  Subtype.ext <| funext fun i ↦ by
+    have hi := (hX.level_mem_Ioo_of_mem_morseBrokenTrajectoryRecords w.property i).2
+    have h' := congrArg (fun γ : MoorePath M ↦ γ (f p - c i).toNNReal) h
+    simp only [morseLevelPath_apply, Real.coe_toNNReal _ (sub_pos.2 hi).le, sub_sub_cancel,
+      hX.morseLevelPoint_apply_level hf hdense w.property,
+      hX.morseLevelPoint_apply_level hf hdense w'.property] at h'
+    exact h'
 
 end LevelPath
 

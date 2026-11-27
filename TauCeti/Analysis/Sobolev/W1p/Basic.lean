@@ -13,7 +13,9 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import Mathlib.Analysis.InnerProductSpace.Dual
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -92,6 +94,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   of `U`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_continuousLinearMap`: on a bounded `Ω`, a continuous
   linear functional is an element of `W^{1,p}(Ω)` whose weak gradient is its dual vector.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_apply`: on a bounded `Ω` in Euclidean space, the
+  coordinate `x ↦ xᵢ` is an element of `W^{1,p}(Ω)` with weak gradient `eᵢ`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasCompactSupport`: a compactly supported `C¹`
   function is an element of `W^{1,p}(E)`, with the `Lᵖ` norms of the function and its gradient.
 * `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
@@ -1192,6 +1196,23 @@ theorem W1p.exists_value_gradient_ae_eq_of_hasCompactSupport {u : E → ℝ} (hu
 end
 
 end WeakDerivIdentification
+
+section Coordinate
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
+
+/-- **A coordinate function is a Sobolev function on a bounded domain.** If `Ω` is a bounded
+subset of `EuclideanSpace ℝ ι`, then the coordinate `x ↦ xᵢ` is represented by an element of
+`W^{1,p}(Ω)` whose weak gradient is the constant basis vector `eᵢ`. -/
+theorem W1p.exists_value_gradient_ae_eq_apply
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι))) (i : ι) :
+    ∃ v : W1p mu Omega p, W1p.value v =ᵐ[mu.restrict Omega] (fun x => x i) ∧
+      W1p.gradient v =ᵐ[mu.restrict Omega] fun _ => EuclideanSpace.single i 1 := by
+  simpa using W1p.exists_value_gradient_ae_eq_continuousLinearMap (mu := mu) (p := p) hΩ
+    (EuclideanSpace.proj i)
+
+end Coordinate
 
 section Exponent
 
