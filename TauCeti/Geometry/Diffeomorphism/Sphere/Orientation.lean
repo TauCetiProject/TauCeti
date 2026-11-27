@@ -71,11 +71,6 @@ open Manifold.Orientation
 
 variable {ι : Type*} [Fintype ι] {n : ℕ} {k : ℕ∞ω}
 
-/-- A clopen set containing `x` contains every point joined to `x`. -/
-private theorem mem_of_joined_of_isClopen {X : Type*} [TopologicalSpace X] {s : Set X}
-    (hs : IsClopen s) {x y : X} (h : Joined x y) (hx : x ∈ s) : y ∈ s :=
-  hs.connectedComponent_subset hx (pathComponent_subset_component x (mem_pathComponent_iff.2 h))
-
 section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = n + 1)]
@@ -111,26 +106,22 @@ theorem unitSphereDiffeomorph_mem_orientationPreservingSubgroup_iff [NeZero n] (
   let σ : Fin n ≃ ι := Fintype.equivOfCardEq (by rw [o.card_eq, finrank_euclideanSpace_fin,
     Fintype.card_fin])
   let oS := (finBasisOfFinrankEq ℝ E Fact.out).orientation.sphereOrientation.reindex σ
-  have ho : o = oS ∨ o = -oS := Manifold.Orientation.eq_or_eq_neg o oS
+  -- Negating both orientations does not change preservation, so `o` may be replaced by `oS`.
+  have ho : ∀ x, IsOrientationPreservingAt o o e.unitSphereEquiv x ↔
+      IsOrientationPreservingAt oS oS e.unitSphereEquiv x := fun x ↦ by
+    rcases Manifold.Orientation.eq_or_eq_neg o oS with ho | ho <;>
+      simp only [ho, isOrientationPreservingAt_neg_left, isOrientationReversingAt_neg_right]
   rw [Diffeomorph.mem_orientationPreservingSubgroup_iff,
-    LinearIsometryEquiv.coe_unitSphereDiffeomorph]
-  refine ⟨fun h ↦ ?_, fun he x ↦ ?_⟩
-  · obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) :=
-      (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
-    refine lt_of_le_of_ne (not_lt.1 fun he ↦ ?_) (LinearEquiv.isUnit_det' _).ne_zero.symm
-    have hrev : IsOrientationReversingAt oS oS e.unitSphereEquiv u :=
-      ((finBasisOfFinrankEq ℝ E Fact.out).orientation.isOrientationReversingAt_unitSphereEquiv
-        he u).reindex σ
-    refine not_isOrientationPreservingAt_and_isOrientationReversingAt o o _ u ⟨h u, ?_⟩
-    rcases ho with ho | ho <;> rw [ho]
-    · exact hrev
-    · simpa using hrev
-  · have hpres : IsOrientationPreservingAt oS oS e.unitSphereEquiv x :=
-      ((finBasisOfFinrankEq ℝ E Fact.out).orientation.isOrientationPreservingAt_unitSphereEquiv
-        he x).reindex σ
-    rcases ho with ho | ho <;> rw [ho]
-    · exact hpres
-    · simpa using hpres
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph, forall_congr' ho]
+  refine ⟨fun h ↦ ?_, fun he x ↦
+    ((finBasisOfFinrankEq ℝ E Fact.out).orientation.isOrientationPreservingAt_unitSphereEquiv
+      he x).reindex σ⟩
+  obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) :=
+    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  refine lt_of_le_of_ne (not_lt.1 fun he ↦ ?_) (LinearEquiv.isUnit_det' _).ne_zero.symm
+  exact not_isOrientationPreservingAt_and_isOrientationReversingAt oS oS _ u ⟨h u,
+    ((finBasisOfFinrankEq ℝ E Fact.out).orientation.isOrientationReversingAt_unitSphereEquiv
+      he u).reindex σ⟩
 
 end InnerProductSpace
 
@@ -146,6 +137,10 @@ theorem orthogonalToDiffSphere_mem_orientationPreservingSubgroup_iff [NeZero n] 
   rw [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply,
     unitSphereDiffeomorph_mem_orientationPreservingSubgroup_iff]
   -- The linear map of the isometry has the determinant of the matrix, which is `1` or `-1`.
+  -- `Matrix.UnitaryGroup.det_toLinearIsometryEquiv` is stated for the linear map
+  -- `toLinearIsometry.toLinearMap`, while the goal carries the coercion of `toLinearEquiv`; the
+  -- two are equal by definition but not syntactically, so a plain `rw` does not match and the
+  -- lemma is restated for the coercion in the goal.
   rw [show LinearMap.det ((Matrix.UnitaryGroup.toLinearIsometryEquiv A).toLinearEquiv :
       EuclideanSpace ℝ (Fin (n + 1)) →ₗ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) =
         (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ).det from
@@ -164,11 +159,17 @@ theorem forall_exists_joined_orthogonalToDiffSphere_iff_pathConnectedSpace [NeZe
         ∃ A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ, Joined (orthogonalToDiffSphere n k A) f) ↔
       PathConnectedSpace (Diffeomorph.orientationPreservingSubgroup hk o) := by
   set G := Diffeomorph.orientationPreservingSubgroup hk o
-  have hG := isClopen_orientationPreservingSubgroup_sphere hk o
+  have hk₁ : 1 ≤ k := ENat.one_le_iff_ne_zero_withTop.2 hk
+  -- Joined diffeomorphisms differ by the final diffeomorphism of a diffeotopy, which lies in `G`.
+  have hmem {f g} (h : Joined f g) (hg : g ∈ G) : f ∈ G := by
+    obtain ⟨Φ, rfl⟩ := (joined_iff_exists_diffeotopy_mul_final_eq hk₁).1 h
+    simpa only [mul_inv_cancel_right] using G.mul_mem hg (G.inv_mem
+      (Diffeomorph.mem_orientationPreservingSubgroup_iff.2
+        (Φ.isOrientationPreservingAt_final hk₁ o)))
   -- The path component of the identity lies in `G`.
   have hsub : pathComponent 1 ⊆ (G : Set (Diff (𝓡 n)
       (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) k)) := fun f hf ↦
-    mem_of_joined_of_isClopen hG (mem_pathComponent_iff.1 hf) G.one_mem
+    hmem (mem_pathComponent_iff.1 hf).symm G.one_mem
   have hG' : IsPathConnected (G : Set (Diff (𝓡 n)
       (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) k)) ↔ PathConnectedSpace G :=
     isPathConnected_iff_pathConnectedSpace
@@ -180,8 +181,8 @@ theorem forall_exists_joined_orthogonalToDiffSphere_iff_pathConnectedSpace [NeZe
       (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) k))
     refine Set.Subset.antisymm (fun f hf ↦ ?_) hsub
     obtain ⟨A, hA⟩ := h f
-    have hAG := mem_of_joined_of_isClopen hG hA.symm hf
-    rw [SetLike.mem_coe, orthogonalToDiffSphere_mem_orientationPreservingSubgroup_iff] at hAG
+    have hAG := hmem hA hf
+    rw [orthogonalToDiffSphere_mem_orientationPreservingSubgroup_iff] at hAG
     have h1 : Joined 1 (orthogonalToDiffSphere n k A) := by
       rw [← map_one (orthogonalToDiffSphere n k), joined_orthogonalToDiffSphere_iff, hAG,
         Submonoid.coe_one, Matrix.det_one]
@@ -190,8 +191,7 @@ theorem forall_exists_joined_orthogonalToDiffSphere_iff_pathConnectedSpace [NeZe
     -- composite with a reflection `ρ` lies in `G`, and it is joined to `ρ⁻¹ = ρ`.
     have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
       connectedSpace_sphere n
-    have hjoin : ∀ g ∈ G, Joined 1 g := fun g hg ↦
-      (h.joinedIn 1 G.one_mem g hg).joined
+    have hjoin : ∀ g ∈ G, Joined 1 g := fun g hg ↦ (h.joinedIn 1 G.one_mem g hg).joined
     by_cases hf : f ∈ G
     · exact ⟨1, by simpa only [map_one] using hjoin f hf⟩
     set R := orthogonalDiagonalReflection ℝ (0 : Fin (n + 1))
@@ -206,8 +206,7 @@ theorem forall_exists_joined_orthogonalToDiffSphere_iff_pathConnectedSpace [NeZe
         (ρ x)).comp
         (Diffeomorph.isOrientationReversingAt_of_notMem_orientationPreservingSubgroup hρ x)
     refine ⟨R, ?_⟩
-    have hρρ : ρ * ρ = 1 := by
-      rw [← map_mul, orthogonalDiagonalReflection_mul_self, map_one]
+    have hρρ : ρ * ρ = 1 := by rw [← map_mul, orthogonalDiagonalReflection_mul_self, map_one]
     simpa only [one_mul, mul_assoc, hρρ, mul_one] using (hjoin _ hfρ).map (continuous_mul_const ρ)
 
 end TauCeti
