@@ -52,12 +52,12 @@ private noncomputable def conePrecompEquiv (n m : ℤ) (hm : m + 1 = n) :
   left_inv z := by
     apply (mappingCone.ext_cochain_from_iff f m n (by omega)).2
     constructor
-    · simp only [mappingCone.inl_descCochain, map_add, smul_add]
-      erw [← ModuleCat.comp_apply, mappingCocone.inl_v_snd_v, ← ModuleCat.comp_apply,
+    · simp only [mappingCone.inl_descCochain, map_add, smul_add, linearHomComplex_X]
+      rw [← ModuleCat.comp_apply, mappingCocone.inl_v_snd_v, ← ModuleCat.comp_apply,
         mappingCocone.inr_v_snd_v]
       simp [smul_smul]
-    · simp only [mappingCone.inr_descCochain, map_add]
-      erw [← ModuleCat.comp_apply, mappingCocone.inl_v_fst_f, ← ModuleCat.comp_apply,
+    · simp only [mappingCone.inr_descCochain, map_add, linearHomComplex_X]
+      rw [← ModuleCat.comp_apply, mappingCocone.inl_v_fst_f, ← ModuleCat.comp_apply,
         mappingCocone.inr_v_fst_f]
       simp
   right_inv z := by
@@ -90,7 +90,7 @@ private lemma conePrecompEquiv_symm_d (n : ℤ)
     simp only [ModuleCat.hom_comp, ModuleCat.hom_neg, ModuleCat.hom_sub, LinearMap.comp_apply,
       LinearMap.neg_apply, LinearMap.sub_apply, linearHomComplex_X,
       linearHomComplexPrecomp_f_apply, linearHomComplex_d_hom_apply] at h
-    erw [h]
+    rw [h]
     simp [δ_units_smul, Int.negOnePow_add, Int.negOnePow_one, smul_add,
       sub_eq_add_neg, add_comm]
   · simp only [conePrecompEquiv, LinearEquiv.coe_symm_mk,
@@ -118,6 +118,13 @@ noncomputable def linearHomComplexMappingConePrecompIso :
       simpa using conePrecompEquiv_symm_d R f Z n
         (conePrecompEquiv R f Z n (n + -1) (by omega) z))
 
+private lemma linearHomComplexMappingConePrecompIso_hom_f_apply (n : ℤ)
+    (z : Cochain (mappingCone f) Z n) :
+    dsimp% only [linearHomComplex_X]
+      (((linearHomComplexMappingConePrecompIso R f Z).hom.f n).hom z =
+        conePrecompEquiv R f Z n (n + -1) (by omega) z) :=
+  (rfl)
+
 /-- The first coordinate is restriction along the right inclusion of the cone. -/
 @[simp]
 lemma linearHomComplexMappingConePrecompIso_hom_f_fst (n : ℤ)
@@ -126,31 +133,29 @@ lemma linearHomComplexMappingConePrecompIso_hom_f_fst (n : ℤ)
       (((mappingCocone.fst (linearHomComplexPrecomp R f Z)).f n).hom
         (((linearHomComplexMappingConePrecompIso R f Z).hom.f n).hom z) =
       (Cochain.ofHom (mappingCone.inr f)).comp z (zero_add n)) := by
-  -- The component chosen by `isoOfComponents` is the degreewise equivalence.
-  change ((mappingCocone.fst (linearHomComplexPrecomp R f Z)).f n).hom
-    (conePrecompEquiv R f Z n (n + -1) (by omega) z) = _
-  simp only [conePrecompEquiv, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
-    map_add]
-  erw [← ModuleCat.comp_apply, mappingCocone.inl_v_fst_f, ← ModuleCat.comp_apply,
-    mappingCocone.inr_v_fst_f]
-  simp
+  -- Apply the restriction to the inverse law, reusing the reconstruction formula.
+  have h := (conePrecompEquiv R f Z n (n + -1) (by omega)).symm_apply_apply z
+  simpa only [linearHomComplexMappingConePrecompIso_hom_f_apply,
+    conePrecompEquiv, LinearEquiv.coe_symm_mk,
+    mappingCone.inr_descCochain] using
+    congrArg (fun w ↦ (Cochain.ofHom (mappingCone.inr f)).comp w (zero_add n)) h
 
 /-- The second coordinate is signed restriction along the left inclusion of the cone. -/
 @[simp]
-lemma linearHomComplexMappingConePrecompIso_hom_f_snd (n : ℤ)
+lemma linearHomComplexMappingConePrecompIso_hom_f_snd (n m : ℤ) (hm : n + -1 = m)
     (z : Cochain (mappingCone f) Z n) :
     dsimp% only [linearHomComplex_X]
-      (((mappingCocone.snd (linearHomComplexPrecomp R f Z)).v n (n + -1) (by omega)).hom
+      (((mappingCocone.snd (linearHomComplexPrecomp R f Z)).v n m hm).hom
         (((linearHomComplexMappingConePrecompIso R f Z).hom.f n).hom z) =
       (n + 1).negOnePow • (mappingCone.inl f).comp z (by omega)) := by
-  -- The component chosen by `isoOfComponents` is the degreewise equivalence.
-  change ((mappingCocone.snd (linearHomComplexPrecomp R f Z)).v n (n + -1) (by omega)).hom
-    (conePrecompEquiv R f Z n (n + -1) (by omega) z) = _
-  simp only [conePrecompEquiv, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
-    map_add]
-  erw [← ModuleCat.comp_apply, mappingCocone.inl_v_snd_v, ← ModuleCat.comp_apply,
-    mappingCocone.inr_v_snd_v]
-  simp
+  subst m
+  -- Apply the restriction to the inverse law, reusing the reconstruction formula.
+  have h := (conePrecompEquiv R f Z n (n + -1) (by omega)).symm_apply_apply z
+  simpa only [linearHomComplexMappingConePrecompIso_hom_f_apply,
+    conePrecompEquiv, LinearEquiv.coe_symm_mk,
+    mappingCone.inl_descCochain, smul_smul, Int.units_mul_self, one_smul] using
+    congrArg (fun w ↦ (n + 1).negOnePow • (mappingCone.inl f).comp w
+      (show -1 + n = n + -1 by omega)) h
 
 /-- Reconstruct a cochain using the two coordinates of the mapping cocone. -/
 @[simp]
@@ -166,19 +171,69 @@ lemma linearHomComplexMappingConePrecompIso_inv_f_apply (n : ℤ)
 
 /-- For a cochain map out of the cone, the second coordinate is the negative of the
 canonical null homotopy of its restriction along `f`. -/
-@[simp]
 lemma linearHomComplexMappingConePrecompIso_hom_f_snd_ofHom (g : mappingCone f ⟶ Z) :
     dsimp% only [linearHomComplex_X]
       (((mappingCocone.snd (linearHomComplexPrecomp R f Z)).v 0 (-1) (by omega)).hom
         (((linearHomComplexMappingConePrecompIso R f Z).hom.f 0).hom (Cochain.ofHom g)) =
       -Cochain.ofHomotopy ((mappingCone.inrCompHomotopy f).compRight g)) := by
-  erw [linearHomComplexMappingConePrecompIso_hom_f_snd]
+  rw [linearHomComplexMappingConePrecompIso_hom_f_snd]
   simp only [Int.reduceAdd, Int.negOnePow_one, Units.neg_smul, one_smul]
   congr 1
   refine Cochain.ext _ _ fun p q hpq ↦ ?_
   simp only [Cochain.comp_zero_cochain_v, Cochain.ofHom_v, Cochain.ofHomotopy,
     Cochain.mk_v, Homotopy.compRight_hom]
   rw [mappingCone.inrCompHomotopy_hom f p q (by omega)]
+
+-- Both naturality squares follow from compatibility with the two signed restrictions.
+private lemma linearHomComplexMappingConePrecompIso_inv_map_of_components
+    {X' Y' Z' : CochainComplex C ℤ} (f' : X' ⟶ Y') [HasHomotopyCofiber f']
+    (a : linearHomComplex R Y Z ⟶ linearHomComplex R Y' Z')
+    (b : linearHomComplex R X Z ⟶ linearHomComplex R X' Z')
+    (comm : linearHomComplexPrecomp R f Z ≫ b = a ≫ linearHomComplexPrecomp R f' Z')
+    (ψ : linearHomComplex R (mappingCone f) Z ⟶ linearHomComplex R (mappingCone f') Z')
+    (hfst : dsimp% only [linearHomComplex_X] (∀ (n : ℤ) (z : Cochain (mappingCone f) Z n),
+      (Cochain.ofHom (mappingCone.inr f')).comp ((ψ.f n).hom z) (zero_add n) =
+        (a.f n).hom ((Cochain.ofHom (mappingCone.inr f)).comp z (zero_add n))))
+    (hsnd : dsimp% only [linearHomComplex_X] (∀ (n : ℤ) (z : Cochain (mappingCone f) Z n),
+      (n + 1).negOnePow • (mappingCone.inl f').comp ((ψ.f n).hom z) (by omega) =
+        (b.f (n + -1)).hom ((n + 1).negOnePow • (mappingCone.inl f).comp z (by omega)))) :
+    (mappingCone.map (linearHomComplexPrecomp R f Z) (linearHomComplexPrecomp R f' Z')
+        a b comm)⟦(-1 : ℤ)⟧' ≫ (linearHomComplexMappingConePrecompIso R f' Z').inv =
+      (linearHomComplexMappingConePrecompIso R f Z).inv ≫ ψ := by
+  let φ : mappingCocone (linearHomComplexPrecomp R f Z) ⟶
+      mappingCocone (linearHomComplexPrecomp R f' Z') :=
+    (mappingCone.map (linearHomComplexPrecomp R f Z) (linearHomComplexPrecomp R f' Z')
+      a b comm)⟦(-1 : ℤ)⟧'
+  -- The shifted cone map has source and target expressed as shifts, whereas the isomorphisms
+  -- use mappingCocone. A dependent rewrite cannot replace those objects inside composition;
+  -- the typed map φ puts every composition in the same cocone objects before cancellation.
+  change φ ≫ (linearHomComplexMappingConePrecompIso R f' Z').inv =
+    (linearHomComplexMappingConePrecompIso R f Z).inv ≫ ψ
+  apply (Iso.comp_inv_eq _).2
+  apply (cancel_epi (linearHomComplexMappingConePrecompIso R f Z).hom).1
+  simp only [Category.assoc, Iso.hom_inv_id_assoc]
+  ext n : 1
+  simp only [HomologicalComplex.comp_f]
+  apply mappingCocone.ext_to (linearHomComplexPrecomp R f' Z') n (n + -1) rfl
+  · have hφ : φ ≫ mappingCocone.fst (linearHomComplexPrecomp R f' Z') =
+        mappingCocone.fst (linearHomComplexPrecomp R f Z) ≫ a :=
+      mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ comm
+    rw [Category.assoc, ← HomologicalComplex.comp_f, hφ, HomologicalComplex.comp_f]
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro z
+    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, linearHomComplex_X,
+      linearHomComplexMappingConePrecompIso_hom_f_fst] using (hfst n z).symm
+  · have hφ : φ.f n ≫ (mappingCocone.snd (linearHomComplexPrecomp R f' Z')).v
+        n (n + -1) rfl =
+      (mappingCocone.snd (linearHomComplexPrecomp R f Z)).v n (n + -1) rfl ≫ b.f (n + -1) :=
+        mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v _ _ _ _ comm n
+    rw [Category.assoc, hφ]
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro z
+    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, linearHomComplex_X,
+      linearHomComplexMappingConePrecompIso_hom_f_snd] using (hsnd n z).symm
 
 /-- The comparison is natural under postcomposition in the target complex. -/
 @[reassoc]
@@ -190,53 +245,13 @@ lemma linearHomComplexMappingConePrecompIso_inv_naturality
       (linearHomComplexMappingConePrecompIso R f Z').inv =
     (linearHomComplexMappingConePrecompIso R f Z).inv ≫
       linearHomComplexPostcomp R (mappingCone f) g := by
-  ext n : 1
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro z
-  -- The native cocone is a shifted cone only after unfolding. Restate the component
-  -- applications so rewriting does not pass through the composite's dependent source type.
-  change ((linearHomComplexMappingConePrecompIso R f Z').inv.f n).hom
-      ((((mappingCone.map (linearHomComplexPrecomp R f Z) (linearHomComplexPrecomp R f Z')
-        (linearHomComplexPostcomp R Y g) (linearHomComplexPostcomp R X g)
-        (linearHomComplexPrecomp_postcomp_comm R f g))⟦(-1 : ℤ)⟧').f n).hom z) =
-    ((linearHomComplexPostcomp R (mappingCone f) g).f n).hom
-      (((linearHomComplexMappingConePrecompIso R f Z).inv.f n).hom z)
-  erw [linearHomComplexMappingConePrecompIso_inv_f_apply,
-    linearHomComplexPostcomp_f_apply, linearHomComplexMappingConePrecompIso_inv_f_apply]
-  apply (mappingCone.ext_cochain_from_iff f (n + -1) n (by omega)).2
-  constructor
-  · ext p q hpq
-    rw [Cochain.comp_v _ _ _ p (p + -1) q rfl (by omega)]
-    simp only [mappingCone.inl_v_descCochain_v]
-    rw [Cochain.comp_v _ _ _ p (p + -1) q rfl (by omega),
-      Cochain.comp_zero_cochain_v, mappingCone.inl_v_descCochain_v_assoc]
-    have h := congrArg (fun k ↦ ModuleCat.Hom.hom k z)
-      (mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v
-        (linearHomComplexPrecomp R f Z) (linearHomComplexPrecomp R f Z')
-        (linearHomComplexPostcomp R Y g) (linearHomComplexPostcomp R X g)
-        (linearHomComplexPrecomp_postcomp_comm R f g) n)
-    erw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_comp,
-      LinearMap.comp_apply, linearHomComplexPostcomp_f_apply] at h
-    convert congrArg (fun k ↦ (n + 1).negOnePow • k) (Cochain.congr_v h p q hpq) using 1 <;>
-      first | rfl | simp only [Cochain.comp_zero_cochain_v, Cochain.ofHom_v]
-    rw [← Linear.units_smul_comp]
-    congr 1
-  · ext p q hpq
-    simp only [Cochain.zero_cochain_comp_v, Cochain.ofHom_v,
-      mappingCone.inr_f_descCochain_v]
-    rw [Cochain.comp_zero_cochain_v, mappingCone.inr_f_descCochain_v_assoc]
-    have h := congrArg (fun k ↦ ModuleCat.Hom.hom k z)
-      (HomologicalComplex.congr_hom
-        (mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst
-          (linearHomComplexPrecomp R f Z) (linearHomComplexPrecomp R f Z')
-          (linearHomComplexPostcomp R Y g) (linearHomComplexPostcomp R X g)
-          (linearHomComplexPrecomp_postcomp_comm R f g)) n)
-    erw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-      HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-      linearHomComplexPostcomp_f_apply] at h
-    convert Cochain.congr_v h p q hpq using 1;
-      simp only [Cochain.comp_zero_cochain_v, Cochain.ofHom_v]; rfl
+  apply linearHomComplexMappingConePrecompIso_inv_map_of_components
+  · intro n z
+    simp only [linearHomComplexPostcomp_f_apply,
+      Cochain.comp_assoc_of_first_is_zero_cochain]
+  · intro n z
+    simp only [linearHomComplexPostcomp_f_apply, Cochain.units_smul_comp,
+      Cochain.comp_assoc_of_third_is_zero_cochain]
 
 section Squares
 
@@ -254,51 +269,18 @@ lemma linearHomComplexMappingConePrecompIso_inv_map :
       (linearHomComplexMappingConePrecompIso R f₁ Z).inv =
     (linearHomComplexMappingConePrecompIso R f₂ Z).inv ≫
       linearHomComplexPrecomp R (mappingCone.map f₁ f₂ a b comm) Z := by
-  ext n : 1
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro z
-  -- Restate the component applications across the native cocone's shifted-cone model.
-  change ((linearHomComplexMappingConePrecompIso R f₁ Z).inv.f n).hom
-      ((((mappingCone.map (linearHomComplexPrecomp R f₂ Z) (linearHomComplexPrecomp R f₁ Z)
-        (linearHomComplexPrecomp R b Z) (linearHomComplexPrecomp R a Z)
-        (by simp only [← linearHomComplexPrecomp_comp, comm]))⟦(-1 : ℤ)⟧').f n).hom z) =
-    ((linearHomComplexPrecomp R (mappingCone.map f₁ f₂ a b comm) Z).f n).hom
-      (((linearHomComplexMappingConePrecompIso R f₂ Z).inv.f n).hom z)
-  erw [linearHomComplexMappingConePrecompIso_inv_f_apply,
-    linearHomComplexPrecomp_f_apply, linearHomComplexMappingConePrecompIso_inv_f_apply]
-  apply (mappingCone.ext_cochain_from_iff f₁ (n + -1) n (by omega)).2
-  constructor <;> ext p q hpq
-  · rw [Cochain.comp_v _ _ _ p (p + -1) q rfl (by omega)]
-    simp only [mappingCone.inl_v_descCochain_v]
+  apply linearHomComplexMappingConePrecompIso_inv_map_of_components
+  · intro n z
+    ext p q hpq
+    simp [mappingCone.inr_f_map_f_assoc]
+  · intro n z
+    simp only [linearHomComplexPrecomp_f_apply, Cochain.comp_units_smul]
+    congr 1
+    ext p q hpq
     rw [Cochain.comp_v _ _ _ p (p + -1) q rfl (by omega)]
     simp only [Cochain.zero_cochain_comp_v, Cochain.ofHom_v,
-      mappingCone.inl_v_map_f_assoc, mappingCone.inl_v_descCochain_v]
-    have h := congrArg (fun k ↦ ModuleCat.Hom.hom k z)
-      (mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v
-        (linearHomComplexPrecomp R f₂ Z) (linearHomComplexPrecomp R f₁ Z)
-        (linearHomComplexPrecomp R b Z) (linearHomComplexPrecomp R a Z)
-        (by simp only [← linearHomComplexPrecomp_comp, comm]) n)
-    erw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_comp,
-      LinearMap.comp_apply, linearHomComplexPrecomp_f_apply] at h
-    convert congrArg (fun k ↦ (n + 1).negOnePow • k) (Cochain.congr_v h p q hpq) using 1 <;>
-      first | rfl | simp only [Cochain.zero_cochain_comp_v, Cochain.ofHom_v]
-    rw [← Linear.comp_units_smul]
-    congr 1
-  · simp only [Cochain.zero_cochain_comp_v,
-      Cochain.ofHom_v, mappingCone.inr_f_descCochain_v,
-      mappingCone.inr_f_map_f_assoc, mappingCone.inr_f_descCochain_v]
-    have h := congrArg (fun k ↦ ModuleCat.Hom.hom k z)
-      (HomologicalComplex.congr_hom
-        (mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst
-          (linearHomComplexPrecomp R f₂ Z) (linearHomComplexPrecomp R f₁ Z)
-          (linearHomComplexPrecomp R b Z) (linearHomComplexPrecomp R a Z)
-          (by simp only [← linearHomComplexPrecomp_comp, comm])) n)
-    erw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-      HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-      linearHomComplexPrecomp_f_apply] at h
-    convert Cochain.congr_v h p q hpq using 1;
-      simp only [Cochain.zero_cochain_comp_v, Cochain.ofHom_v]; rfl
+      mappingCone.inl_v_map_f_assoc]
+    rw [Cochain.comp_v _ _ _ p (p + -1) q rfl (by omega)]
 
 end Squares
 
