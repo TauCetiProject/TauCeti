@@ -8,16 +8,13 @@ module
 public import TauCeti.Analysis.AbsoluteValue.ValuationSubring
 public import TauCeti.RingTheory.Invariant.Profinite.ValuationSubring
 
-import Mathlib.RingTheory.Valuation.LocalSubring
-
 /-!
 # Frobenius elements at a nonarchimedean absolute value for profinite actions
 
 Let `w` be a nonarchimedean absolute value on a field `L`, with valuation subring
 `A_w = {x | w x ≤ 1}` (`AbsoluteValue.valuationSubring`), and let a group `G` act on `L` by ring
-automorphisms. An element `σ : G` inducing `x ↦ x ^ q` on the residue field of `A_w` is described,
-as in the *Absolute-value places* target of the roadmap, by the hypothesis
-`∀ x, w x ≤ 1 → w (σ • x - x ^ q) < 1`, with no named predicate.
+automorphisms. An element `σ : G` inducing `x ↦ x ^ q` on the residue field of `A_w` is described
+by the hypothesis `∀ x, w x ≤ 1 → w (σ • x - x ^ q) < 1`, with no named predicate.
 
 This file transports the profinite Frobenius results of
 `TauCeti/RingTheory/Invariant/Profinite/ValuationSubring.lean` from valuation subrings to
@@ -32,20 +29,19 @@ ring the conditions on `w` translate into conditions modulo `Q`:
 * the inertia group of `Q` consists of the `g` with `w (g • x - x) < 1` whenever `w x ≤ 1`.
 
 For a compact totally disconnected group `G` acting continuously on `L` with the discrete topology,
-with `B^G = R` and `w ≤ 1` on `R` (hence on `B`, which is integral over `R`), this gives:
+with `B^G = R` and `w ≤ 1` on `R` (hence on `B`, which is integral over `R`, by Tau Ceti's
+`IsNonarchimedean.apply_le_one_of_isIntegral`), this gives:
 
 * an element of the stabilizer of `A_w` acting on `A_w` by `x ↦ x ^ #(R ⧸ Q ∩ R)` modulo `w < 1`
   exists when `R ⧸ Q ∩ R` is finite;
 * any such element and the inertia group generate the stabilizer of `A_w` topologically.
 
 The results are stated with the stabilizer of the valuation subring `A_w`. For places
-(`ℚ`-normalised absolute values) this is the stabilizer of `w` itself; that comparison is part of
-the comparisons of the roadmap target, not of this file.
+(`ℚ`-normalised absolute values) this is also the stabilizer of `w`; that comparison is not proved
+here.
 
 ## Main results
 
-* `AbsoluteValue.apply_le_one_of_isIntegral`: an element integral over a ring on which `w ≤ 1`
-  has `w ≤ 1`.
 * `AbsoluteValue.isCenteredAt_valuationSubring`: `A_w` is centred at `{b | w b < 1}`.
 * `AbsoluteValue.isArithFrobAt_iff_forall_apply_smul_sub_pow_lt_one` and
   `AbsoluteValue.mem_inertia_iff_forall_apply_smul_sub_lt_one`: the Frobenius and inertia
@@ -73,19 +69,6 @@ namespace AbsoluteValue
 
 variable {L S : Type*} [Field L] [Semifield S] [LinearOrder S] [IsStrictOrderedRing S]
   {w : AbsoluteValue L S}
-
-/-- **Integral elements have absolute value at most one.** If `w` is nonarchimedean and
-`w ≤ 1` on the image of `R`, then `w x ≤ 1` for every `x` integral over `R`: the valuation subring
-`A_w` is integrally closed. -/
-theorem apply_le_one_of_isIntegral (hw : IsNonarchimedean w) {R : Type*} [CommRing R]
-    [Algebra R L] (hR : ∀ r : R, w (algebraMap R L r) ≤ 1) {x : L} (hx : IsIntegral R x) :
-    w x ≤ 1 := by
-  let A := w.valuationSubring hw
-  let _ : Algebra R A :=
-    ((algebraMap R L).codRestrict A fun r ↦ (mem_valuationSubring_iff hw).mpr (hR r)).toAlgebra
-  have : IsScalarTower R A L := .of_algebraMap_eq fun _ ↦ rfl
-  exact (mem_valuationSubring_iff hw).mp
-    (Subring.isIntegrallyClosed_iff.mp inferInstance (hx.tower_top (A := A)))
 
 variable {B : Type*} [CommRing B] [Algebra B L] {Q : Ideal B}
 
@@ -144,15 +127,13 @@ theorem exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one (hw : IsNonarchim
     [Finite (R ⧸ Q.under R)] :
     ∃ σ : G, σ ∈ stabilizer G (w.valuationSubring hw) ∧
       ∀ x, w x ≤ 1 → w (σ • x - x ^ Nat.card (R ⧸ Q.under R)) < 1 := by
-  let _ : TopologicalSpace B := ⊥
-  have : DiscreteTopology B := ⟨rfl⟩
-  have := IsFractionRing.continuousSMul_of_discreteTopology B L G
-  have hint := Algebra.IsInvariant.isIntegral_of_profinite (A := R) (B := B) (G := G)
+  have hint : Algebra.IsIntegral R B := IsFractionRing.of_continuousSMul_discreteTopology B L G
+    (Algebra.IsInvariant.isIntegral_of_profinite (A := R) (B := B) (G := G))
   have hB (b : B) : w (algebraMap B L b) ≤ 1 :=
-    apply_le_one_of_isIntegral hw hR ((hint.isIntegral b).algebraMap)
+    hw.apply_le_one_of_isIntegral hR ((hint.isIntegral b).algebraMap)
   simpa only [← forall_mem_valuationSubring_smul_sub_pow_mem_nonunits_iff hw] using
-    (isCenteredAt_valuationSubring hw hB hQ).exists_forall_smul_sub_pow_mem_nonunits (G := G)
-      (R := R)
+    (isCenteredAt_valuationSubring hw hB hQ).exists_mem_stabilizer_forall_smul_sub_pow_mem_nonunits
+      (G := G) (R := R)
 
 /-- **A Frobenius element and inertia generate the stabilizer of the valuation subring of an
 absolute value**, as a product of subsets: if `w ≤ 1` on `B`, `Q = {b | w b < 1}` has `B_Q` a

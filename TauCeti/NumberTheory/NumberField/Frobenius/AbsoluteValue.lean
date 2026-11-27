@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.Analysis.AbsoluteValue.Frobenius
+public import TauCeti.NumberTheory.NumberField.IntegralClosure
 
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
-import TauCeti.RingTheory.DedekindDomain.Prufer
 
 /-!
 # Frobenius elements at finite places of algebraic extensions of number fields
@@ -28,14 +27,15 @@ with the inertia group, topologically generates the stabilizer of `A_w`.
 
 No completion of `L` is used. The proofs apply
 `AbsoluteValue.exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one` to the integral closure
-`B` of `𝓞 K` in `L`, whose elements fixed by `G` are those of `𝓞 K` and whose localizations at
-primes are valuation rings (Tau Ceti's `IsIntegralClosure.preValuationRing_atPrime`), with the
-centre `Q = {b ∈ B | w b < 1}` of `w` on `B`.
+`B` of `𝓞 K` in `L`, whose elements fixed by `G` are those of `𝓞 K`
+(`NumberField.isInvariant_integralClosure`) and whose localizations at primes are valuation rings
+(`NumberField.preValuationRing_atPrime_integralClosure`), with the centre `Q = {b ∈ B | w b < 1}`
+of `w` on `B`, on which `w ≤ 1` (`AbsoluteValue.apply_algebraMap_integralClosure_le_one`).
 
 ## Main results
 
-* `NumberField.isInvariant_integralClosure`: the elements of the integral closure of `𝓞 K` in `L`
-  fixed by `G` are those of `𝓞 K`.
+* `AbsoluteValue.apply_algebraMap_integralClosure_le_one`: a nonarchimedean absolute value on `L`
+  is at most `1` on the integral closure of `𝓞 K`.
 * `AbsoluteValue.exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one_of_numberField`:
   existence of a Frobenius element at `w`.
 * `AbsoluteValue.topologicalClosure_zpowers_sup_inertia_eq_stabilizer_of_numberField`: a
@@ -58,28 +58,6 @@ open MulAction NumberField Pointwise
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
   {G : Type*} [Group G] [MulSemiringAction G L] [SMulCommClass G K L]
 
-namespace NumberField
-
-/-- A group acting on `L` by `K`-algebra automorphisms acts by `𝓞 K`-algebra automorphisms. -/
-instance smulCommClass_ringOfIntegers : SMulCommClass G (𝓞 K) L where
-  smul_comm g r x := by
-    rw [← algebraMap_smul K r x, ← algebraMap_smul K r (g • x), smul_comm]
-
-/-- If `G` fixes exactly `K` in `L`, then the elements of the integral closure of `𝓞 K` in `L`
-fixed by `G` are those of `𝓞 K`. -/
-instance isInvariant_integralClosure [Algebra.IsInvariant K L G] :
-    Algebra.IsInvariant (𝓞 K) (integralClosure (𝓞 K) L) G where
-  isInvariant b hb := by
-    obtain ⟨k, hk⟩ := Algebra.IsInvariant.isInvariant (A := K) (G := G) (b : L)
-      fun g ↦ congr_arg Subtype.val (hb g)
-    have hint : IsIntegral ℤ (algebraMap K L k) := by
-      rw [hk]
-      exact isIntegral_trans (R := ℤ) (A := 𝓞 K) _ b.property
-    exact ⟨⟨k, (isIntegral_algHom_iff ((Algebra.ofId K L).restrictScalars ℤ)
-      (algebraMap K L).injective).mp hint⟩, Subtype.ext hk⟩
-
-end NumberField
-
 namespace AbsoluteValue
 
 variable {S : Type*} [Semifield S] [LinearOrder S] [IsStrictOrderedRing S] {w : AbsoluteValue L S}
@@ -87,12 +65,14 @@ variable {S : Type*} [Semifield S] [LinearOrder S] [IsStrictOrderedRing S] {w : 
 /-- A nonarchimedean absolute value on an extension `L` of a number field `K` is at most `1` on
 `𝓞 K`. -/
 theorem apply_algebraMap_ringOfIntegers_le_one (hw : IsNonarchimedean w) (r : 𝓞 K) :
-    w (algebraMap (𝓞 K) L r) ≤ 1 := by
-  refine apply_le_one_of_isIntegral hw (R := ℤ) (fun n ↦ ?_) ?_
-  · rw [eq_intCast]
-    exact (mem_valuationSubring_iff hw).mp (intCast_mem _ n)
-  · rw [IsScalarTower.algebraMap_apply (𝓞 K) K L]
-    exact (RingOfIntegers.isIntegral_coe r).algebraMap
+    w (algebraMap (𝓞 K) L r) ≤ 1 :=
+  hw.apply_le_one_of_isIntegral_int (RingOfIntegers.isIntegral r).algebraMap
+
+/-- A nonarchimedean absolute value on an extension `L` of a number field `K` is at most `1` on
+the integral closure of `𝓞 K` in `L`. -/
+theorem apply_algebraMap_integralClosure_le_one (hw : IsNonarchimedean w)
+    (b : integralClosure (𝓞 K) L) : w (algebraMap (integralClosure (𝓞 K) L) L b) ≤ 1 :=
+  hw.apply_le_one_of_isIntegral_int (isIntegral_trans (R := ℤ) (A := 𝓞 K) _ b.property)
 
 variable (K w) in
 /-- The centre `{b | w b < 1}` of a nonarchimedean absolute value `w` on the integral closure of
@@ -100,7 +80,7 @@ variable (K w) in
 private noncomputable def centre (hw : IsNonarchimedean w) : Ideal (integralClosure (𝓞 K) L) :=
   (w.valuationSubring hw).valuation.centerIdeal (integralClosure (𝓞 K) L) fun b ↦
     ((w.valuationSubring hw).valuation_le_one_iff _).mpr <| (mem_valuationSubring_iff hw).mpr <|
-      apply_le_one_of_isIntegral hw (apply_algebraMap_ringOfIntegers_le_one hw) b.property
+      apply_algebraMap_integralClosure_le_one hw b
 
 private theorem mem_centre_iff (hw : IsNonarchimedean w) (b : integralClosure (𝓞 K) L) :
     b ∈ centre K w hw ↔ w (algebraMap (integralClosure (𝓞 K) L) L b) < 1 := by
@@ -115,22 +95,9 @@ private theorem under_centre (hw : IsNonarchimedean w) {p : Ideal (𝓞 K)}
   ext r
   rw [Ideal.mem_comap, mem_centre_iff, hp, ← IsScalarTower.algebraMap_apply]
 
-variable [NumberField K] [Algebra.IsAlgebraic K L]
-
-private instance : IsFractionRing (integralClosure (𝓞 K) L) L :=
-  have : Algebra.IsAlgebraic (𝓞 K) L :=
-    (IsFractionRing.comap_isAlgebraic_iff (K := K)).mpr inferInstance
-  integralClosure.isFractionRing_of_algebraic fun _ hx ↦
-    IsFractionRing.to_map_eq_zero_iff.mp ((map_eq_zero (algebraMap K L)).mp
-      ((IsScalarTower.algebraMap_apply (𝓞 K) K L _).symm.trans hx))
-
-private instance (Q : Ideal (integralClosure (𝓞 K) L)) [Q.IsPrime] :
-    PreValuationRing (Localization.AtPrime Q) :=
-  IsIntegralClosure.preValuationRing_atPrime (𝓞 K) K L Q
-
-variable [Algebra.IsInvariant K L G] [TopologicalSpace G] [CompactSpace G]
-  [TotallyDisconnectedSpace G] [IsTopologicalGroup G] [TopologicalSpace L] [DiscreteTopology L]
-  [ContinuousSMul G L]
+variable [NumberField K] [Algebra.IsAlgebraic K L] [Algebra.IsInvariant K L G]
+  [TopologicalSpace G] [CompactSpace G] [TotallyDisconnectedSpace G] [IsTopologicalGroup G]
+  [TopologicalSpace L] [DiscreteTopology L] [ContinuousSMul G L]
 
 /-- **Frobenius elements exist at finite places of algebraic extensions of number fields.** Let
 `L/K` be algebraic, `K` a number field, and let a profinite group `G` act continuously on `L`
@@ -167,7 +134,6 @@ theorem topologicalClosure_zpowers_sup_inertia_eq_stabilizer_of_numberField
   obtain rfl : Q = centre K w hw := Ideal.ext fun b ↦ (hQ b).trans (mem_centre_iff hw b).symm
   rw [← under_centre hw hp] at hσ
   exact topologicalClosure_zpowers_sup_inertia_eq_stabilizer_valuationSubring hw
-    (fun b ↦ apply_le_one_of_isIntegral hw (apply_algebraMap_ringOfIntegers_le_one hw) b.property)
-    (mem_centre_iff hw) hσ
+    (apply_algebraMap_integralClosure_le_one hw) (mem_centre_iff hw) hσ
 
 end AbsoluteValue

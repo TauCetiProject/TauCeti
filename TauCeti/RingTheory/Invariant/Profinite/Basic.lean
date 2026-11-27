@@ -40,6 +40,10 @@ topological additive group.
 
 ## Main results
 
+* `IsFractionRing.continuousSMul_of_discreteTopology`: a continuous action on a discrete field is
+  continuous on a discrete ring with that fraction field, and
+  `IsFractionRing.of_continuousSMul_discreteTopology` applies results about discrete rings under
+  continuity on the field alone.
 * `Ideal.isClosed_stabilizer`: the decomposition group of an ideal is closed, and hence compact
   when `G` is (an instance).
 * `Ideal.isClosed_inertia`: the inertia group of an ideal is closed, and hence compact when `G` is
@@ -99,6 +103,42 @@ instance Ideal.compactSpace_inertia [CompactSpace G] [Ring S] [MulAction G S]
   isCompact_iff_compactSpace.mp Q.isClosed_inertia.isCompact
 
 end Closed
+
+/-! ### Continuity on a ring from continuity on its fraction field -/
+
+section FractionRing
+
+variable (B L : Type*) [CommRing B] [Field L] [Algebra B L] [IsFractionRing B L] (G : Type*)
+  [Group G] [MulSemiringAction G B] [MulSemiringAction G L] [SMulDistribClass G B L]
+  [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace L] [DiscreteTopology L]
+  [ContinuousSMul G L]
+
+include L
+
+/-- If a topological group `G` acts continuously on a field `L` with the discrete topology, and
+compatibly on a ring `B` with fraction field `L`, then the action on `B` is continuous for the
+discrete topology on `B`. -/
+theorem IsFractionRing.continuousSMul_of_discreteTopology [TopologicalSpace B]
+    [DiscreteTopology B] : ContinuousSMul G B := by
+  refine continuousSMul_iff_stabilizer_isOpen.mpr fun b ↦ ?_
+  have : stabilizer G b = stabilizer G (algebraMap B L b) := by
+    ext g
+    simp only [mem_stabilizer_iff, ← algebraMap.smul', (IsFractionRing.injective B L).eq_iff]
+  rw [this]
+  exact stabilizer_isOpen G _
+
+/-- A statement proved for the continuous action of `G` on a ring `B` with the discrete topology
+holds as soon as the action on its fraction field `L`, with the discrete topology, is continuous.
+This applies results stated for discrete rings, such as Mathlib's
+`Algebra.IsInvariant.isIntegral_of_profinite`, without putting a topology on `B`. -/
+theorem IsFractionRing.of_continuousSMul_discreteTopology {p : Prop}
+    (h : ∀ [TopologicalSpace B] [DiscreteTopology B] [ContinuousSMul G B], p) : p := by
+  let _ : TopologicalSpace B := ⊥
+  have : DiscreteTopology B := ⟨rfl⟩
+  have := IsFractionRing.continuousSMul_of_discreteTopology B L G
+  exact h
+
+end FractionRing
 
 /-! ### The residue extension -/
 

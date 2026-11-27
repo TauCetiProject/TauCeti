@@ -44,7 +44,8 @@ For a continuous action of a profinite `G` on `L` with the discrete topology, wi
 * such an element and the inertia group of `Q` topologically generate the stabilizer of `A`.
 
 The continuity hypothesis is on `L`, not on `B`: the discrete topology on `B` used by the
-prime-level results is introduced inside the proofs.
+prime-level results is introduced inside the proofs, by
+`IsFractionRing.of_continuousSMul_discreteTopology`.
 
 ## Main results
 
@@ -53,8 +54,8 @@ prime-level results is introduced inside the proofs.
   of `A` to the `#(R ⧸ Q ∩ R)`-th power modulo the nonunits of `A`.
 * `ValuationSubring.IsCenteredAt.mem_inertia_iff`: the inertia group of `Q` consists of the `g`
   with `g • x - x` a nonunit of `A` for every `x ∈ A`.
-* `ValuationSubring.IsCenteredAt.exists_forall_smul_sub_pow_mem_nonunits`: existence of a
-  Frobenius element at `A` for a profinite action.
+* `ValuationSubring.IsCenteredAt.exists_mem_stabilizer_forall_smul_sub_pow_mem_nonunits`:
+  existence of a Frobenius element at `A` for a profinite action.
 * `ValuationSubring.IsCenteredAt.topologicalClosure_zpowers_mul_inertia_eq_stabilizer` and
   `ValuationSubring.IsCenteredAt.topologicalClosure_zpowers_sup_inertia_eq_stabilizer`: a
   Frobenius element and the inertia group generate the stabilizer of `A`.
@@ -72,22 +73,6 @@ prime-level results is introduced inside the proofs.
 public section
 
 open MulAction Pointwise
-
-/-- If a topological group `G` acts continuously on a field `L` with the discrete topology, and
-compatibly on a ring `B` with fraction field `L`, then the action on `B` is continuous for the
-discrete topology on `B`. -/
-theorem IsFractionRing.continuousSMul_of_discreteTopology (B L : Type*) [CommRing B] [Field L]
-    [Algebra B L] [IsFractionRing B L] (G : Type*) [Group G] [MulSemiringAction G B]
-    [MulSemiringAction G L] [SMulDistribClass G B L] [TopologicalSpace G]
-    [IsTopologicalGroup G] [TopologicalSpace L] [DiscreteTopology L] [ContinuousSMul G L]
-    [TopologicalSpace B] [DiscreteTopology B] :
-    ContinuousSMul G B := by
-  refine continuousSMul_iff_stabilizer_isOpen.mpr fun b ↦ ?_
-  have : stabilizer G b = stabilizer G (algebraMap B L b) := by
-    ext g
-    simp only [mem_stabilizer_iff, ← algebraMap.smul', (IsFractionRing.injective B L).eq_iff]
-  rw [this]
-  exact stabilizer_isOpen G _
 
 namespace ValuationSubring.IsCenteredAt
 
@@ -110,6 +95,8 @@ raises every element of `A` to the `#(R ⧸ Q ∩ R)`-th power modulo the nonuni
 theorem isArithFrobAt_iff_forall_smul_sub_pow_mem (h : A.IsCenteredAt Q) {R : Type*}
     [CommRing R] [Algebra R B] [SMulCommClass G R B] {σ : G} :
     IsArithFrobAt R σ Q ↔ ∀ x ∈ A, σ • x - x ^ Nat.card (R ⧸ Q.under R) ∈ A.nonunits :=
+  -- `IsArithFrobAt R σ Q` unfolds to `AlgHom.IsArithFrobAt` for `MulSemiringAction.toAlgHom R B σ`,
+  -- whose application to `b` is `σ • b` by definition.
   h.forall_smul_sub_pow_mem_iff
 
 /-- **The inertia group of the centre of a valuation subring.** The inertia group of `Q` in `G`
@@ -129,14 +116,13 @@ variable [CompactSpace G] [TotallyDisconnectedSpace G] [IsTopologicalGroup G]
 continuously on `L` with the discrete topology, with `B^G = R`, and a valuation subring `A`
 centred at a prime `Q` of `B` with `R ⧸ Q ∩ R` finite, some `σ : G` stabilizes `A` and acts on `A`
 by `x ↦ x ^ #(R ⧸ Q ∩ R)` modulo its nonunits. -/
-theorem exists_forall_smul_sub_pow_mem_nonunits (h : A.IsCenteredAt Q)
+theorem exists_mem_stabilizer_forall_smul_sub_pow_mem_nonunits (h : A.IsCenteredAt Q)
     [Algebra.IsInvariant R B G] [Finite (R ⧸ Q.under R)] :
     ∃ σ : G, σ ∈ stabilizer G A ∧
       ∀ x ∈ A, σ • x - x ^ Nat.card (R ⧸ Q.under R) ∈ A.nonunits := by
-  let _ : TopologicalSpace B := ⊥
-  have : DiscreteTopology B := ⟨rfl⟩
-  have := IsFractionRing.continuousSMul_of_discreteTopology B L G
-  obtain ⟨σ, hσ⟩ := IsArithFrobAt.exists_of_isInvariant_of_profinite R G Q
+  obtain ⟨σ, hσ⟩ : ∃ σ : G, IsArithFrobAt R σ Q :=
+    IsFractionRing.of_continuousSMul_discreteTopology B L G
+      (IsArithFrobAt.exists_of_isInvariant_of_profinite R G Q)
   have hσ' := h.isArithFrobAt_iff_forall_smul_sub_pow_mem.mp hσ
   exact ⟨σ, h.mem_stabilizer hσ', hσ'⟩
 
@@ -148,12 +134,10 @@ in the inertia group of `Q`, which `ValuationSubring.IsCenteredAt.mem_inertia_if
 theorem topologicalClosure_zpowers_mul_inertia_eq_stabilizer (h : A.IsCenteredAt Q) {σ : G}
     (hσ : ∀ x ∈ A, σ • x - x ^ Nat.card (R ⧸ Q.under R) ∈ A.nonunits) :
     ((Subgroup.zpowers σ).topologicalClosure : Set G) * Q.inertia G = stabilizer G A := by
-  let _ : TopologicalSpace B := ⊥
-  have : DiscreteTopology B := ⟨rfl⟩
-  have := IsFractionRing.continuousSMul_of_discreteTopology B L G
   rw [h.stabilizer_eq]
-  exact Ideal.topologicalClosure_zpowers_mul_inertia_eq_stabilizer_of_isArithFrobAt Q
-    (h.isArithFrobAt_iff_forall_smul_sub_pow_mem.mpr hσ)
+  exact IsFractionRing.of_continuousSMul_discreteTopology B L G
+    (Ideal.topologicalClosure_zpowers_mul_inertia_eq_stabilizer_of_isArithFrobAt Q
+      (h.isArithFrobAt_iff_forall_smul_sub_pow_mem.mpr hσ))
 
 /-- **A Frobenius element and inertia generate the stabilizer of a valuation subring**: if `σ`
 acts on `A` by `x ↦ x ^ #(R ⧸ Q ∩ R)` modulo its nonunits, the stabilizer of `A` is generated by
@@ -161,11 +145,9 @@ the closure of `⟨σ⟩` and the inertia group of `Q`. -/
 theorem topologicalClosure_zpowers_sup_inertia_eq_stabilizer (h : A.IsCenteredAt Q) {σ : G}
     (hσ : ∀ x ∈ A, σ • x - x ^ Nat.card (R ⧸ Q.under R) ∈ A.nonunits) :
     (Subgroup.zpowers σ).topologicalClosure ⊔ Q.inertia G = stabilizer G A := by
-  let _ : TopologicalSpace B := ⊥
-  have : DiscreteTopology B := ⟨rfl⟩
-  have := IsFractionRing.continuousSMul_of_discreteTopology B L G
   rw [h.stabilizer_eq]
-  exact Ideal.topologicalClosure_zpowers_sup_inertia_eq_stabilizer_of_isArithFrobAt Q
-    (h.isArithFrobAt_iff_forall_smul_sub_pow_mem.mpr hσ)
+  exact IsFractionRing.of_continuousSMul_discreteTopology B L G
+    (Ideal.topologicalClosure_zpowers_sup_inertia_eq_stabilizer_of_isArithFrobAt Q
+      (h.isArithFrobAt_iff_forall_smul_sub_pow_mem.mpr hσ))
 
 end ValuationSubring.IsCenteredAt
