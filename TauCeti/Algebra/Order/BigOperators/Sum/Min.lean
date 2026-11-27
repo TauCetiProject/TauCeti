@@ -10,16 +10,11 @@ public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Algebra.Order.Group.Abs
 public import Mathlib.Algebra.Order.Sub.Basic
 public import Mathlib.Data.Finset.Lattice.Fold
-public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Nat.Find
-import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Logic.Equiv.Fintype
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-import TauCeti.Algebra.BigOperators.Field
-import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Finite sums of pointwise minima and truncations
@@ -40,9 +35,7 @@ particular the truncated sums determine a finite family of positive natural numb
 reindexing; this is the counting step in the uniqueness of elementary divisors.
 
 For the uniform range `0, …, S - 1`, twice the truncated sum `2 * ∑ s ∈ range S, min k s` is bounded
-below by the quadratic `2 * S * k - k ^ 2 - k` in any ordered ring (with equality for `k ≤ S`), and
-summing over `k = r / p` for `r < R` yields a quantitative lower bound in any strictly ordered
-field.
+below by the quadratic `2 * S * k - k ^ 2 - k` in any ordered ring (with equality for `k ≤ S`).
 
 ## Main results
 
@@ -69,10 +62,6 @@ field.
   `Finset.le_two_mul_sum_range_min`: exact formula `2 * S * m - m ^ 2 - m` with `m = min k S` for
   `2 * ∑ s ∈ range S, min k s` in any ring, its `k ≤ S` case, and the general quadratic lower bound
   `2 * S * k - k ^ 2 - k ≤ 2 * ∑ s ∈ range S, min k s` in any ordered ring.
-* `Finset.le_two_mul_sum_range_min_div`: double-sum lower bound on
-  `2 * ∑ r ∈ range R, ∑ s ∈ range S, min (r / p) s` in any strictly ordered field.
-* `Fintype.sum_fin_prod_rev`, `Fintype.le_two_mul_sum_fin_prod_min_div`: reversed-index
-  `Fin R × Fin S` form of double sums and of the truncated-sum lower bound.
 -/
 
 public section
@@ -278,48 +267,6 @@ theorem le_two_mul_sum_range_min {R : Type*} [Ring R] [PartialOrder R] [IsOrdere
   rw [intCast_two_mul_sum_range_min_sub_quad] at hR
   exact sub_nonneg.mp hR
 
-/-- Lower bound on the double truncated sum `2 * ∑ r ∈ range R, ∑ s ∈ range S, min (r / p) s`
-in any strictly ordered field `K`. -/
-theorem le_two_mul_sum_range_min_div {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] (p R S : ℕ) :
-    (R : K) ^ 2 * S / p - (R : K) * S / p - (R : K) ^ 2 / p - 2 * R * S - (R : K) ^ 3 / p ^ 2 ≤
-      2 * ∑ r ∈ range R, ∑ s ∈ range S, ((min (r / p) s : ℕ) : K) := by
-  rcases Nat.eq_zero_or_pos p with rfl | hp
-  · simp only [Nat.cast_zero, div_zero, zero_sub, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
-      zero_pow, sub_zero, Nat.div_zero, Nat.zero_min, sum_const_zero, mul_zero]
-    have hRS : (0 : K) ≤ 2 * R * S := by positivity
-    linarith
-  have hpK : (0 : K) < p := by exact_mod_cast hp
-  have hr_term (r : ℕ) (hr : r ∈ range R) :
-      2 * (S : K) * r / p - 2 * S - (R : K) ^ 2 / p ^ 2 - (R : K) / p ≤
-        2 * ∑ s ∈ range S, ((min (r / p) s : ℕ) : K) := by
-    set k := r / p
-    have hk_le : (k : K) ≤ (R : K) / p :=
-      (le_div_iff₀ hpK).mpr (by exact_mod_cast (Nat.div_mul_le_self r p).trans (mem_range.mp hr).le)
-    have hk_ge : (r : K) / p - 1 ≤ k := by
-      rw [sub_le_iff_le_add, div_le_iff₀ hpK]
-      exact_mod_cast (by rw [add_mul, one_mul]; exact (Nat.lt_div_mul_add hp).le : r ≤ (k + 1) * p)
-    have hksq : (k : K) ^ 2 ≤ (R : K) ^ 2 / p ^ 2 := by rw [← div_pow]; gcongr
-    have h2Sk : 2 * (S : K) * r / p - 2 * S ≤ 2 * (S : K) * k := by
-      have hmul := mul_le_mul_of_nonneg_left hk_ge (by positivity : (0 : K) ≤ 2 * S)
-      have hnorm : 2 * (S : K) * ((r : K) / p - 1) = 2 * (S : K) * r / p - 2 * S := by ring
-      linarith
-    linarith [le_two_mul_sum_range_min (R := K) S k]
-  have hsum_r : ∑ r ∈ range R, (2 * (S : K) * r / p) = (S : K) * ((R : K) * (R - 1)) / p := by
-    calc ∑ r ∈ range R, (2 * (S : K) * r / p)
-        = ∑ r ∈ range R, (2 * (S : K) / p) * (r : K) :=
-          sum_congr rfl fun r _ ↦ by ring
-      _ = (2 * (S : K) / p) * ∑ r ∈ range R, (r : K) := (mul_sum ..).symm
-      _ = (S : K) * ((R : K) * (R - 1)) / p := by rw [sum_range_natCast]; ring
-  rw [mul_sum]
-  calc (R : K) ^ 2 * S / p - (R : K) * S / p - (R : K) ^ 2 / p - 2 * R * S - (R : K) ^ 3 / p ^ 2
-      = (S : K) * ((R : K) * (R - 1)) / p - (R : K) * (2 * S) -
-          (R : K) * ((R : K) ^ 2 / p ^ 2) - (R : K) * ((R : K) / p) := by ring
-    _ = ∑ r ∈ range R, (2 * (S : K) * r / p - 2 * S - (R : K) ^ 2 / p ^ 2 - (R : K) / p) := by
-        simp only [sub_eq_add_neg, sum_add_distrib, sum_neg_distrib, sum_const, card_range,
-          nsmul_eq_mul, hsum_r]
-    _ ≤ ∑ r ∈ range R, 2 * ∑ s ∈ range S, ((min (r / p) s : ℕ) : K) := sum_le_sum hr_term
-
 /-- In a linearly ordered additive commutative group, the sum of `f` and `g` minus twice the sum of
 their pointwise minima equals the `L¹` distance `∑ x ∈ s, |f x - g x|`. -/
 theorem sum_add_sum_sub_two_nsmul_sum_min {G : Type*} [AddCommGroup G] [LinearOrder G]
@@ -372,27 +319,5 @@ theorem exists_equiv_of_forall_sum_min_eq {e : ι → ℕ} {e' : κ → ℕ} (he
       omega
   exact ⟨.ofFiberEquiv fun k ↦ Fintype.equivOfCardEq (hcard k),
     fun i ↦ (Equiv.ofFiberEquiv_map _ i).symm⟩
-
-/-- Reindexing a sum over `Fin R × Fin S` with reversed second coordinate `S - 1 - j` as a double
-sum over `Finset.range R` and `Finset.range S`. -/
-theorem sum_fin_prod_rev {M : Type*} [AddCommMonoid M] (R S : ℕ) (f : ℕ → ℕ → M) :
-    ∑ i : Fin R × Fin S, f i.1.val (S - 1 - i.2.val) =
-      ∑ r ∈ Finset.range R, ∑ s ∈ Finset.range S, f r s := by
-  rw [Fintype.sum_prod_type, ← Fin.sum_univ_eq_sum_range (n := R)]
-  refine Finset.sum_congr rfl fun r _ ↦ ?_
-  rw [← Equiv.sum_comp Fin.revPerm (fun s : Fin S ↦ f r.val (S - 1 - s.val)),
-    ← Fin.sum_univ_eq_sum_range (n := S)]
-  exact Finset.sum_congr rfl fun s _ ↦ by
-    congr 1
-    simp only [Fin.revPerm_apply, Fin.val_rev]
-    omega
-
-/-- Reversed-index `Fin R × Fin S` form of `Finset.le_two_mul_sum_range_min_div`. -/
-theorem le_two_mul_sum_fin_prod_min_div {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] (p R S : ℕ) :
-    (R : K) ^ 2 * S / p - (R : K) * S / p - (R : K) ^ 2 / p - 2 * R * S - (R : K) ^ 3 / p ^ 2 ≤
-      2 * ∑ i : Fin R × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : K) := by
-  rw [sum_fin_prod_rev R S (fun r s ↦ ((min (r / p) s : ℕ) : K))]
-  exact Finset.le_two_mul_sum_range_min_div p R S
 
 end Fintype

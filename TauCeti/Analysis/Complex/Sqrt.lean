@@ -18,8 +18,9 @@ involving sums of principal roots. The file also records the values `√i = e^{�
 `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the splitting `√(r z) = √r √z`
 for real `r ≥ 0` and the identification of the real square root of `x ≥ 0` with the complex
 half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative real, cast to `ℂ`,
-squares back to it, gives the sign-branch formulas `Complex.sqrt_ratCast_of_nonneg` and
-`Complex.sqrt_ratCast_of_nonpos` for rational inputs, and packages the principal square root of a
+squares back to it, gives the sign-branch formulas `Complex.sqrt_ofReal_of_nonneg` and
+`Complex.sqrt_ofReal_of_nonpos` (and their rational specializations `Complex.sqrt_ratCast_of_nonneg`
+and `Complex.sqrt_ratCast_of_nonpos`), and packages the principal square root of a
 nonzero complex number as a unit, `Complex.sqrtUnit`. On the open upper half-plane the principal
 square root lies in the open first quadrant (`Complex.sqrt_re_pos_iff`, `Complex.sqrt_im_pos`). A
 complex unit of absolute value one has a square root of absolute value one,
@@ -153,25 +154,31 @@ theorem norm_sqrt (z : ℂ) : ‖sqrt z‖ = Real.sqrt ‖z‖ := by
 theorem norm_sqrt_intCast (d : ℤ) : ‖sqrt (d : ℂ)‖ = Real.sqrt d.natAbs := by
   rw [norm_sqrt, Complex.norm_intCast, Nat.cast_natAbs, Int.cast_abs]
 
+/-- The principal square root of a nonnegative real cast `(x : ℂ)` is `(√x : ℂ)`. -/
+theorem sqrt_ofReal_of_nonneg {x : ℝ} (hx : 0 ≤ x) :
+    sqrt (x : ℂ) = √x := by
+  open scoped ComplexOrder in
+  rw [sqrt_of_nonneg (zero_le_real.mpr hx), ofReal_re]
+
+/-- The principal square root of a nonpositive real cast `(x : ℂ)` is `(√(-x) : ℂ) * I`. -/
+theorem sqrt_ofReal_of_nonpos {x : ℝ} (hx : x ≤ 0) :
+    sqrt (x : ℂ) = √(-x) * I := by
+  open scoped ComplexOrder in
+  have hc : (0 : ℂ) ≤ -(x : ℂ) := by
+    rw [← ofReal_neg]
+    exact zero_le_real.mpr (neg_nonneg.mpr hx)
+  rw [← neg_neg (x : ℂ), sqrt_neg_of_nonneg hc, sqrt_of_nonneg hc, neg_re, ofReal_re, mul_comm]
+
 /-- The principal square root of a nonnegative rational cast `(r : ℂ)` is `(√(r : ℝ) : ℂ)`. -/
 theorem sqrt_ratCast_of_nonneg {r : ℚ} (hr : 0 ≤ r) :
     sqrt (r : ℂ) = (√(r : ℝ) : ℂ) := by
-  open scoped ComplexOrder in
-  have hc : (0 : ℂ) ≤ (r : ℂ) := by
-    rw [← ofReal_ratCast]
-    exact zero_le_real.mpr (by exact_mod_cast hr)
-  rw [sqrt_of_nonneg hc, ratCast_re]
+  rw [← ofReal_ratCast, sqrt_ofReal_of_nonneg (by exact_mod_cast hr)]
 
 /-- The principal square root of a nonpositive rational cast `(r : ℂ)` is
 `(√(-(r : ℝ)) : ℂ) * I`. -/
 theorem sqrt_ratCast_of_nonpos {r : ℚ} (hr : r ≤ 0) :
     sqrt (r : ℂ) = (√(-(r : ℝ)) : ℂ) * I := by
-  open scoped ComplexOrder in
-  have hc : (0 : ℂ) ≤ -(r : ℂ) := by
-    rw [← ofReal_ratCast, ← ofReal_neg]
-    exact zero_le_real.mpr (by exact_mod_cast neg_nonneg.mpr hr)
-  rw [← neg_neg (r : ℂ), sqrt_neg_of_nonneg hc, sqrt_of_nonneg hc,
-    neg_re, ratCast_re, mul_comm]
+  rw [← ofReal_ratCast, sqrt_ofReal_of_nonpos (by exact_mod_cast hr)]
 
 /-- A complex unit of absolute value one is `s ^ 2` for a unit `s` of absolute value one, that is,
 with `conj s * s = 1`. -/

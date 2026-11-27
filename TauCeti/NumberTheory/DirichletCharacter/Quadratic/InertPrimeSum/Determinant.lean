@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
-import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.NumberTheory.Zsqrtd.Basic
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Polynomial.Bivariate.Basic

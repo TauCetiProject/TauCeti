@@ -13,6 +13,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.NormNum.RealSqrt
 import Mathlib.Tactic.Ring
+import TauCeti.Analysis.Complex.Sqrt
 
 /-!
 # Norms, embeddings and prime-power divisibility
@@ -225,10 +226,8 @@ example :
       ‖QuadraticAlgebra.negSqrtEmbedding ((2 : ℤ) : ℚ) (e.symm ⟨3, 3⟩)‖ =
         3 * (Real.sqrt 2 - 1) := by
   dsimp only
-  open scoped ComplexOrder in
   have hsqrt2 : Complex.sqrt (2 : ℂ) = √2 := by
-    rw [Complex.sqrt_of_nonneg (by norm_num [Complex.le_def])]
-    norm_num
+    simpa using Complex.sqrt_ofReal_of_nonneg (x := 2) (by norm_num)
   constructor
   · rw [← Complex.abs_re_eq_norm.mpr (QuadraticAlgebra.im_sqrtEmbedding
       (by norm_num : (0 : ℚ) ≤ ((2 : ℤ) : ℚ)) _)]
