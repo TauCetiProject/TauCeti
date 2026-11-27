@@ -49,6 +49,18 @@ namespace SimpleGraph
 
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 
+omit [DecidableEq V] in
+/-- The squared Euclidean norm of a real vector is its dot product with itself. -/
+private theorem norm_toLp_sq_eq_dotProduct_self (x : V → ℝ) :
+    ‖WithLp.toLp 2 x‖ ^ 2 = x ⬝ᵥ x := by
+  rw [EuclideanSpace.real_norm_sq_eq]
+  simp [dotProduct, sq]
+
+/-- The Euclidean quadratic form of a real matrix `A` at `x` is `xᵀAx`. -/
+private theorem inner_toEuclideanLin_toLp_eq_dotProduct_mulVec (A : Matrix V V ℝ) (x : V → ℝ) :
+    ⟪toEuclideanLin A (WithLp.toLp 2 x), WithLp.toLp 2 x⟫_ℝ = x ⬝ᵥ (A *ᵥ x) := by
+  simp [EuclideanSpace.inner_toLp_toLp]
+
 /-- On the vectors orthogonal to the eigenvector of the smallest eigenvalue in the sorted
 eigenbasis of the Laplacian, the quadratic form is at least `a(G)` times the squared norm. -/
 private theorem algebraicConnectivity_mul_dotProduct_self_le_of_inner_eq_zero
@@ -66,11 +78,11 @@ private theorem algebraicConnectivity_mul_dotProduct_self_le_of_inner_eq_zero
     rw [b.repr_apply_apply, hi, hy]
   have h := hT.le_re_inner_apply_self_of_mem_spanIndices finrank_euclideanSpace
     (c := G.algebraicConnectivity) (fun i hi ↦ ?_) hmem
-  · rw [EuclideanSpace.real_norm_sq_eq] at h
-    simpa [EuclideanSpace.inner_toLp_toLp, dotProduct, mul_comm, sq] using h
+  · rwa [norm_toLp_sq_eq_dotProduct_self, RCLike.re_to_real,
+      inner_toEuclideanLin_toLp_eq_dotProduct_mulVec] at h
   · -- Every index but the last is at most `n - 2`, where the eigenvalue is `a(G)`.
-    rw [G.algebraicConnectivity_of_two_le hn, lapEigenvalues_def]
-    refine (G.isHermitian_lapMatrix ℝ).eigenvalues₀_antitone ?_
+    rw [G.algebraicConnectivity_of_two_le hn, lapEigenvalues_def, IsHermitian.eigenvalues₀.eq_1]
+    refine hT.eigenvalues_antitone finrank_euclideanSpace ?_
     simp only [Set.mem_compl_iff, Set.mem_singleton_iff, Fin.ext_iff, l] at hi
     simp only [Fin.le_def]
     omega
@@ -141,18 +153,15 @@ theorem exists_dotProduct_mulVec_le_algebraicConnectivity_mul (h : 2 ≤ Fintype
     finrank_euclideanSpace k _ hdim
   obtain ⟨x, rfl⟩ : ∃ x, y = WithLp.toLp 2 x := ⟨_, (WithLp.toLp_ofLp 2 y).symm⟩
   have hxx : x ⬝ᵥ x = 1 := by
-    have h2 := congrArg (· ^ 2) hy1
-    rw [EuclideanSpace.real_norm_sq_eq] at h2
-    simpa [dotProduct, sq] using h2
+    rw [← norm_toLp_sq_eq_dotProduct_self, hy1, one_pow]
   refine ⟨x, ?_, ?_, ?_⟩
   · rintro rfl
     simp at hxx
   · rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hy
     simpa [one, EuclideanSpace.inner_toLp_toLp, dotProduct] using hy
   · rw [hxx, mul_one, G.algebraicConnectivity_of_two_le h, lapEigenvalues_def]
-    -- `eigenvalues₀` is by definition the sorted eigenvalue list of `toEuclideanLin`.
-    simp only [IsHermitian.eigenvalues₀]
-    simpa [EuclideanSpace.inner_toLp_toLp, dotProduct, mul_comm] using hle
+    rw [IsHermitian.eigenvalues₀.eq_1]
+    rwa [RCLike.re_to_real, inner_toEuclideanLin_toLp_eq_dotProduct_mulVec] at hle
 
 /-- **Fiedler's superadditivity of the algebraic connectivity.** For edge-disjoint graphs `G` and
 `H` on the same vertex type, `a(G) + a(H) ≤ a(G ⊔ H)` (Brouwer–Haemers, Proposition 1.7.1). -/
