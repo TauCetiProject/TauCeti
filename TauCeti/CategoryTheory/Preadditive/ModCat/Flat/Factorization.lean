@@ -31,9 +31,6 @@ namespace TauCeti.ModCat
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 variable {F : ModCat.{v} C} {l m n : ℕ} {X : Fin l → C} {Y : Fin m → C} {Z : Fin n → C}
 
-local instance : (yoneda C).Additive where
-  map_add {_ _ f g} := ObjectProperty.hom_ext _ (preadditiveYoneda.map_add (f := f) (g := g))
-
 private noncomputable def yonedaMatrix (β : ∀ i j, X i ⟶ Y j) :
     (⨁ (yoneda C).obj ∘ X) ⟶ (⨁ (yoneda C).obj ∘ Y) :=
   biproduct.matrix fun i j ↦ (yoneda C).map (β i j)
@@ -58,19 +55,22 @@ private theorem exists_biproduct_desc_app_id (y : ∀ j, F.obj.obj (op (Y j))) :
     ∃ p : (⨁ (yoneda C).obj ∘ Y) ⟶ F, ∀ j,
       (biproduct.ι ((yoneda C).obj ∘ Y) j ≫ p).hom.app (op (Y j)) (𝟙 (Y j)) = y j := by
   have := (additiveFunctor_iff F.obj).1 F.property
-  let a (j : Fin m) : (yoneda C).obj (Y j) ⟶ F :=
-    ObjectProperty.homMk
+  let a (j : Fin m) : (yoneda C).obj (Y j) ⟶ F := by
+    let p : CategoryTheory.yoneda.obj (Y j) ⟶ F.obj ⋙ forget AddCommGrpCat :=
+      yonedaEquiv.symm (y j)
+    exact ObjectProperty.homMk
       { app T := AddCommGrpCat.ofHom
-          ((AddMonoidHom.eval (y j)).comp (AddCommGrpCat.homAddEquiv.toAddMonoidHom.comp
-            (F.obj.mapAddHom.comp (opHom T.unop (Y j)))))
+          (AddMonoidHom.mk' (fun f ↦ p.app T f) (fun f g ↦ by
+            -- The inverse Yoneda component evaluates the action of the arrow on `y j`.
+            change F.obj.map (f + g).op (y j) = F.obj.map f.op (y j) + F.obj.map g.op (y j)
+            simp only [op_add, Functor.map_add, AddCommGrpCat.hom_add_apply]) :
+            (T.unop ⟶ Y j) →+ F.obj.obj T)
         naturality T U g := by
           ext (f : T.unop ⟶ Y j)
-          exact ConcreteCategory.congr_hom (F.obj.map_comp f.op g) (y j) }
+          exact p.naturality_apply g f }
   refine ⟨biproduct.desc a, fun j ↦ ?_⟩
   rw [biproduct.ι_desc]
-  -- Evaluation at the identity reduces to the functor's identity law on the given element.
-  change F.obj.map (𝟙 (Y j)).op (y j) = y j
-  simp
+  exact (yonedaEquiv (X := Y j) (F := F.obj ⋙ forget AddCommGrpCat)).apply_symm_apply (y j)
 
 private theorem biproduct_lift_comp_app_id {A : C} (β : ∀ j, A ⟶ Y j)
     (p : (⨁ (yoneda C).obj ∘ Y) ⟶ F) :

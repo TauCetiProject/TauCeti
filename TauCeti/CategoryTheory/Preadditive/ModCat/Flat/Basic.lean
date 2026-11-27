@@ -55,6 +55,28 @@ class Flat (F : ModCat.{w} C) : Prop where
 
 variable {F : ModCat.{w} C}
 
+/-- An isomorphism transports flatness from its source to its target. -/
+theorem Flat.of_iso [F.Flat] {G : ModCat.{w} C} (e : F ≅ G) : G.Flat where
+  isTrivialRelation {X n Y} β y h := by
+    let y' (j : Fin n) := e.inv.hom.app (op (Y j)) (y j)
+    have h' : ∑ j, F.obj.map (β j).op (y' j) = 0 := by
+      simpa only [y', map_sum, e.inv.hom.naturality_apply, map_zero] using
+        congrArg (e.inv.hom.app (op X)) h
+    obtain ⟨m, Z, z, α, hy, hα⟩ := isTrivialRelation_def.mp (Flat.isTrivialRelation β y' h')
+    refine isTrivialRelation_def.mpr ⟨m, Z, fun i ↦ e.hom.hom.app (op (Z i)) (z i), α, ?_, hα⟩
+    intro j
+    have hj : e.hom.hom.app (op (Y j)) (y' j) = y j := by
+      let e' := (additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).ι.mapIso e
+      simpa only [e', y', Functor.mapIso_hom, Functor.mapIso_inv, ObjectProperty.ι_map,
+        CategoryTheory.comp_apply, CategoryTheory.id_apply] using
+        ConcreteCategory.congr_hom (e'.inv_hom_id_app (op (Y j))) (y j)
+    simpa only [hj, map_sum, e.hom.hom.naturality_apply] using
+      congrArg (e.hom.hom.app (op (Y j))) (hy j)
+
+/-- Flatness is invariant under isomorphism. -/
+theorem flat_iff_of_iso {G : ModCat.{w} C} (e : F ≅ G) : F.Flat ↔ G.Flat :=
+  ⟨fun _ ↦ Flat.of_iso e, fun _ ↦ Flat.of_iso e.symm⟩
+
 private theorem sum_map_sum_map {X : C} {n m : ℕ} {Y : Fin n → C} {Z : Fin m → C}
     (β : ∀ j, X ⟶ Y j) (α : ∀ i j, Y j ⟶ Z i) (z : ∀ i, F.obj.obj (op (Z i))) :
     ∑ j, F.obj.map (β j).op (∑ i, F.obj.map (α i j).op (z i)) =

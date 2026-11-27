@@ -29,22 +29,34 @@ namespace TauCeti.ModCat
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
+private abbrev ι (C : Type u) [Category.{v} C] [Preadditive C] :=
+  (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
+
+private noncomputable def yonedaCoproductIso {n : ℕ} (Y : Fin n → C) :
+    (∐ fun j ↦ preadditiveYoneda.obj (Y j)) ≅ (ι C).obj (∐ (yoneda C).obj ∘ Y) :=
+  asIso (sigmaComparison (ι C) ((yoneda C).obj ∘ Y))
+
 variable (C) in
 /-- A finite free module is isomorphic to a finite coproduct of representable modules. -/
-def isFiniteFree : ObjectProperty (ModCat.{v} C) := fun F ↦
-  ∃ (n : ℕ) (Y : Fin n → C), Nonempty (F ≅ ∐ fun j ↦ (yoneda C).obj (Y j))
+def isFiniteFree : ObjectProperty (ModCat.{v} C) := fun F ↦ IsFiniteSumOfRepresentables F.obj
 
 /-- A finite free module admits an isomorphism to a coproduct indexed by some `Fin n`. -/
 theorem isFiniteFree_def {F : ModCat.{v} C} :
     isFiniteFree C F ↔
-      ∃ (n : ℕ) (Y : Fin n → C), Nonempty (F ≅ ∐ fun j ↦ (yoneda C).obj (Y j)) :=
-  Iff.rfl
+      ∃ (n : ℕ) (Y : Fin n → C), Nonempty (F ≅ ∐ fun j ↦ (yoneda C).obj (Y j)) := by
+  rw [isFiniteFree, isFiniteSumOfRepresentables_def]
+  constructor
+  · rintro ⟨n, Y, ⟨e⟩⟩
+    exact ⟨n, Y, ⟨(ι C).preimageIso (e ≪≫ yonedaCoproductIso Y)⟩⟩
+  · rintro ⟨n, Y, ⟨e⟩⟩
+    exact ⟨n, Y, ⟨(ι C).mapIso e ≪≫ (yonedaCoproductIso Y).symm⟩⟩
 
 /-- Finite free modules are equivalently the finite biproducts of representable modules,
 up to isomorphism. -/
 theorem isFiniteFree_iff_exists_iso_biproduct {F : ModCat.{v} C} :
     isFiniteFree C F ↔
       ∃ (n : ℕ) (Y : Fin n → C), Nonempty (F ≅ ⨁ fun j ↦ (yoneda C).obj (Y j)) := by
+  rw [isFiniteFree_def]
   constructor
   · rintro ⟨n, Y, ⟨e⟩⟩
     exact ⟨n, Y, ⟨e ≪≫ (biproduct.isoCoproduct ((yoneda C).obj ∘ Y)).symm⟩⟩
@@ -52,14 +64,12 @@ theorem isFiniteFree_iff_exists_iso_biproduct {F : ModCat.{v} C} :
     exact ⟨n, Y, ⟨e ≪≫ biproduct.isoCoproduct ((yoneda C).obj ∘ Y)⟩⟩
 
 instance : (isFiniteFree C).IsClosedUnderIsomorphisms where
-  of_iso e := by
-    rintro ⟨n, Y, ⟨e'⟩⟩
-    exact ⟨n, Y, ⟨e.symm ≪≫ e'⟩⟩
+  of_iso e h := IsFiniteSumOfRepresentables.of_iso h ((ι C).mapIso e)
 
 /-- A finite coproduct of representable modules is finite free. -/
 theorem isFiniteFree_coproduct_yoneda {n : ℕ} (Y : Fin n → C) :
     isFiniteFree C (∐ fun j ↦ (yoneda C).obj (Y j)) :=
-  ⟨n, Y, ⟨Iso.refl _⟩⟩
+  (isFiniteSumOfRepresentables_sigma Y).of_iso (yonedaCoproductIso Y)
 
 /-- A finite biproduct of representable modules is finite free. -/
 theorem isFiniteFree_biproduct_yoneda {n : ℕ} (Y : Fin n → C) :
@@ -68,28 +78,20 @@ theorem isFiniteFree_biproduct_yoneda {n : ℕ} (Y : Fin n → C) :
 
 /-- A representable module is finite free. -/
 theorem isFiniteFree_yoneda_obj (X : C) : isFiniteFree C ((yoneda C).obj X) :=
-  ⟨1, fun _ ↦ X, ⟨(coproductUniqueIso (fun _ : Fin 1 ↦ (yoneda C).obj X)).symm⟩⟩
+  isFiniteSumOfRepresentables_preadditiveYoneda_obj X
 
 /-- A finite free module is projective. -/
 theorem projective_of_isFiniteFree {P : ModCat.{v} C} (hP : isFiniteFree C P) :
     Projective P := by
-  obtain ⟨n, Y, ⟨e⟩⟩ := hP
+  obtain ⟨n, Y, ⟨e⟩⟩ := isFiniteFree_def.mp hP
   have (j : Fin n) : Projective ((yoneda C).obj (Y j)) := inferInstance
   exact Projective.of_iso e.symm (Projective.of_isColimit_cofan (coproductIsCoproduct _))
-
-private abbrev ι (C : Type u) [Category.{v} C] [Preadditive C] :=
-  (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
-
-private noncomputable def yonedaCoproductIso {n : ℕ} (Y : Fin n → C) :
-    (∐ fun j ↦ preadditiveYoneda.obj (Y j)) ≅ (ι C).obj (∐ (yoneda C).obj ∘ Y) :=
-  asIso (sigmaComparison (ι C) ((yoneda C).obj ∘ Y))
 
 /-- The underlying functor of a finite free module is finitely presented. -/
 theorem isFinitelyPresentedFunctor_of_isFiniteFree {P : ModCat.{v} C} (hP : isFiniteFree C P) :
     IsFinitelyPresentedFunctor P.obj := by
-  obtain ⟨n, Y, ⟨e⟩⟩ := hP
-  exact (isFinitelyPresentedFunctor C).prop_of_iso
-    (yonedaCoproductIso Y ≪≫ ((ι C).mapIso e).symm)
+  obtain ⟨n, Y, ⟨e⟩⟩ := isFiniteSumOfRepresentables_def.mp hP
+  exact (isFinitelyPresentedFunctor C).prop_of_iso e.symm
     ((isFinitelyPresentedFunctor C).prop_coproduct
       fun j ↦ isFinitelyPresentedFunctor_preadditiveYoneda_obj (Y j))
 
