@@ -19,7 +19,10 @@ attached copies. The pushout itself need not be a quasicategory.
 
 ## References
 
-* J. Lurie, *Higher Topos Theory*, §1.2.7.
+* R. Haugseng, [*Introduction to ∞-Categories*]
+  (https://www.sas.rochester.edu/mth/sites/doug-ravenel/otherpapers/Haugseng-intro.pdf),
+  §6.5, especially the walking-equivalence pushout in the proof of Proposition 6.5.3
+  and the localization construction in Corollary 6.5.4.
 -/
 
 public section
@@ -50,6 +53,10 @@ noncomputable def ofCoproduct : (∐ fun _ : W ↦ coherentIso.{u}) ⟶
 noncomputable def ofEdge (w : W) : coherentIso ⟶ C.equivalenceAttachment W :=
   Sigma.ι (fun _ : W ↦ coherentIso.{u}) w ≫ ofCoproduct W
 
+@[reassoc (attr := simp)]
+lemma ι_ofCoproduct (w : W) :
+    Sigma.ι (fun _ : W ↦ coherentIso.{u}) w ≫ ofCoproduct W = ofEdge W w := (rfl)
+
 /-- The defining pushout square of the attachment. -/
 theorem isPushout : IsPushout
     (Sigma.desc (fun w : W ↦ yonedaEquiv.symm w.val))
@@ -61,7 +68,7 @@ theorem isPushout : IsPushout
 lemma edgeInclusion_ofEdge (w : W) :
     coherentIso.edgeInclusion ≫ ofEdge W w = yonedaEquiv.symm w.val ≫ ι W := by
   have h := congrArg (fun f ↦ Sigma.ι (fun _ : W ↦ Δ[1]) w ≫ f) (isPushout W).w
-  simpa [ofEdge] using h.symm
+  simpa using h.symm
 
 /-- Descent to the attachment from maps agreeing along every marked edge. -/
 noncomputable def desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D))
@@ -83,7 +90,7 @@ lemma ofCoproduct_desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) :
 @[reassoc (attr := simp)]
 lemma ofEdge_desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) (w : W) :
     ofEdge W w ≫ desc W f g h = g w := by
-  simp [ofEdge]
+  rw [← ι_ofCoproduct, Category.assoc, ofCoproduct_desc, Sigma.ι_comp_desc]
 
 /-- Maps out of the attachment are determined by their restrictions to `C` and every
 attached coherent isomorphism. -/
@@ -94,7 +101,7 @@ theorem hom_ext {f g : C.equivalenceAttachment W ⟶ D}
   apply (isPushout W).hom_ext hC
   apply Sigma.hom_ext
   intro w
-  simpa [ofEdge] using hW w
+  simpa using hW w
 
 /-- Descent is compatible with postcomposition. -/
 @[reassoc]
@@ -144,32 +151,49 @@ lemma ofEdge_descOfDegenerate (p : C ⟶ B) (b : W → B _⦋0⦌) (h) (w : W) :
 
 section StandardEdge
 
+private noncomputable def stdSimplexOneHom :
+    (Δ[1] : SSet.{u}).equivalenceAttachment {yonedaEquiv (𝟙 Δ[1])} ⟶ coherentIso :=
+  desc _ coherentIso.edgeInclusion (fun _ ↦ 𝟙 coherentIso) (fun v ↦ by
+    rw [Set.mem_singleton_iff.1 v.property]
+    simp)
+
+@[reassoc (attr := simp)]
+private lemma ι_stdSimplexOneHom :
+    ι {yonedaEquiv (𝟙 (Δ[1] : SSet.{u}))} ≫ stdSimplexOneHom =
+      coherentIso.edgeInclusion := ι_desc _ _ _ _
+
+@[reassoc (attr := simp)]
+private lemma ofEdge_stdSimplexOneHom
+    (w : ({yonedaEquiv (𝟙 (Δ[1] : SSet.{u}))} : Set (Δ[1] _⦋1⦌))) :
+    ofEdge _ w ≫ stdSimplexOneHom = 𝟙 coherentIso := ofEdge_desc _ _ _ _ w
+
+private lemma stdSimplexOneHom_ofEdge :
+    stdSimplexOneHom.{u} ≫ ofEdge _ ⟨_, Set.mem_singleton _⟩ = 𝟙 _ := by
+  apply hom_ext
+  · simpa using edgeInclusion_ofEdge {yonedaEquiv (𝟙 (Δ[1] : SSet.{u}))}
+      ⟨_, Set.mem_singleton _⟩
+  · intro v
+    have hv : v = ⟨_, Set.mem_singleton _⟩ :=
+      Subtype.ext (Set.mem_singleton_iff.1 v.property)
+    simp [hv]
+
 /-- Attaching a coherent isomorphism to the distinguished edge of the standard interval
 gives the coherent isomorphism itself. -/
 noncomputable def stdSimplexOneIso :
-    (Δ[1] : SSet.{u}).equivalenceAttachment {yonedaEquiv (𝟙 Δ[1])} ≅ coherentIso := by
-  let W : Set ((Δ[1] : SSet.{u}) _⦋1⦌) := {yonedaEquiv (𝟙 Δ[1])}
-  let w : W := ⟨_, Set.mem_singleton _⟩
-  have hw (v : W) : v = w := Subtype.ext (Set.mem_singleton_iff.1 v.property)
-  let f := desc W coherentIso.edgeInclusion (fun _ ↦ 𝟙 coherentIso) (fun v ↦ by
-    rw [hw v]
-    simp [w])
-  have hf : f ≫ ofEdge W w = 𝟙 (equivalenceAttachment Δ[1] W) := by
-    apply hom_ext W
-    · simpa [f, w] using edgeInclusion_ofEdge W w
-    · intro v
-      simp [f, hw v]
-  exact
-    { hom := f
-      inv := ofEdge W w
-      hom_inv_id := hf
-      inv_hom_id := by simp [f] }
+    (Δ[1] : SSet.{u}).equivalenceAttachment {yonedaEquiv (𝟙 Δ[1])} ≅ coherentIso where
+  hom := stdSimplexOneHom
+  inv := ofEdge _ ⟨_, Set.mem_singleton _⟩
+  hom_inv_id := stdSimplexOneHom_ofEdge
+  inv_hom_id := ofEdge_stdSimplexOneHom _
+
+@[simp]
+lemma stdSimplexOneIso_inv :
+    stdSimplexOneIso.{u}.inv = ofEdge _ ⟨_, Set.mem_singleton _⟩ := (rfl)
 
 @[reassoc (attr := simp)]
 lemma ι_stdSimplexOneIso_hom :
     ι {yonedaEquiv (𝟙 (Δ[1] : SSet.{u}))} ≫ stdSimplexOneIso.hom =
-      coherentIso.edgeInclusion := by
-  simp [stdSimplexOneIso]
+      coherentIso.edgeInclusion := ι_stdSimplexOneHom
 
 end StandardEdge
 

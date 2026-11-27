@@ -12,14 +12,16 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
 /-!
 # The standard edge in the coherent isomorphism
 
-The inclusion of the forward edge into Mathlib's coherent isomorphism is an anodyne
+The inclusion of the forward edge into Mathlib's coherent isomorphism is a left anodyne
 extension. Compatible contractions to the initial vertex give the lifting property by
 `SSet.exists_lift_cylinder_ι₀_of_mono`. This supplies extensions of edges into Kan
 complexes without using a model structure on simplicial sets.
 
 ## References
 
-* J. Lurie, *Higher Topos Theory*, §1.2.7.
+* R. Haugseng, [*Introduction to ∞-Categories*]
+  (https://www.sas.rochester.edu/mth/sites/doug-ravenel/otherpapers/Haugseng-intro.pdf),
+  Lemma 5.5.2, for the left anodyneness of the standard-edge inclusion.
 -/
 
 public section
@@ -119,19 +121,21 @@ lemma edgeInclusion_contraction :
   rw [hc]
   split_ifs <;> rfl
 
-/-- The standard edge is an anodyne subcomplex of the coherent isomorphism. -/
-theorem anodyneExtensions_edgeInclusion : anodyneExtensions edgeInclusion.{u} := by
+/-- The standard edge is a left anodyne subcomplex of the coherent isomorphism. -/
+theorem leftAnodyneExtensions_edgeInclusion : leftAnodyneExtensions edgeInclusion.{u} := by
+  rw [leftAnodyneExtensions_eq_llp]
   intro E B p hp
-  have : Fibration p := ⟨hp⟩
+  have : LeftFibration p := ⟨hp⟩
   refine ⟨fun {a b} sq ↦ ?_⟩
-  have hzero : edgeInclusion.{u}.app _ (stdSimplex.obj₀Equiv.symm 0) = x₀ := rfl
+  have hzero : edgeInclusion.{u}.app _ (stdSimplex.obj₀Equiv.symm 0) = x₀ :=
+    hom.yonedaEquiv_symm_edge_app_zero
   obtain ⟨L, _, hL, hLp⟩ := exists_lift_cylinder_ι₀_of_mono edgeInclusion p
     (contraction.h ≫ b) (const (a.app _ (stdSimplex.obj₀Equiv.symm 0)))
     ((stdSimplex.contraction 1).h ≫ a)
     (by
       simp only [const_comp, contraction.h₀_assoc]
-      rw [← hzero]
-      exact congrArg (fun f : Δ[1] ⟶ B ↦ const (f.app _ (stdSimplex.obj₀Equiv.symm 0))) sq.w)
+      simpa only [NatTrans.comp_app, types_comp_apply, hzero] using
+        congrArg (fun f : Δ[1] ⟶ B ↦ const (f.app _ (stdSimplex.obj₀Equiv.symm 0))) sq.w)
     (by simp [sq.w, edgeInclusion_contraction_assoc])
     (by simp)
   refine ⟨⟨{ l := ι₁ ≫ L
@@ -139,5 +143,9 @@ theorem anodyneExtensions_edgeInclusion : anodyneExtensions edgeInclusion.{u} :=
              fac_right := ?_ }⟩⟩
   · rw [← ι₁_comp_assoc, hL, (stdSimplex.contraction 1).h₁_assoc, Category.id_comp]
   · rw [Category.assoc, hLp, contraction.h₁_assoc, Category.id_comp]
+
+/-- The standard edge is an anodyne subcomplex of the coherent isomorphism. -/
+theorem anodyneExtensions_edgeInclusion : anodyneExtensions edgeInclusion.{u} :=
+  leftAnodyneExtensions_le_anodyneExtensions _ leftAnodyneExtensions_edgeInclusion
 
 end SSet.coherentIso

@@ -17,7 +17,9 @@ is Kan, and the standard-edge inclusion is anodyne.
 
 ## References
 
-* J. Lurie, *Higher Topos Theory*, §1.2.7.
+* R. Haugseng, [*Introduction to ∞-Categories*]
+  (https://www.sas.rochester.edu/mth/sites/doug-ravenel/otherpapers/Haugseng-intro.pdf),
+  Proposition 5.5.3, for extending equivalences through the Kan core.
 -/
 
 public section
