@@ -69,6 +69,8 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
   is real.
 * `AbsoluteValue.Place.apply_natCast_lt_one_of_under_eq_padic`: a place above `p` is less than one
   at `p`.
+* `AbsoluteValue.Place.exists_prime_apply_natCast_lt_one`: a finite place is less than one at
+  some prime number.
 * `AbsoluteValue.Place.under_smul`: the action does not change the restriction to a subfield that
   the group fixes pointwise.
 * `AbsoluteValue.Place.mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one`: an element satisfying
@@ -195,6 +197,13 @@ theorem apply_natCast_lt_one_of_under_eq_padic {w : Place L} {p : ℕ} [Fact p.P
     simp
   rw [h1, Rat.AbsoluteValue.padic_eq_padicNorm]
   exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
+
+/-- A finite place is less than one at some prime number, the prime `q` for which its restriction
+to `ℚ` is the `q`-adic absolute value. -/
+theorem exists_prime_apply_natCast_lt_one {w : Place L} (hw : IsNonarchimedean w.val) :
+    ∃ q : ℕ, q.Prime ∧ w.val q < 1 := by
+  obtain ⟨q, hq, hwq⟩ := w.isNonarchimedean_iff.mp hw
+  exact ⟨q, hq.out, apply_natCast_lt_one_of_under_eq_padic hwq⟩
 
 /-- A place is infinite if and only if its restriction to `ℚ` is the real absolute value. -/
 theorem not_isNonarchimedean_iff (w : Place L) :

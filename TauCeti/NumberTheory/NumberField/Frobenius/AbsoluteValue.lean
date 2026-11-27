@@ -49,8 +49,6 @@ of `w` on `B`, on which `w ≤ 1` (`AbsoluteValue.apply_algebraMap_integralClosu
 * `AbsoluteValue.Place.exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one_of_numberField`
   and `AbsoluteValue.Place.topologicalClosure_zpowers_sup_inertia_eq_stabilizer_of_numberField`:
   the same for a finite place `w`, with the decomposition and inertia groups of `w`.
-* `AbsoluteValue.Place.exists_prime_apply_natCast_lt_one`: a finite place is less than one at
-  some prime number, so the prime `p` below it is nonzero.
 
 ## References
 
@@ -151,16 +149,6 @@ end AbsoluteValue
 /-! ### Places -/
 
 namespace AbsoluteValue.Place
-
-/-- A finite place is less than one at some prime number, the prime `q` for which its restriction
-to `ℚ` is the `q`-adic absolute value. -/
-theorem exists_prime_apply_natCast_lt_one [CharZero L] {w : Place L}
-    (hw : IsNonarchimedean w.val) : ∃ q : ℕ, q.Prime ∧ w.val q < 1 := by
-  obtain ⟨q, hq, hwq⟩ := w.isNonarchimedean_iff.mp hw
-  refine ⟨q, hq.out, ?_⟩
-  rw [← map_natCast (algebraMap ℚ L), ← AbsoluteValue.under_apply, hwq,
-    Rat.AbsoluteValue.padic_eq_padicNorm]
-  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
 
 variable [CharZero L] [NumberField K] [Algebra.IsAlgebraic K L] [Algebra.IsInvariant K L G]
   [TopologicalSpace G] [CompactSpace G] [TotallyDisconnectedSpace G] [IsTopologicalGroup G]
