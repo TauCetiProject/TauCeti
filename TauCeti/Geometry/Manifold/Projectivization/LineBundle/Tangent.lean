@@ -57,12 +57,12 @@ of that transformation identifies `ℓ* Tℙᵐ⁺¹` with `ℓ'* Tℙᵐ⁺¹`
 `Projectivization.exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist`).
 
 Combined with the vanishing `H¹(ℂP¹, 𝒪(k)) = 0` for `k ≥ -1`, the splitting
-`ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ'* TℂPⁿ) = 0` along every line `ℓ'`. For the
-coordinate line this is
-`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`, in
-`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Cohomology.Tangent`. This group is the
-cokernel of the linearized Cauchy–Riemann operator along `ℓ'`, so its vanishing makes every line
-regular as a holomorphic sphere in `ℂPⁿ`.
+`ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ'* TℂPⁿ) = 0` along every line `ℓ'`
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_pullback_map_tangentSpace`, in
+`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Cohomology.Tangent`). For the coordinate
+line this is `Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`.
+This group is the cokernel of the linearized Cauchy–Riemann operator along `ℓ'`, so its vanishing
+makes every line regular as a holomorphic sphere in `ℂPⁿ`.
 
 ## Main declarations
 
