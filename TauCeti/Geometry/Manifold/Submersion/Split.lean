@@ -19,7 +19,10 @@ import TauCeti.LinearAlgebra.Dimension.Submodule
 `TauCeti.IsDiffSubmersionAt` means that the manifold derivative has a continuous linear right
 inverse. It is meaningful for arbitrary models with corners, without a smoothness hypothesis.
 Over a complete scalar field, for a finite-dimensional target it is equivalent to surjectivity,
-hence to being a regular point.
+hence to being a regular point. Precomposing with a `C^n` submersion (`n ≠ 0`) with boundaryless
+source preserves and reflects regular points
+(`Manifold.IsSubmersionAt.isRegularPoint_comp_iff`), and precomposing with a surjective one
+preserves and reflects regular values (`Manifold.IsSubmersion.isRegularValue_comp_iff`).
 
 For maps between finite-dimensional real or complex manifolds with boundaryless source, a split
 differential and smoothness on a neighbourhood give Mathlib's submersion normal form. The complement
@@ -106,6 +109,37 @@ theorem isDiffSubmersionAt_iff_isRegularPoint [CompleteSpace 𝕜] [FiniteDimens
   rw [isDiffSubmersionAt_iff, isRegularPoint_iff]
   exact ⟨ContinuousLinearMap.HasRightInverse.surjective,
     ContinuousLinearMap.HasRightInverse.of_surjective_of_finiteDimensional⟩
+
+section Submersion
+
+variable {n : ℕ∞ω}
+
+/-- **Regularity descends along a submersion.** Precomposing with a `C^n` submersion at `x`
+(`n ≠ 0`, boundaryless source) preserves and reflects regularity at `x`. Where `g` is not
+differentiable at `f x`, neither is `g ∘ f`, and both derivatives vanish. -/
+theorem _root_.Manifold.IsSubmersionAt.isRegularPoint_comp_iff [I.Boundaryless] {g : N → M'}
+    (hf : IsSubmersionAt I J n f x) (hn : n ≠ 0) :
+    IsRegularPoint I K (g ∘ f) x ↔ IsRegularPoint J K g (f x) := by
+  by_cases hg : MDifferentiableAt J K g (f x)
+  · rw [isRegularPoint_iff, isRegularPoint_iff,
+      mfderiv_comp x hg (hf.contMDiffAt.mdifferentiableAt hn)]
+    exact (hf.surjective_mfderiv hn).of_comp_iff (mfderiv J K g (f x))
+  · have hcomp : ¬MDifferentiableAt I K (g ∘ f) x :=
+      (hf.mdifferentiableAt_comp_iff hn).not.mpr hg
+    simp [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hg,
+      mfderiv_zero_of_not_mdifferentiableAt hcomp, Function.Surjective]
+
+/-- **Regular values descend along a surjective submersion.** Precomposing with a surjective `C^n`
+submersion (`n ≠ 0`, boundaryless source) preserves and reflects regular values. -/
+theorem _root_.Manifold.IsSubmersion.isRegularValue_comp_iff [I.Boundaryless] {g : N → M'}
+    {y : M'} (hf : IsSubmersion I J n f) (hsurj : Surjective f) (hn : n ≠ 0) :
+    IsRegularValue I K (g ∘ f) y ↔ IsRegularValue J K g y := by
+  refine ⟨fun h ↦ isRegularValue_iff.2 fun z hz ↦ ?_, fun h ↦ isRegularValue_iff.2 fun x hx ↦
+    ((hf.isSubmersionAt x).isRegularPoint_comp_iff hn).2 (h.isRegularPoint hx)⟩
+  obtain ⟨x, rfl⟩ := hsurj z
+  exact ((hf.isSubmersionAt x).isRegularPoint_comp_iff hn).1 (h.isRegularPoint hz)
+
+end Submersion
 
 end Differential
 
@@ -345,6 +379,14 @@ theorem _root_.ContDiffAt.isSubmersionAt_of_surjective_fderiv (hf : ContDiffAt �
   obtain ⟨u, hu, hfu⟩ := hf.contDiffOn le_rfl (by simp)
   obtain ⟨U, hUu, hU, hxU⟩ := mem_nhds_iff.1 hu
   exact (hfu.mono hUu).isSubmersionAt_of_surjective_fderiv hU hxU le_rfl hs
+
+/-- A surjective continuous linear map from a finite-dimensional real or complex normed space is a
+`C^n` submersion for every `1 ≤ n`. -/
+theorem _root_.ContinuousLinearMap.isSubmersion_of_surjective {L : E →L[𝕜] F}
+    (hL : Function.Surjective L) (hn : 1 ≤ n) : IsSubmersion 𝓘(𝕜, E) 𝓘(𝕜, F) n L := by
+  have : FiniteDimensional 𝕜 F := Module.Finite.of_surjective (L : E →ₗ[𝕜] F) hL
+  exact (L.contMDiff.isSubmersionOfComplement_of_surjective_mfderiv hn fun y ↦ by
+    rwa [L.mfderiv_eq]).isSubmersion
 
 end NormedSpace
 

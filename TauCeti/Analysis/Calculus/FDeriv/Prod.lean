@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Comp
@@ -77,13 +78,20 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   `(y, t)`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
+* `DifferentiableAt.isInvertible_fderiv_comp_inr_iff`: for a differentiable scalar-target map,
+  invertibility of the right partial Fréchet derivative is equivalent to nonvanishing of the
+  slice derivative.
 * `TauCeti.differentiableAt_comp_snd_iff` and `TauCeti.fderiv_comp_snd`: a function of the
   second variable alone is differentiable exactly when the function is, and its derivative is the
   derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `TauCeti.norm_fderiv_comp_snd_le`: the derivative of a function of the second variable alone
+  has norm at most that of the derivative of the function.
 * `TauCeti.fderiv_comp_fst`, `TauCeti.norm_fderiv_comp_fst_le`: the derivative of a function of
   the first variable alone, and the bound of its norm by that of the derivative of the function.
+* `TauCeti.fderiv_add_comp_fst`: the derivative of `y ↦ f y + h y.1`, a function on the product
+  plus a function of the first variable alone.
 * `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
   second coordinate, with no differentiability assumption.
 * `TauCeti.fderiv_apply_fst`: the first coordinate of the derivative of a map into a product is
@@ -193,6 +201,16 @@ theorem fderiv_slice_right {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, 
     fderiv 𝕜 (fun y ↦ f (a, y)) b = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
   (hf.hasFDerivAt.comp b (hasFDerivAt_prodMk_right a b)).fderiv
 
+/-- For a differentiable scalar-target map `f : E × 𝕜 → 𝕜`, the right Fréchet partial derivative
+`fderiv 𝕜 f u ∘L .inr 𝕜 E 𝕜` is invertible if and only if the slice derivative
+`deriv (fun t ↦ f (u.1, t)) u.2` is nonzero. -/
+theorem _root_.DifferentiableAt.isInvertible_fderiv_comp_inr_iff {f : E × 𝕜 → 𝕜} {u : E × 𝕜}
+    (hf : DifferentiableAt 𝕜 f u) :
+    (fderiv 𝕜 f u ∘L ContinuousLinearMap.inr 𝕜 E 𝕜).IsInvertible ↔
+      deriv (fun t ↦ f (u.1, t)) u.2 ≠ 0 := by
+  rw [← fderiv_slice_right hf, ← toSpanSingleton_deriv,
+    ContinuousLinearMap.isInvertible_toSpanSingleton_iff]
+
 /-- The derivative of a function on a product is the sum of the derivatives of its two slices,
 applied to the two components of the direction. -/
 theorem fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right {f : E × F → G}
@@ -235,6 +253,14 @@ theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
     fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
   simp [← Function.comp_def f Prod.snd, fderiv_comp_snd]
 
+/-- The derivative of a function of the second variable alone has norm at most that of the
+derivative of the function: `‖fderiv 𝕜 (fun w ↦ f w.2) z‖ ≤ ‖fderiv 𝕜 f z.2‖`. -/
+theorem norm_fderiv_comp_snd_le (f : F → G) (z : E × F) :
+    ‖fderiv 𝕜 (fun w : E × F ↦ f w.2) z‖ ≤ ‖fderiv 𝕜 f z.2‖ := by
+  rw [← Function.comp_def f Prod.snd, fderiv_comp_snd]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_snd_le 𝕜 E F))
+
 /-- A function of the first variable alone has derivative `Df ∘ fst`. No differentiability is
 needed: otherwise both sides are zero. -/
 @[simp]
@@ -250,6 +276,14 @@ theorem norm_fderiv_comp_fst_le (f : E → G) (z : E × F) :
   rw [fderiv_comp_fst]
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le 𝕜 E F))
+
+/-- The derivative of `y ↦ f y + h y.1`, a function on the product plus a function of the first
+variable alone, is that of `f` plus that of `h` read on the first component. -/
+theorem fderiv_add_comp_fst {f : E × F → G} {h : E → G} {z : E × F}
+    (hf : DifferentiableAt 𝕜 f z) (hh : DifferentiableAt 𝕜 h z.1) :
+    fderiv 𝕜 (fun y ↦ f y + h y.1) z =
+      fderiv 𝕜 f z + (fderiv 𝕜 h z.1).comp (ContinuousLinearMap.fst 𝕜 E F) :=
+  (hf.hasFDerivAt.add (hh.hasFDerivAt.comp z hasFDerivAt_fst)).fderiv
 
 /-- A map `w ↦ (c, g w)` with a constant first coordinate has the derivative of `g` in the second
 coordinate, with no differentiability assumption. -/

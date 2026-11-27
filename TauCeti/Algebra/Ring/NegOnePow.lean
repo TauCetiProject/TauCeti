@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.Regular.Basic
 public import Mathlib.Algebra.Ring.NegOnePow
 import Mathlib.Algebra.Module.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # Powers of negative one in a ground ring
@@ -23,6 +26,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 ## Main results
 
 * `TauCeti.negOnePowCast_eq_of_even_sub`: exponents of the same parity give the same sign.
+* `TauCeti.negOnePowCast_mul_finsum`: multiplication by a ground-ring sign commutes with `finsum`.
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
 * `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
   factor is replaced by a two-term correction, telescopes.
@@ -40,6 +44,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   natural-number powers of `-1`.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
+  `Int.negOnePow_mul_negOnePow_sub`, `Int.negOnePow_add_one_sub`,
   `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity identities behind the sign cancellations
   of twisted differentials.
 * `TauCeti.negOnePow_smul_op_smul_negOnePow_smul_op_smul`: reassociating two right actions past
@@ -86,6 +91,16 @@ theorem negOnePowCast_two_mul (a : ℤ) : negOnePowCast R (2 * a) = 1 := by
 @[simp]
 theorem negOnePowCast_mul_self (e : ℤ) : negOnePowCast R e * negOnePowCast R e = 1 := by
   rw [← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul]
+
+/-- The scalar `(-1) ^ e` is left-regular, since it is its own inverse. -/
+theorem isLeftRegular_negOnePowCast (e : ℤ) : IsLeftRegular (negOnePowCast R e) :=
+  isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self e)
+
+/-- Multiplication by the scalar `(-1) ^ e` commutes with `finsum`, without any finiteness
+assumption on the support. -/
+theorem negOnePowCast_mul_finsum {ι : Type uI} (e : ℤ) (f : ι → R) :
+    negOnePowCast R e * ∑ᶠ i, f i = ∑ᶠ i, negOnePowCast R e * f i :=
+  (isLeftRegular_negOnePowCast e).mul_finsum f
 
 theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
   simp [negOnePowCast, Int.negOnePow_even _ he]
@@ -223,6 +238,18 @@ theorem _root_.Int.negOnePow_eq_neg_of_odd_sub {a b : ℤ} (h : Odd (a - b)) :
   rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
   obtain ⟨k, hk⟩ := h
   exact ⟨k, by omega⟩
+
+/-- Multiplying the sign of `i - j` by the sign of `i` gives the sign of `j`. -/
+theorem _root_.Int.negOnePow_mul_negOnePow_sub (i j : ℤ) :
+    i.negOnePow * (i - j).negOnePow = j.negOnePow := by
+  rw [Int.negOnePow_sub, ← mul_assoc, Int.units_mul_self, one_mul]
+
+/-- Shifting a difference up or down by one gives the same sign:
+`(-1) ^ (i + 1 - j) = (-1) ^ (i - j - 1)`. -/
+theorem _root_.Int.negOnePow_add_one_sub (i j : ℤ) :
+    (i + 1 - j).negOnePow = (i - j - 1).negOnePow := by
+  rw [Int.negOnePow_eq_iff]
+  exact ⟨1, by ring⟩
 
 /-- A product of two signs is the sign of any exponent congruent modulo two to the sum of their
 exponents. -/

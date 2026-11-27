@@ -89,6 +89,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `IsMorseSmale.strictAnti_manifoldMorseIndex_of_chain`,
   `IsMorseSmale.add_manifoldMorseIndex_le_of_chain`: the Morse index drops strictly along a broken
   trajectory, which therefore has at most `ind p - ind r` components.
+* `IsMorseSmale.morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords`: so between critical
+  points of consecutive index every broken trajectory is unbroken.
 * `exists_homeomorph_morseTrajectoryRecords`,
   `exists_homeomorph_morseTrajectoryRecords_orbitQuotient`:
   the records of unbroken trajectories form a copy of a level slice and of the space of
@@ -368,6 +370,30 @@ theorem closure_morseTrajectoryRecords_subset [Countable ι] (h : hX.IsMorseSmal
     (fun j he ↦ (hxi (Fin.castSucc_lt_succ (i := j))).ne (congrArg _ he.symm)) hz hzlim
     (w := v ∘ n) fun a ↦ hvy (n a)
   rwa [tendsto_nhds_unique (hvw.comp hn.tendsto_atTop) hlim]
+
+/-- **Between consecutive indices broken trajectories are unbroken.** Under the Morse–Smale
+condition, let `p ≠ r` be critical points with `ind p ≤ ind r + 1`. Then every broken trajectory
+from `p` to `r` has a single component, since the Morse index drops strictly along its chain of
+critical points (`IsMorseSmale.add_manifoldMorseIndex_le_of_chain`): its records are those of the
+unbroken trajectories from `p` to `r`. -/
+theorem morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
+    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) (hpr : p ≠ r)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
+    (c : ι → ℝ) : hX.morseBrokenTrajectoryRecords p r c = hX.morseTrajectoryRecords p r c := by
+  refine Subset.antisymm ?_
+    (hX.morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords hp hr hpr c)
+  rintro w ⟨k, x, z, hx0, hxk, -, hxne, hz, hw⟩
+  have hk := h.add_manifoldMorseIndex_le_of_chain hf hx0 hxk hxne hz
+  -- A chain without steps would make `p = r`, and one with two steps would drop the index by two.
+  obtain _ | _ | k := k
+  · exact absurd (hx0.symm.trans hxk) hpr
+  · refine ⟨z 0, ?_, fun i ↦ ⟨(hw i).1, ?_⟩⟩
+    · rw [← hx0, ← hxk]
+      exact hz 0
+    · obtain ⟨-, j, t, ht⟩ := hw i
+      exact ⟨t, by rwa [Fin.fin_one_eq_zero j] at ht⟩
+  · omega
 
 end IsMorseSmale
 

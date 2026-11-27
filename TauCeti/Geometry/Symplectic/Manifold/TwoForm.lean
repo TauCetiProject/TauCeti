@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.TwoForm.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Symplectic.Cayley.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
@@ -52,6 +53,8 @@ example.
   differential of a symplectomorphism is a linear symplectomorphism of the tangent-fiber forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
   diffeomorphism pulls a nondegenerate form back to a nondegenerate form.
+* `IsLocalDiffeomorph.eq_zero_of_isNondegenerate_mpullback`: a two-form whose pullback along a
+  local diffeomorphism `f` is nondegenerate is nondegenerate at every point of the image of `f`.
 * `IsLocalDiffeomorph.isNondegenerate_mpullback_iff`: for a surjective
   local diffeomorphism the converse holds as well.
 * `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
@@ -71,7 +74,8 @@ example.
   immersion there.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`: such a map with
   surjective differential carries a tamed almost complex structure to one tamed by the constant
-  form.
+  form; `TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_mem_image` is the version for a smooth
+  partial diffeomorphism over a set of its source.
 * `TauCeti.SmoothTwoForm.isNondegenerate_const_iff`: the constant two-form of an alternating
   continuous bilinear form `B`, in any dimension, is nondegenerate exactly when `B` separates
   points on the left.
@@ -239,6 +243,17 @@ theorem IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph {f : M�
   obtain ⟨u, rfl⟩ := hinv.surjective w
   simpa only [SmoothForm.eval₂_mpullback] using hv u
 
+/-- A two-form whose pullback along a local diffeomorphism `f` is nondegenerate is nondegenerate at
+every point `f x`: a tangent vector at `f x` pairing to zero with every vector is zero. -/
+theorem _root_.IsLocalDiffeomorph.eq_zero_of_isNondegenerate_mpullback {f : M₂ → M}
+    (hf : IsLocalDiffeomorph I₂ I ∞ f)
+    (h : SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ)) (x : M₂)
+    (v : TangentSpace I (f x)) (hv : ∀ w, SmoothBundleForm.eval₂ σ (f x) v w = 0) : v = 0 := by
+  rw [isNondegenerate_iff_separatingLeft] at h
+  -- The differential at `x` is onto, so `v = df u`, and `u` pairs to zero with every vector.
+  obtain ⟨u, rfl⟩ := (hf.isInvertible_mfderiv (by simp) x).surjective v
+  rw [h x u fun w ↦ by rw [SmoothForm.eval₂_mpullback]; exact hv _, map_zero]
+
 /-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
 back to a nondegenerate form exactly when the form is nondegenerate. -/
 theorem _root_.IsLocalDiffeomorph.isNondegenerate_mpullback_iff {f : M₂ → M}
@@ -246,12 +261,10 @@ theorem _root_.IsLocalDiffeomorph.isNondegenerate_mpullback_iff {f : M₂ → M}
     SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) ↔
       σ.IsNondegenerate := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.isNondegenerate_mpullback_of_isLocalDiffeomorph hf⟩
-  rw [isNondegenerate_iff_separatingLeft] at h ⊢
+  rw [isNondegenerate_iff_separatingLeft]
   intro y v hv
   obtain ⟨x, rfl⟩ := hsurj y
-  -- The differential at `x` is onto, so `v = df u`, and `u` pairs to zero with every vector.
-  obtain ⟨u, rfl⟩ := (hf.isInvertible_mfderiv (by simp) x).surjective v
-  rw [h x u fun w ↦ by rw [SmoothForm.eval₂_mpullback]; exact hv _, map_zero]
+  exact hf.eq_zero_of_isNondegenerate_mpullback h x v hv
 
 /-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
 back to a symplectic form exactly when the form is symplectic. -/
@@ -457,6 +470,22 @@ theorem IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv (h : form.IsNondege
   simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hJv
   rw [← hJv, ← hform, ← IsNondegenerate.symplecticFormAt_apply]
   exact hJt v fun hv ↦ hw (by rw [hv, map_zero])
+
+/-- **Tameness in a symplectic chart.** Let a smooth partial diffeomorphism `φ` pull `ω₀` back to
+the nondegenerate form `form` at the points of a set `C ⊆ φ.source`, and let `J'` be the structures
+`J` read in the chart over `C`, `dφ_x ∘ J x = J' (φ x) ∘ dφ_x`. If `J x` is tamed by `form` for
+`x ∈ C`, then `J' y` is tamed by `ω₀` for `y ∈ φ(C)`. -/
+theorem IsNondegenerate.tames_of_mem_image (h : form.IsNondegenerate)
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {C : Set M}
+    {J : (x : M) → AlmostComplexStructure (TangentSpace I x)} {J' : V → AlmostComplexStructure V}
+    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
+      form.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hJJ' : ∀ x ∈ C, IsComplexLinearMap (J x) (J' (φ x)) (mvfderiv I φ x).toLinearMap)
+    (hCφ : C ⊆ φ.source) (hJt : ∀ x ∈ C, (h.symplecticFormAt x).Tames (J x)) {y : V}
+    (hy : y ∈ φ '' C) : ω₀.Tames (J' y) := by
+  obtain ⟨x, hx, rfl⟩ := hy
+  exact h.tames_of_isComplexLinearMap_mvfderiv
+    (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' x hx) (hJt x hx)
 
 end Chart
 

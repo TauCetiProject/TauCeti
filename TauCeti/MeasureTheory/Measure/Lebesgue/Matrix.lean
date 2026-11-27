@@ -76,3 +76,39 @@ theorem volume_preserving_matrixVecMeasurableEquiv {m n : Type*} [Fintype m] [Fi
     Matrix.of_symm_apply, Matrix.vec, e]
 
 end TauCeti
+
+namespace TauCeti
+
+variable {ι R : Type*} [Fintype ι] [LinearOrder ι]
+
+/-- Assembling a matrix from its upper and strict lower entries preserves product volume. -/
+theorem measurePreserving_schurMatrixMeasurableEquiv [MeasureSpace R]
+    [SigmaFinite (volume : Measure R)] :
+    MeasurePreserving (schurMatrixMeasurableEquiv (ι := ι) (R := R)) volume volume := by
+  let p (ij : ι × ι) := ij.1 ≤ ij.2
+  have hread := (Matrix.volume_preserving_ofMeasurableEquiv (ι) (ι) R).symm
+    (Matrix.ofMeasurableEquiv (ι) (ι) R)
+  have hflat := (measurePreserving_curry
+    (fun _ _ : ι ↦ (volume : Measure R))).symm (MeasurableEquiv.curry (ι) (ι) R)
+  have hsplit := volume_preserving_piEquivPiSubtypeProd (fun _ : ι × ι ↦ R) p
+  have hswap := (volume_measurePreserving_piCongrLeft (fun _ : {ij // ¬p ij} ↦ R)
+    (schurLowerIndexEquiv ι)).symm (MeasurableEquiv.piCongrLeft _ (schurLowerIndexEquiv ι))
+  have hsplitVolume := ((MeasurePreserving.id (volume : Measure ({ij // p ij} → R))).prod
+    hswap).comp (hsplit.comp (hflat.comp hread))
+  refine (hsplitVolume.congr schurMatrixMeasurableEquiv.symm.measurable
+    (ae_of_all _ fun A ↦ ?_)).symm schurMatrixMeasurableEquiv.symm
+  apply Prod.ext <;> funext ij
+  · simp [Function.comp_apply, MeasurableEquiv.coe_curry_symm, Function.uncurry]
+  · simp [Function.comp_apply, MeasurableEquiv.piCongrLeft, MeasurableEquiv.coe_curry_symm,
+      Function.uncurry]
+
+/-- Linear assembly of a matrix from its upper and strict lower entries preserves product volume. -/
+theorem measurePreserving_schurMatrixEquiv [Semiring R] [MeasureSpace R]
+    [SigmaFinite (volume : Measure R)] :
+    MeasurePreserving (schurMatrixEquiv (ι := ι) (R := R)) volume volume := by
+  have h : (⇑(schurMatrixMeasurableEquiv (ι := ι) (R := R))) = schurMatrixEquiv :=
+    funext schurMatrixMeasurableEquiv_apply
+  rw [← h]
+  exact measurePreserving_schurMatrixMeasurableEquiv
+
+end TauCeti

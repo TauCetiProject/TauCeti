@@ -163,8 +163,10 @@ apply to all three ends.
   point lies in the truncation `S_T`, or in the truncation at heights `R`, exactly when it lies in
   `S` and its longitudinal positive end coordinate on each end `q` is at most `T`, or at most
   `R q`.
-* `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function with compact
-  support in `S` vanishes in the positive end chart beyond some height.
+* `TauCeti.Floer.comp_positiveEndChart_eventuallyEq_zero_of_le`,
+  `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function vanishes in the
+  positive end chart beyond a bound of the height on its support, so beyond some height when its
+  support is compact and avoids the center of the end.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
@@ -300,10 +302,7 @@ theorem measurable_positiveEndCoord (q : Puncture) : Measurable (positiveEndCoor
     simp_rw [endCoord_def]
     exact ((Complex.measurable_log.comp ((Complex.equivRealProdCLM.symm.continuous.sub
       continuous_const).div_const _).measurable).neg.div_const _)
-  have he : positiveEndCoord q =
-      fun z ↦ q.endSign • Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)) :=
-    funext (positiveEndCoord_apply q)
-  rw [he]
+  rw [funext (positiveEndCoord_apply q)]
   exact (Complex.equivRealProdCLM.continuous.measurable.comp h).const_smul q.endSign
 
 /-- A `Cⁿ` function `F` on the cylinder of period one in the angular coordinate, read in the
@@ -1343,24 +1342,25 @@ theorem subset_preimage_truncation_union_iUnion_image_positiveEndChart (T : ℝ)
   exact positiveEndChart_positiveEndCoord q
     (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
 
-/-- A function with compact support in `S` vanishes, in the positive end chart of `q`, near every
-point beyond some height. -/
+/-- A function vanishes in the positive end chart of `q` beyond a height bound on its support. -/
+theorem comp_positiveEndChart_eventuallyEq_zero_of_le {M : Type*} [Zero M] {f : ℝ × ℝ → M}
+    {q : Puncture} {N : ℝ} (hN : ∀ z ∈ tsupport f, (positiveEndCoord q z).1 ≤ N) {ζ : ℝ × ℝ}
+    (hζ : N < ζ.1) : f ∘ positiveEndChart q =ᶠ[nhds ζ] 0 := by
+  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
+  refine image_eq_zero_of_notMem_tsupport (f := f) fun h ↦ absurd hζ' (not_lt.2 ?_)
+  simpa only [fst_positiveEndCoord_positiveEndChart] using hN _ h
+
+/-- A function with compact support avoiding the center of the end `q`, for instance with compact
+support in `S`, vanishes, in the positive end chart of `q`, near every point beyond some height. -/
 theorem exists_forall_comp_positiveEndChart_eventuallyEq_zero {M : Type*} [Zero M]
-    {f : ℝ × ℝ → M} (hfc : HasCompactSupport f) (hfS : tsupport f ⊆ thricePuncturedSphereReal)
-    (q : Puncture) :
+    {f : ℝ × ℝ → M} {q : Puncture} (hfc : HasCompactSupport f)
+    (hf : ∀ z ∈ tsupport f, Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
     ∃ N, ∀ ζ : ℝ × ℝ, N < ζ.1 → f ∘ positiveEndChart q =ᶠ[nhds ζ] 0 := by
   -- The longitudinal positive end coordinate is bounded on the support of `f`.
-  obtain ⟨N, hN⟩ :=
-    hfc.isCompact.exists_bound_of_continuousOn (f := fun w ↦ (positiveEndCoord q w).1) fun z hz ↦
-      (continuousAt_fst_positiveEndCoord q
-        (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hfS hz)) q)).continuousWithinAt
-  refine ⟨N, fun ζ hζ ↦ ?_⟩
-  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
-  rw [Pi.zero_apply, Function.comp_apply]
-  refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
-  have := (Real.le_norm_self _).trans (hN _ h)
-  rw [fst_positiveEndCoord_positiveEndChart] at this
-  exact absurd hζ' (not_lt.2 this)
+  obtain ⟨N, hN⟩ := hfc.isCompact.exists_bound_of_continuousOn fun z hz ↦
+    (continuousAt_fst_positiveEndCoord q (hf z hz)).continuousWithinAt
+  exact ⟨N, fun _ ↦ comp_positiveEndChart_eventuallyEq_zero_of_le fun z hz ↦
+    (Real.le_norm_self _).trans (hN z hz)⟩
 
 /-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
 sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/
