@@ -400,6 +400,31 @@ theorem coe_polynomialRep_apply [DecidableEq σ] {d : ℕ} (g : GL σ R)
     (polynomialRep σ R d g p : MvPolynomial σ R) = polynomialAction (g : Matrix σ σ R) p := by
   simp [polynomialRep, polynomialAction_eq_linearSubst_transpose]
 
+/-- Substituting standard vectors by a block diagonal matrix acts on each block separately. -/
+theorem polynomialAction_blockDiagonal_X {m o S : Type*} [Fintype m] [Fintype o] [DecidableEq o]
+    [CommSemiring S] (M : o → Matrix m m S) (c : m) (s : o) :
+    polynomialAction (Matrix.blockDiagonal M) (X (c, s)) = ∑ b, C (M s b c) * X (b, s) := by
+  rw [polynomialAction_X, Fintype.sum_prod_type_right, Finset.sum_eq_single s]
+  · simp [Matrix.blockDiagonal_apply_eq]
+  · intro s' _ hs'
+    simp [Matrix.blockDiagonal_apply_ne _ _ _ hs']
+  · simp
+
+/-- The block diagonal matrix of identity matrices acts trivially. -/
+@[simp]
+theorem polynomialAction_blockDiagonal_one {m o S : Type*} [Fintype m] [Fintype o] [DecidableEq m]
+    [DecidableEq o] [CommSemiring S] :
+    polynomialAction (Matrix.blockDiagonal fun _ : o ↦ (1 : Matrix m m S)) = AlgHom.id S _ := by
+  rw [show (Matrix.blockDiagonal fun _ : o ↦ (1 : Matrix m m S)) = 1 from Matrix.blockDiagonal_one,
+    polynomialAction_one]
+
+/-- Substituting standard vectors does not raise the total degree. -/
+theorem totalDegree_polynomialAction_le {σ S : Type*} [Fintype σ] [CommSemiring S]
+    (g : Matrix σ σ S) (p : MvPolynomial σ S) :
+    (polynomialAction g p).totalDegree ≤ p.totalDegree := by
+  rw [polynomialAction_eq_linearSubst_transpose]
+  exact totalDegree_linearSubst_le _ p
+
 end Action
 
 end TauCeti

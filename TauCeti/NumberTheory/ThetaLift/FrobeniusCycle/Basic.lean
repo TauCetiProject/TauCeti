@@ -137,6 +137,24 @@ theorem five_le_q : 5 ≤ T.q := by
   calc 5 ≤ T.P := T.five_le_P
     _ ≤ T.P ^ N := Nat.le_self_pow (NeZero.ne N) _
 
+/-- `P > 0`. -/
+theorem P_pos : 0 < T.P := by
+  have := T.five_le_P
+  omega
+
+/-- `q > 1`. -/
+theorem one_lt_q : 1 < T.q := by
+  have := T.five_le_q
+  omega
+
+/-- For every letter `s`, read in `{0, …, N - 1}`, one has `5 P ^ s ≤ q`. -/
+theorem five_mul_P_pow_le_q (s : ZMod N) : 5 * T.P ^ s.val ≤ T.q := by
+  have := T.neZero
+  rw [T.q_def]
+  calc 5 * T.P ^ s.val ≤ T.P * T.P ^ s.val := Nat.mul_le_mul_right _ T.five_le_P
+    _ = T.P ^ (s.val + 1) := (pow_succ' ..).symm
+    _ ≤ T.P ^ N := Nat.pow_le_pow_right T.P_pos s.val_lt
+
 include T in
 /-- The residue field of `W` is finite. -/
 theorem finite_residueField : Finite (ResidueField W) :=
@@ -259,6 +277,16 @@ def posIndex (a a' : Fin k) (s : ZMod N) : Fin k := if T.isEven s then a' else a
 (`defectWeight`). -/
 def negIndex (a a' : Fin k) (s : ZMod N) : Fin k := if T.isEven s then a else a'
 
+/-- Unfolding `posIndex`. -/
+theorem posIndex_eq_ite (a a' : Fin k) (s : ZMod N) :
+    T.posIndex a a' s = if T.isEven s then a' else a :=
+  (rfl)
+
+/-- Unfolding `negIndex`. -/
+theorem negIndex_eq_ite (a a' : Fin k) (s : ZMod N) :
+    T.negIndex a a' s = if T.isEven s then a else a' :=
+  (rfl)
+
 /-- `posIndex` at an even letter. -/
 @[simp]
 theorem posIndex_of_isEven {s : ZMod N} (hs : T.isEven s = true) (a a' : Fin k) :
@@ -326,6 +354,11 @@ noncomputable def defect (a a' : Fin k) (i : ZMod N) : (Fin k × ZMod N →₀ �
 theorem defect_apply (a a' : Fin k) (i : ZMod N) (β : Fin k × ZMod N →₀ ℕ) :
     T.defect a a' i β = β.sum fun x m ↦ m * T.defectWeight a a' i x := by
   simp [defect, Finsupp.weight_apply]
+
+/-- The defect is the weighted degree for the defect weights, as a function. -/
+theorem coe_defect (a a' : Fin k) (i : ZMod N) :
+    ⇑(T.defect a a' i) = Finsupp.weight (T.defectWeight a a' i) :=
+  (rfl)
 
 /-- The defect of a power of one variable. -/
 @[simp]
