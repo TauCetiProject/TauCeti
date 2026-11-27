@@ -192,28 +192,23 @@ theorem exists_contDiffOn_ae_eq_and_sum_smul_fderiv_fderiv_eq_zero (hlam : 0 < l
     rw [hcomp, ContinuousLinearEquiv.apply_symm_apply, (hh _ (hmem x hx)).2.eq_of_nhds] at hΔ
     exact hΔ.symm
 
-/-- **Decay of the `L¹` mean oscillation of the Hessian for constant coefficients.** Let `A` be a
-square matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, and let `u ∈ W^{2,p}(Ω)`, `p ≥ 1`,
-solve `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` almost everywhere on a ball `B_R = ball x₀ R ⊆ Ω ⊆ ℝⁿ`. Then for every
-constant `c` and every `0 ≤ ρ ≤ R`, the weak Hessian `D²u` satisfies
-
-`∫_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R)^(n + 1) ∫_{B_R} ‖D²u - c‖`
-with `C = 2^(3n + 5) (n + 1)`,
-
-where `(D²u)_ρ` is the average of `D²u` over `B_ρ`. The constant depends only on `n` and the
-ellipticity ratio `Λ / λ`. -/
-theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
+/-- The reduction of the Hessian decay to harmonic functions. Let `A` be a square matrix with
+`λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, and let `u ∈ W^{2,p}(Ω)` solve `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` almost
+everywhere on a ball `B_R = ball x₀ R ⊆ Ω`. Then the weak Hessian `D²u` agrees almost everywhere on
+`B_R` with the classical Hessian `D²g = D(∇g)` of a function `g`; it is integrable on `B_R`, and it
+becomes harmonic after a linear change of variables `e` with `‖e⁻¹ x‖ ≤ λ^(-1/2) ‖x‖` and
+`‖e y‖ ≤ Λ^(1/2) ‖y‖`. -/
+private theorem exists_iteratedGradient_ae_eq_and_harmonicOnNhd_comp
     (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) (u : Wkp mu Omega p 2)
-    {x₀ : EuclideanSpace ℝ ι} {ρ R : ℝ} (hball : ball x₀ R ⊆ Omega)
+    {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (hball : ball x₀ R ⊆ Omega)
     (heq : ∀ᵐ x ∂mu.restrict (ball x₀ R), ∑ i, ∑ j, A i j *
-      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0)
-    (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
-    ∫ x in ball x₀ ρ,
-        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu ≤
-      2 ^ (3 * Fintype.card ι + 5) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
-        (ρ / R) ^ (Fintype.card ι + 1) *
-          ∫ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0) :
+    ∃ (g : EuclideanSpace ℝ ι → ℝ) (e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι),
+      (∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) ∧ (∀ y, ‖e y‖ ≤ √Lam * ‖y‖) ∧
+      Wkp.iteratedGradient 1 u =ᵐ[mu.restrict (ball x₀ R)] fderiv ℝ (∇ g) ∧
+      HarmonicOnNhd (fderiv ℝ (∇ g) ∘ e) (e ⁻¹' ball x₀ R) ∧
+      IntegrableOn (fderiv ℝ (∇ g)) (ball x₀ R) mu := by
   -- Restrict `u` to `B_R`, where the equation holds, and take its smooth representative `g`.
   set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
   have hB : B ≤ Omega := hball
@@ -249,58 +244,39 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inne
     simp [M, e.comp_right_fderiv]
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hint : IntegrableOn (fderiv ℝ (∇ g)) (ball x₀ R) mu :=
-    (((Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure
-      (Measure.restrict_mono hball le_rfl)).integrable Fact.out).congr hU
-  have hdec := setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp e hae hbe
-    (by positivity) hUe hint c hρ hρR
-  rw [finrank_euclideanSpace, inv_mul_eq_div, ← Real.sqrt_div' _ hlam.le] at hdec
-  have hUρ := ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρR) hU
-  rwa [average_congr hUρ, integral_congr_ae (hUρ.mono fun x hx => by rw [hx]),
-    integral_congr_ae (hU.mono fun x hx => by rw [hx])]
+  exact ⟨g, e, hae, hbe, hU, hUe, (((Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure
+    (Measure.restrict_mono hball le_rfl)).integrable Fact.out).congr hU⟩
 
-/-- **Decay of the mean oscillation of the Hessian for constant coefficients, averaged form.**
-Under the hypotheses of
-`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero`,
-for `0 ≤ ρ ≤ R`,
+/-- **Decay of the `L¹` mean oscillation of the Hessian for constant coefficients.** Let `A` be a
+square matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, and let `u ∈ W^{2,p}(Ω)`, `p ≥ 1`,
+solve `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` almost everywhere on a ball `B_R = ball x₀ R ⊆ Ω ⊆ ℝⁿ`. Then for every
+constant `c` and every `0 ≤ ρ ≤ R`, the weak Hessian `D²u` satisfies
 
-`⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R) ⨍_{B_R} ‖D²u - c‖`
-with `C = 2^(3n + 5) (n + 1)`.
+`∫_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R)^(n + 1) ∫_{B_R} ‖D²u - c‖`
+with `C = 2^(3n + 5) (n + 1)`,
 
-This is the scale-invariant form in which the mean oscillation of the frozen problem enters the
-sharp function method. -/
-theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
+where `(D²u)_ρ` is the average of `D²u` over `B_ρ`. The constant depends only on `n` and the
+ellipticity ratio `Λ / λ`. -/
+theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
     (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) (u : Wkp mu Omega p 2)
     {x₀ : EuclideanSpace ℝ ι} {ρ R : ℝ} (hball : ball x₀ R ⊆ Omega)
     (heq : ∀ᵐ x ∂mu.restrict (ball x₀ R), ∑ i, ∑ j, A i j *
       ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0)
     (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
-    ⨍ x in ball x₀ ρ,
+    ∫ x in ball x₀ ρ,
         ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu ≤
       2 ^ (3 * Fintype.card ι + 5) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
-        (ρ / R) * ⨍ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
-  rcases hρ.eq_or_lt with rfl | hρ
-  · simp
-  have hR : 0 < R := hρ.trans_le hρR
-  have hω : 0 < mu.real (ball (0 : EuclideanSpace ℝ ι) 1) := measureReal_ball_pos mu 0 one_pos
-  have h := setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
-    hlam hA hA' u hball heq c hρ.le hρR
-  rw [setAverage_eq (f := fun x => ‖Wkp.iteratedGradient 1 u x -
-      ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖) mu (ball x₀ ρ),
-    setAverage_eq (f := fun x => ‖Wkp.iteratedGradient 1 u x - c‖) mu (ball x₀ R), smul_eq_mul,
-    smul_eq_mul, mu.addHaar_real_ball_of_pos x₀ hρ, mu.addHaar_real_ball_of_pos x₀ hR,
-    finrank_euclideanSpace]
-  generalize Fintype.card ι = n at h ⊢
-  calc (ρ ^ n * mu.real (ball 0 1))⁻¹ * ∫ x in ball x₀ ρ,
-        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu
-      ≤ (ρ ^ n * mu.real (ball 0 1))⁻¹ * (2 ^ (3 * n + 5) * (n + 1) * √(Lam / lam) ^ (n + 1) *
-          (ρ / R) ^ (n + 1) * ∫ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu) :=
-        mul_le_mul_of_nonneg_left h (by positivity)
-    _ = _ := by
-        simp only [div_pow]
-        field_simp
-        ring
+        (ρ / R) ^ (Fintype.card ι + 1) *
+          ∫ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
+  obtain ⟨g, e, hae, hbe, hU, hUe, hint⟩ :=
+    exists_iteratedGradient_ae_eq_and_harmonicOnNhd_comp hlam hA hA' u hball heq
+  have hdec := setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp e hae hbe
+    (by positivity) hUe hint c hρ hρR
+  rw [finrank_euclideanSpace, inv_mul_eq_div, ← Real.sqrt_div' _ hlam.le] at hdec
+  have hUρ := ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρR) hU
+  rwa [average_congr hUρ, integral_congr_ae (hUρ.mono fun x hx => by rw [hx]),
+    integral_congr_ae (hU.mono fun x hx => by rw [hx])]
 
 /-- **Decay of the `L^γ` mean oscillation of the Hessian for constant coefficients.** Let `A` be a
 square matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, and let `u ∈ W^{2,p}(Ω)`, `p ≥ 1`,
@@ -329,42 +305,8 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_
       (2 ^ (3 * Fintype.card ι + 5) * (Fintype.card ι + 1) *
         √(Lam / lam) ^ (Fintype.card ι + 1) * (ρ / R)) ^ γ *
           ⨍ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ^ γ ∂mu := by
-  -- As for the `L¹` decay: on `B_R` the weak Hessian is the classical Hessian `D²g` of the smooth
-  -- representative `g`, which is harmonic after the change of variables `e`.
-  set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
-  have hB : B ≤ Omega := hball
-  have hHB : Wkp.iteratedGradient 1 (Wkp.restrictL hB 2 u)
-      =ᵐ[mu.restrict (ball x₀ R)] Wkp.iteratedGradient 1 u :=
-    Wkp.iteratedGradient_restrictL_ae hB 1 u
-  have heqB : ∀ᵐ x ∂mu.restrict (B : Set (EuclideanSpace ℝ ι)), ∑ i, ∑ j, A i j *
-      ⟪Wkp.iteratedGradient 1 (Wkp.restrictL hB 2 u) x (EuclideanSpace.single i 1),
-        EuclideanSpace.single j 1⟫_ℝ = 0 := by
-    filter_upwards [heq, hHB] with x hx h
-    rw [h]
-    exact hx
-  obtain ⟨g, hg, hval, hLg⟩ :=
-    exists_contDiffOn_ae_eq_and_sum_smul_fderiv_fderiv_eq_zero hlam hA _ heqB
-  have hg2 : ContDiffOn ℝ 2 g (ball x₀ R) := hg.of_le (by simp)
-  have hU : Wkp.iteratedGradient 1 u =ᵐ[mu.restrict (ball x₀ R)] fderiv ℝ (∇ g) := by
-    filter_upwards [Wkp.iteratedGradient_ae_eq_of_contDiffOn 1 _ (hg.of_le (by simp)) hval, hHB]
-      with x hx hx'
-    rw [← hx', hx, iteratedGradientChain_succ, iteratedGradientChain_zero]
-  obtain ⟨e, -, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
-  have hW := harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hg2 hLg
-  set M : (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) →L[ℝ]
-      (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :=
-    (ContinuousLinearMap.compL ℝ _ _ _).flip
-      (e.symm : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)
-  have hUe : HarmonicOnNhd (fderiv ℝ (∇ g) ∘ e) (e ⁻¹' ball x₀ R) := by
-    convert hW.fderiv.comp_CLM M using 1
-    funext y
-    ext v
-    simp [M, e.comp_right_fderiv]
-  have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hi : IntegrableOn (fderiv ℝ (∇ g)) (ball x₀ R) mu :=
-    (((Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure
-      (Measure.restrict_mono hball le_rfl)).integrable Fact.out).congr hU
+  obtain ⟨g, e, hae, hbe, hU, hUe, hi⟩ :=
+    exists_iteratedGradient_ae_eq_and_harmonicOnNhd_comp hlam hA hA' u hball heq
   have hic : IntegrableOn (fun x => ‖fderiv ℝ (∇ g) x - c‖ ^ γ) (ball x₀ R) mu :=
     hint.congr (hU.mono fun x hx => by simp only [hx])
   have hdec := setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp e hae hbe
@@ -373,6 +315,41 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_
   have hUρ := ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρR) hU
   rwa [average_congr hUρ, average_congr (hUρ.mono fun x hx => by rw [hx]),
     average_congr (hU.mono fun x hx => by rw [hx])]
+
+/-- **Decay of the mean oscillation of the Hessian for constant coefficients, averaged form.**
+Under the hypotheses of
+`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero`,
+for `0 ≤ ρ ≤ R`,
+
+`⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 2) (ρ / R) ⨍_{B_R} ‖D²u - c‖`
+with `C = 2^(3n + 5) (n + 1)`.
+
+This is the scale-invariant form in which the mean oscillation of the frozen problem enters the
+sharp function method. -/
+theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
+    (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) (u : Wkp mu Omega p 2)
+    {x₀ : EuclideanSpace ℝ ι} {ρ R : ℝ} (hball : ball x₀ R ⊆ Omega)
+    (heq : ∀ᵐ x ∂mu.restrict (ball x₀ R), ∑ i, ∑ j, A i j *
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0)
+    (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
+    ⨍ x in ball x₀ ρ,
+        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu ≤
+      2 ^ (3 * Fintype.card ι + 5) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
+        (ρ / R) * ⨍ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
+  rcases hρ.eq_or_lt with rfl | hρ
+  · simp
+  -- This is the `L^γ` decay at `γ = 1`, where `‖D²u - c‖` is integrable since `D²u ∈ L^p`.
+  have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hint :
+      IntegrableOn (fun x => ‖Wkp.iteratedGradient 1 u x - c‖ ^ (1 : ℝ)) (ball x₀ R) mu := by
+    simp only [Real.rpow_one]
+    exact ((((Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure
+      (Measure.restrict_mono hball le_rfl)).integrable Fact.out).sub (integrable_const c)).norm
+  simpa only [Real.rpow_one] using
+    setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_inner_eq_zero hlam hA
+      hA' u hball heq c le_rfl hint hρ hρR
 
 end PDE
 

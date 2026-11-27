@@ -70,15 +70,18 @@ theorem setAverage_norm_sub_setAverage_rpow_le (hs : μ s ≠ ⊤) (hf : Integra
   have hia : MemLp (fun x ↦ f x - ⨍ y in s, f y ∂μ) (ENNReal.ofReal γ) (μ.restrict s) :=
     h.trans_lt (ENNReal.mul_lt_top (by simp) hic)
   rw [hia.eLpNorm_eq_integral_rpow_norm hp0 ENNReal.ofReal_ne_top,
-    hic.eLpNorm_eq_integral_rpow_norm hp0 ENNReal.ofReal_ne_top, ENNReal.toReal_ofReal hγ0.le,
-    ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two,
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
-  have h' := Real.rpow_le_rpow (by positivity) h hγ0.le
-  rw [Real.mul_rpow zero_le_two (by positivity), ← Real.rpow_mul (by positivity),
-    ← Real.rpow_mul (by positivity), inv_mul_cancel₀ hγ0.ne', Real.rpow_one,
-    Real.rpow_one] at h'
-  generalize ⨍ y in s, f y ∂μ = m at h'
+    hic.eLpNorm_eq_integral_rpow_norm hp0 ENNReal.ofReal_ne_top, ENNReal.toReal_ofReal hγ0.le] at h
+  generalize ⨍ y in s, f y ∂μ = m at h
+  -- In real terms: `(∫_s ‖f - f_s‖^γ)^(1/γ) ≤ 2 (∫_s ‖f - c‖^γ)^(1/γ)`; raise it to the power `γ`.
+  have hreal : (∫ x in s, ‖f x - m‖ ^ γ ∂μ) ^ γ⁻¹ ≤ 2 * (∫ x in s, ‖f x - c‖ ^ γ ∂μ) ^ γ⁻¹ := by
+    have h' := ENNReal.toReal_mono (by finiteness) h
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
+      ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat] at h'
+  have hpow : ∫ x in s, ‖f x - m‖ ^ γ ∂μ ≤ 2 ^ γ * ∫ x in s, ‖f x - c‖ ^ γ ∂μ := by
+    have h' := Real.rpow_le_rpow (by positivity) hreal hγ0.le
+    rwa [Real.mul_rpow zero_le_two (by positivity), Real.rpow_inv_rpow (by positivity) hγ0.ne',
+      Real.rpow_inv_rpow (by positivity) hγ0.ne'] at h'
   rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, mul_left_comm]
-  exact mul_le_mul_of_nonneg_left h' (by positivity)
+  gcongr
 
 end TauCeti

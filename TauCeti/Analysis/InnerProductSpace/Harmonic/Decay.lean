@@ -874,6 +874,23 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
         _ ≤ _ := by gcongr
     exact hfour _ h4
 
+omit [NormedSpace ℝ F] [CompleteSpace F] [FiniteDimensional ℝ E'] in
+/-- If `‖e y‖ ≤ b ‖y‖`, the integral of `‖u ∘ e - c‖` over `ball (e⁻¹ x₀) (R / b)` for
+`μ.map e⁻¹` is at most the integral of `‖u - c‖` over `ball x₀ R` for `μ`. -/
+private lemma setIntegral_ball_div_norm_comp_sub_le (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (hb : 0 < b)
+    {x₀ : E} {R : ℝ} (hi : IntegrableOn u (ball x₀ R) μ) (c : F) :
+    ∫ w in ball (e.symm x₀) (R / b), ‖(u ∘ e) w - c‖ ∂(μ.map e.symm) ≤
+      ∫ x in ball x₀ R, ‖u x - c‖ ∂μ := by
+  have hmp : MeasurePreserving e (μ.map e.symm) μ := e.measurePreserving_map_symm μ
+  have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+  calc _ ≤ ∫ w in e ⁻¹' ball x₀ R, ‖(u ∘ e) w - c‖ ∂(μ.map e.symm) :=
+        setIntegral_mono_set
+          ((hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x - c‖)).2
+            (hi.sub (integrableOn_const measure_ball_lt_top.ne)).norm)
+          (ae_of_all _ fun _ ↦ norm_nonneg _)
+          (ball_div_subset_preimage_ball hbe hb x₀ R).eventuallySubset
+    _ = _ := hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x - c‖) _
+
 /-- The `L¹` decay after a linear change of variables in the main case `a ρ ≤ R / b`: the ball
 `ball x₀ ρ` is pulled back into `ball (e.symm x₀) (a ρ)`, which lies in the ball
 `ball (e.symm x₀) (R / b)` on which `u ∘ e` is harmonic. -/
@@ -917,19 +934,10 @@ private lemma setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp_of_l
     _ ≤ 2 * (2 ^ (3 * n + 4) * (n + 1) * (a * ρ / (R / b)) ^ (n + 1) *
           ∫ y in ball (e.symm x₀) (R / b), ‖(u ∘ e) y - c‖ ∂ν) := by
         gcongr
-    _ ≤ 2 * (2 ^ (3 * n + 4) * (n + 1) * (a * ρ / (R / b)) ^ (n + 1) *
-          ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y - c‖ ∂ν) := by
-        refine mul_le_mul_of_nonneg_left
-          (mul_le_mul_of_nonneg_left ?_ (by positivity)) (by norm_num)
-        exact setIntegral_mono_set
-          ((hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x - c‖)).2 (hic c).norm)
-          (ae_of_all _ fun _ ↦ norm_nonneg _) hsub.eventuallySubset
+    _ ≤ 2 * (2 ^ (3 * n + 4) * (n + 1) * (a * ρ / (R / b)) ^ (n + 1) * I) := by
+        gcongr
+        exact setIntegral_ball_div_norm_comp_sub_le hbe hb hi c
     _ = _ := by
-        -- `MeasurePreserving.setIntegral_preimage_emb` matches the goal only after unfolding
-        -- `∘`, so state the pullback of `I` in the form in which it appears here.
-        have hI' : ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y - c‖ ∂ν = I :=
-          hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x - c‖) _
-        rw [hI']
         field_simp
         ring
 
@@ -1013,23 +1021,6 @@ private lemma measureReal_ball_div_le_map_symm (hae : ∀ x, ‖e.symm x‖ ≤ 
     Measure.map_apply e.symm.continuous.measurable measurableSet_ball
   rw [measureReal_def, measureReal_def, hmap]
   exact ENNReal.toReal_mono (hmap ▸ measure_ball_lt_top.ne) (measure_mono hpre)
-
-omit [NormedSpace ℝ F] [CompleteSpace F] [FiniteDimensional ℝ E'] in
-/-- If `‖e y‖ ≤ b ‖y‖`, the integral of `‖u ∘ e - c‖` over `ball (e⁻¹ x₀) (R / b)` for
-`μ.map e⁻¹` is at most the integral of `‖u - c‖` over `ball x₀ R` for `μ`. -/
-private lemma setIntegral_ball_div_norm_comp_sub_le (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (hb : 0 < b)
-    {x₀ : E} {R : ℝ} (hi : IntegrableOn u (ball x₀ R) μ) (c : F) :
-    ∫ w in ball (e.symm x₀) (R / b), ‖(u ∘ e) w - c‖ ∂(μ.map e.symm) ≤
-      ∫ x in ball x₀ R, ‖u x - c‖ ∂μ := by
-  have hmp : MeasurePreserving e (μ.map e.symm) μ := e.measurePreserving_map_symm μ
-  have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
-  calc _ ≤ ∫ w in e ⁻¹' ball x₀ R, ‖(u ∘ e) w - c‖ ∂(μ.map e.symm) :=
-        setIntegral_mono_set
-          ((hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x - c‖)).2
-            (hi.sub (integrableOn_const measure_ball_lt_top.ne)).norm)
-          (ae_of_all _ fun _ ↦ norm_nonneg _)
-          (ball_div_subset_preimage_ball hbe hb x₀ R).eventuallySubset
-    _ = _ := hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x - c‖) _
 
 /-- **The oscillation of a harmonic function after a linear change of variables.** Let
 `e : E' ≃L[ℝ] E` be a continuous linear equivalence with `‖e.symm x‖ ≤ a ‖x‖` and
