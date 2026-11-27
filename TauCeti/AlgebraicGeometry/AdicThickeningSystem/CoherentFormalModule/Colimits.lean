@@ -37,9 +37,19 @@ noncomputable section
 variable {𝔛 𝔜 : AdicThickeningSystem.{u}}
 
 /-- The module sheaf at a specified level of a coherent formal module. -/
+-- The object map must reduce for the dependent types in `evaluation_map` and
+-- `pullbackEvaluationIso_hom_app`, just as for `pullback_map_app`.
 abbrev evaluation (n : ℕ) : CoherentFormalModule 𝔛 ⥤ (𝔛.X n).Modules where
   obj M := M.obj n
   map f := f.app n
+
+@[simp]
+theorem evaluation_obj (n : ℕ) (M : CoherentFormalModule 𝔛) :
+    (evaluation n).obj M = M.obj n := (rfl)
+
+@[simp]
+theorem evaluation_map (n : ℕ) {M N : CoherentFormalModule 𝔛} (f : M ⟶ N) :
+    (evaluation n).map f = f.app n := (rfl)
 
 instance (n : ℕ) : (evaluation (𝔛 := 𝔛) n).Additive where
   map_add := rfl
@@ -150,7 +160,7 @@ def isColimitOfEvaluation (c : Cocone F)
     (fun j ↦ congrArg (fun f ↦ f.app n) (hm j))
 
 /-- Evaluation of pullback is pullback of the evaluated module. -/
-private def pullbackEvaluationIso (g : 𝔛 ⟶ 𝔜) (n : ℕ) :
+def pullbackEvaluationIso (g : 𝔛 ⟶ 𝔜) (n : ℕ) :
     pullback g ⋙ evaluation n ≅ evaluation n ⋙ Scheme.Modules.pullback (g.app n) :=
   NatIso.ofComponents (fun M ↦ Iso.refl ((Scheme.Modules.pullback (g.app n)).obj (M.obj n)))
     (fun f ↦ by
@@ -158,6 +168,12 @@ private def pullbackEvaluationIso (g : 𝔛 ⟶ 𝔜) (n : ℕ) :
       -- Normalize the composite functors and the prescribed levelwise pullback together.
       dsimp only [Functor.comp_map, Functor.comp_obj, evaluation, pullback, Iso.refl_hom]
       simp only [Category.comp_id, Category.id_comp])
+
+@[simp]
+theorem pullbackEvaluationIso_hom_app (g : 𝔛 ⟶ 𝔜) (n : ℕ)
+    (M : CoherentFormalModule 𝔜) :
+    (pullbackEvaluationIso g n).hom.app M =
+      𝟙 ((Scheme.Modules.pullback (g.app n)).obj (M.obj n)) := (rfl)
 
 /-- Pullback of coherent formal modules preserves finite colimits, without Noetherian or
 flatness hypotheses on the morphism of systems. -/
