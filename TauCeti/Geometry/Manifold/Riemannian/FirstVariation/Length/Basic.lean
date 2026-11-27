@@ -128,21 +128,24 @@ theorem continuousAt_inner_alongCurve_variationField_curveVelocity {t : ℝ}
   simp only [he]
   ring
 
-omit [FiniteDimensional ℝ E]
+omit [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
 /-- **The speed is jointly smooth near a regular segment.** If the family is `C^n` at every point
-of `{0} × [a, b]`, for a finite `n` with `m + 1 ≤ n`, the metric is `C^m` and the central curve
-`γ = F 0` has nonzero velocity on `[a, b]`, then the speed `(s, t) ↦ ‖∂_t F (s, t)‖` is `C^m` on an
-open neighbourhood of `{0} × [a, b]`, and for `s` near `0` the length of `F s` between `a` and `b`
+of `{w₀} × [a, b]`, for an order `n ≠ ∞` with `m + 1 ≤ n`, the metric is `C^m`
+and the central curve
+`γ = F w₀` has nonzero velocity on `[a, b]`, then the speed `(w, t) ↦ ‖∂_t F (w, t)‖` is `C^m` on an
+open neighbourhood of `{w₀} × [a, b]`, and for `s` near `w₀` the length of `F s` between `a` and `b`
 is the integral of its speed. -/
-theorem exists_isOpen_contDiffOn_norm_curveVelocity {m n : ℕ∞ω} [IsManifold I n M]
+theorem exists_isOpen_contDiffOn_norm_curveVelocity
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {F : P → ℝ → M} {w₀ : P}
+    {m n : ℕ∞ω} [IsManifold I 1 M] [IsManifold I n M]
     [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
     (hmn : m + 1 ≤ n) (hn : n ≠ ∞) {a b : ℝ} (hab : a ≤ b)
-    (hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
-    (hγ : ∀ t ∈ Icc a b, curveVelocity I (F 0) t ≠ 0) :
-    ∃ W, IsOpen W ∧ {0} ×ˢ uIcc a b ⊆ W ∧
-      ContDiffOn ℝ m (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖) W ∧
-      (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) =ᶠ[𝓝 0]
+    (hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, P × ℝ) I n (fun z : P × ℝ ↦ F z.1 z.2) (w₀, t))
+    (hγ : ∀ t ∈ Icc a b, curveVelocity I (F w₀) t ≠ 0) :
+    ∃ W, IsOpen W ∧ {w₀} ×ˢ uIcc a b ⊆ W ∧
+      ContDiffOn ℝ m (fun z : P × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖) W ∧
+      (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) =ᶠ[𝓝 w₀]
         fun s ↦ ∫ t in a..b, ‖curveVelocity I (F s) t‖ := by
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := m)
@@ -150,23 +153,20 @@ theorem exists_isOpen_contDiffOn_norm_curveVelocity {m n : ℕ∞ω} [IsManifold
   obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV, hG⟩ :=
     exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity hmn hn hF
   -- the speed is the square root of the squared speed, `C^m` on the open set where the squared
-  -- speed is positive, which contains `{0} × [a, b]` because `γ` is regular there
-  refine ⟨(U ×ˢ V) ∩ (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2) ⁻¹' Ioi 0,
+  -- speed is positive, which contains `{w₀} × [a, b]` because `γ` is regular there
+  refine ⟨(U ×ˢ V) ∩ (fun z : P × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2) ⁻¹' Ioi 0,
     hG.continuousOn.isOpen_inter_preimage (hUo.prod hVo) isOpen_Ioi, ?_, ?_, ?_⟩
   · rintro ⟨s, t⟩ ⟨rfl, ht⟩
     exact ⟨⟨h0U, hV ht⟩, pow_pos (norm_pos_iff.2 (hγ t ht)) 2⟩
   · exact ((hG.mono inter_subset_left).sqrt fun _ hz ↦ ne_of_gt hz.2).congr fun _ _ ↦
       (Real.sqrt_sq (norm_nonneg _)).symm
-  -- near `0`, the length is the integral of the speed
+  -- near `w₀`, the length is the integral of the speed
   filter_upwards [hUo.mem_nhds h0U] with s hs
   have hγs : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (F s) V :=
     (hfUV.of_le (le_add_self.trans hmn)).comp
       (contDiff_prodMk_right s).contMDiff.contMDiffOn (fun t ht ↦ ⟨hs, ht⟩)
-  have hVs : Icc a b ⊆ V := by simpa only [uIcc_of_le hab] using hV
-  rw [hγs.pathELength_eq_ofReal_integral_norm_curveVelocityWithin hVs,
+  rw [hγs.pathELength_eq_ofReal_integral_norm_curveVelocity hVo hV,
     ENNReal.toReal_ofReal (intervalIntegral.integral_nonneg hab (fun _ _ ↦ norm_nonneg _))]
-  refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [curveVelocityWithin_of_mem_nhds (hVo.mem_nhds (hV ht))]
 
 /-- **The first variation of length of a regular curve.** Let `F` be a two-parameter family which
 is `C²` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has nonzero velocity on
