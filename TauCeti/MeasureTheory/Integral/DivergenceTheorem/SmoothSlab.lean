@@ -12,6 +12,8 @@ public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.Divergence
+import TauCeti.MeasureTheory.Integral.DivergenceTheorem.CompactSupport
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
