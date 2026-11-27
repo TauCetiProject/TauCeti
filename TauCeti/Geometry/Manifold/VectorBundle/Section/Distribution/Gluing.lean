@@ -15,8 +15,8 @@ public import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 Let `V → M` be a smooth real vector bundle over a Hausdorff manifold modelled on a
 finite-dimensional space, and let the open sets `U i` cover `M`. A continuous linear functional
 `T` on the bundle tests of `V` restricts to each `U i` (`TauCeti.BundleTest.restrictDualCLM`):
-`T|_{U i}` pairs a test of `V|_{U i}` with `T` after extending it by zero. This file shows that
-these functionals form a sheaf.
+`T|_{U i}` pairs a test of `V|_{U i}` with `T` after extending it by zero. This file proves the
+locality and gluing properties of these functionals for an open cover of `M`.
 
 * **Locality.** Two functionals with the same restrictions to every `U i` are equal
   (`TauCeti.BundleTest.eq_of_forall_restrictDualCLM_eq`).
@@ -52,6 +52,10 @@ the test topology is the final locally convex topology of these stages
 has empty support, since every test supported in `U i` extends a test on `U i`
 (`TauCeti.BundleTest.exists_extendByZeroCLM_eq_of_tsupport_subset`).
 
+This adapts the proof of the Euclidean gluing theorem `Distribution.existsUnique_gluing`
+(`TauCeti/Analysis/Distribution/Gluing.lean`) from test functions on open sets of a normed space
+to bundle tests on a manifold.
+
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, second edition,
@@ -81,19 +85,6 @@ section Gluing
 
 variable {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
   {ι : Type*} {U : ι → Opens M}
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- A family of smooth functions summing to one on the support of a test splits the test. -/
-private theorem sum_smulLeftCLM_eq_self {κ : Type*} [Fintype κ] (ρ : κ → C^∞⟮I, M; ℝ⟯)
-    (s : BundleTest I F V) (hρ : ∀ x ∈ closure {x | s x ≠ 0}, ∑ k, ρ k x = 1) :
-    ∑ k, smulLeftCLM (ρ k) s = s := by
-  ext x
-  rw [sum_apply]
-  simp only [smulLeftCLM_apply]
-  rw [← Finset.sum_smul]
-  by_cases hx : x ∈ closure {x | s x ≠ 0}
-  · rw [hρ x hx, one_smul]
-  · rw [show s x = 0 from not_not.1 fun h ↦ hx (subset_closure h), smul_zero]
 
 omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
 /-- A product with a function supported in `U i` is supported in `U i`. -/
@@ -184,10 +175,6 @@ private theorem sum_cutoffRestrictCLM_extendByZeroCLM_eq
   simp only [map_sum, extendByZeroCLM_smulLeftCLM]
   exact sum_smulLeftCLM_eq_self _ _ hρ
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-private theorem exists_mem_of_iSup_eq_top (hU : ⨆ i, U i = ⊤) (x : M) : ∃ i, x ∈ U i :=
-  Opens.mem_iSup.1 (hU ▸ Opens.mem_top x : x ∈ ⨆ i, U i)
-
 variable [IsTopologicalAddGroup W] [ContinuousConstSMul ℝ W]
 
 /-- **Locality.** Two functionals on the bundle tests of `M` with the same restrictions to every
@@ -201,7 +188,7 @@ theorem eq_of_forall_restrictDualCLM_eq (hU : ⨆ i, U i = ⊤)
   rw [← sub_eq_zero]
   refine ContinuousLinearMap.ext fun s ↦ congrFun ((dsupport_eq_empty_iff (S - S')).1
     (eq_empty_of_forall_notMem fun x ↦ ?_)) s
-  obtain ⟨i, hi⟩ := exists_mem_of_iSup_eq_top hU x
+  obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (hU ▸ Opens.mem_top x : x ∈ ⨆ i, U i)
   refine notMem_dsupport_iff.2 ⟨U i, (U i).isOpen, hi, isVanishingOn_iff.2 fun t ht ↦ ?_⟩
   obtain ⟨t, rfl⟩ := exists_extendByZeroCLM_eq_of_tsupport_subset ht
   have h' := DFunLike.congr_fun (h i) t
@@ -220,7 +207,7 @@ theorem existsUnique_restrictDualCLM_eq [ContinuousSMul ℝ W] [LocallyConvexSpa
     ∃! S : BundleTest I F V →L_c[ℝ] W,
       ∀ i, restrictDualCLM (I := I) (F := F) (V := V) (U := U i) S = T i := by
   -- Finite smooth partitions of unity on each compact set, subordinate to the cover.
-  choose idx hidx using exists_mem_of_iSup_eq_top hU
+  choose idx hidx using fun x ↦ Opens.mem_iSup.1 (hU ▸ Opens.mem_top x : x ∈ ⨆ i, U i)
   choose κ hκ f hf using fun K : Compacts M ↦ K.isCompact.exists_smoothBumpCovering_isSubordinate I
     (U := fun x ↦ U (idx x)) fun x _ ↦ (U (idx x)).isOpen.mem_nhds (hidx x)
   let ρ (K : Compacts M) := (f K).toSmoothPartitionOfUnity

@@ -160,13 +160,9 @@ theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by
     fun x hx ↦ (hU x (hs hx)).1.mem_nhds (hU x (hs hx)).2.1
   let ρ := f.toSmoothPartitionOfUnity
   -- `s` is the sum of its products with the partition of unity.
-  have hsum : s = ∑ i, smulLeftCLM (ρ i) s := by
-    ext x
-    rw [sum_apply]
-    by_cases hx : x ∈ closure {x | s x ≠ 0}
-    · simp_rw [smulLeftCLM_apply, ← Finset.sum_smul]
-      rw [← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx, one_smul]
-    · simp [Bundle.apply_eq_zero_of_notMem_closure hx]
+  have hsum : s = ∑ i, smulLeftCLM (ρ i) s :=
+    (sum_smulLeftCLM_eq_self _ s fun x hx ↦ by
+      rw [← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx]).symm
   rw [hsum, map_sum]
   refine Finset.sum_eq_zero fun i _ ↦ (hU _ (hs (f.c_mem' i))).2.2 _ ?_
   exact (tsupport_smulLeftCLM_subset (ρ i) s).trans
