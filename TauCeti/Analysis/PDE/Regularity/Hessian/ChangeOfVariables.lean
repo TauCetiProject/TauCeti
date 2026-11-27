@@ -12,6 +12,7 @@ import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
+import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Bilinear
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
