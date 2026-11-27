@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 public import TauCeti.Analysis.Calculus.IntervalIntegral.Inverse
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 
 /-!
@@ -44,6 +45,8 @@ that energy less than `(b - a) / 2` forces length less than `b - a`.
 * `ContMDiffAt.continuousAt_norm_curveVelocity`: speed is continuous at each `C¹` parameter.
 * `ContMDiffOn.setLIntegral_enorm_curveVelocity_lt_top`: a `C¹` curve on an open parameter set
   has finite length on every compact subset of it.
+* `TauCeti.Manifold.eventually_pathELength_ne_top_of_contMDiffAt`: a jointly `C¹` family
+  along a compact interval has finite length for all nearby parameters.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
   `C¹` curve over a compact interval is the integral of its speed.
 * `ContMDiff.integral_eq_intervalIntegral_norm_curveVelocity_smul`: integrals against the image of
@@ -206,6 +209,33 @@ theorem _root_.ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocity
   congr 1
   exact intervalIntegral.integral_congr fun t ht ↦ by
     rw [curveVelocityWithin_of_mem_nhds (hs.mem_nhds (hsub ht))]
+
+section Finiteness
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+  {C : P → ℝ → M} {w₀ : P}
+
+/-- If `C` is jointly `C¹` along `{w₀} × [a, b]`, then `C w` has finite length on `[a, b]`
+for all `w` near `w₀`. No nonvanishing-velocity assumption is required. -/
+theorem eventually_pathELength_ne_top_of_contMDiffAt {a b : ℝ}
+    (hC : ∀ t ∈ Icc a b,
+      ContMDiffAt 𝓘(ℝ, P × ℝ) I 1 (fun z : P × ℝ ↦ C z.1 z.2) (w₀, t)) :
+    ∀ᶠ w in 𝓝 w₀, Manifold.pathELength I (C w) a b ≠ ⊤ := by
+  by_cases hab : a ≤ b
+  swap
+  · exact .of_forall fun _ ↦ by
+      rw [pathELength_eq_zero_of_le (le_of_not_ge hab)]
+      exact ENNReal.zero_ne_top
+  rw [← uIcc_of_le hab] at hC
+  obtain ⟨U, V, hUo, hVo, hwU, hV, hf⟩ :=
+    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hC
+  filter_upwards [hUo.mem_nhds hwU] with w hw
+  have hcurve : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (C w) V :=
+    hf.comp (contDiff_prodMk_right w).contMDiff.contMDiffOn fun t ht ↦ ⟨hw, ht⟩
+  rw [hcurve.pathELength_eq_ofReal_integral_norm_curveVelocity hVo hV]
+  exact ENNReal.ofReal_ne_top
+
+end Finiteness
 
 /-- The squared Riemannian speed of a `C¹` curve is interval integrable between any two
 parameters of a parameter set with unique derivatives containing the interval between them. -/
