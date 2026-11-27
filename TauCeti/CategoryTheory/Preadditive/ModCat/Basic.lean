@@ -28,17 +28,13 @@ category `D ⥤+ A` of additive functors into any preadditive `A`
 (`CategoryTheory.AdditiveFunctor.sourceLinear`); in particular `ModCat D` is `R`-linear
 ([Mitchell, §11]). This structure is a scoped instance, not a global instance, since at `R = ℤ` it
 agrees with the canonical action of the abelian groups `F ⟶ G` only propositionally. Finally,
-finitely presented functors are additive, so `mod C` is a full subcategory of `ModCat C`. An
-additive equivalence `e : C ≌ D` induces an equivalence `ModCat C ≌ ModCat D` by precomposition
-with the inverse of `e.op`.
+finitely presented functors are additive, so `mod C` is a full subcategory of `ModCat C`.
 
 ## Main definitions
 
 * `TauCeti.ModCat C`: the category `Cᵒᵖ ⥤+ AddCommGrpCat.{w}` of `C`-modules.
 * `TauCeti.ModCat.yoneda C : C ⥤ ModCat C`: the Yoneda embedding `X ↦ Hom(-, X)`.
 * `TauCeti.ModCat.ofFinitelyPresented C`: the fully faithful inclusion `mod C ⥤ ModCat C`.
-* `CategoryTheory.Equivalence.modCatCongr e : ModCat C ≌ ModCat D` for an additive equivalence
-  `e : C ≌ D`: a module `F` over `C` goes to `e⁻¹ᵒᵖ ⋙ F`.
 
 ## Main results
 
@@ -132,47 +128,3 @@ abbrev ofFinitelyPresented : (isFinitelyPresentedFunctor C).FullSubcategory ⥤ 
 end ModCat
 
 end TauCeti
-
-namespace CategoryTheory.Equivalence
-
-open TauCeti
-
-variable {C : Type*} [Category* C] [Preadditive C] {D : Type*} [Category* D] [Preadditive D]
-  (e : C ≌ D) [e.functor.Additive]
-
-/-- Precomposition with an additive equivalence `e : C ≌ D` is an equivalence
-`ModCat C ≌ ModCat D`: a module `F` over `C` goes to `e⁻¹ᵒᵖ ⋙ F`. -/
-@[expose] def modCatCongr : ModCat.{w} C ≌ ModCat.{w} D :=
-  (e.op.congrLeft (E := AddCommGrpCat.{w})).congrFullSubcategory <| by
-    have : e.op.functor.Additive := inferInstanceAs e.functor.op.Additive
-    have : e.op.inverse.Additive := inferInstanceAs e.inverse.op.Additive
-    ext F
-    refine ⟨fun (_ : (e.op.inverse ⋙ F).Additive) ↦ ?_, fun (_ : F.Additive) ↦ ?_⟩
-    · exact Functor.additive_of_iso (e.op.funInvIdAssoc F)
-    · exact (inferInstance : (e.op.inverse ⋙ F).Additive)
-
-/-- The functor of `e.modCatCongr` precomposes a module over `C` with `e.inverse.op`. -/
-@[simp]
-theorem modCatCongr_functor_obj_obj (F : ModCat.{w} C) :
-    (e.modCatCongr.functor.obj F).obj = e.inverse.op ⋙ F.obj :=
-  rfl
-
-/-- The functor of `e.modCatCongr` whiskers a morphism of modules over `C` by `e.inverse.op`. -/
-@[simp]
-theorem modCatCongr_functor_map_hom {F G : ModCat.{w} C} (φ : F ⟶ G) :
-    (e.modCatCongr.functor.map φ).hom = Functor.whiskerLeft e.inverse.op φ.hom :=
-  rfl
-
-/-- The inverse of `e.modCatCongr` precomposes a module over `D` with `e.functor.op`. -/
-@[simp]
-theorem modCatCongr_inverse_obj_obj (F : ModCat.{w} D) :
-    (e.modCatCongr.inverse.obj F).obj = e.functor.op ⋙ F.obj :=
-  rfl
-
-/-- The inverse of `e.modCatCongr` whiskers a morphism of modules over `D` by `e.functor.op`. -/
-@[simp]
-theorem modCatCongr_inverse_map_hom {F G : ModCat.{w} D} (φ : F ⟶ G) :
-    (e.modCatCongr.inverse.map φ).hom = Functor.whiskerLeft e.functor.op φ.hom :=
-  rfl
-
-end CategoryTheory.Equivalence

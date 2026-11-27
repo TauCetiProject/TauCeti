@@ -16,9 +16,9 @@ public import TauCeti.CategoryTheory.SingleObj
 
 A ring `A` is a preadditive category `SingleObj A` with one object. When `A` is an algebra over a
 commutative semiring `R`, the scalar action of `R` on `A` makes `SingleObj A` an `R`-linear
-category. At `R = ℤ` this linear structure agrees with Mathlib's `preadditiveIntLinear` up to
-reducible and instance unfolding, so it is a global instance without creating a
-non-definitional diamond. The isomorphism `SingleObj Aᵐᵒᵖ ≌ (SingleObj A)ᵒᵖ` is additive.
+category. At `R = ℤ` this linear structure is definitionally Mathlib's `preadditiveIntLinear`
+with `Ring.toIntAlgebra`, or with `Algebra.id ℤ` when `A = ℤ`. The isomorphism
+`SingleObj Aᵐᵒᵖ ≌ (SingleObj A)ᵒᵖ` is additive.
 
 ## Main results
 
@@ -33,7 +33,8 @@ namespace CategoryTheory.SingleObj
 variable (R A : Type*) [CommSemiring R] [Ring A] [Algebra R A]
 
 /-- **`SingleObj A` is `R`-linear** for an `R`-algebra `A`, with the scalar action on `A`. At
-`R = ℤ` it is definitionally `preadditiveIntLinear`. -/
+`R = ℤ` it is definitionally `preadditiveIntLinear` with `Ring.toIntAlgebra`, or with
+`Algebra.id ℤ` when `A = ℤ`. -/
 instance linear : Linear R (SingleObj A) where
   homModule _ _ := inferInstanceAs (Module R A)
   smul_comp _ _ _ r f g := Algebra.mul_smul_comm (A := A) r g f
@@ -49,7 +50,8 @@ example : Linear.preadditiveIntLinear (C := SingleObj A) = linear ℤ A := by
 example : Linear.preadditiveIntLinear (C := SingleObj ℤ) = @linear ℤ ℤ _ _ (Algebra.id ℤ) := by
   with_reducible_and_instances rfl
 
-/-- The isomorphism `SingleObj Aᵐᵒᵖ ≌ (SingleObj A)ᵒᵖ` is additive. -/
+/-- The isomorphism
+`SingleObj Aᵐᵒᵖ ≌ (SingleObj A)ᵒᵖ` is additive. -/
 instance : (mulOppositeEquiv A).functor.Additive where
   map_add {_ _ f g} := by
     simp only [mulOppositeEquiv_functor_map]
