@@ -16,14 +16,16 @@ import Mathlib.NumberTheory.Padics.ProperSpace
 Evaluation at `1` identifies the continuous additive homomorphisms from `ℤ_[p]` to
 `ZMod (p ^ k)` with `ZMod (p ^ k)`: the character with value `a` at `1` is
 `x ↦ PadicInt.toZModPow k x * a`. For trivial coefficients this computes first continuous
-cohomology, as a `ZMod (p ^ k)`-module. The exponent `k` may be zero.
+cohomology, as a `ZMod (p ^ k)`-module. The exponent `k` may be zero. Density of the ordinary
+integers gives uniqueness; continuity of the truncation map gives existence.
 
 More generally, for trivial coefficients in a Hausdorff topological `ℤ_[p]`-module `A`, such
 as `ℤ_[p]` or `ℚ_[p]`, evaluation at `1` identifies `H¹(ℤ_[p], A)` with `A`
-(`TauCeti.padicIntH1Equiv`), `ℤ_[p]`-linearly (`TauCeti.padicIntH1LinearEquiv`).
+(`TauCeti.padicIntH1Equiv`), `ℤ_[p]`-linearly (`TauCeti.padicIntH1LinearEquiv`). Here density of
+the ordinary integers again gives uniqueness, and continuity of scalar multiplication `x ↦ x • a`
+gives existence.
 
-Density of the ordinary integers gives uniqueness; continuity of the truncation map gives
-existence. This contrasts with discrete integer coefficients: compactness of `ℤ_[p]` and
+These contrast with discrete integer coefficients: compactness of `ℤ_[p]` and
 torsion-freeness of `ℤ` imply that every continuous additive homomorphism is zero, hence
 first cohomology vanishes. The final examples use the existing compact-group vanishing theorem.
 
@@ -92,9 +94,8 @@ include htriv
 cohomology of `ℤ_[p]` is `A`, by evaluation of a character at the additive generator `1`. -/
 noncomputable def padicIntH1Equiv : H1 (Multiplicative ℤ_[p]) A ≃+ A :=
   (H1EquivOfSmulEqSelf htriv).trans
-    ((AddEquiv.mk (Additive.toMul.trans ContinuousAddMonoidHom.toMultiplicative.symm)
-      fun _ _ ↦ ContinuousAddMonoidHom.ext fun _ ↦ by simp).trans
-        (PadicInt.continuousAddHomEquiv A))
+    (ContinuousAddMonoidHom.toMultiplicativeAddEquiv.symm.trans
+      (PadicInt.continuousAddHomEquiv A))
 
 /-- The equivalence evaluates the continuous character associated with a class at the additive
 generator `1`. -/
@@ -128,6 +129,10 @@ noncomputable def padicIntH1LinearEquiv : H1 (Multiplicative ℤ_[p]) A ≃ₗ[�
 /-- The linear equivalence has the same underlying map as `padicIntH1Equiv`. -/
 @[simp] theorem padicIntH1LinearEquiv_apply (c : H1 (Multiplicative ℤ_[p]) A) :
     padicIntH1LinearEquiv htriv c = padicIntH1Equiv htriv c := (rfl)
+
+/-- The inverse of the linear equivalence is the inverse of `padicIntH1Equiv`. -/
+@[simp] theorem padicIntH1LinearEquiv_symm_apply (a : A) :
+    (padicIntH1LinearEquiv htriv).symm a = (padicIntH1Equiv htriv).symm a := (rfl)
 
 end Module
 

@@ -63,15 +63,14 @@ noncomputable example [i : DistribMulAction (Multiplicative ℤ_[p]) ℚ_[p]]
     H1 (Multiplicative ℤ_[p]) ℚ_[p] ≃ₗ[ℤ_[p]] ℚ_[p] :=
   padicIntH1LinearEquiv htriv
 
-/-- The class in `H¹(ℤ_p, ℚ_p)` with value `1/p` at `1` is the character `x ↦ x / p`; it does not
-come from `H¹(ℤ_p, ℤ_p)`, whose characters take integral values. -/
+/-- The class in `H¹(ℤ_p, ℚ_p)` with value `1/p` at `1` is the character `x ↦ x / p`. -/
 example [i : DistribMulAction (Multiplicative ℤ_[p]) ℚ_[p]]
     [@ContinuousSMul (Multiplicative ℤ_[p]) ℚ_[p] i.toSMul _ _]
     (htriv : ∀ (g : Multiplicative ℤ_[p]) (a : ℚ_[p]), g • a = a) (x : ℤ_[p]) :
     Multiplicative.toAdd ((H1EquivOfSmulEqSelf htriv
       ((padicIntH1Equiv htriv).symm (p : ℚ_[p])⁻¹)).toMul (Multiplicative.ofAdd x)) =
       (x : ℚ_[p]) / p := by
-  rw [padicIntH1Equiv_symm_character, div_eq_mul_inv]
-  rfl
+  rw [padicIntH1Equiv_symm_character, Algebra.smul_def, PadicInt.algebraMap_apply,
+    div_eq_mul_inv]
 
 end PadicIntH1
