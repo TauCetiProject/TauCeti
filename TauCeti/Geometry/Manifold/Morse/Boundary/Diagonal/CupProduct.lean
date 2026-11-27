@@ -65,7 +65,9 @@ coboundary, in either order, is a coboundary
 product descends to Morse cohomology; the induced product on cohomology is not built here.
 
 That the integral diagonal is a chain map, which needs the oriented ends of the one-dimensional
-spaces of Y-flow lines, is not proved here.
+spaces of Y-flow lines, is not proved here. The file
+`TauCeti.Geometry.Manifold.Morse.Boundary.Diagonal.SignedBroken` reduces it, and the Leibniz rule,
+to signed counts of broken Y-flow lines.
 
 ## Main definitions
 
@@ -125,19 +127,13 @@ form `a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` on the Morse chains of `f₀`, for the 
 (`TauCeti.IsAdaptedPseudoGradient.signedMorseDiagonalMap`) and the multiplication `μ` of `R`. Its
 value at a critical point `p` is the sum, over the pairs `(q, r)` with `ind q + ind r = ind p`, of
 the signed count of the Y-slice from `p` to `q` and `r` times `a q * b r`
-(`TauCeti.IsAdaptedPseudoGradient.signedMorseCupProduct_apply_single`). It is bilinear in `a` and
-`b`. -/
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseCupProduct_apply_single`). It is the bilinear cup
+product `LinearMap.cupProduct` along the diagonal. -/
 noncomputable def signedMorseCupProduct :
     ((criticalPoints 𝓘(ℝ, E) f₁ →₀ R) →ₗ[R] R) →ₗ[R]
       ((criticalPoints 𝓘(ℝ, E) f₂ →₀ R) →ₗ[R] R) →ₗ[R]
         ((criticalPoints 𝓘(ℝ, E) f₀ →₀ R) →ₗ[R] R) :=
-  LinearMap.mk₂ R
-    (fun a b ↦ LinearMap.mul' R R ∘ₗ TensorProduct.map a b ∘ₗ
-      hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R)
-    (fun a a' b ↦ by rw [TensorProduct.map_add_left, LinearMap.add_comp, LinearMap.comp_add])
-    (fun c a b ↦ by rw [TensorProduct.map_smul_left, LinearMap.smul_comp, LinearMap.comp_smul])
-    (fun a b b' ↦ by rw [TensorProduct.map_add_right, LinearMap.add_comp, LinearMap.comp_add])
-    (fun c a b ↦ by rw [TensorProduct.map_smul_right, LinearMap.smul_comp, LinearMap.comp_smul])
+  (hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R).cupProduct
 
 end Definition
 
@@ -149,7 +145,7 @@ theorem signedMorseCupProduct_apply (a : (criticalPoints 𝓘(ℝ, E) f₁ →�
     hX₀.signedMorseCupProduct hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R a b =
       LinearMap.mul' R R ∘ₗ TensorProduct.map a b ∘ₗ
         hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R :=
-  (rfl)
+  LinearMap.cupProduct_apply _ a b
 
 /-- **The cup product on a critical point.** The value of `a ∪ b` at a critical point `p` of `f₀`
 is the sum, over the critical points `q` of `f₁` and `r` of `f₂`, of the coefficient
@@ -162,8 +158,7 @@ theorem signedMorseCupProduct_apply_single [Fintype (criticalPoints 𝓘(ℝ, E)
       ∑ x : criticalPoints 𝓘(ℝ, E) f₁ × criticalPoints 𝓘(ℝ, E) f₂,
         (hX₀.signedMorseDiagonalCoeff hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ p x.1 x.2 : R) *
           (a (Finsupp.single x.1 1) * b (Finsupp.single x.2 1)) := by
-  rw [signedMorseCupProduct_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearMap.mul'_map_apply_eq_sum]
+  rw [signedMorseCupProduct, LinearMap.cupProduct_apply_eq_sum]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [finsuppTensorFinsupp'_signedMorseDiagonalMap_single_apply, one_mul]
 
@@ -262,9 +257,8 @@ theorem signedMorseCupProduct_comp_signedMorseBoundary_eq_iff_signedMorseDiagona
               (Finsupp.signEquiv (A := R) R fun q : criticalPoints 𝓘(ℝ, E) f₁ ↦
                 (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f₁ q).toLinearMap
               (hX₂.signedMorseBoundary 𝔬₂ hf₂ R)) ∘ₗ
-          hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R := by
-  simpa only [signedMorseCupProduct_apply, LinearMap.comp_assoc] using
-    LinearMap.mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_map_comp _ _ _ _ _
+          hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R :=
+  LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp _ _ _ _ _
 
 variable {hf₀}
   (hΔ : hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R ∘ₗ
