@@ -64,9 +64,24 @@ theorem exists_algHom_trace_eq_pi_matrix [CharZero k] {m : ℕ} {d : Fin m → �
   have hτ (z : Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
       τ z = ∑ i, c i * (z i).trace := by
     simpa only [hc] using τ.apply_eq_sum_mul_trace_of_map_mul_comm hcomm (fun _ ↦ 0) z
+  have hdiag (w : Π p : Σ i : Fin m, Fin (c i), Matrix (Fin (d p.1)) (Fin (d p.1)) k) :
+      diag w = blockDiagonal' w := by
+    exact (congrFun (AlgHom.coe_mk' (R := k)
+      (blockDiagonal'RingHom (fun p : Σ i : Fin m, Fin (c i) ↦ Fin (d p.1)) k)
+      (fun c x ↦ blockDiagonal'_smul c x)) w).trans (blockDiagonal'RingHom_apply _ _ _)
+  have hblocks (z : Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
+      blocks z = blockDiagonal' (fun p : Σ i : Fin m, Fin (c i) ↦ z p.1) := by
+    rw [AlgHom.comp_apply, hdiag]
+    exact congrArg blockDiagonal' (funext fun p ↦
+      (AlgHom.pi_apply _ _ p).trans (Pi.evalAlgHom_apply _ _ _ _))
   have htrace (z : Π i, Matrix (Fin (d i)) (Fin (d i)) k) : (blocks z).trace = τ z := by
-    simp +instances [blocks, diag, AlgHom.mk', ι, trace_blockDiagonal',
-      hτ, Fintype.sum_sigma]
+    rw [hblocks, trace_blockDiagonal', hτ]
+    rw [Fintype.sum_sigma]
+    apply Finset.sum_congr rfl
+    intro i _
+    exact (Finset.sum_const _).trans
+      ((congrArg (fun a : ℕ ↦ a • (z i).trace)
+        (Finset.card_univ.trans (Fintype.card_fin _))).trans (nsmul_eq_mul _ _))
   have hcard : Fintype.card ι = n := by
     apply Nat.cast_injective (R := k)
     rw [← hone, ← htrace, map_one, Matrix.trace_one]

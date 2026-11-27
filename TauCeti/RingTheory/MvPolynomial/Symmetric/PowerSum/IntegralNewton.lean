@@ -60,6 +60,14 @@ lemma integralNewtonPolynomial_succ (j m : ℕ) :
         j • integralNewtonPolynomial j (m + 1) : MvPolynomial ℕ k) :=
   (rfl)
 
+/-- Changing coefficients preserves the integral Newton recurrence. -/
+@[simp]
+lemma map_integralNewtonPolynomial {S : Type*} [CommRing S] (j m : ℕ) (f : k →+* S) :
+    MvPolynomial.map f (integralNewtonPolynomial j m) = integralNewtonPolynomial j m := by
+  induction j generalizing m with
+  | zero => simp
+  | succ j ih => simp [integralNewtonPolynomial_succ, ih]
+
 /-- Newton's identities without denominators: evaluating at the power sums of a multiset
 returns the elementary symmetric function multiplied by the factorial of its degree. -/
 lemma _root_.Multiset.eval_integralNewtonPolynomial (s : Multiset k) :

@@ -8,13 +8,11 @@ module
 public import TauCeti.RepresentationTheory.Semisimplification
 public import TauCeti.RepresentationTheory.OfGL
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-import TauCeti.LinearAlgebra.Matrix.Charpoly.IntegralNewton
 import TauCeti.RingTheory.Semisimple.Trace.Realization
-import TauCeti.LinearAlgebra.LinearIndependent.Evaluation
+import TauCeti.RingTheory.TraceFunctional.Identities
 import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
-import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 import Mathlib.RingTheory.SimpleModule.IsAlgClosed
-import TauCeti.RingTheory.TraceFunctional.Radical
+import TauCeti.RingTheory.TraceFunctional.Semisimple
 
 /-!
 # Semisimple realization from all trace identities
@@ -32,12 +30,10 @@ then realizes the trace, and semisimplification supplies native representation s
 ## Provenance
 
 The reconstruction adapts `New.exists_rep_of_trace_identities`, `New.linearExtension`,
-`New.eval_linearExtension_eq_zero` and `New.finite_quotient_pairingKernel` in
+`New.eval_linearExtension_eq_zero` in
 `src/Lib/GaloisRep/Pseudocharacter/Pseudorepresentations.lean` in grh-lean
 (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
-Copyright 2026 Anthropic, PBC). `isSemisimpleRing_traceQuotient` adapts the radical argument
-of `New.exists_wedderburn` in
-`src/Lib/GaloisRep/Pseudocharacter/SemisimpleRepresentations.lean` in the same source.
+Copyright 2026 Anthropic, PBC).
 The trace radical and quotient trace use `LinearMap.traceRadical` and `LinearMap.quotientTrace`.
 The native semisimplification interface is new here.
 
@@ -65,6 +61,13 @@ variable {k G n : Type*} [Field k] [Group G] [Fintype n] [DecidableEq n]
 private noncomputable def linearExtension (T : G → k) : k[G] →ₗ[k] k :=
   (aeval T).toLinearMap ∘ₗ Finsupp.lift _ k G X ∘ₗ (coeffLinearEquiv k).toLinearMap
 
+-- `MonoidAlgebra.of` simplifies to `single`, so use that normal form for the generator rule.
+omit [Group G] in
+@[simp]
+private lemma linearExtension_of (T : G → k) (g : G) :
+    linearExtension T (MonoidAlgebra.single g (1 : k)) = T g := by
+  simp [linearExtension]
+
 /-- If `T : G → k` obeys every polynomial identity among traces of homomorphisms `G →* GL n k`, then
 its linear extension to `k[G]` obeys every polynomial identity among traces of algebra maps
 `k[G] →ₐ[k] Matrix n n k`. -/
@@ -79,66 +82,6 @@ private lemma eval_linearExtension_eq_zero {T : G → k}
     (h_identities _ fun ρ ↦ (comp_aeval_apply _ (aeval fun g : G ↦ (ρ g).val.trace) B).trans ?_)
   simpa [Finsupp.sum, lift_apply] using
     hB (MonoidAlgebra.lift k (Matrix n n k) G ((Units.coeHom (Matrix n n k)).comp ρ))
-
-/-- Let `t` be a linear form on `k[G]` that obeys every polynomial identity among traces of algebra
-maps `k[G] → Matrix n n k`. Then the quotient of `k[G]` by the kernel of the pairing `t (x * y)` is
-finite-dimensional: for `card n ^ 2 + 1` elements `s i`, independent modulo the kernel, the forms
-`y ↦ t (s i * y)` would be independent, but their minors `det (t (s i * b j))` are polynomial
-identities among traces, and these vanish since the `ρ (s i)` are dependent in every `ρ`. -/
-private lemma finite_quotient_traceRadical (t : k[G] →ₗ[k] k)
-    (t_comm : ∀ x y : k[G], t (x * y) = t (y * x))
-    (h_alg : ∀ B : MvPolynomial k[G] k,
-      (∀ ρ : k[G] →ₐ[k] Matrix n n k, eval (fun x : k[G] ↦ (ρ x).trace) B = 0) → eval t B = 0) :
-    Module.Finite k (k[G] ⧸ t.traceRadical t_comm) := by
-  let N : ℕ := Fintype.card n * Fintype.card n + 1
-  refine rank_lt_aleph0_iff.mp (not_le.mp fun h_inf ↦ ?_)
-  obtain ⟨s, hs⟩ : ∃ s : Fin N → k[G], LinearIndependent k (mk (t.traceRadical t_comm) ∘ s) :=
-    mk_surjective.comp_left.exists.mp (le_rank_iff.mp (Cardinal.aleph0_le.mp h_inf N))
-  have h_ltoFun : LinearMap.ker (ltoFun k k[G] k k) = ⊥ := by aesop
-  have h_indep : LinearIndependent k fun (i : Fin N) (y : k[G]) ↦ t (s i * y) :=
-    (hs.map' _ (ker_liftQ_eq_bot' _ _ (t.traceRadical_restrictScalars_eq_ker t_comm))).map'
-      (ltoFun k k[G] k k) h_ltoFun
-  have h_dep (ρ : k[G] →ₐ[k] Matrix n n k) :
-      ¬LinearIndependent k fun (i : Fin N) (A : Matrix n n k) ↦ (ρ (s i) * A).trace := by
-    intro h
-    have hle := (LinearIndependent.of_comp (v := fun i ↦ ρ (s i))
-      (pi fun A ↦ traceLinearMap n k k ∘ₗ mulRight k A) h).fintype_card_le_finrank
-    simp only [finrank_matrix, Module.finrank_self, mul_one, Fintype.card_fin] at hle
-    omega
-  refine det_eval_eq_zero_iff_not_linearIndependent.mp (fun b ↦ ?_) h_indep
-  -- the minor `det (t (s i * b j))` is `t` at a polynomial that vanishes on traces
-  have h_det_zero : eval t (of fun i j ↦ X (s i * b j) : Matrix (Fin N) (Fin N) _)ᵀ.det = 0 := by
-    refine h_alg _ fun ρ ↦ ?_
-    simpa [det_apply, Function.flip_def] using det_eval_eq_zero_iff_not_linearIndependent.mpr
-      (h_dep ρ) (ρ ∘ b)
-  simpa [det_apply, Function.flip_def] using h_det_zero
-
-private lemma isSemisimpleRing_traceQuotient (t : k[G] →ₗ[k] k)
-    (t_comm : ∀ x y : k[G], t (x * y) = t (y * x))
-    [Module.Finite k (k[G] ⧸ t.traceRadical t_comm)]
-    (τ_nat : ∀ (l : k) (x : k[G] ⧸ t.traceRadical t_comm),
-      (∀ m : ℕ, x ^ (m + 1) = l ^ m • x) → ∃ j : ℕ, t.quotientTrace t_comm x = j * l) :
-    IsSemisimpleRing (k[G] ⧸ t.traceRadical t_comm) := by
-  classical
-  let I := t.traceRadical t_comm
-  have hzero (x : k[G] ⧸ I) (hx : ∀ y, x * y * x = 0) : x = 0 := by
-    refine t.quotientTrace_nondegenerate t_comm x fun y ↦ ?_
-    have hsq (m : ℕ) : (x * y) ^ (m + 1) = (0 : k) ^ m • (x * y) := by
-      cases m <;> simp_all [pow_succ', ← mul_assoc]
-    obtain ⟨j, hj⟩ := τ_nat 0 (x * y) hsq
-    simpa using hj
-  have : IsArtinianRing (k[G] ⧸ I) := IsArtinianRing.of_finite k _
-  have : IsNoetherianRing (k[G] ⧸ I) := isNoetherian_of_tower k inferInstance
-  have hrad : Ring.jacobson (k[G] ⧸ I) = ⊥ := by
-    refine (eq_bot_or_exists_atom_le (Ring.jacobson (k[G] ⧸ I))).resolve_right
-      fun ⟨J, hatom, hJ⟩ ↦ ?_
-    have kills : Ring.jacobson (k[G] ⧸ I) • J = ⊥ :=
-      hatom.lt_iff.1 (FG.of_finite.jacobson_smul_lt hatom.ne_bot)
-    apply hatom.ne_bot
-    refine eq_bot_iff.mpr fun x hx ↦ ?_
-    exact hzero x fun y ↦ kills.le (smul_mem_smul
-      (Ideal.mul_mem_right y _ (hJ hx)) hx)
-  exact IsArtinianRing.isSemisimpleRing_iff_jacobson.mpr hrad
 
 private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
     (h_identities : ∀ B : MvPolynomial G k,
@@ -155,25 +98,24 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
   let τ : k[G] ⧸ I →ₗ[k] k := t.quotientTrace t_comm
   have hτ (x : k[G]) : τ (mk I x) = t x := t.quotientTrace_mk t_comm x
   have τ_nat (l : k) (x : k[G] ⧸ I) (hx : ∀ m : ℕ, x ^ (m + 1) = l ^ m • x) :
-      ∃ j : ℕ, τ x = j * l := by
-    obtain ⟨x, rfl⟩ := mk_surjective (I := I) x
-    have hz : eval t (rename (fun i : ℕ ↦ x ^ i)
-        (integralNewtonPolynomial (Fintype.card n + 1) 1)) = 0 := by
-      refine h_alg _ fun ρ ↦ ?_
-      simpa [eval_rename, Function.comp_def] using
-        (ρ x).eval_integralNewtonPolynomial_trace_pow_eq_zero_of_splits (IsAlgClosed.splits _)
-    rw [eval_rename] at hz
-    apply τ.exists_nat_mul_of_integralNewtonPolynomial_eq_zero hx
-    simpa only [← map_pow, hτ, Function.comp_def] using hz
-  have : Module.Finite k (k[G] ⧸ I) := finite_quotient_traceRadical t t_comm h_alg
+      ∃ j : ℕ, τ x = j * l :=
+    τ.exists_nat_mul_of_integralNewtonPolynomial_eq_zero hx
+      (t.eval_integralNewtonPolynomial_quotientTrace_eq_zero t_comm h_alg x)
+  have : Module.Finite k (k[G] ⧸ I) :=
+    t.finite_quotient_traceRadical_of_trace_identities t_comm h_alg
+  have : IsArtinianRing (k[G] ⧸ I) := IsArtinianRing.of_finite k _
   have : IsSemisimpleRing (k[G] ⧸ I) :=
-    isSemisimpleRing_traceQuotient t t_comm τ_nat
+    t.isSemisimpleRing_quotient_traceRadical t_comm fun x hx ↦ by
+      obtain ⟨j, hj⟩ := τ_nat 0 x fun m ↦ by
+        cases m with
+        | zero => simp
+        | succ m => simp [pow_succ, mul_assoc, hx]
+      simpa using hj
   have hτone : τ 1 = Fintype.card n := by
     have h := h_alg (X 1 - ∑ _ : n, 1) fun ρ ↦ by simp
     rw [t.quotientTrace_one t_comm]
     simpa [sub_eq_zero] using h
-  obtain ⟨m, d, hd, ⟨e⟩⟩ := IsSemisimpleRing.exists_algEquiv_pi_matrix_of_isAlgClosed k (k[G] ⧸ I)
-  have := hd
+  obtain ⟨m, d, _, ⟨e⟩⟩ := IsSemisimpleRing.exists_algEquiv_pi_matrix_of_isAlgClosed k (k[G] ⧸ I)
   obtain ⟨φ, hφ⟩ := (τ.comp e.symm.toLinearMap).exists_algHom_trace_eq_pi_matrix
     (fun x y ↦ by simpa using t.quotientTrace_mul_comm t_comm (e.symm x) (e.symm y))
     (fun i ↦ by
@@ -188,7 +130,7 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
   let r := MonoidHom.toHomUnits
     (φ'.toMonoidHom.comp ((mk I).toMonoidHom.comp (MonoidAlgebra.of k G)))
   refine ⟨r, fun g ↦ ?_⟩
-  simpa [r, hτ, t, linearExtension] using hφ' (mk I (MonoidAlgebra.of k G g))
+  simpa [r, hτ, t] using hφ' (mk I (MonoidAlgebra.of k G g))
 
 /-- A function satisfying every polynomial identity among traces in dimension `n` is the
 character of a semisimple representation on `kⁿ`. No positivity assumption on `n` is needed. -/
