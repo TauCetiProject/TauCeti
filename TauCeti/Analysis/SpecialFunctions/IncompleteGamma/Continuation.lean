@@ -16,9 +16,11 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 `Complex.upperIncompleteGammaLog a w` is `Γ(a, e^w)` continued to the whole `w`-plane, the
 universal cover of the punctured `z`-plane. It starts from `Γ(a, e^{Re w})` on the positive real
-axis and integrates `d/du Γ(a, e^u) = −e^{au − e^u}` along the vertical segment from `Re w` to
-`w`. It is entire in `a` and in `w`, it is the principal value `Γ(a, z)` at `w = log z` for `z` in
-the slit plane, and it satisfies the continuation formulas DLMF 8.2.9–8.2.11.
+axis and integrates `−e^{au − e^u}` along the vertical segment from `Re w` to `w`. This integrand
+is entire in `u`, and on the strip `|Im u| < π` it is the derivative of the principal function
+`Γ(a, e^u)`; the segment may leave that strip. The continuation is entire in `a` and in `w`, it is
+the principal value `Γ(a, z)` at `w = log z` for `z` in the slit plane, and it satisfies the
+continuation formulas DLMF 8.2.9–8.2.11.
 
 ## Main definitions
 
@@ -63,8 +65,7 @@ poles `a = −n` and DLMF 8.2.10 follow by continuity in `a`.
 
 * NIST Digital Library of Mathematical Functions, §8.2(ii), <https://dlmf.nist.gov/8.2.ii>.
 
-The definition and the statements follow the TauCetiRoadmap `SpecialFunctionsEiLiErfIncompleteGamma`
-roadmap and DLMF. The proofs of DLMF 8.2.9–8.2.11 and of the limiting form are adapted from the
+The proofs of DLMF 8.2.9–8.2.11 and of the limiting form are adapted from the
 lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/IncompleteGamma/ContinuedProperties.lean` (`upperIncompleteGammaOnLog_eq_Gamma_sub`,
 `upperIncompleteGammaOnLog_monodromy`, `upperIncompleteGammaOnLog_monodromy_limit`,
@@ -82,9 +83,10 @@ open scoped Real Topology Nat
 
 namespace Complex
 
-/-- `Γ(a, e^w)` on the logarithmic plane, continued from the positive axis along the vertical
-segment from `Re w` to `w`, on which `d/du Γ(a, e^u) = −e^{au − e^u}`. It is entire in `a`
-and in `w` (`Complex.differentiable_upperIncompleteGammaLog_left`,
+/-- `Γ(a, e^w)` on the logarithmic plane, continued from the positive axis by integrating
+`−e^{au − e^u}` along the vertical segment from `Re w` to `w`. This integrand is entire in `u`,
+and on the strip `|Im u| < π` it is the derivative of the principal function `Γ(a, e^u)`. It is
+entire in `a` and in `w` (`Complex.differentiable_upperIncompleteGammaLog_left`,
 `Complex.differentiable_upperIncompleteGammaLog`). -/
 def upperIncompleteGammaLog (a w : ℂ) : ℂ :=
   upperIncompleteGamma a (Real.exp w.re) -
