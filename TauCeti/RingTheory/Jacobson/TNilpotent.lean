@@ -35,6 +35,7 @@ over left perfect rings.
   left ideal `J` is left T-nilpotent, then `J • M` is superfluous in every module `M`, in every
   universe; `TauCeti.IsLeftTNilpotent.subsingleton_of_smul_top_eq_top` is the form `J • M = M →
   M = 0`.
+* `TauCeti.isSuperfluous_smul_top_of_isNilpotent`: the special case of a nilpotent ideal.
 * `TauCeti.isLeftTNilpotent_of_isSuperfluous_smul_top_finsupp`: conversely, superfluity of `J • F`
   in the single free module `F = ℕ →₀ A` already forces left T-nilpotence. For a sequence `a` in
   `J` with no vanishing initial product, the submodule spanned by the `eᵢ - a i • eᵢ₊₁` supplements
@@ -128,8 +129,8 @@ private theorem exists_mul_smul_notMem {J : Ideal A} {K : Submodule A M}
 
 /-- **Nakayama's lemma for all modules.** If the left ideal `J` is left T-nilpotent, then `J • M`
 is superfluous in every module `M`. Unlike `TauCeti.isSuperfluous_jacobson`, no finiteness of `M`
-is needed; this generalizes `TauCeti.isSuperfluous_smul_top_of_isNilpotent` via
-`TauCeti.IsLeftTNilpotent.of_isNilpotent`. -/
+is needed; `TauCeti.isSuperfluous_smul_top_of_isNilpotent` is the special case of a nilpotent
+ideal. -/
 theorem IsLeftTNilpotent.isSuperfluous_smul_top {J : Ideal A} (hJ : IsLeftTNilpotent (J : Set A)) :
     IsSuperfluous (J • (⊤ : Submodule A M)) := by
   refine isSuperfluous_iff.mpr fun K hK ↦ ?_
@@ -139,16 +140,26 @@ theorem IsLeftTNilpotent.isSuperfluous_smul_top {J : Ideal A} (hJ : IsLeftTNilpo
   -- Iterate the step: the state `(b, x)` records the running product `b` and an element `x` with
   -- `b • x ∉ K`.
   let s : ℕ → A × M := fun n ↦ Nat.rec (1, y) (fun _ p ↦ (p.1 * a p.1 p.2, m p.1 p.2)) n
+  -- The defining equations of the recursion, which hold by `Nat.rec`'s computation rules.
+  have hs0 : s 0 = (1, y) := rfl
+  have hs : ∀ n, s (n + 1) = ((s n).1 * a (s n).1 (s n).2, m (s n).1 (s n).2) := fun _ ↦ rfl
   have key : ∀ n, (s n).1 = ((List.range n).map fun i ↦ a (s i).1 (s i).2).prod ∧
       (s n).1 • (s n).2 ∉ K := by
     intro n
     induction n with
-    | zero => exact ⟨by simp [s], by simpa [s] using hy⟩
-    | succ n ih => exact ⟨by rw [List.prod_range_succ, ← ih.1], hm _ _ ih.2⟩
+    | zero => exact ⟨by simp [hs0], by simpa [hs0] using hy⟩
+    | succ n ih => exact ⟨by rw [hs, List.prod_range_succ, ← ih.1], by rw [hs]; exact hm _ _ ih.2⟩
   obtain ⟨n, hn⟩ := hJ _ fun i ↦ ha _ _
   have hnK := (key n).2
   rw [(key n).1, hn, zero_smul] at hnK
   exact hnK K.zero_mem
+
+/-- **Nakayama's lemma for a nilpotent ideal.** If `I` is a nilpotent ideal, then `I • M` is
+superfluous in every module `M`: a nilpotent ideal is left T-nilpotent
+(`TauCeti.IsLeftTNilpotent.of_isNilpotent`). -/
+theorem isSuperfluous_smul_top_of_isNilpotent {I : Ideal A} (hI : IsNilpotent I) :
+    IsSuperfluous (I • (⊤ : Submodule A M)) :=
+  (IsLeftTNilpotent.of_isNilpotent hI).isSuperfluous_smul_top
 
 /-- **Nakayama's lemma for all modules**, in the form `J • M = M → M = 0`: over a left
 T-nilpotent left ideal `J`, no nonzero module satisfies `J • M = M`. -/
