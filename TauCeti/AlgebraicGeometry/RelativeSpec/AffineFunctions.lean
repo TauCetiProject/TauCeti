@@ -17,7 +17,8 @@ A scheme `p : V ⟶ X` over `X` has a commutative `𝒪ₓ`-algebra of regular f
 the actual pushforward `p_* 𝒪_V` (`AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebra`),
 and a morphism `g : V ⟶ W` over `X` pulls back regular functions
 (`AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraMap`). When the structure morphism is
-affine, the algebra of regular functions is quasi-coherent, so this defines the functor
+quasi-compact quasi-separated (e.g. affine), the algebra of regular functions is quasi-coherent;
+on affine schemes over `X` this defines the functor
 
 `affineFunctions X : AffineSchemeOver X ⥤ (QuasicoherentAlgebra X)ᵒᵖ`
 
@@ -28,7 +29,7 @@ schemes over `X`.
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.isQuasicoherent_pushforwardStructureAlgebra`: the function
-  algebra of an affine morphism is quasi-coherent;
+  algebra of a quasi-compact quasi-separated (e.g. affine) morphism is quasi-coherent;
 * `TauCeti.AlgebraicGeometry.affineFunctions X`: the coordinate-algebra functor from affine
   schemes over `X` to quasi-coherent commutative `𝒪ₓ`-algebras.
 
@@ -36,6 +37,8 @@ schemes over `X`.
 
 * The Stacks Project, [Tag 01LL](https://stacks.math.columbia.edu/tag/01LL) (relative
   spectrum).
+* The Stacks Project, [Tag 01LC](https://stacks.math.columbia.edu/tag/01LC) (pushforward of a
+  quasi-coherent module along a quasi-compact quasi-separated morphism).
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique II*, §1.3.
 -/
 
