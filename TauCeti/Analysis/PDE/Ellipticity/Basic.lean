@@ -91,6 +91,8 @@ constants are parameters, not hidden existential data.
 * `Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm`: the contraction
   `∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫` is at most `n ‖M‖ ‖H‖`, with `‖M‖` the operator norm of the attached
   bilinear form.
+* `Matrix.abs_contraction_sub_contraction_le_mul_norm_matrixBilinearForm_sub_mul_norm`: freezing
+  the coefficients `M` at `A` changes the contraction by at most `n ‖M - A‖ ‖H‖`.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
   bound controls the operator norm of the attached matrix bilinear form.
 * `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
@@ -1430,6 +1432,20 @@ theorem _root_.Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm {m
     _ = m * ‖matrixBilinearForm M‖ * ‖H‖ := by
         simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         ring
+
+/-- **Freezing the coefficients of a contraction.** Replacing `M` by `A` changes the contraction
+`∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫` by at most `m ‖M - A‖ ‖H‖`, where `‖M - A‖` is the operator norm of the
+difference of the bilinear forms. -/
+theorem _root_.Matrix.abs_contraction_sub_contraction_le_mul_norm_matrixBilinearForm_sub_mul_norm
+    {m : ℕ} (A M : Matrix (Fin m) (Fin m) ℝ)
+    (H : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin m)) :
+    |Matrix.contraction A H - Matrix.contraction M H| ≤
+      m * ‖matrixBilinearForm M - matrixBilinearForm A‖ * ‖H‖ := by
+  have h := Matrix.abs_contraction_le_mul_norm_matrixBilinearForm_mul_norm (A - M) H
+  have hn : ‖matrixBilinearForm M - matrixBilinearForm A‖ =
+      ‖matrixBilinearForm A - matrixBilinearForm M‖ :=
+    norm_sub_rev (matrixBilinearForm M) (matrixBilinearForm A)
+  rwa [Matrix.contraction_sub, sub_apply, matrixBilinearForm_sub, ← hn] at h
 
 end PDE
 

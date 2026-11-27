@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
@@ -25,6 +26,8 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 * `Matrix.contraction_add`, `Matrix.contraction_sub`, `Matrix.contraction_smul`: the
   contraction is linear in the matrix.
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
+* `Matrix.contraction_apply_eq_traceCLM`: the contraction of `H` with `A` is the trace of
+  `A ∘ H`, for `A` acting on `ℝⁿ` (`Matrix.toEuclideanCLM`).
 * `Matrix.abs_contraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
 * `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
@@ -106,6 +109,18 @@ theorem contraction_one :
   rw [contraction_apply, TauCeti.traceCLM_apply,
     LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
   simp [Matrix.one_apply, real_inner_comm]
+
+/-- The contraction of `H` with `A` is the trace of the composite `A ∘ H`, where `A` acts on `ℝⁿ`
+as `Matrix.toEuclideanCLM A`: `∑ᵢⱼ Aᵢⱼ ⟪H eᵢ, eⱼ⟫ = tr (A ∘ H)`. -/
+theorem contraction_apply_eq_traceCLM (A : Matrix (Fin n) (Fin n) ℝ)
+    (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
+    contraction A H =
+      traceCLM ℝ (EuclideanSpace ℝ (Fin n)) (toEuclideanCLM (𝕜 := ℝ) A ∘L H) := by
+  rw [contraction_apply, TauCeti.traceCLM_apply,
+    LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  simp [mulVec, dotProduct, real_inner_comm,
+    EuclideanSpace.inner_single_left]
 
 /-- If every entry of `M` is at most `ε` in absolute value, then
 `|∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫| ≤ n² ε ‖H‖`. -/
