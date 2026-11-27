@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Convex.Lifting.SupportRows
 import Mathlib.Algebra.Order.Hom.Monoid
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Algebra.Order.BigOperators.Sum.Sup
 import TauCeti.Analysis.Calculus.FDeriv.Monotone
 import TauCeti.Analysis.Convex.Strong
 
@@ -55,11 +54,10 @@ For the outer sum `h y = ∑ j, y j` with the sum of the coordinate projections 
 every outer row is the sum of the heights, so the rows become the finite support rows of
 `TauCeti.ConvexLifting.sharedRows` and `TauCeti.ConvexLifting.independentRows`: the coordinates
 `j` of the component rows at all anchors are the support rows of the height `y j`. With
-unrestricted heights and finitely many anchors the shared approximation is then `sharedRows`, so its
-projection is cut out by the sum of the coordinatewise row maxima; for any nonempty anchor family
-(finite or infinite), the projection is cut out by every mixed choice of one anchor per coordinate.
-The direct approximation is the projection of `independentRows`, cut out by the same-anchor choices
-only.
+unrestricted heights the shared approximation is then `sharedRows`, so its projection is cut out by
+the sum of the coordinatewise row maxima, equivalently by every mixed choice of one anchor per
+coordinate. The direct approximation is the projection of `independentRows`, cut out by the
+same-anchor choices only.
 
 The inner map `g` is differentiated within `D` and the outer function `h` within `E`, so anchors
 and heights may lie on the boundary of the domains. Only the full-space comparison for a monotone
@@ -708,24 +706,18 @@ theorem fst_image_sharedOuterApprox_univ_sum_coord [Fintype κ] [Nonempty κ] :
     fst_image_sharedRows fun _ ↦ Finset.univ_nonempty]
 
 /-- **Shared heights for the outer sum through mixed choices of anchors.** For the outer sum,
-unrestricted heights, and any nonempty anchor family (finite or infinite), the shared approximation
-projects onto the points of `D` at which, for every choice `c j` of an anchor for each coordinate
-`j`, the coordinates `j` of the component rows at `a (c j)` sum to at most `b`. -/
-theorem fst_image_sharedOuterApprox_univ_sum_coord_eq_forall [Nonempty κ] :
+unrestricted heights and finitely many anchors, at least one, the shared approximation projects onto
+the points of `D` at which, for every choice `c j` of an anchor for each coordinate `j`, the
+coordinates `j` of the component rows at `a (c j)` sum to at most `b`. -/
+theorem fst_image_sharedOuterApprox_univ_sum_coord_eq_forall [Finite κ] [Nonempty κ] :
     Prod.fst '' sharedOuterApprox D univ g (fun y ↦ ∑ j, y j) a Dg (fun _ ↦ ∑ j, proj j) b =
       {x | x ∈ D ∧ ∀ c : ι → κ, ∑ j, componentRow g (a (c j)) (Dg (c j)) x j ≤ b} := by
-  classical
+  have := Fintype.ofFinite κ
   ext x
-  simp only [mem_image, mem_sharedOuterApprox, mem_univ, true_and, outerRow_sum_coord,
-    forall_and, forall_const, Pi.le_def, Prod.exists, exists_and_right, exists_eq_right,
-    mem_ofPred_eq]
-  refine ⟨fun ⟨y, hxD, hy, hsum⟩ ↦ ⟨hxD, fun c ↦
-    (Finset.sum_le_sum fun j _ ↦ hy (c j) j).trans hsum⟩, fun ⟨hxD, hall⟩ ↦ ?_⟩
-  let r : ι → κ → ℝ := fun j i ↦ componentRow g (a i) (Dg i) x j
-  have hbdd : ∀ j, BddAbove (range (r j)) :=
-    TauCeti.bddAbove_range_of_forall_choice_sum_le r hall
-  exact ⟨fun j ↦ ⨆ i : κ, r j i, hxD, fun i j ↦ le_ciSup (hbdd j) i,
-    (TauCeti.sum_ciSup_le_iff_forall_choice r hbdd b).2 hall⟩
+  rw [sharedOuterApprox_univ_sum_coord_eq_sharedRows]
+  simpa only [mem_image, Prod.exists, exists_and_right, exists_eq_right, mem_ofPred_eq,
+    Finset.mem_univ, implies_true, true_implies] using
+    exists_mem_sharedRows_iff_forall_sum_le (fun _ ↦ Finset.univ_nonempty) x
 
 /-- **Direct rows for the outer sum are independent support rows.** For the outer sum, the direct
 approximation is the projection of `independentRows` whose rows at the anchor `i` are the
