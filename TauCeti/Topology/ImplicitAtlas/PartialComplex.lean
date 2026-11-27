@@ -378,8 +378,8 @@ theorem isZero_partialVirtualComplex_obj_of_coe_eq_empty (hJB : J ⊆ B)
       rwa [hK] at h
   have hP : Function.Surjective (TopPair.ofSubset
       (X := TopCat.of (𝒜.deformationSpace I hJB)) (𝒜.deformationSupport I hJB K.unop)ᶜ).map := by
-    rw [← Set.range_eq_univ, TopPair.range_ofSubset_map, hZ, Set.compl_empty]
-    rfl
+    rw [← Set.range_eq_univ, TopPair.range_ofSubset_map, hZ]
+    exact Set.compl_empty
   have hlim : IsZero (limit (TopPair.diagonalChainAction
       ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k)
       (𝒜.deformationPairFunctor I hJB K.unop))) :=

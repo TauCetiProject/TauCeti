@@ -647,15 +647,13 @@ lemma topι_f (A : IntervalDiagram S (ChainComplex D ℕ)) (q : ℕ) :
 @[reassoc (attr := simp)]
 lemma topι_totalMap {A B : IntervalDiagram S (ChainComplex D ℕ)} (α : A ⟶ B) :
     A.topι ≫ totalMap α = α.app (op (NonemptyInterval.pure ⊤)) ≫ B.topι := by
-  ext q : 1
   -- `topι` is `topFlagι` followed by the inclusion of column `0` in the total.
-  have h : (topFlagι A).f q ≫ ((flagComplexMap α).f 0).f q =
-      (α.app (op (NonemptyInterval.pure ⊤))).f q ≫ (topFlagι B).f q := by
-    rw [← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f, topFlagι, topFlagι,
-      Category.assoc, flagComplexι_flagComplexMap_f, NatTrans.naturality_assoc]
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, topι_f, topι_f, Category.assoc,
-    ιTotal_totalMap, ← Category.assoc]
-  exact (congrArg (· ≫ _) h).trans (Category.assoc _ _ _)
+  have h : topFlagι A ≫ (flagComplexMap α).f 0 =
+      α.app (op (NonemptyInterval.pure ⊤)) ≫ topFlagι B := by
+    simp [topFlagι]
+  ext q : 1
+  simp only [HomologicalComplex.comp_f, topι, Category.assoc, ιTotal_totalMap]
+  rw [← HomologicalComplex.comp_f_assoc, h, HomologicalComplex.comp_f_assoc]
 
 end Top
 

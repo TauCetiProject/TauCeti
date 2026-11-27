@@ -176,15 +176,14 @@ def virtualComplexTopι (B : Finset A) :
     -- `πStupidTrunc` is natural and `topι` is natural in the diagram. The two composites agree
     -- because the restriction of `R_BB` along `h` is, definitionally, the component at the top
     -- interval of the map of diagrams, `R_BB` being the value at `(⊤, ⊤) = (B, B)`.
-    have h₁ := HomologicalComplex.πStupidTrunc_naturality
-      ((𝒜.partialVirtualComplex k B (subset_refl B)).map h)
-      (ComplexShape.embeddingUpIntLE (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ)))
-    have h₂ := congrArg (HomologicalComplex.extendMap · (ComplexShape.embeddingUpIntLE
+    have hTop := congrArg (HomologicalComplex.extendMap · (ComplexShape.embeddingUpIntLE
       (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))))
       (IntervalDiagram.topι_totalMap ((𝒜.partialVirtualChainDiagram k hΓ B).map h))
-    simp only [HomologicalComplex.extendMap_comp] at h₂
-    exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) h₁.symm).trans <|
-      (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) h₂.symm).trans (Category.assoc _ _ _).symm
+    simp only [HomologicalComplex.extendMap_comp] at hTop
+    -- The goal typechecks only up to unfolding `stupidTrunc` and the diagram, so `rw` and `simp`
+    -- cannot rewrite in it; the two naturality squares are pasted by unification instead.
+    exact (HomologicalComplex.πStupidTrunc_naturality_assoc _ _ _).symm.trans <|
+      (_ ≫= hTop.symm).trans (Category.assoc _ _ _).symm
 
 /-- The component of the inclusion of the top partial complex at `K`. -/
 theorem virtualComplexTopι_app (B : Finset A) (K : (Compacts (TopCat.of X))ᵒᵖ) :
