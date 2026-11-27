@@ -8,9 +8,8 @@ module
 public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Contact.Standard
 public import Mathlib.Analysis.Calculus.Deriv.Prod
-import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # Legendrian curves in the standard contact space `ℝ³`
@@ -179,28 +178,16 @@ private theorem isLegendrianEmbedding_smul {α : SmoothForm 𝓘(ℝ, ℝ × ℝ
     (hα : α.IsContactForm) {v : ℝ × ℝ × ℝ} (hv : v ≠ 0)
     (hvα : ∀ t : ℝ, (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) (t • v)) ∈ α.kerDistribution (t • v)) :
     IsLegendrianEmbedding 𝓘(ℝ, ℝ) α.kerDistribution (fun t : ℝ ↦ t • v) := by
-  have hd (t : ℝ) : HasDerivAt (fun s : ℝ ↦ s • v) v t := by
-    simpa using (hasDerivAt_id t).smul_const v
-  have hdf (t s : ℝ) :
-      (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s : ℝ ↦ s • v) t s : ℝ × ℝ × ℝ) = s • v := by
-    rw [Manifold.mfderiv_apply_eq_smul_curveVelocity, Manifold.curveVelocity_eq_deriv, (hd t).deriv]
-    -- The scalar action on the tangent space is that of the model space.
-    rfl
-  have hsmooth : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ (fun s : ℝ ↦ s • v) :=
-    (contDiff_id.smul contDiff_const).contMDiff
-  have himm : Manifold.IsImmersion 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ (fun s : ℝ ↦ s • v) :=
-    hsmooth.isImmersion_of_injective_mfderiv (by simp) fun t (s s' : ℝ) hss' ↦
-      smul_left_injective ℝ hv ((hdf t s).symm.trans (hss'.trans (hdf t s')))
-  have hhor : IsHorizontalMap 𝓘(ℝ, ℝ) α.kerDistribution (fun s : ℝ ↦ s • v) := by
-    refine isHorizontalMap_iff.2 fun t (s : ℝ) ↦ ?_
-    -- The differential sends `s` to `s • v`, a multiple of the kernel vector `v`.
-    have hs : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (fun s : ℝ ↦ s • v) t s =
-        s • (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) (t • v)) :=
-      hdf t s
-    rw [hs]
-    exact Submodule.smul_mem _ _ (hvα t)
-  exact ⟨⟨hα.isContactDistribution_kerDistribution, himm, hhor,
-    by simp [Module.finrank_prod]⟩, (isClosedEmbedding_smul_left hv).isEmbedding⟩
+  -- The line is the injective continuous linear map `t ↦ t • v`, hence a smooth embedding.
+  let L := ContinuousLinearMap.toSpanSingleton ℝ v
+  have hemb : Manifold.IsSmoothEmbedding 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ L :=
+    L.isSmoothEmbedding_of_injective (smul_left_injective ℝ hv)
+  refine (isLegendrianEmbedding_iff_of_isSmoothEmbedding hemb).2
+    ⟨hα.isContactDistribution_kerDistribution, hemb.isImmersion, isHorizontalMap_iff.2
+      fun t (s : ℝ) ↦ ?_, by simp [Module.finrank_prod]⟩
+  -- The differential is `L` itself, sending `s` to `s • v`, a multiple of the kernel vector `v`.
+  rw [L.mfderiv_eq, ContinuousLinearMap.toSpanSingleton_apply]
+  exact Submodule.smul_mem _ s (hvα t)
 
 /-- **Legendrian lines of `dz - p dq`.** For `c ≠ 0`, the line `t ↦ (0, c t, 0)` of
 `ℝ × ℝ × ℝ`, along the `p`-axis, is a Legendrian embedding of `ℝ` for the kernel of the one-jet
