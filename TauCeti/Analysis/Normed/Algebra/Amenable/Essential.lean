@@ -87,7 +87,7 @@ theorem isAmenable_iff_essential {𝕜 : Type v} {A : Type u} [NontriviallyNorme
       essentialSubmodule_restrictAction_eq_top_right R hR hC hl.tendsto_mul_left Eess
         (essentialBimoduleSubmodule_le_right hLR) hR_inv
     let Dess : A →L[𝕜] StrongDual 𝕜 Eess := (precomp 𝕜 Eess.subtypeL) ∘L D
-    have hDess := precomp_subtypeL_comp_derivation Eess hL_inv hR_inv hD
+    have hDess := Submodule.precomp_subtypeL_comp_derivation Eess hL_inv hR_inv hD
     obtain ⟨ψ₀, hψ₀⟩ := h Eess Less Ress hLess hRess hLRess hL_top hR_top Dess hDess
     exact exists_eq_dualAction_sub_dualAction_of_restrict_essential hL hR hLR hl hC D hD
       ⟨ψ₀, fun a ↦ by simpa only [Dess, comp_apply, precomp_apply] using hψ₀ a⟩

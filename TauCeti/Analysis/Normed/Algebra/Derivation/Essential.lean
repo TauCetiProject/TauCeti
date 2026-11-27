@@ -213,7 +213,7 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
     restrictAction_apply_comm hLR EL hLL_inv hRL_inv
   -- Step 1: reduce `E` to `EL`.
   let DL : A →L[𝕜] StrongDual 𝕜 EL := (precomp 𝕜 EL.subtypeL) ∘L D
-  have hDL := precomp_subtypeL_comp_derivation EL hLL_inv hRL_inv hD
+  have hDL := Submodule.precomp_subtypeL_comp_derivation EL hLL_inv hRL_inv hD
   suffices ∃ ψL : StrongDual 𝕜 EL, ∀ a, DL a = dualAction RL a ψL - dualAction LL a ψL by
     obtain ⟨ψL, hψL⟩ := this
     exact exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential hL hR hLR hC

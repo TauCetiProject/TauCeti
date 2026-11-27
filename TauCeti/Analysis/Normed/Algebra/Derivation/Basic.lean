@@ -18,7 +18,7 @@ or a dual bimodule `E*`. This file provides basic algebraic and submodule-restri
   inner derivation from a bounded derivation preserves it (`TauCeti.derivation_sub_inner`);
 * restricting the values of a dual-valued bounded derivation to a jointly invariant submodule `p`
   preserves the derivation law for the restricted actions
-  (`TauCeti.precomp_subtypeL_comp_derivation`);
+  (`Submodule.precomp_subtypeL_comp_derivation`);
 * when the restriction to a jointly invariant submodule `p` is inner, Hahn–Banach extension
   produces a residual bounded derivation annihilating `p`
   (`TauCeti.exists_residual_derivation_of_restrict`).
@@ -27,7 +27,7 @@ or a dual bimodule `E*`. This file provides basic algebraic and submodule-restri
 
 * `TauCeti.derivation_inner` and `TauCeti.derivation_sub_inner`: inner derivations satisfy the
   derivation law, and bounded derivations are closed under subtracting inner derivations.
-* `TauCeti.precomp_subtypeL_comp_derivation`: restricting a dual-valued derivation to a jointly
+* `Submodule.precomp_subtypeL_comp_derivation`: restricting a dual-valued derivation to a jointly
   invariant submodule preserves its Leibniz law.
 * `TauCeti.exists_residual_derivation_of_restrict`: Hahn–Banach reduction of a bounded derivation
   that is inner on a jointly invariant submodule to a residual derivation vanishing on that
@@ -72,7 +72,8 @@ theorem derivation_sub_inner {L R : A →L[𝕜] F →L[𝕜] F}
 
 /-- Restricting the values of a dual-valued bounded derivation to any jointly invariant submodule
 preserves its Leibniz law for the restricted actions. -/
-theorem precomp_subtypeL_comp_derivation {L R : A →L[𝕜] E →L[𝕜] E} (p : Submodule 𝕜 E)
+theorem _root_.Submodule.precomp_subtypeL_comp_derivation {L R : A →L[𝕜] E →L[𝕜] E}
+    (p : Submodule 𝕜 E)
     (hLp : ∀ a, ∀ x ∈ p, L a x ∈ p) (hRp : ∀ a, ∀ x ∈ p, R a x ∈ p)
     {D : A →L[𝕜] StrongDual 𝕜 E}
     (hD : ∀ a b, D (a * b) = dualAction R a (D b) + dualAction L b (D a)) (a b : A) :
