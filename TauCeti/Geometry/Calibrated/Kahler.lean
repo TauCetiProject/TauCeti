@@ -7,23 +7,22 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Power
 public import TauCeti.Geometry.Calibrated.FundamentalTheorem
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Riemannian.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.Orientation
-import TauCeti.Geometry.Manifold.DeRham.Wedge
+public import TauCeti.Geometry.Symplectic.Manifold.Volume
 
 /-!
 # Kähler calibrations
 
 Let `(M, g)` be a Riemannian manifold with a smooth almost complex structure `J` that is
 orthogonal for `g`, and let `ω(u, w) = g(J u, w)` be its Kähler two-form
-(`TauCeti.SmoothAlmostComplexStructure.kahlerTwoForm`). The **normalized Kähler power**
-`TauCeti.SmoothAlmostComplexStructure.kahlerPowerForm J hJ r` is the smooth `2r`-form `ω ^ r / r!`.
+(`TauCeti.SmoothAlmostComplexStructure.kahlerTwoForm`). Its **normalized power** `ω ^ r / r!` is
+the smooth `2r`-form `TauCeti.SmoothTwoForm.volumeForm (J.kahlerTwoForm hJ) r`.
 At every point it is the normalized Kähler power of the tangent space
 (`TauCeti.AlmostComplexStructure.kahlerPowerForm`), so by the Wirtinger inequality it has comass at
-most one everywhere. When `ω` is closed, which holds on a Kähler manifold, so are its wedge powers,
-and `ω ^ r / r!` is a calibration.
+most one everywhere. When `ω` is closed, which holds on a Kähler manifold, so is `ω ^ r / r!`
+(`TauCeti.SmoothTwoForm.isClosed_volumeForm`), and it is a calibration.
 
 Let `f : N → M` be an immersion of a manifold of dimension `2r` with an almost complex structure
 `j`, pseudoholomorphic (`df ∘ j = J ∘ df`), and orient `N` by the complex orientation of `j`.
@@ -35,20 +34,14 @@ exactly for the competitors calibrated by `ω ^ r / r!`. Integrability of `J` pl
 statements hold on every almost Kähler manifold, and in particular for compact complex
 submanifolds of Kähler manifolds.
 
-## Main definitions
-
-* `TauCeti.SmoothAlmostComplexStructure.kahlerPowerForm J hJ r`: the smooth `2r`-form
-  `ω ^ r / r!`.
-
 ## Main results
 
-* `TauCeti.SmoothAlmostComplexStructure.kahlerPowerForm_apply`: its value at a point is the
-  normalized Kähler power of the tangent space.
-* `TauCeti.SmoothAlmostComplexStructure.isClosed_kahlerPowerForm`: it is closed when `ω` is.
-* `TauCeti.SmoothAlmostComplexStructure.isCalibration_kahlerPowerForm`: it is a calibration when
-  `ω` is closed.
-* `TauCeti.SmoothAlmostComplexStructure.isCalibratedImmersion_kahlerPowerForm`: pseudoholomorphic
-  immersions, with their complex orientation, are calibrated by it.
+* `TauCeti.SmoothAlmostComplexStructure.volumeForm_kahlerTwoForm_apply`: the value of
+  `ω ^ r / r!` at a point is the normalized Kähler power of the tangent space.
+* `TauCeti.SmoothAlmostComplexStructure.isCalibration_volumeForm_kahlerTwoForm`: `ω ^ r / r!` is a
+  calibration when `ω` is closed.
+* `TauCeti.SmoothAlmostComplexStructure.isCalibratedImmersion_volumeForm_kahlerTwoForm`:
+  pseudoholomorphic immersions, with their complex orientation, are calibrated by `ω ^ r / r!`.
 * `TauCeti.SmoothAlmostComplexStructure.immersionVolume_le_of_isPseudoholomorphic` and
   `TauCeti.SmoothAlmostComplexStructure.immersionVolume_eq_iff_of_isPseudoholomorphic`: compact
   pseudoholomorphic immersions minimize volume among competitors with the same periods, with
@@ -75,42 +68,30 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {J : SmoothAlmostComplexStructure I M}
 
-/-- The **normalized Kähler power** `ω ^ r / r!` of an orthogonal smooth almost complex structure
-`J`: the `r`-th wedge power of the Kähler two-form `ω(u, w) = ⟪J u, w⟫`, divided by `r!`. -/
-def kahlerPowerForm (J : SmoothAlmostComplexStructure I M)
-    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (r : ℕ) :
-    SmoothForm I M ℝ (2 * r) :=
-  (r.factorial : ℝ)⁻¹ • (J.kahlerTwoForm hJ).wedgePow r
-
 variable (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫)
 include hJ
 
-/-- At every point, `ω ^ r / r!` is the normalized Kähler power of the tangent space. -/
-theorem kahlerPowerForm_apply (r : ℕ) (x : M) :
-    (J.kahlerPowerForm hJ r).val x =
+/-- At every point, the normalized power `ω ^ r / r!` of the Kähler two-form is the normalized
+Kähler power of the tangent space. -/
+theorem volumeForm_kahlerTwoForm_apply (r : ℕ) (x : M) :
+    (SmoothTwoForm.volumeForm (J.kahlerTwoForm hJ) r).val x =
       (letI : FiniteDimensional ℝ (TangentSpace I x) :=
         VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
        (J.almostComplexStructureAt x).kahlerPowerForm r) := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  rw [kahlerPowerForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply,
-    kahlerTwoForm_apply, AlmostComplexStructure.kahlerPowerForm_def]
-
-/-- `ω ^ r / r!` is closed when the Kähler two-form `ω` is. -/
-theorem isClosed_kahlerPowerForm (hω : (J.kahlerTwoForm hJ).IsClosed) (r : ℕ) :
-    (J.kahlerPowerForm hJ r).IsClosed := by
-  have h := SmoothForm.wedgePow_mem_closedForms
-    ((mem_closedForms I _).2 ((SmoothForm.isClosed_def _).1 hω)) r
-  exact SmoothForm.IsClosed.smul _ ((SmoothForm.isClosed_def _).2 ((mem_closedForms I _).1 h))
+  rw [SmoothTwoForm.volumeForm_apply, kahlerTwoForm_apply,
+    AlmostComplexStructure.kahlerPowerForm_def]
 
 /-- **Kähler calibrations.** When the Kähler two-form `ω` of an orthogonal smooth almost complex
 structure is closed, `ω ^ r / r!` is a calibration. -/
-theorem isCalibration_kahlerPowerForm (hω : (J.kahlerTwoForm hJ).IsClosed) (r : ℕ) :
+theorem isCalibration_volumeForm_kahlerTwoForm (hω : (J.kahlerTwoForm hJ).IsClosed) (r : ℕ) :
     IsCalibration
       (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := ∞) (F := E))
-      (J.kahlerPowerForm hJ r).val := by
-  refine (isCalibration_iff _ _).2 ⟨(J.kahlerPowerForm hJ r).isSmoothForm,
-    (SmoothForm.isClosed_def _).1 (isClosed_kahlerPowerForm hJ hω r), fun x v hv ↦ ?_⟩
+      (SmoothTwoForm.volumeForm (J.kahlerTwoForm hJ) r).val := by
+  refine (isCalibration_iff _ _).2
+    ⟨(SmoothTwoForm.volumeForm (J.kahlerTwoForm hJ) r).isSmoothForm,
+      (SmoothForm.isClosed_def _).1 (SmoothTwoForm.isClosed_volumeForm hω r), fun x v hv ↦ ?_⟩
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
   have hJx (u w : TangentSpace I x) :
@@ -120,7 +101,7 @@ theorem isCalibration_kahlerPowerForm (hω : (J.kahlerTwoForm hJ).IsClosed) (r :
     rw [← hv i i', ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
     -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
     rfl
-  rw [kahlerPowerForm_apply hJ, ← Real.norm_eq_abs]
+  rw [volumeForm_kahlerTwoForm_apply hJ, ← Real.norm_eq_abs]
   exact (ContinuousAlternatingMap.opNorm_le_iff_le_orthonormal zero_le_one).1
     (AlmostComplexStructure.norm_kahlerPowerForm_le hJx r) v hvo
 
@@ -131,12 +112,12 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteD
 /-- **Pseudoholomorphic immersions are calibrated.** An immersion `f` of a manifold of dimension
 `2r` with an almost complex structure `j`, pseudoholomorphic for `j` and an orthogonal `J`, is
 calibrated by `ω ^ r / r!` for the complex orientation of `j`. -/
-theorem isCalibratedImmersion_kahlerPowerForm (hr : finrank ℝ E' = 2 * r) {f : N → M}
+theorem isCalibratedImmersion_volumeForm_kahlerTwoForm (hr : finrank ℝ E' = 2 * r) {f : N → M}
     (hf : ContMDiff I' I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
     (hfj : IsPseudoholomorphic j J f) :
     IsCalibratedImmersion
       (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := ∞) (F := E))
-      (J.kahlerPowerForm hJ r).val f hf hinj (j.orientation hr) := by
+      (SmoothTwoForm.volumeForm (J.kahlerTwoForm hJ) r).val f hf hinj (j.orientation hr) := by
   let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
     ⟨((ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := ∞) (F := E)).pullback
       f hf hinj).toRiemannianMetric⟩
@@ -163,7 +144,7 @@ theorem isCalibratedImmersion_kahlerPowerForm (hr : finrank ℝ E' = 2 * r) {f :
     exact orthonormal_iff_ite.1 hcal.orthonormal i i'
   refine eq_riemannianVolumeForm_of_apply_of_orthonormal _ x _ b
     (by rw [orientationAt_orientation, hb]) horth ?_
-  rw [mpullback_apply, kahlerPowerForm_apply hJ]
+  rw [mpullback_apply, volumeForm_kahlerTwoForm_apply hJ]
   exact hcal.apply_eq_one
 
 variable {E'' H'' N' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
@@ -191,8 +172,9 @@ theorem immersionVolume_le_of_isPseudoholomorphic (hω : (J.kahlerTwoForm hJ).Is
       immersionVolume
         (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := ∞) (F := E))
         f' hf' hinj' o' :=
-  immersionVolume_le_of_isCalibratedImmersion _ _ (isCalibration_kahlerPowerForm hJ hω r) f hf
-    hinj _ (isCalibratedImmersion_kahlerPowerForm hJ hr hf hinj hfj) f' hf' hinj' o' hhom
+  immersionVolume_le_of_isCalibratedImmersion _ _
+    (isCalibration_volumeForm_kahlerTwoForm hJ hω r) f hf hinj _
+    (isCalibratedImmersion_volumeForm_kahlerTwoForm hJ hr hf hinj hfj) f' hf' hinj' o' hhom
 
 /-- **Equality in the volume bound for pseudoholomorphic immersions.** Under the hypotheses of
 `immersionVolume_le_of_isPseudoholomorphic`, the competitor `f'` has the same volume as the
@@ -215,8 +197,9 @@ theorem immersionVolume_eq_iff_of_isPseudoholomorphic (hω : (J.kahlerTwoForm hJ
         f' hf' hinj' o' ↔
       IsCalibratedImmersion
         (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := ∞) (F := E))
-        (J.kahlerPowerForm hJ r).val f' hf' hinj' o' :=
-  immersionVolume_eq_iff_isCalibratedImmersion _ _ (isCalibration_kahlerPowerForm hJ hω r) f hf
-    hinj _ (isCalibratedImmersion_kahlerPowerForm hJ hr hf hinj hfj) f' hf' hinj' o' hhom
+        (SmoothTwoForm.volumeForm (J.kahlerTwoForm hJ) r).val f' hf' hinj' o' :=
+  immersionVolume_eq_iff_isCalibratedImmersion _ _
+    (isCalibration_volumeForm_kahlerTwoForm hJ hω r) f hf hinj _
+    (isCalibratedImmersion_volumeForm_kahlerTwoForm hJ hr hf hinj hfj) f' hf' hinj' o' hhom
 
 end TauCeti.SmoothAlmostComplexStructure
