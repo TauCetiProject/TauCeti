@@ -31,6 +31,7 @@ example : EnoughInjectives (NondegMod.{0} ℚ (ℕ →₀ ℚ)) := inferInstance
 
 /-- For `H = ℚ`, the separator `H • (ℚ ⊕ ℚ)` is not the zero module: it contains `1 • 1`. -/
 example : Nontrivial (NondegMod.nondegeneratePartRegular.{0} ℚ ℚ).obj := by
+  rw [NondegMod.nondegeneratePartRegular_obj]
   refine ⟨⟨⟨((1 : ℚ) : Unitization ℚ ℚ) • equivShrink _ 1, inr_smul_mem_nondegeneratePart _ _⟩,
     0, fun h ↦ ?_⟩⟩
   have h' : ((1 : ℚ) : Unitization ℚ ℚ) • equivShrink _ 1 = (0 : Shrink.{0} (Unitization ℚ ℚ)) :=

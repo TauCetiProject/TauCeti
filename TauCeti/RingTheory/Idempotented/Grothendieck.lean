@@ -23,7 +23,7 @@ nondegenerate module has a local unit `e ∈ H`, and `r ↦ r • m` sends `e �
 
 ## Main results
 
-* `TauCeti.NondegMod.isSeparator_nondegeneratePart_regular`: the nondegenerate part of the regular
+* `TauCeti.NondegMod.isSeparator_nondegeneratePartRegular`: the nondegenerate part of the regular
   module is a separator.
 * the instances `HasExactColimitsOfShape` (for every shape for which modules have exact colimits)
   and `TauCeti.NondegMod.isGrothendieckAbelian`: when `A` and `H` are `v`-small, `NondegMod.{v} A H`
@@ -58,18 +58,21 @@ instance hasExactColimitsOfShape (J : Type*) [Category J]
 instance ab5OfSize : AB5OfSize.{v, v} (NondegMod.{v} A H) where
   ofShape _ _ _ := inferInstance
 
-/-- The unitization `A ⊕ H` is `v`-small when `A` and `H` are. -/
-instance instSmallUnitization [Small.{v} A] [Small.{v} H] : Small.{v} (Unitization A H) :=
-  small_of_injective Unitization.toProd_injective
-
 /-- The nondegenerate part `H • (A ⊕ H)` of the regular module over the unitization, as a
 nondegenerate module (with the underlying type shrunk to the universe `v`). -/
-noncomputable abbrev nondegeneratePartRegular [Small.{v} A] [Small.{v} H] : NondegMod.{v} A H :=
+noncomputable def nondegeneratePartRegular [Small.{v} A] [Small.{v} H] : NondegMod.{v} A H :=
   (nondegeneratePartFunctor.{v} A H).obj (ModuleCat.of _ (Shrink.{v} (Unitization A H)))
+
+/-- The underlying module of `nondegeneratePartRegular A H` is the nondegenerate part of the
+regular module `Shrink (A ⊕ H)`. -/
+theorem nondegeneratePartRegular_obj [Small.{v} A] [Small.{v} H] :
+    (nondegeneratePartRegular.{v} A H).obj =
+      ModuleCat.of _ (nondegeneratePart A H (Shrink.{v} (Unitization A H))) :=
+  (rfl)
 
 /-- The nondegenerate part of the regular module over the unitization is a separator of the
 category of nondegenerate modules. -/
-theorem isSeparator_nondegeneratePart_regular [Small.{v} A] [Small.{v} H] :
+theorem isSeparator_nondegeneratePartRegular [Small.{v} A] [Small.{v} H] :
     IsSeparator (nondegeneratePartRegular.{v} A H) := by
   rw [isSeparator_def]
   intro X Y f g hfg
@@ -81,17 +84,21 @@ theorem isSeparator_nondegeneratePart_regular [Small.{v} A] [Small.{v} H] :
     (LinearMap.toSpanSingleton R X.obj x).comp (Shrink.linearEquiv R R).toLinearMap
   let h : nondegeneratePartRegular.{v} A H ⟶ X :=
     ObjectProperty.homMk (ModuleCat.ofHom (φ.comp (nondegeneratePart A H _).subtype))
-  let m : nondegeneratePart A H (Shrink.{v} R) :=
-    ⟨(e : R) • equivShrink R 1, inr_smul_mem_nondegeneratePart e _⟩
+  let m : (nondegeneratePartRegular.{v} A H).obj :=
+    (⟨(e : R) • equivShrink R 1, inr_smul_mem_nondegeneratePart e _⟩ :
+      nondegeneratePart A H (Shrink.{v} R))
   have hm : (h.hom.hom m : X.obj) = x := by
+    -- `h` applied to `m` is `φ m` by `ObjectProperty.homMk_hom` and `ModuleCat.hom_ofHom`, but
+    -- `simp` cannot use them: the source of `h` is `nondegeneratePartRegular A H`, which is
+    -- `ModuleCat.of _ (H • Shrink R)` only after unfolding (`nondegeneratePartRegular_obj`).
     change φ ((e : R) • equivShrink R 1) = x
     simp [φ, he]
   have := congrArg (fun k : nondegeneratePartRegular.{v} A H ⟶ Y ↦ k.hom.hom m) (hfg h)
-  change f.hom.hom (h.hom.hom m) = g.hom.hom (h.hom.hom m) at this
-  rwa [hm] at this
+  simpa only [ObjectProperty.FullSubcategory.comp_hom, ModuleCat.hom_comp, LinearMap.coe_comp,
+    Function.comp_apply, hm] using this
 
 instance hasSeparator [Small.{v} A] [Small.{v} H] : HasSeparator (NondegMod.{v} A H) :=
-  ⟨_, isSeparator_nondegeneratePart_regular A H⟩
+  ⟨_, isSeparator_nondegeneratePartRegular A H⟩
 
 /-- **Nondegenerate modules form a Grothendieck abelian category.** -/
 instance isGrothendieckAbelian [Small.{v} A] [Small.{v} H] :
