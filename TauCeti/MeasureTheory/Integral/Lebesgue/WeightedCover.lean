@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 public import TauCeti.LinearAlgebra.Submodule.Zeta
+import TauCeti.MeasureTheory.Integral.Lebesgue.Basic
 
 /-!
 # Lebesgue integrals over a weighted countable cover
@@ -14,8 +15,9 @@ public import TauCeti.LinearAlgebra.Submodule.Zeta
 Let `f ≥ 0` be a function on a measure space `(X, ρ)` and `(S i)` a countable family of sets with
 weights `w i`. If almost every point `x` of a set `s` lies in some `S i` with
 `f x · ρ (S i) ≤ w i`, then `∫_s f dρ ≤ ∑ᵢ w i`. On the points of `S i` where that bound holds,
-`f` is at most `w i / ρ (S i)`, so their integral is at most `w i`; then sum over `i`. No
-measurability of `f`, `s` or the `S i` is needed.
+`f` is at most `w i / ρ (S i)`, so their integral is at most `w i`
+(`TauCeti.setLIntegral_le_of_forall_mul_measure_le`); then sum over `i`. No measurability of `f`,
+`s` or the `S i` is needed.
 
 The main application sorts the points by the submodules of finite index of a module `N` over a
 ring `R`, with the weights `[N : M]^(-μ) V` of the submodule zeta function
@@ -48,21 +50,6 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {X : Type*} [MeasurableSpace X] {ρ : Measure X} {f : X → ℝ≥0∞}
-
-/-- If `f x · ρ S ≤ w` on a subset `t` of `S`, then the integral of `f` over `t` is at most `w`. -/
-private theorem setLIntegral_le_of_forall_mul_measure_le {t S : Set X} {w : ℝ≥0∞} (hts : t ⊆ S)
-    (h : ∀ x ∈ t, f x * ρ S ≤ w) : ∫⁻ x in t, f x ∂ρ ≤ w := by
-  rcases eq_or_ne (ρ S) 0 with h0 | h0
-  · rw [setLIntegral_measure_zero _ _ (measure_mono_null hts h0)]
-    exact zero_le
-  rcases eq_or_ne w ∞ with htop | htop
-  · exact htop ▸ le_top
-  calc ∫⁻ x in t, f x ∂ρ
-    _ ≤ ∫⁻ _ in t, w / ρ S ∂ρ := setLIntegral_mono measurable_const fun x hx ↦
-        (ENNReal.le_div_iff_mul_le (.inl h0) (.inr htop)).2 (h x hx)
-    _ = w / ρ S * ρ t := setLIntegral_const t _
-    _ ≤ ρ S * (w / ρ S) := by rw [mul_comm]; gcongr
-    _ ≤ w := ENNReal.mul_div_le
 
 /-- **Integrals over a weighted countable cover.** Let `(S i)` be a countable family of sets with
 weights `w i`. If almost every `x ∈ s` lies in some `S i` with `f x · ρ (S i) ≤ w i`, then

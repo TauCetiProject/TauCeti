@@ -37,6 +37,12 @@ at `y = log x / 4`: since `L² e^{−L/2}` peaks at `L = 4` with value `16 / e²
 logarithm is at most `16 √x / e²` for `x ≥ 1`. This bounds the prime powers that are not primes
 in explicit prime-counting estimates.
 
+In the other direction, a small logarithm gives a power close to `1`: if `log z ≤ L` and
+`n L ≤ 2^(-(u + 1))`, then `z^n ≤ 1 + 2^(-u)` for every real `z`
+(`Real.pow_le_one_add_inv_two_pow_of_log_le`), since `z^n ≤ |z|^n`, `log |z| = log z` and
+`|z|^n ≤ exp (n L)` for `z ≠ 0`. This controls the powers `ζ(s)^n` of a zeta function whose
+logarithm decays exponentially in `s`.
+
 ## Main results
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
@@ -48,6 +54,8 @@ in explicit prime-counting estimates.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
+* `Real.pow_le_one_add_inv_two_pow_of_log_le`: `z^n ≤ 1 + 2^(-u)` when `log z ≤ L` and
+  `n L ≤ 2^(-(u + 1))`.
 -/
 
 public section
@@ -145,5 +153,29 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
   · exact (mul_nonpos_of_nonneg_of_nonpos ha
       (log_nonpos (div_nonneg (Nat.cast_nonneg p) (Nat.cast_nonneg q)) (le_of_not_ge h))).trans
       (log_natCast_nonneg N)
+
+/-- **A power whose logarithm is small is close to `1`.** For every real `z`, if `log z ≤ L` and
+`n L ≤ 2^(-(u + 1))`, then `z^n ≤ 1 + 2^(-u)`. -/
+theorem pow_le_one_add_inv_two_pow_of_log_le {z L : ℝ} (hzL : log z ≤ L) {n u : ℕ}
+    (hL : n * L ≤ 2⁻¹ ^ (u + 1)) : z ^ n ≤ 1 + 2⁻¹ ^ u := by
+  -- Since `z ^ n ≤ |z| ^ n` and `log |z| = log z`, it suffices to bound `|z| ^ n`.
+  refine (le_abs_self _).trans ((abs_pow z n).trans_le ?_)
+  rcases (abs_nonneg z).eq_or_lt with h0 | hz
+  · rw [← h0]
+    exact (pow_le_one₀ le_rfl zero_le_one).trans (le_add_of_nonneg_right (by positivity))
+  rw [← log_abs] at hzL
+  -- `|z|^n ≤ exp (n L) ≤ exp x ≤ 1 / (1 - x) ≤ 1 + 2 x` for `x = 2^(-(u + 1)) ≤ 1 / 2`.
+  have hx : (2⁻¹ : ℝ) ^ (u + 1) ≤ 1 / 2 := by
+    rw [pow_succ, one_div]
+    exact mul_le_of_le_one_left (by norm_num) (pow_le_one₀ (by norm_num) (by norm_num))
+  have hx0 : (0 : ℝ) ≤ 2⁻¹ ^ (u + 1) := by positivity
+  calc |z| ^ n = exp (n * log |z|) := by rw [exp_natCast_mul, exp_log hz]
+    _ ≤ exp (2⁻¹ ^ (u + 1)) := exp_le_exp.2 ((mul_le_mul_of_nonneg_left hzL
+        (Nat.cast_nonneg n)).trans hL)
+    _ ≤ 1 / (1 - 2⁻¹ ^ (u + 1)) := exp_bound_div_one_sub_of_interval hx0 (by linarith)
+    _ ≤ 1 + 2⁻¹ ^ u := by
+      rw [div_le_iff₀ (by linarith), pow_succ]
+      nlinarith [pow_nonneg (by norm_num : (0 : ℝ) ≤ 2⁻¹) u,
+        pow_le_one₀ (by norm_num : (0 : ℝ) ≤ 2⁻¹) (by norm_num) (n := u)]
 
 end Real

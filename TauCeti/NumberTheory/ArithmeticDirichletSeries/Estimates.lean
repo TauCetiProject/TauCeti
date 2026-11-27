@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.NumberField.Ideal.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+public import TauCeti.LinearAlgebra.Submodule.Zeta
 
 /-!
 # Linear ideal counts and the exact abscissa of the trivial ideal weight
@@ -53,6 +54,9 @@ of a convergent series of nonnegative terms must become arbitrarily small.
   `Re s > 1`.
 * `TauCeti.sum_absNorm_rpow_neg_le_dedekindZeta_re`: for real `s > 1`, a finite sum of
   `N(𝔟) ^ (-s)` over integral ideals is at most `ζ_K(s)`.
+* `TauCeti.submoduleZeta_le_ofReal_dedekindZeta_re`: for natural `s ≥ 2`, the ideal zeta sum
+  `∑_𝔟 [𝓞 K : 𝔟] ^ (-s)` over the ideals of finite index (`Module.submoduleZeta`) is at most
+  `ζ_K(s)`.
 * `TauCeti.summable_idealTerm_of_bounded_of_one_lt_re`: a uniformly bounded weight has an
   absolutely convergent ideal-indexed Dirichlet series on `Re s > 1`, and
   `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
@@ -598,5 +602,28 @@ theorem sum_absNorm_rpow_neg_le_dedekindZeta_re {K : Type*} [Field K] [NumberFie
     _ ≤ ∑' I : (Ideal (𝓞 K))⁰, (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ (-s) :=
         h_summable.sum_le_tsum _ fun _ _ ↦ by positivity
     _ = (NumberField.dedekindZeta K s).re := h_zeta.symm
+
+open scoped ENNReal in
+/-- **The ideal zeta sum of `𝓞 K` is at most the Dedekind zeta function.** For `s ≥ 2`,
+`∑_𝔟 [𝓞 K : 𝔟]^(-s) ≤ ζ_K(s)`, the sum running over the ideals of finite index, that is the nonzero
+ideals, of `𝓞 K`. -/
+theorem submoduleZeta_le_ofReal_dedekindZeta_re {K : Type*} [Field K] [NumberField K] {s : ℕ}
+    (hs : 2 ≤ s) :
+    Module.submoduleZeta (𝓞 K) (𝓞 K) s ≤ ENNReal.ofReal (NumberField.dedekindZeta K s).re := by
+  -- Every finite partial sum is at most `ζ_K(s)`.
+  rw [Module.submoduleZeta_def]
+  refine CompleteLattice.summable.tsum_le_of_sum_le fun F ↦ ?_
+  have h_term (I : {I : Ideal (𝓞 K) // I.cardQuot ≠ 0}) : (I.val.cardQuot : ℝ≥0∞)⁻¹ ^ s =
+      ENNReal.ofReal ((Ideal.absNorm I.val : ℝ) ^ (-(s : ℝ))) := by
+    rw [Ideal.absNorm_apply, Real.rpow_neg (Nat.cast_nonneg _), Real.rpow_natCast, ← inv_pow,
+      ENNReal.ofReal_pow (by positivity),
+      ENNReal.ofReal_inv_of_pos (Nat.cast_pos.2 (Nat.pos_of_ne_zero I.property)),
+      ENNReal.ofReal_natCast]
+  have h_sum := sum_absNorm_rpow_neg_le_dedekindZeta_re (K := K) (s := s)
+    (by exact_mod_cast hs) (F.map (Function.Embedding.subtype _))
+  rw [Finset.sum_map, Complex.ofReal_natCast] at h_sum
+  rw [Finset.sum_congr rfl fun I _ ↦ h_term I,
+    ← ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ by positivity]
+  exact ENNReal.ofReal_le_ofReal h_sum
 
 end TauCeti
