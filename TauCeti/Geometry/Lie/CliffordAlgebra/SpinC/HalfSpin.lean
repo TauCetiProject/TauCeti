@@ -237,7 +237,7 @@ theorem realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin :
 /-- On the Spin summand `ofSpin_* X`, the differentiated `Spinᶜ(4)` half-spin representation agrees
 with the framed even Clifford action evaluated on the quadratic Clifford coordinate of `X`. -/
 @[simp↓ high]
-theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_ofSpin
+theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_lieMap_ofSpinContinuousMonoidHom
     (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel 4) (spinGroup (realCliffordForm 4 0))) :
     unitsLieAlgebraEquiv
         (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
@@ -284,7 +284,7 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSpinProd
         (Complex.I * (p.2 / 2)) • (1 : S →L[ℂ] S) := by
   rw [spinCGroup.realSpinProdDetLinearEquiv_apply]
   simp only [map_add,
-    unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_ofSpin,
+    unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_lieMap_ofSpinContinuousMonoidHom,
     unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realDetLieLift]
 
 /-- In quadratic Clifford–determinant coordinates `(q, a)`, the differentiated `Spinᶜ(4)` half-spin

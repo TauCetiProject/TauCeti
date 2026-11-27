@@ -191,7 +191,7 @@ theorem coe_realSpinLieEquivDetKer_apply (X : 𝔰) : (realSpinLieEquivDetKer n 
 
 /-- Applying `ofSpin_*` to the inverse equivalence recovers the ambient kernel element. -/
 @[simp]
-theorem lieMap_ofSpin_realSpinLieEquivDetKer_symm_apply
+theorem lieMap_ofSpinContinuousMonoidHom_realSpinLieEquivDetKer_symm_apply
     (Y : ContinuousMonoidHom.lieWeightKerLieSubalgebra (I := IC) (detContinuousMonoidHom _ hQ)) :
     ιS ((realSpinLieEquivDetKer n hQ).symm Y) = (Y : 𝔤) :=
   congrArg Subtype.val ((realSpinLieEquivDetKer n hQ).apply_symm_apply Y)
@@ -234,7 +234,7 @@ theorem realSpinProdDetLinearEquiv_symm_snd (Y : 𝔤) :
 /-- Pushing the Spin component of `(realSpinProdDetLinearEquiv n hQ).symm Y` back into
 `Lie(Spinᶜ(n))` removes the central determinant lift `realDetLieLift (d det(Y))`. -/
 @[simp]
-theorem lieMap_ofSpin_realSpinProdDetLinearEquiv_symm_fst (Y : 𝔤) :
+theorem lieMap_ofSpinContinuousMonoidHom_realSpinProdDetLinearEquiv_symm_fst (Y : 𝔤) :
     ιS ((realSpinProdDetLinearEquiv n hQ).symm Y).1 = Y - realDetLieLift n hQ (d Y) := by
   apply eq_sub_of_add_eq
   rw [← realSpinProdDetLinearEquiv_symm_snd n hQ Y, ← realSpinProdDetLinearEquiv_apply,
@@ -242,7 +242,7 @@ theorem lieMap_ofSpin_realSpinProdDetLinearEquiv_symm_fst (Y : 𝔤) :
 
 /-- The inverse splitting sends `ofSpin_* X` to `(X, 0)`. -/
 @[simp]
-theorem realSpinProdDetLinearEquiv_symm_lieMap_ofSpin (X : 𝔰) :
+theorem realSpinProdDetLinearEquiv_symm_lieMap_ofSpinContinuousMonoidHom (X : 𝔰) :
     (realSpinProdDetLinearEquiv n hQ).symm (ιS X) = (X, 0) := by
   apply (realSpinProdDetLinearEquiv n hQ).injective
   simp only [LinearEquiv.apply_symm_apply, realSpinProdDetLinearEquiv_apply, map_zero, add_zero]

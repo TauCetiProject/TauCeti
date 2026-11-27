@@ -26,7 +26,7 @@ and the `𝔰𝔬(n) ⊕ ℝ` connection-lifting isomorphism:
   (its kernel is `range (realDetLieLift n hQ)`) and restricts on `ofSpin_* (Lie(Spin(n)))` to the
   invertible Spin-to-`SO(n)` differential `realSpinToSpecialOrthogonalLieEquiv`;
 * the paired projection `realToSpecialOrthogonalProdDetRange` has bijective Lie map, so it is a
-  smooth local diffeomorphism and a two-sheeted smooth covering map with smooth local sections
+  smooth local diffeomorphism and a smooth covering map with smooth local sections
   through every fiber point;
 * combining the inverse Spin-to-`SO(n)` differential with `realSpinProdDetLinearEquiv` produces
   linear equivalences
@@ -176,7 +176,7 @@ local notation "πO" =>
 /-- The Lie differential of `realToSpecialOrthogonalRange` vanishes on the central circle Lie
 algebra. -/
 @[simp]
-theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofCircle
+theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofCircleContinuousMonoidHom
     (Z : LeftInvariantDerivation (𝓡 1) Circle) :
     πO (ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
       (ofCircleContinuousMonoidHom _ hQ) Z) = 0 := by
@@ -190,12 +190,12 @@ theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofCircle
 theorem lieMap_realToSpecialOrthogonalRange_realDetLieLift (a : ℝ) :
     πO (realDetLieLift n hQ a) = 0 :=
   (congrArg (πO) (realDetLieLift_apply n hQ a)).trans
-    (lieMap_realToSpecialOrthogonalRange_lieMap_ofCircle n hQ _)
+    (lieMap_realToSpecialOrthogonalRange_lieMap_ofCircleContinuousMonoidHom n hQ _)
 
 /-- On `ofSpin_* X`, the Lie differential of `realToSpecialOrthogonalRange` agrees with
 `realSpinToSpecialOrthogonalLieEquiv`. -/
 @[simp]
-theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin (X : 𝔰) :
+theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpinContinuousMonoidHom (X : 𝔰) :
     πO (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
       (ofSpinContinuousMonoidHom _ hQ) X) = realSpinToSpecialOrthogonalLieEquiv n X := by
   -- Factor through the composite `Spin(n) → Spinᶜ(n) → SO(n)`, which agrees with the compact
@@ -229,7 +229,7 @@ Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
 theorem lieMap_realToSpecialOrthogonalRange_realSpinProdDetLinearEquiv (p : 𝔰 × ℝ) :
     πO (realSpinProdDetLinearEquiv n hQ p) = realSpinToSpecialOrthogonalLieEquiv n p.1 := by
   rw [realSpinProdDetLinearEquiv_apply]
-  simp only [map_add, lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin,
+  simp only [map_add, lieMap_realToSpecialOrthogonalRange_lieMap_ofSpinContinuousMonoidHom,
     lieMap_realToSpecialOrthogonalRange_realDetLieLift, add_zero]
 
 /-- **Exactness of the rotation differential**: the kernel of `(realToSpecialOrthogonalRange)_*` is
