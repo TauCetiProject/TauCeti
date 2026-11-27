@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.MeanInequalities
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+import Mathlib.Data.Multiset.Fintype
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonMaclaurin
@@ -171,16 +172,12 @@ theorem multiset_prod_map_rpow_inv_card_add_le {ι : Type*} {s : Multiset ι} (h
     {a b : ι → ℝ} (ha : ∀ i ∈ s, 0 ≤ a i) (hb : ∀ i ∈ s, 0 ≤ b i) :
     (s.map a).prod ^ (Multiset.card s : ℝ)⁻¹ + (s.map b).prod ^ (Multiset.card s : ℝ)⁻¹ ≤
       (s.map fun i ↦ a i + b i).prod ^ (Multiset.card s : ℝ)⁻¹ := by
-  rw [← Multiset.coe_toList s] at hs ha hb ⊢
-  set L := s.toList
-  rw [Multiset.coe_card, Multiset.map_coe, Multiset.map_coe, Multiset.map_coe, Multiset.prod_coe,
-    Multiset.prod_coe, Multiset.prod_coe, ← Fin.prod_univ_fun_getElem,
-    ← Fin.prod_univ_fun_getElem, ← Fin.prod_univ_fun_getElem]
-  have : Nonempty (Fin L.length) :=
-    ⟨⟨0, List.length_pos_iff.2 fun h ↦ hs (by simp [h])⟩⟩
-  simpa using prod_rpow_inv_card_add_le (ι := Fin L.length) (a := fun i ↦ a L[i.val])
-    (b := fun i ↦ b L[i.val]) (fun i ↦ ha _ (List.getElem_mem _))
-    fun i ↦ hb _ (List.getElem_mem _)
+  classical
+  have : Nonempty s := Fintype.card_pos_iff.1 (by simpa [Multiset.card_pos])
+  simpa only [Finset.prod_eq_multiset_prod, Multiset.map_univ, Multiset.map_univ s
+    fun i ↦ a i + b i, Multiset.card_coe] using prod_rpow_inv_card_add_le (ι := s)
+      (a := fun i ↦ a i) (b := fun i ↦ b i) (fun i ↦ ha _ Multiset.coe_mem)
+      fun i ↦ hb _ Multiset.coe_mem
 
 /-- **Concavity of the geometric mean.** The geometric mean `μ ↦ (∏ i, μ i) ^ (1 / n)`,
 `n = card ι`, is concave on the nonnegative orthant. -/

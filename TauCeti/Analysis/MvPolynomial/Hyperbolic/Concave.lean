@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Garding
 import TauCeti.Analysis.MeanInequalities
-import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Gårding's theorem: concavity of `p^{1/m}` on the Gårding cone
