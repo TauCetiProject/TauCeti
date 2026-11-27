@@ -29,11 +29,12 @@ The pseudo-limit comes with projections `limit.π D i : limit D ⟶ D i` and inv
 modifications `limit.πCompMap D f : π D i ≫ D(f) ≅ π D j` compatible with the comparisons of `D`
 (`limit.πCompMap_id`, `limit.πCompMap_comp`), that is, with the pseudo-cone `limit.cone D`. It has
 the 2-universal property of the pseudo-limit: every pseudo-cone `c : limit.Cone D K` factors
-through it (`limit.lift c`, with `limit.liftCompπ` and `limit.lift_whiskerLeft_πCompMap_hom`), and
-modifications between strong transformations into it are given by compatible families of
-modifications between their projections (`limit.homMk`, `limit.isoMk`) and are determined by
-these (`limit.hom_ext`, `limit.whiskerRight_π_comp_whiskerLeft_πCompMap`). The fibers of the
-pseudo-limit of a diagram with groupoid fibers are groupoids (`limit.instIsGroupoidObj`).
+through it (`limit.lift c`, with `limit.liftCompπ` and `limit.lift_whiskerLeft_πCompMap_hom`),
+every other such factorization is isomorphic to it (`limit.isoLift`), and modifications between
+strong transformations into it are given by compatible families of modifications between their
+projections (`limit.homMk`, `limit.isoMk`) and are determined by these (`limit.hom_ext`,
+`limit.whiskerRight_π_comp_whiskerLeft_πCompMap`). The fibers of the pseudo-limit of a diagram
+with groupoid fibers are groupoids (`limit.instIsGroupoidObj`).
 
 Mathematically, the products `TauCeti.Stack.pi` and the 2-fiber products
 `TauCeti.Stack.twoFiberProduct` of pseudofunctors are, up to equivalence, the pseudo-limits over a
@@ -60,7 +61,7 @@ the fibers.
 * `TauCeti.Stack.limit.π`, `TauCeti.Stack.limit.πCompMap`: the projections and their `2`-cells.
 * `TauCeti.Stack.limit.Cone`, `TauCeti.Stack.limit.cone`: pseudo-cones, and the pseudo-cone of
   the pseudo-limit.
-* `TauCeti.Stack.limit.lift`, `TauCeti.Stack.limit.liftCompπ`,
+* `TauCeti.Stack.limit.lift`, `TauCeti.Stack.limit.liftCompπ`, `TauCeti.Stack.limit.isoLift`,
   `TauCeti.Stack.limit.homMk`, `TauCeti.Stack.limit.isoMk`, `TauCeti.Stack.limit.hom_ext`: the
   2-universal property.
 
@@ -464,6 +465,32 @@ lemma mapComp'_inv_app_hom {X Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : 
   rw [Pseudofunctor.mapComp'_eq_mapComp (limit D)]
   rfl
 
+@[simp]
+lemma mapId_hom_app_hom (X : LocallyDiscrete Cᵒᵖ) (x : (limit D).obj X) (i : I) :
+    Fiber.Hom.hom (((limit D).mapId X).hom.toNatTrans.app x) i =
+      ((D.obj (.mk i)).mapId X).hom.toNatTrans.app (Fiber.obj x i) := by
+  simpa only [Pseudofunctor.mapId'_eq_mapId] using mapId'_hom_app_hom (𝟙 X) rfl x i
+
+@[simp]
+lemma mapId_inv_app_hom (X : LocallyDiscrete Cᵒᵖ) (x : (limit D).obj X) (i : I) :
+    Fiber.Hom.hom (((limit D).mapId X).inv.toNatTrans.app x) i =
+      ((D.obj (.mk i)).mapId X).inv.toNatTrans.app (Fiber.obj x i) := by
+  simpa only [Pseudofunctor.mapId'_eq_mapId] using mapId'_inv_app_hom (𝟙 X) rfl x i
+
+@[simp]
+lemma mapComp_hom_app_hom {X Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (x : (limit D).obj X) (i : I) :
+    Fiber.Hom.hom (((limit D).mapComp f g).hom.toNatTrans.app x) i =
+      ((D.obj (.mk i)).mapComp f g).hom.toNatTrans.app (Fiber.obj x i) := by
+  simpa only [Pseudofunctor.mapComp'_eq_mapComp] using mapComp'_hom_app_hom f g _ rfl x i
+
+@[simp]
+lemma mapComp_inv_app_hom {X Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (x : (limit D).obj X) (i : I) :
+    Fiber.Hom.hom (((limit D).mapComp f g).inv.toNatTrans.app x) i =
+      ((D.obj (.mk i)).mapComp f g).inv.toNatTrans.app (Fiber.obj x i) := by
+  simpa only [Pseudofunctor.mapComp'_eq_mapComp] using mapComp'_inv_app_hom f g _ rfl x i
+
 /-- The fibers of the pseudo-limit of a diagram with groupoid fibers are groupoids. -/
 instance instIsGroupoidObj (X : LocallyDiscrete Cᵒᵖ) [∀ i, IsGroupoid ((D.obj (.mk i)).obj X)] :
     IsGroupoid ((limit D).obj X) :=
@@ -586,7 +613,8 @@ lemma πCompMap_comp {i j k : I} (f : i ⟶ j) (g : j ⟶ k) :
 A pseudo-cone over `D` with apex `K` (`limit.Cone D K`) is a family of strong transformations
 `π i : K ⟶ D i` with invertible modifications `π i ≫ D(f) ≅ π j` compatible with the comparisons
 of `D`; the projections of the pseudo-limit form one (`limit.cone D`). Every pseudo-cone factors
-through the pseudo-limit (`lift`, with `liftCompπ` and `lift_whiskerLeft_πCompMap_hom`). A
+through the pseudo-limit (`lift`, with `liftCompπ` and `lift_whiskerLeft_πCompMap_hom`), and
+every other such factorization is isomorphic to `lift` (`isoLift`). A
 modification between two strong transformations into `limit D` is given by a family of
 modifications between their composites with the projections, compatible with the `2`-cells
 `πCompMap` (`homMk`, and `isoMk` for invertible ones), and is determined by these (`hom_ext`). -/
@@ -913,6 +941,37 @@ lemma isoMk_inv_whiskerRight_π (i : I) : (isoMk e he).inv ▷ π D i = (e i).in
 end isoMk
 
 end homMk
+
+section isoLift
+
+variable {K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w v' z}} (c : Cone D K)
+  {φ : K ⟶ limit D} (e : ∀ i, φ ≫ π D i ≅ c.π i)
+  (he : ∀ ⦃i j : I⦄ (f : i ⟶ j), (e i).hom ▷ D.map f.toLoc ≫ (c.iso f).hom =
+    (α_ _ _ _).hom ≫ φ ◁ (πCompMap D f).hom ≫ (e j).hom)
+
+/-- A strong transformation `φ : K ⟶ limit D` whose composites with the projections are
+identified with the legs of a pseudo-cone `c`, compatibly with the `2`-cells, is isomorphic to
+`lift c`. By `hom_ext`, this isomorphism is the only one whose projections are the given
+isomorphisms followed by `liftCompπ` (`isoLift_hom_whiskerRight_π`). -/
+def isoLift : φ ≅ lift c :=
+  isoMk (fun i ↦ e i ≪≫ (liftCompπ c i).symm) fun i j f ↦ by
+    simp [lift_whiskerLeft_πCompMap_hom, reassoc_of% (he f)]
+
+/-- The `i`-th projection of `(isoLift c e he).hom` is `(e i).hom` followed by the inverse of
+`liftCompπ c i`. -/
+@[simp]
+lemma isoLift_hom_whiskerRight_π (i : I) :
+    (isoLift c e he).hom ▷ π D i = (e i).hom ≫ (liftCompπ c i).inv :=
+  isoMk_hom_whiskerRight_π _ _ i
+
+/-- The `i`-th projection of `(isoLift c e he).inv` is `liftCompπ c i` followed by the inverse of
+`e i`. -/
+@[simp]
+lemma isoLift_inv_whiskerRight_π (i : I) :
+    (isoLift c e he).inv ▷ π D i = (liftCompπ c i).hom ≫ (e i).inv :=
+  isoMk_inv_whiskerRight_π _ _ i
+
+end isoLift
 
 end limit
 
