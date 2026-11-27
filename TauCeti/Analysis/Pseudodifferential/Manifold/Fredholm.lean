@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Parametrix
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
+import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 
 /-!
 # Elliptic operators on a compact manifold are Fredholm
@@ -31,11 +32,27 @@ extension of `Q` to `H^{s - m}(M) → H^s(M)` inverts that of `P` up to the exte
 remainders to `H^s(M)` and `H^{s - m}(M)`, and operators of negative order are compact on Sobolev
 spaces by Rellich's theorem (`TauCeti.isCompactOperator_chartSobolevExtension_of_mem`).
 
+**The estimate on the kernel-orthogonal complement.** The elliptic estimate
+`‖u‖_{H^s} ≤ C (‖P u‖_{H^{s - m}} + ‖u‖_{H^r})` needs its lower-order term in general: on the
+circle the Laplacian kills the constant function `1`. Its kernel is the only obstruction. Fix any
+injective continuous linear map `ι` from `H^s(M)` into a Hilbert space and read orthogonality to
+the kernel through `ι`: for the identity of `H^s(M)` this is orthogonality in `H^s(M)` itself, and
+for an inclusion into `L²` it is the `L²`-orthogonality of the classical statement. On the
+elements `ι`-orthogonal to the kernel of `P : H^s(M) → H^{s - m}(M)` the lower-order term can be
+dropped: `‖u‖_{H^s} ≤ C ‖P u‖_{H^{s - m}}`
+(`TauCeti.IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension`). This holds for
+every operator with closed range and finite-dimensional kernel
+(`ContinuousLinearMap.exists_norm_le_mul_norm_of_forall_inner_eq_zero`), so it follows from the
+Fredholm property.
+
 ## Main results
 
 * `TauCeti.IsClassicalElliptic.isFredholm_chartSobolevExtension`: an elliptic classical
   pseudodifferential operator of order `m` on a compact manifold is Fredholm from `H^s(M)` to
   `H^{s - m}(M)`, for every real `s`.
+* `TauCeti.IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension` and
+  `TauCeti.IsClassicalElliptic.exists_norm_toChartSobolevSpace_le_mul_norm`: the elliptic estimate
+  without lower-order term on the complement of the kernel, on `H^s(M)` and for smooth functions.
 
 ## References
 
@@ -51,7 +68,7 @@ public section
 noncomputable section
 
 open TauCeti OpenPartialHomeomorph
-open scoped ContDiff Manifold Distributions
+open scoped ContDiff Manifold Distributions InnerProductSpace
 
 namespace TauCeti
 
@@ -96,5 +113,44 @@ theorem IsClassicalElliptic.isFredholm_chartSobolevExtension [CompactSpace M]
     exact isCompactOperator_chartSobolevExtension_of_mem hQP hψ (by push_cast; linarith)
   · rw [hTS]
     exact isCompactOperator_chartSobolevExtension_of_mem hPQ hφ (by push_cast; linarith)
+
+/-- **The elliptic estimate on the kernel-orthogonal complement.** Let `P` be an elliptic classical
+pseudodifferential operator of order `m` on a compact manifold, `L : H^s(M) → H^{s - m}(M)` its
+extension between the Sobolev spaces of two chart partitions, and `ι` an injective continuous
+linear map from `H^s(M)` into a Hilbert space, such as the identity. There is `C > 0` with
+`‖u‖_{H^s} ≤ C ‖L u‖_{H^{s - m}}` for every `u ∈ H^s(M)` such that `ι u` is orthogonal to `ι k`
+for every `k` in the kernel of `L`. Without the orthogonality the lower-order term of the elliptic
+estimate cannot be dropped as soon as the kernel is nonzero. -/
+theorem IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension [CompactSpace M]
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {ι : chartSobolevSpace hc ψ s →L[ℂ] H} (hι : Function.Injective ι) :
+    ∃ C > 0, ∀ u, (∀ k ∈ (chartSobolevExtension hc ψ hc' φ P s (s - m)).ker, ⟪ι u, ι k⟫_ℂ = 0) →
+      ‖u‖ ≤ C * ‖chartSobolevExtension hc ψ hc' φ P s (s - m) u‖ :=
+  have hL := hPe.isFredholm_chartSobolevExtension hP hψ hφ s
+  have := hL.finite_ker
+  ContinuousLinearMap.exists_norm_le_mul_norm_of_forall_inner_eq_zero hι hL.isClosed_range
+
+/-- **The elliptic estimate on the kernel-orthogonal complement, for smooth functions.** Let `P` be
+an elliptic classical pseudodifferential operator of order `m` on a compact manifold and `ι` an
+injective continuous linear map from `H^s(M)` into a Hilbert space. There is `C > 0` with
+`‖u‖_{H^s} ≤ C ‖P u‖_{H^{s - m}}`, in the norms of the chart readings, for every smooth `u` such
+that `ι u` is orthogonal to `ι k` for every `k` in the kernel of the extension
+`H^s(M) → H^{s - m}(M)` of `P`. -/
+theorem IsClassicalElliptic.exists_norm_toChartSobolevSpace_le_mul_norm [CompactSpace M]
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) {H : Type*}
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {ι : chartSobolevSpace hc ψ s →L[ℂ] H} (hι : Function.Injective ι) :
+    ∃ C > 0, ∀ u, (∀ k ∈ (chartSobolevExtension hc ψ hc' φ P s (s - m)).ker,
+      ⟪ι (toChartSobolevSpace hc ψ s u), ι k⟫_ℂ = 0) →
+      ‖toChartSobolevSpace hc ψ s u‖ ≤ C * ‖toChartSobolevSpace hc' φ (s - m) (P u)‖ := by
+  obtain ⟨C, hC, h⟩ := hPe.exists_norm_le_mul_norm_chartSobolevExtension (hc' := hc') hP hψ hφ s hι
+  refine ⟨C, hC, fun u hu ↦ ?_⟩
+  rw [← chartSobolevExtension_toChartSobolevSpace_of_mem hP hψ le_rfl u]
+  exact h _ hu
 
 end TauCeti
