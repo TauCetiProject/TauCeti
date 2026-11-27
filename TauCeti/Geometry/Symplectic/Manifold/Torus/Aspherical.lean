@@ -36,6 +36,8 @@ of symplectic atoroidality:
   has area `p_(inl j) p_(inr j) ≠ 0`
   (`TauCeti.rectangleIntegral_torusSymplecticForm_coordinateTorus`).
   For the square torus `T² = ℝ² / ℤ²` with `ω = dx ∧ dy` this is the identity map, of area `1`.
+  Since exact two-forms vanish on tori, `ω_T` is not exact
+  (`TauCeti.torusSymplecticForm_notMem_exactForms`).
 
 So the two area conditions on a symplectic manifold, asphericity and atoroidality, are different:
 the results on the action of contractible loops that assume vanishing on spheres apply to `T`, and
@@ -49,6 +51,7 @@ those on the action of all free loops that assume vanishing on tori do not.
   asphericity.
 * `TauCeti.rectangleIntegral_torusSymplecticForm_coordinateTorus`: the area of a coordinate torus.
 * `TauCeti.not_vanishesOnTori_torusSymplecticForm`: `ω_T` is not atoroidal.
+* `TauCeti.torusSymplecticForm_notMem_exactForms`: in particular `ω_T` is not exact.
 
 ## References
 
@@ -215,6 +218,18 @@ theorem not_vanishesOnTori_torusSymplecticForm [Nonempty ι] :
     (fun t _ ↦ coordinateTorus_one_fst p j t) (fun s _ ↦ coordinateTorus_one_snd p j s)
   rw [rectangleIntegral_torusSymplecticForm_coordinateTorus] at h₀
   exact (mul_pos (Fact.out : 0 < p (.inl j)) (Fact.out : 0 < p (.inr j))).ne' h₀
+
+omit [DecidableEq ι] in
+/-- **The standard symplectic form of a torus is not exact**: for nonempty `ι`, `ω_T` is not the
+exterior derivative of a smooth one-form, since exact two-forms vanish on tori. -/
+theorem torusSymplecticForm_notMem_exactForms [Nonempty ι] :
+    torusSymplecticForm p ∉
+      exactForms (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ)) (∀ i, AddCircle (p i)) 2 := by
+  rw [exactForms_succ]
+  rintro ⟨β, hβ⟩
+  apply not_vanishesOnTori_torusSymplecticForm p
+  rw [← hβ, mextDerivₗ_apply]
+  exact vanishesOnTori_mextDeriv (β.isSmoothForm.of_le (by simp))
 
 end CoordinateTorus
 

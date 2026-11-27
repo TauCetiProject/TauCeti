@@ -25,7 +25,8 @@ The **sum rule** `∂(E + ι_C)(u) = ∂E(u) + N_C(u)`, a case of the Moreau–R
 holds when `C` is convex and `E` is convex and continuous at some point of `C`
 (`TauCeti.subdifferential_add_constraintIndicator_eq`); the inclusion `⊇` holds with no
 hypothesis (`TauCeti.subdifferential_add_normalCone_subset`). So a convex energy continuous at a
-point of a convex constraint has `0 ∈ ∂E(u) + N_C(u)` at every constrained minimizer `u`.
+point of a convex constraint has `0 ∈ ∂E(u) + N_C(u)` at every constrained minimizer `u`, and more
+generally `η ∈ ∂E(u) + N_C(u)` at every constrained minimizer of `E - η`.
 
 The proof of `⊆` separates. For `f ∈ ∂(E + ι_C)(u)`, the tilted energy
 `g v = E v - E u - f (v - u)` is nonnegative on `C` and vanishes at `u`, so the interior of the
@@ -46,6 +47,12 @@ gives a functional `(v, t) ↦ ℓ v + λ t` separating the two sets. Testing at
 * `TauCeti.isMinOn_iff_zero_mem_subdifferential_add_constraintIndicator`: constrained minima.
 * `TauCeti.subdifferential_add_normalCone_subset` and
   `TauCeti.subdifferential_add_constraintIndicator_eq`: the sum rule.
+* `TauCeti.isMinOn_sub_iff_mem_subdifferential_add_normalCone`: with a linear term, `u` minimizes
+  `E - η` on `C` exactly when `η ∈ ∂E(u) + N_C(u)`, under the hypotheses of the sum rule (the
+  converse direction holds unconditionally:
+  `TauCeti.isMinOn_sub_of_mem_subdifferential_add_normalCone`);
+  `TauCeti.zero_mem_subdifferential_add_normalCone_of_isMinOn` is the case `η = 0`.
+* `TauCeti.constraintIndicator_add_constraintIndicator`: `ι_C + ι_D = ι_{C ∩ D}`.
 
 ## References
 
@@ -90,6 +97,12 @@ theorem coe_add_constraintIndicator (E : X → ℝ) (C : Set X) [DecidablePred (
       fun v ↦ if v ∈ C then (E v : EReal) else ⊤ := by
   funext v
   by_cases hv : v ∈ C <;> simp [hv]
+
+/-- The sum of two indicators is the indicator of the intersection: `ι_C + ι_D = ι_{C ∩ D}`. -/
+@[simp]
+theorem constraintIndicator_add_constraintIndicator (C D : Set X) (v : X) :
+    constraintIndicator C v + constraintIndicator D v = constraintIndicator (C ∩ D) v := by
+  by_cases hC : v ∈ C <;> by_cases hD : v ∈ D <;> simp [hC, hD]
 
 end Indicator
 
@@ -193,6 +206,20 @@ theorem subdifferential_add_normalCone_subset {E : V → ℝ} {C : Set V} {u : V
   have h₂ := mem_normalCone_iff.1 hh v hv
   simp only [LinearMap.flip_apply, topDualPairing_apply, add_apply] at h₁ ⊢
   linarith
+
+/-- **Minima with a linear term, unconditional direction**: if `η ∈ ∂E(u) + N_C(u)`, then `u`
+minimizes `E - η` on `C`. No hypothesis on `E`, `C` or `u` is needed. -/
+theorem isMinOn_sub_of_mem_subdifferential_add_normalCone {E : V → ℝ} {C : Set V} {u : V}
+    {η : StrongDual ℝ V}
+    (hη : η ∈ subdifferential (topDualPairing ℝ V).flip (fun v ↦ (E v : EReal)) u +
+      normalCone C u) :
+    IsMinOn (fun v ↦ E v - η v) C u := by
+  obtain ⟨g, hg, n, hn, rfl⟩ := hη
+  refine isMinOn_iff.2 fun v hv ↦ ?_
+  have h₁ := (mem_subdifferential_coe_iff _ E).1 hg v
+  have h₂ := mem_normalCone_iff.1 hn v hv
+  simp only [LinearMap.flip_apply, topDualPairing_apply, add_apply] at h₁ ⊢
+  linarith [map_sub g v u, map_sub n v u]
 
 section SumRule
 
@@ -300,6 +327,42 @@ theorem subdifferential_add_constraintIndicator_eq {E : V → ℝ} (hE : ConvexO
     have := hh v
     simp only [LinearMap.flip_apply, topDualPairing_apply, add_apply] at this ⊢
     linarith
+
+/-- **Minima with a linear term.** For a convex set `C` and a convex real energy `E` continuous at
+some point of `C`, a point `u ∈ C` minimizes `E - η` on `C` exactly when `η ∈ ∂E(u) + N_C(u)`.
+Equivalently, the variational inequality `η (v - u) ≤ E v - E u` for all `v ∈ C` splits as a
+subgradient of `E` plus a normal vector of `C`. -/
+theorem isMinOn_sub_iff_mem_subdifferential_add_normalCone {E : V → ℝ} (hE : ConvexOn ℝ univ E)
+    {C : Set V} (hC : Convex ℝ C) {x₀ : V} (hx₀ : x₀ ∈ C) (hEx₀ : ContinuousAt E x₀) {u : V}
+    (hu : u ∈ C) (η : StrongDual ℝ V) :
+    IsMinOn (fun v ↦ E v - η v) C u ↔
+      η ∈ subdifferential (topDualPairing ℝ V).flip (fun v ↦ (E v : EReal)) u +
+        normalCone C u := by
+  refine ⟨fun hmin ↦ ?_, isMinOn_sub_of_mem_subdifferential_add_normalCone⟩
+  -- Subtract `η` from `E`.
+  have hE' : ConvexOn ℝ univ (fun v ↦ E v - η v) := hE.sub (η.toLinearMap.concaveOn convex_univ)
+  have hEx₀' : ContinuousAt (fun v ↦ E v - η v) x₀ := hEx₀.sub η.continuous.continuousAt
+  have h0 := (isMinOn_iff_zero_mem_subdifferential_add_constraintIndicator hu).1 hmin
+  rw [subdifferential_add_constraintIndicator_eq hE' hC hx₀ hEx₀' hu] at h0
+  obtain ⟨g, hg, n, hn, hgn⟩ := h0
+  -- Restore `η`: `g + η ∈ ∂E(u)` and `η = (g + η) + n`.
+  have hfun : (fun v ↦ ((E v - η v : ℝ) : EReal)) =
+      fun v ↦ (E v : EReal) + (((topDualPairing ℝ V).flip v (-η) + 0 : ℝ) : EReal) := by
+    funext v
+    simp [sub_eq_add_neg, EReal.coe_add]
+  rw [hfun, mem_subdifferential_add_affine_iff, sub_neg_eq_add] at hg
+  refine ⟨g + η, hg, n, hn, by
+    simp only at hgn ⊢
+    rw [add_right_comm, hgn, zero_add]⟩
+
+/-- **First-order condition at a constrained minimum.** For a convex set `C` and a convex real
+energy `E` continuous at some point of `C`, every minimizer `u ∈ C` of `E` on `C` satisfies
+`0 ∈ ∂E(u) + N_C(u)`. -/
+theorem zero_mem_subdifferential_add_normalCone_of_isMinOn {E : V → ℝ} (hE : ConvexOn ℝ univ E)
+    {C : Set V} (hC : Convex ℝ C) {x₀ : V} (hx₀ : x₀ ∈ C) (hEx₀ : ContinuousAt E x₀) {u : V}
+    (hu : u ∈ C) (hmin : IsMinOn E C u) :
+    0 ∈ subdifferential (topDualPairing ℝ V).flip (fun v ↦ (E v : EReal)) u + normalCone C u :=
+  (isMinOn_sub_iff_mem_subdifferential_add_normalCone hE hC hx₀ hEx₀ hu 0).1 (by simpa using hmin)
 
 end SumRule
 

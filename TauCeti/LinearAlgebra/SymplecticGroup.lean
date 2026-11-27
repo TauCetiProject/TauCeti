@@ -81,8 +81,9 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   `2 • S`. For symplectic `Ψ` it factors as `(Ψ + 1)ᵀ * -(J * (Ψ - 1))`
   (`Matrix.transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul`), so away from the eigenvalue
   `-1` its kernel is the space of fixed vectors of `Ψ`
-  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`). On every vector its quadratic form is twice
-  that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
+  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`), and it is singular exactly when `Ψ` has the
+  eigenvalue `1` (`Matrix.det_transpose_mul_J_sub_J_mul_eq_zero_iff`). On every vector its
+  quadratic form is twice that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
 * `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: if `S` is symmetric and
   `G'ᵀ * J * G + Gᵀ * J * G' = 0`, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
@@ -358,6 +359,16 @@ theorem ker_mulVecLin_transpose_mul_J_sub_J_mul {Ψ : Matrix (l ⊕ l) (l ⊕ l)
     neg_eq_zero, transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ]
   rw [← mulVec_mulVec]
   exact ⟨fun hv ↦ hinj (hv.trans (mulVec_zero _).symm), fun hv ↦ by rw [hv, mulVec_zero]⟩
+
+/-- For a symplectic matrix `Ψ` without the eigenvalue `-1`, the symmetric matrix
+`Ψᵀ * J - J * Ψ` is singular exactly when `Ψ` has the eigenvalue `1`: its determinant is that of
+`Ψ - 1` up to a unit. -/
+theorem det_transpose_mul_J_sub_J_mul_eq_zero_iff {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hΨ : Ψ ∈ symplecticGroup l R) (h : IsUnit (Ψ + 1).det) :
+    (Ψᵀ * J l R - J l R * Ψ).det = 0 ↔ (Ψ - 1).det = 0 := by
+  rw [transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ, ← Matrix.mul_neg,
+    ← Matrix.mul_assoc, det_mul, det_mul, det_transpose, det_neg, ← mul_assoc,
+    ((h.mul (isUnit_det_J l R)).mul (isUnit_neg_one.pow _)).mul_right_eq_zero]
 
 /-- On every vector, the quadratic form of `Bᵀ * J - J * B` is twice the quadratic form of
 `-(J * B)`. -/

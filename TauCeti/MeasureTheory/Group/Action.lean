@@ -25,7 +25,8 @@ passes to every set almost everywhere equal to an almost invariant one
 have the same invariant measure (`measure_ball_eq_measure_ball`), and on a finite measure space with
 measurable singletons every atom has a finite orbit (`finite_orbit_of_measure_singleton_ne_zero`).
 For a countable group, pushing forward a measure without atoms to the orbit space gives a measure
-without atoms (`nullSingletonClass_map_quotientMk`).
+without atoms (`nullSingletonClass_map_quotientMk`). The product of two s-finite invariant
+measures is invariant under the diagonal action (`Measure.prod.instSMulInvariantMeasure`).
 
 For a monoid `G` carrying a right-invariant probability measure `μ`, such as normalized Haar
 measure on a compact group, the law `μ.map (· • x)` of the orbit map at `x` is the same for all
@@ -180,5 +181,22 @@ theorem eq_measure_univ_smul_map_smul_const [MeasurableSMul₂ G X] [IsProbabili
       rw [lintegral_const, smul_apply, smul_eq_mul, mul_comm]
 
 end OrbitLaw
+
+section Prod
+
+variable {M X Y : Type*} [SMul M X] [SMul M Y] [MeasurableSpace X] [MeasurableSpace Y]
+  [MeasurableConstSMul M X] [MeasurableConstSMul M Y] {μ : Measure X} {ν : Measure Y}
+
+/-- The product of two s-finite invariant measures is invariant under the diagonal action. -/
+@[to_additive /-- The product of two s-finite invariant measures is invariant under the diagonal
+additive action. -/]
+instance Measure.prod.instSMulInvariantMeasure [SFinite μ] [SFinite ν]
+    [SMulInvariantMeasure M X μ] [SMulInvariantMeasure M Y ν] :
+    SMulInvariantMeasure M (X × Y) (μ.prod ν) :=
+  ⟨fun c _ hs ↦
+    ((measurePreserving_smul c μ).prod (measurePreserving_smul c ν)).measure_preimage
+      hs.nullMeasurableSet⟩
+
+end Prod
 
 end MeasureTheory

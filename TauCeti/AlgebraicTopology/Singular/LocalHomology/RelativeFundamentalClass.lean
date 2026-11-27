@@ -90,6 +90,8 @@ the connecting morphism.
   property.
 * `TauCeti.HomologicalOrientation.localHomologyRestriction_fundamentalClassRel_image`: its image
   along `ι(K)`, for compact `K ⊆ M`, is the fundamental class of `M` along `K`.
+* `TauCeti.HomologicalOrientation.fundamentalClassRel_ne_zero`: it is nonzero when `M` is
+  nonempty.
 * `TauCeti.HomologicalOrientation.fundamentalClassRel_neg`: reversing the orientation negates it.
 
 ## References
@@ -355,6 +357,22 @@ theorem localHomologyRestriction_fundamentalClassRel_image {K : Set M} (hK : IsC
     (hK.image hι.continuous).isClosed (image_subset_range ι K) fun x hx ↦ ?_
   rw [← ConcreteCategory.comp_apply, localHomologyRestriction_comp]
   exact o.localHomologyRestriction_fundamentalClassRel hn hι hιf hf x
+
+/-- **The relative fundamental class is nonzero** when the interior `M` is nonempty: it restricts
+to a local orientation, a generator of the infinite cyclic local homology, at every interior
+point. -/
+theorem fundamentalClassRel_ne_zero [Nonempty M] : o.fundamentalClassRel hn hι hιf hf ≠ 0 := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  intro h₀
+  have h := o.localHomologyRestriction_fundamentalClassRel hn hι hιf hf x
+  rw [h₀, map_zero] at h
+  have hz : (o x).val = 0 :=
+    ConcreteCategory.injective_of_mono_of_preservesPullback
+      (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom
+      (h.symm.trans (map_zero _).symm)
+  have h₁ := o.localOrientationEquiv_symm_apply_self hn x
+  rw [hz, map_zero] at h₁
+  exact zero_ne_one h₁
 
 /-- Reversing the orientation negates the relative fundamental class. -/
 @[simp]
