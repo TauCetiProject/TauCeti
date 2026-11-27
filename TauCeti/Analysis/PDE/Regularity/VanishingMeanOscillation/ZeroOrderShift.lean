@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.VanishingMeanOscillation.Basic
+public import TauCeti.Analysis.PDE.Regularity.VanishingMeanOscillation.Regularity
+import TauCeti.Analysis.Matrix.EuclideanLin.Measurable
 import TauCeti.Analysis.PDE.DirichletProblem.LpEstimate
+import TauCeti.Analysis.PDE.Ellipticity.Integral
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.EnergyForm.SmallDrift
 import TauCeti.Analysis.PDE.FundamentalSolution.Divergence
@@ -14,7 +17,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
-# Krylov's whole-space `W^{1,p}` estimate with a zero-order shift
+# Krylov's whole-space `W^{1,p}` theorem with a zero-order shift
 
 Let `a` be a measurable coefficient matrix on `ℝ^{n+1}`, uniformly elliptic with constants
 `0 < λ ≤ Λ`, neither symmetric nor continuous in general, whose mean oscillation is small below a
@@ -44,6 +47,24 @@ On the way it proves the interior estimate with a scalar datum: if `u ∈ H¹(Ω
 (`TauCeti.PDE.exists_eLpNorm_gradient_ball_le_of_scalar_forcing_of_setAverage_le`), where
 `∇u ∈ Lᵖ(B_R)` is an a priori hypothesis.
 
+Both a priori hypotheses can be dropped when the oscillation is measured by the VMO modulus
+(`TauCeti.vmoModulus`):
+
+* `TauCeti.PDE.exists_memLp_gradient_ball_of_scalar_forcing_of_vmoModulus_le`: interior
+  regularity with a scalar datum, `∇u ∈ Lᵖ(B_R)` whenever `f, G ∈ Lᵖ(B_{2R})` and `8 R ≤ r₀`.
+* `TauCeti.PDE.exists_memLp_gradient_and_memLp_value_of_vmoModulus_le`: for every `κ > 0`, an
+  `H¹(ℝ^{n+1})` solution of the shifted equation with `f, G ∈ L² ∩ Lᵖ` lies in `W^{1,p}(ℝ^{n+1})`.
+* `TauCeti.PDE.exists_memLp_and_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_vmoModulus_le`
+  and its form for coefficients of vanishing mean oscillation,
+  `TauCeti.PDE.exists_memLp_and_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_memVMO`: the
+  estimate above for every such solution, with no a priori hypothesis.
+* `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_pos`: for every `κ > 0`
+  and `f, G ∈ L²` the shifted equation has exactly one solution in `H¹(ℝ^{n+1})`, by Lax–Milgram.
+
+Together these are Krylov's theorem for `2 < p < ∞` and data in `L² ∩ Lᵖ`: the shifted equation
+has exactly one solution in `H¹(ℝ^{n+1})`, it lies in `W^{1,p}(ℝ^{n+1})`, and it satisfies the
+estimate.
+
 ## The argument
 
 * **The scalar datum as a divergence.** On `B = B(x₀, 2R)` the datum `f` is minus the divergence
@@ -62,6 +83,11 @@ On the way it proves the interior estimate with a scalar datum: if `u ∈ H¹(Ω
   `√κ ‖u‖_{Lᵖ} ≤ κ^{-1/2} ‖f‖_{Lᵖ} + √((p - 1) / (4 λ)) ‖G‖_{Lᵖ}`
   (`TauCeti.PDE.UniformlyEllipticOn.eLpNorm_value_le_of_forall_energyFormH1_eq`), which removes
   `u` from the right side.
+* **Regularity.** The interior regularity theorem in divergence form
+  (`TauCeti.PDE.exists_memLp_gradient_ball_and_eLpNorm_le_of_vmoModulus_le`), applied to
+  `-div (G + H)` on `B(x₀, 2R)`, supplies the a priori hypothesis of the interior estimate on every
+  ball of radius `r₀ / 8`, and integrating those interior estimates over all centres shows
+  `∇u ∈ Lᵖ(ℝ^{n+1})`. The value lies in `Lᵖ` by the zero-order bound.
 
 ## References
 
@@ -253,9 +279,37 @@ section Shift
 
 variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞} {κ : ℝ}
 
+/-- `C (‖G‖ + R ‖g‖ + R⁻¹ ‖v‖) ≤ C ‖G‖ + 2 C ‖R |g| + R⁻¹ |v|‖` for `R > 0`, so the three terms
+of the interior estimate with a scalar datum combine into one function. -/
+private theorem mul_add_add_le_of_pos {R : ℝ} (hR : 0 < R) (C : ℝ≥0) {F : Type*}
+    [NormedAddCommGroup F] (G : α → F) {g v : α → ℝ} (hg : AEStronglyMeasurable g μ)
+    (hv : AEStronglyMeasurable v μ) :
+    (C : ℝ≥0∞) * (eLpNorm G p μ + ENNReal.ofReal R * eLpNorm g p μ +
+        ENNReal.ofReal R⁻¹ * eLpNorm v p μ) ≤
+      ENNReal.ofReal C * eLpNorm G p μ +
+        ENNReal.ofReal (2 * C) * eLpNorm (fun x => R * ‖g x‖ + R⁻¹ * ‖v x‖) p μ := by
+  set k := fun x => R * ‖g x‖ + R⁻¹ * ‖v x‖
+  have hgk : ENNReal.ofReal R * eLpNorm g p μ ≤ eLpNorm k p μ := by
+    rw [← eLpNorm_const_mul_norm hR.le hg]
+    refine eLpNorm_mono_real (hg.norm.const_mul R) fun x => ?_
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact le_add_of_nonneg_right (by positivity)
+  have hvk : ENNReal.ofReal R⁻¹ * eLpNorm v p μ ≤ eLpNorm k p μ := by
+    rw [← eLpNorm_const_mul_norm (inv_pos.2 hR).le hv]
+    refine eLpNorm_mono_real (hv.norm.const_mul R⁻¹) fun x => ?_
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact le_add_of_nonneg_left (by positivity)
+  calc (C : ℝ≥0∞) * (eLpNorm G p μ + ENNReal.ofReal R * eLpNorm g p μ +
+        ENNReal.ofReal R⁻¹ * eLpNorm v p μ)
+      ≤ C * (eLpNorm G p μ + eLpNorm k p μ + eLpNorm k p μ) := by gcongr
+    _ = ENNReal.ofReal C * eLpNorm G p μ + ENNReal.ofReal (2 * C) * eLpNorm k p μ := by
+        rw [ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
+          ENNReal.ofReal_coe_nnreal]
+        ring
+
 /-- `R ‖f - κ v‖ + R⁻¹ ‖v‖ ≤ 2 ‖g‖` for `R = κ^{-1/2}` and `g = R |f| + 2 √κ |v|`, so the three
 terms of the interior estimate with the shifted datum combine into one function. -/
-private theorem mul_add_le_of_sub_mul (hp1 : 1 ≤ p) (hκ0 : 0 < κ) (C : ℝ≥0)
+private theorem mul_add_le_of_sub_mul (hκ0 : 0 < κ) (C : ℝ≥0)
     {F : Type*} [NormedAddCommGroup F] (G : α → F) {f v : α → ℝ}
     (hf : AEStronglyMeasurable f μ) (hv : AEStronglyMeasurable v μ) :
     (C : ℝ≥0∞) * (eLpNorm G p μ + ENNReal.ofReal (√κ)⁻¹ * eLpNorm (fun x => f x - κ * v x) p μ +
@@ -263,46 +317,18 @@ private theorem mul_add_le_of_sub_mul (hp1 : 1 ≤ p) (hκ0 : 0 < κ) (C : ℝ�
       ENNReal.ofReal C * eLpNorm G p μ +
         ENNReal.ofReal (2 * C) * eLpNorm (fun x => (√κ)⁻¹ * ‖f x‖ + 2 * √κ * ‖v x‖) p μ := by
   have hsκ : 0 < √κ := Real.sqrt_pos.2 hκ0
-  set R := (√κ)⁻¹ with hR_def
-  have hR : 0 < R := inv_pos.2 hsκ
-  set g := fun x => R * ‖f x‖ + 2 * √κ * ‖v x‖
-  have hRκ : R * κ = √κ := by
-    have hκs : κ = √κ * √κ := (Real.mul_self_sqrt hκ0.le).symm
-    calc R * κ = (√κ)⁻¹ * √κ * √κ := by rw [hR_def, mul_assoc, ← hκs]
-      _ = √κ := by rw [inv_mul_cancel₀ hsκ.ne', one_mul]
-  -- Each of `R ‖f‖` and `2 √κ ‖v‖` is at most `‖g‖`.
-  have hfg : ENNReal.ofReal R * eLpNorm f p μ ≤ eLpNorm g p μ := by
-    rw [← eLpNorm_const_mul_norm hR.le hf]
-    refine eLpNorm_mono_real (hf.norm.const_mul R) fun x => ?_
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact le_add_of_nonneg_right (by positivity)
-  have hvg : 2 * (ENNReal.ofReal √κ * eLpNorm v p μ) ≤ eLpNorm g p μ := by
-    rw [← mul_assoc, ← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two,
-      ← eLpNorm_const_mul_norm (by positivity) hv]
-    refine eLpNorm_mono_real (hv.norm.const_mul _) fun x => ?_
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact le_add_of_nonneg_left (by positivity)
-  have hsub : eLpNorm (fun x => f x - κ * v x) p μ ≤
-      eLpNorm f p μ + ENNReal.ofReal κ * eLpNorm v p μ := by
-    have hκv : (fun x => κ * v x) = κ • v := funext fun _ => (smul_eq_mul _ _).symm
-    refine (eLpNorm_sub_le hp1).trans_eq ?_
-    rw [hκv, eLpNorm_const_smul, Real.eNorm_of_nonneg hκ0.le]
-  calc (C : ℝ≥0∞) * (eLpNorm G p μ + ENNReal.ofReal R * eLpNorm (fun x => f x - κ * v x) p μ +
-        ENNReal.ofReal R⁻¹ * eLpNorm v p μ)
-      ≤ C * (eLpNorm G p μ + (ENNReal.ofReal R * eLpNorm f p μ +
-          ENNReal.ofReal √κ * eLpNorm v p μ) + ENNReal.ofReal √κ * eLpNorm v p μ) := by
-        rw [hR_def, inv_inv, ← hR_def]
-        gcongr
-        refine (mul_le_mul_right hsub _).trans_eq ?_
-        rw [mul_add, ← mul_assoc, ← ENNReal.ofReal_mul hR.le, hRκ]
-    _ = C * eLpNorm G p μ +
-          C * (ENNReal.ofReal R * eLpNorm f p μ + 2 * (ENNReal.ofReal √κ * eLpNorm v p μ)) := by
-        ring
-    _ ≤ C * eLpNorm G p μ + C * (eLpNorm g p μ + eLpNorm g p μ) := by gcongr
-    _ = ENNReal.ofReal C * eLpNorm G p μ + ENNReal.ofReal (2 * C) * eLpNorm g p μ := by
-        rw [ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
-          ENNReal.ofReal_coe_nnreal]
-        ring
+  have hRκ : (√κ)⁻¹ * κ = √κ := by
+    rw [inv_mul_eq_iff_eq_mul₀ hsκ.ne', Real.mul_self_sqrt hκ0.le]
+  refine (mul_add_add_le_of_pos (inv_pos.2 hsκ) C G (hf.sub (hv.const_mul κ)) hv).trans ?_
+  gcongr
+  refine eLpNorm_mono_real
+    (((hf.sub (hv.const_mul κ)).norm.const_mul _).add (hv.norm.const_mul _)) fun x => ?_
+  rw [inv_inv, Pi.sub_apply, Real.norm_of_nonneg (by positivity)]
+  have h := norm_sub_le (f x) (κ * v x)
+  rw [norm_mul, Real.norm_of_nonneg hκ0.le] at h
+  have h' := mul_le_mul_of_nonneg_left h (inv_pos.2 hsκ).le
+  rw [mul_add, ← mul_assoc, hRκ] at h'
+  linarith
 
 /-- The final bookkeeping: from `X ≤ A G + 2 A g`, `g ≤ F + 2 U` and `U ≤ F + K G`, the sum
 `X + U` is at most a constant times `G + F`. -/
@@ -533,7 +559,7 @@ theorem exists_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_setAverage_le {
     exact (h₁ ham (fun x => hell.opNorm_matrixBilinearForm_le (mem_univ x)) hosc (Ω := ⊤)
       (x₀ := y) (R := R) (hell.mono_set (subset_univ _)) h4R (subset_univ _) u G _
       (hG.restrict _) ((hf.sub (hu2.const_mul κ)).restrict _) hu' (hgrad.restrict _)).trans
-      (mul_add_le_of_sub_mul hp1 hκ0 C₁ G hf.aestronglyMeasurable.restrict
+      (mul_add_le_of_sub_mul hκ0 C₁ G hf.aestronglyMeasurable.restrict
         hu2.aestronglyMeasurable.restrict)
   -- Integrating the interior estimates over all centres.
   have hgm : AEStronglyMeasurable (fun x => R * ‖f x‖ + 2 * √κ * ‖W1p.value u x‖) volume :=
@@ -550,6 +576,361 @@ theorem exists_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_setAverage_le {
     push_cast
     ring
   · rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat, mul_assoc]
+
+/-! ### Regularity and solvability -/
+
+/-- If the VMO modulus of a uniformly elliptic field `a` at the scale `r₀` is at most `δ`, then on
+every ball of radius at most `r₀` some constant matrix, uniformly elliptic with the same constants
+(the average of `a` over the ball), has mean deviation at most `δ` from `a`. This is the oscillation
+hypothesis of the a priori estimates above. -/
+private theorem exists_uniformlyEllipticOn_const_and_setAverage_le_of_vmoModulus_le {lam Lam : ℝ}
+    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (ham : AEStronglyMeasurable a volume) (hell : UniformlyEllipticOn univ a lam Lam) {r₀ δ : ℝ}
+    (hδ : 0 ≤ δ)
+    (hη : vmoModulus (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume r₀ ≤ ENNReal.ofReal δ)
+    (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ) (hr : 0 < r) (hrr : r ≤ r₀) :
+    ∃ A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,
+      UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam ∧
+        ⨍ x in ball c r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ δ :=
+  (hell.mono_set (subset_univ _)).exists_uniformlyEllipticOn_const_and_setAverage_le
+    measurableSet_ball ham.restrict (measure_ball_pos volume c hr).ne' measure_ball_lt_top.ne hδ
+    ((setLAverage_enorm_sub_setAverage_le_vmoModulus _ volume c hrr).trans hη)
+
+/-- **Interior `W^{1,p}` regularity with a scalar datum, for coefficients of small mean
+oscillation.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There is a threshold `δ > 0`, depending only on
+`n`, `p`, `λ` and `Λ`, with the following property. Let `a` be a measurable coefficient matrix on
+`ℝ^{n+1}`, uniformly elliptic with constants `λ, Λ`, whose VMO modulus at the scale `r₀` is at
+most `δ`. Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly in `Ω`, let `B(x₀, 2R) ⊆ Ω` with
+`8 R ≤ r₀`, and let `f` and `G` lie in `Lᵖ(B(x₀, 2R))`. Then `∇u ∈ Lᵖ(B(x₀, R))`.
+
+Nothing is assumed about the integrability of `∇u` beyond `L²`. This is the regularity counterpart
+of the a priori estimate
+`TauCeti.PDE.exists_eLpNorm_gradient_ball_le_of_scalar_forcing_of_setAverage_le`, and the case of a
+scalar datum of `TauCeti.PDE.exists_memLp_gradient_ball_and_eLpNorm_le_of_vmoModulus_le`: on
+`B(x₀, 2R)` the datum `f` is `-div H` for a field `H ∈ Lᵖ(B(x₀, 2R))`. -/
+theorem exists_memLp_gradient_ball_of_scalar_forcing_of_vmoModulus_le {p : ℝ≥0∞} (hp : 2 < p)
+    (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ δ : ℝ, 0 < δ ∧
+      ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {r₀ : ℝ},
+        AEStronglyMeasurable a volume → UniformlyEllipticOn univ a lam Lam →
+        vmoModulus (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume r₀ ≤ ENNReal.ofReal δ →
+        ∀ {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))}
+          {R : ℝ}, 8 * R ≤ r₀ → ball x₀ (2 * R) ⊆ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) →
+        ∀ (u : W1p volume Ω 2)
+          (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+          (f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
+          MemLp G p (volume.restrict (ball x₀ (2 * R))) →
+          MemLp f p (volume.restrict (ball x₀ (2 * R))) →
+          (∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
+            ∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ ∂volume +
+              ∫ x in Ω, f x * φ x ∂volume) →
+          MemLp (W1p.gradient u) p (volume.restrict (ball x₀ R)) := by
+  obtain ⟨_, δ, hδ, hreg⟩ :=
+    exists_memLp_gradient_ball_and_eLpNorm_le_of_vmoModulus_le (n := n) hp hp_top lam Lam
+  refine ⟨δ, hδ, fun {a r₀} ham hell hη {Ω x₀ R} hRr hball u G f hG hf hu => ?_⟩
+  rcases le_or_gt R 0 with hR | hR
+  · rw [ball_eq_empty.2 hR, Measure.restrict_empty]
+    exact memLp_measure_zero
+  have : IsFiniteMeasure (volume.restrict (ball x₀ (2 * R))) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hΩ : ballOpens x₀ (2 * R) ≤ Ω := hball
+  have ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict (ball x₀ (2 * R))) :=
+    (hell.mono_set (subset_univ _)).memLp_energyIntegrand_zero_zero
+      (Omega := ballOpens x₀ (2 * R)) ham.restrict
+  -- On `B(x₀, 2R)` the scalar datum is `-div H` for a field `H ∈ Lᵖ(B(x₀, 2R))`.
+  obtain ⟨H, hHle, hHeq⟩ := exists_field_forall_energyFormH1_restrictL_eq hR hΩ ha
+    (hG.mono_exponent hp.le) (hf.mono_exponent hp.le) hu
+  have hH : MemLp H p (volume.restrict (ball x₀ (2 * R))) :=
+    (hHle (one_le_two.trans hp.le)).trans_lt
+      (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hf.eLpNorm_lt_top)
+  have h := (hreg ham hell hη (Ω := ballOpens x₀ (2 * R)) (x₀ := x₀) (R := 2 * R)
+    (by positivity) (by linarith) subset_rfl (W1p.restrictL hΩ u) (fun x => G x + H x) hHeq
+    (hG.add hH)).1
+  rw [show 2 * R / 2 = R by ring] at h
+  exact h.ae_eq (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith))
+    (W1p.gradient_restrictL_ae hΩ u))
+
+/-- **`W^{1,p}` regularity for the whole-space equation with a zero-order shift.** Let
+`2 < p < ∞` and `0 < λ ≤ Λ`. There is a threshold `δ > 0`, depending only on `n`, `p`, `λ` and `Λ`,
+with the following property. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}`, uniformly
+elliptic with constants `λ, Λ`, whose VMO modulus at a scale `r₀ > 0` is at most `δ`, and let
+`κ > 0`. If `u ∈ H¹(ℝ^{n+1})` solves
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + κ u = f - div G`
+
+weakly, with `f, G ∈ L² ∩ Lᵖ`, then `∇u ∈ Lᵖ` and `u ∈ Lᵖ`, so `u ∈ W^{1,p}(ℝ^{n+1})`.
+
+No relation between `κ` and `r₀` is needed here. The value lies in `Lᵖ` by the zero-order bound,
+and the gradient by the interior regularity and estimates on all balls of radius `r₀ / 8`, which
+are integrated over all centres. -/
+theorem exists_memLp_gradient_and_memLp_value_of_vmoModulus_le {p : ℝ≥0∞} (hp : 2 < p)
+    (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ δ : ℝ, 0 < δ ∧
+      ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+        {r₀ κ : ℝ}, 0 < r₀ → 0 < κ → AEStronglyMeasurable a volume →
+        UniformlyEllipticOn univ a lam Lam →
+        vmoModulus (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume r₀ ≤ ENNReal.ofReal δ →
+        ∀ (u : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2)
+          (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+          (f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ), MemLp G 2 volume → MemLp f 2 volume →
+          MemLp G p volume → MemLp f p volume →
+          (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
+            energyFormH1 a 0 (fun _ => κ) u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
+              ∫ x, f x * φ x ∂volume +
+                ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ ∂volume) →
+          MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+              p volume ∧
+            MemLp (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p volume := by
+  obtain ⟨δ₁, hδ₁, hloc⟩ :=
+    exists_memLp_gradient_ball_of_scalar_forcing_of_vmoModulus_le (n := n) hp hp_top lam Lam
+  obtain ⟨C, δ₂, hδ₂, hap⟩ :=
+    exists_eLpNorm_gradient_ball_le_of_scalar_forcing_of_setAverage_le (n := n) hp hp_top lam Lam
+  have hp1 : 1 ≤ p := one_le_two.trans hp.le
+  refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂,
+    fun {a r₀ κ} hr₀ hκ ham hell hη u G f hG hf hGp hfp hu => ?_⟩
+  have hcoeff := (hell.mono_set (subset_univ _)).memLp_energyIntegrand_zero_zero
+    (Omega := (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1))))) ham.restrict
+  have hu2 := W1p.memLp_value u
+  have hu' := forall_energyFormH1_zero_zero_eq_of_shift hcoeff hf hu
+  -- The value lies in `Lᵖ` by the zero-order bound.
+  have hup : MemLp (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p volume := by
+    refine ENNReal.lt_top_of_mul_ne_top_right ?_ (ENNReal.ofReal_pos.2 (Real.sqrt_pos.2 hκ)).ne'
+    exact ((sqrt_mul_eLpNorm_value_le_of_shift hp.le hp_top ham hell hcoeff hκ hG hf hu').trans_lt
+      (ENNReal.add_lt_top.2 ⟨ENNReal.mul_lt_top ENNReal.ofReal_lt_top hfp.eLpNorm_lt_top,
+        ENNReal.mul_lt_top ENNReal.ofReal_lt_top hGp.eLpNorm_lt_top⟩)).ne
+  refine ⟨?_, hup⟩
+  set R := r₀ / 8
+  have hR : 0 < R := by positivity
+  have h8R : 8 * R = r₀ := by simp only [R]; ring
+  have hFp := hfp.sub (hup.const_mul κ)
+  -- On every ball of radius `R / 2`, the gradient is bounded by the data on the ball of
+  -- radius `2 R`; the interior regularity theorem supplies the a priori integrability.
+  have hlocal : ∀ y, eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1))) p (volume.restrict (ball y (R / 2))) ≤
+      ENNReal.ofReal C * eLpNorm G p (volume.restrict (ball y (4 * (R / 2)))) +
+        ENNReal.ofReal (2 * C) * eLpNorm (fun x => R * ‖f x - κ * W1p.value u x‖ +
+          R⁻¹ * ‖W1p.value u x‖) p (volume.restrict (ball y (4 * (R / 2)))) := fun y => by
+    rw [show 4 * (R / 2) = 2 * R by ring]
+    have hgradR := hloc ham hell (hη.trans (ENNReal.ofReal_le_ofReal (min_le_left _ _)))
+      (Ω := ⊤) (x₀ := y) (R := R) h8R.le (subset_univ _) u G _ (hGp.restrict _)
+      (hFp.restrict _) hu'
+    exact (hap ham (fun x => hell.opNorm_matrixBilinearForm_le (mem_univ x))
+      (fun c r hr hrr => exists_uniformlyEllipticOn_const_and_setAverage_le_of_vmoModulus_le ham
+        hell hδ₂.le (hη.trans (ENNReal.ofReal_le_ofReal (min_le_right _ _))) c r hr hrr)
+      (Ω := ⊤) (x₀ := y) (R := R) (hell.mono_set (subset_univ _)) (by linarith) (subset_univ _)
+      u G _ (hG.restrict _) ((hf.sub (hu2.const_mul κ)).restrict _) hu' hgradR).trans
+      (mul_add_add_le_of_pos hR C G (hf.sub (hu2.const_mul κ)).aestronglyMeasurable.restrict
+        hu2.aestronglyMeasurable.restrict)
+  -- Integrating the local bounds over all centres.
+  have hk : MemLp (fun x => R * ‖f x - κ * W1p.value u x‖ + R⁻¹ * ‖W1p.value u x‖) p volume :=
+    (hFp.norm.const_mul R).add (hup.norm.const_mul R⁻¹)
+  have hglob := eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add hp1 hp_top
+    (W1p.memLp_gradient u).aestronglyMeasurable hG.aestronglyMeasurable hk.aestronglyMeasurable
+    (by norm_num : (1 : ℝ) ≤ 4) (half_pos hR) (Eventually.of_forall hlocal)
+  exact hglob.trans_lt (ENNReal.mul_lt_top
+    (ENNReal.mul_lt_top (by norm_num) (ENNReal.pow_lt_top ENNReal.ofReal_lt_top))
+    (ENNReal.add_lt_top.2 ⟨ENNReal.mul_lt_top ENNReal.ofReal_lt_top hGp.eLpNorm_lt_top,
+      ENNReal.mul_lt_top ENNReal.ofReal_lt_top hk.eLpNorm_lt_top⟩))
+
+/-- **Krylov's whole-space `W^{1,p}` theorem with a zero-order shift, for coefficients of small
+mean oscillation.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`,
+depending only on `n`, `p`, `λ` and `Λ`, with the following property. Let `a` be a measurable
+coefficient matrix on `ℝ^{n+1}`, uniformly elliptic with constants `λ, Λ`, not necessarily
+symmetric, whose VMO modulus at a scale `r₀ > 0` is at most `δ`, and let `κ ≥ 16 / r₀²`. If
+`u ∈ H¹(ℝ^{n+1})` solves
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + κ u = f - div G`
+
+weakly, with `f, G ∈ L² ∩ Lᵖ`, then `u ∈ W^{1,p}(ℝ^{n+1})` and
+
+`‖∇u‖_{Lᵖ} + √κ ‖u‖_{Lᵖ} ≤ C (‖G‖_{Lᵖ} + κ^{-1/2} ‖f‖_{Lᵖ})`.
+
+Unlike `TauCeti.PDE.exists_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_setAverage_le`,
+nothing is assumed about the integrability of `∇u` beyond `L²`. Such a solution exists and is
+unique for every `κ > 0`
+(`TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_pos`). This is
+N. V. Krylov, *Parabolic and elliptic equations with VMO coefficients*, Theorem 2.8, for
+`2 < p < ∞` and data in `L² ∩ Lᵖ`. -/
+theorem exists_memLp_and_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_vmoModulus_le
+    {p : ℝ≥0∞} (hp : 2 < p) (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
+      ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+        {r₀ κ : ℝ}, 0 < r₀ → 16 / r₀ ^ 2 ≤ κ → AEStronglyMeasurable a volume →
+        UniformlyEllipticOn univ a lam Lam →
+        vmoModulus (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume r₀ ≤ ENNReal.ofReal δ →
+        ∀ (u : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2)
+          (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+          (f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ), MemLp G 2 volume → MemLp f 2 volume →
+          MemLp G p volume → MemLp f p volume →
+          (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
+            energyFormH1 a 0 (fun _ => κ) u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
+              ∫ x, f x * φ x ∂volume +
+                ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ ∂volume) →
+          MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+              p volume ∧
+            MemLp (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p volume ∧
+            eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
+                EuclideanSpace ℝ (Fin (n + 1))) p volume +
+              ENNReal.ofReal √κ *
+                eLpNorm (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p volume ≤
+              C * (eLpNorm G p volume + ENNReal.ofReal (√κ)⁻¹ * eLpNorm f p volume) := by
+  obtain ⟨δ₁, hδ₁, hreg⟩ :=
+    exists_memLp_gradient_and_memLp_value_of_vmoModulus_le (n := n) hp hp_top lam Lam
+  obtain ⟨C, δ₂, hδ₂, hest⟩ :=
+    exists_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_setAverage_le (n := n) hp hp_top
+      lam Lam
+  refine ⟨C, min δ₁ δ₂, lt_min hδ₁ hδ₂,
+    fun {a r₀ κ} hr₀ hκ ham hell hη u G f hG hf hGp hfp hu => ?_⟩
+  have hκ0 : 0 < κ := (by positivity : (0 : ℝ) < 16 / r₀ ^ 2).trans_le hκ
+  obtain ⟨hgrad, hval⟩ := hreg hr₀ hκ0 ham hell
+    (hη.trans (ENNReal.ofReal_le_ofReal (min_le_left _ _))) u G f hG hf hGp hfp hu
+  exact ⟨hgrad, hval, hest hr₀ hκ ham hell
+    (fun c r hr hrr => exists_uniformlyEllipticOn_const_and_setAverage_le_of_vmoModulus_le ham hell
+      hδ₂.le (hη.trans (ENNReal.ofReal_le_ofReal (min_le_right _ _))) c r hr hrr)
+    u G f hG hf hu hgrad⟩
+
+/-- **Krylov's whole-space `W^{1,p}` theorem with a zero-order shift, for coefficients of vanishing
+mean oscillation.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There is a constant `C`, depending only on
+`n`, `p`, `λ` and `Λ`, with the following property. Let `a` be a coefficient matrix on `ℝ^{n+1}`,
+uniformly elliptic with constants `λ, Λ`, not necessarily symmetric, whose operators `a(x)` have
+vanishing mean oscillation. Then there is a threshold `κ₀ > 0` such that for every `κ ≥ κ₀`, every
+`u ∈ H¹(ℝ^{n+1})` solving `-∂ᵢ(aⁱʲ ∂ⱼu) + κ u = f - div G` weakly, with `f, G ∈ L² ∩ Lᵖ`, lies in
+`W^{1,p}(ℝ^{n+1})` and satisfies
+
+`‖∇u‖_{Lᵖ} + √κ ‖u‖_{Lᵖ} ≤ C (‖G‖_{Lᵖ} + κ^{-1/2} ‖f‖_{Lᵖ})`.
+
+The threshold `κ₀` depends on `a` only through its VMO modulus; see
+`TauCeti.PDE.exists_memLp_and_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_vmoModulus_le`. -/
+theorem exists_memLp_and_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_memVMO {p : ℝ≥0∞}
+    (hp : 2 < p) (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ C : ℝ≥0, ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
+      MemVMO (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume →
+      UniformlyEllipticOn univ a lam Lam →
+      ∃ κ₀ : ℝ, 0 < κ₀ ∧ ∀ {κ : ℝ}, κ₀ ≤ κ →
+        ∀ (u : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2)
+          (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+          (f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ), MemLp G 2 volume → MemLp f 2 volume →
+          MemLp G p volume → MemLp f p volume →
+          (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
+            energyFormH1 a 0 (fun _ => κ) u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
+              ∫ x, f x * φ x ∂volume +
+                ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ ∂volume) →
+          MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
+              p volume ∧
+            MemLp (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p volume ∧
+            eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
+                EuclideanSpace ℝ (Fin (n + 1))) p volume +
+              ENNReal.ofReal √κ *
+                eLpNorm (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p volume ≤
+              C * (eLpNorm G p volume + ENNReal.ofReal (√κ)⁻¹ * eLpNorm f p volume) := by
+  obtain ⟨C, δ, hδ, hmain⟩ :=
+    exists_memLp_and_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_vmoModulus_le (n := n) hp
+      hp_top lam Lam
+  refine ⟨C, fun {a} hvmo hell => ?_⟩
+  obtain ⟨hbmo, hlim⟩ := memVMO_iff_tendsto.1 hvmo
+  -- The VMO modulus is below `δ` on `(0, r₁)`.
+  obtain ⟨r₁, hr₁, hsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset).1
+    (hlim.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hδ)))
+  have hr₁' : 0 < r₁ := hr₁
+  refine ⟨16 / (r₁ / 2) ^ 2, by positivity, fun {κ} hκ => ?_⟩
+  exact hmain (by positivity) hκ (Matrix.aestronglyMeasurable_toEuclideanCLM_iff.1
+    hbmo.locallyIntegrable.aestronglyMeasurable) hell (hsub ⟨by positivity, by linarith⟩).le
+
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace in
+/-- On a test function `φ`, the functional `v ↦ ∫ f v + ∫ ⟪G, ∇v⟫` of the shifted equation on
+`ℝ^{n+1}`, in the form of
+`TauCeti.PDE.UniformlyEllipticOn.eLpNorm_value_le_of_forall_energyFormH1_eq`, is
+`∫ f φ + ∫ ⟪G, ∇φ⟫`. -/
+private theorem dirichletForcing_add_divergenceForcing_ofTestFunctionₗ
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (hfT : MemLp f 2 (volume.restrict
+      ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1))))))
+    (hGT : MemLp (fun x => G x - 0) 2 (volume.restrict
+      ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1))))))
+    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ)) :
+    (dirichletForcing hfT.toLp + divergenceForcing (-hGT.toLp))
+        ⟨W1p.ofTestFunctionₗ volume ⊤ 2 φ, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩ =
+      ∫ x, f x * φ x ∂volume +
+        ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ ∂volume := by
+  rw [add_apply, dirichletForcing_apply_eq_setIntegral, divergenceForcing_apply_eq_neg_setIntegral,
+    ← integral_neg]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  congr 1
+  · refine integral_congr_ae ?_
+    have hf1 := hfT.coeFn_toLp
+    simp only [Opens.coe_top, Measure.restrict_univ] at hf1
+    filter_upwards [hf1, W1p.value_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ]
+      with x hx hφx
+    rw [hx, hφx]
+  · refine integral_congr_ae ?_
+    have hneg := (Lp.coeFn_neg hGT.toLp).trans hGT.coeFn_toLp.neg
+    simp only [Opens.coe_top, Measure.restrict_univ] at hneg
+    filter_upwards [hneg, W1p.gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ]
+      with x hx hgx
+    rw [hx, hgx, Pi.neg_apply, sub_zero, inner_neg_left, neg_neg]
+
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace in
+/-- **Existence and uniqueness for the whole-space equation with a zero-order shift.** Let `a` be
+a measurable coefficient matrix on `ℝ^{n+1}`, uniformly elliptic with constants `λ, Λ`, not
+necessarily symmetric, and let `κ > 0`. For all `f ∈ L²(ℝ^{n+1})` and `G ∈ L²(ℝ^{n+1}; ℝ^{n+1})`
+there is exactly one `u ∈ H¹(ℝ^{n+1})` solving
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + κ u = f - div G`
+
+weakly, that is `∫ ⟨a ∇u, ∇φ⟩ + κ ∫ u φ = ∫ f φ + ∫ ⟨G, ∇φ⟩` for every test function `φ`. The
+zero-order term makes the energy form coercive on `H¹(ℝ^{n+1})`, so this is Lax–Milgram. For
+coefficients of small mean oscillation and data also in `Lᵖ`, `2 < p < ∞`, the solution lies in
+`W^{1,p}(ℝ^{n+1})`
+(`TauCeti.PDE.exists_memLp_gradient_and_memLp_value_of_vmoModulus_le`). -/
+theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_pos {lam Lam κ : ℝ}
+    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (hell : UniformlyEllipticOn univ a lam Lam) (ham : AEStronglyMeasurable a volume)
+    (hκ : 0 < κ) {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hG : MemLp G 2 volume) (hf : MemLp f 2 volume) :
+    ∃! u : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
+      ∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
+        energyFormH1 a 0 (fun _ => κ) u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
+          ∫ x, f x * φ x ∂volume +
+            ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ ∂volume := by
+  set T := (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1))))
+  have hT : (T : Set (EuclideanSpace ℝ (Fin (n + 1)))) = univ := Opens.coe_top
+  have hfT : MemLp f 2 (volume.restrict (T : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
+    rwa [hT, Measure.restrict_univ]
+  have hGT : MemLp (fun x => G x - 0) 2
+      (volume.restrict (T : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
+    simpa only [hT, Measure.restrict_univ, sub_zero] using hG
+  have hellT : UniformlyEllipticOn (T : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam :=
+    hell.mono_set (subset_univ _)
+  have hb : ∀ x ∈ (T : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+      ‖(0 : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x‖ ≤ 0 :=
+    fun _ _ => by simp
+  have hc : ∀ x ∈ (T : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+      ‖(fun _ : EuclideanSpace ℝ (Fin (n + 1)) => κ) x‖ ≤ κ :=
+    fun _ _ => (Real.norm_of_nonneg hκ.le).le
+  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := fun _ => κ) hellT.upper_nonneg
+    ham.restrict aestronglyMeasurable_zero aestronglyMeasurable_const
+    (fun _ hx eta xi => hellT.upper_bound hx eta xi) hb hc
+  have hB := hellT.isCoercive_energyFormH1L0_of_mass_lower_bound (b := 0) (c := fun _ => κ)
+    ham.restrict aestronglyMeasurable_zero aestronglyMeasurable_const hb hc (fun _ _ => le_rfl)
+    (by rw [zero_pow two_ne_zero]; exact mul_pos (mul_pos four_pos hellT.pos) hκ) hcoeff
+  obtain ⟨w, hw, hwu⟩ := hB.existsUnique_forall_eq
+    (dirichletForcing hfT.toLp + divergenceForcing (-hGT.toLp))
+  simp only [energyFormH1L0_apply] at hw hwu
+  refine ⟨(w : W1p volume T 2), fun φ => ?_, fun u hu => ?_⟩
+  · -- The Lax–Milgram solution solves the equation against test functions.
+    rw [← dirichletForcing_add_divergenceForcing_ofTestFunctionₗ hfT hGT φ]
+    exact hw ⟨W1p.ofTestFunctionₗ volume ⊤ 2 φ, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+  · -- A solution against test functions solves the equation against `H¹(ℝ^{n+1})`.
+    have hcoeff₀ := (hell.mono_set (subset_univ _)).memLp_energyIntegrand_zero_zero
+      (Omega := T) ham.restrict
+    have hκuT : MemLp (fun x => κ * W1p.value u x) 2
+        (volume.restrict (T : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
+      simpa only [hT, Measure.restrict_univ] using (W1p.memLp_value u).const_mul κ
+    have h := forall_energyFormH1_eq_dirichletForcing_add_divergenceForcing hcoeff₀ hfT hκuT hGT
+      (forall_energyFormH1_zero_zero_eq_of_shift hcoeff₀ hf hu)
+    exact congrArg Subtype.val (hwu ⟨u, W1p.mem_w1p0Submodule_top (by norm_num) u⟩ fun v => by
+      rw [h v, add_apply])
 
 end PDE
 
