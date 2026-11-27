@@ -22,7 +22,8 @@ sense of `TauCeti.MemLpLoc`, on an arbitrary real normed space `E` and for any r
 
 For non-open domains such as half-discs reaching a boundary hyperplane, the `Lᵖ` bounds hold on
 compact subsets touching the boundary, while weak-derivative test functions stay inside
-`interior U`. On open sets this is the usual local Sobolev class `W^{k,p}_loc(Ω; F)`. Derivatives
+`interior U`. On open subsets of a finite-dimensional real normed space equipped with an additive
+Haar measure, this is the usual local Sobolev class `W^{k,p}_loc(Ω; F)`. Derivatives
 take values in iterated continuous linear maps rather than scalar jets, and no basis or separability
 of the codomain `F` is assumed. The predicates concern actual functions, are invariant under
 almost-everywhere modifications on `U`, and impose no global integrability condition on possibly
@@ -38,12 +39,11 @@ This file supplies:
   order (`MemWkpLoc.of_succ`, `MemWkpLoc.of_le`);
 * uniqueness-of-weak-derivative consequences (`MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn`,
   `MemWkpLoc.memLpLoc_of_hasWeakFDerivOn`), first-order characterization for continuous functions
-  (`ContinuousOn.memWkpLoc_one_iff`, `ContinuousOn.memWkpLoc_one_iff_of_isOpen`), classical
-  differentiability criteria (`memWkpLoc_one_of_differentiableOn`,
-  `memWkpLoc_one_of_continuousOn_fderiv`), `Cᵏ` membership (`ContDiffOn.memWkpLoc`,
-  `ContDiff.memWkpLoc`), and identification of derivatives of `Cᵏ` representatives on sets agreeing
-  almost everywhere with their interior (`MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`,
-  `MemWkpLoc.iteratedFDeriv_of_contDiffOn`);
+  (`ContinuousOn.memWkpLoc_one_iff`), classical differentiability criterion
+  (`memWkpLoc_one_of_differentiableOn`), `Cᵏ` membership (`ContDiffOn.memWkpLoc`,
+  `ContDiff.memWkpLoc`, `ContinuousLinearMap.memWkpLoc_affine`), and identification of derivatives
+  of `Cᵏ` representatives on sets agreeing almost everywhere with their interior
+  (`MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`, `MemWkpLoc.iteratedFDeriv_of_contDiffOn`);
 * `TauCeti.WeakDerivChainLe`, comparing the `Lᵖ` norms of two maps and recursively every pair of
   their weak derivatives through a given order.
 
@@ -140,14 +140,6 @@ theorem _root_.ContinuousOn.memWkpLoc_one_iff [OpensMeasurableSpace E]
     MemWkpLoc p U 1 f μ ↔
       ∃ D : E → E →L[ℝ] F, HasWeakFDerivOn μ (Opens.interior U) f D ∧ MemLpLoc p U D μ := by
   simp only [memWkpLoc_succ_iff, memWkpLoc_zero_iff, hf.memLpLoc, true_and]
-
-/-- On an open domain, a continuous function lies in `W^{1,p}_loc(Ω; F)` if and only if it has a
-weak derivative on `Ω` belonging to `MemLpLoc p Ω`. -/
-theorem _root_.ContinuousOn.memWkpLoc_one_iff_of_isOpen [OpensMeasurableSpace E]
-    [IsFiniteMeasureOnCompacts μ] (hf : ContinuousOn f Ω) :
-    MemWkpLoc p Ω 1 f μ ↔
-      ∃ D : E → E →L[ℝ] F, HasWeakFDerivOn μ Ω f D ∧ MemLpLoc p Ω D μ := by
-  simp only [memWkpLoc_succ_iff_of_isOpen, memWkpLoc_zero_iff, hf.memLpLoc, true_and]
 
 /-- Every local Sobolev function is locally `Lᵖ`. -/
 theorem MemWkpLoc.memLpLoc (hf : MemWkpLoc p U k f μ) : MemLpLoc p U f μ := by
@@ -446,21 +438,9 @@ theorem memWkpLoc_one_of_differentiableOn [FiniteDimensional ℝ E] [BorelSpace 
     (hdiff : ∀ x ∈ (Ω : Set E), DifferentiableAt ℝ f x)
     (hD : MemLpLoc p Ω (fderiv ℝ f) μ) : MemWkpLoc p Ω 1 f μ := by
   have hc : ContinuousOn f Ω := fun x hx => (hdiff x hx).continuousAt.continuousWithinAt
-  exact hc.memWkpLoc_one_iff_of_isOpen.2
-    ⟨fderiv ℝ f, hasWeakFDerivOn_of_differentiableOn
-      (hD.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed) hdiff, hD⟩
-
-/-- A function differentiable at every point of an open set `Ω` with continuous Fréchet derivative
-on `Ω` lies in `W^{1,p}_loc(Ω; F)` for every exponent `p`, including `p < 1` and `p = ∞`, with weak
-derivative `fderiv ℝ f`. -/
-theorem memWkpLoc_one_of_continuousOn_fderiv [FiniteDimensional ℝ E] [BorelSpace E]
-    [μ.IsAddHaarMeasure] [CompleteSpace F]
-    (hdiff : ∀ x ∈ (Ω : Set E), DifferentiableAt ℝ f x)
-    (hDc : ContinuousOn (fderiv ℝ f) Ω) : MemWkpLoc p Ω 1 f μ := by
-  have hc : ContinuousOn f Ω := fun x hx => (hdiff x hx).continuousAt.continuousWithinAt
-  exact hc.memWkpLoc_one_iff_of_isOpen.2
-    ⟨fderiv ℝ f, hasWeakFDerivOn_of_differentiableOn
-      (hDc.locallyIntegrableOn Ω.isOpen.measurableSet) hdiff, hDc.memLpLoc⟩
+  exact memWkpLoc_succ_iff_of_isOpen.2 ⟨hc.memLpLoc, fderiv ℝ f,
+    hasWeakFDerivOn_of_differentiableOn (hD.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed) hdiff,
+    hD⟩
 
 private theorem contDiffOn_memWkpLoc_max [FiniteDimensional ℝ E] [BorelSpace E]
     [μ.IsAddHaarMeasure] {F : Type max u v} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -493,6 +473,13 @@ exponent. -/
 theorem _root_.ContDiff.memWkpLoc [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure]
     [CompleteSpace F] (hf : ContDiff ℝ k f) : MemWkpLoc p U k f μ :=
   hf.contDiffOn.memWkpLoc (Ω := ⊤) ((Set.subset_univ U).trans_eq Opens.coe_top.symm)
+
+/-- Every continuous affine map `x ↦ L x + c` into a Banach space lies in `MemWkpLoc p U k` for
+every exponent `p`, order `k`, and additive Haar measure `μ`. -/
+theorem _root_.ContinuousLinearMap.memWkpLoc_affine [FiniteDimensional ℝ E] [BorelSpace E]
+    [μ.IsAddHaarMeasure] [CompleteSpace F] (L : E →L[ℝ] F) (c : F) :
+    MemWkpLoc p U k (fun x : E => L x + c) μ :=
+  (L.contDiff.add contDiff_const).memWkpLoc
 
 end MemWkpLoc
 

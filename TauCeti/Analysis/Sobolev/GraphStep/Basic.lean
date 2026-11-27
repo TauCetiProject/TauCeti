@@ -49,10 +49,11 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
   `TauCeti.WeakDerivStep.norm_prev_add_norm_weakFDeriv_le`: the graph norm in terms of its
   components, and the bound `‖x‖ + ‖Du‖_p ≤ √2 ‖(x, Du)‖`.
 * `TauCeti.WeakDerivStep.exists_prev_ae_eq_and_weakFDeriv_ae_eq_of_differentiableOn`,
-  `TauCeti.WeakDerivStep.tendsto_of_tendsto_eLpNorm`: over the identity of `Lᵖ`, a field
+  `TauCeti.WeakDerivStep.tendsto_of_tendsto_eLpNorm`,
+  `TauCeti.WeakDerivStep.tendsto_iff_eLpNorm_of_ae_eq`: over the identity of `Lᵖ`, a field
   differentiable on the open set, with value and derivative in `Lᵖ`, gives a graph element whose
-  weak derivative is its classical derivative, and graph elements converge when representatives
-  of their fields and weak derivatives converge in `Lᵖ`.
+  weak derivative is its classical derivative, and graph elements converge if and only if
+  representatives of their fields and weak derivatives converge in `Lᵖ`.
 * `TauCeti.WeakDerivStep.restrictBaseL`: restriction of the selected field to an open subdomain,
   with its exact and almost-everywhere characteristic equations.
 * `TauCeti.WeakDerivStep.toIdL`: pushforward along `base` to the weak-derivative graph over the
@@ -485,6 +486,33 @@ theorem tendsto_of_tendsto_eLpNorm {I : Type*} {l : Filter I}
   refine tendsto_iff_prev_weakFDeriv.2 ⟨?_, ?_⟩ <;> rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   · exact hconv.congr fun i => eLpNorm_congr_ae ((hw i).sub hu).symm
   · exact hdconv.congr fun i => eLpNorm_congr_ae ((hdw i).sub hD).symm
+
+/-- **Convergence in `WeakDerivStep` through arbitrary representatives.** A net in the complete
+graph space `WeakDerivStep mu Omega p (id : Lp F p →L Lp F p)` converges exactly when any choice
+of almost-everywhere representatives of the functions and their weak derivatives converge in their
+extended Bochner `Lᵖ` norms. This includes `p = ∞`. -/
+theorem tendsto_iff_eLpNorm_of_ae_eq {I : Type*} {l : Filter I}
+    {v : I → WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))}
+    {v₀ : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))}
+    {u : I → E → F} {u₀ : E → F} {D : I → E → E →L[ℝ] F} {D₀ : E → E →L[ℝ] F}
+    (hu : ∀ i, ⇑(prev _ (v i)) =ᵐ[mu.restrict Omega] u i)
+    (hu₀ : ⇑(prev _ v₀) =ᵐ[mu.restrict Omega] u₀)
+    (hD : ∀ i, ⇑(weakFDeriv _ (v i)) =ᵐ[mu.restrict Omega] D i)
+    (hD₀ : ⇑(weakFDeriv _ v₀) =ᵐ[mu.restrict Omega] D₀) :
+    Filter.Tendsto v l (nhds v₀) ↔
+      Filter.Tendsto (fun i => eLpNorm (u i - u₀) p (mu.restrict Omega)) l (nhds 0) ∧
+      Filter.Tendsto (fun i => eLpNorm (D i - D₀) p (mu.restrict Omega)) l (nhds 0) := by
+  rw [tendsto_iff_prev_weakFDeriv,
+    tendsto_iff_edist_tendsto_0, tendsto_iff_edist_tendsto_0]
+  have heu : ∀ i, edist (prev _ (v i)) (prev _ v₀) =
+      eLpNorm (u i - u₀) p (mu.restrict Omega) := fun i => by
+    rw [Lp.edist_def]
+    exact eLpNorm_congr_ae ((hu i).sub hu₀)
+  have heD : ∀ i, edist (weakFDeriv _ (v i)) (weakFDeriv _ v₀) =
+      eLpNorm (D i - D₀) p (mu.restrict Omega) := fun i => by
+    rw [Lp.edist_def]
+    exact eLpNorm_congr_ae ((hD i).sub hD₀)
+  simp only [heu, heD]
 
 end IdentityBase
 

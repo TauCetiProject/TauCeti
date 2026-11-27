@@ -174,6 +174,8 @@ weaken them for no gain.
 * `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
   linear map on the codomain passes through the weak derivative, which is how a vector-valued weak
   derivative is read off its scalar components.
+* `TauCeti.HasWeakFDerivOn.smul_const`: multiplying a fixed Banach-space vector by a scalar weakly
+  differentiable function has weak derivative `x ↦ (Da x).smulRight v`.
 * `TauCeti.HasWeakFDerivOn.compLp`: the same for `Lᵖ` classes, with `ContinuousLinearMap.compLp`.
 * `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`: the defining identity tested
   against a test function valued in a finite-dimensional real inner product space,
@@ -633,6 +635,18 @@ theorem HasWeakFDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace
     [CompleteSpace G] {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (L : F →L[ℝ] G) :
     HasWeakFDerivOn μ Ω (fun x => L (u x)) (fun x => L.comp (U x)) := fun v =>
   (h v).clm_comp L
+
+/-- Multiplying a fixed vector in a Banach space by a scalar weakly differentiable function gives
+a weak derivative `x ↦ (Da x).smulRight v`. -/
+theorem HasWeakFDerivOn.smul_const [CompleteSpace F] {a : E → ℝ} {Da : E → E →L[ℝ] ℝ}
+    (h : HasWeakFDerivOn μ Ω a Da) (v : F) :
+    HasWeakFDerivOn μ Ω (fun x => a x • v) (fun x => (Da x).smulRight v) := by
+  have h1 : (fun x => ((ContinuousLinearMap.id ℝ ℝ).smulRight v) (a x)) = fun x => a x • v := rfl
+  have h2 : (fun x => ((ContinuousLinearMap.id ℝ ℝ).smulRight v).comp (Da x)) =
+      fun x => (Da x).smulRight v := by
+    ext x w
+    simp
+  simpa only [h1, h2] using h.clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight v)
 
 /-- **Weak derivatives commute with continuous linear maps, for `Lᵖ` classes.** If `D` is a weak
 derivative of `f` on `Ω`, then `M ∘ D` is a weak derivative of `M ∘ f`. -/

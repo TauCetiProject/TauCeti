@@ -101,6 +101,8 @@ Borel measurable structure on the scalar field.
   `LinearIsometryEquiv.map_starProjection_apply`, and
   `LinearIsometryEquiv.mem_orthogonal_iff_forall_mem_orthogonal`: coordinatewise orthogonal
   projections and orthogonal complements under a linear isometry equivalence into `PiLp 2 F`.
+* `TauCeti.prodEquivEuclideanSpaceFin2`: the canonical continuous linear equivalence between
+  `ℝ × ℝ` and `EuclideanSpace ℝ (Fin 2)`.
 -/
 
 public section
@@ -827,6 +829,23 @@ theorem euclideanLinearEquivHom_apply
     euclideanLinearEquivHom 𝕜 ι g v =
       WithLp.ofLp ((g : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (WithLp.toLp 2 v)) :=
   (rfl)
+
+/-- The canonical continuous linear equivalence between `ℝ × ℝ` (with the supremum norm
+`‖(x, y)‖ = max |x| |y|`) and `EuclideanSpace ℝ (Fin 2)` (with the Euclidean `ℓ²` norm). -/
+def prodEquivEuclideanSpaceFin2 : (ℝ × ℝ) ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
+  (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm.trans (EuclideanSpace.equiv (Fin 2) ℝ).symm
+
+/-- The `0`-th coordinate of `prodEquivEuclideanSpaceFin2 p` is `p.1`. -/
+@[simp]
+theorem prodEquivEuclideanSpaceFin2_apply_zero (p : ℝ × ℝ) :
+    prodEquivEuclideanSpaceFin2 p 0 = p.1 := by
+  simp [prodEquivEuclideanSpaceFin2]
+
+/-- The `1`-st coordinate of `prodEquivEuclideanSpaceFin2 p` is `p.2`. -/
+@[simp]
+theorem prodEquivEuclideanSpaceFin2_apply_one (p : ℝ × ℝ) :
+    prodEquivEuclideanSpaceFin2 p 1 = p.2 := by
+  simp [prodEquivEuclideanSpaceFin2]
 
 end TauCeti
 

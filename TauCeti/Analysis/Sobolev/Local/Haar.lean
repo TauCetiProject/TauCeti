@@ -31,11 +31,10 @@ This file establishes two invariance properties of the local Sobolev classes `Ta
 2. **Linear transport.** Any continuous linear equivalence `e : E ≃L[ℝ] E'` between
    finite-dimensional real normed spaces pushes an additive Haar measure `μ` on `E` forward to an
    additive Haar measure `μ.map e` on `E'`. Combining Haar independence with the weak chain rule
-   `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure` carries `MemLpLoc` (via
-   `MapsTo`) and
-   `MemWkpLoc` of every order `k` across `e` for arbitrary additive Haar measures `μ` on `E` and `ν`
-   on `E'` (`TauCeti.MemLpLoc.comp_continuousLinearEquiv`,
-   `TauCeti.MemWkpLoc.comp_continuousLinearEquiv`,
+   `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure` and
+   `TauCeti.MemLpLoc.comp_continuousLinearEquiv` carries `MemWkpLoc` of every order `k` across `e`
+   for arbitrary additive Haar measures `μ` on `E` and `ν` on `E'`
+   (`TauCeti.MemWkpLoc.comp_continuousLinearEquiv`,
    `ContinuousLinearEquiv.memWkpLoc_comp_preimage_iff`).
    In particular, replacing a norm on `E` by an equivalent norm (not necessarily an inner product
    norm) leaves the local Lebesgue and Sobolev classes unchanged.
@@ -152,25 +151,6 @@ theorem memWkpLoc_iff_of_isAddHaarMeasure (μ ν : Measure E) [μ.IsAddHaarMeasu
 end HaarMemWkpLoc
 
 /-! ### Source transport by continuous linear equivalences -/
-
-section ContinuousLinearEquivLp
-
-universe u₁ u₂
-
-variable {E : Type u₁} {E' : Type u₂} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  [FiniteDimensional ℝ E'] [MeasurableSpace E'] [BorelSpace E']
-  {μ : Measure E} {ν : Measure E'} [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
-
-/-- **Linear transport of local `Lᵖ` membership.** Precomposing with a continuous linear
-equivalence `e : E ≃L[ℝ] E'` carries `MemLpLoc p V u ν` to `MemLpLoc p U (u ∘ e) μ` whenever `e`
-maps `U` into `V`, for arbitrary additive Haar measures `μ` on `E` and `ν` on `E'`. -/
-theorem MemLpLoc.comp_continuousLinearEquiv {F : Type*} [NormedAddCommGroup F]
-    {p : ℝ≥0∞} {U : Set E} {V : Set E'} {u : E' → F} (hu : MemLpLoc p V u ν) (e : E ≃L[ℝ] E')
-    (hUV : MapsTo e U V) : MemLpLoc p U (u ∘ e) μ :=
-  ((e.memLpLoc_comp_right_iff μ ν).2 hu).mono_set (mapsTo_iff_subset_preimage.1 hUV)
-
-end ContinuousLinearEquivLp
 
 section ContinuousLinearEquivWkp
 

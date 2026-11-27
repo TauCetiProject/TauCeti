@@ -56,7 +56,8 @@ homeomorphism, which carries the class for `μ` to the class for the image measu
 (`Homeomorph.memLpLoc_comp_iff`). Since the image of an additive Haar measure under a continuous
 linear equivalence is an additive Haar measure, a continuous linear equivalence `E ≃L[ℝ] E₁` onto
 a finite-dimensional space carries the class of `E₁` to that of `E` for any choice of Haar
-measures (`ContinuousLinearEquiv.memLpLoc_comp_right_iff`). Thus the class on a finite-dimensional
+measures (`ContinuousLinearEquiv.memLpLoc_comp_right_iff`,
+`TauCeti.MemLpLoc.comp_continuousLinearEquiv`). Thus the class on a finite-dimensional
 space needs no inner product or preferred basis.
 -/
 
@@ -577,6 +578,15 @@ theorem ContinuousLinearEquiv.memLpLoc_comp_right_iff (e : E ≃L[ℝ] E₁) (μ
     MemLpLoc p (e ⁻¹' U) (f ∘ e) μ ↔ MemLpLoc p U f ν := by
   rw [← memLpLoc_iff_of_isAddHaarMeasure (μ.map e) ν]
   exact e.toHomeomorph.memLpLoc_comp_iff
+
+/-- **Linear transport of local `Lᵖ` membership.** Precomposing with a continuous linear
+equivalence `e : E ≃L[ℝ] E₁` carries `MemLpLoc p V u ν` to `MemLpLoc p U (u ∘ e) μ` whenever `e`
+maps `U` into `V`, for arbitrary additive Haar measures `μ` on `E` and `ν` on `E₁`. -/
+theorem _root_.TauCeti.MemLpLoc.comp_continuousLinearEquiv {μ : Measure E} {ν : Measure E₁}
+    [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure] {U : Set E} {V : Set E₁} {u : E₁ → F}
+    (hu : MemLpLoc p V u ν) (e : E ≃L[ℝ] E₁) (hUV : Set.MapsTo e U V) :
+    MemLpLoc p U (u ∘ e) μ :=
+  ((e.memLpLoc_comp_right_iff μ ν).2 hu).mono_set (Set.mapsTo_iff_subset_preimage.1 hUV)
 
 end Transport
 

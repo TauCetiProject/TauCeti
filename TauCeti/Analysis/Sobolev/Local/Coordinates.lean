@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.Complex.OperatorNorm
 
 /-!
 # Coordinates of local Sobolev maps
@@ -166,16 +165,13 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {μ : Measure �
 
 /-- **Assembling a weak derivative from its partial derivatives.** A locally `L^q` map with a
 weak derivative `D` on the interior of `U` whose partial derivatives `z ↦ D z 1` and `z ↦ D z I`
-lie in `W^{k,q}_loc(U)` lies in `W^{k+1,q}_loc(U)`. The derivative `D` is rebuilt from its two
-partial derivatives with `ContinuousLinearMap.smulRightL`. -/
+lie in `W^{k,q}_loc(U)` lies in `W^{k+1,q}_loc(U)`. -/
 theorem MemLpLoc.memWkpLoc_succ_of_hasWeakFDerivOn {ξ : ℂ → V} {D : ℂ → ℂ →L[ℝ] V}
     (hξ : MemLpLoc q U ξ μ) (hD : HasWeakFDerivOn μ (Opens.interior U) ξ D)
     (h1 : MemWkpLoc q U k (fun z => D z 1) μ) (hI : MemWkpLoc q U k (fun z => D z I) μ) :
-    MemWkpLoc q U (k + 1) ξ μ := by
-  have := hD.completeSpace
-  refine memWkpLoc_succ_iff.2 ⟨hξ, D, hD, ?_⟩
-  rw [ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D]
-  exact (h1.clm_comp _).add (hI.clm_comp _)
+    MemWkpLoc q U (k + 1) ξ μ :=
+  Complex.basisOneI.memWkpLoc_succ_of_hasWeakFDerivOn hξ hD (Fin.forall_fin_two.2 <| by
+    simpa [Complex.coe_basisOneI] using ⟨h1, hI⟩)
 
 /-- **Local Sobolev classes through partial derivatives.** A map lies in `W^{k+1,q}_loc(U)`
 exactly when it is locally `L^q` on `U` and has a weak derivative on the interior of `U` whose
@@ -184,11 +180,7 @@ theorem memWkpLoc_succ_iff_apply_one_apply_I {ξ : ℂ → V} :
     MemWkpLoc q U (k + 1) ξ μ ↔ MemLpLoc q U ξ μ ∧ ∃ D : ℂ → ℂ →L[ℝ] V,
       HasWeakFDerivOn μ (Opens.interior U) ξ D ∧
         (MemWkpLoc q U k (fun z => D z 1) μ) ∧ MemWkpLoc q U k (fun z => D z I) μ := by
-  refine ⟨fun h => ?_, fun ⟨hξ, D, hD, h1, hI⟩ =>
-    hξ.memWkpLoc_succ_of_hasWeakFDerivOn hD h1 hI⟩
-  obtain ⟨hξ, D, hD, hDk⟩ := memWkpLoc_succ_iff.1 h
-  have := hD.completeSpace
-  exact ⟨hξ, D, hD, hDk.clm_comp (ContinuousLinearMap.apply ℝ V 1),
-    hDk.clm_comp (ContinuousLinearMap.apply ℝ V I)⟩
+  simpa [Fin.forall_fin_two, Complex.coe_basisOneI] using
+    (Complex.basisOneI.memWkpLoc_succ_iff_apply (μ := μ) (p := q) (U := U) (k := k) (f := ξ))
 
 end TauCeti

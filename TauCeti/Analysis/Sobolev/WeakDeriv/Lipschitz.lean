@@ -47,6 +47,8 @@ reduced to the real case by testing the identity against continuous linear funct
 * `LocallyLipschitzOn.hasWeakFDerivOn`: the same for an almost-everywhere Fréchet derivative.
 * `LocallyLipschitzOn.hasWeakFDerivOn_fderiv`: for a finite-dimensional codomain, `fderiv ℝ u` is
   the weak derivative.
+* `TauCeti.ae_norm_le_one_of_hasWeakFDerivOn_norm`: any weak derivative of `x ↦ ‖x‖` on an open
+  set has operator norm at most `1` almost everywhere.
 * `IsLocallyConstant.hasWeakFDerivOn_zero`: a function locally constant on `Ω` has weak derivative
   zero there.
 
@@ -140,6 +142,17 @@ theorem _root_.LocallyLipschitzOn.hasWeakFDerivOn_fderiv [FiniteDimensional ℝ 
     (hu : LocallyLipschitzOn Ω u) : HasWeakFDerivOn μ Ω u (fderiv ℝ u) :=
   hu.hasWeakFDerivOn ((hu.ae_differentiableAt_of_mem Ω.isOpen).mono fun _ hx hxΩ =>
     (hx hxΩ).hasFDerivAt)
+
+/-- Every weak derivative of `x ↦ ‖x‖` on an open set `Ω ⊆ E` has operator norm at most `1` almost
+everywhere. -/
+theorem ae_norm_le_one_of_hasWeakFDerivOn_norm {D : E → E →L[ℝ] ℝ}
+    (hD : HasWeakFDerivOn μ Ω (fun x : E => ‖x‖) D) :
+    ∀ᵐ x ∂μ.restrict Ω, ‖D x‖ ≤ 1 := by
+  have hcl : HasWeakFDerivOn μ Ω (fun x : E => ‖x‖) (fderiv ℝ fun x : E => ‖x‖) :=
+    lipschitzWith_one_norm.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv
+  filter_upwards [hD.ae_eq hcl] with x hx
+  rw [hx]
+  simpa using norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_one_norm (E := E)) (x₀ := x)
 
 /-- **A locally constant function has vanishing weak derivative.** If `u` is locally constant on
 the open set `Ω`, that is constant near each point of `Ω`, then `0` is its weak derivative on

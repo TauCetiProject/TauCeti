@@ -27,14 +27,13 @@ class `TauCeti.MemW1pLoc p Ω` with two global quotient carriers:
    No inner product on `E`, Haar assumption on `μ`, or basis/separability of `F` is used.
 
 2. For an inner product space `E`, an additive Haar measure `μ` on `E`, and real-valued functions,
-   both `MemWkpLoc p Ω 1 u μ` and `MemW1pLoc p Ω u μ` agree with `TauCeti.W1p μ W p` on every open
-   `W` with compact closure contained in `Ω` (`TauCeti.MemWkpLoc.exists_w1p`,
-   `TauCeti.memWkpLoc_one_iff_forall_w1p`, `TauCeti.MemW1pLoc.exists_w1p`,
-   `TauCeti.memW1pLoc_iff_forall_w1p`). The weak gradient of that element is dual, through
-   `InnerProductSpace.toDual`, to the weak derivative of `u` on `Ω`. On open sets,
-   `MemWkpLoc p Ω 1` agrees with `MemW1pLoc p Ω` (`TauCeti.memWkpLoc_one_iff_memW1pLoc`), and a
-   real function of finite `W^{1,p}(Ω)` norm `TauCeti.eLpNormWkp p Ω 1` is represented by an element
-   of `W1p μ Ω p` whose norm is at most that size (`TauCeti.exists_w1p_enorm_le_eLpNormWkp`).
+   `MemW1pLoc p Ω u μ` agrees with `TauCeti.W1p μ W p` on every open `W` with compact closure
+   contained in `Ω` (`TauCeti.MemW1pLoc.exists_w1p`, `TauCeti.memW1pLoc_iff_forall_w1p`). The weak
+   gradient of that element is dual, through `InnerProductSpace.toDual`, to the weak derivative of
+   `u` on `Ω`. On open sets, `MemWkpLoc p Ω 1` agrees with `MemW1pLoc p Ω`
+   (`TauCeti.memWkpLoc_one_iff_memW1pLoc`), and a real function of finite `W^{1,p}(Ω)` norm
+   `TauCeti.eLpNormWkp p Ω 1` is represented by an element of `W1p μ Ω p` whose norm is at most
+   that size (`TauCeti.exists_w1p_enorm_le_eLpNormWkp`).
 
 ## Main declarations
 
@@ -43,12 +42,8 @@ class `TauCeti.MemW1pLoc p Ω` with two global quotient carriers:
   subdomain.
 * `TauCeti.memWkpLoc_one_iff_forall_weakDerivStep`: the Banach-valued order-one comparison with
   `WeakDerivStep`.
-* `TauCeti.WeakDerivStep.tendsto_iff_eLpNorm_of_ae_eq`: convergence in `WeakDerivStep` over the
-  identity of `Lp F p` in terms of the extended Bochner `Lᵖ` norms of arbitrary representatives.
 * `TauCeti.MemW1pLoc.exists_w1p`, `TauCeti.memW1pLoc_iff_forall_w1p`: comparison of real-valued
   `MemW1pLoc p Ω` with `W1p μ W p` on relatively compact open subsets `W` of `Ω`.
-* `TauCeti.MemWkpLoc.exists_w1p`, `TauCeti.memWkpLoc_one_iff_forall_w1p`: comparison of real-valued
-  `MemWkpLoc p Ω 1` with `W1p μ W p`.
 * `TauCeti.memWkpLoc_one_iff_memW1pLoc`: on open sets, `MemWkpLoc p Ω 1` agrees with
   `MemW1pLoc p Ω`.
 * `TauCeti.exists_w1p_enorm_le_eLpNormWkp`: a real function of finite `W^{1,p}(Ω)` norm is
@@ -138,33 +133,6 @@ theorem memWkpLoc_one_iff_forall_weakDerivStep {u : E → F} :
         ((WeakDerivStep.hasWeakFDerivOn_base_prev _ v).congr_ae hv).ae_eq (hD.mono hWΩ)
       exact ((Lp.memLp (WeakDerivStep.weakFDeriv _ v)).mono_measure hmono).ae_eq (ae_mono hmono hae)
 
-/-- **Convergence in `WeakDerivStep` through arbitrary representatives.** A net in the complete
-graph space `WeakDerivStep μ Ω p (id : Lp F p →L Lp F p)` converges exactly when any choice of
-almost-everywhere representatives of the functions and their weak derivatives converge in their
-extended Bochner `Lᵖ` norms. This includes `p = ∞`. -/
-theorem WeakDerivStep.tendsto_iff_eLpNorm_of_ae_eq {I : Type*} {l : Filter I}
-    {v : I → WeakDerivStep μ Ω p (ContinuousLinearMap.id ℝ (Lp F p (μ.restrict Ω)))}
-    {v₀ : WeakDerivStep μ Ω p (ContinuousLinearMap.id ℝ (Lp F p (μ.restrict Ω)))}
-    {u : I → E → F} {u₀ : E → F} {D : I → E → E →L[ℝ] F} {D₀ : E → E →L[ℝ] F}
-    (hu : ∀ i, ⇑(WeakDerivStep.prev _ (v i)) =ᵐ[μ.restrict Ω] u i)
-    (hu₀ : ⇑(WeakDerivStep.prev _ v₀) =ᵐ[μ.restrict Ω] u₀)
-    (hD : ∀ i, ⇑(WeakDerivStep.weakFDeriv _ (v i)) =ᵐ[μ.restrict Ω] D i)
-    (hD₀ : ⇑(WeakDerivStep.weakFDeriv _ v₀) =ᵐ[μ.restrict Ω] D₀) :
-    Filter.Tendsto v l (nhds v₀) ↔
-      Filter.Tendsto (fun i => eLpNorm (u i - u₀) p (μ.restrict Ω)) l (nhds 0) ∧
-      Filter.Tendsto (fun i => eLpNorm (D i - D₀) p (μ.restrict Ω)) l (nhds 0) := by
-  rw [WeakDerivStep.tendsto_iff_prev_weakFDeriv,
-    tendsto_iff_edist_tendsto_0, tendsto_iff_edist_tendsto_0]
-  have heu : ∀ i, edist (WeakDerivStep.prev _ (v i)) (WeakDerivStep.prev _ v₀) =
-      eLpNorm (u i - u₀) p (μ.restrict Ω) := fun i => by
-    rw [Lp.edist_def]
-    exact eLpNorm_congr_ae ((hu i).sub hu₀)
-  have heD : ∀ i, edist (WeakDerivStep.weakFDeriv _ (v i)) (WeakDerivStep.weakFDeriv _ v₀) =
-      eLpNorm (D i - D₀) p (μ.restrict Ω) := fun i => by
-    rw [Lp.edist_def]
-    exact eLpNorm_congr_ae ((hD i).sub hD₀)
-  simp only [heu, heD]
-
 end WeakDerivStep
 
 section FirstOrderEquiv
@@ -235,18 +203,6 @@ theorem memW1pLoc_iff_forall_w1p {u : E → ℝ} :
       exact (((innerSL ℝ).comp_memLp' (Lp.memLp (W1p.gradient v))).mono_measure hmono).ae_eq
         (ae_mono hmono hae)
 
-/-- **Local Sobolev functions are Sobolev on relatively compact subdomains.** Let
-`u ∈ MemWkpLoc p Ω 1` be real-valued, with weak derivative `D` on `Ω`. On every open `W` whose
-closure is compact and contained in `Ω`, `u` is represented by an element of `W1p μ W p`
-whose weak gradient is dual to `D`. -/
-theorem MemWkpLoc.exists_w1p {u : E → ℝ} (hu : MemWkpLoc p Ω 1 u μ)
-    {D : E → E →L[ℝ] ℝ} (hD : HasWeakFDerivOn μ Ω u D) {W : Opens E}
-    (hWc : IsCompact (closure (W : Set E))) (hWΩ : closure (W : Set E) ⊆ Ω) :
-    ∃ v : W1p μ W p, W1p.value v =ᵐ[μ.restrict W] u ∧
-      W1p.gradient v =ᵐ[μ.restrict W]
-        fun z => (InnerProductSpace.toDual ℝ E).symm (D z) :=
-  (memWkpLoc_one_iff_memW1pLoc.1 hu).exists_w1p hD hWc hWΩ
-
 /-- **The `W1p` norm is bounded by the `W^{1,p}` norm.** A real function `u` whose `W^{1,p}(Ω)`
 norm `TauCeti.eLpNormWkp p Ω 1 u μ` is finite is represented by an element of `W1p μ Ω p` whose
 extended norm is at most `eLpNormWkp p Ω 1 u μ`. -/
@@ -261,15 +217,6 @@ theorem exists_w1p_enorm_le_eLpNormWkp {u : E → ℝ} (hu : eLpNormWkp p Ω 1 u
     W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn hu1 (memLp_iff.2 hDfin) hD
   rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD, eLpNormWkp_zero]
   exact ⟨v, hv, W1p.enorm_le_eLpNorm_add_eLpNorm_of_ae_eq hv hg⟩
-
-/-- **Comparison with `W1p` at order one.** A real function lies in `MemWkpLoc p Ω 1` exactly when
-its restriction to every open `W` with compact closure contained in `Ω` is represented by an element
-of `W1p μ W p`. The weak gradients then correspond to the weak derivative of `u` on `Ω`
-through `InnerProductSpace.toDual`, by `TauCeti.MemWkpLoc.exists_w1p`. -/
-theorem memWkpLoc_one_iff_forall_w1p {u : E → ℝ} :
-    MemWkpLoc p Ω 1 u μ ↔ ∀ W : Opens E, IsCompact (closure (W : Set E)) →
-      closure (W : Set E) ⊆ Ω → ∃ v : W1p μ W p, W1p.value v =ᵐ[μ.restrict W] u := by
-  rw [memWkpLoc_one_iff_memW1pLoc, memW1pLoc_iff_forall_w1p]
 
 end InnerProduct
 
