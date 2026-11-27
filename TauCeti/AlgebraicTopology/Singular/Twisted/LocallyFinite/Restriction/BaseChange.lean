@@ -276,42 +276,14 @@ theorem borelMooreHomologyMap_comp_borelMooreHomologyRestrictOfExhaustion
   let KU' := K.preimage hf'
   have hKU' :=
     K.closure_image_subset_range_of_cartesian hf hi.isEmbedding hj.isEmbedding hcomm hpre KU' hK
-  rw [borelMooreHomologyRestrictOfExhaustion_eq ((pullback f.hom).obj L) hi KU KU' hKU hKU' k]
-  have := quasiIso_locallyFiniteChainComplexToLimComplexOfInjective L K hj hK
-  have hrK :=
-    borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToLimComplexOfInjective
-      L hj K hK k
-  have hrKU' :=
-    borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToLimComplexOfInjective
-      ((pullback f.hom).obj L) hi KU' hKU' k
-  rw [← cancel_mono (HomologicalComplex.homologyMap
-      (locallyFiniteChainComplexToLimComplexOfInjective L K hj.injective) k),
-    Category.assoc, hrK]
-  calc borelMooreHomologyMap f hf L k ≫
-        HomologicalComplex.homologyMap
-          (locallyFiniteChainComplexToLimComplex L (fun n ↦ j.hom '' K n)
-            (fun n ↦ Set.image_mono (K.subset_succ n))
-            (fun n ↦ (K.isCompact n).image j.hom.continuous)) k
-    _ = HomologicalComplex.homologyMap
-          (locallyFiniteChainComplexToLimComplex ((pullback f.hom).obj L)
-            (fun n ↦ i.hom '' KU' n) (fun n ↦ Set.image_mono (KU'.subset_succ n))
-            (fun n ↦ (KU'.isCompact n).image i.hom.continuous)) k ≫
-          HomologicalComplex.homologyMap
-            (ComplexTower.limComplexMap (baseChangeTowerMap hf' hj.injective hsq hpre L K)) k := by
-        rw [← HomologicalComplex.homologyMap_comp, baseChange_left_square,
-          HomologicalComplex.homologyMap_comp]
-    _ = borelMooreHomologyRestrictOfExhaustion ((pullback f.hom).obj L) hi KU' hKU' k ≫
-          HomologicalComplex.homologyMap (locallyFiniteChainComplexCoefficientMap _ ≫
-            locallyFiniteChainComplexMap f' hf' ((pullback j.hom).obj L) ≫
-              locallyFiniteChainComplexToLimComplexOfInjective L K hj.injective) k := by
-        rw [← hrKU', Category.assoc, ← HomologicalComplex.homologyMap_comp,
-          ← baseChange_right_square hf' hi.injective hj.injective hsq hpre L K]
-    _ = (borelMooreHomologyRestrictOfExhaustion ((pullback f.hom).obj L) hi KU' hKU' k ≫
-          borelMooreHomologyCoefficientMap _ k ≫
-            borelMooreHomologyMap f' hf' ((pullback j.hom).obj L) k) ≫
-          HomologicalComplex.homologyMap
-            (locallyFiniteChainComplexToLimComplexOfInjective L K hj.injective) k := by
-        simp [HomologicalComplex.homologyMap_comp, Category.assoc]
+  rw [borelMooreHomologyRestrictOfExhaustion_eq ((pullback f.hom).obj L) hi KU KU' hKU hKU' k,
+    ← HomologicalComplex.homologyMap_comp]
+  exact homologyMap_comp_borelMooreHomologyRestrictOfExhaustion
+    (baseChange_left_square hf hf' hj.injective hsq hpre L K)
+    (by
+      rw [Category.assoc]
+      exact baseChange_right_square hf' hi.injective hj.injective hsq hpre L K)
+    k
 
 /-- **Proper-map base change for canonical open restriction.** For a Cartesian square
 `i ≫ f = f' ≫ j` with `f` proper and `i, j` open embeddings (`range i = f⁻¹(range j)`), the

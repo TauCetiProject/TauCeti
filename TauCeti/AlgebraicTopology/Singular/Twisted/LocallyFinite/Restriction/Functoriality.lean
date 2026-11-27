@@ -105,43 +105,11 @@ theorem borelMooreHomologyRestrictOfExhaustion_naturality (hj : IsOpenEmbedding 
     borelMooreHomologyCoefficientMap η k ≫
         borelMooreHomologyRestrictOfExhaustion K hj E hE k =
       borelMooreHomologyRestrictOfExhaustion L hj E hE k ≫
-        borelMooreHomologyCoefficientMap ((pullback j.hom).map η) k := by
-  have := quasiIso_locallyFiniteChainComplexToLimComplexOfInjective K E hj hE
-  have hrL :=
-    borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToLimComplexOfInjective
-      L hj E hE k
-  have hrK :=
-    borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToLimComplexOfInjective
-      K hj E hE k
-  rw [← cancel_mono (HomologicalComplex.homologyMap
-      (locallyFiniteChainComplexToLimComplexOfInjective K E hj.injective) k),
-    Category.assoc, hrK]
-  calc borelMooreHomologyCoefficientMap η k ≫
-        HomologicalComplex.homologyMap
-          (locallyFiniteChainComplexToLimComplex K (fun n ↦ j.hom '' E n)
-            (fun n ↦ Set.image_mono (E.subset_succ n))
-            (fun n ↦ (E.isCompact n).image j.hom.continuous)) k
-    _ = HomologicalComplex.homologyMap
-          (locallyFiniteChainComplexToLimComplex L (fun n ↦ j.hom '' E n)
-            (fun n ↦ Set.image_mono (E.subset_succ n))
-            (fun n ↦ (E.isCompact n).image j.hom.continuous)) k ≫
-          HomologicalComplex.homologyMap
-            (ComplexTower.limComplexMap (relativeChainComplexTowerCoefficientMap η
-              (fun n ↦ j.hom '' E n) fun n ↦ Set.image_mono (E.subset_succ n))) k := by
-        rw [← HomologicalComplex.homologyMap_comp,
-          locallyFiniteChainComplexToLimComplex_naturality, HomologicalComplex.homologyMap_comp]
-    _ = borelMooreHomologyRestrictOfExhaustion L hj E hE k ≫
-          borelMooreHomologyCoefficientMap ((pullback j.hom).map η) k ≫
-            HomologicalComplex.homologyMap
-              (locallyFiniteChainComplexToLimComplexOfInjective K E hj.injective) k := by
-        rw [← hrL, Category.assoc, ← HomologicalComplex.homologyMap_comp,
-          ← locallyFiniteChainComplexToLimComplexOfInjective_naturality,
-          HomologicalComplex.homologyMap_comp]
-    _ = (borelMooreHomologyRestrictOfExhaustion L hj E hE k ≫
-          borelMooreHomologyCoefficientMap ((pullback j.hom).map η) k) ≫
-          HomologicalComplex.homologyMap
-            (locallyFiniteChainComplexToLimComplexOfInjective K E hj.injective) k :=
-        (Category.assoc _ _ _).symm
+        borelMooreHomologyCoefficientMap ((pullback j.hom).map η) k :=
+  homologyMap_comp_borelMooreHomologyRestrictOfExhaustion
+    (locallyFiniteChainComplexToLimComplex_naturality η (fun n ↦ j.hom '' E n)
+      (fun n ↦ Set.image_mono (E.subset_succ n)) (fun n ↦ (E.isCompact n).image j.hom.continuous))
+    (locallyFiniteChainComplexToLimComplexOfInjective_naturality hj.injective η E) k
 
 private lemma twistedChainComplexCoefficientMap_comp_twistedChainComplexMapOfFstEq_id
     {X : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, max v w} R X)

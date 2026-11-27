@@ -205,6 +205,73 @@ theorem eq_borelMooreHomologyRestrictOfExhaustion_iff (hj : IsOpenEmbedding j.ho
       h,
       borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToLimComplexOfInjective]
 
+/-- **Ladder naturality of exhaustion-explicit open restriction.** Given chain maps `a` and `b`
+and a chain map `m` between the ambient relative limit complexes forming commuting squares with
+`locallyFiniteChainComplexToLimComplex` and `locallyFiniteChainComplexToLimComplexOfInjective`,
+open restriction intertwines `HomologicalComplex.homologyMap a k` and
+`HomologicalComplex.homologyMap b k`. -/
+@[reassoc]
+theorem homologyMap_comp_borelMooreHomologyRestrictOfExhaustion
+    {V₁ X₁ V₂ X₂ : TopCat.{v}} {j₁ : V₁ ⟶ X₁} {j₂ : V₂ ⟶ X₂}
+    {L₁ : LocalCoefficientSystem.{u, v, max v w} R X₁}
+    {L₂ : LocalCoefficientSystem.{u, v, max v w} R X₂}
+    {hj₁ : IsOpenEmbedding j₁.hom} {hj₂ : IsOpenEmbedding j₂.hom}
+    {K₁ : CompactExhaustion V₁} {K₂ : CompactExhaustion V₂}
+    {hK₁ : ∀ n, closure (j₁.hom '' K₁ n) ⊆ Set.range j₁.hom}
+    {hK₂ : ∀ n, closure (j₂.hom '' K₂ n) ⊆ Set.range j₂.hom}
+    {a : locallyFiniteChainComplex L₁ ⟶ locallyFiniteChainComplex L₂}
+    {b : locallyFiniteChainComplex ((pullback j₁.hom).obj L₁) ⟶
+      locallyFiniteChainComplex ((pullback j₂.hom).obj L₂)}
+    {m : (relativeChainComplexTower L₁ (fun n ↦ j₁.hom '' K₁ n)
+        (fun n ↦ Set.image_mono (K₁.subset_succ n))).limComplex ⟶
+      (relativeChainComplexTower L₂ (fun n ↦ j₂.hom '' K₂ n)
+        (fun n ↦ Set.image_mono (K₂.subset_succ n))).limComplex}
+    (hleft : a ≫ locallyFiniteChainComplexToLimComplex L₂ (fun n ↦ j₂.hom '' K₂ n)
+        (fun n ↦ Set.image_mono (K₂.subset_succ n))
+        (fun n ↦ (K₂.isCompact n).image j₂.hom.continuous) =
+      locallyFiniteChainComplexToLimComplex L₁ (fun n ↦ j₁.hom '' K₁ n)
+        (fun n ↦ Set.image_mono (K₁.subset_succ n))
+        (fun n ↦ (K₁.isCompact n).image j₁.hom.continuous) ≫ m)
+    (hright : b ≫ locallyFiniteChainComplexToLimComplexOfInjective L₂ K₂ hj₂.injective =
+      locallyFiniteChainComplexToLimComplexOfInjective L₁ K₁ hj₁.injective ≫ m)
+    (k : ℕ) :
+    HomologicalComplex.homologyMap a k ≫
+        borelMooreHomologyRestrictOfExhaustion L₂ hj₂ K₂ hK₂ k =
+      borelMooreHomologyRestrictOfExhaustion L₁ hj₁ K₁ hK₁ k ≫
+        HomologicalComplex.homologyMap b k := by
+  have := quasiIso_locallyFiniteChainComplexToLimComplexOfInjective L₂ K₂ hj₂ hK₂
+  have hr₁ :=
+    borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToLimComplexOfInjective
+      L₁ hj₁ K₁ hK₁ k
+  have hr₂ :=
+    borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToLimComplexOfInjective
+      L₂ hj₂ K₂ hK₂ k
+  rw [← cancel_mono (HomologicalComplex.homologyMap
+      (locallyFiniteChainComplexToLimComplexOfInjective L₂ K₂ hj₂.injective) k),
+    Category.assoc, hr₂]
+  calc HomologicalComplex.homologyMap a k ≫
+        HomologicalComplex.homologyMap
+          (locallyFiniteChainComplexToLimComplex L₂ (fun n ↦ j₂.hom '' K₂ n)
+            (fun n ↦ Set.image_mono (K₂.subset_succ n))
+            (fun n ↦ (K₂.isCompact n).image j₂.hom.continuous)) k
+    _ = HomologicalComplex.homologyMap
+          (locallyFiniteChainComplexToLimComplex L₁ (fun n ↦ j₁.hom '' K₁ n)
+            (fun n ↦ Set.image_mono (K₁.subset_succ n))
+            (fun n ↦ (K₁.isCompact n).image j₁.hom.continuous)) k ≫
+          HomologicalComplex.homologyMap m k := by
+        rw [← HomologicalComplex.homologyMap_comp, hleft, HomologicalComplex.homologyMap_comp]
+    _ = borelMooreHomologyRestrictOfExhaustion L₁ hj₁ K₁ hK₁ k ≫
+          HomologicalComplex.homologyMap b k ≫
+            HomologicalComplex.homologyMap
+              (locallyFiniteChainComplexToLimComplexOfInjective L₂ K₂ hj₂.injective) k := by
+        rw [← hr₁, Category.assoc, ← HomologicalComplex.homologyMap_comp, ← hright,
+          HomologicalComplex.homologyMap_comp]
+    _ = (borelMooreHomologyRestrictOfExhaustion L₁ hj₁ K₁ hK₁ k ≫
+          HomologicalComplex.homologyMap b k) ≫
+          HomologicalComplex.homologyMap
+            (locallyFiniteChainComplexToLimComplexOfInjective L₂ K₂ hj₂.injective) k :=
+        (Category.assoc _ _ _).symm
+
 /-- Restricting via a compact exhaustion and mapping into the `n`-th relative stage of `V` agrees
 with mapping directly into the `n`-th relative stage of `X` modulo `X \ j '' K n`. -/
 @[reassoc]
@@ -271,28 +338,17 @@ private lemma borelMooreHomologyRestrictOfExhaustion_eq_of_subset (hj : IsOpenEm
     (hK' : ∀ n, closure (j.hom '' K' n) ⊆ Set.range j.hom) (k : ℕ) :
     borelMooreHomologyRestrictOfExhaustion L hj K' hK' k =
       borelMooreHomologyRestrictOfExhaustion L hj K hK k := by
-  rw [eq_borelMooreHomologyRestrictOfExhaustion_iff]
-  calc borelMooreHomologyRestrictOfExhaustion L hj K' hK' k ≫
-        HomologicalComplex.homologyMap
-          (locallyFiniteChainComplexToLimComplexOfInjective L K hj.injective) k
-    _ = (borelMooreHomologyRestrictOfExhaustion L hj K' hK' k ≫
-          HomologicalComplex.homologyMap
-            (locallyFiniteChainComplexToLimComplexOfInjective L K' hj.injective) k) ≫
-          HomologicalComplex.homologyMap
-            (ComplexTower.limComplexMap (relativeChainComplexTowerMap L
-              (fun n ↦ Set.image_mono (K.subset_succ n))
-              (fun n ↦ Set.image_mono (K'.subset_succ n))
-              fun n ↦ Set.image_mono (h n))) k := by
-        rw [← locallyFiniteChainComplexToLimComplexOfInjective_comp_limComplexMap L hj.injective h,
-          HomologicalComplex.homologyMap_comp, Category.assoc]
-    _ = HomologicalComplex.homologyMap
-          (locallyFiniteChainComplexToLimComplex L (fun n ↦ j.hom '' K n)
-            (fun n ↦ Set.image_mono (K.subset_succ n))
-            (fun n ↦ (K.isCompact n).image j.hom.continuous)) k := by
-      simp only [← HomologicalComplex.homologyMap_comp,
-        borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToLimComplexOfInjective
-      ]
-      rw [locallyFiniteChainComplexToLimComplex_comp_limComplexMap]
+  simpa only [HomologicalComplex.homologyMap_id, Category.id_comp, Category.comp_id] using
+    (homologyMap_comp_borelMooreHomologyRestrictOfExhaustion (hj₁ := hj) (hj₂ := hj)
+      (hK₁ := hK') (hK₂ := hK)
+      (a := 𝟙 (locallyFiniteChainComplex L))
+      (b := 𝟙 (locallyFiniteChainComplex ((pullback j.hom).obj L)))
+      (by rw [Category.id_comp, locallyFiniteChainComplexToLimComplex_comp_limComplexMap L
+        (fun n ↦ Set.image_mono (K.subset_succ n))
+        (fun n ↦ Set.image_mono (K'.subset_succ n)) _ _ fun n ↦ Set.image_mono (h n)])
+      (by rw [Category.id_comp,
+        locallyFiniteChainComplexToLimComplexOfInjective_comp_limComplexMap L hj.injective h])
+      k).symm
 
 /-- **Exhaustion independence of open restriction.** Any two compact exhaustions of `V` whose
 images in `X` have closure in `Set.range j` define the same open restriction map on Borel–Moore
