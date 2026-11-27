@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Sign.Basic
+public import TauCeti.Analysis.Convex.Polyhedron.SignCell.Basic
 public import TauCeti.GroupTheory.BruhatTits.AffineRoot
 import Mathlib.Algebra.Module.Submodule.Union
-import Mathlib.Topology.Algebra.Ring.Real
-import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
-import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.LinearAlgebra.AffineSpace.Ordered
 import TauCeti.Order.Interval.Finite
 
 /-!
@@ -87,85 +86,31 @@ variable {ι M N : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Modu
 
 namespace AffineRoot
 
-/-- An affine root restricted to a segment is the affine interpolation of its endpoint values. -/
-@[simp]
-theorem eval_lineMap (α : AffineRoot φ) (x y : Apartment φ) (t : ℝ) :
-    α.eval (lineMap x y t) = lineMap (α.eval x) (α.eval y) t := by
-  have h := α.toAffineMap.apply_lineMap x y t
-  simp only [toAffineMap_apply] at h
-  exact h
-
 /-- On a segment from `x` to `y`, an affine root has the sign it has at `y` at every point other
 than `x`, provided its sign at `x` is `0` or its sign at `y`. -/
 theorem sign_eval_lineMap {α : AffineRoot φ} {x y : Apartment φ}
     (h : SignType.sign (α.eval x) = 0 ∨ SignType.sign (α.eval x) = SignType.sign (α.eval y))
     {t : ℝ} (ht : t ∈ Ioc 0 1) :
     SignType.sign (α.eval (lineMap x y t)) = SignType.sign (α.eval y) := by
-  obtain ⟨ht0, ht1⟩ := ht
-  rw [eval_lineMap, lineMap_apply_ring']
-  set a := α.eval x
-  set b := α.eval y
-  rcases lt_trichotomy a 0 with ha | ha | ha <;> rcases lt_trichotomy b 0 with hb | hb | hb
-  · rw [sign_neg hb, sign_neg (by nlinarith)]
-  · simp [sign_neg ha, hb] at h
-  · simp [sign_neg ha, sign_pos hb] at h
-  · rw [sign_neg hb, sign_neg (by simp [ha]; nlinarith)]
-  · simp [ha, hb]
-  · rw [sign_pos hb, sign_pos (by simp [ha]; nlinarith)]
-  · simp [sign_pos ha, sign_neg hb] at h
-  · simp [sign_pos ha, hb] at h
-  · rw [sign_pos hb, sign_pos (by nlinarith)]
+  rw [eval_lineMap]
+  exact sign_lineMap_eq_sign_right h ht
 
 /-- An affine root which vanishes nowhere on the part of a segment between the parameters `s`
 and `t` has the same sign at both ends. -/
 theorem sign_eval_lineMap_eq_of_forall_ne_zero {α : AffineRoot φ} {x y : Apartment φ} {s t : ℝ}
     (hst : s ≤ t) (h : ∀ r ∈ Icc s t, α.eval (lineMap x y r) ≠ 0) :
     SignType.sign (α.eval (lineMap x y s)) = SignType.sign (α.eval (lineMap x y t)) := by
-  have hcont : ContinuousOn (fun r : ℝ ↦ α.eval (lineMap x y r)) (Icc s t) := by
-    simp only [eval_lineMap, lineMap_apply_ring']
-    fun_prop
-  have hs := h s (left_mem_Icc.mpr hst)
-  have ht := h t (right_mem_Icc.mpr hst)
-  rcases hs.lt_or_gt with hs' | hs' <;> rcases ht.lt_or_gt with ht' | ht'
-  · rw [sign_neg hs', sign_neg ht']
-  · obtain ⟨r, hr, hr0⟩ := intermediate_value_Icc hst hcont (mem_Icc.mpr ⟨hs'.le, ht'.le⟩)
-    exact absurd hr0 (h r hr)
-  · obtain ⟨r, hr, hr0⟩ := intermediate_value_Icc' hst hcont (mem_Icc.mpr ⟨ht'.le, hs'.le⟩)
-    exact absurd hr0 (h r hr)
-  · rw [sign_pos hs', sign_pos ht']
+  simp only [eval_lineMap] at h ⊢
+  exact sign_lineMap_eq_of_forall_ne_zero hst h
 
 /-- If an affine root has a constant sign `σ` on the points `x + t (y - x)` with `0 < t ≤ 1`,
 then its sign at `x` is `0` or `σ`. -/
 theorem sign_eval_eq_zero_or_of_forall_lineMap {α : AffineRoot φ} {x y : Apartment φ}
     {σ : SignType} (h : ∀ t ∈ Ioc (0 : ℝ) 1, SignType.sign (α.eval (lineMap x y t)) = σ) :
-    SignType.sign (α.eval x) = 0 ∨ SignType.sign (α.eval x) = σ := by
-  have h1 := h 1 ⟨one_pos, le_rfl⟩
-  rw [lineMap_apply_one] at h1
-  subst h1
-  set a := α.eval x
-  set b := α.eval y
-  -- If `a ≠ 0` and `b` does not have the sign of `a`, the point at parameter
-  -- `a / (2 (a - b)) ∈ (0, 1]` has value `a / 2`, of the sign of `a`.
-  have hmid (hab : a - b ≠ 0) : α.eval (lineMap x y (a / (2 * (a - b)))) = a / 2 := by
-    rw [eval_lineMap, lineMap_apply_ring']
-    field_simp
-    ring
-  rcases lt_trichotomy a 0 with ha | ha | ha
-  · rcases lt_or_ge b 0 with hb | hb
-    · exact Or.inr (by rw [sign_neg ha, sign_neg hb])
-    · have hab : a - b < 0 := by linarith
-      have ht := h _ ⟨div_pos_of_neg_of_neg ha (by linarith),
-        (div_le_one_of_neg (show 2 * (a - b) < 0 by linarith)).mpr (by linarith)⟩
-      rw [hmid hab.ne, sign_neg (by linarith)] at ht
-      exact absurd (sign_eq_neg_one_iff.mp ht.symm) hb.not_gt
-  · exact Or.inl (by simp [ha])
-  · rcases le_or_gt b 0 with hb | hb
-    · have hab : 0 < a - b := by linarith
-      have ht := h _ ⟨div_pos ha (by linarith),
-        (div_le_one (show 0 < 2 * (a - b) by linarith)).mpr (by linarith)⟩
-      rw [hmid hab.ne', sign_pos (by linarith)] at ht
-      exact absurd (sign_eq_one_iff.mp ht.symm) hb.not_gt
-    · exact Or.inr (by rw [sign_pos ha, sign_pos hb])
+    SignType.sign (α.eval x) = 0 ∨ SignType.sign (α.eval x) = σ :=
+  sign_eq_zero_or_of_forall_sign_lineMap (b := α.eval y) fun t ht ↦ by
+    rw [← eval_lineMap]
+    exact h t ht
 
 /-! ### Discrete valuations: local finiteness of the walls -/
 
@@ -213,7 +158,7 @@ namespace Apartment
 
 variable (φ) in
 /-- Two points of the apartment are related when every affine root has the same sign at both. -/
-noncomputable def facetSetoid : Setoid (Apartment φ) :=
+private noncomputable def facetSetoid : Setoid (Apartment φ) :=
   Setoid.ker fun x (α : AffineRoot φ) ↦ SignType.sign (α.eval x)
 
 end Apartment
@@ -239,6 +184,11 @@ them. -/
 theorem facet_eq_facet_iff {x y : Apartment φ} :
     x.facet = y.facet ↔ ∀ α : AffineRoot φ, SignType.sign (α.eval x) = SignType.sign (α.eval y) :=
   Quotient.eq.trans funext_iff
+
+/-- Whether an affine root vanishes at a point depends only on the facet of the point. -/
+theorem eval_eq_zero_iff_of_facet_eq {x y : Apartment φ} (h : x.facet = y.facet)
+    (α : AffineRoot φ) : α.eval x = 0 ↔ α.eval y = 0 := by
+  rw [← sign_eq_zero_iff, facet_eq_facet_iff.mp h α, sign_eq_zero_iff]
 
 end Apartment
 
@@ -290,15 +240,15 @@ theorem mem_carrier_facet (x : Apartment φ) : x ∈ x.facet.carrier :=
   mem_carrier.mpr rfl
 
 theorem carrier_nonempty (F : Facet φ) : F.carrier.Nonempty :=
-  (facet_surjective F).imp fun _ ↦ id
+  (facet_surjective F).imp fun _ ↦ mem_carrier.mpr
 
 /-- Every point of the apartment lies in exactly one facet. -/
 theorem existsUnique_mem_carrier (x : Apartment φ) : ∃! F : Facet φ, x ∈ F.carrier :=
-  ⟨x.facet, rfl, fun _ h ↦ h.symm⟩
+  ⟨x.facet, mem_carrier_facet x, fun _ h ↦ (mem_carrier.mp h).symm⟩
 
 theorem carrier_injective : Function.Injective (carrier (φ := φ)) := fun F F' h ↦ by
   obtain ⟨x, hx⟩ := F.carrier_nonempty
-  exact hx.symm.trans (h ▸ hx : x ∈ F'.carrier)
+  exact (mem_carrier.mp hx).symm.trans (mem_carrier.mp (h ▸ hx : x ∈ F'.carrier))
 
 /-- An affine root has the same sign at all points of a facet. -/
 theorem sign_eval_of_mem_carrier {F : Facet φ} {x : Apartment φ} (hx : x ∈ F.carrier)
@@ -320,14 +270,16 @@ theorem mem_wall_iff {x : Apartment φ} : x ∈ wall φ ↔ ∃ α : AffineRoot 
 def IsAlcove (F : Facet φ) : Prop :=
   Disjoint F.carrier (wall φ)
 
+/-- A facet is an alcove exactly when it meets no wall. -/
+theorem isAlcove_iff_disjoint {F : Facet φ} : F.IsAlcove ↔ Disjoint F.carrier (wall φ) :=
+  Iff.rfl
+
 /-- A facet is an alcove exactly when no affine root vanishes on it. -/
 theorem isAlcove_iff_sign_ne_zero {F : Facet φ} : F.IsAlcove ↔ ∀ α, F.sign α ≠ 0 := by
   induction F using Facet.ind with | h x => ?_
-  simp only [IsAlcove, Set.disjoint_left, mem_carrier, mem_wall_iff, not_exists, sign_facet,
-    ne_eq, sign_eq_zero_iff]
-  refine ⟨fun h α ↦ h rfl α, fun h y hy α ↦ ?_⟩
-  rw [← sign_eq_zero_iff, ← sign_facet, hy, sign_facet, sign_eq_zero_iff]
-  exact h α
+  simp only [isAlcove_iff_disjoint, Set.disjoint_left, mem_carrier, mem_wall_iff, not_exists,
+    sign_facet, ne_eq, sign_eq_zero_iff]
+  exact ⟨fun h α ↦ h rfl α, fun h y hy α ↦ (eval_eq_zero_iff_of_facet_eq hy α).not.mpr (h α)⟩
 
 /-- The facet of a point is an alcove exactly when the point lies on no wall. -/
 @[simp]
@@ -340,14 +292,15 @@ theorem isAlcove_facet_iff {x : Apartment φ} : x.facet.IsAlcove ↔ x ∉ wall 
 `F` and on `F'`. This says that `F` lies in the closure of `F'`
 (`Facet.le_iff_forall_lineMap_mem`). -/
 instance instPartialOrder : PartialOrder (Facet φ) where
-  le F F' := ∀ α, F.sign α = 0 ∨ F.sign α = F'.sign α
-  le_refl _ _ := Or.inr rfl
-  le_trans _ _ _ h h' α := (h α).elim Or.inl fun e ↦ e ▸ h' α
+  le F F' := Convex.SignSpecializes F.sign F'.sign
+  le_refl _ := Convex.SignSpecializes.refl
+  le_trans _ _ _ := Convex.SignSpecializes.trans
   le_antisymm _ _ h h' := ext_sign fun α ↦ by
-    rcases h α with e | e <;> rcases h' α with e' | e' <;> simp_all
+    rcases Convex.signSpecializes_iff.mp h α with e | e <;>
+      rcases Convex.signSpecializes_iff.mp h' α with e' | e' <;> simp_all
 
 theorem le_def {F F' : Facet φ} : F ≤ F' ↔ ∀ α, F.sign α = 0 ∨ F.sign α = F'.sign α :=
-  Iff.rfl
+  Convex.signSpecializes_iff
 
 /-- If `F ≤ F'`, every affine root which is nonnegative on `F'` is nonnegative on `F`. -/
 theorem carrier_subset_halfApartment_of_le {F F' : Facet φ} (h : F ≤ F') {α : AffineRoot φ}
@@ -358,7 +311,7 @@ theorem carrier_subset_halfApartment_of_le {F F' : Facet φ} (h : F ≤ F') {α 
     sign_nonneg_iff.mpr (AffineRoot.mem_halfApartment_iff.mp (hα hy))
   rw [AffineRoot.mem_halfApartment_iff, ← sign_nonneg_iff, sign_eval_of_mem_carrier hx]
   rw [sign_eval_of_mem_carrier hy] at hy'
-  rcases h α with e | e
+  rcases le_def.mp h α with e | e
   · exact e.symm.le
   · exact e ▸ hy'
 
@@ -367,15 +320,15 @@ in `F'`. -/
 theorem lineMap_mem_carrier_of_le {F F' : Facet φ} (h : F ≤ F') {x y : Apartment φ}
     (hx : x ∈ F.carrier) (hy : y ∈ F'.carrier) {t : ℝ} (ht : t ∈ Ioc 0 1) :
     lineMap x y t ∈ F'.carrier := by
-  rw [← hy, mem_carrier_iff]
+  rw [← mem_carrier.mp hy, mem_carrier_iff]
   refine fun α ↦ AffineRoot.sign_eval_lineMap ?_ ht
   rw [sign_eval_of_mem_carrier hx, sign_eval_of_mem_carrier hy]
-  exact h α
+  exact le_def.mp h α
 
 /-- If the points `x + t (y - x)` with `0 < t ≤ 1` lie in `F'`, the facet of `x` lies in the
 closure of `F'`. -/
 theorem le_of_forall_lineMap_mem {F F' : Facet φ} {x y : Apartment φ} (hx : x ∈ F.carrier)
-    (h : ∀ t ∈ Ioc (0 : ℝ) 1, lineMap x y t ∈ F'.carrier) : F ≤ F' := fun α ↦ by
+    (h : ∀ t ∈ Ioc (0 : ℝ) 1, lineMap x y t ∈ F'.carrier) : F ≤ F' := le_def.mpr fun α ↦ by
   rw [← sign_eval_of_mem_carrier hx]
   exact AffineRoot.sign_eval_eq_zero_or_of_forall_lineMap fun t ht ↦
     sign_eval_of_mem_carrier (h t ht) α
@@ -399,7 +352,7 @@ theorem lineMap_mem_carrier {F : Facet φ} {x y : Apartment φ} (hx : x ∈ F.ca
 
 /-- An alcove lies in the closure of no other facet. -/
 theorem IsAlcove.eq_of_le {C F : Facet φ} (hC : C.IsAlcove) (h : C ≤ F) : C = F :=
-  ext_sign fun α ↦ (h α).resolve_left (isAlcove_iff_sign_ne_zero.mp hC α)
+  ext_sign fun α ↦ (le_def.mp h α).resolve_left (isAlcove_iff_sign_ne_zero.mp hC α)
 
 /-- Alcoves are maximal facets. -/
 theorem IsAlcove.isMax {C : Facet φ} (hC : C.IsAlcove) : IsMax C :=
@@ -412,7 +365,8 @@ theorem facet_eq_facet_iff_of_notMem_wall {x y : Apartment φ} (hx : x ∉ wall 
   constructor
   · intro h t ht hw
     have hC : x.facet.IsAlcove := isAlcove_facet_iff.mpr hx
-    exact Set.disjoint_left.mp hC (lineMap_mem_carrier rfl h.symm ht) hw
+    exact Set.disjoint_left.mp hC
+      (lineMap_mem_carrier (mem_carrier_facet x) (mem_carrier.mpr h.symm) ht) hw
   · intro h
     refine facet_eq_facet_iff.mpr fun α ↦ ?_
     simpa using AffineRoot.sign_eval_lineMap_eq_of_forall_ne_zero zero_le_one
@@ -509,8 +463,7 @@ end Facet
 namespace Apartment
 
 /-- A point `x` of the apartment is *special* if, for every root `a`, some wall through `x` has
-gradient a positive multiple of `a`; equivalently, every root direction is the direction of a
-wall through `x`. -/
+gradient a positive multiple of `a`. -/
 def IsSpecial (x : Apartment φ) : Prop :=
   ∀ i, ∃ α : AffineRoot φ, x ∈ α.wall ∧ ∃ c : ℝ, 0 < c ∧ P.root α.gradient = c • P.root i
 
@@ -523,9 +476,8 @@ theorem isSpecial_iff {x : Apartment φ} :
 theorem IsSpecial.of_facet_eq {x y : Apartment φ} (hx : x.IsSpecial) (h : x.facet = y.facet) :
     y.IsSpecial := fun i ↦ by
   obtain ⟨α, hα, hgrad⟩ := hx i
-  refine ⟨α, ?_, hgrad⟩
-  rw [AffineRoot.mem_wall_iff, ← sign_eq_zero_iff, ← (facet_eq_facet_iff.mp h α), sign_eq_zero_iff]
-  exact AffineRoot.mem_wall_iff.mp hα
+  exact ⟨α, AffineRoot.mem_wall_iff.mpr
+    ((eval_eq_zero_iff_of_facet_eq h α).mp (AffineRoot.mem_wall_iff.mp hα)), hgrad⟩
 
 /-- Once there is a root, a special point lies on a wall. -/
 theorem IsSpecial.mem_wall [Nonempty ι] {x : Apartment φ} (hx : x.IsSpecial) : x ∈ Facet.wall φ :=
