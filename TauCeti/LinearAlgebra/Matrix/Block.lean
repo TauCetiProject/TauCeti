@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.Data.Matrix.Mul
 
 /-!
 # Block matrix identities
@@ -20,6 +21,10 @@ endomorphism of a finite dependent product.
 
 Multiplying a matrix indexed by `n × ι` on both sides by block-diagonal matrices multiplies each
 of its blocks on both sides by the corresponding diagonal blocks.
+
+On a single diagonal block `{i | b i = a}` of a ranking `b`, the square block of a product of two
+block triangular matrices is the product of their square blocks, and the block diagonal matrix
+with prescribed diagonal blocks on the fibres of `b` is block triangular with those blocks.
 
 On a set of indices that is down-closed for a ranking `b`, the square block of a product with a
 block lower triangular left factor, or a block upper triangular right factor, is the product of
@@ -50,8 +55,15 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 * `Matrix.det_blockDiagonal'`: `(blockDiagonal' M).det = ∏ i, (M i).det`.
 * `Matrix.submatrix_blockDiagonal_mul_mul_blockDiagonal`: the blocks of
   `blockDiagonal d * X * blockDiagonal d'`.
+* `Matrix.BlockTriangular.toSquareBlock_mul`: on a diagonal block, the product of block
+  triangular matrices is the product of their blocks.
+* `Matrix.blockTriangular_reindex_blockDiagonal'` and `Matrix.toSquareBlock_reindex_blockDiagonal'`:
+  the block diagonal matrix with the blocks `M a` on the fibres of `b` is block triangular with
+  diagonal blocks `M a`.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
+* `Matrix.submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular`: rectangular leading
+  submatrices of `L * M * U` only involve the corresponding blocks of the factors.
 * `Matrix.det_toSquareBlockProp_mul_mul`: the minor of `L * M * U` on a down-closed set is the
   product of the minors of `L`, `M` and `U`.
 * `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
@@ -167,6 +179,67 @@ public protected theorem IsIndecomposable.transpose {m R : Type*} [Finite m] [Ze
     {M : Matrix m m R} (hM : M.IsIndecomposable) : Mᵀ.IsIndecomposable :=
   isIndecomposable_transpose.2 hM
 
+/-! ### Diagonal blocks -/
+
+section DiagonalBlocks
+
+variable {m R α : Type*}
+
+/-- On a diagonal block, the product of two block triangular matrices is the product of their
+diagonal blocks: a term `A i k * B k j` with `b i = b j = a` vanishes unless `b k = a`. -/
+public theorem BlockTriangular.toSquareBlock_mul [Fintype m] [LinearOrder α]
+    [NonUnitalNonAssocSemiring R] {b : m → α} {A B : Matrix m m R}
+    (hA : A.BlockTriangular b) (hB : B.BlockTriangular b) (a : α) :
+    (A * B).toSquareBlock b a = A.toSquareBlock b a * B.toSquareBlock b a := by
+  ext i j
+  simp only [toSquareBlock_def, of_apply, Matrix.mul_apply]
+  refine (Fintype.sum_subtype_add_sum_subtype (fun k => b k = a)
+    fun k => A i k * B k j).symm.trans ?_
+  rw [Fintype.sum_eq_zero (fun k : {k // ¬b k = a} => A i k * B k j) fun k => ?_, add_zero]
+  rcases lt_or_gt_of_ne k.property with hk | hk
+  · rw [hA (i.property.symm ▸ hk : b k < b i), zero_mul]
+  · rw [hB (j.property.symm ▸ hk : b j < b k), mul_zero]
+
+/-- The diagonal blocks of the identity matrix are identity matrices. -/
+@[simp]
+public theorem toSquareBlock_one [DecidableEq m] [Zero R] [One R] (b : m → α) (a : α) :
+    (1 : Matrix m m R).toSquareBlock b a = 1 :=
+  toBlock_one_self _
+
+/-- Two matrices with the same diagonal blocks agree at the positions in a diagonal block. -/
+public theorem apply_eq_of_toSquareBlock_eq {b : m → α} {A B : Matrix m m R}
+    (h : ∀ a, A.toSquareBlock b a = B.toSquareBlock b a) {i j : m} (hij : b i = b j) :
+    A i j = B i j := by
+  simpa [toSquareBlock_def] using congr_fun₂ (h (b i)) ⟨i, rfl⟩ ⟨j, hij.symm⟩
+
+/-- The block diagonal matrix with the diagonal blocks `M a` on the fibres `{i | b i = a}`, that
+is `blockDiagonal' M` reindexed along `Equiv.sigmaFiberEquiv b`, is block triangular for `b`. -/
+public theorem blockTriangular_reindex_blockDiagonal' [Preorder α] [DecidableEq α] [Zero R]
+    {b : m → α} (M : (a : α) → Matrix {i // b i = a} {i // b i = a} R) :
+    (reindex (Equiv.sigmaFiberEquiv b) (Equiv.sigmaFiberEquiv b) (blockDiagonal' M)).BlockTriangular
+      b := fun i j hij => by
+  rw [reindex_apply, submatrix_apply, blockDiagonal'_apply, dite_eq_right]
+  rw [Equiv.sigmaFiberEquiv_symm_apply_fst, Equiv.sigmaFiberEquiv_symm_apply_fst]
+  exact hij.ne'
+
+/-- The diagonal blocks of the block diagonal matrix with the blocks `M a` on the fibres of `b` are
+the `M a`. -/
+public theorem toSquareBlock_reindex_blockDiagonal' [DecidableEq α] [Zero R] {b : m → α}
+    (M : (a : α) → Matrix {i // b i = a} {i // b i = a} R) (a : α) :
+    (reindex (Equiv.sigmaFiberEquiv b) (Equiv.sigmaFiberEquiv b) (blockDiagonal' M)).toSquareBlock
+      b a = M a := by
+  ext ⟨i, hi⟩ ⟨j, hj⟩
+  subst hi
+  have h_i : (Equiv.sigmaFiberEquiv b).symm i = ⟨b i, ⟨i, rfl⟩⟩ :=
+    Sigma.subtype_ext (Equiv.sigmaFiberEquiv_symm_apply_fst b i)
+      (Equiv.sigmaFiberEquiv_symm_apply_snd_coe b i)
+  have h_j : (Equiv.sigmaFiberEquiv b).symm j = ⟨b i, ⟨j, hj⟩⟩ :=
+    Sigma.subtype_ext ((Equiv.sigmaFiberEquiv_symm_apply_fst b j).trans hj)
+      (Equiv.sigmaFiberEquiv_symm_apply_snd_coe b j)
+  simp [toSquareBlock_def, h_i, h_j]
+
+end DiagonalBlocks
+
 /-! ### Leading blocks -/
 
 section LeadingBlocks
@@ -199,6 +272,22 @@ public theorem BlockTriangular.toSquareBlockProp_mul [NonUnitalNonAssocSemiring 
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => B i k * A k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => B i k * A k j) fun k => ?_, add_zero]
   rw [hA (lt_of_not_ge fun h => k.property (hp h j.property)), mul_zero]
+
+/-- A rectangular submatrix on initial segments of the rows and columns of `L * X * U`
+can be computed using only those rows and columns. The row and column embeddings need not
+have the same domain. -/
+public theorem submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular
+    {m n p q R : Type*} [Fintype m] [Fintype n] [Fintype p] [Fintype q]
+    [LinearOrder m] [LinearOrder n] [NonUnitalNonAssocSemiring R]
+    {L : Matrix m m R} {U : Matrix n n R} (X : Matrix m n R)
+    (hL : L.IsLowerTriangular) (hU : U.IsUpperTriangular) (r : p ↪ m) (c : q ↪ n)
+    (hr : IsLowerSet (Set.range r)) (hc : IsLowerSet (Set.range c)) :
+    (L * X * U).submatrix r c = L.submatrix r r * X.submatrix r c * U.submatrix c c := by
+  have hleft := submatrix_mul_of_injective L X r r c r.injective fun i j hj ↦
+    hr (le_of_not_gt fun h ↦ hj (hL h)) ⟨i, rfl⟩
+  have hright := submatrix_mul_of_injective_right (L * X) U r c c c.injective fun j k hj ↦
+    hc (le_of_not_gt fun h ↦ hj (hU h)) ⟨k, rfl⟩
+  rw [hright, hleft]
 
 /-- If every leading block of `M` has a unit determinant, so does every leading block on a strict
 initial segment `{j | b j < b i}`: that segment is either empty or a leading segment itself. -/

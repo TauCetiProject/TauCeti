@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.TotalSpace.Basic
 
@@ -167,6 +167,50 @@ theorem openHomEquiv_symm_apply (x : U)
     (ℓ : V (x : M) →L[ℝ] TauCeti.DensityBundle I M (x : M)) :
     (openHomEquiv x).symm ℓ = ℓ := by
   rfl
+
+/-- Near each point of the open subset, the open dual-density comparison does not change
+coordinates in the preferred intrinsic and ambient Hom trivializations. -/
+theorem eventually_openHomEquiv_trivializationAt_eq (x : U) :
+    ∀ᶠ y in 𝓝 x, ∀ ℓ : openHomBundle (I := I) (V := V) (U := U) y,
+      (trivializationAt (F →L[ℝ] ℝ) (ambientHomBundle (I := I) (V := V)) (x : M)
+        ⟨(y : M), openHomEquiv y ℓ⟩).2 =
+      (trivializationAt (F →L[ℝ] ℝ) (openHomBundle (I := I) (V := V) (U := U)) x ⟨y, ℓ⟩).2 := by
+  let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  filter_upwards [eventually_openEquiv_apply_trivializationAt_symm_eq (I := I) x,
+    continuousAt_subtypeVal.eventually
+      ((trivializationAt F V (x : M)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt F V (x : M))),
+    (trivializationAt ℝ (TauCeti.DensityBundle I U) x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt ℝ (TauCeti.DensityBundle I U) x),
+    continuousAt_subtypeVal.eventually
+      ((trivializationAt ℝ (TauCeti.DensityBundle I M) (x : M)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt ℝ (TauCeti.DensityBundle I M) (x : M)))]
+      with y hframe hyV hyDU hyDM
+  intro ℓ
+  rw [hom_trivializationAt_apply, hom_trivializationAt_apply]
+  apply ContinuousLinearMap.ext
+  intro v
+  have hyVU : y ∈ (trivializationAt F (c *ᵖ V) x).baseSet := hyV
+  have hsymm : (trivializationAt F (c *ᵖ V) x).symmL ℝ y v =
+      (trivializationAt F V (x : M)).symmL ℝ (y : M) v := by
+    rw [Trivialization.symmL_apply (trivializationAt F (c *ᵖ V) x) hyVU,
+      Trivialization.symmL_apply (trivializationAt F V (x : M)) hyV]
+    exact Trivialization.symm_pullback (trivializationAt F V (x : M)) c hyV v
+  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+    Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply,
+    ite_eq_left hyDU]
+  -- `filter_upwards` states `hyDM` through the density pretrivialization; restate it on the
+  -- trivialization's base set as it appears in the goal.
+  have hyDM' : (y : M) ∈ (trivializationAt ℝ (TauCeti.DensityBundle I M) (x : M)).baseSet := hyDM
+  rw [ite_eq_left hyDM']
+  -- Express the Hom coordinate in the density trivialization after fibre evaluation.
+  change ((trivializationAt ℝ (TauCeti.DensityBundle I M) (x : M))
+    ⟨(y : M), openEquiv y (ℓ ((trivializationAt F V (x : M)).symmL ℝ (y : M) v))⟩).2 =
+    ((trivializationAt ℝ (TauCeti.DensityBundle I U) x)
+      ⟨y, ℓ ((trivializationAt F (c *ᵖ V) x).symmL ℝ y v)⟩).2
+  rw [hsymm]
+  simpa only [TauCeti.Density.trivializationAt_eq, Trivialization.density_apply] using
+    hframe (ℓ ((trivializationAt F V (x : M)).symmL ℝ (y : M) v))
 
 /-- Real bundle-dual densities of the restricted bundle valued in the pulled-back ambient
 densities. -/

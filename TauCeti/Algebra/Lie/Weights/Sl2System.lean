@@ -68,6 +68,9 @@ defined once the root vectors are.
 * `TauCeti.IsSl2System.toSubmodule_rootSpace_eq_span`: `x α` spans the root space of `α`.
 * `TauCeti.IsSl2System.killingForm_root_neg_eq`: the Killing pairing of opposite normalized root
   vectors is `2 / α((cartanEquivDual H)⁻¹ α)`.
+* `TauCeti.IsSl2System.killingForm_rootVector_neg_eq_zero_of_ne` and
+  `TauCeti.IsSl2System.killingForm_rootVector_cartan_eq_zero`: root vectors at `α` and `-β` are
+  Killing-orthogonal unless `α = β`, and root vectors are Killing-orthogonal to `H`.
 * `TauCeti.IsSl2System.lie_coroot`: the Cartan relation.
 * `TauCeti.IsSl2System.isNilpotent_ad_rootVector`: every member of the family acts nilpotently in
   the adjoint representation.
@@ -159,6 +162,25 @@ theorem killingForm_root_neg_eq (hα : α.IsNonZero) :
     (hx.mem_rootSpace α) (hx.mem_rootSpace (-α)), hx.lie_neg α hα, coroot]
   rw [← Nat.cast_smul_eq_nsmul K, smul_smul, Submodule.coe_smul_of_tower]
   norm_num
+
+omit [CharZero K] in
+/-- Root vectors at `α` and `-β` are Killing-orthogonal unless `α = β`. -/
+theorem killingForm_rootVector_neg_eq_zero_of_ne {α β : Weight K H L} (hαβ : α ≠ β) :
+    killingForm K L (x α) (x (-β)) = 0 :=
+  killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H
+    (hx.mem_rootSpace α) (hx.mem_rootSpace (-β)) fun h ↦ hαβ <|
+      Weight.ext fun y ↦ by
+        have := congr_fun h y
+        simp only [Pi.add_apply, Weight.coe_neg, Pi.neg_apply, Pi.zero_apply] at this
+        exact add_neg_eq_zero.mp this
+
+omit [CharZero K] in
+/-- A root vector is Killing-orthogonal to the Cartan subalgebra. -/
+theorem killingForm_rootVector_cartan_eq_zero {α : Weight K H L} (hα : α.IsNonZero) (h : H) :
+    killingForm K L (x α) h = 0 :=
+  killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H (β := 0)
+    (hx.mem_rootSpace α) (by rw [rootSpace_zero_eq]; exact h.property)
+    fun h' ↦ hα (by rwa [add_zero] at h')
 
 /-- A root vector of a normalised family spans its root space. -/
 theorem toSubmodule_rootSpace_eq_span (hα : α.IsNonZero) :

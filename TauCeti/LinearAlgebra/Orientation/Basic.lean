@@ -26,7 +26,9 @@ compatibility under linear equivalences.
   of linear equivalences carries their sides to the same orientations.
 * `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.reindex_trans`: reindexing along a composite is the composite of the reindexings.
-* `Orientation.reindex_finCongr_reindex_finCongr`: two successive casts of the index type compose.
+* `Orientation.reindex_finCongr_reindex_finCongr` and
+  `Orientation.reindex_finCongr_eq_iff`: two successive casts of the index type compose, and
+  reindexing along a cast moves across an equality.
 * `Orientation.map_units_smul`, `Orientation.reindex_units_smul`: transport and reindexing commute
   with scaling by units.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
@@ -121,6 +123,14 @@ theorem Orientation.reindex_finCongr_reindex_finCongr {m n k : ℕ} (h : m = n) 
     Orientation.reindex R M (finCongr h') (Orientation.reindex R M (finCongr h) x) =
       Orientation.reindex R M (finCongr (h.trans h')) x := by
   subst h h'
+  simp [finCongr_refl, Orientation.reindex_refl]
+
+/-- Reindexing along `finCongr h` moves between the two sides of an equality via `h.symm`. -/
+theorem Orientation.reindex_finCongr_eq_iff {m n : ℕ} (h : m = n)
+    (x : Orientation R M (Fin m)) (y : Orientation R M (Fin n)) :
+    Orientation.reindex R M (finCongr h) x = y ↔
+      x = Orientation.reindex R M (finCongr h.symm) y := by
+  subst h
   simp [finCongr_refl, Orientation.reindex_refl]
 
 /-- Transporting an orientation along a linear equivalence commutes with scaling by a unit. -/

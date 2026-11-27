@@ -183,6 +183,16 @@ theorem one_smul_mem_range_of_isPerfPair [Q.IsPerfPair] (η : Dual R Λ) :
     (1 : R) • η ∈ LinearMap.range Q :=
   LinearMap.mem_range.mpr ⟨Q.toPerfPair.symm ((1 : R) • η), by simp⟩
 
+include ha in
+/-- If `a` kills the cokernel of `Q♭`, it kills the cokernel of `(-Q)♭`. -/
+theorem smul_mem_range_neg (η : Dual R Λ) : a • η ∈ LinearMap.range (-Q) := by
+  simpa [LinearMap.range_neg] using ha η
+
+/-- When `Q♭ : Λ → Hom(Λ, R)` is a perfect pairing, `1` kills the cokernel of `(-Q)♭`. -/
+theorem one_smul_mem_range_neg_of_isPerfPair [Q.IsPerfPair] (η : Dual R Λ) :
+    (1 : R) • η ∈ LinearMap.range (-Q) :=
+  Q.smul_mem_range_neg 1 Q.one_smul_mem_range_of_isPerfPair η
+
 /-- **The dual of a principal form is principal.** If `Q♭ : Λ → Hom(Λ, R)` is bijective, the
 integral dual form `Q^∨` (the case `a = 1`) is the transport of `Q` along `Q♭`, hence a perfect
 pairing on `Hom(Λ, R)`. -/

@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.HahnSeries.PowerSeries
+public import TauCeti.RingTheory.HahnSeries.Multiplication
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.Ideal.Quotient.Operations
-import TauCeti.RingTheory.HahnSeries.Multiplication
 
 /-!
 # Coefficientwise maps of Hahn series
@@ -30,6 +30,8 @@ constructions on Laurent series are natural.
 ## Main definitions
 
 * `HahnSeries.mapRingHom f`: the coefficientwise ring homomorphism `R⟦Γ⟧ →+* S⟦Γ⟧`.
+* `HahnSeries.mapRingEquiv e`: the ring equivalence induced by an equivalence of coefficients.
+* `HahnSeries.coefficientAlgebra Γ R A`: the algebra of `A⟦Γ⟧` over `R⟦Γ⟧` induced by `Algebra R A`.
 * `HahnSeries.mapAlgHom f`: the coefficientwise algebra homomorphism `A⟦Γ⟧ →ₐ[R] B⟦Γ⟧`, for the
   coefficientwise algebra structures.
 * `HahnSeries.piAlgEquiv R`: Hahn series over a finite product `∀ i, A i` are families of Hahn
@@ -163,6 +165,30 @@ theorem mapRingHom_comp (f : R →+* S) (g : S →+* T) :
     mapRingHom (g.comp f) = (mapRingHom g).comp (mapRingHom f : R⟦Γ⟧ →+* S⟦Γ⟧) :=
   RingHom.ext fun _ ↦ HahnSeries.ext rfl
 
+/-- A ring equivalence of coefficients induces a ring equivalence of Hahn series. -/
+noncomputable def mapRingEquiv (e : R ≃+* S) : R⟦Γ⟧ ≃+* S⟦Γ⟧ :=
+  RingEquiv.ofRingHom (mapRingHom (e : R →+* S)) (mapRingHom (e.symm : S →+* R))
+    (by rw [← mapRingHom_comp, RingEquiv.comp_symm, mapRingHom_id])
+    (by rw [← mapRingHom_comp, RingEquiv.symm_comp, mapRingHom_id])
+
+/-- The ring map underlying the induced equivalence maps coefficients by the original ring map. -/
+@[simp]
+theorem mapRingEquiv_toRingHom (e : R ≃+* S) :
+    (mapRingEquiv (Γ := Γ) e : R⟦Γ⟧ →+* S⟦Γ⟧) = mapRingHom (e : R →+* S) :=
+  (rfl)
+
+/-- Applying the induced equivalence applies the underlying coefficientwise ring map. -/
+@[simp]
+theorem mapRingEquiv_apply (e : R ≃+* S) (x : R⟦Γ⟧) :
+    mapRingEquiv e x = mapRingHom (e : R →+* S) x :=
+  (rfl)
+
+/-- Inverting the induced equivalence inverts the equivalence of coefficients. -/
+@[simp]
+theorem mapRingEquiv_symm (e : R ≃+* S) :
+    (mapRingEquiv (Γ := Γ) e).symm = mapRingEquiv e.symm :=
+  (rfl)
+
 theorem mapRingHom_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (mapRingHom f : R⟦Γ⟧ →+* S⟦Γ⟧) := fun _ _ h ↦
   HahnSeries.ext <| funext fun g ↦ hf congr(($h).coeff g)
@@ -240,6 +266,22 @@ section Algebra
 
 variable [PartialOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ] [CommSemiring R]
   {A B D : Type*} [Semiring A] [Algebra R A] [Semiring B] [Algebra R B] [Semiring D] [Algebra R D]
+
+/-- The algebra of Hahn series over Hahn series with the same exponents, induced by applying
+the coefficient algebra map to each coefficient. -/
+noncomputable abbrev coefficientAlgebra (Γ R A : Type*) [PartialOrder Γ] [AddCommMonoid Γ]
+    [IsOrderedCancelAddMonoid Γ] [CommSemiring R] [Semiring A] [Algebra R A] :
+    Algebra R⟦Γ⟧ A⟦Γ⟧ :=
+  (mapRingHom (Γ := Γ) (algebraMap R A)).toAlgebra' fun x y ↦
+    (commute_of_coeff_commute _ y fun i j ↦ by
+      rw [coeff_mapRingHom]
+      exact Algebra.commute_algebraMap_left _ _).eq
+
+/-- The scalar map for the coefficientwise algebra applies the scalar map of the coefficients. -/
+theorem algebraMap_coefficientAlgebra :
+    letI := coefficientAlgebra Γ R A
+    algebraMap R⟦Γ⟧ A⟦Γ⟧ = mapRingHom (algebraMap R A) :=
+  (rfl)
 
 /-- The `R`-algebra homomorphism `A⟦Γ⟧ →ₐ[R] B⟦Γ⟧` applying an `R`-algebra homomorphism
 `f : A →ₐ[R] B` to every coefficient, for the coefficientwise algebra structures
