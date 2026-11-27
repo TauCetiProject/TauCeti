@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
-import Mathlib.Data.Finset.NoncommProd
+public import Mathlib.Data.Finset.NoncommProd
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
@@ -71,7 +71,9 @@ theorem eval_relativeDegreeOnePolynomial [CharZero K] {g N j : ℕ} (hN : 2 ≤ 
 
 variable {K} {V ι : Type*} [AddCommGroup V] [Module K V]
 
-private theorem pairwise_commute_relativeDegreeOne (g N : ℕ) {T : ι → Module.End K V}
+/-- Evaluating the degree-one polynomial on pairwise commuting endomorphisms gives pairwise
+commuting factors. -/
+theorem pairwise_commute_relativeDegreeOne (g N : ℕ) {T : ι → Module.End K V}
     (hT : Pairwise (Commute on T)) :
     Pairwise (Commute on (fun i ↦ aeval (T i) (relativeDegreeOnePolynomial K g N))) := by
   intro i j hij
@@ -85,6 +87,13 @@ noncomputable def relativeDegreeSelector [Fintype ι] (g N : ℕ) (T : ι → Mo
     (hT : Pairwise (Commute on T)) : Module.End K V :=
   Finset.univ.noncommProd (fun i ↦ aeval (T i) (relativeDegreeOnePolynomial K g N))
     ((pairwise_commute_relativeDegreeOne g N hT).set_pairwise _)
+
+/-- The relative-degree selector is the finite product of the degree-one polynomial evaluations. -/
+theorem relativeDegreeSelector_def [Fintype ι] (g N : ℕ) (T : ι → Module.End K V)
+    (hT : Pairwise (Commute on T)) :
+    relativeDegreeSelector g N T hT =
+      Finset.univ.noncommProd (fun i ↦ aeval (T i) (relativeDegreeOnePolynomial K g N))
+        ((pairwise_commute_relativeDegreeOne g N hT).set_pairwise _) := (rfl)
 
 /-- The selector fixes a simultaneous eigenvector in relative degree one in every factor and
 kills it if any of its relative degrees differs from one. -/

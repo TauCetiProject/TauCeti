@@ -7,6 +7,7 @@ module
 
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.NormNum
+import TauCeti.Algebra.Ring.SquareZero
 import TauCeti.AlgebraicGeometry.AbelianScheme.KugaSato.Projector
 import TauCeti.AlgebraicGeometry.AbelianScheme.KugaSato.Selector
 
@@ -58,12 +59,7 @@ example :
     ext i j
     fin_cases i <;> fin_cases j <;> norm_num [J, pow_two, Matrix.mul_apply, Fin.sum_univ_two]
   have hpow (n : ℕ) : (1 + J) ^ n = 1 + (n : ℚ) • J := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [pow_succ, ih, add_mul, one_mul, mul_add, mul_one, smul_mul_assoc, ← pow_two, hJ,
-        smul_zero, add_zero, add_assoc, add_comm J]
-      simp only [Nat.cast_succ, add_smul, one_smul]
+    simpa only [Nat.cast_smul_eq_nsmul] using TauCeti.one_add_pow_of_sq_eq_zero hJ n
   refine ⟨by simp [pow_eq_zero_of_le (by decide : 2 ≤ 5) hJ], ?_, ?_⟩
   · have h : (1 - (1 + J) ^ 5) ^ 2 = 0 := by
       rw [hpow, sub_add_cancel_left, neg_sq, smul_pow, hJ, smul_zero]
