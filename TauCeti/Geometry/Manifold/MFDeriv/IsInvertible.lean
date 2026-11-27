@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
+import Mathlib.Analysis.Calculus.Deriv.Inverse
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -43,6 +45,9 @@ carries a tangent basis `b` onto a basis `b'`, then it is the continuous linear 
 
 On a manifold without boundary, the inverse of an extended chart has invertible manifold
 derivative at every point of the chart target (`isInvertible_mfderiv_extChartAt_symm`).
+
+A nonzero scalar derivative gives an invertible manifold derivative on the normed field
+(`HasDerivAt.isInvertible_mfderiv`).
 -/
 
 public section
@@ -59,6 +64,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E'' H'' M'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace M'']
   [ChartedSpace H'' M'']
+
+/-- A scalar map with nonzero derivative has invertible manifold derivative on a normed field. -/
+theorem _root_.HasDerivAt.isInvertible_mfderiv {f : 𝕜 → 𝕜} {d x : 𝕜}
+    (hf : HasDerivAt f d x) (hd : d ≠ 0) : (mfderiv 𝓘(𝕜) 𝓘(𝕜) f x).IsInvertible :=
+  ⟨_, (hf.hasFDerivAt_equiv hd).hasMFDerivAt.mfderiv.symm⟩
 
 /-- A composite of maps with invertible manifold derivatives at `x` and `f x` has invertible
 manifold derivative at `x`. -/

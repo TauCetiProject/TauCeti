@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
-import TauCeti.Geometry.Manifold.RegularValue.Level
+import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 import TauCeti.Geometry.Manifold.RegularValue.Open
 
 /-!

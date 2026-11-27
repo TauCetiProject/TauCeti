@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic

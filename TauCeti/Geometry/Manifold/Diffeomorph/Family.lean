@@ -76,16 +76,16 @@ variable {𝕂 : Type*} [RCLike 𝕂]
 
 namespace TauCeti
 
-/-- **A map with invertible fibre differentials, paired with the parameter, is a local
-diffeomorphism.** If `φ : P × M → N` is `C^n`, `1 ≤ n`, and every slice `x ↦ φ (p, x)` has
-invertible differentials, then `(p, x) ↦ (p, φ (p, x))` is a `C^n` local diffeomorphism. -/
-theorem isLocalDiffeomorph_fst_prodMk {φ : P × M → N} (hφ : ContMDiff (I'.prod I) J n φ)
-    (hn : 1 ≤ n) (hφ' : ∀ z : P × M, (mfderiv I J (fun x ↦ φ (z.1, x)) z.2).IsInvertible) :
-    IsLocalDiffeomorph (I'.prod I) (I'.prod J) n fun z : P × M ↦ (z.1, φ z) := by
-  refine isLocalDiffeomorph_of_mfderiv_eq (contMDiff_fst.prodMk hφ) hn fun z ↦ ?_
-  have hdiff : MDifferentiableAt (I'.prod I) J φ z := hφ.mdifferentiableAt (by
-    rintro rfl
-    exact absurd hn (by simp))
+/-- Invertibility of the fibre differential at one point makes the map retaining the parameter
+a local diffeomorphism there, whenever the family is smooth on a neighbourhood of that point. -/
+theorem isLocalDiffeomorphAt_fst_prodMk {φ : P × M → N} {s : Set (P × M)} {z : P × M}
+    (hφ : ContMDiffOn (I'.prod I) J n φ s) (hs : IsOpen s) (hz : z ∈ s)
+    (hn : 1 ≤ n) (hφ' : (mfderiv I J (fun x ↦ φ (z.1, x)) z.2).IsInvertible) :
+    IsLocalDiffeomorphAt (I'.prod I) (I'.prod J) n (fun z : P × M ↦ (z.1, φ z)) z := by
+  have hdiff : MDifferentiableAt (I'.prod I) J φ z :=
+    (hφ.contMDiffAt (hs.mem_nhds hz)).mdifferentiableAt (by
+      rintro rfl
+      exact absurd hn (by simp))
   -- Read the differential as a map between the model spaces of the charts.
   obtain ⟨T, hT⟩ : ∃ T : E' × E →L[𝕂] E' × F,
       mfderiv (I'.prod I) (I'.prod J) (fun z : P × M ↦ (z.1, φ z)) z = T := ⟨_, rfl⟩
@@ -107,8 +107,17 @@ theorem isLocalDiffeomorph_fst_prodMk {φ : P × M → N} (hφ : ContMDiff (I'.p
           = mfderiv I' J (fun p ↦ φ (p, z.2)) z.1 0 + mfderiv I J (fun x ↦ φ (z.1, x)) z.2 v :=
             mfderiv_prod_eq_add_apply hdiff
         _ = mfderiv I J (fun x ↦ φ (z.1, x)) z.2 v := by rw [map_zero, zero_add]
-  rw [hT]
-  exact (ContinuousLinearMap.isInvertible_iff_of_fst_comp_eq hfst).2 (hblock ▸ hφ' z)
+  obtain ⟨e, he⟩ := (ContinuousLinearMap.isInvertible_iff_of_fst_comp_eq hfst).2 (hblock ▸ hφ')
+  exact isLocalDiffeomorphAt_of_mfderiv_eq (contMDiff_fst.contMDiffOn.prodMk hφ)
+    hs hz BoundarylessManifold.isInteriorPoint hn (he.trans hT.symm)
+
+/-- **A map with invertible fibre differentials, paired with the parameter, is a local
+diffeomorphism.** If `φ : P × M → N` is `C^n`, `1 ≤ n`, and every slice `x ↦ φ (p, x)` has
+invertible differentials, then `(p, x) ↦ (p, φ (p, x))` is a `C^n` local diffeomorphism. -/
+theorem isLocalDiffeomorph_fst_prodMk {φ : P × M → N} (hφ : ContMDiff (I'.prod I) J n φ)
+    (hn : 1 ≤ n) (hφ' : ∀ z : P × M, (mfderiv I J (fun x ↦ φ (z.1, x)) z.2).IsInvertible) :
+    IsLocalDiffeomorph (I'.prod I) (I'.prod J) n fun z : P × M ↦ (z.1, φ z) :=
+  fun z ↦ isLocalDiffeomorphAt_fst_prodMk hφ.contMDiffOn isOpen_univ (Set.mem_univ z) hn (hφ' z)
 
 end TauCeti
 

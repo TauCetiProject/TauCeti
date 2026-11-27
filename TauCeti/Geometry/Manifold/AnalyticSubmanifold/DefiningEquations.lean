@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.AnalyticSubmanifold.Transport
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.RegularValue.Level
+import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.DefiningEquation
 
 /-!

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.WeightedCircle.Basic
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Geometry.Sphere.LinearIsometry

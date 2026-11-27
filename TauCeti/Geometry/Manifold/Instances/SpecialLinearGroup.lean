@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import TauCeti.Analysis.Matrix.Normed
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.RegularValue.Level
+import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.Det
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace

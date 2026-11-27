@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Killing.Flow
 public import TauCeti.Geometry.Manifold.Flow.FlowOut
 public import TauCeti.Geometry.Manifold.Flow.LevelProduct
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Complete
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Prod.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic

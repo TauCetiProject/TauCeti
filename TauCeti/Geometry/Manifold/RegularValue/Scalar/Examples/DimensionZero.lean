@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Model
 public import TauCeti.Geometry.Manifold.ChartedSpace
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.ModelWithCorners.Boundaryless
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 
 /-!
 # Regular levels and sublevels in dimension zero
