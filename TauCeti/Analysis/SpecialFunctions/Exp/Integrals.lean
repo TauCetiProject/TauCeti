@@ -31,9 +31,9 @@ This file records interval-integral identities and integrability lemmas for `(1 
   `∫ t in a..b, (1 - e^{-t}) / t = log b - log a - ∫ t in a..b, e^{-t} / t`.
 * `Real.integral_exp_div_eq_log_sub_add`: for `a, b > 0`,
   `∫ u in a..b, e^u / u = log b - log a + ∫ u in a..b, (e^u - 1) / u`.
-* `Real.integral_neg_exp_div`: reflection identity
-  `∫ u in (-b)..(-a), e^u / u = -∫ t in a..b, e^{-t} / t`.
-* `Real.integral_one_sub_exp_neg_div_eq`:
+* `Real.integral_exp_neg_div_eq_neg_integral_exp_div`: reflection identity
+  `∫ t in a..b, e^{-t} / t = -∫ u in (-b)..(-a), e^u / u`.
+* `Real.integral_one_sub_exp_neg_div_eq_neg_tsum`:
   `∫ t in 0..z, (1 - e^{-t}) / t = -∑' n, (-z) ^ (n + 1) / ((n + 1) * (n + 1)!)`.
 -/
 
@@ -55,11 +55,8 @@ theorem intervalIntegrable_one_sub_exp_neg_div (a b : ℝ) :
 theorem intervalIntegrable_exp_neg_div {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     IntervalIntegrable (fun t : ℝ ↦ exp (-t) / t) volume a b := by
   refine ContinuousOn.intervalIntegrable ?_
-  refine (continuous_exp.comp continuous_neg).continuousOn.div continuousOn_id fun t ht ↦ ?_
-  rw [mem_uIcc] at ht
-  rcases ht with ⟨h1, _⟩ | ⟨h1, _⟩
-  · exact (ha.trans_le h1).ne'
-  · exact (hb.trans_le h1).ne'
+  exact (continuous_exp.comp continuous_neg).continuousOn.div continuousOn_id
+    fun t ht h ↦ notMem_uIcc_of_lt ha hb (h ▸ ht)
 
 /-- Integration by parts on `[1, b]` (`b > 0`) relating `∫ t in 1..b, exp (-t) / t` and
 `∫ t in 1..b, log t * exp (-t)`. -/
@@ -98,8 +95,7 @@ theorem integral_one_sub_exp_neg_div_eq_log_sub {a b : ℝ} (ha : 0 < a) (hb : 0
     ∫ t in a..b, (1 - exp (-t)) / t =
       (log b - log a) - ∫ t in a..b, exp (-t) / t := by
   have hint1 : IntervalIntegrable (fun t : ℝ ↦ t⁻¹) volume a b :=
-    intervalIntegrable_inv_iff.mpr (Or.inr fun h ↦ by
-      rcases mem_uIcc.mp h with ⟨h1, _⟩ | ⟨h1, _⟩ <;> linarith)
+    intervalIntegrable_inv_iff.mpr (Or.inr (notMem_uIcc_of_lt ha hb))
   have hint2 : IntervalIntegrable (fun t : ℝ ↦ exp (-t) / t) volume a b :=
     intervalIntegrable_exp_neg_div ha hb
   have hcongr : (fun t : ℝ ↦ (1 - exp (-t)) / t) = fun t : ℝ ↦ t⁻¹ - exp (-t) / t := by
@@ -115,8 +111,7 @@ theorem integral_exp_div_eq_log_sub_add {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     ∫ u in a..b, exp u / u =
       (log b - log a) + ∫ u in a..b, (exp u - 1) / u := by
   have hint1 : IntervalIntegrable (fun u : ℝ ↦ u⁻¹) volume a b :=
-    intervalIntegrable_inv_iff.mpr (Or.inr fun h ↦ by
-      rcases mem_uIcc.mp h with ⟨h1, _⟩ | ⟨h1, _⟩ <;> linarith)
+    intervalIntegrable_inv_iff.mpr (Or.inr (notMem_uIcc_of_lt ha hb))
   have hint2 : IntervalIntegrable (fun u : ℝ ↦ (exp u - 1) / u) volume a b :=
     intervalIntegrable_exp_sub_one_div a b
   have hcongr : (fun u : ℝ ↦ exp u / u) = fun u : ℝ ↦ u⁻¹ + (exp u - 1) / u := by
@@ -128,19 +123,20 @@ theorem integral_exp_div_eq_log_sub_add {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
   rw [hcongr, intervalIntegral.integral_add hint1 hint2, integral_inv_of_pos ha hb,
     log_div hb.ne' ha.ne']
 
-/-- Reflection identity for `exp u / u`:
-`∫ u in (-b)..(-a), exp u / u = -∫ t in a..b, exp (-t) / t`. -/
-theorem integral_neg_exp_div (a b : ℝ) :
-    ∫ u in (-b)..(-a), exp u / u = -∫ t in a..b, exp (-t) / t := by
-  have hcomp := (intervalIntegral.integral_comp_neg
-    (f := fun u : ℝ ↦ exp u / u) (a := a) (b := b)).symm
+/-- Reflection identity for `exp (-t) / t`:
+`∫ t in a..b, exp (-t) / t = -∫ u in (-b)..(-a), exp u / u`. -/
+theorem integral_exp_neg_div_eq_neg_integral_exp_div (a b : ℝ) :
+    ∫ t in a..b, exp (-t) / t = -∫ u in (-b)..(-a), exp u / u := by
+  have hcomp := intervalIntegral.integral_comp_neg
+    (f := fun u : ℝ ↦ exp u / u) (a := a) (b := b)
   have hneg : (fun t : ℝ ↦ exp (-t) / (-t)) = fun t : ℝ ↦ -(exp (-t) / t) := by
     ext t; ring
-  rw [hcomp, hneg, intervalIntegral.integral_neg]
+  rw [hneg, intervalIntegral.integral_neg] at hcomp
+  linarith
 
 /-- Integrating `(1 - e^{-t}) / t` from `0` to `z` gives
 `-∑' n, (-z) ^ (n + 1) / ((n + 1) * (n + 1)!)`. -/
-theorem integral_one_sub_exp_neg_div_eq (z : ℝ) :
+theorem integral_one_sub_exp_neg_div_eq_neg_tsum (z : ℝ) :
     ∫ t in (0 : ℝ)..z, (1 - exp (-t)) / t =
       -∑' n : ℕ, (-z) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
   have hcomp := intervalIntegral.integral_comp_neg

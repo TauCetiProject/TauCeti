@@ -49,7 +49,7 @@ the unconditional enclosure `0.96 < li 2 < 1.14`, and under `|γ - 0.5772156649|
   `TauCeti.Real.li_two_lt`, `TauCeti.Real.le_li_two_of_abs_eulerMascheroniConstant_sub_lt`,
   `TauCeti.Real.li_two_le_of_abs_eulerMascheroniConstant_sub_lt`,
   `TauCeti.Real.li_two_mem_Icc`, `TauCeti.Real.li_two_mem_Icc_coarse`,
-  `TauCeti.Real.li_three_div_two_gt` — enclosures of the `y = log 2`
+  `TauCeti.Real.lt_li_three_div_two` — enclosures of the `y = log 2`
   entire-part series, `li 2 - γ`, `li 2`, and `0.04 < li (3 / 2)`.
 * `TauCeti.Real.logIntegral_eq_log_div_add_tsum_sub`,
   `TauCeti.Real.existsUnique_logIntegral_sub_div_log_eq_zero_Ioi`,
@@ -177,47 +177,22 @@ theorem li_two_mem_Icc_coarse
   have h := li_two_mem_Icc hγ
   exact ⟨by linarith [h.1], by linarith [h.2]⟩
 
-private theorem log_three_div_two_lower : (0.40546 : ℝ) ≤ log (3 / 2) := by
-  have hle := two_mul_artanhPartial_le_log (a := (3 / 2 : ℝ)) (by norm_num) 4
-  have hnum : (0.40546 : ℝ) ≤
-      2 * artanhPartial 4 (((3 / 2 : ℝ) - 1) / ((3 / 2 : ℝ) + 1)) := by
-    simp only [artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]
-    norm_num
-  exact hnum.trans hle
-
-private theorem log_log_three_div_two_gt : (-0.903 : ℝ) < log (log (3 / 2)) := by
-  have h2_lo : (0.81092 : ℝ) ≤ 2 * log (3 / 2) := by linarith [log_three_div_two_lower]
-  have hsplit : log (log (3 / 2)) = log (2 * log (3 / 2)) - log 2 := by
-    rw [log_mul two_ne_zero (log_pos (by norm_num : (1 : ℝ) < 3 / 2)).ne']
-    ring
-  have hmono : log (0.81092 : ℝ) ≤ log (2 * log (3 / 2)) :=
-    log_le_log (by norm_num) h2_lo
-  have hlow := neg_two_mul_artanhPartial_add_le_log (a := (0.81092 : ℝ))
-    (by norm_num) (by norm_num) 3
-  have hnum : (-0.20985 : ℝ) <
-      -2 * (artanhPartial 3 ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) +
-        ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) ^ (2 * 3 + 1) /
-          (1 - ((1 - (0.81092 : ℝ)) / (1 + (0.81092 : ℝ))) ^ 2)) := by
-    simp only [artanhPartial_def, Finset.sum_range_succ, Finset.sum_range_zero]
-    norm_num
-  linarith [log_two_lt_d9]
-
 /-- Unconditional lower bound `0.04 < li (3 / 2)`. -/
-theorem li_three_div_two_gt : (0.04 : ℝ) < li (3 / 2) := by
+theorem lt_li_three_div_two : (0.04 : ℝ) < li (3 / 2) := by
   have hlog32 : 0 < log (3 / 2) := log_pos (by norm_num)
   have hser_lo : (0.446 : ℝ) <
       ∑' n : ℕ, log (3 / 2) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
     have hge := sum_range_le_tsum_pow_div_mul_factorial hlog32.le 2
     rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_zero] at hge
     norm_num at hge
-    have hq := log_three_div_two_lower
+    have hq := le_log_three_halves
     have h2 : (0.40546 : ℝ) + (0.40546 : ℝ) ^ 2 / 4 ≤
         log (3 / 2) + log (3 / 2) ^ 2 / 4 := by
       gcongr
     have hnum : (0.446 : ℝ) < (0.40546 : ℝ) + (0.40546 : ℝ) ^ 2 / 4 := by norm_num
     linarith [hge, h2, hnum]
   rw [li_def]
-  linarith [one_half_lt_eulerMascheroniConstant, log_log_three_div_two_gt]
+  linarith [one_half_lt_eulerMascheroniConstant, lt_log_log_three_halves]
 
 /-! ### Zero localization and Lemma 20 for `Li x - x / log x` -/
 
