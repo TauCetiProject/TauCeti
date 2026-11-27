@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.RingTheory.MilnorK.SteinbergPairing
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Matsumoto's presentation of `K₂` and the universal degree-two symbol group
@@ -287,9 +288,8 @@ theorem map_id : map (RingHom.id R) = LinearMap.id := linearMap_ext fun _ _ ↦ 
 /-- `MatsumotoGroup.map` preserves composition of ring homomorphisms. -/
 theorem map_comp (g : S →+* T) (f : R →+* S) : map (g.comp f) = (map g).comp (map f) :=
   linearMap_ext fun a b ↦ by
-    have hcomp : (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
-      MonoidHom.ext (RingHom.comp_apply g f)
-    simp only [map_symbol, LinearMap.comp_apply, hcomp, Units.map_comp, MonoidHom.comp_apply]
+    simp only [map_symbol, LinearMap.comp_apply, RingHom.toMonoidHom_eq_coe,
+      RingHom.toMonoidHom_comp, Units.map_comp, MonoidHom.comp_apply]
 
 end Functoriality
 

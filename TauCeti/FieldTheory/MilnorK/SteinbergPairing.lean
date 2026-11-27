@@ -49,19 +49,24 @@ variable {F : Type*} [Field F] {A : Type*} [AddCommGroup A] {c : Fˣ → Fˣ →
 
 /-- Over a field, every Steinberg pairing satisfies `c a (-a) = 0`. -/
 theorem map_neg_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a (-a) = 0 := by
-  by_cases ha : (a : F) = 1
-  · rw [show a = 1 from Units.ext ha, hc.map_one_left]
-  · let u : Fˣ := Units.mk0 (1 - (a : F)) (sub_ne_zero.mpr (Ne.symm ha))
-    have h1 : c a u = 0 := hc.steinberg (by simp [u])
+  -- For `a ≠ 1`, `-a = (1 - a) / (1 - a⁻¹)`, and both `c a (1 - a)` and
+  -- `c a (1 - a⁻¹) = -c a⁻¹ (1 - a⁻¹)` vanish by the Steinberg relation.
+  rcases eq_or_ne a 1 with rfl | ha
+  · exact hc.map_one_left _
+  have h₁ : (1 : F) - a ≠ 0 := sub_ne_zero.2 (Ne.symm (Units.val_eq_one.not.2 ha))
+  have h₂ : (1 : F) - ((a⁻¹ : Fˣ) : F) ≠ 0 :=
+    sub_ne_zero.2 (Ne.symm (Units.val_eq_one.not.2 (inv_ne_one.2 ha)))
+  have hneg : -a = Units.mk0 (1 - (a : F)) h₁ * (Units.mk0 (1 - ((a⁻¹ : Fˣ) : F)) h₂)⁻¹ := by
+    ext
     have ha0 : (a : F) ≠ 0 := a.ne_zero
-    have h2 : c a⁻¹ (-(a⁻¹ * u)) = 0 := hc.steinberg (by
-      simp only [Units.val_inv_eq_inv_val, Units.val_neg, Units.val_mul, u, Units.val_mk0]
-      field_simp; ring)
-    have hneg : -a = u * (-(a⁻¹ * u))⁻¹ := Units.ext (by
-      simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val, u, Units.val_mk0]
-      field_simp)
-    rw [hneg, hc.map_mul_right, h1, zero_add, hc.map_inv_right, ← neg_neg (c a _),
-      ← hc.map_inv_left, h2, neg_zero, neg_zero]
+    have h₂' : (a : F) - 1 ≠ 0 := sub_ne_zero.2 (Units.val_eq_one.not.2 ha)
+    simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val, Units.val_mk0]
+    field_simp
+    ring
+  have h₁' := hc.steinberg (a := a) (b := Units.mk0 (1 - (a : F)) h₁) (by simp)
+  have h₂' := hc.steinberg (a := a⁻¹) (b := Units.mk0 (1 - ((a⁻¹ : Fˣ) : F)) h₂) (by simp)
+  rw [hc.map_inv_left, neg_eq_zero] at h₂'
+  simp only [hneg, hc.map_mul_right, hc.map_inv_right, h₁', h₂', neg_zero, add_zero]
 
 /-- Over a field, every Steinberg pairing satisfies `c a a = c a (-1)`. -/
 theorem map_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a a = c a (-1 : Fˣ) := by
@@ -112,10 +117,10 @@ theorem eq_zero_of_odd_complementary (hc : IsSteinbergPairing c) {g : Fˣ}
   have h0 : ((2 * k + 1) * (2 * l + 1)) • c g g = 0 := by
     rw [mul_zsmul, ← hc.map_zpow_right, ← hc.map_zpow_left]
     exact hc.steinberg hab
+  obtain ⟨m, hm⟩ : Odd ((2 * k + 1) * (2 * l + 1)) :=
+    (odd_two_mul_add_one k).mul (odd_two_mul_add_one l)
   have hgg : c g g = 0 := by
-    rw [show (2 * k + 1) * (2 * l + 1) = (2 * k * l + k + l) * 2 + 1 by ring,
-      add_zsmul, mul_zsmul, hc.two_zsmul_map_self g, smul_zero, zero_add, one_zsmul] at h0
-    exact h0
+    simpa [hm, add_zsmul, mul_comm (2 : ℤ) m, mul_zsmul, hc.two_zsmul_map_self] using h0
   exact hc.eq_zero_of_generator_map_self_eq_zero hg hgg a b
 
 /-- Every Steinberg pairing on a finite field is identically zero. -/

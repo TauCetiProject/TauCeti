@@ -40,6 +40,8 @@ K-groups of an algebraically closed field are uniquely divisible in degrees at l
 
 ## Main results
 
+* `TauCeti.MilnorK.quotient_linearMap_ext`: extensionality for `ℤ`-linear maps out of
+  `U^{⊗ n} / R_n`.
 * `TauCeti.MilnorK.mk_eq_zero_iff`: a tensor lies in `I` exactly when each of its homogeneous
   components, in the sense of `TensorAlgebra.toDirectSum`, lies in the corresponding `R_n`.
 * `TauCeti.MilnorK.isHomogeneous_ker_mk`: `I` is a homogeneous ideal for the grading
@@ -364,6 +366,21 @@ theorem degreeEquiv_symm_symbol {n : ℕ} (f : Fin n → Rˣ) :
   rw [LinearEquiv.symm_apply_eq]
   ext
   simp
+
+/-- Two `ℤ`-linear maps out of `(Additive Rˣ)^{⊗ n} ⧸ steinbergRelations R n` agreeing on the
+classes of pure tensors of units are equal. -/
+@[ext]
+theorem quotient_linearMap_ext {A : Type*} [AddCommMonoid A] [Module ℤ A] {n : ℕ}
+    {φ ψ : (((⨂[ℤ]^n) (Additive Rˣ)) ⧸ steinbergRelations R n) →ₗ[ℤ] A}
+    (h : ∀ x : Fin n → Additive Rˣ,
+      φ (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x)) =
+        ψ (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x))) :
+    φ = ψ := by
+  refine LinearMap.ext fun q ↦ ?_
+  obtain ⟨t, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+  induction t using PiTensorProduct.induction_on with
+  | smul_tprod r x => simp only [Submodule.Quotient.mk_smul, map_smul, h x]
+  | add _ _ hx hy => simp only [Submodule.Quotient.mk_add, map_add, hx, hy]
 
 /-! ### The direct sum decomposition -/
 

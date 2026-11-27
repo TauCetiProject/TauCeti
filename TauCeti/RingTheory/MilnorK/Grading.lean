@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.RingTheory.MilnorK.Homogeneous
 public import TauCeti.RingTheory.MilnorK.MatsumotoGroup
+import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.TensorSquare
 
 /-!
@@ -130,18 +131,6 @@ theorem mapQuotient_mk_tprod (f : R →+* S) {n : ℕ} (x : Fin n → Additive R
   rw [mapQuotient_mk, PiTensorProduct.map_tprod]
   simp only [AddMonoidHom.coe_toIntLinearMap, MonoidHom.coe_toAdditive, Function.comp_apply]
 
-private theorem quotient_linearMap_ext {A : Type*} [AddCommGroup A] {n : ℕ}
-    {φ ψ : (((⨂[ℤ]^n) (Additive Rˣ)) ⧸ steinbergRelations R n) →ₗ[ℤ] A}
-    (h : ∀ x : Fin n → Additive Rˣ,
-      φ (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x)) =
-        ψ (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x))) :
-    φ = ψ := by
-  refine LinearMap.ext fun q ↦ ?_
-  obtain ⟨t, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-  induction t using PiTensorProduct.induction_on with
-  | smul_tprod r x => simp only [Submodule.Quotient.mk_smul, map_smul, h x]
-  | add _ _ hx hy => simp only [Submodule.Quotient.mk_add, map_add, hx, hy]
-
 /-- `MilnorK.mapQuotient` preserves the identity ring homomorphism. -/
 @[simp]
 theorem mapQuotient_id (n : ℕ) : mapQuotient (RingHom.id R) n = LinearMap.id :=
@@ -153,10 +142,8 @@ theorem mapQuotient_id (n : ℕ) : mapQuotient (RingHom.id R) n = LinearMap.id :
 theorem mapQuotient_comp {T : Type*} [CommRing T] (g : S →+* T) (f : R →+* S) (n : ℕ) :
     mapQuotient (g.comp f) n = (mapQuotient g n).comp (mapQuotient f n) :=
   quotient_linearMap_ext fun x ↦ by
-    have hcomp : (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
-      MonoidHom.ext (RingHom.comp_apply g f)
-    simp only [LinearMap.comp_apply, mapQuotient_mk_tprod, toMul_ofMul, hcomp, Units.map_comp,
-      MonoidHom.comp_apply]
+    simp only [LinearMap.comp_apply, mapQuotient_mk_tprod, toMul_ofMul,
+      RingHom.toMonoidHom_eq_coe, RingHom.toMonoidHom_comp, Units.map_comp, MonoidHom.comp_apply]
 
 /-- `degreeEquiv` intertwines `mapQuotient f n` and `mapDegree f n`. -/
 theorem mapDegree_degreeEquiv (f : R →+* S) (n : ℕ)
@@ -234,10 +221,8 @@ theorem degreeTwoEquivMatsumotoGroup_degreeEquiv_mk (x : Fin 2 → Additive Rˣ)
     degreeTwoEquivMatsumotoGroup R
         (degreeEquiv R 2 (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x))) =
       MatsumotoGroup.symbol (Additive.toMul (x 0)) (Additive.toMul (x 1)) := by
-  rw [degreeTwoEquivMatsumotoGroup, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
-    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
-    tensorProductEquivTensorSquare_symm_int_tprod]
-  simpa using MatsumotoGroup.mk_tmul (Additive.toMul (x 0)) (Additive.toMul (x 1))
+  rw [← MatsumotoGroup.mk_tmul, ofMul_toMul, ofMul_toMul]
+  simp [degreeTwoEquivMatsumotoGroup, tensorProductEquivTensorSquare_symm_int_tprod]
 
 /-- `degreeTwoEquivMatsumotoGroup R` sends the two-entry Milnor symbol `{a, b}` to
 `MatsumotoGroup.symbol a b`. -/
