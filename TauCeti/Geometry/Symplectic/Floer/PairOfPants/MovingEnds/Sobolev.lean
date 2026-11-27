@@ -198,13 +198,15 @@ theorem movingEndsWeight_mul_norm_sub_sq_le (ha : ∀ i, a i ≠ 0)
 
 /-! ### The ends -/
 
-/-- At a point `w ≠ 0` with `2 |c i| ≤ |w|` for every center, the cylindrical weight `ρ` of the
+/-- At a point `w` with `2 |c i| ≤ |w|` for every center, the cylindrical weight `ρ` of the
 sphere with moving input ends satisfies `ρ(w) |w|² ≤ 4 |ι| + 1`. -/
 theorem movingEndsWeight_mul_norm_sq_le {z : ℝ × ℝ}
-    (hz0 : Complex.equivRealProdCLM.symm z ≠ 0)
     (hz : ∀ i, 2 * ‖c i‖ ≤ ‖Complex.equivRealProdCLM.symm z‖) :
     movingEndsWeight c z * ‖Complex.equivRealProdCLM.symm z‖ ^ 2 ≤ 4 * Fintype.card ι + 1 := by
   set w := Complex.equivRealProdCLM.symm z
+  rcases eq_or_ne w 0 with hz0 | hz0
+  · rw [hz0, norm_zero, zero_pow two_ne_zero, mul_zero]
+    positivity
   have hw : 0 < ‖w‖ := norm_pos_iff.2 hz0
   have hi (i : ι) : (‖w - c i‖ ^ 2)⁻¹ * ‖w‖ ^ 2 ≤ 4 := by
     have h : ‖w‖ / 2 ≤ ‖w - c i‖ := by linarith [hz i, norm_sub_norm_le w (c i)]
@@ -232,7 +234,7 @@ theorem movingEndsWeight_le_mul_cylindricalWeight {z : ℝ × ℝ}
   calc movingEndsWeight c z = movingEndsWeight c z * ‖w‖ ^ 2 * (‖w‖ ^ 2)⁻¹ := by field_simp
     _ ≤ (4 * Fintype.card ι + 1) * (‖w‖ ^ 2)⁻¹ := by
         gcongr
-        exact movingEndsWeight_mul_norm_sq_le hz0 hz
+        exact movingEndsWeight_mul_norm_sq_le hz
     _ ≤ _ := by gcongr
 
 section Energy

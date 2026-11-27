@@ -336,7 +336,6 @@ private theorem exists_weight_of_movingEnds (ha : ∀ i, a i ≠ 0)
       rw [← Real.exp_add]
       exact Real.exp_le_exp.2 (by nlinarith [pi_pos])
     have h := movingEndsWeight_mul_norm_sq_le (c := c) (z := p)
-      (by rw [← norm_pos_iff, hnorm]; positivity)
       fun i ↦ by rw [hnorm]; nlinarith [hout i, norm_nonneg (a i), Real.exp_pos (2 * π)]
     rw [← div_eq_mul_inv, le_div_iff₀ (movingEndsWeight_pos c p)]
     nlinarith
