@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
+import TauCeti.Data.Set.Function
 
 /-!
 # Local homology generators from oriented charts
@@ -465,8 +466,10 @@ theorem singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIso
   ext : 1
   have hF' : (LinearEquiv.finrank_eq e.toLinearEquiv).symm.trans hE = hF := Subsingleton.elim _ _
   subst hF'
-  have he : (e.toHomeomorph : C(E, F)) ⁻¹' {(φ.transHomeomorph e.toHomeomorph) x} ⊆ {φ x} :=
-    fun _ hy ↦ e.injective (by simpa [OpenPartialHomeomorph.transHomeomorph_apply] using hy)
+  have he : (e.toHomeomorph : C(E, F)) ⁻¹' {(φ.transHomeomorph e.toHomeomorph) x} ⊆ {φ x} := by
+    rw [OpenPartialHomeomorph.transHomeomorph_apply, ContinuousMap.coe_ofClass,
+      LinearIsometryEquiv.coe_toHomeomorph]
+    exact (e.injective.preimage_singleton_apply (φ x)).subset
   have hchart : TopPair.singularHomologyMap
         (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
           (TopCat.ofHom ⟨e.toHomeomorph, e.toHomeomorph.continuous⟩)
@@ -531,8 +534,8 @@ theorem localHomologyMap_localOrientationOfOrientedChart_linearIsometryEquiv
   let isoM := singularHomologyComplSingletonIsoOfOrientation R φ hx oE hE
   let isoM' := singularHomologyComplSingletonIsoOfOrientation R ψ (hjφ hx) oF hF
   have hf : (f.toHomeomorph : C(E, F)) ⁻¹' {ψ (j x)} ⊆ {φ x} := by
-    rw [hφψ x hx, ContinuousMap.coe_ofClass, LinearIsometryEquiv.coe_toHomeomorph,
-      ← Set.image_singleton, f.injective.preimage_image]
+    rw [hφψ x hx, ContinuousMap.coe_ofClass, LinearIsometryEquiv.coe_toHomeomorph]
+    exact (f.injective.preimage_singleton_apply (φ x)).subset
   have hiso : localHomologyMap R j hj (n + 1) ≫ isoM'.hom = isoM.hom := by
     dsimp only [isoM, isoM']
     rw [singularHomologyComplSingletonIsoOfOrientation_hom_eq R ψ (hjφ hx) (mem_refl_source _),

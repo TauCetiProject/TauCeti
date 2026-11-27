@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Chart
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.Geometry.Manifold.Orientation.Boundaryless
+public import TauCeti.Data.Set.Function
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Data.SignType.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
@@ -1107,7 +1108,7 @@ theorem comap_toHomologicalOrientation
   let jC : C(M, N) := ⟨j, hj.continuous⟩
   have hmap := (chartAt E x).localHomologyMap_localOrientationOfOrientedChart_eq_sign_det_smul
     oM hE (chartAt E (j x)) jC (mem_chart_source E x) (mem_chart_source E (j x))
-    (by rw [ContinuousMap.coe_mk, ← image_singleton, hj.injective.preimage_image]) hfd hdet
+    (hj.injective.preimage_singleton_apply x).subset hfd hdet
   rw [hmap]
   rcases _root_.Orientation.eq_or_eq_neg oN oM (by simp [hE]) with ho | ho
   · have hpos : 0 < f'.det := by
@@ -1141,8 +1142,7 @@ theorem localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrientation
       f.toContinuousLinearEquiv k
     let hF : finrank ℝ F = n + 1 := (LinearEquiv.finrank_eq f.toLinearEquiv).symm.trans hE
     localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (Φ.toHomeomorph : C(M, _))
-        (by rw [ContinuousMap.coe_ofClass, ← image_singleton,
-          Φ.toHomeomorph.injective.preimage_image]) (n + 1)
+        (Φ.toHomeomorph.injective.preimage_singleton_apply x).subset (n + 1)
         (localOrientationOfManifoldOrientation o hE x).val =
       (localOrientationOfManifoldOrientation
         (o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel
@@ -1163,8 +1163,7 @@ theorem localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrientation
         BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv, Homeomorph.symm_apply_apply,
         ModelWithCorners.coe_transContinuousLinearEquiv, Function.comp_apply,
         modelWithCornersSelf_coe, id_eq, LinearIsometryEquiv.coe_toContinuousLinearEquiv])
-    (by rw [ContinuousMap.coe_ofClass, ← image_singleton,
-      Φ.toHomeomorph.injective.preimage_image])
+    (Φ.toHomeomorph.injective.preimage_singleton_apply x).subset
     (o.orientationAt x) _
     (orientationAt_toBoundarylessModel_transContinuousLinearEquiv o f.toContinuousLinearEquiv k x)
 

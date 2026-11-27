@@ -277,12 +277,10 @@ private theorem fundamentalClassSelf_eq_toHomologicalOrientation
   rw [o.fundamentalClassSelf_eq f.toContinuousLinearEquiv]
   refine (o.toHomologicalOrientation hE).eq_fundamentalClass hE fun x ↦ ?_
   have hxpre :
-      (Φ.symm.toHomeomorph : C(BoundarylessModel I' M, M)) ⁻¹' {x} ⊆ {Φ.toHomeomorph x} :=
-    fun z hz ↦ by
-      have hz' : Φ.symm z = x := by
-        simpa [Diffeomorph.coe_toHomeomorph] using hz
-      rw [mem_singleton_iff, Diffeomorph.coe_toHomeomorph]
-      exact (Φ.apply_symm_apply z).symm.trans (congrArg Φ hz')
+      (Φ.symm.toHomeomorph : C(BoundarylessModel I' M, M)) ⁻¹' {x} ⊆ {Φ.toHomeomorph x} := by
+    rw [ContinuousMap.coe_ofClass, Diffeomorph.coe_toHomeomorph, Diffeomorph.coe_toHomeomorph]
+    nth_rw 1 [← Φ.symm_apply_apply x]
+    exact (Φ.symm.injective.preimage_singleton_apply (Φ x)).subset
   refine (singularHomologyToLocalHomology_apply _ x _).trans ?_
   rw [HomologicalOrientation.singularHomologyπ_mapFundamentalClass, ← ConcreteCategory.comp_apply,
     localHomologyMap_comp_localHomologyRestriction,
@@ -416,11 +414,10 @@ theorem mapFundamentalClass_homeomorph
     (o.isOrientationPreservingAt_interiorDiffeomorph_symm 1)
     he
     (o'.isOrientationPreservingAt_interiorDiffeomorph 1)
-  rw [mapFundamentalClass_def, fundamentalClass, fundamentalClass, ← ModuleCat.comp_apply,
-    ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp,
-    continuousMap_comp_conj_diffeomorph Φ Ψ e, TopCat.ofHom_comp,
-    CategoryTheory.Functor.map_comp, ModuleCat.comp_apply,
-    map_fundamentalClassSelf_homeomorph o.interiorOrientation o'.interiorOrientation e₀ he₀]
+  rw [mapFundamentalClass_def, fundamentalClass, fundamentalClass,
+    ← map_fundamentalClassSelf_homeomorph o.interiorOrientation o'.interiorOrientation e₀ he₀]
+  simp only [← ModuleCat.comp_apply, ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp]
+  rw [continuousMap_comp_conj_diffeomorph Φ Ψ e]
 
 /-- An orientation-preserving diffeomorphism between compact boundaryless `C¹` manifolds carries
 the fundamental class of the source to that of the target. -/
