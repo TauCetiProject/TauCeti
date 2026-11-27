@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.RingHom.Etale
 public import TauCeti.CategoryTheory.Abelian.FunctorCohomology.OpenSubfunctor
 public import TauCeti.CategoryTheory.ObjectProperty.Extensions
 
+import TauCeti.Algebra.Category.CommAlgCat.Localization
+
 /-!
 # Étale charts, atlases and charting subfunctors
 
@@ -97,12 +99,8 @@ private lemma mem_ofElement_map_away_iff {A : CommAlgCat.{u} k} {x : X.obj A} :
     exact ⟨_ ≫ ψ, (IsLocalization.Away.algebraMap_isUnit r).map ψ.hom,
       Functor.map_comp_apply X _ ψ y⟩
   · rintro ⟨φ, hφ, rfl⟩
-    refine ⟨CommAlgCat.ofHom (IsLocalization.Away.liftAlgHom (f := φ.hom) r hφ), ?_⟩
-    have : CommAlgCat.ofHom (IsScalarTower.toAlgHom k R (Localization.Away r)) ≫
-        CommAlgCat.ofHom (IsLocalization.Away.liftAlgHom (f := φ.hom) r hφ) = φ := by
-      ext a
-      exact IsLocalization.Away.lift_eq r hφ a
-    rw [← Functor.map_comp_apply, this]
+    obtain ⟨g, hg⟩ := CommAlgCat.exists_away_comp_eq φ hφ
+    exact ⟨g, by rw [← Functor.map_comp_apply, hg]⟩
 
 /-- If distinct maps out of `R` carry `y` to distinct points, then distinct maps out of `R[1/r]`
 carry the image of `y` in `X(R[1/r])` to distinct points: maps out of a localization are
@@ -177,6 +175,12 @@ lemma coe_locusCorepresentableBy_homEquiv {A : CommAlgCat.{u} k} (φ : c.R ⟶ A
     (c.locusCorepresentableBy.homEquiv φ : X.obj A) = X.map φ c.pt :=
   (rfl)
 
+/-- The map `R ⟶ A` corresponding to a point `x` of the locus carries the point of the chart to
+`x`. -/
+lemma map_locusCorepresentableBy_homEquiv_symm {A : CommAlgCat.{u} k}
+    (x : c.locus.toFunctor.obj A) : X.map (c.locusCorepresentableBy.homEquiv.symm x) c.pt = x := by
+  rw [← coe_locusCorepresentableBy_homEquiv, Equiv.apply_symm_apply]
+
 /-! #### Restricting a chart to a basic open subset -/
 
 /-- The coordinates of an étale chart, read in a localization `R[1/r]` of its algebra, make it
@@ -217,49 +221,74 @@ private lemma ofElement_map_away (r : c.R) :
     simpa using hφ
   · rintro ⟨hx, hu⟩
     rw [CorepresentableBy.mem_basicOpen_obj_iff] at hu
-    refine ⟨c.locusCorepresentableBy.homEquiv.symm ⟨x, hx⟩, by simpa using hu, ?_⟩
-    have := c.coe_locusCorepresentableBy_homEquiv (c.locusCorepresentableBy.homEquiv.symm ⟨x, hx⟩)
-    rw [Equiv.apply_symm_apply] at this
-    exact this.symm
+    exact ⟨c.locusCorepresentableBy.homEquiv.symm ⟨x, hx⟩, by simpa using hu,
+      c.map_locusCorepresentableBy_homEquiv_symm ⟨x, hx⟩⟩
 
 /-- The restriction of an étale chart `(R, x, y)` to the basic open subset where `r ∈ R` is a
 unit: for coordinates `z` making the localization `R[1/r]` étale over the polynomial ring in `d`
 variables (for instance the images of `x`, `CategoryTheory.Functor.EtaleChart.etale_aeval_away`),
 the chart on `R[1/r]` given by `z` and the image of `y`. Its locus is open because openness is
 transitive (`CategoryTheory.Subfunctor.IsOpen.image_ι`). -/
-noncomputable def away (r : c.R) (z : Fin d → Localization.Away r)
+@[expose] noncomputable def away (r : c.R) (z : Fin d → Localization.Away r)
     (hz : (MvPolynomial.aeval (R := k) z).toRingHom.Etale) : X.EtaleChart d where
   R := CommAlgCat.of k (Localization.Away r)
   coord := z
   etale_aeval := hz
   pt := X.map (CommAlgCat.ofHom (IsScalarTower.toAlgHom k c.R (Localization.Away r))) c.pt
-  injective {_} _ _ h := injective_map_away c.pt r (fun h ↦ c.injective h) h
+  injective {_} _ _ h := by exact injective_map_away c.pt r (fun h ↦ c.injective h) h
   isOpen_ofElement := by
     rw [ofElement_map_away]
     exact c.isOpen_locus.image_ι
       (c.locusCorepresentableBy.isOpen_basicOpen (forget₂ (CommAlgCat.{u} k) CommRingCat.{u}) r)
+
+section away
+
+variable (r : c.R) (z : Fin d → Localization.Away r)
+  (hz : (MvPolynomial.aeval (R := k) z).toRingHom.Etale)
+
+/-- The algebra of the restriction of a chart to `D(r)` is `R[1/r]`. -/
+@[simp]
+lemma away_R : (c.away r z hz).R = CommAlgCat.of k (Localization.Away r) :=
+  rfl
+
+/-- The coordinates of the restriction of a chart to `D(r)` are the given ones. -/
+@[simp]
+lemma away_coord : (c.away r z hz).coord = z :=
+  rfl
+
+/-- The point of the restriction of a chart to `D(r)` is the image of the point of the chart. -/
+@[simp]
+lemma away_pt : (c.away r z hz).pt =
+    X.map (CommAlgCat.ofHom (IsScalarTower.toAlgHom k c.R (Localization.Away r))) c.pt :=
+  rfl
+
+end away
 
 /-- A point lies in the locus of the restriction of a chart to `D(r)` exactly when it comes from
 a map `φ : R ⟶ A` out of the algebra of the chart that sends `r` to a unit. -/
 lemma mem_locus_away_obj_iff (r : c.R) (z : Fin d → Localization.Away r)
     (hz : (MvPolynomial.aeval (R := k) z).toRingHom.Etale) {A : CommAlgCat.{u} k} {x : X.obj A} :
     x ∈ (c.away r z hz).locus.obj A ↔ ∃ φ : c.R ⟶ A, IsUnit (φ r) ∧ X.map φ c.pt = x := by
-  unfold locus away
+  rw [locus, away_pt]
   exact mem_ofElement_map_away_iff c.pt r
 
 /-- The restriction of an étale chart to the locus where all its coordinates are units, with the
 images of the coordinates: a chart étale over a torus
 (`CategoryTheory.Functor.EtaleChart.isUnit_awayProd_coord`). -/
-noncomputable def awayProd : X.EtaleChart d :=
+@[expose] noncomputable def awayProd : X.EtaleChart d :=
   c.away (∏ i, c.coord i) (fun i ↦ algebraMap c.R _ (c.coord i)) (c.etale_aeval_away _)
+
+/-- The coordinates of `c.awayProd` are the images of those of `c` in `R[1/(x₁ ⋯ x_d)]`. -/
+@[simp]
+lemma awayProd_coord (i : Fin d) :
+    c.awayProd.coord i = (algebraMap c.R (Localization.Away (∏ j, c.coord j)) (c.coord i) :) :=
+  rfl
 
 /-- The coordinates of `c.awayProd` are units. -/
 lemma isUnit_awayProd_coord (i : Fin d) : IsUnit (c.awayProd.coord i) := by
-  have : IsUnit (algebraMap c.R (Localization.Away (∏ i, c.coord i)) (c.coord i)) :=
-    isUnit_of_dvd_unit (map_dvd _ (Finset.dvd_prod_of_mem _ (Finset.mem_univ i)))
-      (IsLocalization.Away.algebraMap_isUnit _)
-  -- the coordinates of `c.awayProd` are, by definition, the images of those of `c`
-  exact this
+  rw [awayProd_coord]
+  exact IsLocalization.Away.isUnit_of_dvd (S := Localization.Away (∏ j, c.coord j)) _
+    (Finset.dvd_prod_of_mem _ (Finset.mem_univ i))
 
 /-- A point lies in the locus of `c.awayProd` exactly when it comes from a map out of the algebra
 of the chart that sends every coordinate to a unit. -/
@@ -339,23 +368,45 @@ private lemma etaleChart_injective {A : CommAlgCat.{u} k} :
 /-- A functor corepresented by `R`, with coordinates `x` making `R` étale over the polynomial ring
 in `d` variables, has the étale chart on `R` given by `x` and the universal point. Its locus is
 the whole functor. -/
-def etaleChart (x : Fin d → R) (hx : (MvPolynomial.aeval (R := k) x).toRingHom.Etale) :
+@[expose] def etaleChart (x : Fin d → R) (hx : (MvPolynomial.aeval (R := k) x).toRingHom.Etale) :
     X.EtaleChart d where
   R := R
   coord := x
   etale_aeval := hx
   pt := e.homEquiv (𝟙 R)
-  injective {_} _ _ h := e.etaleChart_injective h
+  injective {_} _ _ h := by exact e.etaleChart_injective h
   isOpen_ofElement := by
     rw [Subfunctor.ofElement_homEquiv_id]
     exact Subfunctor.isOpen_top
+
+section etaleChart
+
+variable (x : Fin d → R) (hx : (MvPolynomial.aeval (R := k) x).toRingHom.Etale)
+
+/-- The algebra of the chart of a corepresentable functor on `R` is `R`. -/
+@[simp]
+lemma etaleChart_R : (e.etaleChart x hx).R = R :=
+  rfl
+
+/-- The coordinates of the chart of a corepresentable functor on `R` are the given ones. -/
+@[simp]
+lemma etaleChart_coord : (e.etaleChart x hx).coord = x :=
+  rfl
+
+/-- The point of the chart of a corepresentable functor on `R` is the universal point. -/
+@[simp]
+lemma etaleChart_pt : (e.etaleChart x hx).pt = e.homEquiv (𝟙 R) :=
+  rfl
+
+end etaleChart
 
 /-- The chart of a corepresentable functor on its corepresenting algebra covers the whole
 functor. -/
 @[simp]
 lemma locus_etaleChart (x : Fin d → R) (hx : (MvPolynomial.aeval (R := k) x).toRingHom.Etale) :
-    (e.etaleChart x hx).locus = ⊤ :=
-  Subfunctor.ofElement_homEquiv_id e
+    (e.etaleChart x hx).locus = ⊤ := by
+  rw [EtaleChart.locus, etaleChart_pt]
+  exact Subfunctor.ofElement_homEquiv_id e
 
 /-- The points of a functor corepresented by `R` that come from the image of the universal point
 in `X(R[1/r])` are those of the basic open subfunctor `D(r)`. -/
@@ -376,25 +427,52 @@ private lemma ofElement_map_away (r : R) :
 ring in `d` variables, a functor corepresented by `R` has the étale chart on `R[1/r]` given by `y`
 and the image of the universal point under `R ⟶ R[1/r]`. Its locus is the basic open subfunctor
 `D(r)`. -/
-noncomputable def etaleChartAway (r : R) (y : Fin d → Localization.Away r)
+@[expose] noncomputable def etaleChartAway (r : R) (y : Fin d → Localization.Away r)
     (hy : (MvPolynomial.aeval (R := k) y).toRingHom.Etale) : X.EtaleChart d where
   R := CommAlgCat.of k (Localization.Away r)
   coord := y
   etale_aeval := hy
   pt := X.map (CommAlgCat.ofHom (IsScalarTower.toAlgHom k R (Localization.Away r)))
     (e.homEquiv (𝟙 R))
-  injective {_} _ _ h := injective_map_away _ r (fun h ↦ e.etaleChart_injective h) h
+  injective {_} _ _ h := by exact injective_map_away _ r (fun h ↦ e.etaleChart_injective h) h
   isOpen_ofElement := by
     rw [ofElement_map_away]
     exact e.isOpen_basicOpen (forget₂ (CommAlgCat.{u} k) CommRingCat.{u}) r
+
+section etaleChartAway
+
+variable (r : R) (y : Fin d → Localization.Away r)
+  (hy : (MvPolynomial.aeval (R := k) y).toRingHom.Etale)
+
+/-- The algebra of the chart of a corepresentable functor on `R[1/r]` is `R[1/r]`. -/
+@[simp]
+lemma etaleChartAway_R : (e.etaleChartAway r y hy).R = CommAlgCat.of k (Localization.Away r) :=
+  rfl
+
+/-- The coordinates of the chart of a corepresentable functor on `R[1/r]` are the given ones. -/
+@[simp]
+lemma etaleChartAway_coord : (e.etaleChartAway r y hy).coord = y :=
+  rfl
+
+/-- The point of the chart of a corepresentable functor on `R[1/r]` is the image of the universal
+point. -/
+@[simp]
+lemma etaleChartAway_pt : (e.etaleChartAway r y hy).pt =
+    X.map (CommAlgCat.ofHom (IsScalarTower.toAlgHom k R (Localization.Away r)))
+      (e.homEquiv (𝟙 R)) :=
+  rfl
+
+end etaleChartAway
 
 /-- The locus of the chart of a corepresentable functor on `R[1/r]` is the basic open subfunctor
 `D(r)`. -/
 @[simp]
 lemma locus_etaleChartAway (r : R) (y : Fin d → Localization.Away r)
     (hy : (MvPolynomial.aeval (R := k) y).toRingHom.Etale) :
-    (e.etaleChartAway r y hy).locus = e.basicOpen (forget₂ (CommAlgCat.{u} k) CommRingCat.{u}) r :=
-  e.ofElement_map_away r
+    (e.etaleChartAway r y hy).locus =
+      e.basicOpen (forget₂ (CommAlgCat.{u} k) CommRingCat.{u}) r := by
+  rw [EtaleChart.locus, etaleChartAway_pt]
+  exact e.ofElement_map_away r
 
 include e in
 /-- A functor corepresented by `R` has an atlas of dimension `d` if elements of `R` that generate
@@ -435,7 +513,7 @@ include e in
 through coordinates that are units of `R` (étale over a torus) is charting in itself. -/
 theorem isCharting_top (x : Fin d → R) (hx : (MvPolynomial.aeval (R := k) x).toRingHom.Etale)
     (hu : ∀ i, IsUnit (x i)) : (⊤ : Subfunctor X).IsCharting := by
-  have := (e.etaleChart x hx).isCharting_locus hu
+  have := (e.etaleChart x hx).isCharting_locus (fun i ↦ by rw [etaleChart_coord]; exact hu i)
     (by rw [locus_etaleChart]; exact Subfunctor.isZariskiLocallyTop_top)
   rwa [locus_etaleChart] at this
 
@@ -476,8 +554,7 @@ theorem isCharting_top_away_prod_X (e : X.CorepresentableBy (CommAlgCat.of k
       MvPolynomial.algHom_ext fun i ↦ by simp
     rw [this]
     exact RingHom.etale_algebraMap.2 (Algebra.Etale.of_isLocalizationAway p)
-  · exact isUnit_of_dvd_unit (map_dvd _ (Finset.dvd_prod_of_mem _ (Finset.mem_univ i)))
-      (IsLocalization.Away.algebraMap_isUnit p)
+  · exact IsLocalization.Away.isUnit_of_dvd p (Finset.dvd_prod_of_mem _ (Finset.mem_univ i))
 
 end Functor.CorepresentableBy
 
