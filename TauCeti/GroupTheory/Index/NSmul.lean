@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
+import TauCeti.Algebra.Group.Prod
 import TauCeti.GroupTheory.Index.Map
 
 /-!
@@ -230,11 +231,7 @@ theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] (n 
     (AddMonoidHom.ker_eq_bot_iff _).mpr
       (AddSubgroup.nsmulAddMonoidHom_injective_of_isTorsionFree hn)
   -- multiplication by `n` on a product is componentwise, so it is `AddMonoidHom.prodMap`
-  have hprod : nsmulAddMonoidHom (α := (Fin r →₀ ℤ) × ⨁ i, ZMod (p i ^ e i)) n =
-      (nsmulAddMonoidHom (α := Fin r →₀ ℤ) n).prodMap
-        (nsmulAddMonoidHom (α := ⨁ i, ZMod (p i ^ e i)) n) := by
-    ext x <;> simp
-  rw [hidx, hker, hrk, hprod, AddMonoidHom.range_prodMap, AddSubgroup.index_prod,
+  rw [hidx, hker, hrk, nsmulAddMonoidHom_prod, AddMonoidHom.range_prodMap, AddSubgroup.index_prod,
     AddSubgroup.index_range_nsmul, AddSubgroup.index_range,
     AddMonoidHom.ker_prodMap, Nat.card_congr (AddSubgroup.prodEquiv _ _).toEquiv,
     Nat.card_prod, hkerF]
@@ -256,11 +253,6 @@ theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] (n
   have := AddSubgroup.index_range_nsmul_of_fg (Additive G) n
   rwa [← h, MonoidHom.coe_toAdditive_range, MonoidHom.coe_toAdditive_ker,
     index_toAddSubgroup] at this
-
-@[to_additive nsmulAddMonoidHom_prod]
-private theorem powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
-    (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
-  ext x <;> simp
 
 /-- The subgroup of `n`-th powers in a product is the product of the subgroups of `n`-th
 powers. -/

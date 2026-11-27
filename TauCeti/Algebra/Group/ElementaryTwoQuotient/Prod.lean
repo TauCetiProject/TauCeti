@@ -46,10 +46,6 @@ namespace TauCeti
 
 section Prod
 
-private theorem elementaryTwoQuotientMk_eq_modNMkQ {G : Type*} [CommGroup G] (g : G) :
-    elementaryTwoQuotientMk g = ModN.mkQ 2 (Additive.ofMul g) :=
-  elementaryTwoQuotientMk_eq_mkQ g
-
 /-- **The elementary-2 quotient of a product is the product of the elementary-2 quotients.** For
 commutative groups `G` and `H`, the class map identifies `(G × H)/(G × H)²` with `G/G² × H/H²`
 `ZMod 2`-linearly, specializing `ModN.prodLinearEquiv` at `n = 2`. -/
@@ -63,7 +59,7 @@ noncomputable def elementaryTwoQuotientProdLinearEquiv (G H : Type*) [CommGroup 
     (p : G × H) :
     elementaryTwoQuotientProdLinearEquiv G H (elementaryTwoQuotientMk p) =
       (elementaryTwoQuotientMk p.1, elementaryTwoQuotientMk p.2) := by
-  simp only [elementaryTwoQuotientProdLinearEquiv, elementaryTwoQuotientMk_eq_modNMkQ]
+  simp only [elementaryTwoQuotientProdLinearEquiv, elementaryTwoQuotientMk_eq_mkQ]
   exact ModN.prodLinearEquiv_mkQ (Additive G) (Additive H) 2 (Additive.ofMul p)
 
 /-- The inverse product equivalence sends a pair of classes to the class of the pair. -/
@@ -108,7 +104,7 @@ classes. -/
 @[simp] theorem elementaryTwoQuotientPiLinearEquiv_mk (g : ∀ i, G i) :
     elementaryTwoQuotientPiLinearEquiv G (elementaryTwoQuotientMk g) =
       fun i => elementaryTwoQuotientMk (g i) := by
-  simp only [elementaryTwoQuotientPiLinearEquiv, elementaryTwoQuotientMk_eq_modNMkQ]
+  simp only [elementaryTwoQuotientPiLinearEquiv, elementaryTwoQuotientMk_eq_mkQ]
   exact ModN.piLinearEquiv_mkQ (fun i ↦ Additive (G i)) 2 (Additive.ofMul g)
 
 /-- The inverse indexed-product equivalence sends a family of componentwise classes to the class

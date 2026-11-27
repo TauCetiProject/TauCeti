@@ -30,11 +30,13 @@ parameter, are exactly the labels whose module is nondegenerate and nontrivial. 
 invariants: the same module has many decompositions, since `q_1^{(2)}(2) ≅ q_5^{(2)}(2)` and
 `u^{(2)}(2) ⊕ u^{(2)}(2) ≅ v^{(2)}(2) ⊕ v^{(2)}(2)` (Nikulin's Proposition 1.8.2).
 
-A decomposition records the order, Gauss-sum invariant, `p`-adic realization determinant product,
-and generator rank (`AddGroup.rank`) of the module and of its `p`-primary components. It restricts
-to the `p`-primary component: the generators with prime `p` decompose the `p`-primary component,
-which is how quantities attached to the `p`-adic part of a discriminant form, such as the
-determinant of a `p`-adic lattice realizing it, are read off a decomposition.
+A decomposition `D` recovers the module invariants—order, Gauss-sum invariant, and generator rank
+(`AddGroup.rank`)—of the module and of its `p`-primary components, together with the product of
+`realizationDet` over the `p`-primary generators of `D`, which depends on the decomposition (see
+the non-uniqueness witnesses below). It restricts to the `p`-primary component: the generators with
+prime `p` decompose the `p`-primary component, which is how quantities attached to the `p`-adic part
+of a discriminant form, such as the determinant of a `p`-adic lattice realizing it, are read off a
+decomposition.
 
 ## Main definitions
 

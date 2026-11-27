@@ -48,6 +48,8 @@ identities as the product of the two factors.
   componentwise, and its inverse is the product of the inverses.
 * `MulEquiv.iterate_prodCongr_eq_id`: the product of two automorphisms of order dividing `m` has
   order dividing `m`.
+* `powMonoidHom_prod`, `nsmulAddMonoidHom_prod`: the `n`-th power / multiplication-by-`n` map on
+  a product of commutative monoids is the product of those maps on the factors.
 -/
 
 public section
@@ -197,3 +199,12 @@ theorem ofProdCoprod_symm_apply (x : A × B) :
 end ofProdCoprod
 
 end MulEquiv
+
+/-- The `n`-th power map on a product of commutative monoids is the product of the `n`-th power
+maps on the factors. -/
+@[to_additive nsmulAddMonoidHom_prod
+/-- Multiplication by `n` on a product of commutative additive monoids is the product of
+multiplication by `n` on the factors. -/]
+theorem powMonoidHom_prod {A B : Type*} [CommMonoid A] [CommMonoid B] (n : ℕ) :
+    (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
+  ext x <;> simp

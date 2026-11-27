@@ -43,7 +43,8 @@ generators of a finitely generated group (Nikulin's length `l(M)` when `M` is fi
 ## Main statements
 
 * `Group.rank_le_one_iff_isCyclic`, `AddGroup.rank_le_one_iff_isAddCyclic`
-* `Group.rank_prod_le`, `Group.rank_pi_le`
+* `Group.rank_prod_le`, `Group.rank_pi_le`, `Group.rank_prod_eq_rank_piFinTwo`,
+  `AddGroup.rank_prod_eq_rank_piFinTwo`
 * `AddGroup.rank_eq_spanFinrank`, `AddGroup.rank_eq_spanFinrank_of_intCast_surjective`
 * `AddGroup.rank_eq_finrank_of_intCast_surjective`, `AddGroup.rank_eq_finrank`,
   `AddGroup.rank_eq_finrank_zmod`
@@ -126,6 +127,19 @@ theorem rank_pi_le {ι : Type*} [Fintype ι] (G : ι → Type*) [∀ i, Group (G
       _ ≤ ∑ i, ((S i).image (MonoidHom.mulSingle G i)).card := Finset.card_biUnion_le
       _ ≤ ∑ i, (S i).card := Finset.sum_le_sum fun i _ ↦ Finset.card_image_le
       _ = ∑ i, Group.rank (G i) := by simp_rw [hScard]
+
+/-- The generator rank of `F 0 × F 1` equals the generator rank of the indexed product
+`∀ i : Fin 2, F i`. -/
+@[to_additive rank_prod_eq_rank_piFinTwo
+  /-- The generator rank of `F 0 × F 1` equals the generator rank of the indexed product
+  `∀ i : Fin 2, F i`. -/]
+theorem rank_prod_eq_rank_piFinTwo (F : Fin 2 → Type*) [∀ i, Group (F i)]
+    [∀ i, Group.FG (F i)] :
+    Group.rank (F 0 × F 1) = Group.rank (∀ i, F i) := by
+  let e : (∀ i, F i) ≃* F 0 × F 1 :=
+    { piFinTwoEquiv F with
+      map_mul' _ _ := rfl }
+  exact Group.rank_congr e.symm
 
 end Group
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.SpanRank
 public import TauCeti.GroupTheory.Rank
-public import Mathlib.LinearAlgebra.Pi
 import Mathlib.Algebra.Group.ULift
 import Mathlib.Data.Nat.ChineseRemainder
 import Mathlib.GroupTheory.OrderOfElement
@@ -168,11 +167,6 @@ theorem rank_pi_eq_sup_of_coprime_card {ι : Type*} [Fintype ι] (M : ι → Typ
     AddGroup.rank (∀ i, M i) = Finset.univ.sup (fun i ↦ AddGroup.rank (M i)) := by
   simp_rw [AddGroup.rank_eq_spanFinrank]
   exact TauCeti.AddCommGroup.spanFinrank_pi_eq_sup_of_coprime_card M hcop
-
-private theorem rank_prod_eq_rank_piFinTwo.{u} (F : Fin 2 → Type u) [∀ i, AddCommGroup (F i)]
-    [∀ i, AddGroup.FG (F i)] :
-    AddGroup.rank (F 0 × F 1) = AddGroup.rank (∀ i, F i) :=
-  AddGroup.rank_congr (LinearEquiv.piFinTwo ℤ F).symm.toAddEquiv
 
 private theorem rank_prod_eq_max_of_coprime_card_aux.{u} {M N : Type u}
     [instM : AddCommGroup M] [instN : AddCommGroup N] [hM : AddGroup.FG M] [hN : AddGroup.FG N]
