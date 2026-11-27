@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Averages over balls for an additive Haar measure
@@ -23,6 +25,8 @@ volumes is explicit. This comparison is the basic step of stopping-time argument
 * `TauCeti.setLAverage_ball_le`: the average over `B(x, ρ) ⊆ B(x₀, R)` is at most
   `(R / ρ) ^ dim E` times the average over `B(x₀, R)`; `TauCeti.setAverage_ball_le` is its
   Bochner-integral form for integrable, a.e. nonnegative real functions.
+* `TauCeti.setIntegral_ball_le_of_setAverage_le`: a bound `⨍_{B(x, ρ)} f ≤ K ⨍_{B(x₀, R)} g`
+  between averages gives `∫_{B(x, ρ)} f ≤ K (ρ / R) ^ dim E ∫_{B(x₀, R)} g` between integrals.
 * `TauCeti.mul_ofReal_div_pow_le_setLAverage_ball`: if `g ≥ δ` on `B(z, ρ) ⊆ B(c, r)`, the
   average of `g` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`.
 -/
@@ -67,6 +71,20 @@ theorem setAverage_ball_le {g : E → ℝ} {x x₀ : E} {ρ R : ℝ} (hρ : 0 < 
     ENNReal.ofReal_mul (by positivity), ofReal_setAverage (hg.mono_set hsub) hg0',
     ofReal_setAverage hg hg0, ← setLAverage_eq, ← setLAverage_eq]
   exact setLAverage_ball_le _ hρ hsub
+
+/-- **From averages to integrals over balls.** A bound `⨍_{B(x, ρ)} f ≤ K ⨍_{B(x₀, R)} g` between
+averages over two balls of positive radii gives the bound
+`∫_{B(x, ρ)} f ≤ K (ρ / R) ^ dim E ∫_{B(x₀, R)} g` between the integrals, since the ratio of the
+volumes of the balls is `(ρ / R) ^ dim E`. -/
+theorem setIntegral_ball_le_of_setAverage_le {f g : E → ℝ} {x x₀ : E} {ρ R K : ℝ} (hρ : 0 < ρ)
+    (hR : 0 < R) (h : ⨍ y in ball x ρ, f y ∂μ ≤ K * ⨍ y in ball x₀ R, g y ∂μ) :
+    ∫ y in ball x ρ, f y ∂μ ≤ K * (ρ / R) ^ finrank ℝ E * ∫ y in ball x₀ R, g y ∂μ := by
+  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ 0 one_pos
+  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, μ.addHaar_real_ball_of_pos x hρ,
+    μ.addHaar_real_ball_of_pos x₀ hR, inv_mul_le_iff₀ (by positivity)] at h
+  refine h.trans_eq ?_
+  rw [div_pow]
+  field_simp
 
 /-- **A lower bound from a sub-ball.** If `g ≥ δ` on a ball `B(z, ρ) ⊆ B(c, r)`, then the average
 of `g` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`. With `g = ‖f - a‖ₑ` and `a` the average of

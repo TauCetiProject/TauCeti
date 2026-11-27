@@ -1141,24 +1141,15 @@ theorem setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp (e : E' �
     ∫ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ∂μ ≤
       2 ^ (3 * finrank ℝ E + 5) * (finrank ℝ E + 1) * (a * b) ^ (finrank ℝ E + 1) *
         (ρ / R) ^ (finrank ℝ E + 1) * ∫ x in ball x₀ R, ‖u x - c‖ ∂μ := by
-  set n := finrank ℝ E with hn
   rcases hρ.eq_or_lt with rfl | hρ
   · simp
   -- This is the `L^γ` decay at `γ = 1`, multiplied by the volume of `ball x₀ ρ`.
-  have hR : 0 < R := hρ.trans_le hρR
-  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ 0 one_pos
   have hic : IntegrableOn (fun x ↦ u x - c) (ball x₀ R) μ :=
     hi.sub (integrableOn_const measure_ball_lt_top.ne)
   have h := setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp e hae hbe hab hu hi c
     (by simp only [Real.rpow_one]; exact hic.norm) le_rfl hρ hρR
   simp only [Real.rpow_one] at h
-  rw [setAverage_eq (f := fun x ↦ ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖) μ (ball x₀ ρ),
-    setAverage_eq (f := fun x ↦ ‖u x - c‖) μ (ball x₀ R), smul_eq_mul, smul_eq_mul,
-    μ.addHaar_real_ball_of_pos x₀ hρ, μ.addHaar_real_ball_of_pos x₀ hR, ← hn,
-    inv_mul_le_iff₀ (by positivity)] at h
-  refine h.trans_eq ?_
-  simp only [div_pow]
-  field_simp
+  refine (setIntegral_ball_le_of_setAverage_le hρ (hρ.trans_le hρR) h).trans_eq ?_
   ring
 
 end LinearChange

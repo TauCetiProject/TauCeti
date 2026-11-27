@@ -17,8 +17,8 @@ import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.MeasureTheory.Measure.Haar.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Decay of the mean oscillation of the Hessian for constant coefficients
@@ -74,8 +74,9 @@ Laplacian.
   of the harmonic field `∇g ∘ e` followed by `e⁻¹`, so it is harmonic
   (`InnerProductSpace.HarmonicOnNhd.fderiv`), and the `L^γ` decay of harmonic
   functions after a linear change of variables
-  (`TauCeti.setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp`), which bounds the
-  oscillation of `D²u` on `B_ρ` pointwise, applies with `‖e⁻¹‖ ≤ λ^(-1/2)` and `‖e‖ ≤ Λ^(1/2)`.
+  (`TauCeti.setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp`), which follows
+  from the pointwise oscillation bound `TauCeti.norm_sub_le_of_harmonicOnNhd_comp`, applies with
+  `‖e⁻¹‖ ≤ λ^(-1/2)` and `‖e‖ ≤ Λ^(1/2)`.
   The two `L¹` forms are its case `γ = 1`.
 
 ## References
@@ -346,18 +347,10 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inne
   rcases hρ.eq_or_lt with rfl | hρ
   · simp
   -- This is the averaged form multiplied by the volume of `B_ρ`.
-  have hR : 0 < R := hρ.trans_le hρR
-  have hω : 0 < mu.real (ball (0 : EuclideanSpace ℝ ι) 1) := measureReal_ball_pos mu 0 one_pos
   have h := setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
     hlam hA hA' u hball heq c hρ.le hρR
-  rw [setAverage_eq (f := fun x => ‖Wkp.iteratedGradient 1 u x -
-      ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖) mu (ball x₀ ρ),
-    setAverage_eq (f := fun x => ‖Wkp.iteratedGradient 1 u x - c‖) mu (ball x₀ R), smul_eq_mul,
-    smul_eq_mul, mu.addHaar_real_ball_of_pos x₀ hρ, mu.addHaar_real_ball_of_pos x₀ hR,
-    finrank_euclideanSpace, inv_mul_le_iff₀ (by positivity)] at h
-  refine h.trans_eq ?_
-  simp only [div_pow]
-  field_simp
+  refine (setIntegral_ball_le_of_setAverage_le hρ (hρ.trans_le hρR) h).trans_eq ?_
+  rw [finrank_euclideanSpace]
   ring
 
 end PDE
