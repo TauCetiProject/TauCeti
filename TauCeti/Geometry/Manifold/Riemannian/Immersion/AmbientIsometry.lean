@@ -226,10 +226,13 @@ theorem immersionShapeOperatorAt_comp (hΦ : IsLocalRiemannianIsometry J J' Φ)
 the direction `dΦ ν` are those of `f` in the direction `ν`. -/
 theorem immersionPrincipalCurvatures_comp (hΦ : IsLocalRiemannianIsometry J J' Φ)
     (hcov : cov.IsLeviCivitaConnection) (hcov' : cov'.IsLeviCivitaConnection)
-    (ht : cov.IsTorsionFree) (ht' : cov'.IsTorsionFree) (hf : ContMDiffAt I J 2 f x) {m : ℕ}
-    (hm : finrank ℝ E = m) (ν : TangentSpace J (f x)) :
-    immersionPrincipalCurvatures I (Φ ∘ f) x ht' hm (mfderiv J J' Φ (f x) ν) =
-      immersionPrincipalCurvatures I f x ht hm ν := by
+    (hf : ContMDiffAt I J 2 f x) {m : ℕ} (hm : finrank ℝ E = m) (ν : TangentSpace J (f x)) :
+    immersionPrincipalCurvatures I (Φ ∘ f) x
+        ((cov'.isTorsionFree_iff_torsion_eq_zero).2 hcov'.torsion) hm (mfderiv J J' Φ (f x) ν) =
+      immersionPrincipalCurvatures I f x ((cov.isTorsionFree_iff_torsion_eq_zero).2 hcov.torsion)
+        hm ν := by
+  have ht := (cov.isTorsionFree_iff_torsion_eq_zero).2 hcov.torsion
+  have ht' := (cov'.isTorsionFree_iff_torsion_eq_zero).2 hcov'.torsion
   -- Both lists are the sorted eigenvalues of the same self-adjoint operator.
   have hS := isSymmetric_immersionShapeOperatorAt (I := I) (x := x) ht ν
   let b := (hS.eigenvectorBasis (hm : finrank ℝ (TangentSpace I x) = m)).toBasis
