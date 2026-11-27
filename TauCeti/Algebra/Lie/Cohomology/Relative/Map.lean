@@ -18,13 +18,14 @@ Chevalley–Eilenberg differential and induce restriction and coefficient maps o
 
 For relative cohomology of Lie groups and naturality of the comparison with continuous
 cohomology, see C. Wockel, *Topological group cohomology of Lie groups and Chern–Weil theory
-for compact symmetric spaces*, Theorem 3.3. The induced maps on cohomology are given by
-`HomologicalComplex.homologyMap`.
+for compact symmetric spaces*, Theorem 3.3. The induced maps on cohomology are
+`relativeCohomologyMap` and `equivariantRelativeCohomologyMap`; their projection, identity,
+and composition laws express functoriality on cohomology.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory HomologicalComplex
 
 namespace TauCeti.LieModule.Cohomology
 
@@ -52,16 +53,10 @@ noncomputable def cochainSubcomplexMap (he : ∀ (x : L') (m : M), e ⁅φ x, m�
     cochainSubcomplex S hS ⟶ cochainSubcomplex T hT :=
   CochainComplex.ofHom (fun n ↦ ModuleCat.ofHom ((cochainMap e φ n).restrict (h n))) fun n ↦ by
     rw [cochainSubcomplex_d_succ, cochainSubcomplex_d_succ]
-    -- The composition rewrite needs the concrete submodule objects in place of the
-    -- degree objects of the two cochain complexes.
-    change ModuleCat.ofHom ((cochainSubcomplexD T hT n).comp
-        ((cochainMap e φ n).restrict (h n))) =
-      ModuleCat.ofHom (((cochainMap e φ (n + 1)).restrict (h (n + 1))).comp
-        (cochainSubcomplexD S hS n))
-    apply congrArg ModuleCat.ofHom
-    exact LinearMap.ext fun ω ↦ Subtype.ext <| by
-      simp only [LinearMap.comp_apply, LinearMap.coe_restrict_apply, coe_cochainSubcomplexD]
-      exact (cochainMap_d e φ he n ω.val).symm
+    refine ModuleCat.hom_ext <| LinearMap.ext fun ω ↦ Subtype.ext ?_
+    exact (coe_cochainSubcomplexD T hT _).trans <|
+      (cochainMap_d e φ he n ω.val).symm.trans <|
+        congrArg (cochainMap e φ (n + 1)) (coe_cochainSubcomplexD S hS ω).symm
 
 /-- In each degree, the subcomplex map is the restriction of the ambient cochain map. -/
 @[simp]
@@ -80,9 +75,9 @@ theorem cochainSubcomplexMap_comp_subtype
       cochainSubcomplexSubtype S hS ≫ cochainComplexMap e φ he := by
   apply HomologicalComplex.hom_ext
   intro n
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, cochainSubcomplexMap_f,
-    cochainSubcomplexSubtype_f, cochainSubcomplexSubtype_f, cochainComplexMap_f]
-  rfl
+  simp only [HomologicalComplex.comp_f, cochainSubcomplexMap_f, cochainSubcomplexSubtype_f,
+    cochainComplexMap_f]
+  exact ModuleCat.hom_ext (LinearMap.subtype_comp_restrict (h n))
 
 /-- Restricting the identity cochain map to a subcomplex gives its identity. -/
 @[simp]
@@ -95,11 +90,8 @@ theorem cochainSubcomplexMap_id
   apply HomologicalComplex.hom_ext
   intro n
   rw [cochainSubcomplexMap_f, HomologicalComplex.id_f]
-  -- The identity lemma for bundled linear maps needs the concrete submodule as its object.
-  change ModuleCat.ofHom _ = ModuleCat.ofHom (LinearMap.id : S n →ₗ[R] S n)
-  apply congrArg ModuleCat.ofHom
-  exact LinearMap.ext fun ω ↦ Subtype.ext <| by
-    simp only [LinearMap.coe_restrict_apply, LinearMap.id_apply, cochainMap_id]
+  refine ModuleCat.hom_ext <| LinearMap.ext fun ω ↦ Subtype.ext ?_
+  exact DFunLike.congr_fun (cochainMap_id n) ω.val
 
 variable {U : ∀ n, Submodule R (L'' [⋀^Fin n]→ₗ[R] M'')}
   {hU : ∀ n, ∀ ω ∈ U n, d R L'' M'' n ω ∈ U (n + 1)}
@@ -118,13 +110,8 @@ theorem cochainSubcomplexMap_comp (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = 
   intro n
   rw [HomologicalComplex.comp_f, cochainSubcomplexMap_f, cochainSubcomplexMap_f,
     cochainSubcomplexMap_f]
-  -- Identify the degree objects with their submodules before comparing the linear maps.
-  change ModuleCat.ofHom (((cochainMap e' ψ n).restrict (h' n)).comp
-    ((cochainMap e φ n).restrict (h n))) = _
-  apply congrArg ModuleCat.ofHom
-  exact LinearMap.ext fun ω ↦ Subtype.ext <| by
-    simpa only [LinearMap.comp_apply, LinearMap.coe_restrict_apply] using
-      DFunLike.congr_fun (cochainMap_comp e e' φ ψ n) ω.val
+  refine ModuleCat.hom_ext <| LinearMap.ext fun ω ↦ Subtype.ext ?_
+  exact DFunLike.congr_fun (cochainMap_comp e e' φ ψ n) ω.val
 
 end Subcomplex
 
@@ -180,6 +167,52 @@ theorem relativeCochainComplexMap_comp (e' : M' →ₗ[R] M'') (ψ : L'' →ₗ�
       relativeCochainComplexMap (e'.comp e) (φ.comp ψ)
         (fun x m ↦ by simp [he, he']) (fun x hx ↦ hφ _ (hψ x hx)) := by
   exact cochainSubcomplexMap_comp he he' _ _ _
+
+/-- The map on relative Lie algebra cohomology induced by a compatible map of pairs and
+an intertwining coefficient map. -/
+noncomputable def relativeCohomologyMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H) (n : ℕ) :
+    relativeCohomology R M H n ⟶ relativeCohomology R M' H' n :=
+  homologyMap (relativeCochainComplexMap e φ he hφ) n
+
+/-- `relativeCohomologyMap` is induced on homology by `relativeCochainComplexMap`. -/
+theorem relativeCohomologyMap_def (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H) (n : ℕ) :
+    relativeCohomologyMap e φ he hφ n =
+      homologyMap (relativeCochainComplexMap e φ he hφ) n :=
+  (rfl)
+
+/-- Relative cohomology maps commute with the projection from cycles to cohomology. -/
+@[reassoc (attr := simp), elementwise]
+theorem homologyπ_relativeCohomologyMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H) (n : ℕ) :
+    (relativeCochainComplex R M H).homologyπ n ≫ relativeCohomologyMap e φ he hφ n =
+      cyclesMap (relativeCochainComplexMap e φ he hφ) n ≫
+        (relativeCochainComplex R M' H').homologyπ n :=
+  HomologicalComplex.homologyπ_naturality _ _
+
+/-- Identity maps induce the identity on relative cohomology. -/
+@[simp]
+theorem relativeCohomologyMap_id (n : ℕ) :
+    relativeCohomologyMap (H := H) (H' := H) (LinearMap.id : M →ₗ[R] M) LieHom.id
+        (fun _ _ ↦ rfl) (fun _ hx ↦ hx) n = 𝟙 (relativeCohomology R M H n) := by
+  simp [relativeCohomologyMap]
+
+/-- Relative cohomology maps compose contravariantly in the Lie algebra and covariantly
+in the coefficients. -/
+@[simp]
+theorem relativeCohomologyMap_comp (e' : M' →ₗ[R] M'') (ψ : L'' →ₗ⁅R⁆ L')
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (he' : ∀ (x : L'') (m : M'), e' ⁅ψ x, m⁆ = ⁅x, e' m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H) (hψ : ∀ x ∈ H'', ψ x ∈ H') (n : ℕ) :
+    relativeCohomologyMap e φ he hφ n ≫ relativeCohomologyMap e' ψ he' hψ n =
+      relativeCohomologyMap (e'.comp e) (φ.comp ψ)
+        (fun x m ↦ by simp [he, he']) (fun x hx ↦ hφ _ (hψ x hx)) n := by
+  exact (homologyMap_comp _ _ n).symm.trans <|
+    congrArg (fun F ↦ homologyMap F n) (relativeCochainComplexMap_comp e' ψ he he' hφ hψ)
 
 end Relative
 
@@ -266,6 +299,73 @@ theorem equivariantRelativeCochainComplexMap_comp
         (fun x hx ↦ hφ _ (hψ x hx)) (fun k x ↦ by simp [hAd, hAd'])
         (fun k m ↦ by simp [hCoeff, hCoeff']) := by
   exact cochainSubcomplexMap_comp he he' _ _ _
+
+/-- The map on equivariant relative cohomology induced by compatible Lie algebra,
+coefficient, and index maps. -/
+noncomputable def equivariantRelativeCohomologyMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (f : K' → K) (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H)
+    (hAd : ∀ k x, φ (Ad' k x) = Ad (f k) (φ x))
+    (hCoeff : ∀ k m, e (ρ (f k) m) = ρ' k (e m)) (n : ℕ) :
+    equivariantRelativeCohomology R M Ad ρ H hρ n ⟶
+      equivariantRelativeCohomology R M' Ad' ρ' H' hρ' n :=
+  homologyMap (equivariantRelativeCochainComplexMap e φ f he hφ hAd hCoeff) n
+
+/-- `equivariantRelativeCohomologyMap` is induced by `equivariantRelativeCochainComplexMap`. -/
+theorem equivariantRelativeCohomologyMap_def (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (f : K' → K) (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H)
+    (hAd : ∀ k x, φ (Ad' k x) = Ad (f k) (φ x))
+    (hCoeff : ∀ k m, e (ρ (f k) m) = ρ' k (e m)) (n : ℕ) :
+    equivariantRelativeCohomologyMap (hρ := hρ) (hρ' := hρ') e φ f he hφ hAd hCoeff n =
+      homologyMap (equivariantRelativeCochainComplexMap (hρ := hρ) (hρ' := hρ')
+        e φ f he hφ hAd hCoeff) n :=
+  (rfl)
+
+/-- Equivariant relative cohomology maps commute with the projection from cycles. -/
+@[reassoc (attr := simp), elementwise]
+theorem homologyπ_equivariantRelativeCohomologyMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
+    (f : K' → K) (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H)
+    (hAd : ∀ k x, φ (Ad' k x) = Ad (f k) (φ x))
+    (hCoeff : ∀ k m, e (ρ (f k) m) = ρ' k (e m)) (n : ℕ) :
+    (equivariantRelativeCochainComplex R M Ad ρ H hρ).homologyπ n ≫
+        equivariantRelativeCohomologyMap (hρ := hρ) (hρ' := hρ') e φ f he hφ hAd hCoeff n =
+      cyclesMap (equivariantRelativeCochainComplexMap (hρ := hρ) (hρ' := hρ')
+          e φ f he hφ hAd hCoeff) n ≫
+        (equivariantRelativeCochainComplex R M' Ad' ρ' H' hρ').homologyπ n :=
+  HomologicalComplex.homologyπ_naturality _ _
+
+/-- Identity maps induce the identity on equivariant relative cohomology. -/
+@[simp]
+theorem equivariantRelativeCohomologyMap_id (n : ℕ) :
+    equivariantRelativeCohomologyMap (H := H) (H' := H) (hρ := hρ) (hρ' := hρ)
+        (LinearMap.id : M →ₗ[R] M) LieHom.id id (fun _ _ ↦ rfl) (fun _ hx ↦ hx)
+        (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) n =
+      𝟙 (equivariantRelativeCohomology R M Ad ρ H hρ n) := by
+  simp [equivariantRelativeCohomologyMap]
+
+/-- Equivariant relative cohomology maps respect composition in all three arguments. -/
+@[simp]
+theorem equivariantRelativeCohomologyMap_comp
+    (e' : M' →ₗ[R] M'') (ψ : L'' →ₗ⁅R⁆ L') {g : K'' → K'}
+    (he : ∀ (x : L') (m : M), e ⁅φ x, m⁆ = ⁅x, e m⁆)
+    (he' : ∀ (x : L'') (m : M'), e' ⁅ψ x, m⁆ = ⁅x, e' m⁆)
+    (hφ : ∀ x ∈ H', φ x ∈ H) (hψ : ∀ x ∈ H'', ψ x ∈ H')
+    (hAd : ∀ k x, φ (Ad' k x) = Ad (f k) (φ x))
+    (hAd' : ∀ k x, ψ (Ad'' k x) = Ad' (g k) (ψ x))
+    (hCoeff : ∀ k m, e (ρ (f k) m) = ρ' k (e m))
+    (hCoeff' : ∀ k m, e' (ρ' (g k) m) = ρ'' k (e' m)) (n : ℕ) :
+    equivariantRelativeCohomologyMap (hρ := hρ) (hρ' := hρ') e φ f he hφ hAd hCoeff n ≫
+      equivariantRelativeCohomologyMap (hρ := hρ') (hρ' := hρ'')
+        e' ψ g he' hψ hAd' hCoeff' n =
+      equivariantRelativeCohomologyMap (hρ := hρ) (hρ' := hρ'')
+        (e'.comp e) (φ.comp ψ) (f ∘ g) (fun x m ↦ by simp [he, he'])
+        (fun x hx ↦ hφ _ (hψ x hx)) (fun k x ↦ by simp [hAd, hAd'])
+        (fun k m ↦ by simp [hCoeff, hCoeff']) n := by
+  exact (homologyMap_comp _ _ n).symm.trans <|
+    congrArg (fun F ↦ homologyMap F n)
+      (equivariantRelativeCochainComplexMap_comp e' ψ he he' hφ hψ hAd hAd' hCoeff hCoeff')
 
 end Equivariant
 
