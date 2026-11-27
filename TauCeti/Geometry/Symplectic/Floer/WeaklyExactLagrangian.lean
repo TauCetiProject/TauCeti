@@ -60,8 +60,6 @@ needed. Weak exactness relative to a subset is natural under pullback
 
 * `TauCeti.IsWeaklyExactRel.mpullback`: weak exactness relative to a subset pulls back to its
   preimage.
-* `TauCeti.IsWeaklyExact.rectangleIntegral_mpullback_eq_of_isCap`: doubling a disc; for a weakly
-  exact `ψ`, a cap of `γ` has the same `f^* ψ`-integral as any cap of `f ∘ γ` has `ψ`-integral.
 * `TauCeti.SmoothTwoForm.rectangleIntegral_twistedProd`: the integral of a twisted product form
   over a map of the plane into `M × N` is the difference of the integrals over its components.
 * `TauCeti.SmoothTwoForm.rectangleIntegral_twistedProd_prodMk_const`,
@@ -157,24 +155,6 @@ theorem IsWeaklyExact.isWeaklyExactRel_iff_capArea_eq_zero [IsManifold I 1 M]
     · exact (hw.capArea_eq hφ hc.choose_spec).trans (h hc.choose_spec hγ)
     · exact capArea_of_not_exists_isCap hc,
     fun h _ _ hu hγ ↦ (hw.capArea_eq hφ hu).symm.trans (h _ hγ)⟩
-
-/-! ### Doubling discs -/
-
-/-- **Doubling a disc.** Let `ψ` be a continuous weakly exact form on `N` and `f : M → N` a `C²`
-map. For a cap `u₁` of a loop `γ` in `M` and a cap `u₂` of its image `f ∘ γ`, the integral of the
-pullback `f^* ψ` over `u₁` equals the integral of `ψ` over `u₂`: the discs `f ∘ u₁` and `u₂` cap
-the same loop of `N`, and glued along it they form a sphere. -/
-theorem IsWeaklyExact.rectangleIntegral_mpullback_eq_of_isCap {E' H' N : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
-    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {ψ : RoughForm J N F 2}
-    (hψ : IsSmoothForm J 0 ψ) (hw : IsWeaklyExact ψ) {f : M → N} (hf : ContMDiff I J 2 f)
-    {u₁ : ℝ × ℝ → M} {γ : ℝ → M} (hu₁ : IsCap I u₁ γ) {u₂ : ℝ × ℝ → N}
-    (hu₂ : IsCap J u₂ (f ∘ γ)) :
-    rectangleIntegral (TauCeti.mpullback I J f ψ) u₁ (0, 0) (1, 1) =
-      rectangleIntegral ψ u₂ (0, 0) (1, 1) := by
-  rw [rectangleIntegral_mpullback ψ (fun z _ ↦ hf.mdifferentiable two_ne_zero (u₁ z))
-    fun z _ ↦ hu₁.contMDiff.mdifferentiable two_ne_zero z]
-  exact hw.rectangleIntegral_eq_of_isCap hψ (hu₁.comp hf) hu₂
 
 section TwistedProd
 

@@ -87,6 +87,8 @@ action exactly when it has a `C²` cap.
   capped action from the cap.
 * `TauCeti.IsWeaklyExact.rectangleIntegral_eq_of_isCap`: for a weakly exact form, all caps of a
   loop have the same area.
+* `TauCeti.IsWeaklyExact.rectangleIntegral_mpullback_eq_of_isCap`: doubling a disc; for a weakly
+  exact `ψ`, a cap of `γ` has the same `f^* ψ`-integral as any cap of `f ∘ γ` has `ψ`-integral.
 * `TauCeti.IsWeaklyExact.capArea_eq_rectangleIntegral_add`: the cap areas of the two ends of a
   cylinder differ by the area of the cylinder.
 * `TauCeti.isWeaklyExact_mextDeriv`, `TauCeti.capArea_mextDeriv`: exact forms are weakly exact,
@@ -326,6 +328,23 @@ theorem IsWeaklyExact.rectangleIntegral_eq_of_isCap (hφ : IsSmoothForm I 0 φ)
     (hv.contMDiff.of_le one_le_two) fun t ↦ (hu.apply_zero t).trans (hv.apply_zero t).symm,
     sub_eq_zero] at hsphere
   exact hsphere.symm
+
+omit [IsManifold I 1 M] in
+/-- **Doubling a disc.** Let `ψ` be a continuous weakly exact form on `N` and `f : M → N` a `C²`
+map. For a cap `u₁` of a loop `γ` in `M` and a cap `u₂` of its image `f ∘ γ`, the integral of the
+pullback `f^* ψ` over `u₁` equals the integral of `ψ` over `u₂`: the discs `f ∘ u₁` and `u₂` cap
+the same loop of `N`, and glued along it they form a sphere. -/
+theorem IsWeaklyExact.rectangleIntegral_mpullback_eq_of_isCap {E' H' N : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {ψ : RoughForm J N F 2}
+    (hψ : IsSmoothForm J 0 ψ) (hw : IsWeaklyExact ψ) {f : M → N} (hf : ContMDiff I J 2 f)
+    {u₁ : ℝ × ℝ → M} {γ : ℝ → M} (hu₁ : IsCap I u₁ γ) {u₂ : ℝ × ℝ → N}
+    (hu₂ : IsCap J u₂ (f ∘ γ)) :
+    rectangleIntegral (TauCeti.mpullback I J f ψ) u₁ (0, 0) (1, 1) =
+      rectangleIntegral ψ u₂ (0, 0) (1, 1) := by
+  rw [rectangleIntegral_mpullback ψ (fun z _ ↦ hf.mdifferentiable two_ne_zero (u₁ z))
+    fun z _ ↦ hu₁.contMDiff.mdifferentiable two_ne_zero z]
+  exact hw.rectangleIntegral_eq_of_isCap hψ (hu₁.comp hf) hu₂
 
 /-- For a continuous weakly exact form, the cap area of a loop is the integral over any of its
 caps. -/
