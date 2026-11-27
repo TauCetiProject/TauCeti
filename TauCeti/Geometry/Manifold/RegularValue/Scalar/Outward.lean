@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
+public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Basic
 
 /-!
@@ -19,7 +20,9 @@ tangent vector `v` of the sublevel points outward (`TauCeti.IsOutwardPointing`) 
 increases along it, that is, when the derivative of the restriction of `f` to the sublevel is
 positive on `v` (`TauCeti.isOutwardPointing_scalarRegularSublevel_iff`). Read in `M` through the
 differential of the inclusion `j`, this says that `v` points outward exactly when `df(dj v) > 0`
-(`TauCeti.isOutwardPointing_scalarRegularSublevel_iff_mfderiv`).
+(`TauCeti.isOutwardPointing_scalarRegularSublevel_iff_mfderiv`). Since tangent vectors of the
+boundary point neither outward nor inward, `df(dj v) = 0` for each of them
+(`TauCeti.mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero`).
 
 For a band `f⁻¹([a, b])` between regular values `a < b`, with atlas
 `TauCeti.scalarRegularBandChartedSpace`, the derivative of `f` is negative on outward vectors at the
@@ -43,6 +46,8 @@ band, and a vector is outward exactly when the derivative of that coordinate is 
   vectors are those on which `df > 0`.
 * `TauCeti.isOutwardPointing_scalarRegularSublevel_iff_mfderiv`: the same criterion, with the
   derivative of `f` read in `M` through the differential of the inclusion.
+* `TauCeti.mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero`: tangent vectors of the
+  boundary of `{f ≤ a}` lie in the kernel of `df`, read in `M`.
 * `TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_left`: on the lower face of
   `f⁻¹([a, b])`, outward vectors are those on which `df < 0`.
 * `TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_right`: on the upper face of
@@ -108,6 +113,30 @@ theorem isOutwardPointing_scalarRegularSublevel_iff_mfderiv (hreg : IsRegularVal
     (hf.mdifferentiableAt one_ne_zero)
     ((contMDiff_subtypeVal_scalarRegularSublevel hreg hn le_rfl hf).mdifferentiableAt
       one_ne_zero) v))
+
+/-- **Tangent vectors of the boundary of a regular sublevel lie in the kernel of `df`.** At a
+boundary point `q` of the sublevel `{f ≤ a}`, `df(dj v) = 0` for every tangent vector `v` of the
+boundary, where `j` is the inclusion. -/
+theorem mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero
+    (hreg : IsRegularValue I 𝓘(ℝ) f a)
+    {q : letI := scalarRegularSublevelChartedSpace hf hreg hn
+      (𝓡∂ (n + 1)).boundary {x | f x ≤ a}}
+    {v : letI := scalarRegularSublevelChartedSpace hf hreg hn
+      TangentSpace (𝓡∂ (n + 1)) (q : {x | f x ≤ a})}
+    (hv : letI := scalarRegularSublevelChartedSpace hf hreg hn
+      haveI := isManifold_scalarRegularSublevel hreg hn le_rfl hf
+      v ∈ boundaryTangentSpace q) :
+    letI := scalarRegularSublevelChartedSpace hf hreg hn
+    mvfderiv I f q (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : {x | f x ≤ a} → M) q v) = 0 := by
+  let := scalarRegularSublevelChartedSpace hf hreg hn
+  have := isManifold_scalarRegularSublevel hreg hn le_rfl hf
+  have hq : f q = a :=
+    (Set.ext_iff.1 (boundary_scalarRegularSublevel hreg hn le_rfl hf) q).1 q.property
+  have hout := isOutwardPointing_scalarRegularSublevel_iff_mfderiv hf hn hreg hq
+  have h1 := mt (hout v).2 fun h ↦ h.notMem_boundaryTangentSpace hv
+  have h2 := mt (hout (-v)).2 fun h ↦ h.notMem_boundaryTangentSpace (neg_mem hv)
+  rw [map_neg, map_neg, neg_pos, not_lt] at h2
+  exact le_antisymm (not_lt.1 h1) h2
 
 section Band
 

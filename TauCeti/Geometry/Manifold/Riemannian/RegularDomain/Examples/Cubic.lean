@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Convexity.Basic
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.RegularValue
 import TauCeti.Geometry.Manifold.RegularValue.Scalar.Outward
 import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 
@@ -18,7 +19,8 @@ import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 
 In the Euclidean plane `ℝ²`, every value of `f(x, y) = x³ - y` is regular: `df(v) = 3x² v₀ - v₁`
 is onto. The region `M = {y ≥ x³} = {f ≤ 0}` is therefore a regular sublevel, a manifold with
-boundary `{y = x³}` (`TauCeti.cubicEpigraph`, with the atlas `TauCeti.cubicEpigraphChartedSpace`),
+boundary `{y = x³}` (`TauCeti.cubicEpigraph`, with the atlas `TauCeti.cubicEpigraphChartedSpace`;
+`TauCeti.boundary_cubicEpigraph`),
 with the metric pulled back along the
 inclusion `j : M → ℝ²`. Since `Hess f(v, w) = 6x v₀ w₀`, the second fundamental form of the
 boundary at `q = (x, x³)` is
@@ -127,6 +129,14 @@ theorem isManifold_cubicEpigraph :
   isManifold_scalarRegularSublevel (isRegularValue_cubicSub 0)
     (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2)) ENat.LEInfty.out (contMDiff_cubicSub (k := ∞))
 
+/-- The boundary of the region above the cubic is the cubic `y = x³`, the level `x³ - y = 0`. -/
+theorem boundary_cubicEpigraph :
+    letI := cubicEpigraphChartedSpace
+    (𝓡∂ (1 + 1)).boundary cubicEpigraph =
+      {q : cubicEpigraph | (q : ℝ²) 0 ^ (3 : ℕ) - (q : ℝ²) 1 = 0} :=
+  boundary_scalarRegularSublevel (isRegularValue_cubicSub 0)
+    (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2)) le_rfl (contMDiff_cubicSub (k := 1))
+
 /-- The metric of the region above the cubic pulled back along the inclusion
 (`TauCeti.scalarRegularSublevelMetric`), as a Riemannian bundle structure. -/
 abbrev cubicEpigraphRiemannianBundle :
@@ -154,16 +164,6 @@ theorem isContMDiffRiemannianBundle_cubicEpigraph :
       (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2))).inner,
     (scalarRegularSublevelMetric (contMDiff_cubicSub (k := ∞)) (isRegularValue_cubicSub 0)
       (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2))).contMDiff, fun _ _ _ ↦ rfl⟩
-
-/-- The gradient of `f(x, y) = x³ - y` never vanishes. -/
-private theorem norm_mgradient_cubicSub_pos (p : ℝ²) :
-    0 < ‖Manifold.mgradient 𝓘(ℝ, ℝ²)
-      (fun p : ℝ² ↦ p 0 ^ (3 : ℕ) - p 1) p‖ := by
-  refine norm_pos_iff.2 fun h ↦ ?_
-  have h1 := Manifold.inner_mgradient_model_space
-    (fun p : ℝ² ↦ p 0 ^ (3 : ℕ) - p 1) p (EuclideanSpace.single 1 (-1))
-  rw [h, inner_zero_left, (hasFDerivAt_cubicSub p).fderiv] at h1
-  simp at h1
 
 /-- **The second fundamental form of the cubic `y = x³`** bounding the region above it, at
 `q = (x, x³)`: `II_q(u, w) = 6x (dj dι u)₀ (dj dι w)₀ / |grad f|` for `f(x, y) = x³ - y`. -/
@@ -212,24 +212,13 @@ theorem proj_one_mfderiv_cubicEpigraph
           (Subtype.val : (𝓡∂ (1 + 1)).boundary cubicEpigraph → cubicEpigraph) q u)) := by
   let := cubicEpigraphChartedSpace
   have := isManifold_cubicEpigraph
-  have hq : (q : ℝ²) 0 ^ (3 : ℕ) - (q : ℝ²) 1 = 0 :=
-    (Set.ext_iff.1 (boundary_scalarRegularSublevel (isRegularValue_cubicSub 0)
-      (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2)) le_rfl (contMDiff_cubicSub (k := 1))) q).1
-      q.property
-  set v := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) (𝓡∂ (1 + 1))
-    (Subtype.val : (𝓡∂ (1 + 1)).boundary cubicEpigraph → cubicEpigraph) q u
-  have hT : v ∈ boundaryTangentSpace q := mfderiv_subtypeVal_mem_boundaryTangentSpace q u
-  have hout := fun w ↦ isOutwardPointing_scalarRegularSublevel_iff_mfderiv
+  have h0 := mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero
     (contMDiff_cubicSub (k := 1)) (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2))
-    (isRegularValue_cubicSub 0) hq w
-  have h1 := mt (hout v).2 fun h ↦ h.notMem_boundaryTangentSpace hT
-  have h2 := mt (hout (-v)).2 fun h ↦ h.notMem_boundaryTangentSpace (neg_mem hT)
-  rw [map_neg, map_neg, neg_pos, not_lt] at h2
-  have h0 := le_antisymm h2 (not_lt.1 h1)
+    (isRegularValue_cubicSub 0) (mfderiv_subtypeVal_mem_boundaryTangentSpace q u)
   rw [mvfderiv_eq_fderiv_apply, (hasFDerivAt_cubicSub _).fderiv] at h0
   have key : ∀ a : ℝ²,
       ((3 * (q : ℝ²) 0 ^ 2) • π₀ - π₁) a = 3 * (q : ℝ²) 0 ^ 2 * π₀ a - π₁ a := fun a ↦ by simp
-  have h3 := h0.trans (key _)
+  have h3 := h0.symm.trans (key _)
   linarith
 
 /-- A nonzero tangent vector of the cubic `y = x³` has nonzero first coordinate. -/
@@ -305,7 +294,8 @@ theorem isConvexAt_cubicEpigraph_iff
   let := cubicEpigraphRiemannianBundle
   have := isContMDiffRiemannianBundle_cubicEpigraph
   obtain ⟨b, hb, h⟩ := exists_boundarySecondFundamentalForm_cubicEpigraph_eq_mul q
-  rw [isConvexAt_iff_of_eq_mul hb h, le_div_iff₀ (norm_mgradient_cubicSub_pos _), zero_mul,
+  rw [isConvexAt_iff_of_eq_mul hb h, le_div_iff₀ (norm_pos_iff.2
+    ((isRegularValue_cubicSub _).isRegularPoint rfl).mgradient_ne_zero), zero_mul,
     mul_nonneg_iff_of_pos_left (by norm_num)]
 
 /-- **Strict convexity of the cubic `y = x³`.** The boundary of the region above the cubic is
@@ -323,8 +313,9 @@ theorem isStrictlyConvexAt_cubicEpigraph_iff
   let := cubicEpigraphRiemannianBundle
   have := isContMDiffRiemannianBundle_cubicEpigraph
   obtain ⟨b, hb, h⟩ := exists_boundarySecondFundamentalForm_cubicEpigraph_eq_mul q
-  rw [isStrictlyConvexAt_iff_of_eq_mul hb h, div_pos_iff_of_pos_right
-    (norm_mgradient_cubicSub_pos _), mul_pos_iff_of_pos_left (by norm_num)]
+  rw [isStrictlyConvexAt_iff_of_eq_mul hb h, div_pos_iff_of_pos_right (norm_pos_iff.2
+    ((isRegularValue_cubicSub _).isRegularPoint rfl).mgradient_ne_zero),
+    mul_pos_iff_of_pos_left (by norm_num)]
 
 /-- **Convexity is not an open condition.** The set of points of the cubic `y = x³` at which the
 boundary of the region above it is convex is `{x ≥ 0}`, which is not open in the boundary: the
@@ -345,13 +336,12 @@ theorem not_isOpen_setOf_isConvexAt_cubicEpigraph :
       sub_neg_eq_add]
     exact le_of_eq (by ring)
   have hbd : ∀ t : ℝ,
-      (⟨!₂[-t, -t ^ 3], hmem t⟩ : cubicEpigraph) ∈ (𝓡∂ (1 + 1)).boundary cubicEpigraph := fun t ↦
-    (Set.ext_iff.1 (boundary_scalarRegularSublevel (isRegularValue_cubicSub 0)
-      (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2)) le_rfl (contMDiff_cubicSub (k := 1))) _).2
-      (by
-        simp only [mem_ofPred_eq, Matrix.cons_val_zero, Matrix.cons_val_one,
-          Matrix.cons_val_fin_one, sub_neg_eq_add]
-        ring)
+      (⟨!₂[-t, -t ^ 3], hmem t⟩ : cubicEpigraph) ∈ (𝓡∂ (1 + 1)).boundary cubicEpigraph := by
+    intro t
+    rw [boundary_cubicEpigraph, mem_ofPred_eq]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one, sub_neg_eq_add]
+    ring
   let γ : ℝ → (𝓡∂ (1 + 1)).boundary cubicEpigraph := fun t ↦ ⟨⟨!₂[-t, -t ^ 3], hmem t⟩, hbd t⟩
   have hγ : Continuous γ := by
     refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
