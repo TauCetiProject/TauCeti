@@ -12,7 +12,9 @@ public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
+import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.Separation.Basic
 
 /-!
@@ -65,15 +67,39 @@ disc `‖w‖ ≤ 2 exp (2π)`, as along the associativity path (`TauCeti.Floer.
   with compact support in the sphere has integrable `W^{1,2}` energy density in the chart `ψ_i` of
   every input end and in the chart `φ'_∞` of the output end.
 
+The formal adjoint `D_u^*`, whose kernel is the cokernel of `D_u`, satisfies the same estimate for
+covector fields `η`, read on the ends as `(0, 1)`-forms `η'_e` (`TauCeti.Floer.covectorPullback`),
+with the `L²` norm of `D_u^* η` weighted by a weight `w` that is continuous and positive on the
+sphere:
+
+`∑_i ∫_{(T, ∞) × [0, 1]} (‖∂s η'_i‖² + ‖∂t η'_i‖² + ‖η'_i‖²)`
+`  + ∫_{(T, ∞) × [0, 1]} (‖∂s η'_∞‖² + ‖∂t η'_∞‖² + ‖η'_∞‖²)`
+`  + ∫_{Σ_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ w ‖D_u^* η‖² + ∫_{Σ_{T + 1}} ‖η‖²)`.
+
+The patching theorem
+`exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_of_movingEnds_of_ends`
+puts it together from estimates of `D_u^*` on the ends, against the weight `w`, and the `L²`
+estimate of the adjoint on compact parts of the domain
+(`exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add`), with
+the same cutoffs as for `D_u`. The estimate for the datum
+`TauCeti.Floer.puncturedSpherePerturbation c a H Hout` is
+`exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_add_of_movingEnds`.
+Its end estimates, from `TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.EndEstimate`,
+carry the Jacobian weights `|p - c i|²` of the input end charts and `|p|²` of the output end
+chart, at a point `p` of the plane, so the weight `w` is required to dominate them far out on the
+ends. For a conformal weight `ρ` with `ρ(p) |p - c i|² ≤ K` and `ρ(p) |p|² ≤ K` far out on the
+respective ends, `w = K ρ⁻¹` is such a weight.
+
 The patching (the cutoffs, the end and core pieces and their estimates, and the patching at one
 height) follows the proof for the pair of pants of
-`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_ends` in
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_ends`, and
+its counterpart for the formal adjoint, in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`, adapted to moving ends. The steps
 that do not depend on the domain are shared with it through
 `TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching`.
 
-The target is a symplectic vector space. The Sobolev realization of `D_u`, the estimate of its
-formal adjoint and the Fredholm index are not treated here.
+The target is a symplectic vector space. The Sobolev realization of `D_u`, the finiteness of its
+cokernel and the Fredholm index are not treated here.
 
 ## References
 
@@ -138,6 +164,13 @@ private theorem movingEndCoord_movingEndChart (ha : ∀ i, a i ≠ 0) (e : Optio
     simp only [movingEndCoord, movingEndChart, equivRealProdCLM_symm_realChart,
       add_sub_cancel_left, mul_div_cancel_left₀ _ (ha i), re_endCoord_cylindricalEndLift]
     simp [Complex.equivRealProdCLM_symm_apply]
+
+/-- The chart of an end is smooth. -/
+private theorem contDiff_movingEndChart (e : Option ι) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (movingEndChart c a e) := by
+  cases e with
+  | none => exact contDiff_positiveEndChart inf n
+  | some i => exact contDiff_realChart (by fun_prop)
 
 /-- On the output end, the longitudinal coordinate of a point of the disc `‖w‖ ≤ 2 exp (2πr)`,
 `r ≥ 0`, is at most `r`. -/
@@ -289,16 +322,36 @@ private theorem integrableOn_sobolevDensity_comp_movingEndChart (ha : ∀ i, a i
     {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ)
     (hξU : tsupport ξ ⊆ movingEndsDomain c) (e : Option ι) (b : ℝ) :
     IntegrableOn (sobolevDensity (ξ ∘ movingEndChart c a e)) (Ioi b ×ˢ Icc 0 1) := by
-  have hψ : ContDiff ℝ 1 (movingEndChart c a e) := by
-    cases e with
-    | none => exact contDiff_positiveEndChart inf 1
-    | some i => exact contDiff_realChart (by fun_prop)
   obtain ⟨N, hN⟩ := exists_forall_movingEndCoord_le ha hξc.isCompact hξU e
   refine integrableOn_sobolevDensity_of_eventuallyEq_zero
-    (continuous_sobolevDensity (hξ.comp hψ)) (N := N) (fun ζ hζ ↦ ?_) b
+    (continuous_sobolevDensity (hξ.comp (contDiff_movingEndChart e))) (N := N) (fun ζ hζ ↦ ?_) b
   filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
   rw [Pi.zero_apply, Function.comp_apply]
   refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
+  have := hN _ h
+  rw [movingEndCoord_movingEndChart ha] at this
+  exact (lt_irrefl _) (hζ'.trans_le this)
+
+omit [FiniteDimensional ℝ V] in
+/-- If `J` is `C¹` along `u` and `u` is `C¹` on the sphere, a `C¹` covector field with compact
+support in the sphere has integrable `W^{1,2}` energy density in the chart of every end, read as the
+pulled-back form, over every half-cylinder `(b, ∞) × [0, 1]`: it vanishes far out on the end. -/
+private theorem integrableOn_sobolevDensity_covectorPullback_movingEndChart (ha : ∀ i, a i ≠ 0)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hu : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η) (hηU : tsupport η ⊆ movingEndsDomain c)
+    (e : Option ι) (b : ℝ) :
+    IntegrableOn (sobolevDensity (covectorPullback (movingEndChart c a e) J u η))
+      (Ioi b ×ˢ Icc 0 1) := by
+  obtain ⟨N, hN⟩ := exists_forall_movingEndCoord_le ha hηc.isCompact hηU e
+  refine integrableOn_sobolevDensity_of_eventuallyEq_zero
+    (continuous_sobolevDensity_covectorPullback (contDiff_movingEndChart e) hJ hu hη hηU)
+    (N := N) (fun ζ hζ ↦ ?_) b
+  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
+  rw [Pi.zero_apply]
+  refine covectorPullback_eq_zero_of_apply_eq_zero _ J u
+    (image_eq_zero_of_notMem_tsupport fun h ↦ ?_)
   have := hN _ h
   rw [movingEndCoord_movingEndChart ha] at this
   exact (lt_irrefl _) (hζ'.trans_le this)
@@ -556,25 +609,33 @@ private theorem contDiff_movingCoreCutoff_smul (ha : ∀ i, a i ≠ 0) {R₀ : �
     (isOpen_movingEndsDomain c) hξU
 
 omit [Fintype ι] [FiniteDimensional ℝ V] in
-/-- **The end piece.** Beyond `R₀ + 1` on the end `e`, a section agrees with its cut-off `β_e ξ`,
-so its energy there is at most the energy of `β_e ξ` on the end beyond `2`. -/
-private theorem setIntegral_sobolevDensity_comp_movingEndChart_le [Finite ι] (ha : ∀ i, a i ≠ 0)
-    {R₀ : ℝ} (hR₀ : 1 ≤ R₀) (e : Option ι) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ)
-    (hξc : HasCompactSupport ξ) (hξU : tsupport ξ ⊆ movingEndsDomain c) :
-    ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ movingEndChart c a e) ζ ≤
+/-- **The end piece.** Let `G ξ` be a field `ξ` read on the end `e`, such that multiplying `ξ` by a
+function `f` multiplies `G ξ` by `f ∘ ψ_e`, and such that `G ξ` has integrable energy beyond the
+height `2` for every `C¹` field `ξ` with compact support in the sphere. Beyond `R₀ + 1` on the end
+`e`, a field agrees with its cut-off `β_e ξ`, so the energy of `G ξ` there is at most the energy of
+`G (β_e ξ)` on the end beyond `2`. -/
+private theorem setIntegral_sobolevDensity_le_movingEndCutoff [Finite ι] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (ha : ∀ i, a i ≠ 0) {R₀ : ℝ} (hR₀ : 1 ≤ R₀)
+    (e : Option ι) {G : (ℝ × ℝ → V) → ℝ × ℝ → F}
+    (hG : ∀ (f : ℝ × ℝ → ℝ) (ξ : ℝ × ℝ → V) ζ,
+      G (fun z ↦ f z • ξ z) ζ = f (movingEndChart c a e ζ) • G ξ ζ)
+    (hGI : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → HasCompactSupport ξ →
+      tsupport ξ ⊆ movingEndsDomain c → IntegrableOn (sobolevDensity (G ξ)) (Ioi 2 ×ˢ Icc 0 1))
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
+    (hξU : tsupport ξ ⊆ movingEndsDomain c) :
+    ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (G ξ) ζ ≤
       ∫ ζ in Ioi 2 ×ˢ Icc (0 : ℝ) 1,
-        sobolevDensity ((fun z ↦ movingEndCutoff c a R₀ e z • ξ z) ∘ movingEndChart c a e) ζ := by
+        sobolevDensity (G fun z ↦ movingEndCutoff c a R₀ e z • ξ z) ζ := by
   have hβξ := contDiff_movingEndCutoff_smul ha (R₀ := R₀) (by linarith) e hξ hξU
   calc _ = ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1,
-        sobolevDensity ((fun z ↦ movingEndCutoff c a R₀ e z • ξ z) ∘ movingEndChart c a e) ζ := by
+        sobolevDensity (G fun z ↦ movingEndCutoff c a R₀ e z • ξ z) ζ := by
         refine setIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
         refine (sobolevDensity_congr_of_eventuallyEq ?_).symm
         filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ.1] with ζ' hζ'
-        rw [Function.comp_apply, Function.comp_apply, movingEndCutoff_eq_one
+        rw [hG, movingEndCutoff_eq_one
           (by rw [movingEndCoord_movingEndChart ha]; exact le_of_lt hζ'), one_smul]
-    _ ≤ _ := setIntegral_mono_set (integrableOn_sobolevDensity_comp_movingEndChart ha
-        (hβξ.of_le one_le_two) (hξc.mono (support_smul_subset_right _ ξ))
-        ((tsupport_smul_subset_right _ _).trans hξU) e 2)
+    _ ≤ _ := setIntegral_mono_set (hGI (hβξ.of_le one_le_two)
+        (hξc.mono (support_smul_subset_right _ ξ)) ((tsupport_smul_subset_right _ _).trans hξU))
         (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)
         (.of_forall fun _ hζ ↦ prod_mono (Ioi_subset_Ioi (by linarith)) subset_rfl hζ)
 
@@ -615,7 +676,10 @@ private theorem setIntegral_sobolevDensity_comp_movingEndChart_le_of_end [Finite
     hM hB hξ hξc hξU
   have hD₀ : 0 ≤ ∫ z, ‖ω.floerLinearization J Ks Kt u
       (fun w ↦ movingEndCutoff c a R₀ e w • ξ w) z‖ ^ 2 := integral_nonneg fun _ ↦ sq_nonneg _
-  refine (setIntegral_sobolevDensity_comp_movingEndChart_le ha hR₀.le e hξ hξc hξU).trans <|
+  refine (setIntegral_sobolevDensity_le_movingEndCutoff ha hR₀.le e
+    (G := fun ξ ↦ ξ ∘ movingEndChart c a e) (fun _ _ _ ↦ rfl)
+    (fun _ hθ hθc hθU ↦ integrableOn_sobolevDensity_comp_movingEndChart ha hθ hθc hθU e 2) hξ hξc
+    hξU).trans <|
     (hend hβξ (hξc.mono (support_smul_subset_right _ ξ))
       (tsupport_movingEndCutoff_smul_subset ha (by linarith) hRe hξU)).trans ?_
   exact (mul_le_mul_of_nonneg_right (le_max_left _ _) hD₀).trans
@@ -695,6 +759,146 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
       (tsupport_movingCoreCutoff_smul_subset ha hsep hout hR₀.le hξU)).trans (by gcongr)
   -- Summing the pieces.
   exact sum_add_le_mul_add (fun e ↦ le_max_right _ _) hC₀ hX hY hends hcore
+
+/-! ### The formal adjoint on cut-off covector fields -/
+
+omit [Fintype ι] in
+/-- **The end estimate of the adjoint on a cut-off covector field.** If `D_u^*` controls the energy
+of the pulled-back form on the end `e` in its chart, against a weight `w`, for covector fields
+supported beyond the height `Re < R₀`, then the energy of the pulled-back form of a covector field
+beyond `R₀ + 1` on that end is controlled by the `w`-weighted norm of `D_u^* η` and by `η` on
+`Σ_{R₀ + 1}`, through the cut-off field `β_e η`; here `M` bounds the derivative of `β_e`, `B` bounds
+`J` along `u` and `Λ` bounds `w` on `Σ_{R₀ + 1}`. -/
+private theorem setIntegral_sobolevDensity_covectorPullback_movingEndChart_le_of_end [Finite ι]
+    (ω : SymplecticForm V) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π))
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 u z) {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z)
+    (hwc : ContinuousOn w (movingEndsDomain c)) {R₀ : ℝ} (hR₀ : 1 < R₀) (e : Option ι)
+    {Ce Re : ℝ} (hRe : Re < R₀)
+    (hend : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ movingEndChart c a e '' (Ioi Re ×ˢ univ) →
+      ∫ ζ in Ioi 2 ×ˢ Icc (0 : ℝ) 1,
+          sobolevDensity (covectorPullback (movingEndChart c a e) J u η) ζ ≤
+        Ce * ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2)
+    {M B Λ : ℝ}
+    (hM : ∀ z ∈ movingEndsTruncation c a (R₀ + 1), ‖fderiv ℝ (movingEndCutoff c a R₀ e) z‖ ≤ M)
+    (hB : ∀ z ∈ movingEndsTruncation c a (R₀ + 1), ‖J z (u z)‖ ≤ B) (hΛ₀ : 0 ≤ Λ)
+    (hΛ : ∀ z ∈ movingEndsTruncation c a (R₀ + 1), w z ≤ Λ) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) (hηU : tsupport η ⊆ movingEndsDomain c) :
+    ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1,
+        sobolevDensity (covectorPullback (movingEndChart c a e) J u η) ζ ≤
+      max Ce 0 * (2 * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
+        2 * (M * (1 + B)) ^ 2 * Λ * ∫ z in movingEndsTruncation c a (R₀ + 1), ‖η z‖ ^ 2) := by
+  have hβη := contDiff_movingEndCutoff_smul ha (R₀ := R₀) (by linarith) e hη hηU
+  have hD := ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
+    (isOpen_movingEndsDomain c) hJ hKs hKt hu (isCompact_movingEndsTruncation c a _)
+    (fun z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e hz)
+    (fun z _ ↦ abs_le.2 ⟨by linarith [movingEndCutoff_nonneg (c := c) (a := a) R₀ e z],
+      movingEndCutoff_le_one R₀ e z⟩)
+    (fun z hz ↦ mem_movingEndsTruncation_of_fderiv_movingEndCutoff_ne_zero ha hsep hout hR₀ hz)
+    hM hB hw hwc hΛ₀ hΛ hη hηc hηU
+  have hD₀ : 0 ≤ ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u
+      (fun z ↦ movingEndCutoff c a R₀ e z • η z) z‖ ^ 2 :=
+    integral_nonneg fun z ↦ mul_nonneg (hw z) (sq_nonneg _)
+  refine (setIntegral_sobolevDensity_le_movingEndCutoff ha hR₀.le e
+    (G := covectorPullback (movingEndChart c a e) J u) (covectorPullback_fun_smul _ J u)
+    (fun _ hθ hθc hθU ↦
+      integrableOn_sobolevDensity_covectorPullback_movingEndChart ha hJ hu hθ hθc hθU e 2)
+    hη hηc hηU).trans <|
+    (hend hβη (hηc.smul_left (f := movingEndCutoff c a R₀ e))
+      (tsupport_movingEndCutoff_smul_subset ha (by linarith) hRe hηU)).trans ?_
+  exact (mul_le_mul_of_nonneg_right (le_max_left _ _) hD₀).trans
+    (mul_le_mul_of_nonneg_left hD (le_max_right _ _))
+
+/-- **Patching the adjoint at one height.** If the formal adjoint `D_u^*` controls the energy of
+the pulled-back form on every end `e` in its chart, against a weight `w` that is continuous and
+positive on the sphere, for covector fields supported beyond the height `R e`, then for every
+height `R₀ > 1` above the `R e`, the energy of a covector field beyond `R₀ + 1` on the ends and on
+the truncation `Σ_{R₀}` is controlled by the `w`-weighted norm of `D_u^* η` and by `η` on
+`Σ_{R₀ + 1}`. -/
+private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_adjoint_aux
+    (ω : SymplecticForm V) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 u z)
+    (hc : ∀ z ∈ movingEndsDomain c, ω.Compatible (J z (u z))) {w : ℝ × ℝ → ℝ}
+    (hw : ∀ z, 0 ≤ w z) (hwc : ContinuousOn w (movingEndsDomain c))
+    (hwU : ∀ z ∈ movingEndsDomain c, 0 < w z) {C R : Option ι → ℝ}
+    (hend : ∀ e ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ movingEndChart c a e '' (Ioi (R e) ×ˢ univ) →
+      ∫ ζ in Ioi 2 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (movingEndChart c a e)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        C e * ∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2)
+    {R₀ : ℝ} (hR₀ : 1 < R₀) (hR : ∀ e, R e < R₀) :
+    ∃ C', 0 ≤ C' ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ movingEndsDomain c →
+      (∑ e, ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+          (movingEndChart c a e) (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+          ∫ z in movingEndsTruncation c a R₀, sobolevDensity η z ≤
+        C' * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+          ∫ z in movingEndsTruncation c a (R₀ + 1), ‖η z‖ ^ 2) := by
+  set K := movingEndsTruncation c a (R₀ + 1)
+  have hK : IsCompact K := isCompact_movingEndsTruncation c a _
+  have hKU : K ⊆ movingEndsDomain c := movingEndsTruncation_subset ha _
+  set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
+  -- Bounds on `K` for `J` along `u`, for the derivatives of the cutoffs, and for `w` and `w⁻¹`.
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J' z (u z))
+    fun z hz ↦ ((hJ z (hKU hz)).continuousAt.comp₂ continuousAt_id
+      (hu z (hKU hz)).continuousAt).continuousWithinAt
+  obtain ⟨M, hMe, hMc⟩ := hK.exists_forall_norm_fderiv_le
+    (fun e z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e (hKU hz))
+    fun z hz ↦ fderiv_movingCoreCutoff ha (by linarith) (hKU hz)
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := hK.exists_forall_le_and_one_le_mul_of_continuousOn (hwc.mono hKU)
+    fun z hz ↦ hwU z (hKU hz)
+  -- The estimate on the compact core `K`.
+  obtain ⟨C₀, hC₀, hint⟩ :=
+    ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK
+      (fun z hz ↦ hJ z (hKU hz)) (fun z hz ↦ hKs z (hKU hz)) (fun z hz ↦ hKt z (hKU hz))
+      (fun z hz ↦ hu z (hKU hz)) (fun z hz ↦ hc z (hKU hz))
+  set c' := M * (1 + B)
+  refine ⟨∑ e, max (C e) 0 * (2 + 2 * c' ^ 2 * Λ) + C₀ * Λ * (2 + 2 * c' ^ 2 * Λ) + C₀,
+    by positivity, fun η hη hηc hηU ↦ ?_⟩
+  set X := ∫ z, w z * ‖ω.floerLinearizationAdjoint J' Ks Kt u η z‖ ^ 2
+  set Y := ∫ z in K, ‖η z‖ ^ 2
+  have hX : 0 ≤ X := integral_nonneg fun z ↦ mul_nonneg (hw z) (sq_nonneg _)
+  have hY : 0 ≤ Y := setIntegral_nonneg hK.measurableSet fun _ _ ↦ sq_nonneg _
+  -- The ends and the core, through their cutoffs.
+  have hends (e : Option ι) :=
+    ω.setIntegral_sobolevDensity_covectorPullback_movingEndChart_le_of_end (J := J') ha hsep hout
+      hJ hKs hKt hu hw hwc hR₀ e (hR e) (hend e) (hMe e) hB hΛ₀ (fun z hz ↦ (hΛ z hz).1) hη hηc
+      hηU
+  have hcore : ∫ z in movingEndsTruncation c a R₀, sobolevDensity η z ≤
+      C₀ * (Λ * (2 * X + 2 * c' ^ 2 * Λ * Y) + Y) :=
+    (ω.setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_smul_add
+      (J := J') (isOpen_movingEndsDomain c) hJ hKs hKt hu
+      (isCompact_movingEndsTruncation c a R₀).measurableSet hK
+      (movingEndsTruncation_mono c a (by linarith)) hKU
+      (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz)
+      (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le (hKU hz))
+      (fun z hz ↦ movingCoreCutoff_eq_one_and_fderiv_eq_zero ha hR₀.le hz) hw hwc hΛ₀
+      (fun z hz ↦ (hΛ z hz).2) hC₀ hint hη hηU
+      (by simpa only [K] using tsupport_movingCoreCutoff_smul_subset ha hsep hout hR₀.le hηU)).trans
+      (by gcongr; exact ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le (J := J')
+            (isOpen_movingEndsDomain c) hJ hKs hKt hu hK
+            (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz)
+            (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le hz)
+            (fun z hz ↦
+              mem_movingEndsTruncation_of_fderiv_movingCoreCutoff_ne_zero ha hsep hout hR₀ hz)
+            hMc hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) hη hηc hηU)
+  -- Summing the pieces.
+  exact sum_add_le_mul_add_of_weight (fun e ↦ le_max_right _ _) hC₀ hΛ₀ hX hY hends hcore
 
 /-! ### The semi-Fredholm estimate -/
 
@@ -890,6 +1094,263 @@ exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization
       (fun z hz ↦ contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz _ 1)
       (fun z hz ↦ contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz _
         Complex.I) hu hc hend hendOut
+
+/-! ### The semi-Fredholm estimate of the formal adjoint -/
+
+/-- **Patching end estimates into the semi-Fredholm estimate of the formal adjoint on a sphere with
+moving input ends.** Let the discs `‖w - c i‖ < ‖a i‖ / 2` of the input ends be pairwise disjoint
+and lie in the disc `‖w‖ ≤ 2 exp (2π)`, with nonzero scales. Let `J(z)` be compatible along `u` on
+the sphere minus the centers `c i`, with `J` `C¹` and `K_s`, `K_t` `C²` at the points `(z, u z)`,
+and `u` `C¹` there, and let `w ≥ 0` be a weight that is continuous and positive there. Suppose that
+on each end the formal adjoint `D_u^*` of the linearized Floer operator controls the energy of
+covector fields read in the chart of the end: on the input end `i`, read in the chart
+`ψ_i = realChart (z ↦ c i + a i φ₀(z))`, every `C²` covector field `η` with compact support in
+`ψ_i ((R i, ∞) × ℝ)` satisfies
+`∫_{(2, ∞) × [0, 1]} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) ≤ C i ∫ w ‖D_u^* η‖²`, where
+`η' = η (ψ_i ·) ∘ (a + b J)` is `η` read in the chart as a `(0, 1)`-form
+(`TauCeti.Floer.covectorPullback`), and likewise on the output end in the chart `φ'_∞` beyond
+`Rout`, with the constant `Cout`. Then there are `C ≥ 0` and `T ≥ 2` such that every `C²` covector
+field `η` with compact support in the sphere minus the centers satisfies
+
+`∑_i ∫_{(T, ∞) × [0, 1]} (‖∂s η'_i‖² + ‖∂t η'_i‖² + ‖η'_i‖²)`
+`  + ∫_{(T, ∞) × [0, 1]} (‖∂s η'_∞‖² + ‖∂t η'_∞‖² + ‖η'_∞‖²)`
+`  + ∫_{Σ_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ w ‖D_u^* η‖² + ∫_{Σ_{T + 1}} ‖η‖²)`,
+
+where `η'_i` and `η'_∞` are `η` read in the charts `ψ_i` and `φ'_∞`, and `Σ_T` is the truncation
+`TauCeti.ThricePuncturedSphere.puncturedSphereTruncation c a T`. This is the counterpart for the
+formal adjoint of
+`exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearization_add_of_movingEnds_of_ends`.
+-/
+theorem
+  exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_of_movingEnds_of_ends
+    (ω : SymplecticForm V) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
+      ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
+      ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → ContDiffAt ℝ 1 u z)
+    (hc : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
+      ω.Compatible (J z (u z)))
+    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z)
+    (hwc : ContinuousOn w {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i})
+    (hwU : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → 0 < w z) {C R : ι → ℝ}
+    (hend : ∀ i ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆
+        realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) '' (Ioi (R i) ×ˢ univ) →
+      ∫ ζ in Ioi 2 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+          (realChart fun z ↦ c i + a i * zero.cylindricalEndLift z)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        C i * ∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2)
+    {Cout Rout : ℝ}
+    (hendOut : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ positiveEndChart inf '' (Ioi Rout ×ˢ univ) →
+      ∫ ζ in Ioi 2 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart inf)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        Cout * ∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) :
+    ∃ C', 0 ≤ C' ∧ ∃ T, 2 ≤ T ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      HasCompactSupport η → tsupport η ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} →
+      (∑ i, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+          (realChart fun z ↦ c i + a i * zero.cylindricalEndLift z)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        (∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart inf)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T,
+          sobolevDensity η z ≤
+        C' * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a (T + 1),
+            ‖η z‖ ^ 2) := by
+  -- Index the ends by `Option ι`, with `none` the output end.
+  let Ce : Option ι → ℝ := fun e ↦ e.elim Cout C
+  let Re : Option ι → ℝ := fun e ↦ e.elim Rout R
+  have hend' (e : Option ι) ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄ (hη : ContDiff ℝ 2 η)
+      (hηc : HasCompactSupport η)
+      (hηR : tsupport η ⊆ movingEndChart c a e '' (Ioi (Re e) ×ˢ univ)) :
+      ∫ ζ in Ioi 2 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (movingEndChart c a e)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        Ce e * ∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 := by
+    cases e with
+    | none => exact hendOut hη hηc hηR
+    | some i => exact hend i hη hηc hηR
+  obtain ⟨C', hC', T, hT, hest⟩ := exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
+    (K := movingEndsTruncation c a) (isCompact_movingEndsTruncation c a)
+    (fun _ _ h ↦ movingEndsTruncation_mono c a h) (r := 2) (S := movingEndsDomain c) (R := Re)
+    (G := fun e η ↦ covectorPullback (movingEndChart c a e)
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) fun _ hR₀ hR ↦
+      ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_adjoint_aux ha hsep hout hJ
+        hKs hKt hu hc hw hwc hwU hend' (by linarith) hR
+  refine ⟨C', hC', T, hT, fun η hη hηc hηU ↦ ?_⟩
+  have h := hest hη hηc hηU
+  rw [Fintype.sum_option] at h
+  simp only [movingEndChart, movingEndsTruncation] at h
+  linarith
+
+/-- **The semi-Fredholm estimate of the formal adjoint on a sphere with moving input ends.** Let
+the discs `‖w - c i‖ < ‖a i‖ / 2` of the input ends be pairwise disjoint and lie in the disc
+`‖w‖ ≤ 2 exp (2π)`, with nonzero scales, and let the Hamiltonians `H i` and `Hout` be jointly `C²`
+of period one. For each input end `i`, let `x i` be an orbit of `H i` starting at a nondegenerate
+fixed point of its time-one map and let `J_e i` be a `C²` family of almost complex structures
+compatible along `x i`; for the output end, let `x_out` and `J_out` be the same data for the
+Hamiltonian `H'(t, y) = -Hout(-t, y)` of the output end read in its positive end chart. Let `J`
+be `J_e i (t)` beyond `s = 2` in the chart `ψ_i = realChart (z ↦ c i + a i φ₀(z))` of each input
+end and `J_out (t)` beyond `s = 2` in the positive end chart `φ'_∞` of the output end. Let `u`
+and `J` along `u` be `C¹` on the sphere minus the centers `c i`, with `J` compatible along `u`
+there, let `u` be `C²` and solve the Floer equation of the datum
+`TauCeti.Floer.puncturedSpherePerturbation c a H Hout` beyond `s = 2` on each end, and let its loops
+in the end charts converge uniformly to the orbits while the slice defects tend uniformly to zero.
+Let `w ≥ 0` be a weight that is continuous and positive on the sphere minus the centers and is at
+least the Jacobian weights of the end charts far out on the ends, up to the factor `4π²`:
+`|p - c i|² ≤ w(p)` at the points `p = ψ_i(ζ)` with `ζ.1 > 2`, and `|p|² ≤ w(p)` at the points
+`p = φ'_∞(ζ)` with `ζ.1 > 2`. Then there are `C ≥ 0` and `T ≥ 2` such that every `C²` covector
+field `η` with compact support in the sphere minus the centers satisfies
+
+`∑_i ∫_{(T, ∞) × [0, 1]} (‖∂s η'_i‖² + ‖∂t η'_i‖² + ‖η'_i‖²)`
+`  + ∫_{(T, ∞) × [0, 1]} (‖∂s η'_∞‖² + ‖∂t η'_∞‖² + ‖η'_∞‖²)`
+`  + ∫_{Σ_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ w ‖D_u^* η‖² + ∫_{Σ_{T + 1}} ‖η‖²)`
+
+for the formal adjoint `D_u^*` of the linearized Floer operator of these data, whose kernel is the
+cokernel of `D_u`. Here `η'_i` and `η'_∞` are `η` read in the charts `ψ_i` and `φ'_∞` as
+`(0, 1)`-forms (`TauCeti.Floer.covectorPullback`), and `Σ_T` is the truncation
+`TauCeti.ThricePuncturedSphere.puncturedSphereTruncation c a T`. This is the counterpart for the
+formal adjoint of the semi-Fredholm estimate of `D_u`,
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds`
+-/
+theorem
+  exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_add_of_movingEnds
+    (ω : SymplecticForm V) {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContDiff ℝ 2 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
+    (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {L : ι → ℝ≥0}
+    (hX : ∀ i, LipschitzWith (L i) (ω.timeDependentHamiltonianSuspension (H i)))
+    {x : ι → ℝ → V} (hx : ∀ i t, HasDerivAt (x i) (ω.hamiltonianVectorField (H i t) (x i t)) t)
+    (hnd : ∀ i, IsNondegenerateFixedPt 𝓘(ℝ, V)
+      (ω.timeDependentHamiltonianFlow (H i) (hX i) 0 1) (x i 0))
+    {Je : ι → ℝ → V → AlmostComplexStructure V}
+    (hJe : ∀ i, ContDiff ℝ 2 fun p : ℝ × V ↦ (Je i p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJex : ∀ i t, ω.Compatible (Je i t (x i t))) {Lout : ℝ≥0}
+    (hXout : LipschitzWith Lout (ω.timeDependentHamiltonianSuspension fun t y ↦ -Hout (-t) y))
+    {xout : ℝ → V}
+    (hxout : ∀ t, HasDerivAt xout (ω.hamiltonianVectorField (fun y ↦ -Hout (-t) y) (xout t)) t)
+    (hndout : IsNondegenerateFixedPt 𝓘(ℝ, V)
+      (ω.timeDependentHamiltonianFlow (fun t y ↦ -Hout (-t) y) hXout 0 1) (xout 0))
+    {Jout : ℝ → V → AlmostComplexStructure V}
+    (hJout : ContDiff ℝ 2 fun p : ℝ × V ↦ (Jout p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJoutx : ∀ t, ω.Compatible (Jout t (xout t))) {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hJeq : ∀ i (ζ : ℝ × ℝ), 2 < ζ.1 →
+      J (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) = Je i ζ.2)
+    (hJoutq : ∀ ζ : ℝ × ℝ, 2 < ζ.1 → J (positiveEndChart inf ζ) = Jout ζ.2) {u : ℝ × ℝ → V}
+    (hJ : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → ContDiffAt ℝ 1 u z)
+    (hu₂ : ∀ i (ζ : ℝ × ℝ), 2 < ζ.1 →
+      ContDiffAt ℝ 2 u (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ))
+    (hu₂out : ∀ ζ : ℝ × ℝ, 2 < ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart inf ζ))
+    (hc : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
+      ω.Compatible (J z (u z)))
+    (hF : ∀ i (ζ : ℝ × ℝ), 2 < ζ.1 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ)
+        (u (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ)))
+      (ω.perturbedFDeriv
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+          Complex.I) u
+        (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) : ℝ × ℝ →ₗ[ℝ] V))
+    (hFout : ∀ ζ : ℝ × ℝ, 2 < ζ.1 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J (positiveEndChart inf ζ) (u (positiveEndChart inf ζ)))
+      (ω.perturbedFDeriv
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+          Complex.I) u (positiveEndChart inf ζ) : ℝ × ℝ →ₗ[ℝ] V))
+    (hux : ∀ i, TendstoUniformlyOn
+      (fun s t ↦ u (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) (s, t))) (x i)
+      atTop (Icc 0 1))
+    (hδ : ∀ i, TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (H i t))
+      (u ∘ realChart fun z ↦ c i + a i * zero.cylindricalEndLift z) (s, t)) 0 atTop (Icc 0 1))
+    (huxout : TendstoUniformlyOn (fun s t ↦ u (positiveEndChart inf (s, t))) xout atTop
+      (Icc 0 1))
+    (hδout : TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField fun y ↦ -Hout (-t) y) (u ∘ positiveEndChart inf) (s, t))
+      0 atTop (Icc 0 1))
+    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z)
+    (hwc : ContinuousOn w {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i})
+    (hwU : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → 0 < w z)
+    (hwin : ∀ i (ζ : ℝ × ℝ), 2 < ζ.1 →
+      ‖Complex.equivRealProdCLM.symm (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ)
+          - c i‖ ^ 2 ≤ w (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ))
+    (hwout : ∀ ζ : ℝ × ℝ, 2 < ζ.1 →
+      ‖Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)‖ ^ 2 ≤ w (positiveEndChart inf ζ)) :
+    ∃ C, 0 ≤ C ∧ ∃ T, 2 ≤ T ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      HasCompactSupport η → tsupport η ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} →
+      (∑ i, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+          (realChart fun z ↦ c i + a i * zero.cylindricalEndLift z)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        (∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart inf)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T,
+          sobolevDensity η z ≤
+        C * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+          (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+            Complex.I) u η z‖ ^ 2) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a (T + 1),
+            ‖η z‖ ^ 2) := by
+  -- Beyond `s = 0` an input end avoids every center.
+  have hin (i : ι) (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm
+      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
+    rw [equivRealProdCLM_symm_realChart]
+    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
+  have hinf (ζ : ℝ × ℝ) (hζ : 1 < ζ.1) (j : ι) :
+      Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j :=
+    equivRealProdCLM_symm_positiveEndChart_inf_ne hout hζ j
+  have hKs (z : ℝ × ℝ) (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) :=
+    contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz (u z) 1
+  have hKt (z : ℝ × ℝ) (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) :=
+    contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz (u z) Complex.I
+  -- The `w`-weighted norm of `D_u^* η` is finite for `η` supported in the sphere.
+  have hwi {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+      (hηU : tsupport η ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) :=
+    ω.integrable_mul_norm_floerLinearizationAdjoint_sq (isOpen_movingEndsDomain c)
+      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu hwc
+      (hη.of_le one_le_two) subset_rfl hηc hηU
+  choose C R hR hend using fun i ↦
+    exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_inputEnd
+      ω hH hHs hHout hHouts ha hsep hout i (hX i) (hx i) (hnd i) (hJe i) (hJex i) (hJeq i)
+      (fun ζ hζ ↦ hJ _ (hin i ζ (by linarith))) (hu₂ i) (fun ζ hζ ↦ hc _ (hin i ζ (by linarith)))
+      (hF i) (hux i) (hδ i)
+  obtain ⟨Cout, Rout, hRout, hendOut⟩ :=
+    exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_outputEnd
+      ω hH hHs hHout hHouts ha hout hXout hxout hndout hJout hJoutx hJoutq
+      (fun ζ hζ ↦ hJ _ (hinf ζ (by linarith))) hu₂out (fun ζ hζ ↦ hc _ (hinf ζ (by linarith)))
+      hFout huxout hδout
+  refine
+   exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_of_movingEnds_of_ends
+    ω ha hsep hout hJ hKs hKt hu hc hw hwc hwU (C := fun i ↦ max (C i) 0) (R := R)
+    (fun i η hη hηc hηR ↦ ?_) (Cout := max Cout 0) (Rout := Rout) fun η hη hηc hηR ↦ ?_
+  · -- Far out on the input end `i`, the Jacobian weight `|w - c i|²` is at most `w`.
+    refine (hend i hη hηc hηR).trans (mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le
+      ω (fun _ ↦ sq_nonneg _) (fun z hz ↦ ?_) (hwi hη hηc fun z hz ↦ ?_) _)
+    · obtain ⟨ζ, hζ, rfl⟩ := hηR hz
+      exact hwin i ζ ((hR i).trans hζ.1)
+    · obtain ⟨ζ, hζ, rfl⟩ := hηR hz
+      exact hin i ζ (by linarith [hR i, hζ.1.out])
+  · -- Far out on the output end, the Jacobian weight `|w|²` is at most `w`.
+    refine (hendOut hη hηc hηR).trans (mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le
+      ω (fun _ ↦ sq_nonneg _) (fun z hz ↦ ?_) (hwi hη hηc fun z hz ↦ ?_) _)
+    · obtain ⟨ζ, hζ, rfl⟩ := hηR hz
+      exact hwout ζ (hRout.trans hζ.1)
+    · obtain ⟨ζ, hζ, rfl⟩ := hηR hz
+      exact hinf ζ (by linarith [hζ.1.out])
 
 end TauCeti.SymplecticForm
 

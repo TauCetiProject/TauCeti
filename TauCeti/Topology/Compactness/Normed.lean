@@ -28,6 +28,8 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
   map over a compact set is uniformly continuous there, in the fibre direction.
 * `IsCompact.exists_forall_norm_le_of_eventually_eq_zero`: a function continuous on `K × X`, with
   `K` compact, vanishing outside `K × L` for a compact `L ⊆ X`, is bounded on `K × X`.
+* `IsCompact.exists_forall_le_and_one_le_mul_of_continuousOn`: a real function continuous and
+  positive on a compact set `K` satisfies `w ≤ Λ` and `1 ≤ Λ w` on `K`, for some `Λ ≥ 0`.
 * `TauCeti.exists_nonneg_forall_notMem_norm_lt`: in a compact space covered by open sets `U` and
   `V`, the coordinates of the points of `U` outside `V` are bounded.
 * `TauCeti.eventually_principal_closedBall_prod_cocompact_iff`: a statement holds eventually
@@ -97,6 +99,20 @@ theorem IsCompact.exists_forall_norm_le_of_eventually_eq_zero {K : Set P} (hK : 
   · exact (hC (t, x) ⟨ht, hx⟩).trans (le_max_left _ _)
   · rw [show Y (t, x) = 0 from hsY (hLs hx), norm_zero]
     exact le_max_right _ _
+
+/-- A real function `w` that is continuous and positive on a compact set `K` is bounded above and
+away from zero there: there is `Λ ≥ 0` with `w ≤ Λ` and `1 ≤ Λ w` on `K`. -/
+theorem IsCompact.exists_forall_le_and_one_le_mul_of_continuousOn {K : Set X} (hK : IsCompact K)
+    {w : X → ℝ} (hwc : ContinuousOn w K) (hwK : ∀ z ∈ K, 0 < w z) :
+    ∃ Λ, 0 ≤ Λ ∧ ∀ z ∈ K, w z ≤ Λ ∧ 1 ≤ Λ * w z := by
+  obtain ⟨Λ, hΛ⟩ := hK.exists_bound_of_continuousOn (hwc.add (hwc.inv₀ fun z hz ↦ (hwK z hz).ne'))
+  refine ⟨max Λ 0, le_max_right _ _, fun z hz ↦ ?_⟩
+  have hw := hwK z hz
+  have h : w z + (w z)⁻¹ ≤ max Λ 0 :=
+    (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left Λ 0))
+  refine ⟨by linarith [inv_pos.2 hw], ?_⟩
+  rw [← inv_mul_cancel₀ hw.ne']
+  exact mul_le_mul_of_nonneg_right (by linarith) hw.le
 
 namespace TauCeti
 
