@@ -53,6 +53,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
 * `SchwartzMap.norm_toLp_sq`: the squared `L²` norm of `f` is `∫ ‖f x‖²`.
+* `SchwartzMap.integral_inner_eq_inner_toLp`: `∫ ⟪f x, g x⟫` is the `L²` inner product of `f`
+  with an `L²` function `g`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
   with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
@@ -176,6 +178,16 @@ omit [BorelSpace E] [SecondCountableTopology E] in
 theorem norm_toLp_sq [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] (f : 𝓢(E, F)) :
     ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ :=
   (f.memLp 2 μ).norm_toLp_sq
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The integral of the pointwise inner product of a Schwartz function `f` with an `L²` function
+`g` is the `L²` inner product of `f` with `g`. -/
+theorem integral_inner_eq_inner_toLp {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
+    [InnerProductSpace 𝕜 H] [NormedSpace ℝ H] [OpensMeasurableSpace E]
+    [SecondCountableTopologyEither E H] (f : 𝓢(E, H)) (g : Lp H 2 μ) :
+    ∫ x, ⟪f x, g x⟫_𝕜 ∂μ = ⟪f.toLp 2 μ, g⟫_𝕜 := by
+  rw [L2.inner_def]
+  exact integral_congr_ae (by filter_upwards [f.coeFn_toLp 2 μ] with x hx; rw [hx])
 
 omit [SecondCountableTopology E] in
 /-- A Schwartz function vanishes if and only if the integral of its squared norm does, against a

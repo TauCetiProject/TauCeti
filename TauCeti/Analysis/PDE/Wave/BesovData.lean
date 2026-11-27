@@ -413,12 +413,6 @@ section Velocity
 
 variable {σ : ℝ}
 
-/-- The pairing of a Schwartz function with an `L²` function is the `L²` inner product. -/
-private theorem integral_inner_eq_inner_toLp (ψ : 𝓢(E, ℂ)) (h : Lp ℂ 2 (volume : Measure E)) :
-    ∫ x, ⟪ψ x, h x⟫_ℂ = ⟪ψ.toLp 2, h⟫_ℂ := by
-  rw [L2.inner_def]
-  exact integral_congr_ae (by filter_upwards [ψ.coeFn_toLp 2] with x hx; rw [hx])
-
 /-- For `g ∈ \dot B^σ_{2,1}` and `σ ≤ n / 2`, the pairings `⟪ψ, cos(tD) Pⱼ g⟫` are bounded,
 uniformly in `t`, by a summable sequence, namely `K 2^{jσ} ‖Pⱼ g‖₂`. -/
 private theorem exists_summable_norm_inner_waveCosPropagator_block_le
@@ -484,8 +478,8 @@ theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
     rw [HasSum, tendsto_iff_edist_tendsto_0]
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
       fun s ↦ ?_
-    rw [← inner_sum, ← integral_inner_eq_inner_toLp, edist_comm, eDist_eq_eNorm_sub, ← integral_sub
-      ((ψ.memLp (ENNReal.conjExponent r) volume).integrable_inner_of_holderConjugate
+    rw [← inner_sum, ← ψ.integral_inner_eq_inner_toLp, edist_comm, eDist_eq_eNorm_sub,
+      ← integral_sub ((ψ.memLp (ENNReal.conjExponent r) volume).integrable_inner_of_holderConjugate
         (Lp.memLp (U τ)))
       ((ψ.memLp 2 volume).integrable_inner_of_holderConjugate (Lp.memLp _))]
     simp_rw [← inner_sub_right]
@@ -500,7 +494,7 @@ theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
   have heq : (fun τ ↦ ∫ x, ⟪ψ x, U τ x⟫_ℂ) =
       fun τ ↦ ∑' j, ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ :=
     funext fun τ ↦ (hsum τ).tsum_eq.symm
-  rw [heq, tsum_congr fun j ↦ integral_inner_eq_inner_toLp ψ (waveCosPropagator ℂ t (g.block j))]
+  rw [heq, tsum_congr fun j ↦ ψ.integral_inner_eq_inner_toLp (waveCosPropagator ℂ t (g.block j))]
   exact hasDerivAt_tsum hu hder hK (hsum 0).summable t
 
 /-- **The `D⁻¹ sin(tD)` evolution of Besov data attains its initial velocity.** Let `σ ≤ n / 2`, let
@@ -536,7 +530,7 @@ theorem hasDerivAt_integral_mul_of_tendsto_sum_waveSinPropagator_block
   obtain ⟨u, hu, hK⟩ := φ.exists_summable_norm_inner_waveCosPropagator_block_le hσ χ g
   have hsummable : Summable fun j ↦ ∫ x, ⟪χ x, g.block j x⟫_ℂ := by
     refine Summable.of_norm_bounded hu fun j ↦ ?_
-    rw [integral_inner_eq_inner_toLp]
+    rw [χ.integral_inner_eq_inner_toLp]
     simpa using hK j 0
   have htsum : Tendsto (fun s : Finset ℤ ↦ ∑ j ∈ s, ∫ x, ⟪χ x, g.block j x⟫_ℂ) atTop
       (𝓝 (∑' j, ∫ x, ⟪χ x, g.block j x⟫_ℂ)) :=
