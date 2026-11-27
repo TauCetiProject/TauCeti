@@ -236,40 +236,33 @@ theorem placedTiles_tilingA_partition :
   obtain ⟨hsub, hdisj, hcov⟩ := isTiling_iff_placedTile.1 isTiling_tilingA
   exact ⟨hdisj, (Set.iUnion₂_subset hsub).antisymm hcov⟩
 
-/-- A translation fixing a face is trivial. -/
-theorem eq_one_of_smul_face_eq {g : Multiplicative (ℤ × ℤ)} {f : TriFace} (h : g • f = f) :
-    g = 1 := by
-  obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, rfl⟩
-  rw [ofAdd_smul, TriFace.vadd_eq_self_iff] at h
-  simp [h]
+/-- Translations act freely on faces: a translation fixing a face is trivial. -/
+theorem isCancelSMul_triFace : IsCancelSMul (Multiplicative (ℤ × ℤ)) TriFace :=
+  isCancelSMul_iff_eq_one_of_smul_eq.2 fun g f h => by
+    obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, rfl⟩
+    rw [ofAdd_smul, TriFace.vadd_eq_self_iff] at h
+    simp [h]
 
-/-- Translations act freely on placed tiles: a translation fixing a placed tile is trivial, since
-it then fixes a face of it. -/
-theorem eq_one_of_smul_placedTile_eq {g : Multiplicative (ℤ × ℤ)}
-    {pt : DiscreteTiling.PlacedTile lozengeProtoset} (h : g • pt = pt) : g = 1 := by
-  obtain ⟨e, rfl⟩ := TriEdge.toPlacedTile_bijective.2 pt
-  obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, rfl⟩
-  rw [← TriEdge.toPlacedTile_vadd, TriEdge.toPlacedTile_bijective.1.eq_iff,
-    TriEdge.vadd_eq_self_iff] at h
-  simp [h]
+/-- Translations act freely on placed tiles: a translation fixing a placed tile is trivial. -/
+theorem isCancelSMul_placedTile :
+    IsCancelSMul (Multiplicative (ℤ × ℤ)) (DiscreteTiling.PlacedTile lozengeProtoset) :=
+  isCancelSMul_iff_eq_one_of_smul_eq.2 fun g pt h => by
+    obtain ⟨e, rfl⟩ := TriEdge.toPlacedTile_bijective.2 pt
+    obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, rfl⟩
+    rw [← TriEdge.toPlacedTile_vadd, TriEdge.toPlacedTile_bijective.1.eq_iff,
+      TriEdge.vadd_eq_self_iff] at h
+    simp [h]
 
 /-- The stabilizer of each prototile of `lozengeProtoset` is trivial, so its trivial symmetry group
 is the whole stabilizer. -/
 theorem stabilizer_lozengeProtoset (k : Fin 3) :
     MulAction.stabilizer (Multiplicative (ℤ × ℤ)) (lozengeProtoset k : Set TriFace) = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).2 fun g hg => ?_
-  have hmem : (⟨0, k⟩ : TriEdge).whiteFace ∈ (lozengeProtoset k : Set TriFace) := by
-    simp [TriEdge.faces_def]
-  have hg' : g • (lozengeProtoset k : Set TriFace) = lozengeProtoset k := hg
-  rw [← hg'] at hmem
-  obtain ⟨f, hf, hgf⟩ := hmem
   obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, rfl⟩
-  change w +ᵥ f = _ at hgf
-  have hf' : f = (⟨0, k⟩ : TriEdge).whiteFace ∨ f = (⟨0, k⟩ : TriEdge).blackFace := by
-    simpa [TriEdge.faces_def] using hf
-  obtain ⟨w₁, w₂⟩ := w
-  rcases hf' with rfl | rfl <;> fin_cases k <;>
-    simp [TriFace.ext_iff, Prod.ext_iff] at hgf <;> simp [Prod.ext_iff] <;> omega
+  rw [MulAction.mem_stabilizer_iff, lozengeProtoset_apply, ofAdd_smul, ← Finset.coe_vadd_finset,
+    Finset.coe_inj, ← TriEdge.faces_vadd, TriEdge.faces_injective.eq_iff,
+    TriEdge.vadd_eq_self_iff] at hg
+  simp [hg]
 
 /-! ### A wedge -/
 
@@ -308,19 +301,11 @@ theorem not_isTiling_wedgeConfig : ¬ IsTiling wedge wedgeConfig := fun h =>
 /-- The wedge is not of the form `Faces(V)`: the three vertices of `B(0)` are vertices of it. -/
 theorem wedge_ne_facesOf (V : Set (ℤ × ℤ)) : wedge ≠ facesOf V := by
   intro h
-  have hV : regionVertices wedge ⊆ V := by
-    intro u hu
-    obtain ⟨f, hf, hu⟩ := mem_regionVertices.1 hu
-    rw [h] at hf
-    exact mem_facesOf.1 hf u hu
+  have hV : regionVertices wedge ⊆ V := h ▸ regionVertices_facesOf_subset V
   have hB : (⟨(0, 0), false⟩ : TriFace) ∈ facesOf V := by
-    refine mem_facesOf.2 fun u hu => ?_
-    refine hV ?_
+    refine mem_facesOf.2 fun u hu => hV ?_
     simp only [TriFace.vertices_mk_false, Finset.mem_insert, Finset.mem_singleton] at hu
-    rcases hu with rfl | rfl | rfl
-    · exact mem_regionVertices.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩
-    · exact mem_regionVertices.2 ⟨⟨(-1, 0), true⟩, by simp, by simp⟩
-    · exact mem_regionVertices.2 ⟨⟨(0, 0), true⟩, by simp, by simp⟩
+    rcases hu with rfl | rfl | rfl <;> simp
   rw [← h] at hB
   simp at hB
 
