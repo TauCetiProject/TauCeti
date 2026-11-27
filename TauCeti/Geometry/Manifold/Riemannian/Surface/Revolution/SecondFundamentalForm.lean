@@ -54,6 +54,12 @@ theorem inner_profileNormal_self (f g : ℝ → ℝ) (p : ℝ × ℝ) :
   norm_num
   linear_combination deriv g p.2 ^ 2 * Real.sin_sq_add_cos_sq p.1
 
+/-- The squared norm of the profile normal is the squared profile speed. -/
+@[simp]
+theorem norm_profileNormal_sq (f g : ℝ → ℝ) (p : ℝ × ℝ) :
+    ‖profileNormal f g p‖ ^ 2 = profileSpeedSq f g p.2 := by
+  rw [← real_inner_self_eq_norm_sq, inner_profileNormal_self]
+
 /-- The profile normal is orthogonal to every tangent vector of the parametrization. -/
 @[simp]
 theorem inner_profileNormal_fderiv_parametrization {f g : ℝ → ℝ} {p : ℝ × ℝ}
