@@ -43,14 +43,19 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
 (`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). For a real endomorphism
 `T` with `‖T‖ ≤ M`, `‖a v + b T v‖² ≤ (1 + M²) (a² + b²) ‖v‖²`
-(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`). The difference of two
+(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`), and over `ℝ` or `ℂ` an endomorphism `B`
+with `‖B‖ ≤ 1` satisfies `‖v • B f + conj v • f‖ ≤ 2 ‖v‖ ‖f‖`
+(`ContinuousLinearMap.norm_smul_apply_add_conj_smul_le`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
 (`ContinuousLinearMap.enorm_comp_sub_comp_le` in extended norms,
 `ContinuousLinearMap.norm_comp_sub_comp_le` in operator norms). The conjugates `G ∘ K ∘ M` and
 `G' ∘ K' ∘ M'`, with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at most a
 combination of `‖K - K'‖` and `‖M - M'‖` (`ContinuousLinearMap.norm_comp_comp_sub_comp_comp_le`),
-using the triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`. Precomposition by an
+using the triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`, which also bounds
+the difference of two inverses through the resolvent identity,
+`‖f⁻¹ - g⁻¹‖ ≤ ‖f⁻¹‖ ‖g - f‖ ‖g⁻¹‖`
+(`ContinuousLinearMap.IsInvertible.norm_inverse_sub_inverse_le`). Precomposition by an
 operator `T`, as a map between spaces of operators, has norm at most `‖T‖`
 (`ContinuousLinearMap.norm_precomp_le`).
 
@@ -262,6 +267,17 @@ theorem norm_smul_add_smul_apply_sq_le {E : Type*} [SeminormedAddCommGroup E] [N
     _ ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + (M * ‖v‖) ^ 2) := by gcongr
     _ = (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by ring
 
+/-- For an endomorphism `B` of norm at most one over `ℝ` or `ℂ`, `‖v • B f + conj v • f‖` is at
+most `2 ‖v‖ ‖f‖`. -/
+theorem norm_smul_apply_add_conj_smul_le {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {B : E →L[𝕜] E} (hB : ‖B‖ ≤ 1) (v : 𝕜) (f : E) :
+    ‖v • B f + (starRingEnd 𝕜) v • f‖ ≤ 2 * ‖v‖ * ‖f‖ := by
+  have hB' : ‖B f‖ ≤ ‖f‖ := (B.le_of_opNorm_le hB f).trans (one_mul _).le
+  calc ‖v • B f + (starRingEnd 𝕜) v • f‖ ≤ ‖v‖ * ‖B f‖ + ‖v‖ * ‖f‖ := by
+        refine (norm_add_le _ _).trans_eq ?_
+        rw [norm_smul, norm_smul, RCLike.norm_conj]
+    _ ≤ 2 * ‖v‖ * ‖f‖ := by nlinarith [norm_nonneg v]
+
 section SemilinearFamily
 
 variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
@@ -357,6 +373,15 @@ theorem opNorm_comp_comp_le {Z U : Type*} [SeminormedAddCommGroup Z] [NormedSpac
     rw [mul_assoc]
     gcongr
     exact opNorm_comp_le _ _
+
+/-- The inverses of two invertible operators differ in operator norm by at most
+`‖f⁻¹‖ ‖g - f‖ ‖g⁻¹‖`, by the resolvent identity
+`ContinuousLinearMap.IsInvertible.inverse_sub_inverse`. With uniform bounds on the inverses,
+inversion is thus Lipschitz on a family of invertible operators. -/
+theorem IsInvertible.norm_inverse_sub_inverse_le {f g : X →L[𝕜] Y} (hf : f.IsInvertible)
+    (hg : g.IsInvertible) : ‖f.inverse - g.inverse‖ ≤ ‖f.inverse‖ * ‖g - f‖ * ‖g.inverse‖ := by
+  rw [hf.inverse_sub_inverse hg]
+  exact opNorm_comp_comp_le _ _ _
 
 /-- Precomposition by `T` has operator norm at most `‖T‖`. -/
 theorem norm_precomp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]

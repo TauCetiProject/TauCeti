@@ -25,13 +25,17 @@ Extending the fibre product along a homomorphism `G × H →* K` combines the li
 (`TauCeti.SpinCStructure.twist`).
 
 Equivalences of lifts and equivalences of principal `H`-bundles (`TauCeti.PrincipalBundle.Equiv`)
-induce equivalences of fibre products (`TauCeti.OrthonormalFrameLift.Equiv.fiberProd`).
+induce equivalences of fibre products (`TauCeti.OrthonormalFrameLift.Equiv.fiberProd`), and the
+fibre product commutes with pullback along a continuous map
+(`TauCeti.OrthonormalFrameLift.fiberProdPullbackEquiv`).
 
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameLift.fiberProd`: the fibre product of a lift with a principal bundle.
 * `TauCeti.OrthonormalFrameLift.Equiv.fiberProd`: the equivalence of fibre products induced by an
   equivalence of lifts and an equivalence of principal bundles.
+* `TauCeti.OrthonormalFrameLift.fiberProdPullbackEquiv`: the fibre product of the pullbacks of a
+  lift and of `Q` is equivalent to the pullback of their fibre product.
 -/
 
 public section
@@ -174,6 +178,68 @@ theorem Equiv.fiberProd_trans {s t u : OrthonormalFrameLift F E n G ρ} (φ : s.
     (φ.fiberProd ψ).trans (φ'.fiberProd ψ') = (φ.trans φ').fiberProd (ψ.trans ψ') := by
   ext x z
   refine FiberProd.ext (P := u.P) (Q := Q'') ?_ ?_ <;> simp
+
+section Pullback
+
+variable {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
+
+/-- **The frame of `(p, q)`** in the pullback of the fibre product of a lift `s` with `Q` is the
+frame of `p` in the pullback of `s`. -/
+@[simp]
+theorem toFrame_pullback_fiberProd_mk (s : OrthonormalFrameLift F E n G ρ) (g : K) (y : Y)
+    (p : s.P (g y)) (q : Q (g y)) :
+    ((s.fiberProd H Q).pullback g).toFrame ⟨y, FiberProd.mk p q⟩ =
+      (s.pullback g).toFrame ⟨y, p⟩ := by
+  obtain ⟨φ, hφ⟩ := s.exists_toFrame_eq_mk ⟨g y, p⟩
+  exact ((s.fiberProd H Q).toFrame_pullback_mk g y (FiberProd.mk p q)
+    ((s.toFrame_fiberProd_mk H Q (g y) p q).trans hφ)).trans (s.toFrame_pullback_mk g y p hφ).symm
+
+variable [∀ x, Nonempty (Q x)]
+
+/-- **The fibre product commutes with pullback**: for a continuous map `g : Y → X`, the fibre
+product of the pullbacks of `s` and `Q` is equivalent to the pullback of the fibre product of `s`
+and `Q`. Over `y`, both principal bundles are `P_{g y} × Q_{g y}`, and the equivalence is
+`(p, q) ↦ (p, q)`. Mathlib's `FiberBundle.pullback` asks for nonempty fibres of `Q` to pull it
+back. -/
+noncomputable def fiberProdPullbackEquiv (s : OrthonormalFrameLift F E n G ρ) (g : K) :
+    ((s.pullback g).fiberProd H ((g : Y → X) *ᵖ Q)).Equiv ((s.fiberProd H Q).pullback g) where
+  toEquiv _ := _root_.Equiv.refl _
+  continuous_toFun := by
+    have hfst := FiberProd.continuous_totalSpaceMk_fst (P := (g : Y → X) *ᵖ s.P)
+      (Q := (g : Y → X) *ᵖ Q) (G := G) (H := H)
+    have hsnd := FiberProd.continuous_totalSpaceMk_snd (P := (g : Y → X) *ᵖ s.P)
+      (Q := (g : Y → X) *ᵖ Q) (G := G) (H := H)
+    have hlift : Continuous fun z : TotalSpace (G × H)
+        (FiberProd ((g : Y → X) *ᵖ s.P) ((g : Y → X) *ᵖ Q)) ↦
+          (⟨(g : Y → X) z.proj, FiberProd.mk (P := s.P) (Q := Q) z.snd.fst z.snd.snd⟩ :
+            TotalSpace (G × H) (FiberProd s.P Q)) :=
+      ((Pullback.continuous_lift G s.P (g : Y → X)).comp hfst).totalSpaceMk_fiberProdMk
+        ((Pullback.continuous_lift H Q (g : Y → X)).comp hsnd)
+    exact (Pullback.continuous_iff (F := G × H) (E := FiberProd s.P Q) (f := (g : Y → X))).2
+      ⟨(Pullback.continuous_proj G s.P (g : Y → X)).comp hfst, hlift⟩
+  continuous_invFun := by
+    have hfst : Continuous fun z : TotalSpace (G × H) ((g : Y → X) *ᵖ (FiberProd s.P Q)) ↦
+        (⟨z.proj, FiberProd.fst (P := s.P) (Q := Q) z.snd⟩ : TotalSpace G ((g : Y → X) *ᵖ s.P)) :=
+      Pullback.continuous_iff.2 ⟨Pullback.continuous_proj _ _ _,
+        FiberProd.continuous_totalSpaceMk_fst.comp (Pullback.continuous_lift _ _ _)⟩
+    have hsnd : Continuous fun z : TotalSpace (G × H) ((g : Y → X) *ᵖ (FiberProd s.P Q)) ↦
+        (⟨z.proj, FiberProd.snd (P := s.P) (Q := Q) z.snd⟩ : TotalSpace H ((g : Y → X) *ᵖ Q)) :=
+      Pullback.continuous_iff.2 ⟨Pullback.continuous_proj _ _ _,
+        FiberProd.continuous_totalSpaceMk_snd.comp (Pullback.continuous_lift _ _ _)⟩
+    exact FiberProd.continuous_iff.2 ⟨hfst, hsnd⟩
+  map_smul _ _ _ := rfl
+  toFrame_map y z := s.toFrame_pullback_fiberProd_mk g y z.fst z.snd
+
+/-- The equivalence of the fibre product of the pullbacks with the pullback of the fibre product
+sends `(p, q)` to `(p, q)`. -/
+theorem fiberProdPullbackEquiv_toEquiv_mk (s : OrthonormalFrameLift F E n G ρ) (g : K) (y : Y)
+    (p : s.P (g y)) (q : Q (g y)) :
+    (s.fiberProdPullbackEquiv (H := H) (Q := Q) g).toEquiv y
+        (FiberProd.mk (P := (g : Y → X) *ᵖ s.P) (Q := (g : Y → X) *ᵖ Q) p q) =
+      FiberProd.mk (P := s.P) (Q := Q) p q :=
+  (rfl)
+
+end Pullback
 
 end OrthonormalFrameLift
 

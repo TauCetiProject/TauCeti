@@ -78,6 +78,12 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.finrank_symmetricHomogeneousSubmodule`: the dimension in degree `n` is the number of
   partitions of `n` with at most `Fintype.card σ` parts; it is the number of all partitions of `n`
   in at least `n` letters and smaller in fewer.
+* `TauCeti.linearIndependent_diagramSchurPoly`: in `N` variables, the Schur polynomials of all the
+  Young diagrams with at most `N` rows, of every degree, are linearly independent.
+* `TauCeti.span_symmetricDiagramSchurPoly_eq_top`: the Schur polynomials span the symmetric
+  polynomials over a commutative ring, since they span each homogeneous degree.
+* `TauCeti.map_mem_of_forall_symmetricDiagramSchurPoly`: a linear map out of the symmetric
+  polynomials lands in a submodule once every Schur polynomial does.
 
 ## References
 
@@ -380,6 +386,91 @@ theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
   simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
     ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'
       (symmetricHomogeneousSubmodule σ R n).subtype (Submodule.ker_subtype _)
+
+/-- The Schur polynomials of a fixed degree `d` and at most `N` rows are linearly independent,
+being the Schur basis `TauCeti.schurPolyBasis` of the symmetric polynomials of degree `d`. -/
+private theorem linearIndependent_diagramSchurPoly_card (N d : ℕ) :
+    LinearIndependent R fun μ : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = d} =>
+      diagramSchurPoly N R μ.val.val := by
+  have hli := (schurPolyBasis (Fin N) R d).linearIndependent.map' _ (Submodule.ker_subtype _)
+  -- Reorder the two subtype conditions, then read the diagrams of size `d` as partitions of `d`.
+  let e : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = d} ≃
+      {ν : d.Partition // ν.parts.card ≤ Fintype.card (Fin N)} :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans <|
+      (Equiv.subtypeEquivRight fun _ => and_comm).trans <|
+        (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans <|
+          Equiv.subtypeEquiv YoungDiagram.equivPartition fun μ => by
+            rw [Fintype.card_fin, ← YoungDiagram.colLen_zero_ofPartition]
+            simp [YoungDiagram.equivPartition, YoungDiagram.ofPartition_toPartition]
+  convert hli.comp e e.injective with μ
+  simp [e, coe_schurPolyBasis, YoungDiagram.equivPartition]
+
+/-- **The Schur polynomials are linearly independent**: in `N` variables, the Schur polynomials of
+the Young diagrams with at most `N` rows are linearly independent over every commutative ring.
+The diagrams with more rows have Schur polynomial zero
+(`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). -/
+theorem linearIndependent_diagramSchurPoly {N : ℕ} :
+    LinearIndependent R fun μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} => diagramSchurPoly N R μ := by
+  rw [linearIndependent_iff']
+  intro s g hg μ hμ
+  -- Keep the terms of degree `|μ|`, which are independent by the Schur basis in that degree.
+  have hc (ν : {μ : YoungDiagram // μ.colLen 0 ≤ N}) :
+      homogeneousComponent μ.val.card (diagramSchurPoly N R ν) =
+        if ν.val.card = μ.val.card then diagramSchurPoly N R ν else 0 := by
+    rw [homogeneousComponent_of_mem
+      ((mem_homogeneousSubmodule _ _).mpr isHomogeneous_diagramSchurPoly)]
+    exact if_congr eq_comm rfl rfl
+  have h := congrArg (homogeneousComponent μ.val.card) hg
+  simp only [map_sum, map_smul, map_zero, hc, smul_ite, smul_zero] at h
+  rw [← sum_filter, ← sum_subtype_eq_sum_filter] at h
+  exact linearIndependent_iff'.mp (linearIndependent_diagramSchurPoly_card N μ.val.card)
+    (s.subtype fun ν => ν.val.card = μ.val.card) (fun ν => g ν.val) h ⟨μ, rfl⟩
+    (by simpa using hμ)
+
+/-- **The Schur polynomials span the symmetric polynomials**: every symmetric polynomial in `N`
+variables is an `R`-linear combination of Schur polynomials. Each homogeneous component of a
+symmetric polynomial is symmetric, so it is a combination of Schur polynomials of its degree by the
+Schur basis `TauCeti.schurPolyBasis`. -/
+theorem span_symmetricDiagramSchurPoly_eq_top {N : ℕ} :
+    Submodule.span R (Set.range (symmetricDiagramSchurPoly N R)) = ⊤ := by
+  classical
+  refine eq_top_iff.mpr fun x _ => ?_
+  -- It suffices to show that `x`, read as a polynomial, is a combination of Schur polynomials.
+  have hmap : (Submodule.span R (Set.range (symmetricDiagramSchurPoly N R))).map
+      (symmetricSubalgebra (Fin N) R).val.toLinearMap =
+        Submodule.span R (Set.range (diagramSchurPoly N R)) := by
+    rw [Submodule.map_span, ← Set.range_comp]
+    congr 2
+    ext μ
+    simp
+  suffices h : (x : MvPolynomial (Fin N) R) ∈ Submodule.span R (Set.range (diagramSchurPoly N R)) by
+    rw [← hmap] at h
+    obtain ⟨y, hy, hyx⟩ := h
+    rwa [Subtype.ext hyx] at hy
+  -- Split `x` into homogeneous components and expand each in the Schur basis of its degree.
+  rw [← sum_homogeneousComponent (x : MvPolynomial (Fin N) R)]
+  refine sum_mem fun d _ => ?_
+  have hd : homogeneousComponent d (x : MvPolynomial (Fin N) R) ∈
+      symmetricHomogeneousSubmodule (Fin N) R d :=
+    mem_symmetricHomogeneousSubmodule.mpr ⟨fun e => by
+      rw [rename_homogeneousComponent, (mem_symmetricSubalgebra _).mp x.property e],
+      homogeneousComponent_isHomogeneous d _⟩
+  have hsum := congrArg Subtype.val ((schurPolyBasis (Fin N) R d).sum_repr ⟨_, hd⟩)
+  simp only [Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis] at hsum
+  rw [← hsum]
+  refine sum_mem fun ν _ => Submodule.smul_mem _ _
+    (Submodule.subset_span ⟨YoungDiagram.ofPartition ν.val, ?_⟩)
+  simp [schurPoly_eq_rename]
+
+/-- A linear map out of the symmetric polynomials in `N` variables takes values in a submodule `T`
+once it sends every Schur polynomial into `T`, since the Schur polynomials span
+(`TauCeti.span_symmetricDiagramSchurPoly_eq_top`). -/
+theorem map_mem_of_forall_symmetricDiagramSchurPoly {N : ℕ} {M : Type*} [AddCommMonoid M]
+    [Module R M] (f : symmetricSubalgebra (Fin N) R →ₗ[R] M) {T : Submodule R M}
+    (h : ∀ μ, f (symmetricDiagramSchurPoly N R μ) ∈ T) (y : symmetricSubalgebra (Fin N) R) :
+    f y ∈ T :=
+  (Submodule.map_span_le f (Set.range (symmetricDiagramSchurPoly N R)) T).mpr
+    (by rintro _ ⟨μ, rfl⟩; exact h μ) ⟨y, by simp [span_symmetricDiagramSchurPoly_eq_top], rfl⟩
 
 end CommRing
 

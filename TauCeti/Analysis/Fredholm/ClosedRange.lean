@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import TauCeti.Analysis.Fredholm.Basic
+import TauCeti.Analysis.Fredholm.Parametric
 
 /-!
 # Closed range from a finite-dimensional cokernel
@@ -136,5 +137,20 @@ theorem isFredholm_iff_finite_ker_coker (T : E →L[𝕜] F) :
         FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) :=
   ⟨fun h => ⟨h.finite_ker, h.finite_coker⟩,
     fun h => .of_finite_ker_coker T h.1 h.2⟩
+
+/-- **Fredholm operators from surjective stabilizations.** If adjoining finitely many domain
+directions `B : S → F` makes `T` surjective with a finite-dimensional kernel, then `T` is Fredholm:
+its kernel embeds into that of `T.coprod B`, and its cokernel is the image of `S`. -/
+theorem _root_.ContinuousLinearMap.IsFredholm.of_surjective_coprod {S : Type*}
+    [NormedAddCommGroup S] [NormedSpace 𝕜 S] [FiniteDimensional 𝕜 S] (T : E →L[𝕜] F)
+    (B : S →L[𝕜] F) (h : Function.Surjective (T.coprod B))
+    (hker : FiniteDimensional 𝕜 (T.coprod B).ker) : ContinuousLinearMap.IsFredholm T := by
+  refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker T ?_ ?_
+  · have := isNoetherian_of_isNoetherianRing_of_finite 𝕜 (T.coprod B).ker
+    exact Module.Finite.of_injective
+      (ContinuousLinearMap.kerCoprodHom T B : T.ker →ₗ[𝕜] (T.coprod B).ker)
+      (ContinuousLinearMap.kerCoprodHom_injective T B)
+  · exact Module.Finite.of_surjective _
+      ((ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective T B).2 h)
 
 end TauCeti

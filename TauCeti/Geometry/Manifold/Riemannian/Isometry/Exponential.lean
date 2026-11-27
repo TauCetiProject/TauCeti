@@ -56,6 +56,8 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 * `RiemannianIsometry.riemannianLog_apply`: if `dΦ_p` maps a normal domain `U` at `p` into a normal
   domain `V` at `Φ p`, then `log_{Φ p} (Φ q) = dΦ_p (log_p q)` on the normal neighbourhood
   `exp_p '' U`.
+* `RiemannianIsometry.isNormalDomain_mfderiv_image`, `RiemannianIsometry.isNormalDomain_ball_iff`:
+  isometries preserve normal domains and normal tangent balls.
 * `TauCeti.riemannianExp_mfderiv_smul`, `TauCeti.smul_riemannianExp_image_ball`: for an element `a`
   of a group acting by smooth maps, whose differential preserves the metric,
   `exp_{a • x} (d(a •)_x v) = a • exp_x v`, and `a` carries `exp_x '' ball 0 r` onto
@@ -272,6 +274,35 @@ theorem riemannianLog_apply [I.Boundaryless] [J.Boundaryless] [T2Space M]
   obtain ⟨v, hv, rfl⟩ := hq
   rw [← Φ.riemannianExp_mfderiv, hU.riemannianLog_riemannianExp hv,
     hV.riemannianLog_riemannianExp (hUV hv)]
+
+/-- The differential of a smooth Riemannian isometry carries normal domains at `p` to normal domains
+at `Φ p`. -/
+theorem isNormalDomain_mfderiv_image [I.Boundaryless] [J.Boundaryless] [T2Space M]
+    (Φ : RiemannianIsometry I J M N) {p : M}
+    {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) :
+    IsNormalDomain J N (Φ p) (mfderiv I J Φ p '' U) := by
+  let L : TangentSpace I p ≃L[ℝ] TangentSpace J (Φ p) :=
+    (Φ.mfderivToLinearIsometryEquiv p).toContinuousLinearEquiv
+  have hL : ⇑L = mfderiv I J Φ p := funext (Φ.mfderivToLinearIsometryEquiv_apply p)
+  simpa only [hL, coe_toDiffeomorph] using h.image_of_diffeomorph Φ.toDiffeomorph L
+    (fun v hv ↦ by
+      simp only [coe_toDiffeomorph]
+      rw [hL]
+      exact Φ.mfderiv_mem_expDomain_iff.2 (h.subset_expDomain hv))
+    (fun v _ ↦ by
+      simp only [coe_toDiffeomorph]
+      rw [hL, Φ.riemannianExp_mfderiv p v])
+
+/-- A smooth Riemannian isometry preserves whether an open tangent ball of radius `r` is a normal
+domain. -/
+theorem isNormalDomain_ball_iff [I.Boundaryless] [J.Boundaryless] [T2Space M]
+    (Φ : RiemannianIsometry I J M N) (p : M) (r : ℝ) :
+    IsNormalDomain J N (Φ p) (Metric.ball 0 r) ↔ IsNormalDomain I M p (Metric.ball 0 r) := by
+  refine ⟨fun h ↦ ?_, fun h ↦
+    by simpa only [Φ.mfderiv_image_ball, map_zero] using Φ.isNormalDomain_mfderiv_image h⟩
+  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.t2Space
+  have h' := Φ.symm.isNormalDomain_mfderiv_image h
+  rw [Φ.symm.mfderiv_image_ball, map_zero] at h'; exact Φ.symm_apply_apply p ▸ h'
 
 end RiemannianIsometry
 

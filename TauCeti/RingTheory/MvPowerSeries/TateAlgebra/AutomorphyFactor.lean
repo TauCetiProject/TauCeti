@@ -40,7 +40,7 @@ Mathlib `SlashAction`, so lemmas stated for an arbitrary slash action apply to t
 This is the shape of the weight-`κ` actions of `GL₂`-type monoids on the coefficient modules of
 overconvergent and `p`-adic families of automorphic forms, where `w γ` is a Möbius transformation
 and `j γ` is built from a character evaluated on `c z + d`; the Möbius case is in
-`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Moebius`.
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Moebius.Basic`.
 
 ## Main definitions
 

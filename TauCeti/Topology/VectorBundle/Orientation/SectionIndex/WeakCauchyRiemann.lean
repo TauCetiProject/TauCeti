@@ -28,27 +28,37 @@ By the scalar similarity principle for weak inequalities
 (`TauCeti.exists_eventually_eq_mul_of_hasWeakConjWirtingerDerivOn_of_norm_le`), near `φ z` the
 function `f` is `v * σ` with `v` continuous and nonzero at `φ z` and `σ` analytic at `φ z`. So the
 zeros of `s` count as those of a holomorphic section, through the statements of
-`TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Holomorphic`: the local index at an
-isolated zero is positive, on a compact surface the number of zeros is at most the Euler number
-`⟨e(E), [M]⟩`, and on a connected compact surface a section which does not vanish identically has
-finitely many zeros, so a section vanishing at more than `⟨e(E), [M]⟩` points vanishes
-identically. This extends the statements of
+`TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Holomorphic`: the local index at a zero
+is nonnegative, and positive at an isolated zero; on a compact surface a section with finitely many
+zeros, satisfying the inequality in oriented coordinates at each of them, has at most
+`⟨e(E), [M]⟩` zeros, so the Euler number is then nonnegative; and on a connected compact surface a
+section satisfying the inequality in coordinates around every point which does not vanish
+identically has finitely many zeros, so such a section vanishing at more than `⟨e(E), [M]⟩` points
+vanishes identically. This extends the statements of
 `TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiemann`, for `C¹` sections and
 locally bounded `g`, to weak solutions and `Lᵖ` bounds.
 
 ## Main results
 
-* `Bundle.Trivialization.eventually_eq_zero_or_eventually_ne_zero_of_hasWeakConjWirtingerDerivOn`:
-  near a point the section vanishes identically or has no other zero.
-* `TauCeti.VectorBundleOrientation.sectionIndex_pos_of_hasWeakConjWirtingerDerivOn`: the local
-  index at an isolated zero is positive.
-* `TauCeti.finite_setOf_section_eq_zero_of_hasWeakConjWirtingerDerivOn`: on a connected compact
-  surface, a section which is not identically zero has finitely many zeros.
-* `ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn`,
-  `evalFundamentalClass_eulerClass_nonneg_of_hasWeakConjWirtingerDerivOn` and
-  `eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_hasWeakConjWirtingerDerivOn`, in the
-  namespace `TauCeti.VectorBundleOrientation`: the zero count, the nonnegativity of the Euler
-  number, and vanishing at more points than the Euler number.
+* `eventually_eq_zero_or_eventually_ne_zero_of_hasWeakConjWirtingerDerivOn_of_norm_le`, in the
+  namespace `Bundle.Trivialization`: near a point the section vanishes identically or has no
+  other zero.
+* `sectionIndex_nonneg_of_hasWeakConjWirtingerDerivOn_of_norm_le` and
+  `sectionIndex_pos_of_hasWeakConjWirtingerDerivOn_of_norm_le`, in the namespace
+  `TauCeti.VectorBundleOrientation`: the local index at a zero is nonnegative, and positive at an
+  isolated zero.
+* `TauCeti.finite_setOf_section_eq_zero_of_hasWeakConjWirtingerDerivOn_of_norm_le`: on a connected
+  compact surface, a section satisfying the inequality around every point which is not identically
+  zero has finitely many zeros.
+* `ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn_of_norm_le` and
+  `evalFundamentalClass_eulerClass_nonneg_of_hasWeakConjWirtingerDerivOn_of_norm_le`, in the
+  namespace `TauCeti.VectorBundleOrientation`: for a section with finitely many zeros satisfying
+  the inequality in oriented coordinates at each zero, the number of zeros is at most the Euler
+  number, which is therefore nonnegative.
+* `eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_hasWeakConjWirtingerDerivOn_of_norm_le`,
+  in the same namespace: on a connected compact surface, a section satisfying the inequality in
+  oriented coordinates around every point and vanishing at more points than the Euler number
+  vanishes identically.
 
 ## References
 
@@ -80,7 +90,7 @@ coordinates as `f y = (e (s (φ⁻¹ y))).2`, is continuous on an open set `Ω �
 conjugate Wirtinger derivative `G` there and `‖G‖ ≤ g ‖f‖` almost everywhere on `Ω`, for
 `g ∈ Lᵖ_loc(Ω)` and `p > 2`, then either `s` vanishes on a neighbourhood of `z`, or `s` does not
 vanish on a punctured neighbourhood of `z`. -/
-theorem eventually_eq_zero_or_eventually_ne_zero_of_hasWeakConjWirtingerDerivOn
+theorem eventually_eq_zero_or_eventually_ne_zero_of_hasWeakConjWirtingerDerivOn_of_norm_le
     (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source) {p : ℝ≥0∞} (hp : 2 < p) {Ω : Opens ℂ}
     (hzΩ : φ z ∈ Ω) {g : ℂ → ℝ} (hg : MemLpLoc p Ω g) {G : ℂ → ℂ}
     (hf : ContinuousOn (fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2) Ω)
@@ -110,7 +120,7 @@ read as `f y = (e z (s ((φ z)⁻¹ y))).2`, is continuous on an open set `Ω z 
 conjugate Wirtinger derivative `G z` there and `‖G z‖ ≤ g z ‖f‖` almost everywhere on `Ω z`, for
 `g z ∈ Lᵖ_loc(Ω z)` and `p > 2`. If `s` does not vanish identically, it has finitely many
 zeros. -/
-theorem finite_setOf_section_eq_zero_of_hasWeakConjWirtingerDerivOn
+theorem finite_setOf_section_eq_zero_of_hasWeakConjWirtingerDerivOn_of_norm_le
     (φ : M → OpenPartialHomeomorph M ℂ)
     (e : M → Trivialization ℂ (π ℂ E)) [∀ z, (e z).IsLinear ℝ] (hzφ : ∀ z, z ∈ (φ z).source)
     (hze : ∀ z, z ∈ (e z).baseSet) {p : ℝ≥0∞} (hp : 2 < p) (Ω : M → Opens ℂ)
@@ -138,15 +148,46 @@ variable {M : Type} [TopologicalSpace M] [T2Space M] [ChartedSpace ℂ M] {E : M
   (oM : HomologicalOrientation M ℂ (1 + 1)) {s : ∀ x, E x}
   (hs : Continuous fun x ↦ TotalSpace.mk' ℂ x (s x))
 
+/-- **The local index of a section solving a weak Cauchy–Riemann inequality is nonnegative.** Let
+`e` be a linear trivialization of a real plane bundle `E` with fibre `ℂ` and `φ` a chart of `M`
+with values in `ℂ`, both defined at `z`, oriented compatibly with `E` and `M` near `z` as in
+`TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt`. If the section, read in these
+coordinates as `f y = (e (s (φ⁻¹ y))).2`, is continuous on an open set `Ω ∋ φ z` with weak
+conjugate Wirtinger derivative `G` there and `‖G‖ ≤ g ‖f‖` almost everywhere on `Ω`, for
+`g ∈ Lᵖ_loc(Ω)` and `p > 2`, then the local index of `s` at `z` is nonnegative: it is the order of
+vanishing of the holomorphic factor of `f`. -/
+theorem sectionIndex_nonneg_of_hasWeakConjWirtingerDerivOn_of_norm_le (e : Trivialization ℂ (π ℂ E))
+    [e.IsLinear ℝ] (φ : OpenPartialHomeomorph M ℂ) {z : M}
+    (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source) {ω : Orientation ℝ ℂ (Fin (1 + 1))}
+    (ho : ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ e.baseSet, e.mapOrientation (Fin (1 + 1)) hx (o x) = ω)
+    (hφ : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
+          C(φ.source, ℂ)) (S := {⟨z, hzφ⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext (φ.injOn x.property hzφ (sub_eq_zero.1 hx))) (1 + 1)
+        ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ⟩
+          (1 + 1)).symm (oM z)).val =
+      (ω.localOrientation hF).val)
+    {p : ℝ≥0∞} (hp : 2 < p) {Ω : Opens ℂ} (hzΩ : φ z ∈ Ω) {g : ℂ → ℝ} (hg : MemLpLoc p Ω g)
+    {G : ℂ → ℂ}
+    (hf : ContinuousOn (fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2) Ω)
+    (hG : HasWeakConjWirtingerDerivOn volume Ω
+      (fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2) G)
+    (hle : ∀ᵐ y ∂volume.restrict Ω,
+      ‖G y‖ ≤ g y * ‖(e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2‖) :
+    0 ≤ o.sectionIndex hF oM hs z := by
+  obtain ⟨v, σ, hv, hv₀, hσ, hfac⟩ :=
+    exists_eventually_eq_mul_of_hasWeakConjWirtingerDerivOn_of_norm_le hp hg hf hG hle hzΩ
+  rw [o.sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul hF oM hs e φ hze hzφ ho hφ hv hv₀
+    hσ hfac]
+  exact Nat.cast_nonneg _
+
 /-- **The local index of a section at an isolated zero solving a weak Cauchy–Riemann inequality is
-positive.** Let `e` be a linear trivialization of a real plane bundle `E` with fibre `ℂ` and `φ` a
-chart of `M` with values in `ℂ`, both defined at `z`, oriented compatibly with `E` and `M` near `z`
-as in `TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt`. If the section, read
-in these coordinates as `f y = (e (s (φ⁻¹ y))).2`, is continuous on an open set `Ω ∋ φ z` with
-weak conjugate Wirtinger derivative `G` there and `‖G‖ ≤ g ‖f‖` almost everywhere on `Ω`, for
-`g ∈ Lᵖ_loc(Ω)` and `p > 2`, and `z` is an isolated zero of `s`, then the local index of `s` at
-`z` is positive. -/
-theorem sectionIndex_pos_of_hasWeakConjWirtingerDerivOn (e : Trivialization ℂ (π ℂ E))
+positive.** Under the hypotheses of
+`TauCeti.VectorBundleOrientation.sectionIndex_nonneg_of_hasWeakConjWirtingerDerivOn_of_norm_le`,
+if `z` is an isolated zero of `s`, the local index of `s` at `z` is positive. -/
+theorem sectionIndex_pos_of_hasWeakConjWirtingerDerivOn_of_norm_le (e : Trivialization ℂ (π ℂ E))
     [e.IsLinear ℝ] (φ : OpenPartialHomeomorph M ℂ) {z : M}
     (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source) {ω : Orientation ℝ ℂ (Fin (1 + 1))}
     (ho : ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ e.baseSet, e.mapOrientation (Fin (1 + 1)) hx (o x) = ω)
@@ -189,7 +230,7 @@ chart `φ z` and a linear trivialization `e z`, oriented compatibly with `E` and
 Wirtinger derivative `G z` there and `‖G z‖ ≤ g z ‖f‖` almost everywhere on `Ω z`, for
 `g z ∈ Lᵖ_loc(Ω z)` and `p > 2`. Then the number of zeros of `s` is at most the Euler class of `E`
 evaluated on the fundamental class of `M`. -/
-theorem ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn
+theorem ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn_of_norm_le
     (hZ : {x | s x = 0}.Finite) (hze : ∀ z, s z = 0 → z ∈ (e z).baseSet)
     (ho : ∀ z, s z = 0 → ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
       (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
@@ -220,10 +261,10 @@ theorem ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn
 include hs in
 /-- **The Euler number of a plane bundle with a section solving a weak Cauchy–Riemann inequality
 is nonnegative.** Under the hypotheses of
-`ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn`, which include that the
-section has finitely many zeros, the Euler class of `E` evaluated on the fundamental class of `M`
-is nonnegative. -/
-theorem evalFundamentalClass_eulerClass_nonneg_of_hasWeakConjWirtingerDerivOn
+`ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn_of_norm_le`, which
+include that the section has finitely many zeros, the Euler class of `E` evaluated on the
+fundamental class of `M` is nonnegative. -/
+theorem evalFundamentalClass_eulerClass_nonneg_of_hasWeakConjWirtingerDerivOn_of_norm_le
     (hZ : {x | s x = 0}.Finite) (hze : ∀ z, s z = 0 → z ∈ (e z).baseSet)
     (ho : ∀ z, s z = 0 → ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
       (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
@@ -269,7 +310,8 @@ oriented compatibly with `E` and `M` near `z`, in which `s`, read as
 Wirtinger derivative `G z` there and `‖G z‖ ≤ g z ‖f‖` almost everywhere on `Ω z`, for
 `g z ∈ Lᵖ_loc(Ω z)` and `p > 2`. If `s` vanishes on a finite set `S` with more elements than the
 Euler class of `E` evaluated on the fundamental class of `M`, then `s` vanishes identically. -/
-theorem eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_hasWeakConjWirtingerDerivOn
+theorem
+    eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_hasWeakConjWirtingerDerivOn_of_norm_le
     (hze : ∀ z, z ∈ (e z).baseSet)
     (ho : ∀ z, ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
       (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)

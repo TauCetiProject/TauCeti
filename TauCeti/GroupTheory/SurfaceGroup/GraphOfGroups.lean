@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
 public import TauCeti.GroupTheory.SurfaceGroup.Gluing
 public import TauCeti.GroupTheory.SurfaceGroup.HNN
 
@@ -383,7 +384,8 @@ theorem edge_mul_of_peripheral_mul_inv_edge_genusTwo :
         (π₁Tree.edge ∅ ((), false))⁻¹ =
       π₁Tree.of (𝔸 := nonseparatingLoop 1 0) ∅ ()
         ((a 1 2 0)⁻¹ * (b 1 2 0)⁻¹ * a 1 2 0 * b 1 2 0 * peripheral 1 2 0) := by
-  have h := congrArg (π₁Tree.equivHNNExtension _ _ _ _).symm t_mul_of_peripheral_mul_inv_t_genusTwo
+  have h := congrArg (π₁Tree.equivHNNExtension _ _ (curveFst_injective 1 0)
+    (curveSnd_injective 1 0)).symm t_mul_of_peripheral_mul_inv_t_genusTwo
   rwa [map_mul, map_mul, map_inv, π₁Tree.equivHNNExtension_symm_t,
     π₁Tree.equivHNNExtension_symm_of, π₁Tree.equivHNNExtension_symm_of] at h
 

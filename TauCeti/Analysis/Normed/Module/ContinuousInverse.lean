@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Continuity of inverses and left inverses of operators
@@ -124,16 +125,9 @@ theorem ContinuousWithinAt.clm_inverse_of_eventually_isInvertible {X E F : Type*
   refine squeeze_zero' (Eventually.of_forall fun _ => norm_nonneg _) ?_
     (by simpa using hfn.const_mul (2 * ‖g x₀‖ ^ 2))
   filter_upwards [hsmall, h] with y hy hiy
-  have hsub : g y - g x₀ = g y ∘L (f x₀ - f y) ∘L g x₀ :=
-    hiy.inverse_sub_inverse h₀
-  have hd : ‖f x₀ - f y‖ = ‖f y - f x₀‖ := norm_sub_rev _ _
   have he : ‖g y - g x₀‖ ≤ ‖g y‖ * ‖f y - f x₀‖ * ‖g x₀‖ := by
-    rw [hsub, ← hd]
-    calc ‖g y ∘L (f x₀ - f y) ∘L g x₀‖
-        ≤ ‖g y‖ * ‖(f x₀ - f y) ∘L g x₀‖ := ContinuousLinearMap.opNorm_comp_le _ _
-      _ ≤ ‖g y‖ * (‖f x₀ - f y‖ * ‖g x₀‖) := by
-        gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
-      _ = _ := by ring
+    rw [← norm_sub_rev (f x₀)]
+    exact hiy.norm_inverse_sub_inverse_le h₀
   have ha : ‖g y‖ ≤ ‖g x₀‖ + ‖g y - g x₀‖ := by
     simpa using norm_add_le (g x₀) (g y - g x₀)
   have ha0 := norm_nonneg (g y)

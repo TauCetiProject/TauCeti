@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStru
 import TauCeti.Algebra.Group.Pi.Pairing
 import TauCeti.Algebra.Group.Subgroup.Pi
 import TauCeti.Algebra.Module.ZMod.Annihilator
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Finiteness
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Reciprocity
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
@@ -28,10 +29,9 @@ Let `φ : E₁ → E₂` be an isogeny of elliptic curves over a number field `K
 `[Sel_φ^S : Sel_φ] · [Sel_φ̂ : Sel_φ̂,S] ≤ ∏_{v ∈ S} [H¹(K_v, E₁[φ]) : H¹_φ(K_v)]`
 
 (`TauCeti.Isogeny.relIndex_selmerGroup_relaxedAt_mul_relIndex_strictAt_dual_le`), where
-`H¹_φ(K_v)` is the local condition of `φ` at `v`, provided the groups `H¹(K_v, E₁[φ])` for `v ∈ S`
-are finite. Over `ℚ` they are, for every isogeny over every completion
-(`TauCeti.Isogeny.finite_H1_kerCoeff_adicCompletion_rat`), so the hypothesis is discharged by
-`fun _ _ ↦ inferInstance`.
+`H¹_φ(K_v)` is the local condition of `φ` at `v`. The groups `H¹(K_v, E₁[φ])` for `v ∈ S` are
+finite, since `K_v` is a finite extension of `ℚ_p`
+(`TauCeti.Isogeny.finite_H1_kerCoeff_adicCompletion`).
 
 The proof is the orthogonality half of global duality. The local Tate pairings
 `H¹(K_v, E₁[φ]) × H¹(K_v, E₂[φ̂]) → ℤ/deg φ` at the places of `S` add up to a perfect pairing of
@@ -111,9 +111,7 @@ private def localConditions :
 
 /-- The orthogonal subgroups of the product pairing have orders multiplying to at most the order
 of the product of the local cohomology groups. -/
-private theorem natCard_sup_mul_natCard_map_le
-    [∀ v : S, Finite (H1 (AbsoluteGaloisGroup ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K))
-      (ofIsogeny (φ.baseChange ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K))).KerCoeff)] :
+private theorem natCard_sup_mul_natCard_map_le :
     Nat.card (localConditions φ S ⊔
         ((φ.selmerStructure τ).relaxedAt (Sum.inl '' S)).selmerGroup.map (locRes φ τ S) :) *
       Nat.card ((φ.dual.selmerGroup τ).map (locDualRes φ τ S)) ≤
@@ -216,25 +214,18 @@ private theorem natCard_pi :
   exact Finset.prod_congr rfl fun v _ ↦ (AddSubgroup.card_mul_index _).symm
 
 /-- **The orthogonality bound for the Selmer groups of an isogeny and its dual.** Let `φ : E₁ → E₂`
-be an isogeny over a number field `K` and `S` a finite set of finite places of `K` at which the
-local groups `H¹(K_v, E₁[φ])` are finite (over `ℚ` they always are,
-`TauCeti.Isogeny.finite_H1_kerCoeff_adicCompletion_rat`). Then
+be an isogeny over a number field `K` and `S` a finite set of finite places of `K`. Then
 
 `[Sel_φ^S : Sel_φ] · [Sel_φ̂ : Sel_φ̂,S] ≤ ∏_{v ∈ S} [H¹(K_v, E₁[φ]) : H¹_φ(K_v)]`,
 
 where `Sel_φ^S` is the `φ`-Selmer group relaxed at `S`, `Sel_φ̂,S` is the `φ̂`-Selmer group strict
 at `S`, and `H¹_φ(K_v)`, the local condition of `φ` at `v`, is the kernel of
 `H¹(K_v, E₁[φ]) → H¹(K_v, E₁)`. Poitou–Tate duality would give equality. -/
-theorem relIndex_selmerGroup_relaxedAt_mul_relIndex_strictAt_dual_le
-    (hfin : ∀ v ∈ S, Finite (H1 (AbsoluteGaloisGroup (v.adicCompletion K))
-      (ofIsogeny (φ.baseChange (v.adicCompletion K))).KerCoeff)) :
+theorem relIndex_selmerGroup_relaxedAt_mul_relIndex_strictAt_dual_le :
     (φ.selmerGroup τ).relIndex ((φ.selmerStructure τ).relaxedAt (Sum.inl '' S)).selmerGroup *
         ((φ.dual.selmerStructure τ).strictAt (Sum.inl '' S)).selmerGroup.relIndex
           (φ.dual.selmerGroup τ) ≤
       ∏ v ∈ S, (φ.baseChange (v.adicCompletion K)).localKummerCondition.index := by
-  have : ∀ v : S, Finite (H1 (AbsoluteGaloisGroup ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K))
-      (ofIsogeny (φ.baseChange ((v : HeightOneSpectrum (𝓞 K)).adicCompletion K))).KerCoeff) :=
-    fun v ↦ hfin v v.property
   have h := natCard_sup_mul_natCard_map_le φ τ S
   rw [natCard_sup, natCard_map_locDualRes, natCard_pi] at h
   refine Nat.le_of_mul_le_mul_left (c := Nat.card (localConditions φ S)) ?_

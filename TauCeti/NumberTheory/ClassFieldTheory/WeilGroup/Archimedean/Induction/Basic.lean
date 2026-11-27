@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Star.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
+import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # Two-dimensional inductions of characters of `W_ℂ` to `W_ℝ`
@@ -43,6 +44,8 @@ the induction becomes a representation `WeilGroupReal.induceRepresentation χ` o
   continuous character is continuous.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.induceCharacter_comp_star`: the induction of `χ ∘ conj`
   is the conjugate of the induction of `χ` by the image of `j`.
+* `TauCeti.ClassFieldTheory.WeilGroupReal.nonempty_equiv_induceRepresentation_comp_star`: the
+  inductions of `χ ∘ conj` and of `χ` are isomorphic as representations.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.induceRepresentation_includeComplex`,
   `TauCeti.ClassFieldTheory.WeilGroupReal.induceRepresentation_j`: the actions of `ℂˣ` and of `j`
   on `ℂ²`.
@@ -82,14 +85,12 @@ theorem coe_induceCharacterDiag (z : WeilGroupComplex) :
 /-- The diagonal part of the induction of a continuous character is continuous. -/
 theorem continuous_induceCharacterDiag (hχ : Continuous χ) :
     Continuous (induceCharacterDiag χ) := by
-  have hval : Continuous fun z ↦ (induceCharacterDiag χ z : Matrix (Fin 2) (Fin 2) ℂ) := by
-    simp only [coe_induceCharacterDiag]
-    refine Continuous.matrix_diagonal (continuous_pi fun i ↦ ?_)
-    fin_cases i
-    · exact Units.continuous_val.comp hχ
-    · exact Units.continuous_val.comp (hχ.comp continuous_star)
-  refine Units.continuous_iff.mpr ⟨hval, ?_⟩
-  simpa only [Function.comp_def, map_inv] using hval.comp continuous_inv
+  refine (MonoidHom.continuous_iff_continuous_val _).2 ?_
+  simp only [coe_induceCharacterDiag]
+  refine Continuous.matrix_diagonal (continuous_pi fun i ↦ ?_)
+  fin_cases i
+  · exact Units.continuous_val.comp hχ
+  · exact Units.continuous_val.comp (hχ.comp continuous_star)
 
 /-- The image `[[0, χ (-1)], [1, 0]]` of `j` in the induction of `χ`. -/
 def induceCharacterJ : GL (Fin 2) ℂ :=
@@ -182,6 +183,24 @@ theorem induceRepresentation_j (v : Fin 2 → ℂ) :
     induceRepresentation χ j v = ![(χ (-1) : ℂ) * v 1, v 0] := by
   ext i
   fin_cases i <;> simp [induceRepresentation_apply, mulVec, dotProduct, Fin.sum_univ_two]
+
+/-- **The induction of the conjugate character.** The inductions of `χ ∘ conj` and of `χ` are
+isomorphic. -/
+theorem nonempty_equiv_induceRepresentation_comp_star :
+    Nonempty ((induceRepresentation
+        (χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom)).Equiv
+      (induceRepresentation χ)) := by
+  let J := induceCharacter χ j
+  have h (w : WeilGroupReal) :
+      J⁻¹ * induceCharacter (χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom) w =
+        induceCharacter χ w * J⁻¹ := by
+    rw [induceCharacter_comp_star]
+    simp [J, mul_assoc]
+  refine ⟨.mk (Matrix.GeneralLinearGroup.toLin J⁻¹).toLinearEquiv
+    fun w ↦ LinearMap.ext fun v ↦ ?_⟩
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.GeneralLinearGroup.coe_toLinearEquiv, Matrix.GeneralLinearGroup.toLin_apply,
+    Matrix.mulVecLin_apply, induceRepresentation_apply, Matrix.mulVec_mulVec, ← Units.val_mul, h]
 
 end WeilGroupReal
 

@@ -13,11 +13,12 @@ import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 /-!
 # The Schwartz kernel theorem with finite-rank coefficients
 
-Let `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b` be open sets, `W` a finite-dimensional real normed space and `F` a
-real Banach space. An operator from the `W`-valued test functions on `O` to the `F`-valued
-distributions on `Ω` has a kernel with values in `W →L[ℝ] F`: on trivial bundles with fibres `W`
-and `F` over open subsets of Euclidean space, this is the kernel theorem with coefficients in the
-bundle `F ⊠ W*`, the local form of the Schwartz kernel theorem on vector bundles.
+Let `Ω ⊆ E` and `O ⊆ D` be open sets of finite-dimensional real normed spaces, `W` a
+finite-dimensional real normed space and `F` a real Banach space. An operator from the `W`-valued
+test functions on `O` to the `F`-valued distributions on `Ω` has a kernel with values in
+`W →L[ℝ] F`: on trivial bundles with fibres `W` and `F` over open subsets of finite-dimensional
+spaces, this is the kernel theorem with coefficients in the bundle `F ⊠ W*`, the local form of the
+Schwartz kernel theorem on vector bundles.
 
 A distribution `K` on an open set `V ⊇ Ω ×ˢ O` with values in `W →L[ℝ] F` defines the operator
 `Distribution.vectorKernelOperator hV K : 𝓓(O, W) →ₗ[ℝ] 𝓓'(Ω, F)`. On the test function
@@ -130,21 +131,22 @@ namespace LinearMap
 
 open Distribution
 
-variable {a b : Type*} [Fintype a] [Fintype b] {Ω : Opens (a → ℝ)} {O : Opens (b → ℝ)}
-  {V : Opens ((a → ℝ) × (b → ℝ))}
+variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimensional ℝ D] {Ω : Opens E} {O : Opens D}
+  {V : Opens (E × D)}
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- **The Schwartz kernel theorem with finite-rank coefficients.** Let `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b` be
-open sets, `W` a finite-dimensional real normed space and `F` a real Banach space, and let
-`A : 𝓓(O, W) → 𝓓'(Ω, F)` be a linear map which is continuous for the weak topology of
-distributions: `ψ ↦ ⟨A ψ, φ⟩` is continuous for every test function `φ` on `Ω`. Then there is a
-unique distribution `K` on `V = Ω × O` with values in `W →L[ℝ] F` such that
+/-- **The Schwartz kernel theorem with finite-rank coefficients.** Let `Ω ⊆ E` and `O ⊆ D` be
+open sets of finite-dimensional real normed spaces, `W` a finite-dimensional real normed space and
+`F` a real Banach space, and let `A : 𝓓(O, W) → 𝓓'(Ω, F)` be a linear map which is continuous for
+the weak topology of distributions: `ψ ↦ ⟨A ψ, φ⟩` is continuous for every test function `φ` on
+`Ω`. Then there is a unique distribution `K` on `V = Ω × O` with values in `W →L[ℝ] F` such that
 `A = vectorKernelOperator hV K`, that is, `⟨A (g • w), φ⟩ = K (φ ⊗ g) w` for real test functions
 `φ` and `g` and vectors `w ∈ W`. -/
 theorem existsUnique_vectorKernelOperator_eq (A : 𝓓(O, W) →ₗ[ℝ] 𝓓'(Ω, F))
     (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ)
-    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
     ∃! K : 𝓓'(V, W →L[ℝ] F), vectorKernelOperator hV.symm.subset K = A := by
   set e := Module.finBasis ℝ W
   -- The operator `g ↦ (w ↦ A (g • w))` on real test functions, with values in the distributions
@@ -173,7 +175,7 @@ theorem existsUnique_vectorKernelOperator_eq (A : 𝓓(O, W) →ₗ[ℝ] 𝓓'(�
 /-- **The operators with a `W →L[ℝ] F`-valued Schwartz kernel** are exactly the linear maps
 `𝓓(O, W) → 𝓓'(Ω, F)` that are continuous for the weak topology of distributions. -/
 theorem exists_vectorKernelOperator_eq_iff (A : 𝓓(O, W) →ₗ[ℝ] 𝓓'(Ω, F))
-    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
     (∃ K : 𝓓'(V, W →L[ℝ] F), vectorKernelOperator hV.symm.subset K = A) ↔
       ∀ φ, Continuous fun ψ ↦ A ψ φ := by
   refine ⟨?_, fun hA ↦ (existsUnique_vectorKernelOperator_eq A hA hV).exists⟩
@@ -186,8 +188,9 @@ namespace ContinuousLinearMap
 
 open Distribution
 
-variable {a b : Type*} [Fintype a] [Fintype b] {Ω : Opens (a → ℝ)} {O : Opens (b → ℝ)}
-  {V : Opens ((a → ℝ) × (b → ℝ))}
+variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimensional ℝ D] {Ω : Opens E} {O : Opens D}
+  {V : Opens (E × D)}
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
@@ -196,7 +199,7 @@ continuous linear map `A : 𝓓(O, W) → 𝓓'(Ω, F)`, for the topology of com
 distributions, is the operator `vectorKernelOperator hV K` of a unique distribution `K` on
 `V = Ω × O` with values in `W →L[ℝ] F`. -/
 theorem existsUnique_vectorKernelOperator_eq (A : 𝓓(O, W) →L[ℝ] 𝓓'(Ω, F))
-    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
     ∃! K : 𝓓'(V, W →L[ℝ] F), vectorKernelOperator hV.symm.subset K = A :=
   LinearMap.existsUnique_vectorKernelOperator_eq _
     (fun φ ↦ (continuous_eval_const φ).comp A.continuous) hV

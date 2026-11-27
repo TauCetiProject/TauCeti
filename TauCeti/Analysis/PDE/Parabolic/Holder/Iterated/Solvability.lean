@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.CauchyProblem
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Backward
 import TauCeti.Analysis.Holder.Inclusion
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.DifferentiatedEquation
 
 /-!
@@ -86,6 +87,9 @@ norms of the coefficients and of the data.
 * `TauCeti.ParabolicCkHolderSpace.exists_norm_euclideanInitialDataCLE_symm_le` and
   `exists_norm_euclideanTerminalDataCLE_symm_le`: the solution operators are bounded uniformly in
   the coefficients and the horizon.
+* `TauCeti.ParabolicCkHolderSpace.exists_norm_euclideanInitialDataCLE_symm_sub_le` and
+  `exists_norm_euclideanTerminalDataCLE_symm_sub_le`: the solution operators depend Lipschitz
+  continuously on the coefficients, in operator norm.
 * `TauCeti.ParabolicCkHolderSpace.timeReverseLIE_euclideanTerminalDataCLE_symm_apply`: the terminal
   solution operator is the reversed initial solution operator.
 
@@ -538,11 +542,8 @@ private theorem exists_eq_sum_mul_and_norm_le (hα : α ≤ 1) {j : ℕ} {T : �
     (E := EuclideanSpace ℝ ι) (hab := hT) hα
   set c : ℝ := 21 * (j + 1) ^ 2 * 2 ^ j
   have hmul (X Y : ParabolicCkHolderSpace j α (EuclideanSpace ℝ ι) ℝ hT) :
-      ‖mulL X Y‖ ≤ c * (‖X‖ * ‖Y‖) := by
-    refine (ContinuousLinearMap.norm_compParabolicCkHolder₂_apply_le _ hα X Y).trans ?_
-    have h1 : ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ 1 := ContinuousLinearMap.opNorm_mul_le ℝ ℝ
-    calc c * ‖ContinuousLinearMap.mul ℝ ℝ‖ * ‖X‖ * ‖Y‖ ≤ c * 1 * ‖X‖ * ‖Y‖ := by gcongr
-      _ = c * (‖X‖ * ‖Y‖) := by ring
+      ‖mulL X Y‖ ≤ c * (‖X‖ * ‖Y‖) :=
+    ContinuousLinearMap.norm_mul_compParabolicCkHolder₂_apply_le hα X Y
   refine ⟨∑ i, ∑ l, mulL (A i l) (H i l) + ∑ i, mulL (B i) (G i) + mulL C V,
     fun p ↦ by simp [mulL, Finset.sum_apply], ?_⟩
   have h₁ : ‖∑ i, ∑ l, mulL (A i l) (H i l)‖ ≤ c * ∑ i, ∑ l, ‖A i l‖ * ‖H i l‖ := by
@@ -557,16 +558,6 @@ private theorem exists_eq_sum_mul_and_norm_le (hα : α ≤ 1) {j : ℕ} {T : �
   refine (norm_add₃_le).trans ?_
   rw [mul_add, mul_add]
   linarith
-
-omit [DecidableEq ι] in
-/-- Reading a map of order `k + 1` at order `k` costs at most `8 (k + 1)²`. -/
-private theorem norm_inclusionOfLEL_succ_le (hα : α ≤ 1) {k : ℕ} {T : ℝ≥0} {hT : (0 : ℝ) < T}
-    (f : ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT) :
-    ‖inclusionOfLEL hα k.le_succ f‖ ≤ 8 * (k + 1) ^ 2 * ‖f‖ := by
-  have h := norm_inclusionOfLEL_le (E := EuclideanSpace ℝ ι) (F := ℝ) (hab := hT) hα k.le_succ
-  rw [show k.succ - k = 1 by omega, pow_one] at h
-  push_cast at h
-  exact ContinuousLinearMap.le_of_opNorm_le _ h f
 
 omit [DecidableEq ι] in
 /-- The inclusion of consecutive orders, applied to a scalar map on `ℝⁿ`. -/
@@ -890,15 +881,17 @@ private theorem schauderBound_succ (hα₁ : α < 1) {lam : ℝ} {k : ℕ}
   have est' := est T hT hTT₀ (fun i j ↦ inclusionOfLEL hα₁.le k.le_succ (a i j))
     (fun i ↦ inclusionOfLEL hα₁.le k.le_succ (b i)) (inclusionOfLEL hα₁.le k.le_succ c)
     (by simpa only [inclusionOfLEL_apply] using ha)
-    (fun i j ↦ (norm_inclusionOfLEL_succ_le hα₁.le _).trans (by push_cast; gcongr; exact hak i j))
-    (fun i ↦ (norm_inclusionOfLEL_succ_le hα₁.le _).trans (by push_cast; gcongr; exact hbk i))
-    ((norm_inclusionOfLEL_succ_le hα₁.le _).trans (by push_cast; gcongr))
+    (fun i j ↦ (norm_inclusionOfLEL_succ_apply_le hα₁.le _).trans
+      (by push_cast; gcongr; exact hak i j))
+    (fun i ↦ (norm_inclusionOfLEL_succ_apply_le hα₁.le _).trans
+      (by push_cast; gcongr; exact hbk i))
+    ((norm_inclusionOfLEL_succ_apply_le hα₁.le _).trans (by push_cast; gcongr))
   -- It bounds `u` read at order `k + 2`, and the directional derivatives of `u`.
   have hv : ‖v‖ ≤ D₁ * (‖f‖ + ‖g‖) := by
     have h := est' v
     rw [← inclusionOfLEL_euclideanSecondOrderCoeff, ← inclusionOfLEL_euclideanFirstOrderCoeff,
       ← inclusionOfLEL_euclideanZerothOrderCoeff, ← inclusionOfLEL_parabolicOperatorL] at h
-    have h₁ := norm_inclusionOfLEL_succ_le hα₁.le f
+    have h₁ := norm_inclusionOfLEL_succ_apply_le hα₁.le f
     have h₂ := norm_spatialTrace_inclusionOfLEL_le hα₁.le u ⟨0, left_mem_Icc.2 hT.le⟩
     refine h.trans ?_
     calc C₁ * (_ + _) ≤ C₁ * (8 * (k + 1) ^ 2 * ‖f‖ + (k + 6) * ‖g‖) := by gcongr
@@ -1022,6 +1015,113 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ :
         rw [timeReverseLIE_euclideanTerminalDataCLE_symm_apply]
         exact ContinuousLinearMap.le_of_opNorm_le _ h _
     _ = C * ‖d‖ := by simp [Prod.norm_def]
+
+/-- The perturbation bound of the initial-data and terminal-data operators
+(`TauCeti.ParabolicCkHolderSpace.norm_initialDataL_sub_le`,
+`TauCeti.ParabolicCkHolderSpace.norm_terminalDataL_sub_le`), evaluated at the coefficient fields of
+two triples of scalar coefficients, is at most `1344 (k + 1)⁴ (k + 2)² 2ᵏ` times the total distance
+`∑ᵢⱼ ‖aⁱʲ - a'ⁱʲ‖ + ∑ᵢ ‖bⁱ - b'ⁱ‖ + ‖c - c'‖` between the triples. -/
+private theorem coeffPerturbation_le {k : ℕ} {T : ℝ≥0} {hT : (0 : ℝ) < T}
+    (a a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+    (b b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+    (c c' : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT) :
+    21 * (k + 1) ^ 2 * 2 ^ k * (‖euclideanSecondOrderCoeff a - euclideanSecondOrderCoeff a'‖ +
+        8 * (k + 1) ^ 2 * ‖euclideanFirstOrderCoeff b - euclideanFirstOrderCoeff b'‖ +
+        64 * (k + 1) ^ 2 * (k + 2) ^ 2 *
+          ‖euclideanZerothOrderCoeff c - euclideanZerothOrderCoeff c'‖) ≤
+      1344 * (k + 1) ^ 4 * (k + 2) ^ 2 * 2 ^ k *
+        (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  rw [← euclideanSecondOrderCoeff_sub, ← euclideanFirstOrderCoeff_sub,
+    ← euclideanZerothOrderCoeff_sub]
+  set N : ℝ := 64 * (k + 1) ^ 2 * (k + 2) ^ 2
+  have hN₁ : 1 ≤ N := by simp only [N]; nlinarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]
+  have hN₈ : 8 * ((k : ℝ) + 1) ^ 2 ≤ N := by
+    simp only [N]; nlinarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]
+  have hA := (norm_euclideanSecondOrderCoeff_le (a - a')).trans
+    (le_mul_of_one_le_left (by positivity) hN₁)
+  have hB := mul_le_mul hN₈ (norm_euclideanFirstOrderCoeff_le (b - b')) (norm_nonneg _)
+    (by positivity)
+  have hC := mul_le_mul_of_nonneg_left (norm_euclideanZerothOrderCoeff_le (c - c'))
+    (by positivity : 0 ≤ N)
+  simp only [Pi.sub_apply] at hA hB
+  calc _ ≤ 21 * (k + 1) ^ 2 * 2 ^ k * (N * ∑ i, ∑ j, ‖a i j - a' i j‖ +
+        N * ∑ i, ‖b i - b' i‖ + N * ‖c - c'‖) :=
+        mul_le_mul_of_nonneg_left (add_le_add (add_le_add hA hB) hC) (by positivity)
+    _ = _ := by simp only [N]; ring
+
+/-- **The Cauchy problem at every order: Lipschitz dependence on the coefficients.** Under the
+bounds of `exists_norm_euclideanInitialDataCLE_symm_le`, the solution operators of two Cauchy
+problems on `ℝⁿ × [0, T]`, `T ≤ T₀`, differ in operator norm by at most
+`C (∑ᵢⱼ ‖aⁱʲ - a'ⁱʲ‖ + ∑ᵢ ‖bⁱ - b'ⁱ‖ + ‖c - c'‖)`, with the norms of `C_{par,b}^{k+α}`. This is the
+order-`k` form of `TauCeti.ParabolicC2HolderSpace.exists_norm_euclideanInitialDataCLE_symm_sub_le`.
+-/
+theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ}
+    (hlam : 0 < lam) (k : ℕ) (K T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (b b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (c c' : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+        (ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a' i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i j, ‖a' i j‖ ≤ K) → (∀ i, ‖b' i‖ ≤ K) → ‖c'‖ ≤ K →
+        ‖(euclideanInitialDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+          (euclideanInitialDataCLE hα₀ hα₁ a' b' c'
+            ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
+          C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam k K T₀
+  set M : ℝ := 1344 * (k + 1) ^ 4 * (k + 2) ^ 2 * 2 ^ k
+  refine ⟨C * M * C, by positivity,
+    fun T hT hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
+  -- The two isomorphisms differ only in their forcing component.
+  have hdiff : ‖(euclideanInitialDataCLE hα₀ hα₁ a' b' c' ⟨lam, hlam, ha'⟩).toContinuousLinearMap -
+      (euclideanInitialDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩).toContinuousLinearMap‖ ≤
+      M * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+    rw [norm_sub_rev, coe_euclideanInitialDataCLE, coe_euclideanInitialDataCLE]
+    exact (norm_initialDataL_sub_le hα₁.le).trans (coeffPerturbation_le a a' b b' c c')
+  exact (ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le_of_le
+    (hest T hT hTT₀ a b c ha hak hbk hck) (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck')
+    hdiff).trans_eq (by ring)
+
+/-- **The terminal-value problem at every order: Lipschitz dependence on the coefficients.** Under
+the bounds of `exists_norm_euclideanTerminalDataCLE_symm_le`, the solution operators of two
+terminal-value problems on `ℝⁿ × [0, T]`, `T ≤ T₀`, differ in operator norm by at most
+`C (∑ᵢⱼ ‖aⁱʲ - a'ⁱʲ‖ + ∑ᵢ ‖bⁱ - b'ⁱ‖ + ‖c - c'‖)`, with the norms of `C_{par,b}^{k+α}`. This is the
+order-`k` form of `TauCeti.ParabolicC2HolderSpace.exists_norm_euclideanTerminalDataCLE_symm_sub_le`.
+-/
+theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ}
+    (hlam : 0 < lam) (k : ℕ) (K T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (b b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (c c' : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+        (ha' : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a' i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i j, ‖a' i j‖ ≤ K) → (∀ i, ‖b' i‖ ≤ K) → ‖c'‖ ≤ K →
+        ‖(euclideanTerminalDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+          (euclideanTerminalDataCLE hα₀ hα₁ a' b' c'
+            ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
+          C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  obtain ⟨C, hC, hest⟩ :=
+    exists_norm_euclideanTerminalDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam k K T₀
+  set M : ℝ := 1344 * (k + 1) ^ 4 * (k + 2) ^ 2 * 2 ^ k
+  refine ⟨C * M * C, by positivity,
+    fun T hT hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
+  -- The two isomorphisms differ only in their forcing component.
+  have hdiff : ‖(euclideanTerminalDataCLE hα₀ hα₁ a' b' c' ⟨lam, hlam, ha'⟩).toContinuousLinearMap -
+      (euclideanTerminalDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩).toContinuousLinearMap‖ ≤
+      M * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+    rw [norm_sub_rev, coe_euclideanTerminalDataCLE, coe_euclideanTerminalDataCLE]
+    exact (norm_terminalDataL_sub_le hα₁.le _ _ _ _ _ _).trans
+      (coeffPerturbation_le a a' b b' c c')
+  exact (ContinuousLinearEquiv.norm_coe_symm_sub_coe_symm_le_of_le
+    (hest T hT hTT₀ a b c ha hak hbk hck) (hest T hT hTT₀ a' b' c' ha' hak' hbk' hck')
+    hdiff).trans_eq (by ring)
 
 end Estimate
 

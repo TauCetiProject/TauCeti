@@ -25,7 +25,9 @@ estimate on a set covered by finitely many pieces
 `eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) ≤ ∑ i ∈ t, eLpNorm f p (μ.restrict (s i))`.
 No measurability of the sets is needed. The same bound holds on any set covered by finitely many
 pieces (`MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`), so a function in `Lᵖ` on each
-piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`).
+piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`). By
+compactness, a function in `Lᵖ` on a neighbourhood within a compact set of each of its points is
+in `Lᵖ` on the compact set (`IsCompact.memLp_restrict_of_forall_nhdsWithin`).
 For a function in `Lᵖ` on each piece, the same subadditivity holds for the real-valued norm
 `lpNorm` (`MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`).
 On a countable union of sets the `L^∞` seminorm is the supremum of the `L^∞` seminorms on the
@@ -58,11 +60,13 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
   `Lᵖ` on the covered set.
 * `MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`: subadditivity of `lpNorm` over a
   finite cover.
+* `IsCompact.memLp_restrict_of_forall_nhdsWithin`: `Lᵖ` on a neighbourhood within a compact set
+  of each of its points gives `Lᵖ` on the compact set.
 -/
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
@@ -255,5 +259,17 @@ theorem MemLp.restrict_of_subset_iUnion {ι : Type*} [Finite ι] {f : α → ε}
   rw [tsum_fintype]
   exact ENNReal.sum_lt_top.2 fun i _ =>
     (hint (hf i).aestronglyMeasurable).1 (hf i).eLpNorm_lt_top
+
+
+/-- **`Lᵖ` membership on a compact set from neighbourhoods within it.** If every point of a compact
+set `K` has a neighbourhood within `K` on which `f` is in `Lᵖ`, then `f` is in `Lᵖ` on `K`. -/
+theorem _root_.IsCompact.memLp_restrict_of_forall_nhdsWithin [TopologicalSpace α] {f : α → ε}
+    {K : Set α} (hK : IsCompact K)
+    (h : ∀ x ∈ K, ∃ t ∈ 𝓝[K] x, MemLp f p (μ.restrict t)) :
+    MemLp f p (μ.restrict K) :=
+  hK.induction_on (p := fun s => MemLp f p (μ.restrict s)) (by simp)
+    (fun _ _ hst ht => ht.mono_measure (Measure.restrict_mono hst le_rfl))
+    (fun s t hs ht => MemLp.restrict_of_subset_iUnion (t := fun b => cond b s t)
+      Set.union_eq_iUnion.subset (Bool.forall_bool.2 ⟨ht, hs⟩)) h
 
 end MeasureTheory

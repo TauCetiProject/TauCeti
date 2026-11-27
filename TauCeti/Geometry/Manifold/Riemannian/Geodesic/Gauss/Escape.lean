@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Polar.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.RadialLength
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The escape estimate for normal neighbourhoods

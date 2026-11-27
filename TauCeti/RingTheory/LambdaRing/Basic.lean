@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.PowerSeries.Inverse
 
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
+
 /-!
 # Pre-λ structures
 
@@ -51,6 +53,7 @@ rather than a class.
 * `TauCeti.PreLambdaStructure.totalSeries_add`: the total operation turns sums into products.
 * `TauCeti.PreLambdaStructure.lambda_apply_zero` and `TauCeti.PreLambdaStructure.totalSeries_neg`:
   the zero formula `λ_t 0 = 1` and the virtual-negative formula `λ_t (-x) = (λ_t x)⁻¹`.
+* `TauCeti.PreLambdaStructure.IsLine.lambda_neg`: for a line element `l`, `λᵏ (-l) = (-l)ᵏ`.
 * `TauCeti.PreLambdaHom.isLambdaIdeal_ker`: kernels of morphisms are λ-ideals.
 * `TauCeti.PreLambdaStructure.eq_of_surjective` and
   `TauCeti.PreLambdaStructure.eq_of_injective`: uniqueness of the quotient and restricted
@@ -269,6 +272,22 @@ theorem IsLine.totalSeries_eq {l : R} (h : Λ.IsLine l) : Λ.totalSeries l = 1 +
 /-- `0` is a line element. -/
 @[simp]
 theorem isLine_zero : Λ.IsLine 0 := fun _ hn => Λ.lambda_apply_zero_of_ne_zero (by omega)
+
+variable {Λ} in
+/-- The negative of a line element `l` has total operation `(1 + l t)⁻¹ = ∑ₖ (-l)ᵏ tᵏ`. -/
+theorem IsLine.totalSeries_neg {l : R} (h : Λ.IsLine l) :
+    Λ.totalSeries (-l) = PowerSeries.mk fun k => (-l) ^ k := by
+  -- `∑ (-l)ᵏ tᵏ` is the geometric series inverting `1 - (-l) t = 1 + l t`
+  have hinv : (PowerSeries.mk fun k => (-l) ^ k) * Λ.totalSeries l = 1 := by
+    rw [h.totalSeries_eq]
+    simpa only [map_neg, neg_mul, sub_neg_eq_add] using
+      powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one (-l)
+  exact (Λ.isUnit_totalSeries l).mul_left_inj.1 ((Λ.totalSeries_neg_mul l).trans hinv.symm)
+
+variable {Λ} in
+/-- The operations on the negative of a line element `l` are the powers `λᵏ (-l) = (-l)ᵏ`. -/
+theorem IsLine.lambda_neg {l : R} (h : Λ.IsLine l) (k : ℕ) : Λ.lambda k (-l) = (-l) ^ k := by
+  rw [← coeff_totalSeries, h.totalSeries_neg, coeff_mk]
 
 /-! ### Uniqueness of induced structures -/
 

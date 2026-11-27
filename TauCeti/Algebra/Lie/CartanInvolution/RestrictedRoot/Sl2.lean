@@ -39,6 +39,8 @@ directions, the multiples of a restricted root that are restricted roots are amo
 ## Main results
 
 * `LieEquiv.IsCartanInvolution.apply_restrictedCoroot`: `λ(H'_λ) = 2` for `λ ≠ 0`.
+* `LieEquiv.IsCartanInvolution.restrictedCoroot_injective`: distinct functionals have distinct
+  coroots.
 * `LieEquiv.IsCartanInvolution.isSl2Triple_restrictedCoroot`: `(H'_λ, E, c θE)` is an `𝔰𝔩₂`
   triple for nonzero `E ∈ 𝔤_λ`.
 * `LieEquiv.IsCartanInvolution.exists_isSl2Triple_restrictedCoroot`: some `F ∈ 𝔤_{-λ}` completes
@@ -123,6 +125,26 @@ theorem restrictedCoroot_smul (μ : Dual K 𝔞) (c : K) :
 theorem restrictedCoroot_neg (μ : Dual K 𝔞) :
     hθ.restrictedCoroot h𝔞 (-μ) = -hθ.restrictedCoroot h𝔞 μ := by
   rw [← neg_one_smul K μ, restrictedCoroot_smul, inv_neg, inv_one, neg_one_smul]
+
+/-- A functional is recovered from its coroot: `λ = (2 / B(H'_λ, H'_λ)) B(H'_λ, ·)`. -/
+theorem eq_smul_killingEquivDual_restrictedCoroot (μ : Dual K 𝔞) :
+    μ = (2 / killingForm K L (hθ.restrictedCoroot h𝔞 μ) (hθ.restrictedCoroot h𝔞 μ)) •
+      hθ.killingEquivDual h𝔞 (hθ.restrictedCoroot h𝔞 μ) := by
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · simp [restrictedCoroot_def]
+  have hm := (hθ.apply_killingEquivDual_symm_pos h𝔞 hμ).ne'
+  rw [← hθ.killingEquivDual_apply_apply h𝔞]
+  simp only [restrictedCoroot_def, map_smul, LinearEquiv.apply_symm_apply, LinearMap.smul_apply,
+    smul_eq_mul, smul_smul]
+  conv_lhs => rw [← one_smul K μ]
+  congr 1
+  field_simp
+
+/-- **Distinct functionals have distinct coroots.** -/
+theorem restrictedCoroot_injective : Function.Injective (hθ.restrictedCoroot h𝔞) :=
+  fun μ ν h ↦ by
+    rw [hθ.eq_smul_killingEquivDual_restrictedCoroot h𝔞 μ,
+      hθ.eq_smul_killingEquivDual_restrictedCoroot h𝔞 ν, h]
 
 /-- On the restricted root space `𝔤_ν`, the coroot `H'_λ` acts by `ν(H'_λ)`. -/
 theorem restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace {ν : Dual K 𝔞} (μ : Dual K 𝔞)
