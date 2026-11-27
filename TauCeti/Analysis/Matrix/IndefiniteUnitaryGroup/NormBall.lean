@@ -44,8 +44,8 @@ norm is integrable. The threshold `2 d` comes from the crude covering argument a
   to the units of a finite-dimensional normed algebra.
 * `Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le`: for a unitary Gram matrix `J`,
   `ν {s | ‖y * j s‖ ≤ R} ≤ (1 + 2 R² / ε) ^ d * ν {s | ‖j s - 1‖ ≤ ε}`.
-* `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le`: for an almost-everywhere
-  measurable norm and A > 2 d,
+* `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le`: for `A > 2 d`, assuming the
+  translated norm `s ↦ ‖y * j s‖` is almost everywhere measurable,
   `∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`.
 * `Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le_of_isMulRightInvariant` and
   `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant`: the
@@ -170,10 +170,9 @@ theorem lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant
     (fun _ _ ↦ measure_setOf_norm_mul_le_le_of_isMulRightInvariant ν hJ j y one_pos) hA
 
 /-- **Inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary matrix, `ν` a
-left-invariant measure on a group `S`, and `j : S →* unitaryGroupOf J`. Suppose the
-operator norm
-of y * j s is almost everywhere measurable. Let A > 2 d, where d is the real dimension
-of the matrices. Then
+left-invariant measure on a group `S`, and `j : S →* unitaryGroupOf J` such that
+`s ↦ ‖y * j s‖` is almost everywhere measurable. For a real `A > 2 d`, where `d` is the real
+dimension of the matrices,
 
 `∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`
 
