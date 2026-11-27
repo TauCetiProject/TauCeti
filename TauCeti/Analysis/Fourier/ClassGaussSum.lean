@@ -22,8 +22,9 @@ In a second countable Hausdorff topological ring with continuous star, for a
 sigma-finite measure finite on compact sets, a compact subring and a continuous
 character, the integrand is integrable and its integral varies continuously
 with the frequency `b` and norm `α`.
-Its absolute value is at most the volume of the class, and its value at frequency
-zero is exactly that volume. We also give conjugation and change-of-norm formulas.
+Its absolute value is at most the `Measure.real` of the class, and its value at
+frequency zero is exactly that real measure: the class volume when finite, and zero
+when infinite. We also give conjugation and change-of-norm formulas.
 
 The construction is useful for Fourier descriptions of local densities of hermitian
 forms. The elementary API does not require `J` to be hermitian: that hypothesis
@@ -64,13 +65,15 @@ theorem classGaussSum_def (R : Subring A) (μ : Measure A) (ψ : AddChar A Circl
 variable (R : Subring A) (μ : Measure A) (ψ : AddChar A Circle)
   (τ : A) (J : Matrix ι ι A) (g : Aˣ) (x₀ : ι → A) (α b : A)
 
-/-- At frequency zero, the Gauss integral equals the volume of its class. -/
+/-- At frequency zero, the Gauss integral equals the `Measure.real` of its class:
+the class volume when finite, and zero when infinite. -/
 @[simp]
 theorem classGaussSum_zero_frequency : classGaussSum R μ ψ τ J g x₀ α 0 =
     ((Measure.pi (fun _ : ι ↦ μ)).real (R.residueClass g x₀) : ℂ) := by
   simp [classGaussSum]
 
-/-- The trivial character also gives the volume of the class. -/
+/-- The trivial character gives the `Measure.real` of the class:
+the class volume when finite, and zero when infinite. -/
 @[simp]
 theorem classGaussSum_zero_character : classGaussSum R μ 0 τ J g x₀ α b =
     ((Measure.pi (fun _ : ι ↦ μ)).real (R.residueClass g x₀) : ℂ) := by
