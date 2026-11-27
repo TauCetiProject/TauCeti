@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Nondegenerate
 public import TauCeti.Geometry.Symplectic.JHolomorphic.ConfigurationCount
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Weight
 
@@ -18,7 +18,9 @@ coefficient of the local series `f_(σ, i)` (`TauCeti.torusWeightSeries`), and a
 pairwise disjoint tori on the homology ray of a class `A₀` is counted by the coefficients of the
 product of their local series, each evaluated at `t ^ m` for a torus of class `m A₀`
 (`TauCeti.configurationCount_eq_coeff_rayTorusWeightSeries`). This file tests these definitions
-on explicit families, in the integral homology `H = ℤ` of a ray with `A₀ = 1`.
+on explicit families, in the integral homology `H = ℤ` of a ray with `A₀ = 1`, where the count
+of a finite family of tori is a coefficient of the product of their substituted local series
+(`configurationCount_univ_eq_coeff_prod_expand`).
 
 * **The local series.** The first coefficients of `f_(+,2)`, `f_(+,3)` and `f_(-,3)` are
   `1, 1, -1, -1, 1, 1`, `1, 1, -2, -2, 2, 2` and `1, -1, 3, -3, 5, -5`
@@ -52,13 +54,13 @@ on explicit families, in the integral homology `H = ℤ` of a ray with `A₀ = 1
   (`TauCeti.X_mul_derivative_torusWeightSeries_of_det_eq_one`). For the rotation
   `R_θ = Matrix.SpecialLinearGroup.rotation θ` through an angle `θ ∉ 2πℚ`, an elliptic return
   map all of whose iterates are nondegenerate, `det (1 - R_θ ^ k) = 2 - 2 cos (k θ) > 0` for
-  every `k ≥ 1` (`det_one_sub_rotation_pow`, `det_one_sub_rotation_pow_pos`). So the signs sum to
-  `t / (1 - t)` (`mk_sign_det_one_sub_rotation_pow`) and the label is `(+, 0)`, with series
-  `1 / (1 - t)` (`torusWeightSeries_label_rotation`). For a negative hyperbolic `P`
-  (`trace P < -2`) the sign of `det (1 - P ^ k)` is `(-1) ^ (k + 1)`
-  (`sign_det_one_sub_pow_of_trace_lt_neg_two`), the signs sum to `t / (1 + t)`
-  (`mk_sign_det_one_sub_pow_of_trace_lt_neg_two`) and the label is `(+, 1)`, with series `1 + t`
-  (`torusWeightSeries_label_of_trace_lt_neg_two`).
+  every `k ≥ 1` (`Matrix.SpecialLinearGroup.det_one_sub_rotation_pow`,
+  `Matrix.SpecialLinearGroup.det_one_sub_rotation_pow_pos`). So the signs sum to `t / (1 - t)`
+  (`mk_sign_det_one_sub_rotation_pow`) and the label is `(+, 0)`, with series `1 / (1 - t)`
+  (`torusWeightSeries_label_rotation`). For a negative hyperbolic `P` (`trace P < -2`) the sign
+  of `det (1 - P ^ k)` is `(-1) ^ (k + 1)` (`Matrix.sign_det_one_sub_pow_of_trace_lt_neg_two`),
+  the signs sum to `t / (1 + t)` (`TauCeti.mk_sign_det_one_sub_pow_of_trace_lt_neg_two`) and the
+  label is `(+, 1)`, with series `1 + t` (`torusWeightSeries_label_of_trace_lt_neg_two`).
 
 ## References
 
@@ -75,7 +77,7 @@ public section
 noncomputable section
 
 open PowerSeries Matrix
-open Matrix.SpecialLinearGroup (rotation rotation_pow coe_rotation)
+open Matrix.SpecialLinearGroup (rotation det_one_add_rotation det_one_sub_rotation_pow_pos)
 open scoped Real MatrixGroups
 
 namespace TauCeti.Examples.TorusWeight
@@ -112,18 +114,25 @@ theorem torusWeight_true_zero (m : ℕ) : torusWeight true 0 m = 1 := by
 The tori lie on the ray of the class `A₀ = 1` of `H = ℤ`, and two distinct tori are compatible,
 that is disjoint. -/
 
+/-- **A finite family of tori on the ray.** For pairwise compatible tori indexed by a finite
+type, the torus `c` having class `m c • A₀` and label `(σ c, i c)`, the count in the class `j A₀`
+is the coefficient of `t ^ j` in `∏_c f_(σ c, i c)(t ^ m c)`. -/
+theorem configurationCount_univ_eq_coeff_prod_expand {ι : Type*} [Fintype ι] {r : ι → ι → Prop}
+    (hr : (Set.univ : Set ι).Pairwise r) (m : ι → ℕ+) (σ : ι → Bool) (i : ι → Fin 4) (j : ℕ) :
+    configurationCount r (fun c ↦ ((m c : ℕ) : ℤ)) (fun c ↦ torusWeight (σ c) (i c)) Set.univ
+        (j : ℤ) =
+      coeff j (∏ c, expand (m c) (m c).ne_zero (torusWeightSeries (σ c) (i c))) := by
+  rw [← nsmul_one, configurationCount_eq_coeff_rayTorusWeightSeries hr
+    (fun _ _ ↦ (nsmul_one _).symm) (fun a b h ↦ by simpa using h) (fun _ _ ↦ rfl)
+    (s := Finset.univ) (by simp) (fun _ _ _ ↦ Finset.mem_univ _), rayTorusWeightSeries_def]
+
 /-- **One torus.** The count of a single torus of class `A₀` and label `(σ, i)` in the class
 `j A₀` is its weight `w_(σ, i)(j)`. -/
 theorem configurationCount_unit (σ : Bool) (i : Fin 4) (j : ℕ) :
     configurationCount (fun _ _ : Unit ↦ True) (fun _ ↦ (1 : ℤ)) (fun _ ↦ torusWeight σ i)
       Set.univ (j : ℤ) = torusWeight σ i j := by
-  have h := configurationCount_eq_coeff_rayTorusWeightSeries (r := fun _ _ : Unit ↦ True)
-    (cls := fun _ ↦ (1 : ℤ)) (A₀ := 1) (m := fun _ ↦ 1) (w := fun _ ↦ torusWeight σ i)
-    (σ := fun _ ↦ σ) (i := fun _ ↦ i) (s := Finset.univ) (j := j)
-    (T := Set.univ) (fun _ _ _ _ _ ↦ trivial) (fun _ _ ↦ by simp)
-    (fun a b h ↦ by simpa using h) (fun _ _ ↦ rfl) (by simp) (fun _ _ _ ↦ Finset.mem_univ _)
-  rw [← nsmul_one, h, rayTorusWeightSeries_def]
-  simp [torusWeight_def]
+  simpa [torusWeight_def] using configurationCount_univ_eq_coeff_prod_expand
+    (r := fun _ _ : Unit ↦ True) (fun _ _ _ _ _ ↦ trivial) (fun _ ↦ 1) (fun _ ↦ σ) (fun _ ↦ i) j
 
 /-- A torus of label `(-, 0)`, with series `f_(-,0) = 1 - t`, contributes `-1` in its own class
 and nothing in its multiples. -/
@@ -147,15 +156,12 @@ have count `k + 1` in the class `k A₀`: the coefficient of `t ^ k` in
 theorem configurationCount_two_tori (k : ℕ) :
     configurationCount (fun c d : Fin 2 ↦ c ≠ d) (fun _ ↦ (1 : ℤ)) (fun _ ↦ torusWeight true 0)
       Set.univ (k : ℤ) = k + 1 := by
-  have h := configurationCount_eq_coeff_rayTorusWeightSeries (r := fun c d : Fin 2 ↦ c ≠ d)
-    (cls := fun _ ↦ (1 : ℤ)) (A₀ := 1) (m := fun _ ↦ 1) (w := fun _ ↦ torusWeight true 0)
-    (σ := fun _ ↦ true) (i := fun _ ↦ 0) (s := Finset.univ) (j := k)
-    (T := Set.univ) (fun _ _ _ _ h ↦ h) (fun _ _ ↦ by simp)
-    (fun a b h ↦ by simpa using h) (fun _ _ ↦ rfl) (by simp) (fun _ _ _ ↦ Finset.mem_univ _)
-  rw [← nsmul_one, h, rayTorusWeightSeries_def]
-  simp only [PNat.val_ofNat, expand_one_apply, Finset.prod_const, Finset.card_univ,
+  have h := configurationCount_univ_eq_coeff_prod_expand (r := fun c d : Fin 2 ↦ c ≠ d)
+    (fun _ _ _ _ h ↦ h) (fun _ ↦ 1) (fun _ ↦ true) (fun _ ↦ 0) k
+  simp only [PNat.val_ofNat, Nat.cast_one, expand_one_apply, Finset.prod_const, Finset.card_univ,
     Fintype.card_fin, torusWeightSeries_true_zero, mk_one_pow_eq_mk_choose_add, coeff_mk,
-    Nat.choose_one_right]
+    Nat.choose_one_right] at h
+  rw [h]
   push_cast
   ring
 
@@ -179,13 +185,8 @@ disjoint torus `T'` of class `2 A₀` and label `(+, 1)` have the ray series
 theorem configurationCount_ray (j : ℕ) :
     configurationCount (fun c d : Fin 2 ↦ c ≠ d) (fun c ↦ (((![1, 2] : Fin 2 → ℕ+) c : ℕ) : ℤ))
       (fun c ↦ torusWeight true (![0, 1] c)) Set.univ (j : ℤ) = if j ≤ 1 then 1 else 2 := by
-  have h := configurationCount_eq_coeff_rayTorusWeightSeries (r := fun c d : Fin 2 ↦ c ≠ d)
-    (cls := fun c ↦ (((![1, 2] : Fin 2 → ℕ+) c : ℕ) : ℤ)) (A₀ := 1) (m := ![1, 2])
-    (w := fun c ↦ torusWeight true (![0, 1] c)) (σ := fun _ ↦ true) (i := ![0, 1])
-    (s := Finset.univ) (j := j)
-    (T := Set.univ) (fun _ _ _ _ h ↦ h) (fun _ _ ↦ by simp)
-    (fun a b h ↦ by simpa using h) (fun _ _ ↦ rfl) (by simp) (fun _ _ _ ↦ Finset.mem_univ _)
-  rw [← nsmul_one, h, rayTorusWeightSeries_def, Fin.prod_univ_two]
+  rw [configurationCount_univ_eq_coeff_prod_expand (r := fun c d : Fin 2 ↦ c ≠ d)
+    (fun _ _ _ _ h ↦ h) ![1, 2] (fun _ ↦ true) ![0, 1] j, Fin.prod_univ_two]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, PNat.val_ofNat, expand_one_apply,
     torusWeightSeries_true_zero, torusWeightSeries_true_one, map_add, map_one, expand_X]
   rw [mul_add, mul_one, map_add, coeff_mk, coeff_mul_X_pow']
@@ -195,9 +196,7 @@ theorem configurationCount_ray (j : ℕ) :
 in degree one, and would credit the torus of class `2 A₀` to the class `A₀`. -/
 theorem coeff_one_torusWeightSeries_true_zero_mul_true_one :
     coeff 1 (torusWeightSeries true 0 * torusWeightSeries true 1) = 2 := by
-  rw [torusWeightSeries_true_zero, torusWeightSeries_true_one, mul_add, mul_one, map_add,
-    coeff_mk, coeff_succ_mul_X, coeff_mk]
-  norm_num
+  simp [torusWeightSeries_true_zero, torusWeightSeries_true_one, mul_add, coeff_succ_mul_X]
 
 /-! ### The labels of orbit tori
 
@@ -205,46 +204,12 @@ The return map of a periodic orbit of an area-preserving surface map is a `2 × 
 determinant one, and the label of its orbit torus is read off from the signs of `det (1 - P)` and
 `det (1 + P)`, as in `TauCeti.X_mul_derivative_torusWeightSeries_of_det_eq_one`. -/
 
-/-- `det (1 - R_θ ^ k) = 2 - 2 cos (k θ)` for the rotation `R_θ = rotation θ`. -/
-theorem det_one_sub_rotation_pow (θ : ℝ) (k : ℕ) :
-    (1 - (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) ^ k).det = 2 - 2 * Real.cos (k * θ) := by
-  rw [← SpecialLinearGroup.coe_pow, rotation_pow,
-    det_one_sub_eq_two_sub_trace_of_det_eq_one (SpecialLinearGroup.det_coe _), coe_rotation,
-    trace_fin_two_of]
-  ring
-
-/-- `det (1 + R_θ) = 2 + 2 cos θ` for the rotation `R_θ = rotation θ`. -/
-theorem det_one_add_rotation (θ : ℝ) :
-    (1 + (rotation θ : Matrix (Fin 2) (Fin 2) ℝ)).det = 2 + 2 * Real.cos θ := by
-  rw [det_one_add_eq_two_add_trace_of_det_eq_one (SpecialLinearGroup.det_coe _), coe_rotation,
-    trace_fin_two_of]
-  ring
-
-/-- For an angle `θ ∉ 2πℚ`, every iterate of the rotation `R_θ` is nondegenerate, with
-`det (1 - R_θ ^ k) = 2 - 2 cos (k θ) > 0` for `k ≥ 1`. -/
-theorem det_one_sub_rotation_pow_pos {θ : ℝ} (hθ : ∀ q : ℚ, θ ≠ 2 * π * q) {k : ℕ}
-    (hk : k ≠ 0) : 0 < (1 - (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) ^ k).det := by
-  rw [det_one_sub_rotation_pow]
-  have hcos : Real.cos (k * θ) ≠ 1 := by
-    intro h
-    obtain ⟨n, hn⟩ := (Real.cos_eq_one_iff _).1 h
-    refine hθ (n / k) ?_
-    have hk' : (k : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hk
-    push_cast
-    field_simp
-    linarith
-  linarith [(Real.cos_le_one (k * θ)).lt_of_ne hcos]
-
 /-- For an angle `θ ∉ 2πℚ` all the signs `sgn det (1 - R_θ ^ k)`, `k ≥ 1`, are positive, so they
 sum to `∑_{k ≥ 1} t ^ k = t / (1 - t)`. -/
 theorem mk_sign_det_one_sub_rotation_pow {θ : ℝ} (hθ : ∀ q : ℚ, θ ≠ 2 * π * q) :
     (mk fun k ↦ if k = 0 then 0 else
-      (SignType.sign (1 - (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) ^ k).det : ℤ)) = X * mk 1 := by
-  ext (_ | k)
-  · simp
-  · rw [coeff_mk, ite_eq_right k.succ_ne_zero,
-      sign_pos (det_one_sub_rotation_pow_pos hθ k.succ_ne_zero), coeff_succ_X_mul, coeff_mk]
-    simp
+      (SignType.sign (1 - (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) ^ k).det : ℤ)) = X * mk 1 :=
+  mk_sign_det_one_sub_pow_of_forall_pos fun _ hk ↦ det_one_sub_rotation_pow_pos hθ hk
 
 /-- **An elliptic orbit torus has label `(+, 0)`.** For an angle `θ ∉ 2πℚ`, the label read off
 from the rotation `R_θ` is `(+, 0)`: `det (1 - R_θ) > 0` and `det (1 + R_θ) ≥ 0`. Its local series
@@ -263,30 +228,6 @@ theorem torusWeightSeries_label_rotation {θ : ℝ} (hθ : ∀ q : ℚ, θ ≠ 2
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
   {P : Matrix (Fin 2) (Fin 2) R}
-
-/-- For a negative hyperbolic `P` of determinant one (`trace P < -2`), the sign of
-`det (1 - P ^ k)` is `(-1) ^ (k + 1)` for `k ≥ 1`. -/
-theorem sign_det_one_sub_pow_of_trace_lt_neg_two (hdet : P.det = 1) (htr : P.trace < -2)
-    {k : ℕ} (hk : k ≠ 0) : (SignType.sign (1 - P ^ k).det : ℤ) = (-1) ^ (k + 1) := by
-  rcases k.even_or_odd with he | ho
-  · rw [sign_neg (det_one_sub_pow_neg_of_trace_lt_neg_two hdet htr he hk),
-      he.add_one.neg_one_pow]
-    simp
-  · rw [sign_pos (det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr ho),
-      ho.add_one.neg_one_pow]
-    simp
-
-/-- For a negative hyperbolic `P` of determinant one, the signs `sgn det (1 - P ^ k)`, `k ≥ 1`,
-sum to `∑_{k ≥ 1} (-1) ^ (k + 1) t ^ k = t / (1 + t)`. -/
-theorem mk_sign_det_one_sub_pow_of_trace_lt_neg_two (hdet : P.det = 1) (htr : P.trace < -2) :
-    (mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ)) =
-      X * mk fun k ↦ (-1) ^ k := by
-  ext (_ | k)
-  · simp
-  · rw [coeff_mk, ite_eq_right k.succ_ne_zero,
-      sign_det_one_sub_pow_of_trace_lt_neg_two hdet htr k.succ_ne_zero, coeff_succ_X_mul,
-      coeff_mk, pow_succ, pow_succ]
-    ring
 
 /-- **A negative hyperbolic orbit torus has label `(+, 1)`.** For `P` of determinant one with
 `trace P < -2`, the label read off from `P` is `(+, 1)`: `det (1 - P) = 2 - trace P > 0` and

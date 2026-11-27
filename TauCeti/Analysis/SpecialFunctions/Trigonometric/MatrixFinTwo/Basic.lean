@@ -44,10 +44,10 @@ triangle group in `PSL(2, ℝ)`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_pow_eq_one_of_trace_sq_eq_two_mul_cos_pi_div_sq`: if
   `trace A ^ 2 = (2 cos (π / k)) ^ 2` with `2 ≤ k`, then the class of `A` has `k`-th power `1`.
 * `Matrix.SpecialLinearGroup.rotation`: the rotation matrix `!![cos θ, sin θ; -sin θ, cos θ]`;
-  `rotation_zero`, `rotation_add`, `rotation_inv` and `rotation_pow` make the family a
-  one-parameter subgroup, `continuous_rotation` a continuous one, and `pslMk_rotation_pi_div_two`
-  identifies the class of the quarter turn in `PSL(2, ℝ)` with `TauCeti.pslS`, and
-  `trace_rotation_mul` gives the trace `trace A cos θ + (A₁₀ - A₀₁) sin θ` of `rotation θ * A`.
+  `rotation_zero`, `rotation_add` and `rotation_inv` make the family a one-parameter subgroup,
+  `continuous_rotation` a continuous one, and `pslMk_rotation_pi_div_two` identifies the class of
+  the quarter turn in `PSL(2, ℝ)` with `TauCeti.pslS`, and `trace_rotation_mul` gives the trace
+  `trace A cos θ + (A₁₀ - A₀₁) sin θ` of `rotation θ * A`.
 * `Matrix.SpecialLinearGroup.conjRotation`: the conjugated rotation matrix
   (`conjRotation_zero_right` identifies the unconjugated case with `rotation`), with its trace
   `trace_conjRotation`, the trace `trace_conjRotation_mul_conjRotation` of a product, and the
@@ -254,13 +254,6 @@ theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation
 @[simp]
 theorem rotation_inv (θ : ℝ) : (rotation θ)⁻¹ = rotation (-θ) :=
   inv_eq_of_mul_eq_one_right (by rw [← rotation_add, add_neg_cancel, rotation_zero])
-
-/-- The `n`-th power of `rotation θ` is `rotation (n θ)`. -/
-@[simp]
-theorem rotation_pow (θ : ℝ) (n : ℕ) : rotation θ ^ n = rotation (n * θ) := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ, ih, ← rotation_add, Nat.cast_succ, add_one_mul]
 
 /-- The rotations `θ ↦ rotation θ` form a continuous family in `SL(2, ℝ)`. -/
 @[fun_prop]

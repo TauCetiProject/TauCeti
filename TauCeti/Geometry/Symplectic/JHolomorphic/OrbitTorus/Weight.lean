@@ -64,6 +64,10 @@ untwisted sign is the product of the two signs of `S¹ × γ` trivial on `S¹`, 
 
 ## Main results
 
+* `TauCeti.mk_sign_det_one_sub_pow_of_forall_pos`,
+  `TauCeti.mk_sign_det_one_sub_pow_of_trace_lt_neg_two`: the series
+  `∑_{k ≥ 1} sgn det (1 - P ^ k) t ^ k` is `t / (1 - t)` when every `det (1 - P ^ k)` is positive,
+  and `t / (1 + t)` for a negative hyperbolic return map.
 * `TauCeti.X_mul_derivative_torusWeightSeries_false_zero_of_two_lt_trace`: the identity for a
   positive hyperbolic return map and the series `f_(-, 0) = 1 - t`.
 * `TauCeti.X_mul_derivative_torusWeightSeries_true_one_of_trace_lt_neg_two`: the identity for a
@@ -96,6 +100,28 @@ namespace TauCeti
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
   {P : Matrix (Fin 2) (Fin 2) R}
 
+omit [IsStrictOrderedRing R] in
+/-- If every iterate `P ^ k`, `k ≥ 1`, has `0 < det (1 - P ^ k)`, then the signs
+`sgn det (1 - P ^ k)`, `k ≥ 1`, sum to `∑_{k ≥ 1} t ^ k = t / (1 - t)`. -/
+theorem mk_sign_det_one_sub_pow_of_forall_pos (hP : ∀ k ≠ 0, 0 < (1 - P ^ k).det) :
+    (mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ)) = X * mk 1 := by
+  ext (_ | k)
+  · simp
+  · simp [sign_pos (hP _ k.succ_ne_zero), coeff_succ_X_mul]
+
+/-- For a negative hyperbolic `2 × 2` matrix `P` of determinant one (`trace P < -2`), the signs
+`sgn det (1 - P ^ k) = (-1) ^ (k + 1)`, `k ≥ 1`, sum to
+`∑_{k ≥ 1} (-1) ^ (k + 1) t ^ k = t / (1 + t)`. -/
+theorem mk_sign_det_one_sub_pow_of_trace_lt_neg_two (hdet : P.det = 1) (htr : P.trace < -2) :
+    (mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ)) =
+      X * mk fun k ↦ (-1) ^ k := by
+  ext (_ | k)
+  · simp
+  · rw [coeff_mk, ite_eq_right k.succ_ne_zero,
+      sign_det_one_sub_pow_of_trace_lt_neg_two hdet htr k.succ_ne_zero, coeff_succ_X_mul, coeff_mk,
+      pow_succ, pow_succ]
+    ring
+
 /-- For a positive hyperbolic `2 × 2` matrix `P` of determinant one (`2 < trace P`), the local
 series `f_(-, 0) = 1 - t` satisfies `t f' = f ∑_{k ≥ 1} sgn det (1 - P ^ k) t ^ k`: every iterate
 of `P` has `det (1 - P ^ k) < 0`, and `1 - t = exp (-∑_{k ≥ 1} t ^ k / k)`. -/
@@ -124,22 +150,8 @@ theorem X_mul_derivative_torusWeightSeries_true_one_of_trace_lt_neg_two (hdet : 
     (htr : P.trace < -2) :
     X * d⁄dX (torusWeightSeries true 1) = torusWeightSeries true 1 *
       mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ) := by
-  have hS : (mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ)) =
-      mk fun k ↦ if k = 0 then 0 else (-1) ^ (k + 1) := by
-    congr 1
-    funext k
-    split_ifs with hk
-    · rfl
-    rcases k.even_or_odd with he | ho
-    · simp [sign_neg (det_one_sub_pow_neg_of_trace_lt_neg_two hdet htr he hk),
-        he.add_one.neg_one_pow]
-    · simp [sign_pos (det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr ho),
-        ho.add_one.neg_one_pow]
-  have hX : (mk fun k ↦ if k = 0 then 0 else (-1) ^ (k + 1) : ℤ⟦X⟧) =
-      X * mk fun k ↦ (-1) ^ k := by
-    ext (_ | k) <;> simp [coeff_succ_X_mul, pow_succ]
   -- Both sides are `X`, as `(mk fun k ↦ (-1) ^ k) * (1 + X) = 1`.
-  rw [hS, hX, torusWeightSeries_true_one]
+  rw [mk_sign_det_one_sub_pow_of_trace_lt_neg_two hdet htr, torusWeightSeries_true_one]
   simp only [map_add, derivative_one, derivative_X]
   linear_combination (-X) * mk_neg_one_pow_mul_one_add_eq_one (S := ℤ)
 
@@ -151,18 +163,10 @@ theorem X_mul_derivative_torusWeightSeries_true_zero_of_abs_trace_le_two (hdet :
     (htr : |P.trace| ≤ 2) (hP : ∀ k ≠ 0, (1 - P ^ k).det ≠ 0) :
     X * d⁄dX (torusWeightSeries true 0) = torusWeightSeries true 0 *
       mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ) := by
-  have hS : (mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ)) =
-      mk fun k ↦ if k = 0 then 0 else 1 := by
-    congr 1
-    funext k
-    split_ifs with hk
-    · rfl
-    · simp [sign_pos ((det_one_sub_pow_nonneg_of_abs_trace_le_two hdet htr k).lt_of_ne'
-        (hP k hk))]
-  have hX : (mk fun k ↦ if k = 0 then 0 else 1 : ℤ⟦X⟧) = X * mk 1 := by
-    ext (_ | k) <;> simp [coeff_succ_X_mul]
   -- Both sides are `∑ k X ^ k`, the right side being `X * (mk 1) ^ 2`.
-  rw [hS, hX, torusWeightSeries_true_zero, mul_left_comm, ← sq]
+  rw [mk_sign_det_one_sub_pow_of_forall_pos fun k hk ↦
+      (det_one_sub_pow_nonneg_of_abs_trace_le_two hdet htr k).lt_of_ne' (hP k hk),
+    torusWeightSeries_true_zero, mul_left_comm, ← sq]
   ext (_ | n)
   · simp
   · rw [coeff_succ_X_mul, coeff_succ_X_mul, coeff_derivative, mk_one_pow_eq_mk_choose_add]
