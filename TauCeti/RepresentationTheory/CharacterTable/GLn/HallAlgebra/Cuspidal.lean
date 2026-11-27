@@ -39,7 +39,7 @@ similar to `g`, since the Sylvester map `y ↦ g y - y g` between the two blocks
 ## Main results
 
 * `TauCeti.HallAlgebra.blockAverage_moebius`: `δμ(a, ·) = μ(a) · μ`.
-* `TauCeti.HallAlgebra.blockAverage_mul_moebius`: `δ(B · μ)(a, b) = μ(a) μ(b) B(a ⊕ b)`.
+* `TauCeti.HallAlgebra.blockAverage_fun_mul_moebius`: `δ(B · μ)(a, b) = μ(a) μ(b) B(a ⊕ b)`.
 * `TauCeti.HallAlgebra.conj_moebius`: `μ` is real.
 * `TauCeti.HallAlgebra.greenCuspidal_mul_constOne`: `C_η ∗ 𝟙 = -β_η`.
 * `TauCeti.HallAlgebra.greenCuspidal_of_dim_eq_zero`,
@@ -200,7 +200,7 @@ private theorem mul_moebius_blockTriangular (B : HallAlgebra k) (a : Module.End 
 
 /-- The block averages of `B · μ` only see the block diagonal class:
 `δ(B · μ)(a, b) = μ(a) μ(b) B(a ⊕ b)`. -/
-theorem blockAverage_mul_moebius (B : HallAlgebra k) (a : Module.End k V) (b : Module.End k W) :
+theorem blockAverage_fun_mul_moebius (B : HallAlgebra k) (a : Module.End k V) (b : Module.End k W) :
     blockAverage (fun c ↦ B c * moebius c) (ofEnd a) (ofEnd b) =
       moebius (ofEnd a) * moebius (ofEnd b) * B (ofEnd (a.prodMap b)) := by
   have : Finite (W →ₗ[k] V) := Module.finite_of_finite k
@@ -343,7 +343,7 @@ theorem isCuspidal_greenCuspidal : (greenCuspidal K η : HallAlgebra k).IsCuspid
   rw [greenCuspidal_eq_mul_constOne K η (F := fun c ↦ eigenvalueSum K η c * moebius c)
     (fun _ ↦ rfl), blockAverage_mul, finsum_eq_sum_of_fintype]
   simp only [blockAverage_constOne, mul_ofEnd_eq_sum, constOne_apply, mul_one,
-    blockAverage_mul_moebius, eigenvalueSum_ofEnd_prodMap]
+    blockAverage_fun_mul_moebius, eigenvalueSum_ofEnd_prodMap]
   simp only [mul_add, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.sum_mul,
     mul_assoc, mul_comm (moebius _) (eigenvalueSum K η _)]
   -- Each part has a factor `Σ_U μ(c|_U) = 1(c)` with `c = a` or `c = b`, of positive size.
