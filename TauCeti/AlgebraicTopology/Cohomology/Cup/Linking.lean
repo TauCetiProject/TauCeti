@@ -29,9 +29,9 @@ Kronecker pairing. For a closed connected oriented `n`-manifold and `z` its fund
 is the Bockstein description of the linking form on the torsion of its homology, transported along
 Poincaré duality (Conway–Friedl–Herrmann, Section 2).
 
-Two facts make this well defined, both resting on the fact that multiplication by a nonzero
-integer is bijective on `Hᵏ(X; ℚ)` (`TopCat.bijective_smul_singularCohomology`,
-`ModuleCat.isIso_zsmul_id_rat`):
+Two facts make this well defined, both resting on the fact that `Hᵏ(X; ℚ)` has no torsion, since
+multiplication by a nonzero integer is bijective on it
+(`TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology`, `ModuleCat.isIso_zsmul_id_rat`):
 
 * every torsion class `α` is a Bockstein: its image in `Hᵖ⁺¹(X; ℚ)` is torsion, hence zero, so
   `α` lies in the image of `β` by exactness of the coefficient sequence
@@ -81,14 +81,12 @@ theorem exists_singularCohomologyBockstein_eq_of_mem_torsion {p : ℕ}
         (ModuleCat.of ℤ (AddCircle (1 : ℚ))) p,
       X.singularCohomologyBockstein (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ
         ratAddCircleShortComplex_shortExact p (p + 1) rfl u = α := by
-  obtain ⟨m, hm, hmα⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.1 hα
-  have hm0 : (m : ℤ) ≠ 0 := by exact_mod_cast hm.ne'
-  -- The image of `α` in `Hᵖ⁺¹(X; ℚ)` is killed by `m`, on which multiplication by `m` is injective.
-  refine (ShortComplex.moduleCat_exact_iff _).1 (X.singularCohomology_exact_coefficient₁
+  -- The image of `α` in `Hᵖ⁺¹(X; ℚ)` is torsion, hence zero.
+  exact (ShortComplex.moduleCat_exact_iff _).1 (X.singularCohomology_exact_coefficient₁
     (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ ratAddCircleShortComplex_shortExact p (p + 1) rfl) α <|
-    (X.bijective_smul_singularCohomology _ (p + 1) (isIso_zsmul_id_rat hm0)).1 ?_
-  dsimp only
-  rw [smul_zero, Nat.cast_smul_eq_nsmul, ← map_nsmul, hmα, map_zero]
+    X.eq_zero_of_isOfFinAddOrder_singularCohomology
+      (fun _ hm ↦ isIso_zsmul_id_rat (Int.natCast_ne_zero.2 hm)) <|
+      (ModuleCat.Hom.hom _).toAddMonoidHom.isOfFinAddOrder hα
 
 /-- **The cup product with a torsion class only sees the Bockstein**: if `u, u' ∈ Hᵖ(X; ℚ/ℤ)` have
 the same Bockstein in `Hᵖ⁺¹(X; ℤ)` and `b ∈ H^q(X; ℤ)` is torsion, then `u ⌣ b = u' ⌣ b` in
@@ -108,8 +106,6 @@ theorem singularCup_eq_of_singularCohomologyBockstein_eq {p q n : ℕ} (h : p + 
   obtain ⟨r, hr⟩ := (ShortComplex.moduleCat_exact_iff _).1 (X.singularCohomology_exact_coefficient₃
     (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ ratAddCircleShortComplex_shortExact p (p + 1) rfl) (u - u')
     (by rw [map_sub, hu, sub_self])
-  obtain ⟨m, hm, hmb⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.1 hb
-  have hm0 : (m : ℤ) ≠ 0 := by exact_mod_cast hm.ne'
   rw [← sub_eq_zero, ← LinearMap.sub_apply, ← map_sub]
   dsimp only at hr
   -- The reduction of `r` cupped with `b` is the reduction of the rational class `r ⌣ b`.
@@ -117,10 +113,11 @@ theorem singularCup_eq_of_singularCohomologyBockstein_eq {p q n : ℕ} (h : p + 
     MonoidalCategory.rightUnitor_naturality, ← homologyMap_linearYonedaObjMap_singularCup]
   suffices hz : X.singularCup ℤ integralCoeffComul (ρ_ (ModuleCat.of ℤ ℚ)).hom p q n h r b = 0 by
     rw [hz, map_zero]
-  -- `r ⌣ b` is killed by `m`, on which multiplication by `m` is injective.
-  refine (X.bijective_smul_singularCohomology _ n (isIso_zsmul_id_rat hm0)).1 ?_
-  dsimp only
-  rw [smul_zero, ← LinearMap.map_smul, Nat.cast_smul_eq_nsmul, hmb, map_zero]
+  -- `r ⌣ b` is torsion, hence zero.
+  exact X.eq_zero_of_isOfFinAddOrder_singularCohomology
+    (fun _ hm ↦ isIso_zsmul_id_rat (Int.natCast_ne_zero.2 hm))
+    ((X.singularCup ℤ integralCoeffComul (ρ_ (ModuleCat.of ℤ ℚ)).hom p q n h
+      r).toAddMonoidHom.isOfFinAddOrder hb)
 
 /-- The value `⟨u ⌣ b, z⟩` of the torsion linking pairing, for the chosen Bockstein lift `u` of
 `α`. -/

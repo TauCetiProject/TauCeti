@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Linear
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 
@@ -39,12 +38,6 @@ projective, `Hom(K, -)` is exact (`ChainComplex.shortExact_map_linearYonedaObjFu
 the long exact sequence of a pair, which instead uses that the chain sequence of a pair splits in
 each degree.
 
-Multiplication by a scalar `r` on `Hⁿ(X; M)` is the map induced by the coefficient endomorphism
-`r • 𝟙 M`, so it is bijective when that endomorphism is invertible. For `M = ℚ` and a nonzero
-integer `r` this makes `Hⁿ(X; ℚ)` torsion free and divisible, which is what the coefficient
-sequence `0 ⟶ ℤ ⟶ ℚ ⟶ ℚ/ℤ ⟶ 0` is used for: a torsion class of `Hⁿ⁺¹(X; ℤ)` dies in
-`Hⁿ⁺¹(X; ℚ)` and is therefore a Bockstein.
-
 ## Main declarations
 
 * `TopCat.singularCochainComplexCoefficientShortComplex` and
@@ -55,8 +48,6 @@ sequence `0 ⟶ ℤ ⟶ ℚ ⟶ ℚ/ℤ ⟶ 0` is used for: a torsion class of `
   `TopCat.singularCohomology_exact_coefficient₂` and `TopCat.singularCohomology_exact_coefficient₃`
   and the naturality statements `TopCat.singularCohomologyBockstein_naturality` and
   `TopCat.singularCohomologyBockstein_naturality_coefficients`.
-* `TopCat.bijective_smul_singularCohomology`: multiplication by `r` on `Hⁿ(X; M)` is bijective when
-  `r • 𝟙 M` is an isomorphism.
 * `TopPair.singularCochainComplexCoefficientShortComplex`, `TopPair.singularCohomologyBockstein`
   and their exactness and naturality statements: the same for relative singular cohomology.
 
@@ -222,25 +213,6 @@ lemma singularCohomologyBockstein_naturality_coefficients (X : TopCat.{w}) {S' :
     (X.shortExact_singularCochainComplexCoefficientShortComplex R k hS') n m (by simpa)
 
 end Naturality
-
-omit [Projective R] in
-/-- **A scalar acting invertibly on the coefficients acts invertibly on cohomology.** If `r • 𝟙 M`
-is an isomorphism of the coefficient object, then multiplication by `r` on `Hⁿ(X; R, M)` is
-bijective: it is the map induced by `r • 𝟙 M`. -/
-theorem bijective_smul_singularCohomology {k : Type*} [CommRing k] [Linear k C] {M : C}
-    (X : TopCat.{w}) (n : ℕ) {r : k} (hr : IsIso (r • 𝟙 M)) :
-    Function.Bijective (fun x : X.singularCohomology R k M n ↦ r • x) := by
-  have h : HomologicalComplex.homologyMap
-      (((toSSet.obj X).chainComplex R).linearYonedaObjMap k (r • 𝟙 M)) n = r • 𝟙 _ := by
-    rw [ChainComplex.linearYonedaObjMap_smul, ChainComplex.linearYonedaObjMap_id,
-      HomologicalComplex.homologyMap_smul, HomologicalComplex.homologyMap_id]
-  have hiso : IsIso (HomologicalComplex.homologyMap
-      (((toSSet.obj X).chainComplex R).linearYonedaObjMap k (r • 𝟙 M)) n) :=
-    Functor.map_isIso (((toSSet.obj X).chainComplex R).linearYonedaObjFunctor k ⋙
-      HomologicalComplex.homologyFunctor _ _ n) (r • 𝟙 M)
-  rw [h] at hiso
-  -- The underlying function of `r • 𝟙` is multiplication by `r`.
-  exact ConcreteCategory.bijective_of_isIso (r • 𝟙 (X.singularCohomology R k M n))
 
 end TopCat
 
