@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RiemannSurface.FlatLine.Trivial
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Normal.FlatLine
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
 import TauCeti.Algebra.Module.ZLattice.AddChar
@@ -33,10 +34,11 @@ with the normal model structures of `d + i ℓ` on `FlatLine ψ`. Read on the co
 `FlatLine ψ`, for a one-form `A` with `A(v) = ℓ(v)`,
 
 * the gauge transformation pulls the complex structure of `FlatLine ψ'` back to the normal model
-  structure `J_N` of the connection `d + i A` (`TauCeti.FlatLine.pullback_gauge_mfderiv_mk`);
+  structure `J_N` of the connection `d + i A`
+  (`TauCeti.FlatLine.pullback_gauge_mfderiv_mk_eq_normalModelStructure`);
 * it pulls the coupling form of `FlatLine ψ'` back to the coupling form
   `π^* ω_ℂ + d((|v|² / 2) (dθ + A))` of `d + i A`
-  (`TauCeti.FlatLine.eval₂_mpullback_gauge_couplingForm_mfderiv_mk`).
+  (`TauCeti.FlatLine.eval₂_mpullback_gauge_couplingForm_mfderiv_mk_eq_normalCouplingForm`).
 
 **The trivial line.** For the trivial character the flat line is the product line
 `(ℂ / L) × ℂ` (`TauCeti.FlatLine.prodDiffeomorph`). If `ψ γ = exp (i ℓ(γ))` for a real-linear
@@ -56,15 +58,14 @@ is topologically trivial, with a flat unitary connection of irrational holonomy.
 
 * `TauCeti.FlatLine.gauge`: the gauge transformation `FlatLine ψ ≃ FlatLine ψ'` of a linear form
   `ℓ` with `ψ' = ψ exp (i ℓ)`.
-* `TauCeti.FlatLine.prodDiffeomorph`: the flat line of the trivial character is `(ℂ / L) × ℂ`.
 * `TauCeti.FlatLine.trivialization`: the trivialization of the flat line of `exp (i ℓ)`.
 
 ## Main results
 
-* `TauCeti.FlatLine.pullback_gauge_mfderiv_mk`: the gauge transformation pulls the complex
-  structure back to the normal model structure of the connection.
-* `TauCeti.FlatLine.eval₂_mpullback_gauge_couplingForm_mfderiv_mk`: it pulls the coupling form
-  back to the coupling form of the connection.
+* `TauCeti.FlatLine.pullback_gauge_mfderiv_mk_eq_normalModelStructure`: the gauge transformation
+  pulls the complex structure back to the normal model structure of the connection.
+* `TauCeti.FlatLine.eval₂_mpullback_gauge_couplingForm_mfderiv_mk_eq_normalCouplingForm`: it pulls
+  the coupling form back to the coupling form of the connection.
 * `TauCeti.FlatLine.exists_diffeomorph_forall_fst_eq_proj`: every flat line over a complex torus
   is smoothly trivial.
 
@@ -95,7 +96,7 @@ private theorem mk_normalModelGauge_add_mul (h : ∀ γ, ψ' γ = ψ γ * Circle
     (Quotient.mk _ (normalModelGauge ℓ (z + γ, (ψ γ : ℂ) * v)) : FlatLine ψ') =
       Quotient.mk _ (normalModelGauge ℓ (z, v)) := by
   have key : exp (ℓ (z + γ) * I) * ((ψ γ : ℂ) * v) = ψ' γ * (exp (ℓ z * I) * v) := by
-    rw [h, Circle.coe_mul, Circle.coe_exp, map_add, ofReal_add, add_mul, Complex.exp_add]
+    simp only [h, map_add, ofReal_add, add_mul, Complex.exp_add, Circle.coe_mul, Circle.coe_exp]
     ring
   rw [normalModelGauge_def, normalModelGauge_def, key]
   exact mk_add_mul _ _ γ
@@ -178,11 +179,7 @@ theorem gauge_symm (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
     (h' : ∀ γ, ψ γ = ψ' γ * Circle.exp ((-ℓ) γ)) :
     (gauge (n := n) ℓ h).symm = gauge (-ℓ) h' := by
   ext x
-  obtain ⟨p, rfl⟩ := Quotient.mk_surjective x
-  have hp : gauge (n := n) ℓ h (gauge (n := n) (-ℓ) h' (Quotient.mk _ p)) = Quotient.mk _ p := by
-    rw [gauge_mk, gauge_mk, FunLike.coe_neg, normalModelGauge_normalModelGauge_neg]
-  conv_lhs => rw [← hp]
-  exact Diffeomorph.symm_apply_apply _ _
+  exact (gauge ℓ h).symm_apply_eq.2 (gaugeFun_gaugeFun_neg h x).symm
 
 /-- Gauge transformations compose by adding their linear forms. -/
 theorem gauge_trans_gauge (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
@@ -194,64 +191,6 @@ theorem gauge_trans_gauge (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
   simp [normalModelGauge_normalModelGauge]
 
 /-! ### The trivial line -/
-
-/-- The map `([z], v) ↦ [(z, v)]` from the product line to the flat line of the trivial
-character. -/
-private def ofProd (x : AddAction.orbitRel.Quotient L ℂ × ℂ) : FlatLine (1 : AddChar L Circle) :=
-  Quotient.lift (fun z ↦ (Quotient.mk _ (z, x.2) : FlatLine (1 : AddChar L Circle)))
-    (fun z z' hzz' ↦ mk_eq_mk_iff.2 ⟨⟨_, L.orbitRelQuotient_mk_eq_mk_iff.1 (Quotient.sound hzz')⟩,
-      by simp, by simp⟩) x.1
-
-/-- **The flat line of the trivial character is the product line** `(ℂ / L) × ℂ`, by
-`[(z, v)] ↦ ([z], v)`. -/
-def prodDiffeomorph :
-    FlatLine (1 : AddChar L Circle) ≃ₘ^n⟮𝓘(ℝ, ℂ × ℂ), 𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)⟯
-      AddAction.orbitRel.Quotient L ℂ × ℂ where
-  toFun := Quotient.lift (fun p ↦ (Quotient.mk _ p.1, p.2)) fun p q hpq ↦ by
-    obtain ⟨γ, h₁, h₂⟩ := mk_eq_mk_iff.1 (Quotient.sound hpq :
-      (Quotient.mk _ p : FlatLine (1 : AddChar L Circle)) = Quotient.mk _ q)
-    refine Prod.ext (L.orbitRelQuotient_mk_eq_mk_iff.2 (by simp [h₁])) ?_
-    simpa using h₂
-  invFun := ofProd
-  left_inv x := by
-    obtain ⟨p, rfl⟩ := Quotient.mk_surjective x
-    rfl
-  right_inv x := by
-    obtain ⟨y, w⟩ := x
-    obtain ⟨z, rfl⟩ := Quotient.mk_surjective y
-    rfl
-  contMDiff_toFun := by
-    rw [← (isLocalDiffeomorph_addQuotientMk (G := FlatLineLattice (1 : AddChar L Circle))
-      (I := 𝓘(ℝ, ℂ × ℂ)) (n := n)).contMDiff_comp_iff Quotient.mk_surjective le_rfl]
-    exact ((isLocalDiffeomorph_addQuotientMk (G := L) (I := 𝓘(ℝ, ℂ)) (n := n)).contMDiff.comp
-      contDiff_fst.contMDiff).prodMk contDiff_snd.contMDiff
-  contMDiff_invFun := by
-    -- Precomposed with the swap and the orbit projection of the torus, the inverse is the orbit
-    -- projection of the flat line, read on `ℂ × ℂ` with the coordinates swapped.
-    have hswap : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) 𝓘(ℝ, ℂ × ℂ) n
-        ((ofProd ∘ Prod.swap) ∘ Prod.map id (Quotient.mk (AddAction.orbitRel L ℂ))) := by
-      have : (ofProd ∘ Prod.swap) ∘ Prod.map id (Quotient.mk (AddAction.orbitRel L ℂ)) =
-          Quotient.mk _ ∘ fun q : ℂ × ℂ ↦ (q.2, q.1) := rfl
-      rw [this]
-      exact isLocalDiffeomorph_addQuotientMk.contMDiff.comp
-        (contMDiff_snd.prodMk_space contMDiff_fst)
-    have h := ((isLocalDiffeomorph_addQuotientMk (G := L) (I := 𝓘(ℝ, ℂ))
-      (n := n)).contMDiff_comp_prodMap_iff (I' := 𝓘(ℝ, ℂ)) Quotient.mk_surjective le_rfl).1 hswap
-    exact h.comp (contMDiff_snd.prodMk contMDiff_fst)
-
-/-- The identification of the flat line of the trivial character with the product line sends
-`[(z, v)]` to `([z], v)`. -/
-@[simp]
-theorem prodDiffeomorph_mk (p : ℂ × ℂ) :
-    prodDiffeomorph (n := n) (Quotient.mk _ p : FlatLine (1 : AddChar L Circle)) =
-      (Quotient.mk _ p.1, p.2) :=
-  (rfl)
-
-/-- The inverse identification sends `([z], v)` to `[(z, v)]`. -/
-@[simp]
-theorem prodDiffeomorph_symm_mk (z w : ℂ) :
-    (prodDiffeomorph (n := n) (L := L)).symm (Quotient.mk _ z, w) = Quotient.mk _ (z, w) :=
-  (rfl)
 
 variable (ℓ) in
 /-- **The trivialization of a flat line.** If `ψ γ = exp (i ℓ(γ))` for a real-linear form `ℓ` on
@@ -274,9 +213,7 @@ theorem trivialization_mk (h : ∀ γ, ψ γ = Circle.exp (ℓ γ)) (p : ℂ × 
 theorem trivialization_symm_mk (h : ∀ γ, ψ γ = Circle.exp (ℓ γ)) (z w : ℂ) :
     (trivialization (n := n) ℓ h).symm (Quotient.mk _ z, w) =
       Quotient.mk _ (z, exp (ℓ z * I) * w) := by
-  rw [trivialization, Diffeomorph.symm_trans', Diffeomorph.coe_trans, comp_apply,
-    prodDiffeomorph_symm_mk, gauge_symm (one_holonomy h) fun γ ↦ by
-      rw [neg_neg, h, one_apply, one_mul], gauge_mk, normalModelGauge_def, neg_neg]
+  simp [trivialization, gauge_symm _ (neg_holonomy (one_holonomy h)), normalModelGauge_def]
 
 /-- The trivialization is a map over the torus. -/
 @[simp]
@@ -323,7 +260,8 @@ private theorem mfderiv_gauge_mfderiv_mk (h : ∀ γ, ψ' γ = ψ γ * Circle.ex
     ((contDiff_normalModelGauge (n := ∞) ℓ.contDiff).contMDiff.mdifferentiable
       (by simp)) p
   have hcomp : (gauge (n := ∞) ℓ h) ∘ Quotient.mk _ =
-      Quotient.mk (AddAction.orbitRel (FlatLineLattice ψ') (ℂ × ℂ)) ∘ normalModelGauge ℓ := rfl
+      Quotient.mk (AddAction.orbitRel (FlatLineLattice ψ') (ℂ × ℂ)) ∘ normalModelGauge ℓ :=
+    funext fun _ ↦ gauge_mk h _
   calc _ = mfderiv 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℂ × ℂ) ((gauge (n := ∞) ℓ h) ∘ Quotient.mk _) p v :=
         (mfderiv_comp_apply p (((gauge ℓ h).contMDiff.mdifferentiable (by simp)) _)
           ((hq.contMDiff.mdifferentiable (by simp)) p) v).symm
@@ -339,7 +277,8 @@ the connection.** Let the holonomies of `ψ` and `ψ'` differ by `exp (i ℓ)`, 
 one-form `ℓ` on `ℂ`. Read on the cover `ℂ × ℂ` of the flat line of `ψ`, the pullback along the
 gauge transformation of the complex structure of the flat line of `ψ'` is the normal model
 structure `J_N` of the connection `d + i A`. -/
-theorem pullback_gauge_mfderiv_mk (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
+theorem pullback_gauge_mfderiv_mk_eq_normalModelStructure
+    (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
     (hA : ∀ z v, A z (fun _ ↦ v) = ℓ v) (p v : ℂ × ℂ) :
     SmoothAlmostComplexStructure.pullback (gauge ℓ h)
         (SmoothAlmostComplexStructure.ofComplexManifold (ℂ × ℂ) (FlatLine ψ'))
@@ -363,30 +302,36 @@ theorem pullback_gauge_mfderiv_mk (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ 
       (Quotient.mk _ p)) :=
     ((gauge (n := ∞) ℓ h).isInvertible_mfderiv (by simp)).injective
   apply hinj
-  have hI : mfderiv 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℂ × ℂ)
-      (Quotient.mk (AddAction.orbitRel (FlatLineLattice ψ') (ℂ × ℂ))) (normalModelGauge ℓ p)
-        (I • fderiv ℝ (normalModelGauge ℓ) p v) =
-      SmoothAlmostComplexStructure.ofComplexManifold (ℂ × ℂ) (FlatLine ψ')
-        (Quotient.mk _ (normalModelGauge ℓ p))
-        (mfderiv 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℂ × ℂ)
+  -- Read the differential of the gauge transformation on the covers.
+  rw [mfderiv_gauge_mfderiv_mk h p]
+  calc _ = SmoothAlmostComplexStructure.ofComplexManifold (ℂ × ℂ) (FlatLine ψ')
+          (Quotient.mk _ (normalModelGauge ℓ p))
+          (mfderiv 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℂ × ℂ)
+            (Quotient.mk (AddAction.orbitRel (FlatLineLattice ψ') (ℂ × ℂ))) (normalModelGauge ℓ p)
+            (fderiv ℝ (normalModelGauge ℓ) p v)) := by
+        -- The gauge transformation is complex linear from the pullback to the structure of the
+        -- flat line of `ψ'`.
+        rw [SmoothAlmostComplexStructure.mfderiv_pullback_apply, mfderiv_gauge_mfderiv_mk, gauge_mk]
+    -- The orbit projection of the flat line of `ψ'` is holomorphic, so it commutes with `i`.
+    _ = mfderiv 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℂ × ℂ)
           (Quotient.mk (AddAction.orbitRel (FlatLineLattice ψ') (ℂ × ℂ))) (normalModelGauge ℓ p)
-          (fderiv ℝ (normalModelGauge ℓ) p v)) :=
-    (congrArg _ (SmoothAlmostComplexStructure.ofComplexManifold_apply (E := ℂ × ℂ)
-      (M := ℂ × ℂ) _ _).symm).trans
-      (hmk.mfderiv_ofComplexManifold_apply (fderiv ℝ (normalModelGauge ℓ) p v))
-  refine (SmoothAlmostComplexStructure.mfderiv_pullback_apply _ _ _ _).trans
-    (((SmoothAlmostComplexStructure.ofComplexManifold_apply (E := ℂ × ℂ) (M := FlatLine ψ')
-      _ _).trans ((congrArg (fun w : ℂ × ℂ ↦ I • w) (mfderiv_gauge_mfderiv_mk h p v)).trans
-        (SmoothAlmostComplexStructure.ofComplexManifold_apply (E := ℂ × ℂ) (M := FlatLine ψ')
-          _ _).symm)).trans
-    (hI.symm.trans ((congrArg _ hlin.symm).trans (mfderiv_gauge_mfderiv_mk h p _).symm)))
+          (SmoothAlmostComplexStructure.ofComplexManifold (ℂ × ℂ) (ℂ × ℂ) (normalModelGauge ℓ p)
+            (fderiv ℝ (normalModelGauge ℓ) p v)) :=
+        (hmk.mfderiv_ofComplexManifold_apply _).symm
+    -- The differential of `normalModelGauge ℓ` carries `J_N` to multiplication by `i`.
+    _ = mfderiv 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℂ × ℂ)
+          (Quotient.mk (AddAction.orbitRel (FlatLineLattice ψ') (ℂ × ℂ))) (normalModelGauge ℓ p)
+          (fderiv ℝ (normalModelGauge ℓ) p
+            (normalModelStructure (normalModelConnectionCoeff A) 0 p v)) := by
+        rw [SmoothAlmostComplexStructure.ofComplexManifold_apply, hlin]
 
 /-- **The gauge transformation pulls the coupling form back to the coupling form of the
 connection.** Let the holonomies of `ψ` and `ψ'` differ by `exp (i ℓ)`, let `A` be the one-form
 `ℓ` on `ℂ`, and let `ω₀` be the area form of `ℂ`. Read on the cover `ℂ × ℂ` of the flat line of
 `ψ`, the pullback along the gauge transformation of the coupling form of the flat line of `ψ'` is
 the coupling form `π^* ω₀ + d((|v|² / 2) (dθ + A))` of the connection `d + i A`. -/
-theorem eval₂_mpullback_gauge_couplingForm_mfderiv_mk (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
+theorem eval₂_mpullback_gauge_couplingForm_mfderiv_mk_eq_normalCouplingForm
+    (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
     (hω₀ : ∀ z v v', ω₀ z ![v, v'] = stdComplexSymplecticForm v v')
     (hA : ∀ z v, A z (fun _ ↦ v) = ℓ v) (p u w : ℂ × ℂ) :
     (SmoothForm.mpullback (gauge ℓ h) (gauge ℓ h).contMDiff (couplingForm ψ')).eval₂
