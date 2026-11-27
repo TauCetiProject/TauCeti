@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Algebra.Convolution
 public import TauCeti.Analysis.Normed.Algebra.DividedPower
 public import TauCeti.Analysis.Normed.Algebra.Integral
 public import TauCeti.Analysis.Normed.Field.Basic
+public import TauCeti.Analysis.Normed.Field.NatCast
 public import TauCeti.Topology.Algebra.Valued.NormedValued
 public import TauCeti.Algebra.Coalgebra.Convolution.FiniteCoefficients
 public import TauCeti.RingTheory.IntegralClosure.AlgHom
@@ -117,7 +118,7 @@ theorem mul_apply_mem_valuationSubring_of_groupLike [IsAlgClosed C]
   · have hκ0 : κ = 0 := eq_zero_of_pow_eq_zero (norm_le_zero_iff.mp
       (by simpa only [norm_pow, hp0, norm_zero] using hκ : ‖κ ^ (p - 1)‖ ≤ 0))
     simp [hκ0]
-  have : CharZero C := NormedField.charZero_of_norm_natCast_lt_one hpC hp0
+  have : CharZero C := NormedField.charZero_of_norm_natCast_ne_one hpC.ne hp0
   let : NontriviallyNormedField C := NontriviallyNormedField.ofNormNeOne
     ⟨(p : C), Nat.cast_ne_zero.mpr hp.ne_zero, hpC.ne⟩
   let : DenselyNormedField C :=
@@ -138,6 +139,7 @@ theorem mul_apply_mem_valuationSubring_of_groupLike [IsAlgClosed C]
     have hn : ‖y.ofConv (a * b) -
         algebraMap O(C) C (Coalgebra.counit b) * y.ofConv a -
         algebraMap O(C) C (Coalgebra.counit a) * y.ofConv b‖ ≤ 1 := by
+      rw [Valuation.mem_valuationSubring_iff, NormedField.valuation_apply] at h
       exact_mod_cast h
     simpa [mul_comm] using hn
   have hcross (f g : WithConv (A →ₗ[O(C)] C)) :
@@ -166,7 +168,8 @@ theorem _root_.TauCeti.dvd_mul_apply_of_groupLike [IsAlgClosed C]
   have hqC : algebraMap O(C) C q ≠ 0 :=
     fun h ↦ hq ((IsFractionRing.injective O(C) C) (h.trans (map_zero _).symm))
   let y := toConv ((algebraMap O(C) C q)⁻¹ • ((Algebra.linearMap O(C) C).comp D))
-  have hy_apply (b : A) : y.ofConv b = (algebraMap O(C) C q)⁻¹ * (algebraMap O(C) C (D b)) := rfl
+  have hy_apply (b : A) : y.ofConv b = (algebraMap O(C) C q)⁻¹ * (algebraMap O(C) C (D b)) := by
+    simp [y]
   have hy (u : GroupLike O(C) A) : y.ofConv u.val ∈ O(C) := by
     obtain ⟨c, hc⟩ := hgroup u
     rw [hy_apply, hc, map_mul, inv_mul_cancel_left₀ hqC]

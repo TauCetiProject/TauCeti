@@ -61,8 +61,7 @@ private theorem testModule_le_comap (q : R) (hq : ∀ x : CotangentSpace R A, q 
   · rintro _ ⟨u, rfl⟩
     exact Submodule.subset_span ⟨u, rfl⟩
   · rintro _ ⟨t, rfl⟩
-    rw [Submodule.mem_comap, ← LinearMap.comp_apply,
-      cotangentMap_comp_cotangentRelation, LinearMap.zero_apply]
+    rw [Submodule.mem_comap, cotangentMap_cotangentRelation]
     exact Submodule.zero_mem _
   · rintro _ ⟨a, rfl⟩
     simpa only [Submodule.mem_comap, LinearMap.smul_apply, LinearMap.id_apply,
@@ -123,8 +122,11 @@ variable {C : Type*} [NormedField C] [IsUltrametricDist C] [IsAlgClosed C]
 
 local notation "O(" C ")" => Valuation.valuationSubring (NormedField.valuation (K := C))
 
-/-- The finite flat Hodge–Tate cokernel bound at every prime, including `2`. The coordinate
-Hopf algebra may have arbitrary finite rank, and the field need not be complete. -/
+/-- For a finite flat commutative and cocommutative Hopf algebra over the valuation ring
+of an algebraically closed ultrametric normed field `C`, every scalar `κ` with
+`‖κ‖ ^ (p - 1) ≤ ‖p‖`, where `p` is prime and `‖p‖ < 1`, multiplies each cotangent vector
+into the span of the cotangent displacements of group-like elements.
+This includes `p = 2`; the rank is unrestricted and `C` need not be complete. -/
 theorem smul_mem_span_cotangentMap_groupLike
     (p : ℕ) (hp : p.Prime) (hpC : ‖(p : C)‖ < 1)
     {A : Type*} [CommRing A] [HopfAlgebra O(C) A] [Coalgebra.IsCocomm O(C) A]
@@ -137,7 +139,7 @@ theorem smul_mem_span_cotangentMap_groupLike
   · have hκ0 : κ = 0 := Subtype.ext (eq_zero_of_pow_eq_zero (norm_le_zero_iff.mp
       (by simpa only [norm_pow, hp0, norm_zero] using hκ : ‖(κ : C) ^ (p - 1)‖ ≤ 0)))
     simp [hκ0]
-  have : CharZero C := NormedField.charZero_of_norm_natCast_lt_one hpC hp0
+  have : CharZero C := NormedField.charZero_of_norm_natCast_ne_one hpC.ne hp0
   have : Module.Free O(C) A := Module.free_of_flat_of_isLocalRing
   have : Nontrivial A := _root_.Bialgebra.nontrivial O(C)
   have hq : (Module.finrank O(C) A : O(C)) ≠ 0 :=

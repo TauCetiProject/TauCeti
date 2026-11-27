@@ -11,8 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 # Linear relations for the cotangent displacement
 
 The Leibniz relations of a bialgebra are the image of a linear map from its tensor square.
-They vanish under the cotangent displacement. For a finite coordinate algebra their span
-is therefore finitely generated, even over a nonnoetherian base ring.
+They vanish under the cotangent displacement.
 -/
 
 public noncomputable section
@@ -42,5 +41,12 @@ theorem cotangentMap_comp_cotangentRelation :
     (cotangentMap R A).comp (cotangentRelation R A) = 0 := by
   ext a b
   simp [cotangentMap_mul]
+
+/-- The cotangent displacement of every Leibniz relation is zero. -/
+@[simp]
+theorem cotangentMap_cotangentRelation (t : A ⊗[R] A) :
+    cotangentMap R A (cotangentRelation R A t) = 0 := by
+  simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
+    LinearMap.congr_fun (cotangentMap_comp_cotangentRelation R A) t
 
 end TauCeti.Bialgebra

@@ -23,7 +23,7 @@ variable {V : Type*} [CommRing V] [IsDomain V] [ValuationRing V]
 
 /-- A finitely generated submodule of a finite coordinate module containing all multiples of
 `q ≠ 0` is detected by the linear functionals taking that submodule into `(q)`. -/
-theorem mem_iff_forall_dvd_linearMap_fin {n : ℕ} (N : Submodule V (Fin n → V))
+private theorem mem_iff_forall_dvd_linearMap_fin {n : ℕ} (N : Submodule V (Fin n → V))
     (hN : N.FG) {q : V} (hq : q ≠ 0) (hcontain : ∀ m, q • m ∈ N) (x : Fin n → V) :
     x ∈ N ↔ ∀ f : (Fin n → V) →ₗ[V] V, (∀ y ∈ N, q ∣ f y) → q ∣ f x := by
   classical
