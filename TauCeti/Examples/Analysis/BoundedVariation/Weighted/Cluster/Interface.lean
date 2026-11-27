@@ -11,7 +11,8 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Interface
 # Regression examples: the interfaces of a two-cell cluster
 
 For a `2`-cluster `(Ω_1, Ω_2)`, for a `C¹` weight in dimension `n ≥ 2`, there is a single
-interface: `A_12 = P_μ(Ω_1) = P_μ(Ω_2)`, and the total perimeter is `P_μ(Ω) = A_12`.
+interface: `A_12 = P_μ(Ω_1) = P_μ(Ω_2)`, the total perimeter is `P_μ(Ω) = A_12`, and the
+closure of `∂*Ω_1` is the closure of `Σ_12`.
 -/
 
 public section
@@ -43,5 +44,15 @@ theorem perimeter_eq_interfaceArea_zero_one (hW : ContDiff ℝ 1 W) (hn : 2 ≤ 
   rw [Ω.perimeter_eq_sum_interfaceArea hW hn, Fin.sum_univ_two,
     show Finset.Ioi (0 : Fin 2) = {1} by decide, show Finset.Ioi (1 : Fin 2) = ∅ by decide,
     Finset.sum_singleton, Finset.sum_empty, add_zero]
+
+/-- For a `2`-cluster, the closure of `∂*Ω_1` is the closure of the single interface `Σ_12`. -/
+theorem closure_reducedBoundary_cell_zero (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
+    (Ω : Cluster W 2) :
+    closure (reducedBoundary volume ⊤ (Ω.cell 0)) = closure (Ω.interface 0 1) := by
+  rw [Ω.closure_reducedBoundary_cell hW hn 0]
+  congr 1
+  ext x
+  simp only [Set.mem_iUnion, exists_prop]
+  exact ⟨fun ⟨j, hj, hx⟩ => by rwa [show j = 1 by omega] at hx, fun hx => ⟨1, by decide, hx⟩⟩
 
 end TauCeti.Examples.ClusterInterface
