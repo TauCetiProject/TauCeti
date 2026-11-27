@@ -43,42 +43,14 @@ public section
 
 noncomputable section
 
-open Filter Topology
 open TopologicalSpace (Compacts)
 
 namespace TauCeti
 
 namespace Symbol
 
-variable {n : ℕ} {m m' : ℝ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
   [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- A family `t ↦ F t` of symbols is continuous if every seminorm of `F t - F t₀` is at most a
-constant times finitely many seminorms on `K` of `a t - a t₀`, for a continuous family `a`. -/
-private theorem continuous_of_seminorm_sub_le {X : Type*} [TopologicalSpace X]
-    {a : X → Symbol n V W m} (ha : Continuous a) (K : Compacts (CoordinateSpace n))
-    {F : X → Symbol n W V m'}
-    (hF : ∀ (L : Compacts (CoordinateSpace n)) (α β : List (Fin n)),
-      ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), ∀ t t₀,
-        Symbol.seminorm L α β (F t - F t₀) ≤ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 (a t - a t₀)) :
-    Continuous F := by
-  refine continuous_iff_continuousAt.2 fun t₀ ↦ ?_
-  rw [ContinuousAt, withSeminorms.tendsto_nhds]
-  rintro ⟨L, α, β⟩ ε hε
-  obtain ⟨s, C, hC⟩ := hF L α β
-  have ha' (i : List (Fin n) × List (Fin n)) :
-      Tendsto (fun t ↦ Symbol.seminorm K i.1 i.2 (a t - a t₀)) (𝓝 t₀) (𝓝 0) := by
-    simpa only [Function.comp_def, seminormFamily_apply] using
-      ((withSeminorms.continuous_seminorm (K, i.1, i.2)).comp
-        (show Continuous fun t ↦ a t - a t₀ from ha.sub continuous_const)).tendsto' t₀ 0
-        (by simp)
-  have hP : Tendsto (fun t ↦ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 (a t - a t₀)) (𝓝 t₀)
-      (𝓝 0) := by
-    simpa using (tendsto_finsetSum s fun i _ ↦ ha' i).const_mul C
-  have key : Tendsto (fun t ↦ Symbol.seminorm L α β (F t - F t₀)) (𝓝 t₀) (𝓝 0) :=
-    squeeze_zero (fun _ ↦ apply_nonneg _ _) (fun t ↦ hC t t₀) hP
-  simpa only [seminormFamily_apply] using (tendsto_order.1 key).2 ε hε
 
 /-- **Continuity of the adjoint symbol.** If `t ↦ a t` is a continuous family of symbols of order
 `m`, all vanishing at positions outside one compact set `K`, then `t ↦ (a t)*` is a continuous

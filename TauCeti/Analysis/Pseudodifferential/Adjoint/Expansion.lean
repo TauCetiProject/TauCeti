@@ -43,7 +43,9 @@ with an actual remainder symbol after every number of terms:
   `TauCeti.Symbol.exists_seminorm_adjoint_le` for `a*` itself. Together with the additivity of the
   terms and remainders (`TauCeti.Symbol.adjointTerm_add`, `TauCeti.Symbol.adjointRemainder_add`),
   these give the continuity of `a ↦ a*` and of the remainders in
-  `TauCeti.Analysis.Pseudodifferential.Adjoint.Continuity`.
+  `TauCeti.Analysis.Pseudodifferential.Adjoint.Continuity`. Like `a ↦ a*`, the terms and
+  remainders are conjugate-linear in `a` (`TauCeti.Symbol.adjointTerm_smul`,
+  `TauCeti.Symbol.adjointRemainder_smul`).
 
 ## Proof outline
 
@@ -168,6 +170,20 @@ theorem adjointTerm_add (a b : Symbol n V W m) (k : ℕ) :
 theorem adjointTerm_sub (a b : Symbol n V W m) (k : ℕ) :
     (a - b).adjointTerm k = a.adjointTerm k - b.adjointTerm k := by
   rw [eq_sub_iff_add_eq, ← adjointTerm_add, sub_add_cancel]
+
+/-- The terms of the adjoint expansion are conjugate-linear in the symbol:
+`adjointTerm (c • a) k = conj c • adjointTerm a k`. -/
+@[simp]
+theorem adjointTerm_smul (c : ℂ) (a : Symbol n V W m) (k : ℕ) :
+    (c • a).adjointTerm k = (starRingEnd ℂ) c • a.adjointTerm k := by
+  induction k generalizing m with
+  | zero =>
+    ext1
+    funext p
+    simp [LinearIsometryEquiv.map_smulₛₗ]
+  | succ k ih =>
+    rw [adjointTerm_succ, adjointTerm_succ, ← map_smul, smul_comm ((starRingEnd ℂ) c)]
+    simp only [map_smul, ih, Finset.smul_sum]
 
 /-- Spatial derivatives commute with the terms of the adjoint expansion. -/
 @[simp]
@@ -632,6 +648,7 @@ theorem exists_seminorm_adjoint_le (K L : Compacts (CoordinateSpace n)) (α β :
   simpa [remainderSymbol] using hC a ha haK x ξ
 
 /-- The remainder of the adjoint expansion is additive in the symbol. -/
+@[simp]
 theorem adjointRemainder_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     (hb : b.HasCompactSpatialSupport) (N : ℕ) :
     (a + b).adjointRemainder (ha.add hb) N = a.adjointRemainder ha N + b.adjointRemainder hb N := by
@@ -640,7 +657,17 @@ theorem adjointRemainder_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppo
     Finset.sum_add_distrib]
   abel
 
+/-- The remainder of the adjoint expansion is conjugate-linear in the symbol:
+`R_N(c • a) = conj c • R_N(a)`. -/
+@[simp]
+theorem adjointRemainder_smul (c : ℂ) (ha : a.HasCompactSpatialSupport) (N : ℕ) :
+    (c • a).adjointRemainder (ha.smul c) N = (starRingEnd ℂ) c • a.adjointRemainder ha N := by
+  ext1
+  simp only [coefficient_adjointRemainder, adjoint_smul c a ha, adjointTerm_smul, coefficient_smul,
+    Finset.smul_sum, smul_sub]
+
 /-- The remainder of the adjoint expansion of a difference is the difference of the remainders. -/
+@[simp]
 theorem adjointRemainder_sub {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     (hb : b.HasCompactSpatialSupport) (N : ℕ) :
     (a - b).adjointRemainder (ha.sub hb) N = a.adjointRemainder ha N - b.adjointRemainder hb N := by

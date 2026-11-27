@@ -42,6 +42,9 @@ The main results are:
   `TauCeti.Symbol.spatialDerivCLM`: these operations as continuous linear maps;
 * `TauCeti.Symbol.mixedDerivCLM`, `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative
   at a point is a continuous linear function of the symbol;
+* `TauCeti.Symbol.continuous_of_seminorm_sub_le`: a family of symbols is continuous when the
+  seminorms of its differences are dominated by seminorms of the differences of a continuous
+  family;
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
   are bounded independently of the compact set.
 * `TauCeti.Symbol.seminorm_comp_le`: the Leibniz estimate bounding the seminorms of a composition
@@ -361,6 +364,36 @@ symbol `a`; in particular so is the value `a(x, ξ)`. -/
 theorem continuous_mixedDeriv (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     Continuous fun a : Symbol n V W m => mixedDeriv α β a.coefficient x ξ :=
   (mixedDerivCLM n V W m α β x ξ).continuous
+
+open Filter Topology in
+/-- A family `t ↦ F t` of symbols is continuous if every seminorm of `F t - F t₀` is at most a
+constant times finitely many seminorms on one compact set `K` of `a t - a t₀`, for a continuous
+family `a` of symbols. -/
+theorem continuous_of_seminorm_sub_le {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V']
+    [NormedAddCommGroup W'] [NormedSpace ℂ W'] {X : Type*} [TopologicalSpace X]
+    {a : X → Symbol n V W m} (ha : Continuous a) (K : Compacts (CoordinateSpace n))
+    {F : X → Symbol n V' W' m'}
+    (hF : ∀ (L : Compacts (CoordinateSpace n)) (α β : List (Fin n)),
+      ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), ∀ t t₀,
+        Symbol.seminorm L α β (F t - F t₀) ≤
+          C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 (a t - a t₀)) :
+    Continuous F := by
+  refine continuous_iff_continuousAt.2 fun t₀ ↦ ?_
+  rw [ContinuousAt, withSeminorms.tendsto_nhds]
+  rintro ⟨L, α, β⟩ ε hε
+  obtain ⟨s, C, hC⟩ := hF L α β
+  have ha' (i : List (Fin n) × List (Fin n)) :
+      Tendsto (fun t ↦ Symbol.seminorm K i.1 i.2 (a t - a t₀)) (𝓝 t₀) (𝓝 0) := by
+    simpa only [Function.comp_def, seminormFamily_apply] using
+      ((withSeminorms.continuous_seminorm (K, i.1, i.2)).comp
+        (show Continuous fun t ↦ a t - a t₀ from ha.sub continuous_const)).tendsto' t₀ 0
+        (by simp)
+  have hP : Tendsto (fun t ↦ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 (a t - a t₀)) (𝓝 t₀)
+      (𝓝 0) := by
+    simpa using (tendsto_finsetSum s fun i _ ↦ ha' i).const_mul C
+  have key : Tendsto (fun t ↦ Symbol.seminorm L α β (F t - F t₀)) (𝓝 t₀) (𝓝 0) :=
+    squeeze_zero (fun _ ↦ apply_nonneg _ _) (fun t ↦ hC t t₀) hP
+  simpa only [seminormFamily_apply] using (tendsto_order.1 key).2 ε hε
 
 end Topology
 

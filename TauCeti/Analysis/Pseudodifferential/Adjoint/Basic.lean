@@ -345,6 +345,7 @@ theorem frequencyDeriv_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
   exact frequencyDeriv_map _ a j
 
 /-- The adjoint symbol is additive: `(a + b)* = a* + b*`. -/
+@[simp]
 theorem adjoint_add (a b : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
     (hb : b.HasCompactSpatialSupport) :
     adjoint (a + b) (ha.add hb) = adjoint a ha + adjoint b hb := by
@@ -356,6 +357,7 @@ theorem adjoint_add (a b : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
     (hb.integrable_fourierChar_smul_fourier_slice_sub_smul _ y ξ), map_add]
 
 /-- The adjoint symbol is conjugate-linear: `(c • a)* = conj c • a*`. -/
+@[simp]
 theorem adjoint_smul (c : ℂ) (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport) :
     adjoint (c • a) (ha.smul c) = (starRingEnd ℂ) c • adjoint a ha := by
   ext1
@@ -365,6 +367,7 @@ theorem adjoint_smul (c : ℂ) (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
   rw [integral_smul, LinearIsometryEquiv.map_smulₛₗ]
 
 /-- The adjoint symbol of a difference is the difference of the adjoint symbols. -/
+@[simp]
 theorem adjoint_sub (a b : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
     (hb : b.HasCompactSpatialSupport) :
     adjoint (a - b) (ha.sub hb) = adjoint a ha - adjoint b hb := by
