@@ -39,6 +39,9 @@ A continuous linear injection of a space into a finite-dimensional space of stri
 dimension over a complete field has a continuous left inverse and a nonzero continuous covector
 annihilating its range (`ContinuousLinearMap.exists_leftInverse_ne_zero_comp_eq_zero`).
 
+The chosen continuous left inverse composes with the operator to the identity
+(`ContinuousLinearMap.HasLeftInverse.leftInverse_comp_self`).
+
 A space with a continuous linear map into a complete space that has a continuous linear left
 inverse is complete (`ContinuousLinearMap.HasLeftInverse.completeSpace`), as a retract of a
 complete space; this needs uniform additive groups, but no separation and no norm.
@@ -47,6 +50,12 @@ complete space; this needs uniform additive groups, but no separation and no nor
 public section
 
 namespace ContinuousLinearMap
+
+/-- The chosen continuous left inverse of `f` composes with `f` to the identity. -/
+theorem HasLeftInverse.leftInverse_comp_self {R E F : Type*} [Semiring R] [TopologicalSpace E]
+    [AddCommMonoid E] [Module R E] [TopologicalSpace F] [AddCommMonoid F] [Module R F]
+    {f : E →L[R] F} (h : f.HasLeftInverse) : h.leftInverse ∘L f = .id R E :=
+  ext h.leftInverse_leftInverse
 
 variable {R E F G : Type*} [Ring R]
   [TopologicalSpace E] [AddCommGroup E] [Module R E]

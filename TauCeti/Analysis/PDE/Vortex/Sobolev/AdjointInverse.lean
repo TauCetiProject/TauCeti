@@ -80,18 +80,13 @@ theorem id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse
         sobolevGaugeFixedAdjoint a ∘L (sobolevGaugeFixedAdjoint a).orthogonalLeftInverse =
       ((sobolevGaugeFixedOperator a).ker.map sobolevFieldValues.toLinearMap).starProjection := by
   set K := (sobolevGaugeFixedOperator a).ker.map sobolevFieldValues.toLinearMap
-  have h := hasLeftInverse_sobolevGaugeFixedAdjoint hx hsol hlim hax
   have hrange := range_sobolevGaugeFixedAdjoint hx hsol hlim hax
-  refine ContinuousLinearMap.ext fun g ↦ ?_
-  refine (K.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun w hw ↦ ?_).symm
-  · -- `g - L_x* (R g)` is orthogonal to the range `Kᗮ`, so it lies in `Kᗮᗮ = K`.
-    rw [← K.orthogonal_orthogonal, ← hrange]
-    rintro _ ⟨η, rfl⟩
-    simpa using inner_apply_sub_apply_orthogonalLeftInverse h η g
-  · -- `L_x* (R g)` lies in the range `Kᗮ`.
-    have hmem : sobolevGaugeFixedAdjoint a ((sobolevGaugeFixedAdjoint a).orthogonalLeftInverse g)
-        ∈ Kᗮ := hrange ▸ LinearMap.mem_range_self _ _
-    simpa using K.inner_left_of_mem_orthogonal hw hmem
+  have : (sobolevGaugeFixedAdjoint a).range.HasOrthogonalProjection := hrange ▸ inferInstance
+  have hK : (sobolevGaugeFixedAdjoint a).rangeᗮ = K := by rw [hrange, K.orthogonal_orthogonal]
+  rw [id_sub_comp_orthogonalLeftInverse_eq_starProjection_orthogonal
+    (hasLeftInverse_sobolevGaugeFixedAdjoint hx hsol hlim hax)]
+  -- The orthogonal complement of the range `Kᗮ` is `K` (`hK`).
+  congr
 
 /-- **The adjoint of the orthogonal right inverse is the complementary inverse of `L_x*`.** At a
 `C¹` vortex `x` with `|α| → 1` at infinity and with `L∞` class `a`, whose realization `L_x` has a
@@ -119,10 +114,13 @@ theorem adjoint_comp_orthogonalRightInverse_sobolevGaugeFixedOperator
     obtain ⟨y, hy, hyg⟩ := Submodule.mem_map.1 (K.starProjection_apply_mem g)
     rw [← hyg, ContinuousLinearMap.coe_coe, real_inner_comm]
     exact hQ.inner_eq_zero f y hy
-  rw [adjoint_inner_left, comp_apply]
+  -- `⟪L_x* (R g), ι (Q f)⟫ = ⟪R g, ι (L_x (Q f))⟫ = ⟪ι (R g), f⟫`.
+  have hadj : ⟪sobolevGaugeFixedAdjoint a (R g), sobolevFieldValues (Q f)⟫ =
+      ⟪sobolevFieldValues (R g), f⟫ := by
+    rw [real_inner_comm, ← inner_sobolevGaugeFixedOperator_sobolevFieldValues hx.continuous hax,
+      hQ.rightInverse f, real_inner_comm]
+  rw [adjoint_inner_left, comp_apply, comp_apply]
   conv_lhs => rw [hsplit]
-  rw [inner_add_left, horth, add_zero, ← real_inner_comm (sobolevGaugeFixedAdjoint a (R g)),
-    ← inner_sobolevGaugeFixedOperator_sobolevFieldValues hx.continuous hax, hQ.rightInverse f,
-    comp_apply, real_inner_comm]
+  rw [inner_add_left, horth, add_zero, hadj]
 
 end TauCeti.Vortex

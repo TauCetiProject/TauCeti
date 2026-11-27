@@ -52,10 +52,12 @@ classes, and `R` inverts an injective elliptic operator on its range.
   `ContinuousLinearMap.orthogonalLeftInverse_apply_eq_zero`: `R` is a left inverse of `L` and
   vanishes on the orthogonal complement of the range.
 * `ContinuousLinearMap.eq_orthogonalLeftInverse`: these two properties characterize it.
-* `ContinuousLinearMap.isStarProjection_comp_orthogonalLeftInverse`,
-  `ContinuousLinearMap.range_comp_orthogonalLeftInverse`,
-  `ContinuousLinearMap.inner_apply_sub_apply_orthogonalLeftInverse`: `L ∘ R` is the orthogonal
-  projection onto the range of `L`.
+* `ContinuousLinearMap.ker_orthogonalLeftInverse`: the kernel of `R` is the orthogonal complement
+  of the range of `L`.
+* `ContinuousLinearMap.comp_orthogonalLeftInverse_eq_starProjection`,
+  `ContinuousLinearMap.id_sub_comp_orthogonalLeftInverse_eq_starProjection_orthogonal`: `L ∘ R` is
+  the orthogonal projection onto the range of `L`, and `1 - L ∘ R` the orthogonal projection onto
+  its orthogonal complement.
 * `ContinuousLinearMap.contDiffAt_orthogonalLeftInverse`: over `ℝ`, `R` is a `C^n` function of
   `L`.
 
@@ -87,9 +89,9 @@ theorem isUnit_idempotentProjectionDenom (e : F →L[𝕜] F) :
   generalize e - star e = x
   refine isUnit_of_forall_le_norm_inner_map _ one_pos fun v ↦ ?_
   have h : ⟪(1 + x * adjoint x) v, v⟫_𝕜 = ((‖v‖ ^ 2 + ‖adjoint x v‖ ^ 2 : ℝ) : 𝕜) := by
-    rw [_root_.add_apply, one_apply_eq_self, mul_def, comp_apply, inner_add_left,
-      ← adjoint_inner_right, inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K]
-    norm_cast
+    simp only [_root_.add_apply, one_apply_eq_self, mul_def, comp_apply, inner_add_left]
+    rw [← adjoint_inner_right x]
+    simp [inner_self_eq_norm_sq_to_K]
   rw [h, RCLike.norm_ofReal, NNReal.coe_one, mul_one]
   exact (le_add_of_nonneg_right (by positivity)).trans (le_abs_self _)
 
@@ -121,10 +123,10 @@ private theorem comp_idempotentRangeProjection_spec (hK : K ∘L L = .id 𝕜 E)
     rw [← hPL, comp_apply, ← adjoint_inner_right, hadj, map_sub, hPP, sub_self, inner_zero_right]
   refine ⟨by rw [comp_assoc, hPL, hK], fun f hf ↦ ?_, by rw [← comp_assoc, heP], hP, horth⟩
   -- `‖Π f‖² = ⟪f, Π f⟫ = ⟪f, L (K Π f)⟫ = 0`.
-  have h0 : P f = 0 := by
-    rw [← inner_self_eq_zero (𝕜 := 𝕜), ← adjoint_inner_right, hadj, hPP, ← heP, comp_apply,
-      comp_apply, ← inner_conj_symm, hf, map_zero]
-  rw [comp_apply, h0, map_zero]
+  have h1 : ⟪P f, P f⟫_𝕜 = ⟪f, P f⟫_𝕜 := by rw [← adjoint_inner_right, hadj, hPP]
+  have h2 : ⟪f, P f⟫_𝕜 = 0 := by
+    rw [← heP, comp_apply, comp_apply, ← inner_conj_symm, hf, map_zero]
+  rw [comp_apply, inner_self_eq_zero.1 (h1.trans h2), map_zero]
 
 /-- For a continuous left inverse `K` of `L`, every continuous left inverse `R` of `L` vanishing on
 the orthogonal complement of the range of `L` is `K Π`, where `Π` is the range projection of the
@@ -145,11 +147,17 @@ open Classical in
 /-- **The orthogonal left inverse** of an operator `L` into a Hilbert space: the continuous left
 inverse of `L` vanishing on the orthogonal complement of its range, when `L` has a continuous
 left inverse (`ContinuousLinearMap.orthogonalLeftInverse_comp_self`,
-`ContinuousLinearMap.orthogonalLeftInverse_apply_eq_zero`), and `0` otherwise. -/
+`ContinuousLinearMap.orthogonalLeftInverse_apply_eq_zero`), and `0` otherwise
+(`ContinuousLinearMap.orthogonalLeftInverse_of_not_hasLeftInverse`). -/
 noncomputable def orthogonalLeftInverse (L : E →L[𝕜] F) : F →L[𝕜] E :=
   if h : L.HasLeftInverse then
     h.leftInverse ∘L idempotentRangeProjection (L ∘L h.leftInverse)
   else 0
+
+/-- Without a continuous left inverse, the orthogonal left inverse is `0`. -/
+theorem orthogonalLeftInverse_of_not_hasLeftInverse (h : ¬L.HasLeftInverse) :
+    L.orthogonalLeftInverse = 0 := by
+  simp [orthogonalLeftInverse, h]
 
 /-- **The orthogonal left inverse from any left inverse.** If `K` is a continuous left inverse of
 `L`, then the orthogonal left inverse of `L` is `K Π`, where `Π` is the range projection of the
@@ -157,17 +165,30 @@ idempotent `L K`. -/
 theorem orthogonalLeftInverse_eq_comp_idempotentRangeProjection (hK : K ∘L L = .id 𝕜 E) :
     L.orthogonalLeftInverse = K ∘L idempotentRangeProjection (L ∘L K) := by
   have h : L.HasLeftInverse := ⟨K, fun x ↦ by rw [← comp_apply K L, hK, id_apply]⟩
-  obtain ⟨hR, hR0, -⟩ := comp_idempotentRangeProjection_spec (ext h.leftInverse_leftInverse)
+  obtain ⟨hR, hR0, -⟩ := comp_idempotentRangeProjection_spec h.leftInverse_comp_self
   simp only [orthogonalLeftInverse, h, ↓reduceDIte]
   exact eq_comp_idempotentRangeProjection hK hR hR0
+
+/-- The properties of the orthogonal left inverse `R` of `L`: it is a left inverse, it vanishes on
+the orthogonal complement of the range, `L R` is a star projection, and `f - L (R f)` is
+orthogonal to the range. -/
+private theorem orthogonalLeftInverse_spec (h : L.HasLeftInverse) :
+    L.orthogonalLeftInverse ∘L L = .id 𝕜 E ∧
+      (∀ f, (∀ x, ⟪L x, f⟫_𝕜 = 0) → L.orthogonalLeftInverse f = 0) ∧
+      IsStarProjection (L ∘L L.orthogonalLeftInverse) ∧
+      ∀ x f, ⟪L x, f - L (L.orthogonalLeftInverse f)⟫_𝕜 = 0 := by
+  obtain ⟨hR, hR0, hLR, hP, horth⟩ := comp_idempotentRangeProjection_spec h.leftInverse_comp_self
+  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection h.leftInverse_comp_self]
+  refine ⟨hR, hR0, by rwa [hLR], fun x f ↦ ?_⟩
+  rw [← comp_apply L, hLR]
+  exact horth x f
 
 variable (h : L.HasLeftInverse)
 include h
 
 /-- The orthogonal left inverse is a left inverse. -/
-theorem orthogonalLeftInverse_comp_self : L.orthogonalLeftInverse ∘L L = .id 𝕜 E := by
-  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection (ext h.leftInverse_leftInverse)]
-  exact (comp_idempotentRangeProjection_spec (ext h.leftInverse_leftInverse)).1
+theorem orthogonalLeftInverse_comp_self : L.orthogonalLeftInverse ∘L L = .id 𝕜 E :=
+  (orthogonalLeftInverse_spec h).1
 
 /-- The orthogonal left inverse is a left inverse. -/
 @[simp]
@@ -176,24 +197,21 @@ theorem orthogonalLeftInverse_apply_self (x : E) : L.orthogonalLeftInverse (L x)
 
 /-- The orthogonal left inverse vanishes on the orthogonal complement of the range. -/
 theorem orthogonalLeftInverse_apply_eq_zero {f : F} (hf : ∀ x, ⟪L x, f⟫_𝕜 = 0) :
-    L.orthogonalLeftInverse f = 0 := by
-  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection (ext h.leftInverse_leftInverse)]
-  exact (comp_idempotentRangeProjection_spec (ext h.leftInverse_leftInverse)).2.1 f hf
+    L.orthogonalLeftInverse f = 0 :=
+  (orthogonalLeftInverse_spec h).2.1 f hf
 
 /-- **Characterization of the orthogonal left inverse.** A continuous left inverse of `L` vanishing
 on the orthogonal complement of its range is the orthogonal left inverse. -/
 theorem eq_orthogonalLeftInverse (hR : R ∘L L = .id 𝕜 E)
     (hR0 : ∀ f, (∀ x, ⟪L x, f⟫_𝕜 = 0) → R f = 0) : R = L.orthogonalLeftInverse := by
-  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection (ext h.leftInverse_leftInverse)]
-  exact eq_comp_idempotentRangeProjection (ext h.leftInverse_leftInverse) hR hR0
+  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection h.leftInverse_comp_self]
+  exact eq_comp_idempotentRangeProjection h.leftInverse_comp_self hR hR0
 
 /-- `L ∘ R` is a star projection: the orthogonal projection onto the range of `L`
-(`ContinuousLinearMap.range_comp_orthogonalLeftInverse`). -/
+(`ContinuousLinearMap.comp_orthogonalLeftInverse_eq_starProjection`). -/
 theorem isStarProjection_comp_orthogonalLeftInverse :
-    IsStarProjection (L ∘L L.orthogonalLeftInverse) := by
-  obtain ⟨-, -, hLR, hP, -⟩ := comp_idempotentRangeProjection_spec (ext h.leftInverse_leftInverse)
-  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection (ext h.leftInverse_leftInverse), hLR]
-  exact hP
+    IsStarProjection (L ∘L L.orthogonalLeftInverse) :=
+  (orthogonalLeftInverse_spec h).2.2.1
 
 /-- The star projection `L ∘ R` has the range of `L`. -/
 theorem range_comp_orthogonalLeftInverse : (L ∘L L.orthogonalLeftInverse).range = L.range := by
@@ -203,12 +221,34 @@ theorem range_comp_orthogonalLeftInverse : (L ∘L L.orthogonalLeftInverse).rang
 
 /-- The component `f - L (R f)` of `f` is orthogonal to the range of `L`: `L R` is the orthogonal
 projection onto the range and `1 - L R` the orthogonal projection onto the cokernel. -/
-theorem inner_apply_sub_apply_orthogonalLeftInverse (x : E) (f : F) :
-    ⟪L x, f - L (L.orthogonalLeftInverse f)⟫_𝕜 = 0 := by
-  have hK : h.leftInverse ∘L L = .id 𝕜 E := ext h.leftInverse_leftInverse
-  obtain ⟨-, -, hLR, -, horth⟩ := comp_idempotentRangeProjection_spec hK
-  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection hK, ← comp_apply L, hLR]
-  exact horth x f
+theorem inner_apply_sub_apply_orthogonalLeftInverse_eq_zero (x : E) (f : F) :
+    ⟪L x, f - L (L.orthogonalLeftInverse f)⟫_𝕜 = 0 :=
+  (orthogonalLeftInverse_spec h).2.2.2 x f
+
+/-- The kernel of the orthogonal left inverse is the orthogonal complement of the range. -/
+theorem ker_orthogonalLeftInverse : L.orthogonalLeftInverse.ker = L.rangeᗮ := by
+  ext f
+  simp only [LinearMap.mem_ker, coe_coe, Submodule.mem_orthogonal, LinearMap.mem_range,
+    forall_exists_index, forall_apply_eq_imp_iff]
+  refine ⟨fun hf x ↦ ?_, orthogonalLeftInverse_apply_eq_zero h⟩
+  simpa [hf] using inner_apply_sub_apply_orthogonalLeftInverse_eq_zero h x f
+
+/-- **`L ∘ R` is the orthogonal projection onto the range of `L`.** -/
+theorem comp_orthogonalLeftInverse_eq_starProjection [L.range.HasOrthogonalProjection] :
+    L ∘L L.orthogonalLeftInverse = L.range.starProjection := by
+  ext f
+  refine (L.range.eq_starProjection_of_mem_of_inner_eq_zero (LinearMap.mem_range_self _ _)
+    ?_).symm
+  rintro _ ⟨x, rfl⟩
+  rw [inner_eq_zero_symm]
+  exact inner_apply_sub_apply_orthogonalLeftInverse_eq_zero h x f
+
+/-- **`1 - L ∘ R` is the orthogonal projection onto the orthogonal complement of the range of
+`L`**, the cokernel of `L`. -/
+theorem id_sub_comp_orthogonalLeftInverse_eq_starProjection_orthogonal
+    [L.range.HasOrthogonalProjection] :
+    .id 𝕜 F - L ∘L L.orthogonalLeftInverse = L.rangeᗮ.starProjection := by
+  rw [comp_orthogonalLeftInverse_eq_starProjection h, Submodule.starProjection_orthogonal]
 
 omit h
 
@@ -258,8 +298,7 @@ theorem contDiffAt_orthogonalLeftInverse {L : E →L[ℝ] F} (h : L.HasLeftInver
     ContDiffAt ℝ n (orthogonalLeftInverse : (E →L[ℝ] F) → F →L[ℝ] E) L := by
   set K := h.leftInverse
   have hKL : (K ∘L L).IsInvertible := by
-    have hK : K ∘L L = .id ℝ E := ext h.leftInverse_leftInverse
-    rw [hK]
+    rw [h.leftInverse_comp_self]
     exact ⟨ContinuousLinearEquiv.refl ℝ E, rfl⟩
   -- Near `L`, the left inverses `(K L')⁻¹ K` of `L'` are smooth, and give the formula.
   have hΛ : ContDiffAt ℝ n (fun L' : E →L[ℝ] F ↦ leftInverseAlong L' K) L :=
