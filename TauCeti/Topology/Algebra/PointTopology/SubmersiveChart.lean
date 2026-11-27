@@ -13,8 +13,10 @@ public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Localization
 public import TauCeti.Topology.Algebra.PointTopology.Presentation
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import Mathlib.RingTheory.Etale.Kaehler
 import TauCeti.Analysis.Calculus.ImplicitFunction.Data
 import TauCeti.LinearAlgebra.Matrix.MaximalMinor
+import TauCeti.RingTheory.Kaehler.Conormal
 import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
@@ -48,11 +50,10 @@ local field.
   `Set.range P.map` are a local homeomorphism on the points of a submersive presentation.
 * `Algebra.IsStandardSmooth.exists_openPartialHomeomorph_points` and
   `Algebra.Smooth.exists_openPartialHomeomorph_points`: every point of a standard smooth, or
-  more generally smooth, `K`-algebra lies in the source of a chart, a homeomorphism from an open
-  set of points onto an open subset of some `Kⁿ`. The chart of a standard smooth algebra is
-  evaluation at finitely many elements; for a smooth algebra the chart is defined on points `y`
-  with `y g` a unit for some `g` with `x g ≠ 0`, and is evaluation at finitely many elements of
-  the localization `A[1/g]`.
+  more generally smooth, `K`-algebra lies in the source of a chart into `Kⁿ`, where `n` is
+  the rank of the free module of differentials or the dimension of the cotangent space at the
+  point, respectively. The coordinates are evaluations at finitely many elements of the algebra
+  in the standard smooth case and of a principal localization in the smooth case.
 
 ## References
 
@@ -227,25 +228,28 @@ end Algebra.SubmersivePresentation
 
 namespace Algebra
 
-open TauCeti.PointTopology
+open TauCeti.PointTopology _root_.TensorProduct
 
 variable {K A : Type*} [NontriviallyNormedField K] [CompleteSpace K] [CommRing A] [Algebra K A]
 
 /-- Every point of a standard smooth `K`-algebra has a chart: an open partial homeomorphism from
-the points, with their evaluation topology, to some `Kⁿ`, whose source contains the point, and
-which is evaluation at finitely many elements `a i` of `A`. Every coordinate evaluation
-pulled back by the inverse chart is analytic on the target. -/
+the points, with their evaluation topology, to `Kⁿ`, where `n` is the rank of the free module
+of Kähler differentials over `A`. The chart contains the point in its source and is evaluation at
+finitely many elements `a i` of `A`. Every coordinate evaluation pulled back by the inverse chart
+is analytic on the target. -/
 theorem IsStandardSmooth.exists_openPartialHomeomorph_points [IsStandardSmooth K A]
     (x : A →ₐ[K] K) :
-    ∃ (n : ℕ) (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)) (a : Fin n → A),
+    let n := Module.finrank A Ω[A⁄K]
+    ∃ (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)) (a : Fin n → A),
       x ∈ e.source ∧ (∀ y i, e y i = y (a i)) ∧
         ∀ b : A, AnalyticOnNhd K (fun z ↦ e.symm z b) e.target := by
   obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := ‹IsStandardSmooth K A›.out
+  let : Nontrivial A := x.toRingHom.domain_nontrivial
   let := Fintype.ofFinite ↥(Set.range P.map)ᶜ
   obtain ⟨e, hx, he, ha⟩ := P.exists_openPartialHomeomorph_pointCoords x
-  let c := Fintype.equivFin ↥(Set.range P.map)ᶜ
+  let c := Fintype.equivFinOfCardEq (Module.finrank_eq_card_basis P.basisKaehler).symm
   let q := ContinuousLinearEquiv.piCongrLeft K (fun _ : Fin _ ↦ K) c
-  refine ⟨_, e.transHomeomorph q.toHomeomorph, fun i ↦ P.val (c.symm i), hx, fun y i ↦ ?_, ?_⟩
+  refine ⟨e.transHomeomorph q.toHomeomorph, fun i ↦ P.val (c.symm i), hx, fun y i ↦ ?_, ?_⟩
   · simp only [OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
       ContinuousLinearEquiv.coe_toHomeomorph, q, ContinuousLinearEquiv.piCongrLeft_const_apply,
       he, SubmersivePresentation.pointCoords_apply]
@@ -258,12 +262,14 @@ theorem IsStandardSmooth.exists_openPartialHomeomorph_points [IsStandardSmooth K
 
 /-- **Local charts on the points of a smooth algebra.** Every point `x` of a smooth `K`-algebra
 has a chart: an open partial homeomorphism from the points, with their evaluation topology, to
-some `Kⁿ`, whose source contains `x`. There is `g : A` with `x g ≠ 0` such that every point of
-the source sends `g` to a unit, and the chart is evaluation at finitely many elements `b i` of the
-localization `A[1/g]`, through the unique extension of a point to `A[1/g]`.
+`Kⁿ`, where `n` is the cotangent dimension at `x`, whose source contains `x`. There is `g : A`
+with `x g ≠ 0` such that every point of the source sends `g` to a unit, and the chart is evaluation
+at finitely many elements `b i` of the localization `A[1/g]` through the unique extension of a
+point to `A[1/g]`.
 Every coordinate evaluation on `A` pulled back by the inverse chart is analytic on the target. -/
 theorem Smooth.exists_openPartialHomeomorph_points [Smooth K A] (x : A →ₐ[K] K) :
-    ∃ (n : ℕ) (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)) (g : A)
+    let n := Module.finrank K (RingHom.ker x).Cotangent
+    ∃ (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)) (g : A)
       (b : Fin n → Localization.Away g), x ∈ e.source ∧ x g ≠ 0 ∧
       e.source ⊆ {y | IsUnit (y g)} ∧
       (∀ (y : Localization.Away g →ₐ[K] K) i,
@@ -282,8 +288,30 @@ theorem Smooth.exists_openPartialHomeomorph_points [Smooth K A] (x : A →ₐ[K]
     simpa only [isUnit_iff_ne_zero] using isOpen_ne
   have hrange : Set.range j = {y | IsUnit (y g)} := IsLocalization.Away.range_comp_toAlgHom g
   obtain ⟨y, rfl⟩ : x ∈ Set.range j := hrange ▸ isUnit_iff_ne_zero.2 hxg
-  obtain ⟨n, e, b, he, heb, ha⟩ := IsStandardSmooth.exists_openPartialHomeomorph_points y
-  refine ⟨n, e.lift_openEmbedding hj, g, b, Set.mem_image_of_mem j he, hxg, ?_, fun z i ↦ ?_, ?_⟩
+  have hdim : Module.finrank K (RingHom.ker (j y)).Cotangent =
+      Module.finrank (Localization.Away g) Ω[Localization.Away g⁄K] := by
+    let B := Localization.Away g
+    let : Algebra A K := (j y).toRingHom.toAlgebra
+    let : Algebra B K := y.toRingHom.toAlgebra
+    let : IsScalarTower K A K := .of_algebraMap_eq fun k ↦ ((j y).commutes k).symm
+    let : IsScalarTower A B K := .of_algebraMap_eq fun _ ↦ rfl
+    let : Nontrivial B := y.toRingHom.domain_nontrivial
+    have hsurj : Function.Surjective (algebraMap A K) := fun k ↦
+      ⟨algebraMap K A k, (j y).commutes k⟩
+    let conormal := LinearEquiv.ofBijective (KaehlerDifferential.kerCotangentToTensor K A K)
+      (KaehlerDifferential.kerCotangentToTensor_bijective_of_formallyEtale hsurj)
+    let localization := KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale K A B
+    let baseChange := AlgebraTensorModule.congr (LinearEquiv.refl K K) localization
+    calc
+      _ = Module.finrank K (K ⊗[A] Ω[A⁄K]) := (conormal.restrictScalars K).finrank_eq
+      _ = Module.finrank K (K ⊗[B] (B ⊗[A] Ω[A⁄K])) :=
+        (AlgebraTensorModule.cancelBaseChange A B K K _).finrank_eq.symm
+      _ = Module.finrank K (K ⊗[B] Ω[B⁄K]) := baseChange.finrank_eq
+      _ = _ := Module.finrank_baseChange
+  dsimp only
+  rw [hdim]
+  obtain ⟨e, b, he, heb, ha⟩ := IsStandardSmooth.exists_openPartialHomeomorph_points y
+  refine ⟨e.lift_openEmbedding hj, g, b, Set.mem_image_of_mem j he, hxg, ?_, fun z i ↦ ?_, ?_⟩
   · rw [OpenPartialHomeomorph.lift_openEmbedding_source, ← hrange]
     exact Set.image_subset_range j e.source
   · rw [OpenPartialHomeomorph.lift_openEmbedding_apply, heb]

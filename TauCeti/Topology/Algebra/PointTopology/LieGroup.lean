@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.RingTheory.Smooth.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 public import TauCeti.Topology.Algebra.PointTopology.Group
 public import TauCeti.Geometry.Manifold.Algebra.TranslatedChart
 import TauCeti.Analysis.Analytic.AlgHomConvolution
@@ -187,17 +188,35 @@ private theorem lieGroup_chartedSpaceOfOne : letI := chartedSpaceOfOne e h₁
 
 end Manifold
 
+public section
+
+variable (K H) in
+/-- The dimension of the analytic charts, given by the cotangent space at the identity. -/
+noncomputable def chartDimension : ℕ := Module.finrank K (Bialgebra.CotangentSpace K H)
+
+variable (K H) in
+/-- The chart dimension equals the dimension of the augmentation ideal modulo its square. -/
+theorem chartDimension_eq_finrank_cotangentSpace :
+    chartDimension K H = Module.finrank K (Bialgebra.CotangentSpace K H) := (rfl)
+
+end
+
 section Smooth
 
 variable (K H) [CompleteSpace K] [Algebra.Smooth K H]
 
 private theorem exists_identityChart :
-    ∃ (n : ℕ) (e : OpenPartialHomeomorph G (Fin n → K)), (1 : G) ∈ e.source ∧
-      (∃ (s : H) (a : Fin n → H) (m : Fin n → ℕ),
+    ∃ (e : OpenPartialHomeomorph G (Fin (chartDimension K H) → K)), (1 : G) ∈ e.source ∧
+      (∃ (s : H) (a : Fin (chartDimension K H) → H) (m : Fin (chartDimension K H) → ℕ),
         ∀ p ∈ e.source, p.ofConv s ≠ 0 ∧ ∀ i, e p i = p.ofConv (a i) / p.ofConv s ^ m i) ∧
       ∀ b : H, AnalyticOnNhd K (fun z ↦ (e.symm z).ofConv b) e.target := by
-  obtain ⟨n, E, s, b, h₁, -, hsource, he, ha⟩ :=
-    Algebra.Smooth.exists_openPartialHomeomorph_points (1 : G).ofConv
+  have hdim : Module.finrank K (RingHom.ker (1 : G).ofConv).Cotangent = chartDimension K H := by
+    rw [Bialgebra.ofConv_one_eq_counitAlgHom, chartDimension_eq_finrank_cotangentSpace]
+    rfl
+  have hchart := Algebra.Smooth.exists_openPartialHomeomorph_points (1 : G).ofConv
+  dsimp only at hchart
+  rw [hdim] at hchart
+  obtain ⟨E, s, b, h₁, -, hsource, he, ha⟩ := hchart
   let j : G ≃ₜ (H →ₐ[K] K) := isHomeomorph_ofConv.homeomorph
   have hj (p : G) : j p = p.ofConv := IsHomeomorph.homeomorph_apply ..
   let e := j.transOpenPartialHomeomorph E
@@ -209,7 +228,7 @@ private theorem exists_identityChart :
     simpa [e, ← hj] using ha a
   classical
   choose m a hm using fun i ↦ IsLocalization.Away.surj s (b i)
-  have he' (p : G) (hp : p ∈ e.source) (i : Fin n) :
+  have he' (p : G) (hp : p ∈ e.source) (i : Fin (chartDimension K H)) :
       e p i = p.ofConv (a i) / p.ofConv s ^ m i := by
     let ι : H →ₐ[K] Localization.Away s := IsScalarTower.toAlgHom K H (Localization.Away s)
     have hmem : p.ofConv ∈ Set.range (fun y : Localization.Away s →ₐ[K] K ↦ y.comp ι) := by
@@ -222,33 +241,30 @@ private theorem exists_identityChart :
     have hforward : E p.ofConv i = y (b i) := (congrArg (fun z ↦ E z i) hy).symm.trans (he y i)
     rw [hforward, eq_div_iff (pow_ne_zero _ (hs p hp)), ← hy' s, ← hy' (a i)]
     simpa only [map_mul, map_pow] using congrArg y (hm i)
-  exact ⟨n, e, h₁', ⟨s, a, m, fun p hp ↦ ⟨hs p hp, he' p hp⟩⟩, ha'⟩
+  exact ⟨e, h₁', ⟨s, a, m, fun p hp ↦ ⟨hs p hp, he' p hp⟩⟩, ha'⟩
 
 public section
 
-/-- The number of local parameters used in the analytic charts of the group of points. -/
-noncomputable def chartDimension : ℕ := (exists_identityChart K H).choose
-
 /-- The chosen chart at the identity, obtained from smooth local parameters. -/
 noncomputable def identityChart : OpenPartialHomeomorph G (Fin (chartDimension K H) → K) :=
-  (exists_identityChart K H).choose_spec.choose
+  (exists_identityChart K H).choose
 
 /-- The chosen chart at the identity contains the identity in its source. -/
 theorem one_mem_identityChart_source : (1 : G) ∈ (identityChart K H).source :=
-  (exists_identityChart K H).choose_spec.choose_spec.1
+  (exists_identityChart K H).choose_spec.1
 
 /-- The coordinates of the identity chart are evaluations of fractions with a common
 denominator element that is nonzero on the chart source. -/
-theorem identityChart_coordinates :
+theorem exists_identityChart_apply_eq_div :
     ∃ (s : H) (a : Fin (chartDimension K H) → H) (m : Fin (chartDimension K H) → ℕ),
       ∀ p ∈ (identityChart K H).source, p.ofConv s ≠ 0 ∧
         ∀ i, identityChart K H p i = p.ofConv (a i) / p.ofConv s ^ m i :=
-  (exists_identityChart K H).choose_spec.choose_spec.2.1
+  (exists_identityChart K H).choose_spec.2.1
 
 /-- Each coordinate evaluation pulled back by the identity chart is analytic on its target. -/
 theorem analyticOnNhd_eval_identityChart_symm (b : H) :
     AnalyticOnNhd K (fun z ↦ ((identityChart K H).symm z).ofConv b) (identityChart K H).target :=
-  (exists_identityChart K H).choose_spec.choose_spec.2.2 b
+  (exists_identityChart K H).choose_spec.2.2 b
 
 /-- The analytic atlas of the smooth affine group, obtained by left translation of the
 chosen identity chart. Use `letI := chartedSpace K H` to install it locally. -/
@@ -267,7 +283,7 @@ theorem chartAt_eq_translatedChart (p : G) : letI := chartedSpace K H
 chosen atlas, for the evaluation topology and convolution group law. -/
 scoped instance lieGroup : letI := chartedSpace K H
     LieGroup 𝓘(K, Fin (chartDimension K H) → K) ω G := by
-  obtain ⟨s, a, m, h⟩ := identityChart_coordinates K H
+  obtain ⟨s, a, m, h⟩ := exists_identityChart_apply_eq_div K H
   exact lieGroup_chartedSpaceOfOne (one_mem_identityChart_source K H)
     (fun p hp ↦ (h p hp).1) (fun p hp ↦ (h p hp).2)
     (analyticOnNhd_eval_identityChart_symm K H)
