@@ -105,6 +105,9 @@ linear map, the orthogonal complement of its kernel has the dimension of the cod
 Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
 (`LinearMap.toContinuousLinearMap_star`) and its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
+The Hermitian part `H` of a finite-dimensional operator `T`, given by `2 • H = T + T†`, has the
+real quadratic form of `T` (`LinearMap.re_inner_apply_self_eq_of_two_smul_eq`) and is symmetric
+(`LinearMap.isSymmetric_of_two_smul_eq`).
 Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`).
 
 -/
@@ -802,6 +805,31 @@ theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
   rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
     LinearMap.adjoint_toContinuousLinearMap]
+
+open scoped InnerProductSpace in
+/-- An endomorphism `T` and its Hermitian part `H`, given by `2 • H = T + T†`, have the same real
+quadratic form: `re ⟪H x, x⟫ = re ⟪T x, x⟫`. -/
+theorem re_inner_apply_self_eq_of_two_smul_eq {T H : E →ₗ[𝕜] E}
+    (hHT : (2 : 𝕜) • H = T + adjoint T) (x : E) :
+    RCLike.re ⟪H x, x⟫_𝕜 = RCLike.re ⟪T x, x⟫_𝕜 := by
+  have := FiniteDimensional.completeSpace 𝕜 E
+  -- `T` and `T†` have the same real quadratic form, as continuous operators.
+  have hstar := ContinuousLinearMap.re_inner_star_apply_self T.toContinuousLinearMap x
+  rw [← toContinuousLinearMap_star, star_eq_adjoint, coe_toContinuousLinearMap',
+    coe_toContinuousLinearMap'] at hstar
+  have h := congrArg (fun y ↦ RCLike.re ⟪y, x⟫_𝕜) (LinearMap.congr_fun hHT x)
+  simp only [LinearMap.smul_apply, LinearMap.add_apply, inner_add_left, inner_smul_left,
+    map_add, map_ofNat, RCLike.ofNat_mul_re, hstar] at h
+  linarith
+
+/-- A solution `H` of `2 • H = T + T†`, the Hermitian part of `T`, is symmetric. -/
+theorem isSymmetric_of_two_smul_eq {T H : E →ₗ[𝕜] E} (hHT : (2 : 𝕜) • H = T + adjoint T) :
+    H.IsSymmetric := by
+  -- `H = 2⁻¹ • (T + star T)`, a real multiple of a self-adjoint element.
+  have hH : H = (2⁻¹ : 𝕜) • (T + star T) := by
+    rw [star_eq_adjoint, ← hHT, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+  rw [isSymmetric_iff_isSelfAdjoint, hH]
+  exact .smul (isSelfAdjoint_iff.2 (by simp)) (.add_star_self T)
 
 /-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
 instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
