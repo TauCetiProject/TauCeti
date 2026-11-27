@@ -163,7 +163,8 @@ lemma mapDerivedTensorComparison_unique (γ : derivedTensorOfMap F ⟶ mapDerive
 /-- On a K-flat left model whose image is K-flat, the comparison is the composite of
 ordinary cochain compatibility with the two K-flat tensor computation isomorphisms. -/
 @[simp]
-lemma mapDerivedTensorComparison_app_app_of_isKFlat (K L : CochainComplex C ℤ) [K.IsKFlat]
+lemma mapDerivedTensorComparison_app_app_of_isKFlat_left_of_isKFlat_map
+    (K L : CochainComplex C ℤ) [K.IsKFlat]
     [CochainComplex.IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj K)] :
     ((F.mapDerivedTensorComparison χ).app (DerivedCategory.Q.obj K)).app
       (DerivedCategory.Q.obj L) =
@@ -180,11 +181,12 @@ lemma mapDerivedTensorComparison_app_app_of_isKFlat (K L : CochainComplex C ℤ)
   simp [Category.assoc]
 
 /-- K-flatness of the left complex and of its image makes the canonical component invertible. -/
-instance isIso_mapDerivedTensorComparison_app_app_of_isKFlat (K L : CochainComplex C ℤ)
+instance isIso_mapDerivedTensorComparison_app_app_of_isKFlat_left_of_isKFlat_map
+    (K L : CochainComplex C ℤ)
     [K.IsKFlat] [CochainComplex.IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj K)] :
     IsIso (((F.mapDerivedTensorComparison χ).app (DerivedCategory.Q.obj K)).app
       (DerivedCategory.Q.obj L)) := by
-  rw [F.mapDerivedTensorComparison_app_app_of_isKFlat χ K L]
+  rw [F.mapDerivedTensorComparison_app_app_of_isKFlat_left_of_isKFlat_map χ K L]
   infer_instance
 
 /-- Pointwise compatible K-flat replacements suffice for the canonical derived tensor
@@ -201,7 +203,7 @@ theorem isIso_mapDerivedTensorComparison_of_exists_quasiIso_isKFlat_and_isKFlat_
     let e := (asIso (DerivedCategory.Q.map f)).prod (Iso.refl (DerivedCategory.Q.obj L))
     exact (NatTrans.isIso_app_iff_of_iso
       (uncurry.map (F.mapDerivedTensorComparison χ)) e).1
-      (isIso_mapDerivedTensorComparison_app_app_of_isKFlat F χ P L)
+      (isIso_mapDerivedTensorComparison_app_app_of_isKFlat_left_of_isKFlat_map F χ P L)
   have hderived (X Y : DerivedCategory C) :
       IsIso (((F.mapDerivedTensorComparison χ).app X).app Y) := by
     let e := (DerivedCategory.Q.objObjPreimageIso X).prod
