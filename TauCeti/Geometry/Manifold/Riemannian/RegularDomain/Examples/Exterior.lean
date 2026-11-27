@@ -52,26 +52,18 @@ namespace TauCeti
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {c : ℝ}
 
-/-- On the flat space, the gradient of the negated squared norm is `-2x`. -/
-private theorem mgradient_neg_norm_sq (x : E) :
-    Manifold.mgradient 𝓘(ℝ, E) (fun y : E ↦ -‖y‖ ^ (2 : ℕ)) x = -((2 : ℝ) • x) := by
-  rw [← Pi.neg_def, Manifold.mgradient_neg, Manifold.mgradient_norm_sq_model_space]
-  -- The radial vector `2 • x` lies in `TangentSpace 𝓘(ℝ, E) x`, which is `E` by definition.
-  exact congrArg Neg.neg (ofNat_smul_eq_nsmul ℝ 2 x).symm
+omit [FiniteDimensional ℝ E] in
+variable (E) in
+/-- The defining function `-‖·‖²` of the closed exterior is smooth. -/
+private theorem contMDiff_neg_norm_sq_infty :
+    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ fun x : E ↦ -‖x‖ ^ (2 : ℕ) :=
+  contMDiff_neg_norm_sq_model_space
 
-/-- On the flat space, the gradient of the negated squared norm has norm `2 ‖x‖`. -/
-private theorem norm_mgradient_neg_norm_sq (x : E) :
-    ‖Manifold.mgradient 𝓘(ℝ, E) (fun y : E ↦ -‖y‖ ^ (2 : ℕ)) x‖ = 2 * ‖x‖ := by
-  rw [← Pi.neg_def, Manifold.mgradient_neg, norm_neg,
-    Manifold.norm_mgradient_norm_sq_model_space]
-
-/-- On the flat space, the Hessian of the negated squared norm is `-2` times the inner product. -/
-private theorem hessian_neg_norm_sq (x : E) (v w : TangentSpace 𝓘(ℝ, E) x) :
-    Manifold.hessian 𝓘(ℝ, E) (fun y : E ↦ -‖y‖ ^ (2 : ℕ)) x v w = -(2 * ⟪(v : E), (w : E)⟫) := by
-  have h := Manifold.hessian_const_sub 0
-    ((contDiff_norm_sq ℝ).contMDiff.contMDiffAt (I := 𝓘(ℝ, E)) (n := 2) (x := x)) v w
-  simp only [zero_sub] at h
-  rw [h, Manifold.hessian_norm_sq_model_space]
+omit [FiniteDimensional ℝ E] in
+/-- The level `-c` of the defining function `-‖·‖²` of the closed exterior is regular. -/
+private theorem isRegularValue_neg_norm_sq_neg (hc : 0 < c) :
+    IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) (fun x : E ↦ -‖x‖ ^ (2 : ℕ)) (-c) :=
+  isRegularValue_neg_norm_sq (neg_ne_zero.2 hc.ne')
 
 variable (hc : 0 < c) (hn : finrank ℝ E = n + 1)
 
@@ -88,8 +80,8 @@ abbrev normSqGeChartedSpace :
 theorem isManifold_normSqGe :
     letI := normSqGeChartedSpace hc hn
     IsManifold (𝓡∂ (n + 1)) ∞ {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c} :=
-  isManifold_scalarRegularSublevel (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn
-    ENat.LEInfty.out (contMDiff_neg_norm_sq_model_space (E := E) (k := ∞))
+  isManifold_scalarRegularSublevel (isRegularValue_neg_norm_sq_neg hc) hn
+    ENat.LEInfty.out (contMDiff_neg_norm_sq_infty E)
 
 /-- The metric of the closed exterior `{‖x‖² ≥ c}` pulled back along the inclusion
 (`TauCeti.scalarRegularSublevelMetric`), as a Riemannian bundle structure. -/
@@ -110,20 +102,14 @@ theorem isContMDiffRiemannianBundle_normSqGe :
     letI := normSqGeRiemannianBundle hc hn
     IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) ∞ (EuclideanSpace ℝ (Fin (n + 1)))
       (fun x : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
-  letI := normSqGeChartedSpace hc hn
-  haveI := isManifold_normSqGe hc hn
-  letI := normSqGeRiemannianBundle hc hn
-  ⟨(scalarRegularSublevelMetric (contMDiff_neg_norm_sq_model_space (E := E) (k := ∞))
-      (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn).inner,
-    (scalarRegularSublevelMetric (contMDiff_neg_norm_sq_model_space (E := E) (k := ∞))
-      (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn).contMDiff,
-    fun _ _ _ ↦ rfl⟩
+  isContMDiffRiemannianBundle_scalarRegularSublevel (contMDiff_neg_norm_sq_infty E)
+    (isRegularValue_neg_norm_sq_neg hc) hn
 
 /-- The boundary of the closed exterior `{‖x‖² ≥ c}` is the sphere `‖x‖² = c`. -/
 theorem mem_boundary_normSqGe_iff (x : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) :
     letI := normSqGeChartedSpace hc hn
     x ∈ (𝓡∂ (n + 1)).boundary {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c} ↔ ‖(x : E)‖ ^ 2 = c := by
-  rw [boundary_scalarRegularSublevel (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne'))
+  rw [boundary_scalarRegularSublevel (isRegularValue_neg_norm_sq_neg hc)
     hn le_rfl (contMDiff_neg_norm_sq_model_space (E := E) (k := 1)), mem_ofPred_eq, neg_inj]
 
 /-- A boundary point of the closed exterior `{‖x‖² ≥ c}` lies on the sphere: `‖x‖² = c`. -/
@@ -153,9 +139,9 @@ theorem mfderiv_inwardUnitNormal_normSqGe
         (inwardUnitNormal q) =
       (√c)⁻¹ • ((q : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) : E) := by
   rw [mfderiv_inwardUnitNormal_scalarRegularSublevel
-    (contMDiff_neg_norm_sq_model_space (E := E) (k := ∞))
-    (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn q, norm_mgradient_neg_norm_sq,
-    norm_eq_sqrt_of_mem_boundary_normSqGe hc hn q, mgradient_neg_norm_sq]
+    (contMDiff_neg_norm_sq_infty E)
+    (isRegularValue_neg_norm_sq_neg hc) hn q, Manifold.norm_mgradient_neg_norm_sq_model_space,
+    norm_eq_sqrt_of_mem_boundary_normSqGe hc hn q, Manifold.mgradient_neg_norm_sq_model_space]
   have h : -((2 * √c)⁻¹ • -((2 : ℝ) • ((q : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) : E))) =
       (√c)⁻¹ • ((q : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) : E) := by
     rw [smul_neg, neg_neg, smul_smul]
@@ -164,6 +150,31 @@ theorem mfderiv_inwardUnitNormal_normSqGe
     field_simp
   -- The gradient `-2x` lies in the tangent space of `E` at `q`, which is `E` by definition.
   exact h
+
+/-- The induced metric of the boundary sphere of the closed exterior is the flat inner product of
+the tangent vectors pushed forward to `E`: the inclusion of the closed exterior is a local
+Riemannian isometry. -/
+private theorem boundaryInducedForm_normSqGe_apply
+    (q : letI := normSqGeChartedSpace hc hn
+      (𝓡∂ (n + 1)).boundary {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c})
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    letI := normSqGeChartedSpace hc hn
+    haveI := isManifold_normSqGe hc hn
+    letI := normSqGeRiemannianBundle hc hn
+    boundaryInducedForm q u w =
+      ⟪(mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c} → E) q
+          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+            (Subtype.val : (𝓡∂ (n + 1)).boundary {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c} → _) q u) : E),
+        (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c} → E) q
+          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+            (Subtype.val : (𝓡∂ (n + 1)).boundary {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c} → _) q w) : E)⟫ := by
+  let := normSqGeChartedSpace hc hn
+  have := isManifold_normSqGe hc hn
+  let := normSqGeRiemannianBundle hc hn
+  -- The flat inner product on `TangentSpace 𝓘(ℝ, E) _` is that of `E` by definition
+  -- (`TauCeti.Manifold.inner_tangentSpace_vectorSpace`), so the rewrite closes the goal.
+  rw [boundaryInducedForm_apply, ← (isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel
+    (contMDiff_neg_norm_sq_infty E) (isRegularValue_neg_norm_sq_neg hc) hn).inner_mfderiv]
 
 /-- **The second fundamental form of the closed exterior.** For the closed exterior
 `{‖x‖² ≥ c}` with the pulled-back metric, the second fundamental form of the boundary sphere is
@@ -181,15 +192,11 @@ theorem boundarySecondFundamentalForm_normSqGe
   let := normSqGeRiemannianBundle hc hn
   have := isContMDiffRiemannianBundle_normSqGe hc hn
   ext u w
-  rw [boundarySecondFundamentalForm_scalarRegularSublevel_apply
-    (contMDiff_neg_norm_sq_model_space (E := E) (k := ∞))
-    (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn q u w, hessian_neg_norm_sq,
-    norm_mgradient_neg_norm_sq, norm_eq_sqrt_of_mem_boundary_normSqGe hc hn q,
-    LinearMap.smul_apply, LinearMap.smul_apply, boundaryInducedForm_apply,
-    ← (isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel
-      (contMDiff_neg_norm_sq_model_space (E := E) (k := ∞))
-      (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn).inner_mfderiv,
-    TauCeti.Manifold.inner_tangentSpace_vectorSpace, smul_eq_mul]
+  rw [boundarySecondFundamentalForm_scalarRegularSublevel_apply (contMDiff_neg_norm_sq_infty E)
+    (isRegularValue_neg_norm_sq_neg hc) hn q u w]
+  simp only [Manifold.hessian_neg_norm_sq_model_space,
+    Manifold.norm_mgradient_neg_norm_sq_model_space, norm_eq_sqrt_of_mem_boundary_normSqGe hc hn q,
+    LinearMap.smul_apply, boundaryInducedForm_normSqGe_apply hc hn q, smul_eq_mul]
   have : √c ≠ 0 := (Real.sqrt_pos.2 hc).ne'
   field_simp
 
