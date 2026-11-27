@@ -76,4 +76,5 @@ theorem Subgroup.exists_map_conj_le_range_of_isFractionRing
   have hd : b₀.map e = d := by simp only [e, Basis.map_equiv, Equiv.refl_symm, Basis.reindex_refl]
   have hh' : b₀.toGL f = h := b₀.toGL.apply_symm_apply h
   rw [MulEquiv.coe_toMonoidHom, ← hh', ← Basis.toGL_map, hd, Basis.coe_toGL]
-  exact hu
+  ext i j
+  simpa only [Matrix.GeneralLinearGroup.map_apply, Matrix.map_apply] using congr_fun₂ hu i j
