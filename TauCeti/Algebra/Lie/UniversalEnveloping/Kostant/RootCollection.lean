@@ -29,7 +29,8 @@ split according to the presence of `α + γ` and `β + γ`. In a double chain th
 length bound excludes the other double root by `Finite.DoubleChain`. The formulas
 require only the local bound on the string actually used. The versions with
 `eq_swap_add` in their names isolate the leading swapped product. The degree lemmas in
-`RootString.Basic` bound each correction's total degree strictly below the input degree.
+`NormalOrdering` and `RootString.Basic` bound each correction's total degree strictly below
+the input degree.
 
 The formulas use the native Chevalley root brackets and string coefficients. The
 associative identities are the central-commutator rule in

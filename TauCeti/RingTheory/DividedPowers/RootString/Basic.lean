@@ -244,13 +244,6 @@ theorem sum_chainLeTwoIndex_two_one {B : Type*} [AddCommMonoid B] (f : ℕ × �
     ∑ p ∈ chainLeTwoIndex 2 1, f p = f (0, 0) + f (1, 0) + f (0, 1) := by
   simp [chainLeTwoIndex_two_one, add_assoc]
 
-/-- Each nonleading central-bracket term has strictly smaller total degree. -/
-theorem centralBracket_degree_lt {m n k : ℕ}
-    (hk : k ∈ (range (min m n + 1)).erase 0) :
-    (n - k) + k + (m - k) < m + n := by
-  simp only [mem_erase, mem_range] at hk
-  omega
-
 /-- Each nonleading double-chain term has strictly smaller total degree. -/
 theorem chainLeTwoIndex_degree_lt {m n : ℕ} {p : ℕ × ℕ}
     (hp : p ∈ (chainLeTwoIndex m n).erase (0, 0)) :
