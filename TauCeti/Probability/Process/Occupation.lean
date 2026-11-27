@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Enumerative.SuccessorArray
 public import TauCeti.Probability.Process.PathLaw.Shift
 public import Mathlib.Dynamics.BirkhoffSum.NormedSpace
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Probability.Process.SuccessorArray
 
 /-!
 # Occupation counts and finite shifts
@@ -84,5 +85,13 @@ theorem integral_visitCount {Ω : Type*} [MeasurableSpace Ω] [MeasurableSpace �
   rw [integral_finsetSum _ (fun i _ => (integrable_const (1 : ℝ)).indicator (hs i))]
   exact Finset.sum_congr rfl fun i _ =>
     integral_indicator_one ((measurableSet_singleton y).preimage (hX i))
+
+/-- The positive-time visit frequency `(visitCount (fun k => x (k + 1)) y n : ℝ) / n` is
+measurable on path space whenever `{y}` is measurable. -/
+theorem measurable_visitCount_succ_div [MeasurableSpace α] (y : α) (n : ℕ)
+    (hy : MeasurableSet ({y} : Set α)) :
+    Measurable (fun x : ℕ → α => (visitCount (fun k => x (k + 1)) y n : ℝ) / n) :=
+  ((measurable_of_countable (fun k : ℕ => (k : ℝ))).comp
+    ((measurable_visitCount y n hy).comp measurable_shift)).div_const n
 
 end TauCeti.Probability
