@@ -25,9 +25,9 @@ open MvPolynomial
 
 /-- **One common level for specializing the last variable of a polynomial family.**
 Let `K` be an ultrametric normed field in which the prime `p` satisfies `‖(p : K)‖ < 1`, and
-let `φ : O →+* K` map a discrete valuation ring into the closed unit ball of `K`. Fix a finite type
-`ι`, positive real numbers `c` and `ε`, and a total-degree cutoff `D`. There is a bound `M`
-depending only on `p`, `ε`, `D`, `c`, `φ` and the cardinality of `ι`.
+let `φ : O →+* K` map a discrete valuation ring into the closed unit ball of `K`. Fix the number
+`n` of remaining variables, a finite index type `ι`, positive real numbers `c` and `ε`, and a
+total-degree cutoff `D`. There is a bound `M` chosen before the polynomial family.
 
 Suppose each member of a family `P` of polynomials over `O` in `n + 1` variables has a
 coefficient `a` with `c ≤ ‖φ a‖` on a monomial of total degree at most `D`. There are a level
