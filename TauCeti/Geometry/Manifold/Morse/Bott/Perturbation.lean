@@ -119,6 +119,18 @@ private theorem comp_extChartAt_symm_eventuallyEq (a : B) (φ : B → ℝ) {z₀
   rw [Prod.mk.eta] at h
   simp only [comp_apply, h, zeroSection_proj]
 
+omit [IB.Boundaryless] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] [IsManifold IB 2 B]
+  [ContMDiffVectorBundle 2 F E IB] in
+/-- The case of `comp_extChartAt_symm_eventuallyEq` at the image `(b', 0)` of the zero vector `0_b`
+in the chart of the total space at `0_b`. -/
+private theorem comp_extChartAt_symm_eventuallyEq_self (b : B) (φ : B → ℝ) :
+    (fun x : TotalSpace F E ↦ g x + φ x.proj) ∘
+        (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E b)).symm =ᶠ[𝓝 (extChartAt IB b b, 0)]
+      fun z ↦ (g ∘ (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E b)).symm) z +
+        (φ ∘ (extChartAt IB b).symm) z.1 :=
+  comp_extChartAt_symm_eventuallyEq b φ (mem_extChartAt_target b)
+    (by rw [extChartAt_to_inv]; exact mem_baseSet_trivializationAt F E b)
+
 omit [IsManifold IB 2 B] [ContMDiffVectorBundle 2 F E IB] in
 /-- The coordinate expression of a function which is `C²` at the zero vector `0_a`, in the chart of
 the total space at `0_a`, is `C²` at the image `(a', 0)` of `0_a`. -/
@@ -146,15 +158,12 @@ private theorem chart_eventually_fderiv_eq_zero (a : B)
     with y hy hyb
   -- The zero vector `0_b` over the point `b` with coordinate `y` is read as `(y, 0)`.
   set b := (extChartAt IB a).symm y
-  have hb : zeroSection F E b ∈ (chartAt (ModelProd HB F) (zeroSection F E a)).source := by
-    rw [← extChartAt_source (I := IB.prod 𝓘(ℝ, F)), Bundle.mem_extChartAt_source_iff]
-    exact ⟨hyb.1, by rw [extChartAt_source]; exact hyb.2⟩
+  have hb : zeroSection F E b ∈ (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a)).source :=
+    (Bundle.mem_extChartAt_source_iff _ _).2 ⟨hyb.1, by rw [extChartAt_source]; exact hyb.2⟩
   have hτb : extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a) (zeroSection F E b) = (y, 0) := by
     rw [Bundle.extChartAt_zeroSection_of_mem_baseSet a hyb.1, (extChartAt IB a).right_inv hy]
-  have hcb := (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-    (IsManifold.chart_mem_maximalAtlas (zeroSection F E a)) hb).1
-      (mem_criticalPoints.1 (hcrit b))
-  rwa [← hτb]
+  rw [← hτb, ← mvfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hb]
+  exact mem_criticalPoints.1 (hcrit b)
 
 omit [IB.Boundaryless] [IsManifold IB 2 B] [ContMDiffVectorBundle 2 F E IB] in
 /-- If the kernel of the critical Hessian of `g` at `0_a` is the tangent space of the zero section,
@@ -166,7 +175,10 @@ private theorem chart_ker_le (a : B)
     (fderiv ℝ (fderiv ℝ (g ∘ (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a)).symm))
       (extChartAt IB a a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ EB F) := by
   -- In the preferred charts the differential of the zero section is the first summand inclusion.
-  rw [Bundle.mfderiv_zeroSection, criticalHessian_def, Bundle.extChartAt_zeroSection_self] at hker
+  rw [Bundle.mfderiv_zeroSection, criticalHessian_def, Bundle.extChartAt_zeroSection_self,
+    ContinuousLinearMap.coe_inl] at hker
+  -- `hker` is about `LinearMap.inl ℝ (TangentSpace IB a) F`, and `TangentSpace IB a` unfolds to
+  -- the model space `EB`.
   exact hker
 
 variable [FiniteDimensional ℝ F]
@@ -255,9 +267,7 @@ theorem isManifoldNondegenerateCriticalPoint_add_comp_proj_zeroSection_iff
     {φ : B → ℝ} (hφ : ContMDiffAt IB 𝓘(ℝ) 2 φ b) :
     IsManifoldNondegenerateCriticalPoint (IB.prod 𝓘(ℝ, F)) (fun y ↦ g y + φ y.proj)
         (zeroSection F E b) ↔ IsManifoldNondegenerateCriticalPoint IB φ b := by
-  have heq := comp_extChartAt_symm_eventuallyEq (g := g) b φ (z₀ := (extChartAt IB b b, 0))
-    (mem_extChartAt_target b)
-    (by rw [extChartAt_to_inv]; exact mem_baseSet_trivializationAt F E b)
+  have heq := comp_extChartAt_symm_eventuallyEq_self (IB := IB) (g := g) b φ
   rw [isManifoldNondegenerateCriticalPoint_iff, isManifoldNondegenerateCriticalPoint_iff,
     Bundle.extChartAt_zeroSection_self,
     ← isNondegenerateCriticalPoint_add_comp_fst_iff (chart_contDiffAt b hg)
@@ -275,9 +285,7 @@ theorem manifoldMorseIndex_add_comp_proj_zeroSection [FiniteDimensional ℝ EB] 
     {φ : B → ℝ} (hφ : ContMDiffAt IB 𝓘(ℝ) 2 φ b) :
     manifoldMorseIndex (IB.prod 𝓘(ℝ, F)) (fun y ↦ g y + φ y.proj) (zeroSection F E b) =
       manifoldMorseIndex IB φ b + manifoldMorseIndex (IB.prod 𝓘(ℝ, F)) g (zeroSection F E b) := by
-  have heq := comp_extChartAt_symm_eventuallyEq (g := g) b φ (z₀ := (extChartAt IB b b, 0))
-    (mem_extChartAt_target b)
-    (by rw [extChartAt_to_inv]; exact mem_baseSet_trivializationAt F E b)
+  have heq := comp_extChartAt_symm_eventuallyEq_self (IB := IB) (g := g) b φ
   rw [manifoldMorseIndex_def, manifoldMorseIndex_def, manifoldMorseIndex_def,
     Bundle.extChartAt_zeroSection_self, morseIndex_congr_of_eventuallyEq heq]
   exact morseIndex_add_comp_fst (chart_contDiffAt b hg) (chart_eventually_fderiv_eq_zero b hcrit)
@@ -340,7 +348,8 @@ private theorem zeroSection_hypotheses :
     fun s v hv ↦ ?_⟩
   have hD := (hloc s).isInvertible_mfderiv hm0
   -- `dΘ v` lies in the kernel of the critical Hessian of `f` at `i s`, which is the tangent space
-  -- of the critical submanifold.
+  -- of the critical submanifold. Every tangent space `TangentSpace I _` unfolds to the model space
+  -- `E`, so `dΘ v`, a vector at `Θ 0_s`, may be read at `i s`.
   let d : TangentSpace I (i s) := mfderiv (J.prod 𝓘(ℝ, F)) I Θ (zeroSection F V s) v
   have hv' : d ∈ (criticalHessian I f (i s)).ker := by
     have hd := (hloc s).ker_criticalHessian_eq_map hm (hf s) (hcrit s) ▸
@@ -357,6 +366,10 @@ private theorem zeroSection_hypotheses :
     exact mfderiv_comp s (Θ.mdifferentiableAt hm0 (hΘ s))
       ((contMDiff_zeroSection ℝ V).mdifferentiableAt (n := 2) two_ne_zero)
   rw [hchain] at hu
+  -- `hu` reads `(dΘ ∘L d0) u = d` with `d = dΘ v`; it closes the goal `dΘ (d0 u) = dΘ v` by
+  -- unfolding the composition, the `let` and the tangent spaces at `i s` and `Θ 0_s` (both `E`).
+  -- A rewrite with `ContinuousLinearMap.comp_apply` is not possible, since `hchain` is itself only
+  -- well typed up to this identification of tangent spaces.
   exact hu
 
 omit [FiniteDimensional ℝ E'] in
