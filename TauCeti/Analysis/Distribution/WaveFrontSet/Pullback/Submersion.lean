@@ -246,7 +246,7 @@ theorem NoOppositeCovectorsOn.compCLMOfOpenPartialHomeomorph {x : E}
     NoOppositeCovectorsOn (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ S)
       (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T) {x} := by
   rw [← compCLMOfSubmersion_eq_compCLMOfOpenPartialHomeomorph volume he he' hU hUΩ
-    (hsurj := fun _ hx ↦ e.surjective_fderiv_of_contDiffOn he he' (by simp) (hU hx))]
+    (hsurj := fun _ hx ↦ (e.isInvertible_fderiv_of_contDiffOn he he' (by simp) (hU hx)).surjective)]
   exact h.compCLMOfSubmersion (he.mono hU) hUΩ _
 
 omit [FiniteDimensional ℝ E₀] [MeasurableSpace E₀] [BorelSpace E₀] in
@@ -259,7 +259,7 @@ theorem compCLMOfOpenPartialHomeomorph_product (h : ∀ y, NoOppositeCovectorsOn
         (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T)
         (fun x ↦ (h (e x)).compCLMOfOpenPartialHomeomorph he he' hU hUΩ) := by
   have hsurj : ∀ x ∈ U, Surjective (fderiv ℝ e x) := fun _ hx ↦
-    e.surjective_fderiv_of_contDiffOn he he' (by simp) (hU hx)
+    (e.isInvertible_fderiv_of_contDiffOn he he' (by simp) (hU hx)).surjective
   simp only [← compCLMOfSubmersion_eq_compCLMOfOpenPartialHomeomorph volume he he' hU hUΩ
     (hsurj := hsurj)]
   exact compCLMOfSubmersion_product (he.mono hU) hUΩ hsurj h
