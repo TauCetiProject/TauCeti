@@ -19,8 +19,6 @@ vector of a complex polynomial `P` (`TauCeti.Fock.polyVector`). This file comput
 products of polynomial vectors and the matrix coefficients of `ω_ε` between them, and shows that
 the polynomial vectors are dense.
 
-* The overlap of `ω_ε(u) e` with the vacuum is `(ω_ε(u) e)(0) = det(u₋₋)⁻¹`, for the block `u₋₋`
-  of `u` on the coordinates of sign `-1`.
 * *Commutation rules.* The raising and lowering operators `A_j`, `B_j` move across `ω_ε(u)` in a
   matrix coefficient:
   `⟨v_Q, ω_ε(u) v_{A_j P}⟩ = ∑ i, u_{ij} ε_i ⟨v_{B_i Q}, ω_ε(u) v_P⟩` and
@@ -42,7 +40,6 @@ values on these translates (`TauCeti.ReproducingModel.hom_ext`).
 
 ## Main results
 
-* `TauCeti.Fock.weilRep_vacuum_apply_zero`: `(ω_ε(u) e)(0) = det(u₋₋)⁻¹`.
 * `TauCeti.Fock.innerSL_weilRep_raiseOp`, `TauCeti.Fock.innerSL_weilRep_lowerOp`: the commutation
   rules.
 * `TauCeti.Fock.innerSL_polyVector_X_mul`: `⟨v_{X_i P}, v_Q⟩ = ⟨v_P, v_{∂_i Q}⟩`.
@@ -55,11 +52,12 @@ values on these translates (`TauCeti.ReproducingModel.hom_ext`).
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean at commit 72fead1, Apache 2.0,
 Copyright 2026 Anthropic, PBC), file `src/Lib/Weil/Fock/PolynomialVectors.lean`
-(`New.Fock.realWeil_vacVector_apply_zero`, `New.Fock.fockMatrixCoeff_raiseOp`,
-`New.Fock.fockMatrixCoeff_lowerOp`, `New.Fock.fockInner_X_mul`, `New.Fock.fockInner_polyVector`,
-`New.Fock.fockInner_polyVector_monomial`, `New.Fock.denseRange_polyVector`). The source's
-`fockPairing` of two polynomials is here the jet pairing of a polynomial with a polynomial viewed
-as a power series, and its lowering rule is stated with the sign on the right.
+(`New.Fock.fockMatrixCoeff_raiseOp`, `New.Fock.fockMatrixCoeff_lowerOp`, `New.Fock.fockInner_X_mul`,
+`New.Fock.fockInner_polyVector`, `New.Fock.fockInner_polyVector_monomial`,
+`New.Fock.denseRange_polyVector`); its `New.Fock.realWeil_vacVector_apply_zero` is
+`TauCeti.Fock.weilRep_vacuum_apply_zero` in `TauCeti.Analysis.HeisenbergModel.Fock.Basic`. The
+source's `fockPairing` of two polynomials is here the jet pairing of a polynomial with a polynomial
+viewed as a power series, and its lowering rule is stated with the sign on the right.
 
 ## References
 
@@ -78,17 +76,6 @@ namespace TauCeti.Fock
 open ReproducingModel
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {ε : ι → ℤˣ}
-
-/-! ### The vacuum coefficient -/
-
-/-- The overlap of `ω_ε(u) e` with the vacuum is the inverse of the determinant of the block
-`u₋₋` of `u` on the coordinates of sign `-1`. -/
-@[simp]
-theorem weilRep_vacuum_apply_zero (u : unitaryGroup ε) :
-    weilRep ε u vacuum 0 = (negBlock ε ((u : GL ι ℂ) : Matrix ι ι ℂ)).det⁻¹ := by
-  have h := conj_mul_weilRep_vacuum_apply_zero (multiplier ε) u cocycle_multiplier
-  rw [multiplier_apply, conj_conj] at h
-  exact eq_inv_of_mul_eq_one_right h
 
 /-! ### Commutation rules -/
 
