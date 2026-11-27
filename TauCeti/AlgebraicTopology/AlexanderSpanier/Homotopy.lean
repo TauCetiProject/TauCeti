@@ -44,6 +44,11 @@ of `X` has a neighbourhood `V` such that `δ φ` vanishes on all tuples of point
 
 ## Implementation notes
 
+The simplicial homotopy between the pullbacks along `f` and `g`, and the local tactic
+`prism_tuple_ext` that checks its simplicial identities case by case, are adapted from
+`CategoryTheory.Arrow.mapCechNerveHomotopy` and its local tactic `cech_nerve_homotopy_ext` in
+`TauCeti.AlgebraicTopology.CechNerve`.
+
 Let `F` be a homotopy from `f₀` to `f₁` and fix a cocycle `φ` on `Y`. Its coboundary is locally
 zero, so each point of `Y` has a neighbourhood on whose tuples `δ φ` vanishes. By continuity of
 `F` and compactness of `X` (the tube lemma `IsCompact.eventually_forall_of_forall_eventually`), the
@@ -99,6 +104,7 @@ functions on `(n + 1)`-tuples of `X`: `(P ψ)(x) = ∑ₖ (-1)ᵏ ψ(f x₀, …
 def prism (f g : X → Y) (n : ℕ) : ((Fin (n + 2) → Y) → M) →ₗ[R] ((Fin (n + 1) → X) → M) :=
   ∑ k : Fin (n + 1), ((-1 : ℤ) ^ (k : ℕ)) • LinearMap.funLeft R M (prismTuple f g k)
 
+@[simp]
 lemma prism_apply (f g : X → Y) {n : ℕ} (ψ : (Fin (n + 2) → Y) → M) (x : Fin (n + 1) → X) :
     prism R M f g n ψ x = ∑ k : Fin (n + 1), (-1 : ℤ) ^ (k : ℕ) • ψ (prismTuple f g k x) := by
   simp [prism, Finset.sum_apply]
@@ -121,6 +127,8 @@ private lemma opFunLeft_comp_eq {α β γ : Type u} {g₁ : α → β} {g₂ : �
     (h : ∀ a, g₂ (g₁ a) = g a) :
     opFunLeft R M g₁ ≫ opFunLeft R M g₂ = opFunLeft R M g := by
   rw [show g = g₂ ∘ g₁ from (funext h).symm]
+  -- Composition in the opposite category is composition of the `LinearMap.funLeft` maps in the
+  -- reverse order, and `LinearMap.funLeft` of `g₂ ∘ g₁` is that composite by definition.
   rfl
 
 variable (R M) in
@@ -177,6 +185,8 @@ private lemma unop_hom_toChainHomotopy_hom (f g : X → Y) (n : ℕ) :
     ((tupleFunctionsHomotopy R M f g).toChainHomotopy.hom n (n + 1)).unop.hom =
       -prism R M f g n := by
   simp [SimplicialObject.Homotopy.toChainHomotopy, prism]
+  -- The `k`-th component of `tupleFunctionsHomotopy` is by definition `opFunLeft` of the `k`-th
+  -- prism tuple, whose underlying linear map is `LinearMap.funLeft` of that tuple.
   rfl
 
 /-- The differential of the alternating face map complex of `tupleFunctions` is the
@@ -189,6 +199,8 @@ private lemma unop_hom_d (n : ℕ) :
     ModuleCat.hom_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [unop_zsmul, ModuleCat.hom_zsmul]
+  -- The `i`-th face map of `tupleFunctions` is by definition `opFunLeft` of precomposition with
+  -- `SimplexCategory.δ i`, whose underlying order map is `Fin.succAbove i`.
   rfl
 
 private lemma unop_hom_map_f (f : X → Y) (n : ℕ) :
@@ -196,31 +208,48 @@ private lemma unop_hom_map_f (f : X → Y) (n : ℕ) :
       LinearMap.funLeft R M fun x : Fin (n + 1) → X ↦ f ∘ x :=
   rfl
 
+/-- The Alexander–Spanier coboundary, as the alternating sum of the precompositions with the faces,
+evaluated at a function `ψ` on `(n + 1)`-tuples. -/
+private lemma coboundary_apply {Z : Type u} (n : ℕ) (ψ : (Fin (n + 1) → Z) → M) :
+    (∑ i : Fin (n + 2), ((-1 : ℤ) ^ (i : ℕ)) •
+        LinearMap.funLeft R M fun y : Fin (n + 2) → Z ↦ y ∘ i.succAbove) ψ =
+      fun y ↦ ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • ψ (y ∘ Fin.succAbove i) := by
+  funext y
+  simp [Finset.sum_apply]
+
+variable (R M) in
+/-- The chain-homotopy identity of `tupleFunctionsHomotopy` in degree `n`, read as an equation of
+linear maps on functions: pulling back along `f` is `D`, plus minus the prism of the coboundary,
+plus pulling back along `g`, where `D` is the `dNext` term of the chain homotopy. -/
+private lemma funLeft_comp_eq_add (f g : X → Y) (n : ℕ)
+    (D : ((Fin (n + 1) → Y) → M) →ₗ[R] ((Fin (n + 1) → X) → M))
+    (hD : (dNext n (tupleFunctionsHomotopy R M f g).toChainHomotopy.hom).unop.hom = D) :
+    LinearMap.funLeft R M (fun x : Fin (n + 1) → X ↦ f ∘ x) =
+      D + (-prism R M f g n) ∘ₗ (∑ i : Fin (n + 2), ((-1 : ℤ) ^ (i : ℕ)) •
+          LinearMap.funLeft R M fun y : Fin (n + 2) → Y ↦ y ∘ i.succAbove) +
+        LinearMap.funLeft R M (fun x : Fin (n + 1) → X ↦ g ∘ x) := by
+  have h := congrArg (fun φ ↦ φ.unop.hom) ((tupleFunctionsHomotopy R M f g).toChainHomotopy.comm n)
+  rw [prevD_eq _ (j' := n + 1) (by simp)] at h
+  simp only [unop_add, unop_comp, ModuleCat.hom_add, ModuleCat.hom_comp] at h
+  rw [unop_hom_map_f, unop_hom_map_f, unop_hom_d, unop_hom_toChainHomotopy_hom, hD] at h
+  exact h
+
 /-- **The prism identity in degree zero.** For functions `f g : X → Y` and `ψ : Y → M`, read as a
 function on one-element tuples, the prism operator applied to the coboundary
 `(y₀, y₁) ↦ ψ(y₁) - ψ(y₀)` of `ψ` is `ψ ∘ g - ψ ∘ f`. -/
 theorem prism_zero_apply_coboundary (f g : X → Y) (ψ : (Fin 1 → Y) → M) (x : Fin 1 → X) :
     prism R M f g 0 (fun y ↦ ∑ i : Fin 2, (-1 : ℤ) ^ (i : ℕ) • ψ (y ∘ Fin.succAbove i)) x =
       ψ (g ∘ x) - ψ (f ∘ x) := by
-  have h := congrArg (fun φ ↦ φ.unop.hom) ((tupleFunctionsHomotopy R M f g).toChainHomotopy.comm 0)
-  rw [prevD_eq _ (j' := 1) (by simp), dNext_eq_zero _ _ (by simp), zero_add] at h
-  simp only [unop_add, unop_comp, ModuleCat.hom_add, ModuleCat.hom_comp] at h
-  rw [unop_hom_map_f, unop_hom_map_f, unop_hom_d, unop_hom_toChainHomotopy_hom] at h
-  -- `h` is an equation of linear maps between the cochain modules of the complexes, which are
-  -- the modules of functions on tuples; the ascription reads it on functions.
-  have h' : LinearMap.funLeft R M (fun x : Fin 1 → X ↦ f ∘ x) =
-      (-prism R M f g 0) ∘ₗ (∑ i : Fin 2, ((-1 : ℤ) ^ (i : ℕ)) •
-        LinearMap.funLeft R M fun y : Fin 2 → Y ↦ y ∘ i.succAbove) +
-      LinearMap.funLeft R M (fun x : Fin 1 → X ↦ g ∘ x) := h
-  have hD : (fun y : Fin 2 → Y ↦ ∑ i : Fin 2, (-1 : ℤ) ^ (i : ℕ) • ψ (y ∘ Fin.succAbove i)) =
-      (∑ i : Fin 2, ((-1 : ℤ) ^ (i : ℕ)) •
-        LinearMap.funLeft R M fun y : Fin 2 → Y ↦ y ∘ i.succAbove) ψ := by
-    funext y
-    simp
-  have := congrFun (LinearMap.congr_fun h' ψ) x
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.neg_apply,
-    LinearMap.funLeft_apply, Pi.add_apply, Pi.neg_apply] at this
-  rw [hD, this]
+  have h := funLeft_comp_eq_add R M f g 0 0 <| by
+    rw [dNext_eq_zero _ _ (by simp), Limits.unop_zero, ModuleCat.hom_zero]
+    -- The two zero maps differ only in writing the cochain module of the complex in degree `0`
+    -- as its definition, the module of functions on one-element tuples.
+    rfl
+  have := congrFun (LinearMap.congr_fun h ψ) x
+  simp only [LinearMap.add_apply, zero_add, LinearMap.comp_apply,
+    LinearMap.neg_apply, LinearMap.funLeft_apply, Pi.add_apply, Pi.neg_apply,
+    coboundary_apply] at this
+  rw [this]
   abel
 
 /-- **The prism identity.** For functions `f g : X → Y` and `ψ` on `(n + 2)`-tuples of `Y`, the
@@ -232,31 +261,17 @@ theorem coboundary_prism_add_prism_coboundary_apply (f g : X → Y) {n : ℕ}
         prism R M f g (n + 1)
           (fun y ↦ ∑ i : Fin (n + 3), (-1 : ℤ) ^ (i : ℕ) • ψ (y ∘ Fin.succAbove i)) x =
       ψ (g ∘ x) - ψ (f ∘ x) := by
-  have h := congrArg (fun φ ↦ φ.unop.hom)
-    ((tupleFunctionsHomotopy R M f g).toChainHomotopy.comm (n + 1))
-  rw [prevD_eq _ (j' := n + 2) (by simp), dNext_eq _ (i' := n) (by simp)] at h
-  simp only [unop_add, unop_comp, ModuleCat.hom_add, ModuleCat.hom_comp] at h
-  rw [unop_hom_map_f, unop_hom_map_f, unop_hom_d, unop_hom_d, unop_hom_toChainHomotopy_hom,
-    unop_hom_toChainHomotopy_hom] at h
-  -- As in degree zero, the ascription reads the equation of linear maps on functions.
-  have h' : LinearMap.funLeft R M (fun x : Fin (n + 2) → X ↦ f ∘ x) =
-      ((∑ i : Fin (n + 2), ((-1 : ℤ) ^ (i : ℕ)) •
-        LinearMap.funLeft R M fun y : Fin (n + 2) → X ↦ y ∘ i.succAbove) ∘ₗ (-prism R M f g n) +
-      (-prism R M f g (n + 1)) ∘ₗ (∑ i : Fin (n + 3), ((-1 : ℤ) ^ (i : ℕ)) •
-        LinearMap.funLeft R M fun y : Fin (n + 3) → Y ↦ y ∘ i.succAbove)) +
-      LinearMap.funLeft R M (fun x : Fin (n + 2) → X ↦ g ∘ x) := h
-  have hD : ∑ i : Fin (n + 3), ((-1 : ℤ) ^ (i : ℕ)) •
-        LinearMap.funLeft R M (fun y : Fin (n + 3) → Y ↦ y ∘ i.succAbove) ψ =
-      fun y : Fin (n + 3) → Y ↦
-        ∑ i : Fin (n + 3), (-1 : ℤ) ^ (i : ℕ) • ψ (y ∘ Fin.succAbove i) := by
-    funext y
-    simp [Finset.sum_apply]
-  have := congrFun (LinearMap.congr_fun h' ψ) x
+  have h := funLeft_comp_eq_add R M f g (n + 1)
+    ((∑ i : Fin (n + 2), ((-1 : ℤ) ^ (i : ℕ)) •
+      LinearMap.funLeft R M fun y : Fin (n + 2) → X ↦ y ∘ i.succAbove) ∘ₗ (-prism R M f g n)) <| by
+    rw [dNext_eq _ (i' := n) (by simp), unop_comp, ModuleCat.hom_comp, unop_hom_d,
+      unop_hom_toChainHomotopy_hom]
+    -- The two sides differ only in writing the cochain modules of the complexes as their
+    -- definitions, the modules of functions on tuples.
+    rfl
+  have := congrFun (LinearMap.congr_fun h ψ) x
   simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.neg_apply, map_neg,
-    Pi.add_apply, Pi.neg_apply, LinearMap.sum_apply, LinearMap.smul_apply, Finset.sum_apply,
-    Pi.smul_apply] at this
-  rw [hD] at this
-  simp only [LinearMap.funLeft_apply] at this
+    LinearMap.funLeft_apply, Pi.add_apply, Pi.neg_apply, coboundary_apply] at this
   rw [this]
   abel
 
@@ -338,7 +353,7 @@ theorem cohomologyMap_homologyπ_eq_of_forall_nhds {f g : C(X, Y)} {n : ℕ}
         (((cochainComplex R X M).toCycles m (m + 1)).hom
           (cochainClass R X M m (prism R M f g m φ))) = 0 := by
       rw [← ConcreteCategory.comp_apply, HomologicalComplex.toCycles_comp_homologyπ]
-      rfl
+      simp
     rw [key, map_add, h0, add_zero]
 
 variable (R M) in
@@ -356,7 +371,7 @@ theorem cohomologyMap_eq_of_homotopic [CompactSpace X] {f₀ f₁ : C(X, Y)}
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) := by
     rw [← cochainClass_eq_zero_iff (R := R), ← cochainComplex_d_cochainClass, hφ,
       ← ConcreteCategory.comp_apply, HomologicalComplex.iCycles_d]
-    rfl
+    simp
   -- The class `F_t^* [φ]` is a locally constant function of `t`.
   have hT : IsLocallyConstant fun t : unitInterval ↦
       (cohomologyMap R M (F.curry t) n).hom (((cochainComplex R Y M).homologyπ n).hom z) := by
