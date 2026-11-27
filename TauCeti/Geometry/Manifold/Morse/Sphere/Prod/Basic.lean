@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Prod
+public import Mathlib.Algebra.Polynomial.Coeff
+public import TauCeti.Geometry.Manifold.Morse.IteratedProd
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
@@ -20,6 +21,10 @@ points have indices `n + m`, `n`, `m` and `0`. For `n = m = 1` this is the stand
 on the two-torus `S¹ × S¹`, with one critical point of index `2`, two of index `1` and one of
 index `0`.
 
+More generally, on the product `(Sⁿ)ʳ⁺¹ = IteratedProd (sphere (0 : E) 1) r` of `r + 1` copies of
+`Sⁿ`, the iterated sum `iteratedProdSum (sphereHeight v) r` of the height functions has as many
+critical points of index `k` as the coefficient of `tᵏ` in `(1 + tⁿ)ʳ⁺¹`.
+
 ## Main declarations
 
 * `TauCeti.isMorse_sphereHeight_comp_fst_add_comp_snd`: the sum of two height functions is Morse
@@ -30,6 +35,9 @@ index `0`.
   the indices of the two height functions.
 * `TauCeti.criticalCount_sphereHeight_comp_fst_add_comp_snd`: its critical counts, one for each of
   the four pairs of poles.
+* `TauCeti.criticalCount_iteratedProdSum_sphereHeight`: the critical counts of the sum of the
+  height functions on the power `(Sⁿ)ʳ⁺¹` of `r + 1` spheres are the coefficients of
+  `(1 + tⁿ)ʳ⁺¹`.
 
 ## References
 
@@ -39,7 +47,7 @@ index `0`.
 
 public section
 
-open Metric Module
+open Metric Module Polynomial
 open scoped Manifold
 
 namespace TauCeti
@@ -108,6 +116,26 @@ theorem criticalCount_sphereHeight_comp_fst_add_comp_snd (v : sphere (0 : E) 1)
     Finset.sum_insert (by simp [hv, hw]), Finset.sum_insert (by simp [hv]),
     Finset.sum_insert (by simp [hw]), Finset.sum_singleton]
   simp [add_assoc]
+
+/-- **The critical counts of a sum of height functions on a power of a sphere.** The sum of the
+height functions on the product `(Sⁿ)ʳ⁺¹` of `r + 1` copies of the sphere `Sⁿ` has as many
+critical points of index `k` as the coefficient of `tᵏ` in `(1 + tⁿ)ʳ⁺¹`: a critical point is a
+tuple of poles, of index `n` times its number of north poles. -/
+theorem criticalCount_iteratedProdSum_sphereHeight (v : sphere (0 : E) 1) (r k : ℕ) :
+    criticalCount 𝓘(ℝ, IteratedProdModel (EuclideanSpace ℝ (Fin n)) r)
+        (iteratedProdSum (sphereHeight v) r) k =
+      (((1 + X ^ n) ^ (r + 1) : ℕ[X]).coeff k : ℕ∞) := by
+  -- The critical counts of the height function are the coefficients of `1 + tⁿ`.
+  have hcount (j : ℕ) :
+      criticalCount (𝓡 n) (sphereHeight v) j = ((1 + X ^ n : ℕ[X]).coeff j : ℕ∞) := by
+    rw [criticalCount_sphereHeight, coeff_add, coeff_one, coeff_X_pow]
+    split_ifs <;> simp [one_add_one_eq_two]
+  induction r generalizing k with
+  | zero => rw [criticalCount_iteratedProdSum_zero, hcount, zero_add, pow_one]
+  | succ r ih =>
+    rw [criticalCount_iteratedProdSum_succ (contMDiff_sphereHeight v), pow_succ, coeff_mul,
+      Nat.cast_sum]
+    exact Finset.sum_congr rfl fun ij _ ↦ by rw [ih, hcount, Nat.cast_mul]
 
 end TauCeti
 

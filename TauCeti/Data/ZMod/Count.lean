@@ -45,6 +45,7 @@ of the representatives sum to the harmonic number `H_{n-1}`.
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
 * `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_val_sub_eq_sum_range`: the same for the representatives of a shift `x - c`.
 * `ZMod.sum_val_filter_castHom_eq_sum_range`: summing a function of the representatives over a
   fibre of the reduction `ZMod (k * m) → ZMod m`.
 * `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`.
@@ -101,6 +102,13 @@ theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ �
     ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
   rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
   simp
+
+/-- **Summing over shifted representatives.** A function of the representative of `x - c`
+summed over the residues modulo `n` is its sum over `range n`. -/
+theorem sum_val_sub_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M)
+    (c : ZMod n) : ∑ x : ZMod n, f (x - c).val = ∑ i ∈ range n, f i := by
+  simpa only [Equiv.subRight_apply] using
+    ((Equiv.subRight c).sum_comp fun x ↦ f x.val).trans (sum_val_eq_sum_range f)
 
 /-- **Summing over a fibre of the reduction.** The residues modulo `k * m` that reduce to
 `x : ZMod m` have the representatives `x.val + m * j` for `j < k`, so a function of the

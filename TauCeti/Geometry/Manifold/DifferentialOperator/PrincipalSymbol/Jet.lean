@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Jet
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
+public import TauCeti.Geometry.Manifold.VectorBundle.Jet.Symbol
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -51,6 +53,18 @@ most `k` exactly when its jet factors all factor through the truncation to `k`-j
 order `r` of an operator of order at most `r'` is its jet factor of order `r'` composed with the
 truncation (`LinearMap.jetFactorOfMemDifferentialOperators_eq_comp_truncate`).
 
+The jets of top order are also the image of the inclusion `TauCeti.JetBundle.ofTop` of continuous
+multilinear maps `TₓM × ⋯ × TₓM → Vₓ`. Through it the principal symbol is the restriction of the
+jet factor `A_x` to the top-order jets,
+
+`σ(P)(ξ) v = A_x (ofTop (ξ ⊗ ⋯ ⊗ ξ ⊗ v))`,
+
+where `ξ ⊗ ⋯ ⊗ ξ ⊗ v` is the multilinear map `(v₁, …, vᵣ) ↦ ξ(v₁) ⋯ ξ(vᵣ) v`
+(`TauCeti.sectionPrincipalSymbol_apply_eq_jetFactorOfMemDifferentialOperators`), and the
+commutator symbol is `[⋯[P, ξ₁], …, ξᵣ] v = A_x (ofTop (r! • (ξ₁ ⊗ ⋯ ⊗ ξᵣ ⊗ v)))`
+(`TauCeti.sectionCommutatorSymbol_apply_eq_jetFactorOfMemDifferentialOperators`), since the jet of
+`f₁ ⋯ fᵣ s` at `x` is `ofTop (r! • (dₓf₁ ⊗ ⋯ ⊗ dₓfᵣ ⊗ s(x)))` (`TauCeti.JetBundle.jet_prod_smul`).
+
 ## Main definitions
 
 * `TauCeti.JetBundle.jetSymbol`: the commutator symbol at a point of the `r`-jet prolongation
@@ -66,11 +80,14 @@ truncation (`LinearMap.jetFactorOfMemDifferentialOperators_eq_comp_truncate`).
   on the values of the symbol is the commutator symbol of the operator.
 * `TauCeti.mem_differentialOperators_iff_forall_ker_truncate_le`: the order filtration
   of differential operators through truncation of jets.
+* `TauCeti.sectionCommutatorSymbol_apply_eq_jetFactorOfMemDifferentialOperators`,
+  `TauCeti.sectionPrincipalSymbol_apply_eq_jetFactorOfMemDifferentialOperators`: the commutator
+  and principal symbols are the jet factor on the top-order jets `TauCeti.JetBundle.ofTop`.
 
 ## References
 
 * I. Kolář, P. W. Michor and J. Slovák, *Natural Operations in Differential Geometry*,
-  §§12.2–12.5 (jets and the symbol of a linear differential operator).
+  §§12, 19 (jets and the symbol of a linear differential operator).
 * A. Grothendieck, *Éléments de géométrie algébrique IV*, Quatrième partie, §16.8.
 -/
 
@@ -273,5 +290,52 @@ theorem mem_differentialOperators_iff_forall_ker_truncate_le {k : ℕ}
         LinearMap.ker (P.jetFactorOfMemDifferentialOperators hP x) := by
   rw [← forall_sectionCommutatorSymbol_eq_zero_iff ⟨P, hP⟩]
   exact forall_congr' fun x ↦ sectionCommutatorSymbol_eq_zero_iff_ker_truncate_le hP x
+
+/-! ### The principal symbol on the top-order jets `ofTop` -/
+
+section OfTop
+
+variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] {x : M}
+
+/-- **The commutator symbol through jets.** The commutator symbol of a differential operator `P`
+of order at most `m` at `(ξ₁, …, ξₘ)`, applied to `v`, is its jet factor at `x` applied to the
+top-order jet `ofTop (m! • (ξ₁ ⊗ ⋯ ⊗ ξₘ ⊗ v))`, where `ξ₁ ⊗ ⋯ ⊗ ξₘ ⊗ v` is the multilinear map
+`(v₁, …, vₘ) ↦ ξ₁(v₁) ⋯ ξₘ(vₘ) v`. -/
+theorem sectionCommutatorSymbol_apply_eq_jetFactorOfMemDifferentialOperators
+    (hx : I.IsInteriorPoint x) {m : ℕ}
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
+    (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ) (v : V x) :
+    sectionCommutatorSymbol I hx P ξ v =
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯).jetFactorOfMemDifferentialOperators P.property x
+        (ofTop I F V m x (m.factorial •
+          (ContinuousMultilinearMap.mkPiRing ℝ (Fin m) v).compContinuousLinearMap ξ)) := by
+  -- Lift the covectors to functions `fᵢ` vanishing at `x`, and `v` to a section `s`.
+  obtain ⟨f, s, hf, rfl, rfl⟩ := exists_mvfderiv_eq_and_apply_eq (F := F) x ξ v
+  have hprod : ⇑((∏ i, f i) • s) = fun y ↦ (∏ i, f i y) • s y := by
+    rw [ContMDiffSection.coe_smul_contMDiffMap]
+    funext y
+    simp only [Pi.smul_apply', ← ContMDiffMap.evalAlgHom_apply (𝕜 := ℝ), map_prod]
+  rw [sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero hx P hf s,
+    ← LinearMap.jetFactorOfMemDifferentialOperators_jet P.property, hprod, jet_prod_smul f hf s]
+
+/-- **The principal symbol through jets.** The principal symbol `σ(P)(ξ)` of a differential operator
+`P` of order at most `m`, applied to `v`, is its jet factor at `x` applied to the top-order jet
+`ofTop (ξ ⊗ ⋯ ⊗ ξ ⊗ v)`, where `ξ ⊗ ⋯ ⊗ ξ ⊗ v` is the multilinear map
+`(v₁, …, vₘ) ↦ ξ(v₁) ⋯ ξ(vₘ) v`. The principal symbol is the top-order part of the factorization of
+`P` through jets. -/
+theorem sectionPrincipalSymbol_apply_eq_jetFactorOfMemDifferentialOperators
+    (hx : I.IsInteriorPoint x) {m : ℕ}
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) (v : V x) :
+    sectionPrincipalSymbol I hx P ξ v =
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯).jetFactorOfMemDifferentialOperators P.property x
+        (ofTop I F V m x
+          ((ContinuousMultilinearMap.mkPiRing ℝ (Fin m) v).compContinuousLinearMap fun _ ↦ ξ)) := by
+  have hm : (m.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.2 m.factorial_ne_zero
+  rw [sectionPrincipalSymbol_def, LinearMap.smul_apply,
+    sectionCommutatorSymbol_apply_eq_jetFactorOfMemDifferentialOperators, map_nsmul, map_nsmul,
+    ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, inv_mul_cancel₀ hm, one_smul]
+
+end OfTop
 
 end TauCeti

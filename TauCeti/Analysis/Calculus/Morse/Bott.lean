@@ -33,10 +33,12 @@ The same kernel condition makes the zero section isolated among the critical poi
 (`TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`), since the derivative of `Df` at `(a, 0)`
 is injective on the fibre directions.
 
-Quantitatively, the differential grows linearly with the distance to the zero section: near
-`(a, 0)`, `‖Df(z)‖ ≥ c ‖z.2‖` for some `c > 0` (`TauCeti.exists_mul_norm_snd_le_norm_fderiv`). On
-the other hand, near a point of any critical zero section the critical value is constant along it,
-and the energy difference is quadratic in the distance to it,
+Quantitatively, the derivative in the fibre directions grows linearly with the distance to the
+zero section: near `(a, 0)`, `‖Df(z) ∘ inr‖ ≥ c ‖z.2‖` for some `c > 0`
+(`TauCeti.exists_mul_norm_snd_le_norm_fderiv_comp_inr`), and hence `‖Df(z)‖ ≥ c ‖z.2‖`
+(`TauCeti.exists_mul_norm_snd_le_norm_fderiv`). On the other hand, near a point of any critical
+zero section the critical value is constant along it, and the energy difference is quadratic in the
+distance to it,
 `|f z - f (a, 0)| ≤ C ‖z.2‖ ^ 2` (`TauCeti.exists_abs_sub_le_mul_norm_snd_sq`). Together these give
 the **Morse–Bott form of Łojasiewicz's gradient inequality** with exponent `1 / 2`,
 `lam * |f z - f (a, 0)| ≤ ‖Df(z)‖ ^ 2`
@@ -70,10 +72,14 @@ orthogonal to the fibre.
 
 * `TauCeti.isInvertible_fderiv_fderiv_slice_right_of_ker_le`: the vertical Hessian at a
   Morse–Bott point of the zero section is invertible.
+* `TauCeti.isNondegenerateCriticalPoint_slice_right_of_ker_le`: at a Morse–Bott point of the zero
+  section, the restriction of `f` to the normal fibre has a nondegenerate critical point at `0`.
 * `TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`: near a Morse–Bott point of the zero
   section, the critical points are exactly the points of the zero section.
-* `TauCeti.exists_mul_norm_snd_le_norm_fderiv`: near a Morse–Bott point of the zero section, the
-  differential is bounded below by a multiple of the distance to the zero section.
+* `TauCeti.exists_mul_norm_snd_le_norm_fderiv_comp_inr`,
+  `TauCeti.exists_mul_norm_snd_le_norm_fderiv`: near a Morse–Bott point of the zero section, the
+  fibre derivative, and hence the differential, is bounded below by a multiple of the distance to
+  the zero section.
 * `TauCeti.exists_abs_sub_le_mul_norm_snd_sq`: near a point of a critical zero section, the energy
   difference is bounded by a multiple of the squared distance to it.
 * `TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`: the Morse–Bott form of
@@ -128,6 +134,19 @@ theorem isInvertible_fderiv_fderiv_slice_right_of_ker_le [FiniteDimensional ℝ 
   obtain ⟨u, hu⟩ := hker hmem
   simpa using (congrArg Prod.snd hu).symm
 
+/-- **The normal restriction at a Morse–Bott point is nondegenerate.** If `f` is `C²` at `(a, 0)`,
+every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)`
+consists of base directions, then the restriction `v ↦ f (a, v)` of `f` to the fibre over `a` has a
+nondegenerate critical point at `0`. -/
+theorem isNondegenerateCriticalPoint_slice_right_of_ker_le [FiniteDimensional ℝ F]
+    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
+    IsNondegenerateCriticalPoint (fun v ↦ f (a, v)) 0 :=
+  ⟨hf.comp 0 (contDiffAt_const.prodMk contDiffAt_id),
+    by rw [fderiv_slice_right (hf.differentiableAt two_ne_zero), hcrit.self_of_nhds,
+      ContinuousLinearMap.zero_comp],
+    isInvertible_fderiv_fderiv_slice_right_of_ker_le hf hcrit hker⟩
+
 /-- **The critical value is locally constant along a critical zero section.** If every point
 `(b, 0)` with `b` near `a` is a critical point of `f` at which `f` is differentiable, then
 `f (b, 0) = f (a, 0)` for every `b` near `a`. -/
@@ -169,16 +188,47 @@ theorem eventually_fderiv_eq_zero_iff_snd_eq_zero [FiniteDimensional ℝ F]
   have h := hasStrictFDerivAt_fderiv_and_injective hf hker
   h.1.eventually_apply_eq_zero_iff_snd_eq_zero hcrit h.2
 
+/-- **Near a Morse–Bott zero section the fibre derivative grows linearly with the distance to
+it.** If `f` is `C²` at `(a, 0)`, every point `(b, 0)` with `b` near `a` is critical, and the
+kernel of the Hessian at `(a, 0)` consists of base directions, then near `(a, 0)` the derivative of
+`f` in the fibre directions, `Df(z) ∘ inr`, has norm at least a fixed positive multiple of
+`‖z.2‖`. -/
+theorem exists_mul_norm_snd_le_norm_fderiv_comp_inr [FiniteDimensional ℝ F]
+    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
+    ∃ c > 0, ∀ᶠ z in 𝓝 (a, (0 : F)),
+      c * ‖z.2‖ ≤ ‖fderiv ℝ f z ∘L ContinuousLinearMap.inr ℝ P F‖ := by
+  -- Restriction of covectors to the fibre directions.
+  let T : (P × F →L[ℝ] ℝ) →L[ℝ] F →L[ℝ] ℝ :=
+    ContinuousLinearMap.precomp ℝ (ContinuousLinearMap.inr ℝ P F)
+  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
+  have hstrict : HasStrictFDerivAt (fderiv ℝ f) (fderiv ℝ (fderiv ℝ f) (a, 0)) (a, 0) :=
+    hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero
+  have hzero : ∀ᶠ b in 𝓝 a, T (fderiv ℝ f (b, 0)) = 0 :=
+    hcrit.mono fun b hb ↦ by simp [T, hb]
+  -- On the fibre directions the derivative of `T ∘ Df` is the vertical Hessian, which is
+  -- invertible.
+  have hinj : Function.Injective
+      ((T ∘L fderiv ℝ (fderiv ℝ f) (a, 0)) ∘L ContinuousLinearMap.inr ℝ P F) := by
+    refine (injective_iff_map_eq_zero _).2 fun v hv ↦
+      (isInvertible_fderiv_fderiv_slice_right_of_ker_le hf hcrit hker).injective ?_
+    rw [map_zero]
+    ext w
+    simpa [T, fderiv_fderiv_slice_right_apply hf] using congr($hv w)
+  exact (T.hasStrictFDerivAt.comp (a, 0) hstrict).exists_mul_norm_snd_le_norm_apply hzero hinj
+
 /-- **Near a Morse–Bott zero section the differential grows linearly with the distance to it.**
 If `f` is `C²` at `(a, 0)`, every point `(b, 0)` with `b` near `a` is critical, and the kernel of
 the Hessian at `(a, 0)` consists of base directions, then near `(a, 0)` the differential of `f` at
-`z` has norm at least a fixed positive multiple of `‖z.2‖`. -/
+`z` has norm at least a fixed positive multiple of `‖z.2‖`. This follows from the stronger bound
+`TauCeti.exists_mul_norm_snd_le_norm_fderiv_comp_inr` on the fibre derivative. -/
 theorem exists_mul_norm_snd_le_norm_fderiv [FiniteDimensional ℝ F]
     (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
     (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
-    ∃ c > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), c * ‖z.2‖ ≤ ‖fderiv ℝ f z‖ :=
-  have h := hasStrictFDerivAt_fderiv_and_injective hf hker
-  h.1.exists_mul_norm_snd_le_norm_apply hcrit h.2
+    ∃ c > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), c * ‖z.2‖ ≤ ‖fderiv ℝ f z‖ := by
+  obtain ⟨c, hc, hcz⟩ := exists_mul_norm_snd_le_norm_fderiv_comp_inr hf hcrit hker
+  exact ⟨c, hc, hcz.mono fun z hz ↦ hz.trans <| (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
+    mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_inr_le_one ℝ P F)⟩
 
 /-- **Near a critical zero section the energy difference is quadratic in the distance to it.** If
 `f` is `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is critical, then near `(a, 0)`
