@@ -245,17 +245,6 @@ private lemma aeval_glnHeckePolynomial_top_eq_zero {U : End ℂ V} {n : ℕ} {q 
   rw [hn, map_smul, U_last]
   module
 
-/-- Reverse adjointness follows from positive definiteness of a complex sesquilinear form. -/
-private lemma reverse_adjoint_of_pos {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ} {U U' : End ℂ V}
-    (hB : ∀ f ≠ (0 : V), 0 < B f f) (adj : ∀ a y : V, B (U' a) y = B a (U y)) (a y : V) :
-    B (U a) y = B a (U' y) := by
-  have hB_symm : B.IsSymm :=
-    (LinearMap.IsNonneg.mk fun x ↦ by
-      rcases eq_or_ne x 0 with rfl | hx
-      · simp
-      · exact (hB x hx).le).isSymm
-  rw [← hB_symm.eq, ← adj y a, hB_symm.eq]
-
 /-- If `c ≠ 0` and `q * c` are both roots of `P`, then `(P / (X - c)) (U)` kills `T 0`. -/
 private lemma aeval_quot_eq_zero_of_two_roots {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ}
     {U U' : End ℂ V} {n : ℕ} {q : ℝ} {P D F : ℂ[X]} {x : V} {c : ℂ}
@@ -297,7 +286,12 @@ private lemma glnHeckePolynomial_adjoint_core {B : V →ₛₗ[starRingEnd ℂ] 
       P = (∏ i ∈ range k, (C d * X - C ((q : ℂ) ^ i))) * R →
       aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0 := by
   intro P
-  have adj' := reverse_adjoint_of_pos hB adj
+  have hB_symm : B.IsSymm :=
+    (LinearMap.IsNonneg.mk fun x ↦ by
+      rcases eq_or_ne x 0 with rfl | hx
+      · simp
+      · exact (hB x hx).le).isSymm
+  have adj' (a y : V) : B (U a) y = B a (U' y) := by rw [← hB_symm.eq, ← adj y a, hB_symm.eq]
   have q_ne : (q : ℂ) ≠ 0 := by exact_mod_cast (zero_lt_one.trans hq).ne'
   have aeval_p := aeval_glnHeckePolynomial_prefix ht_zero rec_U
   have hcast : (fun i : Fin (n + 1) ↦ t ⟨i.val, by omega⟩) = fun i ↦ t i.castSucc :=
@@ -384,7 +378,7 @@ theorem Module.End.aeval_map_starRingEnd_apply_eq_zero_of_isRoot_glnHeckePolynom
     {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ}
     (U U' : End ℂ V) {n : ℕ} {q : ℝ} {t : Fin (n + 2) → ℂ} (T : Fin (n + 1) → V)
     (hB : ∀ f ≠ (0 : V), 0 < B f f) (adj : ∀ a y : V, B (U' a) y = B a (U y))
-    (hq : 1 < q) (hT_ne : T 0 ≠ 0) (ht_zero : t 0 • T 0 = T 0)
+    (hq : 1 < q) (ht_zero : t 0 • T 0 = T 0)
     (ht_last : t (Fin.last (n + 1)) ≠ 0)
     (rec_U : ∀ j : Fin n,
       U (T j.castSucc) = (q : ℂ) ^ (j : ℕ) • (t j.succ.castSucc • T 0 - T j.succ))
@@ -398,9 +392,11 @@ theorem Module.End.aeval_map_starRingEnd_apply_eq_zero_of_isRoot_glnHeckePolynom
     (hroot : (glnHeckePolynomial (n + 1) (q : ℂ) t).IsRoot ((q : ℂ) ^ k / d))
     (hP : glnHeckePolynomial (n + 1) (q : ℂ) t =
       (∏ i ∈ range k, (C d * X - C ((q : ℂ) ^ i))) * R) :
-    aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0 :=
-  (glnHeckePolynomial_adjoint_core U U' T hB adj hq hT_ne ht_zero ht_last rec_U rec_U'
-    U'_first U_last).2 d hd k R hroot hP
+    aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0 := by
+  by_cases hT_ne : T 0 = 0
+  · simp [hT_ne]
+  · exact (glnHeckePolynomial_adjoint_core U U' T hB adj hq hT_ne ht_zero ht_last rec_U rec_U'
+      U'_first U_last).2 d hd k R hroot hP
 
 end RootChain
 
