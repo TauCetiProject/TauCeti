@@ -44,6 +44,8 @@ modules are the nondegenerate parts of the limits of modules.
   nondegenerate modules is nondegenerate.
 * the instance `HasColimits` on `TauCeti.NondegMod A H`, and for idempotented `H`, the instances
   `Abelian` and `HasLimits` on it and `Coreflective` on its inclusion into modules.
+* `TauCeti.NondegMod.epi_iff_surjective`: for idempotented `H`, the epimorphisms of nondegenerate
+  modules are the surjections.
 * `TauCeti.nondegeneratePartAdjunction_counit_app`: the counit of the coreflection is the
   inclusion `H • M → M`; `TauCeti.coe_nondegeneratePartAdjunction_unit_app` and
   `TauCeti.coe_nondegeneratePartAdjunction_homEquiv_apply` compute its unit and hom-equivalence.
@@ -223,5 +225,16 @@ instance : Coreflective (nondegenerateModuleProperty.{v} A H).ι where
 nondegenerate part of its limit as modules. -/
 instance : HasLimits (NondegMod.{v} A H) :=
   hasLimits_of_coreflective (nondegenerateModuleProperty.{v} A H).ι
+
+variable {A H} in
+/-- **A morphism of nondegenerate modules is an epimorphism iff it is surjective**: the inclusion
+into modules is a left adjoint, so it preserves epimorphisms, and it is faithful, so it reflects
+them. -/
+theorem NondegMod.epi_iff_surjective {M N : NondegMod.{v} A H} (f : M ⟶ N) :
+    Epi f ↔ Function.Surjective f.hom.hom :=
+  ⟨fun _ ↦ (ModuleCat.epi_iff_surjective _).1
+      (inferInstanceAs (Epi ((nondegenerateModuleProperty.{v} A H).ι.map f))),
+    fun hf ↦ (nondegenerateModuleProperty.{v} A H).ι.epi_of_epi_map
+      ((ModuleCat.epi_iff_surjective _).2 hf)⟩
 
 end TauCeti

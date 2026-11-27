@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.CategoryTheory.Generator.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import TauCeti.RingTheory.Idempotented.NondegMod
+public import TauCeti.RingTheory.Idempotents.Hom
+public import TauCeti.RingTheory.Idempotents.Module
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 public import TauCeti.RingTheory.Idempotents.Projective
 
@@ -35,7 +36,6 @@ modules.
 * `TauCeti.principalNondegModHomEquiv`: for idempotent `e`, `Hom(He, M) ≃ {m | e • m = m}`.
 * `TauCeti.projective_principalNondegMod`: `He` is projective for idempotent `e`.
 * `TauCeti.isSeparating_principalNondegMod`: the `He`, `e` idempotent, form a separating family.
-* `TauCeti.epi_iff_surjective_nondegMod`: an epimorphism of nondegenerate modules is surjective.
 
 ## References
 
@@ -71,59 +71,40 @@ instance (e : H) : Module.Finite (Unitization A H) (principalNondegMod A e).obj 
     (Module.Finite _ (Submodule.span (Unitization A H) {(e : Unitization A H)}))
 
 /-- **Morphisms out of `He` are the vectors fixed by `e`**: evaluation at the generator `e`. The
-inverse sends `m` with `e • m = m` to `x ↦ x • m`. -/
+inverse sends `m` with `e • m = m` to `x ↦ x • m`. This is
+`IsIdempotentElem.spanSingletonHomEquivSMulTop` read through the inclusion into modules. -/
 noncomputable def principalNondegModHomEquiv {e : H} (he : IsIdempotentElem e)
     (M : NondegMod.{max u₁ u₂} A H) :
-    (principalNondegMod A e ⟶ M) ≃ {m : M.obj // (e : Unitization A H) • m = m} where
-  toFun φ := ⟨φ.hom.hom (spanSingletonGenerator (e : Unitization A H)), by
-    refine (φ.hom.hom.map_smul _ _).symm.trans (congrArg _ ?_)
-    have h := smul_spanSingletonGenerator (Unitization.IsIdempotentElem.inr A he)
-      (spanSingletonGenerator (e : Unitization A H))
-    rw [coe_spanSingletonGenerator] at h
-    exact h⟩
-  invFun m := ObjectProperty.homMk (ModuleCat.ofHom
-    ((LinearMap.toSpanSingleton _ _ m.val).comp (Ideal.span {(e : Unitization A H)}).subtype))
-  left_inv φ := by
-    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext
-      fun (x : Ideal.span {(e : Unitization A H)}) ↦ ?_))
-    change (x : Unitization A H) • φ.hom.hom (spanSingletonGenerator (e : Unitization A H)) =
-      φ.hom.hom x
-    exact (φ.hom.hom.map_smul _ _).symm.trans
-      (congrArg _ (smul_spanSingletonGenerator (Unitization.IsIdempotentElem.inr A he) x))
-  right_inv m := Subtype.ext <| by
-    change ((spanSingletonGenerator (e : Unitization A H) : Unitization A H)) • m.val = m.val
-    rw [coe_spanSingletonGenerator, m.property]
+    (principalNondegMod A e ⟶ M) ≃ {m : M.obj // (e : Unitization A H) • m = m} :=
+  (nondegenerateModuleProperty A H).fullyFaithfulι.homEquiv.trans <|
+    (ModuleCat.homEquiv (M := ModuleCat.of _ (Ideal.span {(e : Unitization A H)}))).trans <|
+      ((Unitization.IsIdempotentElem.inr A he).spanSingletonHomEquivSMulTop (k := ℤ)).toEquiv.trans
+        (Equiv.subtypeEquivRight fun _ ↦
+          (Unitization.IsIdempotentElem.inr A he).mem_smul_top_iff_smul_eq_self)
 
 @[simp]
 theorem coe_principalNondegModHomEquiv_apply {e : H} (he : IsIdempotentElem e)
     {M : NondegMod.{max u₁ u₂} A H} (φ : principalNondegMod A e ⟶ M) :
     (principalNondegModHomEquiv he M φ : M.obj) =
       φ.hom.hom (spanSingletonGenerator (e : Unitization A H)) :=
-  (rfl)
+  (Unitization.IsIdempotentElem.inr A he).coe_spanSingletonHomEquivSMulTop_apply (k := ℤ) φ.hom.hom
 
+@[simp]
 theorem principalNondegModHomEquiv_symm_apply {e : H} (he : IsIdempotentElem e)
     {M : NondegMod.{max u₁ u₂} A H} (m : {m : M.obj // (e : Unitization A H) • m = m})
     (x : Ideal.span {(e : Unitization A H)}) :
     ((principalNondegModHomEquiv he M).symm m).hom.hom x = (x : Unitization A H) • m.val :=
-  (rfl)
+  (Unitization.IsIdempotentElem.inr A he).spanSingletonHomEquivSMulTop_symm_apply (k := ℤ) _ x
 
 /-- Two morphisms out of `He` agree as soon as they agree at the generator `e`. -/
-theorem principalNondegMod_hom_ext {e : H} (he : IsIdempotentElem e)
-    {M : NondegMod.{max u₁ u₂} A H} {φ ψ : principalNondegMod A e ⟶ M}
+theorem principalNondegMod_hom_ext {e : H} {M : NondegMod.{max u₁ u₂} A H}
+    {φ ψ : principalNondegMod A e ⟶ M}
     (h : φ.hom.hom (spanSingletonGenerator (e : Unitization A H)) =
-      ψ.hom.hom (spanSingletonGenerator (e : Unitization A H))) : φ = ψ :=
-  (principalNondegModHomEquiv he M).injective (Subtype.ext h)
-
-/-- **An epimorphism of nondegenerate modules is surjective**: the inclusion into modules is a left
-adjoint, so it preserves epimorphisms. -/
-theorem epi_iff_surjective_nondegMod {M N : NondegMod.{max u₁ u₂} A H} (f : M ⟶ N) :
-    Epi f ↔ Function.Surjective f.hom.hom := by
-  refine ⟨fun _ ↦ ?_, fun hf ↦ ?_⟩
-  · have : Epi ((nondegenerateModuleProperty A H).ι.map f) := inferInstance
-    exact (ModuleCat.epi_iff_surjective _).mp this
-  · refine ⟨fun g h hgh ↦ ObjectProperty.hom_ext _ ?_⟩
-    have : Epi f.hom := (ModuleCat.epi_iff_surjective _).mpr hf
-    exact (cancel_epi f.hom).mp congr(($hgh).hom)
+      ψ.hom.hom (spanSingletonGenerator (e : Unitization A H))) : φ = ψ := by
+  refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext
+    fun (x : Ideal.span {(e : Unitization A H)}) ↦ ?_))
+  obtain ⟨r, rfl⟩ := exists_smul_spanSingletonGenerator x
+  exact (φ.hom.hom.map_smul r _).trans ((congrArg (r • ·) h).trans (ψ.hom.hom.map_smul r _).symm)
 
 /-- **The principal objects `He` are projective** for `e` idempotent: `He` is a projective module,
 and the inclusion of `NondegMod A H` into modules is fully faithful and preserves epimorphisms. -/
@@ -144,16 +125,12 @@ theorem isSeparating_principalNondegMod :
   have hM : IsNondegenerate A H M.obj := (nondegenerateModuleProperty_iff _).1 M.property
   obtain ⟨e, he, hem⟩ := isNondegenerate_iff.mp hM m
   let φ := (principalNondegModHomEquiv he M).symm ⟨m, hem⟩
-  have hφ : φ.hom.hom (spanSingletonGenerator (e : Unitization A H)) = m := by
-    rw [principalNondegModHomEquiv_symm_apply, coe_spanSingletonGenerator, hem]
+  obtain ⟨x, hx⟩ : ∃ x : (principalNondegMod A e).obj, φ.hom.hom x = m :=
+    ⟨spanSingletonGenerator (e : Unitization A H), by
+      rw [principalNondegModHomEquiv_symm_apply, coe_spanSingletonGenerator, hem]⟩
   have hG : ObjectProperty.ofObj (fun e : {e : H // IsIdempotentElem e} ↦
       principalNondegMod A e.val) (principalNondegMod A e) :=
     ObjectProperty.ofObj_apply _ (⟨e, he⟩ : {e : H // IsIdempotentElem e})
-  have h : φ ≫ f = φ ≫ g := hfg (principalNondegMod A e) hG φ
-  have h' : (φ ≫ f).hom.hom (spanSingletonGenerator (e : Unitization A H)) =
-      (φ ≫ g).hom.hom (spanSingletonGenerator (e : Unitization A H)) := by
-    rw [h]
-  change f.hom.hom (φ.hom.hom _) = g.hom.hom (φ.hom.hom _) at h'
-  rwa [hφ] at h'
+  simpa [hx] using congr(($(hfg (principalNondegMod A e) hG φ)).hom.hom x)
 
 end TauCeti
