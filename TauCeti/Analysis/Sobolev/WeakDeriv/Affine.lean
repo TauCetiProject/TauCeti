@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Translation
 # Affine change of variables for weak derivatives
 
 Combining the weak chain rule along a continuous linear equivalence
-(`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv`) with right translation
+(`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_of_isAddHaarMeasure`) with right translation
 (`TauCeti.HasWeakFDerivOn.comp_add_right`) yields the weak chain rule along any invertible affine
 map `x ↦ e x + b` between finite-dimensional real normed spaces carrying additive Haar measures,
 with no measure-preservation or inner-product hypothesis.
@@ -53,7 +53,7 @@ theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add {ν : Measure E'} [ν.IsA
   have htr : HasWeakFDerivOn ν V' (fun y ↦ u (y + b)) fun y ↦ D (y + b) :=
     h.comp_add_right (mapsTo_preimage (· + b) V)
   have hUV' : MapsTo e U V' := fun x hx ↦ hUV hx
-  exact htr.comp_continuousLinearEquiv μ e hUV'
+  exact htr.comp_continuousLinearEquiv_of_isAddHaarMeasure e hUV'
 
 /-- **Weak derivatives through an invertible affine map.** When `U = (fun x ↦ e x + b) ⁻¹' V`,
 `x ↦ u (e x + b)` has weak derivative `x ↦ D (e x + b) ∘L e` on `U` with respect to an additive Haar

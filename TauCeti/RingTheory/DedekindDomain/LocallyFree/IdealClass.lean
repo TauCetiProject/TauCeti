@@ -165,10 +165,9 @@ end OneDimensional
 
 variable [IsDedekindDomain A]
 
-/-- On a nonzero integral ideal the homomorphism is its reduced projective class.
-The projectivity instance is required to express the right-hand side using `classOf`. -/
+/-- On a nonzero integral ideal the homomorphism is its reduced projective class. -/
 @[simp]
-theorem idealClassHom_mk0 (I : (Ideal A)⁰) [Module.Projective A (I : Ideal A)] :
+theorem idealClassHom_mk0 (I : (Ideal A)⁰) :
     idealClassHom A (Additive.ofMul (ClassGroup.mk0 I)) = classOf A (I : Ideal A) 1 := by
   rw [← ClassGroup.mk_mk0 (FractionRing A), idealClassHom_mk]
   exact classOf_congr (FractionalIdeal.coeIdealEquiv (I : Ideal A)) 1
@@ -181,8 +180,6 @@ theorem idealClassHom_steinitzClass (M : Type u) [AddCommGroup M] [Module A M]
       classOf A M (Module.finrank A M) := by
   obtain ⟨n, J, ⟨e⟩⟩ := Module.exists_linearEquiv_pi_nonZeroDivisors A M
   have hJ i : (J i : Ideal A) ≠ ⊥ := mem_nonZeroDivisors_iff_ne_zero.mp (J i).property
-  have (i : Fin n) : Module.Projective A (J i : Ideal A) := .of_equiv
-    (FractionalIdeal.coeIdealEquiv (S := A⁰) (P := FractionRing A) (J i : Ideal A))
   let Q i := of A (J i : Ideal A)
   have hsum := SplitK0.of_eq_sum_of_linearEquiv_pi (X := of A M) Q e
   rw [Module.steinitzClass_eq_of_linearEquiv_pi A M e,
@@ -315,11 +312,11 @@ theorem ofIdealClassEquiv_symm_ofIdealClass (c : Additive (ClassGroup A)) :
     (ofIdealClassEquiv A K).symm (ofIdealClass A K c) = c := by
   rw [← ofIdealClassEquiv_apply, AddEquiv.symm_apply_apply]
 
-/-- The ideal class corresponding to the reduced class of a nonzero integral ideal is its class.
-The projectivity instance is required to express the class using `classOf`. -/
+/-- The ideal class corresponding to the reduced class of a nonzero integral ideal is its
+class. -/
 @[simp]
 theorem ofIdealClassEquiv_symm_classOf_ideal (I : (Ideal A)⁰)
-    [Module.Projective A (I : Ideal A)] (h : classOf A (I : Ideal A) 1 ∈ classGroup A K A) :
+    (h : classOf A (I : Ideal A) 1 ∈ classGroup A K A) :
     (ofIdealClassEquiv A K).symm ⟨classOf A (I : Ideal A) 1, h⟩ =
       Additive.ofMul (ClassGroup.mk0 I) := by
   rw [AddEquiv.symm_apply_eq]

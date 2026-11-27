@@ -530,10 +530,10 @@ theorem compAffineL_ofTestFunctionₗ (μ : Measure E) [μ.IsAddHaarMeasure] (B 
     (hWU : MapsTo (fun y ↦ B.symm y + -B.symm b) W U) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compAffineL μ B b hUW k (ofTestFunctionₗ (mu := ν) (p := p) k φ) =
       ofTestFunctionₗ k (translateTestFunction (h := -B.symm b) (mapsTo_preimage _ _)
-        (B.symm.transportTestFunction
+        (B.symm.transportTestFunction ℝ
           (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩) hWU φ)) := by
   let ψ : 𝓓(U, ℝ) := translateTestFunction (h := -B.symm b) (mapsTo_preimage _ _)
-    (B.symm.transportTestFunction
+    (B.symm.transportTestFunction ℝ
       (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩) hWU φ)
   refine (compAffineL_eq_iff μ B b hUW k _ _).2 ?_
   have hqmp := Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ ν B b hUW
@@ -550,7 +550,7 @@ theorem compAffineEquiv_ofTestFunctionₗ (μ : Measure E) [μ.IsAddHaarMeasure]
     (b : E') (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compAffineEquiv (ν := ν) (p := p) μ B b hUW k (ofTestFunctionₗ k φ) =
       ofTestFunctionₗ k (translateTestFunction (h := -B.symm b) (mapsTo_preimage _ _)
-        (B.symm.transportTestFunction
+        (B.symm.transportTestFunction ℝ
           (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩)
           (B.toLinearEquiv.mapsTo_symm_add_neg b hUW) φ)) := by
   rw [compAffineEquiv_apply]

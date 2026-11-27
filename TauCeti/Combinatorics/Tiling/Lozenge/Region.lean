@@ -37,8 +37,13 @@ with all three vertices in `V`, which is Aggarwal's induced-subgraph convention.
 
 * `TauCeti.regionVertices_eq`: the vertices of `R` are the endpoints of its edges.
 * `TauCeti.regionGraph_adj`, `TauCeti.boundaryGraph_adj`: the edges of the two graphs.
+* `TauCeti.adj_of_mem_regionEdges`: the endpoints of an edge of `R` are adjacent in
+  `regionGraph R`.
 * `TauCeti.isConnectedRegion_singleton`: a single face is a connected region, and
   `TauCeti.isConnectedRegion_iff_reachable` restates connectedness through the edges of `R`.
+* `TauCeti.IsConnectedRegion.insert_of_mem_regionVertices`: adding a face that shares a vertex
+  with a connected region keeps it connected.
+* `TauCeti.isConnectedRegion_univ`: the plane is connected.
 * `TauCeti.three_mul_card_eq_two_mul_ncard_interiorEdges_add_ncard_boundaryEdges`: for a finite
   region, `3 |R| = 2 |E°(R)| + |E∂(R)|`.
 * `TauCeti.notMem_boundaryVertices_iff`: a vertex of `R` is not a boundary vertex exactly when
@@ -115,6 +120,10 @@ variable {R S : Set TriFace} {e : TriEdge} {f : TriFace} {u u' : ℤ × ℤ}
 
 theorem mem_regionVertices : u ∈ regionVertices R ↔ ∃ f ∈ R, u ∈ f.vertices := Iff.rfl
 
+@[simp] theorem mem_regionVertices_univ (u : ℤ × ℤ) :
+    u ∈ regionVertices (Set.univ : Set TriFace) :=
+  mem_regionVertices.2 ⟨⟨u, true⟩, Set.mem_univ _, by simp⟩
+
 theorem mem_regionEdges : e ∈ regionEdges R ↔ ∃ f ∈ R, e ∈ f.edges := Iff.rfl
 
 theorem mem_interiorEdges : e ∈ interiorEdges R ↔ ∀ f : TriFace, e ∈ f.edges → f ∈ R := Iff.rfl
@@ -185,6 +194,26 @@ theorem edges_subset_regionEdges (hf : f ∈ R) : (f.edges : Set TriEdge) ⊆ re
 theorem regionEdges_mono (h : R ⊆ S) : regionEdges R ⊆ regionEdges S :=
   fun _ ⟨f, hf, he⟩ => ⟨f, h hf, he⟩
 
+@[simp] theorem regionEdges_empty : regionEdges ∅ = ∅ := by
+  ext
+  simp [mem_regionEdges]
+
+/-- The edges of `insert f R` are those of `f` and of `R`. -/
+@[simp] theorem regionEdges_insert (f : TriFace) (R : Set TriFace) :
+    regionEdges (insert f R) = ↑f.edges ∪ regionEdges R := by
+  ext
+  simp [mem_regionEdges]
+
+/-- The edges of a single face `f` are those of `f`. -/
+@[simp] theorem regionEdges_singleton (f : TriFace) : regionEdges {f} = ↑f.edges := by
+  ext
+  simp [mem_regionEdges]
+
+@[simp] theorem regionEdges_union (R S : Set TriFace) :
+    regionEdges (R ∪ S) = regionEdges R ∪ regionEdges S := by
+  ext
+  simp only [mem_regionEdges, Set.mem_union, or_and_right, exists_or]
+
 /-- A finite region has finitely many edges. -/
 theorem finite_regionEdges (R : Finset TriFace) : (regionEdges (R : Set TriFace)).Finite :=
   (R.biUnion TriFace.edges).finite_toSet.subset fun _ ⟨f, hf, he⟩ =>
@@ -207,6 +236,31 @@ theorem regionVertices_eq (R : Set TriFace) :
     exact ⟨e, ⟨f, hf, he⟩, hee ▸ Sym2.mem_mk_left u u'⟩
   · rintro ⟨e, ⟨f, hf, he⟩, hu⟩
     exact ⟨f, hf, TriFace.mem_vertices_of_mem_endpoints he hu⟩
+
+/-- The endpoints of the edges of `R` are vertices of `R`. -/
+theorem mem_regionVertices_of_mem_endpoints (he : e ∈ regionEdges R) (hu : u ∈ e.endpoints) :
+    u ∈ regionVertices R :=
+  regionVertices_eq R ▸ ⟨e, he, hu⟩
+
+@[simp] theorem regionVertices_empty : regionVertices ∅ = ∅ := by
+  ext
+  simp [mem_regionVertices]
+
+/-- The vertices of `insert f R` are those of `f` and of `R`. -/
+@[simp] theorem regionVertices_insert (f : TriFace) (R : Set TriFace) :
+    regionVertices (insert f R) = ↑f.vertices ∪ regionVertices R := by
+  ext u
+  simp [mem_regionVertices]
+
+/-- The vertices of a single face `f` are those of `f`. -/
+@[simp] theorem regionVertices_singleton (f : TriFace) : regionVertices {f} = ↑f.vertices := by
+  ext
+  simp [mem_regionVertices]
+
+@[simp] theorem regionVertices_union (R S : Set TriFace) :
+    regionVertices (R ∪ S) = regionVertices R ∪ regionVertices S := by
+  ext
+  simp only [mem_regionVertices, Set.mem_union, or_and_right, exists_or]
 
 theorem boundaryVertices_subset_regionVertices : boundaryVertices R ⊆ regionVertices R := by
   rw [regionVertices_eq]
@@ -233,6 +287,15 @@ theorem boundaryGraph_adj {u u' : boundaryVertices R} :
 theorem regionGraph_mono (h : R ⊆ S) : regionGraph R ≤ regionGraph S := fun _ _ huu => by
   obtain ⟨e, he, h'⟩ := regionGraph_adj.1 huu
   exact regionGraph_adj.2 ⟨e, regionEdges_mono h he, h'⟩
+
+/-- In `regionGraph R`, the endpoints of an edge of `R` are adjacent. -/
+theorem adj_of_mem_regionEdges (he : e ∈ regionEdges R) : (regionGraph R).Adj e.v e.target :=
+  regionGraph_adj.2 ⟨e, he, TriEdge.endpoints_def e⟩
+
+/-- In `regionGraph R`, the endpoints of an edge of `R` are reachable from each other. -/
+theorem reachable_of_mem_regionEdges (he : e ∈ regionEdges R) :
+    (regionGraph R).Reachable e.v e.target :=
+  (adj_of_mem_regionEdges he).reachable
 
 theorem regionGraph_edgeSet (R : Set TriFace) :
     (regionGraph R).edgeSet = TriEdge.endpoints '' regionEdges R := by
@@ -305,11 +368,23 @@ theorem isConnectedRegion_singleton (f : TriFace) : IsConnectedRegion {f} := by
   · obtain ⟨e, he, hee⟩ := TriFace.exists_mem_edges_endpoints_eq hu hu' h
     exact (regionGraph_adj.2 ⟨e, ⟨_, Set.mem_singleton _, he⟩, hee⟩).reachable
 
+/-- Adding to a connected region a face that shares a vertex with it keeps it connected. -/
+theorem IsConnectedRegion.insert_of_mem_regionVertices (hR : IsConnectedRegion R)
+    (hu : u ∈ f.vertices) (huR : u ∈ regionVertices R) : IsConnectedRegion (insert f R) := by
+  have h : ∀ u' ∈ regionVertices (insert f R), (regionGraph (insert f R)).Reachable u u' := by
+    intro u' hu'
+    rw [regionVertices_insert] at hu'
+    rcases hu' with hu' | hu'
+    · exact (isConnectedRegion_singleton f u ⟨f, rfl, hu⟩ u' ⟨f, rfl, hu'⟩).mono
+        (regionGraph_mono (Set.singleton_subset_iff.2 (Set.mem_insert _ _)))
+    · exact (hR u huR u' hu').mono (regionGraph_mono (Set.subset_insert _ _))
+  exact fun v hv v' hv' => (h v hv).symm.trans (h v' hv')
+
 private theorem reachable_v_of_mem_endpoints (he : e ∈ regionEdges R) (hu : u ∈ e.endpoints) :
     (regionGraph R).Reachable u e.v := by
   rcases TriEdge.mem_endpoints.1 hu with rfl | rfl
   · rfl
-  · exact (regionGraph_adj.2 ⟨e, he, (TriEdge.endpoints_def e).trans Sym2.eq_swap⟩).reachable
+  · exact (reachable_of_mem_regionEdges he).symm
 
 /-- A region is connected exactly when the initial vertices of any two of its edges are joined in
 its edge graph. -/
@@ -324,6 +399,27 @@ theorem isConnectedRegion_iff_reachable : IsConnectedRegion R ↔
   obtain ⟨e', he', hue'⟩ := hu'
   exact ((reachable_v_of_mem_endpoints he hue).trans (h e he e' he')).trans
     (reachable_v_of_mem_endpoints he' hue').symm
+
+/-- The plane is connected through the edges of the lattice. -/
+theorem isConnectedRegion_univ : IsConnectedRegion Set.univ := by
+  have hadj : ∀ e : TriEdge, (regionGraph Set.univ).Reachable e.v e.target := fun e =>
+    reachable_of_mem_regionEdges
+      (mem_regionEdges.2 ⟨e.whiteFace, Set.mem_univ _, TriEdge.mem_whiteFace_edges e⟩)
+  have hx : ∀ (x y : ℤ), (regionGraph Set.univ).Reachable (0, y) (x, y) := by
+    intro x y
+    induction x using Int.induction_on with
+    | zero => rfl
+    | succ x ih => exact ih.trans (by simpa using hadj ⟨(x, y), 0⟩)
+    | pred x ih => exact ih.trans (by simpa using (hadj ⟨(-(x : ℤ) - 1, y), 0⟩).symm)
+  have hy : ∀ y : ℤ, (regionGraph Set.univ).Reachable (0, 0) (0, y) := by
+    intro y
+    induction y using Int.induction_on with
+    | zero => rfl
+    | succ y ih => exact ih.trans (by simpa using hadj ⟨(0, y), 1⟩)
+    | pred y ih => exact ih.trans (by simpa using (hadj ⟨(0, -(y : ℤ) - 1), 1⟩).symm)
+  have h : ∀ u : ℤ × ℤ, (regionGraph Set.univ).Reachable (0, 0) u := fun ⟨x, y⟩ =>
+    (hy y).trans (hx x y)
+  exact isConnectedRegion_def.2 fun u _ u' _ => (h u).symm.trans (h u')
 
 theorem regionUnion_mono (h : R ⊆ S) : regionUnion R ⊆ regionUnion S :=
   Set.biUnion_subset_biUnion_left h

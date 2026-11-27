@@ -188,45 +188,9 @@ theorem monodromy_basepointLift [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ : X) (g : FundamentalGroup X x₀) :
     ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) : UniversalCover x₀) =
       g⁻¹ • (basepointLift x₀ : UniversalCover x₀) := by
-  obtain ⟨γ, hγ⟩ := Quotient.exists_rep g.toPath
-  have hbase : basepointLift x₀ =
-      (⟨ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)),
-        Set.mem_singleton_iff.mpr (by
-          rw [proj_ofBasedPath]
-          exact BasedPath.endpoint_ofPath _)⟩ :
-        (proj : UniversalCover x₀ → X) ⁻¹' {x₀}) := by
-    apply Subtype.ext
-    simp only [basepointLift_coe, ofBasedPath_ofPath, Path.Homotopic.Quotient.mk_refl]
-  rw [hbase]
-  rw [← hγ]
-  -- Unfolding monodromy after choosing `γ` exposes the endpoint of its lifted path.
-  change (isCoveringMap x₀).liftPath γ
-      (ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀))) _ 1 = _
-  let δ : Path (BasedPath.endpoint (BasedPath.ofPath (Path.refl x₀))) x₀ :=
-    γ.cast (BasedPath.endpoint_ofPath _) rfl
-  calc
-    _ = (isCoveringMap x₀).liftPath δ
-        (ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀))) _ 1 := by
-      congr 1
-    _ = ofBasedPath x₀ (BasedPath.append (BasedPath.ofPath (Path.refl x₀)) δ) :=
-      liftPath_apply_one_eq_ofBasedPath_append δ
-    _ = g⁻¹ • ofBasedPath x₀ (BasedPath.ofPath (Path.refl x₀)) := by
-      rw [ofBasedPath_ofPath, inv_smul_mk]
-      rw [ofBasedPath_def]
-      let hend := BasedPath.endpoint_append (BasedPath.ofPath (Path.refl x₀)) δ
-      apply UniversalCover.ext hend
-      have hcast : HEq
-          (Path.Homotopic.Quotient.mk
-            (BasedPath.append (BasedPath.ofPath (Path.refl x₀)) δ).toPath)
-          (Path.Homotopic.Quotient.mk ((Path.refl x₀).trans γ)) :=
-        Path.Homotopic.hpath_hext (fun _ ↦ rfl)
-      refine hcast.trans (heq_of_eq ?_)
-      -- The `HEq` has aligned the dependent endpoints; only quotient concatenation remains.
-      change Path.Homotopic.Quotient.mk ((Path.refl x₀).trans γ) =
-        g.toPath.trans (Path.Homotopic.Quotient.refl x₀)
-      rw [← hγ, Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_refl,
-        Path.Homotopic.Quotient.refl_trans]
-      exact (Path.Homotopic.Quotient.trans_refl _).symm
+  rw [show basepointLift x₀ = ⟨mk x₀ (.refl x₀), rfl⟩ from Subtype.ext (basepointLift_coe x₀),
+    monodromy_mk, inv_smul_mk, Path.Homotopic.Quotient.refl_trans,
+    Path.Homotopic.Quotient.trans_refl]
 
 /-! ### Fiber shifts -/
 

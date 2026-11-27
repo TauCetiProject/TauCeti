@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.Star
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Skew-symmetric sesquilinear maps are alternating, and forms vanishing on the diagonal
+# Symmetry, alternating properties, and diagonal vanishing of sesquilinear maps
 
 Mathlib's `LinearMap.IsAlt.neg` says that an alternating sesquilinear map `ω` is skew-symmetric:
 `-ω x y = ω y x`. Conversely, skew symmetry at `y = x` gives `ω x x + ω x x = 0`, so a
@@ -19,6 +20,10 @@ any module that is an additive group. It is a module-valued, semiring form of th
 direction of `LinearMap.isAlt_iff_eq_neg_flip`, which is stated for scalar-valued forms over a
 `CharZero` integral domain.
 
+For a star-sesquilinear form `a : V →ₗ⋆[R] V →ₗ[R] R` over a commutative star semiring, Mathlib's
+`LinearMap.IsSymm` (`∀ u v, starRingEnd R (a u v) = a v u`) is equivalent to the Hermitian
+identity `∀ u v, a u v = star (a v u)` (`LinearMap.isSymm_iff_eq_star`).
+
 A sesquilinear form `B` with `B x x = 0` for every `x` is skew-symmetric. If moreover the
 involution `σ` moves some `z` with `z - σ z` cancellable, then `B` is zero: the skew symmetry for
 `x` and `z • y` gives `(z - σ z) B x y = 0`. This needs no hypothesis on `2`, so in characteristic
@@ -26,6 +31,7 @@ two it replaces polarization.
 
 ## Main results
 
+* `LinearMap.isSymm_iff_eq_star`: `a.IsSymm` holds if and only if `∀ u v, a u v = star (a v u)`.
 * `LinearMap.IsAlt.of_neg_eq_flip`: a skew-symmetric sesquilinear map is alternating when doubling
   is injective on its values.
 * `LinearMap.eq_zero_of_forall_apply_self_eq_zero`: over a commutative ring with an involution
@@ -35,7 +41,18 @@ two it replaces polarization.
 
 public section
 
-namespace LinearMap.IsAlt
+namespace LinearMap
+
+/-- A sesquilinear form `a : V →ₗ⋆[R] V →ₗ[R] R` is symmetric in Mathlib's `LinearMap.IsSymm`
+sense precisely when `a u v = star (a v u)` for all `u` and `v`. -/
+theorem isSymm_iff_eq_star {R V : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid V]
+    [Module R V] {a : V →ₗ⋆[R] V →ₗ[R] R} :
+    a.IsSymm ↔ ∀ u v, a u v = star (a v u) := by
+  rw [isSymm_def]
+  refine forall₂_congr fun u v ↦ ?_
+  rw [starRingEnd_apply, star_eq_iff_star_eq, eq_comm]
+
+namespace IsAlt
 
 /-- A skew-symmetric sesquilinear map is alternating when doubling is injective on its values.
 This is the converse of `LinearMap.IsAlt.neg`, and a module-valued, semiring form of the reverse
@@ -47,9 +64,7 @@ theorem of_neg_eq_flip {R R₁ M N : Type*} [CommSemiring R] [CommSemiring R₁]
   apply h2
   simpa only [two_nsmul, smul_zero, h x x] using neg_add_cancel (ω x x)
 
-end LinearMap.IsAlt
-
-namespace LinearMap
+end IsAlt
 
 /-- **A sesquilinear form vanishing on the diagonal is zero** when the involution moves some `z`
 with `z - σ z` cancellable. Indeed `B y x = -B x y` by `LinearMap.IsAlt.neg`, and the

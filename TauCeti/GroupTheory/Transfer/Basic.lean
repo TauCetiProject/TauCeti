@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Transfer
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.GroupTheory.TransversalWord
-import TauCeti.GroupTheory.Coset.Basic
+public import TauCeti.GroupTheory.Coset.Basic
 
 /-!
 # Transitivity of the transfer homomorphism
@@ -34,6 +34,8 @@ index to one of finite index, and in a tower `K ≤ H` the index of `H` divides 
   family of coset representatives.
 * `MonoidHom.transfer_eq_prod_mul_out`: for a normal subgroup, computation by right
   multiplication of quotient representatives, matching the factor-set convention.
+* `MonoidHom.transfer_eq_prod_out`: computation with the chosen representatives `q.out`, as a
+  product of the values at the cocycle `QuotientGroup.outCocycle`.
 * `MonoidHom.transfer_comp`: the transfer is natural in the commutative target.
 * `MonoidHom.transfer_apply_of_mulEquiv`: the transfer is invariant under an isomorphism of
   ambient groups carrying one subgroup onto the other.
@@ -107,7 +109,9 @@ theorem transfer_eq_prod_mul_out [H.Normal] [H.FiniteIndex] (g : G) :
   apply Subtype.ext
   simp [mul_assoc]
 
-private theorem transfer_eq_prod_out [H.FiniteIndex] [Fintype (G ⧸ H)] (g : G) :
+/-- The transfer of `ϕ` at `g` is the product of `ϕ` at the cocycle `outCocycle g q`, the element
+of `H` with `g * q.out = (g • q).out * outCocycle g q`, over the cosets `q`. -/
+theorem transfer_eq_prod_out [H.FiniteIndex] [Fintype (G ⧸ H)] (g : G) :
     transfer ϕ g = ∏ q : G ⧸ H, ϕ (outCocycle g q) := by
   rw [transfer_eq_prod_of_bijective ϕ _ (by simp) g _ (mk_out_smul g)]
   exact Fintype.prod_congr _ _ fun q ↦ congrArg ϕ (Subtype.ext (by simp [mul_assoc]))

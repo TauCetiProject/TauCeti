@@ -279,7 +279,7 @@ theorem HasWeakFDerivOn.crReflectedAdjoint (hJ : HasWeakFDerivOn volume Ω J DJ)
     (hΩ : MapsTo (fun z : ℂ => -conj z) Ω' Ω) :
     HasWeakFDerivOn volume Ω' (crReflectedAdjointCoeff J) (crReflectedAdjointDeriv DJ) := by
   rw [crReflectedAdjointCoeff_eq_comp, crReflectedAdjointDeriv_eq_comp]
-  simpa using (hJ.comp_continuousLinearEquiv volume negConj
+  simpa using (hJ.comp_continuousLinearEquiv_of_isAddHaarMeasure negConj
     (fun z hz => by simpa [negConj_apply] using hΩ hz)).clm_comp
     (-(adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V))
 
@@ -403,14 +403,14 @@ theorem IsSobolevCRCoefficients.forall_integral_inner_eq_iff_isWeakCRSolution_cr
   constructor
   · intro h ψ
     refine ⟨(hc.crReflectedAdjoint hρ).integrable_inner_crFormalAdjoint hpq hηρ ψ, ?_⟩
-    have hψ : (ψ : ℂ → V) = fun z => (negConj.transportTestFunction hmaps ψ : ℂ → V) (-conj z) :=
+    have hψ : (ψ : ℂ → V) = fun z => (negConj.transportTestFunction ℝ hmaps ψ : ℂ → V) (-conj z) :=
       funext fun z => by simp [negConj_symm_apply]
     rw [hψ, integral_inner_crFormalAdjoint_crReflectedAdjoint, hrhs]
     exact h _
   · intro h φ
-    have hψ : (negConj.symm.transportTestFunction hmaps' φ : ℂ → V) = fun z => φ (-conj z) :=
+    have hψ : (negConj.symm.transportTestFunction ℝ hmaps' φ : ℂ → V) = fun z => φ (-conj z) :=
       funext fun z => by simp [negConj_apply]
-    have h' := (h (negConj.symm.transportTestFunction hmaps' φ)).2
+    have h' := (h (negConj.symm.transportTestFunction ℝ hmaps' φ)).2
     rwa [hψ, integral_inner_crFormalAdjoint_crReflectedAdjoint, hrhs] at h'
 
 /-- **The annihilator of the range.** Under the hypotheses of

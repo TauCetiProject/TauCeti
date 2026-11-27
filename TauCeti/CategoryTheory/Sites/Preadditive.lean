@@ -18,7 +18,8 @@ sheaves to be compared under coefficient change without requiring a coefficient 
 
 Transport of sheaves along an equivalence of sites, Mathlib's `Equivalence.sheafCongr`, is
 likewise additive (`CategoryTheory.Equivalence.sheafCongr_additive`), since it adds morphisms
-sectionwise.
+sectionwise, and so is the functor of the inverse equivalence
+(`CategoryTheory.Equivalence.sheafCongr_symm_functor_additive`).
 -/
 
 public section
@@ -52,5 +53,10 @@ instance sheafCongr_additive : (e.sheafCongr J K A).functor.Additive := by
   -- and precomposition, using the generic additive whiskeringLeft instance.
   unfold sheafCongr sheafCongr.functor
   infer_instance
+
+/-- Inverse site transport, as the functor of the inverse equivalence, is additive. -/
+instance sheafCongr_symm_functor_additive : (e.sheafCongr J K A).symm.functor.Additive := by
+  -- The functor of the inverse equivalence is its inverse functor.
+  exact (Equivalence.inverse_additive _ : (e.sheafCongr J K A).inverse.Additive)
 
 end CategoryTheory.Equivalence
