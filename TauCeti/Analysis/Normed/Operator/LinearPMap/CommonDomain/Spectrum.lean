@@ -101,6 +101,13 @@ private theorem smul_sub_eq_smul_sub_sub (c₀ c : 𝕜) (ι A : D →L[𝕜] H)
   rw [sub_smul]
   abel
 
+/-- Over an invertible shift `c₀ • ι - A`, every shift factors as
+`c • ι - A = (c₀ • ι - A) ∘ (1 - (c₀ - c) • (c₀ • ι - A)⁻¹ ∘ ι)`. -/
+private theorem smul_sub_eq_comp_one_sub (h₀ : (c₀ • ι - A).IsInvertible) (c : 𝕜) :
+    c • ι - A = (c₀ • ι - A) ∘L (1 - (c₀ - c) • ((c₀ • ι - A).inverse ∘L ι)) := by
+  rw [comp_sub, comp_smul, ← comp_assoc, h₀.self_comp_inverse, id_comp, one_def, comp_id,
+    smul_sub_eq_smul_sub_sub c₀ c]
+
 /-- Away from an invertible shift `c₀ • ι - A`, a vector is killed by the shift `c • ι - A` exactly
 when it is an eigenvector of `(c₀ • ι - A)⁻¹ ∘ ι` with eigenvalue `(c₀ - c)⁻¹`. -/
 private theorem smul_sub_apply_eq_zero_iff (h₀ : (c₀ • ι - A).IsInvertible) (hc : c ≠ c₀)
@@ -131,18 +138,12 @@ theorem isInvertible_smul_sub_iff_injective [CompleteSpace D] (hcpt : IsCompactO
     exact Module.End.mem_eigenspace_iff.1 hx.1
   have hres := (hK.hasEigenvalue_or_mem_resolventSet (inv_ne_zero hc')).resolve_left hnot
   rw [spectrum.mem_resolventSet_iff] at hres
-  -- `c • ι - A = (c₀ • ι - A) ∘ ((c₀ - c) • ((c₀ - c)⁻¹ - K))`, a composition of invertible maps.
-  have hfac : c • ι - A = (c₀ • ι - A) ∘L (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c) *
-      (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c)⁻¹ - K)) := by
-    ext x
-    have hKx : (c₀ • ι - A) (K x) = ι x := h₀.self_apply_inverse (ι x)
-    have hu : (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c) *
-        (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c)⁻¹ - K)) x = x - (c₀ - c) • K x := by
-      simp [smul_sub, smul_smul, hc', -map_sub]
-    rw [comp_apply, hu]
-    simp only [map_sub, map_smul, hKx, sub_apply, smul_apply, sub_smul]
-    abel
-  rw [hfac]
+  -- `c • ι - A = (c₀ • ι - A) ∘ (1 - (c₀ - c) • K)` and `1 - (c₀ - c) • K` is
+  -- `(c₀ - c) • ((c₀ - c)⁻¹ - K)`, so it is a composition of invertible maps.
+  have hu : (1 : D →L[𝕜] D) - (c₀ - c) • K =
+      algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c) * (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c)⁻¹ - K) := by
+    rw [mul_sub, ← map_mul, mul_inv_cancel₀ hc', map_one, ← Algebra.smul_def]
+  rw [smul_sub_eq_comp_one_sub h₀ c, hu]
   exact h₀.comp (isInvertible_iff_isUnit.2 ((isUnit_iff_ne_zero.2 hc').map _ |>.mul hres))
 
 /-- **Fredholm alternative over a compactly embedded domain.** If `ι` is compact and one shift
@@ -163,13 +164,8 @@ theorem finiteDimensional_ker_smul_sub [CompleteSpace 𝕜] (hcpt : IsCompactOpe
   have hK : IsCompactOperator ((c₀ - c) • ((c₀ • ι - A).inverse ∘L ι)) :=
     (hcpt.clm_comp _).smul _
   have := hK.finiteDimensional_ker_one_sub
-  have hle : (c • ι - A).ker ≤
-      LinearMap.ker ((1 - (c₀ - c) • ((c₀ • ι - A).inverse ∘L ι) : D →L[𝕜] D) : D →ₗ[𝕜] D) := by
-    intro x (hx : (c • ι - A) x = 0)
-    rw [LinearMap.mem_ker, ← map_zero (c₀ • ι - A).inverse, ← hx, smul_sub_eq_smul_sub_sub c₀ c,
-      sub_apply, map_sub, h₀.inverse_apply_self]
-    simp
-  exact Submodule.finiteDimensional_of_le hle
+  rwa [smul_sub_eq_comp_one_sub h₀ c, toLinearMap_comp,
+    LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 h₀.bijective.1)]
 
 /-- If a shift `c • ι - A` is injective, `ι` is injective on the kernel of `A`: a vector killed by
 both `A` and `ι` is killed by `c • ι - A`. -/

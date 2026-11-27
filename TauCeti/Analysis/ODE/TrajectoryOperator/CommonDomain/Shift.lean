@@ -389,7 +389,7 @@ private theorem exists_lp_conj [FiniteDimensional ℝ (eigenImage ι B μ)]
     (hsymm : ∀ x y, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) {f : ℝ → ℝ} {M : ℝ} (hM : ∀ s, ‖f s‖ ≤ M)
     (hf : Continuous f) (V : D ≃L[ℝ] WithLp 2 (eigenImage ι B μ × eigenCompl ι B μ))
     (hA' : ∀ a : ℝ, ((eigenImage ι B μ).orthogonalDecomposition : H →L[ℝ] _) ∘L (B - a • ι) ∘L
-          (V.symm : WithLp 2 (eigenImage ι B μ × eigenCompl ι B μ) →L[ℝ] D) =
+          (V.symm : _ →L[ℝ] D) =
         ((μ - a) • (1 : eigenImage ι B μ →L[ℝ] eigenImage ι B μ)).withLpProdMap 2
           (complB ι B μ hsymm - a • complι ι B μ))
     (AL : Lp (D →L[ℝ] H) ∞ μ₀) (hAL : AL =ᵐ[μ₀] fun s ↦ B - f s • ι) :
@@ -401,25 +401,13 @@ private theorem exists_lp_conj [FiniteDimensional ℝ (eigenImage ι B μ)]
       AL' =ᵐ[μ₀] fun s ↦
         ((μ - f s) • (1 : eigenImage ι B μ →L[ℝ] eigenImage ι B μ)).withLpProdMap 2
           (complB ι B μ hsymm - f s • complι ι B μ) := by
-  have hΨ (a : ℝ) :
-      ((eigenImage ι B μ).orthogonalDecomposition :
-          H →L[ℝ] WithLp 2 (eigenImage ι B μ × (eigenImage ι B μ)ᗮ)) ∘L (B - a • ι) ∘L
-        (V.symm : WithLp 2 (eigenImage ι B μ × eigenCompl ι B μ) →L[ℝ] D) =
-      ((eigenImage ι B μ).orthogonalDecomposition :
-          H →L[ℝ] WithLp 2 (eigenImage ι B μ × (eigenImage ι B μ)ᗮ)) ∘L B ∘L
-          (V.symm : WithLp 2 (eigenImage ι B μ × eigenCompl ι B μ) →L[ℝ] D) -
-        a • ((eigenImage ι B μ).orthogonalDecomposition :
-          H →L[ℝ] WithLp 2 (eigenImage ι B μ × (eigenImage ι B μ)ᗮ)) ∘L ι ∘L
-          (V.symm : WithLp 2 (eigenImage ι B μ × eigenCompl ι B μ) →L[ℝ] D) := by
+  set U := ((eigenImage ι B μ).orthogonalDecomposition :
+    H →L[ℝ] WithLp 2 (eigenImage ι B μ × (eigenImage ι B μ)ᗮ))
+  set W := (V.symm : WithLp 2 (eigenImage ι B μ × eigenCompl ι B μ) →L[ℝ] D)
+  have hΨ (a : ℝ) : U ∘L (B - a • ι) ∘L W = U ∘L B ∘L W - a • U ∘L ι ∘L W := by
     simp only [ContinuousLinearMap.sub_comp, ContinuousLinearMap.smul_comp,
       ContinuousLinearMap.comp_sub, ContinuousLinearMap.comp_smul]
-  have hm := memLp_sub_smul
-    (((eigenImage ι B μ).orthogonalDecomposition :
-        H →L[ℝ] WithLp 2 (eigenImage ι B μ × (eigenImage ι B μ)ᗮ)) ∘L B ∘L
-      (V.symm : WithLp 2 (eigenImage ι B μ × eigenCompl ι B μ) →L[ℝ] D))
-    (((eigenImage ι B μ).orthogonalDecomposition :
-        H →L[ℝ] WithLp 2 (eigenImage ι B μ × (eigenImage ι B μ)ᗮ)) ∘L ι ∘L
-      (V.symm : WithLp 2 (eigenImage ι B μ × eigenCompl ι B μ) →L[ℝ] D)) hf hM
+  have hm := memLp_sub_smul (U ∘L B ∘L W) (U ∘L ι ∘L W) hf hM
   refine ⟨hm.toLp _, ?_, ?_⟩
   · filter_upwards [hm.coeFn_toLp, hAL] with s hs hs'
     rw [hs, ← hΨ, hs']
