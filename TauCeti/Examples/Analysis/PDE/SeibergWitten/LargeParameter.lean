@@ -26,10 +26,10 @@ self-dual form `ω`, `q(ψ) = (|ψ|² / 4) ω`
 A nonzero spinor on that line forces `|ω|² = 2`
 (`TauCeti.SeibergWitten.norm_sq_eq_two_of_cliffordProjection_apply_eq_self`), so for a form
 normalized by `|ω| = 1` the line is zero and the value `1 / 16` that `q(u₀) = ω / 4` would then
-suggest never occurs. For a unit spinor `u₀` of the canonical line,
-`|q(u₀)|² = |ω|² / 16 = 1 / 8 = |u₀|⁴ / 8` (`norm_quadraticTwoForm_sq_eq_one_div_eight`),
-consistent with `|q(ψ)|² = |ψ|⁴ / 8` for every spinor
-(`TauCeti.SeibergWitten.norm_quadraticTwoForm_sq`).
+suggest never occurs. For every unit spinor `u₀`, in particular a unit spinor of the canonical
+line, `|q(u₀)|² = 1 / 8 = |u₀|⁴ / 8` (`norm_quadraticTwoForm_sq_eq_one_div_eight`, from
+`TauCeti.SeibergWitten.norm_quadraticTwoForm_sq`); on the line this is `|ω|² / 16` with
+`|ω|² = 2`.
 
 **The Hermitian part.** In a positively oriented unitary frame `e₀, e₁, e₂, e₃` of an oriented
 Euclidean four-space, `J e₀ = e₁` and `J e₂ = e₃`, the Kähler form is `ω = e₀₁ + e₂₃`, writing
@@ -52,8 +52,8 @@ Euclidean four-space, `J e₀ = e₁` and `J e₂ = e₃`, the Kähler form is `
 
 **The twisted differential.** On `ℂ` with its complex structure `J v = i v`, the trivial
 connection and the section `α = z`, the phase form `τ = Im(conj z dz) / |z|²`
-(`TauCeti.SeibergWitten.covariantPhaseForm`) is the angular form `dθ`, which takes the value `1`
-on the rotation field `i z` (`covariantPhaseForm_zero_id_apply_I_mul`). Since `∂bar_a α = 0`
+(`TauCeti.SeibergWitten.covariantPhaseForm`) takes the value `1` on the rotation field `i z`, as
+the angular form `dθ` does (`covariantPhaseForm_zero_id_apply_I_mul`). Since `∂bar_a α = 0`
 (`covariantDBar_zero_id`), it is `d^c_J log |z|²`
 (`covariantPhaseForm_zero_id_eq_twistedDifferential_log`), the correction form `E` of the
 modulus-potential decomposition vanishes (`cutoffDBarForm_zero_id`), and
@@ -108,15 +108,12 @@ theorem norm_quadraticTwoForm_sq_of_cliffordProjection_apply_eq_self
     Real.norm_of_nonneg (by positivity)]
   ring
 
-/-- **Taubes's normalization `|q(u₀)|² = 1 / 8`.** For a unit spinor `u₀` of the canonical line
-`P_α W⁺` of a self-dual form `ω`, `|q(u₀)|² = |ω|² / 16 = 1 / 8 = |u₀|⁴ / 8`. -/
+omit hω in
+/-- **Taubes's normalization `|q(u₀)|² = 1 / 8`.** For every unit spinor `u₀`, in particular a
+unit spinor of the canonical line `P_α W⁺`, `|q(u₀)|² = 1 / 8 = |u₀|⁴ / 8`. -/
 theorem norm_quadraticTwoForm_sq_eq_one_div_eight {u₀ : positiveHalfSpinors o ρ}
-    (hu₀ : cliffordProjection o ρ ω u₀ = u₀) (hu : ‖u₀‖ = 1) :
-    ‖quadraticTwoForm o ρ hkl u₀‖ ^ 2 = 1 / 8 := by
-  have hω₂ := norm_sq_eq_two_of_cliffordProjection_apply_eq_self o ρ hQ hkl hω
-    (norm_ne_zero_iff.1 (by rw [hu]; exact one_ne_zero)) hu₀
-  rw [norm_quadraticTwoForm_sq_of_cliffordProjection_apply_eq_self o hQ hkl hω h₂ hρ hu₀, hu,
-    hω₂]
+    (hu : ‖u₀‖ = 1) : ‖quadraticTwoForm o ρ hkl u₀‖ ^ 2 = 1 / 8 := by
+  rw [norm_quadraticTwoForm_sq o hQ hkl hρ h₂, hu]
   norm_num
 
 end Quadratic
@@ -130,14 +127,9 @@ open AlmostComplexStructure
 variable {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
 
-/-- In an orthonormal frame, the wedges `eᵢ ∧ eⱼ` have the inner products of an orthonormal
-family: `⟪eᵢ ∧ eⱼ, eₖ ∧ eₗ⟫ = δᵢₖ δⱼₗ - δᵢₗ δⱼₖ`. -/
-private theorem inner_ιMulti_two_orthonormalBasis (i j k l : Fin 4) :
-    ⟪ιMulti ℝ 2 ![e i, e j], ιMulti ℝ 2 ![e k, e l]⟫ =
-      (if i = k then 1 else 0) * (if j = l then 1 else 0) -
-        (if i = l then 1 else 0) * (if j = k then 1 else 0) := by
-  rw [inner_ιMulti_two, orthonormal_iff_ite.1 e.orthonormal, orthonormal_iff_ite.1 e.orthonormal,
-    orthonormal_iff_ite.1 e.orthonormal, orthonormal_iff_ite.1 e.orthonormal]
+/-- The dimension `Fact` in the form `2 + 2 = dim V` taken by the Hodge star. -/
+private theorem two_add_two_eq_finrank : 2 + 2 = finrank ℝ V :=
+  (Fact.out : finrank ℝ V = 4).symm
 
 /-- **`e₀₁ - e₂₃` is anti-self-dual**: `⋆(e₀₁ - e₂₃) = -(e₀₁ - e₂₃)` for a positively oriented
 orthonormal frame. -/
@@ -151,9 +143,8 @@ theorem hodgeStar_ιMulti_zero_one_sub_ιMulti_two_three {o : Orientation ℝ V 
 theorem norm_ιMulti_zero_one_sub_ιMulti_two_three :
     ‖ιMulti ℝ 2 ![e 0, e 1] - ιMulti ℝ 2 ![e 2, e 3]‖ = √2 := by
   have h : ‖ιMulti ℝ 2 ![e 0, e 1] - ιMulti ℝ 2 ![e 2, e 3]‖ ^ 2 = 2 := by
-    rw [← real_inner_self_eq_norm_sq, inner_sub_left, inner_sub_right, inner_sub_right,
-      inner_ιMulti_two_orthonormalBasis, inner_ιMulti_two_orthonormalBasis,
-      inner_ιMulti_two_orthonormalBasis, inner_ιMulti_two_orthonormalBasis]
+    rw [← real_inner_self_eq_norm_sq]
+    simp only [inner_sub_left, inner_sub_right, inner_ιMulti_two, e.inner_eq_ite]
     norm_num
   rw [← h, Real.sqrt_sq (norm_nonneg _)]
 
@@ -187,13 +178,16 @@ theorem isLeast_hermitianForm_ιMulti_zero_one_sub_ιMulti_two_three :
     IsLeast ((fun v ↦ J.hermitianForm (ιMulti ℝ 2 ![e 0, e 1] - ιMulti ℝ 2 ![e 2, e 3]) v v) ''
       Metric.sphere 0 1) (-1) := by
   set F := ιMulti ℝ 2 ![e 0, e 1] - ιMulti ℝ 2 ![e 2, e 3]
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
-  have hF := hodgeStar_ιMulti_zero_one_sub_ιMulti_two_three (e := e) hkl rfl
-  have h := isLeast_hermitianForm_apply_self h₀ h₂ hkl rfl F
-  rwa [inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl rfl hF, hF, sub_neg_eq_add,
-    ← two_smul ℝ F, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul,
-    norm_ιMulti_zero_one_sub_ιMulti_two_three,
-    div_self (Real.sqrt_ne_zero'.2 two_pos), zero_div, zero_sub] at h
+  have hF := hodgeStar_ιMulti_zero_one_sub_ιMulti_two_three (e := e) two_add_two_eq_finrank rfl
+  -- The anti-self-dual part of `F` is `F` itself.
+  have hF' : (2⁻¹ : ℝ) • (F - (e.toBasis.orientation).hodgeStar two_add_two_eq_finrank F) = F := by
+    rw [hF]
+    module
+  convert isLeast_hermitianForm_apply_self h₀ h₂ two_add_two_eq_finrank rfl F using 1
+  rw [inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ two_add_two_eq_finrank rfl hF, hF',
+    norm_ιMulti_zero_one_sub_ιMulti_two_three]
+  field_simp
+  ring
 
 include h₀ h₂ in
 /-- **The anti-self-dual part enters with the factor `1 / √2`.** The formula `c - |F⁻|` for the
@@ -210,24 +204,24 @@ include h₀ h₂ in
 /-- **The anti-`J`-invariant self-dual form `e₀₂ - e₁₃` has Hermitian part zero.** -/
 theorem hermitianForm_ιMulti_zero_two_sub_ιMulti_one_three :
     J.hermitianForm (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3]) = 0 := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
-  refine hermitianForm_eq_zero_of_hodgeStar_eq_self_of_inner_eq_zero h₀ h₂ hkl rfl ?_ ?_
-  · rw [map_sub, Orientation.hodgeStar_ιMulti_zero_two hkl rfl,
-      Orientation.hodgeStar_ιMulti_one_three hkl rfl]
+  refine hermitianForm_eq_zero_of_hodgeStar_eq_self_of_inner_eq_zero h₀ h₂
+    two_add_two_eq_finrank rfl ?_ ?_
+  · rw [map_sub, Orientation.hodgeStar_ιMulti_zero_two _ rfl,
+      Orientation.hodgeStar_ιMulti_one_three _ rfl]
     abel
   · simp [kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂, inner_add_left, inner_sub_right,
-      inner_ιMulti_two_orthonormalBasis]
+      inner_ιMulti_two, e.inner_eq_ite]
 
 include h₀ h₂ in
 /-- **The anti-`J`-invariant self-dual form `e₀₃ + e₁₂` has Hermitian part zero.** -/
 theorem hermitianForm_ιMulti_zero_three_add_ιMulti_one_two :
     J.hermitianForm (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2]) = 0 := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
-  refine hermitianForm_eq_zero_of_hodgeStar_eq_self_of_inner_eq_zero h₀ h₂ hkl rfl ?_ ?_
-  · rw [map_add, Orientation.hodgeStar_ιMulti_zero_three hkl rfl,
-      Orientation.hodgeStar_ιMulti_one_two hkl rfl, add_comm]
+  refine hermitianForm_eq_zero_of_hodgeStar_eq_self_of_inner_eq_zero h₀ h₂
+    two_add_two_eq_finrank rfl ?_ ?_
+  · rw [map_add, Orientation.hodgeStar_ιMulti_zero_three _ rfl,
+      Orientation.hodgeStar_ιMulti_one_two _ rfl, add_comm]
   · simp [kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂, inner_add_left, inner_add_right,
-      inner_ιMulti_two_orthonormalBasis]
+      inner_ιMulti_two, e.inner_eq_ite]
 
 include h₀ h₂ in
 /-- **For `F = ω` the coefficient `c = ⟪ω, F⟫ / 2` is `1`**, so the least and greatest eigenvalues
@@ -246,8 +240,9 @@ section Twisted
 
 open AlmostComplexStructure Complex SeibergWitten
 
-/-- **The phase form of `α = z` is the angular form `dθ`**: with the trivial connection,
-`τ = Im(conj z dz) / |z|²` takes the value `1` on the rotation field `i z`, for `z ≠ 0`. -/
+/-- **The phase form of `α = z` on the rotation field**: with the trivial connection,
+`τ = Im(conj z dz) / |z|²` takes the value `1` on the rotation field `i z`, for `z ≠ 0`, as the
+angular form `dθ` does. -/
 theorem covariantPhaseForm_zero_id_apply_I_mul {z : ℂ} (hz : z ≠ 0) :
     covariantPhaseForm 0 id z (fun _ ↦ I * z) = 1 := by
   rw [covariantPhaseForm_apply_eq_div hz, id_eq, div_eq_one_iff_eq (normSq_pos.2 hz).ne']
