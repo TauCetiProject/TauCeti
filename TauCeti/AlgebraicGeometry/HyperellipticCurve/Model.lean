@@ -148,6 +148,14 @@ theorem natDegree_weierstrassForm_le (W : Model R g) :
   · exact natDegree_mul_le.trans (by simpa using W.natDegree_f_le)
   · exact natDegree_pow_le.trans (by linarith [W.natDegree_h_le])
 
+/-- The coefficient of `x ^ (2g + 2)` in the Weierstrass form `4f + h²` is
+`4 f_{2g+2} + h_{g+1}²`; it is the leading coefficient when nonzero. -/
+theorem coeff_weierstrassForm_two_mul_add_two (W : Model R g) :
+    W.weierstrassForm.coeff (2 * g + 2) = 4 * W.f.coeff (2 * g + 2) + W.h.coeff (g + 1) ^ 2 := by
+  have hh := coeff_pow_of_natDegree_le (m := 2) W.natDegree_h_le
+  rw [show 2 * (g + 1) = 2 * g + 2 by ring] at hh
+  rw [weierstrassForm_def, coeff_add, hh, coeff_ofNat_mul]
+
 @[simp]
 theorem map_weierstrassForm (W : Model R g) (φ : R →+* S) :
     (W.map φ).weierstrassForm = W.weierstrassForm.map φ := by
@@ -332,24 +340,14 @@ private theorem two_pow_dvd_leadingCoeff_pow_mul_discr {D : Type*} [CommRing D] 
   rwa [hkey, ← map_ofNat (algebraMap D L) 2, ← map_pow,
     mul_div_cancel_left₀ _ ((map_ne_zero_iff _ hinj).mpr (pow_ne_zero _ h2))]
 
-/-- The leading coefficient `4 f_{2g+2} + h_{g+1}²` of the universal Weierstrass form. -/
-private theorem coeff_weierstrassForm_universal (g : ℕ) :
-    (universal g).weierstrassForm.coeff (2 * g + 2) =
-      4 * MvPolynomial.X (.inl (Fin.last _)) + MvPolynomial.X (.inr (Fin.last _)) ^ 2 := by
-  have hh := coeff_pow_of_natDegree_le (m := 2) (universal g).natDegree_h_le
-  rw [show 2 * (g + 1) = 2 * g + 2 by ring] at hh
-  rw [weierstrassForm_def, coeff_add, hh, coeff_ofNat_mul]
-  congr 2
-  · exact coeff_universal_f (Fin.last _)
-  · exact coeff_universal_h (Fin.last _)
-
 /-- The leading coefficient of the universal Weierstrass form is not divisible by `2`: modulo `2`
 it is the square of a variable. -/
 private theorem not_two_dvd_coeff_weierstrassForm_universal (g : ℕ) :
     ¬ 2 ∣ (universal g).weierstrassForm.coeff (2 * g + 2) := by
   rintro ⟨q, hq⟩
   have h := congrArg (MvPolynomial.map (Int.castRingHom (ZMod 2))) hq
-  rw [coeff_weierstrassForm_universal] at h
+  rw [coeff_weierstrassForm_two_mul_add_two, ← Fin.val_last (2 * g + 2), coeff_universal_f,
+    ← Fin.val_last (g + 1), coeff_universal_h] at h
   have hC (n : ℕ) [n.AtLeastTwo] (hn : (OfNat.ofNat n : ZMod 2) = 0) :
       (OfNat.ofNat n : MvPolynomial (Fin (2 * g + 3) ⊕ Fin (g + 2)) (ZMod 2)) = 0 := by
     rw [← map_ofNat MvPolynomial.C, hn, map_zero]
