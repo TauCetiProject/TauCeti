@@ -22,7 +22,9 @@ multiplicities of `φ` at the basepoints of `L_q`:
 
 The relative multigrading `TauCeti.HeegaardRegionSystem.relativeComponentAlexanderGrading ws zs`,
 its periodic values `TauCeti.HeegaardRegionSystem.periodicComponentAlexanderValues ws zs` and
-its additivity, antisymmetry and filtration properties are in
+its additivity, antisymmetry and filtration properties, and the Alexander function for the `w`'s
+given by the total grading `∑_q A_q`
+(`TauCeti.HeegaardRegionSystem.isAlexanderFunction_sum_relativeComponentAlexanderGrading`), are in
 `TauCeti.LowDimTopology.Heegaard.AlexanderGrading`, where the relative Alexander grading of a knot
 is its case of a single component with one `w` and one `z`. This file proves the results that use
 the components of `Σ - α` and the full multi-pointed differential.
@@ -46,10 +48,6 @@ to vanish take this as a hypothesis.
   (`relativeComponentAlexanderGrading_eq_of_coeff_fullCoefficient_ne_zero`), so grading the
   variable `X_z` of a `z` on `L_q` by `+1` in the `q`-th grading and that of a `w` on `L_q` by
   `-1`, the full differential preserves every Alexander grading.
-* When every basepoint other than the `w`'s is a `z` of exactly one component, the sum of the
-  component gradings relative to a fixed generator is an Alexander function for the `w`'s
-  (`TauCeti.HeegaardRegionSystem.isAlexanderFunction_sum_relativeComponentAlexanderGrading`), so
-  the single Alexander filtration of the hat complex is that of the total grading `∑_q A_q`.
 
 As for the knot grading, the comparison of domains with Whitney disks and of the multigrading with
 relative spin^c structures is geometric and is not formalized here.
@@ -62,8 +60,6 @@ relative spin^c structures is geometric and is not formalized here.
 * In the namespace `TauCeti.HeegaardRegionSystem`,
   `relativeComponentAlexanderGrading_eq_of_coeff_fullCoefficient_ne_zero` and its version modulo
   the periodic values: the gradings of the terms of the full differential.
-* `TauCeti.HeegaardRegionSystem.isAlexanderFunction_sum_relativeComponentAlexanderGrading`: the
-  total grading is an Alexander function.
 
 ## References
 
@@ -154,41 +150,6 @@ theorem relativeComponentAlexanderGrading_eq_of_coeff_fullCoefficient_ne_zero
   simp [(mem_minusDomains_iff.mp hD).1.relativeComponentAlexanderGrading_eq hA, hm]
 
 end Differentials
-
-/-- **The total Alexander grading.** Let `ι` pick out the `w`'s, and suppose that every `w` of a
-component is one of them and every other basepoint is a `z` of exactly one component. When the
-periodic values vanish, the sum `∑_q A_q(x, x₀)` of the component gradings relative to a generator
-`x₀` joined to every generator by a domain is an Alexander function for the `w`'s: a domain `D`
-from `x` to `y` avoiding the `w`'s changes it by its total multiplicity at the `z`'s. -/
-theorem isAlexanderFunction_sum_relativeComponentAlexanderGrading [Fintype Basepoint] [Fintype K]
-    {W : Type*} {ι : W → Basepoint} (hws : ∀ q, ∀ b ∈ ws q, b ∈ Set.range ι)
-    (hzs : ∀ b ∉ Set.range ι, ∃! q, b ∈ zs q)
-    (hA : H.periodicComponentAlexanderValues ws zs = ⊥) {x₀ : H.Generator}
-    (hx₀ : ∀ x, ∃ E, H.IsDomainBetween x x₀ E) :
-    H.IsAlexanderFunction ι (fun x => ∑ q, H.relativeComponentAlexanderGrading ws zs x x₀ q) := by
-  classical
-  rw [isAlexanderFunction_iff]
-  intro x y D hD hw
-  obtain ⟨E, hE⟩ := hx₀ y
-  have hD0 : ∀ b ∈ Set.range ι, D (H.basepoint b) = 0 := by
-    rintro _ ⟨i, rfl⟩
-    exact hw i
-  rw [← hD.relativeComponentAlexanderGrading_add hA hE]
-  simp only [Pi.add_apply, Finset.sum_add_distrib, add_sub_cancel_right,
-    hD.relativeComponentAlexanderGrading_eq hA, componentAlexanderMultiplicity_apply,
-    Finset.sum_eq_zero fun b hb => hD0 b (hws _ b hb), sub_zero]
-  -- count each basepoint once for every component carrying it as a `z`
-  have hsum (q : K) : ∑ b ∈ zs q, D (H.basepoint b) =
-      ∑ b, if b ∈ zs q then D (H.basepoint b) else 0 := by
-    rw [Finset.sum_ite_mem, Finset.univ_inter]
-  simp only [hsum]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun b _ => ?_
-  by_cases hb : b ∈ Set.range ι
-  · simp [hD0 b hb]
-  · obtain ⟨q, hq, huniq⟩ := hzs b hb
-    rw [Finset.sum_eq_single q (fun q' _ hq' => ite_eq_right fun h => hq' (huniq q' h)) (by simp),
-      ite_eq_left hq]
 
 end HeegaardRegionSystem
 

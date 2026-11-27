@@ -64,15 +64,19 @@ picked out by `ι`. An Alexander function `A` on the generators
 domains `D` from `x` to `y` avoiding the `w`'s, so that `A(x) - A(y)` is the total multiplicity
 of `D` at the `z`'s. For a doubly pointed diagram whose periodic Alexander values vanish, the
 relative Alexander gradings to a generator joined to every generator by a domain are such a
-function (`TauCeti.HeegaardRegionSystem.isAlexanderFunction_relativeAlexanderGrading`). For the
-multipointed diagram of a grid, with the `O`-markings as `w`'s and the `X`-markings as `z`'s, the
-requirement is the relation `A(x) - A(y) = n_X(D) - n_O(D)` of Manolescu, Ozsváth and Sarkar on
-these domains; that diagram is not constructed here. The hat differential of the diagram pointed at
-the `w`'s then maps the chains supported in Alexander gradings at most `k` to chains supported
-there, and the map it induces on the quotient by the chains in gradings below `k` is the hat
-differential of `H`, which counts only the domains with `n_z = 0`. This distinguishes the filtered
-differential, which counts the domains avoiding the `w`'s with any multiplicity at the `z`'s, from
-its associated graded differential.
+function (`TauCeti.HeegaardRegionSystem.isAlexanderFunction_relativeAlexanderGrading`), the case
+of a single component of the corresponding result for a link diagram in which every basepoint
+other than the `w`'s is a `z` of exactly one component: there the sum `∑_q A_q` of the
+component gradings to such a generator is an Alexander function
+(`TauCeti.HeegaardRegionSystem.isAlexanderFunction_sum_relativeComponentAlexanderGrading`).
+For the multipointed diagram of a grid, with the `O`-markings as `w`'s and the `X`-markings as
+`z`'s, the requirement is the relation `A(x) - A(y) = n_X(D) - n_O(D)` of Manolescu, Ozsváth and
+Sarkar on these domains; that diagram is not constructed here. The hat differential of the diagram
+pointed at the `w`'s then maps the chains supported in Alexander gradings at most `k` to chains
+supported there, and the map it induces on the quotient by the chains in gradings below `k` is the
+hat differential of `H`, which counts only the domains with `n_z = 0`. This distinguishes the
+filtered differential, which counts the domains avoiding the `w`'s with any multiplicity at the
+`z`'s, from its associated graded differential.
 
 ## Main definitions
 
@@ -101,6 +105,9 @@ its associated graded differential.
 * In the namespace `TauCeti.HeegaardRegionSystem`,
   `relativeComponentAlexanderGrading_eq_zero_of_hatCoefficient_ne_zero`: the hat differential
   preserves the multigrading.
+* In the namespace `TauCeti.HeegaardRegionSystem`, `periodicAlexanderValues_eq_map` and
+  `relativeAlexanderGrading_eq_relativeComponentAlexanderGrading`: the knot grading and its
+  periodic values are the one-component case of the multigrading.
 * `TauCeti.HeegaardRegionSystem.periodicComponentAlexanderValues_singleton_eq_bot_iff`: the
   periodic values of a knot vanish exactly when those of its multigrading do.
 * `TauCeti.HeegaardRegionSystem.periodicAlexanderValues_eq_bot_of_forall_eq_zero`: the subgroup
@@ -119,6 +126,10 @@ its associated graded differential.
   complex of the diagram pointed at `w`.
 * `TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_eq_zero_of_hatCoefficient_ne_zero`: the
   hat differential of the doubly pointed diagram preserves the Alexander grading.
+* `TauCeti.HeegaardRegionSystem.isAlexanderFunction_sum_relativeComponentAlexanderGrading`: when
+  every basepoint other than the `w`'s is a `z` of exactly one component and the periodic values
+  vanish, the total grading `∑_q A_q` relative to a fixed generator is an Alexander function for
+  the `w`'s.
 * `TauCeti.HeegaardRegionSystem.isAlexanderFunction_relativeAlexanderGrading`: in a doubly
   pointed diagram whose periodic Alexander values vanish, the relative Alexander gradings to a
   generator joined to every generator by a domain form an Alexander function.
@@ -261,6 +272,14 @@ def periodicAlexanderValues (w z : Basepoint) : AddSubgroup ℤ :=
     (Pi.evalAddMonoidHom (fun _ : Unit => ℤ) ())
 
 variable {w z : Basepoint} {x y : H.Generator} {k : ℤ}
+
+/-- The periodic Alexander values are the image, under evaluation at the single component, of the
+periodic values of the Alexander multigrading of the component with basepoints `w` and `z`. -/
+theorem periodicAlexanderValues_eq_map :
+    H.periodicAlexanderValues w z =
+      (H.periodicComponentAlexanderValues (fun _ : Unit => {w}) (fun _ => {z})).map
+        (Pi.evalAddMonoidHom (fun _ : Unit => ℤ) ()) :=
+  (rfl)
 
 /-- The value of a periodic value of the one-component multigrading with basepoints `w` and `z` is
 a periodic Alexander value. -/
@@ -489,6 +508,13 @@ noncomputable def relativeAlexanderGrading (w z : Basepoint) (x y : H.Generator)
 
 variable {w z : Basepoint} {x y v : H.Generator} {D D' E : Region → ℤ}
 
+/-- The relative Alexander grading is the value of the relative Alexander multigrading of the
+single component with basepoints `w` and `z`. -/
+theorem relativeAlexanderGrading_eq_relativeComponentAlexanderGrading :
+    H.relativeAlexanderGrading w z x y =
+      H.relativeComponentAlexanderGrading (fun _ : Unit => {w}) (fun _ => {z}) x y () :=
+  (rfl)
+
 /-- When no domain joins `x` to `y`, the relative Alexander grading is `0`. -/
 theorem relativeAlexanderGrading_of_forall_not_isDomainBetween
     (h : ∀ D, ¬H.IsDomainBetween x y D) : H.relativeAlexanderGrading w z x y = 0 :=
@@ -508,7 +534,8 @@ every domain `D` from `x` to `y`. -/
 theorem IsDomainBetween.coe_relativeAlexanderGrading_eq (hD : H.IsDomainBetween x y D) :
     (H.relativeAlexanderGrading w z x y : ℤ ⧸ H.periodicAlexanderValues w z) =
       ((D (H.basepoint z) - D (H.basepoint w) : ℤ) : ℤ ⧸ H.periodicAlexanderValues w z) := by
-  rw [QuotientAddGroup.eq_iff_sub_mem, relativeAlexanderGrading]
+  rw [QuotientAddGroup.eq_iff_sub_mem,
+    relativeAlexanderGrading_eq_relativeComponentAlexanderGrading]
   simpa only [Pi.sub_apply, componentAlexanderMultiplicity_apply, Finset.sum_singleton] using
     apply_mem_periodicAlexanderValues
       (QuotientAddGroup.eq_iff_sub_mem.mp hD.coe_relativeComponentAlexanderGrading_eq)
@@ -518,9 +545,10 @@ theorem IsDomainBetween.coe_relativeAlexanderGrading_eq (hD : H.IsDomainBetween 
 theorem IsDomainBetween.relativeAlexanderGrading_eq (hA : H.periodicAlexanderValues w z = ⊥)
     (hD : H.IsDomainBetween x y D) :
     H.relativeAlexanderGrading w z x y = D (H.basepoint z) - D (H.basepoint w) := by
-  simpa only [relativeAlexanderGrading, componentAlexanderMultiplicity_apply,
-    Finset.sum_singleton] using congrFun (hD.relativeComponentAlexanderGrading_eq
-    ((periodicComponentAlexanderValues_singleton_eq_bot_iff w z).mpr hA)) ()
+  simpa only [relativeAlexanderGrading_eq_relativeComponentAlexanderGrading,
+    componentAlexanderMultiplicity_apply, Finset.sum_singleton] using
+    congrFun (hD.relativeComponentAlexanderGrading_eq
+      ((periodicComponentAlexanderValues_singleton_eq_bot_iff w z).mpr hA)) ()
 
 /-- A generator has relative Alexander grading zero with itself, modulo the periodic Alexander
 values. -/
@@ -609,8 +637,8 @@ not formalized here. -/
 theorem relativeAlexanderGrading_eq_zero_of_hatCoefficient_ne_zero
     (hA : H.periodicAlexanderValues w z = ⊥) (h : H.hatCoefficient χ x y ≠ 0) :
     H.relativeAlexanderGrading w z x y = 0 :=
-  have ⟨_, hD⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero h
-  relativeAlexanderGrading_eq_zero_of_mem_hatDomains hA hD
+  congrFun (relativeComponentAlexanderGrading_eq_zero_of_hatCoefficient_ne_zero
+    ((periodicComponentAlexanderValues_singleton_eq_bot_iff w z).mpr hA) h) ()
 
 end RelativeAlexanderGrading
 
@@ -654,6 +682,41 @@ theorem isAlexanderFunction_id_iff [Fintype Basepoint] :
   simp only [id_eq] at hz
   simp only [hz, Finset.sum_const_zero, sub_eq_zero]
 
+/-- **The total Alexander grading.** Let `ι` pick out the `w`'s, and suppose that every `w` of a
+component is one of them and every other basepoint is a `z` of exactly one component. When the
+periodic values vanish, the sum `∑_q A_q(x, x₀)` of the component gradings relative to a generator
+`x₀` joined to every generator by a domain is an Alexander function for the `w`'s: a domain `D`
+from `x` to `y` avoiding the `w`'s changes it by its total multiplicity at the `z`'s. -/
+theorem isAlexanderFunction_sum_relativeComponentAlexanderGrading [Fintype Basepoint] [Fintype K]
+    {ws zs : K → Finset Basepoint} (hws : ∀ q, ∀ b ∈ ws q, b ∈ Set.range ι)
+    (hzs : ∀ b ∉ Set.range ι, ∃! q, b ∈ zs q)
+    (hA : H.periodicComponentAlexanderValues ws zs = ⊥) {x₀ : H.Generator}
+    (hx₀ : ∀ x, ∃ E, H.IsDomainBetween x x₀ E) :
+    H.IsAlexanderFunction ι (fun x => ∑ q, H.relativeComponentAlexanderGrading ws zs x x₀ q) := by
+  classical
+  rw [isAlexanderFunction_iff]
+  intro x y D hD hw
+  obtain ⟨E, hE⟩ := hx₀ y
+  have hD0 : ∀ b ∈ Set.range ι, D (H.basepoint b) = 0 := by
+    rintro _ ⟨i, rfl⟩
+    exact hw i
+  rw [← hD.relativeComponentAlexanderGrading_add hA hE]
+  simp only [Pi.add_apply, Finset.sum_add_distrib, add_sub_cancel_right,
+    hD.relativeComponentAlexanderGrading_eq hA, componentAlexanderMultiplicity_apply,
+    Finset.sum_eq_zero fun b hb => hD0 b (hws _ b hb), sub_zero]
+  -- count each basepoint once for every component carrying it as a `z`
+  have hsum (q : K) : ∑ b ∈ zs q, D (H.basepoint b) =
+      ∑ b, if b ∈ zs q then D (H.basepoint b) else 0 := by
+    rw [Finset.sum_ite_mem, Finset.univ_inter]
+  simp only [hsum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  by_cases hb : b ∈ Set.range ι
+  · simp [hD0 b hb]
+  · obtain ⟨q, hq, huniq⟩ := hzs b hb
+    rw [Finset.sum_eq_single q (fun q' _ hq' => ite_eq_right fun h => hq' (huniq q' h)) (by simp),
+      ite_eq_left hq]
+
 /-- In a diagram whose basepoints are `w` and `z`, with vanishing periodic Alexander values, the
 Alexander gradings `A(x) = A(x, x₀)` relative to a generator `x₀` joined to every generator by a
 domain form an Alexander function for `w`: `A(x) - A(y) = n_w(D) + n_z(D)` for every domain `D`
@@ -662,16 +725,11 @@ theorem isAlexanderFunction_relativeAlexanderGrading [Fintype Basepoint] {w z : 
     (hB : ∀ b, b = w ∨ b = z) (hA : H.periodicAlexanderValues w z = ⊥) {x₀ : H.Generator}
     (hx₀ : ∀ x, ∃ E, H.IsDomainBetween x x₀ E) :
     H.IsAlexanderFunction (fun _ : Unit => w) (H.relativeAlexanderGrading w z · x₀) := by
-  intro x y D hD hw
-  replace hw : D (H.basepoint w) = 0 := hw ()
-  dsimp only
-  obtain ⟨E, hE⟩ := hx₀ y
-  rw [← hD.relativeAlexanderGrading_add hA hE, add_sub_cancel_right,
-    hD.relativeAlexanderGrading_eq hA, hw, sub_zero]
-  rcases eq_or_ne w z with rfl | hwz
-  · rw [hw]
-    exact (Finset.sum_eq_zero fun b _ => by obtain rfl | rfl := hB b <;> exact hw).symm
-  · rw [Fintype.sum_eq_add w z hwz fun b hb => ((hB b).elim hb.1 hb.2).elim, hw, zero_add]
+  simpa [relativeAlexanderGrading_eq_relativeComponentAlexanderGrading] using
+    isAlexanderFunction_sum_relativeComponentAlexanderGrading (ι := fun _ : Unit => w)
+      (ws := fun _ : Unit => {w}) (zs := fun _ => {z}) (by simp)
+      (fun b hb => ⟨(), by simpa using (hB b).resolve_left (by simpa using hb), fun _ _ => rfl⟩)
+      ((periodicComponentAlexanderValues_singleton_eq_bot_iff w z).mpr hA) hx₀
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
