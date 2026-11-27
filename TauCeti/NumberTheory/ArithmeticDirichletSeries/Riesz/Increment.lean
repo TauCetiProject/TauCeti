@@ -57,8 +57,9 @@ theorem norm_rieszSum_sub_div_sub_sum_div_le (a : ℕ → ℂ) {z y M : ℝ}
   have hzn : z < n := (Nat.floor_lt' hn0).mp hnz
   have hny' : (n : ℝ) ≤ y := (Nat.le_floor_iff' hn0).mp hny
   have hratio : 0 ≤ y / (n : ℝ) - 1 := sub_nonneg.mpr ((one_le_div (hz.trans hzn)).mpr hny')
-  rw [norm_div, norm_mul, ← Complex.ofReal_natCast, ← Complex.ofReal_div, ← Complex.ofReal_one,
-    ← Complex.ofReal_sub, Complex.norm_real, Complex.norm_real, Real.norm_of_nonneg hratio,
+  have hcast : (y : ℂ) / n - 1 = ((y / n - 1 : ℝ) : ℂ) := by push_cast; ring
+  rw [hcast]
+  simp only [norm_div, norm_mul, Complex.norm_real, Real.norm_of_nonneg hratio,
     Real.norm_of_nonneg hstep.le]
   calc
     ‖a n‖ * (y / n - 1) / (y - z) ≤ M * (y / n - 1) / (y - z) := by gcongr; exact hM n hn
