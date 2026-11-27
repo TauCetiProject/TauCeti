@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Algebra.Star.Basic
+public import Mathlib.Data.Set.Card
 import Mathlib.Algebra.Star.BigOperators
 
 /-!
@@ -35,6 +36,8 @@ a *free* tuple rather than as the data of a polynomial subtype.
 * `TauCeti.Polynomial.coeff_monicOfCoeff` and `TauCeti.Polynomial.monicOfCoeff_coeff`: the
   coefficients are read back off, and every monic polynomial of degree `n` arises this way, so the
   two constructions are mutually inverse.
+* `TauCeti.Polynomial.ncard_setOf_monic_natDegree_eq_and`: counting monic polynomials of degree
+  `n` with a property is counting the coefficient tuples whose polynomial has it.
 * `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
   the constant `t`.
 * `TauCeti.Polynomial.translateCoeff a c`: the lower coefficients of
@@ -159,6 +162,21 @@ theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
   · rw [hk, coeff_monicOfCoeff_self, ← hdeg, hp.coeff_natDegree]
   · rw [coeff_eq_zero_of_natDegree_lt (by rwa [natDegree_monicOfCoeff]),
       coeff_eq_zero_of_natDegree_lt (by rwa [hdeg])]
+
+/-- Counting the monic polynomials of degree `n` with a property `P` is counting the coefficient
+tuples whose attached monic polynomial has `P`. -/
+theorem ncard_setOf_monic_natDegree_eq_and (P : R[X] → Prop) :
+    {f : R[X] | f.Monic ∧ f.natDegree = n ∧ P f}.ncard =
+      Nat.card {c : Fin n → R // P (monicOfCoeff c)} := by
+  rw [← Nat.card_coe_set_eq]
+  exact Nat.card_congr
+    { toFun f := ⟨fun i ↦ f.val.coeff i, by
+        obtain ⟨hm, hd, hP⟩ := f.property
+        rwa [monicOfCoeff_coeff hm hd]⟩
+      invFun c := ⟨monicOfCoeff c.val, monic_monicOfCoeff c.val, natDegree_monicOfCoeff c.val,
+        c.property⟩
+      left_inv f := Subtype.ext (monicOfCoeff_coeff f.property.1 f.property.2.1)
+      right_inv c := Subtype.ext (funext (coeff_monicOfCoeff c.val)) }
 
 end OfCoeff
 
