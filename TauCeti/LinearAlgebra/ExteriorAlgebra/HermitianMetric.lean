@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.DegreeScaling
 public import TauCeti.LinearAlgebra.ExteriorPower.Projection
 public import TauCeti.LinearAlgebra.ExteriorPower.SesquilinearForm
 public import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Sesquilinear Gram forms and the Hermitian metric of an exterior algebra
@@ -226,8 +227,7 @@ theorem IsSymm.sesqExteriorAlgebra {B : M →ₛₗ[σ] M →ₗ[R] R} (hσ : Fu
 private theorem ι_mul_ιMulti (x : M) (p : ℕ) (u : Fin p → M) :
     _root_.ExteriorAlgebra.ι R x * _root_.ExteriorAlgebra.ιMulti R p u =
       _root_.ExteriorAlgebra.ιMulti R (p + 1) (Matrix.vecCons x u) := by
-  rw [_root_.ExteriorAlgebra.ιMulti_succ_apply]
-  rfl
+  rw [_root_.ExteriorAlgebra.ιMulti_succ_apply, Matrix.cons_val_zero, Matrix.tail_cons]
 
 private theorem sesqExteriorAlgebra_ιMulti_contractLeft_eq_zero (B : M →ₛₗ[σ] M →ₗ[R] R)
     (f : Module.Dual R M) {p q : ℕ} (hpq : p + 1 ≠ q) (u : Fin p → M) (v : Fin q → M) :
@@ -345,18 +345,6 @@ theorem sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower
     · simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq hs t.property]
 
 end LinearMap
-
-namespace ExteriorAlgebra
-
-/-- Every basis element `b.ExteriorAlgebra S` of `ExteriorAlgebra R M` lies in the homogeneous
-exterior power `⋀[R]^S.card M` of degree `S.card`. -/
-theorem basis_mem_exteriorPower {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    [LinearOrder I] (b : _root_.Module.Basis I R M) (S : Finset I) :
-    b.ExteriorAlgebra S ∈ ⋀[R]^S.card M := by
-  rw [basis_eq_coe_basis b ⟨S, rfl⟩]
-  exact (b.exteriorPower S.card ⟨S, rfl⟩).property
-
-end ExteriorAlgebra
 
 namespace Module.Basis
 

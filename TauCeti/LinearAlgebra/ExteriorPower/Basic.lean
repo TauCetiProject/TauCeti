@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Data.Fintype.Perm
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
@@ -99,6 +100,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   `v ↦ m ∧ v` with values in degree `n + 1`; it squares to zero
   (`TauCeti.ExteriorAlgebra.wedgeLeft_comp_wedgeLeft`), and
   `TauCeti.ExteriorAlgebra.wedgeLeftₗ` is exterior multiplication as a bilinear map.
+* `ExteriorAlgebra.basis_mem_exteriorPower`: every wedge-basis element `b.ExteriorAlgebra S`
+  lies in `⋀[R]^S.card M`.
 * `exteriorPower.not_finite_of_not_finite`: a positive exterior power of an infinite-dimensional
   vector space is infinite-dimensional.
 * `TauCeti.exteriorPower.finrank_range_map`: over a field, the image of `⋀ⁿ V` under the map
@@ -705,6 +708,14 @@ theorem ι_mul_mem_exteriorPower (m : M) {n : ℕ} {x : _root_.ExteriorAlgebra R
     _root_.ExteriorAlgebra.ι R m * x ∈ ⋀[R]^(n + 1) M := by
   rw [_root_.ExteriorAlgebra.exteriorPower, pow_succ']
   exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ m) hx
+
+/-- Every basis element `b.ExteriorAlgebra S` of `ExteriorAlgebra R M` lies in the homogeneous
+exterior power `⋀[R]^S.card M` of degree `S.card`. -/
+theorem _root_.ExteriorAlgebra.basis_mem_exteriorPower {I : Type*} [LinearOrder I]
+    (b : Module.Basis I R M) (S : Finset I) :
+    b.ExteriorAlgebra S ∈ ⋀[R]^S.card M := by
+  rw [_root_.ExteriorAlgebra.basis_eq_coe_basis b ⟨S, rfl⟩]
+  exact (b.exteriorPower S.card ⟨S, rfl⟩).property
 
 /-- Exterior multiplication `v ↦ m ∧ v` by a vector `m`, from the `n`-th exterior power to the
 `(n + 1)`-th. Mathlib's `exteriorPower.wedge R M 1 n` is the same product with values in degree

@@ -152,7 +152,7 @@ theorem sesqExteriorPower_zero (n : ℕ) [NeZero n] :
   symm
   rw [eq_sesqExteriorPower_iff]
   intro v w
-  have h0 : (Matrix.of fun _ _ : Fin n ↦ (0 : R)) = 0 := rfl
+  have h0 : (Matrix.of fun _ _ : Fin n ↦ (0 : R)) = 0 := by ext; simp
   simp [h0]
 
 /-- **Naturality of the exterior Gram form**: an `R`-linear map pulling `B'` back to `B` pulls
