@@ -14,15 +14,22 @@ public import TauCeti.RingTheory.TwoSidedIdeal.Essential
 
 Left and right annihilators `TwoSidedIdeal.annihilator` and `TwoSidedIdeal.rightAnnihilator` of a
 two-sided ideal, their antitone Galois connection, unital identifications with `Module.annihilator`,
-and pseudocomplement / essentiality equivalences for self-adjoint ideals in proper star rings.
+and pseudocomplement / essentiality equivalences for arbitrary two-sided ideals in proper star
+rings.
 
 ## Main declarations
 
 * `TwoSidedIdeal.annihilator`, `TwoSidedIdeal.rightAnnihilator`,
   `TwoSidedIdeal.gc_annihilator_rightAnnihilator`.
 * `TwoSidedIdeal.annihilator_eq_toTwoSided_annihilator`,
-  `TwoSidedIdeal.annihilator_eq_rightAnnihilator_of_star_mem`,
+  `TwoSidedIdeal.annihilator_eq_rightAnnihilator`, `TwoSidedIdeal.disjoint_annihilator`,
   `TwoSidedIdeal.le_annihilator_iff_disjoint`, `TwoSidedIdeal.annihilator_eq_bot_iff_isEssential`.
+
+## References
+
+* B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*, §II.5.4.7.
+* G. J. Murphy, *C*-Algebras and Operator Theory*, §3.1.
+* T. Y. Lam, *Lectures on Modules and Rings*, §3D.
 -/
 
 public section
@@ -313,14 +320,6 @@ section IsProperStar
 variable {R : Type*} [NonUnitalRing R] [StarRing R] [IsProperStar R] {I J : TwoSidedIdeal R}
   {a : R}
 
-/-- In a proper star ring, an element annihilating a self-adjoint ideal from the left also
-annihilates it from the right. -/
-theorem mul_eq_zero_of_star_mem_of_mem_annihilator (hI : ∀ x ∈ I, star x ∈ I)
-    (ha : a ∈ I.annihilator) {x : R} (hx : x ∈ I) : x * a = 0 := by
-  -- `(x * a) * star (x * a) = x * (a * (star a * star x))`, and `star a * star x ∈ I`.
-  rw [← mul_star_self_eq_zero, star_mul, mul_assoc,
-    mul_eq_zero_of_mem_annihilator ha (I.mul_mem_left _ _ (hI x hx)), mul_zero]
-
 /-- The annihilator of a two-sided ideal in a proper star ring is self-adjoint. -/
 theorem star_mem_annihilator (ha : a ∈ I.annihilator) : star a ∈ I.annihilator :=
   mem_annihilator.2 fun x hx ↦ star_mul_self_eq_zero.1 <| by
@@ -330,61 +329,85 @@ theorem star_mem_annihilator (ha : a ∈ I.annihilator) : star a ∈ I.annihilat
 theorem star_mem_annihilator_iff : star a ∈ I.annihilator ↔ a ∈ I.annihilator :=
   ⟨fun h ↦ star_star a ▸ star_mem_annihilator h, star_mem_annihilator⟩
 
-/-- In a proper star ring, the annihilator of a self-adjoint ideal is also its right
-annihilator. -/
-theorem mem_annihilator_iff_mul_left (hI : ∀ x ∈ I, star x ∈ I) :
-    a ∈ I.annihilator ↔ ∀ x ∈ I, x * a = 0 := by
-  refine ⟨fun ha x hx ↦ mul_eq_zero_of_star_mem_of_mem_annihilator hI ha hx, fun ha ↦ ?_⟩
-  rw [← star_mem_annihilator_iff]
-  exact mem_annihilator.2 fun x hx ↦ by
-    rw [← star_star x, ← star_mul, ha _ (hI x hx), star_zero]
-
-/-- For a self-adjoint two-sided ideal `I` in a ring with proper involution, the left and right
-annihilators of `I` coincide. -/
-theorem annihilator_eq_rightAnnihilator_of_star_mem (hI : ∀ x ∈ I, star x ∈ I) :
-    I.annihilator = I.rightAnnihilator :=
-  ext fun _ => (mem_annihilator_iff_mul_left hI).trans mem_rightAnnihilator.symm
-
 /-- The right annihilator of a two-sided ideal in a proper star ring is self-adjoint. -/
 theorem star_mem_rightAnnihilator (ha : a ∈ I.rightAnnihilator) : star a ∈ I.rightAnnihilator :=
   mem_rightAnnihilator.2 fun x hx ↦ mul_star_self_eq_zero.1 <| by
     rw [star_mul, star_star, ← mul_assoc,
       mul_eq_zero_of_mem_rightAnnihilator (I.mul_mem_right x (star a) hx) ha, zero_mul]
 
-/-- A self-adjoint ideal meets its annihilator only in `0`. -/
-theorem disjoint_annihilator (hI : ∀ x ∈ I, star x ∈ I) : Disjoint I I.annihilator := by
+theorem star_mem_rightAnnihilator_iff : star a ∈ I.rightAnnihilator ↔ a ∈ I.rightAnnihilator :=
+  ⟨fun h ↦ star_star a ▸ star_mem_rightAnnihilator h, star_mem_rightAnnihilator⟩
+
+/-- In a ring with proper involution, the left and right annihilators of any two-sided ideal `I`
+coincide. -/
+theorem annihilator_eq_rightAnnihilator (I : TwoSidedIdeal R) :
+    I.annihilator = I.rightAnnihilator := by
+  ext a
+  rw [mem_annihilator, mem_rightAnnihilator]
+  refine ⟨fun ha x hx => star_mul_self_eq_zero.mp ?_, fun ha x hx => mul_star_self_eq_zero.mp ?_⟩
+  · have hsa : star a ∈ I.annihilator := star_mem_annihilator (mem_annihilator.mpr ha)
+    rw [star_mul, mul_assoc]
+    exact mul_eq_zero_of_mem_annihilator hsa
+      (I.mul_mem_left (star x) _ (I.mul_mem_right x a hx))
+  · have hsa : star a ∈ I.rightAnnihilator :=
+      star_mem_rightAnnihilator (mem_rightAnnihilator.mpr ha)
+    rw [star_mul, ← mul_assoc]
+    exact mul_eq_zero_of_mem_rightAnnihilator
+      (I.mul_mem_right _ (star x) (I.mul_mem_left a x hx)) hsa
+
+/-- In a proper star ring, an element left-annihilates a two-sided ideal `I` if and only if it
+right-annihilates `I`. -/
+theorem mem_annihilator_iff_mul_eq_zero_right :
+    a ∈ I.annihilator ↔ ∀ x ∈ I, x * a = 0 := by
+  rw [I.annihilator_eq_rightAnnihilator, mem_rightAnnihilator]
+
+/-- In a proper star ring, any two-sided ideal meets its annihilator only in `0`. -/
+theorem disjoint_annihilator (I : TwoSidedIdeal R) : Disjoint I I.annihilator := by
   refine disjoint_iff.2 <| eq_bot_iff.2 fun a ha ↦ (mem_bot R).2 ?_
   rw [mem_inf R] at ha
-  exact mul_star_self_eq_zero.1 (mul_eq_zero_of_mem_annihilator ha.right (hI a ha.left))
+  exact star_mul_self_eq_zero.1
+    (mul_eq_zero_of_mem_annihilator (star_mem_annihilator ha.right) ha.left)
 
 @[simp]
-theorem inf_annihilator (hI : ∀ x ∈ I, star x ∈ I) : I ⊓ I.annihilator = ⊥ :=
-  disjoint_iff.1 (disjoint_annihilator hI)
-
-/-- The annihilator of a self-adjoint ideal `I` is the largest two-sided ideal disjoint from
-`I`. -/
-theorem le_annihilator_iff_disjoint (hI : ∀ x ∈ I, star x ∈ I) :
-    J ≤ I.annihilator ↔ Disjoint J I :=
-  ⟨fun h ↦ (disjoint_annihilator hI).symm.mono_left h, le_annihilator_of_disjoint⟩
-
-theorem le_annihilator_annihilator (hI : ∀ x ∈ I, star x ∈ I) :
-    I ≤ I.annihilator.annihilator :=
-  le_annihilator_iff_disjoint (fun _ ↦ star_mem_annihilator) |>.2 (disjoint_annihilator hI)
+theorem inf_annihilator_eq_bot (I : TwoSidedIdeal R) : I ⊓ I.annihilator = ⊥ :=
+  disjoint_iff.1 I.disjoint_annihilator
 
 @[simp]
-theorem annihilator_annihilator_annihilator (hI : ∀ x ∈ I, star x ∈ I) :
+theorem annihilator_inf_eq_bot (I : TwoSidedIdeal R) : I.annihilator ⊓ I = ⊥ := by
+  rw [inf_comm, I.inf_annihilator_eq_bot]
+
+@[simp]
+theorem inf_rightAnnihilator_eq_bot (I : TwoSidedIdeal R) : I ⊓ I.rightAnnihilator = ⊥ := by
+  rw [← I.annihilator_eq_rightAnnihilator, I.inf_annihilator_eq_bot]
+
+@[simp]
+theorem rightAnnihilator_inf_eq_bot (I : TwoSidedIdeal R) : I.rightAnnihilator ⊓ I = ⊥ := by
+  rw [inf_comm, I.inf_rightAnnihilator_eq_bot]
+
+/-- In a proper star ring, the annihilator of any two-sided ideal `I` is the largest two-sided
+ideal disjoint from `I`. -/
+theorem le_annihilator_iff_disjoint : J ≤ I.annihilator ↔ Disjoint J I :=
+  ⟨fun h ↦ I.disjoint_annihilator.symm.mono_left h, le_annihilator_of_disjoint⟩
+
+/-- In a proper star ring, a two-sided ideal `J` annihilates `I` if and only if `I ⊓ J = ⊥`. -/
+theorem le_annihilator_iff_inf_eq_bot : J ≤ I.annihilator ↔ I ⊓ J = ⊥ := by
+  rw [le_annihilator_iff_disjoint, disjoint_comm, disjoint_iff]
+
+theorem le_annihilator_annihilator (I : TwoSidedIdeal R) : I ≤ I.annihilator.annihilator :=
+  le_annihilator_iff_disjoint.2 I.disjoint_annihilator
+
+@[simp]
+theorem annihilator_annihilator_annihilator (I : TwoSidedIdeal R) :
     I.annihilator.annihilator.annihilator = I.annihilator :=
-  le_antisymm (annihilator_le_annihilator (le_annihilator_annihilator hI))
-    (le_annihilator_annihilator fun _ ↦ star_mem_annihilator)
+  (congrArg annihilator I.annihilator.annihilator_eq_rightAnnihilator).trans
+    I.annihilator_rightAnnihilator_annihilator
 
-/-- A self-adjoint ideal is essential exactly when its annihilator vanishes. -/
-theorem annihilator_eq_bot_iff_isEssential (hI : ∀ x ∈ I, star x ∈ I) :
-    I.annihilator = ⊥ ↔ I.IsEssential :=
-  ⟨isEssential_of_annihilator_eq_bot, fun h ↦ h.eq_bot_of_disjoint (disjoint_annihilator hI)⟩
+/-- In a proper star ring, a two-sided ideal is essential exactly when its annihilator vanishes. -/
+theorem annihilator_eq_bot_iff_isEssential : I.annihilator = ⊥ ↔ I.IsEssential :=
+  ⟨isEssential_of_annihilator_eq_bot, fun h ↦ h.eq_bot_of_disjoint I.disjoint_annihilator⟩
 
-theorem isEssential_iff_rightAnnihilator_eq_bot_of_star_mem (hI : ∀ x ∈ I, star x ∈ I) :
-    I.IsEssential ↔ I.rightAnnihilator = ⊥ := by
-  rw [← annihilator_eq_bot_iff_isEssential hI, annihilator_eq_rightAnnihilator_of_star_mem hI]
+theorem isEssential_iff_rightAnnihilator_eq_bot : I.IsEssential ↔ I.rightAnnihilator = ⊥ := by
+  rw [← annihilator_eq_bot_iff_isEssential, I.annihilator_eq_rightAnnihilator]
 
 end IsProperStar
 

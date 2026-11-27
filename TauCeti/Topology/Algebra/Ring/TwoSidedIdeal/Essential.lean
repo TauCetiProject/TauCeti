@@ -12,7 +12,13 @@ public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Annihilator
 
 Two-sided ideals meeting every nonzero closed two-sided ideal (`TwoSidedIdeal.IsClosedEssential`),
 lattice/homeomorphism API, and equivalences with `IsEssential` and `annihilator = ⊥` for
-`star`-closed ideals in `T₁` proper star rings with separately continuous multiplication.
+arbitrary two-sided ideals in `T₁` proper star rings with separately continuous multiplication.
+
+## References
+
+* B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*, §II.5.4.7.
+* G. J. Murphy, *C*-Algebras and Operator Theory*, §3.1.
+* T. Y. Lam, *Lectures on Modules and Rings*, §3D.
 -/
 
 public section
@@ -104,41 +110,76 @@ theorem isClosedEssential_of_rightAnnihilator_eq_bot {I : TwoSidedIdeal A}
     (hI : I.rightAnnihilator = ⊥) : I.IsClosedEssential :=
   (isEssential_of_rightAnnihilator_eq_bot hI).isClosedEssential
 
-/-- In a `T₁` ring with separately continuous multiplication and proper involution, a `star`-closed
-two-sided ideal is essential among closed ideals if and only if its left annihilator is trivial. -/
-theorem isClosedEssential_iff_annihilator_eq_bot_of_star_mem
+/-- In a `T₁` ring with separately continuous multiplication and proper involution, any two-sided
+ideal is essential among closed ideals if and only if its left annihilator is trivial. -/
+theorem isClosedEssential_iff_annihilator_eq_bot
     [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
-    {I : TwoSidedIdeal A} (hI : ∀ x ∈ I, star x ∈ I) :
+    {I : TwoSidedIdeal A} :
     I.IsClosedEssential ↔ I.annihilator = ⊥ :=
   ⟨fun h => isClosedEssential_iff.mp h I.annihilator I.isClosed_annihilator
-      (inf_annihilator hI),
+      I.inf_annihilator_eq_bot,
    isClosedEssential_of_annihilator_eq_bot⟩
 
-theorem isClosedEssential_iff_rightAnnihilator_eq_bot_of_star_mem
+theorem isClosedEssential_iff_rightAnnihilator_eq_bot
     [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
-    {I : TwoSidedIdeal A} (hI : ∀ x ∈ I, star x ∈ I) :
+    {I : TwoSidedIdeal A} :
     I.IsClosedEssential ↔ I.rightAnnihilator = ⊥ := by
-  rw [isClosedEssential_iff_annihilator_eq_bot_of_star_mem hI,
-    annihilator_eq_rightAnnihilator_of_star_mem hI]
+  rw [isClosedEssential_iff_annihilator_eq_bot, I.annihilator_eq_rightAnnihilator]
 
 /-- In a `T₁` ring with separately continuous multiplication and proper involution, essentiality
-among closed two-sided ideals and algebraic essentiality coincide for `star`-closed two-sided
-ideals. -/
-theorem isClosedEssential_iff_isEssential_of_star_mem
+among closed two-sided ideals and algebraic essentiality coincide for arbitrary two-sided ideals. -/
+theorem isClosedEssential_iff_isEssential
     [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
-    {I : TwoSidedIdeal A} (hI : ∀ x ∈ I, star x ∈ I) :
+    {I : TwoSidedIdeal A} :
     I.IsClosedEssential ↔ I.IsEssential := by
-  rw [isClosedEssential_iff_annihilator_eq_bot_of_star_mem hI,
-    annihilator_eq_bot_iff_isEssential hI]
+  rw [isClosedEssential_iff_annihilator_eq_bot, annihilator_eq_bot_iff_isEssential]
 
-/-- In a `T₁` topological proper star ring, a self-adjoint ideal is essential exactly when it meets
+/-- In a `T₁` topological proper star ring, a two-sided ideal is essential exactly when it meets
 every nonzero closed two-sided ideal. -/
 theorem isEssential_iff_forall_isClosed
     [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
-    {I : TwoSidedIdeal A} (hI : ∀ x ∈ I, star x ∈ I) :
+    {I : TwoSidedIdeal A} :
     I.IsEssential ↔ ∀ J : TwoSidedIdeal A, IsClosed (J : Set A) → Disjoint I J → J = ⊥ := by
-  rw [← isClosedEssential_iff_isEssential_of_star_mem hI, isClosedEssential_iff]
+  rw [← isClosedEssential_iff_isEssential, isClosedEssential_iff]
   simp only [disjoint_iff]
+
+theorem IsClosedEssential.inf
+    [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
+    {I J : TwoSidedIdeal A} (hI : I.IsClosedEssential) (hJ : J.IsClosedEssential) :
+    (I ⊓ J).IsClosedEssential :=
+  isClosedEssential_iff_isEssential.mpr
+    ((isClosedEssential_iff_isEssential.mp hI).inf (isClosedEssential_iff_isEssential.mp hJ))
+
+@[simp]
+theorem isClosedEssential_inf_iff
+    [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
+    {I J : TwoSidedIdeal A} :
+    (I ⊓ J).IsClosedEssential ↔ I.IsClosedEssential ∧ J.IsClosedEssential :=
+  ⟨fun h => ⟨h.mono inf_le_left, h.mono inf_le_right⟩, fun ⟨hI, hJ⟩ => hI.inf hJ⟩
+
+@[simp]
+theorem isClosedEssential_topologicalClosure_iff
+    [IsTopologicalRing A] [T1Space A] [StarRing A] [IsProperStar A] {I : TwoSidedIdeal A} :
+    I.topologicalClosure.IsClosedEssential ↔ I.IsClosedEssential := by
+  rw [isClosedEssential_iff_annihilator_eq_bot, isClosedEssential_iff_annihilator_eq_bot,
+    I.annihilator_topologicalClosure]
+
+@[simp]
+theorem isEssential_topologicalClosure_iff
+    [IsTopologicalRing A] [T1Space A] [StarRing A] [IsProperStar A] {I : TwoSidedIdeal A} :
+    I.topologicalClosure.IsEssential ↔ I.IsEssential := by
+  rw [← isClosedEssential_iff_isEssential, ← isClosedEssential_iff_isEssential,
+    isClosedEssential_topologicalClosure_iff]
+
+/-- Pulling back along a ring equivalence between `T₁` proper star rings with separately continuous
+multiplication preserves and reflects closed-essentiality. -/
+@[simp]
+theorem isClosedEssential_comap_iff {B E : Type*} [NonUnitalRing B] [TopologicalSpace B]
+    [SeparatelyContinuousMul A] [T1Space A] [StarRing A] [IsProperStar A]
+    [SeparatelyContinuousMul B] [T1Space B] [StarRing B] [IsProperStar B]
+    [EquivLike E A B] [NonUnitalRingHomClass E A B] (e : E) {I : TwoSidedIdeal B} :
+    (I.comap e).IsClosedEssential ↔ I.IsClosedEssential := by
+  rw [isClosedEssential_iff_isEssential, isClosedEssential_iff_isEssential, isEssential_comap_iff]
 
 end ClosedEssentialRing
 

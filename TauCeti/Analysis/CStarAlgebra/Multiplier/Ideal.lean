@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Annihilator
+public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Idealizer
+public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Essential
 
 /-!
 # Canonical multiplier homomorphisms for closed two-sided ideals
@@ -18,6 +19,7 @@ and injectivity / isometry characterizations via essentiality of `I`.
 
 ## References
 
+* B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*, §II.7.3.
 * Iain Raeburn and Dana Williams, *Morita Equivalence and Continuous-Trace C*-Algebras*,
   Proposition 2.54.
 * Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
