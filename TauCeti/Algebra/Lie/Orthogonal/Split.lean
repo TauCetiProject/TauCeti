@@ -162,7 +162,7 @@ theorem lie_eq_zero_of_mem_splitCartanSubmodule (he : Function.Injective e) {x y
 `(i, e i)` and `(e i, i)` positions, when at most one index of `q` lies outside the range of
 `e`. -/
 private theorem entries_eq_zero_of_commute
-    (hc : ∀ j j', j ∉ Set.range e → j' ∉ Set.range e → j = j')
+    (hc : (Set.range e)ᶜ.Subsingleton)
     {M : Matrix (p ⊕ q) (p ⊕ q) ℝ} (hM : M ∈ so' p q ℝ)
     (hcomm : ∀ i a b, ((splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ) * M) a b =
         (M * (splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ)) a b) :
@@ -189,7 +189,7 @@ private theorem entries_eq_zero_of_commute
       · rw [hji]
         exact congrFun (diag_eq_zero_of_mem_so' hM) _
       · exact (hrow i (.inr j) Sum.inr_ne_inl (by simpa using hji)).1
-    rw [hc j j' hj hj']
+    rw [hc hj hj']
     exact congrFun (diag_eq_zero_of_mem_so' hM) _
   have hinl (i i' : p) : M (.inl i) (.inl i') = 0 := by
     by_cases hii : i' = i
@@ -203,7 +203,7 @@ private theorem entries_eq_zero_of_commute
 /-- **The centralizer of the `H_i`.** If at most one index of `q` lies outside the range of `e`,
 an element `X` of `𝔰𝔬(p, q)` commuting with every `H_i` is `∑ᵢ X_(i, e i) H_i`. -/
 theorem eq_sum_smul_splitCartanElement
-    (hc : ∀ j j', j ∉ Set.range e → j' ∉ Set.range e → j = j') {X : so' p q ℝ}
+    (hc : (Set.range e)ᶜ.Subsingleton) {X : so' p q ℝ}
     (hX : ∀ i, ⁅splitCartanElement e i, X⁆ = 0) :
     X = ∑ i, (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr (e i)) • splitCartanElement e i := by
   obtain ⟨M, hM⟩ := X
@@ -233,7 +233,7 @@ theorem eq_sum_smul_splitCartanElement
 /-- **The centralizer `𝔤_0` of `𝔞` is `𝔞`** when `e` is injective and at most one index of `q`
 lies outside its range. -/
 theorem restrictedRootSpace_zero_splitCartanSubmodule (he : Function.Injective e)
-    (hc : ∀ j j', j ∉ Set.range e → j' ∉ Set.range e → j = j') :
+    (hc : (Set.range e)ᶜ.Subsingleton) :
     (splitCartanSubmodule e).restrictedRootSpace 0 = splitCartanSubmodule e := by
   refine le_antisymm (fun X hX ↦ ?_) (Submodule.le_restrictedRootSpace_zero
     fun _ hx _ hy ↦ lie_eq_zero_of_mem_splitCartanSubmodule he hx hy)
@@ -245,7 +245,7 @@ theorem restrictedRootSpace_zero_splitCartanSubmodule (he : Function.Injective e
 /-- **`𝔞` is a maximal abelian subspace of `𝔭`** when `e` is injective and at most one index of
 `q` lies outside its range. -/
 theorem isMaximalAbelianInP_splitCartanSubmodule (he : Function.Injective e)
-    (hc : ∀ j j', j ∉ Set.range e → j' ∉ Set.range e → j = j') :
+    (hc : (Set.range e)ᶜ.Subsingleton) :
     ((so' p q ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_so').IsMaximalAbelianInP
       (splitCartanSubmodule e) := by
   refine LieEquiv.isMaximalAbelianInP_iff.mpr ⟨⟨splitCartanSubmodule_le_cartanP e,
@@ -255,7 +255,7 @@ theorem isMaximalAbelianInP_splitCartanSubmodule (he : Function.Injective e)
 
 /-- **`𝔪 = 0`** when `e` is injective and at most one index of `q` lies outside its range. -/
 theorem restrictedRootSpace_zero_inf_fixedSubalgebra_splitCartanSubmodule
-    (he : Function.Injective e) (hc : ∀ j j', j ∉ Set.range e → j' ∉ Set.range e → j = j') :
+    (he : Function.Injective e) (hc : (Set.range e)ᶜ.Subsingleton) :
     (splitCartanSubmodule e).restrictedRootSpace 0 ⊓
       ((so' p q ℝ).restrictNegConjTranspose
         fun _ ↦ conjTranspose_mem_so').toLieHom.fixedSubalgebra.toSubmodule = ⊥ :=
@@ -267,7 +267,7 @@ theorem restrictedRootSpace_zero_inf_fixedSubalgebra_splitCartanSubmodule
 outside its range: `𝔞` is a Cartan subalgebra. -/
 theorem isCartanSubalgebra_splitCartanSubalgebra
     (hpq : 3 ≤ Fintype.card p + Fintype.card q) (he : Function.Injective e)
-    (hc : ∀ j j', j ∉ Set.range e → j' ∉ Set.range e → j = j') :
+    (hc : (Set.range e)ᶜ.Subsingleton) :
     (splitCartanSubalgebra e).IsCartanSubalgebra := by
   refine ((isCartanInvolution_restrictNegConjTranspose_so' hpq)
     |>.isCartanSubalgebra_iff_restrictedRootSpace_zero_eq ?_).mpr ?_ <;>
@@ -277,16 +277,16 @@ theorem isCartanSubalgebra_splitCartanSubalgebra
 /-- **`𝔰𝔬(n, n)` is split** for `n ≥ 2`. -/
 theorem isCartanSubalgebra_splitCartanSubalgebra_id (hp : 2 ≤ Fintype.card p) :
     (splitCartanSubalgebra (id : p → p)).IsCartanSubalgebra :=
-  isCartanSubalgebra_splitCartanSubalgebra (by omega) Function.injective_id
-    fun j _ hj ↦ absurd ⟨j, rfl⟩ hj
+  isCartanSubalgebra_splitCartanSubalgebra (by omega) Function.injective_id <| by
+    simp
 
 /-- **`𝔰𝔬(n, n + 1)` is split** for `n ≥ 1`. -/
 theorem isCartanSubalgebra_splitCartanSubalgebra_castSucc {n : ℕ} (hn : 1 ≤ n) :
     (splitCartanSubalgebra (Fin.castSucc : Fin n → Fin (n + 1))).IsCartanSubalgebra :=
   isCartanSubalgebra_splitCartanSubalgebra (by simp only [Fintype.card_fin]; omega)
     (Fin.castSucc_injective n)
-    fun j j' hj hj' ↦ by
-      rw [Fin.range_castSucc] at hj hj'
+    fun j hj j' hj' ↦ by
+      rw [Set.mem_compl_iff, Fin.range_castSucc] at hj hj'
       simp only [Set.mem_ofPred_eq, not_lt] at hj hj'
       exact Fin.ext (by have := j.isLt; have := j'.isLt; omega)
 
