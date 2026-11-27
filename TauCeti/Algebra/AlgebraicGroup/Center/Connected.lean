@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Center.Reduced
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
 public import TauCeti.RingTheory.TensorProduct.Reduced
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.RationalPoint
+import TauCeti.Algebra.Coalgebra.Cocommutative
 
 /-!
 # The reduced connected center of an affine group
@@ -47,6 +48,8 @@ trivial exactly when every smooth connected central closed subgroup is trivial.
   isomorphisms of affine groups identify their reduced connected centers.
 * `TauCeti.HopfIdeal.reducedConnectedCenter`: the reduced connected center of a closed subgroup,
   as a closed subgroup of the ambient group.
+* `TauCeti.HopfIdeal.isCocomm_reducedConnectedCenter`: the reduced connected center of a closed
+  subgroup is commutative.
 * `TauCeti.HopfIdeal.IsNormal.reducedConnectedCenter`: the reduced connected center of a normal
   closed subgroup of a reduced affine group is normal.
 
@@ -306,6 +309,18 @@ theorem smooth_reducedConnectedCenter (I : HopfIdeal k H) :
       ((CommHopfAlgCat.mkQuotient H.obj I).quotientIsoOfSurjective
         (CommHopfAlgCat.mkQuotient_surjective _ _) _).symm
       ((smoothCommHopfAlgProperty_iff _).mpr inferInstance)
+
+/-- The reduced connected center of a closed subgroup is commutative: its coordinate Hopf algebra
+is cocommutative. -/
+noncomputable instance isCocomm_reducedConnectedCenter (I : HopfIdeal k H) :
+    Coalgebra.IsCocomm k (FiniteTypeCommHopfAlgCat.quotient H I.reducedConnectedCenter) :=
+  let e := (CommHopfAlgCat.mkQuotient H.obj I).quotientIsoOfSurjective
+    (CommHopfAlgCat.mkQuotient_surjective _ _)
+    (FiniteTypeCommHopfAlgCat.reducedConnectedCenterDefiningIdeal
+      (FiniteTypeCommHopfAlgCat.quotient H I))
+  let _ := (FiniteTypeCommHopfAlgCat.isCentral_reducedConnectedCenterDefiningIdeal
+    (FiniteTypeCommHopfAlgCat.quotient H I)).isCocomm_quotient
+  TauCeti.Coalgebra.IsCocomm.of_surjective e.inv.hom (ConcreteCategory.bijective_of_isIso e.inv).2
 
 /-- **The reduced connected center of a normal subgroup is normal.** Over an algebraically
 closed field, the reduced connected center `Z(N)°_red` of a normal closed subgroup `N` of a

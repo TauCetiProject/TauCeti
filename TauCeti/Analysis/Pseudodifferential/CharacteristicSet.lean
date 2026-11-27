@@ -8,13 +8,12 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Microlocality
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 import TauCeti.Analysis.Pseudodifferential.MicrolocalCutoff
+import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Elliptic
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # The characteristic set and microlocal elliptic regularity
@@ -29,14 +28,11 @@ symbol elliptic above some radius.
 
 For a classical symbol `a` the characteristic set is read off the principal symbol: it consists of
 the points `(x, ξ)`, `ξ ≠ 0`, at which `a_m(x, ξ)` is not invertible
-(`TauCeti.ClassicalSymbol.mem_characteristicSet_toSymbol_iff`). Both inclusions come from the
-high-frequency limit `t^(-m) a(y, t ζ) → a_m(x, ξ)` as `t → ∞` and `(y, ζ) → (x, ξ)`
-(`TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul`). If `a_m(x₀, ξ₀)` is invertible,
-the limit is uniform near `(x₀, ξ₀)`, which makes `a` elliptic on the cone over a neighbourhood of
-`ξ₀` at large frequencies
+(`TauCeti.ClassicalSymbol.mem_characteristicSet_toSymbol_iff`). If `a_m(x₀, ξ₀)` is invertible,
+then `a` is elliptic on the cone over a neighbourhood of `ξ₀` at large frequencies
 (`TauCeti.ClassicalSymbol.exists_isEllipticOn_of_isInvertible_coefficient_principal`). Conversely,
 if `a` is elliptic along the ray of `ξ`, then `a_m(x, ξ)` is invertible
-(`TauCeti.ClassicalSymbol.isInvertible_coefficient_principal_of_eventually`). In particular a
+(`TauCeti.ClassicalSymbol.isInvertible_coefficient_principal_of_isEllipticOn`). In particular a
 classical symbol has empty characteristic set exactly when it is elliptic
 (`TauCeti.ClassicalSymbol.characteristicSet_toSymbol_eq_empty_iff`).
 
@@ -406,123 +402,6 @@ namespace ClassicalSymbol
 variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {a : ClassicalSymbol n V W m}
 
-/-- Near a covector `(x₀, ξ₀)`, `ξ₀ ≠ 0`, at which the principal symbol is invertible, the full
-symbol `a(y, t ζ)` is invertible for all large `t`, uniformly for `(y, ζ)` near `(x₀, ξ₀)`, with
-`‖a(y, t ζ)⁻¹‖ ≤ C t^(-m)`: the rescaled symbol `t^(-m) a(y, t ζ)` tends to `a_m(x₀, ξ₀)`. -/
-private theorem exists_isInvertible_coefficient_smul {x₀ ξ₀ : CoordinateSpace n} (hξ₀ : ξ₀ ≠ 0)
-    (h : (a.principal.coefficient (x₀, ξ₀)).IsInvertible) :
-    ∃ U ∈ 𝓝 x₀, ∃ V ∈ 𝓝 ξ₀, ∃ T C : ℝ, 0 < T ∧ ∀ t, T ≤ t → ∀ y ∈ U, ∀ ζ ∈ V,
-      (a.toSymbol.coefficient (y, t • ζ)).IsInvertible ∧
-        ‖(a.toSymbol.coefficient (y, t • ζ)).inverse‖ ≤ C * t ^ (-m) := by
-  set A := a.principal.coefficient (x₀, ξ₀)
-  set M := ‖A.inverse‖ + 1
-  have hM : 0 < M := by positivity
-  -- Eventually `t^(-m) a(y, t ζ)` is within `1 / (2 M)` of `A`, hence invertible with inverse
-  -- bounded by `2 M`.
-  have hev : ∀ᶠ p in (atTop : Filter ℝ) ×ˢ 𝓝 (x₀, ξ₀),
-      M * ‖p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2) - A‖ ≤ 1 / 2 := by
-    filter_upwards [(a.tendsto_rpow_neg_smul_coefficient_smul hξ₀).eventually
-      (closedBall_mem_nhds A (by positivity : 0 < 1 / (2 * M)))] with p hp
-    rw [dist_eq_norm] at hp
-    calc M * _ ≤ M * (1 / (2 * M)) := by gcongr
-      _ = 1 / 2 := by field_simp
-  obtain ⟨T, hT, N, hN, hTN⟩ := eventually_prod_iff.1 hev
-  obtain ⟨T₀, hT₀⟩ := eventually_atTop.1 hT
-  obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.1 hN
-  refine ⟨U, hU, V, hV, max T₀ 1, 2 * M, by positivity, fun t ht y hy ζ hζ ↦ ?_⟩
-  have ht0 : 0 < t := one_pos.trans_le ((le_max_right _ _).trans ht)
-  have htm : 0 < t ^ (-m) := Real.rpow_pos_of_pos ht0 _
-  have hkey := hTN (hT₀ t ((le_max_left _ _).trans ht)) (hUV (mk_mem_prod hy hζ))
-  dsimp only at hkey
-  have hlt := hkey.trans_lt (by norm_num : (1 / 2 : ℝ) < 1)
-  have hinv := h.of_mul_norm_sub_lt (le_add_of_nonneg_right zero_le_one) hlt
-  have hnorm := (h.norm_inverse_le_of_mul_norm_sub_lt (le_add_of_nonneg_right zero_le_one)
-    hlt).trans (div_le_div_of_nonneg_left hM.le (by norm_num : (0 : ℝ) < 1 / 2) (by linarith))
-  rw [ContinuousLinearMap.isInvertible_smul_iff htm.ne'] at hinv
-  rw [ContinuousLinearMap.inverse_smul_of_isScalarTower, norm_smul, norm_inv,
-    Real.norm_of_nonneg htm.le] at hnorm
-  refine ⟨hinv, ?_⟩
-  calc ‖(a.toSymbol.coefficient (y, t • ζ)).inverse‖
-      = t ^ (-m) * ((t ^ (-m))⁻¹ * ‖(a.toSymbol.coefficient (y, t • ζ)).inverse‖) := by
-        field_simp
-    _ ≤ t ^ (-m) * (M / (1 / 2)) := by gcongr
-    _ = 2 * M * t ^ (-m) := by ring
-
-omit [CompleteSpace V] in
-/-- If `r < s ‖η‖ < 3 r` with `r, s > 0` and `‖η‖ ≥ 1`, then
-`s^m = (s ‖η‖)^m ‖η‖^(-m) ≤ (r^m + (3 r)^m) 2^(|m| / 2) ⟨η⟩^(-m)`. -/
-private theorem rpow_le_mul_one_add_norm_sq_rpow {r s : ℝ} {η : CoordinateSpace n} (hs : 0 < s)
-    (hη1 : 1 ≤ ‖η‖) (hsη : r < s * ‖η‖ ∧ s * ‖η‖ < 3 * r) :
-    s ^ m ≤ (r ^ m + (3 * r) ^ m) * (2 ^ (|-m| / 2) * (1 + ‖η‖ ^ 2) ^ (-m / 2)) := by
-  have hη0 : 0 < ‖η‖ := one_pos.trans_le hη1
-  have hr : 0 < r := by
-    by_contra! hr
-    linarith [mul_pos hs hη0, hsη.1, hsη.2]
-  have hpow : (s * ‖η‖) ^ m ≤ r ^ m + (3 * r) ^ m := by
-    rcases le_total 0 m with hm | hm
-    · exact (Real.rpow_le_rpow (by positivity) hsη.2.le hm).trans
-        (le_add_of_nonneg_left (Real.rpow_nonneg hr.le m))
-    · exact (Real.rpow_le_rpow_of_nonpos hr hsη.1.le hm).trans
-        (le_add_of_nonneg_right (Real.rpow_nonneg (by positivity) m))
-  have hw := Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖η‖) (by rwa [abs_norm]) (-m)
-  rw [abs_norm] at hw
-  have hsm : s ^ m = (s * ‖η‖) ^ m * ‖η‖ ^ (-m) := by
-    rw [Real.mul_rpow hs.le hη0.le, Real.rpow_neg hη0.le, mul_assoc,
-      mul_inv_cancel₀ (Real.rpow_pos_of_pos hη0 m).ne', mul_one]
-  rw [hsm]
-  gcongr
-
-/-- **Ellipticity near a noncharacteristic covector.** If the principal symbol `a_m(x₀, ξ₀)` of a
-classical symbol of order `m` is invertible at a nonzero frequency `ξ₀`, then the full symbol is
-elliptic at large frequencies over a neighbourhood `U` of `x₀` and an open cone `Γ` containing
-`ξ₀` (`TauCeti.Symbol.IsEllipticOn`): it is invertible at the points `(x, ξ)` with `x ∈ U`,
-`ξ ∈ Γ` and `‖ξ‖ ≥ R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. -/
-theorem exists_isEllipticOn_of_isInvertible_coefficient_principal {x₀ ξ₀ : CoordinateSpace n}
-    (hξ₀ : ξ₀ ≠ 0) (h : (a.principal.coefficient (x₀, ξ₀)).IsInvertible) :
-    ∃ U ∈ 𝓝 x₀, ∃ Γ : Set (CoordinateSpace n), IsOpen Γ ∧ ξ₀ ∈ Γ ∧
-      (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
-        ∃ R : ℝ, a.toSymbol.IsEllipticOn {q | q.1 ∈ U ∧ q.2 ∈ Γ ∧ R ≤ ‖q.2‖} := by
-  obtain ⟨U, hU, V, hV, T, C, hT, hTC⟩ := exists_isInvertible_coefficient_smul hξ₀ h
-  set r := ‖ξ₀‖ / 2 with hr_def
-  have hr : 0 < r := half_pos (norm_pos_iff.2 hξ₀)
-  -- The frequencies `η` of `Γ` are `t ζ` with `ζ ∈ V ∩ ball ξ₀ r`, so `‖ζ‖ ∈ (r, 3 r)`, and
-  -- `t ≥ T` once `‖η‖ ≥ 3 r T + 1`.
-  obtain ⟨Γ, hΓo, hξΓ, hcone, hΓ⟩ := (isOpen_interior.inter (isOpen_ball (x := ξ₀) (ε := r)))
-    |>.exists_cone_exists_smul_mem ⟨mem_interior_iff_mem_nhds.2 hV, mem_ball_self hr⟩
-  -- `‖a(y, η)⁻¹‖ ≤ C (r^m + (3 r)^m) 2^(|m| / 2) ⟨η⟩^(-m)`.
-  refine ⟨U, hU, Γ, hΓo, hξΓ, hcone, 3 * r * T + 1, Symbol.isEllipticOn_iff.2 fun _ _ ↦
-    ⟨C * (r ^ m + (3 * r) ^ m) * 2 ^ (|-m| / 2), fun ⟨y, η⟩ ⟨hy, hη, hR⟩ _ ↦ ?_⟩⟩
-  dsimp only at hy hη hR ⊢
-  obtain ⟨s, hs, hsV, hsB⟩ := hΓ η hη
-  have hη1 : 1 ≤ ‖η‖ := (le_add_of_nonneg_left (by positivity)).trans hR
-  -- `s ‖η‖ = ‖s η‖ ∈ (r, 3 r)`.
-  have hsη : r < s * ‖η‖ ∧ s * ‖η‖ < 3 * r := by
-    rw [mem_ball, dist_eq_norm] at hsB
-    have h₁ := norm_sub_norm_le ξ₀ (s • η)
-    have h₂ := norm_sub_norm_le (s • η) ξ₀
-    rw [norm_sub_rev] at h₁
-    rw [norm_smul, Real.norm_of_nonneg hs.le] at h₁ h₂
-    constructor <;> linarith
-  -- `η = s⁻¹ • (s • η)` with `s⁻¹ ≥ T`.
-  have ht : T ≤ s⁻¹ := by
-    have h₁ : 3 * r * T < 3 * r * s⁻¹ :=
-      calc 3 * r * T < ‖η‖ := by linarith
-        _ = s⁻¹ * (s * ‖η‖) := by field_simp
-        _ < s⁻¹ * (3 * r) := mul_lt_mul_of_pos_left hsη.2 (inv_pos.2 hs)
-        _ = 3 * r * s⁻¹ := mul_comm _ _
-    exact (lt_of_mul_lt_mul_left h₁ (by positivity)).le
-  have hTCη := hTC s⁻¹ ht y hy (s • η) (interior_subset hsV)
-  rw [inv_smul_smul₀ hs.ne' η] at hTCη
-  obtain ⟨hinv, hle⟩ := hTCη
-  rw [Real.rpow_neg (inv_nonneg.2 hs.le), Real.inv_rpow hs.le, inv_inv] at hle
-  refine ⟨hinv, hle.trans ?_⟩
-  have hC : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hle)
-    (Real.rpow_pos_of_pos hs m)
-  calc C * s ^ m
-      ≤ C * ((r ^ m + (3 * r) ^ m) * (2 ^ (|-m| / 2) * (1 + ‖η‖ ^ 2) ^ (-m / 2))) :=
-        mul_le_mul_of_nonneg_left (rpow_le_mul_one_add_norm_sq_rpow hs hη1 hsη) hC
-    _ = _ := by ring
-
 /-- **The characteristic set of a classical symbol** consists of the points `(x, ξ)`, `ξ ≠ 0`, at
 which its principal symbol `a_m(x, ξ)` is not invertible. -/
 @[simp]
@@ -530,16 +409,10 @@ theorem mem_characteristicSet_toSymbol_iff {p : CoordinateSpace n × CoordinateS
     p ∈ a.toSymbol.characteristicSet ↔
       p.2 ≠ 0 ∧ ¬ (a.principal.coefficient p).IsInvertible := by
   obtain ⟨x, ξ⟩ := p
-  refine and_congr_right fun hξ ↦ not_congr ⟨fun ⟨U, hU, Γ, _, hξΓ, hcone, R, hR⟩ ↦ ?_,
+  exact and_congr_right fun hξ ↦ not_congr ⟨fun ⟨_, hU, _, _, hξΓ, hcone, _, hR⟩ ↦
+    isInvertible_coefficient_principal_of_isEllipticOn hξ (mem_of_mem_nhds hU)
+      (fun t ht ↦ hcone t ht ξ hξΓ) hR,
     exists_isEllipticOn_of_isInvertible_coefficient_principal hξ⟩
-  -- Along the ray of `ξ`, the points `(x, t ξ)` with `‖t ξ‖ ≥ R` lie in the elliptic region.
-  obtain ⟨C, hC⟩ := Symbol.isEllipticOn_iff.1 hR {x} isCompact_singleton
-  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-  refine isInvertible_coefficient_principal_of_eventually hξ (C := C) ?_
-  filter_upwards [eventually_gt_atTop (0 : ℝ), eventually_ge_atTop (R / ‖ξ‖)] with t ht htR
-  refine hC (x, t • ξ) ⟨mem_of_mem_nhds hU, hcone t ht ξ hξΓ, ?_⟩ rfl
-  rw [norm_smul, Real.norm_of_nonneg ht.le]
-  exact (div_le_iff₀ hn).1 htR
 
 /-- The characteristic set of a classical symbol is the set of points `(x, ξ)`, `ξ ≠ 0`, at which
 its principal symbol is not invertible. -/

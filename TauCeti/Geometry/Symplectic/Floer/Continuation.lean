@@ -146,15 +146,25 @@ theorem linearHomotopy_of_eq_one {β : ℝ → ℝ} {z : ℝ × ℝ} (h : β z.1
     linearHomotopy β H₀ H₁ z x = H₁ z.2 x := by
   simp [linearHomotopy_def, h]
 
+/-- The linear homotopy of two time-dependent Hamiltonians which are `Cⁿ` at `(t, x)`, with a
+profile which is `Cⁿ` at `s`, is `Cⁿ` at `((s, t), x)`. -/
+theorem contDiffAt_uncurry_linearHomotopy [NormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ∞}
+    {β : ℝ → ℝ} {p : (ℝ × ℝ) × V} (hβ : ContDiffAt ℝ n β p.1.1)
+    (hH₀ : ContDiffAt ℝ n (uncurry H₀) (p.1.2, p.2))
+    (hH₁ : ContDiffAt ℝ n (uncurry H₁) (p.1.2, p.2)) :
+    ContDiffAt ℝ n (uncurry (linearHomotopy β H₀ H₁)) p := by
+  have hp : ContDiffAt ℝ n (fun p : (ℝ × ℝ) × V ↦ (p.1.2, p.2)) p :=
+    ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffAt
+  exact (hH₀.comp p hp).add ((hβ.comp p (contDiff_fst.comp contDiff_fst).contDiffAt).mul
+    ((hH₁.comp p hp).sub (hH₀.comp p hp)))
+
 /-- The linear homotopy of two `Cⁿ` time-dependent Hamiltonians with a `Cⁿ` profile is `Cⁿ`. -/
 theorem contDiff_uncurry_linearHomotopy [NormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ∞}
     {β : ℝ → ℝ} (hβ : ContDiff ℝ n β) (hH₀ : ContDiff ℝ n (uncurry H₀))
     (hH₁ : ContDiff ℝ n (uncurry H₁)) :
-    ContDiff ℝ n (uncurry (linearHomotopy β H₀ H₁)) := by
-  have hp : ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ (p.1.2, p.2) :=
-    (contDiff_snd.comp contDiff_fst).prodMk contDiff_snd
-  exact (hH₀.comp hp).add ((hβ.comp (contDiff_fst.comp contDiff_fst)).mul
-    ((hH₁.comp hp).sub (hH₀.comp hp)))
+    ContDiff ℝ n (uncurry (linearHomotopy β H₀ H₁)) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦
+    contDiffAt_uncurry_linearHomotopy hβ.contDiffAt hH₀.contDiffAt hH₁.contDiffAt
 
 /-- Where the linear homotopy is differentiable, its `s`-derivative, its derivative along the
 direction `1` of the domain, is `β'(s) (H₁ - H₀)(t)`. -/
