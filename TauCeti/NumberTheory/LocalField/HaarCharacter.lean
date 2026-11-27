@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.MeasureTheory.Group.LocalFieldScaling
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.Valuation.Integers
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # The Haar character of a nonarchimedean local field
