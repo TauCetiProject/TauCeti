@@ -167,6 +167,16 @@ private theorem mpullback_prodMk_moserFamily_coe (σ₀ σ₁ : SmoothTwoForm I 
   (SmoothForm.coe_mpullback _ _ _).symm.trans
     (congrArg Subtype.val (SmoothForm.mpullback_prodMk_lineMapFamily σ₀ σ₁ _ t))
 
+/-- The time-`0` slice of the Moser family is `σ₀`. -/
+private theorem mpullback_prodMk_zero_moserFamily_coe (σ₀ σ₁ : SmoothTwoForm I M) :
+    mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk 0) (moserFamily σ₀ σ₁).val = σ₀.val := by
+  rw [mpullback_prodMk_moserFamily_coe, Real.smoothTransition.zero, zero_smul, add_zero]
+
+/-- The time-`1` slice of the Moser family is `σ₁`. -/
+private theorem mpullback_prodMk_one_moserFamily_coe (σ₀ σ₁ : SmoothTwoForm I M) :
+    mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk 1) (moserFamily σ₀ σ₁).val = σ₁.val := by
+  rw [mpullback_prodMk_moserFamily_coe, Real.smoothTransition.one, one_smul, add_sub_cancel]
+
 /-- Where `σ₁` agrees with `σ₀`, every point of the path `σ₀ + s (σ₁ - σ₀)` has the bilinear form of
 `σ₀`. -/
 theorem bilinFormAt_add_smul_sub_of_eq {σ₀ σ₁ : SmoothTwoForm I M} {x : M}
@@ -177,14 +187,6 @@ theorem bilinFormAt_add_smul_sub_of_eq {σ₀ σ₁ : SmoothTwoForm I M} {x : M}
   simp only [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
     SmoothForm.add_toRoughForm, Pi.add_apply, SetLike.val_smul, Pi.smul_apply, h, smul_zero,
     add_zero]
-
-/-- If `σ₀` is closed and `σ₁ - σ₀ = dβ`, then `σ₁ = σ₀ + dβ` is closed. -/
-private theorem isClosed_of_mextDeriv_eq_sub {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ₀.IsClosed)
-    {β : SmoothForm I M ℝ 1} (hβ : mextDeriv β.val = (σ₁ - σ₀).val) : σ₁.IsClosed := by
-  have h : (σ₁ - σ₀).IsClosed := by
-    rw [SmoothForm.isClosed_def, ← hβ]
-    exact SmoothForm.mextDeriv_mextDeriv β
-  simpa using h₀.add h
 
 /-- The Moser vector field of the path `σ₀ + c(t) (σ₁ - σ₀)` and the primitive `β`, cut off by
 `ρ`: `X_t = ρ (σ_t♭)⁻¹ (-c'(t) β)`. -/
@@ -579,9 +581,7 @@ theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff {σ₀ σ₁ : 
     (hX.of_le (by simp)) hc (fun _ _ ↦ ((moserFamily σ₀ σ₁).contMDiff.of_le (by simp)).contMDiffAt)
     fun t ht ↦ moserRate_eq_zero h₀ h₁ hβ hρ hinv t
       (huW (mk_mem_prod (hu ((uIcc_of_le (zero_le_one' ℝ)).subset ht)) hx))
-  rw [mpullback_prodMk_moserFamily_coe, mpullback_prodMk_moserFamily_coe,
-    Real.smoothTransition.one, Real.smoothTransition.zero, one_smul, zero_smul,
-    add_zero, add_sub_cancel] at h
+  rw [mpullback_prodMk_one_moserFamily_coe, mpullback_prodMk_zero_moserFamily_coe] at h
   rw [SmoothForm.coe_mpullback, hΦ]
   exact h
 
@@ -602,7 +602,7 @@ theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub
       (∀ᶠ x in 𝓝ˢ K, (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x) ∧
       ∀ x ∈ K, HasFDerivAt (RoughForm.inChartAt β.val x) (0 : E →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ)
         (extChartAt I x x) → mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x) := by
-  have h₁ := isClosed_of_mextDeriv_eq_sub h₀ hβ
+  have h₁ := h₀.of_mextDeriv_eq_sub hβ
   -- Cut the Moser field off outside a neighbourhood of `K` on which the path stays nondegenerate.
   obtain ⟨N, hN, hKN, hndN⟩ := exists_isOpen_forall_nondegenerate hK hnd
   obtain ⟨ρ, hρ, hρ1, hρc, hρN, -⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I hN hKN
@@ -639,7 +639,7 @@ theorem exists_partialDiffeomorph_fix_mpullback_eq_of_mextDeriv_eq_sub
           mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x)) ∧
       ∀ g : M ≃ₘ⟮I, I⟯ M, mpullback I I g σ₀.val = σ₀.val → mpullback I I g σ₁.val = σ₁.val →
         mpullback I I g β.val = β.val → ∀ x ∈ Φ.source, g x ∈ Φ.source ∧ Φ (g x) = g (Φ x) := by
-  have h₁ := isClosed_of_mextDeriv_eq_sub h₀ hβ
+  have h₁ := h₀.of_mextDeriv_eq_sub hβ
   -- The Moser field with the constant cut-off `1`, smooth since every slice is nondegenerate.
   set ρ : M → ℝ := fun _ ↦ 1
   have hρ : ContMDiff I 𝓘(ℝ) ∞ ρ := contMDiff_const
@@ -673,9 +673,7 @@ theorem exists_partialDiffeomorph_fix_mpullback_eq_of_mextDeriv_eq_sub
       (hX.of_le (by simp)) (hsrc.1 hx)
       (fun _ _ ↦ ((moserFamily σ₀ σ₁).contMDiff.of_le (by simp)).contMDiffAt)
       fun t _ ↦ moserRate_eq_zero h₀ h₁ (fun y _ ↦ congrFun hβ y) hρ hinv t (.of_forall fun _ ↦ rfl)
-    rw [mpullback_prodMk_moserFamily_coe, mpullback_prodMk_moserFamily_coe,
-      Real.smoothTransition.one, Real.smoothTransition.zero, one_smul, zero_smul,
-      add_zero, add_sub_cancel] at h
+    rw [mpullback_prodMk_one_moserFamily_coe, mpullback_prodMk_zero_moserFamily_coe] at h
     rw [hΦ]
     exact h
   · rw [hΦ]
@@ -700,8 +698,8 @@ of `M`, with source and target in `W`, such that
   restriction to `W` preserves `β`, the source of `Φ` is invariant under `g` and `Φ ∘ g = g ∘ Φ`
   there.
 
-So the forms `σ₀` and `σ₁` have the same germ along the zero set `K` of `β`, by a germ fixing `K`
-pointwise, and the germ commutes with every symmetry of the data. In particular, if a group acts on
+So near the zero set `K` of `β`, `σ₁` pulls back to `σ₀` by a germ of diffeomorphisms fixing `K`
+pointwise, which commutes with every symmetry of the data. In particular, if a group acts on
 `M` by diffeomorphisms preserving `σ₀`, `σ₁` and `W`, and on `W` by maps preserving `β`, the source
 of `Φ` is an invariant open neighbourhood of `K` and `Φ` commutes with the action. Neither `W` nor
 `K` need be compact: `K` may be a noncompact orbit of a proper action. -/
@@ -736,8 +734,7 @@ theorem exists_partialDiffeomorph_fix_mpullback_eq_of_opens (W : Opens M)
         exact (nondegenerate_bilinFormAt_mpullback_subtype_val_iff x).2 (hnd x x.property s hs))
   let Φ := Ψ.liftOpens hW hW
   have hsrc {x : M} : x ∈ Φ.source ↔ ∃ y ∈ Ψ.source, (y : M) = x := by
-    rw [PartialDiffeomorph.liftOpens_source]
-    rfl
+    rw [PartialDiffeomorph.liftOpens_source, Set.mem_image]
   -- A diffeomorphism of `M` preserving the data restricts to one of `W` preserving the
   -- restricted forms.
   have hresg (g : M ≃ₘ⟮I, I⟯ M) (hgW : ∀ x, x ∈ W ↔ g x ∈ W) (σ : SmoothTwoForm I M)
