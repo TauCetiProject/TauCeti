@@ -27,6 +27,8 @@ quadratic forms with the subgroup preserving both summands.
 
 ## Main results
 
+* `LinearEquiv.prodAssoc_symm_apply`: the inverse of the reassociation of a triple product
+  regroups `(x, y, z)` as `((x, y), z)`.
 * `LinearEquiv.prodCongr_inj`: products of linear equivalences are equal exactly when their
   factors are.
 * `LinearEquiv.exists_prodCongr_eq_iff`: an automorphism of `M₁ × M₂` is `e₁.prodCongr e₂` for
@@ -301,6 +303,13 @@ theorem exists_skewProd_eq_iff {M₂ : Type*} [AddCommGroup M₂] [Module R M₂
   refine ⟨ofBijective _ hb₁, ofBijective _ hb₂,
     LinearMap.snd R M₁ M₂ ∘ₗ g.toLinearMap ∘ₗ LinearMap.inl R M₁ M₂, ?_⟩
   ext x <;> simp [hg x, skewProd_apply]
+
+/-- The inverse of the reassociation `(M₁ × M₂) × M₃ ≃ M₁ × (M₂ × M₃)` regroups `(x, y, z)` as
+`((x, y), z)`. -/
+@[simp]
+theorem prodAssoc_symm_apply {M₃ : Type*} [AddCommMonoid M₃] [Module R M₃] (x : M₁ × M₂ × M₃) :
+    (prodAssoc R M₁ M₂ M₃).symm x = ((x.1, x.2.1), x.2.2) :=
+  rfl
 
 end Semiring
 

@@ -80,8 +80,10 @@ continuous and equal to constants `δ±` near `±∞`. Multiplication by `e^{κ}
 unweighted spaces, and turns `D_u` into `D_u - c(s)`
 (`TauCeti.SymplecticForm.floerLinearization_exp_neg_smul`), realized on `W^{1,2}` as
 `TauCeti.SymplecticForm.floerWeightedSobolevOperator`, which acts pointwise by the coefficient
-field of `D_u - c(s)` (`TauCeti.SymplecticForm.coeFn_floerWeightedSobolevOperator`); these
-coefficients are bounded whenever those of `D_u` are and the slope is bounded
+field of `D_u - c(s)` (`TauCeti.SymplecticForm.coeFn_floerWeightedSobolevOperator`), that of
+`∂s + J ∂t + (A - c(s))`
+(`TauCeti.SymplecticForm.floerJetCoeff_sub_smul_fst_eq_firstOrderJetCoeff`); these coefficients
+are bounded whenever those of `D_u` are and the slope is bounded
 (`TauCeti.SymplecticForm.memLp_floerJetCoeff_sub_smul_fst`), and the operator depends
 Lipschitz-continuously on the slope in operator norm
 (`TauCeti.SymplecticForm.norm_floerWeightedSobolevOperator_sub_le`). The weights need not be
@@ -491,6 +493,18 @@ theorem floerWeightedSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ
       (jetOperator 2 stripMeasure fun z ↦
         ω.floerJetCoeff J Ks Kt u z - c z.1 • fst ℝ V (V × V)).comp (H1 V).subtypeL :=
   (rfl)
+
+/-- The coefficient field of `D_u - r` on jets is that of `∂s + J(z, u z) ∂t + (A(z) - r)`, for the
+zeroth-order part `A = TauCeti.SymplecticForm.floerLinearizationCoeff`; for `r = 0` this is
+`TauCeti.SymplecticForm.floerJetCoeff_def`. -/
+theorem floerJetCoeff_sub_smul_fst_eq_firstOrderJetCoeff (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (r : ℝ) (z : ℝ × ℝ) :
+    ω.floerJetCoeff J Ks Kt u z - r • fst ℝ V (V × V) = firstOrderJetCoeff (J z (u z))
+      (ω.floerLinearizationCoeff J Ks Kt u z - r • ContinuousLinearMap.id ℝ V) := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [sub_apply, smul_apply, floerJetCoeff_apply, coe_fst', firstOrderJetCoeff_apply,
+    coe_id', id_eq]
+  abel
 
 /-- Without weight, the weighted operator is the Sobolev realization of `D_u`. -/
 @[simp]

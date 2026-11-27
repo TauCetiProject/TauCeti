@@ -61,6 +61,11 @@ the universe `v` of the morphisms of `C`; this holds for pseudofunctors with val
   `CategoryTheory.Pseudofunctor.StrongTrans.IsRelativeGerbe`: locally essentially surjective
   transformations and relative gerbes, with the two local lifting statements `exists_covering_lift`
   and `exists_covering_liftIso`.
+* `CategoryTheory.Pseudofunctor.StrongTrans.localImageSieve`: the sieve of arrows along which an
+  object of `G` lifts along `η` up to isomorphism; `η` is locally essentially surjective exactly
+  when these sieves are covering (`isLocallyEssSurj_iff_localImageSieve_mem`).
+* `CategoryTheory.Pseudofunctor.StrongTrans.isLocallyEssSurj_of_isGerbe`: every transformation
+  between gerbes is locally essentially surjective.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_id`: transformations whose components
   are equivalences, and identities, are relative gerbes.
@@ -126,6 +131,65 @@ class IsRelativeGerbe (η : StrongTrans F G) (J : GrothendieckTopology C) : Prop
 
 variable {J : GrothendieckTopology C} (η : StrongTrans F G)
 
+/-- An isomorphism `e : G(g)(η_V x) ≅ G(g)(G(f) z)` between the restrictions along `g : W ⟶ V`
+of `η_V x` and `G(f) z` gives an isomorphism `η_W (F(g) x) ≅ G(g ≫ f) z`, through `c_g(x)` and
+the composition isomorphism of `G`. -/
+noncomputable def restrictImageIso {U V W : C} {z : G.obj (.mk (op U))} {f : V ⟶ U}
+    {x : F.obj (.mk (op V))} (g : W ⟶ V)
+    (e : (G.map g.op.toLoc).toFunctor.obj ((η.app (.mk (op V))).toFunctor.obj x) ≅
+      (G.map g.op.toLoc).toFunctor.obj ((G.map f.op.toLoc).toFunctor.obj z)) :
+    (η.app (.mk (op W))).toFunctor.obj ((F.map g.op.toLoc).toFunctor.obj x) ≅
+      (G.map (g ≫ f).op.toLoc).toFunctor.obj z :=
+  η.naturalityObjIso g.op.toLoc x ≪≫ e ≪≫
+    ((Cat.Hom.toNatIso (G.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc)).app z).symm
+
+/-- The forward arrow of `restrictImageIso`, as the composite of its three factors. -/
+theorem restrictImageIso_hom {U V W : C} {z : G.obj (.mk (op U))} {f : V ⟶ U}
+    {x : F.obj (.mk (op V))} (g : W ⟶ V)
+    (e : (G.map g.op.toLoc).toFunctor.obj ((η.app (.mk (op V))).toFunctor.obj x) ≅
+      (G.map g.op.toLoc).toFunctor.obj ((G.map f.op.toLoc).toFunctor.obj z)) :
+    (η.restrictImageIso g e).hom =
+      (η.naturalityObjIso g.op.toLoc x).hom ≫ e.hom ≫
+        (G.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc).inv.toNatTrans.app z := by
+  simp [restrictImageIso]
+
+/-- The **local-image sieve** of `z` over `U`: the arrows `f : V ⟶ U` such that `G(f) z` is
+isomorphic to the image `η_V x` of some object `x` over `V`. -/
+def localImageSieve {U : C} (z : G.obj (.mk (op U))) : Sieve U where
+  arrows V f := ∃ x : F.obj (.mk (op V)),
+    Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj z)
+  downward_closed := fun ⟨_, ⟨e⟩⟩ g ↦
+    ⟨_, ⟨η.restrictImageIso g ((G.map g.op.toLoc).toFunctor.mapIso e)⟩⟩
+
+theorem mem_localImageSieve_iff {U V : C} (z : G.obj (.mk (op U))) (f : V ⟶ U) :
+    η.localImageSieve z f ↔ ∃ x : F.obj (.mk (op V)),
+      Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj z) :=
+  Iff.rfl
+
+/-- The identity of `U` lies in the local-image sieve of `z` exactly when `z` is isomorphic to
+`η_U y` for some `y` over `U`. -/
+theorem id_mem_localImageSieve_iff {U : C} (z : G.obj (.mk (op U))) :
+    η.localImageSieve z (𝟙 U) ↔
+      ∃ y : F.obj (.mk (op U)), Nonempty ((η.app (.mk (op U))).toFunctor.obj y ≅ z) := by
+  let d := (Cat.Hom.toNatIso (G.mapId' (𝟙 U).op.toLoc (by simp))).app z
+  exact ⟨fun ⟨y, ⟨e⟩⟩ ↦ ⟨y, ⟨e ≪≫ d⟩⟩, fun ⟨y, ⟨e⟩⟩ ↦ ⟨y, ⟨e ≪≫ d.symm⟩⟩⟩
+
+/-- A strong transformation is locally essentially surjective exactly when the local-image sieve
+of every object of `G` is covering. -/
+theorem isLocallyEssSurj_iff_localImageSieve_mem :
+    η.IsLocallyEssSurj J ↔ ∀ {U : C} (z : G.obj (.mk (op U))), η.localImageSieve z ∈ J U :=
+  ⟨fun _ _ z ↦
+    have ⟨_, hR, h⟩ := IsLocallyEssSurj.exists_covering_lift (η := η) (J := J) z
+    J.superset_covering (fun _ f hf ↦ h f hf) hR,
+    fun h ↦ ⟨fun z ↦ ⟨_, h z, fun _ _ hf ↦ hf⟩⟩⟩
+
+variable (J) in
+/-- **The local-image sieve is covering** when `η` is locally essentially surjective, in
+particular when `F` and `G` are gerbes (`StrongTrans.isLocallyEssSurj_of_isGerbe`). -/
+theorem localImageSieve_mem [η.IsLocallyEssSurj J] {U : C} (z : G.obj (.mk (op U))) :
+    η.localImageSieve z ∈ J U :=
+  (η.isLocallyEssSurj_iff_localImageSieve_mem.1 inferInstance) z
+
 /-- A strong transformation whose components are essentially surjective is locally essentially
 surjective, for every topology. -/
 theorem isLocallyEssSurj_of_essSurj (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.EssSurj) :
@@ -134,6 +198,18 @@ theorem isLocallyEssSurj_of_essSurj (hη : ∀ U : C, (η.app (.mk (op U))).toFu
     have := hη V
     ⟨(η.app (.mk (op V))).toFunctor.objPreimage ((G.map f.op.toLoc).toFunctor.obj y),
       ⟨(η.app (.mk (op V))).toFunctor.objObjPreimageIso _⟩⟩⟩
+
+/-- A strong transformation between gerbes is locally essentially surjective: `F` has objects
+locally, and their images become isomorphic to the restrictions of any object of `G` locally. -/
+instance isLocallyEssSurj_of_isGerbe [F.IsGerbe J] [G.IsGerbe J] : η.IsLocallyEssSurj J where
+  exists_covering_lift {U} z := by
+    obtain ⟨R, hR, hne⟩ := IsGerbe.exists_covering_nonempty (F := F) (J := J) U
+    choose S hS hiso using fun ⦃V⦄ ⦃f : V ⟶ U⦄ (hf : R f) ↦ IsGerbe.exists_covering_iso (J := J)
+      ((η.app (.mk (op V))).toFunctor.obj (hne f hf).some) ((G.map f.op.toLoc).toFunctor.obj z)
+    refine ⟨Sieve.bind R S, J.bind_covering hR hS, ?_⟩
+    rintro W _ ⟨V, g, f, hf, hg, rfl⟩
+    obtain ⟨e⟩ := hiso hf g hg
+    exact ⟨_, ⟨η.restrictImageIso g e⟩⟩
 
 /-- A strong transformation whose components are equivalences of categories is a relative gerbe,
 for every topology. -/

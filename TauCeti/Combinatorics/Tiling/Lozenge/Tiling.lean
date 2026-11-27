@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Region
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Basic
 public import Mathlib.Combinatorics.Tiling.Tile
 public import Mathlib.Data.Set.Card
 
@@ -86,6 +86,12 @@ theorem isTiling_iff_subset_interiorEdges :
 theorem isTiling_univ_iff :
     IsTiling Set.univ M ↔ ∀ f : TriFace, ∃! e, e ∈ M ∧ e ∈ f.edges := by
   simp [IsTiling]
+
+/-- The empty tiling is the only tiling of the empty region. -/
+@[simp] theorem isTiling_empty_iff : IsTiling ∅ M ↔ M = ∅ := by
+  simp only [isTiling_def, Set.mem_empty_iff_false, false_imp_iff, implies_true, and_true,
+    Set.eq_empty_iff_forall_notMem]
+  exact ⟨fun h e he => h e he _ e.mem_whiteFace_edges, fun h e he => (h e he).elim⟩
 
 namespace IsTiling
 
