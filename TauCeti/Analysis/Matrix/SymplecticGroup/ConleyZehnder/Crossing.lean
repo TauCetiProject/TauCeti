@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Matrix.HermitianSignature.Matrix
 public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Normalization
 import Mathlib.Topology.Subpath
 import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Homotopy
-import TauCeti.LinearAlgebra.Eigenspace.Matrix
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
@@ -187,7 +186,8 @@ private theorem exists_path_shear_and_conleyZehnderIndex_eq {A B : GLSymplectic 
       rw [Ring.inverse_eq_inv']
       exact continuousAt_inv₀ (hN p.1 p.2).ne_zero)).comp hNc.continuousAt
   let G : I × I → symplecticGroup n ℝ := fun p ↦ ⟨symplecticShear ((p.1 : ℝ) * b) (m p.2),
-    symplecticShear_mem (mem_iff_mem_symplecticGroup.1 (γ p.2).property) (hN p.1 p.2)⟩
+    symplecticShear_mem_symplecticGroup (mem_iff_mem_symplecticGroup.1 (γ p.2).property)
+      (hN p.1 p.2)⟩
   have hS : Continuous fun p : I × I ↦ symplecticShear ((p.1 : ℝ) * b) (m p.2) := by
     simp only [symplecticShear_def]
     exact continuous_const.add (((hm.comp continuous_snd).sub continuous_const).matrix_mul hinv)

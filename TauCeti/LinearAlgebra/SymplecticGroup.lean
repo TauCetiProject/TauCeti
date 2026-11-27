@@ -91,10 +91,10 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   of `Ψᵀ * J - J * Ψ` is twice that of `-(J * Ψ)`
   (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
 * `Matrix.symplecticShear`: the shear `1 + (Ψ - 1) * N⁻¹` of `Ψ`, `N = 1 - b • (J * (Ψ - 1))`.
-  Where `N` is invertible it is symplectic with `Ψ` (`Matrix.symplecticShear_mem`), the eigenvalue
-  `1` has the same multiplicity for both (`Matrix.finrank_eigenspace_symplecticShear`), and
-  congruence by `N` takes its matrix `Φᵀ * J - J * Φ` to
-  `Ψᵀ * J - J * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1))`
+  Where `N` is invertible it is symplectic with `Ψ` (`Matrix.symplecticShear_mem_symplecticGroup`),
+  the eigenvalue `1` has the same multiplicity for both
+  (`Matrix.finrank_eigenspace_symplecticShear`), and congruence by `N` takes its matrix
+  `Φᵀ * J - J * Φ` to `Ψᵀ * J - J * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1))`
   (`Matrix.transpose_mul_transpose_mul_J_sub_J_mul_symplecticShear_mul`).
 * `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: if `S` is symmetric and
   `G'ᵀ * J * G + Gᵀ * J * G' = 0`, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric.
@@ -429,8 +429,8 @@ theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (l ⊕ l) (l ⊕ l) R}
 
 /-- The **symplectic shear** `1 + (Ψ - 1) * (1 - b • (J * (Ψ - 1)))⁻¹` of a matrix `Ψ` by a
 scalar `b`. Where `N = 1 - b • (J * (Ψ - 1))` is invertible, it is symplectic with `Ψ`
-(`Matrix.symplecticShear_mem`), its fixed vectors are the images under `N` of those of `Ψ`
-(`Matrix.finrank_eigenspace_symplecticShear`), `(symplecticShear b Ψ + 1) * N` is
+(`Matrix.symplecticShear_mem_symplecticGroup`), its fixed vectors are the images under `N` of
+those of `Ψ` (`Matrix.finrank_eigenspace_symplecticShear`), `(symplecticShear b Ψ + 1) * N` is
 `Ψ + 1 - (2 * b) • (J * (Ψ - 1))` (`Matrix.symplecticShear_add_one_mul`), and congruence by `N`
 takes its matrix `Φᵀ * J - J * Φ` to `Ψᵀ * J - J * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1))`
 (`Matrix.transpose_mul_transpose_mul_J_sub_J_mul_symplecticShear_mul`). -/
@@ -490,7 +490,7 @@ private theorem symplecticShear_mul_eq_sub_one_add (h : IsUnit (1 - b • (J l R
 
 /-- **The shear of a symplectic matrix is symplectic.** With `N = 1 - b • (J * (Ψ - 1))`, the
 congruence by `N` of `Φᵀ * J * Φ`, `Φ = symplecticShear b Ψ`, is `Ψᵀ * J * Ψ - J + Nᵀ * J * N`. -/
-theorem symplecticShear_mem (hΨ : Ψ ∈ symplecticGroup l R)
+theorem symplecticShear_mem_symplecticGroup (hΨ : Ψ ∈ symplecticGroup l R)
     (h : IsUnit (1 - b • (J l R * (Ψ - 1))).det) : symplecticShear b Ψ ∈ symplecticGroup l R := by
   obtain ⟨N, hN⟩ : ∃ N, N = 1 - b • (J l R * (Ψ - 1)) := ⟨_, rfl⟩
   have hX : symplecticShear b Ψ * N = Ψ - 1 + N := by
