@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.LocallyConstant.Basic
-public import TauCeti.RingTheory.MvPolynomial.Quotient
+public import TauCeti.RingTheory.MvPolynomial.Quotient.CoefficientReduction
 public import TauCeti.RingTheory.AdicCompletion.UniformCompletion
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import TauCeti.RingTheory.Huber.Adic

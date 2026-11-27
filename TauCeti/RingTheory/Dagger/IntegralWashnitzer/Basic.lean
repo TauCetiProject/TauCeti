@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.PiTopology
-public import TauCeti.RingTheory.MvPolynomial.Quotient
+public import TauCeti.RingTheory.MvPolynomial.Quotient.CoefficientReduction
 public import TauCeti.Analysis.Normed.Ring.UnitBall
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.RingTheory.Dagger.GaussNorm
