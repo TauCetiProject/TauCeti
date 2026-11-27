@@ -74,6 +74,10 @@ covectors read in two charts.
 * `TauCeti.BundleTest.isMicrolocallyAt_smul_iff`, `TauCeti.BundleTest.IsMicrolocallyAt.add`,
   `TauCeti.BundleTest.IsMicrolocallyAt.smul`: it depends only on the ray through the covector and
   is preserved by sums and real multiples.
+* `TauCeti.BundleTest.isMicrolocallyAt_neg_iff`,
+  `TauCeti.BundleTest.mk_neg_mem_microlocalSingularSet_iff`: if complex conjugation reflects `P`
+  in the frequency variable, it does not distinguish `ξ` from `-ξ`, since the components of a real
+  functional are fixed by conjugation (`Bundle.Trivialization.mapCLM_conj_chartComponent`).
 * `TauCeti.BundleTest.isOpen_setOf_isMicrolocallyAt`: it is an open condition on the cotangent
   bundle.
 * `TauCeti.BundleTest.IsMicrolocallyAt.smulLeftDualCLM`,
@@ -306,6 +310,25 @@ theorem isMicrolocallyAt_smul_iff (hP : IsInvariantMicrolocalRegularity P) {r : 
   refine ⟨fun h ↦ ?_, key hr⟩
   simpa [smul_smul, inv_mul_cancel₀ hr.ne'] using key (inv_pos.2 hr) h
 
+/-- **Symmetry under `ξ ↦ -ξ`.** If complex conjugation reflects the notion `P` in the frequency
+variable, as it does for microlocal smoothness and microlocal `H^s` regularity, then a real
+functional on bundle tests satisfies `P` at `-ξ` exactly when it satisfies `P` at `ξ`: its
+components are real distributions, fixed by conjugation. -/
+theorem isMicrolocallyAt_neg_iff
+    (hconj : ∀ (Ω : Opens E) (S : 𝓓'(Ω, ℂ)) (y η : E),
+      P Ω (mapCLM conjCLE.toContinuousLinearMap S) y η ↔ P Ω S y (-η)) :
+    IsMicrolocallyAt P T x (-ξ) ↔ IsMicrolocallyAt P T x ξ := by
+  have key {ζ : TangentSpace I x →L[ℝ] ℝ} :
+      IsMicrolocallyAt P T x ζ → IsMicrolocallyAt P T x (-ζ) := by
+    rintro ⟨t, ht, c, hc, hcs, hct, hx, h⟩
+    refine ⟨t, ht, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
+    have hneg : (toDual ℝ E).symm ((-ζ) ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) =
+        -(toDual ℝ E).symm (ζ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) :=
+      (congrArg _ (ContinuousLinearMap.neg_comp _ _)).trans (map_neg _ _)
+    rw [hneg, ← hconj, mapCLM_conj_chartComponent]
+    exact h v
+  exact ⟨fun h ↦ by simpa using key h, key⟩
+
 /-- For an invariant notion of microlocal regularity `P`, the sum of two functionals satisfying
 `P` at a covector satisfies `P` there. -/
 theorem IsMicrolocallyAt.add (hP : IsInvariantMicrolocalRegularity P)
@@ -455,6 +478,15 @@ theorem mk_smul_mem_microlocalSingularSet_iff (hP : IsInvariantMicrolocalRegular
     TotalSpace.mk x (r • ξ) ∈ microlocalSingularSet I P T ↔
       TotalSpace.mk x ξ ∈ microlocalSingularSet I P T := by
   simp [isMicrolocallyAt_smul_iff hP hr, hr.ne']
+
+/-- If complex conjugation reflects `P` in the frequency variable, the singular set of a real
+functional is symmetric: it contains `-ξ` exactly when it contains `ξ`. -/
+theorem mk_neg_mem_microlocalSingularSet_iff
+    (hconj : ∀ (Ω : Opens E) (S : 𝓓'(Ω, ℂ)) (y η : E),
+      P Ω (mapCLM conjCLE.toContinuousLinearMap S) y η ↔ P Ω S y (-η)) :
+    TotalSpace.mk x (-ξ) ∈ microlocalSingularSet I P T ↔
+      TotalSpace.mk x ξ ∈ microlocalSingularSet I P T := by
+  simp [isMicrolocallyAt_neg_iff hconj]
 
 /-- For an invariant notion of microlocal regularity, **the singular set is closed** in the
 complement of the zero section of the cotangent bundle. -/

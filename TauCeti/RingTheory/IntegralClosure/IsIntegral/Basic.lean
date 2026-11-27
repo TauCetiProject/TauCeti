@@ -36,6 +36,8 @@ other.
 * `IsIntegral.exists_isIntegral_algebraMap_pow_mul`: if each element of `A` times a power of `r`
   is integral over `P`, every element of an `A`-algebra integral over `A` becomes integral over
   `P` after multiplication by a power of `r`.
+* `RingHom.IsIntegralElem.isIntegral_of_range_le`: an element integral over an algebra map
+  `ψ : R →ₐ[k] K` is integral over every subalgebra containing the range of `ψ`.
 * `AlgHom.finite_of_adjoin_eq_top`: an `R`-algebra morphism `f : B →ₐ[R] A` is module-finite when
   `A` is generated as an `R`-algebra by a finite set of elements integral over `B` via `f`.
 * `IsIntegral.natCast_pow_mul_pow`: if `b x` is integral over `R` for a natural number
@@ -200,6 +202,15 @@ theorem IsIntegral.exists_isIntegral_algebraMap_pow_mul {c : B} (hc : IsIntegral
   exact ⟨N, isIntegral_trans _ this⟩
 
 end
+
+/-- An element integral over an algebra map `ψ : R →ₐ[k] K` is integral over every subalgebra of
+`K` containing the range of `ψ`. -/
+theorem RingHom.IsIntegralElem.isIntegral_of_range_le {k R K : Type*} [CommRing k]
+    [CommRing R] [CommRing K] [Algebra k R] [Algebra k K] {ψ : R →ₐ[k] K} {z : K}
+    (hz : ψ.toRingHom.IsIntegralElem z) {S : Subalgebra k K} (hS : ψ.range ≤ S) :
+    _root_.IsIntegral S z :=
+  RingHom.IsIntegralElem.of_comp (f := (ψ.codRestrict S fun p ↦ hS (ψ.mem_range_self p)).toRingHom)
+    hz
 
 /-- If a finite set `s ⊆ A` generates `A` as an `R`-algebra and every element of `s` is integral
 over `B` along `f : B →ₐ[R] A`, then `f` is module-finite. -/
