@@ -191,6 +191,36 @@ theorem bipartiteNonbacktracking_iff {r k : ℕ} (u : Fin (r * (k + 1)) → α)
       ∀ t, u t ≠ u (finRotate _ t) ∧ (t.modNat ≠ Fin.last k → v t ≠ v (finRotate _ t)) :=
   (Iff.rfl)
 
+/-- A cyclic bipartite word is non-backtracking in blocks exactly when each position other than
+the last column of a block differs from its two-step cyclic successor. -/
+theorem bipartiteNonbacktracking_iff_bipartiteWord {r k : ℕ} (u : Fin (r * (k + 1)) → α)
+    (v : Fin (r * (k + 1)) → β) :
+    BipartiteNonbacktracking k u v ↔ ∀ t : Fin (2 * (r * (k + 1))),
+      t.val % (2 * (k + 1)) + 1 < 2 * (k + 1) →
+        bipartiteWord u v t ≠ bipartiteWord u v (finRotate _ (finRotate _ t)) := by
+  have hmod (a i : ℕ) (hi : i < 2) :
+      (2 * a + i) % (2 * (k + 1)) = 2 * (a % (k + 1)) + i := by
+    have ha : a % (k + 1) < k + 1 := Nat.mod_lt a (Nat.succ_pos k)
+    rw [← Nat.mod_add_mod (2 * a) (2 * (k + 1)) i, Nat.mul_mod_mul_left]
+    exact Nat.mod_eq_of_lt (by omega)
+  have hrow (t : Fin (r * (k + 1))) :
+      (finSumFinInterleaveEquiv _ (.inl t)).val % (2 * (k + 1)) + 1 < 2 * (k + 1) := by
+    rw [val_finSumFinInterleaveEquiv_inl, ← Nat.add_zero (2 * t.val), hmod _ _ (by decide)]
+    have : t.val % (k + 1) < k + 1 := Nat.mod_lt t.val (Nat.succ_pos k)
+    omega
+  have hcol (t : Fin (r * (k + 1))) :
+      ((finSumFinInterleaveEquiv _ (.inr t)).val % (2 * (k + 1)) + 1 < 2 * (k + 1)) ↔
+        t.modNat ≠ Fin.last k := by
+    rw [val_finSumFinInterleaveEquiv_inr, hmod _ _ (by decide), ne_eq, Fin.ext_iff, Fin.val_last]
+    have := t.modNat.isLt
+    -- The column's remainder is twice its index within the block, plus one.
+    change 2 * t.modNat.val + 1 + 1 < 2 * (k + 1) ↔ ¬t.modNat.val = k
+    omega
+  rw [bipartiteNonbacktracking_iff, (finSumFinInterleaveEquiv (r * (k + 1))).surjective.forall]
+  simp only [Sum.forall, hrow, hcol, true_implies, finRotate_finSumFinInterleaveEquiv_inl,
+    finRotate_finSumFinInterleaveEquiv_inr, bipartiteWord_inl, bipartiteWord_inr,
+    ne_eq, Sum.inl.injEq, Sum.inr.injEq, forall_and]
+
 /-- A cyclic bipartite word is non-backtracking in blocks exactly when adjacent rows differ in
 each block extended by the next block's head, and adjacent columns differ within each block. -/
 theorem bipartiteNonbacktracking_iff_blocks {r k : ℕ} (u : Fin (r * (k + 1)) → α)
@@ -216,6 +246,26 @@ def bipartitePath (u : Fin (k + 1) → α) (v : Fin k → β) :
     Fin (2 * k + 1) → α ⊕ β :=
   Fin.snoc (bipartiteWord (u ∘ Fin.castSucc) v) (.inl (u (Fin.last k)))
 
+/-- The even interleaved index, embedded in the open path, visits the corresponding row. -/
+@[simp]
+theorem bipartitePath_castSucc_inl (u : Fin (k + 1) → α) (v : Fin k → β) (t : Fin k) :
+    bipartitePath u v (finSumFinInterleaveEquiv k (.inl t)).castSucc = .inl (u t.castSucc) := by
+  simp [bipartitePath]
+
+/-- The odd interleaved index, embedded in the open path, visits the corresponding column. -/
+@[simp]
+theorem bipartitePath_castSucc_inr (u : Fin (k + 1) → α) (v : Fin k → β) (t : Fin k) :
+    bipartitePath u v (finSumFinInterleaveEquiv k (.inr t)).castSucc = .inr (v t) := by
+  simp [bipartitePath]
+
+/-- The step after a row at an interleaved index visits the column at the same index. -/
+@[simp]
+theorem bipartitePath_succ_inl (u : Fin (k + 1) → α) (v : Fin k → β) (t : Fin k) :
+    bipartitePath u v (finSumFinInterleaveEquiv k (.inl t)).succ = .inr (v t) := by
+  have h : (finSumFinInterleaveEquiv k (.inl t)).succ =
+      (finSumFinInterleaveEquiv k (.inr t)).castSucc := Fin.ext (by simp)
+  rw [h, bipartitePath_castSucc_inr]
+
 /-- The even positions of a bipartite path are its row vertices. -/
 @[simp]
 theorem bipartitePath_even (u : Fin (k + 1) → α) (v : Fin k → β)
@@ -229,9 +279,17 @@ theorem bipartitePath_even (u : Fin (k + 1) → α) (v : Fin k → β)
     rw [h]
     simp [bipartitePath]
   | cast t =>
-    have h : (⟨2 * (t : ℕ), by omega⟩ : Fin (2 * k + 1)) =
+    have h : (⟨2 * (t.castSucc : ℕ), by omega⟩ : Fin (2 * k + 1)) =
         (finSumFinInterleaveEquiv k (.inl t)).castSucc := by ext; simp
-    simp [bipartitePath, h]
+    rw [h, bipartitePath_castSucc_inl]
+
+/-- The step after a column at an interleaved index visits the following row. -/
+@[simp]
+theorem bipartitePath_succ_inr (u : Fin (k + 1) → α) (v : Fin k → β) (t : Fin k) :
+    bipartitePath u v (finSumFinInterleaveEquiv k (.inr t)).succ = .inl (u t.succ) := by
+  have h : (finSumFinInterleaveEquiv k (.inr t)).succ =
+      ⟨2 * (t.succ : ℕ), by omega⟩ := Fin.ext (by simp; omega)
+  rw [h, bipartitePath_even]
 
 /-- A bipartite path starts at its first row vertex. -/
 @[simp]
@@ -252,7 +310,7 @@ theorem bipartitePath_odd (u : Fin (k + 1) → α) (v : Fin k → β)
     bipartitePath u v ⟨2 * t + 1, by omega⟩ = .inr (v t) := by
   have h : (⟨2 * (t : ℕ) + 1, by omega⟩ : Fin (2 * k + 1)) =
       (finSumFinInterleaveEquiv k (.inr t)).castSucc := by ext; simp
-  simp [bipartitePath, h]
+  rw [h, bipartitePath_castSucc_inr]
 
 /-- A vertex of a bipartite path lies on the row side exactly at an even position. -/
 @[simp]
@@ -261,9 +319,7 @@ theorem bipartitePath_isLeft (u : Fin (k + 1) → α) (v : Fin k → β)
   induction t using Fin.lastCases with
   | last => simp
   | cast t =>
-    obtain ⟨a | b, rfl⟩ := (finSumFinInterleaveEquiv k).surjective t
-    · simp [bipartitePath]
-    · simp [bipartitePath]
+    obtain ⟨a | b, rfl⟩ := (finSumFinInterleaveEquiv k).surjective t <;> simp
 
 /-- A bipartite path determines both of its tuples of vertices. -/
 theorem bipartitePath_injective :

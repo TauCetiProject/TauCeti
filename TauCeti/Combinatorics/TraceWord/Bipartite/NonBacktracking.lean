@@ -46,46 +46,6 @@ namespace TauCeti
 
 variable {α β : Type*}
 
-/-- Within each block of length `2 * k`, the parity selects the interleaving side and division
-by two gives the index within that side of the block. -/
-private theorem finCongr_finProdFinEquiv_eq_interleave {r k : ℕ}
-    (b : Fin r) (i : Fin (2 * k)) :
-    let s := finProdFinEquiv (b, (⟨i.val / 2, by omega⟩ : Fin k))
-    finCongr (by ac_rfl) (finProdFinEquiv (b, i)) =
-      finSumFinInterleaveEquiv (r * k) (if i.val % 2 = 0 then .inl s else .inr s) := by
-  dsimp only
-  split_ifs <;> apply Fin.ext <;>
-    simp only [finCongr_apply, Fin.val_cast, finProdFinEquiv_apply_val,
-      val_finSumFinInterleaveEquiv_inl, val_finSumFinInterleaveEquiv_inr] <;>
-    rw [Nat.mul_assoc] <;> omega
-
-/-- The two steps from an even position start and end at adjacent row indices. From an odd
-position the corresponding columns are adjacent, and the position can lie strictly inside a
-block only if the first column is not the last column of that block. -/
-private theorem bipartiteWord_ne_finRotate_finRotate_of_within_block {r k : ℕ}
-    {u : Fin (r * (k + 1)) → α} {v : Fin (r * (k + 1)) → β}
-    (h : ∀ t, u t ≠ u (finRotate _ t) ∧
-      (t.modNat ≠ Fin.last k → v t ≠ v (finRotate _ t)))
-    (b : Fin r) (i : Fin (2 * (k + 1))) (hi : i.val + 1 < 2 * (k + 1)) :
-    let e : Fin (r * (2 * (k + 1))) ≃ Fin (2 * (r * (k + 1))) := finCongr (by ac_rfl)
-    let t := e (finProdFinEquiv (b, i))
-    bipartiteWord u v t ≠ bipartiteWord u v (finRotate _ (finRotate _ t)) := by
-  let j : Fin (k + 1) := ⟨i.val / 2, by omega⟩
-  let s : Fin (r * (k + 1)) := finProdFinEquiv (b, j)
-  dsimp only
-  rw [finCongr_finProdFinEquiv_eq_interleave]
-  by_cases hi₂ : i.val % 2 = 0
-  · simpa only [ite_eq_left hi₂, finRotate_finSumFinInterleaveEquiv_inl,
-      finRotate_finSumFinInterleaveEquiv_inr, bipartiteWord_inl, ne_eq, Sum.inl.injEq] using (h s).1
-  · have hj : s.modNat = j := Fin.modNat_finProdFinEquiv b j
-    have hjlast : j ≠ Fin.last k := fun he ↦ by
-      have hv := congrArg Fin.val he
-      simp only [j, Fin.val_last] at hv
-      omega
-    simpa only [ite_eq_right hi₂, finRotate_finSumFinInterleaveEquiv_inr,
-      finRotate_finSumFinInterleaveEquiv_inl, bipartiteWord_inr, ne_eq, Sum.inr.injEq] using
-        (h s).2 (hj ▸ hjlast)
-
 variable [Fintype α] [Fintype β]
 
 /-- A scale whose successive ratios are the alternating row and column discovery weights. -/
@@ -181,9 +141,13 @@ private theorem image_bipartiteNonbacktrackingWords_subset {r k : ℕ} :
       have hlt := (finProdFinEquiv (b, j)).isLt
       simp only [Fin.coe_finRotate_eq_ite, finProdFinEquiv_apply_val] at hlt ⊢
       split_ifs <;> omega
+    have hmod : (e (finProdFinEquiv (b, i))).val % l = i.val := by
+      simp only [e, finCongr_apply, Fin.val_cast, finProdFinEquiv_apply_val,
+        Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt i.isLt]
     simpa only [w, Function.comp_apply, ← hrj, he] using
-      bipartiteWord_ne_finRotate_finRotate_of_within_block
-        ((bipartiteNonbacktracking_iff _ _).mp hn) b i (by have := j.isLt; omega)
+      (bipartiteNonbacktracking_iff_bipartiteWord _ _).mp hn (e (finProdFinEquiv (b, i))) (by
+        rw [hmod, hij]
+        exact j.isLt)
 
 private theorem sum_pow_div_sqrt_mul_pow_le_of_nonbacktracking [Nonempty α] [Nonempty β]
     {r : ℕ} (hr : r ≠ 0) (k : ℕ) {γ : ℝ} (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) :
