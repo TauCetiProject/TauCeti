@@ -9,7 +9,6 @@ public import TauCeti.Probability.MDP.Basic
 public import TauCeti.Probability.MDP.Trajectory
 public import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import Mathlib.Probability.Kernel.Composition.IntegralCompProd
 
 /-!
@@ -39,7 +38,7 @@ the same `N`-step return, computed along the orbit `f^[n] s`.
 ## Main results
 
 * `MDP.abs_pathReturn_sub_finitePathReturn_le`: the pathwise tail bound.
-* `MDP.pathReturn_sub_finitePathReturn_zero`: the exact discounted return of the shifted path.
+* `MDP.pathReturn_sub_finitePathReturn_eq_pow_mul`: the exact discounted return of the shifted path.
 * `MDP.abs_expectedReturn_le`: the expected discounted return is bounded by `R / (1 - γ)`.
 * `MDP.abs_expectedReturn_sub_finiteReturn_le`: the tail bound for expected returns, and
   `MDP.tendsto_finiteReturn`: the `N`-step returns converge to the expected discounted return.
@@ -128,7 +127,7 @@ theorem pathReturn_eq_add {γ : ℝ≥0} (hγ : γ < 1) (ω : ℕ → S × A) :
 
 /-- After the first `N` rewards, the remaining return is the return on the shifted path
 discounted by `γ ^ N`. -/
-theorem pathReturn_sub_finitePathReturn_zero {γ : ℝ≥0} (hγ : γ < 1) (N : ℕ)
+theorem pathReturn_sub_finitePathReturn_eq_pow_mul {γ : ℝ≥0} (hγ : γ < 1) (N : ℕ)
     (ω : ℕ → S × A) :
     M.pathReturn γ ω - M.finitePathReturn γ N 0 ω =
       (γ : ℝ) ^ N * M.pathReturn γ (fun n ↦ ω (n + N)) := by
@@ -152,7 +151,7 @@ theorem abs_pathReturn_le {γ : ℝ≥0} (hγ : γ < 1) (ω : ℕ → S × A) :
 theorem abs_pathReturn_sub_finitePathReturn_le {γ : ℝ≥0} (hγ : γ < 1) (N : ℕ)
     (ω : ℕ → S × A) :
     |M.pathReturn γ ω - M.finitePathReturn γ N 0 ω| ≤ γ ^ N * M.rewardBound / (1 - γ) := by
-  rw [M.pathReturn_sub_finitePathReturn_zero hγ, abs_mul,
+  rw [M.pathReturn_sub_finitePathReturn_eq_pow_mul hγ, abs_mul,
     abs_of_nonneg (pow_nonneg γ.coe_nonneg _), mul_div_assoc]
   exact mul_le_mul_of_nonneg_left (M.abs_pathReturn_le hγ _) (pow_nonneg γ.coe_nonneg _)
 
