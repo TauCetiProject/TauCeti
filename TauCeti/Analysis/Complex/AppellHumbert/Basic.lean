@@ -536,6 +536,12 @@ theorem apply_add_of_mem_thetaSpace {f : V → ℂ} (hf : f ∈ D.thetaSpace) (l
     f (z + l) = D.factor l z * f z :=
   hf.2 l z
 
+variable {D} in
+/-- A theta function that vanishes at `0` vanishes on the lattice. -/
+theorem apply_coe_eq_zero_of_mem_thetaSpace {f : V → ℂ} (hf : f ∈ D.thetaSpace) (hf0 : f 0 = 0)
+    (l : L) : f l = 0 := by
+  simpa [hf0] using apply_add_of_mem_thetaSpace hf l 0
+
 variable {D D'} in
 /-- **The product of theta functions** of two data is a theta function of their sum. -/
 theorem mul_mem_thetaSpace_add {f g : V → ℂ} (hf : f ∈ D.thetaSpace) (hg : g ∈ D'.thetaSpace) :

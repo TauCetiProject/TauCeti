@@ -102,33 +102,7 @@ namespace ZLattice
 
 /-! ### The dimension of the theta spaces -/
 
-/-- For `u, v, x ∈ ℂ`: `Im (u conj v) x = Im (x conj v) u - Im (x conj u) v`. -/
-private theorem im_mul_conj_mul (u v x : ℂ) :
-    ((u * conj v).im : ℂ) * x = (x * conj v).im * u - (x * conj u).im * v := by
-  apply Complex.ext <;> simp <;> ring
-
 variable {Λ : Submodule ℤ ℂ} [DiscreteTopology Λ] [IsZLattice ℝ Λ]
-
-/-- **A lattice is self-dual for its Riemann form**: a point `x ∈ ℂ` with `E (x, l) ∈ ℤ` for
-every `l ∈ Λ` lies in `Λ`. -/
-theorem mem_of_forall_im_hermitianForm_eq_intCast {x : ℂ}
-    (hx : ∀ l ∈ Λ, ∃ n : ℤ, (hermitianForm Λ x l).im = n) : x ∈ Λ := by
-  -- With `E (ω₁, ω₂) = k = ±1`, `k x = E (x, ω₂) ω₁ - E (x, ω₁) ω₂`.
-  obtain ⟨L, rfl⟩ := Submodule.exists_periodPair_lattice_eq_of_isZLattice Λ
-  obtain ⟨p, hp⟩ := hx _ L.ω₁_mem_lattice
-  obtain ⟨q, hq⟩ := hx _ L.ω₂_mem_lattice
-  have key : ((hermitianForm L.lattice L.ω₁ L.ω₂).im : ℂ) * x =
-      (hermitianForm L.lattice x L.ω₂).im * L.ω₁ - (hermitianForm L.lattice x L.ω₁).im * L.ω₂ := by
-    simp only [im_hermitianForm, ofReal_div]
-    linear_combination ((covolume L.lattice : ℂ))⁻¹ * im_mul_conj_mul L.ω₁ L.ω₂ x
-  rw [hp, hq] at key
-  push_cast at key
-  have hk := im_hermitianForm_basis_eq_one_or_eq_neg_one L.lattice L.latticeBasis
-  simp only [PeriodPair.latticeBasis_zero, PeriodPair.latticeBasis_one] at hk
-  refine PeriodPair.mem_lattice.mpr ?_
-  rcases hk with hk | hk <;> simp only [hk, ofReal_one, ofReal_neg, one_mul, neg_one_mul] at key
-  · exact ⟨q, -p, by push_cast; linear_combination -key⟩
-  · exact ⟨-q, p, by push_cast; linear_combination key⟩
 
 variable {χ : Λ → Circle} (hχ : IsAppellHumbertMultiplier Λ χ)
 
@@ -205,15 +179,6 @@ variable (L : PeriodPair)
 
 /-! ### The function `℘ f²` -/
 
-/-- Two entire functions that agree off the lattice agree everywhere. -/
-private theorem eq_of_eqOn_compl_lattice {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
-    (hg : Differentiable ℂ g) (h : ∀ z ∉ L.lattice, f z = g z) : f = g := by
-  have : Countable L.lattice := L.latticeEquivProd.injective.countable
-  have h_dense : Dense (range ((↑) : L.lattice → ℂ))ᶜ :=
-    Set.Countable.dense_compl ℝ (Set.countable_range _)
-  exact hf.continuous.ext_on h_dense hg.continuous fun z hz ↦
-    h z fun hz' ↦ hz ⟨⟨z, hz'⟩, rfl⟩
-
 open Classical in
 /-- The function `℘ f²` for the lattice of `L`, extended to the lattice by the value `f′ (l)²`.
 For an entire `f` vanishing on the lattice it is entire
@@ -272,12 +237,6 @@ theorem differentiable_weierstrassPMulSq {f : ℂ → ℂ} (hf : Differentiable 
 
 variable {χ : L.lattice → Circle} {hχ : IsAppellHumbertMultiplier L.lattice χ} {f : ℂ → ℂ}
 
-/-- A theta function that vanishes at `0` vanishes on the lattice. -/
-theorem apply_eq_zero_of_mem_lattice_of_mem_thetaSpace
-    (hf : f ∈ (appellHumbertData L.lattice χ hχ).thetaSpace) (hf0 : f 0 = 0) {l : ℂ}
-    (hl : l ∈ L.lattice) : f l = 0 := by
-  simpa [hf0] using AppellHumbertData.apply_add_of_mem_thetaSpace hf ⟨l, hl⟩ 0
-
 /-- **`℘ f²` is a theta function of degree two**: for `f ∈ Th_1(Λ, χ)` with `f (0) = 0`, the
 function `℘ f²`, extended to the lattice by `f′ (l)²`, lies in `Th_2(Λ, χ)`. -/
 theorem weierstrassPMulSq_mem_thetaSpace (hf : f ∈ (appellHumbertData L.lattice χ hχ).thetaSpace)
@@ -285,15 +244,16 @@ theorem weierstrassPMulSq_mem_thetaSpace (hf : f ∈ (appellHumbertData L.lattic
     L.weierstrassPMulSq f ∈ (2 • appellHumbertData L.lattice χ hχ).thetaSpace := by
   have entire : Differentiable ℂ (L.weierstrassPMulSq f) :=
     differentiable_weierstrassPMulSq (AppellHumbertData.differentiable_of_mem_thetaSpace hf)
-      fun _ hl ↦ apply_eq_zero_of_mem_lattice_of_mem_thetaSpace hf hf0 hl
+      fun _ hl ↦ AppellHumbertData.apply_coe_eq_zero_of_mem_thetaSpace hf hf0 ⟨_, hl⟩
   refine (AppellHumbertData.mem_thetaSpace_iff _).mpr ⟨entire, fun l ↦ ?_⟩
   have h_factor : Differentiable ℂ fun z ↦ (2 • appellHumbertData L.lattice χ hχ).factor l z := by
     simp only [AppellHumbertData.factor_def]
     fun_prop
   -- Both sides are entire in `z`, so it suffices to compare them off the lattice, where this is
   -- the square of the functional equation of `f` times the periodic `℘`.
-  refine congrFun (eq_of_eqOn_compl_lattice L (entire.comp (differentiable_id.add_const _))
-    (h_factor.mul entire) fun z hz ↦ ?_)
+  refine congrFun (L.eq_of_eqOn_compl_lattice
+    (entire.comp (differentiable_id.add_const _)).continuous (h_factor.mul entire).continuous
+    fun z hz ↦ ?_)
   have hzl : z + l ∉ L.lattice := by rwa [add_mem_cancel_right l.property]
   simp only [weierstrassPMulSq_of_notMem hzl,
     weierstrassPMulSq_of_notMem hz, L.weierstrassP_add_coe,
@@ -316,11 +276,8 @@ theorem linearIndependent_sq_weierstrassPMulSq (hf : Differentiable ℂ f) (hf_n
   have pole : Filter.Tendsto ℘[L] (nhdsWithin 0 {0}ᶜ) (Bornology.cobounded ℂ) :=
     tendsto_cobounded_of_meromorphicOrderAt_neg
       (by simp +decide [L.order_weierstrassP 0 (zero_mem _)])
-  have off_lattice : ∀ᶠ z in nhdsWithin 0 {0}ᶜ, z ∉ L.lattice := by
-    filter_upwards [nhdsWithin_le_nhds (L.compl_lattice_sdiff_singleton_mem_nhds 0),
-      self_mem_nhdsWithin] with z hz hz0 using fun h ↦ hz ⟨h, hz0⟩
   have frequently_zero : ∃ᶠ z in nhdsWithin 0 {0}ᶜ, f z = 0 :=
-    ((pole.eventually_ne_cobounded c).and off_lattice).frequently.mono
+    ((pole.eventually_ne_cobounded c).and (L.eventually_notMem_lattice 0)).frequently.mono
       fun z hz ↦ vanishes z hz.2 hz.1
   exact hf_ne ((Differentiable.contDiff hf).analyticOnNhd.eq_of_frequently_eq analyticOnNhd_const
     frequently_zero)
@@ -360,7 +317,7 @@ theorem apply_eq_zero_iff_mem_lattice_of_mem_thetaSpace
     (hf : f ∈ (appellHumbertData L.lattice χ hχ).thetaSpace) (hf_ne : f ≠ 0) (hf0 : f 0 = 0)
     {z : ℂ} : f z = 0 ↔ z ∈ L.lattice := by
   refine ⟨fun hz ↦ by_contra fun hz' ↦ ?_,
-    apply_eq_zero_of_mem_lattice_of_mem_thetaSpace hf hf0⟩
+    fun hz ↦ AppellHumbertData.apply_coe_eq_zero_of_mem_thetaSpace hf hf0 ⟨z, hz⟩⟩
   exact weierstrassPMulSq_ne_zero hf hf_ne hf0 hz (by simp [weierstrassPMulSq_of_notMem hz', hz])
 
 /-- **The zeros are simple**: a nonzero `f ∈ Th_1(Λ, χ)` with `f (0) = 0` has nonzero
@@ -368,37 +325,9 @@ derivative at every point of the lattice. -/
 theorem deriv_ne_zero_of_mem_thetaSpace (hf : f ∈ (appellHumbertData L.lattice χ hχ).thetaSpace)
     (hf_ne : f ≠ 0) (hf0 : f 0 = 0) {z : ℂ} (hz : z ∈ L.lattice) : deriv f z ≠ 0 := by
   simpa [weierstrassPMulSq_of_mem hz] using weierstrassPMulSq_ne_zero hf hf_ne hf0
-    (apply_eq_zero_of_mem_lattice_of_mem_thetaSpace hf hf0 hz)
+    (AppellHumbertData.apply_coe_eq_zero_of_mem_thetaSpace hf hf0 ⟨z, hz⟩)
 
 /-! ### The sigma function of a lattice -/
-
-/-- An Appell–Humbert datum on `Λ` with the form of `H` is the datum of its semicharacter, which
-is then an Appell–Humbert multiplier for `H`. -/
-private theorem exists_eq_appellHumbertData {D : AppellHumbertData L.lattice}
-    (hD : D.form = (sigmaSignData L.lattice).form) :
-    ∃ hχ : IsAppellHumbertMultiplier L.lattice D.semichar,
-      D = appellHumbertData L.lattice D.semichar hχ := by
-  have hE (u v : ℂ) : D.riemannForm u v = (hermitianForm L.lattice u v).im := by
-    rw [AppellHumbertData.riemannForm_apply, hD, ← AppellHumbertData.riemannForm_apply,
-      riemannForm_sigmaSignData_apply, im_hermitianForm]
-  have hχ : IsAppellHumbertMultiplier L.lattice D.semichar := fun l m n hn ↦
-    D.semichar_add_eq_neg_one_zpow_mul l m ((hE l m).trans hn)
-  refine ⟨hχ, AppellHumbertData.ext ?_ ?_⟩
-  · rw [hD, sigmaSignData_def]
-    ext u
-    simp
-  · rw [semichar_appellHumbertData]
-
-/-- `z ↦ f (-z)` preserves `Th_1(Λ, ε)`, as `ε` is even. -/
-theorem comp_neg_mem_thetaSpace_sigmaSignData (hf : f ∈ (sigmaSignData L.lattice).thetaSpace) :
-    (fun z ↦ f (-z)) ∈ (sigmaSignData L.lattice).thetaSpace := by
-  refine (AppellHumbertData.mem_thetaSpace_iff _).mpr
-    ⟨(AppellHumbertData.differentiable_of_mem_thetaSpace hf).comp differentiable_neg,
-      fun l z ↦ ?_⟩
-  have h := AppellHumbertData.apply_add_of_mem_thetaSpace hf (-l) (-z)
-  rw [factor_sigmaSignData] at h
-  rw [factor_sigmaSignData, neg_add]
-  simpa using h
 
 /-- At a half-period `l / 2 ∉ Λ`, a theta function of `(H, ε)` has `f (l / 2) = -f (-l / 2)`. -/
 private theorem apply_div_two_eq_neg (hf : f ∈ (sigmaSignData L.lattice).thetaSpace) {l : ℂ}
@@ -427,7 +356,7 @@ private theorem not_even_of_mem_thetaSpace_sigmaSignData
   set a : ℂ := L.ω₂ / 2
   have hg := AppellHumbertData.twistedTranslate_mem_thetaSpace hf a
   obtain ⟨hχ, hD⟩ := exists_eq_appellHumbertData (D := D + .ofAddChar (D.riemannChar a))
-    (by simp [AppellHumbertData.form_ofAddChar, D])
+    fun l z ↦ by simp [AppellHumbertData.form_ofAddChar, D]
   rw [hD] at hg
   have hg_ne : D.twistedTranslate a f ≠ 0 := fun h ↦ hf_ne <| funext fun z ↦ by
     simpa [exp_ne_zero] using congrFun h (z - a)
@@ -455,6 +384,16 @@ theorem apply_neg_of_mem_thetaSpace_sigmaSignData (hf : f ∈ (sigmaSignData L.l
   · simp only [Pi.add_apply, neg_neg]
     ring
 
+/-- Every `f ∈ Th_1(Λ, ε)` vanishes at `0`, as it is odd. -/
+theorem apply_zero_of_mem_thetaSpace_sigmaSignData
+    (hf : f ∈ (sigmaSignData L.lattice).thetaSpace) : f 0 = 0 :=
+  self_eq_neg.mp (by simpa using apply_neg_of_mem_thetaSpace_sigmaSignData hf 0)
+
+/-- A function with derivative `1` at `0` is not zero. -/
+private theorem ne_zero_of_deriv_eq_one (hf1 : deriv f 0 = 1) : f ≠ 0 := by
+  rintro rfl
+  simp at hf1
+
 /-- `Th_1(Λ, ε)` is the theta space of the datum `(H, ε)` as an Appell–Humbert datum. -/
 private theorem mem_thetaSpace_appellHumbertData_of_mem_sigmaSignData
     (hf : f ∈ (sigmaSignData L.lattice).thetaSpace) :
@@ -476,9 +415,9 @@ theorem exists_mem_thetaSpace_sigmaSignData_deriv_eq_one :
     AppellHumbertData.IsPositive.exists_mem_thetaSpace_ne_zero (L := L.lattice) hpos
   have h_deriv := deriv_ne_zero_of_mem_thetaSpace
     (mem_thetaSpace_appellHumbertData_of_mem_sigmaSignData hg) hg_ne
-    (self_eq_neg.mp (by simpa using apply_neg_of_mem_thetaSpace_sigmaSignData hg 0)) (zero_mem _)
+    (apply_zero_of_mem_thetaSpace_sigmaSignData hg) (zero_mem _)
   refine ⟨(deriv g 0)⁻¹ • g, Submodule.smul_mem _ _ hg, ?_⟩
-  rw [show (deriv g 0)⁻¹ • g = fun z ↦ (deriv g 0)⁻¹ * g z from rfl, deriv_const_mul_field']
+  rw [deriv_const_smul_field, smul_eq_mul]
   exact inv_mul_cancel₀ h_deriv
 
 /-- **Uniqueness of the sigma function**: two theta functions of degree one for `(H, ε)` with
@@ -493,12 +432,11 @@ theorem eq_of_mem_thetaSpace_sigmaSignData_of_deriv_eq_one {g : ℂ → ℂ}
     have := finrank_thetaSpace_nsmul_appellHumbertData
       (isAppellHumbertMultiplier_sigmaSign L.lattice) one_ne_zero
     rwa [one_nsmul, ← sigmaSignData_def] at this
-  have hf_ne : (⟨f, hf⟩ : (sigmaSignData L.lattice).thetaSpace) ≠ 0 := by
-    rintro h
-    have : f = 0 := congrArg Subtype.val h
-    simp [this] at hf1
+  have hf_ne : (⟨f, hf⟩ : (sigmaSignData L.lattice).thetaSpace) ≠ 0 := fun h ↦
+    ne_zero_of_deriv_eq_one hf1 (congrArg Subtype.val h)
   obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hf_ne).mp h_dim ⟨g, hg⟩
-  have hc' : g = fun z ↦ c * f z := (congrArg Subtype.val hc).symm
+  have hc' : g = fun z ↦ c * f z := funext fun z ↦ by
+    simpa [smul_eq_mul] using (congrFun (congrArg Subtype.val hc) z).symm
   rw [hc', deriv_const_mul_field'] at hg1
   simp only [hf1, mul_one] at hg1
   rw [hc', hg1]
@@ -514,11 +452,8 @@ theorem apply_add_mul_apply_sub_of_mem_thetaSpace_sigmaSignData
   -- As a function of `z`, `f (z + v) f (z - v)` lies in `Th_2(Λ, ε)`, so it is `a ℘ f² + b f²`;
   -- the values at `0` and at `v` give `a` and `b`.
   have hf' := mem_thetaSpace_appellHumbertData_of_mem_sigmaSignData hf
-  have hf_ne : f ≠ 0 := by
-    rintro rfl
-    simp at hf1
-  have hf0 : f 0 = 0 :=
-    self_eq_neg.mp (by simpa using apply_neg_of_mem_thetaSpace_sigmaSignData hf 0)
+  have hf_ne := ne_zero_of_deriv_eq_one hf1
+  have hf0 := apply_zero_of_mem_thetaSpace_sigmaSignData hf
   have h_mem := AppellHumbertData.apply_add_mul_apply_sub_mem_thetaSpace_two_nsmul hf' v
   obtain ⟨a, b, hab⟩ := mem_span_pair.mp
     ((thetaSpace_two_eq_span_weierstrassPMulSq hf' hf_ne hf0).le h_mem)
@@ -547,13 +482,11 @@ theorem apply_two_mul_of_mem_thetaSpace_sigmaSignData
   -- Differentiate the addition formula in `v` at `v = z`: as `f (0) = 0`, `f′ (0) = 1` and
   -- `℘ (v) - ℘ (z)` vanishes at `v = z`, one term is left on each side.
   have hdiff := AppellHumbertData.differentiable_of_mem_thetaSpace hf
-  have hf0 : f 0 = 0 :=
-    self_eq_neg.mp (by simpa using apply_neg_of_mem_thetaSpace_sigmaSignData hf 0)
+  have hf0 := apply_zero_of_mem_thetaSpace_sigmaSignData hf
   by_cases hz : z ∈ L.lattice
   · -- On the lattice both sides vanish.
     have h_zero {l : ℂ} (hl : l ∈ L.lattice) : f l = 0 :=
-      apply_eq_zero_of_mem_lattice_of_mem_thetaSpace
-        (mem_thetaSpace_appellHumbertData_of_mem_sigmaSignData hf) hf0 hl
+      AppellHumbertData.apply_coe_eq_zero_of_mem_thetaSpace hf hf0 ⟨l, hl⟩
     rw [h_zero (by simpa [two_mul] using add_mem hz hz), h_zero hz]
     ring
   have h_wp : DifferentiableAt ℂ ℘[L] z :=
