@@ -76,12 +76,12 @@ theorem long_mul_short_two :
       c.structConst (b2Index 0) (b2Index 1) • (e 1 * e 2) -
         (c.structConst (b2Index 0) (b2Index 1) *
           (c.structConst (b2Index 1) (b2Index 2)).sign) • e 3 := by
-  have hindex : chainLeTwoIndex 2 1 = {(0, 0), (1, 0), (0, 1)} := by
-    ext ⟨b, k⟩
-    simp only [mem_chainLeTwoIndex, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
-    omega
-  have h := dividedPower_root_mul_of_reverse_double_chain c
+  have h := dividedPower_root_mul_dividedPower_root_of_reverse_double_chain c
     (by simpa only [add_comm] using b2_sum) b2_double b2_length 1 2
-  simpa [hindex, add_assoc, sub_eq_add_neg] using h
+  simpa only [dividedPower_one, chainLeTwoIndex_two_one, Finset.mem_insert, Prod.mk.injEq,
+    zero_ne_one, and_true, Finset.mem_singleton, and_false, or_self, not_false_eq_true,
+    Finset.sum_insert, pow_zero, mul_one, tsub_zero, dividedPower_zero, mul_zero, one_mul,
+    one_ne_zero, and_self, pow_one, tsub_self, Nat.add_one_sub_one, Finset.sum_singleton,
+    one_smul, neg_smul, add_assoc, sub_eq_add_neg] using h
 
 end TauCeti.Examples.KostantRootCollection
