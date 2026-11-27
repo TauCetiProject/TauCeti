@@ -47,4 +47,32 @@ theorem coprimeLevelEquiv_apply (h : m.Coprime n)
   rw [MulChar.mul_apply, changeLevel_apply_unitsMap, changeLevel_apply_unitsMap]
   simp [coprimeLevelEquiv, MulChar.coprodEquiv_apply, hcast, ZMod.unitsMap_val]
 
+/-- The character behind `coprimeLevelEquiv` transported back to `ZMod m × ZMod n` is `χ`
+composed with the inverse Chinese remainder map, including at nonunits, where both vanish. -/
+private theorem equivToUnitHom_symm_comp_chineseRemainder_apply (h : m.Coprime n)
+    (χ : DirichletCharacter R (m * n)) (x : ZMod m × ZMod n) :
+    MulChar.equivToUnitHom.symm ((MulChar.equivToUnitHom χ).comp
+      ↑(Units.mapEquiv (ZMod.chineseRemainder h).toMulEquiv.symm)) x =
+      χ ((ZMod.chineseRemainder h).symm x) := by
+  by_cases hx : IsUnit x
+  · obtain ⟨w, rfl⟩ := hx
+    rw [MulChar.equivToUnitHom_symm_coe]
+    simp [MulChar.coe_equivToUnitHom]
+  · rw [MulChar.map_nonunit _ hx, MulChar.map_nonunit]
+    exact fun hy ↦ hx (by simpa using hy.map (ZMod.chineseRemainder h))
+
+/-- The level-`m` factor of `χ` is `χ` read on the Chinese remainder lifts of `(x, 1)`. -/
+@[simp]
+theorem coprimeLevelEquiv_symm_apply_fst (h : m.Coprime n)
+    (χ : DirichletCharacter R (m * n)) (x : ZMod m) :
+    ((coprimeLevelEquiv h).symm χ).1 x = χ ((ZMod.chineseRemainder h).symm (x, 1)) := by
+  simpa [coprimeLevelEquiv] using equivToUnitHom_symm_comp_chineseRemainder_apply h χ (x, 1)
+
+/-- The level-`n` factor of `χ` is `χ` read on the Chinese remainder lifts of `(1, y)`. -/
+@[simp]
+theorem coprimeLevelEquiv_symm_apply_snd (h : m.Coprime n)
+    (χ : DirichletCharacter R (m * n)) (y : ZMod n) :
+    ((coprimeLevelEquiv h).symm χ).2 y = χ ((ZMod.chineseRemainder h).symm (1, y)) := by
+  simpa [coprimeLevelEquiv] using equivToUnitHom_symm_comp_chineseRemainder_apply h χ (1, y)
+
 end DirichletCharacter
