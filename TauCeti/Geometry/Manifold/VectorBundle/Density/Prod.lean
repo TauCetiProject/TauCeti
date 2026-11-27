@@ -39,6 +39,8 @@ the coefficients `F ⊠ (E* ⊗ |Λ_N|)` of the distributional kernel of an oper
 
 * `TauCeti.DensityBundle.prod_apply_sumElim`: the value of the product on frames adapted to the
   product.
+* `TauCeti.DensityBundle.add_prod`, `TauCeti.DensityBundle.prod_eq_zero_iff` and their
+  companions: the product is bilinear and vanishes only when a factor does.
 * `TauCeti.DensityBundle.prod_apply_trivializationAt_symm`: in the frames of a product chart, a
   product density is a constant times the product of the coordinates of its factors.
 * `TauCeti.DensityBundle.contMDiffAt_prod`, `TauCeti.DensityBundle.contMDiff_prod`: products of
@@ -70,7 +72,17 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 `(vᵢ, 0)` and then `(0, wⱼ)` (`TauCeti.DensityBundle.prod_apply_sumElim`). -/
 def prod {p : M × N} (μ : DensityBundle I M p.1) (ν : DensityBundle J N p.2) :
     DensityBundle (I.prod J) (M × N) p :=
+  -- `Density.prod μ ν` is a density on `TangentSpace I p.1 × TangentSpace J p.2`, of index
+  -- `finrank ℝ (TangentSpace I p.1 × TangentSpace J p.2)`. Since `TangentSpace` unfolds to the
+  -- model space, both this type and `TangentSpace (I.prod J) p` are `E × F` by definition, and
+  -- `tangentSpaceProdEquiv p` is the identity of `E × F`. So no transport is needed.
   Density.prod μ ν
+
+/-- The product density on `M × N` is the product `TauCeti.Density.prod` of densities on
+`T_x M × T_y N`, which is `T_(x, y) (M × N)` by definition (see `TauCeti.DensityBundle.prod`). -/
+theorem prod_def {p : M × N} (μ : DensityBundle I M p.1) (ν : DensityBundle J N p.2) :
+    μ.prod ν = Density.prod μ ν :=
+  (rfl)
 
 /-- Read through the identification `T_(x, y) (M × N) = T_x M × T_y N`
 (`TauCeti.Manifold.tangentSpaceProdEquiv`), the product density is the product
@@ -79,9 +91,12 @@ theorem prod_apply {p : M × N} (μ : DensityBundle I M p.1) (ν : DensityBundle
     (u : Fin (finrank ℝ (E × F)) → TangentSpace I p.1 × TangentSpace J p.2) :
     μ.prod ν ((Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).symm ∘ u) =
       Density.prod μ ν u := by
+  -- `tangentSpaceProdEquiv p` is the identity of `E × F` up to definitional unfolding.
   have h : (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).symm ∘ u = u :=
     funext fun k ↦ Manifold.tangentSpaceProdEquiv_symm_apply p (u k)
-  rw [h]
+  rw [h, prod_def]
+  -- The two sides now differ only in spelling the type of `u` as `Fin _ → T_p (M × N)` or as
+  -- `Fin _ → T_x M × T_y N`, which are the same type by definition.
   rfl
 
 /-- **The value of a product density.** On the frame of `T_(x, y) (M × N)` listing the vectors
@@ -95,12 +110,51 @@ theorem prod_apply_sumElim {p : M × N} (μ : DensityBundle I M p.1) (ν : Densi
   rw [prod_apply]
   exact Density.prod_apply_sumElim μ ν e v w
 
+@[simp]
+theorem add_prod {p : M × N} (μ μ' : DensityBundle I M p.1) (ν : DensityBundle J N p.2) :
+    (μ + μ').prod ν = μ.prod ν + μ'.prod ν :=
+  Density.add_prod μ μ' ν
+
+@[simp]
+theorem prod_add {p : M × N} (μ : DensityBundle I M p.1) (ν ν' : DensityBundle J N p.2) :
+    μ.prod (ν + ν') = μ.prod ν + μ.prod ν' :=
+  Density.prod_add μ ν ν'
+
+@[simp]
+theorem smul_prod {p : M × N} (a : ℝ) (μ : DensityBundle I M p.1) (ν : DensityBundle J N p.2) :
+    (a • μ).prod ν = a • μ.prod ν :=
+  Density.smul_prod a μ ν
+
+@[simp]
+theorem prod_smul {p : M × N} (a : ℝ) (μ : DensityBundle I M p.1) (ν : DensityBundle J N p.2) :
+    μ.prod (a • ν) = a • μ.prod ν :=
+  Density.prod_smul a μ ν
+
+@[simp]
+theorem zero_prod {p : M × N} (ν : DensityBundle J N p.2) :
+    (0 : DensityBundle I M p.1).prod ν = 0 :=
+  Density.zero_prod ν
+
+@[simp]
+theorem prod_zero {p : M × N} (μ : DensityBundle I M p.1) :
+    μ.prod (0 : DensityBundle J N p.2) = 0 :=
+  Density.prod_zero μ
+
+/-- The product of two densities vanishes only when one of them does. -/
+@[simp]
+theorem prod_eq_zero_iff {p : M × N} {μ : DensityBundle I M p.1} {ν : DensityBundle J N p.2} :
+    μ.prod ν = 0 ↔ μ = 0 ∨ ν = 0 :=
+  Density.prod_eq_zero_iff
+
 /-- The fibre at `p` of the external tensor product `|Λ_M| ⊠ |Λ_N|` of the density lines of `M`
 and `N` is the density line of `M × N` at `p`, the pure tensor `μ ⊗ ν` corresponding to the
 product density `μ.prod ν` (`TauCeti.DensityBundle.externalTensorEquiv_tmul`). -/
 def externalTensorEquiv (p : M × N) :
     ExternalTensor ℝ (DensityBundle I M) (DensityBundle J N) p ≃L[ℝ]
       DensityBundle (I.prod J) (M × N) p :=
+  -- Two identifications hold by definition here: the fibres at `p` of the pullbacks of `|Λ_M|`
+  -- and `|Λ_N|` along the projections are the fibres `|Λ_M|_{p.1}` and `|Λ_N|_{p.2}`, and
+  -- `T_p (M × N)` is `T_{p.1} M × T_{p.2} N` (see `TauCeti.DensityBundle.prod`).
   let e : ExternalTensor ℝ (DensityBundle I M) (DensityBundle J N) p ≃ₗ[ℝ]
       DensityBundle (I.prod J) (M × N) p := Density.tensorProductEquiv
   -- The density line is finite-dimensional, being identified with `ℝ` by evaluation on a basis.
@@ -115,6 +169,7 @@ theorem externalTensorEquiv_tmul {p : M × N} (μ : DensityBundle I M p.1)
     (ν : DensityBundle J N p.2) :
     externalTensorEquiv p (μ ⊗ₜ[ℝ] ν : ExternalTensor ℝ (DensityBundle I M) (DensityBundle J N) p) =
       μ.prod ν :=
+  -- By the definitional identifications recorded in `externalTensorEquiv`.
   Density.tensorProductEquiv_tmul μ ν
 
 @[simp]
@@ -187,14 +242,17 @@ theorem contMDiffAt_prod {μ : ∀ x : M, DensityBundle I M x} {ν : ∀ y : N, 
       (fun q : M × N ↦ TotalSpace.mk' ℝ (E := DensityBundle (I.prod J) (M × N)) q
         ((μ q.1).prod (ν q.2))) p := by
   rw [Density.contMDiffAt_section_iff] at hμ hν ⊢
+  -- Any ordering of the product basis serves to name the constant.
+  obtain ⟨e⟩ : Nonempty (Fin (finrank ℝ E) ⊕ Fin (finrank ℝ F) ≃ Fin (finrank ℝ (E × F))) :=
+    Fintype.card_eq.mp (by simp [finrank_prod])
   -- Near `p`, the coordinate expression of the product is a constant times the product of the
   -- coordinate expressions of `μ` and `ν`.
-  refine ((contMDiffAt_const (c := |(((finBasis ℝ E).prod (finBasis ℝ F)).reindex
-      (finSumFinEquiv.trans (finCongr finrank_prod.symm))).det (finBasis ℝ (E × F))|)).mul
+  refine ((contMDiffAt_const (c := |(((finBasis ℝ E).prod (finBasis ℝ F)).reindex e).det
+      (finBasis ℝ (E × F))|)).mul
     ((hμ.comp p contMDiffAt_fst).mul (hν.comp p contMDiffAt_snd))).congr_of_eventuallyEq ?_
   filter_upwards [(chartAt (ModelProd H G) p).open_source.mem_nhds (mem_chart_source _ p)]
     with q hq
-  exact prod_apply_trivializationAt_symm hq (μ q.1) (ν q.2) _
+  exact prod_apply_trivializationAt_symm hq (μ q.1) (ν q.2) e
 
 /-- **Products of smooth densities are smooth.** If the density sections `μ` of `M` and `ν` of `N`
 are `C^n`, then so is the density section `(x, y) ↦ μ x · ν y` of `M × N`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Density.Basic
-public import Mathlib.LinearAlgebra.Basis.Prod
+public import TauCeti.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -29,7 +29,9 @@ The product is bilinear, and since the three spaces of densities are lines, it i
 tensor product of the density lines of `V` and `W` with the density line of `V × W`
 (`TauCeti.Density.tensorProductEquiv`):
 
-`Density V m ⊗[ℝ] Density W n ≃ₗ[ℝ] Density (V × W) (m + n)`.
+`Density V (finrank ℝ V) ⊗[ℝ] Density W (finrank ℝ W) ≃ₗ[ℝ] Density (V × W) (finrank ℝ (V × W))`,
+
+where `finrank ℝ (V × W) = m + n` holds propositionally (`Module.finrank_prod`), not by definition.
 
 Fibrewise over a product of manifolds, this identifies the density line of `M × N` with the
 external tensor product of the density lines of `M` and `N`, which is how a distributional
@@ -40,7 +42,8 @@ kernel with coefficients in a bundle of densities on `M × N` splits into its tw
 * `TauCeti.Density.prod μ ν`: the product of a density on `V` and a density on `W`, a density on
   `V × W`.
 * `TauCeti.Density.tensorProductEquiv`: the linear equivalence
-  `Density V m ⊗[ℝ] Density W n ≃ₗ[ℝ] Density (V × W) (m + n)` sending `μ ⊗ ν` to `μ.prod ν`.
+  `Density V (finrank ℝ V) ⊗[ℝ] Density W (finrank ℝ W) ≃ₗ[ℝ] Density (V × W) (finrank ℝ (V × W))`
+  sending `μ ⊗ ν` to `μ.prod ν`.
 
 ## Main results
 
@@ -48,7 +51,7 @@ kernel with coefficients in a bundle of densities on `M × N` splits into its tw
   the product on tuples adapted to `V × W`.
 * `TauCeti.Density.prod_apply_prodCongr_comp`: its values on the images of tuples under products
   of linear equivalences, such as the frames of a product of vector bundles.
-* `TauCeti.Density.density_prod_density`: the product of the densities with values `s` and `t` on
+* `Module.Basis.density_prod_density`: the product of the densities with values `s` and `t` on
   bases `b` and `c` is the density with value `s * t` on the product basis.
 * `TauCeti.Density.prod_eq_zero_iff`: the product vanishes only when a factor does.
 
@@ -80,19 +83,6 @@ def prod (μ : Density V (finrank ℝ V)) (ν : Density W (finrank ℝ W)) :
     Density (V × W) (finrank ℝ (V × W)) :=
   prodFinBasis.density (μ (finBasis ℝ V) * ν (finBasis ℝ W))
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] in
-/-- The tuple listing the vectors `(vᵢ, 0)` of `V × {0}` and then the vectors `(0, wⱼ)` of
-`{0} × W`, in the order given by `e`, is the image of the product basis under the product of the
-linear maps sending the bases to `v` and to `w`. -/
-private theorem sumElim_comp_symm_eq (b : Basis (Fin (finrank ℝ V)) ℝ V)
-    (c : Basis (Fin (finrank ℝ W)) ℝ W)
-    (e : Fin (finrank ℝ V) ⊕ Fin (finrank ℝ W) ≃ Fin (finrank ℝ (V × W)))
-    (v : Fin (finrank ℝ V) → V) (w : Fin (finrank ℝ W) → W) :
-    Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm =
-      ((b.constr ℝ v).prodMap (c.constr ℝ w) : V × W → V × W) ∘ ((b.prod c).reindex e) := by
-  funext k
-  obtain ⟨i | j, rfl⟩ := e.surjective k <;> simp
-
 /-- **The value of a product of densities.** On the tuple listing the vectors `(vᵢ, 0)` and then
 `(0, wⱼ)`, in any order `e`, the product `μ.prod ν` takes the value `μ v * ν w`. -/
 theorem prod_apply_sumElim (μ : Density V (finrank ℝ V)) (ν : Density W (finrank ℝ W))
@@ -105,13 +95,26 @@ theorem prod_apply_sumElim (μ : Density V (finrank ℝ V)) (ν : Density W (fin
         (e.symm.trans (finSumFinEquiv.trans (finCongr finrank_prod.symm))) := by
     funext k
     simp [prodFinBasis, Basis.reindex_apply]
-  have hv : ((finBasis ℝ V).constr ℝ v : V → V) ∘ finBasis ℝ V = v :=
-    funext ((finBasis ℝ V).constr_basis ℝ v)
-  have hw : ((finBasis ℝ W).constr ℝ w : W → W) ∘ finBasis ℝ W = w :=
-    funext ((finBasis ℝ W).constr_basis ℝ w)
-  rw [sumElim_comp_symm_eq (finBasis ℝ V) (finBasis ℝ W) e v w, comp_apply, hperm,
-    apply_comp_perm _ prodFinBasis, prod, Basis.density_apply_self, LinearMap.det_prodMap,
-    abs_mul, mul_mul_mul_comm, ← comp_apply, ← comp_apply, hv, hw]
+  -- The tuple is the image of that basis under the product of the maps `constr v`, `constr w`.
+  have himage : Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm =
+      (((finBasis ℝ V).constr ℝ v).prodMap ((finBasis ℝ W).constr ℝ w) : V × W → V × W) ∘
+        (((finBasis ℝ V).prod (finBasis ℝ W)).reindex e) := by
+    rw [Basis.coe_reindex, ← Function.comp_assoc, Basis.prodMap_constr_comp_prod]
+  -- So the product takes the value `|det (constr v)| * |det (constr w)| * μ b * ν c` on it.
+  have hvalue : μ.prod ν (Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm) =
+      |LinearMap.det ((finBasis ℝ V).constr ℝ v)| * |LinearMap.det ((finBasis ℝ W).constr ℝ w)| *
+        (μ (finBasis ℝ V) * ν (finBasis ℝ W)) := by
+    rw [himage, comp_apply, hperm, apply_comp_perm _ prodFinBasis, prod,
+      Basis.density_apply_self, LinearMap.det_prodMap, abs_mul]
+  -- These factors are the values of `μ` on `v` and of `ν` on `w`.
+  have hv : μ v = |LinearMap.det ((finBasis ℝ V).constr ℝ v)| * μ (finBasis ℝ V) := by
+    rw [← comp_apply]
+    exact congrArg μ (funext ((finBasis ℝ V).constr_basis ℝ v)).symm
+  have hw : ν w = |LinearMap.det ((finBasis ℝ W).constr ℝ w)| * ν (finBasis ℝ W) := by
+    rw [← comp_apply]
+    exact congrArg ν (funext ((finBasis ℝ W).constr_basis ℝ w)).symm
+  rw [hvalue, hv, hw]
+  ring
 
 /-- On the product `b.prod c` of bases of `V` and `W`, listed in any order, the product `μ.prod ν`
 takes the value `μ b * ν c`. -/
@@ -146,15 +149,6 @@ theorem prod_apply_prodCongr_comp {V₀ W₀ : Type*} [AddCommGroup V₀] [Modul
   have hu : ((A.prodCongr B).symm : V × W → V₀ × W₀) ∘ (A.prodCongr B) ∘ u = u :=
     funext fun k ↦ (A.prodCongr B).symm_apply_apply (u k)
   rw [apply_eq_abs_det_mul _ β, Basis.det_map, hu, hβ, prod_apply_sumElim]
-
-/-- The product of the densities with values `s` on `b` and `t` on `c` is the density with value
-`s * t` on the product basis. -/
-theorem density_prod_density (b : Basis (Fin (finrank ℝ V)) ℝ V) (c : Basis (Fin (finrank ℝ W)) ℝ W)
-    (e : Fin (finrank ℝ V) ⊕ Fin (finrank ℝ W) ≃ Fin (finrank ℝ (V × W))) (s t : ℝ) :
-    (b.density s).prod (c.density t) = ((b.prod c).reindex e).density (s * t) := by
-  apply ((b.prod c).reindex e).density_ext
-  rw [prod_apply_reindex_prod, Basis.density_apply_self, Basis.density_apply_self,
-    Basis.density_apply_self]
 
 /-- The tensor product of the density lines of `V` and `W` is the density line of `V × W`, the
 pure tensor `μ ⊗ ν` corresponding to the product density `μ.prod ν`
@@ -214,3 +208,20 @@ theorem prod_eq_zero_iff {μ : Density V (finrank ℝ V)} {ν : Density W (finra
   exact h'
 
 end TauCeti.Density
+
+namespace Module.Basis
+
+open TauCeti
+
+variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  [AddCommGroup W] [Module ℝ W] [FiniteDimensional ℝ W]
+
+/-- The product of the densities with values `s` on `b` and `t` on `c` is the density with value
+`s * t` on the product basis. -/
+theorem density_prod_density (b : Basis (Fin (finrank ℝ V)) ℝ V) (c : Basis (Fin (finrank ℝ W)) ℝ W)
+    (e : Fin (finrank ℝ V) ⊕ Fin (finrank ℝ W) ≃ Fin (finrank ℝ (V × W))) (s t : ℝ) :
+    (b.density s).prod (c.density t) = ((b.prod c).reindex e).density (s * t) := by
+  apply ((b.prod c).reindex e).density_ext
+  rw [Density.prod_apply_reindex_prod, density_apply_self, density_apply_self, density_apply_self]
+
+end Module.Basis

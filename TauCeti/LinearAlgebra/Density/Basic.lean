@@ -117,8 +117,8 @@ changes the determinant only by a sign. The basis `b` only witnesses that `m` is
 of `V`; in other dimensions densities need not be symmetric. -/
 theorem apply_comp_perm (μ : Density V m) (b : Module.Basis (Fin m) ℝ V)
     (σ : Equiv.Perm (Fin m)) (v : Fin m → V) : μ (v ∘ σ) = μ v := by
-  rw [apply_eq_abs_det_mul μ b, apply_eq_abs_det_mul μ b v, b.det.map_perm, Units.smul_def,
-    zsmul_eq_mul, abs_mul, abs_unit_intCast, one_mul]
+  rw [apply_eq_abs_det_mul μ b, apply_eq_abs_det_mul μ b v, b.det.map_perm]
+  simp [Units.smul_def, abs_mul, abs_unit_intCast]
 
 /-- A density is zero exactly when its value on a basis is zero. -/
 @[simp]
