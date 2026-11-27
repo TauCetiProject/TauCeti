@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
+import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.RingTheory.PowerSeries.Expand
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -16,7 +17,8 @@ Over a ring of characteristic `p`, the inverse series of `X + s X^q`, with `q = 
 has no terms outside degrees `q^m`. Its coefficient in degree `q^m` is
 `(-s)^(1 + q + ⋯ + q^(m-1))`. The coefficient results also apply to a series given directly by
 the equation `f + s f^q = X`. Comparing coefficients relates degree `q n` to degree `n` by
-the rule `c ↦ -s * c^q`.
+the rule `c ↦ -s * c^q`. When `s^q = s`, the coefficient in degree `q^m` is `(-s)^m`.
+For `k = 0`, the equation is linear and forces all coefficients outside degree one to vanish.
 -/
 
 public section
@@ -26,7 +28,9 @@ namespace PowerSeries
 variable {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP R p] {k : ℕ} {s : R}
   {f : R⟦X⟧}
 
-private theorem coeff_of_add_C_mul_pow_eq_X
+/-- For `q = p^k`, the coefficient in degree `n` is the degree-one term of `X` minus
+`s * (coeff (n/q) f)^q` when `q ∣ n`. When `q ∤ n` the Frobenius term vanishes. -/
+theorem coeff_of_add_C_mul_pow_eq_X
     (hf : f + C s * f ^ p ^ k = X) (n : ℕ) :
     coeff n f = (if n = 1 then 1 else 0) -
       s * (if p ^ k ∣ n then coeff (n / p ^ k) f else 0) ^ p ^ k := by
@@ -45,17 +49,44 @@ theorem coeff_pow_of_add_C_mul_pow_eq_X (hk : k ≠ 0) (hf : f + C s * f ^ p ^ k
     simp [Nat.not_dvd_of_pos_of_lt (by decide : 0 < 1) hq, zero_pow (by omega : p ^ k ≠ 0)]
   | succ m ih =>
     have hne : (p ^ k) ^ (m + 1) ≠ 1 := (one_lt_pow₀ hq (Nat.succ_ne_zero m)).ne'
-    rw [coeff_of_add_C_mul_pow_eq_X hf, ite_eq_right hne, pow_succ',
-      ite_eq_left (dvd_mul_right _ _), Nat.mul_div_cancel_left _ (by omega), ih,
-      zero_sub, ← neg_mul, ← pow_mul]
-    rw [Finset.sum_range_succ', pow_zero, Finset.sum_congr rfl (fun i _ ↦ pow_succ' _ i),
-      ← Finset.mul_sum, pow_add, pow_one]
-    ring
+    have hstep : coeff ((p ^ k) ^ (m + 1)) f = -s * coeff ((p ^ k) ^ m) f ^ p ^ k := by
+      rw [coeff_of_add_C_mul_pow_eq_X hf, ite_eq_right hne, pow_succ']
+      simp [Nat.mul_div_cancel_left _ (by omega : 0 < p ^ k), neg_mul]
+    rw [hstep, ih, geom_sum_succ, pow_succ', Nat.mul_comm (p ^ k), pow_mul]
+
+/-- If the Frobenius power fixes the scalar `s`, the coefficient of a solution in degree
+`(p^k)^m` is `(-s)^m`. In particular this gives the signed coefficients for `s = ±1`. -/
+theorem coeff_pow_of_add_C_mul_pow_eq_X_of_pow_eq_self (hk : k ≠ 0) (hs : s ^ p ^ k = s)
+    (hf : f + C s * f ^ p ^ k = X) (m : ℕ) : coeff ((p ^ k) ^ m) f = (-s) ^ m := by
+  have hneg : (-s) ^ p ^ k = -s := by
+    change iterateFrobenius R p k (-s) = -s
+    rw [map_neg, iterateFrobenius_def, hs]
+  have hiter (i : ℕ) : (-s) ^ (p ^ k) ^ i = -s := by
+    induction i with
+    | zero => simp
+    | succ i ih => rw [pow_succ, pow_mul, ih, hneg]
+  rw [coeff_pow_of_add_C_mul_pow_eq_X hk hf]
+  induction m with
+  | zero => simp
+  | succ m ih => rw [Finset.sum_range_succ, pow_add, ih, hiter, pow_succ]
 
 /-- A solution with zero constant term has zero coefficient in every degree outside the
-powers of `p^k`. -/
-theorem coeff_eq_zero_of_add_C_mul_pow_eq_X (hk : k ≠ 0) (hf : f + C s * f ^ p ^ k = X)
+powers of `p^k`. For `k = 0`, the equation forces the coefficient of degree one to
+be an inverse of `1 + s`, so no invertibility assumption is needed. -/
+theorem coeff_eq_zero_of_add_C_mul_pow_eq_X (hf : f + C s * f ^ p ^ k = X)
     (hf₀ : constantCoeff f = 0) {n : ℕ} (hn : ∀ m : ℕ, n ≠ (p ^ k) ^ m) : coeff n f = 0 := by
+  by_cases hk : k = 0
+  · subst k
+    have hlinear (i : ℕ) : (1 + s) * coeff i f = if i = 1 then 1 else 0 := by
+      simpa only [pow_zero, pow_one, map_add, coeff_C_mul, coeff_X, add_mul, one_mul]
+        using congrArg (coeff (R := R) i) hf
+    have hone : (1 + s) * coeff 1 f = 1 := by simpa using hlinear 1
+    have hn₁ : n ≠ 1 := by simpa using hn 0
+    have hzero : (1 + s) * coeff n f = 0 := by simpa only [ite_eq_right hn₁] using hlinear n
+    calc
+      coeff n f = ((1 + s) * coeff 1 f) * coeff n f := by rw [hone, one_mul]
+      _ = coeff 1 f * ((1 + s) * coeff n f) := by ring
+      _ = 0 := by rw [hzero, mul_zero]
   have hq : 1 < p ^ k := one_lt_pow₀ (Fact.out : p.Prime).one_lt hk
   induction n using Nat.strong_induction_on with
   | ind n ih =>
@@ -80,7 +111,8 @@ open PowerSeries
 
 /-- The inverse of a coordinate represented by `X + s X^q` satisfies the binomial equation
 used by the coefficient formulas. -/
-theorem inv_add_C_mul_pow_eq_X {R : Type*} [CommRing R] (φ : FormalCoordinate R) {s : R} {q : ℕ}
+theorem toPowerSeries_inv_add_C_mul_pow_eq_X {R : Type*} [CommRing R] (φ : FormalCoordinate R)
+    {s : R} {q : ℕ}
     (hφ : φ.toPowerSeries = X + C s * X ^ q) :
     φ⁻¹.toPowerSeries + C s * φ⁻¹.toPowerSeries ^ q = X := by
   have h := φ.toPowerSeries_mul_inv
