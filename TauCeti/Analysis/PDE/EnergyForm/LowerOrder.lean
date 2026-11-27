@@ -24,9 +24,12 @@ between the two sides of a weak equation.
   coefficients the energy form is that of its principal part plus the `L²` pairing of
   `⟪b, ∇u⟫ + c u` with `v`; `TauCeti.PDE.memLp_inner_gradient` and
   `TauCeti.PDE.memLp_lowerOrder`: `⟪b, ∇u⟫ ∈ L²(Ω)` and `⟪b, ∇u⟫ + c u ∈ L²(Ω)`.
-* `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner`: with bounded lower-order
-  coefficients the energy form is that of the operator without drift plus the pairing
-  `∫_Ω ⟪b, ∇u⟫ v`.
+* `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner_of_integrable`: with
+  bounded principal and mass coefficients the energy form is that of the operator without drift
+  plus the pairing `∫_Ω ⟪b, ∇u⟫ v`, as soon as this pairing is integrable, for instance for a drift
+  in `Lᵖ` (`TauCeti.PDE.integrable_inner_gradient_mul_value`);
+  `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner` is the case of a bounded
+  drift.
 * `TauCeti.PDE.lowerOrderL`: the lower-order part `u ↦ ⟪b, ∇u⟫ + c u` as a bounded operator
   `H¹(Ω) → L²(Ω)`, with norm at most `(‖b‖_∞ + ‖c‖_∞) ‖J‖` for the jet map `J`
   (`TauCeti.PDE.norm_lowerOrderL_le_eLpNorm`), hence at most `(|β| + |γ|) ‖J‖` for bounds
@@ -133,8 +136,37 @@ theorem energyFormH1_eq_principal_add_setIntegral {a : EuclideanSpace ℝ ι →
     ← integral_add hBv hCv]
   simp only [add_mul]
 
-/-- **Splitting off the drift.** With an essentially bounded principal energy density and bounded
-lower-order coefficients, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼ·) + bⁱ ∂ᵢ + c` is that of
+/-- **Splitting off the drift.** With an essentially bounded principal energy density and a bounded
+mass coefficient, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼ·) + bⁱ ∂ᵢ + c` is that of `-∂ᵢ(aⁱʲ ∂ⱼ·) + c` plus
+the drift pairing, whenever the drift pairing is integrable:
+
+`a_{b,c}(u, v) = a_{0,c}(u, v) + ∫_Ω ⟪b, ∇u⟫ v`.
+
+The drift `b` itself need not be bounded. -/
+theorem energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner_of_integrable
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) {u v : W1p mu Omega 2}
+    (hb : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x) (mu.restrict Omega)) :
+    energyFormH1 a b c u v = energyFormH1 a 0 c u v +
+      ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x ∂mu := by
+  have hCv : Integrable (fun x => c x * W1p.value u x * W1p.value v x) (mu.restrict Omega) :=
+    (hc.fun_mul (Lp.memLp (W1p.value u)) :
+      MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega)).integrable_mul (Lp.memLp _)
+  have h0 : Integrable (fun x => energyIntegrand (a x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) (c x) (jetField u x) (jetField v x))
+      (mu.restrict Omega) :=
+    ((integrable_energyIntegrand_jetField ha u v).add hCv).congr (.of_forall fun x => by
+      simp [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply])
+  rw [energyFormH1_def, energyFormH1_def, ← integral_add h0 hb]
+  refine integral_congr_ae (.of_forall fun x => ?_)
+  simp only [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply,
+    Pi.zero_apply, inner_zero_left, zero_mul]
+  ring
+
+/-- **Splitting off a bounded drift.** With an essentially bounded principal energy density and
+bounded lower-order coefficients, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼ·) + bⁱ ∂ᵢ + c` is that of
 `-∂ᵢ(aⁱʲ ∂ⱼ·) + c` plus the drift pairing:
 
 `a_{b,c}(u, v) = a_{0,c}(u, v) + ∫_Ω ⟪b, ∇u⟫ v`. -/
@@ -145,20 +177,9 @@ theorem energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner
     (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
     (u v : W1p mu Omega 2) :
     energyFormH1 a b c u v = energyFormH1 a 0 c u v +
-      ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x ∂mu := by
-  have hv := Lp.memLp (W1p.value v)
-  have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x) (mu.restrict Omega) :=
-    (memLp_inner_gradient hb u).integrable_mul hv
-  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) := hc.fun_mul (Lp.memLp _)
-  have hCv : Integrable (fun x => c x * W1p.value u x * W1p.value v x) (mu.restrict Omega) :=
-    hC.integrable_mul hv
-  rw [energyFormH1_eq_principal_add_setIntegral ha hb hc,
-    energyFormH1_eq_principal_add_setIntegral ha MemLp.zero hc, add_assoc]
-  congr 1
-  rw [← integral_add (hCv.congr (ae_of_all _ fun x => by simp)) hBv]
-  refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  simp only [Pi.zero_apply, inner_zero_left, zero_add]
-  ring
+      ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x ∂mu :=
+  energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner_of_integrable ha hc
+    ((memLp_inner_gradient hb u).integrable_mul (Lp.memLp _))
 
 /-- **Moving the lower-order terms to the right-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`, with an essentially bounded principal energy density,

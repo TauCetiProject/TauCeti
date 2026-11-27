@@ -108,7 +108,7 @@ private theorem integrable_const_add_norm_mul_norm_mul_norm {μ : Measure (Eucli
 
 /-- If `‖b‖ ≤ β + |d|` on `Ω` with `d ∈ Lᵖ`, `u ∈ H¹(Ω)` and `φ ∈ H¹(Ω) ∩ L^q` with
 `1/p + 1/q = 1/2`, then the drift term `⟪b, ∇u⟫ φ` of the weak form is integrable. -/
-private theorem integrable_inner_gradient_mul_value
+theorem integrable_inner_gradient_mul_value
     (hb : AEStronglyMeasurable b (mu.restrict Omega)) (hd : MemLp d p (mu.restrict Omega))
     (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta + ‖d x‖)
     (hpq : p⁻¹ + q⁻¹ = 2⁻¹) (u : W1p mu Omega 2) {φ : W1p mu Omega 2}
