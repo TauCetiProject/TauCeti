@@ -57,6 +57,9 @@ limit is a unital C⋆-algebra and the canonical maps are unital.
 * `TauCeti.CStarInductiveLimit.isometry_of`: with injective connecting maps, the canonical maps
   are isometric.
 * `TauCeti.CStarInductiveLimit.dense_iUnion_range_of`: the images of the stages are dense.
+* `TauCeti.CStarInductiveLimit.exists_forall_norm_lt`,
+  `TauCeti.CStarInductiveLimit.exists_forall_norm_of_sub_lt`: finitely many elements decay, or
+  are approximated, uniformly in a single stage.
 * `TauCeti.CStarInductiveLimit.hom_ext`: ⋆-homomorphisms out of the limit are determined on the
   stages.
 * `TauCeti.CStarInductiveLimit.range_lift`: the range of `lift g` is the closure of the union of
@@ -412,6 +415,47 @@ theorem dense_iUnion_range_of : Dense (⋃ i, Set.range (of A f i)) := by
   rintro _ ⟨z, rfl⟩
   obtain ⟨i, a, rfl⟩ := CStarSeminormedDirectLimit.exists_of z
   exact Set.mem_iUnion.2 ⟨i, a, toCompletion_of i a⟩
+
+/-- **Uniform decay.** If finitely many elements of `A i` have images of norm `< ε` in the
+C⋆-inductive limit, their images in some later stage all have norm `< ε`. -/
+theorem exists_forall_norm_lt {β : Type*} [Finite β] {i : ι} (a : β → A i) {ε : ℝ}
+    (h : ∀ b, ‖of A f i (a b)‖ < ε) : ∃ j, ∃ hij : i ≤ j, ∀ b, ‖f i j hij (a b)‖ < ε := by
+  classical
+  have : Nonempty {j // i ≤ j} := ⟨⟨i, le_rfl⟩⟩
+  have hb (b : β) : ∃ j, ∃ hij : i ≤ j, ‖f i j hij (a b)‖ < ε := by
+    have hb := h b
+    rw [norm_of] at hb
+    obtain ⟨j, hj⟩ := exists_lt_of_ciInf_lt hb
+    exact ⟨j, j.property, hj⟩
+  choose g hg hgε using hb
+  have := Fintype.ofFinite β
+  obtain ⟨j, hj⟩ := Finset.exists_le (insert i (Finset.univ.image g))
+  have hij : i ≤ j := hj i (Finset.mem_insert_self _ _)
+  refine ⟨j, hij, fun b => ?_⟩
+  have hgj : g b ≤ j :=
+    hj _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ _)))
+  calc ‖f i j hij (a b)‖ = ‖f (g b) j hgj (f i (g b) (hg b) (a b))‖ := by
+        rw [DirectedSystem.map_map (f := (f · · ·))]
+    _ ≤ ‖f i (g b) (hg b) (a b)‖ := NonUnitalStarAlgHom.norm_apply_le _ _
+    _ < ε := hgε b
+
+/-- **Uniform approximation.** Finitely many elements of the C⋆-inductive limit are within `ε`
+of images of elements of a common stage, which can be taken above any given index. -/
+theorem exists_forall_norm_of_sub_lt {β : Type*} [Finite β] (x : β → CStarInductiveLimit A f)
+    (i₀ : ι) {ε : ℝ} (hε : 0 < ε) :
+    ∃ j, i₀ ≤ j ∧ ∃ a : β → A j, ∀ b, ‖of A f j (a b) - x b‖ < ε := by
+  classical
+  have hb (b : β) : ∃ k, ∃ a : A k, ‖of A f k a - x b‖ < ε := by
+    obtain ⟨y, hy, hxy⟩ := (dense_iUnion_range_of A f).exists_dist_lt (x b) hε
+    obtain ⟨k, a, rfl⟩ := Set.mem_iUnion.1 hy
+    exact ⟨k, a, by rwa [dist_comm, dist_eq_norm] at hxy⟩
+  choose g a ha using hb
+  have := Fintype.ofFinite β
+  obtain ⟨j, hj⟩ := Finset.exists_le (insert i₀ (Finset.univ.image g))
+  have hgj (b : β) : g b ≤ j :=
+    hj _ (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ _)))
+  exact ⟨j, hj _ (Finset.mem_insert_self _ _), fun b => f (g b) j (hgj b) (a b),
+    fun b => by rw [of_f]; exact ha b⟩
 
 /-- The C⋆-inductive limit of a countable directed system of separable C⋆-algebras is
 separable. -/
