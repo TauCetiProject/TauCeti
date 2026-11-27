@@ -48,6 +48,9 @@ variable {C : Type u} [Category.{v} C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{
 private abbrev sourceTorsor (x y : F.obj (.mk (op U))) :=
   b.sheafHomTorsor x y (IsGerbe.exists_covering_iso (J := J) x y)
 
+private abbrev sourceEquiv (x y : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ) :=
+  b.sheafHomTorsorEquiv (IsGerbe.exists_covering_iso (J := J) x y) T
+
 private abbrev bandMap :=
   (abelianSheafToGrpSheaf (J.over U)).map ((J.overPullback AddCommGrpCat U).map φ)
 
@@ -62,18 +65,22 @@ private def chart {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p : (F.presheafHom x y).obj T) :
     coefficient (B := B) T ≃ (b.extendedTorsor φ x y).sheaf.obj.obj T :=
   (Sheaf.Torsor.contractedProductObjEquiv (P := b.sourceTorsor x y)
-    (X := Sheaf.MulActionSheaf.mulRight (bandMap (U := U) φ)) p).trans
+    (X := Sheaf.MulActionSheaf.mulRight (bandMap (U := U) φ)) (b.sourceEquiv x y T p)).trans
       ((((sheafToPresheaf (J.over U) (Type v')).mapIso
         ((b.sourceTorsor x y).contractedProductMulRightIso (bandMap (U := U) φ))).app T).toEquiv)
 
 private lemma chart_apply {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p : (F.presheafHom x y).obj T) (a : coefficient (B := B) T) :
-    b.chart φ p a = a • ((b.sourceTorsor x y).toMap (bandMap (U := U) φ)).hom.app T p := by
-  unfold chart
-  -- The contracted-product chart takes torsor sections; these are the original Hom sections.
-  erw [Equiv.trans_apply, Sheaf.Torsor.contractedProductObjEquiv_apply]
-  exact Sheaf.Torsor.contractedProductMulRightIso_hom_hom_app_contractedProductMk
-    (φ := bandMap φ) (P := b.sourceTorsor x y) p a
+    b.chart φ p a = a • ((b.sourceTorsor x y).toMap (bandMap (U := U) φ)).hom.app T
+      (b.sourceEquiv x y T p) := by
+  calc
+    _ = ((((sheafToPresheaf (J.over U) (Type v')).mapIso
+        ((b.sourceTorsor x y).contractedProductMulRightIso (bandMap φ))).app T).toEquiv)
+          (Sheaf.Torsor.contractedProductMk (b.sourceEquiv x y T p) a) :=
+      congrArg _ (Sheaf.Torsor.contractedProductObjEquiv_apply
+        (X := Sheaf.MulActionSheaf.mulRight (bandMap φ)) (b.sourceEquiv x y T p) a)
+    _ = _ := Sheaf.Torsor.contractedProductMulRightIso_hom_hom_app_contractedProductMk
+      (φ := bandMap φ) (P := b.sourceTorsor x y) (b.sourceEquiv x y T p) a
 
 private lemma chart_map {x y : F.obj (.mk (op U))} {T T' : (Over U)ᵒᵖ}
     (f : T ⟶ T') (p : (F.presheafHom x y).obj T) (a : coefficient (B := B) T) :
@@ -83,19 +90,23 @@ private lemma chart_map {x y : F.obj (.mk (op U))} {T T' : (Over U)ᵒᵖ}
           ((J.overPullback AddCommGrpCat U).obj B)).obj.map f a) := by
   simp only [chart_apply, Sheaf.Torsor.map_smul]
   congr 1
-  exact (NatTrans.naturality_apply ((b.sourceTorsor x y).toMap (bandMap φ)).hom f p).symm
+  exact (NatTrans.naturality_apply ((b.sourceTorsor x y).toMap (bandMap φ)).hom f
+    (b.sourceEquiv x y T p)).symm.trans
+      (congrArg (((b.sourceTorsor x y).toMap (bandMap φ)).hom.app T')
+        (b.sheafHomTorsorEquiv_map _ f p))
 
 private lemma chart_action {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
-    (p : (b.sourceTorsor x y).sheaf.obj.obj T)
+    (p : (F.presheafHom x y).obj T)
     (g : ((abelianSheafToGrpSheaf (J.over U)).obj
       ((J.overPullback AddCommGrpCat U).obj A)).obj.obj T)
     (a : coefficient (B := B) T) :
     b.chart φ (b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm g)) a =
       b.chart φ p (a * (bandMap φ).hom.app T g) := by
-  have h := Sheaf.Torsor.toMap_smul (bandMap φ) (b.sourceTorsor x y) g p
-  rw [sheafHomTorsor_smul] at h
-  -- `homAct` uses fibre morphisms, while `toMap_smul` uses the same sections as torsor sections.
-  erw [chart_apply, chart_apply, h, mul_smul]
+  rw [chart_apply, chart_apply]
+  have h := Sheaf.Torsor.toMap_smul (bandMap φ) (b.sourceTorsor x y) g
+    (b.sourceEquiv x y T p)
+  rw [sheafHomTorsorEquiv_smul] at h
+  rw [h, mul_smul]
 
 private def chartComp {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p : (F.presheafHom x y).obj T) (q : (F.presheafHom y z).obj T)
@@ -111,8 +122,7 @@ private lemma chartComp_chart {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     b.chartComp φ p q (b.chart φ p a) (b.chart φ q c) = b.chart φ (p ≫ q) (a * c) := by
   dsimp only [chartComp]
   rw [Equiv.symm_apply_apply, Equiv.symm_apply_apply]
-  -- The Cartesian tensor of Hom presheaves evaluates to a pair of fibre morphisms.
-  erw [presheafHomComp_app_apply]
+  exact congrArg (fun r ↦ b.chart φ r (a * c)) (presheafHomComp_app_apply x y z T (p, q))
 
 private lemma chartComp_change {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p p' : (F.presheafHom x y).obj T) (q q' : (F.presheafHom y z).obj T)
@@ -121,17 +131,27 @@ private lemma chartComp_change {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     b.chartComp φ p q s t = b.chartComp φ p' q' s t := by
   obtain ⟨a, rfl⟩ := (b.chart φ p').surjective s
   obtain ⟨c, rfl⟩ := (b.chart φ q').surjective t
-  obtain ⟨⟨g, p₀⟩, hg⟩ := (b.sourceTorsor x y).bijective T |>.2 (p', p)
-  obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 hg
-  obtain ⟨⟨h, q₀⟩, hh⟩ := (b.sourceTorsor y z).bijective T |>.2 (q', q)
-  obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 hh
-  dsimp only
-  -- The torsor's bijectivity witnesses are Hom-presheaf sections via `sheafHomTorsor_sheaf`.
-  erw [chartComp_chart, sheafHomTorsor_smul_comp_smul, chart_action]
-  have hp := b.sheafHomTorsor_smul (IsGerbe.exists_covering_iso (J := J) x y) g p₀
-  have hq := b.sheafHomTorsor_smul (IsGerbe.exists_covering_iso (J := J) y z) h q₀
-  -- The same identification converts the two torsor actions to `homAct` in the charts.
-  erw [hp, hq, chart_action, chart_action, chartComp_chart]
+  obtain ⟨⟨g, p₀⟩, hg⟩ := (b.sourceTorsor x y).bijective T |>.2
+    (b.sourceEquiv x y T p', b.sourceEquiv x y T p)
+  obtain ⟨p₀, rfl⟩ := (b.sourceEquiv x y T).surjective p₀
+  dsimp only at hg
+  rw [sheafHomTorsorEquiv_smul] at hg
+  obtain ⟨hg₁, hg₂⟩ := Prod.ext_iff.mp hg
+  obtain rfl := (b.sourceEquiv x y T).injective hg₁
+  obtain rfl := (b.sourceEquiv x y T).injective hg₂
+  obtain ⟨⟨h, q₀⟩, hh⟩ := (b.sourceTorsor y z).bijective T |>.2
+    (b.sourceEquiv y z T q', b.sourceEquiv y z T q)
+  obtain ⟨q₀, rfl⟩ := (b.sourceEquiv y z T).surjective q₀
+  dsimp only at hh
+  rw [sheafHomTorsorEquiv_smul] at hh
+  obtain ⟨hh₁, hh₂⟩ := Prod.ext_iff.mp hh
+  obtain rfl := (b.sourceEquiv y z T).injective hh₁
+  obtain rfl := (b.sourceEquiv y z T).injective hh₂
+  have hc := b.sheafHomTorsor_smul_comp_smul
+    (IsGerbe.exists_covering_iso (J := J) x y) (IsGerbe.exists_covering_iso (J := J) y z)
+    (b.sourceEquiv x y T p₀) (b.sourceEquiv y z T q₀) g h
+  simp only [sheafHomTorsorEquiv_smul, Equiv.symm_apply_apply] at hc
+  rw [chartComp_chart, hc, chart_action, chart_action, chart_action, chartComp_chart]
   congr 1
   rw [map_mul]
   exact mul_mul_mul_comm _ _ _ _
@@ -232,11 +252,12 @@ private lemma compSection_map {x y z : F.obj (.mk (op U))} {T T' : (Over U)ᵒ�
         ((b.extendedTorsor φ y z).sheaf.obj.map f t) := by
   apply b.ext_of_compositionCover φ x y z
   intro V g hg
-  -- Restricting along `f ≫ g.op` is restricting along `(g ≫ f.unop).op`.
-  erw [← Functor.map_comp_apply,
-    b.compSection_restrict φ s t (g ≫ f.unop) hg,
-    b.compSection_restrict φ _ _ g hg]
-  congr 1 <;> exact Functor.map_comp_apply _ _ _ _
+  calc
+    _ = (b.extendedTorsor φ x z).sheaf.obj.map (f ≫ g.op) (b.compSection φ s t) :=
+      (Functor.map_comp_apply _ f g.op _).symm
+    _ = _ := (b.compSection_restrict φ s t (g ≫ f.unop) hg).trans (by
+      rw [b.compSection_restrict φ _ _ g hg]
+      congr 1 <;> exact Functor.map_comp_apply _ _ _ _)
 
 private lemma compSection_mk {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p : (F.presheafHom x y).obj T) (q : (F.presheafHom y z).obj T)
@@ -246,21 +267,18 @@ private lemma compSection_mk {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
 
 private def idSection (x : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ) :
     (b.extendedTorsor φ x x).sheaf.obj.obj T :=
-  ((b.sourceTorsor x x).toMap (bandMap φ)).hom.app T (𝟙 _)
+  ((b.sourceTorsor x x).toMap (bandMap φ)).hom.app T (b.sourceEquiv x x T (𝟙 _))
 
 private lemma idSection_chart (x : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ) :
     b.idSection φ x T = b.chart φ (𝟙 ((F.map T.unop.hom.op.toLoc).toFunctor.obj x)) 1 := by
-  rw [chart_apply, one_smul]
-  -- `idSection` is the extension map applied to the identity of the pulled-back object.
-  rfl
+  simp only [idSection, chart_apply, one_smul]
 
 private lemma idSection_map (x : F.obj (.mk (op U))) {T T' : (Over U)ᵒᵖ}
     (f : T ⟶ T') :
     (b.extendedTorsor φ x x).sheaf.obj.map f (b.idSection φ x T) = b.idSection φ x T' := by
   unfold idSection
-  -- The identity fibre morphism is a section of the original torsor's sheaf.
-  erw [← NatTrans.naturality_apply]
-  congr 1
+  rw [← NatTrans.naturality_apply, sheafHomTorsorEquiv_map]
+  congr 2
   exact pullHom_id_self T.unop.hom f.unop.left T'.unop.hom (Over.w f.unop)
 
 private lemma idSection_comp {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
@@ -330,8 +348,7 @@ private def presheafHomInv {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p : (F.presheafHom x y).obj T) : (F.presheafHom y x).obj T :=
   have : IsGroupoid (F.obj (.mk (op T.unop.left))) := IsGerbe.isGroupoid (J := J) _
   -- A Hom-presheaf section is a morphism between the two pullbacks in the fibre at `T.left`.
-  inv (p : (F.map T.unop.hom.op.toLoc).toFunctor.obj x ⟶
-    (F.map T.unop.hom.op.toLoc).toFunctor.obj y)
+  inv p
 
 omit [HasWeakSheafify (J.over U) (Type v')]
   [(J.over U).WEqualsLocallyBijective (Type v')] in
@@ -534,10 +551,14 @@ lemma changeBandComp_toMap {x y z : F.obj (.mk (op U))} (T : (Over U)ᵒᵖ)
     let ψ := (abelianSheafToGrpSheaf (J.over U)).map
       ((J.overPullback AddCommGrpCat U).map φ)
     (b.changeBandComp φ x y z).hom.app T
-      (a • (P x y |>.toMap ψ).hom.app T p, c • (P y z |>.toMap ψ).hom.app T q) =
-        (a * c) • (P x z |>.toMap ψ).hom.app T (p ≫ q) :=
-  (congrArg₂ (b.compSection φ) (b.chart_apply φ p a).symm (b.chart_apply φ q c).symm).trans
-    ((b.compSection_mk φ p q a c).trans (b.chart_apply φ (p ≫ q) (a * c)))
+      (a • (P x y |>.toMap ψ).hom.app T p,
+      c • (P y z |>.toMap ψ).hom.app T q) =
+        (a * c) • (P x z |>.toMap ψ).hom.app T (p ≫ q) := by
+  have h := (congrArg₂ (b.compSection φ)
+    (b.chart_apply φ p a).symm (b.chart_apply φ q c).symm).trans
+      ((b.compSection_mk φ p q a c).trans (b.chart_apply φ (p ≫ q) (a * c)))
+  simp only [sheafHomTorsorEquiv_apply] at h
+  exact h
 
 /-- The extension maps preserve composition of original local morphisms. -/
 lemma changeBandComp_toMap_toMap {x y z : F.obj (.mk (op U))} (T : (Over U)ᵒᵖ)
@@ -546,7 +567,8 @@ lemma changeBandComp_toMap_toMap {x y z : F.obj (.mk (op U))} (T : (Over U)ᵒ�
     let ψ := (abelianSheafToGrpSheaf (J.over U)).map
       ((J.overPullback AddCommGrpCat U).map φ)
     (b.changeBandComp φ x y z).hom.app T
-      ((P x y |>.toMap ψ).hom.app T p, (P y z |>.toMap ψ).hom.app T q) =
+      ((P x y |>.toMap ψ).hom.app T p,
+      (P y z |>.toMap ψ).hom.app T q) =
         (P x z |>.toMap ψ).hom.app T (p ≫ q) := by
   simpa only [one_mul, one_smul] using b.changeBandComp_toMap φ T p q 1 1
 
@@ -555,7 +577,10 @@ lemma changeBandId_app (x : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ) :
     let P := b.sheafHomTorsor x x (IsGerbe.exists_covering_iso (J := J) x x)
     let ψ := (abelianSheafToGrpSheaf (J.over U)).map
       ((J.overPullback AddCommGrpCat U).map φ)
-    (b.changeBandId φ x).hom.app T PUnit.unit = (P.toMap ψ).hom.app T (𝟙 _) := (rfl)
+    (b.changeBandId φ x).hom.app T PUnit.unit =
+      (P.toMap ψ).hom.app T (𝟙 _) := by
+  intro P ψ
+  exact congrArg ((P.toMap ψ).hom.app T) (b.sheafHomTorsorEquiv_apply _ T (𝟙 _))
 
 /-- The inverse formula on local representatives. -/
 @[simp]
@@ -568,9 +593,11 @@ lemma changeBandInv_toMap {x y : F.obj (.mk (op U))} (T : (Over U)ᵒᵖ)
     let ψ := (abelianSheafToGrpSheaf (J.over U)).map
       ((J.overPullback AddCommGrpCat U).map φ)
     (b.changeBandInv φ x y).hom.app T (a • (P x y |>.toMap ψ).hom.app T p.hom) =
-      a⁻¹ • (P y x |>.toMap ψ).hom.app T p.inv :=
-  (congrArg (b.invSection φ) (b.chart_apply φ p.hom a).symm).trans
-    ((b.invSection_mk φ p a).trans (b.chart_apply φ p.inv a⁻¹))
+      a⁻¹ • (P y x |>.toMap ψ).hom.app T p.inv := by
+  have h := (congrArg (b.invSection φ) (b.chart_apply φ p.hom a).symm).trans
+      ((b.invSection_mk φ p a).trans (b.chart_apply φ p.inv a⁻¹))
+  simp only [sheafHomTorsorEquiv_apply] at h
+  exact h
 
 /-- Composition of the extended sheaves is associative on every object of the slice. -/
 lemma changeBandComp_assoc (w x y z : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ) :
@@ -736,6 +763,16 @@ lemma ChangeBandFiber.smul_def {x y : b.ChangeBandFiber φ U}
     a • s = (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B) T a) • s :=
   (rfl)
 
+/-- The two positive translations add under composition in the changed-band fibre. -/
+lemma changeBandFiber_smul_comp_smul {x y z : b.ChangeBandFiber φ U}
+    (s : x ⟶ y) (t : y ⟶ z) (a c : Multiplicative (B.obj.obj (op U))) :
+    (a • s) ≫ (c • t) = (a * c) • (s ≫ t) := by
+  let : MulAction (coefficient (B := B) (op (Over.mk (𝟙 U)))) (x ⟶ z) :=
+    (b.extendedTorsor φ x.obj z.obj).mulAction _
+  exact (b.changeBandComp_smul φ x.obj y.obj z.obj (op (Over.mk (𝟙 U)))
+    (abelianSheafToGrpSheafObjEquiv _ _ a) (abelianSheafToGrpSheafObjEquiv _ _ c) s t).trans
+      (congrArg (fun d ↦ d • (s ≫ t)) (map_mul _ a c).symm)
+
 /-- Composition of representatives at the terminal slice object multiplies their coefficients. -/
 @[simp]
 lemma changeBandFiber_smul_toMap_comp_smul_toMap {x y z : b.ChangeBandFiber φ U}
@@ -751,22 +788,9 @@ lemma changeBandFiber_smul_toMap_comp_smul_toMap {x y z : b.ChangeBandFiber φ U
     let t : y ⟶ z := (P y z |>.toMap ψ).hom.app T q
     let r : x ⟶ z := (P x z |>.toMap ψ).hom.app T (p ≫ q)
     (a • s) ≫ (c • t) = (a * c) • r := by
-  dsimp only
-  rw [ChangeBandFiber.smul_def, ChangeBandFiber.smul_def, ChangeBandFiber.comp_def,
-    b.changeBandComp_toMap φ, ChangeBandFiber.smul_def]
-  congr 1
-  exact (map_mul (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B)
-    (op (Over.mk (𝟙 U)))) a c).symm
-
-/-- The two positive translations add under composition in the changed-band fibre. -/
-lemma changeBandFiber_smul_comp_smul {x y z : b.ChangeBandFiber φ U}
-    (s : x ⟶ y) (t : y ⟶ z) (a c : Multiplicative (B.obj.obj (op U))) :
-    (a • s) ≫ (c • t) = (a * c) • (s ≫ t) := by
-  let : MulAction (coefficient (B := B) (op (Over.mk (𝟙 U)))) (x ⟶ z) :=
-    (b.extendedTorsor φ x.obj z.obj).mulAction _
-  exact (b.changeBandComp_smul φ x.obj y.obj z.obj (op (Over.mk (𝟙 U)))
-    (abelianSheafToGrpSheafObjEquiv _ _ a) (abelianSheafToGrpSheafObjEquiv _ _ c) s t).trans
-      (congrArg (fun d ↦ d • (s ≫ t)) (map_mul _ a c).symm)
+  intro P ψ T s t r
+  rw [b.changeBandFiber_smul_comp_smul]
+  exact congrArg (fun v : x ⟶ z ↦ (a * c) • v) (b.changeBandComp_toMap_toMap φ T p q)
 
 /-- Inversion negates translations in the changed-band fibre. -/
 lemma ChangeBandFiber.inv_smul {x y : b.ChangeBandFiber φ U}

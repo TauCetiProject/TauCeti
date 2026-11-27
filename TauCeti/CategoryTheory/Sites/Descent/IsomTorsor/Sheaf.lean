@@ -42,6 +42,7 @@ In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 * `coefficientSheaf`: the sheaf `A|_U` on `J.over U`.
 * `principalSheafIso`: the same comparison for the tensor products of sheaves on `J.over U`.
 * `sheafHomTorsor`: `Isom(x, y)` as a torsor under the restriction of `A` to `Over U`.
+* `sheafHomTorsorEquiv`: local morphisms as torsor sections, compatible with restriction and action.
 * `mk_sheafHomTorsor_eq_one_iff`: this torsor is trivial if and only if `x` and `y` are
   isomorphic.
 
@@ -176,7 +177,8 @@ and Remark 31.5). For a gerbe, `IsGerbe.exists_covering_iso x y` supplies the hy
 
 The body is exposed because the sections of this torsor are, by definition, the sections of
 `F.sheafHom J x y`, that is morphisms of fibres; statements about its action apply
-`AbelianBanding.homAct` to them. Use `sheafHomTorsor_sheaf` and `sheafHomTorsor_smul` rather than
+`AbelianBanding.homAct` to them. Use `sheafHomTorsorEquiv` to identify sections explicitly,
+and `sheafHomTorsor_sheaf` and `sheafHomTorsor_smul` for the sheaf and its action, rather than
 unfolding it. -/
 @[expose] noncomputable def sheafHomTorsor
     (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
@@ -222,6 +224,44 @@ lemma sheafHomTorsor_smul
     a • p = b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm a) :=
   (rfl)
 
+/-- Local morphisms as sections of the isomorphism torsor. Restriction and the band action
+are respected by `sheafHomTorsorEquiv_map` and `sheafHomTorsorEquiv_smul`. -/
+def sheafHomTorsorEquiv
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    (T : (Over U)ᵒᵖ) :
+    ((F.map T.unop.hom.op.toLoc).toFunctor.obj x ⟶
+      (F.map T.unop.hom.op.toLoc).toFunctor.obj y) ≃
+        (b.sheafHomTorsor x y h).sheaf.obj.obj T := by
+  rw [sheafHomTorsor_sheaf, sheafHom_obj, presheafHom_obj]
+
+/-- The identification sends a local morphism to the same section of the torsor. -/
+@[simp]
+lemma sheafHomTorsorEquiv_apply
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    (T : (Over U)ᵒᵖ) (p : (F.map T.unop.hom.op.toLoc).toFunctor.obj x ⟶
+      (F.map T.unop.hom.op.toLoc).toFunctor.obj y) :
+    b.sheafHomTorsorEquiv h T p = p := (rfl)
+
+/-- The identification of local morphisms with torsor sections commutes with restriction. -/
+lemma sheafHomTorsorEquiv_map
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    {T T' : (Over U)ᵒᵖ} (f : T ⟶ T') (p : (F.presheafHom x y).obj T) :
+    (b.sheafHomTorsor x y h).sheaf.obj.map f (b.sheafHomTorsorEquiv h T p) =
+      b.sheafHomTorsorEquiv h T' ((F.presheafHom x y).map f p) := (rfl)
+
+/-- The identification of local morphisms with torsor sections intertwines the band action. -/
+lemma sheafHomTorsorEquiv_smul
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    {T : (Over U)ᵒᵖ} (a : ((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat U).obj A)).obj.obj T) (p : (F.presheafHom x y).obj T) :
+    a • b.sheafHomTorsorEquiv h T p =
+      b.sheafHomTorsorEquiv h T
+        (b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm a)) := (rfl)
+
 /-- Translating both local isomorphisms multiplies their coefficients under composition. -/
 lemma sheafHomTorsor_smul_comp_smul {z : F.obj (.mk (op U))}
     (hxy : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
@@ -232,18 +272,22 @@ lemma sheafHomTorsor_smul_comp_smul {z : F.obj (.mk (op U))}
     (q : (b.sheafHomTorsor y z hyz).sheaf.obj.obj T)
     (g h : ((abelianSheafToGrpSheaf (J.over U)).obj
       ((J.overPullback AddCommGrpCat U).obj A)).obj.obj T) :
-    (g • p) ≫ (h • q) =
-      b.homAct (p ≫ q) ((abelianSheafToGrpSheafObjEquiv _ T).symm (g * h)) := by
-  -- Name the fibre morphism so that `asIso` can infer its groupoid instance through the
-  -- exposed identification of torsor sections with Hom-presheaf sections.
-  let q' : (F.map T.unop.hom.op.toLoc).toFunctor.obj y ⟶
-    (F.map T.unop.hom.op.toLoc).toFunctor.obj z := q
-  rw [sheafHomTorsor_smul, sheafHomTorsor_smul]
-  -- This rewrite crosses that same identification and the multiplicative coefficient tag.
-  erw [b.comp_homAct, b.homAct_comp_hom p (asIso q'), ← b.homAct_mul]
-  congr 1
-  exact (map_mul (abelianSheafToGrpSheafObjEquiv _ T).symm h g).symm.trans
-    (congrArg (abelianSheafToGrpSheafObjEquiv _ T).symm (mul_comm h g))
+    (b.sheafHomTorsorEquiv hxy T).symm (g • p) ≫
+        (b.sheafHomTorsorEquiv hyz T).symm (h • q) =
+      b.homAct ((b.sheafHomTorsorEquiv hxy T).symm p ≫
+        (b.sheafHomTorsorEquiv hyz T).symm q)
+        ((abelianSheafToGrpSheafObjEquiv _ T).symm (g * h)) := by
+  obtain ⟨p, rfl⟩ := (b.sheafHomTorsorEquiv hxy T).surjective p
+  obtain ⟨q, rfl⟩ := (b.sheafHomTorsorEquiv hyz T).surjective q
+  simp only [sheafHomTorsorEquiv_smul, Equiv.symm_apply_apply]
+  calc
+    _ = b.homAct (b.homAct p _ ≫ q) _ := b.comp_homAct _ q _
+    _ = b.homAct (b.homAct (p ≫ q) _) _ :=
+      congrArg (b.homAct · _) (b.homAct_comp_hom p (asIso q) _)
+    _ = b.homAct (p ≫ q) _ := (b.homAct_mul _ _ _).symm
+    _ = _ := congrArg (b.homAct (p ≫ q))
+      ((map_mul (abelianSheafToGrpSheafObjEquiv _ T).symm h g).symm.trans
+        (congrArg (abelianSheafToGrpSheafObjEquiv _ T).symm (mul_comm h g)))
 
 /-- The torsor `Isom(x, y)` is trivial, that is has a global section, if and only if `x` and `y`
 are isomorphic over `U`. -/
