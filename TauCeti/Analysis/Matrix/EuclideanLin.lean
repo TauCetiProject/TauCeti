@@ -56,6 +56,8 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 * `TauCeti.inner_self_toEuclideanLin_diagonal_apply` — the quadratic form `⟪x, diag(w) x⟫` of
   `diag(w)` is `∑ᵢ |xᵢ|² wᵢ`; for real weights the real part of `⟪diag(w) x, x⟫` is the same sum
   (`Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
+* `Matrix.inner_toEuclideanLin_toLp_eq_dotProduct_mulVec` — for a real matrix `A`, the form
+  `⟪A x, x⟫` on Euclidean space is the coordinate dot product `xᵀAx`;
 * `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
   form of `A` on an orthonormal basis are the diagonal entries of a unitary conjugate `U A Uᴴ`;
 * `Matrix.rank_eq_finrank_range_toEuclideanLin`, `Matrix.rank_coe_toEuclideanCLM` — the matrix
@@ -182,6 +184,12 @@ theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : Euclid
   rw [inner_re_symm]
   simp only [TauCeti.inner_self_toEuclideanLin_diagonal_apply, ← RCLike.ofReal_pow,
     ← RCLike.ofReal_mul, ← RCLike.ofReal_sum, RCLike.ofReal_re]
+
+/-- The real quadratic form `⟪A x, x⟫` of a real square matrix `A` on Euclidean space, read on
+coordinates, is the dot product `xᵀAx`. -/
+theorem inner_toEuclideanLin_toLp_eq_dotProduct_mulVec (A : Matrix ι ι ℝ) (x : ι → ℝ) :
+    ⟪toEuclideanLin A (WithLp.toLp 2 x), WithLp.toLp 2 x⟫_ℝ = x ⬝ᵥ (A *ᵥ x) := by
+  simp [EuclideanSpace.inner_toLp_toLp]
 
 /-- An orthonormal basis `e` of `EuclideanSpace 𝕜 ι` gives a unitary matrix `U`, whose rows are
 the conjugates of the vectors `e k`, such that the diagonal entries of `U A Uᴴ` are the values

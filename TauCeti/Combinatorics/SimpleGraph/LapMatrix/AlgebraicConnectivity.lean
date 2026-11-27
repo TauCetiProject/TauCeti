@@ -8,6 +8,9 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.LapMatrix.Eigenvalues
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Analysis.InnerProductSpace.CourantFischer
+import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Matrix.Eigenvalues.Basic
+import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Combinatorics.SimpleGraph.AdjMatrix
 import TauCeti.Combinatorics.SimpleGraph.LapMatrix.Complement
 
@@ -49,27 +52,6 @@ namespace SimpleGraph
 
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 
-omit [DecidableEq V] in
-/-- The squared Euclidean norm of a real vector is its dot product with itself. -/
-private theorem norm_toLp_sq_eq_dotProduct_self (x : V → ℝ) :
-    ‖WithLp.toLp 2 x‖ ^ 2 = x ⬝ᵥ x := by
-  rw [EuclideanSpace.real_norm_sq_eq]
-  simp [dotProduct, sq]
-
-/-- The Euclidean quadratic form of a real matrix `A` at `x` is `xᵀAx`. -/
-private theorem inner_toEuclideanLin_toLp_eq_dotProduct_mulVec (A : Matrix V V ℝ) (x : V → ℝ) :
-    ⟪toEuclideanLin A (WithLp.toLp 2 x), WithLp.toLp 2 x⟫_ℝ = x ⬝ᵥ (A *ᵥ x) := by
-  simp [EuclideanSpace.inner_toLp_toLp]
-
-/-- The Laplacian eigenvalues are the sorted eigenvalues of the Laplacian acting on
-`EuclideanSpace ℝ V`. Mathlib defines `Matrix.IsHermitian.eigenvalues₀` this way but has no named
-lemma connecting it to `LinearMap.IsSymmetric.eigenvalues`, so this bridge unfolds its equation
-lemma, in this one place; the Courant–Fischer statements used below are phrased for the operator. -/
-private theorem lapEigenvalues_eq_eigenvalues :
-    G.lapEigenvalues = (isSymmetric_toEuclideanLin_iff.mpr (G.isHermitian_lapMatrix ℝ)).eigenvalues
-      finrank_euclideanSpace := by
-  rw [lapEigenvalues_def, IsHermitian.eigenvalues₀.eq_1]
-
 /-- On the vectors orthogonal to the eigenvector of the smallest eigenvalue in the sorted
 eigenbasis of the Laplacian, the quadratic form is at least `a(G)` times the squared norm. -/
 private theorem algebraicConnectivity_mul_dotProduct_self_le_of_inner_eq_zero
@@ -87,10 +69,11 @@ private theorem algebraicConnectivity_mul_dotProduct_self_le_of_inner_eq_zero
     rw [b.repr_apply_apply, hi, hy]
   have h := hT.le_re_inner_apply_self_of_mem_spanIndices finrank_euclideanSpace
     (c := G.algebraicConnectivity) (fun i hi ↦ ?_) hmem
-  · rwa [norm_toLp_sq_eq_dotProduct_self, RCLike.re_to_real,
+  · rwa [← EuclideanSpace.dotProduct_ofLp_self, WithLp.ofLp_toLp, RCLike.re_to_real,
       inner_toEuclideanLin_toLp_eq_dotProduct_mulVec] at h
   · -- Every index but the last is at most `n - 2`, where the eigenvalue is `a(G)`.
-    rw [G.algebraicConnectivity_of_two_le hn, lapEigenvalues_eq_eigenvalues]
+    rw [G.algebraicConnectivity_of_two_le hn, lapEigenvalues_def,
+      IsHermitian.eigenvalues₀_eq_eigenvalues]
     refine hT.eigenvalues_antitone finrank_euclideanSpace ?_
     simp only [Set.mem_compl_iff, Set.mem_singleton_iff, Fin.ext_iff, l] at hi
     simp only [Fin.le_def]
@@ -162,13 +145,14 @@ theorem exists_dotProduct_mulVec_le_algebraicConnectivity_mul (h : 2 ≤ Fintype
     finrank_euclideanSpace k _ hdim
   obtain ⟨x, rfl⟩ : ∃ x, y = WithLp.toLp 2 x := ⟨_, (WithLp.toLp_ofLp 2 y).symm⟩
   have hxx : x ⬝ᵥ x = 1 := by
-    rw [← norm_toLp_sq_eq_dotProduct_self, hy1, one_pow]
+    rw [← WithLp.ofLp_toLp 2 x, EuclideanSpace.dotProduct_ofLp_self, hy1, one_pow]
   refine ⟨x, ?_, ?_, ?_⟩
   · rintro rfl
     simp at hxx
   · rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hy
     simpa [one, EuclideanSpace.inner_toLp_toLp, dotProduct] using hy
-  · rw [hxx, mul_one, G.algebraicConnectivity_of_two_le h, lapEigenvalues_eq_eigenvalues]
+  · rw [hxx, mul_one, G.algebraicConnectivity_of_two_le h, lapEigenvalues_def,
+      IsHermitian.eigenvalues₀_eq_eigenvalues]
     rwa [RCLike.re_to_real, inner_toEuclideanLin_toLp_eq_dotProduct_mulVec] at hle
 
 /-- **Fiedler's superadditivity of the algebraic connectivity.** For edge-disjoint graphs `G` and
