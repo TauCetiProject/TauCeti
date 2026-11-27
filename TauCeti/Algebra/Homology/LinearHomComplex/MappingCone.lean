@@ -63,10 +63,13 @@ private def homConeEquiv (n : ℤ) :
         LinearMap.id_apply, LinearMap.zero_apply, add_zero, zero_add,
         mappingCone.liftCochain_fst, mappingCone.liftCochain_snd]
   map_add' z z' := by
-    simp [mappingCone.liftCochain, Cochain.add_comp]
-    abel
+    apply (mappingCone.ext_cochain_to_iff f n (n + 1) rfl).2
+    constructor <;> simp only [mappingCone.liftCochain_fst, mappingCone.liftCochain_snd,
+      Cochain.add_comp, map_add]
   map_smul' r z := by
-    simp [mappingCone.liftCochain, Cochain.smul_comp]
+    apply (mappingCone.ext_cochain_to_iff f n (n + 1) rfl).2
+    constructor <;> simp only [mappingCone.liftCochain_fst, mappingCone.liftCochain_snd,
+      Cochain.smul_comp, map_smul, RingHom.id_apply]
 
 /-- The Hom complex into a mapping cone is the mapping cone of postcomposition. The direction
 of this isomorphism assembles a pair of cochains using `mappingCone.liftCochain`. -/
@@ -86,12 +89,10 @@ def linearHomComplexMappingConeIso :
       (mappingCone.d_snd_v (linearHomComplexPostcomp R Z f) n (n + 1) rfl)
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_neg, LinearMap.neg_apply,
       ModuleCat.hom_add, LinearMap.add_apply] at hfst hsnd
-    simp only [hfst, hsnd, mappingCone.liftCochain]
-    rw [linearHomComplex_d_hom_apply R Z X, linearHomComplex_d_hom_apply R Z Y,
-      linearHomComplexPostcomp_f_apply]
-    rw [add_comm (δ n (n + 1) _)]
-    congr 1
-    exact (Cochain.neg_comp _ _ _).symm)
+    rw [hfst, hsnd, linearHomComplex_d_hom_apply R Z X,
+      linearHomComplex_d_hom_apply R Z Y, linearHomComplexPostcomp_f_apply]
+    apply (mappingCone.ext_cochain_to_iff f (n + 1) (n + 1 + 1) rfl).2
+    constructor <;> simp [Cochain.add_comp, Cochain.neg_comp, add_comm])
 
 /-- The comparison assembles the two components with the usual cone inclusions. -/
 @[simp]
@@ -116,22 +117,6 @@ lemma linearHomComplexMappingConeIso_inv_f_apply (n : ℤ)
           (z.comp (mappingCone.snd f) (add_zero n)) :=
   (rfl)
 
-/-- The first component of the comparison is postcomposition with the cone projection. -/
-lemma linearHomComplexMappingConeIso_hom_f_apply_fst (n : ℤ)
-    (z : (mappingCone (linearHomComplexPostcomp R Z f)).X n) :
-    (((linearHomComplexMappingConeIso R f Z).hom.f n).hom z).comp
-        (mappingCone.fst f).val rfl =
-      ((mappingCone.fst (linearHomComplexPostcomp R Z f)).val.v n (n + 1) rfl).hom z := by
-  rw [linearHomComplexMappingConeIso_hom_f_apply, mappingCone.liftCochain_fst]
-
-/-- The second component of the comparison is postcomposition with the cone projection. -/
-lemma linearHomComplexMappingConeIso_hom_f_apply_snd (n : ℤ)
-    (z : (mappingCone (linearHomComplexPostcomp R Z f)).X n) :
-    (((linearHomComplexMappingConeIso R f Z).hom.f n).hom z).comp
-        (mappingCone.snd f) (add_zero n) =
-      ((mappingCone.snd (linearHomComplexPostcomp R Z f)).v n n (add_zero n)).hom z := by
-  rw [linearHomComplexMappingConeIso_hom_f_apply, mappingCone.liftCochain_snd]
-
 /-- On the shifted source summand, the comparison is postcomposition with the degree `-1`
 cone inclusion, the canonical null homotopy of `f` followed by the right inclusion. -/
 lemma linearHomComplexMappingConeIso_hom_f_inl (n : ℤ) (a : Cochain Z X (n + 1)) :
@@ -149,7 +134,8 @@ lemma linearHomComplexMappingConeIso_hom_f_inl (n : ℤ) (a : Cochain Z X (n + 1
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_zero,
     LinearMap.zero_apply] at hsnd
   rw [hfst, hsnd]
-  simp [mappingCone.liftCochain]
+  apply (mappingCone.ext_cochain_to_iff f n (n + 1) rfl).2
+  constructor <;> simp
 
 /-- On the target summand, the comparison is postcomposition with the cone inclusion. -/
 @[reassoc (attr := simp)]
@@ -161,13 +147,14 @@ lemma linearHomComplexMappingConeIso_inr_hom :
   rw [HomologicalComplex.comp_f, ModuleCat.comp_apply,
     linearHomComplexMappingConeIso_hom_f_apply]
   simp only [← ModuleCat.comp_apply, mappingCone.inr_f_fst_v, mappingCone.inr_f_snd_v,
-    ModuleCat.id_apply, ModuleCat.hom_zero, LinearMap.zero_apply, mappingCone.liftCochain,
-    Cochain.zero_comp, zero_add]
-  exact (linearHomComplexPostcomp_f_apply Z (mappingCone.inr f) n b).symm
+    ModuleCat.id_apply, ModuleCat.hom_zero, LinearMap.zero_apply]
+  rw [linearHomComplexPostcomp_f_apply]
+  apply (mappingCone.ext_cochain_to_iff f n (n + 1) rfl).2
+  constructor <;> simp
 
 /-- Naturality of the comparison in the contravariant argument of the Hom complex. -/
 @[reassoc]
-lemma linearHomComplexMappingConeIso_precomp {Z' : CochainComplex C ℤ} (a : Z' ⟶ Z) :
+lemma linearHomComplexMappingConeIso_hom_naturality {Z' : CochainComplex C ℤ} (a : Z' ⟶ Z) :
     mappingCone.map (linearHomComplexPostcomp R Z f) (linearHomComplexPostcomp R Z' f)
         (linearHomComplexPrecomp R a X) (linearHomComplexPrecomp R a Y)
         (linearHomComplexPrecomp_postcomp_comm R a f).symm ≫
@@ -193,8 +180,8 @@ lemma linearHomComplexMappingConeIso_precomp {Z' : CochainComplex C ℤ} (a : Z'
 
 /-- Naturality in a commutative square of maps of complexes. -/
 @[reassoc]
-lemma linearHomComplexMappingConeIso_map (f : X ⟶ Y) (Z : CochainComplex C ℤ)
-    [HasBinaryBiproducts C]
+lemma linearHomComplexMappingConeIso_hom_naturality_mappingConeMap
+    (f : X ⟶ Y) (Z : CochainComplex C ℤ) [HasBinaryBiproducts C]
     {X' Y' : CochainComplex C ℤ} (g : X' ⟶ Y') (a : X ⟶ X') (b : Y ⟶ Y')
     (h : f ≫ b = a ≫ g) :
     mappingCone.map (linearHomComplexPostcomp R Z f) (linearHomComplexPostcomp R Z g)
@@ -222,6 +209,7 @@ lemma linearHomComplexMappingConeIso_map (f : X ⟶ Y) (Z : CochainComplex C ℤ
       linearHomComplexMappingConeIso_inr_hom]
     simp only [← HomologicalComplex.comp_f, ← linearHomComplexPostcomp_comp]
     congr 2
-    simp [mappingCone.map]
+    ext p
+    exact (mappingCone.inr_f_map_f _ _ _ _ h p).symm
 
 end TauCeti
