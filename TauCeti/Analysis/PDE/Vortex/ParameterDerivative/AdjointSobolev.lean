@@ -599,12 +599,10 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_adjoint_orthogonalR
     ext_inner_left ℝ fun g' ↦ by
       rw [adjoint_inner_right, ← hP,
         inner_fderiv_fun_fderiv_adjoint_orthogonalRightInverse_apply hx hsol hframe hax ha]
-  rw [hP, ← ContinuousLinearMap.adjoint_adjoint P, ← eLpNorm_restrict_coe_opens_top
-    (volume : Measure ℂ), ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
-  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  rw [hP, ← ContinuousLinearMap.adjoint_adjoint P]
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_restrict_coe_opens_top _
+    (fun f ↦ ?_) g
   have h := hK x D hx hbound hsol hframe hD hD₀ hax ha v w f
-  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [hP'] using h
 
 /-- **The second derivative of the adjoints of the orthogonal right inverses.** Let `x` be a smooth
