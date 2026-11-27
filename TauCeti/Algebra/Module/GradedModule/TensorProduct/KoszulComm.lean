@@ -14,8 +14,11 @@ public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 `TauCeti.InternalGrading.koszulComm` swaps the factors of an internally graded tensor product
 with the Koszul sign. It is the transport of Mathlib's `TensorProduct.gradedComm` through
 `DirectSum.decomposeLinearEquiv` on both factors.
-The swap preserves total degree, is its own inverse with the factors exchanged, and is natural
-for degree-zero linear maps. These are the Koszul signs used in Keller's
+The construction and its pure-tensor formula `koszulComm_tmul` are the module analogues of
+Mathlib's `GradedTensorProduct.comm` and `GradedTensorProduct.comm_coe_tmul_coe` in
+`Mathlib.LinearAlgebra.TensorProduct.Graded.Internal`, using the same transport.
+The swap preserves total degree, cancels with the reverse swap by `koszulComm_koszulComm`,
+and is natural for degree-zero linear maps. These are the Koszul signs used in Keller's
 *Introduction to A-infinity algebras and modules*, Section 3.1.
 -/
 
@@ -66,6 +69,12 @@ theorem koszulComm_symm (G : InternalGrading R M ℤ) (H : InternalGrading R N �
   ext z
   simp only [LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm, TensorProduct.gradedComm_symm,
     LinearEquiv.trans_apply]
+
+/-- Applying the Koszul swap and then swapping back gives the original tensor. -/
+@[simp]
+theorem koszulComm_koszulComm (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
+    (z : M ⊗[R] N) : H.koszulComm G (G.koszulComm H z) = z := by
+  simpa only [koszulComm_symm] using (G.koszulComm H).symm_apply_apply z
 
 /-- The Koszul swap preserves total degree. -/
 theorem isHomogeneous_koszulComm (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
