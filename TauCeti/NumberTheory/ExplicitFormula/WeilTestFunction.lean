@@ -39,8 +39,8 @@ For `c : ℝ`, `TauCeti.WeilTestFunction c F` states that
 Imposing the weight on both tails strengthens Mestre's one-signed condition; it covers `F` and its
 reflection `x ↦ F (-x)` at once, as the contour proof of the explicit formula needs. The difference
 quotient may have distinct one-sided limits at `0`: no differentiability at `0` is required, and
-`x ↦ exp (-|x|)` is admissible for `c = 0`. Mestre states the condition for `c ≥ 0`; it is
-meaningful for every real `c`, and nothing below assumes `c ≥ 0`.
+`x ↦ exp (-|x|)` is admissible for `c = 0`. The explicit formula uses the condition for `c ≥ 0`;
+it is meaningful for every real `c`, and nothing below assumes `c ≥ 0`.
 
 ## Main definitions
 
