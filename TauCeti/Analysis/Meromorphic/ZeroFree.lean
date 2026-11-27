@@ -53,6 +53,7 @@ satisfying the generalized Riemann hypothesis is `1 / 2`.
 * `TauCeti.zeroFreeRightOf_conj_conj_iff`, `TauCeti.zeroFreeRightOf_comp_add_const`: reflection in
   the real axis and translation.
 * `TauCeti.not_zeroFreeRightOf_zero`: the zero function is zero-free right of no `σ`.
+* `TauCeti.zeroFreeRightOf_id_sub_const`: `s ↦ s - c` is zero-free right of `re c`.
 * `TauCeti.zeroAbscissa_le_iff`, `TauCeti.zeroFreeRightOf_zeroAbscissa`,
   `TauCeti.re_le_zeroAbscissa`, `TauCeti.one_half_le_zeroAbscissa`: for a family zero-free right
   of a common `σ`, the zero abscissa is the least `σ' ≥ 1 / 2` right of which every member is
@@ -118,6 +119,13 @@ has no zero there. This lifts `AnalyticAt.meromorphicOrderAt_nonpos_iff`. -/
 theorem zeroFreeRightOf_iff_of_analyticAt (hf : ∀ s : ℂ, σ < s.re → AnalyticAt ℂ f s) :
     ZeroFreeRightOf σ f ↔ ∀ s : ℂ, σ < s.re → f s ≠ 0 :=
   forall₂_congr fun s hs => (hf s hs).meromorphicOrderAt_nonpos_iff
+
+/-- `s ↦ s - c` is zero-free right of `re c`: its only zero is `c`. -/
+theorem zeroFreeRightOf_id_sub_const (c : ℂ) : ZeroFreeRightOf c.re (· - c) := by
+  rw [zeroFreeRightOf_iff_of_analyticAt fun s _ => by fun_prop]
+  intro s hs h
+  rw [sub_eq_zero.1 h] at hs
+  exact lt_irrefl _ hs
 
 /-- The zero function is zero-free right of no `σ`: its order is `⊤` everywhere. -/
 @[simp]
@@ -197,6 +205,11 @@ section ZeroAbscissa
 
 variable {ι : Type*} {L L' D : ι → ℂ → ℂ} {ρ : ℂ} {b : ℝ}
 
+/-- The set whose supremum is the zero abscissa: `1 / 2` together with the real parts of the
+points `ρ` with `1 / 2 ≤ re ρ` at which some member `L η` has positive meromorphic order. -/
+private noncomputable def zeroAbscissaSet (L : ι → ℂ → ℂ) : Set ℝ :=
+  insert (1 / 2) {x : ℝ | ∃ η ρ, 1 / 2 ≤ ρ.re ∧ 0 < meromorphicOrderAt (L η) ρ ∧ ρ.re = x}
+
 /-- The *zero abscissa* of a family `L : ι → ℂ → ℂ`: the supremum of `1 / 2` and of the real parts
 of the points `ρ` with `1 / 2 ≤ re ρ` at which some member `L η` has positive meromorphic order.
 Zeros left of the critical line are not counted, and poles are not zeros.
@@ -205,8 +218,7 @@ When the members have zeros with unbounded real parts (for instance when the fam
 the zero function), the set is unbounded and the value is Mathlib's junk value `sSup = 0`; the
 results below exclude this by assuming every member zero-free right of a common `σ`. -/
 noncomputable def zeroAbscissa (L : ι → ℂ → ℂ) : ℝ :=
-  sSup (insert (1 / 2)
-    {x : ℝ | ∃ η ρ, 1 / 2 ≤ ρ.re ∧ 0 < meromorphicOrderAt (L η) ρ ∧ ρ.re = x})
+  sSup (zeroAbscissaSet L)
 
 /-- The defining formula of `zeroAbscissa`. -/
 theorem zeroAbscissa_def (L : ι → ℂ → ℂ) :
@@ -217,18 +229,16 @@ theorem zeroAbscissa_def (L : ι → ℂ → ℂ) :
 /-- A bound `b ≥ 1 / 2` bounds the set defining the zero abscissa exactly when every member is
 zero-free right of `b`. -/
 private theorem mem_upperBounds_zeroAbscissa_iff (hb : 1 / 2 ≤ b) :
-    b ∈ upperBounds (insert (1 / 2)
-      {x : ℝ | ∃ η ρ, 1 / 2 ≤ ρ.re ∧ 0 < meromorphicOrderAt (L η) ρ ∧ ρ.re = x}) ↔
+    b ∈ upperBounds (zeroAbscissaSet L) ↔
       ∀ η, ZeroFreeRightOf b (L η) := by
-  simp only [upperBounds_insert, Set.mem_inter_iff, Set.mem_Ici, hb, true_and, mem_upperBounds,
-    Set.mem_ofPred_eq, forall_exists_index, and_imp]
+  simp only [zeroAbscissaSet, upperBounds_insert, Set.mem_inter_iff, Set.mem_Ici, hb, true_and,
+    mem_upperBounds, Set.mem_ofPred_eq, forall_exists_index, and_imp]
   refine ⟨fun h η s hs => not_lt.1 fun h0 => (h _ η s (hb.trans hs.le) h0 rfl).not_gt hs,
     fun h x η ρ _ h0 hx => hx ▸ not_lt.1 fun hρ => (h η ρ hρ).not_gt h0⟩
 
 /-- A family zero-free right of a common `σ` has a bounded set of zero real parts. -/
 private theorem bddAbove_of_zeroFreeRightOf {σ : ℝ} (h : ∀ η, ZeroFreeRightOf σ (L η)) :
-    BddAbove (insert (1 / 2)
-      {x : ℝ | ∃ η ρ, 1 / 2 ≤ ρ.re ∧ 0 < meromorphicOrderAt (L η) ρ ∧ ρ.re = x}) :=
+    BddAbove (zeroAbscissaSet L) :=
   ⟨max σ (1 / 2), (mem_upperBounds_zeroAbscissa_iff (le_max_right _ _)).2 fun η =>
     (h η).mono (le_max_left _ _)⟩
 
@@ -273,10 +283,9 @@ real parts gives the junk value `0`, which does not exceed `1 / 2`. -/
 theorem exists_meromorphicOrderAt_pos_re_mem_Ioc (h12 : 1 / 2 < zeroAbscissa L)
     (hb : b < zeroAbscissa L) :
     ∃ η ρ, 0 < meromorphicOrderAt (L η) ρ ∧ ρ.re ∈ Set.Ioc b (zeroAbscissa L) := by
-  have hbdd : BddAbove (insert (1 / 2)
-      {x : ℝ | ∃ η ρ, 1 / 2 ≤ ρ.re ∧ 0 < meromorphicOrderAt (L η) ρ ∧ ρ.re = x}) := by
+  have hbdd : BddAbove (zeroAbscissaSet L) := by
     by_contra hbdd
-    rw [zeroAbscissa_def, Real.sSup_of_not_bddAbove hbdd] at h12
+    rw [zeroAbscissa, Real.sSup_of_not_bddAbove hbdd] at h12
     norm_num at h12
   obtain ⟨x, hx, hbx⟩ := exists_lt_of_lt_csSup (Set.insert_nonempty _ _) (max_lt h12 hb)
   rcases hx with rfl | ⟨η, ρ, hρ, h0, rfl⟩
@@ -306,7 +315,8 @@ theorem zeroAbscissa_congr
 
 /-- Multiplying each member of a family by a function analytic and nonzero at every point with
 `1 / 2 ≤ re s` does not change the zero abscissa. This applies to deleting or inserting finitely
-many Euler factors, which are analytic and nonzero on `re s > 0`. -/
+many Euler factors whose Satake parameters have absolute value at most `1` (such as those of
+Dirichlet L-functions), which are analytic and nonzero on `re s > 0`. -/
 theorem zeroAbscissa_mul_of_ne_zero (hD : ∀ η s, 1 / 2 ≤ s.re → AnalyticAt ℂ (D η) s)
     (hD0 : ∀ η s, 1 / 2 ≤ s.re → D η s ≠ 0) :
     zeroAbscissa (fun η => L η * D η) = zeroAbscissa L :=

@@ -28,13 +28,6 @@ namespace TauCeti.ZeroAbscissaExamples
 
 open TauCeti
 
-/-- `s ↦ s - c` is zero-free right of `re c`: its only zero is `c`. -/
-theorem zeroFreeRightOf_sub_const (c : ℂ) : ZeroFreeRightOf c.re (· - c) := by
-  rw [zeroFreeRightOf_iff_of_analyticAt fun s _ => by fun_prop]
-  intro s hs h
-  rw [sub_eq_zero.1 h] at hs
-  exact lt_irrefl _ hs
-
 /-- The empty family has zero abscissa `1 / 2`. -/
 example (L : Empty → ℂ → ℂ) : zeroAbscissa L = 1 / 2 := by
   simp
@@ -42,7 +35,7 @@ example (L : Empty → ℂ → ℂ) : zeroAbscissa L = 1 / 2 := by
 /-- The family `{s - 3 / 4}` has zero abscissa `3 / 4`. -/
 example : zeroAbscissa (fun _ : Unit => (· - (3 / 4 : ℂ))) = 3 / 4 := by
   have h := zeroAbscissa_eq_re (L := fun _ : Unit => (· - (3 / 4 : ℂ))) (η := ()) (ρ := 3 / 4)
-    (by norm_num) (by simp) fun _ => zeroFreeRightOf_sub_const _
+    (by norm_num) (by simp) fun _ => zeroFreeRightOf_id_sub_const _
   norm_num at h
   exact h
 
@@ -50,7 +43,7 @@ example : zeroAbscissa (fun _ : Unit => (· - (3 / 4 : ℂ))) = 3 / 4 := by
 line. -/
 example : zeroAbscissa (fun _ : Unit => (· - (1 / 4 : ℂ))) = 1 / 2 := by
   have h : ZeroFreeRightOf (1 / 2) (· - (1 / 4 : ℂ)) :=
-    (zeroFreeRightOf_sub_const _).mono (by norm_num)
+    (zeroFreeRightOf_id_sub_const _).mono (by norm_num)
   exact le_antisymm (zeroAbscissa_le le_rfl fun _ => h) (one_half_le_zeroAbscissa fun _ => h)
 
 /-- The family `{s - 3 / 4, 1 / (s - 1)}` has zero abscissa `3 / 4`: the pole at `1` is not a
@@ -70,7 +63,7 @@ example : zeroAbscissa (fun b : Bool => if b then (· - (3 / 4 : ℂ)) else (· 
     (ρ := 3 / 4) (by norm_num) (by simp) fun b => by
       cases b
       · exact hpole
-      · exact zeroFreeRightOf_sub_const _
+      · exact zeroFreeRightOf_id_sub_const _
   norm_num at h
   exact h
 
@@ -78,7 +71,7 @@ example : zeroAbscissa (fun b : Bool => if b then (· - (3 / 4 : ℂ)) else (· 
 of `1`. -/
 example : zeroAbscissa (fun _ : Unit => (· - (2 : ℂ))) = 2 := by
   have h := zeroAbscissa_eq_re (L := fun _ : Unit => (· - (2 : ℂ))) (η := ()) (ρ := 2)
-    (by norm_num) (by simp) fun _ => zeroFreeRightOf_sub_const _
+    (by norm_num) (by simp) fun _ => zeroFreeRightOf_id_sub_const _
   norm_num at h
   exact h
 
