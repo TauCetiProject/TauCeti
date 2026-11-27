@@ -49,7 +49,7 @@ extension of `φ` by zero, and in the complex plane it is entire of exponential 
   `‖k_t(λ, ·)‖²_{L²(ℝ)} = k_t(λ, λ)` (`TauCeti.integral_norm_paleyWienerKernel_sq`), which is
   `sinh(2t Im λ)/(2π Im λ)` for `Im λ ≠ 0` (`TauCeti.paleyWienerKernel_self`,
   `TauCeti.integral_norm_paleyWienerKernel_sq_eq_sinh`) and `t/π` for real `λ`
-  (`TauCeti.paleyWienerKernel_self_ofReal`, `TauCeti.integral_norm_paleyWienerKernel_ofReal_sq`).
+  (`TauCeti.paleyWienerKernel_ofReal_self`, `TauCeti.integral_norm_paleyWienerKernel_ofReal_sq`).
 
 ## References
 
@@ -393,7 +393,7 @@ theorem paleyWienerKernel_self (t : ℝ) {w : ℂ} (hw : w.im ≠ 0) :
 
 /-- **The diagonal of the reproducing kernel on the real line**: `k_t(x, x) = t/π`. -/
 @[simp]
-theorem paleyWienerKernel_self_ofReal (t x : ℝ) : paleyWienerKernel t x x = t / π := by
+theorem paleyWienerKernel_ofReal_self (t x : ℝ) : paleyWienerKernel t x x = t / π := by
   simpa using paleyWienerKernel_conj_self t (x : ℂ)
 
 /-- **The norm of the reproducing kernel**: `‖k_t(λ, ·)‖²_{L²(ℝ)} = sinh(2t Im λ)/(2π Im λ)` for
@@ -407,7 +407,7 @@ theorem integral_norm_paleyWienerKernel_sq_eq_sinh (ht : 0 ≤ t) {w : ℂ} (hw 
 `t ≥ 0`. -/
 theorem integral_norm_paleyWienerKernel_ofReal_sq (ht : 0 ≤ t) (x : ℝ) :
     ∫ y : ℝ, ‖paleyWienerKernel t x y‖ ^ 2 = t / π := by
-  rw [integral_norm_paleyWienerKernel_sq ht, paleyWienerKernel_self_ofReal]
+  rw [integral_norm_paleyWienerKernel_sq ht, paleyWienerKernel_ofReal_self]
   norm_cast
 
 end TauCeti

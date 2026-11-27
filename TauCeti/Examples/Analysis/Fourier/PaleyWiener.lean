@@ -16,7 +16,7 @@ public import TauCeti.Analysis.Fourier.PaleyWiener
   `∫_ℝ (sin(tx)/x)² dx = πt` (`integral_sin_mul_div_sq`).
 * *The trivial interval.* `PW_0 = {0}` (`TauCeti.paleyWienerFunction_zero_left`).
 * *The kernel on the real line.* For real `λ` the reproducing kernel at `λ` is
-  `k_t(λ, λ) = t/π` (`TauCeti.paleyWienerKernel_self_ofReal`), so `‖k_t(λ, ·)‖²_{L²(ℝ)} = t/π`
+  `k_t(λ, λ) = t/π` (`TauCeti.paleyWienerKernel_ofReal_self`), so `‖k_t(λ, ·)‖²_{L²(ℝ)} = t/π`
   for `t ≥ 0` (`TauCeti.integral_norm_paleyWienerKernel_ofReal_sq`).
 -/
 
