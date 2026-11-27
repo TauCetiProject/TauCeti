@@ -85,10 +85,7 @@ theorem infinite_setOf_isConj_of_right_ne_one
   let f : ℤ → Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp ι] G :=
     fun k => inl (ofAdd (k • u)) * x * (inl (ofAdd (k • u)))⁻¹
   have hleft (k : ℤ) : toAdd (f k).left = toAdd x.left + k • (u - ι x.right • u) := by
-    simp only [f, mul_left, inv_left, left_inl, right_inl, mul_right, inv_one, map_one,
-      MulAut.one_apply, toAdd_mul, toAdd_inv, MonoidHom.comp_apply, slTwoAction_apply, toAdd_ofAdd,
-      map_inv]
-    rw [one_mul, smul_comm (ι x.right) k u, smul_sub]
+    simp [f, slTwoAction_apply, smul_sub, smul_comm]
     abel
   refine Set.infinite_of_injective_forall_mem (f := f) (fun k l hkl => ?_)
     (fun k => isConj_iff.2 ⟨_, rfl⟩)

@@ -94,9 +94,7 @@ acting component of `x` to `n`: `x * inl n * x⁻¹ = inl (φ x.right n)`. -/
 theorem mul_inl_mul_inv {N Q : Type*} [CommGroup N] [Group Q] {φ : Q →* MulAut N}
     (x : N ⋊[φ] Q) (n : N) : x * inl n * x⁻¹ = inl (φ x.right n) := by
   refine SemidirectProduct.ext ?_ ?_
-  · simp only [mul_left, inv_left, left_inl, right_inl, mul_right, mul_one, map_inv,
-      MulAut.inv_apply, MulEquiv.apply_symm_apply]
-    exact mul_inv_cancel_comm _ _
+  · simp [mul_inv_cancel_comm]
   · simp
 
 /-- A semidirect product of finite groups is finite. -/
