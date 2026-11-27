@@ -23,8 +23,8 @@ ring after base change.
 
 * `TauCeti.ModularForm.modularLambdaCoordinate`: the strict integral coordinate.
 * `TauCeti.ModularForm.modularLambdaCoordinate_toPowerSeries`: its Euler-product formula.
-* `TauCeti.ModularForm.modularLambdaCoordinate_coeff_one` and
-  `TauCeti.ModularForm.modularLambdaCoordinate_coeff_two`: its coefficients in degrees one and two.
+* `TauCeti.ModularForm.coeff_one_modularLambdaCoordinate` and
+  `TauCeti.ModularForm.coeff_two_modularLambdaCoordinate`: its coefficients in degrees one and two.
 -/
 
 public noncomputable section
@@ -50,13 +50,13 @@ theorem modularLambdaCoordinate_toPowerSeries :
 
 /-- The normalized modular lambda series has linear coefficient one. -/
 @[simp]
-theorem modularLambdaCoordinate_coeff_one :
+theorem coeff_one_modularLambdaCoordinate :
     coeff 1 modularLambdaCoordinate.toPowerSeries = 1 := by
   simp [modularLambdaCoordinate_toPowerSeries, constantCoeff_invOfUnit]
 
 /-- The quadratic coefficient of the normalized modular lambda series is `-8`. -/
 @[simp]
-theorem modularLambdaCoordinate_coeff_two :
+theorem coeff_two_modularLambdaCoordinate :
     coeff 2 modularLambdaCoordinate.toPowerSeries = -8 := by
   let E := pentagonalSeries ℤ
   let E₂ := E.expand 2 two_ne_zero
