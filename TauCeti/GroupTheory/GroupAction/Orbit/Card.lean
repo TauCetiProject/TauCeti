@@ -21,14 +21,16 @@ import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
-# The multiset of orbit sizes
+# Orbit sizes and stabilizer-weighted orbit sums
 
 For a group `G` acting on a finite type `X`, the multiset of the sizes of the orbits of `G` on
 `X` is a basic invariant of the action. This file records two ways in which it is preserved: by a
 change of the acting group that does not change the orbits, and by an equivariant bijection of
 the underlying types. It also computes the natural cardinality of a cyclic orbit in terms of
 `Function.minimalPeriod` and bounds the length of a list of group elements with distinct images of
-a point by the size of the orbit of that point.
+a point by the size of the orbit of that point. Finally, for a finite group `G` and a function `f`
+constant on orbits, it shows that `|G|⁻¹ ∑ₓ f x` is the sum of `f` over the orbits, each orbit
+weighted by the inverse order of the stabilizer of one of its points.
 
 ## Main results
 
