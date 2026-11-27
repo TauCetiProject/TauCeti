@@ -104,6 +104,13 @@ theorem deriv_keplerActionHamiltonian_fst_pos {m κ J ℓ : ℝ}
   rw [(hasDerivAt_keplerActionHamiltonian_fst m κ ℓ hJ.ne').deriv]
   positivity
 
+/-- **The radial frequency of the circular Kepler orbit.** For `ℓ ≠ 0`, the derivative of the
+Kepler energy `H = -m κ² / (2 (I_r + |ℓ|)²)` in the radial action at the circular orbit `I_r = 0`
+is `Ω_r = m κ² / |ℓ|³`. -/
+theorem deriv_keplerActionHamiltonian_fst_zero (m κ : ℝ) {ℓ : ℝ} (hℓ : ℓ ≠ 0) :
+    deriv (fun r ↦ keplerActionHamiltonian m κ (r, ℓ)) 0 = m * κ ^ 2 / |ℓ| ^ 3 := by
+  rw [(hasDerivAt_keplerActionHamiltonian_fst m κ ℓ (by simpa using hℓ)).deriv, zero_add]
+
 /-- The signed Kepler resonance: `Ω_θ = sign(ℓ) Ω_r`. -/
 theorem deriv_keplerActionHamiltonian_snd_eq_sign_mul (m κ J : ℝ) {ℓ : ℝ}
     (hℓ : ℓ ≠ 0) (hJ : J + |ℓ| ≠ 0) :
