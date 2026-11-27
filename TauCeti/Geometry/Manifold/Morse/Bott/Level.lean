@@ -48,6 +48,8 @@ coindex one at its minimum, and its levels between the two critical values are p
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_isConvexChart`: a point of a
   Morse–Bott critical submanifold at which neither the index nor the coindex is one lies in a
   convexity chart.
+* `TauCeti.forall_exists_isConvexChart_of_forall_mem_criticalPoints`: a `C¹` function with
+  convexity charts at its critical points has convexity charts at all points.
 * `TauCeti.isPreconnected_preimage_singleton_of_forall_mem_criticalPoints_exists_isConvexChart`: on
   a compact connected manifold, a `C¹` function with convexity charts at its critical points has
   preconnected levels.
@@ -195,9 +197,10 @@ end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
 section Level
 
-/-- A `C¹` function with convexity charts at its critical points has convexity charts at all
-points: at a regular point the submersion normal form supplies one. -/
-private theorem forall_exists_isConvexChart_of_forall_mem_criticalPoints [IsManifold I 1 M]
+/-- **Convexity charts at the critical points give them everywhere.** A `C¹` function on a
+boundaryless finite-dimensional manifold with convexity charts at its critical points has convexity
+charts at all points: at a regular point the submersion normal form supplies one. -/
+theorem forall_exists_isConvexChart_of_forall_mem_criticalPoints [IsManifold I 1 M]
     (hf : ContMDiff I 𝓘(ℝ) 1 f)
     (hloc : ∀ x ∈ criticalPoints I f, ∃ U, x ∈ U ∧ IsConvexChart f U) (x : M) :
     ∃ U, x ∈ U ∧ IsConvexChart f U := by

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ConnectedLevel
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Free
 import TauCeti.Geometry.Lie.FundamentalVectorField.Isotropy
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Hessian
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Slice.MomentMap
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Semidefinite
 import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
@@ -26,7 +27,9 @@ the interior of the moment polytope `conv μ(M)`
 Since locally free points of a symplectic toric manifold are free
 (`TauCeti.SmoothTwoForm.IsMomentMap.stabilizer_eq_bot_of_isotropy_eq_bot`), it suffices to show
 that a point `x` with nonzero isotropy algebra `𝔥 = 𝔤_x` maps to the boundary. Effectiveness is
-used only in that last step. Such a point is a global minimum of a component `μ^ξ` for some
+used only to pass from locally free to free; the boundary argument, and
+`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_eq_bot_of_mem_interior_convexHull_range`, do not need
+it. Such a point is a global minimum of a component `μ^ξ` for some
 nonzero `ξ ∈ 𝔥` (`TauCeti.SmoothTwoForm.IsMomentMap.exists_ne_zero_isMinOn_of_isotropy_ne_bot`):
 
 * **The linearized isotropy action.** Every `ξ ∈ 𝔥` acts on `T_x M` by the generator `A_ξ` of
@@ -83,6 +86,7 @@ namespace TauCeti.SmoothTwoForm.IsMomentMap
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -112,19 +116,27 @@ theorem exists_ne_zero_forall_criticalHessian_nonneg
   have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
   have hσG := SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG
   set a := InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M with ha
-  -- The linearized isotropy action `A : 𝔤_x → End (T_x M)`, `A_ξ = d/dt|₀ d(exp (t ξ))_x`.
+  -- The linearized isotropy action `A : 𝔤_x → sp(T_x M, σ_x)`, `A_ξ = d/dt|₀ d(exp (t ξ))_x`.
+  have hσx : ∀ g ∈ MulAction.stabilizer G x, SmoothForm.mpullback (fun y : M ↦ g • y)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ := fun g _ ↦ hG g
   let A : a.isotropy x →ₗ[ℝ] Module.End ℝ (TangentSpace 𝓘(ℝ, E') x) :=
-    ((ContinuousLinearMap.coeLM ℝ : (E' →L[ℝ] E') →ₗ[ℝ] E' →ₗ[ℝ] E').comp
-      (isotropyLinearization 𝓘(ℝ, E') x) : a.isotropy x →ₗ[ℝ] E' →ₗ[ℝ] E')
+    (skewAdjointLieSubalgebra
+      (hσ.isNondegenerate.symplecticFormAt x).toBilinForm).toSubmodule.subtype.comp
+        (hσ.isNondegenerate.isotropySkewAdjoint hσx)
   have hAv (ξ : a.isotropy x) (v : TangentSpace 𝓘(ℝ, E') x) :
       A ξ v = isotropyLinearization 𝓘(ℝ, E') x ξ v :=
-    rfl
+    hσ.isNondegenerate.coe_isotropySkewAdjoint_apply hσx ξ v
+  have hAeq (ξ : a.isotropy x) :
+      A ξ = ((isotropyLinearization 𝓘(ℝ, E') x ξ : E' →ₗ[ℝ] E') :
+        Module.End ℝ (TangentSpace 𝓘(ℝ, E') x)) :=
+    LinearMap.ext (hAv ξ)
   -- They lie in `sp(T_x M, σ_x)` and are complex linear for a compatible complex structure `J`.
   obtain ⟨J, hJ, hA⟩ :=
     hσ.isNondegenerate.exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap
       (I := I) hσG x
-  have hcomm (ξ η : a.isotropy x) : Commute (A ξ) (A η) :=
-    (commute_isotropyLinearization ξ η).map ContinuousLinearMap.toLinearMapRingHom
+  have hcomm (ξ η : a.isotropy x) : Commute (A ξ) (A η) := by
+    rw [hAeq, hAeq]
+    exact (commute_isotropyLinearization ξ η).map ContinuousLinearMap.toLinearMapRingHom
   have hAW (ξ : a.isotropy x) (w : TangentSpace 𝓘(ℝ, E') x) (hw : w ∈ a.orbitTangent x) :
       A ξ w = 0 := by
     obtain ⟨ζ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ x).1 hw
@@ -142,10 +154,11 @@ theorem exists_ne_zero_forall_criticalHessian_nonneg
   have : Nontrivial (a.isotropy x) :=
     Submodule.nontrivial_iff_ne_bot.2 fun h0 ↦ hx ((LieSubalgebra.toSubmodule_eq_bot _).1 h0)
   obtain ⟨ξ, hξ0, hξ⟩ := SymplecticForm.exists_ne_zero_forall_apply_apply_nonneg hJ A hcomm
-    (fun ξ ↦ (hA ξ).1) (fun ξ ↦ (hA ξ).2) hW hAW hdim'
+    (fun ξ ↦ (hσ.isNondegenerate.isotropySkewAdjoint hσx ξ).property)
+    (fun ξ ↦ hAeq ξ ▸ (hA ξ).2) hW hAW hdim'
   -- The Hessian of `μ^ξ` at `x` is `σ_x(A_ξ v, w)`.
   refine ⟨ξ, ξ.property, fun h' ↦ hξ0 (Subtype.ext h'), fun v ↦ ?_⟩
-  rw [h.criticalHessian_apply_eq_eval₂_isotropyLinearization hσ.isNondegenerate]
+  rw [h.criticalHessian_apply_eq_eval₂_isotropyLinearization hσ.isNondegenerate, ← hAv]
   exact (hξ v).trans_eq (hσ.isNondegenerate.symplecticFormAt_apply x _ v)
 
 /-- **A point with nonzero isotropy algebra is a minimum of a moment map component.** Let a compact

@@ -158,8 +158,10 @@ theorem exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ :=
     SmoothBundleForm.ext_eval₂ fun x u v ↦ by rw [SmoothForm.eval₂_mpullback]; exact hσG g x u v
   refine ⟨J.almostComplexStructureAt p, hJ.compatibleAt p, fun ξ ↦ ⟨?_, ?_⟩⟩
-  · exact (LinearMap.mem_skewAdjointSubmodule _).2 fun u v ↦
-      (hσ.symplecticFormAt_isotropyLinearization_apply hσp ξ u v).trans (map_neg _ _).symm
+  · have hA : (hσ.isotropySkewAdjoint hσp ξ : Module.End ℝ (TangentSpace I' p)) =
+        ((isotropyLinearization I' p ξ : E' →ₗ[ℝ] E') : Module.End ℝ (TangentSpace I' p)) :=
+      LinearMap.ext (hσ.coe_isotropySkewAdjoint_apply hσp ξ)
+    exact hA ▸ (hσ.isotropySkewAdjoint hσp ξ).property
   · refine (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ?_
     rw [J.almostComplexStructureAt_apply, J.almostComplexStructureAt_apply]
     refine isotropyLinearization_apply_apply_eq_of_forall_mem_stabilizer ξ (J.toEndomorphism p)
