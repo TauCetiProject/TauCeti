@@ -52,6 +52,12 @@ because that set requires the prime factors to be strictly less than its cutoff.
 noncomputable def smoothCount (x y : ℝ) : ℕ :=
   #(Nat.smoothNumbersUpTo ⌊x⌋₊ (⌊y⌋₊ + 1))
 
+/-- The defining formula: `Ψ(x, y)` is the cardinality of
+`Nat.smoothNumbersUpTo ⌊x⌋₊ (⌊y⌋₊ + 1)`. -/
+theorem smoothCount_def (x y : ℝ) :
+    smoothCount x y = #(Nat.smoothNumbersUpTo ⌊x⌋₊ (⌊y⌋₊ + 1)) :=
+  (rfl)
+
 /-- A natural number lies in `Nat.smoothNumbersUpTo ⌊x⌋₊ (⌊y⌋₊ + 1)` exactly when it lies in
 `[1, ⌊x⌋₊]` and each of its prime factors `p` satisfies `(p : ℝ) ≤ y`. -/
 theorem mem_smoothNumbersUpTo_natFloor_iff {x y : ℝ} {n : ℕ} :
@@ -70,7 +76,7 @@ theorem mem_smoothNumbersUpTo_natFloor_iff {x y : ℝ} {n : ℕ} :
 `(p : ℝ) ≤ y`. -/
 theorem smoothCount_eq_card_filter (x y : ℝ) :
     smoothCount x y = #{n ∈ Icc 1 ⌊x⌋₊ | ∀ p : ℕ, p ∈ n.primeFactors → (p : ℝ) ≤ y} := by
-  rw [smoothCount]
+  rw [smoothCount_def]
   congr 1
   ext n
   rw [mem_smoothNumbersUpTo_natFloor_iff, mem_filter]
@@ -78,18 +84,18 @@ theorem smoothCount_eq_card_filter (x y : ℝ) :
 /-- Only the integer part of the first argument of `Ψ` matters. -/
 @[simp]
 theorem smoothCount_natFloor_left (x y : ℝ) : smoothCount (⌊x⌋₊ : ℝ) y = smoothCount x y := by
-  rw [smoothCount, smoothCount, Nat.floor_natCast]
+  rw [smoothCount_def, smoothCount_def, Nat.floor_natCast]
 
 /-- Only the integer part of the second argument of `Ψ` matters. -/
 @[simp]
 theorem smoothCount_natFloor_right (x y : ℝ) : smoothCount x (⌊y⌋₊ : ℝ) = smoothCount x y := by
-  rw [smoothCount, smoothCount, Nat.floor_natCast]
+  rw [smoothCount_def, smoothCount_def, Nat.floor_natCast]
 
 /-- At natural-number arguments, `Ψ(N, k)` is the cardinality of
 `Nat.smoothNumbersUpTo N (k + 1)`. -/
 theorem smoothCount_natCast (N k : ℕ) :
     smoothCount (N : ℝ) (k : ℝ) = #(Nat.smoothNumbersUpTo N (k + 1)) := by
-  rw [smoothCount, Nat.floor_natCast, Nat.floor_natCast]
+  rw [smoothCount_def, Nat.floor_natCast, Nat.floor_natCast]
 
 /-- `Ψ` is nondecreasing in each of its two arguments. -/
 @[gcongr]
@@ -102,7 +108,7 @@ theorem smoothCount_mono {x₁ x₂ y₁ y₂ : ℝ} (hx : x₁ ≤ x₂) (hy : 
 
 /-- At most `⌊x⌋₊` positive integers are counted by `Ψ(x, y)`. -/
 theorem smoothCount_le_natFloor (x y : ℝ) : smoothCount x y ≤ ⌊x⌋₊ := by
-  rw [smoothCount]
+  rw [smoothCount_def]
   have := Nat.smoothNumbersUpTo_card_add_roughNumbersUpTo_card ⌊x⌋₊ (⌊y⌋₊ + 1)
   omega
 
@@ -117,6 +123,7 @@ theorem smoothCount_eq_natFloor {x y : ℝ} (h : x ≤ y) : smoothCount x y = �
 
 /-- `Ψ(x, y)` is positive exactly when `1 ≤ x`: the integer `1` has no prime factors, so it is
 counted for every `y`. -/
+@[simp]
 theorem smoothCount_pos {x y : ℝ} : 0 < smoothCount x y ↔ 1 ≤ x := by
   refine ⟨fun h ↦ ?_, fun h ↦ card_pos.2 ⟨1, ?_⟩⟩
   · by_contra hx
@@ -127,6 +134,7 @@ theorem smoothCount_pos {x y : ℝ} : 0 < smoothCount x y ↔ 1 ≤ x := by
       ⟨Nat.le_floor (by simpa using h), Nat.mem_smoothNumbers.2 ⟨one_ne_zero, by simp⟩⟩
 
 /-- `Ψ(x, y)` vanishes exactly when `x < 1`. -/
+@[simp]
 theorem smoothCount_eq_zero_iff {x y : ℝ} : smoothCount x y = 0 ↔ x < 1 := by
   rw [← not_le, ← smoothCount_pos (y := y), Nat.pos_iff_ne_zero, not_not]
 
