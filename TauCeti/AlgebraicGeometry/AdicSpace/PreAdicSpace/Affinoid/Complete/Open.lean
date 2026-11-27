@@ -134,9 +134,16 @@ theorem pairComap_comp_hom_base {X Y : PreAdicSpace.{u}} (CY : CompleteAffinoidO
     (CX : CompleteAffinoidOpen X) (φ : Pair.Hom CY.pair CX.pair) {f : X ⟶ Y}
     (hsq : CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f) (c : CX.space) :
     CY.hom.base ((CY.pairComap CX φ).base c) = f.base (CX.hom.base c) := by
-  have h := congrArg (fun m : CX.space ⟶ Y ↦ m.base c) hsq
-  rwa [PreAdicSpace.comp_base, PreAdicSpace.comp_base, TopCat.coe_comp, TopCat.coe_comp,
-    Function.comp_apply, Function.comp_apply] at h
+  simpa only [PreAdicSpace.comp_base_apply] using congrArg (fun m : CX.space ⟶ Y ↦ m.base c) hsq
+
+/-- Pointwise evaluation of a commuting square `CZ.pairComap CX χ ≫ CZ.hom = CX.hom ≫ f ≫ g`
+over a composite morphism `f ≫ g`, given `CX.hom.base c = x`. -/
+theorem pairComap_comp_hom_base_comp {X Y Z : PreAdicSpace.{u}} (CZ : CompleteAffinoidOpen Z)
+    (CX : CompleteAffinoidOpen X) (χ : Pair.Hom CZ.pair CX.pair) {f : X ⟶ Y} {g : Y ⟶ Z}
+    (hsq : CZ.pairComap CX χ ≫ CZ.hom = CX.hom ≫ f ≫ g) {c : CX.space} {x : X}
+    (hc : CX.hom.base c = x) :
+    CZ.hom.base ((CZ.pairComap CX χ).base c) = g.base (f.base x) := by
+  rw [CZ.pairComap_comp_hom_base CX χ hsq c, PreAdicSpace.comp_base_apply, hc]
 
 section OfRestrictIso
 
@@ -166,24 +173,18 @@ theorem ofRestrictIso_hom_base {x : X} (hx : x ∈ U) :
   let u : X.restrict U.isOpenEmbedding := ⟨x, hx⟩
   have hpt := congrArg (fun m : X.restrict U.isOpenEmbedding ⟶ X ↦ m.base u)
     (Iso.hom_inv_id_assoc eU (X.ofRestrict U.isOpenEmbedding))
-  rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
-    ← ofRestrictIso_hom S P hP hsheaf eU, PreAdicSpace.ofRestrict_base] at hpt
-  exact hpt
+  rwa [PreAdicSpace.comp_base_apply, ← ofRestrictIso_hom S P hP hsheaf eU,
+    PreAdicSpace.ofRestrict_base] at hpt
 
 /-- On points of `Spa(A, A⁺)`, `(ofRestrictIso ...).hom.base` sends `b` to `(eU.inv.base b).val`.
 -/
 theorem ofRestrictIso_hom_base_apply (b : (ofRestrictIso S P hP hsheaf eU).space) :
-    (ofRestrictIso S P hP hsheaf eU).hom.base b = (eU.inv.base b).val := by
-  have h1 : (ofRestrictIso S P hP hsheaf eU).hom.base b =
-      (eU.inv ≫ X.ofRestrict U.isOpenEmbedding).base b :=
-    congrFun (congrArg (fun m : _ ⟶ X ↦ ⇑m.base) (ofRestrictIso_hom S P hP hsheaf eU)) b
-  have h2 : ⇑(eU.inv ≫ X.ofRestrict U.isOpenEmbedding).base =
-      ⇑(X.ofRestrict U.isOpenEmbedding).base ∘ ⇑eU.inv.base := by
-    rw [PreAdicSpace.comp_base, TopCat.coe_comp]
-  have h3 : (X.ofRestrict U.isOpenEmbedding).base (eU.inv.base b) = (eU.inv.base b).val := by
-    rw [PreAdicSpace.ofRestrict_base]
-    exact congrFun Opens.coe_inclusion' (eU.inv.base b)
-  exact h1.trans ((congrFun h2 b).trans h3)
+    (ofRestrictIso S P hP hsheaf eU).hom.base b = (eU.inv.base b).val :=
+  (congrArg (fun m : _ ⟶ X ↦ m.base b) (ofRestrictIso_hom S P hP hsheaf eU)).trans <|
+    (PreAdicSpace.comp_base_apply eU.inv (X.ofRestrict U.isOpenEmbedding) b).trans <|
+      (congrArg (fun f ↦ f (eU.inv.base b))
+        (PreAdicSpace.ofRestrict_base X U.isOpenEmbedding)).trans
+        (congrFun Opens.coe_inclusion' (eU.inv.base b))
 
 variable {Y : PreAdicSpace.{u}} {V : Opens Y} {B : Type u} [CommRing B] [UniformSpace B]
   [IsUniformAddGroup B] [IsTopologicalRing B] [CompleteSpace B] [T2Space B] [IsHuberRing B]
@@ -271,7 +272,7 @@ theorem compOpenImmersion_hom_base {X Y : PreAdicSpace.{u}} (C : CompleteAffinoi
     (g : X ⟶ Y) [IsOpenImmersion g] (x : C.space) :
     (C.compOpenImmersion g).hom.base x = g.base (C.hom.base x) :=
   (congrArg (fun m : C.space ⟶ Y ↦ m.base x) (compOpenImmersion_hom C g)).trans
-    (by rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply])
+    (PreAdicSpace.comp_base_apply C.hom g x)
 
 /-- Postcomposing the target chart with an open immersion `g` leaves `pairComap` unchanged. -/
 theorem compOpenImmersion_pairComap_left {X Y Y' : PreAdicSpace.{u}}
@@ -432,14 +433,13 @@ theorem exists_ofRationalLocalization_lift {Z : PreAdicSpace.{u}}
     hrange_ι.symm ▸ (ha₀R : (a₀ : spa S.plus) ∈ (spaBasicOpen S.plus T s : Set (spa S.plus)))
   have hsub : Set.range (CY₁.hom ≫ g).base ⊆ Set.range D.hom.base := by
     rintro _ ⟨z, rfl⟩
-    rw [ofRationalLocalization_hom_assoc, PreAdicSpace.comp_base, TopCat.coe_comp,
-      Function.comp_apply]
+    rw [ofRationalLocalization_hom_assoc, PreAdicSpace.comp_base_apply]
     exact hRAO (hrange_ι ▸ ⟨z, rfl⟩ :
       (ι.base z : spa S.plus) ∈ (spaBasicOpen S.plus T s : Set (spa S.plus)))
   let l := IsOpenImmersion.lift D.hom (CY₁.hom ≫ g) hsub
   refine ⟨T, s, hT, ha₀R, a₁, presentationLimitHomPairHom D.pairOfDefinition CY₁.pairOfDefinition
     D.pair CY₁.pair D.le_plus CY₁.le_plus l, ?_, ?_⟩
-  · rw [ofRationalLocalization_hom, PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply]
+  · rw [ofRationalLocalization_hom, PreAdicSpace.comp_base_apply]
     exact congrArg kY.base ha₁
   · rw [pairComap, presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom
       D.pairOfDefinition CY₁.pairOfDefinition D.pair CY₁.pair D.le_plus CY₁.le_plus CY₁.isSheaf]
@@ -603,8 +603,7 @@ theorem exists_rationalLocalization_lift_sq {X Y Z : PreAdicSpace.{u}}
         φ.comp ψ = (CX.rationalLocalizationHom TC sC hTC).comp χ := by
   obtain ⟨TC, sC, hTC, -, c₁, φ, hc₁, hsq_f⟩ :=
     exists_ofRationalLocalization_lift CX.pairOfDefinition CX.le_plus CX.isSheaf CX.hom CY f
-      (a₀ := c₀) (d₀ := b₀)
-      (by rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply, hc₀]; exact hb₀.symm)
+      (a₀ := c₀) (d₀ := b₀) (by rw [PreAdicSpace.comp_base_apply, hc₀, hb₀])
   let CX₁ := CX.rationalLocalization TC sC hTC; let ιC := CX.rationalLocalizationHom TC sC hTC
   have hφψ : φ.comp ψ = ιC.comp χ := by
     apply CZ.pairComap_injective CX₁

@@ -250,11 +250,9 @@ theorem LocallyOfFiniteType.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
   obtain ⟨CZ, CX, χ, hχ, c₀, hc₀, hsq_fg⟩ := hfg.exists_complete_openImmersion_chart x
   let OY : Opens Y.obj := ⟨g.hom.base ⁻¹' Set.range CZ.hom.base,
     CZ.hom.isOpenEmbedding.isOpen_range.preimage g.hom.base.hom.continuous_toFun⟩
-  have hfxO : f.hom.base x ∈ OY := by
-    refine ⟨(CZ.pairComap CX χ).base c₀, ?_⟩
-    have h := CZ.pairComap_comp_hom_base CX χ hsq_fg c₀
-    rwa [ObjectProperty.FullSubcategory.comp_hom, PreAdicSpace.comp_base, TopCat.coe_comp,
-      Function.comp_apply, hc₀] at h
+  have hfxO : f.hom.base x ∈ OY :=
+    ⟨(CZ.pairComap CX χ).base c₀,
+      CZ.pairComap_comp_hom_base_comp CX χ (f := f.hom) (g := g.hom) hsq_fg hc₀⟩
   obtain ⟨W, hW, hfxW, hWO⟩ :=
     Opens.isBasis_iff_nbhd.mp (isBasis_affinoidOpens Y.property.isLocallyAffinoid) hfxO
   obtain ⟨B, _, _, _, _, _, _, _, T, P', hP', hsheafB, ⟨eW⟩⟩ :=
@@ -264,8 +262,7 @@ theorem LocallyOfFiniteType.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
     ofRestrictIso_hom_base T P' hP' hsheafB eW hfxW
   have hrangeY : Set.range (CY.hom ≫ g.hom).base ⊆ Set.range CZ.hom.base := by
     rintro _ ⟨b, rfl⟩
-    rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply,
-      ofRestrictIso_hom_base_apply T P' hP' hsheafB eW b]
+    rw [PreAdicSpace.comp_base_apply, ofRestrictIso_hom_base_apply T P' hP' hsheafB eW b]
     exact hWO (eW.inv.base b).property
   let p := PreAdicSpace.IsOpenImmersion.lift CZ.hom (CY.hom ≫ g.hom) hrangeY
   let ψ := presentationLimitHomPairHom CZ.pairOfDefinition CY.pairOfDefinition CZ.pair CY.pair
