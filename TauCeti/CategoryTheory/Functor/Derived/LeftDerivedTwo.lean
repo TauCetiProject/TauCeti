@@ -25,17 +25,18 @@ any counit `α : (((whiskeringLeft₂ H).obj L₁).obj L₂).obj LF ⟶ F` induc
 In the homogeneous case `F : C ⥤ C ⥤ H` with a left derived bifunctor `(LF, α)` with respect to
 `W : MorphismProperty C`, reusing `leftDerived₂FlipCounit` via the universal property of `LF` lifts
 any natural transformation `γ : F.flip ⟶ F` to `CategoryTheory.Functor.leftDerived₂FlipLift`
-(`LF.flip ⟶ LF`, with counit equation `CategoryTheory.Functor.leftDerived₂FlipLift_fac` and
+(`LF.flip ⟶ LF`, with counit equations `CategoryTheory.Functor.leftDerived₂FlipLift_fac` and
+`CategoryTheory.Functor.leftDerived₂FlipLift_fac_app_app`, and
 composition law `CategoryTheory.Functor.flip_leftDerived₂FlipLift_comp`), and induces a natural
 isomorphism `LF.flip ≅ LF` (`CategoryTheory.Functor.leftDerived₂FlipIso`, with forward map
 `CategoryTheory.Functor.leftDerived₂FlipIso_hom`) compatible with `α` and
 any `e : F.flip ≅ F` both as natural transformations
 (`CategoryTheory.Functor.leftDerived₂FlipIso_hom_fac` and
 `CategoryTheory.Functor.leftDerived₂FlipIso_inv_fac`) and on objects in the image of `L : C ⥤ D`
-(`CategoryTheory.Functor.leftDerived₂FlipIso_hom_app_app_L`,
-`CategoryTheory.Functor.leftDerived₂FlipIso_inv_app_app_L`, and, when the relevant comparison maps
-are invertible, `CategoryTheory.Functor.leftDerived₂FlipIso_app_app_L_hom`,
-`CategoryTheory.Functor.leftDerived₂FlipIso_app_app_L_inv`, and
+(`CategoryTheory.Functor.leftDerived₂FlipIso_hom_fac_app_app`,
+`CategoryTheory.Functor.leftDerived₂FlipIso_inv_fac_app_app`, and, when the relevant comparison maps
+are invertible, `CategoryTheory.Functor.leftDerived₂FlipIso_hom_app_app_L`,
+`CategoryTheory.Functor.leftDerived₂FlipIso_inv_app_app_L`, and
 `CategoryTheory.Functor.leftDerived₂FlipIso_app_app_L`).
 
 Moreover, when `e` is involutive
@@ -122,7 +123,7 @@ lemma leftDerived₂FlipLift_fac (γ : F.flip ⟶ F) :
 
 /-- Componentwise counit compatibility for `leftDerived₂FlipLift` on images of `L`. -/
 @[reassoc (attr := simp)]
-lemma leftDerived₂FlipLift_app_app (γ : F.flip ⟶ F) (X Y : C) :
+lemma leftDerived₂FlipLift_fac_app_app (γ : F.flip ⟶ F) (X Y : C) :
     ((leftDerived₂FlipLift LF α W γ).app (L.obj X)).app (L.obj Y) ≫ (α.app X).app Y =
       (α.app Y).app X ≫ (γ.app X).app Y := by
   simp only [leftDerived₂FlipLift, leftDerived₂_fac_app_app, NatTrans.comp_app,
@@ -142,7 +143,7 @@ lemma flip_leftDerived₂FlipLift_comp (γ₁ γ₂ : F.flip ⟶ F)
   have hXY := congr_app (congr_app h X) Y
   simp only [NatTrans.comp_app, flipFunctor_map_app_app,
     flipping_counitIso_hom_app_app_app] at hXY
-  simp [leftDerived₂FlipLift_app_app_assoc, hXY]
+  simp [leftDerived₂FlipLift_fac_app_app_assoc, hXY]
 
 /-- Transport a flip isomorphism `e : F.flip ≅ F` along a left derived bifunctor `(LF, α)` of `F`
 with respect to `W` to obtain a natural isomorphism `LF.flip ≅ LF`. -/
@@ -212,15 +213,15 @@ lemma leftDerived₂FlipIso_inv_fac (e : F.flip ≅ F) :
 /-- Compatibility of `(leftDerived₂FlipIso LF α W e).hom` with `α` and `e.hom` on images of
 `L`. -/
 @[reassoc (attr := simp)]
-lemma leftDerived₂FlipIso_hom_app_app_L (e : F.flip ≅ F) (X Y : C) :
+lemma leftDerived₂FlipIso_hom_fac_app_app (e : F.flip ≅ F) (X Y : C) :
     ((leftDerived₂FlipIso LF α W e).hom.app (L.obj X)).app (L.obj Y) ≫ (α.app X).app Y =
       (α.app Y).app X ≫ (e.hom.app X).app Y := by
-  simp only [leftDerived₂FlipIso_hom, leftDerived₂FlipLift_app_app]
+  simp only [leftDerived₂FlipIso_hom, leftDerived₂FlipLift_fac_app_app]
 
 /-- Compatibility of `(leftDerived₂FlipIso LF α W e).inv` with `α` and `e.inv` on images of
 `L`. -/
 @[reassoc (attr := simp)]
-lemma leftDerived₂FlipIso_inv_app_app_L (e : F.flip ≅ F) (X Y : C) :
+lemma leftDerived₂FlipIso_inv_fac_app_app (e : F.flip ≅ F) (X Y : C) :
     ((leftDerived₂FlipIso LF α W e).inv.app (L.obj X)).app (L.obj Y) ≫ (α.app Y).app X =
       (α.app X).app Y ≫ (e.inv.app X).app Y := by
   have h := congr_app (congr_app (leftDerived₂FlipIso_inv_fac LF α W e) X) Y
@@ -229,7 +230,7 @@ lemma leftDerived₂FlipIso_inv_app_app_L (e : F.flip ≅ F) (X Y : C) :
 
 /-- Forward component formula for `leftDerived₂FlipIso` on `(L.obj X, L.obj Y)` when the target
 comparison `(α.app X).app Y` is invertible. -/
-lemma leftDerived₂FlipIso_app_app_L_hom (e : F.flip ≅ F) (X Y : C)
+lemma leftDerived₂FlipIso_hom_app_app_L (e : F.flip ≅ F) (X Y : C)
     [IsIso ((α.app X).app Y)] :
     ((leftDerived₂FlipIso LF α W e).hom.app (L.obj X)).app (L.obj Y) =
       (α.app Y).app X ≫ (e.hom.app X).app Y ≫ CategoryTheory.inv ((α.app X).app Y) := by
@@ -238,7 +239,7 @@ lemma leftDerived₂FlipIso_app_app_L_hom (e : F.flip ≅ F) (X Y : C)
 
 /-- Inverse component formula for `leftDerived₂FlipIso` on `(L.obj X, L.obj Y)` when the source
 comparison `(α.app Y).app X` is invertible. -/
-lemma leftDerived₂FlipIso_app_app_L_inv (e : F.flip ≅ F) (X Y : C)
+lemma leftDerived₂FlipIso_inv_app_app_L (e : F.flip ≅ F) (X Y : C)
     [IsIso ((α.app Y).app X)] :
     ((leftDerived₂FlipIso LF α W e).inv.app (L.obj X)).app (L.obj Y) =
       (α.app X).app Y ≫ (e.inv.app X).app Y ≫ CategoryTheory.inv ((α.app Y).app X) := by
@@ -253,7 +254,7 @@ lemma leftDerived₂FlipIso_app_app_L (e : F.flip ≅ F) (X Y : C)
     ((leftDerived₂FlipIso LF α W e).app (L.obj X)).app (L.obj Y) =
       asIso ((α.app Y).app X) ≪≫ (e.app X).app Y ≪≫ (asIso ((α.app X).app Y)).symm := by
   ext
-  simp [leftDerived₂FlipIso_app_app_L_hom]
+  simp [leftDerived₂FlipIso_hom_app_app_L]
 
 /-- If `e : F.flip ≅ F` is involutive, then `leftDerived₂FlipIso LF α W e` is involutive as a
 natural transformation. -/
