@@ -36,6 +36,8 @@ flatness over every Hopf subalgebra.
 
 * `TauCeti.CommHopfAlgCat.coinvariants_kernelHopfIdeal_hopfSubalgebraι_of_isGeometricallyReduced`:
   a Hopf subalgebra is the algebra of coinvariants of the Hopf ideal it generates.
+* `TauCeti.CommHopfAlgCat.HopfSubalgebra.coinvariants_kernelHopfIdeal` and
+  `TauCeti.CommHopfAlgCat.NormalHopfIdeal.kernelHopfIdeal_coinvariants`: the two round trips.
 * `TauCeti.CommHopfAlgCat.HopfSubalgebra.orderIsoNormalHopfIdeal`: `B ↦ H·B⁺` as an order
   isomorphism from Hopf subalgebras onto normal Hopf ideals.
 
@@ -58,6 +60,7 @@ variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{u} k}
 /-- **Takeuchi correspondence, subalgebra side, geometrically reduced case.** A Hopf subalgebra
 `B` of a geometrically reduced commutative Hopf algebra `H` of finite type over a field is the
 algebra of right coinvariants of the Hopf ideal `H·B⁺` it generates. -/
+@[simp]
 theorem coinvariants_kernelHopfIdeal_hopfSubalgebraι_of_isGeometricallyReduced
     {B : Subalgebra k H} (hB : B.IsHopfSubalgebra) :
     (kernelHopfIdeal (hopfSubalgebraι hB)).coinvariants = B := by
@@ -67,9 +70,22 @@ theorem coinvariants_kernelHopfIdeal_hopfSubalgebraι_of_isGeometricallyReduced
   have : Algebra.IsGeometricallyReduced k (ofHopfSubalgebra hB) :=
     Algebra.IsGeometricallyReduced.of_injective (hopfSubalgebraι hB).hom.toAlgHom hinj
   rw [coinvariants_kernelHopfIdeal_eq_range _
-    ((faithfullyFlat_iff_injective_of_isGeometricallyReduced _).mpr hinj)]
-  ext x
-  exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+    ((faithfullyFlat_iff_injective_of_isGeometricallyReduced _).mpr hinj), range_hopfSubalgebraι]
+
+/-- A Hopf subalgebra is recovered from the normal Hopf ideal it generates. -/
+@[simp]
+theorem HopfSubalgebra.coinvariants_kernelHopfIdeal (B : HopfSubalgebra H) :
+    B.kernelHopfIdeal.coinvariants = B :=
+  Subtype.ext <| by
+    rw [NormalHopfIdeal.coe_coinvariants, HopfSubalgebra.coe_kernelHopfIdeal,
+      coinvariants_kernelHopfIdeal_hopfSubalgebraι_of_isGeometricallyReduced]
+
+/-- A normal Hopf ideal is recovered from its Hopf subalgebra of coinvariants. -/
+@[simp]
+theorem NormalHopfIdeal.kernelHopfIdeal_coinvariants (I : NormalHopfIdeal H) :
+    I.coinvariants.kernelHopfIdeal = I :=
+  Subtype.ext <| by
+    rw [NormalHopfIdeal.coe_kernelHopfIdeal_coinvariants, kernelHopfIdeal_coinvariantsι_eq]
 
 /-- **The Takeuchi correspondence, geometrically reduced case.** For a geometrically reduced
 commutative Hopf algebra `H` of finite type over a field, `B ↦ H·B⁺` is an order isomorphism from
@@ -78,18 +94,8 @@ noncomputable def HopfSubalgebra.orderIsoNormalHopfIdeal : HopfSubalgebra H ≃o
     where
   toFun := kernelHopfIdeal
   invFun := NormalHopfIdeal.coinvariants
-  left_inv B := Subtype.ext <| by
-    rw [NormalHopfIdeal.coe_coinvariants, HopfSubalgebra.coe_kernelHopfIdeal]
-    exact coinvariants_kernelHopfIdeal_hopfSubalgebraι_of_isGeometricallyReduced B.property
-  right_inv I := Subtype.ext <| by
-    rw [HopfSubalgebra.coe_kernelHopfIdeal]
-    -- `I.coinvariants` is `⟨I.val.coinvariants, _⟩` only propositionally outside `Takeuchi.Basic`,
-    -- so generalize it and substitute its carrier before applying the kernel identity.
-    suffices ∀ B : HopfSubalgebra H, B.val = I.val.coinvariants →
-        CommHopfAlgCat.kernelHopfIdeal (hopfSubalgebraι B.property) = I.val from
-      this _ (NormalHopfIdeal.coe_coinvariants I)
-    rintro ⟨B, hB⟩ rfl
-    exact kernelHopfIdeal_coinvariantsι_eq I.property
+  left_inv := HopfSubalgebra.coinvariants_kernelHopfIdeal
+  right_inv := NormalHopfIdeal.kernelHopfIdeal_coinvariants
   map_rel_iff' {B B'} := by
     rw [Equiv.coe_fn_mk, gc_kernelHopfIdeal_coinvariants,
       ← Subtype.coe_le_coe, ← Subtype.coe_le_coe, NormalHopfIdeal.coe_coinvariants,
