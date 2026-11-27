@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.MinCriticalCount
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Degenerate
-public import TauCeti.Geometry.Manifold.Morse.Torus
+public import TauCeti.Geometry.Manifold.Morse.Torus.Basic
 public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.RealProjective
 public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Sphere
 

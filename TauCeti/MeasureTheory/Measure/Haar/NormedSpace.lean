@@ -62,12 +62,16 @@ gives a set of measure one.
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.addHaar_real_ball`: the real measure of a nonnegative-radius ball in a
+  nontrivial space.
 * `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball`: the ratio of the real measures
   of two balls is the ratio of their radii raised to the dimension.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
   dimension `n`.
 * `MeasureTheory.Measure.addHaar_real_ball_half_rpow_le`:
   `μ (ball x (R / 2)) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for `e ≥ -1` in dimension `n`.
+* `MeasureTheory.Measure.addHaar_ball_rpow_le_of_half_le`: its extended form
+  `μ (ball x ρ) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for `R / 2 ≤ ρ` and `-1 ≤ e ≤ 0`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
 * `MeasureTheory.Measure.hasDerivAt_measureReal_ball`: `ρ ↦ μ (ball x ρ)` has derivative
@@ -127,6 +131,8 @@ gives a set of measure one.
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
 * `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
   an additive Haar measure to its multiple by `|det A|⁻¹`.
+* `MeasureTheory.lintegral_comp_linearMap`: for an invertible real linear map `f : E →ₗ[ℝ] E`,
+  `∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ`.
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
   empty).
@@ -139,6 +145,8 @@ gives a set of measure one.
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `ContinuousLinearEquiv.measurePreserving_map_symm`: a continuous linear equivalence `e` carries
+  `μ.map e.symm` to `μ`.
 * `ContinuousLinearEquiv.quasiMeasurePreserving_restrict`: a continuous linear automorphism mapping
   `s` into `t` is quasi measure preserving between the restrictions of an additive Haar measure to
   `s` and to `t`.
@@ -181,6 +189,16 @@ theorem addHaar_real_ball_of_pos
     (x : E) {r : ℝ} (hr : 0 < r) :
     mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- In a nontrivial space, the real measure of a ball of nonnegative radius is the corresponding
+power of the radius times the real measure of the unit ball. -/
+theorem addHaar_real_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r : ℝ} (hr : 0 ≤ r) :
+    mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
+  rw [measureReal_def, mu.addHaar_ball x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
 
 /-- The ratio of the real measures of two balls of positive radii is the ratio of the radii raised
@@ -230,6 +248,27 @@ theorem addHaar_real_ball_half_rpow_le
   calc ((2 : ℝ) ^ finrank ℝ E) ^ (-e) ≤ ((2 : ℝ) ^ finrank ℝ E) ^ (1 : ℝ) :=
         Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ one_le_two) (by linarith)
     _ = 2 ^ finrank ℝ E := Real.rpow_one _
+
+/-- For `R / 2 ≤ ρ` and a nonpositive exponent `e ≥ -1`, `μ (ball x ρ) ^ e ≤ 2ⁿ μ (ball x R) ^ e`,
+where `n` is the dimension. -/
+theorem addHaar_ball_rpow_le_of_half_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {R ρ : ℝ} (hR : 0 < R) (hρ : R / 2 ≤ ρ) {e : ℝ} (he : -1 ≤ e) (he0 : e ≤ 0) :
+    mu (ball x ρ) ^ e ≤ 2 ^ finrank ℝ E * mu (ball x R) ^ e := by
+  have hpos (r : ℝ) (hr : 0 < r) : 0 < mu.real (ball x r) := Metric.measureReal_ball_pos mu x hr
+  have hofReal (r : ℝ) : mu (ball x r) = ENNReal.ofReal (mu.real (ball x r)) := by
+    rw [measureReal_def, ENNReal.ofReal_toReal measure_ball_lt_top.ne]
+  calc mu (ball x ρ) ^ e = ENNReal.ofReal (mu.real (ball x ρ) ^ e) := by
+        rw [hofReal, ENNReal.ofReal_rpow_of_pos (hpos _ (by linarith))]
+    _ ≤ ENNReal.ofReal (mu.real (ball x (R / 2)) ^ e) :=
+        ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow_of_nonpos (hpos _ (half_pos hR))
+          (measureReal_mono (ball_subset_ball hρ) measure_ball_lt_top.ne) he0)
+    _ ≤ ENNReal.ofReal (2 ^ finrank ℝ E * mu.real (ball x R) ^ e) :=
+        ENNReal.ofReal_le_ofReal (mu.addHaar_real_ball_half_rpow_le x hR he)
+    _ = _ := by
+        rw [ENNReal.ofReal_mul (by positivity), hofReal R, ENNReal.ofReal_rpow_of_pos (hpos _ hR),
+          ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
 
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this
@@ -879,6 +918,14 @@ end ContinuousAffineMap
 
 namespace ContinuousLinearEquiv
 
+/-- A continuous linear equivalence `e` carries the pushforward `μ.map e.symm` back to `μ`, so it
+transports integrals for `μ.map e.symm` to integrals for `μ` without a Jacobian. -/
+theorem measurePreserving_map_symm {R E F : Type*} [Semiring R] [TopologicalSpace E]
+    [AddCommMonoid E] [Module R E] [MeasurableSpace E] [BorelSpace E] [TopologicalSpace F]
+    [AddCommMonoid F] [Module R F] [MeasurableSpace F] [BorelSpace F] (e : E ≃L[R] F)
+    (μ : Measure F) : MeasurePreserving e (μ.map e.symm) μ := by
+  simpa using e.symm.toHomeomorph.toMeasurableEquiv.measurePreserving_symm μ
+
 /-- A continuous linear automorphism `e` of a finite-dimensional real normed space that maps `s`
 into `t` is quasi measure preserving between the restrictions of an additive Haar measure to `s`
 and to `t`. In particular almost-everywhere statements on `t` pull back along `e` to `e ⁻¹' t`. -/
@@ -982,6 +1029,21 @@ theorem finiteDimensional_of_isCompact_measure_ne_zero
   .of_locallyCompactSpace 𝕜
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- Change of variables for an invertible real linear map on a finite-dimensional real normed space
+with an additive Haar measure `μ`. -/
+theorem lintegral_comp_linearMap {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {f : E →ₗ[ℝ] E} (hf : LinearMap.det f ≠ 0) (g : E → ENNReal) :
+    ∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ := by
+  have h_emb : MeasurableEmbedding f :=
+    (f.equivOfDetNeZero hf).toContinuousLinearEquiv.toHomeomorph.measurableEmbedding
+  rw [← h_emb.lintegral_map g, Measure.map_linearMap_addHaar_eq_smul_addHaar μ hf,
+    lintegral_smul_measure, smul_eq_mul]
+
+end MeasureTheory
 
 namespace TauCeti
 

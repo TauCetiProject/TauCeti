@@ -8,6 +8,8 @@ module
 public import Mathlib.SetTheory.Descriptive.Tree
 public import Mathlib.Data.Set.Card
 public import Mathlib.Order.RelIso.Set
+public import Mathlib.Data.Set.Finite.Lemmas
+public import TauCeti.Order.RelCovBy
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -27,9 +29,14 @@ prefix order of the tree of its paths from the least element.
 ## Main results
 
 * `TauCeti.IsTreeOrder.of_relIso`: being a tree order is transported along relation isomorphisms.
-* `TauCeti.IsTreeOrder.wellFounded`: the strict order of a tree order is well-founded.
+* `TauCeti.IsTreeOrder.ncard_lt_ncard_of_rel_of_not_rel`, `TauCeti.IsTreeOrder.wellFounded`: a
+  strict predecessor has strictly fewer predecessors, so the strict order of a tree order is
+  well-founded.
 * `TauCeti.isTreeOrder_of_injective`: the order pulled back from `ℕ` along an injection is a tree
   order.
+* `TauCeti.IsTreeOrder.exists_relCovBy`, `TauCeti.IsTreeOrder.rel_of_relCovBy`: every element
+  with a strict predecessor covers its *parent*, the largest of its strict predecessors.
+* `TauCeti.IsTreeOrder.eq_of_relCovBy`: every element covers at most one element.
 * `TauCeti.isTreeOrder_isPrefix`, `TauCeti.IsTreeOrder.exists_relIso_tree`: tree orders are the
   prefix orders of nonempty trees of finite sequences, up to isomorphism.
 -/
@@ -72,14 +79,19 @@ theorem IsTreeOrder.of_relIso {r : V → V → Prop} {s : W → W → Prop} (e :
   · rw [hdown]
     exact (h.isChain_setOf _).image e
 
+/-- In a tree order a strict predecessor `x` of `y` has strictly fewer predecessors than `y`. -/
+theorem IsTreeOrder.ncard_lt_ncard_of_rel_of_not_rel {r : V → V → Prop} (h : IsTreeOrder r)
+    {x y : V} (hxy : r x y) (hyx : ¬ r y x) : {w | r w x}.ncard < {w | r w y}.ncard := by
+  have := h.isPartialOrder
+  exact ncard_lt_ncard ⟨fun z hz => trans_of r hz hxy, fun hs => hyx (hs (refl_of r y))⟩
+    (h.finite_setOf y)
+
 /-- The strict order of a tree order is well-founded: a strict predecessor has strictly fewer
 predecessors. -/
 theorem IsTreeOrder.wellFounded {r : V → V → Prop} (h : IsTreeOrder r) :
-    WellFounded fun x y => r x y ∧ ¬ r y x := by
-  have := h.isPartialOrder
-  refine Subrelation.wf (fun {x y} hxy => ?_) (measure fun x => {y | r y x}.ncard).wf
-  exact ncard_lt_ncard ⟨fun z hz => trans_of r hz hxy.1, fun hs => hxy.2 (hs (refl_of r y))⟩
-    (h.finite_setOf y)
+    WellFounded fun x y => r x y ∧ ¬ r y x :=
+  Subrelation.wf (fun {_ _} hxy => h.ncard_lt_ncard_of_rel_of_not_rel hxy.1 hxy.2)
+    (measure fun x => {y | r y x}.ncard).wf
 
 /-- The order pulled back from `ℕ` along an injection, from a nonempty type, is a tree order: a
 well-order of type at most `ω`. -/
@@ -90,6 +102,48 @@ theorem isTreeOrder_of_injective [Nonempty V] {f : V → ℕ} (hf : Function.Inj
   · exact ⟨Function.argmin f, fun x => Function.argmin_le f x⟩
   · exact (Set.finite_Iic (f x)).preimage hf.injOn
   · exact fun y _ z _ _ => le_total (f y) (f z)
+
+/-! ### Parents -/
+
+namespace IsTreeOrder
+
+variable {r : V → V → Prop} (h : IsTreeOrder r)
+include h
+
+/-- If `p` is covered by `y` in a tree order, every strict predecessor of `y` lies below `p`. -/
+theorem rel_of_relCovBy {p y z : V} (hpy : RelCovBy r p y) (hz : r z y) (hzy : z ≠ y) :
+    r z p := by
+  have := h.isPartialOrder
+  rw [relCovBy_iff] at hpy
+  by_contra hzp
+  refine ((h.isChain_setOf y).total hz hpy.1.1).elim hzp fun hpz => ?_
+  exact hpy.2 z ⟨⟨hpz, hzp⟩, hz, fun hyz => hzy (antisymm_of r hz hyz)⟩
+
+/-- In a tree order every element with a strict predecessor `z` covers some element: the largest
+of its strict predecessors. -/
+theorem exists_relCovBy {y z : V} (hz : r z y) (hzy : z ≠ y) : ∃ p, RelCovBy r p y := by
+  have := h.isPartialOrder
+  let S := {z | r z y} \ {y}
+  have hS : S.Finite := (h.finite_setOf y).sdiff
+  obtain ⟨p, ⟨hpy, hpy'⟩, hmax⟩ := Set.exists_max_image S (fun z => {w | r w z}.ncard) hS
+    ⟨z, hz, hzy⟩
+  have hp (z : V) (hz : r z y) (hzy : z ≠ y) : r z p := by
+    refine ((h.isChain_setOf y).total hz hpy).elim id fun hpz => ?_
+    have hsub : {w | r w p} ⊆ {w | r w z} := fun w hw => trans_of r hw hpz
+    have heq := Set.ext_iff.1
+      (Set.eq_of_subset_of_ncard_le hsub (hmax z ⟨hz, hzy⟩) (h.finite_setOf z)) z
+    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq] at heq
+    exact heq.2 (refl_of r z)
+  refine ⟨p, relCovBy_iff.2 ⟨⟨hpy, fun hyp => hpy' (antisymm_of r hpy hyp)⟩,
+    fun w ⟨⟨_, hwp⟩, hwy, hyw⟩ => ?_⟩⟩
+  exact hwp (hp w hwy fun hw => hyw (hw ▸ refl_of r y))
+
+/-- In a tree order every element covers at most one element. -/
+theorem eq_of_relCovBy {p q y : V} (hp : RelCovBy r p y) (hq : RelCovBy r q y) : p = q := by
+  have := h.isPartialOrder
+  exact antisymm_of r (h.rel_of_relCovBy hq hp.rel hp.ne) (h.rel_of_relCovBy hp hq.rel hq.ne)
+
+end IsTreeOrder
 
 /-! ### Tree orders as trees of finite sequences -/
 
@@ -107,17 +161,6 @@ section Path
 
 variable [PartialOrder V] (h : IsTreeOrder fun x y : V => x ≤ y)
 
-/-- The number of strict predecessors of a node. -/
-private noncomputable def height (x : V) : ℕ := (Iio x).ncard
-
-include h in
-private theorem finite_Iio (x : V) : (Iio x).Finite :=
-  (h.finite_setOf x).subset fun _ hy => le_of_lt hy
-
-include h in
-private theorem height_lt {x y : V} (hxy : x < y) : height x < height y :=
-  ncard_lt_ncard ⟨Iio_subset_Iio hxy.le, fun hs => lt_irrefl x (hs hxy)⟩ (finite_Iio h y)
-
 include h in
 private theorem le_of_not_nonempty {x : V} (hx : ¬ (Iio x).Nonempty) (y : V) : x ≤ y := by
   obtain ⟨a, ha⟩ := h.exists_forall
@@ -125,38 +168,33 @@ private theorem le_of_not_nonempty {x : V} (hx : ¬ (Iio x).Nonempty) (y : V) : 
   · exact ha y
   · exact absurd ⟨a, hlt⟩ hx
 
+include h in
+private theorem exists_covBy {x : V} (hx : (Iio x).Nonempty) : ∃ p, p ⋖ x := by
+  obtain ⟨z, hz⟩ := hx
+  simp_rw [← relCovBy_le_iff_covBy]
+  exact h.exists_relCovBy hz.le hz.ne
+
 open Classical in
-/-- The parent of a node with a strict predecessor: its greatest strict predecessor. -/
+/-- The parent of a node with a strict predecessor: the node it covers. -/
 private noncomputable def parent (x : V) : V :=
-  if hx : (Iio x).Nonempty then
-    ((finite_Iio h x).toFinset.exists_max_image height (by simpa using hx)).choose
-  else x
+  if hx : (Iio x).Nonempty then (exists_covBy h hx).choose else x
 
-private theorem parent_spec {x : V} (hx : (Iio x).Nonempty) :
-    parent h x < x ∧ ∀ y < x, height y ≤ height (parent h x) := by
-  have hne : (finite_Iio h x).toFinset.Nonempty := by simpa using hx
-  obtain ⟨hmem, hmax⟩ := ((finite_Iio h x).toFinset.exists_max_image height hne).choose_spec
-  have hp : parent h x = ((finite_Iio h x).toFinset.exists_max_image height hne).choose := by
+private theorem parent_spec {x : V} (hx : (Iio x).Nonempty) : parent h x ⋖ x := by
+  have hp : parent h x = (exists_covBy h hx).choose := by
     simp only [parent, hx, ↓reduceDIte]
-  rw [hp]
-  exact ⟨by simpa using hmem, fun y hy => hmax y (by simpa using hy)⟩
+  exact hp ▸ (exists_covBy h hx).choose_spec
 
-private theorem le_parent {x y : V} (hx : (Iio x).Nonempty) (hy : y < x) : y ≤ parent h x := by
-  obtain ⟨hp, hmax⟩ := parent_spec h hx
-  rcases (h.isChain_setOf x).total (show y ≤ x from hy.le) (show parent h x ≤ x from hp.le)
-    with hyp | hpy
-  · exact hyp
-  · obtain rfl | hlt := hpy.eq_or_lt
-    · exact le_rfl
-    · exact absurd (hmax y hy) (not_le.2 (height_lt h hlt))
+private theorem le_parent {x y : V} (hx : (Iio x).Nonempty) (hy : y < x) : y ≤ parent h x :=
+  h.rel_of_relCovBy (relCovBy_le_iff_covBy.2 (parent_spec h hx)) hy.le hy.ne
 
 open Classical in
 /-- The path to a node: its strict successors of the least element, up to and including itself,
 in increasing order. -/
 private noncomputable def path (x : V) : List V :=
   if _hx : (Iio x).Nonempty then path (parent h x) ++ [x] else []
-termination_by height x
-decreasing_by exact height_lt h (parent_spec h _hx).1
+termination_by {y | y ≤ x}.ncard
+decreasing_by
+  exact h.ncard_lt_ncard_of_rel_of_not_rel (parent_spec h _hx).le (parent_spec h _hx).lt.not_ge
 
 private theorem path_of_nonempty {x : V} (hx : (Iio x).Nonempty) :
     path h x = path h (parent h x) ++ [x] := by
@@ -176,10 +214,10 @@ private theorem mem_path {y z : V} : z ∈ path h y ↔ (Iio z).Nonempty ∧ z �
   | _ y ih =>
   by_cases hy : (Iio y).Nonempty
   · rw [path_of_nonempty h hy, List.mem_append, List.mem_singleton,
-      ih _ (parent_spec h hy).1]
+      ih _ (parent_spec h hy).lt]
     refine ⟨?_, fun ⟨hz, hzy⟩ => ?_⟩
     · rintro (⟨hz, hzp⟩ | rfl)
-      · exact ⟨hz, hzp.trans (parent_spec h hy).1.le⟩
+      · exact ⟨hz, hzp.trans (parent_spec h hy).lt.le⟩
       · exact ⟨hy, le_rfl⟩
     · obtain rfl | hlt := hzy.eq_or_lt
       · exact Or.inr rfl
@@ -202,7 +240,7 @@ private theorem path_prefix_path {x y : V} : path h x <+: path h y ↔ x ≤ y :
     · exact List.prefix_refl _
     · have hy : (Iio y).Nonempty := ⟨x, hlt⟩
       rw [path_of_nonempty h hy]
-      exact (ih _ (parent_spec h hy).1 (le_parent h hy hlt)).trans (List.prefix_append _ _)
+      exact (ih _ (parent_spec h hy).lt (le_parent h hy hlt)).trans (List.prefix_append _ _)
 
 private theorem exists_path_eq_of_prefix {l : List V} {y : V} (hl : l <+: path h y) :
     ∃ x, path h x = l := by
@@ -212,7 +250,7 @@ private theorem exists_path_eq_of_prefix {l : List V} {y : V} (hl : l <+: path h
   · rw [path_of_nonempty h hy, List.prefix_concat_iff] at hl
     rcases hl with rfl | hl
     · exact ⟨y, path_of_nonempty h hy⟩
-    · exact ih _ (parent_spec h hy).1 hl
+    · exact ih _ (parent_spec h hy).lt hl
   · rw [path_of_not_nonempty h hy, List.prefix_nil] at hl
     exact ⟨y, by rw [hl, path_of_not_nonempty h hy]⟩
 

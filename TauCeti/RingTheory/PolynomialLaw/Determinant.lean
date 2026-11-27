@@ -119,6 +119,16 @@ theorem apply_eq_lid_toFun (x : R) :
     D x = TensorProduct.lid A A (D.toLaw.toFun A (1 ⊗ₜ x)) := by
   rw [← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun]
 
+/-- Specialising a scalar extension: if an `A`-algebra map `φ : S →ₐ[A] A` sends `z ∈ S ⊗ R` to
+`1 ⊗ x`, then `D x = φ (D(z))`, since the law commutes with `φ`. -/
+theorem apply_eq_rid_toFun_of_rTensor_eq {S : Type*} [CommSemiring S] [Algebra A S]
+    (φ : S →ₐ[A] A) {z : S ⊗[A] R} {x : R} (hz : φ.toLinearMap.rTensor R z = 1 ⊗ₜ x) :
+    D x = φ (Algebra.TensorProduct.rid A A S (D.toLaw.toFun S z)) := by
+  rw [apply_eq_lid_toFun, ← hz, ← PolynomialLaw.isCompat_apply]
+  induction D.toLaw.toFun S z using TensorProduct.inductionOn with
+  | tmul s a => simp [mul_comm]
+  | add y w hy hw => simp only [map_add, hy, hw]
+
 /-- A determinant sends `1` to `1`. -/
 @[simp]
 theorem map_one : D 1 = 1 :=
@@ -414,6 +424,17 @@ theorem trace_eq_neg_charpoly_coeff (hd : 0 < d) (x : R) :
     D.trace x = -(D.charpoly x).coeff (d - 1) := by
   rw [coeff_charpoly, ite_eq_left (Nat.sub_le d 1), Nat.sub_sub_self hd, pow_one, neg_one_mul,
     neg_neg, trace_apply]
+
+/-- The trace is minus the second coefficient (`Polynomial.nextCoeff`) of the characteristic
+polynomial, in every dimension, including zero. -/
+theorem trace_eq_neg_charpoly_nextCoeff (x : R) : D.trace x = -(D.charpoly x).nextCoeff := by
+  nontriviality A
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · rw [trace_eq_zero_of_dim_zero, LinearMap.zero_apply,
+      nextCoeff_eq_zero.mpr (Or.inl (D.charpoly_natDegree_eq_dim x)), neg_zero]
+  · rw [trace_eq_neg_charpoly_coeff D hd,
+      nextCoeff_of_natDegree_pos (by rw [charpoly_natDegree_eq_dim]; omega),
+      charpoly_natDegree_eq_dim]
 
 /-- The characteristic polynomial of `1` is `(X - 1) ^ d`. -/
 @[simp]

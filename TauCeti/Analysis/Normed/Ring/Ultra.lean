@@ -9,10 +9,10 @@ public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
+public import Mathlib.RingTheory.Multiplicity
 import Mathlib.Data.Nat.Choose.Factorization
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Ideal.Quotient.Defs
-import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.Algebra.Group.ForwardDiff
 import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 import TauCeti.Analysis.Normed.Ring.Basic
@@ -22,13 +22,14 @@ import TauCeti.Analysis.Normed.Ring.Basic
 
 An ultrametric seminormed ring is a nonarchimedean topological ring: its open balls about zero
 are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1`, the closed unit
-ball is an open subring. In an ultrametric normed ring, a finite or infinite product of elements
-each within `ε ≤ 1` of `1` is again within `ε` of `1`, and over a complete ultrametric commutative
-ring an infinite product `∏' i, (1 + f i)` or `∏' i, (1 - f i)` converges whenever `f` tends to
-`0` along the cofinite filter. A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their
-arguments is bounded by its first argument `q w`, and it depends on `w` in a `‖q‖`-Lipschitz way
-when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (1 - t)³` and
-`t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
+ball is an open subring. In an ultrametric seminormed ring, the product of two elements each
+within `B` of `1` (`0 ≤ B ≤ 1`) or strictly within `ε` of `1` (`0 < ε ≤ 1`) satisfies the same
+bound, and over a commutative ultrametric seminormed ring the same bound holds for finite
+`Finset.prod` products (see `TauCeti.Analysis.Normed.Ring.InfiniteProd.Ultra` for infinite
+products). A series `∑_{n ≥ 1} f(qⁿ w)` of terms bounded by their arguments is bounded by its
+first argument `q w`, and it depends on `w` in a `‖q‖`-Lipschitz way when its terms are
+`1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (1 - t)³` and `t² / (1 - t)³` are
+Lipschitz on the open unit ball of an ultrametric field.
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. For a
 power-multiplicative seminorm, every element integral over `ℤ` has norm at most one. When
@@ -52,10 +53,6 @@ forward differences of a monomial are divisible by `k!`, their norms carry the f
   coefficient `(p ^ (k + 1)).choose (p ^ k)` has the norm of `p`.
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
   ring.
-* `IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero`,
-  `IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero` and
-  `IsUltrametricDist.multipliable_one_sub_of_tendsto_cofinite_zero`: unconditional convergence of
-  `∏' i, (1 ± f i)` in a complete ultrametric seminormed commutative ring when `f → 0` cofinitely.
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
   `‖1‖ = 1`, an open subring.
 * `TauCeti.norm_one_sub_of_norm_lt_one`: subtracting an element of norm less than one from one
@@ -78,11 +75,12 @@ forward differences of a monomial are divisible by `k!`, their norms carry the f
   `1`-Lipschitz on the unit circle of an ultrametric field.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
-* `TauCeti.norm_mul_sub_one_lt`, `TauCeti.norm_prod_sub_one_lt` and
-  `TauCeti.norm_tprod_sub_one_lt`: finite and infinite products of elements strictly within `ε ≤ 1`
-  of `1` remain strictly within `ε` of `1`.
-* `TauCeti.norm_mul_sub_one_le`: a product of two elements within distance at most `ε ≤ 1` of `1`
-  remains within distance at most `ε` of `1`.
+* `TauCeti.norm_mul_sub_one_le` and `TauCeti.norm_mul_sub_one_lt`: binary multiplication bounds
+  near `1` (closed for `0 ≤ B ≤ 1`, strict for `0 < ε ≤ 1`) over any ultrametric seminormed ring
+  (without commutativity).
+* `TauCeti.norm_prod_sub_one_le` and `TauCeti.norm_prod_sub_one_lt`: over a commutative
+  ultrametric seminormed ring, unordered `Finset.prod` products of elements within `B` of `1`
+  (`0 ≤ B ≤ 1`) or strictly within `ε` of `1` (`0 < ε ≤ 1`) satisfy the same bound.
 * `TauCeti.norm_add_add_mul_le`: the group law `a + b + a b` keeps the closed ball of radius
   `ε ≤ 1` about `0`.
 * `TauCeti.norm_inv_sub_one_eq`: inversion preserves distance less than one from `1`.
@@ -167,6 +165,23 @@ theorem IsUltrametricDist.norm_natCast_eq_one_of_coprime {R : Type*} [Seminormed
     ‖(m : R)‖ = 1 := by
   simpa using norm_mul_natCast_eq_of_coprime hnR hnm (1 : R)
 
+namespace TauCeti
+
+/-- A prime of norm less than one determines the norm of every nonzero natural number. -/
+theorem norm_natCast_eq_pow_multiplicity {C : Type*} [SeminormedRing C]
+    [NormOneClass C] [NormMulClass C] [IsUltrametricDist C] {p : ℕ}
+    (hp : p.Prime) (hpC : ‖(p : C)‖ < 1)
+    {m : ℕ} (hm : m ≠ 0) : ‖(m : C)‖ = ‖(p : C)‖ ^ multiplicity p m := by
+  have hfin : FiniteMultiplicity p m :=
+    Nat.finiteMultiplicity_iff.mpr ⟨hp.ne_one, Nat.pos_of_ne_zero hm⟩
+  obtain ⟨u, hu, hpu⟩ := hfin.exists_eq_pow_mul_and_not_dvd
+  conv_lhs => rw [hu]
+  rw [Nat.cast_mul, Nat.cast_pow, norm_mul, norm_pow,
+    IsUltrametricDist.norm_natCast_eq_one_of_coprime hpC (hp.coprime_iff_not_dvd.mpr hpu),
+    mul_one]
+
+end TauCeti
+
 /-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a prime `p` has norm less than one,
 the binomial coefficient `(p ^ (k + 1)).choose (p ^ k)`, which is exactly divisible by `p`, has the
 norm of `p`. -/
@@ -190,35 +205,6 @@ additive subgroup, namely a small open ball. -/
 instance IsUltrametricDist.nonarchimedeanRing {R : Type*} [SeminormedRing R]
     [IsUltrametricDist R] : NonarchimedeanRing R where
   is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean
-
-/-- In a complete ultrametric seminormed commutative ring, if `f` tends to `0` along the cofinite
-filter, then the family of finite partial products `s ↦ ∏ i ∈ s, f i` is summable. -/
-theorem IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero {ι R : Type*}
-    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
-    (hf : Filter.Tendsto f Filter.cofinite (nhds 0)) :
-    Summable fun s : Finset ι ↦ ∏ i ∈ s, f i :=
-  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (TauCeti.tendsto_finsetProd_cofinite_zero hf)
-
-/-- In a complete ultrametric seminormed commutative ring, `∏' i, (1 + f i)` is unconditionally
-multipliable whenever `f` tends to `0` along the cofinite filter. Unlike
-`NonarchimedeanGroup.multipliable_of_tendsto_cofinite_one`, the factors `1 + f i` need not be
-units. -/
-theorem IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero {ι R : Type*}
-    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
-    (hf : Filter.Tendsto f Filter.cofinite (nhds 0)) :
-    Multipliable fun i ↦ 1 + f i :=
-  multipliable_one_add_of_summable_prod
-    (IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero hf)
-
-/-- In a complete ultrametric seminormed commutative ring, `∏' i, (1 - f i)` is unconditionally
-multipliable whenever `f` tends to `0` along the cofinite filter. -/
-theorem IsUltrametricDist.multipliable_one_sub_of_tendsto_cofinite_zero {ι R : Type*}
-    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
-    (hf : Filter.Tendsto f Filter.cofinite (nhds 0)) :
-    Multipliable fun i ↦ 1 - f i := by
-  simpa only [sub_eq_add_neg] using
-    IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero (by simpa using hf.neg)
 
 section UnitClosedBall
 
@@ -433,24 +419,9 @@ theorem norm_one_sub_cube_div_sub_one_sub_cube_div_le {v w : K} (hv : ‖v‖ = 
 
 end Field
 
-/-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
-`a * b`. -/
-theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
-    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε) (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε := by
-  calc ‖a * b - 1‖ = ‖(a - 1) * (b - 1) + (a - 1) + (b - 1)‖ := by
-        congr 1
-        simp only [mul_sub, sub_mul, mul_one, one_mul]
-        abel
-    _ ≤ max (max ‖(a - 1) * (b - 1)‖ ‖a - 1‖) ‖b - 1‖ :=
-      (IsUltrametricDist.norm_add_le_max _ _).trans
-        (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
-    _ < ε := max_lt (max_lt ((norm_mul_le _ _).trans_lt
-      ((mul_le_of_le_one_right (norm_nonneg _) (hb.le.trans hε)).trans_lt ha)) ha) hb
-
-/-- In an ultrametric normed ring, if `a` and `b` are both within distance at most `ε ≤ 1` of `1`,
-so is `a * b`. -/
+/-- In an ultrametric seminormed ring, if `a` and `b` are within `B ≤ 1` of `1`, so is `a * b`. -/
 theorem norm_mul_sub_one_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
-    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ ≤ ε) (hb : ‖b - 1‖ ≤ ε) : ‖a * b - 1‖ ≤ ε := by
+    {B : ℝ} (hB : B ≤ 1) (ha : ‖a - 1‖ ≤ B) (hb : ‖b - 1‖ ≤ B) : ‖a * b - 1‖ ≤ B := by
   calc ‖a * b - 1‖ = ‖(a - 1) * (b - 1) + (a - 1) + (b - 1)‖ := by
         congr 1
         simp only [mul_sub, sub_mul, mul_one, one_mul]
@@ -458,8 +429,15 @@ theorem norm_mul_sub_one_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
     _ ≤ max (max ‖(a - 1) * (b - 1)‖ ‖a - 1‖) ‖b - 1‖ :=
       (IsUltrametricDist.norm_add_le_max _ _).trans
         (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
-    _ ≤ ε := max_le (max_le ((norm_mul_le _ _).trans
-      ((mul_le_of_le_one_right (norm_nonneg _) (hb.trans hε)).trans ha)) ha) hb
+    _ ≤ B := max_le (max_le ((norm_mul_le _ _).trans
+      ((mul_le_of_le_one_right (norm_nonneg _) (hb.trans hB)).trans ha)) ha) hb
+
+/-- In an ultrametric seminormed ring, if `a` and `b` are both strictly within `ε ≤ 1` of `1`,
+so is `a * b`. -/
+theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
+    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε) (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε :=
+  (norm_mul_sub_one_le ((max_le ha.le hb.le).trans hε) (le_max_left _ _)
+    (le_max_right _ _)).trans_lt (max_lt ha hb)
 
 /-- In an ultrametric normed ring, the group law `a ⊕ b = a + b + a b` keeps the closed ball of
 radius `ε ≤ 1` about `0`, since `a ⊕ b = (1 + a) (1 + b) - 1`. -/
@@ -495,8 +473,21 @@ theorem norm_pow_sub_one_le_norm_sub_one {R : Type*} [SeminormedRing R] [IsUltra
       _ ≤ ‖x - 1‖ := max_le ((norm_mul_le _ _).trans
         ((mul_le_of_le_one_left (norm_nonneg _) hx).trans ih)) le_rfl
 
-/-- In an ultrametric normed commutative ring, a finite product of elements each within
-`ε ≤ 1` of `1` is again within `ε` of `1` (for `0 < ε`). -/
+/-- In an ultrametric seminormed commutative ring, a finite product of elements within `B ≤ 1` of
+`1` is again within `B` of `1` (for `0 ≤ B`). -/
+theorem norm_prod_sub_one_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    (s : Finset ι) (f : ι → R) {B : ℝ} (hB0 : 0 ≤ B) (hB1 : B ≤ 1)
+    (hf : ∀ i ∈ s, ‖f i - 1‖ ≤ B) : ‖∏ i ∈ s, f i - 1‖ ≤ B := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using hB0
+  | insert j s hj ih =>
+    rw [Finset.prod_insert hj]
+    exact norm_mul_sub_one_le hB1 (hf j (Finset.mem_insert_self j s))
+      (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
+
+/-- In an ultrametric seminormed commutative ring, a finite product of elements each strictly within
+`ε ≤ 1` of `1` is again strictly within `ε` of `1` (for `0 < ε`). -/
 theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
     (s : Finset ι) (f : ι → R) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
     (hf : ∀ i ∈ s, ‖f i - 1‖ < ε) : ‖∏ i ∈ s, f i - 1‖ < ε := by
@@ -507,23 +498,6 @@ theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametri
     rw [Finset.prod_insert hj]
     exact norm_mul_sub_one_lt hε (hf j (Finset.mem_insert_self j s))
       (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
-
-/-- In an ultrametric seminormed commutative ring, an infinite product of elements each strictly
-within `ε ≤ 1` of `1` is again strictly within `ε` of `1` (for `0 < ε`). -/
-theorem norm_tprod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
-    (f : ι → R) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
-    (hf : ∀ i, ‖f i - 1‖ < ε) : ‖(∏' i, f i) - 1‖ < ε := by
-  by_cases hm : Multipliable f
-  · have ha := hm.hasProd
-    generalize ∏' i, f i = a at ha ⊢
-    obtain ⟨s₀, hs₀⟩ := (ha.eventually (Metric.ball_mem_nhds a hε0)).exists
-    have h1 : ‖a - ∏ i ∈ s₀, f i‖ < ε := by
-      rw [← dist_eq_norm, dist_comm]
-      exact Metric.mem_ball.mp hs₀
-    calc ‖a - 1‖ = ‖(a - ∏ i ∈ s₀, f i) + ((∏ i ∈ s₀, f i) - 1)‖ := by rw [sub_add_sub_cancel]
-      _ ≤ max ‖a - ∏ i ∈ s₀, f i‖ ‖(∏ i ∈ s₀, f i) - 1‖ := IsUltrametricDist.norm_add_le_max _ _
-      _ < ε := max_lt h1 (norm_prod_sub_one_lt s₀ f hε0 hε fun i _ ↦ hf i)
-  · simpa [tprod_eq_one_of_not_multipliable hm] using hε0
 
 /-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate,
 their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural subtraction,

@@ -53,7 +53,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory DirectSum
+open CategoryTheory _root_.DirectSum
 
 universe u
 

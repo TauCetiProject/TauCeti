@@ -30,6 +30,8 @@ locally finite.
 
 ## Main results
 
+* `AbstractSimplicialComplex.finite_setOf_mem_of_isCompact_mem_nhds_vertex`: a vertex with a
+  compact neighbourhood lies in finitely many faces.
 * `AbstractSimplicialComplex.finite_setOf_mem_of_weaklyLocallyCompactSpace`: a vertex lies in
   finitely many faces.
 * `AbstractSimplicialComplex.finite_setOf_subset_of_weaklyLocallyCompactSpace`: a face is a face
@@ -85,13 +87,18 @@ theorem subset_of_mem_nhds_vertex {v : ι} {C : Set (Realization K)} (hC : C ∈
   have : 0 ≤ (Finsupp.single v (1 : ℝ)) w := Finsupp.single_nonneg.mpr zero_le_one w
   positivity
 
-/-- In a weakly locally compact realization, a vertex lies in only finitely many faces. -/
-theorem finite_setOf_mem_of_weaklyLocallyCompactSpace [WeaklyLocallyCompactSpace (Realization K)]
-    (v : ι) : {σ : Finset ι | σ ∈ K ∧ v ∈ σ}.Finite := by
-  obtain ⟨C, hCc, hC⟩ := WeaklyLocallyCompactSpace.exists_compact_mem_nhds (vertex K v)
+/-- A vertex with a compact neighbourhood in the realization lies in only finitely many faces. -/
+theorem finite_setOf_mem_of_isCompact_mem_nhds_vertex {v : ι} {C : Set (Realization K)}
+    (hC : C ∈ 𝓝 (vertex K v)) (hCc : IsCompact C) : {σ : Finset ι | σ ∈ K ∧ v ∈ σ}.Finite := by
   obtain ⟨V, hV⟩ := exists_finset_support_subset_of_isCompact hCc
   refine ((V.powerset : Set (Finset ι)).toFinite).subset fun σ hσ ↦ ?_
   exact Finset.mem_coe.mpr (Finset.mem_powerset.mpr (subset_of_mem_nhds_vertex hC hV hσ.1 hσ.2))
+
+/-- In a weakly locally compact realization, a vertex lies in only finitely many faces. -/
+theorem finite_setOf_mem_of_weaklyLocallyCompactSpace [WeaklyLocallyCompactSpace (Realization K)]
+    (v : ι) : {σ : Finset ι | σ ∈ K ∧ v ∈ σ}.Finite :=
+  let ⟨_, hCc, hC⟩ := WeaklyLocallyCompactSpace.exists_compact_mem_nhds (vertex K v)
+  finite_setOf_mem_of_isCompact_mem_nhds_vertex hC hCc
 
 /-- In a weakly locally compact realization, a nonempty finite set of vertices (for instance a
 face) is contained in only finitely many faces. -/

@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Data.ENat.Monoid
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Pulling back almost complex structures along diffeomorphisms

@@ -39,6 +39,8 @@ used.
 * `UniversalEnvelopingAlgebra.reductiveEnveloping_symm_tmul`: the inverse on a pure tensor.
 * `TauCeti.UniversalEnvelopingAlgebra.reductiveEnveloping_naturality`: naturality for Lie maps
   sending the centre into the centre.
+* `TauCeti.UniversalEnvelopingAlgebra.reductiveCenterEquiv_eq_centerCongr_trans`: the centre
+  comparison is `productCenterEquiv` of `z(L) × [L, L]` through the splitting `L ≃ z(L) × [L, L]`.
 * `TauCeti.UniversalEnvelopingAlgebra.reductiveCenterEquiv_inclusion`: the inclusion square.
 * `TauCeti.UniversalEnvelopingAlgebra.reductiveCenterEquiv_symm_tmul`: the pure-tensor formula.
 
@@ -168,6 +170,32 @@ theorem reductiveCenterEquiv_def :
       centerEquivOfIsCompl K (center K L) (derivedSeries K L 1)
         (isCompl_center_derivedSeries K L) :=
   (rfl)
+
+/-- `reductiveCenterEquiv` is the centre comparison `productCenterEquiv` of `z(L) × [L, L]`
+through the isomorphism `Z(U(L)) ≃ Z(U(z(L) × [L, L]))` induced by the central/derived
+splitting `centerDerivedEquiv`. -/
+theorem reductiveCenterEquiv_eq_centerCongr_trans :
+    reductiveCenterEquiv K L =
+      (Subalgebra.centerCongr (mapEquiv K (centerDerivedEquiv K L))).trans
+        (productCenterEquiv K (center K L) (derivedSeries K L 1)) := by
+  rw [reductiveCenterEquiv_def, centerDerivedEquiv_def]
+  exact centerEquivOfIsCompl_def _ _ _ _
+
+/-- The value of `reductiveCenterEquiv` through the splitting `L ≃ z(L) × [L, L]`. -/
+theorem reductiveCenterEquiv_apply (z : Subalgebra.center K UL) :
+    reductiveCenterEquiv K L z =
+      productCenterEquiv K (center K L) (derivedSeries K L 1)
+        (Subalgebra.centerCongr (mapEquiv K (centerDerivedEquiv K L)) z) := by
+  rw [reductiveCenterEquiv_eq_centerCongr_trans, AlgEquiv.trans_apply]
+
+/-- The inverse of `reductiveCenterEquiv`, carried to `Z(U(z(L) × [L, L]))` by the splitting
+`L ≃ z(L) × [L, L]`, is the inverse of `productCenterEquiv`. -/
+theorem centerCongr_reductiveCenterEquiv_symm_apply (t : SZ ⊗[K] ZD) :
+    Subalgebra.centerCongr (mapEquiv K (centerDerivedEquiv K L))
+        ((reductiveCenterEquiv K L).symm t) =
+      (productCenterEquiv K (center K L) (derivedSeries K L 1)).symm t := by
+  rw [reductiveCenterEquiv_eq_centerCongr_trans, AlgEquiv.symm_trans_apply,
+    AlgEquiv.apply_symm_apply]
 
 /-- The inclusion square of `reductiveCenterEquiv`: followed by `id ⊗ val`, it is
 `reductiveEnveloping` on the underlying central element. -/

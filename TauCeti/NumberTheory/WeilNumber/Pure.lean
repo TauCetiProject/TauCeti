@@ -44,6 +44,7 @@ reflected by field homomorphisms, purity can be tested in any algebraically clos
 * `TauCeti.IsPure.isWeilNumber_of_hasEigenvalue`: every eigenvalue in `K` of a pure endomorphism
   is a Weil number of its weight.
 * `TauCeti.isPure_baseChange_iff`: purity is preserved and reflected by extension of scalars.
+* `TauCeti.isPure_conj_iff`: purity is invariant under conjugation by a linear equivalence.
 * `TauCeti.IsPure.isUnit`: a pure endomorphism is invertible.
 * `TauCeti.IsPure.unique`: a pure endomorphism of a nonzero space has a unique weight.
 * `TauCeti.isPure_of_subsingleton`: every endomorphism of the zero space is pure of every weight.
@@ -92,6 +93,12 @@ theorem isPure_baseChange_iff (L : Type*) [Field L] [Algebra K L] [Algebra ℚ L
     IsPure q n (F.baseChange L) ↔ IsPure q n F := by
   rw [isPure_iff_forall_mem_aroots (AlgebraicClosure L),
     isPure_iff_forall_mem_aroots (AlgebraicClosure L), LinearMap.charpoly_baseChange, aroots_map]
+
+/-- Purity is invariant under conjugation by a linear equivalence. -/
+@[simp]
+theorem isPure_conj_iff {W : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+    (e : V ≃ₗ[K] W) : IsPure q n (e.conj F) ↔ IsPure q n F := by
+  rw [IsPure, IsPure, LinearEquiv.charpoly_conj]
 
 /-- Every endomorphism of the zero space is pure of every weight, relative to every `q`. -/
 @[simp]
