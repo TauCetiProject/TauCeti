@@ -39,8 +39,8 @@ In every degree, wedging with a nonzero covector is exact. The homotopy formula
 shows that if `a ∧ ψ = 0` and `a(r) = 1`, then `ψ = a ∧ ι_r ψ`
 (`ContinuousAlternatingMap.pairedWedge_curryLeftTopological_of_pairedWedge_eq_zero`); on `0`-forms
 the wedge with a nonzero covector is injective
-(`ContinuousAlternatingMap.pairedWedge_eq_zero_iff_of_ne_zero`). This is the exactness of the
-symbol sequence of the de Rham complex at nonzero covectors.
+(`ContinuousAlternatingMap.pairedWedge_zeroForm_eq_zero_iff_of_ne_zero`). This is the exactness of
+the symbol sequence of the de Rham complex at nonzero covectors.
 
 ## References
 
@@ -187,7 +187,7 @@ theorem pairedWedge_curryLeftTopological_of_pairedWedge_eq_zero
 
 /-- **The wedge with a nonzero covector is injective on functions.** The wedge `a ∧ c` of a nonzero
 real covector `a` with a `0`-form `c` vanishes only for `c = 0`. -/
-theorem pairedWedge_eq_zero_iff_of_ne_zero {a : E [⋀^Fin 1]→L[ℝ] ℝ} (ha : a ≠ 0)
+theorem pairedWedge_zeroForm_eq_zero_iff_of_ne_zero {a : E [⋀^Fin 1]→L[ℝ] ℝ} (ha : a ≠ 0)
     {c : E [⋀^Fin 0]→L[ℝ] ℝ} :
     pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a c = 0 ↔
       c = 0 := by

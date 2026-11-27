@@ -274,7 +274,7 @@ theorem injective_sectionPrincipalSymbol_mextDerivSection_zero (hx : I.IsInterio
   intro c hc
   have ha : ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) ξ ≠ 0 :=
     fun ha ↦ hξ <| ContinuousLinearMap.ext fun v ↦ by simpa using congrArg (· ![v]) ha
-  exact (ContinuousAlternatingMap.pairedWedge_eq_zero_iff_of_ne_zero ha).1
+  exact (ContinuousAlternatingMap.pairedWedge_zeroForm_eq_zero_iff_of_ne_zero ha).1
     ((sectionPrincipalSymbol_mextDerivSection_eq_zero_iff hx ξ c).1 hc)
 
 /-- **`d` on functions is elliptic exactly in dimension at most one.** At an interior point,
