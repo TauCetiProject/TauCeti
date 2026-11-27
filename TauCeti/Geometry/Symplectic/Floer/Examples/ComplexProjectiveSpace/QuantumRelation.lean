@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
 public import TauCeti.LinearAlgebra.PerfectPairing.TrilinearProduct
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 import TauCeti.Data.Fin.Basic
@@ -48,6 +49,16 @@ axioms of the three-point classes reduce the whole product to one number, the co
   (`TauCeti.ComplexProjectiveSpace.trilinearProduct_pow_succ_apply_eq_single_smul`), and in
   general `x^a ⋆ x^b = q^L ⟨x^a, x^b, x^(2n+1-a-b)⟩_L x^(a+b-n-1)` when `a + b > n`
   (`TauCeti.ComplexProjectiveSpace.trilinearProduct_apply_eq_single_smul_of_lt_add`).
+* **The Floer degree of the relation.** In Floer cohomology the coefficients are carried along
+  the comparison `q^A ↦ e^(-q A)` (`TauCeti.Floer.coefficientComparison`), and in the cochain
+  grading the monomial `e^γ` has degree `-d' γ`, minus its raw degree, twice the first Chern
+  number. The image of `x^(⋆(n+1))` is then homogeneous of cochain degree `2(n + 1)`, the degree
+  of `x^(n+1)`: its coordinate at `x^j` has raw degree `2j - 2(n + 1)`
+  (`ComplexProjectiveSpace.coefficientComparison_repr_trilinearProduct_pow_succ_mem_gradeBy`).
+  For `n = 1` the relation `x ⋆ x = q^L ⟨x, x, x⟩_L · 1` goes to `e^(-q L)` times the unit, of raw
+  degree `-4` and cochain degree `4 = 2 + 2`. The comparison `q^A ↦ e^(q A)` would instead give
+  `e^(q L)`, of cochain degree `-4`, so the image would not have the degree of `x ⋆ x`
+  (`TauCeti.Floer.single_mem_gradeByCoeff_add_iff`).
 
 No associativity is assumed: `x^(⋆k)` is the left power `x ⋆ (x ⋆ (⋯ ⋆ 1))`, the `k`-th power of
 left multiplication by `x` applied to `1`. The pairing hypothesis already makes `p` a perfect
@@ -301,6 +312,31 @@ theorem trilinearProduct_pow_succ_apply_eq_single_smul
     apply_apply_apply_eq_ite_single_of_zmultiples_eq_top I hL hcL hdeg hpt,
     ite_eq_right (by simp only [h1, Fin.val_last]; omega),
     ite_eq_left (by simp only [h1, Fin.val_last]; omega), coeff_single_same]
+
+/-- **The Floer degree of the quantum relation of `CPⁿ`.** Let `q : S →+ Γ` preserve area, and
+let `d'` be a degree on `Γ` with `d' (q L) = 2 c(L)`, for instance twice the first Chern number.
+Under the degree and mapping-to-a-point axioms, the coefficient comparison `q^A ↦ e^(-q A)` sends
+the coordinate of `x^(⋆(n+1))` at `x^j` to a series of raw degree `2j - 2(n + 1)`. In the cochain
+grading, where `x^j` has degree `2j` and `e^γ` has degree `-d' γ`, the image of `x^(⋆(n+1))` is
+therefore homogeneous of degree `2(n + 1)`, the degree of `x^(n+1)`. -/
+theorem coefficientComparison_repr_trilinearProduct_pow_succ_mem_gradeBy {Γ : Type*}
+    [AddCommGroup Γ] {Ω : Γ →+ ℝ} (q : S →+ Γ) (hω : ∀ A, Ω (q A) = ω A) {d' : Γ →+ ℤ}
+    (hd : d' (q L) = 2 * c L)
+    (hp : ∀ i j : Fin (n + 1), p (x i) (x j) = if (i : ℕ) + j = n then 1 else 0)
+    (hL : AddSubgroup.zmultiples L = ⊤) (hcL : c L = n + 1)
+    (hdeg : ∀ (a b d : Fin (n + 1)) (A : S), (I (x a) (x b) (x d)).coeff A ≠ 0 →
+      ((a + b + d : ℕ) : ℤ) = n + c A)
+    (hpt : ∀ a b d : Fin (n + 1), (a : ℕ) + b + d = n → (I (x a) (x b) (x d)).coeff 0 = 1)
+    (hn : n ≠ 0) (j : Fin (n + 1)) :
+    Floer.coefficientComparison q hω (x.repr ((p.trilinearProduct I (x 1) ^ (n + 1)) (x 0)) j) ∈
+      gradeBy K (-Ω) d' (2 * j - 2 * (n + 1)) := by
+  rw [trilinearProduct_pow_succ_apply_eq_single_smul p hp hL hcL hdeg hpt hn, map_smul,
+    Basis.repr_self, Finsupp.smul_apply]
+  rcases eq_or_ne j 0 with rfl | hj
+  · simp only [Finsupp.single_eq_same, smul_eq_mul, mul_one, Floer.coefficientComparison_single]
+    convert single_mem_gradeBy d' (-q L) _ using 2
+    simp [hd, hcL]
+  · simp [hj]
 
 end GromovWitten
 

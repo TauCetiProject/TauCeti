@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.RealChart
 import Mathlib.Analysis.LocallyConvex.HahnBanach
-import TauCeti.Analysis.PDE.Vortex.SobolevScale
+import TauCeti.Analysis.PDE.Vortex.Sobolev.Scale
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.PDE.Vortex.WeakKernel
 

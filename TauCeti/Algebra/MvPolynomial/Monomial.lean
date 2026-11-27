@@ -36,6 +36,8 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
 * `MvPolynomial.coeff_prod_X_mul_X_pow_eq_zero`: the monomials `∏_{(i, j)} (XᵢYⱼ) ^ lᵢⱼ` with
   `∑ l = d` have no coefficient outside bidegree `(d, d)` in the two groups of variables.
 * `MvPolynomial.monomial_eq_X_pow_mul_monomial_erase`: a monomial splits off its power of `X b`.
+* `MvPolynomial.monomial_extendDomain`: the monomial of an exponent on a finite subtype, extended
+  by zero, is `C a * ∏ X i ^ p i` over that subtype.
 * `MvPolynomial.prod_pow_ite_C_mul_X`: substituting `c * X j` for `X i` in a monomial.
 * `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
   variable set to `1` gives the value of `c Y^e`.
@@ -124,6 +126,15 @@ theorem coeff_prod_X_mul_X_pow_eq_zero {d : ℕ} {κ : Type*} [Fintype ι] [Fint
 theorem monomial_eq_X_pow_mul_monomial_erase {σ : Type*} (b : σ) (s : σ →₀ ℕ) (r : A) :
     monomial s r = X b ^ s b * monomial (s.erase b) r := by
   rw [← monomial_single_add, Finsupp.single_add_erase]
+
+/-- The monomial whose exponent is a function `p` on a finite subtype `{i // P i}`, extended by
+zero to all of `ι`, is `C a * ∏ X i ^ p i`, the product running over that subtype. -/
+theorem monomial_extendDomain {P : ι → Prop} [DecidablePred P] [Fintype (Subtype P)]
+    (p : Subtype P → ℕ) (a : A) :
+    monomial (Finsupp.equivFunOnFinite.symm p).extendDomain a =
+      C a * ∏ i : Subtype P, X (i : ι) ^ p i := by
+  simp [Finsupp.extendDomain_eq_embDomain_subtype, monomial_eq, Finsupp.prod_embDomain,
+    Finsupp.prod_fintype]
 
 /-- Substituting `c * X j` for `X i` turns `X ^ η` into a monomial: the exponent of `X i` is moved
 to `X j`, and the coefficient is `c ^ η i`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
-public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectZeroSplitting
+public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectZero.Splitting
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect.Class
 
 /-!
