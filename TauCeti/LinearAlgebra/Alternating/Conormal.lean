@@ -231,6 +231,14 @@ theorem evalSign_smul [Fintype ι]
   congr 1
   exact map_prod (signHom : R →*₀ SignType) c Finset.univ
 
+/-- Rescaling every vector in the frame by the same positive scalar preserves the evaluation
+sign of a ray of alternating forms. -/
+theorem evalSign_smul_of_pos [Finite ι]
+    (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (v : ι → M) {c : R} (hc : 0 < c) :
+    o.evalSign (fun j => c • v j) = o.evalSign v := by
+  let := Fintype.ofFinite ι
+  simp only [evalSign_smul, sign_pos hc, Finset.prod_const_one, one_mul]
+
 /-- Reversing a ray negates its sign on every tuple. -/
 @[simp]
 theorem evalSign_neg (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (v : ι → M) :

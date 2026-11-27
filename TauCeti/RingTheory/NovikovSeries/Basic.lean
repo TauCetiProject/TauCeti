@@ -17,6 +17,7 @@ public import Mathlib.Data.Finsupp.SMulWithZero
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Finite.Lemmas
+public import TauCeti.Algebra.Group.Torsion
 public import TauCeti.Algebra.Order.Hom.Basic
 public import TauCeti.Data.Set.Finite
 
@@ -74,6 +75,9 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
   of support exponents, on which associativity of the convolution rests.
 * `TauCeti.NovikovSeries.ofFinsupp_surjective_iff`: over a nontrivial coefficient type, every
   Novikov series is finitely supported if and only if `N = 0`.
+* `TauCeti.NovikovSeries.forall_finite_lt_indicator_range_nsmul_iff`: for an exponent `h` of
+  nonzero period, the geometric series `∑ₖ r e^(k h)` with `r ≠ 0` is a Novikov series exactly
+  when the period of `h` is positive; it is then `TauCeti.NovikovSeries.geometric`.
 
 ## References
 
@@ -713,12 +717,26 @@ theorem support_geometric [Zero R] {h : H} (hh : 0 < N h) {r : R} (hr : r ≠ 0)
 
 private theorem infinite_support_geometric [Zero R] {h : H} (hh : 0 < N h) {r : R} (hr : r ≠ 0) :
     (geometric N hh r).support.Infinite := by
-  have hinj : Injective fun k : ℕ => k • h := fun k l hkl => by
-    have := congrArg N hkl
-    simp only [map_nsmul, nsmul_eq_mul] at this
-    exact_mod_cast mul_right_cancel₀ hh.ne' this
   rw [support_geometric hh hr]
-  exact infinite_range_of_injective hinj
+  exact infinite_range_of_injective (N.nsmul_left_injective_of_map_ne_zero hh.ne')
+
+/-- **When is a geometric series a Novikov series?** For an exponent `h` of nonzero period and a
+nonzero coefficient `r`, the coefficient function of `∑ₖ r e^(k h)`, equal to `r` at the natural
+multiples of `h` and `0` elsewhere, satisfies the Novikov condition exactly when the period of `h`
+is positive. For a negative period the series is not a Novikov series: its infinitely many terms
+all have nonpositive period `k N h`, so infinitely many lie below any positive bound. -/
+theorem forall_finite_lt_indicator_range_nsmul_iff [Zero R] {h : H} (hh : N h ≠ 0) {r : R}
+    (hr : r ≠ 0) :
+    (∀ C : ℝ, {g | (range fun k : ℕ => k • h).indicator (fun _ => r) g ≠ 0 ∧ N g < C}.Finite) ↔
+      0 < N h := by
+  refine ⟨fun hf => ?_, fun hpos C => (geometric N hpos r).finite_lt C⟩
+  by_contra hneg
+  have hlt : N h < 0 := lt_of_le_of_ne (not_lt.1 hneg) hh
+  refine infinite_range_of_injective (N.nsmul_left_injective_of_map_ne_zero hh) ((hf 1).subset ?_)
+  rintro _ ⟨k, rfl⟩
+  refine ⟨by simp [hr], ?_⟩
+  rw [map_nsmul, nsmul_eq_mul]
+  nlinarith [hlt, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
 
 /-- Over a nontrivial coefficient type, every Novikov series is finitely supported if and only if
 the period homomorphism vanishes. -/

@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.RingTheory.Valuation.Annulus
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # The rational basis of the adic spectrum
@@ -83,6 +84,8 @@ the basis arguments uses it.
   rational open admits a finite subcover.
 * `TauCeti.ValuationSpectrum.spaComap_preimage_mem_spaRationalFamily`: a rational open pulls back
   to a rational open when the ring map sends open ideals to open ideals.
+* `TauCeti.ValuationSpectrum.bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily`: preimage
+  along `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto `spaRationalFamily A⁺`.
 * `TauCeti.ValuationSpectrum.exists_finite_spaRationalFamily_refinement`: every open cover of a
   member of the family admits a finite refinement by members of the family — the basis and
   compactness results combined, and the form a sheaf criterion on this basis consumes.
@@ -168,6 +171,26 @@ theorem spaComap_preimage_mem_spaRationalFamily {B : Type*} [CommRing B]
     ⟨V.image φ, φ s, by
       rw [Finset.coe_image, ← Ideal.map_span]
       exact hopen _ hV, rfl⟩
+
+/-- Preimage under `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto
+`spaRationalFamily A⁺`. -/
+theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily {B : Type*} [CommRing B]
+    [TopologicalSpace B] {Aplus : Subring A} {Bplus : Subring B}
+    (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
+    (hplus : Aplus.map (e : A →+* B) = Bplus) :
+    Set.BijOn (fun V : Set (spa Bplus) ↦ spaHomeomorphOfRingEquiv e he he' hplus ⁻¹' V)
+      (spaRationalFamily Bplus) (spaRationalFamily Aplus) := by
+  refine ⟨fun V hV ↦ ?_,
+    (spaHomeomorphOfRingEquiv e he he' hplus).surjective.preimage_injective.injOn,
+    fun U hU ↦ ⟨(spaHomeomorphOfRingEquiv e he he' hplus).symm ⁻¹' U, ?_, ?_⟩⟩
+  · rw [coe_spaHomeomorphOfRingEquiv]
+    exact spaComap_preimage_mem_spaRationalFamily (e.symm : B →+* A) he' Bplus Aplus _
+      (e.symm.isOpen_map_ideal he) hV
+  · rw [coe_spaHomeomorphOfRingEquiv_symm]
+    exact spaComap_preimage_mem_spaRationalFamily (e : A →+* B) he Aplus Bplus _
+      (e.isOpen_map_ideal he') hU
+  · ext x
+    simp only [Set.mem_preimage, Homeomorph.symm_apply_apply]
 
 /-- The whole adic spectrum belongs to its rational family, presented as `R({1}/1)`. -/
 theorem univ_mem_spaRationalFamily (Aplus : Subring A) :

@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
+import TauCeti.Topology.Connected.TypeTags
 
 /-!
 # The exponential map of a complex elliptic curve
@@ -450,7 +451,6 @@ theorem isOpenMap_exp : IsOpenMap W.exp := by
 `WeierstrassCurve.Projective.Point.instConnectedSpace`): the exponential of a preconnected
 commutative Lie group is surjective (`TauCeti.lieExp_surjective_of_preconnectedSpace`). -/
 theorem exp_surjective [PreconnectedSpace W.Point] : Function.Surjective W.exp := by
-  have : PreconnectedSpace (Multiplicative W.Point) := inferInstanceAs (PreconnectedSpace W.Point)
   rw [coe_exp, coe_tangentExp]
   exact (Multiplicative.toAdd.surjective.comp (Additive.toMul.surjective.comp
     (TauCeti.mulInvariantExpAddMonoidHom_surjective (I := 𝓘(ℝ, ℂ))

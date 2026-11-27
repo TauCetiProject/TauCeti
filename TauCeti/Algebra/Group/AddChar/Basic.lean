@@ -18,6 +18,8 @@ import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 ## Main results
 
 * `AddChar.map_sum_eq_prod`: an additive character turns finite sums into products.
+* `AddChar.apply_eq_prod_single`: an additive character of a finite product of additive monoids is
+  the product of its values on the components.
 * `AddChar.map_eq_one_of_add_eq_zero`: an additive character trivial at `x` is trivial at every
   additive left inverse of `x`, even over a monoid.
 * `AddChar.pow_char_eq_one`: every additive character on a ring of characteristic `p`, such as
@@ -45,6 +47,15 @@ theorem AddChar.map_sum_eq_prod {ι A M : Type*} [AddCommMonoid A] [CommMonoid M
   induction s using Finset.cons_induction with
   | empty => simp
   | cons a s ha ih => rw [Finset.sum_cons, map_add_eq_mul, ih, Finset.prod_cons]
+
+/-- An additive character of a finite product of additive monoids is the product of its values on
+the components: `φ b = ∏ i, φ (Pi.single i (b i))`. -/
+theorem AddChar.apply_eq_prod_single {ι : Type*} [DecidableEq ι] [Fintype ι] {A : ι → Type*}
+    [∀ i, AddCommMonoid (A i)] {M : Type*} [CommMonoid M] (φ : AddChar (∀ i, A i) M)
+    (b : ∀ i, A i) : φ b = ∏ i, φ (Pi.single i (b i)) := by
+  have h : φ (∑ i, Pi.single i (b i)) = ∏ i, φ (Pi.single i (b i)) :=
+    AddChar.map_sum_eq_prod φ Finset.univ _
+  rwa [Finset.univ_sum_single b] at h
 
 /-- Multiplying the sum of the values of an additive character of a finite group by one of its
 values leaves the sum unchanged: translation permutes the group. -/

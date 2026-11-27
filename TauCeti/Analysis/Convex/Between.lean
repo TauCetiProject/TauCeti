@@ -21,6 +21,9 @@ found for the two directions (`TauCeti.exists_strongDual_neg_pos_ne_zero`).
 
 ## Main results
 
+* `TauCeti.affineSegment_eq_union_of_mem_affineSegment` and
+  `TauCeti.segment_eq_union_of_mem_segment`: a point of a segment splits it into two subsegments.
+
 * `AffineIndependent.affineSegment_inter_eq_endpoint`: two sides of a nondegenerate triangle meet
   only at their common vertex.
 * `TauCeti.zero_notMem_segment_of_affineSegment_inter_eq`: two segments from `z` meeting only at
@@ -83,6 +86,29 @@ theorem zero_notMem_segment_of_affineSegment_inter_eq {a b z : P} (ha : a ≠ z)
 end IsTorsionFree
 
 variable {k : Type*} [Field k] [LinearOrder k] [IsStrictOrderedRing k] [Module k V]
+
+/-- A closed affine segment is the union of its two subsegments at any point on it. -/
+theorem affineSegment_eq_union_of_mem_affineSegment {x y z : P}
+    (hz : z ∈ affineSegment k x y) :
+    affineSegment k x y = affineSegment k x z ∪ affineSegment k z y := by
+  obtain ⟨s, hs, rfl⟩ := hz
+  let f : k →ᵃ[k] P := AffineMap.lineMap x y
+  have hseg (t u : k) (htu : t ≤ u) :
+      affineSegment k (f t) (f u) = f '' Set.Icc t u := by
+    rw [← affineSegment_image, affineSegment_eq_segment, segment_eq_Icc htu]
+  have hleft : affineSegment k x (f s) = f '' Set.Icc 0 s := by
+    simpa only [f, AffineMap.lineMap_apply_zero] using hseg 0 s hs.1
+  have hright : affineSegment k (f s) y = f '' Set.Icc s 1 := by
+    simpa only [f, AffineMap.lineMap_apply_one] using hseg s 1 hs.2
+  rw [hleft, hright, ← Set.image_union, Set.Icc_union_Icc_eq_Icc hs.1 hs.2]
+  rfl
+
+/-- A closed segment in a module is the union of the two subsegments at a point on it. -/
+theorem segment_eq_union_of_mem_segment {x y z : V} (hz : z ∈ segment k x y) :
+    segment k x y = segment k x z ∪ segment k z y := by
+  simpa only [affineSegment_eq_segment] using
+    (affineSegment_eq_union_of_mem_affineSegment (k := k) (x := x) (y := y) (z := z)
+      (by rwa [affineSegment_eq_segment]))
 
 /-- A map of the line that agrees with an affine map on `[a, b]` sends `[a, b]` onto the segment
 between the images of its endpoints. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.Pair
 import TauCeti.Algebra.Ring.Subgroup
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # The plus ring `A_U⁺` of a rational localisation
@@ -57,6 +58,9 @@ Wedhorn's Lemma 7.47(4) that this file needs.
 * `TauCeti.Huber.PairOfDefinition.toCompletionLoc_mem_completedPlusSubring` and
   `TauCeti.Huber.PairOfDefinition.divBy_mem_completedPlusSubring`: the image of `A⁺` and each
   fraction `t/s` lie in `A_U⁺`.
+* `TauCeti.Huber.PairOfDefinition.completedPlusSubring_le_comap`: a continuous homomorphism out of
+  `A⟨T/s⟩` sending `A⁺` and each `t/s` (`t ∈ T`) into a closed integrally closed subring carries
+  `A_U⁺` into it.
 * `TauCeti.Huber.PairOfDefinition.isPowerBounded_of_mem_adjoin_plus`: when every element of `A⁺`
   is power-bounded in `A`, so is every element of `A⁺[T/s]` in `Aₛ`.
 * `TauCeti.Huber.PairOfDefinition.locSubring_mul_idealOfDefinition_mem_adjoin_plus`: the
@@ -178,6 +182,43 @@ theorem completedPlusSubring_le_iff (P : PairOfDefinition A) (Aplus : Subring A)
   rw [← SetLike.coe_subset_coe, coe_completedPlusSubring, hR.closure_subset_iff,
     Set.image_subset_iff]
   rfl
+
+/-- **Rings of integral elements of targets bound the image of `A_U⁺`.** A continuous ring
+homomorphism out of `A⟨T/s⟩` which carries `A⁺` and each distinguished fraction `t/s` (`t ∈ T`)
+into a closed subring `R⁺` integrally closed in `R` carries `completedPlusSubring` into `R⁺`. -/
+theorem completedPlusSubring_le_comap (P : PairOfDefinition A) (Aplus : Subring A) (T : Finset A)
+    (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {R : Type*} [CommRing R] [TopologicalSpace R]
+    {Rplus : Subring R} (hclosed : IsClosed (Rplus : Set R)) [IsIntegrallyClosedIn Rplus R] :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ {φ : UniformSpace.Completion S →+* R}, Continuous φ →
+      (∀ a ∈ Aplus, φ (toCompletionLoc P T s S hden a) ∈ Rplus) →
+      (∀ t ∈ T, φ ((divBy t s : S) : UniformSpace.Completion S) ∈ Rplus) →
+      completedPlusSubring P Aplus T s S hden ≤ Rplus.comap φ := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro φ hφ hA hT
+  refine (completedPlusSubring_le_iff P Aplus T s S hden (hclosed.preimage hφ)).mpr ?_
+  let g := φ.comp UniformSpace.Completion.coeRingHom
+  have hle : (Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S))).toSubring ≤
+      Rplus.comap g := by
+    rw [Algebra.adjoin_eq_ring_closure, Subring.closure_le]
+    rintro w (⟨⟨a, ha⟩, rfl⟩ | ⟨⟨t, ht⟩, rfl⟩)
+    · rw [SetLike.mem_coe, Subring.mem_comap]
+      have hga : g (algebraMap Aplus S ⟨a, ha⟩) = φ (toCompletionLoc P T s S hden a) := by
+        dsimp only [g]
+        rw [RingHom.comp_apply, UniformSpace.Completion.coe_coeRingHom,
+          IsScalarTower.algebraMap_apply Aplus A S, Algebra.algebraMap_ofSubsemiring_apply,
+          toCompletionLoc_apply]
+      rw [hga]
+      exact hA a ha
+    · exact hT t ht
+  exact fun x hx ↦ (Subring.integralClosure_subring_le_iff
+    (S := Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S)))
+    (T := Rplus.comap g)).mpr hle hx
 
 /-- **`A_U⁺` is closed** in `A⟨T/s⟩`, with no hypothesis on `Aplus`. -/
 theorem isClosed_completedPlusSubring (P : PairOfDefinition A) (Aplus : Subring A) (T : Finset A)

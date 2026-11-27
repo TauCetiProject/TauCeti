@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.Ring
+public import TauCeti.Algebra.DirectSum.Ring
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Assoc
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Unit
 
@@ -64,27 +64,16 @@ noncomputable abbrev cohomologyGRing (P : TopPairing X X X) (u : X.V)
     (hright : ∀ x : X.V, P.bil x u = x)
     (hassoc : ∀ x y z : X.V, P.bil (P.bil x y) z = P.bil x (P.bil y z)) :
     DirectSum.GRing fun n ↦ continuousCohomology n X :=
-  -- the multiplication and unit are introduced first, so that the default power fields of the
-  -- graded monoid can be elaborated against them
-  letI : GradedMonoid.GMul fun n ↦ continuousCohomology n X := ⟨fun x y ↦ P.cup _ _ x y⟩
-  letI : GradedMonoid.GOne fun n ↦ continuousCohomology n X := ⟨degreeZeroClass X u hinv⟩
-  { one_mul := fun ⟨n, x⟩ ↦ Sigma.ext (Nat.zero_add n)
-      ((P.cup_one_left u hleft hinv n x).heq.trans
-        (ContinuousCohomology.degreeCast_hom_apply_heq _ x))
-    mul_one := fun ⟨n, x⟩ ↦ Sigma.ext (Nat.add_zero n) (P.cup_one_right u hright hinv n x).heq
-    mul_assoc := fun ⟨m, x⟩ ⟨n, y⟩ ⟨p, z⟩ ↦ Sigma.ext (Nat.add_assoc m n p)
-      ((P.cup_assoc P P P hassoc m n p x y z).heq.trans
-        (ContinuousCohomology.degreeCast_hom_apply_heq _ _))
-    mul_zero x := (P.cup _ _ x).map_zero
-    zero_mul y := LinearMap.congr_fun (map_zero (P.cup _ _)) y
-    mul_add x y z := (P.cup _ _ x).map_add y z
-    add_mul x y z := LinearMap.congr_fun ((P.cup _ _).map_add x y) z
-    natCast n := n • degreeZeroClass X u hinv
-    natCast_zero := zero_nsmul _
-    natCast_succ n := succ_nsmul _ n
-    intCast n := n • degreeZeroClass X u hinv
-    intCast_ofNat n := natCast_zsmul _ n
-    intCast_negSucc_ofNat n := negSucc_zsmul _ n }
+  TauCeti.DirectSum.gRingOfMul
+    (fun m n ↦ LinearMap.toAddMonoidHom'.comp (P.cup m n).toAddMonoidHom)
+    (degreeZeroClass X u hinv)
+    (fun x ↦ Sigma.ext (Nat.zero_add _)
+      ((P.cup_one_left u hleft hinv _ x).heq.trans
+        (ContinuousCohomology.degreeCast_hom_apply_heq _ x)))
+    (fun x ↦ Sigma.ext (Nat.add_zero _) (P.cup_one_right u hright hinv _ x).heq)
+    (fun x y z ↦ Sigma.ext (Nat.add_assoc _ _ _)
+      ((P.cup_assoc P P P hassoc _ _ _ x y z).heq.trans
+        (ContinuousCohomology.degreeCast_hom_apply_heq _ _)))
 
 section Characteristic
 

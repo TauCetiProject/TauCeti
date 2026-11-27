@@ -100,6 +100,12 @@ instance isAdicComplete_maximalIdeal_completedGenericIntegers :
     IsAdicComplete (maximalIdeal (completedGenericIntegers π)) (completedGenericIntegers π) :=
   _root_.AdicCompletion.isAdicComplete_of_fg (fg_maximalIdeal_genericLocalRing π)
 
+/-- The completed generic ring is separated and complete for the maximal ideal of the generic
+local ring, as a module over the generic local ring. -/
+instance isAdicComplete_maximalIdeal_genericLocalRing :
+    IsAdicComplete (maximalIdeal (genericLocalRing π)) (completedGenericIntegers π) :=
+  _root_.AdicCompletion.isAdicComplete (fg_maximalIdeal_genericLocalRing π)
+
 /-- The completed generic ring is separated and complete for its `π`-adic filtration. -/
 theorem isAdicComplete_completedGenericIntegers :
     IsAdicComplete (Ideal.span {algebraMap A (completedGenericIntegers π) π})
