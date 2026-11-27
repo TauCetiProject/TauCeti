@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.QuantumMinor.Commutator
 import Mathlib.GroupTheory.Perm.Fin
-import Mathlib.Algebra.Ring.NegOnePow
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Vector commutators of quantum minors
@@ -47,12 +47,9 @@ private theorem quantumMinor_update_vectorRow (E : Matrix ι ι A) (y : ι → A
   have h : Fin.cons none (some ∘ i.removeNth a) =
       update (some ∘ a) i none ∘ i.cycleRange.symm := by
     rw [← Fin.cons_removeNth_eq_comp_cycleRange_symm]
-    simp only [update_self, Fin.removeNth_update]
-    rfl
-  have hval : ((↑(-1 : ℤˣ)) : ℤ) = -1 := by simp
-  rw [h, quantumMinor_comp_perm_left, Equiv.Perm.sign_symm, Fin.sign_cycleRange, Units.smul_def,
-    Units.val_pow_eq_pow_val, hval, smul_smul, ← pow_add, ← two_mul, pow_mul]
-  simp
+    simp only [update_self, Fin.removeNth_update, Function.comp_def, Fin.removeNth_comp]
+  rw [h, quantumMinor_comp_perm_left, Equiv.Perm.sign_symm, Fin.sign_cycleRange]
+  simp [Units.smul_def, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
 
 -- Before expanding in cofactors, infinitesimal covariance inserts the vector in each matching row.
 private theorem lie_vector_quantumMinor_rows (E : Matrix ι ι A) (y : ι → A) (u : K)
@@ -70,12 +67,11 @@ private theorem lie_vector_quantumMinor_rows (E : Matrix ι ι A) (y : ι → A)
 -- The two signs arise from deleting the last column before or after the first row.
 private theorem cofactor_sign (n : ℕ) (i : Fin (n + 1)) :
     -((-1 : ℤ) ^ (n + 1) * (-1) ^ i.val) = (-1) ^ (n - i.val) := by
-  have hi : i.val ≤ n := by omega
-  rw [← pow_add, ← neg_one_mul, ← pow_succ', ← Int.coe_negOnePow_natCast,
-    ← Int.coe_negOnePow_natCast, Nat.cast_sub hi]
-  apply congrArg ((↑) : ℤˣ → ℤ)
-  rw [Int.negOnePow_eq_iff]
-  exact ⟨(i.val : ℤ) + 1, by push_cast; omega⟩
+  -- write `n = i + k`; the two factors combine to `(-1) ^ (2 * i + k + 1)`
+  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le i.is_le
+  simp only [hk, Nat.add_sub_cancel_left]
+  rw [← pow_add, show i.val + k + 1 + i.val = 2 * i.val + (k + 1) by ring, pow_add, pow_mul]
+  simp [pow_succ]
 
 -- The last shift for the bordered minor has an extra subtraction by one.
 private theorem vectorRow_shift (E : Matrix ι ι A) (u : K) (n : ℕ) (i j : ι) :
@@ -121,7 +117,7 @@ private theorem quantumMinor_vectorRow_succ (E : Matrix ι ι A) (y : ι → A) 
   have hremove (i : Fin (n + 1)) :
       i.succ.removeNth (α := fun _ ↦ Option ι) (Fin.cons none (some ∘ a)) =
         Fin.cons none (some ∘ i.removeNth a) := Fin.cons_comp_succ_succAbove none (some ∘ a) i
-  have hinit : Fin.init (some ∘ b) = some ∘ b₀ := rfl
+  have hinit : Fin.init (some ∘ b) = some ∘ b₀ := (Fin.comp_init some b).symm
   rw [quantumMinor_succ_column_last, Fin.sum_univ_succ]
   simp only [Fin.val_zero, Nat.sub_zero, Fin.removeNth_zero, Fin.tail_cons, hinit,
     quantumMinor_withVectorRow_some, Fin.cons_zero, Fin.cons_succ, Fin.val_succ,
@@ -208,8 +204,9 @@ theorem quantumMinor_id_mul_vector {n : ℕ} (E : Matrix (Fin (n + 1)) (Fin (n +
     by_cases h : i = k <;> simp [h, eq_comm]
   have h := E.lie_vector_quantumMinor y u id id c (fun i j ↦ hy' i j c) hy'
   rw [Finset.sum_eq_single c] at h
-  · simpa only [id_eq, ↓reduceIte, Ring.lie_def, sub_eq_iff_eq_add', eq_sub_iff_add_eq,
-      add_comm] using h.symm
+  · simp only [id_eq, ↓reduceIte, Ring.lie_def] at h
+    rw [← h]
+    abel
   · intro i _ hi
     simp [hi.symm]
   · simp
