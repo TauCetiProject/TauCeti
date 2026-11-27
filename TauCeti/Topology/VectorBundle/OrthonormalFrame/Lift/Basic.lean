@@ -352,6 +352,12 @@ theorem trans_toEquiv (φ : s.Equiv t) (ψ : t.Equiv u) (x : X) :
     (φ.trans ψ).toEquiv x = (φ.toEquiv x).trans (ψ.toEquiv x) :=
   (rfl)
 
+/-- A composite of equivalences of lifts applies its two pieces in turn. Not `@[simp]`: simp
+already proves it from `trans_toEquiv` and `Equiv.trans_apply`. -/
+theorem trans_toEquiv_apply (φ : s.Equiv t) (ψ : t.Equiv u) (x : X) (a : s.P x) :
+    (φ.trans ψ).toEquiv x a = ψ.toEquiv x (φ.toEquiv x a) :=
+  (rfl)
+
 @[simp]
 theorem symm_symm (φ : s.Equiv t) : φ.symm.symm = φ :=
   (rfl)

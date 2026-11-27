@@ -864,6 +864,7 @@ theorem extend_refl : (refl G P).extend ρ hρ = refl H (Extend P ρ hρ) := by
   rfl
 
 /-- Extension is compatible with composition of equivalences. -/
+@[simp]
 theorem extend_trans {P'' : B → Type*} [TopologicalSpace (TotalSpace G P'')]
     [∀ b, TopologicalSpace (P'' b)] [FiberBundle G P''] [∀ b, MulAction Gᵐᵒᵖ (P'' b)]
     [PrincipalBundle G P''] (ψ' : PrincipalBundle.Equiv G P' P'') :
@@ -873,6 +874,7 @@ theorem extend_trans {P'' : B → Type*} [TopologicalSpace (TotalSpace G P'')]
   simp only [trans_toEquiv, _root_.Equiv.trans_apply, extend_toEquiv_mk]
 
 /-- Extension is compatible with inverses of equivalences. -/
+@[simp]
 theorem extend_symm : ψ.symm.extend ρ hρ = (ψ.extend ρ hρ).symm := by
   ext b z
   obtain ⟨p, h, rfl⟩ := Extend.exists_mk z

@@ -227,14 +227,7 @@ theorem chargeConjEquivTwistCanonicalBundle_toEquiv_inl {x : X}
           (canonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂))
         (FiberProd.mk (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
           (Extend.inl κ hκ p)) := by
-  have hdef (a : (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).chargeConj.P x) :
-      (chargeConjEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂).toEquiv x a =
-        (SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
-          (inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂)).toEquiv x
-          ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).chargeConjEquivTwist.toEquiv x a) :=
-    (congrFun (congrArg DFunLike.coe (OrthonormalFrameLift.Equiv.trans_toEquiv _ _ x)) a).trans
-      (_root_.Equiv.trans_apply _ _ a)
-  refine (hdef _).trans ?_
+  refine (OrthonormalFrameLift.Equiv.trans_toEquiv_apply _ _ x _).trans ?_
   exact (congrArg ((SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
       (inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂)).toEquiv x)
     ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).chargeConjEquivTwist_toEquiv_inl x
@@ -301,16 +294,7 @@ theorem chargeConjTwistEquivTwistCanonicalBundle_toEquiv_inl {x : X}
           (Tensor Circle (canonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂) (Inverse Circle Q)))
         (FiberProd.mk (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
           (Extend.inl τ hτ (FiberProd.mk (Extend.inl κ hκ p) (Extend.inl ν hν q)))) := by
-  have hdef (a : ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).twist Q).chargeConj.P x) :
-      (chargeConjTwistEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x a =
-        (SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
-          (((inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂).fiberProd
-            (PrincipalBundle.Equiv.refl Circle (Inverse Circle Q))).extend τ hτ)).toEquiv x
-          (((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).chargeConjTwistEquivTwist Q).toEquiv x
-            a) :=
-    (congrFun (congrArg DFunLike.coe (OrthonormalFrameLift.Equiv.trans_toEquiv _ _ x)) a).trans
-      (_root_.Equiv.trans_apply _ _ a)
-  refine (hdef _).trans ?_
+  refine (OrthonormalFrameLift.Equiv.trans_toEquiv_apply _ _ x _).trans ?_
   exact (congrArg ((SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
       (((inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂).fiberProd
         (PrincipalBundle.Equiv.refl Circle (Inverse Circle Q))).extend τ hτ)).toEquiv x)
