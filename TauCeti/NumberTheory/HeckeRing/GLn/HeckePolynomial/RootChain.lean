@@ -452,22 +452,16 @@ theorem isRoot_glnHeckePolynomial_of_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N
       have hc_ne : (-1 : ℂ) ^ (n + 1) * (q : ℂ) ^ (n + 1).choose 2 ≠ 0 :=
         mul_ne_zero (pow_ne_zero _ (by norm_num)) (pow_ne_zero _ hqC)
       exact (mul_eq_zero.mp h_refl).resolve_left hc_ne
-    have h_conj_eq : C b₀ * P.map (starRingEnd ℂ) = C z * P_rev := by
-      simp only [P, P_rev, glnHeckePolynomial_def, Polynomial.map_sum, Polynomial.map_mul,
-        Polynomial.map_pow, Polynomial.map_C, Polynomial.map_X, Polynomial.map_neg,
-        Polynomial.map_one, map_mul, map_pow, map_neg, map_one, Complex.conj_ofReal,
-        Finset.mul_sum]
-      refine Finset.sum_congr rfl fun d _ ↦ ?_
-      have hd : C (starRingEnd ℂ (t d)) * C b₀ = C (t d.rev) * C z := by
-        simpa [← map_mul, Complex.star_def] using congrArg C (h_dual d)
-      linear_combination (-1) ^ (d : ℕ) * C (q : ℂ) ^ (d : ℕ).choose 2 *
-        X ^ (n + 1 - (d : ℕ)) * hd
-    have h_eval_conj : b₀ * star (P.eval y) = 0 := by
+    have h_conj_eq : P.map (starRingEnd ℂ) * C b₀ = P_rev * C z := by
+      rw [map_glnHeckePolynomial, Complex.conj_ofReal, ← glnHeckePolynomial_mul_const,
+        ← glnHeckePolynomial_mul_const]
+      congr 1; funext d; simpa [Complex.star_def] using h_dual d
+    have h_eval_conj : star (P.eval y) * b₀ = 0 := by
       have h := congrArg (eval (star y)) h_conj_eq
-      rw [eval_mul, eval_C, eval_mul, eval_C, hP_rev_zero, mul_zero, eval_map] at h
+      rw [eval_mul, eval_C, eval_mul, eval_C, hP_rev_zero, zero_mul, eval_map] at h
       have hstar : star (P.eval y) = P.eval₂ (starRingEnd ℂ) (star y) := by simp
       rwa [← hstar] at h
-    exact star_eq_zero.mp ((mul_eq_zero.mp h_eval_conj).resolve_left hb₀)
+    exact star_eq_zero.mp ((mul_eq_zero.mp h_eval_conj).resolve_right hb₀)
 
 /-- Root-chain propagation for a `GL_N` Hecke polynomial: combining the top-root lower bound with
 Hermitian coefficient duality, any root `c` satisfying `‖c‖ ^ 2 * q ^ k = q ^ N` generates the
