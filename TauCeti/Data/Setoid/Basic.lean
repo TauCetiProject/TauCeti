@@ -103,12 +103,12 @@ theorem comapValQuotientEquiv_mk {α : Type*} (s : Setoid α) (K : Set α) (x : 
   apply Subtype.ext
   simp [comapValQuotientEquiv]
 
-/-- The inverse of `Setoid.comapValQuotientEquiv` sends the image point represented by `x : K`
-back to `⟦x⟧`. -/
+/-- The inverse of `Setoid.comapValQuotientEquiv` sends the image point represented by `a : α`
+with `ha : a ∈ K` back to `⟦⟨a, ha⟩⟧`. -/
 @[simp]
-theorem comapValQuotientEquiv_symm_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K)
-    (hx : Quotient.mk s x.val ∈ Quotient.mk s '' K) :
-    (comapValQuotientEquiv s K).symm ⟨Quotient.mk s x.val, hx⟩ = ⟦x⟧ := by
+theorem comapValQuotientEquiv_symm_mk {α : Type*} (s : Setoid α) (K : Set α) (a : α)
+    (ha : a ∈ K) (hx : Quotient.mk s a ∈ Quotient.mk s '' K) :
+    (comapValQuotientEquiv s K).symm ⟨Quotient.mk s a, hx⟩ = ⟦⟨a, ha⟩⟧ := by
   simp [Equiv.symm_apply_eq]
 
 /-- Two elements have the same class exactly when they are related. -/
