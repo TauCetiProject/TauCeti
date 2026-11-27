@@ -52,13 +52,10 @@ theorem exists_isMinimal_injectiveResolution_of_finite {A : Type v} [Ring A]
   have : Small.{w} J := Module.Finite.small A J
   let e := Shrink.linearEquiv.{w} A J
   let ι : N ⟶ ModuleCat.of A (Shrink.{w} J) := ModuleCat.ofHom (e.symm.toLinearMap ∘ₗ i)
-  have hess : IsEssentialMono ι := by
-    refine (ModuleCat.isEssentialMono_iff ι).2 ⟨e.symm.injective.comp hi.injective, ?_⟩
-    simpa only [ι, ModuleCat.hom_ofHom, LinearMap.range_comp] using
-      (isEssential_map_equiv_iff e.symm).2 hi.isEssential_range
-  have : Module.Injective A (Shrink.{w} J) :=
-    Module.Baer.injective ((Module.Baer.of_injective hi.moduleInjective).of_equiv e.symm)
-  refine ⟨_, ι, Module.injective_object_of_injective_module A _, hess, inferInstance, ?_⟩
+  have hι : IsInjectiveEnvelope ι.hom := by
+    simpa only [ι, ModuleCat.hom_ofHom] using hi.linearEquiv_comp e.symm
+  obtain ⟨hI, hess⟩ := (isInjectiveEnvelope_iff_injective_and_isEssentialMono ι).1 hι
+  refine ⟨_, ι, hI, hess, inferInstance, ?_⟩
   exact Module.Finite.of_surjective (cokernel.π ι).hom
     ((ModuleCat.epi_iff_surjective _).1 inferInstance)
 

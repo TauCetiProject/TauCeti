@@ -187,6 +187,19 @@ theorem IsInjectiveEnvelope.comp {N : Type*} [AddCommGroup N] [Module R N] {f : 
     rw [LinearMap.range_comp]
     exact hgrange.map hf.injective hf.isEssential_range
 
+/-- Postcomposing an injective envelope with a linear equivalence gives an injective envelope.
+Smallness of the ring in the original target's universe lets Baer's criterion transfer
+injectivity across universes. -/
+theorem IsInjectiveEnvelope.linearEquiv_comp [Small.{w} R]
+    {Q' : Type w'} [AddCommGroup Q'] [Module R Q']
+    {f : M →ₗ[R] Q} (hf : IsInjectiveEnvelope f) (e : Q ≃ₗ[R] Q') :
+    IsInjectiveEnvelope (e.toLinearMap ∘ₗ f) where
+  moduleInjective := ((Module.Baer.of_injective hf.moduleInjective).of_equiv e).injective
+  injective := e.injective.comp hf.injective
+  isEssential_range := by
+    rw [LinearMap.range_comp]
+    exact (isEssential_map_equiv_iff e).2 hf.isEssential_range
+
 /-! ### Submodules
 
 The inclusions of an injective module are the source of concrete injective envelopes: a submodule
