@@ -82,11 +82,8 @@ Schwartz function `TauCeti.hermiteSchwartzMap n`. -/
 theorem seminorm_complexHermiteSchwartzMap (k m n : ℕ) :
     SchwartzMap.seminorm ℂ k m (complexHermiteSchwartzMap n) =
       SchwartzMap.seminorm ℝ k m (hermiteSchwartzMap n) := by
-  -- `SchwartzMap.seminorm_apply` gives the `ℂ`- and `ℝ`-seminorms by the same supremum, which
-  -- does not involve the scalar field, so the `ℂ`-seminorm is rewritten as the `ℝ`-seminorm.
   -- `Complex.ofRealCLM` is defined as the linear isometry `Complex.ofRealLI`.
-  rw [SchwartzMap.seminorm_apply, ← SchwartzMap.seminorm_apply (𝕜 := ℝ), complexHermiteSchwartzMap,
-    show Complex.ofRealCLM = Complex.ofRealLI.toContinuousLinearMap from rfl]
+  rw [SchwartzMap.seminorm_eq_seminorm ℂ ℝ, complexHermiteSchwartzMap, Complex.ofRealCLM]
   exact SchwartzMap.seminorm_postcompCLM_linearIsometry Complex.ofRealLI (hermiteSchwartzMap n) k m
 
 /-- **Polynomial growth of the Schwartz seminorms of the complex Hermite functions.** For all
