@@ -241,8 +241,7 @@ theorem add_inv_mem_maximalRealSubfield_of_pow_eq_one {K : Type*} [Field K] {x :
   rw [mem_maximalRealSubfield_iff]
   intro φ
   have hφ : φ x ^ n = 1 := by rw [← map_pow, hx, map_one]
-  rw [map_add, map_inv₀, Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hφ hn),
-    ← Complex.star_def, star_add, star_star, add_comm]
+  simp [Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hφ hn), add_comm]
 
 /-- **`k(x + x⁻¹)` is real over a totally real base.** If `K` is an extension of a totally real
 field `k` and `x ∈ K` is a root of unity, the field `k(x + x⁻¹)` lies in the maximal real subfield

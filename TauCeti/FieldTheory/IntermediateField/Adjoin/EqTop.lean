@@ -90,6 +90,8 @@ a ring `A`, then `L` is the fraction field of the `A`-algebra they generate.
   over `E` and `β ^ n` lies in `E` for some `n ≠ 0`, then `[L : E] ≤ n`.
 * `TauCeti.IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot`: if `L = K(y)` with `y`
   in the bottom intermediate field, then `[L : K] = 1`.
+* `TauCeti.IntermediateField.mem_bot_iff_mem`: for an intermediate field `F` of `L / K`, an
+  element of `L` lies in the bottom intermediate field of `L / F` if and only if it lies in `F`.
 * `TauCeti.IntermediateField.finrank_adjoin_add_inv_le_two`: if `ζ` generates `L` over `K`,
   then `L` has degree at most `2` over `K(ζ + ζ⁻¹)`.
 
@@ -397,6 +399,13 @@ theorem finrank_eq_one_of_adjoin_eq_top_of_mem_bot {K L : Type*} [Field K] [Fiel
     (hy : y ∈ (⊥ : IntermediateField K L)) : Module.finrank K L = 1 := by
   rw [IntermediateField.adjoin_simple_eq_bot_iff.2 hy] at hgen
   exact IntermediateField.bot_eq_top_iff_finrank_eq_one.mp hgen
+
+/-- For an intermediate field `F` of `L / K`, an element of `L` lies in the bottom intermediate
+field of `L / F` exactly when it lies in `F`. This is the membership form of Mathlib's
+`IntermediateField.restrictScalars_bot_eq_self`. -/
+theorem mem_bot_iff_mem {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {F : IntermediateField K L} {x : L} : x ∈ (⊥ : IntermediateField F L) ↔ x ∈ F := by
+  rw [← IntermediateField.mem_restrictScalars K, IntermediateField.restrictScalars_bot_eq_self]
 
 open Polynomial in
 /-- If `ζ` generates `L` over `K`, then `L` has degree at most `2` over `K(ζ + ζ⁻¹)`: for `ζ ≠ 0`,

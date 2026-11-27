@@ -304,12 +304,6 @@ open Module
 variable {n : ℕ} {k K : Type*} [Field k] [Field K] [Algebra k K]
   [_root_.IsCyclotomicExtension {n} k K] {ζ : K}
 
-/-- An element of `K` lying in the bottom intermediate field over `F` lies in `F`. -/
-private theorem mem_of_mem_bot {F : IntermediateField k K} {x : K}
-    (hx : x ∈ (⊥ : IntermediateField F K)) : x ∈ F := by
-  rw [← restrictScalars_bot_eq_self F, mem_restrictScalars]
-  exact hx
-
 /-- If `k(ζ + ζ⁻¹)` contains the generator `ζ` of `K = k(μₙ)`, it is all of `K`. -/
 private theorem adjoin_add_inv_eq_top_of_mem [NeZero n] (hζ : IsPrimitiveRoot ζ n)
     (h : ζ ∈ k⟮ζ + ζ⁻¹⟯) : k⟮ζ + ζ⁻¹⟯ = ⊤ := by
@@ -328,7 +322,8 @@ private theorem finrank_adjoin_add_inv_eq_two_of_notMem [NeZero n] (hζ : IsPrim
   refine le_antisymm (TauCeti.IntermediateField.finrank_adjoin_add_inv_le_two hgen) ?_
   have : Module.Finite k⟮ζ + ζ⁻¹⟯ K := .of_restrictScalars_finite ℚ _ K
   have hpos : 0 < finrank k⟮ζ + ζ⁻¹⟯ K := finrank_pos
-  have hne : finrank k⟮ζ + ζ⁻¹⟯ K ≠ 1 := fun h1 ↦ h <| mem_of_mem_bot <| by
+  have hne : finrank k⟮ζ + ζ⁻¹⟯ K ≠ 1 := fun h1 ↦ h <| by
+    refine TauCeti.IntermediateField.mem_bot_iff_mem.1 ?_
     rw [bot_eq_top_iff_finrank_eq_one.2 h1]
     exact mem_top
   omega
@@ -399,7 +394,8 @@ theorem adjoin_adjoin_add_inv_eq_top [NeZero n] (hζ : IsPrimitiveRoot ζ n) {m 
     exact mem_top
   have := isSimpleOrder_of_finrank_prime k⟮ζ + ζ⁻¹⟯ K
     (finrank_adjoin_add_inv_eq_two_of_notMem hζ hζ' ▸ Nat.prime_two)
-  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦ hη (mem_of_mem_bot ?_)
+  refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot ↦
+    hη (TauCeti.IntermediateField.mem_bot_iff_mem.1 ?_)
   rw [← hbot]
   exact mem_adjoin_simple_self _ η
 
