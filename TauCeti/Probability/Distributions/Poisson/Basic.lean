@@ -273,14 +273,8 @@ theorem integrable_exp_mul_map_cast_poissonMeasure
 /-- The exact exponential-integrability domain of a Poisson random variable is all of `ℝ`. -/
 theorem integrableExpSet_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) :
     integrableExpSet X P = Set.univ := by
-  rw [← integrableExpSet_id_map_cast_poissonMeasure r]
   ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq]
-  rw [← hX.map_eq]
-  symm
-  change Integrable (fun x : ℝ ↦ Real.exp (t * x)) (Measure.map X P) ↔
-    Integrable ((fun x : ℝ ↦ Real.exp (t * x)) ∘ X) P
-  exact integrable_map_measure (by fun_prop) hX.aemeasurable
+  simpa [integrableExpSet] using hX.integrable_exp_mul_map_cast_poissonMeasure t
 
 /-- Every real power of a Poisson random variable is integrable. For a negative exponent this uses
 Lean's totalized `Real.rpow`, so the integrand is zero wherever the random variable is zero. -/
