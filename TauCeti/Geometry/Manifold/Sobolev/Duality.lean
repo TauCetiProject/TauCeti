@@ -31,8 +31,8 @@ identifies `H^{-s}(M)` with the antidual of `H^s(M)`, for every real `s`, when t
 operator `P : H^s(M) → H^{s - m}(M)` is described by the kernel of its formal adjoint on
 `H^{m - s}(M)`.
 
-* **Boundedness** (`TauCeti.exists_norm_integral_inner_le`):
-  `|∫ ⟪u, v⟫ dμ| ≤ C ‖u‖_{H^{-s}} ‖v‖_{H^s}`. Split `⟪u, v⟫` with the partition
+* **Boundedness** (`TauCeti.exists_norm_integral_inner_le_mul_norm_chartReading`): for a finite
+  measure `μ`, `|∫ ⟪u, v⟫ dμ| ≤ C ‖u‖_{H^{-s}} ‖v‖_{H^s}`. Split `⟪u, v⟫` with the partition
   `∑ᵢ ψᵢ ∘ eᵢ = 1`. In the chart `eᵢ`, where `μ` is `ρᵢ(y) dy`, the `i`-th piece is the Euclidean
   pairing `∫ ⟪ψᵢ · (u ∘ eᵢ⁻¹), ρᵢ θᵢ · (v ∘ eᵢ⁻¹)⟫ dy`, for a cutoff `θᵢ` equal to `1` on the
   support of `ψᵢ`. The Euclidean duality of `H^{-s}` and `H^s`
@@ -48,7 +48,7 @@ operator `P : H^s(M) → H^{s - m}(M)` is described by the kernel of its formal 
   (`SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall`) then bounds the reading. This
   half holds for every finite family of chart cutoffs and every measure with a smooth positive
   density.
-* **The pairing** `TauCeti.chartSobolevPairing hμ hψ s : H^{-s}(M) →L⋆[ℂ] (H^s(M))⋆` is the
+* **The pairing** `TauCeti.chartSobolevPairing he hμ hψ s : H^{-s}(M) →L⋆[ℂ] (H^s(M))⋆` is the
   continuous extension of `(u, v) ↦ ∫ ⟪u, v⟫ dμ` from the smooth functions
   (`TauCeti.chartSobolevPairing_toChartSobolevSpace`), conjugate-linear in `u` and linear in `v`.
   It is built through the Hilbert space structure of `H^s(M)`: by boundedness, `v ↦ ∫ ⟪u, v⟫ dμ` is
@@ -67,12 +67,13 @@ operator `P : H^s(M) → H^{s - m}(M)` is described by the kernel of its formal 
   killed by `R†`, hence vanishes; so `R` is bijective, and the pairing is `R` followed by the Riesz
   isomorphism `H^s(M) ≃ (H^s(M))⋆`.
 
-The equivalence is not isometric: the norms of `H^s(M)` depend on the chart partition, and the
+The equivalence need not be isometric: the norms of `H^s(M)` depend on the chart partition, and the
 pairing on the density `μ`.
 
 ## Main results
 
-* `TauCeti.exists_norm_integral_inner_le`: the `L²(μ)` pairing is bounded on `H^{-s} × H^s`.
+* `TauCeti.exists_norm_integral_inner_le_mul_norm_chartReading`: the `L²(μ)` pairing is bounded on
+  `H^{-s} × H^s`.
 * `TauCeti.exists_norm_chartReading_neg_le`: the `H^{-s}` norm is controlled by the dual norm for
   the `L²(μ)` pairing.
 * `TauCeti.chartSobolevPairing`: the pairing `H^{-s}(M) →L⋆[ℂ] (H^s(M))⋆`, with
@@ -80,7 +81,8 @@ pairing on the density `μ`.
 * `TauCeti.exists_norm_le_of_forall_norm_chartSobolevPairing_le_left`,
   `TauCeti.exists_norm_le_of_forall_norm_chartSobolevPairing_le_right`: the norms of `H^{-s}(M)`
   and `H^s(M)` are controlled by the dual norms for the pairing.
-* `TauCeti.chartSobolevDualEquiv`: the isomorphism `H^{-s}(M) ≃ (H^s(M))⋆` it induces.
+* `TauCeti.chartSobolevDualEquiv`: the isomorphism `H^{-s}(M) ≃ (H^s(M))⋆` it induces, with
+  `TauCeti.chartSobolevPairing_chartSobolevDualEquiv_symm` representing a functional as a pairing.
 
 ## References
 
@@ -207,6 +209,20 @@ private def schwartzToSmooth (b : 𝓢(CoordinateSpace n, ℂ)) :
     C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯ :=
   ⟨b, contMDiff_iff_contDiff.2 (b.smooth ⊤)⟩
 
+@[simp]
+private theorem schwartzToSmooth_apply (b : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n) :
+    schwartzToSmooth b y = b y :=
+  rfl
+
+/-- Coordinatewise bounds `‖x i‖ ≤ C i * g` with `0 ≤ g` bound the `Lᵖ` norm of `x` by
+`(∑ i, |C i|) * g`. -/
+private theorem norm_le_sum_abs_mul_of_forall_norm_apply_le {p : ENNReal} [Fact (1 ≤ p)]
+    {E : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)] {x : PiLp p E} {C : ι → ℝ} {g : ℝ}
+    (hg : 0 ≤ g) (h : ∀ i, ‖x i‖ ≤ C i * g) : ‖x‖ ≤ (∑ i, |C i|) * g := by
+  refine (PiLp.norm_le_sum_norm x).trans ?_
+  rw [Finset.sum_mul]
+  exact Finset.sum_le_sum fun i _ ↦ (h i).trans (mul_le_mul_of_nonneg_right (le_abs_self _) hg)
+
 omit [MeasurableSpace M] [BorelSpace M] in
 /-- **The readings of a pulled-back Schwartz function.** For a cutoff `σ` in a chart `e'`, the
 smooth function `(σ b) ∘ e'` on `M`, extended by `0`, of a Schwartz function `b` has chart readings
@@ -236,15 +252,13 @@ private theorem exists_norm_chartReading_complexCutoffPullback_le
       ← smul_smul]
     congr 1
     by_cases hy : (e i).symm y ∈ e'.source
-    · rw [complexCutoffPullback_apply_of_mem he' _ _ hy, cutoffPullback_one_apply_of_mem he' _ hy]
-      rfl
+    · rw [complexCutoffPullback_apply_of_mem he' _ _ hy, cutoffPullback_one_apply_of_mem he' _ hy,
+        schwartzToSmooth_apply]
     · rw [complexCutoffPullback_apply_of_notMem he' _ _ hy,
         cutoffPullback_apply_of_notMem he' _ _ hy, zero_smul]
   choose C hC using hC
-  refine ⟨∑ i, |C i|, fun b ↦ (PiLp.norm_le_sum_norm _).trans ?_⟩
-  rw [Finset.sum_mul]
-  exact Finset.sum_le_sum fun i _ ↦ (hC i b).trans
-    (mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _))
+  exact ⟨∑ i, |C i|, fun b ↦
+    norm_le_sum_abs_mul_of_forall_norm_apply_le (norm_nonneg _) fun i ↦ hC i b⟩
 
 omit [BorelSpace M] in
 /-- **The `H^{-s}` norm is the dual norm for the `L²(μ)` pairing.** For a measure `μ` with a smooth
@@ -258,26 +272,25 @@ theorem exists_norm_chartReading_neg_le (hμ : HasSmoothPositiveDensity (Coordin
         ‖chartReading he ψ (-s) u‖ ≤ C * K := by
   choose σ hσ using fun i ↦ exists_integral_inner_complexCutoffPullback_eq (he i) hμ (ψ i)
   choose C hC using fun i ↦ exists_norm_chartReading_complexCutoffPullback_le he ψ (he i) (σ i) s
-  refine ⟨∑ i, |C i|, fun u K hK hu ↦ (PiLp.norm_le_sum_norm _).trans ?_⟩
-  rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
+  refine ⟨∑ i, |(|C i|)|, fun u K hK hu ↦
+    norm_le_sum_abs_mul_of_forall_norm_apply_le hK fun i ↦ ?_⟩
   -- Pair the `i`-th reading with a Schwartz function `b` through `(σᵢ b) ∘ eᵢ` on `M`.
   rw [chartReading_apply]
   refine SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall s _
     (mul_nonneg (abs_nonneg _) hK) fun b ↦ ?_
   have h := hσ i u (schwartzToSmooth b)
-  simp only [schwartzToSmooth, ContMDiffMap.coeFn_mk] at h
+  simp only [schwartzToSmooth_apply] at h
   rw [← h, mul_comm |C i|, mul_assoc]
   exact (hu _).trans (mul_le_mul_of_nonneg_left
     ((hC i b).trans (mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _))) hK)
 
 variable {ψ}
 
-/-- **The `L²(μ)` pairing is bounded on `H^{-s} × H^s`.** For a measure `μ` with a smooth positive
-density and cutoffs `ψᵢ` in charts `eᵢ` whose readings on `M` add up to `1`, there is a constant
-`C` such that `|∫ ⟪u, v⟫ dμ| ≤ C ‖u‖_{H^{-s}} ‖v‖_{H^s}` for all smooth `u` and `v`, the norms being
-those of the chart readings. -/
-theorem exists_norm_integral_inner_le [IsFiniteMeasure μ]
+/-- **The `L²(μ)` pairing is bounded on `H^{-s} × H^s`.** For a finite measure `μ` with a smooth
+positive density and cutoffs `ψᵢ` in charts `eᵢ` whose readings on `M` add up to `1`, there is a
+constant `C` such that `|∫ ⟪u, v⟫ dμ| ≤ C ‖u‖_{H^{-s}} ‖v‖_{H^s}` for all smooth `u` and `v`, the
+norms being those of the chart readings. -/
+theorem exists_norm_integral_inner_le_mul_norm_chartReading [IsFiniteMeasure μ]
     (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
     (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) (s : ℝ) :
     ∃ C, ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
@@ -369,7 +382,7 @@ private theorem integralInnerExtension_toChartSobolevSpace [CompactSpace M]
     (u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     integralInnerExtension (μ := μ) he s u (toChartSobolevSpace he ψ s v) =
       integralInner μ u v := by
-  obtain ⟨C, hC⟩ := exists_norm_integral_inner_le he hμ hψ s
+  obtain ⟨C, hC⟩ := exists_norm_integral_inner_le_mul_norm_chartReading he hμ hψ s
   exact LinearMap.extendOfNorm_eq (denseRange_toChartSobolevSpace he ψ s)
     ⟨C * ‖chartReading he ψ (-s) u‖, fun w ↦ (hC u w).trans_eq (by
       rw [norm_toChartSobolevSpace])⟩ v
@@ -378,7 +391,7 @@ include hμ hψ in
 private theorem norm_integralInnerExtension_le [CompactSpace M] :
     ∃ C, ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       ‖integralInnerExtension (μ := μ) (ψ := ψ) he s u‖ ≤ C * ‖chartReading he ψ (-s) u‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_integral_inner_le he hμ hψ s
+  obtain ⟨C, hC⟩ := exists_norm_integral_inner_le_mul_norm_chartReading he hμ hψ s
   refine ⟨max C 0, fun u ↦ ContinuousLinearMap.opNorm_le_bound _
     (mul_nonneg (le_max_right _ _) (norm_nonneg _)) fun y ↦ ?_⟩
   refine LinearMap.norm_extendOfNorm_apply_le (denseRange_toChartSobolevSpace he ψ s) _
@@ -486,6 +499,15 @@ private theorem exists_norm_le_mul_norm_adjoint_chartSobolevRiesz :
     ← ContinuousLinearMap.adjoint_inner_right, ← norm_toChartSobolevSpace he ψ (-s) u, mul_comm]
   exact norm_inner_le_norm _ _
 
+/-- A vector `z` of a complex inner product space with `‖⟪z, z⟫‖ ≤ K ‖z‖` has norm at most `K`. -/
+private theorem norm_le_of_norm_inner_self_le {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] {z : F} {K : ℝ} (hK : 0 ≤ K) (h : ‖⟪z, z⟫_ℂ‖ ≤ K * ‖z‖) : ‖z‖ ≤ K := by
+  rcases (norm_nonneg z).eq_or_lt with hz | hz
+  · rw [← hz]
+    exact hK
+  refine le_of_mul_le_mul_right ?_ hz
+  rwa [inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal, abs_norm, sq] at h
+
 /-- **The `H^{-s}` norm is the dual norm for the pairing**: if `|⟨x, y⟩| ≤ K ‖y‖_{H^s}` for every
 `y ∈ H^s(M)`, then `‖x‖_{H^{-s}} ≤ C K`. -/
 theorem exists_norm_le_of_forall_norm_chartSobolevPairing_le_left :
@@ -494,14 +516,9 @@ theorem exists_norm_le_of_forall_norm_chartSobolevPairing_le_left :
   obtain ⟨C, hC0, hC⟩ := exists_norm_le_mul_norm_chartSobolevRiesz he hμ hψ s
   refine ⟨C, fun x K hK hx ↦ (hC x).trans (mul_le_mul_of_nonneg_left ?_ hC0)⟩
   -- `‖R x‖² = ⟨x, R x⟩ ≤ K ‖R x‖`.
-  set z := chartSobolevRiesz he hμ hψ s x
-  rcases (norm_nonneg z).eq_or_lt with hz | hz
-  · rw [← hz]
-    exact hK
-  refine le_of_mul_le_mul_right ?_ hz
-  have := hx z
-  rwa [chartSobolevPairing_apply_apply, inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal,
-    abs_norm, sq] at this
+  have := hx (chartSobolevRiesz he hμ hψ s x)
+  rw [chartSobolevPairing_apply_apply] at this
+  exact norm_le_of_norm_inner_self_le hK this
 
 /-- **The `H^s` norm is the dual norm for the pairing**: if `|⟨x, y⟩| ≤ K ‖x‖_{H^{-s}}` for every
 `x ∈ H^{-s}(M)`, then `‖y‖_{H^s} ≤ C K`. -/
@@ -511,37 +528,23 @@ theorem exists_norm_le_of_forall_norm_chartSobolevPairing_le_right :
   obtain ⟨C, hC0, hC⟩ := exists_norm_le_mul_norm_adjoint_chartSobolevRiesz he hμ hψ s
   refine ⟨C, fun y K hK hy ↦ (hC y).trans (mul_le_mul_of_nonneg_left ?_ hC0)⟩
   -- `‖R† y‖² = ⟨R† y, y⟩ ≤ K ‖R† y‖`.
-  set z := ContinuousLinearMap.adjoint (chartSobolevRiesz he hμ hψ s) y
-  rcases (norm_nonneg z).eq_or_lt with hz | hz
-  · rw [← hz]
-    exact hK
-  refine le_of_mul_le_mul_right ?_ hz
-  have := hy z
-  rwa [chartSobolevPairing_apply_apply, ← ContinuousLinearMap.adjoint_inner_right,
-    inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal, abs_norm, sq] at this
+  have := hy (ContinuousLinearMap.adjoint (chartSobolevRiesz he hμ hψ s) y)
+  rw [chartSobolevPairing_apply_apply, ← ContinuousLinearMap.adjoint_inner_right] at this
+  exact norm_le_of_norm_inner_self_le hK this
 
 /-- The Riesz map `H^{-s}(M) → H^s(M)` is bijective: it is bounded below, and an element of `H^s(M)`
 orthogonal to its range is killed by the adjoint, hence vanishes. -/
 private theorem bijective_chartSobolevRiesz :
     Function.Bijective (chartSobolevRiesz he hμ hψ s) := by
-  set R := chartSobolevRiesz he hμ hψ s
-  set R' : chartSobolevSpace he ψ (-s) →ₗ[ℂ] chartSobolevSpace he ψ s := R.toLinearMap
   obtain ⟨C, hC0, hC⟩ := exists_norm_le_mul_norm_chartSobolevRiesz he hμ hψ s
   obtain ⟨C', -, hC'⟩ := exists_norm_le_mul_norm_adjoint_chartSobolevRiesz he hμ hψ s
-  have hR := R.antilipschitz_of_bound (K := ⟨C, hC0⟩) hC
-  refine ⟨hR.injective, LinearMap.range_eq_top.1 ?_⟩
-  have hclosed : IsClosed (LinearMap.range R' : Set (chartSobolevSpace he ψ s)) := by
-    rw [LinearMap.coe_range]
-    exact hR.isClosed_range R.uniformContinuous
-  have horth : (LinearMap.range R')ᗮ = ⊥ := by
-    refine (Submodule.eq_bot_iff _).2 fun y hy ↦ norm_le_zero_iff.1 ((hC' y).trans ?_)
-    -- `⟪x, R† y⟫ = ⟪R x, y⟫ = 0` for every `x`, so `R† y = 0`.
-    have h0 : ContinuousLinearMap.adjoint (chartSobolevRiesz he hμ hψ s) y = 0 :=
-      inner_self_eq_zero.1 (by
-        rw [ContinuousLinearMap.adjoint_inner_left]
-        exact (Submodule.mem_orthogonal' _ y).1 hy _ (LinearMap.mem_range_self R' _))
-    rw [h0, norm_zero, mul_zero]
-  rw [← hclosed.submodule_topologicalClosure_eq, Submodule.topologicalClosure_eq_top_iff, horth]
+  set R := chartSobolevRiesz he hμ hψ s
+  refine R.bijective_iff_dense_range_and_antilipschitz.2
+    ⟨?_, _, R.antilipschitz_of_bound (K := ⟨C, hC0⟩) hC⟩
+  -- An element `y` orthogonal to the range is killed by `R†`, hence vanishes.
+  rw [Submodule.topologicalClosure_eq_top_iff, R.orthogonal_range]
+  refine (Submodule.eq_bot_iff _).2 fun y hy ↦ norm_le_zero_iff.1 ((hC' y).trans ?_)
+  rw [show ContinuousLinearMap.adjoint R y = 0 from LinearMap.mem_ker.1 hy, norm_zero, mul_zero]
 
 /-- **Duality of the Sobolev spaces of a compact manifold.** For a finite measure `μ` with a smooth
 positive density and cutoffs `ψᵢ` in charts `eᵢ` whose readings on `M` add up to `1`, the `L²(μ)`
@@ -560,6 +563,14 @@ theorem chartSobolevDualEquiv_apply (x : chartSobolevSpace he ψ (-s)) :
     chartSobolevDualEquiv he hμ hψ s x = chartSobolevPairing he hμ hψ s x := by
   ext y
   simp [chartSobolevDualEquiv, chartSobolevPairing_apply_apply]
+
+/-- Every continuous functional `f` on `H^s(M)` is the pairing with
+`(chartSobolevDualEquiv he hμ hψ s).symm f ∈ H^{-s}(M)`. -/
+@[simp]
+theorem chartSobolevPairing_chartSobolevDualEquiv_symm
+    (f : StrongDual ℂ (chartSobolevSpace he ψ s)) (y : chartSobolevSpace he ψ s) :
+    chartSobolevPairing he hμ hψ s ((chartSobolevDualEquiv he hμ hψ s).symm f) y = f y := by
+  rw [← chartSobolevDualEquiv_apply, ContinuousLinearEquiv.apply_symm_apply]
 
 end Pairing
 
