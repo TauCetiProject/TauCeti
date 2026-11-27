@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.CMLattice.Basic
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Weierstrass.HalfPeriod
+public import TauCeti.NumberTheory.BinaryQuadraticForm.ComplexMultiplication
 import TauCeti.Analysis.Normed.Ring.CycleBound
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
-import TauCeti.NumberTheory.BinaryQuadraticForm.ComplexMultiplication
 
 /-!
 # The discriminant of a CM lattice is a unit at every prime
@@ -340,13 +340,12 @@ include hd hsq
 
 omit hsq in
 /-- A representative of each homothety class with multiplier ring `ℤ[ω]`, with a CM point. -/
-private theorem exists_family : ∃ (L : {x : PeriodPairHomothetyClass // x.leftOrder =
-      QuadraticOrder.complexOrder (-d) (by simp) hD} → PeriodPair) (t : _ → ℂ),
-    (∀ x, PeriodPairHomothetyClass.mk (L x) = x.val) ∧ ∀ x, (L x).IsCMPoint d (t x) := by
+private theorem exists_family :
+    ∃ (L : BinaryQuadraticForm.CMHomothetyClass d hD → PeriodPair) (t : _ → ℂ),
+      (∀ x, PeriodPairHomothetyClass.mk (L x) = x.val) ∧ ∀ x, (L x).IsCMPoint d (t x) := by
   have hrep (x : PeriodPairHomothetyClass) : ∃ L, PeriodPairHomothetyClass.mk L = x :=
     PeriodPairHomothetyClass.ind (fun L ↦ ⟨L, rfl⟩) x
-  choose L hL using fun x : {x : PeriodPairHomothetyClass // x.leftOrder =
-    QuadraticOrder.complexOrder (-d) (by simp) hD} ↦ hrep x.val
+  choose L hL using fun x : BinaryQuadraticForm.CMHomothetyClass d hD ↦ hrep x.val
   have hω (x : _) : ∀ l ∈ (L x).lattice, cmOmega d * l ∈ (L x).lattice := fun _ ↦
     cmOmega_mul_mem_of_leftOrder_eq (by omega)
       (by rw [← PeriodPairHomothetyClass.leftOrder_mk, hL x]; exact x.property)
@@ -357,8 +356,7 @@ omit hd in
 /-- A lattice with a CM point is homothetic to the representative of its class: its multiplier ring
 is `ℤ[ω]`. -/
 private theorem IsCMPoint.exists_homothetic (h : L.IsCMPoint d t)
-    (Lr : {x : PeriodPairHomothetyClass // x.leftOrder =
-      QuadraticOrder.complexOrder (-d) (by simp) hD} → PeriodPair)
+    (Lr : BinaryQuadraticForm.CMHomothetyClass d hD → PeriodPair)
     (hLr : ∀ x, PeriodPairHomothetyClass.mk (Lr x) = x.val) : ∃ x, (Lr x).Homothetic L := by
   have hx : (PeriodPairHomothetyClass.mk L).leftOrder =
       QuadraticOrder.complexOrder (-d) (by simp) hD := by
@@ -370,8 +368,7 @@ private theorem IsCMPoint.exists_homothetic (h : L.IsCMPoint d t)
 family of representatives `Λ_x` with CM points `t_x`, there is a permutation `σ` with
 `s(b t_x) s((1 - b) t_{σ x}) = 2¹²` and `s(b t_{σ x}) s(t_{σ x}) = -s(b t_x)`. -/
 private theorem exists_perm (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOmega d))
-    (L : {x : PeriodPairHomothetyClass // x.leftOrder =
-      QuadraticOrder.complexOrder (-d) (by simp) hD} → PeriodPair)
+    (L : BinaryQuadraticForm.CMHomothetyClass d hD → PeriodPair)
     (hL : ∀ x, PeriodPairHomothetyClass.mk (L x) = x.val) (t : _ → ℂ)
     (ht : ∀ x, (L x).IsCMPoint d (t x)) :
     ∃ σ : Equiv.Perm _, ∀ x,
@@ -386,8 +383,7 @@ private theorem exists_perm (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOme
     (ht x).cmOmega_mul_mem_of_mem_iff hd hb (hM x)
   choose t' ht' using fun x ↦ (M x).exists_isCMPoint (hMω x)
   -- the class of `Λ_x + ℤ b t_x`
-  let f : _ → {x : PeriodPairHomothetyClass // x.leftOrder =
-      QuadraticOrder.complexOrder (-d) (by simp) hD} := fun x ↦
+  let f : _ → BinaryQuadraticForm.CMHomothetyClass d hD := fun x ↦
     ⟨PeriodPairHomothetyClass.mk (M x), by
       rw [PeriodPairHomothetyClass.leftOrder_mk]
       exact leftOrder_eq_complexOrder_of_cmOmega_mul_mem hsq (hMω x) hD⟩
@@ -412,15 +408,13 @@ and representatives `Λ_x` with CM points `t_x` of the homothety classes of latt
 multiplier ring is the order `ℤ[ω]` of discriminant `-d`, `∏ₓ s_{Λ_x}(t_x) = (-1)^h`, where `h` is
 the number of these classes. -/
 theorem finprod_scaledDiscr_eq_neg_one_pow
-    (L : {x : PeriodPairHomothetyClass // x.leftOrder =
-      QuadraticOrder.complexOrder (-d) (by simp) hD} → PeriodPair)
+    (L : BinaryQuadraticForm.CMHomothetyClass d hD → PeriodPair)
     (hL : ∀ x, PeriodPairHomothetyClass.mk (L x) = x.val) (t : _ → ℂ)
     (ht : ∀ x, (L x).IsCMPoint d (t x)) :
-    ∏ᶠ x, (L x).scaledDiscr (t x) = (-1) ^ Nat.card {x : PeriodPairHomothetyClass //
-      x.leftOrder = QuadraticOrder.complexOrder (-d) (by simp) hD} := by
+    ∏ᶠ x, (L x).scaledDiscr (t x) =
+      (-1) ^ Nat.card (BinaryQuadraticForm.CMHomothetyClass d hD) := by
   have : NeZero d := ⟨by omega⟩
-  have := Fintype.ofFinite {x : PeriodPairHomothetyClass //
-    x.leftOrder = QuadraticOrder.complexOrder (-d) (neg_nonpos.mpr (Nat.cast_nonneg _)) hD}
+  have := Fintype.ofFinite (BinaryQuadraticForm.CMHomothetyClass d hD)
   obtain ⟨σ, hσ⟩ := exists_perm hd hsq (.inl rfl) L hL t ht
   rw [finprod_eq_prod_of_fintype, Nat.card_eq_fintype_card]
   -- multiply `s(ω t_{σ x}) s(t_{σ x}) = -s(ω t_x)` over all classes; the `s(ω t_x)` cancel
@@ -495,8 +489,7 @@ theorem IsCMPoint.norm_map_scaledDiscr_eq_one {R : Type*} [SeminormedCommRing R]
     ‖ι (L.scaledDiscr t)‖ = 1 := by
   have hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1 := .inr (by omega)
   have : NeZero d := ⟨by omega⟩
-  have := Fintype.ofFinite {x : PeriodPairHomothetyClass //
-    x.leftOrder = QuadraticOrder.complexOrder (-d) (neg_nonpos.mpr (Nat.cast_nonneg _)) hD}
+  have := Fintype.ofFinite (BinaryQuadraticForm.CMHomothetyClass d hD)
   obtain ⟨Lr, tr, hLr, htr⟩ := exists_family hd (hD := hD)
   have hprod := finprod_scaledDiscr_eq_neg_one_pow hd hsq Lr hLr tr htr
   rw [finprod_eq_prod_of_fintype] at hprod

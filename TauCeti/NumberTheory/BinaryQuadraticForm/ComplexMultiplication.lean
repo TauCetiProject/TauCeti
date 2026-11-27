@@ -46,6 +46,8 @@ with algebraic elliptic-curve endomorphisms is asserted here):
 
 ## Main definitions
 
+* `TauCeti.BinaryQuadraticForm.CMHomothetyClass`: the homothety classes of lattices with left
+  order `O_{-n}`.
 * `TauCeti.BinaryQuadraticForm.posDefProperClassToHomothetyClass`,
   `TauCeti.BinaryQuadraticForm.cmHomothetyClassEquivPosDefProperClass`,
   `TauCeti.BinaryQuadraticForm.cmHomothetyClassEquivPic`,
@@ -163,12 +165,17 @@ theorem mem_range_posDefProperClassToHomothetyClass_iff
   obtain ⟨f, rfl⟩ := hx
   exact ⟨Quotient.mk _ f, rfl⟩
 
+/-- The homothety classes of complex period lattices whose left order is the quadratic order
+`complexOrder (-n)` of discriminant `-n`. -/
+abbrev CMHomothetyClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) : Type :=
+  {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+    (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}
+
 /-- **Bijection between CM lattice homothety classes and proper classes of forms**: homothety
 classes of period pairs with left order `complexOrder (-n)` correspond bijectively to
 `PosDefProperClass n`. -/
 def cmHomothetyClassEquivPosDefProperClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} ≃ PosDefProperClass n :=
+    CMHomothetyClass n hn ≃ PosDefProperClass n :=
   ((Equiv.ofInjective (posDefProperClassToHomothetyClass n)
     posDefProperClassToHomothetyClass_injective).trans
     (Equiv.subtypeEquivRight fun _ ↦ mem_range_posDefProperClassToHomothetyClass_iff n hn)).symm
@@ -195,8 +202,7 @@ recovers `q`. -/
 recovers the underlying homothety class. -/
 @[simp] theorem posDefProperClassToHomothetyClass_cmHomothetyClassEquivPosDefProperClass
     (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
-    (x : {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
+    (x : CMHomothetyClass n hn) :
     posDefProperClassToHomothetyClass n (cmHomothetyClassEquivPosDefProperClass n hn x) = x.val
         := by
   simpa only [coe_cmHomothetyClassEquivPosDefProperClass_symm] using
@@ -205,8 +211,7 @@ recovers the underlying homothety class. -/
 /-- **Bijection between CM lattice homothety classes and the Picard group** of the quadratic order
 of discriminant `-n`. -/
 def cmHomothetyClassEquivPic (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} ≃
+    CMHomothetyClass n hn ≃
       @GlobalNumberFields.Pic (QuadraticAlgebra ℚ (-((n : ℤ) : ℚ)) 0)
         (inferInstanceAs (Field (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)))
         (inferInstanceAs (NumberField (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)))
@@ -216,8 +221,7 @@ def cmHomothetyClassEquivPic (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
 /-- `cmHomothetyClassEquivPic` sends a CM homothety class to the Picard class of its corresponding
 proper form class. -/
 @[simp] theorem cmHomothetyClassEquivPic_apply (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
-    (x : {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
+    (x : CMHomothetyClass n hn) :
     cmHomothetyClassEquivPic n hn x =
       posDefProperClassToPic n hn (cmHomothetyClassEquivPosDefProperClass n hn x) :=
   posDefProperClassEquivPic_apply n hn (cmHomothetyClassEquivPosDefProperClass n hn x)
@@ -236,8 +240,7 @@ its corresponding proper form class. -/
 /-- **Bijection between CM lattice homothety classes and the ring class Galois group**
 `Gal(H_O / ℚ(√(-n)))`. -/
 def cmHomothetyClassEquivGal (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} ≃
+    CMHomothetyClass n hn ≃
       Gal(ClassFieldTheory.ringClassField (QuadraticOrder.numberFieldOrder (-n) hn) /
         QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0) :=
   (cmHomothetyClassEquivPosDefProperClass n hn).trans (posDefProperClassEquivGal n hn)
@@ -246,8 +249,7 @@ def cmHomothetyClassEquivGal (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
 /-- `cmHomothetyClassEquivGal` sends a CM homothety class to the ring class Artin symbol of its
 corresponding proper form class. -/
 theorem cmHomothetyClassEquivGal_apply (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
-    (x : {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
+    (x : CMHomothetyClass n hn) :
     cmHomothetyClassEquivGal n hn x =
       posDefProperClassEquivGal n hn (cmHomothetyClassEquivPosDefProperClass n hn x) := (rfl)
 
@@ -264,15 +266,13 @@ theorem coe_cmHomothetyClassEquivGal_symm (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ
 /-- There are finitely many homothety classes of complex period lattices with left order
 `complexOrder (-n)`: they correspond to the proper classes of forms of discriminant `-n`. -/
 instance finite_cmHomothetyClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    Finite {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} :=
+    Finite (CMHomothetyClass n hn) :=
   Finite.of_equiv _ (cmHomothetyClassEquivPosDefProperClass n hn).symm
 
 /-- The number of homothety classes of complex period lattices with left order
 `complexOrder (-n)` equals `#Pic(O_{-n})`. -/
 theorem nat_card_cmHomothetyClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
-    Nat.card {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} =
+    Nat.card (CMHomothetyClass n hn) =
       Nat.card (GlobalNumberFields.Pic (QuadraticOrder.numberFieldOrder (-n) hn)) :=
   Nat.card_congr (cmHomothetyClassEquivPic n hn)
 
