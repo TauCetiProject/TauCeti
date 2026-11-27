@@ -24,9 +24,8 @@ star version of Mathlib's `Algebra.TensorProduct.map`.
 ## Main declarations
 
 * `Algebra.TensorProduct.liftNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ φ a * ψ b`.
-* `liftNonUnitalStarAlgHom_comp_includeLeftNonUnitalStarAlgHom_includeRightNonUnitalStarAlgHom`
-  (in `Algebra.TensorProduct`): every star homomorphism out of the tensor product of unital star
-  algebras is the integrated form of its restrictions along
+* `Algebra.TensorProduct.liftNonUnitalStarAlgHom_unique`: every star homomorphism out of the
+  tensor product of unital star algebras is the integrated form of its restrictions along
   `Algebra.TensorProduct.includeLeftNonUnitalStarAlgHom` and
   `Algebra.TensorProduct.includeRightNonUnitalStarAlgHom`.
 * `Algebra.TensorProduct.mapNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ f a ⊗ g b`,
@@ -167,7 +166,7 @@ theorem commute_comp_includeLeftNonUnitalStarAlgHom_includeRightNonUnitalStarAlg
 /-- **Uniqueness in the universal property of `liftNonUnitalStarAlgHom`.** A star homomorphism
 `Φ` out of the tensor product of unital star algebras is the integrated form of its restrictions
 `a ↦ Φ (a ⊗ 1)` and `b ↦ Φ (1 ⊗ b)`. -/
-theorem liftNonUnitalStarAlgHom_comp_includeLeftNonUnitalStarAlgHom_includeRightNonUnitalStarAlgHom
+theorem liftNonUnitalStarAlgHom_unique
     [SMulCommClass R C C] [IsScalarTower R C C] (Φ : A ⊗[R] B →⋆ₙₐ[R] C) :
     liftNonUnitalStarAlgHom (Φ.comp includeLeftNonUnitalStarAlgHom)
       (Φ.comp includeRightNonUnitalStarAlgHom)
