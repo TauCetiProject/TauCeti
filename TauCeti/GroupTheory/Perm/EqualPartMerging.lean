@@ -103,6 +103,30 @@ open TauCeti
 
 variable {α β : Type*} [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 
+/-- If the cycles `q` of `σ` have lengths `K q * d` with `0 < K q ≤ m` and `∑ q, K q = m`, then
+the full cycle type of `σ` is an `m`-merging of `m` copies of `d`, with one block of `K q`
+copies of `d` for each cycle. -/
+private theorem equalPartMerging_of_cycle_counts {σ : Perm α}
+    [Fintype (Quotient (SameCycle.setoid σ))] {d m : ℕ} (K : Quotient (SameCycle.setoid σ) → ℕ)
+    (hK : ∀ x, K (Quotient.mk _ x) * d = minimalPeriod σ x) (hKpos : ∀ q, 0 < K q)
+    (hKle : ∀ q, K q ≤ m) (hKsum : ∑ q, K q = m) :
+    EqualPartMerging m (Multiset.replicate m d) σ.fullCycleType := by
+  -- Write both sides as sums over the cycles of `σ`, and merge cycle by cycle.
+  have hleft : Multiset.replicate m d = ∑ q, Multiset.replicate (K q) d := by
+    rw [eq_comm, Multiset.eq_replicate, Multiset.card_sum]
+    simp [hKsum, Multiset.mem_sum, Multiset.mem_replicate]
+  have hright : σ.fullCycleType = ∑ q, {K q * d} := by
+    rw [fullCycleType_eq_map_univ σ (Equiv.refl _)
+      (f := Quotient.lift (minimalPeriod σ) fun _ _ h => h.minimalPeriod_eq) fun _ => rfl,
+      ← Multiset.sum_map_singleton (Multiset.map _ _), Multiset.map_map,
+      Finset.sum_eq_multiset_sum]
+    refine congrArg Multiset.sum (Multiset.map_congr rfl fun q _ => ?_)
+    induction q using Quotient.inductionOn with
+    | h x => rw [Function.comp_apply, Quotient.lift_mk, hK]
+  rw [hleft, hright]
+  exact equalPartMerging_sum _ fun q _ =>
+    equalPartMerging_replicate_singleton (hKpos q) (by exact_mod_cast hKle q) d
+
 /-- **Cycles above a single cycle merge equal parts.** Let `r : α → β` intertwine `σ` with a
 permutation `ψ` that is a single cycle of length `d`, fixed points included, and let every fibre
 of `r` have `m` points. Then each cycle of `σ` has length `d * mᵢ`, where `0 < mᵢ ≤ m` is the
@@ -142,9 +166,8 @@ theorem equalPartMerging_replicate_fullCycleType {r : α → β} {σ : Perm α} 
     induction q using Quotient.inductionOn with
     | h x =>
       obtain ⟨x', hxx', hx'⟩ := hmeet x
-      refine Finset.card_pos.2 ⟨x', ?_⟩
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      exact ⟨hx', Quotient.sound hxx'.symm⟩
+      exact Finset.card_pos.2 ⟨x', Finset.mem_filter.2 ⟨Finset.mem_univ _, hx',
+        Quotient.sound hxx'.symm⟩⟩
   have hKle (q : Q) : K q ≤ m := by
     rw [← hfibre]
     refine Finset.card_le_card fun y hy => ?_
@@ -156,20 +179,6 @@ theorem equalPartMerging_replicate_fullCycleType {r : α → β} {σ : Perm α} 
     -- The two sides differ only in the decidability instances of the filters.
     simp only [K, Finset.filter_filter]
     rfl
-  -- Write both sides as sums over the cycles of `σ`, and merge cycle by cycle.
-  have hleft : Multiset.replicate m d = ∑ q : Q, Multiset.replicate (K q) d := by
-    rw [eq_comm, Multiset.eq_replicate, Multiset.card_sum]
-    simp [hKsum, Multiset.mem_sum, Multiset.mem_replicate]
-  have hright : σ.fullCycleType = ∑ q : Q, {K q * d} := by
-    rw [fullCycleType_eq_map_univ σ (Equiv.refl Q)
-      (f := Quotient.lift (minimalPeriod σ) fun _ _ h => h.minimalPeriod_eq) fun _ => rfl,
-      ← Multiset.sum_map_singleton (Multiset.map _ _), Multiset.map_map,
-      Finset.sum_eq_multiset_sum]
-    refine congrArg Multiset.sum (Multiset.map_congr rfl fun q _ => ?_)
-    induction q using Quotient.inductionOn with
-    | h x => rw [Function.comp_apply, Quotient.lift_mk, hK]
-  rw [hleft, hright]
-  exact equalPartMerging_sum _ fun q _ =>
-    equalPartMerging_replicate_singleton (hKpos q) (by exact_mod_cast hKle q) d
+  exact equalPartMerging_of_cycle_counts K hK hKpos hKle hKsum
 
 end Function.Semiconj
