@@ -11,8 +11,9 @@ public import TauCeti.Geometry.Manifold.RegularValue
 /-!
 # Gradients at regular points and regular values
 
-At a regular point `x` of a function `f : M → ℝ`, the derivative of `f` along its Riemannian
-gradient is `df_x(grad f x) = |grad f x|² > 0`
+At a regular point `x` of a function `f : M → ℝ`, the Riemannian gradient is nonzero
+(`TauCeti.IsRegularPoint.mgradient_ne_zero`), so the derivative of `f` along it is
+`df_x(grad f x) = |grad f x|² > 0`
 (`TauCeti.IsRegularPoint.mvfderiv_apply_mgradient_pos`): `f` strictly increases along its gradient
 there. Every scalar value is regular for a function with unit Riemannian gradient
 (`TauCeti.Manifold.isRegularValue_of_unit_mgradient`).
@@ -46,12 +47,18 @@ theorem isRegularValue_of_unit_mgradient
   rw [hz, zero_apply, hunit] at h
   exact zero_ne_one h
 
+/-- The gradient of `f` is nonzero at a regular point of `f`. -/
+theorem _root_.TauCeti.IsRegularPoint.mgradient_ne_zero {x : M}
+    (hx : IsRegularPoint I 𝓘(ℝ) f x) : mgradient I f x ≠ 0 := by
+  rw [Ne, mgradient_eq_zero_iff]
+  exact isRegularPoint_iff_mvfderiv_ne_zero.mp hx
+
 /-- At a regular point `x` of `f`, the derivative of `f` along its gradient is positive:
 `df_x(grad f x) = |grad f x|² > 0`. -/
 theorem _root_.TauCeti.IsRegularPoint.mvfderiv_apply_mgradient_pos {x : M}
     (hx : IsRegularPoint I 𝓘(ℝ) f x) : 0 < mvfderiv I f x (mgradient I f x) := by
-  rw [mvfderiv_apply_mgradient, real_inner_self_pos, Ne, mgradient_eq_zero_iff]
-  exact isRegularPoint_iff_mvfderiv_ne_zero.mp hx
+  rw [mvfderiv_apply_mgradient, real_inner_self_pos]
+  exact hx.mgradient_ne_zero
 
 end Level
 

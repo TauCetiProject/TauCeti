@@ -177,11 +177,8 @@ theorem mfderiv_subtypeVal_outwardUnitNormal_scalarRegularSublevel
     have hc₀ : 0 ≤ c := by
       rw [hc_def]
       positivity
-    refine hc₀.lt_of_ne' fun hc0 ↦ ?_
-    have h0 : Manifold.mgradient I f ((q : {x | f x ≤ a}) : N) = 0 := by
-      rw [hj, hc0, zero_smul]
-    exact isRegularPoint_iff_mvfderiv_ne_zero.mp (hreg.isRegularPoint hqa)
-      (Manifold.mgradient_eq_zero_iff.mp h0)
+    exact hc₀.lt_of_ne' fun hc0 ↦
+      (hreg.isRegularPoint hqa).mgradient_ne_zero (by rw [hj, hc0, zero_smul])
   -- The inclusion is a local isometry, so it carries `ν_out q` to a unit vector.
   have hnorm : ‖mfderiv (𝓡∂ (n + 1)) I (Subtype.val : {x | f x ≤ a} → N) q
       (outwardUnitNormal q)‖ = 1 := by
