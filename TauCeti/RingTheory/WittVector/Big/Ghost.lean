@@ -98,6 +98,16 @@ theorem ghostPolynomial_one (x : ℕ → R) : ghostPolynomial 1 x = x 1 := by
 theorem ghostPolynomial_zero_right (n : ℕ) : ghostPolynomial n (0 : ℕ → R) = 0 := by
   simp [ghostPolynomial, Function.iterate_fixed]
 
+/-- A coordinate sequence supported at index one has ghost components given by positive
+powers of its value at one. -/
+theorem ghostPolynomial_single_one_eq_iterate (hn : n ≠ 0) (r : R) :
+    ghostPolynomial n (Pi.single 1 r) = (· * r)^[n - 1] r := by
+  rw [ghostPolynomial, sum_eq_single 1]
+  · simp
+  · intro d _ hd
+    simp [Pi.single_eq_of_ne hd, Function.iterate_fixed]
+  · simp [hn]
+
 /-- The ghost polynomial separates its top coordinate, over a nonunital semiring:
 `w_n(x) = ∑_{d ∣ n, d < n} d • x_d ^ (n / d) + n • x_n`. -/
 theorem ghostPolynomial_eq_sum_properDivisors_nsmul_add (hn : n ≠ 0) (x : ℕ → R) :
@@ -184,11 +194,7 @@ to `1`. -/
 @[simp]
 theorem ghostPolynomial_single_one (hn : n ≠ 0) :
     ghostPolynomial n (Pi.single 1 1 : ℕ → R) = 1 := by
-  rw [ghostPolynomial, sum_eq_single 1]
-  · simp [Function.iterate_fixed]
-  · intro d _ hd
-    simp [Pi.single_eq_of_ne hd, Function.iterate_fixed]
-  · simp [hn]
+  rw [ghostPolynomial_single_one_eq_iterate hn, mul_right_iterate_apply_self, one_pow]
 
 /-- For a prime `p`, `w_p(x) = x_1 ^ p + p * x_p`. -/
 theorem ghostPolynomial_prime {p : ℕ} (hp : p.Prime) (x : ℕ → R) :

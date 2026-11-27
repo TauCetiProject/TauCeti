@@ -83,6 +83,10 @@ private theorem mem_augmentationKernel (y : BigWittVector S (Unitization ℤ R))
 noncomputable def toBigWitt : NonUnitalBigWittVector S R →ₙ+* BigWittVector S (Unitization ℤ R) :=
   NonUnitalSubringClass.subtype _
 
+/-- The kernel inclusion returns the underlying Witt vector of the unitization. -/
+theorem toBigWitt_apply (x : NonUnitalBigWittVector S R) : toBigWitt x = x.val :=
+  (rfl)
+
 /-- The kernel inclusion is injective. -/
 theorem toBigWitt_injective :
     Function.Injective
