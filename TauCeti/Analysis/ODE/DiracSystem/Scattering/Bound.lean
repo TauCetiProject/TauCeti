@@ -56,6 +56,21 @@ private theorem norm_exp_two_I_mul_le_one (hz : 0 ≤ z.im) {u : ℝ} (hu : 0 �
   simp only [mul_re, re_ofNat, I_re, im_ofNat, I_im, ofReal_re, ofReal_im, mul_im]
   nlinarith
 
+/-- The diagonal entries of the scattering coefficient vanish. -/
+private theorem diracScatteringCoeff_apply_self (q : ℝ → ℂ) (z : ℂ) (r : ℝ) (i : Fin 2) :
+    diracScatteringCoeff q z r i i = 0 := by
+  fin_cases i <;> simp [diracScatteringCoeff_def]
+
+/-- The top-right entry of the scattering coefficient. -/
+private theorem diracScatteringCoeff_apply_zero_one (q : ℝ → ℂ) (z : ℂ) (r : ℝ) :
+    diracScatteringCoeff q z r 0 1 = exp (-2 * I * (r * z)) * conj (q r) := by
+  simp [diracScatteringCoeff_def]
+
+/-- The bottom-left entry of the scattering coefficient. -/
+private theorem diracScatteringCoeff_apply_one_zero (q : ℝ → ℂ) (z : ℂ) (r : ℝ) :
+    diracScatteringCoeff q z r 1 0 = exp (2 * I * (r * z)) * q r := by
+  simp [diracScatteringCoeff_def]
+
 /-- The bottom-right entry `m(s) = N(t, s)₂₂` of the propagator from `s` to `t`. -/
 private noncomputable def bm (q : ℝ → ℂ) (z : ℂ) (t s : ℝ) : ℂ :=
   euclideanEntryCLM ℂ 1 1 (propagator (fun r ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ)
@@ -99,18 +114,14 @@ private theorem bm_bn_eq (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) {s : ℝ
     congr 1
     · simp
     refine integral_congr fun r _ ↦ ?_
-    simp only [Fin.isValue, euclideanEntryCLM_apply, diracScatteringCoeff_def, neg_mul, of_apply,
-      cons_val', cons_val_one, cons_val_fin_one, Fin.sum_univ_two, cons_val_zero, mul_zero,
-      add_zero]
+    rw [Fin.sum_univ_two, diracScatteringCoeff_apply_zero_one, diracScatteringCoeff_apply_self]
     ring
   · rw [hback 1 0, (by simp : euclideanEntryCLM ℂ (1 : Fin 2) 0 1 = 0), zero_add,
       ← intervalIntegral.integral_const_mul]
     refine integral_congr fun r _ ↦ ?_
     have he : exp (2 * I * ((r - s) * z)) = exp (-2 * I * (s * z)) * exp (2 * I * (r * z)) := by
       rw [← exp_add]; ring_nf
-    simp only [neg_mul, Fin.isValue, euclideanEntryCLM_apply, diracScatteringCoeff_def, of_apply,
-      cons_val', cons_val_zero, cons_val_fin_one, Fin.sum_univ_two, mul_zero, cons_val_one,
-      zero_add, he]
+    rw [Fin.sum_univ_two, diracScatteringCoeff_apply_one_zero, diracScatteringCoeff_apply_self, he]
     ring
 
 /-- The core estimate: for every `s ∈ [0, t]`, `|m(s)| ≤ cosh Lₛ`, `|n(s)| ≤ sinh Lₛ` and
