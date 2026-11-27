@@ -185,7 +185,8 @@ theorem isEmbedding_normClassicalPoint :
 normed ultrametric field. -/
 noncomputable def classicalPointHomeomorph :
     {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ≃ₜ classicalPoints k K :=
-  isEmbedding_normClassicalPoint.toHomeomorph.trans (Homeomorph.setCongr classicalPoints_def.symm)
+  isEmbedding_normClassicalPoint.toHomeomorph.trans
+    (Homeomorph.setCongr range_normClassicalPoint_eq_classicalPoints)
 
 /-- Applying `classicalPointHomeomorph` returns `normClassicalPoint` at `a`. -/
 @[simp]
@@ -240,17 +241,8 @@ theorem classicalPointPowerBoundedHomeomorph_symm_apply_normClassicalPoint
 /-- **The subspace `classicalPoints k K` of a closed polydisc is completely metrizable**, being
 homeomorphic to the closed unit ball `(K°)ᵏ` of the complete metric space `Kᵏ`. -/
 instance isCompletelyMetrizableSpace_classicalPoints :
-    TopologicalSpace.IsCompletelyMetrizableSpace (classicalPoints k K) := by
-  have hclosed : IsClosed {a : Fin k → K | ∀ i, IsPowerBounded (a i)} := by
-    have heq : {a : Fin k → K | ∀ i, IsPowerBounded (a i)} =
-        Metric.closedBall (0 : Fin k → K) 1 := by
-      ext a
-      simp only [Set.mem_ofPred_eq, mem_closedBall_zero_iff,
-        pi_norm_le_iff_of_nonneg zero_le_one, isPowerBounded_iff_norm_le_one]
-    rw [heq]
-    exact Metric.isClosed_closedBall
-  have : CompleteSpace {a : Fin k → K // ∀ i, IsPowerBounded (a i)} := hclosed.completeSpace_coe
-  exact (classicalPointHomeomorph (k := k)
+    TopologicalSpace.IsCompletelyMetrizableSpace (classicalPoints k K) :=
+  (classicalPointPowerBoundedHomeomorph (k := k)
     (K := K)).symm.isClosedEmbedding.IsCompletelyMetrizableSpace
 
 /-- **The subspace `classicalPoints k K` of a closed polydisc is a Baire space**, by the Baire

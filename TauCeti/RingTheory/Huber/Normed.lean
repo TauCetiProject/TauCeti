@@ -38,8 +38,6 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 
 * `TauCeti.Huber.powerBoundedSubringEquivInteger`: the canonical ring isomorphism `K° ≃+* 𝒪[K]`
   for an ultrametric normed field `K`.
-* `TauCeti.Huber.powerBoundedSubringQuotientEquivResidueField`: the canonical ring isomorphism
-  `K° ⧸ K°° ≃+* IsLocalRing.ResidueField K°` for an ultrametric normed field `K`.
 * `TauCeti.Huber.integerToPowerBounded`: the homomorphism `𝒪[K] →+* A°` for a nonarchimedean
   topological `K`-algebra `A` with continuous scalar multiplication over a nontrivially normed
   ultrametric field `K`.
@@ -65,9 +63,12 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   than one is a pseudouniformiser.
 * `TauCeti.Huber.isPseudoUniformizer_iff_norm_lt_one`: in a normed division ring the
   pseudouniformisers are the nonzero elements of norm less than one.
-* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall` and
+* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`,
+  `TauCeti.Huber.isClosed_powerBoundedSubring`,
+  `TauCeti.Huber.completeSpace_powerBoundedSubring`, and
   `TauCeti.Huber.powerBoundedSubring_eq_integer`: in an ultrametric normed field `K°` is the
-  closed unit ball, equal as a subring to `𝒪[K]`.
+  closed unit ball (hence closed, and complete when `K` is complete), equal as a subring to
+  `𝒪[K]`.
 * `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le` and
   `TauCeti.Huber.powerBoundedSubring.isUnit_iff_norm_eq_one`: in an ultrametric normed field
   divisibility in `K°` is comparison of norms and units of `K°` are the elements of norm one.
@@ -316,37 +317,6 @@ theorem maximalIdeal_powerBoundedSubring :
     tendsto_pow_atTop_nhds_zero_iff_norm_lt_one,
     (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property)).lt_iff_ne]
 
-/-- The canonical ring isomorphism `K° ⧸ K°° ≃+* IsLocalRing.ResidueField K°` for an ultrametric
-normed field `K`. -/
-noncomputable def powerBoundedSubringQuotientEquivResidueField :
-    powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K ≃+*
-      IsLocalRing.ResidueField (powerBoundedSubring K) :=
-  Ideal.quotEquivOfEq (maximalIdeal_powerBoundedSubring (K := K)).symm
-
-/-- `powerBoundedSubringQuotientEquivResidueField` sends the class of `x` to its residue. -/
-@[simp]
-theorem powerBoundedSubringQuotientEquivResidueField_mk (x : powerBoundedSubring K) :
-    powerBoundedSubringQuotientEquivResidueField
-        (Ideal.Quotient.mk (topologicallyNilpotentIdeal K) x) =
-      IsLocalRing.residue (powerBoundedSubring K) x :=
-  Ideal.quotEquivOfEq_mk (maximalIdeal_powerBoundedSubring (K := K)).symm x
-
-/-- The inverse of `powerBoundedSubringQuotientEquivResidueField` sends `residue K° x` to its
-class modulo `K°°`. -/
-@[simp]
-theorem powerBoundedSubringQuotientEquivResidueField_symm_residue (x : powerBoundedSubring K) :
-    (powerBoundedSubringQuotientEquivResidueField (K := K)).symm
-        (IsLocalRing.residue (powerBoundedSubring K) x) =
-      Ideal.Quotient.mk (topologicallyNilpotentIdeal K) x :=
-  (powerBoundedSubringQuotientEquivResidueField (K := K)).symm_apply_eq.mpr
-    (powerBoundedSubringQuotientEquivResidueField_mk x).symm
-
-/-- The residue field `IsLocalRing.ResidueField K°` is infinite whenever `K° ⧸ K°°` is. -/
-instance infinite_residueField_powerBoundedSubring
-    [Infinite (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K)] :
-    Infinite (IsLocalRing.ResidueField (powerBoundedSubring K)) :=
-  powerBoundedSubringQuotientEquivResidueField.toEquiv.infinite_iff.mp ‹_›
-
 /-- For an ultrametric normed field `K`, `K°°` is a maximal ideal of `K°`. -/
 instance isMaximal_topologicallyNilpotentIdeal : (topologicallyNilpotentIdeal K).IsMaximal :=
   maximalIdeal_powerBoundedSubring (K := K) ▸ maximalIdeal.isMaximal (powerBoundedSubring K)
@@ -421,6 +391,16 @@ theorem coe_powerBoundedSubring_eq_closedBall :
     (powerBoundedSubring K : Set K) = Metric.closedBall 0 1 := by
   ext x
   simp
+
+/-- The power-bounded subring `K°` of an ultrametric normed field is closed in `K`. -/
+theorem isClosed_powerBoundedSubring :
+    IsClosed (powerBoundedSubring K : Set K) :=
+  (coe_powerBoundedSubring_eq_closedBall K).symm ▸ Metric.isClosed_closedBall
+
+/-- The power-bounded subring `K°` of a complete ultrametric normed field is complete. -/
+instance completeSpace_powerBoundedSubring [CompleteSpace K] :
+    CompleteSpace (powerBoundedSubring K) :=
+  (isClosed_powerBoundedSubring K).completeSpace_coe
 
 end Ultrametric
 

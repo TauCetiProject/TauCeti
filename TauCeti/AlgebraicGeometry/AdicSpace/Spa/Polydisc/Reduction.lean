@@ -33,6 +33,7 @@ public section
 namespace TauCeti.ValuationSpectrum
 
 open TauCeti.Huber
+open scoped NormedField Valued
 
 variable {n : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
@@ -46,18 +47,20 @@ theorem evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring
   exact weightedEvalHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha _ f
 
 /-- **Reduction commutes with evaluation at power-bounded tuples.** For `f ∈ K°⟨T₁, …, Tₙ⟩` and
-`a ∈ (K°)ⁿ`, the residue of `f(a)` in `IsLocalRing.ResidueField K°` equals the value of
-`polydiscReduction n K f` at the residue tuple `ā`. -/
+`a ∈ (K°)ⁿ`, the residue of `f(a)` in `𝓀[K]` equals the value of `polydiscReduction n K f` at
+the residue tuple `ā`. -/
 theorem residue_evalAtHom_eq_eval_polydiscReduction (a : Fin n → K)
     (ha : ∀ i, IsPowerBounded (a i))
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
-    IsLocalRing.residue (powerBoundedSubring K)
+    IsLocalRing.residue 𝒪[K]
         ⟨evalAtHom a ha f.val,
-          evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f⟩ =
+          (powerBoundedSubring_eq_integer (K := K)).le
+            (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f)⟩ =
       MvPolynomial.eval
-        (fun i ↦ IsLocalRing.residue (powerBoundedSubring K)
-          ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩)
+        (fun i ↦ IsLocalRing.residue 𝒪[K]
+          ⟨a i, (powerBoundedSubring_eq_integer (K := K)).le
+            (mem_powerBoundedSubring.mpr (ha i))⟩)
         (polydiscReduction n K f) := by
   simpa only [evalAtHom_def] using
     residue_weightedEvalHom_eq_eval_polydiscReduction a ha
@@ -71,8 +74,9 @@ theorem norm_evalAtHom_eq_one_iff_eval_polydiscReduction_ne_zero (a : Fin n → 
       (powerBoundedSubring K)) :
     ‖evalAtHom a ha f.val‖ = 1 ↔
       MvPolynomial.eval
-        (fun i ↦ IsLocalRing.residue (powerBoundedSubring K)
-          ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩)
+        (fun i ↦ IsLocalRing.residue 𝒪[K]
+          ⟨a i, (powerBoundedSubring_eq_integer (K := K)).le
+            (mem_powerBoundedSubring.mpr (ha i))⟩)
         (polydiscReduction n K f) ≠ 0 := by
   simpa only [evalAtHom_def] using
     norm_weightedEvalHom_eq_one_iff_eval_polydiscReduction_ne_zero a ha

@@ -15,7 +15,6 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Subring
 import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.Ideal.Maps
@@ -45,8 +44,8 @@ gives `A⟨T⟩/(I·A⟨T⟩)ᵐ ≃ₐ[A] (A/Iᵐ)[T]` on both carriers, and id
 
 ## Main definitions and results
 
-* `Ideal.restrictedReduction`, `Ideal.weightedSubringReduction`,
-  `Ideal.restrictedCompletionReduction`, `Ideal.isLocallyConstant_restrictedReduction`, and
+* `Ideal.restrictedReduction`, `Ideal.restrictedCompletionReduction`,
+  `Ideal.isLocallyConstant_restrictedReduction`, and
   `Ideal.isLocallyConstant_restrictedCompletionReduction`.
 * `TauCeti.Huber.quotientPowRestrictedEquivMvPolynomialQuotient`,
   `TauCeti.Huber.quotientPowRestrictedCompletionEquivMvPolynomialQuotient`, and
@@ -161,89 +160,6 @@ theorem restrictedReduction_surjective (J : Ideal A) (hJ : IsOpen (J : Set A)) :
   obtain ⟨q, rfl⟩ :=
     MvPolynomial.map_surjective (Ideal.Quotient.mk J) Ideal.Quotient.mk_surjective p
   exact ⟨weightedPolynomialHom _ isWeightFamily_one_weight q, by simp⟩
-
-/-- Reduction of unit-bounded restricted series `R⟨X₁, …, Xₖ⟩` modulo an open ideal `J` of a
-subring `R ≤ A` is polynomial, obtained via `weightedRestrictedSubringEquivWeightedSubring`. -/
-noncomputable def weightedSubringReduction (R : Subring A) (J : Ideal R)
-    (hJ : IsOpen (J : Set R)) :
-    weightedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight R →+*
-      MvPolynomial (Fin k) (R ⧸ J) :=
-  (restrictedReduction J hJ).comp (weightedRestrictedSubringEquivWeightedSubring R).symm.toRingHom
-
-/-- Unfolding equation for `weightedSubringReduction`. -/
-theorem weightedSubringReduction_def (R : Subring A) (J : Ideal R)
-    (hJ : IsOpen (J : Set R)) :
-    weightedSubringReduction (k := k) R J hJ =
-      (restrictedReduction J hJ).comp
-        (weightedRestrictedSubringEquivWeightedSubring R).symm.toRingHom :=
-  (rfl)
-
-/-- Polynomial reduction on `R⟨X₁, …, Xₖ⟩` reduces each coefficient modulo `J`. -/
-@[simp]
-theorem coeff_weightedSubringReduction (R : Subring A) (J : Ideal R) (hJ : IsOpen (J : Set R))
-    (f : weightedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight R)
-    (ν : Fin k →₀ ℕ) :
-    (weightedSubringReduction R J hJ f).coeff ν =
-      Ideal.Quotient.mk J
-        ⟨MvPowerSeries.coeff ν ((f.val : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
-            isWeightFamily_one_weight) : MvPowerSeries (Fin k) A),
-          by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
-            mem_weightedNhd.mp (mem_weightedSubring.mp f.property) ν⟩ := by
-  simp only [weightedSubringReduction, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, coeff_restrictedReduction]
-  refine congrArg (Ideal.Quotient.mk J) (Subtype.ext ?_)
-  exact coeff_weightedRestrictedSubringEquivWeightedSubring_symm R f ν
-
-/-- A series in `R⟨X₁, …, Xₖ⟩` reduces to `0` modulo an open ideal `J` of `R` if and only if all
-of its coefficients lie in `J`. -/
-theorem weightedSubringReduction_eq_zero_iff (R : Subring A) {J : Ideal R}
-    (hJ : IsOpen (J : Set R))
-    {f : weightedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight R} :
-    weightedSubringReduction R J hJ f = 0 ↔
-      ∀ ν, ⟨MvPowerSeries.coeff ν ((f.val : weightedRestrictedSubring
-          (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) : MvPowerSeries (Fin k) A),
-        by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
-          mem_weightedNhd.mp (mem_weightedSubring.mp f.property) ν⟩ ∈ J := by
-  simp [MvPolynomial.ext_iff, Ideal.Quotient.eq_zero_iff_mem]
-
-/-- On embedded polynomials with coefficients in `R`, `weightedSubringReduction` reduces
-coefficients modulo `J`. -/
-@[simp]
-theorem weightedSubringReduction_weightedPolynomialHom (R : Subring A) (J : Ideal R)
-    (hJ : IsOpen (J : Set R)) (p : MvPolynomial (Fin k) R) :
-    weightedSubringReduction R J hJ
-        ⟨weightedPolynomialHom (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight
-            (MvPolynomial.map R.subtype p),
-          weightedPolynomialHom_map_mem_weightedSubring_one_weight R p⟩ =
-      MvPolynomial.map (Ideal.Quotient.mk J) p := by
-  simp [weightedSubringReduction]
-
-/-- `weightedSubringReduction` sends constant series in `R` to constant polynomials over `R ⧸ J`. -/
-@[simp]
-theorem weightedSubringReduction_weightedC (R : Subring A) (J : Ideal R) (hJ : IsOpen (J : Set R))
-    (a : R) :
-    weightedSubringReduction (k := k) R J hJ
-        ⟨weightedC (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight (a : A),
-          (weightedC_mem_weightedSubring isWeightFamily_one_weight).mpr a.property⟩ =
-      MvPolynomial.C (Ideal.Quotient.mk J a) := by
-  simp [weightedSubringReduction]
-
-/-- `weightedSubringReduction` preserves the coordinate variables. -/
-@[simp]
-theorem weightedSubringReduction_weightedX (R : Subring A) (J : Ideal R) (hJ : IsOpen (J : Set R))
-    (i : Fin k) :
-    weightedSubringReduction R J hJ
-        ⟨weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i,
-          weightedX_mem_weightedSubring_one_weight R i⟩ =
-      MvPolynomial.X i := by
-  simp [weightedSubringReduction]
-
-/-- Every polynomial over `R ⧸ J` lifts to `R⟨X₁, …, Xₖ⟩`. -/
-theorem weightedSubringReduction_surjective (R : Subring A) (J : Ideal R)
-    (hJ : IsOpen (J : Set R)) :
-    Function.Surjective (weightedSubringReduction (k := k) R J hJ) :=
-  (restrictedReduction_surjective J hJ).comp
-    (weightedRestrictedSubringEquivWeightedSubring R).symm.surjective
 
 local notation:max "WSub" k:max A:max =>
   weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight

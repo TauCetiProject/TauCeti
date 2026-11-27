@@ -738,11 +738,11 @@ noncomputable def classicalPoints (k : ℕ) (K : Type*) [NormedField K] [IsUltra
   Set.range fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
     normClassicalPoint a.val a.property
 
-/-- Unfolding equation for `classicalPoints k K`. -/
-theorem classicalPoints_def {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
-    [NonarchimedeanRing K] [CompleteSpace K] :
-    classicalPoints k K = Set.range fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      normClassicalPoint a.val a.property :=
+/-- The range of `normClassicalPoint` is `classicalPoints k K`. -/
+@[simp]
+theorem range_normClassicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K] :
+    Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+        normClassicalPoint a.val a.property) = classicalPoints k K :=
   (rfl)
 
 /-- Membership in `classicalPoints k K`: a point lies in the classical locus iff it equals
@@ -751,14 +751,7 @@ theorem mem_classicalPoints_iff {k : ℕ} {K : Type*} [NormedField K] [IsUltrame
     [NonarchimedeanRing K] [CompleteSpace K] {v : closedPolydisc k K} :
     v ∈ classicalPoints k K ↔
       ∃ (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)), normClassicalPoint a ha = v := by
-  simp only [classicalPoints_def, Set.mem_range, Subtype.exists]
-
-/-- The range of `normClassicalPoint` is `classicalPoints k K`. -/
-@[simp]
-theorem range_normClassicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K] :
-    Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        normClassicalPoint a.val a.property) = classicalPoints k K :=
-  (rfl)
+  simp only [← range_normClassicalPoint_eq_classicalPoints, Set.mem_range, Subtype.exists]
 
 /-- Every `normClassicalPoint a ha` lies in `classicalPoints k K`. -/
 @[simp]
