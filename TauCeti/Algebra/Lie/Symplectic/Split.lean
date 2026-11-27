@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Split
+public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
+public import TauCeti.Algebra.Lie.Symplectic.Cartan
 public import TauCeti.Algebra.Lie.Symplectic.Diagonal
-public import TauCeti.Algebra.Lie.Symplectic.Killing
 
 /-!
 # The real symplectic Lie algebra is split
 
-On the symplectic Lie algebra `𝔰𝔭(2n, K)` = `LieAlgebra.Symplectic.sp l K`, with the Cartan
+On the symplectic Lie algebra `𝔰𝔭(2n, R)` = `LieAlgebra.Symplectic.sp l R`, with the Cartan
 involution `θ X = -Xᵀ` (`LieAlgebra.Symplectic.cartanInvolution`), the diagonal matrices
 `𝔞 = {diag(D, -D)}` (`LieAlgebra.Symplectic.diagonalSubalgebra`) form a maximal abelian subspace
 of the `-1`-eigenspace `𝔭` (the symmetric matrices). Since `𝔞` is self-normalizing
@@ -23,7 +23,8 @@ of the `-1`-eigenspace `𝔭` (the symmetric matrices). Since `𝔞` is self-nor
   `LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`: `𝔞` is a Cartan subalgebra
   (`LieAlgebra.Symplectic.instIsCartanSubalgebraDiagonalSubalgebra`).
 
-These results hold over every field of characteristic other than two.
+These results hold over every commutative ring in which multiplication by `2` is injective, and
+`𝔪 = 0` over every commutative ring in which `2` is a unit.
 
 ## Main results
 
@@ -45,45 +46,44 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace LieAlgebra.Symplectic
 
-variable {l : Type*} [Fintype l] [DecidableEq l]
+variable {l : Type*} [Fintype l] [DecidableEq l] {R : Type*} [CommRing R]
 
 /-- `𝔞` lies in the `-1`-eigenspace `𝔭` of `θ X = -Xᵀ`: diagonal matrices are symmetric. -/
-theorem diagonalSubalgebra_le_cartanP {R : Type*} [CommRing R] :
+theorem diagonalSubalgebra_le_cartanP :
     (diagonalSubalgebra l R).toSubmodule ≤ (cartanInvolution l R).cartanP := fun X hX ↦
   LieEquiv.mem_cartanP.mpr ((cartanInvolution_eq_neg_iff X).mpr
     (mem_diagonalSubalgebra.mp hX).isSymm.eq)
 
-variable {K : Type*} [Field K] [NeZero (2 : K)]
-
-/-- **The centralizer `𝔤_0` of `𝔞` in `𝔰𝔭(2n, K)` is `𝔞` itself**: it lies in the normalizer,
-which is `𝔞`. -/
-theorem restrictedRootSpace_zero_diagonalSubalgebra :
-    (diagonalSubalgebra l K).toSubmodule.restrictedRootSpace 0 =
-      (diagonalSubalgebra l K).toSubmodule := by
+/-- **The centralizer `𝔤_0` of `𝔞` in `𝔰𝔭(2n, R)` is `𝔞` itself** once multiplication by `2` is
+injective: it lies in the normalizer, which is `𝔞`. -/
+theorem restrictedRootSpace_zero_diagonalSubalgebra (h2 : IsRegular (2 : R)) :
+    (diagonalSubalgebra l R).toSubmodule.restrictedRootSpace 0 =
+      (diagonalSubalgebra l R).toSubmodule := by
   refine le_antisymm (fun X hX ↦ ?_) (Submodule.le_restrictedRootSpace_zero
     fun _ hX _ hY ↦ lie_eq_zero_of_mem_diagonalSubalgebra hX hY)
   rw [mem_restrictedRootSpace_zero] at hX
-  rw [LieSubalgebra.mem_toSubmodule, ← diagonalSubalgebra_normalizer_eq_self,
+  rw [LieSubalgebra.mem_toSubmodule, ← diagonalSubalgebra_normalizer_eq_self l R h2,
     LieSubalgebra.mem_normalizer_iff']
   exact fun Y hY ↦ hX ⟨Y, hY⟩ ▸ zero_mem _
 
-/-- **The diagonal matrices are a maximal abelian subspace of `𝔭`** in `𝔰𝔭(2n, K)`, over any field
-of characteristic other than two. -/
-theorem isMaximalAbelianInP_diagonalSubalgebra :
-    (cartanInvolution l K).IsMaximalAbelianInP (diagonalSubalgebra l K).toSubmodule := by
+/-- **The diagonal matrices are a maximal abelian subspace of `𝔭`** in `𝔰𝔭(2n, R)`, once
+multiplication by `2` is injective. -/
+theorem isMaximalAbelianInP_diagonalSubalgebra (h2 : IsRegular (2 : R)) :
+    (cartanInvolution l R).IsMaximalAbelianInP (diagonalSubalgebra l R).toSubmodule := by
   refine LieEquiv.isMaximalAbelianInP_iff.mpr ⟨⟨diagonalSubalgebra_le_cartanP,
     fun _ hX _ hY ↦ lie_eq_zero_of_mem_diagonalSubalgebra hX hY⟩, fun 𝔟 h𝔟 hle Y hY ↦ ?_⟩
-  rw [← restrictedRootSpace_zero_diagonalSubalgebra, mem_restrictedRootSpace_zero]
+  rw [← restrictedRootSpace_zero_diagonalSubalgebra h2, mem_restrictedRootSpace_zero]
   exact fun H ↦ h𝔟.2 _ (hle H.property) Y hY
 
-/-- **`𝔪 = 0`** for `𝔰𝔭(2n, K)`: no nonzero element of the fixed subalgebra `𝔨` (the
-skew-symmetric matrices) centralizes `𝔞`. By `LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`
-this is the statement that `𝔰𝔭(2n, ℝ)` is split. -/
-theorem restrictedRootSpace_zero_inf_fixedSubalgebra_diagonalSubalgebra :
-    (diagonalSubalgebra l K).toSubmodule.restrictedRootSpace 0 ⊓
-      (cartanInvolution l K).toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
-  rw [restrictedRootSpace_zero_diagonalSubalgebra, ← disjoint_iff]
-  exact ((cartanInvolution l K).isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit
+/-- **`𝔪 = 0`** for `𝔰𝔭(2n, R)` when `2` is a unit: no nonzero element of the fixed
+subalgebra `𝔨` (the skew-symmetric matrices) centralizes `𝔞`. By
+`LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff` this is the statement that `𝔰𝔭(2n, ℝ)` is
+split. -/
+theorem restrictedRootSpace_zero_inf_fixedSubalgebra_diagonalSubalgebra (h2 : IsUnit (2 : R)) :
+    (diagonalSubalgebra l R).toSubmodule.restrictedRootSpace 0 ⊓
+      (cartanInvolution l R).toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
+  rw [restrictedRootSpace_zero_diagonalSubalgebra h2.isRegular, ← disjoint_iff]
+  exact ((cartanInvolution l R).isCompl_fixedSubalgebra_cartanP h2
     cartanInvolution_cartanInvolution).disjoint.symm.mono_left
       diagonalSubalgebra_le_cartanP
 

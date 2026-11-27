@@ -15,9 +15,9 @@ The diagonal matrices in the symplectic Lie algebra `𝔰𝔭(2n, R)` = `LieAlge
 are the matrices `diag(D, -D)`. They form an abelian Lie subalgebra `𝔞`
 (`LieAlgebra.Symplectic.diagonalSubalgebra`), the diagonal Cartan subalgebra of `gl` pulled back
 along the inclusion. For `H ∈ 𝔞` the bracket `[H, X]` has `(a, b)` entry `(H a a - H b b) X a b`,
-and over a field of characteristic other than two the elements
+and once multiplication by `2` is injective the elements
 `H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞` separate the indices of `l ⊕ l`. Hence `𝔞` is
-self-normalizing, and so a Cartan subalgebra of `𝔰𝔭(2n, K)`.
+self-normalizing, and so a Cartan subalgebra of `𝔰𝔭(2n, R)`.
 
 ## Main results
 
@@ -99,56 +99,59 @@ theorem diagonalSubalgebraElement_apply (i : l) (a : l ⊕ l) :
       (if a = .inl i then 1 else 0) - if a = .inr i then 1 else 0 := by
   simp [diagonalSubalgebraElement, Matrix.sub_apply, single_apply, eq_comm]
 
-end CommRing
+/-- The elements `H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞` separate the indices of `l ⊕ l` once
+multiplication by `2` is injective: for `a ≠ b` some `H_i a a - H_i b b`, which is `±1` or `±2`,
+is a regular element. -/
+theorem exists_isRegular_diagonalSubalgebraElement_apply_sub (h2 : IsRegular (2 : R))
+    {a b : l ⊕ l} (hab : a ≠ b) :
+    ∃ i : l, IsRegular
+      (((diagonalSubalgebraElement (R := R) i : sp l R) : Matrix (l ⊕ l) (l ⊕ l) R) a a -
+        ((diagonalSubalgebraElement (R := R) i : sp l R) : Matrix (l ⊕ l) (l ⊕ l) R) b b) := by
+  have hneg {x : R} (hx : IsRegular x) : IsRegular (-x) := by
+    simpa using isUnit_one.neg.isRegular.mul hx
+  rcases a with i | i <;> refine ⟨i, ?_⟩ <;> rcases b with j | j
+  · have hij : j ≠ i := by rintro rfl; exact hab rfl
+    simpa [diagonalSubalgebraElement_apply, hij] using isRegular_one
+  · by_cases hij : j = i
+    · subst hij; simpa [diagonalSubalgebraElement_apply, one_add_one_eq_two] using h2
+    · simpa [diagonalSubalgebraElement_apply, hij] using isRegular_one
+  · by_cases hij : j = i
+    · subst hij; simpa [diagonalSubalgebraElement_apply, ← neg_add', one_add_one_eq_two] using
+        hneg h2
+    · simpa [diagonalSubalgebraElement_apply, hij] using hneg isRegular_one
+  · have hij : j ≠ i := by rintro rfl; exact hab rfl
+    simpa [diagonalSubalgebraElement_apply, hij] using hneg isRegular_one
 
-section Field
+variable (l R)
 
-variable {K : Type*} [Field K] [NeZero (2 : K)]
-
-/-- The elements `H_i = E_(i, i) - E_(n + i, n + i)` of `𝔞` separate the indices of `l ⊕ l`:
-for `a ≠ b` some `H_i` has different diagonal entries at `a` and `b`. -/
-theorem exists_diagonalSubalgebraElement_apply_ne {a b : l ⊕ l} (hab : a ≠ b) :
-    ∃ i : l, ((diagonalSubalgebraElement (R := K) i : sp l K) : Matrix (l ⊕ l) (l ⊕ l) K) a a ≠
-      ((diagonalSubalgebraElement (R := K) i : sp l K) : Matrix (l ⊕ l) (l ⊕ l) K) b b := by
-  have h2 : (1 : K) ≠ -1 := fun h ↦ two_ne_zero (α := K) (by linear_combination h)
-  rcases a with i | i
-  · refine ⟨i, ?_⟩
-    rcases b with j | j
-    · simp_all [diagonalSubalgebraElement_apply, eq_comm]
-    · by_cases hij : j = i
-      · subst hij; simpa [diagonalSubalgebraElement_apply] using h2
-      · simp [diagonalSubalgebraElement_apply, hij]
-  · refine ⟨i, ?_⟩
-    rcases b with j | j
-    · by_cases hij : j = i
-      · subst hij; simpa [diagonalSubalgebraElement_apply] using h2.symm
-      · simp [diagonalSubalgebraElement_apply, hij]
-    · simp_all [diagonalSubalgebraElement_apply, eq_comm]
-
-variable (l K)
-
-/-- **The diagonal matrices are self-normalizing in `𝔰𝔭(2n, K)`**, over any field of
-characteristic other than two: if `[H_i, X]` is diagonal for every `H_i`, then `X` is diagonal. -/
+/-- **The diagonal matrices are self-normalizing in `𝔰𝔭(2n, R)`** once multiplication by `2` is
+injective: if `[H_i, X]` is diagonal for every `H_i`, then `X` is diagonal. -/
 @[simp]
-theorem diagonalSubalgebra_normalizer_eq_self :
-    (diagonalSubalgebra l K).normalizer = diagonalSubalgebra l K := by
-  refine le_antisymm (fun X hX ↦ ?_) (diagonalSubalgebra l K).le_normalizer
+theorem diagonalSubalgebra_normalizer_eq_self (h2 : IsRegular (2 : R)) :
+    (diagonalSubalgebra l R).normalizer = diagonalSubalgebra l R := by
+  refine le_antisymm (fun X hX ↦ ?_) (diagonalSubalgebra l R).le_normalizer
   rw [mem_diagonalSubalgebra]
   intro a b hab
-  obtain ⟨i, hi⟩ := exists_diagonalSubalgebraElement_apply_ne (K := K) hab
-  have h : (⁅_, X⁆ : sp l K).val a b = 0 := mem_diagonalSubalgebra.mp
-    (((diagonalSubalgebra l K).mem_normalizer_iff' X).mp hX _
+  obtain ⟨i, hi⟩ := exists_isRegular_diagonalSubalgebraElement_apply_sub h2 hab
+  have h : (⁅_, X⁆ : sp l R).val a b = 0 := mem_diagonalSubalgebra.mp
+    (((diagonalSubalgebra l R).mem_normalizer_iff' X).mp hX _
       (diagonalSubalgebraElement i).property) hab
   rw [lie_apply_of_mem_diagonalSubalgebra (diagonalSubalgebraElement i).property] at h
-  exact (mul_eq_zero.mp h).resolve_left (sub_ne_zero.mpr hi)
+  exact hi.left (by simpa using h)
 
-/-- The diagonal matrices form a Cartan subalgebra of `𝔰𝔭(2n, K)`: they are abelian and
-self-normalizing. -/
-instance instIsCartanSubalgebraDiagonalSubalgebra :
-    (diagonalSubalgebra l K).IsCartanSubalgebra where
+/-- The diagonal matrices form a Cartan subalgebra of `𝔰𝔭(2n, R)` when multiplication by `2` is
+injective: they are abelian and self-normalizing. -/
+instance instIsCartanSubalgebraDiagonalSubalgebra [h2 : Fact (IsRegular (2 : R))] :
+    (diagonalSubalgebra l R).IsCartanSubalgebra where
   nilpotent := inferInstance
-  self_normalizing := diagonalSubalgebra_normalizer_eq_self l K
+  self_normalizing := diagonalSubalgebra_normalizer_eq_self l R h2.out
 
-end Field
+/-- Over a domain, nonvanishing of `2` supplies the regularity needed by the Cartan instance. -/
+instance (priority := low) instIsCartanSubalgebraDiagonalSubalgebraOfNoZeroDivisors
+    [NoZeroDivisors R] [NeZero (2 : R)] : (diagonalSubalgebra l R).IsCartanSubalgebra := by
+  let _ : Fact (IsRegular (2 : R)) := ⟨IsRegular.of_ne_zero' (NeZero.ne (2 : R))⟩
+  infer_instance
+
+end CommRing
 
 end LieAlgebra.Symplectic
