@@ -120,8 +120,9 @@ theorem IsEdgeCover.infinite [Infinite V] (hF : G.IsEdgeCover F) : F.Infinite :=
 theorem edgeCoverNum_eq_top_of_infinite [Infinite V] : G.edgeCoverNum = ⊤ :=
   top_unique (le_edgeCoverNum_iff.mpr fun _ hF ↦ hF.infinite.encard_eq.ge)
 
-/-- A maximal matching in a graph without isolated vertices extends to an edge cover by adding
-exactly one edge per unmatched vertex. -/
+/-- In a graph without isolated vertices, every maximal matching is contained in an edge cover
+such that the extended cardinalities of the matching's edge set and the cover sum to the extended
+cardinality of the vertex type. -/
 theorem Subgraph.exists_isEdgeCover_superset_of_maximal_isMatching {M : G.Subgraph}
     (hM : Maximal IsMatching M) (hG : ∀ v, ∃ w, G.Adj v w) :
     ∃ F, G.IsEdgeCover F ∧ M.edgeSet ⊆ F ∧
