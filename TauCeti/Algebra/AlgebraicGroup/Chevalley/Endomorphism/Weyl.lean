@@ -58,7 +58,7 @@ theorem isStandardEndomorphism_conj_weylElement (i : Fin t.rank) :
     refine ⟨(t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) α, ?_⟩
     let ε : Aˣ := Units.map (Int.castRingHom A).toMonoidHom
       (t.chevalleyWeylSign ht (t.simpleIndex ht i) α)
-    refine MonoidHom.map_range_eq_of_surjective _ _ _
+    refine MonoidHom.map_range_eq_range_of_comp_eq _ _ _
       ((ofAdd.surjective.comp (Units.mulLeft_bijective ε).surjective).comp toAdd.surjective)
       fun u => ?_
     simpa [ε, MulAut.conj_apply] using D.weylElement_conj_rootSubgroupPoints i α A (toAdd u)

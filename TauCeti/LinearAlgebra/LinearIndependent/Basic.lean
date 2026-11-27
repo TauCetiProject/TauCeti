@@ -44,13 +44,18 @@ theorem linearIndepOn_image_iff {s : Set ι} {f : ι → ι'} (v : ι' → M) (h
 end TauCeti
 
 /-- Transfer of linear independence between pointwise proportional families over an integral
-domain: if `b` is linearly independent and `n i • v i = m i • b i` with `m i ≠ 0` and `n i ≠ 0`
-for all `i`, then `v` is linearly independent. -/
+domain: if `b` is linearly independent and `n i • v i = m i • b i` with `m i ≠ 0` for all `i`,
+then `v` is linearly independent. -/
 theorem LinearIndependent.of_smul_eq_smul {ι R M : Type*} [CommRing R] [IsDomain R]
     [AddCommGroup M] [Module R M] {b v : ι → M} {m n : ι → R}
-    (hb : LinearIndependent R b) (hm : ∀ i, m i ≠ 0) (hn : ∀ i, n i ≠ 0)
+    (hb : LinearIndependent R b) (hm : ∀ i, m i ≠ 0)
     (hmn : ∀ i, n i • v i = m i • b i) : LinearIndependent R v := by
   classical
+  have hn (i : ι) : n i ≠ 0 := by
+    intro hni
+    have h0 : m i • b i = 0 := by simpa [hni] using (hmn i).symm
+    exact hm i ((linearIndependent_iff'.mp hb) {i} (fun _ => m i)
+      (by simpa using h0) i (Finset.mem_singleton_self i))
   have hnv : LinearIndependent R (fun i => n i • v i) := by
     have hmb : LinearIndependent R (fun i => m i • b i) :=
       hb.smul_of_isRightRegular fun i => (IsRegular.of_ne_zero (hm i)).right

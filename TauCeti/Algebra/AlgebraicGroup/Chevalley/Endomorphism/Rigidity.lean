@@ -129,8 +129,8 @@ theorem exists_torusPoints_eq_conj_comp_on_rootTorusSubgroup {K : Type v} [Field
   -- Step 2: match scalar ratios `c / c'` on positive simple roots via a torus parameter `s`.
   have hlin_π : LinearIndependent ℤ
       (fun i : Fin t.rank => D.coordinateRoot (π (t.simpleIndex ht i))) := by
-    choose m n hm hn hmn using fun i : Fin t.rank => hprop (t.simpleIndex ht i)
-    exact (D.linearIndependent_coordinateRoot_simpleIndex.of_smul_eq_smul hm hn hmn).of_comp φ
+    choose m n hm _ hmn using fun i : Fin t.rank => hprop (t.simpleIndex ht i)
+    exact (D.linearIndependent_coordinateRoot_simpleIndex.of_smul_eq_smul hm hmn).of_comp φ
   let ψ := Fintype.linearCombination ℤ
     (fun i : Fin t.rank => D.coordinateRoot (π (t.simpleIndex ht i)))
   have hψ_single (i : Fin t.rank) :

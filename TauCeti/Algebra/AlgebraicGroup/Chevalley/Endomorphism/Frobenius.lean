@@ -67,7 +67,7 @@ theorem isBasedEndomorphism_frobenius_of_surjective (p k : ℕ) [ExpChar A p]
   have hmap (α : Fin t.numRoots) :
       (D.rootSubgroupPoints α A).range.map (D.frobenius p k A) =
         (D.rootSubgroupPoints α A).range :=
-    MonoidHom.map_range_eq_of_surjective _ _ _
+    MonoidHom.map_range_eq_range_of_comp_eq _ _ _
       ((ofAdd.surjective.comp hsurj).comp toAdd.surjective) fun u => by
         rw [← ofAdd_toAdd u, D.frobenius_rootSubgroupPoints, Function.comp_apply,
           Function.comp_apply, toAdd_ofAdd, iterateFrobenius_def]

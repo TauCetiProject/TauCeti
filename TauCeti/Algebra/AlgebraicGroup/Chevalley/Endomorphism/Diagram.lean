@@ -48,7 +48,7 @@ theorem isBasedEndomorphism_chevalleyGraphAut {t : DynkinType} (ht : t.Valid)
           (t.chevalleyGraphAut ht hσ A).toMonoidHom =
         ((t.scChevalleyDatum ht).rootSubgroupPoints (t.diagramRootPerm ht hσ α) A).range := by
     let ε : Aˣ := Units.map (Int.castRingHom A).toMonoidHom (t.chevalleyDiagramSign ht hσ α)
-    refine MonoidHom.map_range_eq_of_surjective _ _ _
+    refine MonoidHom.map_range_eq_range_of_comp_eq _ _ _
       ((ofAdd.surjective.comp (Units.mulLeft_bijective ε).surjective).comp toAdd.surjective)
       fun u => by simp [ε]
   exact ChevalleyDatum.isBasedEndomorphism_iff.mpr

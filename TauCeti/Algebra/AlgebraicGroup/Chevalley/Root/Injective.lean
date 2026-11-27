@@ -19,7 +19,7 @@ every nontrivial commutative ring (`ChevalleyDatum.rootSubgroupPoints_ofAdd_one_
 any integral domain `A` — including `ℤ`, `𝔽₂`, and fields of small characteristic — every root
 subgroup `D.rootSubgroupPoints γ A` is injective, and root subgroups attached to distinct roots have
 trivial intersection; distinct roots have distinct root-subgroup images over every nontrivial
-commutative ring (`ChevalleyDatum.range_rootSubgroupPoints_eq_iff`).
+commutative ring (`ChevalleyDatum.range_rootSubgroupPoints_inj`).
 
 The argument reduces to an algebraically closed field by passing to
 `AlgebraicClosure (FractionRing A)`, where the units are divisible and the field is infinite:
@@ -41,7 +41,7 @@ The argument reduces to an algebraically closed field by passing to
   distinct roots over an integral domain must both have parameter zero.
 * `TauCeti.DynkinType.ChevalleyDatum.disjoint_range_rootSubgroupPoints`: distinct roots give
   disjoint root subgroups over every integral domain.
-* `TauCeti.DynkinType.ChevalleyDatum.range_rootSubgroupPoints_eq_iff`: distinct roots have
+* `TauCeti.DynkinType.ChevalleyDatum.range_rootSubgroupPoints_inj`: distinct roots have
   distinct root-subgroup images over every nontrivial commutative ring.
 
 ## References
@@ -186,7 +186,7 @@ theorem disjoint_range_rootSubgroupPoints (A : Type v) [CommRing A] [IsDomain A]
 /-- **Distinct roots give distinct root-subgroup images** over every nontrivial commutative
 ring. -/
 @[simp]
-theorem range_rootSubgroupPoints_eq_iff (A : Type v) [CommRing A] [Nontrivial A]
+theorem range_rootSubgroupPoints_inj (A : Type v) [CommRing A] [Nontrivial A]
     (α β : Fin t.numRoots) :
     (D.rootSubgroupPoints α A).range = (D.rootSubgroupPoints β A).range ↔ α = β := by
   refine ⟨fun h => by_contra fun hne => ?_, fun h => h ▸ rfl⟩

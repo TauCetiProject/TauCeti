@@ -46,6 +46,15 @@ open _root_.TauCeti.UniversalEnvelopingAlgebra
 noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
+
+/-- Over an infinite field, every root character of a Chevalley datum is nontrivial at some torus
+parameter. -/
+theorem exists_torusCharacter_coordinateRoot_ne_one {K : Type*} [Field K] [Infinite K]
+    (γ : Fin t.numRoots) :
+    ∃ s : Fin t.rank → Kˣ, torusCharacter s (D.coordinateRoot γ) ≠ 1 := by
+  obtain ⟨s, hs⟩ := exists_torusCharacter_ne (K := K) (D.coordinateRoot_ne_zero γ)
+  exact ⟨s, by simpa only [torusCharacter_zero] using hs⟩
+
 variable (A : Type*) [CommRing A]
 
 /-- Restriction `Hom(P, Aˣ) → Hom(Λ(D), Aˣ)` in the chosen coordinates of the character lattice.

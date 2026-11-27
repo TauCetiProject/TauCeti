@@ -359,9 +359,8 @@ theorem IsCharacterMap.conj_mul {g₁ g₂ : G}
     IsCharacterMap T (MulAut.conj (g₁ * g₂)).toMonoidHom (ψ * φ) := by
   have hcomp := h₁.comp h₂
   have hconj : (MulAut.conj (g₁ * g₂)).toMonoidHom =
-      (MulAut.conj g₁).toMonoidHom.comp (MulAut.conj g₂).toMonoidHom := by
-    rw [map_mul]
-    rfl
+      (MulAut.conj g₁).toMonoidHom.comp (MulAut.conj g₂).toMonoidHom :=
+    MonoidHom.ext fun _ => by simp [MulAut.conj_apply, mul_assoc]
   rwa [hconj]
 
 /-- Conjugating by `g⁻¹` has character map `φ.symm` when conjugation by `g` has character map

@@ -80,7 +80,7 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `MonoidHom.map_eq_of_map_le_of_map_le_map_pow` and
   `AddMonoidHom.map_eq_of_map_le_of_map_le_map_nsmul`: homomorphisms inverse up to `n` identify
   subgroup images when the target subgroup has no nontrivial `n`-torsion.
-* `MonoidHom.map_range_eq_of_surjective`: a homomorphism intertwining two parametrizations along
+* `MonoidHom.map_range_eq_range_of_comp_eq`: a homomorphism intertwining two parametrizations along
   a surjection carries the first range onto the second.
 -/
 
@@ -136,7 +136,7 @@ theorem _root_.MonoidHom.closure_preimage_eq_of_injective (f : G →* H)
 
 /-- If a homomorphism `F` intertwines two monoid parametrizations `x` and `y` along a surjective
 reparameterization `σ`, then `F` maps the range of `x` onto the range of `y`. -/
-theorem _root_.MonoidHom.map_range_eq_of_surjective {M₁ M₂ : Type*} [Group M₁] [Group M₂]
+theorem _root_.MonoidHom.map_range_eq_range_of_comp_eq {M₁ M₂ : Type*} [Group M₁] [Group M₂]
     (F : G →* H) (x : M₁ →* G) (y : M₂ →* H) {σ : M₁ → M₂}
     (hσ : Function.Surjective σ) (h : ∀ u, F (x u) = y (σ u)) :
     x.range.map F = y.range := by

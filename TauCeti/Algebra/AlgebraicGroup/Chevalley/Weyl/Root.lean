@@ -131,7 +131,7 @@ theorem map_range_rootSubgroupPoints_conj (g : D.weylSubgroup K) (γ : Fin t.num
       (D.rootSubgroupPoints
         ((t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) γ) K).range := by
   obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints K g γ
-  exact MonoidHom.map_range_eq_of_surjective _ _ _
+  exact MonoidHom.map_range_eq_range_of_comp_eq _ _ _
     (ofAdd.surjective.comp ((Units.mulLeft_bijective c).surjective.comp toAdd.surjective))
     (fun u => by
       simpa only [MulEquiv.coe_toMonoidHom, Function.comp_apply, ofAdd_toAdd] using hc (toAdd u))

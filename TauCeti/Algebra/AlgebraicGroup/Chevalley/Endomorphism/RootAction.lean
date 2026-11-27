@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Endomorphism.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 import TauCeti.Algebra.Group.Pow
 import TauCeti.FieldTheory.RingHom
 
@@ -92,9 +93,7 @@ private theorem smul_coordinateRoot_eq_of_forall_ringHom_torusCharacter
   refine ⟨hp, fun h0 => ?_⟩
   rw [h0, zero_smul] at hp
   have hφβ0 : φ (D.coordinateRoot β) = 0 := (smul_eq_zero.mp hp).resolve_left hi
-  obtain ⟨s, hs⟩ : ∃ s : Fin t.rank → Kˣ, torusCharacter s (D.coordinateRoot α) ≠ 1 := by
-    simpa only [torusCharacter_zero] using
-      exists_torusCharacter_ne (K := K) (D.coordinateRoot_ne_zero α)
+  obtain ⟨s, hs⟩ := D.exists_torusCharacter_coordinateRoot_ne_one (K := K) α
   have hgs := hg s
   rw [hφβ0, torusCharacter_zero, Units.val_one] at hgs
   exact hs (Units.ext (g.injective (hgs.trans (map_one g).symm)))
@@ -159,7 +158,6 @@ private theorem exists_additive_equivariant_of_rootSubgroup_map {K : Type v} [Fi
     ∃ f : K → K,
       (∀ u : K, F (D.rootSubgroupPoints α K (ofAdd u)) = D.rootSubgroupPoints β K (ofAdd (f u))) ∧
       (∀ u v : K, f (u + v) = f u + f v) ∧
-      f 0 = 0 ∧
       (∀ (s : Fin t.rank → Kˣ) (u : K),
         f ((torusCharacter s (D.coordinateRoot α) : K) * u) =
           (torusCharacter s (φ (D.coordinateRoot β)) : K) * f u) ∧
@@ -173,8 +171,6 @@ private theorem exists_additive_equivariant_of_rootSubgroup_map {K : Type v} [Fi
   have hf_add (u v : K) : f (u + v) = f u + f v := ofAdd.injective <|
     (D.rootSubgroupPoints_inj β K).mp <| by
       rw [← hf (u + v), ofAdd_add, map_mul, map_mul, hf u, hf v, ← map_mul, ← ofAdd_add]
-  have hf_zero : f 0 = 0 := (D.rootSubgroupPoints_ofAdd_eq_one_iff β K).mp <| by
-    rw [← hf 0, ofAdd_zero, map_one, map_one]
   have hf_scale (s : Fin t.rank → Kˣ) (u : K) :
       f ((torusCharacter s (D.coordinateRoot α) : K) * u) =
         (torusCharacter s (φ (D.coordinateRoot β)) : K) * f u := by
@@ -188,7 +184,7 @@ private theorem exists_additive_equivariant_of_rootSubgroup_map {K : Type v} [Fi
       hβ.symm ▸ ⟨ofAdd v, rfl⟩
     exact ⟨toAdd u, ofAdd.injective <| (D.rootSubgroupPoints_inj β K).mp <| by
       rw [← hf (toAdd u), ofAdd_toAdd, hu]⟩
-  exact ⟨f, hf, hf_add, hf_zero, hf_scale, hf_surj⟩
+  exact ⟨f, hf, hf_add, hf_scale, hf_surj⟩
 
 /-- **Root-subgroup structure of a standard endomorphism.** Over an infinite field with divisible
 units, a standard endomorphism `F` with character map `φ` sends each root subgroup `x_α` to
@@ -207,7 +203,7 @@ theorem exists_root_and_ringEquiv_of_isStandardEndomorphism {K : Type v} [Field 
       (∃ m n : ℤ, m ≠ 0 ∧ n ≠ 0 ∧
         n • φ (D.coordinateRoot β) = m • D.coordinateRoot α) := by
   obtain ⟨β, hβ⟩ := isStandardEndomorphism_iff.mp hstd α
-  obtain ⟨f, hf, hf_add, _, hf_scale, hf_surj⟩ :=
+  obtain ⟨f, hf, hf_add, hf_scale, hf_surj⟩ :=
     D.exists_additive_equivariant_of_rootSubgroup_map hφ hβ
   obtain ⟨c, g, hfg, hg_char⟩ := exists_ringEquiv_of_additive_equivariant
     (D.coordinateRoot_ne_zero α) hf_add hf_scale hf_surj
@@ -308,7 +304,7 @@ theorem mem_posRoots_iff_of_isBasedEndomorphism {A : Type v} [CommRing A] [Nontr
   have hfwd : Set.MapsTo π (posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
       (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) := fun γ hγ => by
     obtain ⟨β, hβ, hmap⟩ := (isBasedEndomorphism_iff.mp hbased).2 γ hγ
-    rwa [(D.range_rootSubgroupPoints_eq_iff A (π γ) β).mp ((hπ γ).symm.trans hmap)]
+    rwa [(D.range_rootSubgroupPoints_inj A (π γ) β).mp ((hπ γ).symm.trans hmap)]
   have hbij := ((posRoots_finite _ _).injOn_iff_bijOn_of_mapsTo hfwd).mp π.injective.injOn
   refine ⟨fun hπα => ?_, fun hα => hfwd hα⟩
   obtain ⟨γ, hγ, hπγ⟩ := hbij.surjOn hπα

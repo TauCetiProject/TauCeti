@@ -60,9 +60,7 @@ theorem eq_zero_of_opposite_mul_torus_mul_mem_normalizer
   let w := D.rootSubgroupPoints β' K (ofAdd a) * D.torusPoints K h *
     D.rootSubgroupPoints β K (ofAdd b)
   -- Pick a torus point `s` where `β(s) ≠ 1`.
-  obtain ⟨s, hs⟩ : ∃ s : Fin t.rank → Kˣ, torusCharacter s (D.coordinateRoot β) ≠ 1 := by
-    obtain ⟨s, hs⟩ := exists_torusCharacter_ne (K := K) (D.coordinateRoot_ne_zero β)
-    exact ⟨s, by simpa only [torusCharacter_zero] using hs⟩
+  obtain ⟨s, hs⟩ := D.exists_torusCharacter_coordinateRoot_ne_one (K := K) β
   obtain ⟨s', hs'⟩ : w * D.torusPoints K s * w⁻¹ ∈ (D.torusPoints K).range :=
     ((Subgroup.mem_normalizer_iff.mp hnorm) (D.torusPoints K s)).mp ⟨s, rfl⟩
   -- Commute `T s` left past `x_β(b)` and `T s'` right past `x_{-β}(a)` to equate factorizations.
