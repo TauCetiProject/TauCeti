@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.NormalQuotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Stages.Residual
 
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ReducedForm
+import TauCeti.Topology.Algebra.ProperAction.Quotient
 
 /-!
 # The first stage of reduction by a closed normal subgroup
@@ -51,6 +52,15 @@ for arbitrary presentations of the reduced spaces) takes as input.
   (`IsEquivariantMomentMap.existsUnique_comp_groupLieAlgebraMap_mk'_eq_and_isEquivariantMomentMap`,
   from the abstract residual moment map
   `IsEquivariantMomentMap.existsUnique_comp_groupLieAlgebraMap_eq_and_isEquivariantMomentMap`).
+* **The residual action is proper, and free over `μ⁻¹(0)`.** These are the hypotheses under which
+  the second stage, the reduction of `Z₁ ⧸ N` by `G ⧸ N` at `0`, is again a Marsden–Weinstein–Meyer
+  reduction. If `G` acts properly on `M`, then `G ⧸ N` acts properly on `Z₁ ⧸ N`
+  (`IsEquivariantMomentMap.properSMul_quotientGroup_subtypeLevel`), because `Z₁` is closed in the
+  locally compact manifold `M` (`TauCeti.SmoothTwoForm.IsMomentMap.isClosed_preimage_singleton`) and
+  properness descends to orbit spaces (`MulAction.orbitRel.Quotient.properSMul_quotientGroup`).
+  The stabilizer of `[z]` in `G ⧸ N` is the image of the stabilizer of `z` in `G`
+  (`IsEquivariantMomentMap.stabilizer_quotientGroup_quotientMk_subtypeLevel`), so `G ⧸ N` acts
+  freely at the classes of the points of `μ⁻¹(0)` at which `G` acts freely.
 
 All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`.
 
@@ -479,6 +489,67 @@ theorem quotientMk_eq_smul_quotientMk_subtypeLevel (hμ : σ.IsEquivariantMoment
   intro g z z' h
   rw [show z' = g • z from Subtype.ext (h.trans (hμ.coe_smul_subtypeLevelMulAction hN g z).symm)]
   exact (MulAction.orbitRel.Quotient.mk_smul_mk N g z).symm
+
+omit [I'.Boundaryless] in
+/-- **The residual action is proper.** If `G` acts properly on `M`, then the quotient group
+`G ⧸ N` acts properly on the orbit space `μ_N⁻¹(0) ⧸ N` of the first-stage level, by
+`[g] • [z] = [g • z]`. The level is closed in the locally compact manifold `M`, so this is an
+instance of `MulAction.orbitRel.Quotient.properSMul_quotientGroup`; neither regularity of the level
+nor freeness of any action is needed. -/
+theorem properSMul_quotientGroup_subtypeLevel [ProperSMul G M] (hμ : σ.IsEquivariantMomentMap μ) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
+      (I'' := I') (M := M)
+    letI := hμ.subtypeLevelMulAction hN
+    ProperSMul (G ⧸ N)
+      (MulAction.orbitRel.Quotient N ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0)) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  let _ := hμ.subtypeLevelMulAction hN
+  have := hμ.properSMul_subtypeLevelMulAction hN
+  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I'
+  have hclosed : IsClosed ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0 : Set M) := by
+    rw [coe_levelSubMulAction]
+    exact (hμ.comp_subtype_ofIsClosed hN).isClosed_preimage_singleton 0
+  have : WeaklyLocallyCompactSpace ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) :=
+    hclosed.weaklyLocallyCompactSpace
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have : IsClosed (N : Set G) := hN
+  infer_instance
+
+omit [I'.Boundaryless] in
+/-- **Stabilizers of the residual action.** An element of `G ⧸ N` fixes the class `[z]` of a point
+`z` of the first-stage level `μ_N⁻¹(0)` exactly when it is the image of an element of `G` fixing
+`z` in `M`. In particular `G ⧸ N` acts freely at `[z]` when `G` acts freely at `z`, as it does at
+the points of `μ⁻¹(0)` in the second stage of reduction by `N`. -/
+theorem stabilizer_quotientGroup_quotientMk_subtypeLevel (hμ : σ.IsEquivariantMomentMap μ) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).lieGroup
+    haveI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).contMDiffSMul
+      (I'' := I') (M := M)
+    letI := hμ.subtypeLevelMulAction hN
+    ∀ z : (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0,
+      MulAction.stabilizer (G ⧸ N) (Quotient.mk (MulAction.orbitRel N
+          ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0)) z) =
+        (MulAction.stabilizer G (z : M)).map (QuotientGroup.mk' N) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  let _ := hμ.subtypeLevelMulAction hN
+  intro z
+  rw [← Quotient.mk''_eq_mk, Subgroup.stabilizer_quotientGroup_orbitRelQuotient_mk]
+  congr 1
+  ext g
+  rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, Subtype.ext_iff,
+    hμ.coe_smul_subtypeLevelMulAction hN]
 
 /-- **The residual moment map.** In the setting of
 `IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_quotientMk_subtypeLevel`,
