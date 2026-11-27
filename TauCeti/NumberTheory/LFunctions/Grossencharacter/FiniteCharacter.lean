@@ -226,13 +226,6 @@ theorem finiteCharacterK_eq_one_of_residueHom_eq_one (χ : Grossencharacter K �
     χ.toHeckeCharacter.idealCharacter_apply_toPrincipalIdeal (x : Kˣ) hx𝔣,
     archimedeanValue_apply, inv_mul_cancel]
 
-/-- On any element of `primeToSubgroup 𝔪` congruent to `1` modulo `𝔪`, `finiteCharacterK` takes
-the value `1`. -/
-theorem finiteCharacterK_eq_one_of_isCongrOne (χ : Grossencharacter K 𝔪) {x : primeToSubgroup 𝔪}
-    (hx : IsCongrOne 𝔪 (x : Kˣ)) : χ.finiteCharacterK x = 1 :=
-  χ.finiteCharacterK_eq_one_of_residueHom_eq_one
-    (residueHom_eq_one_of_mem_congruenceSubgroup (mem_congruenceSubgroup.mpr hx))
-
 /-- **At a trivial finite modulus the finite character is trivial**: the residue ring modulo
 `𝓞 K` has a single element. -/
 theorem finiteCharacterK_eq_one_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
@@ -448,14 +441,6 @@ theorem finiteCharacter_ne_zero_iff (χ : Grossencharacter K 𝔪) {a : 𝓞 K} 
     χ.finiteCharacter a ≠ 0 ↔ 𝔪.IsCoprimeTo (Ideal.span {a}) := by
   rw [ne_eq, χ.finiteCharacter_eq_zero_iff, not_not]
 
-/-- On an integer congruent to `1` modulo `𝔪`, Hecke's finite character evaluates to `1`. -/
-theorem finiteCharacter_eq_one_of_isCongrOne (χ : Grossencharacter K 𝔪) {a : 𝓞 K} {x : Kˣ}
-    (ha : algebraMap (𝓞 K) K a = x) (hx : IsCongrOne 𝔪 x) : χ.finiteCharacter a = 1 := by
-  have hxp : x ∈ primeToSubgroup 𝔪 :=
-    congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx)
-  rw [χ.finiteCharacter_eq_finiteCharacterK ⟨x, hxp⟩ ha,
-    χ.finiteCharacterK_eq_one_of_isCongrOne hx, Units.val_one]
-
 /-- **On nonzero integers, the finite character is the residue character** at the class modulo
 `𝔪₀`. At an integer not prime to `𝔪` both vanish, the class not being a unit. The integer `0` is
 excluded: when `𝔪₀ = 𝓞 K` its class is the unit of the zero ring. -/
@@ -609,7 +594,7 @@ theorem finiteCharacterField_coe_mul (χ : Grossencharacter K 𝔪) (y : primeTo
 
 /-- Multiplying any element of `K` by a global unit `u : (𝓞 K)ˣ` factors out
 `χ.finiteCharacter u`. -/
-theorem finiteCharacterField_mul_unit (χ : Grossencharacter K 𝔪) (u : (𝓞 K)ˣ) (x : K) :
+theorem finiteCharacterField_unit_mul (χ : Grossencharacter K 𝔪) (u : (𝓞 K)ˣ) (x : K) :
     χ.finiteCharacterField (algebraMap (𝓞 K) K u * x) =
       χ.finiteCharacter u * χ.finiteCharacterField x := by
   have heq : algebraMap (𝓞 K) K (u : 𝓞 K) =
@@ -874,6 +859,24 @@ theorem finiteConductor_dvd_iff_residueCharacter_eq_one (χ : Grossencharacter K
   rw [HeightOneSpectrum.maxPowDividing, χ.toHeckeCharacter.count_finiteConductor]
   exact le_pow_conductorExponent_of_residueCharacter_eq_one χ le_sup_right h' v
 
+/-- If `I` divides `𝔪.finitePart` and the finite conductor of `χ.toHeckeCharacter` does not divide
+`I`, then `χ.residueCharacter` is nontrivial on some residue unit congruent to `1` modulo `I`. -/
+theorem exists_residueCharacter_ne_one_of_not_finiteConductor_dvd (χ : Grossencharacter K 𝔪)
+    {I : Ideal (𝓞 K)} (hI : I ∣ 𝔪.finitePart)
+    (h : ¬ χ.toHeckeCharacter.finiteConductor ∣ I) :
+    ∃ u : (𝓞 K ⧸ 𝔪.finitePart)ˣ,
+      Ideal.Quotient.factor (Ideal.le_of_dvd hI) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1 ∧
+        χ.residueCharacter u ≠ 1 := by
+  by_contra hcon
+  push Not at hcon
+  refine h ((χ.finiteConductor_dvd_iff_residueCharacter_eq_one I).mpr fun a ha ha1 ↦ ?_)
+  have hfac : Ideal.Quotient.factor (Ideal.le_of_dvd hI)
+      (ha.unit : 𝓞 K ⧸ 𝔪.finitePart) = 1 := by
+    rw [IsUnit.unit_spec, Ideal.Quotient.factor_mk, ← map_one (Ideal.Quotient.mk I),
+      Ideal.Quotient.eq]
+    exact ha1
+  simpa [IsUnit.unit_spec] using hcon ha.unit hfac
+
 /-- **Primitivity of `residueCharacter` at the finite conductor.** When `𝔪.finitePart` equals
 the finite conductor of `χ.toHeckeCharacter`, `χ.residueCharacter` does not factor through any
 proper divisor `I` of `𝔪.finitePart`: there exists a residue unit congruent to `1` modulo `I`
@@ -883,19 +886,9 @@ theorem exists_residueCharacter_ne_one_of_finiteConductor_eq (χ : Grossencharac
     (hI : I ∣ 𝔪.finitePart) (hIne : I ≠ 𝔪.finitePart) :
     ∃ u : (𝓞 K ⧸ 𝔪.finitePart)ˣ,
       Ideal.Quotient.factor (Ideal.le_of_dvd hI) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1 ∧
-        χ.residueCharacter u ≠ 1 := by
-  by_contra h
-  push Not at h
-  have hdvd : 𝔪.finitePart ∣ I := by
-    rw [← hcond, χ.finiteConductor_dvd_iff_residueCharacter_eq_one I]
-    intro a ha ha1
-    have hfac : Ideal.Quotient.factor (Ideal.le_of_dvd hI)
-        (ha.unit : 𝓞 K ⧸ 𝔪.finitePart) = 1 := by
-      rw [IsUnit.unit_spec, Ideal.Quotient.factor_mk, ← map_one (Ideal.Quotient.mk I),
-        Ideal.Quotient.eq]
-      exact ha1
-    simpa [IsUnit.unit_spec] using h ha.unit hfac
-  exact hIne (le_antisymm (Ideal.le_of_dvd hdvd) (Ideal.le_of_dvd hI))
+        χ.residueCharacter u ≠ 1 :=
+  χ.exists_residueCharacter_ne_one_of_not_finiteConductor_dvd hI
+    fun hdvd ↦ hIne (le_antisymm (Ideal.le_of_dvd (hcond ▸ hdvd)) (Ideal.le_of_dvd hI))
 
 /-! ### Ray class presentations -/
 
