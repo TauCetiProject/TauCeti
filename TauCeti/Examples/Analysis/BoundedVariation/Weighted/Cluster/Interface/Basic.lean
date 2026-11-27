@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Interface
+public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Interface.Basic
 
 /-!
 # Regression examples: the interfaces of a two-cell cluster
