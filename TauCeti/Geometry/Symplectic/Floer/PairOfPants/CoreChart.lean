@@ -57,8 +57,9 @@ concatenation of the end loops of the inputs `0` and `1` at height `0`, both sta
 (`TauCeti.Floer.pairOfPantsCoreChart_mk_zero`), and at `s = 1` through the points of the output
 circle `‖w‖ = 2` on the same rays from `1/2` (`TauCeti.Floer.pairOfPantsCoreChart_mk_one`,
 `TauCeti.Floer.norm_symm_pairOfPantsCoreChart_mk_one`). It thus runs once clockwise around that
-circle, like the end loop `t ↦ 2 e^{-2πit}` of the output at height `0`, but at the speed of the
-angle about `1/2` rather than about `0`.
+circle, like the end loop `t ↦ 2 e^{-2πit}` of the output at height `0`. The two loops differ in
+their parametrizations: the end loop is uniform in the angle about `0`, while the output loop of
+the core chart moves through the angle about `1/2` along smooth transitions, which is not uniform.
 
 The **output cylinder** `TauCeti.Floer.pairOfPantsOutputCylinder` compares the two loops. It is a
 smooth map of the cylinder into the output circle
@@ -595,15 +596,27 @@ private theorem coreLobe_three_quarters_mk_zero {r : ℝ} (hr : r ∈ Icc 0 1) :
     Complex.exp_sub, Complex.exp_sub, Complex.exp_pi_mul_I, Complex.exp_two_pi_mul_I]
   ring
 
+/-- The point of the output circle `‖w‖ = 2` on the ray from `1/2` at the angle `θ`. -/
+private def outputCirclePoint (θ : ℝ) : ℂ :=
+  circleMap (1 / 2) (coreOuterRadius θ) θ
+
+private theorem norm_outputCirclePoint (θ : ℝ) : ‖outputCirclePoint θ‖ = 2 := by
+  have h := norm_sq_circleMap_half (coreOuterRadius θ) θ
+  have h' := coreOuterRadius_sq_add θ
+  have hn := norm_nonneg (outputCirclePoint θ)
+  rw [outputCirclePoint] at hn ⊢
+  nlinarith
+
+/-- On the output circle, the end of a lobe is the point of the circle at the angle of the
+lobe. -/
+private theorem coreLobe_mk_one (a : ℝ) {r : ℝ} (hr : r ∈ Icc 0 1) :
+    coreLobe a (1, r) = Complex.equivRealProdCLM (outputCirclePoint (lobeAngle a r)) := by
+  rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
+    add_sub_cancel, outputCirclePoint]
+
 private theorem norm_symm_coreLobe_mk_one (a : ℝ) {r : ℝ} (hr : r ∈ Icc 0 1) :
     ‖Complex.equivRealProdCLM.symm (coreLobe a (1, r))‖ = 2 := by
-  rw [coreLobe_of_mem hr, lobeChart, ContinuousLinearEquiv.symm_apply_apply,
-    smoothTransition.one, lobePoint, lobeRadius, one_mul, add_sub_cancel]
-  have h := norm_sq_circleMap_half (coreOuterRadius (lobeAngle a r)) (lobeAngle a r)
-  have h' := coreOuterRadius_sq_add (lobeAngle a r)
-  have hn := norm_nonneg
-    (circleMap (1 / 2 : ℂ) (coreOuterRadius (lobeAngle a r)) (lobeAngle a r))
-  nlinarith
+  rw [coreLobe_mk_one a hr, ContinuousLinearEquiv.symm_apply_apply, norm_outputCirclePoint]
 
 /-- The core chart is `1`-periodic in its second variable. -/
 @[simp]
@@ -668,8 +681,7 @@ theorem pairOfPantsCoreChart_mk_one (t : ℝ) :
         ((-Real.sin (π * z.2) + √(Real.sin (π * z.2) ^ 2 + 15)) / 2) (-(3 * π / 2) - π * z.2)))
       (1, t) := by
   refine loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_) <;>
-    rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
-      add_sub_cancel, coreOuterRadius]
+    rw [coreLobe_mk_one _ hr, outputCirclePoint, coreOuterRadius]
   · rw [cos_lobeAngle_quarter, neg_neg, neg_sq,
       show lobeAngle (1 / 4) r = -(π / 2) - π * r by rw [lobeAngle]; ring]
   · rw [cos_lobeAngle_three_quarters,
@@ -961,17 +973,6 @@ theorem rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart
 
 /-! ### From the output loop of the core chart to the output end loop -/
 
-/-- The point of the output circle `‖w‖ = 2` on the ray from `1/2` at the angle `θ`. -/
-private def outputCirclePoint (θ : ℝ) : ℂ :=
-  circleMap (1 / 2) (coreOuterRadius θ) θ
-
-private theorem norm_outputCirclePoint (θ : ℝ) : ‖outputCirclePoint θ‖ = 2 := by
-  have h := norm_sq_circleMap_half (coreOuterRadius θ) θ
-  have h' := coreOuterRadius_sq_add θ
-  have hn := norm_nonneg (outputCirclePoint θ)
-  rw [outputCirclePoint] at hn ⊢
-  nlinarith
-
 private theorem outputCirclePoint_add_two_pi (θ : ℝ) :
     outputCirclePoint (θ + 2 * π) = outputCirclePoint θ := by
   rw [outputCirclePoint, outputCirclePoint, coreOuterRadius_add_two_pi, periodic_circleMap]
@@ -997,13 +998,6 @@ private theorem coreOuterRadius_eq_of_norm_circleMap {r θ : ℝ} (hr : 0 < r)
   have hprod : (coreOuterRadius θ - r) * (coreOuterRadius θ + r + Real.cos θ) = 0 := by
     linear_combination h₂ + h₁
   rcases mul_eq_zero.1 hprod with h | h <;> linarith
-
-/-- On the output circle, the end of a lobe is the point of the circle at the angle of the
-lobe. -/
-private theorem coreLobe_mk_one (a : ℝ) {r : ℝ} (hr : r ∈ Icc 0 1) :
-    coreLobe a (1, r) = Complex.equivRealProdCLM (outputCirclePoint (lobeAngle a r)) := by
-  rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
-    add_sub_cancel, outputCirclePoint]
 
 /-- The correction `g(t) - 2t` to the uniform angle `-π/2 - 2πt` about `1/2` along the output
 loop of the core chart, where `g(t) = β(6t - 1) + β(6t - 4)` runs from `0` to `2` over `[0, 1]`
@@ -1157,9 +1151,10 @@ private theorem contDiff_outputCylinderAngle {n : ℕ∞} : ContDiff ℝ n outpu
 /-- The **output cylinder** of the pair of pants `S = ℂ ∖ {0, 1}`, in the real coordinates
 `ℝ × ℝ ≃ ℂ`: a smooth map, `1`-periodic in its second variable, into the output circle `‖w‖ = 2`
 of `S`, from the output loop of the core chart `TauCeti.Floer.pairOfPantsCoreChart` at `s = 0`
-to the end loop `t ↦ 2 e^{-2πit}` of the output end at height `0` at `s = 1`. The two loops run
-once clockwise around the circle, at the speeds of the angles about `1/2` and about `0`
-respectively; the output cylinder interpolates the angles about `1/2` of their points. -/
+to the end loop `t ↦ 2 e^{-2πit}` of the output end at height `0` at `s = 1`. Both loops run
+once clockwise around the circle: the end loop is uniform in the angle about `0`, while the output
+loop of the core chart moves through the angle about `1/2` along smooth transitions. The output
+cylinder interpolates the angles about `1/2` of their points. -/
 def pairOfPantsOutputCylinder (z : ℝ × ℝ) : ℝ × ℝ :=
   Complex.equivRealProdCLM (outputCirclePoint (outputCylinderAngle z))
 
@@ -1284,15 +1279,12 @@ theorem isLoopCylinder_pairOfPantsGluedDisc {u : ℝ × ℝ → M}
     (h₀₁ : ∀ s, D₀ (s, 1) = D₁ (s, 0)) (h₁₀ : ∀ s, D₁ (s, 1) = D₀ (s, 0)) :
     IsLoopCylinder I (pairOfPantsGluedDisc D₀ D₁ u) (fun _ ↦ x)
       fun t ↦ u (endChart Puncture.inf (0, t)) := by
-  have hloop : IsLoopCylinder I (loopwiseTrans D₀ D₁) (fun _ ↦ x)
-      (fun t ↦ loopwiseTrans (fun z ↦ u (endChart Puncture.zero (0, z.2)))
-        (fun z ↦ u (endChart Puncture.one (0, z.2))) (0, t)) :=
-    { contMDiff := contMDiff_loopwiseTrans hD₀.contMDiff hD₁.contMDiff h₀₁ h₁₀
-      apply_add_one := fun z ↦ loopwiseTrans_apply_add_one D₀ D₁ z.1 z.2
-      apply_zero := fun _ ↦ loopwiseTrans_mem (A := {x}) (fun r _ ↦ hD₀.apply_zero r)
-        (fun r _ ↦ hD₁.apply_zero r)
-      apply_one := fun _ ↦ loopwiseTrans_congr (fun r _ ↦ hD₀.apply_one r)
-        (fun r _ ↦ hD₁.apply_one r) }
+  -- The loopwise concatenation of the two constant loops at `x` is the constant loop at `x`.
+  have hx : (fun t ↦ loopwiseTrans (fun _ : ℝ × ℝ ↦ x) (fun _ ↦ x) (0, t)) = fun _ ↦ x :=
+    funext fun _ ↦ Set.mem_singleton_iff.1 <|
+      loopwiseTrans_mem (fun _ _ ↦ Set.mem_singleton x) (fun _ _ ↦ Set.mem_singleton x)
+  have hloop := hD₀.loopwiseTrans hD₁ h₀₁ h₁₀
+  rw [hx] at hloop
   exact (hloop.trans (isLoopCylinder_comp_pairOfPantsCoreChart hu)).trans
     (isLoopCylinder_comp_pairOfPantsOutputCylinder hu)
 
