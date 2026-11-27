@@ -348,6 +348,56 @@ public instance preservesFiniteLimits_tensorLeft_kFlatResolution_X [MonoidalCate
 
 end Resolution
 
+section MapResolution
+
+variable {D : Type*} [Category* D] [Abelian D] [MonoidalCategory D]
+  [MonoidalPreadditive D] [∀ K L : CochainComplex D ℤ, HasTensor K L]
+  [HasColimitsOfShape ℕ C] [HasColimitsOfShape ℕ D] [HasExactColimitsOfShape ℕ D]
+  [∀ X : D, PreservesColimitsOfShape ℕ (tensorRight X)]
+  [HasColimitsOfShape (Discrete ℤ) D] [HasExactColimitsOfShape (Discrete ℤ) D]
+  [∀ X : D, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
+
+/-- An additive functor preserving sequential colimits sends a cellular resolution to a
+K-flat complex whenever it sends the covering objects to flat objects. No monoidal structure
+on the source or monoidal compatibility of the functor is required. -/
+public theorem _root_.CategoryTheory.Functor.isKFlat_map_kFlatResolution (F : C ⥤ D) [F.Additive]
+    [PreservesColimitsOfShape ℕ F] (E : C → C) (p : ∀ X, E X ⟶ X)
+    [∀ X, PreservesFiniteLimits (tensorLeft (F.obj (E X)))]
+    [∀ X, PreservesFiniteColimits (tensorLeft (F.obj (E X)))]
+    (K : CochainComplex C ℤ) :
+    IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj (kFlatResolution E p K)) := by
+  have hgraded (A : ℤ → C) :
+      IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj (graded (.up ℤ) fun n ↦ E (A n))) := by
+    have (n : ℤ) : PreservesFiniteLimits (tensorLeft
+        (((F.mapHomologicalComplex (.up ℤ)).obj (graded (.up ℤ) fun n ↦ E (A n))).X n)) := by
+      simp only [Functor.mapHomologicalComplex_obj_X]
+      infer_instance
+    have (n : ℤ) : PreservesFiniteColimits (tensorLeft
+        (((F.mapHomologicalComplex (.up ℤ)).obj (graded (.up ℤ) fun n ↦ E (A n))).X n)) := by
+      simp only [Functor.mapHomologicalComplex_obj_X]
+      infer_instance
+    exact isKFlat_of_d_eq_zero _ fun _ _ ↦ by simp
+  have hstage : ∀ k, IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj
+      ((kFlatResolution.sequence E p K).obj k)) := by
+    intro k
+    induction k with
+    | zero =>
+      rw [kFlatResolution.sequence_obj_zero]
+      exact hgraded _
+    | succ k hk =>
+      rw [kFlatResolution.sequence_obj_succ]
+      have := hk
+      have : IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj (graded (.up ℤ) fun n ↦
+          E (kFlatResolution.boundaryPairs ((kFlatResolution.toComplex E p K).app k) n))) :=
+        hgraded _
+      exact isKFlat_of_iso (mappingCone.mapHomologicalComplexIso _ F).symm
+  have : ∀ k, IsKFlat ((kFlatResolution.sequence E p K ⋙
+      F.mapHomologicalComplex (.up ℤ)).obj k) := hstage
+  exact isKFlat_of_isColimit
+    (isColimitOfPreserves (F.mapHomologicalComplex (.up ℤ)) (colimit.isColimit _))
+
+end MapResolution
+
 /-- **K-flat resolutions of unbounded complexes.** Let `C` be an abelian monoidal category in which
 every object is a quotient of a flat object, and in which countable coproducts and sequential
 colimits are exact and commute with tensoring by each object. Then every cochain complex `K` in

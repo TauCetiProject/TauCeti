@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Flat
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Projective
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Yoneda
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
-import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
+import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.SheafOfModules
+import Mathlib.CategoryTheory.ObjectProperty.FunctorCategory.ExactColimits
 import TauCeti.CategoryTheory.Abelian.Exact
 
 /-!
@@ -40,6 +42,10 @@ the site, the extension by zero `j_{U!} R|_U` of the structure sheaf, is flat
 fact that these sheaves form a separating family (`SheafOfModules.isSeparating_freeYonedaFunctor`),
 they provide flat generators of the category of sheaves of modules, from which flat resolutions
 of complexes of sheaves of modules are built.
+
+Free module sheaves on arbitrary bases are also flat
+(`SheafOfModules.preservesFiniteLimits_tensorLeft_free`): they are coproducts of the tensor unit,
+and coproducts of sheaves of modules are exact.
 
 ## References
 
@@ -141,6 +147,18 @@ instance preservesFiniteLimits_tensorLeft_sheafification_free_obj (F : Cᵒᵖ �
 end PresheafOfModules
 
 namespace SheafOfModules
+
+/-- A free sheaf of modules is flat, with no finiteness assumption on its basis. -/
+instance preservesFiniteLimits_tensorLeft_free (I : Type u) :
+    PreservesFiniteLimits (tensorLeft (free (R := ringCatSheaf R) I)) := by
+  let Q : ObjectProperty (SheafOfModules.{u} (ringCatSheaf R)) :=
+    ObjectProperty.preservesFiniteLimits.inverseImage (curriedTensor _)
+  have : PreservesColimitsOfShape (Discrete I)
+      (curriedTensor (SheafOfModules.{u} (ringCatSheaf R))) :=
+    preservesColimitsOfShape_of_evaluation _ _ fun X ↦
+      inferInstanceAs (PreservesColimitsOfShape (Discrete I) (tensorRight X))
+  exact Q.prop_of_isColimit (isColimitFreeCofan I) fun _ ↦
+    preservesFiniteLimits_of_natIso (leftUnitorNatIso _).symm
 
 /-- The free module sheaf on an object `U` of the site is flat: tensoring with it is exact. -/
 instance preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj (U : C) :

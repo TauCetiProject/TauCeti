@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Homology.Monoidal.KFlat.Resolution
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
-import Mathlib.Algebra.Category.ModuleCat.AB
+public import TauCeti.Algebra.Category.ModuleCat.AB
+public import Mathlib.Algebra.Category.ModuleCat.LeftResolution
+import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.RingTheory.Flat.CategoryTheory
 
 /-!
@@ -20,6 +22,10 @@ receives a quasi-isomorphism from a K-flat complex. Such a resolution computes t
 product of unbounded complexes of modules. This is the case of
 `CochainComplex.exists_quasiIso_isKFlat` in which every module is covered by the free module
 on its elements.
+
+The native functorial cellular resolution with the free-forgetful counit is K-flat as well
+(`CochainComplex.isKFlat_free_kFlatResolutionFunctor_obj`), so its natural augmentation can be
+used without making nonfunctorial choices of covers.
 
 ## References
 
@@ -35,6 +41,17 @@ namespace CochainComplex
 universe u
 
 variable {R : Type u} [CommRing R]
+
+/-- The native functorial resolution by free cells is K-flat over a commutative ring. -/
+instance isKFlat_free_kFlatResolutionFunctor_obj (K : CochainComplex (ModuleCat.{u} R) ℤ) :
+    IsKFlat ((kFlatResolutionFunctor
+      (CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free R)
+      (ModuleCat.adj R).counit).obj K) := by
+  have (X : ModuleCat.{u} R) : PreservesFiniteLimits (MonoidalCategory.tensorLeft
+      ((CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free R).obj X)) :=
+    inferInstanceAs (PreservesFiniteLimits (MonoidalCategory.tensorLeft
+      ((ModuleCat.free R).obj X)))
+  exact isKFlat_kFlatResolutionFunctor_obj _ _ K
 
 /-- Every possibly unbounded complex of modules over a commutative ring admits a
 quasi-isomorphism from a K-flat complex. -/
