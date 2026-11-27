@@ -662,11 +662,6 @@ theorem notMem_waveFrontSet_quantizeDistribution_of_isSmoothing_sub
     (x₀, ξ₀) ∉ (quantizeDistribution ha T).waveFrontSet := by
   intro hp
   obtain ⟨-, hξ0, hnot⟩ := mem_waveFrontSet_iff.1 hp
-  -- A covector outside a wave front set is a point of microlocal smoothness.
-  have hsm {S : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)} (hS : (x₀, ξ₀) ∉ S.waveFrontSet) :
-      S.IsMicrolocallySmoothAt x₀ ξ₀ := by
-    by_contra h
-    exact hS (mem_waveFrontSet_iff.2 ⟨trivial, hξ0, h⟩)
   -- `Op(a) T` agrees near `x₀` with `Op(a) (χ T) = Op(a') u`, where `u ∈ H^t` and `a'` has compact
   -- spatial support and agrees with `a` on `supp χ`, a neighbourhood of `x₀`.
   obtain ⟨χ, -, hOpTD, hχx₀⟩ := exists_notMem_dsupport_sub_cutoffTempered ha T x₀
@@ -687,7 +682,8 @@ theorem notMem_waveFrontSet_quantizeDistribution_of_isSmoothing_sub
   have he := ha'.sub hsc
   rw [← sub_add_cancel (a'.quantizeSobolev ha' t u).toDistr (s.quantizeSobolev hsc t u).toDistr,
     ← toDistr_quantizeSobolev_sub_apply ha' hsc he, map_add]
-  refine IsMicrolocallySmoothAt.add (hsm ?_) (hsm ?_)
+  refine IsMicrolocallySmoothAt.add (isMicrolocallySmoothAt_of_notMem_waveFrontSet trivial hξ0 ?_)
+    (isMicrolocallySmoothAt_of_notMem_waveFrontSet trivial hξ0 ?_)
   · -- Near `x₀`, `a' - s = a - (a - b) = b`, which vanishes conically.
     refine notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero he t u
       (Filter.inter_mem (Filter.inter_mem hU (ball_mem_nhds x₀ one_pos)) hχx₀) hΓ hξ₀ hcone
@@ -715,9 +711,7 @@ theorem exists_notMem_characteristicSet_and_waveFrontSet_quantizeDistribution_eq
     refine ⟨c, hc, fun h ↦ (mem_characteristicSet_iff.1 h).1 rfl, ?_⟩
     rw [← image_eq_empty (f := Prod.fst), fst_image_waveFrontSet]
     exact IsSmoothing.singularSupport_quantizeDistribution_eq_empty hc (by simpa using hc0) T
-  have hs : T.IsMicrolocallySmoothAt x₀ ξ₀ := by
-    by_contra h
-    exact hT (mem_waveFrontSet_iff.2 ⟨trivial, hξ₀, h⟩)
+  have hs := isMicrolocallySmoothAt_of_notMem_waveFrontSet trivial hξ₀ hT
   -- The witnesses of microlocal smoothness at `(x₀, ξ₀)`, a cutoff `φ` and an open cone `Γ`,
   -- witness it at every `(x, η)` with `φ x ≠ 0` and `η ∈ Γ`.
   obtain ⟨φ, hφ, Γ, hΓ, hξ₀Γ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hs
@@ -768,9 +762,8 @@ theorem notMem_waveFrontSet_iff_exists_quantizeDistribution
   obtain ⟨-, hξ₀, hns⟩ := mem_waveFrontSet_iff.1 hp
   obtain ⟨U, hU, Γ, hΓ, hξ₀Γ, hcone, R', hell⟩ :=
     not_not.1 (not_and.1 (mem_characteristicSet_iff.not.1 hchar) hξ₀)
-  refine hns (IsMicrolocallySmoothAt.of_quantizeDistribution hc hU hΓ hcone hξ₀Γ hell ?_)
-  by_contra h
-  simpa [hWF] using mem_waveFrontSet_iff.2 ⟨trivial, hξ₀, h⟩
+  exact hns (IsMicrolocallySmoothAt.of_quantizeDistribution hc hU hΓ hcone hξ₀Γ hell
+    (isMicrolocallySmoothAt_of_notMem_waveFrontSet trivial hξ₀ (by simp [hWF])))
 
 /-- **The wave front set as an intersection of characteristic sets.** For a distribution `T` on
 `ℝⁿ`, `WF(T)` is the intersection of the characteristic sets of the symbols `c` of order `0` whose
