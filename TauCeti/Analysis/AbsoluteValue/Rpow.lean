@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
@@ -31,6 +32,7 @@ makes it restrict to the real or a `p`-adic absolute value on `ℚ`
 ## Main results
 
 * `AbsoluteValue.rpow_add_le_of_forall_natCast`: the triangle inequality for `x ↦ v x ^ t`.
+* `AbsoluteValue.isEquiv_rpowOfNatCast`: `v` is equivalent to `AbsoluteValue.rpowOfNatCast`.
 
 The argument is the one of `normalization_triangle` in Jz Pan's lean-iwasawa
 (`acmepjz/lean-iwasawa` at `7666c16`, branch `autoformalize.v1`, file
@@ -110,5 +112,9 @@ noncomputable def rpowOfNatCast : AbsoluteValue R ℝ where
 @[simp]
 theorem rpowOfNatCast_apply (x : R) : v.rpowOfNatCast ht h x = v x ^ t :=
   (rfl)
+
+/-- A real absolute value `v` is equivalent to its power `x ↦ v x ^ t`. -/
+theorem isEquiv_rpowOfNatCast : v.IsEquiv (v.rpowOfNatCast ht h) := fun x y ↦ by
+  simp [Real.rpow_le_rpow_iff (v.nonneg x) (v.nonneg y) ht]
 
 end AbsoluteValue

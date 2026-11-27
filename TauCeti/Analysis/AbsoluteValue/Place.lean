@@ -286,8 +286,7 @@ theorem exists_isEquiv_of_isNontrivial_under (hw : (w.under ℚ).IsNontrivial) :
   obtain ⟨c, hc, hcw⟩ := isEquiv_iff_exists_rpow_eq.mp h
   have hn (n : ℕ) : w n ^ c ≤ n := by
     simpa [under_apply] using (congrFun hcw n).trans_le (hun n)
-  refine ⟨⟨w.rpowOfNatCast hc hn, ?_⟩, isEquiv_iff_exists_rpow_eq.mpr
-    ⟨c, hc, funext fun x ↦ (rpowOfNatCast_apply w hc hn x).symm⟩⟩
+  refine ⟨⟨w.rpowOfNatCast hc hn, ?_⟩, isEquiv_rpowOfNatCast w hc hn⟩
   convert hu using 1
   ext q
   simpa [under_apply] using congrFun hcw q
