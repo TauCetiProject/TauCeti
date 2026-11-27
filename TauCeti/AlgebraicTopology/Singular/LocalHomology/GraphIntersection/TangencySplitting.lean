@@ -63,7 +63,8 @@ perturbation is `z ^ k`.
 ## Main declarations
 
 * `TauCeti.tangencySplitting`: the perturbation of `z ^ k` by `∏_{j < k} (z + j ε)` with a cutoff.
-* `TauCeti.contDiff_tangencySplitting`: it is smooth.
+* `TauCeti.contDiff_tangencySplitting`, `TauCeti.contDiff_uncurry_tangencySplitting`: it is smooth,
+  also jointly in `(ε, z)`.
 * `TauCeti.tangencySplitting_eq_pow_of_rOut_le`, `TauCeti.tangencySplitting_eq_prod_of_norm_le`,
   `TauCeti.tangencySplitting_zero_right`: it is `z ^ k` outside the cutoff, the polynomial inside,
   and `z ^ k` for `ε = 0`.
@@ -115,13 +116,20 @@ theorem tangencySplitting_apply (z : ℂ) :
     tangencySplitting β k ε z = z ^ k + (β z : ℂ) * (∏ j ∈ range k, (z + j * ε) - z ^ k) :=
   (rfl)
 
+variable (β k) in
+/-- The perturbation is jointly smooth in `(ε, z)`, as a function of real variables. -/
+theorem contDiff_uncurry_tangencySplitting {n : ℕ∞} :
+    ContDiff ℝ n (Function.uncurry (tangencySplitting β k)) := by
+  have hβ : ContDiff ℝ n fun q : ℂ × ℂ ↦ (β q.2 : ℂ) :=
+    Complex.ofRealCLM.contDiff.comp (β.contDiff.comp contDiff_snd)
+  have hP : ContDiff ℝ n fun q : ℂ × ℂ ↦ ∏ j ∈ range k, (q.2 + j * q.1) :=
+    contDiff_prod fun j _ ↦ contDiff_snd.add (contDiff_const.mul contDiff_fst)
+  exact (contDiff_snd.pow k).add (hβ.mul (hP.sub (contDiff_snd.pow k)))
+
 variable (β k ε) in
 /-- The perturbation is smooth as a function of a real variable. -/
-theorem contDiff_tangencySplitting {n : ℕ∞} : ContDiff ℝ n (tangencySplitting β k ε) := by
-  have hβ : ContDiff ℝ n fun z ↦ (β z : ℂ) := Complex.ofRealCLM.contDiff.comp β.contDiff
-  have hP : ContDiff ℝ n fun z : ℂ ↦ ∏ j ∈ range k, (z + j * ε) :=
-    contDiff_prod fun j _ ↦ contDiff_id.add contDiff_const
-  exact (contDiff_id.pow k).add (hβ.mul (hP.sub (contDiff_id.pow k)))
+theorem contDiff_tangencySplitting {n : ℕ∞} : ContDiff ℝ n (tangencySplitting β k ε) :=
+  (contDiff_uncurry_tangencySplitting β k).comp (contDiff_const.prodMk contDiff_id)
 
 /-- Outside the ball of radius `β.rOut` the perturbation is `z ^ k`. -/
 theorem tangencySplitting_eq_pow_of_rOut_le {z : ℂ} (hz : β.rOut ≤ ‖z‖) :
@@ -246,16 +254,9 @@ theorem eventually_rIn_add_mul_norm_pow_lt :
 /-- For `ε ≠ 0` the roots `-j ε` of `∏_{i < k} (z + i ε)` are distinct, hence simple. -/
 private theorem analyticOrderAt_prod_add_mul (hε : ε ≠ 0) {j : ℕ} (hj : j < k) :
     analyticOrderAt (fun z ↦ ∏ i ∈ range k, (z + i * ε)) (-(j * ε)) = 1 := by
-  have hmem : j ∈ range k := mem_range.2 hj
-  have hP : AnalyticAt ℂ (fun z ↦ ∏ i ∈ range k, (z + i * ε)) (-(j * ε)) := by fun_prop
-  refine (hP.analyticOrderAt_eq_natCast (n := 1)).2
-    ⟨fun z ↦ ∏ i ∈ (range k).erase j, (z + i * ε), by fun_prop, ?_, .of_forall fun z ↦ ?_⟩
-  · refine prod_ne_zero_iff.2 fun i hi ↦ ?_
-    have hij : (i : ℂ) ≠ j := Nat.cast_injective.ne (ne_of_mem_erase hi)
-    have : -((j : ℂ) * ε) + i * ε = (i - j) * ε := by ring
-    rw [this]
-    exact mul_ne_zero (sub_ne_zero.2 hij) hε
-  · rw [← mul_prod_erase _ _ hmem, pow_one, smul_eq_mul, sub_neg_eq_add]
+  have hinj : Set.InjOn (fun i : ℕ ↦ -((i : ℂ) * ε)) (range k) := fun i _ i' _ h ↦ by
+    simpa [hε] using h
+  simpa only [sub_neg_eq_add] using analyticOrderAt_prod_sub_of_injOn hinj (mem_range.2 hj)
 
 /-- **The zeros of the perturbation are simple.** When `ε ≠ 0` and
 `(β.rIn + k ‖ε‖) ^ k < 2 β.rIn ^ k`, the perturbation vanishes to order exactly `1` at each of its
@@ -295,12 +296,7 @@ theorem eventually_forall_prod_stdComplexSymplecticForm_fderiv_tangencySplitting
   -- The perturbation as a smooth function of `(ε, z)`; its derivative in `z` is a partial
   -- derivative, continuous in `(ε, z)`.
   set G : ℂ × ℂ → ℂ := fun q ↦ tangencySplitting β k q.1 q.2
-  have hG : ContDiff ℝ 1 G := by
-    have hβ : ContDiff ℝ 1 fun q : ℂ × ℂ ↦ (β q.2 : ℂ) :=
-      Complex.ofRealCLM.contDiff.comp (β.contDiff.comp contDiff_snd)
-    have hP : ContDiff ℝ 1 fun q : ℂ × ℂ ↦ ∏ j ∈ range k, (q.2 + j * q.1) :=
-      contDiff_prod fun j _ ↦ contDiff_snd.add (contDiff_const.mul contDiff_fst)
-    exact (contDiff_snd.pow k).add (hβ.mul (hP.sub (contDiff_snd.pow k)))
+  have hG : ContDiff ℝ 1 G := contDiff_uncurry_tangencySplitting β k
   have hpartial : ∀ ε z v, fderiv ℝ (tangencySplitting β k ε) z v = fderiv ℝ G (ε, z) (0, v) := by
     intro ε z v
     have h := ((hG.differentiable one_ne_zero) (ε, z)).hasFDerivAt.comp z
