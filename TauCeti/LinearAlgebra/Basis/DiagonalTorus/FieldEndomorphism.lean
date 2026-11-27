@@ -138,6 +138,18 @@ theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_eq {κ K : Type*} [Finty
 
 end RingHom
 
+namespace TauCeti
+
+/-- A nonzero element of a field `K` is the underlying value of a surjective split-torus
+character `s ↦ torusCharacter s ξ`. -/
+theorem exists_torusCharacter_val_eq {κ K : Type*} [Fintype κ] [Field K] {ξ : κ → ℤ}
+    (hsurj : Function.Surjective fun s : κ → Kˣ => torusCharacter s ξ) {x : K} (hx : x ≠ 0) :
+    ∃ s : κ → Kˣ, (torusCharacter s ξ : K) = x := by
+  obtain ⟨s, hs⟩ := hsurj (Units.mk0 x hx)
+  exact ⟨s, by simpa using congrArg Units.val hs⟩
+
+end TauCeti
+
 namespace AddMonoidHom
 variable {κ K : Type*} [Fintype κ] [Field K] (f : K →+ K) {ξ η : κ → ℤ}
   (hsurj : Function.Surjective fun s : κ → Kˣ => torusCharacter s ξ) (hf1 : f 1 = 1)
@@ -150,8 +162,7 @@ def toRingHomOfTorusCharacter : K →+* K where
   toFun := f; map_zero' := f.map_zero; map_add' := f.map_add; map_one' := hf1
   map_mul' x y := by
     by_cases hx : x = 0; · simp [hx]
-    obtain ⟨s, hs⟩ := hsurj (Units.mk0 x hx)
-    have hxval : (torusCharacter s ξ : K) = x := by simpa using congrArg Units.val hs
+    obtain ⟨s, hxval⟩ := exists_torusCharacter_val_eq hsurj hx
     have hfx : f x = (torusCharacter s η : K) := by simpa [hxval, hf1] using hscale s 1
     rw [← hxval, hscale s y, hxval, hfx]
 
@@ -185,8 +196,7 @@ theorem eq_of_map_torusCharacter_eq {κ K F S : Type*} [Fintype κ] [Field K] [Z
     (h : ∀ s : κ → Kˣ, g₁ (torusCharacter s ξ : K) = g₂ (torusCharacter s ξ : K)) :
     g₁ = g₂ := DFunLike.ext g₁ g₂ fun x => by
   by_cases hx : x = 0; · simp [hx]
-  obtain ⟨s, hs⟩ := hsurj (Units.mk0 x hx)
-  have hxval : (torusCharacter s ξ : K) = x := by simpa using congrArg Units.val hs
+  obtain ⟨s, hxval⟩ := exists_torusCharacter_val_eq hsurj hx
   simpa only [hxval] using h s
 
 end TauCeti

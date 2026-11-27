@@ -767,23 +767,15 @@ of the root system. -/
 
 /-! ## Automorphisms of the simply connected `A₁` root datum -/
 
-private lemma root_typeASimplyConnectedRootDatum_one_zero :
-    (typeASimplyConnectedRootDatum 1).root (typeASimpleIndex 1 0) 0 = 2 := by
-  rw [root_typeASimpleIndex]; simp [CartanMatrix.A]
-
 /-- On `typeASimplyConnectedRootDatum 1`, the weight map of the simple reflection is `-id`. -/
 @[simp] theorem reflection_typeASimplyConnectedRootDatum_one_weightMap :
     (RootPairing.Equiv.reflection (typeASimplyConnectedRootDatum 1)
       (typeASimpleIndex 1 0)).toHom.weightMap = -LinearMap.id :=
   LinearMap.ext fun x => funext fun k => by
     rcases Subsingleton.elim k 0 with rfl
-    rw [← RootPairing.Equiv.weightEquiv_apply]
-    simp only [Nat.reduceAdd, Nat.reduceMul, Fin.isValue, RootPairing.Equiv.reflection_weightEquiv,
-      RootPairing.reflection_apply, RootPairing.coroot', coroot_typeASimpleIndex 0,
-      LinearMap.flip_apply, toLinearMap_typeASimplyConnectedRootDatum, dotProduct_single, mul_one,
-      zsmul_eq_mul, Pi.sub_apply, Pi.mul_apply, Pi.intCast_apply, Int.cast_eq, LinearMap.neg_apply,
-      LinearMap.id_coe, id_eq, Pi.neg_apply]
-    rw [root_typeASimplyConnectedRootDatum_one_zero]
+    rw [← RootPairing.Equiv.weightEquiv_apply, RootPairing.Equiv.reflection_weightEquiv,
+      RootPairing.reflection_apply]
+    simp [coroot_typeASimpleIndex 0, root_typeASimpleIndex 0, CartanMatrix.A]
     ring
 
 /-- On `typeASimplyConnectedRootDatum 1`, the coweight map of the simple reflection is `-id`. -/
@@ -792,14 +784,9 @@ private lemma root_typeASimplyConnectedRootDatum_one_zero :
       (typeASimpleIndex 1 0)).toHom.coweightMap = -LinearMap.id :=
   LinearMap.ext fun y => funext fun k => by
     rcases Subsingleton.elim k 0 with rfl
-    rw [← RootPairing.Equiv.coweightEquiv_apply]
-    simp only [Nat.reduceAdd, Nat.reduceMul, Fin.isValue,
-      RootPairing.Equiv.reflection_coweightEquiv, RootPairing.coreflection_apply,
-      RootPairing.root', toLinearMap_typeASimplyConnectedRootDatum, dotProduct, Finset.univ_unique,
-      Fin.default_eq_zero, Finset.sum_singleton, coroot_typeASimpleIndex 0, zsmul_eq_mul,
-      Int.cast_mul, Pi.sub_apply, Pi.mul_apply, Pi.intCast_apply, Int.cast_eq, Pi.single_eq_same,
-      mul_one, LinearMap.neg_apply, LinearMap.id_coe, id_eq, Pi.neg_apply]
-    rw [root_typeASimplyConnectedRootDatum_one_zero]
+    rw [← RootPairing.Equiv.coweightEquiv_apply, RootPairing.Equiv.reflection_coweightEquiv,
+      RootPairing.coreflection_apply]
+    simp [coroot_typeASimpleIndex 0, root_typeASimpleIndex 0, CartanMatrix.A, dotProduct]
     ring
 
 /-- On `typeASimplyConnectedRootDatum 1`, the simple reflection sends every root to its opposite. -/

@@ -348,6 +348,15 @@ theorem IsStandard.map_range_rootSubgroupPoints (hF : D.IsStandard F) (α : Fin 
     (D.rootSubgroupPoints α K).range.map F = (D.rootSubgroupPoints (hF.rootPerm α) K).range := by
   rw [hF.rootPerm_apply]; exact hF.map_range_rootSubgroupPoints_rawRootMap α
 
+/-- Every element of the `β`-root subgroup lies in the `F`-image of the `hF.rootPerm.symm β`-root
+subgroup. -/
+theorem IsStandard.rootSubgroupPoints_mem_map_range_rootPerm_symm (hF : D.IsStandard F)
+    (β : Fin t.numRoots) (u : Multiplicative K) :
+    D.rootSubgroupPoints β K u ∈
+      (D.rootSubgroupPoints (hF.rootPerm.symm β) K).range.map F := by
+  rw [hF.map_range_rootSubgroupPoints, Equiv.apply_symm_apply]
+  exact ⟨u, rfl⟩
+
 /-- Recognition lemma for `hF.rootPerm` from the image of a root subgroup. -/
 theorem IsStandard.rootPerm_eq_of_map_range (hF : D.IsStandard F) {α β : Fin t.numRoots}
     (h : (D.rootSubgroupPoints α K).range.map F = (D.rootSubgroupPoints β K).range) :
@@ -476,15 +485,9 @@ theorem IsBased.map_positivePoints_eq (hF : D.IsBased F) :
   have hα : hF.isStandard.rootPerm.symm β ∈
       posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
     obtain ⟨α, hα, hβα⟩ := hF.image_rootPerm_posRoots.symm ▸ hβ
-    rw [hF.isStandard.rootPerm.symm_apply_eq.mpr hβα.symm]
-    exact hα
-  have hmem : D.rootSubgroupPoints β K u ∈
-      (D.rootSubgroupPoints (hF.isStandard.rootPerm.symm β) K).range.map F := by
-    rw [hF.isStandard.map_range_rootSubgroupPoints, Equiv.apply_symm_apply]
-    exact ⟨u, rfl⟩
-  exact Subgroup.map_mono
-    (show (D.rootSubgroupPoints (hF.isStandard.rootPerm.symm β) K).range ≤ D.positivePoints K from
-      by rintro _ ⟨v, rfl⟩; exact D.rootSubgroupPoints_mem_positivePoints K hα v) hmem
+    rwa [hF.isStandard.rootPerm.symm_apply_eq.mpr hβα.symm]
+  exact Subgroup.map_mono (D.range_rootSubgroupPoints_le_positivePoints K hα)
+    (hF.isStandard.rootSubgroupPoints_mem_map_range_rootPerm_symm β u)
 
 /-- For a based endomorphism, `rootPerm α` is positive iff `α` is positive. -/
 -- Note: `@[simp]` is on `isPos_rootPerm_iff` because `TauCeti.mem_posRoots` simplifies
@@ -562,20 +565,12 @@ theorem IsStandard.map_rootTorusSubgroup_eq (hF : D.IsStandard F) :
     (D.rootTorusSubgroup K).map F = D.rootTorusSubgroup K := by
   refine le_antisymm hF.map_rootTorusSubgroup_le ((D.rootTorusSubgroup_le_iff K _).mpr ⟨?_, ?_⟩)
   · intro β u
-    have hmem : D.rootSubgroupPoints β K u ∈
-        (D.rootSubgroupPoints (hF.rootPerm.symm β) K).range.map F := by
-      rw [hF.map_range_rootSubgroupPoints, Equiv.apply_symm_apply]
-      exact ⟨u, rfl⟩
     exact Subgroup.map_mono
-      (show (D.rootSubgroupPoints (hF.rootPerm.symm β) K).range ≤ D.rootTorusSubgroup K from
-        by rintro _ ⟨v, rfl⟩; exact D.rootSubgroupPoints_mem_rootTorusSubgroup _ K v) hmem
+      (D.range_rootSubgroupPoints_le_rootTorusSubgroup (hF.rootPerm.symm β) K)
+      (hF.rootSubgroupPoints_mem_map_range_rootPerm_symm β u)
   · intro s
-    have hmem : D.torusPoints K s ∈ (D.torusPoints K).range.map F := by
-      rw [hF.map_range_torusPoints_eq]
-      exact ⟨s, rfl⟩
-    exact Subgroup.map_mono
-      (show (D.torusPoints K).range ≤ D.rootTorusSubgroup K from
-        by rintro _ ⟨s', rfl⟩; exact D.torusPoints_mem_rootTorusSubgroup K s') hmem
+    exact Subgroup.map_mono (D.range_torusPoints_le_rootTorusSubgroup K)
+      (hF.map_range_torusPoints_eq.symm ▸ ⟨s, rfl⟩)
 
 /-- Over an infinite field with divisible units, a based endomorphism maps
 `D.borelSubgroup K` onto itself. -/
@@ -588,10 +583,10 @@ private theorem IsStandard.rootParamHom_one_ne_zero (hF : D.IsStandard F) (α) :
     hF.rootParamHom α 1 ≠ 0 := fun h0 => by
   obtain ⟨u, hu⟩ := hF.rootParamHom_surjective α 1
   by_cases hu0 : u = 0; · exact (@one_ne_zero K _ _) (by simpa [hu0] using hu.symm)
-  obtain ⟨s, hs⟩ := torusCharacter_surjective (D.coordinateRoot_ne_zero α) (Units.mk0 u hu0)
-  have hs' : (torusCharacter s (D.coordinateRoot α) : K) = u := by simpa using congrArg Units.val hs
+  obtain ⟨s, hs⟩ := exists_torusCharacter_val_eq
+    (torusCharacter_surjective (D.coordinateRoot_ne_zero α)) hu0
   exact (@one_ne_zero K _ _)
-    (hu.symm.trans (by simpa [hs', h0] using hF.rootParamHom_torusCharacter_mul α s 1))
+    (hu.symm.trans (by simpa [hs, h0] using hF.rootParamHom_torusCharacter_mul α s 1))
 
 /-- **The field endomorphism `g_α : K →+* K` of a standard endomorphism on the `α`-root subgroup**,
 normalized by `F (x_α(u)) = x_{hF.rootPerm α}(hF.rootUnit α * g_α u)`. -/

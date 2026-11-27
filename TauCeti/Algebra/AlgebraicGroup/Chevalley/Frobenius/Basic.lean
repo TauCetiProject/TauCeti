@@ -102,25 +102,15 @@ theorem isCharacterMap_frobenius :
     D.frobenius p k A (D.weylElement γ A s) = D.weylElement γ A (s ^ p ^ k) :=
   Subtype.ext (by rw [coe_frobenius, map_weylElement, map_iterateFrobenius_unit_eq_pow])
 
-open Multiplicative in
 /-- Over a perfect ring of exponential characteristic `p`, Frobenius maps each root subgroup onto
 itself. -/
 @[simp] theorem map_range_rootSubgroupPoints_frobenius [PerfectRing A p] (γ : Fin t.numRoots) :
     (D.rootSubgroupPoints γ A).range.map (D.frobenius p k A) =
-      (D.rootSubgroupPoints γ A).range := by
-  have hcomp : (D.frobenius p k A).comp (D.rootSubgroupPoints γ A) =
-      (D.rootSubgroupPoints γ A).comp
-        (AddMonoidHom.toMultiplicative (iterateFrobenius A p k).toAddMonoidHom) :=
-    MonoidHom.ext fun u => by
-      simpa only [MonoidHom.comp_apply, AddMonoidHom.coe_toMultiplicative,
-        RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, Function.comp_apply,
-        iterateFrobenius_def, Equiv.apply_symm_apply, ofAdd_toAdd] using
-        D.frobenius_rootSubgroupPoints p k A γ (toAdd u)
-  rw [MonoidHom.map_range, hcomp, MonoidHom.range_comp,
-    MonoidHom.range_eq_top_of_surjective _ fun y => by
-      obtain ⟨x, hx⟩ := (bijective_iterateFrobenius A p k).surjective (toAdd y)
-      exact ⟨ofAdd x, by simp [hx]⟩,
-    Subgroup.map_top]
+      (D.rootSubgroupPoints γ A).range :=
+  D.map_range_rootSubgroupPoints_of_comp_eq
+    (f := (iterateFrobenius A p k).toAddMonoidHom)
+    (bijective_iterateFrobenius A p k).surjective
+    (D.frobenius_rootSubgroupPoints p k A γ)
 
 /-- The zeroth Frobenius is the identity on the point group. -/
 @[simp]
