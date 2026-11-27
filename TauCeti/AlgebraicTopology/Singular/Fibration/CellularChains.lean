@@ -77,6 +77,9 @@ differential one target cell at a time.
 * `TauCeti.TopCat.singularHomologyMap_cellDiskPullbackPairMap_comp_serreChainsIso_hom`:
   on the contribution of the cell `j`, the identification is the one over the single cell,
   followed by the map induced by the characteristic map of `j`.
+* `TauCeti.TopCat.singularHomologyMap_cellDiskPullbackPairMap_comp_serreLocalHomologyIso_hom`:
+  on the contribution of the cell `j`, the local homology isomorphism at its centre is the
+  identification over the single cell, followed by the characteristic map and the localization.
 * `TauCeti.TopCat.serreChainsIso_hom_comp_twistedCellularChainLocalization`: the identification is
   compatible with localization at the centre of a cell.
 
@@ -241,6 +244,28 @@ def serreLocalHomologyIso (n q : ℕ) (j : cell C n) (x : skeletonObj C (n + 1))
         (hx ▸ map_zero_notMem_skeletonLT j))
 
 variable (C) in
+/-- **The local homology isomorphism over the centre of a cell, on the contribution of the cell.**
+On the contribution `Hq+n(Pⱼ, ∂Pⱼ; R)` of the `n`-cell `j`, mapped to
+`Hq+n(p⁻¹(Xⁿ), p⁻¹(Xⁿ ∖ {b}); R)` for the centre `b = χⱼ(0)`,
+`TauCeti.TopCat.serreLocalHomologyIso` is the identification
+`Hq+n(Pⱼ, ∂Pⱼ; R) ≅ Hn(Dⁿ, Sⁿ⁻¹; χⱼ*Hq(F))` over the cell, followed by the map induced by the
+characteristic map of `j` and the localization of cellular chains at `b`. -/
+@[reassoc]
+theorem singularHomologyMap_cellDiskPullbackPairMap_comp_serreLocalHomologyIso_hom
+    (n q : ℕ) (j : cell C n) (x : skeletonObj C (n + 1)) (hx : (x : B) = map n j 0) :
+    (cellDiskPullbackPair p C n j).singularHomologyMap
+        (cellDiskPullbackPairMap p C n j ≫
+          preimageSkeletonPairToComplFiber p C n (map_zero_notMem_skeletonLT j))
+        (ModuleCat.of R R) (q + n) ≫ (serreLocalHomologyIso C hp R n q j x hx).hom =
+      (cellDiskPullbackPairTwistedIso hp R n q j).hom ≫
+        TopPair.twistedHomologyMap (characteristicCellPairMap C j)
+          (skeletonSystem C (serreFiberLocalSystemOn C R hp q) (n + 1)) n ≫
+        twistedCellularChainLocalization C (serreFiberLocalSystemOn C R hp q) x
+          (hx ▸ map_zero_notMem_skeletonLT j) := by
+  simp only [serreLocalHomologyIso, Iso.trans_hom, Iso.symm_hom, asIso_inv, asIso_hom,
+    IsIso.hom_inv_id_assoc]
+
+variable (C) in
 /-- **The identification of the first page with cellular chains is compatible with localization at
 the centre of a cell.** For the centre `b = χⱼ(0)` of an `n`-cell `j`, the isomorphism
 `Hq+n(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹); R) ≅ Hn(Xⁿ, Xⁿ⁻¹; Hq(F))` of `TauCeti.TopCat.serreChainsIso`, followed by
@@ -264,8 +289,7 @@ theorem serreChainsIso_hom_comp_twistedCellularChainLocalization (n q : ℕ) (j 
     ← TopPair.singularHomologyMap_comp_assoc]
   by_cases hk : k = j
   · subst hk
-    simp only [serreLocalHomologyIso, Iso.trans_hom, Iso.symm_hom, asIso_inv, asIso_hom,
-      IsIso.hom_inv_id_assoc]
+    rw [singularHomologyMap_cellDiskPullbackPairMap_comp_serreLocalHomologyIso_hom]
   · rw [twistedHomologyMap_characteristicCellPairMap_comp_twistedCellularChainLocalization_eq_zero
       C _ hk x (hx ▸ map_zero_mem_openCell n j), comp_zero,
       singularHomologyMap_cellDiskPullbackPairMap_comp_preimageSkeletonPairToComplFiber_eq_zero
