@@ -183,9 +183,13 @@ theorem matrixBilinearForm_skewBlock (a : Matrix ι ι ℝ) (b : E) (x y : E') :
     sumElim_dotProduct_sumElim,
     dotProduct_add, dotProduct_add]
   simp [matrixBilinearForm_apply, Matrix.mulVec, dotProduct, PiLp.inner_apply,
-    horizontal_apply, vertical_apply, Finset.mul_sum,
-    mul_comm, mul_left_comm, mul_assoc]
-  ring
+    horizontal_apply, vertical_apply, Finset.mul_sum]
+  ring_nf
+  simp only [Finset.mul_sum]
+  congr 2
+  · exact Finset.sum_congr rfl fun _ _ ↦ by ring
+  · funext i
+    ring
 
 /-- The two off-diagonal terms cancel in the quadratic form of the lifted matrix. -/
 theorem matrixBilinearForm_skewBlock_self (a : Matrix ι ι ℝ) (b : E) (v : E') :
