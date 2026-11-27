@@ -26,14 +26,14 @@ complex Green formula to `(z - ξ)⁻¹ • f z` on `C - circleCycle ξ ε` (for
 `f ξ = (2πi)⁻¹ • C.integral (fun z ↦ (z - ξ)⁻¹ • f z) - π⁻¹ • ∫ z in Δ, (z - ξ)⁻¹ • \bar∂ f(z)`,
 
 together with its specialization to finitely connected Jordan regions via
-`TauCeti.Contour.jordanBoundaryCycle`.
+`TauCeti.Contour.jordanRegion` and `TauCeti.Contour.jordanBoundaryCycle`.
 
 ## Main results
 
 * `TauCeti.integrableOn_sub_inv_smul_conjWirtingerDeriv`
 * `TauCeti.Contour.Cycle.integral_sub_circleIntegral_sub_inv_smul_eq`
 * `TauCeti.cauchyPompeiu_smul`, `TauCeti.cauchyPompeiu`
-* `TauCeti.cauchyPompeiu_jordanBoundaryCycle_smul`
+* `TauCeti.cauchyPompeiu_jordanBoundaryCycle_smul`, `TauCeti.cauchyPompeiu_jordanBoundaryCycle`
 
 ## References
 
@@ -288,11 +288,10 @@ variable {ι : Type*}
 /-- **Cauchy–Pompeiu formula on a finitely connected Jordan region (Banach-valued).** Given an
 outer simple closed absolutely continuous curve `γ₀` and simple closed absolutely continuous hole
 curves `(γ i)_{i ∈ s}` whose filled hulls are pairwise disjoint and contained in the inside of `γ₀`,
-let `Δ := (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \`
-`⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)` be the resulting finitely connected Jordan
-region. For any real `C¹` map `f : ℂ → E` on an open neighborhood `Ω` of `closure Δ` into a
-complex Banach space `E` and any `ξ ∈ Δ`, `f ξ` is represented by integrating over
-`Contour.jordanBoundaryCycle γ₀ s γ` and over `Δ`. -/
+let `Δ := Contour.jordanRegion γ₀ s γ` be the resulting finitely connected Jordan region. For any
+real `C¹` map `f : ℂ → E` on an open neighborhood `Ω` of `closure Δ` into a complex Banach space `E`
+and any `ξ ∈ Δ`, `f ξ` is represented by integrating over `Contour.jordanBoundaryCycle γ₀ s γ` and
+over `Δ`. -/
 theorem cauchyPompeiu_jordanBoundaryCycle_smul {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] [CompleteSpace E] {γ₀ : Contour.AbsolutelyContinuousClosedCurve}
     {s : Finset ι} {γ : ι → Contour.AbsolutelyContinuousClosedCurve} {Ω : Set ℂ}
@@ -302,25 +301,47 @@ theorem cauchyPompeiu_jordanBoundaryCycle_smul {E : Type*} [NormedAddCommGroup E
     (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
       filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
-    (hΩ : IsOpen Ω)
-    (hclosure : closure ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) ⊆ Ω)
-    (f : ℂ → E) (hf : ContDiffOn ℝ 1 f Ω) {ξ : ℂ}
-    (hξ : ξ ∈ (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) :
+    (hΩ : IsOpen Ω) (hclosure : closure (Contour.jordanRegion γ₀ s γ) ⊆ Ω)
+    (f : ℂ → E) (hf : ContDiffOn ℝ 1 f Ω) {ξ : ℂ} (hξ : ξ ∈ Contour.jordanRegion γ₀ s γ) :
     f ξ = (2 * (Real.pi : ℂ) * I)⁻¹ •
         (Contour.jordanBoundaryCycle γ₀ s γ).integral (fun z ↦ (z - ξ)⁻¹ • f z) -
-      (Real.pi : ℂ)⁻¹ • ∫ z in (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-          ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b),
+      (Real.pi : ℂ)⁻¹ • ∫ z in Contour.jordanRegion γ₀ s γ,
         (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 :=
   cauchyPompeiu_smul hΩ (Contour.isOpen_jordanRegion hab₀ hinj₀ hab hinj) hclosure
     (Contour.jordanBoundaryCycle γ₀ s γ)
     (Contour.Cycle.isIn_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hclosure)
-    (fun _ hz ↦ by
-      rw [Contour.Cycle.windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hz]
-      split_ifs <;> rfl)
+    (fun _ hz ↦ Contour.Cycle.windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hz)
     f hf hξ
-      (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hξ)
+    (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hξ)
+
+/-- **Cauchy–Pompeiu formula on a finitely connected Jordan region.** Given an outer simple closed
+absolutely continuous curve `γ₀` and simple closed absolutely continuous hole curves
+`(γ i)_{i ∈ s}` whose filled hulls are pairwise disjoint and contained in the inside of `γ₀`, let
+`Δ := Contour.jordanRegion γ₀ s γ` be the resulting finitely connected Jordan region. For any real
+`C¹` function `f : ℂ → ℂ` on an open neighborhood `Ω` of `closure Δ` and any `ξ ∈ Δ`, `f ξ` is
+represented by integrating over `Contour.jordanBoundaryCycle γ₀ s γ` and over `Δ`, written with the
+real directional derivatives `f_x + i f_y = 2 \bar∂ f`. -/
+theorem cauchyPompeiu_jordanBoundaryCycle {γ₀ : Contour.AbsolutelyContinuousClosedCurve}
+    {s : Finset ι} {γ : ι → Contour.AbsolutelyContinuousClosedCurve} {Ω : Set ℂ}
+    (hab₀ : γ₀.a ≠ γ₀.b) (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
+    (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
+    (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b)))
+    (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
+      filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
+    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
+    (hΩ : IsOpen Ω) (hclosure : closure (Contour.jordanRegion γ₀ s γ) ⊆ Ω)
+    (f : ℂ → ℂ) (hf : ContDiffOn ℝ 1 f Ω) {ξ : ℂ} (hξ : ξ ∈ Contour.jordanRegion γ₀ s γ) :
+    f ξ = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
+        (Contour.jordanBoundaryCycle γ₀ s γ).integral (fun z ↦ f z / (z - ξ)) -
+      (2 * (Real.pi : ℂ))⁻¹ *
+        ∫ z in Contour.jordanRegion γ₀ s γ,
+          (fderiv ℝ f z 1 + Complex.I * fderiv ℝ f z Complex.I) / (z - ξ) :=
+  cauchyPompeiu hΩ (Contour.isOpen_jordanRegion hab₀ hinj₀ hab hinj) hclosure
+    (Contour.jordanBoundaryCycle γ₀ s γ)
+    (Contour.Cycle.isIn_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hclosure)
+    (fun _ hz ↦ Contour.Cycle.windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hz)
+    f hf hξ
+    (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hξ)
 
 end JordanRegion
 

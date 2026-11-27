@@ -17,17 +17,19 @@ import TauCeti.Topology.JordanCurve.Interval
 
 Given an outer simple closed absolutely continuous curve `γ₀` and finitely many inner simple closed
 absolutely continuous curves `γ i` (`i ∈ s`) whose closed filled hulls are pairwise disjoint inside
-the inside of `γ₀`, this file packages the positively oriented boundary cycle
+the inside of `γ₀`, this file packages the finitely connected Jordan region
+`TauCeti.Contour.jordanRegion γ₀ s γ` and its positively oriented boundary cycle
 `TauCeti.Contour.jordanBoundaryCycle γ₀ s γ := [γ₀⁺] - ∑ i ∈ s, [γᵢ⁺]` on the existing
-`TauCeti.Contour.Cycle` carrier and proves its trace, winding-number, winding-weight, containment,
-and null-homology adapters for the finitely connected Jordan region
-`Δ := (filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)`.
+`TauCeti.Contour.Cycle` carrier, and proves its trace, winding-number, winding-weight, containment,
+and null-homology adapters.
 
 ## Main definitions
 
 * `TauCeti.Contour.AbsolutelyContinuousClosedCurve.positivelyOrient`: orient a closed absolutely
   continuous curve positively (reversing it when `jordanSign = -1`, leaving it unchanged otherwise).
 * `TauCeti.Contour.jordanBoundaryCycle`: oriented boundary cycle `[γ₀⁺] - ∑ i ∈ s, [γᵢ⁺]`.
+* `TauCeti.Contour.jordanRegion`: finitely connected Jordan region bounded externally by `γ₀` and
+  internally by the holes `γ i` (`i ∈ s`).
 
 ## Main results
 
@@ -38,10 +40,13 @@ and null-homology adapters for the finitely connected Jordan region
 * `TauCeti.Contour.Cycle.windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff`: a
   positively oriented simple closed absolutely continuous curve has winding number `1` on its
   inside.
-* `TauCeti.Contour.isOpen_jordanRegion`, `TauCeti.Contour.Cycle.trace_jordanBoundaryCycle`,
+* `TauCeti.Contour.jordanRegion_def`, `TauCeti.Contour.mem_jordanRegion_iff`,
+  `TauCeti.Contour.jordanRegion_empty`, `TauCeti.Contour.isOpen_jordanRegion`,
+  `TauCeti.Contour.Cycle.trace_jordanBoundaryCycle`,
   `notMem_trace_jordanBoundaryCycle_of_mem`, `windingNumber_jordanBoundaryCycle`,
   `windingWeight_jordanBoundaryCycle`, `isIn_jordanBoundaryCycle`,
-  `isNullHomologous_jordanBoundaryCycle`: openness, trace, winding, and null-homology adapters.
+  `isNullHomologous_jordanBoundaryCycle`: region, openness, trace, winding, and null-homology
+  adapters.
 
 ## References
 
@@ -331,16 +336,46 @@ theorem jordanBoundaryCycle_of_jordanSign_eq_one {γ₀ : AbsolutelyContinuousCl
   exact congrArg _ (Finset.sum_congr rfl fun i hi ↦ by
     rw [AbsolutelyContinuousClosedCurve.positivelyOrient_of_jordanSign_eq_one (h i hi)])
 
-/-- A finitely connected Jordan region `(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)`
-bounded by simple closed absolutely continuous curves `C₀ := γ₀ '' uIcc γ₀.a γ₀.b` and
-`C i := γ i '' uIcc (γ i).a (γ i).b` (`i ∈ s`) is open. -/
+/-- **Finitely connected Jordan region** bounded externally by `γ₀ '' uIcc γ₀.a γ₀.b` and
+internally by the filled hulls of `γ i '' uIcc (γ i).a (γ i).b` (`i ∈ s`). When `γ₀` and the
+`γ i` (`i ∈ s`) are simple closed curves whose hole filled hulls are pairwise disjoint and contained
+in the inside of `γ₀`, this open set has oriented boundary cycle `jordanBoundaryCycle γ₀ s γ`. -/
+def jordanRegion (γ₀ : AbsolutelyContinuousClosedCurve) (s : Finset ι)
+    (γ : ι → AbsolutelyContinuousClosedCurve) : Set ℂ :=
+  (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
+    ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)
+
+/-- Defining formula for `TauCeti.Contour.jordanRegion`. -/
+theorem jordanRegion_def (γ₀ : AbsolutelyContinuousClosedCurve) (s : Finset ι)
+    (γ : ι → AbsolutelyContinuousClosedCurve) :
+    jordanRegion γ₀ s γ =
+      (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
+        ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) :=
+  (rfl)
+
+/-- Membership in `TauCeti.Contour.jordanRegion`. -/
+theorem mem_jordanRegion_iff {γ₀ : AbsolutelyContinuousClosedCurve} {s : Finset ι}
+    {γ : ι → AbsolutelyContinuousClosedCurve} {z : ℂ} :
+    z ∈ jordanRegion γ₀ s γ ↔
+      z ∈ filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b) ∧
+        ∀ i ∈ s, z ∉ filledHull (γ i '' uIcc (γ i).a (γ i).b) := by
+  simp only [jordanRegion, Set.mem_sdiff, mem_iUnion₂, not_exists]
+
+/-- With no holes (`s = ∅`), `jordanRegion` is the inside of `γ₀`. -/
+@[simp]
+theorem jordanRegion_empty (γ₀ : AbsolutelyContinuousClosedCurve)
+    (γ : ι → AbsolutelyContinuousClosedCurve) :
+    jordanRegion γ₀ ∅ γ = filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b) := by
+  simp [jordanRegion]
+
+/-- A finitely connected Jordan region `jordanRegion γ₀ s γ` bounded by simple closed absolutely
+continuous curves `γ₀` and `γ i` (`i ∈ s`) is open. -/
 theorem isOpen_jordanRegion {γ₀ : AbsolutelyContinuousClosedCurve} {s : Finset ι}
     {γ : ι → AbsolutelyContinuousClosedCurve} (hab₀ : γ₀.a ≠ γ₀.b)
     (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
     (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
     (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b))) :
-    IsOpen ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) :=
+    IsOpen (jordanRegion γ₀ s γ) :=
   (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).isClosed.isOpen_filledHull_sdiff_biUnion s
     fun i hi ↦ ((γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)).isClosed
 
@@ -418,7 +453,7 @@ theorem trace_jordanBoundaryCycle_eq_union
       exact hneg.ne
 
 /-- **Trace identification for `jordanBoundaryCycle`.** The trace of the oriented boundary cycle of
-a finitely connected Jordan region `Δ` equals `frontier Δ`. -/
+`jordanRegion γ₀ s γ` equals `frontier (jordanRegion γ₀ s γ)`. -/
 theorem trace_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
     (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
     (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
@@ -426,15 +461,12 @@ theorem trace_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
     (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
       filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b)) :
-    trace (jordanBoundaryCycle γ₀ s γ) =
-      frontier ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-        ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) := by
-  rw [trace_jordanBoundaryCycle_eq_union hsub,
+    trace (jordanBoundaryCycle γ₀ s γ) = frontier (jordanRegion γ₀ s γ) := by
+  rw [trace_jordanBoundaryCycle_eq_union hsub, jordanRegion,
     (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).frontier_filledHull_sdiff_biUnion
       (fun i hi ↦ (γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)) hsub hdisj]
 
-/-- Any point of a finitely connected Jordan region `Δ` lies off the trace of
-`jordanBoundaryCycle γ₀ s γ`. -/
+/-- Any point of `jordanRegion γ₀ s γ` lies off the trace of `jordanBoundaryCycle γ₀ s γ`. -/
 theorem notMem_trace_jordanBoundaryCycle_of_mem (hab₀ : γ₀.a ≠ γ₀.b)
     (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
     (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
@@ -442,17 +474,16 @@ theorem notMem_trace_jordanBoundaryCycle_of_mem (hab₀ : γ₀.a ≠ γ₀.b)
     (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
       filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
-    {z : ℂ} (hz : z ∈ (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) :
+    {z : ℂ} (hz : z ∈ jordanRegion γ₀ s γ) :
     z ∉ trace (jordanBoundaryCycle γ₀ s γ) := by
   rw [trace_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj]
   exact Set.disjoint_right.mp
     (disjoint_frontier_iff_isOpen.mpr (isOpen_jordanRegion hab₀ hinj₀ hab hinj)) hz
 
 open scoped Classical in
-/-- **Winding-number adapter for `jordanBoundaryCycle`.** Off its trace `frontier Δ`, the oriented
-boundary cycle of a finitely connected Jordan region `Δ` has winding number `1` on `Δ` and `0`
-everywhere else. -/
+/-- **Winding-number adapter for `jordanBoundaryCycle`.** Off its trace
+`frontier (jordanRegion γ₀ s γ)`, the oriented boundary cycle of `jordanRegion γ₀ s γ` has winding
+number `1` on `jordanRegion γ₀ s γ` and `0` everywhere else. -/
 theorem windingNumber_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
     (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
     (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
@@ -462,8 +493,7 @@ theorem windingNumber_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
     {z : ℂ} (hz : z ∉ trace (jordanBoundaryCycle γ₀ s γ)) :
     windingNumber z (jordanBoundaryCycle γ₀ s γ) =
-      if z ∈ (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-          ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) then 1 else 0 := by
+      if z ∈ jordanRegion γ₀ s γ then 1 else 0 := by
   rw [trace_jordanBoundaryCycle_eq_union hsub] at hz
   rw [jordanBoundaryCycle, map_sub, map_sum]
   split_ifs with hzΔ
@@ -487,7 +517,8 @@ theorem windingNumber_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
           windingNumber_of_positivelyOrient_eq_zero_of_notMem_filledHull (γ i)
             (fun h ↦ hzF₀ (hsub i hi h).1), sub_zero]
 
-/-- The trace-zero real `windingWeight` of `jordanBoundaryCycle γ₀ s γ` is the indicator of `Δ`. -/
+/-- The trace-zero real `windingWeight` of `jordanBoundaryCycle γ₀ s γ` is the indicator of
+`jordanRegion γ₀ s γ`. -/
 theorem windingWeight_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
     (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
     (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
@@ -495,12 +526,8 @@ theorem windingWeight_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
     (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
       filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b)) :
-    (jordanBoundaryCycle γ₀ s γ).windingWeight =
-      ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-        ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)).indicator 1 := by
+    (jordanBoundaryCycle γ₀ s γ).windingWeight = (jordanRegion γ₀ s γ).indicator 1 := by
   classical
-  set Δ := (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-    ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)
   ext z
   by_cases htr : z ∈ trace (jordanBoundaryCycle γ₀ s γ)
   · rw [windingWeight_eq_zero_of_mem _ htr,
@@ -508,9 +535,10 @@ theorem windingWeight_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
         notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hzΔ htr]
   · rw [windingWeight_eq_of_notMem _ htr,
       windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj htr]
-    by_cases hzΔ : z ∈ Δ <;> simp [Δ, hzΔ]
+    by_cases hzΔ : z ∈ jordanRegion γ₀ s γ <;> simp [hzΔ]
 
-/-- Whenever `closure Δ ⊆ Ω`, the trace of `jordanBoundaryCycle γ₀ s γ` lies in `Ω`. -/
+/-- Whenever `closure (jordanRegion γ₀ s γ) ⊆ Ω`, the trace of `jordanBoundaryCycle γ₀ s γ` lies in
+`Ω`. -/
 theorem isIn_jordanBoundaryCycle {Ω : Set ℂ} (hab₀ : γ₀.a ≠ γ₀.b)
     (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
     (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
@@ -518,13 +546,13 @@ theorem isIn_jordanBoundaryCycle {Ω : Set ℂ} (hab₀ : γ₀.a ≠ γ₀.b)
     (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
       filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
-    (hΩ : closure ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) ⊆ Ω) :
+    (hΩ : closure (jordanRegion γ₀ s γ) ⊆ Ω) :
     IsIn (jordanBoundaryCycle γ₀ s γ) Ω := by
   rw [isIn_iff, trace_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj]
   exact frontier_subset_closure.trans hΩ
 
-/-- Whenever `closure Δ ⊆ Ω`, `jordanBoundaryCycle γ₀ s γ` is null-homologous in `Ω`. -/
+/-- Whenever `closure (jordanRegion γ₀ s γ) ⊆ Ω`, `jordanBoundaryCycle γ₀ s γ` is null-homologous
+in `Ω`. -/
 theorem isNullHomologous_jordanBoundaryCycle {Ω : Set ℂ} (hab₀ : γ₀.a ≠ γ₀.b)
     (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
     (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
@@ -532,8 +560,7 @@ theorem isNullHomologous_jordanBoundaryCycle {Ω : Set ℂ} (hab₀ : γ₀.a �
     (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
       filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
-    (hΩ : closure ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) ⊆ Ω) :
+    (hΩ : closure (jordanRegion γ₀ s γ) ⊆ Ω) :
     IsNullHomologous (jordanBoundaryCycle γ₀ s γ) Ω := by
   rw [isNullHomologous_iff]
   intro z hzΩ
