@@ -94,7 +94,10 @@ theorem mem_maxGenEigenspace_aeval_X_sq_sub_C {R M : Type*} [CommRing R] [AddCom
 
 /-- If `P (U)` kills `y` and `(P / (X - c)) (U)` still kills `y` whenever `c ≠ 0` and `q * c` are
 both roots of `P`, then any geometric chain `q ^ i / d` (`i < k`) ending below a root `q ^ k / d`
-cancels from `P`, provided the powers `q ^ i` are pairwise distinct. -/
+cancels from `P`, provided the powers `q ^ i` are pairwise distinct.
+
+Adapted from grh-lean (https://github.com/lsernau/grh-lean at commit `72fead1`, Apache 2.0,
+Copyright 2026 Anthropic, PBC), file `src/Lib/LocalGL/SphericalChainLemma.lean`. -/
 theorem aeval_apply_eq_zero_of_eq_prod_mul {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
     {U : End K V} {y : V} {P : K[X]} {q d : K}
     (hq : Function.Injective (q ^ · : ℕ → K)) (aeval_P : aeval U P y = 0)

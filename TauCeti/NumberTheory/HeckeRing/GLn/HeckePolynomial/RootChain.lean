@@ -19,8 +19,8 @@ import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Aeval
+import TauCeti.LinearAlgebra.SesquilinearForm.AdjointPair
 import TauCeti.LinearAlgebra.SesquilinearForm.Complex
-import TauCeti.LinearAlgebra.SesquilinearForm.Polynomial
 
 /-!
 # Root chains of `GL n` Hecke polynomials
@@ -29,9 +29,12 @@ This file isolates the linear-algebraic and polynomial core of the root-chain le
 spherical Hecke polynomials of `GL_N` in unitary representations (cf. Tadić's classification of
 the unitary dual and Bernstein's inequality at the ends of segments).
 
-Adapted from `grh-lean` (`https://github.com/lsernau/grh-lean`, commit `72fead1`, Apache 2.0),
-file `src/Lib/LocalGL/SphericalChainLemma.lean` (`New.Patching.chain_lemma_of_adjoint`,
-`New.Patching.le_norm_sq_of_isRoot_of_not_isRoot_mul`, and `New.Patching.isRoot_chain_of_norm`).
+## Provenance
+
+Adapted from grh-lean (https://github.com/lsernau/grh-lean at commit `72fead1`, Apache 2.0,
+Copyright 2026 Anthropic, PBC), file `src/Lib/LocalGL/SphericalChainLemma.lean`
+(`New.Patching.chain_lemma_of_adjoint`, `New.Patching.le_norm_sq_of_isRoot_of_not_isRoot_mul`,
+and `New.Patching.isRoot_chain_of_norm`).
 
 Given a positive-definite sesquilinear form `B` on a complex vector space `V`, an endomorphism
 `U : Module.End ℂ V` with left adjoint `U'`, a real scale `q > 1`, coefficients `t` with
