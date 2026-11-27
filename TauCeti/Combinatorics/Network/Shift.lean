@@ -22,6 +22,9 @@ feasible reference instead reduces its prescribed-excess problem to a circulatio
 `BoundedFlow`; their extra constraint prescribes excess at every vertex. Excess is incoming minus
 outgoing, so the shifted demand is the original demand minus the reference excess.
 
+The abbreviations `Network.ExcessFlow` and `Network.ExcessIntervalFlow` specialize these types to
+the lower and upper bounds carried by a bundled network.
+
 ## References
 
 * D. P. Bertsekas, *Linear Network Optimization*, Section 1.1.3 and Exercises 2.4–2.6.
@@ -48,6 +51,21 @@ abbrev ExcessFlow [Preorder K] (lo hi : Assignment Q K) (b : V → K) :=
 The vertex bounds constrain net excess, rather than total traffic through a vertex. -/
 abbrev ExcessIntervalFlow [Preorder K] (lo hi : Assignment Q K) (a b : V → K) :=
   {f : Assignment Q K // f ∈ Set.Icc lo hi ∧ excessAt f ∈ Set.Icc a b}
+
+namespace Network
+
+variable [Preorder K]
+
+/-- Assignments respecting a network's bounds with prescribed excess `b` at every vertex. -/
+abbrev ExcessFlow (N : Network K V) [∀ x y, Fintype (N.Hom x y)] (b : V → K) :=
+  TauCeti.ExcessFlow N.lower N.upper b
+
+/-- Assignments respecting a network's bounds whose excess at each vertex lies in the prescribed
+interval. -/
+abbrev ExcessIntervalFlow (N : Network K V) [∀ x y, Fintype (N.Hom x y)] (a b : V → K) :=
+  TauCeti.ExcessIntervalFlow N.lower N.upper a b
+
+end Network
 
 namespace ExcessFlow
 

@@ -66,6 +66,9 @@ flows is assembled.
   `n • d` for a natural number `n`.
 * `TauCeti.Flow.exists_nsmul_eq_val_and_nsmul_eq_arrowSum_and_le`: a compatible flow value and
   the capacity of any source--sink cut have natural multipliers `n ≤ m`.
+* `TauCeti.Network.upperCutCapacity`, `TauCeti.Network.cutBound`,
+  `TauCeti.Network.BoundedFlow`, and `TauCeti.Network.UpperFlow`: the cut functions and terminal
+  assignment types specialized to a bundled network.
 
 ## References
 
@@ -553,7 +556,21 @@ end BoundedFlow
 
 namespace Network
 
-variable [Fintype V] [AddCommGroup K] [Preorder K]
+variable [Fintype V]
+
+/-- The upper capacity of a vertex cut in a network. This ignores the network's lower bounds, as
+ordinary flows against the upper capacities do. -/
+abbrev upperCutCapacity [AddCommMonoid K] [LE K] (N : Network K V)
+    [∀ x y, Fintype (N.Hom x y)] [DecidableEq V] (S : Finset V) : K :=
+  arrowSum N.upper S Sᶜ
+
+/-- The signed cut bound of a vertex set in a network: upper capacity leaving the set minus lower
+capacity entering it. -/
+abbrev cutBound [AddCommGroup K] [LE K] (N : Network K V)
+    [∀ x y, Fintype (N.Hom x y)] [DecidableEq V] (S : Finset V) : K :=
+  TauCeti.cutBound N.lower N.upper S
+
+variable [AddCommGroup K] [Preorder K]
 
 /-- The bounded `s`–`t` assignments of a network, respecting both its lower and upper bounds. -/
 abbrev BoundedFlow (N : Network K V) [∀ x y, Fintype (N.Hom x y)] (s t : V) :=
