@@ -93,6 +93,9 @@ bounds.
 * `MeasureTheory.Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top`: on a σ-finite
   measure space, every nonnegative level strictly below the `L∞` norm of an operator-valued
   function is witnessed at a single vector on a measurable set of positive finite measure.
+* `MeasureTheory.Lp.exists_measurableSet_forall_norm_sub_lt_of_lt_norm`: on a σ-finite measure
+  space, an `L∞` function stays `ε`-close to a single vector of norm above `t - ε`, for any
+  nonnegative level `t` below its norm, on a measurable set of positive finite measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.MemLp.integral_norm_le_mul_eLpNorm`: the same bound for a function in `Lᵖ`.
@@ -837,6 +840,43 @@ theorem Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top [SigmaFini
   exact ⟨u B, t, ht, hts, h1, h2⟩
 
 end OperatorNorm
+
+section Localization
+
+variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
+
+/-- On a σ-finite measure space, if `0 ≤ t < ‖g‖_∞` and `ε > 0`, then `g ∈ L^∞(μ; E)` stays
+`ε`-close to a single vector of norm greater than `t - ε` on some measurable set of finite
+positive measure. This uses that `g` has separable range. -/
+theorem Lp.exists_measurableSet_forall_norm_sub_lt_of_lt_norm [SigmaFinite μ] (g : Lp E ∞ μ)
+    {t ε : ℝ} (ht0 : 0 ≤ t) (ht : t < ‖g‖) (hε : 0 < ε) :
+    ∃ s, MeasurableSet s ∧ 0 < μ s ∧ μ s < ∞ ∧
+      ∃ d : E, t - ε < ‖d‖ ∧ ∀ x ∈ s, ‖g x - d‖ < ε := by
+  have hg := Lp.stronglyMeasurable g
+  -- Cover `{x | t < ‖g x‖}` by countably many sets where `g` is `ε`-close to a point of a
+  -- countable dense subset of its range.
+  obtain ⟨D, hDc, hD⟩ := hg.isSeparable_range
+  have hmeas (d : E) : MeasurableSet ({x | t < ‖g x‖} ∩ {x | ‖g x - d‖ < ε}) :=
+    (measurableSet_lt measurable_const hg.norm.measurable).inter
+      (measurableSet_lt (hg.sub stronglyMeasurable_const).norm.measurable measurable_const)
+  have hcover : {x | t < ‖g x‖} ⊆ ⋃ d ∈ D, {x | t < ‖g x‖} ∩ {x | ‖g x - d‖ < ε} := by
+    intro x hx
+    obtain ⟨d, hdD, hd⟩ := Metric.mem_closure_iff.1 (hD (Set.mem_range_self x)) ε hε
+    exact Set.mem_biUnion hdD ⟨hx, by simpa [_root_.dist_eq_norm] using hd⟩
+  obtain ⟨d, -, hd⟩ : ∃ d ∈ D, μ ({x | t < ‖g x‖} ∩ {x | ‖g x - d‖ < ε}) ≠ 0 := by
+    by_contra! h
+    exact Lp.measure_lt_norm_ne_zero ht0 ht
+      (measure_mono_null hcover ((measure_biUnion_null_iff hDc).2 h))
+  obtain ⟨s, hs, hsd, hspos, hstop⟩ := Measure.exists_subset_measure_lt_top (hmeas d)
+    (pos_iff_ne_zero.2 hd)
+  -- Any point of `s` shows that `‖d‖ > t - ε`.
+  obtain ⟨x₀, hx₀⟩ := nonempty_of_measure_ne_zero hspos.ne'
+  have h₁ : t < ‖g x₀‖ := (hsd hx₀).1
+  have h₂ : ‖g x₀ - d‖ < ε := (hsd hx₀).2
+  have := norm_sub_norm_le (g x₀) d
+  exact ⟨s, hs, hspos, hstop, d, by linarith, fun x hx ↦ (hsd hx).2⟩
+
+end Localization
 section Inv
 
 variable {α 𝕜 : Type*} [MeasurableSpace α] [NormedDivisionRing 𝕜] {μ : Measure α}

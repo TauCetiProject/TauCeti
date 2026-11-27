@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The integral pairing of a Bochner space with the Bochner space of the dual
@@ -51,6 +52,8 @@ to composition with `T` on the other side.
   `MeasureTheory.Lp.norm_bochnerDualMap_apply`: the pairing is isometric.
 * `MeasureTheory.Lp.norm_flip_bochnerDualMap_apply_of_ne_top`,
   `MeasureTheory.Lp.norm_flip_bochnerDualMap_apply`: its range norms `L^q(μ; X)`.
+* `MeasureTheory.Lp.bochnerDualMapₗᵢ`: on a σ-finite measure space, the integral pairing as a
+  linear isometry.
 * `MeasureTheory.Lp.isClosed_range_bochnerDualMap`: on a σ-finite measure space the range is
   closed.
 
@@ -66,6 +69,27 @@ open MeasureTheory
 open scoped ENNReal
 
 namespace ContinuousLinearMap
+
+section Indicator
+
+variable {α 𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] {mα : MeasurableSpace α}
+  {μ : Measure α} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace ℝ G]
+  [SMulCommClass ℝ 𝕜 G] [CompleteSpace G] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+  [p.HolderConjugate q]
+
+/-- Pairing `g ∈ Lᵖ(μ; E)` through `B` with the indicator function of a set `s` of finite measure
+with value `y` gives the integral of `B (g x) y` over `s`. -/
+theorem lpPairing_indicatorConstLp (B : E →L[𝕜] F →L[𝕜] G) (g : Lp E p μ) {s : Set α}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (y : F) :
+    B.lpPairing μ p q g (indicatorConstLp q hs hμs y) = ∫ x in s, B (g x) y ∂μ := by
+  rw [lpPairing_eq_integral, ← integral_indicator hs]
+  refine integral_congr_ae ?_
+  filter_upwards [indicatorConstLp_coeFn (p := q) (hs := hs) (hμs := hμs) (c := y)] with x hx
+  rw [hx]
+  by_cases hxs : x ∈ s <;> simp [hxs]
+
+end Indicator
 
 variable {α 𝕜 E F : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -105,9 +129,9 @@ private theorem mul_eLpNorm_le_enorm_lpPairing (B : E →L[𝕜] F →L[𝕜] �
     set w : α → F := fun x ↦ σ x • c (ψ x)
     have hwm : AEStronglyMeasurable w μ :=
       σ.aestronglyMeasurable.smul (ψ.map c).aestronglyMeasurable
-    have hw : MemLp w q μ := hσ.of_le hwm
-      (ae_of_all _ fun x ↦ by
-        simpa [w, norm_smul] using mul_le_of_le_one_right (norm_nonneg _) (hc1 (ψ x)))
+    have hwσ (x : α) : ‖w x‖ ≤ ‖σ x‖ := by
+      simpa [w, norm_smul] using mul_le_of_le_one_right (norm_nonneg _) (hc1 (ψ x))
+    have hw : MemLp w q μ := hσ.of_le hwm (ae_of_all _ hwσ)
     have hint : ∫ x, h x * σ x ∂μ = B.lpPairing μ p q g (hw.toLp w) := by
       rw [lpPairing_eq_integral]
       refine integral_congr_ae ?_
@@ -118,8 +142,7 @@ private theorem mul_eLpNorm_le_enorm_lpPairing (B : E →L[𝕜] F →L[𝕜] �
       _ ≤ ‖B.lpPairing μ p q g‖ₑ * eLpNorm σ q μ := by
           rw [Lp.eNorm_toLp]
           gcongr
-          exact eLpNorm_mono hwm fun x ↦ by
-            simpa [w, norm_smul] using mul_le_of_le_one_right (norm_nonneg _) (hc1 (ψ x))
+          exact eLpNorm_mono hwm hwσ
   have ha' : a = ‖(θ : 𝕜)‖ₑ := by
     rw [← ofReal_norm, RCLike.norm_ofReal, abs_of_nonneg ENNReal.toReal_nonneg,
       ENNReal.ofReal_toReal (ha.trans ENNReal.one_lt_top).ne]
@@ -146,43 +169,6 @@ theorem norm_le_norm_lpPairing_apply_of_ne_top (B : E →L[𝕜] F →L[𝕜] �
   rw [Lp.eNorm_def]
   exact mul_eLpNorm_le_enorm_lpPairing B hB hp _ _ (Lp.simpleFunc.toSimpleFunc_eq_toFun φ) ha
 
-/-- On a σ-finite measure space, if `0 ≤ t < ‖g‖_∞` and `ε > 0`, then `g ∈ L^∞(μ; E)` stays
-`ε`-close to a single vector of norm greater than `t - ε` on some set of finite positive
-measure. This uses that `g` has separable range. -/
-private theorem exists_forall_norm_sub_lt [SigmaFinite μ] (g : Lp E ∞ μ) {t ε : ℝ} (ht0 : 0 ≤ t)
-    (ht : t < ‖g‖) (hε : 0 < ε) :
-    ∃ s, MeasurableSet s ∧ 0 < μ s ∧ μ s < ∞ ∧
-      ∃ d : E, t - ε < ‖d‖ ∧ ∀ x ∈ s, ‖g x - d‖ < ε := by
-  have hg := Lp.stronglyMeasurable g
-  -- The set where `‖g‖ > t` has positive measure.
-  have hpos : μ {x | t < ‖g x‖} ≠ 0 := by
-    intro hnull
-    refine ht.not_ge ?_
-    rw [Lp.norm_def, eLpNorm_exponent_top hg.aestronglyMeasurable]
-    refine ENNReal.toReal_le_of_le_ofReal ht0 ?_
-    exact eLpNormEssSup_le_of_ae_bound <| (measure_eq_zero_iff_ae_notMem.1 hnull).mono
-      fun x hx ↦ not_lt.1 hx
-  -- Cover it by countably many sets where `g` is `ε`-close to a point of a countable dense set.
-  obtain ⟨D, hDc, hD⟩ := hg.isSeparable_range
-  have hmeas (d : E) : MeasurableSet ({x | t < ‖g x‖} ∩ {x | ‖g x - d‖ < ε}) :=
-    (measurableSet_lt measurable_const hg.norm.measurable).inter
-      (measurableSet_lt (hg.sub stronglyMeasurable_const).norm.measurable measurable_const)
-  have hcover : {x | t < ‖g x‖} ⊆ ⋃ d ∈ D, {x | t < ‖g x‖} ∩ {x | ‖g x - d‖ < ε} := by
-    intro x hx
-    obtain ⟨d, hdD, hd⟩ := Metric.mem_closure_iff.1 (hD (Set.mem_range_self x)) ε hε
-    exact Set.mem_biUnion hdD ⟨hx, by simpa [dist_eq_norm] using hd⟩
-  obtain ⟨d, -, hd⟩ : ∃ d ∈ D, μ ({x | t < ‖g x‖} ∩ {x | ‖g x - d‖ < ε}) ≠ 0 := by
-    by_contra! h
-    exact hpos (measure_mono_null hcover ((measure_biUnion_null_iff hDc).2 h))
-  obtain ⟨s, hs, hsd, hspos, hstop⟩ := Measure.exists_subset_measure_lt_top (hmeas d)
-    (pos_iff_ne_zero.2 hd)
-  -- Any point of `s` shows that `‖d‖ > t - ε`.
-  obtain ⟨x₀, hx₀⟩ := nonempty_of_measure_ne_zero hspos.ne'
-  have h₁ : t < ‖g x₀‖ := (hsd hx₀).1
-  have h₂ : ‖g x₀ - d‖ < ε := (hsd hx₀).2
-  have := norm_sub_norm_le (g x₀) d
-  exact ⟨s, hs, hspos, hstop, d, by linarith, fun x hx ↦ (hsd hx).2⟩
-
 /-- If `g ∈ L^∞(μ; E)` stays `ε`-close to `d` on a set `s` of finite positive measure, then
 pairing `g` with the indicator function `1_s y ∈ L¹(μ; F)`, for `‖y‖ ≤ 1`, shows that
 `‖B d y‖ ≤ ‖B.lpPairing μ ∞ 1 g‖ + ‖B‖ ε`. -/
@@ -195,13 +181,8 @@ private theorem norm_apply_le_norm_lpPairing_apply_top_add (B : E →L[𝕜] F �
   have hf : ‖f‖ ≤ μ.real s := by
     rw [norm_indicatorConstLp one_ne_zero ENNReal.one_ne_top]
     simpa using mul_le_of_le_one_left hμs.le hy
-  have hint : B.lpPairing μ ∞ 1 g f = ∫ x in s, B (g x) y ∂μ := by
-    rw [lpPairing_eq_integral, ← integral_indicator hs]
-    refine integral_congr_ae ?_
-    filter_upwards [indicatorConstLp_coeFn (p := 1) (hs := hs) (hμs := hstop.ne) (c := y)]
-      with x hx
-    rw [hx]
-    by_cases hxs : x ∈ s <;> simp [hxs]
+  have hint : B.lpPairing μ ∞ 1 g f = ∫ x in s, B (g x) y ∂μ :=
+    B.lpPairing_indicatorConstLp g hs hstop.ne y
   have hbound : ∀ x ∈ s, ‖B (g x) y - B d y‖ ≤ ‖B‖ * ε := fun x hx ↦ by
     rw [← sub_apply, ← map_sub]
     refine (B.le_opNorm₂ _ _).trans ?_
@@ -240,7 +221,7 @@ theorem norm_le_norm_lpPairing_apply_top [SigmaFinite μ] (B : E →L[𝕜] F �
   set ε := (t - N) / (2 * (2 + ‖B‖))
   have hε : 0 < ε := div_pos (by linarith) (by positivity)
   obtain ⟨s, hs, hspos, hstop, d, hdt, hsd⟩ :=
-    exists_forall_norm_sub_lt g ((norm_nonneg _).trans hNt.le) htg hε
+    Lp.exists_measurableSet_forall_norm_sub_lt_of_lt_norm g ((norm_nonneg _).trans hNt.le) htg hε
   obtain ⟨y, hy, hdy⟩ := (B d).exists_lt_apply_of_lt_opNorm
     ((show t - 2 * ε < t - ε by linarith).trans (hdt.trans_le (hB d)))
   have := norm_apply_le_norm_lpPairing_apply_top_add B g hs hspos hstop hsd hy.le
@@ -294,12 +275,8 @@ theorem bochnerDualMap_apply (g : Lp (StrongDual 𝕜 X) p μ) (f : Lp X q μ) :
 @[simp high]
 theorem bochnerDualMap_indicatorConstLp (g : Lp (StrongDual 𝕜 X) p μ) {s : Set α}
     (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (x : X) :
-    bochnerDualMap 𝕜 μ p q g (indicatorConstLp q hs hμs x) = ∫ y in s, g y x ∂μ := by
-  rw [bochnerDualMap_apply, ← integral_indicator hs]
-  refine integral_congr_ae ?_
-  filter_upwards [indicatorConstLp_coeFn (p := q) (hs := hs) (hμs := hμs) (c := x)] with y hy
-  rw [hy]
-  by_cases hys : y ∈ s <;> simp [hys]
+    bochnerDualMap 𝕜 μ p q g (indicatorConstLp q hs hμs x) = ∫ y in s, g y x ∂μ :=
+  (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 X)).lpPairing_indicatorConstLp g hs hμs x
 
 /-- **Naturality of the integral pairing.** Pairing `T⋆ ∘ g` with `f` is pairing `g` with
 `T ∘ f`, where `T⋆ = ContinuousLinearMap.precomp 𝕜 T` is the adjoint of `T : X →L[𝕜] Y`. -/
@@ -350,6 +327,19 @@ theorem norm_bochnerDualMap_apply [SigmaFinite μ] (g : Lp (StrongDual 𝕜 X) p
     (by
       rw [bochnerDualMap_eq_lpPairing]
       exact (ContinuousLinearMap.id 𝕜 _).norm_le_norm_lpPairing_apply (fun _ ↦ le_rfl) g)
+
+variable (𝕜 μ p q) in
+/-- On a σ-finite measure space, the integral pairing `bochnerDualMap 𝕜 μ p q` bundled as a linear
+isometry `Lᵖ(μ; X⋆) →ₗᵢ[𝕜] (L^q(μ; X))⋆`. -/
+noncomputable def bochnerDualMapₗᵢ [SigmaFinite μ] :
+    Lp (StrongDual 𝕜 X) p μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp X q μ) where
+  toLinearMap := (bochnerDualMap 𝕜 μ p q).toLinearMap
+  norm_map' := norm_bochnerDualMap_apply
+
+@[simp]
+theorem coe_bochnerDualMapₗᵢ [SigmaFinite μ] :
+    ⇑(bochnerDualMapₗᵢ 𝕜 μ p q (X := X)) = bochnerDualMap 𝕜 μ p q :=
+  (rfl)
 
 /-- On a σ-finite measure space, the integral pairing is an isometry. -/
 theorem isometry_bochnerDualMap [SigmaFinite μ] :

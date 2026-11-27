@@ -149,22 +149,10 @@ open scoped InnerProductSpace ComplexConjugate
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
-variable (𝕜 μ p q) in
-/-- The integral pairing `g ↦ (f ↦ ∫ g x (f x) dμ)` as a linear isometry from `Lᵖ(μ; H⋆)` to the
-continuous dual of `Lᵠ(μ; H)`. -/
-private noncomputable def toStrongDual :
-    Lp (StrongDual 𝕜 H) p μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp H q μ) where
-  toLinearMap := (bochnerDualMap 𝕜 μ p q (X := H)).toLinearMap
-  norm_map' := norm_bochnerDualMap_apply
-
-private theorem toStrongDual_apply (g : Lp (StrongDual 𝕜 H) p μ) (f : Lp H q μ) :
-    toStrongDual 𝕜 μ p q g f = bochnerDualMap 𝕜 μ p q g f :=
-  rfl
-
 variable [CompleteSpace H]
 
-private theorem toStrongDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
-    Function.Surjective (toStrongDual 𝕜 μ p q (H := H)) := by
+private theorem bochnerDualMapₗᵢ_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
+    Function.Surjective (bochnerDualMapₗᵢ 𝕜 μ p q (X := H)) := by
   -- `Lᵠ(μ; H)` is reflexive, since `H` is uniformly convex.
   have : UniformConvexSpace H := by
     let := InnerProductSpace.rclikeToReal 𝕜 H
@@ -174,7 +162,8 @@ private theorem toStrongDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
   -- The pairings with `Lᵖ(μ; H⋆)` norm `f`, and they all vanish.
   have hle : ‖(bochnerDualMap 𝕜 μ p q).flip f‖ ≤ 0 :=
     ContinuousLinearMap.opNorm_le_bound _ le_rfl fun g ↦ by
-      rw [ContinuousLinearMap.flip_apply, ← toStrongDual_apply, hf g, _root_.norm_zero, zero_mul]
+      rw [ContinuousLinearMap.flip_apply, ← coe_bochnerDualMapₗᵢ, hf g, _root_.norm_zero,
+        zero_mul]
   rw [norm_flip_bochnerDualMap_apply] at hle
   exact norm_le_zero_iff.1 hle
 
@@ -185,14 +174,14 @@ space, for Hölder conjugate exponents `1 < p, q < ∞` and a Hilbert space `H`,
 isometrically with the continuous dual of `Lᵠ(μ; H)`. -/
 noncomputable def strongDualEquiv (hq : 1 < q) (hq_top : q ≠ ∞) :
     Lp (StrongDual 𝕜 H) p μ ≃ₗᵢ[𝕜] StrongDual 𝕜 (Lp H q μ) :=
-  LinearIsometryEquiv.ofSurjective _ (toStrongDual_surjective hq hq_top)
+  LinearIsometryEquiv.ofSurjective _ (bochnerDualMapₗᵢ_surjective hq hq_top)
 
 /-- Evaluation of the integral representation of functionals on `Lᵠ(μ; H)`. -/
 @[simp]
 theorem strongDualEquiv_apply (hq : 1 < q) (hq_top : q ≠ ∞) (g : Lp (StrongDual 𝕜 H) p μ)
     (f : Lp H q μ) :
     strongDualEquiv 𝕜 μ p q hq hq_top g f = ∫ x, g x (f x) ∂μ := by
-  rw [strongDualEquiv, LinearIsometryEquiv.coe_ofSurjective, toStrongDual_apply,
+  rw [strongDualEquiv, LinearIsometryEquiv.coe_ofSurjective, coe_bochnerDualMapₗᵢ,
     bochnerDualMap_apply]
 
 /-- The representing density of a functional on `Lᵠ(μ; H)` integrates to its value on every
