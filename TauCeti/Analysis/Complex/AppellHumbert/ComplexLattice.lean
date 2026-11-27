@@ -43,8 +43,9 @@ period pair `L` they apply to `L.lattice`.
 
 Following `TauCeti.AppellHumbertData.ofHermitian`, the Hermitian form is complex linear in the
 first variable and the Riemann form is `E = Im H`, so `E (u, v) = Im (u conj(v)) / A`. This is the
-negative of the form `Im (ū v) / A` of the roadmap convention, under which positivity reads
-`E (u, i u) > 0`; here it reads `E (i u, u) > 0`
+negative of the form `Im (ū v) / A` of the convention in which the Hermitian form is complex
+linear in the second variable, under which positivity reads `E (u, i u) > 0`; here it reads
+`E (i u, u) > 0`
 (`ZLattice.riemannForm_appellHumbertData_I_mul_self_pos`). The form `B` of the datum, and hence
 the theta functions, are the same in both conventions.
 
