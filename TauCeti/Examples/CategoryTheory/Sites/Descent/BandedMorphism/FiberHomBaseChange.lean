@@ -13,8 +13,8 @@ public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.FiberHomBaseCh
 * The forward comparison followed by its inverse recovers every section, over every `t : T ⟶ V`.
 * The identity coefficient acts trivially before the comparison.
 * The comparison commutes with restriction along every arrow of `Over V`.
-* The inverse of a modification, and the composite of two modifications, satisfy the naturality
-  square of the comparison.
+* The composite of two modifications satisfies the naturality square of the comparison, and so
+  does the inverse of a modification when the fibres of `G` are groupoids.
 -/
 
 public section
@@ -58,6 +58,15 @@ example (X : HomCategory bF bG) {T T' : (Over V)ᵒᵖ} (g : T ⟶ T')
         ((fiberHomBaseChangeIso f x y X).hom.hom.app T p) :=
   ConcreteCategory.congr_hom ((fiberHomBaseChangeIso f x y X).hom.hom.naturality g) p
 
+/-- Two composable modifications satisfy the naturality square of the comparison. -/
+example {X Y Z : HomCategory bF bG} (m : X ⟶ Y) (n : Y ⟶ Z) :
+    (J.overMapPullback (Type _) f).map ((fiberHomSheafFunctor bF bG J U x y).map (m ≫ n)) ≫
+        (fiberHomBaseChangeIso f x y Z).hom =
+      (fiberHomBaseChangeIso f x y X).hom ≫
+        (fiberHomSheafFunctor bF bG J V _ _).map m ≫
+          (fiberHomSheafFunctor bF bG J V _ _).map n := by
+  rw [fiberHomBaseChangeIso_modification, Functor.map_comp]
+
 variable [∀ U : C, IsGroupoid (G.obj (.mk (op U)))]
 
 /-- The inverse of a modification satisfies the naturality square of the comparison. -/
@@ -67,14 +76,5 @@ example {X Y : HomCategory bF bG} (m : X ⟶ Y) :
       (fiberHomBaseChangeIso f x y Y).hom ≫
         (fiberHomSheafFunctor bF bG J V _ _).map (homIso m).inv :=
   fiberHomBaseChangeIso_modification f x y _
-
-/-- Two composable modifications satisfy the naturality square of the comparison. -/
-example {X Y Z : HomCategory bF bG} (m : X ⟶ Y) (n : Y ⟶ Z) :
-    (J.overMapPullback (Type _) f).map ((fiberHomSheafFunctor bF bG J U x y).map (m ≫ n)) ≫
-        (fiberHomBaseChangeIso f x y Z).hom =
-      (fiberHomBaseChangeIso f x y X).hom ≫
-        (fiberHomSheafFunctor bF bG J V _ _).map m ≫
-          (fiberHomSheafFunctor bF bG J V _ _).map n := by
-  rw [fiberHomBaseChangeIso_modification, Functor.map_comp]
 
 end TauCeti.Examples.FiberHomBaseChange

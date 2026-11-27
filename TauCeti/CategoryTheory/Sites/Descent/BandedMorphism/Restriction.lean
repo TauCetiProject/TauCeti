@@ -16,7 +16,8 @@ Let `bG` be an `A`-banding of a pseudofunctor `G : LocallyDiscrete Cᵒᵖ ⥤�
 arrow of `C`. For a strong transformation `X : F ⟶ G`, the restriction comparison
 `BandedMorphism.restrictionIso f X x : G(f) (X_U x) ≅ X_V (F(f) x)` is the inverse of the
 naturality isomorphism of `X` along `f` at `x`. It is compatible with modifications
-(`BandedMorphism.restrictionIso_modification`) and natural in `x`
+(`BandedMorphism.restrictionIso_hom_modification`, `BandedMorphism.restrictionIso_modification`)
+and natural in `x`
 (`BandedMorphism.restrictionIso_naturality`); along the identity it is assembled from the unit
 isomorphisms of `F` and `G` (`BandedMorphism.restrictionIso_id`), and along a composite from the
 composition isomorphisms and the comparisons along the two factors
@@ -31,8 +32,8 @@ Definitions 31.1 and Remarks 31.2, 31.5; Groechenig, Wyss and Ziegler, Definitio
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.BandedMorphism.restrictionIso`, with `restrictionIso_hom`,
-  `restrictionIso_inv`, `restrictionIso_modification`, `restrictionIso_naturality`,
-  `restrictionIso_id` and `restrictionIso_comp`.
+  `restrictionIso_inv`, `restrictionIso_hom_modification`, `restrictionIso_modification`,
+  `restrictionIso_naturality`, `restrictionIso_id` and `restrictionIso_comp`.
 * `CategoryTheory.Pseudofunctor.BandedMorphism.fiberIsomRestriction`, with
   `fiberIsomRestriction_hom_apply`, `fiberIsomRestriction_id` and `fiberIsomRestriction_comp`.
 
@@ -129,6 +130,22 @@ theorem restrictionIso_comp {W : C} (g : W ⟶ V) (X : F ⟶ G) (x : F.obj (.mk 
 
 variable {bF : F.AbelianBanding J A} {bG : G.AbelianBanding J A}
 
+/-- **Modifications commute with the restriction comparisons**, on morphisms: for `m : X ⟶ Y`,
+pulling back the component of `m` at `x` along `f` and comparing with `Y` is comparing with `X` and
+then taking the component of `m` at `F(f) x`. -/
+@[reassoc]
+theorem restrictionIso_hom_modification {X Y : HomCategory bF bG} (m : X ⟶ Y)
+    (x : F.obj (.mk (op U))) :
+    (G.map f.op.toLoc).toFunctor.map ((m.hom.as.app (.mk (op U))).toNatTrans.app x) ≫
+        (restrictionIso f Y.obj x).hom =
+      (restrictionIso f X.obj x).hom ≫
+        (m.hom.as.app (.mk (op V))).toNatTrans.app ((F.map f.op.toLoc).toFunctor.obj x) := by
+  -- Evaluate the naturality of `m` along `f` at `x` and move the comparisons across.
+  have h := congrArg (fun φ ↦ φ.toNatTrans.app x) (m.hom.as.naturality f.op.toLoc)
+  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
+  rw [← cancel_epi ((X.obj.naturality f.op.toLoc).hom.toNatTrans.app x)]
+  simp [← reassoc_of% h]
+
 /-- **Modifications commute with the restriction comparisons**: for `m : X ⟶ Y`, pulling back the
 component of `m` at `x` along `f` and comparing with `Y` is comparing with `X` and then taking the
 component of `m` at `F(f) x`. -/
@@ -136,13 +153,9 @@ theorem restrictionIso_modification [∀ U : C, IsGroupoid (G.obj (.mk (op U)))]
     {X Y : HomCategory bF bG} (m : X ⟶ Y)
     (x : F.obj (.mk (op U))) :
     (G.map f.op.toLoc).toFunctor.mapIso (componentIso m U x) ≪≫ restrictionIso f Y.obj x =
-      restrictionIso f X.obj x ≪≫ componentIso m V ((F.map f.op.toLoc).toFunctor.obj x) := by
-  ext
-  -- Evaluate the naturality of `m` along `f` at `x` and move the comparisons across.
-  have h := congrArg (fun φ ↦ φ.toNatTrans.app x) (m.hom.as.naturality f.op.toLoc)
-  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
-  rw [← cancel_epi ((X.obj.naturality f.op.toLoc).hom.toNatTrans.app x)]
-  simp [← reassoc_of% h]
+      restrictionIso f X.obj x ≪≫ componentIso m V ((F.map f.op.toLoc).toFunctor.obj x) :=
+  Iso.ext (by simpa only [Iso.trans_hom, Functor.mapIso_hom, componentIso_hom] using
+    restrictionIso_hom_modification f m x)
 
 variable (bG)
 
