@@ -199,9 +199,9 @@ theorem stasheffSum_eq_ungradedStasheff [CharP R 2] (n : ℕ) (x : M) (e : ℤ) 
   congr 1
   · -- The composite terms agree on the nose.
     rw [ungradedStasheffComp_def]
-    simp only [evalNat_def]
-    exact (Fin.sum_univ_eq_sum_range (fun k => MM.ungradedAct (n - k) (fun l => b (k + l))
-      (MM.ungradedAct k (fun l => b l) x)) (n + 1)).symm
+    simp only [evalNat_def, ungradedAct_apply]
+    exact (Fin.sum_univ_eq_sum_range (fun k => MM.m (n - k + 1) (MM.m (k + 1) x fun l => b l)
+      fun l => b (k + l)) (n + 1)).symm
   · -- The terms collapsing a block are the differential terms and the product terms.
     rw [Finset.sum_range (fun p => ∑ s ∈ Icc 1 (n - p), _),
       Finset.sum_congr rfl fun p _ => MM.sum_Icc_evalNat_m_replaceBlock p x b,
