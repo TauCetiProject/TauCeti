@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.TorusKasteleyn
-public import TauCeti.Examples.Combinatorics.Tiling.Lozenge.Torus
+public import TauCeti.Combinatorics.Tiling.Lozenge.Torus.Kasteleyn
+public import TauCeti.Examples.Combinatorics.Tiling.Lozenge.Torus.Basic
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Tactic.NormNum
 
@@ -64,14 +64,9 @@ theorem torusPartitionFunction_one_one (w : TriEdge → ℝ) :
     simp only [Set.mem_inter_iff, mem_edgesOfDir, Set.mem_ofPred_eq, mem_torusDomain,
       Set.mem_singleton_iff, TriEdge.mk.injEq, Prod.mk_eq_zero]
     omega
-  have h := torusPartitionFunction_def 1 1 w
-  rw [show (∑ᶠ (M : Set TriEdge) (_ : IsTorusTiling 1 1 M),
-      ∏ᶠ (e : TriEdge) (_ : e ∈ M ∩ {e | e.v ∈ torusDomain 1 1}), w e) =
-      ∑ᶠ (M : Set TriEdge) (_ : M ∈ {M : Set TriEdge | IsTorusTiling 1 1 M}),
-      ∏ᶠ (e : TriEdge) (_ : e ∈ M ∩ {e | e.v ∈ torusDomain 1 1}), w e from rfl, hset,
-    finsum_mem_range hinj] at h
-  simp only [hdom, finprod_mem_singleton] at h
-  rw [h, finsum_eq_sum_of_fintype, Fin.sum_univ_three]
+  rw [torusPartitionFunction_def, hset, finsum_mem_range hinj]
+  simp only [hdom, finprod_mem_singleton]
+  rw [finsum_eq_sum_of_fintype, Fin.sum_univ_three]
 
 /-- At unit weights the `1 × 1` torus partition function counts its three torus tilings. -/
 example : torusPartitionFunction 1 1 (fun _ => 1) = 3 := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Torus
+public import TauCeti.Combinatorics.Tiling.Lozenge.Torus.Basic
 public import TauCeti.Examples.Combinatorics.Tiling.Lozenge.Height
 import Mathlib.Tactic.FinCases
 
