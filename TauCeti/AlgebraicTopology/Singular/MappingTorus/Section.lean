@@ -29,9 +29,11 @@ through `s`. For a family of seamed paths `ℓ : K → SeamedPath φ`, whose sec
 `TauCeti.SeamedPath.sectionFamily`, the map `g` takes `k` to the start point of `ℓ k`
 (`TauCeti.SeamedPath.singularHomologyMap_sectionFamily_comp_wangδ`), so `∂ (s'_* z) = g_* (∂ z)`
 for every class `z` of `T_{𝟙_K} = K × S¹`. For a loop of seamed paths `u ↦ γ_u`, `K` is a circle,
-and the formula `∂ (im [γ_u]) = [u ↦ γ_u(0)]` for the class of the torus swept by the loop in the
-Floer–Novikov theory of a symplectomorphism follows once the Wang boundary `∂` of the oriented torus
-class of `K × S¹` is identified with the class of the circle `K`, which is not proved here.
+and the Wang boundary of the oriented torus class of `K × S¹` is, up to a universal sign, the class
+of the circle `K`; this gives the formula `∂ [(t, u) ↦ γ_u(t)] = ±[u ↦ γ_u(0)]` for the class of the
+torus swept by the loop in the Floer–Novikov theory of a symplectomorphism
+(`TauCeti.SeamedPath.wangδ_singularHomologyMap_sectionFamily_comp_prodSwap`, in
+`TauCeti.AlgebraicTopology.Singular.MappingTorus.SweptTorus`).
 
 The proof is naturality of the Wang connecting morphism for maps of infinite cyclic covers
 (`TauCeti.MappingTorus.singularHomologyMap_descend_comp_wangδ`). Read on the cylinders through the

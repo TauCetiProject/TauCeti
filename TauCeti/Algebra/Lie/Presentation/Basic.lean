@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Free
 public import TauCeti.Algebra.Lie.Basic
+import Mathlib.Data.Fin.Tuple.Reflection
 
 /-!
 # Presenting a Lie algebra by generators and relations
@@ -36,6 +37,8 @@ generate the presented algebra, rather than merely determine maps out of it.
 
 * `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`: the generators of a free Lie algebra generate it
   as a Lie subalgebra.
+* `TauCeti.FreeLieAlgebra.comp_lift`: composing the lift of a family with a Lie homomorphism
+  lifts the composed family; `TauCeti.FreeLieAlgebra.comp_lift_pair` is its form for a pair.
 
 ## Applications
 
@@ -68,6 +71,21 @@ theorem lieSpan_range_of_eq_top :
   have hy : K.incl (g y) = y :=
     congrArg (fun F : FreeLieAlgebra R X →ₗ⁅R⁆ FreeLieAlgebra R X => F y) hid
   exact hy ▸ (g y).property
+
+variable {R X} in
+/-- Composing the lift of a family with a Lie homomorphism lifts the composed family. -/
+theorem comp_lift {L L' : Type*} [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+    (F : L →ₗ⁅R⁆ L') (v : X → L) :
+    F.comp (_root_.FreeLieAlgebra.lift R v) = _root_.FreeLieAlgebra.lift R (F ∘ v) :=
+  _root_.FreeLieAlgebra.hom_ext fun x => by simp
+
+variable {R} in
+/-- Composing the lift of a pair with a Lie homomorphism lifts the image pair. -/
+theorem comp_lift_pair {L L' : Type*} [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+    (F : L →ₗ⁅R⁆ L') (x y : L) :
+    F.comp (_root_.FreeLieAlgebra.lift R ![x, y]) = _root_.FreeLieAlgebra.lift R ![F x, F y] := by
+  rw [comp_lift, ← FinVec.map_eq]
+  rfl
 
 end FreeLieAlgebra
 

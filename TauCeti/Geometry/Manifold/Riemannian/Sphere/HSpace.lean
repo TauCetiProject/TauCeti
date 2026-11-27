@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import Mathlib.Topology.Homotopy.HSpaces
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.VectorField
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 
 /-!
 # A tangent frame on a sphere gives a multiplication with a strict unit

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.Dynamics.Flow.ConnectingOrbit
-public import TauCeti.Geometry.Manifold.Morse.Boundary.BrokenSign
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Broken.Sign
 
 /-!
 # The Morse boundary with coefficients in a local system
@@ -60,7 +60,8 @@ arc is a homotopy between their concatenated paths, so that their transports agr
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `trajectoryPathClass`: the homotopy class of the path traced by a trajectory.
+* `trajectoryPathClass`: the homotopy class of the path traced by a trajectory; for `-X` it is
+  the reversed class (`neg_trajectoryPathClass`).
 * `brokenTrajectoryPathClass`: the homotopy class of the concatenated path of a broken trajectory.
 * `twistedMorseBoundaryMap`: the component `L(p) → L(q)` of the twisted Morse boundary.
 * `twistedMorseBoundary`: the Morse boundary with coefficients in `L`.
@@ -106,6 +107,21 @@ theorem trajectoryPathClass_def {p q : M} (y : hX.morseTrajectorySlice p q) :
       .mk (Flow.connectingPath (hX.mem_morseTrajectorySlice.1 y.property).1
         (hX.mem_morseTrajectorySlice.1 y.property).2.1) :=
   (rfl)
+
+/-- **Trajectories of `-X` trace the reversed paths.** A point `y` of the middle-level slice of
+trajectories of `X` from `p` to `q` also lies on a trajectory of `-X` from `q` to `p`
+(`TauCeti.IsAdaptedPseudoGradient.neg_morseTrajectorySlice`), and the path class it traces for
+`-X` is the reverse of the one it traces for `X`. -/
+theorem neg_trajectoryPathClass (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
+    (y : hX.morseTrajectorySlice p q) (y' : (hX.neg hf).morseTrajectorySlice q p)
+    (h : (y' : M) = y) :
+    (hX.neg hf).trajectoryPathClass y' = (hX.trajectoryPathClass y).symm := by
+  obtain ⟨y, hy⟩ := y
+  obtain ⟨y', hy'⟩ := y'
+  subst h
+  rw [trajectoryPathClass_def, trajectoryPathClass_def,
+    Flow.connectingPath_eq_symm_of_eq_reverse (hX.neg_flow hf) (hX.mem_morseTrajectorySlice.1 hy).1
+      (hX.mem_morseTrajectorySlice.1 hy).2.1, Path.Homotopic.Quotient.mk_symm]
 
 /-- The homotopy class of the path from `p` to `r` traced by a broken trajectory `(q, z₁, z₂)`:
 the trajectory through `z₁` from `p` to `q` followed by the trajectory through `z₂` from `q` to

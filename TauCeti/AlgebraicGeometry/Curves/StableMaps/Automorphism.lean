@@ -9,7 +9,7 @@ public import Mathlib.Algebra.DualNumber
 public import Mathlib.GroupTheory.GroupExtension.Basic
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
-public import TauCeti.AlgebraicGeometry.Deformation.InfinitesimalAut
+public import TauCeti.AlgebraicGeometry.Deformation.InfinitesimalAut.Basic
 
 /-!
 # Infinitesimal automorphisms of prestable maps

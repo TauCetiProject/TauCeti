@@ -89,6 +89,13 @@ theorem smulLeftCLM_apply (f : C^∞⟮I, M; ℝ⟯) (s : BundleTest I F V) (x :
     smulLeftCLM f s x = f x • s x := by
   simp [smulLeftCLM, LinearMap.restrict_apply]
 
+/-- Multiplying a bundle test by a smooth function `f` gives a test supported in the supports of
+`f` and of the test. -/
+theorem tsupport_smulLeftCLM_subset (f : C^∞⟮I, M; ℝ⟯) (s : BundleTest I F V) :
+    closure {x | smulLeftCLM f s x ≠ 0} ⊆ tsupport f ∩ closure {x | s x ≠ 0} := by
+  simpa [ContMDiffSection.tsupport_def, ContMDiffSection.smul_apply] using
+    tsupport_smul_function_subset f ((ofCompactlySupported I F V).symm s).val
+
 /-- Multiplying by the constant function `1` does nothing. -/
 @[simp]
 theorem smulLeftCLM_one :
@@ -150,6 +157,13 @@ theorem smulLeftDualCLM_add (f g : C^∞⟮I, M; ℝ⟯) :
       (smulLeftDualCLM f + smulLeftDualCLM g : (BundleTest I F V →L_c[ℝ] W) →L[ℝ] _) := by
   ext T s
   simp [smulLeftCLM_add]
+
+/-- Multiplication of functionals by a finite sum of functions is the sum of the multiplications. -/
+theorem smulLeftDualCLM_sum {ι : Type*} (s : Finset ι) (f : ι → C^∞⟮I, M; ℝ⟯) :
+    smulLeftDualCLM (∑ i ∈ s, f i) =
+      (∑ i ∈ s, smulLeftDualCLM (f i) : (BundleTest I F V →L_c[ℝ] W) →L[ℝ] _) :=
+  map_sum (AddMonoidHom.mk' (fun g : C^∞⟮I, M; ℝ⟯ ↦
+    (smulLeftDualCLM g : (BundleTest I F V →L_c[ℝ] W) →L[ℝ] _)) smulLeftDualCLM_add) f s
 
 /-- A smooth multiple of a point mass is a point mass: `f δ_x ℓ = f(x) δ_x ℓ`. -/
 @[simp]

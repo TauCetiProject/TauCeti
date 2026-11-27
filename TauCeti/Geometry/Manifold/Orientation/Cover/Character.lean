@@ -34,15 +34,17 @@ coefficients in any commutative ring
 In positive dimension the proof reads the canonical homological orientation of the cover `M'`
 (`TauCeti.Manifold.OrientationCover.homologicalOrientation`) in `M` through the covering map,
 a local homeomorphism (`IsLocalHomeomorph.localOrientationEquiv`). At a point `p = (x, ω)` of
-the cover, with `ω` an orientation of `TₓM`, this gives a local orientation `ℓ(p)` of `M` at `x`.
+the cover, with `ω` an orientation of `TₓM`, this gives a local orientation `ℓ(p)` of `M` at `x`
+(`TauCeti.Manifold.OrientationCover.coverLocalOrientation`).
 
 * The deck involution `(x, ω) ↦ (x, -ω)` has local index `-1` for the canonical orientation
   (`TauCeti.Manifold.OrientationCover.localIndex_deck`), and lies over the identity of `M`, so
-  `ℓ(x, -ω) = -ℓ(x, ω)`.
+  `ℓ(x, -ω) = -ℓ(x, ω)` (`TauCeti.Manifold.OrientationCover.coverLocalOrientation_neg`).
 * The covering map intertwines the transport of local orientations
   (`IsLocalHomeomorph.localOrientationEquiv_localOrientationTransport`), and the canonical
   orientation of `M'` is invariant under transport. So along a path `δ` in `M'`, transport in
-  `M` along the projection of `δ` carries `ℓ` at the start of `δ` to `ℓ` at its end.
+  `M` along the projection of `δ` carries `ℓ` at the start of `δ` to `ℓ` at its end
+  (`TauCeti.Manifold.OrientationCover.localOrientationTransport_coverLocalOrientation`).
 
 Lift a loop `γ` at `x` to `M'` from `(x, ω)`. It ends at `(x, ω)` exactly when the tangent
 character of `γ` is `1`, and at `(x, -ω)` exactly when it is `-1`. Transport along `γ` then fixes,
@@ -52,6 +54,19 @@ records.
 In dimension `0` the manifold is discrete, so its fundamental groups are trivial and so are both
 characters.
 
+The same two facts identify the local systems themselves, with integer coefficients and not only
+their monodromy. The orientation local system `o(TM)` of the tangent bundle
+(`TauCeti.VectorBundleOrientationCover.signLocalSystem`), whose fibre over `x` is the integer
+functions on the two orientations of `TₓM` that change sign under reversal, is isomorphic to the
+local homology system `x ↦ H_d(M, M ∖ {x}; ℤ)` (`TauCeti.localHomologySystem`) when `d > 0`
+(`TauCeti.Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem`): a sign function `f`
+goes to `f ω • ℓ(x, ω)`, which does not depend on the choice of `ω`, since both factors change sign
+with it, and which commutes with transport, since the lift of a path from `(x, ω)` carries the
+value of `f` at `ω` and the local orientation `ℓ(x, ω)` to the corresponding data at its end. No
+connectedness of `M` is needed. So homology twisted by `o(TM)` is homology with coefficients in the
+homological orientation system of `M`, the coefficients of Poincaré duality for nonorientable
+manifolds.
+
 ## Main results
 
 * `TauCeti.Manifold.OrientationCover.orientationCharacter_eq_orientationCharacter_tangentSpace`:
@@ -59,6 +74,10 @@ characters.
   bundle.
 * `TauCeti.Manifold.OrientationCover.rankOneLocalSystem_orientation_eq_signRankOneLocalSystem`:
   the orientation local system of `M` is the sign local system of its orientation double cover.
+* `TauCeti.Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem`: the orientation local
+  system of the tangent bundle is isomorphic to the local homology system of `M` in its dimension,
+  computed on fibres by
+  `TauCeti.Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem_hom_app_apply`.
 
 ## References
 
@@ -81,16 +100,26 @@ variable {E M : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
   [TopologicalSpace M] [T2Space M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M] {n : ℕ}
   (hE : finrank ℝ E = n + 1)
 
-/-- The local orientation of `M` at `p.proj` read through the covering map from the canonical
-homological orientation of the orientation cover at `p`. -/
-private def coverLocalOrientation (p : OrientationCover 𝓘(ℝ, E) M) :
+/-- **The local orientation of `M` read from a point of its orientation cover.** At a point
+`p = (x, ω)` of the cover, with `ω` an orientation of `TₓM`, the canonical homological orientation
+of the cover at `p`, read in `M` through the covering map, a local homeomorphism, is a local
+orientation of `M` at `x`, a generator of `H_d(M, M ∖ {x}; ℤ)`. -/
+def coverLocalOrientation (p : OrientationCover 𝓘(ℝ, E) M) :
     LocalOrientation M p.proj (n + 1) :=
   (isCoveringMap_proj 𝓘(ℝ, E) M).isLocalHomeomorph.localOrientationEquiv p (n + 1)
     (homologicalOrientation hE p)
 
-/-- **The local orientations read from the two points of a fibre are opposite.** The deck
-involution has local index `-1` and lies over the identity of `M`. -/
-private theorem coverLocalOrientation_neg (p : OrientationCover 𝓘(ℝ, E) M) :
+/-- The local orientation read from a point `p` of the orientation cover is the canonical
+homological orientation of the cover at `p`, read in `M` through the covering map. -/
+theorem coverLocalOrientation_def (p : OrientationCover 𝓘(ℝ, E) M) :
+    coverLocalOrientation hE p =
+      (isCoveringMap_proj 𝓘(ℝ, E) M).isLocalHomeomorph.localOrientationEquiv p (n + 1)
+        (homologicalOrientation hE p) :=
+  (rfl)
+
+/-- **The local orientations read from the two points of a fibre are opposite**: reversing the
+orientation of `TₓM` reverses the local orientation of `M` at `x` read from the cover. -/
+theorem coverLocalOrientation_neg (p : OrientationCover 𝓘(ℝ, E) M) :
     coverLocalOrientation hE ⟨p.proj, -p.orientation⟩ = -coverLocalOrientation hE p := by
   have hπ := (isCoveringMap_proj 𝓘(ℝ, E) M).isLocalHomeomorph
   -- A sheet `S` of the cover around `p`, on which the projection is an open embedding.
@@ -146,7 +175,7 @@ private theorem coverLocalOrientation_neg (p : OrientationCover 𝓘(ℝ, E) M) 
 /-- **Transport of the local orientations read from the cover.** Along a path `δ` in the
 orientation cover, transport in `M` along the projection of `δ` carries the local orientation read
 at the start of `δ` to the one read at its end. -/
-private theorem localOrientationTransport_coverLocalOrientation
+theorem localOrientationTransport_coverLocalOrientation
     {p q : OrientationCover 𝓘(ℝ, E) M} (δ : Path p q) :
     localOrientationTransport M E (n + 1)
         (Path.Homotopic.Quotient.mk (δ.map VectorBundleOrientationCover.continuous_proj) :
@@ -251,5 +280,137 @@ theorem rankOneLocalSystem_orientation_eq_signRankOneLocalSystem (R : Type*) [Co
       IsCoveringMap.monodromy_signRankOneLocalSystem,
       orientationCharacter_eq_orientationCharacter_tangentSpace hd,
       VectorBundleOrientationCover.orientationCharacter_eq_signCharacter]
+
+/-! ### The orientation local system -/
+
+section LocalSystem
+
+open VectorBundleOrientationCover
+
+/-- The orientation of `TₓM` given by a basis of the model space. It selects the components of
+`TauCeti.Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem`, which do not depend on
+it. -/
+private def baseOrientation (x : M) :
+    _root_.Orientation ℝ (TangentSpace 𝓘(ℝ, E) x) (Fin (finrank ℝ E)) :=
+  (Module.finBasis ℝ E).orientation
+
+/-- On the fibre over `x`, read at an orientation `ω` of `TₓM`: a sign function `f` goes to
+`f ω • ℓ(x, ω)`, with `ℓ(x, ω)` the local orientation read from the cover. -/
+private def fiberLinearEquiv (x : M)
+    (ω : _root_.Orientation ℝ (TangentSpace 𝓘(ℝ, E) x) (Fin (finrank ℝ E))) :
+    (signLocalSystem E (TangentSpace 𝓘(ℝ, E) : M → Type) ℤ (Fintype.card_fin _)).obj
+        (FundamentalGroupoid.mk x) ≃ₗ[ℤ]
+      (localHomologySystem (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) M E
+        (n + 1)).obj (FundamentalGroupoid.mk x) :=
+  (signLocalSystemFiberEquiv (Fintype.card_fin _) ω).trans
+    ((coverLocalOrientation hE ⟨x, ω⟩).property.linearEquiv
+      (singularHomologyComplSingletonIsoOfFinrankEq (A := ModuleCat.{0} ℤ)
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (chartAt E x) (mem_chart_source E x) hE))
+
+private theorem fiberLinearEquiv_apply (x : M)
+    (ω : _root_.Orientation ℝ (TangentSpace 𝓘(ℝ, E) x) (Fin (finrank ℝ E)))
+    (f : (signLocalSystem E (TangentSpace 𝓘(ℝ, E) : M → Type) ℤ (Fintype.card_fin _)).obj
+      (FundamentalGroupoid.mk x)) :
+    fiberLinearEquiv hE x ω f =
+      signLocalSystemFiberEquiv (Fintype.card_fin _) ω f • (coverLocalOrientation hE ⟨x, ω⟩).val :=
+  IsLocalOrientation.linearEquiv_apply _ _ _
+
+/-- Read at a point `p` of the cover over `x`, the fibre map is evaluation at `p` times the local
+orientation read from `p`, whichever orientation `ω` of `TₓM` it was defined with. -/
+private theorem fiberLinearEquiv_eq (p : OrientationCover 𝓘(ℝ, E) M)
+    (ω : _root_.Orientation ℝ (TangentSpace 𝓘(ℝ, E) p.proj) (Fin (finrank ℝ E)))
+    (f : (signLocalSystem E (TangentSpace 𝓘(ℝ, E) : M → Type) ℤ (Fintype.card_fin _)).obj
+      (FundamentalGroupoid.mk p.proj)) :
+    fiberLinearEquiv hE p.proj ω f =
+      liftFiberEquiv (Fintype.card_fin _) p rfl f • (coverLocalOrientation hE p).val := by
+  obtain ⟨x, o⟩ := p
+  rw [fiberLinearEquiv_apply]
+  rw [liftFiberEquiv_apply]
+  rcases _root_.Orientation.eq_or_eq_neg ω o (Nat.card_fin _) with h | h
+  · rw [h, signLocalSystemFiberEquiv_apply]
+  · -- Both the evaluation and the local orientation change sign with the orientation.
+    rw [h, signLocalSystemFiberEquiv_neg, coverLocalOrientation_neg hE ⟨x, o⟩,
+      LocalOrientation.coe_neg, signLocalSystemFiberEquiv_apply]
+    -- The two signs cancel: `(-a) • -v = a • v`.
+    rw [zsmul_neg', neg_neg]
+
+/-- **Naturality of the fibre maps.** Transport along a path class `γ` from `x` to `y` in the
+orientation local system of the tangent bundle and in the local homology system is intertwined by
+the fibre maps: the lift of `γ` to the cover from `(x, ω)` carries both the value of a sign
+function at `ω` and the local orientation read from `(x, ω)` to the corresponding data at its
+end. -/
+private theorem fiberLinearEquiv_naturality {x y : M}
+    (γ : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y)
+    (f : (signLocalSystem E (TangentSpace 𝓘(ℝ, E) : M → Type) ℤ (Fintype.card_fin _)).obj
+      (FundamentalGroupoid.mk x)) :
+    fiberLinearEquiv hE y (baseOrientation y)
+        ((signLocalSystem E (TangentSpace 𝓘(ℝ, E) : M → Type) ℤ (Fintype.card_fin _)).map γ f) =
+      (localHomologySystem (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) M E (n + 1)).map γ
+        (fiberLinearEquiv hE x (baseOrientation x) f) := by
+  have hcov := isCoveringMap_proj 𝓘(ℝ, E) M
+  let p : OrientationCover 𝓘(ℝ, E) M := ⟨x, baseOrientation x⟩
+  -- Lift a representative `g` of `γ` to the cover from `p`.
+  obtain ⟨g, hg⟩ : ∃ g : Path x y, (Path.Homotopic.Quotient.mk g :
+      FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) = γ := Quotient.exists_rep _
+  obtain ⟨Γ, hΓ, hΓ0⟩ : ∃ Γ : C(unitInterval, OrientationCover 𝓘(ℝ, E) M),
+      VectorBundleOrientationCover.proj ∘ Γ = g ∧ Γ 0 = p :=
+    ⟨_, hcov.liftPath_lifts g p g.source, hcov.liftPath_zero g p g.source⟩
+  have hΓ1 : (Γ 1).proj = y := (congrFun hΓ 1).trans g.target
+  subst hΓ1
+  have hmono : hcov.monodromy γ ⟨p, rfl⟩ = ⟨Γ 1, rfl⟩ := by
+    rw [← hg]
+    exact Subtype.ext (hcov.monodromy_eq_apply_one hΓ hΓ0)
+  -- The projection of the lift is a representative of `γ`.
+  have hγ : (Path.Homotopic.Quotient.mk
+      ((⟨Γ, hΓ0, rfl⟩ : Path p (Γ 1)).map VectorBundleOrientationCover.continuous_proj) :
+        FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk (Γ 1).proj) = γ := by
+    rw [← hg]
+    congr 1
+    ext t
+    exact congrFun hΓ t
+  -- Transport carries the local orientation read from `p` to the one read from `Γ 1`.
+  have htr := congrArg Subtype.val (localOrientationTransport_coverLocalOrientation hE
+    (⟨Γ, hΓ0, rfl⟩ : Path p (Γ 1)))
+  rw [coe_localOrientationTransport, hγ] at htr
+  have htr' (c : ℤ) : (localHomologySystem (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
+      M E (n + 1)).map γ (c • (coverLocalOrientation hE p).val) =
+        c • (coverLocalOrientation hE (Γ 1)).val :=
+    (map_zsmul _ c _).trans (congrArg (c • ·) htr)
+  -- Transport carries the value of a sign function at `p` to its value at `Γ 1`.
+  have hval := signLocalSystemObjEquiv_map_apply_monodromy (Fintype.card_fin _) γ f ⟨p, rfl⟩
+  rw [hmono] at hval
+  rw [fiberLinearEquiv_eq hE (Γ 1), fiberLinearEquiv_apply, htr', liftFiberEquiv_apply, hval,
+    signLocalSystemFiberEquiv_apply]
+
+/-- **The orientation local system of the tangent bundle is the homological orientation system.**
+For a manifold `M` of dimension `n + 1`, the integral orientation local system `o(TM)` of its
+tangent bundle, whose fibre over `x` is the functions on the two orientations of `TₓM` that change
+sign under reversal (`TauCeti.VectorBundleOrientationCover.signLocalSystem`), is isomorphic to the
+local homology system `x ↦ Hₙ₊₁(M, M ∖ {x}; ℤ)` (`TauCeti.localHomologySystem`), the orientation
+local system of `M` built from local homology. On the fibre over `x` the isomorphism sends a sign
+function `f` to `f ω • ℓ(x, ω)` for either orientation `ω` of `TₓM`, where `ℓ(x, ω)` is the local
+orientation read from the point `(x, ω)` of the orientation cover
+(`TauCeti.Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem_hom_app_apply`). -/
+def signLocalSystemIsoLocalHomologySystem :
+    signLocalSystem E (TangentSpace 𝓘(ℝ, E) : M → Type) ℤ (Fintype.card_fin _) ≅
+      localHomologySystem (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) M E (n + 1) :=
+  NatIso.ofComponents (fun X ↦ (fiberLinearEquiv hE X.as (baseOrientation X.as)).toModuleIso)
+    fun {X Y} γ ↦ ModuleCat.hom_ext (LinearMap.ext (fiberLinearEquiv_naturality hE (x := X.as)
+      (y := Y.as) γ))
+
+/-- **The isomorphism of orientation local systems on a fibre.** For either orientation `ω` of
+`TₓM`, `TauCeti.Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem` sends a sign
+function `f` on the orientations of `TₓM` to its value at `ω` times the local orientation of `M` at
+`x` read from the point `(x, ω)` of the orientation cover. -/
+theorem signLocalSystemIsoLocalHomologySystem_hom_app_apply (x : M)
+    (ω : _root_.Orientation ℝ (TangentSpace 𝓘(ℝ, E) x) (Fin (finrank ℝ E)))
+    (f : (signLocalSystem E (TangentSpace 𝓘(ℝ, E) : M → Type) ℤ (Fintype.card_fin _)).obj
+      (FundamentalGroupoid.mk x)) :
+    (signLocalSystemIsoLocalHomologySystem hE).hom.app (FundamentalGroupoid.mk x) f =
+      signLocalSystemFiberEquiv (Fintype.card_fin _) ω f • (coverLocalOrientation hE ⟨x, ω⟩).val :=
+  (fiberLinearEquiv_eq hE ⟨x, ω⟩ _ f).trans (by
+    rw [liftFiberEquiv_apply, signLocalSystemFiberEquiv_apply])
+
+end LocalSystem
 
 end TauCeti.Manifold.OrientationCover

@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.VectorField.ModelChart
-import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
@@ -268,17 +267,12 @@ variable [IsManifold 𝓘(ℝ, E) ∞ M] {X : (x : M) → TangentSpace 𝓘(ℝ,
 /-- If `X` is an adapted pseudo-gradient for `f`, then `f` is differentiable; this hypothesis need
 not be assumed separately. -/
 theorem mdifferentiable (hX : IsAdaptedPseudoGradient f X) : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f :=
-  fun p ↦ by
-  -- Where `mfderiv` is nonzero, `f` is differentiable by definition of `mfderiv`; a zero of the
-  -- derivative has a Morse chart, in which `f` is the (smooth) quadratic normal form.
-  by_contra hd
-  obtain ⟨φ, -⟩ := hX.exists_morseChart p (mfderiv_zero_of_not_mdifferentiableAt hd)
-  exact hd ((φ.contMDiffAt φ.mem_source).mdifferentiableAt (by simp))
+  hX.isBottAdaptedPseudoGradient.mdifferentiable
 
 /-- **`f` is antitone along every integral curve of an adapted pseudo-gradient.** -/
 theorem antitone_comp {γ : ℝ → M} (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X) :
     Antitone (f ∘ γ) :=
-  hγ.antitone_comp (fun t ↦ hX.mdifferentiable (γ t)) fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
+  hX.isBottAdaptedPseudoGradient.antitone_comp hγ
 
 end IsAdaptedPseudoGradient
 

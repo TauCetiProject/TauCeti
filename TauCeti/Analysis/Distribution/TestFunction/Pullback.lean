@@ -53,7 +53,8 @@ used to push forward currents whose support is compact, see
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
 * `TestFunction.cutoffCompCLM`: the composition with a cutoff `f ↦ χ (f ∘ Φ)` of test functions,
   the pullback with a cutoff of `0`-forms, with its values `TestFunction.cutoffCompCLM_apply`,
-  its composition law `TestFunction.cutoffCompCLM_cutoffCompCLM` and its commutation
+  its composition laws `TestFunction.cutoffCompCLM_cutoffCompCLM` and
+  `TestFunction.cutoffCompCLM_cutoffCompCLM_of_eqOn`, and its commutation
   `TestFunction.postcompCLM_cutoffCompCLM` with postcomposition, and
   `TestFunction.cutoffCompCLM_eventuallyEq`: it agrees with `f ∘ Φ` where `χ` is one. It is used
   to push forward distributions.
@@ -530,14 +531,32 @@ theorem postcompCLM_cutoffCompCLM {G : Type*} [NormedAddCommGroup G] [NormedSpac
   ext x
   simp
 
+/-- **Composition of compositions with cutoffs, up to agreement on the cutoffs**: composing with
+the cutoff `χ'` along `Ψ` and then with the cutoff `χ` along `Φ` only sees `Ψ ∘ Φ` on the part of
+`supp χ` that `Φ` maps into `supp χ'`, so it is composing with the cutoff `χ (χ' ∘ Φ)` along any map
+`B` smooth on `Ω` that agrees with `Ψ ∘ Φ` there. -/
+theorem cutoffCompCLM_cutoffCompCLM_of_eqOn {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)}
+    {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'} {B : E → E''} {hB : ContDiffOn ℝ (⊤ : ℕ∞) B Ω}
+    (h : EqOn (Ψ ∘ Φ) B (tsupport χ ∩ Φ ⁻¹' tsupport χ')) (f : 𝓓(Ω'', F)) :
+    cutoffCompCLM χ Φ hΦ (cutoffCompCLM χ' Ψ hΨ f) =
+      cutoffCompCLM (cutoffCompCLM χ Φ hΦ χ') B hB f := by
+  ext x
+  by_cases hx : x ∈ tsupport χ ∩ Φ ⁻¹' tsupport χ'
+  · simp [smul_smul, ← h hx]
+  · -- One of the two cutoffs vanishes at `x`.
+    have h0 : χ x * χ' (Φ x) = 0 := by
+      rcases not_and_or.1 hx with hx | hx
+      · simp [image_eq_zero_of_notMem_tsupport hx]
+      · simp [image_eq_zero_of_notMem_tsupport hx]
+    simp [smul_smul, h0]
+
 /-- **Composition of compositions with cutoffs**: composing with the cutoff `χ'` along `Ψ` and then
 with the cutoff `χ` along `Φ` is composing with the cutoff `χ (χ' ∘ Φ)` along `Ψ ∘ Φ`. -/
 theorem cutoffCompCLM_cutoffCompCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)}
     {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'} {hΨΦ : ContDiffOn ℝ (⊤ : ℕ∞) (Ψ ∘ Φ) Ω} (f : 𝓓(Ω'', F)) :
     cutoffCompCLM χ Φ hΦ (cutoffCompCLM χ' Ψ hΨ f) =
-      cutoffCompCLM (cutoffCompCLM χ Φ hΦ χ') (Ψ ∘ Φ) hΨΦ f := by
-  ext x
-  simp [smul_smul]
+      cutoffCompCLM (cutoffCompCLM χ Φ hΦ χ') (Ψ ∘ Φ) hΨΦ f :=
+  cutoffCompCLM_cutoffCompCLM_of_eqOn (fun _ _ ↦ rfl) f
 
 /-- The composition with a cutoff along the constant map at `y₀` is the multiple `f y₀ • χ` of the
 cutoff. -/

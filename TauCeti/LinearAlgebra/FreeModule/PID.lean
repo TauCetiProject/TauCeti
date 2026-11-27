@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
+import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.SetTheory.Cardinal.Order
 
@@ -29,7 +30,8 @@ module, so every submodule of a projective module is free as well
 (`Submodule.free_of_projective_of_isPrincipalIdealRing`), as is every module that injects into a
 projective module (`Module.Free.of_injective_of_projective_of_isPrincipalIdealRing`), and any
 middle term of an exact sequence `0 → M → N → P` with `M` free and `P` projective
-(`Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing`).
+(`Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing`). Over `ℤ`, every
+subgroup of a free abelian group is free (`AddSubgroup.free_of_free`).
 -/
 
 public section
@@ -133,6 +135,11 @@ theorem of_injective_of_projective_of_isPrincipalIdealRing [Module.Projective R 
   .of_equiv (LinearEquiv.ofInjective f hf).symm
 
 end Module.Free
+
+/-- Every subgroup of a free abelian group is free. -/
+theorem AddSubgroup.free_of_free {G : Type*} [AddCommGroup G] [Module.Free ℤ G]
+    (H : AddSubgroup G) : Module.Free ℤ H :=
+  H.toIntSubmodule.free_of_isPrincipalIdealRing
 
 /-- Over a principal ideal ring without zero divisors, if `0 → M → N → P` is exact with `M` free
 and `P` projective, then `N` is free: the image of `N → P` is a submodule of `P`, hence free and
