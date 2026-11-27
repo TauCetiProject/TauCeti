@@ -57,6 +57,26 @@ namespace Quaternion
 noncomputable def ijSquare (q₀ : ℍ) (δ : ℝ) : Fin 4 → ℍ :=
   ![q₀, q₀ + ⟨0, δ, 0, 0⟩, q₀ + ⟨0, δ, δ, 0⟩, q₀ + ⟨0, 0, δ, 0⟩]
 
+/-- The first vertex of `ijSquare q₀ δ` is its corner `q₀`. -/
+@[simp]
+theorem ijSquare_zero (q₀ : ℍ) (δ : ℝ) : ijSquare q₀ δ 0 = q₀ := by
+  simp [ijSquare]
+
+/-- The second vertex of `ijSquare q₀ δ` is `q₀ + δ i`. -/
+@[simp]
+theorem ijSquare_one (q₀ : ℍ) (δ : ℝ) : ijSquare q₀ δ 1 = q₀ + ⟨0, δ, 0, 0⟩ := by
+  simp [ijSquare]
+
+/-- The third vertex of `ijSquare q₀ δ` is `q₀ + δ (i + j)`. -/
+@[simp]
+theorem ijSquare_two (q₀ : ℍ) (δ : ℝ) : ijSquare q₀ δ 2 = q₀ + ⟨0, δ, δ, 0⟩ := by
+  simp [ijSquare]
+
+/-- The fourth vertex of `ijSquare q₀ δ` is `q₀ + δ j`. -/
+@[simp]
+theorem ijSquare_three (q₀ : ℍ) (δ : ℝ) : ijSquare q₀ δ 3 = q₀ + ⟨0, 0, δ, 0⟩ := by
+  simp [ijSquare]
+
 end Quaternion
 
 /-- The commutators of consecutive vertices of the square with corner `q₀` and side `δ` in the
@@ -65,8 +85,9 @@ private theorem sum_mul_sub_mul_square (q₀ : ℍ) (δ : ℝ) :
     let p := Quaternion.ijSquare q₀ δ
     ∑ k, (p k * p (finRotate 4 k) - p (finRotate 4 k) * p k) = ⟨0, 0, 0, 4 * δ ^ 2⟩ := by
   intro p
-  simp only [Fin.sum_univ_four, p, Quaternion.ijSquare, Fin.isValue, Matrix.cons_val_zero,
-    finRotate_apply, zero_add, Matrix.cons_val_one, Fin.reduceAdd, Matrix.cons_val]
+  simp only [Fin.sum_univ_four, p, Fin.isValue, finRotate_apply, zero_add, Fin.reduceAdd,
+    Quaternion.ijSquare_zero, Quaternion.ijSquare_one, Quaternion.ijSquare_two,
+    Quaternion.ijSquare_three]
   ext <;> simp <;> ring
 
 /-- The commutators of consecutive vertices of the square with corner `q₀` and side `δ`, taken in
@@ -172,27 +193,20 @@ private theorem exists_square_segment_subset {q₀ : ℍ} (hs : s ∈ nhds q₀)
     intro k
     rw [mem_ball_iff_norm, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hε.le two_ne_zero, sq,
       ← normSq_eq_norm_mul_self, normSq_def']
-    fin_cases k <;> simp [Quaternion.ijSquare] <;> nlinarith
+    fin_cases k <;> simp <;> nlinarith
   exact ((convex_ball q₀ ε).segment_subset (hmem _) (hmem _)).trans hball
-
-/-- A quaternion `c k` with `c ≠ 0` is nonzero. -/
-private theorem mk_zero_zero_zero_ne_zero {c : ℝ} (hc : c ≠ 0) : (⟨0, 0, 0, c⟩ : ℍ) ≠ 0 := by
-  intro h0
-  have hk := congrArg QuaternionAlgebra.imK h0
-  rw [Quaternion.imK_zero] at hk
-  exact hc hk
 
 /-- If `(c k * b) / 2 = 0` with `c ≠ 0`, then `b = 0`. -/
 private theorem eq_zero_of_smul_mk_mul_eq_zero {b : ℍ} {c : ℝ} (hc : c ≠ 0)
     (h : (2 : ℝ)⁻¹ • ((⟨0, 0, 0, c⟩ : ℍ) * b) = 0) : b = 0 :=
   (mul_eq_zero.mp ((smul_eq_zero.mp h).resolve_left (inv_ne_zero two_ne_zero))).resolve_left
-    (mk_zero_zero_zero_ne_zero hc)
+    fun h0 ↦ hc (QuaternionAlgebra.mk.inj (h0.trans QuaternionAlgebra.mk_zero.symm)).2.2.2
 
 /-- If `(b * c k) / 2 = 0` with `c ≠ 0`, then `b = 0`. -/
 private theorem eq_zero_of_smul_mul_mk_eq_zero {b : ℍ} {c : ℝ} (hc : c ≠ 0)
     (h : (2 : ℝ)⁻¹ • (b * (⟨0, 0, 0, c⟩ : ℍ)) = 0) : b = 0 :=
   (mul_eq_zero.mp ((smul_eq_zero.mp h).resolve_left (inv_ne_zero two_ne_zero))).resolve_right
-    (mk_zero_zero_zero_ne_zero hc)
+    fun h0 ↦ hc (QuaternionAlgebra.mk.inj (h0.trans QuaternionAlgebra.mk_zero.symm)).2.2.2
 
 /-- **No loop theorem for left quotient differentiable functions.** Let `f` have a left quotient
 derivative at every point of a connected open set `s`. Then the integral of `dq f` vanishes
