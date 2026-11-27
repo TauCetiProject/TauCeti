@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Order.Chebyshev
 public import Mathlib.Algebra.Order.Monovary
-import Mathlib.Tactic
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Ring
 
 /-!
 # Weighted Chebyshev inequalities
