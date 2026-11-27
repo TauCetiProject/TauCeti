@@ -23,6 +23,8 @@ to `R` commutes with restricting its height function.
 
 * `TauCeti.IsHeightFunctionOn R H`: the increments of `H` along the edges of `R` lie in `{0, 1}`.
 * `TauCeti.tilingOfHeightOn R H`: the edges of `R` along which the increment of `H` is not neutral.
+* `TauCeti.IsBoundaryHeight R h`: the increment of `h` along every boundary edge of `R` is the
+  neutral one.
 
 ## Main statements
 
@@ -39,7 +41,8 @@ to `R` commutes with restricting its height function.
 * `TauCeti.IsSimplyConnectedRegion.tilingOfHeightOn_bijOn`: free tilings of a simply connected
   region correspond bijectively to normalised height functions on it.
 * `TauCeti.IsHeightFunctionOn.isTiling_tilingOfHeightOn_iff`: the free tiling of a height function
-  is a tiling exactly when the increment along every boundary edge is neutral.
+  is a tiling exactly when it is a boundary height, i.e. its increment along every boundary edge is
+  neutral.
 * `TauCeti.IsTiling.tilingOfHeightOn_tilingHeight`: the free tiling on `R` of the height function of
   a plane tiling `M` is the restriction `M ∩ E(R)`.
 
@@ -217,13 +220,25 @@ theorem IsSimplyConnectedRegion.tilingOfHeightOn_bijOn (hR : IsSimplyConnectedRe
     refine ⟨H₀, ⟨hH.congr hEq, by simp [H₀, hv₀, hHm], fun u hu => by simp [H₀, hu]⟩, ?_⟩
     rw [← tilingOfHeightOn_congr hEq, hHM]
 
+/-- A boundary height of `R`: the increment of `h` along every boundary edge of `R` is the neutral
+increment. Only the values of `h` on the boundary vertices of `R` matter. -/
+def IsBoundaryHeight (R : Set TriFace) (h : ℤ × ℤ → ℤ) : Prop :=
+  ∀ e ∈ boundaryEdges R, h e.target - h e.v = neutralIncrement e
+
+theorem isBoundaryHeight_def : IsBoundaryHeight R H ↔
+    ∀ e ∈ boundaryEdges R, H e.target - H e.v = neutralIncrement e := Iff.rfl
+
+/-- The increment of a boundary height along a boundary edge is the neutral one. -/
+theorem IsBoundaryHeight.sub_eq (hH : IsBoundaryHeight R H) {e : TriEdge}
+    (he : e ∈ boundaryEdges R) : H e.target - H e.v = neutralIncrement e :=
+  hH e he
+
 /-- **Tilings are the heights with neutral boundary increments**: the free tiling of a height
-function on `R` is a tiling of `R` exactly when the increment of `H` along every boundary edge of
-`R` is the neutral one. -/
+function on `R` is a tiling of `R` exactly when `H` is a boundary height of `R`, i.e. the increment
+of `H` along every boundary edge of `R` is the neutral one. -/
 theorem IsHeightFunctionOn.isTiling_tilingOfHeightOn_iff (hH : IsHeightFunctionOn R H) :
-    IsTiling R (tilingOfHeightOn R H) ↔
-      ∀ e ∈ boundaryEdges R, H e.target - H e.v = neutralIncrement e := by
-  rw [hH.isFreeTiling_tilingOfHeightOn.isTiling_iff, Set.disjoint_right]
+    IsTiling R (tilingOfHeightOn R H) ↔ IsBoundaryHeight R H := by
+  rw [isBoundaryHeight_def, hH.isFreeTiling_tilingOfHeightOn.isTiling_iff, Set.disjoint_right]
   refine forall₂_congr fun e he => ?_
   have heR := boundaryEdges_subset_regionEdges he
   rw [mem_tilingOfHeightOn, not_and_or, or_iff_left (not_not.2 heR)]

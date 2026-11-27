@@ -97,7 +97,7 @@ example {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn {whiteZero} H) (h0 : H
 edges would force `H(e₁) = H(0) = H(e₃)` and `H(e₃) = H(0) + 1`. -/
 example {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn {whiteZero} H) :
     ¬IsTiling {whiteZero} (tilingOfHeightOn {whiteZero} H) := by
-  rw [hH.isTiling_tilingOfHeightOn_iff]
+  rw [hH.isTiling_tilingOfHeightOn_iff, isBoundaryHeight_def]
   intro h
   have hb : ∀ e ∈ whiteZero.edges, e ∈ boundaryEdges {whiteZero} := by
     intro e he
