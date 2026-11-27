@@ -67,6 +67,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 
 ## References
 
+* M. F. Atiyah, *Convexity and commuting Hamiltonians*, Bull. London Math. Soc. **14** (1982),
+  1–15.
 * T. Delzant, *Hamiltoniens périodiques et images convexes de l'application moment*, Bull. Soc.
   Math. France 116 (1988), 315–339.
 * V. Guillemin and S. Sternberg, *Convexity properties of the moment mapping*, Invent. Math. 67
