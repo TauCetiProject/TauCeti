@@ -10,12 +10,14 @@ public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Topology.Order.AtTopBotIxx
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Growth
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.ODE.SecondOrder.Linear
 import TauCeti.Analysis.ODE.Wronskian
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Order.Filter.AtTopBot.Group
+import TauCeti.Order.Filter.Basic
 
 /-!
 # Recessive and dominant Liouville–Green solutions
@@ -154,10 +156,6 @@ private lemma eventually_ne_zero_of_isEquivalent_approximant {l : Filter ℝ} {u
   hl.and <| hu.eventually_ne_zero <| hl.mono fun x hx ↦
     liouvilleGreen_approximant_ne_zero (hf0 x hx)
 
-/-- Along the image in `ℝ` of a filter on the subtype `I`, points eventually lie in `I`. -/
-private lemma eventually_mem_map_val (l : Filter I) : ∀ᶠ x in map ((↑) : I → ℝ) l, x ∈ I :=
-  eventually_map.2 (Eventually.of_forall Subtype.property)
-
 /-- Where `w₂ ≠ 0`, the function `w / w₂ - (W / 2) e^{2ξ}` has derivative
 `(W / 2) ((w₂ / y₋)⁻² - 1) (e^{2ξ})'`, where `W = w₂ w' - w₂' w` and `y₋ = f^{-1/4} e^{-ξ}`. -/
 private lemma hasDerivAt_div_sub_exp {x : ℝ} {W : ℂ} (hfx : 0 < f x)
@@ -187,7 +185,7 @@ private lemma isLittleO_div_sub_exp {W : ℂ} (hI : IsOpen I) (hIc : I.OrdConnec
     (hw : ContDiffOn ℝ 2 w I) (hW : ∀ x ∈ I, w₂ x * deriv w x - deriv w₂ x * w x = W) :
     (fun x ↦ w x / w₂ x - W / 2 * ((Real.exp (2 * ξ x) : ℝ) : ℂ)) =o[map ((↑) : I → ℝ) atTop]
       fun x ↦ ((Real.exp (2 * ξ x) : ℝ) : ℂ) := by
-  have hl := eventually_mem_map_val (I := I) atTop
+  have hl := eventually_mem_map_val (s := I) atTop
   refine Complex.isLittleO_ofReal_right.2 <| isLittleO_map_val_atTop_of_hasDerivAt hIc
     ((eventually_ne_zero_of_isEquivalent_approximant hl hf0 hw₂e).mono fun x hx ↦
       hasDerivAt_div_sub_exp (hf0 x hx.1) (hξ x hx.1)
@@ -221,7 +219,7 @@ theorem tendsto_div_liouvilleGreen_atTop (hI : IsOpen I) (hIc : I.OrdConnected)
     Tendsto (fun x ↦ w x / ((f x ^ (-(1 / 4) : ℝ) * Real.exp (ξ x) : ℝ) : ℂ))
       (map ((↑) : I → ℝ) atTop)
       (𝓝 ((w₂ x₀ * deriv w x₀ - deriv w₂ x₀ * w x₀) / 2)) := by
-  have hl := eventually_mem_map_val (I := I) atTop
+  have hl := eventually_mem_map_val (s := I) atTop
   set W := w₂ x₀ * deriv w x₀ - deriv w₂ x₀ * w x₀
   have hGo := isLittleO_div_sub_exp hI hIc hf0 hξ hξt hw₂ hw₂e hw fun x hx ↦
     wronskian_eq_of_iteratedDeriv_eq_mul hI hIc.isPreconnected hw₂ hw₂q hw hwq hx hx₀
@@ -258,7 +256,7 @@ private lemma tendsto_norm_div_approximant_atTop (hI : IsOpen I) (hIc : I.OrdCon
   have h := tendsto_div_liouvilleGreen_atTop hI hIc hf0 hξ hξt hw₂ hw₂q hw₂e hw hwq hx₀
   refine ((h.norm.pos_mul_atTop (norm_pos_iff.2 (div_ne_zero hW two_ne_zero))
     (Real.tendsto_exp_atTop.comp (hξt.const_mul_atTop two_pos)))).congr' ?_
-  filter_upwards [eventually_mem_map_val (I := I) atTop] with x hx
+  filter_upwards [eventually_mem_map_val (s := I) atTop] with x hx
   rw [Function.comp_apply, div_approximant_eq_div_mul_exp (hf0 x hx), norm_mul, Complex.norm_real,
     Real.norm_of_nonneg (Real.exp_pos _).le]
 
@@ -274,7 +272,7 @@ theorem tendsto_div_of_wronskian_ne_zero_atTop (hI : IsOpen I) (hIc : I.OrdConne
     (hw : ContDiffOn ℝ 2 w I) (hwq : ∀ x ∈ I, iteratedDeriv 2 w x = q x * w x)
     {x₀ : ℝ} (hx₀ : x₀ ∈ I) (hW : w₂ x₀ * deriv w x₀ - deriv w₂ x₀ * w x₀ ≠ 0) :
     Tendsto (fun x ↦ w₂ x / w x) (map ((↑) : I → ℝ) atTop) (𝓝 0) := by
-  have hl := eventually_mem_map_val (I := I) atTop
+  have hl := eventually_mem_map_val (s := I) atTop
   -- `|w₂ / w| = |w₂ / y₋| / |w / y₋|`, with `|w₂ / y₋| → 1` and `|w / y₋| → ∞`
   refine tendsto_zero_iff_norm_tendsto_zero.2 <|
     ((tendsto_div_of_isEquivalent_approximant hl hf0 hw₂e).norm.div_atTop
@@ -301,7 +299,7 @@ theorem eqOn_of_isEquivalent_liouvilleGreen_atTop (hI : IsOpen I) (hIc : I.OrdCo
   rcases I.eq_empty_or_nonempty with rfl | hne
   · exact eqOn_empty _ _
   have : Nonempty I := hne.to_subtype
-  have hl := eventually_mem_map_val (I := I) atTop
+  have hl := eventually_mem_map_val (s := I) atTop
   have h₂ := tendsto_div_of_isEquivalent_approximant hl hf0 hw₂e
   have h₁ := tendsto_div_of_isEquivalent_approximant hl hf0 hwe
   obtain ⟨x₀, hx₀, hw₂x₀⟩ := (eventually_ne_zero_of_isEquivalent_approximant hl hf0 hw₂e).exists
@@ -343,7 +341,7 @@ theorem exists_liouvilleGreen_dominant_atTop (hI : IsOpen I) (hIc : I.OrdConnect
       by rw [hbot]; exact IsLittleO.of_bound fun _ _ ↦ eventually_bot,
       by rw [hbot]; exact tendsto_bot⟩
   have : Nonempty I := hne.to_subtype
-  have hl := eventually_mem_map_val (I := I) atTop
+  have hl := eventually_mem_map_val (s := I) atTop
   obtain ⟨x₀, hx₀, hw₂x₀⟩ := (eventually_ne_zero_of_isEquivalent_approximant hl hf0 hw₂e).exists
   -- the solution with `w₃(x₀) = 0` and `w₃'(x₀) = 2 / w₂(x₀)` has Wronskian `2` with `w₂`
   obtain ⟨w₃, hw₃, hw₃q, hw₃0, hw₃1⟩ := exists_contDiffOn_iteratedDeriv_eq_mul hI hIc hq hx₀ 0
@@ -357,25 +355,6 @@ theorem exists_liouvilleGreen_dominant_atTop (hI : IsOpen I) (hIc : I.OrdConnect
   exact ⟨w₃, hw₃, hw₃q, isEquivalent_of_tendsto_one h,
     tendsto_div_of_wronskian_ne_zero_atTop hI hIc hf0 hξ hξt hw₂ hw₂q hw₂e hw₃ hw₃q hx₀
       (hW ▸ two_ne_zero)⟩
-
-/-- The tails `∫_{(x, a₂)} |Φ|` of an integrand that is integrable on each of them tend to `0`
-as `x → a₂-`. -/
-private lemma tendsto_integral_norm_Ioi_inter {Φ : ℝ → ℂ} (hI : IsOpen I)
-    (hIc : I.OrdConnected) (hΦi : ∀ x ∈ I, IntegrableOn Φ (Ioi x ∩ I)) :
-    Tendsto (fun x ↦ ∫ v in Ioi x ∩ I, ‖Φ v‖) (map ((↑) : I → ℝ) atTop) (𝓝 0) := by
-  rcases isEmpty_or_nonempty I with hI0 | hne
-  · rw [filter_eq_bot_of_isEmpty (atTop : Filter I), map_bot]
-    exact tendsto_bot
-  obtain ⟨x₀⟩ := hne
-  have h := tendsto_setIntegral_of_antitone (μ := volume) (f := fun v ↦ ‖Φ v‖)
-    (s := fun x : I ↦ Ioi (x : ℝ) ∩ I) (fun _ ↦ measurableSet_Ioi.inter hI.measurableSet)
-    (fun _ _ hxy ↦ inter_subset_inter_left _ (Ioi_subset_Ioi hxy))
-    ⟨x₀, (hΦi x₀ x₀.property).norm⟩
-  have h0 : ⋂ x : I, Ioi (x : ℝ) ∩ I = ∅ := eq_empty_of_forall_notMem fun v hv ↦ by
-    have hv' := mem_iInter.1 hv
-    exact lt_irrefl v (hv' ⟨v, (hv' x₀).2⟩).1
-  rw [h0, setIntegral_empty] at h
-  exact tendsto_map'_iff.2 h
 
 /-- A function `w = f^{-1/4} e^{σ} (1 + ε)` whose relative error is bounded by
 `|ε| ≤ exp(V / 2) - 1`, where `V → 0` along a filter `l` on `I`, is asymptotic to
@@ -413,54 +392,35 @@ theorem exists_liouvilleGreen_isEquivalent_atTop {g Φ : ℝ → ℂ} (hI : IsOp
   -- `‖ε(x)‖ ≤ exp(V(x) / 2) - 1 → 0`, since `V(x) = ∫_{(x, a₂)} |Φ| → 0`
   exact ⟨w, hw, fun x hx ↦ (hwε x hx).1, isEquivalent_approximant_of_tendsto
     (eventually_mem_map_val atTop) hf0 (fun x hx ↦ ⟨(hwε x hx).2.1, (hwε x hx).2.2.1⟩)
-    (tendsto_integral_norm_Ioi_inter hI hIc hΦi)⟩
+    (tendsto_setIntegral_Ioi_inter_map_val_atTop hIc fun x hx ↦ (hΦi x hx).norm)⟩
 
 /-! ### The left end
 
 The results at the left end `a₁` follow from those at the right end by the reflection
 `x ↦ -x`. -/
 
-/-- The reflection `x ↦ -x` maps the filter `x → a₁+` within `I` to the filter `t → (-a₁)-` within
-`-I`. -/
-private lemma map_neg_map_val_atBot (I : Set ℝ) :
-    map Neg.neg (map ((↑) : I → ℝ) atBot) = map ((↑) : (Neg.neg ⁻¹' I : Set ℝ) → ℝ) atTop := by
-  rcases isEmpty_or_nonempty I with hI0 | hne
-  · have : IsEmpty (Neg.neg ⁻¹' I : Set ℝ) := ⟨fun t ↦ hI0.false ⟨-t, t.property⟩⟩
-    rw [filter_eq_bot_of_isEmpty (atBot : Filter I),
-      filter_eq_bot_of_isEmpty (atTop : Filter (Neg.neg ⁻¹' I : Set ℝ)), map_bot, map_bot,
-      map_bot]
-  obtain ⟨x₀⟩ := hne
-  have : Nonempty I := ⟨x₀⟩
-  have : Nonempty (Neg.neg ⁻¹' I : Set ℝ) := ⟨⟨-x₀, by simp⟩⟩
-  ext s
-  simp only [mem_map, mem_atBot_sets, mem_atTop_sets, mem_preimage]
-  constructor
-  · rintro ⟨a, ha⟩
-    refine ⟨⟨-a, by simp⟩, fun b hb ↦ ?_⟩
-    simpa using ha ⟨-b, b.property⟩ (Subtype.coe_le_coe.1 (neg_le.1 (Subtype.coe_le_coe.2 hb)))
-  · rintro ⟨a, ha⟩
-    refine ⟨⟨-a, a.property⟩, fun b hb ↦ ?_⟩
-    simpa using ha ⟨-b, by simp⟩ (Subtype.coe_le_coe.1 (le_neg.2 (Subtype.coe_le_coe.2 hb)))
+/-- The reflection `t ↦ w(-t)` of a solution of `w'' = q w`, `C²` on `I`, is a solution of
+`w'' = q(-t) w`, `C²` on `-I`. -/
+private lemma contDiffOn_and_iteratedDeriv_comp_neg (hw : ContDiffOn ℝ 2 w I)
+    (hwq : ∀ x ∈ I, iteratedDeriv 2 w x = q x * w x) :
+    ContDiffOn ℝ 2 (fun t ↦ w (-t)) (Neg.neg ⁻¹' I) ∧
+      ∀ t ∈ Neg.neg ⁻¹' I, iteratedDeriv 2 (fun t ↦ w (-t)) t = q (-t) * w (-t) :=
+  ⟨hw.comp contDiff_neg.contDiffOn fun _ ht ↦ ht, fun t ht ↦ by
+    rw [iteratedDeriv_comp_neg, neg_one_sq, one_smul, hwq _ ht]⟩
 
-/-- The reflection `x ↦ -x` sends `x → a₁+` within `I` to `t → (-a₁)-` within `-I`. -/
-private lemma tendsto_neg_map_val_atBot (I : Set ℝ) :
-    Tendsto Neg.neg (map ((↑) : I → ℝ) atBot) (map ((↑) : (Neg.neg ⁻¹' I : Set ℝ) → ℝ) atTop) :=
-  (map_neg_map_val_atBot I).le
-
-/-- The reflection `t ↦ -t` sends `t → (-a₁)-` within `-I` back to `x → a₁+` within `I`. -/
-private lemma tendsto_neg_map_val_atTop (I : Set ℝ) :
-    Tendsto Neg.neg (map ((↑) : (Neg.neg ⁻¹' I : Set ℝ) → ℝ) atTop) (map ((↑) : I → ℝ) atBot) := by
-  rw [Tendsto, ← map_neg_map_val_atBot, map_map, neg_involutive.comp_self, map_id]
-
-/-- The reflection `t ↦ w(-t)` of a solution of `w'' = q w` on `I` solves `w'' = q(-t) w` on
-`-I`. -/
-private lemma iteratedDeriv_two_comp_neg_eq (hwq : ∀ x ∈ I, iteratedDeriv 2 w x = q x * w x) :
-    ∀ t ∈ Neg.neg ⁻¹' I, iteratedDeriv 2 (fun t ↦ w (-t)) t = q (-t) * w (-t) := fun t ht ↦ by
-  rw [iteratedDeriv_comp_neg, neg_one_sq, one_smul, hwq _ ht]
-
-/-- The reflection `t ↦ -ξ(-t)` of a primitive of `f^{1/2}` is a primitive of `f(-t)^{1/2}`. -/
-private lemma hasDerivAt_neg_comp_neg (hξ : ∀ x ∈ I, HasDerivAt ξ (√(f x)) x) :
-    ∀ t ∈ Neg.neg ⁻¹' I, HasDerivAt (fun t ↦ -ξ (-t)) (√(f (-t))) t := fun t ht ↦ by
+/-- The reflection `x ↦ -x` turns an open order-connected `I = (a₁, a₂)`, a positive `f` and a
+primitive `ξ` of `f^{1/2}` with `ξ(x) → -∞` as `x → a₁+` into the open order-connected `-I`, the
+positive `f(-t)` and the primitive `-ξ(-t)` of `f(-t)^{1/2}`, which tends to `∞` as
+`t → (-a₁)-`. -/
+private lemma liouvilleGreen_data_comp_neg (hI : IsOpen I) (hIc : I.OrdConnected)
+    (hf0 : ∀ x ∈ I, 0 < f x) (hξ : ∀ x ∈ I, HasDerivAt ξ (√(f x)) x)
+    (hξt : Tendsto ξ (map ((↑) : I → ℝ) atBot) atBot) :
+    IsOpen (Neg.neg ⁻¹' I) ∧ (Neg.neg ⁻¹' I).OrdConnected ∧ (∀ t ∈ Neg.neg ⁻¹' I, 0 < f (-t)) ∧
+      (∀ t ∈ Neg.neg ⁻¹' I, HasDerivAt (fun t ↦ -ξ (-t)) (√(f (-t))) t) ∧
+      Tendsto (fun t ↦ -ξ (-t)) (map ((↑) : (Neg.neg ⁻¹' I : Set ℝ) → ℝ) atTop) atTop := by
+  refine ⟨hI.preimage continuous_neg, hIc.preimage_anti fun _ _ h ↦ neg_le_neg h,
+    fun t ht ↦ hf0 _ ht, fun t ht ↦ ?_,
+    tendsto_neg_atBot_atTop.comp (hξt.comp (tendsto_neg_map_val_atTop I))⟩
   convert ((hξ _ ht).comp t (hasDerivAt_neg t)).neg using 1
   · ext
     simp
@@ -491,14 +451,12 @@ theorem tendsto_div_liouvilleGreen_atBot (hI : IsOpen I) (hIc : I.OrdConnected)
     {x₀ : ℝ} (hx₀ : x₀ ∈ I) :
     Tendsto (fun x ↦ w x / ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ))
       (map ((↑) : I → ℝ) atBot) (𝓝 (-(w₁ x₀ * deriv w x₀ - deriv w₁ x₀ * w x₀) / 2)) := by
-  have h := (tendsto_div_liouvilleGreen_atTop (q := fun t ↦ q (-t))
-    (w₂ := fun t ↦ w₁ (-t)) (w := fun t ↦ w (-t)) (hI.preimage continuous_neg)
-    (hIc.preimage_anti fun _ _ h ↦ neg_le_neg h) (fun t ht ↦ hf0 _ ht) (hasDerivAt_neg_comp_neg hξ)
-    (tendsto_neg_atBot_atTop.comp (hξt.comp (tendsto_neg_map_val_atTop I)))
-    (hw₁.comp contDiff_neg.contDiffOn fun _ ht ↦ ht) (iteratedDeriv_two_comp_neg_eq hw₁q)
-    (isEquivalent_comp_neg hw₁e)
-    (hw.comp contDiff_neg.contDiffOn fun _ ht ↦ ht) (iteratedDeriv_two_comp_neg_eq hwq)
-    (x₀ := -x₀) (by simpa using hx₀)).comp (tendsto_neg_map_val_atBot I)
+  obtain ⟨hI', hIc', hf0', hξ', hξt'⟩ := liouvilleGreen_data_comp_neg hI hIc hf0 hξ hξt
+  obtain ⟨hw₁', hw₁q'⟩ := contDiffOn_and_iteratedDeriv_comp_neg hw₁ hw₁q
+  obtain ⟨hw', hwq'⟩ := contDiffOn_and_iteratedDeriv_comp_neg hw hwq
+  have h := (tendsto_div_liouvilleGreen_atTop hI' hIc' hf0' hξ' hξt' hw₁' hw₁q'
+    (isEquivalent_comp_neg hw₁e) hw' hwq' (x₀ := -x₀) (by simpa using hx₀)).comp
+    (tendsto_neg_map_val_atBot I)
   simp only [Function.comp_def, deriv_comp_neg, neg_neg] at h
   convert h using 3
   ring
@@ -515,13 +473,11 @@ theorem tendsto_div_of_wronskian_ne_zero_atBot (hI : IsOpen I) (hIc : I.OrdConne
     (hw : ContDiffOn ℝ 2 w I) (hwq : ∀ x ∈ I, iteratedDeriv 2 w x = q x * w x)
     {x₀ : ℝ} (hx₀ : x₀ ∈ I) (hW : w₁ x₀ * deriv w x₀ - deriv w₁ x₀ * w x₀ ≠ 0) :
     Tendsto (fun x ↦ w₁ x / w x) (map ((↑) : I → ℝ) atBot) (𝓝 0) := by
-  have h := (tendsto_div_of_wronskian_ne_zero_atTop (q := fun t ↦ q (-t))
-    (w₂ := fun t ↦ w₁ (-t)) (w := fun t ↦ w (-t)) (hI.preimage continuous_neg)
-    (hIc.preimage_anti fun _ _ h ↦ neg_le_neg h) (fun t ht ↦ hf0 _ ht) (hasDerivAt_neg_comp_neg hξ)
-    (tendsto_neg_atBot_atTop.comp (hξt.comp (tendsto_neg_map_val_atTop I)))
-    (hw₁.comp contDiff_neg.contDiffOn fun _ ht ↦ ht) (iteratedDeriv_two_comp_neg_eq hw₁q)
-    (isEquivalent_comp_neg hw₁e) (hw.comp contDiff_neg.contDiffOn fun _ ht ↦ ht)
-    (iteratedDeriv_two_comp_neg_eq hwq) (x₀ := -x₀) (by simpa using hx₀) ?_).comp
+  obtain ⟨hI', hIc', hf0', hξ', hξt'⟩ := liouvilleGreen_data_comp_neg hI hIc hf0 hξ hξt
+  obtain ⟨hw₁', hw₁q'⟩ := contDiffOn_and_iteratedDeriv_comp_neg hw₁ hw₁q
+  obtain ⟨hw', hwq'⟩ := contDiffOn_and_iteratedDeriv_comp_neg hw hwq
+  have h := (tendsto_div_of_wronskian_ne_zero_atTop hI' hIc' hf0' hξ' hξt' hw₁' hw₁q'
+    (isEquivalent_comp_neg hw₁e) hw' hwq' (x₀ := -x₀) (by simpa using hx₀) ?_).comp
     (tendsto_neg_map_val_atBot I)
   · simpa [Function.comp_def] using h
   · -- the Wronskian of the reflected solutions is `-W`
@@ -543,14 +499,12 @@ theorem eqOn_of_isEquivalent_liouvilleGreen_atBot (hI : IsOpen I) (hIc : I.OrdCo
     (hwe : w ~[map ((↑) : I → ℝ) atBot]
       fun x ↦ ((f x ^ (-(1 / 4) : ℝ) * Real.exp (ξ x) : ℝ) : ℂ)) :
     EqOn w w₁ I := by
-  have h := eqOn_of_isEquivalent_liouvilleGreen_atTop (q := fun t ↦ q (-t))
-    (w₂ := fun t ↦ w₁ (-t)) (w := fun t ↦ w (-t)) (hI.preimage continuous_neg)
-    (hIc.preimage_anti fun _ _ h ↦ neg_le_neg h) (fun t ht ↦ hf0 _ ht) (hasDerivAt_neg_comp_neg hξ)
-    (tendsto_neg_atBot_atTop.comp (hξt.comp (tendsto_neg_map_val_atTop I)))
-    (hq.comp continuous_neg.continuousOn fun _ ht ↦ ht)
-    (hw₁.comp contDiff_neg.contDiffOn fun _ ht ↦ ht) (iteratedDeriv_two_comp_neg_eq hw₁q)
-    (isEquivalent_comp_neg hw₁e) (hw.comp contDiff_neg.contDiffOn fun _ ht ↦ ht)
-    (iteratedDeriv_two_comp_neg_eq hwq) (isEquivalent_comp_neg hwe)
+  obtain ⟨hI', hIc', hf0', hξ', hξt'⟩ := liouvilleGreen_data_comp_neg hI hIc hf0 hξ hξt
+  obtain ⟨hw₁', hw₁q'⟩ := contDiffOn_and_iteratedDeriv_comp_neg hw₁ hw₁q
+  obtain ⟨hw', hwq'⟩ := contDiffOn_and_iteratedDeriv_comp_neg hw hwq
+  have h := eqOn_of_isEquivalent_liouvilleGreen_atTop hI' hIc' hf0' hξ' hξt'
+    (hq.comp continuous_neg.continuousOn fun _ ht ↦ ht) hw₁' hw₁q' (isEquivalent_comp_neg hw₁e)
+    hw' hwq' (isEquivalent_comp_neg hwe)
   intro x hx
   simpa using h (x := -x) (by simpa using hx)
 
@@ -568,43 +522,17 @@ theorem exists_liouvilleGreen_dominant_atBot (hI : IsOpen I) (hIc : I.OrdConnect
     ∃ w₄ : ℝ → ℂ, ContDiffOn ℝ 2 w₄ I ∧ (∀ x ∈ I, iteratedDeriv 2 w₄ x = q x * w₄ x) ∧
       (w₄ ~[map ((↑) : I → ℝ) atBot] fun x ↦ ((f x ^ (-(1 / 4) : ℝ) * Real.exp (-ξ x) : ℝ) : ℂ)) ∧
       Tendsto (fun x ↦ w₁ x / w₄ x) (map ((↑) : I → ℝ) atBot) (𝓝 0) := by
-  obtain ⟨w₃, hw₃, hw₃q, hw₃e, hw₃t⟩ := exists_liouvilleGreen_dominant_atTop
-    (q := fun t ↦ q (-t)) (w₂ := fun t ↦ w₁ (-t)) (hI.preimage continuous_neg)
-    (hIc.preimage_anti fun _ _ h ↦ neg_le_neg h) (fun t ht ↦ hf0 _ ht) (hasDerivAt_neg_comp_neg hξ)
-    (tendsto_neg_atBot_atTop.comp (hξt.comp (tendsto_neg_map_val_atTop I)))
-    (hq.comp continuous_neg.continuousOn fun _ ht ↦ ht)
-    (hw₁.comp contDiff_neg.contDiffOn fun _ ht ↦ ht) (iteratedDeriv_two_comp_neg_eq hw₁q)
-    (isEquivalent_comp_neg hw₁e)
+  obtain ⟨hI', hIc', hf0', hξ', hξt'⟩ := liouvilleGreen_data_comp_neg hI hIc hf0 hξ hξt
+  obtain ⟨hw₁', hw₁q'⟩ := contDiffOn_and_iteratedDeriv_comp_neg hw₁ hw₁q
+  obtain ⟨w₃, hw₃, hw₃q, hw₃e, hw₃t⟩ := exists_liouvilleGreen_dominant_atTop hI' hIc' hf0' hξ' hξt'
+    (hq.comp continuous_neg.continuousOn fun _ ht ↦ ht) hw₁' hw₁q' (isEquivalent_comp_neg hw₁e)
   -- the reflection `w₄(x) = w₃(-x)` of the dominant solution at `(-a₁)-`
   have hmaps : MapsTo Neg.neg I (Neg.neg ⁻¹' I) := fun x hx ↦ by simpa using hx
   refine ⟨fun x ↦ w₃ (-x), hw₃.comp contDiff_neg.contDiffOn hmaps, fun x hx ↦ ?_, ?_, ?_⟩
-  · rw [iteratedDeriv_comp_neg, neg_one_sq, one_smul, hw₃q _ (hmaps hx), neg_neg]
+  · simpa using (contDiffOn_and_iteratedDeriv_comp_neg hw₃ hw₃q).2 x (by simpa using hx)
   · exact (hw₃e.comp_tendsto (tendsto_neg_map_val_atBot I)).congr_right
       (.of_forall fun x ↦ by simp only [Function.comp_apply, neg_neg])
   · simpa [Function.comp_def] using hw₃t.comp (tendsto_neg_map_val_atBot I)
-
-/-- The tails `∫_{(a₁, x)} |Φ|` of an integrand that is integrable on each of them tend to `0`
-as `x → a₁+`. -/
-private lemma tendsto_integral_norm_Iio_inter {Φ : ℝ → ℂ} (hI : IsOpen I)
-    (hIc : I.OrdConnected) (hΦi : ∀ x ∈ I, IntegrableOn Φ (Iio x ∩ I)) :
-    Tendsto (fun x ↦ ∫ v in Iio x ∩ I, ‖Φ v‖) (map ((↑) : I → ℝ) atBot) (𝓝 0) := by
-  rcases isEmpty_or_nonempty I with hI0 | hne
-  · rw [filter_eq_bot_of_isEmpty (atBot : Filter I), map_bot]
-    exact tendsto_bot
-  obtain ⟨x₀⟩ := hne
-  -- the sets `(a₁, x)` decrease as `x` decreases, that is along `atTop` of the order dual `Iᵒᵈ`,
-  -- which is `atBot` of `I` by definition (as in Mathlib's dual lemmas, e.g. `atBot_basis`)
-  have h := tendsto_setIntegral_of_antitone (μ := volume) (f := fun v ↦ ‖Φ v‖)
-    (s := fun x : Iᵒᵈ ↦ Iio ((OrderDual.ofDual x : I) : ℝ) ∩ I)
-    (fun _ ↦ measurableSet_Iio.inter hI.measurableSet)
-    (fun _ _ hxy ↦ inter_subset_inter_left _ (Iio_subset_Iio hxy))
-    ⟨OrderDual.toDual x₀, (hΦi x₀ x₀.property).norm⟩
-  have h0 : ⋂ x : Iᵒᵈ, Iio ((OrderDual.ofDual x : I) : ℝ) ∩ I = ∅ :=
-    eq_empty_of_forall_notMem fun v hv ↦ by
-      have hv' := mem_iInter.1 hv
-      exact lt_irrefl v (hv' (OrderDual.toDual ⟨v, (hv' (OrderDual.toDual x₀)).2⟩)).1
-  rw [h0, setIntegral_empty] at h
-  exact tendsto_map'_iff.2 h
 
 /-- **The Liouville–Green solution is asymptotic to its approximant at the left end.** Under the
 hypotheses of the Liouville–Green theorem `TauCeti.exists_liouvilleGreen_left` on an open
@@ -622,6 +550,6 @@ theorem exists_liouvilleGreen_isEquivalent_atBot {g Φ : ℝ → ℂ} (hI : IsOp
   obtain ⟨w, ε, hw, -, hwε⟩ := exists_liouvilleGreen_left hI hIc hf hf0 hg hξ hΦ hΦi
   exact ⟨w, hw, fun x hx ↦ (hwε x hx).1, isEquivalent_approximant_of_tendsto
     (eventually_mem_map_val atBot) hf0 (fun x hx ↦ ⟨(hwε x hx).2.1, (hwε x hx).2.2.1⟩)
-    (tendsto_integral_norm_Iio_inter hI hIc hΦi)⟩
+    (tendsto_setIntegral_Iio_inter_map_val_atBot hIc fun x hx ↦ (hΦi x hx).norm)⟩
 
 end TauCeti
