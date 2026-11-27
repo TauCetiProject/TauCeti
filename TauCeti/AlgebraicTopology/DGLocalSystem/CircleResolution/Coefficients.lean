@@ -18,8 +18,9 @@ Let `γ` be a Moore loop at `b` and `K` the free module of the twisting cocycle
 resolution of `R` over the chains `C_*(Ω_b B; R)` on the Moore loops
 (`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_eq_zero`). So the
 twisted complex `𝓕 ⊗ K` with coefficients in a DG local system `𝓕` represents the derived tensor
-product `𝓕 ⊗^𝐋 R` (`TauCeti.nonempty_localizedFunctor_iso_derivedTensor`), the homology of the
-circle with coefficients in `𝓕`.
+product `𝓕 ⊗^𝐋 R`, the homology of the circle with coefficients in `𝓕`; for the complex unit
+circle and its loop `Circle.expLoop` this is
+`TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`.
 
 This file computes that twisted complex when `𝓕` is concentrated in degree zero, as the DG local
 system of a covering map is (`IsCoveringMap.isConcentratedInDegreeZero_liftingLocalSystem`). Write
@@ -331,6 +332,7 @@ def loopCellCocycleHomologyNegOneIso :
 
 /-- The isomorphism `TauCeti.loopCellCocycleHomologyZeroIso` sends the class of a cycle to the
 class of its coefficient of `e₀`. -/
+@[simp]
 theorem loopCellCocycleHomologyZeroIso_hom_homologyπ
     (z : ((loopCellCocycle R γ).coefficientCochainComplex 𝓕.isDGRightModule).cycles 0) :
     (loopCellCocycleHomologyZeroIso h𝓕 γ).hom
@@ -345,11 +347,13 @@ theorem loopCellCocycleHomologyZeroIso_hom_homologyπ
   simp only [loopCellCocycleHomologyZeroIso, Iso.trans_hom, ConcreteCategory.comp_apply,
     HomologicalComplex.isoHomologyι_hom, h, LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom,
     LinearEquiv.coe_coe, Submodule.Quotient.equiv_apply]
-  erw [ShortComplex.pOpcycles_comp_moduleCatOpcyclesIso_hom_apply]
+  -- Unfold `HomologicalComplex.pOpcycles` to the `pOpcycles` of the short complex `sc 0`.
+  rw [HomologicalComplex.pOpcycles, ShortComplex.pOpcycles_comp_moduleCatOpcyclesIso_hom_apply]
   rw [Submodule.mapQ_apply, LinearEquiv.coe_coe, xZeroEquiv_apply]
 
 /-- The isomorphism `TauCeti.loopCellCocycleHomologyNegOneIso` sends the class of a cycle to its
 coefficient of `e₁`. -/
+@[simp]
 theorem coe_loopCellCocycleHomologyNegOneIso_hom_homologyπ
     (z : ((loopCellCocycle R γ).coefficientCochainComplex 𝓕.isDGRightModule).cycles (-1)) :
     ((loopCellCocycleHomologyNegOneIso h𝓕 γ).hom
@@ -416,24 +420,24 @@ private def fibZero : Fib := ⟨_, addCircleDoubleCover_zero⟩
 /-- The point `1 / 2` of the fibre. -/
 private def fibHalf : Fib := ⟨_, addCircleDoubleCover_half⟩
 
-private theorem fibZero_ne_fibHalf : fibZero ≠ fibHalf := by
-  intro h
-  have h' : ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) = 0 := (congrArg Subtype.val h).symm
-  obtain ⟨n, hn⟩ := (AddCircle.coe_eq_zero_iff (p := (1 : ℝ))).1 h'
-  rw [zsmul_eq_mul, mul_one] at hn
-  have : (2 * n : ℝ) = 1 := by rw [hn]; norm_num
-  have : 2 * n = 1 := by exact_mod_cast this
-  omega
+/-- A vector supported at `0` vanishes at `1 / 2`. -/
+@[simp]
+private theorem single_fibZero_apply_fibHalf {R : Type*} [AddCommMonoid R] (a : R) :
+    Finsupp.single fibZero a fibHalf = 0 :=
+  Finsupp.single_eq_of_ne' addCircleDoubleCover_zero_ne_half
+
+/-- A vector supported at `1 / 2` vanishes at `0`. -/
+@[simp]
+private theorem single_fibHalf_apply_fibZero {R : Type*} [AddCommMonoid R] (a : R) :
+    Finsupp.single fibHalf a fibZero = 0 :=
+  Finsupp.single_eq_of_ne addCircleDoubleCover_zero_ne_half
 
 /-- A coefficient vector on the fibre is determined by its values at `0` and `1 / 2`. -/
 private theorem eq_single_fibZero_add_single_fibHalf {R : Type*} [AddCommMonoid R] (w : Fib →₀ R) :
     w = Finsupp.single fibZero (w fibZero) + Finsupp.single fibHalf (w fibHalf) := by
   ext q
-  rcases (addCircleDoubleCover_eq_zero_iff q.val).1 q.property with hq | hq
-  · obtain rfl : q = fibZero := Subtype.ext hq
-    simp [fibZero_ne_fibHalf.symm]
-  · obtain rfl : q = fibHalf := Subtype.ext hq
-    simp [fibZero_ne_fibHalf]
+  obtain rfl | rfl : q = fibZero ∨ q = fibHalf := addCircleDoubleCover_fiber_eq_zero_or_eq_half q
+  all_goals simp
 
 section Swap
 
@@ -453,8 +457,7 @@ private theorem fibSum_apply (w : Fib →₀ R) : fibSum e (e w) = w fibZero + w
 
 private theorem surjective_fibSum : Function.Surjective (fibSum e) := fun r ↦
   ⟨e (Finsupp.single fibZero r), by
-    rw [fibSum_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne' fibZero_ne_fibHalf,
-      add_zero]⟩
+    simp [fibSum_apply]⟩
 
 /-- The diagonal. -/
 private def fibDiag : R →ₗ[R] M :=
@@ -467,9 +470,7 @@ private theorem fibDiag_apply (r : R) :
 private theorem injective_fibDiag : Function.Injective (fibDiag e) := fun r s hrs ↦ by
   have := congrArg (· fibZero)
     (e.injective ((fibDiag_apply e r).symm.trans (hrs.trans (fibDiag_apply e s))))
-  simpa only [Finsupp.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne fibZero_ne_fibHalf, Finsupp.single_eq_of_ne' fibZero_ne_fibHalf,
-    add_zero] using this
+  simpa using this
 
 variable {e}
 
@@ -487,16 +488,15 @@ private theorem range_sub_one_eq_ker_fibSum
     rw [LinearMap.sub_apply, one_apply_eq_self, hT, ← map_sub] at hβ
     rw [← e.injective hβ]
     simp only [Finsupp.sub_apply, Finsupp.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne fibZero_ne_fibHalf, Finsupp.single_eq_of_ne' fibZero_ne_fibHalf,
-      add_zero, zero_add]
+      single_fibZero_apply_fibHalf, single_fibHalf_apply_fibZero, add_zero, zero_add]
     abel
   · intro hw
     refine ⟨e (Finsupp.single fibZero (w fibHalf)), ?_⟩
     rw [LinearMap.sub_apply, one_apply_eq_self, hT, ← map_sub]
     congr 1
     conv_rhs => rw [eq_single_fibZero_add_single_fibHalf w, eq_neg_of_add_eq_zero_left hw]
-    simp only [Finsupp.single_eq_same, Finsupp.single_eq_of_ne' fibZero_ne_fibHalf,
-      Finsupp.single_zero, add_zero, Finsupp.single_neg]
+    simp only [Finsupp.single_eq_same, single_fibZero_apply_fibHalf, Finsupp.single_zero,
+      add_zero, Finsupp.single_neg]
     abel
 
 /-- The invariants of the swap are the diagonal. -/
@@ -511,20 +511,14 @@ private theorem ker_sub_one_eq_range_fibDiag
   constructor
   · intro hw
     have h₁ : w fibZero = w fibHalf := by
-      simpa only [Finsupp.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne fibZero_ne_fibHalf, Finsupp.single_eq_of_ne' fibZero_ne_fibHalf,
-        add_zero] using
-        congrArg (· fibHalf) (e.injective hw)
+      simpa using congrArg (· fibHalf) (e.injective hw)
     refine ⟨w fibZero, ?_⟩
     rw [fibDiag_apply]
     conv_rhs => rw [eq_single_fibZero_add_single_fibHalf w, ← h₁]
   · rintro ⟨r, hr⟩
     rw [fibDiag_apply] at hr
     rw [← e.injective hr]
-    simp only [Finsupp.add_apply, Finsupp.single_eq_same,
-    Finsupp.single_eq_of_ne fibZero_ne_fibHalf, Finsupp.single_eq_of_ne' fibZero_ne_fibHalf,
-      add_zero, zero_add]
-    rw [add_comm]
+    simp [add_comm]
 
 end Swap
 

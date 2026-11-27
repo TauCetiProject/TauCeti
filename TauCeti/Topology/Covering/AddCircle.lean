@@ -89,6 +89,22 @@ theorem addCircleDoubleCover_half :
     addCircleDoubleCover ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) = ((0 : ℝ) : AddCircle (1 : ℝ)) :=
   (addCircleDoubleCover_eq_zero_iff _).2 (Or.inr rfl)
 
+/-- The two points `0` and `1 / 2` of the fibre of the double cover over `0` are distinct. -/
+theorem addCircleDoubleCover_zero_ne_half :
+    (⟨_, addCircleDoubleCover_zero⟩ :
+        {x // addCircleDoubleCover x = ((0 : ℝ) : AddCircle (1 : ℝ))}) ≠
+      ⟨_, addCircleDoubleCover_half⟩ := fun h ↦ by
+  have h' : ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) = 0 := (congrArg Subtype.val h).symm
+  have h'' := (AddCircle.coe_eq_zero_iff_of_mem_Ico (p := (1 : ℝ)) (a := 1 / 2)
+    ⟨by norm_num, by norm_num⟩).1 h'
+  norm_num at h''
+
+/-- **Every point of the fibre of the double cover over `0` is `0` or `1 / 2`.** -/
+theorem addCircleDoubleCover_fiber_eq_zero_or_eq_half
+    (q : {x // addCircleDoubleCover x = ((0 : ℝ) : AddCircle (1 : ℝ))}) :
+    q = ⟨_, addCircleDoubleCover_zero⟩ ∨ q = ⟨_, addCircleDoubleCover_half⟩ :=
+  ((addCircleDoubleCover_eq_zero_iff q.val).1 q.property).imp Subtype.ext Subtype.ext
+
 /-- **The generator of the fundamental group moves each point of the fibre by `1 / 2`**: the loop
 `t ↦ t` of the circle lifts along the double cover from `x` to the path `t ↦ x + t / 2`. -/
 theorem coe_monodromyPerm_addCircleDoubleCover
