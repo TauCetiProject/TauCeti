@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # Finite sums and differences of harmonic functions
@@ -49,9 +50,7 @@ theorem HarmonicOnNhd.sum (h : ∀ i ∈ u, HarmonicOnNhd (f i) s) :
 /-- A continuous linear map is harmonic at every point: its second derivative vanishes. -/
 @[simp]
 theorem _root_.ContinuousLinearMap.harmonicAt (l : E →L[ℝ] F) : HarmonicAt l x :=
-  ⟨l.contDiff.contDiffAt, Eventually.of_forall fun y => by
-    have hl : fderiv ℝ l = fun _ => l := funext fun _ => l.fderiv
-    simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply, hl]⟩
+  ⟨l.contDiff.contDiffAt, .of_forall (congrFun l.laplacian)⟩
 
 /-- A continuous linear map is harmonic on every set. -/
 @[simp]
