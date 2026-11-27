@@ -160,6 +160,9 @@ theorem φ_two_add_ζ : φ (2 + ζ) = 2 + Complex.I := by
 theorem star_φ_two_sub_ζ : star φ (2 - ζ) = 2 + Complex.I := by
   simp [RingHom.star_apply, map_sub, φ_ζ, map_ofNat]
 
+-- `ℚ(i)` is formally unramified over `ℚ`, so its reflex norms are defined.
+attribute [local instance] Algebra.FormallyUnramified.of_isSeparable
+
 /-- **`N_Φ` inverts the selected embedding** `φ : i ↦ I`. -/
 theorem reflexNorm_Φ {a : Φ.reflexField} {c : K} (ha : (a : ℂ) = φ c) :
     Φ.reflexNorm le_rfl a = c :=
