@@ -61,7 +61,7 @@ theorem exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one (I : Ideal 
 
 /-- Every fraction that is a unit at all primes dividing `I` is a quotient of two elements of
 `R` whose images in `K` are also units at all primes dividing `I`. -/
-theorem exists_unit_div_eq (I : Ideal R)
+theorem exists_unit_eq_mul (I : Ideal R)
     (x : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).unit K) :
     ∃ (a b : R) (xa xb : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).unit K),
       algebraMap R K a = ((xa : Kˣ) : K) ∧ algebraMap R K b = ((xb : Kˣ) : K) ∧
