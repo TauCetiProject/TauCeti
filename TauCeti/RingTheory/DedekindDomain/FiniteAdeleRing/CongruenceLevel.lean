@@ -31,8 +31,9 @@ the three congruence levels of `GL₂(𝔸_f)`:
 
 No generator of `N` is chosen, so nonprincipal ideals are allowed. Membership is expressed
 entrywise: integral entries, integral inverse entries and the congruence conditions. The levels
-satisfy `K(N) ≤ K₁(N) ≤ K₀(N)`, are monotone in `N`, and are open for `N ≠ ⊥` and compact when
-the residue fields of `R` are finite.
+satisfy `K(N) ≤ K₁(N) ≤ K₀(N)`, are monotone in `N`, are open for `N ≠ ⊥`, and are compact when
+the residue fields of `R` are finite, as images of subgroups of `GL₂(Ô)` cut out by closed
+conditions on the entries (`NÔ` is closed in `Ô`).
 
 ## Main declarations
 
@@ -53,8 +54,8 @@ the residue fields of `R` are finite.
 * `IsDedekindDomain.FiniteAdeleRing.upperRightHom_mem_level1`,
   `upperRightHom_mem_principalLevel_iff` and `upperRightHom_algebraMap_mem_principalLevel_iff`:
   the unipotent matrices `[[1, b], [0, 1]]` in `K₁(N)` and `K(N)`.
-* `IsDedekindDomain.FiniteAdeleRing.isOpen_principalLevel`, `isCompact_principalLevel` and their
-  analogues for `K₀(N)` and `K₁(N)`.
+* `IsDedekindDomain.FiniteAdeleRing.isOpen_principalLevel` (for `N ≠ ⊥`),
+  `isCompact_principalLevel` (for every `N`) and their analogues for `K₀(N)` and `K₁(N)`.
 
 ## References
 
@@ -276,6 +277,14 @@ theorem principalLevel_bot : principalLevel K (⊥ : Ideal R) = ⊥ := by
 variable {K}
 
 open Matrix.GeneralLinearGroup in
+/-- The unipotent matrix `[[1, b], [0, 1]]` with integral `b` is the image of the unipotent
+matrix of `GL₂(Ô)` with entry `b`: the case `Ô ⊆ 𝔸_f` of
+`Matrix.GeneralLinearGroup.map_upperRightHom`. -/
+theorem integralGL_upperRightHom (b : integralAdeles R K) :
+    integralGL K (Fin 2) (upperRightHom b) = upperRightHom (b : 𝔸ᶠ[R, K]) :=
+  Matrix.GeneralLinearGroup.ext fun i j ↦ by fin_cases i <;> fin_cases j <;> simp
+
+open Matrix.GeneralLinearGroup in
 /-- The unipotent matrix `[[1, b], [0, 1]]` lies in `K₁(N)` for every integral `b` and every
 ideal `N`. -/
 theorem upperRightHom_mem_level1 {b : 𝔸ᶠ[R, K]} (hb : b ∈ integralAdeles R K) (N : Ideal R) :
@@ -326,29 +335,48 @@ theorem isOpen_level0 {N : Ideal R} (hN : N ≠ ⊥) :
 
 variable [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
 
-/-- With finite residue fields and `N ≠ ⊥`, `K(N)` is compact: the kernel of reduction modulo the
-open ideal `NÔ` is an open, hence closed, subgroup of the compact group `GL₂(Ô)`. -/
-theorem isCompact_principalLevel {N : Ideal R} (hN : N ≠ ⊥) :
+/-- With finite residue fields, `K(N)` is compact: it is the image of the kernel of reduction
+modulo `NÔ`, a closed subgroup of the compact group `GL₂(Ô)` as `NÔ` is closed. -/
+theorem isCompact_principalLevel (N : Ideal R) :
     IsCompact (principalLevel K N : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
-  rw [principalLevel_eq_map_ker, Subgroup.coe_map]
-  exact (Subgroup.isClosed_of_isOpen _ (isOpen_ker_map_quotientMk 2
-    (isOpen_completedIdeal K hN))).isCompact.image (continuous_integralGL K (Fin 2))
+  -- The kernel of reduction is cut out by the closed conditions `g i j - δ i j ∈ NÔ`.
+  have h : ((Matrix.GeneralLinearGroup.map (n := Fin 2)
+      (Ideal.Quotient.mk (completedIdeal K N))).ker : Set (GL (Fin 2) (integralAdeles R K))) =
+        ⋂ (i) (j), {g : GL (Fin 2) (integralAdeles R K) | (g : Matrix (Fin 2) (Fin 2) _) i j -
+          (1 : Matrix (Fin 2) (Fin 2) (integralAdeles R K)) i j ∈ completedIdeal K N} := by
+    ext g
+    simp only [SetLike.mem_coe, Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff,
+      Set.mem_iInter, Set.mem_ofPred_eq]
+  rw [principalLevel_eq_map_ker, Subgroup.coe_map, h]
+  exact (isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ (isClosed_completedIdeal K N).preimage
+    ((Units.continuous_val.matrix_elem i j).sub continuous_const)).isCompact.image
+      (continuous_integralGL K (Fin 2))
 
-/-- With finite residue fields and `N ≠ ⊥`, `K₁(N)` is compact. -/
-theorem isCompact_level1 {N : Ideal R} (hN : N ≠ ⊥) :
+/-- With finite residue fields, `K₁(N)` is compact: it is the image of the subgroup of `GL₂(Ô)`
+cut out by the closed conditions `c ∈ NÔ` and `d - 1 ∈ NÔ`. -/
+theorem isCompact_level1 (N : Ideal R) :
     IsCompact (level1 K N : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
-  rw [level1, Subgroup.coe_map]
-  exact (Subgroup.isClosed_of_isOpen _ (Subgroup.isOpen_mono (GL2K1.ker_map_le _)
-    (isOpen_ker_map_quotientMk 2 (isOpen_completedIdeal K hN)))).isCompact.image
-      (continuous_integralGL K (Fin 2))
+  have h : (GL2K1 (completedIdeal K N) : Set (GL (Fin 2) (integralAdeles R K))) =
+      {g : GL (Fin 2) (integralAdeles R K) | (g : Matrix (Fin 2) (Fin 2) _) 1 0 ∈
+          completedIdeal K N} ∩
+        {g : GL (Fin 2) (integralAdeles R K) | (g : Matrix (Fin 2) (Fin 2) _) 1 1 - 1 ∈
+          completedIdeal K N} :=
+    Set.ext fun _ ↦ GL2K1.mem_iff
+  rw [level1, Subgroup.coe_map, h]
+  exact (((isClosed_completedIdeal K N).preimage (Units.continuous_val.matrix_elem 1 0)).inter
+    ((isClosed_completedIdeal K N).preimage ((Units.continuous_val.matrix_elem 1 1).sub
+      continuous_const))).isCompact.image (continuous_integralGL K (Fin 2))
 
-/-- With finite residue fields and `N ≠ ⊥`, `K₀(N)` is compact. -/
-theorem isCompact_level0 {N : Ideal R} (hN : N ≠ ⊥) :
+/-- With finite residue fields, `K₀(N)` is compact: it is the image of the subgroup of `GL₂(Ô)`
+cut out by the closed condition `c ∈ NÔ`. -/
+theorem isCompact_level0 (N : Ideal R) :
     IsCompact (level0 K N : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
-  rw [level0, Subgroup.coe_map]
-  exact (Subgroup.isClosed_of_isOpen _ (Subgroup.isOpen_mono
-    ((GL2K1.ker_map_le _).trans (GL2K1.le_GL2K0 _))
-    (isOpen_ker_map_quotientMk 2 (isOpen_completedIdeal K hN)))).isCompact.image
-      (continuous_integralGL K (Fin 2))
+  have h : (GL2K0 (completedIdeal K N) : Set (GL (Fin 2) (integralAdeles R K))) =
+      {g : GL (Fin 2) (integralAdeles R K) | (g : Matrix (Fin 2) (Fin 2) _) 1 0 ∈
+        completedIdeal K N} :=
+    Set.ext fun _ ↦ GL2K0.mem_iff
+  rw [level0, Subgroup.coe_map, h]
+  exact ((isClosed_completedIdeal K N).preimage
+    (Units.continuous_val.matrix_elem 1 0)).isCompact.image (continuous_integralGL K (Fin 2))
 
 end IsDedekindDomain.FiniteAdeleRing

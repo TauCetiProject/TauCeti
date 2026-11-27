@@ -19,7 +19,11 @@ that `e` itself carries the `v`-adic valuation to the valuation of any finite pl
 whose ideal is the image of that of `v`, and in particular to the valuation of the corresponding
 place. This is the hypothesis `adicCompletionCongr` needs to extend `e` to the adic completions.
 The corresponding place is the only finite place of `L` doing so; this is the finite-place
-counterpart of `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`.
+counterpart of `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`. These two statements about
+the corresponding place are the case of rings of integers of
+`IsDedekindDomain.HeightOneSpectrum.valuation_equivOfRingEquiv` and
+`IsDedekindDomain.HeightOneSpectrum.eq_equivOfRingEquiv_iff` for Dedekind domains, as the
+isomorphism of fraction fields induced by `mapRingEquiv e` is `e`.
 
 ## Main results
 
@@ -70,9 +74,7 @@ theorem eq_equivOfRingEquiv_mapRingEquiv_iff (e : K ≃+* L) {w : HeightOneSpect
     {w' : HeightOneSpectrum (𝓞 L)} :
     w' = equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) w ↔
       ∀ x, w'.valuation L (e x) = w.valuation K x := by
-  refine ⟨fun h ↦ h ▸ e.valuation_equivOfRingEquiv w, fun hw ↦ ?_⟩
-  refine valuation_injective L (Valuation.ext fun y ↦ ?_)
-  obtain ⟨x, rfl⟩ := e.surjective y
-  rw [hw, e.valuation_equivOfRingEquiv]
+  simpa only [RingOfIntegers.ringEquivOfRingEquiv_mapRingEquiv] using
+    eq_equivOfRingEquiv_iff (K := K) (K' := L) (RingOfIntegers.mapRingEquiv e)
 
 end IsDedekindDomain.HeightOneSpectrum

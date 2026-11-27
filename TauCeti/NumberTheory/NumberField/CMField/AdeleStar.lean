@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.CMField.Basic
-public import TauCeti.NumberTheory.NumberField.FinitePlace.Transport
+public import Mathlib.Algebra.Star.Subsemiring
+public import TauCeti.NumberTheory.NumberField.CMField.FinitePlace
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 
 /-!
@@ -17,8 +17,10 @@ Let `E` be a CM field. Its complex conjugation `x ↦ conj x` is Mathlib's star 
 to the finite adeles `𝔸_f` and to the infinite adeles `E_∞ = ∏_w E_w` of `E`, it gives star
 structures on these rings (`NumberField.IsCMField.finiteAdeleConj`,
 `NumberField.IsCMField.infiniteAdeleConj`), semilinear over `E`: `conj (r • a) = conj r • conj a`
-for `r ∈ E`. Conjugation preserves the integral finite adeles `Ô`, which inherit the star
-structure. With them, the matrix groups of hermitian forms over the adeles, such as
+for `r ∈ E`; `star` is the `simp` normal form of both conjugations
+(`NumberField.IsCMField.finiteAdeleConj_apply`, `NumberField.IsCMField.infiniteAdeleConj_apply`).
+Conjugation preserves the integral finite adeles `Ô`, which form a star subsemiring and inherit the
+star structure. With them, the matrix groups of hermitian forms over the adeles, such as
 `{g ∈ GL_n(𝔸_f) : g* g = 1}`, are the groups `Matrix.unitaryGroupOf A` of Tau Ceti's general
 theory of unitary groups over a ring with involution.
 
@@ -28,9 +30,9 @@ Place by place, the two star structures behave differently.
   (`IsDedekindDomain.HeightOneSpectrum.conjPlace`) is the unique finite place with
   `|conj x|_{conj w} = |x|_w` for `x ∈ E`. The component of `conj a` at `conj w` is the image of
   `a_w` under the isomorphism `E_w ≃ E_{conj w}` extending the conjugation of `E`
-  (`IsDedekindDomain.FiniteAdeleRing.star_apply_conjPlace`). At a finite place split in `E / E⁺`,
-  `conj w ≠ w`, so conjugation exchanges the two completions `E_w` and `E_{conj w}` rather than
-  acting within one of them.
+  (`IsDedekindDomain.FiniteAdeleRing.star_apply_conjPlace`). When `conj w ≠ w`, that is when the
+  place of `E⁺` below `w` splits in `E`, conjugation exchanges the two completions `E_w` and
+  `E_{conj w}` rather than acting within one of them.
 * An infinite place `w` of a CM field is its own conjugate, and the component of `conj a` at `w`
   is the complex conjugate of that of `a` once `E_w` is identified with `ℂ` through the embedding
   attached to `w` (`NumberField.InfiniteAdeleRing.extensionEmbedding_star_apply`). As
@@ -49,10 +51,9 @@ infinite adeles only needs `E` to be an algebraic CM field.
   `ContinuousStar` and `StarModule E` instances, and
   `NumberField.IsCMField.instStarRingIntegralAdeles` on the integral finite adeles, which
   conjugation preserves (`NumberField.IsCMField.star_mem_integralAdeles_iff`).
-* `IsDedekindDomain.HeightOneSpectrum.conjPlace`: the conjugate of a finite place, with
-  `IsDedekindDomain.HeightOneSpectrum.valuation_conjPlace`,
-  `IsDedekindDomain.HeightOneSpectrum.eq_conjPlace_iff` and
-  `IsDedekindDomain.HeightOneSpectrum.conjPlace_conjPlace`.
+* `IsDedekindDomain.FiniteAdeleRing.finiteAdeleConj_finiteAdeleConj`,
+  `NumberField.InfiniteAdeleRing.infiniteAdeleConj_infiniteAdeleConj`: the conjugations are
+  involutions.
 * `IsDedekindDomain.FiniteAdeleRing.star_apply_conjPlace`: the components of the conjugate of a
   finite adele.
 * `NumberField.InfiniteAdeleRing.extensionEmbedding_star_apply`: the components of the conjugate
@@ -75,39 +76,6 @@ noncomputable section
 open IsDedekindDomain NumberField NumberField.IsCMField TauCeti.GlobalNumberFields
 open scoped NumberField.AdeleRing ComplexConjugate
 
-/-! ### The conjugate of a finite place -/
-
-namespace IsDedekindDomain.HeightOneSpectrum
-
-variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
-
-/-- The **conjugate** `conj w` of a finite place `w` of a CM field: its image under complex
-conjugation, the unique finite place with `|conj x|_{conj w} = |x|_w` for `x ∈ E`
-(`valuation_conjPlace`, `eq_conjPlace_iff`). -/
-def conjPlace (w : HeightOneSpectrum (𝓞 E)) : HeightOneSpectrum (𝓞 E) :=
-  equivOfRingEquiv (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) w
-
-/-- The conjugate place carries the valuation of `w` along conjugation:
-`|conj x|_{conj w} = |x|_w`. -/
-@[simp]
-theorem valuation_conjPlace (w : HeightOneSpectrum (𝓞 E)) (x : E) :
-    w.conjPlace.valuation E (complexConj E x) = w.valuation E x :=
-  RingEquiv.valuation_equivOfRingEquiv _ w x
-
-/-- **The conjugate place is characterised by its valuation**: `w'` is the conjugate of `w`
-exactly when `|conj x|_{w'} = |x|_w` for all `x ∈ E`. -/
-theorem eq_conjPlace_iff {w w' : HeightOneSpectrum (𝓞 E)} :
-    w' = w.conjPlace ↔ ∀ x : E, w'.valuation E (complexConj E x) = w.valuation E x :=
-  eq_equivOfRingEquiv_mapRingEquiv_iff _
-
-/-- Conjugation of finite places is an involution. -/
-@[simp]
-theorem conjPlace_conjPlace (w : HeightOneSpectrum (𝓞 E)) : w.conjPlace.conjPlace = w :=
-  (eq_conjPlace_iff.2 fun x ↦ by
-    rw [← valuation_conjPlace w (complexConj E x), complexConj_apply_apply]).symm
-
-end IsDedekindDomain.HeightOneSpectrum
-
 /-! ### The finite adeles -/
 
 namespace NumberField.IsCMField
@@ -127,28 +95,42 @@ theorem finiteAdeleConj_def :
   (rfl)
 
 /-- Complex conjugation on the finite adeles extends that of `E`. -/
-@[simp]
 theorem finiteAdeleConj_algebraMap (x : E) :
     finiteAdeleConj E (algebraMap E 𝔸ᶠ[E] x) = algebraMap E 𝔸ᶠ[E] (complexConj E x) :=
   finiteAdeleEquiv_algebraMap E E _ x
 
-/-- Complex conjugation on the finite adeles is an involution. -/
-@[simp]
-theorem finiteAdeleConj_finiteAdeleConj (a : 𝔸ᶠ[E]) :
-    finiteAdeleConj E (finiteAdeleConj E a) = a := by
+end FiniteAdeleRing
+
+end NumberField.IsCMField
+
+/-- Complex conjugation on the finite adeles of a CM field is an involution. -/
+theorem IsDedekindDomain.FiniteAdeleRing.finiteAdeleConj_finiteAdeleConj {E : Type*} [Field E]
+    [NumberField E] [IsCMField E] (a : 𝔸ᶠ[E]) : finiteAdeleConj E (finiteAdeleConj E a) = a := by
   rw [finiteAdeleConj_def, ← RingEquiv.trans_apply, finiteAdeleEquiv_trans,
     complexConj_trans_complexConj, finiteAdeleEquiv_refl, RingEquiv.refl_apply]
+
+namespace NumberField.IsCMField
+
+section FiniteAdeleRing
+
+variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
 /-- Complex conjugation `finiteAdeleConj` is a star structure on the finite adeles of a CM field. -/
 instance instStarRingFiniteAdeleRing : StarRing 𝔸ᶠ[E] where
   star := finiteAdeleConj E
-  star_involutive := finiteAdeleConj_finiteAdeleConj
+  star_involutive := FiniteAdeleRing.finiteAdeleConj_finiteAdeleConj
   star_mul a b := by rw [map_mul, mul_comm]
   star_add := map_add _
 
 variable (E) in
 /-- The star structure on the finite adeles is complex conjugation `finiteAdeleConj`. -/
 theorem coe_finiteAdeleConj : ⇑(finiteAdeleConj E) = star :=
+  (rfl)
+
+/-- Complex conjugation on the finite adeles is the star structure: `star` is the `simp` normal
+form. -/
+@[simp]
+theorem finiteAdeleConj_apply (a : 𝔸ᶠ[E]) : finiteAdeleConj E a = star a :=
   (rfl)
 
 /-- Conjugation preserves the integral finite adeles. It takes priority over the place-by-place
@@ -161,12 +143,13 @@ theorem star_mem_integralAdeles_iff {a : 𝔸ᶠ[E]} :
   exact finiteAdeleEquiv_mem_integralAdeles_iff _
 
 /-- The integral finite adeles `Ô` of a CM field inherit the star structure of the finite adeles:
-complex conjugation preserves `Ô` (`star_mem_integralAdeles_iff`). -/
-instance instStarRingIntegralAdeles : StarRing (FiniteAdeleRing.integralAdeles (𝓞 E) E) where
-  star a := ⟨star (a : 𝔸ᶠ[E]), star_mem_integralAdeles_iff.2 a.property⟩
-  star_involutive a := Subtype.ext (star_star (a : 𝔸ᶠ[E]))
-  star_mul a b := Subtype.ext (star_mul (a : 𝔸ᶠ[E]) b)
-  star_add a b := Subtype.ext (star_add (a : 𝔸ᶠ[E]) b)
+complex conjugation preserves `Ô` (`star_mem_integralAdeles_iff`), so `Ô` is a star subsemiring of
+the finite adeles, and this is the star structure `StarSubsemiring.starRing` of that star
+subsemiring. -/
+instance instStarRingIntegralAdeles : StarRing (FiniteAdeleRing.integralAdeles (𝓞 E) E) :=
+  inferInstanceAs <| StarRing
+    ({ (FiniteAdeleRing.integralAdeles (𝓞 E) E).toSubsemiring with
+        star_mem' := star_mem_integralAdeles_iff.2 } : StarSubsemiring 𝔸ᶠ[E])
 
 /-- The inclusion of the integral finite adeles in the finite adeles commutes with conjugation. -/
 @[simp, norm_cast]
@@ -229,30 +212,45 @@ theorem infiniteAdeleConj_def :
   (rfl)
 
 /-- Complex conjugation on the infinite adeles extends that of `E`. -/
-@[simp]
 theorem infiniteAdeleConj_algebraMap (x : E) :
     infiniteAdeleConj E (algebraMap E (InfiniteAdeleRing E) x) =
       algebraMap E (InfiniteAdeleRing E) (complexConj E x) :=
   infiniteAdeleEquiv_algebraMap E E _ x
 
-/-- Complex conjugation on the infinite adeles is an involution. -/
-@[simp]
-theorem infiniteAdeleConj_infiniteAdeleConj (a : InfiniteAdeleRing E) :
+end InfiniteAdeleRing
+
+end NumberField.IsCMField
+
+/-- Complex conjugation on the infinite adeles of an algebraic CM field is an involution. -/
+theorem NumberField.InfiniteAdeleRing.infiniteAdeleConj_infiniteAdeleConj {E : Type*} [Field E]
+    [CharZero E] [Algebra.IsIntegral ℚ E] [IsCMField E] (a : InfiniteAdeleRing E) :
     infiniteAdeleConj E (infiniteAdeleConj E a) = a := by
   rw [infiniteAdeleConj_def, ← RingEquiv.trans_apply, infiniteAdeleEquiv_trans,
     complexConj_trans_complexConj, infiniteAdeleEquiv_refl, RingEquiv.refl_apply]
+
+namespace NumberField.IsCMField
+
+section InfiniteAdeleRing
+
+variable {E : Type*} [Field E] [CharZero E] [Algebra.IsIntegral ℚ E] [IsCMField E]
 
 /-- Complex conjugation `infiniteAdeleConj` is a star structure on the infinite adeles of a CM
 field. -/
 instance instStarRingInfiniteAdeleRing : StarRing (InfiniteAdeleRing E) where
   star := infiniteAdeleConj E
-  star_involutive := infiniteAdeleConj_infiniteAdeleConj
+  star_involutive := InfiniteAdeleRing.infiniteAdeleConj_infiniteAdeleConj
   star_mul a b := by rw [map_mul, mul_comm]
   star_add := map_add _
 
 variable (E) in
 /-- The star structure on the infinite adeles is complex conjugation `infiniteAdeleConj`. -/
 theorem coe_infiniteAdeleConj : ⇑(infiniteAdeleConj E) = star :=
+  (rfl)
+
+/-- Complex conjugation on the infinite adeles is the star structure: `star` is the `simp`
+normal form. -/
+@[simp]
+theorem infiniteAdeleConj_apply (a : InfiniteAdeleRing E) : infiniteAdeleConj E a = star a :=
   (rfl)
 
 instance : ContinuousStar (InfiniteAdeleRing E) where
