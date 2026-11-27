@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Homotopy
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Invariance
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 
 /-!
@@ -137,6 +138,8 @@ private theorem contDiffAt_pathAlmostComplex_assoc {n : ℕ∞} (h₀ : ω.Compa
       (J₂ r.1 r.2).toLinearMap.toContinuousLinearMap) ((p.2, z), y)) :
     ContDiffAt ℝ n (fun r : ((ℝ × ℝ) × (ℝ × ℝ)) × V ↦ (pathAlmostComplex h₀ hJt₁ hJt₂
       (r.1.1.1, (r.1.1.2, r.1.2)) r.2).toLinearMap.toContinuousLinearMap) ((p, z), y) :=
+  -- The ascription elaborates the composite before matching it with the statement; matched
+  -- against the statement first, `ContDiffAt.comp` would split off the wrong outer map.
   ((contDiffAt_pathAlmostComplex h₀ hJt₁ hJt₂ (p := (p.1, (p.2, z))) hJ₁ hJ₂).comp ((p, z), y)
     ((contDiff_fst.fst.fst.prodMk (contDiff_fst.fst.snd.prodMk contDiff_fst.snd)).prodMk
       contDiff_snd).contDiffAt :)
@@ -149,6 +152,7 @@ private theorem contDiffAt_pathHamiltonian_assoc {W : Type*} [NormedAddCommGroup
     (hK₂ : ContDiffAt ℝ n (uncurry K₂) ((p.2, z), y)) :
     ContDiffAt ℝ n (uncurry fun r : (ℝ × ℝ) × (ℝ × ℝ) ↦
       pathHamiltonian K₁ K₂ (r.1.1, (r.1.2, r.2))) ((p, z), y) :=
+  -- The ascription elaborates the composite before matching it with the statement.
   ((contDiffAt_pathHamiltonian (p := (p.1, (p.2, z))) hK₁ hK₂).comp ((p, z), y)
     ((contDiff_fst.fst.fst.prodMk (contDiff_fst.fst.snd.prodMk contDiff_fst.snd)).prodMk
       contDiff_snd).contDiffAt :)
@@ -284,11 +288,6 @@ private theorem isFredholm_floerConformalSobolevOperator_pathData (ω : Symplect
         (pathAlmostComplex h₀ hJt₁ hJt₂ (p.1, (p.2, z)) y).toLinearMap.toContinuousLinearMap)
       (fun z ↦ pathHamiltonian Ks₁ Ks₂ (p.1, (p.2, z)))
       (fun z ↦ pathHamiltonian Kt₁ Kt₂ (p.1, (p.2, z))) u).IsFredholm := by
-  -- The data at the parameter `p` are regular along `u`: each is the family composed with the
-  -- slice `(z, y) ↦ ((p, z), y)`.
-  have hslice {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] (e : E) (z : ℝ × ℝ) :
-      ContDiffAt ℝ ⊤ (fun r : (ℝ × ℝ) × V ↦ (((e, r.1), r.2) : (E × (ℝ × ℝ)) × V)) (z, u z) :=
-    ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd).contDiffAt
   -- Beyond the height `R` the homotopy at `p` is the first path at `p.2`, so the two have the
   -- same end data, and the Fredholm property passes from one to the other.
   have hend {q : Puncture} {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
@@ -302,15 +301,16 @@ private theorem isFredholm_floerConformalSobolevOperator_pathData (ω : Symplect
     (Kt' := fun z ↦ pathHamiltonian Kt₁ Kt₂ (p.1, (p.2, z))) (u := u) hJeq₁
     (pathAlmostComplex_positiveEndChart (hJt₁ := hJt₁) (hJt₂ := hJt₂) h₀ hJeq₁ hJeq₂ p.1) hK₁
     (fun q z hz hzR ↦ ?_)
-    (fun z hz ↦ ((hJ₁ z hz).comp (z, u z) ((hslice p.2 z).of_le le_top) :))
-    (fun z hz ↦ ((contDiffAt_pathAlmostComplex_assoc (hJt₁ := hJt₁) (hJt₂ := hJt₂) h₀
-      (hJ₁ z hz) (hJ₂ z hz)).comp (z, u z) ((hslice p z).of_le le_top) :))
-    (fun z hz ↦ ((hKs₁ z hz).comp (z, u z) ((hslice p.2 z).of_le le_top) :))
-    (fun z hz ↦ ((hKt₁ z hz).comp (z, u z) ((hslice p.2 z).of_le le_top) :))
-    (fun z hz ↦ ((contDiffAt_pathHamiltonian_assoc (hKs₁ z hz) (hKs₂ z hz)).comp (z, u z)
-      ((hslice p z).of_le le_top) :))
-    (fun z hz ↦ ((contDiffAt_pathHamiltonian_assoc (hKt₁ z hz) (hKt₂ z hz)).comp (z, u z)
-      ((hslice p z).of_le le_top) :))
+    -- The data at the parameter `p` are regular along `u`, as slices of the families.
+    (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hJ₁ z hz))
+    (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (contDiffAt_pathAlmostComplex_assoc
+      (hJt₁ := hJt₁) (hJt₂ := hJt₂) h₀ (hJ₁ z hz) (hJ₂ z hz)))
+    (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hKs₁ z hz))
+    (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hKt₁ z hz))
+    (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right
+      (contDiffAt_pathHamiltonian_assoc (hKs₁ z hz) (hKs₂ z hz)))
+    (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right
+      (contDiffAt_pathHamiltonian_assoc (hKt₁ z hz) (hKt₂ z hz)))
     (fun z y ↦ hJt₁ _ y) (fun z y ↦ tames_pathAlmostComplex h₀ _ y) hc₁
     (fun z hz ↦ compatible_pathAlmostComplex h₀ (hc₁ z hz) (hc₂ z hz)) hu hF hux hδ).1 hF₁
   rw [(hend hz hzR).2.1, (hend hz hzR).2.2]
@@ -437,6 +437,15 @@ theorem detLineOrientationTransport_floerConformalSobolevOperator_pairOfPants_co
       simp only [pathAlmostComplex_of_eq h₀ _ (congrFun (hJb _) _),
         pathHamiltonian_of_eq _ (hKsb _), pathHamiltonian_of_eq _ (hKtb _)]
 
+/-- The constant path `((μ, z), y) ↦ F ((a, z), y)` at the parameter `a` of a family `F` which is
+`Cⁿ` at `((a, z), y)` is `Cⁿ` at `((μ, z), y)` for every `μ`: it is `F` composed with the smooth map
+`((μ, z), y) ↦ ((a, z), y)`. -/
+private theorem contDiffAt_constantPath {W X : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] {n : WithTop ℕ∞} {F : (ℝ × (ℝ × ℝ)) × W → X}
+    {a μ : ℝ} {z : ℝ × ℝ} {y : W} (hF : ContDiffAt ℝ n F ((a, z), y)) :
+    ContDiffAt ℝ n (fun r : (ℝ × (ℝ × ℝ)) × W ↦ F ((a, r.1.2), r.2)) ((μ, z), y) :=
+  hF.comp ((μ, z), y) ((contDiff_const.prodMk contDiff_fst.snd).prodMk contDiff_snd).contDiffAt
+
 /-- **Orientation transport around a loop of core data on the pair of pants is trivial.** Under
 the hypotheses of
 `TauCeti.SymplecticForm.detLineOrientationTransport_floerConformalSobolevOperator_pairOfPants_congr`
@@ -504,16 +513,12 @@ theorem detLineOrientationTransport_floerConformalSobolevOperator_pairOfPants_eq
           (fun z y ↦ (J (a, z) y).toLinearMap.toContinuousLinearMap)
           (fun z ↦ Ks (a, z)) (fun z ↦ Kt (a, z)) u := by
     simp only
-  -- The constant path is regular along `u`: it is the path composed with `(μ, z) ↦ (a, z)`.
-  have hg (z : ℝ × ℝ) (μ : ℝ) : ContDiffAt ℝ ⊤
-      (fun r : (ℝ × (ℝ × ℝ)) × V ↦ ((a, r.1.2), r.2)) ((μ, z), u z) :=
-    ((contDiff_const.prodMk contDiff_fst.snd).prodMk contDiff_snd).contDiffAt
   have key := detLineOrientationTransport_floerConformalSobolevOperator_pairOfPants_congr ω hH hHs
     hX hx hnd hJe hJex (J₂ := fun p ↦ J (a, p.2)) (Ks₂ := fun p ↦ Ks (a, p.2))
     (Kt₂ := fun p ↦ Kt (a, p.2)) hJeq (fun _ _ ↦ hJeq a ha) hK (fun _ _ ↦ hK a ha) hJ
-    (fun μ _ z hz ↦ ((hJ a ha z hz).comp ((μ, z), u z) ((hg z μ).of_le le_top) :)) hKs hKt
-    (fun μ _ z hz ↦ ((hKs a ha z hz).comp ((μ, z), u z) ((hg z μ).of_le le_top) :))
-    (fun μ _ z hz ↦ ((hKt a ha z hz).comp ((μ, z), u z) ((hg z μ).of_le le_top) :)) hJt
+    (fun _ _ z hz ↦ contDiffAt_constantPath (hJ a ha z hz)) hKs hKt
+    (fun _ _ z hz ↦ contDiffAt_constantPath (hKs a ha z hz))
+    (fun _ _ z hz ↦ contDiffAt_constantPath (hKt a ha z hz)) hJt
     (fun p ↦ hJt (a, p.2)) hc (fun _ _ ↦ hc a ha) hu hF hux hδ (fun _ ↦ rfl) (fun _ ↦ rfl)
     (fun _ ↦ rfl) (fun w ↦ (hJab w).symm) (fun w ↦ (hKsab w).symm) (fun w ↦ (hKtab w).symm) hT hFr
     (continuousOn_const.congr fun μ _ ↦ hconst μ) (fun μ _ ↦ by rw [hconst μ]; exact hT₀)

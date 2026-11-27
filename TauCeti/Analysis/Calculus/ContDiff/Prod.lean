@@ -19,8 +19,9 @@ the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`. Likew
 `J z x` that is smooth near the graph of a map `u` smooth on `s` gives a map `z ↦ J z (u z)`
 smooth on `s` (`TauCeti.contDiffOn_comp_graph`). The slices `(x, y) ↦ H ((p, x), y)` of a `Cⁿ`
 family `H` on `(P × E) × G` at a fixed parameter `p` are `Cⁿ`
-(`TauCeti.contDiff_comp_prodMap_prodMk_right`), and so are the uncurried slices `uncurry (H p)`
-of a curried family `(p, x, y) ↦ H p x y` that is `Cⁿ` on `P × E × G`
+(`TauCeti.contDiff_comp_prodMap_prodMk_right`), and `Cⁿ` at `(x, y)` when `H` is `Cⁿ` at
+`((p, x), y)` (`TauCeti.contDiffAt_comp_prodMap_prodMk_right`). So are the uncurried slices
+`uncurry (H p)` of a curried family `(p, x, y) ↦ H p x y` that is `Cⁿ` on `P × E × G`
 (`TauCeti.contDiff_uncurry_apply`).
 
 A slice `f p` of a family `f : P → E → X` that is jointly `C^n` at `(p, x)` is `C^n` at `x`
@@ -81,6 +82,14 @@ theorem contDiff_comp_prodMap_prodMk_right {P : Type*} [NormedAddCommGroup P] [N
     {H : (P × E) × G → F} (hH : ContDiff 𝕜 n H) (p : P) :
     ContDiff 𝕜 n fun q : E × G ↦ H ((p, q.1), q.2) :=
   hH.comp ((contDiff_prodMk_right p).prodMap contDiff_id)
+
+/-- **Slices of a family at a fixed parameter, at a point**: if `H` is `Cⁿ` at `((p, x), y)`, then
+the slice `(x', y') ↦ H ((p, x'), y')` is `Cⁿ` at `(x, y)`. -/
+theorem contDiffAt_comp_prodMap_prodMk_right {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace 𝕜 P] {H : (P × E) × G → F} {p : P} {x : E} {y : G}
+    (hH : ContDiffAt 𝕜 n H ((p, x), y)) :
+    ContDiffAt 𝕜 n (fun q : E × G ↦ H ((p, q.1), q.2)) (x, y) :=
+  hH.comp (x, y) ((contDiff_prodMk_right p).prodMap contDiff_id).contDiffAt
 
 /-- **Uncurried slices of a curried family at a fixed parameter**: if `(p, x, y) ↦ H p x y` is `Cⁿ`
 on `P × E × G`, then for every `p : P` the uncurried slice `uncurry (H p)` is `Cⁿ` on `E × G`. -/

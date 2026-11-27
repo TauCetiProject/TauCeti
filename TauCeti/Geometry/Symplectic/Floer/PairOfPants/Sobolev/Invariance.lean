@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Analysis.Fredholm.SemiFredholm
 import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
@@ -133,20 +134,14 @@ theorem continuousOn_floerConformalSobolevOperator_pairOfPants_family {E : Type*
       cylindricalWeight (fun z y ↦ (J (μ, z) y).toLinearMap.toContinuousLinearMap)
         (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u) P := by
   set S := thricePuncturedSphereReal
-  -- The data at a fixed `μ` are regular along `u`: each is the family composed with the slice
-  -- `(z, y) ↦ ((μ, z), y)`, and the ascriptions elaborate that composite before matching it.
-  have hslice (μ : E) (z : ℝ × ℝ) : ContDiffAt ℝ ⊤
-      (fun q : (ℝ × ℝ) × V ↦ (((μ, q.1), q.2) : (E × (ℝ × ℝ)) × V)) (z, u z) :=
-    ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd).contDiffAt
   set M : E → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦ ω.floerConformalJetCoeff cylindricalWeight
     (fun z y ↦ (J (μ, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (μ, z))
     (fun z ↦ Kt (μ, z)) u
   have hM (μ : E) (hμ : μ ∈ P) : MemLp (M μ) ∞ (volume.restrict S) :=
     ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs hx hJe (hJeq μ hμ)
-      (hK μ hμ) (fun z hz ↦ ((hJ μ hμ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :))
-      (fun z hz ↦ ((hKs μ hμ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :))
-      (fun z hz ↦ ((hKt μ hμ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)) hu (hF μ hμ)
-      hux hδ
+      (hK μ hμ) (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hJ μ hμ z hz))
+      (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hKs μ hμ z hz))
+      (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hKt μ hμ z hz)) hu (hF μ hμ) hux hδ
   -- Beyond the height `R` of an end the data are the end data, whatever `μ ∈ P`.
   have heq {μ lam : E} (hμ : μ ∈ P) (hlam : lam ∈ P) {z : ℝ × ℝ} (hz : z ∈ S)
       (hzK : z ∉ Complex.equivRealProdCLM.symm ⁻¹' truncation R) : M μ z = M lam z := by
@@ -228,20 +223,16 @@ private theorem isFredholm_and_index_eq_of_family (ω : SymplecticForm V)
       (fun z y ↦ (J (0, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (0, z))
         (fun z ↦ Kt (0, z)) u).index := by
   set S := thricePuncturedSphereReal
-  -- The data at a fixed `μ` are regular along `u`: each is the family composed with the slice
-  -- `(z, y) ↦ ((μ, z), y)`, and the ascriptions elaborate that composite before matching it.
-  have hslice (μ : ℝ) (z : ℝ × ℝ) : ContDiffAt ℝ ⊤
-      (fun q : (ℝ × ℝ) × V ↦ (((μ, q.1), q.2) : (ℝ × (ℝ × ℝ)) × V)) (z, u z) :=
-    ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd).contDiffAt
+  -- The data at a fixed `μ` are regular along `u`, as slices of the family.
   have hJμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) : ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J (μ, p.1) p.2).toLinearMap.toContinuousLinearMap) (z, u z) :=
-    ((hJ μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
+    contDiffAt_comp_prodMap_prodMk_right (hJ μ z hz)
   have hKsμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) :
       ContDiffAt ℝ 2 (uncurry fun w ↦ Ks (μ, w)) (z, u z) :=
-    ((hKs μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
+    contDiffAt_comp_prodMap_prodMk_right (hKs μ z hz)
   have hKtμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) :
       ContDiffAt ℝ 2 (uncurry fun w ↦ Kt (μ, w)) (z, u z) :=
-    ((hKt μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
+    contDiffAt_comp_prodMap_prodMk_right (hKt μ z hz)
   -- The operators of the family.
   set T : ℝ → H1 V S cylindricalWeight →L[ℝ] Lp V 2 (volume.restrict S) := fun μ ↦
     ω.floerConformalSobolevOperator S cylindricalWeight
