@@ -21,7 +21,6 @@ in `𝔪_τ` (Thomsen [WTK], Lemma 4.11, with Lemma 3.1 (f)).
 ## Main results
 
 * `TauCeti.IsTrace.matrixTrace_lt_top_of_isStarProjection`: `τ_n(e) < ∞`.
-* `TauCeti.IsTrace.mem_domain_matrixTrace_of_isStarProjection`: `e ∈ 𝔪_{τ_n}`.
 * `TauCeti.IsTrace.apply_mem_domain_of_isStarProjection`: `eᵢⱼ ∈ 𝔪_τ` for all `i, j`.
 
 ## References
@@ -47,17 +46,13 @@ theorem matrixTrace_lt_top_of_isStarProjection (hτ : IsTrace τ) (hd : IsDensel
     {e : CStarMatrix n n B} (he : IsStarProjection e) : matrixTrace τ n e < ∞ :=
   hτ.isTrace_matrixTrace.lt_top_of_isStarProjection (hτ.isDenselyDefined_matrixTrace hd) he
 
-/-- A projection of `M_n(B)` lies in the domain `𝔪_{τ_n}` of the amplification of a densely
-defined trace. -/
-theorem mem_domain_matrixTrace_of_isStarProjection (hτ : IsTrace τ) (hd : IsDenselyDefined τ)
-    {e : CStarMatrix n n B} (he : IsStarProjection e) : e ∈ domain (matrixTrace τ n) :=
-  hτ.isTrace_matrixTrace.mem_domain_of_isStarProjection (hτ.isDenselyDefined_matrixTrace hd) he
-
 /-- **Projections of `M_n(B)` lie in `M_n(𝔪_τ)`.** For a densely defined trace `τ`, every entry
 of a projection `e ∈ M_n(B)` lies in the domain `𝔪_τ` (Thomsen [WTK], Lemmas 3.1 (f) and 4.11). -/
 theorem apply_mem_domain_of_isStarProjection (hτ : IsTrace τ) (hd : IsDenselyDefined τ)
     {e : CStarMatrix n n B} (he : IsStarProjection e) (i j : n) : e i j ∈ domain τ :=
-  hτ.mem_domain_matrixTrace_iff.1 (hτ.mem_domain_matrixTrace_of_isStarProjection hd he) i j
+  hτ.mem_domain_matrixTrace_iff.1
+    (hτ.isTrace_matrixTrace.mem_domain_of_isStarProjection (hτ.isDenselyDefined_matrixTrace hd) he)
+    i j
 
 end IsTrace
 
