@@ -11,6 +11,7 @@ import Mathlib.Topology.Subpath
 import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Homotopy
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The crossing form formula for the Conley–Zehnder index
@@ -181,9 +182,7 @@ private theorem exists_path_shear_and_conleyZehnderIndex_eq {A B : GLSymplectic 
     continuous_const.sub (((continuous_subtypeVal.comp continuous_fst).mul continuous_const).smul
       (continuous_const.matrix_mul ((hm.comp continuous_snd).sub continuous_const)))
   have hinv : Continuous fun p : I × I ↦ (1 - ((p.1 : ℝ) * b) • (J n ℝ * (m p.2 - 1)))⁻¹ :=
-    continuous_iff_continuousAt.2 fun p ↦ (continuousAt_matrix_inv _ (by
-      rw [Ring.inverse_eq_inv']
-      exact continuousAt_inv₀ (hN p.1 p.2).ne_zero)).comp hNc.continuousAt
+    continuous_iff_continuousAt.2 fun p ↦ hNc.continuousAt.matrix_inv (hN p.1 p.2).ne_zero
   let G : I × I → symplecticGroup n ℝ := fun p ↦ ⟨symplecticShear ((p.1 : ℝ) * b) (m p.2),
     symplecticShear_mem_symplecticGroup (mem_iff_mem_symplecticGroup.1 (γ p.2).property)
       (hN p.1 p.2)⟩
