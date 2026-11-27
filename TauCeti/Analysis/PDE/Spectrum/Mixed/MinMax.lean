@@ -66,9 +66,10 @@ isometric to a bounded Lipschitz domain, and `Γ` missing `Ω` and meeting the b
 positive surface measure, `λ₀(Γ) > 0` and `1 / √λ₀(Γ)` is the optimal Poincaré–Friedrichs
 constant. Under the Rellich property, on a nonempty preconnected `Ω` of finite measure and for
 every `Γ` missing `Ω`, `λ₁(Γ) > 0` (`TauCeti.PDE.mixedEigenvalue_laplacian_one_pos`): the
-functions of zero energy are the constants, which span a single line. For `Γ = ∅` this makes the
-Neumann eigenvalue `λ₀(∅) = 0` simple; the identification of `λ₁(∅)` with the least Rayleigh
-quotient of mean zero is in `TauCeti.Analysis.PDE.Neumann.SecondEigenvalue`.
+functions of zero energy are the constants, which span a single line. For `Γ = ∅` on a bounded
+`Ω` this gives `λ₀(∅) = 0 < λ₁(∅)`, so `0` occurs once in the min–max sequence; the
+identification of `λ₁(∅)` with the least Rayleigh quotient of mean zero is in
+`TauCeti.Analysis.PDE.Neumann.SecondEigenvalue`.
 
 ## Main declarations
 
@@ -598,8 +599,9 @@ theorem mixedEigenvalue_laplacian_empty_zero [Nonempty ι]
 
 /-- **On a connected domain the second mixed eigenvalue of `-Δ` is positive.** On a nonempty
 preconnected open set of finite measure with the Rellich property, for every `Γ` missing `Ω`,
-`λ₁(Γ) > 0`. In particular, for `Γ = ∅`, the Neumann eigenvalue `λ₀(∅) = 0`
-(`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`) is simple. -/
+`λ₁(Γ) > 0`. In particular, for `Γ = ∅` on a bounded `Ω`,
+`λ₀(∅) = 0 < λ₁(∅)` (`TauCeti.PDE.mixedEigenvalue_laplacian_empty_zero`), so `0` occurs once in
+the min–max sequence. -/
 theorem mixedEigenvalue_laplacian_one_pos [Nonempty ι]
     [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))] (hΓ : Disjoint Γ Omega)
     (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
