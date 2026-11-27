@@ -231,18 +231,15 @@ theorem isIso_twistedHomologyMap_diskBoundaryPairToComplDiskCenter (n : ℕ)
   let φ := isoConstantOfHomotopy (diskContraction n) L
   let M := L.obj (FundamentalGroupoid.mk (diskCenter n))
   -- The systems live on `TopCat.disk n`, which the ambient spaces of the pairs unfold to only up
-  -- to definitional equality, so instances of composites are supplied by hand.
-  have hiso (P : TopPair.{v}) {K K' : LocalCoefficientSystem.{u, v, max v w} R P.fst}
-      (e : K ≅ K') : IsIso (P.twistedHomologyCoefficientMap e.hom k) :=
-    ⟨_, TopPair.twistedHomologyCoefficientMap_hom_inv_id P e k,
-      TopPair.twistedHomologyCoefficientMap_inv_hom_id P e k⟩
+  -- to definitional equality, so instances of composites are supplied by hand, naming the pair.
   -- With constant coefficients the map is the ordinary one.
   have hc : IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n)
       ((constantFunctor _).obj M) k) := by
     have hs : IsIso (TopPair.singularHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n) M k) :=
       isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter M n k
-    have he := hiso (diskBoundaryPair.{v} n)
-      (pullbackConstantIso (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom M)
+    have he := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (diskBoundaryPair.{v} n) _ _
+      (pullbackConstantIso (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom M).hom
+      (Iso.isIso_hom _) k
     have h := TopPair.twistedHomologyConstantIso_hom_pair_naturality M
       (diskBoundaryPairToComplDiskCenter.{v} n) k
     have : IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n)
@@ -255,10 +252,12 @@ theorem isIso_twistedHomologyMap_diskBoundaryPairToComplDiskCenter (n : ℕ)
       ((TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyConstantIso
         M k).hom
   -- The identification of `L` with the constant system is natural in maps of pairs.
-  have := hiso (TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))) φ
-  have hp := hiso (diskBoundaryPair.{v} n)
+  have := @TopPair.isIso_twistedHomologyCoefficientMap _ _
+    (TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))) _ _ φ.hom (Iso.isIso_hom _) k
+  have hp := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (diskBoundaryPair.{v} n) _ _
     ((LocalCoefficientSystem.pullback
-      (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom).mapIso φ)
+      (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom).mapIso φ).hom
+    (Iso.isIso_hom _) k
   have h := TopPair.twistedHomologyMap_naturality (diskBoundaryPairToComplDiskCenter.{v} n)
     (η := φ.hom) (k := k)
   have : IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n) L k ≫

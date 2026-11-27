@@ -113,9 +113,8 @@ lemma coe_characteristicCellPairMap_fst_diskCenter {n : ℕ} (j : cell C n) :
     (ConcreteCategory.hom (X := TopCat.disk.{w} n)
       (Y := TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞)))
       (TopPair.Hom.fst (characteristicCellPairMap C j)) (diskCenter n)).val = map n j 0 := by
-  rw [coe_characteristicCellPairMap_fst_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply]
-  -- The centre of `TopCat.disk n` is `0` only after unfolding its `ULift`, so `erw` is used.
-  erw [coe_diskCenter_down, map_zero, gaugeRescale_zero]
+  rw [coe_characteristicCellPairMap_fst_apply, ← coe_diskHomeomorphClosedBall_apply,
+    coe_diskHomeomorphClosedBall_diskCenter]
 
 /-- The subspace component of the single-cell pair map is the attaching map
 `TauCeti.cellAttachingMap` of the cell. -/

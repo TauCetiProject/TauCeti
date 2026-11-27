@@ -57,7 +57,8 @@ local homology is constant along convex sets in a chart
 
 * `TauCeti.skeletonPairToComplSingleton`: the inclusion `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, Xⁿ ∖ {x})`.
 * `TauCeti.diskInterior` and `TauCeti.isEmbedding_cellDiskHom_restrict`: the interior of the disk,
-  which the characteristic map of a cell embeds onto the open cell.
+  which contains its centre (`TauCeti.diskCenter_mem_diskInterior`) and which the characteristic
+  map of a cell embeds onto the open cell.
 * `TauCeti.cellLocalClass`: the local class of the cell `i` at `x`.
 * `TauCeti.isIso_singularHomologyMap_characteristicCellPairMap_comp_skeletonPairToComplSingleton`
   and `TauCeti.isIso_cellLocalClass`: the characteristic map computes the local homology at `x`,
@@ -249,6 +250,11 @@ lemma mem_diskInterior_iff {z : TopCat.disk.{w} n} :
 lemma isOpen_diskInterior : IsOpen (diskInterior.{w} n) :=
   isOpen_lt (continuous_norm.comp (continuous_subtypeVal.comp
     (diskHomeomorphClosedBall n).continuous)) continuous_const
+
+/-- The centre of the disk lies in its interior. -/
+lemma diskCenter_mem_diskInterior (n : ℕ) : diskCenter.{w} n ∈ diskInterior.{w} n := by
+  rw [mem_diskInterior_iff, coe_diskHomeomorphClosedBall_diskCenter, norm_zero]
+  exact zero_lt_one
 
 /-- The radial deformation `TauCeti.radialPush r` of the disk, in sup-norm coordinates. -/
 private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :

@@ -25,6 +25,11 @@ sequences of a pair.  Consequently the relative map commutes with the connecting
 long exact sequence, and by the five lemma it is a quasi-isomorphism when the maps on ambient and
 subspace chains are (`TopPair.quasiIso_twistedChainComplexMap_of_quasiIso`).
 
+A map of pairs `f : (X, A) ⟶ (X', A')` whose ambient map lands in `A'` induces zero on relative
+twisted chains and homology (`TopPair.twistedChainComplexMap_eq_zero_of_fac`,
+`TopPair.twistedHomologyMap_eq_zero_of_fac`). This is the local-coefficient form of
+`TopPair.singularHomologyMap_eq_zero_of_fac`.
+
 Together with `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, this supplies functoriality of
 twisted singular homology for maps of spaces and maps of pairs.
 
@@ -557,6 +562,30 @@ lemma quasiIso_twistedChainComplexMap_of_quasiIso
     (by rw [twistedChainComplexShortComplexMap_τ₁]; infer_instance)
     (by rw [twistedChainComplexShortComplexMap_τ₂]; infer_instance)
   rwa [twistedChainComplexShortComplexMap_τ₃] at this
+
+section Factorization
+
+/-- **A map of pairs whose ambient map lands in the target subspace is zero on relative chains with
+local coefficients.** If the ambient map `X ⟶ X'` of `f : (X, A) ⟶ (X', A')` factors through
+`A'`, then `f` induces the zero map of relative twisted chain complexes. -/
+theorem twistedChainComplexMap_eq_zero_of_fac (g : P.fst ⟶ Q.snd) (hg : g ≫ Q.map = Hom.fst f) :
+    twistedChainComplexMap f L = 0 := by
+  rw [← cancel_epi (P.twistedChainComplexπ _), comp_zero,
+    twistedChainComplexπ_comp_twistedChainComplexMap]
+  generalize Hom.fst f = φ at hg ⊢
+  subst hg
+  rw [LocalCoefficientSystem.twistedChainComplexMap_comp, Category.assoc, Category.assoc,
+    twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero, comp_zero]
+
+/-- **A map of pairs whose ambient map lands in the target subspace is zero on relative homology
+with local coefficients.** If the ambient map `X ⟶ X'` of `f : (X, A) ⟶ (X', A')` factors through
+`A'`, then `f` induces the zero map `Hₙ(X, A; f*L) ⟶ Hₙ(X', A'; L)`. -/
+theorem twistedHomologyMap_eq_zero_of_fac (g : P.fst ⟶ Q.snd) (hg : g ≫ Q.map = Hom.fst f)
+    (n : ℕ) : twistedHomologyMap f L n = 0 := by
+  rw [twistedHomologyMap, twistedChainComplexMap_eq_zero_of_fac f L g hg,
+    HomologicalComplex.homologyMap_zero]
+
+end Factorization
 
 section AmbientComponent
 

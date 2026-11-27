@@ -280,6 +280,14 @@ lemma coe_diskCenter_down (n : ℕ) :
         EuclideanSpace ℝ (Fin n)) = 0 :=
   (rfl)
 
+/-- The centre of the disk is sent to the centre `0` of the closed unit ball of the sup norm. -/
+lemma coe_diskHomeomorphClosedBall_diskCenter (n : ℕ) :
+    (diskHomeomorphClosedBall n (diskCenter.{u} n) : Fin n → ℝ) = 0 := by
+  rw [coe_diskHomeomorphClosedBall_apply]
+  -- The centre of `TopCat.disk n` is `0` only after unfolding its `ULift`, so `erw` is used.
+  erw [coe_diskCenter_down, ContinuousLinearEquiv.unitBallHomeomorph_apply, map_zero,
+    gaugeRescale_zero]
+
 /-- The centre of the disk does not lie on its boundary sphere. -/
 lemma diskCenter_notMem_range_diskBoundaryInclusion (n : ℕ) :
     diskCenter.{u} n ∉ Set.range (TopCat.diskBoundaryInclusion.{u} n) := by
