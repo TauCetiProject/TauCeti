@@ -66,9 +66,9 @@ only the interval values of the section; any endpoint where the section vanishes
 * `TauCeti.Manifold.isFixedEndpointVariation_exponentialVariation`: when `V` has a `ContMDiffAt`
   lift at every point of `uIcc a b` (including both endpoints) and vanishes at `a` and `b`, the
   exponential variation is a fixed-endpoint variation.
-* `TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn`: a closed-interval `C^k`
-  section lift agrees on `uIcc a b` with a two-sided `C^k` lift having the same exponential
-  variation on `uIcc a b`.
+* `TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn`: in a boundaryless manifold, a
+  closed-interval `C^k` (`k : ℕ`) section lift agrees on `uIcc a b` with a two-sided `C^k` lift
+  having the same exponential variation on `uIcc a b`.
 * `TauCeti.Manifold.isOpen_setOfPred_smul_mem_expDomain`: its natural domain over an open set of
   parameters is open.
 * `TauCeti.Manifold.contMDiffOn_exponentialVariation`: its joint regularity on that domain.
@@ -208,9 +208,10 @@ theorem isFixedEndpointVariation_exponentialVariation {n : ℕ∞} {a b : ℝ}
     simp only [exponentialVariation_apply, hb, smul_zero, riemannianExp_zero]
 
 omit [T2Space M] in
-/-- A `C^k` (`k : ℕ`) section lift `(γ, V)` on `uIcc a b` agrees on `uIcc a b` with a pair
-`(γ', V')` whose tangent-bundle lift is two-sided `C^k` at every point of `uIcc a b`, and whose
-exponential variation agrees with `exponentialVariation I γ V` on `uIcc a b` for every `s`. -/
+/-- In a boundaryless manifold, a `C^k` (`k : ℕ`) section lift `(γ, V)` on `uIcc a b` agrees on
+`uIcc a b` with a pair `(γ', V')` whose tangent-bundle lift is two-sided `C^k` at every point of
+`uIcc a b`, and whose exponential variation agrees with `exponentialVariation I γ V` on `uIcc a b`
+for every `s`. -/
 theorem exists_contMDiffAt_exponentialVariation_eqOn {k : ℕ} {a b : ℝ}
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent k (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc a b)) :
     ∃ (γ' : ℝ → M) (V' : ∀ t, TangentSpace I (γ' t)),

@@ -15,21 +15,22 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 /-!
 # First variation of energy and length along exponential variations
 
-For a curve `γ` in a smooth Riemannian manifold and a tangent field `V` along `γ` whose lift to
-the tangent bundle is `C²` on the closed interval `uIcc a b` (or continuous piecewise `C²` on
-`Icc a b`), the exponential variation `TauCeti.Manifold.exponentialVariation I γ V` realizes `V` as
-the variation field of a family of curves whose energy can be differentiated at `s = 0`. When
-`a ≤ b` and `γ` also has constant positive speed `C > 0` on `(a, b)`,
+For a curve `γ` in a smooth boundaryless Riemannian manifold and a tangent field `V` along `γ`
+whose lift to the tangent bundle is `C²` on the closed interval `uIcc a b` (or continuous
+piecewise `C²` on `Icc a b`), the exponential variation
+`TauCeti.Manifold.exponentialVariation I γ V` realizes `V` as the variation field of a family of
+curves whose energy can be differentiated at `s = 0`. When `a ≤ b` and `γ` also has constant
+positive speed `C > 0` on `(a, b)`,
 `TauCeti.Manifold.hasDerivAt_toReal_pathELength_exponentialVariation` differentiates its length
-at `s = 0` for any field with a `C²` lift on `[a, b]`. Because
-`TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn` extends any closed-interval
-`C^k` section lift to a two-sided `C^k` lift having the same exponential variation on `uIcc a b`,
-the smooth formulas require only closed-interval (`ContMDiffOn`) regularity, and piecewise
-regularity (`IsPiecewiseContMDiffOn` / `PiecewiseContMDiffSectionAlong`) suffices to decompose the
-energy near `s = 0` into piece energies. Obtaining the corner-free piecewise first variation of
-energy additionally requires `γ` to be differentiable at every interior point of `(a, b)` so that
-the corner pairings cancel, with outer endpoint velocities read within the closed interval via
-`curveVelocityWithin`.
+at `s = 0` for any field with a `C²` lift on `[a, b]`. In a boundaryless manifold, because
+`TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn` extends any finite-order
+closed-interval `C^k` (`k : ℕ`) section lift to a two-sided `C^k` lift having the same exponential
+variation on `uIcc a b`, the smooth formulas require only closed-interval (`ContMDiffOn`)
+regularity, and piecewise regularity (`IsPiecewiseContMDiffOn` / `PiecewiseContMDiffSectionAlong`)
+suffices to decompose the energy near `s = 0` into piece energies. Obtaining the corner-free
+piecewise first variation of energy additionally requires `γ` to be differentiable at every
+interior point of `(a, b)` so that the corner pairings cancel, with outer endpoint velocities read
+within the closed interval via `curveVelocityWithin`.
 
 ## Main results
 
