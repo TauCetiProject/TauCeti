@@ -35,6 +35,8 @@ by Legendre's bound `v_p(j!) ≤ j / (p - 1)` (`PowerSeries.gaussNorm_rescale_ex
 
 * `PowerSeries.norm_coeff_subst_exp_mul_prod_le_one`: the coefficientwise bound, at each exponent
   `n` from the bound on `B` at the exponents `m ≤ n`.
+* `PowerSeries.norm_coeff_subst_exp_smul_le_one`: the total-degree scalar-multiple specialization
+  for `exp (a • G)` with `‖a‖ * r ≤ p ^ (-1 / (p - 1))`.
 * `PowerSeries.hasGaussNorm_subst_exp`, `PowerSeries.gaussNorm_subst_exp_le_one`: the Gauss-norm
   form.
 
@@ -75,6 +77,25 @@ theorem norm_coeff_subst_exp_mul_prod_le_one (hc : 0 ≤ c) {B : MvPowerSeries �
   rw [rescale_one, RingHom.id_apply] at h h1
   exact norm_coeff_subst_mul_prod_le hc (.of_constantCoeff_zero hB) hBn
     fun j ↦ (le_gaussNorm _ _ _ h j).trans_eq h1
+
+/-- If `‖a‖ * r ≤ p ^ (-(p - 1 : ℝ)⁻¹)` and `G` has zero constant term with `‖coeff d G‖ ≤ r` for
+all `d.degree ≤ B`, then `exp (a • G)` has integral coefficients in degrees at most `B`. -/
+theorem norm_coeff_subst_exp_smul_le_one {a : K} {r : ℝ}
+    (hr : ‖a‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {G : MvPowerSeries σ K}
+    (hG : MvPowerSeries.constantCoeff G = 0) {B : ℕ}
+    (h_le : ∀ d : σ →₀ ℕ, d.degree ≤ B → ‖MvPowerSeries.coeff d G‖ ≤ r)
+    {m : σ →₀ ℕ} (hm : m.degree ≤ B) :
+    ‖MvPowerSeries.coeff m ((exp K).subst (a • G))‖ ≤ 1 := by
+  have haG : MvPowerSeries.constantCoeff (a • G) = 0 := by
+    rw [← MvPowerSeries.coeff_zero_eq_constantCoeff, MvPowerSeries.coeff_smul,
+      MvPowerSeries.coeff_zero_eq_constantCoeff, hG, mul_zero]
+  have h1 := norm_coeff_subst_exp_mul_prod_le_one (p := p) (K := K)
+    (c := fun _ : σ ↦ (1 : ℝ)) (fun _ ↦ zero_le_one) haG (n := m) fun d hd ↦ by
+      have hprod : d.prod (fun _ n ↦ (1 : ℝ) ^ n) = 1 := by simp [Finsupp.prod]
+      rw [hprod, mul_one, MvPowerSeries.coeff_smul, norm_mul]
+      exact (mul_le_mul_of_nonneg_left (h_le d ((Finsupp.degree_mono hd).trans hm))
+        (norm_nonneg a)).trans hr
+  simpa [Finsupp.prod] using h1
 
 /-- **Integrality of `exp(B)`.** If `B` has no constant term and a Gauss norm at radii `c` of size
 at most `p ^ (-1 / (p - 1))`, then `exp(B)` has a Gauss norm at `c`. -/

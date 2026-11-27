@@ -165,6 +165,9 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   is integrable.
 * `Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport`: the same after multiplying by
   the square of a continuous real weight.
+* `Continuous.integrable_inner_of_hasCompactSupport_left` and
+  `Continuous.integrable_inner_of_hasCompactSupport_right`: the pairing of two continuous
+  functions, one of them compactly supported, is integrable.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
@@ -657,6 +660,24 @@ theorem Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport {F : Type*}
     (hcg : HasCompactSupport g) : Integrable (fun x ↦ f x ^ 2 * ‖g x‖ ^ 2) μ :=
   ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
     (hcg.mono fun x hx hzero ↦ hx (by simp [hzero]))
+
+open scoped InnerProductSpace in
+/-- The pairing of two continuous functions, the first of them compactly supported, is integrable
+for any measure finite on compact sets. -/
+theorem Continuous.integrable_inner_of_hasCompactSupport_left {𝕜 F : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] {f g : X → F} (hf : Continuous f)
+    (hg : Continuous g) (hcf : HasCompactSupport f) :
+    Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
+  (hf.inner hg).integrable_of_hasCompactSupport (hcf.mono fun x hx hzero ↦ hx (by simp [hzero]))
+
+open scoped InnerProductSpace in
+/-- The pairing of two continuous functions, the second of them compactly supported, is integrable
+for any measure finite on compact sets. -/
+theorem Continuous.integrable_inner_of_hasCompactSupport_right {𝕜 F : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] {f g : X → F} (hf : Continuous f)
+    (hg : Continuous g) (hcg : HasCompactSupport g) :
+    Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
+  (hf.inner hg).integrable_of_hasCompactSupport (hcg.mono fun x hx hzero ↦ hx (by simp [hzero]))
 
 omit [IsFiniteMeasureOnCompacts μ] in
 /-- On a compact space, an integrable function stays integrable after multiplication on the left
