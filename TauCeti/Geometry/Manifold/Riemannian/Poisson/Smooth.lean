@@ -23,8 +23,9 @@ every smooth function `f` with `∫ f dV = 0` has a smooth solution `u` with `�
 `Δ⁺u = f`. Classical uniqueness for `C²` functions under a `C¹` metric
 (`TauCeti.Manifold.eq_of_laplaceBeltrami_eq_of_integral_eq`) then yields unique smooth solvability
 (`TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`). For a
-smooth `1`-form `a` on a closed four-manifold, this is the scalar equation `Δ⁺ξ = d*a / 2` of the
-global Coulomb gauge `d*(a - 2 dξ) = 0`.
+smooth `1`-form `a` on a closed connected oriented Riemannian manifold of positive dimension, this
+solves the scalar equation `Δ⁺f = d*a` of the global Coulomb gauge `d*(a - df) = 0`
+(`TauCeti.SmoothForm.existsUnique_codifferential_sub_mextDerivₗ_eq_zero`).
 
 Restricting `-TauCeti.smoothLaplaceBeltrami I M` to
 `meanZeroSmoothFunctions I M (riemannianVolume I M) ∞` and using `LinearEquiv.ofBijective` gives
