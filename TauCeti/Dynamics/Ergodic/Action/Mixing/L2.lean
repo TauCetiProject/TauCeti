@@ -8,28 +8,29 @@ module
 public import TauCeti.Dynamics.Ergodic.Action.Mixing
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+import TauCeti.MeasureTheory.Function.L2Space
 import Mathlib.Topology.MetricSpace.UniformConvergence
 
 /-!
 # The `L²` correlation test for mixing along a filter
 
-Let a monoid `M` act measurably on a probability space `(X, μ)` preserving `μ`, and let `l` be a
+Let `M` act measurably on a probability space `(X, μ)` preserving `μ`, and let `l` be a
 filter on `M`. The action is mixing along `l` exactly when the correlations of square-integrable
 real functions converge: `∫ f · (g ∘ (m • ·)) dμ → (∫ f dμ) (∫ g dμ)` along `l` for all
 `f, g ∈ L²(μ)`. Indicators of measurable sets give the converse; for the direct implication the
 correlations are bilinear and, by the Cauchy–Schwarz inequality and invariance of `μ`, Lipschitz
 in each argument uniformly in `m`, so convergence passes from indicators to all of `L²` by
-`MeasureTheory.MemLp.induction`.
+`MeasureTheory.MemLp.induction`; the Lipschitz bound is
+`MeasureTheory.MemLp.lipschitzWith_integral_mul`.
 
 ## Main results
 
-* `TauCeti.lipschitzWith_integral_mul`: for `h ∈ L²(μ)`, `F ↦ ∫ F h dμ` is Lipschitz on
-  `Lp ℝ 2 μ` with constant `‖h‖₂`.
 * `TauCeti.MixingAlong.tendsto_integral_mul`: mixing along `l` gives convergence of `L²`
   correlations.
 * `TauCeti.mixingAlong_iff_tendsto_integral_mul`: the `L²` correlation test.
 
-Both theorems have additive versions, for instance for flows.
+Both results have additive versions (`TauCeti.AddMixingAlong.tendsto_integral_mul`,
+`TauCeti.addMixingAlong_iff_tendsto_integral_mul`), for instance for flows.
 
 ## References
 
@@ -40,34 +41,22 @@ Both theorems have additive versions, for instance for flows.
 public section
 
 open Filter MeasureTheory Set Topology
-open scoped ENNReal NNReal InnerProductSpace
+open scoped ENNReal
 
 namespace TauCeti
 
 variable {M X : Type*} [MeasurableSpace X] {μ : Measure X} {l : Filter M}
 
-/-- For a square-integrable real function `h`, integration against `h` is Lipschitz on
-`Lp ℝ 2 μ`, with constant the `L²` norm of `h`: it is the inner product with `h`. -/
-theorem lipschitzWith_integral_mul {h : X → ℝ} (hh : MemLp h 2 μ) :
-    LipschitzWith (eLpNorm h 2 μ).toNNReal fun F : Lp ℝ 2 μ ↦ ∫ x, F x * h x ∂μ := by
-  have hinner (F : Lp ℝ 2 μ) : ∫ x, F x * h x ∂μ = ⟪F, hh.toLp h⟫_ℝ := by
-    rw [L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hh.coeFn_toLp] with x hx
-    simp [hx, mul_comm]
-  refine LipschitzWith.of_dist_le_mul fun F F' ↦ ?_
-  rw [hinner, hinner, Real.dist_eq, ← inner_sub_left, ENNReal.coe_toNNReal_eq_toReal,
-    ← Lp.norm_toLp h hh, dist_eq_norm, mul_comm]
-  exact abs_real_inner_le_norm _ _
+section SMul
 
-section Mul
-
-variable [Monoid M] [MulAction M X] [MeasurableConstSMul M X] [SMulInvariantMeasure M X μ]
+variable [SMul M X] [MeasurableConstSMul M X] [SMulInvariantMeasure M X μ]
 
 omit [SMulInvariantMeasure M X μ] in
-/-- The correlation of indicators of measurable sets is the measure of an intersection. -/
-@[to_additive integral_indicator_mul_indicator_vadd /-- The correlation of indicators of measurable
-sets is the measure of an intersection. -/]
+/-- The correlation of the constant-valued indicators `c • 1_s` and `d • 1_t ∘ (m • ·)` of
+measurable sets is `c * d` times the measure of `s ∩ (m • ·)⁻¹' t`. -/
+@[to_additive integral_indicator_mul_indicator_vadd /-- The correlation of the constant-valued
+indicators `c • 1_s` and `d • 1_t ∘ (m +ᵥ ·)` of measurable sets is `c * d` times the measure of
+`s ∩ (m +ᵥ ·)⁻¹' t`. -/]
 theorem integral_indicator_mul_indicator_smul {s t : Set X} (hs : MeasurableSet s)
     (ht : MeasurableSet t) (c d : ℝ) (m : M) :
     ∫ x, s.indicator (fun _ ↦ c) x * t.indicator (fun _ ↦ d) (m • x) ∂μ =
@@ -92,7 +81,7 @@ theorem tendsto_integral_mul_of_indicator_left {g : X → ℝ} (hg : MemLp g 2 �
         (𝓝 ((∫ x, s.indicator (fun _ ↦ c) x ∂μ) * ∫ x, g x ∂μ)))
     {f : X → ℝ} (hf : MemLp f 2 μ) :
     Tendsto (fun m : M ↦ ∫ x, f x * g (m • x) ∂μ) l (𝓝 ((∫ x, f x ∂μ) * ∫ x, g x ∂μ)) := by
-  have hgm (m : M) : MemLp (fun x ↦ g (m • x)) 2 μ :=
+  have hgm (m : M) : MemLp (g ∘ (m • ·)) 2 μ :=
     hg.comp_measurePreserving (measurePreserving_smul m μ)
   refine MemLp.induction (p := 2) ENNReal.ofNat_ne_top
     (fun f ↦ Tendsto (fun m : M ↦ ∫ x, f x * g (m • x) ∂μ) l (𝓝 ((∫ x, f x ∂μ) * ∫ x, g x ∂μ)))
@@ -107,13 +96,11 @@ theorem tendsto_integral_mul_of_indicator_left {g : X → ℝ} (hg : MemLp g 2 �
   · -- Closedness: the correlations are uniformly Lipschitz in `f`.
     have hlip (m : M) : LipschitzWith (eLpNorm g 2 μ).toNNReal
         fun F : Lp ℝ 2 μ ↦ ∫ x, F x * g (m • x) ∂μ := by
-      have := lipschitzWith_integral_mul (hgm m)
-      rwa [show (fun x ↦ g (m • x)) = g ∘ (m • ·) from rfl,
-        eLpNorm_comp_measurePreserving hg.aestronglyMeasurable (measurePreserving_smul m μ)]
+      have := (hgm m).lipschitzWith_integral_mul
+      rwa [eLpNorm_comp_measurePreserving hg.aestronglyMeasurable (measurePreserving_smul m μ)]
         at this
     have hcont : Continuous fun F : Lp ℝ 2 μ ↦ (∫ x, F x ∂μ) * ∫ x, g x ∂μ := by
-      simp_rw [← integral_mul_const]
-      exact (lipschitzWith_integral_mul (memLp_const (∫ x, g x ∂μ))).continuous
+      simpa using (memLp_const (1 : ℝ)).lipschitzWith_integral_mul.continuous.mul_const _
     exact ((LipschitzWith.uniformEquicontinuous _ _ hlip).equicontinuous).isClosed_setOfPred_tendsto
       hcont
   · intro f f' hff' _ hf
@@ -135,19 +122,19 @@ theorem tendsto_integral_mul_of_indicator_right {f : X → ℝ} (hf : MemLp f 2 
     (fun g ↦ Tendsto (fun m : M ↦ ∫ x, f x * g (m • x) ∂μ) l (𝓝 ((∫ x, f x ∂μ) * ∫ x, g x ∂μ)))
     (fun d t ht _ ↦ hind d ht) ?_ ?_ ?_ hg
   · intro g₁ g₂ _ hg₁ hg₂ h₁ h₂
-    have hgm {g : X → ℝ} (hg : MemLp g 2 μ) (m : M) : MemLp (fun x ↦ g (m • x)) 2 μ :=
-      hg.comp_measurePreserving (measurePreserving_smul m μ)
     have heq (m : M) : ∫ x, f x * (g₁ + g₂) (m • x) ∂μ =
         ∫ x, f x * g₁ (m • x) ∂μ + ∫ x, f x * g₂ (m • x) ∂μ := by
+      have hmp := measurePreserving_smul m μ
       simp only [Pi.add_apply, mul_add]
-      exact integral_add (hf.integrable_mul (hgm hg₁ m)) (hf.integrable_mul (hgm hg₂ m))
+      exact integral_add (hf.integrable_mul (hg₁.comp_measurePreserving hmp))
+        (hf.integrable_mul (hg₂.comp_measurePreserving hmp))
     rw [integral_add' (hg₁.integrable one_le_two) (hg₂.integrable one_le_two), mul_add]
     exact (h₁.add h₂).congr fun m ↦ (heq m).symm
   · -- Closedness: the correlations are Lipschitz in `g`, composing with the isometric pullback.
     have hlip (m : M) : LipschitzWith ((eLpNorm f 2 μ).toNNReal * 1)
         fun G : Lp ℝ 2 μ ↦ ∫ x, f x * G (m • x) ∂μ := by
       have hmp := measurePreserving_smul m μ
-      have := (lipschitzWith_integral_mul hf).comp
+      have := hf.lipschitzWith_integral_mul.comp
         (Lp.compMeasurePreservingₗᵢ ℝ (m • · : X → X) hmp).lipschitzWith
       convert this using 2 with G
       refine integral_congr_ae ?_
@@ -156,8 +143,7 @@ theorem tendsto_integral_mul_of_indicator_right {f : X → ℝ} (hf : MemLp f 2 
       congr 1
       exact hx.symm
     have hcont : Continuous fun G : Lp ℝ 2 μ ↦ (∫ x, f x ∂μ) * ∫ x, G x ∂μ := by
-      simp_rw [mul_comm (∫ x, f x ∂μ), ← integral_mul_const]
-      exact (lipschitzWith_integral_mul (memLp_const (∫ x, f x ∂μ))).continuous
+      simpa using (memLp_const (1 : ℝ)).lipschitzWith_integral_mul.continuous.const_mul _
     exact ((LipschitzWith.uniformEquicontinuous _ _ hlip).equicontinuous).isClosed_setOfPred_tendsto
       hcont
   · intro g g' hgg' _ hg
@@ -202,6 +188,6 @@ theorem mixingAlong_iff_tendsto_integral_mul :
   simpa [integral_indicator_mul_indicator_smul hA hB, integral_indicator_const _ hA,
     integral_indicator_const _ hB] using this
 
-end Mul
+end SMul
 
 end TauCeti
