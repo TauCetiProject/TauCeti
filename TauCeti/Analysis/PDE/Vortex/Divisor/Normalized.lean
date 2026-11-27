@@ -141,6 +141,14 @@ theorem isZeroMultiplicity_sectionValue_normalizedVortex (c : Fin m → ℂ) :
     (contDiff_polynomialGauge.comp (contDiff_prodMk_right c)).continuous
     (isZeroMultiplicity_sectionValue_polynomialVortex (monic_monicOfCoeff c).ne_zero)
 
+/-- The section of the normalized vortex `y_c` tends to the vacuum in norm, `|α|² → 1` at
+infinity. -/
+theorem tendsto_normSq_normalizedVortex (hm : 0 < m) (c : Fin m → ℂ) :
+    Tendsto (fun z ↦ 4 * (normalizedVortex c z 2 ^ 2 + normalizedVortex c z 3 ^ 2))
+      (cocompact ℂ) (𝓝 1) :=
+  tendsto_normSq_of_forall_mem_framedFieldSpace (f := default)
+    (contDiff_normalizedVortex c).continuous fun k ↦ normalizedVortex_mem_framedFieldSpace hm _ c k
+
 /-! ### The background and reduced parts of the normalized vortex -/
 
 /-- The background amplitude `u₀ = -log (1 + ‖P_c‖²) / 2` of `P_c`. -/

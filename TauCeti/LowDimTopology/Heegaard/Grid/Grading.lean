@@ -194,7 +194,7 @@ variable {G}
 /-- A quantity attached to domains which is additive under juxtaposition, vanishes on the domains
 from a generator to itself and is the change of a function `f` of grid states across every
 rectangle is the change of `f` across every domain. -/
-private theorem eq_sub_of_isDomainBetween
+theorem eq_sub_of_isDomainBetween
     (φ : G.heegaardRegionSystem.Generator → G.heegaardRegionSystem.Generator →
       (Fin n × Fin n → ℤ) → ℚ) (f : GridState n → ℚ)
     (hadd : ∀ {g h k : G.heegaardRegionSystem.Generator} {D E : Fin n × Fin n → ℤ},
