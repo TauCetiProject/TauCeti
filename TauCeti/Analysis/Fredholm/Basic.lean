@@ -262,10 +262,11 @@ theorem IsFredholm.finiteDimensional_ker_of_restrictScalars_eq {A : E →L[𝕜]
     (hA : A.IsFredholm) {f : E →ₗ[𝕜'] F} (hf : f.restrictScalars 𝕜 = A) :
     FiniteDimensional 𝕜' (LinearMap.ker f) := by
   -- The kernel of `f`, with its `𝕜`-structure, is the kernel of `A`.
-  have : FiniteDimensional 𝕜 (LinearMap.ker (f.restrictScalars 𝕜)) := by
-    rw [hf]
+  have : FiniteDimensional 𝕜 ((LinearMap.ker f).restrictScalars 𝕜) := by
+    rw [← LinearMap.ker_restrictScalars, hf]
     exact hA.finite_ker
-  have : FiniteDimensional 𝕜 (LinearMap.ker f) := this
+  have : FiniteDimensional 𝕜 (LinearMap.ker f) :=
+    Module.Finite.equiv (((LinearMap.ker f).restrictScalarsEquiv 𝕜).restrictScalars 𝕜)
   exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' (LinearMap.ker f)
 
 variable {𝕜} in

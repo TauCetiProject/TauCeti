@@ -24,9 +24,14 @@ positive element of `det (f ⊕ g)`
 (`LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul`), and
 conversely every complex positive element of `det (f ⊕ g)` is such a tensor product
 (`LinearMap.IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongrOfEq_eq_tmul`). The
-direct sum may be given as any complex-linear map whose underlying real map is the direct sum of
-those of `f` and `g`, such as an operator commuting with a splitting of its domain and target;
-its elements are read through `LinearMap.detLineCongrOfEq`. No sign enters: the Koszul sign
+direct sum is given as a complex-linear map `h` together with an equation saying that its
+underlying real map is the direct sum of those of `f` and `g`. Such an `h` is necessarily
+`f.prodMap g`; stating it through the equation lets the results apply to other forms of
+`f.prodMap g`, such as the realification of a continuous `prodMap`, and the elements of `det h` are
+read through `LinearMap.detLineCongrOfEq`. An operator commuting with a splitting of its domain and
+target is not of this form: transport its determinant line along the splitting isomorphisms
+first, which preserves complex orientations when they are complex linear
+(`LinearMap.IsComplexPositiveDetLine.detLineCongr`). No sign enters: the Koszul sign
 `(-1) ^ (dim (coker f) * dim (ker g))` of the direct sum isomorphism is `1`, because complex
 vector spaces have even real dimension. The isomorphism is assembled from the identifications
 `det U ⊗ det W ≃ det (U × W)` (`TauCeti.detLineProdEquiv`), its dual
@@ -229,9 +234,10 @@ variable [FiniteDimensional ℂ (ker f)] [FiniteDimensional ℂ (N ⧸ range f)]
 
 /-- **The direct sum of complex orientations is the complex orientation of the direct sum.** Let
 `f` and `g` be complex-linear maps with finite-dimensional kernels and cokernels, and `h` a
-complex-linear map whose underlying real map is the direct sum of those of `f` and `g`, such as
-`f.prodMap g`. For complex positive elements `x` of `det f` and `y` of `det g`, the element of
-`det h` corresponding to `x ⊗ y` under the direct sum isomorphism
+complex-linear map whose underlying real map is the direct sum of those of `f` and `g` (by
+`hh`), so that `h` is `f.prodMap g`, stated through `hh` to fit other forms of it such as the
+realification of a continuous `prodMap`. For complex positive elements `x` of `det f` and `y` of
+`det g`, the element of `det h` corresponding to `x ⊗ y` under the direct sum isomorphism
 `LinearMap.detLineProdMapEquiv`, read through `LinearMap.detLineCongrOfEq`, is complex positive. -/
 theorem IsComplexPositiveDetLine.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul
     (hh : (f.restrictScalars ℝ).prodMap (g.restrictScalars ℝ) = h.restrictScalars ℝ)
@@ -280,15 +286,16 @@ theorem IsComplexPositiveDetLine.detLineCongrOfEq_detLineProdMapEquiv_symm_tmul
       LinearEquiv.detLineCongr_symm, ← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply,
       ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans,
       ← LinearEquiv.detLineCongr_trans, ← LinearEquiv.detLineCongr_trans, LinearEquiv.symm_symm,
-      cokerRestrictScalarsEquiv_symm_trans_cokerProdMapEquiv]
-    rfl
+      cokerRestrictScalarsEquiv_symm_trans_cokerProdMapEquiv, LinearMap.comp_apply,
+      LinearEquiv.coe_coe]
 
 /-- **The complex orientation of a direct sum splits.** Let `f` and `g` be complex-linear maps
 with finite-dimensional kernels and cokernels, and `h` a complex-linear map whose underlying real
-map is the direct sum of those of `f` and `g`. The direct sum isomorphism
-`LinearMap.detLineProdMapEquiv` sends a complex positive element of `det h`, read through
-`LinearMap.detLineCongrOfEq`, to `x ⊗ y` for complex positive elements `x` of `det f` and `y` of
-`det g`. -/
+map is the direct sum of those of `f` and `g` (by `hh`), so that `h` is `f.prodMap g`, stated
+through `hh` to fit other forms of it such as the realification of a continuous `prodMap`. The
+direct sum isomorphism `LinearMap.detLineProdMapEquiv` sends a complex positive element of
+`det h`, read through `LinearMap.detLineCongrOfEq`, to `x ⊗ y` for complex positive elements `x`
+of `det f` and `y` of `det g`. -/
 theorem IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongrOfEq_eq_tmul
     (hh : (f.restrictScalars ℝ).prodMap (g.restrictScalars ℝ) = h.restrictScalars ℝ)
     {z : (h.restrictScalars ℝ).detLine} (hz : h.IsComplexPositiveDetLine z) :
