@@ -36,6 +36,7 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
   volume of `ℝⁿ⁺¹` with the product of the volumes of `ℝ` and `ℝⁿ`.
 * `TauCeti.measurePreserving_euclideanPlaneEquivProd`: the coordinates of the Euclidean plane
   identify its volume with the product of Lebesgue measures on `ℝ × ℝ`.
+* `TauCeti.euclideanPlaneEquivProdL`: the same coordinates as a continuous linear equivalence.
 -/
 
 public section
@@ -184,6 +185,42 @@ theorem euclideanPlaneEquivProd_apply (y : EuclideanSpace ℝ (Fin 2)) :
 theorem euclideanPlaneEquivProd_symm_apply (z : ℝ × ℝ) :
     euclideanPlaneEquivProd.symm z = WithLp.toLp 2 ![z.1, z.2] :=
   (rfl)
+
+/-- The coordinates `(y₀, y₁)` of a point of the Euclidean plane, as a continuous linear equivalence
+onto `ℝ × ℝ`. As a map it is `TauCeti.euclideanPlaneEquivProd`
+(`TauCeti.coe_euclideanPlaneEquivProdL`), so it preserves volume. -/
+noncomputable def euclideanPlaneEquivProdL : EuclideanSpace ℝ (Fin 2) ≃L[ℝ] ℝ × ℝ :=
+  (EuclideanSpace.equiv (Fin 2) ℝ).trans (ContinuousLinearEquiv.finTwoArrow ℝ ℝ)
+
+@[simp]
+theorem euclideanPlaneEquivProdL_apply (y : EuclideanSpace ℝ (Fin 2)) :
+    euclideanPlaneEquivProdL y = (y 0, y 1) :=
+  (rfl)
+
+@[simp]
+theorem euclideanPlaneEquivProdL_symm_apply (z : ℝ × ℝ) :
+    euclideanPlaneEquivProdL.symm z = WithLp.toLp 2 ![z.1, z.2] :=
+  (rfl)
+
+theorem coe_euclideanPlaneEquivProdL :
+    ⇑euclideanPlaneEquivProdL = euclideanPlaneEquivProd :=
+  (rfl)
+
+theorem coe_euclideanPlaneEquivProdL_symm :
+    ⇑euclideanPlaneEquivProdL.symm = euclideanPlaneEquivProd.symm :=
+  (rfl)
+
+/-- The first coordinate vector `(1, 0)` of `ℝ × ℝ` is the first basis vector of the plane. -/
+theorem euclideanPlaneEquivProdL_symm_one_zero :
+    euclideanPlaneEquivProdL.symm (1, 0) = EuclideanSpace.single 0 1 := by
+  ext i
+  fin_cases i <;> simp
+
+/-- The second coordinate vector `(0, 1)` of `ℝ × ℝ` is the second basis vector of the plane. -/
+theorem euclideanPlaneEquivProdL_symm_zero_one :
+    euclideanPlaneEquivProdL.symm (0, 1) = EuclideanSpace.single 1 1 := by
+  ext i
+  fin_cases i <;> simp
 
 /-- The coordinates of the Euclidean plane carry its volume to the product of Lebesgue measures. -/
 theorem measurePreserving_euclideanPlaneEquivProd :
