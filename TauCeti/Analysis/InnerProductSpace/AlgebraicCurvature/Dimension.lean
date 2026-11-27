@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Multilinear.SectionalPolarization
@@ -325,9 +326,8 @@ private theorem choose_symm_sub_choose_four {n d : ℕ}
   match n with
   | 0 | 1 | 2 | 3 => norm_num [Nat.choose] at hrk ⊢; omega
   | m + 4 =>
-    have hc4 : 24 * (m + 4).choose 4 = (m + 4) * (m + 3) * (m + 2) * (m + 1) := by
-      have h := (Nat.descFactorial_eq_factorial_mul_choose (m + 4) 4).symm
-      simp [Nat.factorial, Nat.add_sub_assoc] at h; linarith
+    have hc4 : 24 * (m + 4).choose 4 = (m + 4) * (m + 3) * (m + 2) * (m + 1) :=
+      Nat.choose_four_mul m
     have hc2 : 2 * (m + 4).choose 2 = (m + 4) * (m + 3) := by
       have h := (Nat.descFactorial_eq_factorial_mul_choose (m + 4) 2).symm
       simp [Nat.factorial] at h; linarith

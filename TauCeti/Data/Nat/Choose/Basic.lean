@@ -42,6 +42,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
   `Nat.two_mul_choose_two_add_mul_sub`: `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`.
 * `Nat.add_choose_two_add_choose_two`: `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.choose_three_mul`, `Nat.choose_four_mul`: the closed forms
+  `6 C(n + 3, 3) = (n + 3)(n + 2)(n + 1)` and `24 C(n + 4, 4) = (n + 4)(n + 3)(n + 2)(n + 1)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
 * `Nat.neg_one_pow_succ_choose_two_mul_neg_one_pow`: the step
@@ -145,6 +147,20 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
       ring
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
+
+/-- The closed form `6 C(n + 3, 3) = (n + 3)(n + 2)(n + 1)`. -/
+theorem choose_three_mul (n : ℕ) :
+    6 * (n + 3).choose 3 = (n + 3) * (n + 2) * (n + 1) := by
+  rw [show (6 : ℕ) = (3 : ℕ).factorial from rfl, ← descFactorial_eq_factorial_mul_choose]
+  simp [descFactorial_succ]
+  ring
+
+/-- The closed form `24 C(n + 4, 4) = (n + 4)(n + 3)(n + 2)(n + 1)`. -/
+theorem choose_four_mul (n : ℕ) :
+    24 * (n + 4).choose 4 = (n + 4) * (n + 3) * (n + 2) * (n + 1) := by
+  rw [show (24 : ℕ) = (4 : ℕ).factorial from rfl, ← descFactorial_eq_factorial_mul_choose]
+  simp [descFactorial_succ]
+  ring
 
 /-- `C(m, 2)` and `⌊m / 2⌋` have the same parity: going from `m` to `m + 2` adds `2m + 1` to the
 first and `1` to the second. -/
