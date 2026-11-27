@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import TauCeti.Topology.Algebra.Module.ComplexSmulI
-import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
 # Multiplication by `i` as a real linear isometry
