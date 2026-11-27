@@ -62,6 +62,8 @@ those components.
   invariants.
 * `Representation.charEigenspace_eq_bot`: if some `g` acts trivially and `χ(g) - 1` acts
   injectively on `V`, then `V^χ = 0`.
+* `Representation.mem_charEigenspace_dual_iff`: a functional `ℓ` lies in the `χ`-eigensubmodule of
+  the contragredient exactly when `ℓ(ρ(g) v) = χ(g)⁻¹ ℓ(v)`.
 * `Representation.exists_mem_charEigenspace_of_apply_mem_span`: over a field, a nonzero vector
   spanning a `G`-stable line lies in `V^χ` for some linear character `χ`.
 * `Representation.charSum_apply_mem`, `Representation.charSum_apply_of_mem`,
@@ -196,6 +198,15 @@ theorem charEigenspace_eq_invariants_charTwist :
 theorem charEigenspace_one : ρ.charEigenspace 1 = ρ.invariants := by
   ext v
   simp [mem_invariants]
+
+/-- A functional `ℓ` lies in the `χ`-eigensubmodule of the contragredient `ρ.dual` exactly when
+`ℓ(ρ(g) v) = χ(g)⁻¹ ℓ(v)` for all `g` and `v`. -/
+theorem mem_charEigenspace_dual_iff {ℓ : Dual k V} :
+    ℓ ∈ ρ.dual.charEigenspace χ ↔ ∀ g v, ℓ (ρ g v) = (((χ g)⁻¹ : kˣ) : k) * ℓ v := by
+  rw [mem_charEigenspace_iff]
+  refine ⟨fun H g v ↦ ?_, fun H g ↦ LinearMap.ext fun v ↦ ?_⟩
+  · simpa [dual_apply, Dual.transpose_apply] using LinearMap.congr_fun (H g⁻¹) v
+  · simp [dual_apply, Dual.transpose_apply, H]
 
 end Group
 
