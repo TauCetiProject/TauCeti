@@ -254,11 +254,7 @@ theorem Continuous.isMurrayVonNeumannEquivalent {A : Type*} [NonUnitalCStarAlgeb
     rw [CStarMatrix.ofMatrix_eq_ofMatrixL]
     exact CStarMatrix.ofMatrixL.continuous.comp hf
   obtain ⟨v, hv₁, hv₂⟩ := hg.exists_star_mul_self_eq hfp' x y
-  refine ⟨hfp x, hfp y, CStarMatrix.ofMatrix.symm v, ?_, ?_⟩
-  · rw [← CStarMatrix.ofMatrix_symm_star, ← CStarMatrix.ofMatrix_symm_mul, hv₁,
-      Equiv.symm_apply_apply]
-  · rw [← CStarMatrix.ofMatrix_symm_star, ← CStarMatrix.ofMatrix_symm_mul, hv₂,
-      Equiv.symm_apply_apply]
+  simpa using CStarMatrix.isMurrayVonNeumannEquivalent_of_star_mul_self_eq (hfp' x) (hfp' y) hv₁ hv₂
 
 end Continuous
 

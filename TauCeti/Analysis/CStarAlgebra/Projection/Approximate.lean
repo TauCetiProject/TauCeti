@@ -154,20 +154,7 @@ theorem exists_star_mul_self_eq_of_norm_star_mul_self_sub_lt_one (hp : IsStarPro
     hq' (w := (w : Unitization ℂ A)) (by rw [← Unitization.inr_mul, ← Unitization.inr_mul, hw])
     (by rwa [← Unitization.inr_star, ← Unitization.inr_mul, ← hinr])
     (by rwa [← Unitization.inr_star, ← Unitization.inr_mul, ← hinr])
-  -- `u * p` lies in `A`, and implements the equivalence there
-  have hv : ((u.fst • p + u.snd * p : A) : Unitization ℂ A) = u * p :=
-    (Unitization.mul_inr u p).symm
-  have hpp : (p : Unitization ℂ A) * p = p := hp'.isIdempotentElem.eq
-  refine ⟨u.fst • p + u.snd * p, Unitization.inr_injective (R := ℂ) ?_,
-    Unitization.inr_injective (R := ℂ) ?_⟩
-  · calc _ = star (u * p) * (u * p) := by rw [Unitization.inr_mul, Unitization.inr_star, hv]
-      _ = p * (star u * u) * p := by rw [star_mul, hp'.isSelfAdjoint.star_eq]; noncomm_ring
-      _ = p := by rw [hu₁, hpp, hpp]
-  · calc _ = u * p * star (u * p) := by rw [Unitization.inr_mul, Unitization.inr_star, hv]
-      _ = u * star u * (u * star u) := by
-        rw [star_mul, hp'.isSelfAdjoint.star_eq, ← mul_assoc, mul_assoc u, hpp, ← hu₁]
-        noncomm_ring
-      _ = q := by rw [hu₂, hq'.isIdempotentElem.eq]
+  exact hp.exists_star_mul_self_eq_of_star_mul_self_eq_unitization hq.isIdempotentElem hu₁ hu₂
 
 /-- **Defect near a projection.** If `‖x - p‖ ≤ η ≤ 1` for a star projection `p`, then
 `‖x - x * x‖ ≤ 4 η`. -/
