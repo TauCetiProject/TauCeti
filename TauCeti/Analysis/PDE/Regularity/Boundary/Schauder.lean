@@ -375,8 +375,7 @@ private theorem exists_boundary_decay {α : ℝ≥0} {γ : ℝ} (hγ : 0 < γ) (
       (ae_of_all _ fun _ => by positivity)
       (inter_subset_inter_left _ hsub).eventuallySubset).trans (by
         rw [hVdef]; exact le_add_of_nonneg_right (by positivity))
-  have hfin : IsFiniteMeasure (volume.restrict (ball z₀ R ∩ H)) :=
-    isFiniteMeasure_restrict.2 measure_ball_inter_ne_top
+  have hfin := isFiniteMeasure_restrict_ball_inter volume z₀ R H
   have hf2 : MemLp f 2 (volume.restrict (ball z (R / 2) ∩ H)) :=
     (hf.mono_exponent hq).mono_measure (Measure.restrict_mono (inter_subset_inter_left _ hsub)
       le_rfl)
@@ -441,8 +440,7 @@ private theorem exists_interior_decay {α : ℝ≥0} {γ : ℝ} (hγ : 0 < γ) (
   have hxH : ball x r ⊆ H := hxr.trans inter_subset_right
   have hxUH : ball x r ⊆ ((U ⊓ H : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
       Set (EuclideanSpace ℝ (Fin (n + 1)))) := fun y hy => ⟨hU (hxR hy), hxH hy⟩
-  have hfin : IsFiniteMeasure (volume.restrict (ball z₀ R ∩ H)) :=
-    isFiniteMeasure_restrict.2 measure_ball_inter_ne_top
+  have hfin := isFiniteMeasure_restrict_ball_inter volume z₀ R H
   have hf2 : MemLp f 2 (volume.restrict (ball x r)) :=
     (hf.mono_exponent hq).mono_measure (Measure.restrict_mono hxr le_rfl)
   have hgrad := W1p.gradient_restrictL_ae
@@ -988,8 +986,7 @@ theorem exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnW
   rotate_left
   · -- Integrability on the balls.
     intro x hx
-    have : IsFiniteMeasure (volume.restrict (ball x ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-      := isFiniteMeasure_restrict.2 measure_ball_inter_ne_top
+    have := isFiniteMeasure_restrict_ball_inter volume x ρ H
     rw [IntegrableOn, volume.restrict_restrict_closedBall_eq_restrict_ball_inter]
     exact (hg.mono_measure (Measure.restrict_mono (inter_subset_left.trans
       ((hsubU x hx ρ le_rfl).trans hU)) le_rfl)).integrable one_le_two

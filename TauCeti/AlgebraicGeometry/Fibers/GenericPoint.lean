@@ -39,6 +39,9 @@ a point has dimension that of the closure of its image plus `n`
   every point is a generic point of its fibre.
 * `AlgebraicGeometry.Scheme.Hom.finite_setOf_mem_and_apply_eq_and_isFiberGenericPoint`: a
   Noetherian open subset contains finitely many generic points of a given fibre.
+* `AlgebraicGeometry.Scheme.Hom.isFiberGenericPoint_comp_iff_of_generalizingMap`: for `f`
+  generalizing (for instance flat), `x` is a generic point of its fibre under `f ≫ g` exactly
+  when `f x` is one under `g` and `x` is one under `f`.
 -/
 
 public section
@@ -128,5 +131,44 @@ lemma finite_setOf_mem_and_apply_eq_and_isFiberGenericPoint (f : X ⟶ Y) {U : S
   rintro x ⟨hxU, rfl, hx⟩
   exact ⟨⟨⟨x, rfl⟩, hxU⟩,
     (hV.isOpenEmbedding_subtypeVal.mem_genericPoints_iff (⟨⟨x, rfl⟩, hxU⟩ : V)).mp hx, rfl⟩
+
+/-- If `x` is a generic point of its fibre under `f ≫ g`, it is one under `f`: a generization of
+`x` in its `f`-fibre lies in its `(f ≫ g)`-fibre. -/
+lemma IsFiberGenericPoint.of_comp {Z : Scheme.{u}} {f : X ⟶ Y} {g : Y ⟶ Z} {x : X}
+    (hx : IsFiberGenericPoint (f ≫ g) x) : IsFiberGenericPoint f x := by
+  rw [isFiberGenericPoint_iff_forall_specializes] at hx ⊢
+  intro z hz hzx
+  exact hx z (by rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, hz]) hzx
+
+/-- If `f x` is a generic point of its fibre under `g` and `x` one of its fibre under `f`, then
+`x` is a generic point of its fibre under `f ≫ g`: a generization `z` of `x` with the same image
+in `Z` has `f z` a generization of `f x` in its `g`-fibre, so `f z = f x`, and then `z = x`. -/
+lemma IsFiberGenericPoint.comp {Z : Scheme.{u}} {f : X ⟶ Y} {g : Y ⟶ Z} {x : X}
+    (hg : IsFiberGenericPoint g (f x)) (hf : IsFiberGenericPoint f x) :
+    IsFiberGenericPoint (f ≫ g) x := by
+  rw [isFiberGenericPoint_iff_forall_specializes] at hg hf ⊢
+  intro z hz hzx
+  simp only [Scheme.Hom.comp_apply] at hz
+  exact hf z (hg (f z) hz (hzx.map f.continuous)) hzx
+
+/-- For `f` generalizing (for instance flat, `AlgebraicGeometry.Flat.generalizingMap`), if `x` is
+a generic point of its fibre under `f ≫ g`, then `f x` is a generic point of its fibre under `g`:
+a generization of `f x` in its `g`-fibre lifts to a generization of `x`, which lies in the
+`(f ≫ g)`-fibre of `x`. -/
+lemma IsFiberGenericPoint.of_comp_of_generalizingMap {Z : Scheme.{u}} {f : X ⟶ Y} {g : Y ⟶ Z}
+    (hf : GeneralizingMap f) {x : X} (hx : IsFiberGenericPoint (f ≫ g) x) :
+    IsFiberGenericPoint g (f x) := by
+  rw [isFiberGenericPoint_iff_forall_specializes] at hx ⊢
+  intro w hw hwx
+  obtain ⟨z, hzx, rfl⟩ := hf hwx
+  rw [hx z (by simpa only [Scheme.Hom.comp_apply] using hw) hzx]
+
+/-- For `f` generalizing (for instance flat), `x` is a generic point of its fibre under `f ≫ g`
+exactly when `f x` is a generic point of its fibre under `g` and `x` is one of its fibre under
+`f`. -/
+lemma isFiberGenericPoint_comp_iff_of_generalizingMap {Z : Scheme.{u}} {f : X ⟶ Y} (g : Y ⟶ Z)
+    (hf : GeneralizingMap f) (x : X) :
+    IsFiberGenericPoint (f ≫ g) x ↔ IsFiberGenericPoint g (f x) ∧ IsFiberGenericPoint f x :=
+  ⟨fun hx ↦ ⟨hx.of_comp_of_generalizingMap hf, hx.of_comp⟩, fun h ↦ h.1.comp h.2⟩
 
 end AlgebraicGeometry.Scheme.Hom
