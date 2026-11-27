@@ -10,10 +10,12 @@ public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.RingTheory.Algebraic.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 
 import Mathlib.Analysis.Normed.Field.Ultra
 import Mathlib.Analysis.Normed.Field.WithAbs
+import Mathlib.RingTheory.Algebraic.Integral
 import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 
 /-!
@@ -52,6 +54,9 @@ finite place of the extension.
   an injective ring homomorphism is nonarchimedean.
 * `AbsoluteValue.isNonarchimedean_trivial`: the trivial absolute value on any semiring without zero
   divisors is nonarchimedean.
+* `AbsoluteValue.isNontrivial_iff_of_liesOver`: an absolute value on an algebraic field extension
+  is nontrivial if and only if its restriction to the base is. This is an application of the
+  integrality bound above.
 * `NormedField.isNonarchimedean_toAbsoluteValue`: the norm of a nonarchimedean normed field is a
   nonarchimedean absolute value.
 
@@ -227,6 +232,29 @@ theorem liesOver_nonarchRpow {K L : Type*} [CommSemiring K] [Semiring L] [Algebr
     (w.nonarchRpow hw ht).LiesOver (u.nonarchRpow hu ht) := by
   refine ⟨ext fun x ↦ ?_⟩
   simp [under_def, LiesOver.apply_algebraMap u]
+
+/-- An absolute value on an algebraic field extension `L / K` is nontrivial if and only if its
+restriction to `K` is. If `w` is trivial on `K`, it is bounded by `1` on the natural numbers,
+hence nonarchimedean, and so bounded by `1` on every element of `L`, which is integral over `K`;
+applied to `x` and `x⁻¹` this gives `w x = 1`. -/
+theorem isNontrivial_iff_of_liesOver {K L : Type*} [Field K] [Field L] [Algebra K L]
+    [Algebra.IsAlgebraic K L] (w : AbsoluteValue L ℝ) (u : AbsoluteValue K ℝ) [w.LiesOver u] :
+    w.IsNontrivial ↔ u.IsNontrivial := by
+  refine ⟨fun hw ↦ ?_, fun ⟨k, hk, hk1⟩ ↦
+    ⟨algebraMap K L k, by simpa using hk, by rwa [LiesOver.apply_algebraMap u]⟩⟩
+  by_contra hu
+  have hle (k : K) : w (algebraMap K L k) ≤ 1 := by
+    rw [LiesOver.apply_algebraMap u]
+    rcases eq_or_ne k 0 with rfl | hk
+    · simp
+    · exact (u.not_isNontrivial_iff.mp hu k hk).le
+  have hna : IsNonarchimedean w :=
+    isNonarchimedean_of_forall_natCast_le_one fun n ↦ by simpa using hle n
+  obtain ⟨x, hx, hx1⟩ := hw
+  have h1 := hna.apply_le_one_of_isIntegral hle (Algebra.IsIntegral.isIntegral x)
+  have h2 := hna.apply_le_one_of_isIntegral hle (Algebra.IsIntegral.isIntegral x⁻¹)
+  rw [map_inv₀, inv_le_one₀ (w.pos hx)] at h2
+  exact hx1 (le_antisymm h1 h2)
 
 end AbsoluteValue
 
