@@ -63,14 +63,12 @@ theorem smoothCount_def (x y : ℝ) :
 theorem mem_smoothNumbersUpTo_natFloor_iff {x y : ℝ} {n : ℕ} :
     n ∈ Nat.smoothNumbersUpTo ⌊x⌋₊ (⌊y⌋₊ + 1) ↔
       n ∈ Icc 1 ⌊x⌋₊ ∧ ∀ p ∈ n.primeFactors, (p : ℝ) ≤ y := by
-  rw [Nat.mem_smoothNumbersUpTo, mem_Icc]
-  refine ⟨fun ⟨hn, hmem⟩ ↦ ⟨⟨Nat.one_le_iff_ne_zero.2 (Nat.ne_zero_of_mem_smoothNumbers hmem), hn⟩,
-    fun p hp ↦ ?_⟩, fun ⟨⟨hn₁, hn⟩, hp⟩ ↦ ⟨hn, Nat.mem_smoothNumbers'.2 fun p hp' hpn ↦ ?_⟩⟩
-  · obtain ⟨hp', hpn, -⟩ := Nat.mem_primeFactors.1 hp
-    exact (Nat.le_floor_iff' hp'.ne_zero).1
-      (Nat.lt_succ_iff.1 (Nat.mem_smoothNumbers'.1 hmem p hp' hpn))
-  · exact Nat.lt_succ_iff.2 ((Nat.le_floor_iff' hp'.ne_zero).2
-      (hp p (Nat.mem_primeFactors.2 ⟨hp', hpn, Nat.one_le_iff_ne_zero.1 hn₁⟩)))
+  have key : ∀ p ∈ n.primeFactors, (p ∈ (⌊y⌋₊ + 1).primesBelow ↔ (p : ℝ) ≤ y) := fun p hp ↦ by
+    have hp' := Nat.prime_of_mem_primeFactors hp
+    simp [Nat.mem_primesBelow, Nat.le_floor_iff' hp'.ne_zero, hp']
+  rw [Nat.mem_smoothNumbersUpTo, Nat.mem_smoothNumbers_iff_primeFactors_subset, subset_iff,
+    mem_Icc, forall₂_congr key, Nat.one_le_iff_ne_zero]
+  tauto
 
 /-- `Ψ(x, y)` is the number of `n` in `[1, ⌊x⌋₊]` all of whose prime factors `p` satisfy
 `(p : ℝ) ≤ y`. -/
@@ -105,7 +103,7 @@ theorem smoothCount_mono {x₁ x₂ y₁ y₂ : ℝ} (hx : x₁ ≤ x₂) (hy : 
   refine card_le_card fun n hn ↦ ?_
   rw [Nat.mem_smoothNumbersUpTo] at hn ⊢
   exact ⟨hn.1.trans (Nat.floor_mono hx),
-    Nat.smoothNumbers_mono (Nat.succ_le_succ (Nat.floor_mono hy)) hn.2⟩
+    Nat.smoothNumbers_mono (by gcongr) hn.2⟩
 
 /-- At most `⌊x⌋₊` positive integers are counted by `Ψ(x, y)`. -/
 theorem smoothCount_le_natFloor (x y : ℝ) : smoothCount x y ≤ ⌊x⌋₊ := by
