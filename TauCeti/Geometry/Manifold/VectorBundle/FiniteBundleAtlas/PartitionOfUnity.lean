@@ -56,8 +56,7 @@ theorem exists_nested_chart_sets :
     A.isOpen_dom (by rw [A.iUnion_dom])
   -- The support of `χᵢ` read in chart `i` is a compact subset of the chart image.
   have hK (i : Fin A.n) : IsCompact (A.chart i '' tsupport (χ i)) :=
-    (isClosed_tsupport _).isCompact.image_of_continuousOn
-      ((A.chart i).continuousOn.mono ((hχ i).trans (A.dom_subset_chart_source i)))
+    A.isCompact_chart_image_of_isClosed (isClosed_tsupport _) (hχ i)
   choose Q₃ hK₃ hQ₃ _ using fun i ↦ Opens.exists_between_and_isCompact_closure (hK i)
     fun _ hy ↦ A.mem_image.2 (image_mono (hχ i) hy)
   choose Q₂ hK₂ hQ₂ _ using fun i ↦ Opens.exists_between_and_isCompact_closure (hK i) (hK₃ i)
