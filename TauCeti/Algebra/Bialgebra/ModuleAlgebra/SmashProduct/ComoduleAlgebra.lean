@@ -11,6 +11,8 @@ public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct.Map
 public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 
+import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Fixed
+
 /-!
 # Right comodule algebra structure on the smash product
 
@@ -103,22 +105,6 @@ theorem coact_pure_eq_sum {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι) (a : 
   rw [coact_pure, ← r.eq, TensorProduct.tmul_sum, map_sum, map_sum]
   simp only [TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul, LinearEquiv.coe_coe,
     linearEquivTensor_symm_tmul]
-
-/-- Applying `retractA μ` to the left factor of `coact x` recovers `linearEquivTensor μ x`. -/
-@[simp↓]
-theorem retractA_rTensor_coact (x : SmashProduct μ) :
-    (retractA μ).rTensor H (Comodule.coact (R := R) (C := H) x) = linearEquivTensor μ x := by
-  let _ := Comodule.cofree R H A
-  have hretract :
-      retractA μ = (Comodule.cofreeCounit R H A).comp (linearEquivTensor μ).toLinearMap :=
-    lhom_ext fun a h => by simp
-  rw [hretract, Comodule.transport_coact (R := R) (C := H) (linearEquivTensor μ).symm,
-    Comodule.transportCoact_apply, ← LinearMap.rTensor_def, LinearMap.rTensor_comp_apply,
-    ← LinearMap.comp_apply ((linearEquivTensor μ).toLinearMap.rTensor H), ← LinearMap.rTensor_comp]
-  simp only [LinearEquiv.comp_symm, LinearMap.rTensor_id, LinearMap.id_apply,
-    LinearEquiv.symm_symm]
-  exact LinearMap.congr_fun Comodule.rTensor_cofreeCounit_comp_cofreeCoact
-    (linearEquivTensor μ x)
 
 private noncomputable def coactIncludeA (μ : LeftModuleAlgebra R H A) :
     A →ₐ[R] SmashProduct μ ⊗[R] H :=
@@ -213,11 +199,21 @@ theorem includeA_mem_coinvariants (a : A) :
 theorem includeA_retractA_of_mem_coinvariants {x : SmashProduct μ}
     (hx : x ∈ ComoduleAlgebra.coinvariants R H (SmashProduct μ)) :
     includeA (retractA μ x) = x := by
+  let _ := Comodule.cofree R H A
+  have hmem : linearEquivTensor μ x ∈ Comodule.fixedSubcomodule R H (A ⊗[R] H) := by
+    simpa using (Comodule.transportInvHom (R := R) (C := H)
+      (linearEquivTensor μ).symm).mem_fixedSubcomodule
+        (Comodule.mem_fixedSubcomodule.2 (ComoduleAlgebra.mem_coinvariants.1 hx))
+  have hretract : retractA μ x =
+      TensorProduct.rid R A ((Coalgebra.counit (R := R)).lTensor A (linearEquivTensor μ x)) :=
+    LinearMap.congr_fun (lhom_ext (f := retractA μ)
+      (g := (TensorProduct.rid R A).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := H)).lTensor A ∘ₗ
+        (linearEquivTensor μ).toLinearMap)
+      fun a h => by simp) x
   refine (linearEquivTensor μ).injective ?_
-  have hco : (retractA μ).rTensor H (Comodule.coact (R := R) (C := H) x) =
-      (retractA μ).rTensor H (x ⊗ₜ[R] 1) :=
-    congrArg ((retractA μ).rTensor H) (ComoduleAlgebra.mem_coinvariants.1 hx)
-  simpa using hco.symm
+  rw [linearEquivTensor_includeA, hretract]
+  exact (Comodule.mem_fixedSubcomodule_cofree_iff (linearEquivTensor μ x)).1 hmem
 
 /-- The coinvariant subalgebra `(A # H)^{co H}` equals the image `(includeA (μ := μ)).range` of
 `A`, unconditionally over any commutative semiring `R` and any `R`-bialgebra `H`. -/

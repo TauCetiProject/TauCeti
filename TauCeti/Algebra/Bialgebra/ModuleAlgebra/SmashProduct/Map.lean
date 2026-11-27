@@ -59,7 +59,7 @@ noncomputable def mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebr
     (g : K →ₐc[R] H) (f : Hom μ (ν.restrict g)) :
     SmashProduct μ →ₐ[R] SmashProduct ν :=
   lift (includeA.comp f.toAlgHom) (includeH.comp g.toAlgHom) <|
-    smashCompatible_iff.mpr fun k a => by
+    (smashCompatible_iff (ℛ R)).mpr fun k a => by
       have hcomul : Coalgebra.comul (R := R) (g k) =
           ∑ i ∈ (ℛ R k).index, g ((ℛ R k).left i) ⊗ₜ[R] g ((ℛ R k).right i) := by
         simpa [← (ℛ R k).eq, map_sum] using (CoalgHomClass.map_comp_comul_apply g k).symm

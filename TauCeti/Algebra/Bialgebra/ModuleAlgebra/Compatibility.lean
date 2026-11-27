@@ -61,7 +61,7 @@ theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C 
     (hf : μ.SmashCompatible fA fH) (gH : H →ₐ[R] D) :
     μ.SmashCompatible (Algebra.TensorProduct.includeLeft.comp fA)
       ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) := by
-  rw [smashCompatible_iff]
+  rw [smashCompatible_iff (ℛ R)]
   intro h a
   set r := ℛ R h
   let r₁ := fun i => ℛ R (r.left i)
@@ -102,7 +102,7 @@ theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C 
 /-- Left multiplication by `A` and `μ.action` form a `SmashCompatible` pair in `Module.End R A`. -/
 theorem smashCompatible_lsmul_action (μ : LeftModuleAlgebra R H A) :
     μ.SmashCompatible (Algebra.lsmul R R A) μ.action := by
-  rw [smashCompatible_iff]
+  rw [smashCompatible_iff (ℛ R)]
   intro h a
   ext b
   simpa [LinearMap.sum_apply] using μ.action_mul_eq_sum (ℛ R h) a b
@@ -133,29 +133,9 @@ theorem isCompatibleAction_iff_sum (μ : LeftModuleAlgebra R H A) (M : Type*)
     [Module H M] [IsScalarTower R H M] {ι : H → Type*} (r : ∀ h, Coalgebra.Repr R h (ι h)) :
     μ.IsCompatibleAction M ↔ ∀ h a (m : M),
       h • (a • m) = ∑ i ∈ (r h).index, μ.action ((r h).left i) a • ((r h).right i • m) := by
-  rw [isCompatibleAction_iff]
-  refine ⟨fun hc h a m => by
-      simpa [LinearMap.sum_apply] using DFunLike.congr_fun (hc.mul_eq_sum (r h) a) m,
-    fun hf => smashCompatible_iff.mpr fun h a => ?_⟩
-  ext m
-  let Ψ : H ⊗[R] H →ₗ[R] Module.End R M :=
-    LinearMap.mul' R (Module.End R M) ∘ₗ TensorProduct.map
-      (Algebra.lsmul R (A := A) R M ∘ₗ LinearMap.applyₗ a ∘ₗ μ.action.toLinearMap)
-      (Algebra.lsmul R (A := H) R M)
-  have hsum : ∑ i ∈ (ℛ R h).index,
-      (Algebra.lsmul R (A := A) R M (μ.action ((ℛ R h).left i) a) *
-        Algebra.lsmul R (A := H) R M ((ℛ R h).right i)) m =
-      ∑ i ∈ (r h).index, μ.action ((r h).left i) a • ((r h).right i • m) := by
-    have h₁ : Ψ (Coalgebra.comul (R := R) h) = ∑ i ∈ (ℛ R h).index,
-        Algebra.lsmul R (A := A) R M (μ.action ((ℛ R h).left i) a) *
-          Algebra.lsmul R (A := H) R M ((ℛ R h).right i) := by
-      simp [Ψ, ← (ℛ R h).eq, map_sum]
-    have h₂ : Ψ (Coalgebra.comul (R := R) h) = ∑ i ∈ (r h).index,
-        Algebra.lsmul R (A := A) R M (μ.action ((r h).left i) a) *
-          Algebra.lsmul R (A := H) R M ((r h).right i) := by
-      simp [Ψ, ← (r h).eq, map_sum]
-    simpa [LinearMap.sum_apply] using DFunLike.congr_fun (h₁.symm.trans h₂) m
-  simpa [LinearMap.sum_apply] using (hf h a m).trans hsum.symm
+  rw [isCompatibleAction_iff, smashCompatible_iff r]
+  exact ⟨fun hc h a m => by simpa [LinearMap.sum_apply] using DFunLike.congr_fun (hc h a) m,
+    fun hf h a => LinearMap.ext fun m => by simpa [LinearMap.sum_apply] using hf h a m⟩
 
 end Semiring
 
