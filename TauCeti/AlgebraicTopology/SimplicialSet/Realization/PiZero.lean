@@ -109,13 +109,13 @@ section Discrete
 
 /-- The continuous map from the realization of the constant simplicial set on `S` to the discrete
 space `TopCat.discrete.obj S`, adjoint to the identification on `0`-simplices. -/
-noncomputable def toTopConstHom (S : Type u) :
+private noncomputable def toTopConstHom (S : Type u) :
     |(Functor.const SimplexCategoryᵒᵖ).obj S| ⟶ TopCat.discrete.obj S :=
   (sSetTopAdj.homEquiv _ (TopCat.discrete.obj S)).symm
     ((constHomEquiv S).symm fun s ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm s)
 
 /-- `toTopConstHom S` maps the realized vertex `toTopPoint s` back to `s`. -/
-lemma toTopConstHom_toTopPoint (S : Type u) (s : S) :
+private lemma toTopConstHom_toTopPoint (S : Type u) (s : S) :
     toTopConstHom S (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s := by
   have h := ConcreteCategory.congr_hom
     (NatTrans.congr_app (sSetTopAdj.homEquiv_unit _ _ (toTopConstHom S)) (Opposite.op ⦋0⦌)) s

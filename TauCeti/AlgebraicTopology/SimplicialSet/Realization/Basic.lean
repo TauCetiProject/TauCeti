@@ -169,6 +169,8 @@ noncomputable def toTopIsoGeometricRealization (X : SSet.{u}) :
       SimplicialObject.geometricRealization.ι (X ⋙ TopCat.discrete) n (x, ULift.up w) :=
   toTopToGeometricRealizationHom_toTopObjMk x w
 
+-- Not `@[simp]`: `simpNF` rejects it because `CategoryTheory.Functor.comp_obj` simplifies
+-- `(X ⋙ TopCat.discrete).obj` in the implicit domain type of `geometricRealization.ι`.
 lemma toTopIsoGeometricRealization_inv_ι {X : SSet.{u}} {n : ℕ}
     (x : X _⦋n⦌) (t : SimplexCategory.toTop.{u}.obj ⦋n⦌) :
     (toTopIsoGeometricRealization X).inv
