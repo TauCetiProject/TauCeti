@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
+import TauCeti.Data.Nat.ModEq
 import Mathlib.Algebra.BigOperators.Associated
 import Mathlib.Data.Nat.GCD.BigOperators
 
@@ -174,22 +175,6 @@ theorem prime_dvd_admissiblePairModulus {B : ℝ} (q : ℕ) {p : ℕ} (hp : p.Pr
   (Finset.dvd_prod_of_mem id (mem_primesLE_erase_two_iff.mpr ⟨hp, hp2, hpB⟩)).trans
     ((Nat.dvd_lcm_right _ _).trans (dvd_mul_left _ _))
 
-/-- Modulo `M > 0`, the residue class of `M - 1` consists of the `n` with `M ∣ n + 1`. -/
-private theorem modEq_sub_one_iff_dvd_add_one {n M : ℕ} (hM : 0 < M) :
-    n ≡ M - 1 [MOD M] ↔ M ∣ n + 1 := by
-  have hpred : M - 1 + 1 = M := Nat.sub_add_cancel hM
-  have hz : M ≡ 0 [MOD M] := Nat.modEq_zero_iff_dvd.mpr dvd_rfl
-  rw [← Nat.modEq_zero_iff_dvd]
-  constructor
-  · intro h
-    have h1 := h.add_right 1
-    rw [hpred] at h1
-    exact h1.trans hz
-  · intro h
-    apply Nat.ModEq.add_right_cancel' 1
-    rw [hpred]
-    exact h.trans hz.symm
-
 /-- At fixed `q ≡ 3 (mod 8)`, admissibility at dyadic bound `3` cuts out one reduced
 residue class modulo `admissiblePairModulus B q`, which is `16` times the lcm of `q` and the
 product of the odd primes up to `B`.
@@ -213,7 +198,7 @@ theorem exists_coprime_modEq_iff_isAdmissibleAuxiliaryPair (B : ℝ) {q : ℕ}
       (fun h ↦ hp2 ((Nat.prime_dvd_prime_iff_eq Nat.prime_two hp').mp h).symm)
   have hcop : Nat.Coprime 16 M := (Nat.coprime_pow_left_iff (by decide : 0 < 4) _ _).mpr htwo
   let r := Nat.chineseRemainder hcop 7 (M - 1)
-  have hm (n : ℕ) : n ≡ M - 1 [MOD M] ↔ M ∣ n + 1 := modEq_sub_one_iff_dvd_add_one hM
+  have hm (n : ℕ) : n ≡ M - 1 [MOD M] ↔ M ∣ n + 1 := Nat.modEq_sub_one_iff_dvd_add_one hM
   have hr16 : r.val.Coprime 16 :=
     Nat.coprime_of_mul_modEq_one 7 ((r.property.1.mul_right 7).trans (by decide))
   have hrM : r.val.Coprime M :=

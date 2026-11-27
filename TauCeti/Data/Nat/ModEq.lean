@@ -24,6 +24,8 @@ with `ν i < p`. Likewise, since `(p - 1) a ≡ -a` modulo `p`, two residues `a,
 * `Nat.eq_of_dvd_sub_one_mul_add`: for residues `a, b < p`, `p ∣ (p - 1) * a + b` forces `b = a`.
 * `Nat.modEq_div_two_sub_one_iff`: for even `q ≠ 0`, `d ≡ q / 2 - 1 (mod q)` if and only if
   `q ∣ 2 (d + 1)` and `q ∤ d + 1`.
+* `Nat.modEq_sub_one_iff_dvd_add_one`: for `M > 0`, `n ≡ M - 1 (mod M)` if and only if
+  `M ∣ n + 1`.
 * `TauCeti.sq_sub_one_eq_four_mul_of_mod_four_eq_three`: for `q ≡ 3 (mod 4)`, factor `q² - 1`
   with the factor `4` made explicit.
 -/
@@ -83,6 +85,22 @@ theorem modEq_div_two_sub_one_iff {q d : ℕ} (hq : Even q) (hq₀ : q ≠ 0) :
   rw [h₃, h₁, h₂, Nat.ModEq, Nat.mod_eq_of_lt (by omega : m < m + m), hn,
     Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hr]
   omega
+
+/-- Modulo `M > 0`, the residue class of `M - 1` consists of the `n` with `M ∣ n + 1`. -/
+theorem modEq_sub_one_iff_dvd_add_one {n M : ℕ} (hM : 0 < M) :
+    n ≡ M - 1 [MOD M] ↔ M ∣ n + 1 := by
+  have hpred : M - 1 + 1 = M := Nat.sub_add_cancel hM
+  have hz : M ≡ 0 [MOD M] := Nat.modEq_zero_iff_dvd.mpr dvd_rfl
+  rw [← Nat.modEq_zero_iff_dvd]
+  constructor
+  · intro h
+    have h1 := h.add_right 1
+    rw [hpred] at h1
+    exact h1.trans hz
+  · intro h
+    apply Nat.ModEq.add_right_cancel' 1
+    rw [hpred]
+    exact h.trans hz.symm
 
 end Nat
 
