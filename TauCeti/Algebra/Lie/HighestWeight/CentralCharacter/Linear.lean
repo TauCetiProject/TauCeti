@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 -- Non-public: an element of `S(H)` is determined by its values over the infinite field `K`, used
 -- only in the comparison with the invariants of the coroot representation.
 import Mathlib.Algebra.CharZero.Infinite
-import TauCeti.RingTheory.Invariant.OrbitSeparation
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 
 /-!
@@ -69,8 +68,6 @@ Over an algebraically closed field the projection is onto the Weyl invariants
   `χ_λ(z)` is its value at `λ + ρ`.
 * `TauCeti.hcProjectionLinear_mem_linearInvariants`: the linear projection takes values in the
   Weyl invariants.
-* `TauCeti.forall_mem_linearInvariants_lift_eq_iff`: Weyl-invariant polynomials in `S(H)^W`
-  separate distinct Weyl orbits on `H*`.
 
 ## References
 
@@ -216,34 +213,6 @@ theorem coe_dotInvariantsEquivLinearInvariants_symm_apply (q : linearInvariants 
   rw [coe_dotInvariantsEquivLinearInvariants_apply] at h
   rw [← h, translation_translation, neg_add_cancel, translation_zero]
   rfl
-
-/-- Equality of all Weyl-invariant polynomial values characterizes a Weyl orbit on the weights. -/
-theorem forall_mem_linearInvariants_lift_eq_iff {lam mu : Dual K H} :
-    (∀ q ∈ linearInvariants H,
-        _root_.SymmetricAlgebra.lift lam q = _root_.SymmetricAlgebra.lift mu q) ↔
-      ∃ w : (IsKilling.rootSystem H).weylGroup, w • lam = mu := by
-  constructor
-  · intro hlin
-    have : Finite (IsKilling.rootSystem H).weylGroup :=
-      RootPairing.finite_weylGroup (IsKilling.rootSystem H)
-    have : Finite (IsKilling.rootSystem H).weylGroup.op := Finite.of_equiv _ (Subgroup.equivOp _)
-    let ρ := (IsKilling.rootSystem H).weylGroupCorootRep
-    let := ρ.symmetricAlgebraMulSemiringAction
-    have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-    rw [linearInvariants_eq_symmetricAlgebraInvariants,
-      ρ.symmetricAlgebraInvariants_eq_fixedPoints, FixedPoints.forall_mem_subalgebra_eq_iff]
-      at hlin
-    obtain ⟨g, hg⟩ := hlin
-    let w : (IsKilling.rootSystem H).weylGroup := (Subgroup.equivOp _).symm g
-    have hgw : g = Subgroup.equivOp _ w := ((Subgroup.equivOp _).apply_symm_apply g).symm
-    refine ⟨w, LinearMap.ext fun h ↦ ?_⟩
-    have hι := DFunLike.congr_fun hg (_root_.SymmetricAlgebra.ι K H h)
-    simp only [AlgHom.comp_apply, MulSemiringAction.toAlgHom_apply,
-      ρ.symmetricAlgebraMulSemiringAction_smul, Representation.symmetricAlgebra_apply,
-      map_apply_ι, lift_ι_apply, hgw] at hι
-    exact (smul_apply_eq_apply_op_smul w lam h).trans hι
-  · rintro ⟨w, rfl⟩ q hq
-    exact ((mem_linearInvariants_iff.mp hq) w lam).symm
 
 /-! ### The linear Harish-Chandra projection -/
 

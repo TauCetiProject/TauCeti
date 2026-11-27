@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.GradeTwoOrbit
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Exponential
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Nilpotent.Cone
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.NilpotentCone
 public import TauCeti.Algebra.Lie.AdjointAction.Regular
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Uniqueness
 import Mathlib.Data.Set.Card
@@ -75,7 +75,8 @@ all-zero diagram `0` to the zero orbit and `b.weightedDynkinDiagram h` to each n
   `TauCeti.Comodule.VectorOrbit.finite_setOf_lt_of_isNilpotentAd`: finiteness of orbits below a
   nilpotent orbit in the closure order, making the decomposition of the `k`-rational vectors
   `{y : 𝔤 | mk y ≤ O}` in
-  `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd` a finite union.
+  `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`
+  a finite union.
 * `TauCeti.Comodule.VectorOrbit.mk_eq_mk_of_isCentralizerRegular`: any two regular `ad`-nilpotent
   elements are `G(k)`-conjugate.
 * `IsSl2Triple.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq`: for connected `G`,

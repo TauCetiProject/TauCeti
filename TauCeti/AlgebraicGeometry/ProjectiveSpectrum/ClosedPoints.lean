@@ -27,9 +27,6 @@ functional (`AlgHom.apply_awayMk_eq_lift_chartFunctional`).
 
 ## Main declarations
 
-* `ProjectiveSpectrum.exists_apply_eq_one_forall_mem_symmetricAlgebra_iff_of_isClosed`: a closed
-  point of `Proj (Sym N)` in `D₊(φ)` is the vanishing locus of a functional taking value `1` at
-  `φ`.
 * `ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed`: a closed
   point of `Proj (Sym N)` is the vanishing locus of a nonzero functional on `N`.
 
@@ -51,42 +48,6 @@ universe u
 
 variable {k N : Type u} [Field k] [AddCommGroup N] [Module k N]
 
-/-- Over an algebraically closed field, a closed point of the projective spectrum of `Sym N`
-lying in the standard open `D₊(φ)` of a linear coordinate `φ : N`, for `N` finite-dimensional,
-is cut out by a functional `v` on `N` normalized by `v φ = 1`. -/
-theorem exists_apply_eq_one_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed k]
-    [Module.Finite k N] {x : Proj (homogeneousSubmodule k N)} (hx : IsClosed {x})
-    {φ : N} (hφx : SymmetricAlgebra.ι k N φ ∉ x.asHomogeneousIdeal) :
-    ∃ v : Module.Dual k N, v φ = 1 ∧ ∀ n > 0, ∀ s ∈ homogeneousSubmodule k N n,
-      s ∈ x.asHomogeneousIdeal ↔ SymmetricAlgebra.lift v s = 0 := by
-  have hφ := ι_mem_homogeneousSubmodule k N φ
-  obtain ⟨y, rfl⟩ : x ∈ Set.range (Proj.awayι _ _ hφ one_pos) := by
-    rw [← Scheme.Hom.coe_opensRange, Proj.opensRange_awayι]
-    exact hφx
-  -- The chart is a finitely generated `k`-algebra, so its closed points are rational.
-  have : Algebra.FiniteType k (Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ)) := by
-    have : LocallyOfFiniteType (Proj.awayι _ _ hφ one_pos ≫ projToSpec k N) := inferInstance
-    rw [awayι_projToSpec] at this
-    exact RingHom.finiteType_algebraMap.mp (HasRingHomProperty.Spec_iff.mp this)
-  have hy : IsClosed {y} := by
-    rw [← (Proj.awayι _ _ hφ one_pos).isOpenEmbedding.injective.preimage_image {y},
-      Set.image_singleton]
-    exact hx.preimage (Proj.awayι _ _ hφ one_pos).continuous
-  obtain ⟨ψ, rfl⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k) y hy
-  -- The point is given by the functional `c ↦ ψ (c / φ)` on linear coordinates.
-  refine ⟨ψ.chartFunctional, ψ.chartFunctional_self, fun n hn s hs ↦ ?_⟩
-  · -- Read membership in `x` on the chart, where `s` becomes `s / φⁿ`.
-    rw [← not_iff_not, ← Proj.mem_basicOpen, ← Scheme.Hom.mem_preimage,
-      Proj.awayι_preimage_basicOpen _ hφ one_pos hs hn]
-    -- The open is `PrimeSpectrum.basicOpen` viewed as an open of the scheme `Spec`, whose type
-    -- differs syntactically from the opens of `PrimeSpectrum`, so `PrimeSpectrum.mem_basicOpen`
-    -- is applied by unification rather than by rewriting.
-    refine (PrimeSpectrum.mem_basicOpen (Away.isLocalizationElem hφ hs) _).trans ?_
-    rw [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
-    have := ψ.apply_awayMk_eq_lift_chartFunctional (n := n) (a := s ^ 1) (by simpa using hs)
-    rw [map_pow, pow_one (SymmetricAlgebra.lift ψ.chartFunctional s)] at this
-    exact not_congr (Iff.of_eq (congrArg (· = (0 : k)) this))
-
 /-- Over an algebraically closed field, a closed point of the projective spectrum of `Sym N`, for
 `N` finite-dimensional, is cut out by a nonzero functional `v` on `N`: a homogeneous polynomial
 of positive degree lies in its homogeneous prime ideal exactly when it vanishes at `v`. -/
@@ -104,8 +65,36 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
       (fun a ha b _ ↦ ?_) ht
     obtain ⟨c, rfl⟩ := ha
     exact Ideal.mul_mem_right b _ (h c)
-  obtain ⟨v, hvφ, hv⟩ :=
-    exists_apply_eq_one_forall_mem_symmetricAlgebra_iff_of_isClosed hx hφx
-  exact ⟨v, fun h0 ↦ one_ne_zero (by rw [← hvφ, h0, LinearMap.zero_apply]), hv⟩
+  have hφ := ι_mem_homogeneousSubmodule k N φ
+  obtain ⟨y, rfl⟩ : x ∈ Set.range (Proj.awayι _ _ hφ one_pos) := by
+    rw [← Scheme.Hom.coe_opensRange, Proj.opensRange_awayι]
+    exact hφx
+  -- The chart is a finitely generated `k`-algebra, so its closed points are rational.
+  have : Algebra.FiniteType k (Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ)) := by
+    have : LocallyOfFiniteType (Proj.awayι _ _ hφ one_pos ≫ projToSpec k N) := inferInstance
+    rw [awayι_projToSpec] at this
+    exact RingHom.finiteType_algebraMap.mp (HasRingHomProperty.Spec_iff.mp this)
+  have hy : IsClosed {y} := by
+    rw [← (Proj.awayι _ _ hφ one_pos).isOpenEmbedding.injective.preimage_image {y},
+      Set.image_singleton]
+    exact hx.preimage (Proj.awayι _ _ hφ one_pos).continuous
+  obtain ⟨ψ, rfl⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k) y hy
+  -- The point is given by the functional `c ↦ ψ (c / φ)` on linear coordinates.
+  refine ⟨ψ.chartFunctional, fun hv ↦ ?_, fun n hn s hs ↦ ?_⟩
+  · -- The functional takes the value `1` on the chart coordinate `φ`.
+    have := ψ.chartFunctional_self
+    rw [hv, LinearMap.zero_apply] at this
+    exact zero_ne_one this
+  · -- Read membership in `x` on the chart, where `s` becomes `s / φⁿ`.
+    rw [← not_iff_not, ← Proj.mem_basicOpen, ← Scheme.Hom.mem_preimage,
+      Proj.awayι_preimage_basicOpen _ hφ one_pos hs hn]
+    -- The open is `PrimeSpectrum.basicOpen` viewed as an open of the scheme `Spec`, whose type
+    -- differs syntactically from the opens of `PrimeSpectrum`, so `PrimeSpectrum.mem_basicOpen`
+    -- is applied by unification rather than by rewriting.
+    refine (PrimeSpectrum.mem_basicOpen (Away.isLocalizationElem hφ hs) _).trans ?_
+    rw [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
+    have := ψ.apply_awayMk_eq_lift_chartFunctional (n := n) (a := s ^ 1) (by simpa using hs)
+    rw [map_pow, pow_one (SymmetricAlgebra.lift ψ.chartFunctional s)] at this
+    exact not_congr (Iff.of_eq (congrArg (· = (0 : k)) this))
 
 end ProjectiveSpectrum

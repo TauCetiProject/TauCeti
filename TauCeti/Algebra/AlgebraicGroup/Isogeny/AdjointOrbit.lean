@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Nilpotent.Cone
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.NilpotentCone
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Orbit
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Map
 import TauCeti.Algebra.Lie.AdjointAction.Regular

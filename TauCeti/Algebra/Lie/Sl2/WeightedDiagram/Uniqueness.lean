@@ -40,8 +40,7 @@ has exactly one dominant neutral element
 
 * `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
   `RootPairing.Base.injOn_orbit_dominantNeutralElements`: distinct dominant neutral elements have
-  disjoint `Int(L)`-orbits, so they map injectively into the `Int(L)`-orbits of neutral elements
-  of `sl₂` triples.
+  disjoint `Int(L)`-orbits.
 * `RootPairing.Base.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: there are exactly as many
   `Int(L)`-orbits of neutral elements as dominant neutral elements.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: an invariant-preserving Lie
