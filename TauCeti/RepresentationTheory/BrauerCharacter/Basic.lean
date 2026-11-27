@@ -51,17 +51,21 @@ follows from the tensor product of eigenbases.
 * `Representation.brauerCharacter_eq_subrepresentation_add_quotient`: additivity on an invariant
   subspace and its quotient; `Representation.brauerCharacter_prod` on direct sums.
 * `Representation.brauerCharacter_dual`: the Brauer character of the dual is `g ↦ φ(g⁻¹)`.
-* `Representation.brauerCharacter_comp`: restriction and inflation along a homomorphism.
+* `Representation.brauerCharacter_comp`: restriction and inflation along a homomorphism at
+  `p`-regular elements; `Representation.brauerCharacter_comp_of_injective` at every element along
+  an injective homomorphism.
 * `Representation.brauerCharacter_ofLinearCharacter`: the Brauer character of a one-dimensional
   representation is the lift of its character.
 * `Representation.brauerCharacter_eq_sum_of_apply_eq_smul`,
   `Representation.exists_brauerCharacter_eq_sum`: in an eigenbasis the Brauer character is the
   sum of the lifted eigenvalues, so its values are sums of `dim V` roots of unity of `L`.
-* `Representation.brauerCharacter_tprod`: the Brauer character of a tensor product is the
-  product.
+* `Representation.brauerCharacter_tprod`: when `k` contains a primitive `m`-th root of unity,
+  the Brauer character of a tensor product is the product at every element of order dividing `m`.
 * `Representation.brauerCharacter_eq_of_dvd`: compatibility with a change of `m` to a multiple and
   of `τ` to an isomorphism that agrees with it on the `m`-th roots of unity.
-* `Representation.brauerCharacter_baseChange`: invariance under scalar extension.
+* `Representation.brauerCharacter_baseChange`: when `k` contains a primitive `m`-th root of
+  unity, invariance under scalar extension to `k'` with an isomorphism `τ'` compatible with `τ`, at
+  every element of order dividing `m`.
 
 ## References
 
@@ -313,6 +317,7 @@ section Group
 variable [Group G] (p : ℕ) (τ : rootsOfUnity m k ≃* rootsOfUnity m L) (ρ : Representation k G V)
 
 /-- The Brauer character is constant on conjugacy classes. -/
+@[simp]
 theorem brauerCharacter_conj (g h : G) :
     ρ.brauerCharacter p τ (g * h * g⁻¹) = ρ.brauerCharacter p τ h := by
   have ho : orderOf (g * h * g⁻¹) = orderOf h := by
@@ -321,6 +326,7 @@ theorem brauerCharacter_conj (g h : G) :
   simp only [brauerCharacter, ho, charpoly_apply_conj]
 
 /-- **Duals.** The Brauer character of the contragredient representation is `g ↦ φ(g⁻¹)`. -/
+@[simp]
 theorem brauerCharacter_dual (g : G) :
     ρ.dual.brauerCharacter p τ g = ρ.brauerCharacter p τ g⁻¹ := by
   simp only [brauerCharacter, orderOf_inv, charpoly_dual_apply]
