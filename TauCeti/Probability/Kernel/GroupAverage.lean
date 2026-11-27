@@ -28,7 +28,8 @@ kernels. Composed with a measure `μ` on `X`, it is the average over `g` of the 
 
 * `ProbabilityTheory.Kernel.groupAverage_smul_apply`: the group average is equivariant.
 * `ProbabilityTheory.Kernel.groupAverage_eq_self_iff`: a kernel is its own group average
-  exactly when it is equivariant.
+  exactly when it is equivariant; in particular averaging is idempotent
+  (`ProbabilityTheory.Kernel.groupAverage_groupAverage`).
 * `ProbabilityTheory.Kernel.groupAverage_comp`: the composition of the group average with a
   measure.
 
@@ -101,6 +102,12 @@ theorem groupAverage_eq_self_iff {κ : Kernel X A} :
   simp only [groupAverage_apply', hg, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
     ← mul_assoc]
   rw [ENNReal.inv_mul_cancel (by simp) (ENNReal.natCast_ne_top _), one_mul]
+
+/-- Averaging is idempotent: the group average of a group average is itself. -/
+@[simp]
+theorem groupAverage_groupAverage (κ : Kernel X A) :
+    groupAverage G (groupAverage G κ) = groupAverage G κ :=
+  (groupAverage_eq_self_iff G).2 (groupAverage_smul_apply G κ)
 
 /-- Composing the group average of `κ` with a measure `μ` averages the images under `g • ·` of
 `κ ∘ₘ μ.map (g⁻¹ • ·)`. -/
