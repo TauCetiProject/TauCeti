@@ -15,6 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Hopf
+import TauCeti.Geometry.Manifold.Instances.Sphere.SkewHermitian
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
@@ -109,6 +110,17 @@ theorem coe_hermitianProjector (x : ComplexProjectiveSpace n) :
     (hermitianProjector n x : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) =
       (homeomorphProjectivization n x).hermitianProjector :=
   (rfl)
+
+/-- Distinct lines have distinct projectors. -/
+theorem hermitianProjector_injective : Injective (hermitianProjector n) := fun _ _ h ↦
+  (homeomorphProjectivization n).injective
+    (Projectivization.hermitianProjector_injective (congrArg Subtype.val h))
+
+/-- Two lines are equal exactly when their projectors are. -/
+@[simp]
+theorem hermitianProjector_inj {x y : ComplexProjectiveSpace n} :
+    hermitianProjector n x = hermitianProjector n y ↔ x = y :=
+  hermitianProjector_injective.eq_iff
 
 /-- The projector onto the line spanned by a unit vector `y` is the Hermitian projector of `y`,
 the matrix `y y*`. -/
@@ -217,20 +229,6 @@ private theorem fderiv_imInnerApply_apply (X : unitaryLieAlgebra (Fin (n + 1)))
   simp only [Complex.add_im, Complex.neg_im, Complex.conj_im]
   ring
 
-/-- The tangent vector `X y` of the sphere at `y`: since `X` is skew-Hermitian, `X y` is real
-orthogonal to `y`. -/
-theorem exists_mvfderiv_coe_eq_toEuclideanCLM (X : unitaryLieAlgebra (Fin (n + 1)))
-    (y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    ∃ u : TangentSpace (𝓡 (2 * n + 1)) y,
-      mvfderiv (𝓡 (2 * n + 1))
-          ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
-          y u =
-        toEuclideanCLM (𝕜 := ℂ) (X : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) y := by
-  refine exists_mvfderiv_coe_sphere_eq y ?_
-  rw [EuclideanSpace.real_inner_eq_re_inner]
-  exact re_inner_toEuclideanCLM_self_of_conjTranspose_eq_neg
-    (conjTranspose_coe_unitaryLieAlgebra X) _
-
 /-- On the sphere, the component `μ_X` of the moment map is the restriction of
 `w ↦ Im ⟪w, X w⟫`. -/
 private theorem unitaryMomentMap_apply_comp_mk (X : unitaryLieAlgebra (Fin (n + 1))) :
@@ -322,8 +320,10 @@ theorem poissonBracket_unitaryMomentMap (X Y : unitaryLieAlgebra (Fin (n + 1))) 
   funext x
   induction x using ComplexProjectiveSpace.inductionOn with
   | h y =>
-    obtain ⟨u, hu⟩ := exists_mvfderiv_coe_eq_toEuclideanCLM X y
-    obtain ⟨u', hu'⟩ := exists_mvfderiv_coe_eq_toEuclideanCLM Y y
+    obtain ⟨u, hu⟩ := exists_mvfderiv_coe_sphere_eq_toEuclideanCLM_of_conjTranspose_eq_neg
+      (n := 2 * n + 1) (conjTranspose_coe_unitaryLieAlgebra X) y
+    obtain ⟨u', hu'⟩ := exists_mvfderiv_coe_sphere_eq_toEuclideanCLM_of_conjTranspose_eq_neg
+      (n := 2 * n + 1) (conjTranspose_coe_unitaryLieAlgebra Y) y
     set A := toEuclideanCLM (𝕜 := ℂ) (X : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ)
     set B := toEuclideanCLM (𝕜 := ℂ) (Y : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ)
     have hXY : toEuclideanCLM (𝕜 := ℂ)
