@@ -46,8 +46,10 @@ domains in place of holomorphic disks.
   the differential (`knotInfinityDifferential_knotInfinityShift`). The shifts by `(1, 0)` and
   `(0, 1)` are the actions of the two variables `U` and `V` of Zemke's complex. The shifts by
   `(a, a)` preserve `CFK^∞` (`knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff`), and their
-  restrictions `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderShift` give the action of `U` on
-  `CFK^∞` of Ozsváth and Szabó, the shift by `(1, 1)`.
+  restrictions `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderShift` form an action of `ℤ`
+  (`knotInfinityAlexanderShift_zero`, `knotInfinityAlexanderShift_add`) commuting with the
+  restricted differential (`knotInfinityAlexanderShift_restrict_knotInfinityDifferential`): the
+  action of `U` on `CFK^∞` of Ozsváth and Szabó, the shift by `(1, 1)`.
 
 **Filtrations.** The terms of the differential have `n_w(φ), n_z(φ) ≥ 0`, so the differential
 does not increase either index. For every lower set `S` of `ℤ × ℤ`, the chains of the full complex
@@ -481,6 +483,27 @@ theorem coe_knotInfinityAlexanderShift_apply {A : H.Generator → ℤ} (a : ℤ)
       H.knotInfinityShift a a c :=
   (rfl)
 
+/-- The shift by `(0, 0)` of `CFK^∞` is the identity. -/
+@[simp]
+theorem knotInfinityAlexanderShift_zero {A : H.Generator → ℤ} :
+    H.knotInfinityAlexanderShift A 0 = LinearEquiv.refl (ZMod 2) _ :=
+  LinearEquiv.ext fun c => Subtype.ext <| by simp
+
+/-- Shifting `CFK^∞` by `(a, a)` and then by `(a', a')` is shifting it by `(a + a', a + a')`. -/
+theorem knotInfinityAlexanderShift_add {A : H.Generator → ℤ} (a a' : ℤ) :
+    H.knotInfinityAlexanderShift A (a + a') =
+      (H.knotInfinityAlexanderShift A a).trans (H.knotInfinityAlexanderShift A a') :=
+  LinearEquiv.ext fun c => Subtype.ext <| by simp [knotInfinityShift_add]
+
+/-- The inverse of the shift by `(a, a)` of `CFK^∞` is its shift by `(-a, -a)`. -/
+@[simp]
+theorem knotInfinityAlexanderShift_symm {A : H.Generator → ℤ} (a : ℤ) :
+    (H.knotInfinityAlexanderShift A a).symm = H.knotInfinityAlexanderShift A (-a) :=
+  LinearEquiv.ext fun c => (LinearEquiv.symm_apply_eq _).mpr <| Subtype.ext <| by
+    rw [coe_knotInfinityAlexanderShift_apply, coe_knotInfinityAlexanderShift_apply,
+      ← LinearEquiv.trans_apply, ← knotInfinityShift_add]
+    simp
+
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
 variable {χ : Region → ℤ} {w z : Basepoint} {A : H.Generator → ℤ}
@@ -504,6 +527,20 @@ theorem knotInfinityAlexanderSubmodule_le_comap_knotInfinityDifferential
   rw [hg'm]
   dsimp only
   omega
+
+/-- The shifts by `(a, a)` of `CFK^∞`, in particular the action of `U`, commute with the infinity
+knot differential restricted to `CFK^∞`. -/
+theorem knotInfinityAlexanderShift_restrict_knotInfinityDifferential
+    (hA : ∀ {x y : H.Generator} {D : Region → ℤ}, H.IsDomainBetween x y D →
+      A x - A y = D (H.basepoint z) - D (H.basepoint w))
+    (a : ℤ) (c : H.knotInfinityAlexanderSubmodule A) :
+    H.knotInfinityAlexanderShift A a ((H.knotInfinityDifferential χ w z).restrict
+      (knotInfinityAlexanderSubmodule_le_comap_knotInfinityDifferential hA) c) =
+      (H.knotInfinityDifferential χ w z).restrict
+        (knotInfinityAlexanderSubmodule_le_comap_knotInfinityDifferential hA)
+        (H.knotInfinityAlexanderShift A a c) :=
+  Subtype.ext <| by
+    simp [LinearMap.restrict_apply, knotInfinityDifferential_knotInfinityShift]
 
 end Alexander
 
