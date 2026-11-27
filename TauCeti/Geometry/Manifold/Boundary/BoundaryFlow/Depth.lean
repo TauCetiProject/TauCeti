@@ -99,6 +99,6 @@ theorem IsOutwardPointingField.exists_contMDiffMap_depth_boundaryFlow
         ∀ x : (𝓡∂ (n + 1)).boundary M, Φ x 0 = x ∧ IsMIntegralCurveOn (Φ x) (-V) (Icc 0 (δ x)) ∧
           ∀ t ∈ Ioc 0 (δ x), Φ x t ∈ (𝓡∂ (n + 1)).interior M :=
   TauCeti.exists_contMDiffMap_depth_boundaryFlow (-V)
-    (fun x ↦ (hV.contMDiff x).neg_section) fun a ha ↦ by simpa using hV.isOutwardPointing ha
+    hV.contMDiff_neg hV.isOutwardPointing_neg_neg
 
 end TauCeti

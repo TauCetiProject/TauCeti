@@ -105,6 +105,8 @@ embeddings into block-diagonal matrices.
   projection) and `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
+* `CStarMatrix.piStarAlgEquiv`: a matrix over a product is the family of its components,
+  `M_m(Π B_i) ≃ Π M_m(B_i)`, as a star algebra isomorphism.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
   in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
   `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
@@ -139,6 +141,11 @@ embeddings into block-diagonal matrices.
   of norm at most `1` is a contraction `Aⁿ → Aᵐ` of Hilbert `A`-modules.
 * `CStarMatrix.norm_compress_le`: compressing `x ∈ M_{m,n}(A)` by pairwise orthogonal scalar
   vectors of norm at most `1` (`CStarMatrix.compress`) does not increase norms.
+* `CStarMatrix.compress_self_nonneg`: compressing a positive matrix by the same scalar vectors on
+  both sides gives a positive matrix, `0 ≤ e x e⋆`.
+* `CStarMatrix.star_compress_one_mul_self`, `CStarMatrix.compress_one_mul_star_self`: for
+  `z = R u⋆ = compress 1 u R` with `R ∈ M_n(A)` and `u ∈ M_n(ℂ)`, `z⋆z = u (R⋆R) u⋆`, and
+  `zz⋆ = RR⋆` when `u⋆u = 1`.
 * `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
   `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
   `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
@@ -202,6 +209,39 @@ theorem compStarAlgEquiv_map {B : Type*} [AddCommMonoid B] [Mul B] [Star B] [SMu
   (rfl)
 
 end Comp
+
+section Pi
+
+variable (R m : Type*) {ι : Type*} (B : ι → Type*) [Fintype m] [∀ i, AddCommMonoid (B i)]
+  [∀ i, Mul (B i)] [∀ i, Star (B i)] [∀ i, SMul R (B i)]
+
+/-- A matrix over a product is the family of its components: `M_m(Π B_i) ≃ Π M_m(B_i)`, as a
+star algebra isomorphism of C⋆-matrices (`Matrix.piRingEquiv` with the star structure). -/
+def piStarAlgEquiv : CStarMatrix m m (∀ i, B i) ≃⋆ₐ[R] ∀ i, CStarMatrix m m (B i) where
+  toFun M i := M.map (· i)
+  invFun f := ofMatrix (Matrix.of fun j l i ↦ f i j l)
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_mul' := (Matrix.piRingEquiv (n := m) (β := B)).map_mul
+  map_smul' _ _ := rfl
+  map_star' M := by
+    ext i j l
+    simp [CStarMatrix.star_apply]
+
+variable {R m B}
+
+@[simp]
+theorem piStarAlgEquiv_apply (M : CStarMatrix m m (∀ i, B i)) (i : ι) (j l : m) :
+    piStarAlgEquiv R m B M i j l = M j l i :=
+  (rfl)
+
+@[simp]
+theorem piStarAlgEquiv_symm_apply (f : ∀ i, CStarMatrix m m (B i)) (j l : m) (i : ι) :
+    (piStarAlgEquiv R m B).symm f j l i = f i j l :=
+  (rfl)
+
+end Pi
 
 section Diagonal
 
@@ -1187,6 +1227,59 @@ omit [PartialOrder A] [StarOrderedRing A] in
 theorem compress_apply {ι ι' : Type*} (e : ι → m → ℂ) (f : ι' → n → ℂ) (x : CStarMatrix m n A)
     (t : ι) (t' : ι') : compress e f x t t' = ∑ k, ∑ l, (e t k * star (f t' l)) • x k l :=
   (rfl)
+
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- Compressing by the standard basis on the left multiplies by `f⋆` on the right:
+`compress 1 f x = x f⋆`. -/
+theorem compress_one_apply [DecidableEq m] {ι' : Type*} (f : ι' → n → ℂ) (x : CStarMatrix m n A)
+    (k : m) (t' : ι') : compress (1 : CStarMatrix m m ℂ) f x k t' = ∑ l, star (f t' l) • x k l := by
+  simp [compress_apply (1 : CStarMatrix m m ℂ) f, one_apply, ite_smul]
+
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- For `R ∈ M_n(A)` and `u ∈ M_n(ℂ)`, the product `z = R u⋆ = compress 1 u R` satisfies
+`z⋆z = u (R⋆R) u⋆ = compress u u (R⋆R)`. -/
+theorem star_compress_one_mul_self [DecidableEq n] (u : CStarMatrix n n ℂ)
+    (R : CStarMatrix n n A) :
+    star (compress (1 : CStarMatrix n n ℂ) u R) * compress (1 : CStarMatrix n n ℂ) u R =
+      compress u u (star R * R) := by
+  ext t t'
+  simp only [mul_apply, star_apply, compress_one_apply u, compress_apply u u, star_sum, star_smul,
+    star_star, Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm, Finset.smul_sum]
+  -- Reorder `∑ k, ∑ l, ∑ j` to `∑ j, ∑ l, ∑ k`.
+  exact Finset.sum_comm_cycle.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm)
+
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- For `R ∈ M_n(A)` and `u ∈ M_n(ℂ)` with `u⋆u = 1`, the product `z = R u⋆ = compress 1 u R`
+satisfies `zz⋆ = RR⋆`. -/
+theorem compress_one_mul_star_self [DecidableEq n] {u : CStarMatrix n n ℂ} (hu : star u * u = 1)
+    (R : CStarMatrix n n A) :
+    compress (1 : CStarMatrix n n ℂ) u R * star (compress (1 : CStarMatrix n n ℂ) u R) =
+      R * star R := by
+  have h (k l : n) : ∑ t, star (u t k) * u t l = if k = l then 1 else 0 := by
+    simpa [mul_apply, star_apply, one_apply] using CStarMatrix.ext_iff.mpr hu k l
+  ext i j
+  simp only [mul_apply, star_apply, compress_one_apply u, star_sum, star_smul, star_star,
+    Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm]
+  -- Reorder `∑ t, ∑ k, ∑ l` to `∑ l, ∑ k, ∑ t` and use `u⋆u = 1`.
+  rw [← Finset.sum_comm_cycle]
+  simp_rw [← Finset.sum_smul, h, ite_smul, one_smul, zero_smul, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true]
+
+/-- **Compression preserves positivity**: `0 ≤ x` gives `0 ≤ compress e e x` for any scalar
+vectors `e t ∈ ℂⁿ`, i.e. `0 ≤ e x e⋆`. -/
+theorem compress_self_nonneg {ι : Type*} [Fintype ι] (e : ι → n → ℂ) {x : CStarMatrix n n A}
+    (hx : 0 ≤ x) : 0 ≤ compress e e x := by
+  refine nonneg_iff_forall_sum_nonneg.mpr fun y => ?_
+  -- The quadratic form at `y` is that of `x` at `w l = ∑ t, star (e t l) • y t`.
+  convert nonneg_iff_forall_sum_nonneg.mp hx fun l => ∑ t, star (e t l) • y t using 1
+  simp only [compress_apply, star_sum, star_smul, star_star, Finset.sum_mul, Finset.mul_sum,
+    smul_mul_assoc, mul_smul_comm, Finset.smul_sum, smul_smul, ← Fintype.sum_prod_type']
+  -- reindex `(t, t', k, l) ↦ (k, l, t', t)`
+  exact Fintype.sum_equiv
+    ⟨fun p => (p.2.2.1, p.2.2.2, p.2.1, p.1), fun q => (q.2.2.2, q.2.2.1, q.1, q.2.1),
+      fun _ => rfl, fun _ => rfl⟩ _ _ fun _ => by
+    dsimp only [Equiv.coe_fn_mk]
+    rw [mul_comm (e _ _)]
 
 /-- Compressing a matrix over a C⋆-algebra by pairwise orthogonal scalar vectors of norm at most
 `1` does not increase norms: `‖compress e f x‖ ≤ ‖x‖`. -/

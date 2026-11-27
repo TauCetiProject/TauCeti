@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
 
+import TauCeti.Algebra.Group.ZMultiples
+
 /-!
 # Densities on the additive circle
 
@@ -137,11 +139,9 @@ variable {M : Type*} [TopologicalSpace M] [AddCommMonoid M]
 function over the translates of that point by multiples of the period. -/
 theorem automorphize_coe (f : ℝ → M) (x : ℝ) :
     QuotientAddGroup.automorphize f (x : AddCircle T) = ∑' k : ℤ, f (x + k • T) := by
-  let e : ℤ ≃ (AddSubgroup.zmultiples T).op :=
-    (AddSubgroup.zmultiplesEquivInt hT.out.ne').symm.toEquiv.trans (AddSubgroup.equivOp _)
-  rw [QuotientAddGroup.automorphize_mk, ← e.tsum_eq]
-  refine tsum_congr fun k ↦ congrArg f ?_
-  simp [e, AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply]
+  rw [QuotientAddGroup.automorphize_mk, ← (TauCeti.intEquivOpZMultiples
+    (not_isOfFinAddOrder_of_isAddTorsionFree hT.out.ne')).tsum_eq]
+  simp
 
 /-- Reducing a real law with density `f` modulo `T` gives the circle law whose density
 relative to circle volume is the periodization of `f`.

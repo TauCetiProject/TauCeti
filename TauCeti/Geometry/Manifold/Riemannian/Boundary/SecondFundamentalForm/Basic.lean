@@ -35,7 +35,8 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
 ## Main declarations
 
 * `TauCeti.boundaryInducedForm`: the induced metric `h_q(u, w) = ⟨dι u, dι w⟩` on the tangent
-  space `T_q∂M` of the boundary manifold, as a bilinear form; it is symmetric and nondegenerate.
+  space `T_q∂M` of the boundary manifold, as a bilinear form; it is symmetric and nondegenerate,
+  and positive on nonzero vectors (`TauCeti.boundaryInducedForm_self_pos`).
 * `TauCeti.boundarySecondFundamentalForm`: the second fundamental form `II_q` as a bilinear form on
   the tangent space of the boundary manifold at `q`.
 * `TauCeti.boundarySecondFundamentalForm_isSymm`: it is symmetric.
@@ -249,12 +250,11 @@ theorem IsBoundaryDefiningFunctionOn.boundarySecondFundamentalForm_apply {ρ : M
   have hρW : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q, mvfderiv (𝓡∂ (n + 1)) ρ p (W p) = 0 := by
     filter_upwards [hWt, (hρ.isOpen.preimage continuous_subtypeVal).mem_nhds hqU] with p hp hpU
     exact (hρ.mvfderiv_eq_zero_iff hpU (W p)).mpr hp
-  have hne : ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ ≠ 0 :=
-    by simpa using hρ.mvfderiv_ne_zero (q : M) hqU q.property
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     hessian_eq_neg_mvfderiv_of_eventually_mvfderiv_eq_zero hρq u w hW hWq hρW,
     ← Manifold.inner_mgradient, hρ.mgradient_eq_norm_smul_inwardUnitNormal hqU,
-    inwardUnitNormal_def, real_inner_smul_left, inner_neg_left, real_inner_comm, eq_div_iff hne]
+    inwardUnitNormal_def, real_inner_smul_left, inner_neg_left, real_inner_comm,
+    eq_div_iff (hρ.norm_mvfderiv_pos hqU q.property).ne']
   -- `-⟨ν, ∇W⟩ * |dρ_q| = -(-(|dρ_q| * -⟨ν, ∇W⟩))`
   ring
 
@@ -351,6 +351,22 @@ theorem boundaryInducedForm_isSymm (q : (𝓡∂ (n + 1)).boundary M) :
 theorem boundaryInducedForm_nondegenerate (q : (𝓡∂ (n + 1)).boundary M) :
     (boundaryInducedForm q).Nondegenerate :=
   nondegenerate_inner_comp (injective_mfderiv_subtypeVal_boundary q)
+
+/-- The induced metric is nonnegative on the diagonal: `h_q(u, u) ≥ 0`. -/
+theorem boundaryInducedForm_self_nonneg (q : (𝓡∂ (n + 1)).boundary M)
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    0 ≤ boundaryInducedForm q u u := by
+  rw [boundaryInducedForm_apply]
+  exact real_inner_self_nonneg
+
+/-- The induced metric is positive on nonzero vectors: `h_q(u, u) > 0` for `u ≠ 0`, since the
+differential of the inclusion is injective. -/
+theorem boundaryInducedForm_self_pos (q : (𝓡∂ (n + 1)).boundary M)
+    {u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q} (hu : u ≠ 0) :
+    0 < boundaryInducedForm q u u := by
+  rw [boundaryInducedForm_apply]
+  exact real_inner_self_pos.2 fun h ↦
+    hu ((map_eq_zero_iff _ (injective_mfderiv_subtypeVal_boundary q)).1 h)
 
 /-- The induced metric is the inner product of `T_q∂M ⊆ T_qM`, transported along
 `TauCeti.boundaryTangentEquiv`. -/

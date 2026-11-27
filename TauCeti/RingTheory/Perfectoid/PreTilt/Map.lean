@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.Teichmuller
+public import TauCeti.RingTheory.WittVector.MapEquiv
 public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
 import Mathlib.NumberTheory.Basic
@@ -39,6 +40,8 @@ the corresponding constructions on the rings themselves.
 
 * `ModP.map p f : ModP A p →+* ModP B p`: reduction modulo `p` of a ring homomorphism.
 * `PreTilt.map p f : PreTilt A p →+* PreTilt B p`: the induced homomorphism of tilts.
+* `PreTilt.mapEquiv p e : PreTilt A p ≃+* PreTilt B p`: the induced isomorphism of tilts, for a
+  ring isomorphism `e`.
 
 ## Main results
 
@@ -49,6 +52,8 @@ the corresponding constructions on the rings themselves.
   `p`-adically Hausdorff, elements of `A♭` and `B♭` with the same image in `C♭` have sharps with the
   same image in `C`.
 * `WittVector.theta_natural`: naturality of Fontaine's map.
+* `WittVector.map_mapEquiv_ker_fontaineTheta`: a ring isomorphism `e : A ≃+* B` induces an
+  isomorphism `W(A♭) ≃+* W(B♭)` carrying `ker θ_A` onto `ker θ_B`.
 
 ## References
 
@@ -116,6 +121,27 @@ theorem map_comp (g : B →+* C) (f : A →+* B) :
     map p (g.comp f) = (map p g).comp (map p f) :=
   RingHom.ext fun x ↦ ext fun n ↦ by simp [ModP.map_comp]
 
+variable (p) in
+/-- The ring isomorphism of tilts `A♭ ≃+* B♭` induced by a ring isomorphism `e : A ≃+* B`: it is
+`PreTilt.map p e`, with inverse `PreTilt.map p e.symm`. -/
+noncomputable def mapEquiv (e : A ≃+* B) : PreTilt A p ≃+* PreTilt B p :=
+  .ofRingHom (map p e) (map p e.symm)
+    (by rw [← map_comp, RingEquiv.comp_symm, map_id])
+    (by rw [← map_comp, RingEquiv.symm_comp, map_id])
+
+@[simp]
+theorem coe_mapEquiv (e : A ≃+* B) :
+    (mapEquiv p e : PreTilt A p →+* PreTilt B p) = map p e :=
+  (rfl)
+
+@[simp]
+theorem mapEquiv_apply (e : A ≃+* B) (x : PreTilt A p) : mapEquiv p e x = map p e x :=
+  (rfl)
+
+@[simp]
+theorem mapEquiv_symm (e : A ≃+* B) : (mapEquiv p e).symm = mapEquiv p e.symm :=
+  (rfl)
+
 /-- **Naturality of the sharp map**: for `p`-adically complete `A` and `B`, a ring homomorphism
 `f : A →+* B` satisfies `(PreTilt.map p f x)♯ = f (x♯)`. -/
 @[simp]
@@ -168,5 +194,14 @@ theorem theta_natural_comp (f : A →+* B) :
 theorem theta_natural (f : A →+* B) (w : WittVector p (PreTilt A p)) :
     fontaineTheta B p (map (PreTilt.map p f) w) = f (fontaineTheta A p w) :=
   congr($(theta_natural_comp f) w)
+
+/-- **A ring isomorphism carries the kernel of Fontaine's map onto the kernel of Fontaine's map.**
+For `p`-adically complete `A` and `B` and `e : A ≃+* B`, the isomorphism `W(A♭) ≃+* W(B♭)` induced
+by `e` carries `ker θ_A` onto `ker θ_B`, by naturality of `θ`. -/
+theorem map_mapEquiv_ker_fontaineTheta (e : A ≃+* B) :
+    (RingHom.ker (fontaineTheta A p)).map (mapEquiv (PreTilt.mapEquiv p e)) =
+      RingHom.ker (fontaineTheta B p) := by
+  ext w
+  simp [← comap_symm, RingHom.mem_ker]
 
 end WittVector

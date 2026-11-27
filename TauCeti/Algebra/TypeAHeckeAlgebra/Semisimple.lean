@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Regular.Form
-public import TauCeti.RingTheory.Semisimple.Star
+public import TauCeti.RingTheory.Semisimple.Star.Basic
 
 /-!
 # Semisimplicity for real Hecke parameters

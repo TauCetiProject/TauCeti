@@ -41,6 +41,8 @@ The estimate `Complex.norm_log_le_of_re_mem_Icc` bounds the principal logarithm 
 in the real part on a positive vertical strip, with logarithmic growth in the imaginary part.
 Its proof adapts Robby Sneiderman’s strip argument from
 [PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
+Off the real axis, `|Real.log ‖z‖ - Real.log |im z||` is bounded above by
+`(re z / im z) ^ 2 / 2`; the lower half-plane follows from the upper one by conjugation.
 Away from the branch cut, on any vertical line `Re z = x` with `x ≥ 2`, the real part
 `Real.log ‖x + t I‖` of `Complex.log (x + t I)` differs from `Real.log (1 + |t|)` by at most
 `Real.log x`, comparing holomorphic logarithmic strip weights with the real height scale
@@ -77,6 +79,8 @@ singularity of `log (1 - t z)` along a real ray into `|log |t - Re(z⁻¹)||`.
   positive vertical strip, including empty and singleton strips.
 * `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
   `|Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x`.
+* `Complex.abs_log_norm_sub_log_abs_im_le`: off the real axis,
+  `|Real.log ‖z‖ - Real.log |im z|| ≤ (re z / im z) ^ 2 / 2`.
 -/
 
 public section
@@ -313,5 +317,27 @@ theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) 
   · have h := Real.log_le_log hz0 hhi
     rw [Real.log_mul hx0.ne' ht1.ne'] at h
     linarith
+
+/-- Off the real axis, `Real.log ‖z‖` differs from `Real.log |im z|` by at most
+`(re z / im z) ^ 2 / 2`, since `(‖z‖ / |im z|) ^ 2 = 1 + (re z / im z) ^ 2`. -/
+theorem abs_log_norm_sub_log_abs_im_le {z : ℂ} (hz : z.im ≠ 0) :
+    abs (Real.log ‖z‖ - Real.log |z.im|) ≤ (z.re / z.im) ^ 2 / 2 := by
+  have upper {w : ℂ} (hw : 0 < w.im) :
+      Real.log ‖w‖ - Real.log w.im ≤ (w.re / w.im) ^ 2 / 2 := by
+    have hw0 : 0 < ‖w‖ := hw.trans_le (im_le_norm w)
+    have hq : (‖w‖ / w.im) ^ 2 = 1 + (w.re / w.im) ^ 2 := by
+      rw [div_pow, div_pow, ← normSq_eq_norm_sq, normSq_apply]
+      field_simp
+      ring
+    have h := Real.log_le_sub_one_of_pos (pow_pos (div_pos hw0 hw) 2)
+    rw [Real.log_pow, Real.log_div hw0.ne' hw.ne', hq] at h
+    push_cast at h
+    linarith
+  rw [abs_of_nonneg (sub_nonneg.mpr
+    (Real.log_le_log (abs_pos.mpr hz) (abs_im_le_norm z)))]
+  rcases hz.lt_or_gt with hz | hz
+  · simpa [abs_of_neg hz, div_neg] using
+      (upper (w := (starRingEnd ℂ) z) (by simpa using hz))
+  · simpa [abs_of_pos hz] using upper hz
 
 end Complex

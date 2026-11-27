@@ -7,13 +7,16 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.Topology.JacobsonSpace
+public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.RingTheory.RegularLocalRing.Locus
 import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
+import TauCeti.RingTheory.SerreCondition.Normal
 import TauCeti.RingTheory.Smooth.Regular
 
 /-!
@@ -52,6 +55,9 @@ for general locally Noetherian schemes (Stacks, Section 15.48).
 * `AlgebraicGeometry.Scheme.Hom.smooth_iff_isRegularLocalRing_closedPoints`: over a perfect field,
   a scheme locally of finite type is smooth exactly when its local rings at closed points are
   regular.
+* `AlgebraicGeometry.IsAffineOpen.mem_regularLocus_of_mem_minimalPrimes_span_singleton`: on an
+  affine open of a normal locally Noetherian scheme, the sections are regular at every minimal
+  prime over a principal ideal.
 -/
 
 public section
@@ -165,3 +171,24 @@ theorem isRegular_iff_regularLocus_eq_univ [IsLocallyNoetherian X] :
   exact and_iff_right ‹_›
 
 end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry.IsAffineOpen
+
+variable {X : Scheme.{u}}
+
+/-- Over an affine open `U` of a normal locally Noetherian scheme, the sections are regular at
+every minimal prime over a principal ideal: such a prime has height at most one, and a normal
+Noetherian ring satisfies Serre's condition `(R₁)`. -/
+theorem mem_regularLocus_of_mem_minimalPrimes_span_singleton [IsLocallyNoetherian X]
+    [IsNormalScheme X] {U : X.Opens} (hU : IsAffineOpen U) {a : Γ(X, U)} (q : PrimeSpectrum Γ(X, U))
+    (hq : q.asIdeal ∈ (Ideal.span {a}).minimalPrimes) :
+    q ∈ Excellence.regularLocus Γ(X, U) := by
+  have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
+  -- The normal ring `Γ(X, U)` satisfies `(R₁)`, and `q` has height at most one.
+  have hR := satisfiesSerreR_one_of_forall_isIntegrallyClosed
+    ((isNormalScheme_Spec_iff_forall_localization Γ(X, U)).mp
+      (isNormalScheme_iff_forall_affineOpens.mp ‹_› ⟨U, hU⟩))
+  exact Excellence.mem_regularLocus.mpr <| Ring.satisfiesSerreR_iff.mp hR q.asIdeal <| by
+    exact_mod_cast Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ _ hq
+
+end AlgebraicGeometry.IsAffineOpen

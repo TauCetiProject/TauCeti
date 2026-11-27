@@ -36,6 +36,8 @@ the wedge of complex-valued forms given by complex multiplication.
 
 * `TauCeti.RoughForm.mapCoeff`, `TauCeti.SmoothForm.mapCoeff`: coefficient maps of forms.
 * `TauCeti.IsSmoothForm.mapCoeff`: coefficient maps preserve regularity.
+* `TauCeti.SmoothForm.exists_mapCoeff_flip_ne_zero`: a nonzero form has a nonzero real component
+  under a nondegenerate real-valued pairing.
 * `TauCeti.mextDerivWithin_mapCoeff`, `TauCeti.mextDeriv_mapCoeff`: naturality of the exterior
   derivative in the coefficient space.
 * `TauCeti.mpullbackWithin_mapCoeff`, `TauCeti.mpullback_mapCoeff`: coefficient maps commute
@@ -223,6 +225,19 @@ theorem mapCoeff_cast {l : ℕ} (h : k = l) (L : F →L[ℝ] G) (φ : SmoothForm
       LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M G n) h (mapCoeff L φ) := by
   cases h
   rfl
+
+/-- For a nondegenerate real-valued pairing `μ`, a nonzero smooth `F`-valued form has a nonzero
+real component `μ(φ, z)` for some `z`. -/
+theorem exists_mapCoeff_flip_ne_zero {μ : F →L[ℝ] G →L[ℝ] ℝ}
+    (hμ : ∀ u, (∀ z, μ u z = 0) → u = 0) {φ : SmoothForm I M F k} (hφ : φ ≠ 0) :
+    ∃ z, mapCoeff (μ.flip z) φ ≠ 0 := by
+  obtain ⟨x, v, hxv⟩ : ∃ x v, φ.val x v ≠ 0 := by
+    by_contra! h
+    exact hφ (Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext (h x)))
+  obtain ⟨z, hz⟩ : ∃ z, μ (φ.val x v) z ≠ 0 := by
+    by_contra! h
+    exact hxv (hμ _ h)
+  exact ⟨z, fun h ↦ hz (by simpa using congrArg (fun ψ : SmoothForm I M ℝ k ↦ ψ.val x v) h)⟩
 
 /-- The exterior derivative of smooth forms is natural in the coefficient space. -/
 @[simp]

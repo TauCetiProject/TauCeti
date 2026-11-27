@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Matteo Cipollina
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.Basic.Real.Sign
@@ -15,6 +16,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
@@ -60,11 +62,17 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
+* `TauCeti.integral_inv_linear_mul_eq_log_sub`:
+  `∫ t in a₀..b₀, (z₀ + t * d)⁻¹ * d = log (u * (z₀ + b₀ * d)) - log (u * (z₀ + a₀ * d))`
+  when `u * (z₀ + t * d) ∈ Complex.slitPlane` on `uIcc a₀ b₀`.
 * `TauCeti.integral_log_pow_div_self`:
   `∫ t in a..b, (log t) ^ k / t = ((log b) ^ (k + 1) - (log a) ^ (k + 1)) / (k + 1)` when
   `0 ∉ [[a, b]]`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I`:
+  `∫∫_{(0,2π]²} exp ((d₁ θ + d₂ φ) i)` is `4π²` for `d = 0` in `ℤ²` and `0` otherwise, the
+  orthogonality of the characters of the torus.
 * `TauCeti.norm_integral_cexp_le`, `TauCeti.norm_integral_cexp_le_of_ne_zero`: the integral
   `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`, and at most `2 / |u|` for `u ≠ 0`.
 * `TauCeti.tendsto_average_integral_cexp`: the averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to
@@ -396,6 +404,40 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
 
+open MeasureTheory Set in
+/-- The integral of the Fourier character `(θ, φ) ↦ exp ((d₁ θ + d₂ φ) i)` over the torus
+`(0, 2π]²`, for `d ∈ ℤ²`: it is `4π²` when `d = 0`, and vanishes otherwise. It is the product of
+two integrals `TauCeti.integral_cexp_intCast_mul_mul_I`, each shifted by one period. -/
+theorem setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I (d : ℤ × ℤ) :
+    ∫ p in Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi),
+        Complex.exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * Complex.I) =
+      if d = 0 then ((4 * Real.pi ^ 2 : ℝ) : ℂ) else 0 := by
+  have hcircle (k : ℤ) : ∫ θ in Ioc 0 (2 * Real.pi), Complex.exp ((k * θ : ℝ) * Complex.I) =
+      if k = 0 then 2 * (Real.pi : ℂ) else 0 := by
+    have hper : Function.Periodic (fun θ : ℝ => Complex.exp (k * θ * Complex.I))
+        (2 * Real.pi) := fun θ => by
+      dsimp only
+      rw [show (k : ℂ) * ((θ + 2 * Real.pi : ℝ) : ℂ) * Complex.I =
+          k * θ * Complex.I + k * (2 * Real.pi * Complex.I) by push_cast; ring,
+        Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I, mul_one]
+    have h := hper.intervalIntegral_add_eq 0 (-Real.pi)
+    rw [zero_add, show -Real.pi + 2 * Real.pi = Real.pi by ring,
+      integral_cexp_intCast_mul_mul_I] at h
+    simp only [Complex.ofReal_mul, Complex.ofReal_intCast]
+    rw [← intervalIntegral.integral_of_le (by positivity), ← h]
+  simp_rw [Complex.ofReal_add, add_mul, Complex.exp_add]
+  rw [Measure.volume_eq_prod, setIntegral_prod_mul
+    (fun x : ℝ => Complex.exp ((d.1 * x : ℝ) * Complex.I))
+    (fun y : ℝ => Complex.exp ((d.2 * y : ℝ) * Complex.I)), hcircle, hcircle]
+  rcases d with ⟨a, b⟩
+  by_cases ha : a = 0
+  · by_cases hb : b = 0
+    · simp only [ha, hb, ite_true, Prod.mk_zero_zero]
+      push_cast
+      ring
+    · simp [hb]
+  · simp [ha]
+
 /-- The interval integral `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`. -/
 theorem norm_integral_cexp_le (u a b : ℝ) :
     ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ |b - a| := by
@@ -574,6 +616,30 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+/-- Fundamental theorem of calculus for `t ↦ (z₀ + t * d)⁻¹ * d` along a real segment mapped into
+`Complex.slitPlane` after rotation by a constant `u`. -/
+theorem integral_inv_linear_mul_eq_log_sub {u z₀ d : ℂ} {a₀ b₀ : ℝ}
+    (hslit : ∀ t ∈ Set.uIcc a₀ b₀, u * (z₀ + (t : ℂ) * d) ∈ Complex.slitPlane) :
+    ∫ t in a₀..b₀, (z₀ + (t : ℂ) * d)⁻¹ * d =
+      Complex.log (u * (z₀ + (b₀ : ℂ) * d)) - Complex.log (u * (z₀ + (a₀ : ℂ) * d)) := by
+  have hu : u ≠ 0 :=
+    (mul_ne_zero_iff.mp (Complex.slitPlane_ne_zero (hslit a₀ Set.left_mem_uIcc))).1
+  have heq : (fun t : ℝ => (u * d) / (u * (z₀ + (t : ℂ) * d))) =
+      fun t : ℝ => (z₀ + (t : ℂ) * d)⁻¹ * d :=
+    funext fun t => by rw [mul_div_mul_left _ _ hu, div_eq_inv_mul]
+  have hint : IntervalIntegrable (fun t : ℝ => (z₀ + (t : ℂ) * d)⁻¹ * d)
+      MeasureTheory.volume a₀ b₀ :=
+    ContinuousOn.intervalIntegrable fun t ht =>
+      (((continuous_const.add (Complex.continuous_ofReal.mul continuous_const)).continuousAt.inv₀
+        (mul_ne_zero_iff.mp (Complex.slitPlane_ne_zero (hslit t ht))).2).mul
+          continuousAt_const).continuousWithinAt
+  simpa only [heq] using TauCeti.Contour.integral_deriv_div_eq_log_sub_log
+    (f := fun t : ℝ => u * (z₀ + (t : ℂ) * d)) (f' := fun _ => u * d) (P := ∅)
+    Set.countable_empty (by fun_prop)
+    (fun t _ => by
+      simpa using (((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const d).const_add z₀).const_mul u)
+    hslit (heq.symm ▸ hint)
 
 open MeasureTheory Set in
 /-- The integral of `t⁻²` over the tails `|t| > T` of the real line is `2/T`. At `T = 0` the

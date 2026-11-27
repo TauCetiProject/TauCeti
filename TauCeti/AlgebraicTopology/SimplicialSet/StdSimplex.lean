@@ -29,6 +29,8 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
   simplices.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
   to the constant simplex at that vertex.
+* `SSet.stdSimplex.asOrderHom_monotone_functor_eq_const`: a simplex of `Δ[n]` all of whose
+  vertices are `b` is, as a functor of finite linear orders, the constant functor at `b`.
 * `SSet.stdSimplex.δ_objMk_orderEmbOfFin`: the faces of the increasing enumeration of a set of
   vertices.
 * `SSet.stdSimplex.objMk_orderEmbOfFin_image`: an injective simplex is the increasing enumeration
@@ -56,6 +58,8 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
 * `SSet.fstStdSimplexZeroIso`: the projection `K ⊗ Δ[0] ⟶ K` is an isomorphism.
 
 * `SSet.boundary.isConnected`: the boundary `∂Δ[n + 2]` is connected.
+* `SSet.boundary.edgeZero`: the degenerate edge at vertex `0` of `∂Δ[n + 1]`, whose underlying
+  simplex is constant (`SSet.boundary.edgeZero_val`).
 -/
 
 public section
@@ -85,6 +89,13 @@ the vertex function of the morphism `objEquiv x : ⦋d⦌ ⟶ ⦋n⦌` of the si
 @[simp]
 lemma coe_asOrderHom {n d : ℕ} (x : (Δ[n] : SSet.{u}) _⦋d⦌) : ⇑(asOrderHom x) = ⇑x :=
   rfl
+
+/-- A simplex `s` of `Δ[n]` all of whose vertices are `b`, seen through its vertex map as a functor
+`Fin (m + 1) ⥤ Fin (n + 1)`, is the constant functor at `b`. -/
+lemma asOrderHom_monotone_functor_eq_const {n : ℕ} {m : SimplexCategoryᵒᵖ}
+    (s : (Δ[n] : SSet.{u}).obj m) (b : Fin (n + 1)) (hs : ∀ k, asOrderHom s k = b) :
+    (asOrderHom s).monotone.functor = (Functor.const _).obj b :=
+  CategoryTheory.Functor.ext hs fun _ _ _ ↦ Subsingleton.elim _ _
 
 /-- The `i`-th face of the simplex of `Δ[n]` enumerating a set `J` of vertices in increasing order
 enumerates `J` with its `i`-th smallest element removed. -/
@@ -348,5 +359,16 @@ instance boundary.isConnected (n : ℕ) : (∂Δ[n + 2] : SSet.{u}).IsConnected 
       ⟨stdSimplex.edge.{u} _ 0 k (Fin.zero_le k), by simp [boundary_obj_eq_univ]⟩
       (Subtype.ext (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl))
       (Subtype.ext (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)))).symm
+
+/-- The degenerate edge at vertex `0` of the boundary of a positive-dimensional simplex. -/
+noncomputable def boundary.edgeZero (n : ℕ) : (∂Δ[n + 1] : SSet.{u}) _⦋1⦌ :=
+  (∂Δ[n + 1] : SSet.{u}).σ 0
+    ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩
+
+/-- The underlying simplex of `boundary.edgeZero` is constant at vertex `0`. -/
+@[simp]
+lemma boundary.edgeZero_val (n : ℕ) :
+    (boundary.edgeZero.{u} n).val = stdSimplex.const (n + 1) 0 _ :=
+  stdSimplex.ext _ _ fun _ ↦ rfl
 
 end SSet
