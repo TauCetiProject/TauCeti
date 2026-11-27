@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.LinearAlgebra.BilinearForm.NormalizingTransport
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 
 /-!
 # The normal Hessian of a Morse–Bott submanifold in Sylvester form
@@ -384,16 +385,7 @@ private theorem exists_contMDiffOn_normalHessianNormalization_trivializationAt
   let := i.normalSpaceContMDiffVectorBundle hn hk hdim
   set e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀
   -- The metric read in the trivialization.
-  set G : S → P →L[ℝ] P →L[ℝ] ℝ := fun s ↦
-    ((g.inner s).toLinearMap₁₂.compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)).toContinuousBilinearMap
-  have hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G e.baseSet :=
-    e.contMDiffOn_compl₁₂_symmₗ g.contMDiff.contMDiffOn
-  have hGg (s : S) (hs : s ∈ e.baseSet) (u v : P) :
-      G s u v = g.toRiemannianMetric.inner s (e.symm s u) (e.symm s v) := by
-    simp only [G, LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply,
-      ContinuousLinearMap.toLinearMap₁₂_apply, e.symmₗ_apply hs]
-    -- The underlying metric of `g` has the inner products of `g`, by definition.
-    rfl
+  obtain ⟨G, hG, hGg⟩ := g.exists_contMDiffOn_apply_eq_inner_symm e
   have hinj {s : S} (hs : s ∈ e.baseSet) {u : P} (hu : u ≠ 0) : e.symm s u ≠ 0 := by
     rw [← Trivialization.linearEquivAt_symm_apply (R := ℝ) e s hs]
     exact (map_ne_zero_iff _ (e.linearEquivAt ℝ s hs).symm.injective).mpr hu
@@ -442,26 +434,12 @@ theorem contMDiff_normalHessianNormalization
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
-  let := i.normalSpaceContMDiffVectorBundle hn hk hdim
-  intro w₀
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  refine ⟨(Bundle.contMDiff_proj _).contMDiffAt, ?_⟩
+  -- In the trivialization at any point, the normalization reads as the `C^k` family `Ψ`.
+  refine contMDiff_bundleMap_of_contMDiffOn_symm
+    (fun s ↦ h.normalHessianNormalization hn g.toRiemannianMetric s) fun s₀ ↦ ?_
   obtain ⟨Ψ, hΨ, hΨs⟩ :=
-    exists_contMDiffOn_normalHessianNormalization_trivializationAt hn h hk hf hdim g w₀.proj
-  set e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) w₀.proj
-  have hw₀ : w₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt P _ w₀.proj
-  have hΨw : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P →L[ℝ] P) k (fun w ↦ Ψ w.proj) w₀ :=
-    (hΨ.contMDiffAt (e.open_baseSet.mem_nhds hw₀)).comp w₀ (Bundle.contMDiff_proj _).contMDiffAt
-  have he : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P) k (fun w ↦ (e w).2) w₀ :=
-    ((e.contMDiffOn (IB := J) (n := k)).contMDiffAt
-      (e.open_source.mem_nhds (e.mem_source.mpr hw₀))).snd
-  refine (hΨw.clm_apply he).congr_of_eventuallyEq ?_
-  filter_upwards [(FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
-    (e.open_baseSet.mem_nhds hw₀)] with w hw
-  have hy : w.snd = e.symm w.proj (e w).2 := (e.symm_proj_apply w hw).symm
-  rw [hy, ← hΨs w.proj hw]
-  exact congr_arg Prod.snd (e.apply_mk_symm hw _)
+    exists_contMDiffOn_normalHessianNormalization_trivializationAt hn h hk hf hdim g s₀
+  exact ⟨Ψ, hΨ.mono inter_subset_left, fun s hs ↦ hΨs s hs.1⟩
 
 /-- **The normalization of the normal Hessian as a `C^k` automorphism of the normal bundle.** For
 a `C^k` fibre metric `g` on the normal bundle, this is the `C^k` diffeomorphism of the total space

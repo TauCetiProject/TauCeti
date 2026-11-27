@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Spectral subspaces of a symmetric bilinear form relative to an inner product
@@ -324,14 +325,6 @@ namespace ContinuousLinearEquiv
 variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
 
-/-- A form pulled back along a continuous linear equivalence `e`, read as a bilinear form, is the
-pull-back of the bilinear form along `e`. -/
-private theorem toBilinForm_bilinearComp (e : W ≃L[𝕜] V) (B : V →L[𝕜] V →L[𝕜] 𝕜) :
-    (B.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm =
-      B.toBilinForm.compl₁₂ (e.toLinearEquiv : W →ₗ[𝕜] V) (e.toLinearEquiv : W →ₗ[𝕜] V) := by
-  ext u v
-  simp
-
 /-- Pulling a form and a metric back along a linear equivalence `e` pulls back their relative
 spectral subspaces: these are carried by `e` to the relative spectral subspaces of the original
 pair. -/
@@ -342,7 +335,7 @@ theorem map_relativeSpectralSubspace_bilinearComp (e : W ≃L[𝕜] V) (q h : V 
       (q.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm Ω).map
         (e.toLinearEquiv : W →ₗ[𝕜] V) =
       h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
-  rw [toBilinForm_bilinearComp, toBilinForm_bilinearComp]
+  rw [ContinuousLinearMap.toBilinForm_bilinearComp, ContinuousLinearMap.toBilinForm_bilinearComp]
   exact LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ e.toLinearEquiv
 
 /-- A vector lies in a relative spectral subspace of a pulled-back pair exactly when its image
@@ -353,7 +346,7 @@ theorem mem_relativeSpectralSubspace_bilinearComp_iff (e : W ≃L[𝕜] V) {q h 
     u ∈ (h.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm.relativeSpectralSubspace
         (q.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm Ω ↔
       e u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
-  rw [toBilinForm_bilinearComp, toBilinForm_bilinearComp]
+  rw [ContinuousLinearMap.toBilinForm_bilinearComp, ContinuousLinearMap.toBilinForm_bilinearComp]
   exact LinearMap.BilinForm.mem_relativeSpectralSubspace_compl₁₂_iff e.toLinearEquiv
 
 end ContinuousLinearEquiv

@@ -52,7 +52,11 @@ form of the smoothness of inversion of continuous linear maps between Banach spa
 bilinear pairing between trivial bundles is a smooth hom-bundle section
 (`TauCeti.contMDiff_const_bundlePairing`). A hom-bundle section whose coordinate expressions are
 constant on the common frame domains is smooth
-(`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
+(`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`). A fibrewise map whose expressions in
+the preferred trivializations are `C^n` families of continuous linear maps of the model fibres is
+`C^n` on total spaces (`TauCeti.contMDiff_bundleMap_of_contMDiffOn_coordinates`, and
+`TauCeti.contMDiff_bundleMap_of_contMDiffOn_symm` with the expressions read through the inverse
+trivializations).
 
 Fibrewise composition preserves joint `Cⁿ` regularity along any common base map
 (`ContMDiff.clm_bundle_comp`). The corresponding native section operation is
@@ -891,6 +895,32 @@ variable {𝕜 B EB HB F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [Topolo
   [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
   [FiberBundle F₁ E₁] [FiberBundle F₂ E₂] {n : ℕ∞ω}
 
+/-- A fibrewise map whose expression in the preferred trivializations at every point `a` is a
+family of continuous linear maps of the model fibres, `C^n` on the common base set at `a`, is
+`C^n` on total spaces. -/
+theorem contMDiff_bundleMap_of_contMDiffOn_coordinates (φ : ∀ x, E₁ x → E₂ x)
+    (hφ : ∀ a, ∃ Ψ : B → F₁ →L[𝕜] F₂, ContMDiffOn IB 𝓘(𝕜, F₁ →L[𝕜] F₂) n Ψ
+        ((trivializationAt F₁ E₁ a).baseSet ∩ (trivializationAt F₂ E₂ a).baseSet) ∧
+      ∀ x ∈ (trivializationAt F₁ E₁ a).baseSet ∩ (trivializationAt F₂ E₂ a).baseSet, ∀ v,
+        (trivializationAt F₂ E₂ a ⟨x, φ x v⟩).2 = Ψ x (trivializationAt F₁ E₁ a ⟨x, v⟩).2) :
+    ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
+      (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ (E := E₂) p.proj (φ p.proj p.snd)) := by
+  intro p
+  obtain ⟨Ψ, hΨ, hΨφ⟩ := hφ p.proj
+  have hU : (trivializationAt F₁ E₁ p.proj).baseSet ∩ (trivializationAt F₂ E₂ p.proj).baseSet ∈
+      𝓝 p.proj :=
+    ((trivializationAt F₁ E₁ p.proj).open_baseSet.inter
+      (trivializationAt F₂ E₂ p.proj).open_baseSet).mem_nhds
+        ⟨mem_baseSet_trivializationAt F₁ E₁ p.proj, mem_baseSet_trivializationAt F₂ E₂ p.proj⟩
+  rw [Bundle.contMDiffAt_totalSpace_iff]
+  refine ⟨contMDiffAt_proj _, ?_⟩
+  have hc := (Bundle.contMDiffAt_totalSpace_iff.mp
+    (contMDiffAt_id (I := IB.prod 𝓘(𝕜, F₁)) (x := p) (n := n))).2
+  refine (((hΨ.contMDiffAt hU).comp p (contMDiffAt_proj _)).clm_apply
+    hc).congr_of_eventuallyEq ?_
+  filter_upwards [(FiberBundle.continuous_proj F₁ E₁).continuousAt.preimage_mem_nhds hU] with q hq
+  exact hΨφ q.proj hq q.snd
+
 /-- A fibrewise map with a fixed continuous-linear expression in preferred native frames
 is smooth on total spaces. -/
 theorem contMDiff_bundleMap_of_constant_coordinates
@@ -900,21 +930,28 @@ theorem contMDiff_bundleMap_of_constant_coordinates
       (trivializationAt F₂ E₂ a ⟨x, φ x v⟩).2 =
         A (trivializationAt F₁ E₁ a ⟨x, v⟩).2) :
     ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
+      (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ (E := E₂) p.proj (φ p.proj p.snd)) :=
+  contMDiff_bundleMap_of_contMDiffOn_coordinates φ fun a ↦ ⟨fun _ ↦ A, contMDiffOn_const, hφ a⟩
+
+/-- A fibrewise map which, in the preferred trivializations at every point `a`, reads as
+`e₂.symm x (Ψ x u) = φ x (e₁.symm x u)` for a family `Ψ` of continuous linear maps of the model
+fibres which is `C^n` on the common base set at `a`, is `C^n` on total spaces. This is
+`contMDiff_bundleMap_of_contMDiffOn_coordinates` with the expression read through the inverses of
+the trivializations. -/
+theorem contMDiff_bundleMap_of_contMDiffOn_symm [∀ x, Zero (E₁ x)] [∀ x, Zero (E₂ x)]
+    (φ : ∀ x, E₁ x → E₂ x)
+    (hφ : ∀ a, ∃ Ψ : B → F₁ →L[𝕜] F₂, ContMDiffOn IB 𝓘(𝕜, F₁ →L[𝕜] F₂) n Ψ
+        ((trivializationAt F₁ E₁ a).baseSet ∩ (trivializationAt F₂ E₂ a).baseSet) ∧
+      ∀ x ∈ (trivializationAt F₁ E₁ a).baseSet ∩ (trivializationAt F₂ E₂ a).baseSet, ∀ u,
+        (trivializationAt F₂ E₂ a).symm x (Ψ x u) = φ x ((trivializationAt F₁ E₁ a).symm x u)) :
+    ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
       (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ (E := E₂) p.proj (φ p.proj p.snd)) := by
-  intro p
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  refine ⟨contMDiffAt_proj _, ?_⟩
-  have hc := (Bundle.contMDiffAt_totalSpace_iff.mp
-    (contMDiffAt_id (I := IB.prod 𝓘(𝕜, F₁)) (x := p) (n := n))).2
-  have hm := (A.contDiff (n := n)).contMDiff
-  refine (hm.contMDiffAt.comp p hc).congr_of_eventuallyEq ?_
-  have hb := ((FiberBundle.continuous_proj F₁ E₁).continuousAt).preimage_mem_nhds
-    (((trivializationAt F₁ E₁ p.proj).open_baseSet.inter
-      (trivializationAt F₂ E₂ p.proj).open_baseSet).mem_nhds
-        ⟨mem_baseSet_trivializationAt F₁ E₁ p.proj,
-          mem_baseSet_trivializationAt F₂ E₂ p.proj⟩)
-  filter_upwards [hb] with q hq
-  exact hφ p.proj q.proj hq q.snd
+  refine contMDiff_bundleMap_of_contMDiffOn_coordinates φ fun a ↦ ?_
+  obtain ⟨Ψ, hΨ, hΨφ⟩ := hφ a
+  refine ⟨Ψ, hΨ, fun x hx v ↦ ?_⟩
+  have hv := hΨφ x hx (trivializationAt F₁ E₁ a ⟨x, v⟩).2
+  rw [Trivialization.symm_apply_apply_mk _ hx.1] at hv
+  rw [← hv, Trivialization.apply_mk_symm _ hx.2]
 
 end ConstantCoordinates
 
