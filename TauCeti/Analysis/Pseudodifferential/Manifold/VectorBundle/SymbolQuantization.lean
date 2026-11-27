@@ -7,7 +7,11 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.SymbolQuantization
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.PrincipalSymbol
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Geometry.Manifold.BumpFunction
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Quantization of principal symbols between vector bundles
@@ -36,6 +40,18 @@ matrix entries of the operator
 (`TauCeti.sectionClassicalPrincipalSymbol_mem_sectionHomogeneousCotangentSymbols`). This gives the
 principal symbol map `TauCeti.sectionClassicalPrincipalSymbolLinearMap`, whose kernel is the
 operators of order `m - 1` (`TauCeti.ker_sectionClassicalPrincipalSymbolLinearMap`).
+
+The fibrewise inverse of a smooth homogeneous symbol `s` of degree `m` that is bijective at every
+nonzero covector is a smooth homogeneous `Hom(F, E)`-valued symbol of degree `-m`
+(`TauCeti.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id`), the bundle counterpart of
+`TauCeti.inv_mem_homogeneousCotangentSymbols`. Homogeneity of the inverse follows from that of `s`
+at points where the cutoffs of a reading do not vanish. For smoothness near a point `x` of the
+support of a reading, take a cutoff `φ` equal to `1` near `x` and supported in the common base set
+of the trivializations. The readings of `s` through `φ` in bases of `V` and `W` are smooth, and
+near `x` they are the entries of the matrix `A(x, ξ) = t'ₓ ∘ s(x, ξ) ∘ tₓ⁻¹ : V → W`. The reading
+of the inverse is read off from `A(x, ξ)⁻¹`
+(`Bundle.Trivialization.inverse_apply_of_bijective_conj`), and inversion is smooth on the
+invertible maps `V → W` (`ContDiffWithinAt.clm_inverse`).
 
 Conversely every such symbol vanishing over the complement of a compact set is a principal symbol
 (`exists_mem_sectionClassicalPseudodifferentialOperators_sectionClassicalPrincipalSymbol_eq`),
@@ -76,6 +92,8 @@ Neumann series.
   symbols are smooth homogeneous symbols.
 * `TauCeti.ker_sectionClassicalPrincipalSymbolLinearMap`: the kernel of the principal symbol map
   is the operators of order `m - 1`.
+* `TauCeti.exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id`: the fibrewise inverse of a
+  smooth homogeneous symbol bijective at nonzero covectors is a smooth homogeneous symbol.
 * `TauCeti.sectionClassicalPrincipalSymbol_toSpanSingleton_comp_comp_cutoffFrameCoeff`: the
   principal symbol of a scalar operator tensored with cut-off frames.
 * `exists_mem_sectionClassicalPseudodifferentialOperators_sectionClassicalPrincipalSymbol_eq`:
@@ -151,6 +169,236 @@ theorem mem_sectionHomogeneousCotangentSymbols_iff
           ℓ (t'.continuousLinearMapAt ℂ x (s x ξ (t.symm x v)))) ∈
             homogeneousCotangentSymbols n M m :=
   Iff.rfl
+
+/-! ### The inverse of a bijective symbol -/
+
+section Inverse
+
+variable {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → E x →ₗ[ℂ] F x}
+
+/-- The fibrewise inverse `s(x, ξ)⁻¹ : F_x → E_x` of a family of linear maps
+`s(x, ξ) : E_x → F_x`, at the nonzero covectors where it is bijective, and `0` elsewhere. -/
+private def inverseSymbol
+    (s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → E x →ₗ[ℂ] F x) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) : F x →ₗ[ℂ] E x :=
+  open Classical in
+  if h : ξ ≠ 0 ∧ Function.Bijective (s x ξ) then
+    (LinearEquiv.ofBijective _ h.2).symm.toLinearMap
+  else 0
+
+omit [∀ x, TopologicalSpace (E x)] [∀ x, TopologicalSpace (F x)] in
+private theorem apply_inverseSymbol_apply {x : M}
+    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0)
+    (h : Function.Bijective (s x ξ)) (y : F x) : s x ξ (inverseSymbol s x ξ y) = y := by
+  simp only [inverseSymbol, hξ, h, ne_eq, not_false_eq_true, and_self, ↓reduceDIte,
+    LinearEquiv.coe_coe, LinearEquiv.apply_ofBijective_symm_apply]
+
+omit [∀ x, TopologicalSpace (E x)] [∀ x, TopologicalSpace (F x)] in
+private theorem inverseSymbol_apply_apply {x : M}
+    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0)
+    (h : Function.Bijective (s x ξ)) (u : E x) : inverseSymbol s x ξ (s x ξ u) = u := by
+  simp only [inverseSymbol, hξ, h, ne_eq, not_false_eq_true, and_self, ↓reduceDIte,
+    LinearEquiv.coe_coe, LinearEquiv.ofBijective_symm_apply_apply]
+
+omit [∀ x, TopologicalSpace (E x)] [∀ x, TopologicalSpace (F x)] in
+/-- Where `s` is positively homogeneous of degree `m` at `ξ`, its fibrewise inverse is positively
+homogeneous of degree `-m` at `ξ`. -/
+private theorem inverseSymbol_smul_covector {x : M}
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) {c : ℝ} (hc : 0 < c)
+    (hsc : s x (c • ξ) = ((c ^ m : ℝ) : ℂ) • s x ξ) :
+    inverseSymbol s x (c • ξ) = (((c ^ m : ℝ) : ℂ))⁻¹ • inverseSymbol s x ξ := by
+  have hcm : ((c ^ m : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos hc m).ne'
+  by_cases hξ : ξ = 0
+  · simp [inverseSymbol, hξ]
+  have hcξ : c • ξ ≠ 0 := smul_ne_zero hc.ne' hξ
+  by_cases h : Function.Bijective (s x ξ)
+  · have h' : Function.Bijective (s x (c • ξ)) := by
+      rw [hsc, LinearMap.coe_smul]
+      exact (MulAction.bijective (Units.mk0 _ hcm)).comp h
+    refine LinearMap.ext fun y ↦ h'.1 ?_
+    rw [apply_inverseSymbol_apply hcξ h', LinearMap.smul_apply, map_smul, hsc,
+      LinearMap.smul_apply, apply_inverseSymbol_apply hξ h, smul_smul, inv_mul_cancel₀ hcm,
+      one_smul]
+  · have h' : ¬ Function.Bijective (s x (c • ξ)) := by
+      rw [hsc, LinearMap.coe_smul]
+      exact fun h' ↦ h ((MulAction.bijective (Units.mk0 _ hcm)).of_comp_iff' _ |>.1 h')
+    simp only [inverseSymbol, h, h', and_false, ↓reduceDIte, smul_zero]
+
+variable [FiniteDimensional ℂ W]
+
+/-- **Pointwise homogeneity.** At a point `x` where cutoffs `ψ` and `χ`, supported in the base sets
+of trivializations `t` of `E` and `t'` of `F`, do not vanish, a smooth homogeneous symbol `s` of
+degree `m` satisfies `s(x, c ξ) = c ^ m s(x, ξ)` for `c > 0`: its readings in `t` and `t'` are. -/
+private theorem apply_smul_covector_of_mul_ne_zero
+    (hs : s ∈ sectionHomogeneousCotangentSymbols n V E W F m)
+    {t : Trivialization V (π V E)} [MemTrivializationAtlas t]
+    {ψ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯} (hψ : tsupport ψ ⊆ t.baseSet)
+    {t' : Trivialization W (π W F)} [MemTrivializationAtlas t']
+    {χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯} (hχ : tsupport χ ⊆ t'.baseSet) {x : M}
+    (hx : χ x * ψ x ≠ 0) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) {c : ℝ}
+    (hc : 0 < c) :
+    s x (c • ξ) = ((c ^ m : ℝ) : ℂ) • s x ξ := by
+  have hxψ : x ∈ t.baseSet := hψ (subset_tsupport _ (right_ne_zero_of_mul hx))
+  have hxχ : x ∈ t'.baseSet := hχ (subset_tsupport _ (left_ne_zero_of_mul hx))
+  have hx' : ((χ x * ψ x : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hx
+  refine t.linearMap_ext ℂ t' hxψ hxχ fun v ↦ (finBasis ℂ W).ext_elem fun j ↦ ?_
+  have h := (mem_homogeneousCotangentSymbols_iff.1 (hs t ψ hψ v t' χ hχ
+    ((finBasis ℂ W).coord j).toContinuousLinearMap)).2.1 x ξ c hc
+  simp only [LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply] at h
+  rw [LinearMap.smul_apply, map_smul, map_smul, Finsupp.smul_apply, smul_eq_mul]
+  exact mul_left_cancel₀ hx' (by rw [h]; ring)
+
+variable [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [FiniteDimensional ℂ V]
+
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- **The matrix of a symbol in a pair of frames.** Let `s` be a smooth homogeneous symbol that is
+bijective at nonzero covectors. In a chart `e` of the maximal atlas, let `φ` be a smooth function
+supported in the common base set of trivializations `t'` of `E` and `t` of `F`. There is a smooth
+family `A(y, η) : V → W` over `e.target × {η ≠ 0}` which, wherever `φ(x) = 1` with `x = e⁻¹ y` and
+`ξ = ⟪η, ·⟫ ∘ de_x`, reads `s(x, ξ)` in these frames; so `A(y, η)` is invertible there and its
+inverse reads `s(x, ξ)⁻¹`.
+
+Its entries are the readings of `s` through `φ`, which are smooth since `s` is a smooth homogeneous
+symbol. -/
+private theorem exists_contDiffOn_frameMatrix
+    (hs : s ∈ sectionHomogeneousCotangentSymbols n V E W F m)
+    (hb : ∀ x ξ, ξ ≠ 0 → Function.Bijective (s x ξ))
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {t' : Trivialization V (π V E)} [MemTrivializationAtlas t']
+    {t : Trivialization W (π W F)} [MemTrivializationAtlas t]
+    {φ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯} (hφU : tsupport φ ⊆ t'.baseSet ∩ t.baseSet) :
+    ∃ A : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W,
+      ContDiffOn ℝ ∞ A (e.target ×ˢ {η | η ≠ 0}) ∧
+      ∀ q ∈ e.target ×ˢ {η | η ≠ 0}, φ (e.symm q.1) = 1 → (A q).IsInvertible ∧ ∀ w,
+        (A q).inverse w = t'.continuousLinearMapAt ℂ (e.symm q.1)
+          (inverseSymbol s (e.symm q.1) ((innerSL ℝ q.2).comp
+            (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1))) (t.symm (e.symm q.1) w)) := by
+  set b := finBasis ℂ V
+  set c := finBasis ℂ W
+  set G := fun (j : Fin (finrank ℂ W)) (k : Fin (finrank ℂ V))
+      (q : CoordinateSpace n × CoordinateSpace n) ↦
+    ((φ (e.symm q.1) * φ (e.symm q.1) : ℝ) : ℂ) * (c.coord j).toContinuousLinearMap
+      (t.continuousLinearMapAt ℂ (e.symm q.1) (s (e.symm q.1)
+        ((innerSL ℝ q.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1)))
+        (t'.symm (e.symm q.1) (b k))))
+  refine ⟨fun q ↦ ∑ j, ∑ k, G j k q • (b.coord k).toContinuousLinearMap.smulRight (c j),
+    ContDiffOn.sum fun j _ ↦ ContDiffOn.sum fun k _ ↦ ContDiffOn.smul
+      ((mem_homogeneousCotangentSymbols_iff.1 (mem_sectionHomogeneousCotangentSymbols_iff.1 hs
+          t' φ (hφU.trans inter_subset_left) (b k) t φ (hφU.trans inter_subset_right)
+          (c.coord j).toContinuousLinearMap)).2.2 e he) contDiffOn_const,
+    fun q hq hφq ↦ ?_⟩
+  have hqU : e.symm q.1 ∈ t'.baseSet ∩ t.baseSet :=
+    hφU (subset_tsupport _ (by simp [hφq]))
+  have hξ := (innerSL_comp_mvfderiv_eq_zero_iff
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) (e.map_target hq.1)).not.2 hq.2
+  have hbq := hb _ _ hξ
+  -- Where `φ = 1`, the matrix entries are those of `s` read in the frames.
+  have hA : ∀ v, (∑ j, ∑ k, G j k q • (b.coord k).toContinuousLinearMap.smulRight (c j) :
+      V →L[ℂ] W) v = t.continuousLinearMapAt ℂ (e.symm q.1) (s (e.symm q.1)
+        ((innerSL ℝ q.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1)))
+        (t'.symm (e.symm q.1) v)) := fun v ↦ by
+    rw [← t'.symmL_apply (R := ℂ) hqU.1]
+    set L : V →ₗ[ℂ] W := (t.continuousLinearMapAt ℂ (e.symm q.1)).toLinearMap ∘ₗ
+      s (e.symm q.1) ((innerSL ℝ q.2).comp
+        (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1))) ∘ₗ
+      (t'.symmL ℂ (e.symm q.1)).toLinearMap
+    have hL : ((∑ j, ∑ k, G j k q • (b.coord k).toContinuousLinearMap.smulRight (c j) :
+        V →L[ℂ] W) : V →ₗ[ℂ] W) = L := b.ext fun k ↦ by
+      simp [G, hφq, L, t'.symmL_apply hqU.1, Finsupp.single_apply, c.sum_repr]
+    exact congr($hL v)
+  exact ⟨t'.isInvertible_of_bijective_conj hqU.1 hqU.2 hbq hA,
+    t'.inverse_apply_of_bijective_conj hqU.1 hqU.2 hbq (apply_inverseSymbol_apply hξ hbq) hA⟩
+
+/-- **Smoothness of the inverse reading at a point of the support.** Let `s` be a smooth
+homogeneous symbol that is bijective at nonzero covectors. In a chart `e` of the maximal atlas, let
+`g` be a smooth function supported in the common base set of trivializations `t'` of `E` and `t`
+of `F`. The reading `(y, η) ↦ g(x) ℓ(t'ₓ (s(x, ξ)⁻¹ (tₓ⁻¹ w)))`, with `x = e⁻¹ y` and
+`ξ = ⟪η, ·⟫ ∘ de_x`, is smooth near every point of `e.target × {η ≠ 0}` over the support of `g`:
+near such a point it is read from the inverse of the matrix of `s`, and inversion is smooth on the
+invertible maps `V → W`. -/
+private theorem contDiffWithinAt_inverseSymbol_reading
+    (hs : s ∈ sectionHomogeneousCotangentSymbols n V E W F m)
+    (hb : ∀ x ξ, ξ ≠ 0 → Function.Bijective (s x ξ))
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {t' : Trivialization V (π V E)} [MemTrivializationAtlas t']
+    {t : Trivialization W (π W F)} [MemTrivializationAtlas t]
+    {g : M → ℝ} (hg : ContMDiff 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ) ∞ g)
+    (hgt : tsupport g ⊆ t'.baseSet ∩ t.baseSet) (w : W) (ℓ : V →L[ℂ] ℂ)
+    {p : CoordinateSpace n × CoordinateSpace n} (hp : p ∈ e.target ×ˢ {η | η ≠ 0})
+    (hpg : e.symm p.1 ∈ tsupport g) :
+    ContDiffWithinAt ℝ ∞ (fun q : CoordinateSpace n × CoordinateSpace n ↦
+      (g (e.symm q.1) : ℂ) * ℓ (t'.continuousLinearMapAt ℂ (e.symm q.1)
+        (inverseSymbol s (e.symm q.1) ((innerSL ℝ q.2).comp
+          (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1))) (t.symm (e.symm q.1) w))))
+      (e.target ×ˢ {η | η ≠ 0}) p := by
+  -- A cutoff `φ` equal to `1` near `e⁻¹ p.1`, and the matrix `A` of `s` read through it.
+  obtain ⟨φ, hφU, hφ1⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
+    ((t'.open_baseSet.inter t.open_baseSet).mem_nhds (hgt hpg))
+  obtain ⟨A, hA, hAinv⟩ := exists_contDiffOn_frameMatrix hs hb he hφU
+  have hev : ∀ᶠ q in 𝓝 p, φ (e.symm q.1) = 1 :=
+    Filter.Tendsto.eventually ((e.continuousAt_symm hp.1).comp continuousAt_fst) hφ1
+  -- So the reading agrees near `p` with `g(x) ℓ(A⁻¹ w)`, which is smooth at `p`.
+  have hge : ContDiffOn ℝ ∞ (g ∘ e.symm) e.target :=
+    contMDiffOn_iff_contDiffOn.1 (hg.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas he))
+  have hinv := (hA p hp).clm_inverse (hAinv p hp hev.self_of_nhds).1
+  refine ((Complex.ofRealCLM.contDiff.contDiffAt.comp_contDiffWithinAt p
+      ((hge.comp contDiffOn_fst mapsTo_fst_prod) p hp)).mul
+    (((ℓ.comp (ContinuousLinearMap.apply ℂ V w)).restrictScalars ℝ).contDiff.contDiffAt
+      |>.comp_contDiffWithinAt p hinv)).congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds hev]
+      with q hq hqφ
+    simp [(hAinv q hq hqφ).2 w]
+  · simp [(hAinv p hp hev.self_of_nhds).2 w]
+
+/-- **The inverse of a bijective symbol is a smooth homogeneous symbol.** -/
+private theorem inverseSymbol_mem_sectionHomogeneousCotangentSymbols
+    (hs : s ∈ sectionHomogeneousCotangentSymbols n V E W F m)
+    (hb : ∀ x ξ, ξ ≠ 0 → Function.Bijective (s x ξ)) :
+    inverseSymbol s ∈ sectionHomogeneousCotangentSymbols n W F V E (-m) := by
+  refine mem_sectionHomogeneousCotangentSymbols_iff.2 fun t _ ψ hψ w t' _ χ hχ ℓ ↦ ?_
+  refine mem_homogeneousCotangentSymbols_iff.2 ⟨fun x ↦ ?_, fun x ξ c hc ↦ ?_, fun e he p hp ↦ ?_⟩
+  · simp [inverseSymbol]
+  · by_cases hx : χ x * ψ x = 0
+    · simp [hx]
+    rw [inverseSymbol_smul_covector ξ hc
+        (apply_smul_covector_of_mul_ne_zero hs hχ hψ (by rwa [mul_comm]) ξ hc),
+      LinearMap.smul_apply, map_smul, map_smul, smul_eq_mul, Real.rpow_neg hc.le,
+      Complex.ofReal_inv]
+    ring
+  have hgt : tsupport (fun y ↦ χ y * ψ y) ⊆ t'.baseSet ∩ t.baseSet := fun y hy ↦
+    ⟨hχ (tsupport_mul_subset_left hy), hψ (tsupport_mul_subset_right hy)⟩
+  by_cases hpg : e.symm p.1 ∈ tsupport (fun y ↦ χ y * ψ y)
+  · exact contDiffWithinAt_inverseSymbol_reading hs hb he (χ.contMDiff.mul ψ.contMDiff)
+      hgt w ℓ hp hpg
+  · -- Off the support of `χ ψ`, the reading vanishes near `p`.
+    have hc : ∀ᶠ q in 𝓝 p, χ (e.symm (q : CoordinateSpace n × CoordinateSpace n).1) *
+        ψ (e.symm q.1) = 0 := by
+      filter_upwards [((e.continuousAt_symm hp.1).comp continuousAt_fst).preimage_mem_nhds
+        ((isClosed_tsupport _).isOpen_compl.mem_nhds hpg)] with q hq
+      exact image_eq_zero_of_notMem_tsupport (f := fun y ↦ χ y * ψ y) hq
+    exact (contDiffWithinAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
+      (eventually_nhdsWithin_of_eventually_nhds (hc.mono fun q hq ↦ by simp [hq]))
+      (by simp [image_eq_zero_of_notMem_tsupport hpg])
+
+/-- **The inverse of a bijective symbol.** If a smooth positively homogeneous `Hom(E, F)`-valued
+symbol `s` of degree `m` is bijective at every nonzero covector, its fibrewise inverses
+`s(x, ξ)⁻¹ : F_x → E_x` form a smooth positively homogeneous `Hom(F, E)`-valued symbol of degree
+`-m`: there is `s'` in `TauCeti.sectionHomogeneousCotangentSymbols n W F V E (-m)` with
+`s'(x, ξ) ∘ s(x, ξ) = 1` and `s(x, ξ) ∘ s'(x, ξ) = 1` for every nonzero covector `ξ ∈ T*ₓM`. This
+is the bundle counterpart of `TauCeti.inv_mem_homogeneousCotangentSymbols`. -/
+theorem exists_mem_sectionHomogeneousCotangentSymbols_comp_eq_id
+    (hs : s ∈ sectionHomogeneousCotangentSymbols n V E W F m)
+    (hb : ∀ x ξ, ξ ≠ 0 → Function.Bijective (s x ξ)) :
+    ∃ s' ∈ sectionHomogeneousCotangentSymbols n W F V E (-m), ∀ x ξ, ξ ≠ 0 →
+      s' x ξ ∘ₗ s x ξ = LinearMap.id ∧ s x ξ ∘ₗ s' x ξ = LinearMap.id :=
+  ⟨inverseSymbol s, inverseSymbol_mem_sectionHomogeneousCotangentSymbols hs hb,
+    fun x ξ hξ ↦ ⟨LinearMap.ext (inverseSymbol_apply_apply hξ (hb x ξ hξ)),
+      LinearMap.ext (apply_inverseSymbol_apply hξ (hb x ξ hξ))⟩⟩
+
+end Inverse
 
 variable [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
   [FiniteDimensional ℂ V] [∀ x, Module ℝ (E x)] [VectorBundle ℝ V E]
