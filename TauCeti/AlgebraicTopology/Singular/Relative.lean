@@ -313,6 +313,17 @@ lemma singularChainComplexCoefficientMap_naturality {R' : C} (φ : R ⟶ R') :
       P.singularChainComplexCoefficientMap φ ≫ singularChainComplexMap f R' :=
   ((SSetPair.chainComplexFunctor C).map φ).naturality (toSSetPair.map f)
 
+variable {P P'} in
+/-- Read in the relative singular chain complexes, the relative singular chain functor sends a map
+of pairs to its chain map `TopPair.singularChainComplexMap`. -/
+@[reassoc]
+lemma singularChainComplexFunctor_obj_map_comp_eqToHom :
+    ((singularChainComplexFunctor C).obj R).map f ≫
+        eqToHom (singularChainComplexFunctor_obj_obj (C := C) P' R) =
+      eqToHom (singularChainComplexFunctor_obj_obj (C := C) P R) ≫
+        singularChainComplexMap f R := by
+  simp [singularChainComplexFunctor_obj_map]
+
 /-- The quotient map from ambient singular chains to relative singular chains. -/
 noncomputable abbrev singularChainComplexπ :
     (toSSetPair.obj P).right.chainComplex R ⟶ P.singularChainComplex R :=

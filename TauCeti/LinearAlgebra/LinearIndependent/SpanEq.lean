@@ -17,12 +17,18 @@ many elements as the dimension of `W`, the linearly independent families `ι →
 independent tuples by their span, such as the count of subspaces of a given dimension over a
 finite field, reduce the size of each group to a count of independent tuples in `W` this way.
 
+In the same vein, a family of vectors of a finite-dimensional space spans it as soon as some
+linearly independent subfamily has as many members as the dimension
+(`LinearIndependent.span_range_eq_top_of_comp`).
+
 ## Main results
 
 * `Submodule.linearIndependentSpanEqEquiv`: linearly independent families in `V` spanning `W`
   are equivalent to linearly independent families in `W`, with its value on elements given by
   `Submodule.linearIndependentSpanEqEquiv_apply_coe` and
   `Submodule.linearIndependentSpanEqEquiv_symm_apply_coe_coe`.
+* `LinearIndependent.span_range_eq_top_of_comp`: a family with a linearly independent subfamily
+  of `finrank` members spans the space.
 -/
 
 public section
@@ -65,3 +71,12 @@ theorem linearIndependentSpanEqEquiv_symm_apply_coe_coe
   (rfl)
 
 end Submodule
+
+/-- A family `A` of vectors of a finite-dimensional space spans it if a linearly independent
+subfamily `A ∘ r` has as many members as the dimension. -/
+theorem LinearIndependent.span_range_eq_top_of_comp {ι κ K V : Type*} [Fintype ι] [DivisionRing K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] {A : κ → V} {r : ι → κ}
+    (hA : LinearIndependent K (A ∘ r)) (hcard : Fintype.card ι = finrank K V) :
+    Submodule.span K (Set.range A) = ⊤ := by
+  rw [eq_top_iff, ← hA.span_eq_top_of_card_eq_finrank' hcard]
+  exact Submodule.span_mono (Set.range_comp_subset_range r A)

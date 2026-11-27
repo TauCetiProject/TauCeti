@@ -38,6 +38,7 @@ its Lie algebra by a lattice.
 * `TauCeti.lieExpLattice`: the kernel `Λ` of the exponential, as a `ℤ`-submodule of the Lie
   algebra.
 * `TauCeti.discreteTopology_ker_lieExpAddMonoidHom`: the kernel of the exponential is discrete.
+* `TauCeti.finite_lieExpLattice`: the exponential lattice is a finitely generated `ℤ`-module.
 * `TauCeti.isOpenMap_lieExpAddMonoidHom` and `TauCeti.isOpenMap_lieExp`: the exponential of a
   commutative Lie group is an open map.
 * `TauCeti.lieExpAddMonoidHom_surjective_of_preconnectedSpace`: the exponential homomorphism of
@@ -213,6 +214,12 @@ theorem lieExp_surjective_of_preconnectedSpace [PreconnectedSpace G] :
 noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
   finiteDimensional_leftInvariantDerivation
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+
+omit [IsTopologicalGroup G] in
+/-- **The exponential lattice of a commutative Lie group is finitely generated**, being discrete
+in the finite-dimensional Lie algebra. -/
+instance finite_lieExpLattice : Module.Finite ℤ (lieExpLattice (I := I) (G := G)) :=
+  instModuleFinite_of_discrete_submodule _
 
 section Preconnected
 

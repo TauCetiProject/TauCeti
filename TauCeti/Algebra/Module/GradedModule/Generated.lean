@@ -40,6 +40,8 @@ semiring suffices; multiplicative grading laws and a commutative base semiring a
   direct sum is generated in one degree exactly when every summand is generated in that degree.
 * `TauCeti.InternalGrading.linearMap_ext_of_isGeneratedInDegree`: two linear maps out of a module
   generated in degree `d` agree when they agree on its degree-`d` piece.
+* `TauCeti.InternalGrading.decompose_mem_span_piece_eq_zero_of_lt`: over a nonnegatively graded
+  scalar semiring, elements in the span of `G.piece d` have zero components below degree `d`.
 * `TauCeti.InternalGrading.IsGeneratedInDegree.piece_add_eq_smul`: over a graded algebra `𝒜`, a
   graded module generated in degree `d` has degree-`m + d` piece `𝒜 m • M_d`.
 * `TauCeti.InternalGrading.IsGeneratedInDegree.piece_eq_bot_of_lt`: over a nonnegatively graded
@@ -240,6 +242,25 @@ theorem isHomogeneous_span_piece (d : ℤ) :
   rw [h]
   exact Submodule.smul_mem _ _ (Submodule.subset_span (g i).property)
 
+include 𝒜 in
+omit [IsScalarTower k A M] in
+/-- Over a nonnegatively graded scalar semiring, every element of the `A`-span of `G.piece d`
+has zero homogeneous components in degrees below `d`. -/
+theorem decompose_mem_span_piece_eq_zero_of_lt (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) {d p : ℤ}
+    (hp : p < d) {x : M} (hx : x ∈ Submodule.span A (G.piece d : Set M)) :
+    (DirectSum.decompose G.piece x p : M) = 0 := by
+  classical
+  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.mp hx
+  rw [DirectSum.decompose_sum, DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property
+    (a := c i) (i := p - d)
+  rw [sub_add_cancel] at h
+  have h0 : (DirectSum.decompose 𝒜 (c i) (p - d) : A) = 0 :=
+    (Submodule.eq_bot_iff _).1 (h𝒜 (p - d) (by omega)) _
+      (DirectSum.decompose 𝒜 (c i) (p - d)).property
+  rw [h, h0, zero_smul]
+
 /-- Under compatible decompositions of the scalar semiring and module, a module generated in
 degree `d` has degree-`m + d` piece `𝒜 m • M_d`: its homogeneous elements of degree `m + d` are
 exactly the sums of products of degree-`m` scalars with degree-`d` elements of the module. -/
@@ -259,19 +280,9 @@ omit [IsScalarTower k A M] in
 homogeneous elements of degree below `d`. -/
 theorem IsGeneratedInDegree.piece_eq_bot_of_lt (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
     (hG : G.IsGeneratedInDegree A d) {p : ℤ} (hp : p < d) : G.piece p = ⊥ := by
-  classical
   refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
-  obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.1 ((G.isGeneratedInDegree_iff d).1 hG x)
-  rw [← DirectSum.decompose_of_mem_same G.piece hx, DirectSum.decompose_sum,
-    DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  have h := _root_.DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 G.piece (g i).property
-    (a := c i) (i := p - d)
-  rw [sub_add_cancel] at h
-  have h0 : (DirectSum.decompose 𝒜 (c i) (p - d) : A) = 0 := by
-    exact (Submodule.eq_bot_iff _).1 (h𝒜 (p - d) (by omega)) _
-      (DirectSum.decompose 𝒜 (c i) (p - d)).property
-  rw [h, h0, zero_smul]
+  rw [← DirectSum.decompose_of_mem_same G.piece hx]
+  exact decompose_mem_span_piece_eq_zero_of_lt 𝒜 h𝒜 hp ((G.isGeneratedInDegree_iff d).1 hG x)
 
 /-- A graded module generated in degree `d` has every homogeneous piece of degree above `d`
 inside `A₊ M`, the products of elements of positive degree with elements of the module. -/

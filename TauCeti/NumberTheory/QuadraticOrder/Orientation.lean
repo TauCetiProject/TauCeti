@@ -45,6 +45,7 @@ further choices.
   `ι_K` exactly when it sends `θ` into the upper half-plane.
 * `TauCeti.QuadraticOrder.ringHom_eq_complexEmbeddingOfSqrt_or_eq_conjugate`: `ι_K` and its
   conjugate are the two complex embeddings of `K`.
+* `TauCeti.QuadraticOrder.not_isReal_complexEmbeddingOfSqrt`: the two embeddings are distinct.
 * `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_algEquivOfSqrt`,
   `TauCeti.QuadraticOrder.ringHom_comp_algEquivOfSqrt_eq_complexEmbedding_iff`,
   `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_omega`: compatibility with the model
@@ -169,6 +170,17 @@ theorem ringHom_eq_complexEmbeddingOfSqrt_or_eq_conjugate (φ : K →+* ℂ) :
   · refine Or.inr (RingHom.ext fun x ↦ ?_)
     rw [ComplexEmbedding.conjugate_coe_eq, RingHom.coe_coe, complexEmbeddingOfSqrt_apply]
     simpa [e, ComplexEmbedding.conjugate_coe_eq] using RingHom.congr_fun h (e.symm x)
+
+/-- The distinguished embedding of a quadratic number field presented by a square root of a
+negative integer differs from its complex conjugate. -/
+@[simp]
+theorem not_isReal_complexEmbeddingOfSqrt :
+    ¬ ComplexEmbedding.IsReal (complexEmbeddingOfSqrt d hd θ hθ hK : K →+* ℂ) := by
+  have hd' : (d : ℚ) < 0 := by exact_mod_cast hd
+  have hθ' : θ ^ 2 = algebraMap ℚ K (d : ℚ) := by
+    simpa only [map_intCast] using hθ
+  let := isTotallyComplex_of_sq_ratCast_of_neg hθ' hd'
+  exact IsTotallyComplex.complexEmbedding_not_isReal _
 
 end Basic
 

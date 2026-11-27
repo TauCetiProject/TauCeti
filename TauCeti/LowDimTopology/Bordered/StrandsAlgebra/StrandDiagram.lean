@@ -330,6 +330,16 @@ theorem endpoint_mem_target {φ : StrandDiagram α} {x : α} (hx : x ∈ φ.sour
     φ.endpoint x ∈ φ.target :=
   mem_target.2 ⟨x, endpoint_mem hx⟩
 
+/-- The strand starting at a point of the source goes upwards. -/
+theorem le_endpoint {φ : StrandDiagram α} {x : α} (hx : x ∈ φ.source) : x ≤ φ.endpoint x :=
+  φ.le_of_mem (endpoint_mem hx)
+
+/-- A point that is not a starting point of `φ` is its own end point. -/
+theorem endpoint_of_notMem_source {φ : StrandDiagram α} {x : α} (hx : x ∉ φ.source) :
+    φ.endpoint x = x := by
+  rw [mem_source, not_exists] at hx
+  rw [endpoint_def, Option.eq_none_iff_forall_not_mem.2 hx, Option.getD_none]
+
 /-- Strands starting at distinct points of the source end at distinct points. -/
 theorem endpoint_injOn (φ : StrandDiagram α) : Set.InjOn φ.endpoint φ.source :=
   fun _ hx _ hy h ↦ φ.eq_of_mem_of_mem (endpoint_mem hx) (h ▸ endpoint_mem hy)

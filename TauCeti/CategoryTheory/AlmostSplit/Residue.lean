@@ -30,10 +30,10 @@ of `φ.τ₃` to the class of `φ.τ₁` for every endomorphism `φ` of the sequ
 of algebras over the base ring of a linear category
 (`CategoryTheory.ShortComplex.IsAlmostSplit.residueAlgEquiv`).
 
-Over a field `k`, the two residue division rings therefore have the same dimension, and together
-with the tower law of `TauCeti/CategoryTheory/Preadditive/Radical/Valuation.lean` and the
-multiplicity count of `TauCeti/CategoryTheory/AlmostSplit/Valuation.lean` this gives the second
-half of the valued mesh relation: for every object `X` with a local endomorphism ring, the first
+The two residue division rings therefore have the same length over the base ring. When that
+length is finite, the length formula for free modules in a scalar tower and the multiplicity
+count of `TauCeti/CategoryTheory/AlmostSplit/Valuation.lean` give the second half of the valued
+mesh relation. For every object `X` with a local endomorphism ring, the first
 entry of the valuation of `Irr(X, C)` is the second entry of the valuation of `Irr(A, X)`
 (`CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_fst_eq_snd`). Together
 with `CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_snd_eq_fst`, the
@@ -55,8 +55,8 @@ valuation of `A → X` is the valuation of `X → C` with its two entries exchan
 * `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_τ₁_iff_isIso_τ₃`: an endomorphism of the
   sequence is invertible at `A` exactly when it is invertible at `C`.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.residueRingEquiv_mk`: the characterizing equation.
-* `CategoryTheory.ShortComplex.IsAlmostSplit.finrank_residue_X₁_eq_finrank_residue_X₃`: over a
-  field, the residue division rings of `A` and `C` have the same dimension.
+* `CategoryTheory.ShortComplex.IsAlmostSplit.length_residue_X₁_eq_length_residue_X₃`: the
+  residue division rings of `A` and `C` have the same length over the base ring.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_fst_eq_snd`: the first
   entry of the valuation of `Irr(X, C)` is the second entry of the valuation of `Irr(A, X)`, and
   `CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_X₁_eq_swap`: the
@@ -65,7 +65,7 @@ valuation of `A → X` is the valuation of `X → C` with its two entries exchan
 ## References
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
-  University Press (1995), Section VII.1, in particular Proposition VII.1.5.
+  University Press (1995), Section VII.1, in particular Lemma VII.1.4 and Proposition VII.1.5.
 -/
 
 public section
@@ -238,62 +238,61 @@ theorem residueAlgEquiv_apply (hS : S.IsAlmostSplit) (x : End S.X₃ ⧸ Ring.ja
   (rfl)
 
 /-- **The residue division rings of the two end terms of an almost-split sequence have the same
-dimension** over the base ring of a linear category. -/
-theorem finrank_residue_X₁_eq_finrank_residue_X₃ (hS : S.IsAlmostSplit) :
-    finrank k (End S.X₁ ⧸ Ring.jacobson (End S.X₁)) =
-      finrank k (End S.X₃ ⧸ Ring.jacobson (End S.X₃)) :=
-  (hS.residueAlgEquiv k).toLinearEquiv.finrank_eq.symm
+length** over the base ring of a linear category. -/
+theorem length_residue_X₁_eq_length_residue_X₃ (hS : S.IsAlmostSplit) :
+    length k (End S.X₁ ⧸ Ring.jacobson (End S.X₁)) =
+      length k (End S.X₃ ⧸ Ring.jacobson (End S.X₃)) :=
+  (hS.residueAlgEquiv k).toLinearEquiv.length_eq.symm
 
 end Linear
 
-/-! ### Over a field: the valued mesh relation -/
+/-! ### The valued mesh relation -/
 
-section Field
+section Mesh
 
-variable (k : Type*) [Field k] [Linear k C]
+variable (k : Type*) [CommRing k] [Linear k C]
+  [IsArtinian k (End S.X₃ ⧸ Ring.jacobson (End S.X₃))]
+  [IsNoetherian k (End S.X₃ ⧸ Ring.jacobson (End S.X₃))]
 
 variable {J : Type*} [Finite J] (P : J → C) [HasBiproduct P] [∀ j, IsLocalRing (End (P j))]
 
-/-- **The valued mesh relation of an almost-split sequence, second half**: in an almost-split
-sequence `0 → A → B → C → 0` over a field, with `End C` finite-dimensional and with
-`B ≅ ⨁ P` a finite biproduct of objects with local endomorphism rings, for every object `X` with a
-local endomorphism ring the first entry of the valuation of `Irr(X, C)` equals the second entry
-of the valuation of `Irr(A, X)`. -/
-theorem irreducibleMorphismValuation_fst_eq_snd [Module.Finite k (End S.X₃)]
+/-- In an almost-split sequence `0 → A → B → C → 0`, suppose the residue division ring of
+`End C` has finite length over the base ring and `B ≅ ⨁ P` is a finite biproduct of objects
+with local endomorphism rings. For every object `X` with a local endomorphism ring, the first
+entry of the valuation of `Irr(X, C)` equals the second entry of the valuation of `Irr(A, X)`. -/
+theorem irreducibleMorphismValuation_fst_eq_snd
     (hS : S.IsAlmostSplit) (e : S.X₂ ≅ ⨁ P) (X : C) [IsLocalRing (End X)] :
     (irreducibleMorphismValuation k X S.X₃).1 = (irreducibleMorphismValuation k S.X₁ X).2 := by
   have := hS.isLeftAlmostSplit_f.isLocalRing_end
   have := hS.isRightAlmostSplit_g.isLocalRing_end
-  refine Nat.eq_of_mul_eq_mul_left
-    (Module.finrank_pos (R := k) (M := End S.X₃ ⧸ Ring.jacobson (End S.X₃))) ?_
-  -- Both sides compute the `k`-dimension of `Irr(X, C)`, respectively `Irr(A, X)`, which agree
-  -- since both are `dim_k F_X` times the multiplicity of `X` in the middle term.
-  calc finrank k (End S.X₃ ⧸ Ring.jacobson (End S.X₃)) * (irreducibleMorphismValuation k X S.X₃).1
-      = finrank k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ) *
-          (irreducibleMorphismValuation k X S.X₃).2 := by
-        rw [finrank_residue_mul_irreducibleMorphismValuation_fst,
-          finrank_residueOp_mul_irreducibleMorphismValuation_snd]
-    _ = finrank k (End X ⧸ Ring.jacobson (End X)) * (irreducibleMorphismValuation k S.X₁ X).1 := by
+  have hpos : 0 < (length k (End S.X₃ ⧸ Ring.jacobson (End S.X₃))).toNat :=
+    ENat.toNat_pos Module.length_pos.ne' Module.length_ne_top
+  refine Nat.eq_of_mul_eq_mul_right hpos ?_
+  -- Compare lengths of the two spaces of irreducible maps using both of their scalar actions.
+  calc (irreducibleMorphismValuation k X S.X₃).1 * (length k (End S.X₃ ⧸ Ring.jacobson _)).toNat
+      = (irreducibleMorphismValuation k X S.X₃).2 *
+          (length k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson _)).toNat := by
+        rw [← toNat_length_irreducibleMorphismSpace_eq_fst_mul,
+          ← toNat_length_irreducibleMorphismSpace_eq_snd_mul]
+    _ = (irreducibleMorphismValuation k S.X₁ X).1 * (length k (End X ⧸ Ring.jacobson _)).toNat := by
         rw [hS.irreducibleMorphismValuation_snd_eq_fst k P e,
-          Ring.finrank_quotient_jacobson_mulOpposite]
-    _ = finrank k ((End S.X₁)ᵐᵒᵖ ⧸ Ring.jacobson (End S.X₁)ᵐᵒᵖ) *
-          (irreducibleMorphismValuation k S.X₁ X).2 := by
-        rw [finrank_residue_mul_irreducibleMorphismValuation_fst,
-          finrank_residueOp_mul_irreducibleMorphismValuation_snd]
-    _ = finrank k (End S.X₃ ⧸ Ring.jacobson (End S.X₃)) *
-          (irreducibleMorphismValuation k S.X₁ X).2 := by
-        rw [Ring.finrank_quotient_jacobson_mulOpposite,
-          hS.finrank_residue_X₁_eq_finrank_residue_X₃ k]
+          Ring.length_quotient_jacobson_mulOpposite]
+    _ = (irreducibleMorphismValuation k S.X₁ X).2 *
+          (length k ((End S.X₁)ᵐᵒᵖ ⧸ Ring.jacobson _)).toNat := by
+        rw [← toNat_length_irreducibleMorphismSpace_eq_fst_mul,
+          ← toNat_length_irreducibleMorphismSpace_eq_snd_mul]
+    _ = (irreducibleMorphismValuation k S.X₁ X).2 *
+          (length k (End S.X₃ ⧸ Ring.jacobson _)).toNat := by
+        rw [Ring.length_quotient_jacobson_mulOpposite, hS.length_residue_X₁_eq_length_residue_X₃ k]
 
-/-- **The valued mesh relation of an almost-split sequence**: under the hypotheses of
-`CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_fst_eq_snd`, the valuation
-of `Irr(A, X)` is the valuation of `Irr(X, C)` with its two entries exchanged. -/
-theorem irreducibleMorphismValuation_X₁_eq_swap [Module.Finite k (End S.X₃)]
+/-- Under the hypotheses of `irreducibleMorphismValuation_fst_eq_snd`, the valuation of
+`Irr(A, X)` is the valuation of `Irr(X, C)` with its two entries exchanged. -/
+theorem irreducibleMorphismValuation_X₁_eq_swap
     (hS : S.IsAlmostSplit) (e : S.X₂ ≅ ⨁ P) (X : C) [IsLocalRing (End X)] :
     irreducibleMorphismValuation k S.X₁ X = (irreducibleMorphismValuation k X S.X₃).swap :=
   Prod.ext (hS.irreducibleMorphismValuation_snd_eq_fst k P e X).symm
     (hS.irreducibleMorphismValuation_fst_eq_snd k P e X).symm
 
-end Field
+end Mesh
 
 end CategoryTheory.ShortComplex.IsAlmostSplit

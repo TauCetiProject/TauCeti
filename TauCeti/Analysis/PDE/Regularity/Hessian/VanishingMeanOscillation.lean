@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.SmallMeanOscillation
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Cutoff
-import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Matrix.Contraction.LpNorm
 import TauCeti.Analysis.Matrix.EuclideanLin.Measurable
+import TauCeti.Analysis.PDE.Ellipticity.Integral
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.Analysis.Sobolev.Wkp.Interpolation
 import TauCeti.Analysis.PDE.Regularity.Hessian.Interior
@@ -37,15 +37,14 @@ mean from its average by at most `δ`, in the operator norm of `a(x)` acting on 
 `TauCeti.PDE.norm_matrixBilinearForm_eq_norm_toEuclideanCLM`). This file proves the interior
 estimate
 
-`(R - r)² ‖D²u‖_{Lᵖ(B_r)} ≤ C (R² ‖f‖_{Lᵖ(B_R)} + ‖u‖_{Lᵖ(B_R)})`, `2 < p < ∞`, `r < R`,
+`(R - r)² ‖D²u‖_{Lᵖ(B_r)} ≤ C (R² ‖f‖_{Lᵖ(B_R)} + ‖u‖_{Lᵖ(B_R)})`, `1 < p < ∞`, `r < R`,
 
 with `C` and the threshold `δ` depending only on `n`, `p`, `λ` and `Λ`
 (`TauCeti.PDE.exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le`). For coefficients of
 vanishing mean oscillation the threshold is reached below some radius `r₀`, and on every ball of
 radius `R ≤ r₀`
 `‖D²u‖_{Lᵖ(B_{R/2})} ≤ C (‖f‖_{Lᵖ(B_R)} + R⁻² ‖u‖_{Lᵖ(B_R)})`
-(`TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`). The restriction `p > 2` is that of
-the whole-space estimate for coefficients of small mean oscillation; the interior estimate treats
+(`TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`). The interior estimate treats
 the principal part alone.
 
 Averaging the `p`-th powers of the interior estimates over all centres turns them into the estimate
@@ -58,9 +57,10 @@ with the same `r₀` and `C` depending only on `n`, `p`, `λ` and `Λ`
 (`TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO`). Bounded lower-order
 terms `⟪b, ∇u⟫ + c u` are then absorbed by the interpolation inequality for the gradient
 (`TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_of_memVMO`).
-For `2 < p < ∞` these give the Hessian part of the a priori estimate in Krylov's whole-space
-theorem, without its zero-order shift `λ u`, `λ ≥ λ₀` (which removes `‖u‖_{Lᵖ}` from the right
-side), and without the range `1 < p ≤ 2`.
+These give the Hessian part of the a priori estimate in Krylov's whole-space theorem. Its
+zero-order shift `λ u`, `λ ≥ λ₀`, which removes `‖u‖_{Lᵖ}` from the right side, is proved in
+`TauCeti.Analysis.PDE.Regularity.Hessian.ZeroOrderShift`
+(`TauCeti.PDE.exists_mul_norm_add_sqrt_mul_norm_add_norm_le_of_sum_mul_inner_sub_mul_eq_of_memVMO`).
 
 ## The argument
 
@@ -74,11 +74,11 @@ side), and without the range `1 < p ≤ 2`.
   (`MeasureTheory.LocallyIntegrable.exists_forall_mem_and_bmoSeminorm_le_and_eqOn`). On every ball
   it is therefore close in mean to its average, which is uniformly elliptic.
 * **Localization.** For a cutoff `ζ` between `B_s` and `B_t`, `t ≤ R`, the product `ζ u` lies in
-  `W^{2,2}_0(B_t)`, since `W^{2,p}(B_t) ⊆ W^{2,2}(B_t)` on the ball of finite measure, and its
-  Hessian is `ζ D²u + T` with the Leibniz remainder `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ`. Its extension
-  by zero is a whole-space solution with the extended coefficients and right side
-  `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ`, so the whole-space estimate bounds `D²u` on `B_s` by `f` on `B_R`, `∇u` on
-  `B_t` and `u` on `B_R`.
+  `W^{2,p}_0(B_t)`, and its Hessian is `ζ D²u + T` with the Leibniz remainder
+  `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ`. Its extension by zero lies in `W^{2,p}(ℝ^{n+1})` and is a
+  whole-space solution with the extended coefficients and right side `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ`, so the
+  whole-space estimate for coefficients of small mean oscillation, which holds for every
+  `1 < p < ∞`, bounds `D²u` on `B_s` by `f` on `B_R`, `∇u` on `B_t` and `u` on `B_R`.
 * **Absorption.** As for the estimate with coefficients of small oscillation
   (`TauCeti.PDE.exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq`),
   the interpolation inequality between concentric balls
@@ -135,40 +135,29 @@ private theorem exists_eqOn_ball_and_forall_setAverage_matrixBilinearForm_sub_le
       (S := ellipticCLMSet lam Lam) (convex_ellipticCLMSet lam Lam)
       (isClosed_ellipticCLMSet lam Lam) hR fun x hx =>
         (toEuclideanCLM_mem_ellipticCLMSet_iff _).2 ((uniformlyEllipticOn_iff.1 hell).2.2 hx)
-  set e := Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)
-  have he (M : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) : e (e.symm M) = M :=
-    e.apply_symm_apply M
-  refine ⟨fun x => e.symm (β x),
+  set a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ := fun x => (Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (β x)
+  have he (x : EuclideanSpace ℝ ι) : Matrix.toEuclideanCLM (𝕜 := ℝ) (a' x) = β x :=
+    StarAlgEquiv.apply_symm_apply _ _
+  have ha' : AEStronglyMeasurable a' volume :=
     Matrix.aestronglyMeasurable_toEuclideanCLM_iff.1
-      (hβloc.aestronglyMeasurable.congr (ae_of_all _ fun x => (he (β x)).symm)),
+      (hβloc.aestronglyMeasurable.congr (ae_of_all _ fun x => (he x).symm))
+  have hell' : UniformlyEllipticOn univ a' lam Lam :=
     uniformlyEllipticOn_of_forall_toEuclideanCLM_mem hell.pos hell.le fun x _ => by
       rw [he]
-      exact hβK x, fun x hx => ?_, fun c r hr => ?_⟩
-  · simp only [hβb hx, e.symm_apply_apply]
-  -- On a ball, freeze at the average `κ` of `β`, which is elliptic.
-  have hβB : IntegrableOn β (ball c r) volume :=
-    (hβloc.integrableOn_isCompact (isCompact_closedBall c r)).mono_set ball_subset_closedBall
-  set κ := ⨍ y in ball c r, β y
-  have hκ : κ ∈ ellipticCLMSet lam Lam := Convex.set_average_mem (convex_ellipticCLMSet lam Lam)
-    (isClosed_ellipticCLMSet lam Lam) (measure_ball_pos volume c hr).ne' measure_ball_lt_top.ne
-    (ae_of_all _ hβK) hβB
-  refine ⟨e.symm κ, uniformlyEllipticOn_of_forall_toEuclideanCLM_mem hell.pos hell.le
-    fun _ _ => by rwa [he], ?_⟩
-  have hint : IntegrableOn (fun x => β x - κ) (ball c r) volume :=
-    hβB.sub (integrableOn_const measure_ball_lt_top.ne)
-  -- The mean oscillation of `β` on the ball is at most its BMO seminorm.
-  have hle := (setLAverage_enorm_sub_setAverage_le_bmoSeminorm β volume c r).trans
-    (hbmo.trans (mul_le_mul_of_nonneg_left hη zero_le))
+      exact hβK x
+  refine ⟨a', ha', hell', fun x hx => ?_, fun c r hr => ?_⟩
+  · simp only [a', hβb hx, StarAlgEquiv.symm_apply_apply]
+  -- On a ball, freeze at the average of `β`, whose mean oscillation is at most its BMO seminorm.
   have hD : (2 + 20 * 8 ^ finrank ℝ (EuclideanSpace ℝ ι) : ℝ≥0∞) * ENNReal.ofReal δ =
       ENNReal.ofReal ((2 + 20 * 8 ^ finrank ℝ (EuclideanSpace ℝ ι)) * δ) := by
     rw [ENNReal.ofReal_mul (by positivity)]
     norm_cast
-  rw [setLAverage_enorm_eq_ofReal_setAverage_norm hint, hD,
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at hle
-  have heq (x : EuclideanSpace ℝ ι) :
-      ‖matrixBilinearForm (e.symm (β x)) - matrixBilinearForm (e.symm κ)‖ = ‖β x - κ‖ := by
-    rw [← matrixBilinearForm_sub, norm_matrixBilinearForm_eq_norm_toEuclideanCLM, map_sub, he, he]
-  simpa only [heq] using hle
+  refine (hell'.mono_set (subset_univ _)).exists_uniformlyEllipticOn_const_and_setAverage_le
+    measurableSet_ball ha'.restrict (measure_ball_pos volume c hr).ne' measure_ball_lt_top.ne
+    (by positivity) ?_
+  simpa only [he, hD] using
+    (setLAverage_enorm_sub_setAverage_le_bmoSeminorm β volume c r).trans
+    (hbmo.trans (mul_le_mul_of_nonneg_left hη zero_le))
 
 end Coefficient
 
@@ -176,11 +165,11 @@ section Estimate
 
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The small mean oscillation estimate on an open set of finite measure.** The whole-space
-estimate `exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le`, applied to
-the extension by zero of `w ∈ W^{2,2}_0(U)`, bounds `‖D²w‖_{Lᵖ(U)}` by the `Lᵖ(U)` norm of
-`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼw` when `D²w ∈ Lᵖ(U)`. -/
-private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 < p)
+/-- **The small mean oscillation estimate for functions vanishing on the boundary.** The
+whole-space estimate `exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le`,
+applied to the extension by zero of `w ∈ W^{2,p}_0(U)`, bounds `‖D²w‖_{Lᵖ(U)}` by the `Lᵖ(U)` norm
+of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼw`. -/
+private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 1 < p)
     (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
       ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
@@ -190,24 +179,18 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
             UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam ∧
               ⨍ x in ball c r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ δ) →
       ∀ {U : Opens (EuclideanSpace ℝ (Fin (n + 1)))},
-        volume (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≠ ⊤ →
-      ∀ w ∈ wkp0Submodule (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) U 2 2,
-        MemLp (Wkp.iteratedGradient 1 w : EuclideanSpace ℝ (Fin (n + 1)) →
-          EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) p
-          (volume.restrict U) →
+      ∀ w ∈ wkp0Submodule (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) U p 2,
       ∀ {F : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}, MemLp F p (volume.restrict U) →
         (∀ᵐ x ∂volume.restrict U,
           Matrix.contraction (a x) (Wkp.iteratedGradient 1 w x) = F x) →
         lpNorm (Wkp.iteratedGradient 1 w) p (volume.restrict U) ≤
           C * lpNorm F p (volume.restrict U) := by
   obtain ⟨C, δ, hδ, hCZ⟩ :=
-    exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le (n := n) hp hp_top
-      lam Lam
-  refine ⟨C, δ, hδ, fun {a} ha haΛ hosc {U} hUfin w hw0 hwp {F} hF heq => ?_⟩
-  have : IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    isFiniteMeasure_restrict.2 hUfin
+    exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le (n := n) (s := p) hp
+      hp_top hp lam Lam
+  refine ⟨C, δ, hδ, fun {a} ha haΛ hosc {U} w hw0 {F} hF heq => ?_⟩
   have hUm : MeasurableSet (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) := U.isOpen.measurableSet
-  set W : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ 2 2 :=
+  set W : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ p 2 :=
     (Wkp0.extendByZeroₗᵢ (le_top : U ≤ ⊤) 2 ⟨w, hw0⟩).val
   have hW : ∀ᵐ x, Wkp.iteratedGradient 1 W x =
       (U : Set _).indicator (Wkp.iteratedGradient 1 w : EuclideanSpace ℝ (Fin (n + 1)) →
@@ -221,9 +204,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
       heq] with x hx
     rw [← hx, Matrix.contraction_apply]
   have hkey := hCZ ha (fun x => haΛ.opNorm_matrixBilinearForm_le (mem_univ x)) hosc W _ hWeq
-    (((integrable_indicator_iff hUm).2 (hwp.integrable Fact.out)).congr
-      (hW.mono fun _ h => h.symm))
-    (((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 hwp).ae_eq
+    (((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 (Lp.memLp _)).ae_eq
       (hW.mono fun _ h => h.symm))
     ((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 hF)
   have e1 : eLpNorm (Wkp.iteratedGradient 1 W : EuclideanSpace ℝ (Fin (n + 1)) →
@@ -239,12 +220,12 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
   rw [← toReal_eLpNorm, ← toReal_eLpNorm, ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top hF.eLpNorm_ne_top) hkey
 
-/-- **The localized estimate for coefficients of small mean oscillation.** For `2 < p < ∞`, a
+/-- **The localized estimate for coefficients of small mean oscillation.** For `1 < p < ∞`, a
 coefficient field `a` of small mean oscillation at every scale, an open set `U ⊆ Ω` of finite
 measure, a smooth cutoff `ζ` with compact support in `U` and `‖∇ζ‖ ≤ M₁`, `‖D²ζ‖ ≤ M₂`, every
 `u ∈ W^{2,p}(Ω)` with `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` on `U` satisfies
 `‖ζ D²u‖ ≤ C ‖ζ f‖ + (C (n + 1)² Λ + 1) (2 M₁ ‖∇u‖ + M₂ ‖u‖)` in `Lᵖ(U)`. -/
-private theorem exists_lpNorm_smul_iteratedGradient_le (hp : 2 < p) (hp_top : p ≠ ⊤)
+private theorem exists_lpNorm_smul_iteratedGradient_le (hp : 1 < p) (hp_top : p ≠ ⊤)
     (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
       ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
@@ -271,8 +252,8 @@ private theorem exists_lpNorm_smul_iteratedGradient_le (hp : 2 < p) (hp_top : p 
     hp_top lam Lam
   refine ⟨C, δ, hδ, fun {a} ha haΛ hosc {Omega U} hU hUfin {ζ M₁ M₂} hζ hcpt hζU hM₁ hM₂ u f hf
     heq => ?_⟩
-  obtain ⟨w, hw0, hDw⟩ := Wkp.exists_mem_wkp0Submodule_iteratedGradient_ae_eq (q := 2) hp.le
-    ENNReal.ofNat_ne_top hU hUfin hζ hcpt hζU u
+  obtain ⟨w, hw0, hDw⟩ := Wkp.exists_mem_wkp0Submodule_iteratedGradient_ae_eq (q := p) le_rfl
+    hp_top hU hUfin hζ hcpt hζU u
   set T := fun x => leibnizRemainder ζ (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x)
     (Wkp.value 2 u x) x
   have hζ_top := hζ.continuous.memLp_top_of_hasCompactSupport hcpt
@@ -289,17 +270,14 @@ private theorem exists_lpNorm_smul_iteratedGradient_le (hp : 2 < p) (hp_top : p 
     (ae_of_all _ fun x i j => haΛ.abs_apply_le (mem_univ x) i j) hTU
   have hζf : MemLp (fun x => ζ x * f x) p (volume.restrict U) := hζ_top.smul hf
   -- The equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼ(ζ u) = ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` and the estimate for `ζ u`.
-  have hwp : MemLp (Wkp.iteratedGradient 1 w : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) p
-      (volume.restrict U) := (hζH.add hTU).ae_eq (hDw.mono fun _ h => h.symm)
-  have hkey := hW0 ha haΛ hosc hUfin w hw0 hwp (hζf.add hE) (by
+  have hkey := hW0 ha haΛ hosc w hw0 (hζf.add hE) (by
       filter_upwards [hDw, heq] with x h1 h2
       rw [h1, map_add, map_smul, h2, smul_eq_mul, Pi.add_apply])
   have hsub : lpNorm (fun x => ζ x • Wkp.iteratedGradient 1 u x) p (volume.restrict U) =
       lpNorm (fun x => Wkp.iteratedGradient 1 w x - T x) p (volume.restrict U) :=
     lpNorm_congr_ae (hDw.mono fun x h => by dsimp only; rw [h, add_sub_cancel_right])
   rw [hsub]
-  have h1 := lpNorm_sub_le (g := T) hwp Fact.out
+  have h1 := lpNorm_sub_le (g := T) (Lp.memLp (Wkp.iteratedGradient 1 w)) Fact.out
   have h2 := lpNorm_add_le (g := fun x => Matrix.contraction (a x) (T x)) hζf Fact.out
   have hC : (0 : ℝ) ≤ C := C.property
   calc _ ≤ _ := h1
@@ -318,7 +296,7 @@ private theorem exists_lpNorm_smul_iteratedGradient_le (hp : 2 < p) (hp_top : p 
 estimate `exists_lpNorm_smul_iteratedGradient_le`, for the coefficients extended from `B_R` by
 `exists_eqOn_ball_and_forall_setAverage_matrixBilinearForm_sub_le` and a cutoff between `B_s` and
 `B_t`, bounds `D²u` on `B_s` by `f` and `∇u` on `B_t` and by `u` on `B_R`. -/
-private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hp : 2 < p) (hp_top : p ≠ ⊤)
+private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hp : 1 < p) (hp_top : p ≠ ⊤)
     (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∃ c : ℝ, 0 ≤ c ∧
       ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -400,7 +378,7 @@ private theorem add_mul_le_mul_add {C C₂ K R X Z : ℝ} (hC : 0 ≤ C) (hC₂ 
     2 * (R ^ 2 * (C * X)) + C₂ * K ^ 2 * Z + (2 * C * Z + C₂ * K ^ 2 * (R ^ 2 * X)) by ring]
 
 /-- **The interior Calderón–Zygmund estimate for coefficients of vanishing mean oscillation.**
-Let `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`,
+Let `1 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`,
 `λ` and `Λ`, with the following property. Let `a` be a coefficient matrix on `ℝ^{n+1}`, neither
 symmetric nor continuous in general, whose operators `a(x)` are locally integrable, uniformly
 elliptic with the constants `λ, Λ` on `B(x₀, 2 R)`, and of VMO modulus `η_a(16 R) ≤ δ`: on every
@@ -414,7 +392,7 @@ where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`. No boundary
 is imposed, and `f` is not assumed to be in `Lᵖ`: the equation and the bound on `a` force it. For
 coefficients of vanishing mean oscillation the smallness holds below a radius `r₀` depending on
 `a`, see `TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`. -/
-theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le (hp : 2 < p)
+theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le (hp : 1 < p)
     (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
       ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -485,7 +463,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le (hp : 2 < p)
   exact hΦ.trans (add_mul_le_mul_add C.property hC₂ lpNorm_nonneg lpNorm_nonneg)
 
 /-- **The interior Calderón–Zygmund estimate for coefficients of vanishing mean oscillation, below
-a radius `r₀`.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There is a constant `C`, depending only on `n`,
+a radius `r₀`.** Let `1 < p < ∞` and `0 < λ ≤ Λ`. There is a constant `C`, depending only on `n`,
 `p`, `λ` and `Λ`, with the following property. Let `a` be a coefficient matrix on `ℝ^{n+1}`,
 uniformly elliptic with the constants `λ, Λ`, whose operators `a(x)` have vanishing mean
 oscillation. Then there is a radius `r₀ > 0` such that for every ball `B_R = B(x₀, R) ⊆ Ω` with
@@ -495,7 +473,7 @@ oscillation. Then there is a radius `r₀ > 0` such that for every ball `B_R = B
 
 For the explicit dependence of the admissible radii on the VMO modulus of `a`, see
 `TauCeti.PDE.exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le`. -/
-theorem exists_lpNorm_iteratedGradient_ball_le_of_memVMO (hp : 2 < p) (hp_top : p ≠ ⊤)
+theorem exists_lpNorm_iteratedGradient_ball_le_of_memVMO (hp : 1 < p) (hp_top : p ≠ ⊤)
     (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       MemVMO (fun x => Matrix.toEuclideanCLM (𝕜 := ℝ) (a x)) volume →
@@ -542,7 +520,7 @@ theorem exists_lpNorm_iteratedGradient_ball_le_of_memVMO (hp : 2 < p) (hp_top : 
 /-! ### The estimate on the whole space -/
 
 /-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝ^{n+1})` for coefficients of vanishing mean
-oscillation.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There is a constant `C`, depending only on `n`,
+oscillation.** Let `1 < p < ∞` and `0 < λ ≤ Λ`. There is a constant `C`, depending only on `n`,
 `p`, `λ` and `Λ`, with the following property. Let `a` be a coefficient matrix on `ℝ^{n+1}`,
 uniformly elliptic with the constants `λ, Λ`, whose operators `a(x)` have vanishing mean
 oscillation. Then there is a radius `r₀ > 0` such that every `u ∈ W^{2,p}(ℝ^{n+1})` with
@@ -552,7 +530,7 @@ oscillation. Then there is a radius `r₀ > 0` such that every `u ∈ W^{2,p}(�
 
 The radius `r₀` is that of the interior estimate
 `TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`. -/
-theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO (hp : 2 < p)
+theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO (hp : 1 < p)
     (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       MemVMO (fun x => Matrix.toEuclideanCLM (𝕜 := ℝ) (a x)) volume →
@@ -641,7 +619,7 @@ private theorem exists_sum_mul_inner_eq_and_norm_le_of_sum_mul_inner_add_inner_a
       _ ≤ _ := by gcongr
 
 /-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝ^{n+1})` for coefficients of vanishing mean
-oscillation, with lower-order terms.** Let `2 < p < ∞`, let `a` be a coefficient matrix on
+oscillation, with lower-order terms.** Let `1 < p < ∞`, let `a` be a coefficient matrix on
 `ℝ^{n+1}`, uniformly elliptic with constants `λ, Λ`, whose operators `a(x)` have vanishing mean
 oscillation, and let `b`, `c` be measurable with `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere. Then
 there is a constant `C` such that every `u ∈ W^{2,p}(ℝ^{n+1})` with
@@ -652,7 +630,7 @@ there is a constant `C` such that every `u ∈ W^{2,p}(ℝ^{n+1})` with
 The constant `C` depends on `n`, `p`, `λ`, `Λ`, `β`, `γ`, and on `a` through the radius `r₀` of
 `TauCeti.PDE.exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_memVMO`. -/
 theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_of_memVMO
-    (hp : 2 < p) (hp_top : p ≠ ⊤) {lam Lam : ℝ}
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {lam Lam : ℝ}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (hvmo : MemVMO (fun x => Matrix.toEuclideanCLM (𝕜 := ℝ) (a x)) volume)
     (hell : UniformlyEllipticOn univ a lam Lam)
