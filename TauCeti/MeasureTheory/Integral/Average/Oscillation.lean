@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.Average
 
 /-!
-# The `L¹` mean oscillation about the average
+# The mean oscillation about the average
 
 On a set `s` of finite measure, the `L¹` deviation of an integrable `f` from its average
 `f_s = ⨍_s f` is at most twice its deviation from any constant `c`:
@@ -17,11 +17,15 @@ On a set `s` of finite measure, the `L¹` deviation of an integrable `f` from it
 
 This is the Bochner-integral form, at `p = 1`, of the `Lᵖ` comparison
 `TauCeti.eLpNorm_sub_setAverage_le`; its `L²` analogue, with factor `4`, is
-`TauCeti.setIntegral_norm_sub_setAverage_sq_le`.
+`TauCeti.setIntegral_norm_sub_setAverage_sq_le`. For every real exponent `γ ≥ 1` the averaged
+form `⨍_s ‖f - f_s‖^γ ≤ 2^γ ⨍_s ‖f - c‖^γ` holds as well; it is the form in which mean
+oscillations in `L^γ` enter the sharp function method.
 
 ## Main results
 
 * `TauCeti.setIntegral_norm_sub_setAverage_le_two_mul`: `∫_s ‖f - f_s‖ ≤ 2 ∫_s ‖f - c‖`.
+* `TauCeti.setAverage_norm_sub_setAverage_rpow_le`: `⨍_s ‖f - f_s‖^γ ≤ 2^γ ⨍_s ‖f - c‖^γ` for
+  `γ ≥ 1`.
 -/
 
 public section
@@ -47,5 +51,37 @@ theorem setIntegral_norm_sub_setAverage_le_two_mul (hs : μ s ≠ ⊤) (hf : Int
     integral_norm_eq_lintegral_eNorm hic.aestronglyMeasurable, ← ENNReal.toReal_ofNat,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hic.2.ne) h
+
+/-- **The `L^γ` mean oscillation about the average.** On a set `s` of finite measure and for
+`γ ≥ 1`, `⨍_s ‖f - f_s‖^γ ≤ 2^γ ⨍_s ‖f - c‖^γ` for every constant `c` for which `‖f - c‖^γ` is
+integrable on `s`, where `f_s` is the average of `f` over `s`. This is
+`TauCeti.eLpNorm_sub_setAverage_le` at `p = γ`, raised to the power `γ`. -/
+theorem setAverage_norm_sub_setAverage_rpow_le (hs : μ s ≠ ⊤) (hf : IntegrableOn f s μ)
+    {γ : ℝ} (hγ : 1 ≤ γ) (c : F) (hfc : IntegrableOn (fun x ↦ ‖f x - c‖ ^ γ) s μ) :
+    ⨍ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ∂μ ≤ 2 ^ γ * ⨍ x in s, ‖f x - c‖ ^ γ ∂μ := by
+  have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
+  have hp0 : ENNReal.ofReal γ ≠ 0 := by simpa using hγ0
+  -- Raise the `Lᵖ` comparison `TauCeti.eLpNorm_sub_setAverage_le`, `p = γ`, to the power `γ`.
+  have h := eLpNorm_sub_setAverage_le (μ := μ) (f := f) hs (p := ENNReal.ofReal γ)
+    (by simpa using hγ) c
+  have hic : MemLp (fun x ↦ f x - c) (ENNReal.ofReal γ) (μ.restrict s) :=
+    (integrable_norm_rpow_iff (hf.sub (integrableOn_const hs)).aestronglyMeasurable hp0
+      ENNReal.ofReal_ne_top).1 (by rwa [ENNReal.toReal_ofReal hγ0.le])
+  have hia : MemLp (fun x ↦ f x - ⨍ y in s, f y ∂μ) (ENNReal.ofReal γ) (μ.restrict s) :=
+    h.trans_lt (ENNReal.mul_lt_top (by simp) hic)
+  rw [hia.eLpNorm_eq_integral_rpow_norm hp0 ENNReal.ofReal_ne_top,
+    hic.eLpNorm_eq_integral_rpow_norm hp0 ENNReal.ofReal_ne_top, ENNReal.toReal_ofReal hγ0.le] at h
+  generalize ⨍ y in s, f y ∂μ = m at h
+  -- In real terms: `(∫_s ‖f - f_s‖^γ)^(1/γ) ≤ 2 (∫_s ‖f - c‖^γ)^(1/γ)`; raise it to the power `γ`.
+  have hreal : (∫ x in s, ‖f x - m‖ ^ γ ∂μ) ^ γ⁻¹ ≤ 2 * (∫ x in s, ‖f x - c‖ ^ γ ∂μ) ^ γ⁻¹ := by
+    have h' := ENNReal.toReal_mono (by finiteness) h
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
+      ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat] at h'
+  have hpow : ∫ x in s, ‖f x - m‖ ^ γ ∂μ ≤ 2 ^ γ * ∫ x in s, ‖f x - c‖ ^ γ ∂μ := by
+    have h' := Real.rpow_le_rpow (by positivity) hreal hγ0.le
+    rwa [Real.mul_rpow zero_le_two (by positivity), Real.rpow_inv_rpow (by positivity) hγ0.ne',
+      Real.rpow_inv_rpow (by positivity) hγ0.ne'] at h'
+  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, mul_left_comm]
+  gcongr
 
 end TauCeti

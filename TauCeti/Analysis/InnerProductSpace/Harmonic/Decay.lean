@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.MeasureTheory.Function.L2Space
@@ -14,6 +15,7 @@ import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Average.Oscillation
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import TauCeti.MeasureTheory.Measure.Haar.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -83,6 +85,16 @@ integral to the other without a Jacobian factor. A second-order operator with co
 coefficients becomes the Laplacian after such a change of variables, so this is the decay estimate
 for its solutions.
 
+After the change of variables the Lipschitz bound also holds pointwise: for `8 a b ρ ≤ R`, any two
+values of `u` on `B_ρ` differ by at most `2^(2n + 3) n (a b)^(n + 1) (ρ / R) ⨍_{B_R} ‖u - c‖`.
+Since this bounds `‖u - u_ρ‖` uniformly on `B_ρ`, Jensen's inequality gives the decay of the mean
+oscillation in every `L^γ`, `γ ≥ 1`, in averaged form:
+
+`⨍_{B_ρ} ‖u - u_ρ‖^γ ≤ (2^(3n + 5) (n + 1) (a b)^(n + 1) (ρ / R))^γ ⨍_{B_R} ‖u - c‖^γ`.
+
+The `L¹` estimate after the change of variables is its case `γ = 1`, multiplied by the volume of
+`B_ρ`.
+
 ## Main declarations
 
 * `InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_setIntegral`: the pointwise bound
@@ -108,6 +120,9 @@ for its solutions.
   `TauCeti.setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp` and
   `TauCeti.setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp`: the three estimates
   for `u` when `u ∘ e` is harmonic, `e` a continuous linear equivalence.
+* `TauCeti.norm_sub_le_of_harmonicOnNhd_comp` and
+  `TauCeti.setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp`: the pointwise
+  oscillation bound and the decay of the `L^γ` mean oscillation, `γ ≥ 1`, when `u ∘ e` is harmonic.
 * `InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAverage_sq_le_add`:
   the comparison step of the Campanato approach. A square-integrable `f` close in `L²(B_R)` to a
   harmonic function inherits its decay, up to the distance `∫_{B_R} ‖f - u‖²`.
@@ -862,64 +877,253 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
         _ ≤ _ := by gcongr
     exact hfour _ h4
 
-/-- The `L¹` decay after a linear change of variables in the main case `a ρ ≤ R / b`: the ball
-`ball x₀ ρ` is pulled back into `ball (e.symm x₀) (a ρ)`, which lies in the ball
-`ball (e.symm x₀) (R / b)` on which `u ∘ e` is harmonic. -/
-private lemma setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp_of_le
-    (e : E' ≃L[ℝ] E) (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (ha : 0 < a)
-    (hb : 0 < b) {x₀ : E} {ρ R : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R))
-    (hi : IntegrableOn u (ball x₀ R) μ) (c : F) (hρ : 0 < ρ) (hρR : ρ ≤ R)
-    (hle : a * ρ ≤ R / b) :
-    ∫ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ∂μ ≤
-      2 ^ (3 * finrank ℝ E + 5) * (finrank ℝ E + 1) * (a * b) ^ (finrank ℝ E + 1) *
-        (ρ / R) ^ (finrank ℝ E + 1) * ∫ x in ball x₀ R, ‖u x - c‖ ∂μ := by
-  set n := finrank ℝ E
-  set I := ∫ x in ball x₀ R, ‖u x - c‖ ∂μ
-  have hR : 0 < R := hρ.trans_le hρR
-  have hic : ∀ c' : F, IntegrableOn (fun x ↦ u x - c') (ball x₀ R) μ := fun c' ↦
-    hi.sub (integrableOn_const measure_ball_lt_top.ne)
-  -- Compare with the average `c'` of `u ∘ e` over `ball (e.symm x₀) (a ρ)` for `ν = μ.map e⁻¹`,
-  -- which `e` carries to `μ`, and pull the integrals back along `e` without a Jacobian. The
-  -- bounds on `e` and `e.symm` make them Lipschitz, which compares the balls.
-  set ν := μ.map e.symm
-  set c' := ⨍ y in ball (e.symm x₀) (a * ρ), (u ∘ e) y ∂ν
-  have hmp : MeasurePreserving e ν μ := e.measurePreserving_map_symm μ
+omit [NormedSpace ℝ F] [CompleteSpace F] [FiniteDimensional ℝ E'] in
+/-- If `‖e y‖ ≤ b ‖y‖`, the integral of `‖u ∘ e - c‖` over `ball (e⁻¹ x₀) (R / b)` for
+`μ.map e⁻¹` is at most the integral of `‖u - c‖` over `ball x₀ R` for `μ`. -/
+private lemma setIntegral_ball_div_norm_comp_sub_le (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (hb : 0 < b)
+    {x₀ : E} {R : ℝ} (hi : IntegrableOn u (ball x₀ R) μ) (c : F) :
+    ∫ w in ball (e.symm x₀) (R / b), ‖(u ∘ e) w - c‖ ∂(μ.map e.symm) ≤
+      ∫ x in ball x₀ R, ‖u x - c‖ ∂μ := by
+  have hmp : MeasurePreserving e (μ.map e.symm) μ := e.measurePreserving_map_symm μ
   have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+  calc _ ≤ ∫ w in e ⁻¹' ball x₀ R, ‖(u ∘ e) w - c‖ ∂(μ.map e.symm) :=
+        setIntegral_mono_set
+          ((hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x - c‖)).2
+            (hi.sub (integrableOn_const measure_ball_lt_top.ne)).norm)
+          (ae_of_all _ fun _ ↦ norm_nonneg _)
+          (ball_div_subset_preimage_ball hbe hb x₀ R).eventuallySubset
+    _ = _ := hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x - c‖) _
+
+omit [FiniteDimensional ℝ E] in
+/-- If `‖e⁻¹ x‖ ≤ a ‖x‖`, a ball of radius `r` has `μ.map e⁻¹`-measure at least the `μ`-measure of
+the ball of radius `r / a`. -/
+private lemma measureReal_ball_div_le_map_symm (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (ha : 0 < a)
+    (r : ℝ) :
+    μ.real (ball (0 : E) (r / a)) ≤ (μ.map e.symm).real (ball (0 : E') r) := by
+  have hpre : ball (0 : E) (r / a) ⊆ e.symm ⁻¹' ball (0 : E') r := fun x hx ↦ by
+    rw [mem_ball_zero_iff, lt_div_iff₀ ha] at hx
+    rw [mem_preimage, mem_ball_zero_iff]
+    linarith [hae x, mul_comm a ‖x‖]
+  have hmap : μ.map e.symm (ball (0 : E') r) = μ (e.symm ⁻¹' ball (0 : E') r) :=
+    Measure.map_apply e.symm.continuous.measurable measurableSet_ball
+  rw [measureReal_def, measureReal_def, hmap]
+  exact ENNReal.toReal_mono (hmap ▸ measure_ball_lt_top.ne) (measure_mono hpre)
+
+/-- **The oscillation of a harmonic function after a linear change of variables.** Let
+`e : E' ≃L[ℝ] E` be a continuous linear equivalence with `‖e.symm x‖ ≤ a ‖x‖` and
+`‖e y‖ ≤ b ‖y‖`, and let `u ∘ e` be harmonic on `e ⁻¹' ball x₀ R`, with `u` integrable on
+`ball x₀ R`. If `8 a b ρ ≤ R`, then for every constant `c` any two values of `u` on `ball x₀ ρ`
+differ by at most
+
+`2^(2n + 3) n (a b)^(n + 1) (ρ / R) ⨍_{ball x₀ R} ‖u - c‖`,
+
+where `n` is the dimension of `E`. This pointwise bound is what controls the mean oscillation of
+`u` on `ball x₀ ρ` in every `L^γ` at once. -/
+theorem norm_sub_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E) (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖)
+    (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) {x₀ : E} {ρ R : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R))
+    (hi : IntegrableOn u (ball x₀ R) μ) (c : F) (h8 : 8 * (a * b * ρ) ≤ R)
+    {y z : E} (hy : y ∈ ball x₀ ρ) (hz : z ∈ ball x₀ ρ) :
+    ‖u y - u z‖ ≤ 2 ^ (2 * finrank ℝ E + 3) * finrank ℝ E * (a * b) ^ (finrank ℝ E + 1) *
+      (ρ / R) * ⨍ x in ball x₀ R, ‖u x - c‖ ∂μ := by
+  set n := finrank ℝ E with hn
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · rw [Subsingleton.elim y z, sub_self, norm_zero, hn, Module.finrank_zero_of_subsingleton]
+    simp
+  obtain ⟨ha, hb⟩ := pos_and_pos_of_norm_le hae hbe
+  have hρ : 0 < ρ := pos_of_mem_ball hy
+  have hR : 0 < R := by nlinarith [mul_pos (mul_pos ha hb) hρ]
+  set ν := μ.map e.symm
   have hsub := ball_div_subset_preimage_ball hbe hb x₀ R
-  have hsup := preimage_ball_subset_ball_mul hae ha x₀ ρ
-  have hi'' : IntegrableOn (fun y ↦ ‖(u ∘ e) y - c'‖) (e ⁻¹' ball x₀ R) ν :=
-    (hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x - c'‖)).2 (hic c').norm
-  have hdec := (hu.mono hsub).setIntegral_ball_norm_sub_setAverage_le (μ := ν)
-    (((hmp.integrableOn_comp_preimage hemb (f := u)).2 hi).mono_set hsub) c (by positivity) hle
-  rw [e.toLinearEquiv.finrank_eq] at hdec
-  calc ∫ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ∂μ
-      ≤ 2 * ∫ x in ball x₀ ρ, ‖u x - c'‖ ∂μ :=
-        setIntegral_norm_sub_setAverage_le_two_mul measure_ball_lt_top.ne
-          (hi.mono_set (ball_subset_ball hρR)) c'
-    _ = 2 * ∫ y in e ⁻¹' ball x₀ ρ, ‖(u ∘ e) y - c'‖ ∂ν :=
-        congrArg (2 * ·) (hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x - c'‖) _).symm
-    _ ≤ 2 * ∫ y in ball (e.symm x₀) (a * ρ), ‖(u ∘ e) y - c'‖ ∂ν := by
-        refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
-        exact setIntegral_mono_set (hi''.mono_set ((ball_subset_ball hle).trans hsub))
-          (ae_of_all _ fun _ ↦ norm_nonneg _) hsup.eventuallySubset
-    _ ≤ 2 * (2 ^ (3 * n + 4) * (n + 1) * (a * ρ / (R / b)) ^ (n + 1) *
-          ∫ y in ball (e.symm x₀) (R / b), ‖(u ∘ e) y - c‖ ∂ν) := by
+  set I := ∫ x in ball x₀ R, ‖u x - c‖ ∂μ with hI
+  -- The mean-value bound on `ball (e⁻¹ x₀) (R / (2 b))` bounds `‖u ∘ e - c‖` there by `M`, for
+  -- the Haar measure `ν`, which `e` carries to `μ`.
+  set M := (ν.real (ball (0 : E') (R / b / 2)))⁻¹ *
+    ∫ w in ball (e.symm x₀) (R / b), ‖(u ∘ e) w - c‖ ∂ν
+  have hM : ∀ w ∈ ball (e.symm x₀) (R / b / 2), ‖(u ∘ e) w - c‖ ≤ M := fun w hw ↦
+    ((hu.mono hsub).sub (harmonicOnNhd_const c)).norm_le_inv_measureReal_mul_integral_norm
+      ((((e.measurePreserving_map_symm μ).integrableOn_comp_preimage
+        e.toHomeomorph.measurableEmbedding (f := fun x ↦ u x - c)).2
+          (hi.sub (integrableOn_const measure_ball_lt_top.ne))).mono_set hsub)
+      (by positivity) fun z hz ↦ by
+        rw [mem_ball] at hw ⊢
+        rw [mem_closedBall] at hz
+        linarith [dist_triangle z w (e.symm x₀)]
+  have hM' : M ≤ (μ.real (ball (0 : E) (R / b / 2 / a)))⁻¹ * I :=
+    mul_le_mul (inv_anti₀ (measureReal_ball_pos μ 0 (by positivity))
+      (measureReal_ball_div_le_map_symm hae ha _))
+      (setIntegral_ball_div_norm_comp_sub_le hbe hb hi c)
+      (setIntegral_nonneg measurableSet_ball fun _ _ ↦ norm_nonneg _) (by positivity)
+  -- The points `e⁻¹ y` and `e⁻¹ z` lie in `ball (e⁻¹ x₀) (a ρ)`, and `8 a ρ ≤ R / b`.
+  have hpre := preimage_ball_subset_ball_mul hae ha x₀ ρ
+  have h8' : 8 * (a * ρ) ≤ R / b := by
+    rw [le_div_iff₀ hb]
+    linarith [show 8 * (a * ρ) * b = 8 * (a * b * ρ) by ring]
+  have hy' : e.symm y ∈ ball (e.symm x₀) (a * ρ) := hpre (by simpa using hy)
+  have hz' : e.symm z ∈ ball (e.symm x₀) (a * ρ) := hpre (by simpa using hz)
+  have hosc := norm_sub_le_of_mem_ball_of_eight_mul_le (hu.mono hsub) hM (mul_pos ha hρ) h8' hy'
+    hz'
+  simp only [Function.comp_apply, ContinuousLinearEquiv.apply_symm_apply,
+    e.toLinearEquiv.finrank_eq] at hosc
+  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ 0 one_pos
+  calc ‖u y - u z‖ ≤ 2 ^ (n + 3) * n * M * (a * ρ) / (R / b) := hosc
+    _ ≤ 2 ^ (n + 3) * n * ((μ.real (ball (0 : E) (R / b / 2 / a)))⁻¹ * I) * (a * ρ) / (R / b) := by
         gcongr
-    _ ≤ 2 * (2 ^ (3 * n + 4) * (n + 1) * (a * ρ / (R / b)) ^ (n + 1) *
-          ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y - c‖ ∂ν) := by
-        refine mul_le_mul_of_nonneg_left
-          (mul_le_mul_of_nonneg_left ?_ (by positivity)) (by norm_num)
-        exact setIntegral_mono_set
-          ((hmp.integrableOn_comp_preimage hemb (f := fun x ↦ ‖u x - c‖)).2 (hic c).norm)
-          (ae_of_all _ fun _ ↦ norm_nonneg _) hsub.eventuallySubset
     _ = _ := by
-        -- `MeasurePreserving.setIntegral_preimage_emb` matches the goal only after unfolding
-        -- `∘`, so state the pullback of `I` in the form in which it appears here.
-        have hI' : ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y - c‖ ∂ν = I :=
-          hmp.setIntegral_preimage_emb hemb (fun x ↦ ‖u x - c‖) _
-        rw [hI']
+        rw [setAverage_eq, smul_eq_mul, ← hI,
+          μ.addHaar_real_ball_of_pos 0 (by positivity), μ.addHaar_real_ball_of_pos x₀ hR, ← hn]
+        simp only [div_pow]
         field_simp
         ring
+
+omit [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] [CompleteSpace F]
+  [FiniteDimensional ℝ E] [MeasurableSpace E'] [BorelSpace E'] [FiniteDimensional ℝ E'] in
+/-- The constant of the `L^γ` decay dominates the factor `2^γ (8 a b)ⁿ` coming from the comparison
+with a constant on a ball of radius `ρ > R / (8 a b)`. -/
+private lemma two_rpow_mul_le_rpow {n : ℕ} {ρ R γ : ℝ} (hab1 : 1 ≤ a * b) (hρ : 0 < ρ)
+    (hR : 0 < R) (h8 : R < 8 * (a * b * ρ)) (hγ : 1 ≤ γ) :
+    2 ^ γ * (R / ρ) ^ n ≤ (2 ^ (3 * n + 5) * ((n : ℝ) + 1) * (a * b) ^ (n + 1) * (ρ / R)) ^ γ := by
+  generalize a * b = t at hab1 h8 ⊢
+  have h8ab : 1 ≤ (8 * t) ^ n := one_le_pow₀ (by linarith)
+  have h1 : t ^ n / 8 ≤ t ^ (n + 1) * (ρ / R) := by
+    have hρR' : 1 / (8 * t) ≤ ρ / R := by
+      rw [div_le_div_iff₀ (by positivity) hR]
+      linarith
+    calc t ^ n / 8 = t ^ (n + 1) * (1 / (8 * t)) := by
+          field_simp
+          ring
+      _ ≤ _ := by gcongr
+  have hXY : 2 * (8 * t) ^ n ≤
+      2 ^ (3 * n + 5) * ((n : ℝ) + 1) * t ^ (n + 1) * (ρ / R) := by
+    calc 2 * (8 * t) ^ n = 2 ^ (3 * n + 1) * t ^ n := by
+          rw [mul_pow, show (8 : ℝ) = 2 ^ 3 by norm_num, ← pow_mul, pow_succ]
+          ring
+      _ ≤ 2 ^ (3 * n + 5) * ((n : ℝ) + 1) * (t ^ n / 8) := by
+          rw [show (2 : ℝ) ^ (3 * n + 5) = 2 ^ (3 * n + 1) * 16 by ring]
+          have : (0 : ℝ) ≤ 2 ^ (3 * n + 1) * t ^ n := by positivity
+          nlinarith [Nat.cast_nonneg (α := ℝ) n]
+      _ ≤ _ := by
+          simp only [mul_assoc]
+          gcongr
+  have hRρ : R / ρ ≤ 8 * t := by
+    rw [div_le_iff₀ hρ]
+    linarith
+  calc 2 ^ γ * (R / ρ) ^ n ≤ 2 ^ γ * ((8 * t) ^ n) ^ γ := by
+        gcongr
+        exact (pow_le_pow_left₀ (by positivity) hRρ n).trans (Real.self_le_rpow_of_one_le h8ab hγ)
+    _ = (2 * (8 * t) ^ n) ^ γ := (Real.mul_rpow (by norm_num) (by positivity)).symm
+    _ ≤ _ := by gcongr
+
+/-- The `L^γ` decay for small balls, `8 a b ρ ≤ R`, from the pointwise oscillation bound and
+Jensen's inequality. -/
+private lemma setAverage_ball_norm_sub_setAverage_rpow_le_of_eight_mul_le (e : E' ≃L[ℝ] E)
+    (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (hab : 0 ≤ a * b) {x₀ : E}
+    {ρ R γ : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R)) (hi : IntegrableOn u (ball x₀ R) μ)
+    (c : F) (hic : IntegrableOn (fun x ↦ ‖u x - c‖ ^ γ) (ball x₀ R) μ) (hγ : 1 ≤ γ) (hρ : 0 < ρ)
+    (hρR : ρ ≤ R) (h8 : 8 * (a * b * ρ) ≤ R) :
+    ⨍ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ^ γ ∂μ ≤
+      (2 ^ (2 * finrank ℝ E + 3) * finrank ℝ E * (a * b) ^ (finrank ℝ E + 1) * (ρ / R)) ^ γ *
+        ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ := by
+  have hR : 0 < R := hρ.trans_le hρR
+  have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
+  set m := ⨍ y in ball x₀ ρ, u y ∂μ
+  -- Every value of `u` on `ball x₀ ρ` lies within `L` of `u_ρ = m`.
+  set L := 2 ^ (2 * finrank ℝ E + 3) * finrank ℝ E * (a * b) ^ (finrank ℝ E + 1) * (ρ / R) *
+    ⨍ x in ball x₀ R, ‖u x - c‖ ∂μ
+  have hdev : ∀ y ∈ ball x₀ ρ, ‖u y - m‖ ≤ L := fun y hy ↦ by
+    have h := Convex.set_average_mem (convex_closedBall (u y) L) isClosed_closedBall
+      (measure_ball_pos μ x₀ hρ).ne' measure_ball_lt_top.ne
+      ((ae_restrict_mem measurableSet_ball).mono fun z hz ↦ by
+        rw [mem_closedBall, dist_eq_norm]
+        exact norm_sub_le_of_harmonicOnNhd_comp e hae hbe hu hi c h8 hz hy)
+      (hi.mono_set (ball_subset_ball hρR))
+    rwa [mem_closedBall, dist_eq_norm, norm_sub_rev] at h
+  have hbd : ∀ᵐ x ∂μ.restrict (ball x₀ ρ), ‖u x - m‖ ^ γ ≤ L ^ γ :=
+    (ae_restrict_mem measurableSet_ball).mono fun x hx ↦
+      Real.rpow_le_rpow (norm_nonneg _) (hdev x hx) hγ0
+  have hL : IntegrableOn (fun _ ↦ L ^ γ) (ball x₀ ρ) μ := integrableOn_const measure_ball_lt_top.ne
+  have hic' : IntegrableOn (fun x ↦ u x - c) (ball x₀ R) μ :=
+    hi.sub (integrableOn_const measure_ball_lt_top.ne)
+  have hA : 0 ≤ ⨍ x in ball x₀ R, ‖u x - c‖ ∂μ := average_nonneg fun _ ↦ norm_nonneg _
+  calc ⨍ x in ball x₀ ρ, ‖u x - m‖ ^ γ ∂μ
+      ≤ ⨍ _ in ball x₀ ρ, L ^ γ ∂μ :=
+        average_mono_ae (hL.mono'
+          ((((hi.mono_set (ball_subset_ball hρR)).aestronglyMeasurable.sub
+            aestronglyMeasurable_const).norm.aemeasurable.pow_const γ).aestronglyMeasurable)
+          (hbd.mono fun x hx ↦
+            (Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)).trans_le hx))
+          hL hbd
+    _ = (2 ^ (2 * finrank ℝ E + 3) * finrank ℝ E * (a * b) ^ (finrank ℝ E + 1) * (ρ / R)) ^ γ *
+          (⨍ x in ball x₀ R, ‖u x - c‖ ∂μ) ^ γ := by
+        rw [setAverage_const (measure_ball_pos μ x₀ hρ).ne' measure_ball_lt_top.ne]
+        exact Real.mul_rpow (by have := pow_nonneg hab (finrank ℝ E + 1); positivity) hA
+    _ ≤ _ := by
+        -- Jensen's inequality: `(⨍_{B_R} ‖u - c‖)^γ ≤ ⨍_{B_R} ‖u - c‖^γ`.
+        refine mul_le_mul_of_nonneg_left ?_
+          (by have := pow_nonneg hab (finrank ℝ E + 1); positivity)
+        exact (convexOn_rpow hγ).map_set_average_le
+          (continuous_id.rpow_const fun _ ↦ Or.inr hγ0).continuousOn isClosed_Ici
+          (measure_ball_pos μ x₀ hR).ne' measure_ball_lt_top.ne
+          (ae_of_all _ fun x ↦ norm_nonneg (u x - c)) hic'.norm hic
+
+/-- **Decay of the `L^γ` mean oscillation after a linear change of variables.** Let
+`e : E' ≃L[ℝ] E` be a continuous linear equivalence with `‖e.symm x‖ ≤ a ‖x‖` and
+`‖e y‖ ≤ b ‖y‖`, and let `u ∘ e` be harmonic on `e ⁻¹' ball x₀ R`, with `u` integrable on
+`ball x₀ R`. Then for every `γ ≥ 1`, every constant `c` for which `‖u - c‖^γ` is integrable on
+`ball x₀ R`, and every `0 ≤ ρ ≤ R`,
+
+`⨍_{ball x₀ ρ} ‖u - u_ρ‖^γ ≤ (C (a b)^(n + 1) (ρ / R))^γ ⨍_{ball x₀ R} ‖u - c‖^γ`
+with `C = 2^(3n + 5) (n + 1)`,
+
+where `u_ρ` is the average of `u` over `ball x₀ ρ` and `n` is the dimension of `E`. At `γ = 1`
+this is the averaged form of
+`TauCeti.setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp`, with the same constant.
+The hypothesis `0 ≤ a b` only matters when `E` is zero-dimensional. -/
+theorem setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E)
+    (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (hab : 0 ≤ a * b)
+    {x₀ : E} {ρ R γ : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R))
+    (hi : IntegrableOn u (ball x₀ R) μ) (c : F)
+    (hic : IntegrableOn (fun x ↦ ‖u x - c‖ ^ γ) (ball x₀ R) μ) (hγ : 1 ≤ γ) (hρ : 0 ≤ ρ)
+    (hρR : ρ ≤ R) :
+    ⨍ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ^ γ ∂μ ≤
+      (2 ^ (3 * finrank ℝ E + 5) * (finrank ℝ E + 1) * (a * b) ^ (finrank ℝ E + 1) *
+        (ρ / R)) ^ γ * ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ := by
+  rcases hρ.eq_or_lt with rfl | hρ
+  · -- The ball of radius `0` is empty, and `0 ^ γ = 0` since `γ ≥ 1`.
+    simp [Real.zero_rpow (zero_lt_one.trans_le hγ).ne']
+  set n := finrank ℝ E with hn
+  have hR : 0 < R := hρ.trans_le hρR
+  have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
+  have hK : 0 ≤ ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ := average_nonneg fun _ ↦ by positivity
+  set K := ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In a zero-dimensional space `u` is constant, so the left side vanishes.
+    rw [setAverage_eq, setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ by
+      simp [sub_setAverage_ball_eq_zero_of_subsingleton (μ := μ) (u := u) hx,
+        Real.zero_rpow (zero_lt_one.trans_le hγ).ne'], smul_zero]
+    have := pow_nonneg hab (n + 1)
+    positivity
+  -- `‖e⁻¹‖ ≤ a` and `‖e‖ ≤ b`, and the condition number `‖e⁻¹‖ ‖e‖` is at least `1`.
+  obtain ⟨ha, hb⟩ := pos_and_pos_of_norm_le hae hbe
+  have hab1 : 1 ≤ a * b := e.symm.one_le_norm_mul_norm_symm.trans
+    (mul_le_mul ((e.symm : E →L[ℝ] E').opNorm_le_bound ha.le hae)
+      ((e : E' →L[ℝ] E).opNorm_le_bound hb.le hbe) (norm_nonneg _) ha.le)
+  rcases le_or_gt (8 * (a * b * ρ)) R with h8 | h8
+  · refine (setAverage_ball_norm_sub_setAverage_rpow_le_of_eight_mul_le e hae hbe hab hu hi c hic
+      hγ hρ hρR h8).trans (mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (by positivity) ?_ hγ0) hK)
+    have := pow_nonneg hab (n + 1)
+    rw [← hn]
+    gcongr <;> norm_num
+  -- For `8 a b ρ > R`, compare with the constant `c` on `ball x₀ ρ` and enlarge the ball.
+  calc ⨍ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ^ γ ∂μ
+      ≤ 2 ^ γ * ⨍ x in ball x₀ ρ, ‖u x - c‖ ^ γ ∂μ :=
+        setAverage_norm_sub_setAverage_rpow_le measure_ball_lt_top.ne
+          (hi.mono_set (ball_subset_ball hρR)) hγ c (hic.mono_set (ball_subset_ball hρR))
+    _ ≤ 2 ^ γ * ((R / ρ) ^ n * K) := by
+        gcongr
+        exact setAverage_ball_le hρ (ball_subset_ball hρR) hic (ae_of_all _ fun _ ↦ by positivity)
+    _ ≤ _ := by
+        rw [← mul_assoc]
+        exact mul_le_mul_of_nonneg_right (two_rpow_mul_le_rpow hab1 hρ hR h8 hγ) hK
 
 /-- **Decay of the `L¹` mean oscillation after a linear change of variables.** Let
 `e : E' ≃L[ℝ] E` be a continuous linear equivalence with `‖e.symm x‖ ≤ a ‖x‖` and
@@ -929,9 +1133,11 @@ private lemma setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp_of_l
 `∫_{ball x₀ ρ} ‖u - u_ρ‖ ≤ C (a b)^(n + 1) (ρ / R)^(n + 1) ∫_{ball x₀ R} ‖u - c‖`
 with `C = 2^(3n + 5) (n + 1)`,
 
-where `u_ρ` is the average of `u` over `ball x₀ ρ` and `n` is the dimension of `E`. The bounds on
-`e` force `a, b > 0` unless `E` is zero-dimensional; the hypothesis `0 ≤ a b` covers that case,
-where the odd power `(a b)^(n + 1)` would otherwise be allowed to be negative. -/
+where `u_ρ` is the average of `u` over `ball x₀ ρ` and `n` is the dimension of `E`. This is the
+case `γ = 1` of `TauCeti.setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp`,
+multiplied by the volume of `ball x₀ ρ`. The bounds on `e` force `a, b > 0` unless `E` is
+zero-dimensional; the hypothesis `0 ≤ a b` covers that case, where the odd power `(a b)^(n + 1)`
+would otherwise be allowed to be negative. -/
 theorem setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E)
     (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (hab : 0 ≤ a * b)
     {x₀ : E} {ρ R : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R))
@@ -939,38 +1145,16 @@ theorem setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp (e : E' �
     ∫ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ∂μ ≤
       2 ^ (3 * finrank ℝ E + 5) * (finrank ℝ E + 1) * (a * b) ^ (finrank ℝ E + 1) *
         (ρ / R) ^ (finrank ℝ E + 1) * ∫ x in ball x₀ R, ‖u x - c‖ ∂μ := by
-  set n := finrank ℝ E
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · -- In a zero-dimensional space `u` is constant, so the left side vanishes.
-    rw [setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ by
-      simp [sub_setAverage_ball_eq_zero_of_subsingleton (μ := μ) (u := u) hx]]
-    have hρR' : 0 ≤ ρ / R := div_nonneg hρ (hρ.trans hρR)
-    positivity
-  obtain ⟨ha, hb⟩ := pos_and_pos_of_norm_le hae hbe
   rcases hρ.eq_or_lt with rfl | hρ
-  · simp only [ball_zero, Measure.restrict_empty, integral_zero_measure]
-    positivity
-  have hR : 0 < R := hρ.trans_le hρR
-  rcases le_or_gt (a * ρ) (R / b) with hle | hlt
-  · exact setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp_of_le e hae hbe ha hb hu
-      hi c hρ hρR hle
-  · -- For `a ρ > R / b` compare with the constant `c`; the factor is then at least `2`.
-    have h1 : 1 ≤ (a * b * (ρ / R)) ^ (n + 1) := by
-      refine one_le_pow₀ ?_
-      rw [div_lt_iff₀ hb] at hlt
-      rw [← mul_div_assoc, le_div_iff₀ hR]
-      nlinarith
-    have h2 : 2 ≤ 2 ^ (3 * n + 5) * ((n : ℝ) + 1) * (a * b) ^ (n + 1) * (ρ / R) ^ (n + 1) := by
-      rw [mul_assoc _ ((a * b) ^ (n + 1)), ← mul_pow]
-      have h2' : (2 : ℝ) ≤ 2 ^ (3 * n + 5) := by
-        calc (2 : ℝ) = 2 ^ 1 := by norm_num
-          _ ≤ 2 ^ (3 * n + 5) := pow_le_pow_right₀ (by norm_num) (by omega)
-      have h3 : (1 : ℝ) ≤ (n : ℝ) + 1 := by linarith [n.cast_nonneg (α := ℝ)]
-      calc (2 : ℝ) = 2 * 1 * 1 := by ring
-        _ ≤ _ := by gcongr
-    exact (setIntegral_ball_norm_sub_setAverage_le_two_mul_of_le hi c hρR).trans
-      (mul_le_mul_of_nonneg_right h2
-        (setIntegral_nonneg measurableSet_ball fun _ _ ↦ norm_nonneg _))
+  · simp
+  -- This is the `L^γ` decay at `γ = 1`, multiplied by the volume of `ball x₀ ρ`.
+  have hic : IntegrableOn (fun x ↦ u x - c) (ball x₀ R) μ :=
+    hi.sub (integrableOn_const measure_ball_lt_top.ne)
+  have h := setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp e hae hbe hab hu hi c
+    (by simp only [Real.rpow_one]; exact hic.norm) le_rfl hρ.le hρR
+  simp only [Real.rpow_one] at h
+  refine (setIntegral_ball_le_of_setAverage_le hρ (hρ.trans_le hρR) h).trans_eq ?_
+  ring
 
 end LinearChange
 
