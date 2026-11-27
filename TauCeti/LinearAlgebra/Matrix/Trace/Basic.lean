@@ -8,18 +8,22 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import Mathlib.LinearAlgebra.Matrix.Trace
+import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Ring.List
 
 /-!
-# Traces of products alternating with a fixed matrix
+# Trace identities for matrices
 
 Fix a matrix `S`. This file expands the quadratic map `M ↦ trace (M * S * M * S)` at a sum, so
 that polarization recovers the symmetric bilinear map `(M, N) ↦ trace (M * S * N * S)` from it.
 It also computes the trace of `2 P - 1`, which vanishes for a trace-one `2 × 2` matrix `P` such as
 the orthogonal projector onto a line of `ℂ²`, and records that reindexing rows and columns along
-one equivalence preserves the trace. Finally, two square matrices intertwined by a matrix whose
+one equivalence preserves the trace. Two square matrices intertwined by a matrix whose
 determinant is a non-zero-divisor have the same trace; over a domain this applies to every
 intertwiner of nonzero determinant, such as the inclusion matrix of a full-rank sublattice.
+The trace of a product of two skew-Hermitian matrices is fixed by `star` (in particular,
+it is real over `ℂ`).
 
 ## Main results
 
@@ -32,6 +36,12 @@ intertwiner of nonzero determinant, such as the inclusion matrix of a full-rank 
   `trace A = trace B`.
 * `Matrix.trace_list_prod_map_mapMatrix`: mapping a list of square matrices along a ring
   homomorphism commutes with taking the trace of its product.
+* `Matrix.sum_trace_prod_update_lie`: the trace of an ordered product is invariant under
+  simultaneous infinitesimal conjugation.
+* `Matrix.star_trace_mul_of_conjTranspose_eq_neg`: the trace of a product of two skew-Hermitian
+  matrices is fixed by `star`.
+* `Matrix.sum_map_mul_comm`: the trace property for rectangular matrices over a possibly
+  noncommutative ring, through an additive map `f` with `f (a * b) = f (b * a)`.
 -/
 
 public section
@@ -82,5 +92,37 @@ theorem trace_list_prod_map_mapMatrix {R S : Type*} [DecidableEq n] [Semiring R]
     (f : R →+* S) (l : List (Matrix n n R)) :
     trace (l.map f.mapMatrix).prod = f (trace l.prod) := by
   rw [← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace]
+
+/-- The trace of an ordered product is invariant under the simultaneous infinitesimal
+conjugation action on all its arguments. -/
+theorem sum_trace_prod_update_lie {A : Type*} [CommRing A] [DecidableEq n] {k : ℕ}
+    (Y : Matrix n n A) (v : Fin k → Matrix n n A) :
+    ∑ i, trace (List.ofFn (Function.update v i ⁅Y, v i⁆)).prod = 0 := by
+  have h := TauCeti.map_prod_ofFn_of_leibniz (fun X : Matrix n n A ↦ ⁅Y, X⁆)
+    (fun X Z ↦ by simp only [Ring.lie_def]; noncomm_ring) v
+  calc
+    (∑ i, trace (List.ofFn (Function.update v i ⁅Y, v i⁆)).prod) =
+        (traceAddMonoidHom n A)
+          (∑ i, (List.ofFn (Function.update v i ⁅Y, v i⁆)).prod) := by rw [map_sum]; rfl
+    _ = trace ⁅Y, (List.ofFn v).prod⁆ := congrArg trace h.symm
+    _ = 0 := by rw [Ring.lie_def, trace_sub, trace_mul_comm, sub_self]
+
+/-- The trace of a product of two skew-Hermitian matrices is fixed by `star`. -/
+theorem star_trace_mul_of_conjTranspose_eq_neg {R : Type*} [NonUnitalNonAssocCommRing R]
+    [StarRing R] {X Y : Matrix n n R} (hX : Xᴴ = -X) (hY : Yᴴ = -Y) :
+    star (X * Y).trace = (X * Y).trace := by
+  rw [← trace_conjTranspose, conjTranspose_mul, hX, hY, neg_mul_neg, trace_mul_comm]
+
+/-- **Trace property for rectangular matrices.** If an additive map `f` satisfies
+`f (a * b) = f (b * a)`, then for `u : Matrix m n R` and `v : Matrix n m R` the sums of `f` over the
+diagonals of `u * v` and `v * u` agree. For commutative `R` and `f = id` this is
+`Matrix.trace_mul_comm`. -/
+theorem sum_map_mul_comm {R M F : Type*} [AddCommMonoid R] [Mul R] [AddCommMonoid M]
+    [FunLike F R M] [AddMonoidHomClass F R M] (f : F) (hf : ∀ a b, f (a * b) = f (b * a))
+    (u : Matrix m n R) (v : Matrix n m R) :
+    ∑ i, f ((u * v) i i) = ∑ k, f ((v * u) k k) := by
+  simp only [Matrix.mul_apply, map_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun i _ ↦ hf _ _
 
 end Matrix

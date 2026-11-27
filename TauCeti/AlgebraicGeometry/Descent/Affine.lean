@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.GammaSpecAdjunction
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import TauCeti.CategoryTheory.EffectiveEpi.Descent
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.DescentDatum
 public import TauCeti.RingTheory.Flat.EffectiveDescent
@@ -572,11 +573,8 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [Module.Faithful
 and quasi-compact. This is the hypothesis of descent of morphisms (`TauCeti.homDescentEquiv`,
 `TauCeti.DescentDatum.baseChangeHomEquiv`) along `Spec S ⟶ Spec R`. -/
 instance effectiveEpi_pullback_fst_specAlgebraMap {X : Scheme.{u}} (f : X ⟶ Spec (.of R)) :
-    EffectiveEpi (pullback.fst f (Spec.algebraMap R S)) := by
-  obtain ⟨_, _⟩ : Flat (Spec.algebraMap R S) ∧ Surjective (Spec.algebraMap R S) :=
-    (flat_and_surjective_SpecMap_iff _).mpr
-      (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
-  infer_instance
+    EffectiveEpi (pullback.fst f (Spec.algebraMap R S)) :=
+  inferInstance
 
 end FaithfullyFlat
 

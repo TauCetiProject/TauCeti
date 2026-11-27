@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder.Slice.Average
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Sobolev.GraphStep.Density
 import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 
@@ -33,7 +34,10 @@ weak-derivative graph `TauCeti.WeakDerivStep` over `L²(ℝ, V)`.
 * **Its range is the zero mode.** An element `x` of `W^{1,2}(ℝ × S¹, V)` is its own slice average
   exactly when it lies in the range of `zeroModeL`
   (`TauCeti.CylinderSobolev.sliceAverageL_eq_self_iff`): the slice average of the jet of a test
-  section is the jet of a section that does not depend on `t`, and these jets are dense.
+  section is the jet of a section that does not depend on `t`, and these jets are dense. Likewise
+  an element of `L²(ℝ × S¹, V)` is its own slice average exactly when it lies in the range of
+  `zeroModeLp` (`TauCeti.CylinderSobolev.sliceAverageLp_eq_self_iff`): the slice average of `x` is
+  the zero mode of `s ↦ ∫₀¹ x(s, t) dt`.
 
 Through this identification, a first-order operator on the cylinder whose coefficients do not
 depend on `t` restricts on the zero mode to an operator on the line; for the linearized Floer
@@ -147,13 +151,13 @@ is the jet of the test section `(s, t) ↦ φ(s)`. -/
 private theorem zeroModeJetL_eq_jetLp {φ : ℝ → V} (hφ : ContDiff ℝ 2 φ)
     (hφc : HasCompactSupport φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
-    zeroModeJetL u = jetLp (testSection V) ⟨_, comp_fst_mem_testSection hφ hφc⟩ := by
+    zeroModeJetL u = jetLp 2 (testSection V) ⟨_, comp_fst_mem_testSection hφ hφc⟩ := by
   have hφ1 : ContDiff ℝ 1 φ := hφ.of_le one_le_two
   have hw := ((hasWeakFDerivOn_base_prev _ u).congr_ae hu).ae_eq_fderiv
     ((hφ1.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
     fun s _ ↦ hφ1.differentiable one_ne_zero s
   refine Lp.ext ?_
-  filter_upwards [coeFn_zeroModeJetL u, coeFn_jetLp (S := testSection V)
+  filter_upwards [coeFn_zeroModeJetL u, coeFn_jetLp 2 (S := testSection V)
     ⟨_, comp_fst_mem_testSection hφ hφc⟩, ae_eq_comp_fst hu,
     measurePreserving_fst_stripMeasure.quasiMeasurePreserving.ae_eq_comp hw] with z h₁ h₂ h₃ h₄
   rw [h₁, h₂, jet_comp_fst (hφ1.differentiable one_ne_zero)]
@@ -166,7 +170,7 @@ private theorem zeroModeJetL_mem_H1
       (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     zeroModeJetL u ∈ H1 V := by
   refine induction_on_contDiff_hasCompactSupport ENNReal.ofNat_ne_top u
-    ((isClosed_jetClosure _).preimage zeroModeJetL.continuous) fun v φ hφ hφc hv ↦ ?_
+    ((isClosed_jetClosure 2 _).preimage zeroModeJetL.continuous) fun v φ hφ hφc hv ↦ ?_
   rw [zeroModeJetL_eq_jetLp (hφ.of_le (by norm_cast)) hφc hv]
   exact jetLp_mem_jetClosure _
 
@@ -194,14 +198,14 @@ private theorem zeroModeL_eq_jetLp {φ : ℝ → V} (hφ : ContDiff ℝ 2 φ)
     (hφc : HasCompactSupport φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
     zeroModeL V u =
-      ⟨jetLp (testSection V) ⟨_, comp_fst_mem_testSection hφ hφc⟩, jetLp_mem_jetClosure _⟩ :=
+      ⟨jetLp 2 (testSection V) ⟨_, comp_fst_mem_testSection hφ hφc⟩, jetLp_mem_jetClosure _⟩ :=
   Subtype.ext (zeroModeJetL_eq_jetLp hφ hφc hu)
 
 /-- The value of the zero mode of a path `ζ` is the zero mode of `ζ` in `L²`. -/
 theorem valueL_zeroModeL
     (u : WeakDerivStep volume ⊤ 2
       (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
-    valueL (zeroModeL V u) = zeroModeLp V (prev _ u) := by
+    valueL 2 (zeroModeL V u) = zeroModeLp V (prev _ u) := by
   refine Lp.ext ?_
   filter_upwards [coeFn_valueL (zeroModeL V u), coeFn_zeroModeL u,
     coeFn_zeroModeLp (prev _ u)] with z h₁ h₂ h₃
@@ -267,7 +271,7 @@ theorem sliceAverageL_mem_range_zeroModeL (x : H1 V) :
     sliceAverageL x ∈ range (zeroModeL V) := by
   have hcl : IsClosed {x : H1 V | sliceAverageL x ∈ range (zeroModeL V)} :=
     isClosed_range_zeroModeL.preimage sliceAverageL.continuous
-  refine (denseRange_codRestrict_jetLp (testSection V)).induction_on x hcl fun ξ ↦ ?_
+  refine jetClosure_induction hcl (fun ξ ↦ ?_) x
   -- The slice average of the jet of `ξ` is the jet of the section `(s, t) ↦ φ(s)`.
   obtain ⟨hψ, -, R, hR⟩ := mem_testSection_iff.1 (sliceAverage_mem_testSection ξ.property)
   set φ : ℝ → V := fun s ↦ sliceAverage (ξ : ℝ × ℝ → V) (s, 0)
@@ -285,10 +289,7 @@ theorem sliceAverageL_mem_range_zeroModeL (x : H1 V) :
     (hφ.continuous.memLp_of_hasCompactSupport hφc)
     ((hφ.continuous_fderiv two_ne_zero).memLp_of_hasCompactSupport (hφc.fderiv (𝕜 := ℝ)))
   refine ⟨u, ?_⟩
-  have hξ : (jetLp (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ =
-      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ :=
-    Subtype.ext (LinearMap.codRestrict_apply _ _ ξ)
-  rw [zeroModeL_eq_jetLp hφ hφc hu, hξ, sliceAverageL_jetLp]
+  rw [zeroModeL_eq_jetLp hφ hφc hu, toJetClosure_apply, sliceAverageL_jetLp]
   congr 3
   exact hψφ.symm
 
@@ -300,5 +301,49 @@ theorem sliceAverageL_eq_self_iff {x : H1 V} :
   refine ⟨fun h ↦ h ▸ sliceAverageL_mem_range_zeroModeL x, ?_⟩
   rintro ⟨u, rfl⟩
   exact sliceAverageL_zeroModeL u
+
+/-! ### The zero mode of `L²` is the image of the slice average -/
+
+/-- The zero mode of a map on the line does not depend on `t`: it is its own `L²` slice
+average. -/
+theorem sliceAverageLp_zeroModeLp (f : Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
+    sliceAverageLp (zeroModeLp V f) = zeroModeLp V f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_sliceAverageLp (zeroModeLp V f),
+    sliceAverage_congr_ae (coeFn_zeroModeLp f), coeFn_zeroModeLp f] with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃, sliceAverage_apply]
+  simp
+
+omit [CompleteSpace V] in
+/-- The `L²` slice average of a section of the strip is the zero mode of a map on the line,
+`s ↦ ∫₀¹ x(s, t) dt`. -/
+theorem sliceAverageLp_mem_range_zeroModeLp (x : Lp V 2 stripMeasure) :
+    sliceAverageLp x ∈ range (zeroModeLp V) := by
+  set f : ℝ → V := fun s ↦ sliceAverage x (s, 0)
+  have hff : f ∘ Prod.fst = sliceAverage x := funext fun z ↦ (sliceAverage_mk _ z.1 z.2).symm
+  have hfm : AEStronglyMeasurable f (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
+    have h : AEStronglyMeasurable (x : ℝ × ℝ → V)
+        ((volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
+      rw [← stripMeasure_eq_prod]
+      exact Lp.aestronglyMeasurable x
+    rw [Opens.coe_top, Measure.restrict_univ]
+    exact h.integral_prod_right'.congr
+      (.of_forall fun s ↦ (sliceAverage_eq_integral _ (s, 0)).symm)
+  have hf : MemLp f 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
+    rw [← measurePreserving_fst_stripMeasure.map_eq] at hfm ⊢
+    rw [memLp_map_measure_iff hfm measurable_fst.aemeasurable, hff]
+    exact memLp_sliceAverage (Lp.memLp x)
+  refine ⟨hf.toLp f, Lp.ext ?_⟩
+  filter_upwards [coeFn_zeroModeLp (hf.toLp f), ae_eq_comp_fst hf.coeFn_toLp,
+    coeFn_sliceAverageLp x] with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃, ← hff, Function.comp_apply]
+
+/-- **The zero mode of `L²` is the range of `zeroModeLp`.** An element of `L²(ℝ × S¹, V)` is its
+own slice average exactly when it is the zero mode of a map in `L²(ℝ, V)`. -/
+theorem sliceAverageLp_eq_self_iff {x : Lp V 2 stripMeasure} :
+    sliceAverageLp x = x ↔ x ∈ range (zeroModeLp V) := by
+  refine ⟨fun h ↦ h ▸ sliceAverageLp_mem_range_zeroModeLp x, ?_⟩
+  rintro ⟨f, rfl⟩
+  exact sliceAverageLp_zeroModeLp f
 
 end TauCeti.CylinderSobolev

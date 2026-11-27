@@ -121,6 +121,15 @@ theorem refl (α : Ordinal.{o}) (a : Fin n → M) : BFEquiv (L := L) α n a a :=
     exact (add_one α a a).mpr ⟨ih a, fun x => ⟨x, ih _⟩, fun x => ⟨x, ih _⟩⟩
   | limit α hα ih => exact (limit hα a a).mpr fun β hβ => ih β hβ a
 
+/-- In a relational language without nullary relation symbols, two empty structures are
+back-and-forth equivalent at every level. -/
+theorem of_isEmpty [IsEmpty (L.Relations 0)] [IsEmpty M] [IsEmpty N] (α : Ordinal.{o}) :
+    BFEquiv (L := L) α 0 (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N) := by
+  induction α using Ordinal.limitRecOn with
+  | zero => exact zero.mpr sameAtomicType_elim0
+  | add_one α ih => exact (add_one α _ _).mpr ⟨ih, isEmptyElim, isEmptyElim⟩
+  | limit α hα ih => exact (limit hα _ _).mpr ih
+
 /-- Back-and-forth equivalence is symmetric, including between different structure universes. -/
 @[symm]
 theorem symm {α : Ordinal.{o}} (h : BFEquiv (L := L) α n a b) :

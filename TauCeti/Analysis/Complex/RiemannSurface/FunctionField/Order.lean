@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Valuation.Basic
+public import Mathlib.RingTheory.Valuation.Integers
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
 import Mathlib.Topology.DiscreteSubset
@@ -45,6 +45,8 @@ Riemann surfaces.
   `TauCeti.RiemannSurface.MeromorphicFunction.order_neg_iff` and
   `TauCeti.RiemannSurface.MeromorphicFunction.order_eq_zero_iff`: the order is positive at the
   zeros, negative at the poles, and zero at the other points.
+* `TauCeti.RiemannSurface.MeromorphicFunction.mem_integer_toValuation_order_iff`: the valuation
+  integers of `ord_x` are the meromorphic functions without a pole at `x`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.order_algebraMap`: nonzero constants have order `0`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.setOf_order_eq_zero_mem_codiscrete`: a nonzero
   meromorphic function has order `0` away from a closed discrete set.
@@ -110,6 +112,12 @@ theorem order_neg_iff : order x f < 0 ↔ f x = ∞ := by
 theorem order_nonneg_iff : 0 ≤ order x f ↔ f x ≠ ∞ := by
   rw [← not_lt, order_neg_iff]
 
+/-- The integers of the valuation `ord_x`, written multiplicatively, are the meromorphic functions
+without a pole at `x`. -/
+theorem mem_integer_toValuation_order_iff :
+    f ∈ (order x).toValuation.integer ↔ f x ≠ ∞ := by
+  simp [Valuation.mem_integer_iff, ← order_nonneg_iff, ← ofAdd_zero, ← toDual_zero]
+
 /-- The order of a meromorphic function at `x` is positive exactly when `x` is a zero. -/
 @[simp]
 theorem order_pos_iff : 0 < order x f ↔ f x = ((0 : ℂ) : OnePoint ℂ) := by
@@ -171,6 +179,13 @@ theorem coe_coeff_principalDivisor_orderSystem (u : Additive (MeromorphicFunctio
     (coeff ((orderSystem X).principalDivisor u) x : WithTop ℤ) =
       order x (u.toMul : MeromorphicFunction X) := by
   rw [OrderSystem.coeff_principalDivisor, coe_ord_orderSystem]
+
+/-- The order at `x` of a nonzero meromorphic function `f` is the coefficient at `x` of its
+principal divisor. -/
+theorem order_eq_principalDivisor_mk0 (hf : f ≠ 0) (x : X) :
+    order x f =
+      ((orderSystem X).principalDivisor (Additive.ofMul (Units.mk0 f hf)) x : WithTop ℤ) := by
+  rw [← WeilDivisor.coeff, coe_coeff_principalDivisor_orderSystem, toMul_ofMul, Units.val_mk0]
 
 /-- The divisor of a nonzero meromorphic function has positive coefficient exactly at its
 zeros. -/

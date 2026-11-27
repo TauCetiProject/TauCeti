@@ -17,6 +17,7 @@ public import Mathlib.CategoryTheory.Sites.Abelian
 public import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
 public import TauCeti.CategoryTheory.Preadditive.FreeYoneda
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.DegreeZero
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 
 /-!
@@ -51,6 +52,8 @@ when some `Hom(W, U i)` is nonempty, and because all its terms vanish otherwise.
   injective presheaf of abelian groups is exact in positive degrees.
 * `TauCeti.CategoryTheory.exactAt_cechComplexFunctor_obj_obj_of_injective`: the same for an
   injective abelian sheaf on a site.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_injective`: for a family covering the
+  terminal object, the augmented Čech complex of an injective abelian sheaf is exact.
 
 ## References
 
@@ -163,6 +166,17 @@ theorem exactAt_cechComplexFunctor_obj_obj_of_injective {J : GrothendieckTopolog
     ((cechComplexFunctor U).obj I.obj).ExactAt (n + 1) := by
   have : Injective I.obj := (sheafificationAdjunction J _).map_injective I inferInstance
   exact exactAt_cechComplexFunctor_obj_of_injective U I.obj n
+
+/-- For a family covering a terminal object `T`, the augmented Čech complex
+`0 ⟶ I(T) ⟶ Č(U, I)` of an injective abelian sheaf `I` is exact: the sheaf condition gives
+exactness in degree `0`, and injectivity in positive degrees. -/
+theorem quasiIso_cechAugmentation_of_injective {J : GrothendieckTopology C}
+    [HasSheafify J AddCommGrpCat.{v}] {T : C} (hT : IsTerminal T) (hU : J.CoversTop U)
+    (I : Sheaf J AddCommGrpCat.{v}) [Injective I] :
+    QuasiIso (cechAugmentation U hT I.obj) :=
+  (quasiIso_cechAugmentation_iff U hT _).2
+    ⟨isSheafFor_ofArrows_of_coversTop U hT hU I,
+      exactAt_cechComplexFunctor_obj_obj_of_injective U I⟩
 
 end Presheaf
 

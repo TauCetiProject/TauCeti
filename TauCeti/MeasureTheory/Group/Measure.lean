@@ -14,6 +14,8 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import TauCeti.MeasureTheory.Group.Arithmetic
 -- Proof-only: pushing a measure forward along a measurable embedding.
 import TauCeti.MeasureTheory.Measure.AEMeasurable
+-- Proof-only: an open subgroup has finite index in a compact subgroup.
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Measures and the group operations
@@ -31,8 +33,10 @@ without any measurability hypotheses (for subgroups as typeclass instances), tha
 `volume` of left- or right-invariant measure spaces (such as Lebesgue measure on `ℝ × ℝ`) is
 left- or right-invariant, and that restricting
 an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
-inversion-invariant. A surjective homomorphism onto a finite group with measurable kernel splits
-a left-invariant measure evenly among its fibres, the translates of the kernel. Finally, for an
+inversion-invariant. A left-invariant probability measure gives mass `n⁻¹` to a measurable
+subgroup of finite index `n`, since its `n` cosets have equal mass and partition the group, and a
+surjective homomorphism onto a finite group with measurable kernel splits a left-invariant measure
+evenly among its fibres, the translates of the kernel. Finally, for an
 inner regular measure whose right translations are quasi-measure-preserving—in particular any
 inner regular Haar measure on a locally compact group—if an open set `U` lies up to a null set
 inside a null-measurable set `V` satisfying `V * s ⊆ V`, then `U * s` (such as the subgroup
@@ -66,6 +70,11 @@ sets forces the group to be locally compact
   `Measure.isMulRightInvariant_comap_subtype`, `Measure.isAddRightInvariant_comap_subtype`: the
   instances for the pullback of an invariant measure to a subgroup, without measurability
   hypotheses on the subgroup.
+* `Subgroup.measure_eq_inv_index`, `AddSubgroup.measure_eq_inv_index`: a left-invariant
+  probability measure gives mass `n⁻¹` to a measurable subgroup of finite index `n`.
+* `Subgroup.relIndex_mul_measure_inf`, `Subgroup.measure_inf_eq_inv_relIndex`: for `K` compact and
+  `H` open in a topological group, `[K : H ∩ K] · μ(H ∩ K) = μ(K)` for a left-invariant `μ`, so
+  `μ(H ∩ K) = [K : H ∩ K]⁻¹` when `μ(K) = 1`.
 * `Measure.isMulLeftInvariant_volume_prod`, `Measure.isAddLeftInvariant_volume_prod`,
   `Measure.isMulRightInvariant_volume_prod`, `Measure.isAddRightInvariant_volume_prod`: the
   instances for the `volume` of a product of invariant measure spaces.
@@ -327,6 +336,55 @@ theorem isInvInvariant_withDensity [μ.IsInvInvariant] {f : G → ℝ≥0∞} (h
 end InvolutiveInv
 
 end MeasureTheory.Measure
+
+/-- A left-invariant probability measure on a group gives mass `n⁻¹` to a measurable subgroup of
+finite index `n`: its `n` left cosets have equal mass and partition the group
+(`Subgroup.index_mul_measure`). -/
+@[to_additive /-- A left-invariant probability measure on an additive group gives mass `n⁻¹` to a
+measurable additive subgroup of finite index `n`: its `n` cosets have equal mass and partition the
+group (`AddSubgroup.index_mul_measure`). -/]
+theorem Subgroup.measure_eq_inv_index {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+    (K : Subgroup G) [K.FiniteIndex] (hK : MeasurableSet (K : Set G)) (μ : Measure G)
+    [IsProbabilityMeasure μ] [μ.IsMulLeftInvariant] : μ K = (K.index : ℝ≥0∞)⁻¹ := by
+  have h := K.index_mul_measure hK μ
+  rw [measure_univ, mul_comm] at h
+  exact ENNReal.eq_inv_of_mul_eq_one_left h
+
+/-! ### Open subgroups of a compact subgroup
+
+The two results of this section are adapted from grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic PBC), `src/Lib/Adelic/Hecke/Basic.lean`
+(`New.relIndex_mul_measure_inf`, `New.measure_inter_eq_inv_relIndex`). -/
+
+section RelIndex
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [T2Space G]
+  [MeasurableSpace G] [BorelSpace G] {H K : Subgroup G}
+
+/-- For `K` compact, `H` open and `μ` left invariant, `[K : H ∩ K] · μ(H ∩ K) = μ(K)`: the cosets of
+`H ∩ K` in `K`, all of the same measure, partition `K`. -/
+theorem Subgroup.relIndex_mul_measure_inf (hK : IsCompact (K : Set G)) (hH : IsOpen (H : Set G))
+    (μ : Measure G) [μ.IsMulLeftInvariant] :
+    H.relIndex K * μ (H ⊓ K : Subgroup G) = μ K := by
+  -- Pull `μ` back to `K`, where `H ⊓ K` is a measurable subgroup of finite index.
+  have h_emb : MeasurableEmbedding K.subtype := .subtypeVal hK.isClosed.measurableSet
+  have : (H.subgroupOf K).FiniteIndex := ⟨Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact hH hK⟩
+  have : (μ.comap K.subtype).IsMulLeftInvariant := .comap _ h_emb
+  have h_index := (H.subgroupOf K).index_mul_measure
+    (h_emb.measurable hH.measurableSet) (μ.comap K.subtype)
+  have h_image : K.subtype '' (H.subgroupOf K) = (H ⊓ K : Subgroup G) := by
+    rw [← Subgroup.coe_map, Subgroup.subgroupOf_map_subtype]
+  rwa [h_emb.comap_apply, h_emb.comap_apply, h_image, Set.image_univ, Subgroup.coe_subtype,
+    Subtype.range_coe] at h_index
+
+/-- For `K` compact with `μ(K) = 1`, `H` open and `μ` left invariant, `μ(H ∩ K) = [K : H ∩ K]⁻¹`. -/
+theorem Subgroup.measure_inf_eq_inv_relIndex (hK : IsCompact (K : Set G))
+    (hH : IsOpen (H : Set G)) (μ : Measure G) [μ.IsMulLeftInvariant] (hμ : μ K = 1) :
+    μ (H ⊓ K : Subgroup G) = (H.relIndex K : ℝ≥0∞)⁻¹ := by
+  have h := (Subgroup.relIndex_mul_measure_inf hK hH μ).trans hμ
+  exact ENNReal.eq_inv_of_mul_eq_one_left (by rwa [mul_comm])
+
+end RelIndex
 
 namespace MeasureTheory
 

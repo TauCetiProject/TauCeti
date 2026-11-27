@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Order.ToIntervalMod
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 
@@ -24,6 +26,16 @@ band `s ×ˢ [a, a + c)` (`TauCeti.integrableOn_prod_Ico_sub_of_periodic`,
 integral over one period (`TauCeti.integrableOn_prod_Ico_sub_add_of_periodic`,
 `TauCeti.setIntegral_prod_Ico_sub_add_of_periodic`).
 
+Translating by `n c` carries integrability on, and the integral over, the band
+`s ×ˢ [a + n c, a + (n + 1) c)` to those of the translate `(x, t) ↦ f (x, t + n c)` on the band
+`s ×ˢ [a, a + c)` (`TauCeti.integrableOn_prod_Ico_add_zsmul_iff`,
+`TauCeti.setIntegral_prod_Ico_add_zsmul`), for any `f`. Hence the integral over `α × ℝ` of an
+integrable `f` unfolds onto one period band: it is the integral over `univ ×ˢ [a, a + c)` of the
+sum `∑ₙ f (x, t + n c)` of the translates of `f` by the multiples of the period
+(`TauCeti.integral_eq_setIntegral_tsum_add_zsmul`). This is the band case of the unfolding of an
+integral over a fundamental domain (`MeasureTheory.IsAddFundamentalDomain.integral_eq_tsum`), with
+the sum taken inside the integral.
+
 When `α` is a metric space, the integral of a function periodic in its second variable with
 period `d` over a ball about `(x, t + d)` is its integral over the ball about `(x, t)`
 (`TauCeti.setIntegral_ball_add_of_periodic`). The ball of radius `c` about `(x, a)` lies in the two
@@ -32,7 +44,8 @@ integral over the ball about `(x, a)`. So the integral of a nonnegative such `f`
 most twice the integral over one period (`TauCeti.setIntegral_ball_le_two_mul_of_periodic`). For
 the energy density of a map on the cylinder `ℝ × S¹`, lifted to a map on `ℝ × ℝ` that is
 `1`-periodic in `t`, this bounds the energy over a disc of radius `1` about an integer point
-`(s, n)` by twice the energy over the strip `ℝ × [0, 1)`.
+`(s, n)` by twice the energy over the strip `ℝ × [0, 1)`
+(`TauCeti.setIntegral_ball_intCast_le_two_mul_of_periodic`).
 
 For densities `e i ≥ 0`, periodic in the second variable with energy at most `M` over one period,
 energy concentrating at a point of that period also concentrates on the two periods about it. So a
@@ -127,6 +140,57 @@ theorem setIntegral_prod_Ico_sub_add_of_periodic (hs : MeasurableSet s)
       (hs.prod measurableSet_Ico) (integrableOn_prod_Ico_sub_of_periodic hf h) h,
     setIntegral_prod_Ico_sub_of_periodic hf, two_nsmul]
 
+omit [NormedSpace ℝ E] [MeasurableSpace α] in
+/-- The translation `(x, t) ↦ (x, t + n c)` pulls the band `s ×ˢ [a + n c, a + (n + 1) c)` back to
+the band `s ×ˢ [a, a + c)`. -/
+private lemma preimage_prodMap_add_zsmul_prod_Ico (n : ℤ) :
+    (Prod.map id (· + n • c) : α × ℝ → α × ℝ) ⁻¹' (s ×ˢ Ico (a + n • c) (a + (n + 1) • c)) =
+      s ×ˢ Ico a (a + c) := by
+  rw [preimage_prod_map_prod, preimage_id, preimage_add_const_Ico, add_smul, one_smul]
+  congr 2 <;> abel
+
+omit [NormedSpace ℝ E] in
+/-- Translating by `n c` carries integrability on the band `s ×ˢ [a + n c, a + (n + 1) c)` to
+integrability of the translate on the band `s ×ˢ [a, a + c)`. -/
+theorem integrableOn_prod_Ico_add_zsmul_iff (n : ℤ) :
+    IntegrableOn f (s ×ˢ Ico (a + n • c) (a + (n + 1) • c)) (μ.prod volume) ↔
+      IntegrableOn (fun z ↦ f (z.1, z.2 + n • c)) (s ×ˢ Ico a (a + c)) (μ.prod volume) := by
+  obtain ⟨hm, he⟩ := measurePreserving_prodMap_add_right μ (n • c)
+  rw [← hm.integrableOn_comp_preimage he, preimage_prodMap_add_zsmul_prod_Ico]
+  rfl
+
+/-- The integral over the band `s ×ˢ [a + n c, a + (n + 1) c)` is the integral of the translate by
+`n c` over the band `s ×ˢ [a, a + c)`. -/
+theorem setIntegral_prod_Ico_add_zsmul (n : ℤ) :
+    ∫ z in s ×ˢ Ico (a + n • c) (a + (n + 1) • c), f z ∂μ.prod volume =
+      ∫ z in s ×ˢ Ico a (a + c), f (z.1, z.2 + n • c) ∂μ.prod volume := by
+  obtain ⟨hm, he⟩ := measurePreserving_prodMap_add_right μ (n • c)
+  rw [← hm.setIntegral_preimage_emb he f, preimage_prodMap_add_zsmul_prod_Ico]
+  rfl
+
+/-- **Unfolding an integral over the cylinder.** The integral over `α × ℝ` of an integrable `f` is
+the integral over one period band `univ ×ˢ [a, a + c)` of the sum `∑ₙ f (x, t + n c)` of its
+translates by the integer multiples of the period `c > 0`. -/
+theorem integral_eq_setIntegral_tsum_add_zsmul (hc : 0 < c) (hf : Integrable f (μ.prod volume))
+    (a : ℝ) :
+    ∫ z, f z ∂μ.prod volume =
+      ∫ z in univ ×ˢ Ico a (a + c), ∑' n : ℤ, f (z.1, z.2 + n • c) ∂μ.prod volume := by
+  -- Cut `α × ℝ` into the bands `B n = univ ×ˢ [a + n c, a + (n + 1) c)`.
+  set B : ℤ → Set (α × ℝ) := fun n ↦ univ ×ˢ Ico (a + n • c) (a + (n + 1) • c)
+  have hB (n : ℤ) : MeasurableSet (B n) := MeasurableSet.univ.prod measurableSet_Ico
+  have hBd : Pairwise (Function.onFun Disjoint B) := fun m n hmn ↦
+    disjoint_prod.2 (Or.inr (pairwise_disjoint_Ico_add_zsmul a c hmn))
+  have hBu : ⋃ n, B n = univ := by
+    simp only [B, ← prod_iUnion, iUnion_Ico_add_zsmul hc a, univ_prod_univ]
+  have hfB : IntegrableOn f (⋃ n, B n) (μ.prod volume) := by rw [hBu]; exact hf.integrableOn
+  have hnB : IntegrableOn (fun z ↦ ‖f z‖) (⋃ n, B n) (μ.prod volume) := by
+    rw [hBu]; exact hf.norm.integrableOn
+  rw [← setIntegral_univ, ← hBu, integral_iUnion hB hBd hfB]
+  simp only [B, setIntegral_prod_Ico_add_zsmul]
+  refine integral_tsum_of_summable_integral_norm (fun n ↦
+    (integrableOn_prod_Ico_add_zsmul_iff n).1 (hfB.mono_set (subset_iUnion B n))) ?_
+  simpa only [B, setIntegral_prod_Ico_add_zsmul] using (hasSum_integral_iUnion hB hBd hnB).summable
+
 /-- For functions `e i` periodic in the second variable with period `c`, with integral at most `M`
 over one period `univ ×ˢ [a, a + c)`, the integral over two periods `univ ×ˢ [a - c, a + c)` is at
 most `2 * M`. -/
@@ -185,6 +249,18 @@ theorem setIntegral_ball_le_two_mul_of_periodic {f : α × ℝ → ℝ} (hf0 : �
           (Filter.Eventually.of_forall hf0) (ball_subset_univ_prod_Ico_sub_add x).eventuallySubset
     _ = 2 * ∫ z in univ ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
         rw [setIntegral_prod_Ico_sub_add_of_periodic MeasurableSet.univ hf h, two_nsmul, two_mul]
+
+/-- The integral of a nonnegative function of period one in the second variable over the ball of
+radius `1` about a point `(x, n)`, `n ∈ ℤ`, is at most `2 * E` if its integral over the strip
+`univ ×ˢ [0, 1)` is at most `E`. -/
+theorem setIntegral_ball_intCast_le_two_mul_of_periodic {f : α × ℝ → ℝ} {E : ℝ}
+    (hf0 : ∀ z, 0 ≤ f z) (hf : ∀ x t, f (x, t + 1) = f (x, t))
+    (h : IntegrableOn f (univ ×ˢ Ico 0 1) (μ.prod volume))
+    (hE : ∫ z in univ ×ˢ Ico 0 1, f z ∂μ.prod volume ≤ E) (x : α) (n : ℤ) :
+    ∫ z in Metric.ball (x, (n : ℝ)) 1, f z ∂μ.prod volume ≤ 2 * E := by
+  have h2 := setIntegral_ball_le_two_mul_of_periodic (a := 0) hf0 hf (by simpa using h) x n
+  simp only [zero_add, mul_one] at h2
+  exact h2.trans (mul_le_mul_of_nonneg_left hE two_pos.le)
 
 end Ball
 

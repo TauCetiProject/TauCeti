@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.GL2.CompactWeightModule
+public import TauCeti.RepresentationTheory.GL2.CompactWeight.Module
 
 /-!
 # The discrete series of `GL₂(ℝ)` as explicit `𝔤𝔩₂(ℂ)`-modules
@@ -111,6 +111,12 @@ theorem neg_mem_positiveDiscreteSeriesWeights_iff {k : ℕ} {ℓ : ℤ} :
 theorem neg_mem_negativeDiscreteSeriesWeights_iff {k : ℕ} {ℓ : ℤ} :
     -ℓ ∈ negativeDiscreteSeriesWeights k ↔ ℓ ∈ positiveDiscreteSeriesWeights k := by
   simp only [mem_positiveDiscreteSeriesWeights, mem_negativeDiscreteSeriesWeights]
+  omega
+
+/-- The weights of `D_k` form a symmetric set. -/
+theorem neg_mem_discreteSeriesWeights_iff {k : ℕ} {ℓ : ℤ} :
+    -ℓ ∈ discreteSeriesWeights k ↔ ℓ ∈ discreteSeriesWeights k := by
+  simp only [mem_discreteSeriesWeights, abs_neg]
   omega
 
 /-- The weights of `D_k` are those of its two rays. -/
@@ -255,9 +261,7 @@ namespace CompactWeightModule
 /-- The reflection preserves `D_k(μ)`. -/
 theorem reflection_mem_discreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : ℂ) μ} :
     reflection (k : ℂ) μ v ∈ discreteSeries k μ ↔ v ∈ discreteSeries k μ :=
-  reflection_mem_weightLieSubmodule_iff fun ℓ ↦ by
-    simp only [mem_discreteSeriesWeights, abs_neg]
-    omega
+  reflection_mem_weightLieSubmodule_iff fun _ ↦ neg_mem_discreteSeriesWeights_iff
 
 /-- **The reflection interchanges the two rays** `D_k^+(μ)` and `D_k^-(μ)`. -/
 theorem reflection_mem_negativeDiscreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : ℂ) μ} :

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Periodic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+import TauCeti.Analysis.Calculus.BumpFunction.IntervalIntegral
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.PeriodicBump
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
@@ -31,8 +32,8 @@ the area swept out by the variation, and this file collects what follows from th
   `-∫₀¹ σ(∂_s w, ∂_t w) dt` at `s₀`, then
   `d/ds A_H(γ_s) = ∫₀¹ σ(∂_t w - X_{H_t}(w), ∂_s w) dt`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_sub_intervalIntegral`).
-* **Periodic orbits are critical.** Along a variation of a `1`-periodic orbit `γ` of `X_H`, the
-  integrand vanishes at `s = 0`
+* **Orbits are critical.** Along a variation of a solution `γ` of `γ' = X_{H_t}(γ)`, such as a
+  `1`-periodic orbit of `X_H`, the integrand vanishes at `s = 0`
   (`TauCeti.SmoothTwoForm.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero`).
 * **Critical loops are periodic orbits.** Conversely, for a Hamiltonian which is `1`-periodic in
   time, if `γ' ≠ X_H(γ)` at some time `t₀`, pushing `γ` near `t₀ + ℤ` in a chart direction `e`
@@ -40,6 +41,13 @@ the area swept out by the variation, and this file collects what follows from th
   manifold without boundary, a `C^n` loop, `n ≥ 1`, along all of whose `C^n` variations the
   integral vanishes at `s = 0` is a `1`-periodic orbit of `X_H`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.mem_periodicSolutions_of_forall_integral_eq_zero`).
+* **Critical paths solve Hamilton's equation.** The same argument, with variations supported in
+  `(0, 1)` and no periodicity, shows that a `C^n` path solves `γ' = X_{H_t}(γ)` on `[0, 1]` if
+  `∫₀¹ φ g = 0` for the profiles `φ` supported in `(0, 1)` of its chart variations, the integrals
+  of the first variation along them
+  (`IsNondegenerate.curveVelocity_eq_hamiltonianVectorField_of_forall_integral_mul_eq_zero`, in
+  the namespace `TauCeti.SmoothTwoForm`); the final step is the bump-function test
+  `TauCeti.eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero`.
 
 The converse follows the chart-variation argument of the variational characterization of
 geodesics, `TauCeti.Manifold.IsEnergyCritical.isGeodesicCurveOn`, and reuses its chart variations
@@ -51,16 +59,22 @@ These results are the common part of the variational characterizations of the cr
 the contractible action
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isContractibleLoopActionCritical_iff`) and of the action
 relative to a reference loop
-(`TauCeti.SmoothTwoForm.IsNondegenerate.isReferenceActionCritical_iff`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isReferenceActionCritical_iff`), and of the
+characterizations of the critical points of the action of seamed paths
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isSeamedReferenceActionCritical_iff`) and of paths between
+Lagrangians (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianPathActionCritical_iff`).
 
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_sub_intervalIntegral`: the first variation
   formula, from the variation of the area term.
 * `TauCeti.SmoothTwoForm.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero`: the first
-  variation vanishes at a periodic orbit.
+  variation vanishes at an orbit.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mem_periodicSolutions_of_forall_integral_eq_zero`:
   a loop along all of whose variations the first variation vanishes is a periodic orbit.
+* `IsNondegenerate.curveVelocity_eq_hamiltonianVectorField_of_forall_integral_mul_eq_zero`, in the
+  namespace `TauCeti.SmoothTwoForm`: a path along whose chart variations supported in `(0, 1)` the
+  first variation integral vanishes solves Hamilton's equation.
 
 ## References
 
@@ -135,22 +149,23 @@ private theorem apply_eq_of_apply_zero {γ : ℝ → M} (h0 : ∀ t, w (0, t) = 
   rw [hv, h0 t]
 
 omit [FiniteDimensional ℝ E] in
-/-- **The first variation vanishes at a periodic orbit.** Along a variation `w` of a `1`-periodic
-orbit `γ` of `X_H`, differentiable along `s = 0`, the integrand
-`σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation formula vanishes at `s = 0`, since
-`∂_t w(0, t) = γ'(t) = X_{H_t}(γ(t))`; so does its integral. -/
+/-- **The first variation vanishes at an orbit.** Along a variation `w` of a curve `γ` solving
+`γ' = X_{H_t}(γ)` between the times `a` and `b`, such as a `1`-periodic orbit or a seamed solution,
+differentiable along `s = 0`, the integrand `σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation
+formula vanishes at `s = 0` and those times, since `∂_t w(0, t) = γ'(t) = X_{H_t}(γ(t))`; so does
+its integral from `a` to `b`. -/
 theorem SmoothTwoForm.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero {γ : ℝ → M}
-    (horbit : γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1)
-    (hwd : ∀ t, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (0, t)) (h0 : ∀ t, w (0, t) = γ t)
-    (a b : ℝ) :
+    {a b : ℝ} (horbit : ∀ t ∈ uIoo a b, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (H t) (γ t))))
+    (hwd : ∀ t, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (0, t)) (h0 : ∀ t, w (0, t) = γ t) :
     ∫ t in a..b, σ.val (w (0, t))
       ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (0, t)),
         mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] = 0 := by
-  refine (intervalIntegral.integral_congr fun t _ ↦ ?_).trans intervalIntegral.integral_zero
+  refine (intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_).trans intervalIntegral.integral_zero
   have hv : Manifold.curveVelocity I γ t = σ.hamiltonianVectorField (H t) (γ t) := by
     rw [← Manifold.curveVelocityWithin_univ]
     exact Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
-      ((mem_periodicSolutions.mp horbit).1 t).hasMFDerivWithinAt uniqueDiffWithinAt_univ
+      (horbit t ht).hasMFDerivWithinAt uniqueDiffWithinAt_univ
   rw [apply_eq_of_apply_zero h0 (hwd t), hv, sub_self]
   exact (σ.val (γ t)).map_coord_zero 0 rfl
 
@@ -340,6 +355,58 @@ theorem mem_periodicSolutions_of_forall_integral_eq_zero [I.Boundaryless]
     (⟨by linarith, by linarith⟩ : t₀ ∈ Ioo (t₀ - 1 / 2) (t₀ - 1 / 2 + 1))
   rw [(eventually_periodicBump_eq_one (hcos1 r hr hr2)).self_of_nhds, one_mul] at heq
   exact hg₀.ne' heq
+
+/-- **Paths along whose interior chart variations the first variation vanishes solve Hamilton's
+equation.** Let `σ` be a nondegenerate two-form on a manifold without boundary modelled on a
+finite-dimensional space, `H` a jointly `C¹` Hamiltonian and `γ` a `C^n` path, `n ≥ 1`. Suppose
+that `∫₀¹ φ g = 0` for every open set `J ⊆ (0, 1)` of times on which `γ` stays in the chart at
+`x₀`, every chart vector `e` and every `C^n` profile `φ` supported in `J` such that the points
+`ψ (γ t) + (c φ(t)) • e`, `|c| ≤ 1`, stay in the chart target, where `g t` is the pairing of the
+obstruction `γ' - X_H` at `t` with the tangent vector of chart coordinates `e` at `γ t`. This
+holds when the first variation vanishes along the chart variations
+`TauCeti.Manifold.sinChartVariation`, which leave `γ` unchanged outside `J`, so in particular at
+the times `0` and `1`. Then `γ' = X_{H_t}(γ)` at every time `t₀ ∈ [0, 1]`. -/
+theorem curveVelocity_eq_hamiltonianVectorField_of_forall_integral_mul_eq_zero [I.Boundaryless]
+    (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hn : 1 ≤ n)
+    (hγ : ContMDiff 𝓘(ℝ, ℝ) I n γ)
+    (hint : ∀ ⦃x₀ : M⦄ ⦃J : Set ℝ⦄ ⦃φ : ℝ → ℝ⦄ ⦃e : E⦄, IsOpen J → J ⊆ Ioo 0 1 →
+      (∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) →
+      (∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
+        extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target) →
+      ContDiff ℝ n φ → tsupport φ ⊆ J →
+      ∫ t in 0..1, φ t * σ.val (γ t) ![Manifold.curveVelocity I γ t -
+        σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ
+          (γ t) e] = 0)
+    {t₀ : ℝ} (ht₀ : t₀ ∈ Icc (0 : ℝ) 1) :
+    Manifold.curveVelocity I γ t₀ = σ.hamiltonianVectorField (H t₀) (γ t₀) := by
+  by_contra hne
+  set x₀ := γ t₀
+  -- a chart vector `e` whose tangent vector at `x₀` pairs positively with the obstruction
+  -- `γ' - X_H` at `t₀`, and a radius `δ` of times near `t₀` along which `γ` stays in the chart at
+  -- `x₀` and the points displaced by at most `e` stay in the chart target
+  obtain ⟨e, he, hU⟩ :=
+    h.exists_pos_apply_and_eventually_add_smul_mem_target (sub_ne_zero.mpr hne)
+  obtain ⟨δ, hδ, hδU⟩ := Metric.eventually_nhds_iff.mp
+    ((hγ.continuous.continuousAt (x := t₀)).eventually hU)
+  -- `g t` pairs the obstruction at `t` with the tangent vector of chart coordinates `e`
+  set g : ℝ → ℝ := fun t ↦ σ.val (γ t) ![Manifold.curveVelocity I γ t -
+    σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e]
+  -- on a set of times within `δ` of `t₀`, `γ` stays in the chart, and the points displaced by a
+  -- bump profile stay in the chart target
+  have hJ : ∀ {K : Set ℝ}, K ⊆ Metric.ball t₀ δ → ∀ t ∈ K, γ t ∈ (extChartAt I x₀).source :=
+    fun hK t ht ↦ (hδU (hK ht)).1
+  have hT : ∀ {K : Set ℝ} {c' : ℝ} (φ : ContDiffBump c'), K ⊆ Metric.ball t₀ δ → ∀ t ∈ K,
+      ∀ c : ℝ, |c| ≤ 1 → extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target :=
+    fun φ hK t ht c hc1 ↦ (hδU (hK ht)).2 _ (by
+      rw [abs_mul, abs_of_nonneg φ.nonneg]
+      exact (mul_le_mul hc1 φ.le_one φ.nonneg zero_le_one).trans_eq (one_mul 1))
+  -- `φ g` is continuous for the bumps `φ` near `t₀`, with `∫₀¹ φ g = 0` for those supported in
+  -- `(0, 1)`, so `g t₀ = 0`; but `g t₀ > 0`
+  refine he.ne' (eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero (g := g) zero_lt_one ht₀ hδ
+    (fun φ hφ ↦ (h.continuous_mul_apply_curveVelocity_sub hH hn Metric.isOpen_ball
+      (hJ subset_rfl) (hT φ subset_rfl) φ.contDiff hφ hγ).continuousOn)
+    fun φ hφ ↦ hint (Metric.isOpen_ball.inter isOpen_Ioo) inter_subset_right
+      (hJ inter_subset_left) (hT φ inter_subset_left) φ.contDiff hφ)
 
 end SmoothTwoForm.IsNondegenerate
 

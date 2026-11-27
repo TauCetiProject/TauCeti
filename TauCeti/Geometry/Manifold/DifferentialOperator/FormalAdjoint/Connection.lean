@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.DifferentialOperator
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
