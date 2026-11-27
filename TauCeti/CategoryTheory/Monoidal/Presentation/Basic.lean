@@ -110,13 +110,30 @@ theorem sound {X Y : S.FreeMonoidal} {f g : X ⟶ Y} (h : R f g) :
     (quotientFunctor R).map f = (quotientFunctor R).map g :=
   CategoryTheory.Quotient.sound _ (.of h)
 
+/-- An interpretation `(fo, fc)` of `S` in `D` satisfies the presentation equations `R` if
+`FreeMonoidal.lift fo fc` identifies the two sides of every relation in `R`. -/
+abbrev Satisfies {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
+    (R : HomRel S.FreeMonoidal) (fo : S.Obj → D)
+    (fc : ∀ g : S.Coupon,
+      FreeMonoidalCategory.projectObj fo (S.src g) ⟶
+        FreeMonoidalCategory.projectObj fo (S.tgt g)) : Prop :=
+  ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
+    (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g
+
+/-- A substitution `σ : Substitution S T` respects presentations `(S, R)` and `(T, R')` if
+`σ.toFunctor` sends every defining equation of `R` to an equality in `T.Presented R'`. -/
+abbrev Respects {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    (R : HomRel S.FreeMonoidal) (R' : HomRel T.FreeMonoidal) (σ : Substitution S T) : Prop :=
+  ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
+    (quotientFunctor R').map (σ.toFunctor.map f) =
+      (quotientFunctor R').map (σ.toFunctor.map g)
+
 section Lift
 
 variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] (fo : S.Obj → D)
   (fc : ∀ g : S.Coupon,
     FreeMonoidalCategory.projectObj fo (S.src g) ⟶ FreeMonoidalCategory.projectObj fo (S.tgt g))
-  (h : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-    (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g)
+  (h : Satisfies R fo fc)
 
 /-- The functor out of the monoidal category presented by `S` and `R` determined by the images
 `fo` of the generating objects and `fc` of the coupons, provided the induced interpretation of the
@@ -158,8 +175,7 @@ theorem quotientFunctor_comp_lift : quotientFunctor R ⋙ lift fo fc h = FreeMon
 functor `quotientFunctor R` if and only if it identifies the two sides of every equation in `R`. -/
 theorem exists_lift_iff :
     (∃ F : S.Presented R ⥤ D, quotientFunctor R ⋙ F = FreeMonoidal.lift fo fc) ↔
-      ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-        (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g :=
+      Satisfies R fo fc :=
   CategoryTheory.Quotient.exists_lift_monoidalClosure_iff R (FreeMonoidal.lift fo fc)
 
 /-- Exact descent characterization up to natural isomorphism: `FreeMonoidal.lift fo fc` factors
@@ -168,15 +184,13 @@ of every equation in `R` (in which case `Presented.lift fo fc` gives a strong mo
 factorization). -/
 theorem exists_iso_lift_iff :
     (∃ F : S.Presented R ⥤ D, Nonempty (quotientFunctor R ⋙ F ≅ FreeMonoidal.lift fo fc)) ↔
-      ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-        (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g :=
+      Satisfies R fo fc :=
   CategoryTheory.Quotient.exists_iso_lift_monoidalClosure_iff R (FreeMonoidal.lift fo fc)
 
 private def isLiftIso {D : Type u'} [Category.{v'} D] [MonoidalCategory D] (fo : S.Obj → D)
     (fc : ∀ g : S.Coupon,
       FreeMonoidalCategory.projectObj fo (S.src g) ⟶ FreeMonoidalCategory.projectObj fo (S.tgt g))
-    (h : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
+    (h : Satisfies R fo fc) :
     quotientFunctor R ⋙ lift fo fc h ≅ FreeMonoidal.lift fo fc :=
   CategoryTheory.Quotient.lift.isLift _ _ _
 
@@ -184,9 +198,7 @@ private lemma isLiftIso_hom_app {D : Type u'} [Category.{v'} D] [MonoidalCategor
     (fo : S.Obj → D)
     (fc : ∀ g : S.Coupon,
       FreeMonoidalCategory.projectObj fo (S.src g) ⟶ FreeMonoidalCategory.projectObj fo (S.tgt g))
-    (h : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g)
-    (X : S.FreeMonoidal) :
+    (h : Satisfies R fo fc) (X : S.FreeMonoidal) :
     (isLiftIso (R := R) fo fc h).hom.app X = 𝟙 _ :=
   CategoryTheory.Quotient.lift.isLift_hom _ _ _ X
 
@@ -194,27 +206,21 @@ private lemma isLiftIso_inv_app {D : Type u'} [Category.{v'} D] [MonoidalCategor
     (fo : S.Obj → D)
     (fc : ∀ g : S.Coupon,
       FreeMonoidalCategory.projectObj fo (S.src g) ⟶ FreeMonoidalCategory.projectObj fo (S.tgt g))
-    (h : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g)
-    (X : S.FreeMonoidal) :
+    (h : Satisfies R fo fc) (X : S.FreeMonoidal) :
     (isLiftIso (R := R) fo fc h).inv.app X = 𝟙 _ :=
   CategoryTheory.Quotient.lift.isLift_inv _ _ _ X
 
 private instance {D : Type u'} [Category.{v'} D] [MonoidalCategory D] (fo : S.Obj → D)
     (fc : ∀ g : S.Coupon,
       FreeMonoidalCategory.projectObj fo (S.src g) ⟶ FreeMonoidalCategory.projectObj fo (S.tgt g))
-    (h : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
+    (h : Satisfies R fo fc) :
     NatTrans.IsMonoidal (isLiftIso (R := R) fo fc h).hom :=
   inferInstanceAs (NatTrans.IsMonoidal
     (CategoryTheory.Quotient.lift.isLift _ (FreeMonoidal.lift fo fc) _).hom)
 
 private def liftPreIso {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
     {I J : Interpretation S D} (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g) :
+    (hI : Satisfies R I.obj I.coupon) (hJ : Satisfies R J.obj J.coupon) :
     quotientFunctor R ⋙ lift I.obj I.coupon hI ≅
       quotientFunctor R ⋙ lift J.obj J.coupon hJ :=
   isLiftIso I.obj I.coupon hI ≪≫
@@ -223,54 +229,51 @@ private def liftPreIso {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
 
 private lemma liftPreIso_hom_app {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
     {I J : Interpretation S D} (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g)
+    (hI : Satisfies R I.obj I.coupon) (hJ : Satisfies R J.obj J.coupon)
     (X : S.FreeMonoidal) :
     (liftPreIso α hI hJ).hom.app X = (FreeMonoidalCategory.projectObjIso α.iso X.as).hom := by
-  erw [liftPreIso, Iso.trans_hom, Iso.trans_hom, NatTrans.comp_app, NatTrans.comp_app,
-    isLiftIso_hom_app, Iso.symm_hom, isLiftIso_inv_app, MonoidalFunctor.toFunctorIso_hom,
-    Interpretation.extension_map_iso_hom_hom_hom_app, Category.id_comp, Category.comp_id]
+  have heq : (liftPreIso α hI hJ).hom.app X =
+      (isLiftIso I.obj I.coupon hI).hom.app X ≫
+        ((Interpretation.extension S D).map α).iso.hom.hom.hom.app X ≫
+        (isLiftIso J.obj J.coupon hJ).inv.app X := by
+    -- `liftPreIso` composes along `FreeMonoidal.lift = ((Interpretation.extension _ _).obj _).of`.
+    rfl
+  exact heq.trans <| (congrArg₂ (· ≫ ·) (isLiftIso_hom_app (R := R) I.obj I.coupon hI X)
+    (congrArg₂ (· ≫ ·) (Interpretation.extension_map_iso_hom_hom_hom_app α X)
+      (isLiftIso_inv_app (R := R) J.obj J.coupon hJ X))).trans <|
+    (Category.id_comp _).trans (Category.comp_id _)
 
 private instance {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
     {I J : Interpretation S D} (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g) :
+    (hI : Satisfies R I.obj I.coupon) (hJ : Satisfies R J.obj J.coupon) :
     NatTrans.IsMonoidal (liftPreIso α hI hJ).hom where
   unit := by
     simp only [liftPreIso_hom_app, Functor.comp_obj, Functor.LaxMonoidal.comp_ε,
       lift_ε, CategoryTheory.Quotient.functor_ε, Functor.map_id,
       FreeMonoidal.tensorUnit_as, FreeMonoidalCategory.projectObjIso_tensorUnit, Iso.refl_hom]
-    erw [Category.id_comp, Category.comp_id]
+    -- `(lift ...).obj (𝟙_ _)` reduces to `𝟙_ D`.
+    exact ((congrArg (· ≫ _) (Category.id_comp _)).trans (Category.id_comp _)).trans
+      (Category.id_comp _).symm
   tensor X Y := by
     simp only [liftPreIso_hom_app, Functor.comp_obj, Functor.LaxMonoidal.comp_μ,
       lift_μ, CategoryTheory.Quotient.functor_μ, Functor.map_id,
       FreeMonoidal.tensorObj_as, FreeMonoidalCategory.projectObjIso_tensor, tensorIso_hom]
-    erw [Category.id_comp, Category.comp_id, Category.id_comp, Category.comp_id]
-    rfl
+    -- `(lift ...).obj ((quotientFunctor R).obj (X ⊗ Y))` reduces to
+    -- `projectObj _ X.as ⊗ projectObj _ Y.as`.
+    exact ((congrArg (· ≫ _) (Category.id_comp _)).trans (Category.id_comp _)).trans
+      ((congrArg (_ ≫ ·) (Category.id_comp _)).trans (Category.comp_id _)).symm
 
 /-- An isomorphism `α : I ⟶ J` of interpretations of `S` in `D` whose induced lifts satisfy `R`
 descends to a monoidal natural isomorphism between `lift I.obj I.coupon hI` and
 `lift J.obj J.coupon hJ`. -/
 def liftIso {D : Type u'} [Category.{v'} D] [MonoidalCategory D] {I J : Interpretation S D}
-    (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g) :
+    (α : I ⟶ J) (hI : Satisfies R I.obj I.coupon) (hJ : Satisfies R J.obj J.coupon) :
     lift I.obj I.coupon hI ≅ lift J.obj J.coupon hJ :=
   CategoryTheory.Quotient.natIsoLift _ (liftPreIso α hI hJ)
 
 @[simp] theorem liftIso_hom_app {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
     {I J : Interpretation S D} (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g)
-    (X : S.FreeMonoidal) :
+    (hI : Satisfies R I.obj I.coupon) (hJ : Satisfies R J.obj J.coupon) (X : S.FreeMonoidal) :
     (liftIso α hI hJ).hom.app ((quotientFunctor R).obj X) =
       (FreeMonoidalCategory.projectObjIso α.iso X.as).hom :=
   (CategoryTheory.Quotient.natTransLift_app _ _ _ (liftPreIso α hI hJ).hom X).trans
@@ -278,45 +281,35 @@ def liftIso {D : Type u'} [Category.{v'} D] [MonoidalCategory D] {I J : Interpre
 
 @[simp] theorem liftIso_inv_app {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
     {I J : Interpretation S D} (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g)
-    (X : S.FreeMonoidal) :
+    (hI : Satisfies R I.obj I.coupon) (hJ : Satisfies R J.obj J.coupon) (X : S.FreeMonoidal) :
     (liftIso α hI hJ).inv.app ((quotientFunctor R).obj X) =
       (FreeMonoidalCategory.projectObjIso α.iso X.as).inv :=
   NatIso.inv_app_of_hom_app (liftIso α hI hJ) ((quotientFunctor R).obj X)
     (FreeMonoidalCategory.projectObjIso α.iso X.as) (liftIso_hom_app α hI hJ X)
 
 instance {D : Type u'} [Category.{v'} D] [MonoidalCategory D] {I J : Interpretation S D}
-    (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g) :
+    (α : I ⟶ J) (hI : Satisfies R I.obj I.coupon) (hJ : Satisfies R J.obj J.coupon) :
     NatTrans.IsMonoidal (liftIso α hI hJ).hom := by dsimp only [liftIso]; infer_instance
 
 /-- Lifting the identity morphism of an interpretation gives the identity natural isomorphism. -/
 @[simp] theorem liftIso_id {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
-    {I : Interpretation S D}
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g) :
+    {I : Interpretation S D} (hI : Satisfies R I.obj I.coupon) :
     liftIso (R := R) (𝟙 I) hI hI = Iso.refl (lift I.obj I.coupon hI) :=
   CategoryTheory.Quotient.natIso_ext fun X ↦ by
   simp only [liftIso_hom_app, Iso.refl_hom, NatTrans.id_app]
   rw [funext (Interpretation.id_iso I), FreeMonoidalCategory.projectObjIso_refl, Iso.refl_hom]
-  rfl
+  have hobj : FreeMonoidalCategory.projectObj I.obj X.as =
+      (lift I.obj I.coupon hI).obj ((quotientFunctor R).obj X) :=
+    ((lift_obj I.obj I.coupon hI X).trans (FreeMonoidal.lift_obj I.obj I.coupon X)).symm
+  exact eq_of_heq
+    ((@eqToHom_heq_id_dom D _ _ _ hobj).symm.trans (@eqToHom_heq_id_cod D _ _ _ hobj))
 
 /-- Lifting a composite morphism of interpretations gives the composite of the lifted natural
 isomorphisms. -/
 theorem liftIso_comp {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
     {I J K : Interpretation S D} (α : I ⟶ J) (β : J ⟶ K)
-    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g)
-    (hK : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift K.obj K.coupon).map f = (FreeMonoidal.lift K.obj K.coupon).map g) :
+    (hI : Satisfies R I.obj I.coupon) (hJ : Satisfies R J.obj J.coupon)
+    (hK : Satisfies R K.obj K.coupon) :
     liftIso (R := R) (α ≫ β) hI hK = liftIso (R := R) α hI hJ ≪≫ liftIso (R := R) β hJ hK :=
   CategoryTheory.Quotient.natIso_ext fun X ↦ by
   simp only [liftIso_hom_app, Iso.trans_hom, NatTrans.comp_app]
@@ -385,20 +378,14 @@ variable {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
 /-- Descend a substitution `σ : Substitution S T` to a strong monoidal functor
 `S.Presented R ⥤ T.Presented R'`, provided `σ.toFunctor` sends every generating equation of `R` to
 an equality in `T.Presented R'`. -/
-@[expose] def mapSubst (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g)) :
+@[expose] def mapSubst (σ : Substitution S T) (hσ : Respects R R' σ) :
     S.Presented R ⥤ T.Presented R' :=
   CategoryTheory.Quotient.lift _ (σ.toFunctor ⋙ quotientFunctor R') fun _ _ _ _ hfg ↦
     HomRel.MonoidalClosure.map_eq (F := σ.toFunctor ⋙ quotientFunctor R') hσ hfg
 
 section Basic
 
-variable (σ : Substitution S T)
-  (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-    (quotientFunctor R').map (σ.toFunctor.map f) =
-      (quotientFunctor R').map (σ.toFunctor.map g))
+variable (σ : Substitution S T) (hσ : Respects R R' σ)
 
 instance : (mapSubst σ hσ).Monoidal := CategoryTheory.Quotient.liftMonoidal _ _
 
@@ -452,12 +439,7 @@ end Basic
 
 /-- Equal substitutions induce equal descended functors between presented categories. -/
 theorem mapSubst_congr {σ₁ σ₂ : Substitution S T} (h : σ₁ = σ₂)
-    (hσ₁ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ₁.toFunctor.map f) =
-        (quotientFunctor R').map (σ₁.toFunctor.map g))
-    (hσ₂ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ₂.toFunctor.map f) =
-        (quotientFunctor R').map (σ₂.toFunctor.map g)) :
+    (hσ₁ : Respects R R' σ₁) (hσ₂ : Respects R R' σ₂) :
     mapSubst σ₁ hσ₁ = mapSubst σ₂ hσ₂ := by
   subst h
   rfl
@@ -468,9 +450,7 @@ strictly through `quotientFunctor R` if and only if every equation in `R` become
 theorem exists_mapSubst_iff (σ : Substitution S T) :
     (∃ F : S.Presented R ⥤ T.Presented R',
         quotientFunctor R ⋙ F = σ.toFunctor ⋙ quotientFunctor R') ↔
-      ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-        (quotientFunctor R').map (σ.toFunctor.map f) =
-          (quotientFunctor R').map (σ.toFunctor.map g) :=
+      Respects R R' σ :=
   CategoryTheory.Quotient.exists_lift_monoidalClosure_iff R (σ.toFunctor ⋙ quotientFunctor R')
 
 /-- Exact descent characterization for substitutions up to natural isomorphism:
@@ -480,9 +460,7 @@ if and only if every equation in `R` becomes an equality in `T.Presented R'` aft
 theorem exists_iso_mapSubst_iff (σ : Substitution S T) :
     (∃ F : S.Presented R ⥤ T.Presented R',
         Nonempty (quotientFunctor R ⋙ F ≅ σ.toFunctor ⋙ quotientFunctor R')) ↔
-      ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-        (quotientFunctor R').map (σ.toFunctor.map f) =
-          (quotientFunctor R').map (σ.toFunctor.map g) :=
+      Respects R R' σ :=
   CategoryTheory.Quotient.exists_iso_lift_monoidalClosure_iff R (σ.toFunctor ⋙ quotientFunctor R')
 
 /-- Descend a substitution `σ : Substitution S T` when `σ.toFunctor` maps every generating relation
@@ -494,39 +472,24 @@ abbrev mapSubstOfRel (σ : Substitution S T)
 
 /-- Descend a tensor-signature morphism `φ : Hom S T` to a strong monoidal functor
 `S.Presented R ⥤ T.Presented R'`. -/
-abbrev mapHom (φ : Hom S T)
-    (hφ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (φ.toFunctor.map f) =
-        (quotientFunctor R').map (φ.toFunctor.map g)) :
+abbrev mapHom (φ : Hom S T) (hφ : Respects R R' φ.toSubstitution) :
     S.Presented R ⥤ T.Presented R' := mapSubst φ.toSubstitution hφ
 
-private def mapSubstIsLiftIso (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g)) :
+private def mapSubstIsLiftIso (σ : Substitution S T) (hσ : Respects R R' σ) :
     quotientFunctor R ⋙ mapSubst σ hσ ≅ σ.toFunctor ⋙ quotientFunctor R' :=
   CategoryTheory.Quotient.lift.isLift _ _ _
 
-private lemma mapSubstIsLiftIso_hom_app (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
+private lemma mapSubstIsLiftIso_hom_app (σ : Substitution S T) (hσ : Respects R R' σ)
     (X : S.FreeMonoidal) :
     (mapSubstIsLiftIso (R := R) (R' := R') σ hσ).hom.app X = 𝟙 _ :=
   CategoryTheory.Quotient.lift.isLift_hom _ _ _ X
 
-private lemma mapSubstIsLiftIso_inv_app (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
+private lemma mapSubstIsLiftIso_inv_app (σ : Substitution S T) (hσ : Respects R R' σ)
     (X : S.FreeMonoidal) :
     (mapSubstIsLiftIso (R := R) (R' := R') σ hσ).inv.app X = 𝟙 _ :=
   CategoryTheory.Quotient.lift.isLift_inv _ _ _ X
 
-private instance (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g)) :
+private instance (σ : Substitution S T) (hσ : Respects R R' σ) :
     NatTrans.IsMonoidal (mapSubstIsLiftIso (R := R) (R' := R') σ hσ).hom :=
   inferInstanceAs (NatTrans.IsMonoidal
     (CategoryTheory.Quotient.lift.isLift _ (σ.toFunctor ⋙ quotientFunctor R') _).hom)
@@ -539,9 +502,7 @@ section Functoriality
 
 /-- The identity substitution on `S` respects every presentation relation `R`. -/
 theorem mapSubst_id_respects {S : TensorSignature.{u, v}} (R : HomRel S.FreeMonoidal) :
-    ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R).map ((Substitution.id S).toFunctor.map f) =
-        (quotientFunctor R).map ((Substitution.id S).toFunctor.map g) :=
+    Respects R R (Substitution.id S) :=
   fun _ _ _ _ hfg ↦ (NatIso.map_eq_iff
     (Functor.isoWhiskerRight (Substitution.toFunctorIdIso S) (quotientFunctor R))).mpr
     (sound hfg)
@@ -586,22 +547,18 @@ def mapSubstIdIso {S : TensorSignature.{u, v}} (R : HomRel S.FreeMonoidal) :
 instance {S : TensorSignature.{u, v}} (R : HomRel S.FreeMonoidal) :
     NatTrans.IsMonoidal (mapSubstIdIso R).hom := by dsimp only [mapSubstIdIso]; infer_instance
 
+section Comp
+
+variable {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
+  {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
+  {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
+  {σ : Substitution S T} (hσ : Respects R R' σ)
+  {τ : Substitution T U} (hτ : Respects R' R'' τ)
+
+include hσ hτ
+
 /-- Composition of substitutions preserves compatibility with presentation relations. -/
-theorem mapSubst_comp_respects
-    {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
-    {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    {τ : Substitution T U}
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g)) :
-    ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R'').map ((σ.comp τ).toFunctor.map f) =
-        (quotientFunctor R'').map ((σ.comp τ).toFunctor.map g) :=
+theorem mapSubst_comp_respects : Respects R R'' (σ.comp τ) :=
   fun _ _ _ _ hfg ↦
     have h := congrArg (mapSubst τ hτ).map (hσ hfg)
     (NatIso.map_eq_iff
@@ -609,18 +566,7 @@ theorem mapSubst_comp_respects
         rw [mapSubst_map, mapSubst_map] at h
         exact h
 
-private def mapSubstCompPreIso
-    {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
-    {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    {τ : Substitution T U}
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g)) :
+private def mapSubstCompPreIso :
     quotientFunctor R ⋙ mapSubst (σ.comp τ) (mapSubst_comp_respects hσ hτ) ≅
       quotientFunctor R ⋙ mapSubst σ hσ ⋙ mapSubst τ hτ :=
   mapSubstIsLiftIso (σ.comp τ) (mapSubst_comp_respects hσ hτ) ≪≫
@@ -631,54 +577,18 @@ private def mapSubstCompPreIso
     Functor.isoWhiskerRight (mapSubstIsLiftIso σ hσ).symm _ ≪≫
     Functor.associator _ _ _
 
-private instance
-    {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
-    {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    {τ : Substitution T U}
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g)) :
-    NatTrans.IsMonoidal (mapSubstCompPreIso hσ hτ).hom := by
+private instance : NatTrans.IsMonoidal (mapSubstCompPreIso hσ hτ).hom := by
   dsimp only [mapSubstCompPreIso]
-  simp only [Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom,
-    Functor.isoWhiskerLeft_hom]
+  simp only [Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom]
   infer_instance
 
 /-- Descending a composite substitution `σ.comp τ` is monoidally naturally isomorphic to composing
 the descended functors `mapSubst σ hσ ⋙ mapSubst τ hτ`. -/
-def mapSubstCompIso
-    {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
-    {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    {τ : Substitution T U}
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g)) :
+def mapSubstCompIso :
     mapSubst (σ.comp τ) (mapSubst_comp_respects hσ hτ) ≅ mapSubst σ hσ ⋙ mapSubst τ hτ :=
   CategoryTheory.Quotient.natIsoLift _ (mapSubstCompPreIso hσ hτ)
 
-@[simp] theorem mapSubstCompIso_hom_app
-    {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
-    {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    {τ : Substitution T U}
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g))
-    (X : S.FreeMonoidal) :
+@[simp] theorem mapSubstCompIso_hom_app (X : S.FreeMonoidal) :
     (mapSubstCompIso hσ hτ).hom.app ((quotientFunctor R).obj X) =
       eqToHom (congrArg (quotientFunctor R'').obj (Substitution.toFunctor_comp_obj σ τ X)) := by
   rw [mapSubstCompIso, CategoryTheory.Quotient.natIsoLift_hom,
@@ -690,49 +600,24 @@ def mapSubstCompIso
     Functor.comp_obj, mapSubst_obj, Functor.map_id, eqToHom_map,
     Category.id_comp, Category.comp_id]
 
-@[simp] theorem mapSubstCompIso_inv_app
-    {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
-    {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    {τ : Substitution T U}
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g))
-    (X : S.FreeMonoidal) :
+@[simp] theorem mapSubstCompIso_inv_app (X : S.FreeMonoidal) :
     (mapSubstCompIso hσ hτ).inv.app ((quotientFunctor R).obj X) =
       eqToHom
         (congrArg (quotientFunctor R'').obj (Substitution.toFunctor_comp_obj σ τ X)).symm :=
   NatIso.inv_app_eqToHom _ _ (mapSubstCompIso_hom_app hσ hτ X)
 
-instance
-    {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
-    {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    {τ : Substitution T U}
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g)) :
-    NatTrans.IsMonoidal (mapSubstCompIso hσ hτ).hom := by
+instance : NatTrans.IsMonoidal (mapSubstCompIso hσ hτ).hom := by
   dsimp only [mapSubstCompIso]
   infer_instance
+
+end Comp
 
 /-- Left unit coherence for `mapSubst`: composing `mapSubstCompIso` with `mapSubstIdIso R`
 agrees with `Substitution.id_comp`. -/
 theorem mapSubstCompIso_id_left
     {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
     {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g)) :
+    {σ : Substitution S T} (hσ : Respects R R' σ) :
     mapSubstCompIso (mapSubst_id_respects R) hσ ≪≫
         Functor.isoWhiskerRight (mapSubstIdIso R) (mapSubst σ hσ) ≪≫
         Functor.leftUnitor (mapSubst σ hσ) =
@@ -742,17 +627,16 @@ theorem mapSubstCompIso_id_left
     Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
     mapSubstCompIso_hom_app, mapSubstIdIso_hom_app, mapSubst_obj, eqToIso.hom, eqToHom_app,
     eqToHom_map, Category.comp_id]
-  erw [eqToHom_trans]
+  apply eq_of_heq
+  exact (eqToHom_comp_heq _ _).trans
+    ((@eqToHom_heq_id_cod _ _ _ _ _).trans (@eqToHom_heq_id_cod _ _ _ _ _).symm)
 
 /-- Right unit coherence for `mapSubst`: composing `mapSubstCompIso` with `mapSubstIdIso R'`
 agrees with `Substitution.comp_id`. -/
 theorem mapSubstCompIso_id_right
     {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
     {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g)) :
+    {σ : Substitution S T} (hσ : Respects R R' σ) :
     mapSubstCompIso hσ (mapSubst_id_respects R') ≪≫
         Functor.isoWhiskerLeft (mapSubst σ hσ) (mapSubstIdIso R') ≪≫
         Functor.rightUnitor (mapSubst σ hσ) =
@@ -769,18 +653,9 @@ theorem mapSubstCompIso_assoc
     {T : TensorSignature.{u₂, v₂}} {R' : HomRel T.FreeMonoidal}
     {U : TensorSignature.{u₃, v₃}} {R'' : HomRel U.FreeMonoidal}
     {V : TensorSignature.{u₄, v₄}} {R''' : HomRel V.FreeMonoidal}
-    {σ : Substitution S T}
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    {τ : Substitution T U}
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g))
-    {ρ : Substitution U V}
-    (hρ : ∀ ⦃X Y : U.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R'' f g →
-      (quotientFunctor R''').map (ρ.toFunctor.map f) =
-        (quotientFunctor R''').map (ρ.toFunctor.map g)) :
+    {σ : Substitution S T} (hσ : Respects R R' σ)
+    {τ : Substitution T U} (hτ : Respects R' R'' τ)
+    {ρ : Substitution U V} (hρ : Respects R'' R''' ρ) :
     mapSubstCompIso (mapSubst_comp_respects hσ hτ) hρ ≪≫
         Functor.isoWhiskerRight (mapSubstCompIso hσ hτ) (mapSubst ρ hρ) ≪≫
         Functor.associator (mapSubst σ hσ) (mapSubst τ hτ) (mapSubst ρ hρ) =
@@ -790,9 +665,11 @@ theorem mapSubstCompIso_assoc
   CategoryTheory.Quotient.natIso_ext fun X ↦ by
   simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
     Functor.whiskerRight_app, Functor.associator_hom_app, Functor.isoWhiskerLeft_hom,
-    Functor.whiskerLeft_app, Functor.comp_obj, mapSubstCompIso_hom_app, mapSubst_obj, eqToHom_map,
-    eqToHom_trans, Category.comp_id, eqToIso.hom, eqToHom_app]
-  erw [eqToHom_trans, eqToHom_trans]
+    Functor.whiskerLeft_app, Functor.comp_obj, mapSubstCompIso_hom_app, mapSubst_obj,
+    eqToHom_map, eqToHom_trans, Category.comp_id, eqToIso.hom, eqToHom_app]
+  apply eq_of_heq
+  exact (eqToHom_comp_heq _ _).trans ((@eqToHom_heq_id_cod _ _ _ _ _).trans
+    ((eqToHom_comp_heq _ _).trans (@eqToHom_heq_id_cod _ _ _ _ _)).symm)
 
 end Functoriality
 
@@ -805,33 +682,22 @@ variable {S : TensorSignature.{u₁, v₁}} {R : HomRel S.FreeMonoidal}
 /-- Pulling back a presentation-satisfying interpretation `(fo, fc)` of `(T, R')` along a
 relation-respecting substitution `σ : Substitution S T` yields an interpretation of `(S, R)`
 satisfying `R`. -/
-theorem pullback_respects (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    (fo : T.Obj → D)
+theorem pullback_respects (σ : Substitution S T) (hσ : Respects R R' σ) (fo : T.Obj → D)
     (fc : ∀ h : T.Coupon,
       FreeMonoidalCategory.projectObj fo (T.src h) ⟶ FreeMonoidalCategory.projectObj fo (T.tgt h))
-    (hR' : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
-    ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift (σ.pullbackObj fo) (σ.pullbackCoupon fo fc)).map f =
-        (FreeMonoidal.lift (σ.pullbackObj fo) (σ.pullbackCoupon fo fc)).map g :=
+    (hR' : Satisfies R' fo fc) :
+    Satisfies R (σ.pullbackObj fo) (σ.pullbackCoupon fo fc) :=
   fun _ _ _ _ hfg ↦
     have h := congrArg (lift fo fc hR').map (hσ hfg)
     (NatIso.map_eq_iff (σ.toFunctorCompLiftIso fo fc)).mp <| by
       rw [lift_map, lift_map] at h
       exact h
 
-private def mapSubstCompLiftPreIso (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
+private def mapSubstCompLiftPreIso (σ : Substitution S T) (hσ : Respects R R' σ)
     (fo : T.Obj → D)
     (fc : ∀ h : T.Coupon,
       FreeMonoidalCategory.projectObj fo (T.src h) ⟶ FreeMonoidalCategory.projectObj fo (T.tgt h))
-    (hR' : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
+    (hR' : Satisfies R' fo fc) :
     quotientFunctor R ⋙ mapSubst σ hσ ⋙ lift fo fc hR' ≅
       quotientFunctor R ⋙
         lift (σ.pullbackObj fo) (σ.pullbackCoupon fo fc) (pullback_respects σ hσ fo fc hR') :=
@@ -843,15 +709,10 @@ private def mapSubstCompLiftPreIso (σ : Substitution S T)
     (isLiftIso (σ.pullbackObj fo) (σ.pullbackCoupon fo fc)
       (pullback_respects σ hσ fo fc hR')).symm
 
-private instance (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    (fo : T.Obj → D)
+private instance (σ : Substitution S T) (hσ : Respects R R' σ) (fo : T.Obj → D)
     (fc : ∀ h : T.Coupon,
       FreeMonoidalCategory.projectObj fo (T.src h) ⟶ FreeMonoidalCategory.projectObj fo (T.tgt h))
-    (hR' : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
+    (hR' : Satisfies R' fo fc) :
     NatTrans.IsMonoidal (mapSubstCompLiftPreIso σ hσ fo fc hR').hom := by
   dsimp only [mapSubstCompLiftPreIso]
   simp only [Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom,
@@ -862,29 +723,19 @@ private instance (σ : Substitution S T)
 substitution `mapSubst σ hσ` is monoidally naturally isomorphic to `Presented.lift` of the
 pulled-back interpretation `(σ.pullbackObj fo, σ.pullbackCoupon fo fc)` in any monoidal category
 `D`. -/
-def mapSubstCompLiftIso (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    (fo : T.Obj → D)
+def mapSubstCompLiftIso (σ : Substitution S T) (hσ : Respects R R' σ) (fo : T.Obj → D)
     (fc : ∀ h : T.Coupon,
       FreeMonoidalCategory.projectObj fo (T.src h) ⟶ FreeMonoidalCategory.projectObj fo (T.tgt h))
-    (hR' : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
+    (hR' : Satisfies R' fo fc) :
     mapSubst σ hσ ⋙ lift fo fc hR' ≅
       lift (σ.pullbackObj fo) (σ.pullbackCoupon fo fc) (pullback_respects σ hσ fo fc hR') :=
   CategoryTheory.Quotient.natIsoLift _ (mapSubstCompLiftPreIso σ hσ fo fc hR')
 
-@[simp] theorem mapSubstCompLiftIso_hom_app (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
+@[simp] theorem mapSubstCompLiftIso_hom_app (σ : Substitution S T) (hσ : Respects R R' σ)
     (fo : T.Obj → D)
     (fc : ∀ h : T.Coupon,
       FreeMonoidalCategory.projectObj fo (T.src h) ⟶ FreeMonoidalCategory.projectObj fo (T.tgt h))
-    (hR' : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g)
-    (X : S.FreeMonoidal) :
+    (hR' : Satisfies R' fo fc) (X : S.FreeMonoidal) :
     (mapSubstCompLiftIso σ hσ fo fc hR').hom.app ((quotientFunctor R).obj X) =
       eqToHom (σ.projectObj_pullbackObj fo X.as).symm := by
   rw [mapSubstCompLiftIso, CategoryTheory.Quotient.natIsoLift_hom,
@@ -895,56 +746,38 @@ def mapSubstCompLiftIso (σ : Substitution S T)
     isLiftIso_hom_app, isLiftIso_inv_app, Substitution.toFunctorCompLiftIso_hom_app,
     Functor.comp_obj, mapSubst_obj, FreeMonoidal.lift_obj, Functor.map_id,
     Category.id_comp]
-  erw [Category.id_comp, Category.comp_id]
+  -- Unfold `(lift ...).obj` implicitly so `Category.id_comp` and `Category.comp_id` apply.
+  exact (Category.id_comp _).trans (Category.comp_id _)
 
-@[simp] theorem mapSubstCompLiftIso_inv_app (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
+@[simp] theorem mapSubstCompLiftIso_inv_app (σ : Substitution S T) (hσ : Respects R R' σ)
     (fo : T.Obj → D)
     (fc : ∀ h : T.Coupon,
       FreeMonoidalCategory.projectObj fo (T.src h) ⟶ FreeMonoidalCategory.projectObj fo (T.tgt h))
-    (hR' : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g)
-    (X : S.FreeMonoidal) :
+    (hR' : Satisfies R' fo fc) (X : S.FreeMonoidal) :
     (mapSubstCompLiftIso σ hσ fo fc hR').inv.app ((quotientFunctor R).obj X) =
       eqToHom (σ.projectObj_pullbackObj fo X.as) :=
   NatIso.inv_app_eqToHom _ _ (mapSubstCompLiftIso_hom_app σ hσ fo fc hR' X)
 
-instance (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    (fo : T.Obj → D)
+instance (σ : Substitution S T) (hσ : Respects R R' σ) (fo : T.Obj → D)
     (fc : ∀ h : T.Coupon,
       FreeMonoidalCategory.projectObj fo (T.src h) ⟶ FreeMonoidalCategory.projectObj fo (T.tgt h))
-    (hR' : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
+    (hR' : Satisfies R' fo fc) :
     NatTrans.IsMonoidal (mapSubstCompLiftIso σ hσ fo fc hR').hom := by
   dsimp only [mapSubstCompLiftIso]
   infer_instance
 
 private lemma liftIso_hom_app_extension {S' : TensorSignature.{u, v}} {R'' : HomRel S'.FreeMonoidal}
     {I J : Interpretation S' D} (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : S'.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R'' f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : S'.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R'' f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g)
-    (X : S'.FreeMonoidal) :
+    (hI : Satisfies R'' I.obj I.coupon) (hJ : Satisfies R'' J.obj J.coupon) (X : S'.FreeMonoidal) :
     (liftIso (R := R'') α hI hJ).hom.app ((quotientFunctor R'').obj X) =
       (MonoidalFunctor.toFunctorIso ((Interpretation.extension S' D).map α).iso).hom.app X :=
   (liftIso_hom_app α hI hJ X).trans (Interpretation.extension_map_iso_hom_hom_hom_app α X).symm
 
-private lemma mapSubstCompLiftIso_hom_app_eq (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
+private lemma mapSubstCompLiftIso_hom_app_eq (σ : Substitution S T) (hσ : Respects R R' σ)
     (fo : T.Obj → D)
     (fc : ∀ h : T.Coupon,
       FreeMonoidalCategory.projectObj fo (T.src h) ⟶ FreeMonoidalCategory.projectObj fo (T.tgt h))
-    (hR' : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g)
-    (X : S.FreeMonoidal) :
+    (hR' : Satisfies R' fo fc) (X : S.FreeMonoidal) :
     (mapSubstCompLiftIso σ hσ fo fc hR').hom.app ((quotientFunctor R).obj X) =
       (σ.toFunctorCompLiftIso fo fc).hom.app X :=
   (mapSubstCompLiftIso_hom_app σ hσ fo fc hR' X).trans
@@ -953,15 +786,9 @@ private lemma mapSubstCompLiftIso_hom_app_eq (σ : Substitution S T)
 /-- Naturality of `mapSubstCompLiftIso` in `α : I ⟶ J`: whiskering `Presented.liftIso α`
 with `mapSubst σ hσ` commutes with `mapSubstCompLiftIso` and `Presented.liftIso` of
 `(σ.pullback D).map α`. -/
-theorem mapSubstCompLiftIso_natural (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
+theorem mapSubstCompLiftIso_natural (σ : Substitution S T) (hσ : Respects R R' σ)
     {I J : Interpretation T D} (α : I ⟶ J)
-    (hI : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
-    (hJ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g) :
+    (hI : Satisfies R' I.obj I.coupon) (hJ : Satisfies R' J.obj J.coupon) :
     Functor.isoWhiskerLeft (mapSubst σ hσ) (liftIso α hI hJ) ≪≫
         mapSubstCompLiftIso σ hσ J.obj J.coupon hJ =
       mapSubstCompLiftIso σ hσ I.obj I.coupon hI ≪≫
@@ -985,8 +812,7 @@ theorem mapSubstCompLiftIso_natural (σ : Substitution S T)
 theorem mapSubstCompLiftIso_id (fo : S.Obj → D)
     (fc : ∀ g : S.Coupon,
       FreeMonoidalCategory.projectObj fo (S.src g) ⟶ FreeMonoidalCategory.projectObj fo (S.tgt g))
-    (hR : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
+    (hR : Satisfies R fo fc) :
     mapSubstCompLiftIso (Substitution.id S) (mapSubst_id_respects R) fo fc hR ≪≫
         liftIso ((Substitution.pullbackIdIso D).hom.app ⟨fo, fc⟩)
           (pullback_respects (Substitution.id S) (mapSubst_id_respects R) fo fc hR) hR =
@@ -1001,26 +827,27 @@ theorem mapSubstCompLiftIso_id (fo : S.Obj → D)
     simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
       Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
       Substitution.toFunctorIdIso_hom_app, mapSubstIdIso_hom_app, eqToHom_map, Category.comp_id]
-    erw [eqToHom_map]
-    rfl
+    have hl : eqToHom (congrArg (FreeMonoidal.lift fo fc).obj (Substitution.toFunctor_id_obj S X)) ≍
+        𝟙 ((FreeMonoidal.lift fo fc).obj X) :=
+      @eqToHom_heq_id_cod D _ _ _ _
+    have hr : (lift fo fc hR).map
+          (eqToHom (congrArg (quotientFunctor R).obj (Substitution.toFunctor_id_obj S X))) ≍
+        𝟙 ((lift fo fc hR).obj ((quotientFunctor R).obj X)) :=
+      (heq_of_eq (eqToHom_map _ _)).trans (@eqToHom_heq_id_cod D _ _ _ _)
+    apply eq_of_heq
+    refine hl.trans (HEq.trans ?_ hr.symm)
+    rw [lift_obj]
 
 /-- Compatibility of `mapSubstCompLiftIso` with successive pullback along a composite
 substitution `σ.comp τ`. -/
 theorem mapSubstCompLiftIso_comp
     {U : TensorSignature.{u₄, v₄}} {R'' : HomRel U.FreeMonoidal}
-    (σ : Substitution S T)
-    (hσ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
-      (quotientFunctor R').map (σ.toFunctor.map f) =
-        (quotientFunctor R').map (σ.toFunctor.map g))
-    (τ : Substitution T U)
-    (hτ : ∀ ⦃X Y : T.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R' f g →
-      (quotientFunctor R'').map (τ.toFunctor.map f) =
-        (quotientFunctor R'').map (τ.toFunctor.map g))
+    (σ : Substitution S T) (hσ : Respects R R' σ)
+    (τ : Substitution T U) (hτ : Respects R' R'' τ)
     (fo : U.Obj → D)
     (fc : ∀ h : U.Coupon,
       FreeMonoidalCategory.projectObj fo (U.src h) ⟶ FreeMonoidalCategory.projectObj fo (U.tgt h))
-    (hR'' : ∀ ⦃X Y : U.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R'' f g →
-      (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g) :
+    (hR'' : Satisfies R'' fo fc) :
     mapSubstCompLiftIso (σ.comp τ) (mapSubst_comp_respects hσ hτ) fo fc hR'' ≪≫
         liftIso ((Substitution.pullbackCompIso D σ τ).hom.app ⟨fo, fc⟩)
           (pullback_respects (σ.comp τ) (mapSubst_comp_respects hσ hτ) fo fc hR'')
@@ -1043,7 +870,12 @@ theorem mapSubstCompLiftIso_comp
       Functor.whiskerLeft_app, Functor.comp_obj, Substitution.toFunctorCompIso_hom_app,
       Substitution.toFunctorCompLiftIso_hom_app, mapSubstCompIso_hom_app, mapSubst_obj,
       mapSubstCompLiftIso_hom_app, eqToHom_map, Category.id_comp]
-    erw [eqToHom_trans, eqToHom_trans]
+    apply eq_of_heq
+    refine (eqToHom_comp_heq _ _).trans ((eqToHom_comp_heq _ _).trans
+      ((@eqToHom_heq_id_cod D _ _ _ _).trans
+        ((HEq.trans ?_ (@eqToHom_heq_id_cod D _ _ _ _).symm).trans
+          ((eqToHom_comp_heq _ _).trans (eqToHom_comp_heq _ _)).symm)))
+    rw [lift_obj, FreeMonoidal.lift_obj]
 
 end Pullback
 

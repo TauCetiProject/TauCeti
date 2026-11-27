@@ -21,6 +21,9 @@ parallel morphisms.
   holds if and only if `G.map f = G.map g`.
 * `CategoryTheory.NatIso.inv_app_of_hom_app` and `CategoryTheory.NatIso.inv_app_eqToHom`: compute
   the inverse component `e.inv.app X` from an identification of `e.hom.app X`.
+* `CategoryTheory.NatIso.eq_of_hom_app_eqToHom` and
+  `CategoryTheory.NatIso.eq_eqToIso_of_hom_app_eqToHom`: natural isomorphisms whose components
+  are all `eqToHom`s agree (and equal `eqToIso`).
 -/
 
 public section
@@ -49,5 +52,24 @@ theorem inv_app_eqToHom {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Cat
     {F G : C ⥤ D} (e : F ≅ G) (X : C) {h : F.obj X = G.obj X}
     (he : e.hom.app X = eqToHom h) : e.inv.app X = eqToHom h.symm :=
   (inv_app_of_hom_app e X (eqToIso h) he).trans (eqToIso.inv h)
+
+/-- Two natural isomorphisms `e₁ e₂ : F ≅ G` whose components are both `eqToHom`s are equal. -/
+theorem eq_of_hom_app_eqToHom {C : Type u₁} [Category.{v₁} C] {D : Type u₂}
+    [Category.{v₂} D] {F G : C ⥤ D} {e₁ e₂ : F ≅ G}
+    (h₁ : ∀ X : C, ∃ p : F.obj X = G.obj X, e₁.hom.app X = eqToHom p)
+    (h₂ : ∀ X : C, ∃ p : F.obj X = G.obj X, e₂.hom.app X = eqToHom p) :
+    e₁ = e₂ := by
+  ext X
+  obtain ⟨p₁, hp₁⟩ := h₁ X
+  obtain ⟨p₂, hp₂⟩ := h₂ X
+  rw [hp₁, hp₂]
+
+/-- A natural isomorphism `e : F ≅ G` between equal functors `h : F = G` whose components are
+all `eqToHom`s equals `eqToIso h`. -/
+theorem eq_eqToIso_of_hom_app_eqToHom {C : Type u₁} [Category.{v₁} C] {D : Type u₂}
+    [Category.{v₂} D] {F G : C ⥤ D} (e : F ≅ G) (h : F = G)
+    (he : ∀ X : C, ∃ p : F.obj X = G.obj X, e.hom.app X = eqToHom p) :
+    e = eqToIso h :=
+  eq_of_hom_app_eqToHom he fun X ↦ ⟨Functor.congr_obj h X, by rw [eqToIso.hom, eqToHom_app]⟩
 
 end CategoryTheory.NatIso
