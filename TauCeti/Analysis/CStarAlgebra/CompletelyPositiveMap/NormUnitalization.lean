@@ -27,7 +27,7 @@ this, because compressing creates the cross term `Qφ(a)(1 - Q)·(1 - Q)φ(b)Q`.
 
 Renormalizing the compression gives a completely positive map that is unital onto the corner
 `Q M_k Q`. With `k = Qφ(1)Q + (1 - Q)`, which is within `2δ` of `1`, and `g = k^{-1/2}`
-(`TauCeti.exists_isSelfAdjoint_mul_mul_eq_one`, by the continuous functional calculus for
+(`IsSelfAdjoint.exists_isSelfAdjoint_mul_mul_eq_one`, by the continuous functional calculus for
 `t ↦ t^{-1/2}`, which moves points of `[3/4, 5/4]` by at most their distance to `1`), the map
 `ψ(a) = gQφ(a)Qg` satisfies `ψ(1) = Q`, is within `5δ‖a‖` of `QφQ`, and keeps the norm defects of
 `φ` up to `17δ‖a‖‖b‖` when `δ ≤ 1/8` (`CompletelyPositiveMap.exists_renormalized_compress`).
