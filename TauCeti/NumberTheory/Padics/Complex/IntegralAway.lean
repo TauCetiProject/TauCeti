@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 
 import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Cardinality
 import TauCeti.NumberTheory.Padics.Complex.Basic
 
@@ -124,7 +125,7 @@ theorem inv_natCast_mem_integralAway {K : Type*} [Field K] {n : ℕ}
   refine mem_integralAway.2 fun ℓ hℓ hℓq ι ↦ ?_
   have hn : ‖(n : ℚ_[ℓ])‖ = 1 := Padic.norm_natCast_eq_one_iff.2 <|
     (Nat.Prime.coprime_iff_not_dvd hℓ.out).2 fun hℓn ↦ hℓq (h ℓ hℓ.out hℓn)
-  rw [map_inv₀, map_natCast, norm_inv, PadicComplex.norm_natCast, hn, inv_one]
+  rw [map_inv₀, map_natCast, norm_inv, norm_natCast_eq_norm_padic (p := ℓ), hn, inv_one]
 
 /-- The inverse of a nonzero natural number `n` is integral away from `q` exactly when every
 prime factor of `n` divides `q`. The forward direction uses that `ℂ` embeds into every `ℂ_[ℓ]`;
@@ -137,7 +138,7 @@ theorem inv_natCast_mem_integralAway_iff {n : ℕ} (hn : n ≠ 0) :
   -- `ℂ` is isomorphic to an algebraic closure of `ℚ_[ℓ]`, which lies in `ℂ_[ℓ]`.
   obtain ⟨e⟩ := TauCeti.Padic.nonempty_ringEquiv_complex ℓ (PadicAlgCl ℓ)
   have hle := mem_integralAway.1 h ℓ hℓq ((algebraMap (PadicAlgCl ℓ) ℂ_[ℓ]).comp e.symm)
-  rw [map_inv₀, map_natCast, norm_inv, PadicComplex.norm_natCast] at hle
+  rw [map_inv₀, map_natCast, norm_inv, norm_natCast_eq_norm_padic (p := ℓ)] at hle
   have hlt : ‖(n : ℚ_[ℓ])‖ < 1 := Padic.norm_natCast_lt_one_iff.2 hℓn
   have hpos : 0 < ‖(n : ℚ_[ℓ])‖ := norm_pos_iff.2 (Nat.cast_ne_zero.2 hn)
   exact hle.not_gt ((one_lt_inv₀ hpos).2 hlt)
