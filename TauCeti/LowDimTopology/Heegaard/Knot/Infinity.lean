@@ -45,8 +45,9 @@ domains in place of holomorphic disks.
   form an action of `ℤ × ℤ` (`knotInfinityShift_zero`, `knotInfinityShift_add`) and commute with
   the differential (`knotInfinityDifferential_knotInfinityShift`). The shifts by `(1, 0)` and
   `(0, 1)` are the actions of the two variables `U` and `V` of Zemke's complex. The shifts by
-  `(a, a)` preserve `CFK^∞` (`knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff`), and the
-  shift by `(1, 1)` is the action of `U` on `CFK^∞` of Ozsváth and Szabó.
+  `(a, a)` preserve `CFK^∞` (`knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff`), and their
+  restrictions `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderShift` give the action of `U` on
+  `CFK^∞` of Ozsváth and Szabó, the shift by `(1, 1)`.
 
 **Filtrations.** The terms of the differential have `n_w(φ), n_z(φ) ≥ 0`, so the differential
 does not increase either index. For every lower set `S` of `ℤ × ℤ`, the chains of the full complex
@@ -89,6 +90,8 @@ As for the knot differential, these are counts of domains rather than of holomor
   the quotient by a lower set.
 * `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderSubmodule`: the chains with `j - i = A(x)`,
   those of `CFK^∞`.
+* `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderShift`: the shifts by `(a, a)` of `CFK^∞`,
+  the action of `U`.
 * `TauCeti.HeegaardRegionSystem.knotInfinityForget`: forgetting the index `j`.
 * `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv`: `CFK^∞` is linearly isomorphic to
   `CF^∞` of the ambient manifold.
@@ -108,7 +111,7 @@ As for the knot differential, these are counts of domains rather than of holomor
   `HeegaardRegionSystem.knotInfinityAlexanderEquiv_restrict_knotInfinityDifferential`: forgetting
   `j` is a chain map, and an isomorphism of complexes from `CFK^∞` onto `CF^∞` of the diagram
   pointed at `w`.
-* `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv_knotInfinityShift`: this isomorphism
+* `HeegaardRegionSystem.knotInfinityAlexanderEquiv_knotInfinityAlexanderShift`: this isomorphism
   turns the action of `U` on `CFK^∞` into multiplication by `U` on `CF^∞`.
 
 ## References
@@ -190,16 +193,10 @@ theorem knotInfinityLift_monomial_smul (m : Fin 2 →₀ ℕ)
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     H.knotInfinityLift i j (monomial m (1 : ZMod 2) • c) =
       H.knotInfinityLift (i - m 0) (j - m 1) c := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => rw [smul_add, map_add, map_add, hc, hd]
-  | single y p =>
-    induction p using MvPolynomial.induction_on' with
-    | monomial m' a =>
-      rw [Finsupp.smul_single, smul_eq_mul, monomial_mul_monomial, one_mul,
-        knotInfinityLift_single_monomial, knotInfinityLift_single_monomial]
-      simp [sub_add_eq_sub_sub]
-    | add p q hp hq => rw [Finsupp.single_add, smul_add, map_add, map_add, hp, hq]
+  refine LinearMap.congr_fun (f := H.knotInfinityLift i j ∘ₗ (monomial m (1 : ZMod 2) • .id))
+    (g := H.knotInfinityLift (i - m 0) (j - m 1)) ?_ c
+  refine Finsupp.lhom_ext' fun y => linearMap_ext fun m' => LinearMap.ext_ring ?_
+  simp [Finsupp.smul_single, monomial_mul_monomial, sub_add_eq_sub_sub]
 
 end Lift
 
@@ -238,18 +235,15 @@ theorem knotInfinityDifferential_knotInfinityLift (i j : ℤ)
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     H.knotInfinityDifferential χ w z (H.knotInfinityLift i j c) =
       H.knotInfinityLift i j (H.knotDifferential χ w z c) := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => rw [map_add, map_add, hc, hd, map_add, map_add]
-  | single x p =>
-    induction p using MvPolynomial.induction_on' with
-    | monomial m a =>
-      have h : Finsupp.single x (monomial m a) =
-          a • monomial m (1 : ZMod 2) • Finsupp.single x (1 : MvPolynomial (Fin 2) (ZMod 2)) := by
-        simp [Finsupp.smul_single, smul_monomial]
-      rw [knotInfinityLift_single_monomial, knotInfinityDifferential_single, h,
-        LinearMap.map_smul_of_tower, map_smul, map_smul, knotInfinityLift_monomial_smul]
-    | add p q hp hq => rw [Finsupp.single_add, map_add, map_add, hp, hq, map_add, map_add]
+  refine LinearMap.congr_fun (f := H.knotInfinityDifferential χ w z ∘ₗ H.knotInfinityLift i j)
+    (g := H.knotInfinityLift i j ∘ₗ (H.knotDifferential χ w z).restrictScalars (ZMod 2)) ?_ c
+  refine Finsupp.lhom_ext' fun x => linearMap_ext fun m => LinearMap.ext_ring ?_
+  have h : Finsupp.single x (monomial m (1 : ZMod 2)) =
+      monomial m (1 : ZMod 2) • Finsupp.single x (1 : MvPolynomial (Fin 2) (ZMod 2)) := by
+    simp [Finsupp.smul_single]
+  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, LinearMap.restrictScalars_apply]
+  rw [knotInfinityLift_single_monomial, knotInfinityDifferential_single, one_smul, h, map_smul,
+    knotInfinityLift_monomial_smul]
 
 /-- **Reduction of `∂ ∘ ∂ = 0` to the knot differential.** The infinity knot differential squares
 to zero exactly when the knot differential over `𝔽₂[U, V]` does. -/
@@ -313,23 +307,29 @@ theorem knotInfinityShift_symm (a b : ℤ) :
   LinearEquiv.toLinearMap_injective <| Finsupp.lhom_ext fun ⟨x, i, j⟩ c => by
     simp [LinearEquiv.symm_apply_eq]
 
+/-- A chain shifted by `(a, b)` is supported on a set `s` of cells exactly when the chain is
+supported on the cells `[x, i, j]` with `[x, i - a, j - b] ∈ s`. -/
+theorem knotInfinityShift_mem_supported_iff {a b : ℤ} {s : Set (H.Generator × ℤ × ℤ)}
+    {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
+    H.knotInfinityShift a b c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s ↔
+      c ∈ Finsupp.supported (ZMod 2) (ZMod 2) ((fun g => (g.1, g.2.1 - a, g.2.2 - b)) ⁻¹' s) := by
+  classical
+  rw [Finsupp.mem_supported, Finsupp.mem_supported, knotInfinityShift, Finsupp.domLCongr_apply,
+    Finsupp.domCongr_apply, Finsupp.equivMapDomain_eq_mapDomain,
+    Finsupp.mapDomain_support_of_injective (Equiv.injective _), Finset.coe_image,
+    Set.image_subset_iff]
+  rfl
+
 /-- Shifting a chain placed at the level `(i, j)` by `(a, b)` places it at the level
 `(i - a, j - b)`. -/
 @[simp]
 theorem knotInfinityShift_knotInfinityLift (a b i j : ℤ)
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     H.knotInfinityShift a b (H.knotInfinityLift i j c) = H.knotInfinityLift (i - a) (j - b) c := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => rw [map_add, map_add, hc, hd, map_add]
-  | single y p =>
-    induction p using MvPolynomial.induction_on' with
-    | monomial m e =>
-      rw [knotInfinityLift_single_monomial, knotInfinityLift_single_monomial,
-        knotInfinityShift_single]
-      congr 1
-      exact Prod.ext rfl (Prod.ext (by ring) (by ring))
-    | add p q hp hq => rw [Finsupp.single_add, map_add, map_add, hp, hq, map_add]
+  refine LinearMap.congr_fun (f := (H.knotInfinityShift a b).toLinearMap ∘ₗ H.knotInfinityLift i j)
+    (g := H.knotInfinityLift (i - a) (j - b)) ?_ c
+  refine Finsupp.lhom_ext' fun y => linearMap_ext fun m => LinearMap.ext_ring ?_
+  simp [sub_right_comm _ a, sub_right_comm _ b]
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
@@ -380,10 +380,10 @@ theorem knotInfinityShift_mem_knotInfinityFiltration_iff {a b : ℤ} {S : Set (�
     {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
     H.knotInfinityShift a b c ∈ H.knotInfinityFiltration ((· + (a, b)) ⁻¹' S) ↔
       c ∈ H.knotInfinityFiltration S := by
-  simp only [mem_knotInfinityFiltration_iff, Finsupp.mem_support_iff, Prod.forall,
-    knotInfinityShift_apply, Set.mem_preimage, Prod.mk_add_mk]
-  refine ⟨fun h x i j hc => ?_, fun h x i j hc => h x _ _ hc⟩
-  simpa using h x (i - a) (j - b) (by simpa using hc)
+  have hS : (fun g : H.Generator × ℤ × ℤ => (g.1, g.2.1 - a, g.2.2 - b)) ⁻¹'
+      (Prod.snd ⁻¹' ((· + (a, b)) ⁻¹' S)) = Prod.snd ⁻¹' S :=
+    Set.ext fun g => by simp
+  rw [knotInfinityFiltration, knotInfinityFiltration, knotInfinityShift_mem_supported_iff, hS]
 
 /-- For a lower set `S` and `a, b ≥ 0`, the shift by `(a, b)` preserves the chains over `S`. In
 particular the actions of `U` and `V` preserve the double filtration. -/
@@ -457,10 +457,29 @@ theorem knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff {a : ℤ} {A : 
     {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
     H.knotInfinityShift a a c ∈ H.knotInfinityAlexanderSubmodule A ↔
       c ∈ H.knotInfinityAlexanderSubmodule A := by
-  simp only [mem_knotInfinityAlexanderSubmodule_iff, Finsupp.mem_support_iff, Prod.forall,
-    knotInfinityShift_apply]
-  refine ⟨fun h x i j hc => ?_, fun h x i j hc => by simpa using h x _ _ hc⟩
-  simpa using h x (i - a) (j - a) (by simpa using hc)
+  have hA : (fun g : H.Generator × ℤ × ℤ => (g.1, g.2.1 - a, g.2.2 - a)) ⁻¹'
+      {g | g.2.2 - g.2.1 = A g.1} = {g | g.2.2 - g.2.1 = A g.1} :=
+    Set.ext fun g => by simp
+  rw [knotInfinityAlexanderSubmodule, knotInfinityShift_mem_supported_iff, hA]
+
+variable (H) in
+/-- The shift by `(a, a)` of `CFK^∞` for the Alexander grading `A`. The shift by `(1, 1)` is the
+action of `U` of Ozsváth and Szabó. -/
+noncomputable def knotInfinityAlexanderShift (A : H.Generator → ℤ) (a : ℤ) :
+    H.knotInfinityAlexanderSubmodule A ≃ₗ[ZMod 2] H.knotInfinityAlexanderSubmodule A :=
+  (H.knotInfinityShift a a).ofSubmodules _ _ <| by
+    ext c
+    rw [Submodule.mem_map_equiv, knotInfinityShift_symm,
+      knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff]
+
+/-- The shift by `(a, a)` of a chain of `CFK^∞` is its shift by `(a, a)` as a chain of the full
+infinity knot complex. -/
+@[simp]
+theorem coe_knotInfinityAlexanderShift_apply {A : H.Generator → ℤ} (a : ℤ)
+    (c : H.knotInfinityAlexanderSubmodule A) :
+    (H.knotInfinityAlexanderShift A a c : H.Generator × ℤ × ℤ →₀ ZMod 2) =
+      H.knotInfinityShift a a c :=
+  (rfl)
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
@@ -510,19 +529,18 @@ theorem knotInfinityForget_knotInfinityLift (i j : ℤ)
     H.knotInfinityForget (H.knotInfinityLift i j c) =
       (T (-i) : (ZMod 2)[T;T⁻¹]) • Finsupp.mapRange (fun p => Polynomial.toLaurent (R := ZMod 2)
         (aeval ![(Polynomial.X : Polynomial (ZMod 2)), 1] p)) (by simp) c := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => rw [map_add, map_add, hc, hd, Finsupp.mapRange_add (by simp), smul_add]
-  | single x p =>
-    induction p using MvPolynomial.induction_on' with
-    | monomial m a =>
-      simp only [knotInfinityLift_single_monomial, knotInfinityForget_single,
-        Finsupp.mapRange_single, Finsupp.smul_single, aeval_monomial_fin_two]
-      congr 1
-      simp [LaurentPolynomial.smul_eq_C_mul, sub_eq_add_neg]
-    | add p q hp hq =>
-      rw [Finsupp.single_add, map_add, map_add, hp, hq, ← smul_add,
-        ← Finsupp.mapRange_add (by simp)]
+  refine LinearMap.congr_fun (f := H.knotInfinityForget ∘ₗ H.knotInfinityLift i j)
+    (g := (T (-i) : (ZMod 2)[T;T⁻¹]) • Finsupp.mapRange.linearMap
+      (Polynomial.toLaurentAlg.comp (aeval ![Polynomial.X, 1])).toLinearMap) ?_ c
+  refine Finsupp.lhom_ext' fun x => linearMap_ext fun m => LinearMap.ext_ring ?_
+  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, LinearMap.smul_apply,
+    Finsupp.mapRange.linearMap_apply, knotInfinityLift_single_monomial, knotInfinityForget_single,
+    Finsupp.mapRange_single, Finsupp.smul_single, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
+    aeval_monomial_fin_two, Polynomial.toLaurentAlg_apply]
+  rw [one_smul, map_one, one_pow, mul_one, one_mul, Polynomial.toLaurent_X_pow, smul_eq_mul,
+    ← T_add]
+  congr 2
+  ring
 
 /-- Forgetting the second index turns the shift by `(a, b)` into multiplication by `U ^ a`. -/
 @[simp]
@@ -545,6 +563,7 @@ variable {χ : Region → ℤ} {w z : Basepoint}
 /-- **Forgetting the second index is a chain map** from `CFK^∞` to `CF^∞` of the diagram pointed
 at `w` alone: it intertwines the infinity knot differential with the infinity differential of
 that diagram. -/
+@[simp]
 theorem knotInfinityForget_knotInfinityDifferential (c : H.Generator × ℤ × ℤ →₀ ZMod 2) :
     H.knotInfinityForget (H.knotInfinityDifferential χ w z c) =
       (H.withBasepoints fun _ : Unit => H.basepoint w).infinityDifferential χ
@@ -585,6 +604,12 @@ theorem knotInfinityAlexanderLift_single_C_mul_T (x : H.Generator) (k : ℤ) (a 
     LinearEquiv.coe_coe, AddMonoidAlgebra.coeffLinearEquiv_apply, AddMonoidAlgebra.coeff_single,
     Finsupp.lmapDomain_apply, Finsupp.mapDomain_single]
 
+/-- The inverse of forgetting the second index sends `U ^ k x` to `[x, -k, A(x) - k]`. -/
+@[simp]
+theorem knotInfinityAlexanderLift_single_T (x : H.Generator) (k : ℤ) :
+    H.knotInfinityAlexanderLift A (Finsupp.single x (T k)) = Finsupp.single (x, -k, A x - k) 1 := by
+  simpa using H.knotInfinityAlexanderLift_single_C_mul_T (A := A) x k 1
+
 /-- The inverse of forgetting the second index takes its values in `CFK^∞`. -/
 theorem knotInfinityAlexanderLift_mem (c : H.Generator →₀ (ZMod 2)[T;T⁻¹]) :
     H.knotInfinityAlexanderLift A c ∈ H.knotInfinityAlexanderSubmodule A := by
@@ -602,15 +627,10 @@ theorem knotInfinityAlexanderLift_mem (c : H.Generator →₀ (ZMod 2)[T;T⁻¹]
 @[simp]
 theorem knotInfinityForget_knotInfinityAlexanderLift (c : H.Generator →₀ (ZMod 2)[T;T⁻¹]) :
     H.knotInfinityForget (H.knotInfinityAlexanderLift A c) = c := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => rw [map_add, map_add, hc, hd]
-  | single x p =>
-    induction p using LaurentPolynomial.induction_on' with
-    | add p q hp hq => rw [Finsupp.single_add, map_add, map_add, hp, hq]
-    | C_mul_T k a =>
-      rw [knotInfinityAlexanderLift_single_C_mul_T, knotInfinityForget_single, neg_neg,
-        Finsupp.smul_single, LaurentPolynomial.smul_eq_C_mul]
+  refine LinearMap.congr_fun (f := H.knotInfinityForget ∘ₗ H.knotInfinityAlexanderLift A)
+    (g := .id) ?_ c
+  refine Finsupp.lhom_ext' fun x => AddMonoidAlgebra.lhom_ext' fun k => LinearMap.ext_ring ?_
+  simp
 
 /-- On `CFK^∞`, `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderLift` undoes forgetting the
 second index. -/
@@ -621,8 +641,7 @@ theorem knotInfinityAlexanderLift_knotInfinityForget {c : H.Generator × ℤ × 
   induction hc using Submodule.span_induction with
   | mem c hc =>
     obtain ⟨⟨x, i, j⟩, hg, rfl⟩ := hc
-    have hT : (T (-i) : (ZMod 2)[T;T⁻¹]) = LaurentPolynomial.C 1 * T (-i) := by simp
-    rw [knotInfinityForget_single, one_smul, hT, knotInfinityAlexanderLift_single_C_mul_T, neg_neg]
+    rw [knotInfinityForget_single, one_smul, knotInfinityAlexanderLift_single_T, neg_neg]
     simp only [Set.mem_ofPred_eq] at hg
     dsimp only
     rw [show A x - -i = j by omega]
@@ -656,13 +675,11 @@ theorem coe_knotInfinityAlexanderEquiv_symm_apply (c : H.Generator →₀ (ZMod 
 
 /-- **The action of `U`.** The isomorphism `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv`
 turns the shift by `(a, a)` of `CFK^∞` into multiplication by `U ^ a` on `CF^∞`. -/
-theorem knotInfinityAlexanderEquiv_knotInfinityShift (a : ℤ)
+theorem knotInfinityAlexanderEquiv_knotInfinityAlexanderShift (a : ℤ)
     (c : H.knotInfinityAlexanderSubmodule A) :
-    H.knotInfinityAlexanderEquiv A ⟨H.knotInfinityShift a a c,
-      knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff.mpr c.property⟩ =
+    H.knotInfinityAlexanderEquiv A (H.knotInfinityAlexanderShift A a c) =
       (T a : (ZMod 2)[T;T⁻¹]) • H.knotInfinityAlexanderEquiv A c := by
-  rw [knotInfinityAlexanderEquiv_apply, knotInfinityAlexanderEquiv_apply,
-    knotInfinityForget_knotInfinityShift]
+  simp
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
@@ -681,7 +698,7 @@ theorem knotInfinityAlexanderEquiv_restrict_knotInfinityDifferential
       (knotInfinityAlexanderSubmodule_le_comap_knotInfinityDifferential hA) c) =
       (H.withBasepoints fun _ : Unit => H.basepoint w).infinityDifferential χ
         (H.knotInfinityAlexanderEquiv A c) := by
-  simp [LinearMap.restrict_apply, knotInfinityForget_knotInfinityDifferential]
+  simp [LinearMap.restrict_apply]
 
 end AlexanderEquiv
 
