@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Connected.PathConnected
 
 /-!
