@@ -175,8 +175,8 @@ private theorem exists_polynomial_eventually_eq_mk
     have hgj : g j w = ↑((r j).eval (RingHom.id ℂ) w) := by
       rw [← MeromorphicFunction.ratFuncEquiv_apply_coe (r j) hdw]
       simp [r]
-    rw [← hjw j, MeromorphicFunction.finitePart_of_eq_coe hgj, hc j, RatFunc.eval, eval₂_id,
-      eval₂_id, eval_mul, eval_mul]
+    rw [← hjw j, MeromorphicFunction.finitePart_of_eq_coe hgj, hc j]
+    simp [RatFunc.eval]
     field_simp
   have hQ : (fun j ↦ ((r j).num * c j).eval w) ≠ 0 := fun h ↦ by
     have := congr_fun h i
@@ -285,7 +285,7 @@ theorem exists_injective_eq_map_of_natDegree_le_one {P : Fin (n + 1) → ℂ[X]}
   obtain ⟨A, hA⟩ : ∃ A : (Fin 2 → ℂ) →ₗ[ℂ] Fin (n + 1) → ℂ,
       ∀ x, A x = fun j ↦ x 0 * (P j).coeff 1 + x 1 * (P j).coeff 0 :=
     ⟨(LinearMap.proj 0).smulRight (fun j ↦ (P j).coeff 1) +
-      (LinearMap.proj 1).smulRight (fun j ↦ (P j).coeff 0), fun _ ↦ rfl⟩
+      (LinearMap.proj 1).smulRight (fun j ↦ (P j).coeff 0), fun x ↦ by ext j; simp⟩
   have heval (t : ℂ) : (fun j ↦ (P j).eval t) = A ![t, 1] := by
     ext j
     conv_lhs => rw [eq_X_add_C_of_natDegree_le_one (hdeg j)]
