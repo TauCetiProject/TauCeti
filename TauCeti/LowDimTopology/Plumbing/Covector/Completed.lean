@@ -44,14 +44,17 @@ in `∂ ∂ C` is the finite sum `∑_B ⟨∂ C, B⟩ ⟨∂ B, D⟩`, which va
 The coefficient change from the finite-support complex sends a chain to the function of its
 coefficients, read as power series (`TauCeti.PlumbingGraph.covectorChainToCompleted`). It is an
 injective chain map
-(`TauCeti.PlumbingGraph.completedCovectorDifferential_covectorChainToCompleted`), but not onto,
-even on the chains supported at a single generator: `1 + U` is a unit of `𝔽₂[[U]]`, with inverse
-`1 + U + U² + ⋯`, so multiplication by `1 + U` is bijective on completed chains, while no
-polynomial inverts `1 + U` in `𝔽₂[U]`
-(`TauCeti.PlumbingGraph.single_notMem_range_smul_one_add_X`). So completing changes the carrier.
+(`TauCeti.PlumbingGraph.completedCovectorDifferential_covectorChainToCompleted`), but not onto
+(`TauCeti.PlumbingGraph.not_surjective_covectorChainToCompleted`): `1 + U` is a unit of
+`𝔽₂[[U]]`, with inverse `1 + U + U² + ⋯`, so multiplication by `1 + U` is bijective on completed
+chains, while no polynomial inverts `1 + U` in `𝔽₂[U]`, so it is not onto on the finite-support
+chains (`TauCeti.PlumbingGraph.single_notMem_range_smul_one_add_X`). So completing changes the
+carrier.
 
 The completed lattice homology is the homology of the completed differential, as a module over
-`𝔽₂[[U]]` (`TauCeti.PlumbingGraph.completedCovectorHomology`).
+`𝔽₂[[U]]` (`TauCeti.PlumbingGraph.completedCovectorHomology`). A completed cycle `c` gives the
+`𝔽₂[[U]]`-linear map `φ ↦ [φ c]` into it
+(`TauCeti.PlumbingGraph.completedCovectorHomologyCycleMap`).
 
 ## Main definitions
 
@@ -62,6 +65,8 @@ The completed lattice homology is the homology of the completed differential, as
   finite-support complex.
 * `TauCeti.PlumbingGraph.completedCovectorShortComplex`,
   `TauCeti.PlumbingGraph.completedCovectorHomology`: the completed lattice homology.
+* `TauCeti.PlumbingGraph.completedCovectorHomologyCycleMap`: the map sending a power series to the
+  class of its multiple of a completed cycle.
 
 ## Main results
 
@@ -78,6 +83,9 @@ The completed lattice homology is the homology of the completed differential, as
   `TauCeti.PlumbingGraph.single_notMem_range_smul_one_add_X` and
   `TauCeti.PlumbingGraph.not_surjective_covectorChainToCompleted`: `1 + U` acts bijectively on the
   completed chains but not on the finite-support chains, so the coefficient change is not onto.
+* `TauCeti.PlumbingGraph.completedCovectorHomologyCycleMap_apply_eq_zero_iff`,
+  `TauCeti.PlumbingGraph.completedCovectorHomologyCycleMap_surjective`: when a class of a
+  completed cycle vanishes, and when it generates the completed lattice homology.
 
 ## References
 
@@ -131,27 +139,23 @@ theorem finite_setOf_covectorDifferentialOnGenerator_apply_ne_zero (D : P.Covect
     {C | P.covectorDifferentialOnGenerator C D ≠ 0}.Finite :=
   (P.covectorCofaces D).finite_toSet.subset fun _ hC => P.mem_covectorCofaces_of_apply_ne_zero hC
 
-/-- The component at `D` of the differential of a finitely supported chain is a sum over any finite
-set containing the generators whose differential involves `D`. -/
-theorem covectorDifferential_apply_eq_sum (x : P.CovectorChain) (D : P.CovectorCube)
-    {s : Finset P.CovectorCube}
-    (hs : ∀ C, P.covectorDifferentialOnGenerator C D ≠ 0 → C ∈ s) :
-    P.covectorDifferential x D = ∑ C ∈ s, x C * P.covectorDifferentialOnGenerator C D := by
-  classical
-  conv_lhs => rw [← Finsupp.sum_single x]
-  rw [map_finsuppSum, Finsupp.sum, Finsupp.finsetSum_apply]
-  simp only [covectorDifferential_single, Finsupp.smul_apply, smul_eq_mul]
-  have h₁ : ∑ C ∈ x.support, x C * P.covectorDifferentialOnGenerator C D =
-      ∑ C ∈ x.support ∪ s, x C * P.covectorDifferentialOnGenerator C D :=
-    Finset.sum_subset Finset.subset_union_left fun C _ hC => by
-      rw [Finsupp.notMem_support_iff.mp hC, zero_mul]
-  have h₂ : ∑ C ∈ s, x C * P.covectorDifferentialOnGenerator C D =
-      ∑ C ∈ x.support ∪ s, x C * P.covectorDifferentialOnGenerator C D :=
-    Finset.sum_subset Finset.subset_union_right fun C _ hC => by
-      rw [not_not.mp (mt (hs C) hC), mul_zero]
-  rw [h₁, h₂]
-
 /-! ### Completed chains and the completed differential -/
+
+omit [DecidableEq V] [Fintype V] in
+/-- A finite sum of products of polynomials, read as a power series, is the sum of the products of
+the polynomials read as power series. -/
+private theorem coe_sum_mul {ι : Type*} (s : Finset ι) (f g : ι → PlumbingCoefficient) :
+    ((∑ i ∈ s, f i * g i : PlumbingCoefficient) : PowerSeries (ZMod 2)) =
+      ∑ i ∈ s, (f i : PowerSeries (ZMod 2)) * (g i : PowerSeries (ZMod 2)) := by
+  rw [← Polynomial.coeToPowerSeries.ringHom_apply, map_sum]
+  simp only [map_mul, Polynomial.coeToPowerSeries.ringHom_apply]
+
+omit [DecidableEq V] [Fintype V] in
+/-- A polynomial acts on a power series by multiplication with it, read as a power series. -/
+private theorem polynomial_smul_powerSeries_eq_coe_mul (p : PlumbingCoefficient)
+    (φ : PowerSeries (ZMod 2)) : p • φ = (p : PowerSeries (ZMod 2)) * φ := by
+  rw [Algebra.smul_def, PowerSeries.algebraMap_apply', Algebra.algebraMap_self, PowerSeries.map_id,
+    id_eq]
 
 omit [DecidableEq V] [Fintype V] in
 /-- The completed chains of the lattice complex on characteristic covectors: the direct product,
@@ -217,9 +221,7 @@ theorem completedCovectorDifferential_single [DecidableEq P.CovectorCube] (C : P
       fun B _ hB => by rw [Pi.single_eq_of_ne hB, mul_zero],
     Pi.single_eq_same, mul_comm]
 
-/-- **The completed differential squares to zero.** The component at `D` of `∂ ∂ c` is the sum over
-`B` of `∑_C ⟨∂ B, C⟩ ⟨∂ C, D⟩` times `c B`, a finite sum, and `∑_C ⟨∂ B, C⟩ ⟨∂ C, D⟩` is the
-coefficient of `D` in `∂ ∂ B = 0` (`covectorDifferential_comp_self`). -/
+/-- **The completed differential squares to zero.** -/
 theorem completedCovectorDifferential_comp_self :
     P.completedCovectorDifferential ∘ₗ P.completedCovectorDifferential = 0 := by
   classical
@@ -249,11 +251,8 @@ theorem completedCovectorDifferential_comp_self :
       = ((∑ C ∈ s, P.covectorDifferentialOnGenerator B C *
           P.covectorDifferentialOnGenerator C D : PlumbingCoefficient) : PowerSeries (ZMod 2)) *
           c B := by
-        rw [← Polynomial.coeToPowerSeries.ringHom_apply, map_sum, Finset.sum_mul]
-        refine Finset.sum_congr rfl fun C _ => ?_
-        rw [map_mul, Polynomial.coeToPowerSeries.ringHom_apply,
-          Polynomial.coeToPowerSeries.ringHom_apply]
-        ring
+        rw [coe_sum_mul, Finset.sum_mul]
+        exact Finset.sum_congr rfl fun C _ => by ring
     _ = 0 := by rw [hcoeff B, Polynomial.coe_zero, zero_mul]
 
 /-- The completed differential of the completed differential of any completed chain vanishes. -/
@@ -268,16 +267,9 @@ theorem completedCovectorDifferential_completedCovectorDifferential
 /-- The coefficient change from the finite-support lattice complex to the completed one: a
 finitely supported chain is sent to the function of its coefficients, read as power series. -/
 noncomputable def covectorChainToCompleted :
-    P.CovectorChain →ₗ[PlumbingCoefficient] P.CompletedCovectorChain where
-  toFun x C := (x C : PowerSeries (ZMod 2))
-  map_add' x y := by
-    funext C
-    simp only [Finsupp.add_apply, Polynomial.coe_add, Pi.add_apply]
-  map_smul' r x := by
-    funext C
-    simp only [Finsupp.smul_apply, smul_eq_mul, Polynomial.coe_mul, RingHom.id_apply,
-      Pi.smul_apply, Algebra.smul_def, PowerSeries.algebraMap_apply', Algebra.algebraMap_self,
-      PowerSeries.map_id, id_eq]
+    P.CovectorChain →ₗ[PlumbingCoefficient] P.CompletedCovectorChain :=
+  (Algebra.linearMap PlumbingCoefficient (PowerSeries (ZMod 2))).compLeft P.CovectorCube ∘ₗ
+    Finsupp.lcoeFun
 
 omit [DecidableEq V] [Fintype V] in
 /-- The components of the coefficient change are the coefficients, read as power series. -/
@@ -312,11 +304,8 @@ theorem completedCovectorDifferential_covectorChainToCompleted (x : P.CovectorCh
   have hs : ∀ C, P.covectorDifferentialOnGenerator C D ≠ 0 → C ∈ P.covectorCofaces D :=
     fun C => P.mem_covectorCofaces_of_apply_ne_zero
   rw [P.completedCovectorDifferential_apply_eq_sum _ D hs, covectorChainToCompleted_apply,
-    P.covectorDifferential_apply_eq_sum x D hs, ← Polynomial.coeToPowerSeries.ringHom_apply,
-    map_sum]
-  exact Finset.sum_congr rfl fun C _ => by
-    rw [map_mul, Polynomial.coeToPowerSeries.ringHom_apply,
-      Polynomial.coeToPowerSeries.ringHom_apply, covectorChainToCompleted_apply, mul_comm]
+    P.covectorDifferential_apply_eq_sum x D hs, coe_sum_mul]
+  exact Finset.sum_congr rfl fun C _ => by rw [covectorChainToCompleted_apply, mul_comm]
 
 /-- The coefficient change is a chain map, as an identity of `𝔽₂[U]`-linear maps. -/
 theorem completedCovectorDifferential_comp_covectorChainToCompleted :
@@ -350,9 +339,8 @@ theorem single_notMem_range_smul_one_add_X (C : P.CovectorCube) :
   exact one_ne_zero hdeg
 
 omit [DecidableEq V] [Fintype V] in
-/-- **The coefficient change is not onto.** The completed chain `(1 + U)⁻¹ [C]` is not the image
-of a finitely supported chain, although it is supported at a single generator: `(1 + U)` times a
-preimage would be a preimage of `[C]` divisible by `1 + U`. -/
+/-- **The coefficient change is not onto**: some completed chain is not the image of a finitely
+supported chain. -/
 theorem not_surjective_covectorChainToCompleted :
     ¬ Function.Surjective P.covectorChainToCompleted := by
   intro hsurj
@@ -364,9 +352,8 @@ theorem not_surjective_covectorChainToCompleted :
   refine P.single_notMem_range_smul_one_add_X C ⟨x, P.covectorChainToCompleted_injective ?_⟩
   rw [map_smul, ← hc]
   funext D
-  simp only [Pi.smul_apply, Algebra.smul_def, PowerSeries.algebraMap_apply',
-    Algebra.algebraMap_self, PowerSeries.map_id, id_eq, RingHom.id_apply, Polynomial.coe_add,
-    Polynomial.coe_one, Polynomial.coe_X]
+  simp only [Pi.smul_apply, polynomial_smul_powerSeries_eq_coe_mul, smul_eq_mul,
+    Polynomial.coe_add, Polynomial.coe_one, Polynomial.coe_X]
 
 /-! ### Completed lattice homology -/
 
@@ -374,6 +361,36 @@ theorem not_surjective_covectorChainToCompleted :
 noncomputable def completedCovectorShortComplex : ShortComplex (ModuleCat (PowerSeries (ZMod 2))) :=
   ShortComplex.moduleCatMk P.completedCovectorDifferential P.completedCovectorDifferential
     P.completedCovectorDifferential_comp_self
+
+/-- The left object of the completed short complex is the module of completed chains. -/
+@[simp]
+theorem completedCovectorShortComplex_X₁ :
+    P.completedCovectorShortComplex.X₁ =
+      ModuleCat.of (PowerSeries (ZMod 2)) P.CompletedCovectorChain := (rfl)
+
+/-- The middle object of the completed short complex is the module of completed chains. -/
+@[simp]
+theorem completedCovectorShortComplex_X₂ :
+    P.completedCovectorShortComplex.X₂ =
+      ModuleCat.of (PowerSeries (ZMod 2)) P.CompletedCovectorChain := (rfl)
+
+/-- The right object of the completed short complex is the module of completed chains. -/
+@[simp]
+theorem completedCovectorShortComplex_X₃ :
+    P.completedCovectorShortComplex.X₃ =
+      ModuleCat.of (PowerSeries (ZMod 2)) P.CompletedCovectorChain := (rfl)
+
+/-- The left map of the completed short complex is the completed differential. -/
+@[simp]
+theorem completedCovectorShortComplex_f :
+    HEq P.completedCovectorShortComplex.f (ModuleCat.ofHom P.completedCovectorDifferential) :=
+  (HEq.rfl)
+
+/-- The right map of the completed short complex is the completed differential. -/
+@[simp]
+theorem completedCovectorShortComplex_g :
+    HEq P.completedCovectorShortComplex.g (ModuleCat.ofHom P.completedCovectorDifferential) :=
+  (HEq.rfl)
 
 /-- Exactness of the completed short complex says that the boundaries of the completed
 differential are all of its cycles. -/
@@ -389,9 +406,102 @@ noncomputable def completedCovectorHomology : ModuleCat (PowerSeries (ZMod 2)) :
   P.completedCovectorShortComplex.homology
 
 /-- The completed lattice homology is the homology of the completed short complex. -/
+@[simp]
 theorem completedCovectorHomology_def :
     P.completedCovectorHomology = P.completedCovectorShortComplex.homology :=
   (rfl)
+
+private theorem completedCovectorShortComplex_g_hom_apply (c : P.CompletedCovectorChain) :
+    P.completedCovectorShortComplex.g.hom c = P.completedCovectorDifferential c := rfl
+
+private theorem completedCovectorShortComplex_f_hom_apply (c : P.CompletedCovectorChain) :
+    P.completedCovectorShortComplex.f.hom c = P.completedCovectorDifferential c := rfl
+
+/-- The linear map sending `φ : 𝔽₂[[U]]` to the completed homology class of `φ • c`, for a
+completed cycle `c`. -/
+noncomputable def completedCovectorHomologyCycleMap (c : P.CompletedCovectorChain)
+    (hc : P.completedCovectorDifferential c = 0) :
+    PowerSeries (ZMod 2) →ₗ[PowerSeries (ZMod 2)] P.completedCovectorHomology :=
+  let S := P.completedCovectorShortComplex
+  let z : LinearMap.ker S.g.hom := ⟨c, (P.completedCovectorShortComplex_g_hom_apply c).trans hc⟩
+  let q : S.moduleCatLeftHomologyData.H :=
+    (LinearMap.range S.moduleCatToCycles).mkQ z
+  S.moduleCatHomologyIso.inv.hom.comp
+    (LinearMap.toSpanSingleton (PowerSeries (ZMod 2)) S.moduleCatLeftHomologyData.H q)
+
+/-- The cycle map sends a power series to the corresponding multiple of the chosen cycle in the
+explicit cycles-modulo-boundaries model of short-complex homology. -/
+private theorem completedCovectorHomologyCycleMap_apply (c : P.CompletedCovectorChain)
+    (hc : P.completedCovectorDifferential c = 0) (φ : PowerSeries (ZMod 2)) :
+    P.completedCovectorHomologyCycleMap c hc φ =
+      P.completedCovectorShortComplex.moduleCatHomologyIso.inv
+        ((LinearMap.range P.completedCovectorShortComplex.moduleCatToCycles).mkQ
+          (φ • ⟨c, (P.completedCovectorShortComplex_g_hom_apply c).trans hc⟩)) := rfl
+
+/-- A power series maps to zero under `completedCovectorHomologyCycleMap` exactly when its multiple
+of the cycle is a completed boundary. -/
+@[simp]
+theorem completedCovectorHomologyCycleMap_apply_eq_zero_iff (c : P.CompletedCovectorChain)
+    (hc : P.completedCovectorDifferential c = 0) (φ : PowerSeries (ZMod 2)) :
+    P.completedCovectorHomologyCycleMap c hc φ = 0 ↔
+      φ • c ∈ LinearMap.range P.completedCovectorDifferential := by
+  let S := P.completedCovectorShortComplex
+  let z : LinearMap.ker S.g.hom := ⟨c, (P.completedCovectorShortComplex_g_hom_apply c).trans hc⟩
+  have hmap : P.completedCovectorHomologyCycleMap c hc φ =
+      S.moduleCatHomologyIso.inv ((LinearMap.range S.moduleCatToCycles).mkQ (φ • z)) := by
+    simpa only [S, z] using P.completedCovectorHomologyCycleMap_apply c hc φ
+  rw [hmap]
+  constructor
+  · intro hφ
+    have hφ' : S.moduleCatHomologyIso.inv
+        ((LinearMap.range S.moduleCatToCycles).mkQ (φ • z)) = (0 : S.homology) := hφ
+    have hq : (LinearMap.range S.moduleCatToCycles).mkQ (φ • z) = 0 := by
+      have hz := S.moduleCatHomologyIso.inv_hom_id_apply
+        ((LinearMap.range S.moduleCatToCycles).mkQ (φ • z))
+      rw [hφ', map_zero] at hz
+      exact hz.symm
+    rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hq
+    obtain ⟨b, hb⟩ := hq
+    exact ⟨b, congrArg Subtype.val hb⟩
+  · rintro ⟨b, hb⟩
+    have hq : (LinearMap.range S.moduleCatToCycles).mkQ (φ • z) = 0 := by
+      rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+      exact ⟨b, Subtype.ext hb⟩
+    exact (congrArg (fun x => S.moduleCatHomologyIso.inv x) hq).trans (map_zero _)
+
+/-- A completed cycle whose class generates the completed lattice homology: if every completed
+cycle differs from a multiple of `c` by a completed boundary, then
+`completedCovectorHomologyCycleMap` is surjective. -/
+theorem completedCovectorHomologyCycleMap_surjective (c : P.CompletedCovectorChain)
+    (hc : P.completedCovectorDifferential c = 0)
+    (hgen : ∀ z : P.CompletedCovectorChain, P.completedCovectorDifferential z = 0 →
+      ∃ φ : PowerSeries (ZMod 2), z - φ • c ∈ LinearMap.range P.completedCovectorDifferential) :
+    Function.Surjective (P.completedCovectorHomologyCycleMap c hc) := by
+  intro y
+  let S := P.completedCovectorShortComplex
+  let z : LinearMap.ker S.g.hom := ⟨c, (P.completedCovectorShortComplex_g_hom_apply c).trans hc⟩
+  -- Every homology class is the class of an honest cycle.
+  obtain ⟨w, hw⟩ := Submodule.mkQ_surjective (LinearMap.range S.moduleCatToCycles)
+    (S.moduleCatHomologyIso.hom y)
+  have hcycle : P.completedCovectorDifferential w.val = 0 :=
+    (P.completedCovectorShortComplex_g_hom_apply w.val).symm.trans
+      (LinearMap.mem_ker.mp w.property)
+  obtain ⟨φ, b, hb⟩ := hgen w.val hcycle
+  -- The cycles `w` and `φ • z` differ by the boundary of `b`, so they agree in homology.
+  have hmem : w - φ • z ∈ LinearMap.range S.moduleCatToCycles :=
+    ⟨b, Subtype.ext ((P.completedCovectorShortComplex_f_hom_apply b).trans hb)⟩
+  refine ⟨φ, ?_⟩
+  have hmap : P.completedCovectorHomologyCycleMap c hc φ =
+      S.moduleCatHomologyIso.inv ((LinearMap.range S.moduleCatToCycles).mkQ (φ • z)) := by
+    simpa only [S, z] using P.completedCovectorHomologyCycleMap_apply c hc φ
+  rw [hmap]
+  have hq : (LinearMap.range S.moduleCatToCycles).mkQ (φ • z) =
+      S.moduleCatHomologyIso.hom y := by
+    refine Eq.trans ?_ hw
+    rw [Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq]
+    exact neg_sub w (φ • z) ▸ Submodule.neg_mem _ hmem
+  rw [hq]
+  exact S.moduleCatHomologyIso.hom_inv_id_apply y
 
 end PlumbingGraph
 
