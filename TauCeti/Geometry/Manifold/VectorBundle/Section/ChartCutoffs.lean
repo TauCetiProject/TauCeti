@@ -81,13 +81,8 @@ omit [LocallyCompactSpace E] in
 /-- The cutoffs meeting a compact set `K` decompose every bundle test supported in `K`. -/
 theorem sum_smulLeftCLM {K : Set M} (hK : IsCompact K) {Φ : BundleTest I F V}
     (hΦ : closure {x | Φ x ≠ 0} ⊆ K) :
-    ∑ i ∈ A.meeting K hK, smulLeftCLM (A.cutoff i) Φ = Φ := by
-  refine BundleTest.ext fun z ↦ ?_
-  rw [BundleTest.sum_apply]
-  simp_rw [smulLeftCLM_apply, ← Finset.sum_smul]
-  by_cases hz : z ∈ K
-  · rw [A.sum_meeting_eq_one hK hz, one_smul]
-  · rw [Bundle.apply_eq_zero_of_notMem_closure fun h ↦ hz (hΦ h), smul_zero]
+    ∑ i ∈ A.meeting K hK, smulLeftCLM (A.cutoff i) Φ = Φ :=
+  BundleTest.sum_smulLeftCLM_eq_self _ fun _ hz ↦ A.sum_meeting_eq_one hK (hΦ hz)
 
 variable [T2Space M]
 

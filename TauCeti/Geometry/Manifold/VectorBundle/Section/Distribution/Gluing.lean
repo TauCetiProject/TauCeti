@@ -11,33 +11,34 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero.Topolo
 /-!
 # Gluing functionals on bundle tests
 
-Let `V → M` be a smooth real vector bundle over a manifold modelled on a finite-dimensional space,
-and let the open sets `U i` cover `M`. Suppose that for every `i` a continuous linear map
-`T i : TauCeti.BundleTest I F V →L_c[ℝ] W` is given, with values in a locally convex space `W`, and
-that these maps are compatible: `T i` and `T j` agree on the tests supported in `U i ∩ U j`. Then
-there is a unique continuous linear map `S` on the bundle tests that agrees with `T i` on the tests
-supported in `U i`, for every `i` (`TauCeti.BundleTest.existsUnique_gluing`). Functionals on bundle
-tests therefore form a sheaf: distributional sections of a bundle (`TauCeti.BundleDistribution`),
-for instance, can be defined chart by chart. In the language of restrictions, `S` and `T i` have the
+Let `V → M` be a smooth real vector bundle over a Hausdorff manifold modelled on a
+finite-dimensional space, and let the open sets `U i` cover `M`. Suppose that for every `i` a
+continuous linear map `T i : TauCeti.BundleTest I F V →L_c[ℝ] W` is given on *all* bundle tests on
+`M`, with values in a locally convex space `W`, and that these maps are compatible: `T i` and `T j`
+agree on the tests supported in `U i ∩ U j`. Then there is a unique continuous linear map `S` on
+the bundle tests that agrees with `T i` on the tests supported in `U i`, for every `i`
+(`TauCeti.BundleTest.existsUnique_gluing`). Only the behaviour of `T i` on the tests supported in
+`U i` matters, so maps on all of `M` that agree on tests supported in overlaps are determined by,
+and recovered from, their local behaviour. In the language of restrictions, `S` and `T i` have the
 same restriction to `U i` (`TauCeti.BundleTest.restrictDualCLM_glue`), and a functional is
 determined by its restrictions to the members of an open cover
 (`TauCeti.BundleTest.ext_restrictDualCLM`). The cover is arbitrary: it need not be locally finite
 or countable, and `M` need not be σ-compact.
 
-This is the manifold counterpart of `Distribution.existsUnique_gluing`, whose proof it follows.
+The proof follows the Euclidean `Distribution.existsUnique_gluing`. There the maps `T i` are given
+on the tests on `U i`; here they are global maps, compared on the tests supported in `U i`.
 The glued map is
 
 `S s = ∑ k, T (j k) (χ k • s)`
 
 for finitely many smooth functions `χ k`, each supported in a member `U (j k)` of the cover, whose
-sum is one on the support of `s` (they come from a smooth bump covering of the compact support of
-`s`, `IsCompact.exists_smoothBumpCovering_isSubordinate`). Compatibility shows that this value does
-not depend on the functions `χ k`: for a second family `χ'`, both sums equal
-`∑ k, ∑ l, T (χ' l • χ k • s)`, computed on `U (j k)` or on `U (j' l)`. Using one family for all
-tests supported in a fixed compact set gives continuity for the test topology, through its
-universal property (`TauCeti.BundleTest.continuous_iff_continuous_comp`). Uniqueness is the
-localization principle (`TauCeti.BundleTest.isVanishingOn_compl_dsupport`): a functional vanishing
-on the tests supported in each `U i` has empty support
+sum is one on the support of `s` (`IsCompact.exists_finite_smooth_sum_eq_one_subordinate`).
+Compatibility shows that this value does not depend on the functions `χ k`: for a second family
+`χ'`, both sums equal `∑ k, ∑ l, T (χ' l • χ k • s)`, computed on `U (j k)` or on `U (j' l)`.
+Using one family for all tests supported in a fixed compact set gives continuity for the test
+topology, through its universal property (`TauCeti.BundleTest.continuous_iff_continuous_comp`).
+Uniqueness is the localization principle (`TauCeti.BundleTest.isVanishingOn_compl_dsupport`): a
+functional vanishing on the tests supported in each `U i` has empty support
 (`TauCeti.BundleTest.eq_of_forall_tsupport_subset`).
 
 ## Main declarations
@@ -96,31 +97,6 @@ theorem eq_of_forall_tsupport_subset {W : Type*} [AddCommGroup W] {𝓕 : Type*}
 
 /-! ### Gluing -/
 
-/-- Finitely many smooth functions, each supported in a member of an open cover, whose sum is one
-on a given compact set. -/
-private theorem exists_cutoffs (hU : ⨆ i, U i = ⊤) {K : Set M} (hK : IsCompact K) :
-    ∃ (n : ℕ) (χ : Fin n → C^∞⟮I, M; ℝ⟯) (j : Fin n → ι),
-      (∀ k, tsupport (χ k) ⊆ U (j k)) ∧ ∀ x ∈ K, ∑ k, χ k x = 1 := by
-  choose idx hidx using fun x : M ↦ Opens.mem_iSup.1 (hU ▸ Opens.mem_top x : x ∈ ⨆ i, U i)
-  obtain ⟨κ, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I
-    (U := fun x ↦ U (idx x)) fun x _ ↦ (U (idx x)).isOpen.mem_nhds (hidx x)
-  let e := Fintype.equivFin κ
-  refine ⟨Fintype.card κ, fun k ↦ f.toSmoothPartitionOfUnity (e.symm k),
-    fun k ↦ idx (f.c (e.symm k)), fun k ↦ hf.toSmoothPartitionOfUnity _, fun x hx ↦ ?_⟩
-  rw [← f.toSmoothPartitionOfUnity.sum_eq_one hx, finsum_eq_sum_of_fintype]
-  exact e.symm.sum_comp fun i ↦ f.toSmoothPartitionOfUnity i x
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- A bundle test is the sum of its products with finitely many functions whose sum is one on its
-support. -/
-private theorem sum_smulLeftCLM_eq {n : ℕ} {χ : Fin n → C^∞⟮I, M; ℝ⟯} (s : BundleTest I F V)
-    (hs : ∀ x ∈ closure {x | s x ≠ 0}, ∑ k, χ k x = 1) : ∑ k, smulLeftCLM (χ k) s = s := by
-  ext x
-  rw [sum_apply]
-  by_cases hx : x ∈ closure {x | s x ≠ 0}
-  · simp_rw [smulLeftCLM_apply, ← Finset.sum_smul, hs x hx, one_smul]
-  · simp [Bundle.apply_eq_zero_of_notMem_closure hx]
-
 variable {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
   {T : ι → BundleTest I F V →L_c[ℝ] W}
 
@@ -150,14 +126,14 @@ private theorem sum_eq_sum_of_compatible
   calc ∑ k, T (j k) (smulLeftCLM (χ k) s)
       = ∑ k, ∑ l, T (j k) (smulLeftCLM (χ' l) (smulLeftCLM (χ k) s)) := by
         refine Finset.sum_congr rfl fun k _ ↦ ?_
-        rw [← map_sum, sum_smulLeftCLM_eq _ (hsk k)]
+        rw [← map_sum, sum_smulLeftCLM_eq_self _ (hsk k)]
     _ = ∑ k, ∑ l, T (j' l) (smulLeftCLM (χ' l) (smulLeftCLM (χ k) s)) :=
         Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦ hT _ _ _ (hsupp k l)
     _ = ∑ l, T (j' l) (smulLeftCLM (χ' l) s) := by
         rw [Finset.sum_comm]
         refine Finset.sum_congr rfl fun l _ ↦ ?_
         simp_rw [smulLeftCLM_smulLeftCLM, mul_comm (χ' l), ← smulLeftCLM_smulLeftCLM]
-        rw [← map_sum, sum_smulLeftCLM_eq _ (hsl l)]
+        rw [← map_sum, sum_smulLeftCLM_eq_self _ (hsl l)]
 
 variable [IsTopologicalAddGroup W] [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W]
 
@@ -169,7 +145,10 @@ theorem existsUnique_gluing (hU : ⨆ i, U i = ⊤)
     ∃! S : BundleTest I F V →L_c[ℝ] W,
       ∀ i (s : BundleTest I F V), closure {x | s x ≠ 0} ⊆ U i → S s = T i s := by
   -- Finitely many functions subordinate to the cover summing to one on each compact `K`.
-  choose n χ j hχ hsum using fun (K : Set M) (hK : IsCompact K) ↦ exists_cutoffs (I := I) hU hK
+  have hKU (K : Set M) : K ⊆ ⋃ i, (U i : Set M) := fun x _ ↦
+    mem_iUnion.2 (Opens.mem_iSup.1 (hU ▸ Opens.mem_top x : x ∈ ⨆ i, U i))
+  choose n χ j hχ hsum using fun (K : Set M) (hK : IsCompact K) ↦
+    hK.exists_finite_smooth_sum_eq_one_subordinate I (fun i ↦ (U i).isOpen) (hKU K)
   -- The glued value on `s`, computed with the functions chosen for the support of `s`.
   let S₀ : BundleTest I F V → W := fun s ↦
     ∑ k, T (j _ s.isCompact_tsupport k) (smulLeftCLM (χ _ s.isCompact_tsupport k) s)
@@ -201,16 +180,16 @@ theorem existsUnique_gluing (hU : ⨆ i, U i = ⊤)
     exact (hc.comp (continuous_ofSupportedIn K)).congr fun σ ↦
       (hS₀ _ K K.isCompact (tsupport_ofSupportedIn_subset K σ)).symm
   let S : BundleTest I F V →L_c[ℝ] W := { L with cont := hL }
+  have hS (s : BundleTest I F V) : S s = S₀ s := rfl
   have hglue (i : ι) (s : BundleTest I F V) (hs : closure {x | s x ≠ 0} ⊆ U i) : S s = T i s := by
     -- Each term `χ k • s` is supported in `U (j k) ∩ U i`, where `T (j k)` and `T i` agree.
-    change S₀ s = T i s
-    rw [hS₀ s _ s.isCompact_tsupport subset_rfl]
+    rw [hS, hS₀ s _ s.isCompact_tsupport subset_rfl]
     calc ∑ k, T (j _ s.isCompact_tsupport k) (smulLeftCLM (χ _ s.isCompact_tsupport k) s)
         = ∑ k, T i (smulLeftCLM (χ _ s.isCompact_tsupport k) s) :=
           Finset.sum_congr rfl fun k _ ↦ hT _ _ _ fun x hx ↦
             ⟨hχ _ _ k (tsupport_smulLeftCLM_subset _ _ hx).1,
               hs (tsupport_smulLeftCLM_subset _ _ hx).2⟩
-      _ = T i s := by rw [← map_sum, sum_smulLeftCLM_eq _ (hsum _ _)]
+      _ = T i s := by rw [← map_sum, sum_smulLeftCLM_eq_self _ (hsum _ _)]
   exact ⟨S, hglue, fun S' hS' ↦
     eq_of_forall_tsupport_subset hU fun i s hs ↦ (hS' i s hs).trans (hglue i s hs).symm⟩
 
