@@ -41,23 +41,26 @@ unit of `A` whose inverse again has supremum seminorm at most one.
 
 * `TauCeti.Dagger.mem_intSubring_iff_supSeminorm_le_one`, `TauCeti.Dagger.coe_intSubring`:
   `A^int = {a | |a|sup ≤ 1}`, and `TauCeti.Dagger.mem_intSubring_iff_isPowerBounded_toCompletion`,
-  `TauCeti.Dagger.coe_intSubring_eq_preimage`: `A^int = τ⁻¹(Â°)`.
-* `TauCeti.Dagger.algebraMap_mem_intSubring_iff`: a scalar lies in `A^int` iff it lies in `K°`
-  (for `A ≠ 0`), and `TauCeti.Dagger.mem_intSubring_of_isNilpotent`: nilpotents lie in `A^int`.
+  `TauCeti.Dagger.coe_intSubring_eq_preimage`, `TauCeti.Dagger.intSubring_eq_comap`:
+  `A^int = τ⁻¹(Â°)`.
+* `TauCeti.Dagger.algebraMap_mem_intSubring`, `TauCeti.Dagger.algebraMap_mem_intSubring_iff`: a
+  scalar lies in `A^int` iff it lies in `K°` (the converse for `A ≠ 0`), and
+  `TauCeti.Dagger.mem_intSubring_of_isNilpotent`: nilpotents lie in `A^int`. The forward inclusion
+  and the nilpotent case need no completeness of `K`.
 * `AlgHom.map_mem_intSubring`, `AlgEquiv.map_intSubring`: functoriality of `A^int` along
   arbitrary morphisms of dagger algebras.
 * `TauCeti.Dagger.washnitzerAlgebra.mem_intSubring_iff_norm_le_one`: `W^int` is the Gauss unit
-  ball, and `TauCeti.Dagger.washnitzerAlgebra.intSubring_eq_powerBoundedSubring`: it is the ring
-  of power-bounded elements of `W`.
+  ball.
 * `TauCeti.Dagger.intSubring.isUnit_one_sub_of_supSeminorm_lt_one`,
   `TauCeti.Dagger.intSubring.mem_jacobson_of_supSeminorm_lt_one`: elements of supremum seminorm
   `< 1` lie in the Jacobson radical of `A^int`.
 
-That `A^int` is also the ring of power-bounded elements of `A` for its canonical residue-norm
-topology is `TauCeti.Dagger.mem_intSubring_iff_isPowerBounded` and
-`TauCeti.Dagger.intSubring_eq_powerBoundedSubring`, proved alongside the other topological
-statements in `TauCeti.RingTheory.Dagger.DaggerAlgebra.Continuity`. The identification of `W^int`
-with the integral Monsky–Washnitzer algebra `K°⟨X⟩†` is in
+That `A^int` is also the ring of power-bounded elements of `A` for every topology induced from
+`Â` is `TauCeti.Dagger.intSubring_eq_powerBoundedSubring_of_isInducing`, specialised to the
+canonical residue norm (`TauCeti.Dagger.intSubring_eq_powerBoundedSubring`) and to the Gauss norm
+of `W` (`TauCeti.Dagger.washnitzerAlgebra.intSubring_eq_powerBoundedSubring`), proved alongside
+the other topological statements in `TauCeti.RingTheory.Dagger.DaggerAlgebra.Continuity`. The
+identification of `W^int` with the integral Monsky–Washnitzer algebra `K°⟨X⟩†` is in
 `TauCeti.RingTheory.Dagger.IntegralWashnitzer.IntSubring`.
 
 ## References
@@ -85,20 +88,40 @@ completion map `τ : A → Â` of the power-bounded subring of the affinoid comp
 Equivalently (`mem_intSubring_iff_supSeminorm_le_one`) it is the unit ball `{a | |a|sup ≤ 1}` of
 the supremum seminorm. -/
 noncomputable def intSubring : Subring A :=
-  (Huber.powerBoundedSubring (completion K A)).comap (toCompletion K A).toRingHom
+  (Huber.powerBoundedSubring (completion K A)).comap (toCompletion K A : A →+* completion K A)
 
 /-- **`A^int = τ⁻¹(Â°)`**: an element of a dagger algebra lies in the integral subring iff its
 image in the affinoid completion `Â` is power-bounded. -/
 theorem mem_intSubring_iff_isPowerBounded_toCompletion {a : A} :
     a ∈ intSubring K A ↔ Huber.IsPowerBounded (toCompletion K A a) := by
-  rw [intSubring, Subring.mem_comap, Huber.mem_powerBoundedSubring]
-  rfl
+  rw [intSubring, Subring.mem_comap, Huber.mem_powerBoundedSubring, AlgHom.coe_toRingHom]
+
+variable (K A) in
+/-- **`A^int = τ⁻¹(Â°)` as subrings**: the integral subring is the preimage of the power-bounded
+subring of the affinoid completion under the completion map. -/
+theorem intSubring_eq_comap :
+    intSubring K A = (Huber.powerBoundedSubring (completion K A)).comap
+      (toCompletion K A : A →+* completion K A) := by
+  rw [intSubring]
 
 /-- As a set, the integral subring is the preimage `τ⁻¹(Â°)` of the power-bounded elements of the
 affinoid completion. -/
 theorem coe_intSubring_eq_preimage :
     (intSubring K A : Set A) = toCompletion K A ⁻¹' {b | Huber.IsPowerBounded b} :=
   Set.ext fun _ ↦ mem_intSubring_iff_isPowerBounded_toCompletion
+
+/-- A scalar of norm at most one lies in the integral subring: its image in the Tate algebra has
+Gauss norm at most one, so it is power-bounded there and hence in the quotient `Â`. -/
+theorem algebraMap_mem_intSubring {c : K} (hc : ‖c‖ ≤ 1) : algebraMap K A c ∈ intSubring K A := by
+  rw [mem_intSubring_iff_isPowerBounded_toCompletion, AlgHom.commutes]
+  exact (Huber.IsPowerBounded.of_norm_le_one
+    (by rwa [MvPowerSeries.norm_algebraMap_isRestrictedSubring])).quotientMk _
+
+/-- Nilpotent elements of a dagger algebra lie in its integral subring: their images in `Â` are
+nilpotent, hence topologically nilpotent and so power-bounded. -/
+theorem mem_intSubring_of_isNilpotent {a : A} (ha : IsNilpotent a) : a ∈ intSubring K A :=
+  mem_intSubring_iff_isPowerBounded_toCompletion.mpr <|
+    Huber.IsPowerBounded.of_isTopologicallyNilpotent (ha.map _).isTopologicallyNilpotent
 
 end Defs
 
@@ -120,25 +143,11 @@ seminorm. -/
 theorem coe_intSubring : (intSubring K A : Set A) = {a | supSeminorm K a ≤ 1} :=
   Set.ext fun _ ↦ mem_intSubring_iff_supSeminorm_le_one
 
-/-- A scalar of norm at most one lies in the integral subring. -/
-theorem algebraMap_mem_intSubring {c : K} (hc : ‖c‖ ≤ 1) : algebraMap K A c ∈ intSubring K A := by
-  refine mem_intSubring_iff_supSeminorm_le_one.mpr ?_
-  cases subsingleton_or_nontrivial A
-  · rw [supSeminorm_eq_zero_of_subsingleton]
-    exact zero_le_one
-  · rwa [supSeminorm_algebraMap]
-
 /-- In a nonzero dagger algebra, a scalar lies in the integral subring iff it has norm at most
 one. -/
 theorem algebraMap_mem_intSubring_iff [Nontrivial A] {c : K} :
     algebraMap K A c ∈ intSubring K A ↔ ‖c‖ ≤ 1 := by
   rw [mem_intSubring_iff_supSeminorm_le_one, supSeminorm_algebraMap]
-
-/-- Nilpotent elements of a dagger algebra lie in its integral subring, since their supremum
-seminorm vanishes. -/
-theorem mem_intSubring_of_isNilpotent {a : A} (ha : IsNilpotent a) : a ∈ intSubring K A := by
-  rw [mem_intSubring_iff_supSeminorm_le_one, IsDaggerAlgebra.supSeminorm_eq_zero_iff.mpr ha]
-  exact zero_le_one
 
 /-- **Inverting `1 - a` in the integral subring.** If `|a|sup < 1`, then `1 - a` is a unit of
 `A^int`: at every classical point `|1 - a| = 1`, so the inverse of `1 - a` in `A` again has supremum
@@ -181,14 +190,6 @@ theorem mem_intSubring_iff_norm_le_one {f : washnitzerAlgebra σ K} :
     f ∈ intSubring K (washnitzerAlgebra σ K) ↔ ‖f‖ ≤ 1 := by
   rw [mem_intSubring_iff_supSeminorm_le_one, supSeminorm_eq_norm]
 
-/-- The integral subring of `W = K⟨X⟩†` is the ring of power-bounded elements of `W` for the Gauss
-norm. -/
-theorem intSubring_eq_powerBoundedSubring :
-    intSubring K (washnitzerAlgebra σ K) = Huber.powerBoundedSubring (washnitzerAlgebra σ K) := by
-  ext f
-  rw [mem_intSubring_iff_supSeminorm_le_one, Huber.mem_powerBoundedSubring,
-    isPowerBounded_iff_supSeminorm_le_one]
-
 end washnitzerAlgebra
 
 end TauCeti.Dagger
@@ -222,8 +223,8 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 @[simp]
 theorem map_intSubring (e : A ≃ₐ[K] B) : (intSubring K A).map (e : A →+* B) = intSubring K B := by
   ext b
-  refine (Subring.mem_map_equiv (f := e.toRingEquiv)).trans ?_
-  rw [mem_intSubring_iff_supSeminorm_le_one, mem_intSubring_iff_supSeminorm_le_one]
-  exact iff_of_eq (congrArg (· ≤ 1) (e.symm.supSeminorm_eq b))
+  rw [← e.toRingEquiv_toRingHom, Subring.mem_map_equiv, AlgEquiv.toRingEquiv_symm,
+    AlgEquiv.coe_toRingEquiv, mem_intSubring_iff_supSeminorm_le_one,
+    mem_intSubring_iff_supSeminorm_le_one, e.symm.supSeminorm_eq]
 
 end AlgEquiv

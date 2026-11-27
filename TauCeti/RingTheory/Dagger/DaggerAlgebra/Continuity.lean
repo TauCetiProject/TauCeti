@@ -51,8 +51,11 @@ dagger algebras:
   arbitrary `K`-algebra homomorphisms via `AlgHom.isPowerBounded_map_of_isDaggerAlgebra`) and
   the topologically nilpotent elements are `{a | |a|sup < 1}` (preserved via automatic continuity
   and `IsTopologicallyNilpotent.map`). So the power-bounded subring is the integral subring
-  `A^int` (`TauCeti.Dagger.mem_intSubring_iff_isPowerBounded`,
-  `TauCeti.Dagger.intSubring_eq_powerBoundedSubring`).
+  `A^int` for every topology induced from the affinoid completion
+  (`TauCeti.Dagger.intSubring_eq_powerBoundedSubring_of_isInducing`), in particular for the
+  residue norm (`TauCeti.Dagger.mem_intSubring_iff_isPowerBounded`,
+  `TauCeti.Dagger.intSubring_eq_powerBoundedSubring`) and for the Gauss norm on `W`
+  (`TauCeti.Dagger.washnitzerAlgebra.intSubring_eq_powerBoundedSubring`).
 
 ## Main definitions
 
@@ -673,27 +676,6 @@ theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one {a : A} :
 
 end IsDaggerAlgebra
 
-/-- **The integral subring is the ring of power-bounded elements**: in the canonical residue-norm
-topology on a dagger algebra `A`, the power-bounded elements are exactly those of `A^int`. -/
-theorem mem_intSubring_iff_isPowerBounded {a : A} :
-    letI := residueNormedCommRing K A
-    a ∈ intSubring K A ↔ Huber.IsPowerBounded a := by
-  let := residueNormedCommRing K A
-  exact mem_intSubring_iff_supSeminorm_le_one.trans
-    (IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one (K := K) (a := a)).symm
-
-/-- **The integral subring is the power-bounded subring**: for the canonical residue norm on a
-dagger algebra `A`, which is ultrametric, `A^int = A°`. -/
-theorem intSubring_eq_powerBoundedSubring :
-    letI := residueNormedCommRing K A
-    letI := isUltrametricDist_residueNormedCommRing K A
-    intSubring K A = Huber.powerBoundedSubring A := by
-  let := residueNormedCommRing K A
-  let := isUltrametricDist_residueNormedCommRing K A
-  ext a
-  rw [Huber.mem_powerBoundedSubring]
-  exact mem_intSubring_iff_isPowerBounded (K := K)
-
 end PowerBounded
 
 end TauCeti.Dagger
@@ -966,6 +948,56 @@ theorem isPowerBounded_map [TopologicalSpace A] [TopologicalSpace B]
       (isAffinoidAlgebra_completion (K := K) (A := B)) ((toCompletion K B).comp φ) ha
 
 end IsDaggerAlgebra
+
+section IntSubring
+
+variable {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+/-- **The integral subring is the ring of power-bounded elements** for every topology on a dagger
+algebra `A` induced from its affinoid completion. -/
+theorem mem_intSubring_iff_isPowerBounded_of_isInducing [TopologicalSpace A]
+    (hA : Topology.IsInducing (toCompletion K A)) {a : A} :
+    a ∈ intSubring K A ↔ Huber.IsPowerBounded a :=
+  mem_intSubring_iff_isPowerBounded_toCompletion.trans
+    (IsDaggerAlgebra.isPowerBounded_toCompletion_iff_of_isInducing hA)
+
+/-- **The integral subring is the power-bounded subring** `A^int = A°` for every nonarchimedean
+topology on a dagger algebra `A` induced from its affinoid completion. -/
+theorem intSubring_eq_powerBoundedSubring_of_isInducing [TopologicalSpace A]
+    [NonarchimedeanAddGroup A] (hA : Topology.IsInducing (toCompletion K A)) :
+    intSubring K A = Huber.powerBoundedSubring A := by
+  ext a
+  rw [Huber.mem_powerBoundedSubring]
+  exact mem_intSubring_iff_isPowerBounded_of_isInducing hA
+
+/-- **The integral subring is the ring of power-bounded elements**: in the canonical residue-norm
+topology on a dagger algebra `A`, the power-bounded elements are exactly those of `A^int`. -/
+theorem mem_intSubring_iff_isPowerBounded {a : A} :
+    letI := residueNormedCommRing K A
+    a ∈ intSubring K A ↔ Huber.IsPowerBounded a := by
+  let := residueNormedCommRing K A
+  exact mem_intSubring_iff_isPowerBounded_of_isInducing
+    (isometry_toCompletion K A).isEmbedding.isInducing
+
+/-- **The integral subring is the power-bounded subring**: for the canonical residue norm on a
+dagger algebra `A`, which is ultrametric, `A^int = A°`. -/
+theorem intSubring_eq_powerBoundedSubring :
+    letI := residueNormedCommRing K A
+    letI := isUltrametricDist_residueNormedCommRing K A
+    intSubring K A = Huber.powerBoundedSubring A := by
+  let := residueNormedCommRing K A
+  let := isUltrametricDist_residueNormedCommRing K A
+  exact intSubring_eq_powerBoundedSubring_of_isInducing
+    (isometry_toCompletion K A).isEmbedding.isInducing
+
+/-- The integral subring of `W = K⟨X⟩†` is the ring of power-bounded elements of `W` for the Gauss
+norm. -/
+theorem washnitzerAlgebra.intSubring_eq_powerBoundedSubring :
+    intSubring K (W σ) = Huber.powerBoundedSubring (W σ) :=
+  intSubring_eq_powerBoundedSubring_of_isInducing
+    isEmbedding_toCompletion_washnitzerAlgebra.isInducing
+
+end IntSubring
 
 
 section NormEquivalence

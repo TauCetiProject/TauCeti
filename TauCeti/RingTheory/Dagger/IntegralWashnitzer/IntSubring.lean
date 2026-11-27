@@ -20,9 +20,8 @@ Monsky–Washnitzer algebra `K°⟨X⟩†` of overconvergent series with coeffi
 
 * `TauCeti.Dagger.intWashnitzerAlgebra.range_toWashnitzerAlgebra`: `W^int = K°⟨X⟩†` inside `W`.
 * `TauCeti.Dagger.intWashnitzerAlgebra.equivIntSubring`: the induced ring isomorphism
-  `K°⟨X⟩† ≃+* W^int`, with `TauCeti.Dagger.intWashnitzerAlgebra.coe_equivIntSubring` and
-  `TauCeti.Dagger.intWashnitzerAlgebra.coe_equivIntSubring_algebraMap` describing it on series
-  and on scalars of `K°`.
+  `K°⟨X⟩† ≃+* W^int`, with `TauCeti.Dagger.intWashnitzerAlgebra.coe_equivIntSubring` describing
+  it on series.
 
 ## References
 
@@ -47,26 +46,21 @@ theorem range_toWashnitzerAlgebra :
   exact ⟨by rintro ⟨g, rfl⟩; simp, fun hf ↦ ⟨⟨f, hf⟩, toWashnitzerAlgebra_mk f hf⟩⟩
 
 /-- The ring isomorphism `K°⟨X⟩† ≃+* W^int` between the integral Monsky–Washnitzer algebra and the
-integral subring of `W = K⟨X⟩†`, induced by the inclusion `toWashnitzerAlgebra`. -/
+integral subring of `W = K⟨X⟩†`: the codomain restriction of the inclusion `toWashnitzerAlgebra`,
+which is bijective onto `W^int` by `range_toWashnitzerAlgebra`. -/
 noncomputable def equivIntSubring :
     intWashnitzerAlgebra σ K ≃+* intSubring K (washnitzerAlgebra σ K) :=
   RingEquiv.ofBijective ((toWashnitzerAlgebra σ K).codRestrict _ fun f ↦
-      washnitzerAlgebra.mem_intSubring_iff_norm_le_one.2 (norm_toWashnitzerAlgebra_le_one f))
-    ⟨fun _ _ h ↦ toWashnitzerAlgebra_injective (congrArg Subtype.val h), fun g ↦
-      ⟨⟨g, mem_intWashnitzerAlgebra_iff_norm_le_one.2
-        (washnitzerAlgebra.mem_intSubring_iff_norm_le_one.1 g.property)⟩,
-        Subtype.ext (toWashnitzerAlgebra_mk _ _)⟩⟩
+      (range_toWashnitzerAlgebra σ).le (RingHom.mem_range_self _ f))
+    (show Function.Bijective _ from
+      ⟨RingHom.injective_codRestrict.mpr toWashnitzerAlgebra_injective, fun g ↦ by
+        obtain ⟨f, hf⟩ := RingHom.mem_range.mp ((range_toWashnitzerAlgebra σ).ge g.property)
+        exact ⟨f, Subtype.ext ((RingHom.codRestrict_apply _ _ _ f).trans hf)⟩⟩)
 
 /-- The isomorphism `K°⟨X⟩† ≃+* W^int` is the inclusion `toWashnitzerAlgebra` on series. -/
 @[simp]
 theorem coe_equivIntSubring (f : intWashnitzerAlgebra σ K) :
-    (equivIntSubring σ f : washnitzerAlgebra σ K) = toWashnitzerAlgebra σ K f :=
-  (rfl)
-
-/-- The isomorphism `K°⟨X⟩† ≃+* W^int` sends the constant `a ∈ K°` to the scalar `a` of `W`. -/
-theorem coe_equivIntSubring_algebraMap (a : Subring.unitClosedBall K) :
-    (equivIntSubring σ (algebraMap (Subring.unitClosedBall K) (intWashnitzerAlgebra σ K) a) :
-      washnitzerAlgebra σ K) = algebraMap K (washnitzerAlgebra σ K) a := by
-  rw [coe_equivIntSubring, toWashnitzerAlgebra_algebraMap]
+    (equivIntSubring σ f : washnitzerAlgebra σ K) = toWashnitzerAlgebra σ K f := by
+  rw [equivIntSubring, RingEquiv.ofBijective_apply, RingHom.codRestrict_apply]
 
 end TauCeti.Dagger.intWashnitzerAlgebra
