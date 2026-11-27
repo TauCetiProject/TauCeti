@@ -361,6 +361,13 @@ theorem insert_erase (u : powersetCard α (r + 1)) (k : α) (hk : k ∈ u) :
     insert (erase u k hk) k (fun h ↦ ((mem_erase u hk).mp h).1 rfl) = u :=
   Subtype.ext (Finset.insert_erase hk)
 
+/-- Inserting `k ∉ s` into `s` equals `u` precisely when `s` is `u` with `k ∈ u` erased. -/
+theorem insert_eq_iff_eq_erase {s : powersetCard α r} {u : powersetCard α (r + 1)} {k : α}
+    (hks : k ∉ s) (hku : k ∈ u) :
+    insert s k hks = u ↔ s = erase u k hku :=
+  ⟨fun h ↦ by subst h; exact (erase_insert s k hks).symm,
+   fun h ↦ by subst h; exact insert_erase u k hku⟩
+
 end EraseInsert
 
 end Set.powersetCard

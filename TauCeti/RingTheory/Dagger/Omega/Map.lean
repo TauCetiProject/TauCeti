@@ -63,8 +63,7 @@ theorem map_eq_zero_of_ofKaehler_eq_zero {M : Type*} [AddCommGroup M]
     Module.Finite.equiv ((TensorProduct.quotTensorEquivQuotSMul M (m ^ n)).restrictScalars R)
   let : Module A (M ⧸ P) := Module.compHom (M ⧸ P) f.toRingHom
   have : IsScalarTower R A (M ⧸ P) := IsScalarTower.of_algebraMap_smul fun r z ↦ by
-    rw [MulAction.compHom_smul_def (f.toRingHom : A →* B), MonoidHom.coe_ofClass,
-      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, f.commutes, algebraMap_smul]
+    simp [MulAction.compHom_smul_def, f.commutes]
   let q : Ω[A⁄R] →ₗ[A] M ⧸ P :=
     { toFun := fun z ↦ P.mkQ (g z)
       map_add' := fun _ _ ↦ by rw [map_add, map_add]
@@ -86,9 +85,11 @@ noncomputable def mapSemilinearOfFiniteResidue [Module.Finite B (Omega R B)]
   let g : Ω[A⁄R] →ₛₗ[f.toRingHom] Omega R B :=
     (ofKaehler R B).comp (KaehlerDifferential.mapSemilinear f)
   let hA : Omega R A →ₗ[A] Omega R B := (ofKaehler R A).liftOfSurjective (ofKaehler_surjective R A)
-    ⟨{ toFun := g, map_add' := g.map_add, map_smul' := fun a z ↦ g.map_smulₛₗ a z },
+    ⟨{ toFun := g, map_add' := g.map_add
+       map_smul' := fun a z ↦ by simpa [MulAction.compHom_smul_def] using g.map_smulₛₗ a z },
       fun _ hx ↦ map_eq_zero_of_ofKaehler_eq_zero hm f g hx⟩
-  { toFun := hA, map_add' := hA.map_add, map_smul' := fun a ω ↦ hA.map_smul a ω }
+  { toFun := hA, map_add' := hA.map_add
+    map_smul' := fun a ω ↦ by simp [MulAction.compHom_smul_def] }
 
 @[simp] theorem mapSemilinearOfFiniteResidue_ofKaehler [Module.Finite B (Omega R B)]
     (hm : ∀ (m : Ideal B) [m.IsMaximal], Module.Finite R (B ⧸ m))

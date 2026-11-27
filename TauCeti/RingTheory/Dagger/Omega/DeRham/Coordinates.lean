@@ -87,15 +87,16 @@ theorem washnitzerBasis_exteriorPower_repr_extDerivPow [Finite σ] [LinearOrder 
   let : Fintype σ := Fintype.ofFinite σ; let : Fintype (Set.powersetCard σ r) := Fintype.ofFinite _
   rw [← Module.Basis.coord_apply]
   conv_lhs => rw [← ((washnitzerBasis σ K).exteriorPower r).sum_repr ω]
+  -- Swap the sums over `t` and `k`, restrict `k` to `u`, and keep only `t = erase u k`.
   rw [map_sum, map_sum, Finset.sum_congr rfl fun t _ ↦ by
       rw [Module.Basis.coord_apply, washnitzerBasis_exteriorPower_repr_extDerivPow_smul],
     Finset.sum_comm, ← Finset.sum_subset (Finset.subset_univ u.val)]
   · rw [← Finset.sum_attach u.val]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     rw [Finset.sum_eq_single (Set.powersetCard.erase u k.val k.property)
-      (fun t _ hne ↦ ite_eq_right fun ⟨hkt, hins⟩ ↦ hne <| Subtype.ext <|
-        ((Finset.erase_insert hkt).symm.trans (congrArg (·.erase k.val) hins)).trans
-          (Set.powersetCard.val_erase _ _ _).symm)
+      (fun t _ hne ↦ ite_eq_right fun ⟨hkt, hins⟩ ↦ hne <|
+        (Set.powersetCard.insert_eq_iff_eq_erase hkt k.property).mp <|
+          Subtype.ext ((Set.powersetCard.val_insert t k.val hkt).trans hins))
       (fun h ↦ absurd (Finset.mem_univ (Set.powersetCard.erase u k.val k.property)) h),
       ite_eq_left (by
         rw [Set.powersetCard.val_erase]
