@@ -9,6 +9,12 @@ public import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialOrthogonal
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.Geometry.Manifold.Instances.Unitary.Special
 
+public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
+
+import TauCeti.Geometry.Lie.Adjoint.Units.Basic
+import TauCeti.Geometry.Lie.Functor
+import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
+
 /-!
 # The Lie algebra of the special orthogonal group
 
@@ -29,16 +35,32 @@ of skew-symmetric matrices: the differential at the identity of the inclusion
 * It is surjective: a skew-symmetric matrix `X` is the velocity at `t = 0` of the smooth curve
   `t ↦ exp (t X)`, which stays in `SO(n)` (`Matrix.exp_mem_specialOrthogonalGroup_of_mem_so`).
 
-Only this vector-space identification is constructed here; compatibility with the Lie brackets is
-not proved.
+It preserves the Lie brackets, so it is an isomorphism of Lie algebras: the inclusion is the
+differential of the smooth homomorphism from `SO(n)` into the invertible matrices
+(`Matrix.specialUnitaryGroup.toUnitsSmoothHom`), whose Lie algebra is the matrices with the
+commutator bracket (`TauCeti.Lie.groupLieAlgebra_units_ad_apply`), and the differential of a smooth
+homomorphism preserves brackets (`ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`).
+
+For `n = 3`, composing with the hat map `TauCeti.soThreeEquiv` identifies the dual of the Lie
+algebra of `SO(3)` with `ℝ³` (`TauCeti.specialOrthogonalThreeDualEquiv`), and the coadjoint
+stabilizer of the functional of `m ≠ 0` is the line of infinitesimal rotations about `m`.
 
 As for the special unitary group, matrices carry the `ℓ²` operator norm: the statements are made
 with `open scoped Matrix.Norms.L2Operator` and the local instance `Matrix.l2OpNormedAlgebraReal`.
 
 ## Main declarations
 
-* `TauCeti.specialOrthogonalLieAlgebraEquiv`: the Lie algebra of `SO(n)` is linearly isomorphic to
-  `so(n)`, by the differential of the inclusion at the identity.
+* `TauCeti.specialOrthogonalLieAlgebraEquiv`: the Lie algebra of `SO(n)` is isomorphic to `so(n)` as
+  a Lie algebra, by the differential of the inclusion at the identity.
+* `TauCeti.finrank_groupLieAlgebra_specialOrthogonalGroup_fin_three`: the Lie algebra of `SO(3)` has
+  dimension `3`.
+* `TauCeti.specialOrthogonalThreeDualEquiv`: the dual of the Lie algebra of `SO(3)` is `ℝ³`, the
+  vector `m` giving the functional `ν_m` that pairs `ξ` with `m ⬝ᵥ u` when `ξ` corresponds to `û`.
+* `TauCeti.lieAnnihilator_specialOrthogonalThreeDualEquiv_toSubmodule_eq`,
+  `TauCeti.finrank_lieAnnihilator_specialOrthogonalThreeDualEquiv`,
+  `TauCeti.lieAnnihilator_specialOrthogonalThreeDualEquiv_eq_top_iff`: the coadjoint stabilizer of
+  `ν_m` in the Lie algebra of `SO(3)` is the line of infinitesimal rotations about `m` for
+  `m ≠ 0`, and all of it only for `m = 0`.
 
 ## References
 
@@ -54,6 +76,7 @@ open Manifold NormedSpace
 open scoped ContDiff Manifold Matrix.Norms.L2Operator
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
+  LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace TauCeti
@@ -150,16 +173,59 @@ private theorem bijective_specialOrthogonalLieAlgebraMap :
     Function.Bijective (specialOrthogonalLieAlgebraMap n) :=
   ⟨injective_specialOrthogonalLieAlgebraMap, surjective_specialOrthogonalLieAlgebraMap⟩
 
+/-- The differential at the identity of the inclusion of `SO(n)` into the invertible matrices,
+read in the matrices, is that of the inclusion into the matrices. -/
+private theorem groupLieAlgebraMap_toUnitsSmoothHom
+    (ξ : GroupLieAlgebra (Matrix.specialUnitaryGroup.model n ℝ)
+      (Matrix.specialOrthogonalGroup n ℝ)) :
+    ((Matrix.specialUnitaryGroup.toUnitsSmoothHom n ℝ).toMonoidHom.groupLieAlgebraMap
+        (Matrix.specialUnitaryGroup.model n ℝ) 𝓘(ℝ, Matrix n n ℝ) ξ : Matrix n n ℝ) =
+      (specialOrthogonalLieAlgebraMap n ξ : Matrix n n ℝ) := by
+  have hφ : MDifferentiableAt (Matrix.specialUnitaryGroup.model n ℝ) 𝓘(ℝ, Matrix n n ℝ)
+      (Matrix.specialUnitaryGroup.toUnitsSmoothHom n ℝ) 1 :=
+    (Matrix.specialUnitaryGroup.toUnitsSmoothHom n ℝ).contMDiff_toFun.mdifferentiableAt (by simp)
+  have hcomp : (Subtype.val : Matrix.specialOrthogonalGroup n ℝ → Matrix n n ℝ) =
+      (Units.val : (Matrix n n ℝ)ˣ → Matrix n n ℝ) ∘
+        Matrix.specialUnitaryGroup.toUnitsSmoothHom n ℝ :=
+    funext fun g ↦ (Matrix.specialUnitaryGroup.val_toUnitsSmoothHom_apply g).symm
+  rw [coe_specialOrthogonalLieAlgebraMap_apply, mvfderiv_apply_eq_mfderiv_apply, hcomp,
+    mfderiv_comp 1 ((Units.hasMFDerivAt_val (𝕜 := ℝ) _).mdifferentiableAt) hφ,
+    (Units.hasMFDerivAt_val (𝕜 := ℝ) _).mfderiv, MonoidHom.groupLieAlgebraMap_apply]
+  -- What is left is `id (dφ ξ) = dφ ξ`, both sides read in `Matrix n n ℝ`, which is the tangent
+  -- space of the invertible matrices at `1` and their Lie algebra.
+  rfl
+
+/-- The differential at the identity of the inclusion `SO(n) → Matrix n n ℝ` preserves the Lie
+bracket: it is the differential of the smooth homomorphism into the invertible matrices, whose Lie
+algebra carries the commutator bracket. -/
+private theorem specialOrthogonalLieAlgebraMap_lie
+    (ξ η : GroupLieAlgebra (Matrix.specialUnitaryGroup.model n ℝ)
+      (Matrix.specialOrthogonalGroup n ℝ)) :
+    specialOrthogonalLieAlgebraMap n ⁅ξ, η⁆ =
+      ⁅specialOrthogonalLieAlgebraMap n ξ, specialOrthogonalLieAlgebraMap n η⁆ := by
+  refine Subtype.ext ?_
+  -- In the Lie algebra of the invertible matrices the bracket is the commutator.
+  have h := Lie.groupLieAlgebra_units_ad_apply (R := Matrix n n ℝ)
+    ((Matrix.specialUnitaryGroup.toUnitsSmoothHom n ℝ).toMonoidHom.groupLieAlgebraMap
+      (Matrix.specialUnitaryGroup.model n ℝ) 𝓘(ℝ, Matrix n n ℝ) ξ)
+    ((Matrix.specialUnitaryGroup.toUnitsSmoothHom n ℝ).toMonoidHom.groupLieAlgebraMap
+      (Matrix.specialUnitaryGroup.model n ℝ) 𝓘(ℝ, Matrix n n ℝ) η)
+  rw [LieAlgebra.ad_apply, ← ContMDiffMonoidMorphism.groupLieAlgebraMap_lie,
+    groupLieAlgebraMap_toUnitsSmoothHom, groupLieAlgebraMap_toUnitsSmoothHom,
+    groupLieAlgebraMap_toUnitsSmoothHom] at h
+  rw [LieSubalgebra.coe_bracket, Ring.lie_def]
+  exact h
+
 variable (n) in
-/-- **The Lie algebra of the special orthogonal group is linearly isomorphic to `so(n)`.** The
-differential at the identity of the inclusion of `SO(n) = Matrix.specialOrthogonalGroup n ℝ` into
-the matrices is a linear isomorphism from its Lie algebra onto the skew-symmetric matrices
-`so(n) = LieAlgebra.Orthogonal.so n ℝ`. This is an identification of vector spaces; it is not shown
-here to preserve the brackets. -/
+/-- **The Lie algebra of the special orthogonal group is `so(n)`.** The differential at the
+identity of the inclusion of `SO(n) = Matrix.specialOrthogonalGroup n ℝ` into the matrices is an
+isomorphism of Lie algebras from its Lie algebra onto the skew-symmetric matrices
+`so(n) = LieAlgebra.Orthogonal.so n ℝ`, with the commutator bracket. -/
 def specialOrthogonalLieAlgebraEquiv :
-    GroupLieAlgebra (Matrix.specialUnitaryGroup.model n ℝ) (Matrix.specialOrthogonalGroup n ℝ) ≃ₗ[ℝ]
+    GroupLieAlgebra (Matrix.specialUnitaryGroup.model n ℝ) (Matrix.specialOrthogonalGroup n ℝ) ≃ₗ⁅ℝ⁆
       LieAlgebra.Orthogonal.so n ℝ :=
-  LinearEquiv.ofBijective (specialOrthogonalLieAlgebraMap n)
+  LieEquiv.ofBijective
+    { specialOrthogonalLieAlgebraMap n with map_lie' := specialOrthogonalLieAlgebraMap_lie _ _ }
     bijective_specialOrthogonalLieAlgebraMap
 
 /-- The element of `so(n)` attached to `ξ` is the differential of the inclusion
@@ -171,7 +237,83 @@ theorem coe_specialOrthogonalLieAlgebraEquiv_apply
     (specialOrthogonalLieAlgebraEquiv n ξ : Matrix n n ℝ) =
       mvfderiv (Matrix.specialUnitaryGroup.model n ℝ)
         (Subtype.val : Matrix.specialOrthogonalGroup n ℝ → Matrix n n ℝ) 1 ξ := by
-  rw [specialOrthogonalLieAlgebraEquiv, LinearEquiv.ofBijective_apply,
+  rw [specialOrthogonalLieAlgebraEquiv, ← LieEquiv.coe_toLinearEquiv,
+    LieEquiv.toLinearEquiv_ofBijective, LinearEquiv.ofBijective_apply,
     coe_specialOrthogonalLieAlgebraMap_apply]
+
+/-! ### The dual of the Lie algebra of `SO(3)` -/
+
+section Three
+
+open Module
+
+/-- The Lie algebra of the rotation group `SO(3)`. -/
+local notation "𝔰𝔬₃" => GroupLieAlgebra (Matrix.specialUnitaryGroup.model (Fin 3) ℝ)
+  (Matrix.specialOrthogonalGroup (Fin 3) ℝ)
+
+/-- **The dual of the Lie algebra of `SO(3)` is `ℝ³`.** The vector `m` gives the functional
+`ν_m : ξ ↦ m ⬝ᵥ u` on the Lie algebra of `SO(3)`, where `u ⨯₃ ·` is the infinitesimal rotation of
+`ξ`, that is, `ξ` corresponds to the hat matrix `û` under `TauCeti.specialOrthogonalLieAlgebraEquiv`
+and `TauCeti.soThreeEquiv`. It is `TauCeti.soThreeDualEquiv` read through the Lie algebra
+isomorphism `TauCeti.specialOrthogonalLieAlgebraEquiv`. -/
+def specialOrthogonalThreeDualEquiv : (Fin 3 → ℝ) ≃ₗ[ℝ] Module.Dual ℝ 𝔰𝔬₃ :=
+  (soThreeDualEquiv ℝ).trans (specialOrthogonalLieAlgebraEquiv (Fin 3)).toLinearEquiv.dualMap
+
+/-- The Lie algebra of `SO(3)` has dimension `3`. -/
+theorem finrank_groupLieAlgebra_specialOrthogonalGroup_fin_three : finrank ℝ 𝔰𝔬₃ = 3 :=
+  (specialOrthogonalLieAlgebraEquiv (Fin 3)).toLinearEquiv.finrank_eq.trans finrank_so_three
+
+/-- The functional `ν_m` pairs `ξ` with `m ⬝ᵥ u`, where `ξ` corresponds to `û`. -/
+@[simp]
+theorem specialOrthogonalThreeDualEquiv_apply (m : Fin 3 → ℝ) (ξ : 𝔰𝔬₃) :
+    specialOrthogonalThreeDualEquiv m ξ =
+      m ⬝ᵥ (soThreeEquiv ℝ).symm (specialOrthogonalLieAlgebraEquiv (Fin 3) ξ) := by
+  rw [specialOrthogonalThreeDualEquiv, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply,
+    soThreeDualEquiv_apply, LieEquiv.coe_toLinearEquiv]
+
+/-- **The coadjoint stabilizer of `ν_m` in the Lie algebra of `SO(3)`** is the preimage of the
+stabilizer of the functional `m ⬝ᵥ ·` of `so(3)`, the infinitesimal rotations about the axis `m`. -/
+theorem lieAnnihilator_specialOrthogonalThreeDualEquiv (m : Fin 3 → ℝ) :
+    lieAnnihilator ℝ 𝔰𝔬₃ (specialOrthogonalThreeDualEquiv m) =
+      (lieAnnihilator ℝ (LieAlgebra.Orthogonal.so (Fin 3) ℝ) (soThreeDualEquiv ℝ m)).comap
+        (specialOrthogonalLieAlgebraEquiv (Fin 3)).toLieHom :=
+  Module.Dual.lieAnnihilator_eq_comap (specialOrthogonalLieAlgebraEquiv (Fin 3)).surjective rfl
+
+/-- **The coadjoint stabilizer of `ν_m`, for `m ≠ 0`, is the line of infinitesimal rotations about
+the axis `m`**: the preimage under `TauCeti.specialOrthogonalLieAlgebraEquiv` of the span of the
+hat matrix `m̂`. -/
+theorem lieAnnihilator_specialOrthogonalThreeDualEquiv_toSubmodule_eq {m : Fin 3 → ℝ}
+    (hm : m ≠ 0) :
+    (lieAnnihilator ℝ 𝔰𝔬₃ (specialOrthogonalThreeDualEquiv m)).toSubmodule =
+      (ℝ ∙ soThreeEquiv ℝ m).comap
+        ((specialOrthogonalLieAlgebraEquiv (Fin 3)).toLinearEquiv :
+          𝔰𝔬₃ →ₗ[ℝ] LieAlgebra.Orthogonal.so (Fin 3) ℝ) := by
+  ext ξ
+  rw [LieSubalgebra.mem_toSubmodule, lieAnnihilator_specialOrthogonalThreeDualEquiv,
+    LieSubalgebra.mem_comap, ← LieSubalgebra.mem_toSubmodule,
+    lieAnnihilator_soThreeDualEquiv_toSubmodule_eq_span_soThreeEquiv hm, Submodule.mem_comap,
+    LieEquiv.coe_toLieHom, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv]
+
+/-- **The coadjoint stabilizers of nonzero functionals on the Lie algebra of `SO(3)` are lines**:
+for `m ≠ 0` the infinitesimal rotations fixing `ν_m` are those about the axis `m`. -/
+theorem finrank_lieAnnihilator_specialOrthogonalThreeDualEquiv {m : Fin 3 → ℝ} (hm : m ≠ 0) :
+    finrank ℝ (lieAnnihilator ℝ 𝔰𝔬₃ (specialOrthogonalThreeDualEquiv m)) = 1 := by
+  -- A Lie subalgebra and its underlying submodule have the same carrier type.
+  change finrank ℝ (lieAnnihilator ℝ 𝔰𝔬₃ (specialOrthogonalThreeDualEquiv m)).toSubmodule = 1
+  rw [lieAnnihilator_specialOrthogonalThreeDualEquiv_toSubmodule_eq hm,
+    Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq,
+    finrank_span_singleton ((soThreeEquiv ℝ).map_ne_zero_iff.mpr hm)]
+
+/-- The only functional on the Lie algebra of `SO(3)` fixed by its whole coadjoint action is
+zero. -/
+theorem lieAnnihilator_specialOrthogonalThreeDualEquiv_eq_top_iff {m : Fin 3 → ℝ} :
+    lieAnnihilator ℝ 𝔰𝔬₃ (specialOrthogonalThreeDualEquiv m) = ⊤ ↔ m = 0 := by
+  rw [lieAnnihilator_specialOrthogonalThreeDualEquiv, ← lieAnnihilator_soThreeDualEquiv_eq_top_iff]
+  refine ⟨fun h ↦ eq_top_iff.2 fun A _ ↦ ?_, fun h ↦ eq_top_iff.2 fun ξ _ ↦
+    (LieSubalgebra.mem_comap _ _).2 (h ▸ LieSubalgebra.mem_top _)⟩
+  obtain ⟨ξ, rfl⟩ := (specialOrthogonalLieAlgebraEquiv (Fin 3)).surjective A
+  exact (LieSubalgebra.mem_comap _ _).1 (h ▸ LieSubalgebra.mem_top ξ)
+
+end Three
 
 end TauCeti
