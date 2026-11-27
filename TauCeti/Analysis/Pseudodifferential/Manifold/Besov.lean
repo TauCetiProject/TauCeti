@@ -135,9 +135,7 @@ theorem exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum
       BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc hθs b s p ∞)
     _ (fun _ ha ↦ (ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b s).imp
       fun _ hA w ↦ hA.2 w)
-    he φ (K := Set.univ)
-    (fun f g hfg ↦ DFunLike.coe_injective ((Set.eqOn_univ f g).1 hfg) ▸ Set.eqOn_refl _ _) he' ψ
-    fun x _ ↦ hψ x
+    he φ (K := Set.univ) (fun _ _ hfg ↦ eqOn_apply_of_eqOn_univ hfg _) he' ψ fun x _ ↦ hψ x
 
 /-- **Besov and Hölder–Zygmund estimates for classical pseudodifferential operators on a
 manifold.** Let `P` be a classical pseudodifferential operator of order `m` and `ψᵢ` finitely many

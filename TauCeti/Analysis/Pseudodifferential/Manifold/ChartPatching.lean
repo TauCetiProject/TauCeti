@@ -222,6 +222,13 @@ theorem exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le
     fun y hy ↦ (hχ k).1.self_of_nhdsSet y hy, mul_assoc]
   exact (hA k _).trans (mul_le_mul_of_nonneg_left (hB k g) (hA0 k))
 
+omit [T2Space M] in
+/-- Agreement on all of `M` is equality, so with `K = M` every operator `P` satisfies the agreement
+hypothesis of `TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_le_sum`. -/
+theorem eqOn_apply_of_eqOn_univ {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hfg : EqOn f g univ) (S : Set M) : EqOn (P f) (P g) S :=
+  fun _ _ ↦ by rw [DFunLike.coe_injective ((eqOn_univ f g).1 hfg)]
+
 /-- **The estimate in one chart.** Let `Ls`, `Lt` and `P` be as in
 `TauCeti.exists_norm_cutoffPushforwardSchwartz_apply_mulLeft_le`, `φ` a cutoff in a chart `e`, and
 `K ⊆ M` a set such that `P f` and `P g` agree on `e⁻¹(supp φ)` whenever `f` and `g` agree on `K`.
@@ -266,10 +273,8 @@ theorem exists_norm_cutoffPushforwardSchwartz_apply_le_sum
     ext y
     rw [cutoffPushforwardSchwartz_apply, cutoffPushforwardSchwartz_apply]
     by_cases hy : y ∈ tsupport φ
-    · refine congrArg _ (hPK _ _ (fun x hx ↦ ?_) (mem_image_of_mem _ hy))
-      simp only [ContMDiffMap.coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply,
-        ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.ofReal_apply, ← Finset.sum_mul,
-        ← Complex.ofReal_sum, hψ x hx, Complex.ofReal_one, one_mul]
+    · exact congrArg _
+        (hPK _ _ (ContMDiffMap.eqOn_sum_mulLeft_ofReal _ _ u hψ) (mem_image_of_mem _ hy))
     · simp [image_eq_zero_of_notMem_tsupport hy]
   rw [hu, map_sum, Finset.mul_sum]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (hC i u).trans ?_)
@@ -306,8 +311,7 @@ theorem exists_sum_norm_cutoffPushforwardSchwartz_apply_le_sum
         C * ∑ i, ‖Ls ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
   choose C hC using fun j ↦
     exists_norm_cutoffPushforwardSchwartz_apply_le_sum hP hLs hcov Lt hq (he j) (φ j)
-      (K := univ) (fun f g hfg ↦ DFunLike.coe_injective ((eqOn_univ f g).1 hfg) ▸ eqOn_refl _ _)
-      he' ψ fun x _ ↦ hψ x
+      (K := univ) (fun _ _ hfg ↦ eqOn_apply_of_eqOn_univ hfg _) he' ψ fun x _ ↦ hψ x
   exact ⟨∑ j, C j, fun u ↦ (Finset.sum_le_sum fun j _ ↦ hC j u).trans_eq (Finset.sum_mul ..).symm⟩
 
 end TauCeti
