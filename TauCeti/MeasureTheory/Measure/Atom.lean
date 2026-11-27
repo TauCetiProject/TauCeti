@@ -237,7 +237,8 @@ variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 metrizable space that is a.e. strongly measurable on a measurable atom `A` of finite mass agrees
 almost everywhere on `A` with a constant. Unlike `AEMeasurable.exists_ae_eq_const_restrict_of_atom`,
 the target need not be a standard Borel space: the map takes its values almost everywhere in a
-separable subset. -/
+separable subset. The proof follows Mathlib's `QuasiErgodic.ae_eq_const_of_ae_eq_comp_ae`, with the
+atom dichotomy `IsAtom.ae_mem_or_ae_notMem_restrict` in place of quasi-ergodicity. -/
 theorem AEStronglyMeasurable.exists_ae_eq_const_restrict_of_atom {Y : Type*} [TopologicalSpace Y]
     [MetrizableSpace Y] {f : X → Y} {A : Set X} (hf : AEStronglyMeasurable f (μ.restrict A))
     (hAfin : μ A ≠ ∞) (hAatom : μ.IsAtom A) : ∃ y : Y, f =ᵐ[μ.restrict A] fun _ ↦ y := by

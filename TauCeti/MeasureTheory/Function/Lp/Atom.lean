@@ -169,9 +169,8 @@ theorem exists_lpPairing_eq_of_atoms [SigmaFinite μ] {ι : Type*} [Countable ι
   · filter_upwards [ae_restrict_of_ae hg_mem.coeFn_toLp, ae_restrict_mem (hA i).measurableSet]
       with x hx hxA
     rw [hx, hg_eq i x hxA]
-  · rw [Lp.norm_toLp, eLpNorm_exponent_top hg_meas]
-    exact ENNReal.toReal_le_of_le_ofReal (norm_nonneg Φ)
-      (eLpNormEssSup_le_of_ae_bound (.of_forall hg_norm))
+  · exact Lp.norm_le_of_ae_bound_top (norm_nonneg Φ)
+      (hg_mem.coeFn_toLp.mono fun x hx ↦ hx ▸ hg_norm x)
   · -- the integral pairing is a contraction, by Hölder's inequality
     calc ‖Φ‖
         = ‖(ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 X)).lpPairing μ ∞ 1 (hg_mem.toLp g)‖ := by
