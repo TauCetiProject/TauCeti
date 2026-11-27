@@ -91,6 +91,28 @@ def adjoinKink (D : OrientedPDCode n) (o b : Bool) : OrientedPDCode (n + 1) wher
     (D.adjoinKink o b).crossingSign (Fin.last n) = if b then 1 else -1 := by
   cases o <;> cases b <;> simp [crossingSign_def]
 
+/-- A positive isolated kink adds one positive crossing. A negative kink leaves
+the positive crossing count unchanged. -/
+@[simp]
+theorem positiveCrossingCount_adjoinKink (D : OrientedPDCode n) (o b : Bool) :
+    (D.adjoinKink o b).positiveCrossingCount =
+      D.positiveCrossingCount + if b then 1 else 0 := by
+  classical
+  simp only [positiveCrossingCount_def, Finset.card_filter, Fin.sum_univ_castSucc,
+    crossingSign_adjoinKink_castSucc, crossingSign_adjoinKink_last]
+  cases b <;> simp
+
+/-- A negative isolated kink adds one negative crossing. A positive kink leaves
+the negative crossing count unchanged. -/
+@[simp]
+theorem negativeCrossingCount_adjoinKink (D : OrientedPDCode n) (o b : Bool) :
+    (D.adjoinKink o b).negativeCrossingCount =
+      D.negativeCrossingCount + if b then 0 else 1 := by
+  classical
+  simp only [negativeCrossingCount_def, Finset.card_filter, Fin.sum_univ_castSucc,
+    crossingSign_adjoinKink_castSucc, crossingSign_adjoinKink_last]
+  cases b <;> simp
+
 /-- The isolated kink changes the writhe by its crossing sign. -/
 @[simp] theorem writhe_adjoinKink (D : OrientedPDCode n) (o b : Bool) :
     (D.adjoinKink o b).writhe = D.writhe + if b then 1 else -1 := by

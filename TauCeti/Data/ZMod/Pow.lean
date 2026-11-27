@@ -21,6 +21,8 @@ of a natural number `c` gives the power `x ^ c`, and negating a residue inverts 
 * `TauCeti.pow_val_mul`: `x ^ (a * b).val = (x ^ a.val) ^ b.val` when `x ^ n = 1`.
 * `TauCeti.pow_val_natCast`: `x ^ (c : ZMod n).val = x ^ c` when `x ^ n = 1`.
 * `TauCeti.pow_val_neg`: `x ^ (-a).val = (x ^ a.val)⁻¹` when `x ^ n = 1` and `n ≠ 0`.
+* `TauCeti.pow_val_neg_eq_pow_val_pow`: `x ^ (-a).val = (x ^ a.val) ^ k` when `x ^ n = 1` and
+  `k ≡ -1 (mod n)`, in any monoid.
 * `TauCeti.pow_mul_val_inv`: `x ^ (k * (k⁻¹ : ZMod n).val) = x` when `x ^ n = 1` and `k` is prime
   to `n`.
 -/
@@ -57,6 +59,13 @@ theorem pow_val_neg {G : Type*} [DivisionMonoid G] {n : ℕ} [NeZero n] {x : G}
     (hx : x ^ n = 1) (a : ZMod n) : x ^ (-a).val = (x ^ a.val)⁻¹ := by
   refine eq_inv_of_mul_eq_one_left ?_
   rw [← pow_val_add hx, neg_add_cancel, ZMod.val_zero, pow_zero]
+
+/-- If `x ^ n = 1` and `k ≡ -1 (mod n)`, then the power of `x` at the negative of a residue `a` is
+the `k`-th power of the power at `a`. Unlike `TauCeti.pow_val_neg`, this needs no inverses. -/
+theorem pow_val_neg_eq_pow_val_pow {M : Type*} [Monoid M] {n k : ℕ} {x : M} (hx : x ^ n = 1)
+    (hk : (k : ZMod n) = -1) (a : ZMod n) : x ^ (-a).val = (x ^ a.val) ^ k := by
+  have hxa : (x ^ a.val) ^ n = 1 := by rw [pow_right_comm, hx, one_pow]
+  rw [← mul_neg_one, ← hk, pow_val_mul hx, pow_val_natCast hxa]
 
 /-- If `x ^ n = 1` and `k` is prime to `n`, then raising `x` to the power `k` and then to the
 representative of the inverse of `k` modulo `n` gives back `x`. -/

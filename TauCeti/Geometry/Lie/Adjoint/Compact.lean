@@ -7,16 +7,19 @@ module
 
 public import TauCeti.Algebra.Lie.InvariantForm.Positive
 public import TauCeti.Algebra.Lie.InvariantForm.RankOne
+public import TauCeti.Algebra.Lie.InvariantForm.RootPlane.Decomposition
 public import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 
 /-!
-# The centre and derived algebra of a compact Lie group
+# The Lie algebra of a compact Lie group
 
 The Lie algebra of a compact finite-dimensional real smooth Lie group is the direct sum
 of its centre and derived ideal. The derived algebra is centreless and semisimple, and
 its Killing form is negative definite. On the whole Lie algebra the Killing form is
 nonpositive, with diagonal zero exactly on the centre. Unless it is abelian, the Lie algebra
-contains a copy of `so(3) ≅ 𝔰𝔲(2)`. Connectedness is not required.
+contains a copy of `so(3) ≅ 𝔰𝔲(2)`. The Lie algebra also has a root-plane decomposition, for a
+separating invariant form, over an abelian subspace containing a regular element. Connectedness is
+not required.
 
 ## Main results
 
@@ -36,6 +39,9 @@ contains a copy of `so(3) ≅ 𝔰𝔲(2)`. Connectedness is not required.
   the derived algebra has negative-definite Killing form.
 * `TauCeti.Lie.exists_injective_lieHom_soThree_of_compactSpace`: a non-abelian Lie algebra of a
   compact Lie group receives an injective homomorphism from `so(3) ≅ 𝔰𝔲(2)`.
+* `TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra`: the Lie algebra carries a
+  separating invariant form and a root-plane decomposition, with two-dimensional planes, over an
+  abelian subspace containing a regular element.
 
 ## References
 
@@ -153,5 +159,30 @@ theorem exists_injective_lieHom_soThree_of_compactSpace
   obtain ⟨B, hinv, hsymm, hpos, _⟩ :=
     exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace (I := I) (G := G)
   exact B.exists_injective_lieHom_soThree hsymm hpos hinv hG
+
+/-- **A root-plane decomposition of the Lie algebra of a compact Lie group.** The Lie algebra `𝔤`
+of a compact Lie group carries a separating invariant form `B` and a root-plane decomposition
+`𝔤 = t + Σ F_k` for `B`, with planes of dimension two, over an abelian subspace `t` containing a
+regular element, at which no root vanishes. -/
+theorem _root_.TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra :
+    ∃ (B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)) (t : Submodule ℝ (GroupLieAlgebra I G))
+      (r : ℕ) (α : Fin r → Module.Dual ℝ t) (F : Fin r → Submodule ℝ (GroupLieAlgebra I G))
+      (J : (k : Fin r) → Module.End ℝ (F k)),
+      IsRootPlaneDecomposition B t α F J ∧ (∀ k, Module.finrank ℝ (F k) = 2) ∧
+        B.lieInvariant (GroupLieAlgebra I G) ∧ B.SeparatingLeft ∧ ∃ X : t, ∀ k, α k X ≠ 0 := by
+  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  -- An `Ad`-invariant inner product, and a maximal abelian subspace for it.
+  obtain ⟨b, hsymm, hpos, hinv⟩ :=
+    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant (I := I) (G := G)
+  have hB : b.toBilinForm.lieInvariant (GroupLieAlgebra I G) :=
+    lieInvariant_of_adjoint_invariant hinv
+  have hsep : b.toBilinForm.SeparatingLeft := fun x hx ↦ by
+    by_contra h
+    exact (hpos x h).ne' (hx x)
+  obtain ⟨t, r, α, F, J, hD, hF, hX⟩ :=
+    TauCeti.exists_isRootPlaneDecomposition (B := b.toBilinForm)
+      (LinearMap.BilinForm.isSymm_def.2 hsymm) hpos hB
+  exact ⟨b.toBilinForm, t, r, α, F, J, hD, hF, hB, hsep, hX⟩
 
 end TauCeti.Lie

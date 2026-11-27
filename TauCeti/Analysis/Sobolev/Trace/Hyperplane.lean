@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.EndpointEstimates
 public import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
@@ -56,8 +57,7 @@ private theorem hyperplane_memLp (p : ℝ≥0∞) (a : ℝ)
     (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
     MemLp (fun y ↦ φ (WithLp.toLp 2 (a, y))) p volume := by
   have he : IsClosedEmbedding (fun y : E ↦ WithLp.toLp 2 (a, y)) :=
-    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight a) (isClosedMap_prodMk_left a))
+    WithLp.isClosedEmbedding_toLp_prodMk_left 2 a
   exact (φ.continuous.comp he.continuous).memLp_of_hasCompactSupport
     (φ.hasCompactSupport.comp_isClosedEmbedding he)
 
@@ -97,8 +97,7 @@ private theorem norm_rpow_le_integral_Ioi_energy [NormedSpace ℝ E]
   have hFc : Continuous F := hu.continuous_rpow_energy (zero_le_one.trans hr)
   have hs : HasCompactSupport F := hsupp.rpow_energy r
   have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
-    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
+    WithLp.isClosedEmbedding_toLp_prodMk_right 2 y
   have hg : ContDiff ℝ 1 (fun s : ℝ ↦ u (WithLp.toLp 2 (s, y))) :=
     hu.comp (WithLp.contDiff_toLp.comp (contDiff_id.prodMk contDiff_const))
   have hgs : HasCompactSupport (fun s : ℝ ↦ u (WithLp.toLp 2 (s, y))) :=
