@@ -20,7 +20,7 @@ Let `A` and `B` be (possibly non-unital) C*-algebras. A **C*-norm** on the algeb
 product `A ⊗[ℂ] B` (`TauCeti.CStarTensorNorm A B`) is a norm that is submultiplicative and
 satisfies the C*-inequality `N x ^ 2 ≤ N (x⋆ x)`. With such a norm, `A ⊗[ℂ] B` is a normed
 star algebra satisfying the C*-identity (`TauCeti.CStarTensorAlgebra N`, a type synonym of
-`A ⊗[ℂ] B`); in particular `N` is star-invariant (`TauCeti.CStarTensorNorm.map_star`) and
+`A ⊗[ℂ] B`); in particular `N` is star-invariant (`TauCeti.CStarTensorNorm.map_star_eq_map`) and
 satisfies the C*-identity `N (x⋆ x) = N x ^ 2` (`TauCeti.CStarTensorNorm.map_star_mul_self`).
 Its completion is the **C*-tensor product** `TauCeti.CStarTensorProduct N` (written A ⊗_N B in
 the literature; this file declares no notation for it), a C*-algebra, with the star
@@ -65,7 +65,7 @@ variable (A : Type u) (B : Type v) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlge
 
 /-- A **C*-norm** on the algebraic tensor product `A ⊗[ℂ] B`: a norm that is submultiplicative
 and satisfies the C*-inequality `N x ^ 2 ≤ N (x⋆ x)`. Star-invariance and the C*-identity
-`N (x⋆ x) = N x ^ 2` follow (`TauCeti.CStarTensorNorm.map_star`,
+`N (x⋆ x) = N x ^ 2` follow (`TauCeti.CStarTensorNorm.map_star_eq_map`,
 `TauCeti.CStarTensorNorm.map_star_mul_self`). Its completion is the C*-tensor product
 `TauCeti.CStarTensorProduct N`. -/
 structure CStarTensorNorm extends RingNorm (A ⊗[ℂ] B) where
@@ -198,7 +198,7 @@ open CStarTensorAlgebra
 
 /-- A C*-norm is star-invariant. -/
 @[simp]
-theorem map_star (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) : N (star x) = N x := by
+theorem map_star_eq_map (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) : N (star x) = N x := by
   rw [← norm_equiv, StarHomClass.map_star, norm_star, norm_equiv]
 
 /-- A C*-norm satisfies the C*-identity. -/
