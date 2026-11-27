@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Tangent
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
@@ -160,19 +161,8 @@ theorem _root_.ContMDiffAt.differentiableWithinAt_sectionCoord_mfderiv {s : Set 
     rw [e.mdifferentiableWithinAt_totalSpace_iff I]
     · exact ⟨hγ, mdifferentiableWithinAt_iff_differentiableWithinAt.mpr hcoord⟩
     · exact (Bundle.Trivialization.mem_source e).2 hbase
-  have htangent : MDifferentiableAt I.tangent J.tangent (tangentMap I J f)
-      (TotalSpace.mk' E (γ t) (V t)) :=
-    (hf.contMDiffAt_tangentMap (X := TotalSpace.mk' E (γ t) (V t)) (m := 1)
-      (by rwa [one_add_one_eq_two])).mdifferentiableAt one_ne_zero
-  have hmap : tangentMap I J f ∘ (fun r ↦ TotalSpace.mk' E (γ r) (V r)) =
-      fun r ↦ TotalSpace.mk' F (f (γ r)) (mfderiv I J f (γ r) (V r)) := by
-    funext r
-    exact TotalSpace.ext tangentMap_proj (heq_of_eq tangentMap_snd)
-  have htransport : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) J.tangent
-      (fun r ↦ TotalSpace.mk' F (f (γ r)) (mfderiv I J f (γ r) (V r))) s t := by
-    simpa only [hmap] using htangent.comp_mdifferentiableWithinAt t htotal
   exact differentiableWithinAt_sectionCoord (f ∘ γ)
-    (fun r ↦ mfderiv I J f (γ r) (V r)) htransport
+    (fun r ↦ mfderiv I J f (γ r) (V r)) (hf.mdifferentiableWithinAt_totalSpace_mfderiv hn htotal)
     (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
 
 /-- The unrestricted form of `ContMDiffAt.differentiableWithinAt_sectionCoord_mfderiv`. -/

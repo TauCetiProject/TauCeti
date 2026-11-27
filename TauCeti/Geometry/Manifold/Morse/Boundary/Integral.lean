@@ -68,6 +68,8 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
 ## Main results
 
 * `TauCeti.IsAdaptedPseudoGradient.nonempty_morseOrientation`: orientation data exist.
+* `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_eq_finsum_mem`: the boundary
+  coefficient as a sum of trajectory signs over the trajectory slice.
 * `TauCeti.IsAdaptedPseudoGradient.morseIndex_eq_add_one_of_signedMorseBoundaryCoeff_ne_zero`:
   the boundary lowers the index by one.
 * `TauCeti.IsAdaptedPseudoGradient.value_lt_of_signedMorseBoundaryCoeff_ne_zero`: the boundary
@@ -218,6 +220,19 @@ theorem signedMorseBoundaryCoeff_of_morseIndex_eq_add_one {p q : criticalPoints 
     hX.signedMorseBoundaryCoeff 𝔬 p q =
       hX.signedTrajectoryCount (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq :=
   dite_eq_left hpq
+
+/-- For critical points of consecutive index, the boundary coefficient is the sum of the signs over
+the trajectory slice, written with the index condition inside. This is the shape in which signed
+counts of broken trajectories split as sums over intermediate critical points. -/
+theorem signedMorseBoundaryCoeff_eq_finsum_mem {p q : criticalPoints 𝓘(ℝ, E) f}
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    hX.signedMorseBoundaryCoeff 𝔬 p q =
+      ∑ᶠ z ∈ hX.morseTrajectorySlice p q,
+        if h : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 then
+          hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) h z
+        else 0 := by
+  rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def]
+  exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpq]
 
 /-- The boundary coefficient vanishes between critical points whose indices do not differ by
 one. -/

@@ -21,7 +21,9 @@ self-adjointness of that operator into conditions on the pair `(ι, A)`.
 
 * It is symmetric exactly when `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all `x, y : D`
   (`LinearMap.isFormalAdjoint_domainOperator_iff`), the symmetry hypothesis of the
-  common-domain trajectory operators `TauCeti.WeakDerivStep.domainTrajectoryOperator`.
+  common-domain trajectory operators `TauCeti.WeakDerivStep.domainTrajectoryOperator`. Then
+  solutions of `A x = c • ι x` for distinct real `c` have orthogonal images under `ι`
+  (`ContinuousLinearMap.inner_eq_zero_of_apply_eq_smul`).
 * On a Hilbert space, a symmetric pair for which `c • ι - A` is surjective at one real `c`, for
   instance a pair with `A` invertible, gives a self-adjoint operator
   (`ContinuousLinearMap.isSelfAdjoint_domainOperator`,
@@ -76,6 +78,17 @@ local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 section Topological
 
 variable [AddCommGroup D] [Module 𝕜 D] [TopologicalSpace D] {ι A : D →L[𝕜] H} {hι : Injective ι}
+
+/-- **Orthogonality of eigenvectors on a common domain.** If `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all
+`x y : D`, then solutions of `A x = c • ι x` and `A y = d • ι y` for distinct real scalars `c` and
+`d` have orthogonal images under `ι`. -/
+theorem inner_eq_zero_of_apply_eq_smul (hsymm : ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫) {c d : ℝ}
+    (hcd : c ≠ d) {x y : D} (hx : A x = (c : 𝕜) • ι x) (hy : A y = (d : 𝕜) • ι y) :
+    ⟪ι x, ι y⟫ = 0 := by
+  have h := hsymm x y
+  rw [hx, hy, inner_smul_left, inner_smul_right, RCLike.conj_ofReal] at h
+  have h' : ((c : 𝕜) - d) * ⟪ι x, ι y⟫ = 0 := by rw [sub_mul, h, sub_self]
+  exact (mul_eq_zero.1 h').resolve_left (sub_ne_zero.2 (RCLike.ofReal_injective.ne hcd))
 
 /-- **Self-adjointness on a common domain.** On a Hilbert space `H`, if `⟪A x, ι y⟫ = ⟪ι x, A y⟫`
 for all `x y : D` and the shift `c • ι - A` is surjective at a real scalar `c`, then

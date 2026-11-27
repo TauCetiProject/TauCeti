@@ -52,24 +52,31 @@ theorem isSquare_mul_iff_exists_eq_mul_sq {m n : ℕ} :
     simp only [pow_two]
     ac_rfl
 
+/-- If `ordCompl[p] n` is a square, then `n` is a square times `p ^ d`, where `d` is zero or one. -/
+theorem exists_eq_pow_mul_sq_of_isSquare_ordCompl {p n : ℕ} (h : IsSquare (ordCompl[p] n)) :
+    ∃ d : Fin 2, ∃ k : ℕ, n = p ^ d.val * k ^ 2 := by
+  obtain ⟨r, hr⟩ := h
+  let a := n.factorization p
+  have ha : a = a % 2 + a / 2 * 2 := by omega
+  refine ⟨⟨a % 2, by omega⟩, p ^ (a / 2) * r, ?_⟩
+  calc
+    n = p ^ a * (r * r) := by rw [← hr, ordProj_mul_ordCompl_eq_self]
+    _ = p ^ (a % 2 + a / 2 * 2) * (r * r) := congrArg (fun e ↦ p ^ e * (r * r)) ha
+    _ = _ := by rw [pow_add, pow_mul, mul_pow, pow_two r, mul_assoc]
+
 /-- A natural number has square `p`-free part if and only if it or its product with `p` is
 square, for `p` prime. -/
 theorem isSquare_ordCompl_iff {p n : ℕ} (hp : p.Prime) :
     IsSquare (ordCompl[p] n) ↔ IsSquare n ∨ IsSquare (p * n) := by
   constructor
-  · rintro ⟨r, hr⟩
-    have hn : n = p ^ n.factorization p * (r * r) := by
-      rw [← hr, ordProj_mul_ordCompl_eq_self]
-    obtain ⟨k, hk | hk⟩ := (n.factorization p).even_or_odd'
-    · left
-      refine ⟨p ^ k * r, ?_⟩
-      have he : n.factorization p = k * 2 := by omega
-      rw [hn, he, pow_mul, pow_two, mul_mul_mul_comm]
-    · right
-      refine ⟨p ^ (k + 1) * r, ?_⟩
-      have he : (n.factorization p).succ = (k + 1) * 2 := by omega
-      conv_lhs => rw [hn, ← mul_assoc, ← pow_succ', he, pow_mul, pow_two]
-      exact mul_mul_mul_comm _ _ _ _
+  · intro h
+    obtain ⟨d, k, rfl⟩ := exists_eq_pow_mul_sq_of_isSquare_ordCompl h
+    have hd : d = 0 ∨ d = 1 := by omega
+    rcases hd with rfl | rfl
+    · exact Or.inl ⟨k, by simp [pow_two]⟩
+    · refine Or.inr ⟨p * k, ?_⟩
+      simp only [Fin.val_one, pow_one, pow_two]
+      ac_rfl
   · rintro (⟨r, hr⟩ | ⟨r, hr⟩)
     · exact ⟨ordCompl[p] r, by rw [hr, ordCompl_mul]⟩
     · refine ⟨ordCompl[p] r, ?_⟩

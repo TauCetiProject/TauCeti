@@ -399,8 +399,7 @@ along the inclusion gives it back. -/
 theorem IsDimerGibbs.map_comap_val {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet → Bool)}
     (hμ : G.IsDimerGibbs w μ) :
     (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)).map Subtype.val = μ :=
-  (map_comap_subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe μ).trans
-    (Measure.restrict_eq_self_of_ae_mem (hμ.ae_mem_dimerSubshift Γ hΓ))
+  TauCeti.Subshift.map_comap_val_of_ae_mem (hμ.ae_mem_dimerSubshift Γ hΓ)
 
 variable (Γ hΓ) in
 /-- The pull-back to `𝔛(G)` of a dimer Gibbs measure is a probability measure. -/
@@ -408,9 +407,7 @@ theorem IsDimerGibbs.isProbabilityMeasure_comap_val {w : G.edgeSet → ℝ}
     {μ : Measure (G.edgeSet → Bool)} (hμ : G.IsDimerGibbs w μ) :
     IsProbabilityMeasure (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)) := by
   have := hμ.isProbabilityMeasure
-  exact (MeasurableEmbedding.subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe)
-    |>.isProbabilityMeasure_comap
-      ((hμ.ae_mem_dimerSubshift Γ hΓ).mono fun ω hω => ⟨⟨ω, hω⟩, rfl⟩)
+  exact TauCeti.Subshift.isProbabilityMeasure_comap_val_of_ae_mem (hμ.ae_mem_dimerSubshift Γ hΓ)
 
 variable (Γ hΓ) in
 /-- **The DLR equation on a cylinder.** Let `μ` be dimer Gibbs for a positive `w`, `ω` a dimer

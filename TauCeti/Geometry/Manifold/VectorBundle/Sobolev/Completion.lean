@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Schwartz
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CutoffFrame
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
-import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+import TauCeti.Analysis.Sobolev.BesselPotential.Rellich.Basic
 import TauCeti.Geometry.Manifold.Sobolev.ChartReading
 
 /-!

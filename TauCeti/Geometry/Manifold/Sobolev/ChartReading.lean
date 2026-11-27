@@ -12,7 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LocalizedChangeOfVariables
 import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
-import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+import TauCeti.Analysis.Sobolev.BesselPotential.Rellich.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
