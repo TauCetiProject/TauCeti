@@ -228,10 +228,27 @@ private noncomputable def positiveRootHom (A : Type v) [CommRing A] (γ : Positi
   (D.rootSubgroupPoints γ.val A).codRestrict _
     (D.rootSubgroupPoints_mem_positivePoints A γ.property)
 
+@[simp]
+private theorem positiveRootHom_pin_apply (A : Type v) [CommRing A] (i : Fin t.rank)
+    (u : Multiplicative A) :
+    positiveRootHom D A (pin i) u =
+      ⟨D.rootSubgroupPoints (t.simpleIndex ht i) A u,
+        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩ := rfl
+
 private noncomputable def simpleQuotientMap (A : Type v) [CommRing A] (i : Fin t.rank) :
     Multiplicative A →*
       D.positivePoints A ⧸ (D.puncturedPositivePoints A i).subgroupOf (D.positivePoints A) :=
   (QuotientGroup.mk' _).comp (positiveRootHom D A (pin i))
+
+@[simp]
+private theorem simpleQuotientMap_apply (A : Type v) [CommRing A] (i : Fin t.rank)
+    (u : Multiplicative A) :
+    simpleQuotientMap D A i u = QuotientGroup.mk
+      (⟨D.rootSubgroupPoints (t.simpleIndex ht i) A u,
+        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩ :
+        D.positivePoints A) := by
+  rw [simpleQuotientMap, MonoidHom.comp_apply, positiveRootHom_pin_apply,
+    QuotientGroup.mk'_apply]
 
 private theorem simpleQuotientMap_bijective (A : Type v) [CommRing A] (i : Fin t.rank) :
     Function.Bijective (simpleQuotientMap D A i) := by
@@ -242,10 +259,11 @@ private theorem simpleQuotientMap_bijective (A : Type v) [CommRing A] (i : Fin t
     apply Subgroup.mem_bot.mpr
     apply (D.rootSubgroupPoints_simpleIndex_mem_puncturedPositivePoints_iff A i u).mp
     have hq := MonoidHom.mem_ker.mp hu
-    rw [simpleQuotientMap, MonoidHom.comp_apply] at hq
+    rw [simpleQuotientMap_apply] at hq
     exact (QuotientGroup.eq_one_iff
       (N := (D.puncturedPositivePoints A i).subgroupOf (D.positivePoints A))
-      (positiveRootHom D A (pin i) u)).mp hq
+      ⟨D.rootSubgroupPoints (t.simpleIndex ht i) A u,
+        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩).mp hq
   · intro q
     obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective _ q
     obtain ⟨v, hv, u, h⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints A i g).mp
@@ -255,9 +273,11 @@ private theorem simpleQuotientMap_bijective (A : Type v) [CommRing A] (i : Fin t
         (D.positivePoints A))) ⟨v, D.puncturedPositivePoints_le_positivePoints A i hv⟩ = 1 :=
       (QuotientGroup.eq_one_iff _).mpr hv
     have hg : g = ⟨v, D.puncturedPositivePoints_le_positivePoints A i hv⟩ *
-        positiveRootHom D A (pin i) u := Subtype.ext h
-    rw [hg, map_mul, hv', one_mul]
-    exact MonoidHom.comp_apply _ _ _
+        positiveRootHom D A (pin i) u := by
+      rw [positiveRootHom_pin_apply]
+      exact Subtype.ext h
+    rw [hg, map_mul, hv', one_mul, simpleQuotientMap_apply,
+      positiveRootHom_pin_apply, QuotientGroup.mk'_apply]
 
 /-- The simple-root quotient, normalized by the chosen root parameter. -/
 noncomputable def simpleRootQuotientEquiv (A : Type v) [CommRing A] (i : Fin t.rank) :
@@ -273,7 +293,9 @@ theorem simpleRootQuotientEquiv_symm_apply (A : Type v) [CommRing A] (i : Fin t.
     (D.simpleRootQuotientEquiv A i).symm u = QuotientGroup.mk
       (⟨D.rootSubgroupPoints (t.simpleIndex ht i) A u,
         D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩ :
-        D.positivePoints A) := (rfl)
+        D.positivePoints A) := by
+  rw [simpleRootQuotientEquiv, MulEquiv.symm_symm, MulEquiv.ofBijective_apply,
+    simpleQuotientMap_apply]
 
 /-- The coordinate at the simple root `i`, as a homomorphism to the additive group of `A`. -/
 noncomputable def simpleRootCoordinate (A : Type v) [CommRing A] (i : Fin t.rank) :
@@ -293,9 +315,9 @@ theorem simpleRootCoordinate_simpleIndex (A : Type v) [CommRing A] (i : Fin t.ra
     (u : Multiplicative A) :
     D.simpleRootCoordinate A i
       ⟨D.rootSubgroupPoints (t.simpleIndex ht i) A u,
-        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩ = u :=
-  (MulEquiv.ofBijective (simpleQuotientMap D A i)
-    (simpleQuotientMap_bijective D A i)).symm_apply_apply u
+        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩ = u := by
+  simpa only [D.simpleRootQuotientEquiv_symm_apply, D.simpleRootQuotientEquiv_mk] using
+    (D.simpleRootQuotientEquiv A i).apply_symm_apply u
 
 /-- The kernel is the native punctured positive subgroup, restricted to positive points. -/
 @[simp]
@@ -404,8 +426,10 @@ theorem existsUnique_puncturedPositivePoints_mul_rootSubgroupPoints_simpleIndex
       (hw : (g : D.points A) = w * D.rootSubgroupPoints (t.simpleIndex ht i) A a) :
       D.simpleRootCoordinate A i g = a := by
     have hg : g = ⟨w, D.puncturedPositivePoints_le_positivePoints A i w.property⟩ *
-        positiveRootHom D A (pin i) a := Subtype.ext hw
-    rw [hg]
+        positiveRootHom D A (pin i) a := by
+      rw [positiveRootHom_pin_apply]
+      exact Subtype.ext hw
+    rw [hg, positiveRootHom_pin_apply]
     exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i _ w.property a
   refine ⟨(⟨v, hv⟩, u), h, fun p hp => ?_⟩
   have hu : p.2 = u := (coord p.1 p.2 hp).symm.trans (coord ⟨v, hv⟩ u h)
@@ -421,9 +445,7 @@ theorem simpleRootCoordinate_map {A : Type v} {B : Type w} [CommRing A] [CommRin
     D.simpleRootCoordinate B i (D.mapPositivePoints f g) =
       ofAdd (f (D.simpleRootCoordinate A i g).toAdd) := by
   classical
-  let l : List PositiveRoot := Finset.univ.toList
-  have hl := Finset.nodup_toList (Finset.univ : Finset PositiveRoot)
-  have hall (γ : PositiveRoot) : γ ∈ l := Finset.mem_toList.mpr (Finset.mem_univ _)
+  obtain ⟨l, hl, hall⟩ := Finite.exists_univ_list PositiveRoot
   rw [D.simpleRootCoordinate_eq_positiveRootEquiv_symm B i l hl hall,
     D.simpleRootCoordinate_eq_positiveRootEquiv_symm A i l hl hall,
     D.positiveRootEquiv_symm_map, toAdd_ofAdd]
@@ -440,9 +462,11 @@ theorem simpleRootCoordinate_torusPoints_conj (A : Type v) [CommRing A] (i : Fin
   obtain ⟨v, hv, u, h⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints A i g).mp
     g.property
   let v' : D.positivePoints A := ⟨v, D.puncturedPositivePoints_le_positivePoints A i hv⟩
-  have hg : g = v' * positiveRootHom D A (pin i) u := Subtype.ext h
+  have hg : g = v' * positiveRootHom D A (pin i) u := by
+    rw [positiveRootHom_pin_apply]
+    exact Subtype.ext h
   have hcoord : D.simpleRootCoordinate A i g = u := by
-    rw [hg]
+    rw [hg, positiveRootHom_pin_apply]
     exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i v' hv u
   have hvconj := (Subgroup.mem_normalizer_iff.mp
     (D.range_torusPoints_le_normalizer_puncturedPositivePoints A i ⟨s, rfl⟩) v).mp hv
@@ -456,11 +480,10 @@ theorem simpleRootCoordinate_torusPoints_conj (A : Type v) [CommRing A] (i : Fin
       w * positiveRootHom D A (pin i)
         (ofAdd ((torusCharacter s (D.coordinateRoot (t.simpleIndex ht i)) : A) * u.toAdd)) := by
     apply Subtype.ext
-    simp only [Subgroup.coe_mul, positiveRootHom,
-      MonoidHom.codRestrict_apply, pin, w]
+    simp only [positiveRootHom_pin_apply, Subgroup.coe_mul, w]
     rw [h, ← D.torusPoints_conj_rootSubgroupPoints, ofAdd_toAdd]
     group
-  rw [heq, hcoord]
+  rw [heq, hcoord, positiveRootHom_pin_apply]
   exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i w hvconj _
 
 /-- The simultaneous simple-root coordinates, with the componentwise additive group law. -/
@@ -479,9 +502,7 @@ theorem simpleRootCoordinates_surjective (A : Type v) [CommRing A] :
     Function.Surjective (D.simpleRootCoordinates A) := by
   classical
   intro a
-  let l : List PositiveRoot := Finset.univ.toList
-  have hl := Finset.nodup_toList (Finset.univ : Finset PositiveRoot)
-  have hall (γ : PositiveRoot) : γ ∈ l := Finset.mem_toList.mpr (Finset.mem_univ _)
+  obtain ⟨l, hl, hall⟩ := Finite.exists_univ_list PositiveRoot
   have hinj : Function.Injective (pin (t := t) (ht := ht)) := by
     intro i j h
     apply (t.simpleSupportEquiv ht).injective
@@ -503,9 +524,7 @@ theorem ker_simpleRootCoordinates (A : Type v) [CommRing A] :
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf]
   constructor
   · intro hg
-    let l : List PositiveRoot := Finset.univ.toList
-    have hl := Finset.nodup_toList (Finset.univ : Finset PositiveRoot)
-    have hall (γ : PositiveRoot) : γ ∈ l := Finset.mem_toList.mpr (Finset.mem_univ _)
+    obtain ⟨l, hl, hall⟩ := Finite.exists_univ_list PositiveRoot
     let u := (D.positiveRootEquiv l hl hall A).symm g
     have hsimple (γ : PositiveRoot) (hγ : γ.val ∈ (t.rationalBase ht).support) : u γ = 0 := by
       obtain ⟨i, hi⟩ := exists_simpleIndex_eq_of_mem_support hγ
