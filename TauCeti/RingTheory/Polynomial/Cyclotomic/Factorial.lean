@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Ring.QPochhammer
+public import TauCeti.Algebra.Ring.QPochhammer.Basic
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.IndexMonoid
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.NumberTheory.Divisors

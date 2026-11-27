@@ -62,6 +62,15 @@ proves that `D` is bounded below, and that in a unitary frame (`J_t = i`) it is 
   the realization `D_u` of the linearized Floer operator is bounded below on `W^{1,2}`
   (`exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt`) and
   injective (`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt`).
+* **The weighted operator in a unitary trivialization.** With the constant weight slope `δ`, the
+  weighted operator `D_u - δ` (`TauCeti.SymplecticForm.floerWeightedSobolevOperator`) at the
+  stationary cylinder over a loop `x` and with `J = i` is the stationary cylinder operator with
+  `S_t = dX_{H_t}(x(t)) - δ i`, because `-δ = i (δ i)`
+  (`TauCeti.SymplecticForm.floerJetCoeff_sub_smul_fst_eq_stationaryJetCoeff`). The shift `δ i` is
+  infinitesimally symplectic for `Im ⟪·, ·⟫`, so for a one-periodic `C¹` loop `x` the operator is
+  an isomorphism as soon as the shifted field has a nondegenerate return map
+  (`TauCeti.SymplecticForm.isInvertible_floerWeightedSobolevOperator_comp_snd`); along an orbit of
+  `H` this says that `δ` is not an eigenvalue of the asymptotic operator.
 
 Surjectivity of `D_u`, which reduces to the unitary case by conjugating with a loop of unitary
 frames, is in `TauCeti/Geometry/Symplectic/Floer/Sobolev/UnitaryFrame.lean`, together with its
@@ -104,6 +113,14 @@ theorem stationaryJetCoeff_apply (J : ℝ → AlmostComplexStructure V) (S : ℝ
     stationaryJetCoeff J S z v = v.2.1 + J z.2 (v.2.2 - S z.2 v.1) := by
   simp [stationaryJetCoeff]
 
+/-- The stationary cylinder operator `∂s + J_t (∂t - S_t)` is the first-order operator
+`∂s + J_t ∂t - J_t S_t` (`TauCeti.firstOrderJetCoeff`). -/
+theorem stationaryJetCoeff_eq_firstOrderJetCoeff (J : ℝ → AlmostComplexStructure V)
+    (S : ℝ → V →L[ℝ] V) (z : ℝ × ℝ) :
+    stationaryJetCoeff J S z = firstOrderJetCoeff (J z.2).toLinearMap.toContinuousLinearMap
+      (-(J z.2).toLinearMap.toContinuousLinearMap.comp (S z.2)) := by
+  ext v <;> simp [stationaryJetCoeff_apply, sub_eq_add_neg]
+
 /-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a section, the coefficient field gives the stationary cylinder
 operator `D ξ`. -/
 @[simp]
@@ -144,15 +161,15 @@ variable (J S) in
 Sobolev space `W^{1,2}(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.H1`) to `L²(ℝ × S¹, V)`. It is `0`
 by convention when its coefficients are not essentially bounded on the cylinder. -/
 def stationarySobolevOperator : H1 V →L[ℝ] Lp V 2 stripMeasure :=
-  (jetOperator stripMeasure (stationaryJetCoeff J S)).comp (H1 V).subtypeL
+  (jetOperator 2 stripMeasure (stationaryJetCoeff J S)).comp (H1 V).subtypeL
 
 variable (J S) in
 /-- The definition of the Sobolev realization of the stationary cylinder operator: the first-order
-operator `TauCeti.jetOperator stripMeasure` of its coefficient field on jets, restricted to
+operator `TauCeti.jetOperator 2 stripMeasure` of its coefficient field on jets, restricted to
 `TauCeti.CylinderSobolev.H1`. -/
 theorem stationarySobolevOperator_def :
     stationarySobolevOperator J S =
-      (jetOperator stripMeasure (stationaryJetCoeff J S)).comp (H1 V).subtypeL :=
+      (jetOperator 2 stripMeasure (stationaryJetCoeff J S)).comp (H1 V).subtypeL :=
   (rfl)
 
 /-- For continuous loops `J_t` and `S_t`, the Sobolev realization of the stationary cylinder
@@ -162,7 +179,7 @@ theorem coeFn_stationarySobolevOperator
     (x : H1 V) :
     stationarySobolevOperator J S x =ᵐ[stripMeasure]
       fun z ↦ stationaryJetCoeff J S z ((x : Lp (V × V × V) 2 stripMeasure) z) :=
-  coeFn_jetOperator (memLp_stationaryJetCoeff hJc hSc) x
+  coeFn_jetOperator (p := 2) (memLp_stationaryJetCoeff hJc hSc) x
 
 /-- For continuous loops `J_t` and `S_t`, the Sobolev realization of the stationary cylinder
 operator is `D ξ` on the jet of a test section `ξ`. -/
@@ -463,6 +480,74 @@ theorem floerJetCoeff_eq_stationaryJetCoeff (ω : SymplecticForm V)
   rw [floerJetCoeff_apply, Floer.stationaryJetCoeff_apply, h]
   simp [sub_eq_add_neg, add_assoc]
 
+section Weighted
+
+/-! ### The weighted operator at a stationary cylinder in a unitary trivialization -/
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **The weighted operator at a stationary cylinder is a stationary cylinder operator.** For the
+complex structure `i` of `F`, the coefficient field of `D_u - δ` at the stationary cylinder
+`u(s, t) = x(t)`, with Floer data `(i, 0, H_t)`, is that of the stationary cylinder operator
+`∂s + i (∂t - (S_t - δ i))` with `S_t = dX_{H_t}(x(t))`, since `-δ = i (δ i)`. The loop `x` need
+not be an orbit of `H`. -/
+theorem floerJetCoeff_sub_smul_fst_eq_stationaryJetCoeff (ω : SymplecticForm F) (H : ℝ → F → ℝ)
+    (x : ℝ → F) (δ : ℝ) (z : ℝ × ℝ) :
+    ω.floerJetCoeff
+        (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z - δ • fst ℝ F (F × F) =
+      Floer.stationaryJetCoeff (fun _ ↦ AlmostComplexStructure.ofComplexModule F)
+        (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+          δ • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) z := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [floerJetCoeff_const]
+  simp [Floer.stationaryJetCoeff_apply, AlmostComplexStructure.ofComplexModule_apply, smul_smul,
+    sub_eq_add_neg, add_assoc, add_comm, add_left_comm]
+
+/-- **The weighted operator at a stationary cylinder is invertible away from the spectrum.** Let
+`F` be a finite-dimensional complex inner product space whose symplectic form `ω` is
+`Im ⟪·, ·⟫`, let `H` be a one-periodic, jointly `C³` time-dependent Hamiltonian and `x` a
+one-periodic `C¹` loop, and let `δ` be a real number such that the shifted field
+`dX_{H_t}(x(t)) - δ i` has a nondegenerate return map, `det (1 - Ψ(1)) ≠ 0`; for an orbit `x` of
+`H` this says that `δ` is not an eigenvalue of the asymptotic operator at `x`. Then at the
+stationary cylinder `u(s, t) = x(t)`, with Floer data `(i, 0, H_t)`, the realization
+`D_u - δ : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator with the constant
+weight slope `δ` is an isomorphism of Banach spaces. -/
+theorem isInvertible_floerWeightedSobolevOperator_comp_snd (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ}
+    (hH : ContDiff ℝ 3 (Function.uncurry H)) (hHp : Function.Periodic H 1) {x : ℝ → F}
+    (hx : ContDiff ℝ 1 x) (hxp : Function.Periodic x 1) {δ : ℝ}
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+        δ • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap) 1 :
+          F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0) :
+    (ω.floerWeightedSobolevOperator
+      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) fun _ ↦ δ).IsInvertible := by
+  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp hx hxp
+  -- `S_t = dX_{H_t}(x(t))` is infinitesimally symplectic for `Im ⟪·, ·⟫`, and so is `S_t - δ i`.
+  have hSω (θ : AddCircle (1 : ℝ)) (v w : F) :
+      (inner ℂ (S θ v) w).im + (inner ℂ v (S θ w)).im = 0 := by
+    induction θ using QuotientAddGroup.induction_on with | H t => ?_
+    rw [hS, ← hω, ← hω]
+    exact ω.apply_fderiv_hamiltonianVectorField_add
+      ((hH.of_le (by norm_num)).comp (contDiff_prodMk_right t)).contDiffAt v w
+  set S' := S - δ • ContinuousMap.const _ (Complex.I • ContinuousLinearMap.id ℝ F)
+  have hS'f : (fun t : ℝ ↦ S' t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+      δ • (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap := by
+    ext t v
+    simp [S', hS, AlmostComplexStructure.ofComplexModule_apply]
+  have hS'₁ : ContDiff ℝ 1 fun t : ℝ ↦ S' t :=
+    hS₁.sub (contDiff_const (c := δ • Complex.I • ContinuousLinearMap.id ℝ F))
+  rw [← hS'f] at hdet
+  simp only [floerWeightedSobolevOperator_def, floerJetCoeff_sub_smul_fst_eq_stationaryJetCoeff,
+    ← hS'f, ← Floer.stationarySobolevOperator_def]
+  exact ⟨Floer.stationarySobolevEquiv hS'₁
+    (CircleSobolev.im_inner_sub_smul_const_I_add_eq_zero 1 hSω δ) hdet,
+    Floer.coe_stationarySobolevEquiv ..⟩
+
+end Weighted
+
 section Stationary
 
 /-! ### The stationary cylinder at a nondegenerate orbit -/
@@ -486,7 +571,7 @@ the linearized Floer operator, which is the translation-invariant operator
 constant `K`. -/
 theorem exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    ∃ C : ℝ≥0, ∀ ξ : H1 V, ‖ξ‖ ≤ C * ‖ω.floerSobolevOperator
+    ∃ C : ℝ≥0, ∀ ξ : H1 V, ‖ξ‖ ≤ C * ‖ω.floerSobolevOperator 2
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
         (fun w ↦ x w.2) ξ‖ := by
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
@@ -505,7 +590,7 @@ the realization of the linearized Floer operator at the stationary cylinder `u(s
 trivial kernel. -/
 theorem ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).ker = ⊥ := by
   obtain ⟨C, hC⟩ :=
     exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt ω hX hH hx hJc

@@ -92,8 +92,6 @@ operators, are separate.
   untwisted along the circle factor is described by the propagator and the return map.
 * `TauCeti.exists_ne_zero_orbitTorusOperator_eq_zero_iff_det_eq_zero`: such a kernel is nonzero
   exactly when `det (ε₂ - Ψ(d)) = 0`.
-* `TauCeti.inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply`: the propagator preserves
-  the symplectic form `⟪J₀ ·, ·⟫`.
 * `TauCeti.periodic_snd_of_twists` and `TauCeti.eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero`:
   on a finite cover, twisted maps are periodic in `t`, and the operators twisted along the circle
   factor have no kernel.
@@ -560,21 +558,6 @@ theorem contDiff_dysonSeriesLeft_apply_snd {m : ℕ} (hS : ContDiff ℝ m S) (v 
     ContDiff ℝ (m + 1) fun z : ℝ × ℝ => dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 v :=
   ((contDiff_dysonSeriesLeft ((contDiff_const (c := J₀)).clm_comp hS)).clm_apply
     contDiff_const).comp contDiff_snd
-
-/-- **The propagator is symplectic.** If `J₀` is an orthogonal complex structure and every `S(t)` is
-symmetric, then `J₀ S(t)` is skew for the symplectic form `⟪J₀ ·, ·⟫`, so the propagator `Ψ(t)` of
-the loop equation `w' = J₀ S(t) w` preserves it: `⟪J₀ (Ψ(t) x), Ψ(t) y⟫ = ⟪J₀ x, y⟫`. -/
-theorem inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply
-    (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
-    (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫) (hScont : Continuous S) (t : ℝ) (x y : V) :
-    ⟪J₀ (dysonSeriesLeft (fun t => J₀ ∘L S t) t x), dysonSeriesLeft (fun t => J₀ ∘L S t) t y⟫ =
-      ⟪J₀ x, y⟫ := by
-  have hM : Continuous fun t => J₀ ∘L S t := (continuous_const (y := J₀)).clm_comp hScont
-  have h := apply_dysonSeriesLeft_apply_dysonSeriesLeft hM
-    ((innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).comp J₀) (fun r x y => ?_) t x y
-  · simpa using h
-  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, hJ₀sq, inner_neg_left,
-    hJ₀ x, hS r, inner_neg_right, neg_neg, neg_add_cancel]
 
 end Complete
 

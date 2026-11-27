@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Module.Euclidean
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame.Orthonormal
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial

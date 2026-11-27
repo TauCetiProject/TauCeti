@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
+import TauCeti.Geometry.Symplectic.Floer.Linearization.Pullback
 
 /-!
 # The linearized Floer operator on the Sobolev space of a conformal metric
@@ -44,6 +47,12 @@ of a test section `ξ` is the `L²` norm of `D_u ξ`
 energy of test sections by `∫ ‖D_u ξ‖²` and an `L²` norm on a compact set then gives the estimate
 of Peetre's argument
 (`exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le`).
+
+The coefficient field is continuous where the data are regular along `u`
+(`continuousOn_floerConformalJetCoeff`), and for a family of data `(J_μ, K_{s,μ}, K_{t,μ})` that is
+regular jointly in the parameter it is continuous jointly in the parameter and the domain point
+(`continuousAt_floerConformalJetCoeff_family`); this is how the operators of a family of data are
+compared in operator norm.
 
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
 `(0, 1)`-form `(dξ + …)^(0,1)` for the conformal metric, since the conformal factors of a
@@ -161,6 +170,75 @@ theorem norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le (ω : Sympl
         gcongr 1 + B + κ * ?_
         exact hC.trans (mul_le_mul h1 hCe (norm_nonneg _) (by linarith))
 
+/-- **The coefficient field on conformal jets in a holomorphic chart of an end.** Let `ψ` be
+holomorphic at `ζ` with Jacobian `r²`, `r > 0`, and let the pulled-back perturbation `ψ^*K` at `ζ`
+be the cylindrical datum `H_e(t) dt`, with `K_s` and `K_t` of class `C²` at `ψ ζ`, the structures
+`J(ψ ζ, ·) = J_e(t)`, and `u` solve the Floer equation at `ψ ζ`. If `B` bounds the coefficient
+field on jets of the end datum, with the structures `J_e`, along `u ∘ ψ` at `ζ`, and
+`ρ(ψ ζ)^(-1/2) ≤ κ r` with `κ ≥ 0`, then the coefficient field on conformal jets is at most
+`1 + B + κ (1 + B) B` at `ψ ζ`. -/
+theorem norm_floerConformalJetCoeff_le_of_perturbationPullback (ω : SymplecticForm V)
+    {ρ : ℝ × ℝ → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Je : ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {He : ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {ψ : ℝ × ℝ → ℝ × ℝ} {ζ : ℝ × ℝ} {r κ B : ℝ}
+    (hψ : DifferentiableAt ℝ ψ ζ)
+    (hψJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ ψ ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hdet : (fderiv ℝ ψ ζ).det = r ^ 2) (hr : 0 < r) (hJζ : J (ψ ζ) = Je ζ.2)
+    (hKs : ContDiff ℝ 2 (Ks (ψ ζ))) (hKt : ContDiff ℝ 2 (Kt (ψ ζ)))
+    (hKs₀ : Floer.perturbationPullback ψ Ks Kt stdComplexLineReal ζ = 0)
+    (hKtH : Floer.perturbationPullback ψ Ks Kt stdComplexLineImag ζ = He ζ.2)
+    (hu : DifferentiableAt ℝ u (ψ ζ))
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (ψ ζ) (u (ψ ζ)))
+      (ω.perturbedFDeriv Ks Kt u (ψ ζ) : ℝ × ℝ →ₗ[ℝ] V))
+    (hB : ‖ω.floerJetCoeff (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ He w.2) (u ∘ ψ) ζ‖ ≤ B)
+    (hρ : (√(ρ (ψ ζ)))⁻¹ ≤ κ * r) (hκ : 0 ≤ κ) :
+    ‖ω.floerConformalJetCoeff ρ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
+      (ψ ζ)‖ ≤ 1 + B + κ * ((1 + B) * B) := by
+  have hXs := ((ω.contDiff_hamiltonianVectorField (n := 1) hKs).differentiable one_ne_zero)
+    (u (ψ ζ))
+  have hXt := ((ω.contDiff_hamiltonianVectorField (n := 1) hKt).differentiable one_ne_zero)
+    (u (ψ ζ))
+  -- The zeroth-order part of the operator of the pulled-back data is `a C - b J C`, and the
+  -- pulled-back data at `ζ` are the end data `(0, H_e(t))`.
+  have hcoef := ω.floerLinearizationCoeff_perturbationPullback (J := J) hψ hψJ hu
+    (.of_forall fun y ↦ hKs.differentiable two_ne_zero y)
+    (.of_forall fun y ↦ hKt.differentiable two_ne_zero y) hXs hXt
+    ((floerOperator_eq_zero_iff ω J Ks Kt u (ψ ζ)).2 hF)
+  rw [ω.floerLinearizationCoeff_congr_data (u ∘ ψ) (Ks' := fun _ _ ↦ 0) (Kt' := fun w ↦ He w.2)
+    rfl hKs₀ hKtH] at hcoef
+  have hab : (fderiv ℝ ψ ζ stdComplexLineReal).1 ^ 2 + (fderiv ℝ ψ ζ stdComplexLineReal).2 ^ 2 =
+      r ^ 2 := by
+    rw [← hdet, ContinuousLinearMap.det, hψJ.det_eq_sq_add_sq, ContinuousLinearMap.coe_coe]
+  refine ω.norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le
+    (Je := fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (by simp only [hJζ]) hB ?_
+    hρ hκ
+  exact (J (ψ ζ) (u (ψ ζ))).mul_opNorm_le_of_eq_smul_sub_smul
+    (fun v ↦ by simpa [Function.comp_def] using congrArg (fun L : V →L[ℝ] V ↦ L v) hcoef) hab hr
+
+/-- The coefficient field on conformal jets of a family of Floer data `(J_μ, K_{s,μ}, K_{t,μ})`
+with parameter `μ` in a real normed space `P` along `u` is continuous jointly in `μ` and the
+domain point `z` at `(μ, z)` when the family is `C¹` (with `C²` Hamiltonians) jointly in `μ`, `z`
+and the target point at `((μ, z), u z)`, `u` is `C¹` at `z`, and the weight is continuous and
+positive at `z`. -/
+theorem continuousAt_floerConformalJetCoeff_family {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] (ω : SymplecticForm V) {ρ : ℝ × ℝ → ℝ} {J : P × (ℝ × ℝ) → V → V →L[ℝ] V}
+    {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : ℝ × ℝ → V} {p : P × (ℝ × ℝ)}
+    (hJ : ContDiffAt ℝ 1 (uncurry J) (p, u p.2))
+    (hKs : ContDiffAt ℝ 2 (uncurry Ks) (p, u p.2)) (hKt : ContDiffAt ℝ 2 (uncurry Kt) (p, u p.2))
+    (hu : ContDiffAt ℝ 1 u p.2) (hρ : ContinuousAt ρ p.2) (hρp : 0 < ρ p.2) :
+    ContinuousAt (fun q : P × (ℝ × ℝ) ↦ ω.floerConformalJetCoeff ρ (fun z ↦ J (q.1, z))
+      (fun z ↦ Ks (q.1, z)) (fun z ↦ Kt (q.1, z)) u q.2) p := by
+  have hJu : ContinuousAt (fun q ↦ J q (u q.2)) p :=
+    ContinuousAt.comp (f := fun q : P × (ℝ × ℝ) ↦ (q, u q.2)) hJ.continuousAt
+      (continuousAt_id.prodMk (hu.continuousAt.comp continuousAt_snd))
+  have hρq : ContinuousAt (fun q : P × (ℝ × ℝ) ↦ (√(ρ q.2))⁻¹) p :=
+    ((hρ.comp continuousAt_snd).sqrt).inv₀ (Real.sqrt_pos.2 hρp).ne'
+  simp only [floerConformalJetCoeff_def]
+  exact continuousAt_firstOrderJetCoeff hJu
+    (hρq.smul (ω.continuousAt_floerLinearizationCoeff_family hJ hKs hKt hu))
+
 /-- The coefficient field on conformal jets is continuous on `U` when the weight is a conformal
 weight on `U`, the data are `C¹` (and the Hamiltonians `C²`) along the graph of `u` over `U`, and
 `u` is `C¹` on `U`. -/
@@ -171,15 +249,17 @@ theorem continuousOn_floerConformalJetCoeff (ω : SymplecticForm V) {U : Set (�
     (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 1 u U) :
     ContinuousOn (ω.floerConformalJetCoeff ρ J Ks Kt u) U := by
   intro z hz
-  have huz : ContDiffAt ℝ 1 u z := hu.contDiffAt (hρ.isOpen.mem_nhds hz)
-  have hJu : ContinuousAt (fun z ↦ J z (u z)) z :=
-    (hJ z hz).continuousAt.comp (f := fun z ↦ (z, u z))
-      (continuousAt_id.prodMk huz.continuousAt)
-  have hA := ω.continuousAt_floerLinearizationCoeff (hJ z hz) (hKs z hz) (hKt z hz) huz
-  have hρz : ContinuousAt (fun z ↦ (√(ρ z))⁻¹) z :=
-    ((hρ.continuousOn.continuousAt (hρ.isOpen.mem_nhds hz)).sqrt).inv₀
-      (Real.sqrt_pos.2 (hρ.pos z hz)).ne'
-  exact (continuousAt_firstOrderJetCoeff hJu (hρz.smul hA)).continuousWithinAt
+  -- The data form a constant family over the parameter space `ℝ`.
+  have hπ {m : WithTop ℕ∞} :
+      ContDiffAt ℝ m (fun x : (ℝ × (ℝ × ℝ)) × V ↦ (x.1.2, x.2)) (((0 : ℝ), z), u z) :=
+    (contDiff_fst.snd.prodMk contDiff_snd).contDiffAt
+  have h := ω.continuousAt_floerConformalJetCoeff_family (P := ℝ) (J := fun q ↦ J q.2)
+    (Ks := fun q ↦ Ks q.2) (Kt := fun q ↦ Kt q.2) (p := (0, z))
+    ((hJ z hz).comp (((0 : ℝ), z), u z) hπ) ((hKs z hz).comp (((0 : ℝ), z), u z) hπ)
+    ((hKt z hz).comp (((0 : ℝ), z), u z) hπ) (hu.contDiffAt (hρ.isOpen.mem_nhds hz))
+    (hρ.continuousOn.continuousAt (hρ.isOpen.mem_nhds hz)) (hρ.pos z hz)
+  exact (h.comp (f := fun w : ℝ × ℝ ↦ ((0 : ℝ), w))
+    (continuousAt_const.prodMk continuousAt_id)).continuousWithinAt
 
 /-- **The coefficient field on conformal jets is bounded when the data are constant near
 infinity.** Let `ρ` be a conformal weight on the whole plane, and let the Floer data `J`, `K_s`,
@@ -219,13 +299,14 @@ field on conformal jets, and it is `0` by convention when this field is not
 essentially bounded on `U`. -/
 def floerConformalSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) : H1 V U ρ →L[ℝ] Lp V 2 (volume.restrict U) :=
-  (jetOperator (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp (H1 V U ρ).subtypeL
+  (jetOperator 2 (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
+    (H1 V U ρ).subtypeL
 
 /-- The definition of the conformal Sobolev realization of the linearized Floer operator. -/
 theorem floerConformalSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
     ω.floerConformalSobolevOperator U ρ J Ks Kt u =
-      (jetOperator (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
+      (jetOperator 2 (volume.restrict U) (ω.floerConformalJetCoeff ρ J Ks Kt u)).comp
         (H1 V U ρ).subtypeL :=
   (rfl)
 
@@ -240,7 +321,7 @@ theorem coeFn_floerConformalSobolevOperator (ω : SymplecticForm V)
     ω.floerConformalSobolevOperator U ρ J Ks Kt u x =ᵐ[volume.restrict U]
       fun z ↦ ω.floerConformalJetCoeff ρ J Ks Kt u z
         ((x : Lp (V × V × V) 2 (volume.restrict U)) z) :=
-  coeFn_jetOperator hM x
+  coeFn_jetOperator (p := 2) hM x
 
 /-- On the jet of a test section `ξ`, the conformal Sobolev realization of the linearized Floer
 operator is `D_u ξ`, when the coefficient field on conformal jets is essentially bounded on `U`. -/

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Flow
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Dynamics.Flow.Lyapunov
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
@@ -53,6 +54,13 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
   `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot`: every orbit converges to a critical point
   forward, respectively backward, in time.
+* `TauCeti.IsAdaptedPseudoGradient.eventually_atBot_eqOn_flow_of_tendsto_snd`,
+  `TauCeti.IsAdaptedPseudoGradient.eventually_atTop_eqOn_flow_of_tendsto_snd`,
+  `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot_of_tendsto_snd` and
+  `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop_of_tendsto_snd`: for an integral curve of a
+  field on a product `M × F'` whose base component converges to a point `v`, near which the space
+  component of the field is `X`, the space component near `∓∞` is an orbit of `X`, and the curve
+  tends to `(p, v)` for a critical point `p` of `f`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt`: a point
   of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p` to a
   critical point below `c`.
@@ -136,25 +144,33 @@ theorem contMDiff_flow_uncurry :
 
 /-- For a fixed time `t`, the time-`t` map of the flow is smooth. -/
 theorem contMDiff_flow_apply (t : ℝ) : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ (hX.flow t) :=
-  contMDiff_globalFlow_apply hX.isCompleteVectorField (n := ⊤) le_top
-    hX.contMDiff t
+  hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.contMDiff_flow_apply t
 
 /-- The time-`t` map of the flow of an adapted pseudo-gradient, as a diffeomorphism. Its inverse
 is the time-`(-t)` map. -/
 noncomputable def flowDiffeomorph (t : ℝ) :
     M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
-  globalFlowDiffeomorph hX.isCompleteVectorField (n := ⊤) le_top hX.contMDiff t
+  hX.isBottAdaptedPseudoGradient.flowDiffeomorph t
+
+/-- The time-`t` diffeomorphism of the flow is the one of the flow as a pseudo-gradient adapted in
+the Morse–Bott sense. -/
+@[simp]
+theorem isBottAdaptedPseudoGradient_flowDiffeomorph (t : ℝ) :
+    hX.isBottAdaptedPseudoGradient.flowDiffeomorph t = hX.flowDiffeomorph t := by
+  rw [flowDiffeomorph]
 
 /-- The diffeomorphism `flowDiffeomorph t` is the time-`t` map of the flow. -/
 @[simp]
 theorem flowDiffeomorph_apply (t : ℝ) (y : M) : hX.flowDiffeomorph t y = hX.flow t y := by
-  rw [flowDiffeomorph, globalFlowDiffeomorph_apply, hX.flow_apply, globalFlow_apply]
+  rw [flowDiffeomorph, IsBottAdaptedPseudoGradient.flowDiffeomorph_apply,
+    isBottAdaptedPseudoGradient_flow]
 
 /-- The inverse of `flowDiffeomorph t` is the time-`(-t)` map of the flow. -/
 @[simp]
 theorem flowDiffeomorph_symm_apply (t : ℝ) (y : M) :
     (hX.flowDiffeomorph t).symm y = hX.flow (-t) y := by
-  rw [flowDiffeomorph, globalFlowDiffeomorph_symm_apply, hX.flow_apply, globalFlow_apply]
+  rw [flowDiffeomorph, IsBottAdaptedPseudoGradient.flowDiffeomorph_symm_apply,
+    isBottAdaptedPseudoGradient_flow]
 
 /-- **The flow preserves the pseudo-gradient.** The derivative of the time-`t` map of the flow
 carries `X y` to `X` at the image of `y`. -/
@@ -256,13 +272,15 @@ theorem mfderiv_eq_zero_of_forall_eq {z : M}
 
 /-- A point with a nonempty stable set is a critical point of `f`: it is fixed by the flow. -/
 theorem mfderiv_eq_zero_of_mem_stableSet {a y : M} (hy : y ∈ hX.flow.stableSet a) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 := by
-  exact hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by rw [Flow.fixed_of_mem_stableSet hy t]
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 :=
+  hX.isBottAdaptedPseudoGradient.mfderiv_eq_zero_of_mem_stableSet
+    (hX.isBottAdaptedPseudoGradient_flow ▸ hy)
 
 /-- A point with a nonempty unstable set is a critical point of `f`: it is fixed by the flow. -/
 theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hy : y ∈ hX.flow.unstableSet a) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 := by
-  exact hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by rw [Flow.fixed_of_mem_unstableSet hy t]
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 :=
+  hX.isBottAdaptedPseudoGradient.mfderiv_eq_zero_of_mem_unstableSet
+    (hX.isBottAdaptedPseudoGradient_flow ▸ hy)
 
 /-- **Every orbit converges forward in time to a critical point**, a special case of
 `TauCeti.IsBottAdaptedPseudoGradient.exists_tendsto_atTop`. -/
@@ -275,6 +293,82 @@ theorem exists_tendsto_atTop (y : M) :
 theorem exists_tendsto_atBot (y : M) :
     ∃ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 x) :=
   hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.exists_tendsto_atBot y
+
+section Prod
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  {W : (z : M × F') → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ, F')) z} {γ : ℝ → M × F'} {S : Set F'}
+  {v : F'}
+
+/-- **Near `-∞` a trajectory converging in the base follows the pseudo-gradient.** Let `γ` be an
+integral curve of a vector field `W` on `M × F'` whose base component tends to `v` within a set `S`
+at `-∞`. If near `v` in `S` the space component of `W` is `X`, then for every sufficiently negative
+time `a` the space component of `γ` is, up to time `a`, the orbit of `(γ a).1` under the flow of
+`X`. -/
+theorem eventually_atBot_eqOn_flow_of_tendsto_snd
+    (hWv : ∀ᶠ b in 𝓝[S] v, ∀ x, (W (x, b) : E × F').1 = X x) (hγ : IsMIntegralCurve γ W)
+    (hv : Tendsto (fun s ↦ (γ s).2) atBot (𝓝[S] v)) :
+    ∀ᶠ a in atBot, EqOn (fun s ↦ (γ s).1) (fun s ↦ hX.flow (s - a) (γ a).1) (Iic a) := by
+  obtain ⟨b, hb⟩ := eventually_atBot.1 (hv.eventually hWv)
+  have hc : IsMIntegralCurveOn (fun s ↦ (γ s).1) X (Iio b) :=
+    (hγ.isMIntegralCurveOn _).map_of_mfderiv_eq (f := Prod.fst) (fun _ _ ↦ mdifferentiableAt_fst)
+      fun s hs ↦ by rw [mfderiv_fst]; exact hb s (le_of_lt hs) (γ s).1
+  filter_upwards [eventually_lt_atBot b] with a hab
+  exact hX.eqOn_flow_of_isMIntegralCurveOn_Iio hc hab
+
+/-- **Near `+∞` a trajectory converging in the base follows the pseudo-gradient.** Let `γ` be an
+integral curve of a vector field `W` on `M × F'` whose base component tends to `v` within a set `S`
+at `+∞`. If near `v` in `S` the space component of `W` is `X`, then for every sufficiently large
+time `b` the space component of `γ` is, from time `b` on, the orbit of `(γ b).1` under the flow of
+`X`. -/
+theorem eventually_atTop_eqOn_flow_of_tendsto_snd
+    (hWv : ∀ᶠ b in 𝓝[S] v, ∀ x, (W (x, b) : E × F').1 = X x) (hγ : IsMIntegralCurve γ W)
+    (hv : Tendsto (fun s ↦ (γ s).2) atTop (𝓝[S] v)) :
+    ∀ᶠ b in atTop, EqOn (fun s ↦ (γ s).1) (fun s ↦ hX.flow (s - b) (γ b).1) (Ici b) := by
+  obtain ⟨a, ha⟩ := eventually_atTop.1 (hv.eventually hWv)
+  have hc : IsMIntegralCurveOn (fun s ↦ (γ s).1) X (Ioi a) :=
+    (hγ.isMIntegralCurveOn _).map_of_mfderiv_eq (f := Prod.fst) (fun _ _ ↦ mdifferentiableAt_fst)
+      fun s hs ↦ by rw [mfderiv_fst]; exact ha s (le_of_lt hs) (γ s).1
+  filter_upwards [eventually_gt_atTop a] with b hab
+  exact hX.eqOn_flow_of_isMIntegralCurveOn_Ioi hc hab
+
+include hX in
+/-- **The backward limit of a trajectory converging in the base.** Let `γ` be an integral curve of
+a vector field `W` on `M × F'` whose base component tends to `v` within a set `S` at `-∞`. If near
+`v` in `S` the space component of `W` is a pseudo-gradient `X` adapted to `f`, then `γ` tends at
+`-∞` to `(p, v)` for a critical point `p` of `f`. -/
+theorem exists_tendsto_atBot_of_tendsto_snd
+    (hWv : ∀ᶠ b in 𝓝[S] v, ∀ x, (W (x, b) : E × F').1 = X x) (hγ : IsMIntegralCurve γ W)
+    (hv : Tendsto (fun s ↦ (γ s).2) atBot (𝓝[S] v)) :
+    ∃ p ∈ criticalPoints 𝓘(ℝ, E) f, Tendsto γ atBot (𝓝 (p, v)) := by
+  obtain ⟨a, ha⟩ := (hX.eventually_atBot_eqOn_flow_of_tendsto_snd hWv hγ hv).exists
+  obtain ⟨p, hp, hlim⟩ := hX.exists_tendsto_atBot (γ a).1
+  refine ⟨p, mem_criticalPoints_iff_mfderiv_eq_zero.2 hp, ?_⟩
+  -- Up to time `a`, the space component runs along the orbit of `(γ a).1`, which tends to `p`.
+  have hspace : Tendsto (fun s ↦ (γ s).1) atBot (𝓝 p) :=
+    (hlim.comp (tendsto_atBot_add_const_right _ (-a) tendsto_id)).congr'
+      ((eventually_le_atBot a).mono fun s hs ↦ (ha hs).symm)
+  exact hspace.prodMk_nhds (hv.mono_right nhdsWithin_le_nhds)
+
+include hX in
+/-- **The forward limit of a trajectory converging in the base.** Let `γ` be an integral curve of
+a vector field `W` on `M × F'` whose base component tends to `v` within a set `S` at `+∞`. If near
+`v` in `S` the space component of `W` is a pseudo-gradient `X` adapted to `f`, then `γ` tends at
+`+∞` to `(q, v)` for a critical point `q` of `f`. -/
+theorem exists_tendsto_atTop_of_tendsto_snd
+    (hWv : ∀ᶠ b in 𝓝[S] v, ∀ x, (W (x, b) : E × F').1 = X x) (hγ : IsMIntegralCurve γ W)
+    (hv : Tendsto (fun s ↦ (γ s).2) atTop (𝓝[S] v)) :
+    ∃ q ∈ criticalPoints 𝓘(ℝ, E) f, Tendsto γ atTop (𝓝 (q, v)) := by
+  obtain ⟨b, hb⟩ := (hX.eventually_atTop_eqOn_flow_of_tendsto_snd hWv hγ hv).exists
+  obtain ⟨q, hq, hlim⟩ := hX.exists_tendsto_atTop (γ b).1
+  refine ⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq, ?_⟩
+  -- From time `b` on, the space component runs along the orbit of `(γ b).1`, which tends to `q`.
+  have hspace : Tendsto (fun s ↦ (γ s).1) atTop (𝓝 q) :=
+    (hlim.comp (tendsto_atTop_add_const_right _ (-b) tendsto_id)).congr'
+      ((eventually_ge_atTop b).mono fun s hs ↦ (hb hs).symm)
+  exact hspace.prodMk_nhds (hv.mono_right nhdsWithin_le_nhds)
+
+end Prod
 
 /-- A point of `W^u(p)` whose orbit passes below a level `c ≤ f p` lies on a trajectory from `p`
 to a critical point `b ≠ p` below `c`. -/

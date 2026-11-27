@@ -170,6 +170,14 @@ theorem eq_const_of_length_eq_zero {γ : MooreFreeLoopSpace X} (h : γ.length = 
     γ = const γ.basepoint :=
   ext (MoorePath.eq_refl_of_length_eq_zero h)
 
+/-- A loop of length zero, read on `ℝ`, is constant at its base point. -/
+theorem extend_eq_basepoint_of_length_eq_zero {γ : MooreFreeLoopSpace X} (h : γ.length = 0)
+    (t : ℝ) : γ.toMoorePath.extend t = γ.basepoint := by
+  rcases le_total t 0 with ht | ht
+  · rw [γ.toMoorePath.extend_of_nonpos ht, source_toMoorePath]
+  · rw [γ.toMoorePath.extend_of_length_le (by rwa [length_toMoorePath, h, NNReal.coe_zero]),
+      target_toMoorePath]
+
 /-- The constant loops are exactly the loops of length zero. -/
 theorem range_const : Set.range (const : X → MooreFreeLoopSpace X) = {γ | γ.length = 0} := by
   ext γ

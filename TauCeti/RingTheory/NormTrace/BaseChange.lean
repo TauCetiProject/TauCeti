@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Trace.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.RingTheory.TensorProduct.Finite
+import TauCeti.RingTheory.TensorProduct.Free
 import TauCeti.LinearAlgebra.Trace.RestrictScalars
 
 /-!
@@ -69,13 +70,12 @@ theorem Algebra.leftMulMatrix_rTensor {ι : Type*} [Fintype ι] [DecidableEq ι]
     Algebra.leftMulMatrix (Algebra.TensorProduct.basis T b)
         (Algebra.TensorProduct.rTensor B φ x) =
       φ.mapMatrix (Algebra.leftMulMatrix (Algebra.TensorProduct.basis P b) x) := by
-  have key (y : P ⊗[K] B) (i : ι) : (Algebra.TensorProduct.basis T b).repr
-      (Algebra.TensorProduct.rTensor B φ y) i = φ ((Algebra.TensorProduct.basis P b).repr y i) := by
-    induction y using TensorProduct.inductionOn with
-    | tmul p m => simp
-    | add y z hy hz => simp [hy, hz]
   ext i j
-  simp [Algebra.leftMulMatrix_eq_repr_mul, ← key]
+  have hj : Algebra.TensorProduct.rTensor B φ (Algebra.TensorProduct.basis P b j) =
+      Algebra.TensorProduct.basis T b j := by simp
+  rw [AlgHom.mapMatrix_apply, Matrix.map_apply, Algebra.leftMulMatrix_eq_repr_mul,
+    Algebra.leftMulMatrix_eq_repr_mul, ← hj, ← map_mul]
+  exact Algebra.TensorProduct.basis_repr_rTensor b φ _ i
 
 end LeftMulMatrix
 

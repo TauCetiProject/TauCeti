@@ -114,6 +114,10 @@ def degree : PeriodGroup ω c →+ ℤ :=
 theorem degree_apply (γ : PeriodGroup ω c) : degree ω c γ = 2 * chern ω c γ := by
   simp [degree]
 
+/-- The degree is twice the first Chern number, as homomorphisms. -/
+theorem degree_eq_two_smul_chern : degree ω c = 2 • chern ω c := by
+  simp [degree]
+
 /-- Degrees in the period group are even. -/
 theorem even_degree (γ : PeriodGroup ω c) : Even (degree ω c γ) :=
   ⟨chern ω c γ, by rw [degree_apply, two_mul]⟩

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Int.Interval
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Function.Holder
@@ -19,9 +20,13 @@ not belong to any particular application.
 
 ## Main results
 
+* `TauCeti.intervalIntegral.sum_integral_adjacent_intervals_fin` and
+  `TauCeti.intervalIntegral.sum_integral_adjacent_intervals_Ico_int`: additivity of interval
+  integrals over `Fin`-indexed and `ℤ`-indexed (`Finset.Ico a n`) partitions.
 * `TauCeti.intervalIntegral.monotoneOn_primitive_of_nonneg`: the primitive `t ↦ ∫ x in a..t, f x`
   of a function that is nonnegative and interval integrable on `[a, b]` is nondecreasing on
-  `[a, b]`.
+  `[a, b]`; `TauCeti.intervalIntegral.strictMonoOn_primitive_of_pos`: it is strictly increasing
+  when the function is positive on `(a, b)`.
 * `TauCeti.intervalIntegral.eq_of_integral_eq_sub`: if the increments of `F` are the interval
   integrals of a function vanishing outside `[-r, r]` with total integral zero, then `F` is
   constant outside `[-r, r]`.
@@ -45,6 +50,8 @@ not belong to any particular application.
   on singletons, the integral over `a..b` of a function vanishing on `(-∞, a)` is zero.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
   function leaves a function of integral zero over `a..b`.
+* `TauCeti.setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral`: for `F` interval integrable and
+  nonnegative on `(a, b)`, `∫⁻ t in Ioo a b, ofReal (F t) = ofReal (∫ t in a..b, F t)`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -117,6 +124,19 @@ theorem sum_integral_adjacent_intervals_fin {E : Type*} [NormedAddCommGroup E]
   intro i _
   simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
 
+/-- Interval integrals add over an integer-indexed interval `Finset.Ico a n` (`a ≤ n`) for any
+sequence of endpoints `τ : ℤ → ℝ` (which need not be monotone). -/
+theorem sum_integral_adjacent_intervals_Ico_int {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E} {a n : ℤ} (han : a ≤ n) (τ : ℤ → ℝ)
+    (hint : ∀ j ∈ Finset.Ico a n, IntervalIntegrable f μ (τ j) (τ (j + 1))) :
+    ∑ j ∈ Finset.Ico a n, ∫ t in τ j..τ (j + 1), f t ∂μ = ∫ t in τ a..τ n, f t ∂μ := by
+  rw [Int.Ico_eq_finset_map, Finset.sum_map]
+  have hm : max (n - a) 0 = n - a := by omega
+  have hsum := _root_.intervalIntegral.sum_integral_adjacent_intervals (n := (n - a).toNat)
+    (a := fun k : ℕ => τ (a + k)) fun k hk => by
+      simpa [Nat.cast_add, add_assoc] using hint (a + k) (Finset.mem_Ico.mpr (by omega))
+  simpa [Nat.cast_add, add_assoc, hm] using hsum
+
 /-- The primitive `t ↦ ∫ x in a..t, f x ∂μ` of a function that is almost everywhere nonnegative and
 interval integrable on `[a, b]` is nondecreasing on `[a, b]`. -/
 theorem monotoneOn_primitive_of_nonneg {f : ℝ → ℝ} {μ : Measure ℝ} {a b : ℝ}
@@ -125,6 +145,20 @@ theorem monotoneOn_primitive_of_nonneg {f : ℝ → ℝ} {μ : Measure ℝ} {a b
   _root_.intervalIntegral.integral_mono_interval le_rfl hs.1 hst
     (ae_mono (Measure.restrict_mono (Ioc_subset_Ioc_right ht.2) le_rfl) hf)
     (hfi.mono_set (uIcc_subset_uIcc_left (mem_uIcc_of_le ht.1 ht.2)))
+
+/-- The primitive `t ↦ ∫ x in a..t, f x` of a function that is positive on `(a, b)` and interval
+integrable on `[a, b]` is strictly increasing on `[a, b]`. -/
+theorem strictMonoOn_primitive_of_pos {f : ℝ → ℝ} {a b : ℝ} (hf : ∀ x ∈ Ioo a b, 0 < f x)
+    (hfi : IntervalIntegrable f volume a b) :
+    StrictMonoOn (fun t ↦ ∫ x in a..t, f x) (Icc a b) := by
+  intro s hs t ht hst
+  have his : IntervalIntegrable f volume a s :=
+    hfi.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc hs))
+  have hit : IntervalIntegrable f volume a t :=
+    hfi.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc ht))
+  rw [← sub_pos, _root_.intervalIntegral.integral_interval_sub_left hit his]
+  exact _root_.intervalIntegral.intervalIntegral_pos_of_pos_on (his.symm.trans hit)
+    (fun x hx ↦ hf x ⟨hs.1.trans_lt hx.1, hx.2.trans_le ht.2⟩) hst
 
 /-- If the increments of `F` are the interval integrals of a function `f` that vanishes outside
 `[-r, r]` and has total integral zero, then `F` is constant outside `[-r, r]`. -/
@@ -448,6 +482,16 @@ theorem intervalIntegral_sub_intervalAverage {E : Type*} [NormedAddCommGroup E]
   have : IsFiniteMeasure (volume.restrict (uIoc a b)) :=
     isFiniteMeasure_restrict.2 measure_Ioc_lt_top.ne
   rw [_root_.intervalIntegral.intervalIntegral_eq_integral_uIoc, integral_sub_average, smul_zero]
+
+/-- For an interval integrable `F` that is nonnegative on `(a, b)`, the lower integral of
+`ofReal ∘ F` over `(a, b)` is `ofReal` of the interval integral of `F`. -/
+theorem setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral {a b : ℝ} (hab : a ≤ b) {F : ℝ → ℝ}
+    (hF : IntervalIntegrable F volume a b) (hF0 : ∀ t ∈ Ioo a b, 0 ≤ F t) :
+    ∫⁻ t in Ioo a b, ENNReal.ofReal (F t) = ENNReal.ofReal (∫ t in a..b, F t) := by
+  rw [_root_.intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+    ofReal_integral_eq_lintegral_ofReal
+      (((intervalIntegrable_iff_integrableOn_Ioc_of_le hab).1 hF).mono_set Ioo_subset_Ioc_self)
+      (ae_restrict_of_forall_mem measurableSet_Ioo hF0)]
 
 open Filter in
 /-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below
