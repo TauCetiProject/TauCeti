@@ -7,13 +7,15 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-import Mathlib.NumberTheory.Chebyshev
+public import Mathlib.NumberTheory.Chebyshev
 import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.DirichletEulerProduct
 
 /-!
-# Harmonic sums of twisted von Mangoldt coefficients
+# Sums of twisted von Mangoldt coefficients
+
+The norm of the twisted sum up to any real cutoff is bounded by Chebyshev's `ψ`.
 
 For a nonprincipal Dirichlet character `χ`, the partial sums of `χ(n) Λ(n) / n` are
 uniformly bounded. In the finite twisted convolution
@@ -34,6 +36,14 @@ open ArithmeticFunction Finset
 namespace DirichletCharacter
 
 variable {N : ℕ} (χ : DirichletCharacter ℂ N)
+
+/-- The norm of the von Mangoldt sum twisted by a Dirichlet character is at most `ψ(x)`. -/
+theorem norm_sum_mul_vonMangoldt_le_psi (x : ℝ) :
+    ‖∑ n ∈ Ioc 0 ⌊x⌋₊, χ n * (Λ n : ℂ)‖ ≤ Chebyshev.psi x := by
+  rw [Chebyshev.psi]
+  refine (norm_sum_le _ _).trans (sum_le_sum fun n _ ↦ ?_)
+  rw [norm_mul, Complex.norm_of_nonneg vonMangoldt_nonneg]
+  exact mul_le_of_le_one_left vonMangoldt_nonneg (χ.norm_le_one n)
 
 private theorem norm_sum_mul_vonMangoldt_div_mul_truncationError_le [NeZero N]
     (hχ : χ ≠ 1) (m : ℕ) :

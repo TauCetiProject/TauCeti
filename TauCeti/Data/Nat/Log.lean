@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Log
+import Mathlib.Data.Nat.Find
 
 /-!
 # Integer logarithms and rounding to powers
@@ -49,5 +50,21 @@ theorem pow_clog_lt_mul_self {b n : ℕ} (hb : 1 < b) (hn : 0 < n) :
     _ < b * n := by
       simpa only [Nat.mul_comm] using
         Nat.mul_lt_mul_of_pos_right (pow_pred_clog_lt_self b h) (by omega : 0 < b)
+
+/-- The first integer halving of `n` that goes below `K` stays positive and occurs in at most
+`log₂ n` steps, provided `n ≥ 1` and `K ≥ 2`. -/
+theorem exists_div_pow_two_lt {n K : ℕ} (hn : 1 ≤ n) (hK : 2 ≤ K) :
+    ∃ J : ℕ, J ≤ log 2 n ∧ (∀ j < J, K ≤ n / 2 ^ j) ∧ 1 ≤ n / 2 ^ J ∧ n / 2 ^ J < K := by
+  have hpow := pow_log_le_self 2 (by omega : n ≠ 0)
+  have hlast : n / 2 ^ log 2 n < K := by
+    apply (div_lt_iff_lt_mul (Nat.two_pow_pos _)).2
+    calc
+      n < 2 ^ (log 2 n + 1) := lt_pow_succ_log_self (by decide) n
+      _ ≤ K * 2 ^ log 2 n := by rw [pow_succ']; exact Nat.mul_le_mul_right _ hK
+  have hex : ∃ J : ℕ, n / 2 ^ J < K := ⟨log 2 n, hlast⟩
+  refine ⟨Nat.find hex, Nat.find_min' hex hlast, fun j hj ↦ ?_, ?_, Nat.find_spec hex⟩
+  · exact le_of_not_gt (Nat.find_min hex hj)
+  · apply (le_div_iff_mul_le (Nat.two_pow_pos _)).2
+    simpa using (Nat.pow_le_pow_right (by decide : 0 < 2) (Nat.find_min' hex hlast)).trans hpow
 
 end Nat
