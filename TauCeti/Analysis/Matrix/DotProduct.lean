@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
@@ -33,8 +32,7 @@ polarization for Hermitian forms, read from Mathlib's
 `LinearMap.IsSymmetric.inner_map_self_eq_zero` through `Matrix.toEuclideanLin`.
 
 The self pairing `star x ⬝ᵥ x` is real: it is the cast of its real part
-(`Matrix.star_dotProduct_self_eq_ofReal_re`). For a vector of Euclidean space it is the squared
-norm (`EuclideanSpace.star_dotProduct_self_eq_norm_sq`).
+(`Matrix.star_dotProduct_self_eq_ofReal_re`).
 -/
 
 public section
@@ -109,14 +107,3 @@ theorem star_dotProduct_self_eq_ofReal_re (x : n → 𝕜) :
   (RCLike.conj_eq_iff_re.mp (by rw [← RCLike.star_def, ← star_dotProduct_star, star_star])).symm
 
 end Matrix
-
-namespace EuclideanSpace
-
-/-- The self pairing `star x ⬝ᵥ x` of a vector of Euclidean space is its squared norm. -/
-theorem star_dotProduct_self_eq_norm_sq {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
-    (x : EuclideanSpace 𝕜 ι) :
-    star (WithLp.ofLp x) ⬝ᵥ WithLp.ofLp x = ((‖x‖ ^ 2 : ℝ) : 𝕜) := by
-  rw [dotProduct_comm, ← inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K]
-  norm_cast
-
-end EuclideanSpace

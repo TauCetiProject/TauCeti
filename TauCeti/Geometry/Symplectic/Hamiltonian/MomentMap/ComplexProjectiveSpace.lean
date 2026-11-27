@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
 public import TauCeti.Topology.ComplexProjectiveSpace.Homogeneous
 public import TauCeti.Topology.ComplexProjectiveSpace.Projectivization
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.Matrix.DotProduct
+import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Hopf
 import TauCeti.Geometry.Manifold.Instances.Sphere.SkewHermitian
