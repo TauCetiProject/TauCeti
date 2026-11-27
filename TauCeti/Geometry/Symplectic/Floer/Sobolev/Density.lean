@@ -26,7 +26,8 @@ records the derivatives of a section cut off by a function of `s`.
 ## Main results
 
 * `TauCeti.Floer.sobolevDensity_nonneg`: the density is nonnegative.
-* `TauCeti.Floer.continuous_sobolevDensity`: the density of a `C¹` map is continuous.
+* `TauCeti.Floer.continuous_sobolevDensity`, `TauCeti.Floer.continuousAt_sobolevDensity`: the
+  density of a `C¹` map is continuous, and that of a map `C¹` at a point is continuous there.
 * `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
   germ of the map at `z`.
 * `TauCeti.Floer.integrableOn_sobolevDensity_of_eventuallyEq_zero`: a map with continuous density
@@ -37,8 +38,13 @@ records the derivatives of a section cut off by a function of `s`.
   by a function `β(s)` are `∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`.
 * `TauCeti.Floer.sobolevDensity_add_le`: the density of `ξ₁ + ξ₂` is at most twice the sum of the
   densities of `ξ₁` and `ξ₂`.
+* `TauCeti.Floer.setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity`: on a compact set where a
+  conformal weight `ρ` is at most `B`, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` is at
+  most `B + 1` times the `W^{1,2}` energy.
 * `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
   its integral over a rectangle bounds the `L²` norm.
+* `TauCeti.Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one`: if `β = 1` near every point
+  of `s` and `s ⊆ t` with `t` compact, the energy of `ξ` on `s` is at most that of `β ξ` on `t`.
 -/
 
 public section
@@ -69,13 +75,18 @@ theorem sobolevDensity_nonneg (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : 0 ≤ s
 theorem sobolevDensity_zero (z : ℝ × ℝ) : sobolevDensity (0 : ℝ × ℝ → V) z = 0 := by
   simp [sobolevDensity_apply]
 
-/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
-theorem continuous_sobolevDensity {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous (sobolevDensity ξ) := by
-  have := hξ.continuous_fderiv one_ne_zero
-  have := hξ.continuous
+/-- The `W^{1,2}` energy density of a map that is `C¹` at `z` is continuous at `z`. -/
+theorem continuousAt_sobolevDensity {ξ : ℝ × ℝ → V} {z : ℝ × ℝ} (hξ : ContDiffAt ℝ 1 ξ z) :
+    ContinuousAt (sobolevDensity ξ) z := by
+  have := hξ.continuousAt_fderiv one_ne_zero
+  have := hξ.continuousAt
   simp only [funext (sobolevDensity_apply ξ)]
   fun_prop
+
+/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
+theorem continuous_sobolevDensity {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
+    Continuous (sobolevDensity ξ) :=
+  continuous_iff_continuousAt.2 fun _ ↦ continuousAt_sobolevDensity hξ.contDiffAt
 
 /-- Two maps that agree near `z` have the same energy density at `z`. -/
 theorem sobolevDensity_congr_of_eventuallyEq {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ}
@@ -142,5 +153,36 @@ theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {ξ : ℝ × ℝ → V
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
       linarith
+
+/-- **Comparing with a cut-off map.** If `β = 1` near every point of a measurable set `s`, and `s`
+lies in a compact set `t`, then the `W^{1,2}` energy of `ξ` on `s` is at most the energy of the
+`C¹` map `β ξ` on `t`. -/
+theorem setIntegral_sobolevDensity_le_of_eventuallyEq_one {ξ : ℝ × ℝ → V} {β : ℝ × ℝ → ℝ}
+    {s t : Set (ℝ × ℝ)} (hs : MeasurableSet s) (ht : IsCompact t) (hst : s ⊆ t)
+    (hβ1 : ∀ z ∈ s, β =ᶠ[𝓝 z] 1) (hβξ : ContDiff ℝ 1 fun z ↦ β z • ξ z) :
+    ∫ z in s, sobolevDensity ξ z ≤ ∫ z in t, sobolevDensity (fun z ↦ β z • ξ z) z := by
+  refine le_of_eq_of_le (setIntegral_congr_fun hs fun z hz ↦ ?_)
+    (setIntegral_mono_set ((continuous_sobolevDensity hβξ).continuousOn.integrableOn_compact ht)
+      (ae_of_all _ fun z ↦ sobolevDensity_nonneg _ z) (ae_of_all _ hst))
+  -- Near `s` the cut-off map agrees with `ξ`.
+  refine (sobolevDensity_congr_of_eventuallyEq ((hβ1 z hz).mono fun z' h ↦ ?_)).symm
+  simp [h]
+
+/-- **The weighted energy on a compact set.** On a compact set `K` where a weight `ρ` is at most
+`B ≥ 0`, the weighted energy `∫_K (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of a `C¹` section is at most `B + 1`
+times its `W^{1,2}` energy on `K`. -/
+theorem setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) {ρ : ℝ × ℝ → ℝ} {B : ℝ} (hB0 : 0 ≤ B) (hB : ∀ z ∈ K, ρ z ≤ B)
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
+    ∫⁻ z in K, ENNReal.ofReal (ρ z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
+        ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) ≤
+      ENNReal.ofReal ((B + 1) * ∫ z in K, sobolevDensity ξ z) := by
+  rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal
+    (((continuous_sobolevDensity hξ).continuousOn.integrableOn_compact hK).const_mul _)
+    (ae_of_all _ fun z ↦ mul_nonneg (by positivity) (sobolevDensity_nonneg ξ z))]
+  refine setLIntegral_mono' hK.measurableSet fun z hz ↦ ENNReal.ofReal_le_ofReal ?_
+  rw [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  nlinarith [mul_le_mul_of_nonneg_right (hB z hz) (sq_nonneg ‖ξ z‖),
+    sq_nonneg ‖fderiv ℝ ξ z (1, 0)‖, sq_nonneg ‖fderiv ℝ ξ z (0, 1)‖, sq_nonneg ‖ξ z‖]
 
 end TauCeti.Floer

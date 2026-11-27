@@ -31,9 +31,14 @@ equality of valuations (`TauCeti.Place.eq_of_isEquiv`).
 
 * `TauCeti.Place k F`: a place of `F/k`.
 * `TauCeti.Place.integers`: the valuation ring `𝒪_P ⊆ F` of a place.
+* `TauCeti.Place.integersAlgebra`: the `R`-algebra structure on `𝒪_P` induced by `R ⊆ 𝒪_P`, with
+  `TauCeti.Place.coe_algebraMap_integersAlgebra`, `TauCeti.Place.isScalarTower_integers`, and
+  `TauCeti.Place.isScalarTower_integers_extension`.
 * `TauCeti.Place.ord`: the additive order function `ord_P : F → ℤ`, normalized so that a prime
   element has order `1`. It has the junk value `ord_P 0 = 0`.
 * `TauCeti.Place.ResidueField`: the residue field `F_P = 𝒪_P / 𝔪_P`, a `k`-algebra.
+* `TauCeti.Place.residueFieldEquivValuationSubring`: `F_P` is the residue field of the valuation
+  subring of `v_P`, where constructions for a general valuation take values.
 * `TauCeti.Place.degree`: the degree `deg P = [F_P : k]` of a place.
 * `TauCeti.Place.ordAddMonoidHom`: `ord_P` bundled as an additive homomorphism on `Additive Fˣ`.
   Restricting to units is what makes it additive, since `ord_P 0 = 0` is a junk value.
@@ -559,9 +564,66 @@ theorem coe_algebraMap_constants (c : k) :
     ((algebraMap k P.integers c : P.integers) : F) = algebraMap k F c := by
   rw [IsScalarTower.algebraMap_apply k P.integers F, ValuationSubring.algebraMap_apply]
 
+/-- The `R`-algebra structure on `𝒪_P` induced by `R ⊆ 𝒪_P`. -/
+@[instance_reducible]
+noncomputable def integersAlgebra {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    Algebra R P.integers :=
+  ((algebraMap R F).codRestrict P.integers hR).toAlgebra
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` sends `r` to `algebraMap R F r`
+in `F`. -/
+@[simp]
+theorem coe_algebraMap_integersAlgebra {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) (r : R) :
+    letI := P.integersAlgebra hR
+    ((algebraMap R P.integers r : P.integers) : F) = algebraMap R F r := by
+  rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` is compatible with the inclusion into
+`F`. -/
+theorem isScalarTower_integers {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    letI := P.integersAlgebra hR
+    IsScalarTower R P.integers F :=
+  letI := P.integersAlgebra hR
+  .of_algebraMap_eq fun r ↦ by
+    rw [ValuationSubring.algebraMap_apply, coe_algebraMap_integersAlgebra]
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` is compatible with any field
+extension `F' / F` over `R` and `𝒪_P`. -/
+theorem isScalarTower_integers_extension {R F' : Type*} [CommRing R] [Field F']
+    [Algebra F F'] [Algebra R F] [Algebra R F'] [IsScalarTower R F F']
+    [Algebra P.integers F'] [IsScalarTower P.integers F F']
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    letI := P.integersAlgebra hR
+    IsScalarTower R P.integers F' :=
+  letI := P.integersAlgebra hR
+  have := P.isScalarTower_integers hR
+  IsScalarTower.to₁₂₄ R P.integers F F'
+
 /-- The residue field `F_P = 𝒪_P / 𝔪_P` of a place (Stichtenoth, Definition 1.1.14). The
 evaluation map `f ↦ f(P)` is `IsLocalRing.residue P.integers`. -/
 noncomputable abbrev ResidueField : Type v := IsLocalRing.ResidueField P.integers
+
+/-- The residue field of a place is the residue field of the valuation subring of its valuation.
+Constructions attached to a general valuation `F → ℤᵐ⁰`, such as reduced unit parts, tame symbols
+and the residues and specializations of Milnor K-theory, take values in the latter. -/
+noncomputable def residueFieldEquivValuationSubring :
+    P.ResidueField ≃+* IsLocalRing.ResidueField P.valuation.valuationSubring :=
+  RingEquiv.refl _
+
+@[simp]
+theorem residueFieldEquivValuationSubring_residue (x : P.integers) :
+    P.residueFieldEquivValuationSubring (IsLocalRing.residue P.integers x) =
+      IsLocalRing.residue P.valuation.valuationSubring ⟨x, P.integers_def ▸ x.property⟩ :=
+  (rfl)
+
+@[simp]
+theorem residueFieldEquivValuationSubring_symm_residue (x : P.valuation.valuationSubring) :
+    P.residueFieldEquivValuationSubring.symm (IsLocalRing.residue P.valuation.valuationSubring x) =
+      IsLocalRing.residue P.integers ⟨x, P.integers_def.symm ▸ x.property⟩ :=
+  (rfl)
 
 /-- The canonical map from an algebra acting compatibly on the valuation ring to the residue
 field is reduction after the map to the valuation ring. -/

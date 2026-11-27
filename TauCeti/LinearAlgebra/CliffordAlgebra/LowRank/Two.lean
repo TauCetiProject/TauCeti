@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 -- Public: `ιInv` appears in the coordinate formula for the character.
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.CliffordAlgebra.HyperbolicPair
 
 /-!
 # Clifford algebras in dimension two
@@ -38,6 +39,9 @@ the even Clifford algebra has the character `u + v J ↦ u + i v`, built with `e
   dimension two is a vector generator.
 * `CliffordAlgebra.mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two`: every even Clifford element in
   dimension two is a product `ι a * ι w`, for any fixed `a` of invertible norm.
+* `CliffordAlgebra.exists_eq_smul_add_smul_of_mem_even_of_polar_eq_one`: for a hyperbolic pair
+  `(e, f)` spanning the module, over any commutative ring, every even Clifford element is
+  `b e f + a f e`.
 * `CliffordAlgebra.evenWeightedSumSquaresOneAlgHom_ι` and
   `CliffordAlgebra.evenWeightedSumSquaresOneAlgHom_apply`: the character on a product of two
   generators, and in coordinates.
@@ -85,6 +89,50 @@ theorem mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two (Q : QuadraticForm K V)
     exact ι_mul_ι_mem_evenOdd_zero Q a w
 
 end FieldDimension
+
+/-! ### A hyperbolic plane in every characteristic -/
+
+section HyperbolicPlane
+
+open QuadraticMap
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  {Q : QuadraticForm R M} {e f : M}
+
+/-- **The even Clifford algebra of a hyperbolic plane is spanned by `e f` and `f e`**: for a
+hyperbolic pair `(e, f)` spanning the module, over any commutative ring, every even Clifford
+element is `b e f + a f e`. Over a field, a hyperbolic pair spans a two-dimensional space by
+`QuadraticForm.span_pair_eq_top_of_polar_eq_one`. -/
+theorem exists_eq_smul_add_smul_of_mem_even_of_polar_eq_one
+    (hspan : Submodule.span R {e, f} = ⊤) (he : Q e = 0) (hf : Q f = 0) (hef : polar Q e f = 1)
+    {x : CliffordAlgebra Q} (hx : x ∈ even Q) :
+    ∃ a b : R, x = b • (ι Q e * ι Q f) + a • (ι Q f * ι Q e) := by
+  have hee : ι Q e * ι Q e = 0 := by rw [ι_sq_scalar, he, map_zero]
+  have hff : ι Q f * ι Q f = 0 := by rw [ι_sq_scalar, hf, map_zero]
+  induction x, hx using even_induction with
+  | algebraMap r =>
+    refine ⟨r, r, ?_⟩
+    rw [← smul_add, ι_mul_ι_add_swap_of_polar_eq_one hef, Algebra.algebraMap_eq_smul_one]
+  | add x y _ _ ihx ihy =>
+    obtain ⟨a, b, rfl⟩ := ihx
+    obtain ⟨a', b', rfl⟩ := ihy
+    exact ⟨a + a', b + b', by rw [add_smul, add_smul]; abel⟩
+  | ι_mul_ι_mul m₁ m₂ y _ ih =>
+    obtain ⟨a, b, rfl⟩ := ih
+    obtain ⟨a₁, b₁, rfl⟩ := Submodule.mem_span_pair.mp (hspan ▸ Submodule.mem_top (x := m₁))
+    obtain ⟨a₂, b₂, rfl⟩ := Submodule.mem_span_pair.mp (hspan ▸ Submodule.mem_top (x := m₂))
+    have hm : ι Q (a₁ • e + b₁ • f) * ι Q (a₂ • e + b₂ • f) =
+        (a₁ * b₂) • (ι Q e * ι Q f) + (b₁ * a₂) • (ι Q f * ι Q e) := by
+      simp only [map_add, map_smul, add_mul, mul_add, smul_mul_assoc, mul_smul_comm, hee, hff,
+        smul_zero, zero_add, add_zero, smul_smul]
+      module
+    refine ⟨b₁ * a₂ * a, a₁ * b₂ * b, ?_⟩
+    rw [hm, mul_add, mul_smul_comm, mul_smul_comm,
+      smul_add_smul_mul_ι_mul_ι_of_polar_eq_one he hef,
+      smul_add_smul_mul_ι_mul_ι_swap_of_polar_eq_one he hef]
+    module
+
+end HyperbolicPlane
 
 /-! ### The sum of two squares when `-1` is a square -/
 

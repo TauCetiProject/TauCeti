@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.RepresentationTheory.Continuous.IntegralModel.Basic
+public import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # The matrix form of an integral model
@@ -115,11 +116,9 @@ lattice of `Λ` carries its `O`-module topology, as it does over the valuation r
 a valuative topology, then `g ↦ Λ.toGL b g` is continuous. -/
 theorem continuous_toGL [ContinuousInv Γ] [TopologicalSpace O] [IsTopologicalSemiring O]
     (Λ : IntegralModel O ρ) [IsModuleTopology O Λ.lattice] (b : Basis ι O Λ.lattice) :
-    Continuous (Λ.toGL b) := by
-  have hmat : Continuous fun g => (Λ.toGL b g : Matrix ι ι O) := by
+    Continuous (Λ.toGL b) :=
+  (MonoidHom.continuous_iff_continuous_val _).2 <| by
     simpa only [coe_toGL_apply] using Λ.toContinuousRep.continuous_toMatrix b
-  refine Units.continuous_iff.mpr ⟨hmat, ?_⟩
-  simpa only [Function.comp_def, map_inv] using hmat.comp continuous_inv
 
 end TauCeti.GaloisLattice.IntegralModel
 

@@ -29,6 +29,10 @@ squaring to `-1`, satisfies `L (b * I) = A (L b)` for every `b`
 (`LinearMap.eq_zero_of_apply_I_eq_of_apply_eq_zero`), and a real-linear map intertwines
 multiplication by `I` with such an `A` exactly when `L 1 + A (L I) = 0`
 (`LinearMap.forall_apply_I_mul_eq_iff`).
+A real linear functional on `ℂ` killing a unit vector `τ` is a multiple of the cross product
+`w ↦ (conj τ * w).im` with `τ` (`LinearMap.apply_eq_mul_im_conj_mul`), and this cross product,
+measured from a base point, commutes with affine combinations
+(`Complex.im_conj_mul_smul_add_smul_sub`).
 A real-bilinear map is unchanged by conjugating both arguments exactly when it vanishes at
 `(1, I)` and `(I, 1)` (`LinearMap.forall_apply_conj_apply_conj_eq_iff`).
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
@@ -47,11 +51,16 @@ conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds eve
 at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
-half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). For a real-linear `J`
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). Since every element
+of a complex star algebra is a complex combination of skew-adjoint ones, an element commuting with
+every skew-adjoint element commutes with everything
+(`TauCeti.commute_of_forall_mem_skewAdjoint_commute`). For a real-linear `J`
 with `J ∘ J = -1`, the map `a + b i ↦ a - b J` from `ℂ` is multiplicative
 (`TauCeti.re_smul_sub_im_smul_apply_mul`). Multiplication by `-I` is a real linear equivalence
 from the skew-adjoint onto the self-adjoint elements, with inverse multiplication by `I`
-(`skewAdjoint.negISMulEquiv`), extending Mathlib's `skewAdjoint.negISMul`.
+(`skewAdjoint.negISMulEquiv`), extending Mathlib's `skewAdjoint.negISMul`. The self-adjoint
+complex numbers are the real ones (`Complex.mem_range_algebraMap_of_isSelfAdjoint`), and `I`, as a
+unit, is skew-adjoint (`Complex.val_mk0_I_mem_skewAdjoint`).
 
 A vector lies in the real span of a complex basis exactly when its coordinates are real
 (`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
@@ -205,7 +214,37 @@ theorem forall_apply_conj_apply_conj_eq_iff {F : Type*} [AddCommGroup F] [Module
       (B I).apply_eq_re_smul_one_add_im_smul_I (conj e), (B I).apply_eq_re_smul_one_add_im_smul_I e,
       h₁, h₂]
 
+/-- A real linear functional on `ℂ` killing a unit vector `τ` is a multiple of the cross product
+with `τ`: `f w = f (i τ) (τ × w)`. -/
+theorem apply_eq_mul_im_conj_mul {f : ℂ →ₗ[ℝ] ℝ} {τ : ℂ} (hτ : conj τ * τ = 1)
+    (hf : f τ = 0) (w : ℂ) : f w = f (I * τ) * (conj τ * w).im := by
+  have hw : w = (conj τ * w).re • τ + (conj τ * w).im • (I * τ) := by
+    calc w = conj τ * w * τ := by rw [mul_right_comm, hτ, one_mul]
+      _ = _ := by
+        conv_lhs => rw [← re_add_im (conj τ * w)]
+        simp only [real_smul]
+        ring
+  conv_lhs => rw [hw]
+  simp [-real_smul, hf, mul_comm]
+
 end LinearMap
+
+namespace Complex
+
+open ComplexConjugate
+
+/-- The cross product with a fixed vector `c`, measured from a base point `p`, is affine:
+it commutes with affine combinations `a • x + b • y`, `a + b = 1`. -/
+theorem im_conj_mul_smul_add_smul_sub {a b : ℝ} (hab : a + b = 1) (c x y p : ℂ) :
+    (conj c * (a • x + b • y - p)).im = a * (conj c * (x - p)).im + b * (conj c * (y - p)).im := by
+  have : a • x + b • y - p = a • (x - p) + b • (y - p) := by
+    calc a • x + b • y - p = a • x + b • y - (a + b) • p := by rw [hab, one_smul]
+      _ = _ := by rw [add_smul, smul_sub, smul_sub]; abel
+  rw [this]
+  simp only [real_smul, mul_add, mul_left_comm _ (a : ℂ), mul_left_comm _ (b : ℂ), add_im,
+    im_ofReal_mul]
+
+end Complex
 
 namespace TauCeti
 
@@ -216,6 +255,17 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
     (ℜ a : A) = a + (2 : ℝ)⁻¹ • (star a - a) := by
   rw [realPart_apply_coe]
   module
+
+open scoped ComplexStarModule in
+/-- In a complex star algebra, an element commuting with every skew-adjoint element commutes with
+every element: `a = -I • (I • ℜ a) + I • ℑ a`, where `I • ℜ a` and `I • ℑ a` are skew-adjoint. -/
+theorem commute_of_forall_mem_skewAdjoint_commute {A : Type*} [Ring A] [StarRing A]
+    [Algebra ℂ A] [StarModule ℂ A] {x : A} (h : ∀ y ∈ skewAdjoint A, Commute y x) (a : A) :
+    Commute a x := by
+  have hI (b : selfAdjoint A) : Complex.I • (b : A) ∈ skewAdjoint A :=
+    Complex.I_smul_mem_skewAdjoint_iff_isSelfAdjoint.mpr b.property
+  rw [← realPart_add_I_smul_imaginaryPart a, ← Complex.neg_I_smul_I_smul (ℜ a : A)]
+  exact ((h _ (hI _)).smul_left _).add_left (h _ (hI _))
 
 /-- The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries. -/
 theorem mem_span_real_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
@@ -258,6 +308,21 @@ theorem coe_negISMulEquiv_symm_apply (a : selfAdjoint A) :
   (rfl)
 
 end skewAdjoint
+
+/-- **The self-adjoint complex numbers are the real ones**: `ℝ` is the fixed ring of complex
+conjugation. Together with `Complex.val_mk0_I_mem_skewAdjoint`, this supplies the hypotheses of
+the quadratic-algebra results of `TauCeti.Algebra.Star.SelfAdjoint.BaseChange` for `ℂ / ℝ`. -/
+theorem Complex.mem_range_algebraMap_of_isSelfAdjoint (c : ℂ) (hc : IsSelfAdjoint c) :
+    c ∈ Set.range (algebraMap ℝ ℂ) :=
+  ⟨c.re, by rw [Complex.coe_algebraMap, ← Complex.conj_eq_iff_re, ← Complex.star_def, hc.star_eq]⟩
+
+/-- **`I` is a skew-adjoint unit of `ℂ`**: the unit `Units.mk0 I I_ne_zero` has value `I`, which is
+skew-adjoint by Mathlib's `Complex.I_mem_skewAdjoint`. This is the skew-adjoint unit `t` of the
+quadratic-algebra results of `TauCeti.Algebra.Star.SelfAdjoint.BaseChange` for `ℂ / ℝ`. -/
+theorem Complex.val_mk0_I_mem_skewAdjoint :
+    ((Units.mk0 Complex.I Complex.I_ne_zero : ℂˣ) : ℂ) ∈ skewAdjoint ℂ := by
+  rw [Units.val_mk0]
+  exact Complex.I_mem_skewAdjoint
 
 section ComplexOfMapISmul
 

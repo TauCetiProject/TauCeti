@@ -8,12 +8,16 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
+import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Group.NullFamily
+import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Data.Nat.ModEq
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
-# Maximum modulus for Tate algebras at roots of unity
+# Maximum modulus for Tate algebras at roots of unity and at finite-extension points
 
 Let `f = ∑ₜ fₜ Xᵗ` be a restricted power series in `k` variables at unit polyradius over an
 ultrametric normed ring `R`, and let `φ : R → S` be an isometric ring homomorphism into a complete
@@ -33,10 +37,26 @@ the `m`-th roots of unity are distinct. Points with coordinates in `R` do not su
 over `ℚ_p` the polynomial `X ^ p - X` has Gauss norm one but takes values of norm at most `p⁻¹` on
 `ℤ_p`.
 
+Over a complete nontrivially normed ultrametric field `K`, the cyclotomic field `K(μₘ)` is a
+finite extension of `K` and carries the spectral norm, so every `f ∈ Tₙ = K⟨X₁, …, Xₙ⟩` attains
+its Gauss norm at a point of the closed unit polydisc of a finite normed field extension of `K`.
+As no such point gives a value of norm above the Gauss norm, the Gauss norm is the largest of the
+values `‖f(x)‖` over all finite normed field extensions `L / K` and all `x ∈ (L°)ⁿ`. Evaluation at
+any point over an algebraic extension has a field as image, so its kernel is a maximal ideal
+(`AlgHom.ker_isMaximal_of_isAlgebraic`); and a nonzero `f` does not vanish at some
+finite-extension point. These statements read the maximum principle as evaluation at points,
+without passing through maximal ideals of `Tₙ` or through the affinoid Nullstellensatz.
+
 ## Main results
 
 * `MvPowerSeries.exists_norm_restrictedEval₂_eq_norm`: a restricted series attains its Gauss norm
   at a point whose coordinates are `m`-th roots of unity.
+* `MvPowerSeries.exists_finiteDimensional_norm_restrictedEval₂_eq_norm`: a Tate series attains its
+  Gauss norm at a point of the closed unit polydisc over a finite normed field extension of `K`.
+* `MvPowerSeries.isGreatest_norm_restrictedEval₂`: the Gauss norm of a Tate series is the greatest
+  of its absolute values at such points.
+* `MvPowerSeries.exists_finiteDimensional_restrictedEval₂_ne_zero`: finite-extension points
+  separate the elements of a Tate algebra.
 
 ## References
 
@@ -156,5 +176,81 @@ theorem exists_norm_restrictedEval₂_eq_norm (hφ : ∀ r, ‖φ r‖ = ‖r‖
     fun j ↦ w j * ev j
   refine ⟨j, ?_⟩
   rwa [htotal, norm_mul, hw, one_mul] at hj
+
+section FiniteExtension
+
+universe u
+
+variable {K : Type u} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K] {n : ℕ}
+
+local notation "T" => IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)
+
+/-- **Maximum principle at finite-extension points.** Every `f ∈ K⟨X₁, …, Xₙ⟩` attains its Gauss
+norm at a point of the closed unit polydisc over a finite normed field extension of `K`: there are
+a finite extension `L / K`, with a norm extending that of `K`, and `x ∈ Lⁿ` with every `‖x i‖ ≤ 1`
+and `‖f(x)‖ = ‖f‖`. -/
+theorem exists_finiteDimensional_norm_restrictedEval₂_eq_norm (f : T) :
+    ∃ (L : Type u) (_ : NormedField L) (_ : IsUltrametricDist L) (_ : CompleteSpace L)
+      (_ : NormedAlgebra K L) (_ : FiniteDimensional K L) (x : Fin n → L)
+      (hx : ∀ i, ‖x i‖ ≤ 1),
+      ‖restrictedEval₂ (algebraMap K L) x (fun r ↦ (norm_algebraMap' L r).le) hx f‖ = ‖f‖ := by
+  classical
+  rcases eq_or_ne f 0 with rfl | hf
+  · exact ⟨K, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, 0,
+      fun _ ↦ by simp, by simp⟩
+  -- Choose `m` of norm one exceeding every exponent of every coefficient of norm `‖f‖`; there are
+  -- finitely many such coefficients since `f` is restricted and nonzero.
+  have hD : {t : Fin n →₀ ℕ | ‖coeff t (f : MvPowerSeries (Fin n) K)‖ = ‖f‖}.Finite :=
+    (f.property.finite_setOfPred_achievesGaussNorm (by simpa using hf)).subset fun t ht ↦ by
+      simpa [AchievesGaussNorm, norm_eq_gaussNorm] using ht
+  obtain ⟨m, hNm, hm⟩ := IsUltrametricDist.exists_lt_norm_natCast_eq_one K
+    (hD.toFinset.sup Finsupp.degree)
+  have hfm (t : Fin n →₀ ℕ) (ht : ‖coeff t (f : MvPowerSeries (Fin n) K)‖ = ‖f‖) (i : Fin n) :
+      t i < m :=
+    (Finsupp.le_degree i t).trans_lt ((Finset.le_sup (hD.mem_toFinset.mpr ht)).trans_lt hNm)
+  -- Evaluate at roots of unity in the cyclotomic extension `E = K(μₘ)` with its spectral norm.
+  have : NeZero (m : K) := ⟨fun h ↦ by simp [h] at hm⟩
+  have : NeZero m := ⟨fun h ↦ by simp [h] at hm⟩
+  let E := CyclotomicField m K
+  have : FiniteDimensional K E := IsCyclotomicExtension.finiteDimensional {m} K E
+  let : NormedField E := spectralNorm.normedField K E
+  let : NormedAlgebra K E := spectralNorm.normedAlgebra K E
+  have : IsUltrametricDist E :=
+    IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
+      isNonarchimedean_spectralNorm (K := K) (L := E) a b
+  have : CompleteSpace E := FiniteDimensional.completeSpace K E
+  have hφ (r : K) : ‖algebraMap K E r‖ = ‖r‖ := norm_algebraMap' E r
+  have hmE : ‖(m : E)‖ = 1 := by rw [← map_natCast (algebraMap K E), hφ, hm]
+  obtain ⟨x, hx, -, hfx⟩ := exists_norm_restrictedEval₂_eq_norm (algebraMap K E) hφ
+    (IsCyclotomicExtension.zeta_spec m K E) hmE f hfm
+  exact ⟨E, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, x, hx, hfx⟩
+
+/-- **The Gauss norm as a maximum over finite-extension points.** The Gauss norm of
+`f ∈ K⟨X₁, …, Xₙ⟩` is the greatest of the values `‖f(x)‖`, over all finite normed field
+extensions `L / K` and all `x ∈ Lⁿ` with every `‖x i‖ ≤ 1`. -/
+theorem isGreatest_norm_restrictedEval₂ (f : T) :
+    IsGreatest {a : ℝ | ∃ (L : Type u) (_ : NormedField L) (_ : IsUltrametricDist L)
+      (_ : CompleteSpace L) (_ : NormedAlgebra K L) (_ : FiniteDimensional K L) (x : Fin n → L)
+      (hx : ∀ i, ‖x i‖ ≤ 1),
+      ‖restrictedEval₂ (algebraMap K L) x (fun r ↦ (norm_algebraMap' L r).le) hx f‖ = a} ‖f‖ :=
+  ⟨exists_finiteDimensional_norm_restrictedEval₂_eq_norm f, by
+    rintro _ ⟨L, _, _, _, _, _, x, hx, rfl⟩
+    exact norm_restrictedEval₂_le _ _ _ _ f⟩
+
+/-- **Finite-extension points separate the elements of a Tate algebra.** A nonzero
+`f ∈ K⟨X₁, …, Xₙ⟩` does not vanish at some point of the closed unit polydisc over a finite normed
+field extension of `K`. The kernel of evaluation at such a point is a maximal ideal
+(`AlgHom.ker_isMaximal_of_isAlgebraic`). -/
+theorem exists_finiteDimensional_restrictedEval₂_ne_zero {f : T} (hf : f ≠ 0) :
+    ∃ (L : Type u) (_ : NormedField L) (_ : IsUltrametricDist L) (_ : CompleteSpace L)
+      (_ : NormedAlgebra K L) (_ : FiniteDimensional K L) (x : Fin n → L)
+      (hx : ∀ i, ‖x i‖ ≤ 1),
+      restrictedEval₂ (algebraMap K L) x (fun r ↦ (norm_algebraMap' L r).le) hx f ≠ 0 := by
+  obtain ⟨L, _, _, _, _, _, x, hx, hfx⟩ :=
+    exists_finiteDimensional_norm_restrictedEval₂_eq_norm f
+  exact ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, x, hx,
+    norm_ne_zero_iff.mp (hfx ▸ norm_ne_zero_iff.mpr hf)⟩
+
+end FiniteExtension
 
 end MvPowerSeries

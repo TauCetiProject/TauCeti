@@ -9,10 +9,11 @@ public import TauCeti.Analysis.Contour.Winding.Number.Segment.Jump
 public import TauCeti.Analysis.Normed.Module.FilledHull
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.Topology.Connected.LocallyPathConnected
-import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Calculus.ContDiff.Approximation
-import TauCeti.Analysis.Contour.Winding.LocallyConstant
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
+import TauCeti.Order.Interval.Set.Piecewise
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # A segment crossing a set once has its ends on different sides
@@ -44,6 +45,27 @@ namespace TauCeti.Contour
 
 variable {K : Set ℂ} {v z₀ : ℂ} {a b s : ℝ}
 
+/-- A segment `t ↦ v t + z₀` on `[a, b]` whose ends lie in one connected component of the
+complement of a closed set `K` closes up, through that component, to a piecewise-`C¹` closed curve
+on `[a, b + 1]` that follows the segment on `[a, b]` and avoids `K` on `[b, b + 1]`. -/
+private theorem exists_isPiecewiseC1On_eqOn_segment_mapsTo_compl (hK : IsClosed K) (hab : a ≤ b)
+    (hmem : v * b + z₀ ∈ connectedComponentIn Kᶜ (v * a + z₀)) :
+    ∃ Γ : ℝ → ℂ, IsPiecewiseC1On Γ a (b + 1) ∧ Γ a = Γ (b + 1) ∧
+      EqOn Γ (fun t : ℝ ↦ v * t + z₀) (Icc a b) ∧ MapsTo Γ (Icc b (b + 1)) Kᶜ := by
+  obtain ⟨g, hg, hg0, hg1, hgK⟩ :=
+    ((hK.isOpen_compl.joinedIn_of_mem_connectedComponentIn hmem).symm.mono
+      (connectedComponentIn_subset _ _)).exists_contDiff_mapsTo hK.isOpen_compl
+  let Γ : ℝ → ℂ := fun t ↦ if t ≤ b then v * t + z₀ else g (t - b)
+  have hΓg : EqOn Γ (fun t ↦ g (t - b)) (Ici b) := eqOn_ite_le_Ici (by simp [hg0])
+  refine ⟨Γ, (IsPiecewiseC1On.of_contDiffOn
+    ((contDiff_const.mul Complex.ofRealCLM.contDiff).add contDiff_const).contDiffOn).if_le
+    (.of_contDiffOn ((hg.of_le le_top).comp (contDiff_id.sub contDiff_const)).contDiffOn) hab
+    (by linarith) (by simp [hg0]), ?_, fun t ht ↦ ite_eq_left ht.2, fun t ht ↦ ?_⟩
+  · simp only [hΓg (show b ≤ b + 1 by linarith), add_sub_cancel_left, hg1]
+    exact ite_eq_left hab
+  · rw [hΓg ht.1]
+    exact hgK ⟨by linarith [ht.1], by linarith [ht.2]⟩
+
 /-- **A segment crossing a set once has its ends in different components of the complement.**
 Let `K` be closed with `K \ {p}` preconnected, crossed by a straight segment at an interior point
 `p = v · s + z₀` with `K` adherent from both sides of the segment. Then the two endpoints
@@ -56,86 +78,23 @@ theorem notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton (hK 
     (hright : v * s + z₀ ∈ closure (K ∩ {q | ((q - (v * s + z₀)) / v).im < 0})) :
     v * b + z₀ ∉ connectedComponentIn Kᶜ (v * a + z₀) := by
   intro hmem
-  have hv : v ≠ 0 := by
-    rintro rfl
-    simp at hleft
+  have hv : v ≠ 0 := by rintro rfl; simp at hleft
   set p : ℂ := v * s + z₀
   have hp : p ∈ K := hK.closure_subset (closure_mono inter_subset_left hleft)
   have hab : a < b := hs.1.trans hs.2
-  have hx : v * a + z₀ ∈ Kᶜ := fun h => hs.1.ne (hseg a ⟨le_rfl, hab.le⟩ h)
-  -- Stage 1: smooth the return path through `Kᶜ`
-  have hCopen : IsOpen (connectedComponentIn Kᶜ (v * a + z₀)) :=
-    hK.isOpen_compl.connectedComponentIn
-  have hCpath : IsPathConnected (connectedComponentIn Kᶜ (v * a + z₀)) :=
-    hCopen.isConnected_iff_isPathConnected.mp (isConnected_connectedComponentIn_iff.mpr hx)
-  obtain ⟨π₀, hπ₀⟩ := hCpath.joinedIn _ hmem _ (mem_connectedComponentIn hx)
-  have hrangeK : range π₀ ⊆ Kᶜ := by
-    rintro _ ⟨t, rfl⟩
-    exact connectedComponentIn_subset _ _ (hπ₀ t)
-  obtain ⟨δ, hδ, hthick⟩ :=
-    (isCompact_range π₀.continuous).exists_thickening_subset_open hK.isOpen_compl hrangeK
-  obtain ⟨g, hg, hg0, hg1, hgδ⟩ := π₀.toContinuousMap.exists_contDiff_eq_endpoints_dist_lt hδ
-  replace hg0 : g 0 = v * b + z₀ := hg0.trans π₀.source
-  replace hg1 : g 1 = v * a + z₀ := hg1.trans π₀.target
-  have hgK : ∀ t ∈ Icc (0 : ℝ) 1, g t ∈ Kᶜ := by
-    intro t ht
-    apply hthick
-    rw [mem_thickening_iff]
-    exact ⟨π₀ ⟨t, ht⟩, ⟨_, rfl⟩, by simpa using hgδ ⟨t, ht⟩⟩
-  -- Stage 2: construct the closed curve Γ = segment ∪ smooth return
-  let Γ : ℝ → ℂ := fun t => if t ≤ b then v * t + z₀ else g (t - b)
-  have hΓseg : EqOn Γ (fun t : ℝ => v * (t : ℂ) + z₀) (Icc a b) := fun t ht => ite_eq_left ht.2
-  have hΓg : ∀ t ∈ Icc b (b + 1), Γ t = g (t - b) := by
-    intro t ht
-    rcases eq_or_lt_of_le ht.1 with h | h
-    · subst h
-      simp [Γ, hg0]
-    · exact ite_eq_right (not_le.mpr h)
-  have hΓclosed : Γ a = Γ (b + 1) := by
-    have h1 : Γ a = v * a + z₀ := ite_eq_left hab.le
-    have h2 : Γ (b + 1) = g 1 := by
-      rw [hΓg (b + 1) ⟨by linarith, le_rfl⟩]
-      ring_nf
-    rw [h1, h2, hg1]
-  have hΓcont : Continuous Γ := by
-    refine Continuous.if_le (by fun_prop)
-      (hg.continuous.comp (continuous_id.sub continuous_const)) continuous_id continuous_const ?_
-    intro t ht
-    simp [ht, hg0]
-  have hΓpw : IsPiecewiseC1On Γ a (b + 1) := by
-    refine IsPiecewiseC1On.of_breakpoints hΓcont.continuousOn {b} ?_ fun c d hcd hdisj => ?_
-    · rw [min_eq_left (by linarith : a ≤ b + 1), max_eq_right (by linarith : a ≤ b + 1),
-        Finset.coe_singleton, singleton_subset_iff]
-      exact ⟨hab, by linarith⟩
-    · have hside : d ≤ b ∨ b ≤ c := by
-        by_contra hcon
-        push Not at hcon
-        exact Set.disjoint_left.mp hdisj (by simp) (mem_Ioo.mpr ⟨hcon.2, hcon.1⟩)
-      rw [uIcc_of_le (by linarith : a ≤ b + 1)] at hcd
-      rcases hside with hd | hc
-      · have hseg1 : ContDiff ℝ 1 fun t : ℝ => v * (t : ℂ) + z₀ :=
-          ContDiff.add (ContDiff.mul contDiff_const Complex.ofRealCLM.contDiff) contDiff_const
-        exact hseg1.contDiffOn.congr fun t ht => hΓseg ⟨(hcd ht).1, ht.2.trans hd⟩
-      · have hg1' : ContDiff ℝ 1 fun t : ℝ => g (t - b) :=
-          ContDiff.comp (ContDiff.of_le hg le_top) (ContDiff.sub contDiff_id contDiff_const)
-        exact hg1'.contDiffOn.congr fun t ht => hΓg t ⟨hc.trans ht.1, (hcd ht).2⟩
-  -- Stage 3: the smooth part avoids p, so the jump formula applies
-  have hpg : p ∉ Γ '' Icc b (b + 1) := by
-    rintro ⟨t, ht, hpt⟩
-    rw [hΓg t ht] at hpt
-    exact hgK (t - b) ⟨by linarith [ht.1], by linarith [ht.2]⟩ (by rw [hpt]; exact hp)
+  -- Stage 1: the closed curve Γ = segment ∪ smooth return through `Kᶜ`
+  obtain ⟨Γ, hΓpw, hΓclosed, hΓseg, hΓK⟩ :=
+    exists_isPiecewiseC1On_eqOn_segment_mapsTo_compl hK hab.le hmem
+  -- Stage 2: the return avoids p, so the jump formula applies
+  have hpg : p ∉ Γ '' Icc b (b + 1) := fun ⟨_, ht, hpt⟩ ↦ hΓK ht (hpt ▸ hp)
   obtain ⟨r, hr, hjump⟩ := exists_forall_windingNumber_eq_add_one_of_eqOn_segment hΓpw hΓclosed
     (by linarith : b ≤ b + 1) hΓseg hv hs hpg
-  -- Stage 4: winding number is constant on K \ {p} yet jumps — contradiction
+  -- Stage 3: winding number is constant on K \ {p} yet jumps — contradiction
   obtain ⟨q₁, ⟨hq₁K, hq₁im⟩, hq₁r⟩ := Metric.mem_closure_iff.mp hleft r hr
   obtain ⟨q₂, ⟨hq₂K, hq₂im⟩, hq₂r⟩ := Metric.mem_closure_iff.mp hright r hr
   simp only [mem_ofPred_eq] at hq₁im hq₂im
-  have hq₁p : q₁ ≠ p := by
-    rintro rfl
-    simp only [sub_self, zero_div, zero_im, lt_irrefl] at hq₁im
-  have hq₂p : q₂ ≠ p := by
-    rintro rfl
-    simp only [sub_self, zero_div, zero_im, lt_irrefl] at hq₂im
+  have hq₁p : q₁ ≠ p := by rintro rfl; simp at hq₁im
+  have hq₂p : q₂ ≠ p := by rintro rfl; simp at hq₂im
   have hKΓ : K \ {p} ⊆ (Γ '' uIcc a (b + 1))ᶜ := by
     rintro q ⟨hqK, hqp⟩ ⟨t, ht, hqt⟩
     rw [uIcc_of_le (by linarith : a ≤ b + 1)] at ht
@@ -144,19 +103,14 @@ theorem notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton (hK 
       have hts : t = s := hseg t ⟨ht.1, htb⟩ (by rw [← hΓt, hqt]; exact hqK)
       apply hqp
       rw [mem_singleton_iff, ← hqt, hΓt, hts]
-    · rw [hΓg t ⟨htb.le, ht.2⟩] at hqt
-      exact hgK (t - b) ⟨by linarith, by linarith [ht.2]⟩ (by rw [hqt]; exact hqK)
+    · exact hΓK ⟨htb.le, ht.2⟩ (hqt ▸ hqK)
   have hW : windingNumber Γ a (b + 1) q₁ = windingNumber Γ a (b + 1) q₂ :=
-    hΓpw.windingNumber_eq_of_mem_connectedComponentIn hΓclosed
+    hΓpw.absolutelyContinuousOnInterval.windingNumber_eq_of_mem_connectedComponentIn hΓclosed
       (hKp.subset_connectedComponentIn ⟨hq₂K, hq₂p⟩ hKΓ ⟨hq₁K, hq₁p⟩)
   have hJ := hjump q₁ (by rw [mem_ball, dist_comm]; exact hq₁r) q₂
     (by rw [mem_ball, dist_comm]; exact hq₂r) hq₁im hq₂im
   rw [hW] at hJ
-  have h0 := sub_eq_zero.mpr hJ
-  have h1 : windingNumber Γ a (b + 1) q₂ -
-      (windingNumber Γ a (b + 1) q₂ + 1) = -1 := by ring
-  rw [h1] at h0
-  exact absurd (neg_eq_zero.mp h0) one_ne_zero
+  simp at hJ
 
 /-- **One end of a segment crossing a bounded set once lies in its filled hull.**
 Under the same hypotheses as

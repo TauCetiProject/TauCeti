@@ -67,6 +67,10 @@ The computations follow Mathlib's treatment of `ℂ` over `ℝ`, `Algebra.leftMu
 * `Quaternion.toMatrix_mulRight`: the matrix of right multiplication.
 * `Quaternion.toMatrix_mulRight_eq_leftMulMatrix_iff`: when `2` is regular in `R`, the two
   matrices agree exactly when `a` is real.
+* `Quaternion.transpose_toMatrix_mulRight`: transposing the matrix of right multiplication
+  conjugates the multiplier.
+* `Quaternion.toMatrix_mulRight_mul_transpose`, `Quaternion.transpose_mul_toMatrix_mulRight`:
+  the matrix `v` of right multiplication by `a` satisfies `v * vᵀ = vᵀ * v = normSq a • 1`.
 * `Quaternion.det_mulLeft`, `Quaternion.det_mulRight`, `Algebra.norm_quaternion_apply`: both
   determinants, and the algebra norm `ℍ[R] → R`, are `normSq a ^ 2`.
 * `QuaternionAlgebra.exists_eq_mulLeft_iff`, `QuaternionAlgebra.exists_eq_mulRight_iff`: a linear
@@ -85,6 +89,7 @@ The computations follow Mathlib's treatment of `ℂ` over `ℝ`, `Algebra.leftMu
 public section
 
 open Quaternion
+open scoped Matrix
 
 variable {R : Type*} [CommRing R]
 
@@ -132,6 +137,43 @@ theorem toMatrix_mulRight_eq_leftMulMatrix_iff (h2 : IsLeftRegular (2 : R)) (a :
     simp
   · intro h
     exact ⟨a.re, h.symm⟩
+
+/-- The transpose of the matrix of right multiplication by `a` is the matrix of right
+multiplication by its conjugate `star a`. -/
+theorem transpose_toMatrix_mulRight (a : ℍ[R]) :
+    (LinearMap.toMatrix (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1))
+        (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)) (LinearMap.mulRight R a))ᵀ =
+      LinearMap.toMatrix (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1))
+        (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)) (LinearMap.mulRight R (star a)) := by
+  rw [toMatrix_mulRight, toMatrix_mulRight]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- The matrix `v` of right multiplication by `a` satisfies `v * vᵀ = normSq a • 1`: its rows are
+orthogonal of squared length `normSq a = α² + β² + γ² + δ²`. -/
+theorem toMatrix_mulRight_mul_transpose (a : ℍ[R]) :
+    LinearMap.toMatrix (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1))
+        (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)) (LinearMap.mulRight R a) *
+      (LinearMap.toMatrix (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1))
+        (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)) (LinearMap.mulRight R a))ᵀ =
+      normSq a • 1 := by
+  rw [transpose_toMatrix_mulRight, ← LinearMap.toMatrix_mul, Module.End.mul_eq_comp,
+    ← LinearMap.mulRight_mul, star_mul_self]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [LinearMap.toMatrix_apply, QuaternionAlgebra.basisOneIJK]
+
+/-- The matrix `v` of right multiplication by `a` satisfies `vᵀ * v = normSq a • 1`: its columns
+are orthogonal of squared length `normSq a = α² + β² + γ² + δ²`. -/
+theorem transpose_mul_toMatrix_mulRight (a : ℍ[R]) :
+    (LinearMap.toMatrix (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1))
+        (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)) (LinearMap.mulRight R a))ᵀ *
+      LinearMap.toMatrix (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1))
+        (QuaternionAlgebra.basisOneIJK (-1 : R) 0 (-1)) (LinearMap.mulRight R a) =
+      normSq a • 1 := by
+  rw [transpose_toMatrix_mulRight, ← LinearMap.toMatrix_mul, Module.End.mul_eq_comp,
+    ← LinearMap.mulRight_mul, self_mul_star]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [LinearMap.toMatrix_apply, QuaternionAlgebra.basisOneIJK]
 
 /-- The determinant of left multiplication by a quaternion `a` is `normSq a ^ 2`; over `ℝ` this
 is `‖a‖ ^ 4`. -/

@@ -13,13 +13,14 @@ public import Mathlib.Data.Nat.Cast.NeZero
 # Natural numbers casting to units in a semiring
 
 Because natural-number casts commute with every element of a semiring, any divisor of an invertible
-natural cast is again a unit. A natural number casting to a unit of a nontrivial semiring is
-nonzero.
+natural cast is again a unit, as is every power of it. A natural number casting to a unit of a
+nontrivial semiring is nonzero.
 
 ## Main results
 
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
 * `IsUnit.natCast_of_dvd`: a divisor of a natural number casting to a unit also casts to a unit.
+* `IsUnit.natCast_pow`: a power of a natural number casting to a unit also casts to a unit.
 -/
 
 public section
@@ -36,3 +37,9 @@ theorem IsUnit.natCast_of_dvd {R : Type*} [Semiring R] {m n : ℕ}
   obtain ⟨k, rfl⟩ := hmn
   rw [Nat.cast_mul, (Nat.cast_commute m (k : R)).isUnit_mul_iff] at hn
   exact hn.1
+
+/-- A power of a natural number casting to a unit in a semiring also casts to a unit. -/
+theorem IsUnit.natCast_pow {R : Type*} [Semiring R] {p : ℕ} (hp : IsUnit (p : R)) (m : ℕ) :
+    IsUnit ((p ^ m : ℕ) : R) := by
+  rw [Nat.cast_pow]
+  exact hp.pow m

@@ -9,21 +9,21 @@ public import Mathlib.RingTheory.Localization.AsSubring
 public import Mathlib.RingTheory.DedekindDomain.Dvr
 
 /-!
-# Membership in a localization realized inside the fraction field
+# Dedekind localizations inside fraction fields
 
-Mathlib's `Localization.subalgebra.ofField K S hS` is the localization of a ring `A` at a
-submonoid `S` of non-zero-divisors, realized as the `A`-subalgebra of the fraction field `K` of
-`A` consisting of the quotients `a / s` with `a ∈ A` and `s ∈ S`. This file adds the membership
-tests that make it usable as a subring of `K`: an element `z : K` lies in it exactly when some
-`s ∈ S` clears its denominator, `s * z ∈ A`, and for `S = powers x` exactly when some power of
-`x` does so. It also records that the localization of a Dedekind domain, so realized, is again a
-Dedekind domain.
+Mathlib's `Localization.subalgebra.ofField K S hS` realizes the localization of a ring `A` at a
+submonoid `S` of non-zero-divisors inside the fraction field `K` of `A`. This file records that
+its elements are exactly the quotients `a / s` with `s ∈ S`, and that the localization of a
+Dedekind domain, so realized, is again a Dedekind domain. For the localization at a prime `P`, the
+hypothesis `S ≤ A⁰` holds for any ring with a fraction field.
 
 ## Main results
 
-* `Localization.subalgebra.mem_ofField_iff_exists_mul_mem_range` and
-  `Localization.subalgebra.mem_ofField_powers_iff`: membership in `A[S⁻¹] ⊆ K`, respectively in
-  `A[1/x] ⊆ K`, by clearing denominators.
+* `Ideal.primeCompl_le_nonZeroDivisors_of_isFractionRing`: the complement of a prime ideal of a
+  ring with a fraction field consists of non-zero-divisors.
+* `Ideal.algebraMap_ne_zero_of_notMem`: an element outside an ideal has nonzero image in the
+  fraction field.
+* `Localization.subalgebra.mem_ofField_iff`: membership in `A[S⁻¹] ⊆ K` as a quotient `a / s`.
 * `Localization.subalgebra.isDedekindDomain_ofField`: `A[S⁻¹] ⊆ K` is a Dedekind domain when `A`
   is.
 -/
@@ -37,22 +37,12 @@ open scoped nonZeroDivisors
 variable {A K : Type*} [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
   (S : Submonoid A) (hS : S ≤ A⁰)
 
-/-- **Membership in `A[S⁻¹] ⊆ K` by clearing denominators**: `z` lies in the localization exactly
-when some `s ∈ S` has `s * z ∈ A`. -/
-theorem mem_ofField_iff_exists_mul_mem_range {z : K} :
-    z ∈ ofField K S hS ↔ ∃ s ∈ S, algebraMap A K s * z ∈ (algebraMap A K).range := by
-  rw [ofField, Subalgebra.copy_eq, mem_range_mapToFractionRing_iff_ofField, exists_comm]
-  refine exists_congr fun s ↦ ?_
-  simp only [exists_prop, RingHom.mem_range, exists_and_left]
-  refine and_congr_right fun hs ↦ exists_congr fun a ↦ ?_
-  rw [eq_mul_inv_iff_mul_eq₀ (map_isUnit_of_le K S hS ⟨s, hs⟩).ne_zero, mul_comm, eq_comm]
-
-/-- **Membership in `A[1/x] ⊆ K`**: `z` lies in the localization of `A` away from `x` exactly when
-some power of `x` clears its denominator, `x ^ n * z ∈ A`. -/
-theorem mem_ofField_powers_iff (x : A) (hx : Submonoid.powers x ≤ A⁰) {z : K} :
-    z ∈ ofField K (Submonoid.powers x) hx ↔
-      ∃ n : ℕ, algebraMap A K x ^ n * z ∈ (algebraMap A K).range := by
-  simp [mem_ofField_iff_exists_mul_mem_range, Submonoid.mem_powers_iff]
+/-- **Membership in `A[S⁻¹] ⊆ K` as a fraction**: `z` lies in the localization exactly when it is
+a quotient `a / s` with `a ∈ A` and `s ∈ S`. -/
+theorem mem_ofField_iff {z : K} :
+    z ∈ ofField K S hS ↔ ∃ a, ∃ s ∈ S, z = algebraMap A K a * (algebraMap A K s)⁻¹ := by
+  rw [ofField, ← SetLike.mem_coe, Subalgebra.coe_copy, Set.mem_ofPred_eq]
+  simp only [exists_prop]
 
 /-- The localization of a Dedekind domain at a submonoid of nonzero elements, realized inside its
 fraction field, is a Dedekind domain. -/
@@ -60,3 +50,26 @@ instance isDedekindDomain_ofField [IsDedekindDomain A] : IsDedekindDomain (ofFie
   IsLocalization.isDedekindDomain A hS _
 
 end Localization.subalgebra
+
+namespace Ideal
+
+open scoped nonZeroDivisors
+
+variable {A : Type*} {K : Type*} [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
+
+/-- An element outside an ideal has nonzero image in the fraction field, as `0` lies in the
+ideal. -/
+theorem algebraMap_ne_zero_of_notMem {P : Ideal A} {s : A} (hs : s ∉ P) : algebraMap A K s ≠ 0 :=
+  fun h ↦ hs (IsFractionRing.to_map_eq_zero_iff.mp h ▸ P.zero_mem)
+
+variable (K) (P : Ideal A) [P.IsPrime]
+
+include K in
+/-- The complement of a prime ideal of a ring with a fraction field consists of
+non-zero-divisors. This is the hypothesis under which Mathlib realizes the localization at `P`
+inside the fraction field (`Localization.subalgebra.ofField`). -/
+theorem primeCompl_le_nonZeroDivisors_of_isFractionRing : P.primeCompl ≤ A⁰ :=
+  have : IsDomain A := (IsFractionRing.isDomain_iff_isField (K := K)).mpr (Field.toIsField K)
+  P.primeCompl_le_nonZeroDivisors
+
+end Ideal

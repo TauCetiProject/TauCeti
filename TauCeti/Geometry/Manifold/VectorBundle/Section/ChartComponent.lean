@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SmulLeft
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Support
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -55,6 +56,8 @@ which carries the Jacobian `|det Dκ⁻¹|` (`TestFunction.pushforwardCLM`), giv
 
 * `Bundle.Trivialization.chartComponent`: the component along `v` of the local representative of
   `T` in a chart and a frame, as a complex distribution on the chart target.
+* `Bundle.Trivialization.dsupport_chartComponent_inter_target_subset`: over the chart target, the
+  components are supported in the chart image of the support of the functional.
 * `Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`: the change of chart and frame for the
   components.
 * `Bundle.Trivialization.contDiffOn_abs_det_fderiv_mul_coord_coordChangeL`: the smoothness of the
@@ -165,6 +168,39 @@ theorem chartComponent_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ
     ← chartDistributionCLM_apply_apply]
   conv_lhs => rw [← b.sum_repr v]
   simp only [map_sum, map_smul, smul_eq_mul, ofReal_sum, ofReal_mul]
+
+variable {t c hc hct} in
+/-- If over an open set `B` the local representative of `S` is `g` times that of `T`, then so are
+its components. -/
+theorem restrictCLM_chartComponent_eq_smulLeftCLM {S T : BundleTest I F V →L_c[ℝ] ℝ} {B : Opens E}
+    {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
+    (h : (restrictCLM (t.chartDistributionCLM c hc hct S) : 𝓓'(B, F →L[ℝ] ℝ)) =
+      Distribution.smulLeftCLM hg (restrictCLM (t.chartDistributionCLM c hc hct T))) (v : F) :
+    (restrictCLM (t.chartComponent c hc hct S v) : 𝓓'(B, ℂ)) =
+      Distribution.smulLeftCLM hg (restrictCLM (t.chartComponent c hc hct T v)) := by
+  ext φ
+  have h := congr($h φ v)
+  simp only [restrictCLM_apply, chartDistributionCLM_apply_apply,
+    Distribution.smulLeftCLM_apply] at h
+  simp [h]
+
+/-- Over the chart target, the support of a component of `T` lies in the image under the chart of
+the support of `T`. -/
+theorem dsupport_chartComponent_inter_target_subset (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
+    Distribution.dsupport (t.chartComponent c hc hct T v) ∩ c.target ⊆
+      c.symm ⁻¹' BundleTest.dsupport T := by
+  rintro z ⟨hzT, hzc⟩
+  by_contra hx
+  obtain ⟨U, hU, hxU, hTU⟩ := BundleTest.notMem_dsupport_iff.1 hx
+  refine (Distribution.notMem_dsupport_iff z).2 ⟨c.target ∩ c.symm ⁻¹' U, fun φ hφ ↦ ?_,
+    c.isOpen_inter_preimage_symm hU, hzc, hxU⟩ hzT
+  -- The extended test `φ • v` is supported in `c⁻¹ (supp φ) ⊆ U`.
+  rw [chartComponent_apply, BundleTest.isVanishingOn_iff.1 hTU _ ?_, Complex.ofReal_zero]
+  rw [coe_chartTestCLM, ← ContMDiffSection.tsupport_def, tsupport_chartTestSection]
+  rintro _ ⟨w, hw, rfl⟩
+  refine (hφ (closure_mono (fun w hw ↦ ?_) hw)).2
+  rw [mem_support] at hw ⊢
+  exact fun h ↦ hw (by simp [h])
 
 /-! ### Changes of chart and frame -/
 

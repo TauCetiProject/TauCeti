@@ -303,6 +303,18 @@ theorem mextDeriv_mpullback_apply_two (f : M → M') (hf : ContMDiff I I' ∞ f)
   ext i
   fin_cases i <;> rfl
 
+/-- The exterior derivative of the pullback of a smooth form along a map `f` restricted to an open
+subset `U` evaluates tangent vectors at `x ∈ U` through the differential of `f` itself. -/
+theorem mextDeriv_mpullback_comp_subtypeVal_apply {U : TopologicalSpace.Opens M} {f : M → M'}
+    (hf : ContMDiff I I' ∞ (f ∘ (Subtype.val : U → M))) (φ : SmoothForm I' M' F k) (x : U)
+    (v : Fin (k + 1) → TangentSpace I x) :
+    mextDeriv (mpullback _ hf φ).val x v =
+      mextDeriv φ.val (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
+  rw [coe_mpullback, ← mpullback_mextDeriv_at ((hf x).of_le (by simp))
+    ((φ.contMDiff (f x)).of_le (by simp)), TauCeti.mpullback_apply]
+  exact congrArg (mextDeriv φ.val (f x))
+    (funext fun i ↦ Manifold.mfderiv_comp_subtype_val_apply (v i))
+
 end SmoothForm
 
 end TauCeti

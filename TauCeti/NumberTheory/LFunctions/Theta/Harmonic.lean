@@ -198,6 +198,13 @@ theorem zero_harmonicFactor (x : mixedSpace K) :
 theorem harmonicFactor_one (t : ContinuousInfinityType K) : t.harmonicFactor 1 = 1 := by
   classical simp [harmonicFactor_def]
 
+/-- When the total harmonic degree vanishes, the harmonic polynomial is the constant `1`. -/
+theorem harmonicFactor_eq_one_of_harmonicDegree_eq_zero (t : ContinuousInfinityType K)
+    (h : t.harmonicDegree = 0) (x : mixedSpace K) : t.harmonicFactor x = 1 := by
+  classical
+  obtain ⟨hr, hc⟩ := t.harmonicDegree_eq_zero_iff.mp h
+  simp [harmonicFactor_def, hr, hc, TauCeti.complexHarmonicMonomial_zero]
+
 /-- `harmonicFactor` is completely multiplicative on the commutative ring `mixedSpace K`. -/
 theorem harmonicFactor_mul (t : ContinuousInfinityType K) (x z : mixedSpace K) :
     t.harmonicFactor (x * z) = t.harmonicFactor x * t.harmonicFactor z := by
@@ -366,17 +373,27 @@ theorem archWeight_sq (t : ContinuousInfinityType K) {y : realSpace K} (hy : ∀
   refine Finset.prod_congr rfl fun w _ ↦ ?_
   rw [Pi.mul_apply, ← sq, Real.sq_rpow_div_two (hy w), Real.rpow_natCast]
 
+/-- Upon rescaling each parameter by the square of a local absolute value, the
+archimedean weight gains the absolute value of the harmonic factor. -/
+theorem archWeight_mul_sq_normAtPlace (t : ContinuousInfinityType K) (a : mixedSpace K)
+    (y : realSpace K) :
+    t.archWeight (fun w ↦ normAtPlace w a ^ 2 * y w) = ‖t.harmonicFactor a‖ * t.archWeight y := by
+  simp only [archWeight_def, norm_harmonicFactor, ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  rw [Real.mul_rpow_of_nonneg_left (sq_nonneg _),
+    Real.sq_rpow_div_two (normAtPlace_nonneg w a), Real.rpow_natCast]
+
 /-- Under `TauCeti.LFunctions.unitScale u`, `archWeight` multiplies by
 `∏_w normAtPlace w (mixedEmbedding K u) ^ P_w`. -/
 theorem archWeight_unitScale (t : ContinuousInfinityType K) (u : (𝓞 K)ˣ) (y : realSpace K) :
     t.archWeight (TauCeti.LFunctions.unitScale u y) =
       (∏ w : InfinitePlace K, normAtPlace w (mixedEmbedding K u) ^ t.harmonicExponent w) *
         t.archWeight y := by
-  simp only [archWeight_def, TauCeti.LFunctions.unitScale_apply, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun w _ ↦ ?_
-  have hw : 0 ≤ w (u : K) := normAtPlace_apply w (u : K) ▸ normAtPlace_nonneg w _
-  rw [Real.mul_rpow_of_nonneg_left (sq_nonneg _), Real.sq_rpow_div_two hw, Real.rpow_natCast,
-    normAtPlace_apply]
+  have h : TauCeti.LFunctions.unitScale u y =
+      fun w ↦ normAtPlace w (mixedEmbedding K (u : K)) ^ 2 * y w := by
+    ext w
+    rw [TauCeti.LFunctions.unitScale_apply, normAtPlace_apply]
+  rw [h, t.archWeight_mul_sq_normAtPlace, norm_harmonicFactor]
 
 end NumberField
 

@@ -32,7 +32,10 @@ Its velocity is the slice `ι_t^* L_{∂_t} σ` of the Lie derivative along the 
 By Moser's principle for families of forms
 (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`), the time-dependent flow `φ_{s,t}`
 of any vector field with `ι_{X_t} σ_t = -α_t` then satisfies `φ_{s,t}^* σ_t = σ_s`, as soon as
-its suspension is complete (`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_eq`).
+its suspension is complete (`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_eq`). Without
+completeness, the flow of the Moser vector field still pulls `σ_t` back to `σ_s` at every point
+where it is defined, and the field vanishes exactly where `α_t` does
+(`TauCeti.SmoothTwoForm.exists_contMDiff_mpullback_timeDependentFlowOf_apply_eq`).
 
 The suspension is complete when every `α_t` vanishes outside one fixed compact set, since `X_t`
 vanishes where `α_t` does. This gives **Moser's stability theorem** with support control
@@ -50,6 +53,8 @@ exactness of the velocity which the theorem uses.
 
 * `TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_eq`: a complete Moser flow pulls `σ_t`
   back to `σ_s`.
+* `TauCeti.SmoothTwoForm.exists_contMDiff_mpullback_timeDependentFlowOf_apply_eq`: the Moser
+  vector field, whose flow pulls `σ_t` back to `σ_s` wherever it is defined.
 * `TauCeti.SmoothTwoForm.exists_isotopy_mpullback_eq_of_isCompact`: Moser's stability theorem for
   primitives supported in a fixed compact set.
 * `TauCeti.SmoothTwoForm.exists_isotopy_mpullback_eq`: Moser's stability theorem on a compact
@@ -91,6 +96,57 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 variable [I.Boundaryless] [T2Space M]
 
+/-- **Moser's lemma along the domain of the flow.** Let `σ` be a smooth two-form on `ℝ × M` whose
+slices `σ_t = ι_t^* σ` are symplectic, and let `α` be a smooth one-form on `ℝ × M` whose slices are
+primitives of the velocity, `ι_t^* L_{∂_t} σ = dα_t`. Then the Moser field, the solution `X` of
+Moser's equation `ι_{X_t} σ_t = -α_t`, is a smooth time-dependent vector field which vanishes
+exactly where `α_t` does, and its time-dependent flow `φ_{s,t}` pulls `σ_t` back to `σ_s` at every
+point `x` where `φ_{s,t} x` is defined: `(φ_{s,t}^* σ_t)ₓ = (σ_s)ₓ`. No completeness of the flow
+is assumed. -/
+theorem exists_contMDiff_mpullback_timeDependentFlowOf_apply_eq
+    (σ : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 2) (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1)
+    (hσ : ∀ t, IsSymplectic
+      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ))
+    (hα : ∀ t, TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) =
+      mextDeriv (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val) :
+    ∃ X : ℝ → (x : M) → TangentSpace I x,
+      ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent ∞
+        (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)) ∧
+      (∀ t, RoughForm.interior (X t)
+          (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ).val =
+        -(SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val) ∧
+      (∀ t x, X t x = 0 ↔
+        (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x = 0) ∧
+      ∀ s t x, ((s, t), x) ∈ timeDependentFlowDomain X →
+        TauCeti.mpullback I I (timeDependentFlowOf X s t)
+            (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ).val x =
+          (SmoothForm.mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) σ).val x := by
+  -- The Moser vector field `X_t = (σ_t♭)⁻¹ (-α_t)`.
+  obtain ⟨X, hXdef⟩ : ∃ X : ℝ → (x : M) → TangentSpace I x, ∀ t, X t =
+      (hσ t).isNondegenerate.interiorEquiv.symm
+        (-SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α) :=
+    ⟨_, fun _ ↦ rfl⟩
+  have hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent ∞
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)) := by
+    simpa only [hXdef, map_neg] using
+      contMDiff_interiorEquiv_symm_mpullback_prodMk σ (fun t ↦ (hσ t).isNondegenerate) (-α)
+  refine ⟨X, hX, fun t ↦ ?_, fun t x ↦ ?_, fun s t x hx ↦ ?_⟩
+  · rw [hXdef t, IsNondegenerate.interior_interiorEquiv_symm, Submodule.coe_neg]
+  · rw [hXdef t, IsNondegenerate.interiorEquiv_symm_apply_eq_zero_iff, Submodule.coe_neg,
+      Pi.neg_apply, neg_eq_zero]
+  -- The rate `ι_t^* L_{∂_t} σ + L_{X_t} σ_t = dα_t - dα_t` vanishes.
+  have hL (t : ℝ) : TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) +
+      mlieDerivForm (X t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) σ.val) = 0 := by
+    have h := (hσ t).mlieDerivForm_interiorEquiv_symm
+      (-SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α)
+    rw [← hXdef, Submodule.coe_neg, mextDeriv_neg, SmoothForm.coe_mpullback _ _ σ] at h
+    rw [hα t, h, add_neg_cancel]
+  simp only [SmoothForm.coe_mpullback]
+  exact mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_mem (hX.of_le (by simp))
+    (σ.contMDiff.of_le (by simp)) hL hx
+
 /-- **Moser's isotopy lemma.** Let `σ` be a smooth two-form on `ℝ × M` whose slices
 `σ_t = ι_t^* σ` are symplectic, and let `α` be a smooth one-form on `ℝ × M` whose slices are
 primitives of the velocity, `ι_t^* L_{∂_t} σ = dα_t`. If a time-dependent vector field `X` solves
@@ -111,27 +167,14 @@ theorem mpullback_timeDependentFlowOf_eq (σ : SmoothForm (𝓘(ℝ, ℝ).prod I
     TauCeti.mpullback I I (timeDependentFlowOf X s t)
         (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ).val =
       (SmoothForm.mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) σ).val := by
-  -- Moser's equation determines `X_t` as the inverse flat map of `-α_t`.
-  have hXeq (t : ℝ) : X t = (hσ t).isNondegenerate.interiorEquiv.symm
-      (-SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α) := by
-    refine (hσ t).isNondegenerate.interior_injective ?_
+  -- Moser's equation determines `X_t`, so `X` is the Moser field.
+  obtain ⟨X', -, hX'σ, -, hflow⟩ :=
+    exists_contMDiff_mpullback_timeDependentFlowOf_apply_eq σ α hσ hα
+  obtain rfl : X = X' := funext fun t ↦ (hσ t).isNondegenerate.interior_injective (by
     beta_reduce
-    rw [hX t, IsNondegenerate.interior_interiorEquiv_symm, Submodule.coe_neg]
-  have hXs : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent ∞
-      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)) := by
-    simpa only [hXeq, map_neg] using
-      contMDiff_interiorEquiv_symm_mpullback_prodMk σ (fun t ↦ (hσ t).isNondegenerate) (-α)
-  -- The rate `ι_t^* L_{∂_t} σ + L_{X_t} σ_t = dα_t - dα_t` vanishes.
-  have hL (t : ℝ) : TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) σ.val) +
-      mlieDerivForm (X t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) σ.val) = 0 := by
-    have h := (hσ t).mlieDerivForm_interiorEquiv_symm
-      (-SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α)
-    rw [← hXeq, Submodule.coe_neg, mextDeriv_neg, SmoothForm.coe_mpullback _ _ σ] at h
-    rw [hα t, h, add_neg_cancel]
-  simp only [SmoothForm.coe_mpullback]
-  exact mpullback_timeDependentFlowOf_mpullback_prodMk_eq (hXs.of_le (by simp)) hc
-    (σ.contMDiff.of_le (by simp)) hL s t
+    rw [hX t, hX'σ t])
+  funext x
+  exact hflow s t x ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)
 
 /-- **Moser's stability theorem**, with support control. Let `σ` be a smooth two-form on `ℝ × M`
 whose slices `σ_t = ι_t^* σ` are symplectic, and let `α` be a smooth one-form on `ℝ × M` whose
@@ -156,21 +199,10 @@ theorem exists_isotopy_mpullback_eq_of_isCompact (σ : SmoothForm (𝓘(ℝ, ℝ
       ∀ t, SmoothForm.mpullback (ψ t) (ψ t).contMDiff
           (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ) =
         SmoothForm.mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) σ := by
-  -- The Moser vector field `X_t = (σ_t♭)⁻¹ (-α_t)`.
-  obtain ⟨X, hXdef⟩ : ∃ X : ℝ → (x : M) → TangentSpace I x, ∀ t, X t =
-      (hσ t).isNondegenerate.interiorEquiv.symm
-        (-SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α) :=
-    ⟨_, fun _ ↦ rfl⟩
-  have hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent ∞
-      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)) := by
-    simpa only [hXdef, map_neg] using
-      contMDiff_interiorEquiv_symm_mpullback_prodMk σ (fun t ↦ (hσ t).isNondegenerate) (-α)
+  -- The Moser vector field `X_t = (σ_t♭)⁻¹ (-α_t)` vanishes exactly where `α_t` does, so
+  -- outside `K`.
+  obtain ⟨X, hX, -, hX0, hXσ⟩ := exists_contMDiff_mpullback_timeDependentFlowOf_apply_eq σ α hσ hα
   have hX₁ := hX.of_le (m := 1) (by simp)
-  -- `X_t` vanishes exactly where `α_t` does, so outside `K`.
-  have hX0 (t : ℝ) (x : M) : X t x = 0 ↔
-      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x = 0 := by
-    rw [hXdef t, IsNondegenerate.interiorEquiv_symm_apply_eq_zero_iff, Submodule.coe_neg,
-      Pi.neg_apply, neg_eq_zero]
   have hc : IsCompleteVectorField (timeDependentSuspensionField X) :=
     isCompleteVectorField_timeDependentSuspensionField hX₁ hK fun u y hy ↦ (hX0 u y).2 (hαK u y hy)
   refine ⟨fun t ↦ timeDependentFlowDiffeomorph hc (n := ⊤) le_top hX 0 t, ?_, fun x ↦ ?_,
@@ -187,8 +219,8 @@ theorem exists_isotopy_mpullback_eq_of_isCompact (σ : SmoothForm (𝓘(ℝ, ℝ
       funext (timeDependentFlowDiffeomorph_apply hc le_top hX 0 t)
     rw [SmoothForm.coe_mpullback _ _
       (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ), hψ]
-    refine mpullback_timeDependentFlowOf_eq σ α hσ hα (fun u ↦ ?_) hc 0 t
-    rw [hXdef u, IsNondegenerate.interior_interiorEquiv_symm, Submodule.coe_neg]
+    funext x
+    exact hXσ 0 t x ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)
 
 /-- **Moser's stability theorem.** Let `σ` be a smooth two-form on `ℝ × M`, for a compact
 boundaryless manifold `M`, whose slices `σ_t = ι_t^* σ` are symplectic, and let `α` be a smooth

@@ -48,11 +48,20 @@ as the model for this file.
   `Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection`: admissible unitary
   transvections `τ_{v,a}` and Siegel transformations `S(u, w, c)` lie in the special isometry
   group.
-* `Matrix.exists_coe_eq_unitaryTransvection_iff`: for a nondegenerate `ε`-Hermitian `Q`, the
-  transvection `τ_{v,a}` along an isotropic point is an isometry exactly when `a + ε σ(a) = 0`.
+* `Matrix.exists_coe_eq_unitaryTransvection_iff` and
+  `Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff`: for a nondegenerate
+  `ε`-Hermitian `Q`, `τ_{v,a}` and `S(u, w, c)` are isometries exactly when their parameters
+  satisfy `a + ε σ(a) = 0` and `c + ε σ(c) + ε h(w, w) = 0`.
 * `Matrix.coe_mul_unitaryTransvection_mul_coe_inv` and
   `Matrix.coe_mul_siegelTransvection_mul_coe_inv`: an isometry `g` conjugates `τ_{v,a}` to
   `τ_{g v,a}` and `S(u, w, c)` to `S(g u, g w, c)`.
+* `Matrix.coe_inv_specialIsometryGroup_eq_unitaryTransvection` and
+  `Matrix.coe_inv_specialIsometryGroup_eq_siegelTransvection`: explicit matrices for the inverses
+  of unitary transvections and Siegel transformations in `Q.specialIsometryGroup σ`.
+* `Matrix.coe_commutatorElement_eq_unitaryTransvection_of_mulVec_eq_smul` and
+  `Matrix.coe_commutatorElement_eq_unitaryTransvection_of_coe_eq_siegelTransvection`: explicit
+  unitary transvection matrices for commutators in `Q.specialIsometryGroup σ` of an
+  isotropic-vector rescaling with a transvection and of two Siegel transformations.
 * `Matrix.unitaryTransvectionSubgroup_smul`: `T(g • p) = g T(p) g⁻¹`.
 
 ## References
@@ -63,7 +72,7 @@ as the model for this file.
 
 public section
 
-open scoped LinearAlgebra.Projectivization Pointwise
+open scoped LinearAlgebra.Projectivization Pointwise commutatorElement
 
 namespace Matrix
 
@@ -114,6 +123,66 @@ theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection (hσ : Functio
       (transpose_map_siegelTransvection_mul_mul_self hσ hQ hu huw hc),
     rfl⟩
 
+/-- The inverse in `Q.specialIsometryGroup σ` of a Siegel transformation `S(u, w, c)` with
+`B(u, u) = B(u, w) = B(w, u) = 0` has matrix `S(u, -w, -c - ε B(w, w))`. -/
+theorem coe_inv_specialIsometryGroup_eq_siegelTransvection {s : Q.specialIsometryGroup σ} {ε : K}
+    {u w : n → K} (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0) (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0)
+    (hwu : (σ ∘ w) ⬝ᵥ (Q *ᵥ u) = 0) {c : K}
+    (hcs : ((s : SpecialLinearGroup n K) : Matrix n n K) = Q.siegelTransvection σ ε u w c) :
+    (((s⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.siegelTransvection σ ε u (-w) (-c - ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w))) :=
+  coe_inv_specialIsometryGroup_eq_of_mul_eq_one <| by
+    rw [hcs]
+    exact siegelTransvection_mul_siegelTransvection_neg_eq_one hu huw hwu c
+
+/-- The inverse in `Q.specialIsometryGroup σ` of a unitary transvection `τ_{v,a}` along an
+isotropic vector `v` has matrix `τ_{v,-a}`. -/
+theorem coe_inv_specialIsometryGroup_eq_unitaryTransvection {t : Q.specialIsometryGroup σ}
+    {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
+    (hct : ((t : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a) :
+    (((t⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.unitaryTransvection σ v (-a) :=
+  coe_inv_specialIsometryGroup_eq_of_mul_eq_one <| by
+    rw [hct, unitaryTransvection_mul_unitaryTransvection hv, add_neg_cancel,
+      unitaryTransvection_zero]
+
+/-- If `g : Q.specialIsometryGroup σ` scales an isotropic vector `v` by `c` and `t` has matrix
+`τ_{v,a}`, then the commutator `⁅g, t⁆` has matrix `τ_{v, a (c σ(c) - 1)}`. -/
+theorem coe_commutatorElement_eq_unitaryTransvection_of_mulVec_eq_smul
+    {g t : Q.specialIsometryGroup σ} {v : n → K} {c a : K}
+    (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0)
+    (hgv : ((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ v = c • v)
+    (hct : ((t : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a) :
+    (((⁅g, t⁆ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.unitaryTransvection σ v (a * (c * σ c - 1)) := by
+  rw [coe_commutatorElement_specialIsometryGroup,
+    coe_inv_specialIsometryGroup_eq_unitaryTransvection hv hct, Subgroup.coe_inv, hct,
+    coe_mul_unitaryTransvection_mul_coe_inv g.property, hgv, unitaryTransvection_smul,
+    unitaryTransvection_mul_unitaryTransvection hv]
+  congr 1
+  ring
+
+/-- The commutator in `Q.specialIsometryGroup σ` of two Siegel transformations `S(u, w₁, c₁)` and
+`S(u, w₂, c₂)` along an isotropic `u` orthogonal on both sides to `w₁` and `w₂` has matrix
+`τ_{u, ε (h(w₂, w₁) - h(w₁, w₂))}`. -/
+theorem coe_commutatorElement_eq_unitaryTransvection_of_coe_eq_siegelTransvection
+    {s₁ s₂ : Q.specialIsometryGroup σ} {ε c₁ c₂ : K} {u w₁ w₂ : n → K}
+    (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
+    (huw₁ : (σ ∘ u) ⬝ᵥ (Q *ᵥ w₁) = 0) (hw₁u : (σ ∘ w₁) ⬝ᵥ (Q *ᵥ u) = 0)
+    (huw₂ : (σ ∘ u) ⬝ᵥ (Q *ᵥ w₂) = 0) (hw₂u : (σ ∘ w₂) ⬝ᵥ (Q *ᵥ u) = 0)
+    (hcs₁ : ((s₁ : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.siegelTransvection σ ε u w₁ c₁)
+    (hcs₂ : ((s₂ : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.siegelTransvection σ ε u w₂ c₂) :
+    (((⁅s₁, s₂⁆ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
+      Q.unitaryTransvection σ u
+        (ε * ((σ ∘ w₂) ⬝ᵥ (Q *ᵥ w₁) - (σ ∘ w₁) ⬝ᵥ (Q *ᵥ w₂))) := by
+  rw [coe_commutatorElement_specialIsometryGroup,
+    coe_inv_specialIsometryGroup_eq_siegelTransvection hu huw₁ hw₁u hcs₁,
+    coe_inv_specialIsometryGroup_eq_siegelTransvection hu huw₂ hw₂u hcs₂, hcs₁, hcs₂,
+    siegelTransvection_mul_siegelTransvection_mul_neg_mul_neg_eq_unitaryTransvection hu huw₁ hw₁u
+      huw₂ hw₂u]
+
 end CommRing
 
 section Field
@@ -136,16 +205,8 @@ def unitaryTransvectionSubgroup (p : Q.isotropicPoints σ) :
       unitaryTransvection_mul_unitaryTransvection (comp_rep_dotProduct_mulVec_rep p)]
   inv_mem' {g} := by
     rintro ⟨a, ha⟩
-    refine ⟨-a, ?_⟩
-    have h₁ : ((g : SpecialLinearGroup n K) : Matrix n n K) *
-        Q.unitaryTransvection σ (p : ℙ K (n → K)).rep (-a) = 1 := by
-      rw [ha, unitaryTransvection_mul_unitaryTransvection (comp_rep_dotProduct_mulVec_rep p),
-        add_neg_cancel, unitaryTransvection_zero]
-    have h₂ : ((g : SpecialLinearGroup n K) : Matrix n n K) *
-        ((g⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) = 1 := by
-      rw [← SpecialLinearGroup.coe_mul, ← Subgroup.coe_mul, mul_inv_cancel, Subgroup.coe_one,
-        SpecialLinearGroup.coe_one]
-    rw [← inv_eq_right_inv h₂, inv_eq_right_inv h₁]
+    exact ⟨-a,
+      coe_inv_specialIsometryGroup_eq_unitaryTransvection (comp_rep_dotProduct_mulVec_rep p) ha⟩
 
 /-- An isometry lies in the transvection group of `p` exactly when it is a unitary transvection
 along the chosen representative of `p`. -/
@@ -182,7 +243,7 @@ instance (p : Q.isotropicPoints σ) : IsMulCommutative (Q.unitaryTransvectionSub
         Subgroup.coe_mul, SpecialLinearGroup.coe_mul, ha, hb,
         unitaryTransvection_mul_unitaryTransvection hv,
         unitaryTransvection_mul_unitaryTransvection hv, add_comm]
-    exact Subtype.ext (Subtype.ext (Subtype.ext h))⟩⟩
+    exact Subtype.ext (specialIsometryGroup_ext h)⟩⟩
 
 /-- **Conjugation moves transvection groups along the action**: `T(g • p) = g T(p) g⁻¹`. -/
 theorem unitaryTransvectionSubgroup_smul (g : Q.specialIsometryGroup σ)
@@ -252,19 +313,28 @@ theorem exists_coe_eq_unitaryTransvection_iff (hσ : Function.Involutive σ)
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
         Q.unitaryTransvection σ (p : ℙ K (n → K)).rep a) ↔ a + ε * σ a = 0 := by
   refine ⟨fun ⟨g, hg⟩ ↦ ?_, exists_coe_eq_unitaryTransvection hσ hQ p⟩
-  set v := (p : ℙ K (n → K)).rep
-  have hv := comp_rep_dotProduct_mulVec_rep p
-  have h := (mem_specialIsometryGroup_iff).mp (g : Q.specialIsometryGroup σ).property
-  rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ hv, add_eq_left, smul_eq_zero,
-    vecMulVec_eq_zero] at h
-  -- The column `Q v` and the row `vᵀ ^ σ Q` are nonzero, as `Q` is invertible and `v ≠ 0`.
-  have hQv : Q *ᵥ v ≠ 0 := fun h0 ↦
-    hdet (exists_mulVec_eq_zero_iff.mp ⟨v, (p : ℙ K (n → K)).rep_ne_zero, h0⟩)
-  have hσv : σ ∘ v ≠ 0 := fun h0 ↦ (p : ℙ K (n → K)).rep_ne_zero <| funext fun i ↦
-    (map_eq_zero σ).mp (congrFun h0 i)
-  have hvQ : (σ ∘ v) ᵥ* Q ≠ 0 := fun h0 ↦
-    hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ v, hσv, h0⟩)
-  exact h.resolve_right (not_or.mpr ⟨hQv, hvQ⟩)
+  have h := mem_specialIsometryGroup_iff.mp (g : Q.specialIsometryGroup σ).property
+  rw [hg, transpose_map_unitaryTransvection_mul_mul hσ hQ, comp_rep_dotProduct_mulVec_rep p,
+    mul_zero, add_zero, add_eq_left, smul_eq_zero] at h
+  exact h.resolve_right
+    (vecMulVec_mulVec_comp_vecMul_ne_zero hσ.injective hdet (p : ℙ K (n → K)).rep_ne_zero)
+
+/-- **The parameters of Siegel transformations in the special isometry group.** If `σ` is an
+involution and `Q` is a nondegenerate `ε`-Hermitian matrix, the Siegel transformation `S(u, w, c)`
+along a nonzero isotropic vector `u` with `h(u, w) = 0` belongs to `Q.specialIsometryGroup σ` if
+and only if `c + ε * σ c + ε * h(w, w) = 0`. -/
+theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
+    {u w : n → K} (hu0 : u ≠ 0) (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
+    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (c : K) :
+    (∃ g ∈ Q.specialIsometryGroup σ,
+      (g : Matrix n n K) = Q.siegelTransvection σ ε u w c) ↔
+      c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0 := by
+  refine ⟨fun ⟨g, hg, hcg⟩ ↦ ?_,
+    exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ hu huw⟩
+  have h := mem_specialIsometryGroup_iff.mp hg
+  rw [hcg, transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, add_eq_left, smul_eq_zero] at h
+  exact h.resolve_right (vecMulVec_mulVec_comp_vecMul_ne_zero hσ.injective hdet hu0)
 
 end Field
 

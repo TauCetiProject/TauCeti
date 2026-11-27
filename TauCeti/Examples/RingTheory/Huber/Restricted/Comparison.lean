@@ -10,7 +10,7 @@ import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.Huber.Padic.Basic
 import TauCeti.RingTheory.Huber.Restricted.Comparison
 import TauCeti.RingTheory.PowerSeries.AdicComplete
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
