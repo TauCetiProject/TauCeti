@@ -61,6 +61,8 @@ constant indicator classes it intersects the supporting sets.
   `c • 1_s` is `c • linftyIndicator μ s hs`.
 * `ContinuousLinearMap.compLp_indicatorConstLp`: postcomposition with a continuous linear map
   sends the indicator class of `c` to that of its image.
+* `ContinuousLinearMap.eNorm_apply_indicatorConstLp_le`: a continuous linear map `T` out of `Lᵖ`
+  sends `c 𝟙_s` to a vector of norm at most `‖T‖ ‖c‖ μ(s)^(1/p)`.
 * `ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton`: a continuous linear map out of
   counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on singleton-supported vectors is zero.
 * `ContinuousLinearMap.ext_indicatorConstLp`: continuous linear maps out of `Lᵖ`, `p ≠ ∞`, that
@@ -404,6 +406,16 @@ theorem compLp_indicatorConstLp {α 𝕜 𝕜' E F : Type*} [MeasurableSpace α]
     (indicatorConstLp_coeFn : ⇑(indicatorConstLp p hs hμs (L c)) =ᵐ[μ] _)] with x hx₁ hx₂ hx₃
   rw [hx₁, hx₂, hx₃]
   exact (congrFun (Set.indicator_comp_of_zero (f := fun _ ↦ c) (map_zero L)) x).symm
+
+/-- A continuous semilinear map `T` out of `Lᵖ` sends the indicator class `c 𝟙_s` to a vector of
+norm at most `‖T‖ ‖c‖ μ(s)^(1/p)`. -/
+theorem eNorm_apply_indicatorConstLp_le {α 𝕜 𝕜' E F : Type*} [MeasurableSpace α]
+    {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)] [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜'] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜' F] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
+    (T : Lp E p μ →SL[σ] F) {s : Set α} (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E) :
+    ‖T (indicatorConstLp p hs hμs c)‖ₑ ≤ ‖T‖ₑ * (‖c‖ₑ * μ s ^ (1 / p.toReal)) :=
+  T.le_opENorm_of_le eNorm_indicatorConstLp_le
 
 /-- A continuous linear map out of counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on all
 singleton-supported vectors is zero. No countability of the index space is needed. -/

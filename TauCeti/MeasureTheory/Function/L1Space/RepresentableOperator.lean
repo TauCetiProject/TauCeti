@@ -74,18 +74,6 @@ section ToVectorMeasure
 
 variable [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 X] [IsFiniteMeasure μ] (T : Lp 𝕜 1 μ →L[𝕜] X)
 
-omit [IsFiniteMeasure μ] in
-/-- The bound `‖T 𝟙_s‖ ≤ ‖T‖ μ(s)` for an operator on scalar `L¹`. -/
-private theorem eNorm_apply_indicatorConstLp_one_le {s : Set S} (hs : MeasurableSet s)
-    (hμs : μ s ≠ ∞) : ‖T (indicatorConstLp 1 hs hμs (1 : 𝕜))‖ₑ ≤ (‖T‖₊ • μ) s := by
-  calc ‖T (indicatorConstLp 1 hs hμs (1 : 𝕜))‖ₑ
-      ≤ ‖T‖ₑ * ‖indicatorConstLp 1 hs hμs (1 : 𝕜)‖ₑ := T.le_opENorm _
-    _ ≤ ‖T‖ₑ * μ s := by
-      gcongr
-      simpa using eNorm_indicatorConstLp_le (p := 1) (hs := hs) (hμs := hμs) (c := (1 : 𝕜))
-    _ = (‖T‖₊ • μ) s := by
-      rw [smul_apply, ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm]
-
 open Classical in
 /-- The vector measure `s ↦ T 𝟙_s` of a bounded operator `T` on scalar `L¹` of a finite measure.
 It is countably additive because it is dominated by the finite measure `‖T‖ μ`. -/
@@ -94,7 +82,9 @@ def toVectorMeasure : VectorMeasure S X :=
     (fun s ↦ if hs : MeasurableSet s then T (indicatorConstLp 1 hs (measure_ne_top μ s) 1) else 0)
     (fun s ↦ by
       split_ifs with hs
-      · exact eNorm_apply_indicatorConstLp_one_le T hs _
+      · simpa only [eNorm_one, one_mul, ENNReal.toReal_one, div_one, ENNReal.rpow_one,
+          smul_apply, ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm, nnNorm_one, ENNReal.coe_one]
+          using T.eNorm_apply_indicatorConstLp_le hs _ (1 : 𝕜)
       · simp)
     (fun s t hs ht hst ↦ by
       simp only [hs, ht, hs.union ht, dite_true]
@@ -121,7 +111,9 @@ theorem apply_indicatorConstLp_eq_smul_toVectorMeasure {s : Set S} (hs : Measura
 theorem variation_toVectorMeasure_le : T.toVectorMeasure.variation ≤ ‖T‖₊ • μ :=
   VectorMeasure.variation_le_of_forall_eNorm_le fun s hs ↦ by
     rw [toVectorMeasure_apply T hs]
-    exact eNorm_apply_indicatorConstLp_one_le T hs _
+    simpa only [eNorm_one, one_mul, ENNReal.toReal_one, div_one, ENNReal.rpow_one, smul_apply,
+      ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm, nnNorm_one, ENNReal.coe_one]
+      using T.eNorm_apply_indicatorConstLp_le hs _ (1 : 𝕜)
 
 instance isFiniteMeasure_variation_toVectorMeasure :
     IsFiniteMeasure T.toVectorMeasure.variation :=
