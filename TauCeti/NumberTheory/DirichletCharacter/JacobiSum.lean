@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.JacobiSum.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
+import TauCeti.Data.ZMod.Units
 
 /-!
 # Jacobi sums of Dirichlet characters
@@ -25,7 +26,6 @@ needs the primitivity: for `N = 9`, a primitive `χ` of order `6` and `ψ = χ�
 
 ## Main results
 
-* `jacobiSum_one_right`: on a finite commutative ring, `J(χ, 1) = ∑_{1 - r unit} χ(r)`.
 * `DirichletCharacter.sum_mul_apply_sub_eq_zero_of_isPrimitive`: if `χ ψ` is primitive, then
   `∑_x χ(x) ψ(t - x) = 0` at every nonunit `t`.
 * `DirichletCharacter.gaussSum_mul_jacobiSum_of_isPrimitive`: if `χ ψ` is primitive, then
@@ -37,17 +37,6 @@ needs the primitivity: for `N = 9`, a primitive `χ` of order `6` and `ψ = χ�
 public section
 
 open Finset
-
-/-- The Jacobi sum of `χ` and the trivial character is the sum of `χ` over the `r` with `1 - r` a
-unit. -/
-theorem jacobiSum_one_right {R R' : Type*} [CommRing R] [Fintype R] [CommRing R']
-    [DecidablePred (IsUnit : R → Prop)] (χ : MulChar R R') :
-    jacobiSum χ 1 = ∑ r with IsUnit (1 - r), χ r := by
-  rw [jacobiSum, sum_filter]
-  refine sum_congr rfl fun r _ ↦ ?_
-  by_cases hr : IsUnit (1 - r)
-  · simp [MulChar.one_apply hr, hr]
-  · simp [MulChar.map_nonunit _ hr, hr]
 
 namespace DirichletCharacter
 
@@ -76,15 +65,7 @@ theorem sum_mul_apply_sub_eq_zero_of_isPrimitive (h : (χ * ψ).IsPrimitive) {t 
     refine hnf ((factorsThrough_iff_ker_unitsMap hd).mpr fun u hu ↦ ?_)
     rw [MonoidHom.mem_ker, ← Units.val_inj, MulChar.coe_toUnitHom, Units.val_one]
     exact hall u hu
-  have hut : (u : ZMod N) * t = t := by
-    rw [MonoidHom.mem_ker, ← Units.val_inj, ZMod.unitsMap_val, Units.val_one] at hu
-    have hdvd : N / g ∣ ((u : ZMod N) - 1).val := by
-      rw [← ZMod.natCast_eq_zero_iff, ← ZMod.cast_eq_val, ZMod.cast_sub hd, hu, ZMod.cast_one hd,
-        sub_self]
-    rw [← sub_eq_zero, ← sub_one_mul, ← ZMod.natCast_zmod_val ((u : ZMod N) - 1),
-      ← ZMod.natCast_zmod_val t, ← Nat.cast_mul, ZMod.natCast_eq_zero_iff]
-    exact (dvd_of_eq (Nat.div_mul_cancel hg).symm).trans
-      (Nat.mul_dvd_mul hdvd (Nat.gcd_dvd_left _ _))
+  have hut : (u : ZMod N) * t = t := ZMod.unit_mul_eq_self_of_mem_ker_unitsMap hu
   -- The substitution `x = u x'` multiplies the sum by `(χ ψ)(u)`.
   have key : ∑ x, χ x * ψ (t - x) = (χ * ψ) (u : ZMod N) * ∑ x, χ x * ψ (t - x) := by
     rw [mul_sum]
