@@ -78,28 +78,15 @@ variable {ι₁ ι₂ : Type*} [Fintype ι₁] [DecidableEq ι₁] [Fintype ι�
 variable (ι₁ ι₂) in
 /-- The isomorphism `(ι₁ → ℂ) × (ι₂ → ℂ) ≃ (ι → ℂ)` of a splitting `e : ι₁ ⊕ ι₂ ≃ ι` of the
 coordinates. -/
-def coordSumEquiv (e : ι₁ ⊕ ι₂ ≃ ι) : (ι₁ → ℂ) × (ι₂ → ℂ) ≃ₜ+ (ι → ℂ) where
-  toFun x := Sum.elim x.1 x.2 ∘ e.symm
-  invFun y := (fun i ↦ y (e (Sum.inl i)), fun i ↦ y (e (Sum.inr i)))
-  left_inv x := by ext <;> simp
-  right_inv y := by
-    ext i
-    obtain ⟨j, rfl⟩ := e.surjective i
-    cases j <;> simp
-  map_add' x y := by
-    ext i
-    simp only [Function.comp_apply, Prod.fst_add, Prod.snd_add, Pi.add_apply]
-    cases e.symm i <;> simp
-  continuous_toFun := continuous_pi fun i ↦ by
-    simp only [Function.comp_apply]
-    cases e.symm i <;> simp only [Sum.elim_inl, Sum.elim_inr] <;> fun_prop
-  continuous_invFun := by fun_prop
+def coordSumEquiv (e : ι₁ ⊕ ι₂ ≃ ι) : (ι₁ → ℂ) × (ι₂ → ℂ) ≃ₜ+ (ι → ℂ) :=
+  ((ContinuousLinearEquiv.sumPiEquivProdPi ℂ ι₁ ι₂ fun _ ↦ ℂ).symm.trans
+    (ContinuousLinearEquiv.piCongrLeft ℂ (fun _ ↦ ℂ) e)).toContinuousAddEquiv
 
 omit [Fintype ι] [DecidableEq ι] [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂] in
 @[simp]
 theorem coordSumEquiv_apply (e : ι₁ ⊕ ι₂ ≃ ι) (x : (ι₁ → ℂ) × (ι₂ → ℂ)) (j : ι₁ ⊕ ι₂) :
     coordSumEquiv ι₁ ι₂ e x (e j) = Sum.elim x.1 x.2 j := by
-  simp [coordSumEquiv]
+  cases j <;> exact Equiv.piCongrLeft_apply_apply (P := fun _ ↦ ℂ) e _ _
 
 omit [DecidableEq ι] [DecidableEq ι₁] [DecidableEq ι₂] in
 /-- A sum over `ι` of a function of the coordinates of `coordSumEquiv e x` splits along `e`. -/
