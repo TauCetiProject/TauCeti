@@ -72,7 +72,7 @@ private lemma aeval_glnHeckePolynomial_succ_apply (U : End ℂ V) (m : ℕ) (q :
 /-- `Fin.castLE` sends `Fin.last k` to `⟨k, h⟩`. -/
 private lemma castLE_last {k m : ℕ} (h : k + 1 ≤ m) :
     Fin.castLE h (Fin.last k) = ⟨k, h⟩ :=
-  rfl
+  Fin.ext (by simp)
 
 /-- For real `q > 1`, `0 < (q : ℂ) ^ (n + 1) - 1`. -/
 private lemma pow_succ_sub_one_pos {q : ℝ} (hq : 1 < q) (n : ℕ) :
@@ -205,8 +205,8 @@ private lemma exists_mul_eq_sub_eval_and_apply {U U' : End ℂ V} {n : ℕ} {q :
         simp only [map_zero, add_zero, eval_add, eval_mul, eval_X, eval_C, map_add,
           LinearMap.add_apply, map_smul, LinearMap.smul_apply, Nat.choose_succ_succ,
           Nat.choose_one_right, Function.comp_apply, Fin.castLE_refl]
-        rw [aeval_p m le_rfl, show (⟨m, by omega⟩ : Fin (m + 1)) = Fin.last m from Fin.ext rfl,
-          hT_last]
+        have hlast_m : (⟨m, by omega⟩ : Fin (m + 1)) = Fin.last m := Fin.ext (by simp)
+        rw [aeval_p m le_rfl, hlast_m, hT_last]
         match_scalars <;> field
       · have hrec : U' (T ⟨m + 1, by omega⟩) =
             q ^ (n - m - 1) • ((t ⟨m + 1, by omega⟩ / q ^ n) • U' (T 0) - T ⟨m, by omega⟩) := by
@@ -317,7 +317,7 @@ private lemma glnHeckePolynomial_adjoint_core {B : V →ₛₗ[starRingEnd ℂ] 
   have aeval_P : aeval U P (T 0) = 0 := by
     have hcast : t ∘ Fin.castSucc = t ∘ Fin.castLE (by omega) :=
       funext fun i ↦ congrArg t (Fin.ext (by simp))
-    have hlast : (⟨n, by omega⟩ : Fin (n + 1)) = Fin.last n := Fin.ext rfl
+    have hlast : (⟨n, by omega⟩ : Fin (n + 1)) = Fin.last n := Fin.ext (by simp)
     dsimp only [P]
     rw [aeval_glnHeckePolynomial_succ_apply, hcast, aeval_p n le_rfl, hlast, map_smul, U_last]
     simp only [Nat.choose_succ_succ, Nat.choose_one_right]; module
@@ -423,23 +423,23 @@ private lemma glnHeckePolynomial_term_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (
           X ^ (N - (d.rev : ℕ))) := by
   refine mul_right_cancel₀ (pow_ne_zero d.val hqC) ?_
   have hN : N = d.val + d.rev.val := by simp [Fin.val_rev]; omega
-  have h_exp : N.choose 2 + d.val.choose 2 + d.val = d.rev.val.choose 2 + N * d.val := by
-    generalize d.val = a, d.rev.val = b at hN ⊢
-    subst hN
-    have h1 := Nat.add_choose_two_add_choose_two b a
-    have h2 : (b + a - 1) * a + a = (b + a) * a := by
-      cases a with
-      | zero => simp
-      | succ k => rw [Nat.add_succ_sub_one]; ring
-    rw [add_comm a b]; omega
+  have h_aux (a b : ℕ) (h : N = a + b) :
+      (N.choose 2 + a.choose 2 + a = b.choose 2 + N * a) ∧
+      ((-1 : ℂ) ^ a = (-1) ^ N * (-1) ^ b) ∧
+      ((-star y) ^ N = (-1) ^ N * (star y ^ a * star y ^ b)) := by
+    subst h
+    refine ⟨?_, ?_, ?_⟩
+    · have h1 := Nat.add_choose_two_add_choose_two b a
+      have h2 : (b + a - 1) * a + a = (b + a) * a := by
+        cases a with
+        | zero => simp
+        | succ k => rw [Nat.add_succ_sub_one]; ring
+      rw [add_comm a b]; omega
+    · rw [pow_add, mul_assoc, ← mul_pow]; simp
+    · rw [neg_pow, pow_add (star y)]
+  obtain ⟨h_exp, h_sign, hneg⟩ := h_aux d.val d.rev.val hN
   have hsub1 : N - d.val = d.rev.val := by omega
   have hsub2 : N - d.rev.val = d.val := by omega
-  have h_sign : (-1 : ℂ) ^ d.val = (-1) ^ N * (-1) ^ d.rev.val := by
-    generalize d.val = a, d.rev.val = b at hN ⊢
-    subst hN; rw [pow_add, mul_assoc, ← mul_pow]; simp
-  have hneg : (-star y) ^ N = (-1) ^ N * (star y ^ d.val * star y ^ d.rev.val) := by
-    generalize d.val = a, d.rev.val = b at hN ⊢
-    subst hN; rw [neg_pow, pow_add (star y)]
   calc
     _ = (-1) ^ d.val * star y ^ d.rev.val * (star (t d) * b₀) *
           (q : ℂ) ^ (N.choose 2 + d.val.choose 2 + d.val) := by
