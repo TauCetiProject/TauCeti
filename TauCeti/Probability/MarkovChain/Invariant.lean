@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.MarkovChain.Recurrence
 import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.Probability.Kernel.Invariance
-import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Positive recurrence, cycle occupation measures, and Kac's theorem

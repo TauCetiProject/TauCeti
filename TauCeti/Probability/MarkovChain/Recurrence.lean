@@ -505,14 +505,6 @@ theorem isTransient_deterministic {f : S → S} (hf : Measurable f) (x : S) :
     (deterministic f hf).IsTransient x ↔ x ∉ Function.periodicPts f := by
   rw [isTransient_iff, isRecurrent_deterministic]
 
-omit [MeasurableSingletonClass S] in
-/-- The constant kernel sending every state to `Measure.dirac a` is the deterministic kernel of the
-constant map `fun _ => a`. -/
-theorem const_dirac_eq_deterministic (a : S) :
-    const S (Measure.dirac a) = deterministic (fun _ : S => a) measurable_const := by
-  ext1 _
-  simp [deterministic_apply]
-
 /-- Under the constant kernel `const S (Measure.dirac a)` sending every state to `a`, the mean
 return time is `1` at `a` and `∞` at every `x ≠ a` (distinguishing positive return times
 `t ≥ 1` from time-zero entrance). -/

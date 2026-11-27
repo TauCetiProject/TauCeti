@@ -14,7 +14,6 @@ public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Probability.Process.Occupation
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Analysis.SpecificLimits.MovingAverage
-import TauCeti.Data.ENat.ENNReal
 import TauCeti.MeasureTheory.Measure.Subtype
 import TauCeti.Probability.MarkovChain.Transient.Occupation
 
@@ -43,7 +42,7 @@ initial law (`Kernel.IsNullRecurrent.tendsto_pow_comp_real_singleton`,
 `Kernel.tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent`).
 
 Only singleton convergence is asserted, not convergence in total variation to zero.
-The infinite-mean decay theorems transfer to arbitrary realizations of the chain through
+The non-positive-recurrent decay theorem transfers to arbitrary realizations of the chain through
 their path laws.
 
 ## References
@@ -87,11 +86,8 @@ theorem tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent
     (fun _ => measureReal_nonneg) hshift hb
     (fun n k _ => κ.sum_range_pow_comp_real_singleton_div_le ν y n k)
 
-/-- **Pointwise decay at an infinite-mean state.** For an irreducible
-aperiodic Markov kernel, if the extended mean positive return time to `y` is infinite,
-then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`.
-The mean assigns infinity to nonreturn, so no recurrence assumption is needed. -/
-theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top
+-- Pointwise decay at an infinite-mean state for an irreducible aperiodic Markov kernel.
+private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top
     [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
     (hy : κ.meanReturnTime y = ⊤) (ν : Measure α) [IsProbabilityMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
@@ -111,67 +107,6 @@ end Aperiodic
 section PeriodDecay
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-
-omit [MeasurableSingletonClass α] in
-private theorem cesaro_pow_mul_le (κ : Kernel α α) {d : ℕ} (hd : 0 < d) (y : α) (k : ℕ) :
-    (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y}) / k ≤
-      (d : ℝ) * ((∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y}) / (d * k : ℕ)) := by
-  let φ : ℕ → ℕ := fun j => d * (j + 1) - 1
-  have hφ (j : ℕ) : φ j + 1 = d * (j + 1) :=
-    Nat.sub_add_cancel (Nat.succ_le_of_lt (Nat.mul_pos hd (Nat.succ_pos j)))
-  have hφ_inj : Function.Injective φ := fun i j hij => by
-    have hmul : d * (i + 1) = d * (j + 1) := by rw [← hφ i, ← hφ j, hij]
-    exact Nat.succ.inj (mul_right_injective₀ hd.ne' hmul)
-  have hsub : (Finset.range k).image φ ⊆ Finset.range (d * k) := by
-    intro m hm
-    obtain ⟨j, hj, rfl⟩ := Finset.mem_image.mp hm
-    rw [Finset.mem_range] at hj ⊢
-    exact Nat.lt_of_lt_of_le (by rw [← hφ j]; exact Nat.lt_succ_self _)
-      (Nat.mul_le_mul_left d hj)
-  have hsum_le :
-      (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y}) ≤
-        ∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y} :=
-    Finset.sum_le_sum_of_injOn φ hφ_inj.injOn hsub
-      (fun j _ => le_of_eq (by rw [← pow_mul, hφ j]))
-      (fun _ _ _ => measureReal_nonneg)
-  have hd0 : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
-  rw [Nat.cast_mul, ← mul_div_assoc, mul_div_mul_left _ _ hd0]
-  exact div_le_div_of_nonneg_right hsum_le (Nat.cast_nonneg k)
-
-/-- Sampling a chain on a countable state space at multiples of `κ.period y` preserves null
-recurrence of `y`. -/
-theorem IsNullRecurrent.pow_period [Countable α] {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
-    (hy : κ.IsNullRecurrent y) :
-    (κ ^ κ.period y).IsNullRecurrent y := by
-  -- Positive return probabilities occur only at multiples of `κ.period y`, while Cesàro return
-  -- averages of `κ ^ κ.period y` are bounded by `κ.period y` times those of `κ`.
-  set d := κ.period y
-  have hd : 0 < d := hy.isRecurrent.period_pos
-  have hrec : (κ ^ d).IsRecurrent y := by
-    rw [isRecurrent_iff_tsum_eq_top]
-    simp_rw [← pow_mul]
-    have htsum : (∑' k : ℕ, (κ ^ (d * k)) y {y}) = ∑' n : ℕ, (κ ^ n) y {y} := by
-      refine Function.Injective.tsum_eq (f := fun n => (κ ^ n) y {y})
-        (mul_right_injective₀ hd.ne') fun n hn => ?_
-      rw [Function.mem_support] at hn
-      obtain ⟨k, rfl⟩ := Classical.not_not.mp
-        (mt pow_apply_singleton_self_eq_zero_of_not_period_dvd hn)
-      exact ⟨k, rfl⟩
-    exact htsum.trans (isRecurrent_iff_tsum_eq_top.mp hy.isRecurrent)
-  refine isNullRecurrent_iff.mpr ⟨hrec, ?_⟩
-  rw [← not_lt_top_iff, ← isPositiveRecurrent_iff, ← inv_meanReturnTime_toReal_eq_zero_iff]
-  refine tendsto_nhds_unique ((κ ^ d).tendsto_cesaro_pow_real_singleton_self y) ?_
-  have hlim0 : Tendsto (fun n : ℕ => (∑ i ∈ Finset.range n, ((κ ^ (i + 1)) y).real {y}) / n)
-      atTop (𝓝 0) := by
-    simpa only [inv_meanReturnTime_toReal_eq_zero_iff.mpr hy.not_isPositiveRecurrent] using
-      κ.tendsto_cesaro_pow_real_singleton_self y
-  have hlim_dk : Tendsto (fun k : ℕ =>
-      (d : ℝ) * ((∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y}) / (d * k : ℕ)))
-      atTop (𝓝 0) := by
-    simpa only [mul_zero, Function.comp_def] using (tendsto_const_nhds (x := (d : ℝ))).mul
-      (hlim0.comp (tendsto_atTop_mono (fun k => Nat.le_mul_of_pos_left k hd) tendsto_id))
-  exact squeeze_zero (fun k => div_nonneg (Finset.sum_nonneg fun _ _ => measureReal_nonneg)
-    (Nat.cast_nonneg k)) (cesaro_pow_mul_le κ hd y) hlim_dk
 
 private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_not_isPositiveRecurrent_finite
     {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
@@ -298,26 +233,6 @@ end PeriodDecay
 end ProbabilityTheory.Kernel
 
 namespace ProbabilityTheory.HasLaw
-
-/-- On any realization of an irreducible aperiodic chain, the probability
-of occupying an infinite-mean state tends to zero. -/
-theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_lintegral_return_eq_top
-    {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-    [MeasurableSpace Ω] {κ : Kernel α α} [IsMarkovKernel κ]
-    [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsProbabilityMeasure ν]
-    {P : Measure Ω} {X : ℕ → Ω → α}
-    (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) P)
-    (hκ : κ.IsAperiodic) {y : α}
-    (hy : (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-      (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ) = ⊤) :
-    Tendsto (fun n : ℕ => P.real {ω | X n ω = y}) atTop (𝓝 0) := by
-  have heq (n : ℕ) : P.real {ω | X n ω = y} = ((κ ^ n) ∘ₘ ν).real {y} :=
-    (hX.eval_markovChainLaw ν κ n).measureReal_eq (measurableSet_singleton y)
-  simp_rw [heq]
-  have hm : κ.meanReturnTime y = ⊤ := by
-    rw [Kernel.meanReturnTime_def, ← hy]
-    simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
-  exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top hκ hm ν
 
 /-- On any realization of a counting-measure-irreducible chain (periodic or aperiodic) started from
 a finite initial law, the time-`n` measure of occupying a non-positive-recurrent state tends to

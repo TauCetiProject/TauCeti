@@ -100,9 +100,10 @@ theorem tendsto_countdownKernel_map_pred_pow_apply_zero (ν : Measure ℕ) [IsPr
       rw [hm]
       simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
       exact (ν.lintegral_hittingAfter_countdownKernel_map_pred hν).trans hmean
-    simpa only [hmass, hmean, ENNReal.inv_top, ENNReal.toReal_zero] using
-      κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top
-        haper hret (dirac z)
+    have hlim := κ.tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent
+      (by rwa [Kernel.isPositiveRecurrent_iff, not_lt_top_iff]) (dirac z)
+    simp_rw [hmass] at hlim
+    simpa only [hmean, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
   · obtain ⟨ρ, hρ, hstat, hz⟩ := exists_invariant_countdownKernel_subtype ν hν hmean
     let := hρ
     -- Identify the helper's local gap law and zero state with μ and z above.

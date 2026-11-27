@@ -139,6 +139,13 @@ theorem ae_tendsto_visitCount_div_markovChainLaw_dirac (κ : Kernel α α)
 
 end ProbabilityTheory.Kernel
 
+private theorem measurable_visitCount_succ_div {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] (y : α) (n : ℕ) :
+    Measurable (fun x : ℕ → α => (visitCount (fun k => x (k + 1)) y n : ℝ) / n) :=
+  ((measurable_of_countable (fun k : ℕ => (k : ℝ))).comp
+    (measurable_visitCount_comp y n (measurableSet_singleton y)
+      (fun i _ => measurable_pi_apply (i + 1)))).div_const n
+
 namespace ProbabilityTheory.HasLaw
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
@@ -164,11 +171,7 @@ theorem tendsto_integral_visitCount_div_markovChainLaw_dirac
       (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
   classical
   let : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  have hm (n : ℕ) : Measurable (fun x : ℕ → α =>
-      (visitCount (fun k => x (k + 1)) y n : ℝ) / n) :=
-    ((measurable_of_countable (fun k : ℕ => (k : ℝ))).comp
-      (measurable_visitCount_comp y n (measurableSet_singleton y)
-        (fun i _ => measurable_pi_apply (i + 1)))).div_const n
+  have hm := measurable_visitCount_succ_div y
   have hb (n : ℕ) : ∀ᵐ ω ∂P,
       ‖(visitCount (fun k => X ω (k + 1)) y n : ℝ) / n‖ ≤ 1 := by
     apply Eventually.of_forall
@@ -315,15 +318,11 @@ theorem tendsto_integral_visitCount_div_markovChainLaw [IsFiniteMeasure ν]
     Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P) atTop
       (𝓝 (P.real {ω | hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤} *
         (κ.meanReturnTime y)⁻¹.toReal)) := by
-  have hm (n : ℕ) : Measurable (fun x : ℕ → α =>
-      (visitCount (fun k => x (k + 1)) y n : ℝ) / n) :=
-    ((measurable_of_countable (fun k : ℕ => (k : ℝ))).comp
-      (measurable_visitCount_comp y n (measurableSet_singleton y)
-        (fun i _ => measurable_pi_apply (i + 1)))).div_const n
   have heq (n : ℕ) :
       (∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P) =
         ∫ x, (visitCount (fun k => x (k + 1)) y n : ℝ) / n ∂markovChainLaw ν κ := by
-    simpa only [Function.comp_apply] using hX.integral_comp (hm n).aestronglyMeasurable
+    simpa only [Function.comp_apply] using
+      hX.integral_comp (measurable_visitCount_succ_div y n).aestronglyMeasurable
   have hE : MeasurableSet {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} :=
     measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 0
   have hreal : P.real {ω | hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤} =

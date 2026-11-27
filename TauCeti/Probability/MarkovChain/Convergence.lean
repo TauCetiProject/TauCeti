@@ -64,7 +64,8 @@ theorem tendsto_pow_comp_real_singleton_of_isAperiodic
       (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
   by_cases hy : κ.meanReturnTime y = ⊤
   · simpa only [hy, ENNReal.inv_top, ENNReal.toReal_zero] using
-      κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top hκ hy ν
+      κ.tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent
+        (by rwa [isPositiveRecurrent_iff, not_lt_top_iff]) ν
   · have hpos : κ.IsPositiveRecurrent y :=
       (isPositiveRecurrent_iff κ y).mpr (lt_top_iff_ne_top.mpr hy)
     obtain ⟨π, ⟨hprob, hπ⟩, _⟩ := hpos.existsUnique_invariant_probability
