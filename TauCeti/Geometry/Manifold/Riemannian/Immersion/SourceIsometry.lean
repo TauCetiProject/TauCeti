@@ -68,17 +68,6 @@ variable
   {cov : CovariantDerivative J F (TangentSpace J : N → Type _)} {f : M → N} {ψ : M' → M}
   {x' : M'}
 
-omit [FiniteDimensional ℝ E] [IsManifold I 2 M] [FiniteDimensional ℝ F] [IsManifold J 2 N]
-  [FiniteDimensional ℝ E'] [IsManifold I' 2 M'] in
-/-- Precomposition with a map whose differential at `x'` is surjective does not change the normal
-space. -/
-theorem orthogonalNormalSpace_comp (hf : MDifferentiableAt I J f (ψ x'))
-    (hψ : MDifferentiableAt I' I ψ x') (hψ' : Function.Surjective (mfderiv I' I ψ x')) :
-    orthogonalNormalSpace I' J (f ∘ ψ) x' = orthogonalNormalSpace I J f (ψ x') := by
-  rw [orthogonalNormalSpace_def, orthogonalNormalSpace_def, mfderiv_comp x' hf hψ]
-  congr 1
-  exact LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr hψ')
-
 /-- **The second fundamental form under precomposition with a local diffeomorphism**: if `ψ` is
 `C²` at `x'` and its differential is invertible near `x'`, then
 `B^{f ∘ ψ}_{x'}(v, w) = B^f_{ψ x'}(dψ v, dψ w)`. No metric on the source is involved. -/
