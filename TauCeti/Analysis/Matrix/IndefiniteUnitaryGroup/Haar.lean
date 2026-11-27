@@ -49,8 +49,6 @@ entries; measures and statements use the topology of entries.
 
 ## Main definitions
 
-* `Matrix.unitaryGroupOf.cayleyChartUnitary A S`: the Cayley chart as a map to `U(A)`, equal to
-  `1` off the source of the chart.
 * `Matrix.unitaryGroupOf.cayleyDensity A S`: the density `|det (1 - A⁻¹ S / 2)|^(-2 n)`.
 * `Matrix.unitaryGroupOf.cayleyMeasure A μ`: the Cayley measure on `U(A)`.
 
@@ -61,7 +59,8 @@ entries; measures and statements use the topology of entries.
 * `Matrix.unitaryGroupOf.isMulLeftInvariant_cayleyMeasure`,
   `Matrix.unitaryGroupOf.isInvInvariant_cayleyMeasure`,
   `Matrix.unitaryGroupOf.isMulRightInvariant_cayleyMeasure`: for an additive Haar measure `μ`, the
-  Cayley measure is invariant under left multiplication, inversion and right multiplication.
+  Cayley measure is invariant under left multiplication, inversion and right multiplication;
+  invariance under inversion only needs `μ` to be invariant under negation.
 * `Matrix.unitaryGroupOf.isHaarMeasure_cayleyMeasure`: it is a Haar measure.
 
 ## Provenance
@@ -111,9 +110,10 @@ theorem measurable_cayleyChartUnitary [MeasurableSpace (unitaryGroupOf A)]
     isOpen_cayleyChartSource.measurableSet
 
 /-- The **Cayley density** `|det (1 - A⁻¹ S / 2)|^(-2 n)` of the skew-Hermitian `S`, where
-`n` is the size of the matrices. It is the determinant of the logarithmic derivative of the
-Cayley chart (`Matrix.unitaryGroupOf.det_codRestrict_mulLeft_comp_fderiv_cayleyChart`), and it
-vanishes off the source of the chart. -/
+`n` is the size of the matrices. For an invertible Hermitian `A` and `S` in the source of the
+chart, it is the determinant of the logarithmic derivative of the Cayley chart
+(`Matrix.unitaryGroupOf.det_codRestrict_mulLeft_comp_fderiv_cayleyChart`). It vanishes off the
+source of the chart. -/
 noncomputable def cayleyDensity (A : Matrix n n ℂ)
     (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) : ℝ≥0∞ :=
   ENNReal.ofReal (normSq (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))).det ^ Fintype.card n)⁻¹
@@ -340,6 +340,30 @@ theorem lintegral_cayleyMeasure (hA : A.IsHermitian)
   exact lintegral_withDensity_eq_lintegral_mul _ measurable_cayleyDensity
     (hF.comp (measurable_cayleyChartUnitary hA))
 
+section Neg
+
+variable [μ.IsNegInvariant]
+
+/-- Inversion invariance of integrals for the Cayley measure: `∫ F(g⁻¹) dμ^c = ∫ F dμ^c`.
+In Cayley coordinates inversion is `S ↦ -S`, which preserves the density and, since `μ` is
+invariant under negation, also `μ`. -/
+private theorem lintegral_inv_cayleyMeasure (hA : A.IsHermitian)
+    {F : unitaryGroupOf A → ℝ≥0∞} (hF : Measurable F) :
+    ∫⁻ g, F g⁻¹ ∂cayleyMeasure A μ = ∫⁻ g, F g ∂cayleyMeasure A μ := by
+  rw [lintegral_cayleyMeasure μ hA (F := fun g ↦ F g⁻¹) (hF.comp measurable_inv),
+    lintegral_cayleyMeasure μ hA hF,
+    ← lintegral_neg_eq_self (μ := μ) (fun S ↦ cayleyDensity A S * F (cayleyChartUnitary A S))]
+  simp only [cayleyDensity_neg hA, cayleyChartUnitary_neg hA]
+
+/-- **The Cayley measure is invariant under inversion.** This holds for every measure `μ` invariant
+under negation, in particular for every additive Haar measure. -/
+theorem isInvInvariant_cayleyMeasure (hA : A.IsHermitian) :
+    (cayleyMeasure A μ).IsInvInvariant :=
+  ⟨Measure.ext_of_lintegral _ fun F hF ↦ by
+    rw [Measure.inv, lintegral_map hF measurable_inv, lintegral_inv_cayleyMeasure μ hA hF]⟩
+
+end Neg
+
 section Invariance
 
 variable [μ.IsAddHaarMeasure]
@@ -438,22 +462,6 @@ theorem isMulLeftInvariant_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
     (cayleyMeasure A μ).IsMulLeftInvariant :=
   ⟨fun a ↦ Measure.ext_of_lintegral _ fun F hF ↦ by
     rw [lintegral_map hF (measurable_const_mul a), lintegral_mul_left_cayleyMeasure μ hA hA' a hF]⟩
-
-/-- Inversion invariance of integrals for the Cayley measure: `∫ F(g⁻¹) dμ^c = ∫ F dμ^c`.
-In Cayley coordinates inversion is `S ↦ -S`, which preserves the density and `μ`. -/
-private theorem lintegral_inv_cayleyMeasure (hA : A.IsHermitian)
-    {F : unitaryGroupOf A → ℝ≥0∞} (hF : Measurable F) :
-    ∫⁻ g, F g⁻¹ ∂cayleyMeasure A μ = ∫⁻ g, F g ∂cayleyMeasure A μ := by
-  rw [lintegral_cayleyMeasure μ hA (F := fun g ↦ F g⁻¹) (hF.comp measurable_inv),
-    lintegral_cayleyMeasure μ hA hF,
-    ← lintegral_neg_eq_self (μ := μ) (fun S ↦ cayleyDensity A S * F (cayleyChartUnitary A S))]
-  simp only [cayleyDensity_neg hA, cayleyChartUnitary_neg hA]
-
-/-- **The Cayley measure is invariant under inversion.** -/
-theorem isInvInvariant_cayleyMeasure (hA : A.IsHermitian) :
-    (cayleyMeasure A μ).IsInvInvariant :=
-  ⟨Measure.ext_of_lintegral _ fun F hF ↦ by
-    rw [Measure.inv, lintegral_map hF measurable_inv, lintegral_inv_cayleyMeasure μ hA hF]⟩
 
 /-- **The Cayley measure is right invariant.** -/
 theorem isMulRightInvariant_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
