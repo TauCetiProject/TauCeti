@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Center
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Decomposition
+import TauCeti.Algebra.Group.AddChar.Equiv
 import TauCeti.GroupTheory.Subgroup.Centralizer
 import TauCeti.LinearAlgebra.RootSystem.LongestElement
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
@@ -202,12 +203,7 @@ def centerExtendedElementarySubgroupEquiv :
     AddChar (D.weightLattice ⧸
         ((t.simplyConnectedRootDatum ht).rootSpan ℤ).comap D.weightLattice.subtype) Kˣ ≃*
       Subgroup.center (D.extendedElementarySubgroup K) :=
-  MulEquiv.trans
-    { toFun := fun χ => χ.compAddMonoidHom D.weightLatticeQuotientEquiv.symm.toAddMonoidHom
-      invFun := fun ψ => ψ.compAddMonoidHom D.weightLatticeQuotientEquiv.toAddMonoidHom
-      left_inv := fun χ => by ext x; simp
-      right_inv := fun ψ => by ext x; simp
-      map_mul' := fun _ _ => by ext x; rfl }
+  (AddChar.congrLeft D.weightLatticeQuotientEquiv.symm.toAddEquiv).trans
     ((D.torusInfCentralizerRootTorusSubgroupEquiv K).trans
       (Subgroup.centerEquivOfMapSubtypeEq (D.map_center_extendedElementarySubgroup K)))
 
@@ -221,7 +217,7 @@ theorem coe_centerExtendedElementarySubgroupEquiv
         D.points K) =
       D.torusPoints K (fun i => χ (Submodule.Quotient.mk (D.weightLatticeBasis i))) := by
   simp only [centerExtendedElementarySubgroupEquiv, MulEquiv.trans_apply,
-    MulEquiv.coe_mk, Equiv.coe_fn_mk, Subgroup.coe_centerEquivOfMapSubtypeEq,
+    LinearEquiv.coe_toAddEquiv, Subgroup.coe_centerEquivOfMapSubtypeEq,
     D.coe_torusInfCentralizerRootTorusSubgroupEquiv K]
   refine congrArg (D.torusPoints K) (funext fun i => ?_)
   have hsingle : D.weightLatticeBasis.equivFun.symm (Pi.single i 1) = D.weightLatticeBasis i := by
@@ -265,12 +261,7 @@ def scChevalleyDatumCenterElementarySubgroupEquiv (K : Type v) [Field K] :
     AddChar ((Fin t.rank → ℤ) ⧸ (t.simplyConnectedRootDatum ht).rootSpan ℤ) Kˣ ≃*
       Subgroup.center ((t.scChevalleyDatum ht).elementarySubgroup K) :=
   let e := Submodule.quotEquivOfEq _ _ (t.span_range_scChevalleyDatum_coordinateRoot_eq_rootSpan ht)
-  MulEquiv.trans
-    { toFun := fun χ => χ.compAddMonoidHom e.toAddMonoidHom
-      invFun := fun ψ => ψ.compAddMonoidHom e.symm.toAddMonoidHom
-      left_inv := fun χ => by ext x; simp
-      right_inv := fun ψ => by ext x; simp
-      map_mul' := fun _ _ => by ext x; rfl }
+  (AddChar.congrLeft e.toAddEquiv).trans
     (((t.scChevalleyDatum ht).torusInfCentralizerRootTorusSubgroupEquiv K).trans
       (Subgroup.centerEquivOfMapSubtypeEq (t.map_center_scChevalleyDatum_elementarySubgroup ht K)))
 
@@ -283,7 +274,7 @@ theorem coe_scChevalleyDatumCenterElementarySubgroupEquiv (K : Type v) [Field K]
         (t.scChevalleyDatum ht).elementarySubgroup K) : (t.scChevalleyDatum ht).points K) =
       (t.scChevalleyDatum ht).torusPoints K (quotientCharTorusPoint _ χ) := by
   simp only [scChevalleyDatumCenterElementarySubgroupEquiv, MulEquiv.trans_apply,
-    MulEquiv.coe_mk, Equiv.coe_fn_mk, Subgroup.coe_centerEquivOfMapSubtypeEq,
+    LinearEquiv.coe_toAddEquiv, Subgroup.coe_centerEquivOfMapSubtypeEq,
     ChevalleyDatum.coe_torusInfCentralizerRootTorusSubgroupEquiv]
   refine congrArg ((t.scChevalleyDatum ht).torusPoints K) (funext fun i => ?_)
   simp [quotientCharTorusPoint_apply]
