@@ -23,9 +23,11 @@ and limit pages:
 2. **A two-term `ℤ`-module spectral sequence `E₂^{0,1} = ℤ →(×2) E₂^{2,0} = ℤ`**
    (`TauCeti.Examples.LimitPage.timesTwoPage2`): does not stabilize at `(0, 1)` or `(2, 0)` on
    page `2`, does not degenerate at page `2`, degenerates at page `3`, has vanishing limit page at
-   `(0, 1)`, and has nontrivial limit page `cokernel (×2) ≅ ℤ/2ℤ` at `(2, 0)`.
+   `(0, 1)`, and has limit page isomorphic to `cokernel (×2)`
+   (`TauCeti.Examples.LimitPage.targetCokIsoLimitPage`) and nonzero
+   (`TauCeti.Examples.LimitPage.not_isZero_limitPage_timesTwoPage2_two_zero`) at `(2, 0)`.
 3. **The filtered complex `ℤ →(×2) ℤ`** (`TauCeti.Examples.TimesTwo.spectralObject`): at `(1, -1)`
-   the limit cycles vanish (`Z_∞ = ⊥`), the object on page `3` vanishes, the spectral sequence
+   the page-3 cycles vanish (`Z_3 = ⊥`), the object on page `3` vanishes, the spectral sequence
    stabilizes from page `3`, and `E_∞(1, -1) = 0`.
 -/
 
@@ -49,7 +51,9 @@ def graded (X : κ → C) : SpectralSequence C c r₀ where
 
 lemma degeneratesAt_graded (X : κ → C) : (graded c r₀ X).DegeneratesAt r₀ where
   le := le_rfl
-  d_eq_zero _ _ _ _ _ := rfl
+  d_eq_zero _ _ _ _ _ := by
+    change (HomologicalComplex.graded (c _) X).d _ _ = 0
+    simp
 
 instance hasLimitPage_graded (X : κ → C) (pq : κ) : (graded c r₀ X).HasLimitPage pq :=
   ((degeneratesAt_graded c r₀ X).stabilizesAt pq).hasLimitPage
@@ -160,17 +164,22 @@ def timesTwoPage2 : SpectralSequence (ModuleCat ℤ) cohShape 2 where
       refine (HomologicalComplex.XIsoHomologyOfDEqZero _ pq h0 h1).symm ≪≫ eqToIso ?_
       rw [timesTwoPage_of_ne hr2, timesTwoPage_of_ne hr'2]
 
+private lemma timesTwoPage2_page (r : ℤ) (hr : 2 ≤ r) :
+    timesTwoPage2.page r hr = timesTwoPage r :=
+  rfl
+
 lemma d_timesTwoPage2_two_ne_zero :
     (timesTwoPage2.page 2 le_rfl).d (0, 1) (2, 0) ≠ 0 := by
   intro h
+  rw [timesTwoPage2_page, timesTwoPage_two] at h
   have h1 : (HomologicalComplex.doubleXIso₀ mulTwo cohShape_rel_two).hom ≫ mulTwo ≫
-      (HomologicalComplex.doubleXIso₁ mulTwo cohShape_rel_two pair_ne).inv = 0 := by
-    refine (HomologicalComplex.double_d mulTwo cohShape_rel_two pair_ne).symm.trans ?_
-    exact h
+      (HomologicalComplex.doubleXIso₁ mulTwo cohShape_rel_two pair_ne).inv = 0 :=
+    (HomologicalComplex.double_d mulTwo cohShape_rel_two pair_ne).symm.trans h
   have h2 : mulTwo = 0 := by
-    simpa using (cancel_epi (HomologicalComplex.doubleXIso₀ mulTwo cohShape_rel_two).hom).1
-      ((cancel_mono (HomologicalComplex.doubleXIso₁ mulTwo cohShape_rel_two pair_ne).inv).1
-        (by simpa using h1))
+    rw [← cancel_epi (HomologicalComplex.doubleXIso₀ mulTwo cohShape_rel_two).hom,
+      ← cancel_mono (HomologicalComplex.doubleXIso₁ mulTwo cohShape_rel_two pair_ne).inv,
+      comp_zero, zero_comp, Category.assoc]
+    exact h1
   have h3 := ConcreteCategory.congr_hom h2 (1 : ℤ)
   norm_num [mulTwo, ZModZ] at h3
 
@@ -194,11 +203,7 @@ lemma degeneratesAt_timesTwoPage2_three : timesTwoPage2.DegeneratesAt 3 where
   le := by norm_num
   d_eq_zero r _ h3r pq pq' := by
     have hne : r ≠ 2 := by lia
-    have hd : ∀ (K : HomologicalComplex (ModuleCat ℤ) (cohShape r)),
-        K = HomologicalComplex.graded (cohShape r) page3Obj → K.d pq pq' = 0 := by
-      rintro _ rfl
-      rfl
-    exact hd _ (timesTwoPage_of_ne hne)
+    rw [timesTwoPage2_page, timesTwoPage_of_ne hne]
 
 example : timesTwoPage2.IsRegularAt (0, 1) ∧ timesTwoPage2.IsCoregularAt (0, 1) :=
   ⟨(degeneratesAt_timesTwoPage2_three.stabilizesAt (0, 1)).isRegularAt,
@@ -215,18 +220,16 @@ instance hasLimitPage_timesTwoPage2 (pq : ℕ × ℕ) : timesTwoPage2.HasLimitPa
 lemma isZero_limitPage_timesTwoPage2_zero_one : IsZero (timesTwoPage2.limitPage (0, 1)) := by
   have hst := degeneratesAt_timesTwoPage2_three.stabilizesAt (0, 1)
   have h3 : IsZero ((timesTwoPage2.page 3 (by norm_num)).X (0, 1)) := by
-    dsimp only [timesTwoPage2, timesTwoPage]
-    split_ifs with h
-    · exact absurd h (by norm_num)
-    · dsimp only [HomologicalComplex.graded_X, page3Obj]
-      rw [ite_eq_right (by decide)]
-      exact isZero_zero _
+    rw [timesTwoPage2_page, timesTwoPage_of_ne (by norm_num)]
+    dsimp only [HomologicalComplex.graded_X, page3Obj]
+    rw [ite_eq_right (by decide)]
+    exact isZero_zero _
   exact h3.of_iso (hst.limitPageIso 3 (by norm_num) le_rfl).symm
 
 /-- At `(2, 0)`, the limit page of `timesTwoPage2` is isomorphic to `cokernel (×2)`. -/
 def targetCokIsoLimitPage : targetCok ≅ timesTwoPage2.limitPage (2, 0) :=
   have hst := degeneratesAt_timesTwoPage2_three.stabilizesAt (2, 0)
-  eqToIso (by simp [timesTwoPage2, timesTwoPage, page3Obj]) ≪≫
+  eqToIso (by rw [timesTwoPage2_page, timesTwoPage_of_ne (by norm_num)]; simp [page3Obj]) ≪≫
     hst.limitPageIso 3 (by norm_num) le_rfl
 
 /-- At `(2, 0)`, the limit page of `timesTwoPage2` is nonzero. -/

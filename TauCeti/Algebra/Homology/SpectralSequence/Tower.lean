@@ -34,6 +34,14 @@ each page of `E` to that of `E'` through its first-page component, over its comp
 `Z_r(E, pq)` into `Z_r(E', pq)` and `B_r(E, pq)` into `B_r(E', pq)`, and an isomorphism of spectral
 sequences identifies the towers.
 
+The presentations and towers are compatible with rebasing to a later page `s ≥ r₀`
+(`CategoryTheory.SpectralSequence.fromPage`): composing the page-`s` presentation of `E` with the
+page-`r` presentation of `E.fromPage s hs` yields the page-`r` presentation of `E`
+(`CategoryTheory.SpectralSequence.pagePresentation_trans_fromPage`), so the rebased cycle and
+boundary subobjects at page `r ≥ s` are the images of `Z_r(pq)` and `B_r(pq)` under the page-`s`
+presentation (`CategoryTheory.SpectralSequence.fromPage_cyclesSubobject_eq_image`,
+`CategoryTheory.SpectralSequence.fromPage_boundariesSubobject_eq_image`).
+
 ## Main definitions
 
 * `CategoryTheory.SpectralSequence.pagePresentation`: the presentation of `(E.page r).X pq` inside
@@ -67,6 +75,14 @@ sequences identifies the towers.
 * `CategoryTheory.SpectralSequence.pullback_cyclesSubobject_of_iso`,
   `CategoryTheory.SpectralSequence.pullback_boundariesSubobject_of_iso`: isomorphic spectral
   sequences have towers corresponding under the first-page isomorphism.
+* `CategoryTheory.SpectralSequence.pagePresentation_trans_fromPage`,
+  `CategoryTheory.SpectralSequence.preimage_fromPage_cyclesSubobject`,
+  `CategoryTheory.SpectralSequence.preimage_fromPage_boundariesSubobject`,
+  `CategoryTheory.SpectralSequence.fromPage_cyclesSubobject_eq_image`,
+  `CategoryTheory.SpectralSequence.fromPage_boundariesSubobject_eq_image`,
+  `CategoryTheory.SpectralSequence.orderIso_fromPage_cyclesSubobject`,
+  `CategoryTheory.SpectralSequence.orderIso_fromPage_boundariesSubobject`: compatibility of the
+  presentations and towers with rebasing.
 
 ## References
 

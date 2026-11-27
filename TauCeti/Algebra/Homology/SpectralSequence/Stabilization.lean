@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
-public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
+public import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
 public import TauCeti.Algebra.Homology.SpectralSequence.Tower
 
 /-!
@@ -148,8 +148,8 @@ lemma degeneratesAt_iff_forall_stabilizesAt (hs : r₀ ≤ s) :
 lemma stabilizesAt_of_isZero {r : ℤ} (hr : r₀ ≤ r) (h : IsZero ((E.page r hr).X pq)) :
     E.StabilizesAt pq r where
   le := hr
-  dFrom_eq_zero _ _ hrr' := (E.isZero_page_X_of_le hr h _ hrr').eq_of_src _ _
-  dTo_eq_zero _ _ hrr' := (E.isZero_page_X_of_le hr h _ hrr').eq_of_tgt _ _
+  dFrom_eq_zero _ _ hrr' := (E.prop_page_X_of_le IsZero hr h _ hrr').eq_of_src _ _
+  dTo_eq_zero _ _ hrr' := (E.prop_page_X_of_le IsZero hr h _ hrr').eq_of_tgt _ _
 
 end Basic
 
@@ -247,14 +247,6 @@ section Iso
 
 variable {E E' : SpectralSequence C c r₀}
 
-private lemma d_eq_zero_of_iso (e : E ≅ E') {r : ℤ} (hr : r₀ ≤ r) {i j : κ}
-    (h : (E.page r hr).d i j = 0) : (E'.page r hr).d i j = 0 := by
-  calc (E'.page r hr).d i j
-      = ((e.inv.hom r hr).f i ≫ (e.hom.hom r hr).f i) ≫ (E'.page r hr).d i j := by simp
-    _ = (e.inv.hom r hr).f i ≫ (E.page r hr).d i j ≫ (e.hom.hom r hr).f j := by
-        rw [Category.assoc, (e.hom.hom r hr).comm]
-    _ = 0 := by rw [h, zero_comp, comp_zero]
-
 lemma StabilizesAt.of_iso {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s) (e : E ≅ E') :
     E'.StabilizesAt pq s where
   le := h.le
@@ -322,61 +314,54 @@ lemma StabilizesAt.pageXIso_add_one (h : E.StabilizesAt pq s) (r : ℤ) (hr : r�
         E.iso r (r + 1) pq rfl hr :=
   Int.leInduction_add_one _ _ r hsr
 
+private lemma π_comp_iCyclesIso_inv {A : C} {c' : ComplexShape κ} {K : HomologicalComplex C c'}
+    (pq : κ) (P : SubquotientPresentation A (K.X pq)) (hFrom : K.dFrom pq = 0) :
+    P.π ≫ (K.iCyclesIso pq (c'.next pq) rfl hFrom).inv =
+      Subobject.ofLE _ _ (by
+        rw [HomologicalComplex.shortComplexFunctor_obj_g]
+        change P.Z ≤ P.preimage (kernelSubobject (K.dFrom pq))
+        rw [hFrom, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
+        P.preimageπ (kernelSubobject (K.sc pq).g) ≫
+        (K.sc pq).kernelSubobjectIsoCycles.hom := by
+  rw [← cancel_mono (K.iCycles pq), Category.assoc, Category.assoc, Category.assoc,
+    HomologicalComplex.iCyclesIso_inv_hom_id, Category.comp_id]
+  -- `(K.sc pq).iCycles` is definitionally `K.iCycles pq`.
+  dsimp only [HomologicalComplex.iCycles]
+  rw [ShortComplex.kernelSubobjectIsoCycles_hom_iCycles,
+    SubquotientPresentation.preimageπ_arrow, Subobject.ofLE_comp_ofLE_assoc,
+    Subobject.ofLE_refl, Category.id_comp]
+
 private lemma pageXIso_step_eq_isoOfEq (r : ℤ) (hr : r₀ ≤ r) (hFrom : (E.page r hr).dFrom pq = 0)
-    (hTo : (E.page r hr).dTo pq = 0) :
+    (hTo : (E.page r hr).dTo pq = 0)
+    (hB : (E.pagePresentation pq r hr).B =
+      (E.pagePresentation pq (r + 1) (Int.le_add_one hr)).B)
+    (hZ : (E.pagePresentation pq r hr).Z =
+      (E.pagePresentation pq (r + 1) (Int.le_add_one hr)).Z) :
     (E.page r hr).XIsoHomologyOfDEqZero pq hTo hFrom ≪≫ E.iso r (r + 1) pq rfl hr =
-      (E.pagePresentation pq r hr).isoOfEq (E.pagePresentation pq (r + 1) (Int.le_add_one hr))
-        ((E.pagePresentation_B pq r hr).trans
-          (((E.boundariesSubobject_add_one_eq_iff pq r hr).2 hTo).symm.trans
-            (E.pagePresentation_B pq (r + 1) (Int.le_add_one hr)).symm))
-        ((E.pagePresentation_Z pq r hr).trans
-          (((E.cyclesSubobject_add_one_eq_iff pq r hr).2 hFrom).symm.trans
-            (E.pagePresentation_Z pq (r + 1) (Int.le_add_one hr)).symm)) := by
-  have hZ : (E.pagePresentation pq r hr).Z =
-      (E.pagePresentation pq (r + 1) (Int.le_add_one hr)).Z :=
-    (E.pagePresentation_Z pq r hr).trans
-      (((E.cyclesSubobject_add_one_eq_iff pq r hr).2 hFrom).symm.trans
-        (E.pagePresentation_Z pq (r + 1) (Int.le_add_one hr)).symm)
-  have hZ' : (E.pagePresentation pq r hr).Z =
-      (E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r hr).sc pq).g) := by
-    rw [E.pagePresentation_Z pq r hr,
-      ← (E.cyclesSubobject_add_one_eq_iff pq r hr).2 hFrom,
-      E.cyclesSubobject_add_one pq r hr, HomologicalComplex.shortComplexFunctor_obj_g]
-  have ofLE_π_eq : ∀ {P₁ P₂ : SubquotientPresentation ((E.page r₀).X pq)
-        ((E.page (r + 1) (Int.le_add_one hr)).X pq)} (hP : P₁ = P₂)
-      {S : Subobject ((E.page r₀).X pq)} (hS : S ≤ P₁.Z),
-      Subobject.ofLE S P₁.Z hS ≫ P₁.π =
-        Subobject.ofLE S P₂.Z (hS.trans_eq (congrArg SubquotientPresentation.Z hP)) ≫ P₂.π := by
-    rintro P₁ P₂ rfl S hS
-    simp
+      (E.pagePresentation pq r hr).isoOfEq
+        (E.pagePresentation pq (r + 1) (Int.le_add_one hr)) hB hZ := by
   have hπ' : Subobject.ofLE _ _ hZ.le ≫ (E.pagePresentation pq (r + 1) (Int.le_add_one hr)).π =
-      Subobject.ofLE _ _ hZ'.le ≫
+      Subobject.ofLE _ _ (by
+        rw [HomologicalComplex.shortComplexFunctor_obj_g]
+        change _ ≤ (E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r hr).dFrom pq))
+        rw [hFrom, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
         (E.pagePresentation pq r hr).preimageπ (kernelSubobject ((E.page r hr).sc pq).g) ≫
         ((E.page r hr).sc pq).kernelSubobjectIsoCycles.hom ≫
         ((E.page r hr).sc pq).homologyπ ≫ (E.iso r (r + 1) pq rfl hr).hom := by
-    rw [ofLE_π_eq (E.pagePresentation_add_one pq r hr) hZ.le,
+    rw [SubquotientPresentation.ofLE_π_eq (E.pagePresentation_add_one pq r hr) hZ.le,
       SubquotientPresentation.π_mapIso', SubquotientPresentation.π_trans',
       ShortComplex.π_homologyPresentation',
       SubquotientPresentation.preimageπ_ofLE_assoc (E.pagePresentation pq r hr)
         (ShortComplex.homologyPresentation_Z ((E.page r hr).sc pq)).le]
     simp only [Category.assoc, Subobject.ofLE_comp_ofLE_assoc]
-  have hp : (E.pagePresentation pq r hr).π ≫
-      ((E.page r hr).iCyclesIso pq ((c r).next pq) rfl hFrom).inv =
-      Subobject.ofLE _ _ hZ'.le ≫
-        (E.pagePresentation pq r hr).preimageπ (kernelSubobject ((E.page r hr).sc pq).g) ≫
-        ((E.page r hr).sc pq).kernelSubobjectIsoCycles.hom := by
-    have h_ic : ((E.page r hr).sc pq).iCycles = (E.page r hr).iCycles pq := rfl
-    rw [← cancel_mono ((E.page r hr).iCycles pq), Category.assoc, Category.assoc, Category.assoc,
-      HomologicalComplex.iCyclesIso_inv_hom_id, Category.comp_id, ← h_ic,
-      ShortComplex.kernelSubobjectIsoCycles_hom_iCycles, SubquotientPresentation.preimageπ_arrow,
-      Subobject.ofLE_comp_ofLE_assoc, Subobject.ofLE_refl, Category.id_comp]
-  have h_hπ : ((E.page r hr).sc pq).homologyπ = (E.page r hr).homologyπ pq := rfl
   ext
   rw [← cancel_epi (E.pagePresentation pq r hr).π, SubquotientPresentation.π_isoOfEq_hom, hπ',
     Iso.trans_hom, HomologicalComplex.XIsoHomologyOfDEqZero_hom]
+  -- `((E.page r hr).sc pq).homologyπ` is definitionally `(E.page r hr).homologyπ pq`.
+  dsimp only [HomologicalComplex.homologyπ]
   simp only [← Category.assoc]
-  rw [hp]
-  simp only [Category.assoc, h_hπ]
+  rw [π_comp_iCyclesIso_inv pq (E.pagePresentation pq r hr) hFrom]
+  simp only [Category.assoc]
 
 /-- `StabilizesAt.pageXIso` coincides with the canonical isomorphism between subquotient
 presentations with equal subobjects. -/
@@ -393,7 +378,11 @@ lemma StabilizesAt.pageXIso_eq_isoOfEq (h : E.StabilizesAt pq s) (r : ℤ) (hr :
     rw [pageXIso_self, SubquotientPresentation.isoOfEq_refl]
   | succ k hk ih =>
     rw [pageXIso_add_one h k (h.le.trans hk) hk, ih (h.le.trans hk),
-      pageXIso_step_eq_isoOfEq k (h.le.trans hk) (h.dFrom_eq_zero _ hk) (h.dTo_eq_zero _ hk),
+      pageXIso_step_eq_isoOfEq k (h.le.trans hk) (h.dFrom_eq_zero _ hk) (h.dTo_eq_zero _ hk)
+        (by rw [E.pagePresentation_B, E.pagePresentation_B,
+          (E.boundariesSubobject_add_one_eq_iff pq k (h.le.trans hk)).2 (h.dTo_eq_zero _ hk)])
+        (by rw [E.pagePresentation_Z, E.pagePresentation_Z,
+          (E.cyclesSubobject_add_one_eq_iff pq k (h.le.trans hk)).2 (h.dFrom_eq_zero _ hk)]),
       SubquotientPresentation.isoOfEq_trans]
 
 /-- Composition compatibility for `StabilizesAt.pageXIso`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.SpectralObject.HasSpectralSequence
-public import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
+public import TauCeti.Algebra.Homology.SpectralSequence.Stabilization
 
 /-!
 # Vanishing and survival of objects on later pages of a spectral sequence
@@ -92,33 +92,33 @@ lemma page_d_eq_zero_of_forall_isZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
     · exact E.page_d_eq_zero_of_le hr (Or.inl (h s hrs i (Or.inr hrel))) s hrs
   · exact (E.page s (hr.trans hrs)).shape i j hrel
 
+private lemma stabilizesAt_of_forall_isZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
+    (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq')) :
+    E.StabilizesAt pq r where
+  le := hr
+  dFrom_eq_zero _ _ hsr := E.page_d_eq_zero_of_forall_isZero hr h _ hsr (Or.inl rfl)
+  dTo_eq_zero _ _ hsr := E.page_d_eq_zero_of_forall_isZero hr h _ hsr (Or.inr rfl)
+
 /-- **Objects with vanishing neighbours survive.** Suppose that on the page `r` every object
 joined to the position `pq` by a differential of some page `s ≥ r` is zero. Then the object at
 `pq` on every later page `r' ≥ r` is isomorphic to the object at `pq` on the page `r`: on each
 page in between, both differentials at `pq` vanish
-(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero`), so the object is its own
-homology. The isomorphism is built page by page, see
+(`CategoryTheory.SpectralSequence.page_d_eq_zero_of_forall_isZero`), so `E` stabilizes at `pq` from
+page `r` and `CategoryTheory.SpectralSequence.StabilizesAt.pageXIso` identifies the objects. See
 `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_self` and
 `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_add_one`. -/
 noncomputable def pageXIsoOfLEOfIsZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
     (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq'))
     (r' : ℤ) (hrr' : r ≤ r') : (E.page r' (hr.trans hrr')).X pq ≅ (E.page r).X pq :=
-  Int.leInduction (motive := fun r' hrr' ↦ (E.page r' (hr.trans hrr')).X pq ≅ (E.page r).X pq)
-    (Iso.refl _)
-    (fun s hrs e ↦ (E.iso s (s + 1) pq rfl (hr.trans hrs)).symm ≪≫
-      ((E.page s (hr.trans hrs)).isoHomologyπ _ pq rfl
-        (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inr rfl))).symm ≪≫
-      (E.page s (hr.trans hrs)).iCyclesIso pq _ rfl
-        (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inl rfl)) ≪≫ e)
-    r' hrr'
+  ((E.stabilizesAt_of_forall_isZero hr h).pageXIso r' (hr.trans hrr') hrr').symm
 
 /-- On the page `r` itself, `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero` is the
 identity. -/
 @[simp]
 lemma pageXIsoOfLEOfIsZero_self {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
     (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq')) :
-    E.pageXIsoOfLEOfIsZero hr h r le_rfl = Iso.refl _ :=
-  Int.leInduction_base _ _
+    E.pageXIsoOfLEOfIsZero hr h r le_rfl = Iso.refl _ := by
+  rw [pageXIsoOfLEOfIsZero, StabilizesAt.pageXIso_self, Iso.refl_symm]
 
 /-- From the page `s` to the page `s + 1`,
 `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero` identifies the object at `pq` with its
@@ -132,8 +132,13 @@ lemma pageXIsoOfLEOfIsZero_add_one {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
           (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inr rfl))).symm ≪≫
         (E.page s (hr.trans hrs)).iCyclesIso pq _ rfl
           (E.page_d_eq_zero_of_forall_isZero hr h s hrs (Or.inl rfl)) ≪≫
-        E.pageXIsoOfLEOfIsZero hr h s hrs :=
-  Int.leInduction_add_one _ _ s hrs
+        E.pageXIsoOfLEOfIsZero hr h s hrs := by
+  ext
+  rw [pageXIsoOfLEOfIsZero, pageXIsoOfLEOfIsZero,
+    (E.stabilizesAt_of_forall_isZero hr h).pageXIso_add_one s (hr.trans hrs) hrs]
+  simp only [Iso.symm_hom, Iso.trans_inv, Iso.trans_hom,
+    HomologicalComplex.XIsoHomologyOfDEqZero_inv, HomologicalComplex.iCyclesIso_hom,
+    Category.assoc]
 
 section Cohomological
 

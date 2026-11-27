@@ -26,11 +26,11 @@ has a least upper bound `B_∞(pq)` (`HasBoundariesSup`) in `Subobject ((E.page 
 `(E.page r₀).X pq` (`CategoryTheory.SpectralSequence.limitPagePresentation`).
 
 Both bounds exist unconditionally when `C` has countable products (`HasCountableProducts C`) and
-countable coproducts (`HasCountableCoproducts C`), and they also exist at any position that is
-regular (`IsRegularAt`) or coregular (`IsCoregularAt`), hence at every stabilizing position
-(`StabilizesAt`). When `E` stabilizes at `pq` from page `s`, each `(E.page r).X pq` for `r ≥ s`
-is canonically isomorphic to `E_∞(pq)` (`StabilizesAt.limitPageIso`), compatibly with
-`StabilizesAt.pageXIso`.
+countable coproducts (`HasCountableCoproducts C`); regularity (`IsRegularAt`) guarantees the cycle
+infimum `Z_∞(pq)` and coregularity (`IsCoregularAt`) guarantees the boundary supremum `B_∞(pq)`,
+so together they guarantee both, as happens at every stabilizing position (`StabilizesAt`). When
+`E` stabilizes at `pq` from page `s`, each `(E.page r).X pq` for `r ≥ s` is canonically
+isomorphic to `E_∞(pq)` (`StabilizesAt.limitPageIso`), compatibly with `StabilizesAt.pageXIso`.
 
 A morphism `f : E ⟶ E'` induces `limitPageMap f pq : E.limitPage pq ⟶ E'.limitPage pq`,
 compatible with `(f.hom r).f pq` at stabilizing positions. Rebased spectral sequences
@@ -246,11 +246,11 @@ subquotient `Z_∞(pq) / B_∞(pq)` inside `(E.page r₀).X pq`. -/
 
 @[simp]
 lemma limitPagePresentation_B : (E.limitPagePresentation pq).B = E.boundariesSup pq :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma limitPagePresentation_Z : (E.limitPagePresentation pq).Z = E.cyclesInf pq :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma π_limitPagePresentation :
@@ -356,9 +356,11 @@ lemma StabilizesAt.pageXIso_comp_limitPageIso (h : E.StabilizesAt pq s)
   rw [h.pageXIso_eq_isoOfEq r hr hsr, StabilizesAt.limitPageIso, StabilizesAt.limitPageIso,
     SubquotientPresentation.isoOfEq_trans]
 
+/-- The canonical identification `StabilizesAt.limitPageIso` is independent of the starting page
+used to witness stabilization. -/
 lemma StabilizesAt.limitPageIso_trans (h : E.StabilizesAt pq s)
     [E.HasCyclesInf pq] [E.HasBoundariesSup pq]
-    {r₁ r₂ : ℤ} (_hr₁ : r₀ ≤ r₁) (hr₂ : r₀ ≤ r₂) (hsr₁ : s ≤ r₁) (hr₁₂ : r₁ ≤ r₂) :
+    {r₁ r₂ : ℤ} (hr₂ : r₀ ≤ r₂) (hsr₁ : s ≤ r₁) (hr₁₂ : r₁ ≤ r₂) :
     (h.mono hsr₁).limitPageIso r₂ hr₂ hr₁₂ = h.limitPageIso r₂ hr₂ (hsr₁.trans hr₁₂) := by
   rfl
 
@@ -492,33 +494,27 @@ lemma StabilizesAt.limitPageIso_hom_comp_limitPageMap (f : E ⟶ E') {s : ℤ}
 
 section Iso
 
-private noncomputable def pageXIsoOfIso (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
-    (E.page r hr).X pq ≅ (E'.page r hr).X pq where
-  hom := (e.hom.hom r hr).f pq
-  inv := (e.inv.hom r hr).f pq
-  hom_inv_id := hom_inv_id_hom_f e r hr pq
-  inv_hom_id := inv_hom_id_hom_f e r hr pq
-
-@[simp]
-private lemma pageXIsoOfIso_hom (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
-    (pageXIsoOfIso e r hr pq).hom = (e.hom.hom r hr).f pq :=
-  rfl
-
-private lemma map_pageXIsoOfIso_inv (e : E ≅ E') (pq : κ) (S : Subobject ((E'.page r₀).X pq)) :
-    (Subobject.map (pageXIsoOfIso e r₀ le_rfl pq).inv).obj S =
-      (Subobject.pullback (pageXIsoOfIso e r₀ le_rfl pq).hom).obj S := by
-  have hS : (Subobject.map (pageXIsoOfIso e r₀ le_rfl pq).hom).obj
-      ((Subobject.map (pageXIsoOfIso e r₀ le_rfl pq).inv).obj S) = S :=
-    (Subobject.mapIsoToOrderIso (pageXIsoOfIso e r₀ le_rfl pq)).right_inv S
+private lemma map_pageFunctor_isoApp_inv (e : E ≅ E') (pq : κ)
+    (S : Subobject ((E'.page r₀).X pq)) :
+    (Subobject.map (HomologicalComplex.Hom.isoApp
+        ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq).inv).obj S =
+      (Subobject.pullback ((e.hom.hom r₀).f pq)).obj S := by
+  let φ := HomologicalComplex.Hom.isoApp ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq
+  have hS : (Subobject.map φ.hom).obj ((Subobject.map φ.inv).obj S) = S :=
+    (Subobject.mapIsoToOrderIso φ).right_inv S
+  have hφ : φ.hom = (e.hom.hom r₀).f pq := by simp [φ]
+  rw [← hφ]
   conv_rhs => rw [← hS]
   exact (Subobject.pullback_map_self _ _).symm
 
 private lemma pullback_cyclesSet_of_iso (e : E ≅ E') (pq : κ) :
-    (Subobject.mapIsoToOrderIso (pageXIsoOfIso e r₀ le_rfl pq).symm) '' (E'.cyclesSet pq) =
+    (Subobject.mapIsoToOrderIso
+        (HomologicalComplex.Hom.isoApp ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq).symm) ''
+        (E'.cyclesSet pq) =
       E.cyclesSet pq := by
   ext S
-  simp only [Set.mem_image, mem_cyclesSet_iff, Subobject.mapIsoToOrderIso_apply, Iso.symm_hom,
-    map_pageXIsoOfIso_inv, pageXIsoOfIso_hom]
+  simp only [pageFunctor_obj, Set.mem_image, mem_cyclesSet_iff, Subobject.mapIsoToOrderIso_apply,
+    Iso.symm_hom, map_pageFunctor_isoApp_inv]
   constructor
   · rintro ⟨T, ⟨r, hr, rfl⟩, rfl⟩
     exact ⟨r, hr, (E.pullback_cyclesSubobject_of_iso pq e r hr).symm⟩
@@ -526,11 +522,13 @@ private lemma pullback_cyclesSet_of_iso (e : E ≅ E') (pq : κ) :
     exact ⟨E'.cyclesSubobject pq r hr, ⟨r, hr, rfl⟩, E.pullback_cyclesSubobject_of_iso pq e r hr⟩
 
 private lemma pullback_boundariesSet_of_iso (e : E ≅ E') (pq : κ) :
-    (Subobject.mapIsoToOrderIso (pageXIsoOfIso e r₀ le_rfl pq).symm) '' (E'.boundariesSet pq) =
+    (Subobject.mapIsoToOrderIso
+        (HomologicalComplex.Hom.isoApp ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq).symm) ''
+        (E'.boundariesSet pq) =
       E.boundariesSet pq := by
   ext S
-  simp only [Set.mem_image, mem_boundariesSet_iff, Subobject.mapIsoToOrderIso_apply, Iso.symm_hom,
-    map_pageXIsoOfIso_inv, pageXIsoOfIso_hom]
+  simp only [pageFunctor_obj, Set.mem_image, mem_boundariesSet_iff,
+    Subobject.mapIsoToOrderIso_apply, Iso.symm_hom, map_pageFunctor_isoApp_inv]
   constructor
   · rintro ⟨T, ⟨r, hr, rfl⟩, rfl⟩
     exact ⟨r, hr, (E.pullback_boundariesSubobject_of_iso pq e r hr).symm⟩
@@ -539,7 +537,8 @@ private lemma pullback_boundariesSet_of_iso (e : E ≅ E') (pq : κ) :
       E.pullback_boundariesSubobject_of_iso pq e r hr⟩
 
 lemma HasCyclesInf.of_iso (e : E ≅ E') [E.HasCyclesInf pq] : E'.HasCyclesInf pq := by
-  let o := Subobject.mapIsoToOrderIso (pageXIsoOfIso e r₀ le_rfl pq).symm
+  let o := Subobject.mapIsoToOrderIso
+    (HomologicalComplex.Hom.isoApp ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq).symm
   refine ⟨⟨o.symm (E.cyclesInf pq), ?_⟩⟩
   rw [← OrderIso.isGLB_image (f := o), pullback_cyclesSet_of_iso e pq]
   exact E.isGLB_cyclesInf pq
@@ -548,7 +547,8 @@ lemma hasCyclesInf_iff_of_iso (e : E ≅ E') (pq : κ) : E.HasCyclesInf pq ↔ E
   ⟨fun _ ↦ HasCyclesInf.of_iso e, fun _ ↦ HasCyclesInf.of_iso e.symm⟩
 
 lemma HasBoundariesSup.of_iso (e : E ≅ E') [E.HasBoundariesSup pq] : E'.HasBoundariesSup pq := by
-  let o := Subobject.mapIsoToOrderIso (pageXIsoOfIso e r₀ le_rfl pq).symm
+  let o := Subobject.mapIsoToOrderIso
+    (HomologicalComplex.Hom.isoApp ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq).symm
   refine ⟨⟨o.symm (E.boundariesSup pq), ?_⟩⟩
   rw [← OrderIso.isLUB_image (f := o), pullback_boundariesSet_of_iso e pq]
   exact E.isLUB_boundariesSup pq
@@ -592,6 +592,7 @@ end Iso
 
 /-- Taking the limit page at `pq` as a functor `SpectralSequence C c r₀ ⥤ C`, when `C` has
 countable products and countable coproducts. -/
+@[expose, simps]
 noncomputable def limitPageFunctor (C : Type*) [Category* C] [Abelian C]
     [HasCountableProducts C] [HasCountableCoproducts C]
     {κ : Type*} (c : ℤ → ComplexShape κ) (r₀ : ℤ) (pq : κ) :
@@ -748,6 +749,30 @@ noncomputable def limitPageFromPageIso (s : ℤ) (hs : r₀ ≤ s)
       E.preimage_fromPage_boundariesSup pq s hs, limitPagePresentation_B])
     (by rw [SubquotientPresentation.trans_Z, limitPagePresentation_Z,
       E.preimage_fromPage_cyclesInf pq s hs, limitPagePresentation_Z])
+
+/-- Compatibility of `limitPageFromPageIso` with the subquotient projections. -/
+@[reassoc]
+lemma π_limitPageFromPageIso_hom (s : ℤ) (hs : r₀ ≤ s)
+    [E.HasCyclesInf pq] [E.HasBoundariesSup pq] :
+    ((E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq)).π ≫
+      (E.limitPageFromPageIso pq s hs).hom =
+      ofLE _ _ (by rw [SubquotientPresentation.trans_Z, limitPagePresentation_Z,
+        E.preimage_fromPage_cyclesInf pq s hs, limitPagePresentation_Z]) ≫
+        (E.limitPagePresentation pq).π :=
+  SubquotientPresentation.π_isoOfEq_hom _ _ _ _
+
+/-- Naturality of `limitPageFromPageIso` with respect to morphisms of spectral sequences. -/
+@[reassoc]
+lemma limitPageFromPageIso_hom_comp_limitPageMap {E' : SpectralSequence C c r₀}
+    (f : E ⟶ E') (pq : κ) (s : ℤ) (hs : r₀ ≤ s)
+    [E.HasCyclesInf pq] [E.HasBoundariesSup pq]
+    [E'.HasCyclesInf pq] [E'.HasBoundariesSup pq] :
+    (E.limitPageFromPageIso pq s hs).hom ≫ limitPageMap f pq =
+      limitPageMap (fromPageMap s hs f) pq ≫ (E'.limitPageFromPageIso pq s hs).hom := by
+  have hmaps := (E.fromPage s hs).limitPagePresentation_mapsTo (fromPageMap s hs f) pq
+  rw [fromPageMap_hom] at hmaps
+  exact ((E.pagePresentation_mapsTo pq f s hs).trans hmaps).isoOfEq_hom
+    (E.limitPagePresentation_mapsTo f pq) _ _ _ _
 
 end Rebase
 

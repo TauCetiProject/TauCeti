@@ -167,6 +167,15 @@ lemma ext {P Q : SubquotientPresentation A X} (hB : P.B = Q.B) (hZ : P.Z = Q.Z)
   cases Iso.ext hπ
   rfl
 
+/-- Rewriting along an equality of subquotient presentations preserves the composition of `ofLE`
+with the projection `π`. -/
+lemma ofLE_π_eq {P₁ P₂ : SubquotientPresentation A X} (hP : P₁ = P₂)
+    {S : Subobject A} (hS : S ≤ P₁.Z) :
+    ofLE S P₁.Z hS ≫ P₁.π =
+      ofLE S P₂.Z (hS.trans_eq (congrArg SubquotientPresentation.Z hP)) ≫ P₂.π := by
+  subst hP
+  simp
+
 section OfEpi
 
 variable {B Z : Subobject A} (le : B ≤ Z) (g : (Z : C) ⟶ X) [Epi g]
