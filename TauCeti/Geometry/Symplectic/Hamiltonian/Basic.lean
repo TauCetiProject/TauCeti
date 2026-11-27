@@ -53,7 +53,7 @@ form `ω(·, -J ·)`, the gradient of `H` is `-J X_H`, with no invariance needed
 (`TauCeti.SymplecticForm.associatedBilinForm_neg_apply_neg_hamiltonianVectorField`). The
 Hamiltonian vector field of `(c / 2) ‖y‖²` is the linear field `-c J`
 (`TauCeti.SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq`), whose derivative has norm
-at most `c ≥ 0`
+at most `|c|`
 (`TauCeti.SymplecticForm.norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le`).
 
 Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
@@ -659,13 +659,14 @@ theorem hamiltonianVectorField_div_two_mul_norm_sq {ω : SymplecticForm E}
   ring
 
 /-- If the inner product of `E` is the metric `ω(·, J ·)`, the derivative `-c J` of the Hamiltonian
-vector field of `Q(y) = (c / 2) ‖y‖²` has norm at most `c ≥ 0`, since `J` is an isometry. -/
+vector field of `Q(y) = (c / 2) ‖y‖²` has norm at most `|c|`, since `J` is an isometry. -/
 theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le {ω : SymplecticForm E}
-    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {c : ℝ} (hc : 0 ≤ c) (y : E) :
-    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ c / 2 * ‖y‖ ^ 2) y‖ ≤ c := by
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (c : ℝ) (y : E) :
+    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ c / 2 * ‖y‖ ^ 2) y‖ ≤ |c| := by
   rw [hamiltonianVectorField_div_two_mul_norm_sq hg c, ContinuousLinearMap.fderiv, norm_smul,
-    norm_neg, Real.norm_eq_abs, abs_of_nonneg hc]
-  refine mul_le_of_le_one_right hc (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_)
+    norm_neg, Real.norm_eq_abs]
+  refine mul_le_of_le_one_right (abs_nonneg c)
+    (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_)
   rw [one_mul, LinearMap.coe_toContinuousLinearMap']
   exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
 

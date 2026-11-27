@@ -211,6 +211,18 @@ theorem valueL_zeroModeL
     coeFn_zeroModeLp (prev _ u)] with z h₁ h₂ h₃
   rw [h₁, h₂, h₃]
 
+/-- The `L²` norm of a path on the line is at most the `W^{1,2}` norm of its zero mode on the
+cylinder. -/
+theorem norm_prev_le_norm_zeroModeL
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖prev _ u‖ ≤ ‖zeroModeL V u‖ := by
+  rw [← (zeroModeLp V).norm_map, ← Submodule.norm_coe]
+  refine Lp.norm_le_norm_of_ae_le ?_
+  filter_upwards [coeFn_zeroModeLp (prev _ u), coeFn_zeroModeL u] with z h h'
+  rw [h, h']
+  exact norm_fst_le ((prev _ u z.1, weakFDeriv _ u z.1 1, 0) : V × V × V)
+
 /-- **The zero mode is bounded below.** The `W^{1,2}` norm of a path on the line is at most twice
 the `W^{1,2}` norm of its zero mode on the cylinder. -/
 theorem norm_le_two_mul_norm_zeroModeL
@@ -219,12 +231,7 @@ theorem norm_le_two_mul_norm_zeroModeL
     ‖u‖ ≤ 2 * ‖zeroModeL V u‖ := by
   set w := (ContinuousLinearMap.apply ℝ V (1 : ℝ)).compLp
     (weakFDeriv (ContinuousLinearMap.id ℝ _) u)
-  have h₁ : ‖prev _ u‖ ≤ ‖zeroModeL V u‖ := by
-    rw [← (zeroModeLp V).norm_map, ← Submodule.norm_coe]
-    refine Lp.norm_le_norm_of_ae_le ?_
-    filter_upwards [coeFn_zeroModeLp (prev _ u), coeFn_zeroModeL u] with z h h'
-    rw [h, h']
-    exact norm_fst_le ((prev _ u z.1, weakFDeriv _ u z.1 1, 0) : V × V × V)
+  have h₁ := norm_prev_le_norm_zeroModeL u
   have h₂ : ‖weakFDeriv _ u‖ ≤ ‖zeroModeL V u‖ := by
     rw [← ContinuousLinearMap.norm_apply_one_compLp, ← (zeroModeLp V).norm_map,
       ← Submodule.norm_coe]
