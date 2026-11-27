@@ -35,8 +35,15 @@ dimension count is the multiplicity of that eigenvalue. A bounded Lipschitz doma
 measure and finitely many components
 (`Set.IsLipschitzDomain.finite_connectedComponents_of_isBounded`), so the count applies to it.
 
+On a preconnected `Ω` of finite measure the kernel consists of the constants, and the only one with
+`∫_Ω u = 0` is `0` (`TauCeti.W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero`). This fails
+as soon as `Ω` is not preconnected: a splitting into two disjoint nonempty open pieces gives a
+nonzero function, constant on each piece, of mean zero.
+
 ## Main declarations
 
+* `TauCeti.W1p.ofIsLocallyConstant`: the Sobolev function of an `Lᵖ` function that is locally
+  constant on `Ω`, whose weak gradient vanishes.
 * `TauCeti.W1p.componentFunEquivKerGradientL`: on a domain of finite measure with finitely many
   connected components, the Sobolev functions with vanishing weak gradient are identified, as a
   linear equivalence, with the functions on the set of components.
@@ -45,6 +52,9 @@ measure and finitely many components
   the number of components.
 * `TauCeti.W1p.finrank_ker_gradientL_of_isLipschitzDomain`: the same on a bounded Lipschitz
   domain.
+* `TauCeti.W1p.exists_ne_zero_and_gradient_eq_zero_and_setIntegral_eq_zero`: on an open set of
+  finite measure that is not preconnected, some nonzero Sobolev function with vanishing weak
+  gradient has mean zero.
 -/
 
 public section
@@ -57,6 +67,35 @@ open MeasureTheory Module Set TopologicalSpace
 open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Omega : Opens E}
+
+section LocallyConstant
+
+variable [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E}
+  [mu.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)] {g : E → ℝ}
+
+/-- The Sobolev function with value `g`, for a function `g` in `Lᵖ(Ω)` that is locally constant on
+`Ω`. Its weak gradient vanishes. -/
+def W1p.ofIsLocallyConstant (hg : IsLocallyConstant ((Omega : Set E).domRestrict g))
+    (hgp : MemLp g p (mu.restrict Omega)) : W1p mu Omega p :=
+  W1p.mk (hgp.toLp g) 0 <|
+    ((hg.hasWeakFDerivOn_zero (μ := mu)).congr_ae hgp.coeFn_toLp.symm).congr_ae_deriv <| by
+      filter_upwards [Lp.coeFn_zero E p (mu.restrict Omega)] with x hx
+      rw [hx, Pi.zero_apply, Pi.zero_apply, map_zero]
+
+/-- The value of `W1p.ofIsLocallyConstant hg hgp` is the class of `g` in `Lᵖ(Ω)`. -/
+@[simp]
+theorem W1p.value_ofIsLocallyConstant (hg : IsLocallyConstant ((Omega : Set E).domRestrict g))
+    (hgp : MemLp g p (mu.restrict Omega)) :
+    W1p.value (W1p.ofIsLocallyConstant hg hgp) = hgp.toLp g :=
+  W1p.value_mk _ _ _
+
+/-- The Sobolev function `W1p.ofIsLocallyConstant hg hgp` has vanishing weak gradient. -/
+@[simp]
+theorem W1p.gradient_ofIsLocallyConstant (hg : IsLocallyConstant ((Omega : Set E).domRestrict g))
+    (hgp : MemLp g p (mu.restrict Omega)) : W1p.gradient (W1p.ofIsLocallyConstant hg hgp) = 0 :=
+  W1p.gradient_mk _ _ _
+
+end LocallyConstant
 
 section Components
 
@@ -85,15 +124,11 @@ variable [mu.IsAddHaarMeasure] [Fact (1 ≤ p)]
 
 /-- The Sobolev function equal to `φ c` on the component `c` of `Ω`. -/
 private def componentW1p (φ : ConnectedComponents (Omega : Set E) → ℝ) : W1p mu Omega p :=
-  W1p.mk ((memLp_componentFun φ).toLp _) 0 <|
-    (((isLocallyConstant_componentFun Omega.isOpen φ).hasWeakFDerivOn_zero (μ := mu)).congr_ae
-      (memLp_componentFun φ).coeFn_toLp.symm).congr_ae_deriv <| by
-        filter_upwards [Lp.coeFn_zero E p (mu.restrict Omega)] with x hx
-        rw [hx, Pi.zero_apply, Pi.zero_apply, map_zero]
+  W1p.ofIsLocallyConstant (isLocallyConstant_componentFun Omega.isOpen φ) (memLp_componentFun φ)
 
 private theorem value_componentW1p (φ : ConnectedComponents (Omega : Set E) → ℝ) :
     W1p.value (componentW1p (mu := mu) (p := p) φ) = (memLp_componentFun φ).toLp _ :=
-  W1p.value_mk _ _ _
+  W1p.value_ofIsLocallyConstant _ _
 
 /-- The Sobolev functions that are constant on each component of `Ω`, as a linear map. -/
 private def componentW1pₗ :
@@ -143,7 +178,8 @@ private theorem range_componentW1pₗ :
     W1p.gradientL_apply]
   constructor
   · rintro ⟨φ, rfl⟩
-    exact W1p.gradient_mk _ _ _
+    exact W1p.gradient_ofIsLocallyConstant (isLocallyConstant_componentFun Omega.isOpen φ)
+      (memLp_componentFun φ)
   · intro hu
     obtain ⟨g, hg, hug⟩ := W1p.exists_isLocallyConstant_ae_eq_of_gradient_eq_zero hu
     -- The value of `u` on a component is the value of `g` at a chosen point of it.
@@ -196,6 +232,83 @@ theorem W1p.finrank_ker_gradientL :
     Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
 
 end Components
+
+section Disconnected
+
+variable [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E}
+  [mu.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)] [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- If `Ω` is the union of disjoint nonempty open sets `U` and `V`, the function equal to `μ(V)` on
+`U` and to `-μ(U)` on `V` is a nonzero Sobolev function with vanishing gradient and mean zero. -/
+private theorem W1p.exists_ne_zero_and_gradient_eq_zero_and_setIntegral_eq_zero_of_union_eq
+    {U V : Set E} (hU : IsOpen U) (hV : IsOpen V) (hUV : (Omega : Set E) = U ∪ V)
+    (hd : Disjoint U V) (hUne : U.Nonempty) (hVne : V.Nonempty) :
+    ∃ u : W1p mu Omega p, u ≠ 0 ∧ W1p.gradient u = 0 ∧ ∫ x in Omega, W1p.value u x ∂mu = 0 := by
+  have hsub {W : Set E} (hW : W ⊆ U ∪ V) : (mu.restrict Omega).real W = mu.real W := by
+    rw [hUV, measureReal_restrict_apply' (hU.union hV).measurableSet, inter_eq_left.2 hW]
+  set a := mu.real V
+  set b := mu.real U
+  set g : E → ℝ := U.indicator (fun _ => a) - V.indicator (fun _ => b) with hg_def
+  have hgU {z : E} (hz : z ∈ U) : g z = a := by
+    simp [hg_def, indicator_of_mem hz, indicator_of_notMem (hd.notMem_of_mem_left hz)]
+  have hgV {z : E} (hz : z ∈ V) : g z = -b := by
+    simp [hg_def, indicator_of_mem hz, indicator_of_notMem (hd.notMem_of_mem_right hz)]
+  -- `g` is constant on each of the two pieces, which are open.
+  have hloc : IsLocallyConstant ((Omega : Set E).domRestrict g) := by
+    refine (IsLocallyConstant.iff_eventually_eq _).2 fun z => ?_
+    rcases (hUV ▸ z.property : (z : E) ∈ U ∪ V) with hz | hz
+    · filter_upwards [(hU.preimage continuous_subtypeVal).mem_nhds hz] with w hw
+      simp only [Set.domRestrict_apply, hgU hw, hgU hz]
+    · filter_upwards [(hV.preimage continuous_subtypeVal).mem_nhds hz] with w hw
+      simp only [Set.domRestrict_apply, hgV hw, hgV hz]
+  have hgp : MemLp g p (mu.restrict Omega) :=
+    ((memLp_const a).indicator hU.measurableSet.nullMeasurableSet).sub
+      ((memLp_const b).indicator hV.measurableSet.nullMeasurableSet)
+  have hval : W1p.value (W1p.ofIsLocallyConstant hloc hgp) =ᵐ[mu.restrict Omega] g := by
+    rw [W1p.value_ofIsLocallyConstant]
+    exact hgp.coeFn_toLp
+  refine ⟨W1p.ofIsLocallyConstant hloc hgp, fun h0 => ?_, W1p.gradient_ofIsLocallyConstant _ _, ?_⟩
+  · -- On `U`, of positive measure, `g` is the constant `a = μ(V) > 0`, so `g` is not `0`.
+    have ha : a ≠ 0 := by
+      refine ENNReal.toReal_ne_zero.2 ⟨hV.measure_ne_zero mu hVne, ne_top_of_le_ne_top ?_
+        (measure_mono (hUV ▸ subset_union_right : V ⊆ Omega))⟩
+      rw [← Measure.restrict_apply_univ]
+      exact measure_ne_top _ _
+    have hg0 : ∀ᵐ z ∂mu.restrict Omega, g z = 0 := by
+      filter_upwards [hval, Lp.coeFn_zero ℝ p (mu.restrict Omega),
+        Lp.ext_iff.1 (congrArg W1p.value h0)] with z h1 h2 h3
+      rw [← h1, h3, W1p.value_zero, h2, Pi.zero_apply]
+    have hfalse : ∀ᵐ _ ∂mu.restrict U, False := by
+      filter_upwards [ae_restrict_of_ae_restrict_of_subset (hUV ▸ subset_union_left) hg0,
+        ae_restrict_mem hU.measurableSet] with z hz hzU
+      exact ha ((hgU hzU).symm.trans hz)
+    exact hU.measure_ne_zero mu hUne
+      (Measure.restrict_eq_zero.1 (ae_eq_bot.1 (Filter.eventually_false_iff_eq_bot.1 hfalse)))
+  · -- The two pieces contribute `μ(U) μ(V)` with opposite signs.
+    rw [integral_congr_ae hval, hg_def, integral_sub'
+      ((integrable_const a).indicator hU.measurableSet)
+      ((integrable_const b).indicator hV.measurableSet),
+      integral_indicator_const a hU.measurableSet, integral_indicator_const b hV.measurableSet,
+      hsub subset_union_left, hsub subset_union_right, smul_eq_mul, smul_eq_mul, mul_comm,
+      sub_self]
+
+/-- **A disconnected domain carries a nonzero gradient-free function of mean zero.** If the open
+set `Ω` has finite measure and is not preconnected, some nonzero `u ∈ W^{1,p}(Ω)` has vanishing
+weak gradient and `∫_Ω u = 0`. For a splitting of `Ω` into disjoint nonempty open pieces `U` and
+`V`, the function equal to `μ(V)` on `U` and to `-μ(U)` on `V` is one. On a preconnected `Ω` there
+is no such function (`TauCeti.W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero`). -/
+theorem W1p.exists_ne_zero_and_gradient_eq_zero_and_setIntegral_eq_zero
+    (hΩ : ¬IsPreconnected (Omega : Set E)) :
+    ∃ u : W1p mu Omega p, u ≠ 0 ∧ W1p.gradient u = 0 ∧ ∫ x in Omega, W1p.value u x ∂mu = 0 := by
+  simp only [IsPreconnected, not_forall, not_nonempty_iff_eq_empty, exists_prop] at hΩ
+  obtain ⟨U, V, hU, hV, hUV, hUne, hVne, hdisj⟩ := hΩ
+  refine W1p.exists_ne_zero_and_gradient_eq_zero_and_setIntegral_eq_zero_of_union_eq
+    (Omega.isOpen.inter hU) (Omega.isOpen.inter hV)
+    (by rw [← inter_union_distrib_left, inter_eq_left.2 hUV]) ?_ hUne hVne
+  exact disjoint_left.2 fun z hzU hzV => (eq_empty_iff_forall_notMem.1 hdisj) z
+    ⟨hzU.1, hzU.2, hzV.2⟩
+
+end Disconnected
 
 /-- **On a bounded Lipschitz domain the kernel of the weak gradient counts the components.** For
 a bounded Lipschitz domain `Ω`, the Sobolev functions `u ∈ W^{1,p}(Ω)` with vanishing weak
