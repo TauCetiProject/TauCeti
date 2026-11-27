@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.IntegralOrder.Star
 public import Mathlib.Algebra.QuadraticAlgebra.Integral
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
-public import Mathlib.RingTheory.Ideal.Prime
 
 /-!
 # Star-order examples
@@ -24,7 +23,7 @@ Star-orders in four small algebras with involution:
   matrix units;
 * the conjugation-stable order `ℤ[2i]` in `ℚ(i)`, realised as `QuadraticAlgebra ℚ (-1) 0`, whose
   underlying order is not maximal since it lies strictly inside the order `ℤ[i]`, with index `2`;
-  the localizations of `ℤ[2i]` and `ℤ[i]` at every prime `P` of `ℤ` not containing `2` agree, so
+  the localizations of `ℤ[2i]` and `ℤ[i]` at every submonoid of `ℤ` containing `2` agree, so
   the inclusion becomes an equality over `ℤ_(p)` for `p` odd.
 -/
 
@@ -97,30 +96,46 @@ example : Matrix.single (0 : Fin 2) (1 : Fin 2) (1 : ℚ) * Matrix.single 1 0 1 
 
 /-! ### The nonmaximal star-order `ℤ[2i] ⊆ ℚ(i)` -/
 
+/-- `ℤ[c i]` consists of the elements `m + c k i` of `ℚ(i)` with `m, k ∈ ℤ`. -/
+theorem mem_adjoin_intCast_mul_omega (c : ℤ) {x : QuadraticAlgebra ℚ (-1) 0} :
+    x ∈ Algebra.adjoin ℤ {(c : QuadraticAlgebra ℚ (-1) 0) * ω} ↔
+      ∃ m k : ℤ, x = ⟨m, c * k⟩ := by
+  -- `ℤ[c i]` is the image of `ℤ[√(-c²)]` under `ω ↦ c i`.
+  have h : ((c : QuadraticAlgebra ℚ (-1) 0) * ω) * ((c : QuadraticAlgebra ℚ (-1) 0) * ω) =
+      (-c ^ 2 : ℤ) • 1 + (0 : ℤ) • ((c : QuadraticAlgebra ℚ (-1) 0) * ω) := by
+    ext <;> simp [sq]
+  rw [← range_lift h, AlgHom.mem_range]
+  refine ⟨fun ⟨y, hy⟩ => ⟨y.re, y.im, ?_⟩, fun ⟨m, k, hx⟩ => ⟨⟨m, k⟩, ?_⟩⟩
+  · rw [← hy]
+    ext <;> simp [mul_comm]
+  · rw [hx]
+    ext <;> simp [mul_comm]
+
 /-- `ℤ[2i]` consists of the elements `m + 2 k i` of `ℚ(i)` with `m, k ∈ ℤ`. -/
 theorem mem_adjoin_two_omega {x : QuadraticAlgebra ℚ (-1) 0} :
     x ∈ Algebra.adjoin ℤ {2 * ω} ↔ ∃ m k : ℤ, x = ⟨m, 2 * k⟩ := by
-  refine ⟨fun hx => ?_, ?_⟩
-  · induction hx using Algebra.adjoin_induction with
-    | mem x hx =>
-      rw [Set.mem_singleton_iff.1 hx]
-      exact ⟨0, 1, by ext <;> simp⟩
-    | algebraMap r => exact ⟨r, 0, by ext <;> simp⟩
-    | add x y _ _ hx hy =>
-      obtain ⟨m, k, rfl⟩ := hx
-      obtain ⟨m', k', rfl⟩ := hy
-      exact ⟨m + m', k + k', by ext <;> simp [mul_add]⟩
-    | mul x y _ _ hx hy =>
-      obtain ⟨m, k, rfl⟩ := hx
-      obtain ⟨m', k', rfl⟩ := hy
-      exact ⟨m * m' - 4 * k * k', m * k' + k * m', by ext <;> simp <;> ring⟩
-  · rintro ⟨m, k, rfl⟩
-    have hω : (2 * ω : QuadraticAlgebra ℚ (-1) 0) ∈ Algebra.adjoin ℤ {2 * ω} :=
-      Algebra.subset_adjoin rfl
-    have : (⟨m, 2 * k⟩ : QuadraticAlgebra ℚ (-1) 0) = algebraMap ℤ _ m + k • (2 * ω) := by
-      ext <;> simp [mul_comm]
-    rw [this]
-    exact add_mem (Subalgebra.algebraMap_mem _ m) (Subalgebra.smul_mem _ hω k)
+  simpa using mem_adjoin_intCast_mul_omega 2
+
+/-- `ℤ[i]` consists of the elements `m + k i` of `ℚ(i)` with `m, k ∈ ℤ`. -/
+theorem mem_adjoin_omega {x : QuadraticAlgebra ℚ (-1) 0} :
+    x ∈ Algebra.adjoin ℤ {ω} ↔ ∃ m k : ℤ, x = ⟨m, k⟩ := by
+  simpa using mem_adjoin_intCast_mul_omega 1
+
+/-- An element `m + k i` of `ℤ[i]` lies in `ℤ[2i]` exactly when `k` is even. -/
+theorem mk_mem_adjoin_two_omega_iff {m k : ℤ} :
+    (⟨m, k⟩ : QuadraticAlgebra ℚ (-1) 0) ∈ Algebra.adjoin ℤ {2 * ω} ↔ Even k := by
+  rw [mem_adjoin_two_omega]
+  refine ⟨fun ⟨m', k', h⟩ => ⟨k', ?_⟩, fun ⟨k', hk⟩ => ⟨m, k', by ext <;> simp [hk, two_mul]⟩⟩
+  have : (k : ℚ) = 2 * k' := by simpa using congrArg QuadraticAlgebra.im h
+  have : k = 2 * k' := by exact_mod_cast this
+  omega
+
+/-- `ℤ[2i] ⊆ ℤ[i]`. -/
+theorem adjoin_two_omega_le_adjoin_omega :
+    Algebra.adjoin ℤ {2 * ω} ≤ Algebra.adjoin ℤ {(ω : QuadraticAlgebra ℚ (-1) 0)} := by
+  refine Algebra.adjoin_le ?_
+  rintro _ rfl
+  exact mul_mem (Subalgebra.algebraMap_mem _ (2 : ℤ)) (Algebra.subset_adjoin rfl)
 
 /-- `ω = i` is integral over `ℤ`. -/
 theorem isIntegral_omega_neg_one : IsIntegral ℤ (ω : QuadraticAlgebra ℚ (-1) 0) :=
@@ -154,56 +169,12 @@ example : ∃ O : StarOrder ℤ ℚ (QuadraticAlgebra ℚ (-1) 0),
   rw [StarOrder.ofSubalgebra_toSubalgebra]
   refine fun h => h.not_gt (isOrder_adjoin_of_im_ne_zero isIntegral_omega_neg_one (by simp)) ?_
   refine IsConcreteLE.lt_iff_le_and_exists.2
-    ⟨Algebra.adjoin_le ?_, ω, Algebra.subset_adjoin rfl, ?_⟩
-  · rintro _ rfl
-    exact mul_mem (Subalgebra.algebraMap_mem _ (2 : ℤ)) (Algebra.subset_adjoin rfl)
-  · rintro hω
-    obtain ⟨m, k, h⟩ := mem_adjoin_two_omega.1 hω
-    have h1 : (1 : ℚ) = 2 * k := by simpa using congrArg QuadraticAlgebra.im h
-    have : (1 : ℤ) = 2 * k := by exact_mod_cast h1
-    omega
+    ⟨adjoin_two_omega_le_adjoin_omega, ω, Algebra.subset_adjoin rfl, fun hω => ?_⟩
+  have : (ω : QuadraticAlgebra ℚ (-1) 0) = ⟨((0 : ℤ) : ℚ), ((1 : ℤ) : ℚ)⟩ := by
+    ext <;> simp
+  exact Int.not_even_one (mk_mem_adjoin_two_omega_iff.1 (this ▸ hω))
 
 /-! ### The inclusion `ℤ[2i] ⊆ ℤ[i]` -/
-
-/-- `ℤ[i]` consists of the elements `m + k i` of `ℚ(i)` with `m, k ∈ ℤ`. -/
-theorem mem_adjoin_omega {x : QuadraticAlgebra ℚ (-1) 0} :
-    x ∈ Algebra.adjoin ℤ {ω} ↔ ∃ m k : ℤ, x = ⟨m, k⟩ := by
-  refine ⟨fun hx => ?_, ?_⟩
-  · induction hx using Algebra.adjoin_induction with
-    | mem x hx =>
-      rw [Set.mem_singleton_iff.1 hx]
-      exact ⟨0, 1, by ext <;> simp⟩
-    | algebraMap r => exact ⟨r, 0, by ext <;> simp⟩
-    | add x y _ _ hx hy =>
-      obtain ⟨m, k, rfl⟩ := hx
-      obtain ⟨m', k', rfl⟩ := hy
-      exact ⟨m + m', k + k', by ext <;> simp⟩
-    | mul x y _ _ hx hy =>
-      obtain ⟨m, k, rfl⟩ := hx
-      obtain ⟨m', k', rfl⟩ := hy
-      exact ⟨m * m' - k * k', m * k' + k * m', by ext <;> simp; ring⟩
-  · rintro ⟨m, k, rfl⟩
-    have hω : (ω : QuadraticAlgebra ℚ (-1) 0) ∈ Algebra.adjoin ℤ {ω} := Algebra.subset_adjoin rfl
-    have : (⟨m, k⟩ : QuadraticAlgebra ℚ (-1) 0) = algebraMap ℤ _ m + k • ω := by
-      ext <;> simp
-    rw [this]
-    exact add_mem (Subalgebra.algebraMap_mem _ m) (Subalgebra.smul_mem _ hω k)
-
-/-- An element `m + k i` of `ℤ[i]` lies in `ℤ[2i]` exactly when `k` is even. -/
-theorem mk_mem_adjoin_two_omega_iff {m k : ℤ} :
-    (⟨m, k⟩ : QuadraticAlgebra ℚ (-1) 0) ∈ Algebra.adjoin ℤ {2 * ω} ↔ Even k := by
-  rw [mem_adjoin_two_omega]
-  refine ⟨fun ⟨m', k', h⟩ => ⟨k', ?_⟩, fun ⟨k', hk⟩ => ⟨m, k', by ext <;> simp [hk, two_mul]⟩⟩
-  have : (k : ℚ) = 2 * k' := by simpa using congrArg QuadraticAlgebra.im h
-  have : k = 2 * k' := by exact_mod_cast this
-  omega
-
-/-- `ℤ[2i] ⊆ ℤ[i]`. -/
-theorem adjoin_two_omega_le_adjoin_omega :
-    Algebra.adjoin ℤ {2 * ω} ≤ Algebra.adjoin ℤ {(ω : QuadraticAlgebra ℚ (-1) 0)} := by
-  refine Algebra.adjoin_le ?_
-  rintro _ rfl
-  exact mul_mem (Subalgebra.algebraMap_mem _ (2 : ℤ)) (Algebra.subset_adjoin rfl)
 
 /-- Twice an element of `ℤ[i]` lies in `ℤ[2i]`. -/
 theorem add_self_mem_adjoin_two_omega {x : QuadraticAlgebra ℚ (-1) 0}
@@ -227,31 +198,31 @@ theorem relIndex_adjoin_two_omega :
     mk_mem_adjoin_two_omega_iff, Int.even_add_one]
   by_cases h : Even k <;> simp [h]
 
-/-- **The inclusion `ℤ[2i] ⊆ ℤ[i]` is an equality away from `2`.** For every prime `P` of `ℤ` not
-containing `2`, in particular `P = (p)` for an odd prime `p`, the localizations at `P` of the
-underlying `ℤ`-modules of the orders `ℤ[2i]` and `ℤ[i]` agree, as `ℤ_(P)`-submodules of the
-localization of `ℚ(i)`. -/
-theorem localized_adjoin_two_omega (P : Ideal ℤ) [P.IsPrime] (h2 : (2 : ℤ) ∉ P) :
-    (Subalgebra.toSubmodule (Algebra.adjoin ℤ {2 * ω})).localized P.primeCompl =
+/-- **The inclusion `ℤ[2i] ⊆ ℤ[i]` is an equality away from `2`.** For every submonoid `S` of `ℤ`
+containing `2`, the localizations at `S` of the underlying `ℤ`-modules of the orders `ℤ[2i]` and
+`ℤ[i]` agree, as `ℤ_S`-submodules of the localization of `ℚ(i)`. This applies in particular to the
+complement `S = P.primeCompl` of any prime `P` of `ℤ` not containing `2`, such as `P = (p)` for an
+odd prime `p`, giving the equality over `ℤ_(p)`. -/
+theorem localized_adjoin_two_omega (S : Submonoid ℤ) (h2 : (2 : ℤ) ∈ S) :
+    (Subalgebra.toSubmodule (Algebra.adjoin ℤ {2 * ω})).localized S =
       (Subalgebra.toSubmodule
-        (Algebra.adjoin ℤ {(ω : QuadraticAlgebra ℚ (-1) 0)})).localized P.primeCompl := by
+        (Algebra.adjoin ℤ {(ω : QuadraticAlgebra ℚ (-1) 0)})).localized S := by
   ext x
   refine ⟨fun ⟨m, hm, s, hx⟩ => ⟨m, adjoin_two_omega_le_adjoin_omega hm, s, hx⟩,
     fun ⟨m, hm, s, hx⟩ => ?_⟩
-  -- Twice every element of `ℤ[i]` lies in `ℤ[2i]`, and `2` is invertible away from `P`.
-  let t : P.primeCompl := ⟨2, h2⟩
+  -- Twice every element of `ℤ[i]` lies in `ℤ[2i]`, and `2` is invertible in `ℤ_S`.
+  let t : S := ⟨2, h2⟩
+  have ht : (t : ℤ) = 2 := rfl
   refine ⟨t • m, ?_, t * s, ?_⟩
   swap
   · -- Over `ℤ`, Mathlib's lemmas on `IsLocalizedModule.mk'` would otherwise use the instance
     -- `AddCommGroup.toIntModule` on the localization, which is not the one of `localized`.
-    let : Module ℤ (LocalizedModule P.primeCompl (QuadraticAlgebra ℚ (-1) 0)) :=
+    let : Module ℤ (LocalizedModule S (QuadraticAlgebra ℚ (-1) 0)) :=
       OreLocalization.instModuleOfIsScalarTower
     rw [← hx]
     exact IsLocalizedModule.mk'_cancel_left
-      (f := LocalizedModule.mkLinearMap P.primeCompl (QuadraticAlgebra ℚ (-1) 0)) m t s
-  rw [Submonoid.smul_def]
-  change (2 : ℤ) • m ∈ Algebra.adjoin ℤ {2 * ω}
-  rw [two_smul]
+      (f := LocalizedModule.mkLinearMap S (QuadraticAlgebra ℚ (-1) 0)) m t s
+  rw [Submonoid.smul_def, ht, Subalgebra.mem_toSubmodule, two_smul]
   exact add_self_mem_adjoin_two_omega hm
 
 end TauCeti.IntegralOrder.StarOrderExample
