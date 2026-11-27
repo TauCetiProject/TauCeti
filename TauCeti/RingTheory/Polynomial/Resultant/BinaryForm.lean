@@ -15,22 +15,27 @@ import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 For binary forms `F, G ∈ R[X₀, X₁]` and formal degrees `m, n`, the resultant
 `Res_{m,n}(F, G)` is Mathlib's Sylvester resultant `Polynomial.resultant f g m n` of the
-dehomogenisations `f = F(X, 1)` and `g = G(X, 1)`. The formal degrees are part of the data: when
-the coefficient of `X₀ᵐ` in `F` vanishes, `F` has a zero at `∞ = [1 : 0]` that `F(X, 1)` does not
-see, and the resultant with formal degree `m` records it. With this orientation
-`Res_{d,d}(X₀ᵈ, X₁ᵈ) = 1` and `Res_{1,1}(a X₀ + b X₁, c X₀ + e X₁) = a e - b c`.
+dehomogenisations `f = F(X, 1)` and `g = G(X, 1)`. The formal degrees are part of the data. For
+`F` homogeneous of degree `m`, the coefficient of `X₀ᵐ` in `F` is `F(1, 0)`, and it is the
+coefficient of `Xᵐ` in `F(X, 1)`; when it vanishes, `F` has a zero at `∞ = [1 : 0]` that
+`F(X, 1)` does not see. The resultant with formal degrees `m, n` keeps track of `∞`: if `F` and
+`G` both vanish there, then `deg F(X, 1) < m` and `deg G(X, 1) < n`, so `Res_{m,n}(F, G) = 0`,
+whereas the resultant of `F(X, 1)` and `G(X, 1)` at their actual degrees can miss this common
+zero. With this orientation `Res_{d,d}(X₀ᵈ, X₁ᵈ) = 1` and
+`Res_{1,1}(a X₀ + b X₁, c X₀ + e X₁) = a e - b c`.
 
 For a pair `(F₀, F₁)` of forms of degree `d` lifting a rational self-map of `ℙ¹`, the resultant
 `Res_{d,d}(F₀, F₁)` measures how far the two forms are from having a common zero. The main result
 of this file makes this precise in every commutative ring: for forms `F, G` of degrees `m, n` with
-`m + n ≥ 1` and for each variable `X_k` there are forms `A, B` of degrees `n - 1, m - 1` with
-`A F + B G = Res_{m,n}(F, G) · X_k ^ (m + n - 1)`. Evaluating this certificate at a common zero
+`m + n ≥ 1` and every form `H` of degree `m + n - 1` there are forms `A, B` of degrees
+`n - 1, m - 1` with `A F + B G = Res_{m,n}(F, G) · H`; in particular this holds for
+`H = X_k ^ (m + n - 1)` for each variable `X_k`. Evaluating this certificate at a common zero
 `x` of `F` and `G` gives `Res_{m,n}(F, G) · x_k ^ (m + n - 1) = 0`, so over a ring without zero
-divisors a pair of forms with nonzero resultant has no common zero besides `0`. For two forms of
-degree `d` over a field with an absolute value, upper bounds for `|A(x)|` and `|B(x)|` turn the
-same identity into a lower bound for `max(|F(x)|, |G(x)|)` by a multiple of
-`max(|x₀|, |x₁|) ^ d`, the estimate behind canonical heights and escape rates of rational
-maps.
+divisors a pair of forms of degrees `m, n` with `m + n ≥ 1` and nonzero resultant has no common
+zero besides `0`. For two forms of the same degree `d ≥ 1` with nonzero resultant over a field
+with an absolute value, upper bounds for `|A(x)|` and `|B(x)|` turn the same identity into a lower
+bound for `max(|F(x)|, |G(x)|)` by a positive multiple of `max(|x₀|, |x₁|) ^ d`, the estimate
+behind canonical heights and escape rates of rational maps.
 
 ## Main definitions
 
@@ -39,7 +44,10 @@ maps.
 
 ## Main results
 
-* `MvPolynomial.binaryResultant_homogenize`: on homogenisations it is `Polynomial.resultant`.
+* `Polynomial.binaryResultant_homogenize`: on homogenisations it is `Polynomial.resultant`.
+* `MvPolynomial.binaryResultant_zero_left_deg`, `MvPolynomial.binaryResultant_zero_right_deg`:
+  the resultant with a formal degree zero, `Res_{0,n}(F, G) = F(0, 1) ^ n` and
+  `Res_{m,0}(F, G) = G(0, 1) ^ m`.
 * `MvPolynomial.binaryResultant_smul_left`, `MvPolynomial.binaryResultant_smul_right`,
   `MvPolynomial.binaryResultant_smul_smul`: behaviour under scaling of the forms.
 * `MvPolynomial.binaryResultant_comm`, `MvPolynomial.binaryResultant_map`: symmetry and base
@@ -47,12 +55,16 @@ maps.
 * `MvPolynomial.binaryResultant_mul_left`, `MvPolynomial.binaryResultant_mul_right`:
   bimultiplicativity, the formal degrees adding.
 * `MvPolynomial.binaryResultant_X_pow_X_pow`, `MvPolynomial.binaryResultant_C_mul_X_add_C_mul_X`,
-  `MvPolynomial.binaryResultant_toTupleMvPolynomial`: the resultant of `(X₀ᵐ, X₁ⁿ)`, of two linear
+  `Polynomial.binaryResultant_toTupleMvPolynomial`: the resultant of `(X₀ᵐ, X₁ⁿ)`, of two linear
   forms, and of the standard lift of a polynomial map.
-* `MvPolynomial.IsHomogeneous.exists_mul_add_mul_eq_C_binaryResultant_mul_X_pow`: the
-  certificate `A F + B G = Res_{m,n}(F, G) · X_k ^ (m + n - 1)`.
+* `MvPolynomial.IsHomogeneous.exists_mul_add_mul_eq_C_binaryResultant_mul`: for forms of degrees
+  `m, n` with `m + n ≥ 1` and a form `H` of degree `m + n - 1`, the certificate
+  `A F + B G = Res_{m,n}(F, G) · H`.
+* `MvPolynomial.IsHomogeneous.exists_mul_add_mul_eq_C_binaryResultant_mul_X_pow`: the case
+  `H = X_k ^ (m + n - 1)` of the certificate, for `m + n ≥ 1`.
 * `MvPolynomial.IsHomogeneous.eq_zero_of_eval_eq_zero_of_binaryResultant_ne_zero`: over a ring
-  without zero divisors, forms with nonzero resultant have no common nonzero zero.
+  without zero divisors, forms of degrees `m, n` with `m + n ≥ 1` and nonzero resultant have no
+  common nonzero zero.
 
 ## References
 
@@ -84,33 +96,26 @@ theorem binaryResultant_def (F G : MvPolynomial (Fin 2) R) (m n : ℕ) :
       (aeval ![Polynomial.X, 1] F : R[X]).resultant (aeval ![Polynomial.X, 1] G) m n :=
   (rfl)
 
-/-- On homogenisations, the resultant of binary forms is Mathlib's resultant of the
-polynomials. No degree bound is needed: homogenising in degree `m` keeps exactly the coefficients
-of index at most `m`, which are the ones the resultant with formal degree `m` uses. -/
-@[simp]
-theorem binaryResultant_homogenize (p q : R[X]) (m n : ℕ) :
-    (p.homogenize m).binaryResultant (q.homogenize n) m n = p.resultant q m n := by
-  rw [binaryResultant_def]
-  exact resultant_congr_of_coeff_eq (fun i hi ↦ coeff_aeval_homogenize_X_one p hi)
-    (fun i hi ↦ coeff_aeval_homogenize_X_one q hi)
-
 /-- Scaling the first form by `c` scales the resultant by `c ^ n`. -/
 @[simp]
 theorem binaryResultant_smul_left (c : R) (F G : MvPolynomial (Fin 2) R) (m n : ℕ) :
     (c • F).binaryResultant G m n = c ^ n * F.binaryResultant G m n := by
-  rw [binaryResultant_def, map_smul, Polynomial.smul_eq_C_mul, resultant_C_mul_left,
-    binaryResultant_def]
+  simp only [binaryResultant_def]
+  rw [map_smul, Polynomial.smul_eq_C_mul]
+  exact resultant_C_mul_left _ _ m n c
 
 /-- Scaling the second form by `c` scales the resultant by `c ^ m`. -/
 @[simp]
 theorem binaryResultant_smul_right (c : R) (F G : MvPolynomial (Fin 2) R) (m n : ℕ) :
     F.binaryResultant (c • G) m n = c ^ m * F.binaryResultant G m n := by
-  rw [binaryResultant_def, map_smul, Polynomial.smul_eq_C_mul, resultant_C_mul_right,
-    binaryResultant_def]
+  simp only [binaryResultant_def]
+  rw [map_smul, Polynomial.smul_eq_C_mul]
+  exact resultant_C_mul_right _ _ m n c
 
 /-- Scaling both forms by `c` scales the resultant by `c ^ (m + n)`. For the two forms of degree
-`d` of a homogeneous lift of a rational map this is `c ^ (2 d)`, so the resultant of the map is
-defined up to `(Rˣ) ^ (2 d)`. -/
+`d` of a homogeneous lift of a rational map this is `c ^ (2 d)`: two lifts that differ by a unit
+`u` of `R` have resultants differing by `u ^ (2 d)`, so the resultant of the map is defined up to
+`(Rˣ) ^ (2 d)`. -/
 theorem binaryResultant_smul_smul (c : R) (F G : MvPolynomial (Fin 2) R) (m n : ℕ) :
     (c • F).binaryResultant (c • G) m n = c ^ (m + n) * F.binaryResultant G m n := by
   rw [binaryResultant_smul_left, binaryResultant_smul_right, ← mul_assoc, ← pow_add, add_comm]
@@ -118,14 +123,16 @@ theorem binaryResultant_smul_smul (c : R) (F G : MvPolynomial (Fin 2) R) (m n : 
 /-- Swapping the two forms multiplies the resultant by `(-1) ^ (m n)`. -/
 theorem binaryResultant_comm (F G : MvPolynomial (Fin 2) R) (m n : ℕ) :
     F.binaryResultant G m n = (-1) ^ (m * n) * G.binaryResultant F n m := by
-  rw [binaryResultant_def, resultant_comm, binaryResultant_def]
+  simp only [binaryResultant_def]
+  exact resultant_comm _ _ m n
 
 /-- The resultant of binary forms commutes with base change. -/
 @[simp]
 theorem binaryResultant_map (φ : R →+* S) (F G : MvPolynomial (Fin 2) R) (m n : ℕ) :
     (F.map φ).binaryResultant (G.map φ) m n = φ (F.binaryResultant G m n) := by
-  rw [binaryResultant_def, aeval_X_one_map, aeval_X_one_map, resultant_map_map,
-    binaryResultant_def]
+  simp only [binaryResultant_def]
+  rw [aeval_X_one_map φ F, aeval_X_one_map φ G]
+  exact resultant_map_map _ _ m n φ
 
 /-- The resultant of the zero form with a form of positive formal degree vanishes. -/
 @[simp]
@@ -138,6 +145,19 @@ theorem binaryResultant_zero_left (G : MvPolynomial (Fin 2) R) (m : ℕ) {n : �
 theorem binaryResultant_zero_right (F : MvPolynomial (Fin 2) R) {m : ℕ} (n : ℕ) (hm : m ≠ 0) :
     F.binaryResultant 0 m n = 0 := by
   rw [binaryResultant_def, map_zero, resultant_zero_right, zero_pow hm, zero_mul]
+
+/-- With first formal degree zero, the resultant is `Res_{0,n}(F, G) = F(0, 1) ^ n`; in particular
+`Res_{0,0}(F, G) = 1`. -/
+@[simp]
+theorem binaryResultant_zero_left_deg (F G : MvPolynomial (Fin 2) R) (n : ℕ) :
+    F.binaryResultant G 0 n = eval ![0, 1] F ^ n := by
+  simp only [binaryResultant_def, resultant_zero_left_deg, coeff_zero_aeval_X_one]
+
+/-- With second formal degree zero, the resultant is `Res_{m,0}(F, G) = G(0, 1) ^ m`. -/
+@[simp]
+theorem binaryResultant_zero_right_deg (F G : MvPolynomial (Fin 2) R) (m : ℕ) :
+    F.binaryResultant G m 0 = eval ![0, 1] G ^ m := by
+  simp only [binaryResultant_def, resultant_zero_right_deg, coeff_zero_aeval_X_one]
 
 /-- The normalisation `Res_{m,n}(X₀ᵐ, X₁ⁿ) = 1`; in particular `Res_{d,d}(X₀ᵈ, X₁ᵈ) = 1`. -/
 @[simp]
@@ -157,6 +177,7 @@ theorem binaryResultant_X_pow_X_pow_swap (m n : ℕ) :
 
 /-- The resultant of two linear forms is the determinant of their coefficient matrix:
 `Res_{1,1}(a X₀ + b X₁, c X₀ + e X₁) = a e - b c`. -/
+@[simp]
 theorem binaryResultant_C_mul_X_add_C_mul_X (a b c e : R) :
     (C a * X 0 + C b * X 1 : MvPolynomial (Fin 2) R).binaryResultant (C c * X 0 + C e * X 1)
       1 1 = a * e - b * c := by
@@ -166,66 +187,55 @@ theorem binaryResultant_C_mul_X_add_C_mul_X (a b c e : R) :
       Polynomial.C c * Polynomial.X + Polynomial.C e := by simp
   rw [binaryResultant_def, h₀, h₁, resultant_C_mul_X_add_C_C_mul_X_add_C]
 
-/-- The standard lift `(p.homogenize p.natDegree, X₁ ^ p.natDegree)` of a polynomial map has
-resultant `p.leadingCoeff ^ p.natDegree`. -/
-@[simp]
-theorem binaryResultant_toTupleMvPolynomial (p : R[X]) :
-    (p.toTupleMvPolynomial 0).binaryResultant (p.toTupleMvPolynomial 1) p.natDegree
-      p.natDegree = p.leadingCoeff ^ p.natDegree := by
-  have h₁ : (aeval ![Polynomial.X, 1] (p.toTupleMvPolynomial 1) : R[X]) = 1 := by
-    simp [toTupleMvPolynomial_one_eq]
-  rw [binaryResultant_def, toTupleMvPolynomial_zero_eq, aeval_homogenize_X_one _ le_rfl, h₁,
-    resultant_one_right, coeff_natDegree]
-
-/-- **Bimultiplicativity of the resultant**, in the first form: for binary forms `F₁, F₂, G`
-homogeneous of degrees `m₁, m₂, n`,
+/-- **Bimultiplicativity of the resultant**, in the first form: for binary forms `F₁, F₂`
+homogeneous of degrees `m₁, m₂` and any `G`,
 `Res_{m₁+m₂,n}(F₁ F₂, G) = Res_{m₁,n}(F₁, G) · Res_{m₂,n}(F₂, G)`. -/
 theorem binaryResultant_mul_left {F₁ F₂ G : MvPolynomial (Fin 2) R} {m₁ m₂ n : ℕ}
-    (hF₁ : F₁.IsHomogeneous m₁) (hF₂ : F₂.IsHomogeneous m₂) (hG : G.IsHomogeneous n) :
+    (hF₁ : F₁.IsHomogeneous m₁) (hF₂ : F₂.IsHomogeneous m₂) :
     (F₁ * F₂).binaryResultant G (m₁ + m₂) n =
       F₁.binaryResultant G m₁ n * F₂.binaryResultant G m₂ n := by
-  rw [binaryResultant_def, map_mul, resultant_mul_left_of_natDegree_le
-    hF₁.natDegree_aeval_X_one_le hF₂.natDegree_aeval_X_one_le hG.natDegree_aeval_X_one_le,
-    binaryResultant_def, binaryResultant_def]
+  -- The resultants only see the coefficients of `G(X, 1)` of index at most `n`, so `G(X, 1)` may
+  -- be replaced by the dehomogenization `g` of its homogenization in degree `n`, of degree `≤ n`.
+  set g : R[X] := aeval ![Polynomial.X, 1] ((aeval ![Polynomial.X, 1] G : R[X]).homogenize n)
+  have hg (f : R[X]) (k : ℕ) : f.resultant (aeval ![Polynomial.X, 1] G) k n = f.resultant g k n :=
+    resultant_congr_of_coeff_eq (fun _ _ ↦ rfl) fun _ hi ↦ (coeff_aeval_homogenize_X_one _ hi).symm
+  simp only [binaryResultant_def, hg]
+  rw [map_mul]
+  exact resultant_mul_left_of_natDegree_le hF₁.natDegree_aeval_X_one_le
+    hF₂.natDegree_aeval_X_one_le (isHomogeneous_homogenize _).natDegree_aeval_X_one_le
 
-/-- **Bimultiplicativity of the resultant**, in the second form: for binary forms `F, G₁, G₂`
-homogeneous of degrees `m, n₁, n₂`,
+/-- **Bimultiplicativity of the resultant**, in the second form: for binary forms `G₁, G₂`
+homogeneous of degrees `n₁, n₂` and any `F`,
 `Res_{m,n₁+n₂}(F, G₁ G₂) = Res_{m,n₁}(F, G₁) · Res_{m,n₂}(F, G₂)`. -/
 theorem binaryResultant_mul_right {F G₁ G₂ : MvPolynomial (Fin 2) R} {m n₁ n₂ : ℕ}
-    (hF : F.IsHomogeneous m) (hG₁ : G₁.IsHomogeneous n₁) (hG₂ : G₂.IsHomogeneous n₂) :
+    (hG₁ : G₁.IsHomogeneous n₁) (hG₂ : G₂.IsHomogeneous n₂) :
     F.binaryResultant (G₁ * G₂) m (n₁ + n₂) =
       F.binaryResultant G₁ m n₁ * F.binaryResultant G₂ m n₂ := by
-  rw [binaryResultant_comm F, binaryResultant_mul_left hG₁ hG₂ hF, binaryResultant_comm F G₁,
+  rw [binaryResultant_comm F, binaryResultant_mul_left hG₁ hG₂, binaryResultant_comm F G₁,
     binaryResultant_comm F G₂, mul_add, pow_add]
   ring
 
 namespace IsHomogeneous
 
 /-- **The resultant as a Nullstellensatz certificate.** Let `F` and `G` be binary forms over a
-commutative ring, homogeneous of degrees `m` and `n` with `m + n ≥ 1`. For each variable `X_k`
-there are binary forms `A` and `B`, homogeneous of degrees `n - 1` and `m - 1`, with
-`A F + B G = Res_{m,n}(F, G) · X_k ^ (m + n - 1)`. -/
-theorem exists_mul_add_mul_eq_C_binaryResultant_mul_X_pow {F G : MvPolynomial (Fin 2) R}
+commutative ring, homogeneous of degrees `m` and `n` with `m + n ≥ 1`. For every binary form `H`
+homogeneous of degree `m + n - 1` there are binary forms `A` and `B`, homogeneous of degrees
+`n - 1` and `m - 1`, with `A F + B G = Res_{m,n}(F, G) · H`. -/
+theorem exists_mul_add_mul_eq_C_binaryResultant_mul {F G H : MvPolynomial (Fin 2) R}
     {m n : ℕ} (hF : F.IsHomogeneous m) (hG : G.IsHomogeneous n) (hmn : m ≠ 0 ∨ n ≠ 0)
-    (k : Fin 2) :
+    (hH : H.IsHomogeneous (m + n - 1)) :
     ∃ A B : MvPolynomial (Fin 2) R, A.IsHomogeneous (n - 1) ∧ B.IsHomogeneous (m - 1) ∧
-      A * F + B * G = C (F.binaryResultant G m n) * X k ^ (m + n - 1) := by
-  -- Dehomogenise: `F = f.homogenize m` and `G = g.homogenize n` with `deg f ≤ m`, `deg g ≤ n`.
+      A * F + B * G = C (F.binaryResultant G m n) * H := by
+  -- Dehomogenise: `F = f.homogenize m`, `G = g.homogenize n` and `H = P.homogenize (m + n - 1)`
+  -- with `deg f ≤ m`, `deg g ≤ n` and `deg P ≤ m + n - 1 < m + n`.
   set f : R[X] := MvPolynomial.aeval ![Polynomial.X, 1] F
   set g : R[X] := MvPolynomial.aeval ![Polynomial.X, 1] G
+  set P : R[X] := MvPolynomial.aeval ![Polynomial.X, 1] H
   have hf : f.natDegree ≤ m := hF.natDegree_aeval_X_one_le
   have hg : g.natDegree ≤ n := hG.natDegree_aeval_X_one_le
-  -- The polynomial `P` whose homogenisation in degree `m + n - 1` is `X_k ^ (m + n - 1)`.
-  set P : R[X] := if k = 0 then Polynomial.X ^ (m + n - 1) else 1 with hP
-  have hPle : P.degree ≤ (m + n - 1 : ℕ) := by
-    rw [hP]
-    split_ifs
-    · exact degree_X_pow_le _
-    · exact degree_one_le.trans (by exact_mod_cast Nat.zero_le _)
-  -- `m + n - 1 < m + n` since `m + n ≥ 1`.
-  have hPdeg : P.degree < ↑(m + n) := hPle.trans_lt (by exact_mod_cast Nat.sub_lt (by lia) one_pos)
-  have hPh : P.homogenize (m + n - 1) = X k ^ (m + n - 1) := by
-    fin_cases k <;> simp [hP]
+  have hPdeg : P.degree < ↑(m + n) :=
+    (degree_le_of_natDegree_le hH.natDegree_aeval_X_one_le).trans_lt
+      (by exact_mod_cast Nat.sub_lt (by lia) one_pos)
   obtain ⟨p, q, hp, hq, key⟩ := exists_mul_add_mul_eq_C_resultant_mul hf hg hPdeg
   refine ⟨p.homogenize (n - 1), q.homogenize (m - 1),
     isHomogeneous_homogenize _, isHomogeneous_homogenize _, ?_⟩
@@ -233,9 +243,21 @@ theorem exists_mul_add_mul_eq_C_binaryResultant_mul_X_pow {F G : MvPolynomial (F
   have hgq := homogenize_mul_of_degree_lt g q hg hq
   rw [add_comm n m] at hgq
   have h := congr(homogenize $key (m + n - 1))
-  rw [homogenize_add, homogenize_mul_of_degree_lt f p hf hp, hgq, homogenize_C_mul, hPh,
-    homogenize_eq_of_isHomogeneous hF rfl, homogenize_eq_of_isHomogeneous hG rfl] at h
+  rw [homogenize_add, homogenize_mul_of_degree_lt f p hf hp, hgq, homogenize_C_mul,
+    homogenize_eq_of_isHomogeneous hH rfl, homogenize_eq_of_isHomogeneous hF rfl,
+    homogenize_eq_of_isHomogeneous hG rfl] at h
   rw [binaryResultant_def, ← h, mul_comm _ F, mul_comm _ G]
+
+/-- **The resultant as a Nullstellensatz certificate**, for a power of a variable: for binary forms
+`F` and `G` homogeneous of degrees `m` and `n` with `m + n ≥ 1` and each variable `X_k`, there are
+binary forms `A` and `B`, homogeneous of degrees `n - 1` and `m - 1`, with
+`A F + B G = Res_{m,n}(F, G) · X_k ^ (m + n - 1)`. -/
+theorem exists_mul_add_mul_eq_C_binaryResultant_mul_X_pow {F G : MvPolynomial (Fin 2) R}
+    {m n : ℕ} (hF : F.IsHomogeneous m) (hG : G.IsHomogeneous n) (hmn : m ≠ 0 ∨ n ≠ 0)
+    (k : Fin 2) :
+    ∃ A B : MvPolynomial (Fin 2) R, A.IsHomogeneous (n - 1) ∧ B.IsHomogeneous (m - 1) ∧
+      A * F + B * G = C (F.binaryResultant G m n) * X k ^ (m + n - 1) :=
+  hF.exists_mul_add_mul_eq_C_binaryResultant_mul hG hmn (isHomogeneous_X_pow k _)
 
 /-- At a common zero `x` of binary forms `F` and `G` of degrees `m` and `n` with `m + n ≥ 1`, the
 resultant satisfies `Res_{m,n}(F, G) · x_k ^ (m + n - 1) = 0` for each coordinate `x_k`. -/
@@ -259,3 +281,30 @@ theorem eq_zero_of_eval_eq_zero_of_binaryResultant_ne_zero [NoZeroDivisors R]
 end IsHomogeneous
 
 end MvPolynomial
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- On homogenisations, the resultant of binary forms is Mathlib's resultant of the
+polynomials. No degree bound is needed: homogenising in degree `m` keeps exactly the coefficients
+of index at most `m`, which are the ones the resultant with formal degree `m` uses. -/
+@[simp]
+theorem binaryResultant_homogenize (p q : R[X]) (m n : ℕ) :
+    (p.homogenize m).binaryResultant (q.homogenize n) m n = p.resultant q m n := by
+  rw [MvPolynomial.binaryResultant_def]
+  exact resultant_congr_of_coeff_eq (fun i hi ↦ coeff_aeval_homogenize_X_one p hi)
+    (fun i hi ↦ coeff_aeval_homogenize_X_one q hi)
+
+/-- The standard lift `(p.homogenize p.natDegree, X₁ ^ p.natDegree)` of a polynomial map has
+resultant `p.leadingCoeff ^ p.natDegree`. -/
+@[simp]
+theorem binaryResultant_toTupleMvPolynomial (p : R[X]) :
+    (p.toTupleMvPolynomial 0).binaryResultant (p.toTupleMvPolynomial 1) p.natDegree
+      p.natDegree = p.leadingCoeff ^ p.natDegree := by
+  have h₁ : (MvPolynomial.aeval ![X, 1] (p.toTupleMvPolynomial 1) : R[X]) = 1 := by
+    simp [toTupleMvPolynomial_one_eq]
+  rw [MvPolynomial.binaryResultant_def, toTupleMvPolynomial_zero_eq,
+    aeval_homogenize_X_one _ le_rfl, h₁, resultant_one_right, coeff_natDegree]
+
+end Polynomial

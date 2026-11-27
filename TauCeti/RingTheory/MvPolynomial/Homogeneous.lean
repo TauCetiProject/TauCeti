@@ -32,7 +32,8 @@ nonzero scalar does not change whether the value vanishes. In the same way
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
-polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records that
+polynomials of degree at most one (for a binary form, `hp.natDegree_aeval_X_one_le` specializes
+this to the dehomogenization `F(X, 1)`), `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
 by `d`, and `hp.not_dvd_X` records that without zero divisors a homogeneous polynomial of degree at
 least two divides no variable. Without zero divisors, the factors of a homogeneous product are
@@ -170,6 +171,12 @@ theorem natDegree_aeval_le {σ R : Type*} [CommSemiring R]
   rw [← hp (mem_support_iff.mp hs), Finsupp.weight_apply, Finsupp.sum]
   refine Finset.sum_le_sum fun i _ ↦ (Polynomial.natDegree_pow_le).trans ?_
   simpa using Nat.mul_le_mul_left (s i) (hv i)
+
+/-- The dehomogenization `F(X, 1)` of a binary form `F` of degree `m` has degree at most `m`. -/
+theorem natDegree_aeval_X_one_le {R : Type*} [CommSemiring R]
+    {F : MvPolynomial (Fin 2) R} {m : ℕ} (hF : F.IsHomogeneous m) :
+    (_root_.MvPolynomial.aeval ![Polynomial.X, 1] F : Polynomial R).natDegree ≤ m :=
+  hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp [Polynomial.natDegree_X_le]
 
 attribute [local instance] gradedAlgebra in
 /-- Multiplying by a polynomial homogeneous of degree `d` shifts homogeneous components by `d`:

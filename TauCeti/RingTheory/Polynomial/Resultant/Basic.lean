@@ -74,8 +74,9 @@ polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
 * `Polynomial.resultant_C_mul_X_add_C_C_mul_X_add_C`: `Res_{1,1}(a X + b, c X + e) = a e - b c`.
-* `Polynomial.exists_mul_add_mul_eq_C_resultant_mul`: for any `P` of degree less than `m + n` there
-  are `p`, `q` of degrees less than `n`, `m` with `f p + g q = Res_{m,n}(f, g) P`.
+* `Polynomial.exists_mul_add_mul_eq_C_resultant_mul`: for `f`, `g` of degrees at most `m`, `n` and
+  any `P` of degree less than `m + n` there are `p`, `q` of degrees less than `n`, `m` with
+  `f p + g q = Res_{m,n}(f, g) P`.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
   modulo an ideal in the Jacobson radical are coprime are themselves coprime.
 * `Polynomial.IsDistinguishedAt.isUnit_resultant_of_isUnit_coeff_zero`: a polynomial distinguished
@@ -393,9 +394,15 @@ theorem Monic.resultant_ne_zero_of_not_dvd [IsDomain R] [IsIntegrallyClosed R] {
 
 /-- The resultant of two linear polynomials is the determinant of their coefficient matrix:
 `Res_{1,1}(a X + b, c X + e) = a e - b c`. -/
+@[simp]
 theorem resultant_C_mul_X_add_C_C_mul_X_add_C (a b c e : R) :
     (C a * X + C b).resultant (C c * X + C e) 1 1 = a * e - b * c := by
-  simpa [resultant, sylvester, Matrix.det_fin_two, Fin.addCases] using mul_comm e a
+  -- The Sylvester matrix has the coefficients of `c X + e` in its first column and those of
+  -- `a X + b` in its second.
+  have h : sylvester (C a * X + C b) (C c * X + C e) 1 1 = !![e, b; c, a] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [sylvester, Fin.addCases]
+  rw [resultant, h, Matrix.det_fin_two_of, mul_comm e a]
 
 /-- **Bézout identity for the resultant with an arbitrary right-hand side.** For `f` and `g` of
 degrees at most `m` and `n` and any `P` of degree less than `m + n`, there are `p` and `q` of
@@ -405,9 +412,14 @@ the adjugate `Polynomial.adjSylvester` of the Sylvester map to `P` instead of to
 theorem exists_mul_add_mul_eq_C_resultant_mul {f g : R[X]} {m n : ℕ} (hf : f.natDegree ≤ m)
     (hg : g.natDegree ≤ n) {P : R[X]} (hP : P.degree < ↑(m + n)) :
     ∃ p q : R[X], p.degree < n ∧ q.degree < m ∧ f * p + g * q = C (f.resultant g m n) * P := by
-  set pq := adjSylvester f g ⟨P, mem_degreeLT.mpr hP⟩
-  have key := congr(($(sylvesterMap_comp_adjSylvester f g hf hg) ⟨P, mem_degreeLT.mpr hP⟩).val)
-  exact ⟨pq.2, pq.1, mem_degreeLT.mp pq.2.property, mem_degreeLT.mp pq.1.property,
-    by simpa [Algebra.smul_def, pq] using key⟩
+  let P' : R[X]_(m + n) := ⟨P, mem_degreeLT.mpr hP⟩
+  let pq := adjSylvester f g P'
+  have key : sylvesterMap f g hf hg pq = f.resultant g m n • P' := by
+    rw [← LinearMap.comp_apply, sylvesterMap_comp_adjSylvester, LinearMap.smul_apply,
+      LinearMap.id_apply]
+  refine ⟨pq.2, pq.1, mem_degreeLT.mp pq.2.property, mem_degreeLT.mp pq.1.property, ?_⟩
+  -- By definition, `sylvesterMap f g hf hg` sends `(p, q)` to `f q + g p`.
+  have hval : (sylvesterMap f g hf hg pq : R[X]) = f * pq.2 + g * pq.1 := rfl
+  rw [← hval, key, Submodule.coe_smul, smul_eq_C_mul]
 
 end Polynomial

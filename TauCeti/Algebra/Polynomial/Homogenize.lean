@@ -93,8 +93,7 @@ roots of `F(X, 1)` multiplied by `a`.
   `a d - b c ≠ 0` in a commutative ring without zero divisors.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
-* `MvPolynomial.IsHomogeneous.natDegree_aeval_X_one_le`: the dehomogenization `F(X, 1)` of a
-  binary form of degree `m` has degree at most `m`.
+* `MvPolynomial.coeff_zero_aeval_X_one`: the constant coefficient of `F(X, 1)` is `F(0, 1)`.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a binary form of degree `d` with no
   squared linear factor, whose dehomogenization splits, is `a ∏_{ℓ ∈ T} (ℓ.1 X₀ + ℓ.2 X₁)` for `d`
   pairwise non-proportional linear forms.
@@ -349,15 +348,11 @@ theorem aeval_homogenize_eq_sum {A : Type*} [CommSemiring A] [Algebra S A] (p : 
 /-- Dehomogenizing the homogenization of degree `n` of `p` recovers the coefficients of `p` of
 index at most `n`. Unlike `Polynomial.aeval_homogenize_X_one`, this needs no bound on
 `natDegree p`. -/
+@[simp]
 theorem coeff_aeval_homogenize_X_one (p : S[X]) {n i : ℕ} (hi : i ≤ n) :
     (MvPolynomial.aeval ![X, 1] (p.homogenize n) : S[X]).coeff i = p.coeff i := by
-  rw [aeval_homogenize_eq_sum, finsetSum_coeff, Finset.sum_eq_single (i, n - i)]
-  · simp
-  · rintro ⟨k, l⟩ hkl hne
-    rw [Finset.mem_antidiagonal] at hkl
-    have hki : k ≠ i := fun h ↦ hne (by simp only [Prod.mk.injEq]; lia)
-    simp [hki.symm]
-  · simp [hi]
+  rw [aeval_homogenize_eq_sum, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  simp [Nat.lt_succ_of_le hi]
 
 /-- For `natDegree p ≤ n` and `x 1 ≠ 0`, the homogenization of degree `n` of `p` takes the value
 `p(x 0 / x 1) x 1 ^ n` at `x`, in any semifield that is an algebra over the coefficients. This is
@@ -472,11 +467,16 @@ theorem aeval_X_one_map {R S : Type*} [CommSemiring R] [CommSemiring S] (φ : R 
   · funext i
     fin_cases i <;> simp
 
-/-- The dehomogenization `F(X, 1)` of a binary form `F` of degree `m` has degree at most `m`. -/
-theorem IsHomogeneous.natDegree_aeval_X_one_le {R : Type*} [CommSemiring R]
-    {F : MvPolynomial (Fin 2) R} {m : ℕ} (hF : F.IsHomogeneous m) :
-    (MvPolynomial.aeval ![Polynomial.X, 1] F : Polynomial R).natDegree ≤ m :=
-  hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp [Polynomial.natDegree_X_le]
+/-- The constant coefficient of the dehomogenization `F(X, 1)` of a binary form is its value
+`F(0, 1)`. -/
+@[simp]
+theorem coeff_zero_aeval_X_one {R : Type*} [CommSemiring R] (F : MvPolynomial (Fin 2) R) :
+    (aeval ![Polynomial.X, 1] F : Polynomial R).coeff 0 = eval ![0, 1] F := by
+  rw [Polynomial.coeff_zero_eq_eval_zero]
+  induction F using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => fin_cases i <;> simp [hp]
 
 /-- **Splitting of binary forms.** Let `F` be a binary form of degree `d` over a domain, with no
 squared linear factor (so `F ≠ 0`), whose dehomogenization `F(X, 1)` has as many roots as its
