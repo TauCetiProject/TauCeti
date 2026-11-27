@@ -36,6 +36,10 @@ positivity hypothesis is used; the result depends purely on `PoleBoundary`. We a
 vanishing of the regularised integral whenever `F` agrees on `Re s > a` with the model pole, even
 when `F` is redefined at the pole so that the raw remainder `R` is discontinuous at `a`.
 
+## Main definitions
+
+* `TauCeti.HigherPoleTauberian.regularizedRemainder`: Delange's regularised remainder `H`.
+
 ## Main results
 
 * `TauCeti.HigherPoleTauberian.regularizedBoundaryL1`: compact `L¹` boundary convergence of `H`
@@ -59,7 +63,7 @@ open scoped Topology
 
 namespace TauCeti.HigherPoleTauberian
 
-/-! ### Private analytic and integral helpers -/
+/-! ### The regularised remainder -/
 
 /-- The raw (unregularised) model-subtracted remainder `R(s) = F(s) - A / (s - a) ^ (k + 1)`. -/
 private noncomputable def poleSubtractedRemainder (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) :
@@ -76,18 +80,31 @@ private theorem poleSubtractedRemainder_apply (F : ℂ → ℂ) (a : ℝ) (k : �
     poleSubtractedRemainder F a k A s = F s - (A : ℂ) / (s - a) ^ (k + 1) :=
   (rfl)
 
-/-- Delange's regularised remainder integral
-`H(s) = -∫ u in (0 : ℝ)..1, deriv R (s + u) * (u ^ k / k!)`, where
-`R = poleSubtractedRemainder F a k A`. -/
-private noncomputable def regularizedRemainder (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) : ℂ :=
+/-- **Delange's regularised remainder.** For `F : ℂ → ℂ`, `a A : ℝ` and `k : ℕ`, this is
+`H(s) = -∫ u in (0 : ℝ)..1, R'(s + u) * (u ^ k / k!)`, where
+`R(s) = F(s) - A / (s - a) ^ (k + 1)` is the model-subtracted remainder. Use
+`regularizedRemainder_apply` to unfold it. -/
+noncomputable def regularizedRemainder (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) : ℂ :=
   -∫ u : ℝ in (0 : ℝ)..1,
     deriv (poleSubtractedRemainder F a k A) (s + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)
 
-/-- Evaluation of `regularizedRemainder`. -/
-private theorem regularizedRemainder_apply (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) :
+/-- Evaluation of `regularizedRemainder`:
+`H(s) = -∫ u in (0 : ℝ)..1, R'(s + u) * (u ^ k / k!)` with `R(s) = F(s) - A / (s - a) ^ (k + 1)`.
+-/
+theorem regularizedRemainder_apply (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ) (s : ℂ) :
+    regularizedRemainder F a k A s = -∫ u : ℝ in (0 : ℝ)..1,
+      deriv (fun w : ℂ ↦ F w - (A : ℂ) / (w - a) ^ (k + 1)) (s + u) *
+        ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ) :=
+  (rfl)
+
+/-- Evaluation of `regularizedRemainder` in terms of `poleSubtractedRemainder`. -/
+private theorem regularizedRemainder_apply_poleSubtracted (F : ℂ → ℂ) (a : ℝ) (k : ℕ) (A : ℝ)
+    (s : ℂ) :
     regularizedRemainder F a k A s = -∫ u : ℝ in (0 : ℝ)..1,
       deriv (poleSubtractedRemainder F a k A) (s + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ) :=
   (rfl)
+
+/-! ### Private analytic and integral helpers -/
 
 /-- On the open right half-plane `Re s > a`, `poleSubtractedRemainder F a k A` is analytic, so its
 derivative is also analytic (hence continuous) there. -/
@@ -171,7 +188,7 @@ private theorem continuous_regularized_of_pos {F : ℂ → ℂ} {a A : ℝ} {k :
           (((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)) :=
     (continuous_parametric_intervalIntegral_of_continuous' h_uncurry 0 1).neg
   refine h_param.congr fun y ↦ ?_
-  rw [regularizedRemainder_apply]
+  rw [regularizedRemainder_apply_poleSubtracted]
   refine congrArg Neg.neg (integral_congr fun u hu ↦ ?_)
   rw [uIcc_of_le zero_le_one] at hu
   simp [φ, max_eq_left hu.1]
@@ -268,7 +285,7 @@ private theorem tendsto_regularized_of_ne_zero {F : ℂ → ℂ} {a A : ℝ} {k 
         hinner rfl).mul continuousAt_const).continuousWithinAt
   have h_neg : ContinuousWithinAt
       (fun ε : ℝ ↦ regularizedRemainder F a k A ((a : ℂ) + ε + y₀ * I)) (Ici 0) 0 := by
-    simp_rw [regularizedRemainder_apply]
+    simp_rw [regularizedRemainder_apply_poleSubtracted]
     exact h_cwa.neg
   simpa only [ofReal_zero, add_zero] using
     h_neg.tendsto.mono_left (nhdsWithin_mono 0 Ioi_subset_Ici_self)
@@ -299,7 +316,7 @@ private theorem exists_away_compact_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ
     fun ε hε y hyL hyδ ↦ ?_⟩
   rcases mem_iUnion₂.mp (ht_cov ⟨hyL, hyδ⟩) with ⟨y₀, hy₀t, hy_ball⟩
   have hε_Icc : ε ∈ Icc (0 : ℝ) (ρ y₀) := ⟨hε.1.le, hε.2.le.trans (hε_le y₀ hy₀t)⟩
-  rw [regularizedRemainder_apply, norm_neg]
+  rw [regularizedRemainder_apply_poleSubtracted, norm_neg]
   exact (norm_intervalIntegral_mul_weight_le le_rfl zero_le_one (hB0 y₀)
     (hB y₀ ε hε_Icc y hy_ball)).trans (Finset.single_le_sum (f := B) (fun z _ ↦ hB0 z) hy₀t)
 
@@ -499,7 +516,7 @@ private theorem exists_near_pole_log_bound {F : ℂ → ℂ} {a A : ℝ} {k : �
   have hφ_cont : ContinuousOn φ (Icc 0 1) :=
     (hR_cont.comp (by fun_prop) fun u hu ↦ mem_re_gt_of_add_pos (by linarith [hε.1, hu.1])).mul
       (by fun_prop)
-  rw [regularizedRemainder_apply, norm_neg, ← integral_add_adjacent_intervals
+  rw [regularizedRemainder_apply_poleSubtracted, norm_neg, ← integral_add_adjacent_intervals
     ((hφ_cont.mono (Icc_subset_Icc_right hδ1)).intervalIntegrable_of_Icc hδ.le)
     ((hφ_cont.mono (Icc_subset_Icc_left hδ.le)).intervalIntegrable_of_Icc hδ1)]
   have htail_le : ‖∫ u : ℝ in δ..1, φ u‖ ≤ B_tail :=
@@ -536,22 +553,16 @@ private theorem exists_compact_majorant {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
 /-! ### Main theorems -/
 
 /-- **Locally integrable boundary values of Delange's regularised remainder.**
-With `R(s) = F(s) - A / (s - a) ^ (k + 1)` and `H(s) = -∫₀¹ R'(s + u) u ^ k / k! du`, there exists
-a boundary function `b : ℝ → ℂ` such that on every compact interval `[-L, L]` (`0 < L`), `b` is
-integrable and `y ↦ H(a + ε + i y)` converges to `b` in `L¹([-L, L])` as `ε → 0⁺`. -/
+With `R(s) = F(s) - A / (s - a) ^ (k + 1)` and `H(s) = -∫₀¹ R'(s + u) u ^ k / k! du`, the function
+`regularizedRemainder F a k A`, there exists a boundary function `b : ℝ → ℂ` such that on every
+compact interval `[-L, L]` (`0 < L`), `b` is integrable and `y ↦ H(a + ε + i y)` converges to `b`
+in `L¹([-L, L])` as `ε → 0⁺`. -/
 theorem regularizedBoundaryL1 {F : ℂ → ℂ} {a A : ℝ} {k : ℕ} (h : PoleBoundary F a k A) :
-    let R := fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1)
-    let H := fun s : ℂ ↦ -∫ u : ℝ in (0 : ℝ)..1,
-      deriv R (s + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ)
     ∃ b : ℝ → ℂ, ∀ L : ℝ, 0 < L →
       IntegrableOn b (Icc (-L) L) ∧
-      Tendsto (fun ε : ℝ ↦ ∫ y in Icc (-L) L, ‖H ((a : ℂ) + ε + y * Complex.I) - b y‖)
+      Tendsto (fun ε : ℝ ↦
+          ∫ y in Icc (-L) L, ‖regularizedRemainder F a k A ((a : ℂ) + ε + y * I) - b y‖)
         (𝓝[>] 0) (𝓝 0) := by
-  intro R H
-  have hH : H = regularizedRemainder F a k A := by
-    ext s
-    rw [regularizedRemainder_apply, poleSubtractedRemainder_def]
-  rw [hH]
   let b : ℝ → ℂ := fun y ↦
     if y = 0 then 0 else regularizedRemainder F a k A ((a : ℂ) + y * I)
   have h_ptwise : ∀ y : ℝ, y ≠ 0 →
@@ -600,9 +611,8 @@ theorem regularizedBoundaryL1 {F : ℂ → ℂ} {a A : ℝ} {k : ℕ} (h : PoleB
 `a ≤ s.re` (including on the boundary line `Re s = a`). -/
 theorem regularizedRemainder_eq_zero_of_eq_on_re_gt {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
     (hF : ∀ s : ℂ, a < s.re → F s = (A : ℂ) / (s - a) ^ (k + 1)) {s : ℂ} (hs : a ≤ s.re) :
-    -∫ u : ℝ in (0 : ℝ)..1,
-      deriv (fun z : ℂ ↦ F z - (A : ℂ) / (z - a) ^ (k + 1)) (s + u) *
-        ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ) = 0 := by
+    regularizedRemainder F a k A s = 0 := by
+  rw [regularizedRemainder_apply]
   rw [neg_eq_zero]
   have hzero : ∫ _ : ℝ in (0 : ℝ)..1, (0 : ℂ) = 0 := intervalIntegral.integral_zero
   rw [← hzero]

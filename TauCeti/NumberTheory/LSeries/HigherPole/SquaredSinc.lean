@@ -42,6 +42,7 @@ only.
   of `π / λ`.
 * `squaredSinc_mass`: `∫ v, K_λ v = 1` for `λ > 0`.
 * `squaredSinc_fourier`: the triangle formula above, for `λ ≥ 0` and every `v`.
+* `abs_one_sub_abs_div_le_one`: the triangle `1 - |y| / (2λ)` is bounded by `1` on `|y| ≤ 2λ`.
 * `tendsto_intervalIntegral_squaredSinc`, `tendsto_integral_squaredSinc_tail`: for `h > 0`, the
   mass of `[-h, h]` tends to `1` and the mass of `{v | h ≤ |v|}` tends to `0` as `λ → ∞`.
 
@@ -177,6 +178,15 @@ theorem tendsto_integral_squaredSinc_tail (hh : 0 < h) :
     add_sub_cancel_right]
 
 /-! ### The triangle formula -/
+
+/-- The triangle `1 - |y| / (2λ)` of `squaredSinc_fourier` has absolute value at most `1` on its
+support `|y| ≤ 2λ`. -/
+theorem abs_one_sub_abs_div_le_one {ell y : ℝ} (hy : |y| ≤ 2 * ell) :
+    |1 - |y| / (2 * ell)| ≤ 1 := by
+  have hell : 0 ≤ 2 * ell := (abs_nonneg y).trans hy
+  have h0 : 0 ≤ |y| / (2 * ell) := div_nonneg (abs_nonneg y) hell
+  rw [abs_of_nonneg (by linarith [div_le_one_of_le₀ hy hell])]
+  linarith
 
 /-- **The kernel is the inverse Fourier transform of the triangle.** For `λ ≥ 0` and every `v`,
 `K_λ(v) = (1 / 2π) ∫_{-2λ}^{2λ} (1 - |y| / (2λ)) e^{i y v} dy`, the inverse Fourier transform, in

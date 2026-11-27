@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.LaplaceTransform.Basic
 public import TauCeti.NumberTheory.LSeries.HigherPole.DelangeWeight
+public import TauCeti.NumberTheory.LSeries.HigherPole.Regularized
 public import TauCeti.NumberTheory.LSeries.HigherPole.SquaredSinc
 import TauCeti.Analysis.LaplaceTransform.Elementary
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
@@ -25,6 +27,7 @@ over `u ∈ [0, 1]` reproduces `w_k(t) / t`.
 
 Applied to a function `α` with transform `F` and to the model `(A / k!) exp (a t) t ^ k`, whose
 transform is `A / (s - a) ^ (k + 1)`, this identifies Delange's regularised remainder
+`TauCeti.HigherPoleTauberian.regularizedRemainder`,
 
 `H(s) = -∫ u in 0..1, R'(s + u) * u ^ k / k!`,  `R(s) = F(s) - A / (s - a) ^ (k + 1)`,
 
@@ -81,21 +84,6 @@ private theorem mul_intervalIntegral_cexp_mul_eq_delangeWeight (k : ℕ) (t : �
     ring
   simp_rw [h, intervalIntegral.integral_ofReal, delangeWeight_def, ofReal_mul]
 
-/-- For `u ∈ (0, 1]` and `t > 0`, the factor `exp (-u t) * (u ^ k / k!)` has norm at most `1`. -/
-private theorem norm_cexp_mul_pow_div_factorial_le_one (k : ℕ) {u t : ℝ}
-    (hu : u ∈ uIoc (0 : ℝ) 1) (ht : t ∈ Ioi (0 : ℝ)) :
-    ‖cexp (-(u : ℂ) * t) * ((u ^ k / k ! : ℝ) : ℂ)‖ ≤ 1 := by
-  rw [uIoc_of_le zero_le_one] at hu
-  have hw0 : 0 ≤ u ^ k / k ! := div_nonneg (pow_nonneg hu.1.le k) k.factorial.cast_nonneg
-  have hw1 : u ^ k / k ! ≤ 1 :=
-    div_le_one_of_le₀ ((pow_le_one₀ hu.1.le hu.2).trans (by exact_mod_cast k.factorial_pos))
-      k.factorial.cast_nonneg
-  have hexp : Real.exp (-u * t) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith [hu.1, mem_Ioi.mp ht])
-  rw [norm_mul, ← ofReal_neg, ← ofReal_mul, norm_exp_ofReal, norm_real, Real.norm_of_nonneg hw0]
-  calc Real.exp (-u * t) * (u ^ k / k !) ≤ 1 * 1 :=
-        mul_le_mul hexp hw1 hw0 zero_le_one
-    _ = 1 := one_mul 1
-
 /-- **Weighting by Delange's weight on the Laplace side.** If `G` is the one-sided Laplace
 transform of `f` on the half-plane `Re s > a`, then so is
 `s ↦ -∫ u in 0..1, G'(s + u) * u ^ k / k!` the transform of `t ↦ w_k(t) * f t`, where `w_k` is
@@ -112,10 +100,14 @@ theorem hasLaplace_delangeWeight_mul {f : ℝ → ℂ} {G : ℂ → ℂ} {a : �
     (hasLaplace_neg_smul_deriv_of_re_gt hG hs).integrable
   set Φ : ℝ → ℝ → ℂ := fun u t ↦ cexp (-(u : ℂ) * t) * ((u ^ k / k ! : ℝ) : ℂ) * h t with Φ_def
   have hΦ : Integrable (Function.uncurry Φ)
-      ((volume.restrict (uIoc (0 : ℝ) 1)).prod (volume.restrict (Ioi 0))) :=
-    integrable_uncurry_mul_of_norm_le measurableSet_uIoc measurableSet_Ioi measure_Ioc_lt_top.ne
-      (Continuous.aestronglyMeasurable (by fun_prop))
-      (fun _ hu _ ht ↦ norm_cexp_mul_pow_div_factorial_le_one k hu ht) hh
+      ((volume.restrict (uIoc (0 : ℝ) 1)).prod (volume.restrict (Ioi 0))) := by
+    refine integrable_uncurry_mul_of_norm_le (C := 1) measurableSet_uIoc measurableSet_Ioi
+      measure_Ioc_lt_top.ne (Continuous.aestronglyMeasurable (by fun_prop)) (fun u hu t ht ↦ ?_) hh
+    rw [uIoc_of_le zero_le_one] at hu
+    have hw : 0 ≤ u ^ k / k ! := div_nonneg (pow_nonneg hu.1.le k) k.factorial.cast_nonneg
+    rw [← ofReal_neg, ← ofReal_mul, ← ofReal_exp, ← ofReal_mul, norm_real,
+      Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le hw), neg_mul]
+    exact exp_neg_mul_mul_pow_div_factorial_le_one hu.1.le hu.2 (mem_Ioi.mp ht).le k
   -- For each `t`, the `u`-integral of `Φ` is `-exp (-s t) * (w_k(t) * f t)`.
   have hinner (t : ℝ) : ∫ u in (0 : ℝ)..1, Φ u t =
       -(cexp (-s * t) * ((delangeWeight k t : ℂ) * f t)) := by
@@ -149,14 +141,14 @@ theorem hasLaplace_delangeWeight_mul {f : ℝ → ℂ} {G : ℂ → ℂ} {a : �
 half-plane `Re s > a`, and write `R(s) = F(s) - A / (s - a) ^ (k + 1)`. Then on `Re s > a`, the
 regularised remainder `-∫ u in 0..1, R'(s + u) * u ^ k / k!` is the Laplace transform of
 `t ↦ w_k(t) * (α(t) - (A / k!) * exp (a t) * t ^ k)`, where `w_k` is
-`TauCeti.HigherPoleTauberian.delangeWeight k`. No positivity, monotonicity or boundary hypothesis
-is needed. -/
+`TauCeti.HigherPoleTauberian.delangeWeight k`; this remainder is
+`TauCeti.HigherPoleTauberian.regularizedRemainder F a k A`. No positivity, monotonicity or boundary
+hypothesis is needed. -/
 theorem hasLaplace_delangeWeight_mul_sub_exp_mul_pow {α : ℝ → ℝ} {F : ℂ → ℂ} {a A : ℝ} (k : ℕ)
     (hF : ∀ s : ℂ, a < s.re → HasLaplace (fun t ↦ (α t : ℂ)) s (F s)) {s : ℂ} (hs : a < s.re) :
     HasLaplace
       (fun t : ℝ ↦ ((delangeWeight k t * (α t - A / k ! * (Real.exp (a * t) * t ^ k)) : ℝ) : ℂ))
-      s (-∫ u in (0 : ℝ)..1, deriv (fun w : ℂ ↦ F w - (A : ℂ) / (w - a) ^ (k + 1)) (s + u) *
-        ((u ^ k / k ! : ℝ) : ℂ)) := by
+      s (regularizedRemainder F a k A s) := by
   have hR (w : ℂ) (hw : a < w.re) : HasLaplace
       (fun t : ℝ ↦ ((α t - A / k ! * (Real.exp (a * t) * t ^ k) : ℝ) : ℂ)) w
       (F w - (A : ℂ) / (w - a) ^ (k + 1)) := by
@@ -166,19 +158,10 @@ theorem hasLaplace_delangeWeight_mul_sub_exp_mul_pow {α : ℝ → ℝ} {F : ℂ
     refine ((hF w hw).sub hmodel).congr_ae (.of_forall fun t ↦ ?_)
     push_cast
     simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
+  rw [regularizedRemainder_apply]
   simpa only [ofReal_mul] using hasLaplace_delangeWeight_mul hR k hs
 
 /-! ### Smoothing against the squared-sinc kernel -/
-
-/-- On `[-2λ, 2λ]` with `λ ≥ 0`, the triangle function `1 - |y| / (2λ)` lies in `[0, 1]`. -/
-private theorem norm_triangle_le_one {ell y : ℝ} (hell : 0 ≤ ell)
-    (hy : y ∈ uIoc (-(2 * ell)) (2 * ell)) :
-    ‖((1 - |y| / (2 * ell) : ℝ) : ℂ)‖ ≤ 1 := by
-  rw [uIoc_of_le (by linarith)] at hy
-  have hy' : |y| ≤ 2 * ell := abs_le.mpr ⟨hy.1.le, hy.2⟩
-  have hdiv : |y| / (2 * ell) ≤ 1 := div_le_one_of_le₀ hy' (by positivity)
-  rw [norm_real, Real.norm_of_nonneg (by linarith)]
-  linarith [div_nonneg (abs_nonneg y) (by positivity : (0 : ℝ) ≤ 2 * ell)]
 
 /-- **Smoothing a Laplace integrand against the squared-sinc kernel.** Let `λ ≥ 0` and let `G` be
 the one-sided Laplace transform of `g` at every point `s + i y` with `y ∈ [-2λ, 2λ]`. Then for
@@ -207,8 +190,9 @@ theorem integral_cexp_mul_squaredSinc_sub {g : ℝ → ℂ} {G : ℂ → ℂ} {s
     have hphase : I * y * ((T - t : ℝ) : ℂ) = ((y * (T - t) : ℝ) : ℂ) * I := by
       push_cast
       ring
-    rw [norm_mul, hphase, norm_exp_ofReal_mul_I, mul_one]
-    exact norm_triangle_le_one hell hy
+    rw [uIoc_of_le (by linarith)] at hy
+    rw [norm_mul, hphase, norm_exp_ofReal_mul_I, mul_one, norm_real, Real.norm_eq_abs]
+    exact abs_one_sub_abs_div_le_one (abs_le.mpr ⟨hy.1.le, hy.2⟩)
   have hinner (t : ℝ) : cexp (-s * t) * g t * (squaredSinc ell (t - T) : ℂ) =
       1 / (2 * π) * ∫ y in (-(2 * ell))..(2 * ell), Ψ y t := by
     simp only [Ψ_def, q_def, intervalIntegral.integral_mul_const]
@@ -237,7 +221,8 @@ theorem integral_cexp_mul_squaredSinc_sub {g : ℝ → ℂ} {G : ℂ → ℂ} {s
   rw [integral_const_mul, ← intervalIntegral_integral_swap hΨ, houter]
 
 /-- **The damped identity for Delange's regularised remainder.** Let `α` have transform `F` on the
-half-plane `Re s > a`, let `ε > 0` and `λ ≥ 0`, and write
+half-plane `Re s > a`, let `ε > 0` and `λ ≥ 0`, and write `H` for
+`TauCeti.HigherPoleTauberian.regularizedRemainder F a k A`, that is,
 `H(s) = -∫ u in 0..1, R'(s + u) * u ^ k / k!` with `R(s) = F(s) - A / (s - a) ^ (k + 1)`. Then for
 every real `T`,
 
@@ -254,15 +239,12 @@ theorem integral_exp_mul_delangeWeight_mul_squaredSinc_sub {α : ℝ → ℝ} {F
         (delangeWeight k t * (α t - A / k ! * (Real.exp (a * t) * t ^ k))) *
           squaredSinc ell (t - T) : ℝ) : ℂ) =
       1 / (2 * π) * ∫ y in (-(2 * ell))..(2 * ell),
-        (-∫ u in (0 : ℝ)..1,
-          deriv (fun w : ℂ ↦ F w - (A : ℂ) / (w - a) ^ (k + 1)) ((a + ε : ℂ) + y * I + u) *
-            ((u ^ k / k ! : ℝ) : ℂ)) *
+        regularizedRemainder F a k A ((a : ℂ) + ε + y * I) *
           ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * T) := by
-  have h := integral_cexp_mul_squaredSinc_sub (s := (a + ε : ℂ))
-    (G := fun w ↦ -∫ u in (0 : ℝ)..1,
-      deriv (fun w : ℂ ↦ F w - (A : ℂ) / (w - a) ^ (k + 1)) (w + u) * ((u ^ k / k ! : ℝ) : ℂ)) hell
+  have h := integral_cexp_mul_squaredSinc_sub (s := (a : ℂ) + ε)
+    (G := regularizedRemainder F a k A) hell
     (fun y _ ↦ hasLaplace_delangeWeight_mul_sub_exp_mul_pow (A := A) k hF
-      (s := (a + ε : ℂ) + y * I) (by simp [hε])) T
+      (s := (a : ℂ) + ε + y * I) (by simp [hε])) T
   rw [← h, ← integral_complex_ofReal]
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
   push_cast

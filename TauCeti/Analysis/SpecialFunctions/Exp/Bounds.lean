@@ -56,6 +56,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
 * `TauCeti.pow_mul_exp_neg_mul_div_factorial_le_profile`: a sharper bound for the factorial-
   normalized kernel, expressed in the rescaled coordinate `t = a u / k`.
+* `TauCeti.exp_neg_mul_mul_pow_div_factorial_le_one`: `exp (-(u t)) (u ^ k / k!) ≤ 1` for
+  `0 ≤ u ≤ 1` and `0 ≤ t`.
 * `TauCeti.one_add_pow_mul_exp_neg_mul_le`, `TauCeti.one_add_pow_mul_exp_neg_add_mul_le`:
   `(1 + t) ^ n exp (-a t) ≤ n! exp a / a ^ n` and
   `(1 + t) ^ n exp (-(a + b) t) ≤ (n! exp a / a ^ n) exp (-b t)` for `0 < a`, `-1 ≤ t`.
@@ -329,6 +331,17 @@ theorem pow_mul_exp_neg_mul_div_factorial_le_profile {a u : ℝ} (ha : 0 < a) (h
             (k ! : ℝ) := by ring
         _ = _ := by rw [hpow, hexp, ← mul_assoc, inv_mul_cancel₀ (pow_ne_zero _ ha.ne'), one_mul]
     _ ≤ (a ^ k)⁻¹ * (t * exp (1 - t)) ^ k := mul_le_of_le_one_right (by positivity) hmode
+
+/-- For `0 ≤ u ≤ 1` and `0 ≤ t`, the factor `exp (-(u t)) * (u ^ k / k!)` is at most `1`. -/
+theorem exp_neg_mul_mul_pow_div_factorial_le_one {u t : ℝ} (hu₀ : 0 ≤ u) (hu₁ : u ≤ 1)
+    (ht : 0 ≤ t) (k : ℕ) : exp (-(u * t)) * (u ^ k / k !) ≤ 1 := by
+  have hw : u ^ k / k ! ≤ 1 :=
+    div_le_one_of_le₀ ((pow_le_one₀ hu₀ hu₁).trans (by exact_mod_cast k.factorial_pos))
+      k.factorial.cast_nonneg
+  calc exp (-(u * t)) * (u ^ k / k !) ≤ 1 * 1 :=
+        mul_le_mul (exp_le_one_iff.mpr (neg_nonpos.mpr (mul_nonneg hu₀ ht))) hw (by positivity)
+          zero_le_one
+    _ = 1 := one_mul 1
 
 /-- For `0 < a` and `-1 ≤ t`, `(1 + t) ^ n * exp (-a * t) ≤ n! * exp a / a ^ n`. -/
 theorem one_add_pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
