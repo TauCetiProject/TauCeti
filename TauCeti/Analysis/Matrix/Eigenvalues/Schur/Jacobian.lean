@@ -44,8 +44,8 @@ noncomputable section
 
 namespace TauCeti
 
-open _root_.Matrix
-open scoped _root_.Matrix
+open Matrix
+open scoped Matrix
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
 

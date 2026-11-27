@@ -11,8 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.Unique
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 
 /-!
 # Continuous equivalences of unitary matrices
@@ -28,12 +28,13 @@ Over any topological star semiring `α`:
 Conjugation by a fixed unitary matrix and by its inverse are continuous for the
 entrywise topology, giving a continuous linear equivalence on the matrix space.
 
-Over a Hausdorff topological ring with continuous star, the unitary group
+Over a Hausdorff topological semiring with continuous star, commutative or not, the unitary group
 `Matrix.unitaryGroupOf A` of a Gram matrix `A`, the invertible matrices `g` with
 `star g * A * g = A`, is a closed subgroup of the general linear group with the topology of units
-(`Matrix.isClosed_unitaryGroupOf`). For invertible `A` it is also a closed subset of the matrices,
-with the subspace topology (`Matrix.unitaryGroupOf.isClosedEmbedding_val`), since its inverse
-`A⁻¹ * star g * A` is a continuous function of `g`.
+(`Matrix.isClosed_unitaryGroupOf`). Over a Hausdorff commutative topological ring with continuous
+star and for invertible `A`, it is also a closed subset of the matrices, with the subspace topology
+(`Matrix.unitaryGroupOf.isClosedEmbedding_val`): its inverse `A⁻¹ * star g * A` is a continuous
+function of `g`, and every matrix preserving the form is invertible.
 
 ## Main definitions
 
@@ -47,8 +48,8 @@ with the subspace topology (`Matrix.unitaryGroupOf.isClosedEmbedding_val`), sinc
 ## Main results
 
 * `Matrix.isClosed_unitaryGroupOf`: `unitaryGroupOf A` is closed in `GL n R`.
-* `Matrix.unitaryGroupOf.isClosedEmbedding_val`: for invertible `A`, the coercion of
-  `unitaryGroupOf A` to the matrices is a closed embedding.
+* `Matrix.unitaryGroupOf.isClosedEmbedding_val`: over a commutative ring and for invertible `A`,
+  the coercion of `unitaryGroupOf A` to the matrices is a closed embedding.
 -/
 
 public section
@@ -203,8 +204,8 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- `unitaryGroupOf A` is a closed subgroup of `GL n R`: it is cut out by the continuous equation
 `star g * A * g = A`. -/
-theorem isClosed_unitaryGroupOf {R : Type*} [CommRing R] [StarRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] [ContinuousStar R] [T2Space R] (A : Matrix n n R) :
+theorem isClosed_unitaryGroupOf {R : Type*} [Semiring R] [StarRing R] [TopologicalSpace R]
+    [IsTopologicalSemiring R] [ContinuousStar R] [T2Space R] (A : Matrix n n R) :
     IsClosed (unitaryGroupOf A : Set (GL n R)) := by
   have h : (unitaryGroupOf A : Set (GL n R)) =
       {g : GL n R | star (g : Matrix n n R) * A * g = A} :=
@@ -213,10 +214,11 @@ theorem isClosed_unitaryGroupOf {R : Type*} [CommRing R] [StarRing R] [Topologic
   exact isClosed_eq (((Units.continuous_val.star).matrix_mul continuous_const).matrix_mul
     Units.continuous_val) continuous_const
 
-/-- **`unitaryGroupOf A` is a closed subset of the matrices**, for invertible `A`: the coercion to
-matrices is a closed embedding. The topology of `GL n R` is that of the pair `(g, g⁻¹)`, and on
-`unitaryGroupOf A` the inverse `A⁻¹ * star g * A` is a continuous function of `g`; the image is
-cut out by the continuous equation `star M * A * M = A`, every solution of which is invertible. -/
+/-- **`unitaryGroupOf A` is a closed subset of the matrices**, over a Hausdorff commutative
+topological ring with continuous star and for invertible `A`: the coercion to matrices is a closed
+embedding. The topology of `GL n R` is that of the pair `(g, g⁻¹)`, and on `unitaryGroupOf A` the
+inverse `A⁻¹ * star g * A` is a continuous function of `g`. Over a commutative ring every solution
+of `star M * A * M = A` is invertible, so the image is cut out by that continuous equation. -/
 theorem unitaryGroupOf.isClosedEmbedding_val {R : Type*} [CommRing R] [StarRing R]
     [TopologicalSpace R] [IsTopologicalRing R] [ContinuousStar R] [T2Space R] {A : Matrix n n R}
     (hA : IsUnit A) :

@@ -5,16 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
-import Mathlib.Topology.Algebra.Group.Matrix
-import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic
 
 /-!
 # Integral matrices over the finite adeles
@@ -25,12 +23,16 @@ index type `ι` of size `n`, this file studies the inclusion `GL_n(Ô) → GL_n(
 `Ô ⊆ 𝔸_f` (`IsDedekindDomain.FiniteAdeleRing.integralGL`).
 
 It is injective, and its image consists of the matrices whose entries and inverse entries are
-integral; it is an open embedding, its image being the group of units of the open submonoid
-`M_n(Ô)` of `M_n(𝔸_f)`. A matrix of `GL_n(Ô)` carries the integral vectors `Ô^n` onto themselves,
-and a matrix of `GL_n(K)` of determinant `1` with integral entries comes from `SL_n(R)`.
-Membership in the image of a subgroup of `GL_n(Ô)` cut out by a condition on the entries is
-again a condition on the entries, which is how the congruence levels of `GL₂(𝔸_f)`
-(`TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel`) are described.
+integral; it is an open embedding, as `Ô` is open in `𝔸_f`. A matrix of `GL_n(Ô)` carries the
+integral vectors `Ô^n` onto themselves, and a matrix of `GL_n(K)` of determinant `1` with integral
+entries comes from `SL_n(R)`. Membership in the image of a subgroup of `GL_n(Ô)` cut out by a
+condition on the entries is again a condition on the entries, which is how the congruence levels
+of `GL₂(𝔸_f)` (`TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel`) are described.
+These are the cases `Ô ⊆ 𝔸_f` of the general statements for a subalgebra
+(`Matrix.GeneralLinearGroup.mem_range_map_val_iff`,
+`Matrix.GeneralLinearGroup.forall_mulVec_mem_iff`,
+`Matrix.GeneralLinearGroup.mem_map_map_val_iff`) and for an open embedding
+(`Topology.IsOpenEmbedding.generalLinearGroup_map`).
 
 ## Main declarations
 
@@ -118,17 +120,8 @@ integral exactly when `v` is: the entries of `g` and of `g⁻¹` are integral. -
 theorem forall_mulVec_mem_integralAdeles_iff {g : GL ι 𝔸ᶠ[R, K]}
     (hg : g ∈ (integralGL K ι).range) {v : ι → 𝔸ᶠ[R, K]} :
     (∀ i, ((g : Matrix ι ι 𝔸ᶠ[R, K]) *ᵥ v) i ∈ integralAdeles R K) ↔
-      ∀ i, v i ∈ integralAdeles R K := by
-  -- A matrix with integral entries carries integral vectors to integral vectors.
-  have key {M : Matrix ι ι 𝔸ᶠ[R, K]} (hM : ∀ i j, M i j ∈ integralAdeles R K)
-      {w : ι → 𝔸ᶠ[R, K]} (hw : ∀ i, w i ∈ integralAdeles R K) (i : ι) :
-      (M *ᵥ w) i ∈ integralAdeles R K :=
-    Subalgebra.sum_mem _ fun j _ ↦ Subalgebra.mul_mem _ (hM i j) (hw j)
-  obtain ⟨hg, hg'⟩ := mem_range_integralGL_iff.1 hg
-  refine ⟨fun h i ↦ ?_, fun h ↦ key hg h⟩
-  have h' := key hg' h i
-  rwa [Matrix.mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-    Matrix.one_mulVec] at h'
+      ∀ i, v i ∈ integralAdeles R K :=
+  Matrix.GeneralLinearGroup.forall_mulVec_mem_iff hg
 
 /-- A matrix in `GL_n(K)` of determinant `1` whose entries are integral at every finite place,
 that is whose diagonal images in `𝔸_f` lie in `Ô`, comes from `SL_n(R)`. -/
@@ -144,21 +137,9 @@ theorem mem_range_mapGL_of_det_eq_one {γ : GL ι K}
     (congrArg Subtype.val hσ))⟩
 
 variable (K ι) in
-/-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is an open embedding: it is an embedding as `Ô ⊆ 𝔸_f` is
-one, and its range, the group of units of the submonoid `M_n(Ô)` of `M_n(𝔸_f)`
-(`mem_range_integralGL_iff`), is open as `M_n(Ô)` is open in `M_n(𝔸_f)`. -/
-theorem isOpenEmbedding_integralGL : IsOpenEmbedding (integralGL K ι (R := R)) := by
-  have ho := isOpen_integralAdeles R K
-  refine ⟨ho.isOpenEmbedding_subtypeVal.isEmbedding.generalLinearGroup_map, ?_⟩
-  have h : Set.range (integralGL K ι (R := R)) =
-      ((integralAdeles R K).matrix (n := ι)).toSubmonoid.units := by
-    ext g
-    rw [← MonoidHom.coe_range, SetLike.mem_coe, mem_range_integralGL_iff, SetLike.mem_coe,
-      Submonoid.mem_units_iff]
-    -- Membership in the submonoid `M_n(Ô)` is integrality of every entry, by `Set.mem_matrix`.
-    exact Iff.rfl
-  rw [h]
-  exact Submonoid.isOpen_units ho.matrix
+/-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is an open embedding, as `Ô ⊆ 𝔸_f` is one. -/
+theorem isOpenEmbedding_integralGL : IsOpenEmbedding (integralGL K ι (R := R)) :=
+  (isOpen_integralAdeles R K).isOpenEmbedding_subtypeVal.generalLinearGroup_map
 
 variable (K ι) in
 /-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is continuous. -/
@@ -175,33 +156,7 @@ theorem mem_map_integralGL_iff {H : Subgroup (GL ι (integralAdeles R K))}
     g ∈ H.map (integralGL K ι) ↔
       ∃ (hg : ∀ i j, (g : Matrix ι ι 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K),
         (∀ i j, (↑g⁻¹ : Matrix ι ι 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
-          P (Matrix.of fun i j ↦ ⟨_, hg i j⟩) := by
-  -- Reading the entries of the image of `h ∈ GL_n(Ô)` back in `Ô` recovers `h`.
-  have hof (h : GL ι (integralAdeles R K))
-      (hh : ∀ i j, (integralGL K ι h : Matrix ι ι 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) :
-      (Matrix.of fun i j ↦ (⟨_, hh i j⟩ : integralAdeles R K)) = h := by
-    refine Matrix.ext fun i j ↦ Subtype.ext ?_
-    simp only [Matrix.of_apply, integralGL_apply]
-  rw [Subgroup.mem_map]
-  refine ⟨?_, fun ⟨hg, hg', h⟩ ↦ ?_⟩
-  · rintro ⟨g, hg, rfl⟩
-    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, ?_⟩
-    · rw [integralGL_apply]
-      exact (g i j).property
-    · rw [integralGL_inv_apply]
-      exact (g⁻¹ i j).property
-    · rw [hof]
-      exact (hH g).mp hg
-  · obtain ⟨g, rfl⟩ := MonoidHom.mem_range.mp (mem_range_integralGL_iff.mpr ⟨hg, hg'⟩)
-    rw [hof] at h
-    exact ⟨g, (hH g).mpr h, rfl⟩
-
-open Matrix.GeneralLinearGroup in
-/-- The unipotent matrix `[[1, b], [0, 1]]` with integral `b` is the image of the unipotent
-matrix of `GL₂(Ô)` with entry `b`: the case `Ô ⊆ 𝔸_f` of
-`Matrix.GeneralLinearGroup.map_upperRightHom`. -/
-theorem integralGL_upperRightHom (b : integralAdeles R K) :
-    integralGL K (Fin 2) (upperRightHom b) = upperRightHom (b : 𝔸ᶠ[R, K]) :=
-  map_upperRightHom _ b
+          P (Matrix.of fun i j ↦ ⟨_, hg i j⟩) :=
+  Matrix.GeneralLinearGroup.mem_map_map_val_iff hH
 
 end IsDedekindDomain.FiniteAdeleRing

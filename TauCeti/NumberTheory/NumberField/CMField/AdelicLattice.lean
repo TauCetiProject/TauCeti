@@ -26,8 +26,8 @@ of `M` is `B u` with `[det u] = [L : M]`
 
 ## Main declarations
 
-* `NumberField.IsCMField.genIndex_finiteAdeleConj`: the generalised index is invariant under
-  complex conjugation.
+* `NumberField.IsCMField.genIndex_star`: the generalised index is invariant under complex
+  conjugation.
 * `NumberField.IsCMField.gramDet`: the Gram determinant `det(B^*B)` of an adelic matrix.
 * `NumberField.IsCMField.latticeDiscriminant`: the discriminant of a lattice of rank `r`.
 * `NumberField.IsCMField.latticeDiscriminant_span_col`: the discriminant computed from any basis.
@@ -53,7 +53,7 @@ Adapted from the file `src/New/Spanning/RemainingTerms/Discriminants.lean` of gr
   second half of) `New.Filling.IsLatticeOfRank.of_le_and_discriminant_eq_mul_index`.
 
 The invariance of the generalised index under complex conjugation
-(`NumberField.IsCMField.genIndex_finiteAdeleConj`) is `New.genIndex_star` in
+(`NumberField.IsCMField.genIndex_star`) is `New.genIndex_star` in
 `src/Lib/General/Measure/HaarModulus.lean` of grh-lean. In grh-lean `E` is also assumed to contain
 a primitive root of unity of order `5040`; nothing here needs it.
 -/
@@ -73,8 +73,9 @@ variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
 /-- The generalised index is invariant under complex conjugation. -/
 @[simp]
-theorem genIndex_finiteAdeleConj (a : 𝔸ᶠ[E]) : genIndex E (finiteAdeleConj E a) = genIndex E a :=
-  genIndex_map _ (fun _ ↦ by rw [coe_finiteAdeleConj]; exact star_mem_integralAdeles_iff) a
+theorem genIndex_star (a : 𝔸ᶠ[E]) : genIndex E (star a) = genIndex E a := by
+  rw [← finiteAdeleConj_apply]
+  exact genIndex_map _ (fun _ ↦ by rw [coe_finiteAdeleConj]; exact star_mem_integralAdeles_iff) a
 
 variable {κ : Type*} [Fintype κ] {r : ℕ}
 
@@ -107,7 +108,7 @@ theorem gramDet_mul (B : Matrix κ (Fin r) 𝔸ᶠ[E]) (M : Matrix (Fin r) (Fin 
 Gram determinant by `[det M]²`. -/
 theorem genIndex_gramDet_mul (B : Matrix κ (Fin r) 𝔸ᶠ[E]) (M : Matrix (Fin r) (Fin r) 𝔸ᶠ[E]) :
     genIndex E (gramDet (B * M)) = genIndex E M.det ^ 2 * genIndex E (gramDet B) := by
-  rw [gramDet_mul, map_mul, map_mul, genIndex_finiteAdeleConj]
+  rw [gramDet_mul, map_mul, map_mul, finiteAdeleConj_apply, genIndex_star]
   ring
 
 /-- Two matrices over the finite adeles whose columns span the same `Ô`-submodule, the first with
@@ -213,7 +214,7 @@ theorem latticeDiscriminant_pos
     have h_conj : (x.map (algebraMap E 𝔸ᶠ[E])).map (finiteAdeleConj E) =
         (x.map (complexConj E)).map (algebraMap E 𝔸ᶠ[E]) := by
       ext i j : 1
-      simp
+      simp only [Matrix.map_apply, finiteAdeleConj_algebraMap]
     rw [gramDet_def, h_conj, ← Matrix.transpose_map, ← Matrix.map_mul, RingHom.map_det,
       RingHom.mapMatrix_apply]
   rw [latticeDiscriminant_span_col hx, genIndex_gramDet_mul, h_gram, genIndex_algebraMap]

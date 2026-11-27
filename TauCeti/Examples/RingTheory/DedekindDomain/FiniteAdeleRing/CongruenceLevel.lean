@@ -62,7 +62,7 @@ theorem not_isOpen_principalLevel_bot [∀ v : HeightOneSpectrum R, Finite (R �
   -- `GL₂(Ô)` is compact, hence finite, and contains `[[1, r], [0, 1]]` for every `r ∈ R`.
   have hfin : ((integralGL K (Fin 2) (R := R)).range : Set (GL (Fin 2) 𝔸ᶠ[R, K])).Finite := by
     rw [← level0_top]
-    exact (isCompact_level0 K top_ne_bot).finite_of_discrete
+    exact (isCompact_level0 K ⊤).finite_of_discrete
   have hmem (r : R) : upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ (integralGL K (Fin 2)).range :=
     level1_top (R := R) K ▸ upperRightHom_mem_level1 ((integralAdeles R K).algebraMap_mem r) ⊤
   have := hfin.to_subtype

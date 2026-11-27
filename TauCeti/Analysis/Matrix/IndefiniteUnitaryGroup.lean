@@ -31,8 +31,8 @@ that use the topology or the order of `ℝ` and `ℂ`.
   the same values on the diagonal and so the same isometries.
 * Over `ℝ` or `ℂ`, the form `⟨z, z⟩` of `J = indefiniteDiagonal p q 𝕜` is the real number
   `Σ_{i ∈ p} ‖zᵢ‖² - Σ_{j ∈ q} ‖zⱼ‖²`.
-* For invertible `A` over a Hausdorff topological ring with continuous star, `unitaryGroupOf A` is
-  a closed subset of the matrices with the subspace topology
+* For invertible `A` over a Hausdorff commutative topological ring with continuous star,
+  `unitaryGroupOf A` is a closed subset of the matrices with the subspace topology
   (`Matrix.unitaryGroupOf.isClosedEmbedding_val`, in
   `TauCeti.Topology.Algebra.Matrix.UnitaryGroup`); over `ℝ` or `ℂ` this makes `U(p, q)` locally
   compact and second countable.
