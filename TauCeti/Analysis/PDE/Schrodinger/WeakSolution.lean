@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Duhamel
 public import TauCeti.Analysis.Semigroups.CauchyProblem.Unitary
 import Mathlib.Analysis.Distribution.FourierMultiplier
+import TauCeti.Analysis.PDE.HeatKernel.Core
 
 /-!
 # Weak solutions of the Schrödinger equation
@@ -30,6 +31,13 @@ Duhamel's formula solves the equation in the weak sense, in particular in the se
 distributions in space (`TauCeti.inner_toLp_schrodingerDuhamel`), and it is the only weak
 solution in `C([0, ∞); L²)`: the Cauchy problem is uniquely solvable in the energy class.
 
+Uniqueness needs only Schwartz test functions, and holds on every bounded interval: a function
+continuous on `[0, T]` with values in `L²` that solves the free equation with zero initial value
+against Schwartz functions vanishes there
+(`TauCeti.eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian`). This is the
+form used for solutions whose forcing does not take values in `L²`, which can only be paired with
+Schwartz functions.
+
 ## The argument
 
 The Schrödinger group `S(t) = exp(itΔ)` is the unitary group `exp(itω(D))` of the phase
@@ -43,6 +51,15 @@ unitary group, mild solutions are exactly the weak solutions tested against the 
 (`TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.isForcedMildSolution_iff_forall_inner_eq`);
 with `A ψ = i Δψ` that weak formulation is the one above, since `⟪i Δψ, u⟫ = -i ⟪Δψ, u⟫`.
 
+For uniqueness against Schwartz functions on `[0, T]`, the Schwartz functions are a core for the
+Laplacian on `L²` (`TauCeti.exists_tendsto_toLp_and_tendsto_toLp_laplacian`), so the weak
+formulation passes to every `ψ` with `Δψ ∈ L²`, that is to the whole domain of the generator.
+At each `t ∈ [0, T]` this puts `∫_{(0,t]} u` in the domain of the generator
+(`TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.exists_mem_domain_complexGenerator_eq`),
+so `u` satisfies the integrated equation on `[0, T]`. Duhamel's formula on a bounded interval
+(`StronglyContinuousSemigroup.eqOn_realOperator_sub_add_setIntegral_of_generator_setIntegral_eq`)
+then gives `u t = S(t) u(0) = 0`.
+
 ## Main declarations
 
 * `TauCeti.exists_complexGenerator_phaseGroup_laplacianSymbol_eq_I_smul`: if
@@ -55,6 +72,9 @@ with `A ψ = i Δψ` that weak formulation is the one above, since `⟪i Δψ, u
 * `TauCeti.inner_schrodingerDuhamel`: Duhamel's formula satisfies the weak formulation.
 * `TauCeti.inner_toLp_schrodingerDuhamel`: the weak formulation tested against Schwartz functions,
   the Schrödinger equation in the sense of distributions in space.
+* `TauCeti.eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian`: on a bounded
+  interval `[0, T]`, a continuous weak solution of the free equation with zero initial value,
+  tested against Schwartz functions only, vanishes.
 
 ## References
 
@@ -192,5 +212,78 @@ theorem inner_toLp_schrodingerDuhamel (hG : LocallyIntegrableOn G (Ici 0)) (φ :
     (𝓕 φ)).coeFn_toLp 2] with ξ h₁ h₂
   rw [h₂, h₁, SchwartzMap.smulLeftCLM_apply_apply hasTemperateGrowth_laplacianSymbol,
     Complex.coe_smul]
+
+/-- A weak solution of the free equation with zero initial value against Schwartz functions is
+one against every `ψ` with `Δψ ∈ L²`, since Schwartz functions are a core for the Laplacian. -/
+private theorem inner_eq_of_forall_inner_toLp_eq {T : ℝ} {u : ℝ → Lp F 2 (volume : Measure E)}
+    (hu : ContinuousOn u (Icc 0 T))
+    (h : ∀ φ : 𝓢(E, F), ∀ t ∈ Icc 0 T,
+      ⟪φ.toLp 2, u t⟫_ℂ = I * ∫ s in Ioc 0 t, ⟪(Δ φ).toLp 2, u s⟫_ℂ)
+    {ψ χ : Lp F 2 (volume : Measure E)}
+    (hχ : 𝓕 χ =ᵐ[volume] fun ξ ↦ (laplacianSymbol ξ : ℂ) • 𝓕 ψ ξ) {t : ℝ} (ht : t ∈ Icc 0 T) :
+    ⟪ψ, u t⟫_ℂ = I * ∫ s in Ioc 0 t, ⟪χ, u s⟫_ℂ := by
+  obtain ⟨φ, hφψ, hφχ⟩ := exists_tendsto_toLp_and_tendsto_toLp_laplacian hχ
+  have hint : IntegrableOn u (Ioc 0 t) :=
+    (hu.mono (Icc_subset_Icc_right ht.2)).integrableOn_Icc.mono_set Ioc_subset_Icc_self
+  rw [integral_inner hint]
+  refine tendsto_nhds_unique (hφψ.inner tendsto_const_nhds)
+    (((hφχ.inner tendsto_const_nhds).const_mul I).congr fun n ↦ ?_)
+  rw [h (φ n) t ht, integral_inner hint]
+
+/-- **Uniqueness of weak solutions on a bounded interval, tested against Schwartz functions.** Let
+`u` be continuous on `[0, T]` with values in `L²(E, F)`, and suppose that `u` solves the free
+Schrödinger equation `i ∂ₜu + Δu = 0` with `u(0) = 0` weakly against Schwartz functions: for every
+`φ ∈ 𝓢(E, F)` and every `t ∈ [0, T]`,
+
+`⟪φ, u t⟫ = i ∫_{(0,t]} ⟪Δφ, u s⟫ ds`.
+
+Then `u = 0` on `[0, T]`. So a solution of the inhomogeneous equation on `[0, T]` that is
+continuous with values in `L²` is determined by its data and its forcing, through its weak
+formulation against Schwartz functions alone. -/
+theorem eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian {T : ℝ}
+    {u : ℝ → Lp F 2 (volume : Measure E)}
+    (hu : ContinuousOn u (Icc 0 T))
+    (h : ∀ φ : 𝓢(E, F), ∀ t ∈ Icc 0 T,
+      ⟪φ.toLp 2, u t⟫_ℂ = I * ∫ s in Ioc 0 t, ⟪(Δ φ).toLp 2, u s⟫_ℂ) :
+    EqOn u 0 (Icc 0 T) := by
+  intro t₀ ht₀
+  set U := phaseGroup E F laplacianSymbol
+  have hU : U.IsUnitary := isUnitary_phaseGroup laplacianSymbol
+  -- At each `t ∈ [0, T]` the weak formulation, passed to the domain of the generator `A` of the
+  -- Schrödinger group through the core, puts `∫_{(0,t]} u` in the domain of `A`.
+  have key (t : ℝ) (ht : t ∈ Icc 0 T) :
+      ∃ hv : (∫ s in Ioc 0 t, u s) ∈ (U.complexGenerator hU).domain,
+        U.complexGenerator hU ⟨_, hv⟩ = u t - 0 -
+          ∫ s in Ioc 0 t, ((-I) • (0 : ℝ → Lp F 2 (volume : Measure E))) s := by
+    refine hU.exists_mem_domain_complexGenerator_eq (by rw [smul_zero]; exact integrableOn_zero)
+      ((hu.mono (Icc_subset_Icc_right ht.2)).integrableOn_Icc.mono_set Ioc_subset_Icc_self)
+      fun ψ ↦ (inner_eq_iff_of_eq_I_smul (f := 0) (G := 0) _
+        (χ := (-I) • U.complexGenerator hU ψ) ?_ t).2 ?_
+    · rw [smul_smul, mul_neg, I_mul_I, neg_neg, one_smul]
+    · simp only [inner_zero_right, Pi.zero_apply, integral_zero, sub_zero, zero_add]
+      exact inner_eq_of_forall_inner_toLp_eq hu h
+        (coeFn_fourier_neg_I_smul_complexGenerator_phaseGroup_laplacianSymbol ψ) ht
+  -- At `t = 0` the time integrals vanish, so `u 0 = A 0 = 0`.
+  have hu0 : u 0 = 0 := by
+    obtain ⟨hv, hAv⟩ := key 0 ⟨le_rfl, ht₀.1.trans ht₀.2⟩
+    have hzero : (⟨_, hv⟩ : (U.complexGenerator hU).domain) = 0 := Subtype.ext (by simp)
+    rw [hzero, LinearPMap.map_zero] at hAv
+    simpa [sub_eq_zero] using hAv.symm
+  -- So `u` satisfies the integrated equation of `u' = A u` on `[0, T]`, and Duhamel's formula on a
+  -- bounded interval gives `u t = S(t) (u 0) = 0`.
+  have hmild (t : ℝ) (ht : t ∈ Icc 0 T) :
+      ∃ hv : (∫ s in Ioc 0 t, u s) ∈ U.toSemigroup.generator.domain,
+        U.toSemigroup.generator ⟨_, hv⟩ =
+          u t - u 0 - ∫ s in Ioc 0 t, (0 : ℝ → Lp F 2 (volume : Measure E)) s := by
+    obtain ⟨hv, hAv⟩ := key t ht
+    have hR : (U.complexGenerator hU).restrictScalars ℝ = U.toSemigroup.generator :=
+      (U.complexGenerator_restrictScalars hU).trans U.generator_def
+    rw [← hR]
+    refine ⟨(LinearPMap.mem_restrictScalars_domain ℝ _).2 hv, ?_⟩
+    rw [LinearPMap.restrictScalars_apply, hAv, hu0]
+    simp
+  rw [U.toSemigroup.eqOn_realOperator_sub_add_setIntegral_of_generator_setIntegral_eq
+    integrableOn_zero hu hmild ht₀, hu0]
+  simp
 
 end TauCeti

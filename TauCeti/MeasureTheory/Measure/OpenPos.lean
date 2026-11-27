@@ -24,7 +24,8 @@ An almost-everywhere inclusion of an open set in another set implies inclusion i
 In particular, two almost-everywhere equal open sets have the same closure. Taking interiors
 then shows that regular open sets are determined by their almost-everywhere classes. Likewise a
 continuous function on the closure of an open set is determined by its values almost everywhere on
-the set.
+the set, and two functions continuous on `closure U ∩ V`, for open `U` and `V`, which agree almost
+everywhere on `U ∩ V` agree on `closure U ∩ V`.
 
 On a discrete space, such a measure charges every point, so the only null set is empty and
 almost everywhere means everywhere. If such a measure gives every point measure zero, on the other
@@ -214,6 +215,24 @@ theorem _root_.ContinuousOn.le_of_ae_le {X Y : Type*} [TopologicalSpace X] [Meas
   intro x hx
   by_contra hfg
   exact (hW.eq_empty_of_measure_zero hnull).subset ⟨hx, hfg⟩
+
+/-- An almost-everywhere pairwise comparison for a representative of a continuous real-valued
+function on an open set holds at every pair of points of that set, for a measure positive on
+nonempty open sets. -/
+theorem _root_.ContinuousOn.forall_le_mul_of_ae_ae {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {B : Set X}
+    {f g : X → ℝ} {C : ℝ} (hg : ContinuousOn g B) (hB : IsOpen B)
+    (hval : f =ᵐ[μ.restrict B] g)
+    (hae : ∀ᵐ x ∂μ.restrict B, ∀ᵐ y ∂μ.restrict B, f y ≤ C * f x) :
+    ∀ y ∈ B, ∀ x ∈ B, g y ≤ C * g x := by
+  have hall : ∀ᵐ x ∂μ.restrict B, ∀ y ∈ B, g y ≤ C * g x := by
+    filter_upwards [hae, hval] with x hx hx'
+    refine ContinuousOn.le_of_ae_le (μ := μ) hB hg continuousOn_const ?_
+    filter_upwards [hx, hval] with y hy hy'
+    simpa only [hy', hx'] using hy
+  intro y hy
+  exact ContinuousOn.le_of_ae_le (μ := μ) hB continuousOn_const (continuousOn_const.mul hg)
+    (hall.mono fun _ hx ↦ hx y hy)
 
 /-- Under a measure positive on nonempty open sets, an almost everywhere inequality between
 continuous functions into an order-closed space holds everywhere. -/

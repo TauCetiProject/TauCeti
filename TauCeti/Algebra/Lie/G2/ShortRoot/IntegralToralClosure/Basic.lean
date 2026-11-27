@@ -397,6 +397,12 @@ theorem points_def (A : Type v) [CommRing A] :
   exact TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def
     _ _ _ _ _ _ _ _ A
 
+/-- The integral Hopf-ideal presentation of the short-root carrier's matrix points, used to
+change the coefficient ring. -/
+noncomputable abbrev pointsPresentation (A : Type v) [CommRing A] :
+    TauCeti.GeneralLinear.IntegralPointsPresentation 7 definingIdeal A :=
+  ⟨points A, points_def A⟩
+
 /-- A matrix is a point of the integral toral closure exactly when its associated convolution
 point kills the defining Hopf ideal. -/
 -- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.

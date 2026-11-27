@@ -326,6 +326,13 @@ instance : Unique (PointedMatchedCircle 4) where
   default := genusOne
   uniq := eq_genusOne
 
+/-- The orientation reversal of the genus-one pointed matched circle has the same pairs: it is the
+genus-one pointed matched circle again, since reversing the order of the points `0, 1, 2, 3` keeps
+the pairs `{0, 2}` and `{1, 3}`. -/
+@[simp]
+theorem genusOne_reverse_pair (i : Fin 4) : genusOne.reverse.pair i = genusOne.pair i := by
+  rw [eq_genusOne genusOne.reverse]
+
 /-- The **split pointed matched circle** of genus `k`, the connected sum of `k` copies of the
 genus-one pointed matched circle: its points `4 * j, 4 * j + 1, 4 * j + 2, 4 * j + 3` are paired as
 `{4 * j, 4 * j + 2}` and `{4 * j + 1, 4 * j + 3}` for each `j < k`. -/

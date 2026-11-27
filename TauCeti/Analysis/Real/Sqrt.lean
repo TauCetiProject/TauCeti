@@ -116,6 +116,8 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
   and `1 ≤ r`.
 * `Real.tendsto_sqrt_nhds_zero_iff`: an eventually nonnegative function tends to `0` exactly when
   its square root does.
+* `TauCeti.sum_range_inv_sqrt_add_one_le`: the sum of the reciprocal square roots of `1` through
+  `n` is at most `2√n`.
 * `TauCeti.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
   divergence of the normalization of an `(n + 1) × (n + 1)` random matrix.
 
@@ -276,6 +278,18 @@ theorem two_mul_sqrt_div_one_add_eq_abs {k : ℝ} (hk : k ^ 2 ≤ 1) :
 theorem sq_sqrt_one_sub_sq {t : ℝ} (ht : |t| ≤ 1) : √(1 - t ^ 2) ^ 2 = 1 - t ^ 2 := by
   have : t ^ 2 ≤ 1 := by nlinarith [abs_nonneg t, sq_abs t]
   exact sq_sqrt (by linarith)
+
+/-- The squared half-angle quotient can be rationalized when `|t| ≤ 1`. -/
+theorem sq_div_one_add_sqrt_one_sub_sq {t : ℝ} (ht : |t| ≤ 1) :
+    (t / (1 + √(1 - t ^ 2))) ^ 2 =
+      (1 - √(1 - t ^ 2)) / (1 + √(1 - t ^ 2)) := by
+  set s := √(1 - t ^ 2)
+  have hs : s ^ 2 = 1 - t ^ 2 := sq_sqrt_one_sub_sq ht
+  have ht₂ : t ^ 2 = 1 - s ^ 2 := by linarith
+  have hs₀ : 0 ≤ s := sqrt_nonneg _
+  rw [div_pow, ht₂]
+  field_simp
+  ring
 
 /-- For nonnegative ordered inputs, squaring `√(1 - (b / a)²)` recovers its argument. -/
 theorem sq_sqrt_one_sub_sq_div {a b : ℝ} (hb : 0 ≤ b) (hba : b ≤ a) :
@@ -807,6 +821,23 @@ theorem tendsto_sqrt_nhds_zero_iff {α : Type*} {l : Filter α} {f : α → ℝ}
 end Real
 
 namespace TauCeti
+
+/-- The sum of the reciprocal square roots of the first `n` positive integers is at most `2√n`. -/
+theorem sum_range_inv_sqrt_add_one_le (n : ℕ) :
+    (∑ i ∈ Finset.range n, (√((i : ℝ) + 1))⁻¹) ≤ 2 * √(n : ℝ) := by
+  calc
+    _ ≤ ∑ i ∈ Finset.range n, 2 * (√((i : ℝ) + 1) - √(i : ℝ)) := by
+      refine Finset.sum_le_sum fun i _ ↦ ?_
+      have hpos : 0 < √((i : ℝ) + 1) := by positivity
+      have hsq := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (i : ℝ) + 1)
+      have hsq' := Real.sq_sqrt (Nat.cast_nonneg i : (0 : ℝ) ≤ i)
+      rw [inv_eq_one_div, div_le_iff₀ hpos]
+      nlinarith only [hsq, hsq', sq_nonneg (√((i : ℝ) + 1) - √(i : ℝ))]
+    _ = _ := by
+      rw [← Finset.mul_sum]
+      simp only [← Nat.cast_succ]
+      rw [Finset.sum_range_sub (fun i : ℕ ↦ √(i : ℝ))]
+      simp
 
 open Filter in
 /-- The square roots of the successive natural numbers `n + 1` tend to infinity. -/

@@ -13,6 +13,7 @@ public import Mathlib.Topology.Homotopy.LocallyContractible
 public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.ContinuousMap.Glue.DisjointOpen
+import TauCeti.Topology.Neighborhoods
 
 /-!
 # Lusternik–Schnirelmann categorical covers
@@ -479,17 +480,10 @@ theorem exists_isOpen_mem_lsCategoryCount_le_one (hX : LocallyContractibleSpace 
 Lusternik–Schnirelmann count is at most the cardinality of `S`: for finite `S`, the union of
 neighbourhoods of count at most `1` of its points. -/
 theorem exists_isOpen_superset_lsCategoryCount_le_encard (hX : LocallyContractibleSpace X)
-    (S : Set X) : ∃ U, IsOpen U ∧ S ⊆ U ∧ lsCategoryCount X U ≤ S.encard := by
-  cases S.finite_or_infinite with
-  | inr hS => exact ⟨univ, isOpen_univ, subset_univ S, by simp [hS.encard_eq]⟩
-  | inl hS =>
-    choose U hUo hxU hU using exists_isOpen_mem_lsCategoryCount_le_one hX
-    refine ⟨⋃ x ∈ hS.toFinset, U x, isOpen_biUnion fun x _ ↦ hUo x,
-      fun x hx ↦ mem_biUnion (hS.mem_toFinset.mpr hx) (hxU x), ?_⟩
-    calc lsCategoryCount X (⋃ x ∈ hS.toFinset, U x)
-        ≤ ∑ x ∈ hS.toFinset, lsCategoryCount X (U x) := lsCategoryCount_biUnion_le _ _
-      _ ≤ ∑ x ∈ hS.toFinset, 1 := Finset.sum_le_sum fun x _ ↦ hU x
-      _ = S.encard := by simp [hS.encard_eq_coe_toFinset_card]
+    (S : Set X) : ∃ U, IsOpen U ∧ S ⊆ U ∧ lsCategoryCount X U ≤ S.encard :=
+  S.exists_isOpen_superset_le_encard (fun _ _ ↦ lsCategoryCount_mono) lsCategoryCount_empty
+    (fun _ _ ↦ lsCategoryCount_union_le) fun x _ ↦
+      (exists_isOpen_mem_lsCategoryCount_le_one hX x).imp fun _ h ↦ ⟨h.1.mem_nhds h.2.1, h.2.2⟩
 
 /-- A compact subset of a locally contractible space has an open neighborhood with finite
 categorical-cover count. -/

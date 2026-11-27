@@ -39,6 +39,8 @@ it kills are exactly the multiples of `X a`.
   renaming is killed by `killCompl`.
 * `MvPolynomial.killCompl_eq_zero_iff_X_dvd`: when the range of the renaming is the complement of
   a single variable `X a`, discarding that variable kills exactly the multiples of `X a`.
+* `MvPolynomial.linearCombination_rename_eq_of_comp`: relates `Finsupp.linearCombination` on the
+  support of `rename τ P` to that on the support of `P` when `b ∘ τ = a`.
 * `MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq`: a ring homomorphism moving the points
   along a map of indices carries the value of an integral polynomial to that of its renaming.
 * `Polynomial.map_eval_map_rename`: for a polynomial family with coefficients in `MvPolynomial`,
@@ -110,6 +112,16 @@ theorem killCompl_eq_zero_iff_X_dvd (ha : Set.range f = {a}ᶜ) (p : MvPolynomia
       simp
   · rintro ⟨q, rfl⟩
     rw [map_mul, killCompl_X_of_notMem_range hf hna, zero_mul]
+
+/-- For any monomial `w` in the support of `rename τ P`, if `b ∘ τ = a`, then `w` has the same
+`b`-linear combination as some monomial `u` in the support of `P` under `a`. -/
+theorem linearCombination_rename_eq_of_comp {α β R M : Type*}
+    [CommSemiring R] [AddCommMonoid M]
+    {τ : α → β} {a : α → M} {b : β → M} (hcomp : b ∘ τ = a)
+    {P : MvPolynomial α R} {w : β →₀ ℕ} (hw : w ∈ (rename τ P).support) :
+    ∃ u ∈ P.support, Finsupp.linearCombination ℕ b w = Finsupp.linearCombination ℕ a u := by
+  obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ (mem_support_iff.1 hw)
+  exact ⟨u, mem_support_iff.2 hu, by rw [Finsupp.linearCombination_mapDomain, hcomp]⟩
 
 /-- A ring homomorphism `φ` that moves a family of points along a map of indices,
 `φ ∘ x = y ∘ π`, carries the value at `x` of an integral polynomial `Ψ` to the value at `y` of `Ψ`

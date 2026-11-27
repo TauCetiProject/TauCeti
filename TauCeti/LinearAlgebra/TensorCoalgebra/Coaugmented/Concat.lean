@@ -96,15 +96,14 @@ theorem cofreeLift_comp_tmulConcat {N : Type uN} [AddCommGroup N] [Module R N]
         (Comodule.Hom.cofreeLift (C := TensorWords R A)
           (φ ∘ₗ tmulConcat R A X z)).toLinearMap := by
   refine TensorProduct.ext' fun y w ↦ ?_
-  have hΔ := deconcatenation_reducedInclusion_prepend (R := R) y w
   simp only [LinearMap.comp_apply, LinearMap.add_apply, tmulConcat_tmul,
     Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact_tmul, comul_eq_deconcatenation]
-  rw [hΔ]
+  rw [← cons_apply, deconcatenation_cons]
   simp only [TensorProduct.tmul_add, map_add, TensorProduct.assoc_symm_tmul,
     LinearMap.rTensor_tmul]
   congr 1
   induction deconcatenation R A w using TensorProduct.inductionOn with
-  | tmul u v => simp
+  | tmul u v => simp [cons_apply]
   | add s t hs ht => simp only [map_add, TensorProduct.tmul_add, hs, ht]
 
 /-- Concatenation behind an element of degree `q` raises the total degree by `q`. -/

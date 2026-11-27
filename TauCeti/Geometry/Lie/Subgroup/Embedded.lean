@@ -122,6 +122,15 @@ theorem injective_mfderiv_subtypeVal (d : EmbeddedLieSubgroupData I K E') (k : K
   let _ : ChartedSpace E' K := d.chartedSpace
   exact (d.isDiffImmersionAt_subtypeVal k).mfderiv_injective
 
+/-- **The model space of an embedded Lie subgroup is finite-dimensional** when that of the ambient
+group is: the differential of the inclusion at `1` embeds it linearly in `E`. -/
+theorem finiteDimensional [FiniteDimensional ℝ E] (d : EmbeddedLieSubgroupData I K E') :
+    FiniteDimensional ℝ E' :=
+  let _ := d.chartedSpace
+  Module.Finite.of_injective
+    (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ (x : G)) 1 : E' →L[ℝ] E).toLinearMap
+    (d.injective_mfderiv_subtypeVal 1)
+
 /-- The inclusion of an embedded Lie subgroup is a smooth embedding. -/
 theorem isSmoothEmbedding_subtypeVal [FiniteDimensional ℝ E] [LieGroup I ∞ G]
     [I.Boundaryless] (d : EmbeddedLieSubgroupData I K E') :
@@ -193,10 +202,7 @@ theorem isClosed [FiniteDimensional ℝ E] [IsTopologicalGroup G]
     (d : EmbeddedLieSubgroupData I K E') : IsClosed (K : Set G) := by
   let _ := d.chartedSpace
   have := I.t1Space G
-  have : FiniteDimensional ℝ E' :=
-    Module.Finite.of_injective
-      (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ (x : G)) 1 : E' →L[ℝ] E).toLinearMap
-      (d.injective_mfderiv_subtypeVal 1)
+  have := d.finiteDimensional
   have : LocallyCompactSpace K := ChartedSpace.locallyCompactSpace E' K
   exact Subgroup.isClosed_of_weaklyLocallyCompactSpace K
 

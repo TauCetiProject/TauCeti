@@ -78,6 +78,8 @@ Chevalley involution is already visible on a presentation of `L`.
   statement to a square-root form of the root-vector equation.
 * `TauCeti.IsSl2System.exists_isChevalleySystem_of_forall_exists_sq`: if every `-c α` is a square,
   the family rescales to a Chevalley system for `ω`.
+* `TauCeti.exists_isChevalleySystem_of_isAlgClosed`: over an algebraically closed field every `-c α`
+  is a square, so every automorphism inverting `H` carries a Chevalley system.
 
 ## References
 
@@ -252,5 +254,19 @@ theorem exists_isChevalleySystem_of_forall_exists_sq
       hx.eq_zero_of_isZero (-α) (not_not.1 hα).neg, smul_zero, smul_zero, map_zero, neg_zero]
 
 end IsSl2System
+
+variable {ω} in
+/-- **Chevalley systems over an algebraically closed field.** A Lie automorphism acting by `-1`
+on a splitting Cartan subalgebra carries a Chevalley system: the scalars `c α` with
+`ω (x α) = c α • x (-α)` of any normalised family have square roots of `-c α`, by which the family
+rescales. -/
+theorem exists_isChevalleySystem_of_isAlgClosed [IsAlgClosed K] (hω : ∀ y ∈ H, ω y = -y) :
+    ∃ x : Weight K H L → L, IsChevalleySystem ω x := by
+  obtain ⟨x, hx⟩ := exists_isSl2System K H (L := L)
+  refine hx.exists_isChevalleySystem_of_forall_exists_sq ω hω fun α hα ↦ ?_
+  have hσ := LieSubalgebra.map_eq_self_of_forall_mem_apply_eq_neg ω hω
+  obtain ⟨c, -, hc⟩ := hx.exists_map_eq_smul ω hσ hα
+  obtain ⟨t, ht⟩ := IsAlgClosed.exists_pow_nat_eq (-c) two_pos
+  exact ⟨t, by rw [hc, weightPerm_eq_neg ω hω, ht, neg_neg]⟩
 
 end TauCeti
