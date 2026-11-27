@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.SomewhereInjective
 public import TauCeti.Geometry.Symplectic.JHolomorphic.BranchDegree
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Immersion.Family
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 import TauCeti.Topology.Perfect
 import TauCeti.Topology.Separation.Hausdorff
@@ -35,8 +36,8 @@ is immersed.
   (`TauCeti.RiemannSurface.GermFactorsThrough.eq_of_dense`). A factorization `u = u ∘ φ` near `z`
   with `φ z = ζ ≠ z` relates every point `w` near `z` to `φ w ≠ w`, and some of these `w` lie in
   the dense set.
-* **Injective points accumulate.** If no two distinct points are related, the points near an
-  immersed point `z₀` other than `z₀` are injective points
+* **Injective points accumulate.** If no point other than an immersed point `z₀` is related to
+  `z₀`, the points near `z₀` other than `z₀` are injective points
   (`TauCeti.eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq`). Otherwise there are
   points `z → z₀`, `z ≠ z₀`, with partners `ζ z ≠ z` of the same value, and by compactness the
   partners cluster at some `ζ₀`. If `ζ₀ = z₀` this contradicts the injectivity of `u` near the
@@ -106,9 +107,7 @@ immersed at `x`. -/
 theorem IsInjectivePoint.notMem_criticalValuePreimage {x : S}
     (hx : IsInjectivePoint 𝓘(ℝ, ℂ) I u x) : x ∉ criticalValuePreimage I u := fun hB ↦ by
   obtain ⟨y, hy0, hyx⟩ := mem_criticalValuePreimage.1 hB
-  have h0 : mfderiv 𝓘(ℝ, ℂ) I u x = 0 := hx.eq_of_apply_eq hyx ▸ hy0
-  exact one_ne_zero (α := ℂ) <| hx.injective_mfderiv <| (DFunLike.congr_fun h0 (1 : ℂ)).trans <|
-    (zero_apply _).trans (map_zero _).symm
+  exact mfderiv_ne_zero_of_injective hx.injective_mfderiv (hx.eq_of_apply_eq hyx ▸ hy0)
 
 /-- On a closed curve whose coincident-branch classes off `B = u⁻¹(u(Crit u))` all have one
 element, the branch of `u` at a point factors holomorphically through the branch of `u` at no
@@ -130,13 +129,13 @@ private theorem eq_of_germFactorsThrough_of_forall_ncard_eq_one [CompactSpace S]
 
 /-- **On a closed curve of branch degree one, the points near an immersed point are injective.**
 Let `u : S → N` be a `C²` pseudoholomorphic map from a compact Riemann surface into a Hausdorff
-almost complex manifold such that the branch of `u` at a point factors holomorphically through the
-branch of `u` at no other point. If `u` is immersed at `z₀`, then every point near `z₀` other than
+almost complex manifold, immersed at `z₀`, such that the branch of `u` at no point other than `z₀`
+factors holomorphically through the branch of `u` at `z₀`. Then every point near `z₀` other than
 `z₀` is an injective point of `u`. -/
 theorem eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq [CompactSpace S]
     [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
-    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
-    (hd : ∀ z ζ, GermFactorsThrough u z u ζ → ζ = z) {z₀ : S}
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) {z₀ : S}
+    (hd : ∀ ζ, GermFactorsThrough u ζ u z₀ → ζ = z₀)
     (hz₀ : mfderiv 𝓘(ℝ, ℂ) I u z₀ ≠ 0) :
     ∀ᶠ z in 𝓝[≠] z₀, IsInjectivePoint 𝓘(ℝ, ℂ) I u z := by
   have hinj₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀) :=
@@ -182,8 +181,8 @@ theorem eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq [Compact
       obtain ⟨z, ⟨hζW, hzt, hzne, -, hu'⟩, hzs⟩ := ((hfr W hW).and_eventually (hFz₀ hs)).exists
       refine ⟨ζ z, hζW, ⟨z, hzs, hu'.symm⟩, fun hζ ↦ hzne (htinj hzt (mem_of_mem_nhds ht) ?_)⟩
       rw [← hu', hval, ← mem_singleton_iff.1 hζ]
-    exact hζz₀ (hd ζ₀ z₀ (germFactorsThrough_of_frequently_mem_image hu hJu
-      (hu.of_le one_le_two) hJu hz₀ hacc)).symm
+    exact hζz₀ (hd ζ₀ (germFactorsThrough_of_frequently_mem_image hu hJu
+      (hu.of_le one_le_two) hJu hz₀ hacc))
 
 /-- **The noninjective points of a closed curve of branch degree one accumulate only at critical
 points.** Let `u : S → N` be a `C²` pseudoholomorphic map from a compact Riemann surface into a
@@ -196,7 +195,8 @@ theorem setOf_isInjectivePoint_mem_codiscreteWithin [CompactSpace S] [T2Space N]
     {z | IsInjectivePoint 𝓘(ℝ, ℂ) I u z} ∈
       codiscreteWithin {z | mfderiv 𝓘(ℝ, ℂ) I u z ≠ 0} :=
   mem_codiscreteWithin_iff_forall_mem_nhdsNE.2 fun _ hz ↦ mem_of_superset
-    (eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq hu hJu hd hz)
+    (eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq hu hJu
+      (fun ζ h ↦ (hd ζ _ h).symm) hz)
     subset_union_left
 
 /-- **A closed curve of branch degree one is somewhere injective.** Let `u : S → N` be a `C²`
@@ -215,7 +215,8 @@ theorem isSomewhereInjective_of_forall_germFactorsThrough_imp_eq [CompactSpace S
     (setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic (hu.of_le one_le_two) hJu
       (exists_apply_ne_of_forall_germFactorsThrough_imp_eq hd)) x₁)
   obtain ⟨z, hz⟩ :=
-    (eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq hu hJu hd hz₀).exists
+    (eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq hu hJu
+      (fun ζ h ↦ (hd ζ z₀ h).symm) hz₀).exists
   exact hz.isSomewhereInjective
 
 /-- **On a somewhere injective closed curve, coincident branches occur only at the same point.**
