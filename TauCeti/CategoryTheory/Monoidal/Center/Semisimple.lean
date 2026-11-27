@@ -28,8 +28,8 @@ for any family `a S : S.repr ≅ S.reprᘁᘁ`.
 This yields the arbitrary-characteristic structural theorems of Etingof–Nikshych–Ostrik and Müger:
 * `finite_simpleClasses`: whenever `Center C` is finite semisimple, it has finitely many simple
   isomorphism classes (without assuming simplicity of `𝟙_ C` or a pivotal structure).
-* `simpleMultiplicities_inductionCenterObj_apply`, `simpleMultiplicities_induction_obj_apply`:
-  Frobenius reciprocity for simple multiplicities of induced objects.
+* `simpleMultiplicities_inductionCenterObj_apply`: Frobenius reciprocity for simple
+  multiplicities of induced objects.
 * `forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app`: pivot-free
   averaging identity (`= normGlobalDim C a • 𝟙 Z`);
 * `isSplitMono_forgetInductionAdjunction_unit_app_of_normGlobalDim_ne_zero`,
@@ -38,12 +38,8 @@ This yields the arbitrary-characteristic structural theorems of Etingof–Nikshy
   `finite_simpleClasses_of_normGlobalDim_ne_zero`: pivot-free Maschke splittings, semisimplicity,
   and finiteness when `normGlobalDim C a ≠ 0` (necessary in characteristic `p > 0`, e.g. `ℤ/p`-
   graded vector spaces have `dim C = p = 0` and non-semisimple centre).
-* `forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f_of_pivotal`,
-  `forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_of_pivotal`,
-  `isSplitMono_forgetInductionAdjunction_unit_app_of_globalDim_ne_zero`,
-  `isSplitEpi_inductionForgetAdjunction_counit_app_of_globalDim_ne_zero`,
-  `isFiniteSemisimpleCategory_of_globalDim_ne_zero`,
-  `finite_simpleClasses_of_globalDim_ne_zero`: pivotal corollaries when `globalDim C ≠ 0`.
+* `isFiniteSemisimpleCategory_of_globalDim_ne_zero`: Maschke semisimplicity for a pivotal fusion
+  category when `globalDim C ≠ 0`.
 * `leftDim_induction_obj_f`, `rightDim_induction_obj_f`, `endAlgEquivOfSimple_globalDim`,
   `globalDim_f`: `dim((induction k C).obj X) = dim(C) · dim(X)` and `dim(Center C) = (dim C)²`.
 
@@ -107,15 +103,6 @@ theorem simpleMultiplicities_inductionCenterObj_apply [IsFiniteSemisimpleCategor
         ((forgetInductionAdjunction k C).homLinearEquiv k M.repr X).finrank_eq.symm
     _ = simpleMultiplicities M.repr.1 (SimpleClasses.classOf X) :=
         finrank_homTo_simple_eq_simpleMultiplicities k _ _
-
-/-- **Frobenius reciprocity for centre induction**: when `Center C` is finite semisimple, the
-multiplicity of a simple isomorphism class `M` of `Center C` in `(induction k C).obj X` (for a
-simple object `X : C`) equals the multiplicity of the class of `X` in `M.repr.1`. -/
-theorem simpleMultiplicities_induction_obj_apply [IsFiniteSemisimpleCategory (Center C)]
-    (X : C) [Simple X] (M : SimpleClasses (Center C)) :
-    simpleMultiplicities ((induction k C).obj X) M =
-      simpleMultiplicities M.repr.1 (SimpleClasses.classOf X) := by
-  rw [induction_obj, simpleMultiplicities_inductionCenterObj_apply]
 
 variable [Simple (𝟙_ C)]
 
@@ -202,52 +189,11 @@ section Pivotal
 
 variable [PivotalCategory C]
 
-/-- On underlying objects in a pivotal fusion category `C` over an algebraically closed field `k`,
-the composite of the unit of `forgetInductionAdjunction` with the counit of
-`inductionForgetAdjunction` at `Z : Center C` is multiplication by `globalDim C`. -/
-theorem forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f_of_pivotal
-    (Z : Center C) :
-    ((forgetInductionAdjunction k C).unit.app Z ≫
-        (inductionForgetAdjunction k C).counit.app Z).f =
-      (λ_ Z.1).inv ≫ globalDim C ▷ Z.1 ≫ (λ_ Z.1).hom := by
-  rw [← normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)]
-  exact forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f
-    k Z (fun S ↦ pivotalIsoApp S.repr)
-
-/-- In a pivotal fusion category `C` over an algebraically closed field `k`, the composite of the
-unit of `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` at
-`Z : Center C` is scalar multiplication by `globalDim C` (read in `k`). -/
-@[reassoc]
-theorem forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_of_pivotal
-    (Z : Center C) :
-    (forgetInductionAdjunction k C).unit.app Z ≫
-        (inductionForgetAdjunction k C).counit.app Z =
-      endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) • 𝟙 Z := by
-  rw [← normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)]
-  exact forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app
-    k (fun S ↦ pivotalIsoApp S.repr) Z
-
 omit [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] in
 include k in
 private theorem normGlobalDim_pivotalIsoApp_ne_zero (hdim : globalDim C ≠ 0) :
     normGlobalDim C (fun S ↦ pivotalIsoApp S.repr) ≠ 0 := by
   rwa [normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)]
-
-/-- In a pivotal fusion category `C` over an algebraically closed field `k` with `globalDim C ≠ 0`,
-every component of `(forgetInductionAdjunction k C).unit` is a split monomorphism. -/
-theorem isSplitMono_forgetInductionAdjunction_unit_app_of_globalDim_ne_zero
-    (hdim : globalDim C ≠ 0) (Z : Center C) :
-    IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) :=
-  isSplitMono_forgetInductionAdjunction_unit_app_of_normGlobalDim_ne_zero k
-    (normGlobalDim_pivotalIsoApp_ne_zero k hdim) Z
-
-/-- In a pivotal fusion category `C` over an algebraically closed field `k` with `globalDim C ≠ 0`,
-every component of `(inductionForgetAdjunction k C).counit` is a split epimorphism. -/
-theorem isSplitEpi_inductionForgetAdjunction_counit_app_of_globalDim_ne_zero
-    (hdim : globalDim C ≠ 0) (Z : Center C) :
-    IsSplitEpi ((inductionForgetAdjunction k C).counit.app Z) :=
-  isSplitEpi_inductionForgetAdjunction_counit_app_of_normGlobalDim_ne_zero k
-    (normGlobalDim_pivotalIsoApp_ne_zero k hdim) Z
 
 include k in
 /-- **Maschke's theorem for the Drinfeld centre** (Etingof–Nikshych–Ostrik, Müger): if `C` is a
@@ -256,14 +202,6 @@ pivotal fusion category over an algebraically closed field `k` with `globalDim C
 theorem isFiniteSemisimpleCategory_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
     IsFiniteSemisimpleCategory (Center C) :=
   isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero k
-    (normGlobalDim_pivotalIsoApp_ne_zero k hdim)
-
-include k in
-/-- If `C` is a pivotal fusion category over an algebraically closed field `k` with
-`globalDim C ≠ 0`, then `Center C` has finitely many isomorphism classes of simple objects. -/
-theorem finite_simpleClasses_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
-    Finite (SimpleClasses (Center C)) :=
-  finite_simpleClasses_of_normGlobalDim_ne_zero k
     (normGlobalDim_pivotalIsoApp_ne_zero k hdim)
 
 omit [Simple (𝟙_ C)] in
@@ -314,7 +252,8 @@ private theorem sum_simpleMultiplicities_mul_leftDimChar_eq
         SplitK0.leftDimChar k C (SplitK0.of S.repr) := by
   calc _ = SplitK0.leftDimChar k (Center C) (SplitK0.of ((induction k C).obj S.repr)) := by
           rw [SplitK0.ringHom_apply_of]
-          simp_rw [simpleMultiplicities_induction_obj_apply k, SimpleClasses.classOf_repr]
+          simp_rw [induction_obj, simpleMultiplicities_inductionCenterObj_apply k,
+            SimpleClasses.classOf_repr]
     _ = _ := by
           rw [leftDimChar_center_of, leftDim_induction_obj_f]
           simp [mul_comm]
