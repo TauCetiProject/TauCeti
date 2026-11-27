@@ -69,7 +69,9 @@ theorem weightedPairing_intCast (s : WeightedLatticeFamily U L K)
 variable (s : WeightedLatticeFamily U L K) (B : N →ₗ[ℤ] N →ₗ[ℤ] ℚ)
   (hB : ∀ x y, y ∈ U ⊓ L → ∃ n : ℤ, B x y = n)
 
-private theorem weight_mul_weightedPairing (hAlt : B.IsAlt) (i k : K) :
+/-- The positive weights skew-symmetrize the matrix of integral pairing entries, with
+row index the unweighted vector and column index the weighted vector. -/
+theorem weight_mul_weightedPairing (hAlt : B.IsAlt) (i k : K) :
     s.weight i * s.weightedPairing B hB (s.vector i) k =
       -(s.weight k * s.weightedPairing B hB (s.vector k) i) := by
   apply Int.cast_injective (α := ℚ)
