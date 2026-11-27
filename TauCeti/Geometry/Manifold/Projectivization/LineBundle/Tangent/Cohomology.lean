@@ -17,8 +17,10 @@ a split bundle on `ℂℙ¹` vanishes when every twist is at least `-1`
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`), so
 `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`. This is the case of the coordinate line of the vanishing of
 `H¹(C, u* TℂPⁿ)` on the line component `u` of a genus-zero stable map in the class of a line, on
-which the regularity of such maps rests (Fulton–Pandharipande, Lemma 10). A general line needs
-the splitting of the pulled-back tangent bundle along every line, which is not proved here.
+which the regularity of such maps rests (Fulton–Pandharipande, Lemma 10). The splitting along
+every line is `Projectivization.lineTangentDiffeomorph`
+(`Projectivization.exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist`);
+this file states the vanishing only for the coordinate line.
 
 ## Main declarations
 
