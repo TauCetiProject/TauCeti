@@ -325,11 +325,9 @@ theorem limitPageIsoPageX_trans_pageXIsoOfStabilises {s r : ℤ} (hs : r₀ ≤ 
     (h : E.StabilisesAt pq s hs) (hsr : s ≤ r) :
     E.limitPageIsoPageX pq s hs h ≪≫ E.pageXIsoOfStabilises pq s hs h r hsr =
       E.limitPageIsoPageX pq r (hs.trans hsr) (h.of_le hsr) := by
-  refine (E.limitPagePresentation pq).mapIso_injective ?_
-  rw [← SubquotientPresentation.mapIso_trans, limitPageIsoPageX,
-    SubquotientPresentation.mapIso_isoOfEq,
-    ← E.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h r hsr,
-    limitPageIsoPageX, SubquotientPresentation.mapIso_isoOfEq]
+  rw [limitPageIsoPageX, limitPageIsoPageX, SubquotientPresentation.isoOfEq_trans_iso]
+  exact SubquotientPresentation.isoOfEq_congr rfl
+    (E.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h r hsr).symm
 
 end Existence
 
@@ -654,10 +652,9 @@ noncomputable def limitPageIsoFromPage (s : ℤ) (hs : r₀ ≤ s)
 @[simp]
 theorem limitPageIsoFromPage_self [E.HasInfiniteCyclesAt pq] [E.HasInfiniteBoundariesAt pq] :
     E.limitPageIsoFromPage pq r₀ le_rfl = Iso.refl (E.limitPage pq) := by
-  refine (E.limitPagePresentation pq).mapIso_injective ?_
-  rw [limitPageIsoFromPage, SubquotientPresentation.mapIso_isoOfEq,
-    SubquotientPresentation.mapIso_refl, pagePresentation_self,
-    SubquotientPresentation.refl_trans]
+  rw [limitPageIsoFromPage]
+  exact SubquotientPresentation.isoOfEq_eq_refl
+    (Eq.symm (by rw [pagePresentation_self, SubquotientPresentation.refl_trans]))
 
 /-- Composition law for `limitPageIsoFromPage` through an intermediate page `s ≤ t`. -/
 theorem limitPageIsoFromPage_trans (s t : ℤ) (hs : r₀ ≤ s) (hst : s ≤ t)
@@ -667,12 +664,11 @@ theorem limitPageIsoFromPage_trans (s t : ℤ) (hs : r₀ ≤ s) (hst : s ≤ t)
     [(E.fromPage t (hs.trans hst)).HasInfiniteBoundariesAt pq] :
     E.limitPageIsoFromPage pq s hs ≪≫ (E.fromPage s hs).limitPageIsoFromPage pq t hst =
       E.limitPageIsoFromPage pq t (hs.trans hst) := by
-  refine (E.limitPagePresentation pq).mapIso_injective ?_
-  rw [← SubquotientPresentation.mapIso_trans, limitPageIsoFromPage,
-    SubquotientPresentation.mapIso_isoOfEq, ← SubquotientPresentation.trans_mapIso,
-    limitPageIsoFromPage, SubquotientPresentation.mapIso_isoOfEq,
-    ← SubquotientPresentation.trans_assoc, ← E.pagePresentation_eq_comp_fromPage pq s hs t hst,
-    limitPageIsoFromPage, SubquotientPresentation.mapIso_isoOfEq]
+  rw [limitPageIsoFromPage, limitPageIsoFromPage, limitPageIsoFromPage,
+    (E.pagePresentation pq s hs).isoOfEq_eq_trans, SubquotientPresentation.isoOfEq_trans]
+  exact SubquotientPresentation.isoOfEq_congr rfl
+    (by rw [← SubquotientPresentation.trans_assoc,
+      ← E.pagePresentation_eq_comp_fromPage pq s hs t hst])
 
 end
 
