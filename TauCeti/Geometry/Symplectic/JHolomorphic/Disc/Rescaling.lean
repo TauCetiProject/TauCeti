@@ -201,6 +201,18 @@ private theorem exists_rescale_of_le {η r A : ℝ} {K : ℝ≥0} (hη : 0 < η)
   exact ⟨hdt, fun x hx ↦ (hAt x hx).trans hAη,
     fun x hx y hy ↦ (hLt x hx y hy).trans (mul_le_mul_of_nonneg_right hLη (norm_nonneg _))⟩
 
+/-- A map that is `K`-Lipschitz on the ball of radius `r` about `c` is bounded there by its value
+at the centre plus `K r`; applied to the derivative of a map this bounds the derivative. -/
+private theorem norm_le_norm_add_mul_of_lipschitz {X Z : Type*} [SeminormedAddCommGroup X]
+    [SeminormedAddCommGroup Z] {g : X → Z} {c : X} {r : ℝ} {K : ℝ≥0} (hr : 0 ≤ r)
+    (hL : ∀ x ∈ closedBall c r, ∀ y ∈ closedBall c r, ‖g x - g y‖ ≤ K * ‖x - y‖) :
+    ∀ x ∈ closedBall c r, ‖g x‖ ≤ ‖g c‖ + K * r := fun x hx ↦ by
+  refine norm_le_norm_add_const_of_dist_le ?_
+  rw [dist_eq_norm]
+  refine (hL x hx c (mem_closedBall_self hr)).trans ?_
+  rw [mem_closedBall, dist_eq_norm] at hx
+  gcongr
+
 /-- Rescaling the argument of a map `J` whose derivative is `K`-Lipschitz on the ball of radius
 `r` makes its derivative and the Lipschitz constant of its derivative as small as required on
 the ball of radius `4`. -/
@@ -214,16 +226,9 @@ private theorem exists_rescale {J : F → F →L[ℝ] F} {η r : ℝ} {K : ℝ�
       ∀ x ∈ closedBall (0 : F) 4, ∀ y ∈ closedBall (0 : F) 4,
         ‖fderiv ℝ (fun x ↦ J (t • x)) x - fderiv ℝ (fun x ↦ J (t • x)) y‖ ≤ η * ‖x - y‖ := by
   -- On the ball of radius `r`, `DJ` is bounded by `‖DJ(0)‖ + K r`.
-  have hA : ∀ x ∈ closedBall (0 : F) r, ‖fderiv ℝ J x‖ ≤ ‖fderiv ℝ J 0‖ + K * r := fun x hx ↦ by
-    have h := hL x hx 0 (mem_closedBall_self hr.le)
-    rw [sub_zero] at h
-    rw [mem_closedBall, dist_zero_right] at hx
-    calc ‖fderiv ℝ J x‖ ≤ ‖fderiv ℝ J 0‖ + ‖fderiv ℝ J x - fderiv ℝ J 0‖ :=
-          norm_le_insert' (fderiv ℝ J x) (fderiv ℝ J 0)
-      _ ≤ _ := by gcongr; exact h.trans (by gcongr)
   obtain ⟨t, ht, -, htr, h⟩ := exists_rescale_of_le (F := F) (K := K) hη hr
     (by positivity : 0 ≤ ‖fderiv ℝ J 0‖ + K * r)
-  exact ⟨t, ht, htr, h J hd hA hL⟩
+  exact ⟨t, ht, htr, h J hd (norm_le_norm_add_mul_of_lipschitz (g := fderiv ℝ J) hr.le hL) hL⟩
 
 /-- **Discs solving `∂ₛu + J(u) ∂ₜu = 0` with a prescribed first jet.** Let
 `J : F → (F →L[ℝ] F)` be of class `C²` near `0` with `J(0) v = i v`. For every `ξ ∈ F` there is a
@@ -417,7 +422,19 @@ private theorem slice_bounds {Q : E × F → F →L[ℝ] F} {p₀ : E} {r A : �
     refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ((mul_le_of_le_one_right
       (norm_nonneg _) (ContinuousLinearMap.norm_inr_le_one ℝ E F)).trans ?_)
     have h := hL _ (hmem x hx) _ (hmem y hy)
-    rwa [Prod.mk_sub_mk, sub_self, Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _)] at h
+    simpa [Prod.norm_def] using h
+
+omit [NormedSpace ℝ E] in
+/-- For `‖p - p₀‖ ≤ r`, `‖x‖ ≤ 4`, `t ≥ 0` and `4 t ≤ r`, the point `(p, t x)` lies in the ball of
+radius `r` about `(p₀, 0)`. -/
+private theorem mk_smul_mem_closedBall {p₀ p : E} {x : F} {r t : ℝ} (ht : 0 ≤ t)
+    (htr : 4 * t ≤ r) (hp : p ∈ closedBall p₀ r) (hx : x ∈ closedBall (0 : F) 4) :
+    (p, t • x) ∈ closedBall (p₀, (0 : F)) r := by
+  rw [← closedBall_prod_same]
+  refine ⟨hp, ?_⟩
+  rw [mem_closedBall_zero_iff] at hx ⊢
+  rw [norm_smul, Real.norm_of_nonneg ht]
+  nlinarith
 
 /-- Rescaled slices at two parameters differ by `O(‖p - p'‖)` in `C¹`: if `DQ` is bounded by `A`
 and `K`-Lipschitz on the ball of radius `r` about `(p₀, 0)`, and `0 < t ≤ 1` with `4 t ≤ r`, then on
@@ -433,14 +450,10 @@ private theorem rescaled_slice_sub_le {Q : E × F → F →L[ℝ] F} {p₀ : E} 
       ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ (fun x ↦ Q (p, t • x)) x -
         fderiv ℝ (fun x ↦ Q (p', t • x)) x‖ ≤ (A + K) * ‖p - p'‖ := by
   have hmem : ∀ {p : E}, p ∈ closedBall p₀ r → ∀ x ∈ closedBall (0 : F) 4,
-      (p, t • x) ∈ closedBall (p₀, (0 : F)) r := fun hp x hx ↦ by
-    rw [← closedBall_prod_same]
-    refine ⟨hp, ?_⟩
-    rw [mem_closedBall_zero_iff] at hx ⊢
-    rw [norm_smul, Real.norm_of_nonneg ht.le]
-    nlinarith
+      (p, t • x) ∈ closedBall (p₀, (0 : F)) r := fun hp _ hx ↦
+    mk_smul_mem_closedBall ht.le htr hp hx
   have hpp : ∀ x : F, ‖(p, t • x) - (p', t • x)‖ = ‖p - p'‖ := fun x ↦ by
-    rw [Prod.mk_sub_mk, sub_self, Prod.norm_mk, norm_zero, max_eq_left (norm_nonneg _)]
+    simp [Prod.norm_def]
   have hA0 : 0 ≤ A := (norm_nonneg (fderiv ℝ Q (p₀, 0))).trans (hA _ (mem_closedBall_self
     ((mul_nonneg zero_le_four ht.le).trans htr)))
   refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
@@ -541,24 +554,16 @@ private theorem exists_rescaled_beltrami_family [CompleteSpace F] {J : E → F �
     fun q ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J q.1 q.2)
   -- On the ball of radius `r` about `(p₀, 0)`, `DQ` is bounded by `A = ‖DQ(p₀, 0)‖ + K r`.
   set A := ‖fderiv ℝ Q (p₀, 0)‖ + K * r
-  have hA : ∀ q ∈ closedBall (p₀, (0 : F)) r, ‖fderiv ℝ Q q‖ ≤ A := fun q hq ↦ by
-    have h := hL q hq _ (mem_closedBall_self hr.le)
-    rw [mem_closedBall, dist_eq_norm] at hq
-    calc ‖fderiv ℝ Q q‖ ≤ ‖fderiv ℝ Q (p₀, 0)‖ + ‖fderiv ℝ Q q - fderiv ℝ Q (p₀, 0)‖ :=
-          norm_le_insert' (fderiv ℝ Q q) (fderiv ℝ Q (p₀, 0))
-      _ ≤ ‖fderiv ℝ Q (p₀, 0)‖ + K * r := by gcongr; exact h.trans (by gcongr)
+  have hA : ∀ q ∈ closedBall (p₀, (0 : F)) r, ‖fderiv ℝ Q q‖ ≤ A :=
+    norm_le_norm_add_mul_of_lipschitz hr.le hL
   have hA0 : 0 ≤ A := by positivity
   obtain ⟨t, ht, ht1, htr, hresc⟩ := exists_rescale_of_le (F := F) (K := K) hη hr hA0
   refine ⟨r, hr, t, ht, ht1, A + K, add_nonneg hA0 K.coe_nonneg, fun p hp ↦ ?_,
     fun p hp p' hp' ↦ rescaled_slice_sub_le hd hA hL ht ht1 htr hp hp'⟩
   obtain ⟨hd', hA', hL'⟩ := slice_bounds hd hA hL hp
   obtain ⟨hdt, hAt, hLt⟩ := hresc _ hd' hA' hL'
-  refine ⟨by simpa using hQ0 p hp, hdt, hAt, hLt, fun x hx ↦ hrJ (p, t • x) ?_⟩
-  rw [← closedBall_prod_same]
-  refine ⟨hp, ?_⟩
-  rw [mem_closedBall_zero_iff] at hx ⊢
-  rw [norm_smul, Real.norm_of_nonneg ht.le]
-  nlinarith
+  exact ⟨by simpa using hQ0 p hp, hdt, hAt, hLt, fun x hx ↦ hrJ (p, t • x)
+    (mk_smul_mem_closedBall ht.le htr hp (closedBall_subset_closedBall (by norm_num) hx))⟩
 
 /-- **Families of `J`-holomorphic discs depending Lipschitz continuously on the base point.** Let
 `J p : F → (F →L[ℝ] F)` be a family of structures depending on a parameter `p` in a real normed
