@@ -35,8 +35,9 @@ that the regular case `Module.supportDim_add_length_eq_supportDim_of_isRegular` 
 equality. An element of `𝔪` that lowers the dimension at all therefore lowers it by exactly one
 (`Module.supportDim_quotSMulTop_succ_eq_supportDim_of_lt`).
 
-The support of `M ⧸ r s M` is the union of the supports of `M ⧸ r M` and `M ⧸ s M`, so its
-dimension is the larger of their dimensions (`Module.supportDim_quotSMulTop_mul`).
+The support of `M ⧸ (I * J) • M` is the union of the supports of `M ⧸ I • M` and `M ⧸ J • M`, so
+its dimension is the larger of their dimensions (`Module.supportDim_quotient_mul`, specialized to
+elements in `Module.supportDim_quotSMulTop_mul`).
 
 Over any commutative ring, an `M`-regular element lies outside every minimal prime of the
 annihilator of `M` and so lowers the dimension of the support by at least one; by induction, the
@@ -164,20 +165,31 @@ theorem supportDim_quotSMulTop_succ_eq_supportDim_of_lt {R M : Type*} [CommRing 
   norm_cast at hlt hle ⊢
   omega
 
+/-- For a finite module `M` and ideals `I, J`, the support of `M ⧸ (I * J) • M` is the union of
+the supports of `M ⧸ I • M` and `M ⧸ J • M`, so its dimension is the larger of their dimensions. -/
+theorem supportDim_quotient_mul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [Module.Finite R M] (I J : Ideal R) :
+    supportDim R (M ⧸ ((I * J) • ⊤ : Submodule R M)) =
+      max (supportDim R (M ⧸ (I • ⊤ : Submodule R M)))
+        (supportDim R (M ⧸ (J • ⊤ : Submodule R M))) := by
+  have hsupp : support R (M ⧸ ((I * J) • ⊤ : Submodule R M)) =
+      support R (M ⧸ (I • ⊤ : Submodule R M)) ∪ support R (M ⧸ (J • ⊤ : Submodule R M)) := by
+    rw [support_quotient, support_quotient, support_quotient, PrimeSpectrum.zeroLocus_mul,
+      Set.inter_union_distrib_left]
+  rw [supportDim, hsupp]
+  exact Order.krullDim_union_of_isUpperSet (fun _ _ ↦ mem_support_mono) (fun _ _ ↦ mem_support_mono)
+
 /-- The support of `M ⧸ r s M` is the union of the supports of `M ⧸ r M` and `M ⧸ s M`, so its
 dimension is the larger of their dimensions. -/
 theorem supportDim_quotSMulTop_mul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     [Module.Finite R M] (r s : R) :
     supportDim R (QuotSMulTop (r * s) M) =
       max (supportDim R (QuotSMulTop r M)) (supportDim R (QuotSMulTop s M)) := by
-  have hup (x : R) : IsUpperSet (support R (QuotSMulTop x M)) :=
-    fun _ _ hpq hp ↦ mem_support_mono hpq hp
-  have hsupp : support R (QuotSMulTop (r * s) M) =
-      support R (QuotSMulTop r M) ∪ support R (QuotSMulTop s M) := by
-    simp only [support_quotSMulTop, PrimeSpectrum.zeroLocus_singleton_mul,
-      Set.inter_union_distrib_left]
-  rw [supportDim, hsupp]
-  exact Order.krullDim_union_of_isUpperSet (hup r) (hup s)
+  have h (x : R) : supportDim R (QuotSMulTop x M) =
+      supportDim R (M ⧸ (span {x} • ⊤ : Submodule R M)) :=
+    supportDim_eq_of_equiv (Submodule.quotEquivOfEq _ _
+      (Submodule.ideal_span_singleton_smul x (⊤ : Submodule R M)).symm)
+  rw [h (r * s), h r, h s, ← span_singleton_mul_span_singleton, supportDim_quotient_mul]
 
 end Module
 

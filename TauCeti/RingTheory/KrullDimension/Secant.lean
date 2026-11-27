@@ -34,14 +34,17 @@ sequences.
   dimension of the prefix quotient by `[]` and by `r :: ts`;
   `TauCeti.supportDim_prefixQuotient_take_succ_cons` is the form used along prefixes of `r :: rs`.
 * `TauCeti.isSecant_cons_iff`, `TauCeti.isSecant_append_iff`: secancy of a concatenation
-  `rs ++ qs` is secancy of `rs` for `M` together with secancy of `qs` for `M ⧸ (rs) M`.
+  `rs ++ qs` is secancy of `rs` for `M` together with secancy of `qs` for `M ⧸ (rs) M`;
+  `TauCeti.IsSecant.take` and `TauCeti.IsSecant.drop` extract prefix and suffix secancy.
 * `TauCeti.isSecant_iff_of_support_eq`: secancy for a finite module depends only on its support.
 * `TauCeti.isSecant_iff_supportDim_add_length_eq`: for a nonzero finite module over a Noetherian
   local ring, `rs` is secant if and only if its entries lie in `𝔪` and
-  `dim Supp M ⧸ (rs) M + length rs = dim Supp M`.
+  `dim Supp M ⧸ (rs) M + length rs = dim Supp M`;
+  `TauCeti.IsSecant.supportDim_prefixQuotient_eq_zero_iff` characterizes zero-dimensional terminal
+  support by `dim Supp M = length rs`.
 * `TauCeti.IsSecant.length_le_supportDim`: a secant list has length at most `dim Supp M`.
-* `TauCeti.IsSecant.perm`, `TauCeti.IsSecant.sublist`: permutations and sublists of secant lists
-  are secant.
+* `TauCeti.IsSecant.perm`, `TauCeti.IsSecant.reverse`, `TauCeti.isSecant_reverse_iff`,
+  `TauCeti.IsSecant.sublist`: permutations, reversals, and sublists of secant lists are secant.
 * `TauCeti.isSecant_append_pow_cons_iff`: replacing an entry by a positive power of itself does
   not affect secancy.
 * `TauCeti.IsSecant.append_mul`: if `r₁, …, rₙ` is secant and `i ≤ j ≤ n`, then
@@ -150,6 +153,21 @@ theorem isSecant_append_iff (rs qs : List R) :
       (Submodule.quotOfListConsSMulTopEquivQuotSMulTopInner M r rs).isSecant_iff]
     simp only [and_assoc]
 
+/-- Every prefix of a secant list is secant. -/
+theorem IsSecant.take {rs : List R} (h : IsSecant M rs) (k : ℕ) : IsSecant M (rs.take k) :=
+  ((isSecant_append_iff (rs.take k) (rs.drop k)).1 (by rwa [List.take_append_drop])).1
+
+/-- Every suffix `rs.drop k` of a secant list is secant for `M ⧸ (rs.take k) M`. -/
+theorem IsSecant.drop {rs : List R} (h : IsSecant M rs) (k : ℕ) :
+    IsSecant (prefixQuotient M (rs.take k)) (rs.drop k) :=
+  ((isSecant_append_iff (rs.take k) (rs.drop k)).1 (by rwa [List.take_append_drop])).2
+
+/-- Every strict prefix quotient along a secant list is nonzero, since the next step lowers its
+support dimension. -/
+theorem IsSecant.nontrivial_prefixQuotient_take {rs : List R} (h : IsSecant M rs) {i : ℕ}
+    (hi : i < rs.length) : Nontrivial (prefixQuotient M (rs.take i)) :=
+  (supportDim_ne_bot_iff_nontrivial R _).1 (ne_bot_of_gt (h.supportDim_lt i hi))
+
 /-- Only the empty list is secant for the zero module. -/
 theorem isSecant_iff_eq_nil [Subsingleton M] {rs : List R} : IsSecant M rs ↔ rs = [] := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ .nil⟩
@@ -201,6 +219,12 @@ theorem IsSecant.supportDim_add_length_eq {rs : List R} (h : IsSecant M rs) :
       ih hrs this]
     exact supportDim_quotSMulTop_succ_eq_supportDim_of_lt hr hlt
 
+/-- For a secant list `rs` on a finite module `M` over a Noetherian local ring, the terminal
+quotient `M ⧸ (rs) M` has zero-dimensional support if and only if `supportDim R M = rs.length`. -/
+theorem IsSecant.supportDim_prefixQuotient_eq_zero_iff {rs : List R} (h : IsSecant M rs) :
+    supportDim R (prefixQuotient M rs) = 0 ↔ supportDim R M = rs.length := by
+  rw [← ENat.WithBot.add_natCast_cancel (c := rs.length), h.supportDim_add_length_eq, zero_add]
+
 /-- **The secant dimension formula.** For a nonzero finite module `M` over a Noetherian local ring,
 a list `rs` is secant for `M` if and only if its entries lie in `𝔪` and
 `dim Supp M ⧸ (rs) M + length rs = dim Supp M`. The hypothesis that `M` is nonzero is needed: for
@@ -242,6 +266,15 @@ theorem IsSecant.perm {rs qs : List R} (h : IsSecant M rs) (hp : rs.Perm qs) : I
   · rw [isSecant_iff_supportDim_add_length_eq] at h ⊢
     rw [← supportDim_eq_of_equiv (prefixQuotient.equivOfPerm M hp), ← hp.length_eq]
     exact ⟨fun r hr ↦ h.1 r (hp.mem_iff.2 hr), h.2⟩
+
+/-- Reversing a secant list preserves secancy. -/
+theorem IsSecant.reverse {rs : List R} (h : IsSecant M rs) : IsSecant M rs.reverse :=
+  h.perm rs.reverse_perm.symm
+
+/-- A reversed list is secant if and only if the original list is secant. -/
+@[simp]
+theorem isSecant_reverse_iff (rs : List R) : IsSecant M rs.reverse ↔ IsSecant M rs :=
+  ⟨fun h ↦ by simpa only [List.reverse_reverse] using h.reverse, IsSecant.reverse⟩
 
 /-- A sublist of a secant list is secant. -/
 theorem IsSecant.sublist {rs qs : List R} (h : IsSecant M rs) (hs : qs.Sublist rs) :

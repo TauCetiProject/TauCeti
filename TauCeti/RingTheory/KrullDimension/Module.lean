@@ -17,7 +17,7 @@ import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Localization.Annihilator
 
 /-!
-# Support dimension of a localized module
+# Support dimension of localized and quotient modules
 
 Let `M` be a finite module over a Noetherian ring `R` and `p` a prime containing the annihilator
 of `M`. The support of the localization `M_p` over `R_p` is zero-dimensional exactly when `p` is a
@@ -27,6 +27,9 @@ survives in `M_p` as a non-maximal associated prime.
 
 This is the dimension input to the characterization of Serre's condition `(S_1)` as the absence of
 embedded primes.
+
+For a finite module `M`, the support and support dimension of `M ⧸ I • M` depend only on the
+radical of `I`.
 
 ## Main results
 
@@ -42,6 +45,8 @@ embedded primes.
   minimal prime of the annihilator of a finite module, its support has dimension at most zero.
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
   `p` is a minimal prime of the support of `M`.
+* `Module.support_quotient_eq_of_radical_eq`, `Module.supportDim_quotient_eq_of_radical_eq`: for a
+  finite module, `Supp(M ⧸ I • M)` and `supportDim R (M ⧸ I • M)` depend only on `I.radical`.
 -/
 
 public section
@@ -184,5 +189,25 @@ theorem supportDim_localizedModule_nonpos_iff [IsNoetherianRing R] [Module.Finit
         (LocalizedModule.mkLinearMap p.primeCompl M)).trans (annihilator_le_of_mem_support hQ)
     exact Localization.AtPrime.eq_maximalIdeal_iff_under_eq.1
       (le_antisymm hQp (h.2 ⟨Ideal.IsPrime.under R Q.asIdeal, hann⟩ hQp))
+
+section Quotient
+
+open scoped Pointwise
+
+/-- For a finite module `M`, the support of `M ⧸ I • M` depends only on the radical of `I`. -/
+theorem support_quotient_eq_of_radical_eq [Module.Finite R M] {I J : Ideal R}
+    (h : I.radical = J.radical) :
+    support R (M ⧸ (I • ⊤ : Submodule R M)) = support R (M ⧸ (J • ⊤ : Submodule R M)) := by
+  rw [support_quotient, support_quotient, ← PrimeSpectrum.zeroLocus_radical I,
+    ← PrimeSpectrum.zeroLocus_radical J, h]
+
+/-- For a finite module `M`, the support dimension of `M ⧸ I • M` depends only on the radical of
+`I`. -/
+theorem supportDim_quotient_eq_of_radical_eq [Module.Finite R M] {I J : Ideal R}
+    (h : I.radical = J.radical) :
+    supportDim R (M ⧸ (I • ⊤ : Submodule R M)) = supportDim R (M ⧸ (J • ⊤ : Submodule R M)) :=
+  supportDim_eq_of_support_eq (support_quotient_eq_of_radical_eq h)
+
+end Quotient
 
 end Module

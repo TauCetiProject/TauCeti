@@ -23,8 +23,11 @@ nonzero.
 
 * `TauCeti.prefixQuotient M rs`: the quotient `M ⧸ (r₁, …, rₛ) M`.
 * `TauCeti.prefixQuotient.nilEquiv`: `M ⧸ () M ≃ M`.
+* `TauCeti.prefixQuotient.singletonEquiv`: `M ⧸ (r) M ≃ QuotSMulTop r M`.
 * `TauCeti.prefixQuotient.appendEquiv`: `M ⧸ (rs ++ qs) M ≃ (M ⧸ (rs) M) ⧸ (qs) (M ⧸ (rs) M)`.
 * `TauCeti.prefixQuotient.equivOfPerm`: permuting the list does not change the quotient.
+* `TauCeti.prefixQuotient.dropReverseEquiv`:
+  `M ⧸ (rs.reverse.drop k) M ≃ M ⧸ (rs.take (len - k)) M`.
 * `TauCeti.prefixQuotient.congr`: a linear equivalence `M ≃ N` induces `M ⧸ (rs) M ≃ N ⧸ (rs) N`.
 
 ## Main results
@@ -63,6 +66,20 @@ theorem nilEquiv_symm_apply (x : M) :
     (nilEquiv M).symm x = (Submodule.Quotient.mk x : prefixQuotient M ([] : List R)) :=
   (rfl)
 
+/-- The quotient of `M` by a singleton list `[r]` is `QuotSMulTop r M`. -/
+noncomputable def singletonEquiv (r : R) : prefixQuotient M [r] ≃ₗ[R] QuotSMulTop r M :=
+  Submodule.quotEquivOfEq _ _ (by rw [ofList_singleton, Submodule.ideal_span_singleton_smul])
+
+@[simp]
+theorem singletonEquiv_mk (r : R) (x : M) :
+    singletonEquiv M r (Submodule.Quotient.mk x) = Submodule.Quotient.mk x :=
+  Submodule.quotEquivOfEq_mk _ _ _ x
+
+@[simp]
+theorem singletonEquiv_symm_mk (r : R) (x : M) :
+    (singletonEquiv M r).symm (Submodule.Quotient.mk x) = Submodule.Quotient.mk x := by
+  rw [← singletonEquiv_mk M r x, LinearEquiv.symm_apply_apply]
+
 /-- The quotient of `M` by `rs ++ qs` is the quotient of `M ⧸ (rs) M` by `qs`. -/
 noncomputable def appendEquiv (rs qs : List R) :
     prefixQuotient M (rs ++ qs) ≃ₗ[R] prefixQuotient (prefixQuotient M rs) qs :=
@@ -92,6 +109,22 @@ noncomputable def equivOfPerm {rs qs : List R} (h : rs.Perm qs) :
 theorem equivOfPerm_mk {rs qs : List R} (h : rs.Perm qs) (x : M) :
     equivOfPerm M h (Submodule.Quotient.mk x) = Submodule.Quotient.mk x :=
   (rfl)
+
+/-- Dropping `k` entries from the reversed list `rs.reverse` reverses the prefix
+`rs.take (rs.length - k)`, so the two prefix quotients are canonically equivalent. -/
+noncomputable def dropReverseEquiv (rs : List R) (k : ℕ) :
+    prefixQuotient M (rs.reverse.drop k) ≃ₗ[R] prefixQuotient M (rs.take (rs.length - k)) :=
+  equivOfPerm M (List.drop_reverse ▸ (rs.take (rs.length - k)).reverse_perm)
+
+@[simp]
+theorem dropReverseEquiv_mk (rs : List R) (k : ℕ) (x : M) :
+    dropReverseEquiv M rs k (Submodule.Quotient.mk x) = Submodule.Quotient.mk x :=
+  equivOfPerm_mk M _ x
+
+@[simp]
+theorem dropReverseEquiv_symm_mk (rs : List R) (k : ℕ) (x : M) :
+    (dropReverseEquiv M rs k).symm (Submodule.Quotient.mk x) = Submodule.Quotient.mk x := by
+  rw [← dropReverseEquiv_mk M rs k x, LinearEquiv.symm_apply_apply]
 
 /-- By Nakayama's lemma, the prefix quotient of a nonzero finite module over a local ring by a list
 whose entries lie in the maximal ideal is nonzero. -/

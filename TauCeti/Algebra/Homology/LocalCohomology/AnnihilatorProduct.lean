@@ -43,12 +43,17 @@ torsion created by dividing by part of a system of parameters.
 * `localCohomology.annihilatorProduct_eq_top_of_subsingleton`: `a_J(0, d) = R`.
 * `localCohomology.annihilatorProduct_eq_top_of_le_depth`: `a_J(M, d) = R` when `d` is at most the
   `J`-depth of a finite module `M` over a Noetherian ring.
+* `localCohomology.annihilatorProduct_eq_of_sameRadical`: over a Noetherian ring, `a_J(M, d)`
+  depends on `J` only through its radical.
 * `LinearEquiv.annihilatorProduct_eq`: `a_J(M, d)` is invariant under linear equivalence.
 * `localCohomology.annihilator_obj_zero` and `localCohomology.annihilatorProduct_one`:
-  `a_J(M, 1) = Ann_R H^0_J(M)` is the annihilator of the `J`-power torsion of `M`; by
+  `a_J(M, 1) = Ann_R H^0_J(M)` is the annihilator of the `J`-primary component of `M`; by
   `localCohomology.annihilator_obj_zero_of_pow_le` it is `Ann_R M` when a power of `J` kills `M`.
-* `Module.IsCohenMacaulay.annihilatorProduct_eq_top`: for a finite Cohen–Macaulay module over a
-  Noetherian local ring whose support has dimension `d`, `a_𝔪(M, d) = R`.
+* `Module.IsCohenMacaulay.isZero_localCohomology`,
+  `Module.IsCohenMacaulay.annihilatorProduct_eq_top_of_le_supportDim`, and
+  `Module.IsCohenMacaulay.annihilatorProduct_eq_top`: for a finite Cohen–Macaulay module over a
+  Noetherian local ring, `H^j_𝔪(M) = 0` for `j < supportDim R M` and `a_𝔪(M, d) = R` for
+  `d ≤ supportDim R M`.
 
 ## References
 
@@ -133,6 +138,15 @@ theorem annihilatorProduct_eq_top_of_le_depth [IsNoetherianRing R] [Module.Finit
   (annihilatorProduct_eq_top_iff J M).2 fun _ hj ↦
     isZero_obj_of_lt_depth J _ ((Nat.cast_lt.2 hj).trans_le h)
 
+/-- Over a Noetherian ring, ideals with the same radical have the same local-cohomology annihilator
+product. -/
+theorem annihilatorProduct_eq_of_sameRadical [IsNoetherianRing R] {K : Ideal R}
+    (hJK : J.radical = K.radical) (d : ℕ) :
+    annihilatorProduct J M d = annihilatorProduct K M d := by
+  simp only [annihilatorProduct_def]
+  exact Finset.prod_congr rfl fun j _ ↦
+    ((isoOfSameRadical hJK j).app (ModuleCat.of R M)).toLinearEquiv.annihilator_eq
+
 /-- The annihilator of `H^0_J(M)` is the annihilator of the `J`-power torsion
 `Ideal.primaryComponent M J` of `M`, the union of the annihilators in `M` of the powers of `J`. -/
 theorem annihilator_obj_zero :
@@ -175,18 +189,28 @@ open localCohomology _root_.IsLocalRing
 variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] {M : Type u}
   [AddCommGroup M] [Module R M] [Module.Finite R M]
 
+/-- For a finite Cohen–Macaulay module `M` over a Noetherian local ring `(R, 𝔪)`, the local
+cohomology module `H^j_𝔪(M)` vanishes for every `j : ℕ` strictly below `supportDim R M`. -/
+theorem isZero_localCohomology (hM : IsCohenMacaulay R M) {j : ℕ}
+    (hj : (j : WithBot ℕ∞) < supportDim R M) :
+    IsZero ((localCohomology (maximalIdeal R) j).obj (ModuleCat.of R M)) := by
+  have : Nontrivial M := (supportDim_ne_bot_iff_nontrivial R M).1 (ne_bot_of_gt hj)
+  rw [← hM.depth_eq] at hj
+  exact isZero_obj_of_lt_depth (maximalIdeal R) (ModuleCat.of R M) (by exact_mod_cast hj)
+
+/-- For a finite Cohen–Macaulay module `M` over a Noetherian local ring `(R, 𝔪)`, the
+local-cohomology annihilator product `a_𝔪(M, d)` is the unit ideal whenever `d ≤ supportDim R M`. -/
+theorem annihilatorProduct_eq_top_of_le_supportDim (hM : IsCohenMacaulay R M) {d : ℕ}
+    (hd : (d : WithBot ℕ∞) ≤ supportDim R M) :
+    annihilatorProduct (maximalIdeal R) M d = ⊤ :=
+  (annihilatorProduct_eq_top_iff _ M).2 fun j hj ↦
+    hM.isZero_localCohomology ((by exact_mod_cast hj : (j : WithBot ℕ∞) < d).trans_le hd)
+
 /-- For a finite Cohen–Macaulay module `M` over a Noetherian local ring `(R, 𝔪)` whose support has
 dimension `d`, the local cohomology modules `H^j_𝔪(M)`, `j < d`, vanish, so `a_𝔪(M, d)` is the
 unit ideal. -/
 theorem annihilatorProduct_eq_top (hM : IsCohenMacaulay R M) {d : ℕ}
-    (hd : supportDim R M = d) : annihilatorProduct (maximalIdeal R) M d = ⊤ := by
-  cases subsingleton_or_nontrivial M
-  · exact annihilatorProduct_eq_top_of_subsingleton _ M d
-  -- A nonzero Cohen–Macaulay module has depth `d`.
-  refine annihilatorProduct_eq_top_of_le_depth _ M (le_of_eq ?_)
-  have := hM.depth_eq
-  rw [hd] at this
-  rw [← depth]
-  exact_mod_cast this.symm
+    (hd : supportDim R M = d) : annihilatorProduct (maximalIdeal R) M d = ⊤ :=
+  hM.annihilatorProduct_eq_top_of_le_supportDim hd.ge
 
 end Module.IsCohenMacaulay
