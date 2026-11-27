@@ -5,6 +5,7 @@ Authors: Jon Crall, Claude Fable 5
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Matrix
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
@@ -78,7 +79,8 @@ vanishing on the range is a dot product with such a `z`.
 * `Matrix.mem_span_col_iff`, `Matrix.mem_span_col_one_iff` and
   `Matrix.GeneralLinearGroup.mem_span_col_iff_mulVec_inv_mem`: membership in the `S`-span of the
   columns of a matrix, of the identity matrix, and of an invertible matrix `w`, where it means that
-  `w⁻¹ x` has entries in `S`, for a subalgebra `S`.
+  `w⁻¹ x` has entries in `S`, for a subalgebra `S`; so `w⁻¹ B` has entries in `S` when the columns
+  of `B` lie in that span (`Matrix.GeneralLinearGroup.inv_mul_mem_matrix_of_col_mem_span`).
 * `Matrix.exists_eq_mul_map_of_span_col_eq` and
   `Matrix.GeneralLinearGroup.exists_eq_mul_map_of_span_col_eq`: a left-invertible matrix is
   determined up to `GL(S)` on the right by the `S`-span of its columns.
@@ -191,6 +193,15 @@ theorem GeneralLinearGroup.mem_span_col_iff_mulVec_inv_mem [Fintype o] [Decidabl
     rwa [mulVec_mulVec, Units.inv_mul, one_mulVec]
   · intro h
     exact ⟨_, h, by rw [mulVec_mulVec, Units.mul_inv, one_mulVec]⟩
+
+/-- If every column of `B` lies in the `S`-span of the columns of `w ∈ GL_n(A)`, then `w⁻¹ B` has
+entries in `S`. -/
+theorem GeneralLinearGroup.inv_mul_mem_matrix_of_col_mem_span [Fintype o] [DecidableEq o]
+    (w : GL o A) {B : Matrix o o A}
+    (hB : ∀ j, B.col j ∈ Submodule.span S (Set.range (w : Matrix o o A).col)) :
+    ((w⁻¹ : GL o A) : Matrix o o A) * B ∈ S.matrix := fun i j ↦ by
+  simpa [mulVec, dotProduct, Matrix.mul_apply] using
+    (mem_span_col_iff_mulVec_inv_mem w).1 (hB j) i
 
 /-- The `S`-span of the columns of the identity matrix is `Sⁿ`. -/
 @[simp]

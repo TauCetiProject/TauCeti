@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Idempotent
+import TauCeti.Algebra.Algebra.Subalgebra.Matrix
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 import TauCeti.LinearAlgebra.Matrix.Range
 
 /-!
@@ -69,15 +71,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 variable {g u : GL n A}
 
-/-- Entries of `M y` lie in `S` when those of `M` and of `y` do. -/
-private theorem mulVec_apply_mem {M : Matrix n n A} (hM : M ∈ S.matrix) {y : n → A}
-    (hy : ∀ j, y j ∈ S) (i : n) : (M *ᵥ y) i ∈ S :=
-  Subalgebra.sum_mem _ fun j _ ↦ S.mul_mem (hM i j) (hy j)
-
-/-- The image of an invertible matrix over `S` has entries in `S`. -/
-private theorem val_map_mem (k : GL n S) : (map S.val.toRingHom k : Matrix n n A) ∈ S.matrix :=
-  fun i j ↦ ((k : Matrix n n S) i j).property
-
 variable (S) in
 /-- For `g ∈ GL_n(A)`, a matrix `u ∈ GL_n(A)` is **saturating** for `g`, relative to the
 subalgebra `S`, if `u` and `g u` have entries in `S` and `u⁻¹ = l + m g` for matrices `l`, `m`
@@ -106,31 +99,18 @@ theorem IsSaturating.span_col_eq (h : IsSaturating S g u) :
   · intro hx
     -- `x = u (u⁻¹ x)` and `g x = (g u) (u⁻¹ x)`.
     refine ⟨fun i ↦ ?_, fun i ↦ ?_⟩
-    · simpa [mulVec_mulVec] using mulVec_apply_mem h.val_mem hx i
-    · simpa [mulVec_mulVec, Matrix.mul_assoc] using mulVec_apply_mem h.mul_val_mem hx i
+    · simpa [mulVec_mulVec] using Subalgebra.mulVec_apply_mem h.val_mem hx i
+    · simpa [mulVec_mulVec, Matrix.mul_assoc] using Subalgebra.mulVec_apply_mem h.mul_val_mem hx i
   · rintro ⟨hx, hgx⟩ i
     -- `u⁻¹ x = l x + m (g x)`.
     rw [hlm, add_mulVec, ← mulVec_mulVec]
-    exact S.add_mem (mulVec_apply_mem hl hx i) (mulVec_apply_mem hm hgx i)
+    exact S.add_mem (Subalgebra.mulVec_apply_mem hl hx i) (Subalgebra.mulVec_apply_mem hm hgx i)
 
 /-- **Uniqueness of saturating matrices.** Two saturating matrices `u`, `u'` of `g` differ by an
 element of `GL_n(S)`: `u' = u k`. -/
 theorem IsSaturating.exists_eq_mul_map {u' : GL n A} (h : IsSaturating S g u)
     (h' : IsSaturating S g u') : ∃ k : GL n S, u' = u * map S.val.toRingHom k :=
   exists_eq_mul_map_of_span_col_eq (h.span_col_eq.trans h'.span_col_eq.symm)
-
-/-- If every column of `B` lies in the `S`-span of the columns of `w ∈ GL_n(A)`, then `w⁻¹ B` has
-entries in `S`. -/
-private theorem inv_mul_mem_of_col_mem (w : GL n A) {B : Matrix n n A}
-    (hB : ∀ j, B.col j ∈ Submodule.span S (Set.range (w : Matrix n n A).col)) :
-    ((w⁻¹ : GL n A) : Matrix n n A) * B ∈ S.matrix := fun i j ↦ by
-  simpa [mulVec, dotProduct, Matrix.mul_apply] using
-    (mem_span_col_iff_mulVec_inv_mem w).1 (hB j) i
-
-/-- The inverse of the transpose `(u⁻¹)ᵀ` of `u⁻¹` is `uᵀ`. -/
-private theorem coe_inv_unop_transposeMulEquiv_inv (u : GL n A) :
-    ((((transposeMulEquiv n u⁻¹).unop)⁻¹ : GL n A) : Matrix n n A) = (u : Matrix n n A)ᵀ := by
-  rw [← MulOpposite.unop_inv, ← map_inv, inv_inv, coe_unop_transposeMulEquiv]
 
 /-- If the columns of `(u⁻¹)ᵀ` span `Sⁿ + gᵀ Sⁿ` over `S`, then `u` is saturating for `g`. -/
 private theorem isSaturating_of_span_col_transpose_eq
@@ -139,13 +119,14 @@ private theorem isSaturating_of_span_col_transpose_eq
         Submodule.span S (Set.range (g : Matrix n n A)ᵀ.col)) :
     IsSaturating S g u := by
   -- `w = (u⁻¹)ᵀ` is invertible, with inverse `uᵀ`.
-  set w : GL n A := (transposeMulEquiv n u⁻¹).unop
-  have hw_inv := coe_inv_unop_transposeMulEquiv_inv u
+  rw [← coe_inverseTranspose] at hspan
+  set w : GL n A := inverseTranspose u
+  have hw_inv := coe_inv_inverseTranspose u
   -- The columns of `1` and of `gᵀ` lie in the span of those of `w`, so `w⁻¹ = uᵀ` and
   -- `w⁻¹ gᵀ = (g u)ᵀ` have entries in `S`.
-  have hu := inv_mul_mem_of_col_mem w (B := 1) fun j ↦
+  have hu := inv_mul_mem_matrix_of_col_mem_span w (B := 1) fun j ↦
     hspan.ge (Submodule.mem_sup_left (Submodule.subset_span ⟨j, rfl⟩))
-  have hgu := inv_mul_mem_of_col_mem w (B := (g : Matrix n n A)ᵀ) fun j ↦
+  have hgu := inv_mul_mem_matrix_of_col_mem_span w (B := (g : Matrix n n A)ᵀ) fun j ↦
     hspan.ge (Submodule.mem_sup_right (Submodule.subset_span ⟨j, rfl⟩))
   rw [Matrix.mul_one, hw_inv] at hu
   rw [hw_inv, ← transpose_mul] at hgu
@@ -162,7 +143,7 @@ private theorem isSaturating_of_span_col_transpose_eq
   ext i j
   have h := congrFun (hyb i) j
   simp only [Pi.add_apply, mulVec, dotProduct, transpose_apply, col_apply, w,
-    coe_unop_transposeMulEquiv] at h
+    coe_inverseTranspose] at h
   simp [← h, Matrix.mul_apply, mul_comm]
 
 /-- **The row lattice of a saturating matrix.** A matrix `u` is saturating for `g` exactly when
@@ -175,9 +156,9 @@ theorem isSaturating_iff_span_col_transpose_eq :
           Submodule.span S (Set.range (g : Matrix n n A)ᵀ.col) := by
   refine ⟨fun ⟨hu, hgu, l, hl, m, hm, hlm⟩ ↦ ?_, isSaturating_of_span_col_transpose_eq⟩
   -- `w = (u⁻¹)ᵀ` is invertible, with inverse `uᵀ`.
-  set w : GL n A := (transposeMulEquiv n u⁻¹).unop
-  have hw : (w : Matrix n n A) = ((u⁻¹ : GL n A) : Matrix n n A)ᵀ := rfl
-  have hw_inv := coe_inv_unop_transposeMulEquiv_inv u
+  set w : GL n A := inverseTranspose u
+  have hw : (w : Matrix n n A) = ((u⁻¹ : GL n A) : Matrix n n A)ᵀ := coe_inverseTranspose u
+  have hw_inv := coe_inv_inverseTranspose u
   rw [← hw]
   refine le_antisymm (Submodule.span_le.2 ?_) (sup_le (fun x hx ↦ ?_) (fun x hx ↦ ?_))
   · -- The `j`-th column of `(u⁻¹)ᵀ = lᵀ + gᵀ mᵀ` lies in `Sⁿ + gᵀ Sⁿ`.
@@ -190,11 +171,11 @@ theorem isSaturating_iff_span_col_transpose_eq :
       (mem_span_col_iff.2 ⟨_, fun i ↦ hm j i, rfl⟩)
   · -- `w⁻¹ x = uᵀ x`.
     rw [mem_span_col_iff_mulVec_inv_mem, hw_inv]
-    exact mulVec_apply_mem (fun i j ↦ hu j i) (mem_span_col_one_iff.1 hx)
+    exact Subalgebra.mulVec_apply_mem (fun i j ↦ hu j i) (mem_span_col_one_iff.1 hx)
   · -- `w⁻¹ gᵀ y = (g u)ᵀ y`.
     obtain ⟨y, hy, rfl⟩ := mem_span_col_iff.1 hx
     rw [mem_span_col_iff_mulVec_inv_mem, hw_inv, mulVec_mulVec, ← transpose_mul]
-    exact mulVec_apply_mem (fun i j ↦ hgu j i) hy
+    exact Subalgebra.mulVec_apply_mem (fun i j ↦ hgu j i) hy
 
 /-- A matrix with entries in `S` has `1` as a saturating matrix. -/
 theorem isSaturating_one_of_mem (hg : (g : Matrix n n A) ∈ S.matrix) : IsSaturating S g 1 where
@@ -207,8 +188,8 @@ matrix. -/
 theorem IsSaturating.mul_map (h : IsSaturating S g u) (k : GL n S) :
     IsSaturating S g (u * map S.val.toRingHom k) := by
   obtain ⟨l, hl, m, hm, hlm⟩ := h.exists_inv_eq
-  have hk := val_map_mem k
-  have hk' := val_map_mem k⁻¹
+  have hk := Subalgebra.coe_map_val_mem_matrix k
+  have hk' := Subalgebra.coe_map_val_mem_matrix k⁻¹
   rw [map_inv] at hk'
   refine ⟨?_, ?_, ((map S.val.toRingHom k)⁻¹ : GL n A) * l, mul_mem hk' hl,
     ((map S.val.toRingHom k)⁻¹ : GL n A) * m, mul_mem hk' hm, ?_⟩
@@ -224,9 +205,9 @@ theorem IsSaturating.map_mul_mul_map (h : IsSaturating S g u) (k k' : GL n S) :
     IsSaturating S (map S.val.toRingHom k * g * map S.val.toRingHom k')
       ((map S.val.toRingHom k')⁻¹ * u) := by
   obtain ⟨l, hl, m, hm, hlm⟩ := h.exists_inv_eq
-  have hk' := val_map_mem k'
-  have hk_inv := val_map_mem k⁻¹
-  have hk'_inv := val_map_mem k'⁻¹
+  have hk' := Subalgebra.coe_map_val_mem_matrix k'
+  have hk_inv := Subalgebra.coe_map_val_mem_matrix k⁻¹
+  have hk'_inv := Subalgebra.coe_map_val_mem_matrix k'⁻¹
   rw [map_inv] at hk_inv hk'_inv
   refine ⟨?_, ?_, l * map S.val.toRingHom k', mul_mem hl hk',
     m * ((map S.val.toRingHom k)⁻¹ : GL n A), mul_mem hm hk_inv, ?_⟩
@@ -238,7 +219,7 @@ theorem IsSaturating.map_mul_mul_map (h : IsSaturating S g u) (k k' : GL n S) :
           (map S.val.toRingHom k : Matrix n n A) * ((g : Matrix n n A) * (u : Matrix n n A)) := by
       simp only [← Units.val_mul, mul_assoc, mul_inv_cancel_left]
     rw [h_mul]
-    exact mul_mem (val_map_mem k) h.mul_val_mem
+    exact mul_mem (Subalgebra.coe_map_val_mem_matrix k) h.mul_val_mem
   · -- `(k'⁻¹ u)⁻¹ = u⁻¹ k' = l k' + m k⁻¹ (k g k')`.
     rw [_root_.mul_inv_rev, inv_inv, Units.val_mul, hlm, Matrix.add_mul]
     simp only [Units.val_mul, Matrix.mul_assoc, Units.inv_mul_cancel_left]
@@ -277,36 +258,6 @@ theorem IsSaturating.fromBlocksGL {m : Type*} [Fintype m] [DecidableEq m] {g₁ 
       TauCeti.coe_fromBlocksGL, fromBlocks_multiply, fromBlocks_add]
     simp
 
-omit [DecidableEq n] in
-/-- For an idempotent `e`, `(e • a + (1 - e) • b) (e • c + (1 - e) • d) = e • a c + (1 - e) • b d`:
-matrices cut along `e` and `1 - e` multiply blockwise. -/
-private theorem smul_add_smul_mul_smul_add_smul {e : A} (he : IsIdempotentElem e)
-    (a b c d : Matrix n n A) :
-    (e • a + (1 - e) • b) * (e • c + (1 - e) • d) = e • (a * c) + (1 - e) • (b * d) := by
-  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.smul_mul, Matrix.mul_smul, smul_add,
-    smul_smul, he.eq, he.one_sub.eq, he.mul_one_sub_self, he.one_sub_mul_self, zero_smul,
-    add_zero, zero_add]
-
-/-- The matrix underlying `he.cutGL a * he.one_sub.cutGL b` is `e • a + (1 - e) • b`. -/
-private theorem val_cutGL_mul_cutGL {e : A} (he : IsIdempotentElem e) (a b : GL n A) :
-    ((he.cutGL a * he.one_sub.cutGL b : GL n A) : Matrix n n A) =
-      e • (a : Matrix n n A) + (1 - e) • (b : Matrix n n A) := by
-  have h := smul_add_smul_mul_smul_add_smul he (a : Matrix n n A) 1 1 b
-  rw [Matrix.mul_one, Matrix.one_mul] at h
-  rw [Units.val_mul, IsIdempotentElem.val_cutGL, IsIdempotentElem.val_cutGL, sub_sub_cancel,
-    add_comm (_ • (b : Matrix n n A)), h]
-
-/-- The matrix underlying the inverse of `he.cutGL a * he.one_sub.cutGL b` is
-`e • a⁻¹ + (1 - e) • b⁻¹`. -/
-private theorem val_inv_cutGL_mul_cutGL {e : A} (he : IsIdempotentElem e) (a b : GL n A) :
-    (((he.cutGL a * he.one_sub.cutGL b)⁻¹ : GL n A) : Matrix n n A) =
-      e • ((a⁻¹ : GL n A) : Matrix n n A) + (1 - e) • ((b⁻¹ : GL n A) : Matrix n n A) := by
-  have h := smul_add_smul_mul_smul_add_smul he 1 ((b⁻¹ : GL n A) : Matrix n n A)
-    ((a⁻¹ : GL n A) : Matrix n n A) 1
-  rw [Matrix.mul_one, Matrix.one_mul] at h
-  rw [_root_.mul_inv_rev, Units.val_mul, ← map_inv, ← map_inv, IsIdempotentElem.val_cutGL,
-    IsIdempotentElem.val_cutGL, sub_sub_cancel, add_comm ((1 - e) • _), h]
-
 /-- **Cutting along an idempotent.** Let `e ∈ S` be an idempotent. If `u₁` is saturating for
 `g₁` and `u₂` for `g₂`, then the matrix equal to `u₁` along `e` and to `u₂` along `1 - e` is
 saturating for the matrix equal to `g₁` along `e` and to `g₂` along `1 - e`. -/
@@ -319,12 +270,12 @@ theorem IsSaturating.cutGL_mul_cutGL {e : A} (he : IsIdempotentElem e) (heS : e 
       e • P + (1 - e) • Q ∈ S.matrix := fun i j ↦
     S.add_mem (S.mul_mem heS (hP i j)) (S.mul_mem (S.sub_mem (S.one_mem) heS) (hQ i j))
   refine ⟨?_, ?_, e • l₁ + (1 - e) • l₂, h_mem hl₁ hl₂, e • m₁ + (1 - e) • m₂, h_mem hm₁ hm₂, ?_⟩
-  · rw [val_cutGL_mul_cutGL]
+  · rw [he.val_cutGL_mul_cutGL]
     exact h_mem h₁.val_mem h₂.val_mem
-  · rw [val_cutGL_mul_cutGL, val_cutGL_mul_cutGL, smul_add_smul_mul_smul_add_smul he]
+  · rw [he.val_cutGL_mul_cutGL, he.val_cutGL_mul_cutGL, he.smul_add_smul_mul_smul_add_smul]
     exact h_mem h₁.mul_val_mem h₂.mul_val_mem
-  · rw [val_inv_cutGL_mul_cutGL, val_cutGL_mul_cutGL, smul_add_smul_mul_smul_add_smul he, hlm₁,
-      hlm₂, smul_add, smul_add]
+  · rw [he.val_inv_cutGL_mul_cutGL, he.val_cutGL_mul_cutGL, he.smul_add_smul_mul_smul_add_smul,
+      hlm₁, hlm₂, smul_add, smul_add]
     abel
 
 end Matrix.GeneralLinearGroup
