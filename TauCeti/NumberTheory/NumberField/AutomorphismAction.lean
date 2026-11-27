@@ -84,10 +84,10 @@ theorem algebraMap_restrictNormal_smul (σ : L ≃ₐ[K] L) (x : 𝓞 M) :
 
 variable {F : Type*} [Field F] [Algebra K F]
 
-/-- A group acting on `F` by ring automorphisms that commute with the `K`-action, such as
-`Gal(F/K)`, commutes with the `𝓞 K`-action on `F`. -/
-instance smulCommClass_ringOfIntegers {G : Type*} [Group G] [MulSemiringAction G F]
-    [SMulCommClass G K F] : SMulCommClass G (𝓞 K) F where
+/-- An action on `F` that commutes with the `K`-action, such as that of `Gal(F/K)`, commutes
+with the `𝓞 K`-action on `F`. -/
+instance smulCommClass_ringOfIntegers {G : Type*} [SMul G F] [SMulCommClass G K F] :
+    SMulCommClass G (𝓞 K) F where
   smul_comm g r x := by
     rw [← algebraMap_smul K r x, ← algebraMap_smul K r (g • x), smul_comm]
 
