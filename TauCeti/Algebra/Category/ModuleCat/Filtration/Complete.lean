@@ -22,6 +22,9 @@ module `M` (Mathlib's `IsAdicComplete`), the decreasing filtration `F^p = J^p �
 ## Main results
 
 * `CategoryTheory.FilteredObject.isComplete_ofSubmodules`: the element-wise criterion.
+* `CategoryTheory.FilteredObject.isExhaustive_adicFiltration`,
+  `CategoryTheory.FilteredObject.isSeparated_adicFiltration`: the `J`-adic filtration is
+  exhaustive, and separated when `M` is `J`-adically Hausdorff.
 * `CategoryTheory.FilteredObject.isComplete_adicFiltration`: the `J`-adic filtration of a
   `J`-adically complete module is complete.
 -/
@@ -92,11 +95,27 @@ noncomputable abbrev adicFiltration : FilteredObject (ModuleCat.{v} R) ℤᵒᵖ
   ofSubmodules (fun p : ℤᵒᵖ ↦ J ^ p.unop.toNat • (⊤ : Submodule R M)) fun _ _ f ↦
     Submodule.smul_mono_left (Ideal.pow_le_pow_right (Int.toNat_le_toNat (leOfHom f.unop)))
 
+/-- The steps `F^p` of the `J`-adic filtration with `p ≤ 0` are the whole module. -/
+theorem step_adicFiltration_of_nonpos {p : ℤ} (hp : p ≤ 0) :
+    (adicFiltration J M).step (op p) = ⊤ := by
+  rw [step_ofSubmodules, unop_op, Int.toNat_eq_zero.2 hp, pow_zero, Ideal.one_eq_top,
+    Submodule.top_smul, map_top]
+
+/-- The `J`-adic filtration is exhaustive: its step `F^0` is the whole module. -/
+theorem isExhaustive_adicFiltration : (adicFiltration J M).IsExhaustive :=
+  isExhaustive_of_step_eq_top _ (step_adicFiltration_of_nonpos J M le_rfl)
+
+/-- The `J`-adic filtration of a `J`-adically Hausdorff module is separated. -/
+theorem isSeparated_adicFiltration [IsHausdorff J M] : (adicFiltration J M).IsSeparated :=
+  (isSeparated_ofSubmodules_iff_forall_mem _ _).2 fun x hx ↦
+    IsHausdorff.haus (inferInstance : IsHausdorff J M) x fun n ↦ by
+      simpa [SModEq.sub_mem] using hx (op (n : ℤ))
+
 /-- **The `J`-adic filtration of a `J`-adically complete module is complete.** -/
 theorem isComplete_adicFiltration [IsAdicComplete J M] : (adicFiltration J M).IsComplete := by
   refine isComplete_ofSubmodules
-    (fun x hx ↦ IsHausdorff.haus (inferInstance : IsHausdorff J M) x fun n ↦ ?_) fun y hy ↦ ?_
-  · simpa [SModEq.sub_mem] using hx (op (n : ℤ))
+    ((isSeparated_ofSubmodules_iff_forall_mem _ _).1 (isSeparated_adicFiltration J M))
+    fun y hy ↦ ?_
   -- The representatives at the natural indices form a Cauchy sequence.
   obtain ⟨L, hL⟩ := IsPrecomplete.prec (inferInstance : IsPrecomplete J M)
     (f := fun n : ℕ ↦ y (op (n : ℤ))) fun {m n} hmn ↦ by

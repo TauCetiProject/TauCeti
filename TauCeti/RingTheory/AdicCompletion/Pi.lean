@@ -29,6 +29,8 @@ element or a Cauchy sequence of `A j` may be placed in the `j`-th coordinate.
 
 ## Main results
 
+* `Ideal.mem_span_singleton_pow_smul_top_iff`: membership in `(π)^n • ⊤` on the ring itself is
+  divisibility by `π ^ n`.
 * `TauCeti.mem_span_singleton_pow_smul_top_iff`: membership in `(π)^n • ⊤` on a product module is
   coordinatewise divisibility by `π ^ n`.
 * `AdicCompletion.pi_of`: the product of the completions of the factors receives the canonical
@@ -63,6 +65,11 @@ element or a Cauchy sequence of `A j` may be placed in the `j`-th coordinate.
 public section
 
 open AdicCompletion
+
+/-- On the ring itself, membership in `(π)^n • ⊤` is divisibility by `π ^ n`. -/
+theorem Ideal.mem_span_singleton_pow_smul_top_iff {R : Type*} [CommSemiring R] (π x : R) (n : ℕ) :
+    x ∈ ((Ideal.span {π}) ^ n • ⊤ : Submodule R R) ↔ π ^ n ∣ x := by
+  rw [Ideal.span_singleton_pow, smul_eq_mul, Ideal.mul_top, Ideal.mem_span_singleton]
 
 namespace TauCeti
 

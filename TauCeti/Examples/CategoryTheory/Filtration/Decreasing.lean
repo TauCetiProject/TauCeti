@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Filtration.Complete
+import TauCeti.RingTheory.AdicCompletion.Pi
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.RingTheory.Multiplicity
@@ -65,18 +66,10 @@ theorem not_isExhaustive_const_bot :
 
 /-! ### The `ℓ`-adic filtration of `ℤ` -/
 
-/-- An integer lies in the step `F^n = (ℓ)^n • ℤ` of the `ℓ`-adic filtration exactly when `ℓ^n`
-divides it. -/
-private theorem mem_span_singleton_pow_smul_top_iff {ℓ x : ℤ} {n : ℕ} :
-    x ∈ Ideal.span {ℓ} ^ n • (⊤ : Submodule ℤ ℤ) ↔ ℓ ^ n ∣ x := by
-  rw [Ideal.span_singleton_pow, smul_eq_mul, Ideal.mul_top, Ideal.mem_span_singleton]
-
 /-- The `ℓ`-adic filtration of `ℤ` is exhaustive: its step `F^0` is `ℤ`. -/
 theorem isExhaustive_adicFiltration (ℓ : ℤ) :
     (adicFiltration (Ideal.span {ℓ}) ℤ).IsExhaustive :=
-  isExhaustive_of_step_eq_top _ (i := op (0 : ℤ)) (by
-    rw [step_ofSubmodules, unop_op, Int.toNat_zero, pow_zero, Ideal.one_eq_top, Submodule.top_smul,
-      map_top])
+  FilteredObject.isExhaustive_adicFiltration _ _
 
 /-- The `ℓ`-adic filtration of `ℤ`, for `|ℓ| ≠ 1`, is separated: an integer divisible by every
 power of `ℓ` is `0`. -/
@@ -86,7 +79,7 @@ theorem isSeparated_adicFiltration {ℓ : ℤ} (hℓ : ℓ.natAbs ≠ 1) :
   by_contra h0
   refine FiniteMultiplicity.not_iff_forall.2 (fun k ↦ ?_) (Int.finiteMultiplicity_iff.2 ⟨hℓ, h0⟩)
   have := hn (op (k : ℤ))
-  rwa [unop_op, Int.toNat_natCast, mem_span_singleton_pow_smul_top_iff] at this
+  rwa [unop_op, Int.toNat_natCast, Ideal.mem_span_singleton_pow_smul_top_iff] at this
 
 /-- The partial sums `sₖ = ∑_{i < k} (-ℓ)^i` of the `ℓ`-adic expansion of `1 / (1 + ℓ)`. -/
 private def adicPartialSum (ℓ : ℤ) (k : ℕ) : ℤ :=
@@ -129,7 +122,7 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
             refine (comp_cokernel_π_stepι_ofSubmodules_eq_iff _ _ q (g _) (g _)).2 fun a ↦ ?_
             have h : s q.unop.toNat - s p.unop.toNat ∈
                 Ideal.span {ℓ} ^ q.unop.toNat • (⊤ : Submodule ℤ ℤ) := by
-              rw [mem_span_singleton_pow_smul_top_iff, ← dvd_neg, neg_sub]
+              rw [Ideal.mem_span_singleton_pow_smul_top_iff, ← dvd_neg, neg_sub]
               exact pow_dvd_adicPartialSum_sub ℓ (Int.toNat_le_toNat (leOfHom f.unop))
             simp only [g, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, ← smul_sub]
             exact Submodule.smul_mem _ a h } }
@@ -147,7 +140,7 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
     rw [quotientCone_π_app] at hfac
     have h' := (comp_cokernel_π_stepι_ofSubmodules_eq_iff _ _ (op (k : ℤ)) φ (g k)).1 hfac 1
     simp only [g, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, one_smul] at h'
-    rw [Int.toNat_natCast, mem_span_singleton_pow_smul_top_iff] at h'
+    rw [Int.toNat_natCast, Ideal.mem_span_singleton_pow_smul_top_iff] at h'
     have : (1 + ℓ) * n - 1 = (1 + ℓ) * (n - s k) - (-ℓ) ^ k := by
       have := one_add_mul_adicPartialSum ℓ k
       linear_combination this
