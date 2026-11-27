@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.RingTheory.Trace.Basic
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # Linear independence of the rows of an embeddings matrix
@@ -40,6 +41,8 @@ matrix in a basis and the embeddings matrix of that basis.
 * `Algebra.linearIndependent_embeddingsMatrix_row_iff`: the converse also holds.
 * `Module.Basis.embeddingsMatrix_eq_transpose_mul`: the embeddings matrix of `y` is the transposed
   coordinate matrix of `y` in a basis `b` times the embeddings matrix of `b`.
+* `Module.Basis.transpose_embeddingsMatrix_mul_traceDual`: the transpose of the embeddings
+  matrix is a left inverse of the embeddings matrix of the trace-dual basis.
 
 ## References
 
@@ -109,5 +112,33 @@ theorem embeddingsMatrix_eq_transpose_mul [Fintype ι] {A B : Type*} (C : Type*)
   ext a σ
   conv_lhs => rw [Algebra.embeddingsMatrix_apply, ← b.sum_repr (y a)]
   simp [Matrix.mul_apply, toMatrix_apply, Algebra.smul_def]
+
+open Classical in
+/-- Summing products of a basis and its trace-dual basis gives the identity matrix on the
+embeddings of a finite separable extension into any extension field of the base. -/
+theorem transpose_embeddingsMatrix_mul_traceDual [Fintype ι] [DecidableEq ι]
+    {K L : Type*} (Ω : Type*)
+    [Field K] [Field L] [Algebra K L] [Field Ω] [Algebra K Ω]
+    [FiniteDimensional K L] [Algebra.IsSeparable K L] (b : Basis ι K L) :
+    (Algebra.embeddingsMatrix K Ω b)ᵀ * Algebra.embeddingsMatrix K Ω b.traceDual = 1 := by
+  let E := AlgebraicClosure Ω
+  let e : ι ≃ (L →ₐ[K] E) :=
+    Fintype.equivOfCardEq ((Module.finrank_eq_card_basis b).symm.trans (AlgHom.card _ _ _).symm)
+  have h : (Algebra.embeddingsMatrix K E b)ᵀ * Algebra.embeddingsMatrix K E b.traceDual = 1 := by
+    apply (Matrix.mul_eq_one_comm_of_equiv e.symm).2
+    ext i j
+    simp only [Matrix.mul_apply, Matrix.transpose_apply, Algebra.embeddingsMatrix_apply,
+      ← map_mul, ← trace_eq_sum_embeddings E, b.trace_traceDual_mul, Matrix.one_apply]
+    simp [eq_comm]
+  let j : Ω →ₐ[K] E := IsScalarTower.toAlgHom K Ω E
+  ext σ τ
+  apply j.injective
+  have hστ := congrFun (congrFun h (j.comp σ)) (j.comp τ)
+  by_cases hEq : σ = τ
+  · subst τ
+    simpa [Matrix.mul_apply] using hστ
+  · have hcomp : j.comp σ ≠ j.comp τ := fun heq ↦ hEq <| AlgHom.ext fun x ↦
+      j.injective (DFunLike.congr_fun heq x)
+    simpa [Matrix.mul_apply, Matrix.one_apply, hEq, hcomp] using hστ
 
 end Module.Basis
