@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 
-import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
-import TauCeti.Analysis.Complex.EquivRealProd
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
@@ -157,32 +156,6 @@ private theorem norm_sub_sq_le_of_setIntegral_le (ω : SymplecticForm V) (hU : I
           (le_abs_self B) (sq_nonneg ε))) (le_max_right _ _)
     _ = max A 0 * |B| * ε ^ 2 := by ring
 
-omit [FiniteDimensional ℝ V] in
-/-- The weighted energy `∫_U (ρ ‖g‖² + ‖∂s g‖² + ‖∂t g‖²)` of a `C¹` field `g` supported in a
-compact subset `L` of `U`, on which the weight lies in `[0, R]` with `R ≥ 1`, is at most `R` times
-the `W^{1,2}` energy of `g` on `L`. -/
-private theorem setIntegral_weighted_le_mul_setIntegral_sobolevDensity (hU : MeasurableSet U)
-    {ρ : ℝ × ℝ → ℝ} {L : Set (ℝ × ℝ)} (hL : IsCompact L) (hLU : L ⊆ U) {R : ℝ} (hR : 1 ≤ R)
-    (hρ0 : ∀ z ∈ L, 0 ≤ ρ z) (hρL : ∀ z ∈ L, ρ z ≤ R)
-    {g : ℝ × ℝ → V →L[ℝ] ℝ} (hg : ContDiff ℝ 1 g) (hgL : tsupport g ⊆ L) :
-    ∫ z in U, (ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 + ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤
-      R * ∫ z in L, sobolevDensity g z := by
-  have hf0 (z : ℝ × ℝ) (hz : z ∉ L) :
-      ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 + ‖fderiv ℝ g z (0, 1)‖ ^ 2 = 0 := by
-    have hz' : z ∉ tsupport g := fun h ↦ hz (hgL h)
-    simp [image_eq_zero_of_notMem_tsupport hz', fderiv_of_notMem_tsupport ℝ hz']
-  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hU hLU fun z hz ↦ hf0 z hz.2,
-    ← integral_const_mul]
-  refine integral_mono_of_nonneg ((ae_restrict_iff' hL.measurableSet).2
-    (ae_of_all _ fun z hz ↦ by have := hρ0 z hz; positivity))
-    (((continuous_sobolevDensity hg).continuousOn.integrableOn_compact hL).const_mul R)
-    ((ae_restrict_iff' hL.measurableSet).2 (ae_of_all _ fun z hz ↦ ?_))
-  dsimp only
-  rw [sobolevDensity_apply]
-  simp only [stdComplexLineReal, stdComplexLineImag]
-  have h1 := mul_le_mul_of_nonneg_right (hρL z hz) (sq_nonneg ‖g z‖)
-  nlinarith [sq_nonneg ‖fderiv ℝ g z (1, 0)‖, sq_nonneg ‖fderiv ℝ g z (0, 1)‖]
-
 /-- **The weighted energy of a cut-off cokernel element.** Let `J` be `C¹` and `K_s`, `K_t` be
 `C²` along a map `u`, `C¹` on the open set `U`, with `J` compatible along `u` there, let `ρ` be a
 weight on `U`, and let `χ` be a `C²` cutoff with values in `[0, 1]` whose support is a compact
@@ -215,17 +188,34 @@ private theorem exists_integral_weighted_smul_le (ω : SymplecticForm V) {ρ : �
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hL
       (fun z hz ↦ hJ z (hLU hz)) (fun z hz ↦ hKs z (hLU hz)) (fun z hz ↦ hKt z (hLU hz))
       (fun z hz ↦ hu z (hLU hz)) (fun z hz ↦ hc z (hLU hz))
-  set R := max Rρ 1
+  set R := max Rρ 0 + 1
   set c := (M * (1 + B)) ^ 2
   refine ⟨R * (C' * (c + 1)), fun η hη hD hηi ↦ ?_⟩
   set g : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ χ z • η z
   have hg : ContDiff ℝ 2 g :=
     hη.contDiff_smul_of_tsupport_subset hρ.isOpen hχ.contDiffOn (hχL.trans hLU)
   have hgL : tsupport g ⊆ L := (tsupport_smul_subset_left χ η).trans hχL
-  have hW := setIntegral_weighted_le_mul_setIntegral_sobolevDensity hρ.isOpen.measurableSet hL hLU
-    (le_max_right Rρ 1) (fun z hz ↦ (hρ.pos z (hLU hz)).le)
-    (fun z hz ↦ (le_abs_self _).trans ((hRρ z hz).trans (le_max_left _ _)))
-    (hg.of_le one_le_two) hgL
+  -- The weighted energy of `g` lives on `L`, where the weight is at most `max Rρ 0`.
+  have hW : ∫ z in U, (ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 +
+      ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤ R * ∫ z in L, sobolevDensity g z := by
+    have hg1 := hg.of_le one_le_two
+    have := hg1.continuous_fderiv one_ne_zero
+    have := hg1.continuous
+    rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hρ.isOpen.measurableSet hLU
+      fun z hz ↦ by
+        have hz' : z ∉ tsupport g := fun h ↦ hz.2 (hgL h)
+        simp [image_eq_zero_of_notMem_tsupport hz', fderiv_of_notMem_tsupport ℝ hz']]
+    refine (ENNReal.ofReal_le_ofReal_iff (mul_nonneg (by positivity)
+      (setIntegral_nonneg hL.measurableSet fun z _ ↦ sobolevDensity_nonneg g z))).1 ?_
+    have hcont : ContinuousOn (fun z ↦ ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 +
+        ‖fderiv ℝ g z (0, 1)‖ ^ 2) L := by
+      refine (((hρ.continuousOn.mono hLU).mul ?_).add ?_).add ?_ <;> fun_prop
+    rw [ofReal_integral_eq_lintegral_ofReal (hcont.integrableOn_compact hL)
+      ((ae_restrict_iff' hL.measurableSet).2 (ae_of_all _ fun z hz ↦
+        add_nonneg (add_nonneg (mul_nonneg (hρ.pos z (hLU hz)).le (sq_nonneg _)) (sq_nonneg _))
+          (sq_nonneg _)))]
+    exact setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity hL (le_max_right _ _)
+      (fun z hz ↦ (le_abs_self _).trans ((hRρ z hz).trans (le_max_left _ _))) hg1
   -- Since `D_u^* η = 0`, the adjoint of `χ η` only involves the derivative of `χ`.
   have hpt (z : ℝ × ℝ) (hz : z ∈ L) :
       ‖ω.floerLinearizationAdjoint J' Ks Kt u g z‖ ^ 2 + ‖g z‖ ^ 2 ≤ (c + 1) * ‖η z‖ ^ 2 := by

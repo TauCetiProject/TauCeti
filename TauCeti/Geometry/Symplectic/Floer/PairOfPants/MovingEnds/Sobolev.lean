@@ -105,6 +105,11 @@ theorem movingEndsWeight_nonneg (c : ι → ℂ) (z : ℝ × ℝ) : 0 ≤ moving
   rw [movingEndsWeight_apply]
   positivity
 
+/-- The cylindrical weight of a sphere with moving input ends is positive everywhere. -/
+theorem movingEndsWeight_pos (c : ι → ℂ) (z : ℝ × ℝ) : 0 < movingEndsWeight c z := by
+  rw [movingEndsWeight_apply]
+  positivity
+
 /-- The cylindrical weight is a conformal weight on the sphere with moving input ends, the plane
 minus the centers `c i`: it is continuous and positive there. -/
 theorem isWeight_movingEndsWeight (c : ι → ℂ) :
@@ -118,9 +123,7 @@ theorem isWeight_movingEndsWeight (c : ι → ℂ) :
         pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 (hz i)))
     · exact (continuous_const.add (he.norm.pow 2)).continuousOn.inv₀ fun z _ ↦
         (add_pos_of_pos_of_nonneg one_pos (sq_nonneg _)).ne'
-  pos z _ := by
-    rw [movingEndsWeight_apply]
-    exact add_pos_of_nonneg_of_pos (Finset.sum_nonneg fun i _ ↦ by positivity) (by positivity)
+  pos z _ := movingEndsWeight_pos c z
 
 /-- The cylindrical weight is at least `|w - c i|⁻²` for every center `c i`. -/
 theorem inv_norm_sub_sq_le_movingEndsWeight (i : ι) (z : ℝ × ℝ) :
@@ -195,6 +198,26 @@ theorem movingEndsWeight_mul_norm_sub_sq_le (ha : ∀ i, a i ≠ 0)
 
 /-! ### The ends -/
 
+/-- At a point `w ≠ 0` with `2 |c i| ≤ |w|` for every center, the cylindrical weight `ρ` of the
+sphere with moving input ends satisfies `ρ(w) |w|² ≤ 4 |ι| + 1`. -/
+theorem movingEndsWeight_mul_norm_sq_le {z : ℝ × ℝ}
+    (hz0 : Complex.equivRealProdCLM.symm z ≠ 0)
+    (hz : ∀ i, 2 * ‖c i‖ ≤ ‖Complex.equivRealProdCLM.symm z‖) :
+    movingEndsWeight c z * ‖Complex.equivRealProdCLM.symm z‖ ^ 2 ≤ 4 * Fintype.card ι + 1 := by
+  set w := Complex.equivRealProdCLM.symm z
+  have hw : 0 < ‖w‖ := norm_pos_iff.2 hz0
+  have hi (i : ι) : (‖w - c i‖ ^ 2)⁻¹ * ‖w‖ ^ 2 ≤ 4 := by
+    have h : ‖w‖ / 2 ≤ ‖w - c i‖ := by linarith [hz i, norm_sub_norm_le w (c i)]
+    have hwc : 0 < ‖w - c i‖ := by linarith
+    rw [inv_mul_eq_div, div_le_iff₀ (by positivity)]
+    nlinarith
+  have h1 : (1 + ‖w‖ ^ 2)⁻¹ * ‖w‖ ^ 2 ≤ 1 := by
+    rw [inv_mul_eq_div, div_le_one (by positivity)]
+    linarith
+  rw [movingEndsWeight_apply, add_mul, Finset.sum_mul]
+  calc _ ≤ (∑ _i : ι, (4 : ℝ)) + 1 := add_le_add (Finset.sum_le_sum fun i _ ↦ hi i) h1
+    _ = _ := by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]; ring
+
 /-- **The weight near the output end.** At a point `w ≠ 0` with `2 |c i| ≤ |w|` for every center,
 the cylindrical weight of the sphere with moving input ends is at most `4 |ι| + 1` times the
 cylindrical weight `TauCeti.Floer.cylindricalWeight` of the pair of pants. -/
@@ -203,21 +226,13 @@ theorem movingEndsWeight_le_mul_cylindricalWeight {z : ℝ × ℝ}
     (hz : ∀ i, 2 * ‖c i‖ ≤ ‖Complex.equivRealProdCLM.symm z‖) :
     movingEndsWeight c z ≤ (4 * Fintype.card ι + 1) * cylindricalWeight z := by
   set w := Complex.equivRealProdCLM.symm z
-  have hw : 0 < ‖w‖ := norm_pos_iff.2 hz0
+  have : 0 < ‖w‖ ^ 2 := pow_pos (norm_pos_iff.2 hz0) 2
   have hcyl := inv_norm_sub_endCenter_sq_le_cylindricalWeight inf z
   rw [endCenter_inf, sub_zero] at hcyl
-  have hi (i : ι) : (‖w - c i‖ ^ 2)⁻¹ ≤ 4 * (‖w‖ ^ 2)⁻¹ := by
-    have h : ‖w‖ / 2 ≤ ‖w - c i‖ := by linarith [hz i, norm_sub_norm_le w (c i)]
-    have hwc : 0 < ‖w - c i‖ := by linarith
-    rw [← div_eq_mul_inv, inv_le_comm₀ (pow_pos hwc 2) (by positivity), inv_div]
-    nlinarith
-  have h1 : (1 + ‖w‖ ^ 2)⁻¹ ≤ (‖w‖ ^ 2)⁻¹ := inv_anti₀ (by positivity) (by linarith)
-  rw [movingEndsWeight_apply]
-  calc _ ≤ (∑ _i : ι, 4 * (‖w‖ ^ 2)⁻¹) + (‖w‖ ^ 2)⁻¹ :=
-        add_le_add (Finset.sum_le_sum fun i _ ↦ hi i) h1
-    _ = (4 * Fintype.card ι + 1) * (‖w‖ ^ 2)⁻¹ := by
-        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-        ring
+  calc movingEndsWeight c z = movingEndsWeight c z * ‖w‖ ^ 2 * (‖w‖ ^ 2)⁻¹ := by field_simp
+    _ ≤ (4 * Fintype.card ι + 1) * (‖w‖ ^ 2)⁻¹ := by
+        gcongr
+        exact movingEndsWeight_mul_norm_sq_le hz0 hz
     _ ≤ _ := by gcongr
 
 section Energy

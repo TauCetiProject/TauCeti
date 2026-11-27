@@ -13,7 +13,9 @@ import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Complex.RealChart
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.Chart
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
+import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
 # The linearized Floer operator on spheres with moving input ends is Fredholm
@@ -81,27 +83,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {ι : Type*} [Fintype ι] {c a : ι → ℂ}
 
 /-! ### The `L²` norm from the energies on the ends -/
-
-/-- The positive end chart of `q` is the real chart of `w ↦ φ_q(ε_q w)`, where `ε_q` is the sign
-of the end. -/
-private theorem positiveEndChart_eq_realChart (q : Puncture) :
-    positiveEndChart q = realChart fun w ↦ q.cylindricalEndLift ((q.endSign : ℂ) * w) := by
-  funext z
-  rw [positiveEndChart_apply, endChart_eq_realChart, realChart_apply, realChart_apply, map_smul,
-    Complex.real_smul]
-
-/-- Changing variables along a chart `φ` that is injective on `S`: if
-`|det dφ| F ∘ φ ≤ G` on `S`, then the lower integral of `F` over `φ(S)` is at most that of `G`
-over `S`. -/
-private theorem setLIntegral_image_le {φ : ℝ × ℝ → ℝ × ℝ} {S : Set (ℝ × ℝ)} (hS : MeasurableSet S)
-    (hφ : ∀ g : ℝ × ℝ → ℝ≥0∞, ∫⁻ w in φ '' S, g w =
-      ∫⁻ ζ in S, ENNReal.ofReal |(fderiv ℝ φ ζ).det| * g (φ ζ))
-    {F G : ℝ × ℝ → ℝ} (hpt : ∀ ζ ∈ S, |(fderiv ℝ φ ζ).det| * F (φ ζ) ≤ G ζ) :
-    ∫⁻ w in φ '' S, ENNReal.ofReal (F w) ≤ ∫⁻ ζ in S, ENNReal.ofReal (G ζ) := by
-  rw [hφ]
-  refine setLIntegral_mono' hS fun ζ hζ ↦ ?_
-  rw [← ENNReal.ofReal_mul (abs_nonneg _)]
-  exact ENNReal.ofReal_le_ofReal (hpt ζ hζ)
 
 omit [FiniteDimensional ℝ V] in
 /-- If `det dφ ‖η ∘ φ‖² ≤ (1 + ‖J‖)² ‖η'‖²` with `det dφ > 0` and `‖J‖ ≤ B`, then
@@ -207,9 +188,8 @@ private theorem setIntegral_norm_sq_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
     rw [← hφ] at h
     exact abs_det_mul_norm_sq_le_mul_sobolevDensity hdet h (norm_nonneg _) (hB _ hne)
   -- Cover the sphere by the truncation and the bands, and compare the lower integrals.
-  have hFi : Integrable fun z ↦ ‖g z‖ ^ 2 :=
-    Continuous.integrable_of_hasCompactSupport (f := fun z ↦ ‖g z‖ ^ 2)
-      (hg.continuous.norm.pow 2) (hgc.comp_left (g := fun v : V →L[ℝ] ℝ ↦ ‖v‖ ^ 2) (by simp))
+  have hFi : Integrable fun z ↦ ‖g z‖ ^ 2 := (memLp_two_iff_integrable_sq_norm
+    hg.continuous.aestronglyMeasurable).1 (hg.continuous.memLp_of_hasCompactSupport hgc)
   have hlin : ENNReal.ofReal (∫ z in {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i},
       ‖g z‖ ^ 2) ≤
       ENNReal.ofReal Ec + ((∑ i, ENNReal.ofReal ((1 + B) ^ 2 * E i)) +
@@ -226,16 +206,19 @@ private theorem setIntegral_norm_sq_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
       nlinarith [sq_nonneg ‖fderiv ℝ g z stdComplexLineReal‖,
         sq_nonneg ‖fderiv ℝ g z stdComplexLineImag‖]
     · rw [tsum_fintype]
-      refine Finset.sum_le_sum fun i _ ↦ (setLIntegral_image_le hS (fun G ↦
-        lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hS
-          (fun ζ _ ↦ (TauCeti.Complex.hasFDerivAt_realChart (hasDerivAt_add_mul_cylindricalEndLift
-            (c i) (a i) _)).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
-          ((injOn_realChart_add_mul_cylindricalEndLift (ha i)).mono
-            (prod_mono subset_rfl (by rw [zero_add]))) G) (hin i)).trans ?_
+      refine Finset.sum_le_sum fun i _ ↦ (lintegral_image_ofReal_le_of_abs_det_mul_le volume
+        hS.nullMeasurableSet
+        (fun ζ _ ↦ (TauCeti.Complex.hasFDerivAt_realChart (hasDerivAt_add_mul_cylindricalEndLift
+          (c i) (a i) _)).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
+        ((injOn_realChart_add_mul_cylindricalEndLift (ha i)).mono
+          (prod_mono subset_rfl (by rw [zero_add]))) (hin i)).trans ?_
       exact hband (integrableOn_sobolevDensity_covectorPullback_realChart_of_movingEnds ha hJ hu
         hg hgc hgU i T) (sobolevDensity_nonneg _)
-    · exact (setLIntegral_image_le hS (fun G ↦ lintegral_image_positiveEndChart inf
-        measurableSet_Ioi G) hon).trans (hband
+    · exact (lintegral_image_ofReal_le_of_abs_det_mul_le volume hS.nullMeasurableSet
+        (fun ζ _ ↦ ((contDiff_positiveEndChart inf 1).differentiable one_ne_zero
+          ζ).hasFDerivAt.hasFDerivWithinAt)
+        ((injOn_positiveEndChart inf 0).mono (prod_mono (subset_univ _) (by norm_num))) hon).trans
+        (hband
           (integrableOn_sobolevDensity_covectorPullback_positiveEndChart_of_movingEnds ha hJ hu hg
             hgc hgU T) (sobolevDensity_nonneg _))
   rw [← ENNReal.ofReal_sum_of_nonneg (fun i _ ↦ by have := hE0 i; positivity),
@@ -281,24 +264,13 @@ private theorem exists_forall_norm_le_of_movingEnds {ι : Type*} [Finite ι] {c 
     ∃ B, ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
       ‖(J z (u z)).toLinearMap.toContinuousLinearMap‖ ≤ B := by
   have := Fintype.ofFinite ι
-  -- Far out on an end the loops of `u` stay within `1` of the orbit, which is bounded.
-  have hend {y : ℝ → V} (hy : ContinuousOn y (Icc 0 1)) {Jq : ℝ → V → AlmostComplexStructure V}
-      (hJq : Continuous fun p : ℝ × V ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap)
-      {φ : ℝ × ℝ → ℝ × ℝ}
-      (hφ : TendstoUniformlyOn (fun s t ↦ u (φ (s, t))) y atTop (Icc 0 1)) :
-      ∃ S Bq, ∀ ζ : ℝ × ℝ, S ≤ ζ.1 → ζ.2 ∈ Icc (0 : ℝ) 1 →
-        ‖(Jq ζ.2 (u (φ ζ))).toLinearMap.toContinuousLinearMap‖ ≤ Bq := by
-    obtain ⟨S, hS⟩ := eventually_atTop.1 ((Metric.tendstoUniformlyOn_iff.1 hφ) 1 one_pos)
-    obtain ⟨X, hX⟩ := isCompact_Icc.exists_bound_of_continuousOn hy
-    obtain ⟨Bq, hBq⟩ := IsCompact.exists_bound_of_continuousOn
-      (isCompact_Icc.prod (isCompact_closedBall (0 : V) (X + 1))) hJq.continuousOn
-    refine ⟨S, Bq, fun ζ hζ ht ↦ hBq (ζ.2, u (φ ζ)) ⟨ht, ?_⟩⟩
-    have h := hS ζ.1 hζ ζ.2 ht
-    rw [Prod.mk.eta, dist_eq_norm] at h
-    rw [mem_closedBall_zero_iff]
-    linarith [hX ζ.2 ht, norm_sub_norm_le (u (φ ζ)) (y ζ.2), norm_sub_rev (y ζ.2) (u (φ ζ))]
-  choose S Bi hSB using fun i ↦ hend (hx i) (hJe i) (hux i)
-  obtain ⟨So, Bo, hSBo⟩ := hend hxout hJout huxout
+  -- Far out on an end `J` is bounded along the loops of `u`, which converge to the orbit.
+  choose Bi hBi using fun i ↦
+    isCompact_Icc.exists_eventually_forall_norm_le_of_tendstoUniformlyOn (hx i) (hJe i) (hux i)
+  choose S hSB using fun i ↦ eventually_atTop.1 (hBi i)
+  obtain ⟨Bo, hBo⟩ :=
+    isCompact_Icc.exists_eventually_forall_norm_le_of_tendstoUniformlyOn hxout hJout huxout
+  obtain ⟨So, hSBo⟩ := eventually_atTop.1 hBo
   set T : ℝ := 2 + ∑ i, |S i| + |So|
   have hsum : 0 ≤ ∑ i, |S i| := Finset.sum_nonneg fun i _ ↦ abs_nonneg _
   have hST (i : ι) : S i ≤ T := by
@@ -313,43 +285,18 @@ private theorem exists_forall_norm_le_of_movingEnds {ι : Type*} [Finite ι] {c 
   refine ⟨|B₀| + ∑ i, |Bi i| + |Bo|, fun z hz ↦ ?_⟩
   rcases subset_preimage_puncturedSphereTruncation_union ha T hz with hzT | hzi | hzo
   · linarith [hB₀ z hzT, le_abs_self B₀, abs_nonneg Bo]
-  · obtain ⟨i, ζ, hζ, rfl⟩ := mem_iUnion.1 hzi
-    have h1 : T < ζ.1 := hζ.1
-    rw [hJeq i ζ (by linarith)]
+  · obtain ⟨i, ⟨s, t⟩, hζ, rfl⟩ := mem_iUnion.1 hzi
+    have h1 : T < s := hζ.1
+    rw [hJeq i (s, t) (by linarith)]
     have := Finset.single_le_sum (f := fun i ↦ |Bi i|) (fun i _ ↦ abs_nonneg _) (Finset.mem_univ i)
-    linarith [hSB i ζ (by linarith [hST i]) (Ico_subset_Icc_self hζ.2), le_abs_self (Bi i),
+    linarith [hSB i s (by linarith [hST i]) t (Ico_subset_Icc_self hζ.2), le_abs_self (Bi i),
       abs_nonneg B₀, abs_nonneg Bo]
-  · obtain ⟨ζ, hζ, rfl⟩ := hzo
-    have h1 : T < ζ.1 := hζ.1
-    rw [hJoutq ζ (by linarith)]
-    linarith [hSBo ζ (by linarith) (Ico_subset_Icc_self hζ.2), le_abs_self Bo, abs_nonneg B₀]
+  · obtain ⟨⟨s, t⟩, hζ, rfl⟩ := hzo
+    have h1 : T < s := hζ.1
+    rw [hJoutq (s, t) (by linarith)]
+    linarith [hSBo s (by linarith) t (Ico_subset_Icc_self hζ.2), le_abs_self Bo, abs_nonneg B₀]
 
 /-! ### The weight of the adjoint estimate -/
-
-/-- The weight of the moving ends is positive everywhere. -/
-private theorem movingEndsWeight_pos (c : ι → ℂ) (z : ℝ × ℝ) : 0 < movingEndsWeight c z := by
-  rw [movingEndsWeight_apply]
-  positivity
-
-/-- At a point `w ≠ 0` with `2 |c i| ≤ |w|` for every center, `ρ(w) |w|² ≤ 4 |ι| + 1` for the
-weight `ρ` of the moving ends. -/
-private theorem movingEndsWeight_mul_norm_sq_le {z : ℝ × ℝ}
-    (hz0 : Complex.equivRealProdCLM.symm z ≠ 0)
-    (hz : ∀ i, 2 * ‖c i‖ ≤ ‖Complex.equivRealProdCLM.symm z‖) :
-    movingEndsWeight c z * ‖Complex.equivRealProdCLM.symm z‖ ^ 2 ≤ 4 * Fintype.card ι + 1 := by
-  set w := Complex.equivRealProdCLM.symm z
-  have hw : 0 < ‖w‖ := norm_pos_iff.2 hz0
-  have hi (i : ι) : (‖w - c i‖ ^ 2)⁻¹ * ‖w‖ ^ 2 ≤ 4 := by
-    have h : ‖w‖ / 2 ≤ ‖w - c i‖ := by linarith [hz i, norm_sub_norm_le w (c i)]
-    have hwc : 0 < ‖w - c i‖ := by linarith
-    rw [inv_mul_eq_div, div_le_iff₀ (by positivity)]
-    nlinarith
-  have h1 : (1 + ‖w‖ ^ 2)⁻¹ * ‖w‖ ^ 2 ≤ 1 := by
-    rw [inv_mul_eq_div, div_le_one (by positivity)]
-    linarith
-  rw [movingEndsWeight_apply, add_mul, Finset.sum_mul]
-  calc _ ≤ (∑ _i : ι, (4 : ℝ)) + 1 := add_le_add (Finset.sum_le_sum fun i _ ↦ hi i) h1
-    _ = _ := by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]; ring
 
 /-- **The weight of the adjoint estimate.** There is `K > 0` such that `K ρ⁻¹`, for the weight `ρ`
 of the moving ends, is at least the Jacobian weights `|p - c i|²` and `|p|²` of the end charts
@@ -405,6 +352,26 @@ private theorem measurable_movingEndsHeight (c : ι → ℂ) : Measurable (movin
   Complex.equivRealProdCLM.symm.continuous.norm.measurable.add
     (Finset.measurable_sum _ fun _ _ ↦ measurable_const.div
       (Complex.equivRealProdCLM.symm.continuous.sub continuous_const).norm.measurable)
+
+/-- A point of the plane minus the centers of height less than `n` satisfies `|w| < n` and
+`|w - c i| > 2 / n` for every `i`. -/
+private theorem norm_lt_and_forall_lt_of_movingEndsHeight_lt {z : ℝ × ℝ}
+    (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) {n : ℝ} (hn : 0 < n)
+    (hν : movingEndsHeight c z < n) :
+    ‖Complex.equivRealProdCLM.symm z‖ < n ∧
+      ∀ i, 2 / n < ‖Complex.equivRealProdCLM.symm z - c i‖ := by
+  rw [movingEndsHeight] at hν
+  have hs0 : 0 ≤ ∑ i, 2 / ‖Complex.equivRealProdCLM.symm z - c i‖ :=
+    Finset.sum_nonneg fun i _ ↦ by positivity
+  refine ⟨by linarith, fun i ↦ ?_⟩
+  have hpos : 0 < ‖Complex.equivRealProdCLM.symm z - c i‖ := norm_pos_iff.2 (sub_ne_zero.2 (hz i))
+  have hle := Finset.single_le_sum (f := fun i ↦ 2 / ‖Complex.equivRealProdCLM.symm z - c i‖)
+    (fun i _ ↦ by positivity) (Finset.mem_univ i)
+  have hlt : 2 / ‖Complex.equivRealProdCLM.symm z - c i‖ < n := by
+    linarith [norm_nonneg (Complex.equivRealProdCLM.symm z)]
+  rw [div_lt_iff₀ hpos] at hlt
+  rw [div_lt_iff₀ hn]
+  linarith
 
 /-- **Cutoffs on a sphere with moving input ends.** There is `M` such that for every large `n`
 there is a smooth `χ` with compact support in the plane minus the centers, equal to `1` where
@@ -549,51 +516,10 @@ private theorem exists_cutoff_of_movingEnds (ha : ∀ i, a i ≠ 0)
           add_le_add (hsθ z) (Finset.sum_le_sum fun i _ ↦ hsβ z hz i)
       _ = _ := by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   · rw [indicator_of_notMem (show z ∉ {z | (n : ℝ) ≤ movingEndsHeight c z} from hν)]
-    simp only [movingEndsHeight, not_le] at hν
-    have hs0 : 0 ≤ ∑ i, 2 / ‖Complex.equivRealProdCLM.symm z - c i‖ :=
-      Finset.sum_nonneg fun i _ ↦ by positivity
-    have h1 : ‖Complex.equivRealProdCLM.symm z‖ < n := by linarith
-    have h2 (i : ι) : 2 * (n : ℝ)⁻¹ < ‖Complex.equivRealProdCLM.symm z - c i‖ := by
-      have hpos : 0 < ‖Complex.equivRealProdCLM.symm z - c i‖ :=
-        norm_pos_iff.2 (sub_ne_zero.2 (hz i))
-      have hle := Finset.single_le_sum (f := fun i ↦ 2 / ‖Complex.equivRealProdCLM.symm z - c i‖)
-        (fun i _ ↦ by positivity) (Finset.mem_univ i)
-      have hlt : 2 / ‖Complex.equivRealProdCLM.symm z - c i‖ < n := by
-        linarith [norm_nonneg (Complex.equivRealProdCLM.symm z)]
-      rw [div_lt_iff₀ hpos] at hlt
-      nlinarith
-    rw [hθd0 z h1, Finset.sum_eq_zero fun i _ ↦ hβd2 _ ((h2 i).trans_le (hc' z i).ge), sub_zero,
+    obtain ⟨h1, h2⟩ := norm_lt_and_forall_lt_of_movingEndsHeight_lt hz hn0 (not_le.1 hν)
+    rw [hθd0 z h1, Finset.sum_eq_zero fun i _ ↦
+      hβd2 _ (((div_eq_mul_inv 2 (n : ℝ)).symm.trans_lt (h2 i)).trans_le (hc' z i).ge), sub_zero,
       norm_zero, mul_zero]
-
-/-- The formal adjoint `D_u^*` vanishes at a point near which the covector field vanishes. -/
-private theorem floerLinearizationAdjoint_eq_zero_of_eventuallyEq_zero (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ} (h : η =ᶠ[𝓝 z] 0) :
-    ω.floerLinearizationAdjoint J Ks Kt u η z = 0 := by
-  have h' : (fun w ↦ (η w).comp (J w (u w))) =ᶠ[𝓝 z] fun _ ↦ 0 :=
-    h.mono fun w hw ↦ by simp [hw]
-  rw [floerLinearizationAdjoint_def, h.fderiv_eq, h'.fderiv_eq, h.eq_of_nhds]
-  simp
-
-/-- A point of the plane minus the centers of height less than `n` satisfies `|w| ≤ n` and
-`|w - c i| ≥ 2 / n` for every `i`. -/
-private theorem norm_le_and_forall_le_of_movingEndsHeight_lt {z : ℝ × ℝ}
-    (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) {n : ℝ} (hn : 0 < n)
-    (hν : movingEndsHeight c z < n) :
-    ‖Complex.equivRealProdCLM.symm z‖ ≤ n ∧
-      ∀ i, 2 / n ≤ ‖Complex.equivRealProdCLM.symm z - c i‖ := by
-  rw [movingEndsHeight] at hν
-  have hs0 : 0 ≤ ∑ i, 2 / ‖Complex.equivRealProdCLM.symm z - c i‖ :=
-    Finset.sum_nonneg fun i _ ↦ by positivity
-  refine ⟨by linarith, fun i ↦ ?_⟩
-  have hpos : 0 < ‖Complex.equivRealProdCLM.symm z - c i‖ := norm_pos_iff.2 (sub_ne_zero.2 (hz i))
-  have hle := Finset.single_le_sum (f := fun i ↦ 2 / ‖Complex.equivRealProdCLM.symm z - c i‖)
-    (fun i _ ↦ by positivity) (Finset.mem_univ i)
-  have hlt : 2 / ‖Complex.equivRealProdCLM.symm z - c i‖ < n := by
-    linarith [norm_nonneg (Complex.equivRealProdCLM.symm z)]
-  rw [div_lt_iff₀ hpos] at hlt
-  rw [div_le_iff₀ hn]
-  linarith
 
 /-- **The weighted adjoint of a cut-off cokernel element.** Let `J` be `C¹` along a map `u`, `C¹`
 on the plane minus the centers, with `‖J(z, u z)‖ ≤ B` there, let `η` be `C¹` there with
@@ -672,8 +598,7 @@ private theorem mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : SymplecticFo
       simpa using hR0
   · have hz' : z ∉ tsupport fun z ↦ χ z • η z :=
       fun h ↦ hz (hχU (tsupport_smul_subset_left χ η h))
-    rw [hDdef, floerLinearizationAdjoint_eq_zero_of_eventuallyEq_zero ω
-      (notMem_tsupport_iff_eventuallyEq.1 hz'), norm_zero]
+    rw [hDdef, floerLinearizationAdjoint_of_notMem_tsupport hz', norm_zero]
     simpa using hR0
 
 /-- **The `L²` norm of a cokernel element is controlled on a truncation.** Under the hypotheses of
@@ -823,29 +748,26 @@ private theorem
   -- The cutoff costs at most `c₀ tail_n` in the weighted norm of the adjoint.
   have hHn : MeasurableSet {z | (n : ℝ) ≤ movingEndsHeight c z} :=
     measurableSet_le measurable_const (measurable_movingEndsHeight c)
-  have hW : ∫ z, Kw * (movingEndsWeight c z)⁻¹ * ‖ω.floerLinearizationAdjoint
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-      (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-        Complex.I) u g z‖ ^ 2 ≤ c₀ * tail n := by
+  set W := ∫ z, Kw * (movingEndsWeight c z)⁻¹ * ‖ω.floerLinearizationAdjoint
+    (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+    (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
+    (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
+      Complex.I) u g z‖ ^ 2 with hWdef
+  have hW : W ≤ c₀ * tail n := by
+    rw [hWdef]
     refine (integral_mono_of_nonneg
       (ae_of_all _ fun z ↦ by have := movingEndsWeight_pos c z; positivity)
       ((hFi.indicator hHn).const_mul c₀)
       (ae_of_all _ fun z ↦ mul_norm_floerLinearizationAdjoint_smul_sq_le ω hJ hu hB
         (hη.of_le one_le_two) hD (hχs.of_le one_le_two) hχU hKw.le hχd z)).trans_eq ?_
     rw [integral_const_mul, integral_indicator hHn]
-  have hW0 : 0 ≤ ∫ z, Kw * (movingEndsWeight c z)⁻¹ * ‖ω.floerLinearizationAdjoint
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-      (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-        Complex.I) u g z‖ ^ 2 :=
+  have hW0 : 0 ≤ W :=
     integral_nonneg fun z ↦ by have := movingEndsWeight_pos c z; positivity
   -- The `L²` norm of `g` on the sphere from the energies, and of `η` from that of `g`.
   have hL := setIntegral_norm_sq_le_of_movingEnds ha hsep hout hJ hu hB (hg.of_le one_le_two) hgc
     hgU (T := T) (by linarith)
-  have hgi : Integrable fun z ↦ ‖g z‖ ^ 2 :=
-    Continuous.integrable_of_hasCompactSupport (f := fun z ↦ ‖g z‖ ^ 2)
-      (hg.continuous.norm.pow 2) (hgc.comp_left (g := fun v : V →L[ℝ] ℝ ↦ ‖v‖ ^ 2) (by simp))
+  have hgi : Integrable fun z ↦ ‖g z‖ ^ 2 := (memLp_two_iff_integrable_sq_norm
+    hg.continuous.aestronglyMeasurable).1 (hg.continuous.memLp_of_hasCompactSupport hgc)
   have hind : Integrable ({z | (n : ℝ) ≤ movingEndsHeight c z}.indicator F) := hFi.indicator hHn
   have hηg : ∫ z in U, ‖η z‖ ^ 2 ≤ (∫ z in U, ‖g z‖ ^ 2) + tail n := by
     calc ∫ z in U, ‖η z‖ ^ 2 ≤ ∫ z in U, (‖g z‖ ^ 2 +
@@ -856,8 +778,8 @@ private theorem
           · have hFz : F z = ‖η z‖ ^ 2 := indicator_of_mem hz _
             rw [indicator_of_mem (show z ∈ {z | (n : ℝ) ≤ movingEndsHeight c z} from hν), hFz]
             linarith [sq_nonneg ‖g z‖]
-          · obtain ⟨h1, h2⟩ := norm_le_and_forall_le_of_movingEndsHeight_lt hz hn0 (not_le.1 hν)
-            simp only [g, hχ1 z h1 h2, one_smul]
+          · obtain ⟨h1, h2⟩ := norm_lt_and_forall_lt_of_movingEndsHeight_lt hz hn0 (not_le.1 hν)
+            simp only [g, hχ1 z h1.le fun i ↦ (h2 i).le, one_smul]
             linarith [indicator_nonneg (fun z (_ : z ∈ {z | (n : ℝ) ≤ movingEndsHeight c z}) ↦
               indicator_nonneg (fun z (_ : z ∈ U) ↦ sq_nonneg ‖η z‖) z) z]
       _ = (∫ z in U, ‖g z‖ ^ 2) + ∫ z in U, {z | (n : ℝ) ≤ movingEndsHeight c z}.indicator F z :=
@@ -885,11 +807,7 @@ private theorem
       fun z _ ↦ sobolevDensity_nonneg _ z
   have hm1 : 1 ≤ m := le_max_left _ _
   have hmB : (1 + B) ^ 2 ≤ m := le_max_right _ _
-  have hC : C * ((∫ z, Kw * (movingEndsWeight c z)⁻¹ * ‖ω.floerLinearizationAdjoint
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-      (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-        Complex.I) u g z‖ ^ 2) + P) ≤ max C 0 * (c₀ * tail n + P) :=
+  have hC : C * (W + P) ≤ max C 0 * (c₀ * tail n + P) :=
     (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)).trans
       (mul_le_mul_of_nonneg_left (by linarith) (le_max_right _ _))
   nlinarith [hP0, ht0, mul_le_mul_of_nonneg_right hmB hE0, mul_le_mul_of_nonneg_right hm1 hD0,
