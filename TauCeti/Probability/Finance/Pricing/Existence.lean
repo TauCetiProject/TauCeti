@@ -49,7 +49,13 @@ construction, whatever the sign of `r`.
 ## Terminal-data isomorphism, solution operator, and classical solvability
 
 This file packages `v ↦ (P v, v(·, t₁))` as a Banach-space isomorphism
-(`weightedLogSpotTerminalDataCLE`) via `realTerminalDataCLE`. At zero forcing this yields the
+(`weightedLogSpotTerminalDataCLE`, with underlying product map
+`weightedLogSpotTerminalDataCLE_toContinuousLinearMap`) via `realTerminalDataCLE`, and proves
+uniform operator-norm Schauder bounds for `t₁ - t₀ ≤ T₀`, `δ ≤ a`, `‖a‖, ‖r‖ ≤ K`
+(`exists_norm_weightedLogSpotTerminalDataCLE_symm_le`), Lipschitz dependence on `(a, r)`
+(`exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le`), and the pointwise exponential bound with
+forcing `|u(y, t)| ≤ exp (γ (t₁ - t)) (M + (t₁ - t) K)`
+(`abs_weightedLogSpotTerminalDataCLE_symm_apply_le`). At zero forcing this yields the
 homogeneous terminal solution operator `weightedLogSpotTerminalSolutionL`, its discounted supremum
 bound (`abs_weightedLogSpotTerminalSolutionL_le_exp_mul`), its spot-PDE identities in all three
 time-derivative conventions, and its discounted linear-growth bound. Finally, `halfSqVolatility`,
@@ -233,8 +239,16 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
             weightedLogSpotZerothOrderCoeff hα₁.le r'‖ ≤
         6 * (‖a - a'‖ + ‖r - r'‖) := by
     linarith [norm_nonneg (a - a'), norm_nonneg (r - r')]
-  dsimp only [weightedLogSpotTerminalDataCLE]
-  -- Bridge the `ContinuousLinearMap` norm/subtraction instances between here and `Line`.
+  have heq (x y : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (hx : ∀ p, δ ≤ x p) :
+      (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht x y ⟨δ, hδ, hx⟩).symm.toContinuousLinearMap =
+      (realTerminalDataCLE hα₀ hα₁ ht (weightedLogSpotSecondOrderCoeff x)
+        (weightedLogSpotFirstOrderCoeff hα₁.le x y) (weightedLogSpotZerothOrderCoeff hα₁.le y)
+        ⟨δ, hδ, fun p ↦ by simp [hx p]⟩).symm.toContinuousLinearMap := rfl
+  rw [heq a r ha, heq a' r' ha']
+  -- Bridge the instance diamond on `HolderSpace α (slab t₀ t₁) ℝ` between `Line`
+  -- (`HolderSpace.instNormedAddCommGroup` / `HolderSpace.instNormedSpace`) and `Existence`
+  -- (`HolderSpace.instNormedCommRing.toSeminormedAddCommGroup` / `instNormedSpaceReal`), which
+  -- propagates into the synthesized `Prod` and `ContinuousLinearMap` `Norm`/`Sub` instances.
   convert (hmid.trans (mul_le_mul_of_nonneg_left hsum hC)).trans_eq (mul_assoc _ _ _).symm using 1
 
 end TerminalDataCLE
@@ -250,7 +264,7 @@ theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (hα₀ 
     ((weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
       (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible :=
   ⟨weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨lam, hlam, ha⟩,
-    ContinuousLinearMap.ext fun u ↦ by simp [spatialTraceL_apply]⟩
+    weightedLogSpotTerminalDataCLE_toContinuousLinearMap⟩
 
 /-- **Existence and uniqueness of the classical price in the weighted Hölder class.** Let
 `0 < α < 1`, let the local variance rate `a = σ² / 2 ≥ lam > 0` and the rate `r` be fields in
@@ -343,11 +357,9 @@ theorem abs_weightedLogSpotTerminalSolutionL_le_exp_mul {hα₀ : 0 < α} {hα�
     {γ M : ℝ} (hr : ∀ p, -γ ≤ r p) (hγ : 0 ≤ γ) {g : CkHolderSpace 2 α ℝ ℝ} (hg : ∀ y, |g y| ≤ M)
     (p : slab (E := ℝ) t₀ t₁) :
     |weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ha g p| ≤ exp (γ * (t₁ - slabTime p)) * M := by
-  obtain ⟨lam, hlam, hle⟩ := ha
-  simpa using abs_le_exp_mul_mul_add_mul_of_abs_weightedLogSpotPricingOperatorL_le hα₁.le
-    (fun q ↦ hlam.le.trans (hle q)) hr hγ (M := M) (K := 0)
-    (weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a r ⟨lam, hlam, hle⟩ g)
-    (fun q ↦ by simp) (fun y ↦ by simpa using hg y) p
+  simpa [weightedLogSpotTerminalSolutionL_apply] using
+    abs_weightedLogSpotTerminalDataCLE_symm_apply_le (K := 0) hr hγ (0, g)
+      (fun _ ↦ by simp) hg p
 
 end TerminalSolution
 

@@ -234,6 +234,17 @@ theorem norm_compSpatialL_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1) :
     ‖compSpatialL α F hab e‖ ≤ 1 :=
   (norm_compSpatialL_le_of_norm_le α F hab le_rfl he).trans (by norm_num)
 
+/-- If `‖e‖ ≤ 1`, the change of spatial variables by `e` does not increase the parabolic Hölder
+norm. -/
+theorem norm_compSpatialL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
+    (u : ParabolicC2HolderSpace α E' F hab) :
+    ‖compSpatialL α F hab e u‖ ≤ ‖u‖ := by
+  -- `le_of_opNorm_le` uses `SeminormedAddCommGroup.toNorm`, while the goal uses
+  -- `NormedAddCommGroup.toNorm`; `ParabolicC2HolderSpace`'s instance body is private across
+  -- `module`, so `convert ... using 1` bridges the two norm projections.
+  convert ((compSpatialL α F hab e).le_of_opNorm_le
+    (norm_compSpatialL_le_one α F hab he) u).trans_eq (one_mul _) using 1
+
 /-- The change of spatial variables by the identity does nothing. -/
 @[simp]
 theorem compSpatialL_id (u : ParabolicC2HolderSpace α E F hab) :
@@ -269,29 +280,20 @@ theorem compSpatialCLE_symm_apply (e : E ≃L[ℝ] E') (v : ParabolicC2HolderSpa
     (compSpatialCLE α F hab e).symm v = compSpatialL α F hab (e.symm : E' →L[ℝ] E) v :=
   (rfl)
 
-private theorem norm_compSpatialL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
-    (u : ParabolicC2HolderSpace α E' F hab) :
-    ‖compSpatialL α F hab e u‖ ≤ ‖u‖ := by
-  convert ((compSpatialL α F hab e).le_of_opNorm_le
-    (norm_compSpatialL_le_one α F hab he) u).trans_eq (one_mul _)
-
 private theorem compSpatialCLE_toLinearEquiv_apply (e : E ≃ₗᵢ[ℝ] E')
     (u : ParabolicC2HolderSpace α E' F hab) :
     (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv u =
       compSpatialL α F hab e.toLinearIsometry.toContinuousLinearMap u := by
-  have he : (e.toContinuousLinearEquiv : E →L[ℝ] E') =
-      e.toLinearIsometry.toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
-  rw [ContinuousLinearEquiv.coe_toLinearEquiv, compSpatialCLE_apply, he]
+  rw [ContinuousLinearEquiv.coe_toLinearEquiv, compSpatialCLE_apply,
+    e.toContinuousLinearMap_toLinearIsometry]
 
 private theorem compSpatialCLE_toLinearEquiv_symm_apply (e : E ≃ₗᵢ[ℝ] E')
     (v : ParabolicC2HolderSpace α E F hab) :
     (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv.symm v =
       compSpatialL α F hab e.symm.toLinearIsometry.toContinuousLinearMap v := by
-  have he' : (e.toContinuousLinearEquiv.symm : E' →L[ℝ] E) =
-      e.symm.toLinearIsometry.toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
-  rw [ContinuousLinearEquiv.coe_symm_toLinearEquiv, compSpatialCLE_symm_apply, he']
+  rw [ContinuousLinearEquiv.coe_symm_toLinearEquiv, compSpatialCLE_symm_apply,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+    e.symm.toContinuousLinearMap_toLinearIsometry]
 
 variable (α F hab) in
 /-- The change of spatial variables `u ↦ u ∘ (e × id)` by a linear isometric equivalence
@@ -328,8 +330,9 @@ theorem compSpatialLIE_symm_apply (e : E ≃ₗᵢ[ℝ] E') (v : ParabolicC2Hold
 theorem compSpatialLIE_apply_apply (e : E ≃ₗᵢ[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab)
     (p : slab (E := E) a b) :
     compSpatialLIE α F hab e u p = u (slabSpaceIsometryEquiv e.toIsometryEquiv p) := by
-  rw [compSpatialLIE_apply, compSpatialL_apply, slabSpaceIsometryEquiv_apply]
-  congr 1
+  rw [compSpatialLIE_apply, compSpatialL_apply, slabSpaceIsometryEquiv_apply,
+    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
+    LinearIsometryEquiv.coe_toIsometryEquiv]
 
 /-- The inverse of `compSpatialLIE α F hab e` is `compSpatialLIE α F hab e.symm`. -/
 @[simp]

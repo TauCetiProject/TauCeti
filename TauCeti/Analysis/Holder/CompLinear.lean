@@ -283,6 +283,13 @@ theorem norm_compLinearL_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1) :
         (by positivity) (by positivity)
     _ = 1 := by simp
 
+/-- Precomposing a `C^{k,α}` function with a linear map of norm at most `1` does not increase its
+norm. -/
+theorem norm_compLinearL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
+    (f : CkHolderSpace k α E' F) :
+    ‖compLinearL e f‖ ≤ ‖f‖ :=
+  ((compLinearL e).le_of_opNorm_le (norm_compLinearL_le_one he) f).trans_eq (one_mul _)
+
 @[simp]
 theorem compLinearL_id (f : CkHolderSpace k α E F) : compLinearL (.id ℝ E) f = f :=
   ext fun _ ↦ by simp
@@ -311,11 +318,6 @@ theorem compLinearCLE_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E' F) :
 theorem compLinearCLE_symm_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E F) :
     (compLinearCLE e).symm f = compLinearL (e.symm : E' →L[ℝ] E) f :=
   (rfl)
-
-private theorem norm_compLinearL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
-    (f : CkHolderSpace k α E' F) :
-    ‖compLinearL e f‖ ≤ ‖f‖ :=
-  ((compLinearL e).le_of_opNorm_le (norm_compLinearL_le_one he) f).trans_eq (one_mul _)
 
 /-- Isometric linear coordinate changes on bounded `C^{k,α}` functions, as a linear isometric
 equivalence. -/

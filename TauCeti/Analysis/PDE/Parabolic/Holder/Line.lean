@@ -31,7 +31,13 @@ problem with variable Hölder coefficients from `ℝ¹` to the line:
 * by time reversal, so is the terminal-data map `u ↦ (P_back u, u(·, t₁))` of the backward
   operator `P_back u = ∂ₜu + A·D_x²u + B·D_xu + C·u` on every slab `ℝ × [t₀, t₁]`
   (`ParabolicC2HolderSpace.realTerminalDataCLE`,
-  `ParabolicC2HolderSpace.isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real`).
+  `ParabolicC2HolderSpace.isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real`);
+* for `0 < lam ≤ a`, `‖A‖, ‖B‖, ‖C‖ ≤ K`, and horizon/duration at most `T₀`, both solution
+  operators are uniformly bounded in operator norm and Lipschitz in `(A, B, C)`
+  (`ParabolicC2HolderSpace.exists_norm_realInitialDataCLE_symm_le`,
+  `ParabolicC2HolderSpace.exists_norm_realInitialDataCLE_symm_sub_le`,
+  `ParabolicC2HolderSpace.exists_norm_realTerminalDataCLE_symm_le`,
+  `ParabolicC2HolderSpace.exists_norm_realTerminalDataCLE_symm_sub_le`).
 
 As for the Euclidean theorems, `0 < α < 1`, and no sign condition on the lower-order coefficients
 is needed. One-dimensional problems, such as the weighted pricing equation in log-spot
@@ -257,21 +263,20 @@ private theorem realInitialDataCLE_symm_eq {T : ℝ≥0} (hα₀ : 0 < α) (hα�
           (hA.elim fun lam h ↦ ⟨lam, h.1, ellipticity_evalCoord h.2⟩)).symm.toContinuousLinearMap ∘L
         (dataCoordBridgeLIE (α := α) 0 T : _ →L[ℝ] _) :=
   ContinuousLinearMap.ext fun d ↦ by
-    have he₁ : (coordLIE.toContinuousLinearEquiv.symm :
-        ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1)) = coordLIE.symm.toLinearIsometry.toContinuousLinearMap :=
-      ContinuousLinearMap.ext fun _ ↦ rfl
-    have he₂ : (coordLIE.toContinuousLinearEquiv :
-        EuclideanSpace ℝ (Fin 1) →L[ℝ] ℝ) = coordLIE.toLinearIsometry.toContinuousLinearMap :=
-      ContinuousLinearMap.ext fun _ ↦ rfl
     simp only [realInitialDataCLE, dataCoordBridgeCLE, dataCoordBridgeLIE,
       ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
       ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
       ContinuousLinearEquiv.prodCongr_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       LinearIsometryEquiv.prodCongr_apply, compSpatialCLE_symm_apply, compSpatialLIE_symm,
       compSpatialLIE_apply, CkHolderSpace.compLinearCLE_apply, CkHolderSpace.compLinearLIE_apply]
-    rw [he₁, he₂]
+    rw [← LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+      ← coordLIE.symm.toContinuousLinearMap_toLinearIsometry,
+      ← coordLIE.toContinuousLinearMap_toLinearIsometry]
 
-/-- **Uniform Schauder estimate for the initial-value problem on the line.** -/
+/-- **Uniform Schauder estimate for the initial-value problem on the line.** For `0 < α < 1`, an
+ellipticity constant `lam > 0`, a bound `K` on the Hölder norms of the coefficients and a bound `T₀`
+on the horizon, the solution operators of the initial-value problems on `ℝ × [0, T]`, `T ≤ T₀`, are
+bounded uniformly in operator norm. -/
 theorem exists_norm_realInitialDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ}
     (hlam : 0 < lam) (K T₀ : ℝ≥0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
@@ -293,7 +298,9 @@ theorem exists_norm_realInitialDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α < 
     (fun _ ↦ (norm_evalCoord_le B ContinuousLinearMap.norm_id_le).trans hBk)
     ((norm_evalCoord_le C₀ norm_one.le).trans hCk)
 
-/-- **Lipschitz dependence of the line initial-value solution operator on `(A, B, C)`.** -/
+/-- **Lipschitz dependence of the line initial-value solution operator on `(A, B, C)`.** Under the
+bounds of `exists_norm_realInitialDataCLE_symm_le`, the solution operators for `(A, B, C)` and
+`(A', B', C')` differ in operator norm by at most `C (‖A - A'‖ + ‖B - B'‖ + ‖C - C'‖)`. -/
 theorem exists_norm_realInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : α < 1) {lam : ℝ}
     (hlam : 0 < lam) (K T₀ : ℝ≥0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
@@ -310,10 +317,6 @@ theorem exists_norm_realInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : �
   obtain ⟨C, hC, hest⟩ :=
     exists_norm_euclideanInitialDataCLE_symm_sub_le (ι := Fin 1) hα₀ hα₁ hlam K T₀
   refine ⟨C, hC, fun T hT hTT₀ A A' B B' C₀ C₀' hA hA' hAk hBk hCk hAk' hBk' hCk' ↦ ?_⟩
-  rw [realInitialDataCLE_symm_eq, realInitialDataCLE_symm_eq,
-    ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp,
-    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
-    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
   have hmid := hest T hT hTT₀ _ _ _ _ _ _
     (ellipticity_evalCoord hA) (ellipticity_evalCoord hA')
     (fun _ _ ↦ (norm_evalCoord_le A (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)).trans hAk)
@@ -323,16 +326,30 @@ theorem exists_norm_realInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : �
     (fun _ ↦ (norm_evalCoord_le B' ContinuousLinearMap.norm_id_le).trans hBk')
     ((norm_evalCoord_le C₀' norm_one.le).trans hCk')
   simp only [Finset.univ_unique, Finset.sum_singleton, evalCoord_sub] at hmid
+  have heq (X : HolderSpace α (slab (E := ℝ) 0 T) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
+      (Y : HolderSpace α (slab (E := ℝ) 0 T) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
+      (Z : HolderSpace α (slab (E := ℝ) 0 T) (ℝ →L[ℝ] ℝ))
+      (hX : ∀ p, lam ≤ X p (ContinuousLinearMap.mul ℝ ℝ)) :
+      (euclideanInitialDataCLE hα₀ hα₁ hT (evalA X) (evalB Y) (evalCoord Z 1)
+        ((⟨lam, hlam, hX⟩ : ∃ l, 0 < l ∧ ∀ p, l ≤ X p (ContinuousLinearMap.mul ℝ ℝ)).elim
+          fun l h ↦ ⟨l, h.1, ellipticity_evalCoord h.2⟩)).symm.toContinuousLinearMap =
+      (euclideanInitialDataCLE hα₀ hα₁ hT (evalA X) (evalB Y) (evalCoord Z 1)
+        ⟨lam, hlam, ellipticity_evalCoord hX⟩).symm.toContinuousLinearMap := rfl
+  rw [realInitialDataCLE_symm_eq, realInitialDataCLE_symm_eq, heq A B C₀ hA, heq A' B' C₀' hA',
+    ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp,
+    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
   have hδ : ‖evalCoord (A - A') (ContinuousLinearMap.mul ℝ ℝ)‖ +
         ‖evalCoord (B - B') (ContinuousLinearMap.id ℝ ℝ)‖ + ‖evalCoord (C₀ - C₀') 1‖ ≤
       ‖A - A'‖ + ‖B - B'‖ + ‖C₀ - C₀'‖ :=
     add_le_add (add_le_add (norm_evalCoord_le (A - A') (ContinuousLinearMap.opNorm_mul_le ℝ ℝ))
       (norm_evalCoord_le (B - B') ContinuousLinearMap.norm_id_le))
       (norm_evalCoord_le (C₀ - C₀') norm_one.le)
-  calc _ ≤ C * (‖evalCoord (A - A') (ContinuousLinearMap.mul ℝ ℝ)‖ +
-          ‖evalCoord (B - B') (ContinuousLinearMap.id ℝ ℝ)‖ + ‖evalCoord (C₀ - C₀') 1‖) := by
-        convert hmid using 1
-    _ ≤ C * (‖A - A'‖ + ‖B - B'‖ + ‖C₀ - C₀'‖) := mul_le_mul_of_nonneg_left hδ hC
+  -- Bridge the product-space topology/norm instance diamond on
+  -- `HolderSpace α (slab 0 T) ℝ × CkHolderSpace 2 α (EuclideanSpace ℝ (Fin 1)) ℝ` between
+  -- `Solvability` (`instTopologicalSpaceProd`) and `opNorm_comp_linearIsometryEquiv`
+  -- (uniform product topology), as in `exists_norm_euclideanTerminalDataCLE_symm_sub_le`.
+  convert hmid.trans (mul_le_mul_of_nonneg_left hδ hC) using 1
 
 end InitialData
 
@@ -462,7 +479,7 @@ theorem isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real (hα₀ 
     ((backwardParabolicOperatorL (ht := ht) hα₁.le A B C).prod
       (spatialTraceL (F := ℝ) ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible :=
   ⟨realTerminalDataCLE hα₀ hα₁ ht A B C ⟨lam, hlam, hA⟩,
-    ContinuousLinearMap.ext fun u ↦ by simp [spatialTraceL_apply]⟩
+    realTerminalDataCLE_toContinuousLinearMap⟩
 
 private theorem realTerminalDataCLE_symm_eq (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
     (A : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
@@ -524,10 +541,6 @@ theorem exists_norm_realTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : 
   obtain ⟨C, hC, hest⟩ :=
     exists_norm_realInitialDataCLE_symm_sub_le (α := α) hα₀ hα₁ hlam K T₀
   refine ⟨C, hC, fun {t₀ t₁} ht hTT₀ A A' B B' C₀ C₀' hA hA' hAk hBk hCk hAk' hBk' hCk' ↦ ?_⟩
-  rw [realTerminalDataCLE_symm_eq, realTerminalDataCLE_symm_eq,
-    ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp,
-    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
-    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
   have hmid := hest (slabDuration ht) (slabDuration_pos ht) (by exact_mod_cast hTT₀)
     _ _ _ _ _ _ (ellipticity_revHolder ht hA) (ellipticity_revHolder ht hA')
     (((revHolderLIE ht).norm_map A).le.trans hAk)
@@ -537,7 +550,22 @@ theorem exists_norm_realTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : 
     (((revHolderLIE ht).norm_map B').le.trans hBk')
     (((revHolderLIE ht).norm_map C₀').le.trans hCk')
   simp only [← map_sub, (revHolderLIE ht).norm_map] at hmid
-  convert hmid using 1
+  have heq (X : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
+      (Y : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
+      (Z : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ))
+      (hX : ∀ p, lam ≤ X p (ContinuousLinearMap.mul ℝ ℝ)) :
+      (realInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
+        (revHolderLIE ht X) (revHolderLIE ht Y) (revHolderLIE ht Z)
+        ((⟨lam, hlam, hX⟩ : ∃ l, 0 < l ∧ ∀ p, l ≤ X p (ContinuousLinearMap.mul ℝ ℝ)).elim
+          fun l h ↦ ⟨l, h.1, ellipticity_revHolder ht h.2⟩)).symm.toContinuousLinearMap =
+      (realInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
+        (revHolderLIE ht X) (revHolderLIE ht Y) (revHolderLIE ht Z)
+        ⟨lam, hlam, ellipticity_revHolder ht hX⟩).symm.toContinuousLinearMap := rfl
+  rw [realTerminalDataCLE_symm_eq, realTerminalDataCLE_symm_eq, heq A B C₀ hA, heq A' B' C₀' hA',
+    ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp,
+    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+  exact hmid
 
 end TerminalData
 

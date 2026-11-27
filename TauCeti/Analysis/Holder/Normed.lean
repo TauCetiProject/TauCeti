@@ -41,9 +41,14 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
-* `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
-  at most `max 1 (K ^ α)`, and `TauCeti.HolderSpace.compIsometryEquivLIE`, precomposition with an
-  isometric equivalence, as a linear isometric equivalence.
+* `TauCeti.HolderSpace.castLIE`: transport along an equality of Hölder exponents as a linear
+  isometric equivalence.
+* `TauCeti.HolderSpace.compHolderL`: precomposition with a continuous `β`-Hölder map of constant
+  `K` into `HolderSpace (α * β)`, of operator norm at most `max 1 (K ^ α)`.
+* `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map (the `β = 1`
+  special case of `compHolderL`), of operator norm at most `max 1 (K ^ α)`, and
+  `TauCeti.HolderSpace.compIsometryEquivLIE`, precomposition with an isometric equivalence, as a
+  linear isometric equivalence.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
 * `TauCeti.HolderSpace.norm_le_mul_norm_of_apply_eq`: an element whose values are those of `g`
