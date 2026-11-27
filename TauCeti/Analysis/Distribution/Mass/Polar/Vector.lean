@@ -59,6 +59,8 @@ pairing that is not almost everywhere strongly measurable is `0` by convention.
 * `Distribution.locallyIntegrable_polarVector`: `η` is locally integrable for `‖T‖`.
 * `Distribution.ae_eq_polarVector`: a locally integrable field representing `T` against `‖T‖`
   is `η` almost everywhere.
+* `Distribution.hasLocallyFiniteMass_of_apply_eq_integral_inner`: a map represented against a
+  measure finite on compact sets by a field of norm one almost everywhere has locally finite mass.
 * `Distribution.massMeasure_eq_of_apply_eq_integral_inner`: a Radon measure `μ` against which
   `T` is represented by an almost everywhere strongly measurable field of norm one
   `μ`-almost everywhere is the mass measure of `T`.
@@ -296,7 +298,7 @@ variable {μ : Measure Ω} {η : Ω → F}
 omit [FiniteDimensional ℝ E] in
 /-- A map represented against a measure `μ` finite on compact sets by a field of norm one at
 `μ`-almost every point has locally finite mass. -/
-private theorem hasLocallyFiniteMass_of_apply_eq_integral_inner [IsFiniteMeasureOnCompacts μ]
+theorem hasLocallyFiniteMass_of_apply_eq_integral_inner [IsFiniteMeasureOnCompacts μ]
     (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1) (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) :
     HasLocallyFiniteMass T := by
   refine (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun K hK hKΩ => ?_

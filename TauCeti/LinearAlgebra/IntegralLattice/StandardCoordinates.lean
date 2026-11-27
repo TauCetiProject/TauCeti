@@ -52,6 +52,9 @@ Cartan matrix computable from that matrix alone.
   `ℤ`, a vector is recovered from its pairings `w` with the coordinate vectors as `M w / d`, and
   `d` times its norm is the value of the integral quadratic form `M` on `w`. For a Cartan matrix
   this computes in the weight lattice with an integral multiple of the inverse Cartan matrix.
+* `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_of_mul_eq_smul_one` and
+  `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_of_mul_eq_smul_one`: if `G M = d • 1` over
+  `ℤ` with `d ≠ 0`, the columns of `M / d` are the dual basis vectors.
 -/
 
 public section
@@ -75,6 +78,13 @@ theorem sum_mul_div_eq_ite (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d e
     exact Finset.sum_congr rfl fun j _ ↦ by ring
   rw [hsum, hcast]
   split_ifs <;> simp [hd']
+
+/-- If `G M = d • 1` over `ℤ` with `d ≠ 0`, the rational `i`-th column of `M / d` has row
+combinations `δ_{k, i}` against `G`. -/
+theorem sum_mul_apply_div_eq_ite_of_mul_eq_smul_one {M : Matrix ι ι ℤ} (hM : G * M = d • 1)
+    (i k : ι) : ∑ j, ((G k j : ℤ) : ℚ) * ((M j i : ℚ) / d) = if k = i then 1 else 0 :=
+  sum_mul_div_eq_ite G (fun j ↦ M j i) d hd i
+    (fun k ↦ by simpa [Matrix.mul_apply, Matrix.one_apply] using congrFun₂ hM k i) k
 
 end Matrix
 
@@ -270,6 +280,20 @@ theorem apply_eq_sum_mul_form_ofGramMatrix_basisFun_div (hd : d ≠ 0) (x : ι �
   simp_rw [← Finset.sum_mul, hjk, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
     ite_true]
   field_simp
+
+/-- If `G M = d • 1` over `ℤ` with `d ≠ 0`, the `i`-th column of `M / d` lies in the dual of the
+Gram-matrix lattice. -/
+theorem mem_ofGramMatrix_basisFun_dualCarrier_of_mul_eq_smul_one (hd : d ≠ 0) (i : ι) :
+    (fun j ↦ (M j i : ℚ) / d) ∈ (ofGramMatrix (Pi.basisFun ℚ ι) G hG).dualCarrier :=
+  mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite G hG _ i
+    (Matrix.sum_mul_apply_div_eq_ite_of_mul_eq_smul_one G d hd hM i)
+
+/-- If `G M = d • 1` over `ℤ` with `d ≠ 0`, the `i`-th column of `M / d` is the dual vector of the
+`i`-th coordinate: `y` pairs with it to `y i`. -/
+theorem form_ofGramMatrix_basisFun_of_mul_eq_smul_one (hd : d ≠ 0) (y : ι → ℚ) (i : ι) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form y (fun j ↦ (M j i : ℚ) / d) = y i :=
+  form_ofGramMatrix_basisFun_of_sum_eq_ite G hG _ i
+    (Matrix.sum_mul_apply_div_eq_ite_of_mul_eq_smul_one G d hd hM i) y
 
 open _root_.Matrix in
 /-- If `G M = d • 1` over `ℤ`, then `d` times the norm of a vector is the value of the

@@ -34,7 +34,8 @@ normalizer of `Γ` acts on `Γ \ ℍ` itself.
 * `Subgroup.quotientConjHomeomorph`: the homeomorphism `Γ \ ℍ ≃ₜ Γ' \ ℍ`, with
   `Subgroup.quotientConjHomeomorph_mk`, `Subgroup.quotientConjHomeomorph_symm`,
   `Subgroup.quotientConjHomeomorph_one` and `Subgroup.quotientConjHomeomorph_trans`.
-* `Subgroup.mdifferentiable_quotientConjHomeomorph`: it is holomorphic.
+* `Subgroup.mdifferentiable_quotientConjHomeomorph` and
+  `Subgroup.mdifferentiable_quotientConjHomeomorph_symm`: it and its inverse are holomorphic.
 
 ## References
 
@@ -108,5 +109,16 @@ theorem mdifferentiable_quotientConjHomeomorph [ProperlyDiscontinuousSMul Γ ℍ
   rw [hcomp]
   exact (mdifferentiable_quotientMk Γ' _).comp w
     ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) (M := ℍ) g).mdifferentiable (by simp) w)
+
+/-- **The inverse of the homeomorphism of coarse quotients induced by conjugation is
+holomorphic**: it is the homeomorphism induced by `g⁻¹` (`Subgroup.quotientConjHomeomorph_symm`).
+-/
+theorem mdifferentiable_quotientConjHomeomorph_symm [ProperlyDiscontinuousSMul Γ ℍ]
+    (h : ConjAct.toConjAct g • Γ = Γ') :
+    letI := TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq (X := ℍ) h
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (quotientConjHomeomorph h).symm := by
+  have := TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq (X := ℍ) h
+  rw [quotientConjHomeomorph_symm]
+  exact mdifferentiable_quotientConjHomeomorph _
 
 end Subgroup

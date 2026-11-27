@@ -45,7 +45,9 @@ correction by a power of a cycle for a permutation commuting with it. The set of
 cycle through `x` has `Function.minimalPeriod σ x` elements, counted by `Set.ncard`
 (`Equiv.Perm.ncard_setOf_sameCycle`, and `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle`
 for a single cycle through every point). Points over distinct classes of the cycle quotient are
-distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), the representatives `Quotient.out` of the
+`⟨σ⟩`-orbits pick exactly one point on every cycle
+(`Equiv.Perm.existsUnique_sameCycle_orbitRel_out`), every such class is nonempty
 (`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally, right
@@ -67,7 +69,8 @@ finite type sends as many points into a set as out of it
 function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), a
 permutation fixing every point except possibly one is the identity
 (`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`), and a type admitting a transposition is
-nontrivial (`Equiv.Perm.IsSwap.nontrivial`, `Equiv.Perm.IsSwap.two_le_card`).
+nontrivial (`Equiv.Perm.IsSwap.nontrivial`, `Equiv.Perm.IsSwap.two_le_card`). A transposition is
+an involution (`Equiv.Perm.IsSwap.mul_self_eq_one`).
 -/
 
 public section
@@ -213,6 +216,21 @@ theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
   · rintro ⟨g, hg⟩
     obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.property
     exact ⟨i, by rw [hi]; exact hg⟩
+
+/-- A point lies in the `⟨σ⟩`-orbit `ω` exactly when it lies on the cycle of `ω.out`. -/
+theorem sameCycle_orbitRel_out_iff {x : α}
+    {ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α} :
+    σ.SameCycle ω.out x ↔
+      (Quotient.mk'' x : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α) = ω := by
+  rw [σ.sameCycle_iff_mem_orbit_zpowers, ← MulAction.orbitRel_apply, ← Quotient.eq'',
+    Quotient.out_eq']
+
+/-- The representatives `Quotient.out` of the `⟨σ⟩`-orbits pick exactly one point on every
+cycle of `σ`. -/
+theorem existsUnique_sameCycle_orbitRel_out (x : α) :
+    ∃! ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α, σ.SameCycle ω.out x :=
+  ⟨Quotient.mk'' x, σ.sameCycle_orbitRel_out_iff.mpr rfl,
+    fun _ h ↦ (σ.sameCycle_orbitRel_out_iff.mp h).symm⟩
 
 /-- The number `Set.ncard {y | σ.SameCycle x y}` of points on the cycle of `σ` through `x` is
 `Function.minimalPeriod σ x`; a fixed point is a cycle of length one. If the cycle is infinite, then
@@ -377,6 +395,12 @@ theorem eq_one_of_forall_ne_apply_eq_self (x : α) (h : ∀ y ≠ x, σ y = y) :
     by_contra hne
     exact hne (σ.injective (h (σ y) hne))
   · exact h y hy
+
+variable {σ} in
+/-- A transposition is an involution. -/
+theorem IsSwap.mul_self_eq_one [DecidableEq α] (hσ : σ.IsSwap) : σ * σ = 1 := by
+  obtain ⟨a, b, -, rfl⟩ := hσ
+  exact swap_mul_self a b
 
 end Equiv.Perm
 

@@ -22,6 +22,8 @@ scalar comes out of `star (c • x) * (c • x)` as `‖c‖ ^ 2`, and in any st
 ## Main results
 
 * `TauCeti.star_mul_mul_polarization`: the polarization identity for `star u * x * c`.
+* `TauCeti.star_mul_polarization`, `TauCeti.mul_star_polarization`: the polarization identities
+  for `star u * c` and `c * star u`.
 * `TauCeti.star_smul_mul_smul`: `star (c • x) * (c • x) = ‖c‖ ^ 2 • (star x * x)`.
 * `TauCeti.star_add_mul_add_add_star_sub_mul_sub`: the parallelogram identity
   `star (x + y) * (x + y) + star (x - y) * (x - y) = 2 • (star x * x + star y * y)`.
@@ -51,6 +53,28 @@ theorem star_mul_mul_polarization (u x c : A) :
   simp only [star_add, star_sub, star_smul, Complex.star_def, Complex.conj_I, add_mul, sub_mul,
     mul_add, mul_sub, smul_mul_assoc, mul_smul_comm, smul_add, smul_sub, smul_smul, neg_smul,
     neg_mul, smul_neg, Complex.I_mul_I]
+  module
+
+/-- Polarization without a middle factor: `4 • (star u * c)` is the sum over `k` of
+`Iᵏ • (star (c + Iᵏ • u) * (c + Iᵏ • u))`. -/
+theorem star_mul_polarization (u c : A) :
+    (4 : ℂ) • (star u * c) =
+      star (c + u) * (c + u) + Complex.I • (star (c + Complex.I • u) * (c + Complex.I • u)) -
+        star (c - u) * (c - u) - Complex.I • (star (c - Complex.I • u) * (c - Complex.I • u)) := by
+  simp only [star_add, star_sub, star_smul, Complex.star_def, Complex.conj_I, add_mul, sub_mul,
+    mul_add, mul_sub, smul_mul_assoc, mul_smul_comm, smul_add, smul_sub, smul_smul, neg_smul,
+    neg_mul, smul_neg, Complex.I_mul_I]
+  module
+
+/-- Polarization for the products `c * star u`: `4 • (c * star u)` is the sum over `k` of
+`Iᵏ • ((c + Iᵏ • u) * star (c + Iᵏ • u))`. -/
+theorem mul_star_polarization (u c : A) :
+    (4 : ℂ) • (c * star u) =
+      (c + u) * star (c + u) + Complex.I • ((c + Complex.I • u) * star (c + Complex.I • u)) -
+        (c - u) * star (c - u) - Complex.I • ((c - Complex.I • u) * star (c - Complex.I • u)) := by
+  simp only [star_add, star_sub, star_smul, Complex.star_def, Complex.conj_I, add_mul, sub_mul,
+    mul_add, mul_sub, smul_mul_assoc, mul_smul_comm, smul_add, smul_sub, smul_smul, neg_smul,
+    mul_neg, smul_neg, Complex.I_mul_I]
   module
 
 /-- A complex scalar comes out of `star (c • x) * (c • x)` as `‖c‖ ^ 2`. -/

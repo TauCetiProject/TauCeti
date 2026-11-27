@@ -10,7 +10,7 @@ import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.LocallyConstant.Preconnected
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The spectral flow of a path of operators on a compactly embedded common domain
@@ -61,6 +61,11 @@ potentials `TauCeti.IsSpectralFlowPotential` of the bounded spectral flow in
   (`TauCeti.domainSpectralFlow_comp_neg`).
 * A path of invertible operators `A t : D → H` has no spectral flow
   (`TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`): every transform is invertible.
+  Nor has a constant path (`TauCeti.domainSpectralFlow_eq_zero_of_forall_eq`).
+* Paths with the same potentials, possibly on different spaces, have the same spectral flow
+  (`TauCeti.domainSpectralFlow_eq_of_isDomainSpectralFlowPotential_iff`). In particular it is
+  unchanged by changes of trivialization (`TauCeti.domainSpectralFlow_comp_comp_symm`, in
+  `TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Conjugation`).
 * It extends the bounded spectral flow: on a finite-dimensional space, with `D = H` and `ι = 1`,
   every path of self-adjoint operators qualifies, and its spectral flow is
   `TauCeti.spectralFlow A a b` (`TauCeti.domainSpectralFlow_one`). Then `τ_c A` is the image
@@ -86,11 +91,14 @@ here.
 * `TauCeti.domainSpectralFlow_eq_sub`: the spectral flow is the increment of any potential.
 * `TauCeti.domainSpectralFlow_eq_spectralFlow_shiftedResolventTransform`: the spectral flow over
   an interval with a single admissible shift.
+* `TauCeti.domainSpectralFlow_eq_of_isDomainSpectralFlowPotential_iff`: paths with the same
+  potentials have the same spectral flow.
 * `TauCeti.domainSpectralFlow_add_adjacent_intervals`: concatenation.
 * `TauCeti.IsDomainSpectralFlowPotential.comp_of_mapsTo`: potentials of reparametrized paths.
 * `TauCeti.domainSpectralFlow_comp_of_mapsTo`, `TauCeti.domainSpectralFlow_comp_of_mapsTo_of_ge`,
   `TauCeti.domainSpectralFlow_comp_neg`: reparametrization and reversal.
 * `TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`: paths of invertible operators.
+* `TauCeti.domainSpectralFlow_eq_zero_of_forall_eq`: constant paths.
 * `TauCeti.domainSpectralFlow_one`: comparison with the bounded spectral flow in finite
   dimensions.
 
@@ -151,7 +159,7 @@ omit [NormedAlgebra ℝ (H →L[𝕜] H)]
 /-- Along an interval with an admissible shift `c ≠ 0`, the shifted resolvent transforms at `c`
 of a continuous path of operators symmetric through a compact `ι` form a continuous path of
 self-adjoint Fredholm operators. -/
-private theorem regular_shiftedResolventTransform {s : Set ℝ} {c : ℝ}
+theorem regular_shiftedResolventTransform {s : Set ℝ} {c : ℝ}
     (hι : IsCompactOperator ι) (hA : ContinuousOn A s)
     (hsymm : ∀ t ∈ s, ∀ x y, ⟪A t x, ι y⟫ = ⟪ι x, A t y⟫) (hc : c ≠ 0)
     (hinv : ∀ u ∈ s, ((c : 𝕜) • ι - A u).IsInvertible) :
@@ -335,6 +343,21 @@ theorem domainSpectralFlow_congr {B : ℝ → D →L[𝕜] H} {a b : ℝ} (h : E
   unfold domainSpectralFlow
   rw [hpot]
 
+/-- **Comparison of spectral flows.** Two paths on common domains, possibly embedded in different
+Hilbert spaces, with the same spectral flow potentials on `[a, b]` have the same spectral flow. No
+regularity of either path is assumed. -/
+theorem domainSpectralFlow_eq_of_isDomainSpectralFlowPotential_iff {D' K : Type*}
+    [NormedAddCommGroup D'] [NormedSpace 𝕜 D'] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K]
+    [CompleteSpace K] [NormedAlgebra ℝ (K →L[𝕜] K)]
+    [IsometricContinuousFunctionalCalculus ℝ (K →L[𝕜] K) IsSelfAdjoint] {ι' : D' →L[𝕜] K}
+    {B : ℝ → D' →L[𝕜] K} {a b : ℝ}
+    (h : ∀ F, IsDomainSpectralFlowPotential ι' B a b F ↔ IsDomainSpectralFlowPotential ι A a b F) :
+    domainSpectralFlow ι' B a b = domainSpectralFlow ι A a b := by
+  have hpot : IsDomainSpectralFlowPotential ι' B a b = IsDomainSpectralFlowPotential ι A a b :=
+    funext fun F ↦ propext (h F)
+  unfold domainSpectralFlow
+  rw [hpot]
+
 /-- The spectral flow over a single time vanishes. -/
 @[simp]
 theorem domainSpectralFlow_self (ι : D →L[𝕜] H) (A : ℝ → D →L[𝕜] H) (a : ℝ) :
@@ -503,6 +526,19 @@ theorem domainSpectralFlow_comp_neg {a b : ℝ} (hab : a ≤ b) (hA : Continuous
     hA hsymm h₀
   rw [neg_neg, neg_neg] at h
   exact h
+
+/-- **A constant path has no spectral flow**: if `A t = A a` for all `t ∈ [a, b]`, where `A a` is
+symmetric through `ι` with some invertible shift, the spectral flow from `a` to `b` vanishes. -/
+theorem domainSpectralFlow_eq_zero_of_forall_eq {a b : ℝ} (hab : a ≤ b)
+    (hsymm : ∀ x y, ⟪A a x, ι y⟫ = ⟪ι x, A a y⟫) (h₀ : ∃ c₀ : 𝕜, (c₀ • ι - A a).IsInvertible)
+    (hA : ∀ t ∈ Icc a b, A t = A a) : domainSpectralFlow ι A a b = 0 := by
+  obtain ⟨c₀, hc₀⟩ := h₀
+  obtain ⟨c, hc, hinv⟩ := ι.exists_mem_Ioo_isInvertible_ofReal_smul_sub hι hc₀ zero_lt_one
+  rw [domainSpectralFlow_eq_spectralFlow_shiftedResolventTransform hι hab
+    (continuousOn_const.congr hA) (fun t ht ↦ hA t ht ▸ hsymm) hc.1.ne'
+    (fun t ht ↦ hA t ht ▸ hinv)]
+  exact spectralFlow_eq_zero_of_forall_eq hab (ι.isSelfAdjoint_shiftedResolventTransform hsymm)
+    (ι.isFredholm_shiftedResolventTransform hι hc.1.ne' hinv) fun t ht ↦ by rw [hA t ht]
 
 omit hι
 

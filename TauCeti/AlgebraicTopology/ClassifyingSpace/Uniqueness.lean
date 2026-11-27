@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.Topology.CWComplex.Classical.CWType
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
+import TauCeti.AlgebraicTopology.ClassifyingSpace.MapsToAspherical
+import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
 
@@ -27,11 +29,22 @@ with the identifications of both fundamental groups with `G`
 (`TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`). So the classifying space is well
 defined up to homotopy equivalence among spaces of CW type.
 
-The cellular classifying space `C` of a presentation of `π₁(X, x)` is homotopy equivalent to both
-spaces by homotopy equivalences `f : C ≃ₕ X` and `g : C ≃ₕ Y` whose forward maps are pointed and
-realize an identification `ψ` and `φ ∘ ψ` (`TauCeti.cellularClassifyingSpaceHomotopyEquiv`). The
-composite `g ∘ f⁻¹` is the required homotopy equivalence. The homotopy from `f ∘ f⁻¹` to the
-identity moves the base point, which is why the realization of `φ` involves a change of base point
+When `X` and `Y` carry actual Hausdorff CW structures (possibly in different universes), Hatcher's
+Proposition 1B.9 (`TauCeti.exists_mapOfEq_of_cwComplex` and
+`TauCeti.homotopicRel_of_mapOfEq_eq_of_cwComplex`) strengthens this to a *based* homotopy
+equivalence (`TauCeti.IsAspherical.exists_basedHomotopyEquiv`): `φ` and `φ⁻¹` are realized on the
+nose by basepoint-preserving maps whose two composites are homotopic to the identity relative to
+`{x}` and `{y}` (in particular giving a homotopy equivalence whose forward map sends `x` to `y` and
+induces `φ`, `TauCeti.exists_homotopyEquiv_of_isAspherical`). Specializing `Y` to
+`classifyingSpace G` gives a based homotopy equivalence between any aspherical Hausdorff CW complex
+and Milnor's classifying space (`TauCeti.IsAspherical.exists_basedHomotopyEquiv_classifyingSpace`).
+
+For spaces merely of CW type, the cellular classifying space `C` of a presentation of `π₁(X, x)` is
+homotopy equivalent to both spaces by homotopy equivalences `f : C ≃ₕ X` and `g : C ≃ₕ Y` whose
+forward maps are pointed and realize an identification `ψ` and `φ ∘ ψ`
+(`TauCeti.cellularClassifyingSpaceHomotopyEquiv`). The composite `g ∘ f⁻¹` is the required homotopy
+equivalence. The homotopy from `f ∘ f⁻¹` to the identity moves the base point, which is why the
+realization of `φ` involves a change of base point
 (`ContinuousMap.Homotopy.exists_path_fundamentalGroupMulEquivOfPath_map_comp`).
 
 The hypothesis of CW type on both spaces cannot be dropped: a point and the Warsaw circle are both
@@ -56,6 +69,13 @@ for abelian `G`, which need not have CW type.
 * `TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`: an aspherical space of CW type
   with fundamental group identified with `G` is homotopy equivalent to `classifyingSpace G`,
   compatibly with the identifications of fundamental groups.
+* `TauCeti.IsAspherical.exists_basedHomotopyEquiv`: **based homotopy equivalence of aspherical
+  Hausdorff CW complexes** realizing any prescribed isomorphism of fundamental groups (with pointed
+  inverse and homotopies relative to `{x}` and `{y}`).
+* `TauCeti.exists_homotopyEquiv_of_isAspherical`: homotopy equivalence of aspherical Hausdorff CW
+  complexes whose forward map sends `x` to `y` and induces `φ`.
+* `TauCeti.IsAspherical.exists_basedHomotopyEquiv_classifyingSpace`: based homotopy equivalence of
+  an aspherical Hausdorff CW complex with `classifyingSpace G`.
 
 ## References
 
@@ -185,5 +205,76 @@ theorem IsEilenbergMacLaneSpaceOne.exists_isWeakHomotopyEquivalence_classifyingS
   obtain ⟨eX⟩ := hX.nonempty_fundamentalGroupMulEquiv
   obtain ⟨f, -, hf, -⟩ := hX.isAspherical.exists_isWeakHomotopyEquivalence_classifyingSpace eX
   exact ⟨f, hf⟩
+
+/-- **Based homotopy equivalence of aspherical CW complexes (Hatcher, Theorem 1B.8 and
+Proposition 1B.9).** For Hausdorff CW complexes `X` and `Y` (in arbitrary universes) that are
+aspherical at `x` and `y`, every isomorphism `φ : π₁(X, x) ≃* π₁(Y, y)` is induced by a homotopy
+equivalence `F : X ≃ₕ Y` sending `x` to `y` whose homotopy inverse sends `y` to `x`, with both
+compositions homotopic to the identity *relative to the base points* and `F.invFun` inducing
+`φ.symm`. -/
+theorem IsAspherical.exists_basedHomotopyEquiv {X : Type u} {Y : Type v}
+    [TopologicalSpace X] [T2Space X] [Topology.CWComplex (Set.univ : Set X)]
+    [TopologicalSpace Y] [T2Space Y] [Topology.CWComplex (Set.univ : Set Y)]
+    {x : X} {y : Y} (hX : IsAspherical X x) (hY : IsAspherical Y y)
+    (φ : FundamentalGroup X x ≃* FundamentalGroup Y y) :
+    ∃ (F : X ≃ₕ Y) (hF : F.toFun x = y) (hFinv : F.invFun y = x),
+      (F.invFun.comp F.toFun).HomotopicRel (.id X) {x} ∧
+      (F.toFun.comp F.invFun).HomotopicRel (.id Y) {y} ∧
+      mapOfEq F.toFun hF = φ.toMonoidHom ∧
+      mapOfEq F.invFun hFinv = φ.symm.toMonoidHom := by
+  have : PathConnectedSpace X := hX.pathConnectedSpace
+  have : PathConnectedSpace Y := hY.pathConnectedSpace
+  obtain ⟨f, hf, hfφ⟩ := exists_mapOfEq_of_cwComplex hY.subsingleton_homotopyGroup φ.toMonoidHom
+  obtain ⟨g, hg, hgφ⟩ :=
+    exists_mapOfEq_of_cwComplex hX.subsingleton_homotopyGroup φ.symm.toMonoidHom
+  have hgf₀ : (g.comp f) x = x := (congrArg g hf).trans hg
+  have hfg₀ : (f.comp g) y = y := (congrArg f hg).trans hf
+  have hgf_rel : (g.comp f).HomotopicRel (.id X) {x} :=
+    homotopicRel_of_mapOfEq_eq_of_cwComplex hX.subsingleton_homotopyGroup hgf₀
+      (rfl : ContinuousMap.id X x = x) <| MonoidHom.ext fun a ↦ by
+        rw [← mapOfEq_comp g f hf hg, hgφ, hfφ]
+        exact (φ.symm_apply_apply a).trans (mapOfEq_id _ a).symm
+  have hfg_rel : (f.comp g).HomotopicRel (.id Y) {y} :=
+    homotopicRel_of_mapOfEq_eq_of_cwComplex hY.subsingleton_homotopyGroup hfg₀
+      (rfl : ContinuousMap.id Y y = y) <| MonoidHom.ext fun b ↦ by
+        rw [← mapOfEq_comp f g hg hf, hfφ, hgφ]
+        exact (φ.apply_symm_apply b).trans (mapOfEq_id _ b).symm
+  exact ⟨⟨f, g, hgf_rel.homotopic, hfg_rel.homotopic⟩, hf, hg, hgf_rel, hfg_rel, hfφ, hgφ⟩
+
+/-- **Homotopy equivalence of aspherical CW complexes realizing a prescribed `π₁`-isomorphism
+(Hatcher, Theorem 1B.8).** Two aspherical Hausdorff CW complexes with isomorphic fundamental groups
+are homotopy equivalent by a homotopy equivalence whose forward map is basepoint-preserving and
+induces any prescribed isomorphism `φ` on fundamental groups; see
+`TauCeti.IsAspherical.exists_basedHomotopyEquiv` for the pointed homotopy inverse and
+basepoint-relative homotopies, and `TauCeti.homotopicRel_of_mapOfEq_eq_of_cwComplex` for uniqueness
+of the forward map up to pointed homotopy. -/
+theorem exists_homotopyEquiv_of_isAspherical {X : Type u} {Y : Type v}
+    [TopologicalSpace X] [T2Space X] [Topology.CWComplex (Set.univ : Set X)]
+    [TopologicalSpace Y] [T2Space Y] [Topology.CWComplex (Set.univ : Set Y)]
+    {x : X} {y : Y} (hX : IsAspherical X x) (hY : IsAspherical Y y)
+    (φ : FundamentalGroup X x ≃* FundamentalGroup Y y) :
+    ∃ (F : X ≃ₕ Y) (hF : F.toFun x = y), mapOfEq F.toFun hF = φ.toMonoidHom := by
+  obtain ⟨F, hF, -, -, -, hFφ, -⟩ := hX.exists_basedHomotopyEquiv hY φ
+  exact ⟨F, hF, hFφ⟩
+
+/-- **Based homotopy equivalence of an aspherical CW complex with Milnor's classifying space.** An
+aspherical Hausdorff CW complex `X` whose fundamental group at `x` is identified with `G` (in any
+universe) by `eX` is homotopy equivalent to `classifyingSpace G` via a based homotopy equivalence
+whose forward map sends `x` to `classifyingSpaceBasepoint G` and realizes `eX`, with both
+compositions homotopic to the identity relative to the base points. -/
+theorem IsAspherical.exists_basedHomotopyEquiv_classifyingSpace {G : Type v} [Group G]
+    {X : Type u} [TopologicalSpace X] [T2Space X] [Topology.CWComplex (Set.univ : Set X)]
+    {x : X} (hX : IsAspherical X x) (eX : FundamentalGroup X x ≃* G) :
+    ∃ (e : X ≃ₕ classifyingSpace G) (he : e.toFun x = classifyingSpaceBasepoint G),
+      e.invFun (classifyingSpaceBasepoint G) = x ∧
+      (e.invFun.comp e.toFun).HomotopicRel (.id X) {x} ∧
+      (e.toFun.comp e.invFun).HomotopicRel (.id (classifyingSpace G))
+        {classifyingSpaceBasepoint G} ∧
+      ∀ a, classifyingSpaceFundamentalGroupMulEquiv G (mapOfEq e.toFun he a) = eX a := by
+  obtain ⟨e, he, he_inv, hleft, hright, heφ, -⟩ := hX.exists_basedHomotopyEquiv
+    (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical
+    (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)
+  refine ⟨e, he, he_inv, hleft, hright, fun a ↦ ?_⟩
+  rw [heφ, MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, MulEquiv.apply_symm_apply]
 
 end TauCeti

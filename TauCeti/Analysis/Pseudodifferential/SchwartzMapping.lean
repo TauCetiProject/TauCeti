@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Basic
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
