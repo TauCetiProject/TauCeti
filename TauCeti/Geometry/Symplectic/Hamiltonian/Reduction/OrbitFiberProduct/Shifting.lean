@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
 import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 import TauCeti.Geometry.Manifold.Submersion.Split
+import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Naturality
 import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.Quotient
 
 /-!
@@ -52,10 +53,10 @@ Unless stated otherwise, the declarations named below are in the namespace
   (`shiftingReducedSpaceDiffeomorph_comp_quotientMk`).
 * `Φ` pulls the reduced form of `M` at `c` back to the reduced form of `M × O⁻` at zero
   (`mpullback_shiftingReducedSpaceDiffeomorph`):
-  pulled back to `Ψ⁻¹(0)`, the first is `pr_M^* σ - pr_O^* ω_KKS`
-  (`mpullback_quotientMk_eq_iff_mpullback_orbitFiberProductProj_eq_sub`),
-  which is the restriction of `σ ⊞ (-ω_KKS)`. So `Φ` is a symplectomorphism between the two
-  reduced spaces.
+  the section `z ↦ (z, G_c)` of `Ψ⁻¹(0)` over `μ⁻¹(c)` satisfies `Φ⁻¹ ∘ π = π₀ ∘ (z ↦ (z, G_c))`,
+  and it pulls `σ ⊞ (-ω_KKS)` back to the restriction of `σ`, since its orbit component is
+  constant. So `Φ` is a symplectomorphism between the two reduced spaces. This comparison needs
+  neither closedness, nondegeneracy nor invariance of `σ`.
 
 All Lie group structures on the stabilizers `G_c` and `G_0` are arbitrary, and the theorem holds
 for every value `c`, whether or not it is fixed by the coadjoint action.
@@ -505,83 +506,55 @@ theorem shiftingReducedSpaceDiffeomorph_symm_mk (z : h.levelSubMulAction c) :
 
 omit [ProperSMul G M]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
-/-- Read on the zero level of the shifting moment map, the form `pr_M^* σ - pr_O^* ω_KKS` of the
-orbit fibre product is the restriction of the product form `σ ⊞ (-ω_KKS)`. -/
-private theorem mpullback_levelDiffeomorphOrbitFiberProduct_sub :
-    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
-      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
-    haveI := (h.prod_neg_coadjointOrbitForm c).isManifold_levelSubMulAction
-      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
-    letI := h.orbitFiberProductChartedSpace c hreg b
-    haveI := h.isManifold_orbitFiberProduct hreg b
-    SmoothForm.mpullback (h.levelDiffeomorphOrbitFiberProduct hreg hn₀ b)
-        (h.levelDiffeomorphOrbitFiberProduct hreg hn₀ b).contMDiff
-        (SmoothForm.mpullback
-            (fun p : OrbitFiberProduct μ c b ↦ p.val.1)
-            (contMDiff_fst.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff) σ -
-          SmoothForm.mpullback
-            (fun p : OrbitFiberProduct μ c b ↦ p.val.2)
-            (contMDiff_snd.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff)
-            c.coadjointOrbitForm) =
-      SmoothForm.mpullback Subtype.val
-        ((h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
-          (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀).contMDiff
-        (σ.prod (-c.coadjointOrbitForm)) := by
-  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
-    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
-  have := (h.prod_neg_coadjointOrbitForm c).isManifold_levelSubMulAction
-    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
-  let _ := h.orbitFiberProductChartedSpace c hreg b
-  have := h.isManifold_orbitFiberProduct hreg b
-  have hi₀ := ((h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
-    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀).contMDiff
-  have hi := (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff
-  set j := h.levelDiffeomorphOrbitFiberProduct hreg hn₀ b
-  -- The identification `j` is the identity of points, so `pr_M ∘ j` and `pr_O ∘ j` are the two
-  -- projections of `M × O` restricted to the zero level.
-  rw [LinearMap.map_sub, SmoothForm.mpullback_mpullback_of_comp_eq
-      (g := fun p : OrbitFiberProduct μ c b ↦ p.val.1)
-      (g' := Prod.fst) j.contMDiff (contMDiff_fst.comp hi) hi₀ contMDiff_fst
-      (funext fun p ↦ congrArg Prod.fst (h.coe_levelDiffeomorphOrbitFiberProduct hreg hn₀ b p)),
-    SmoothForm.mpullback_mpullback_of_comp_eq
-      (g := fun p : OrbitFiberProduct μ c b ↦ p.val.2)
-      (g' := Prod.snd) j.contMDiff (contMDiff_snd.comp hi) hi₀ contMDiff_snd
-      (funext fun p ↦ congrArg Prod.snd (h.coe_levelDiffeomorphOrbitFiberProduct hreg hn₀ b p)),
-    congrArg (SmoothForm.mpullback Subtype.val hi₀) (prod_def σ (-c.coadjointOrbitForm)),
-    LinearMap.map_add, LinearMap.map_neg, LinearMap.map_neg, sub_eq_add_neg]
-
-/-- **The shifting theorem.** Let a Lie group `G` act smoothly and properly on `(M, σ)`, preserving
-`σ`, with coadjoint-equivariant moment map `μ`, let `c` be a regular value of `μ` whose coadjoint
-stabilizer `G_c` acts freely on the level `μ⁻¹(c)`, and let `O = G ⧸ G_c` be its coadjoint orbit.
-Then the shifting diffeomorphism
-
-`Φ : Ψ⁻¹(0) ⧸ G_0 ≃ μ⁻¹(c) ⧸ G_c`, `Φ [(x, g G_c)] = [g⁻¹ • x]`
-
-from the reduced space of `M × O⁻` at zero, for `Ψ(x, o) = μ(x) - ι_O(o)` and the product form
-`σ ⊞ (-ω_KKS)`, onto the reduced space of `M` at `c` pulls the reduced form `η` of `M` at `c`,
-characterized by `π^* η = i^* σ`, back to the reduced form `η₀` of `M × O⁻` at zero, characterized
-by `π₀^* η₀ = i₀^* (σ ⊞ (-ω_KKS))`. For a symplectic `σ`, these are the reduced symplectic forms of
-the Marsden–Weinstein–Meyer theorem
-(`existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback`, in the namespace
-`TauCeti.SmoothTwoForm.IsEquivariantMomentMap`), so `Φ` is a symplectomorphism: reduction at `c`
-is reduction of `M × O⁻` at zero. -/
-theorem mpullback_shiftingReducedSpaceDiffeomorph
-    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
-    haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-    haveI := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
-    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
-      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
-    haveI := (h.prod_neg_coadjointOrbitForm c).isManifold_levelSubMulAction
-      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
-    letI := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
-      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
-    haveI := (h.prod_neg_coadjointOrbitForm c).isManifold_orbitRelQuotient
-      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
+/-- Along the section `z ↦ (z, G_c)` of the zero level of the shifting map over the level
+`μ⁻¹(c)`, the form `σ ⊞ (-ω_KKS)` of `M × O` pulls back to the restriction of `σ`, since the second
+component of the section is constant. -/
+private theorem mpullback_prodMk_one_prod_neg_coadjointOrbitForm :
     letI := h.levelSubMulActionChartedSpace c hreg hn
     haveI := h.isManifold_levelSubMulAction hreg hn
+    SmoothForm.mpullback
+        (fun z : h.levelSubMulAction c ↦
+          ((z : M), ((1 : G) : G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)))
+        ((h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff.prodMk contMDiff_const)
+        (σ.prod (-c.coadjointOrbitForm)) =
+      SmoothForm.mpullback Subtype.val (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
+        σ := by
+  let _ := h.levelSubMulActionChartedSpace c hreg hn
+  have := h.isManifold_levelSubMulAction hreg hn
+  rw [prod_def, map_add, SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
+  -- The first summand is the right-hand side: `Prod.fst ∘ (fun z ↦ (↑z, 1))` is `Subtype.val` by
+  -- unfolding `Function.comp` and `Prod.fst`, so it remains to kill the second summand.
+  refine add_eq_left.2 (Subtype.ext ?_)
+  rw [SmoothForm.coe_mpullback]
+  exact mpullback_const two_ne_zero _ _
+
+/-- **The shifting theorem.** Let a Lie group `G` act smoothly and properly on `(M, σ)` with
+coadjoint-equivariant moment map `μ`, let `c` be a regular value of `μ` at which `G_c` acts freely
+on the level, and let `O = G ⧸ G_c` be the coadjoint orbit of `c`, with its
+Kirillov–Kostant–Souriau form `ω_KKS`. Reduction of `M` at `c` is reduction at zero of
+`M × O⁻ = (M × O, σ ⊞ (-ω_KKS))`, for the shifting moment map `Ψ(x, o) = μ(x) - ι_O(o)`: the
+diffeomorphism `[(x, g G_c)] ↦ [g⁻¹ • x]` of reduced spaces
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingReducedSpaceDiffeomorph`) pulls a reduced
+form `η` of `μ⁻¹(c) ⧸ G_c`, characterized by `π^* η = i^* σ`, back to the reduced form `η₀` of
+`Ψ⁻¹(0) ⧸ G`, characterized by `π₀^* η₀ = i₀^* (σ ⊞ (-ω_KKS))`. In particular the
+Marsden–Weinstein–Meyer reduced spaces of `M` at `c` and of `M × O⁻` at zero are symplectomorphic.
+Neither closedness nor nondegeneracy of `σ`, nor invariance of `σ`, is needed for this
+comparison. -/
+theorem mpullback_shiftingReducedSpaceDiffeomorph :
+    haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+    haveI := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    letI := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
+    haveI := h.isManifold_levelSubMulAction hreg hn
+    haveI := (h.prod_neg_coadjointOrbitForm c).isManifold_levelSubMulAction
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
     haveI := h.isManifold_orbitRelQuotient hreg hn d
+    haveI := (h.prod_neg_coadjointOrbitForm c).isManifold_orbitRelQuotient
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
     ∀ (η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
         (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
           (h.levelSubMulAction c)))
@@ -603,40 +576,45 @@ theorem mpullback_shiftingReducedSpaceDiffeomorph
           η₀ := by
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   have := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
+  let _ := h.levelSubMulActionChartedSpace c hreg hn
   let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
-  have := (h.prod_neg_coadjointOrbitForm c).isManifold_levelSubMulAction
-    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
   let _ := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
+  have := h.isManifold_levelSubMulAction hreg hn
+  have := (h.prod_neg_coadjointOrbitForm c).isManifold_levelSubMulAction
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  have := h.isManifold_orbitRelQuotient hreg hn d
   have := (h.prod_neg_coadjointOrbitForm c).isManifold_orbitRelQuotient
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
-  let _ := h.levelSubMulActionChartedSpace c hreg hn
-  have := h.isManifold_levelSubMulAction hreg hn
-  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
-  have := h.isManifold_orbitRelQuotient hreg hn d
   intro η η₀ hη hη₀
-  set b := Module.finBasis ℝ (GroupLieAlgebra I G)
-  let _ := h.orbitFiberProductChartedSpace c hreg b
-  have := h.isManifold_orbitFiberProduct hreg b
+  have hπ := h.isSubmersion_quotientMk_levelSubMulAction hreg hn d
   have hπ₀ := (h.prod_neg_coadjointOrbitForm c).isSubmersion_quotientMk_levelSubMulAction
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
-  have hq := h.isSubmersion_orbitFiberProductProj hreg hn d b
-  set j := h.levelDiffeomorphOrbitFiberProduct hreg hn₀ b
-  -- `Φ ∘ π₀ = q_W ∘ j`, where `j` identifies `Ψ⁻¹(0)` with the orbit fibre product, on which the
-  -- reduced form of `M` pulls back to `pr_M^* σ - pr_O^* ω_KKS`.
-  have hk : ⇑(h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀) ∘ Quotient.mk _ =
-      h.orbitFiberProductProj c b ∘ j :=
-    h.shiftingReducedSpaceDiffeomorph_comp_quotientMk hreg hn d hn₀ d₀ b
-  have hqW :=
-    (h.mpullback_quotientMk_eq_iff_mpullback_orbitFiberProductProj_eq_sub hreg hn d b hG η).1 hη
-  -- Pullback along the surjective submersion `π₀` is injective.
-  refine SmoothForm.mpullback_injective_of_surjective hπ₀.contMDiff Quotient.mk_surjective
-    (hπ₀.surjective_mfderiv (by simp)) ?_
-  rw [hη₀, SmoothForm.mpullback_mpullback_of_comp_eq hπ₀.contMDiff
-    (h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀).contMDiff j.contMDiff hq.contMDiff hk,
-    hqW]
-  exact h.mpullback_levelDiffeomorphOrbitFiberProduct_sub hreg hn₀ b
+  have hi := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
+  have hi₀ := (h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  -- The section `j z = (z, G_c)` of the zero level over the level `μ⁻¹(c)`; by the inverse
+  -- formula, `Φ⁻¹ ∘ π = π₀ ∘ j`.
+  let j : h.levelSubMulAction c → (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0 :=
+    fun z ↦ ⟨((z : M), ((1 : G) : G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)),
+      (h.prod_neg_coadjointOrbitForm c).mem_levelSubMulAction.2 (sub_eq_zero.2
+        (h.apply_eq_orbitMap_iff.2 (by simpa using h.mem_levelSubMulAction.1 z.property)))⟩
+  have hj : ContMDiff 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n₀ → ℝ) ∞ j :=
+    hi₀.contMDiff_iff_comp.2 (hi.contMDiff.prodMk contMDiff_const)
+  have hΦj : ⇑(h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀).symm ∘ Quotient.mk _ =
+      Quotient.mk _ ∘ j :=
+    funext (h.shiftingReducedSpaceDiffeomorph_symm_mk hreg hn d hn₀ d₀)
+  -- So `Φ⁻¹` carries `η₀` to `η`: `j` carries the restricted form of `M × O⁻` to that of `M`, and
+  -- `Φ⁻¹ ∘ π = π₀ ∘ j`.
+  have hsymm :=
+    SmoothForm.mpullback_eq_of_mpullback_eq hi.contMDiff hπ.contMDiff hi₀.contMDiff hπ₀.contMDiff
+      hη hη₀ Quotient.mk_surjective (hπ.surjective_mfderiv (by simp)) hj
+      ((SmoothForm.mpullback_mpullback _ _ _ _ _).trans
+        (h.mpullback_prodMk_one_prod_neg_coadjointOrbitForm hreg hn))
+      (h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀).symm.contMDiff hΦj
+  rw [← hsymm, SmoothForm.mpullback_mpullback_symm]
 
 end Reduced
 
