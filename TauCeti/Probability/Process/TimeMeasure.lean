@@ -121,6 +121,13 @@ theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ 
   rw [timeMeasure_def]
   exact ae_restrict_mem measurableSet_Ioc
 
+/-- Almost every time-outcome pair has its time coordinate in the finite horizon, excluding the
+origin. -/
+theorem ae_mem_Ioc_timeMeasure_prod {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) (T : ℝ≥0) :
+    ∀ᵐ p ∂(timeMeasure T).prod P, p.1 ∈ Ioc 0 T :=
+  (Measure.quasiMeasurePreserving_fst (μ := timeMeasure T) (ν := P)).ae
+    (ae_mem_Ioc_timeMeasure T)
+
 /-- A continuous function on time lies in every `Lᵖ` space of a finite horizon. -/
 theorem _root_.Continuous.memLp_timeMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ≥0 → E}
     (hf : Continuous f) (p : ℝ≥0∞) (T : ℝ≥0) : MemLp f p (timeMeasure T) := by
@@ -172,8 +179,7 @@ theorem indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure_prod {Ω E : Type*}
     (H : ℝ≥0 → Ω → E) (s t : ℝ≥0) :
     (fun p : ℝ≥0 × Ω ↦ (Ioi s).indicator (H · p.2) p.1) =ᵐ[(timeMeasure t).prod P]
       fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (H · p.2) p.1 := by
-  filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure t)
-    (ν := P)).ae (ae_mem_Ioc_timeMeasure t)] with p hp
+  filter_upwards [ae_mem_Ioc_timeMeasure_prod P t] with p hp
   by_cases hps : s < p.1 <;> simp [hps, hp.2]
 
 /-- Initial-interval indicator classes only depend on the endpoint clipped to the horizon. -/

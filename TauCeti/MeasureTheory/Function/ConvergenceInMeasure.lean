@@ -764,8 +764,8 @@ theorem tendsto_measure_lintegral_enorm_add_sq {α β ι E : Type*}
   by_contra hnot
   simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
   have h4 : (2 : ℝ≥0∞) * (ε / 4 + ε / 4) ≤ ε := by
-    rw [← two_mul, ← mul_assoc, two_mul, two_add_two_eq_four]
-    exact ENNReal.mul_div_le
+    calc (2 : ℝ≥0∞) * (ε / 4 + ε / 4) = 4 * (ε / 4) := by ring
+      _ ≤ ε := ENNReal.mul_div_le
   exact (hy.trans hbd).not_gt <|
     (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num)
       (ENNReal.add_lt_add hnot.1 hnot.2)).trans_le h4

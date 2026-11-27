@@ -78,8 +78,7 @@ theorem locally_martingale
   have hmart (k : ℕ) : Martingale (MeasureTheory.stoppedProcess I (τ k)) ℱ P :=
     ((hI.stoppedProcess hW (hτ_loc.isStoppingTime k)).congr_integrand
       (hHs k).isStronglyPredictable fun T ↦ by
-        filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure T)
-            (ν := P)).ae (ae_mem_Ioc_timeMeasure T),
+        filter_upwards [ae_mem_Ioc_timeMeasure_prod P T,
           (Measure.quasiMeasurePreserving_snd (μ := timeMeasure T)
             (ν := P)).ae hI.locallyBrownianIntegrable.ae_accumulatedEnergy_lt_top] with p hpT hfin
         dsimp only [Function.uncurry, energyStage, τ]
