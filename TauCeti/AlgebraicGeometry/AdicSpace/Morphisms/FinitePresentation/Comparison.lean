@@ -22,9 +22,10 @@ This file compares `TauCeti.AdicSpace.LocallyOfFinitePresentation` with
 * **Discrete-noetherian and analytic equivalence**: over `Y.IsLocallyHuberStandard`, the two
   properties coincide when every discrete complete affinoid open of `Y` is noetherian, and in
   particular whenever `Y` is analytic.
-* **Affinoid criteria**: `comapOfPresentation` and `comapOfPair` are locally of finite
-  presentation under `IsHuberStandard A` and `DiscreteTopology A → φ.toRingHom.FinitePresentation`
-  (automatically satisfied over strongly noetherian Tate bases).
+* **Affinoid criteria**: for `φ` topologically of finite type, `comapOfPresentation` and
+  `comapOfPair` are locally of finite presentation under `IsHuberStandard A` and
+  `DiscreteTopology A → φ.toRingHom.FinitePresentation` (automatically satisfied over strongly
+  noetherian Tate bases).
 * **Discrete affinoid comparison**: for discrete rings with `Pair.discrete`,
   `LocallyOfFinitePresentation (comapOfPair hS hT φ) ↔ φ.toRingHom.FinitePresentation`.
 

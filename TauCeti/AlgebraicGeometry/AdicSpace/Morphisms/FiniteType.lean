@@ -33,7 +33,8 @@ this file develops the chart-refinement API for `LocallyOfFiniteType`, proves We
 Proposition 8.50 (closure under composition, right-cancellation, and restriction along open
 immersions), gives the affinoid criterion for arbitrary (not necessarily complete) Huber pairs, and
 proves the discrete affinoid comparison
-`LocallyOfFiniteType (comapOfPair hS hT φ) ↔ φ.toRingHom.FiniteType`.
+`LocallyOfFiniteType (comapOfPair hS hT φ) ↔ φ.toRingHom.FiniteType` for discrete rings `A, B`
+with `S = Pair.discrete A` and `T = Pair.discrete B`.
 
 ## Main definitions
 
