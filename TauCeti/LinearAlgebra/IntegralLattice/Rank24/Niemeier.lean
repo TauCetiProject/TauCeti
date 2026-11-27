@@ -65,9 +65,6 @@ abbreviation of `r.lattice` for its row, so the uniform theorems apply to it dir
   `TauCeti.RootfulNiemeierType.mem_rootLattice_carrier_of_form_self_eq_two`,
   `TauCeti.RootfulNiemeierType.span_vectorsOfNorm_two_lattice`: unimodularity, the norm-`2`
   vectors and the root sublattice of every row.
-* `TauCeti.RootfulNiemeierType.map_rootLattice_carrier_ambientEquiv`,
-  `TauCeti.RootfulNiemeierType.apply_mem_rootLattice_carrier_iff`: every isometry between rootful
-  Niemeier lattices preserves their orthogonal-sum root sublattices.
 * `TauCeti.RootfulNiemeierType.representationNumber_lattice_two`,
   `TauCeti.RootfulNiemeierType.index_span_vectorsOfNorm_two_lattice`: the number of roots of `N_r`
   and the index of its root sublattice.
@@ -266,26 +263,6 @@ theorem mem_rootLattice_carrier_of_form_self_eq_two (r : RootfulNiemeierType)
   exact y.property
 
 /-! ### Isometry invariants and pairwise non-isometry -/
-
-/-- **Every isometry between rootful Niemeier lattices maps the source root sublattice onto the
-target root sublattice**, because in every row `R_r` is spanned by the norm-`2` vectors of `N_r`. -/
--- Not `@[simp]`: `r.rootLattice` is an `abbrev` for `IntegralLattice.pi`, so `simp` unfolds
--- `r.rootLattice.carrier` via `IntegralLattice.pi_carrier`.
-theorem map_rootLattice_carrier_ambientEquiv {r s : RootfulNiemeierType}
-    (e : Isometry r.lattice s.lattice) :
-    r.rootLattice.carrier.map e.ambientEquiv.toLinearMap = s.rootLattice.carrier := by
-  rw [← r.span_vectorsOfNorm_two_lattice, ← s.span_vectorsOfNorm_two_lattice]
-  exact e.map_span_val_image_vectorsOfNorm 2
-
-/-- **Every isometry between rootful Niemeier lattices preserves membership in the orthogonal-sum
-root sublattice.** -/
--- Not `@[simp]`: `s.rootLattice` is an `abbrev` for `IntegralLattice.pi`, so `simp` unfolds
--- `s.rootLattice.carrier` via `IntegralLattice.pi_carrier`.
-theorem apply_mem_rootLattice_carrier_iff {r s : RootfulNiemeierType}
-    (e : Isometry r.lattice s.lattice) (x : ∀ i, Fin (r.componentType i).rank → ℚ) :
-    e x ∈ s.rootLattice.carrier ↔ x ∈ r.rootLattice.carrier := by
-  rw [← r.span_vectorsOfNorm_two_lattice, ← s.span_vectorsOfNorm_two_lattice]
-  exact e.apply_mem_span_val_image_vectorsOfNorm_iff 2 x
 
 /-- **`R_r` has the displayed number of roots**: the number of its norm-`2` vectors is the sum of
 the root counts of the components, which is the displayed root count of the row. -/

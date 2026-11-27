@@ -50,12 +50,10 @@ expands; that identification is not made here.
 * `TauCeti.IntegralLattice.Isometry.carrierEquiv_image_vectorsOfNorm` and
   `TauCeti.IntegralLattice.Isometry.representationNumber_eq`: isometries carry shells onto shells
   and preserve representation numbers.
-* `TauCeti.IntegralLattice.Isometry.map_span_vectorsOfNorm`,
-  `TauCeti.IntegralLattice.Isometry.map_span_val_image_vectorsOfNorm`,
-  `TauCeti.IntegralLattice.Isometry.apply_mem_span_val_image_vectorsOfNorm_iff`, and
+* `TauCeti.IntegralLattice.Isometry.map_span_vectorsOfNorm` and
   `TauCeti.IntegralLattice.Isometry.span_vectorsOfNorm_eq_top_iff`: isometries carry the span of a
-  shell (both inside the carrier and in the ambient space) onto the span of the corresponding shell,
-  so whether a shell spans the lattice is an isometry invariant.
+  shell onto the span of the corresponding shell, so whether a shell spans the lattice is an
+  isometry invariant.
 * `TauCeti.IntegralLattice.Isometry.index_span_vectorsOfNorm_eq`: the index of the span of a shell
   is an isometry invariant.
 
@@ -184,25 +182,6 @@ theorem map_span_vectorsOfNorm (e : Isometry L M) (n : ℚ) :
     (Submodule.span ℤ (L.vectorsOfNorm n)).map (e.carrierEquiv : L →ₗ[ℤ] M) =
       Submodule.span ℤ (M.vectorsOfNorm n) := by
   rw [Submodule.map_span, LinearEquiv.coe_coe, e.carrierEquiv_image_vectorsOfNorm]
-
-/-- An isometry carries the ambient `ℤ`-span of each shell of the source onto the ambient `ℤ`-span
-of the shell of the same norm of the target. -/
-theorem map_span_val_image_vectorsOfNorm (e : Isometry L M) (n : ℚ) :
-    (Submodule.span ℤ ((Subtype.val : L → V) '' L.vectorsOfNorm n)).map e.ambientEquiv.toLinearMap =
-      Submodule.span ℤ ((Subtype.val : M → W) '' M.vectorsOfNorm n) := by
-  rw [← Submodule.coe_subtype (p := L.carrier), ← Submodule.map_span,
-    ← Submodule.coe_subtype (p := M.carrier), ← Submodule.map_span,
-    ← e.map_span_vectorsOfNorm n, ← Submodule.map_comp, ← Submodule.map_comp]
-  congr 1
-  ext x
-  exact (e.ambientEquiv_apply (x : V)).trans (e.coe_carrierEquiv_apply x).symm
-
-/-- An isometry preserves membership in the ambient `ℤ`-span of each shell. -/
-theorem apply_mem_span_val_image_vectorsOfNorm_iff (e : Isometry L M) (n : ℚ) (x : V) :
-    e x ∈ Submodule.span ℤ ((Subtype.val : M → W) '' M.vectorsOfNorm n) ↔
-      x ∈ Submodule.span ℤ ((Subtype.val : L → V) '' L.vectorsOfNorm n) := by
-  rw [← e.ambientEquiv_apply, ← e.map_span_val_image_vectorsOfNorm n, Submodule.mem_map_equiv,
-    LinearEquiv.symm_apply_apply]
 
 /-- Spanning the lattice by vectors of a given norm is an isometry invariant. For norm two this
 says that the root sublattice is the whole lattice. -/

@@ -22,22 +22,20 @@ parenthesized pattern symmetry is not a pure coordinate glue symmetry: rotating 
 Coupling the block rotation with `D₄` triality (`TauCeti.DynkinType.typeD4Triality`) on the `D₄`
 component preserves `a5FourthD4.glueSubgroup`
 (`TauCeti.RootfulNiemeierType.a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff`), yielding the
-order-three, determinant-one self-isometry `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry`
+order-three self-isometry `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry`
 of `TauCeti.niemeierA5FourthD4`.  This yields a faithful action
 `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom` of the cyclic pattern's symmetry group on
 `niemeierA5FourthD4`.
 
 ## Main declarations
 
-* `TauCeti.RootfulNiemeierType.det_a5FourthD4TrialityIsometry`,
-  `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_zero`,
+* `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_zero`,
   `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_one`,
   `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_two`,
-  `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_three`: determinant and
+  `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_three`:
   `A₅`-coordinate corollaries for `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry`.
 * `TauCeti.RootfulNiemeierType.mem_symmetries_cyclic_a5FourthD4_iff`,
   `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom`,
-  `TauCeti.RootfulNiemeierType.exists_a5FourthD4CyclicSymmetryHom_eq_pow`,
   `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom_injective`: membership characterization
   and faithful action of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries` on
   `niemeierA5FourthD4`.
@@ -56,7 +54,7 @@ namespace RootfulNiemeierType
 
 open DynkinType IntegralLattice
 
-/-! ### Determinant and coordinate corollaries for `a5FourthD4TrialityIsometry` -/
+/-! ### `A₅`-coordinate corollaries for `a5FourthD4TrialityIsometry` -/
 
 private theorem a5FourthD4TrialityIsometry_apply_of_eq
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ)
@@ -95,12 +93,6 @@ theorem a5FourthD4TrialityIsometry_apply_three
     a5FourthD4TrialityIsometry x (3 : Fin 5) = x (2 : Fin 5) :=
   a5FourthD4TrialityIsometry_apply_of_eq x (k := ⟨3, by decide⟩) (b := ⟨2, by decide⟩)
     (by decide) (a5FourthD4BlockRotation_symm_apply_mk_three (by decide))
-
-/-- **`a5FourthD4TrialityIsometry` is a proper isometry (`det = 1`).** -/
-@[simp]
-theorem det_a5FourthD4TrialityIsometry :
-    Isometry.det niemeierA5FourthD4 a5FourthD4TrialityIsometry = 1 :=
-  Isometry.det_eq_one_of_pow_eq_one (by decide : Odd 3) a5FourthD4TrialityIsometry_pow_three
 
 /-! ### Faithful action of `[2(024)0].symmetries` on `niemeierA5FourthD4` -/
 
@@ -180,24 +172,6 @@ theorem a5FourthD4CyclicSymmetryHom_blockRot :
           a5FourthD4BlockRotation_mem_symmetries⟩ =
       a5FourthD4TrialityIsometry := by
   simp [a5FourthD4CyclicSymmetryHom, mulEquivOfOrderOfEq_apply_gen]
-
-/-- Every symmetry of `[2(024)0]` acts on the component positions as `a5FourthD4BlockRotation ^ k`
-(`k < 3`) and on `niemeierA5FourthD4` as the matching power `a5FourthD4TrialityIsometry ^ k`. -/
-theorem exists_a5FourthD4CyclicSymmetryHom_eq_pow
-    (g : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) :
-    ∃ k < 3,
-      g.val = (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) ^ k ∧
-        a5FourthD4CyclicSymmetryHom g = a5FourthD4TrialityIsometry ^ k := by
-  have hmem := mem_zpowers_iff_mem_range_orderOf.mp
-    ((mem_symmetries_cyclic_a5FourthD4_iff_mem_zpowers
-      (show Equiv.Perm (Fin a5FourthD4.components.length) from g.val)).mp g.property)
-  rw [orderOf_a5FourthD4BlockRotation, Finset.mem_image] at hmem
-  obtain ⟨k, hk, hgk⟩ := hmem
-  rw [Finset.mem_range] at hk
-  refine ⟨k, hk, hgk.symm, ?_⟩
-  rw [show g = ⟨(a5FourthD4BlockRotation : Equiv.Perm (Fin 5)),
-      a5FourthD4BlockRotation_mem_symmetries⟩ ^ k from Subtype.ext hgk.symm,
-    map_pow, a5FourthD4CyclicSymmetryHom_blockRot]
 
 /-- **The cyclic pattern `[2(024)0]` acts faithfully on `niemeierA5FourthD4`.** -/
 theorem a5FourthD4CyclicSymmetryHom_injective :
