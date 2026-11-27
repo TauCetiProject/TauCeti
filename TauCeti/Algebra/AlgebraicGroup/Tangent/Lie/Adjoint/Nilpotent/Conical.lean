@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Killing
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.ClosureOrder
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Nilpotent.Cone
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.GradeTwoOrbit
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
