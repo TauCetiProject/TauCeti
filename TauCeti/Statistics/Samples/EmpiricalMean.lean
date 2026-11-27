@@ -7,14 +7,15 @@ module
 
 public import Mathlib.Algebra.BigOperators.Expect
 public import TauCeti.Probability.Process.EmpiricalMeasure
-import Mathlib.Probability.HasLaw
+import Mathlib.MeasureTheory.Integral.Pi
 
 /-!
 # Empirical means of functions over a sample
 
 For a real function `g : Z → ℝ` and a sample `z : Fin n → Z`, the empirical mean
 `empiricalMean g z = (∑ i, g (z i)) / n` is the average of `g` over the sample points. It is the
-finite average `𝔼 i, g (z i)` and the integral of `g` against the empirical measure of `z`. For
+finite average `𝔼 i, g (z i)` and, for strongly measurable `g`, the integral of `g` against the
+empirical measure of `z`. For
 the empty sample (`n = 0`) it is `0`, the junk value of division by zero, not the average of an
 empty family, so statements about a constant or about expectations assume `n ≠ 0`.
 
@@ -31,8 +32,8 @@ and for a probability measure and `n ≠ 0` it is unbiased: its mean is `∫ g �
 ## Main results
 
 * `TauCeti.empiricalMean_eq_expect`: the empirical mean as the finite average `𝔼 i, g (z i)`.
-* `TauCeti.empiricalMean_eq_integral`: the empirical mean as an integral against
-  `TauCeti.Probability.empiricalFiniteMeasure z`.
+* `TauCeti.empiricalMean_eq_integral`: the empirical mean of a strongly measurable function as
+  an integral against `TauCeti.Probability.empiricalFiniteMeasure z`.
 * `TauCeti.empiricalMean_const`, `TauCeti.empiricalMean_add`, `TauCeti.empiricalMean_sub`,
   `TauCeti.empiricalMean_neg`, `TauCeti.empiricalMean_const_mul`: constants and linearity.
 * `TauCeti.empiricalMean_mono`, `TauCeti.empiricalMean_nonneg`,
@@ -41,9 +42,6 @@ and for a probability measure and `n ≠ 0` it is unbiased: its mean is `∫ g �
 * `TauCeti.empiricalMean_update_sub`: the effect of replacing one sample point.
 * `TauCeti.integrable_empiricalMean`, `TauCeti.integral_empiricalMean`: integrability under
   `Measure.pi fun _ ↦ P` for a finite measure `P`, and unbiasedness for a probability measure.
-
-The empirical mean is part of the vocabulary of item 1.1 of the StatisticalLearningTheory roadmap,
-whose definition this file follows.
 -/
 
 public section
@@ -152,14 +150,8 @@ function is integrable. -/
 theorem integrable_empiricalMean (P : Measure Z) [IsFiniteMeasure P] {g : Z → ℝ}
     (hg : Integrable g P) :
     Integrable (fun z : Fin n → Z ↦ empiricalMean g z) (Measure.pi fun _ ↦ P) := by
-  classical
   simp only [empiricalMean_def]
-  refine (integrable_finsetSum _ fun i _ ↦ ?_).div_const _
-  -- The law of the `i`-th coordinate is a finite multiple of `P`.
-  have hmap : Integrable g ((Measure.pi fun _ : Fin n ↦ P).map (Function.eval i)) := by
-    rw [Measure.pi_map_eval]
-    exact hg.smul_measure (ENNReal.prod_ne_top fun _ _ ↦ measure_ne_top P _)
-  exact hmap.comp_measurable (measurable_pi_apply i)
+  exact (integrable_finsetSum _ fun i _ ↦ integrable_comp_eval hg).div_const _
 
 /-- The empirical mean is unbiased: under an i.i.d. sample of size `n ≠ 0` from a probability
 measure `P` (or from the zero measure), the mean of the empirical mean of a `P`-integrable
@@ -172,13 +164,10 @@ theorem integral_empiricalMean [NeZero n] (P : Measure Z) [IsZeroOrProbabilityMe
       rw [← Measure.measure_univ_eq_zero, ← Set.pi_univ, Measure.pi_pi]
       simp [NeZero.ne n]
     simp [h0]
-  have hmp (i : Fin n) := measurePreserving_eval (μ := fun _ : Fin n ↦ P) i
-  have hint (i : Fin n) : Integrable (fun z : Fin n → Z ↦ g (z i)) (Measure.pi fun _ ↦ P) :=
-    (hmp i).integrable_comp_of_integrable hg
   have heq (i : Fin n) : ∫ z, g (z i) ∂(Measure.pi fun _ : Fin n ↦ P) = ∫ w, g w ∂P :=
-    (hmp i).hasLaw.integral_comp hg.aestronglyMeasurable
+    integral_comp_eval hg.aestronglyMeasurable
   simp only [empiricalMean_def]
-  rw [integral_div, integral_finsetSum _ fun i _ ↦ hint i]
+  rw [integral_div, integral_finsetSum _ fun i _ ↦ integrable_comp_eval hg]
   simp only [heq, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
   field_simp [NeZero.ne n]
 

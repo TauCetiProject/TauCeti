@@ -21,8 +21,9 @@ data are pairs in `X × Bool`, and real scores are read against a Boolean label 
   errors of `h` and of the opposite classifier add up to `1`.
 * The empirical error `empiricalError h z` is the fraction of points of a sample
   `z : Fin n → X × Bool` that `h` misclassifies: the empirical mean of the `0`–`1` loss. It lies
-  in `[0, 1]`, vanishes exactly when `h` is consistent with the sample, and is an unbiased
-  estimator of the misclassification probability under an i.i.d. sample.
+  in `[0, 1]` and vanishes exactly when `h` is consistent with the sample. For a measurable `h`
+  it is an unbiased estimator of the misclassification probability under an i.i.d. sample of
+  size `n ≠ 0`.
 * The ERM inequality: an approximate minimizer of an empirical criterion that is uniformly within
   `D` of the true criterion is within `2 D + ε` of every competitor. With the risk as criterion
   and the uniform deviation over a class as `D`, this is the excess-risk bound of empirical risk
@@ -46,8 +47,7 @@ data are pairs in `X × Bool`, and real scores are read against a Boolean label 
   `TauCeti.integral_empiricalError`.
 * `TauCeti.le_add_two_mul_add_of_isApproxMin`: the ERM inequality.
 
-This is item 1.1 of the StatisticalLearningTheory roadmap, whose definitions this file follows;
-the ERM inequality is Devroye–Györfi–Lugosi, Lemma 8.2.
+The ERM inequality is Devroye–Györfi–Lugosi, Lemma 8.2.
 
 ## References
 
@@ -99,6 +99,7 @@ theorem abs_labelSign (b : Bool) : |labelSign b| = 1 := by
 
 /-- The sign of a label is never `0`; in particular `labelSign` is not the `0`–`1` coding of
 labels. -/
+@[simp]
 theorem labelSign_ne_zero (b : Bool) : labelSign b ≠ 0 := by
   cases b <;> simp
 
@@ -140,6 +141,7 @@ theorem classificationError_le_one (P : Measure (X × Bool)) [IsZeroOrProbabilit
 
 /-- Under a finite measure a classifier has misclassification probability `0` exactly when the
 law is concentrated on its graph. -/
+@[simp]
 theorem classificationError_eq_zero_iff (P : Measure (X × Bool)) [IsFiniteMeasure P]
     (h : X → Bool) : classificationError P h = 0 ↔ ∀ᵐ z ∂P, h z.1 = z.2 := by
   rw [classificationError_def, measureReal_eq_zero_iff, measure_eq_zero_iff_ae_notMem]
@@ -205,6 +207,7 @@ theorem empiricalError_le_one (h : X → Bool) (z : Fin n → X × Bool) : empir
   exact_mod_cast (card_filter_le _ _).trans_eq (by simp)
 
 /-- The empirical error vanishes exactly when the classifier is consistent with the sample. -/
+@[simp]
 theorem empiricalError_eq_zero_iff (h : X → Bool) (z : Fin n → X × Bool) :
     empiricalError h z = 0 ↔ ∀ i, h (z i).1 = (z i).2 := by
   rcases n with _ | n
