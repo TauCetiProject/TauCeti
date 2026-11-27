@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 import TauCeti.AlgebraicGeometry.Descent.Fpqc
 import TauCeti.AlgebraicGeometry.Sites.Etale.Localization
+import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 import TauCeti.CategoryTheory.Adjunction.Representable
 import TauCeti.CategoryTheory.EffectiveEpi.Representable
 import TauCeti.CategoryTheory.Limits.Shapes.Pullback.DescentDatum
@@ -108,17 +109,20 @@ private noncomputable def preimageDescentDatumHom {S S' : Scheme.{u}} (p : S' �
     U.iteratedSliceEquiv.functor ⋙ Etale.forget S'
   let hΦ : Φ.FullyFaithful :=
     U.iteratedSliceEquiv.fullyFaithfulFunctor.comp (Etale.forgetFullyFaithful S')
-  let g_scheme : Φ.obj ((CategoryTheory.Over.pullback p₀).obj X₀_et) ⟶ Φ.obj X_et :=
-    CategoryTheory.Over.homMk f_map.hom.left (CategoryTheory.Over.w f_map.hom)
-  have : IsIso g_scheme.left := by change IsIso f_map.hom.left; infer_instance
-  have : IsIso g_scheme := CategoryTheory.Over.isIso_of_isIso_left g_scheme
+  let e_left := asIso f_map.hom.left
+  let g_scheme_iso : Φ.obj ((CategoryTheory.Over.pullback p₀).obj X₀_et) ≅ Φ.obj X_et :=
+    CategoryTheory.Over.isoMk e_left (CategoryTheory.Over.w f_map.hom)
+  let g_scheme := g_scheme_iso.hom
+  have : IsIso g_scheme := inferInstance
   let g_et : (CategoryTheory.Over.pullback p₀).obj X₀_et ⟶ X_et := hΦ.preimage g_scheme
   have : IsIso (Φ.map g_et) := (hΦ.map_preimage g_scheme).symm ▸ ‹IsIso g_scheme›
   have : IsIso g_et :=
     let := hΦ.reflectsIsomorphisms
     isIso_of_reflects_iso g_et Φ
-  have hf_map : f_map.hom.left = (toScheme S).map g_et.left :=
-    (congrArg CategoryTheory.Over.Hom.left (hΦ.map_preimage g_scheme)).symm
+  have hf_map : f_map.hom.left = (toScheme S).map g_et.left := by
+    have h := congrArg CategoryTheory.Over.Hom.left (hΦ.map_preimage g_scheme)
+    dsimp only [g_scheme, g_scheme_iso] at h
+    exact h.symm
   let f_et : (TauCeti.DescentDatum.baseChange p₀ X₀_et).Hom D :=
     TauCeti.DescentDatum.Hom.ofMap (toScheme S) g_et f_map hf_map
   have : IsIso f_et.hom := by
@@ -147,10 +151,10 @@ private noncomputable def liftDescentDatumHom {S S' : Scheme.{u}} (p : S' ⟶ S)
   have hX₀_hom : (toScheme S).map X₀_et.hom = X₀_over.hom :=
     (Category.comp_id _).symm.trans (MorphismProperty.Over.w
       ((Etale.mkIdTerminal S).from ((toEtale S).obj X₀)))
-  let iX₀ : CategoryTheory.Over.mk ((toScheme S).map X₀_et.hom) ⟶ X₀_over :=
-    CategoryTheory.Over.homMk (𝟙 X₀_over.left) ((Category.id_comp _).trans hX₀_hom.symm)
-  have : IsIso iX₀.left := by change IsIso (𝟙 X₀_over.left); infer_instance
-  have : IsIso iX₀ := CategoryTheory.Over.isIso_of_isIso_left iX₀
+  let iX₀_iso : CategoryTheory.Over.mk ((toScheme S).map X₀_et.hom) ≅ X₀_over :=
+    CategoryTheory.Over.isoMk (Iso.refl X₀_over.left) ((Category.id_comp _).trans hX₀_hom.symm)
+  let iX₀ := iX₀_iso.hom
+  have : IsIso iX₀ := inferInstance
   have : IsIso (TauCeti.DescentDatum.baseChangeHom ((toScheme S).map p₀) iX₀).hom := by
     rw [TauCeti.DescentDatum.baseChangeHom_hom]
     infer_instance
@@ -163,35 +167,6 @@ private noncomputable def liftDescentDatumHom {S S' : Scheme.{u}} (p : S' ⟶ S)
     rw [TauCeti.DescentDatum.Hom.comp_hom, TauCeti.DescentDatum.Hom.comp_hom]
     infer_instance
   preimageDescentDatumHom p p₀ X₀_et D f_map
-
-/-- Base changes of a surjective étale map `p : S' ⟶ S` are effective epimorphisms in `S.Etale`. -/
-private lemma effectiveEpi_pullback_fst_of_surjective {S S' : Scheme.{u}} (p : S' ⟶ S)
-    [AlgebraicGeometry.Etale p] (p₀ : Etale.mk p ⟶ Etale.mk (𝟙 S))
-    [Surjective ((toScheme S).map p₀)] (T : CategoryTheory.Over (Etale.mk (𝟙 S))) :
-    EffectiveEpi (Limits.pullback.fst T.hom p₀) :=
-  have : Surjective (Limits.pullback.fst T.hom p₀).left :=
-    MorphismProperty.of_isPullback (P := @Surjective)
-      (IsPullback.of_isLimit (isLimitOfHasPullbackOfPreservesLimit (toScheme S) T.hom p₀)).flip ‹_›
-  Etale.effectiveEpi_of_surjective _
-
-/-- Base changes of a surjective étale map `p : S' ⟶ S` satisfy the sheaf condition in
-`Over (Etale.mk (𝟙 S))`. -/
-private lemma isSheafFor_mapPullbackAdj_counit {S S' : Scheme.{u}} (p : S' ⟶ S)
-    [AlgebraicGeometry.Etale p] (p₀ : Etale.mk p ⟶ Etale.mk (𝟙 S))
-    [Surjective ((toScheme S).map p₀)]
-    (F : Sheaf (smallEtaleTopology S) (Type u)) (T : CategoryTheory.Over (Etale.mk (𝟙 S))) :
-    Presieve.IsSheafFor (F.over (Etale.mk (𝟙 S))).obj
-      (.singleton ((CategoryTheory.Over.mapPullbackAdj p₀).counit.app T)) := by
-  have hsurj : Surjective (Limits.pullback.fst T.hom p₀).left :=
-    MorphismProperty.of_isPullback (P := @Surjective)
-      (IsPullback.of_isLimit (isLimitOfHasPullbackOfPreservesLimit (toScheme S) T.hom p₀)).flip ‹_›
-  have hcounit : ((CategoryTheory.Over.mapPullbackAdj p₀).counit.app T).left =
-      Limits.pullback.fst T.hom p₀ := by
-    simp only [CategoryTheory.Over.mapPullbackAdj_counit_app, CategoryTheory.Over.homMk_left]
-  have : Surjective ((CategoryTheory.Over.mapPullbackAdj p₀).counit.app T).left.left :=
-    hcounit ▸ hsurj
-  exact isSheafFor_singleton_over_of_surjective F (Etale.mk (𝟙 S))
-    ((CategoryTheory.Over.mapPullbackAdj p₀).counit.app T)
 
 /-- Effective descent for representability of étale sheaves by finite étale schemes along a
 quasi-compact surjective étale morphism `p : S' ⟶ S`. -/
@@ -209,6 +184,7 @@ theorem exists_toSheaf_iso_of_smallEtalePullback_iso {S S' : Scheme.{u}} (p : S'
   have hp₀ : (toScheme S).map p₀ = p := toScheme_map_homMk p
   have hX_hom : (toScheme S).map X_et.hom = X.obj.hom := toScheme_map_toEtale_inverse_hom p X
   have : Surjective ((toScheme S).map p₀) := by rw [hp₀]; exact ‹Surjective p›
+  have : Surjective p₀.left := this
   have hp_flat : Flat p := inferInstance
   have : Flat ((toScheme S).map p₀) := by rw [hp₀]; exact hp_flat
   have : QuasiCompact ((toScheme S).map p₀) := by rw [hp₀]; exact ‹QuasiCompact p›
@@ -224,8 +200,8 @@ theorem exists_toSheaf_iso_of_smallEtalePullback_iso {S S' : Scheme.{u}} (p : S'
   let X₀ : TauCeti.FiniteEtaleScheme S := ⟨X₀_over, hX₀⟩
   obtain ⟨f_et, hf_et⟩ := liftDescentDatumHom p p₀ e_rep.descentDatum X₀_over hX₀ f
   -- Descend the local representation along `p₀` and identify `F.over U₀` with `F`.
-  have (T : CategoryTheory.Over U₀) := effectiveEpi_pullback_fst_of_surjective p p₀ T
-  have rep₀ := e_rep.descend (isSheafFor_mapPullbackAdj_counit p p₀ F) f_et
+  have (T : CategoryTheory.Over U₀) := Etale.effectiveEpi_pullback_fst_of_surjective T.hom p₀
+  have rep₀ := e_rep.descend (isSheafFor_mapPullbackAdj_counit_of_surjective F p₀) f_et
   exact ⟨X₀, ⟨(fullyFaithfulSheafToPresheaf (smallEtaleTopology S) (Type u)).preimageIso
     (Functor.RepresentableBy.ofOverIsTerminal hU₀ rep₀).toIso⟩⟩
 

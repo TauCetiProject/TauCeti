@@ -51,6 +51,9 @@ structure morphisms cover `S` (`AlgebraicGeometry.Scheme.coversTop_smallEtaleTop
   étale site covers if and only if every point of `X.left` lifts along one of its members.
 * `AlgebraicGeometry.Scheme.coversTop_smallEtaleTopology_iff`: a family of étale `S`-schemes
   covers the small étale site if and only if their images cover `S`.
+* `AlgebraicGeometry.Scheme.isSheafFor_mapPullbackAdj_counit_of_surjective`: étale sheaves
+  satisfy the sheaf condition for the counit of `Over.mapPullbackAdj` along a morphism
+  surjective on underlying schemes.
 * `AlgebraicGeometry.Scheme.Etale.isIso_iff_forall_isIso_sheafRestrict_map`: a morphism of étale
   sheaves is an isomorphism if and only if its restrictions to the members of an étale covering
   are isomorphisms.
@@ -129,6 +132,22 @@ theorem isSheafFor_singleton_over_of_surjective (F : Sheaf (smallEtaleTopology S
   rw [Presieve.isSheafFor_iff_generate]
   exact (isSheaf_iff_isSheaf_of_type _ _).mp (F.over U).property _
     (generate_singleton_mem_over_smallEtaleTopology_of_surjective g)
+
+/-- An étale sheaf of sets on `S` satisfies the sheaf condition for the counit of
+`Over.mapPullbackAdj g` whenever `g : U ⟶ V` in `S.Etale` is surjective on underlying schemes. -/
+theorem isSheafFor_mapPullbackAdj_counit_of_surjective (F : Sheaf (smallEtaleTopology S) (Type u))
+    {U V : S.Etale} (g : U ⟶ V) [Surjective g.left] (T : Over V) :
+    Presieve.IsSheafFor (F.over V).obj (.singleton ((Over.mapPullbackAdj g).counit.app T)) := by
+  have hsurj : Surjective (pullback.fst T.hom g).left :=
+    MorphismProperty.of_isPullback (P := @Surjective)
+      (IsPullback.of_isLimit
+        (isLimitOfHasPullbackOfPreservesLimit (Etale.forget S ⋙ Over.forget S) T.hom g)).flip
+      ‹_›
+  have hcounit : ((Over.mapPullbackAdj g).counit.app T).left = pullback.fst T.hom g := by
+    simp only [Over.mapPullbackAdj_counit_app, Over.homMk_left]
+  have : Surjective ((Over.mapPullbackAdj g).counit.app T).left.left :=
+    hcounit ▸ hsurj
+  exact isSheafFor_singleton_over_of_surjective F V ((Over.mapPullbackAdj g).counit.app T)
 
 /-- A family of étale `S`-schemes covers the small étale site of `S`, in the sense that it
 generates a covering sieve of every object, if and only if every point of `S` lies in the image of

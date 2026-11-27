@@ -35,6 +35,8 @@ an effective epimorphism (`AlgebraicGeometry.Scheme.Etale.effectiveEpi_of_surjec
   subcanonical.
 * `AlgebraicGeometry.Scheme.Etale.effectiveEpi_of_surjective`: surjective morphisms in `S.Etale`
   are effective epimorphisms.
+* `AlgebraicGeometry.Scheme.Etale.effectiveEpi_pullback_fst_of_surjective`: base changes of
+  surjective morphisms in `S.Etale` are effective epimorphisms.
 
 ## References
 
@@ -79,5 +81,17 @@ theorem Etale.effectiveEpi_of_surjective {S : Scheme.{u}} {U V : S.Etale} (f : U
     [Surjective f.left] : EffectiveEpi f :=
   (smallEtaleTopology S).effectiveEpi_of_generate_singleton_mem f
     (generate_singleton_mem_smallEtaleTopology_of_surjective f)
+
+/-- Base change in `S.Etale` preserves effective epimorphisms coming from surjective morphisms. -/
+theorem Etale.effectiveEpi_pullback_fst_of_surjective {S : Scheme.{u}} {U V W : S.Etale}
+    (f : U ⟶ W) (g : V ⟶ W) [Surjective g.left] :
+    EffectiveEpi (Limits.pullback.fst f g) :=
+  have : Surjective (Limits.pullback.fst f g).left :=
+    MorphismProperty.of_isPullback (P := @Surjective)
+      (IsPullback.of_isLimit
+        (Limits.isLimitOfHasPullbackOfPreservesLimit
+          (Etale.forget S ⋙ Over.forget S) f g)).flip
+      ‹_›
+  Etale.effectiveEpi_of_surjective _
 
 end AlgebraicGeometry.Scheme

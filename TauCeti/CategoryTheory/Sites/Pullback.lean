@@ -629,6 +629,17 @@ private lemma homEquiv_sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom 
           dsimp only [adj₁, Functor.comp_obj]
           rw [Functor.yonedaCompSheafPullbackIso_hom_app, Equiv.apply_symm_apply]
 
+omit [J'.Subcanonical] [K'.Subcanonical]
+  [(G'.sheafPushforwardContinuous (Type v) K' J').IsRightAdjoint] in
+include hG' in
+private lemma sheafPushforwardContinuous_map_hom_app_apply
+    {F₁ F₂ : Sheaf J' (Type v)} (ψ : F₁ ⟶ F₂) (Y : D')
+    (s : ((G'.sheafPushforwardContinuous (Type v) K' J').obj F₁).obj.obj (Opposite.op Y))
+    (s' : F₁.obj.obj (Opposite.op (G'.obj Y))) (hs : s = s') :
+    (((G'.sheafPushforwardContinuous (Type v) K' J').map ψ).hom.app (Opposite.op Y)) s =
+      (ψ.hom.app (Opposite.op (G'.obj Y))) s' :=
+  hs ▸ rfl
+
 omit [(G'.sheafPushforwardContinuous (Type v) K' J').IsRightAdjoint] in
 include adj' hF' in
 private lemma homEquiv_preimageIso_compYonedaIso_symm_hom (X : D') :
@@ -647,21 +658,22 @@ private lemma homEquiv_preimageIso_compYonedaIso_symm_hom (X : D') :
         ((F'.sheafPushforwardContinuous (Type v) J' K').obj (K'.yoneda.obj X)) ≅
       (sheafToPresheaf J' (Type v)).obj (J'.yoneda.obj (G'.obj X)) :=
     (adj'.compYonedaIso.app X).symm
-  let φ : (F'.sheafPushforwardContinuous (Type v) J' K').obj (K'.yoneda.obj X) ⟶
-      J'.yoneda.obj (G'.obj X) :=
-    ((fullyFaithfulSheafToPresheaf J' (Type v)).preimageIso e).hom
-  have hφ : φ.hom = e.hom :=
+  have hφ : ((fullyFaithfulSheafToPresheaf J' (Type v)).preimageIso
+        (X := (F'.sheafPushforwardContinuous (Type v) J' K').obj (K'.yoneda.obj X))
+        (Y := J'.yoneda.obj (G'.obj X))
+        (adj'.compYonedaIso.app X).symm).hom.hom =
+      e.hom :=
     (fullyFaithfulSheafToPresheaf J' (Type v)).map_preimage e.hom
   apply K'.yonedaEquiv.injective
   refine .trans ?_ (Equiv.apply_symm_apply _ _).symm
   rw [adj₂.homEquiv_unit, K'.yonedaEquiv_comp, K'.yonedaEquiv_apply,
-    Functor.sheafPushforwardContinuous_map_hom_app,
-    sheafPushforwardContinuous_unit_app_yoneda_hom_app_id adj' J' K' X]
-  change (φ.hom.app (Opposite.op (G'.obj X))) (adj'.counit.app X) = 𝟙 (G'.obj X)
-  rw [hφ]
-  have he : ((adj'.compYonedaIso.app X).inv.app (Opposite.op (G'.obj X))) (adj'.counit.app X) =
+    sheafPushforwardContinuous_map_hom_app_apply J' K' _ X _ (adj'.counit.app X)
+      (sheafPushforwardContinuous_unit_app_yoneda_hom_app_id adj' J' K' X),
+    hφ]
+  have he : (e.hom.app (Opposite.op (G'.obj X))) (adj'.counit.app X) =
       adj'.homEquiv (G'.obj X) X (adj'.counit.app X) := by
-    simp [Adjunction.compYonedaIso]
+    simp [e, Adjunction.compYonedaIso]
+    rfl
   exact he.trans ((adj'.homEquiv_unit _ _ _).trans (adj'.right_triangle_components X))
 
 include adj' hF' in
