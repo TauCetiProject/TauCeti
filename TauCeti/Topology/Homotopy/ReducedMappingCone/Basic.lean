@@ -109,8 +109,8 @@ theorem incl_injective : Function.Injective (incl f) := by
 
 @[simp]
 theorem line_zero (x : X.carrier) : line f (0, x) = incl f (f x) := by
-  rw [line_apply, incl_apply, unitInterval.symm_zero, MappingCylinder.mkCyl_one]
-  rfl
+  rw [line_apply, incl_apply, unitInterval.symm_zero, MappingCylinder.mkCyl_one,
+    Hom.coe_toContinuousMap]
 
 @[simp]
 theorem line_one (x : X.carrier) : line f (1, x) = (reducedMappingCone f).basepoint := by
@@ -320,10 +320,9 @@ def map : Hom (reducedMappingCone a.hom) (reducedMappingCone b.hom) :=
   desc a.hom ((incl b.hom).comp s.right)
     { toContinuousMap := (line b.hom).comp ((ContinuousMap.id I).prodMap s.left.toContinuousMap)
       map_zero_left := fun x ↦ by
-        refine (line_zero b.hom _).trans ?_
-        simpa only [comp_eq_hom_comp, Hom.toContinuousMap_comp, ContinuousMap.comp_apply,
-          Hom.coe_toContinuousMap, Hom.comp_apply] using
-          congrArg (incl b.hom) (DFunLike.congr_fun (F := Hom a.left b.right) (Arrow.w s) x)
+        have hw := DFunLike.congr_fun (F := Hom a.left b.right) (Arrow.w s) x
+        simp only [comp_eq_hom_comp, Hom.comp_apply] at hw
+        simpa using (line_zero b.hom _).trans (congrArg (incl b.hom) hw)
       map_one_left := fun x ↦ line_one b.hom (DFunLike.coe (F := Hom a.left b.left) s.left x)
       prop' := fun t x hx ↦ by
         obtain rfl := Set.mem_singleton_iff.1 hx
@@ -363,13 +362,11 @@ def collapseNatTrans : functor.{u} ⟶ Arrow.leftFunc ⋙ reducedSuspension wher
   naturality a b s := by
     apply hom_ext a.hom
     · intro y
-      simp only [Functor.comp_obj, Arrow.leftFunc_obj, functor_obj, functor_map, comp_eq_hom_comp,
-        Hom.comp_apply, map_incl, collapse_incl, Functor.comp_map, Arrow.leftFunc_map]
-      exact (reducedSuspension.map s.left).map_basepoint.symm
+      simpa [-Hom.map_basepoint_apply] using
+        (Hom.map_basepoint_apply (reducedSuspension.map s.left)).symm
     · intro p
-      simp only [Functor.comp_obj, Arrow.leftFunc_obj, functor_obj, functor_map, comp_eq_hom_comp,
-        Hom.comp_apply, map_line, collapse_line, Functor.comp_map, Arrow.leftFunc_map]
-      exact (reducedSuspension_map_apply_mk s.left (p.2, p.1)).symm
+      simpa [-reducedSuspension_map_apply_mk] using
+        (reducedSuspension_map_apply_mk s.left (p.2, p.1)).symm
 
 @[simp]
 theorem collapseNatTrans_app (a : Arrow BasedTopologicalSpace.{u}) :

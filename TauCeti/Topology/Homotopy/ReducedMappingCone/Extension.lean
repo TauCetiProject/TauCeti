@@ -68,6 +68,10 @@ private def targetTrack : Hom Y (trackSpace Z) where
   toContinuousMap := (K.toContinuousMap.comp ⟨Prod.swap, continuous_swap⟩).curry
   map_basepoint := ContinuousMap.ext fun t ↦ (K.eq_snd t (mem_singleton _)).trans g.map_basepoint
 
+private lemma targetTrack_apply (y : Y.carrier) (t : I) :
+    (targetTrack f h K).toContinuousMap y t = K (t, y) := by
+  simp [targetTrack]
+
 /-- At time `t`, stretch the cone coordinate `s` over the signed interval `[-t,1]`.
 This leaves the apex fixed and runs the prescribed homotopy on the attaching face. -/
 private def coneTrack : C(I × X.carrier, C(I, Z.carrier)) :=
@@ -82,11 +86,8 @@ private def extensionTrack : Hom (reducedMappingCone f) (trackSpace Z) :=
   desc f (targetTrack f h K)
     { toContinuousMap := coneTrack f h K
       map_zero_left := fun x ↦ ContinuousMap.ext fun t ↦ by
-        simpa only [ContinuousMap.toFun_eq_coe, coneTrack_apply, Icc.coe_zero, sub_zero, mul_one,
-          zero_sub, targetTrack, ContinuousMap.comp_apply, ContinuousMap.curry_apply,
-          ContinuousMap.coe_mk, Prod.swap_prod_mk, Hom.coe_toContinuousMap,
-          ContinuousMap.HomotopyWith.coe_toContinuousMap] using
-          (joinedLine_neg f h K t x)
+        simpa [ContinuousMap.toFun_eq_coe, coneTrack_apply] using
+          (joinedLine_neg f h K t x).trans (targetTrack_apply f h K (f x) t).symm
       map_one_left := fun x ↦ ContinuousMap.ext fun t ↦ by
         simpa only [ContinuousMap.toFun_eq_coe, coneTrack_apply, Icc.coe_one, sub_self, mul_zero,
           sub_zero, line_one, Hom.map_basepoint_apply, ContinuousMap.const_apply] using
@@ -98,8 +99,7 @@ private def extensionTrack : Hom (reducedMappingCone f) (trackSpace Z) :=
 
 private lemma extensionTrack_incl (y : Y.carrier) (t : I) :
     extensionTrack f h K (incl f y) t = K (t, y) := by
-  rw [extensionTrack, desc_incl]
-  rfl
+  rw [extensionTrack, desc_incl, ← Hom.coe_toContinuousMap (targetTrack f h K), targetTrack_apply]
 
 private lemma extensionTrack_zero (z : (reducedMappingCone f).carrier) :
     extensionTrack f h K z 0 = h z := by
