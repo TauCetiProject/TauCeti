@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.KrullTopology
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.ModuleSheafStalk
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.ModuleSheaf.Stalk
 public import TauCeti.FieldTheory.Galois.Basic
 public import TauCeti.FieldTheory.Galois.Complex
 

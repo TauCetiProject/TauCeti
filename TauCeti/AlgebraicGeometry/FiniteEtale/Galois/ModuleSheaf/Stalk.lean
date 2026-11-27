@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.ModuleSheaf
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.ModuleSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GaloisStalk
 
 /-!
