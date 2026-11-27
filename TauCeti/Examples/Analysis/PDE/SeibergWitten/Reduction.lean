@@ -45,11 +45,11 @@ and at `m = 1` the exponent is `0`, the nonsingular case
 `16 C² L (1 + B) τ ≤ 1` (`TauCeti.IsForcingTolerance`); with the unforced residual
 `2 C² L ε < 1 / 4` this keeps the forced contraction constant `2 C² L (ε + B τ)` below `3 / 8`
 (`TauCeti.IsForcingTolerance.two_mul_sq_mul_mul_add_mul_lt`). For `C = L = 1` and `B = 8`,
-`τ = 1 / 144` is a tolerance (`isForcingTolerance_one_one_eight`), and the contraction constant
-stays below `3 / 8` (`two_mul_add_eight_mul_lt`). The budget without the factor `1 + B`,
-`16 C² L τ ≤ 1`, admits `τ = 1 / 16`, which is not a tolerance
-(`not_isForcingTolerance_one_one_eight`): there the forcing term alone makes the contraction
-constant at least `1` (`one_le_two_mul_add_eight_mul`).
+`τ = 1 / 144` is a tolerance (`isForcingTolerance_one_one_eight_one_div_one_hundred_forty_four`),
+and the contraction constant stays below `3 / 8` (`two_mul_add_eight_mul_lt`). The budget without
+the factor `1 + B`, `16 C² L τ ≤ 1`, admits `τ = 1 / 16`, which is not a tolerance
+(`sixteen_mul_le_one_and_not_isForcingTolerance_one_one_eight_one_div_sixteen`): there the forcing
+term alone makes the contraction constant at least `1` (`one_le_two_mul_add_eight_mul`).
 
 **A covered torus with a flat normal line of irrational holonomy.** On the square torus
 `ℂ / (ℤ + ℤ i)` take the flat line `N` with holonomy `exp (2πi √2)` along `1` and trivial
@@ -153,7 +153,8 @@ open scoped NNReal
 variable {ε : ℝ}
 
 /-- For `C = L = 1` and `B = 8`, `τ = 1 / 144` is a forcing tolerance, with `δ = b = 1`. -/
-theorem isForcingTolerance_one_one_eight : IsForcingTolerance 1 1 8 1 1 (1 / 144) where
+theorem isForcingTolerance_one_one_eight_one_div_one_hundred_forty_four :
+    IsForcingTolerance 1 1 8 1 1 (1 / 144) where
   nonneg := by norm_num
   sixteen_mul_sq_mul_mul_one_add_mul_le_one := by norm_num
   eight_mul_mul_one_add_mul_le := by norm_num
@@ -163,13 +164,14 @@ theorem isForcingTolerance_one_one_eight : IsForcingTolerance 1 1 8 1 1 (1 / 144
 constant `2 (ε + 8 τ)` stays below `3 / 8`. -/
 theorem two_mul_add_eight_mul_lt (hε : 2 * ε < 1 / 4) :
     2 * (ε + 8 * (1 / 144)) < 3 / 8 := by
-  have h := isForcingTolerance_one_one_eight.two_mul_sq_mul_mul_add_mul_lt (ε := ε)
-    (by simpa using hε)
+  have h := isForcingTolerance_one_one_eight_one_div_one_hundred_forty_four
+    |>.two_mul_sq_mul_mul_add_mul_lt (ε := ε) (by simpa using hε)
   simpa using h
 
 /-- **The budget without the factor `1 + B` is not a tolerance.** For `C = L = 1` and `B = 8`,
 `τ = 1 / 16` meets `16 C² L τ ≤ 1` but not `16 C² L (1 + B) τ ≤ 1`. -/
-theorem not_isForcingTolerance_one_one_eight {δ b : ℝ} :
+theorem sixteen_mul_le_one_and_not_isForcingTolerance_one_one_eight_one_div_sixteen
+    {δ b : ℝ} :
     16 * (1 : ℝ) ^ 2 * 1 * (1 / 16) ≤ 1 ∧ ¬ IsForcingTolerance 1 1 8 δ b (1 / 16) := by
   refine ⟨by norm_num, fun h ↦ ?_⟩
   have h₁ := h.sixteen_mul_sq_mul_mul_one_add_mul_le_one
@@ -201,15 +203,9 @@ theorem eq_zero_of_conjWirtingerDeriv_eq_zero_sqrt_two {j a b c d : ℤ} (hj : j
     (h : ∀ z, conjWirtingerDeriv u z 1 = 0) : u = 0 := by
   have hinj := (bijective_flatLineConjWirtingerDerivₗ_of_irrational (θ₂ := 0)
     (Or.inl irrational_sqrt_two) im_conj_one_mul_I_ne_zero hj hdet).1
-  have e₁ : (a : ℂ) * 1 + b * I = a + b * I := by ring
-  have e₂ : (c : ℂ) * 1 + d * I = c + d * I := by ring
-  have e₃ : (j : ℝ) * (a * √2 + b * 0) = j * a * √2 := by ring
-  have e₄ : (j : ℝ) * (c * √2 + d * 0) = j * c * √2 := by ring
-  rw [e₁, e₂, e₃, e₄] at hinj
-  have h0 : flatLineConjWirtingerDerivₗ _ _ _ _ ⟨u, hu⟩ = 0 :=
-    Subtype.ext <| by rw [coe_flatLineConjWirtingerDerivₗ_apply]; exact funext h
-  rw [← map_zero (flatLineConjWirtingerDerivₗ _ _ _ _)] at h0
-  exact congrArg Subtype.val (hinj h0)
+  refine congrArg Subtype.val (@hinj ⟨u, by convert hu using 2 <;> ring⟩ 0 ?_)
+  rw [map_zero]
+  exact Subtype.ext <| by rw [coe_flatLineConjWirtingerDerivₗ_apply]; exact funext h
 
 /-- **Irrationality is needed.** For the flat line over `ℂ / (ℤ + ℤ i)` with holonomy
 `exp (2πi / 2) = -1` along `1` and trivial holonomy along `i`, the square has trivial holonomy,
@@ -228,8 +224,7 @@ theorem not_injective_flatLineConjWirtingerDerivₗ_two_mul_half :
     refine Subtype.ext ?_
     rw [coe_flatLineConjWirtingerDerivₗ_apply]
     funext z
-    rw [(differentiableAt_const (1 : ℂ)).conjWirtingerDeriv_eq_zero]
-    rfl
+    simp
   have := congrArg (fun v : flatLineSections ∞ 1 I (2 * (1 / 2)) 0 ↦ (v : ℂ → ℂ) 0) (hinj h0)
   simp at this
 
