@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CommutingFlow
 
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 import TauCeti.Geometry.Manifold.RegularValue.Section
 import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
@@ -31,6 +32,8 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
 
 * `TauCeti.SmoothTwoForm.IsSymplectic.isLocalDiffeomorphAt_hamiltonianFlowAction_section`: sweeping
   a local section of `F` through a regular point by the action is a local diffeomorphism.
+* `TauCeti.SmoothTwoForm.IsSymplectic.isLocalDiffeomorphOn_hamiltonianFlowAction_section`:
+  sweeping a local section of `F` by the action is a local diffeomorphism wherever it is defined.
 * `TauCeti.SmoothTwoForm.IsSymplectic.eventually_exists_hamiltonianFlowAction_apply_eq`: small
   elements of the action reach every nearby point of a regular level.
 * `TauCeti.SmoothTwoForm.IsSymplectic.range_hamiltonianFlowAction_apply`: the orbit of `x` is
@@ -171,6 +174,48 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
     rw [Module.finrank_prod, Module.finrank_fintype_fun_eq_card, ← hdim, two_mul]
   exact isLocalDiffeomorphAt_of_injective_mfderiv hPs hopen hmem
     BoundarylessManifold.isInteriorPoint (by simp) hinj hfin
+
+/-- **Sweeping a section is a local diffeomorphism.** Let `s` be a smooth local section of `F`,
+defined on an open set `t`. When `dim M = 2 · |ι|`, sweeping it by the Hamiltonian flow action,
+`(v, c) ↦ v • s c`, is a smooth local diffeomorphism on `ℝ^ι × t`. -/
+theorem isLocalDiffeomorphOn_hamiltonianFlowAction_section
+    (hdim : 2 * Fintype.card ι = finrank ℝ E) {t : Set (ι → ℝ)} (ht : IsOpen t)
+    {s : (ι → ℝ) → M} (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s t) (hFs : ∀ c ∈ t, F (s c) = c) :
+    IsLocalDiffeomorphOn (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞
+      (fun p : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.1).toMul (s p.2))
+      (univ ×ˢ t) := by
+  rintro ⟨⟨v, c⟩, hvc⟩
+  have hct : c ∈ t := hvc.2
+  set G : (ι → ℝ) × (ι → ℝ) → M := fun q ↦
+    (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2)
+  have hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F (s c) :=
+    isRegularPoint_of_comp_eventuallyEq_id ((hF (s c)).mdifferentiableAt (by simp))
+      ((hs.contMDiffAt (ht.mem_nhds hct)).mdifferentiableAt (by simp))
+      (eventually_of_mem (ht.mem_nhds hct) hFs)
+  -- At `(0, c)` the sweep is a local diffeomorphism by the inverse function theorem.
+  have h0 : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞ G (0, c) := by
+    have h := hσ.isLocalDiffeomorphAt_hamiltonianFlowAction_section hF hcomm hc hdim hreg ht
+      (by rwa [hFs c hct]) (by rw [hFs c hct]) hs hFs
+    rwa [hFs c hct] at h
+  -- Elsewhere it is the flow `v •` after the sweep translated by `-v`.
+  have hG : G = (hσ.hamiltonianFlowAction hF hcomm hc v).toMul ∘ G ∘
+      Prod.map (· - v) (id : (ι → ℝ) → ι → ℝ) := by
+    funext q
+    simp only [G, comp_apply, Prod.map_fst, Prod.map_snd, id_eq]
+    rw [← hσ.hamiltonianFlowAction_add_apply, add_sub_cancel]
+  change IsLocalDiffeomorphAt _ I ∞ G (v, c)
+  rw [hG]
+  have htr : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ))
+      (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) ∞ (Prod.map (· - v) (id : (ι → ℝ) → ι → ℝ)) (v, c) :=
+    (isLocalDiffeomorphAt_of_fderiv_eq (e := ContinuousLinearEquiv.refl ℝ (ι → ℝ))
+      (contDiff_id.sub contDiff_const).contDiffOn isOpen_univ (mem_univ v) (by simp)
+      (by rw [fderiv_sub_const, fderiv_id, ContinuousLinearEquiv.coe_refl])).prodMap
+      (by simpa using (Diffeomorph.refl 𝓘(ℝ, ι → ℝ) (ι → ℝ) ∞).isLocalDiffeomorph c)
+  have h0' : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞ G
+      (Prod.map (· - v) (id : (ι → ℝ) → ι → ℝ) (v, c)) := by
+    simpa using h0
+  exact (htr.comp (hg := h0')).comp
+    (hg := (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.isLocalDiffeomorph _)
 
 /-- **Small elements of the Hamiltonian flow action reach every nearby point of a regular level.**
 Let `x` be a regular point of `F` on a manifold of dimension `2 · |ι|`. For every neighbourhood

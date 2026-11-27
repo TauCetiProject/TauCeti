@@ -40,13 +40,14 @@ reached from the section by the flows
 the parameter `c`. So `W` is a union of whole orbits, the regular Liouville tori through the points
 `s c`, and `W` is identified with the family of tori `ℝ^ι / Λ_c`, one for each value `c ∈ D`.
 Composing with the global trivialization of the family of tori
-(`TauCeti.torusFamilyDiffeomorphProd`) gives a diffeomorphism `D × ℝ^ι/ℤ^ι ≃ W`
-(`TauCeti.SmoothTwoForm.IsSymplectic.prodTorusDiffeomorph`), the angle coordinates of `W`.
+(`TauCeti.torusFamilyDiffeomorphProd`) along a `ℤ`-basis of `Λ` indexed by `κ` gives a
+diffeomorphism `D × ℝ^κ/ℤ^κ ≃ W` (`TauCeti.SmoothTwoForm.IsSymplectic.prodTorusDiffeomorph`), the
+angle coordinates of `W`.
 
 Injectivity holds because `F` separates the parameters and the periods of `s c` are exactly the
-lattice of `c`; the local diffeomorphism property is the inverse function theorem for the sweep at
-a regular point (`isLocalDiffeomorphAt_hamiltonianFlowAction_section`, in the same namespace),
-transported along the flows. No isotropy of the section is needed.
+lattice of `c`; the local diffeomorphism property descends from that of the sweep
+(`isLocalDiffeomorphOn_hamiltonianFlowAction_section`, in the same namespace). No isotropy of the
+section is needed.
 
 ## Main definitions
 
@@ -55,7 +56,7 @@ All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 * `torusFamilyMap`: the map `[c, v] ↦ v • s c` from the family of tori to `M`.
 * `torusFamilyDiffeomorph`: the same map as a diffeomorphism onto its open image.
 * `prodTorusDiffeomorph`: its composite with the global trivialization of the family of tori,
-  a diffeomorphism `D × ℝ^ι/ℤ^ι ≃ W`.
+  a diffeomorphism `D × ℝ^κ/ℤ^κ ≃ W`, for a `ℤ`-basis of `Λ` indexed by `κ`.
 
 ## Main results
 
@@ -63,8 +64,10 @@ All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 * `apply_torusFamilyMap`: it lies over the parameter space.
 * `injective_torusFamilyMap`: it is injective.
 * `isLocalDiffeomorph_torusFamilyMap`: it is a smooth local diffeomorphism.
-* `connectedComponentIn_subset_range_torusFamilyMap`: its image contains the compact regular
-  component of a level through a point of the section.
+* `connectedComponentIn_subset_range_torusFamilyMap`: its image contains the regular connected
+  component of the level through a point of the section.
+* `coe_torusFamilyProjection_torusFamilyDiffeomorph_symm_apply`,
+  `coe_fst_prodTorusDiffeomorph_symm_apply`: the inverse diffeomorphisms read off `F`.
 
 ## References
 
@@ -165,9 +168,8 @@ theorem connectedComponentIn_subset_range_torusFamilyMap (hdim : 2 * Fintype.car
   rintro _ ⟨v, rfl⟩
   exact ⟨c, v, rfl⟩
 
-/-- **The descended sweep is injective.** Let `s` be a section of `F` over `U` and let the lattice
-`P c` contain every period of `s c`. Two points `[c, v]` and `[c', v']` with the same image lie in
-the same level, so `c = c'`, and `-v + v'` is a period of `s c`, hence a vector of `P c`. -/
+/-- **The descended sweep is injective.** If `s` is a section of `F` over `U` and every period of
+`s c` lies in the lattice `P c`, then `[c, v] ↦ v • s c` is injective. -/
 theorem injective_torusFamilyMap (hFs : ∀ c ∈ U, F (s c) = c)
     (hstab : ∀ (c : U) (v : ι → ℝ), v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) →
       v ∈ LinearMap.range (P c)) :
@@ -199,60 +201,6 @@ variable [∀ c, DiscreteTopology (LinearMap.range (P c))]
   (hinj : ∀ c, Injective (P c))
   (hP : ∀ l, ContMDiff 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) ∞ fun c : U ↦ P c l)
 
-/-- **The sweep of a section is a local diffeomorphism.** On a manifold of dimension `2 · |ι|`,
-let `s` be a smooth section of `F` over `U`. Then `(c, v) ↦ v • s c` is a smooth local
-diffeomorphism on `U × ℝ^ι`. -/
-theorem isLocalDiffeomorph_hamiltonianFlowAction_section
-    (hdim : 2 * Fintype.card ι = finrank ℝ E) (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s U)
-    (hFs : ∀ c ∈ U, F (s c) = c) :
-    IsLocalDiffeomorph (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞
-      fun p : U × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.2).toMul (s p.1) := by
-  rintro ⟨c, v⟩
-  set G : (ι → ℝ) × (ι → ℝ) → M := fun q ↦
-    (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (s q.2)
-  -- `s c` is a regular point of `F`, since `F ∘ s` is the identity near `c`.
-  have hsd : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c :=
-    (hs.contMDiffAt (U.isOpen.mem_nhds c.prop)).mdifferentiableAt (by simp)
-  have hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F (s c) := by
-    refine IsRegularPoint.of_comp ?_ ((hF (s c)).mdifferentiableAt (by simp)) hsd
-    refine IsRegularPoint.congr_of_eventuallyEq (f := id) ?_
-      (eventually_of_mem (U.isOpen.mem_nhds c.prop) fun c' hc' ↦ hFs c' hc')
-    rw [isRegularPoint_iff, mfderiv_id]
-    exact surjective_id
-  have hid (y : ι → ℝ) : IsLocalDiffeomorphAt 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) ∞ id y := by
-    simpa using (Diffeomorph.refl 𝓘(ℝ, ι → ℝ) (ι → ℝ) ∞).isLocalDiffeomorph y
-  -- At `(0, c)` the sweep is a local diffeomorphism by the inverse function theorem.
-  have h0 : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞ G (0, (c : ι → ℝ)) := by
-    have h := hσ.isLocalDiffeomorphAt_hamiltonianFlowAction_section hF hcomm hc hdim hreg U.isOpen
-      (by rw [hFs c c.prop]; exact c.prop) (by rw [hFs c c.prop]) hs hFs
-    rwa [hFs c c.prop] at h
-  -- Elsewhere it is the flow `v •` after the sweep translated by `-v`.
-  have hG : G = (hσ.hamiltonianFlowAction hF hcomm hc v).toMul ∘ G ∘
-      Prod.map (· - v) (id : (ι → ℝ) → ι → ℝ) := by
-    funext q
-    simp only [G, comp_apply, Prod.map_fst, Prod.map_snd, id_eq]
-    rw [← hσ.hamiltonianFlowAction_add_apply, add_sub_cancel]
-  have hv : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞ G (v, (c : ι → ℝ)) := by
-    rw [hG]
-    have ht : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ))
-        (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) ∞
-        (Prod.map (· - v) (id : (ι → ℝ) → ι → ℝ)) (v, (c : ι → ℝ)) :=
-      (isLocalDiffeomorphAt_of_fderiv_eq (e := ContinuousLinearEquiv.refl ℝ (ι → ℝ))
-        (contDiff_id.sub contDiff_const).contDiffOn isOpen_univ (mem_univ v) (by simp)
-        (by rw [fderiv_sub_const, fderiv_id]; rfl)).prodMap (hid c)
-    have h0' : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞ G
-        (Prod.map (· - v) (id : (ι → ℝ) → ι → ℝ) (v, (c : ι → ℝ))) := by
-      simpa using h0
-    exact (ht.comp (hg := h0')).comp
-      (hg := (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.isLocalDiffeomorph _)
-  -- Finally pass to `U × ℝ^ι` through the open inclusion and the swap of factors.
-  have hu : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ))
-      (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) ∞
-      (fun p : U × (ι → ℝ) ↦ (p.2, (p.1 : ι → ℝ))) (c, v) :=
-    (isLocalDiffeomorph_subtype_val c |>.prodMap (hid v)).comp
-      (hg := (Diffeomorph.prodComm 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) (ι → ℝ) (ι → ℝ) ∞).isLocalDiffeomorph _)
-  exact hu.comp (hg := hv)
-
 include hinj hP in
 /-- **The descended sweep is a local diffeomorphism.** On a manifold of dimension `2 · |ι|`, let
 `s` be a smooth section of `F` over `U`, and `P` a smooth family of full lattices of periods of the
@@ -271,7 +219,15 @@ theorem isLocalDiffeomorph_torusFamilyMap (hdim : 2 * Fintype.card ι = finrank 
   -- Cancel the orbit map, a local diffeomorphism, on the right.
   refine IsLocalDiffeomorphAt.of_comp_right ?_ (isLocalDiffeomorph_torusFamily_mk P hinj hP p)
   rw [torusFamilyMap_comp_mk]
-  exact hσ.isLocalDiffeomorph_hamiltonianFlowAction_section hF hcomm hc s hdim hs hFs p
+  -- On `U × ℝ^ι` the sweep is the sweep on `ℝ^ι × ℝ^ι` after the open inclusion and the swap.
+  have hu : IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ))
+      (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) ∞
+      (fun p : U × (ι → ℝ) ↦ (p.2, (p.1 : ι → ℝ))) p :=
+    (isLocalDiffeomorph_subtype_val p.1 |>.prodMap
+      (by simpa using (Diffeomorph.refl 𝓘(ℝ, ι → ℝ) (ι → ℝ) ∞).isLocalDiffeomorph p.2)).comp
+      (hg := (Diffeomorph.prodComm 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) (ι → ℝ) (ι → ℝ) ∞).isLocalDiffeomorph _)
+  exact hu.comp (hg := hσ.isLocalDiffeomorphOn_hamiltonianFlowAction_section hF hcomm hc hdim
+    U.isOpen hs hFs ⟨(p.2, p.1), mem_univ _, p.1.prop⟩)
 
 /-! ### The diffeomorphism onto the saturated neighbourhood -/
 
@@ -307,9 +263,31 @@ theorem coe_torusFamilyDiffeomorph_apply (hdim : 2 * Fintype.card ι = finrank �
   letI := torusFamilyChartedSpace (H := ι → ℝ) P (fun l ↦ (hP l).continuous) hinj
   IsLocalDiffeomorph.coe_diffeomorphOfInjective_apply _ _ z
 
+/-- The diffeomorphism onto the swept set lies over the values: the inverse sends `y` into the
+torus over `F y`. -/
+@[simp]
+theorem coe_torusFamilyProjection_torusFamilyDiffeomorph_symm_apply
+    (hdim : 2 * Fintype.card ι = finrank ℝ E)
+    (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s U) (hFs : ∀ c ∈ U, F (s c) = c)
+    (hstab : ∀ (c : U) (v : ι → ℝ), v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) →
+      v ∈ LinearMap.range (P c))
+    (y : letI := periodAddAction P
+      letI := torusFamilyChartedSpace (H := ι → ℝ) P (fun l ↦ (hP l).continuous) hinj
+      (hσ.isLocalDiffeomorph_torusFamilyMap hF hcomm hc s P hper hinj hP hdim hs hFs).image) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ι → ℝ) P (fun l ↦ (hP l).continuous) hinj
+    torusFamilyProjection P
+        ((hσ.torusFamilyDiffeomorph hF hcomm hc s P hper hinj hP hdim hs hFs hstab).symm y) =
+      F y := by
+  let _ := periodAddAction P
+  let _ := torusFamilyChartedSpace (H := ι → ℝ) P (fun l ↦ (hP l).continuous) hinj
+  rw [← hσ.apply_torusFamilyMap hF hcomm hc s P hper hFs,
+    ← hσ.coe_torusFamilyDiffeomorph_apply hF hcomm hc s P hper hinj hP hdim hs hFs hstab,
+    Diffeomorph.apply_symm_apply]
+
 /-- **Angle coordinates on the swept set.** For a `ℤ`-basis `b` of `Λ`, the family of tori is
 trivialized by the period coordinates (`TauCeti.torusFamilyDiffeomorphProd`), so the swept set is
-diffeomorphic to `U × ℝ^ι/ℤ^ι`: the class of `x ∈ ℝ^ι` over `c` goes to
+diffeomorphic to `U × ℝ^κ/ℤ^κ`, where `κ` indexes `b`: the class of `x ∈ ℝ^κ` over `c` goes to
 `(∑ i, xᵢ P c (b i)) • s c` (`prodTorusDiffeomorph_apply`). -/
 def prodTorusDiffeomorph {κ : Type*} [Fintype κ] (b : Basis κ ℤ Λ)
     (hdim : 2 * Fintype.card ι = finrank ℝ E)
@@ -327,6 +305,7 @@ def prodTorusDiffeomorph {κ : Type*} [Fintype κ] (b : Basis κ ℤ Λ)
     (hσ.torusFamilyDiffeomorph hF hcomm hc s P hper hinj hP hdim hs hFs hstab)
 
 /-- The angle coordinates send the class of `x` over `c` to `(∑ i, xᵢ P c (b i)) • s c`. -/
+@[simp]
 theorem prodTorusDiffeomorph_apply {κ : Type*} [Fintype κ] (b : Basis κ ℤ Λ)
     (hdim : 2 * Fintype.card ι = finrank ℝ E)
     (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s U) (hFs : ∀ c ∈ U, F (s c) = c)
@@ -336,6 +315,25 @@ theorem prodTorusDiffeomorph_apply {κ : Type*} [Fintype κ] (b : Basis κ ℤ �
         (c, Quotient.mk _ x) : M) =
       (hσ.hamiltonianFlowAction hF hcomm hc (∑ i, x i • P c (b i))).toMul (s c) := by
   simp [prodTorusDiffeomorph, Basis.equivFun_symm_apply]
+
+/-- The angle coordinates lie over the values: the parameter of the inverse image of `y` is
+`F y`. -/
+@[simp]
+theorem coe_fst_prodTorusDiffeomorph_symm_apply {κ : Type*} [Fintype κ] (b : Basis κ ℤ Λ)
+    (hdim : 2 * Fintype.card ι = finrank ℝ E)
+    (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s U) (hFs : ∀ c ∈ U, F (s c) = c)
+    (hstab : ∀ (c : U) (v : ι → ℝ), v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) →
+      v ∈ LinearMap.range (P c))
+    (y : letI := periodAddAction P
+      letI := torusFamilyChartedSpace (H := ι → ℝ) P (fun l ↦ (hP l).continuous) hinj
+      (hσ.isLocalDiffeomorph_torusFamilyMap hF hcomm hc s P hper hinj hP hdim hs hFs).image) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ι → ℝ) P (fun l ↦ (hP l).continuous) hinj
+    (((hσ.prodTorusDiffeomorph hF hcomm hc s P hper hinj hP b hdim hs hFs hstab).symm y).1 :
+      ι → ℝ) = F y := by
+  let _ := periodAddAction P
+  let _ := torusFamilyChartedSpace (H := ι → ℝ) P (fun l ↦ (hP l).continuous) hinj
+  simp [prodTorusDiffeomorph]
 
 end IsSymplectic
 
