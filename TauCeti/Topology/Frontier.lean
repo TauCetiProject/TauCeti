@@ -124,7 +124,7 @@ let alone a holomorphic map.
   frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
 * `IsOpen.closure_sdiff_of_isClosed` and `IsOpen.frontier_sdiff_of_isClosed` — the closure and
   frontier of an open set with a closed subset removed.
-* `interior_biUnion_of_isClosed_of_pairwiseDisjoint` — the interior of a finite union of
+* `TauCeti.interior_biUnion_of_isClosed_of_pairwiseDisjoint` — the interior of a finite union of
   pairwise-disjoint closed sets is the union of their interiors.
 * `IsOpen.closure_sdiff_biUnion` and `IsOpen.frontier_sdiff_biUnion` — the closure and frontier
   of an open set with finitely many pairwise-disjoint closed subsets removed.
@@ -418,7 +418,7 @@ theorem _root_.IsOpen.frontier_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (
 
 /-- The interior of a finite union of pairwise-disjoint closed sets is the union of their
 interiors. -/
-theorem _root_.interior_biUnion_of_isClosed_of_pairwiseDisjoint {s : Finset ι} {K : ι → Set X}
+theorem interior_biUnion_of_isClosed_of_pairwiseDisjoint {s : Finset ι} {K : ι → Set X}
     (hK : ∀ i ∈ s, IsClosed (K i)) (hdisj : (s : Set ι).PairwiseDisjoint K) :
     interior (⋃ i ∈ s, K i) = ⋃ i ∈ s, interior (K i) := by
   classical
