@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import TauCeti.Algebra.MonoidAlgebra.Supported
 public import TauCeti.RingTheory.GradedAlgebra.Degree.Width
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # Bases, ranks, and weighted degrees of the graded pieces of a monoid algebra
@@ -46,6 +47,14 @@ When `w : M →+ ι` takes values in a linearly ordered additive monoid or commu
   `AddMonoidAlgebra.infDegree_withTop_eq_minDeg_gradeBy`, and
   `AddMonoidAlgebra.degWidth_gradeBy_eq_zero_iff_forall_mem_support`: extremal graded degrees and
   degree width of `gradeBy R w` in terms of `x.coeff.support`, `supDegree`, and `infDegree`.
+* `AddMonoidAlgebra.single_coeff_eq_of_mem_grade`: a homogeneous element of `grade R m` equals
+  `single m (a.coeff m)`.
+* `AddMonoidAlgebra.coeff_mul_of_mem_grade`: the `(m₁ + m₂)`-th coefficient of a product of
+  homogeneous elements in `grade R m₁` and `grade R m₂` is the product of their coefficients.
+* `AddMonoidAlgebra.decompose_grade_curryAlgEquiv_symm_single`: homogeneous component of an
+  uncurried single-exponent Laurent/monoid-algebra element.
+* `AddMonoidAlgebra.map_mem_gradeBy`, `AddMonoidAlgebra.mapAlgHom_mem_gradeBy`,
+  `AddMonoidAlgebra.mapAlgHom_mem_grade`: coefficient homomorphisms preserve graded pieces.
 * `TauCeti.homogeneousUnitDegrees_gradeBy`: for the group algebra `R[G]` graded by an additive
   homomorphism `f : G →+ ι`, the homogeneous unit degrees are the range of `f`.
 -/
@@ -53,6 +62,8 @@ When `w : M →+ ι` takes values in a linearly ordered additive monoid or commu
 public section
 
 namespace AddMonoidAlgebra
+
+section GradeBy
 
 variable {M ι : Type*} (R : Type*) [CommSemiring R]
 
@@ -212,11 +223,62 @@ end AddCommGroup
 
 end WeightDegree
 
+end GradeBy
+
+variable {M ι : Type*}
+
+/-- An element of `AddMonoidAlgebra.grade R m` equals `single m` of its `m`-th coefficient. -/
+theorem single_coeff_eq_of_mem_grade {R : Type*} [CommSemiring R] {m : M} {a : R[M]}
+    (ha : a ∈ grade R m) : single m (a.coeff m) = a := by
+  obtain ⟨r, rfl⟩ := (mem_grade_iff' R m a).mp ha
+  simp
+
+/-- In an additive monoid algebra, the `(m₁ + m₂)`-th coefficient of a product of homogeneous
+elements of degrees `m₁` and `m₂` is the product of their respective coefficients. -/
+theorem coeff_mul_of_mem_grade {R : Type*} [CommSemiring R] [Add M] {m₁ m₂ : M}
+    {a₁ a₂ : R[M]} (ha₁ : a₁ ∈ grade R m₁) (ha₂ : a₂ ∈ grade R m₂) :
+    (a₁ * a₂).coeff (m₁ + m₂) = a₁.coeff m₁ * a₂.coeff m₂ := by
+  rw [← single_coeff_eq_of_mem_grade ha₁, ← single_coeff_eq_of_mem_grade ha₂]
+  simp
+
+/-- Graded component of `(AddMonoidAlgebra.curryAlgEquiv S).symm (single d f)` in `S[M × N]`. -/
+theorem decompose_grade_curryAlgEquiv_symm_single {S M N : Type*} [CommSemiring S]
+    [AddMonoid M] [AddMonoid N] [DecidableEq M] [DecidableEq N]
+    (d : M) (f : S[N]) (k : M) (m' : N) :
+    (DirectSum.decompose (grade S) ((curryAlgEquiv S).symm (single d f)) (k, m') : S[M × N]) =
+      if d = k then single (d, m') (f.coeff m') else 0 := by
+  rw [grade.decompose_apply, coeff_curryAlgEquiv_symm, coeff_single, Finsupp.single_apply]
+  split_ifs with h <;> [rw [h]; simp]
+
+/-- Mapping coefficients along an additive monoid homomorphism preserves every graded piece of
+`gradeBy`. -/
+theorem map_mem_gradeBy {S S' : Type*} [CommSemiring S] [CommSemiring S']
+    (g : S →+ S') (f : M → ι) {i : ι} {x : S[M]} (hx : x ∈ gradeBy S f i) :
+    map g x ∈ gradeBy S' f i := by
+  intro m hm
+  rw [coeff_map] at hm
+  exact hx m (Finsupp.support_mapRange hm)
+
+/-- Mapping coefficients along an algebra homomorphism preserves every graded piece of `gradeBy`. -/
+theorem mapAlgHom_mem_gradeBy {R S S' : Type*} [CommSemiring R] [CommSemiring S]
+    [CommSemiring S'] [Algebra R S] [Algebra R S'] [AddMonoid M]
+    (φ : S →ₐ[R] S') (f : M → ι) {i : ι} {x : S[M]} (hx : x ∈ gradeBy S f i) :
+    mapAlgHom M φ x ∈ gradeBy S' f i := by
+  rw [← AlgHom.coe_toRingHom, toRingHom_mapAlgHom, coe_mapRingHom]
+  exact map_mem_gradeBy φ.toRingHom.toAddMonoidHom f hx
+
+/-- Mapping coefficients along an algebra homomorphism preserves every graded piece of `grade`. -/
+theorem mapAlgHom_mem_grade {R S S' : Type*} [CommSemiring R] [CommSemiring S]
+    [CommSemiring S'] [Algebra R S] [Algebra R S'] [AddMonoid M]
+    (φ : S →ₐ[R] S') {m : M} {x : S[M]} (hx : x ∈ grade S m) :
+    mapAlgHom M φ x ∈ grade S' m :=
+  mapAlgHom_mem_gradeBy φ id hx
+
 end AddMonoidAlgebra
 
 namespace TauCeti
 
-open AddMonoidAlgebra
+open _root_.AddMonoidAlgebra
 
 variable {ι G : Type*} [AddGroup ι] [AddGroup G]
 

@@ -73,6 +73,8 @@ none of the further theory built on it.
   unit `u` of `M` conjugates the indices of the coefficients.
 * `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
   `∑ m, x_m • F m`.
+* `MonoidAlgebra.coeff_curryAlgEquiv_symm` and `AddMonoidAlgebra.coeff_curryAlgEquiv_symm`:
+  reading coefficients of an uncurried nested monoid algebra element.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
   group, as a convolution.
 
@@ -463,6 +465,19 @@ theorem addSubgroupClosure_range_of {M : Type*} [MulOneClass M] :
     have h : single m c = c • of ℤ M m := by rw [of_apply, smul_single, smul_eq_mul, mul_one]
     rw [h]
     exact zsmul_mem (AddSubgroup.subset_closure (Set.mem_range_self m)) c
+
+/-- The `(m, n)`-coefficient of `(MonoidAlgebra.curryAlgEquiv R).symm x` is
+`(x.coeff m).coeff n`. -/
+@[to_additive (attr := simp) (dont_translate := R A)
+/-- The `(m, n)`-coefficient of `(AddMonoidAlgebra.curryAlgEquiv R).symm x` is
+`(x.coeff m).coeff n`. -/]
+theorem coeff_curryAlgEquiv_symm {R A M N : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [Monoid M] [Monoid N] (x : A[N][M]) (m : M) (n : N) :
+    ((curryAlgEquiv R).symm x).coeff (m, n) = (x.coeff m).coeff n := by
+  -- `(curryAlgEquiv R).symm` acts on the underlying carrier as `curryAddEquiv.symm`.
+  change (curryAddEquiv.symm x).coeff (m, n) = (x.coeff m).coeff n
+  rw [curryAddEquiv]
+  simp [Finsupp.curryAddEquiv_symm_apply, Finsupp.uncurry_apply_pair]
 
 end MonoidAlgebra
 
