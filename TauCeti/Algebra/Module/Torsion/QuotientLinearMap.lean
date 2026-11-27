@@ -97,7 +97,7 @@ theorem quotientLinearMapEquivTorsionBySet_symm_apply_mk (x : torsionBySet R M J
 section QuotientModule
 
 variable {R : Type*} [CommRing R] (I : Ideal R)
-  (M N : Type*) [AddCommGroup M] [Module R M] [Module (R ⧸ I) M]
+  (M N : Type*) [AddCommMonoid M] [Module R M] [Module (R ⧸ I) M]
   [IsScalarTower R (R ⧸ I) M] [AddCommGroup N] [Module R N]
 
 /-- Factoring through the submodule killed by `I` identifies `R`-linear maps out of an
@@ -132,7 +132,7 @@ theorem linearMapEquivLinearMapTorsionBySet_symm_apply
 
 /-- The coefficient comparison commutes with precomposition by a quotient-linear map. -/
 @[simp]
-theorem linearMapEquivLinearMapTorsionBySet_comp {P : Type*} [AddCommGroup P] [Module R P]
+theorem linearMapEquivLinearMapTorsionBySet_comp {P : Type*} [AddCommMonoid P] [Module R P]
     [Module (R ⧸ I) P] [IsScalarTower R (R ⧸ I) P]
     (f : M →ₗ[R] N) (g : P →ₗ[R ⧸ I] M) :
     I.linearMapEquivLinearMapTorsionBySet P N (f.comp (g.restrictScalars R)) =
