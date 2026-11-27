@@ -57,8 +57,9 @@ theorem isCompleteStatistic_exponentialFamilyMeasure (ν : Measure X) (T : X →
   rintro g hg hzero ⟨η₀, hη₀⟩
   have key (η : E) (hη : η ∈ U) :
       Integrable (fun x ↦ exp ⟪η, T x⟫ * g (T x)) ν ∧ ∫ x, exp ⟪η, T x⟫ * g (T x) ∂ν = 0 :=
-    ⟨(integrable_exponentialFamilyMeasure_iff (hUN hη)).mp (hzero ⟨η, hη⟩).1,
-      (integral_exponentialFamilyMeasure_eq_zero_iff (hUN hη)).mp (hzero ⟨η, hη⟩).2⟩
+    by simpa only [smul_eq_mul, Function.comp_apply] using
+      And.intro ((integrable_exponentialFamilyMeasure_iff (hUN hη)).mp (hzero ⟨η, hη⟩).1)
+        ((integral_exponentialFamilyMeasure_eq_zero_iff (hUN hη)).mp (hzero ⟨η, hη⟩).2)
   -- Shift the parameter to `η₀` and pass to the law of `T` under `ν`.
   have hshift (u t : E) : exp ⟪u, t⟫ * (exp ⟪η₀, t⟫ * g t) = exp ⟪η₀ + u, t⟫ * g t := by
     rw [inner_add_left, exp_add]

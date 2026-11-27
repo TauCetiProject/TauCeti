@@ -15,15 +15,16 @@ import TauCeti.Probability.Moments.Determinacy
 A finite measure with exponential moments on a neighbourhood of zero is determined by its
 Laplace transform there. The proof uses scalar MGF determinacy for each real projection and
 Mathlib's characteristic-function uniqueness theorem. In signed form: a real function whose
-products with the exponentials `exp ⟪u, ·⟫` have integral zero for all `u` near zero vanishes
-almost everywhere.
+products with the exponentials `exp ⟪u, ·⟫` are integrable with integral zero for all `u` near
+zero vanishes almost everywhere.
 
 ## Main results
 
 * `MeasureTheory.Measure.ext_of_integral_exp_inner_eq`: Laplace transforms agreeing near zero
   determine a finite measure.
-* `MeasureTheory.ae_eq_zero_of_integral_exp_inner_mul_eq_zero`: a real function with vanishing
-  weighted Laplace transform near zero vanishes almost everywhere, for any measure.
+* `MeasureTheory.ae_eq_zero_of_integral_exp_inner_mul_eq_zero`: a real function whose products
+  with `exp ⟪u, ·⟫` are integrable with integral zero for all `u` near zero vanishes almost
+  everywhere, for any measure.
 
 ## References
 
