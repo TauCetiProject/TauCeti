@@ -14,7 +14,7 @@ import TauCeti.LinearAlgebra.LinearIndependent.Evaluation
 import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 import Mathlib.RingTheory.SimpleModule.IsAlgClosed
-import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.TraceFunctional.Radical
 
 /-!
 # Semisimple realization from all trace identities
@@ -32,13 +32,13 @@ then realizes the trace, and semisimplification supplies native representation s
 ## Provenance
 
 The reconstruction adapts `New.exists_rep_of_trace_identities`, `New.linearExtension`,
-`New.eval_linearExtension_eq_zero`, `New.pairingKernel` and
-`New.finite_quotient_pairingKernel` in
+`New.eval_linearExtension_eq_zero` and `New.finite_quotient_pairingKernel` in
 `src/Lib/GaloisRep/Pseudocharacter/Pseudorepresentations.lean` in grh-lean
 (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
 Copyright 2026 Anthropic, PBC). `isSemisimpleRing_traceQuotient` adapts the radical argument
 of `New.exists_wedderburn` in
 `src/Lib/GaloisRep/Pseudocharacter/SemisimpleRepresentations.lean` in the same source.
+The trace radical and quotient trace use `LinearMap.traceRadical` and `LinearMap.quotientTrace`.
 The native semisimplification interface is new here.
 
 ## References
@@ -80,30 +80,24 @@ private lemma eval_linearExtension_eq_zero {T : G → k}
   simpa [Finsupp.sum, lift_apply] using
     hB (MonoidAlgebra.lift k (Matrix n n k) G ((Units.coeHom (Matrix n n k)).comp ρ))
 
-/-- The kernel of the pairing `(x, y) ↦ t (x * y)` on `k[G]`, for a linear form `t` with
-`t (x * y) = t (y * x)`; this symmetry makes the kernel a left ideal. -/
-private def pairingKernel (t : k[G] →ₗ[k] k) (t_comm : ∀ x y : k[G], t (x * y) = t (y * x)) :
-    Ideal k[G] :=
-  { toAddSubmonoid := ((mul k k[G]).compr₂ t).ker.toAddSubmonoid
-    smul_mem' := fun a x hx ↦ by simp_all [t_comm a, DFunLike.ext_iff, mul_assoc] }
-
 /-- Let `t` be a linear form on `k[G]` that obeys every polynomial identity among traces of algebra
 maps `k[G] → Matrix n n k`. Then the quotient of `k[G]` by the kernel of the pairing `t (x * y)` is
 finite-dimensional: for `card n ^ 2 + 1` elements `s i`, independent modulo the kernel, the forms
 `y ↦ t (s i * y)` would be independent, but their minors `det (t (s i * b j))` are polynomial
 identities among traces, and these vanish since the `ρ (s i)` are dependent in every `ρ`. -/
-private lemma finite_quotient_pairingKernel (t : k[G] →ₗ[k] k)
-    (t_comm : ∀ x y : k[G], t (x * y) = t (y * x)) [hI : (pairingKernel t t_comm).IsTwoSided]
+private lemma finite_quotient_traceRadical (t : k[G] →ₗ[k] k)
+    (t_comm : ∀ x y : k[G], t (x * y) = t (y * x))
     (h_alg : ∀ B : MvPolynomial k[G] k,
       (∀ ρ : k[G] →ₐ[k] Matrix n n k, eval (fun x : k[G] ↦ (ρ x).trace) B = 0) → eval t B = 0) :
-    Module.Finite k (k[G] ⧸ pairingKernel t t_comm) := by
+    Module.Finite k (k[G] ⧸ t.traceRadical t_comm) := by
   let N : ℕ := Fintype.card n * Fintype.card n + 1
   refine rank_lt_aleph0_iff.mp (not_le.mp fun h_inf ↦ ?_)
-  obtain ⟨s, hs⟩ : ∃ s : Fin N → k[G], LinearIndependent k (mk (pairingKernel t t_comm) ∘ s) :=
+  obtain ⟨s, hs⟩ : ∃ s : Fin N → k[G], LinearIndependent k (mk (t.traceRadical t_comm) ∘ s) :=
     mk_surjective.comp_left.exists.mp (le_rank_iff.mp (Cardinal.aleph0_le.mp h_inf N))
   have h_ltoFun : LinearMap.ker (ltoFun k k[G] k k) = ⊥ := by aesop
   have h_indep : LinearIndependent k fun (i : Fin N) (y : k[G]) ↦ t (s i * y) :=
-    (hs.map' _ (ker_liftQ_eq_bot' _ _ rfl)).map' (ltoFun k k[G] k k) h_ltoFun
+    (hs.map' _ (ker_liftQ_eq_bot' _ _ (t.traceRadical_restrictScalars_eq_ker t_comm))).map'
+      (ltoFun k k[G] k k) h_ltoFun
   have h_dep (ρ : k[G] →ₐ[k] Matrix n n k) :
       ¬LinearIndependent k fun (i : Fin N) (A : Matrix n n k) ↦ (ρ (s i) * A).trace := by
     intro h
@@ -121,25 +115,18 @@ private lemma finite_quotient_pairingKernel (t : k[G] →ₗ[k] k)
 
 private lemma isSemisimpleRing_traceQuotient (t : k[G] →ₗ[k] k)
     (t_comm : ∀ x y : k[G], t (x * y) = t (y * x))
-    [hI : (pairingKernel t t_comm).IsTwoSided]
-    [Module.Finite k (k[G] ⧸ pairingKernel t t_comm)]
-    (τ : k[G] ⧸ pairingKernel t t_comm →ₗ[k] k)
-    (hτ : ∀ x, τ (mk (pairingKernel t t_comm) x) = t x)
-    (τ_nat : ∀ (l : k) (x : k[G] ⧸ pairingKernel t t_comm),
-      (∀ m : ℕ, x ^ (m + 1) = l ^ m • x) → ∃ j : ℕ, τ x = j * l) :
-    IsSemisimpleRing (k[G] ⧸ pairingKernel t t_comm) := by
+    [Module.Finite k (k[G] ⧸ t.traceRadical t_comm)]
+    (τ_nat : ∀ (l : k) (x : k[G] ⧸ t.traceRadical t_comm),
+      (∀ m : ℕ, x ^ (m + 1) = l ^ m • x) → ∃ j : ℕ, t.quotientTrace t_comm x = j * l) :
+    IsSemisimpleRing (k[G] ⧸ t.traceRadical t_comm) := by
   classical
-  let I := pairingKernel t t_comm
+  let I := t.traceRadical t_comm
   have hzero (x : k[G] ⧸ I) (hx : ∀ y, x * y * x = 0) : x = 0 := by
-    obtain ⟨x, rfl⟩ := mk_surjective (I := I) x
-    refine eq_zero_iff_mem.mpr ?_
-    ext g
-    have hsq (m : ℕ) :
-        (mk I x * mk I (.single g 1)) ^ (m + 1) =
-          (0 : k) ^ m • (mk I x * mk I (.single g 1)) := by
+    refine t.quotientTrace_nondegenerate t_comm x fun y ↦ ?_
+    have hsq (m : ℕ) : (x * y) ^ (m + 1) = (0 : k) ^ m • (x * y) := by
       cases m <;> simp_all [pow_succ', ← mul_assoc]
-    obtain ⟨j, hj⟩ := τ_nat 0 (mk I x * mk I (.single g 1)) hsq
-    simpa [I, ← map_mul, hτ, LinearMap.compr₂_apply, MonoidAlgebra.lsingle_apply] using hj
+    obtain ⟨j, hj⟩ := τ_nat 0 (x * y) hsq
+    simpa using hj
   have : IsArtinianRing (k[G] ⧸ I) := IsArtinianRing.of_finite k _
   have : IsNoetherianRing (k[G] ⧸ I) := isNoetherian_of_tower k inferInstance
   have hrad : Ring.jacobson (k[G] ⧸ I) = ⊥ := by
@@ -164,11 +151,9 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
     eval_linearExtension_eq_zero h_identities
   have t_comm (x y : k[G]) : t (x * y) = t (y * x) := by
     simpa [trace_mul_comm (m := n) (n := n), sub_eq_zero] using h_alg (X (x * y - y * x))
-  let I : Ideal k[G] := pairingKernel t t_comm
-  have hI : I.IsTwoSided := ⟨by simp_all [I, pairingKernel, mul_assoc, DFunLike.ext_iff]⟩
-  let τ : k[G] ⧸ I →ₗ[k] k := liftQ _ t fun x hx ↦ by
-    simpa using LinearMap.congr_fun hx 1
-  have hτ (x : k[G]) : τ (mk I x) = t x := rfl
+  let I : Ideal k[G] := t.traceRadical t_comm
+  let τ : k[G] ⧸ I →ₗ[k] k := t.quotientTrace t_comm
+  have hτ (x : k[G]) : τ (mk I x) = t x := t.quotientTrace_mk t_comm x
   have τ_nat (l : k) (x : k[G] ⧸ I) (hx : ∀ m : ℕ, x ^ (m + 1) = l ^ m • x) :
       ∃ j : ℕ, τ x = j * l := by
     obtain ⟨x, rfl⟩ := mk_surjective (I := I) x
@@ -178,18 +163,19 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
       simpa [eval_rename, Function.comp_def] using
         (ρ x).eval_integralNewtonPolynomial_trace_pow_eq_zero_of_splits (IsAlgClosed.splits _)
     rw [eval_rename] at hz
-    exact τ.exists_nat_mul_of_integralNewtonPolynomial_eq_zero hx hz
-  have : Module.Finite k (k[G] ⧸ I) := finite_quotient_pairingKernel t t_comm h_alg
+    apply τ.exists_nat_mul_of_integralNewtonPolynomial_eq_zero hx
+    simpa only [← map_pow, hτ, Function.comp_def] using hz
+  have : Module.Finite k (k[G] ⧸ I) := finite_quotient_traceRadical t t_comm h_alg
   have : IsSemisimpleRing (k[G] ⧸ I) :=
-    isSemisimpleRing_traceQuotient t t_comm τ hτ τ_nat
+    isSemisimpleRing_traceQuotient t t_comm τ_nat
   have hτone : τ 1 = Fintype.card n := by
     have h := h_alg (X 1 - ∑ _ : n, 1) fun ρ ↦ by simp
-    rw [← map_one (mk I), hτ]
+    rw [t.quotientTrace_one t_comm]
     simpa [sub_eq_zero] using h
   obtain ⟨m, d, hd, ⟨e⟩⟩ := IsSemisimpleRing.exists_algEquiv_pi_matrix_of_isAlgClosed k (k[G] ⧸ I)
   have := hd
   obtain ⟨φ, hφ⟩ := (τ.comp e.symm.toLinearMap).exists_algHom_trace_eq_pi_matrix
-    (fun x y ↦ by simpa using (e.symm x).ind₂ t_comm (e.symm y))
+    (fun x y ↦ by simpa using t.quotientTrace_mul_comm t_comm (e.symm x) (e.symm y))
     (fun i ↦ by
       have hi : IsIdempotentElem (Pi.single i
           (Matrix.single (0 : Fin (d i)) (0 : Fin (d i)) (1 : k)) :
