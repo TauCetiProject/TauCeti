@@ -266,7 +266,8 @@ private theorem norm_fderiv_hamiltonianVectorField_segment_le (hg : ∀ v w, ω 
   refine (ω.norm_fderiv_hamiltonianVectorField_const_mul_add_const_mul_le hHs
     (contDiff_const.mul (contDiff_norm_sq ℝ)) _ _ _).trans ?_
   have hQ : ‖fderiv ℝ (ω.hamiltonianVectorField fun y : V ↦ π / 2 * ‖y‖ ^ 2) (γ s)‖ ≤ π :=
-    norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le hg pi_pos.le (γ s)
+    (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le hg π (γ s)).trans_eq
+      (abs_of_pos pi_pos)
   rw [abs_of_nonneg (sub_nonneg.2 hτ.2), abs_of_nonneg hτ.1]
   nlinarith [le_max_left a π, le_max_right a π, hτ.1, hτ.2,
     mul_le_mul_of_nonneg_left (haγ s) (sub_nonneg.2 hτ.2), mul_le_mul_of_nonneg_left hQ hτ.1]
@@ -293,7 +294,8 @@ private theorem ker_sliceAverageLp_le_range_floerSobolevOperator_of_bijective
   have hQ₂ : ContDiff ℝ 2 Q := contDiff_const.mul (contDiff_norm_sq ℝ)
   have hQ₂' : ContDiff ℝ 2 (Function.uncurry fun (_ : ℝ) ↦ Q) := hQ₂.comp contDiff_snd
   have hQγ (s : ℝ) : ‖fderiv ℝ (ω.hamiltonianVectorField Q) (γ s)‖ ≤ π :=
-    norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le hg pi_pos.le (γ s)
+    (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le hg π (γ s)).trans_eq
+      (abs_of_pos pi_pos)
   set b := max a π
   have hb : b < 2 * π := max_lt ha (by linarith [pi_pos])
   -- The nonzero modes of `W^{1,2}`, as `L²` jets, and of `L²`. Every operator of the segment, the

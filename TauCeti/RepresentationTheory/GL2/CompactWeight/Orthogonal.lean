@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.RepresentationTheory.GKModule.Basic
 public import TauCeti.RepresentationTheory.GL2.CompactCartan.Orthogonal
 public import TauCeti.RepresentationTheory.GL2.CompactWeight.Module
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
 # The action of `O(2)` on the module of compact weights
@@ -39,6 +41,8 @@ The Lie submodules `TauCeti.CompactWeightModule.weightLieSubmodule k μ S` with 
 ## Main results
 
 * `TauCeti.CompactWeightModule.orthogonalRep_weightVector`: `g • v_ℓ = z(g) ^ (ε ℓ) v_{ε ℓ}`.
+* `TauCeti.CompactWeightModule.aeval_orthogonalRep_eq_zero_iff`: if the roots of `q` among the
+  `z(g) ^ ℓ` are those with `ℓ ∈ S`, then `q(g)` kills exactly the vectors supported on `S`.
 * `TauCeti.CompactWeightModule.orthogonalRep_orthogonalDiagonalReflection`: `A` acts by the
   reflection `v_ℓ ↦ v_{-ℓ}`.
 * `TauCeti.CompactWeightModule.orthogonalRep_lie`: covariance,
@@ -93,6 +97,24 @@ theorem orthogonalRep_weightVector (g : orthogonalGroup (Fin 2) ℝ) (ℓ : ℤ)
     orthogonalRep k μ g (weightVector k μ ℓ) =
       (orthogonalPhase g ^ (orthogonalSign g * ℓ)) • weightVector k μ (orthogonalSign g * ℓ) :=
   constr_weightVector _ ℓ
+
+/-- A rotation `g` is diagonal in the weight basis, with eigenvalue `z(g) ^ ℓ` at `v_ℓ`. -/
+private theorem orthogonalRep_weightBasis_of_det_eq_one {g : orthogonalGroup (Fin 2) ℝ}
+    (hg : (g : Matrix (Fin 2) (Fin 2) ℝ).det = 1) (ℓ : ℤ) :
+    orthogonalRep k μ g (weightBasis k μ ℓ) = orthogonalPhase g ^ ℓ • weightBasis k μ ℓ := by
+  simp [orthogonalRep_weightVector, orthogonalSign_of_det_eq_one hg]
+
+open Polynomial in
+/-- **The kernel of a polynomial in a rotation**: if the roots of `q` among the powers
+`z(g) ^ ℓ` are exactly those with `ℓ ∈ S`, then `q(g)` kills exactly the vectors supported on
+`S`. -/
+theorem aeval_orthogonalRep_eq_zero_iff {g : orthogonalGroup (Fin 2) ℝ}
+    (hg : (g : Matrix (Fin 2) (Fin 2) ℝ).det = 1) {q : ℂ[X]} {S : Set ℤ}
+    (hq : ∀ ℓ : ℤ, q.eval (orthogonalPhase g ^ ℓ) = 0 ↔ ℓ ∈ S) (v : CompactWeightModule k μ) :
+    aeval (orthogonalRep k μ g) q v = 0 ↔ equivFinsupp k μ v ∈ Finsupp.supported ℂ ℂ S := by
+  rw [← weightBasis_repr]
+  exact (weightBasis k μ).aeval_apply_eq_zero_iff_repr_mem_supported
+    (orthogonalRep_weightBasis_of_det_eq_one hg) hq v
 
 /-- **The reflection `A = diag(1, -1)` acts by `TauCeti.CompactWeightModule.reflection`**,
 `v_ℓ ↦ v_{-ℓ}`. -/
