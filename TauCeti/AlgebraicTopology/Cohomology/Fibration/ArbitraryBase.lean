@@ -155,18 +155,8 @@ def serreCohomologySpectralSequencePullbackFirstPageXIsoPi (g : B' ⟶ B) (n q :
       ∏ᶜ fun j : cell C n ↦ (p.fiber (g (map n j 0))).singularCohomology (ModuleCat.of R R) k M q :=
   serreCohomologySpectralSequenceFirstPageXIsoPi C (mem_serreFibrations_pullbackFst hp g) R k M n
       q s t hs hst ≪≫
-    -- The factors are written with `TopCat.singularCohomologyMap` rather than through
-    -- `TauCeti.singularCohomologyFunctor`, whose objects are not reducibly the cohomology groups
-    -- appearing in the product.
-    Pi.mapIso fun j ↦
-      { hom := _root_.TopCat.singularCohomologyMap (p.fiberPullbackFstIso g (map n j 0)).inv q
-        inv := _root_.TopCat.singularCohomologyMap (p.fiberPullbackFstIso g (map n j 0)).hom q
-        hom_inv_id := by
-          rw [← _root_.TopCat.singularCohomologyMap_comp, Iso.hom_inv_id,
-            _root_.TopCat.singularCohomologyMap_id]
-        inv_hom_id := by
-          rw [← _root_.TopCat.singularCohomologyMap_comp, Iso.inv_hom_id,
-            _root_.TopCat.singularCohomologyMap_id] }
+    Pi.mapIso fun j ↦ (singularCohomologyFunctor (ModuleCat.of R R) k M q).mapIso
+      (p.fiberPullbackFstIso g (map n j 0)).symm.op
 
 /-- On the factor of the `n`-cell `j`,
 `TauCeti.TopCat.serreCohomologySpectralSequencePullbackFirstPageXIsoPi` is the factor of
@@ -184,8 +174,12 @@ lemma serreCohomologySpectralSequencePullbackFirstPageXIsoPi_hom_π (g : B' ⟶ 
           (map n j 0)).singularCohomology (ModuleCat.of R R) k M q) j ≫
         _root_.TopCat.singularCohomologyMap (R := ModuleCat.of R R) (k := k) (M := M)
           (p.fiberPullbackFstIso g (map n j 0)).inv q := by
-  rw [serreCohomologySpectralSequencePullbackFirstPageXIsoPi, Iso.trans_hom, Category.assoc,
-    Pi.mapIso_hom_π]
+  rw [serreCohomologySpectralSequencePullbackFirstPageXIsoPi, Iso.trans_hom, Category.assoc]
+  -- `rw [Pi.mapIso_hom_π]` fails: the factors of `Pi.mapIso` are objects of
+  -- `TauCeti.singularCohomologyFunctor`, which match the product only up to unfolding, so the
+  -- target is not type-correct at instance transparency. Unification by `exact` sees through this.
+  exact congrArg (_ ≫ ·) ((Pi.mapIso_hom_π _ j).trans (congrArg (_ ≫ ·)
+    ((Functor.mapIso_hom _ _).trans (singularCohomologyFunctor_map _ _ _ _ _))))
 
 end Pullback
 
@@ -246,8 +240,8 @@ lemma arbitraryBaseSerreCohomologySpectralSequenceFirstPageXIsoPi_hom_π (n q : 
   serreCohomologySpectralSequencePullbackFirstPageXIsoPi_hom_π ..
 
 include hp in
-/-- **The cohomological Serre spectral sequence over an arbitrary base is a first-quadrant
-spectral sequence.** The object at `(s, t)` of the first page vanishes when `t < 0`, which is
+/-- **The first page of the cohomological Serre spectral sequence over an arbitrary base vanishes
+below the `s`-axis.** The object at `(s, t)` of the first page vanishes when `t < 0`, which is
 `E₁^{s,t} = 0` in negative fibre degree. -/
 theorem isZero_arbitraryBaseSerreCohomologySpectralSequence_page_one_X (s t : ℤ) (ht : t < 0) :
     IsZero (((p.arbitraryBaseSerreCohomologySpectralSequence R k M).page 1).X (s, t)) :=
