@@ -76,8 +76,9 @@ private theorem LSeriesHasSum_primeWeight_sub_principalTwists {s : ℂ} (hs : 1 
     by_cases hn : (n : ZMod q) = 1 <;>
       simp [primeWeight_def, hn, hφ]
 
-/-- If `d` is odd and prime to `q`, only the untwisted principal character contributes a pole
-at `1` to the Dirichlet series of the signed weight on the class of `1`. -/
+/-- For an odd prime `d` coprime to `q` and `Re s > 1`, the Dirichlet series of the signed
+weight `primeWeight d q` sums to `s / (φ(q) * (s - 1)) + G_q(s)`, where `φ` is Euler's
+totient and `G_q = logDerivMean d q`. -/
 theorem LSeriesHasSum_primeWeight (hd : d ≠ 2) (hq : q.Coprime d) {s : ℂ} (hs : 1 < s.re) :
     LSeriesHasSum (fun n ↦ (primeWeight d q n : ℂ)) s
       (s / ((q.totient : ℂ) * (s - 1)) + logDerivMean d q s) := by
@@ -91,8 +92,7 @@ theorem LSeriesHasSum_primeWeight (hd : d ≠ 2) (hq : q.Coprime d) {s : ℂ} (h
   field_simp
   ring
 
-/-- The logarithmic-derivative mean is analytic throughout the closed right half-plane
-`Re s ≥ 1`, since the pole-removed L-functions have no zeros there. -/
+/-- The logarithmic-derivative mean is analytic at every `s` with `Re s ≥ 1`. -/
 theorem analyticAt_logDerivMean_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
     AnalyticAt ℂ (logDerivMean d q) s := by
   have : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
@@ -103,10 +103,10 @@ theorem analyticAt_logDerivMean_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
   exact ((Finset.analyticAt_fun_sum _ fun χ _ ↦ (h (quadraticTwist d χ)).sub (h χ)).sub
     analyticAt_const).div_const
 
-/-- The value of the logarithmic-derivative mean at `1` is real. This follows by approaching
-from the right along the real line, where the coefficients and the polar counterterm are real. -/
+/-- The value of the logarithmic-derivative mean at `1` is real. -/
 @[simp] theorem ofReal_re_logDerivMean_one :
     ((logDerivMean d q 1).re : ℂ) = logDerivMean d q 1 := by
+  -- Approach from the right along the real line, where the series and polar counterterm are real.
   have hc := (analyticAt_logDerivMean_of_one_le_re (d := d) (q := q) (s := 1)
     (by simp)).continuousAt
   have hreal : ContinuousAt (fun x : ℝ ↦ logDerivMean d q x) 1 :=
@@ -140,8 +140,8 @@ theorem ofReal_primeRemainder_eq (y : ℝ) :
   have hy' : (y : ℂ) ≠ 0 := ofReal_ne_zero.mpr hy
   rw [mul_div_assoc, sub_div, div_right_comm, div_self hy']
 
-/-- The absolutely convergent Laplace transform of `u ↦ R_q(exp u)` at `s - 1` is
-`(G_q(s) / s - G_q(1)) / (s - 1)` for `Re s > 1`. -/
+/-- For an odd prime `d` coprime to `q` and `Re s > 1`, the absolutely convergent Laplace
+transform of `u ↦ R_q(exp u)` at `s - 1` is `(G_q(s) / s - G_q(1)) / (s - 1)`. -/
 theorem hasLaplace_primeRemainder (hd : d ≠ 2) (hq : q.Coprime d) {s : ℂ} (hs : 1 < s.re) :
     HasLaplace (fun u ↦ (primeRemainder d q (Real.exp u) : ℂ)) (s - 1)
       ((logDerivMean d q s / s - logDerivMean d q 1) / (s - 1)) := by
