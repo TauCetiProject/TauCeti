@@ -101,8 +101,8 @@ theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictO
 theorem card_Icc_ceil_floor_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
     [FloorRing R] {a b : R} (hab : a ≤ b + 1) :
     ((Finset.Icc ⌈a⌉ ⌊b⌋).card : R) ≤ b - a + 1 := by
-  rw [Int.card_Icc, ← Int.cast_natCast, Int.toNat_eq_max, Int.cast_max, Int.cast_zero,
-    Int.cast_sub, Int.cast_add, Int.cast_one, sub_add_eq_add_sub]
+  rw [Int.card_Icc, ← Int.cast_natCast]
+  push_cast [Int.toNat_eq_max, sub_add_eq_add_sub]
   exact max_le (sub_le_sub ((add_le_add_iff_right 1).2 (Int.floor_le b)) (Int.le_ceil a))
     (sub_nonneg.2 hab)
 

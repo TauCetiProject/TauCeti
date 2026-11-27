@@ -139,7 +139,6 @@ example : nearIntegerCount (fun x ↦ x / 3) 3 0 0.1 = 1 := by
 example : nearIntegerCount (fun x ↦ x / 3) 2.5 0 0.5 = 0 := by
   have h₁ : ⌈(2.5 : ℝ)⌉ = 3 := by norm_num
   have h₂ : ⌊(2.5 : ℝ) + 0⌋ = 2 := by norm_num
-  rw [nearIntegerCount_def, h₁, h₂, Icc_eq_empty (by norm_num)]
-  rfl
+  rw [nearIntegerCount_def, h₁, h₂, Icc_eq_empty (by norm_num), filter_empty, card_empty]
 
 end TauCeti
