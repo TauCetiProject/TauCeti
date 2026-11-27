@@ -69,8 +69,10 @@ theorem poly_comp_affine_kill_high {s j₀ : ℕ} (hj₀_ge : 1 ≤ j₀) (hj₀
   let γ : ℕ → G := fun t ↦ ∑ j ∈ Ico t (s + 1), (q ^ t * r ^ (j - t) * (j.choose t : ℤ)) • c j
   have hkill (t j : ℕ) (ht : 1 ≤ t) (hj : j ∈ Ioc j₀ s) :
       (q ^ t * r ^ (j - t) * (j.choose t : ℤ)) • c j = 0 := by
-    rw [(by rw [← pow_succ, Nat.sub_add_cancel ht] : q ^ t = q ^ (t - 1) * q),
-      mul_assoc, mul_assoc, mul_comm q, ← mul_assoc, mul_zsmul, hqkill j hj, smul_zero]
+    obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_le' ht
+    rw [show q ^ (t + 1) * r ^ (j - (t + 1)) * (j.choose (t + 1) : ℤ) =
+        (q ^ t * r ^ (j - (t + 1)) * (j.choose (t + 1) : ℤ)) * q by ring,
+      mul_zsmul, hqkill j hj, smul_zero]
   refine ⟨γ, ?_, fun n ↦ ?_⟩
   · have hsplit : Ico j₀ (s + 1) = insert j₀ (Ioc j₀ s) := by
       ext j; simp only [mem_Ico, mem_insert, mem_Ioc]; omega

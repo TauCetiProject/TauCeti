@@ -158,8 +158,9 @@ private theorem tendsto_fract_Ico_of_asympEquidistributed {u : ℕ → ℝ}
     rw [Measure.real, (by simp [AddCircle.volume_eq_smul_haarAddCircle] :
         (AddCircle.haarAddCircle : Measure UnitAddCircle) = volume),
       ← Measure.map_apply hm measurableSet_Ico, AddCircle.map_coe_equivIco_volume 0,
-      Measure.restrict_apply measurableSet_Ico, zero_add, Set.Ico_inter_Ico, max_eq_left ha,
-      min_eq_left hb, Real.volume_Ico, ENNReal.toReal_ofReal (sub_nonneg.mpr hab)]
+      Measure.restrict_apply measurableSet_Ico,
+      inter_eq_left.mpr (Ico_subset_Ico ha (by linarith))]
+    simp [sub_nonneg.mpr hab]
   have hfreq := hu.tendsto_frequency (E := E) (hm measurableSet_Ico) (measure_mono_null
     (AddCircle.frontier_preimage_equivIco_Ico_subset ha (b := b) (by linarith)) (by
       rw [Measure.coe_toProbabilityMeasure, Set.insert_eq]
@@ -207,16 +208,6 @@ private theorem asympEquidistributed_fract_of_forall_Ico {u : ℕ → ℝ}
       Finset.card_empty, Nat.cast_zero, zero_div] at hμ hν
     simpa only [μ, hμ, hν] using tendsto_const_nhds
 
-/-- Pushing `volume.restrict (Ico 0 1)` forward to `UnitAddCircle` gives normalized Haar measure. -/
-private theorem map_coe_restrict_Ico_unitAddCircle {ν : ProbabilityMeasure ℝ}
-    (hν_eq : (ν : Measure ℝ) = volume.restrict (Ico (0 : ℝ) 1)) :
-    ν.map ((↑) : ℝ → UnitAddCircle) = AddCircle.haarAddCircle.toProbabilityMeasure :=
-  ProbabilityMeasure.toMeasure_injective (by
-    rw [ProbabilityMeasure.toMeasure_map, hν_eq, Measure.coe_toProbabilityMeasure,
-      Measure.restrict_congr_set Ico_ae_eq_Ioc]
-    simpa [AddCircle.volume_eq_smul_haarAddCircle] using
-      (AddCircle.measurePreserving_mk 1 0).map_eq)
-
 /-- Convergence of fractional-part frequencies on `[a, b) ⊆ [0, 1]` gives Haar equidist. -/
 private theorem asympEquidistributed_of_forall_fract_Ico {u : ℕ → ℝ}
     (hfreq : ∀ a b : ℝ, 0 ≤ a → a ≤ b → b ≤ 1 → Tendsto (fun n : ℕ ↦
@@ -228,7 +219,12 @@ private theorem asympEquidistributed_of_forall_fract_Ico {u : ℕ → ℝ}
   let ν : ProbabilityMeasure ℝ := (volume.restrict (Ico (0 : ℝ) 1)).toProbabilityMeasure
   have hν_eq : (ν : Measure ℝ) = volume.restrict (Ico (0 : ℝ) 1) :=
     Measure.coe_toProbabilityMeasure _
-  simpa only [Function.comp_def, AddCircle.coe_fract, map_coe_restrict_Ico_unitAddCircle hν_eq]
+  have hmap : ν.map ((↑) : ℝ → UnitAddCircle) = AddCircle.haarAddCircle.toProbabilityMeasure :=
+    ProbabilityMeasure.toMeasure_injective (by
+      rw [ProbabilityMeasure.toMeasure_map, hν_eq, Measure.coe_toProbabilityMeasure]
+      simpa [AddCircle.volume_eq_smul_haarAddCircle] using
+        AddCircle.map_coe_restrict_Ico_volume (T := 1) 0)
+  simpa only [Function.comp_def, AddCircle.coe_fract, hmap]
     using (asympEquidistributed_fract_of_forall_Ico hfreq hν_eq).map
       (f := ((↑) : ℝ → UnitAddCircle)) continuous_quotient_mk' AddCircle.measurable_mk'
 

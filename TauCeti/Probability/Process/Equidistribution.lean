@@ -308,6 +308,17 @@ theorem totallyAsympEquidistributedInt_def {x : ℤ → X} {μ : ProbabilityMeas
     TotallyAsympEquidistributedInt x μ ↔
       ∀ q : ℕ, 0 < q → ∀ r : ℤ, AsympEquidistributedInt (fun n ↦ x (q * n + r)) μ := Iff.rfl
 
+/-- A sequence `x : ℤ → X` is totally two-sided equidistributed for `μ` if every one-sided
+affine progression `n ↦ x (Q * n + R)` (`Q ≠ 0`) is equidistributed for `μ`. -/
+theorem totallyAsympEquidistributedInt_of_forall_affine {x : ℤ → X} {μ : ProbabilityMeasure X}
+    (h : ∀ Q : ℤ, Q ≠ 0 → ∀ R : ℤ, AsympEquidistributed (fun n : ℕ ↦ x (Q * n + R)) μ) :
+    TotallyAsympEquidistributedInt x μ := by
+  refine fun q hq r ↦ ⟨?_, ?_⟩
+  · simpa only [mul_add, mul_one, add_assoc] using
+      h (q : ℤ) (Int.natCast_ne_zero.mpr hq.ne') ((q : ℤ) + r)
+  · convert h (-(q : ℤ)) (neg_ne_zero.mpr (Int.natCast_ne_zero.mpr hq.ne')) (r - (q : ℤ)) using 3
+    ring
+
 /-- Total two-sided equidistribution implies plain two-sided equidistribution. -/
 theorem TotallyAsympEquidistributedInt.asympEquidistributedInt {x : ℤ → X}
     {μ : ProbabilityMeasure X} (hx : TotallyAsympEquidistributedInt x μ) :

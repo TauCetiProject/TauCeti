@@ -100,10 +100,8 @@ private theorem totallyAsympEquidistributedInt_poly_of_forall_addOrderOf {d : Ty
     (s : ℕ) (α : ℕ → UnitAddTorus d)
     (h6 : ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ Icc 1 s, addOrderOf (∑ i, k i • α j i) = 0) :
     TotallyAsympEquidistributedInt (fun n : ℤ ↦ ∑ j ∈ range (s + 1), n ^ j • α j)
-      (volume : Measure (UnitAddTorus d)).toProbabilityMeasure := by
-  have haff (Q R : ℤ) (hQ : Q ≠ 0) :
-      AsympEquidistributed (fun n : ℕ ↦ ∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • α j)
-        (volume : Measure (UnitAddTorus d)).toProbabilityMeasure :=
+      (volume : Measure (UnitAddTorus d)).toProbabilityMeasure :=
+  totallyAsympEquidistributedInt_of_forall_affine fun Q hQ R ↦
     asympEquidistributed_unitAddTorus_iff_forall_linear_comb.mpr fun k hk ↦ by
       simp_rw [(fun n : ℕ ↦ (by
         rw [← UnitAddTorus.pairing_apply, map_sum]
@@ -111,16 +109,6 @@ private theorem totallyAsympEquidistributedInt_poly_of_forall_addOrderOf {d : Ty
         ∑ i, k i • (∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • α j) i =
           ∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • ∑ i, k i • α j i))]
       exact asympEquidistributed_poly_comp_affine_addCircle _ (h6 k hk) hQ R
-  refine totallyAsympEquidistributedInt_def.mpr fun q hq r ↦
-    asympEquidistributedInt_def.mpr ⟨?_, ?_⟩
-  · rw [(funext fun _ ↦ sum_congr rfl fun _ _ ↦ by ring_nf :
-      (fun n : ℕ ↦ ∑ j ∈ range (s + 1), ((q : ℤ) * ((n : ℤ) + 1) + r) ^ j • α j) =
-        fun n : ℕ ↦ ∑ j ∈ range (s + 1), ((q : ℤ) * (n : ℤ) + ((q : ℤ) + r)) ^ j • α j)]
-    exact haff (q : ℤ) ((q : ℤ) + r) (Int.natCast_ne_zero.mpr hq.ne')
-  · rw [(funext fun _ ↦ sum_congr rfl fun _ _ ↦ by ring_nf :
-      (fun n : ℕ ↦ ∑ j ∈ range (s + 1), ((q : ℤ) * -((n : ℤ) + 1) + r) ^ j • α j) =
-        fun n : ℕ ↦ ∑ j ∈ range (s + 1), ((-(q : ℤ)) * (n : ℤ) + (r - (q : ℤ))) ^ j • α j)]
-    exact haff (-(q : ℤ)) (r - (q : ℤ)) (neg_ne_zero.mpr (Int.natCast_ne_zero.mpr hq.ne'))
 
 /-- Necessary non-annihilation condition for equidistribution of a polynomial sequence. -/
 private theorem forall_pairing_ne_zero_of_asympEquidistributed_poly {d : Type*} [Fintype d]

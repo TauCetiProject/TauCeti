@@ -79,19 +79,11 @@ theorem linear_equidistributionInt_tfae (α β : UnitAddTorus d) :
       TotallyAsympEquidistributedInt (fun n : ℤ ↦ n • α + β)
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure,
       TorusIrrational α] := by
-  tfae_have 3 → 2 := fun hα ↦ totallyAsympEquidistributedInt_def.mpr fun q hq r ↦
-    asympEquidistributedInt_def.mpr ⟨by
-      rw [(funext fun n ↦ by
-        rw [← add_assoc, ← natCast_zsmul, ← natCast_zsmul, ← mul_zsmul, ← add_zsmul]; congr 2; ring
-        : (fun n : ℕ ↦ ((q : ℤ) * ((n : ℤ) + 1) + r) • α + β) =
-          fun n : ℕ ↦ n • (q • α) + (((q : ℤ) + r) • α + β))]
-      exact asympEquidistributed_linear_of_torusIrrational (hα.nsmul hq.ne') _, by
-      rw [(funext fun n ↦ by
-        rw [← add_assoc, ← natCast_zsmul, ← mul_zsmul, ← add_zsmul]; congr 2; ring :
-        (fun n : ℕ ↦ ((q : ℤ) * -((n : ℤ) + 1) + r) • α + β) =
-          fun n : ℕ ↦ n • ((-(q : ℤ)) • α) + ((r - (q : ℤ)) • α + β))]
-      exact asympEquidistributed_linear_of_torusIrrational
-        (hα.zsmul (neg_ne_zero.mpr (Int.natCast_ne_zero.mpr hq.ne'))) _⟩
+  tfae_have 3 → 2 := fun hα ↦ totallyAsympEquidistributedInt_of_forall_affine fun Q hQ R ↦ by
+    rw [(funext fun n ↦ by
+      rw [add_zsmul, mul_zsmul, natCast_zsmul, smul_comm, add_assoc] :
+      (fun n : ℕ ↦ (Q * (n : ℤ) + R) • α + β) = fun n : ℕ ↦ n • (Q • α) + (R • α + β))]
+    exact asympEquidistributed_linear_of_torusIrrational (hα.zsmul hQ) _
   tfae_have 2 → 1 := TotallyAsympEquidistributedInt.asympEquidistributedInt
   tfae_have 1 → 3 := fun h ↦
     ((linear_equidistribution_tfae α β).out 1 3).mp (by simpa only [natCast_zsmul] using h.natCast)
