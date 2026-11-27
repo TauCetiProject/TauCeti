@@ -74,7 +74,7 @@ theorem mul_esymm_rpow_mul_esymm_rpow_le_sum_mul_eval_update_zero_esymm (k : ℕ
   rcases le_or_gt (k + 1) n with hkn | hkn
   · rw [← gardingCone_esymm_eq_hessianCone] at hμ hν
     have h := (isHyperbolic_esymm (σ := Fin n) (by simpa using hkn))
-      |>.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv (by omega) hμ hν
+      |>.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv hμ hν
     simpa only [map_sum, smul_eval, eval_pderiv_esymm_succ] using h
   · simp [hessianCone_eq_empty hkn] at hμ
 

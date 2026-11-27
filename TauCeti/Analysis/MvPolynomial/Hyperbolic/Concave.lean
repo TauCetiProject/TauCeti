@@ -27,8 +27,8 @@ is concave on the convex cone `Γ` (`MvPolynomial.IsHyperbolic.concaveOn_rpow`).
 concavity part of Gårding's theorem.
 
 Its tangent form is **Gårding's inequality**
-(`MvPolynomial.IsHyperbolic.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv`): for `m ≥ 1`, `x ∈ Γ` and
-`y` in the closure of `Γ`,
+(`MvPolynomial.IsHyperbolic.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv`): for `x ∈ Γ` and `y` in the
+closure of `Γ`,
 
 `m p(y)^{1/m} p(x)^{1 - 1/m} ≤ D_y p(x) = ∑ᵢ yᵢ ∂p/∂Xᵢ (x)`.
 
@@ -185,13 +185,19 @@ private theorem mul_rpow_mul_rpow_le_eval_sum_smul_pderiv_of_mem [Fintype σ]
     rw [mul_assoc, mul_comm (P ^ _), h1]] at hs'
   linarith
 
-/-- **Gårding's inequality.** For `p` hyperbolic of degree `m ≥ 1` in the direction `a`, `x` in
+/-- **Gårding's inequality.** For `p` hyperbolic of degree `m` in the direction `a`, `x` in
 the Gårding cone `Γ(p, a)` and `y` in its closure,
 `m p(y)^{1/m} p(x)^{1 - 1/m} ≤ D_y p(x) = ∑ᵢ yᵢ ∂p/∂Xᵢ (x)`. This is the tangent inequality of
-the concave function `p^{1/m}`, positively homogeneous of degree one, at `x`. -/
+the concave function `p^{1/m}`, positively homogeneous of degree one, at `x`. In degree `m = 0`
+both sides vanish. -/
 theorem mul_rpow_mul_rpow_le_eval_sum_smul_pderiv [Fintype σ] (hp : IsHyperbolic p m a)
-    (hm : 1 ≤ m) {x y : σ → ℝ} (hx : x ∈ gardingCone p a) (hy : y ∈ closure (gardingCone p a)) :
+    {x y : σ → ℝ} (hx : x ∈ gardingCone p a) (hy : y ∈ closure (gardingCone p a)) :
     m * eval y p ^ (m : ℝ)⁻¹ * eval x p ^ (1 - (m : ℝ)⁻¹) ≤ eval x (∑ i, y i • pderiv i p) := by
+  -- In degree `0`, `p` is a constant and both sides vanish.
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · obtain ⟨c, rfl⟩ : ∃ c, p = C c := ⟨_, totalDegree_eq_zero_iff_eq_C.1
+      (hp.isHomogeneous.totalDegree hp.ne_zero)⟩
+    simp
   have hm' : (0 : ℝ) < (m : ℝ)⁻¹ := inv_pos.2 (by exact_mod_cast hm)
   -- Both sides are continuous in `y`; the left side through `t ↦ t^{1/m}` with `1/m > 0`.
   have hclosed : IsClosed {y : σ → ℝ |
