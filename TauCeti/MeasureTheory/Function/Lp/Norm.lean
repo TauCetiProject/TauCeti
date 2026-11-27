@@ -229,6 +229,18 @@ theorem normLp_smul {𝕜 : Type*} [NormedRing 𝕜] [NormedAddCommGroup E] [Mod
     Lp.coeFn_smul ‖c‖ (normLp f), coeFn_normLp f] with x h₁ h₂ h₃ h₄
   simp [h₁, h₂, h₃, h₄, norm_smul]
 
+/-- `Lp.normLp` of `hf.toLp f` is `hf.norm.toLp (fun x ↦ ‖f x‖)`. -/
+theorem normLp_toLp [NormedAddCommGroup E] {f : α → E} (hf : MemLp f p μ) :
+    normLp (hf.toLp f) = hf.norm.toLp fun x ↦ ‖f x‖ := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_normLp (hf.toLp f), hf.norm.coeFn_toLp, hf.coeFn_toLp] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+
+/-- `Lp.normLp` of `hf.toL1 f` is `hf.norm.toL1 (fun x ↦ ‖f x‖)`. -/
+theorem normLp_toL1 [NormedAddCommGroup E] {f : α → E} (hf : Integrable f μ) :
+    normLp (hf.toL1 f) = hf.norm.toL1 fun x ↦ ‖f x‖ :=
+  normLp_toLp (memLp_one_iff_integrable.2 hf)
+
 end MeasureTheory.Lp
 
 namespace TauCeti

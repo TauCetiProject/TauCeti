@@ -80,21 +80,13 @@ private theorem ae_summable_integral_norm_of_summable {φ ψ : ℕ → C_c(G, A)
     have hfn_eq :
         hni.toL1 (fun r => ‖φ q.1 r‖) =
           Lp.normLp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ q.1)) := by
-      refine Lp.ext ?_
-      filter_upwards [hni.coeFn_toL1,
-        Lp.coeFn_normLp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ q.1)),
-        CompactlySupportedContinuousMap.coeFn_toLp (p := 1) (μ := μ) ℂ (φ q.1)]
-        with r h₁ h₂ h₃
-      rw [h₁, h₂, h₃]
+      rw [CompactlySupportedContinuousMap.toLp_apply, Lp.normLp_toLp]
+      rfl
     have hgn_eq :
         hmi.toL1 (fun s => ‖ψ q.2 s‖) =
           Lp.normLp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (ψ q.2)) := by
-      refine Lp.ext ?_
-      filter_upwards [hmi.coeFn_toL1,
-        Lp.coeFn_normLp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (ψ q.2)),
-        CompactlySupportedContinuousMap.coeFn_toLp (p := 1) (μ := μ) ℂ (ψ q.2)]
-        with s h₁ h₂ h₃
-      rw [h₁, h₂, h₃]
+      rw [CompactlySupportedContinuousMap.toLp_apply, Lp.normLp_toLp]
+      rfl
     calc
       eLpNorm (W q) 1 μ
           = eLpNorm (Lp.convolutionL μ 1 ENNReal.one_ne_top (hni.toL1 fun r => ‖φ q.1 r‖)

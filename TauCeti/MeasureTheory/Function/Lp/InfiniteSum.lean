@@ -28,6 +28,8 @@ the tails of the series obey `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ 
 * `MeasureTheory.Lp.ae_enorm_le_tsum_enorm_of_hasSum`: the pointwise bound.
 * `MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`: for a countable family, the sum in `Lᵖ`
   agrees almost everywhere with the pointwise sum, wherever the latter exists.
+* `MeasureTheory.Lp.ae_hasSum_of_hasSum`: for a countable family in `Lᵖ` with sum `v` and
+  summable `Lᵖ` norms, the pointwise series converges absolutely to `v` almost everywhere.
 * `MeasureTheory.exists_eLpNorm_sub_sum_le_tsum_compl`: a series of `Lᵖ` functions whose `L^r`
   seminorms are summable has a sum in `L^r`, with the tail bound
   `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ s} ‖xᵢ‖_{L^r}`.
@@ -77,6 +79,21 @@ theorem ae_eq_of_hasSum_of_ae_hasSum [Countable κ] {u : κ → Lp E p μ} {v : 
   filter_upwards [hSv, hsum, hg] with x hx hxsum hgx
   simp only [hxsum] at hx
   exact tendsto_nhds_unique hx (hgx.comp hS)
+
+/-- If a countable family `u` in `Lᵖ` has sum `v` with summable `Lᵖ` norms, then at almost every
+point `x` the pointwise series `u i x` converges absolutely to `v x`. -/
+theorem ae_hasSum_of_hasSum [Countable κ] {u : κ → Lp E p μ} {v : Lp E p μ}
+    (hsum : HasSum u v) (hnorm : Summable fun i => ‖u i‖) :
+    ∀ᵐ x ∂μ, HasSum (fun i => u i x) (v x) ∧ Summable fun i => ‖u i x‖ := by
+  have heNorm : ∑' i, ‖u i‖ₑ ≠ ∞ := tsum_eNorm_ne_top_iff_summable_norm.2 hnorm
+  obtain ⟨S, hS, hSv⟩ := (tendstoInMeasure_of_tendsto_Lp hsum).exists_seq_tendsto_ae'
+  have hfin : ∀ᵐ x ∂μ, ∀ n, (⇑(∑ i ∈ S n, u i) : α → E) x = ∑ i ∈ S n, u i x :=
+    ae_all_iff.2 fun n => coeFn_fun_finsetSum (S n) _
+  filter_upwards [hSv, hfin,
+    summable_norm_of_tsum_eLpNorm_ne_top Fact.out (by simpa [Lp.eNorm_def] using heNorm)]
+    with x hx hfx hnx
+  simp only [hfx] at hx
+  exact ⟨hasSum_of_subseq_of_summable hnx hS hx, hnx⟩
 
 end Lp
 
@@ -152,18 +169,8 @@ theorem ae_hasSum_of_hasSum_toLp {X E ι : Type*} [TopologicalSpace X] [Measurab
     (hsum : HasSum (fun i => toLp p μ 𝕜 (ψ i)) v)
     (hnorm : Summable fun i => ‖toLp p μ 𝕜 (ψ i)‖) :
     ∀ᵐ t ∂μ, HasSum (fun i => ψ i t) (v t) ∧ Summable fun i => ‖ψ i t‖ := by
-  have heNorm : ∑' i, ‖toLp p μ 𝕜 (ψ i)‖ₑ ≠ ∞ :=
-    tsum_eNorm_ne_top_iff_summable_norm.2 hnorm
-  obtain ⟨S, hS, hSv⟩ := (tendstoInMeasure_of_tendsto_Lp hsum).exists_seq_tendsto_ae'
-  have hfin : ∀ᵐ t ∂μ, ∀ n, (⇑(∑ i ∈ S n, toLp p μ 𝕜 (ψ i)) : X → E) t =
-      ∑ i ∈ S n, toLp p μ 𝕜 (ψ i) t :=
-    ae_all_iff.2 fun n => Lp.coeFn_fun_finsetSum (S n) _
-  filter_upwards [hSv, hfin,
-    summable_norm_of_tsum_eLpNorm_ne_top Fact.out (by simpa [Lp.eNorm_def] using heNorm),
-    ae_all_iff.2 fun i => coeFn_toLp (p := p) (μ := μ) 𝕜 (ψ i)]
-    with t ht hft hnt hcoe
-  simp only [hft, hcoe] at ht
-  have hnt' : Summable fun i => ‖ψ i t‖ := by simpa only [hcoe] using hnt
-  exact ⟨hasSum_of_subseq_of_summable hnt' hS ht, hnt'⟩
+  filter_upwards [Lp.ae_hasSum_of_hasSum hsum hnorm,
+    ae_all_iff.2 fun i => coeFn_toLp (p := p) (μ := μ) 𝕜 (ψ i)] with t ⟨ht, hnt⟩ hcoe
+  simpa only [hcoe] using And.intro ht hnt
 
 end CompactlySupportedContinuousMap
