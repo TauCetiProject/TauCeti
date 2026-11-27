@@ -162,15 +162,6 @@ end Matrix.IsGeneralizedCartan
 
 namespace Matrix.IsFiniteCartan
 
-/-- Clearing denominators with a positive common integer scale on a finite index type. -/
-private lemma exists_pos_int_mul_eq {ι : Type*} [Finite ι] (d : ι → ℚ) :
-    ∃ (c : ℤ) (d' : ι → ℤ), 0 < c ∧ ∀ i, (d' i : ℚ) = (c : ℚ) * d i := by
-  classical
-  have _ : Fintype ι := Fintype.ofFinite ι
-  obtain ⟨⟨c, hc⟩, hc'⟩ := IsLocalization.exist_integer_multiples_of_finite (Submonoid.pos ℤ) d
-  choose d' hd' using hc'
-  exact ⟨c, d', hc, fun i ↦ by simpa [Algebra.smul_def] using hd' i⟩
-
 /-- Building a finite-type Cartan matrix from a rational symmetrizer `d` whose symmetrization
 `fun i j ↦ d i * (M i j : ℚ)` is positive definite. Positive definiteness already forces
 `0 < d i` on the diagonal (since `M i i = 2`) and the symmetric vanishing pattern
@@ -183,7 +174,9 @@ theorem mk_of_posDef_rat {ι : Type*} [Fintype ι] [DecidableEq ι] {M : Matrix 
     have hdiag : (0 : ℚ) < (Matrix.of fun p q ↦ d p * (M p q : ℚ)) i i := hpd.diag_pos
     simp only [Matrix.of_apply, h2 i, Int.cast_ofNat] at hdiag
     linarith
-  obtain ⟨c, d', hc_pos, hd'_eq⟩ := exists_pos_int_mul_eq d
+  obtain ⟨⟨c, hc_pos⟩, hc'⟩ := IsLocalization.exist_integer_multiples_of_finite (Submonoid.pos ℤ) d
+  choose d' hd' using hc'
+  have hd'_eq (i : ι) : (d' i : ℚ) = (c : ℚ) * d i := by simpa [Algebra.smul_def] using hd' i
   have hc_qpos : (0 : ℚ) < (c : ℚ) := Int.cast_pos.mpr hc_pos
   have hd'_pos (i : ι) : 0 < d' i := by
     have : (0 : ℚ) < (d' i : ℚ) := by rw [hd'_eq i]; exact mul_pos hc_qpos (hd i)
