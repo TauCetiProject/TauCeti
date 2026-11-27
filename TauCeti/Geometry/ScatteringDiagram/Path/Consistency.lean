@@ -10,10 +10,10 @@ public import TauCeti.Geometry.ScatteringDiagram.Path.Product
 /-!
 # Consistency of wall transport
 
-When the normal of each wall has its direction as kernel, polygonal transport is determined
-by its endpoints precisely when every admissible closed path has identity transport. For a
-finite family of codimension-one convex polyhedral walls, it suffices to check loops at a
-single off-wall basepoint.
+Polygonal transport is determined by its endpoints precisely when every admissible
+closed path has identity transport. It suffices to check loops at one basepoint
+from which every endpoint is reachable. Codimension-one convex polyhedral walls
+provide this reachability.
 -/
 
 public section
@@ -54,32 +54,40 @@ theorem IsConsistent.wallPathProduct_eq_one (h : IsConsistent ν label hcomm)
   (h.wallPathProduct_eq p .nil).trans (Quiver.Path.wallPathProduct_nil ν label hcomm)
 
 /-- Endpoint independence is equivalent to trivial transport on all closed paths. -/
-theorem isConsistent_iff_wallPathProduct_eq_one
-    (hν : ∀ i, LinearMap.ker (ν i) = (affineSpan ℝ (W i)).direction) :
+theorem isConsistent_iff_wallPathProduct_eq_one :
     IsConsistent ν label hcomm ↔
       ∀ (x : WallComplement W) (p : AdmissiblePLPath x x),
         p.wallPathProduct ν label hcomm = 1 := by
   refine ⟨fun h _ p => h.wallPathProduct_eq_one p, fun h x _ p q => ?_⟩
-  have hloop := h x (p.comp q.reverse)
-  rw [Quiver.Path.wallPathProduct_comp, Quiver.Path.wallPathProduct_reverse _ _ _ hν,
-    inv_mul_eq_one] at hloop
-  exact hloop.symm
+  have hp := h x (p.comp q.reverse)
+  have hq := h x (q.comp q.reverse)
+  simp only [Quiver.Path.wallPathProduct_comp] at hp hq
+  exact mul_left_cancel (hp.trans hq.symm)
 
-/-- For convex polyhedral walls of codimension one and normals with the wall directions as
-kernels, consistency can be tested using loops at any single off-wall basepoint. -/
+/-- An off-wall basepoint that reaches every endpoint detects consistency by its loops. -/
+theorem isConsistent_iff_wallPathProduct_eq_one_at_of_reachable
+    {b : WallComplement W} (hconn : ∀ x, Nonempty (AdmissiblePLPath b x)) :
+    IsConsistent ν label hcomm ↔
+      ∀ p : AdmissiblePLPath b b, p.wallPathProduct ν label hcomm = 1 := by
+  rw [isConsistent_iff_wallPathProduct_eq_one]
+  refine ⟨fun h => h b, fun h x p => ?_⟩
+  obtain ⟨q⟩ := hconn x
+  have hp := h ((q.comp p).comp q.reverse)
+  have hq := h (q.comp q.reverse)
+  simp only [Quiver.Path.wallPathProduct_comp] at hp hq
+  have heq := mul_left_cancel (hp.trans hq.symm)
+  exact mul_right_cancel (heq.trans (one_mul _).symm)
+
+/-- For convex polyhedral walls of codimension one, consistency can be tested using loops
+at any single off-wall basepoint. -/
 theorem isConsistent_iff_wallPathProduct_eq_one_at
-    (hν : ∀ i, LinearMap.ker (ν i) = (affineSpan ℝ (W i)).direction)
     (hpoly : ∀ i, IsConvexPolyhedron (W i))
     (hdim : ∀ i, Module.finrank ℝ (affineSpan ℝ (W i)).direction + 1 = Module.finrank ℝ V)
     (b : WallComplement W) :
     IsConsistent ν label hcomm ↔
-      ∀ p : AdmissiblePLPath b b, p.wallPathProduct ν label hcomm = 1 := by
-  rw [isConsistent_iff_wallPathProduct_eq_one hν]
-  refine ⟨fun h => h b, fun h x p => ?_⟩
-  obtain ⟨q, -⟩ := AdmissiblePLPath.exists_length_eq_two hpoly hdim b x
-  have hloop := h ((q.comp p).comp q.reverse)
-  rwa [Quiver.Path.wallPathProduct_comp, Quiver.Path.wallPathProduct_comp,
-    Quiver.Path.wallPathProduct_reverse _ _ _ hν, inv_mul_eq_iff_eq_mul, mul_one,
-    mul_eq_right] at hloop
+      ∀ p : AdmissiblePLPath b b, p.wallPathProduct ν label hcomm = 1 :=
+  isConsistent_iff_wallPathProduct_eq_one_at_of_reachable fun x => by
+    obtain ⟨q, -⟩ := AdmissiblePLPath.exists_length_eq_two hpoly hdim b x
+    exact ⟨q⟩
 
 end TauCeti.WallComplement
