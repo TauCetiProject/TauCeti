@@ -6,21 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Grading finitely supported functions by assigned degrees
 
-For an arbitrary assignment `g : I → ℤ`, `InternalGrading.finsupp A g` grades the free
-`A`-module on `I` by placing its `i`-th basis vector in degree `g i`. A homogeneous element
-has support in a single fibre of `g`. No finiteness or injectivity of `g` is required.
+For an arbitrary assignment `g : I → ι` of degrees in any type `ι`,
+`InternalGrading.finsupp A g` grades the free `A`-module on `I` by placing its `i`-th basis vector
+in degree `g i`. A homogeneous element has support in a single fibre of `g`. No finiteness or
+injectivity of `g` is required.
 
 The internal direct sum gives every finitely supported function a unique finite homogeneous
 decomposition, including when several basis vectors have the same degree. This construction
 also applies after a linear change of coordinates, via `InternalGrading.map`.
 
 Each piece is itself free: `InternalGrading.finsuppPieceBasis A g p` is its basis formed by the
-basis vectors of the indices of degree `p`.
+basis vectors of the indices of degree `p`. So its rank is the number of indices of degree `p`
+(`InternalGrading.finrank_finsupp_piece`), and for finitely many indices a sum of weights over the
+degrees, counted with the ranks of the pieces, is the sum of the weights of the degrees of the
+indices (`InternalGrading.finsum_finrank_finsupp_piece_smul`): this computes the Euler
+characteristic of a complex with a basis of homogeneous generators by counting generators.
 
 The construction uses Mathlib's `Finsupp.supported` submodules and
 `DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`.
@@ -30,11 +37,11 @@ public section
 
 namespace TauCeti.InternalGrading
 
-variable (A : Type*) [Ring A] {I : Type*} (g : I → ℤ)
+variable (A : Type*) [Ring A] {I ι : Type*} [DecidableEq ι] (g : I → ι)
 
 /-- The internal grading of the free module on `I` assigning its `i`-th basis vector
 degree `g i`. The degree-`p` piece consists of functions supported in the fibre of `p`. -/
-noncomputable def finsupp : InternalGrading A (I →₀ A) ℤ where
+noncomputable def finsupp : InternalGrading A (I →₀ A) ι where
   piece p := Finsupp.supported A A {i | g i = p}
   isInternal := by
     classical
@@ -48,13 +55,13 @@ noncomputable def finsupp : InternalGrading A (I →₀ A) ℤ where
       intro i hi
       exact fun hip => hqp (hi.symm.trans hip)
     · rw [← Finsupp.supported_iUnion]
-      have hcover : (⋃ p : ℤ, {i | g i = p}) = Set.univ := by
+      have hcover : (⋃ p : ι, {i | g i = p}) = Set.univ := by
         ext i
         simp
       rw [hcover, Finsupp.supported_univ]
 
 /-- The homogeneous piece is the supported submodule on the corresponding degree fibre. -/
-theorem finsupp_piece (p : ℤ) :
+theorem finsupp_piece (p : ι) :
     (finsupp A g).piece p = Finsupp.supported A A {i | g i = p} := (rfl)
 
 variable {A g}
@@ -62,7 +69,7 @@ variable {A g}
 /-- A finitely supported function has degree `p` exactly when every nonzero coordinate
 has assigned degree `p`. -/
 @[simp]
-theorem mem_finsupp_piece_iff {p : ℤ} {c : I →₀ A} :
+theorem mem_finsupp_piece_iff {p : ι} {c : I →₀ A} :
     c ∈ (finsupp A g).piece p ↔ ∀ i, c i ≠ 0 → g i = p := by
   rw [finsupp_piece]
   simp [Finsupp.mem_supported, Set.subset_def]
@@ -75,7 +82,7 @@ theorem single_mem_finsupp_piece (i : I) (a : A) :
 
 /-- A single coordinate belongs to a homogeneous piece precisely when its coefficient
 vanishes or its assigned degree is that of the piece. -/
-theorem single_mem_finsupp_piece_iff (i : I) (a : A) (p : ℤ) :
+theorem single_mem_finsupp_piece_iff (i : I) (a : A) (p : ι) :
     Finsupp.single i a ∈ (finsupp A g).piece p ↔ a = 0 ∨ g i = p := by
   classical
   rw [mem_finsupp_piece_iff]
@@ -93,20 +100,42 @@ theorem single_mem_finsupp_piece_iff (i : I) (a : A) (p : ℤ) :
 variable (A g) in
 /-- The basis of the degree-`p` piece of `InternalGrading.finsupp A g` formed by the basis vectors
 `Finsupp.single i 1` of the indices `i` of degree `p`. -/
-noncomputable def finsuppPieceBasis (p : ℤ) :
+noncomputable def finsuppPieceBasis (p : ι) :
     Module.Basis {i // g i = p} A ((finsupp A g).piece p) :=
   .ofRepr (Finsupp.supportedEquivFinsupp {i | g i = p})
 
 /-- The basis vector of an index of degree `p` is its single coordinate. -/
 @[simp]
-theorem coe_finsuppPieceBasis {p : ℤ} (i : {i // g i = p}) :
+theorem coe_finsuppPieceBasis {p : ι} (i : {i // g i = p}) :
     (finsuppPieceBasis A g p i : I →₀ A) = Finsupp.single (i : I) 1 :=
   Finsupp.supportedEquivFinsupp_symm_single {i | g i = p} i 1
 
 /-- The coordinates of a homogeneous element in `finsuppPieceBasis` are its coefficients. -/
 @[simp]
-theorem finsuppPieceBasis_repr_apply {p : ℤ} (x : (finsupp A g).piece p) (i : {i // g i = p}) :
+theorem finsuppPieceBasis_repr_apply {p : ι} (x : (finsupp A g).piece p) (i : {i // g i = p}) :
     (finsuppPieceBasis A g p).repr x i = (x : I →₀ A) i :=
   (rfl)
+
+/-- The degree-`p` piece of the free module graded by `g` has rank the number of indices of degree
+`p`. -/
+theorem finrank_finsupp_piece [StrongRankCondition A] (p : ι) :
+    Module.finrank A ((finsupp A g).piece p) = Nat.card {i // g i = p} :=
+  Module.finrank_eq_nat_card_basis (finsuppPieceBasis A g p)
+
+/-- For finitely many indices, a sum of weights `w` over the degrees, counted with the ranks of the
+pieces of the free module graded by `g`, is the sum of the weights of the degrees of the indices. -/
+theorem finsum_finrank_finsupp_piece_smul [StrongRankCondition A] [Fintype I] {B : Type*}
+    [AddCommMonoid B] (w : ι → B) :
+    ∑ᶠ p, Module.finrank A ((finsupp A g).piece p) • w p = ∑ i, w (g i) := by
+  classical
+  rw [finsum_eq_sum_of_support_subset _ (s := Finset.univ.image g) fun p hp ↦ ?_,
+    Finset.sum_comp]
+  · refine Finset.sum_congr rfl fun p _ ↦ ?_
+    rw [finrank_finsupp_piece, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  · obtain ⟨i, rfl⟩ : ∃ i, g i = p := by
+      by_contra! h
+      have : IsEmpty {i // g i = p} := ⟨fun i ↦ h i i.property⟩
+      simp [finrank_finsupp_piece] at hp
+    simp
 
 end TauCeti.InternalGrading

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.PathSpace.Moore.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
 /-!
@@ -29,6 +29,11 @@ base point (`TauCeti.MooreFreeLoopSpace.map_basepointMap_rotationLoop`). Local s
 loop space are tested against this loop: a local system pulled back along evaluation at the base
 point has, along the rotation loop of `γ`, the monodromy of `γ` itself.
 
+Reparametrized to circle maps (`TauCeti.MooreFreeLoopSpace.toCircleMap`), the rotation of `γ` by
+the fraction `s` of its length is `γ` precomposed with multiplication by `exp (2πis)`
+(`TauCeti.MooreFreeLoopSpace.toCircleMap_rotate`). So the torus swept out by the rotation loop
+factors through the circle.
+
 ## Main definitions
 
 * `TauCeti.MooreFreeLoopSpace.rotate γ s`: the rotation of a free Moore loop by the time `s`.
@@ -45,6 +50,8 @@ point has, along the rotation loop of `γ`, the monodromy of `γ` itself.
   before and after the end of `γ`.
 * `TauCeti.MooreFreeLoopSpace.map_basepointMap_rotationLoop`: the base points of the rotation loop
   of `γ` trace `γ`.
+* `TauCeti.MooreFreeLoopSpace.toCircleMap_rotate`: as a circle map, the rotation by a fraction `s`
+  of the length is precomposition with multiplication by `exp (2πis)`.
 
 ## References
 
@@ -173,6 +180,65 @@ theorem map_basepointMap_rotationLoop (γ : MooreFreeLoopSpace X) :
     MooreLoopSpace.map (basepointMap X) (basepointMap_apply γ) γ.rotationLoop = γ.toMooreLoop :=
   MooreLoopSpace.ext <| MoorePath.ext (by simp) fun s ↦ by
     simp [MoorePath.map_apply]
+
+/-! ### The rotation as a circle map -/
+
+/-- **Rotation is multiplication on the circle**: reparametrized to the circle, the rotation of a
+free Moore loop `γ` by the fraction `s` of its length is `γ` precomposed with multiplication by
+`exp (2πis)`. -/
+theorem toCircleMap_rotate_unitToCircle (γ : MooreFreeLoopSpace X) (s u : unitInterval) :
+    toCircleMap (γ.rotate (γ.length * unitInterval.toNNReal s)) (unitToCircle u) =
+      toCircleMap γ (unitToCircle u * unitToCircle s) := by
+  have hs := unitInterval.toNNReal_le_one s
+  rw [toCircleMap_unitToCircle, MoorePath.toUnitPath_apply, length_toMoorePath, length_rotate,
+    unitToCircle_apply, unitToCircle_apply, ← Circle.exp_add]
+  rcases le_or_gt ((u : ℝ) + s) 1 with hus | hus
+  · -- Before `γ` ends, the rotation runs along `γ` from time `L s`.
+    have hI : (u : ℝ) + s ∈ Set.Icc (0 : ℝ) 1 :=
+      ⟨add_nonneg (unitInterval.nonneg u) (unitInterval.nonneg s), hus⟩
+    have hle : γ.length * unitInterval.toNNReal u ≤
+        γ.length - γ.length * unitInterval.toNNReal s := by
+      rw [le_tsub_iff_right (mul_le_of_le_one_right' hs), ← mul_add]
+      exact mul_le_of_le_one_right' (by rw [← NNReal.coe_le_coe]; simpa using hus)
+    have harg : 2 * Real.pi * u + 2 * Real.pi * s =
+        2 * Real.pi * ((⟨(u : ℝ) + s, hI⟩ : unitInterval) : ℝ) := by
+      simp only
+      ring
+    rw [rotate_apply_of_le _ hle, harg, ← unitToCircle_apply, toCircleMap_unitToCircle,
+      MoorePath.toUnitPath_apply, length_toMoorePath]
+    congr 1
+    ext
+    simp only [NNReal.coe_add, NNReal.coe_mul, unitInterval.coe_toNNReal]
+    ring
+  · -- After `γ` ends, the rotation runs along `γ` from its start, and `exp` has period `2π`.
+    have hI : (u : ℝ) + s - 1 ∈ Set.Icc (0 : ℝ) 1 :=
+      ⟨by linarith, by linarith [unitInterval.le_one u, unitInterval.le_one s]⟩
+    have hv : (u : ℝ) + s - 1 ≤ s := by linarith [unitInterval.le_one u]
+    have hlen : γ.length * unitInterval.toNNReal u = γ.length -
+        γ.length * unitInterval.toNNReal s + γ.length * NNReal.mk _ hI.1 := by
+      have hsub : ((γ.length - γ.length * unitInterval.toNNReal s : ℝ≥0) : ℝ) =
+          γ.length - γ.length * s := by
+        rw [NNReal.coe_sub (mul_le_of_le_one_right' hs), NNReal.coe_mul,
+          unitInterval.coe_toNNReal]
+      ext
+      rw [NNReal.coe_add, hsub, NNReal.coe_mul, NNReal.coe_mul, unitInterval.coe_toNNReal,
+        NNReal.coe_mk]
+      ring
+    have harg : 2 * Real.pi * u + 2 * Real.pi * s =
+        2 * Real.pi * ((⟨(u : ℝ) + s - 1, hI⟩ : unitInterval) : ℝ) + 2 * Real.pi := by
+      simp only
+      ring
+    rw [hlen, rotate_apply_length_sub_add,
+      min_eq_left (by gcongr; rw [← NNReal.coe_le_coe]; simpa using hv), harg,
+      Circle.exp_add_two_pi, ← unitToCircle_apply, toCircleMap_unitToCircle,
+      MoorePath.toUnitPath_apply, length_toMoorePath, unitInterval.toNNReal_mk]
+
+/-- **Rotation is multiplication on the circle**: as a circle map, the rotation of `γ` by the
+fraction `s` of its length is `γ` precomposed with multiplication by `exp (2πis)`. -/
+theorem toCircleMap_rotate (γ : MooreFreeLoopSpace X) (s : unitInterval) :
+    toCircleMap (γ.rotate (γ.length * unitInterval.toNNReal s)) =
+      (toCircleMap γ).comp (ContinuousMap.mulRight (unitToCircle s)) :=
+  ContinuousMap.ext_unitToCircle fun u ↦ toCircleMap_rotate_unitToCircle γ s u
 
 end MooreFreeLoopSpace
 

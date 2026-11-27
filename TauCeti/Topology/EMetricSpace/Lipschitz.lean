@@ -7,23 +7,30 @@ module
 
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.EMetricSpace.Weak
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Topology.Compactness.Lindelof
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Metrizable.Basic
 
+import Mathlib.Topology.MetricSpace.Isometry
+import Mathlib.Topology.MetricSpace.Lipschitz
+
 /-!
 # Lipschitz maps from extended metric spaces
 
 This file gives a real-valued Lipschitz estimate for the extended distance from a fixed point,
-shows that the inclusion of a subset into a larger subset is `1`-Lipschitz, records that a map
-Lipschitz on a set is locally Lipschitz on that set (`LipschitzOnWith.locallyLipschitzOn`), covers
-any separable set on which a map is locally Lipschitz by countably many open sets on whose
-intersections with the set the map is Lipschitz
-(`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows (`LocallyLipschitzOn.comp`),
-also for outer maps locally Lipschitz only on a set containing the image, that composing a function
-locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschitz on that set.
+records non-expansiveness (`edist` contraction) of `ENNReal.toReal` and `ENNReal.ofReal`
+(`ENNReal.edist_toReal_le`, `ENNReal.edist_ofReal_le`; stated directly in terms of `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`), shows that the inclusion of a
+subset into a larger subset is `1`-Lipschitz, records that a map Lipschitz on a set is locally
+Lipschitz on that set (`LipschitzOnWith.locallyLipschitzOn`), covers any separable set on which a
+map is locally Lipschitz by countably many open sets on whose intersections with the set the map is
+Lipschitz (`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows
+(`LocallyLipschitzOn.comp`), also for outer maps locally Lipschitz only on a set containing the
+image, that composing a function locally Lipschitz on a set with a locally Lipschitz map keeps it
+locally Lipschitz on that set.
 
 `LipschitzOnWith.closure_of_continuousWithinAt` extends a Lipschitz bound to the closure when
 continuity is supplied only at the added points. `LipschitzOnWith.Icc_of_Ico` specializes this
@@ -157,3 +164,25 @@ protected theorem LocallyLipschitzOn.comp {α β γ : Type*} [PseudoEMetricSpace
   refine ⟨Kg * Kf, u ∩ f ⁻¹' v,
     inter_mem hu ((hf.continuousOn x hx).tendsto_nhdsWithin hst hv), ?_⟩
   exact hKg.comp (hKf.mono inter_subset_left) fun _ hy => hy.2
+
+/-- `ENNReal.toReal` does not increase extended distances. Stated directly via `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`. -/
+theorem ENNReal.edist_toReal_le (a b : ℝ≥0∞) : edist a.toReal b.toReal ≤ edist a b := by
+  rcases eq_or_ne a ∞ with rfl | ha
+  · rcases eq_or_ne b ∞ with rfl | hb
+    · simp
+    · rw [(ENNReal.edist_eq_top_iff ∞ b).2 ⟨Ne.symm hb, Or.inl rfl⟩]
+      exact le_top
+  · rcases eq_or_ne b ∞ with rfl | hb
+    · rw [(ENNReal.edist_eq_top_iff a ∞).2 ⟨ha, Or.inr rfl⟩]
+      exact le_top
+    · rw [← ENNReal.coe_toNNReal_eq_toReal a, ← ENNReal.coe_toNNReal_eq_toReal b,
+        NNReal.isometry_coe.edist_eq, ← ENNReal.edist_coe,
+        ENNReal.coe_toNNReal ha, ENNReal.coe_toNNReal hb]
+
+/-- `ENNReal.ofReal` does not increase extended distances. Stated directly via `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`. -/
+theorem ENNReal.edist_ofReal_le (a b : ℝ) :
+    edist (ENNReal.ofReal a) (ENNReal.ofReal b) ≤ edist a b := by
+  rw [← ENNReal.ofNNReal_toNNReal, ← ENNReal.ofNNReal_toNNReal, ENNReal.edist_coe]
+  simpa only [ENNReal.coe_one, one_mul] using Real.lipschitzWith_toNNReal a b

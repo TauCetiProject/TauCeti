@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Map
 public import TauCeti.RingTheory.WittVector.MapEquiv
+public import TauCeti.RingTheory.WittVector.Primitive.Basic
 public import TauCeti.RingTheory.WittVector.Pullback
 
 /-!
@@ -47,8 +48,13 @@ products of integral perfectoid rings along a surjection are integral perfectoid
   when `A`, `B` and `C` are `p`-adically complete, and surjective when `A` and `B` are and `T` is
   `p`-adically Hausdorff.
 * `PreTilt.coe_untilt_pullbackEquiv_symm`: the tilt isomorphism is compatible with the sharp maps.
-* `PreTilt.coe_fontaineTheta_wittVectorPullbackEquiv_symm`: the `A_inf` isomorphism is compatible
-  with Fontaine's maps.
+* `PreTilt.coe_fontaineTheta_wittVectorPullbackEquiv_symm`,
+  `PreTilt.coe_fontaineTheta_wittVectorPullbackEquiv`: the `A_inf` isomorphism is compatible with
+  Fontaine's maps.
+* `PreTilt.mem_ker_fontaineTheta_iff_wittVectorPullbackEquiv`: an element of `A_inf(A ×_T B)` lies
+  in `ker θ` exactly when both of its components do.
+* `PreTilt.isDistinguished_iff_wittVectorPullbackEquiv`: an element of `A_inf(A ×_T B)` is
+  distinguished exactly when both of its components are.
 
 ## References
 
@@ -187,6 +193,22 @@ theorem coe_wittVectorPullbackEquiv (w : WittVector p (PreTilt (f.pullback g) p)
   Prod.ext (WittVector.ext fun n ↦ by simp [wittVectorPullbackEquiv, WittVector.map_coeff])
     (WittVector.ext fun n ↦ by simp [wittVectorPullbackEquiv, WittVector.map_coeff])
 
+/-- An element of `A_inf(A ×_T B)` is distinguished exactly when both of its components in
+`A_inf(A)` and `A_inf(B)` are. -/
+theorem isDistinguished_iff_wittVectorPullbackEquiv
+    {ξ : WittVector p (PreTilt (f.pullback g) p)} :
+    ξ.IsDistinguished ↔
+      (wittVectorPullbackEquiv p f g ξ :
+        WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).1.IsDistinguished ∧
+      (wittVectorPullbackEquiv p f g ξ :
+        WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).2.IsDistinguished := by
+  rw [coe_wittVectorPullbackEquiv]
+  simp only [WittVector.isDistinguished_iff, WittVector.map_coeff]
+  rw [← isUnit_map_iff (pullbackEquiv p f g),
+    ← Subtype.coe_eta (pullbackEquiv p f g _) (pullbackEquiv p f g _).property,
+    RingHom.isUnit_pullback_mk_iff]
+  simp
+
 /-- **Fontaine's map of a pullback is the pair of Fontaine's maps**: under
 `A_inf(A ×_T B) ≃+* A_inf(A) ×_{A_inf(T)} A_inf(B)`, `θ` of the pullback is computed
 componentwise. -/
@@ -200,5 +222,29 @@ theorem coe_fontaineTheta_wittVectorPullbackEquiv_symm
   obtain ⟨w, rfl⟩ := (wittVectorPullbackEquiv p f g).surjective v
   simp only [RingEquiv.symm_apply_apply, coe_wittVectorPullbackEquiv, WittVector.theta_natural]
   simp
+
+/-- Fontaine's map of `A ×_T B` is computed componentwise on the image of `w` in
+`A_inf(A) ×_{A_inf(T)} A_inf(B)`. -/
+theorem coe_fontaineTheta_wittVectorPullbackEquiv (w : WittVector p (PreTilt (f.pullback g) p)) :
+    (WittVector.fontaineTheta (f.pullback g) p w : A × B) =
+      (WittVector.fontaineTheta A p (wittVectorPullbackEquiv p f g w :
+          WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).1,
+        WittVector.fontaineTheta B p (wittVectorPullbackEquiv p f g w :
+          WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).2) := by
+  simp
+
+/-- An element of `A_inf(A ×_T B)` lies in the kernel of Fontaine's map exactly when both of its
+components in `A_inf(A)` and `A_inf(B)` do. -/
+theorem mem_ker_fontaineTheta_iff_wittVectorPullbackEquiv
+    {w : WittVector p (PreTilt (f.pullback g) p)} :
+    w ∈ RingHom.ker (WittVector.fontaineTheta (f.pullback g) p) ↔
+      (wittVectorPullbackEquiv p f g w :
+        WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).1 ∈
+          RingHom.ker (WittVector.fontaineTheta A p) ∧
+      (wittVectorPullbackEquiv p f g w :
+        WittVector p (PreTilt A p) × WittVector p (PreTilt B p)).2 ∈
+          RingHom.ker (WittVector.fontaineTheta B p) := by
+  rw [RingHom.mem_ker, ← ZeroMemClass.coe_eq_zero, coe_fontaineTheta_wittVectorPullbackEquiv,
+    Prod.mk_eq_zero, RingHom.mem_ker, RingHom.mem_ker]
 
 end PreTilt

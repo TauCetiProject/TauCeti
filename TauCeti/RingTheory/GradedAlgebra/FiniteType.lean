@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
+public import TauCeti.Data.Finset.Finsupp
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -29,7 +30,9 @@ For the invariants of a linearly reductive group acting on a polynomial ring, id
 supplied by exactness of invariants, in place of the Reynolds operator of the classical argument.
 
 The file also compares finite generation over the coefficients `R` with finite generation over the
-degree-zero part `𝒜 0`, the form in which finiteness hypotheses enter the projective spectrum.
+degree-zero part `𝒜 0`, the form in which finiteness hypotheses enter the projective spectrum, and
+shows that every graded piece of a finite-type `ℕ`-graded algebra with finite degree-zero part is
+itself a finite module over the base semiring.
 
 ## Main results
 
@@ -38,6 +41,10 @@ degree-zero part `𝒜 0`, the form in which finiteness hypotheses enter the pro
 * `TauCeti.GradedAlgebra.exists_finset_adjoin_eq_top_and_mem_grade_ne_zero`: a finite-type
   semiring graded algebra is generated over its degree-zero part by finitely many homogeneous
   elements of nonzero degree.
+* `TauCeti.GradedAlgebra.span_weightedFinsuppAntidiag_eq_gradedPiece`: explicit spanning set of
+  monomials of weighted degree `n` for each graded piece.
+* `TauCeti.GradedAlgebra.moduleFinite_gradedPiece_of_finiteType`: every graded piece of a
+  finite-type `ℕ`-graded algebra with finite degree-zero part is finite over the base.
 * `TauCeti.GradedAlgebra.finiteType_gradeZero_left`: a graded algebra of finite type over `R` is
   of finite type over its degree-zero part.
 * `TauCeti.GradedAlgebra.finiteType_gradeZero`: the degree-zero part of a graded algebra of finite
@@ -141,6 +148,85 @@ theorem exists_finset_adjoin_eq_top_and_mem_grade_ne_zero [Algebra.FiniteType (�
   · simp only [Finset.mem_biUnion, Finset.mem_image, Finset.mem_filter]
     rintro _ ⟨f, -, n, ⟨-, hn0⟩, rfl⟩
     exact ⟨n, hn0, (decompose 𝒜 f n).property⟩
+
+/-- For an `ℕ`-graded commutative algebra generated over `ℬ 0` by a finite set `s` of
+positive-degree homogeneous elements with degrees `m : s → ℕ+`, the `n`-th graded piece `ℬ n`
+equals the `ℬ 0`-span of the monomials of weighted degree `n` in `s`. -/
+theorem span_weightedFinsuppAntidiag_eq_gradedPiece {A B : Type*} [CommSemiring A] [CommSemiring B]
+    [Algebra A B] (ℬ : ℕ → Submodule A B) [GradedAlgebra ℬ] {s : Finset B}
+    (hs : Algebra.adjoin (ℬ 0) (s : Set B) = ⊤) (m : s → ℕ+) (hm : ∀ y : s, (y : B) ∈ ℬ (m y))
+    (n : ℕ) :
+    (Submodule.span (ℬ 0)
+      ((fun l : s →₀ ℕ ↦ l.prod fun y e ↦ (y : B) ^ e) ''
+        ((Finset.univ : Finset s).weightedFinsuppAntidiag m n : Set (s →₀ ℕ)))).restrictScalars A =
+      ℬ n := by
+  classical
+  let T : Set B := (fun l : s →₀ ℕ ↦ l.prod fun y e ↦ (y : B) ^ e) ''
+    ((Finset.univ : Finset s).weightedFinsuppAntidiag m n : Set (s →₀ ℕ))
+  have hprod_mem (l : s →₀ ℕ) :
+      (l.prod fun y e ↦ (y : B) ^ e) ∈ ℬ (∑ y : s, (m y : ℕ) * l y) := by
+    have hw : (∑ y : s, (m y : ℕ) * l y) = l.sum fun y e ↦ e • (m y : ℕ) := by
+      rw [Finsupp.sum_fintype _ _ (fun _ ↦ by simp)]
+      exact Finset.sum_congr rfl fun y _ ↦ by simp [mul_comm]
+    rw [hw]
+    exact SetLike.prod_pow_mem_graded ℬ (fun y : s ↦ (m y : ℕ)) (fun y : s ↦ (y : B)) l
+      fun y _ ↦ hm y
+  refine le_antisymm (fun x hx ↦ ?_) (fun x hx ↦ ?_)
+  · induction hx using Submodule.span_induction with
+    | mem y hy =>
+      rcases hy with ⟨l, hl, rfl⟩
+      rw [← (Finset.mem_weightedFinsuppAntidiag.mp hl).2]
+      exact hprod_mem l
+    | zero => exact zero_mem _
+    | add y z _ _ hy hz => exact add_mem hy hz
+    | smul c y _ hy =>
+      rw [Algebra.smul_def]
+      simpa using SetLike.GradedMul.mul_mem c.property hy
+  · have hrange : (MvPolynomial.aeval (R := ℬ 0) (Subtype.val : s → B)).range = ⊤ := by
+      rw [← Algebra.adjoin_range_eq_range_aeval]
+      simpa [Subtype.range_coe_subtype] using hs
+    have hx_range : x ∈ (MvPolynomial.aeval (R := ℬ 0) (Subtype.val : s → B)).range :=
+      hrange ▸ (Algebra.mem_top : x ∈ (⊤ : Subalgebra (ℬ 0) B))
+    obtain ⟨p, rfl⟩ := (AlgHom.mem_range _).mp hx_range
+    rw [← decompose_of_mem_same ℬ hx]
+    clear hx hx_range
+    induction p using MvPolynomial.induction_on' with
+    | monomial d c =>
+      rw [MvPolynomial.aeval_monomial, SetLike.GradeZero.algebraMap_apply]
+      have hmem : (c : B) * (d.prod fun y e ↦ (y : B) ^ e) ∈ ℬ (∑ y : s, (m y : ℕ) * d y) := by
+        simpa using SetLike.GradedMul.mul_mem c.property (hprod_mem d)
+      by_cases hwt : ∑ y : s, (m y : ℕ) * d y = n
+      · rw [decompose_of_mem_same ℬ (hwt ▸ hmem)]
+        have hdT : (d.prod fun y e ↦ (y : B) ^ e) ∈ T :=
+          ⟨d, Finset.mem_coe.mpr (Finset.mem_weightedFinsuppAntidiag.mpr
+            ⟨Finset.subset_univ _, hwt⟩), rfl⟩
+        simpa only [Submodule.restrictScalars_mem, Algebra.smul_def,
+          SetLike.GradeZero.algebraMap_apply] using
+          Submodule.smul_mem (Submodule.span (ℬ 0) T) c (Submodule.subset_span hdT)
+      · rw [decompose_of_mem_ne ℬ hmem hwt]
+        exact zero_mem _
+    | add p q hp hq =>
+      rw [map_add, decompose_add, DirectSum.add_apply, Submodule.coe_add]
+      exact add_mem hp hq
+
+/-- Every graded piece of an `ℕ`-graded commutative algebra of finite type over its degree-zero
+part, whose degree-zero part is finite over the base semiring, is a finite module over the base
+semiring. -/
+theorem moduleFinite_gradedPiece_of_finiteType {A B : Type*} [CommSemiring A] [CommSemiring B]
+    [Algebra A B] (ℬ : ℕ → Submodule A B) [GradedAlgebra ℬ] [Algebra.FiniteType (ℬ 0) B]
+    [Module.Finite A (ℬ 0)] (n : ℕ) : Module.Finite A (ℬ n) := by
+  classical
+  obtain ⟨s, hs, hdeg⟩ := exists_finset_adjoin_eq_top_and_mem_grade_ne_zero ℬ
+  choose deg hdeg_ne hdeg_mem using fun y : s ↦ hdeg y.val y.property
+  let m : s → ℕ+ := fun y ↦ ⟨deg y, Nat.pos_of_ne_zero (hdeg_ne y)⟩
+  let T : Set B := (fun l : s →₀ ℕ ↦ l.prod fun y e ↦ (y : B) ^ e) ''
+    ((Finset.univ : Finset s).weightedFinsuppAntidiag m n : Set (s →₀ ℕ))
+  have hTfin : T.Finite :=
+    ((Finset.univ : Finset s).weightedFinsuppAntidiag m n).finite_toSet.image _
+  have hspan : (Submodule.span (ℬ 0) T).restrictScalars A = ℬ n :=
+    span_weightedFinsuppAntidiag_eq_gradedPiece ℬ hs m hdeg_mem n
+  rw [Module.Finite.iff_fg, ← hspan]
+  exact (Submodule.fg_span hTfin).restrictScalars
 
 end Nat
 
