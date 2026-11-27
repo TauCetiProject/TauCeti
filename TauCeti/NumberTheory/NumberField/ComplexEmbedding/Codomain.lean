@@ -9,6 +9,8 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
+public import TauCeti.LinearAlgebra.ExteriorPower.RestrictScalars
 
 import Mathlib.RingTheory.DedekindDomain.Basic
 import Mathlib.RingTheory.Flat.Stability
@@ -26,7 +28,8 @@ formed for every `σ` at once. When `E` is torsion-free of generic rank one and 
 complex fibre is the line spanned by `1 ⊗ s`
 (`NumberField.ComplexEmbedding.Codomain.exists_eq_smul_one_tmul`). The complex fibres
 of `E × F` and of `E ⊗[𝓞 K] F` are the product and the complex tensor product of those of `E` and
-`F` (`Codomain.prodEquiv`, `Codomain.tensorProductEquiv`).
+`F` (`Codomain.prodEquiv`, `Codomain.tensorProductEquiv`), and the complex fibre of `⋀ⁿ E` is the
+complex exterior power of that of `E` (`Codomain.exteriorPowerEquiv`).
 
 Complex conjugation is `𝓞 K`-linear from `Codomain σ` to `Codomain (conjugate σ)`
 (`NumberField.ComplexEmbedding.Codomain.conj`), and `Codomain σ` is flat over `𝓞 K` when `K` is a
@@ -188,6 +191,27 @@ theorem prodEquiv_tmul (c : Codomain σ) (x : E × F) :
 theorem tensorProductEquiv_tmul (c : Codomain σ) (x : E) (y : F) :
     tensorProductEquiv σ E F (c ⊗ₜ (x ⊗ₜ y)) = (c ⊗ₜ x) ⊗ₜ (1 ⊗ₜ y) :=
   (rfl)
+
+/-- `ℂ` and `Codomain σ` are the same ring. -/
+theorem bijective_algebraMap : Function.Bijective (algebraMap ℂ (Codomain σ)) :=
+  ⟨(algebraMap ℂ (Codomain σ)).injective, fun c ↦ ⟨equiv σ c, algebraMap_equiv σ c⟩⟩
+
+variable (E) in
+/-- The complex fibre of `⋀ⁿ E` at `σ` is the `n`-th complex exterior power of the complex fibre
+of `E`, by `c ⊗ (x₁ ∧ ⋯ ∧ xₙ) ↦ c • ((1 ⊗ x₁) ∧ ⋯ ∧ (1 ⊗ xₙ))`. -/
+def exteriorPowerEquiv (n : ℕ) :
+    Codomain σ ⊗[𝓞 K] ⋀[𝓞 K]^n E ≃ₗ[ℂ] ⋀[ℂ]^n (Codomain σ ⊗[𝓞 K] E) :=
+  ((TauCeti.exteriorPower.equivBaseChange (Codomain σ) n).symm.restrictScalars ℂ).trans
+    (exteriorPower.restrictScalarsEquiv (bijective_algebraMap σ) n).symm
+
+@[simp]
+theorem exteriorPowerEquiv_tmul_ιMulti {n : ℕ} (c : Codomain σ) (x : Fin n → E) :
+    exteriorPowerEquiv σ E n (c ⊗ₜ exteriorPower.ιMulti (𝓞 K) n x) =
+      equiv σ c • exteriorPower.ιMulti ℂ n (fun i ↦ (1 : Codomain σ) ⊗ₜ[𝓞 K] x i) := by
+  -- Write the scalar `c` as a complex number, which the comparison over `ℂ` commutes with.
+  obtain ⟨c, rfl⟩ := (bijective_algebraMap σ).2 c
+  simp [exteriorPowerEquiv, TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti,
+    algebraMap_smul]
 
 end Codomain
 

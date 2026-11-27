@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import TauCeti.RingTheory.Spectrum.Prime.TensorProduct
 import TauCeti.RingTheory.TensorProduct.Maps
+import TauCeti.RingTheory.Valuation.Extension
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
@@ -57,7 +58,12 @@ integral ring maps have going up, so are integral ring homomorphisms surjective 
   the prime spectrum of `V ⊗[A] B` contains such a pair.
 * `RingHom.isVCover_iff_exists_isPrime_le`: `f` is a v-cover if and only if, for every test map
   `A →+* V`, the prime spectrum of `V ⊗[A] B` contains such a pair.
+* `RingHom.isVCover_iff_exists_isPrime_le_of_valuationRing`: a homomorphism out of a valuation
+  domain `A` is a v-cover if and only if the specialization from the generic to the closed point
+  of `Spec A` lifts to the target.
 * `RingHom.IsVCover.of_faithfullyFlat`: faithfully flat ring homomorphisms are v-covers.
+* `RingHom.IsVCover.of_injective_of_isLocalHom`: injective local homomorphisms from a valuation
+  domain to a local domain are v-covers.
 * `RingHom.IsVCover.of_isIntegral_of_comap_surjective`: integral ring homomorphisms that are
   surjective on prime spectra are v-covers, the affine case of proper surjections.
 
@@ -67,8 +73,8 @@ integral ring maps have going up, so are integral ring homomorphisms surjective 
   209 (2017), Definition 2.1 and Remark 2.2.
 * D. Rydh, *Submersions and effective descent of étale morphisms*, Bull. Soc. Math. France 138
   (2010), Definition 2.2 and Theorem 2.8.
-* B. Bhatt and A. Mathew, *The arc-topology*, Forum Math. Pi 9 (2021), Definition 1.1 and
-  Lemma 2.3.
+* B. Bhatt and A. Mathew, *The arc-topology*, Forum Math. Pi 9 (2021), Definition 1.1,
+  Lemma 2.3 and Lemma 2.4.
 -/
 
 public section
@@ -267,6 +273,12 @@ theorem of_faithfullyFlat {f : A →+* B} (hf : f.FaithfullyFlat) : f.IsVCover :
     bot_le
   exact ⟨P, Q, ‹_›, ‹_›, hPQ, hP.over.symm, hQ.over.symm⟩
 
+/-- An injective local homomorphism from a valuation domain to a local domain is a v-cover, being
+faithfully flat. In particular every extension of valuation domains is a v-cover. -/
+theorem of_injective_of_isLocalHom [IsDomain A] [ValuationRing A] [IsDomain B] [IsLocalRing B]
+    {f : A →+* B} (hf : Function.Injective f) [IsLocalHom f] : f.IsVCover :=
+  of_faithfullyFlat (.of_injective_of_isLocalHom hf)
+
 /-- An integral ring homomorphism which is surjective on prime spectra is a v-cover. On spectra,
 this is the affine case of the fact that proper surjections are v-covers. -/
 theorem of_isIntegral_of_comap_surjective {f : A →+* B} (hf : f.IsIntegral)
@@ -297,5 +309,29 @@ theorem of_isIntegral_of_injective {f : A →+* B} (hf : f.IsIntegral)
   of_isIntegral_of_comap_surjective hf (hf.comap_surjective hinj)
 
 end IsVCover
+
+/-- A ring homomorphism `f : A →+* B` out of a valuation domain is a v-cover if and only if some
+prime of `B` lying over the zero ideal of `A` is contained in a prime lying over the maximal ideal
+of `A`. On spectra: the specialization from the generic to the closed point of `Spec A` lifts to
+`Spec B`. -/
+theorem isVCover_iff_exists_isPrime_le_of_valuationRing [IsDomain A] [ValuationRing A]
+    (f : A →+* B) :
+    f.IsVCover ↔ ∃ P Q : Ideal B, P.IsPrime ∧ Q.IsPrime ∧ P ≤ Q ∧ P.comap f = ⊥ ∧
+      Q.comap f = maximalIdeal A := by
+  constructor
+  · -- Lift the identity of `A` to `ψ : B →+* W`; take the kernel of `ψ` and the preimage of the
+    -- maximal ideal of `W`.
+    intro hf
+    obtain ⟨W, _, _, _, e, ψ, he, _, hψ⟩ := hf A (RingHom.id A)
+    rw [RingHom.comp_id] at hψ
+    refine ⟨RingHom.ker ψ, (maximalIdeal W).comap ψ, RingHom.ker_isPrime ψ, inferInstance,
+      Ideal.ker_le_comap ψ, ?_, ?_⟩
+    · rw [RingHom.comap_ker, hψ, (RingHom.injective_iff_ker_eq_bot e).mp he]
+    · rw [Ideal.comap_comap, hψ, maximalIdeal_comap]
+  · -- A valuation domain `W` dominating the pair of primes makes `A →+* B →+* W` an extension.
+    rintro ⟨P, Q, _, _, hPQ, hP, hQ⟩
+    let := f.toAlgebra
+    obtain ⟨W, _, _, _, g, hg, _⟩ := TauCeti.exists_valuationRing_of_isPrime_le hPQ hP hQ
+    exact IsVCover.of_comp (g := g) (IsVCover.of_injective_of_isLocalHom hg)
 
 end RingHom

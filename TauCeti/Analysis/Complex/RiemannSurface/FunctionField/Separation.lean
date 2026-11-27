@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
 import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Holomorphic
 
 /-!
 # Separating finitely many points by one meromorphic function
@@ -18,7 +19,8 @@ function separates all of them at once, and it can be chosen without poles on `s
 
 The pairwise separators may have poles on `s`. Each is first replaced by `(g - c)⁻¹` for a
 constant `c` that `g` does not take on `s`; this has no poles on `s` and still separates the same
-two points. The meromorphic functions without poles on `s` form a `ℂ`-subspace on which evaluation
+two points. The meromorphic functions without poles on `s` form a `ℂ`-subspace
+(`TauCeti.RiemannSurface.MeromorphicFunction.holomorphicSubalgebra s`) on which evaluation
 at a point of `s` is linear, and each pair `x ≠ y` of points of `s` gives the nonzero linear form
 `f ↦ f(x) - f(y)` on it. A vector space over an infinite field is not a finite union of proper
 subspaces (`Module.Dual.exists_forall_ne_zero_of_forall_exists`), so a generic linear combination
@@ -79,27 +81,22 @@ private theorem exists_forall_ne_infty_and_ne (hs : s.Finite) {x y : X} (hx : x 
     rw [hfin x hx a ha.symm, hfin y hy b hb.symm, Ne, coe_eq_coe, inv_inj, sub_left_inj]
     exact fun h ↦ hg (by rw [← ha, ← hb, h])
 
-/-- The meromorphic functions without poles on `s`, as a `ℂ`-subspace. -/
-private def finiteOn (s : Set X) : Submodule ℂ (MeromorphicFunction X) where
-  carrier := {f | ∀ x ∈ s, f x ≠ ∞}
-  add_mem' {f g} hf hg x hx := by simp [add_apply (hf x hx) (hg x hx)]
-  zero_mem' x _ := by simp
-  smul_mem' c f hf x hx := by
-    rw [Algebra.smul_def, mul_apply (f := algebraMap ℂ _ c) (by simp) (hf x hx)]
-    exact OnePoint.coe_ne_infty _
-
 /-- Evaluation at a point of `s`, as a linear form on the meromorphic functions without poles on
 `s`. -/
-private def evalFiniteOn {x : X} (hx : x ∈ s) : Module.Dual ℂ (finiteOn s) where
+private def evalFiniteOn {x : X} (hx : x ∈ s) :
+    Module.Dual ℂ (Subalgebra.toSubmodule (holomorphicSubalgebra s)) where
   toFun f := (f : MeromorphicFunction X).finitePart x
-  map_add' f g := finitePart_of_eq_coe (add_apply (f.property x hx) (g.property x hx))
+  map_add' f g := finitePart_of_eq_coe (add_apply
+    (mem_holomorphicSubalgebra.mp ((Subalgebra.mem_toSubmodule _).mp f.property) x hx)
+    (mem_holomorphicSubalgebra.mp ((Subalgebra.mem_toSubmodule _).mp g.property) x hx))
   map_smul' c f := by
     refine finitePart_of_eq_coe ?_
     rw [SetLike.val_smul, Algebra.smul_def, mul_apply (f := algebraMap ℂ _ c) (by simp)
-        (f.property x hx)]
+        (mem_holomorphicSubalgebra.mp ((Subalgebra.mem_toSubmodule _).mp f.property) x hx)]
     simp
 
-private theorem evalFiniteOn_apply {x : X} (hx : x ∈ s) (f : finiteOn s) :
+private theorem evalFiniteOn_apply {x : X} (hx : x ∈ s)
+    (f : Subalgebra.toSubmodule (holomorphicSubalgebra s)) :
     evalFiniteOn hx f = (f : MeromorphicFunction X).finitePart x :=
   rfl
 
@@ -116,15 +113,17 @@ theorem exists_forall_ne_infty_and_injOn (hs : s.Finite)
       q.property.2.1⟩ : ↥(s ×ˢ s)))
     fun _ _ h ↦ Subtype.ext (congrArg Subtype.val h :)
   -- The linear form `f ↦ f(x) - f(y)` attached to a pair `x ≠ y` of points of `s`.
-  let D (q : ι) : Module.Dual ℂ (finiteOn s) := evalFiniteOn q.property.1 - evalFiniteOn
-      q.property.2.1
+  let D (q : ι) : Module.Dual ℂ (Subalgebra.toSubmodule (holomorphicSubalgebra s)) :=
+    evalFiniteOn q.property.1 - evalFiniteOn q.property.2.1
   obtain ⟨⟨f, hf⟩, hD⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists D fun q ↦ by
     obtain ⟨g, hg⟩ := hsep q.property.1 q.property.2.1 q.property.2.2
     obtain ⟨h, hh, hxy⟩ := exists_forall_ne_infty_and_ne hs q.property.1 q.property.2.1 hg
-    refine ⟨⟨h, hh⟩, sub_ne_zero.2 fun he ↦ hxy ?_⟩
+    refine ⟨⟨h, (Subalgebra.mem_toSubmodule _).mpr (mem_holomorphicSubalgebra.mpr hh)⟩,
+      sub_ne_zero.2 fun he ↦ hxy ?_⟩
     rw [← coe_finitePart (hh _ q.property.1), ← coe_finitePart (hh _ q.property.2.1)]
     exact congrArg _ he
-  refine ⟨f, hf, fun x hx y hy hxy ↦ by_contra fun hne ↦ hD ⟨(x, y), hx, hy, hne⟩ ?_⟩
+  refine ⟨f, mem_holomorphicSubalgebra.mp ((Subalgebra.mem_toSubmodule _).mp hf),
+    fun x hx y hy hxy ↦ by_contra fun hne ↦ hD ⟨(x, y), hx, hy, hne⟩ ?_⟩
   rw [LinearMap.sub_apply, evalFiniteOn_apply, evalFiniteOn_apply, finitePart_def, finitePart_def,
     hxy, sub_self]
 

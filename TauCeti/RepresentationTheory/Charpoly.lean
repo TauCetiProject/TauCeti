@@ -19,7 +19,9 @@ import TauCeti.LinearAlgebra.Charpoly.Quotient
 For a representation `ρ` of a monoid on a finite free module and an element `g`, the
 characteristic polynomial of `ρ g` is invariant under isomorphism of representations and cyclic
 permutation `g * h ↔ h * g`, multiplicative on products, and equal to `(X - 1) ^ dim V` for the
-trivial representation. The determinant of `ρ g` is invariant under isomorphism too, on any module.
+trivial representation. The determinant of `ρ g` is invariant under isomorphism too, on any module,
+and for a representation of a group it is a unit; over a ring whose only unit is `1`, such as `𝔽₂`,
+it is therefore `1`.
 
 For a representation of a group, `(ρ g).charpoly` is invariant under conjugation; `g⁻¹` acts with
 the reverse of the characteristic polynomial of `g`, up to a unit, and so does `g` in the
@@ -32,6 +34,9 @@ eigenvalues of arithmetic and geometric Frobenius.
 
 * `Representation.Equiv.charpoly_apply_eq`, `Representation.Equiv.det_apply_eq`: invariance of
   the characteristic polynomial and of the determinant under isomorphism.
+* `Representation.isUnit_det_apply`: a group element acts with a unit determinant.
+* `Representation.det_apply_eq_one`: over a ring whose only unit is `1`, such as `𝔽₂`, a group
+  element acts with determinant `1`.
 * `Representation.charpoly_apply_mul_comm` and `Representation.charpoly_apply_conj`: cyclic and
   conjugation invariance.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
@@ -60,6 +65,18 @@ theorem Equiv.det_apply_eq {R G V W : Type*} [CommRing R] [Monoid G] [AddCommGro
     [AddCommGroup W] [Module R W] {ρ : Representation R G V} {σ : Representation R G W}
     (φ : ρ.Equiv σ) (g : G) : (ρ g).det = (σ g).det := by
   rw [← φ.conj_apply_self g, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj]
+
+/-- In a representation of a group, every element acts with a unit determinant. -/
+theorem isUnit_det_apply {R G V : Type*} [CommRing R] [Group G] [AddCommGroup V] [Module R V]
+    (ρ : Representation R G V) (g : G) : IsUnit (ρ g).det :=
+  LinearMap.isUnit_det _ ((Group.isUnit g).map ρ)
+
+/-- Over a ring whose only unit is `1`, such as `𝔽₂`, every element of a group acts with
+determinant `1`. -/
+@[simp]
+theorem det_apply_eq_one {R G V : Type*} [CommRing R] [Subsingleton Rˣ] [Group G]
+    [AddCommGroup V] [Module R V] (ρ : Representation R G V) (g : G) : (ρ g).det = 1 :=
+  (ρ.isUnit_det_apply g).eq_one
 
 variable {R G V W : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Module.Free R V]
   [Module.Finite R V] [AddCommGroup W] [Module R W] [Module.Free R W] [Module.Finite R W]

@@ -54,6 +54,9 @@ second of these twists.
 * `TauCeti.negPointTwistOfZero`: the section of `E(-x)` defined by a section of `E` vanishing at
   `x`.
 * `TauCeti.negPointTwistPairing`: the fibrewise pairing `𝒪(-x) × 𝒪(x) → 𝒪`.
+* `TauCeti.IsSignedTransverseZero`: the derivative estimate on the chart reading
+  (`TauCeti.negPointTwistChartReading`) making a zero of a section of a line bundle positive or
+  negative, the condition under which the zero is untwisted in `L(-x)` or `L(x)`.
 
 ## Main results
 
@@ -185,6 +188,37 @@ theorem negPointTwistChartReading_apply (x : X) (σ : ∀ z, E z) (w : ℂ) :
     negPointTwistChartReading F x σ w =
       (trivializationAt F E x ⟨(chartAt ℂ x).symm w, σ ((chartAt ℂ x).symm w)⟩).2 :=
   (rfl)
+
+/-- The derivative condition making a zero `x` of a section `σ` of a complex line bundle with fibre
+`ℂ` *transverse of sign `s`*: the real derivative `D` of the chart reading of `σ` at `x` is within
+`‖c‖` of `u ↦ u c` (`s = false`, a positive zero) or of `u ↦ conj u c` (`s = true`, a negative
+zero), for some `c`. The predicate constrains only the derivative at `x`; that `σ` vanishes at `x`
+is a separate hypothesis wherever it is needed. -/
+def IsSignedTransverseZero {L : X → Type*} [∀ z, TopologicalSpace (L z)]
+    [TopologicalSpace (TotalSpace ℂ L)] [FiberBundle ℂ L] (σ : ∀ z, L z) (x : X) (s : Bool) :
+    Prop :=
+  ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x) ∧
+    ‖D - (if s then Complex.conjCLE.toContinuousLinearMap
+      else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖
+
+theorem isSignedTransverseZero_iff {L : X → Type*} [∀ z, TopologicalSpace (L z)]
+    [TopologicalSpace (TotalSpace ℂ L)] [FiberBundle ℂ L] {σ : ∀ z, L z} {x : X} {s : Bool} :
+    IsSignedTransverseZero σ x s ↔
+      ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x) ∧
+        ‖D - (if s then Complex.conjCLE.toContinuousLinearMap
+          else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖ :=
+  Iff.rfl
+
+/-- The sign condition at `x` depends only on the chart reading of the section near `x`. -/
+theorem IsSignedTransverseZero.congr {L L' : X → Type*} [∀ z, TopologicalSpace (L z)]
+    [TopologicalSpace (TotalSpace ℂ L)] [FiberBundle ℂ L] [∀ z, TopologicalSpace (L' z)]
+    [TopologicalSpace (TotalSpace ℂ L')] [FiberBundle ℂ L'] {σ : ∀ z, L z} {σ' : ∀ z, L' z}
+    {x : X} {s : Bool} (h : IsSignedTransverseZero σ x s)
+    (h' : negPointTwistChartReading ℂ x σ =ᶠ[𝓝 (chartAt ℂ x x)]
+      negPointTwistChartReading ℂ x σ') :
+    IsSignedTransverseZero σ' x s := by
+  obtain ⟨D, c, hD, hDc⟩ := isSignedTransverseZero_iff.1 h
+  exact isSignedTransverseZero_iff.2 ⟨D, c, hD.congr_of_eventuallyEq h'.symm, hDc⟩
 
 omit [NormedSpace ℂ F] [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [VectorBundle ℂ F E] in
 variable (F) in

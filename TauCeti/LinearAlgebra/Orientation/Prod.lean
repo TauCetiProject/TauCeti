@@ -156,6 +156,22 @@ theorem prod_neg_right (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n
   congr 1
   module
 
+/-- Reversing the first factor of a product orientation negates its transport along any linear
+equivalence. -/
+theorem map_prod_neg_left {N : Type*} [AddCommGroup N] [Module R N]
+    (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) (e : (E × F) ≃ₗ[R] N) :
+    (prod (-o) p hm hn).map (Fin (m + n)) e = -((prod o p hm hn).map (Fin (m + n)) e) := by
+  rw [prod_neg_left, Orientation.map_neg]
+
+/-- Reversing the second factor of a product orientation negates its transport along any linear
+equivalence. -/
+theorem map_prod_neg_right {N : Type*} [AddCommGroup N] [Module R N]
+    (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) (e : (E × F) ≃ₗ[R] N) :
+    (prod o (-p) hm hn).map (Fin (m + n)) e = -((prod o p hm hn).map (Fin (m + n)) e) := by
+  rw [prod_neg_right, Orientation.map_neg]
+
 /-- Simultaneous reversal of both factors preserves the product orientation. -/
 theorem prod_neg_neg (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
     (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :

@@ -27,8 +27,8 @@ finite subcover of a refinement is again a refinement, of no larger order.
 Covering dimension is the dimension theory used for function rings: the Bass stable rank of
 `C(X, ℝ)` and `C(X, ℂ)` over a compact Hausdorff space `X` is computed from the covering dimension
 of `X` (Vaserstein). This file sets up the predicate and the dimension value, their invariance
-properties, the description by shrinkings of open covers, the sum theorem for finite closed
-covers, and the first computations.
+properties, the description by shrinkings of open covers, Hemmingsen's characterization by covers
+with `d + 2` members, the sum theorem for finite closed covers, and the first computations.
 
 ## Main definitions
 
@@ -53,6 +53,10 @@ covers, and the first computations.
   that every open cover `U` has an open shrinking `V` (so `V i ⊆ U i`) of order at most `d + 1`;
   `TauCeti.HasCoveringDimensionLE.exists_shrinking` gives such shrinkings for covers indexed by an
   arbitrary type.
+* `TauCeti.HasCoveringDimensionLE.exists_shrinking_iInter_eq_empty` and
+  `TauCeti.hasCoveringDimensionLE_iff_forall_exists_shrinking_iInter_eq_empty`: Hemmingsen's
+  characterization; a compact space has covering dimension at most `d` exactly when every open
+  cover by `d + 2` sets has an open shrinking with empty intersection.
 * `TauCeti.hasCoveringDimensionLE_of_iUnion_eq_univ`,
   `TauCeti.coveringDimension_eq_iSup_of_iUnion_eq_univ`: the sum theorem; a space covered by
   finitely many closed subsets of covering dimension at most `d` has covering dimension at most
@@ -70,7 +74,10 @@ covers, and the first computations.
 
 * R. Engelking, *Dimension Theory*, North-Holland, 1978, §3.1 (Definition 3.1.1 of the covering
   dimension, Theorem 3.1.4 for closed subspaces, and Theorem 3.1.8 for the sum theorem, of which
-  `TauCeti.hasCoveringDimensionLE_of_iUnion_eq_univ` is the case of a finite closed cover).
+  `TauCeti.hasCoveringDimensionLE_of_iUnion_eq_univ` is the case of a finite closed cover), and
+  §3.2 for Hemmingsen's characterization by covers with `n + 2` members.
+* E. Hemmingsen, *Some theorems in dimension theory for normal Hausdorff spaces*, Duke Math. J.
+  13 (1946), 495–504.
 * L. N. Vaserstein, *Stable rank of rings and dimensionality of topological spaces*, Funct. Anal.
   Appl. 5 (1971), 102–110.
 * The set-of-sets encoding of covers and refinements, counting distinct members, follows the
@@ -487,6 +494,140 @@ theorem coveringDimension_eq_iSup_of_iUnion_eq_univ {ι : Type*} [Finite ι] {F 
       rw [WithBot.coe_natCast] at hb ⊢
       exact coveringDimension_le_iff.2 (hasCoveringDimensionLE_of_iUnion_eq_univ hF hFX
         fun i ↦ coveringDimension_le_iff.1 (hb ▸ le_iSup (fun j ↦ coveringDimension (F j)) i))
+
+/-! ### Hemmingsen's characterization -/
+
+/-- In a space of covering dimension at most `d`, every open cover by `d + 2` sets has an open
+shrinking with empty intersection. -/
+theorem HasCoveringDimensionLE.exists_shrinking_iInter_eq_empty {d : ℕ}
+    (h : HasCoveringDimensionLE X d) {U : Fin (d + 2) → Set X} (hUo : ∀ i, IsOpen (U i))
+    (hU : ⋃ i, U i = univ) :
+    ∃ V : Fin (d + 2) → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ U i) ∧ ⋃ i, V i = univ ∧
+      ⋂ i, V i = ∅ := by
+  -- A shrinking of order at most `d + 1` has no point in all `d + 2` of its members.
+  obtain ⟨V, hVo, hVU, hVc, hVm⟩ := h.exists_shrinking hUo hU
+  refine ⟨V, hVo, hVU, hVc, eq_empty_of_forall_notMem fun x hx ↦ ?_⟩
+  have hall : {i | x ∈ V i} = univ := eq_univ_of_forall (mem_iInter.1 hx)
+  have := hVm x
+  simp [hall] at this
+
+/-- The hypothesis of Hemmingsen's characterization: every open cover of `X` by `d + 2` sets has
+an open shrinking with empty intersection. -/
+private abbrev ShrinkingCondition (X : Type*) [TopologicalSpace X] (d : ℕ) : Prop :=
+  ∀ U : Fin (d + 2) → Set X, (∀ i, IsOpen (U i)) → ⋃ i, U i = univ →
+    ∃ V : Fin (d + 2) → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ U i) ∧ ⋃ i, V i = univ ∧
+      ⋂ i, V i = ∅
+
+/-- One shrinking step: under Hemmingsen's condition, an open cover indexed by any type has an
+open shrinking whose members indexed by a given set `S` of `d + 2` indices have empty
+intersection. -/
+private theorem exists_shrinking_biInter_eq_empty {d : ℕ} (h : ShrinkingCondition X d)
+    {ι : Type*} {U : ι → Set X} (hUo : ∀ i, IsOpen (U i)) (hU : ⋃ i, U i = univ)
+    {S : Finset ι} (hS : S.card = d + 2) :
+    ∃ V : ι → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ U i) ∧ ⋃ i, V i = univ ∧
+      ⋂ i ∈ S, V i = ∅ := by
+  classical
+  -- Enlarge each `U i`, `i ∈ S`, by the union `W` of the members outside `S`, shrink the
+  -- resulting cover by `d + 2` sets, and intersect back with `U i`.
+  let e : Fin (d + 2) ≃ S := (S.equivFin.trans (finCongr hS)).symm
+  let W := ⋃ (j) (_ : j ∉ S), U j
+  have hWo : IsOpen W := isOpen_iUnion fun j ↦ isOpen_iUnion fun _ ↦ hUo j
+  obtain ⟨V', hV'o, hV'O, hV'c, hV'e⟩ := h (fun k ↦ U (e k) ∪ W)
+    (fun k ↦ (hUo _).union hWo) (eq_univ_of_forall fun x ↦ by
+      obtain ⟨j, hj⟩ := mem_iUnion.1 (hU ▸ mem_univ x)
+      by_cases hjS : j ∈ S
+      · exact mem_iUnion.2 ⟨e.symm ⟨j, hjS⟩, Or.inl (by simpa using hj)⟩
+      · exact mem_iUnion.2 ⟨0, Or.inr (mem_iUnion₂.2 ⟨j, hjS, hj⟩)⟩)
+  refine ⟨fun j ↦ if hj : j ∈ S then U j ∩ V' (e.symm ⟨j, hj⟩) else U j, fun j ↦ ?_,
+    fun j ↦ ?_, eq_univ_of_forall fun x ↦ ?_, eq_empty_of_forall_notMem fun x hx ↦ ?_⟩
+  · dsimp only
+    split_ifs
+    exacts [(hUo j).inter (hV'o _), hUo j]
+  · dsimp only
+    split_ifs
+    exacts [inter_subset_left, subset_rfl]
+  · by_cases hxW : x ∈ W
+    · obtain ⟨j, hjS, hxj⟩ := mem_iUnion₂.1 hxW
+      exact mem_iUnion.2 ⟨j, by simpa [hjS] using hxj⟩
+    · obtain ⟨k, hk⟩ := mem_iUnion.1 (hV'c ▸ mem_univ x)
+      have hxU : x ∈ U (e k) := ((hV'O k hk).resolve_right hxW)
+      exact mem_iUnion.2 ⟨e k, by simpa [(e k).property] using ⟨hxU, hk⟩⟩
+  · refine (eq_empty_iff_forall_notMem.1 hV'e) x (mem_iInter.2 fun k ↦ ?_)
+    have := mem_iInter₂.1 hx (e k) (e k).property
+    simp only [(e k).property, ↓reduceDIte, Subtype.coe_eta, Equiv.symm_apply_apply] at this
+    exact this.2
+
+/-- Under Hemmingsen's condition, a finite open cover has an open shrinking in which every
+`d + 2` members have empty intersection. -/
+private theorem exists_shrinking_forall_biInter_eq_empty {d : ℕ} (h : ShrinkingCondition X d)
+    {ι : Type*} [Finite ι] {U : ι → Set X} (hUo : ∀ i, IsOpen (U i)) (hU : ⋃ i, U i = univ) :
+    ∃ V : ι → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ U i) ∧ ⋃ i, V i = univ ∧
+      ∀ S : Finset ι, S.card = d + 2 → ⋂ i ∈ S, V i = ∅ := by
+  classical
+  have := Fintype.ofFinite ι
+  -- Treat the finitely many sets of `d + 2` indices one at a time; shrinking further keeps the
+  -- intersections already made empty.
+  suffices ∀ 𝒮 : Finset (Finset ι), ∃ V : ι → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ U i) ∧
+      ⋃ i, V i = univ ∧ ∀ S ∈ 𝒮, S.card = d + 2 → ⋂ i ∈ S, V i = ∅ by
+    obtain ⟨V, hVo, hVU, hVc, hVe⟩ := this Finset.univ
+    exact ⟨V, hVo, hVU, hVc, fun S hS ↦ hVe S (Finset.mem_univ S) hS⟩
+  intro 𝒮
+  induction 𝒮 using Finset.induction_on with
+  | empty => exact ⟨U, hUo, fun _ ↦ subset_rfl, hU, by simp⟩
+  | insert S 𝒮 _ ih =>
+    obtain ⟨V, hVo, hVU, hVc, hVe⟩ := ih
+    by_cases hS : S.card = d + 2
+    · obtain ⟨V', hV'o, hV'V, hV'c, hV'e⟩ := exists_shrinking_biInter_eq_empty h hVo hVc hS
+      refine ⟨V', hV'o, fun i ↦ (hV'V i).trans (hVU i), hV'c, fun T hT hTc ↦ ?_⟩
+      rcases Finset.mem_insert.1 hT with rfl | hT
+      · exact hV'e
+      · exact eq_empty_of_subset (biInter_mono subset_rfl fun i _ ↦ hV'V i) (hVe T hT hTc)
+    · refine ⟨V, hVo, hVU, hVc, fun T hT hTc ↦ ?_⟩
+      rcases Finset.mem_insert.1 hT with rfl | hT
+      · exact absurd hTc hS
+      · exact hVe T hT hTc
+
+/-- **Hemmingsen's characterization**, the converse direction: a compact space in which every open
+cover by `d + 2` sets has an open shrinking with empty intersection has covering dimension at most
+`d`. -/
+theorem hasCoveringDimensionLE_of_forall_exists_shrinking_iInter_eq_empty [CompactSpace X]
+    {d : ℕ} (h : ∀ U : Fin (d + 2) → Set X, (∀ i, IsOpen (U i)) → ⋃ i, U i = univ →
+      ∃ V : Fin (d + 2) → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ U i) ∧ ⋃ i, V i = univ ∧
+        ⋂ i, V i = ∅) :
+    HasCoveringDimensionLE X d := by
+  classical
+  rw [hasCoveringDimensionLE_iff]
+  intro 𝒰 h𝒰o h𝒰c
+  -- Pass to a finite subcover and shrink it so that no point lies in `d + 2` of its members.
+  obtain ⟨t, ht𝒰, htf, htc⟩ := isCompact_univ.elim_finite_subcover_image (c := id) h𝒰o
+    (by simpa [← sUnion_eq_biUnion] using h𝒰c.ge)
+  have := htf.to_subtype
+  have := Fintype.ofFinite t
+  obtain ⟨V, hVo, hVU, hVc, hVe⟩ := exists_shrinking_forall_biInter_eq_empty (U := Subtype.val)
+    h (fun i : t ↦ h𝒰o _ (ht𝒰 i.property))
+    (eq_univ_of_forall fun x ↦ by simpa using htc (mem_univ x))
+  refine ⟨range V, forall_mem_range.2 hVo, by rwa [sUnion_range],
+    forall_mem_range.2 fun i ↦ ⟨i, ht𝒰 i.property, hVU i⟩, fun x ↦ ?_⟩
+  -- The members containing `x` are the images of the indices `i` with `x ∈ V i`.
+  have hsub : {W | W ∈ range V ∧ x ∈ W} ⊆ V '' (Finset.univ.filter (x ∈ V ·) : Finset t) := by
+    rintro _ ⟨⟨i, rfl⟩, hx⟩
+    exact ⟨i, by simpa using hx, rfl⟩
+  refine (encard_le_encard hsub).trans ((encard_image_le _ _).trans ?_)
+  rw [encard_coe_eq_coe_finsetCard, Nat.cast_le]
+  by_contra! hlt
+  obtain ⟨S, hSs, hSc⟩ := Finset.exists_subset_card_eq (Nat.succ_le_of_lt hlt)
+  refine (eq_empty_iff_forall_notMem.1 (hVe S hSc)) x (mem_iInter₂.2 fun i hi ↦ ?_)
+  simpa using hSs hi
+
+/-- **Hemmingsen's characterization**: a compact space has covering dimension at most `d` exactly
+when every open cover by `d + 2` sets has an open shrinking with empty intersection. -/
+theorem hasCoveringDimensionLE_iff_forall_exists_shrinking_iInter_eq_empty [CompactSpace X]
+    {d : ℕ} :
+    HasCoveringDimensionLE X d ↔ ∀ U : Fin (d + 2) → Set X, (∀ i, IsOpen (U i)) →
+      ⋃ i, U i = univ → ∃ V : Fin (d + 2) → Set X, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ U i) ∧
+        ⋃ i, V i = univ ∧ ⋂ i, V i = ∅ :=
+  ⟨fun h _ hUo hU ↦ h.exists_shrinking_iInter_eq_empty hUo hU,
+    hasCoveringDimensionLE_of_forall_exists_shrinking_iInter_eq_empty⟩
 
 end TauCeti
 

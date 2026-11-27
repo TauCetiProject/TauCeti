@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Weighted
+public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 import TauCeti.Analysis.Distribution.TestFunction.Inner
@@ -29,7 +30,8 @@ symbol is the complex conjugate of that of `P`:
 
 (`TauCeti.classicalPrincipalSymbol_eq_conj_of_forall_integral_inner_eq`). In particular a
 formally self-adjoint classical pseudodifferential operator has a real principal symbol
-(`TauCeti.conj_classicalPrincipalSymbol_eq_of_forall_integral_inner_eq`).
+(`TauCeti.conj_classicalPrincipalSymbol_eq_of_forall_integral_inner_eq`), and `Q` is elliptic
+exactly where `P` is (`TauCeti.isClassicalEllipticAt_iff_of_forall_integral_inner_eq`).
 
 Proper support of `Q` is a hypothesis, not a consequence: the adjoint identity only involves the
 values of `Q` on compactly supported functions, while membership in
@@ -62,6 +64,9 @@ classical symbol of order `m` (`TauCeti.ClassicalSymbol.weightedAdjoint`) with p
   the complex conjugate of the principal symbol of the operator.
 * `TauCeti.conj_classicalPrincipalSymbol_eq_of_forall_integral_inner_eq`: a formally self-adjoint
   classical pseudodifferential operator has a real principal symbol.
+* `TauCeti.isClassicalEllipticAt_iff_of_forall_integral_inner_eq`,
+  `TauCeti.isClassicalElliptic_iff_of_forall_integral_inner_eq`: a properly supported formal
+  adjoint is elliptic exactly where the operator is.
 
 ## References
 
@@ -340,5 +345,31 @@ theorem conj_classicalPrincipalSymbol_eq_of_forall_integral_inner_eq
     conj (classicalPrincipalSymbol m P x ξ) = classicalPrincipalSymbol m P x ξ :=
   (classicalPrincipalSymbol_eq_conj_of_forall_integral_inner_eq hμ hP
     (mem_classicalPseudodifferentialOperators_iff.1 hP).1 hPP x ξ).symm
+
+/-- **The formal adjoint of an elliptic operator is elliptic.** Under the hypotheses of
+`TauCeti.mem_classicalPseudodifferentialOperators_of_forall_integral_inner_eq`, the formal adjoint
+`Q` of `P` is elliptic at `x` exactly when `P` is, since its principal symbol is the complex
+conjugate of that of `P`. -/
+theorem isClassicalEllipticAt_iff_of_forall_integral_inner_eq
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hQ : IsProperlySupported Q)
+    (hPQ : ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, HasCompactSupport u →
+      HasCompactSupport v → ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ)
+    (x : M) : IsClassicalEllipticAt m Q x ↔ IsClassicalEllipticAt m P x := by
+  simp only [isClassicalEllipticAt_iff,
+    classicalPrincipalSymbol_eq_conj_of_forall_integral_inner_eq hμ hP hQ hPQ x, ne_eq,
+    map_eq_zero]
+
+/-- **The formal adjoint of an elliptic operator is elliptic.** Under the hypotheses of
+`TauCeti.mem_classicalPseudodifferentialOperators_of_forall_integral_inner_eq`, the formal adjoint
+`Q` of `P` is elliptic exactly when `P` is. -/
+theorem isClassicalElliptic_iff_of_forall_integral_inner_eq
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hQ : IsProperlySupported Q)
+    (hPQ : ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, HasCompactSupport u →
+      HasCompactSupport v → ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (Q v x) ∂μ) :
+    IsClassicalElliptic m Q ↔ IsClassicalElliptic m P := by
+  simp only [isClassicalElliptic_iff,
+    isClassicalEllipticAt_iff_of_forall_integral_inner_eq hμ hP hQ hPQ]
 
 end TauCeti

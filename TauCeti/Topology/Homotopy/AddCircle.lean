@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Normed.Group.AddCircle
+public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 public import TauCeti.Topology.Instances.AddCircle.UnitInterval
@@ -52,6 +53,10 @@ points to the open interval of length `p` above it, they move linearly to its mi
 (`AddCircle.nullhomotopic_subtypeVal_compl_singleton`). So any subset of a torus on which every
 coordinate avoids a point of its circle has nullhomotopic inclusion.
 
+Through the winding number (`AddCircle.windingNumber`), the loop `t ↦ n • (t * p) + x` that winds
+`n` times around the circle is homotopic to the constant loop only for `n = 0`
+(`AddCircle.zsmulLoop_homotopic_refl_iff`).
+
 ## Main declarations
 
 * `ContinuousMap.toLoop`: a continuous map `f : C(AddCircle p, X)` read as a based loop at `f 0`
@@ -76,6 +81,8 @@ coordinate avoids a point of its circle has nullhomotopic inclusion.
   (through an inducing map) of contractible periodic curves are contractible.
 * `AddCircle.nullhomotopic_subtypeVal_compl_singleton`: the circle with a point removed contracts
   in the circle.
+* `AddCircle.zsmulLoop_homotopic_refl_iff`: the loop winding `n` times around the circle is
+  homotopic to the constant loop exactly when `n = 0`.
 -/
 
 public section
@@ -406,5 +413,25 @@ theorem nullhomotopic_subtypeVal_compl_singleton (c : AddCircle p) :
         ((continuous_subtypeVal.comp continuous_fst).mul continuous_const))
     map_zero_left := fun x ↦ by simp
     map_one_left := fun x ↦ by simp }⟩⟩
+
+/-- The trivial class of `π₁(AddCircle p, x)` has winding number `0`. -/
+@[simp]
+theorem windingNumber_one (x : AddCircle p) :
+    windingNumber (1 : FundamentalGroup (AddCircle p) x) = 0 := by
+  rw [windingNumber, map_one, toAdd_one]
+
+/-- The loop `t ↦ n • (t * p) + x`, which winds `n` times around the circle, is homotopic to the
+constant loop exactly when `n = 0`: its winding number is `n`. -/
+theorem zsmulLoop_homotopic_refl_iff (x : ℝ) (n : ℤ) :
+    (zsmulLoop p x n).Homotopic (Path.refl _) ↔ n = 0 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have hw := windingNumber_zsmulLoop (p := p) x n
+    rw [Path.Homotopic.Quotient.eq.2 h, Path.Homotopic.Quotient.mk_refl,
+      ← FundamentalGroup.one_def, windingNumber_one] at hw
+    exact hw.symm
+  · rintro rfl
+    convert Path.Homotopic.refl (Path.refl ((x : ℝ) : AddCircle p))
+    ext t
+    simp
 
 end AddCircle

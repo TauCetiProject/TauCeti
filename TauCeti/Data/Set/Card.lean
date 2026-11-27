@@ -36,7 +36,9 @@ Adding a fresh element to a set removes one element from its complement
 `ℕ∞`, than the set of indices whose successor lies in it (`Set.encard_preimage_succ_add_one`).
 
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
-are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
+are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`),
+and the fibre of `Sigma.fst` over `x` has `encard` equal to `ENat.card (Y x)`
+(`Set.encard_setOf_sigma_fst_eq`).
 
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
 indices as on `ι` (`Set.ncard_setOf_sumElim`). A property of the first coordinate of `α × β` holds
@@ -85,6 +87,10 @@ The fibre of the first pullback projection has the same `Set.ncard` as the origi
 (`Function.Pullback.ncard_preimage_fst_singleton`). An equivalence onto the preimage of a subset
 transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
 identities transfer sheet counts from local models; `Set.ncard` is zero on infinite fibres.
+
+For finite sets, equality and inequality of `Set.encard` are equivalent to equality and
+inequality of `Set.ncard` (`Set.encard_eq_encard_iff_ncard_eq_ncard`,
+`Set.encard_le_encard_iff_ncard_le_ncard`).
 -/
 
 public section
@@ -396,6 +402,25 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
     (k.succAbove ⁻¹' s).ncard = (s \ {k}).ncard := by
   rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
     Fin.range_succAbove, ← sdiff_eq]
+
+/-- For finite sets, equality of `Set.encard` is equivalent to equality of `Set.ncard`. -/
+theorem encard_eq_encard_iff_ncard_eq_ncard {α β : Type*} {s : Set α} {t : Set β}
+    (hs : s.Finite) (ht : t.Finite) :
+    s.encard = t.encard ↔ s.ncard = t.ncard := by
+  rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_inj]
+
+/-- For finite sets, inequality of `Set.encard` is equivalent to inequality of `Set.ncard`. -/
+theorem encard_le_encard_iff_ncard_le_ncard {α β : Type*} {s : Set α} {t : Set β}
+    (hs : s.Finite) (ht : t.Finite) :
+    s.encard ≤ t.encard ↔ s.ncard ≤ t.ncard := by
+  rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_le]
+
+/-- The fibre of `Sigma.fst : (Σ y, Y y) → α` over `x` has `encard` equal to `ENat.card (Y x)`. -/
+@[simp]
+theorem encard_setOf_sigma_fst_eq {α : Type*} (Y : α → Type*) (x : α) :
+    {p : Σ y : α, Y y | p.1 = x}.encard = ENat.card (Y x) := by
+  rw [← preimage_singleton Sigma.fst x, ← range_sigmaMk,
+    sigma_mk_injective.encard_range]
 
 end Set
 
