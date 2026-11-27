@@ -50,14 +50,20 @@ def dualTransfer (t : A →ₗ[R] R) : (M →ₗ[A] A) →ₗ[R] (M →ₗ[R] R)
 theorem dualTransfer_apply (t : A →ₗ[R] R) (f : M →ₗ[A] A) (m : M) :
     t.dualTransfer f m = t (f m) := (rfl)
 
+/-- An injective multiplication pairing separates elements by their products under the trace. -/
+theorem eq_of_forall_apply_mul_eq (t : A →ₗ[R] R)
+    (ht : Function.Injective ((mul R A).compr₂ t)) {x y : A}
+    (h : ∀ a, t (x * a) = t (y * a)) : x = y :=
+  ht (LinearMap.ext fun a ↦ by simpa using h a)
+
 /-- An injective multiplication pairing makes transfer injective on module duals. -/
 theorem dualTransfer_injective (t : A →ₗ[R] R)
     (ht : Function.Injective ((mul R A).compr₂ t)) :
     Function.Injective (t.dualTransfer (M := M)) := by
   intro f g h
   ext m
-  apply ht
-  ext a
+  apply t.eq_of_forall_apply_mul_eq ht
+  intro a
   simpa [mul_comm] using congrArg (fun l : M →ₗ[R] R ↦ l (a • m)) h
 
 variable (t : A →ₗ[R] R) [((mul R A).compr₂ t).IsPerfPair]
@@ -68,15 +74,13 @@ theorem dualTransfer_surjective : Function.Surjective (t.dualTransfer (M := M)) 
   intro f
   let g (m : M) := e.symm (f.comp (((lsmul A M).flip m).restrictScalars R))
   have hg (m : M) (a : A) : t (g m * a) = f (a • m) := by
-    simpa only [g, e, compr₂_apply, mul_apply', comp_apply, restrictScalars_apply,
-      flip_apply, lsmul_apply] using congr($(((mul R A).compr₂ t).apply_symm_toPerfPair_self
-      (f.comp (((lsmul A M).flip m).restrictScalars R))) a)
-  have hinj {x y : A} (h : ∀ a, t (x * a) = t (y * a)) : x = y :=
-    (IsPerfPair.bijective_left ((mul R A).compr₂ t)).injective
-      (LinearMap.ext fun a ↦ by simpa using h a)
+    rw [← mul_apply' (R := R), ← compr₂_apply]
+    simp [g, e]
   refine ⟨{ toFun := g
-            map_add' := fun x y ↦ hinj fun a ↦ by simp [add_mul, hg]
-            map_smul' := fun a m ↦ hinj fun b ↦ ?_ }, ?_⟩
+            map_add' := fun x y ↦ t.eq_of_forall_apply_mul_eq
+              (IsPerfPair.bijective_left _).injective fun a ↦ by simp [add_mul, hg]
+            map_smul' := fun a m ↦ t.eq_of_forall_apply_mul_eq
+              (IsPerfPair.bijective_left _).injective fun b ↦ ?_ }, ?_⟩
   · simp only [RingHom.id_apply, smul_eq_mul]
     calc
       t (g (a • m) * b) = f (b • (a • m)) := hg _ _
@@ -130,7 +134,7 @@ include t in
 /-- A functional on a submodule extends whenever the inclusion splits over the base ring.
 The retraction need not be algebra-linear. This gives the surjectivity at the right end
 of the dual of a short exact sequence of base-ring lattices. -/
-theorem dualTransfer_exists_comp_eq_of_retraction (i : M →ₗ[A] N) (r : N →ₗ[R] M)
+theorem exists_comp_eq_of_retraction_of_dualTransfer (i : M →ₗ[A] N) (r : N →ₗ[R] M)
     (hr : r.comp (i.restrictScalars R) = .id) (f : M →ₗ[A] A) :
     ∃ g : N →ₗ[A] A, g.comp i = f := by
   refine ⟨t.dualTransferEquiv.symm ((t.dualTransferEquiv f).comp r), ?_⟩
@@ -209,7 +213,7 @@ theorem dualMap_surjective_of_exact_of_projective_of_dualTransfer [Module.Projec
     ext m
     simp
   intro f
-  exact t.dualTransfer_exists_comp_eq_of_retraction i ((fst R M P).comp e.toLinearMap) hr f
+  exact t.exists_comp_eq_of_retraction_of_dualTransfer i ((fst R M P).comp e.toLinearMap) hr f
 
 end Exact
 
