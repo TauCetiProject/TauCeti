@@ -35,8 +35,8 @@ because they shift weights differently. No commutator formula is used.
 * `Matrix.RaisesDegree.mul`: degrees add under multiplication.
 * `Matrix.RaisesDegree.of_shift`: a matrix shifting weights by `a` raises their degree by
   `degree a`.
-* `Matrix.raisesDegree_list_prod_sub`: the leading-degree congruence for an ordered product.
-* `Matrix.parameters_mem_of_list_prod_mem`: integral recovery inside a subalgebra.
+* `TauCeti.Matrix.raisesDegree_list_prod_sub`: the leading-degree congruence for an ordered product.
+* `TauCeti.Matrix.parameters_mem_of_list_prod_mem`: integral recovery inside a subalgebra.
 * `TauCeti.Matrix.list_prod_map_inj_of_raisesDegree`: an ordered product of graded unipotent
   families determines its parameters.
 
@@ -147,6 +147,14 @@ theorem RaisesDegree.mul [NonUnitalNonAssocSemiring A] [Fintype η] {X Y : Matri
   have hr := hX r t (left_ne_zero_of_mul hne)
   have hs := hY t s (right_ne_zero_of_mul hne)
   omega
+
+end Matrix
+
+namespace TauCeti.Matrix
+
+open _root_.Matrix
+
+variable {η A : Type*}
 
 /-! ## Uniqueness of ordered products -/
 
@@ -263,7 +271,7 @@ theorem raisesDegree_list_prod_sub (n : ℤ) (u : ι → A) :
 omit hX in
 /-- On the exact weight shift of a root, subtracting the factors of smaller degree from
 an ordered product leaves just that root's linear term. -/
-theorem list_prod_sub_apply_eq {i : ι} (hi : i ∈ l) (hl : (l.map α).Nodup)
+theorem list_prod_sub_filter_degree_lt_apply_of_shift {i : ι} (hi : i ∈ l) (hl : (l.map α).Nodup)
     (hshift : ∀ j ∈ l, ∀ r s, X j r s ≠ 0 → wt r = wt s + α j)
     (u : ι → A) {r s : η} (hrs : wt r = wt s + α i) :
     ((l.map fun j ↦ x j (u j)).prod -
@@ -327,7 +335,7 @@ theorem parameters_mem_of_list_prod_mem (wt : η → G) (degree : G →+ ℤ) (�
         u i * X i r s = if wt r = wt s + α i then
           ((l.map fun j ↦ x j (u j)).prod - q) r s else 0 := by
       split_ifs with hrs
-      · exact (list_prod_sub_apply_eq hpos hx hi hl hshift u hrs).symm
+      · exact (list_prod_sub_filter_degree_lt_apply_of_shift hpos hx hi hl hshift u hrs).symm
       · have hz : X i r s = 0 := not_not.mp fun h ↦ hrs (hshift i hi r s h)
         simp [hz]
     have hmem (r s : η) : u i * X i r s ∈ S := by
@@ -344,13 +352,7 @@ theorem parameters_mem_of_list_prod_mem (wt : η → G) (degree : G →+ ℤ) (�
 
 end CoordinateRecovery
 
-end Matrix
-
-namespace TauCeti.Matrix
-
-open _root_.Matrix
-
-variable {η A : Type*} [Fintype η] [DecidableEq η] [Ring A]
+variable [Fintype η] [DecidableEq η] [Ring A]
 variable {ι G : Type*} [AddCommGroup G]
 
 /-- **An ordered product of graded unipotent families determines its parameters.**

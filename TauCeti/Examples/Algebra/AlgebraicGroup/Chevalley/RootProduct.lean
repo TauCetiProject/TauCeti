@@ -33,12 +33,13 @@ def a1Simple : Fin (DynkinType.A 1).rank :=
 
 /-- The empty A₁ root product is the closed unit section. -/
 theorem isClosedImmersion_a1_rootProduct_nil : IsClosedImmersion (a1Datum.rootProduct []).left :=
-  a1Datum.isClosedImmersion_rootProduct List.nodup_nil (fun _ h ↦ (List.not_mem_nil h).elim)
+  a1Datum.isClosedImmersion_rootProduct_of_posRoots List.nodup_nil
+    (fun _ h ↦ (List.not_mem_nil h).elim)
 
 /-- The positive one-root A₁ product is a closed affine-line chart. -/
 theorem isClosedImmersion_a1_rootProduct_positive : IsClosedImmersion
     (a1Datum.rootProduct [(DynkinType.A 1).simpleIndex (by decide) a1Simple]).left := by
-  apply a1Datum.isClosedImmersion_rootProduct (List.nodup_singleton _)
+  apply a1Datum.isClosedImmersion_rootProduct_of_posRoots (List.nodup_singleton _)
   intro γ hγ
   simp only [List.mem_singleton] at hγ
   subst γ

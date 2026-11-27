@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Product.Parameters
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Recovery
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
@@ -38,6 +38,43 @@ noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
+/-- The matrix of the ordered root product at the universal polynomial parameters. -/
+def universalRootProduct (l : List (Fin t.numRoots)) :
+    Matrix (Fin D.dim) (Fin D.dim) (MvPolynomial {γ // γ ∈ l} ℤ) :=
+  (l.map fun γ ↦
+    ((D.rootSubgroupPoints γ _ (Multiplicative.ofAdd (t.universalRootParameter l γ)) :
+      Matrix.GeneralLinearGroup (Fin D.dim) (MvPolynomial {γ // γ ∈ l} ℤ)) :
+        Matrix (Fin D.dim) (Fin D.dim) (MvPolynomial {γ // γ ∈ l} ℤ))).prod
+
+/-- The universal matrix is the product of root matrices at the universal parameters. -/
+theorem universalRootProduct_def (l : List (Fin t.numRoots)) :
+    D.universalRootProduct l = (l.map fun γ ↦
+      ((D.rootSubgroupPoints γ _ (Multiplicative.ofAdd (t.universalRootParameter l γ)) :
+        Matrix.GeneralLinearGroup (Fin D.dim) (MvPolynomial {γ // γ ∈ l} ℤ)) :
+          Matrix (Fin D.dim) (Fin D.dim) (MvPolynomial {γ // γ ∈ l} ℤ))).prod :=
+  (rfl)
+
+/-- The entries of the universal ordered root product generate the entire polynomial
+parameter ring over `ℤ`. There is one variable for each root occurring in the list. -/
+theorem adjoin_universalRootProduct_eq_top
+    {l : List (Fin t.numRoots)} (hl : l.Nodup)
+    (degree : (Fin t.rank → ℤ) →+ ℚ)
+    (hdegree : ∀ γ ∈ l, 0 < degree ((t.simplyConnectedRootDatum ht).root γ)) :
+    Algebra.adjoin ℤ (Set.range fun rs : Fin D.dim × Fin D.dim ↦
+      D.universalRootProduct l rs.1 rs.2) = ⊤ := by
+  classical
+  have hmem := D.parameters_mem_of_list_prod_rootSubgroupPoints_mem hl degree hdegree
+    (Algebra.adjoin ℤ (Set.range fun rs : Fin D.dim × Fin D.dim ↦
+      D.universalRootProduct l rs.1 rs.2)) (t.universalRootParameter l)
+    (fun r s ↦ by
+      rw [← universalRootProduct_def]
+      exact Algebra.subset_adjoin (Set.mem_range_self (r, s)))
+  apply top_unique
+  rw [← MvPolynomial.adjoin_range_X, Algebra.adjoin_le_iff]
+  rintro _ ⟨⟨γ, hγ⟩, rfl⟩
+  rw [← t.universalRootParameter_of_mem l hγ]
+  exact hmem γ hγ
+
 /-- The pullback of functions on `GL` along the universal ordered root product. -/
 def rootProductCoordinateMap (l : List (Fin t.numRoots)) :
     GeneralLinear.coordinateHopfAlgebra ℤ D.dim →ₐ[ℤ] MvPolynomial {γ // γ ∈ l} ℤ :=
@@ -48,12 +85,7 @@ def rootProductCoordinateMap (l : List (Fin t.numRoots)) :
 theorem rootProductCoordinateMap_genericMatrix (l : List (Fin t.numRoots))
     (r s : Fin D.dim) :
     D.rootProductCoordinateMap l (GeneralLinear.genericMatrix ℤ D.dim r s) =
-      let u : Fin t.numRoots → MvPolynomial {γ // γ ∈ l} ℤ :=
-        fun γ ↦ if hγ : γ ∈ l then MvPolynomial.X ⟨γ, hγ⟩ else 0
-      (l.map fun γ ↦
-        ((D.rootSubgroupPoints γ _ (Multiplicative.ofAdd (u γ)) :
-          Matrix.GeneralLinearGroup (Fin D.dim) (MvPolynomial {γ // γ ∈ l} ℤ)) :
-            Matrix (Fin D.dim) (Fin D.dim) (MvPolynomial {γ // γ ∈ l} ℤ))).prod r s := by
+      D.universalRootProduct l r s := by
   classical
   have hp := congrArg (fun g : Matrix.GeneralLinearGroup (Fin D.dim)
       (MvPolynomial {γ // γ ∈ l} ℤ) ↦
@@ -71,12 +103,12 @@ theorem rootProductCoordinateMap_genericMatrix (l : List (Fin t.numRoots))
   rw [Units.coeHom_apply] at hval
   refine (congrArg (fun m ↦ m r s) hval).trans ?_
   simp only [List.map_map, Function.comp_def, t.rootProductParametersPoint_coordinate]
-  rw [← List.attach_map_val (l := l)]
+  rw [universalRootProduct_def, ← List.attach_map_val (l := l)]
   apply congrArg (fun xs : List
     (Matrix (Fin D.dim) (Fin D.dim) (MvPolynomial {γ // γ ∈ l} ℤ)) ↦ xs.prod r s)
   apply List.map_congr_left
   intro γ _
-  simp only [dite_eq_left γ.property, Units.coeHom_apply]
+  simp only [t.universalRootParameter_of_mem l γ.property, Units.coeHom_apply]
 
 /-- The ambient matrix-coordinate pullback for a positive-degree root list is surjective. -/
 theorem rootProductCoordinateMap_surjective
@@ -94,7 +126,7 @@ theorem rootProductCoordinateMap_surjective
 
 /-- The spectrum map of the matrix-coordinate pullback is the universal parameter point
 followed by ordered multiplication and the embedding into `GL`. -/
-theorem rootProductCoordinateMap_spec (l : List (Fin t.numRoots)) :
+theorem spec_map_rootProductCoordinateMap (l : List (Fin t.numRoots)) :
     Spec.map (CommRingCat.ofHom (D.rootProductCoordinateMap l).toRingHom) ≫
       eqToHom (GeneralLinear.groupScheme_X_left ℤ D.dim).symm =
       (t.rootProductParametersPoint l ≫ D.rootProduct l ≫ D.groupSchemeι.hom.hom).left := by
@@ -119,7 +151,7 @@ theorem isClosedImmersion_rootProduct_of_degree
       (D.rootProductCoordinateMap_surjective hl degree hdegree)
   have hp : IsClosedImmersion
       (t.rootProductParametersPoint l ≫ D.rootProduct l ≫ D.groupSchemeι.hom.hom).left := by
-    rw [← D.rootProductCoordinateMap_spec]
+    rw [← D.spec_map_rootProductCoordinateMap]
     exact @IsClosedImmersion.comp _ _ _ _ _ hs inferInstance
   have hGL : IsClosedImmersion ((D.rootProduct l).left ≫ D.groupSchemeι.hom.hom.left) := by
     rw [← MorphismProperty.cancel_left_of_respectsIso @IsClosedImmersion
@@ -129,7 +161,7 @@ theorem isClosedImmersion_rootProduct_of_degree
     (D.rootProduct l).left D.groupSchemeι.hom.hom.left
 
 /-- Ordered multiplication of distinct positive roots is a closed immersion over `ℤ`. -/
-theorem isClosedImmersion_rootProduct
+theorem isClosedImmersion_rootProduct_of_posRoots
     {l : List (Fin t.numRoots)} (hl : l.Nodup)
     (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
     IsClosedImmersion (D.rootProduct l).left :=

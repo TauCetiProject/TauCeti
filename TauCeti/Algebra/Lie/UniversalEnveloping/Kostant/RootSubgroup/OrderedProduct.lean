@@ -77,7 +77,7 @@ attribute [local instance high] Algebra.toModule
 
 /-- In a weight basis, the `n`-th divided power of a root operator of weight `α` has nonzero
 entries only where it raises the weight by `n α`. -/
-theorem eq_add_nsmul_of_toMatrix_integralDividedPower_ne_zero [Fintype η] [DecidableEq η]
+private theorem eq_add_nsmul_of_toMatrix_integralDividedPower_ne_zero [Fintype η] [DecidableEq η]
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) {i : ι} {a : κ → ℤ}
     (hα : ∀ j, ⁅h j, e i⁆ = (a j : ℚ) • e i) (n : ℕ) {r s : η}
     (hrs : LinearMap.toMatrix b b
@@ -91,7 +91,7 @@ theorem eq_add_nsmul_of_toMatrix_integralDividedPower_ne_zero [Fintype η] [Deci
 
 /-- A positive root-subgroup matrix is `1 + t X` up to a matrix raising the degree by more than the
 degree of its root. -/
-theorem raisesDegree_kostantRootSubgroupMatrix_sub [Fintype η] [DecidableEq η]
+private theorem raisesDegree_kostantRootSubgroupMatrix_sub [Fintype η] [DecidableEq η]
     {A : Type*} [CommRing A]
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) {i : ι} {a : κ → ℤ}
     (hα : ∀ j, ⁅h j, e i⁆ = (a j : ℚ) • e i) (hdeg : 0 < degree a) (t : A) :
@@ -146,7 +146,7 @@ theorem parameters_mem_of_list_prod_kostantRootSubgroupMatrix_mem
   classical
   let X (i : ι) := (LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i)).map
     (Int.cast : ℤ → A)
-  apply Matrix.parameters_mem_of_list_prod_mem wt degree α
+  apply TauCeti.Matrix.parameters_mem_of_list_prod_mem wt degree α
     (fun i a ↦ (kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
         (Multiplicative.ofAdd a)) : Matrix η η A)) X hl hdeg ?_ ?_ ?_ S ?_ u hprod

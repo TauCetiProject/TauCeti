@@ -28,6 +28,22 @@ noncomputable section
 
 variable (t : DynkinType) (l : List (Fin t.numRoots))
 
+/-- The universal root parameter is its polynomial variable on the list and zero elsewhere. -/
+def universalRootParameter (γ : Fin t.numRoots) : MvPolynomial {γ // γ ∈ l} ℤ :=
+  if hγ : γ ∈ l then MvPolynomial.X ⟨γ, hγ⟩ else 0
+
+/-- The defining formula for a universal root parameter. -/
+theorem universalRootParameter_def (γ : Fin t.numRoots) :
+    t.universalRootParameter l γ =
+      if hγ : γ ∈ l then MvPolynomial.X ⟨γ, hγ⟩ else 0 :=
+  (rfl)
+
+/-- A root occurring in the list has its own variable as universal parameter. -/
+@[simp]
+theorem universalRootParameter_of_mem {γ : Fin t.numRoots} (hγ : γ ∈ l) :
+    t.universalRootParameter l γ = MvPolynomial.X ⟨γ, hγ⟩ := by
+  rw [universalRootParameter_def, dite_eq_left hγ]
+
 /-- The universal polynomial point of the parameter scheme of a root product. -/
 def rootProductParametersPoint :
     (Spec (CommRingCat.of (MvPolynomial {γ // γ ∈ l} ℤ))).asOver
@@ -53,8 +69,8 @@ theorem rootProductParametersPoint_map_coordinate
         t.rootProductParametersPoint l ≫
           Pi.π (fun _ : {γ // γ ∈ l} ↦ (AdditiveGroup.groupScheme ℤ).X) γ) =
       Multiplicative.ofAdd (φ (MvPolynomial.X γ)) := by
-  rw [AdditiveGroup.schemePointsMulEquiv_mapValue, rootProductParametersPoint_coordinate]
-  rfl
+  simp only [AdditiveGroup.schemePointsMulEquiv_mapValue,
+    rootProductParametersPoint_coordinate, toAdd_ofAdd]
 
 /-- The universal polynomial point identifies the root-product parameter scheme with an
 affine space over `ℤ`. -/
