@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.FiberHomotopy
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.FiberHomotopy.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Kunneth
 
 /-!

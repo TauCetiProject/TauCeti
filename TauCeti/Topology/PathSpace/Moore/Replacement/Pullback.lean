@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Constructions.Pullback
+public import TauCeti.Data.Set.Prod
+public import TauCeti.Topology.Constructions.Basic
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Append

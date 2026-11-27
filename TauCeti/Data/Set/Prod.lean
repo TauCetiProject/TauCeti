@@ -22,6 +22,8 @@ This file adds to Mathlib's API for graphs of functions over a set and for the f
 * `Set.range_prodMk_const_inter_range_const_prodMk`: a horizontal and a vertical such slice meet
   in exactly one point.
 * `Function.Pullback.ext`: a point of the fibre product is determined by its two coordinates.
+* `Function.Pullback.fst_mk`, `Function.Pullback.snd_mk`: the projections of a point given by its
+  coordinates.
 * `Function.Pullback.fstPreimageEquiv`: the fibre of the projection `X ×_Y Z → X` over `x` is the
   fibre of `g` over `f x`.
 -/
@@ -67,6 +69,14 @@ variable {X Y Z : Type*} {f : X → Y} {g : Z → Y}
 theorem Function.Pullback.ext {p q : f.Pullback g} (h₁ : p.fst = q.fst) (h₂ : p.snd = q.snd) :
     p = q :=
   Subtype.ext (Prod.ext h₁ h₂)
+
+@[simp]
+theorem Function.Pullback.fst_mk (z : X × Z) (h : f z.1 = g z.2) :
+    Pullback.fst (⟨z, h⟩ : f.Pullback g) = z.1 := (rfl)
+
+@[simp]
+theorem Function.Pullback.snd_mk (z : X × Z) (h : f z.1 = g z.2) :
+    Pullback.snd (⟨z, h⟩ : f.Pullback g) = z.2 := (rfl)
 
 /-- The fibre over `x` of the projection `X ×_Y Z → X` of the fibre product of `f` and `g` is the
 fibre of `g` over `f x`. -/
