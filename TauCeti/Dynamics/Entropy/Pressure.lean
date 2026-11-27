@@ -225,6 +225,7 @@ theorem topologicalPressure_add_const [UniformSpace X] (T : X → X) (φ : X →
     AddQuantale.iSup_add_distrib]
 
 /-- The pressure of a constant potential `c` is the topological entropy plus `c`. -/
+@[simp]
 theorem topologicalPressure_const [UniformSpace X] (T : X → X) (c : ℝ) :
     topologicalPressure T (fun _ ↦ c) = coverEntropy T univ + c := by
   simpa only [Pi.zero_apply, zero_add, topologicalPressure_zero] using
