@@ -20,15 +20,18 @@ when the two mean embeddings agree. It need not separate probability measures: f
 kernel `1` all their mean embeddings coincide.
 
 When `Φ` is integrable for `μ` and `ν`, every `f ∈ H` integrates against `μ` through the
-embedding, `⟪f, m μ⟫ = ∫ ⟪f, Φ x⟫ dμ`, so the MMD is the integral probability metric of the unit
-ball of `H`:
+embedding, `⟪f, m μ⟫ = ∫ ⟪f, Φ x⟫ dμ`
+(`Matrix.PosSemidef.inner_kernelMeanEmbedding_eq_integral_inner`), so the MMD is the integral
+probability metric of the unit ball of `H`:
 
 `MMD(μ, ν) = ⨆ ‖f‖ ≤ 1, (∫ ⟪f, Φ x⟫ dμ - ∫ ⟪f, Φ x⟫ dν)`.
 
 The *witness function* `m μ - m ν` is the function `x ↦ ∫ k x y dμ - ∫ k x y dν`, in the sense
-that `⟪Φ x, m μ - m ν⟫ = ∫ k x y dμ - ∫ k x y dν`, and the supremum is attained at the normalized
-witness `MMD(μ, ν)⁻¹ • (m μ - m ν)`. The square of the MMD is the double integral form
-`∫∫ k dμ dμ - 2 ∫∫ k dμ dν + ∫∫ k dν dν`.
+that `⟪Φ x, m μ - m ν⟫ = ∫ k x y dμ - ∫ k x y dν`
+(`Matrix.PosSemidef.inner_kolmogorovFeature_kernelMeanEmbedding_sub`), and the supremum is
+attained at the normalized witness `MMD(μ, ν)⁻¹ • (m μ - m ν)`. Since `MMD(μ, ν) ^ 2` unfolds to
+`‖m μ - m ν‖ ^ 2`, its double integral form `∫∫ k dμ dμ - 2 ∫∫ k dμ dν + ∫∫ k dν dν` is
+`Matrix.PosSemidef.norm_kernelMeanEmbedding_sub_sq`.
 
 Without integrability the Bochner integral defining `m μ` is the junk value `0`, so the statements
 that relate the MMD to integrals carry `Integrable hk.kolmogorovFeature μ`; the metric properties
@@ -42,18 +45,14 @@ need no hypothesis.
 
 * `Matrix.PosSemidef.mmd_eq_dist`: `MMD(μ, ν) = dist (m μ) (m ν)`; hence `mmd_nonneg`,
   `mmd_self`, `mmd_comm`, `mmd_triangle` and `mmd_eq_zero_iff`.
-* `Matrix.PosSemidef.mmd_sq`: the double integral form of `MMD(μ, ν) ^ 2`.
 * `Matrix.PosSemidef.mmd_dirac_dirac_sq`: `MMD(δ x, δ y) ^ 2 = k x x - 2 k x y + k y y`.
-* `Matrix.PosSemidef.inner_kernelMeanEmbedding_eq_integral_inner`:
-  `⟪f, m μ⟫ = ∫ ⟪f, Φ x⟫ dμ`.
 * `Matrix.PosSemidef.abs_integral_inner_sub_integral_inner_le`: the unit-ball bound
   `|∫ ⟪f, Φ⟫ dμ - ∫ ⟪f, Φ⟫ dν| ≤ ‖f‖ * MMD(μ, ν)`.
 * `Matrix.PosSemidef.mmd_eq_iSup_integral_inner_sub`: the MMD is the supremum over the unit ball.
-* `Matrix.PosSemidef.inner_kolmogorovFeature_kernelMeanEmbedding_sub`: the witness function
-  `x ↦ ⟪Φ x, m μ - m ν⟫` is `∫ k x y dμ - ∫ k x y dν`.
 * `Matrix.PosSemidef.integral_inner_inv_mmd_smul_sub`: the normalized witness attains the
   supremum.
-* `Matrix.PosSemidef.mmd_eq_iSup`: the four facts above bundled, the form stated in the roadmap.
+* `Matrix.PosSemidef.mmd_eq_iSup`: the integral form of the mean embedding, the unit-ball
+  supremum, the witness function and the normalized witness, bundled in one statement.
 
 ## References
 
@@ -111,6 +110,7 @@ theorem mmd_triangle (hk : Matrix.PosSemidef k) (μ ν ρ : Measure X) :
   simpa only [mmd_eq_dist] using dist_triangle _ _ _
 
 /-- The MMD vanishes exactly when the two mean embeddings agree. -/
+@[simp]
 theorem mmd_eq_zero_iff (hk : Matrix.PosSemidef k) {μ ν : Measure X} :
     hk.mmd μ ν = 0 ↔ hk.kernelMeanEmbedding μ = hk.kernelMeanEmbedding ν := by
   rw [mmd, norm_sub_eq_zero_iff]
@@ -135,14 +135,6 @@ theorem mmd_smul_measure (hk : Matrix.PosSemidef k) (c : ENNReal) (μ ν : Measu
 
 /-! ### Closed forms -/
 
-/-- **The double integral form of the squared MMD**:
-`MMD(μ, ν) ^ 2 = ∫∫ k dμ dμ - 2 ∫∫ k dμ dν + ∫∫ k dν dν`. -/
-theorem mmd_sq (hk : Matrix.PosSemidef k) {μ ν : Measure X}
-    (hμ : Integrable hk.kolmogorovFeature μ) (hν : Integrable hk.kolmogorovFeature ν) :
-    hk.mmd μ ν ^ 2 =
-      ∫ y, ∫ x, k x y ∂μ ∂μ - 2 * ∫ y, ∫ x, k x y ∂μ ∂ν + ∫ y, ∫ x, k x y ∂ν ∂ν :=
-  hk.norm_kernelMeanEmbedding_sub_sq hμ hν
-
 /-- The MMD of two Dirac masses is the distance of the feature vectors of their points. -/
 @[simp]
 theorem mmd_dirac_dirac [MeasurableSingletonClass X] (hk : Matrix.PosSemidef k) (x y : X) :
@@ -156,23 +148,6 @@ theorem mmd_dirac_dirac_sq [MeasurableSingletonClass X] (hk : Matrix.PosSemidef 
   simp
 
 /-! ### The unit-ball supremum and the witness function -/
-
-/-- Every vector `f` of the Kolmogorov space integrates against `μ` through the mean embedding:
-`⟪f, m μ⟫ = ∫ ⟪f, Φ x⟫ dμ`. -/
-theorem inner_kernelMeanEmbedding_eq_integral_inner (hk : Matrix.PosSemidef k) {μ : Measure X}
-    (hμ : Integrable hk.kolmogorovFeature μ) (f : hk.KolmogorovSpace) :
-    ⟪f, hk.kernelMeanEmbedding μ⟫_ℝ = ∫ x, ⟪f, hk.kolmogorovFeature x⟫_ℝ ∂μ := by
-  rw [kernelMeanEmbedding_def, integral_inner hμ]
-
-/-- The difference of the integrals of `x ↦ ⟪f, Φ x⟫` is the coefficient of `f` against the
-difference of the mean embeddings. -/
-theorem integral_inner_sub_integral_inner (hk : Matrix.PosSemidef k) {μ ν : Measure X}
-    (hμ : Integrable hk.kolmogorovFeature μ) (hν : Integrable hk.kolmogorovFeature ν)
-    (f : hk.KolmogorovSpace) :
-    ∫ x, ⟪f, hk.kolmogorovFeature x⟫_ℝ ∂μ - ∫ x, ⟪f, hk.kolmogorovFeature x⟫_ℝ ∂ν =
-      ⟪f, hk.kernelMeanEmbedding μ - hk.kernelMeanEmbedding ν⟫_ℝ := by
-  rw [inner_sub_right, hk.inner_kernelMeanEmbedding_eq_integral_inner hμ,
-    hk.inner_kernelMeanEmbedding_eq_integral_inner hν]
 
 /-- **The unit-ball bound.** The integrals of `x ↦ ⟪f, Φ x⟫` against `μ` and `ν` differ by at
 most `‖f‖ * MMD(μ, ν)`. -/
@@ -192,16 +167,6 @@ theorem mmd_eq_iSup_integral_inner_sub (hk : Matrix.PosSemidef k) {μ ν : Measu
       (∫ x, ⟪f.val, hk.kolmogorovFeature x⟫_ℝ ∂μ - ∫ x, ⟪f.val, hk.kolmogorovFeature x⟫_ℝ ∂ν) := by
   simp only [hk.integral_inner_sub_integral_inner hμ hν]
   exact TauCeti.norm_eq_iSup_real_inner _
-
-/-- **The witness function.** The coefficient of a feature vector `Φ x` against `m μ - m ν` is
-`∫ k x y dμ - ∫ k x y dν`. -/
-theorem inner_kolmogorovFeature_kernelMeanEmbedding_sub (hk : Matrix.PosSemidef k)
-    {μ ν : Measure X} (hμ : Integrable hk.kolmogorovFeature μ)
-    (hν : Integrable hk.kolmogorovFeature ν) (x : X) :
-    ⟪hk.kolmogorovFeature x, hk.kernelMeanEmbedding μ - hk.kernelMeanEmbedding ν⟫_ℝ =
-      ∫ y, k x y ∂μ - ∫ y, k x y ∂ν := by
-  rw [inner_sub_right, hk.inner_kolmogorovFeature_kernelMeanEmbedding hμ,
-    hk.inner_kolmogorovFeature_kernelMeanEmbedding hν]
 
 /-- The normalized witness `MMD(μ, ν)⁻¹ • (m μ - m ν)` is a unit vector when the MMD is
 nonzero. -/
@@ -223,9 +188,9 @@ theorem integral_inner_inv_mmd_smul_sub (hk : Matrix.PosSemidef k) {μ ν : Meas
   rw [hk.integral_inner_sub_integral_inner hμ hν]
   exact TauCeti.real_inner_inv_norm_smul_self _
 
-/-- **The MMD and its witness**, the form stated in the roadmap: the integral form of the mean
-embedding, the unit-ball supremum form of the MMD, the witness function, and, when the MMD is
-nonzero, the normalized witness, a unit vector attaining the supremum. -/
+/-- **The MMD and its witness**: the integral form of the mean embedding, the unit-ball
+supremum form of the MMD, the witness function, and, when the MMD is nonzero, the normalized
+witness, a unit vector attaining the supremum. -/
 theorem mmd_eq_iSup (hk : Matrix.PosSemidef k) {μ ν : Measure X}
     (hμ : Integrable hk.kolmogorovFeature μ) (hν : Integrable hk.kolmogorovFeature ν) :
     (∀ f : hk.KolmogorovSpace,
