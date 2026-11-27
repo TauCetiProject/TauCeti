@@ -268,36 +268,54 @@ theorem eq_of_collapse_eq {z w : (reducedMappingCone f).carrier}
 abbrev targetPair : TopPair.{u} :=
   TopPair.ofSubset (X := _root_.TopCat.of (reducedMappingCone f).carrier) (Set.range (incl f))
 
-/-- Collapsing the target of the reduced mapping cone gives the reduced suspension of the source.
-The homeomorphism uses the same increasing interval parameter on both sides. -/
-def quotientTargetHomeomorph :
-    (targetPair f).ordinaryPairQuotient ≃ₜ ReducedSuspension X.carrier X.basepoint := by
+private def quotientTargetDesc : (targetPair f).ordinaryPairQuotient ⟶
+    _root_.TopCat.of (ReducedSuspension X.carrier X.basepoint) :=
+  (targetPair f).ordinaryPairQuotientDesc (_root_.TopCat.ofHom (collapse f).toContinuousMap)
+    ReducedSuspension.basepoint fun b ↦
+      (collapse_eq_basepoint_iff f ((targetPair f).map b)).2
+        ((TopPair.range_ofSubset_map (B := Set.range (incl f))).subset (Set.mem_range_self b))
+
+private theorem isHomeomorph_quotientTargetDesc : IsHomeomorph (quotientTargetDesc f) := by
   let c := _root_.TopCat.ofHom (collapse f).toContinuousMap
   have hbase (z) : c z = ReducedSuspension.basepoint ↔ z ∈ Set.range (targetPair f).map :=
     (collapse_eq_basepoint_iff f z).trans (by rw [TopPair.range_ofSubset_map]; rfl)
-  let d := (targetPair f).ordinaryPairQuotientDesc c ReducedSuspension.basepoint
-    fun b ↦ (hbase _).2 ⟨b, rfl⟩
-  have hd : Function.Bijective d := (targetPair f).ordinaryPairQuotientDesc_bijective c _
-    hbase (fun z w hz h ↦ eq_of_collapse_eq f (by rwa [TopPair.range_ofSubset_map] at hz) h)
-    fun z _ ↦ (isQuotientMap_collapse f).surjective z
-  have hq : IsQuotientMap d := by
-    apply IsQuotientMap.of_comp (targetPair f).ordinaryPairQuotientπ.hom.continuous d.hom.continuous
-    have he : d ∘ (targetPair f).ordinaryPairQuotientπ = collapse f :=
-      funext ((targetPair f).ordinaryPairQuotientπ_desc_apply _ _ _)
+  have hd : Function.Bijective (quotientTargetDesc f) := by
+    rw [quotientTargetDesc]
+    exact (targetPair f).ordinaryPairQuotientDesc_bijective c _
+      hbase (fun z w hz h ↦ eq_of_collapse_eq f (by rwa [TopPair.range_ofSubset_map] at hz) h)
+      fun z _ ↦ (isQuotientMap_collapse f).surjective z
+  have hq : IsQuotientMap (quotientTargetDesc f) := by
+    apply IsQuotientMap.of_comp (targetPair f).ordinaryPairQuotientπ.hom.continuous
+      (quotientTargetDesc f).hom.continuous
+    have he : quotientTargetDesc f ∘ (targetPair f).ordinaryPairQuotientπ = collapse f := by
+      rw [quotientTargetDesc]
+      exact funext ((targetPair f).ordinaryPairQuotientπ_desc_apply _ _ _)
     rw [he]
     exact isQuotientMap_collapse f
-  exact (isHomeomorph_iff_isQuotientMap_injective.2 ⟨hq, hd.1⟩).homeomorph d
+  exact isHomeomorph_iff_isQuotientMap_injective.2 ⟨hq, hd.1⟩
+
+/-- Collapsing the target of the reduced mapping cone gives the reduced suspension of the source.
+The homeomorphism uses the same increasing interval parameter on both sides. -/
+def quotientTargetHomeomorph :
+    (targetPair f).ordinaryPairQuotient ≃ₜ ReducedSuspension X.carrier X.basepoint :=
+  (isHomeomorph_quotientTargetDesc f).homeomorph (quotientTargetDesc f)
+
+private theorem coe_quotientTargetHomeomorph :
+    ⇑(quotientTargetHomeomorph f) = ⇑(quotientTargetDesc f) :=
+  funext (IsHomeomorph.homeomorph_apply (quotientTargetDesc f) (isHomeomorph_quotientTargetDesc f))
 
 @[simp]
 theorem quotientTargetHomeomorph_π (z : (reducedMappingCone f).carrier) :
-    quotientTargetHomeomorph f ((targetPair f).ordinaryPairQuotientπ z) = collapse f z :=
-  (targetPair f).ordinaryPairQuotientπ_desc_apply _ _ _ z
+    quotientTargetHomeomorph f ((targetPair f).ordinaryPairQuotientπ z) = collapse f z := by
+  rw [coe_quotientTargetHomeomorph, quotientTargetDesc]
+  exact (targetPair f).ordinaryPairQuotientπ_desc_apply _ _ _ z
 
 @[simp]
 theorem quotientTargetHomeomorph_basepoint :
     quotientTargetHomeomorph f (targetPair f).ordinaryPairQuotientBasepoint =
-      ReducedSuspension.basepoint :=
-  (targetPair f).ordinaryPairQuotientDesc_basepoint _ _ _
+      ReducedSuspension.basepoint := by
+  rw [coe_quotientTargetHomeomorph, quotientTargetDesc]
+  exact (targetPair f).ordinaryPairQuotientDesc_basepoint _ _ _
 
 @[simp]
 theorem quotientTargetHomeomorph_symm_mk (p : X.carrier × I) :
@@ -360,13 +378,12 @@ theorem inclNatTrans_app (a : Arrow BasedTopologicalSpace.{u}) :
 def collapseNatTrans : functor.{u} ⟶ Arrow.leftFunc ⋙ reducedSuspension where
   app a := collapse a.hom
   naturality a b s := by
-    apply hom_ext a.hom
-    · intro y
-      simpa [-Hom.map_basepoint_apply] using
-        (Hom.map_basepoint_apply (reducedSuspension.map s.left)).symm
-    · intro p
-      simpa [-reducedSuspension_map_apply_mk] using
-        (reducedSuspension_map_apply_mk s.left (p.2, p.1)).symm
+    apply hom_ext a.hom <;> intro p <;>
+      simp only [comp_eq_hom_comp, Hom.comp_apply, functor_map, Functor.comp_map,
+        Arrow.leftFunc_map]
+    · rw [map_incl, collapse_incl, collapse_incl]
+      exact (Hom.map_basepoint_apply (reducedSuspension.map s.left)).symm
+    · rw [map_line, collapse_line, collapse_line, reducedSuspension_map_apply_mk]
 
 @[simp]
 theorem collapseNatTrans_app (a : Arrow BasedTopologicalSpace.{u}) :
