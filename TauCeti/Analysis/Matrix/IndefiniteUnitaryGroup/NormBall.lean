@@ -157,7 +157,8 @@ private theorem lintegral_norm_rpow_neg_le_of_cover
   · rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_comm (A / _), mul_div_assoc]
 
 /-- Inverse powers of the operator norm of `j s * y` under a right-invariant measure.
-For `A > 2 d`, the constant is uniform in `y`, where `d` is the real matrix dimension. -/
+If `s ↦ ‖j s * y‖` is almost everywhere measurable and `A > 2 d`, the bound is uniform in `y`,
+where `d` is the real matrix dimension. -/
 theorem lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant
     (ν : Measure S) [ν.IsMulRightInvariant]
     (hJ : J ∈ unitary (Matrix n n 𝕜)) (j : S →* unitaryGroupOf J) (y : unitaryGroupOf J)
@@ -170,9 +171,9 @@ theorem lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant
     (fun _ _ ↦ measure_setOf_norm_mul_le_le_of_isMulRightInvariant ν hJ j y one_pos) hA
 
 /-- **Inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary matrix, `ν` a
-left-invariant measure on a group `S`, and `j : S →* unitaryGroupOf J` such that
-`s ↦ ‖y * j s‖` is almost everywhere measurable. For a real `A > 2 d`, where `d` is the real
-dimension of the matrices,
+left-invariant measure on a group `S`, `j : S →* unitaryGroupOf J` and `y : unitaryGroupOf J`.
+Suppose `s ↦ ‖y * j s‖` is almost everywhere measurable. For a real `A > 2 d`, where `d` is the
+real dimension of the matrices,
 
 `∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`
 

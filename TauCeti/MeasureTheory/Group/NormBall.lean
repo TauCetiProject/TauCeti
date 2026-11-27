@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import Mathlib.MeasureTheory.Group.Measure
+public import TauCeti.MeasureTheory.Group.Opposite
 import Mathlib.Algebra.Group.Units.Opposite
 import Mathlib.Algebra.Module.Equiv.Opposite
 import TauCeti.Analysis.Normed.Module.CoveringNumber
@@ -113,15 +113,7 @@ theorem measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant
   have hdim : finrank ℝ Eᵐᵒᵖ = finrank ℝ E := (opLinearEquiv ℝ (M := E)).finrank_eq.symm
   let e : S ≃ᵐ Sᵐᵒᵖ := ⟨opEquiv, measurable_mul_op, measurable_mul_unop⟩
   let νOp : Measure Sᵐᵒᵖ := Measure.map op ν
-  let : νOp.IsMulLeftInvariant := by
-    refine ⟨fun g ↦ ?_⟩
-    have hcomp : (g * ·) ∘ op = op ∘ (· * unop g) := by
-      funext s
-      rw [Function.comp_apply, Function.comp_apply, MulOpposite.op_mul, op_unop]
-    simp only [νOp]
-    rw [Measure.map_map (measurable_const_mul g) measurable_mul_op, hcomp,
-      ← Measure.map_map measurable_mul_op (measurable_mul_const (unop g)),
-      map_mul_right_eq_self]
+  have : νOp.IsMulLeftInvariant := Measure.IsMulRightInvariant.isMulLeftInvariant_map_op ν
   have hmap (A : Set Sᵐᵒᵖ) : νOp A = ν (op ⁻¹' A) :=
     e.measurableEmbedding.map_apply ν A
   let unitsOp : Eˣᵐᵒᵖ ≃* (Eᵐᵒᵖ)ˣ := Units.opEquiv.symm
@@ -129,12 +121,25 @@ theorem measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant
   let yOp : (Eᵐᵒᵖ)ˣ := unitsOp (op y)
   have hprod (s : S) : yOp * jOp (op s) = unitsOp (op (j s * y)) :=
     (unitsOp.map_mul (op y) (op (j s))).symm
-  have h :=
+  have hjOp (s : S) : jOp (op s) = unitsOp (op (j s)) := by
+    simp only [jOp, MulEquiv.toMonoidHom_eq_coe, MonoidHom.comp_apply, MonoidHom.op_apply_apply,
+      Function.comp_apply, unop_op, MonoidHom.coe_ofClass]
+  have hnormInv (u : Eˣ) :
+      ‖(((unitsOp (op u))⁻¹ : (Eᵐᵒᵖ)ˣ) : Eᵐᵒᵖ)‖ = ‖((u⁻¹ : Eˣ) : E)‖ := by
+    calc
+      _ = ‖(unitsOp (op (u⁻¹)) : Eᵐᵒᵖ)‖ := by rw [op_inv, map_inv]
+      _ = _ := by simp only [unitsOp, Units.coe_opEquiv_symm, unop_op, MulOpposite.norm_op]
+  have hpreTarget : op ⁻¹' {s | ‖((yOp * jOp s : (Eᵐᵒᵖ)ˣ) : Eᵐᵒᵖ)‖ ≤ R ∧
+      ‖(((yOp * jOp s)⁻¹ : (Eᵐᵒᵖ)ˣ) : Eᵐᵒᵖ)‖ ≤ R'} =
+      {s | ‖((j s * y : Eˣ) : E)‖ ≤ R ∧ ‖(((j s * y)⁻¹ : Eˣ) : E)‖ ≤ R'} := by
+    ext s
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, hprod, hnormInv, unitsOp,
+      Units.coe_opEquiv_symm, unop_op, MulOpposite.norm_op]
+  have hpreBall : op ⁻¹' {s | ‖(jOp s : Eᵐᵒᵖ) - 1‖ ≤ ε} = {s | ‖(j s : E) - 1‖ ≤ ε} := by
+    ext s
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, hjOp, unitsOp, Units.coe_opEquiv_symm, unop_op]
+    rw [← MulOpposite.norm_unop (op (j s : E) - 1), unop_sub, unop_op, unop_one]
+  simpa only [hmap, hpreTarget, hpreBall, hdim] using
     measure_setOf_norm_le_and_norm_inv_le_le νOp jOp yOp (R := R) (R' := R') hε
-  have hjOp (s : S) : jOp (op s) = unitsOp (op (j s)) := rfl
-  simp only [hmap, Set.preimage_ofPred_eq, hdim, hprod] at h
-  simpa only [hjOp, ← map_inv,
-    ← op_inv, unitsOp, Units.coe_opEquiv_symm, unop_op, ← MulOpposite.op_one,
-    ← MulOpposite.op_sub, MulOpposite.norm_op] using h
 
 end MeasureTheory
