@@ -111,7 +111,7 @@ theorem exp_pi_mul_I_mul_eq_qParam_pow (hh : h ≠ 0) {t : ℝ} {m : ℕ} (ht : 
   field_simp
 
 /-- The local parameter at width two is `exp (π I z)`. -/
-theorem exp_pi_I_mul_eq_qParam_two (z : ℂ) : exp (π * I * z) = 𝕢 2 z := by
+theorem exp_pi_mul_I_mul_eq_qParam_two (z : ℂ) : exp (π * I * z) = 𝕢 2 z := by
   simpa using exp_pi_mul_I_mul_eq_qParam_pow
     (h := 2) (t := 1) (m := 1) (by norm_num) (by norm_num) z
 

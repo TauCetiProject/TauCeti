@@ -516,7 +516,7 @@ theorem siegelFunction_zero_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
 theorem siegelFunction_half_zero_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 0] τ ^ 4 =
       cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - 𝕢 2 τ ^ (2 * n + 1))) ^ 8 := by
-  rw [siegelFunction_half_zero hτ, Periodic.exp_pi_I_mul_eq_qParam_two, mul_pow, neg_pow,
+  rw [siegelFunction_half_zero hτ, Periodic.exp_pi_mul_I_mul_eq_qParam_two, mul_pow, neg_pow,
     exp_neg_pi_I_mul_div_twelve_pow_four, ← pow_mul]
   norm_num
 
@@ -532,7 +532,7 @@ theorem siegelFunction_half_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
     ring
   have hodd : ∏' n : ℕ, (1 + 𝕢 2 τ ^ (2 * n + 1)) = ∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1)) :=
     tprod_congr fun n ↦ (one_sub_neg_pow_odd _ n).symm
-  rw [siegelFunction_half_half hτ, Periodic.exp_pi_I_mul_eq_qParam_two, hodd, mul_pow, mul_pow,
+  rw [siegelFunction_half_half hτ, Periodic.exp_pi_mul_I_mul_eq_qParam_two, hodd, mul_pow, mul_pow,
     neg_pow,
     exp_neg_pi_I_mul_div_twelve_pow_four, h₄, ← pow_mul]
   norm_num

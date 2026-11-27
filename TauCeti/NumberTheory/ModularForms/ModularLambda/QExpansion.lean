@@ -86,7 +86,7 @@ private theorem cuspFunction_modularLambda_div_sixteen_eventuallyEq :
       fun τ : ℍ ↦ normalizedLambdaEuler (Function.Periodic.qParam 2 τ) := by
     funext τ
     rw [modularLambda_div_sixteen_eq_euler τ.im_pos]
-    simp only [Periodic.exp_pi_I_mul_eq_qParam_two, normalizedLambdaEuler,
+    simp only [Periodic.exp_pi_mul_I_mul_eq_qParam_two, normalizedLambdaEuler,
       Pi.mul_apply, Pi.pow_apply, Pi.inv_apply]
   rw [hfun]
   exact TauCeti.UpperHalfPlane.cuspFunction_comp_qParam_eventuallyEq (by norm_num)
