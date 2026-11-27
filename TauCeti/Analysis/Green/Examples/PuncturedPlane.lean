@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.Green.FlatDifferentialForm
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
-import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.InnerProductSpace.NormPow
 
 /-!
 # A family of one-forms on the punctured plane
@@ -44,14 +43,17 @@ theorem puncturedPlaneP_apply (α : ℝ) (z : ℂ) :
 theorem puncturedPlaneQ_apply (α : ℝ) (z : ℂ) :
     puncturedPlaneQ α z = (z.re + z.im) * normSq z ^ (-α) := (rfl)
 
+private theorem normSq_rpow_eq_norm_rpow (z : ℂ) (p : ℝ) :
+    normSq z ^ p = ‖z‖ ^ (2 * p) := by
+  rw [normSq_eq_norm_sq, ← Real.rpow_natCast_mul (norm_nonneg _)]
+  norm_num
+
 /-- The weighted covector field is smooth away from the origin for every real exponent. -/
 theorem contDiffOn_oneForm_puncturedPlane (α : ℝ) :
     ContDiffOn ℝ ∞ (oneForm (puncturedPlaneP α) (puncturedPlaneQ α)) {0}ᶜ := by
   intro z hz
   have hρ : ContDiffAt ℝ ∞ (fun w : ℂ ↦ normSq w ^ (-α)) z := by
-    simp only [normSq_eq_norm_sq]
-    exact (contDiff_norm_sq ℝ).contDiffAt.rpow_const_of_ne
-      (pow_ne_zero 2 (norm_ne_zero_iff.mpr hz))
+    simpa only [normSq_rpow_eq_norm_rpow] using contDiffAt_norm_rpow_of_ne (2 * -α) hz
   have hP : ContDiffAt ℝ ∞ (puncturedPlaneP α) z :=
     (reCLM.contDiff.contDiffAt.sub imCLM.contDiff.contDiffAt).mul hρ
   have hQ : ContDiffAt ℝ ∞ (puncturedPlaneQ α) z :=
@@ -62,13 +64,16 @@ theorem contDiffOn_oneForm_puncturedPlane (α : ℝ) :
 private theorem hasFDerivAt_puncturedPlaneWeight (α : ℝ) {z : ℂ} (hz : z ≠ 0) :
     HasFDerivAt (fun w : ℂ ↦ normSq w ^ (-α))
       ((-α * normSq z ^ (-α - 1)) • ((2 * z.re) • reCLM + (2 * z.im) • imCLM)) z := by
-  have hn : ‖z‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.mpr hz)
-  have hd := (hasStrictFDerivAt_norm_sq z).hasFDerivAt.rpow_const (p := -α) (Or.inl hn)
-  have hcoords : 2 • innerSL ℝ z = (2 * z.re) • reCLM + (2 * z.im) • imCLM := by
+  have hcoords : (2 : ℝ) • innerSL ℝ z = (2 * z.re) • reCLM + (2 * z.im) • imCLM := by
     ext v
     simp [two_smul, real_inner_eq_re_inner ℂ, RCLike.inner_apply]
     ring
-  simpa only [normSq_eq_norm_sq, hcoords] using hd
+  rw [← hcoords, smul_smul]
+  simp only [normSq_rpow_eq_norm_rpow]
+  convert hasFDerivAt_norm_rpow_of_ne (2 * -α) hz using 1
+  rw [show 2 * (-α - 1) = 2 * -α - 2 by ring]
+  congr 1
+  ring
 
 /-- The curl in the positively oriented basis `(1, I)` at a nonzero point. -/
 theorem curl_puncturedPlane (α : ℝ) {z : ℂ} (hz : z ≠ 0) :

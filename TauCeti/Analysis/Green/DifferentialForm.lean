@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Green.Basic
 public import TauCeti.Analysis.Green.WindingWeight.Basic
 import TauCeti.Analysis.Green.Winding
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
+public import TauCeti.Analysis.Green.FlatDifferentialForm
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 
 /-!
@@ -63,32 +64,29 @@ theorem differentiableAt_manifoldOneForm_inChartAt (c : ℂ) {P Q : ℂ → ℝ}
   exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := ℂ) (F := ℝ)
     (0 : Fin 1)).toContinuousLinearEquiv.differentiableAt.comp z hlin
 
+attribute [local instance] Complex.finrank_real_complex_fact
+
+/-- On the plane, the exterior derivative of the circulation form is the curl times the
+normalized area form in the model space. -/
+theorem _root_.DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_volumeFormL
+    {P Q : ℂ → ℝ} {z : ℂ} (hP : DifferentiableAt ℝ P z) (hQ : DifferentiableAt ℝ Q z) :
+    mextDeriv (manifoldOneForm P Q) z = curl P Q z • Complex.orientation.volumeFormL := by
+  have hω := differentiableAt_manifoldOneForm_inChartAt z hP hQ
+  rw [manifoldOneForm_inChartAt] at hω
+  rw [mextDeriv_eq_extDeriv, ← RoughForm.inChartAt_modelSpace (manifoldOneForm P Q) z,
+    manifoldOneForm_inChartAt]
+  exact hω.extDeriv_oneForm_eq_smul_volumeFormL
+
 /-- The manifold exterior derivative has the curl as its coefficient in the positive real basis. -/
 theorem _root_.DifferentiableAt.mextDeriv_manifoldOneForm_apply {P Q : ℂ → ℝ} {z : ℂ}
     (hP : DifferentiableAt ℝ P z) (hQ : DifferentiableAt ℝ Q z) :
     mextDeriv (manifoldOneForm P Q) z
       (fun i ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) z).symm (![1, Complex.I] i)) =
         curl P Q z := by
-  have h := mextDeriv_def (manifoldOneForm P Q) z
-  have he := congrArg (fun L : TangentSpace 𝓘(ℝ, ℂ) z [⋀^Fin 2]→L[ℝ] ℝ ↦
-    L (fun i ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) z).symm (![1, Complex.I] i))) h
-  -- The canonical identification of the plane's tangent space sends this tuple to `(1,I)`.
-  change mextDeriv (manifoldOneForm P Q) z _ =
-    extDerivWithin ((manifoldOneForm P Q).inChartAt z) (Set.range 𝓘(ℝ, ℂ))
-      (extChartAt 𝓘(ℝ, ℂ) z z) ![1, Complex.I] at he
-  rw [he, extChartAt_model_space_eq_id]
-  simp only [modelWithCornersSelf_coe, range_id, PartialEquiv.refl_coe, id_eq,
-    extDerivWithin_univ]
-  have hd := differentiableAt_manifoldOneForm_inChartAt z hP hQ
-  rw [manifoldOneForm_inChartAt] at hd ⊢
-  rw [extDeriv_apply hd]
-  have h₁ : (1 : Fin 2).removeNth ![(1 : ℂ), Complex.I] = ![(1 : ℂ)] := by
-    ext i
-    fin_cases i
-    rfl
-  suffices fderiv ℝ Q z 1 + -(fderiv ℝ P z Complex.I) = curl P Q z by
-    simpa [Fin.sum_univ_succ, h₁, oneForm_apply] using this
-  rw [curl, sub_eq_add_neg]
+  rw [hP.mextDeriv_manifoldOneForm_eq_smul_volumeFormL hQ]
+  change (curl P Q z • Complex.orientation.volumeFormL) ![1, Complex.I] = curl P Q z
+  rw [ContinuousAlternatingMap.smul_apply, Complex.orientation_volumeFormL_one_I, smul_eq_mul,
+    mul_one]
 
 /-- The coordinate form of AC Green agrees with the existing manifold exterior derivative.
 The coefficient is integrated against ordinary planar area in the basis `(1,I)`. -/
