@@ -254,8 +254,7 @@ lemma sheafifyPresheafHomEquiv_toSheafify (M N : F.obj (.mk (op U))) (T : Over U
         ((Over.map T.hom).obj (Over.mk (𝟙 T.left))).hom
         ((Over.map T.hom).obj (Over.mk (𝟙 T.left))).hom (by simp) (by simp) := by
       rw [Over.mapObjMkIdHom, Over.mapMkIso_hom]
-      -- Restriction along `Over.homMk g` is `pullHom` along `g`, by definition of `presheafHom`.
-      rfl
+      simp only [presheafHom_map, TypeCat.ofHom_apply, Quiver.Hom.unop_op, Over.homMk_left]
     rw [overMapCompPresheafHomIso_hom_app_apply, presheafHomObjHomEquiv_eq_map, hx]
     simp [pullHom]
   apply Fiber.hom_ext

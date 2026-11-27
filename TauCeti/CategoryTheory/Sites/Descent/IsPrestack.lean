@@ -520,7 +520,7 @@ lemma mapComp'_conj_eq_mapId'_conj_pullHom {X₀ Y : C} (z : Y ⟶ X₀) (y₁ :
     rw [← cancel_mono ((F.map y₁.op.toLoc).toFunctor.map
       ((F.mapId' (𝟙 X₀).op.toLoc (by simp)).hom.toNatTrans.app N)), hN, ← Functor.map_comp,
       Cat.Hom.inv_hom_id_toNatTrans_app, CategoryTheory.Functor.map_id]
-    rfl
+    simp only [Cat.Hom.id_toFunctor, Functor.id_obj]
   rw [hM', hN']
 variable (F) in
 /-- The presheaves of morphisms out of `M`, as a functor of the target: `N ↦ F.presheafHom M N`,
