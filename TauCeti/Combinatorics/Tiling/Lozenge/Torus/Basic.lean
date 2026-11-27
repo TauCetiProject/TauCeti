@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Height
 import TauCeti.Data.Int.DivMod
+import Mathlib.Data.Int.Interval
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -34,6 +35,9 @@ it contains `n₁ n₂ − n₂ h₁ − n₁ h₂` of type 3. The attainable he
 the second raises the height by `n₂ h₁ + n₁ h₂`, which the Lipschitz bound caps at `n₁ n₂`, and
 each such `(a, b)` is realised by the floor tiling `H(x, y) = ⌊(n₂ a x + n₁ b y) / (n₁ n₂)⌋`.
 
+A torus tiling is invariant under all of `L`, so for `n₁, n₂ ≥ 1` it is determined by its edges
+`(v, k)` with `v` in the fundamental domain; hence there are finitely many torus tilings.
+
 ## Main definitions
 
 * `TauCeti.IsTorusTiling n₁ n₂ M`: `M` is a plane tiling invariant under the translations by
@@ -41,6 +45,7 @@ each such `(a, b)` is realised by the floor tiling `H(x, y) = ⌊(n₂ a x + n�
 * `TauCeti.heightChange n₁ n₂ M`: the pair of counts of edges of `M` of direction `e₁` on
   `[0, n₁) × {0}` and of direction `e₂` on `{0} × [0, n₂)`.
 * `TauCeti.floorHeight n₁ n₂ a b`: the floor height `⌊(n₂ a x + n₁ b y) / (n₁ n₂)⌋`.
+* `TauCeti.torusDomain n₁ n₂`: the fundamental domain `[0, n₁) × [0, n₂)` in `ℤ²`.
 
 ## Main statements
 
@@ -60,6 +65,10 @@ each such `(a, b)` is realised by the floor tiling `H(x, y) = ⌊(n₂ a x + n�
   with height change `(a, b)`.
 * `TauCeti.exists_isTorusTiling_heightChange_eq_iff`: for `n₁, n₂ ≥ 1` the attainable height
   changes are exactly the `(a, b)` with `n₂ a + n₁ b ≤ n₁ n₂`.
+* `TauCeti.IsTorusTiling.vadd_mem_iff`: torus tilings are invariant under all of `L`.
+* `TauCeti.IsTorusTiling.eq_of_inter_eq`: a torus tiling is determined by its edges with initial
+  vertex in the fundamental domain.
+* `TauCeti.finite_setOf_isTorusTiling`: for `n₁, n₂ ≥ 1` there are finitely many torus tilings.
 
 ## References
 
@@ -132,6 +141,19 @@ theorem isTiling : IsTiling Set.univ M := h.1
 theorem vadd_fst : ((n₁ : ℤ), (0 : ℤ)) +ᵥ M = M := h.2.1
 
 theorem vadd_snd : ((0 : ℤ), (n₂ : ℤ)) +ᵥ M = M := h.2.2
+
+/-- **Torus tilings are invariant under all of `L = n₁ℤ × n₂ℤ`.** -/
+theorem vadd_mem_iff (m₁ m₂ : ℤ) (e : TriEdge) :
+    ((m₁ * n₁, m₂ * n₂) +ᵥ e) ∈ M ↔ e ∈ M := by
+  have h₁ : ((n₁ : ℤ), (0 : ℤ)) ∈ AddAction.stabilizer (ℤ × ℤ) M := h.vadd_fst
+  have h₂ : ((0 : ℤ), (n₂ : ℤ)) ∈ AddAction.stabilizer (ℤ × ℤ) M := h.vadd_snd
+  have hm : (m₁ * n₁, m₂ * n₂) ∈ AddAction.stabilizer (ℤ × ℤ) M := by
+    have := add_mem (zsmul_mem h₁ m₁) (zsmul_mem h₂ m₂)
+    simpa using this
+  have hneg := neg_mem hm
+  rw [AddAction.mem_stabilizer_iff] at hneg
+  conv_rhs => rw [← hneg]
+  rw [Set.mem_vadd_set_iff_neg_vadd_mem, neg_neg]
 
 /-- **The height change by heights**: `H_M(v + (n₁, 0)) − H_M(v) = h₁`. -/
 theorem tilingHeight_add_sub_eq_heightChange_fst (v : ℤ × ℤ) :
@@ -339,5 +361,56 @@ theorem exists_isTorusTiling_heightChange_eq_iff (hn₁ : 0 < n₁) (hn₂ : 0 <
     fun hab => ⟨_, isTorusTiling_tilingOfHeight_floorHeight hn₁ hn₂ hab⟩⟩
   have := hM.heightChange_le
   rwa [hab] at this
+
+/-! ### The fundamental domain and finiteness -/
+
+/-- The fundamental domain `[0, n₁) × [0, n₂)` of the torus `ℤ² / (n₁ℤ × n₂ℤ)`. -/
+def torusDomain (n₁ n₂ : ℕ) : Set (ℤ × ℤ) :=
+  Set.Ico 0 (n₁ : ℤ) ×ˢ Set.Ico 0 (n₂ : ℤ)
+
+@[simp] theorem mem_torusDomain {v : ℤ × ℤ} :
+    v ∈ torusDomain n₁ n₂ ↔ (0 ≤ v.1 ∧ v.1 < n₁) ∧ 0 ≤ v.2 ∧ v.2 < n₂ :=
+  Iff.rfl
+
+theorem finite_torusDomain (n₁ n₂ : ℕ) : (torusDomain n₁ n₂).Finite :=
+  (Set.finite_Ico _ _).prod (Set.finite_Ico _ _)
+
+/-- The edges with initial vertex in the fundamental domain are finitely many. -/
+theorem finite_setOf_v_mem_torusDomain (n₁ n₂ : ℕ) :
+    {e : TriEdge | e.v ∈ torusDomain n₁ n₂}.Finite := by
+  have : {e : TriEdge | e.v ∈ torusDomain n₁ n₂} =
+      (fun p : (ℤ × ℤ) × Fin 3 => (⟨p.1, p.2⟩ : TriEdge)) '' (torusDomain n₁ n₂ ×ˢ Set.univ) := by
+    ext ⟨v, k⟩
+    simp
+  rw [this]
+  exact ((finite_torusDomain n₁ n₂).prod Set.finite_univ).image _
+
+/-- **A torus tiling is determined by its edges with initial vertex in the fundamental domain.**
+For `n₁, n₂ ≥ 1` two torus tilings with the same such edges are equal. -/
+theorem IsTorusTiling.eq_of_inter_eq {M' : Set TriEdge} (h : IsTorusTiling n₁ n₂ M)
+    (h' : IsTorusTiling n₁ n₂ M') (hn₁ : 0 < n₁) (hn₂ : 0 < n₂)
+    (hMM' : M ∩ {e | e.v ∈ torusDomain n₁ n₂} = M' ∩ {e | e.v ∈ torusDomain n₁ n₂}) :
+    M = M' := by
+  ext ⟨⟨x, y⟩, k⟩
+  set e₀ : TriEdge := ⟨(x % n₁, y % n₂), k⟩
+  have he : (⟨(x, y), k⟩ : TriEdge) = ((x / n₁) * n₁, (y / n₂) * n₂) +ᵥ e₀ := by
+    simp only [e₀, TriEdge.vadd_mk, Prod.mk_add_mk, TriEdge.mk.injEq, Prod.mk.injEq, and_true]
+    exact ⟨(Int.ediv_mul_add_emod _ _).symm, (Int.ediv_mul_add_emod _ _).symm⟩
+  have hd : e₀.v ∈ torusDomain n₁ n₂ := by
+    simp only [e₀, mem_torusDomain]
+    refine ⟨⟨Int.emod_nonneg _ (by omega), Int.emod_lt_of_pos _ (by omega)⟩,
+      Int.emod_nonneg _ (by omega), Int.emod_lt_of_pos _ (by omega)⟩
+  rw [he, h.vadd_mem_iff, h'.vadd_mem_iff]
+  have := congrArg (e₀ ∈ ·) hMM'
+  simpa [hd, -mem_torusDomain] using this
+
+/-- **There are finitely many torus tilings** of the `n₁ × n₂` torus for `n₁, n₂ ≥ 1`. -/
+theorem finite_setOf_isTorusTiling (hn₁ : 0 < n₁) (hn₂ : 0 < n₂) :
+    {M : Set TriEdge | IsTorusTiling n₁ n₂ M}.Finite := by
+  refine Set.Finite.of_finite_image (f := fun M => M ∩ {e | e.v ∈ torusDomain n₁ n₂}) ?_
+    fun M hM M' hM' hMM' => IsTorusTiling.eq_of_inter_eq hM hM' hn₁ hn₂ hMM'
+  refine ((finite_setOf_v_mem_torusDomain n₁ n₂).finite_subsets).subset ?_
+  rintro _ ⟨M, -, rfl⟩
+  exact Set.inter_subset_right
 
 end TauCeti
