@@ -28,10 +28,10 @@ This file defines the solution
 
 and proves that it solves the Stein equation at every point where `h` is continuous, for every
 `h` integrable against `γ`. It also records the equivalent form as an integral over `(w, ∞)`,
-which shows that `f_h` vanishes outside every closed ball around `0` that contains the support of
-a compactly supported `h` with `∫ h dγ = 0`, so that `f_h` has compact support, and it shows that
-every other solution differs from `f_h` by a multiple of `e^{w²/2}`. Finally, `h ↦ f_h` is linear
-on functions integrable against `γ` and commutes with the reflection `w ↦ -w` up to sign.
+which shows that `f_h` has compact support when `h` has compact support and `∫ h dγ = 0`, and it
+shows that every other solution differs from `f_h` by a multiple of `e^{w²/2}`. Finally,
+`h ↦ f_h` is linear on functions integrable against `γ` and commutes with the reflection
+`w ↦ -w` up to sign.
 
 ## Main definitions
 
@@ -88,25 +88,6 @@ theorem steinSolution_const (c : ℝ) : steinSolution (fun _ => c) = 0 := by
 @[simp]
 theorem steinSolution_zero : steinSolution 0 = 0 :=
   steinSolution_const 0
-
-/-- The derivative of the weight `e^{w²/2}` of the Stein solution. -/
-theorem hasDerivAt_exp_sq_div_two (w : ℝ) :
-    HasDerivAt (fun u : ℝ => exp (u ^ 2 / 2)) (exp (w ^ 2 / 2) * w) w := by
-  convert ((hasDerivAt_pow 2 w).div_const 2).exp using 1
-  ring
-
-/-- The derivative of the Gaussian weight `e^{-w²/2}` in the integrand of the Stein solution. -/
-theorem hasDerivAt_exp_neg_sq_div_two (w : ℝ) :
-    HasDerivAt (fun u : ℝ => exp (-(u ^ 2 / 2))) (exp (-(w ^ 2 / 2)) * -w) w := by
-  convert ((hasDerivAt_pow 2 w).div_const 2).fun_neg.exp using 1
-  ring
-
-/-- The Gaussian weight `e^{-t²/2}` is `√(2π)` times the standard normal density. -/
-private theorem exp_neg_sq_div_two_eq_mul_gaussianPDFReal (t : ℝ) :
-    exp (-(t ^ 2 / 2)) = √(2 * π) * gaussianPDFReal 0 1 t := by
-  have hπ : √(2 * π) ≠ 0 := by positivity
-  rw [gaussianPDFReal_zero_one]
-  field_simp
 
 /-- The integrand of the Stein solution is Lebesgue integrable on `ℝ` when `h` is integrable
 against the standard normal law. -/
@@ -200,8 +181,7 @@ theorem steinSolution_comp_neg {h : ℝ → ℝ} (hh : Integrable h (gaussianRea
   simp only [neg_sq] at hI
   rw [steinSolution_def, steinSolution_eq_neg_integral_Ioi hh, hc, hI, neg_sq, neg_neg]
 
-/-- If `h` has compact support and `∫ h dγ = 0`, then its Stein solution has compact support: it
-vanishes outside every closed ball around `0` that contains the support of `h`. -/
+/-- If `h` has compact support and `∫ h dγ = 0`, then its Stein solution has compact support. -/
 theorem hasCompactSupport_steinSolution {h : ℝ → ℝ} (hh : Integrable h (gaussianReal 0 1))
     (hs : HasCompactSupport h) (h0 : ∫ x, h x ∂gaussianReal 0 1 = 0) :
     HasCompactSupport (steinSolution h) := by

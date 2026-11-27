@@ -30,6 +30,8 @@ needs nothing beyond the definition of `gaussianReal`.
 ## Main statements
 
 * `TauCeti.Probability.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
+* `TauCeti.Probability.exp_neg_sq_div_two_eq_mul_gaussianPDFReal` — the same closed form solved
+  for the weight: `e^{-x²/2} = √(2π) · gaussianPDFReal 0 1 x`.
 * `TauCeti.Probability.gaussianPDFReal_eq_gaussianPDFReal_zero_one` — standardization:
   `gaussianPDFReal m v x = φ ((x - m) / √v) / √v` with `φ = gaussianPDFReal 0 1`.
 * `TauCeti.Probability.gaussianPDFReal_neg` and `TauCeti.Probability.gaussianPDFReal_zero_neg` —
@@ -48,6 +50,9 @@ needs nothing beyond the definition of `gaussianReal`.
   `x g(x) → 0` as `|x| → ∞`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
   its real argument is `-(x - μ) / v` times the density, for every variance.
+* `TauCeti.Probability.hasDerivAt_exp_neg_sq_div_two` and
+  `TauCeti.Probability.hasDerivAt_exp_sq_div_two` — the derivatives of the standard Gaussian
+  weight `e^{-x²/2}` and of its reciprocal `e^{x²/2}`.
 * `TauCeti.Probability.integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul` — at positive
   variance, integrability against `gaussianReal μ v` is equivalent to Lebesgue integrability of
   the function weighted by the density.
@@ -76,6 +81,13 @@ open scoped Topology NNReal
 theorem gaussianPDFReal_zero_one (x : ℝ) :
     gaussianPDFReal 0 1 x = (Real.sqrt (2 * π))⁻¹ * Real.exp (-(x ^ 2 / 2)) := by
   simp [gaussianPDFReal, neg_div]
+
+/-- The standard Gaussian weight `e^{-x²/2}` is `√(2π)` times the standard normal density. -/
+theorem exp_neg_sq_div_two_eq_mul_gaussianPDFReal (x : ℝ) :
+    Real.exp (-(x ^ 2 / 2)) = √(2 * π) * gaussianPDFReal 0 1 x := by
+  have hπ : √(2 * π) ≠ 0 := by positivity
+  rw [gaussianPDFReal_zero_one]
+  field_simp
 
 /-- Standardization of the Gaussian density: the density of `N(m, v)` at `x` is
 `φ ((x - m) / √v) / √v`, where `φ = gaussianPDFReal 0 1` is the standard Gaussian density. At zero
@@ -180,6 +192,19 @@ theorem hasDerivAt_gaussianPDFReal (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
   have hq := (((hasDerivAt_id' x).sub_const μ).fun_pow 2).fun_neg.div_const (2 * (v : ℝ))
   convert hq.exp.const_mul (√(2 * π * (v : ℝ)))⁻¹ using 1
   field_simp
+  ring
+
+/-- The derivative of the standard Gaussian weight `e^{-x²/2}` is `-x e^{-x²/2}`. -/
+theorem hasDerivAt_exp_neg_sq_div_two (x : ℝ) :
+    HasDerivAt (fun u : ℝ => Real.exp (-(u ^ 2 / 2))) (Real.exp (-(x ^ 2 / 2)) * -x) x := by
+  convert ((hasDerivAt_pow 2 x).div_const 2).fun_neg.exp using 1
+  ring
+
+/-- The derivative of the reciprocal `e^{x²/2}` of the standard Gaussian weight is
+`x e^{x²/2}`. -/
+theorem hasDerivAt_exp_sq_div_two (x : ℝ) :
+    HasDerivAt (fun u : ℝ => Real.exp (u ^ 2 / 2)) (Real.exp (x ^ 2 / 2) * x) x := by
+  convert ((hasDerivAt_pow 2 x).div_const 2).exp using 1
   ring
 
 /-- At positive variance, a function is integrable against `gaussianReal μ v` if and only if its
