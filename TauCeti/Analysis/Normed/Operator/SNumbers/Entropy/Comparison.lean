@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.SNumbers.Entropy.Hilbert
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 public import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Normed.Operator.SNumbers.Compact
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -18,6 +19,8 @@ Over `ℝ` or `ℂ`, the entropy numbers of a bounded operator `T : E →L[𝕜]
 Kolmogorov, approximation and Hilbert numbers from above, up to an explicit factor:
 
 * `cₙ(T) ≤ (n + 1) eₙ(T)` and `dₙ(T) ≤ (n + 1) eₙ(T)` on all seminormed spaces;
+* `c_{2^n}(T) ≤ 2 eₙ(T)` and `d_{2^n}(T) ≤ eₙ(T)` on all seminormed spaces, the latter over any
+  densely normed field;
 * `aₙ(T) ≤ 2 eₙ(T)` between inner product spaces;
 * `hₙ(T) ≤ 2 eₙ(T)` on all seminormed spaces.
 
@@ -28,10 +31,15 @@ unit ball such that each `T xⱼ` keeps distance more than `γ` from the span of
 averages `(n + 1)⁻¹ ∑ₖ ±xₖ` lie in the unit ball and their images are `2γ / (n + 1)`-separated, so
 no `2 ^ n` balls of radius below `γ / (n + 1)` cover `T(B_E)`.
 
-The second pair is proved in `TauCeti.Analysis.Normed.Operator.SNumbers.Entropy.Hilbert`, which
-this file re-exports: below `aₙ(T)`, the scalar factorization `B ∘L T ∘L A = c • id` through
-contractions combines with the ideal inequality for entropy numbers and the lower bound
-`1 / 2 ≤ eₙ(id)`. The Hilbert numbers inherit the bound from their compressions.
+The dyadic pair applies the covering estimates `c_k(T) ≤ 2ε` and `d_k(T) ≤ ε` of
+`TauCeti.Analysis.Normed.Operator.SNumbers.Compact` to the covers of `T(B_E)` by `2 ^ n` balls
+that define the entropy numbers.
+
+The bounds for approximation and Hilbert numbers are proved in
+`TauCeti.Analysis.Normed.Operator.SNumbers.Entropy.Hilbert`, which this file re-exports: below
+`aₙ(T)`, the scalar factorization `B ∘L T ∘L A = c • id` through contractions combines with the
+ideal inequality for entropy numbers and the lower bound `1 / 2 ≤ eₙ(id)`. The Hilbert numbers
+inherit the bound from their compressions.
 
 ## Main declarations
 
@@ -42,6 +50,9 @@ contractions combines with the ideal inequality for entropy numbers and the lowe
   `cₙ(T)`.
 * `ContinuousLinearMap.kolmogorovNumber_le_mul_entropyNumber`,
   `ContinuousLinearMap.gelfandNumber_le_mul_entropyNumber`: `dₙ(T), cₙ(T) ≤ (n + 1) eₙ(T)`.
+* `ContinuousLinearMap.kolmogorovNumber_two_pow_le_entropyNumber`,
+  `ContinuousLinearMap.gelfandNumber_two_pow_le_two_mul_entropyNumber`: `d_{2^n}(T) ≤ eₙ(T)` and
+  `c_{2^n}(T) ≤ 2 eₙ(T)`.
 * `ContinuousLinearMap.singularValue_le_two_mul_entropyNumber`: `aₙ(T) ≤ 2 eₙ(T)` between inner
   product spaces, and `ContinuousLinearMap.hilbertNumber_le_two_mul_entropyNumber`:
   `hₙ(T) ≤ 2 eₙ(T)`, from `Entropy.Hilbert`.
@@ -49,7 +60,7 @@ contractions combines with the ideal inequality for entropy numbers and the lowe
 ## References
 
 * A. Pietsch, *Operator Ideals*, North-Holland Mathematical Library 20, North-Holland (1980),
-  12.3.2 for the Gelfand and Kolmogorov bounds.
+  12.3.2 for the Gelfand and Kolmogorov bounds, and Chapter 12 for the dyadic comparisons.
 * B. Carl and I. Stephani, *Entropy, Compactness and the Approximation of Operators*, Cambridge
   Tracts in Mathematics 98, Cambridge University Press (1990), Chapter 2.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
@@ -232,5 +243,29 @@ theorem gelfandNumber_le_mul_entropyNumber (T : E →L[𝕜] F) (n : ℕ) :
   calc γ ≤ ‖ρ j (T (x j))‖ := (hγx j).le
     _ = ‖ρ j (T (x j) + w)‖ := by rw [map_add, hρw, add_zero]
     _ ≤ ‖T (x j) + w‖ := (ρ j).le_of_opNorm_le (hρ j) _ |>.trans_eq (one_mul _)
+
+/-- **Gelfand numbers below entropy numbers.** `c_{2^n}(T) ≤ 2 eₙ(T)`. -/
+theorem gelfandNumber_two_pow_le_two_mul_entropyNumber (T : E →L[𝕜] F) (n : ℕ) :
+    T.gelfandNumber (2 ^ n) ≤ 2 * T.entropyNumber n := by
+  refine le_of_forall_gt_imp_ge_of_dense fun a ha ↦ ?_
+  have ha' : T.entropyNumber n < a / 2 := by
+    rwa [lt_div_iff₀ two_pos, mul_comm]
+  obtain ⟨N, hcard, hN⟩ := exists_isCover_of_entropyNumber_lt ha'
+  exact (T.gelfandNumber_le_two_mul_of_isCover hcard hN).trans_eq (mul_div_cancel₀ _ two_ne_zero)
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [DenselyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Kolmogorov numbers below entropy numbers.** Over a densely normed field,
+`d_{2^n}(T) ≤ eₙ(T)`. -/
+theorem kolmogorovNumber_two_pow_le_entropyNumber (T : E →L[𝕜] F) (n : ℕ) :
+    T.kolmogorovNumber (2 ^ n) ≤ T.entropyNumber n :=
+  le_of_forall_gt_imp_ge_of_dense fun _ ha ↦
+    let ⟨_, hcard, hN⟩ := exists_isCover_of_entropyNumber_lt ha
+    T.kolmogorovNumber_le_of_isCover hcard hN
 
 end ContinuousLinearMap

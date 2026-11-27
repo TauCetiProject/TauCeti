@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Basic
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 

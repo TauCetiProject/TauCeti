@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
+import TauCeti.AlgebraicGeometry.Restrict
 import Mathlib.AlgebraicGeometry.QuasiAffine
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Tower
@@ -328,6 +329,23 @@ lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : 
         rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
           Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
 
+/-- Over an affine base `Y`, the preimage `f'⁻¹ V` of an affine open `V` of `Y'` is the base change
+of `X` along `Spec Γ(Y', V) ⟶ Spec Γ(Y, ⊤)`. -/
+lemma _root_.CategoryTheory.IsPullback.isPullback_preimage_ι_comp
+    {X Y X' Y' : Scheme.{u}} {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
+    (H : IsPullback g' f' f g) [IsAffine Y] {V : Y'.Opens}
+    (hV : IsAffineOpen V) (hVg : V ≤ g ⁻¹ᵁ ⊤) :
+    IsPullback ((f' ⁻¹ᵁ V).ι ≫ g') (f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom)
+      (f ≫ Y.toSpecΓ) (Spec.map (g.appLE ⊤ V hVg)) := by
+  have : IsIso V.toSpecΓ := inferInstanceAs (IsIso hV.isoSpec.hom)
+  have hB : IsPullback (V.ι ≫ g) V.toSpecΓ Y.toSpecΓ (Spec.map (g.appLE ⊤ V hVg)) := by
+    refine IsPullback.of_vert_isIso ⟨?_⟩
+    rw [Category.assoc, Scheme.toSpecΓ_naturality,
+      ← Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top_assoc, ← Spec.map_comp]
+    -- `g.appLE ⊤ V hVg` is by definition `g.appTop` followed by restriction to `V`.
+    rfl
+  exact ((f'.isPullback_resLE_of_eq V rfl).flip.paste_horiz H).paste_vert hB
+
 /-- Reading a function on an affine open chart `ι : Spec A ⟶ X` as an element of `A` and
 mapping it along `φ : A ⟶ A'` is the same as restricting it to the image `V` of `Spec A'` and
 reading it as an element of `A'`. -/
@@ -573,6 +591,33 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
     ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
   obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
   exact Subtype.ext hzw.symm
+
+/-- Let `j : Y ⟶ X` be an open immersion and `U` a quasi-compact and quasi-separated open of `X`,
+for instance an affine open, whose intersection with the image of `j` is the basic open of
+`s ∈ Γ(X, U)`. Then the sections of `Y` over `j⁻¹ U` are the localization `Γ(X, U)_s`, as a
+`Γ(X, U)`-algebra through `j`. -/
+theorem Scheme.Hom.isLocalization_app_of_inf_opensRange_eq {X Y : Scheme.{u}} (j : Y ⟶ X)
+    [IsOpenImmersion j] {U : X.Opens} (hU : IsCompact (U : Set X))
+    (hU' : IsQuasiSeparated (U : Set X)) {s : Γ(X, U)} (h : U ⊓ j.opensRange = X.basicOpen s) :
+    letI := (j.app U).hom.toAlgebra
+    IsLocalization.Away s Γ(Y, j ⁻¹ᵁ U) := by
+  let := (j.app U).hom.toAlgebra
+  have := isLocalization_basicOpen_of_qcqs hU hU' s
+  -- The image `j (j⁻¹ U) = U ∩ j(Y)` is the basic open `D(s)`.
+  have e : j ''ᵁ j ⁻¹ᵁ U = X.basicOpen s := by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, inf_comm, h]
+  -- Transport along `Γ(X, D(s)) = Γ(X, j (j⁻¹ U)) ≅ Γ(Y, j⁻¹ U)`, which is compatible with the
+  -- maps from `Γ(X, U)` by `Scheme.Hom.app_appIso_inv`.
+  have key : X.presheaf.map (homOfLE (X.basicOpen_le s)).op ≫ X.presheaf.map (eqToHom e).op =
+      j.app U ≫ (j.appIso (j ⁻¹ᵁ U)).inv := by
+    rw [j.app_appIso_inv, ← Functor.map_comp]
+    rfl
+  refine IsLocalization.isLocalization_of_algEquiv (.powers s) (AlgEquiv.ofRingEquiv
+    (f := (X.presheaf.mapIso (eqToIso e).op ≪≫ j.appIso (j ⁻¹ᵁ U)).commRingCatIsoToRingEquiv)
+    fun x ↦ ?_)
+  calc _ = (j.appIso (j ⁻¹ᵁ U)).hom ((j.appIso (j ⁻¹ᵁ U)).inv (j.app U x)) :=
+        congrArg (j.appIso (j ⁻¹ᵁ U)).hom congr($(key).hom x)
+    _ = _ := (j.appIso (j ⁻¹ᵁ U)).inv_hom_id_apply _
 
 end AlgebraicGeometry
 

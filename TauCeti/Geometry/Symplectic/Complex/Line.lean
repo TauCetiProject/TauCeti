@@ -52,6 +52,10 @@ conjugating the coordinates exchanges them.
   scales the area form by its determinant.
 * `TauCeti.stdComplexSymplecticForm_mul_mul`: multiplication by `u` scales the area form by
   `‖u‖²`, so rotations preserve it.
+* `TauCeti.stdComplexSymplecticForm_eq_im_conj_mul`: the area spanned by `u` and `v` is
+  `Im (conj u v)`.
+* `TauCeti.stdComplexSymplecticForm_mul_right`: the area spanned by `u w` and `v w` is
+  `‖w‖² Im (conj u v)`.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
@@ -159,17 +163,8 @@ lemma stdComplexSymplecticForm_compatible :
 /-- Every real one-dimensional subspace of the complex plane is Lagrangian for its
 standard symplectic area form. -/
 theorem isLagrangian_stdComplexSymplecticForm_of_finrank_eq_one {L : Submodule ℝ ℂ}
-    (hL : Module.finrank ℝ L = 1) : stdComplexSymplecticForm.IsLagrangian L := by
-  have hne : L ≠ ⊥ := by
-    intro h
-    have hz : Module.finrank ℝ L = 0 := Submodule.finrank_eq_zero.2 h
-    omega
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
-  have hs := eq_span_singleton_of_mem_of_finrank_eq_one hL hv hv0
-  have hi : stdComplexSymplecticForm.IsIsotropic L := by
-    rw [hs, SymplecticForm.isIsotropic_span_iff]
-    simpa only [Set.mem_singleton_iff, forall_eq] using stdComplexSymplecticForm.isAlt v
-  exact hi.isLagrangian_of_finrank (by simp [hL])
+    (hL : Module.finrank ℝ L = 1) : stdComplexSymplecticForm.IsLagrangian L :=
+  (SymplecticForm.isIsotropic_of_finrank_le_one hL.le).isLagrangian_of_finrank (by simp [hL])
 
 /-- The standard area form paired with the standard complex structure is the norm square. -/
 theorem stdComplexSymplecticForm_apply_ofComplexModule (z : ℂ) :
@@ -201,6 +196,20 @@ theorem stdComplexSymplecticForm_mul_mul (u v w : ℂ) :
   simp only [stdComplexSymplecticForm_apply, Complex.mul_re, Complex.mul_im, Complex.sq_norm,
     Complex.normSq_apply]
   ring
+
+open scoped ComplexConjugate in
+/-- The area spanned by `u` and `v` is `Im (conj u v)`. -/
+theorem stdComplexSymplecticForm_eq_im_conj_mul (u v : ℂ) :
+    stdComplexSymplecticForm u v = (conj u * v).im := by
+  simp only [stdComplexSymplecticForm_apply, Complex.mul_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+open scoped ComplexConjugate in
+/-- The area spanned by `u w` and `v w` is `‖w‖² Im (conj u v)`. -/
+theorem stdComplexSymplecticForm_mul_right (u v w : ℂ) :
+    stdComplexSymplecticForm (u * w) (v * w) = ‖w‖ ^ 2 * (conj u * v).im := by
+  rw [mul_comm u, mul_comm v, stdComplexSymplecticForm_mul_mul,
+    stdComplexSymplecticForm_eq_im_conj_mul]
 
 private noncomputable def planeBasis (J : AlmostComplexStructure ℂ) : Basis (Fin 2) ℝ ℂ :=
   basisOfLinearIndependentOfCardEqFinrank' ![1, J 1]

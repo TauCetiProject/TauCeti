@@ -126,23 +126,8 @@ by construction of the outer factor `√(√(2π))`, so the rescaled Hermite fun
 pointwise orthonormality of the `ψₙ`. -/
 theorem integral_twoPiHermiteFunction_mul_twoPiHermiteFunction (m n : ℕ) :
     ∫ x : ℝ, twoPiHermiteFunction m x * twoPiHermiteFunction n x = if m = n then 1 else 0 := by
-  have hfun : (fun x : ℝ => twoPiHermiteFunction m x * twoPiHermiteFunction n x)
-      = fun x : ℝ => Real.sqrt (2 * Real.pi) *
-          (hermiteFunction m (Real.sqrt (2 * Real.pi) * x)
-            * hermiteFunction n (Real.sqrt (2 * Real.pi) * x)) := by
-    funext x
-    have hsq : Real.sqrt (Real.sqrt (2 * Real.pi)) * Real.sqrt (Real.sqrt (2 * Real.pi))
-        = Real.sqrt (2 * Real.pi) := Real.mul_self_sqrt (Real.sqrt_nonneg _)
-    rw [twoPiHermiteFunction_def, twoPiHermiteFunction_def]
-    linear_combination
-      (hermiteFunction m (Real.sqrt (2 * Real.pi) * x)
-        * hermiteFunction n (Real.sqrt (2 * Real.pi) * x)) * hsq
-  -- The dilation contributes the Jacobian `√(2π)⁻¹`, which the outer factor `√(√(2π))²` cancels.
-  have hcv := Measure.integral_comp_mul_left
-    (fun y : ℝ => hermiteFunction m y * hermiteFunction n y) (Real.sqrt (2 * Real.pi))
-  rw [hfun, integral_const_mul, hcv, integral_hermiteFunction_mul_hermiteFunction,
-    abs_of_pos (inv_pos.2 twoPiScale_pos), smul_eq_mul, ← mul_assoc,
-    mul_inv_cancel₀ twoPiScale_ne_zero, one_mul]
+  simpa only [twoPiHermiteFunction_eq_dilatedHermiteFunction] using
+    integral_dilatedHermiteFunction_mul_dilatedHermiteFunction twoPiScale_pos m n
 
 /-- **The orthogonality relation of the Fourier-adapted system.**
 `∫ Hₘ(2√π·x)Hₙ(2√π·x)e^{-2πx²} = δₘₙ·cₙ` with `cₙ = n!√π/√(2π)`; this is the input the bridge
@@ -187,15 +172,8 @@ private theorem exp_moment_twoPiGaussianWeight :
 dilation, which preserves square-integrability. -/
 theorem memLp_two_twoPiHermiteFunction (n : ℕ) :
     MemLp (twoPiHermiteFunction n) 2 volume := by
-  rw [memLp_two_iff_integrable_sq (continuous_twoPiHermiteFunction n).aestronglyMeasurable]
-  have hsq : Integrable (fun y : ℝ => hermiteFunction n y ^ 2) volume := by
-    rw [← memLp_two_iff_integrable_sq (continuous_hermiteFunction n).aestronglyMeasurable]
-    exact memLp_two_hermiteFunction n
-  have hdil := (hsq.comp_mul_left' twoPiScale_ne_zero).const_mul (Real.sqrt (2 * Real.pi))
-  refine hdil.congr (Filter.Eventually.of_forall fun x => ?_)
-  have hs : Real.sqrt (Real.sqrt (2 * Real.pi)) ^ 2 = Real.sqrt (2 * Real.pi) :=
-    Real.sq_sqrt (Real.sqrt_nonneg _)
-  simp only [twoPiHermiteFunction_def, mul_pow, hs]
+  simpa only [twoPiHermiteFunction_eq_dilatedHermiteFunction] using
+    memLp_two_dilatedHermiteFunction _ n
 
 section Basis
 

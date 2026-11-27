@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.AddChar
 public import Mathlib.NumberTheory.Padics.MahlerBasis
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.Topology.ContinuousMap.Polynomial
@@ -41,6 +42,8 @@ additional scalars `S` acting on `E`; this scalar-linear refinement is
 * `PadicInt.mahler_natCast_mul`: for `m : ℕ`, the Mahler function `(m x choose n)` is the integral
   combination of the `(x choose k)`, `k ≤ n`, with coefficients those of `((1 + T) ^ m - 1) ^ k`
   at `T ^ n`.
+* `PadicInt.mahlerEquiv_eq_pow_of_coe_eq_addChar`: the Mahler coefficients of the
+  character `χ_t(x) = (1 + t) ^ x` are the powers `tⁿ`.
 -/
 
 public section
@@ -141,6 +144,23 @@ theorem mahlerEquiv_mahlerTerm (n : ℕ) (a : E) :
   rw [← mahlerEquiv_symm_single, LinearIsometryEquiv.apply_symm_apply]
 
 end Module
+
+section AddChar
+
+open Filter Topology
+
+variable {R : Type*} [NormedRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
+  [IsUltrametricDist R] [CompleteSpace R]
+
+/-- **The Mahler coefficients of `χ_t` are the powers `tⁿ`.** If a continuous function `f` on `ℤ_p`
+evaluates to the character `χ_t(x) = (1 + t) ^ x`, its `n`-th Mahler coefficient is `tⁿ`. -/
+theorem mahlerEquiv_eq_pow_of_coe_eq_addChar {t : R} (hr : Tendsto (t ^ ·) atTop (𝓝 0))
+    {f : C(ℤ_[p], R)} (hf : ⇑f = addChar_of_value_at_one t hr) (n : ℕ) :
+    mahlerEquiv R f n = t ^ n := by
+  rw [mahlerEquiv_apply, hf, coe_addChar_of_value_at_one]
+  exact fwdDiff_mahlerSeries hr n
+
+end AddChar
 
 /-- For a normed ring `R` with a `ℤ_[p]`-action commuting with left multiplication, the Mahler term
 with coefficient `a` is `a` times the Mahler basis function `mahler n • 1`. -/

@@ -16,17 +16,21 @@ Let `R → S → T` be a tower of algebras. An ideal of `T` has the same residue
 over `S` when `algebraMap R S` is bijective, and the same ramification index when that map is
 surjective. In particular, statements about two presentations of the same base ring, such as
 `ℤ` and the ring of integers of `ℚ`, can be transported into each other. Dually, the
-ramification index of an ideal over `R` is unchanged by an `R`-algebra isomorphism of the ring
-containing it, so it does not depend on the chosen model of, say, an integral closure. Along a
-flat integral extension `S → T`, each maximal ideal of `S` lies under a maximal ideal of `T`
-whose ramification index it divides.
+ramification index and the residue degree of an ideal over `R` are unchanged by an `R`-algebra
+isomorphism of the ring containing it, so they do not depend on the chosen model of, say, an
+integral closure. Along a flat integral extension `S → T`, each maximal ideal of `S` lies under
+a maximal ideal of `T` whose ramification index it divides.
 
 ## Main results
 
 * `Ideal.inertiaDeg_eq_of_bijective`: `r.inertiaDeg S = r.inertiaDeg R`.
 * `Ideal.ramificationIdx_eq_of_surjective`: `r.ramificationIdx S = r.ramificationIdx R`.
+* `Ideal.inertiaDeg_eq_one_of_surjective`: a prime ideal of `T` has residue degree `1` over `S`
+  when `algebraMap S T` is surjective.
 * `Ideal.ramificationIdx_map_algEquiv`: `(P.map e).ramificationIdx R = P.ramificationIdx R` for
   an `R`-algebra isomorphism `e`.
+* `Ideal.inertiaDeg_map_algEquiv`: `(P.map e).inertiaDeg R = P.inertiaDeg R` for an `R`-algebra
+  isomorphism `e`.
 * `Ideal.exists_isMaximal_liesOver_ramificationIdx_dvd`: a maximal ideal `Q` of `S` lies under a
   maximal ideal `P` of `T` with `Q.ramificationIdx R ∣ P.ramificationIdx R`.
 -/
@@ -64,6 +68,17 @@ theorem ramificationIdx_eq_of_surjective
 
 end ChangeOfBase
 
+/-- If the algebra map `S → T` is surjective, a prime ideal of `T` has inertia degree `1` over
+`S`. -/
+theorem inertiaDeg_eq_one_of_surjective {S T : Type*} [CommRing S] [CommRing T]
+    [Algebra S T] (h : Function.Surjective (algebraMap S T)) (q : Ideal T) [q.IsPrime] :
+    q.inertiaDeg S = 1 := by
+  let := Localization.AtPrime.algebraOfLiesOver (q.under S) q
+  rw [inertiaDeg_def, Algebra.finrank_eq_one_iff_bijective_algebraMap]
+  -- The residue-field algebra map induced by `algebraOfLiesOver` is, by definition,
+  -- `ResidueField.map` of `algebraMap S T`.
+  exact (RingHom.surjectiveOnStalks_of_surjective h).residueFieldMap_bijective _ q rfl
+
 /-- The ramification index over `R` is invariant under `R`-algebra isomorphisms: the image of an
 ideal `P` under `e : S ≃ₐ[R] T` has the same ramification index over `R` as `P`. -/
 theorem ramificationIdx_map_algEquiv {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
@@ -85,6 +100,25 @@ theorem ramificationIdx_map_algEquiv {R S T : Type*} [CommRing R] [CommRing S] [
   have : (P.map e).IsPrime := map_isPrime_of_equiv e
   rw [ramificationIdx_tower (q := P), ← ramificationIdx_eq_of_surjective hbij.2,
     ramificationIdx_eq_one (P.map e) T, mul_one]
+
+/-- The residue degree over `R` is invariant under `R`-algebra isomorphisms: the image of an ideal
+`P` under `e : S ≃ₐ[R] T` has the same residue degree over `R` as `P`, the residue fields being
+isomorphic over the residue field of `P.under R` (`Ideal.residueFieldAlgEquiv'`). -/
+theorem inertiaDeg_map_algEquiv {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
+    [Algebra R S] [Algebra R T] (e : S ≃ₐ[R] T) (P : Ideal S) :
+    (P.map e).inertiaDeg R = P.inertiaDeg R := by
+  have hP' : P = (P.map e).comap e := (comap_map_of_bijective _ e.bijective).symm
+  by_cases hP : P.IsPrime
+  swap
+  · rw [inertiaDeg_of_not_isPrime _ _ hP, inertiaDeg_of_not_isPrime]
+    intro h
+    exact hP (hP' ▸ comap_isPrime e (P.map e))
+  have : (P.map e).IsPrime := map_isPrime_of_equiv e
+  let p := P.under R
+  let := Localization.AtPrime.algebraOfLiesOver p P
+  let := Localization.AtPrime.algebraOfLiesOver p (P.map e)
+  rw [inertiaDeg_eq p P, inertiaDeg_eq p (P.map e)]
+  exact (residueFieldAlgEquiv' p P (P.map e) e hP').toLinearEquiv.finrank_eq.symm
 
 /-- Going up along a flat integral extension `S → T` keeps track of ramification: every maximal
 ideal `Q` of `S` lies under a maximal ideal `P` of `T` whose ramification index over `R` is

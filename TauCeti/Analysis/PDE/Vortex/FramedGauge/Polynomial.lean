@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Moduli
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 public import TauCeti.RingTheory.Polynomial.SymmetricPower
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Polynomial.SymmetricPower
@@ -55,8 +55,14 @@ with the smooth transition `χ` vanishing on `(-∞, 0]` and equal to one on `[1
   (`TauCeti.Vortex.rotateField_gaugeTransform_polynomialGauge`). The polynomial with rotated
   coefficients is `P_c` with roots scaled by `u⁻¹` (`TauCeti.Vortex.monicOfCoeff_rotateCoeff`),
   and the rotations compose (`TauCeti.Vortex.rotateCoeff_one`,
-  `TauCeti.Vortex.rotateCoeff_mul`). The gauge of `Wᵐ` is trivial
-  (`TauCeti.Vortex.polynomialGauge_zero`).
+  `TauCeti.Vortex.rotateCoeff_mul`). In the elementary symmetric chart the rotated coefficients
+  are the divisor multiplied by `u⁻¹` (`TauCeti.Vortex.coeffEquiv_symm_rotateCoeff`). The gauge of
+  `Wᵐ` is trivial (`TauCeti.Vortex.polynomialGauge_zero`).
+* Translations of the plane act on the coefficients too, by
+  `TauCeti.Polynomial.translateCoeff a c`, the coefficients of `P_c(z + a)`: the divisor moves by
+  `-a` (`Sym.coeffEquiv_symm_translateCoeff`). The polynomial gauge is not
+  translation-equivariant, since translations do not preserve the winding phase; the laws of the
+  normalized vortices under both symmetries are in `TauCeti.Analysis.PDE.Vortex.Divisor.Symmetry`.
 
 Applied to a field whose section is a nonnegative multiple `ρ P_c` of the polynomial, such as
 the reconstructed field `TauCeti.Vortex.amplitudeField u P_c` of Taubes's existence proof, the
@@ -247,6 +253,11 @@ private theorem tendsto_polynomialPhase (c : Fin m → ℂ) :
 theorem polynomialGauge_mem_framedGaugeGroup (c : Fin m → ℂ) :
     polynomialGauge c ∈ framedGaugeGroup :=
   exp_mem_framedGaugeGroup (contDiff_polynomialPhase_right c) (tendsto_polynomialPhase c)
+
+/-- The polynomial gauge is differentiable in the point. -/
+theorem differentiable_polynomialGauge (c : Fin m → ℂ) :
+    Differentiable ℝ fun z ↦ (polynomialGauge c z : ℂ) :=
+  differentiable_of_mem_framedGaugeGroup (polynomialGauge_mem_framedGaugeGroup c)
 
 /-- The polynomial gauge is trivial where `‖z‖² ≤ m ∑ᵢ ‖cᵢ‖² + 1`. -/
 theorem polynomialGauge_eq_one {c : Fin m → ℂ} {z : ℂ}
@@ -455,6 +466,26 @@ theorem eval_monicOfCoeff_rotateCoeff (u : Circle) (c : Fin m → ℂ) (z : ℂ)
     rw [← mul_assoc, inv_mul_cancel₀ (Circle.coe_ne_zero u), one_mul]
   have h := Polynomial.scaleRoots_eval_mul (monicOfCoeff c) ((u : ℂ) * z) (u : ℂ)⁻¹
   rwa [hz, natDegree_monicOfCoeff, ← monicOfCoeff_rotateCoeff, inv_pow, ← div_eq_inv_mul] at h
+
+open _root_.Polynomial in
+/-- The polynomial with rotated coefficients is the rotated polynomial with the leading
+coefficient restored by the constant `u⁻ᵐ`: `P_(c^u) = u⁻ᵐ P_c(u ·)`. -/
+theorem monicOfCoeff_rotateCoeff_eq_C_mul_comp (u : Circle) (c : Fin m → ℂ) :
+    monicOfCoeff (rotateCoeff u c) =
+      C ((u⁻¹ ^ m : Circle) : ℂ) * (monicOfCoeff c).comp (C (u : ℂ) * X) := by
+  refine Polynomial.funext fun z ↦ ?_
+  rw [eval_monicOfCoeff_rotateCoeff]
+  simp [div_eq_inv_mul]
+
+open _root_.Polynomial in
+/-- In the elementary symmetric chart, rotating the coefficients rotates the divisor: the zeros
+of `P_(c^u) = u⁻ᵐ P_c(u ·)` are those of `P_c` multiplied by `u⁻¹`. -/
+theorem coeffEquiv_symm_rotateCoeff (u : Circle) (c : Fin m → ℂ) :
+    (Sym.coeffEquiv ℂ m).symm (rotateCoeff u c) =
+      ((Sym.coeffEquiv ℂ m).symm c).map ((u : ℂ)⁻¹ * ·) := by
+  apply Sym.coe_injective
+  rw [Sym.coeffEquiv_symm_apply, Sym.coe_map, Sym.coeffEquiv_symm_apply,
+    monicOfCoeff_rotateCoeff, roots_scaleRoots _ (Circle.coe_ne_zero u).isUnit.inv]
 
 /-- **Rotation law of the polynomial gauge.** The gauge of the rotated polynomial
 `u⁻ᵐ P_c(u z)` is the rotated gauge: `g_(c^u)(z) = g_c(u z)`. -/

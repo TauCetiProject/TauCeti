@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.Completion
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
 import Mathlib.Topology.Algebra.LinearMapCompletion
-public import TauCeti.Topology.Algebra.Module.WeakSpace
+public import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # Orthonormal families converge weakly to zero

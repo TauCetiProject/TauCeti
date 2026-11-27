@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Basic.Complex.BigOperators
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Normed.Group.Pi
@@ -324,10 +325,8 @@ theorem pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → E} {k : ℕ}
   change ∀ x, g (toTorus x) = iteratedFDeriv ℝ k (fun x ↦ f (toTorus x)) x
     fun _ ↦ Pi.single i 1 at hg
   have hcoeff := mFourierCoeff_eq_prod_smul_of_iteratedFDeriv hf _ hg n
-  have hsum : ∑ j, (n j : ℂ) * (((Pi.single i 1 : d → ℝ) j : ℝ) : ℂ) = n i := by
-    rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp)]
-    simp
-  rw [hsum, Finset.prod_const, Finset.card_univ, Fintype.card_fin] at hcoeff
+  rw [Complex.sum_intCast_mul_single, Finset.prod_const, Finset.card_univ,
+    Fintype.card_fin] at hcoeff
   have hgM : ∀ z, ‖g z‖ ≤ M := fun z ↦ by
     obtain ⟨x, rfl⟩ : ∃ x, toTorus x = z := surjective_coe z
     rw [hg]

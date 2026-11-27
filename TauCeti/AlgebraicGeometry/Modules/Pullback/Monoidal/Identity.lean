@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 
+import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
+
 /-!
 # Monoidal identity coherence of quasicoherent pullback
 
@@ -76,14 +78,13 @@ theorem pullback_id_δ (X : Scheme.{u}) (E F : QuasicoherentSheaf X) :
 
 /-- The identity isomorphism of quasicoherent pullback is monoidal. -/
 instance isMonoidal_pullbackId_hom (X : Scheme.{u}) :
-    NatTrans.IsMonoidal (pullbackId X).hom where
-  unit := by
-    erw [← pullback_id_η X]
-    exact CategoryTheory.Functor.Monoidal.ε_η _
-  tensor E F := by
-    rw [← cancel_epi (CategoryTheory.Functor.OplaxMonoidal.δ (pullback (𝟙 X)) E F)]
-    simp [pullback_id_δ]
-    rfl
+    NatTrans.IsMonoidal (pullbackId X).hom := by
+  refine NatTrans.IsMonoidal.of_oplax (pullbackId X).hom ?_ ?_
+  · rw [Functor.OplaxMonoidal.id_η, Category.comp_id]
+    exact (pullback_id_η X).symm
+  · intro E F
+    rw [Functor.OplaxMonoidal.id_δ, Category.comp_id]
+    exact (pullback_id_δ X E F).symm
 
 end
 
