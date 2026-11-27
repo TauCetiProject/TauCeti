@@ -115,13 +115,11 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
     ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦
         pairOfPantsPerturbation H (equivRealProdCLM.symm p.1) (φ.symm p.2) v)
       (thricePuncturedSphereReal ×ˢ φ.target) := by
-  refine (φ.contDiffOn_comp_symm_of_contMDiffOn
-    (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x)
-    isOpen_thricePuncturedSphereReal ?_ hnm).clm_apply contDiffOn_const
+  refine φ.contDiffOn_comp_symm_of_contMDiffOn
+    (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v)
+    isOpen_thricePuncturedSphereReal ?_ hnm
   rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd).contMDiffAt).contMDiffWithinAt
+  exact (contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contMDiffWithinAt
 
 /-- **The end Hamiltonian read in a chart is smooth.** For a period-one Hamiltonian `H_q` which is
 `C^n` on `ℝ × M` and a `C^n` partial diffeomorphism `φ` from `M` to a normed space `V`, the
@@ -161,15 +159,16 @@ private theorem exists_isOpen_and_contDiffOn_positiveEndHamiltonian_comp_symm
   exact ⟨hCW ⟨mem_univ _, x, hx, rfl⟩, mem_univ _, φ.toPartialEquiv.map_source (hCφ hx)⟩
 
 /-- A translated end `v(z) = u(φ'_q(z + (R, 0)))`, on a window `Ω` whose translate lies in a band
-`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end, is `Cⁿ` on `Ω` when `u` is `Cⁿ` on `S`. -/
+`(a, ∞) × (t₀, t₀ + 1)` of the positive end, is `Cⁿ` on `Ω` when `u` is `Cⁿ` on a set `U`
+containing the part `s > a` of the positive end chart. -/
 private theorem contMDiffOn_comp_positiveEndChart_add {n : WithTop ℕ∞} {q : Puncture}
-    {Ω : Set (ℝ × ℝ)} {u : ℝ × ℝ → M} {R T₀ t₀ : ℝ}
-    (hΩT : ∀ z ∈ Ω, z + (R, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1))
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u thricePuncturedSphereReal) :
+    {Ω U : Set (ℝ × ℝ)} {u : ℝ × ℝ → M} {R a t₀ : ℝ}
+    (hΩT : ∀ z ∈ Ω, z + (R, 0) ∈ Ioi a ×ˢ Ioo t₀ (t₀ + 1))
+    (haU : ∀ ζ : ℝ × ℝ, a < ζ.1 → positiveEndChart q ζ ∈ U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u U) :
     ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n (fun z ↦ u (positiveEndChart q (z + (R, 0)))) Ω :=
   hu.comp ((contDiff_positiveEndChart q n).comp
-    (contDiff_id.add contDiff_const)).contMDiff.contMDiffOn fun z hz ↦
-      positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hΩT z hz).1)
+    (contDiff_id.add contDiff_const)).contMDiff.contMDiffOn fun z hz ↦ haU _ (hΩT z hz).1
 
 end Floer
 
@@ -181,6 +180,20 @@ variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [FiniteDimensional 
   [IsManifold I ⊤ M] {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V}
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
+
+/-- **The Hamiltonian vector fields of the perturbation are `C²` in every chart.** For period-one
+`C³` Hamiltonians `H_q`, the Hamiltonian vector field of each component `z ↦ K_z(w)` of the
+pair-of-pants perturbation, read in the real coordinates of `S = ℂ ∖ {0, 1}` and in the chart of
+`M` at `α`, is `C²` on `S` times the chart target. -/
+theorem contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q))) (w : ℂ) (α : M) :
+    ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α
+        fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w)
+      (thricePuncturedSphereReal ×ˢ (extChartAt I α).target) :=
+  hω.contDiffOn_hamiltonianVectorFieldInChartAt
+    (fun _ hz x ↦ (contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x w).of_le
+      (by norm_num)) α
 
 /-- **Floer pairs of pants in a symplectic chart converge off finitely many bubbling points, for an
 energy bound over the part of the domain considered.** This is the compactness theorem for Floer
@@ -325,14 +338,16 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPant
   exact hconv hΩ hΩD (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huC
     (fun k ↦ (hE k).mono_set hΩS) hle
 
-/-- **Translated ends of Floer pairs of pants solve the Floer equation of the end.** Let `K` be
-equal to `H_q(t) dt` beyond `T₀` on the end `q`, and the structures `J` equal to `J_q(t)` there. A
-translated end `v(z) = u(φ'_q(z + (R, 0)))`, `R ≥ 0`, of a Floer pair of pants `u` of energy at
-most `E`, on an open window `Ω` inside a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
-chart, whose image lies in a set `C` where the end structures are tamed, is a `C³` solution of the
-cylindrical Floer equation `(dv - X_{H'_q} dt)^{0,1} = 0` of the positive end on `Ω`, with
-integrable energy density and energy over `Ω` at most `E`. This is how compactness theorems for a
-fixed cylindrical equation apply to the windows that move off along an end. -/
+/-- **Translated ends of Floer solutions solve the Floer equation of the end.** Let `K` be equal
+to `H_q(t) dt` beyond `T₀` on the end `q`, and the structures `J` equal to `J_q(t)` there. Let `u`
+be a `C³` solution of energy at most `E` on an open set `U` containing the part `s > max T₀ 0` of
+the positive end chart, such as a Floer pair of pants on `S`. A translated end
+`v(z) = u(φ'_q(z + (R, 0)))`, `R ≥ 0`, on an open window `Ω` inside a band
+`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end chart, whose image lies in a set `C` where the
+end structures are tamed, is a `C³` solution of the cylindrical Floer equation
+`(dv - X_{H'_q} dt)^{0,1} = 0` of the positive end on `Ω`, with integrable energy density and
+energy over `Ω` at most `E`. This is how compactness theorems for a fixed cylindrical equation
+apply to the windows that move off along an end. -/
 theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add
     (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
     (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
@@ -341,16 +356,17 @@ theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart
     (hHq : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
     {Jq : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ s t x, T₀ ≤ s → J (endChart q (q.endSign * s, t)) x = Jq t x) {C : Set M}
-    (hJt : ∀ t, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jq t x)) {Ω D : Set (ℝ × ℝ)}
+    (hJt : ∀ t, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jq t x)) {Ω D U : Set (ℝ × ℝ)}
     (hΩ : IsOpen Ω) {u : ℝ × ℝ → M} {R E t₀ : ℝ} (hΩD : Ω ⊆ D)
-    (hDT : D ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) (hR : 0 ≤ R)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u thricePuncturedSphereReal)
-    (hfl : ∀ z ∈ thricePuncturedSphereReal,
+    (hDT : D ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) (hR : 0 ≤ R) (hU : IsOpen U)
+    (hUq : ∀ ζ : ℝ × ℝ, max T₀ 0 < ζ.1 → positiveEndChart q ζ ∈ U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u U)
+    (hfl : ∀ z ∈ U,
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
         (ω.perturbedMFDeriv (fun z x ↦ K (equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
     (hE0 : 0 ≤ E)
-    (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+    (hE : ∫⁻ z in U, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (equivRealProdCLM.symm z) x Complex.I) u z) ≤ ENNReal.ofReal E)
     (huC : MapsTo (fun z ↦ u (positiveEndChart q (z + (R, 0)))) Ω C) :
@@ -372,9 +388,8 @@ theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart
     (hHq.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable (by norm_num)
   have hT (z : ℝ × ℝ) (hz : z ∈ Ω) : T₀ ≤ z.1 + R := by
     simpa using ((le_max_left _ _).trans_lt (hΩT z hz).1).le
-  have hS (z : ℝ × ℝ) (hz : z ∈ Ω) : positiveEndChart q (z + (R, 0)) ∈ thricePuncturedSphereReal :=
-    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hΩT z hz).1)
-  have hvC : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 v Ω := contMDiffOn_comp_positiveEndChart_add hΩT hu
+  have hS (z : ℝ × ℝ) (hz : z ∈ Ω) : positiveEndChart q (z + (R, 0)) ∈ U := hUq _ (hΩT z hz).1
+  have hvC : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 v Ω := contMDiffOn_comp_positiveEndChart_add hΩT hUq hu
   -- Beyond `T₀` the structure on the end `q` is `J_q(±t)`, so `v` solves the cylindrical equation.
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (Jq (q.endSign * z.2) (v z)) (ω.perturbedMFDeriv (fun _ _ ↦ 0)
@@ -386,11 +401,10 @@ theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart
     have h := hfl _ (hS z hz)
     rw [hJz] at h
     exact isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_add hKH hH hHd R (hT z hz)
-      ((hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds (hS z hz))).mdifferentiableAt
-        (by norm_num)) h
-  -- The energy of `v` over `Ω` is at most the energy of `u` over `S`.
-  have hlin := (setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le q hKH hH hHd
-    (hu.mdifferentiableOn (by norm_num)) R hΩ.measurableSet hΩT).trans hE
+      ((hu.contMDiffAt (hU.mem_nhds (hS z hz))).mdifferentiableAt (by norm_num)) h
+  -- The energy of `v` over `Ω` is at most the energy of `u` over `U`.
+  have hlin := (setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le_of_isOpen q hKH hH hHd
+    hU (hu.mdifferentiableOn (by norm_num)) (le_max_left T₀ 0) hUq R hΩ.measurableSet hΩT).trans hE
   -- The Hamiltonian vector fields of `0` and of `H'_q(t)` are continuous, so the energy bound
   -- over `Ω` is one for the Bochner integral.
   have hX {F : ℝ × ℝ → M → ℝ} (hF : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 2 (uncurry F)) :
@@ -477,7 +491,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huC ↦ ?_⟩
   have h (k : ℕ) :=
     contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω hKH hH hHq
-      hJ hJt hΩ hΩD hDT (hR k) (hu k) (hfl k) hE0 (hE k) (huC k)
+      hJ hJt hΩ hΩD hDT (hR k) isOpen_thricePuncturedSphereReal
+      (fun _ hζ ↦ positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hζ))
+      (hu k) (hfl k) hE0 (hE k) (huC k)
   exact hconv hΩ hΩD (fun k ↦ (h k).1) (fun k ↦ (h k).2.1) huC (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
 
@@ -559,11 +575,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_com
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
       z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) :=
     add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
-  have hvC (k : ℕ) := contMDiffOn_comp_positiveEndChart_add (q := q) (hΩT k) (hu k)
+  have hSq (ζ : ℝ × ℝ) (hζ : max T₀ 0 < ζ.1) : positiveEndChart q ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hζ)
+  have hvC (k : ℕ) := contMDiffOn_comp_positiveEndChart_add (q := q) (hΩT k) hSq (hu k)
   have h (k : ℕ) :=
     contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω hKH hH hHq
-      hJ hJt hΩ hΩD hDT (hR k) ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k)
-      (huC k)
+      hJ hJt hΩ hΩD hDT (hR k) isOpen_thricePuncturedSphereReal hSq
+      ((hu k).of_le (WithTop.coe_le_coe.2 le_top)) (hfl k) hE0 (hE k) (huC k)
   exact hconv hΩ hΩD hvC (fun k ↦ (h k).2.1) huC (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
 
 end SmoothTwoForm.IsNondegenerate

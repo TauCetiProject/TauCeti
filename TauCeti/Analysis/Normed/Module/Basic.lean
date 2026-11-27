@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.Normed.Module.RCLike.Real
+import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Module.Basic
 
 /-!
 # Basic lemmas on normed scalar actions and modules
@@ -39,6 +42,7 @@ normed spaces:
 * `TauCeti.norm_neg_one_pow_smul`: the sign `(-1) ^ n` does not change norms.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
+* `TauCeti.norm_sq_add_norm_sq_ne_zero`: a nonzero pair `p` has `‖p.1‖² + ‖p.2‖² ≠ 0`.
 * `TauCeti.norm_smul_add_smul_sq_le`: the Cauchy–Schwarz bound
   `‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)` for real scalars.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
@@ -60,8 +64,18 @@ normed spaces:
 * `Continuous.div_norm_smul`: for a continuous real scalar action and continuous `τ` and `y`, the
   radial rescaling `p ↦ (τ p / ‖y p‖) • y p` is continuous as long as `τ` vanishes on the frontier
   of the locus where `‖y‖` vanishes.
+* `TauCeti.norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub`: splitting `x` into the
+  midpoint `2⁻¹ • (x + y)` and the half difference `2⁻¹ • (x - y)` bounds `‖x‖` by the sum of
+  their norms, for instance `‖F‖ ≤ ‖F⁺‖ + ‖F⁻‖` for the self-dual and anti-self-dual parts.
+* `TauCeti.nonneg_of_forall_norm_eq_abs_le`: a bound on the absolute values of a real function on
+  a sphere of nonnegative radius in a nontrivial real normed space is nonnegative.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
+* `Units.norm_coe_zpow_smul`, `Units.exists_zpow_smul_mem_annulus`: on the nonzero vectors of a
+  normed space, the dilation by `cᵏ` for a unit `c` of the scalar field multiplies norms by
+  `‖c‖ ^ k`, so for `1 < ‖c‖` every orbit meets the annulus `1 ≤ ‖v‖ < ‖c‖`.
+* `Units.coe_zpow_smul_of_eq_algebraMap`: a unit that is the image of a real `r` acts on nonzero
+  vectors by powers of `r`.
 * `LipschitzWith.smul_const`: if a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is
   `K ‖c‖`-Lipschitz.
 * `LinearMap.norm_apply_le_sum_norm_mul`: for a semilinear map `L : (ι → R) →ₛₗ[σ] F` on a
@@ -169,6 +183,13 @@ theorem norm_smul_sq_div_add_norm_smul_sq {𝕜 E F : Type*} [NormedDivisionRing
   simp only [norm_smul, mul_pow, ← mul_add]
   exact mul_div_mul_left _ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 ht))
 
+/-- A nonzero pair has nonzero squared norm `‖p.1‖² + ‖p.2‖²`. -/
+theorem norm_sq_add_norm_sq_ne_zero {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
+    {p : E × F} (hp : p ≠ 0) : ‖p.1‖ ^ 2 + ‖p.2‖ ^ 2 ≠ 0 := by
+  rcases not_and_or.1 (mt Prod.ext_iff.2 hp) with h | h
+  · exact (add_pos_of_pos_of_nonneg (pow_pos (norm_pos_iff.2 h) 2) (sq_nonneg _)).ne'
+  · exact (add_pos_of_nonneg_of_pos (sq_nonneg _) (pow_pos (norm_pos_iff.2 h) 2)).ne'
+
 /-- **Cauchy–Schwarz for a combination of two vectors.** For real scalars `a`, `b`,
 `‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)`. -/
 theorem norm_smul_add_smul_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
@@ -268,6 +289,22 @@ theorem norm_div_norm_smul_le {F : Type*} [SeminormedAddGroup F] [SMulZeroClass 
     rw [norm_div, Real.norm_of_nonneg (norm_nonneg y), div_eq_mul_inv, mul_assoc]
     exact mul_le_of_le_one_right (norm_nonneg τ) inv_mul_le_one
 
+/-- The norm of `x` is at most the sum of the norms of the midpoint `2⁻¹ • (x + y)` and the half
+difference `2⁻¹ • (x - y)`, which add up to `x`
+(`TauCeti.inv_two_smul_add_add_inv_two_smul_sub`). -/
+theorem norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub {R E : Type*}
+    [DivisionSemiring R] [NeZero (2 : R)] [SeminormedAddCommGroup E] [Module R E] (x y : E) :
+    ‖x‖ ≤ ‖(2⁻¹ : R) • (x + y)‖ + ‖(2⁻¹ : R) • (x - y)‖ :=
+  (norm_add_le _ _).trans_eq' (by rw [inv_two_smul_add_add_inv_two_smul_sub])
+
+/-- A bound on the absolute values of a real function on the sphere of radius `R ≥ 0` about the
+origin of a nontrivial real normed space is nonnegative, since that sphere is nonempty. -/
+theorem nonneg_of_forall_norm_eq_abs_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [Nontrivial E] {f : E → ℝ} {R M : ℝ} (hR : 0 ≤ R) (hbd : ∀ z, ‖z‖ = R → |f z| ≤ M) :
+    0 ≤ M := by
+  obtain ⟨z, hz⟩ := NormedSpace.sphere_nonempty (x := (0 : E)).2 hR
+  exact (abs_nonneg _).trans (hbd z (mem_sphere_zero_iff_norm.1 hz))
+
 end TauCeti
 
 /-- A nonempty bounded open set in a nontrivial real normed space has positive diameter. -/
@@ -279,6 +316,41 @@ theorem IsOpen.diam_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
     _ = Metric.diam (Metric.ball x r) := (Metric.diam_ball_eq x hr.le).symm
     _ ≤ Metric.diam s := Metric.diam_mono hball hb
 
+namespace Units
+
+section Norm
+
+/-! ### Norms of dilated nonzero vectors -/
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+/-- The dilation by `cᵏ` multiplies the norm of a nonzero vector by `‖c‖ ^ k`. -/
+theorem norm_coe_zpow_smul (c : 𝕜ˣ) (k : ℤ) (v : {v : E // v ≠ 0}) :
+    ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ = ‖(c : 𝕜)‖ ^ k * ‖(v : E)‖ := by
+  rw [Units.smul_coe, Units.smul_def, norm_smul, Units.val_zpow_eq_zpow_val, norm_zpow]
+
+/-- For `1 < ‖c‖` every nonzero vector has a multiple by a power of `c` in the annulus
+`1 ≤ ‖v‖ < ‖c‖`. -/
+theorem exists_zpow_smul_mem_annulus {c : 𝕜ˣ} (hc : 1 < ‖(c : 𝕜)‖) (v : {v : E // v ≠ 0}) :
+    ∃ k : ℤ, 1 ≤ ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ ∧
+      ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ < ‖(c : 𝕜)‖ := by
+  obtain ⟨k, -, hk₂, hk₁, -⟩ := rescale_to_shell_zpow hc (one_pos.trans hc) v.property
+  rw [div_self (one_pos.trans hc).ne'] at hk₁
+  refine ⟨k, ?_, ?_⟩ <;>
+    rwa [Units.smul_coe, Units.smul_def, Units.val_zpow_eq_zpow_val]
+
+/-- A power of a unit of a normed `ℝ`-algebra `𝕜` that is the image of a real `r` acts on
+nonzero vectors as the real scalar `r ^ k`. -/
+theorem coe_zpow_smul_of_eq_algebraMap [NormedAlgebra ℝ 𝕜] [NormedSpace ℝ E]
+    [IsScalarTower ℝ 𝕜 E] {c : 𝕜ˣ} {r : ℝ} (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r) (k : ℤ)
+    (v : {v : E // v ≠ 0}) : ((c ^ k • v : {v : E // v ≠ 0}) : E) = (r ^ k) • (v : E) := by
+  rw [Units.smul_coe, Units.smul_def, Units.val_zpow_eq_zpow_val, hc, ← map_zpow₀,
+    algebraMap_smul]
+
+end Norm
+
+end Units
 /-- If a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is `K ‖c‖`-Lipschitz. -/
 theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [SeminormedRing 𝕜]
     [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {K : NNReal} {f : α → 𝕜}

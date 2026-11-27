@@ -32,6 +32,7 @@ Liouville domain, `v` is the Liouville field, and transversality is the outward-
 
 ## Main results
 
+* `TauCeti.continuous_flowOf_comp`: the flow-out of a continuous map is continuous.
 * `TauCeti.mfderiv_globalFlow_comp_apply`: the differential of the flow-out.
 * `TauCeti.isLocalDiffeomorph_globalFlow_comp`: the flow-out of a transverse immersed hypersurface
   is a local diffeomorphism.
@@ -81,6 +82,14 @@ theorem mfderiv_globalFlow_comp_apply [IsManifold I 1 M] (hv : ContMDiff I I.tan
     rfl
   · exact mfderiv_comp_apply (I' := I) p.2
       ((contMDiff_globalFlow_apply hc le_rfl hv p.1).mdifferentiableAt one_ne_zero) hι w
+
+include hc in
+/-- The flow-out `(t, s) ↦ ψₜ (ι s)` of a continuous map `ι` along a complete `C¹` vector field
+is continuous. -/
+theorem continuous_flowOf_comp [IsManifold I 1 M] (hv : ContMDiff I I.tangent 1 (T% v))
+    (hι : Continuous ι) : Continuous fun p : ℝ × S ↦ flowOf v p.1 (ι p.2) := by
+  rw [flowOf_eq_globalFlow hv hc]
+  exact (globalFlow v hv hc).continuous continuous_fst (hι.comp continuous_snd)
 
 variable [BoundarylessManifold J S]
 

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.DifferenceQuotient
+public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.StarConvex
 import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompactExhaustion
@@ -38,7 +40,9 @@ values.
 * If `u ∈ W^{1,p}_0(Ω)` and its first derivatives lie in `W^{1,p}(Ω)`, the difference quotients
   of `u` converge to `∂_τ u` in `W^{1,p}(Ω)`, coordinate by coordinate for the gradient. They lie
   in the closed subspace `W^{1,p}_0(Ω)`, and so does `∂_τ u`
-  (`TauCeti.W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn`).
+  (`TauCeti.W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn`). In particular every tangential
+  derivative of `u ∈ W^{2,p}(Ω)` with zero boundary values has zero boundary values
+  (`TauCeti.Wkp.exists_hasWeakLineDerivOn_value_of_firstOrder_mem_w1p0Submodule`).
 
 ## References
 
@@ -92,12 +96,8 @@ private theorem W1p.tendsto_eLpNorm_inv_mul_value_restrictL_ofTestFunctionₗ_su
   have hval : W1p.value w =ᵐ[mu.restrict Omega] ψ :=
     (W1p.value_restrictL_ae le_top _).trans
       (ae_restrict_of_ae_restrict_of_subset hsub (W1p.value_ofTestFunctionₗ_ae ψ))
-  have hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient w x = ∇ (ψ : E → ℝ) x := by
-    have h := gradientTestFunctionLp_apply_ae (mu := mu) p ψ
-    rw [← W1p.gradient_ofTestFunctionₗ] at h
-    filter_upwards [W1p.gradient_restrictL_ae le_top (W1p.ofTestFunctionₗ mu ⊤ p ψ),
-      ae_restrict_of_ae_restrict_of_subset hsub h] with x h1 h2
-    rw [h1, h2]
+  have hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient w x = ∇ (ψ : E → ℝ) x :=
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae le_top ψ
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (ψ.hasCompactSupport.tendsto_eLpNorm_inv_smul_comp_add_smul_sub_sub_fderiv (p := p) (mu := mu)
       (ψ.contDiff.of_le (by simp)) τ) (fun _ ↦ bot_le) fun t ↦ ?_
@@ -233,5 +233,25 @@ theorem W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn {ι : Type*} [Fintype ι] (h
     (W1p.tendsto_differenceQuotient hp hΩc hΩ b hD hd) (Eventually.of_forall fun t ↦
       W1p.differenceQuotient_mem_w1p0Submodule (hΩ t)
         (fun x hx ↦ by simpa [neg_smul] using hΩ (-t) hx) hu)
+
+/-- **Tangential derivatives of `W^{2,p}` functions with zero boundary values.** Let `Ω` be convex
+and mapped into itself by every translation along `τ`, and let `1 ≤ p < ∞`. If `u ∈ W^{2,p}(Ω)`
+has zero boundary values, in the sense that its first-order part lies in `W^{1,p}_0(Ω)`, then its
+weak derivative `∂_τ u` is the value of an element of `W^{1,p}_0(Ω)`. On a half-space
+`{x | c < ⟪x, ν⟫}` every `τ` with `⟪τ, ν⟫ = 0` qualifies. -/
+theorem Wkp.exists_hasWeakLineDerivOn_value_of_firstOrder_mem_w1p0Submodule (hp : p ≠ ∞)
+    (hΩc : Convex ℝ (Omega : Set E)) (hΩ : ∀ s : ℝ, MapsTo (· + s • τ) Omega Omega)
+    {u : Wkp mu Omega p 2} (hu : Wkp.firstOrder 1 u ∈ w1p0Submodule mu Omega p) :
+    ∃ d : W1p0 mu Omega p,
+      HasWeakLineDerivOn mu Omega (Wkp.value 2 u) (W1p.value (d : W1p mu Omega p)) τ := by
+  have hv : Wkp.value 2 u = W1p.value (Wkp.firstOrder 1 u) := by
+    rw [Wkp.value_succ, Wkp.value_one, Wkp.firstOrder_succ, Wkp.firstOrder_zero]
+  set b := stdOrthonormalBasis ℝ E
+  -- The first derivatives of `u` along `b` and along `τ` lie in `W^{1,p}(Ω)`.
+  choose D hD using fun j => Wkp.exists_hasWeakLineDerivOn_value 1 u (b j)
+  obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 u τ
+  simp only [Wkp.value_one] at hD hd
+  rw [hv] at hD hd ⊢
+  exact ⟨⟨d, W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn hp hΩc hΩ b hu hD hd⟩, hd⟩
 
 end TauCeti

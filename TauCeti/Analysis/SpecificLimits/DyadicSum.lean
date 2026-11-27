@@ -60,9 +60,12 @@ bilateral geometric series of ratio `2^{-ε}`. For `σ ≥ 1` the shifted sums
 points `σ j` are `1`-separated. These sum per-scale bounds over the dyadic time shells
 `|s - t| ≈ 2^j` in the endpoint Strichartz estimate.
 
-In a sum over `l ∈ ℤ` of terms `Yₗ ∈ ℝ≥0∞` with dyadic weights `2^{lσ}`, shifting the index of
-the weight by each `d` in a finite set `S` multiplies the sum by `∑_{d ∈ S} 2^{dσ}`. This sums
-estimates of a block by its neighbouring blocks over the Littlewood–Paley decomposition.
+For a term `y ∈ ℝ≥0∞` with the dyadic weight `2^{lσ}`, shifting the index of the weight by each
+`d` in a finite set `S` and summing multiplies the weighted term by `∑_{d ∈ S} 2^{dσ}`. This
+collects the estimates of a block by its neighbouring blocks in the Littlewood–Paley
+decomposition.
+Underlying this, for `b > 0` the weight `(b^{j+k})^s` of a shifted index is the product
+`(b^j)^s (b^k)^s` in `ℝ≥0∞`.
 
 Finally, for a base `b > 1`, a function `R` antitone on `(0, ∞)` is bounded by step functions
 built from its values at the left endpoints of the scales `b ^ n s`: on `(0, s]` by the values
@@ -89,8 +92,13 @@ dyadic series.
 * `TauCeti.summable_two_rpow_neg_mul_abs`: `m ↦ 2^{-r|m|}` is summable over `ℤ` for `r > 0`.
 * `TauCeti.tsum_two_rpow_neg_mul_abs_ne_top`, `TauCeti.tsum_two_rpow_neg_mul_abs_sub_le`: the
   two-sided series `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite and bounds its shifts by `σ`-separated points.
-* `TauCeti.tsum_sum_ofReal_two_zpow_add_rpow_mul`: shifting the dyadic weights `2^{lσ}` of a
-  sum by the elements of a finite set `S` multiplies it by `∑_{d ∈ S} 2^{dσ}`.
+* `TauCeti.ofReal_zpow_add_rpow`: the weight `(b^{j+k})^s` is the product of `(b^j)^s` and
+  `(b^k)^s`.
+* `TauCeti.sum_ofReal_two_zpow_add_rpow_mul`: shifting the dyadic weight `2^{lσ}` of a term by
+  each element of a finite set `S` and summing multiplies it by `∑_{d ∈ S} 2^{dσ}`.
+* `TauCeti.tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero`: a dyadically weighted series whose terms
+  vanish outside a window `j - L < k < j + L` is at most `(∑_{-L < d < L} 2^{dσ}) 2^{jσ}` times a
+  bound on its terms.
 * `TauCeti.sum_range_sub_le_tsum`: a sum over the truncation `-N ≤ k < N` of `ℤ` is at most the
   sum over all of `ℤ`.
 * `AntitoneOn.le_tsum_indicator_Ioc`, `AntitoneOn.le_tsum_indicator_Ico`: a function antitone on
@@ -494,20 +502,44 @@ theorem tsum_two_rpow_neg_mul_abs_sub_le {σ ε : ℝ} (hσ : 1 ≤ σ) (hε : 0
         congr 1
         exact (Equiv.subRight n).tsum_eq fun m : ℤ ↦ (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|))
 
-/-- **Shifting a dyadic weight.** In a sum over `l ∈ ℤ` of weighted terms `Yₗ`, shifting the index
-of the weight `2^{lσ}` by `d` costs the factor `2^{dσ}`:
-`∑ₗ ∑_{d ∈ S} 2^{(d + l)σ} Yₗ = (∑_{d ∈ S} 2^{dσ}) ∑ₗ 2^{lσ} Yₗ`. -/
-theorem tsum_sum_ofReal_two_zpow_add_rpow_mul (σ : ℝ) (S : Finset ℤ) (Y : ℤ → ℝ≥0∞) :
-    ∑' l, ∑ d ∈ S, ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * Y l =
+/-- **Splitting a shifted weight.** For `b > 0`, the weight `(b^{j+k})^s` of the index `j + k` is
+the product of the weights `(b^j)^s` and `(b^k)^s`. -/
+theorem ofReal_zpow_add_rpow {b : ℝ} (hb : 0 < b) (s : ℝ) (j k : ℤ) :
+    ENNReal.ofReal ((b ^ (j + k)) ^ s) =
+      ENNReal.ofReal ((b ^ j) ^ s) * ENNReal.ofReal ((b ^ k) ^ s) := by
+  rw [zpow_add₀ hb.ne', Real.mul_rpow (by positivity) (by positivity),
+    ENNReal.ofReal_mul (by positivity)]
+
+/-- **Shifting a dyadic weight.** Shifting the index of the weight `2^{lσ}` of a term `y` by `d`
+costs the factor `2^{dσ}`: `∑_{d ∈ S} 2^{(d + l)σ} y = (∑_{d ∈ S} 2^{dσ}) 2^{lσ} y`. -/
+theorem sum_ofReal_two_zpow_add_rpow_mul (σ : ℝ) (S : Finset ℤ) (l : ℤ) (y : ℝ≥0∞) :
+    ∑ d ∈ S, ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * y =
       ((∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
-        ∑' l, ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * Y l := by
-  rw [← ENNReal.tsum_mul_left]
-  refine tsum_congr fun l ↦ ?_
+        (ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * y) := by
   rw [ENNReal.ofNNReal_finsetSum, Finset.sum_mul]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
-  rw [ENNReal.ofNNReal_toNNReal, zpow_add₀ two_ne_zero,
-    Real.mul_rpow (by positivity) (by positivity), ENNReal.ofReal_mul (by positivity)]
+  rw [ENNReal.ofNNReal_toNNReal, ofReal_zpow_add_rpow two_pos]
   ring
+
+/-- **Dyadic weights over a window.** If `w k` vanishes for `k` outside the window
+`j - L < k < j + L` and is at most `B` inside it, then
+`∑ₖ 2^{kσ} w k ≤ (∑_{-L < d < L} 2^{dσ}) 2^{jσ} B`. -/
+theorem tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero (σ : ℝ) {L : ℕ} {j : ℤ} {w : ℤ → ℝ≥0∞}
+    {B : ℝ≥0∞} (hfar : ∀ k ∉ Finset.Ioo (j - L) (j + L), w k = 0)
+    (hnear : ∀ k ∈ Finset.Ioo (j - L) (j + L), w k ≤ B) :
+    ∑' k : ℤ, ENNReal.ofReal (((2 : ℝ) ^ k) ^ σ) * w k ≤
+      ((∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
+        (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) * B) := by
+  rw [tsum_eq_sum (s := Finset.Ioo (j - L) (j + L)) fun k hk ↦ by rw [hfar k hk, mul_zero],
+    show Finset.Ioo (j - L) (j + L) = (Finset.Ioo (-(L : ℤ)) L).map (addRightEmbedding j) by
+      rw [Finset.map_add_right_Ioo, neg_add_eq_sub, add_comm (L : ℤ)],
+    Finset.sum_map, ← sum_ofReal_two_zpow_add_rpow_mul]
+  refine Finset.sum_le_sum fun d hd ↦ ?_
+  rw [addRightEmbedding_apply]
+  gcongr
+  refine hnear _ ?_
+  rw [Finset.mem_Ioo] at hd ⊢
+  omega
 
 /-- A sum over the truncation `-N ≤ k < N` is at most the sum over all of `ℤ`. -/
 theorem sum_range_sub_le_tsum (f : ℤ → ℝ≥0∞) (N : ℕ) :

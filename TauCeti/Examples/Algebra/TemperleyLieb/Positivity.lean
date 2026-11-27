@@ -52,7 +52,7 @@ example : (1 / 2 : ℝ) ∉ jonesLoopParameters ∧ ⌊π / arccos ((1 / 2 : ℝ
       (by norm_num [cos_pi_div_three])⟩
 
 -- At `δ = 1 / 2`, a Markov trace is positive semidefinite on `n` strands iff `n < 2`.
-example [Fact (IsSelfAdjoint ((1 / 2 : ℝ) : ℂ))]
+example
     {tr : ∀ n : ℕ, TemperleyLieb ℂ ((1 / 2 : ℝ) : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ ((1 / 2 : ℝ) : ℂ) tr) (n : ℕ) :
     (∀ x : TemperleyLieb ℂ ((1 / 2 : ℝ) : ℂ) n, 0 ≤ tr n (star x * x)) ↔ n < 2 := by
@@ -65,7 +65,7 @@ example [Fact (IsSelfAdjoint ((1 / 2 : ℝ) : ℂ))]
   rw [htr.forall_map_star_mul_self_nonneg_iff_lt_floor (by norm_num) hJ, hfl]
 
 -- At `δ = 1 / 2`, `f₂ = 1 - 2 • e 0` has negative trace `-3 / 4`.
-example [Fact (IsSelfAdjoint ((1 / 2 : ℝ) : ℂ))]
+example
     {tr : ∀ n : ℕ, TemperleyLieb ℂ ((1 / 2 : ℝ) : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ ((1 / 2 : ℝ) : ℂ) tr) :
     jonesWenzl ((1 / 2 : ℝ) : ℂ) 2 = 1 - (2 : ℂ) • e ((1 / 2 : ℝ) : ℂ) 0 ∧
@@ -100,11 +100,9 @@ example {R : Type*} [CommSemiring R] [PartialOrder R] [StarRing R] [StarOrderedR
 -- In particular, at `δ = 0` (`q = i`), the complex spin-model trace is positive semidefinite on
 -- all strands despite `0 ∉ jonesLoopParameters`.
 example :
-    let _ : Fact (IsSelfAdjoint ((0 : ℝ) : ℂ)) := ⟨Complex.conj_ofReal 0⟩
     (0 : ℝ) ∉ jonesLoopParameters ∧
       ∀ (n : ℕ) (x : TemperleyLieb ℂ ((0 : ℝ) : ℂ) n),
         0 ≤ markovTrace (Units.mk0 Complex.I Complex.I_ne_zero) (by simp) (star x * x) := by
-  intro _
   let qI : ℂˣ := Units.mk0 Complex.I Complex.I_ne_zero
   exact ⟨zero_notMem_jonesLoopParameters, fun n x ↦
     (isMarkovTrace_markovTrace qI (by simp [qI])).map_star_mul_self_nonneg_of_eq_zero
@@ -113,7 +111,7 @@ example :
 -- Every negative real parameter `δ < 0` fails positivity on one strand (`tr 1 (1⋆ * 1) = δ < 0`),
 -- while on zero strands positivity still holds (witnessed for `-2 ≤ δ < 0` by
 -- `⌊π / arccos (δ / 2)⌋ = 1`).
-example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hlo : -2 ≤ δ) (hneg : δ < 0)
+example {δ : ℝ} (hlo : -2 ≤ δ) (hneg : δ < 0)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) :
     ⌊π / arccos (δ / 2)⌋₊ = 1 ∧
@@ -132,14 +130,12 @@ example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hlo : -2 ≤ δ) (hneg : �
 -- `0 < c n` in `mem_jonesLoopParameters_of_pullback`), normalizing by `δ⁻ⁿ` fails to force
 -- admissibility without `0 < δ`.
 example :
-    let _ : Fact (IsSelfAdjoint ((-1 : ℝ) : ℂ)) := ⟨Complex.conj_ofReal (-1)⟩
     ∃ (ρ : ∀ n : ℕ, TemperleyLieb ℂ ((-1 : ℝ) : ℂ) n →⋆ₐ[ℂ] ℂ)
       (φ : StarPositiveFunctional ℂ)
       (tr : ∀ n : ℕ, TemperleyLieb ℂ ((-1 : ℝ) : ℂ) n →ₗ[ℂ] ℂ),
       IsMarkovTrace ℂ ((-1 : ℝ) : ℂ) tr ∧
       (∀ n x, φ (ρ n x) = ((-1 : ℝ) : ℂ)⁻¹ ^ n * tr n x) ∧
       (-1 : ℝ) ∉ jonesLoopParameters := by
-  intro _
   obtain ⟨ρAlg, hρAlg⟩ :
       ∃ f : ∀ n : ℕ, TemperleyLieb ℂ ((-1 : ℝ) : ℂ) n →ₐ[ℂ] ℂ,
         ∀ (n : ℕ) (i : Fin (n - 1)), f n (e ((-1 : ℝ) : ℂ) i) = -1 :=
@@ -182,7 +178,7 @@ example :
 /-! ### Open gap `1 < δ < √2`: first bad level `3` -/
 
 -- Throughout `1 < δ < √2`, positivity holds on `0`, `1`, and `2` strands and fails from `3` on.
-example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (h1 : 1 < δ) (h2 : δ < √2)
+example {δ : ℝ} (h1 : 1 < δ) (h2 : δ < √2)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ) :
     δ ∉ jonesLoopParameters ∧
@@ -236,13 +232,13 @@ example {δ : ℝ} (h1 : 1 < δ) (h2 : δ < √2)
 
 -- At `δ = √2` (`m = 4`), `⌊π / arccos (√2 / 2)⌋ = 4`, all levels are positive semidefinite, and
 -- `f₃` is a nonzero element of the three-strand trace radical.
-example [Fact (IsSelfAdjoint (√2 : ℂ))]
+example
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (√2 : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (√2 : ℂ) tr) :
     ⌊π / arccos (√2 / 2)⌋₊ = 4 ∧
       (∀ (n : ℕ) (x : TemperleyLieb ℂ (√2 : ℂ) n), 0 ≤ tr n (star x * x)) ∧
       jonesWenzl (√2 : ℂ) 3 ≠ 0 ∧
-      jonesWenzl (√2 : ℂ) 3 ∈ (tr 3).traceRadical (htr.map_mul_comm 3) := by
+      jonesWenzl (√2 : ℂ) 3 ∈ htr.traceRadical 3 := by
   have hfl : ⌊π / arccos (√2 / 2)⌋₊ = 4 := by
     refine floor_pi_div_arccos_eq (by omega) ?_ ?_
     · rw [Nat.cast_ofNat, cos_pi_div_four]
@@ -278,25 +274,19 @@ example [Fact (IsSelfAdjoint (√2 : ℂ))]
 -- Without exposing `starPositiveFunctional`, `IsMarkovTrace.quotientStarPositiveFunctional` lives
 -- directly on the canonical trace-radical quotient, composes with
 -- `IsMarkovTrace.quotientStrandIncl`, and is faithful across module boundaries.
-example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ ∈ jonesLoopParameters)
+example {δ : ℝ} (hδ : δ ∈ jonesLoopParameters)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
-    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ)
-    (x : TemperleyLieb ℂ (δ : ℂ) (n + 1) ⧸
-      (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    letI := htr.isStar_traceRadical (n + 1)
-    letI := htr.isStar_traceRadical (n + 2)
-    htr.quotientStarPositiveFunctional hδ (n + 2) (htr.quotientStrandIncl n x) =
-        (δ : ℂ) * htr.quotientStarPositiveFunctional hδ (n + 1) x ∧
-      (htr.quotientStarPositiveFunctional hδ (n + 1)).nullSubmodule = ⊥ ∧
-      (htr.quotientStarPositiveFunctional hδ (n + 1) (star x * x) = 0 ↔ x = 0) ∧
-      (htr.starPositiveFunctional hδ (n + 1)).toLinearMap.traceRadical
-          (htr.starPositiveFunctional_mul_comm hδ (n + 1)) =
-        (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) := by
-  have := htr.isStar_traceRadical (n + 1)
-  have := htr.isStar_traceRadical (n + 2)
-  refine ⟨?_, htr.nullSubmodule_quotientStarPositiveFunctional hδ (n + 1),
-    htr.quotientStarPositiveFunctional_star_mul_self_eq_zero_iff hδ (n + 1) x,
-    htr.traceRadical_starPositiveFunctional hδ (n + 1)⟩
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ) (x : htr.Quotient n) :
+    htr.quotientStarPositiveFunctional hδ (n + 1) (htr.quotientStrandIncl n x) =
+        (δ : ℂ) * htr.quotientStarPositiveFunctional hδ n x ∧
+      (htr.quotientStarPositiveFunctional hδ n).nullSubmodule = ⊥ ∧
+      (htr.quotientStarPositiveFunctional hδ n (star x * x) = 0 ↔ x = 0) ∧
+      (htr.starPositiveFunctional hδ n).toLinearMap.traceRadical
+          (htr.starPositiveFunctional_mul_comm hδ n) =
+        htr.traceRadical n := by
+  refine ⟨?_, htr.nullSubmodule_quotientStarPositiveFunctional hδ n,
+    htr.quotientStarPositiveFunctional_star_mul_self_eq_zero_iff hδ n x,
+    htr.traceRadical_starPositiveFunctional hδ n⟩
   rw [htr.quotientStarPositiveFunctional_apply, htr.quotientStarPositiveFunctional_apply,
     htr.quotientTrace_quotientStrandIncl]
 
@@ -304,15 +294,14 @@ example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ ∈ jonesLoopPara
 -- not belong to the Jacobson radical because `1 - f₂ = e 0` is killed by the augmentation.
 example {tr : ∀ n : ℕ, TemperleyLieb ℂ ((1 : ℝ) : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ ((1 : ℝ) : ℂ) tr) :
-    jonesWenzl ((1 : ℝ) : ℂ) 2 ∈ (tr 2).traceRadical (htr.map_mul_comm 2) ∧
+    jonesWenzl ((1 : ℝ) : ℂ) 2 ∈ htr.traceRadical 2 ∧
       jonesWenzl ((1 : ℝ) : ℂ) 2 ∉ Ring.jacobson (TemperleyLieb ℂ ((1 : ℝ) : ℂ) 2) ∧
-      (tr 2).traceRadical (htr.map_mul_comm 2) ≠
-        Ring.jacobson (TemperleyLieb ℂ ((1 : ℝ) : ℂ) 2) := by
+      htr.traceRadical 2 ≠ Ring.jacobson (TemperleyLieb ℂ ((1 : ℝ) : ℂ) 2) := by
   have hunit : ∀ k ∈ Finset.Icc 1 2, IsUnit (qInt ℂ ((1 : ℝ) : ℂ) k) := by
     intro k hk
     rcases Finset.mem_Icc.1 hk with ⟨hk1, hk2⟩
     interval_cases k <;> simp
-  have hmem : jonesWenzl ((1 : ℝ) : ℂ) 2 ∈ (tr 2).traceRadical (htr.map_mul_comm 2) := by
+  have hmem : jonesWenzl ((1 : ℝ) : ℂ) 2 ∈ htr.traceRadical 2 := by
     rw [htr.jonesWenzl_mem_traceRadical_iff hunit, qInt_add_two, qInt_two, qInt_one]
     norm_num
   have hnotjac :

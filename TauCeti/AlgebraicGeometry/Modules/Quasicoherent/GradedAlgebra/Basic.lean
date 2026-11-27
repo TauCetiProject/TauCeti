@@ -47,6 +47,8 @@ symmetric algebras of quasicoherent sheaves, enter this category.
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.degree`: extraction of a homogeneous
   component as a quasicoherent sheaf;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.degreeOne`: the degree-one functor;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isIso_of_isIso_hom_hom_hom`: a morphism
+  of graded algebras with invertible homogeneous components is an isomorphism;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one` and
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.mul`: the unit and homogeneous
   multiplications as morphisms of quasicoherent sheaves, with their laws `one_mul`, `mul_one`,
@@ -186,6 +188,19 @@ instance isIso_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) [I
   -- The `map` field of `degree` is the degree-`n` component by construction, so the image of
   -- `f` under `degree n` followed by the inclusion into modules is `f.hom.hom.hom n`.
   inferInstanceAs (IsIso ((degree (X := X) n ⋙ ObjectProperty.ι _).map f))
+
+/-- A morphism of graded quasicoherent algebras whose homogeneous components are isomorphisms is
+an isomorphism. -/
+theorem isIso_of_isIso_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B)
+    (hf : ∀ n, IsIso (f.hom.hom.hom n)) : IsIso f := by
+  have : IsIso f.hom.hom.hom := GradedObject.isIso_of_isIso_apply _ (hf := hf)
+  -- The forgetful functor to graded modules sends `f` to its underlying morphism
+  -- `f.hom.hom.hom` (`Functor.comp_map`, `ObjectProperty.ι_map`, `CommMon.forget₂Mon_map_hom`,
+  -- `Mon.forget_map`), and it reflects isomorphisms.
+  have : IsIso ((ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _).map f) := by
+    simpa only [Functor.comp_map, ObjectProperty.ι_map, CommMon.forget₂Mon_map_hom,
+      Mon.forget_map]
+  exact isIso_of_reflects_iso f (ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _)
 
 /-- Extract the degree-one component of a graded quasicoherent algebra. This is the component
 that generates a free graded algebra and therefore the coefficient sheaf of a linear scheme. -/
@@ -331,9 +346,7 @@ theorem mul_ofHomogeneous (i j : ℕ) :
       eqToHom (by rw [CommMon.toMon_X, ofHomogeneous_obj_X]) ≫ mul i j ≫
         eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
           (i + j)).symm :=
-  Mon.mul_eq _ _ _ |>.trans
-    ((GradedObject.Monoidal.ιTensorObj_mulOfHomogeneous M mul i j (i + j) rfl).trans
-      (Category.comp_id _))
+  Mon.mul_mk_monObjOfHomogeneous M one mul one_mul mul_one mul_assoc i j
 
 /-- The unit of `ofHomogeneous` is the given one, up to the identification
 `ofHomogeneous_obj_X` of its degree-zero component with `M 0`. -/
@@ -342,9 +355,7 @@ theorem one_ofHomogeneous :
     (ofHomogeneous M one mul one_mul mul_one mul_assoc mul_comm).obj.toMon.one =
       one ≫ eqToHom (congrFun (ofHomogeneous_obj_X M one mul one_mul mul_one mul_assoc mul_comm)
         0).symm :=
-  Mon.one_eq _ |>.trans
-    ((congrArg (GradedObject.Monoidal.tensorUnit₀.inv ≫ ·)
-      (GradedObject.Monoidal.oneOfDegreeZero_zero M one)).trans (Iso.inv_hom_id_assoc _ _))
+  Mon.one_mk_monObjOfHomogeneous M one mul one_mul mul_one mul_assoc
 
 end Homogeneous
 

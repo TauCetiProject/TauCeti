@@ -5,10 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.EssentiallySmall
 public import Mathlib.CategoryTheory.SingleObj
 
 /-!
-# Pointwise algebraic structures on functors to a single-object category
+# One-object categories: opposite monoids, essential smallness, and pointwise functor structures
+
+For a monoid `M`, the one-object category `SingleObj M` has the elements of `M` as endomorphisms
+of its object `∗`, composed by `f ≫ g = g * f`. Reversing the multiplication is the same as
+reversing the composition: `SingleObj Mᵐᵒᵖ` is isomorphic to the opposite category
+`(SingleObj M)ᵒᵖ`, a morphism `op a` going to `a.op`. The category `SingleObj M` is also
+essentially small as soon as `M` is small, since it has one object.
 
 For a category `C` and a commutative monoid `M`, functors `C ⥤ SingleObj M` form a commutative
 monoid under pointwise multiplication (`(F * G).map f = F.map f * G.map f`, which respects
@@ -18,6 +25,10 @@ a groupoid).
 
 ## Main declarations
 
+* `CategoryTheory.SingleObj.mulOppositeEquiv M : SingleObj Mᵐᵒᵖ ≌ (SingleObj M)ᵒᵖ`, with the
+  computation lemmas `mulOppositeEquiv_functor_obj`, `mulOppositeEquiv_functor_map`,
+  `mulOppositeEquiv_inverse_obj` and `mulOppositeEquiv_inverse_map`.
+* The instance `EssentiallySmall.{w} (SingleObj M)` for a `w`-small monoid `M`.
 * `CategoryTheory.SingleObj.eqToHom_as_one`: every equality morphism in `SingleObj M` is `1`.
 * `CategoryTheory.SingleObj.isIso_iff_isUnit`: a morphism in `SingleObj M` is an isomorphism
   if and only if it is a unit in `M`.
@@ -30,9 +41,66 @@ a groupoid).
 
 public section
 
-universe v₁ u₁ w₁ w₂
+universe v₁ u₁ w w₁ w₂
 
 namespace CategoryTheory.SingleObj
+
+section Opposite
+
+open Opposite
+
+variable (M : Type*) [Monoid M]
+
+/-- The isomorphism of categories `SingleObj Mᵐᵒᵖ ≌ (SingleObj M)ᵒᵖ`: a morphism `op a` goes to
+`a.op`. -/
+def mulOppositeEquiv : SingleObj Mᵐᵒᵖ ≌ (SingleObj M)ᵒᵖ where
+  functor :=
+    { obj _ := op (SingleObj.star M)
+      map f := Quiver.Hom.op (X := SingleObj.star M) (Y := SingleObj.star M) (MulOpposite.unop f)
+      map_id _ := rfl
+      map_comp _ _ := rfl }
+  inverse :=
+    { obj _ := SingleObj.star Mᵐᵒᵖ
+      map f := (MulOpposite.op f.unop : Mᵐᵒᵖ)
+      map_id _ := rfl
+      map_comp _ _ := rfl }
+  unitIso := Iso.refl _
+  counitIso := Iso.refl _
+
+variable {M}
+
+/-- The functor of `mulOppositeEquiv M` sends the object to `op ∗`. -/
+@[simp]
+theorem mulOppositeEquiv_functor_obj (X : SingleObj Mᵐᵒᵖ) :
+    (mulOppositeEquiv M).functor.obj X = op (SingleObj.star M) :=
+  (rfl)
+
+/-- The functor of `mulOppositeEquiv M` sends `op a` to `a.op`. -/
+@[simp]
+theorem mulOppositeEquiv_functor_map {X Y : SingleObj Mᵐᵒᵖ} (f : X ⟶ Y) :
+    (mulOppositeEquiv M).functor.map f =
+      Quiver.Hom.op (X := SingleObj.star M) (Y := SingleObj.star M) (MulOpposite.unop f) :=
+  (rfl)
+
+/-- The inverse of `mulOppositeEquiv M` sends the object to `∗`. -/
+@[simp]
+theorem mulOppositeEquiv_inverse_obj (X : (SingleObj M)ᵒᵖ) :
+    (mulOppositeEquiv M).inverse.obj X = SingleObj.star Mᵐᵒᵖ :=
+  (rfl)
+
+/-- The inverse of `mulOppositeEquiv M` sends `a.op` to `op a`. -/
+@[simp]
+theorem mulOppositeEquiv_inverse_map {X Y : (SingleObj M)ᵒᵖ} (f : X ⟶ Y) :
+    (mulOppositeEquiv M).inverse.map f = (MulOpposite.op f.unop : Mᵐᵒᵖ) :=
+  (rfl)
+
+/-- A one-object category is essentially small as soon as its endomorphism monoid is small. -/
+instance [Small.{w} M] : EssentiallySmall.{w} (SingleObj M) :=
+  have : Small.{w} (SingleObj M) := inferInstanceAs (Small.{w} Unit)
+  have : LocallySmall.{w} (SingleObj M) := ⟨fun _ _ ↦ inferInstanceAs (Small.{w} M)⟩
+  essentiallySmall_of_small_of_locallySmall _
+
+end Opposite
 
 section Monoid
 

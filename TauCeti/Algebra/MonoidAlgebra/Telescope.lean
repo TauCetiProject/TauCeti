@@ -29,6 +29,9 @@ ring `R[G]`: the summands are `g⁻ʲ * (r y)`, respectively `g * gʲ * (r y)`, 
   form is `AddCommute.one_sub_single_neg_mul_sum_sub`.
 * `Commute.one_sub_single_inv_mul_sum_mul`: the ascending string telescopes; its additive
   form is `AddCommute.one_sub_single_neg_mul_sum_add`.
+* `MonoidAlgebra.one_sub_single_inv_pow_eq_mul_sum`: `1 - g⁻ⁿ` is `1 - g⁻¹` times the geometric
+  sum `1 + g⁻¹ + ⋯ + g⁻⁽ⁿ⁻¹⁾`; its additive form is
+  `AddMonoidAlgebra.one_sub_single_neg_nsmul_eq_mul_sum`.
 -/
 
 public section
@@ -75,3 +78,18 @@ theorem one_sub_single_inv_mul_sum_mul {g y : G} (hgy : Commute g y) (n : ℕ) (
         rw [hg, mul_geom_sum, sub_mul, one_mul, hterm]
 
 end Commute
+
+namespace MonoidAlgebra
+
+/-- `1 - g⁻ⁿ` is `1 - g⁻¹` times the geometric sum `1 + g⁻¹ + ⋯ + g⁻⁽ⁿ⁻¹⁾`: the descending
+string starting at `1`. -/
+@[to_additive (dont_translate := R) one_sub_single_neg_nsmul_eq_mul_sum
+  /-- `1 - e^{-n x}` is `1 - e^{-x}` times the geometric sum
+  `1 + e^{-x} + ⋯ + e^{-(n - 1) x}`: the descending string starting at `0`. -/]
+theorem one_sub_single_inv_pow_eq_mul_sum (g : G) (n : ℕ) :
+    (1 - single (g ^ n)⁻¹ 1 : MonoidAlgebra R G) =
+      (1 - single g⁻¹ 1) * ∑ j ∈ Finset.range n, single (g ^ j)⁻¹ 1 := by
+  simpa [one_div, one_def] using
+    ((Commute.one_right g).one_sub_single_inv_mul_sum_div n (1 : R)).symm
+
+end MonoidAlgebra

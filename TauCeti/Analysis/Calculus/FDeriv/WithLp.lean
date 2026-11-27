@@ -5,14 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.InnerProductSpace.ProdL2
 
 /-!
 # Derivatives along coordinate slices of an `L^p` product
@@ -23,10 +28,13 @@ corresponding coordinate direction: along the line `s ↦ (s, y)` in the first f
 `fderiv 𝕜 g (t, y) (1, 0)`, and on the slice `z ↦ (t, z)` it is `w ↦ fderiv 𝕜 g (t, y) (0, w)`.
 These are the chain rules used to compute integrals over a half-space `{x | a < x.fst}` one
 normal line or one tangential slice at a time, as in Fubini-type proofs of the divergence
-theorem. A map `w ↦ (f w, g w)` into the product is differentiated componentwise. The file also
+theorem. A map `w ↦ (f w, g w)` into the product is differentiated componentwise, and a separated
+product `x ↦ A x.fst * B x.snd` on `WithLp p (𝕜 × 𝕜)` coordinatewise. The file also
 computes the derivative of the normal graph parametrization
 `y ↦ (φ y, y)`: it is the graph `x ↦ (A x, x)` of the derivative `A` of `φ`, so its
-geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
+geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`. In every codimension, the
+derivative of the graph parametrization `x ↦ (x, φ x)` of `φ : V → W` is the linear graph
+`v ↦ (v, A v)` of its derivative `A`.
 
 ## Main declarations
 
@@ -42,6 +50,11 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   `‖df v‖² + ‖dg v‖²`.
 * `TauCeti.fderiv_toLp_const_prodMk_apply`: with a constant first coordinate the derivative is
   `v ↦ (0, dg v)` at every point.
+* `TauCeti.hasFDerivAt_mul_fst_snd`, `TauCeti.contDiff_mul_fst_snd`: a product
+  `x ↦ A x.fst * B x.snd` of functions of the two coordinates of `WithLp p (𝕜 × 𝕜)` is
+  differentiable, with partial derivatives `A' B` and `A B'`, and is `Cⁿ` when `A` and `B` are.
+* `TauCeti.gradient_eq_toLp`: on the Euclidean plane, a function differentiable at `x` with
+  derivative `a • fst + b • snd` (partial derivatives `a` and `b`) has gradient `(a, b)`.
 * `DifferentiableAt.fderiv_withLp_snd`: the derivative of the second component of a map into
   the product is the second component of its derivative.
 * `HasFDerivWithinAt.normalGraphEmbedding`, `HasFDerivAt.normalGraphEmbedding`: the derivative
@@ -53,6 +66,9 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   linear tangent graph.
 * `DifferentiableAt.normDet_fderiv_normalGraphEmbedding`: the geometric Jacobian of a graph
   parametrization is `sqrt (1 + ‖Dφ‖²)`.
+* `HasFDerivWithinAt.graph`, `HasFDerivAt.graph`, `DifferentiableAt.fderiv_graph`: the
+  derivative of the graph parametrization `x ↦ (x, φ x)` is the linear graph
+  `ContinuousLinearMap.graphL` of the derivative.
 -/
 
 public section
@@ -163,6 +179,70 @@ theorem _root_.DifferentiableAt.fderiv_withLp_snd {g : G → WithLp p (F × E)} 
     fderiv 𝕜 (fun w ↦ (g w).snd) y = (WithLp.sndL p 𝕜 F E).comp (fderiv 𝕜 g y) :=
   ((WithLp.sndL p 𝕜 F E).hasFDerivAt.comp y hg.hasFDerivAt).fderiv
 
+section Separated
+
+open scoped Gradient
+
+/-- A product `x ↦ A x.fst * B x.snd` of differentiable functions of the two coordinates of
+`WithLp p (𝕜 × 𝕜)` is differentiable, with partial derivatives `A' B` and `A B'`. -/
+theorem hasFDerivAt_mul_fst_snd {A B : 𝕜 → 𝕜} {A' B' : 𝕜} {x : WithLp p (𝕜 × 𝕜)}
+    (hA : HasDerivAt A A' x.fst) (hB : HasDerivAt B B' x.snd) :
+    HasFDerivAt (fun y : WithLp p (𝕜 × 𝕜) ↦ A y.fst * B y.snd)
+      ((A' * B x.snd) • WithLp.fstL p 𝕜 𝕜 𝕜 + (A x.fst * B') • WithLp.sndL p 𝕜 𝕜 𝕜) x := by
+  have h1 := hA.comp_hasFDerivAt x (WithLp.fstL p 𝕜 𝕜 𝕜).hasFDerivAt
+  have h2 := hB.comp_hasFDerivAt x (WithLp.sndL p 𝕜 𝕜 𝕜).hasFDerivAt
+  refine (h1.mul h2).congr_fderiv ?_
+  ext w
+  simp only [Function.comp_apply, add_apply, smul_apply, WithLp.fstL_apply, WithLp.sndL_apply,
+    smul_eq_mul]
+  ring
+
+/-- A product `x ↦ A x.fst * B x.snd` of `Cⁿ` functions of the two coordinates of
+`WithLp p (𝕜 × 𝕜)` is `Cⁿ`. -/
+theorem contDiff_mul_fst_snd {n : WithTop ℕ∞} {A B : 𝕜 → 𝕜} (hA : ContDiff 𝕜 n A)
+    (hB : ContDiff 𝕜 n B) : ContDiff 𝕜 n (fun y : WithLp p (𝕜 × 𝕜) ↦ A y.fst * B y.snd) :=
+  (hA.comp (WithLp.fstL p 𝕜 𝕜 𝕜).contDiff).mul (hB.comp (WithLp.sndL p 𝕜 𝕜 𝕜).contDiff)
+
+/-- On the Euclidean plane `WithLp 2 (ℝ × ℝ)`, a function differentiable at `x` with derivative
+`a • fst + b • snd` (partial derivatives `a` and `b`) has gradient `(a, b)` there. Partial
+derivatives alone do not suffice: the hypothesis is full differentiability at `x`. -/
+theorem gradient_eq_toLp {f : WithLp 2 (ℝ × ℝ) → ℝ} {a b : ℝ} {x : WithLp 2 (ℝ × ℝ)}
+    (h : HasFDerivAt f (a • WithLp.fstL 2 ℝ ℝ ℝ + b • WithLp.sndL 2 ℝ ℝ ℝ) x) :
+    ∇ f x = WithLp.toLp 2 (a, b) := by
+  refine ext_inner_right ℝ fun w ↦ ?_
+  rw [inner_gradient_left, h.fderiv, WithLp.prod_inner_apply]
+  simp [mul_comm]
+
+end Separated
+
+section Graph
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W]
+
+/-- Within a parameter set, the derivative of the graph parametrization `x ↦ (x, φ x)` into
+`WithLp 2 (V × W)` is the linear graph of the within-derivative of `φ`. -/
+theorem _root_.HasFDerivWithinAt.graph {φ : V → W} {φ' : V →L[ℝ] W} {s : Set V} {x : V}
+    (hφ : HasFDerivWithinAt φ φ' s x) :
+    HasFDerivWithinAt (fun y ↦ WithLp.toLp 2 (y, φ y)) φ'.graphL s x :=
+  ((WithLp.prodContinuousLinearEquiv 2 ℝ V W).symm.hasFDerivAt.comp_hasFDerivWithinAt x
+    ((hasFDerivWithinAt_id x s).prodMk hφ)).congr_fderiv (by ext v; simp)
+
+/-- The derivative of the graph parametrization `x ↦ (x, φ x)` into `WithLp 2 (V × W)` is the
+linear graph of the derivative of `φ`. -/
+theorem _root_.HasFDerivAt.graph {φ : V → W} {φ' : V →L[ℝ] W} {x : V}
+    (hφ : HasFDerivAt φ φ' x) :
+    HasFDerivAt (fun y ↦ WithLp.toLp 2 (y, φ y)) φ'.graphL x :=
+  hasFDerivWithinAt_univ.mp (hφ.hasFDerivWithinAt.graph (s := Set.univ))
+
+/-- At a differentiability point, the Fréchet derivative of the graph parametrization
+`x ↦ (x, φ x)` is the continuous linear graph of the derivative. -/
+theorem _root_.DifferentiableAt.fderiv_graph {φ : V → W} {x : V} (hφ : DifferentiableAt ℝ φ x) :
+    fderiv ℝ (fun y ↦ WithLp.toLp 2 (y, φ y)) x = (fderiv ℝ φ x).graphL :=
+  hφ.hasFDerivAt.graph.fderiv
+
+end Graph
+
 section NormalGraph
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -172,13 +252,13 @@ within-derivative. -/
 theorem _root_.HasFDerivWithinAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V →L[ℝ] ℝ}
     {s : Set V} {x : V} (hφ : HasFDerivWithinAt φ φ' s x) :
     HasFDerivWithinAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL s x := by
-  have h : TauCeti.normalGraphEmbedding φ =
-      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm ∘ fun y ↦ (φ y, y) :=
-    funext fun y ↦ by simp [normalGraphEmbedding_apply]
-  rw [h]
-  refine (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm :
-    (ℝ × V) →L[ℝ] WithLp 2 (ℝ × V)).hasFDerivAt.comp_hasFDerivWithinAt x
-      (hφ.prodMk (hasFDerivWithinAt_id x s))).congr_fderiv ?_
+  -- Swapping the coordinates of the `L²` product turns `y ↦ (y, φ y)` into `y ↦ (φ y, y)`.
+  have h := (LinearIsometryEquiv.withLpProdComm 2 ℝ V ℝ).toContinuousLinearEquiv.hasFDerivAt
+    |>.comp_hasFDerivWithinAt x hφ.graph
+  simp only [Function.comp_def, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    LinearIsometryEquiv.withLpProdComm_apply, WithLp.toLp_fst, WithLp.toLp_snd,
+    ← normalGraphEmbedding_apply] at h
+  refine h.congr_fderiv ?_
   ext v
   simp [normalGraphEmbedding_apply]
 

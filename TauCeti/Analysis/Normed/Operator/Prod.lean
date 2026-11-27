@@ -18,8 +18,10 @@ operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le
 operators assembled from separate operators for each component of the data, for instance the
 forcing and the initial datum of an evolution equation. A continuous linear map out of `𝕜 × 𝕜`
 is determined by its values on the coordinate vectors
-(`ContinuousLinearMap.apply_mk_eq_smul_add_smul`), and has operator norm at most
-`‖f (1, 0)‖ + ‖f (0, 1)‖`
+(`ContinuousLinearMap.apply_mk_eq_smul_add_smul`), so it vanishes once it vanishes on them
+(`ContinuousLinearMap.eq_zero_of_apply_one_zero_of_apply_zero_one`); a vector `(a, b)` is in the
+kernel of a functional `f` exactly when `a f(1, 0) + b f(0, 1) = 0`
+(`ContinuousLinearMap.mk_mem_ker_iff`). It has operator norm at most `‖f (1, 0)‖ + ‖f (0, 1)‖`
 (`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`). The map
 `(x, y) ↦ (x, c • y)` on a product with `‖c‖ ≤ 1` is a contraction
 (`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`). For an
@@ -28,7 +30,10 @@ endomorphism `L` of `E × F`, each component of `L v - v` has norm at most `‖L
 so `L` moves each coordinate of `v` little when it is close to the identity.
 
 The map `x ↦ (x, f x)` into a product, the derivative of a graph map, has operator norm at most
-`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`).
+`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`). Padding a map with the zero second
+component does not change its norm (`ContinuousLinearMap.opNorm_prod_zero`), and projecting a map
+into a product to its first component does not increase it
+(`ContinuousLinearMap.opNorm_fst_comp_le`).
 -/
 
 public section
@@ -65,6 +70,19 @@ theorem apply_mk_eq_smul_add_smul (f : 𝕜 × 𝕜 →L[𝕜] G) (a b : 𝕜) :
   rw [← map_smul, ← map_smul, ← map_add]
   simp
 
+/-- A continuous linear map out of `𝕜 × 𝕜` vanishing on the coordinate vectors `(1, 0)` and
+`(0, 1)` is zero. -/
+theorem eq_zero_of_apply_one_zero_of_apply_zero_one {f : 𝕜 × 𝕜 →L[𝕜] G} (h₁ : f (1, 0) = 0)
+    (h₂ : f (0, 1) = 0) : f = 0 :=
+  ext fun ⟨a, b⟩ ↦ by
+    rw [f.apply_mk_eq_smul_add_smul, h₁, h₂, smul_zero, smul_zero, add_zero, zero_apply]
+
+/-- A vector `(a, b)` lies in the kernel of a continuous linear functional `f` on `𝕜 × 𝕜` exactly
+when `a f(1, 0) + b f(0, 1) = 0`. -/
+theorem mk_mem_ker_iff {f : 𝕜 × 𝕜 →L[𝕜] 𝕜} {a b : 𝕜} :
+    (a, b) ∈ LinearMap.ker (f : 𝕜 × 𝕜 →ₗ[𝕜] 𝕜) ↔ a * f (1, 0) + b * f (0, 1) = 0 := by
+  rw [LinearMap.mem_ker, coe_coe, f.apply_mk_eq_smul_add_smul, smul_eq_mul, smul_eq_mul]
+
 /-- A continuous linear map out of `𝕜 × 𝕜` has operator norm at most the sum of the norms of its
 values on the coordinate vectors. -/
 theorem opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one (f : 𝕜 × 𝕜 →L[𝕜] G) :
@@ -80,6 +98,14 @@ theorem opNorm_id_prod_le (f : E →L[𝕜] F) :
     ‖(ContinuousLinearMap.id 𝕜 E).prod f‖ ≤ max 1 ‖f‖ := by
   rw [opNorm_prod, Prod.norm_def]
   exact max_le_max norm_id_le le_rfl
+
+/-- The operator norm of `x ↦ (f x, 0)` is that of `f`. -/
+theorem opNorm_prod_zero (f : E →L[𝕜] F) : ‖f.prod (0 : E →L[𝕜] G)‖ = ‖f‖ := by
+  rw [opNorm_prod, Prod.norm_def, norm_zero, max_eq_left (norm_nonneg f)]
+
+/-- The first component of a map into a product has operator norm at most that of the map. -/
+theorem opNorm_fst_comp_le (f : E →L[𝕜] F × G) : ‖(fst 𝕜 F G).comp f‖ ≤ ‖f‖ :=
+  (opNorm_comp_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (norm_fst_le 𝕜 F G))
 
 /-- The map `(x, y) ↦ (x, c • y)` on a product has operator norm at most `1` when `‖c‖ ≤ 1`. -/
 theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 1) :

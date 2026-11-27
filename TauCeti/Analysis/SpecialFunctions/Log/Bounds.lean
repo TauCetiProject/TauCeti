@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Elementary bounds for the real logarithm
@@ -15,11 +16,21 @@ From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x 
 one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
 `x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+real cutoff `x` when passing between inclusive and strict prime sums. Conversely, `e < 3` yields
+`1 < log x` for every `x ≥ 3` (`Real.one_lt_log_of_three_le`). From `e² < (3 / 2) ^ 5`
+(Mathlib's `Real.exp_one_lt_d9`) one obtains `log (3 / 2) > 2 / 5`
+(`Real.two_fifths_lt_log_three_halves`), which locates the zero of the unoffset logarithmic
+integral below `3 / 2`.
+
+This file also records the explicit decimal lower bound `0.4054 < log (3 / 2)` and the numerical
+enclosure `-0.366513 ≤ log (log 2) ≤ -0.366512` for the iterated logarithm at `2`, used in
+logarithmic-integral estimates.
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
-decay of `log x`, as for the modulus `|α|²` of a section tending to one.
+decay of `log x`, as for the modulus `|α|²` of a section tending to one. For every `x ≤ 1` the
+truncation `min (-log x) 1` obeys the same bound (`Real.min_neg_log_one_le_two_mul_one_sub`),
+which compares the truncated logarithm of `|α|²` with the defect `1 - |α|²`.
 
 `Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
 including the totalized value at zero. `Real.posLog_le_sqrt_two_mul_abs` bounds
@@ -33,21 +44,40 @@ at `y = log x / 4`: since `L² e^{−L/2}` peaks at `L = 4` with value `16 / e²
 logarithm is at most `16 √x / e²` for `x ≥ 1`. This bounds the prime powers that are not primes
 in explicit prime-counting estimates.
 
+In the other direction, a small logarithm bounds a power from above: if `log z ≤ L` and
+`n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε` for every real `z`
+(`TauCeti.pow_le_one_add_two_mul_of_log_le`), since `z^n ≤ |z^n| ≤ exp (n log z)`
+(`Real.abs_rpow_le_exp_log_mul`) and `exp ε ≤ 1 / (1 - ε) ≤ 1 + 2 ε`. This bounds the powers
+`ζ(s)^n` of a zeta function whose logarithm is bounded by an exponentially decaying function of
+`s`.
+
 ## Main results
 
+* `Real.one_lt_log_of_three_le`: `1 < log x` for `3 ≤ x`.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
+* `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
+* `TauCeti.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
+* `TauCeti.le_log_log_two` and `TauCeti.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
+* `Real.min_neg_log_one_le_two_mul_one_sub`: `min (-log x) 1 ≤ 2 (1 - x)` for `x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
+* `TauCeti.pow_le_one_add_two_mul_of_log_le`: `z^n ≤ 1 + 2 ε` when `log z ≤ L`, `n L ≤ ε` and
+  `0 ≤ ε ≤ 1 / 2`.
+* `Real.log_sub_one_div_le_log`: `log a - 1 / m ≤ log m` for `0 ≤ m` and `0 ≤ a ≤ m + 1`.
 -/
 
 public section
 
 namespace Real
+
+/-- For `x ≥ 3`, `1 < log x`. -/
+theorem one_lt_log_of_three_le {x : ℝ} (hx : 3 ≤ x) : 1 < log x :=
+  (lt_log_iff_exp_lt (by linarith)).mpr (exp_one_lt_three.trans_le hx)
 
 /-- The natural logarithm of `4` is at most `2`. -/
 theorem log_four_le_two : log 4 ≤ 2 := by
@@ -55,6 +85,15 @@ theorem log_four_le_two : log 4 ≤ 2 := by
   rw [h4, log_pow]
   norm_num
   linarith [log_le_sub_one_of_pos zero_lt_two]
+
+/-- `2 / 5 < log (3 / 2)`, from `e² < (3 / 2) ^ 5` and `e < 2.7182818286`. -/
+theorem two_fifths_lt_log_three_halves : (2 / 5 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  refine (pow_lt_pow_iff_left₀ (exp_pos _).le (by norm_num) (by norm_num : (5 : ℕ) ≠ 0)).1 ?_
+  rw [← exp_natCast_mul, show ((5 : ℕ) : ℝ) * (2 / 5) = (2 : ℕ) * 1 by norm_num, exp_natCast_mul]
+  have h := exp_one_lt_d9
+  have h0 := (exp_pos 1).le
+  nlinarith
 
 /-- For every nonnegative real `x`, `log x / x ≤ 1 / 2` (holding at `x = 0` via `0 / 0 = 0`). -/
 theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := by
@@ -75,6 +114,26 @@ theorem abs_log_le_two_mul_one_sub {x : ℝ} (hx : 1 / 2 ≤ x) (hx₁ : x ≤ 1
   rw [log_inv, inv_eq_one_div, div_sub_one hx₀.ne', le_div_iff₀ hx₀] at h
   rw [abs_of_nonpos (log_nonpos hx₀.le hx₁)]
   nlinarith
+
+/-- For every `x ≤ 1`, the truncation of `-log x` at height one is controlled by the distance
+to `1`: `min (-log x) 1 ≤ 2 (1 - x)`. For `x ≤ 0` the right side is at least `2`. -/
+theorem min_neg_log_one_le_two_mul_one_sub {x : ℝ} (hx₁ : x ≤ 1) :
+    min (-log x) 1 ≤ 2 * (1 - x) := by
+  rcases le_or_gt x 0 with hx | hx
+  · linarith [min_le_right (-log x) 1]
+  -- `1 - log x ≤ exp (-log x) = x⁻¹`, so `x (1 - log x) ≤ 1`.
+  have hexp : x * (-log x + 1) ≤ 1 := by
+    have h := add_one_le_exp (-log x)
+    rw [exp_neg, exp_log hx] at h
+    calc x * (-log x + 1) ≤ x * x⁻¹ := mul_le_mul_of_nonneg_left h hx.le
+      _ = 1 := mul_inv_cancel₀ hx.ne'
+  rcases le_total (-log x) 1 with h | h
+  · -- `(1 - x) (1 - log x) ≥ -log x` and `1 - log x ≤ 2`.
+    rw [min_eq_left h]
+    nlinarith [mul_le_mul_of_nonneg_left (show -log x + 1 ≤ 2 by linarith)
+      (sub_nonneg.2 hx₁)]
+  · rw [min_eq_right h]
+    nlinarith
 
 /-- The negative logarithm is bounded by an inverse-square-root majorant on the nonnegative
 half-line, including its totalized value at zero. -/
@@ -132,4 +191,66 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
       (log_nonpos (div_nonneg (Nat.cast_nonneg p) (Nat.cast_nonneg q)) (le_of_not_ge h))).trans
       (log_natCast_nonneg N)
 
+/-- The logarithm grows by at most `1 / m` over a step of length one: for `0 ≤ m` and
+`0 ≤ a ≤ m + 1`, `log a - 1 / m ≤ log m`. At `m = 0` this reads `log a ≤ 0`. -/
+theorem log_sub_one_div_le_log {a m : ℝ} (ha : 0 ≤ a) (hm : 0 ≤ m) (h : a ≤ m + 1) :
+    log a - 1 / m ≤ log m := by
+  rcases hm.eq_or_lt with rfl | hm
+  · simpa using log_nonpos ha (by linarith)
+  rcases ha.eq_or_lt with rfl | ha
+  · have h1 := one_sub_inv_le_log_of_pos hm
+    rw [log_zero, one_div]
+    linarith [inv_pos.2 hm]
+  have h1 := log_le_sub_one_of_pos (div_pos ha hm)
+  rw [log_div ha.ne' hm.ne'] at h1
+  have h2 : a / m - 1 ≤ 1 / m := by
+    rw [div_sub_one hm.ne', div_le_div_iff_of_pos_right hm]
+    linarith
+  linarith
+
 end Real
+
+namespace TauCeti
+
+open _root_.Real
+
+/-- **A power with a small logarithm is at most `1 + 2 ε`.** For every real `z`, if `log z ≤ L`
+and `n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε`. -/
+theorem pow_le_one_add_two_mul_of_log_le {z L ε : ℝ} {n : ℕ} (hzL : log z ≤ L) (hL : n * L ≤ ε)
+    (hε0 : 0 ≤ ε) (hε : ε ≤ 1 / 2) : z ^ n ≤ 1 + 2 * ε := by
+  have h := abs_rpow_le_exp_log_mul z n
+  rw [rpow_natCast, mul_comm] at h
+  -- `z ^ n ≤ |z ^ n| ≤ exp (n log z) ≤ exp ε ≤ 1 / (1 - ε) ≤ 1 + 2 ε`.
+  calc z ^ n ≤ exp (n * log z) := (le_abs_self _).trans h
+    _ ≤ exp ε := exp_le_exp.2 ((mul_le_mul_of_nonneg_left hzL (Nat.cast_nonneg n)).trans hL)
+    _ ≤ 1 / (1 - ε) := exp_bound_div_one_sub_of_interval hε0 (by linarith)
+    _ ≤ 1 + 2 * ε := by
+      rw [div_le_iff₀ (by linarith)]
+      nlinarith [mul_nonneg hε0 (by linarith : (0 : ℝ) ≤ 1 - 2 * ε)]
+
+/-- Explicit decimal lower bound `0.4054 < log (3 / 2)`. -/
+theorem lt_log_three_halves : (0.4054 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  have hb := exp_bound' (x := (0.4054 : ℝ)) (by norm_num) (by norm_num) (n := 6) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb ⊢
+  linarith
+
+/-- Lower bound `-0.366513 ≤ log (log 2)`. -/
+theorem le_log_log_two : (-0.366513 : ℝ) ≤ log (log 2) := by
+  rw [le_log_iff_exp_le (log_pos one_lt_two), exp_neg]
+  refine (inv_le_of_inv_le₀ (by norm_num : (0 : ℝ) < 0.6931471803) ?_).trans log_two_gt_d9.le
+  refine le_trans ?_ (sum_le_exp_of_nonneg (x := (0.366513 : ℝ)) (by norm_num) 8)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
+
+/-- Upper bound `log (log 2) ≤ -0.366512`. -/
+theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
+  rw [log_le_iff_le_exp (log_pos one_lt_two), exp_neg]
+  refine log_two_lt_d9.le.trans (le_inv_of_le_inv₀ (exp_pos _) ?_)
+  have hb := exp_bound' (x := (0.366512 : ℝ)) (by norm_num) (by norm_num) (n := 8) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb
+  linarith
+
+end TauCeti

@@ -36,7 +36,9 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
-  vectors are equivalent over a commutative semiring.
+  vectors are equivalent over a commutative semiring; the abbreviation
+  `TauCeti.matrixLinearEquiv` lands in `(n → R) ≃ₗ[R] (n → R)`, and evaluates through
+  `TauCeti.matrixGeneralLinearEquiv_apply`.
 * `Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
   coordinate action has the corresponding single-entry matrix.
 * `LinearMap.vecMul_toMatrixRight'` and `LinearMap.isIdempotentElem_toMatrixRight'_iff`: over a
@@ -60,6 +62,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `Matrix.toLin_bijective_iff`, and `Matrix.toLin_bijective_iff_isUnit_det`: for bases of two
   modules indexed by the same finite type, the representing matrix (and, over a commutative ring,
   its determinant) is a unit if and only if the linear map is bijective.
+* `Matrix.toLin_apply_fin_two`: for bases indexed by `Fin 2`, the linear map of a matrix acts on
+  coordinates by the matrix.
 * `LinearEquiv.map_toMatrix_mul_map_toMatrix_symm`: even after applying a ring homomorphism to
   their entries, the matrix of a linear equivalence is a left inverse of the matrix of its inverse;
   applying the lemma to `T.symm` gives the product in the other order.
@@ -100,6 +104,13 @@ theorem matrixGeneralLinearEquiv_apply {R : Type*} [CommSemiring R] {n : Type*}
   rw [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     matrixGeneralLinearEquiv, Units.coe_mapEquiv]
   exact Matrix.toLinAlgEquiv'_apply _ _
+
+/-- Invertible matrices are the linear automorphisms of coordinate vectors, a matrix acting by
+multiplication of column vectors: `TauCeti.matrixGeneralLinearEquiv` followed by Mathlib's
+identification of `LinearMap.GeneralLinearGroup` with linear automorphisms. -/
+noncomputable abbrev matrixLinearEquiv {R : Type*} [CommSemiring R] {n : Type*} [Fintype n]
+    [DecidableEq n] : Matrix.GeneralLinearGroup n R ≃* ((n → R) ≃ₗ[R] (n → R)) :=
+  matrixGeneralLinearEquiv.trans (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R))
 
 end TauCeti
 
@@ -351,6 +362,16 @@ theorem toLin_bijective_iff_isUnit_det {R V M ι : Type*} [CommRing R] [AddCommM
     (v : Module.Basis ι R V) (b : Module.Basis ι R M) (A : Matrix ι ι R) :
     Function.Bijective (Matrix.toLin v b A) ↔ IsUnit A.det := by
   rw [toLin_bijective_iff, isUnit_iff_isUnit_det]
+
+/-- For bases `v` and `b` indexed by `Fin 2`, the linear map with matrix `A` sends the vector with
+coordinates `(x, y)` in `v` to the vector with coordinates `A (x, y)` in `b`. -/
+theorem toLin_apply_fin_two {R V M : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid M] [Module R M] (v : Module.Basis (Fin 2) R V) (b : Module.Basis (Fin 2) R M)
+    (A : Matrix (Fin 2) (Fin 2) R) (x y : R) :
+    Matrix.toLin v b A (x • v 0 + y • v 1) =
+      (A 0 0 * x + A 0 1 * y) • b 0 + (A 1 0 * x + A 1 1 * y) • b 1 := by
+  simp only [map_add, map_smul, toLin_self, Fin.sum_univ_two]
+  match_scalars <;> ring
 
 section Bilinear
 

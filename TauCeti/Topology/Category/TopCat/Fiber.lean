@@ -65,6 +65,10 @@ lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b :=
   ext x
   exact x.property
 
+/-- The fibre of the identity of `B` over a point is a point. -/
+instance uniqueFiberId (b : B) : Unique ((𝟙 B : B ⟶ B).fiber b) :=
+  ⟨⟨⟨b, rfl⟩⟩, fun x ↦ Subtype.ext x.property⟩
+
 /-- A map `f` over `B`, that is with `f ≫ p' = p`, carries the part of `E` over a subset of `B`
 into the part of `E'` over it. -/
 lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
@@ -79,6 +83,13 @@ lemma mapsTo_preimage_of_comp_eq_comp {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E
     (hs : Set.MapsTo s T U) : Set.MapsTo g (p' ⁻¹' T) (p ⁻¹' U) := fun x hx ↦ by
   rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hg, ConcreteCategory.comp_apply]
   exact hs hx
+
+/-- A map `g` over `s`, that is with `g ≫ p = p' ≫ s`, carries the complement of the part of `E'`
+over `T` into the complement of the part of `E` over `U`, whenever `s` pulls `U` back into `T`. -/
+lemma mapsTo_compl_preimage_of_comp_eq_comp {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E ⟶ B}
+    {p' : E' ⟶ B'} {s : B' ⟶ B} (hg : g ≫ p = p' ≫ s) {T : Set B'} {U : Set B}
+    (hs : ∀ x, s x ∈ U → x ∈ T) : Set.MapsTo g (p' ⁻¹' T)ᶜ (p ⁻¹' U)ᶜ :=
+  g.mapsTo_preimage_of_comp_eq_comp (T := Tᶜ) (U := Uᶜ) hg fun x hx hxu ↦ hx (hs x hxu)
 
 /-- The restriction `p'⁻¹(T) ⟶ p⁻¹(U)` of a map `g` over `s`, that is with `g ≫ p = p' ≫ s`, where
 `s` maps `T` into `U` (`TopCat.Hom.mapsTo_preimage_of_comp_eq_comp`). -/

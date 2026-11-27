@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Group.UniqueProds.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
@@ -44,6 +45,12 @@ a basis and the multiplication table above holds on the nose.
   `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, the
   dimension count `TauCeti.TwistedMonoidAlgebra.finrank_eq_natCard`, and the embedding of
   scalars `TauCeti.TwistedMonoidAlgebra.algebraMap_injective`;
+* `TauCeti.TwistedMonoidAlgebra.repr_mul_of_apply` and
+  `TauCeti.TwistedMonoidAlgebra.repr_of_mul_apply`: shifted coefficients after right or left
+  multiplication by a basis element, under the corresponding cancellation hypothesis;
+  support-local variants only require uniqueness on the actual coefficient support;
+* `TauCeti.TwistedMonoidAlgebra.domCongr`: twist-preserving monoid equivalences reindex the
+  algebra, with forward and inverse basis and coefficient laws;
 * `TauCeti.TwistedMonoidAlgebra.lift`: the universal property. A family `u : G → A` in a
   `k`-algebra `A` with `u 1 = 1` and `u g * u h = α g h • u (g * h)` -- that is, a projective
   representation with factor set `α` -- extends uniquely to an algebra map `k_α[G] →ₐ[k] A`.
@@ -51,8 +58,9 @@ a basis and the multiplication table above holds on the nose.
   (`TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top`);
 * `TauCeti.TwistedMonoidAlgebra.repr_mul_apply_one_comm`: for a group `G`, the coefficient at the
   identity is a trace on `k_α[G]`;
-* `TauCeti.TwistedMonoidAlgebra.monoidAlgebraEquiv`: for the trivial factor set, `k_α[G]` is the
-  monoid algebra `MonoidAlgebra k G`;
+* `TauCeti.TwistedMonoidAlgebra.monoidAlgebraEquiv`,
+  `TauCeti.TwistedMonoidAlgebra.addMonoidAlgebraEquiv`: for the trivial factor set, `k_α[G]` is
+  the monoid algebra `MonoidAlgebra k G`, and `k_1[Multiplicative L]` is `AddMonoidAlgebra k L`;
 * `TauCeti.TwistedMonoidAlgebra.equivOfCoboundary`: two factor sets related by
   `β g h * c (g * h) = α g h * (c g * c h)` for some `c : G → kˣ` have isomorphic twisted monoid
   algebras. For a group `G` that relation is exactly the statement that `α` and `β` are
@@ -74,7 +82,7 @@ two (`TauCeti.IsFactorSet.one_right`). Carrying the hypotheses in a class keeps 
 representations.
 
 Nothing in the construction uses inverses in `G`, so `IsFactorSet`, the twisted algebra, its basis,
-the universal property and the two comparison isomorphisms are all stated for a monoid `G`. A group
+the universal property and the comparison isomorphisms, including `domCongr`, use monoids. A group
 is assumed for descent to a quotient group and where an inverse appears, in
 `TauCeti.IsFactorSet.apply_inv_eq_inv_apply`, `TauCeti.TwistedMonoidAlgebra.isUnit_of`,
 `TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top` and
@@ -98,7 +106,8 @@ public section
 
 namespace TauCeti
 
-open Module
+open Module Finset
+open scoped Pointwise
 
 /-- A **normalized factor set** on a monoid `G` with values in the units of a commutative semiring
 `k`: a function `α : G → G → kˣ` satisfying the multiplicative `2`-cocycle identity and normalized
@@ -409,6 +418,189 @@ theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
   simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul_sum, smul_mul_smul_comm,
     map_sum, map_smul, basis_apply, of_mul_of, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one]
 
+/-- The support of a product lies in the pointwise product of the supports. -/
+theorem support_repr_mul_subset [DecidableEq G] (f g : twistedMonoidAlgebra k G α) :
+    ((basis k G α).repr (f * g)).support ⊆
+      ((basis k G α).repr f).support * ((basis k G α).repr g).support := by
+  rw [repr_mul]
+  refine Finsupp.support_sum.trans <| biUnion_subset.2 fun a ha ↦ ?_
+  refine Finsupp.support_sum.trans <| biUnion_subset.2 fun b hb ↦ ?_
+  exact Finsupp.support_single_subset.trans (singleton_subset_iff.2 (mul_mem_mul ha hb))
+
+/-- If no pair in the supports of `f` and `g` other than `(a, b)` has product `a * b`, the
+coefficient of `f * g` at `a * b` is
+`(basis k G α).repr f a * (basis k G α).repr g b * α a b`.
+The unique-product argument adapts `MonoidAlgebra.coeff_mul_mul_of_uniqueMul` from
+`Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors`. -/
+theorem repr_mul_apply_of_uniqueMul {f g : twistedMonoidAlgebra k G α} {a b : G}
+    (h : UniqueMul ((basis k G α).repr f).support ((basis k G α).repr g).support a b) :
+    (basis k G α).repr (f * g) (a * b) =
+      (basis k G α).repr f a * (basis k G α).repr g b * (α a b : k) := by
+  classical
+  rw [repr_mul]
+  simp only [Finsupp.sum, Finsupp.finsetSum_apply, Finsupp.single_apply]
+  rw [← Finset.sum_product']
+  refine (Finset.sum_eq_single (a, b) ?_ ?_).trans (ite_eq_left rfl)
+  · intro p hp hpne
+    rw [Finset.mem_product] at hp
+    exact ite_eq_right fun he ↦ hpne (Prod.ext (h hp.1 hp.2 he).1 (h hp.1 hp.2 he).2)
+  · intro hab
+    simp only [Finset.mem_product, not_and_or] at hab
+    rcases hab with ha | hb
+    · simp [Finsupp.notMem_support_iff.mp ha]
+    · simp [Finsupp.notMem_support_iff.mp hb]
+
+section MonoidCoefficients
+
+variable {R H : Type*} [CommSemiring R] [Monoid H]
+  {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- Right multiplication by a normalized basis element expands as a single weighted sum. -/
+theorem repr_mul_of (f : twistedMonoidAlgebra R H β) (b : H) :
+    (basis R H β).repr (f * of b) =
+      ((basis R H β).repr f).sum fun a r ↦ Finsupp.single (a * b) (r * (β a b : R)) := by
+  rw [repr_mul, repr_of]
+  simp only [Finsupp.sum_single_index, zero_mul, mul_zero, Finsupp.single_zero, mul_one]
+
+/-- Left multiplication by a normalized basis element expands as a single weighted sum. -/
+theorem repr_of_mul (f : twistedMonoidAlgebra R H β) (b : H) :
+    (basis R H β).repr (of b * f) =
+      ((basis R H β).repr f).sum fun a r ↦ Finsupp.single (b * a) (r * (β b a : R)) := by
+  rw [repr_mul, repr_of]
+  simp only [Finsupp.sum_single_index, zero_mul, Finsupp.single_zero,
+    Finsupp.sum_fun_zero, one_mul]
+
+/-- The coefficient at `a * b` when no support index other than `a` maps there under right
+multiplication by `b`; the coefficient at `a` is allowed to be zero. -/
+theorem repr_mul_of_apply_of_unique (f : twistedMonoidAlgebra R H β) (a b : H)
+    (h : ∀ x ∈ ((basis R H β).repr f).support, x * b = a * b → x = a) :
+    (basis R H β).repr (f * of b) (a * b) =
+      (basis R H β).repr f a * (β a b : R) := by
+  classical
+  have h' : UniqueMul ((basis R H β).repr f).support
+      ((basis R H β).repr (of b)).support a b := by
+    intro x y hx hy hxy
+    have hyb : y = b := Finset.mem_singleton.mp (Finsupp.support_single_subset
+      (by simpa only [repr_of] using hy))
+    subst y
+    exact ⟨h x hx hxy, rfl⟩
+  simpa only [repr_of, Finsupp.single_eq_same, mul_one] using repr_mul_apply_of_uniqueMul h'
+
+/-- The coefficient at `b * a` when no support index other than `a` maps there under left
+multiplication by `b`; the coefficient at `a` is allowed to be zero. -/
+theorem repr_of_mul_apply_of_unique (f : twistedMonoidAlgebra R H β) (a b : H)
+    (h : ∀ x ∈ ((basis R H β).repr f).support, b * x = b * a → x = a) :
+    (basis R H β).repr (of b * f) (b * a) =
+      (basis R H β).repr f a * (β b a : R) := by
+  classical
+  have h' : UniqueMul ((basis R H β).repr (of b)).support
+      ((basis R H β).repr f).support b a := by
+    intro x y hx hy hxy
+    have hxb : x = b := Finset.mem_singleton.mp (Finsupp.support_single_subset
+      (by simpa only [repr_of] using hx))
+    subst x
+    exact ⟨rfl, h y hy hxy⟩
+  simpa only [repr_of, Finsupp.single_eq_same, one_mul] using repr_mul_apply_of_uniqueMul h'
+
+/-- The shifted coefficient formula when the right multiplying index is right regular. -/
+theorem repr_mul_of_apply_of_isRightRegular (f : twistedMonoidAlgebra R H β) (a b : H)
+    (hb : IsRightRegular b) :
+    (basis R H β).repr (f * of b) (a * b) =
+      (basis R H β).repr f a * (β a b : R) :=
+  repr_mul_of_apply_of_unique f a b fun _ _ h ↦ hb h
+
+/-- The shifted coefficient formula when the left multiplying index is left regular. -/
+theorem repr_of_mul_apply_of_isLeftRegular (f : twistedMonoidAlgebra R H β) (a b : H)
+    (hb : IsLeftRegular b) :
+    (basis R H β).repr (of b * f) (b * a) =
+      (basis R H β).repr f a * (β b a : R) :=
+  repr_of_mul_apply_of_unique f a b fun _ _ h ↦ hb h
+
+/-- The coefficient of right multiplication by a basis element, with its shifted index. -/
+@[simp]
+theorem repr_mul_of_apply [IsRightCancelMul H] (f : twistedMonoidAlgebra R H β) (a b : H) :
+    (basis R H β).repr (f * of b) (a * b) =
+      (basis R H β).repr f a * (β a b : R) :=
+  repr_mul_of_apply_of_isRightRegular f a b fun _ _ h ↦ mul_right_cancel h
+
+/-- The coefficient of left multiplication by a basis element, with its shifted index. -/
+@[simp]
+theorem repr_of_mul_apply [IsLeftCancelMul H] (f : twistedMonoidAlgebra R H β) (a b : H) :
+    (basis R H β).repr (of b * f) (b * a) =
+      (basis R H β).repr f a * (β b a : R) :=
+  repr_of_mul_apply_of_isLeftRegular f a b fun _ _ h ↦ mul_left_cancel h
+
+/-- A coefficient outside the right translate of the actual coefficient support vanishes. -/
+theorem repr_mul_of_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
+    (hc : c ∉ (fun a : H ↦ a * b) '' ↑((basis R H β).repr f).support) :
+    (basis R H β).repr (f * of b) c = 0 := by
+  classical
+  apply Finsupp.notMem_support_iff.mp
+  intro hn
+  have hs := (support_repr_mul_subset f (of b)).trans
+    (Finset.mul_subset_mul_left (s := ((basis R H β).repr f).support)
+      (by simpa only [repr_of] using
+        (Finsupp.support_single_subset : (Finsupp.single b (1 : R)).support ⊆ {b})))
+  apply hc
+  simpa only [Finset.coe_mul, Finset.coe_singleton, Set.mul_singleton] using
+    (Finset.mem_coe.mpr (hs hn))
+
+/-- A coefficient outside the left translate of the actual coefficient support vanishes. -/
+theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
+    (hc : c ∉ (fun a : H ↦ b * a) '' ↑((basis R H β).repr f).support) :
+    (basis R H β).repr (of b * f) c = 0 := by
+  classical
+  apply Finsupp.notMem_support_iff.mp
+  intro hn
+  have hs := (support_repr_mul_subset (of b) f).trans
+    (Finset.mul_subset_mul_right (t := ((basis R H β).repr f).support)
+      (by simpa only [repr_of] using
+        (Finsupp.support_single_subset : (Finsupp.single b (1 : R)).support ⊆ {b})))
+  apply hc
+  simpa only [Finset.coe_mul, Finset.coe_singleton, Set.singleton_mul] using
+    (Finset.mem_coe.mpr (hs hn))
+
+/-- The coefficient at a free index after right multiplication by a unit-index basis element. -/
+@[simp]
+theorem repr_mul_of_unit_apply (f : twistedMonoidAlgebra R H β) (b : Hˣ) (c : H) :
+    (basis R H β).repr (f * of (b : H)) c =
+      (basis R H β).repr f (c * ↑b⁻¹) * (β (c * ↑b⁻¹) b : R) := by
+  simpa only [Units.inv_mul_cancel_right] using
+    repr_mul_of_apply_of_isRightRegular f (c * ↑b⁻¹) (b : H)
+      (fun _ _ h ↦ (Units.mul_left_inj b).mp h)
+
+/-- The coefficient at a free index after left multiplication by a unit-index basis element. -/
+@[simp]
+theorem repr_of_unit_mul_apply (f : twistedMonoidAlgebra R H β) (b : Hˣ) (c : H) :
+    (basis R H β).repr (of (b : H) * f) c =
+      (basis R H β).repr f (↑b⁻¹ * c) * (β b (↑b⁻¹ * c) : R) := by
+  simpa only [Units.mul_inv_cancel_left] using
+    repr_of_mul_apply_of_isLeftRegular f (↑b⁻¹ * c) (b : H)
+      (fun _ _ h ↦ (Units.mul_right_inj b).mp h)
+
+end MonoidCoefficients
+
+section GroupCoefficients
+
+variable {R H : Type*} [CommSemiring R] [Group H]
+  {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- The coefficient at a free index after right multiplication by a basis element. -/
+@[simp]
+theorem repr_mul_of_apply_mul_inv (f : twistedMonoidAlgebra R H β) (b c : H) :
+    (basis R H β).repr (f * of b) c =
+      (basis R H β).repr f (c * b⁻¹) * (β (c * b⁻¹) b : R) :=
+  repr_mul_of_unit_apply f (toUnits b) c
+
+/-- The coefficient at a free index after left multiplication by a basis element. -/
+@[simp]
+theorem repr_of_mul_apply_inv_mul (f : twistedMonoidAlgebra R H β) (b c : H) :
+    (basis R H β).repr (of b * f) c =
+      (basis R H β).repr f (b⁻¹ * c) * (β b (b⁻¹ * c) : R) :=
+  repr_of_unit_mul_apply f (toUnits b) c
+
+end GroupCoefficients
+
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
 theorem algHom_ext {A : Type*} [Semiring A] [Algebra k A]
@@ -515,6 +707,81 @@ theorem lift_of (u : G → A) (hu₁ : u 1 = 1)
 
 end Lift
 
+section DomCongr
+
+variable {R G H : Type*} [CommSemiring R] [Monoid G] [Monoid H]
+  {α : G → G → Rˣ} {β : H → H → Rˣ} [IsFactorSet α] [IsFactorSet β]
+
+/-- A multiplicative equivalence preserving the factor set reindexes the twisted algebra. -/
+noncomputable def domCongr (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) :
+    twistedMonoidAlgebra R G α ≃ₐ[R] twistedMonoidAlgebra R H β := by
+  let f : twistedMonoidAlgebra R G α →ₐ[R] twistedMonoidAlgebra R H β :=
+    lift (fun a ↦ of (e a)) (by simp) (by intro a b; simp [of_mul_of, h])
+  let g : twistedMonoidAlgebra R H β →ₐ[R] twistedMonoidAlgebra R G α :=
+    lift (fun b ↦ of (e.symm b)) (by simp) (by
+      intro a b
+      have hh := h (e.symm a) (e.symm b)
+      simpa only [map_mul, e.apply_symm_apply, of_mul_of] using
+        congrArg (fun r : Rˣ ↦ (r : R) •
+          (of (e.symm a * e.symm b) : twistedMonoidAlgebra R G α)) hh)
+  exact AlgEquiv.ofAlgHom f g (by ext a; simp [f, g]) (by ext a; simp [f, g])
+
+/-- Reindexing sends each normalized basis element to its corresponding basis element. -/
+@[simp]
+theorem domCongr_of (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) (a : G) :
+    domCongr e h (of a) = of (e a) := by
+  simp only [domCongr, AlgEquiv.ofAlgHom_apply, lift_of]
+
+/-- Inverse reindexing is reindexing by the inverse monoid equivalence. -/
+@[simp]
+theorem domCongr_symm (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) :
+    (domCongr e h).symm = domCongr e.symm (fun a b ↦ by
+      simpa only [e.apply_symm_apply] using (h (e.symm a) (e.symm b)).symm) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply algHom_ext
+  intro b
+  apply (domCongr e h).injective
+  simp only [AlgEquiv.toAlgHom_apply, AlgEquiv.apply_symm_apply, domCongr_of,
+    e.apply_symm_apply]
+
+/-- Inverse reindexing sends each normalized basis element to its inverse-index basis element. -/
+theorem domCongr_symm_of (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) (b : H) :
+    (domCongr e h).symm (of b) = of (e.symm b) := by
+  rw [domCongr_symm, domCongr_of]
+
+/-- The underlying linear equivalence is the canonical basis transport. -/
+theorem domCongr_toLinearEquiv (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) :
+    (domCongr e h).toLinearEquiv = (basis R G α).equiv (basis R H β) e.toEquiv := by
+  apply LinearEquiv.toLinearMap_injective
+  apply (basis R G α).ext
+  intro a
+  -- The induced linear maps evaluate as their underlying equivalences.
+  change (domCongr e h) ((basis R G α) a) =
+    ((basis R G α).equiv (basis R H β) e.toEquiv) ((basis R G α) a)
+  rw [Module.Basis.equiv_apply, basis_apply, basis_apply, domCongr_of]
+  simp only [MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv]
+
+/-- Coefficients at corresponding indices are unchanged by twist-preserving reindexing. -/
+@[simp]
+theorem repr_domCongr_apply (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b))
+    (f : twistedMonoidAlgebra R G α) (a : G) :
+    (basis R H β).repr (domCongr e h f) (e a) = (basis R G α).repr f a := by
+  have hr : ((basis R H β).reindex e.toEquiv.symm).repr (domCongr e h f) =
+      (basis R G α).repr f := by
+    rw [← AlgEquiv.toLinearEquiv_apply, domCongr_toLinearEquiv]
+    simp only [Module.Basis.equiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  have hc := congrArg (fun v ↦ v a) hr
+  simpa only [Module.Basis.repr_reindex_apply, Equiv.symm_symm,
+    MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv] using hc
+
+/-- Inverse reindexing preserves coefficients at inverse-corresponding indices. -/
+theorem repr_domCongr_symm_apply (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b))
+    (f : twistedMonoidAlgebra R H β) (b : H) :
+    (basis R G α).repr ((domCongr e h).symm f) (e.symm b) = (basis R H β).repr f b := by
+  rw [domCongr_symm, repr_domCongr_apply]
+
+end DomCongr
+
 section Trivial
 
 variable (k G)
@@ -550,6 +817,34 @@ noncomputable def monoidAlgebraEquiv :
 theorem monoidAlgebraEquiv_of (g : G) :
     monoidAlgebraEquiv k G (of g) = MonoidAlgebra.single g (1 : k) :=
   toMonoidAlgebra_of k G g
+
+section AddMonoid
+
+variable (L : Type*) [AddMonoid L]
+
+/-- For the trivial factor set `1`, `twistedMonoidAlgebra k (Multiplicative L) 1` is canonically
+isomorphic as a `k`-algebra to `AddMonoidAlgebra k L`. -/
+noncomputable def addMonoidAlgebraEquiv :
+    twistedMonoidAlgebra k (Multiplicative L) (1 : Multiplicative L → Multiplicative L → kˣ) ≃ₐ[k]
+      AddMonoidAlgebra k L :=
+  (monoidAlgebraEquiv k (Multiplicative L)).trans
+    (AddMonoidAlgebra.toMultiplicativeAlgEquiv k k L).symm
+
+@[simp]
+theorem addMonoidAlgebraEquiv_of (m : L) :
+    addMonoidAlgebraEquiv k L (of (Multiplicative.ofAdd m)) = AddMonoidAlgebra.single m 1 := by
+  apply (AddMonoidAlgebra.toMultiplicativeAlgEquiv k k L).injective
+  simp [addMonoidAlgebraEquiv]
+
+@[simp]
+theorem addMonoidAlgebraEquiv_symm_single (m : L) (c : k) :
+    (addMonoidAlgebraEquiv k L).symm (AddMonoidAlgebra.single m c) =
+      c • of (Multiplicative.ofAdd m) := by
+  apply (addMonoidAlgebraEquiv k L).injective
+  rw [AlgEquiv.apply_symm_apply, map_smul, addMonoidAlgebraEquiv_of,
+    AddMonoidAlgebra.smul_single, smul_eq_mul, mul_one]
+
+end AddMonoid
 
 end Trivial
 

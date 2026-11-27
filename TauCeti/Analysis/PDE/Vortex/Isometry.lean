@@ -266,8 +266,7 @@ theorem coe_translationGauge_mul_pow {m : ℕ} {a z : ℂ} (hz : ‖a‖ ^ 2 + 2
   have hw : 1 + a / z = (z + a) / z := by field_simp
   -- `exp (i arg w) = w / ‖w‖` for `w = 1 + a / z = (z + a) / z`.
   have hexp : exp (arg (1 + a / z) * I) = (z + a) / z / ‖(z + a) / z‖ := by
-    rw [hw, eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 (div_ne_zero hza0 hz0))), mul_comm,
-      norm_mul_exp_arg_mul_I]
+    rw [hw, exp_arg_mul_I (div_ne_zero hza0 hz0)]
   -- The gauge is `exp (-i m arg w) = (exp (i arg w) ^ m)⁻¹`.
   have hg : (translationGauge m a z : ℂ) = (exp (arg (1 + a / z) * I) ^ m)⁻¹ := by
     rw [translationGauge, Circle.coe_exp, translationPhase_eq hz, ← exp_natCast_mul, ← exp_neg]
