@@ -25,6 +25,10 @@ with a neighbourhood of `S` in place of `X`, this is the injectivity half of the
 subsets: a class on a neighbourhood of `S` that vanishes on `S` vanishes on a smaller
 neighbourhood.
 
+Since the cohomology of a point vanishes in positive degree, a class of positive degree restricts
+to zero on a neighbourhood of every point
+(`TauCeti.AlexanderSpanier.exists_mem_nhds_cohomologyMap_subtypeVal_apply_eq_zero`).
+
 Consequently, if a class restricts to zero on the intersection of a directed family of compact
 closed sets, it restricts to zero on one member of the family
 (`TauCeti.AlexanderSpanier.exists_cohomologyMap_subtypeVal_apply_eq_zero_of_directed`). This is how
@@ -227,6 +231,20 @@ theorem exists_cohomologyMap_subtypeVal_apply_eq_zero_of_directed {ι : Type*} [
       (iInter_subset _ _)) c hc
   obtain ⟨i, hi⟩ := exists_subset_nhds_of_isCompact' hK hKc hKcl hU
   exact ⟨i, cohomologyMap_subtypeVal_apply_eq_zero_of_subset R M hi hcU⟩
+
+variable (R M) in
+/-- **Positive-degree classes vanish near points.** On a uniform space, a class of positive degree
+in Alexander–Spanier cohomology restricts to zero on a neighbourhood of every point: it restricts
+to zero on the point, whose cohomology vanishes in positive degree, and continuity for compact
+subsets extends this to a neighbourhood. -/
+theorem exists_mem_nhds_cohomologyMap_subtypeVal_apply_eq_zero (x : X) {n : ℕ} (hn : n ≠ 0)
+    (c : cohomology R X M n) :
+    ∃ U ∈ 𝓝 x, (cohomologyMap R M (ContinuousMap.subtypeVal U) n).hom c = 0 := by
+  have : Subsingleton ({x} : Set X) := subsingleton_singleton.coe_sort
+  have := subsingleton_cohomology (R := R) (M := M) (Y := ({x} : Set X)) hn
+  simpa only [nhdsSet_singleton] using
+    exists_mem_nhdsSet_cohomologyMap_subtypeVal_apply_eq_zero R M isCompact_singleton c
+      (Subsingleton.elim _ _)
 
 end Uniform
 

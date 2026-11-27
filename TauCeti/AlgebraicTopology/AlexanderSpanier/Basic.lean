@@ -12,6 +12,7 @@ public import Mathlib.AlgebraicTopology.AlternatingFaceMapComplex
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.LocallyConstant.Algebra
 public import TauCeti.AlgebraicTopology.AlternatingCofaceMapComplex
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Alexander–Spanier cohomology
@@ -48,6 +49,10 @@ coboundary `(x₀, x₁) ↦ ψ(x₁) - ψ(x₀)` is locally zero exactly when `
 (`TauCeti.AlexanderSpanier.cohomologyMap_zero_comp_cohomologyZeroIso_hom`). Locally constant
 functions are constant on connected components, whereas the degree-zero singular cohomology
 consists of the functions constant on path components.
+
+On a space with at most one point every cochain is determined by its value on the constant tuple,
+and Alexander–Spanier cohomology vanishes in positive degree
+(`TauCeti.AlexanderSpanier.subsingleton_cohomology`).
 
 Alexander–Spanier cohomology agrees with Čech cohomology on paracompact Hausdorff spaces, and it is
 the theory used for the continuity and tautness properties of cohomology on compact pairs. The
@@ -365,6 +370,20 @@ theorem cohomologyMap_subtypeVal_apply_eq_zero_of_subset {N U : Set X} (hNU : N 
   rw [← ContinuousMap.subtypeVal_comp_inclusion hNU, cohomologyMap_comp,
     ConcreteCategory.comp_apply, hc, map_zero]
 
+/-- Restriction to the whole space loses nothing: a class of `H^n(X; M)` restricts to zero on
+`Set.univ` exactly when it is zero. -/
+theorem cohomologyMap_subtypeVal_univ_apply_eq_zero_iff {n : ℕ} {c : cohomology R X M n} :
+    (cohomologyMap R M (ContinuousMap.subtypeVal (Set.univ : Set X)) n).hom c = 0 ↔ c = 0 := by
+  refine ⟨fun hc ↦ ?_, fun hc ↦ by rw [hc, map_zero]⟩
+  -- The inclusion of `Set.univ` has the continuous inverse `x ↦ ⟨x, trivial⟩`.
+  have hid : (ContinuousMap.subtypeVal (Set.univ : Set X)).comp
+      ⟨fun x ↦ ⟨x, Set.mem_univ x⟩, continuous_id.subtype_mk _⟩ = ContinuousMap.id X :=
+    ContinuousMap.ext fun _ ↦ rfl
+  have hc' := congrArg (cohomologyMap R M ⟨fun x ↦ ⟨x, Set.mem_univ x⟩,
+    continuous_id.subtype_mk _⟩ n).hom hc
+  rwa [← ConcreteCategory.comp_apply, ← cohomologyMap_comp, hid, cohomologyMap_id, map_zero,
+    ConcreteCategory.id_apply] at hc'
+
 variable {R M} in
 /-- If the cocycle `z` is represented by `φ`, then its pullback along `f` is represented by
 `y ↦ φ (f ∘ y)`. -/
@@ -526,5 +545,49 @@ lemma cohomologyMap_zero_comp_cohomologyZeroIso_hom {Y : Type u} [TopologicalSpa
     reassoc_of% h]
 
 end DegreeZero
+
+/-! ### Spaces with at most one point -/
+
+section Subsingleton
+
+variable {R : Type w} [Ring R] {M : Type v} [AddCommGroup M] [Module R M] {Y : Type u}
+  [TopologicalSpace Y]
+
+/-- **The Alexander–Spanier cohomology of a space with at most one point vanishes in positive
+degree.** On such a space a function on tuples is determined by its value on the constant tuple,
+and a cocycle `φ` of degree `m + 1` is the coboundary of the constant function with the value of
+`φ`. -/
+theorem subsingleton_cohomology [Subsingleton Y] {n : ℕ} (hn : n ≠ 0) :
+    Subsingleton (cohomology R Y M n) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨z, rfl⟩ := (cochainComplex R Y M).moduleCat_homologyπ_surjective (m + 1) c
+  obtain ⟨φ, hφ⟩ := cochainClass_surjective (R := R) (m + 1)
+    (((cochainComplex R Y M).iCycles (m + 1)).hom z)
+  -- The coboundary of the cocycle `φ` is locally zero.
+  have hδ : IsLocallyZero fun y : Fin (m + 3) → Y ↦
+      ∑ i : Fin (m + 3), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) := by
+    rw [← cochainClass_eq_zero_iff (R := R), ← cochainComplex_d_cochainClass, hφ,
+      HomologicalComplex.moduleCat_d_iCycles_apply]
+  refine ((cochainComplex R Y M).moduleCat_homologyπ_eq_zero_iff (m := m) (by simp) _).2
+    ⟨cochainClass R Y M m fun y ↦ φ fun _ ↦ y 0, ?_⟩
+  rw [← (HomologicalComplex.moduleCat_iCycles_injective _ _).eq_iff,
+    HomologicalComplex.moduleCat_iCycles_toCycles_apply, cochainComplex_d_cochainClass, ← hφ]
+  congr 1
+  funext y
+  -- All tuples of points of `Y` of a given length agree.
+  have hy {k : ℕ} (y' : Fin (k + 1) → Y) : (fun _ ↦ y' 0 : Fin (m + 2) → Y) = y :=
+    funext fun _ ↦ Subsingleton.elim _ _
+  -- The cocycle condition at the constant tuple reads `φ y = ∑ᵢ (-1)ⁱ φ y`, the sum over
+  -- `m + 2` faces.
+  have h0 := hδ.apply_const (y 0)
+  simp only [Function.comp_def, Fin.sum_univ_succ (n := m + 2), Fin.val_zero, pow_zero, one_smul,
+    Fin.val_succ, pow_succ, mul_neg_one, neg_smul, Finset.sum_neg_distrib, ← sub_eq_add_neg,
+    sub_eq_zero] at h0
+  rw [show (fun _ ↦ y 0 : Fin (m + 2) → Y) = y from hy y] at h0
+  simp only [hy]
+  exact h0.symm
+
+end Subsingleton
 
 end TauCeti.AlexanderSpanier
