@@ -37,11 +37,12 @@ and the inequality is Maclaurin's inequality `S_m^{1/m} ≤ S_k^{1/k}` for nonne
 
 ## Main results
 
-* `TauCeti.AlmostComplexStructure.wedge_wedgePow_div_rpow_le_wedge_wedgePow_div_rpow`: the
-  Maclaurin form inequality between the mixed wedge powers `β ^ m ∧ ω ^ (n - m)` and
-  `β ^ k ∧ ω ^ (n - k)`.
-* `TauCeti.AlmostComplexStructure.wedgePow_div_rpow_le_wedge_wedgePow_div_rpow`: its case
-  `m = n`, against the top power `β ^ n`.
+Both results are in the namespace `TauCeti.AlmostComplexStructure`.
+
+* `wedge_wedgePow_wedgePow_div_rpow_le_wedge_wedgePow_wedgePow_div_rpow`: the Maclaurin form
+  inequality between the mixed wedge powers `β ^ m ∧ ω ^ (n - m)` and `β ^ k ∧ ω ^ (n - k)`.
+* `wedgePow_div_rpow_le_wedge_wedgePow_wedgePow_div_rpow`: its case `m = n`, against the top
+  power `β ^ n`.
 
 ## References
 
@@ -87,7 +88,7 @@ private theorem wedge_wedgePow_wedgePow_div_eq_normalizedEsymm {n k l : ℕ}
 `α(u, i u) ≥ 0`, satisfies
 `(α ^ m ∧ ω ^ p / ω ^ n) ^ (1 / m) ≤ (α ^ k ∧ ω ^ l / ω ^ n) ^ (1 / k)` for `1 ≤ k ≤ m`,
 `k + l = n` and `m + p = n`, the quotients being taken on any tuple `v` of `2 n` vectors. -/
-theorem wedge_wedgePow_div_rpow_le_wedge_wedgePow_div_rpow {n k l m p : ℕ}
+theorem wedge_wedgePow_wedgePow_div_rpow_le_wedge_wedgePow_wedgePow_div_rpow {n k l m p : ℕ}
     (hn : finrank ℂ E = n) (hpos : ∀ u : E, 0 ≤ α ![u, I • u]) (hk : 1 ≤ k) (hkm : k ≤ m)
     (hkl : k + l = n) (hmp : m + p = n) (v : Fin (2 * n) → E) :
     (wedge (α.wedgePow m) ((alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow p)
@@ -111,7 +112,7 @@ dimension `n`, with `ω` the Kähler form of multiplication by `i`, a positive r
 type (1,1), `α(u, i u) ≥ 0`, satisfies
 `(α ^ n / ω ^ n) ^ (1 / n) ≤ (α ^ k ∧ ω ^ l / ω ^ n) ^ (1 / k)` for `k ≥ 1` and `k + l = n`, the
 quotients being taken on any tuple `v` of `2 n` vectors. -/
-theorem wedgePow_div_rpow_le_wedge_wedgePow_div_rpow {n k l : ℕ} (hn : finrank ℂ E = n)
+theorem wedgePow_div_rpow_le_wedge_wedgePow_wedgePow_div_rpow {n k l : ℕ} (hn : finrank ℂ E = n)
     (hpos : ∀ u : E, 0 ≤ α ![u, I • u]) (hk : 1 ≤ k) (hkl : k + l = n) (v : Fin (2 * n) → E) :
     (α.wedgePow n v /
         (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v) ^ (1 / (n : ℝ)) ≤
