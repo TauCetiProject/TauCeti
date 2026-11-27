@@ -53,7 +53,7 @@ variable {α : Type*} [Fintype α] [DecidableEq α]
 counted by `∑ i, (M ^ n *ᵥ 1) i` for the transition matrix `M` of `A`. -/
 theorem languageCount_sftOneSided {R : Type*} [CommSemiring R] {A : α → α → Bool}
     (hrow : ∀ i, ∃ j, A i j) (n : ℕ) :
-    (languageCount (sftOneSided A) (n + 1) : R) = ∑ i, (transitionMatrix R A ^ n *ᵥ 1) i := by
+    (languageCount (sftOneSided A) (n + 1) : R) = ∑ i, (sftTransitionMatrix R A ^ n *ᵥ 1) i := by
   have hwords : wordsOf (sftOneSided A) (n + 1) =
       ((Finset.univ.filter fun w : Fin (n + 1) → α ↦
         ∀ k : Fin n, A (w k.castSucc) (w k.succ) : Finset _) : Set (Fin (n + 1) → α)) := by
@@ -64,7 +64,7 @@ theorem languageCount_sftOneSided {R : Type*} [CommSemiring R] {A : α → α �
     simpa using mem_sftOneSided.1 hx k
   rw [languageCount_def, hwords, ncard_coe_finset, ← Matrix.sum_pathWeight, Finset.card_filter]
   push_cast
-  exact Finset.sum_congr rfl fun w _ ↦ (pathWeight_transitionMatrix A w).symm
+  exact Finset.sum_congr rfl fun w _ ↦ (pathWeight_sftTransitionMatrix A w).symm
 
 omit [DecidableEq α] in
 /-- **Entropy of a subshift of finite type.** For a finite discrete alphabet and a relation `A`
@@ -73,16 +73,16 @@ topological entropy `log (spectralRadius ℝ M)` for the `0`-`1` transition matr
 theorem coverEntropy_shift_sftOneSided [UniformSpace α] [DiscreteUniformity α]
     {A : α → α → Bool} (hrow : ∀ i, ∃ j, A i j) :
     coverEntropy (shift (1 : ℕ)) (sftOneSided A) =
-      ENNReal.log (spectralRadius ℝ (transitionMatrix ℝ A)) := by
+      ENNReal.log (spectralRadius ℝ (sftTransitionMatrix ℝ A)) := by
   classical
   have hmono : Monotone fun n ↦ (languageCount (sftOneSided A) n : ℝ≥0∞) :=
     fun _ _ h ↦ Nat.cast_le.2 (languageCount_mono _ h)
   have hL : (fun n ↦ (languageCount (sftOneSided A) (n + 1) : ℝ≥0∞)) =
-      fun n ↦ ENNReal.ofReal (∑ i, (transitionMatrix ℝ A ^ n *ᵥ 1) i) := by
+      fun n ↦ ENNReal.ofReal (∑ i, (sftTransitionMatrix ℝ A ^ n *ᵥ 1) i) := by
     funext n
     rw [← languageCount_sftOneSided hrow n, ENNReal.ofReal_natCast]
   rw [coverEntropy_shift_nat_eq_expGrowthSup, ← hmono.expGrowthSup_comp_add 1, hL,
-    Matrix.expGrowthSup_sum_pow_mulVec_eq (transitionMatrix_nonneg A)]
+    Matrix.expGrowthSup_sum_pow_mulVec_eq (sftTransitionMatrix_nonneg A)]
 
 omit [DecidableEq α] in
 /-- The `liminf` topological entropy of a subshift of finite type is also
@@ -90,7 +90,7 @@ omit [DecidableEq α] in
 theorem coverEntropyInf_shift_sftOneSided [UniformSpace α] [DiscreteUniformity α]
     {A : α → α → Bool} (hrow : ∀ i, ∃ j, A i j) :
     coverEntropyInf (shift (1 : ℕ)) (sftOneSided A) =
-      ENNReal.log (spectralRadius ℝ (transitionMatrix ℝ A)) :=
+      ENNReal.log (spectralRadius ℝ (sftTransitionMatrix ℝ A)) :=
   (coverEntropyInf_eq_coverEntropy _ (mapsTo_shift_sftOneSided A)).trans
     (coverEntropy_shift_sftOneSided hrow)
 

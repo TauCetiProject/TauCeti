@@ -36,27 +36,27 @@ theorem goldenMean_row (i : Fin 2) : ∃ j, goldenMean i j :=
   ⟨0, by simp [goldenMean]⟩
 
 /-- The transition matrix of the golden-mean relation is `!![1, 1; 1, 0]`. -/
-theorem transitionMatrix_goldenMean : transitionMatrix ℝ goldenMean = !![1, 1; 1, 0] := by
+theorem sftTransitionMatrix_goldenMean : sftTransitionMatrix ℝ goldenMean = !![1, 1; 1, 0] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [goldenMean]
 
 /-- The spectral radius of the golden-mean matrix is the golden ratio. -/
 theorem spectralRadius_goldenMean :
-    spectralRadius ℝ (transitionMatrix ℝ goldenMean) = ENNReal.ofReal φ := by
+    spectralRadius ℝ (sftTransitionMatrix ℝ goldenMean) = ENNReal.ofReal φ := by
   have hv : ∀ i, 0 < (![φ, 1] : Fin 2 → ℝ) i := by
     intro i
     fin_cases i
     · exact goldenRatio_pos
     · exact one_pos
-  have hMv : transitionMatrix ℝ goldenMean *ᵥ ![φ, 1] = φ • ![φ, 1] := by
-    rw [transitionMatrix_goldenMean]
+  have hMv : sftTransitionMatrix ℝ goldenMean *ᵥ ![φ, 1] = φ • ![φ, 1] := by
+    rw [sftTransitionMatrix_goldenMean]
     ext i
     fin_cases i
     · simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
       nlinarith [goldenRatio_sq]
     · simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-  rw [Matrix.spectralRadius_real_eq_of_nonneg (transitionMatrix_nonneg _),
-    Matrix.spectralRadius_eq_of_mulVec_eq_smul (transitionMatrix_nonneg _) hv hMv]
+  rw [Matrix.spectralRadius_real_eq_of_nonneg (sftTransitionMatrix_nonneg _),
+    Matrix.spectralRadius_eq_of_mulVec_eq_smul (sftTransitionMatrix_nonneg _) hv hMv]
 
 /-- The golden-mean shift, with matrix `!![1, 1; 1, 0]`, has topological entropy
 `log ((1 + √5) / 2)`. -/
@@ -65,24 +65,19 @@ example [UniformSpace (Fin 2)] [DiscreteUniformity (Fin 2)] :
   rw [coverEntropy_shift_sftOneSided goldenMean_row, spectralRadius_goldenMean,
     ENNReal.log_ofReal_of_pos goldenRatio_pos]
 
-/-- The relation that is always true defines the full shift. -/
-theorem sftOneSided_true {α : Type*} : sftOneSided (fun _ _ ↦ true : α → α → Bool) = univ := by
-  ext x
-  simp
-
 /-- For the relation that is always true the entropy formula gives `log (card α)`, the entropy of
 the full shift. -/
 example {α : Type*} [Fintype α] [Nonempty α] [UniformSpace α] [DiscreteUniformity α] :
     coverEntropy (shift (1 : ℕ)) (sftOneSided (fun _ _ ↦ true : α → α → Bool)) =
       ENNReal.log (Fintype.card α) := by
   classical
-  have hMv : transitionMatrix ℝ (fun _ _ ↦ true : α → α → Bool) *ᵥ (fun _ ↦ 1) =
+  have hMv : sftTransitionMatrix ℝ (fun _ _ ↦ true : α → α → Bool) *ᵥ (fun _ ↦ 1) =
       (Fintype.card α : ℝ) • fun _ ↦ 1 := by
     ext i
     simp [Matrix.mulVec, dotProduct]
   rw [coverEntropy_shift_sftOneSided (fun _ ↦ ⟨Classical.arbitrary α, rfl⟩),
-    Matrix.spectralRadius_real_eq_of_nonneg (transitionMatrix_nonneg _),
-    Matrix.spectralRadius_eq_of_mulVec_eq_smul (transitionMatrix_nonneg _) (fun _ ↦ one_pos) hMv,
+    Matrix.spectralRadius_real_eq_of_nonneg (sftTransitionMatrix_nonneg _),
+    Matrix.spectralRadius_eq_of_mulVec_eq_smul (sftTransitionMatrix_nonneg _) (fun _ ↦ one_pos) hMv,
     ENNReal.ofReal_natCast]
 
 end TauCeti.FiniteTypeEntropyExamples

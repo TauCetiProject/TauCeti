@@ -14,18 +14,19 @@ public import TauCeti.LinearAlgebra.Matrix.PathWeight
 For a relation `A : α → α → Bool` on an alphabet `α`, the one-sided one-step subshift of finite
 type `TauCeti.sftOneSided A ⊆ ℕ → α` consists of the sequences `x` with `A (x k) (x (k + 1))` for
 every `k`; it is mapped into itself by the shift. Its `0`-`1` transition matrix
-`TauCeti.transitionMatrix R A` has path weight `1` on the admissible words and `0` on the others,
+`TauCeti.sftTransitionMatrix R A` has path weight `1` on the admissible words and `0` on the others,
 and if every symbol has a successor, every admissible word extends to a point of `sftOneSided A`.
 
 ## Main definitions
 
-* `TauCeti.transitionMatrix R A`: the `0`-`1` matrix of a relation `A`, with entries in `R`.
+* `TauCeti.sftTransitionMatrix R A`: the `0`-`1` matrix of a relation `A`, with entries in `R`.
 * `TauCeti.sftOneSided A`: the one-sided one-step subshift of finite type of `A`.
 
 ## Main results
 
-* `TauCeti.pathWeight_transitionMatrix`: the path weight of a word for the transition matrix is
+* `TauCeti.pathWeight_sftTransitionMatrix`: the path weight of a word for the transition matrix is
   the indicator of its admissibility.
+* `TauCeti.sftOneSided_true`: the relation that is always true defines the full shift.
 * `TauCeti.mapsTo_shift_sftOneSided`: the shift maps `sftOneSided A` into itself.
 * `TauCeti.exists_mem_sftOneSided_of_admissible`: if every symbol has a successor, every
   admissible word extends to a point of `sftOneSided A`.
@@ -45,27 +46,27 @@ variable (R : Type*)
 
 /-- The `0`-`1` transition matrix of a relation `A`: its `(i, j)` entry is `1` if `A i j` holds
 and `0` otherwise. -/
-def transitionMatrix [Zero R] [One R] (A : α → α → Bool) : Matrix α α R :=
+def sftTransitionMatrix [Zero R] [One R] (A : α → α → Bool) : Matrix α α R :=
   Matrix.of fun i j ↦ if A i j then 1 else 0
 
 @[simp]
-theorem transitionMatrix_apply [Zero R] [One R] (A : α → α → Bool) (i j : α) :
-    transitionMatrix R A i j = if A i j then 1 else 0 :=
+theorem sftTransitionMatrix_apply [Zero R] [One R] (A : α → α → Bool) (i j : α) :
+    sftTransitionMatrix R A i j = if A i j then 1 else 0 :=
   (rfl)
 
 variable {R}
 
 /-- The entries of a transition matrix are nonnegative. -/
-theorem transitionMatrix_nonneg [Zero R] [One R] [Preorder R] [ZeroLEOneClass R]
-    (A : α → α → Bool) (i j : α) : 0 ≤ transitionMatrix R A i j := by
-  rw [transitionMatrix_apply]
+theorem sftTransitionMatrix_nonneg [Zero R] [One R] [Preorder R] [ZeroLEOneClass R]
+    (A : α → α → Bool) (i j : α) : 0 ≤ sftTransitionMatrix R A i j := by
+  rw [sftTransitionMatrix_apply]
   split_ifs
   exacts [zero_le_one, le_rfl]
 
 /-- The path weight of a word for a transition matrix is the indicator of its admissibility. -/
-theorem pathWeight_transitionMatrix [CommMonoidWithZero R] (A : α → α → Bool) {n : ℕ}
+theorem pathWeight_sftTransitionMatrix [CommMonoidWithZero R] (A : α → α → Bool) {n : ℕ}
     (w : Fin (n + 1) → α) :
-    (transitionMatrix R A).pathWeight w =
+    (sftTransitionMatrix R A).pathWeight w =
       if ∀ k : Fin n, A (w k.castSucc) (w k.succ) then 1 else 0 := by
   rw [Matrix.pathWeight_def]
   split_ifs with h
@@ -85,6 +86,12 @@ def sftOneSided (A : α → α → Bool) : Set (ℕ → α) :=
 theorem mem_sftOneSided {A : α → α → Bool} {x : ℕ → α} :
     x ∈ sftOneSided A ↔ ∀ k, A (x k) (x (k + 1)) :=
   Iff.rfl
+
+/-- The relation that is always true defines the full shift. -/
+@[simp]
+theorem sftOneSided_true : sftOneSided (fun _ _ ↦ true : α → α → Bool) = univ := by
+  ext x
+  simp
 
 /-- The shift maps a subshift of finite type into itself. -/
 theorem mapsTo_shift_sftOneSided (A : α → α → Bool) :
