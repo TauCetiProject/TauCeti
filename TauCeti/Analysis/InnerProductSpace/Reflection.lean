@@ -49,6 +49,8 @@ conjugation on the plane `ι ℂ` (`LinearIsometry.reflection_orthogonal_singlet
 In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of determinant
 `1` (`TauCeti.exists_det_eq_one_apply_eq_neg`). For nonzero `v`, this is the composition of the
 reflections in the hyperplanes orthogonal to `v` and to a nonzero vector orthogonal to `v`.
+The second reflection alone is a linear isometry of determinant `-1` fixing `v`
+(`TauCeti.exists_det_eq_neg_one_apply_eq_self`).
 In every nonzero finite dimension, the reflection in the hyperplane orthogonal to a nonzero vector
 is a linear isometry of determinant `-1` (`TauCeti.exists_det_eq_neg_one`), so of negative
 determinant as a continuous linear map (`TauCeti.exists_det_neg`).

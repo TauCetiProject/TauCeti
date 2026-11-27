@@ -30,6 +30,12 @@ closed, and hence clopen in the orthogonal group (`TauCeti.isOpen_specialOrthogo
 dimension the reflection in a hyperplane is an orthogonal transformation of determinant `-1`
 (`Unitary.exists_det_eq_neg_one`); in dimension at least two it can be chosen to fix a given
 vector (`Unitary.exists_det_eq_neg_one_apply_eq_self`).
+
+The special orthogonal stabilizer `TauCeti.specialOrthogonalStabilizer V v₀` of a vector `v₀` is
+the subgroup of special orthogonal transformations fixing `v₀`
+(`TauCeti.mem_specialOrthogonalStabilizer_iff`): for a unit vector it is `SO(N - 1)`, and in an
+oriented three-dimensional space it is the circle group of rotations about the axis `ℝ v₀`. It is
+the structure group of the frames adapted to an oriented plane field.
 -/
 
 public section
@@ -142,7 +148,7 @@ variable (V) in
 /-- The special orthogonal transformations of `V` fixing a vector `v₀`. For a unit vector of an
 oriented three-dimensional space this is the circle group of rotations about the axis `ℝ v₀`; it
 is the structure group of the frames adapted to an oriented plane field. -/
-@[expose] def specialOrthogonalStabilizer (v₀ : V) : Subgroup (unitary (V →L[ℝ] V)) :=
+def specialOrthogonalStabilizer (v₀ : V) : Subgroup (unitary (V →L[ℝ] V)) :=
   MulAction.stabilizer (unitary (V →L[ℝ] V)) v₀ ⊓ specialOrthogonalGroup V
 
 /-- An orthogonal transformation lies in the special orthogonal stabilizer of `v₀` exactly when it

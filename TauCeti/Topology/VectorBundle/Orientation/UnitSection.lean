@@ -105,8 +105,9 @@ theorem smul_mem_orientedSectionFrames_iff (hι : Fintype.card ι = finrank ℝ 
     {g : unitary (V →L[ℝ] V)} :
     op g • p ∈ orientedSectionFrames s o σ v₀ ↔ g ∈ specialOrthogonalStabilizer V v₀ := by
   rw [orientedSectionFrames, mem_inter_iff, smul_mem_sectionFrames_iff hp.1,
-    smul_mem_orientedFrames_iff hι hp.2]
-  exact Subgroup.mem_inf.symm
+    smul_mem_orientedFrames_iff hι hp.2, mem_specialOrthogonalStabilizer_iff,
+    ← mem_specialOrthogonalGroup_iff, MulAction.mem_stabilizer_iff, Submonoid.smul_def,
+    ContinuousLinearMap.smul_def]
 
 /-- The orthogonal transformations carrying a positively oriented frame adapted to `σ` to such a
 frame are those of the special orthogonal stabilizer of `v₀`, which therefore acts on these frames

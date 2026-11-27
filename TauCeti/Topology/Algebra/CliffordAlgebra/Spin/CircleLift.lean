@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Analysis.InnerProductSpace.SpecialOrthogonal.AxialRotation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Real
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
@@ -39,8 +40,7 @@ oriented Riemannian three-manifold: the frames adapted to the plane field form a
 
 ## Main results
 
-* `CliffordAlgebra.continuous_spinCircle`, `CliffordAlgebra.continuous_spinCCircle`: the circle
-  subgroup of `Spin(Q)` and the plane lift into `Spinᶜ(Q)` are continuous.
+* `CliffordAlgebra.continuous_spinCCircle`: the plane lift into `Spinᶜ(Q)` is continuous.
 * `TauCeti.axialSpinCLift_apply`: the lift is `spinCCircle` applied to the rotation angle.
 * `TauCeti.toSpecialOrthogonal_comp_axialSpinCLift`: `axialSpinCLift` lifts the inclusion
   `SO(2) ⊆ SO(3)`.
@@ -64,13 +64,6 @@ section Continuity
 
 variable {M : Type*} [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M} (hQ : Q ≠ 0)
   {u w : M} (huw : Q.IsOrtho u w) (h : Q u * Q w = 1)
-
-/-- The circle subgroup `z ↦ Re z + Im z ι u ι w` of `Spin(Q)` is continuous. -/
-@[fun_prop]
-theorem continuous_spinCircle : Continuous (spinCircle Q u w huw h) := by
-  refine continuous_induced_rng.2 ?_
-  simp only [Function.comp_def, coe_spinCircle, Algebra.algebraMap_eq_smul_one]
-  fun_prop
 
 /-- **The `Spinᶜ` lift of the rotations of a plane is continuous**, for the quotient topology of
 `Spinᶜ(Q)`: squaring is a quotient map of the circle, and on squares the lift is
