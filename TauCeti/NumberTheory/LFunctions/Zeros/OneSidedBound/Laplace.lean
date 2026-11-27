@@ -30,20 +30,11 @@ The normalization follows `New.LSeries_lambdaKResidueClass_eq_add_logDerivMean` 
 public section
 
 open ArithmeticFunction Complex DirichletCharacter Filter
-open scoped Topology
+open scoped ComplexConjugate Topology
 
 namespace TauCeti.OneSidedBound
 
 variable {d q : ℕ} [Fact d.Prime] [NeZero q]
-
--- Identify the twist used in the prime remainder with the Legendre twist at level `q * d`.
-private theorem quadraticTwist_eq_legendreTwist (χ : DirichletCharacter ℂ q) :
-    quadraticTwist d χ = χ.legendreTwist d := by
-  have : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
-  refine MulChar.ext fun a ↦ ?_
-  rw [quadraticTwist_apply, ← ZMod.natCast_zmod_val (a : ZMod (q * d)),
-    legendreTwist_apply_natCast]
-  simp [legendreSym]
 
 open Classical in
 /-- The polar counterterm counts the untwisted principal character with sign `+1` and each
@@ -53,7 +44,6 @@ private theorem LSeriesHasSum_primeWeight_sub_principalTwists {s : ℂ} (hs : 1 
       ((1 - ∑ χ : DirichletCharacter ℂ q, if quadraticTwist d χ = 1 then (1 : ℂ) else 0) /
         ((q.totient : ℂ) * (s - 1)) + (q.totient : ℂ)⁻¹ + logDerivMean d q s) := by
   classical
-  have : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
   have h (χ : DirichletCharacter ℂ q) :=
     (χ.LSeriesHasSum_twist_vonMangoldt hs).sub
       ((quadraticTwist d χ).LSeriesHasSum_twist_vonMangoldt hs)
@@ -72,7 +62,7 @@ private theorem LSeriesHasSum_primeWeight_sub_principalTwists {s : ℂ} (hs : 1 
       quadraticTwist_eq_legendreTwist, legendreTwist_apply_natCast, ← sub_mul]
     simp_rw [← mul_one_sub, mul_right_comm (_ : ℂ) (1 - _), ← Finset.sum_mul, ← mul_assoc]
     rw [sum_characters_eq]
-    have hφ : (q.totient : ℂ) ≠ 0 := by exact_mod_cast (Nat.totient_pos.mpr (NeZero.pos q)).ne'
+    have hφ : (q.totient : ℂ) ≠ 0 := NeZero.ne _
     by_cases hn : (n : ZMod q) = 1 <;>
       simp [primeWeight_def, hn, hφ]
 
@@ -83,19 +73,18 @@ theorem LSeriesHasSum_primeWeight (hd : d ≠ 2) (hq : q.Coprime d) {s : ℂ} (h
     LSeriesHasSum (fun n ↦ (primeWeight d q n : ℂ)) s
       (s / ((q.totient : ℂ) * (s - 1)) + logDerivMean d q s) := by
   classical
-  have hne (χ : DirichletCharacter ℂ q) : quadraticTwist d χ ≠ 1 :=
-    (quadraticTwist_eq_legendreTwist (d := d) χ) ▸ χ.legendreTwist_ne_one d hd hq
+  have hne (χ : DirichletCharacter ℂ q) : quadraticTwist d χ ≠ 1 := by
+    simpa only [quadraticTwist_eq_legendreTwist] using χ.legendreTwist_ne_one d hd hq
   convert LSeriesHasSum_primeWeight_sub_principalTwists (d := d) (q := q) hs using 1
   simp only [ite_eq_right (hne _), Finset.sum_const_zero, sub_zero]
   have hs₁ : s - 1 ≠ 0 := sub_ne_zero.mpr (by rintro rfl; simp at hs)
-  have hφ : (q.totient : ℂ) ≠ 0 := by exact_mod_cast (Nat.totient_pos.mpr (NeZero.pos q)).ne'
+  have hφ : (q.totient : ℂ) ≠ 0 := NeZero.ne _
   field_simp
   ring
 
 /-- The logarithmic-derivative mean is analytic at every `s` with `Re s ≥ 1`. -/
 theorem analyticAt_logDerivMean_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
     AnalyticAt ℂ (logDerivMean d q) s := by
-  have : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
   have h {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
       AnalyticAt ℂ (logDeriv χ.entireLFunction) s :=
     (χ.analyticAt_entireLFunction s).logDeriv (χ.entireLFunction_ne_zero_of_one_le_re hs)
@@ -121,9 +110,9 @@ theorem analyticAt_logDerivMean_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
   have hconj := TauCeti.LSeries.LSeries_star (fun n ↦ (primeWeight d q n : ℂ)) (x : ℂ)
   simp only [Pi.star_def, Complex.star_def, Complex.conj_ofReal] at hconj
   rw [hsum] at hconj
-  exact Complex.conj_eq_iff_re.mp (by
-    simpa only [map_add, map_div₀, map_mul, map_sub, map_inv₀, map_one, _root_.map_zero,
-      map_natCast, map_sum, apply_ite, Complex.conj_ofReal, add_right_inj] using hconj.symm)
+  have hmean : conj (logDerivMean d q x) = logDerivMean d q x := by
+    simpa [apply_ite] using hconj.symm
+  exact Complex.conj_eq_iff_re.mp hmean
 
 /-- After division by its length, the first Riesz sum of the prime weights gives the smoothed
 part of `primeRemainder`. -/
@@ -154,6 +143,8 @@ theorem hasLaplace_primeRemainder (hd : d ≠ 2) (hq : q.Coprime d) {s : ℂ} (h
     simp [div_eq_mul_inv, mul_comm]
   · rw [hsum.LSeries_eq]
     have hs₀ : s ≠ 0 := by rintro rfl; norm_num at hs
-    rw [add_div, div_right_comm, div_self hs₀, ← div_div, one_div, add_sub_cancel_left]
+    have hs₁ : s - 1 ≠ 0 := sub_ne_zero.mpr (by rintro rfl; simp at hs)
+    field_simp
+    ring
 
 end TauCeti.OneSidedBound
