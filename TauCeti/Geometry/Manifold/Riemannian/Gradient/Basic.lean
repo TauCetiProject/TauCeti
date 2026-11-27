@@ -132,18 +132,29 @@ theorem mvfderiv_apply_mgradient :
       inner ℝ (mgradient I f x) (mgradient I f x) :=
   (inner_mgradient _).symm
 
+/-- The differential of `f` in the direction of its negative gradient is minus the squared norm of
+the gradient. -/
+theorem mvfderiv_apply_neg_mgradient :
+    mvfderiv I f x (-mgradient I f x) = -‖mgradient I f x‖ ^ 2 := by
+  rw [map_neg, mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq]
+
 /-- The gradient vanishes exactly where the differential does. -/
 @[simp]
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
+
+/-- The gradient vanishes outside the topological support of the function. -/
+theorem mgradient_eq_zero_of_notMem_tsupport (hx : x ∉ tsupport f) :
+    mgradient I f x = 0 :=
+  mgradient_eq_zero_iff.2
+    ((notMem_tsupport_iff_eventuallyEq.1 hx).mvfderiv_eq.trans mvfderiv_zero)
 
 variable (I) in
 /-- The gradient of a compactly supported function is compactly supported, since it vanishes off
 the support of the function. -/
 protected theorem _root_.HasCompactSupport.mgradient (hf : HasCompactSupport f) :
     HasCompactSupport (β := E) (mgradient I f) :=
-  hf.mono' fun _ hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
-    (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
+  hf.mono' fun _ hx ↦ by_contra fun h ↦ hx (mgradient_eq_zero_of_notMem_tsupport h)
 
 /-- Pairing the gradient of a compactly supported function with any vector field gives a
 compactly supported scalar function. No differentiability assumption is needed. -/
@@ -183,16 +194,22 @@ theorem mgradient_add_eventuallyEq {g : M → ℝ}
   rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
     mvfderiv_add hfy hgy, add_apply]
 
+/-- The gradient satisfies the scalar product rule at a point where both factors are
+differentiable. -/
+theorem mgradient_mul_apply {g : M → ℝ} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    mgradient I (f * g) x = f x • mgradient I g x + g x • mgradient I f x := by
+  apply ext_inner_right ℝ
+  intro v
+  rw [inner_mgradient, mvfderiv_mul hf hg]
+  simp only [inner_add_left, real_inner_smul_left, inner_mgradient, add_apply, smul_apply,
+    smul_eq_mul]
+
 /-- The gradient satisfies the scalar product rule for differentiable functions. -/
 theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
     (hg : MDifferentiable I 𝓘(ℝ) g) :
-    mgradient I (f * g) = fun x ↦ f x • mgradient I g x + g x • mgradient I f x := by
-  funext x
-  apply ext_inner_right ℝ
-  intro v
-  rw [inner_mgradient, mvfderiv_mul (hf x) (hg x)]
-  simp only [inner_add_left, real_inner_smul_left, inner_mgradient]
-  simp only [add_apply, smul_apply, smul_eq_mul]
+    mgradient I (f * g) = fun x ↦ f x • mgradient I g x + g x • mgradient I f x :=
+  funext fun x ↦ mgradient_mul_apply (hf x) (hg x)
 
 /-- The gradient commutes with multiplication by a real constant. -/
 @[simp]

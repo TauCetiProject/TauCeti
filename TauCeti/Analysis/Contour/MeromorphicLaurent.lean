@@ -32,6 +32,8 @@ generalized residue theorem be discharged at simple poles by flatness of order o
 
 * `Contour.exists_laurent_data_of_meromorphicAt` — the Laurent decomposition with tail length
   pinned to the canonical order.
+* `Contour.exists_laurent_data_of_meromorphicOrderAt_eq_neg_succ` — at a pole of given order,
+  the top coefficient in the Laurent decomposition is the meromorphic trailing coefficient.
 * `Contour.eventuallyEq_meromorphicAnalyticPartAt_add_meromorphicPolarPartAt` — `f` equals
   analytic part plus polar part near `s`.
 * `Contour.meromorphicPolarPartAt_eq_sum` — the polar part as its explicit Laurent sum.
@@ -283,6 +285,44 @@ theorem exists_laurent_data_of_meromorphicAt {f : ℂ → ℂ} {s : ℂ} (hMero 
   obtain ⟨g₀, hg₀_an, hg₀_eq⟩ :=
     exists_analyticAt_eventuallyEq_zpow_smul hMero (neg_meromorphicPolarOrderAt_le f s)
   exact laurent_data_of_zpow_factor _ hg₀_an hg₀_eq
+
+/-- At a pole of order `m + 1`, the finite Laurent expansion has `m + 1` polar coefficients,
+and its highest-order coefficient is the meromorphic trailing coefficient. -/
+theorem exists_laurent_data_of_meromorphicOrderAt_eq_neg_succ {f : ℂ → ℂ} {s : ℂ} {m : ℕ}
+    (hord : meromorphicOrderAt f s = (-(↑(m + 1) : ℤ) : WithTop ℤ)) :
+    ∃ (c : Fin (m + 1) → ℂ) (g : ℂ → ℂ), AnalyticAt ℂ g s ∧
+      (∀ᶠ z in 𝓝[≠] s, f z = g z + ∑ i, c i / (z - s) ^ (i.val + 1)) ∧
+      c (Fin.last m) = meromorphicTrailingCoeffAt f s := by
+  have hf : MeromorphicAt f s := meromorphicAt_of_meromorphicOrderAt_ne_zero fun hz ↦ by
+    have h := congrArg WithTop.untop₀ (hz.symm.trans hord)
+    simp only [WithTop.untop₀_zero, WithTop.untop₀_neg, WithTop.untop₀_coe] at h
+    omega
+  have hlen : meromorphicPolarOrderAt f s = m + 1 := by
+    simp [meromorphicPolarOrderAt_eq_of_order_eq hord]
+  obtain ⟨c, g, hg, heq⟩ := hlen ▸ exists_laurent_data_of_meromorphicAt hf
+  refine ⟨c, g, hg, heq, ?_⟩
+  let G (z : ℂ) := (z - s) ^ (m + 1) * g z + ∑ i, c i * (z - s) ^ (m - i.val)
+  have hG : ContinuousAt G s := by
+    refine (((continuousAt_id.sub continuousAt_const).pow _).mul hg.continuousAt).add ?_
+    exact (continuous_finsetSum _ fun i _ ↦ by fun_prop).continuousAt
+  have hGs : G s = c (Fin.last m) := by
+    simp only [G, sub_self, zero_pow (Nat.succ_ne_zero m), zero_mul, zero_add,
+      Fin.sum_univ_castSucc, Fin.val_castSucc, Fin.val_last, tsub_self, pow_zero, mul_one]
+    have hz : (∑ i : Fin m, c i.castSucc * (0 : ℂ) ^ (m - i.val)) = 0 :=
+      Finset.sum_eq_zero fun i _ ↦ by rw [zero_pow (by omega), mul_zero]
+    rw [hz, zero_add]
+  have hlim := hf.tendsto_nhds_meromorphicTrailingCoeffAt
+  rw [hord, WithTop.untop₀_neg, WithTop.untop₀_coe, neg_neg, zpow_natCast] at hlim
+  have hlim' : Tendsto ((· - s) ^ (m + 1) • f) (𝓝[≠] s) (𝓝 (G s)) := by
+    refine hG.continuousWithinAt.tendsto.congr' ?_
+    filter_upwards [heq, self_mem_nhdsWithin] with z hz (hzs : z ≠ s)
+    simp only [G, Pi.smul_apply', Pi.pow_apply, smul_eq_mul, hz, mul_add, Finset.mul_sum]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hm : m + 1 = (i.val + 1) + (m - i.val) := by omega
+    rw [congrArg (fun n : ℕ ↦ (z - s) ^ n) hm, pow_add]
+    field_simp [pow_ne_zero _ (sub_ne_zero.mpr hzs)]
+  exact hGs.symm.trans (tendsto_nhds_unique hlim' hlim)
 
 /-- The `k`-th canonical Laurent coefficient of `f` at `s`. -/
 def meromorphicPolarCoeffAt {f : ℂ → ℂ} {s : ℂ} (hMero : MeromorphicAt f s)

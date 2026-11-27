@@ -39,6 +39,8 @@ entry of `P` by `m` adds `m` to every component of `P.rowWeight`. In the polynom
   homomorphism `GTPattern n →+ (Fin n → ℤ)`.
 * `TauCeti.GTPattern.truncateRowWeightSigmaEquiv`: the weight-refined branching equivalence along
   `GL (n + 1) ↓ GL n`.
+* `TauCeti.GTPattern.highest`: the highest-weight pattern of a dominant weight, whose rows are
+  initial segments of its top row.
 
 ## Main results
 
@@ -50,6 +52,8 @@ entry of `P` by `m` adds `m` to every component of `P.rowWeight`. In the polynom
   first entries of row `r + 1`, hence of `P.topRow`, so nonnegative patterns have nonnegative
   weights (`rowWeight_nonneg`); a dominant row weight is dominated by `P.topWeight`
   (`TauCeti.GTPattern.topWeight_dominates_of_rowWeight_eq`).
+* `TauCeti.GTPattern.eq_highest_iff`: a pattern whose weight is its top row is the highest-weight
+  pattern.
 * `TauCeti.GTPattern.rowWeight_eq_iff_truncate`: the weight of a pattern is determined by the weight
   of its truncation and the degree increment of its top row.
 * `TauCeti.GTPattern.card_topRow_rowWeight_succ`, `TauCeti.GTPattern.card_topRow_rowWeight_zero`,
@@ -239,6 +243,60 @@ theorem rowWeight_mem_Icc (P : GTPattern n) (r : Fin n) :
 /-- Nonnegative (polynomial) patterns have nonnegative weights. -/
 theorem rowWeight_nonneg {P : GTPattern n} (hP : 0 ≤ P) (r : Fin n) : 0 ≤ P.rowWeight r :=
   (zero_le_iff_topRow.mp hP ⟨n - 1, by have := r.isLt; omega⟩).trans (P.rowWeight_mem_Icc r).1
+
+/-! ### The highest-weight pattern -/
+
+/-- The **highest-weight pattern** of a dominant weight `μ`: every row is an initial segment of
+`μ`, that is `highest μ i j = μ i` for `i < j ≤ n`. Its top row and its weight are both `μ`, and it
+is the only pattern with this property (`TauCeti.GTPattern.eq_highest_iff`). -/
+def highest (μ : DominantWeight n) : GTPattern n where
+  entry i j := if h : i < j ∧ j ≤ n then μ.val ⟨i, by omega⟩ else 0
+  zeros' h := dite_eq_right (by omega)
+  interlacing' {i _} hij hj := by
+    rw [dite_eq_left ⟨hij, hj.le⟩, dite_eq_left ⟨by omega, hj⟩, dite_eq_left ⟨by omega, hj⟩]
+    exact ⟨le_rfl, μ.antitone (Fin.mk_le_mk.mpr (Nat.le_succ i))⟩
+
+theorem highest_apply (μ : DominantWeight n) (i j : ℕ) :
+    highest μ i j = if h : i < j ∧ j ≤ n then μ.val ⟨i, by omega⟩ else 0 :=
+  (rfl)
+
+@[simp] theorem highest_apply_of_lt_of_le (μ : DominantWeight n) {i j : ℕ} (hij : i < j)
+    (hj : j ≤ n) : highest μ i j = μ.val ⟨i, by omega⟩ :=
+  dite_eq_left ⟨hij, hj⟩
+
+@[simp] theorem topRow_highest (μ : DominantWeight n) : (highest μ).topRow = μ.val := by
+  funext i
+  rw [topRow_apply, highest_apply_of_lt_of_le μ i.isLt le_rfl]
+
+/-- Row `j ≤ n` of the highest-weight pattern of `μ` sums to `μ₁ + ⋯ + μⱼ`. -/
+@[simp] theorem rowSum_highest (μ : DominantWeight n) {j : ℕ} (hj : j ≤ n) :
+    (highest μ).rowSum j = TauCeti.prefixSum j μ.val := by
+  rw [← topRow_highest μ, prefixSum_topRow, rowSum_def]
+  exact Finset.sum_congr rfl fun k hk => by
+    have := Finset.mem_range.mp hk
+    rw [highest_apply_of_lt_of_le μ this hj, highest_apply_of_lt_of_le μ (by omega) le_rfl]
+
+@[simp] theorem rowWeight_highest (μ : DominantWeight n) : (highest μ).rowWeight = μ.val := by
+  funext r
+  rw [rowWeight_eq_rowSum_sub, rowSum_highest μ r.isLt, rowSum_highest μ r.isLt.le,
+    TauCeti.prefixSum_succ r.isLt, add_sub_cancel_left]
+
+/-- **A pattern whose weight is its top row is the highest-weight pattern**: `P` is the
+highest-weight pattern of `μ` exactly when its top row and its weight are both `μ`. -/
+theorem eq_highest_iff {P : GTPattern n} {μ : DominantWeight n} :
+    P = highest μ ↔ P.topRow = μ.val ∧ P.rowWeight = μ.val := by
+  -- Each row sum is the matching prefix sum of the top row, while each entry is at most the
+  -- top-row entry above it, so every row is an initial segment of the top row.
+  refine ⟨fun h => h ▸ ⟨topRow_highest μ, rowWeight_highest μ⟩, fun ⟨htop, hw⟩ => ?_⟩
+  have hrow {j : ℕ} (hj : j ≤ n) : ∀ k ∈ Finset.range j, P k j = P k n :=
+    (Finset.sum_eq_sum_iff_of_le fun k hk =>
+      P.entry_le_entry_of_le (Finset.mem_range.mp hk) hj le_rfl).mp (by
+        rw [← P.rowSum_def, ← P.prefixSum_rowWeight hj, hw, ← htop, P.prefixSum_topRow])
+  ext i j
+  by_cases h : i < j ∧ j ≤ n
+  · rw [highest_apply_of_lt_of_le μ h.1 h.2, hrow h.2 i (Finset.mem_range.mpr h.1), ← htop,
+      topRow_apply]
+  · rw [P.entry_eq_zero (by omega), highest_apply, dite_eq_right h]
 
 /-! ### Branching recursion and low-rank weight fibres -/
 

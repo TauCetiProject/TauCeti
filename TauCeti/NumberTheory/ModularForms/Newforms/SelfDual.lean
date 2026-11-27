@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Fricke
+public import TauCeti.NumberTheory.ModularForms.Newforms.Twist
 
 /-!
 # Self-dual newforms
@@ -23,6 +24,11 @@ newform `𝒲_N f = λ_N(f) • f`. Moreover `λ_N(f) λ_N(f_ρ) = (-1) ^ k`, so
 and the sign `i ^ k λ_N(f)` of the functional equation of `L(s, f)` is `1` or `-1`, in every
 weight and for every real nebentypus.
 
+Every newform equals its dual up to a primitive twist: `f_ρ` is the primitive twist of `f` by
+`χ⁻¹` (`HeckeRing.GL2.Newform.coe_primitiveTwist_dirichletLift_inv`). So a self-dual newform is
+its own twist by its real nebentypus `χ`, and its coefficient `a_p` vanishes at every prime
+`p ∤ N` with `χ(p) ≠ 1`.
+
 ## Main definitions
 
 * `HeckeRing.GL2.Newform.IsSelfDual`: the newform equals its conjugate newform.
@@ -39,6 +45,10 @@ weight and for every real nebentypus.
   a newform is an eigenvector of `𝒲_N` only if it is self-dual.
 * `HeckeRing.GL2.Newform.IsSelfDual.I_zpow_mul_frickePseudoEigenvalue_eq_one_or_neg_one`: the
   sign `i ^ k λ_N(f)` of a self-dual newform is `1` or `-1`.
+* `HeckeRing.GL2.Newform.IsSelfDual.coe_primitiveTwist_dirichletLift`: a self-dual newform is its
+  own primitive twist by its nebentypus.
+* `HeckeRing.GL2.Newform.IsSelfDual.qExpansion_coeff_eq_zero_of_dirichletLift_ne_one`: a self-dual
+  newform has `a_p = 0` at every prime `p ∤ N` with `χ(p) ≠ 1`.
 
 ## References
 
@@ -73,9 +83,9 @@ theorem isSelfDual_iff_forall_conj_coeff_eq (f : Newform N k) :
   refine ⟨fun h n ↦ ?_, fun h ↦ Newform.ext <| CuspForm.qExpansion_injective one_pos
     (one_mem_strictPeriods_Gamma1_map N) ?_⟩
   · have hn := congrArg (fun g : Newform N k ↦ (qExpansion 1 g.toCuspForm).coeff n) h
-    simpa only [qExpansion_conj, PowerSeries.coeff_map] using hn
+    simpa only [qExpansion_coeff_conj] using hn
   · ext n
-    simp only [qExpansion_conj, PowerSeries.coeff_map, h]
+    simp only [qExpansion_coeff_conj, h]
 
 /-- **A newform is self-dual if and only if all of its Fourier coefficients are real.** -/
 theorem isSelfDual_iff_forall_im_coeff_eq_zero (f : Newform N k) :
@@ -115,6 +125,34 @@ theorem I_zpow_mul_frickePseudoEigenvalue_eq_one_or_neg_one (hf : f.IsSelfDual) 
   refine sq_eq_one_iff.mp ?_
   rw [mul_pow, hf.frickePseudoEigenvalue_sq, sq (Complex.I ^ k), ← mul_zpow, Complex.I_mul_I,
     ← mul_zpow, neg_one_mul, neg_neg, one_zpow]
+
+/-- **The zero-extended nebentypus of a self-dual newform is real**: `χ⁻¹ = χ`. -/
+theorem inv_dirichletLift (hf : f.IsSelfDual) : f.dirichletLift⁻¹ = f.dirichletLift := by
+  rw [← dirichletLift_conj, hf]
+
+/-- **A self-dual newform is a self-twist by its nebentypus**: twisting by `χ` does not change its
+level (`coe_primitiveTwist_dirichletLift`). -/
+theorem primitiveTwistLevel_dirichletLift (hf : f.IsSelfDual) :
+    f.primitiveTwistLevel f.dirichletLift = N := by
+  rw [← hf.inv_dirichletLift, primitiveTwistLevel_dirichletLift_inv]
+
+/-- **A self-dual newform is a self-twist by its nebentypus**: the primitive twist of a self-dual
+newform `f` of nebentypus `χ` by `χ` is `f`. Since `χ = χ⁻¹`, this twist is the conjugate newform
+(`coe_primitiveTwist_dirichletLift_inv`), which is `f`. For a nontrivial real `χ` it is a
+nontrivial quadratic self-twist. -/
+theorem coe_primitiveTwist_dirichletLift (hf : f.IsSelfDual) :
+    ⇑(f.primitiveTwist f.dirichletLift).toCuspForm = ⇑f.toCuspForm := by
+  rw [← hf.inv_dirichletLift, coe_primitiveTwist_dirichletLift_inv, hf]
+
+/-- **The coefficients of a self-dual newform vanish where its nebentypus is not `1`**: at a prime
+`p ∤ N` with `χ(p) ≠ 1`, `a_p(f) = 0`. Indeed `f` is its own twist by `χ`
+(`coe_primitiveTwist_dirichletLift`), so `a_p = χ(p) a_p`
+(`qExpansion_coeff_eq_zero_of_coe_primitiveTwist_eq`). -/
+theorem qExpansion_coeff_eq_zero_of_dirichletLift_ne_one (hf : f.IsSelfDual) {p : ℕ}
+    (hp : p.Prime) (hpN : p.Coprime N) (hχ : f.dirichletLift p ≠ 1) :
+    (qExpansion 1 f.toCuspForm).coeff p = 0 :=
+  f.qExpansion_coeff_eq_zero_of_coe_primitiveTwist_eq f.dirichletLift
+    hf.coe_primitiveTwist_dirichletLift hp hpN hpN hχ
 
 end IsSelfDual
 

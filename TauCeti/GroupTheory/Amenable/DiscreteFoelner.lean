@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Lp.LeftTranslation
-public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 public import TauCeti.GroupTheory.Amenable.Average
 public import TauCeti.GroupTheory.Amenable.Reiter
 public import TauCeti.GroupTheory.Amenable.Sequence
 import Mathlib.Analysis.LocallyConvex.Separation
+import TauCeti.Analysis.Normed.Lp.PiLp.Dual
 import TauCeti.Geometry.Convex.ConvexSpace.Topology
 import TauCeti.Topology.Algebra.Group.UCB.Discrete
 
@@ -205,22 +205,25 @@ theorem Amenable.zero_mem_closure_range_stdSimplexLeftTranslationSub [Amenable G
   obtain ⟨Λ, u, hΛ0, hΛ⟩ := geometric_hahn_banach_point_closed
     (convex_range_stdSimplexLeftTranslationSub K).closure isClosed_closure h
   rw [map_zero] at hΛ0
-  -- Pull `Λ` back along each coordinate inclusion `ι_g` and identify `(ℓ¹(G))* ≃ₗᵢ (G →ᵇ ℝ)`.
-  let f (g : K) : G →ᵇ ℝ :=
-    (lp.bcfDualEquiv ℝ G).symm
-      (Λ.comp (PiLp.singleCLM 1 ℝ (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1) g))
+  -- Represent `Λ` by its coordinate bounded functions `Λ.piLpCoordBCF g : G →ᵇ ℝ`.
   have hv (x : G) :
-      Λ (stdSimplexLeftTranslationSub K (.single x)) = ∑ g : K, (f g ((g : G) * x) - f g x) := by
-    conv_lhs => rw [← PiLp.univ_sum_single (stdSimplexLeftTranslationSub K (.single x))]
-    simp [stdSimplexLeftTranslationSub_single, map_sum, PiLp.single_sub, sum_sub_distrib, f]
-  let F (g : K) : UCB G := ⟨f g, by simp [ucb_eq_top]⟩
+      Λ (stdSimplexLeftTranslationSub K (.single x)) =
+        ∑ g : K, (Λ.piLpCoordBCF g ((g : G) * x) - Λ.piLpCoordBCF g x) := by
+    rw [Λ.apply_eq_sum_bcfPairing]
+    simp [stdSimplexLeftTranslationSub_apply, smul_eq_mul]
+  let F (g : K) : UCB G := (UCB.discreteAlgEquiv G).symm (Λ.piLpCoordBCF g)
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   have h0 : m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) = 0 := by
     simp only [map_sum, map_sub, hm.apply_leftTranslation, sub_self, sum_const_zero]
   -- `map_inv` would turn `UCB.leftTranslation g⁻¹` into `(UCB.leftTranslation g).symm`.
+  have hF (x : G) :
+      ((∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g) : UCB G) : G →ᵇ ℝ) x =
+        Λ (stdSimplexLeftTranslationSub K (.single x)) := by
+    simp [hv, F, -map_inv]
   have hu : u ≤ m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) :=
     m.le_apply_of_forall_le fun x ↦ by
-      simpa [hv, F, -map_inv] using (hΛ _ (subset_closure ⟨.single x, rfl⟩)).le
+      rw [hF]
+      exact (hΛ _ (subset_closure ⟨.single x, rfl⟩)).le
   linarith
 
 /-- **Reiter's condition in `ℓ¹(G)`.** In an amenable discrete group, for every finite `K ⊆ G` and

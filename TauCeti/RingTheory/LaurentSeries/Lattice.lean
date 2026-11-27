@@ -11,8 +11,8 @@ public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.Topology.Algebra.FilterBasis
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
-public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Convergence
+import TauCeti.RingTheory.LaurentSeries.Multiplication
 
 /-!
 # The lattices `U_a` of Laurent series
@@ -197,16 +197,10 @@ theorem coe_powerSeries_mem_lattice_zero (p : R⟦X⟧) : (p : R⸨X⸩) ∈ lat
 series. -/
 theorem mem_lattice_iff_exists {a : ℤ} {f : R⸨X⸩} :
     f ∈ lattice R R a ↔ ∃ p : R⟦X⟧, single a 1 * (p : R⸨X⸩) = f := by
-  have hmem (p : R⟦X⟧) : single a 1 * (p : R⸨X⸩) ∈ lattice R R a := by
-    simpa using mul_mem_lattice (single_mem_lattice (R := R) (le_refl a) (1 : R))
-      (coe_powerSeries_mem_lattice_zero p)
-  refine ⟨fun hf ↦ ⟨PowerSeries.mk fun n ↦ f.coeff (a + n), ?_⟩, fun ⟨p, hp⟩ ↦ hp ▸ hmem p⟩
-  ext n
-  obtain hn | hn := lt_or_ge n a
-  · rw [hf n hn, coeff_eq_zero_of_mem_lattice (hmem _) hn]
-  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = (k : ℤ) + a := ⟨(n - a).toNat, by omega⟩
-    rw [coeff_single_mul_add, one_mul, PowerSeries.coeff_coe]
-    simp [add_comm]
+  refine ⟨fun hf ↦ exists_single_mul_of_le_orderTop (mem_lattice_iff_le_orderTop.mp hf), ?_⟩
+  rintro ⟨p, rfl⟩
+  simpa using mul_mem_lattice (single_mem_lattice (R := R) (le_refl a) (1 : R))
+    (coe_powerSeries_mem_lattice_zero p)
 
 /-- The lattice `U_0` consists of the formal power series. -/
 theorem mem_lattice_zero_iff {f : R⸨X⸩} : f ∈ lattice R R 0 ↔ ∃ p : R⟦X⟧, (p : R⸨X⸩) = f := by

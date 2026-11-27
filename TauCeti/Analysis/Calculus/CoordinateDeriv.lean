@@ -12,6 +12,7 @@ public import TauCeti.Data.List.Sublists
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
+import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -63,7 +64,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
-  derivatives.
+  derivatives; `TauCeti.norm_iteratedFDeriv_coordinateDeriv_le`: conversely, a Fréchet
+  derivative of a first partial derivative is bounded by the next Fréchet derivative.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute; `TauCeti.coordinateDeriv_pair_comm`: so do two partial derivatives in one variable.
@@ -291,6 +293,15 @@ theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : Coordinat
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
   refine ((T j).norm_iteratedFDeriv_comp_left (hdf j).contDiffAt le_rfl).trans ?_
   exact mul_le_of_le_one_left (norm_nonneg _) (hT j)
+
+/-- The `k`-th Fréchet derivative of a first partial derivative of a `C^(k+1)` function is bounded
+by the `(k + 1)`-st Fréchet derivative of the function: `‖D^k (∂ⱼ f) x‖ ≤ ‖D^(k+1) f x‖`. -/
+theorem norm_iteratedFDeriv_coordinateDeriv_le {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ (k + 1) f) (j : Fin n) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ k (coordinateDeriv [j] f) x‖ ≤ ‖iteratedFDeriv ℝ (k + 1) f x‖ := by
+  rw [funext (coordinateDeriv_singleton j f)]
+  simpa using hf.norm_iteratedFDeriv_fderiv_apply_le (i := k)
+    (by simp [minSmoothness_of_isRCLikeNormedField]) (EuclideanSpace.single j 1) x
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
@@ -843,6 +854,22 @@ theorem mixedDeriv_comp_add_smul {a : CoordinateSpace n × CoordinateSpace n →
     simp [Fin.prod_univ_add]
   simp only [ContinuousLinearMap.coe_id', id_eq, map_zero, Prod.mk_zero_zero, add_zero] at hv ⊢
   rw [hv, ContinuousMultilinearMap.map_smul_univ, hprod]
+
+/-- **Undoing a frequency dilation.** Up to the factor `t ^ |β|`, the mixed derivative
+`∂_x^α ∂_ξ^β a` at `(x, ξ)` is the mixed derivative at `(0, 0)` of the dilation
+`(y, v) ↦ a(x + y, ξ + t v)`, so for `t ≥ 0` it is bounded by the Fréchet derivative of order
+`|α| + |β|` of the dilation there. -/
+theorem pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_comp_add_smul
+    {a : CoordinateSpace n × CoordinateSpace n → A} {α β : List (Fin n)}
+    (ha : ContDiff ℝ (α.length + β.length) a) (x ξ : CoordinateSpace n) {t : ℝ} (ht : 0 ≤ t) :
+    t ^ β.length * ‖mixedDeriv α β a x ξ‖ ≤
+      ‖iteratedFDeriv ℝ (α.length + β.length)
+        (fun q : CoordinateSpace n × CoordinateSpace n => a (x + q.1, ξ + t • q.2)) 0‖ := by
+  have h := norm_mixedDeriv_le α β (ha.comp (((contDiff_const (c := x)).add contDiff_fst).prodMk
+    ((contDiff_const (c := ξ)).add (contDiff_snd.const_smul t)))) 0 0
+  simp only [Function.comp_def] at h
+  rwa [mixedDeriv_comp_add_smul ha, norm_smul, Real.norm_eq_abs, abs_pow, abs_of_nonneg ht,
+    Prod.mk_zero_zero] at h
 
 /-- A position-independent function has no position derivatives. -/
 theorem mixedDeriv_comp_snd (f : CoordinateSpace n → A) {α : List (Fin n)} (hα : α ≠ [])

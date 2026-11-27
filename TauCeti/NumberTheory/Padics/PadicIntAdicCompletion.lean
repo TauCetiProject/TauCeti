@@ -33,6 +33,8 @@ a finitely generated abelian group `M` with `ℤ_[p] ⊗ M` (`PadicInt.tensorAdi
   `PadicInt.toZModPow n x`.
 * `PadicInt.tensorAdicCompletionEquiv_tmul`: `x ⊗ₜ m` is sent to
   `adicCompletionRingEquiv p x • of _ M m`.
+* `PadicInt.tensorAdicCompletionEquiv_smul`: the equivalence intertwines multiplication by
+  `a ∈ ℤ_[p]` on the left factor with multiplication by `adicCompletionRingEquiv p a`.
 -/
 
 public section
@@ -124,5 +126,16 @@ theorem tensorAdicCompletionEquiv_tmul (M : Type) [AddCommGroup M] [Module.Finit
     (x : ℤ_[p]) (m : M) :
     tensorAdicCompletionEquiv p M (x ⊗ₜ m) = adicCompletionRingEquiv p x • of _ M m := by
   simp [tensorAdicCompletionEquiv, ofTensorProduct_tmul]
+
+/-- `tensorAdicCompletionEquiv p M` is semilinear along `adicCompletionRingEquiv p`: it sends
+`a • t` to `adicCompletionRingEquiv p a • tensorAdicCompletionEquiv p M t`. -/
+@[simp]
+theorem tensorAdicCompletionEquiv_smul (M : Type) [AddCommGroup M] [Module.Finite ℤ M]
+    (a : ℤ_[p]) (t : ℤ_[p] ⊗[ℤ] M) :
+    tensorAdicCompletionEquiv p M (a • t) =
+      adicCompletionRingEquiv p a • tensorAdicCompletionEquiv p M t := by
+  induction t using TensorProduct.inductionOn with
+  | tmul x m => simp [TensorProduct.smul_tmul', mul_smul]
+  | add t u ht hu => rw [smul_add, map_add, ht, hu, map_add, smul_add]
 
 end PadicInt

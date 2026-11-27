@@ -657,19 +657,19 @@ theorem IsMorseSmale.exists_unstableSet_inter_stableSet_level_isManifold
 section LevelPoint
 
 /-- The orbit of a point of `W^u(p)` below the level `c < f p` meets that level. -/
-theorem exists_flow_eq_of_mem_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) {p x : M}
+theorem exists_flow_eq_of_mem_unstableSet {p x : M}
     (hx : x ∈ hX.flow.unstableSet p) {c : ℝ} (hcp : c < f p) (hxc : f x < c) :
     ∃ t, f (hX.flow t x) = c := by
-  obtain ⟨a, hpa, hxa⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hf hx
+  obtain ⟨a, hpa, hxa⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hx
     (ne_of_apply_ne f (hxc.trans hcp).ne)
   exact (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpa hxa
     ((hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa hxa).1.trans hxc) hcp).exists
 
 /-- The orbit of a point of `W^s(r)` above the level `c > f r` meets that level. -/
-theorem exists_flow_eq_of_mem_stableSet (hf : IsMorse 𝓘(ℝ, E) f) {r x : M}
+theorem exists_flow_eq_of_mem_stableSet {r x : M}
     (hx : x ∈ hX.flow.stableSet r) {c : ℝ} (hrc : f r < c) (hcx : c < f x) :
     ∃ t, f (hX.flow t x) = c := by
-  obtain ⟨b, hbr, hxb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hf hx
+  obtain ⟨b, hbr, hxb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hx
     (ne_of_apply_ne f (hrc.trans hcx).ne')
   exact (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hbr hxb hrc
     (hcx.trans (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr hxb).2)).exists
@@ -823,10 +823,10 @@ theorem upperLevelPoint_eq_lowerLevelPoint_neg (hf : IsMorse 𝓘(ℝ, E) f) {p 
     hX.upperLevelPoint c x = (hX.neg hf).lowerLevelPoint (-c) x := by
   rcases le_or_gt c (f x) with hcx | hxc
   · rw [hX.upperLevelPoint_of_le hcx, (hX.neg hf).lowerLevelPoint_of_le (neg_le_neg hcx)]
-  · obtain ⟨a, hpa, hxa⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hf hx
+  · obtain ⟨a, hpa, hxa⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hx
       (ne_of_apply_ne f (hxc.trans hcp).ne)
     rw [hX.upperLevelPoint_of_lt hxc, (hX.neg hf).lowerLevelPoint_of_lt (neg_lt_neg hxc),
-      hX.levelPoint_neg hf hpa hxa (hX.exists_flow_eq_of_mem_unstableSet hf hx hcp hxc)]
+      hX.levelPoint_neg hf hpa hxa (hX.exists_flow_eq_of_mem_unstableSet hx hcp hxc)]
 
 /-- On `W^s(r)`, for `f r < c`, the lower level point on the level `c` is the upper level point
 for `-X` on the level `-c` of `-f`. -/
@@ -835,15 +835,15 @@ theorem lowerLevelPoint_eq_upperLevelPoint_neg (hf : IsMorse 𝓘(ℝ, E) f) {r 
     hX.lowerLevelPoint c x = (hX.neg hf).upperLevelPoint (-c) x := by
   rcases le_or_gt (f x) c with hxc | hcx
   · rw [hX.lowerLevelPoint_of_le hxc, (hX.neg hf).upperLevelPoint_of_le (neg_le_neg hxc)]
-  · obtain ⟨b, hbr, hxb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hf hx
+  · obtain ⟨b, hbr, hxb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hx
       (ne_of_apply_ne f (hrc.trans hcx).ne')
     rw [hX.lowerLevelPoint_of_lt hcx, (hX.neg hf).upperLevelPoint_of_lt (neg_lt_neg hcx),
-      hX.levelPoint_neg hf hbr hxb (hX.exists_flow_eq_of_mem_stableSet hf hx hrc hcx)]
+      hX.levelPoint_neg hf hbr hxb (hX.exists_flow_eq_of_mem_stableSet hx hrc hcx)]
 
 /-- **The upper level point is continuous on an unstable manifold.** For `c < f p`, the point of
 the orbit of `x` on the level `max (f x) c` depends continuously on the point `x` of `W^u(p)`. -/
-theorem continuousOn_upperLevelPoint (hf : IsMorse 𝓘(ℝ, E) f) {p : M} {c : ℝ}
-    (hcp : c < f p) : ContinuousOn (hX.upperLevelPoint c) (hX.flow.unstableSet p) := by
+theorem continuousOn_upperLevelPoint {p : M} {c : ℝ} (hcp : c < f p) :
+    ContinuousOn (hX.upperLevelPoint c) (hX.flow.unstableSet p) := by
   intro y hy
   have hcont : Continuous f := hX.mdifferentiable.continuous
   have hsplit : hX.flow.unstableSet p =
@@ -862,13 +862,13 @@ theorem continuousOn_upperLevelPoint (hf : IsMorse 𝓘(ℝ, E) f) {p : M} {c : 
     by_cases hcl : y ∈ closure (hX.flow.unstableSet p ∩ {x | f x < c})
     · have hcy : f y ≤ c :=
         closure_lt_subset_le hcont continuous_const (closure_mono inter_subset_right hcl)
-      obtain ⟨a, hpa, hya⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hf hy
+      obtain ⟨a, hpa, hya⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hy
         (ne_of_apply_ne f (hcy.trans_lt hcp).ne)
       have hfy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa hya
       have hlim := hX.tendsto_levelPoint hya (hfy.1.trans_le hcy) hcp (u := id)
         (l := 𝓝[hX.flow.unstableSet p ∩ {x | f x < c}] y) nhdsWithin_le_nhds
         (eventually_nhdsWithin_of_forall fun x hx ↦
-          hX.exists_flow_eq_of_mem_unstableSet hf hx.1 hcp hx.2)
+          hX.exists_flow_eq_of_mem_unstableSet hx.1 hcp hx.2)
       have hy' : hX.upperLevelPoint c y = hX.levelPoint c y := by
         rcases hcy.lt_or_eq with hcy | hcy
         · exact hX.upperLevelPoint_of_lt hcy
@@ -886,7 +886,7 @@ theorem continuousOn_lowerLevelPoint (hf : IsMorse 𝓘(ℝ, E) f) {r : M} {c : 
     (hrc : f r < c) : ContinuousOn (hX.lowerLevelPoint c) (hX.flow.stableSet r) := by
   -- Reversing the pseudo-gradient, it is an upper level point on an unstable manifold.
   rw [hX.stableSet_eq_unstableSet_neg hf]
-  refine ((hX.neg hf).continuousOn_upperLevelPoint hf.neg (neg_lt_neg hrc)).congr fun x hx ↦ ?_
+  refine ((hX.neg hf).continuousOn_upperLevelPoint (neg_lt_neg hrc)).congr fun x hx ↦ ?_
   rw [← hX.stableSet_eq_unstableSet_neg hf] at hx
   exact hX.lowerLevelPoint_eq_upperLevelPoint_neg hf hx hrc
 

@@ -5,21 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.Calculus.TangentCone.Defs
 public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.HasPrimitives
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.Taylor
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Complex.RealDeriv
+import Mathlib.Analysis.RCLike.TangentCone
+import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Analysis.Calculus.IteratedDeriv.Within
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Complex.HasPrimitives.Basic
+import TauCeti.Basic.Complex.Basic
 
 /-!
 # Vertical strips
 
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
-This file records their membership criteria, behavior under reflection and affine contraction,
-convexity, closure, their images in annuli under the translated exponential `w ↦ z₀ + exp w`, the
-exponential gauge multiplier `scaleFactor` normalizing strip boundary bounds, and holomorphic
-primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip
-(specializing `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
+This file records their membership criteria, behavior under reflection, affine contraction,
+convexity, closure, their images in annuli under the translated exponential `w ↦ z₀ + exp w`,
+unique differentiability (`uniqueDiffOn_verticalClosedStrip`), vanishing of imaginary parts of
+iterated derivatives along the real segment for functions real-valued on `[a, b]`
+(`ContDiffOn.im_iteratedDerivWithin_verticalClosedStrip_eq_zero`), the vertical Taylor–Lagrange
+expansion of `Im f(c + i y)` (`TauCeti.exists_im_add_mul_I_eq_taylor_odd`), the bound
+`‖exp ((z - θ) a)‖ ≤ exp |a|` on the closed unit strip for `0 ≤ θ ≤ 1` (`norm_exp_sub_mul_le`)
+and its complex-power form `‖b ^ ((z - θ) s)‖ ≤ exp |s log b|` for `0 < b`
+(`norm_ofReal_cpow_sub_mul_le`), the exponential gauge multiplier `scaleFactor` normalizing strip
+boundary bounds, holomorphic primitives `Complex.wedgeIntegral` for functions satisfying
+`DiffContOnCl` on a vertical strip (specializing `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
 `verticalClosedStrip a b = Icc a b ×ℂ univ`), and the Cauchy rectangle contour-shift identity
 `DiffContOnCl.intervalIntegral_add_mul_I_eq` equating vertical line integrals of vertically
 periodic holomorphic strip functions.
@@ -38,6 +55,11 @@ variable {a b : ℝ} {z : ℂ}
 
 @[simp] theorem mem_verticalClosedStrip_iff : z ∈ verticalClosedStrip a b ↔ z.re ∈ Icc a b :=
   Iff.rfl
+
+/-- The closed vertical strip `verticalClosedStrip a b` as a set comprehension. -/
+theorem verticalClosedStrip_eq_setOf (a b : ℝ) :
+    verticalClosedStrip a b = {z : ℂ | a ≤ z.re ∧ z.re ≤ b} := by
+  ext z; exact mem_verticalClosedStrip_iff
 
 /-- Reflection by `z ↦ w - z` reverses the real endpoints of an open vertical strip. -/
 theorem sub_mem_verticalStrip_iff (w z : ℂ) :
@@ -73,6 +95,16 @@ theorem mapsTo_contracted_verticalStrip {ε : ℝ} (hε : ε ∈ Ioo (0 : ℝ) 2
     rw [hcoeff, add_re, re_ofReal_mul, ofReal_re]
   rw [mem_verticalStrip_iff, hre]
   exact ⟨by nlinarith [hε.1, hε.2, hz.1], by nlinarith [hε.1, hε.2, hz.2]⟩
+
+/-- Complex conjugation preserves open vertical strips. -/
+theorem mapsTo_conj_verticalStrip (a b : ℝ) :
+    MapsTo (starRingEnd ℂ) (verticalStrip a b) (verticalStrip a b) :=
+  fun _ hz => by simpa only [mem_verticalStrip_iff, conj_re] using hz
+
+/-- Complex conjugation preserves closed vertical strips. -/
+theorem mapsTo_conj_verticalClosedStrip (a b : ℝ) :
+    MapsTo (starRingEnd ℂ) (verticalClosedStrip a b) (verticalClosedStrip a b) :=
+  fun _ hz => by simpa only [mem_verticalClosedStrip_iff, conj_re] using hz
 
 theorem isOpen_verticalStrip (a b : ℝ) : IsOpen (verticalStrip a b) :=
   isOpen_Ioo.preimage continuous_re
@@ -121,6 +153,62 @@ theorem mapsTo_add_exp_verticalClosedStrip (z₀ : ℂ) (r₁ : ℝ) {r₂ : ℝ
   rw [mem_sdiff, mem_closedBall_iff_norm, mem_ball_iff_norm, add_sub_cancel_left, norm_exp, not_lt]
   exact ⟨(Real.le_log_iff_exp_le hr₂).1 hw.2,
     (Real.le_exp_log r₁).trans (Real.exp_le_exp.2 hw.1)⟩
+
+/-- A closed vertical strip `verticalClosedStrip a b` with `a < b` has unique complex derivatives
+at every point, including on both vertical boundary lines `Re z = a` and `Re z = b`. -/
+theorem uniqueDiffOn_verticalClosedStrip (hab : a < b) :
+    UniqueDiffOn ℂ (verticalClosedStrip a b) := by
+  have hconv : Convex ℝ (verticalClosedStrip a b) :=
+    (convex_Icc a b).linear_preimage reLm
+  have hsub : verticalStrip a b ⊆ interior (verticalClosedStrip a b) :=
+    interior_maximal (verticalStrip_subset_verticalClosedStrip a b) (isOpen_verticalStrip a b)
+  refine uniqueDiffOn_convex_of_isRCLikeNormedField hconv ⟨(((a + b) / 2 : ℝ) : ℂ), hsub ?_⟩
+  simp only [mem_verticalStrip_iff, mem_Ioo, ofReal_re]
+  constructor <;> linarith
+
+end TauCeti.Complex.HadamardThreeLines
+
+/-- If `f : ℂ → ℂ` is `C^n` on the closed vertical strip `verticalClosedStrip a b` (`a < b`)
+and real-valued on `[a, b]`, then every iterated derivative
+`iteratedDerivWithin k f (verticalClosedStrip a b) c` (`k ≤ n`, `c ∈ [a, b]`) has vanishing
+imaginary part. -/
+theorem ContDiffOn.im_iteratedDerivWithin_verticalClosedStrip_eq_zero {f : ℂ → ℂ} {a b c : ℝ}
+    {n : WithTop ℕ∞} {k : ℕ} (hf : ContDiffOn ℂ n f (verticalClosedStrip a b))
+    (hab : a < b) (hc : c ∈ Icc a b) (hk : (k : WithTop ℕ∞) ≤ n)
+    (hreal : ∀ x ∈ Icc a b, (f x).im = 0) :
+    (iteratedDerivWithin k f (verticalClosedStrip a b) c).im = 0 := by
+  have huniqS : UniqueDiffOn ℂ (verticalClosedStrip a b) :=
+    TauCeti.Complex.HadamardThreeLines.uniqueDiffOn_verticalClosedStrip hab
+  have hmaps : MapsTo (fun t : ℝ => (0 : ℂ) + t • (1 : ℂ)) (Icc a b) (verticalClosedStrip a b) :=
+    fun t ht => by simp [TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff,
+      Complex.real_smul, ht]
+  simpa [Complex.real_smul] using
+    hf.map_pow_smul_iteratedDerivWithin_eq_zero huniqS (uniqueDiffOn_Icc hab) hmaps
+      Complex.imCLM (fun t ht => by simpa [Complex.real_smul] using hreal t ht) hk hc
+
+namespace TauCeti.Complex.HadamardThreeLines
+
+variable {a b : ℝ} {z : ℂ}
+
+/-- For `0 ≤ θ ≤ 1` and `z` in the closed unit strip, `|re z - θ| ≤ 1`, so the exponential
+`exp ((z - θ) a)` with real slope `a` has modulus at most `exp |a|`. -/
+theorem norm_exp_sub_mul_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) (a : ℝ)
+    (hz : z ∈ verticalClosedStrip 0 1) : ‖exp ((z - θ) * a)‖ ≤ Real.exp |a| := by
+  rw [norm_exp]
+  refine Real.exp_le_exp.2 ((le_abs_self _).trans ?_)
+  simp only [mul_re, sub_re, ofReal_re, sub_im, ofReal_im, mul_zero, sub_zero, abs_mul]
+  exact mul_le_of_le_one_left (abs_nonneg _)
+    (abs_le.2 ⟨by linarith [hz.1, hθ.2], by linarith [hz.2, hθ.1]⟩)
+
+/-- For `0 < b`, `0 ≤ θ ≤ 1` and `z` in the closed unit strip, the complex power
+`b ^ ((z - θ) s)` with real exponent slope `s` has modulus at most `exp |s log b|`. -/
+theorem norm_ofReal_cpow_sub_mul_le {b : ℝ} (hb : 0 < b) {θ : ℝ} (hθ : θ ∈ Icc 0 1) (s : ℝ)
+    (hz : z ∈ verticalClosedStrip 0 1) :
+    ‖(b : ℂ) ^ ((z - θ) * s)‖ ≤ Real.exp |s * Real.log b| := by
+  rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 hb.ne'), ← ofReal_log hb.le,
+    show (Real.log b : ℂ) * ((z - θ) * s) = (z - θ) * ((s * Real.log b : ℝ) : ℂ) by
+      push_cast; ring]
+  exact norm_exp_sub_mul_le hθ _ hz
 
 section ScaleFactor
 
@@ -297,3 +385,120 @@ theorem DiffContOnCl.intervalIntegral_exp_smul_add_mul_I_eq
   simp only [hper x hx, mul_add, Complex.exp_add, hωT, Complex.exp_int_mul_two_pi_mul_I, mul_one]
 
 end ContourShift
+
+section VerticalTaylor
+
+open scoped Nat
+
+namespace TauCeti
+
+/-- The degree-`(2 * m - 1)` Taylor polynomial of `t ↦ Im f(c + i t)` on `[0, y]` collapses to
+the odd-order sum over `Finset.Icc 1 m` when `f` is real on `[a, b]`. -/
+private lemma taylorWithinEval_im_comp {f : ℂ → ℂ} {a b c y : ℝ} {m : ℕ}
+    (hab : a < b) (hc : c ∈ Icc a b) (hm : 1 ≤ m) (hy : 0 < y)
+    (hf : ContDiffOn ℂ (2 * m : ℕ) f (verticalClosedStrip a b))
+    (hreal : ∀ x ∈ Icc a b, (f x).im = 0)
+    (hψ : ContDiff ℝ (2 * m : ℕ) (_root_.Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)))
+    (hψ_deriv : ∀ {k : ℕ}, k ≤ 2 * m →
+      iteratedDeriv k (_root_.Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)) 0 =
+        (I ^ k * iteratedDerivWithin k f (verticalClosedStrip a b) c).im) :
+    taylorWithinEval (_root_.Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I))
+        (2 * m - 1) (uIcc 0 y) 0 y =
+      ∑ s ∈ Finset.Icc 1 m,
+        (-1 : ℝ) ^ (s - 1) *
+          (iteratedDerivWithin (2 * s - 1) f (verticalClosedStrip a b) c).re *
+          y ^ (2 * s - 1) / (2 * s - 1)! := by
+  let S : Set ℂ := verticalClosedStrip a b
+  let ψ : ℝ → ℝ := _root_.Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)
+  have h2m : (2 * m - 1) + 1 = 2 * m := by omega
+  rw [taylor_within_apply, h2m]
+  have hcongr : ∑ k ∈ Finset.range (2 * m),
+        ((k ! : ℝ)⁻¹ * (y - 0) ^ k) • iteratedDerivWithin k ψ (uIcc 0 y) 0 =
+      ∑ k ∈ Finset.range (2 * m),
+        (I ^ k * iteratedDerivWithin k f S c).im * y ^ k / (k ! : ℝ) := by
+    refine Finset.sum_congr rfl fun k hk => ?_
+    have hk_le : k ≤ 2 * m := (Finset.mem_range.mp hk).le
+    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hy.ne)
+      (hψ.contDiffAt.of_le (by exact_mod_cast hk_le)) left_mem_uIcc,
+      hψ_deriv hk_le, sub_zero, smul_eq_mul]
+    ring
+  rw [hcongr, Finset.sum_range_two_mul]
+  have heven : ∑ j ∈ Finset.range m,
+      (I ^ (2 * j) * iteratedDerivWithin (2 * j) f S c).im * y ^ (2 * j) / ((2 * j)! : ℝ) =
+      0 := by
+    refine Finset.sum_eq_zero fun j hj => ?_
+    have hj_le : 2 * j ≤ 2 * m := by
+      have := Finset.mem_range.mp hj; omega
+    have him0 : (iteratedDerivWithin (2 * j) f S c).im = 0 :=
+      hf.im_iteratedDerivWithin_verticalClosedStrip_eq_zero hab hc (by exact_mod_cast hj_le) hreal
+    rw [_root_.Complex.im_I_pow_two_mul_mul, him0, mul_zero, zero_mul, zero_div]
+  rw [heven, zero_add]
+  symm
+  rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, add_tsub_cancel_right]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  have hsub : 2 * (1 + j) - 1 = 2 * j + 1 := by omega
+  rw [Nat.add_sub_cancel_left, hsub, _root_.Complex.im_I_pow_two_mul_add_one_mul]
+
+/-- Pointwise Taylor–Lagrange identity along a vertical line: if `f : ℂ → ℂ` is `C^{2m}`
+(`1 ≤ m`) on the closed vertical strip `verticalClosedStrip a b` (`a < b`) and real-valued on
+`[a, b]`, then for any `c ∈ [a, b]` and `y > 0` there exists `θ ∈ (0, 1)` such that
+`Im f(c + y i)` equals its odd-order Taylor polynomial of degree `2m - 1` plus the Lagrange
+remainder `(-1)^m * Im f^{(2m)}(c + θ y i) * y^{2m} / (2m)!`. -/
+theorem exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ} {m : ℕ}
+    (hab : a < b) (hc : c ∈ Icc a b) (hm : 1 ≤ m) (hy : 0 < y)
+    (hf : ContDiffOn ℂ (2 * m : ℕ) f (verticalClosedStrip a b))
+    (hreal : ∀ x ∈ Icc a b, (f x).im = 0) :
+    ∃ θ ∈ Ioo (0 : ℝ) 1,
+      (f (c + y * I)).im =
+        (∑ s ∈ Finset.Icc 1 m,
+          (-1 : ℝ) ^ (s - 1) *
+            (iteratedDerivWithin (2 * s - 1) f (verticalClosedStrip a b) c).re *
+            y ^ (2 * s - 1) / (2 * s - 1)!) +
+        (-1 : ℝ) ^ m *
+          (iteratedDerivWithin (2 * m) f (verticalClosedStrip a b)
+            (c + ((θ * y : ℝ) : ℂ) * I)).im *
+          y ^ (2 * m) / (2 * m)! := by
+  let S : Set ℂ := verticalClosedStrip a b
+  have huniqS : UniqueDiffOn ℂ S :=
+    TauCeti.Complex.HadamardThreeLines.uniqueDiffOn_verticalClosedStrip hab
+  let γ : ℝ → ℂ := fun t => (c : ℂ) + t • I
+  have hγ_mem : ∀ t : ℝ, γ t ∈ S := fun t => by
+    simp [S, TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff, γ,
+      _root_.Complex.real_smul, hc.1, hc.2]
+  have hfγ : ContDiff ℝ (2 * m : ℕ) (f ∘ γ) :=
+    (hf.restrict_scalars ℝ).comp_contDiff (by fun_prop) hγ_mem
+  let ψ : ℝ → ℝ := _root_.Complex.imCLM ∘ (f ∘ γ)
+  have hψ : ContDiff ℝ (2 * m : ℕ) ψ := _root_.Complex.imCLM.contDiff.comp hfγ
+  -- Line derivatives along `t ↦ c + t * I`.
+  have hψ_deriv : ∀ {k : ℕ}, k ≤ 2 * m → ∀ t : ℝ,
+      iteratedDeriv k ψ t = (I ^ k * iteratedDerivWithin k f S ((c : ℂ) + (t : ℂ) * I)).im := by
+    intro k hk t
+    have hk' : (k : WithTop ℕ∞) ≤ ((2 * m : ℕ) : WithTop ℕ∞) := by exact_mod_cast hk
+    rw [_root_.Complex.imCLM.iteratedDeriv_comp_left hfγ.contDiffAt hk']
+    have hline := hf.iteratedDeriv_comp_add_smul huniqS hγ_mem hk' t
+    simpa [γ, S, Function.comp_def, _root_.Complex.real_smul, smul_eq_mul] using
+      congrArg _root_.Complex.im hline
+  -- Lagrange remainder on `[0, y]`.
+  have h2m : (2 * m - 1) + 1 = 2 * m := by omega
+  have hψ_on : ContDiffOn ℝ (((2 * m - 1 : ℕ) : WithTop ℕ∞) + 1) ψ (uIcc 0 y) := by
+    have h1 : ContDiffOn ℝ (2 * m : ℕ) ψ (uIcc 0 y) := hψ.contDiffOn
+    rwa [← h2m, Nat.cast_add, Nat.cast_one] at h1
+  obtain ⟨ξ, hξ_mem, hξ_eq⟩ := taylor_mean_remainder_lagrange_iteratedDeriv hy.ne hψ_on
+  rw [uIoo_of_lt hy] at hξ_mem
+  refine ⟨ξ / y, ⟨div_pos hξ_mem.1 hy, (div_lt_one hy).mpr hξ_mem.2⟩, ?_⟩
+  have hθy : ξ / y * y = ξ := div_mul_cancel₀ ξ hy.ne'
+  -- Polynomial part (even terms vanish since `f` is real on `[a, b]`).
+  have htaylor := taylorWithinEval_im_comp hab hc hm hy hf hreal hψ fun hk => by
+    simpa only [ofReal_zero, zero_mul, add_zero] using hψ_deriv hk 0
+  -- Remainder part.
+  have hrem : iteratedDeriv ((2 * m - 1) + 1) ψ ξ * (y - 0) ^ ((2 * m - 1) + 1) /
+        ((2 * m - 1) + 1)! =
+      (-1 : ℝ) ^ m * (iteratedDerivWithin (2 * m) f S (c + ((ξ / y * y : ℝ) : ℂ) * I)).im *
+        y ^ (2 * m) / (2 * m)! := by
+    rw [h2m, hψ_deriv le_rfl ξ, hθy, sub_zero, _root_.Complex.im_I_pow_two_mul_mul]
+  have hψy : ψ y = (f (c + (y : ℂ) * I)).im := by simp [ψ, γ, _root_.Complex.real_smul]
+  linarith [hξ_eq, htaylor, hrem, hψy]
+
+end TauCeti
+
+end VerticalTaylor
