@@ -47,8 +47,7 @@ are `Cⁿ` jointly in the parameter and the point: `p ↦ u_p (g p)` is `Cⁿ` f
 (`ContDiff.toZeroAtInfty_apply`). This follows from the regularity of evaluation on spaces of
 `C^n` functions with derivatives bounded by the norm
 (`TauCeti.contDiffOn_apply_of_forall_norm_iteratedFDeriv_le`). The parameter derivative of the
-continuous representatives of a real family differentiable in `H^s` is again the continuous
-representative of an element of `H^s`
+continuous representatives of a real family differentiable in `H^s` again lies in `H^s`
 (`BesselPotentialSpace.fderiv_apply_mem_realSobolevFunctions`).
 
 ## References
@@ -335,7 +334,7 @@ theorem _root_.ContDiff.toZeroAtInfty_apply {P : Type*} [NormedAddCommGroup P] [
 /-- **Parameter derivatives of a family of Sobolev functions.** Let `s > dim E / 2`, let
 `U : P → H^s(E)` be differentiable at `p`, and let the continuous representatives of `U q` be the
 real functions `g q`. Then for every direction `v` the parameter derivative
-`x ↦ ∂_v g_p (x)` lies in `H^s(E)`: it is the continuous representative of `∂_v U (p)`. -/
+`x ↦ ∂_v g_p (x)` lies in `H^s(E)`. -/
 theorem fderiv_apply_mem_realSobolevFunctions {P : Type*} [NormedAddCommGroup P]
     [NormedSpace ℝ P] {p : P} (hs : finrank ℝ E < 2 * s) {U : P → H^{s}(E)}
     (hU : DifferentiableAt ℝ U p) {g : P → E → ℝ}
@@ -354,7 +353,8 @@ theorem fderiv_apply_mem_realSobolevFunctions {P : Type*} [NormedAddCommGroup P]
     have h2 : DifferentiableAt ℝ (fun q ↦ g q x) p := by
       simpa [Function.comp_def] using (Complex.reCLM.hasFDerivAt.comp p h1).differentiableAt
     have h3 := (Complex.ofRealCLM.hasFDerivAt.comp p h2.hasFDerivAt).fderiv
-    rw [show (fun q ↦ (g q x : ℂ)) = ⇑Complex.ofRealCLM ∘ fun q ↦ g q x from rfl] at h1
+    rw [show (fun q ↦ (g q x : ℂ)) = ⇑Complex.ofRealCLM ∘ fun q ↦ g q x from
+      funext fun _ ↦ (Complex.ofRealCLM_apply _).symm] at h1
     simpa [Φ] using congrArg (· v) (h1.fderiv.symm.trans h3)
   rw [mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq h0]
   exact ⟨fderiv ℝ U p v,

@@ -69,7 +69,11 @@ transformation into the gauge-fixing slice, and its divisor variation is
 (`TauCeti.Vortex.isDivisorVariation_covariantTranslation`,
 `TauCeti.Vortex.coe_gaugeFixedKernelEquivDegreeLT_covariantTranslation`). Writing `α = h P_D` with
 `h` smooth and nowhere zero, `∇_v α = α (∂_v h / h + i b(v)) + h v P_D'`, which is the defining
-identity with `G = ∂_v h / h + i b(v)`.
+identity with `G = ∂_v h / h + i b(v)`. In the same way, the velocity of a family of fields whose
+sections factor as `α_q = H_q Q_q` through polynomials `Q_q`, with `H` jointly `C¹` and `H_p`
+nowhere zero, has divisor variation `∂_v Q_p`
+(`TauCeti.Vortex.isDivisorVariation_fderiv_of_sectionValue_eq_mul`), while infinitesimal gauge
+transformations have divisor variation zero (`TauCeti.Vortex.isDivisorVariation_gaugeDirection`).
 
 The isomorphism is complex linear for the complex structure `J` of the kernel
 (`TauCeti.Vortex.gaugeFixedKernelAlmostComplexStructure`): the section variation of `J y` is
@@ -173,6 +177,40 @@ theorem isDivisorVariation_gaugeDirection (x : ℂ → EuclideanSpace ℝ (Fin 4
   simp only [sectionValue_apply, gaugeDirection_apply_two, gaugeDirection_apply_three, eval_zero,
     add_zero, ofReal_mul, ofReal_neg]
   linear_combination (-2 * (D.map fun a ↦ X - C a).prod.eval w * u w * (x w 3 : ℂ)) * I_sq
+
+/-- **The divisor variation of the velocity of a family of fields.** Let `F` be a family of fields
+whose sections factor as `α_q = H_q Q_q` through polynomials `Q_q` and functions `H` jointly `C¹`
+in the parameter and the point, with `H_p` nowhere zero. If the zero divisor `D` has polynomial
+`Q_p` and the velocity of the polynomials in the direction `v` is `R`, then `R` is a divisor
+variation of the velocity `w ↦ ∂_v F_p (w)` of the fields. -/
+theorem isDivisorVariation_fderiv_of_sectionValue_eq_mul {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {F : P → ℂ → EuclideanSpace ℝ (Fin 4)} {p : P} {H : P → ℂ → ℂ}
+    {Q : P → ℂ[X]} {v : P} (hF : ∀ w, DifferentiableAt ℝ (fun q ↦ F q w) p)
+    (hH : ContDiff ℝ 1 (Function.uncurry H)) (hH₀ : ∀ w, H p w ≠ 0)
+    (hsec : ∀ q w, sectionValue (F q) w = H q w * (Q q).eval w)
+    (hQ : ∀ w, DifferentiableAt ℝ (fun q ↦ (Q q).eval w) p)
+    (hR : ∀ w, fderiv ℝ (fun q ↦ (Q q).eval w) p v = R.eval w)
+    (hD : (D.map fun a ↦ X - C a).prod = Q p) :
+    IsDivisorVariation (F p) (fun w ↦ fderiv ℝ (fun q ↦ F q w) p v) D R := by
+  -- The derivative of `H` along the parameter, as a function of the point.
+  have hHd (w : ℂ) : HasFDerivAt (fun q ↦ H q w)
+      ((fderiv ℝ (Function.uncurry H) (p, w)).comp (ContinuousLinearMap.inl ℝ P ℂ)) p :=
+    ((hH.differentiable one_ne_zero (p, w)).hasFDerivAt).comp (f := fun q ↦ (q, w)) p
+      (hasFDerivAt_prodMk_left (𝕜 := ℝ) p w)
+  refine isDivisorVariation_iff.2 ⟨fun w ↦ fderiv ℝ (fun q ↦ H q w) p v / H p w, ?_, fun w ↦ ?_⟩
+  · have hc : Continuous fun w ↦ fderiv ℝ (Function.uncurry H) (p, w) (v, 0) :=
+      ((hH.continuous_fderiv one_ne_zero).comp (continuous_const.prodMk continuous_id)).clm_apply
+        continuous_const
+    refine Continuous.div ?_ ((hH.continuous).comp (continuous_const.prodMk continuous_id)) hH₀
+    convert hc using 2 with w
+    simp [(hHd w).fderiv]
+  · rw [sectionValue_fderiv (hF w) v,
+      show (fun q ↦ sectionValue (F q) w) = fun q ↦ H q w * (Q q).eval w from
+        funext fun q ↦ hsec q w,
+      fderiv_fun_mul (hHd w).differentiableAt (hQ w), hsec p w, hD]
+    simp only [add_apply, smul_apply, smul_eq_mul, hR]
+    field_simp [hH₀ w]
+    ring
 
 /-- **Uniqueness of the divisor variation.** If the section of `x` has zero divisor `D`, a
 variation has at most one divisor variation of degree less than `|D|`. -/
