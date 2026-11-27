@@ -68,12 +68,10 @@ private theorem shift_mul_apply_of_X_sub_C_pow_dvd {f : R[X]} {c : R} {A : Matri
   have hdvd : X ^ n ∣ (taylor c f) ^ (i : ℕ) - ∑ j : Fin n, C (A j i) * (X + C c) ^ (j : ℕ) := by
     simpa [taylor_apply] using X_sub_C_pow_dvd_iff.mp (hA i)
   have hzero : ((taylor c f) ^ (i : ℕ)).coeff k =
-      (∑ j : Fin n, C (A j i) * (X + C c) ^ (j : ℕ)).coeff k := by
-    rw [← sub_eq_zero, ← coeff_sub]
-    exact (X_pow_dvd_iff.mp hdvd) k k.isLt
-  rw [hzero, finsetSum_coeff, Matrix.mul_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [of_apply, coeff_C_mul, mul_comm]
+      (∑ j : Fin n, C (A j i) * (X + C c) ^ (j : ℕ)).coeff k :=
+    sub_eq_zero.mp ((coeff_sub _ _ k).symm.trans ((X_pow_dvd_iff.mp hdvd) k k.isLt))
+  rw [hzero, finsetSum_coeff, Matrix.mul_apply]; exact Finset.sum_congr rfl fun j _ ↦ by
+    rw [of_apply, coeff_C_mul, mul_comm]
 
 /-- Multiplying on the right by the monic shift matrix of `X - C (f.eval c)` turns the columns from
 `(taylor c f) ^ m` into `(taylor c f - C (f.eval c)) ^ i`. -/
@@ -84,21 +82,16 @@ private theorem shift_mul_shift_apply {f : R[X]} {c : R} {A : Matrix (Fin n) (Fi
         of fun m i : Fin n ↦ ((X + C (-f.eval c)) ^ (i : ℕ)).coeff m) k i =
       ((taylor c f - C (f.eval c)) ^ (i : ℕ)).coeff k := by
   nontriviality R
-  rw [Matrix.mul_apply]
-  simp_rw [shift_mul_apply_of_X_sub_C_pow_dvd hA, of_apply]
+  rw [Matrix.mul_apply]; simp_rw [shift_mul_apply_of_X_sub_C_pow_dvd hA, of_apply]
   have hdeg : ((X + C (-f.eval c)) ^ (i : ℕ)).natDegree < n :=
     natDegree_pow_le.trans_lt (by rw [natDegree_X_add_C, mul_one]; exact i.isLt)
-  have hsum : ((X + C (-f.eval c)) ^ (i : ℕ)).comp (taylor c f) =
-      ∑ m ∈ Finset.range n,
-        C (((X + C (-f.eval c)) ^ (i : ℕ)).coeff m) * (taylor c f) ^ m := by
-    rw [comp_eq_sum_left, sum_over_range' _ _ n hdeg]
-    simp
-  have hcomp : ((X + C (-f.eval c)) ^ (i : ℕ)).comp (taylor c f) =
-      (taylor c f - C (f.eval c)) ^ (i : ℕ) := by
-    simp [sub_eq_add_neg]
-  rw [← hcomp, hsum, finsetSum_coeff, ← Fin.sum_univ_eq_sum_range]
-  refine Finset.sum_congr rfl fun m _ ↦ ?_
-  rw [coeff_C_mul, mul_comm]
+  have hsum : (taylor c f - C (f.eval c)) ^ (i : ℕ) =
+      ∑ m ∈ Finset.range n, C (((X + C (-f.eval c)) ^ (i : ℕ)).coeff m) * (taylor c f) ^ m := by
+    rw [show (taylor c f - C (f.eval c)) ^ (i : ℕ) =
+        ((X + C (-f.eval c)) ^ (i : ℕ)).comp (taylor c f) by simp [sub_eq_add_neg],
+      comp_eq_sum_left, sum_over_range' _ _ n hdeg]; simp
+  rw [hsum, finsetSum_coeff, ← Fin.sum_univ_eq_sum_range]
+  exact Finset.sum_congr rfl fun m _ ↦ by rw [coeff_C_mul, mul_comm]
 
 /-- **Determinant of a polynomial power-expansion matrix modulo `(X - C c) ^ n`**: if each column
 `i` of `A : Matrix (Fin n) (Fin n) R` gives the coefficients of `f ^ i` modulo `(X - C c) ^ n`, then
@@ -116,15 +109,12 @@ theorem det_of_X_sub_C_pow_dvd_pow_sub_sum {f : R[X]} {c : R} {A : Matrix (Fin n
     (fun i ↦ by rw [(monic_X_add_C _).natDegree_pow, natDegree_X_add_C, mul_one])
     (fun i ↦ (monic_X_add_C _).pow _)
   have hlow : (P * A * Q).IsLowerTriangular := fun k i hki ↦ by
-    dsimp only [P, Q]
-    rw [shift_mul_shift_apply hA]
+    dsimp only [P, Q]; rw [shift_mul_shift_apply hA]
     exact coeff_taylor_sub_C_eval_pow_of_lt f c hki
-  have hdet : (P * A * Q).det = A.det := by rw [det_mul, det_mul, hP, hQ, one_mul, mul_one]
-  rw [← hdet, det_of_isLowerTriangular _ hlow]
-  have hdiag (i : Fin n) : (P * A * Q) i i = f.derivative.eval c ^ (i : ℕ) := by
-    dsimp only [P, Q]
-    rw [shift_mul_shift_apply hA, coeff_taylor_sub_C_eval_pow_self]
-  simp_rw [hdiag]
+  rw [← show (P * A * Q).det = A.det by rw [det_mul, det_mul, hP, hQ, one_mul, mul_one],
+    det_of_isLowerTriangular _ hlow]
+  simp_rw [show ∀ i : Fin n, (P * A * Q) i i = f.derivative.eval c ^ (i : ℕ) from fun i ↦ by
+    dsimp only [P, Q]; rw [shift_mul_shift_apply hA, coeff_taylor_sub_C_eval_pow_self]]
   rw [Finset.prod_pow_eq_pow_sum, Fin.sum_univ_eq_sum_range (fun i ↦ i) n, Finset.sum_range_id]
 
 end Matrix
@@ -145,19 +135,14 @@ theorem det_coeff_pow_modByMonic_X_sub_C_pow {R : Type*} [CommRing R] (n : ℕ) 
   have hm : ((X - C c) ^ n).Monic := (monic_X_sub_C c).pow n
   have hnd : ((X - C c) ^ n).natDegree = n := by
     rw [(monic_X_sub_C c).natDegree_pow, natDegree_X_sub_C, mul_one]
-  have hne1 : (X - C c) ^ n ≠ 1 := fun h1 ↦ by
-    have := congrArg natDegree h1
-    rw [hnd, natDegree_one] at this
-    omega
   have hdeg : ((f ^ (i : ℕ)) %ₘ ((X - C c) ^ n)).natDegree < n :=
-    (natDegree_modByMonic_lt _ hm hne1).trans_eq hnd
+    (natDegree_modByMonic_lt _ hm fun h1 ↦ by
+      have := congrArg natDegree h1; rw [hnd, natDegree_one] at this; omega).trans_eq hnd
   have hsum : ∑ j : Fin n, C (((f ^ (i : ℕ)) %ₘ ((X - C c) ^ n)).coeff j) * X ^ (j : ℕ) =
       (f ^ (i : ℕ)) %ₘ ((X - C c) ^ n) := by
-    rw [Fin.sum_univ_eq_sum_range
-      (fun m ↦ C (((f ^ (i : ℕ)) %ₘ ((X - C c) ^ n)).coeff m) * X ^ m) n]
+    rw [Fin.sum_univ_eq_sum_range (fun m ↦ C _ * X ^ m) n]
     exact (((f ^ (i : ℕ)) %ₘ ((X - C c) ^ n)).as_sum_range_C_mul_X_pow' hdeg).symm
-  simp only [Matrix.of_apply]
-  rw [hsum]
+  simp only [Matrix.of_apply]; rw [hsum]
   exact ⟨(f ^ (i : ℕ)) /ₘ ((X - C c) ^ n),
     sub_eq_of_eq_add' (modByMonic_add_div (f ^ (i : ℕ)) ((X - C c) ^ n)).symm⟩
 

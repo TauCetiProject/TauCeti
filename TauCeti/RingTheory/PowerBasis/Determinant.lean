@@ -61,19 +61,18 @@ theorem det_toMatrix_aeval_pow {R S : Type*} [CommRing R] [CommRing S] [Algebra 
   nontriviality S
   have : Nontrivial R := (algebraMap R S).domain_nontrivial
   have hmin : pb.minpolyGen = X ^ pb.dim - C b := pb.minpolyGen_eq_X_pow_sub_C hb
-  have hmod : X ^ pb.dim - C pb.gen ^ pb.dim = (X - C pb.gen) ^ pb.dim := by
-    rw [hdim, sub_pow_expChar_pow]
   have hmat : (algebraMap R S).mapMatrix
       (LinearMap.toMatrix pb.basis pb.basis
         (pb.basis.constr R fun i : Fin pb.dim ↦ aeval pb.gen f ^ (i : ℕ))) =
       Matrix.of fun j i : Fin pb.dim ↦
         (((f.map (algebraMap R S)) ^ (i : ℕ)) %ₘ ((X - C pb.gen) ^ pb.dim)).coeff j := by
     ext j i
+    have hpow : X ^ pb.dim - C pb.gen ^ pb.dim = (X - C pb.gen) ^ pb.dim := by
+      rw [hdim, sub_pow_expChar_pow]
     rw [RingHom.mapMatrix_apply, Matrix.map_apply, LinearMap.toMatrix_apply, pb.basis.constr_basis,
       ← map_pow, pb.basis_repr_aeval, hmin, Matrix.of_apply, ← coeff_map,
-      Polynomial.map_modByMonic _ (monic_X_pow_sub_C b pb.dim_pos.ne'),
-      Polynomial.map_pow, Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
-      Polynomial.map_C, hb, C_pow, hmod]
+      Polynomial.map_modByMonic _ (monic_X_pow_sub_C b pb.dim_pos.ne'), Polynomial.map_pow,
+      Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_C, hb, C_pow, hpow]
   rw [RingHom.map_det, hmat, Polynomial.det_coeff_pow_modByMonic_X_sub_C_pow,
     Polynomial.derivative_map, Polynomial.eval_map, aeval_def]
 

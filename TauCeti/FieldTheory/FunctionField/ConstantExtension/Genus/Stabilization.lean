@@ -63,15 +63,11 @@ private theorem isIntegrallyClosedIn_and_genus_restrictScalars (L : Intermediate
       letI := constantCompositumAlgebra F M F'
       IsIntegrallyClosedIn M (constantCompositum F M F') ∧
         genus M (constantCompositum F M F') = g := by
-  let FL := constantCompositum F L F'
-  let := constantCompositumAlgebra F L F'
-  let FLN := constantCompositum FL N F'
-  let := constantCompositumAlgebra FL N F'
+  let FL := constantCompositum F L F'; let := constantCompositumAlgebra F L F'
+  let FLN := constantCompositum FL N F'; let := constantCompositumAlgebra FL N F'
   have := isScalarTower_constantCompositum FL N F'
-  let M := N.restrictScalars k
-  let FM := constantCompositum F M F'
-  let := constantCompositumAlgebra F M F'
-  have := isScalarTower_constantCompositum F M F'
+  let M := N.restrictScalars k; let FM := constantCompositum F M F'
+  let := constantCompositumAlgebra F M F'; have := isScalarTower_constantCompositum F M F'
   have : FiniteDimensional k N := Module.Finite.trans L N
   let eN := (IntermediateField.restrictScalarsAlgEquiv k N).symm
   let eF := restrictScalarsConstantCompositumEquiv F F' L N
@@ -92,21 +88,18 @@ private theorem exists_finiteDimensional_isIntegrallyClosedIn_genus_eq_of_linear
         genus M (constantCompositum F M F') = genus k' F' := by
   classical
   have hF' := hF.of_constantCompositum_eq_top h
-  obtain ⟨x, hx⟩ := hF.exists_transcendental
-  have := hF.finiteDimensional_adjoin hx
+  obtain ⟨x, hx⟩ := hF.exists_transcendental; have := hF.finiteDimensional_adjoin hx
   set z := Units.mk0 x hx.ne_zero
   set B' := Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)
   have hdegB' := Divisor.degree_poles_eq_of_linearDisjoint hF h H hF' hx
   have hpos : 1 ≤ Divisor.degree B' := by
     rw [hdegB']; exact_mod_cast Nat.succ_le_of_lt (finrank_pos (R := k⟮x⟯) (M := F))
-  let l : ℕ := 2 * genus k F
-  have := finiteDimensional_riemannRochSpace hF' (l • B')
+  let l : ℕ := 2 * genus k F; have := finiteDimensional_riemannRochSpace hF' (l • B')
   let b := Module.finBasis k' (riemannRochSpace (l • B'))
   obtain ⟨M, _, hbM⟩ :=
     exists_finiteDimensional_constantSubfield_of_finset_subset_constantCompositum (k := k) (F := F)
       (Finset.univ.image fun i ↦ (b i : F')) fun _ _ ↦ h ▸ IntermediateField.mem_top
-  let FM := constantCompositum F M F'
-  let := constantCompositumAlgebra F M F'
+  let FM := constantCompositum F M F'; let := constantCompositumAlgebra F M F'
   have := isScalarTower_constantCompositum F M F'
   have := isScalarTower_base_constantCompositum k F M F'
   have hFM : constantCompositum F M FM = ⊤ := (constantCompositum_eq_top_iff F M F' FM).2 rfl
@@ -135,8 +128,7 @@ private theorem exists_finiteDimensional_isIntegrallyClosedIn_genus_eq_of_linear
   have hdimM := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree hFFM hexM
     (D := l • BM) (by rw [map_nsmul, hdegBM, ← map_nsmul]; omega)
   rw [map_nsmul, hdegBM, ← map_nsmul] at hdimM
-  have hgM_eq : genus M FM = genus k' F' := by omega
-  exact ⟨M, ‹_›, hexM, hgM_eq⟩
+  exact ⟨M, ‹_›, hexM, (by omega : genus M FM = genus k' F')⟩
 
 /-- **Genus stabilization under an algebraic constant field extension**: if `F' = F · k'` for an
 algebraic extension `k' / k`, finite or not, and `k'` is the exact constant field of `F'`, then
@@ -150,8 +142,7 @@ theorem exists_finiteDimensional_isIntegrallyClosedIn_genus_eq [Algebra.IsAlgebr
       IsIntegrallyClosedIn L (constantCompositum F L F') ∧
         genus L (constantCompositum F L F') = genus k' F' := by
   obtain ⟨L, _, H⟩ := exists_finiteDimensional_linearDisjoint_of_constantCompositum_eq_top hF h
-  let FL := constantCompositum F L F'
-  let := constantCompositumAlgebra F L F'
+  let FL := constantCompositum F L F'; let := constantCompositumAlgebra F L F'
   have := isScalarTower_constantCompositum F L F'
   have := isScalarTower_base_constantCompositum k F L F'
   have hFL : constantCompositum F L FL = ⊤ := (constantCompositum_eq_top_iff F L F' FL).2 rfl

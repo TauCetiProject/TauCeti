@@ -199,32 +199,27 @@ theorem mem_span_X_sub_C_pow_iff_forall_eval_hasseDeriv_eq_zero {R : Type*} [Rin
     rw [taylor_mul_X_sub_C_pow, hg, (commute_X_pow g n).eq]
     simpa using congr_arg (· * X ^ n) (taylor_neg_taylor (-r) g)
 
+private theorem taylor_sub_C_eval_eq_X_mul_divX {R : Type*} [Ring R] (f : R[X]) (c : R) :
+    taylor c f - C (f.eval c) = X * divX (taylor c f - C (f.eval c)) := by
+  simpa [taylor_coeff_zero] using (X_mul_divX_add (taylor c f - C (f.eval c))).symm
+
 /-- Shifting `f` to `c` and subtracting its constant term `f.eval c` yields a multiple of `X`, so
 every coefficient of `(taylor c f - C (f.eval c)) ^ i` in degree below `i` vanishes. -/
 @[simp]
 theorem coeff_taylor_sub_C_eval_pow_of_lt {R : Type*} [Ring R] (f : R[X]) (c : R) {k i : ℕ}
     (hki : k < i) :
     ((taylor c f - C (f.eval c)) ^ i).coeff k = 0 := by
-  set g := divX (taylor c f - C (f.eval c))
-  have hfg : taylor c f - C (f.eval c) = X * g := by
-    have h := X_mul_divX_add (taylor c f - C (f.eval c))
-    simpa [taylor_coeff_zero] using h.symm
-  rw [hfg, (commute_X g).mul_pow]
+  rw [taylor_sub_C_eval_eq_X_mul_divX, (commute_X _).mul_pow]
   simp [coeff_X_pow_mul', not_le_of_gt hki]
 
 /-- The `i`-th coefficient of `(taylor c f - C (f.eval c)) ^ i` is `(f.derivative.eval c) ^ i`. -/
 @[simp]
 theorem coeff_taylor_sub_C_eval_pow_self {R : Type*} [Ring R] (f : R[X]) (c : R) (i : ℕ) :
     ((taylor c f - C (f.eval c)) ^ i).coeff i = f.derivative.eval c ^ i := by
-  set g := divX (taylor c f - C (f.eval c))
-  have hfg : taylor c f - C (f.eval c) = X * g := by
-    have h := X_mul_divX_add (taylor c f - C (f.eval c))
-    simpa [taylor_coeff_zero] using h.symm
-  have hg0 : g.coeff 0 = f.derivative.eval c := by
-    simp [g, coeff_divX, taylor_coeff_one]
-  rw [hfg, (commute_X g).mul_pow]
-  simp only [coeff_X_pow_mul', le_refl, ↓reduceIte, tsub_self]
-  rw [← constantCoeff_apply, map_pow, constantCoeff_apply, hg0]
+  rw [taylor_sub_C_eval_eq_X_mul_divX, (commute_X _).mul_pow, coeff_X_pow_mul']
+  simp only [le_refl, ↓reduceIte, tsub_self]
+  rw [← constantCoeff_apply, map_pow, constantCoeff_apply, coeff_divX]
+  simp [taylor_coeff_one]
 
 /-- The Taylor coefficients at `ζ` of the image of `p` in an `R`-algebra are the values at `ζ` of
 the Hasse derivatives of `p`. -/

@@ -244,28 +244,21 @@ theorem restrictScalars_riemannRochSpace_conorm [Algebra k' F] [IsScalarTower k 
     (D : Divisor k F) :
     (riemannRochSpace (Divisor.conorm k' F D)).restrictScalars k = riemannRochSpace D := by
   ext f
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
+  rcases eq_or_ne f 0 with rfl | hf; · simp
   rw [Submodule.restrictScalars_mem, mem_riemannRochSpace_iff_neg_le_ord hf,
     mem_riemannRochSpace_iff_neg_le_ord hf]
-  constructor
-  · intro h P
-    set P' : Place k' F := Place.constantsEquiv k k' F P
-    have hP' : P'.restrict k F = P :=
-      (Place.restrict_eq_iff_integers_le k F P' P).2 fun x hx ↦ by
-        simpa [P', Place.integers_constantsEquiv] using hx
-    have hbound := h P'
-    rw [Divisor.coeff_conorm, hP'] at hbound
-    have hord := Place.ord_algebraMap_restrict k F P' f
-    rw [Algebra.algebraMap_self, RingHom.id_apply, hP'] at hord
-    have he : (0 : ℤ) < Place.ramificationIdx F P' := by
-      exact_mod_cast Place.ramificationIdx_pos F P'
+  have hord (P' : Place k' F) :
+      P'.ord f = Place.ramificationIdx F P' * (P'.restrict k F).ord f := by
+    simpa using Place.ord_algebraMap_restrict k F P' f
+  refine ⟨fun h P ↦ ?_, fun h P' ↦ ?_⟩
+  · set P' : Place k' F := Place.constantsEquiv k k' F P
+    have hP' : P'.restrict k F = P := (Place.restrict_eq_iff_integers_le k F P' P).2 fun _ hx ↦
+      by simpa [P', Place.integers_constantsEquiv] using hx
+    have hbound := h P'; rw [Divisor.coeff_conorm, hP'] at hbound
+    have hord' := hord P'; rw [hP'] at hord'
+    have he : (0 : ℤ) < Place.ramificationIdx F P' := mod_cast Place.ramificationIdx_pos F P'
     nlinarith
-  · intro h P'
-    have hord := Place.ord_algebraMap_restrict k F P' f
-    rw [Algebra.algebraMap_self, RingHom.id_apply] at hord
-    rw [Divisor.coeff_conorm]
-    nlinarith [h (P'.restrict k F)]
+  · rw [Divisor.coeff_conorm, hord]; nlinarith [h (P'.restrict k F)]
 
 /-- **Riemann–Roch dimension under base-field enlargement inside `F`**: for an integral extension
 `k' / k` inside a field `F`, `ℓ_k(D) = [k' : k] · ℓ_{k'}(Con D)`, since both Riemann–Roch spaces

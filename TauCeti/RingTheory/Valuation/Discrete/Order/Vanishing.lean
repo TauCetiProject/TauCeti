@@ -45,20 +45,17 @@ theorem ringOrd_valuationSubring_eq_toNat_ord {F : Type*} [Field F]
   have ht_ord : ord v t = 1 := by simp [ord_def, ht]
   have ht0 : t ≠ 0 := fun h0 ↦ by rw [h0, ord_zero] at ht_ord; omega
   let π : v.valuationSubring := ⟨t, (mem_valuationSubring_iff_ord_nonneg v).2 (by omega)⟩
-  have hπ : Irreducible π := by
-    rw [IsDiscreteValuationRing.irreducible_iff_uniformizer]
-    exact ((isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top v
+  have hπ : Irreducible π := (IsDiscreteValuationRing.irreducible_iff_uniformizer π).2
+    ((isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top v
       (v.valueGroup_eq_top_of_surjective hv)).2 ht_ord).is_generator
-  have hx0 : x ≠ 0 := fun h0 ↦ hx (congrArg Subtype.val h0)
-  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx0 hπ
-  rw [Ring.ord_eq_addVal, IsDiscreteValuationRing.addVal_def' u hπ n]
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible
+    (fun h0 ↦ hx (congrArg Subtype.val h0)) hπ
   have hu0 : ((u : v.valuationSubring) : F) ≠ 0 := fun h0 ↦ u.ne_zero (Subtype.ext h0)
   have hord : ord v (((u : v.valuationSubring) * π ^ n : v.valuationSubring) : F) = n := by
     rw [Subring.coe_mul, Subring.coe_pow]
     simp only [π]
     rw [ord_mul v (v.ne_zero_iff.2 hu0) (v.ne_zero_iff.2 (pow_ne_zero n ht0)),
-      (isUnit_iff_ord_eq_zero v hu0).1 u.isUnit, ord_pow v t n, ht_ord]
-    omega
-  rw [hord, Int.toNat_natCast]
+      (isUnit_iff_ord_eq_zero v hu0).1 u.isUnit, ord_pow v t n, ht_ord]; omega
+  rw [Ring.ord_eq_addVal, IsDiscreteValuationRing.addVal_def' u hπ n, hord, Int.toNat_natCast]
 
 end Valuation

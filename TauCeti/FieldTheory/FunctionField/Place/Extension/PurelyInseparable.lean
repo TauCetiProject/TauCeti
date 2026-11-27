@@ -247,23 +247,20 @@ theorem exists_adjoin_integers_eq_top_of_finrank_eq_prime {p : ℕ} (hp : p.Prim
     exact ⟨_,
       IsLocalRing.adjoin_eq_top_of_algebraMap_residueField_surjective_of_span_eq_maximalIdeal
         hsurj hπ.maximalIdeal_eq.symm⟩
-  · have he1 : ramificationIdx F P' = 1 := by
-      rw [hfp] at hef
-      nlinarith [hp.pos]
+  · have he1 : ramificationIdx F P' = 1 := by rw [hfp] at hef; nlinarith [hp.pos]
     obtain ⟨bar_b, hbar⟩ := Field.exists_adjoin_simple_eq_top_of_finrank_prime (hfp ▸ hp)
     obtain ⟨β, hβ⟩ := IsLocalRing.residue_surjective (R := P'.integers) bar_b
     obtain ⟨t₀, ht₀⟩ := (P'.restrict k F).exists_isUniformizer
-    have ht₀_ord : (P'.restrict k F).ord t₀ = 1 :=
-      (P'.restrict k F).isUniformizer_iff_ord_eq_one.1 ht₀
     let π₀ : (P'.restrict k F).integers :=
-      ⟨t₀, (P'.restrict k F).mem_integers_iff_ord_nonneg.2 (by omega)⟩
+      ⟨t₀, (P'.restrict k F).mem_integers_iff_ord_nonneg.2 (by
+        rw [(P'.restrict k F).isUniformizer_iff_ord_eq_one.1 ht₀]; norm_num)⟩
     have hπ₀_unif : P'.valuation.IsUniformizer
         ((algebraMap (P'.restrict k F).integers P'.integers π₀ : P'.integers) : F') := by
       rw [P'.isUniformizer_iff_ord_eq_one, coe_algebraMap_integers,
-        ord_algebraMap_restrict k F P', he1, Nat.cast_one, one_mul, ht₀_ord]
+        ord_algebraMap_restrict k F P', he1, Nat.cast_one, one_mul,
+        (P'.restrict k F).isUniformizer_iff_ord_eq_one.1 ht₀]
     have hspan : Ideal.span {aeval β (C π₀)} = IsLocalRing.maximalIdeal P'.integers := by
-      rw [aeval_C]
-      exact (P'.irreducible_of_isUniformizer hπ₀_unif).maximalIdeal_eq.symm
+      rw [aeval_C]; exact (P'.irreducible_of_isUniformizer hπ₀_unif).maximalIdeal_eq.symm
     refine ⟨β, TauCeti.IsLocalRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal (g := C π₀) ?_ hspan⟩
     rw [hβ, ← adjoin_simple_toSubalgebra_of_isAlgebraic (Algebra.IsAlgebraic.isAlgebraic bar_b),
       hbar, IntermediateField.top_toSubalgebra]
@@ -276,20 +273,16 @@ theorem exists_powerBasis_integers_of_finrank_eq_prime {p : ℕ} [Fact p.Prime]
     [Algebra.IsIntegral k k'] (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
     (hFF' : Module.finrank F F' = p) (P' : Place k' F') :
     ∃ pb : PowerBasis (P'.restrict k F).integers P'.integers, pb.dim = p := by
-  have hp : p.Prime := Fact.out
-  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hFF' ▸ hp.pos)
-  have : Module.Finite (P'.restrict k F).integers P'.integers :=
-    P'.moduleFinite_integers_of_isPurelyInseparable hF hF'
-  obtain ⟨β, hβ⟩ := P'.exists_adjoin_integers_eq_top_of_finrank_eq_prime hp hF hF' hFF'
+  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hFF' ▸ (Fact.out : p.Prime).pos)
+  have := P'.moduleFinite_integers_of_isPurelyInseparable hF hF'
+  obtain ⟨β, hβ⟩ := P'.exists_adjoin_integers_eq_top_of_finrank_eq_prime Fact.out hF hF' hFF'
   have : FaithfulSMul (P'.restrict k F).integers P'.integers :=
-    (faithfulSMul_iff_algebraMap_injective _ _).2 fun x y hxy ↦ Subtype.ext <|
+    (faithfulSMul_iff_algebraMap_injective _ _).2 fun _ _ hxy ↦ Subtype.ext <|
       (algebraMap F F').injective
         (by simpa [coe_algebraMap_integers] using congrArg Subtype.val hxy)
-  have : IsScalarTower (P'.restrict k F).integers P'.integers F' :=
-    .of_algebraMap_eq fun x ↦ by
-      rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
-        ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply,
-        coe_algebraMap_integers]
+  have : IsScalarTower (P'.restrict k F).integers P'.integers F' := .of_algebraMap_eq fun _ ↦ by
+    rw [IsScalarTower.algebraMap_apply _ F F', ValuationSubring.algebraMap_apply,
+      ValuationSubring.algebraMap_apply, coe_algebraMap_integers]
   refine ⟨PowerBasis.ofAdjoinEqTop' (IsIntegral.of_finite _ β) hβ, ?_⟩
   rw [← PowerBasis.finrank, ← IsFractionRing.finrank_eq (P'.restrict k F).integers F P'.integers F',
     hFF']
@@ -316,11 +309,9 @@ omit [CharP k p] in
 private theorem ord_algebraMap_gen_sub (hs : ∀ c : k, c ^ p ≠ s) :
     (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs)).ord
       (algebraMap k⟮t⟯ (_root_.RatFunc k) (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s)) = 1 := by
-  have : algebraMap k⟮t⟯ (_root_.RatFunc k) (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s) =
-      algebraMap k[X] (_root_.RatFunc k) (X ^ p - C s) := by
-    simp
-  rw [this, ord_adicOfIrreducible_algebraMap_irreducible _
-    (irreducible_X_pow_sub_C_of_prime Fact.out hs)]
+  rw [show algebraMap k⟮t⟯ (_root_.RatFunc k) (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s) =
+      algebraMap k[X] (_root_.RatFunc k) (X ^ p - C s) by simp,
+    ord_adicOfIrreducible_algebraMap_irreducible _ (irreducible_X_pow_sub_C_of_prime Fact.out hs)]
   simp
 
 omit [CharP k p] in

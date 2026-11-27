@@ -424,14 +424,12 @@ theorem constantCompositumBotEquiv_algebraMap (F k' F' : Type*) [Field k] [Field
         ((IntermediateField.botEquiv k k').symm c) := by
   let := constantCompositumAlgebra F (⊥ : IntermediateField k k') F'
   have := isScalarTower_constantCompositum F (⊥ : IntermediateField k k') F'
-  apply Subtype.ext
-  rw [coe_constantCompositumBotEquiv_apply, ← IsScalarTower.algebraMap_apply k F F',
-    ← IntermediateField.algebraMap_apply
-      (S := constantCompositum F (⊥ : IntermediateField k k') F'),
-    ← IsScalarTower.algebraMap_apply (⊥ : IntermediateField k k') _ F',
-    IsScalarTower.algebraMap_apply (⊥ : IntermediateField k k') k' F',
-    IntermediateField.algebraMap_apply, IntermediateField.botEquiv_symm,
-    IntermediateField.coe_algebraMap_apply, IsScalarTower.algebraMap_apply k k' F']
+  exact Subtype.ext <| by
+    rw [coe_constantCompositumBotEquiv_apply, ← IsScalarTower.algebraMap_apply k F F',
+      ← IntermediateField.algebraMap_apply
+        (S := constantCompositum F (⊥ : IntermediateField k k') F'),
+      ← IsScalarTower.algebraMap_apply (⊥ : IntermediateField k k') _ F']
+    exact IsScalarTower.algebraMap_apply k k' F' c
 
 /-! ### The compositum of an intermediate field with the constants -/
 
@@ -571,10 +569,12 @@ theorem restrictScalarsConstantCompositumEquiv_algebraMap (L : IntermediateField
   have := isScalarTower_constantCompositum (constantCompositum F L F') N F'
   have := isScalarTower_constantCompositum F (N.restrictScalars k) F'
   apply Subtype.ext
-  rw [coe_restrictScalarsConstantCompositumEquiv_apply, ← IntermediateField.algebraMap_apply,
-    ← IsScalarTower.algebraMap_apply N _ F', IsScalarTower.algebraMap_apply N k' F',
-    ← IntermediateField.algebraMap_apply,
+  rw [coe_restrictScalarsConstantCompositumEquiv_apply,
+    ← IntermediateField.algebraMap_apply (S := constantCompositum (constantCompositum F L F') N F'),
+    ← IsScalarTower.algebraMap_apply N _ F',
+    ← IntermediateField.algebraMap_apply (S := constantCompositum F (N.restrictScalars k) F'),
     ← IsScalarTower.algebraMap_apply (N.restrictScalars k) _ F',
+    IsScalarTower.algebraMap_apply N k' F',
     IsScalarTower.algebraMap_apply (N.restrictScalars k) k' F',
     IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply,
     IntermediateField.coe_restrictScalarsAlgEquiv_symm_apply]
@@ -615,29 +615,25 @@ theorem exists_intermediateField_isIntegrallyClosedIn_constantCompositum
   let EM := constantCompositum E M F'
   let := constantCompositumAlgebra E M F'
   have := isScalarTower_constantCompositum E M F'
-  have hm_mem (m : M) : algebraMap M k'' m ∈ (EM.toSubfield).comap (algebraMap k'' F') := by
-    rw [Subfield.mem_comap, ← IsScalarTower.algebraMap_apply M k'' F']
-    exact algebraMap_mem_constantCompositum E M F' m
   let M₁ : IntermediateField M k'' :=
-    ((EM.toSubfield).comap (algebraMap k'' F')).toIntermediateField hm_mem
-  have hmEM (c : M₁) : algebraMap M₁ F' c ∈ EM := by
+    ((EM.toSubfield).comap (algebraMap k'' F')).toIntermediateField fun m ↦ by
+      rw [Subfield.mem_comap, ← IsScalarTower.algebraMap_apply M k'' F']
+      exact algebraMap_mem_constantCompositum E M F' m
+  let _ : Algebra M₁ EM := ((algebraMap M₁ F').codRestrict EM fun c ↦ by
     rw [IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
-    exact c.property
-  let _ : Algebra M₁ EM := ((algebraMap M₁ F').codRestrict EM hmEM).toAlgebra
+    exact c.property).toAlgebra
   have hstEM : IsScalarTower M₁ EM F' := .of_algebraMap_eq fun c ↦ by
-    rw [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+    simp [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra]
   have hstM : IsScalarTower M M₁ EM := .of_algebraMap_eq fun m ↦ (algebraMap EM F').injective <| by
-    rw [← IsScalarTower.algebraMap_apply M EM F', ← IsScalarTower.algebraMap_apply M₁ EM F',
-      IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply,
-      IntermediateField.coe_algebraMap_apply, IsScalarTower.algebraMap_apply M k'' F']
+    simp [← IsScalarTower.algebraMap_apply _ _ F']
   refine ⟨M₁, inferInstance, hstM, hstEM,
     isIntegrallyClosedIn_iff.2 ⟨(algebraMap M₁ EM).injective, fun {y} hy ↦ ?_⟩⟩
   obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.1
     ((hy.map (IsScalarTower.toAlgHom M₁ EM F')).tower_top : IsIntegral k'' (y : F'))
-  refine ⟨⟨c, show algebraMap k'' F' c ∈ EM from hc.symm ▸ y.property⟩, Subtype.ext ?_⟩
-  rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply,
-    IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
-  exact hc
+  have hc' : algebraMap k'' F' c = (y : F') := hc
+  refine ⟨⟨c, show algebraMap k'' F' c ∈ EM from hc'.symm ▸ y.property⟩, Subtype.ext ?_⟩
+  rw [← IntermediateField.algebraMap_apply (S := EM), ← IsScalarTower.algebraMap_apply M₁ EM F',
+    IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply, hc']
 
 /-! ### The degree of `F' / F` when `[F·k' : F]` is known -/
 
@@ -776,15 +772,10 @@ theorem finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top
   have hkα : k⟮algebraMap k' F' α⟯ = (IsScalarTower.toAlgHom k k' F').fieldRange := by
     rw [AlgHom.fieldRange_eq_map, ← hα, IntermediateField.adjoin_map, Set.image_singleton,
       IsScalarTower.coe_toAlgHom']
-  calc Module.finrank F (constantCompositum F k' F')
-      = Module.finrank F F⟮algebraMap k' F' α⟯ := by rw [hFα]
-    _ = Module.finrank k k⟮algebraMap k' F' α⟯ :=
-        IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn
-          hex (hα_int.map (IsScalarTower.toAlgHom k k' F'))
-    _ = Module.finrank k k' := by
-        rw [hkα]
-        exact
-          (AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k k' F')).symm.toLinearEquiv.finrank_eq
+  have hint : IsIntegral k (algebraMap k' F' α) := hα_int.map (IsScalarTower.toAlgHom k k' F')
+  rw [hFα, IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn
+      hex hint, hkα]
+  exact (AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k k' F')).symm.toLinearEquiv.finrank_eq
 
 /-- **Adjoining a prime-degree constant extension to an exact constant field preserves finrank**:
 if `k` is relatively algebraically closed in `F` and `[k' : k]` is prime (with no separability or
@@ -803,8 +794,8 @@ theorem finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
     (hp : (Module.finrank k k').Prime) :
     Module.finrank F F' = Module.finrank k k' := by
-  have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex hp
-  rwa [h, IntermediateField.finrank_top'] at hdeg
+  rw [← (IntermediateField.topEquiv (F := F) (E := F')).toLinearEquiv.finrank_eq, ← h]
+  exact finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex hp
 
 end LinearDisjoint
 

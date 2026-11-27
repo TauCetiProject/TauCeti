@@ -62,8 +62,7 @@ theorem exists_map_eq_pow_expChar_pow_of_isPurelyInseparable {L : Type*} [CommRi
           rw [map_pow, ha i, ← pow_mul, ← pow_add, Nat.add_sub_cancel' (Finset.le_sup hi)]⟩
       · exact ⟨0, by rw [notMem_support_iff.mp hi, zero_pow hq, map_zero]⟩
   refine ⟨n, expand K (p ^ n) Q₀, ?_⟩
-  rw [coe_mapRingHom] at hQ₀
-  rw [map_expand, hQ₀, ← map_expand, map_iterateFrobenius_expand]
+  rw [coe_mapRingHom] at hQ₀; rw [map_expand, hQ₀, ← map_expand, map_iterateFrobenius_expand]
 
 end Polynomial
 
@@ -80,12 +79,9 @@ theorem charP_of_prime_dvd_finrank {K M : Type*} [Field K] [Field M] [Algebra K 
   obtain ⟨q, hq⟩ := ExpChar.exists K
   obtain ⟨r, hr⟩ := _root_.IsPurelyInseparable.finrank_eq_pow K M q
   rcases hq with _ | hq_prime
-  · rw [hr, one_pow] at hdvd
-    exact absurd hdvd hp.not_dvd_one
-  · rw [hr] at hdvd
-    have hqp : p = q :=
-      (Nat.prime_dvd_prime_iff_eq hp hq_prime).mp (hp.dvd_of_dvd_pow hdvd)
-    subst hqp
+  · exact absurd (by simpa [hr] using hdvd) hp.not_dvd_one
+  · obtain rfl : p = q :=
+      (Nat.prime_dvd_prime_iff_eq hp hq_prime).mp (hp.dvd_of_dvd_pow (hr ▸ hdvd))
     infer_instance
 
 /-- **Prime-degree subextension of a nontrivial purely inseparable extension**: if `M / K` is a
@@ -97,10 +93,8 @@ theorem exists_intermediateField_finrank_eq_expChar {K M : Type*} [Field K] [Fie
     (h : ¬Function.Surjective (algebraMap K M)) :
     ∃ L : IntermediateField K M, Module.finrank K L = p := by
   rcases ‹ExpChar K p› with _ | hp
-  · exfalso
-    refine h fun x ↦ ?_
-    obtain ⟨_, a, ha⟩ := _root_.IsPurelyInseparable.pow_mem K 1 x
-    exact ⟨a, by simpa using ha⟩
+  · exact False.elim <| h fun x ↦
+      let ⟨_, a, ha⟩ := _root_.IsPurelyInseparable.pow_mem K 1 x; ⟨a, by simpa using ha⟩
   · have : ExpChar K p := .prime hp
     have hne : (⊥ : IntermediateField K M) ≠ ⊤ := fun hbot ↦ h fun x ↦
       IntermediateField.mem_bot.1 (hbot ▸ IntermediateField.mem_top)
@@ -108,22 +102,19 @@ theorem exists_intermediateField_finrank_eq_expChar {K M : Type*} [Field K] [Fie
     obtain ⟨m, y, hmin⟩ := _root_.IsPurelyInseparable.minpoly_eq_X_pow_sub_C K p x
     have hm0 : m ≠ 0 := by
       rintro rfl
-      have hroot := minpoly.aeval K x
-      rw [hmin, pow_zero, pow_one, map_sub, aeval_X, aeval_C, sub_eq_zero] at hroot
-      exact hx (IntermediateField.mem_bot.2 ⟨y, hroot.symm⟩)
+      exact hx (IntermediateField.mem_bot.2
+        ⟨y, Eq.symm <| sub_eq_zero.1 <| by simpa [hmin] using minpoly.aeval K x⟩)
     obtain ⟨d, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm0
     let z : M := x ^ p ^ d
     have hz_not_bot : z ∉ (⊥ : IntermediateField K M) := by
       rintro ⟨c, hc⟩
-      have hroot : aeval x (X ^ p ^ d - C c : K[X]) = 0 := by simp [z, ← hc]
-      have hle := minpoly.min K x (monic_X_pow_sub_C c (pow_ne_zero d hp.ne_zero)) hroot
+      have hle := minpoly.min K x (monic_X_pow_sub_C c (pow_ne_zero d hp.ne_zero))
+        (by simp [z, ← hc])
       rw [hmin, degree_X_pow_sub_C (pow_pos hp.pos _) y, degree_X_pow_sub_C (pow_pos hp.pos _) c,
         Nat.cast_le] at hle
       exact (Nat.pow_lt_pow_right hp.one_lt (Nat.lt_succ_self d)).not_ge hle
     have hzp : aeval z (X ^ p - C y : K[X]) = 0 := by
-      have hxroot := minpoly.aeval K x
-      rw [hmin, map_sub, map_pow, aeval_X, aeval_C, pow_succ, pow_mul] at hxroot
-      simpa [z] using hxroot
+      simpa [z, hmin, pow_succ, pow_mul] using minpoly.aeval K x
     have hz_int : IsIntegral K z := Algebra.IsIntegral.isIntegral z
     have : FiniteDimensional K K⟮z⟯ := IntermediateField.adjoin.finiteDimensional hz_int
     have hz_le : Module.finrank K K⟮z⟯ ≤ p := by
@@ -153,8 +144,7 @@ theorem of_isIntegrallyClosedIn {k k' F : Type*} (F' : Type*) {k'' : Type*}
   obtain ⟨p, _⟩ := ExpChar.exists k
   have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
   have : ExpChar k' p := expChar_of_injective_algebraMap (algebraMap k k').injective p
-  let _ := compAlgebra k k' k''
-  have := isScalarTower_compAlgebra_left k k' k''
+  let _ := compAlgebra k k' k''; have := isScalarTower_compAlgebra_left k k' k''
   have := isScalarTower_compAlgebra_right k k' k'' F'
   have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
   rw [isPurelyInseparable_iff_pow_mem k' p]

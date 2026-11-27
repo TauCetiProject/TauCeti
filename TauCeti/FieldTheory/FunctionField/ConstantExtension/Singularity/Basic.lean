@@ -96,19 +96,15 @@ theorem singularityDegree_eq_zero_iff [FiniteDimensional k' (singularityQuotient
 
 end Singularity
 
-variable (k F) in
-/-- When `F' / F` is purely inseparable, `P'` is the unique place over `P = P'|_F`, so `𝒪'_P`
-coincides with `𝒪_{P'}` and `P'.integers ⧸ P'.constantSpanSubmodule k F` is `k`-linearly isomorphic
-to `P.singularityQuotient k' F'`. -/
-noncomputable def singularityQuotientLinearEquiv [Algebra.IsIntegral k k']
+section
+variable (k F)
+
+private noncomputable def singularityIntegersEquiv [Algebra.IsIntegral k k']
     [IsPurelyInseparable F F'] (hF' : IsFunctionField k' F') (P' : Place k' F') :
-    letI := Place.integersAlgebraBase k P'
-    haveI := Place.isScalarTower_integersAlgebraBase k P'
+    letI := Place.integersAlgebraBase k P'; haveI := Place.isScalarTower_integersAlgebraBase k P'
     haveI := Place.isScalarTower_integers_restrict k F P'
-    (P'.integers ⧸ P'.constantSpanSubmodule k F) ≃ₗ[k]
-      (P'.restrict k F).singularityQuotient k' F' :=
-  letI := Place.integersAlgebraBase k P'
-  haveI := Place.isScalarTower_integersAlgebraBase k P'
+    P'.integers ≃ₗ[k] ↥((P'.restrict k F).integralClosureSubmodule k' F') :=
+  letI := Place.integersAlgebraBase k P'; haveI := Place.isScalarTower_integersAlgebraBase k P'
   haveI := Place.isScalarTower_integers_restrict k F P'
   let P := P'.restrict k F
   have : IsIntegralClosure P'.integers P.integers F' := Place.isIntegralClosure_integers hF' P'
@@ -117,32 +113,67 @@ noncomputable def singularityQuotientLinearEquiv [Algebra.IsIntegral k k']
     IsIntegralClosure.algebraMap_equiv P.integers P'.integers F' (integralClosure P.integers F') z
   let toIC (z : F') (hz : z ∈ P.integralClosureSubmodule k' F') : integralClosure P.integers F' :=
     ⟨z, (mem_integralClosure_iff P.integers F').2 ((P.mem_integralClosureSubmodule_iff k' F').1 hz)⟩
-  let eTop : P'.integers ≃ₗ[k] ↥(P.integralClosureSubmodule k' F') :=
-    { toFun := fun x ↦ ⟨((e x : integralClosure P.integers F') : F'),
-        (P.mem_integralClosureSubmodule_iff k' F').2
-          ((mem_integralClosure_iff P.integers F').1 (e x).property)⟩
-      invFun := fun y ↦ e.symm (toIC y.val y.property)
-      left_inv := fun x ↦ by simp [e, toIC]
-      right_inv := fun y ↦ Subtype.ext <| by simp [toIC]
-      map_add' := fun x y ↦ Subtype.ext <| by simp
-      map_smul' := fun c x ↦ Subtype.ext <| by
-        rw [RingHom.id_apply, Submodule.coe_smul_of_tower, he, Algebra.smul_def, Algebra.smul_def,
-          Subring.coe_mul, IsScalarTower.algebraMap_apply k k' P'.integers,
-          Place.coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k k' F', he] }
+  { toFun := fun x ↦ ⟨((e x : integralClosure P.integers F') : F'),
+      (P.mem_integralClosureSubmodule_iff k' F').2
+        ((mem_integralClosure_iff P.integers F').1 (e x).property)⟩
+    invFun := fun y ↦ e.symm (toIC y.val y.property)
+    left_inv := fun x ↦ by simp [e, toIC]
+    right_inv := fun y ↦ Subtype.ext <| by simp [toIC]
+    map_add' := fun x y ↦ Subtype.ext <| by simp
+    map_smul' := fun c x ↦ Subtype.ext <| by
+      rw [RingHom.id_apply, Submodule.coe_smul_of_tower, he, Algebra.smul_def, Algebra.smul_def,
+        Subring.coe_mul, IsScalarTower.algebraMap_apply k k' P'.integers,
+        Place.coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k k' F', he] }
+
+private theorem coe_singularityIntegersEquiv_apply [Algebra.IsIntegral k k']
+    [IsPurelyInseparable F F'] (hF' : IsFunctionField k' F') (P' : Place k' F')
+    (x : P'.integers) :
+    ((singularityIntegersEquiv k F hF' P' x :
+      ↥((P'.restrict k F).integralClosureSubmodule k' F')) : F') = (x : F') := by
+  let := Place.integersAlgebraBase k P'; have := Place.isScalarTower_integersAlgebraBase k P'
+  have := Place.isScalarTower_integers_restrict k F P'
+  have : IsIntegralClosure P'.integers (P'.restrict k F).integers F' :=
+    Place.isIntegralClosure_integers hF' P'
+  exact IsIntegralClosure.algebraMap_equiv (P'.restrict k F).integers P'.integers F'
+    (integralClosure (P'.restrict k F).integers F') x
+
+private theorem singularityIntegersEquiv_map_constantSpan [Algebra.IsIntegral k k']
+    [IsPurelyInseparable F F'] (hF' : IsFunctionField k' F') (P' : Place k' F') :
+    letI := Place.integersAlgebraBase k P'; haveI := Place.isScalarTower_integersAlgebraBase k P'
+    haveI := Place.isScalarTower_integers_restrict k F P'
+    ((P'.constantSpanSubmodule k F).restrictScalars k).map
+        (singularityIntegersEquiv k F hF' P' : P'.integers →ₗ[k] _) =
+      (((P'.restrict k F).constantSpanIntegers k' F').submoduleOf
+        ((P'.restrict k F).integralClosureSubmodule k' F')).restrictScalars k := by
+  let := Place.integersAlgebraBase k P'; have := Place.isScalarTower_integersAlgebraBase k P'
+  have := Place.isScalarTower_integers_restrict k F P'
+  ext ⟨z, hz⟩
+  simp only [Submodule.mem_map, LinearEquiv.coe_coe, Submodule.restrictScalars_mem,
+    Place.mem_constantSpanSubmodule_iff]
+  refine ⟨fun ⟨x, hx, hxz⟩ ↦ ?_,
+    fun hz' ↦ ⟨(singularityIntegersEquiv k F hF' P').symm ⟨z, hz⟩, ?_,
+      (singularityIntegersEquiv k F hF' P').apply_symm_apply _⟩⟩
+  · have hxz' : (x : F') = z :=
+      (coe_singularityIntegersEquiv_apply k F hF' P' x).symm.trans (congrArg Subtype.val hxz)
+    exact hxz' ▸ hx
+  · have hz_eq := (coe_singularityIntegersEquiv_apply k F hF' P'
+      ((singularityIntegersEquiv k F hF' P').symm ⟨z, hz⟩)).symm
+    rw [LinearEquiv.apply_symm_apply] at hz_eq; rwa [hz_eq]
+
+/-- When `F' / F` is purely inseparable, `P'` is the unique place over `P = P'|_F`, so `𝒪'_P`
+coincides with `𝒪_{P'}` and `P'.integers ⧸ P'.constantSpanSubmodule k F` is `k`-linearly isomorphic
+to `P.singularityQuotient k' F'`. -/
+noncomputable def singularityQuotientLinearEquiv [Algebra.IsIntegral k k']
+    [IsPurelyInseparable F F'] (hF' : IsFunctionField k' F') (P' : Place k' F') :
+    letI := Place.integersAlgebraBase k P'; haveI := Place.isScalarTower_integersAlgebraBase k P'
+    haveI := Place.isScalarTower_integers_restrict k F P'
+    (P'.integers ⧸ P'.constantSpanSubmodule k F) ≃ₗ[k]
+      (P'.restrict k F).singularityQuotient k' F' :=
+  letI := Place.integersAlgebraBase k P'; haveI := Place.isScalarTower_integersAlgebraBase k P'
+  haveI := Place.isScalarTower_integers_restrict k F P'
   ((Submodule.Quotient.restrictScalarsEquiv k (P'.constantSpanSubmodule k F)).symm.trans
-    (Submodule.Quotient.equiv ((P'.constantSpanSubmodule k F).restrictScalars k)
-      (((P.constantSpanIntegers k' F').submoduleOf
-        (P.integralClosureSubmodule k' F')).restrictScalars k) eTop (by
-        ext ⟨z, hz⟩
-        simp only [Submodule.mem_map, Submodule.restrictScalars_mem,
-          Place.mem_constantSpanSubmodule_iff, eTop]
-        refine ⟨fun ⟨x, hx, hxz⟩ ↦ ?_, fun hz' ↦ ⟨e.symm (toIC z hz), ?_, Subtype.ext ?_⟩⟩
-        · have hxz' : (x : F') = z := by simpa [he] using congrArg Subtype.val hxz
-          exact hxz' ▸ hx
-        · have hz_eq : ((e.symm (toIC z hz) : P'.integers) : F') = z := by
-            simp [← he, toIC]
-          rwa [hz_eq]
-        · simp [toIC]))).trans
+    (Submodule.Quotient.equiv _ _ (singularityIntegersEquiv k F hF' P')
+      (singularityIntegersEquiv_map_constantSpan k F hF' P'))).trans
     (Submodule.Quotient.restrictScalarsEquiv k _)
 
 /-- `Place.singularityQuotientLinearEquiv` sends the class of `x : P'.integers` to the class of
@@ -155,17 +186,12 @@ theorem singularityQuotientLinearEquiv_mk [Algebra.IsIntegral k k']
       Submodule.Quotient.mk ⟨(x : F'),
         ((P'.restrict k F).mem_integralClosureSubmodule_iff k' F').2
           ((Place.isIntegral_integers_restrict_iff hF' P').2 x.property)⟩ := by
-  let _ := Place.integersAlgebraBase k P'
-  have := Place.isScalarTower_integersAlgebraBase k P'
+  let _ := Place.integersAlgebraBase k P'; have := Place.isScalarTower_integersAlgebraBase k P'
   have := Place.isScalarTower_integers_restrict k F P'
-  have : IsIntegralClosure P'.integers (P'.restrict k F).integers F' :=
-    Place.isIntegralClosure_integers hF' P'
-  have he : ((IsIntegralClosure.equiv (P'.restrict k F).integers P'.integers F'
-      (integralClosure (P'.restrict k F).integers F') x :
-      integralClosure (P'.restrict k F).integers F') : F') = (x : F') :=
-    IsIntegralClosure.algebraMap_equiv (P'.restrict k F).integers P'.integers F'
-      (integralClosure (P'.restrict k F).integers F') x
-  simp [singularityQuotientLinearEquiv, he]
+  simpa [singularityQuotientLinearEquiv] using congrArg Submodule.Quotient.mk
+    (Subtype.ext (coe_singularityIntegersEquiv_apply k F hF' P' x))
+
+end
 
 end Place
 

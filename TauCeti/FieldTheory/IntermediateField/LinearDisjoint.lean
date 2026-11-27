@@ -492,39 +492,31 @@ theorem linearDisjoint_fieldRange_of_ringEquiv {k' F' K₁ K₂ E₁ E₂ : Type
   let A₁ := (IsScalarTower.toAlgHom K₁ k' F').fieldRange
   let A₂ := (IsScalarTower.toAlgHom K₂ k' F').fieldRange
   let b₂ := Module.Basis.ofVectorSpace K₂ A₂
-  have hmem (i) : (b₂ i : F') ∈ A₁ := by
-    obtain ⟨c, hc⟩ := (b₂ i).property
-    exact ⟨c, hc⟩
-  let u : _ → A₁ := fun i ↦ ⟨(b₂ i : F'), hmem i⟩
+  let u : _ → A₁ := fun i ↦ ⟨(b₂ i : F'), let ⟨c, hc⟩ := (b₂ i).property; ⟨c, hc⟩⟩
   have hu : LinearIndependent K₁ u := by
     rw [linearIndependent_iff']
     intro s g hg i hi
     have hg' : ∑ j ∈ s, σ (g j) • b₂ j = 0 := by
       refine Subtype.ext ?_
       have h0 := congrArg Subtype.val hg
-      rw [AddSubmonoidClass.coe_finsetSum, ZeroMemClass.coe_zero] at h0
-      rw [AddSubmonoidClass.coe_finsetSum, ZeroMemClass.coe_zero]
-      have hterm (j) : ((σ (g j) • b₂ j : A₂) : F') = ((g j • u j : A₁) : F') := by
-        have h1 : ((algebraMap K₂ A₂ (σ (g j)) : A₂) : F') = algebraMap K₂ F' (σ (g j)) := by
-          rw [← IntermediateField.algebraMap_apply, ← IsScalarTower.algebraMap_apply K₂ A₂ F']
-        have h2 : ((algebraMap K₁ A₁ (g j) : A₁) : F') = algebraMap K₁ F' (g j) := by
-          rw [← IntermediateField.algebraMap_apply, ← IsScalarTower.algebraMap_apply K₁ A₁ F']
-        rw [Algebra.smul_def, Algebra.smul_def, MulMemClass.coe_mul, MulMemClass.coe_mul,
-          h1, h2, hσ]
-      simpa only [hterm] using h0
-    have := linearIndependent_iff'.1 b₂.linearIndependent s (σ ∘ g) hg' i hi
-    exact σ.injective (by simpa using this)
+      simp only [AddSubmonoidClass.coe_finsetSum, ZeroMemClass.coe_zero] at h0 ⊢
+      have h1 (c : K₁) :
+          ((algebraMap K₂ A₂ (σ c) : A₂) : F') = ((algebraMap K₁ A₁ c : A₁) : F') := by
+        rw [← IntermediateField.algebraMap_apply (S := A₂),
+          ← IsScalarTower.algebraMap_apply K₂ A₂ F',
+          ← IntermediateField.algebraMap_apply (S := A₁),
+          ← IsScalarTower.algebraMap_apply K₁ A₁ F', hσ]
+      simpa only [Algebra.smul_def, MulMemClass.coe_mul, h1, u] using h0
+    exact σ.injective
+      (by simpa using linearIndependent_iff'.1 b₂.linearIndependent s (σ ∘ g) hg' i hi)
   have hu' := H.linearIndependent_left hu
   refine .of_basis_left b₂ ?_
   rw [linearIndependent_iff']
   intro s g hg i hi
   have hg' : ∑ j ∈ s, τ.symm (g j) • (u j : F') = 0 := by
     rw [← hg]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [Algebra.smul_def, Algebra.smul_def, ← hτ (τ.symm (g j)), τ.apply_symm_apply]
-    simp only [u, Function.comp_apply, IntermediateField.coe_val]
-  have := linearIndependent_iff'.1 hu' s (τ.symm ∘ g) hg' i hi
-  exact τ.symm.injective (by simpa using this)
+    exact Finset.sum_congr rfl fun j _ ↦ by simp [Algebra.smul_def, ← hτ (τ.symm (g j)), u]
+  exact τ.symm.injective (by simpa using linearIndependent_iff'.1 hu' s (τ.symm ∘ g) hg' i hi)
 
 end RingEquiv
 

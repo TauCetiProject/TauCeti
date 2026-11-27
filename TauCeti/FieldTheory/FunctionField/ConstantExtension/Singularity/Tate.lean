@@ -111,10 +111,9 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
   have hrange : LinearMap.range ψ = P'.constantSpanSubmodule k F := by
     rw [LinearMap.range_eq_map, ← w.span_eq, Submodule.map_span, ← Set.range_comp,
       P'.constantSpanSubmodule_eq_span h hn bk]
-    refine congrArg (Submodule.span P.integers) (congrArg Set.range (funext fun i ↦ ?_))
-    rw [Function.comp_apply, w.constr_basis]; exact Subtype.ext (by simp [αS, hbk])
-  let _ := Place.integersAlgebraBase k P'
-  have := Place.isScalarTower_integersAlgebraBase k P'
+    exact congrArg (Submodule.span P.integers) <| congrArg Set.range <| funext fun i ↦ by
+      rw [Function.comp_apply, w.constr_basis]; exact Subtype.ext (by simp [αS, hbk])
+  let _ := Place.integersAlgebraBase k P'; have := Place.isScalarTower_integersAlgebraBase k P'
   have := Place.isScalarTower_integers_restrict k F P'
   refine ⟨hAdetF, ?_⟩
   rw [← hk', Place.singularityDegree_def k' F' P,
@@ -136,8 +135,7 @@ private theorem Place.two_mul_ramificationIdx_mul_toNat_ord_eq {p : ℕ}
       p * (p - 1) * (P'.ord (d : F')).toNat := by
   have h := Place.ramificationIdx_mul_toNat_ord_eq_of_algebraMap_eq_pow k F P'
     x.property d.property (congrArg Subtype.val hxd)
-  have h2 : 2 * (p * (p - 1) / 2) = p * (p - 1) :=
-    Nat.two_mul_div_two_of_even (Nat.even_mul_pred_self p)
+  have h2 := Nat.two_mul_div_two_of_even (Nat.even_mul_pred_self p)
   nlinarith
 
 /-- **Local Tate–Schröer formula**: for a purely inseparable constant field extension `F' = F · k'`
@@ -176,18 +174,18 @@ theorem Place.two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {p : ℕ
   rw [pow_one] at hb₀
   let b : (P'.restrict k F).integers :=
     ⟨b₀, (Place.mem_integers_iff_of_algebraMap_eq_pow k F P' hp.ne_zero hb₀).1 pb.gen.property⟩
-  have hb : algebraMap (P'.restrict k F).integers P'.integers b = pb.gen ^ pb.dim := by
-    rw [hdim]; exact Subtype.ext hb₀
+  have hb : algebraMap (P'.restrict k F).integers P'.integers b = pb.gen ^ pb.dim :=
+    hdim ▸ Subtype.ext hb₀
   have hfdet := (pb.det_toMatrix_aeval_pow (p := p) (e := 1) (by rw [hdim, pow_one]) hb f).trans
     (by rw [hdim])
-  rw [(Subtype.ext hf : aeval pb.gen f = ⟨algebraMap k' F' α, P'.algebraMap_mem_integers α⟩)]
-    at hfdet
+  rw [(Subtype.ext hf :
+    aeval pb.gen f = ⟨algebraMap k' F' α, P'.algebraMap_mem_integers α⟩)] at hfdet
   obtain ⟨-, hlen⟩ := P'.mul_singularityDegree_eq_toNat_ord_det_mul_degree hp hk' hF hex h hdim
     pb.basis hα
   have hord_eq := P'.two_mul_ramificationIdx_mul_toNat_ord_eq hfdet
   have hef : Place.ramificationIdx F P' * Place.relativeDegree k F P' = p :=
-    (Place.ramificationIdx_mul_relativeDegree_eq_finrank_of_isPurelyInseparable k F hF P').trans
-      hFF'
+    (Place.ramificationIdx_mul_relativeDegree_eq_finrank_of_isPurelyInseparable
+      k F hF P').trans hFF'
   have hfdeg : Place.relativeDegree k F P' * (P'.restrict k F).degree = p * P'.degree := by
     simpa [hk'] using (Place.finrank_mul_degree_eq_relativeDegree_mul_degree_restrict k F P').symm
   refine Nat.mul_left_cancel (Nat.mul_pos hp.pos hp.pos) ?_

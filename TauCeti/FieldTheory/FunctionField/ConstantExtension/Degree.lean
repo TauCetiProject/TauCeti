@@ -122,17 +122,14 @@ private theorem relfinrank_adjoin_simple_fieldRange_mul {E : Type*} [Field E] [A
     let f := IsScalarTower.toAlgHom k F E
     IntermediateField.relfinrank k⟮algebraMap F E x⟯ f.fieldRange = Module.finrank k⟮x⟯ F ∧
       IntermediateField.relfinrank f.fieldRange ⊤ = Module.finrank F E := by
-  intro f
-  refine ⟨?_, ?_⟩
-  · have hmapC : (k⟮x⟯ : IntermediateField k F).map f = k⟮algebraMap F E x⟯ := by
-      simp [f, IntermediateField.adjoin_map]
-    have hmaptop : (⊤ : IntermediateField k F).map f = f.fieldRange := by
-      simp [AlgHom.fieldRange_eq_map]
-    rw [← hmapC, ← hmaptop, IntermediateField.relfinrank_map_map,
-      IntermediateField.relfinrank_top_right]
-  · have hbot : f.fieldRange.toSubfield = (⊥ : IntermediateField F E).toSubfield := by
-      ext y; exact (IntermediateField.mem_bot (F := F)).symm
-    rw [IntermediateField.relfinrank_eq_relfinrank_of_toSubfield_eq hbot
+  intro f; refine ⟨?_, ?_⟩
+  · rw [← show (k⟮x⟯ : IntermediateField k F).map f = k⟮algebraMap F E x⟯ by
+        simp [f, IntermediateField.adjoin_map],
+      ← show (⊤ : IntermediateField k F).map f = f.fieldRange by simp [AlgHom.fieldRange_eq_map],
+      IntermediateField.relfinrank_map_map, IntermediateField.relfinrank_top_right]
+  · rw [IntermediateField.relfinrank_eq_relfinrank_of_toSubfield_eq
+        (show f.fieldRange.toSubfield = (⊥ : IntermediateField F E).toSubfield from
+          SetLike.ext fun _ ↦ (IntermediateField.mem_bot (F := F)).symm)
         (IntermediateField.top_toSubfield.trans IntermediateField.top_toSubfield.symm),
       IntermediateField.relfinrank_top_right, IntermediateField.finrank_bot']
 
@@ -147,8 +144,7 @@ theorem finrank_adjoin_simple_lt_of_finrank_ne [FiniteDimensional k k'] {x : F}
     haveI := isScalarTower_constantCompositum F k' F'
     haveI := isScalarTower_base_constantCompositum k F k' F'
     Module.finrank k'⟮algebraMap F Fk' x⟯ Fk' < Module.finrank k⟮x⟯ F := by
-  let Fk' := constantCompositum F k' F'
-  let := constantCompositumAlgebra F k' F'
+  let Fk' := constantCompositum F k' F'; let := constantCompositumAlgebra F k' F'
   have := isScalarTower_constantCompositum F k' F'
   have := isScalarTower_base_constantCompositum k F k' F'
   have hFk' : constantCompositum F k' Fk' = ⊤ := (constantCompositum_eq_top_iff F k' F' Fk').2 rfl

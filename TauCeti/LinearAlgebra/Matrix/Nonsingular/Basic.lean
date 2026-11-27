@@ -70,17 +70,13 @@ theorem nonsingular_mapMatrix_toMatrix_of_linearIndependent {σ : R →+* S}
     (v : Module.Basis ι R M) (w : Module.Basis ι R N) (ψ : M →ₗ[R] N) (f : N →ₛₗ[σ] V)
     (hli : LinearIndependent S fun i ↦ f (ψ (v i))) :
     (σ.mapMatrix (LinearMap.toMatrix v w ψ)).Nonsingular := by
-  refine Matrix.Nonsingular.of_linearIndependent_col ?_
-  refine LinearIndependent.of_comp (Fintype.linearCombination S fun j ↦ f (w j)) ?_
-  have hcomp : (Fintype.linearCombination S fun j ↦ f (w j)) ∘
-      (σ.mapMatrix (LinearMap.toMatrix v w ψ)).col = fun i ↦ f (ψ (v i)) := by
-    ext i
+  refine Matrix.Nonsingular.of_linearIndependent_col <|
+    LinearIndependent.of_comp (Fintype.linearCombination S fun j ↦ f (w j)) ?_
+  rwa [show (Fintype.linearCombination S fun j ↦ f (w j)) ∘
+      (σ.mapMatrix (LinearMap.toMatrix v w ψ)).col = fun i ↦ f (ψ (v i)) from funext fun i ↦ by
     simp only [Function.comp_apply, Fintype.linearCombination_apply, Matrix.col_apply,
       RingHom.mapMatrix_apply, Matrix.map_apply, LinearMap.toMatrix_apply, ← f.map_smulₛₗ,
-      ← map_sum]
-    congr 1
-    exact w.sum_repr (ψ (v i))
-  rwa [hcomp]
+      ← map_sum, w.sum_repr]]
 
 end CommSemiring
 
@@ -97,9 +93,8 @@ variable [Module R M] [Module R N] [Module S V]
 theorem map_det_toMatrix_mem_nonZeroDivisors_of_linearIndependent {σ : R →+* S}
     (v : Module.Basis ι R M) (w : Module.Basis ι R N) (ψ : M →ₗ[R] N) (f : N →ₛₗ[σ] V)
     (hli : LinearIndependent S fun i ↦ f (ψ (v i))) :
-    σ (LinearMap.toMatrix v w ψ).det ∈ nonZeroDivisors S := by
-  rw [RingHom.map_det]
-  exact Matrix.nonsingular_iff_det_mem_nonZeroDivisors.mp
+    σ (LinearMap.toMatrix v w ψ).det ∈ nonZeroDivisors S :=
+  RingHom.map_det σ (LinearMap.toMatrix v w ψ) ▸ Matrix.nonsingular_iff_det_mem_nonZeroDivisors.mp
     (nonsingular_mapMatrix_toMatrix_of_linearIndependent v w ψ f hli)
 
 /-- **Nonvanishing mapped determinant of a transition matrix**: if `S` is nontrivial and
