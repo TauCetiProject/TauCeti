@@ -27,7 +27,7 @@ import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 
 This file isolates the linear-algebraic and polynomial core of the root-chain lemma for
 spherical Hecke polynomials of `GL_N` in unitary representations (cf. Tadić's classification of
-the unitary dual and Bernstein's inequality at the ends of segments).
+the unitary dual).
 
 ## Provenance
 
