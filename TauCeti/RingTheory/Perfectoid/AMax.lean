@@ -69,6 +69,9 @@ endomorphisms are unique and compose.
 * `TauCeti.Perfectoid.AMax.exists_mem_adjoin_sub_mem_span_pow` and
   `TauCeti.Perfectoid.AMax.exists_natCast_pow_mul_eq_algebraMap`: polynomials in `ξ / p` over
   `W(S)` are `p`-adically dense in `A_max`, and each of them has a multiple `p ^ k` in `W(S)`.
+* `TauCeti.Perfectoid.frobenius_xi_mem_span`: the Witt vector Frobenius carries `ξ` into `(p, ξ)`,
+  so it extends to `A_max` and `B⁺_max` (`TauCeti.Perfectoid.AMax.frobenius_eq_map`,
+  `TauCeti.Perfectoid.BMaxPlus.frobenius_eq_map`).
 * `TauCeti.Perfectoid.AMax.map_comp`, `TauCeti.Perfectoid.BMaxPlus.map_comp`: the extensions to
   `A_max` and to `B⁺_max` compose, when `p` is a nonzerodivisor of `A_max`.
 * `TauCeti.Perfectoid.BMaxPlus.algebraMap_injective`: `A_max → B⁺_max` is injective.
@@ -117,6 +120,15 @@ noncomputable instance (ε : S) : CommRing (AMax p ε) :=
 noncomputable instance (ε : S) : Algebra (WittVector p S) (AMax p ε) :=
   inferInstanceAs (Algebra (WittVector p S) (AdicCompletion _ _))
 
+/-- The Witt vector Frobenius carries `ξ` into the ideal `(p, ξ)` of `W(S)`, since
+`φ(ξ) ≡ ξ ^ p` modulo `p`. -/
+theorem frobenius_xi_mem_span (ε : S) :
+    _root_.WittVector.frobenius (xi p ε) ∈ Ideal.span {(p : WittVector p S), xi p ε} := by
+  obtain ⟨y, hy⟩ := (isFrobeniusLift_frobenius p S).dvd_sub_pow (xi p ε)
+  refine Ideal.mem_span_pair.mpr ⟨y, xi p ε ^ (p - 1), ?_⟩
+  rw [← pow_succ, Nat.sub_add_cancel (Fact.out : p.Prime).one_le]
+  linear_combination -hy
+
 namespace AMax
 
 variable {p}
@@ -146,6 +158,10 @@ noncomputable def xiDivP (ε : S) : AMax p ε :=
 
 variable {ε : S}
 
+-- Both sides are the class in the completion of `AdjoinRoot.of _ a`: the `W(S)`-algebra structure
+-- of `A_max` is that of the completion (`AdicCompletion.algebraMap_apply`), which is the class of
+-- the image under the algebra map of `W(S)[X] ⧸ (p X - ξ)`, namely `AdjoinRoot.of`
+-- (`AdjoinRoot.algebraMap_eq`). Both lemmas are proved by `rfl`.
 private theorem ofPre_of (a : WittVector p S) :
     ofPre ε (AdjoinRoot.of _ a) = algebraMap (WittVector p S) (AMax p ε) a :=
   (rfl)
@@ -158,9 +174,7 @@ private theorem ofPre_root : ofPre ε (AdjoinRoot.root (rel p ε)) = xiDivP p ε
 theorem natCast_mul_xiDivP :
     (p : AMax p ε) * xiDivP p ε = algebraMap (WittVector p S) (AMax p ε) (xi p ε) := by
   have h := congrArg (ofPre ε) (AdjoinRoot.mk_self (f := rel p ε))
-  rw [map_sub, map_mul, AdjoinRoot.mk_C, AdjoinRoot.mk_C, AdjoinRoot.mk_X, map_sub,
-    map_mul, map_zero, sub_eq_zero, ofPre_of, ofPre_of, ofPre_root, map_natCast] at h
-  exact h
+  simpa [sub_eq_zero, ofPre_of, ofPre_root, -AdjoinRoot.mk_self] using h
 
 /-- **`A_max` is `p`-adically complete.** -/
 instance instIsAdicComplete : IsAdicComplete (Ideal.span {(p : AMax p ε)}) (AMax p ε) := by
@@ -316,13 +330,6 @@ section Map
 
 variable {S' : Type*} [CommRing S'] [CharP S' p] [PerfectRing S' p] {ε' : S'}
 
-/-- If `a ∈ (p, ξ)`, then the image of `a` in `A_max` is divisible by `p`. -/
-private theorem exists_algebraMap_eq_natCast_mul {a : WittVector p S}
-    (ha : a ∈ Ideal.span {(p : WittVector p S), xi p ε}) :
-    ∃ x : AMax p ε, algebraMap (WittVector p S) (AMax p ε) a = p * x := by
-  simpa [dvd_iff_exists_eq_mul_right] using
-    natCast_pow_dvd_algebraMap_of_mem_pow (n := 1) (by rwa [pow_one])
-
 /-- **Extension of ring maps to `A_max`.** A ring map `σ : W(S) → W(S')` carrying `ξ` into the
 ideal `(p, ξ')` extends to a ring map `A_max(ε) → A_max(ε')`. This applies to the Witt vector
 Frobenius (`AMax.frobenius`) and to every `σ` with `ξ' ∣ σ(ξ)`, such as the automorphisms of
@@ -330,8 +337,11 @@ Frobenius (`AMax.frobenius`) and to every `σ` with `ξ' ∣ σ(ξ)`, such as th
 (`AMax.natCast_mul_map_xiDivP`), unique when `p` is a nonzerodivisor of `A_max(ε')`. -/
 noncomputable def map (σ : WittVector p S →+* WittVector p S')
     (hσ : σ (xi p ε) ∈ Ideal.span {(p : WittVector p S'), xi p ε'}) : AMax p ε →+* AMax p ε' :=
-  lift ((algebraMap (WittVector p S') (AMax p ε')).comp σ)
-    (exists_algebraMap_eq_natCast_mul hσ).choose (exists_algebraMap_eq_natCast_mul hσ).choose_spec
+  have h : (p : AMax p ε') ∣ algebraMap (WittVector p S') (AMax p ε') (σ (xi p ε)) := by
+    simpa using natCast_pow_dvd_algebraMap_of_mem_pow (a := σ (xi p ε)) (n := 1)
+      (by rwa [pow_one])
+  lift ((algebraMap (WittVector p S') (AMax p ε')).comp σ) (dvd_def.mp h).choose
+    (dvd_def.mp h).choose_spec
 
 variable (σ : WittVector p S →+* WittVector p S')
   (hσ : σ (xi p ε) ∈ Ideal.span {(p : WittVector p S'), xi p ε'})
@@ -354,22 +364,23 @@ theorem map_comp_algebraMap :
 theorem natCast_mul_map_xiDivP :
     (p : AMax p ε') * map σ hσ (xiDivP p ε) =
       algebraMap (WittVector p S') (AMax p ε') (σ (xi p ε)) := by
-  rw [map, lift_xiDivP, ← (exists_algebraMap_eq_natCast_mul hσ).choose_spec]
+  simp only [map, lift_xiDivP]
+  generalize_proofs h
+  exact h.choose_spec.symm
 
 /-- The extension of the identity is the identity, when `p` is a nonzerodivisor of `A_max`. -/
-theorem map_id [IsDomain S] (hε : ε ≠ 1)
+theorem map_id (hp : (p : AMax p ε) ∈ (AMax p ε)⁰)
     (h : RingHom.id (WittVector p S) (xi p ε) ∈ Ideal.span {(p : WittVector p S), xi p ε}) :
     map (RingHom.id _) h = RingHom.id (AMax p ε) :=
-  ringHom_ext_of_natCast_mem_nonZeroDivisors (natCast_mem_nonZeroDivisors hε) (by ext; simp)
+  ringHom_ext_of_natCast_mem_nonZeroDivisors hp (by ext; simp)
 
 /-- **Extension to `A_max` is functorial**, when `p` is a nonzerodivisor of the target. -/
-theorem map_comp {S'' : Type*} [CommRing S''] [IsDomain S''] [CharP S'' p] [PerfectRing S'' p]
-    {ε'' : S''} (hε'' : ε'' ≠ 1) (τ : WittVector p S' →+* WittVector p S'')
+theorem map_comp {S'' : Type*} [CommRing S''] [CharP S'' p] [PerfectRing S'' p] {ε'' : S''}
+    (hp : (p : AMax p ε'') ∈ (AMax p ε'')⁰) (τ : WittVector p S' →+* WittVector p S'')
     (hτ : τ (xi p ε') ∈ Ideal.span {(p : WittVector p S''), xi p ε''})
     (hτσ : (τ.comp σ) (xi p ε) ∈ Ideal.span {(p : WittVector p S''), xi p ε''}) :
     (map τ hτ).comp (map σ hσ) = map (τ.comp σ) hτσ :=
-  ringHom_ext_of_natCast_mem_nonZeroDivisors (natCast_mem_nonZeroDivisors hε'')
-    (by ext; simp)
+  ringHom_ext_of_natCast_mem_nonZeroDivisors hp (by ext; simp)
 
 end Map
 
@@ -379,11 +390,14 @@ variable (p) in
 /-- **The Frobenius of `A_max`**: the extension of the Witt vector Frobenius `φ` of `W(S)`, which
 carries `ξ` into `(p, ξ)` since `φ(ξ) ≡ ξ ^ p` modulo `p`. -/
 noncomputable def frobenius (ε : S) : AMax p ε →+* AMax p ε :=
-  map _root_.WittVector.frobenius <| by
-    obtain ⟨y, hy⟩ := (isFrobeniusLift_frobenius p S).dvd_sub_pow (xi p ε)
-    refine Ideal.mem_span_pair.mpr ⟨y, xi p ε ^ (p - 1), ?_⟩
-    rw [← pow_succ, Nat.sub_add_cancel (Fact.out : p.Prime).one_le]
-    linear_combination -hy
+  map _root_.WittVector.frobenius (frobenius_xi_mem_span p ε)
+
+/-- The Frobenius of `A_max` is the extension `AMax.map` of the Witt vector Frobenius, so that
+`AMax.map_comp` applies to its composites. -/
+theorem frobenius_eq_map
+    (h : _root_.WittVector.frobenius (xi p ε) ∈ Ideal.span {(p : WittVector p S), xi p ε}) :
+    frobenius p ε = map _root_.WittVector.frobenius h :=
+  (rfl)
 
 /-- The Frobenius of `A_max` restricts to the Witt vector Frobenius on `W(S)`. -/
 @[simp]
@@ -488,39 +502,61 @@ theorem map_algebraMap (x : AMax p ε) :
       algebraMap (AMax p ε') (BMaxPlus p ε') (AMax.map σ hσ x) :=
   IsLocalization.map_eq _ _
 
+/-- The extension `BMaxPlus.map σ hσ` restricts to `σ` on `W(S)`. -/
+@[simp]
+theorem map_algebraMap_wittVector (a : WittVector p S) :
+    map σ hσ (algebraMap (WittVector p S) (BMaxPlus p ε) a) =
+      algebraMap (WittVector p S') (BMaxPlus p ε') (σ a) := by
+  rw [IsScalarTower.algebraMap_apply (WittVector p S) (AMax p ε), map_algebraMap,
+    AMax.map_algebraMap, ← IsScalarTower.algebraMap_apply]
+
 /-- The extension of the identity to `B⁺_max` is the identity, when `p` is a nonzerodivisor of
 `A_max`. -/
-theorem map_id [IsDomain S] (hε : ε ≠ 1)
+theorem map_id (hp : (p : AMax p ε) ∈ (AMax p ε)⁰)
     (h : RingHom.id (WittVector p S) (xi p ε) ∈ Ideal.span {(p : WittVector p S), xi p ε}) :
     map (RingHom.id _) h = RingHom.id (BMaxPlus p ε) :=
   IsLocalization.ringHom_ext (Submonoid.powers (p : AMax p ε)) <| by
     ext x
-    simp [AMax.map_id hε h]
+    simp [AMax.map_id hp h]
 
 /-- **Extension to `B⁺_max` is functorial**, when `p` is a nonzerodivisor of the target. -/
-theorem map_comp {S'' : Type*} [CommRing S''] [IsDomain S''] [CharP S'' p] [PerfectRing S'' p]
-    {ε'' : S''} (hε'' : ε'' ≠ 1) (τ : WittVector p S' →+* WittVector p S'')
+theorem map_comp {S'' : Type*} [CommRing S''] [CharP S'' p] [PerfectRing S'' p] {ε'' : S''}
+    (hp : (p : AMax p ε'') ∈ (AMax p ε'')⁰) (τ : WittVector p S' →+* WittVector p S'')
     (hτ : τ (xi p ε') ∈ Ideal.span {(p : WittVector p S''), xi p ε''})
     (hτσ : (τ.comp σ) (xi p ε) ∈ Ideal.span {(p : WittVector p S''), xi p ε''}) :
     (map τ hτ).comp (map σ hσ) = map (τ.comp σ) hτσ :=
   IsLocalization.ringHom_ext (Submonoid.powers (p : AMax p ε)) <| by
     ext x
-    simp [← AMax.map_comp σ hσ hε'' τ hτ hτσ]
+    simp [← AMax.map_comp σ hσ hp τ hτ hτσ]
 
 end Map
 
 variable (p) in
-/-- **The Frobenius of `B⁺_max`**: the extension of the Frobenius of `A_max`. -/
+/-- **The Frobenius of `B⁺_max`**: the extension `BMaxPlus.map` of the Witt vector Frobenius,
+which restricts to the Frobenius of `A_max`. -/
 noncomputable def frobenius (ε : S) : BMaxPlus p ε →+* BMaxPlus p ε :=
-  IsLocalization.map (M := Submonoid.powers (p : AMax p ε))
-    (T := Submonoid.powers (p : AMax p ε)) _ (AMax.frobenius p ε) (powers_le_comap _)
+  map _root_.WittVector.frobenius (frobenius_xi_mem_span p ε)
+
+/-- The Frobenius of `B⁺_max` is the extension `BMaxPlus.map` of the Witt vector Frobenius, so
+that `BMaxPlus.map_comp` applies to its composites. -/
+theorem frobenius_eq_map
+    (h : _root_.WittVector.frobenius (xi p ε) ∈ Ideal.span {(p : WittVector p S), xi p ε}) :
+    frobenius p ε = map _root_.WittVector.frobenius h :=
+  (rfl)
 
 /-- The Frobenius of `B⁺_max` restricts to the Frobenius of `A_max`. -/
 @[simp]
 theorem frobenius_algebraMap (x : AMax p ε) :
     frobenius p ε (algebraMap (AMax p ε) (BMaxPlus p ε) x) =
       algebraMap (AMax p ε) (BMaxPlus p ε) (AMax.frobenius p ε x) :=
-  IsLocalization.map_eq _ _
+  map_algebraMap _ _ x
+
+/-- The Frobenius of `B⁺_max` restricts to the Witt vector Frobenius on `W(S)`. -/
+@[simp]
+theorem frobenius_algebraMap_wittVector (a : WittVector p S) :
+    frobenius p ε (algebraMap (WittVector p S) (BMaxPlus p ε) a) =
+      algebraMap (WittVector p S) (BMaxPlus p ε) (_root_.WittVector.frobenius a) :=
+  map_algebraMap_wittVector _ _ a
 
 section Theta
 
@@ -541,6 +577,13 @@ theorem theta_algebraMap (hξ : fontaineTheta A p (xi p ε) = 0) {K : Type*} [Co
     [Algebra A K] (hp : IsUnit (p : K)) (x : AMax p ε) :
     theta hξ hp (algebraMap (AMax p ε) (BMaxPlus p ε) x) = algebraMap A K (AMax.theta hξ x) :=
   IsLocalization.Away.lift_eq _ _ _
+
+/-- Fontaine's map on `B⁺_max` restricts to Fontaine's map on `W(A♭)`. -/
+@[simp]
+theorem theta_algebraMap_wittVector (hξ : fontaineTheta A p (xi p ε) = 0) {K : Type*}
+    [CommRing K] [Algebra A K] (hp : IsUnit (p : K)) (a : WittVector p (PreTilt A p)) :
+    theta hξ hp (algebraMap _ (BMaxPlus p ε) a) = algebraMap A K (fontaineTheta A p a) := by
+  rw [IsScalarTower.algebraMap_apply _ (AMax p ε), theta_algebraMap, AMax.theta_algebraMap]
 
 end Theta
 
