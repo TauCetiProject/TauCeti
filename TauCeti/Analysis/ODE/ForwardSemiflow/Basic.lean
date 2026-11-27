@@ -48,9 +48,9 @@ def forwardSemiflowInterval (X : E → E) (S : Set E) (x : E) : Set ℝ :=
     ∀ s ∈ Ico 0 b, HasDerivWithinAt γ (X (γ s)) (Ico 0 b) s}
 
 /-- **The joint domain of the maximal forward semiflow** of `X` in `S`, consisting of pairs
-`(t, x) : ℝ × E` with `x ∈ S` and `t ∈ forwardSemiflowInterval X S x`. -/
+`(t, x) : ℝ × E` with `t ∈ forwardSemiflowInterval X S x`. -/
 def forwardSemiflowDomain (X : E → E) (S : Set E) : Set (ℝ × E) :=
-  {p | p.2 ∈ S ∧ p.1 ∈ forwardSemiflowInterval X S p.2}
+  {p | p.1 ∈ forwardSemiflowInterval X S p.2}
 
 open Classical in
 /-- **The maximal forward semiflow** of `X` in `S`, evaluated at time `t` and initial point `x`.
@@ -70,13 +70,25 @@ theorem mem_forwardSemiflowInterval_iff {X : E → E} {S : Set E} {x : E} {t : �
 /-- Membership in `forwardSemiflowDomain` unfolded. -/
 @[simp]
 theorem mem_forwardSemiflowDomain_iff {X : E → E} {S : Set E} {p : ℝ × E} :
-    p ∈ forwardSemiflowDomain X S ↔ p.2 ∈ S ∧ p.1 ∈ forwardSemiflowInterval X S p.2 :=
+    p ∈ forwardSemiflowDomain X S ↔ p.1 ∈ forwardSemiflowInterval X S p.2 :=
   Iff.rfl
 
 /-- Every time in `forwardSemiflowInterval` is nonnegative. -/
 theorem nonneg_of_mem_forwardSemiflowInterval {X : E → E} {S : Set E} {x : E} {t : ℝ}
     (ht : t ∈ forwardSemiflowInterval X S x) : 0 ≤ t :=
   let ⟨_, _, _, htI, _⟩ := mem_forwardSemiflowInterval_iff.mp ht; htI.1
+
+/-- Any starting point with a time in `forwardSemiflowInterval X S x` belongs to `S`. -/
+theorem mem_of_mem_forwardSemiflowInterval {X : E → E} {S : Set E} {x : E} {t : ℝ}
+    (ht : t ∈ forwardSemiflowInterval X S x) : x ∈ S :=
+  let ⟨_, _, hb, _, h0, hS, _⟩ := mem_forwardSemiflowInterval_iff.mp ht
+  h0 ▸ hS ⟨le_rfl, hb⟩
+
+/-- When `x ∉ S`, `forwardSemiflowInterval X S x` is empty. -/
+@[simp]
+theorem forwardSemiflowInterval_of_notMem {X : E → E} {S : Set E} {x : E} (hx : x ∉ S) :
+    forwardSemiflowInterval X S x = ∅ :=
+  eq_empty_iff_forall_notMem.mpr fun _ ht ↦ hx (mem_of_mem_forwardSemiflowInterval ht)
 
 /-- Any integral curve of `X` in `S` on `[0, b)` (`0 < b`) starting at `x` has `[0, b)` contained in
 `forwardSemiflowInterval X S x`. -/
@@ -108,10 +120,23 @@ theorem forwardSemiflowInterval_mono {X : E → E} {S₁ S₂ : Set E} (hS : S�
 
 /-- Enlarging the state set enlarges `forwardSemiflowDomain`. -/
 theorem forwardSemiflowDomain_mono {X : E → E} {S₁ S₂ : Set E} (hS : S₁ ⊆ S₂) :
-    forwardSemiflowDomain X S₁ ⊆ forwardSemiflowDomain X S₂ := by
-  intro _ hp
-  obtain ⟨hpS, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp hp
-  exact mem_forwardSemiflowDomain_iff.mpr ⟨hS hpS, forwardSemiflowInterval_mono hS _ hpJ⟩
+    forwardSemiflowDomain X S₁ ⊆ forwardSemiflowDomain X S₂ :=
+  fun _ hp ↦ forwardSemiflowInterval_mono hS _ hp
+
+/-- Changing `X` outside `S` preserves `forwardSemiflowInterval`. -/
+theorem forwardSemiflowInterval_congr {X Y : E → E} {S : Set E} (hXY : EqOn X Y S) (x : E) :
+    forwardSemiflowInterval X S x = forwardSemiflowInterval Y S x := by
+  have hsub {X' Y' : E → E} (h : EqOn X' Y' S) :
+      forwardSemiflowInterval X' S x ⊆ forwardSemiflowInterval Y' S x := fun _ ht ↦ by
+    obtain ⟨γ, b, hb, htI, h0, hS, hγ'⟩ := mem_forwardSemiflowInterval_iff.mp ht
+    exact mem_forwardSemiflowInterval_iff.mpr
+      ⟨γ, b, hb, htI, h0, hS, fun s hs ↦ h (hS hs) ▸ hγ' s hs⟩
+  exact Subset.antisymm (hsub hXY) (hsub hXY.symm)
+
+/-- Changing `X` outside `S` preserves `forwardSemiflowDomain`. -/
+theorem forwardSemiflowDomain_congr {X Y : E → E} {S : Set E} (hXY : EqOn X Y S) :
+    forwardSemiflowDomain X S = forwardSemiflowDomain Y S := by
+  ext p; simp only [mem_forwardSemiflowDomain_iff, forwardSemiflowInterval_congr hXY]
 
 /-- `forwardSemiflowInterval` is downward-closed in `[0, ∞)`. -/
 theorem Icc_subset_forwardSemiflowInterval_of_mem {X : E → E} {S : Set E} {x : E} {t : ℝ}
@@ -163,8 +188,9 @@ is equal to `Ici 0 ×ˢ S`. -/
 theorem forwardSemiflowDomain_eq_Ici_prod {X : E → E} {S : Set E}
     (hglob : ∀ x ∈ S, forwardSemiflowInterval X S x = Ici 0) :
     forwardSemiflowDomain X S = Ici 0 ×ˢ S := by
-  ext ⟨t, x⟩; simp only [mem_forwardSemiflowDomain_iff, mem_prod, and_comm]
-  exact and_congr_right fun hx ↦ by rw [hglob x hx]
+  ext ⟨t, x⟩; simp only [mem_forwardSemiflowDomain_iff, mem_prod]
+  exact ⟨fun ht ↦ let hx := mem_of_mem_forwardSemiflowInterval ht; ⟨hglob x hx ▸ ht, hx⟩,
+    fun ⟨ht, hx⟩ ↦ (hglob x hx) ▸ ht⟩
 
 /-- On `forwardSemiflowInterval X S x`, `forwardSemiflow` stays in `S`. -/
 theorem forwardSemiflow_mem {X : E → E} {S : Set E} {x : E} {t : ℝ}
@@ -284,6 +310,20 @@ theorem eqOn_forwardSemiflow_of_subset {S₁ S₂ : Set E} (hX : LocallyLipschit
   dsimp only; rw [← hγt]
   exact hX.eqOn_forwardSemiflow hb h0 (hS₁.mono_right hS) hγ' htI
 
+/-- If `X` is locally Lipschitz on `S` and agrees with `Y` on `S`, then `forwardSemiflow X S` and
+`forwardSemiflow Y S` agree everywhere. -/
+theorem forwardSemiflow_congr (hX : LocallyLipschitzOn S X) {Y : E → E} (hXY : EqOn X Y S)
+    (t : ℝ) (x : E) :
+    forwardSemiflow X S t x = forwardSemiflow Y S t x := by
+  by_cases ht : t ∈ forwardSemiflowInterval Y S x
+  · obtain ⟨γ, b, hb, htI, hγt, h0, hS, hγ'⟩ := exists_integralCurve_apply_eq_forwardSemiflow ht
+    rw [← hγt]
+    exact (hX.eqOn_forwardSemiflow hb h0 hS
+      (fun s hs ↦ (hXY (hS hs)).symm ▸ hγ' s hs) htI).symm
+  · have ht' : t ∉ forwardSemiflowInterval X S x := by
+      rwa [forwardSemiflowInterval_congr hXY]
+    rw [forwardSemiflow_of_notMem ht', forwardSemiflow_of_notMem ht]
+
 /-- On any `[0, b) ⊆ forwardSemiflowInterval X S x` (`0 < b`), `forwardSemiflow` solves
 `γ' = X ∘ γ` within `[0, b)`. -/
 theorem hasDerivWithinAt_forwardSemiflow_Ico (hX : LocallyLipschitzOn S X) {b t : ℝ}
@@ -386,7 +426,7 @@ theorem forwardSemiflow_add (hX : LocallyLipschitzOn S X)
 
 /-- Spatial Grönwall Lipschitz bound and joint continuity of `forwardSemiflow` on `Icc 0 τ ×ˢ B`
 from a Lipschitz bound on `X` over a trapping region `B'`. -/
-theorem lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod {B B' : Set E}
+theorem lipschitzOnWith_forwardSemiflow_space_and_continuousOn_Icc_prod {B B' : Set E}
     (hX : LocallyLipschitzOn S X) {τ : ℝ} {K : ℝ≥0}
     (hKLip : LipschitzOnWith K X B')
     (hsub : ∀ y ∈ B, τ ∈ forwardSemiflowInterval X S y)
@@ -579,7 +619,8 @@ theorem forwardSemiflow_prod_inter_induction {C U : Set E} (hX : LocallyLipschit
     exact ⟨r', lt_min hr hrU, δ, hδ, hr'U, fun y hy ↦ hsub y (hsub_inter hy),
       fun p hp ↦ hQ.mono hp (prod_mono Subset.rfl hsub_inter) (hQt p ⟨hp.1, hsub_inter hp.2⟩)⟩
   refine ⟨hprod, fun p hp ↦ ?_⟩
-  obtain ⟨hpU, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp hp
+  have hpJ : p.1 ∈ forwardSemiflowInterval X (U ∩ C) p.2 := mem_forwardSemiflowDomain_iff.mp hp
+  have hpU : p.2 ∈ U ∩ C := mem_of_mem_forwardSemiflowInterval hpJ
   obtain ⟨r, hr, δ, hδ, _, _, hQt⟩ := hprod hpU hpJ
   have hp_box : p ∈ Icc 0 (p.1 + δ) ×ˢ (ball p.2 r ∩ C) :=
     ⟨⟨nonneg_of_mem_forwardSemiflowInterval hpJ, by linarith⟩, mem_ball_self hr, hpU.2⟩
@@ -587,8 +628,9 @@ theorem forwardSemiflow_prod_inter_induction {C U : Set E} (hX : LocallyLipschit
     inter_subset_right
     (mem_nhdsWithin.mpr ⟨Iio (p.1 + δ) ×ˢ ball p.2 r, isOpen_Iio.prod isOpen_ball,
       ⟨mem_Iio.mpr (by linarith), mem_ball_self hr⟩, fun q hq ↦
-        ⟨⟨⟨nonneg_of_mem_forwardSemiflowInterval (mem_forwardSemiflowDomain_iff.mp hq.2).2,
-          hq.1.1.le⟩, hq.1.2, (mem_forwardSemiflowDomain_iff.mp hq.2).1.2⟩, hq.2⟩⟩)
+        have hqJ := mem_forwardSemiflowDomain_iff.mp hq.2
+        ⟨⟨⟨nonneg_of_mem_forwardSemiflowInterval hqJ, hq.1.1.le⟩,
+          hq.1.2, (mem_of_mem_forwardSemiflowInterval hqJ).2⟩, hq.2⟩⟩)
     (hQ.mono ⟨hp_box, hp⟩ inter_subset_left (hQt p hp_box))
 
 /-- **No cluster point with uniform local restart.** If `X` is locally Lipschitz on `S`,

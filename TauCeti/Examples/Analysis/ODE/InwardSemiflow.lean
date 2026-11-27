@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Exponential
 public import TauCeti.Analysis.ODE.ForwardSemiflow.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
@@ -40,8 +39,9 @@ theorem forwardSemiflowInterval_const_one_Ici {x : ℝ} (hx : x ∈ Ici (0 : ℝ
       (fun _ hs ↦ mem_Ici.mpr (by linarith [mem_Ici.mp hx, hs.1]))
       (fun s _ ↦ ((hasDerivAt_id' s).const_add x).hasDerivWithinAt) ⟨ht, lt_add_one t⟩
 
-/-- Closed-form check on the closed half-line `Ici (0 : ℝ)`: the forward semiflow of the constant
-inward field `X = 1` is `forwardSemiflow (fun _ ↦ 1) (Ici 0) t x = x + t`. -/
+/-- Closed-form check on the closed half-line `Ici (0 : ℝ)`: for `0 ≤ t` and `x ∈ Ici (0 : ℝ)`,
+the forward semiflow of the constant inward field `X = 1` is
+`forwardSemiflow (fun _ ↦ 1) (Ici 0) t x = x + t`. -/
 theorem forwardSemiflow_const_one_Ici {t x : ℝ} (ht : 0 ≤ t) (hx : x ∈ Ici (0 : ℝ)) :
     forwardSemiflow (fun _ : ℝ ↦ (1 : ℝ)) (Ici (0 : ℝ)) t x = x + t :=
   (((LipschitzWith.const (1 : ℝ)).locallyLipschitz.locallyLipschitzOn).eqOn_forwardSemiflow
@@ -69,8 +69,9 @@ theorem forwardSemiflowInterval_half_sub_Icc {x : ℝ} (hx : x ∈ Icc (0 : ℝ)
     Ico_subset_forwardSemiflowInterval (by linarith [mem_Ici.mp ht]) (by simp) h.1 h.2
       ⟨ht, lt_add_one t⟩
 
-/-- Closed-form check on the unit interval `Icc (0 : ℝ) 1`: the forward semiflow of the affine
-inward field `X y = 1 / 2 - y` is `1 / 2 + (x - 1 / 2) * exp (-t)`. -/
+/-- Closed-form check on the unit interval `Icc (0 : ℝ) 1`: for `0 ≤ t` and `x ∈ Icc (0 : ℝ) 1`,
+the forward semiflow of the affine inward field `X y = 1 / 2 - y` is
+`1 / 2 + (x - 1 / 2) * Real.exp (-t)`. -/
 theorem forwardSemiflow_half_sub_Icc {t x : ℝ} (ht : 0 ≤ t) (hx : x ∈ Icc (0 : ℝ) 1) :
     forwardSemiflow (fun y : ℝ ↦ 1 / 2 - y) (Icc (0 : ℝ) 1) t x =
       1 / 2 + (x - 1 / 2) * Real.exp (-t) :=

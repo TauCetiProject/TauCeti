@@ -263,7 +263,7 @@ theorem Convex.exists_local_forwardSemiflow_continuousOn {C U : Set E} (hC : Con
     hr hε hδ h2rU hKLip hin_ball
   -- Step 3: Spatial Grönwall Lipschitz bound and joint continuity on `Icc 0 τ ×ˢ (ball x₀ r ∩ C)`.
   obtain ⟨hLipΦ, hcontΦ⟩ :=
-    hX.lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod hKLip
+    hX.lipschitzOnWith_forwardSemiflow_space_and_continuousOn_Icc_prod hKLip
       (fun y hy ↦ hsub y hy ⟨hτ.le, by linarith⟩)
       (fun y hy t ht ↦ hmem y hy t (Ico_subset_Icc_self ht))
   exact ⟨r, hr, τ, hτ, K, h2rU, hKLip, hsub, hmem, hint, hLipΦ, hcontΦ⟩
@@ -327,17 +327,20 @@ theorem Convex.exists_isOpen_inter_eq_forwardSemiflowDomain {C U : Set E} (hC : 
     ∃ Ω : Set (ℝ × E), IsOpen Ω ∧ Ω ∩ (Ici 0 ×ˢ (U ∩ C)) = forwardSemiflowDomain X (U ∩ C) := by
   have hloc (p : forwardSemiflowDomain X (U ∩ C)) : ∃ W : Set (ℝ × E), IsOpen W ∧ p.val ∈ W ∧
       W ∩ (Ici 0 ×ˢ (U ∩ C)) ⊆ forwardSemiflowDomain X (U ∩ C) := by
-    obtain ⟨hpU, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp p.property
+    have hpJ : p.val.1 ∈ forwardSemiflowInterval X (U ∩ C) p.val.2 :=
+      mem_forwardSemiflowDomain_iff.mp p.property
     obtain ⟨r, hr, δ, hδ, _, hsub, _⟩ :=
-      hC.exists_continuousOn_Icc_prod_of_mem_forwardSemiflowInterval hU hX hX_in hpU hpJ
+      hC.exists_continuousOn_Icc_prod_of_mem_forwardSemiflowInterval hU hX hX_in
+        (mem_of_mem_forwardSemiflowInterval hpJ) hpJ
     exact ⟨Iio (p.val.1 + 2 * δ) ×ˢ ball p.val.2 r, isOpen_Iio.prod isOpen_ball,
       ⟨mem_Iio.mpr (by linarith), mem_ball_self hr⟩, fun q hq ↦
-        mem_forwardSemiflowDomain_iff.mpr ⟨hq.2.2, hsub q.2 ⟨hq.1.2, hq.2.2.2⟩ ⟨hq.2.1, hq.1.1⟩⟩⟩
+        mem_forwardSemiflowDomain_iff.mpr (hsub q.2 ⟨hq.1.2, hq.2.2.2⟩ ⟨hq.2.1, hq.1.1⟩)⟩
   choose W hW_open hpW hW_sub using hloc
   refine ⟨⋃ p, W p, isOpen_iUnion hW_open, Subset.antisymm (fun q hq ↦ ?_) (fun q hq ↦ ?_)⟩
   · obtain ⟨p, hqp⟩ := mem_iUnion.mp hq.1; exact hW_sub p ⟨hqp, hq.2⟩
-  · obtain ⟨hqU, hqJ⟩ := mem_forwardSemiflowDomain_iff.mp hq
-    exact ⟨mem_iUnion.mpr ⟨⟨q, hq⟩, hpW ⟨q, hq⟩⟩, nonneg_of_mem_forwardSemiflowInterval hqJ, hqU⟩
+  · have hqJ : q.1 ∈ forwardSemiflowInterval X (U ∩ C) q.2 := mem_forwardSemiflowDomain_iff.mp hq
+    exact ⟨mem_iUnion.mpr ⟨⟨q, hq⟩, hpW ⟨q, hq⟩⟩, nonneg_of_mem_forwardSemiflowInterval hqJ,
+      mem_of_mem_forwardSemiflowInterval hqJ⟩
 
 /-- **Joint continuity of the maximal forward semiflow.** If `X` is locally Lipschitz on `U ∩ C`
 and strictly inward to the convex set `C` on `U ∩ C`, then
@@ -371,9 +374,10 @@ private theorem exists_nhds_forall_mem_forwardSemiflowInterval {C U : Set E} (hC
   exact ⟨ball z r, Metric.ball_mem_nhds z hr, τ, hτ,
     fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩ ⟨hτ.le, by linarith⟩⟩
 
-/-- **Forward compact-escape lemma.** At a finite least upper bound `b` of
-`forwardSemiflowInterval X (U ∩ C) x`, if `X` is strictly inward to `C` on a compact subset
-`K ⊆ U ∩ C`, then the trajectory leaves `K` as `t → b⁻`. -/
+/-- **Forward compact-escape lemma.** If `C` is convex, `U` is open, `X` is locally Lipschitz on
+`U ∩ C`, `0 ∈ forwardSemiflowInterval X (U ∩ C) x` with finite least upper bound `b`, and `X` is
+strictly inward to `C` on a compact subset `K ⊆ U ∩ C`, then `forwardSemiflow X (U ∩ C) · x`
+eventually leaves `K` as `t → b⁻`. -/
 theorem Convex.eventually_notMem_nhdsLT_forwardSemiflow {C U : Set E} (hC : Convex ℝ C)
     (hU : IsOpen U) {X : E → E} (hX : LocallyLipschitzOn (U ∩ C) X) {x : E} {b : ℝ}
     (h0 : (0 : ℝ) ∈ forwardSemiflowInterval X (U ∩ C) x)
@@ -383,9 +387,11 @@ theorem Convex.eventually_notMem_nhdsLT_forwardSemiflow {C U : Set E} (hC : Conv
   hX.eventually_notMem_nhdsLT_forwardSemiflow h0 hb hK
     (exists_nhds_forall_mem_forwardSemiflowInterval hC hU hX hKU hX_in)
 
-/-- **Global forward existence under compact trapping.** If a trajectory of `forwardSemiflow` stays
-inside a compact subset `K ⊆ U ∩ C` on which `X` is strictly inward to `C`, then it is defined on
-all of `[0, ∞)`. -/
+/-- **Global forward existence under compact trapping.** If `C` is convex, `U` is open, `X` is
+locally Lipschitz on `U ∩ C`, `0 ∈ forwardSemiflowInterval X (U ∩ C) x`, `X` is strictly inward to
+`C` on a compact subset `K ⊆ U ∩ C`, and `forwardSemiflow X (U ∩ C) · x` maps all of
+`forwardSemiflowInterval X (U ∩ C) x` into `K`, then
+`forwardSemiflowInterval X (U ∩ C) x = Ici 0`. -/
 theorem Convex.forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo {C U : Set E}
     (hC : Convex ℝ C) (hU : IsOpen U) {X : E → E} (hX : LocallyLipschitzOn (U ∩ C) X) {x : E}
     (h0 : (0 : ℝ) ∈ forwardSemiflowInterval X (U ∩ C) x) {K : Set E} (hK : IsCompact K)
