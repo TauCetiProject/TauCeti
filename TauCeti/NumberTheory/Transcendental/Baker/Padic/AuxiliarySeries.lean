@@ -17,15 +17,16 @@ multiplied by an exponential in all coordinates. The series
 that allows the frequencies `ψ t` to vary independently of the coordinate multipliers
 `a t` and `c t i`. When `ψ t = a t + ∑ i, c t i` for every `t`, the series gives the mixed
 derivatives of the multivariate sum restricted to the diagonal. For the Baker argument, take
-`ψ t = ∑ i, t i * λ i`, `a t = t 0 * θ` and `c t i = (t i + t 0 * b i) * λ i`
-for the remaining coordinates.
+`ψ t = ∑ o, t o * λ o`, `a t = t 0 * θ` and `c t i = (t i + t 0 * b i) * λ i`,
+where `o` includes coordinate `0` and `i` ranges over the remaining coordinates.
 
 The relation `ψ t = a t + ∑ i, c t i` gives
 `TauCeti.Baker.derivative_diagonalAuxiliarySeries`: the derivative on the diagonal is the sum
-of the mixed derivatives with one coordinate order increased. It uses
-`PowerSeries.derivative_rescale_exp` and `Polynomial.expDerivFactor_succ`.
+of the mixed derivatives with one coordinate order increased. Iterating this identity turns
+vanishing of mixed derivatives into a univariate zero with multiplicity. The proof uses
+`PowerSeries.derivative_coe_mul_of_derivative_eq_C_mul` and `Polynomial.expDerivFactor_succ`.
 `TauCeti.Baker.hasSum_coeff_diagonalAuxiliarySeries` evaluates the series wherever all its
-exponential factors converge on their open `p`-adic discs, using
+exponential arguments `ψ t * x` lie in the open `p`-adic convergence disc, using
 `PowerSeries.hasSum_coeff_coe_mul_rescale_exp`.
 
 ## References
@@ -47,24 +48,26 @@ variable {A T ι : Type*} [CommRing A] [Algebra ℚ A] [Fintype T] [Fintype ι]
 Its term at `t` is `((D + a t)^m₀ (Q t)) * exp (ψ t * X)` scaled by
 `∏ i, (c t i) ^ (m i)`. -/
 noncomputable def diagonalAuxiliarySeries (ψ a : T → A) (c : T → ι → A)
-    (m₀ : ℕ) (m : ι → ℕ) : (T → A[X]) →ₗ[A] A⟦X⟧ :=
-  ∑ t, (∏ i, c t i ^ m i) •
+    (m₀ : ℕ) (m : ι → ℕ) : (T → A[X]) →ₗ[A] A⟦X⟧ := by
+  classical
+  exact LinearMap.lsum A (fun _ : T ↦ A[X]) A fun t ↦ (∏ i, c t i ^ m i) •
     ((LinearMap.mulRight A (PowerSeries.rescale (ψ t) (PowerSeries.exp A))).comp
       ((Polynomial.coeToPowerSeries.algHom A).toLinearMap.comp
-        ((Polynomial.expDerivFactor (a t) m₀).comp (LinearMap.proj t))))
+        (Polynomial.expDerivFactor (a t) m₀)))
 
 -- The full expansion stays out of the simp set so identities for the diagonal series can apply.
-/-- The exponential-polynomial expansion with frequencies `ψ` independent of `a` and `c`.
-It gives the mixed derivative of Baker's multivariate sum restricted to the diagonal when
-`ψ t = a t + ∑ i, c t i` for every `t`, and is a formal extension for arbitrary `ψ`. -/
+/-- The explicit expansion of `diagonalAuxiliarySeries` applied to `Q`, for arbitrary `ψ`.
+The mixed-derivative interpretation in the module overview requires `ψ t = a t + ∑ i, c t i`
+for every `t`. -/
 theorem diagonalAuxiliarySeries_apply (ψ a : T → A) (c : T → ι → A) (m₀ : ℕ)
     (m : ι → ℕ) (Q : T → A[X]) :
     diagonalAuxiliarySeries ψ a c m₀ m Q =
       ∑ t, (∏ i, c t i ^ m i) •
         ((Polynomial.expDerivFactor (a t) m₀ (Q t) : A⟦X⟧) *
           PowerSeries.rescale (ψ t) (PowerSeries.exp A)) := by
+  classical
   rw [diagonalAuxiliarySeries]
-  simp only [LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+  simp only [LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.comp_apply,
     LinearMap.mulRight_apply, AlgHom.toLinearMap_apply, Polynomial.coeToPowerSeries.algHom_apply,
     LinearMap.proj_apply, Algebra.algebraMap_self, PowerSeries.map_id, id_eq]
 
@@ -94,15 +97,16 @@ theorem derivative_diagonalAuxiliarySeries [DecidableEq ι] {ψ a : T → A}
     have heq : (fun j ↦ c t j ^ Function.update m i (m i + 1) j) =
         Function.update (fun j ↦ c t j ^ m j) i (c t i ^ (m i + 1)) := by
       exact funext (Function.apply_update (fun j n ↦ c t j ^ n) m i (m i + 1))
-    calc
-      _ = c t i ^ (m i + 1) * ∏ j ∈ Finset.univ.erase i, c t j ^ m j := by
-        rw [heq, Finset.prod_update_of_mem (Finset.mem_univ i), Finset.sdiff_singleton_eq_erase]
-      _ = _ := by
-        rw [pow_succ', mul_assoc, Finset.mul_prod_erase _ (fun j ↦ c t j ^ m j) (Finset.mem_univ i)]
+    rw [heq, pow_succ']
+    simpa only [MultilinearMap.mkPiAlgebra_apply, smul_eq_mul, RingHom.id_apply,
+      Function.update_eq_self] using
+      (MultilinearMap.mkPiAlgebra A ι A).map_update_smul (fun j ↦ c t j ^ m j) i
+        (c t i) (c t i ^ m i)
   simp only [hprod, ← Finset.sum_smul, ← Finset.sum_mul, Derivation.map_smul,
-    Derivation.leibniz, PowerSeries.derivative_rescale_exp, PowerSeries.derivative_coe,
-    Polynomial.expDerivFactor_succ, Polynomial.coe_add, Polynomial.coe_mul, Polynomial.coe_C]
-  simp only [smul_eq_mul, Algebra.smul_def, PowerSeries.algebraMap_apply, Algebra.algebraMap_self,
+    PowerSeries.derivative_coe_mul_of_derivative_eq_C_mul (PowerSeries.derivative_rescale_exp _)]
+  simp only [Polynomial.expDerivFactor_one]
+  simp only [Polynomial.expDerivFactor_succ, Polynomial.coe_add, Polynomial.coe_mul,
+    Polynomial.coe_C, Algebra.smul_def, PowerSeries.algebraMap_apply, Algebra.algebraMap_self,
     RingHom.id_apply, map_mul]
   rw [hψ t, map_add]
   ring
