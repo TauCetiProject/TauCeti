@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.Prod
 -- Private: used only inside proofs.
 import Mathlib.Analysis.Convex.Deriv
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.Morse.GradientFlow
 import TauCeti.Analysis.Convex.Deriv
 import TauCeti.Analysis.Convex.StrictTangent
@@ -276,8 +277,8 @@ theorem exists_pos_eventually_setOf_fderiv_separatedSum_eq_zero_and_isIntegralCu
       · exact ⟨hz ▸ hqI, (fderiv_separatedSum_eq_zero_iff (hdiff _ (hz ▸ hqI)) (hQ _)).2
           ⟨(hfderiv _).2 (hz ▸ hq0), hz0⟩⟩
   · -- The trajectory `σ ↦ (γ σ, b)`.
-    have hb' : ∇ Q b = 0 := by rw [gradient, hb, map_zero]
-    exact hγ.separatedSum (isIntegralCurve_const_neg_gradient_iff.2 hb') hγd fun _ ↦ hQ _
+    exact hγ.separatedSum (isIntegralCurve_const_neg_gradient_iff.2 (gradient_eq_zero_iff.2 hb))
+      hγd fun _ ↦ hQ _
   · -- Every trajectory from `(p, b)` to `(q, b)` is a translate of it.
     exact fun z hz ↦ hz.exists_eq_toLp_comp_add_of_separatedSum hQ hγd huniq
 
