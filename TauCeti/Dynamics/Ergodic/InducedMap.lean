@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.ReturnTime
-public import Mathlib.Dynamics.Ergodic.Conservative
 
 /-!
 # Induced maps
@@ -25,8 +24,8 @@ finite almost everywhere on `A` by Poincaré recurrence
 
 `μ B = ∑_{1 ≤ k ≤ n} μ (A ∩ {τ = k} ∩ T^[k]⁻¹ B) + μ D_n`,
 
-where `D_n` is the set of points first entering `A` at time `n`, inside `B`. These sets are
-disjoint, so `μ D_n → 0`.
+where `D_n` is the set of points avoiding `A` before time `n` and lying in `B` at time `n`, that
+is, first entering `A` at time `n`, inside `B`. These sets are disjoint, so `μ D_n → 0`.
 
 ## Main definitions
 
@@ -36,7 +35,6 @@ disjoint, so `μ D_n → 0`.
 
 * `TauCeti.inducedMap_mem`: points with finite return time return to `A`.
 * `TauCeti.measurable_inducedMap`.
-* `TauCeti.ae_positiveReturnTime_ne_top`: Poincaré recurrence for return times.
 * `TauCeti.measure_inter_inducedMap_preimage`: `μ (A ∩ inducedMap T A ⁻¹' B) = μ B` for
   measurable `B ⊆ A`.
 * `TauCeti.measurePreserving_inducedMap`, `TauCeti.measurePreserving_inducedMap_smul`.
@@ -65,7 +63,13 @@ theorem inducedMap_def (T : X → X) (A : Set X) (x : X) :
     inducedMap T A x = T^[(positiveReturnTime T A x).toNat] x :=
   (rfl)
 
+/-- Where the return time is a natural number `n`, the induced map is `T^[n]`. -/
+theorem inducedMap_eq_iterate_of_positiveReturnTime_eq {T : X → X} {A : Set X} {x : X} {n : ℕ}
+    (h : positiveReturnTime T A x = n) : inducedMap T A x = T^[n] x := by
+  rw [inducedMap_def, h, ENat.toNat_natCast]
+
 /-- Where the return time is infinite, the induced map fixes the point. -/
+@[simp]
 theorem inducedMap_of_eq_top {T : X → X} {A : Set X} {x : X}
     (h : positiveReturnTime T A x = ⊤) : inducedMap T A x = x := by
   simp [inducedMap_def, h]
@@ -97,22 +101,13 @@ theorem measurable_inducedMap {T : X → X} (hT : Measurable T) {A : Set X} (hA 
 
 variable {μ : Measure X}
 
-/-- **Poincaré recurrence for return times.** For a measure-preserving map of a finite measure
-space, almost every point of a measurable set `A` returns to `A`. -/
-theorem ae_positiveReturnTime_ne_top [IsFiniteMeasure μ] {T : X → X}
-    (hT : MeasurePreserving T μ μ) {A : Set X} (hA : MeasurableSet A) :
-    ∀ᵐ x ∂μ, x ∈ A → positiveReturnTime T A x ≠ ⊤ := by
-  filter_upwards [hT.conservative.ae_mem_imp_frequently_image_mem hA.nullMeasurableSet]
-    with x hx hxA
-  obtain ⟨n, hn, hnA⟩ := (frequently_atTop.1 (hx hxA)) 1
-  exact positiveReturnTime_ne_top_iff.2 ⟨n, hn, hnA⟩
-
 section Core
 
 variable {T : X → X} {A B : Set X}
 
-/-- The points first entering `A` at time `n`, inside `B`: `T^[i] x ∉ A` for `i < n` and
-`T^[n] x ∈ B`. -/
+/-- The points avoiding `A` before time `n` and lying in `B` at time `n`: `T^[i] x ∉ A` for
+`i < n` and `T^[n] x ∈ B`. When `B ⊆ A`, these are the points first entering `A` at time `n`,
+inside `B`. -/
 def firstEntrySet (T : X → X) (A B : Set X) (n : ℕ) : Set X :=
   {x | (∀ i < n, T^[i] x ∉ A) ∧ T^[n] x ∈ B}
 
@@ -131,11 +126,24 @@ theorem returnSet_def (T : X → X) (A B : Set X) (n : ℕ) :
       A ∩ {x | positiveReturnTime T A x = (n + 1 : ℕ)} ∩ T^[n + 1] ⁻¹' B :=
   (rfl)
 
+omit [MeasurableSpace X] in
+@[simp]
+theorem mem_firstEntrySet_iff {n : ℕ} {x : X} :
+    x ∈ firstEntrySet T A B n ↔ (∀ i < n, T^[i] x ∉ A) ∧ T^[n] x ∈ B :=
+  Iff.rfl
+
+omit [MeasurableSpace X] in
+@[simp]
+theorem mem_returnSet_iff {n : ℕ} {x : X} :
+    x ∈ returnSet T A B n ↔
+      (x ∈ A ∧ positiveReturnTime T A x = (n + 1 : ℕ)) ∧ T^[n + 1] x ∈ B :=
+  Iff.rfl
+
 theorem measurableSet_firstEntrySet (hT : Measurable T) (hA : MeasurableSet A)
     (hB : MeasurableSet B) (n : ℕ) : MeasurableSet (firstEntrySet T A B n) := by
   have : firstEntrySet T A B n = (⋂ i ∈ Finset.range n, T^[i] ⁻¹' Aᶜ) ∩ T^[n] ⁻¹' B := by
     ext x
-    simp [firstEntrySet]
+    simp
   rw [this]
   exact (Finset.measurableSet_biInter _ fun i _ ↦ hT.iterate i hA.compl).inter (hT.iterate n hB)
 
@@ -149,7 +157,7 @@ omit [MeasurableSpace X] in
 theorem preimage_firstEntrySet_inter (hBA : B ⊆ A) (n : ℕ) :
     T ⁻¹' firstEntrySet T A B n ∩ A = returnSet T A B n := by
   ext x
-  simp only [firstEntrySet, returnSet, mem_inter_iff, mem_preimage, mem_ofPred_eq,
+  simp only [mem_inter_iff, mem_preimage, mem_firstEntrySet_iff, mem_returnSet_iff,
     ← Function.iterate_succ_apply]
   rw [positiveReturnTime_eq_coe_iff (Nat.succ_pos n)]
   constructor
@@ -166,7 +174,7 @@ omit [MeasurableSpace X] in
 theorem preimage_firstEntrySet_diff (n : ℕ) :
     T ⁻¹' firstEntrySet T A B n \ A = firstEntrySet T A B (n + 1) := by
   ext x
-  simp only [firstEntrySet, Set.mem_sdiff, mem_ofPred_eq]
+  simp only [Set.mem_sdiff, mem_preimage, mem_firstEntrySet_iff]
   constructor
   · rintro ⟨⟨h, hB⟩, hx⟩
     refine ⟨fun i hi ↦ ?_, hB⟩
@@ -186,6 +194,15 @@ theorem pairwise_disjoint_firstEntrySet (hBA : B ⊆ A) :
   · exact hn.1 m h (hBA hm.2)
   · exact hm.1 n h (hBA hn.2)
 
+omit [MeasurableSpace X] in
+/-- The return sets at different times are disjoint. -/
+theorem pairwise_disjoint_returnSet : Pairwise (Function.onFun Disjoint (returnSet T A B)) := by
+  intro m n hmn
+  refine Set.disjoint_left.2 fun x hm hn ↦ hmn ?_
+  rw [mem_returnSet_iff] at hm hn
+  have := ENat.natCast_inj.1 (hm.1.2.symm.trans hn.1.2)
+  omega
+
 /-- `μ B = ∑_{k < n} μ (returnSet k) + μ (firstEntrySet n)`. -/
 theorem measure_eq_sum_returnSet_add (hT : MeasurePreserving T μ μ) (hA : MeasurableSet A)
     (hB : MeasurableSet B) (hBA : B ⊆ A) (n : ℕ) :
@@ -195,7 +212,7 @@ theorem measure_eq_sum_returnSet_add (hT : MeasurePreserving T μ μ) (hA : Meas
     simp only [Finset.range_zero, Finset.sum_empty, zero_add]
     congr 1
     ext x
-    simp [firstEntrySet]
+    simp
   | succ n ih =>
     rw [ih, Finset.sum_range_succ, add_assoc, ← hT.measure_preimage
       (measurableSet_firstEntrySet hT.measurable hA hB n).nullMeasurableSet,
@@ -220,15 +237,11 @@ theorem measure_eq_tsum_returnSet [IsFiniteMeasure μ] (hT : MeasurePreserving T
 theorem measure_inter_inducedMap_preimage [IsFiniteMeasure μ] (hT : MeasurePreserving T μ μ)
     (hA : MeasurableSet A) (hB : MeasurableSet B) (hBA : B ⊆ A) :
     μ (A ∩ inducedMap T A ⁻¹' B) = μ B := by
-  rw [measure_eq_tsum_returnSet hT hA hB hBA, ← measure_iUnion
-    (fun m n hmn ↦ Set.disjoint_left.2 fun x hm hn ↦ hmn (by
-      have := ENat.natCast_inj.1 (hm.1.2.symm.trans hn.1.2)
-      omega))
+  rw [measure_eq_tsum_returnSet hT hA hB hBA, ← measure_iUnion pairwise_disjoint_returnSet
     (measurableSet_returnSet hT.measurable hA hB)]
-  refine measure_congr ?_
-  filter_upwards [ae_positiveReturnTime_ne_top hT hA] with x hx
-  change x ∈ A ∩ inducedMap T A ⁻¹' B ↔ x ∈ ⋃ k, returnSet T A B k
-  simp only [mem_iUnion, returnSet, mem_inter_iff, mem_preimage, mem_ofPred_eq]
+  refine measure_congr (eventuallyEqSet_iff.2 ?_)
+  filter_upwards [ae_positiveReturnTime_ne_top hT.conservative hA.nullMeasurableSet] with x hx
+  simp only [mem_iUnion, mem_returnSet_iff, mem_inter_iff, mem_preimage]
   constructor
   · rintro ⟨hxA, hxB⟩
     obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.1 (hx hxA)
@@ -237,9 +250,9 @@ theorem measure_inter_inducedMap_preimage [IsFiniteMeasure μ] (hT : MeasurePres
       exact positiveReturnTime_ne_zero T A x (by simpa using hm.symm)
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm0
     refine ⟨k, ⟨hxA, hm.symm⟩, ?_⟩
-    rwa [inducedMap_def, ← hm, ENat.toNat_natCast] at hxB
+    rwa [inducedMap_eq_iterate_of_positiveReturnTime_eq hm.symm] at hxB
   · rintro ⟨k, ⟨hxA, hk⟩, hxB⟩
-    exact ⟨hxA, by rwa [inducedMap_def, hk, ENat.toNat_natCast]⟩
+    exact ⟨hxA, by rwa [inducedMap_eq_iterate_of_positiveReturnTime_eq hk]⟩
 
 end Core
 
@@ -255,8 +268,8 @@ theorem measurePreserving_inducedMap [IsFiniteMeasure μ] {T : X → X}
       Measure.restrict_apply (measurable_inducedMap hT.measurable hA hS),
       Measure.restrict_apply hS, ← measure_inter_inducedMap_preimage hT hA (hS.inter hA)
         inter_subset_right]
-    refine measure_congr ?_
-    filter_upwards [ae_positiveReturnTime_ne_top hT hA] with x hx
+    refine measure_congr (eventuallyEqSet_iff.2 ?_)
+    filter_upwards [ae_positiveReturnTime_ne_top hT.conservative hA.nullMeasurableSet] with x hx
     simp only [mem_inter_iff, mem_preimage]
     exact ⟨fun h ↦ ⟨h.2, h.1, inducedMap_mem (hx h.2)⟩, fun h ↦ ⟨h.2.1, h.1⟩⟩
 
