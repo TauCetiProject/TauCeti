@@ -45,10 +45,7 @@ theorem evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
     evalAtHom a ha f.val ∈ powerBoundedSubring K := by
-  have : IsHuberRing K := by
-    rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨_, rfl⟩
-    · infer_instance
-    · exact (IsTateRing.of_nontriviallyNormedField K).toIsHuberRing
+  have : IsHuberRing K := IsHuberRing.of_normedField K
   exact evalAtHom_mem_powerBoundedSubring a ha
     (weightedSubring_le_powerBoundedSubring isWeightFamily_one_weight le_rfl f.property)
 

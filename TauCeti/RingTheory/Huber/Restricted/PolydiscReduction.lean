@@ -201,8 +201,9 @@ theorem polydiscReduction_eq_zero_iff
       ← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one, hlt_iff]
   · rw [polydiscReduction_eq_restrictedReduction,
       TauCeti.MvPowerSeries.restrictedReduction_eq_zero_iff, MvPowerSeries.norm_eq_gaussNorm,
-      toUnitClosedBall, coe_restrictedMvPowerSeriesGaussEquiv, ← coe_unitGaussValuation]
-    exact_mod_cast Iff.rfl
+      toUnitClosedBall, coe_restrictedMvPowerSeriesGaussEquiv, ← coe_unitGaussValuation,
+      ← NNReal.coe_one]
+    exact NNReal.coe_lt_coe
 
 /-- The reduction of a unit-bounded series is nonzero if and only if its unit Gauss valuation
 equals `1`. -/
@@ -251,11 +252,11 @@ private theorem coe_weightedEvalHom_symm
     (fun c ↦ by
       dsimp only [toSub, RingHom.comp_apply]
       rw [weightedEvalHom_weightedC, weightedMap_weightedC, weightedEvalHom_weightedC]
-      rfl)
+      simp)
     (fun i ↦ by
       dsimp only [toSub, RingHom.comp_apply]
       rw [weightedEvalHom_weightedX, weightedMap_weightedX, weightedEvalHom_weightedX]
-      rfl)
+      simp)
   have htoSub : ∀ g, toSub g = (weightedRestrictedSubringEquivWeightedSubring
       (powerBoundedSubring K) g).val := fun g ↦ Subtype.ext (by
     dsimp only [toSub]

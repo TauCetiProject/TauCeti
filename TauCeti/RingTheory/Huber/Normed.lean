@@ -83,6 +83,7 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   with a unit of norm less than one is a Tate ring.
 * `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`: a nontrivially normed field with an
   ultrametric norm is a Tate ring; for instance `ℚ_[p]`.
+* `TauCeti.Huber.IsHuberRing.of_normedField`: every ultrametric normed field is a Huber ring.
 * `TauCeti.Huber.IsTateRing.of_normedAlgebra`: an ultrametric seminormed algebra over a
   nontrivially normed field is Tate, without requiring its norm at one to equal one.
 
@@ -444,6 +445,14 @@ instance IsTateRing.of_nontriviallyNormedField (K : Type*) [NontriviallyNormedFi
     [IsUltrametricDist K] : IsTateRing K := by
   obtain ⟨ϖ, h0, h1⟩ := NormedField.exists_norm_lt_one K
   exact IsTateRing.of_isUnit_norm_lt_one (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp h0)) h1
+
+/-- **Every ultrametric normed field is a Huber ring**: either its topology is discrete or its norm
+is nontrivial, in which case it is a Tate ring (`IsTateRing.of_nontriviallyNormedField`). -/
+theorem IsHuberRing.of_normedField (K : Type*) [NormedField K] [IsUltrametricDist K] :
+    IsHuberRing K := by
+  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨_, rfl⟩
+  · infer_instance
+  · exact (IsTateRing.of_nontriviallyNormedField K).toIsHuberRing
 
 /-- An ultrametric seminormed algebra over a nontrivially normed field is a Tate ring.
 No normalisation of the algebra norm at one is required. -/

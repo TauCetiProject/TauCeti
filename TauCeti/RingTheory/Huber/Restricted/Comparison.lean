@@ -151,26 +151,32 @@ theorem norm_weightedEvalHom_le
   rw [weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha hb]
   exact φ.norm_restrictedEval₂OfBound_le a hφ ha _
 
-private lemma norm_pow_sub_pow_le {S : Type*} [SeminormedCommRing S] [IsUltrametricDist S]
-    {x y : S} (hx : ‖x‖ ≤ 1) (hy : ‖y‖ ≤ 1) (m : ℕ) :
-    ‖x ^ m - y ^ m‖ ≤ ‖x - y‖ := by
-  simpa using TauCeti.norm_prod_sub_prod_le (s := Finset.range m)
-    (f := fun _ ↦ x) (g := fun _ ↦ y) (M := 1) (norm_nonneg _)
-    (fun _ _ ↦ hx) (fun _ _ ↦ hy) (fun _ _ ↦ le_rfl)
-
-private lemma norm_prod_pow_sub_prod_pow_le {k : ℕ} {S : Type*}
-    [SeminormedCommRing S] [IsUltrametricDist S] {a b : Fin k → S}
-    (ha : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, ‖b i‖ ≤ 1) (ν : Fin k →₀ ℕ) :
-    ‖∏ i, a i ^ ν i - ∏ i, b i ^ ν i‖ ≤ ‖a - b‖ := by
-  rw [← Finsupp.prod_fintype ν (a · ^ ·) fun _ ↦ pow_zero _,
-    ← Finsupp.prod_fintype ν (b · ^ ·) fun _ ↦ pow_zero _, Finsupp.prod, Finsupp.prod]
-  simpa only [one_pow, mul_one] using TauCeti.norm_prod_sub_prod_le (s := ν.support)
-    (M := 1) (ε := ‖a - b‖) (norm_nonneg _)
-    (fun i hi ↦ (norm_pow_le' (a i) (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
-      (pow_le_one₀ (norm_nonneg _) (ha i)))
-    (fun i hi ↦ (norm_pow_le' (b i) (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
-      (pow_le_one₀ (norm_nonneg _) (hb i)))
-    (fun i _ ↦ (norm_pow_sub_pow_le (ha i) (hb i) (ν i)).trans (norm_le_pi_norm (a - b) i))
+omit [IsUltrametricDist S] [CompleteSpace S] in
+include hφ in
+private lemma norm_map_coeff_le_mul_norm
+    (f' : MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    0 ≤ C * ‖f'‖ ∧ ∀ ν : Fin k →₀ ℕ,
+      ‖φ (MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R))‖ ≤ C * ‖f'‖ := by
+  rcases eq_or_lt_of_le (norm_nonneg f') with hf0 | hfpos
+  · have h0 : ‖f'‖ = 0 := hf0.symm
+    refine ⟨by simp [h0], fun ν ↦ ?_⟩
+    have hcoeff0 : ‖MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R)‖ = 0 :=
+      le_antisymm (by simpa [h0] using MvPowerSeries.norm_coeff_mul_prod_le f' ν) (norm_nonneg _)
+    simpa [h0, hcoeff0] using hφ (MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R))
+  · have hex : ∃ ν : Fin k →₀ ℕ,
+        0 < ‖MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R)‖ := by
+      by_contra! hall
+      have hle : ‖f'‖ ≤ 0 := MvPowerSeries.norm_le_iff.mpr fun ν ↦ by
+        have h0 : ‖MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R)‖ = 0 :=
+          le_antisymm (hall ν) (norm_nonneg _)
+        simp [h0]
+      exact hfpos.not_ge hle
+    obtain ⟨ν₀, hν₀⟩ := hex
+    have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hφ _)) hν₀
+    refine ⟨mul_nonneg hC0 (norm_nonneg f'), fun ν ↦ (hφ _).trans ?_⟩
+    refine mul_le_mul_of_nonneg_left ?_ hC0
+    simpa only [one_pow, Finsupp.prod, Finset.prod_const_one, mul_one] using
+      MvPowerSeries.norm_coeff_mul_prod_le f' ν
 
 include hφ ha in
 /-- **Huber evaluation is Lipschitz in the evaluation tuple on the closed unit ball**, with
@@ -183,6 +189,7 @@ theorem norm_weightedEvalHom_sub_weightedEvalHom_le {b : Fin k → S}
         weightedEvalHom isWeightFamily_one_weight hφc hb' f‖ ≤
       C * ‖restrictedMvPowerSeriesGaussEquiv f‖ * ‖a - b‖ := by
   set f' := restrictedMvPowerSeriesGaussEquiv f
+  -- Express the difference of evaluations as the sum of termwise differences.
   have hsum : HasSum
       (fun ν : Fin k →₀ ℕ ↦
         weightedEvalTerm φ a (f : MvPowerSeries (Fin k) R) ν -
@@ -194,43 +201,15 @@ theorem norm_weightedEvalHom_sub_weightedEvalHom_le {b : Fin k → S}
     simpa only [f', coe_restrictedMvPowerSeriesGaussEquiv] using
       (φ.hasSum_restrictedEval₂OfBound a hφ ha f').sub
         (φ.hasSum_restrictedEval₂OfBound b hφ hb₁ f')
-  have hC : ‖f'‖ = 0 ∨ 0 ≤ C := by
-    rcases eq_or_lt_of_le (norm_nonneg f') with hf0 | hfpos
-    · exact Or.inl hf0.symm
-    · refine Or.inr ?_
-      have hex : ∃ ν : Fin k →₀ ℕ,
-          0 < ‖MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R)‖ := by
-        by_contra! hall
-        have hle : ‖f'‖ ≤ 0 := MvPowerSeries.norm_le_iff.mpr fun ν ↦ by
-          have h0 : ‖MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R)‖ = 0 :=
-            le_antisymm (hall ν) (norm_nonneg _)
-          simp [h0]
-        exact hfpos.not_ge hle
-      obtain ⟨ν₀, hν₀⟩ := hex
-      have h0 : 0 ≤ C * ‖MvPowerSeries.coeff ν₀ (f' : MvPowerSeries (Fin k) R)‖ :=
-        (norm_nonneg _).trans (hφ _)
-      exact nonneg_of_mul_nonneg_left h0 hν₀
-  have hC_nonneg : 0 ≤ C * ‖f'‖ := by
-    rcases hC with hf0 | hC0
-    · simp [hf0]
-    · exact mul_nonneg hC0 (norm_nonneg f')
+  -- Bound each coefficient by `C * ‖f'‖` and each monomial difference by `‖a - b‖`.
+  obtain ⟨hC_nonneg, hcoeff⟩ := norm_map_coeff_le_mul_norm hφ f'
   rw [← hsum.tsum_eq]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
     (mul_nonneg hC_nonneg (norm_nonneg (a - b))) fun ν ↦ ?_
   rw [weightedEvalTerm_def, weightedEvalTerm_def, ← mul_sub]
-  have hcoeff : ‖φ (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) R))‖ ≤ C * ‖f'‖ := by
-    rcases hC with hf0 | hC0
-    · have h0 : ‖MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R)‖ ≤ 0 := by
-        simpa [hf0] using MvPowerSeries.norm_coeff_mul_prod_le f' ν
-      have h0' : ‖MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) R)‖ = 0 :=
-        le_antisymm (by simpa [f'] using h0) (norm_nonneg _)
-      simpa [hf0, h0'] using hφ (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) R))
-    · refine (hφ _).trans (mul_le_mul_of_nonneg_left ?_ hC0)
-      rw [← coe_restrictedMvPowerSeriesGaussEquiv f]
-      simpa only [one_pow, Finsupp.prod, Finset.prod_const_one, mul_one] using
-        MvPowerSeries.norm_coeff_mul_prod_le f' ν
-  exact (norm_mul_le _ _).trans
-    (mul_le_mul hcoeff (norm_prod_pow_sub_prod_pow_le ha hb₁ ν) (norm_nonneg _) hC_nonneg)
+  refine (norm_mul_le _ _).trans (mul_le_mul ?_
+    (TauCeti.norm_prod_pow_sub_prod_pow_le ha hb₁ ν) (norm_nonneg _) hC_nonneg)
+  simpa only [f', coe_restrictedMvPowerSeriesGaussEquiv] using hcoeff ν
 
 variable [CompleteSpace R]
 

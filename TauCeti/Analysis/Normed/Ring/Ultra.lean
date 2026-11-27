@@ -67,6 +67,9 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
+* `TauCeti.norm_pow_sub_pow_le_of_norm_le_one` and
+  `TauCeti.norm_prod_pow_sub_prod_pow_le`: powers and monomials on the closed unit ball are
+  `1`-Lipschitz.
 * `TauCeti.norm_fwdDiff_iter_pow_mul_pow_le`: for `‖x‖, ‖h‖ ≤ c`, the `k`-th forward difference
   of `y ↦ yᵐ` with step `h` at `x` satisfies `‖Δₕᵏ (y ↦ yᵐ)(x)‖ cᵏ ≤ ‖k!‖ ‖h‖ᵏ cᵐ`.
 -/
@@ -438,6 +441,48 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
       _ = ε * M ^ s.card := by
         have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
         rw [mul_left_comm M ε, ← pow_succ', hcard, max_self]
+
+/-- In an ultrametric seminormed ring, if `‖x‖ ≤ 1` and `‖y‖ ≤ 1`, then
+`‖x ^ m - y ^ m‖ ≤ ‖x - y‖` for every `m : ℕ`. -/
+theorem norm_pow_sub_pow_le_of_norm_le_one {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
+    {x y : R} (hx : ‖x‖ ≤ 1) (hy : ‖y‖ ≤ 1) (m : ℕ) : ‖x ^ m - y ^ m‖ ≤ ‖x - y‖ := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rcases m with _ | m
+    · simp
+    · calc ‖x ^ (m + 2) - y ^ (m + 2)‖ =
+            ‖x * (x ^ (m + 1) - y ^ (m + 1)) + (x - y) * y ^ (m + 1)‖ := by
+              rw [mul_sub, sub_mul, ← pow_succ', ← pow_succ', sub_add_sub_cancel]
+        _ ≤ max ‖x * (x ^ (m + 1) - y ^ (m + 1))‖ ‖(x - y) * y ^ (m + 1)‖ :=
+          IsUltrametricDist.norm_add_le_max _ _
+        _ ≤ ‖x - y‖ := max_le
+          ((norm_mul_le _ _).trans ((mul_le_of_le_one_left (norm_nonneg _) hx).trans ih))
+          ((norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
+            ((norm_pow_le' y (Nat.succ_pos m)).trans (pow_le_one₀ (norm_nonneg y) hy))))
+
+/-- In an ultrametric seminormed commutative ring, if two `ι`-tuples lie in the closed unit ball,
+then every monomial `∏ i, xᵢ ^ νᵢ` is `1`-Lipschitz:
+`‖∏ i, a i ^ ν i - ∏ i, b i ^ ν i‖ ≤ ‖a - b‖`. -/
+theorem norm_prod_pow_sub_prod_pow_le {ι R : Type*} [Fintype ι] [SeminormedCommRing R]
+    [IsUltrametricDist R] {a b : ι → R} (ha : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, ‖b i‖ ≤ 1)
+    (ν : ι → ℕ) :
+    ‖∏ i, a i ^ ν i - ∏ i, b i ^ ν i‖ ≤ ‖a - b‖ := by
+  classical
+  let s : Finset ι := Finset.univ.filter fun i ↦ ν i ≠ 0
+  have hprod (c : ι → R) : ∏ i, c i ^ ν i = ∏ i ∈ s, c i ^ ν i :=
+    (Finset.prod_subset (Finset.filter_subset _ _) fun i _ hi ↦ by
+      have h0 : ν i = 0 := by simpa [s] using hi
+      simp [h0]).symm
+  rw [hprod a, hprod b]
+  simpa only [one_pow, mul_one] using TauCeti.norm_prod_sub_prod_le (s := s)
+    (M := 1) (ε := ‖a - b‖) (norm_nonneg _)
+    (fun i hi ↦ (norm_pow_le' (a i) (Nat.pos_of_ne_zero (Finset.mem_filter.mp hi).2)).trans
+      (pow_le_one₀ (norm_nonneg _) (ha i)))
+    (fun i hi ↦ (norm_pow_le' (b i) (Nat.pos_of_ne_zero (Finset.mem_filter.mp hi).2)).trans
+      (pow_le_one₀ (norm_nonneg _) (hb i)))
+    (fun i _ ↦ (norm_pow_sub_pow_le_of_norm_le_one (ha i) (hb i) (ν i)).trans
+      (norm_le_pi_norm (a - b) i))
 
 section FwdDiff
 

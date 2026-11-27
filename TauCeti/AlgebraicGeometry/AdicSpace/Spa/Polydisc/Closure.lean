@@ -173,10 +173,11 @@ theorem exists_normClassicalPoint_mem_basicOpenFinset [Infinite 𝓀[K]]
             (mem_powerBoundedSubring.mpr (hba i))⟩) = ā :=
         funext fun i ↦ hb i
       rwa [heq])
-  dsimp only [g'] at hmem
-  rw [rationalSubset_def, Set.mem_inter_iff] at hmem
+  have hg' : g'.val = g * u := rfl
+  rw [rationalSubset_def, Set.mem_inter_iff, hg'] at hmem
   rw [← basicOpenFinset_image_mul_right T g u hu]
-  convert hmem.right
+  -- `basicOpenFinset_image_mul_right` fixes `Classical.propDecidable` on `Finset.image`.
+  convert hmem.right using 3
 
 /-- Every rational subset `R(T/g)` of `closedPolydisc n K` containing the unit Gauss point contains
 a canonical classical point when `𝓀[K]` is infinite. -/
@@ -198,10 +199,7 @@ is infinite, the unit Gauss point of `closedPolydisc n K` lies in the closure of
 `classicalPoints n K`. -/
 theorem unitGaussPoint_mem_closure_classicalPoints [Infinite 𝓀[K]] :
     unitGaussPoint n K ∈ closure (classicalPoints n K) := by
-  have : IsHuberRing K := by
-    rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨_, rfl⟩
-    · infer_instance
-    · exact (IsTateRing.of_nontriviallyNormedField K).toIsHuberRing
+  have : IsHuberRing K := IsHuberRing.of_normedField K
   rw [mem_closure_iff]
   intro U hU hηU
   let e : closedPolydisc n K ≃ₜ spa (powerBoundedSubring _) :=
