@@ -323,6 +323,11 @@ theorem coe_baseSetChart (x : M) : ⇑(baseSetChart F I V x) = extChartAt I x :=
   rw [baseSetChart, OpenPartialHomeomorph.coe_extendTrans_refl, OpenPartialHomeomorph.extend_coe,
     extChartAt_coe, OpenPartialHomeomorph.restr_apply]
 
+/-- The extended chart at `x` inverts `baseSetChart F I V x` on its target. -/
+theorem extChartAt_baseSetChart_symm (x : M) {z : E} (hz : z ∈ (baseSetChart F I V x).target) :
+    extChartAt I x ((baseSetChart F I V x).symm z) = z := by
+  rw [← coe_baseSetChart (F := F) V x, (baseSetChart F I V x).right_inv hz]
+
 /-- The point `x` lies in the source of `baseSetChart F I V x`. -/
 theorem mem_baseSetChart_source (x : M) : x ∈ (baseSetChart F I V x).source := by
   rw [baseSetChart_source]

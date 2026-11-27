@@ -137,10 +137,9 @@ theorem notMem_singularSupport_ofSection {u : (x : M) → W x} (hu : LocallyInte
       fun z ↦ ((r * v (FirstJetBundle.localRep I G u x z) : ℝ) : ℂ), fun z hz ↦ ?_, fun φ _ ↦ ?_⟩
   · -- The reading of `u` is smooth at the chart images of the points of `U`.
     have hy := c.map_target hz.1
-    have hz' : extChartAt I x (c.symm z) = z := by rw [← hcα _ hy, c.right_inv hz.1]
     have h := FirstJetBundle.contDiffAt_localRep I G (hus.contMDiffAt (hU.mem_nhds hz.2))
       (mem_firstJetBundle_baseSet hy)
-    rw [hz'] at h
+    rw [extChartAt_baseSetChart_symm V x hz.1] at h
     exact (Complex.ofRealCLM.contDiff.comp_contDiffAt _
       (contDiffAt_const.mul (v.contDiff.contDiffAt.comp _ h))).contDiffWithinAt
   · rw [Trivialization.chartComponent_apply, ← Trivialization.chartDistributionCLM_apply_apply,
@@ -222,9 +221,7 @@ private theorem localRep_smul_symm_eq {x : M} {ρ : M → ℝ} {k : E → G} {z 
   have hy := c.map_target hz
   have hy' := (FirstJetBundle.mem_baseSet_iff G W).1 (mem_firstJetBundle_baseSet hy)
   have hzy : (extChartAt I x).symm z = c.symm z := by
-    have hcz : extChartAt I x (c.symm z) = z := by
-      rw [show extChartAt I x (c.symm z) = c (c.symm z) by rw [coe_baseSetChart], c.right_inv hz]
-    conv_lhs => rw [← hcz]
+    conv_lhs => rw [← extChartAt_baseSetChart_symm _ x hz]
     exact (extChartAt I x).left_inv (by rw [extChartAt_source]; exact hy'.2)
   rw [FirstJetBundle.localRep_apply, hzy, hρ, one_smul,
     (trivializationAt G W x).apply_mk_symm hy'.1, c.right_inv hz]
