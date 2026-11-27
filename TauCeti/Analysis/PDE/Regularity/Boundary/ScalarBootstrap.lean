@@ -65,12 +65,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 local notation "E" => EuclideanSpace ℝ ι
 
-omit [Fintype ι] [DecidableEq ι] in
-private theorem mem_iff_mem_of_inter_eq
-    (hΩU : (Omega : Set E) ∩ U = (H : Set E) ∩ U) {x : E} (hx : x ∈ (U : Set E)) :
-    x ∈ Omega ↔ x ∈ H := by
-  simpa only [← SetLike.mem_coe, mem_inter_iff, hx, and_true] using Set.ext_iff.1 hΩU x
-
 omit [DecidableEq ι] in
 private theorem energyFormH1_restrictL_eq_setIntegral_value {D : Opens E}
     {a' : E → Matrix ι ι ℝ} (hD : D ≤ Omega ⊓ U) (haa' : EqOn a' a D) {k : ℕ} {F : Wkp mu D 2 k}
@@ -200,12 +194,12 @@ private theorem forall_exists_value_eq_value_restrictL_of_uniformlyElliptic
   · have hH₀ (x : E) : x ∈ H ↔ c₀ < 0 := by simpa [hν] using hH x
     by_cases hc : c₀ < 0
     · exact forall_exists_value_eq_value_restrictL_of_interior
-        (fun x hx ↦ (mem_iff_mem_of_inter_eq hΩW hx).2 ((hH₀ x).2 hc))
+        (fun x hx ↦ (hΩW.symm.subset ⟨(hH₀ x).2 hc, hx⟩).1)
         ha hsmooth hf hu hW hWU hV hVW
     · intro k
       refine ⟨0, Lp.ext ?_⟩
       filter_upwards [ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x hx
-      exact (hc ((hH₀ x).1 ((mem_iff_mem_of_inter_eq hΩW (hVW (subset_closure hx.2))).1 hx.1))).elim
+      exact (hc ((hH₀ x).1 (hΩW.subset ⟨hx.1, hVW (subset_closure hx.2)⟩).1)).elim
   · exact forall_exists_value_eq_value_restrictL_of_ne_zero
       hν hH hΩW ha hsmooth hf hu (hu0 hν) hW hWU hV hVW
 
