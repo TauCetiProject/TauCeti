@@ -110,13 +110,13 @@ theorem ext {F G : ImplicitDoubleFunctor D₁ D₂}
   rcases G with ⟨G, Gh, Gv, hGh, hGv⟩
   cases h
   have hh : @Fh = @Gh := by
-    let := H₂
     funext a b f
-    exact eq_of_heq (Quiver.Path.hom_heq_of_cons_eq_cons ((hFh f).symm.trans (hGh f)))
+    exact eq_of_heq (@Quiver.Path.hom_heq_of_cons_eq_cons O₂ H₂ _ _ _ _ _ _ _ _
+      ((hFh f).symm.trans (hGh f)))
   have hv : @Fv = @Gv := by
-    let := V₂
     funext a b f
-    exact eq_of_heq (Quiver.Path.hom_heq_of_cons_eq_cons ((hFv f).symm.trans (hGv f)))
+    exact eq_of_heq (@Quiver.Path.hom_heq_of_cons_eq_cons O₂ V₂ _ _ _ _ _ _ _ _
+      ((hFv f).symm.trans (hGv f)))
   cases hh
   cases hv
   rfl
