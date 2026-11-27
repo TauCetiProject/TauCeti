@@ -140,8 +140,10 @@ end Newton
 
 /-! ### The exponent margin at one sheet -/
 
-/-- At `m = 1` the margin exponent `p_m (1 - 1 / m)` is `0`: a single sheet is nonsingular. -/
+/-- At `m = 1` the margin exponent `p_m (1 - 1 / m) = 2 - 2 / m²` is `0`: a single sheet is
+nonsingular. This is `TauCeti.two_add_two_div_mul_one_sub_inv` at `m = 1`. -/
 theorem two_add_two_div_one_mul_one_sub_inv_one : (2 + 2 / (1 : ℝ)) * (1 - 1⁻¹) = 0 := by
+  rw [two_add_two_div_mul_one_sub_inv one_ne_zero]
   norm_num
 
 /-! ### The forcing tolerance -/
