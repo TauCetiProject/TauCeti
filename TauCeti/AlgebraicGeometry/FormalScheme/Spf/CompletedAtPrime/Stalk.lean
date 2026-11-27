@@ -288,17 +288,7 @@ private theorem quotientMap_localizationToStalk_surjective_ideal_pow (n : ℕ) :
     (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
       (IsAdicRing.ideal_spec A).1).hom.hom.comp
       (colimit.ι (completedNeighbourhoodDiagram p) f).hom
-  let eAway := CompletedAway.equivAdicCompletion A f.elem
-  obtain ⟨y, hy⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow
-    ((IsAdicRing.ideal_spec A).1.map (algebraMap A (Localization.Away f.elem))) n (eAway x)
-  have hy' : x - algebraMap (Localization.Away f.elem) (CompletedAway A f.elem) y ∈
-      (IsAdicRing.ideal A ^ n).map (algebraMap A (CompletedAway A f.elem)) := by
-    have hmem : eAway.symm (eAway x - algebraMap (Localization.Away f.elem) _ y) ∈ _ :=
-      Ideal.mem_map_of_mem eAway.symm.toAlgHom.toRingHom hy
-    rw [map_sub, AlgEquiv.symm_apply_apply, eAway.symm.commutes, ← Ideal.map_pow, Ideal.map_map,
-      Ideal.map_map, AlgHom.toRingHom_eq_coe, AlgHom.comp_algebraMap_of_tower,
-      ← IsScalarTower.algebraMap_eq] at hmem
-    exact hmem
+  obtain ⟨y, hy'⟩ := CompletedAway.exists_sub_algebraMap_mem_map_pow A f.elem n x
   refine ⟨Ideal.Quotient.mk _
     ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem y), ?_⟩
   rw [Ideal.quotientMap_mk]
@@ -481,6 +471,13 @@ theorem factor_comp_stalkQuotientEquivCompletedAtPrimeQuotient {J K : Ideal A}
   RingHom.ext (factor_stalkQuotientEquivCompletedAtPrimeQuotient p hJ hK hJK)
 
 omit [IsTopologicalRing A] [IsAdicRing A] in
+private lemma isLocalization_atPrime_comap {J : Ideal A} (Q : Ideal (A ⧸ J)) [Q.IsPrime]
+    (hQ : Q.comap (Ideal.Quotient.mk J) = (p : PrimeSpectrum A).asIdeal) :
+    IsLocalization.AtPrime (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
+      (Q.comap (Ideal.Quotient.mk J)) := by
+  simp only [hQ]; infer_instance
+
+omit [IsTopologicalRing A] [IsAdicRing A] in
 /-- For any ideal `J` of `A` and prime ideal `Q` of `A ⧸ J` lying over `𝔭`, the quotient
 `A_𝔭 ⧸ J A_𝔭` is canonically `(A ⧸ J)`-algebra isomorphic to the localisation `(A ⧸ J)_Q`. -/
 noncomputable def localizationQuotientEquivQuotientLocalization {J : Ideal A}
@@ -489,8 +486,7 @@ noncomputable def localizationQuotientEquivQuotientLocalization {J : Ideal A}
     (Localization.AtPrime (p : PrimeSpectrum A).asIdeal ⧸
         J.map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))) ≃ₐ[A ⧸ J]
       Localization.AtPrime Q :=
-  haveI : IsLocalization.AtPrime (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
-      (Q.comap (Ideal.Quotient.mk J)) := by simp only [hQ]; infer_instance
+  haveI := isLocalization_atPrime_comap p Q hQ
   J.quotientLocalizationAtPrimeEquiv Q
 
 omit [IsTopologicalRing A] [IsAdicRing A] in
@@ -505,8 +501,7 @@ theorem localizationQuotientEquivQuotientLocalization_algebraMap {J : Ideal A}
           (Localization.AtPrime (p : PrimeSpectrum A).asIdeal ⧸
             J.map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))) a) =
       algebraMap (A ⧸ J) (Localization.AtPrime Q) (Ideal.Quotient.mk J a) := by
-  have : IsLocalization.AtPrime (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
-      (Q.comap (Ideal.Quotient.mk J)) := by simp only [hQ]; infer_instance
+  have := isLocalization_atPrime_comap p Q hQ
   exact J.quotientLocalizationAtPrimeEquiv_algebraMap Q a
 
 /-- For every open ideal `J` of `A` and prime ideal `Q` of `A ⧸ J` lying over `𝔭`, the quotient

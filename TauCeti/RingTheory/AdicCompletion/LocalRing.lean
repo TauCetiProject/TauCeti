@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.LocalRing.Quotient
 public import TauCeti.RingTheory.RegularLocalRing.Flat
 
+import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.AdicCompletion.Localization
 
 /-!
@@ -148,39 +149,18 @@ variable {R : Type*} [CommRing R] [IsLocalRing R] {I : Ideal R}
 `AdicCompletion I R → R ⧸ I` is a local homomorphism. -/
 theorem isLocalHom_evalOneₐ_of_le_maximalIdeal (hI : I ≤ maximalIdeal R) :
     IsLocalHom (evalOneₐ I).toRingHom := by
-  have : Nontrivial (R ⧸ I) :=
-    Ideal.Quotient.nontrivial_iff.mpr (lt_of_le_of_lt hI (maximalIdeal.isMaximal R).lt_top).ne
-  refine ⟨fun x hx ↦ ?_⟩
-  have htr {m n : ℕ} (hmn : m ≤ n) : transitionMap I R hmn (eval I R n x) = eval I R m x :=
-    x.property hmn
-  have hunit (n : ℕ) : IsUnit (eval I R n x) := by
-    rcases n with _ | k
-    · have : Subsingleton (R ⧸ (I ^ 0 • ⊤ : Ideal R)) :=
-        Ideal.Quotient.subsingleton_iff.mpr (by simp)
-      exact isUnit_of_subsingleton _
-    · have hle : (I ^ (k + 1) • ⊤ : Ideal R) ≤ I := by
-        simpa using Ideal.pow_le_self (Nat.succ_ne_zero k)
-      have : Nontrivial (R ⧸ (I ^ (k + 1) • ⊤ : Ideal R)) := Ideal.Quotient.nontrivial_iff.mpr
-        (lt_of_le_of_lt (hle.trans hI) (maximalIdeal.isMaximal R).lt_top).ne
-      have : IsLocalRing (R ⧸ (I ^ (k + 1) • ⊤ : Ideal R)) :=
-        .of_surjective' _ Ideal.Quotient.mk_surjective
-      have : IsLocalHom (Ideal.Quotient.factor hle) :=
-        .of_surjective _ (Ideal.Quotient.factor_surjective hle)
-      refine isUnit_of_map_unit (Ideal.Quotient.factor hle) (eval I R (k + 1) x) ?_
-      obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (eval I R (k + 1) x)
-      have hx1 : eval I R 1 x = Ideal.Quotient.mk (I ^ 1 • ⊤ : Ideal R) r := by
-        rw [← htr (Nat.succ_le_succ (Nat.zero_le k)), ← hr]; exact Submodule.factor_mk _ _
-      have heval : evalₐ I 1 x = Ideal.Quotient.mk (I ^ 1) r := by
-        rw [← factor_eval_eq_evalₐ I x (by simp : (I ^ 1 • ⊤ : Ideal R) ≤ I ^ 1), hx1]
-        exact Submodule.factor_mk _ _
-      have h1 : evalOneₐ I x = Ideal.Quotient.mk I r := by
-        rw [← factorₐ_evalₐ_one, heval, Ideal.Quotient.factor_mk]
-      rwa [← hr, Ideal.Quotient.factor_mk, ← h1]
-  refine isUnit_iff_exists_inv.mpr ⟨⟨fun n ↦ ↑(hunit n).unit⁻¹, fun {m n} hmn ↦ ?_⟩,
-    ext fun n ↦ (hunit n).mul_val_inv⟩
-  have hmul : transitionMap I R hmn (↑(hunit n).unit⁻¹) * eval I R m x = 1 := by
-    rw [← htr hmn, ← transitionMap_map_mul I hmn, (hunit n).val_inv_mul, transitionMap_map_one]
-  rw [← mul_one (transitionMap I R hmn _), ← (hunit m).mul_val_inv, ← mul_assoc, hmul, one_mul]
+  have hI_ne : I ≠ ⊤ := (lt_of_le_of_lt hI (maximalIdeal.isMaximal R).lt_top).ne
+  refine ⟨fun x hx ↦ x.isUnit_of_forall_isUnit_evalₐ fun n ↦ ?_⟩
+  rcases n with _ | k
+  · have : Subsingleton (R ⧸ I ^ 0) := Ideal.Quotient.subsingleton_iff.mpr (by simp)
+    exact isUnit_of_subsingleton _
+  · have : IsLocalHom (Ideal.Quotient.factor (Ideal.pow_le_self k.succ_ne_zero)) :=
+      Ideal.Quotient.isLocalHom_factor _ hI_ne
+    refine isUnit_of_map_unit (Ideal.Quotient.factor (Ideal.pow_le_self k.succ_ne_zero))
+      (evalₐ I (k + 1) x) ?_
+    rwa [← Ideal.Quotient.factor_comp_apply
+      (Ideal.pow_le_pow_right (Nat.succ_le_succ (Nat.zero_le k))) (by simp : I ^ 1 ≤ I),
+      factor_evalₐ (Nat.succ_le_succ (Nat.zero_le k)), factorₐ_evalₐ_one]
 
 /-- For a local ring `R` and an ideal `I ≤ 𝔪_R`, the canonical map `R → AdicCompletion I R` is a
 local homomorphism. -/

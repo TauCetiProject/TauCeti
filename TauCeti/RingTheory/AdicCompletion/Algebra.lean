@@ -42,6 +42,9 @@ exponential characteristic of `R`.
   `n = 1`.
 * `AdicCompletion.denseRange_algebraMap`: the image of `R` is dense in `R̂` for the `I R̂`-adic
   topology.
+* `AdicCompletion.isUnit_of_forall_isUnit_eval`,
+  `AdicCompletion.isUnit_of_forall_isUnit_evalₐ`: an element of `R̂` is a unit if every level is
+  a unit.
 * `AdicCompletion.expChar`: the `I`-adic completion of an `I`-adically Hausdorff ring has the
   exponential characteristic of the ring.
 
@@ -177,6 +180,25 @@ theorem denseRange_algebraMap [TopologicalSpace (AdicCompletion I R)] (fg : I.FG
   rw [Ideal.map_pow] at hy
   refine ⟨_, hn ⟨_, neg_mem hy, ?_⟩, y, rfl⟩
   simp only [neg_sub, add_sub_cancel]
+
+/-- An element of an adic completion is a unit if its projection `eval I R n x` is a unit at
+every level `n`. -/
+theorem isUnit_of_forall_isUnit_eval (x : AdicCompletion I R)
+    (hx : ∀ n, IsUnit (eval I R n x)) : IsUnit x := by
+  refine isUnit_iff_exists_inv.mpr ⟨⟨fun n ↦ ↑(hx n).unit⁻¹, fun {m n} hmn ↦ ?_⟩,
+    ext fun n ↦ (hx n).mul_val_inv⟩
+  have htr : transitionMap I R hmn (eval I R n x) = eval I R m x := x.property hmn
+  have hmul : transitionMap I R hmn (↑(hx n).unit⁻¹) * eval I R m x = 1 := by
+    rw [← htr, ← transitionMap_map_mul I hmn, (hx n).val_inv_mul, transitionMap_map_one]
+  rw [← mul_one (transitionMap I R hmn _), ← (hx m).mul_val_inv, ← mul_assoc, hmul, one_mul]
+
+/-- An element of an adic completion is a unit if its projection `evalₐ I n x` to `R ⧸ I ^ n` is
+a unit at every level `n`. -/
+theorem isUnit_of_forall_isUnit_evalₐ (x : AdicCompletion I R)
+    (hx : ∀ n, IsUnit (evalₐ I n x)) : IsUnit x :=
+  x.isUnit_of_forall_isUnit_eval fun n ↦ by
+    rw [← factor_evalₐ_eq_eval I x (by simp)]
+    exact (hx n).map _
 
 /-- The completion of an `I`-adically Hausdorff ring has the exponential characteristic of the
 ring, since the ring embeds into it. -/

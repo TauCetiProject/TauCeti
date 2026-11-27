@@ -70,6 +70,8 @@ topology, not on the chosen ideal of definition.
 * `TauCeti.AdicRing.CompletedAway.denseRange_algebraMap`: the image of `A_f` is dense.
 * `TauCeti.AdicRing.CompletedAway.exists_sub_mem_map`: every element of `A_{f}` is congruent
   modulo `I A_{f}` to an element of `A_f`.
+* `TauCeti.AdicRing.CompletedAway.exists_sub_algebraMap_mem_map_pow`: every element of `A_{f}`
+  is congruent modulo `I ^ n A_{f}` to an element of `A_f`.
 * `TauCeti.AdicRing.CompletedAway.ringHom_ext`: continuous ring homomorphisms out of `A_{f}` into
   a Hausdorff ring agreeing on `A` are equal.
 * `TauCeti.AdicRing.CompletedAway.existsUnique_lift`: the universal property of `A_{f}`.
@@ -204,13 +206,20 @@ theorem denseRange_algebraMap :
     inferInstanceAs (TopologicalSpace (CompletedAway A f))
   AdicCompletion.denseRange_algebraMap (fg_map A f) (map_algebraMap_eq A f ▸ isAdic A f)
 
+/-- Every element of the completed localisation `A_{f}` is congruent modulo `I ^ n A_{f}` to the
+image of an element of `A_f`. -/
+theorem exists_sub_algebraMap_mem_map_pow (n : ℕ) (x : CompletedAway A f) :
+    ∃ y : Localization.Away f, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
+      (IsAdicRing.ideal A ^ n).map (algebraMap A (CompletedAway A f)) := by
+  rw [Ideal.map_pow, map_algebraMap_eq, ← Ideal.map_pow]
+  exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) n x
+
 /-- Every element of the completed localisation `A_{f}` is congruent modulo `I A_{f}` to the image
 of an element of `A_f`. -/
 theorem exists_sub_mem_map (x : CompletedAway A f) :
     ∃ y : Localization.Away f, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
       (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) := by
-  rw [map_algebraMap_eq, ← pow_one (Ideal.map _ (IsAdicRing.ideal A))]
-  exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) 1 x
+  simpa only [pow_one] using exists_sub_algebraMap_mem_map_pow A f 1 x
 
 /-- Two continuous ring homomorphisms out of the completed localisation `A_{f}` into a Hausdorff
 ring are equal as soon as they agree on the image of `A`. -/

@@ -44,6 +44,8 @@ is bijective.
 * `TauCeti.isLocalRing_quotient`: the quotient of a local ring by a proper ideal is local.
 * `Ideal.Quotient.isLocalHom_algebraMap_quotient_map_quotient`: `R ⧸ J → S ⧸ J S` is a local
   homomorphism when `R → S` is one and `S` is local.
+* `Ideal.Quotient.isLocalHom_factor`: `R ⧸ J → R ⧸ I` is a local homomorphism for ideals
+  `J ≤ I` of a local ring `R` with `I ≠ ⊤`.
 * `TauCeti.IsLocalRing.finrank_residueField_eq_finrank`: if `S` is finite free over `R` and
   `𝔪_R S = 𝔪_S`, the residue field extension has degree `[S : R]`, by Mathlib's
   `IsLocalRing.finrank_quotient_map`.
@@ -203,6 +205,15 @@ instance isLocalHom_algebraMap_quotient_map_quotient (J : Ideal R) :
     Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top IsPrime.ne_top' hJS)
   have := IsLocalHom.of_surjective (mk (J.map (algebraMap R S))) mk_surjective
   exact (isUnit_of_map_unit (algebraMap R S) r (isUnit_of_map_unit (mk _) _ ha)).map _
+
+/-- For ideals `J ≤ I` of a local ring `R` with `I ≠ ⊤`, the canonical factor map
+`R ⧸ J →+* R ⧸ I` is a local homomorphism. -/
+theorem isLocalHom_factor {R : Type*} [CommRing R] [IsLocalRing R] {J I : Ideal R}
+    (hJI : J ≤ I) (hI : I ≠ ⊤) : IsLocalHom (factor hJI) :=
+  have : Nontrivial (R ⧸ J) := Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top hI hJI)
+  have : IsLocalRing (R ⧸ J) := .of_surjective' _ mk_surjective
+  have : Nontrivial (R ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
+  .of_surjective _ (factor_surjective hJI)
 
 end Ideal.Quotient
 
