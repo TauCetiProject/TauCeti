@@ -73,7 +73,9 @@ The two results are Pardon's Lemmas A.7.4 and A.7.3.
 * `TauCeti.IntervalDiagram.IsFlag`, `TauCeti.IntervalDiagram.flagInterval`: flags and the
   intervals they span.
 * `TauCeti.IntervalDiagram.flagComplex`, `TauCeti.IntervalDiagram.flagComplexι`: the flag complex
-  and its summand inclusions.
+  and its summand inclusions, which exhibit each of its terms as a coproduct
+  (`TauCeti.IntervalDiagram.isColimitFlagComplexCofan`); the flag complex as a functor
+  (`TauCeti.IntervalDiagram.flagComplexFunctor`).
 * `TauCeti.IntervalDiagram.total`, `TauCeti.IntervalDiagram.totalMap`: the total and the maps
   induced on it by maps of interval diagrams, together the functor
   `TauCeti.IntervalDiagram.totalFunctor`.
@@ -350,6 +352,18 @@ lemma flagComplexι_flagComplexDesc (A : IntervalDiagram S C) {p : ℕ} {Y : C}
   simp only [flagComplexι, flagComplexDesc, Category.assoc, Functor.ι_orderedCechComplexDesc]
   exact A.flagObjι_flagObjDesc _ hs
 
+/-- The summand inclusions `IntervalDiagram.flagComplexι` exhibit the degree `p` term of the flag
+complex as the coproduct of the `A[s₀, sₚ]` over the flags `s₀ < ⋯ < sₚ` with `p + 1` vertices. -/
+def isColimitFlagComplexCofan (A : IntervalDiagram S C) (p : ℕ) :
+    IsColimit (Cofan.mk (A.flagComplex.X p)
+      fun s : {s : Finset (LinearExtension S) // IsFlag s ∧ #s = p + 1} ↦
+        A.flagComplexι s.property.1 s.property.2) :=
+  Cofan.IsColimit.mk _ (fun c ↦ A.flagComplexDesc fun s hs hp ↦ c.inj ⟨s, hs, hp⟩)
+    (fun c s ↦ A.flagComplexι_flagComplexDesc _ s.property.1 s.property.2)
+    fun c m hm ↦ A.flagComplex_hom_ext fun s hs hp ↦ by
+      rw [A.flagComplexι_flagComplexDesc]
+      exact hm ⟨s, hs, hp⟩
+
 end Desc
 
 section Map
@@ -419,6 +433,17 @@ lemma flagComplexMap_comp (α : A ⟶ B) (β : B ⟶ E) :
 lemma flagComplexMap_zero : flagComplexMap (0 : A ⟶ B) = 0 := by
   ext
   simp
+
+variable (S C) in
+/-- **The flag complex, as a functor**: an interval diagram goes to its flag complex
+(`IntervalDiagram.flagComplex`), and a map of interval diagrams to the induced chain map
+(`IntervalDiagram.flagComplexMap`). -/
+-- The body is exposed so that its values and maps are definitionally the flag complexes and the
+-- maps of flag complexes (`flagComplexFunctor_obj`, `flagComplexFunctor_map`).
+@[expose, simps]
+def flagComplexFunctor : IntervalDiagram S C ⥤ ChainComplex C ℕ where
+  obj := flagComplex
+  map := flagComplexMap
 
 end ComplexMap
 
