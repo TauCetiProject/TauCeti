@@ -31,10 +31,12 @@ as the original one does (`Bundle.Trivialization.symm_pullback`,
 `Bundle.Trivialization.pullback_symmL_apply`). Restricting a chart whose source lies in the base
 set of a trivialization to an open subset gives a chart whose source lies in the base set of the
 trivialization pulled back along the inclusion
-(`Bundle.Trivialization.subtypeRestr_source_subset_pullback_baseSet`). Hom coordinates between
-pullbacks by two different base maps agree with the original source and target coordinates
-(`ContinuousLinearMap.inCoordinates_pullback_of_mem`), and so do the coordinates of a bilinear
-form on the fibres of two pullbacks along the same map
+(`Bundle.Trivialization.subtypeRestr_source_subset_pullback_baseSet`). The pullbacks of
+trivializations along the two projections of a product have the product of their base sets as
+the intersection of their base sets (`Bundle.Trivialization.prod_baseSet_eq_inter_pullback`).
+Hom coordinates between pullbacks by two different base maps agree with the original source and
+target coordinates (`ContinuousLinearMap.inCoordinates_pullback_of_mem`), and so do the
+coordinates of a bilinear form on the fibres of two pullbacks along the same map
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem₂`).
 -/
 
@@ -202,6 +204,18 @@ theorem subtypeRestr_source_subset_pullback_baseSet {E M F : Type*} [Topological
       (t.pullback (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))).baseSet := by
   rw [OpenPartialHomeomorph.subtypeRestr_source, pullback_baseSet]
   exact Set.preimage_mono hct
+
+/-- The product of the base sets of trivializations `t` over `B` and `t'` over `B'` is the
+intersection of the base sets of their pullbacks along the two projections of `B × B'`. -/
+theorem prod_baseSet_eq_inter_pullback {B B' F F' : Type*} [TopologicalSpace B]
+    [TopologicalSpace B'] [TopologicalSpace F] [TopologicalSpace F'] {V : B → Type*}
+    [∀ x, Nonempty (V x)] [TopologicalSpace (TotalSpace F V)] {W : B' → Type*}
+    [∀ y, Nonempty (W y)] [TopologicalSpace (TotalSpace F' W)] (t : Trivialization F (π F V))
+    (t' : Trivialization F' (π F' W)) :
+    t.baseSet ×ˢ t'.baseSet = (t.pullback (ContinuousMap.fst : C(B × B', B))).baseSet ∩
+      (t'.pullback (ContinuousMap.snd : C(B × B', B'))).baseSet := by
+  rw [pullback_baseSet, pullback_baseSet, ContinuousMap.fst_apply, ContinuousMap.snd_apply,
+    Set.prod_eq]
 
 end Bundle.Trivialization
 

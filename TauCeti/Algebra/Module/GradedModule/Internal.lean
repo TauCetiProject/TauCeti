@@ -41,6 +41,9 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `InternalGrading`: an internal grading of a module.
 * `InternalGrading.ofDecomposition`: the internal grading carried by a family of submodules with a
   `DirectSum.Decomposition`, as graded algebras store it.
+* `InternalGrading.ofRangeCoe`: the internal grading on the range of `DirectSum.coeLinearMap` for
+  a family with injective recomposition (generalized from Wentao Li's
+  `TauCeti.Algebra.Module.GradedModule.Product`).
 * `InternalGrading.map`: transport an internal grading across a linear equivalence.
 * `InternalGrading.koszulTwist`: the operator scaling degree-`e` elements by `(-1)^(q * e)`.
 * `InternalGrading.quadraticExponent`: the exponent `p choose 2` of the quadratic sign in
@@ -55,6 +58,7 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
 * `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
   `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
+* `TauCeti.InternalGrading.mem_ofRangeCoe_piece_iff`: piece membership for `ofRangeCoe`.
 * `TauCeti.InternalGrading.instGradedMonoidOfDecompositionPiece`: the pieces of
   `ofDecomposition 𝒜` inherit the graded-monoid structure of `𝒜`.
 * `TauCeti.InternalGrading.instGradedSMulOfDecompositionSelf`: left multiplication respects the
@@ -407,6 +411,33 @@ theorem map_trans {P : Type*} [AddCommMonoid P] [Module R P]
   simp
 
 end Map
+
+section RangeCoe
+
+/-- The internal grading on the range of an injective `DirectSum.coeLinearMap C`, transported from
+the summands of `⨁ p, C p`. -/
+noncomputable def ofRangeCoe (C : ι → Submodule R M)
+    (hinj : Function.Injective (DirectSum.coeLinearMap C)) :
+    InternalGrading R (LinearMap.range (DirectSum.coeLinearMap C)) ι :=
+  (ofDecomposition (DirectSum.summand R (fun p ↦ C p))).map
+    (LinearEquiv.ofInjective (DirectSum.coeLinearMap C) hinj)
+
+/-- An element of `LinearMap.range (DirectSum.coeLinearMap C)` lies in the degree-`p` piece of
+`ofRangeCoe C hinj` iff its underlying value in `M` lies in `C p`. -/
+@[simp]
+theorem mem_ofRangeCoe_piece_iff (C : ι → Submodule R M)
+    (hinj : Function.Injective (DirectSum.coeLinearMap C))
+    (p : ι) (x : LinearMap.range (DirectSum.coeLinearMap C)) :
+    x ∈ (ofRangeCoe C hinj).piece p ↔ x.val ∈ C p := by
+  rw [ofRangeCoe, map_piece, ofDecomposition_piece, DirectSum.summand_def]
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨y, ⟨t, rfl⟩, rfl⟩
+    simpa only [LinearEquiv.coe_coe, LinearEquiv.ofInjective_apply, DirectSum.coeLinearMap_lof]
+      using t.property
+  · refine ⟨DirectSum.lof R ι (fun q ↦ C q) p ⟨x.val, hx⟩, ⟨⟨x.val, hx⟩, rfl⟩, Subtype.ext ?_⟩
+    simp only [LinearEquiv.coe_coe, LinearEquiv.ofInjective_apply, DirectSum.coeLinearMap_lof]
+
+end RangeCoe
 
 /-- An additive map that vanishes on every homogeneous piece except degree `i` sees only the
 degree-`i` component of each argument. -/

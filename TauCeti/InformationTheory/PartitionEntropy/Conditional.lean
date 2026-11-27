@@ -99,10 +99,8 @@ private theorem conditionalPartitionEntropy_eq_of_indepFun_of_isZeroOrProbabilit
       hab.measure_inter_preimage_eq_mul _ _ (measurableSet_singleton i)
         (measurableSet_singleton j)]
     simp [mul_comm, mul_assoc, ENNReal.mul_inv_cancel h0 (measure_ne_top μ _)]
-  have hsum : ∑' j, μ (b ⁻¹' {j}) = μ Set.univ := by
-    simpa using tsum_measure_inter_preimage_singleton (μ := μ) hb Set.univ
   rw [conditionalPartitionEntropy_eq_tsum_cond a hb]
-  simp only [hatom, ENNReal.tsum_mul_right, hsum]
+  simp only [hatom, ENNReal.tsum_mul_right, tsum_measure_preimage_singleton_eq_measure_univ hb]
   obtain rfl | _ := eq_zero_or_isProbabilityMeasure (μ := μ) <;> simp
 
 /-- **Independence.** Conditioning on an independent measurable countable label does not change

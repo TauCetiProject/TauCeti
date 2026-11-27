@@ -26,6 +26,7 @@ Tate rings are exactly the perfect complete Tate rings.
 ## Main results
 
 * `TauCeti.Huber.isOpenMap_frobenius`: Frobenius is an open map.
+* `TauCeti.Huber.continuous_iterateFrobeniusEquiv_symm`: taking `p ^ n`-th roots is continuous.
 * `TauCeti.Huber.IsUniform.of_perfectRing`: `R` is uniform.
 * `RingHom.perfectRing_topologicalClosure_range`: the closure of a perfect ring's image in `R`
   is perfect; no topology on the source or continuity of the homomorphism is required.
@@ -88,6 +89,19 @@ theorem isOpenMap_frobenius (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing R 
     funext fun x ↦ by rw [Function.comp_apply, hfx, frobenius_def]
   rw [hφ]
   exact hN.isOpenMap_subtypeVal.comp hf
+
+/-- The `p ^ n`-th root map `(iterateFrobeniusEquiv R p n).symm` is continuous on a perfect
+complete Hausdorff Tate ring of characteristic `p`. -/
+@[fun_prop, continuity]
+theorem continuous_iterateFrobeniusEquiv_symm (p : ℕ) [Fact p.Prime] [CharP R p]
+    [PerfectRing R p] (n : ℕ) : Continuous (iterateFrobeniusEquiv R p n).symm := by
+  have h1 : Continuous (frobeniusEquiv R p).symm :=
+    (frobeniusEquiv R p).toEquiv.continuous_symm_iff.mpr (isOpenMap_frobenius p)
+  induction n with
+  | zero => simp [continuous_id]
+  | succ n ih =>
+    rw [iterateFrobeniusEquiv_symm_add, iterateFrobeniusEquiv_one, RingEquiv.coe_trans]
+    exact ih.comp h1
 
 /-- **A perfect complete Hausdorff Tate ring of characteristic `p` is uniform** (Scholze, *Étale
 cohomology of diamonds*, proof of Proposition 3.5): its power-bounded subring `R°` is bounded. -/

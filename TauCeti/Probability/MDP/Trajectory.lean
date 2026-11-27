@@ -19,6 +19,8 @@ two kernels gives the joint step for Mathlib's Ionescu–Tulcea construction.
 The joint-law identities describe this sequential sampling on arbitrary measurable spaces.
 On nonempty standard Borel state and action spaces, they identify the regular conditional laws
 of the next state given the history and of the next action given the history and the new state.
+Under a deterministic Markov policy, the action at every time is almost surely the prescribed
+function of the current state.
 
 See Puterman, *Markov Decision Processes* (1994), §2.1.6, for the history-dependent trajectory law.
 -/
@@ -171,5 +173,25 @@ theorem trajLaw_ofMarkov_map_eval_succ [Countable S] [MeasurableSingletonClass S
   rwa [Measure.map_map (measurable_snd.prodMap measurable_id) hmeas, ofMarkov_next,
     Measure.map_prodMap_compProd_comap _ _ measurable_snd,
     Measure.map_map measurable_snd (by fun_prop)] at h
+
+/-- Under a deterministic Markov policy, playing `PMF.pure (d n s)` at time `n` in the state `s`,
+the action at every time `n` is almost surely `d n` of the state at time `n`. -/
+theorem trajLaw_ofMarkov_ae_action_eq [Countable S] [MeasurableSingletonClass S]
+    [MeasurableSingletonClass A] {π : ℕ → S → PMF A} {d : ℕ → S → A}
+    (hπ : ∀ n s, π n s = PMF.pure (d n s)) :
+    ∀ᵐ x ∂(ofMarkov π).trajLaw κ s, ∀ n, (x n).2 = d n (x n).1 := by
+  refine ae_all_iff.2 fun n ↦ ?_
+  cases n with
+  | zero =>
+    have h : ∀ᵐ p ∂(Measure.dirac s ⊗ₘ (ofMarkov π).first), p.2 = d 0 p.1 := by
+      rw [ofMarkov_first]
+      exact Kernel.ae_compProd_ofPMF_of_eq_pure (hπ 0)
+    rw [← (ofMarkov π).trajLaw_map_eval_zero κ s] at h
+    exact ae_of_ae_map (measurable_pi_apply 0).aemeasurable h
+  | succ n =>
+    have h := Kernel.ae_compProd_ofPMF_of_eq_pure
+      (μ := ((ofMarkov π).trajLaw κ s).map (fun x ↦ (x (n + 1)).1)) (hπ (n + 1))
+    rw [← trajLaw_ofMarkov_map_eval_succ κ s n] at h
+    exact ae_of_ae_map (measurable_pi_apply (n + 1)).aemeasurable h
 
 end TauCeti.HistoryPolicy
