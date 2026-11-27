@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Region
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Basic
 import TauCeti.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Order.Interval.Finset.Defs
@@ -173,6 +173,12 @@ theorem neutralIncrement_eq_zero_or_eq_one (e : TriEdge) :
     neutralIncrement e = 0 ∨ neutralIncrement e = 1 := by
   rw [neutralIncrement_def]
   split_ifs <;> simp
+
+/-- An increment in `{0, 1}` differs from `1 - neutralIncrement e` exactly when it is the neutral
+increment. -/
+theorem ne_one_sub_neutralIncrement_iff {d : ℤ} {e : TriEdge} (hd : d = 0 ∨ d = 1) :
+    d ≠ 1 - neutralIncrement e ↔ d = neutralIncrement e := by
+  rcases neutralIncrement_eq_zero_or_eq_one e with h | h <;> rw [h] <;> omega
 
 theorem IsClosedCochainOn.mono (h : IsClosedCochainOn S c) (hRS : R ⊆ S) :
     IsClosedCochainOn R c :=
@@ -378,6 +384,14 @@ end Translation
 /-! ### The rotation -/
 
 section Rotation
+
+/-- The neutral increment of `ρ e` is that of `e` for `e` of direction `e₁`, and its complement
+`1 − c₀(e)` for the other two directions. -/
+theorem neutralIncrement_rot (e : TriEdge) :
+    neutralIncrement (TriEdge.rot e) =
+      if e.k = 0 then neutralIncrement e else 1 - neutralIncrement e := by
+  obtain ⟨v, k⟩ := e
+  fin_cases k <;> simp [neutralIncrement_def]
 
 /-- **Closedness under the rotation.** `ρ` preserves the orientation of the edges of direction
 `1` and reverses those of directions `2` and `3` (`ρ e₂ = -e₃` and `ρ e₃ = -e₁`), so a cochain `c`

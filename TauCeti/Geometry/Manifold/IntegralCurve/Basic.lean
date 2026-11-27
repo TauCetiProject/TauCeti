@@ -9,6 +9,7 @@ public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -29,7 +30,8 @@ the field.
   derivative intertwines the vector fields there sends it to an integral curve of the second field.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
-  curve on that set.
+  curve on that set, and `IsMIntegralCurveOn.of_forall_mem_nhdsWithin`: it is a local property of
+  the set.
 * `IsMIntegralCurveOn.union_of_isClosed`: integral curves on two closed sets of times glue to an
   integral curve on their union.
 * `IsMIntegralCurveOn.comp_neg`: running an integral curve of `v` on `s` backwards gives an
@@ -42,6 +44,8 @@ the field.
   of the vector field along the curve.
 * `TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a
   vector field are the solutions of the autonomous differential equation it defines.
+* `IsIntegralCurve.eq_of_contDiff`: two solutions of the autonomous differential equation of a
+  continuously differentiable vector field on a vector space which agree at one time are equal.
 * `IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt`: a coordinate solution on an
   arbitrary set of times, which may meet the boundary of the model, gives a manifold integral
   curve. `IsMIntegralCurveAt.of_extChartAt_symm` is its form on a neighbourhood of a time.
@@ -121,6 +125,15 @@ theorem union_of_isClosed {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s
   · exact (ht r hrt).mono_of_mem_nhdsWithin
       (mem_nhdsWithin.2 ⟨sᶜ, hsc.isOpen_compl, hrs, fun x hx ↦ hx.2.resolve_left hx.1⟩)
   · exact absurd hr (by simp [hrs, hrt])
+
+/-- **Being an integral curve is local in the set of times.** If every time `t` of `s` has a
+neighbourhood within `s` on which `γ` is an integral curve of `v`, then `γ` is an integral curve
+of `v` on `s`. -/
+theorem of_forall_mem_nhdsWithin {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ}
+    (h : ∀ t ∈ s, ∃ u ∈ 𝓝[s] t, t ∈ u ∧ IsMIntegralCurveOn γ V u) :
+    IsMIntegralCurveOn γ V s := fun t ht ↦ by
+  obtain ⟨u, hu, htu, hγ⟩ := h t ht
+  exact (hγ t htu).mono_of_mem_nhdsWithin hu
 
 /-- **Time reversal on a set of times.** Running an integral curve of `v` on `s` backwards gives
 an integral curve of `-v` on `-s`. -/
@@ -203,6 +216,21 @@ theorem isMIntegralCurveOn_iff_isIntegralCurveOn {γ : ℝ → E}
     (hasDerivWithinAt_iff_hasFDerivWithinAt (f := γ) (f' := (v (γ t) : E))).symm
 
 end TauCeti
+
+/-- **Uniqueness of integral curves of a `C¹` autonomous field.** Two solutions of the autonomous
+differential equation `γ' = v ∘ γ` of a continuously differentiable vector field `v` on a vector
+space which agree at one time agree at all times. -/
+theorem IsIntegralCurve.eq_of_contDiff {v : E → E} (hv : ContDiff ℝ 1 v) {γ γ' : ℝ → E}
+    (hγ : IsIntegralCurve γ (fun _ ↦ v)) (hγ' : IsIntegralCurve γ' (fun _ ↦ v)) {t₀ : ℝ}
+    (h : γ t₀ = γ' t₀) : γ = γ' := by
+  -- Read the vector space as a manifold modelled on itself, where integral curves of a smooth
+  -- field are unique.
+  have hM : ∀ c : ℝ → E, IsIntegralCurve c (fun _ ↦ v) →
+      IsMIntegralCurve c (fun x ↦ (v x : TangentSpace 𝓘(ℝ, E) x)) := fun c hc ↦
+    isMIntegralCurve_iff_isMIntegralCurveOn.2
+      (TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn.2 (hc.isIntegralCurveOn _))
+  exact isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (contMDiff_vectorSpace_iff_contDiff.2 hv)
+    (hM γ hγ) (hM γ' hγ') h
 
 /-- A curve in the extended chart at `x₀` that stays in the chart target on a set `s` of times and
 whose derivative within `s` is the coordinate expression of a vector field is an integral curve of

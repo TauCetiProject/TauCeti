@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Transverse
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Pair.Commutation
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Pair.ExtremeIndex
+public import TauCeti.Geometry.Manifold.Morse.Boundary.PullbackSign
 
 /-!
 # The integral continuation map
@@ -51,6 +53,15 @@ followed by the bijection of critical points `Φ⁻¹ q ↦ q`
   (`IsMorseSmalePair.signedMorseBoundary_comp_signedContinuationMap_eq_iff`, in the namespace
   `TauCeti.IsAdaptedPseudoGradient`). That these counts agree, which needs the oriented ends of
   the one-dimensional intersections, is not proved here.
+* **Augmentations.** When `(X₀, Φ^* X₁)` is a Morse–Smale pair of pseudo-gradients adapted to Morse
+  functions, the integral continuation map commutes with the augmentations of `f₀` and of `f₁`
+  (`IsMorseSmalePair.signedMorseAugmentation_comp_signedContinuationMap` and its applied form
+  `IsMorseSmalePair.signedMorseAugmentation_signedContinuationMap`, in the namespace
+  `TauCeti.IsAdaptedPseudoGradient`), since the signed pair map does and the bijection of critical
+  points `Φ⁻¹ q ↦ q` preserves the augmentation signs. For a transverse continuation this holds
+  along the transition diffeomorphism from `a` to `b` once `a` is very negative and `b` very
+  positive (`eventually_signedMorseAugmentation_comp_signedContinuationMap`, in the namespace
+  `TauCeti.IsTransverseContinuation`).
 * **Coefficients and orientations.** The map is compatible with every change of coefficients along
   an additive map (`TauCeti.IsAdaptedPseudoGradient.mapRange_signedContinuationMap`), and reversing
   the orientations at the critical points of sets `S₀` and `S₁` conjugates it by the involutions
@@ -287,6 +298,30 @@ theorem IsMorseSmalePair.signedMorseBoundary_comp_signedContinuationMap_eq_iff
   rw [LinearMap.cancel_left (Finsupp.domLCongr _).injective]
   exact h.signedMorseBoundary_comp_signedPairMap_eq_iff h₀ (h₁.pullback hΦ) hf₀ hf₁'
 
+/-- **The integral continuation map commutes with the augmentations.** If `(X₀, Φ^* X₁)` is a
+Morse–Smale pair of pseudo-gradients adapted to Morse functions, the integral continuation map
+along `Φ` with coefficients in a ring `R`, followed by the augmentation of `f₁` for `𝔬₁`, is the
+augmentation of `f₀` for `𝔬₀`. -/
+theorem IsMorseSmalePair.signedMorseAugmentation_comp_signedContinuationMap
+    (h : IsMorseSmalePair hX₀ (hX₁.mpullback Φ)) (hf₀ : IsMorse 𝓘(ℝ, E) f₀) :
+    𝔬₁.signedMorseAugmentation R ∘ₗ hX₀.signedContinuationMap hX₁ 𝔬₀ 𝔬₁ Φ hf₁ R =
+      𝔬₀.signedMorseAugmentation R := by
+  rw [signedContinuationMap_eq_comp_signedPairMap, ← LinearMap.comp_assoc,
+    MorseOrientation.signedMorseAugmentation_comp_domLCongr]
+  exact h.signedMorseAugmentation_comp_signedPairMap _ _ hf₀
+    (hf₁.comp_isLocalDiffeomorph Φ.isLocalDiffeomorph) R
+
+/-- **The augmentation of the image of a chain under the integral continuation map** is the
+augmentation of the chain. The applied form of
+`IsMorseSmalePair.signedMorseAugmentation_comp_signedContinuationMap`. -/
+@[simp]
+theorem IsMorseSmalePair.signedMorseAugmentation_signedContinuationMap
+    (h : IsMorseSmalePair hX₀ (hX₁.mpullback Φ)) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (c : criticalPoints 𝓘(ℝ, E) f₀ →₀ R) :
+    𝔬₁.signedMorseAugmentation R (hX₀.signedContinuationMap hX₁ 𝔬₀ 𝔬₁ Φ hf₁ R c) =
+      𝔬₀.signedMorseAugmentation R c := by
+  rw [← LinearMap.comp_apply, h.signedMorseAugmentation_comp_signedContinuationMap hf₁ hf₀]
+
 end Map
 
 end IsAdaptedPseudoGradient
@@ -326,6 +361,24 @@ theorem eventually_signedContinuationMap_eq_morseContinuationMap (h₀ : hX₀.I
       coe_continuationTransition]
   · rw [IsAdaptedPseudoGradient.signedContinuationCoeff_eq_zero_of_morseIndex_ne 𝔬₀ 𝔬₁ hpq,
       morseContinuationCoeff_eq_zero_of_manifoldMorseIndex_ne hpq, Int.cast_zero]
+
+omit hV hC in
+/-- **The integral continuation map of a transverse continuation commutes with the
+augmentations.** For a transverse smooth continuation between pseudo-gradients adapted to Morse
+functions, and any orientation data, the integral continuation map along the transition
+diffeomorphism from `a` to `b`, followed by the augmentation of `f₁`, is the augmentation of `f₀`,
+for all sufficiently negative `a` and sufficiently positive `b`. -/
+theorem eventually_signedMorseAugmentation_comp_signedContinuationMap (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (𝔬₀ : MorseOrientation f₀ X₀) (𝔬₁ : MorseOrientation f₁ X₁)
+    (R : Type*) [Ring R] :
+    ∀ᶠ a in atBot, ∀ᶠ b in atTop,
+      𝔬₁.signedMorseAugmentation R ∘ₗ
+          hX₀.signedContinuationMap hX₁ 𝔬₀ 𝔬₁ (continuationTransition C hVs a b) hf₁ R =
+        𝔬₀.signedMorseAugmentation R := by
+  filter_upwards [(isTransverseContinuation_iff_eventually_isMorseSmalePair hVs).1 hT] with a ha
+  filter_upwards [ha] with b hb
+  exact IsAdaptedPseudoGradient.IsMorseSmalePair.signedMorseAugmentation_comp_signedContinuationMap
+    (hf₁ := hf₁) (h := hb) (hf₀ := hf₀)
 
 end IsTransverseContinuation
 

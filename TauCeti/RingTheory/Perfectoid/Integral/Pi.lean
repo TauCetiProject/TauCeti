@@ -45,6 +45,8 @@ of the tilts (`PreTilt.piEquiv`).
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.pi`: the corresponding instance.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_pi`: every factor of an integral perfectoid product
   is integral perfectoid.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.prod`: the product `R × S` of two integral perfectoid
+  rings is integral perfectoid, as the product of the family `![ULift R, ULift S]`.
 
 ## References
 
@@ -54,6 +56,8 @@ of the tilts (`PreTilt.piEquiv`).
 public section
 
 open Ideal
+
+universe u v
 
 namespace TauCeti.Perfectoid
 
@@ -134,6 +138,24 @@ instance pi [∀ i, IsIntegralPerfectoid p (A i)] : IsIntegralPerfectoid p (∀ 
 /-- Every factor of an integral perfectoid product is integral perfectoid. -/
 theorem of_pi [IsIntegralPerfectoid p (∀ i, A i)] (i : ι) : IsIntegralPerfectoid p (A i) :=
   isIntegralPerfectoid_pi_iff.mp ‹_› i
+
+/-- **Binary products.** The product `R × S` of two integral perfectoid rings is integral
+perfectoid. -/
+instance prod {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsIntegralPerfectoid p R]
+    [IsIntegralPerfectoid p S] : IsIntegralPerfectoid p (R × S) := by
+  -- `R × S` is the product of the family `![ULift R, ULift S]` indexed by `Fin 2`. The ring
+  -- structures on the factors are built by `Fin.cases`, so `![..] 0` and `![..] 1` reduce by `rfl`
+  -- (`Matrix.cons_val_zero`, `Matrix.cons_val_one`) to `ULift R` and `ULift S` with their usual
+  -- ring structures. This definitional unfolding is what lets `RingEquiv.piFinTwo` compose with
+  -- `ULift.ringEquiv.prodCongr ULift.ringEquiv` below.
+  let _ : ∀ i, CommRing (![ULift.{v} R, ULift.{u} S] i) :=
+    Fin.cases (inferInstanceAs (CommRing (ULift R)))
+      (Fin.cases (inferInstanceAs (CommRing (ULift S))) finZeroElim)
+  have : ∀ i, IsIntegralPerfectoid p (![ULift.{v} R, ULift.{u} S] i) :=
+    Fin.cases (.of_ringEquiv ULift.ringEquiv.symm)
+      (Fin.cases (.of_ringEquiv ULift.ringEquiv.symm) finZeroElim)
+  exact .of_ringEquiv (A := ∀ i, ![ULift.{v} R, ULift.{u} S] i)
+    ((RingEquiv.piFinTwo _).trans (ULift.ringEquiv.prodCongr ULift.ringEquiv))
 
 end IsIntegralPerfectoid
 

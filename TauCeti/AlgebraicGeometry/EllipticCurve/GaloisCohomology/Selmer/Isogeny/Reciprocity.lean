@@ -13,9 +13,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStru
 # Global reciprocity for isogeny Selmer groups
 
 For an isogeny `φ : E₁ → E₂` of elliptic curves over a number field `K` and its dual
-`φ̂ : E₂ → E₁`, global reciprocity for the isogeny Weil cup product
-(`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`,
-`TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`) turns local orthogonality of
+`φ̂ : E₂ → E₁`, global reciprocity for the isogeny Weil cup product (in `TauCeti.Isogeny`:
+`sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero` and
+`sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`) turns local orthogonality of
 the Selmer conditions into global orthogonality between `S`-relaxed `φ`-Selmer classes and
 `S`-relaxed `φ̂`-Selmer classes:
 
@@ -37,8 +37,10 @@ Birch–Swinnerton-Dyer quotient.
 
 ## Main results
 
-* `TauCeti.Isogeny.mem_selmerGroup_relaxedAt_iff`: membership in the `S`-relaxed `φ`-Selmer group
-  via vanishing of `pointRes` at finite places outside `S` and at infinite places.
+* `TauCeti.Isogeny.selmerGroup_le_selmerGroup_relaxedAt` and
+  `TauCeti.Isogeny.mem_selmerGroup_relaxedAt_iff`: inclusion into and membership in the
+  `S`-relaxed `φ`-Selmer group via vanishing of `pointRes` at finite places outside `S` and at
+  infinite places.
 * `TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt`,
   `TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt`,
   `TauCeti.Isogeny.localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt_singleton`, and
@@ -72,6 +74,15 @@ section Global
 variable {K : Type} [Field K] [NumberField K]
   {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
+
+/-- Every class in `φ.selmerGroup τ` lies in the `T`-relaxed Selmer group for any set `T` of
+places. -/
+theorem selmerGroup_le_selmerGroup_relaxedAt
+    (τ : ∀ p : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure p.Completion)
+    (T : Set (GlobalNumberFields.Place K)) :
+    φ.selmerGroup τ ≤ ((φ.selmerStructure τ).relaxedAt T).selmerGroup :=
+  (φ.selmerGroup_def τ).symm ▸ (φ.selmerStructure τ).selmerGroup_le_selmerGroup_relaxedAt T
 
 /-- An `S`-relaxed `φ`-Selmer class is precisely a class in `H¹(K, E₁[φ])` whose image under
 `pointRes` after pushing forward to `E₁` vanishes at every finite place outside `S` and at
@@ -113,11 +124,19 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
       ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
-          (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 :=
+          (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 := by
   have ha' := (φ.mem_selmerGroup_relaxedAt_iff τ S).1 ha
   have hb' := (φ.dual.mem_selmerGroup_relaxedAt_iff τ S).1 hb
-  φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero a b
-    (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S ha'.1 hb'.1 ha'.2 hb'.2
+  let S' : Finset (GlobalNumberFields.Place K) := S.map ⟨Sum.inl, Sum.inl_injective⟩
+  have h :=
+    φ.sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero a b
+      (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S'
+      (fun v hv ↦ ha'.1 v (by simpa [S'] using hv))
+      (fun v hv ↦ hb'.1 v (by simpa [S'] using hv))
+      (fun w _ ↦ ha'.2 w) (fun w _ ↦ hb'.2 w)
+  have hL : S'.toLeft = S := by ext v; simp [S']
+  have hR : S'.toRight = ∅ := by ext w; simp [S']
+  rwa [hL, hR, Finset.sum_empty, add_zero] at h
 
 /-- **Global Selmer reciprocity in `ℚ/ℤ` against `Sel_φ̂`.** If `a` belongs to the `S`-relaxed
 `φ`-Selmer group and `b ∈ φ.dual.selmerGroup τ`, then the sum over `v ∈ S` of their
@@ -138,8 +157,7 @@ theorem
           (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
           (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 :=
   φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt τ S ha
-    ((φ.dual.selmerStructure τ).selmerGroup_le_selmerGroup_relaxedAt _
-      (by rwa [← selmerGroup_def]))
+    (φ.dual.selmerGroup_le_selmerGroup_relaxedAt τ _ hb)
 
 /-- **Global Selmer reciprocity in `ℤ/(deg φ)ℤ`.** If `a` belongs to the `S`-relaxed `φ`-Selmer
 group and `b` belongs to the `S`-relaxed `φ̂`-Selmer group, then the sum over `v ∈ S` of their
@@ -183,8 +201,7 @@ theorem
           (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
           (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 :=
   φ.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt τ S ha
-    ((φ.dual.selmerStructure τ).selmerGroup_le_selmerGroup_relaxedAt _
-      (by rwa [← selmerGroup_def]))
+    (φ.dual.selmerGroup_le_selmerGroup_relaxedAt τ _ hb)
 
 /-- **Single-place Selmer orthogonality.** Two global classes `a ∈ H¹(K, E₁[φ])` and
 `b ∈ H¹(K, E₂[φ̂])` satisfying their respective local Selmer conditions at every place except
@@ -229,8 +246,7 @@ theorem localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt_singleton_o
       (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v₀.adicCompletion K)).degree_ne_zero)
       (φ.kerRes (τ (.inl v₀)) a) (φ.dualKerRes (τ (.inl v₀)) b) = 0 :=
   φ.localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relaxedAt_singleton τ v₀ ha
-    ((φ.dual.selmerStructure τ).selmerGroup_le_selmerGroup_relaxedAt _
-      (by rwa [← selmerGroup_def]))
+    (φ.dual.selmerGroup_le_selmerGroup_relaxedAt τ _ hb)
 
 end Global
 
