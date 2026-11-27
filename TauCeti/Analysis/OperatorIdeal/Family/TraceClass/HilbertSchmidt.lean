@@ -314,13 +314,7 @@ theorem trace_adjoint_comp_self
     (hT : T ∈ ((hilbertSchmidt.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule) :
     (adjoint T ∘L T).trace = ((T.hilbertSchmidtNorm ^ 2 : ℝ) : 𝕜) := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-  have hE := (mem_finiteSubmodule_hilbertSchmidt_iff T b).1 hT
-  have hfin (i : _) : ‖T (b i)‖ₑ ^ 2 ≠ ∞ := by simp
-  -- In `ℝ`, the squared column norms sum to the squared Hilbert–Schmidt norm.
-  have hsum : HasSum (fun i ↦ ‖T (b i)‖ ^ 2) (T.hilbertSchmidtNorm ^ 2) := by
-    rw [T.sq_hilbertSchmidtNorm b, hilbertSchmidtEnergy_def, ENNReal.tsum_toReal_eq hfin]
-    have := ENNReal.summable_toReal (hilbertSchmidtEnergy_def T b ▸ hE)
-    simpa using this.hasSum
+  have hsum := T.hasSum_sq_norm_apply b ((mem_finiteSubmodule_hilbertSchmidt_iff T b).1 hT)
   refine (hasSum_inner_apply_apply_trace_adjoint_comp hT hT b).unique ?_
   simpa [inner_self_eq_norm_sq_to_K] using hsum.mapL (RCLike.ofRealCLM (K := 𝕜))
 

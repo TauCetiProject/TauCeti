@@ -57,6 +57,8 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
   `E_b(S + T)^(1/2) ≤ E_b(S)^(1/2) + E_b(T)^(1/2)`.
 * `ContinuousLinearMap.tsum_enorm_apply_mul_enorm_apply_le`: Cauchy–Schwarz for two operators on a
   common source, `∑ᵢ ‖A cᵢ‖ ‖B cᵢ‖ ≤ E_c(A)^(1/2) E_c(B)^(1/2)`.
+* `ContinuousLinearMap.hasSum_sq_norm_apply`: for an operator of finite energy,
+  `∑ᵢ ‖T bᵢ‖² = ‖T‖_HS²` as a real `HasSum`.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_smul` and `ContinuousLinearMap.hilbertSchmidtNorm_smul`:
   homogeneity, `E_b(c • T) = ‖c‖ₑ² E_b(T)` and `‖c • T‖_HS = ‖c‖ ‖T‖_HS`.
 * `ContinuousLinearMap.hilbertSchmidtNorm_adjoint`: `‖T†‖_HS = ‖T‖_HS`, for every operator.
@@ -323,6 +325,18 @@ theorem ofReal_sq_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι �
     (h : T.hilbertSchmidtEnergy b ≠ ∞) :
     ENNReal.ofReal (T.hilbertSchmidtNorm ^ 2) = T.hilbertSchmidtEnergy b := by
   rw [T.sq_hilbertSchmidtNorm b, ENNReal.ofReal_toReal h]
+
+/-- For an operator of finite energy, the squared column norms `‖T bᵢ‖²` sum in `ℝ` to the
+squared Hilbert–Schmidt norm. -/
+theorem hasSum_sq_norm_apply (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
+    (h : T.hilbertSchmidtEnergy b ≠ ∞) :
+    HasSum (fun i ↦ ‖T (b i)‖ ^ 2) (T.hilbertSchmidtNorm ^ 2) := by
+  have hfin (i : ι) : ‖T (b i)‖ₑ ^ 2 ≠ ∞ := by simp
+  rw [T.sq_hilbertSchmidtNorm b, hilbertSchmidtEnergy_def, ENNReal.tsum_toReal_eq hfin]
+  have hs : Summable fun i ↦ (‖T (b i)‖ₑ ^ 2).toReal :=
+    ENNReal.summable_toReal (by rwa [hilbertSchmidtEnergy_def] at h)
+  simp_rw [ENNReal.toReal_pow, toReal_eNorm] at hs ⊢
+  exact hs.hasSum
 
 @[simp]
 theorem hilbertSchmidtNorm_zero : (0 : E →L[𝕜] F).hilbertSchmidtNorm = 0 := by
