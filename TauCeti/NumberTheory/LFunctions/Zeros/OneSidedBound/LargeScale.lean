@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
+public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.AdmissibleScale
+public import Mathlib.Order.Filter.AtTopBot.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Ranks
 import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Scales
 
@@ -37,23 +37,19 @@ satisfies the sparsity threshold and the search-modulus bound for the level prim
 The real parameter `C` is the required lower bound for `log (log b)`. -/
 theorem eventually_exists_admissible_ranks_and_scales (P : Parameters) (C : ℝ) {ε : ℝ}
     (hε : 0 < ε) (hε' : ε < 1 / 100) :
-    ∀ᶠ x : ℕ in atTop, ∃ e e' x₁ b : ℕ,
-      let m : ℕ := 2 ^ e
-      let r : ℕ := 3 ^ e'
-      let s := 22 * e
-      0 < e ∧ 0 < e' ∧
-        IsLeast {u : ℕ | (∃ i : ℕ, u = 2 ^ i) ∧ √(x : ℝ) ≤ u} m ∧
+    ∀ᶠ x : ℕ in atTop, ∃ D : AdmissibleScale P C x,
+      let m : ℕ := 2 ^ D.e
+      let r : ℕ := 3 ^ D.e'
+      let s := 22 * D.e
+      IsLeast {u : ℕ | (∃ i : ℕ, u = 2 ^ i) ∧ √(x : ℝ) ≤ u} m ∧
         IsLeast {u : ℕ | (∃ i : ℕ, u = 3 ^ i) ∧ x ^ 5 ≤ u} r ∧
-        (m : ℝ) < 2 * √(x : ℝ) ∧ r < 3 * x ^ 5 ∧
-        (s : ℝ) ≤ 32 * log (x : ℝ) ∧ P.q₁ s ≤ x ^ 12 ∧
+        (m : ℝ) < 2 * √(x : ℝ) ∧ r < 3 * x ^ 5 ∧ P.q₁ s ≤ x ^ 12 ∧
         P.q₂ s ≤ x ^ (33 * (P.q₀ * P.d)) ∧
         2 * l₀ s * ((r + 1 - m) * (5 * r) + 1) < 2 ^ s ∧
-        x₁ = ⌊exp ((x : ℝ) ^ (ε / 6))⌋₊ ∧ 0 < x₁ ∧ 0 < b ∧
-        IsLeast {n : ℕ | P.q₁ s * x₁ ∣ n ∧ exp ((x : ℝ) ^ ε) < (n : ℝ)} b ∧
-        (x : ℝ) ^ (ε / 6) - 1 ≤ log x₁ ∧
-        (x : ℝ) ^ ε ≤ log b ∧ log b ≤ (x : ℝ) ^ ε + 1 ∧
-        C ≤ log (log b) ∧ (log b) ^ (100 : ℕ) ≤ x ∧
-        x ^ (10 ^ 6) ≤ x₁ ∧ x₁ ^ (10 ^ 6) ≤ b ∧ (log x₁) ^ (6 : ℕ) ≤ log b := by
+        D.x₁ = ⌊exp ((x : ℝ) ^ (ε / 6))⌋₊ ∧
+        IsLeast {n : ℕ | P.q₁ s * D.x₁ ∣ n ∧ exp ((x : ℝ) ^ ε) < (n : ℝ)} D.b ∧
+        (x : ℝ) ^ (ε / 6) - 1 ≤ log D.x₁ ∧
+        (x : ℝ) ^ ε ≤ log D.b ∧ log D.b ≤ (x : ℝ) ^ ε + 1 := by
   have hranks := eventually_exists_admissible_ranks P.q₀ P.d P.q₀_pos
   have hcanonical : ∀ (x e : ℕ),
       IsLeast {u : ℕ | (∃ i : ℕ, u = 2 ^ i) ∧ √(x : ℝ) ≤ u} (2 ^ e) →
@@ -81,9 +77,20 @@ theorem eventually_exists_admissible_ranks_and_scales (P : Parameters) (C : ℝ)
   filter_upwards [hranks, hscales] with x hr hs
   obtain ⟨e, e', he, he', hm, hr, hm', hr', hlog, _, hq₁, hq₂, hsparse⟩ := hr
   rw [← hcanonical x e hm] at hs
-  obtain ⟨x₁, b, hcutoffs⟩ := hs
-  exact ⟨e, e', x₁, b, he, he', hm, hr, hm', hr', hlog,
+  obtain ⟨x₁, b, hex, _, _, hb, hlogx₁, hlogb, hlogb', hC, h100, hxx₁, hx₁b, hlogpow⟩ := hs
+  let D : AdmissibleScale P C x :=
+    { e := e, e' := e', x₁ := x₁, b := b
+      e_pos := he, e'_pos := he'
+      sqrt_le := by exact_mod_cast hm.1.2
+      le_two_mul_sqrt := by exact_mod_cast hm'.le
+      pow_five_le := hr.1.2, le_three_mul_pow_five := hr'.le
+      tower_le := by exact_mod_cast hlog
+      level_mul_dvd_b := hb.1.1
+      log_log_lower := hC, log_pow_le := h100
+      first_pow_le := hxx₁, second_pow_le := hx₁b, log_second_pow_le := hlogpow }
+  exact ⟨D, hm, hr, hm', hr',
     by simpa only [q₁_def, towerDeg_def, l₀_def] using hq₁,
-    by simpa only [q₂_def] using hq₂, by simpa only [l₀_def] using hsparse, hcutoffs⟩
+    by simpa only [q₂_def] using hq₂, by simpa only [l₀_def] using hsparse,
+    hex, hb, hlogx₁, hlogb, hlogb'⟩
 
 end TauCeti.OneSidedBound.Parameters
