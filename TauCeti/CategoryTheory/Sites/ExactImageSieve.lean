@@ -51,9 +51,8 @@ theorem Exact.imageSieve_mem {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS 
   refine J.superset_covering ?_ (Presheaf.imageSieve_mem J S.toCycles.hom y)
   rintro V f ⟨z, hz⟩
   refine ⟨z, ?_⟩
-  rw [← S.toCycles_i]
-  change S.iCycles.hom.app (Opposite.op V) (S.toCycles.hom.app (Opposite.op V) z) = _
-  rw [hz]
+  rw [← S.toCycles_i, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ConcreteCategory.comp_apply, hz]
   exact NatTrans.naturality_apply S.iCycles.hom (Quiver.Hom.op f) y
 
 end CategoryTheory.ShortComplex
