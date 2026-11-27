@@ -79,6 +79,14 @@ theorem hessian_comp {h : ℝ → ℝ} {f : M → ℝ} {x : M} (hh : ContDiffAt 
     real_inner_smul_left, inner_mgradient, hdg, I.hessian_eq_inner_leviCivitaConnection_mgradient,
     G, g, cov, Function.comp_apply]
 
+/-- The Hessian of `a - f` is the opposite of the Hessian of `f`, for `f` that is `C²` at `x`. -/
+theorem hessian_const_sub (a : ℝ) {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (v w : TangentSpace I x) :
+    hessian I (fun y ↦ a - f y) x v w = -hessian I f x v w := by
+  have hd : deriv (fun t : ℝ ↦ a - t) = fun _ ↦ -1 := funext fun t ↦ by simp
+  have h := hessian_comp (h := fun t : ℝ ↦ a - t) (contDiffAt_const.sub contDiffAt_id) hf v w
+  rwa [hd, deriv_const, zero_mul, zero_mul, add_zero, neg_one_mul] at h
+
 /-- The Hessian of the square of a `C²` function. -/
 theorem hessian_sq {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (v w : TangentSpace I x) :

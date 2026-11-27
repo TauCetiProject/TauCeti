@@ -32,6 +32,8 @@ with the special case `TauCeti.IsContMDiffDistribution.comap_mfderiv` of a diffe
 conversely a distribution whose pullback along a surjective local diffeomorphism is `C^m` is itself
 `C^m` (`TauCeti.IsContMDiffDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`), as local
 inverses pull the pullback back to it.
+In particular the restriction of a `C^m` distribution to an open subset is `C^m`
+(`TauCeti.IsContMDiffDistribution.comp_subtypeVal`).
 When `D x` is the preimage of `D' (f x)` under the differential of a local diffeomorphism `f` at
 `x`, the differential restricts to a linear equivalence `D x ≃ D' (f x)`
 (`IsLocalDiffeomorphAt.mfderivRestrictEquiv`) and induces one of normal spaces
@@ -189,6 +191,16 @@ theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
     IsContMDiffDistribution I m k
       (fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap) :=
   hD'.comap_mfderiv_of_isLocalDiffeomorph h.isLocalDiffeomorph hmn
+
+/-- **Restriction of a distribution to an open subset.** The restriction `x ↦ D x` of a `C^m`
+distribution of rank `k` to an open subset `U` is a `C^m` distribution of rank `k` on `U`, the
+tangent spaces of `U` being those of `M`. -/
+theorem IsContMDiffDistribution.comp_subtypeVal {m : ℕ∞ω} {k : ℕ}
+    (hD : IsContMDiffDistribution I m k D) (U : TopologicalSpace.Opens M) :
+    IsContMDiffDistribution I m k (fun x : U ↦ D x) := by
+  rw [show (fun x : U ↦ D x) = fun x : U ↦ (D x).comap (mfderiv I I Subtype.val x).toLinearMap from
+    funext fun x ↦ (Submodule.comap_mfderiv_subtype_val (D x)).symm]
+  exact hD.comap_mfderiv_of_isLocalDiffeomorph isLocalDiffeomorph_subtype_val le_rfl
 
 omit [CompleteSpace E] in
 /-- **Descent of a distribution along a surjective local diffeomorphism.** Let `f` be a surjective
@@ -515,6 +527,14 @@ theorem mem_iff_mfderiv_symm_apply_mem (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
   refine Iff.trans ?_ (hcongr (h.symm_apply_apply x) _).symm
   refine Iff.trans ?_ (hDD' x _).symm
   rw [h.mfderiv_apply_mfderiv_symm_apply hn x w]
+
+/-- If the differential of `h` carries `D` onto `D'`, then the inverse of the differential of `h`
+at `x` carries `D' (h x)` back into `D x`. -/
+theorem inverse_mfderiv_apply_mem (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (hDD' : ∀ x v, v ∈ D x ↔ mfderiv I J h x v ∈ D' (h x)) {x : M}
+    {w : TangentSpace J (h x)} (hw : w ∈ D' (h x)) :
+    (mfderiv I J h x).inverse w ∈ D x :=
+  (hDD' x _).2 <| by rwa [(h.isInvertible_mfderiv hn).self_apply_inverse]
 
 /-- If the differentials of `h` and `g` carry `D` onto `D'` and `D'` onto `D''`, then the
 differential of the composite carries `D` onto `D''`. -/

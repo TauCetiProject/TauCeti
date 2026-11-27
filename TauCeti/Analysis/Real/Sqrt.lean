@@ -64,6 +64,7 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 * `Real.sqrt_mul_eq_mul_sqrt_div`: `√(x * y) = y * √(x / y)` for `0 ≤ y`.
 * `Real.sqrt_div_mul_mul_sqrt_div`: `√(u / t) * t * √(u / t) = u` for `0 ≤ u / t` and `t ≠ 0`.
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
+* `Real.inv_sqrt_le_of_inv_sq_le`: `(√ρ)⁻¹ ≤ d` when `0 < d` and `(d ^ 2)⁻¹ ≤ ρ`.
 * `Real.inv_sqrt_pow_mul_pow`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `0 < a` and `2p ≤ n`.
 * `Real.sqrt_natCast_pow_self_pos`: `0 < √n ^ n` for every natural number `n`.
 * `Real.one_sub_sq_two_mul_sqrt_div_one_add`: the complementary square of `2√k / (1 + k)`.
@@ -187,6 +188,12 @@ theorem inv_sqrt_mul_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : ((√a)⁻¹ * x) ^
 /-- Dividing by `√a` and squaring divides the square by `a`. -/
 theorem div_sqrt_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : (x / √a) ^ 2 = x ^ 2 / a := by
   rw [div_pow, sq_sqrt ha]
+
+/-- A lower bound `(d ^ 2)⁻¹ ≤ ρ` with `0 < d` bounds the inverse square root: `(√ρ)⁻¹ ≤ d`. -/
+theorem inv_sqrt_le_of_inv_sq_le {ρ d : ℝ} (hd : 0 < d) (h : (d ^ 2)⁻¹ ≤ ρ) : (√ρ)⁻¹ ≤ d := by
+  have h' := sqrt_le_sqrt h
+  rw [sqrt_inv, sqrt_sq hd.le] at h'
+  simpa using inv_anti₀ (inv_pos.2 hd) h'
 
 /-- A square factor comes out of a square root as its absolute value. -/
 theorem sqrt_sq_mul (x y : ℝ) : √(x ^ 2 * y) = |x| * √y := by
