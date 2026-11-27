@@ -11,8 +11,6 @@ public import Mathlib.Topology.Algebra.LinearTopology
 public import TauCeti.Analysis.Normed.Ring.UnitBall
 
 import Mathlib.Analysis.Normed.Operator.NNNorm
-import Mathlib.RingTheory.Noetherian.Basic
-import Mathlib.RingTheory.PrincipalIdealDomain
 
 /-!
 # Integer rings of valued rings and nonarchimedean normed fields
@@ -26,8 +24,6 @@ of power series with integral coefficients.
 
 As a subring of `K`, `𝒪[K]` equals `Subring.unitClosedBall K` (`TauCeti.integer_eq_unitClosedBall`),
 yielding the identity ring equivalence `TauCeti.integerUnitClosedBallEquiv : 𝒪[K] ≃+* K°`.
-Accordingly, `𝒪[K]` is a discrete valuation ring if and only if it is noetherian, if and only if
-there is a strict norm gap `ρ < 1` above `{‖a‖ < 1}`.
 
 Every `𝒪[K]`-linear map between finite products of copies of `K` is `K`-linear, since `K` is the
 fraction field of `𝒪[K]`; hence it is continuous and carries bounded sets to bounded sets. If the
@@ -70,10 +66,6 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
 * `LinearEquiv.isBounded_image_iff_of_integer`: `𝒪[K]`-linear equivalences between finite
   products of `K` preserve and reflect bounded sets.
 * `TauCeti.integer_eq_unitClosedBall`: `𝒪[K] = Subring.unitClosedBall K` as subrings of `K`.
-* `TauCeti.isDiscreteValuationRing_integer_iff_isNoetherianRing` and
-  `TauCeti.isDiscreteValuationRing_integer_iff_exists_forall_norm_le`: `𝒪[K]` is a discrete
-  valuation ring if and only if it is noetherian, if and only if some `ρ < 1` bounds all norms
-  strictly below `1`.
 * `TauCeti.isOpen_maximalIdeal_integer`: for any valued field `K`, the maximal ideal `𝓂[K]` of
   `𝒪[K]` is open.
 * `TauCeti.not_fg_maximalIdeal_integer`: for a densely normed field the maximal ideal of `𝒪[K]`
@@ -331,23 +323,6 @@ theorem _root_.Valued.integer.smul_mem_span_singleton_of_norm_le {x c y : 𝒪[K
   refine Ideal.mem_span_singleton'.mpr ⟨integerUnitClosedBallEquiv.symm q, ?_⟩
   apply integerUnitClosedBallEquiv.injective
   simpa only [map_mul, RingEquiv.apply_symm_apply, smul_eq_mul] using hq
-
-/-- **Over a nontrivially normed ultrametric field, `𝒪[K]` is a discrete valuation ring if and only
-if it is noetherian.** -/
-theorem isDiscreteValuationRing_integer_iff_isNoetherianRing :
-    IsDiscreteValuationRing 𝒪[K] ↔ IsNoetherianRing 𝒪[K] := by
-  refine ⟨fun _ ↦ inferInstance, fun _ ↦ ?_⟩
-  obtain ⟨a, ham, ha0⟩ := Valued.integer.exists_mem_maximalIdeal_coe_ne_zero (K := K)
-  exact ⟨fun h ↦ ha0 (by simpa [h] using ham)⟩
-
-/-- **Over a nontrivially normed ultrametric field, `𝒪[K]` is a discrete valuation ring if and only
-if some `ρ < 1` bounds every norm strictly below `1`.** -/
-theorem isDiscreteValuationRing_integer_iff_exists_forall_norm_le :
-    IsDiscreteValuationRing 𝒪[K] ↔ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ := by
-  rw [isDiscreteValuationRing_integer_iff_isNoetherianRing,
-    ← isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le]
-  exact ⟨fun _ ↦ isNoetherianRing_of_ringEquiv 𝒪[K] (integerUnitClosedBallEquiv (K := K)),
-    fun _ ↦ isNoetherianRing_of_ringEquiv _ (integerUnitClosedBallEquiv (K := K)).symm⟩
 
 end NontriviallyNormedField
 

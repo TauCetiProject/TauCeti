@@ -742,27 +742,19 @@ theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_comp_weightedPolyno
         (polynomialToRestricted (R := Subring.unitClosedBall K)
           fun _ : Fin n ↦ (1 : ℝ)).toRingHom := by
   refine RingHom.ext fun p ↦ Subtype.ext <| Subtype.ext <| MvPowerSeries.ext fun t ↦ ?_
-  change MvPowerSeries.coeff t
-      (((restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (K := K) n)
-          (weightedPolynomialHom _ isWeightFamily_one_weight p :
-            restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall K)) :
-          IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :
-        MvPowerSeries (Fin n) K) =
-    MvPowerSeries.coeff t
-      ((restrictedUnitClosedBallEquiv
-          (polynomialToRestricted (R := Subring.unitClosedBall K)
-            (fun _ : Fin n ↦ (1 : ℝ)) p) :
-          IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :
-        MvPowerSeries (Fin n) K)
   have hc : Continuous ((integerUnitClosedBallEquiv (K := K)).symm :
       Subring.unitClosedBall K →+* 𝒪[K]) := continuous_integerUnitClosedBallEquiv_symm
-  rw [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv, RingEquiv.trans_apply,
+  rw [RingHom.comp_apply, RingHom.comp_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingHom.coe_coe,
+    UniformSpace.Completion.coeRingHom_apply,
+    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_apply,
     restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv,
     weightedMapCompletionEquiv_symm_apply, weightedMapCompletion_coe hc,
     restrictedMvPowerSeriesCompletionIntegerEquiv_coe, coeff_restrictedIntegerEquiv]
   simp only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedMap, coe_weightedPolynomialHom,
     coeff_restrictedUnitClosedBallEquiv, coe_polynomialToRestricted, MvPowerSeries.coeff_map,
-    MvPolynomial.coeff_coe, RingHom.coe_coe, coe_integerUnitClosedBallEquiv_symm]
+    MvPolynomial.coeff_coe, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    coe_integerUnitClosedBallEquiv_symm]
 
 /-- **Unique extension of an integral presentation to a `K`-algebra Tate homomorphism** (Bosch,
 *Lectures on Formal and Rigid Geometry*, §6.4, proof of Lemma 5, pp. 137–138). Let `K` be a

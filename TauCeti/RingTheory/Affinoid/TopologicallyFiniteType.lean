@@ -487,9 +487,8 @@ noncomputable def ofSurjective [CompleteSpace K]
     surjective_hom :=
       π.unitClosedBallMapHom_surjective.comp eComp.surjective
     hom_algebraMap := fun c ↦ by
-      change π.unitClosedBallMapHom (eComp (algebraMap (Subring.unitClosedBall K) _ c)) =
-        π.unitClosedBallMapHom (unitClosedBallC c)
-      rw [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap]
+      simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, eComp,
+        restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap]
     isOpen_subring := by
       have := MvPowerSeries.isNoetherianRing_isRestricted_subring (K := K) (c := fun _ : Fin n ↦ 1)
       simpa only [AlgHom.toRingHom_eq_coe] using hA.isOpen_map_unitClosedBall π hπ
@@ -553,9 +552,10 @@ noncomputable def unitClosedBallSelf [CompleteSpace K] :
       ⟨eComp.symm (unitClosedBallC c), by
         simp [r, unitClosedBallConstantCoeffHom_unitClosedBallC]⟩
     hom_algebraMap := fun c ↦ by
-      change r (eComp (algebraMap (Subring.unitClosedBall K) _ c)) = c
-      rw [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap]
-      simp [r, unitClosedBallConstantCoeffHom_unitClosedBallC]
+      simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+        RingHom.id_apply, eComp, r,
+        restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap,
+        unitClosedBallConstantCoeffHom_unitClosedBallC]
     isOpen_subring := Subring.isOpen_unitClosedBall K
     isBounded_subring := Subring.coe_unitClosedBall K ▸ isBounded_closedBall_zero 1 }
 
