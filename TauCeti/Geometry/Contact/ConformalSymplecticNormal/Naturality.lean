@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.ConformalSymplecticNormal.Bundle
+public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
+import TauCeti.Algebra.Module.Submodule.Map
 
 /-!
 # Contactomorphisms induce isomorphisms of conformal symplectic normal bundles
@@ -15,7 +17,8 @@ Let `D` and `D₁` be smooth contact structures on Hausdorff manifolds `M` and `
 `F : M → M₁` be a smooth map with invertible differentials that carries `D` onto `D₁`: `dF_x` maps
 `D x` into `D₁ (F x)` and its inverse maps `D₁ (F x)` into `D x`. A contactomorphism between open
 subsets is the main example. For a smooth isotropic immersion `f : N → M` of a nonempty manifold,
-with `F ∘ f` again an isotropic immersion, the differential of `F` induces at each `y : N` the
+`F ∘ f` is again an isotropic immersion (`TauCeti.IsHorizontalMap.comp_left`,
+`TauCeti.injective_mfderiv_comp`), and the differential of `F` induces at each `y : N` the
 conformally symplectic isomorphism `[u] ↦ [dF u]` of conformal symplectic normal spaces
 (`TauCeti.conformalSymplecticNormalEquiv`). This file shows that these isomorphisms form a smooth
 isomorphism of the conformal symplectic normal bundles of `f` and of `F ∘ f`
@@ -24,7 +27,8 @@ isomorphism of the conformal symplectic normal bundles of `f` and of `F ∘ f`
 * **Smoothness.** The map of total spaces `(y, [u]) ↦ (y, [dF u])` is smooth
   (`TauCeti.contMDiff_totalSpace_conformalSymplecticNormalEquiv`). Both bundles are quotients of
   bundles of Levi orthogonals, smooth subbundles of `f^* D` and `(F ∘ f)^* D₁`; the differential of
-  `F` maps the first Levi orthogonals into the second (`TauCeti.mfderiv_mem_leviOrthogonal`), and
+  `F` maps the first Levi orthogonals onto the second
+  (`TauCeti.map_orthogonalBilin_comap_range_mfderiv`), and
   read along `f` and `F ∘ f` it is the tangent map of `F`, which is smooth. The induced map of
   quotient bundles is then smooth
   (`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiff_totalSpace_mapQ`).
@@ -95,36 +99,34 @@ local instance instIsManifoldConformalSymplecticNormalNaturalityBase [IsManifold
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E₁]
 
-/-- The restriction of `dF` to `D` maps the Levi orthogonals of the tangent images of `f`, read in
-`f^* D`, into those of `F ∘ f`, read in `(F ∘ f)^* D₁`. -/
-private theorem restrict_mfderiv_mem_leviOrthogonalPullback (hD : IsContactDistribution I ∞ D)
-    (hD₁ : IsContactDistribution I₁ ∞ D₁) (hF : ContMDiff I I₁ ∞ F)
-    (hFx : ∀ x, (mfderiv I I₁ F x).IsInvertible)
-    (hFD : ∀ x, ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
-    (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) (hf : ContMDiff J I ∞ f)
-    (y : N) : ∀ u ∈ leviOrthogonalPullback J D f y,
-      (mfderiv I I₁ F (f y)).toLinearMap.restrict (hFD (f y)) u ∈
-        leviOrthogonalPullback J D₁ (F ∘ f) y := fun u hu ↦ by
-  have h := mfderiv_mem_leviOrthogonal (hD.isContMDiffDistribution.of_le (m := 1) (by simp))
-    (hD₁.isContMDiffDistribution.of_le (m := 1) (by simp)) hF.contMDiffAt (n := ∞) (by simp)
-    (hFx _) (hFD _) (.of_forall hFD') (hf.mdifferentiableAt (by simp))
-    (map_subtype_orthogonalBilin_eq_leviOrthogonal (J := J) (D := D) (f := f) (y := y) ▸
-      Submodule.mem_map_of_mem (f := (D (f y)).subtype) hu)
-  rw [← map_subtype_orthogonalBilin_eq_leviOrthogonal] at h
-  obtain ⟨w, hw, hwu⟩ := h
-  have hw' : w = (mfderiv I I₁ F (f y)).toLinearMap.restrict (hFD (f y)) u := Subtype.ext hwu
-  exact hw' ▸ hw
-
-/-- The map of Levi orthogonals `u ↦ dF u` from `f` to `F ∘ f`, whose induced map of quotients
-is the map of conformal symplectic normal spaces. -/
+/-- The map of Levi orthogonals `u ↦ dF u` from `f` to `F ∘ f`: the restriction to Levi
+orthogonals of the isomorphism `D (f y) ≃ D₁ (F (f y))` induced by `dF`
+(`TauCeti.map_orthogonalBilin_comap_range_mfderiv`). Its map of quotients is
+`TauCeti.conformalSymplecticNormalEquiv`. -/
 private def leviOrthogonalPullbackMap (hD : IsContactDistribution I ∞ D)
     (hD₁ : IsContactDistribution I₁ ∞ D₁) (hF : ContMDiff I I₁ ∞ F)
     (hFx : ∀ x, (mfderiv I I₁ F x).IsInvertible)
     (hFD : ∀ x, ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
     (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) (hf : ContMDiff J I ∞ f)
     (y : N) : leviOrthogonalPullback J D f y →ₗ[ℝ] leviOrthogonalPullback J D₁ (F ∘ f) y :=
-  ((mfderiv I I₁ F (f y)).toLinearMap.restrict (hFD (f y))).restrict
-    (restrict_mfderiv_mem_leviOrthogonalPullback hD hD₁ hF hFx hFD hFD' hf y)
+  (((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
+    (hFx (f y)).bijective).ofSubmodules _ _
+      (map_ofBijective_mfderiv_eq (hFx _) (hFD _) (hFD' _))).ofSubmodules _ _
+    (map_orthogonalBilin_comap_range_mfderiv (hD.isContMDiffDistribution.of_le (m := 1) (by simp))
+      (hD₁.isContMDiffDistribution.of_le (m := 1) (by simp)) hF.contMDiffAt (n := ∞) (by simp)
+      (hFx _) (hFD _) (.of_forall hFD') _ (hf.mdifferentiableAt (by simp)))).toLinearMap
+
+/-- The map of Levi orthogonals acts as `dF` on the underlying tangent vectors. -/
+private theorem leviOrthogonalPullbackMap_apply (hD : IsContactDistribution I ∞ D)
+    (hD₁ : IsContactDistribution I₁ ∞ D₁) (hF : ContMDiff I I₁ ∞ F)
+    (hFx : ∀ x, (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ x, ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) (hf : ContMDiff J I ∞ f)
+    (y : N) (u : leviOrthogonalPullback J D f y) :
+    (leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf y u).val.val =
+      mfderiv I I₁ F (f y) u.val.val :=
+  (congrArg Subtype.val (LinearEquiv.ofSubmodules_apply _ _ _)).trans
+    ((LinearEquiv.ofSubmodules_apply _ _ _).trans (LinearEquiv.ofBijective_apply _ _))
 
 /-- The map of Levi orthogonals carries the tangent images of `f` into those of `F ∘ f`. -/
 private theorem le_comap_leviOrthogonalPullbackMap (hD : IsContactDistribution I ∞ D)
@@ -137,15 +139,21 @@ private theorem le_comap_leviOrthogonalPullbackMap (hD : IsContactDistribution I
         (leviOrthogonalPullback J D f y).subtype ≤
       (((LinearMap.range (mfderiv J I₁ (F ∘ f) y).toLinearMap).comap
         (D₁ ((F ∘ f) y)).subtype).comap (leviOrthogonalPullback J D₁ (F ∘ f) y).subtype).comap
-          (leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf y) := by
-  rintro u ⟨a, ha⟩
-  refine ⟨a, ?_⟩
-  have hcomp : mfderiv J I₁ (F ∘ f) y = (mfderiv I I₁ F (f y)).comp (mfderiv J I f y) :=
-    mfderiv_comp y (hF.mdifferentiableAt (by simp)) (hf.mdifferentiableAt (by simp))
-  simp only [ContinuousLinearMap.coe_coe] at ha
-  simp only [ContinuousLinearMap.coe_coe, hcomp, ContinuousLinearMap.comp_apply, ha]
-  -- The restricted map acts as `dF` on the underlying vectors (`LinearMap.restrict_apply`).
-  rfl
+          (leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf y) :=
+  Submodule.map_le_iff_le_comap.1 (LinearEquiv.map_comap_subtype_ofSubmodules _ _
+    (map_comap_range_mfderiv (hFx _) (map_ofBijective_mfderiv_eq (hFx _) (hFD _) (hFD' _))
+      (hF.mdifferentiableAt (by simp)) (hf.mdifferentiableAt (by simp)))).le
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁]
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ E₁] in
+/-- `F ∘ f` is again horizontal, with injective differentials. -/
+private theorem isHorizontalMap_comp_and_injective_mfderiv_comp (hF : ContMDiff I I₁ ∞ F)
+    (hFx : ∀ x, (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ x, ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x)) (hf : ContMDiff J I ∞ f)
+    (hfD : IsHorizontalMap J D f) (hinj : ∀ y, Injective (mfderiv J I f y)) :
+    IsHorizontalMap J D₁ (F ∘ f) ∧ ∀ y, Injective (mfderiv J I₁ (F ∘ f) y) :=
+  ⟨hfD.comp_left (fun _ ↦ hF.mdifferentiableAt (by simp)) (fun _ ↦ hf.mdifferentiableAt (by simp))
+    fun y ↦ hFD (f y), fun y ↦ injective_mfderiv_comp (hFx (f y)).injective (hinj y)⟩
 
 variable [FiniteDimensional ℝ E'] [IsManifold I ∞ M] [IsManifold I₁ ∞ M₁] [IsManifold J ∞ N]
   [T2Space M] [T2Space M₁] {K : Type*} [FunLike K N M] [ContinuousMapClass K N M]
@@ -158,8 +166,7 @@ private theorem contMDiff_totalSpace_leviOrthogonalPullbackMap
     (hinj : ∀ y, Injective (mfderiv J I f y)) (hF : ContMDiff I I₁ ∞ F)
     (hFx : ∀ x, (mfderiv I I₁ F x).IsInvertible)
     (hFD : ∀ x, ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
-    (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x)
-    (hgD : IsHorizontalMap J D₁ (F ∘ f)) (hginj : ∀ y, Injective (mfderiv J I₁ (F ∘ f) y)) :
+    (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) :
     letI := hD.isContMDiffDistribution.fiberBundle
     letI := hD.isContMDiffDistribution.vectorBundle
     letI := subbundleTopology (Fin (finrank ℝ E - 1) → ℝ) (E := (f : N → M) *ᵖ fun x ↦ D x)
@@ -172,7 +179,10 @@ private theorem contMDiff_totalSpace_leviOrthogonalPullbackMap
         fun x ↦ D₁ x)
       (F' := Fin (finrank ℝ E₁ - (finrank ℝ E' + 1)) → ℝ) (leviOrthogonalPullback J D₁ (F ∘ f))
     letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD₁
-      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD hginj).fiberBundle
+      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf)
+      (hfD.comp_left (fun _ ↦ hF.mdifferentiableAt (by simp))
+        (fun _ ↦ hf.mdifferentiableAt (by simp)) fun y ↦ hFD (f y))
+      fun y ↦ injective_mfderiv_comp (g := F) (hFx (f y)).injective (hinj y)).fiberBundle
     ContMDiff (J.prod 𝓘(ℝ, Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ))
       (J.prod 𝓘(ℝ, Fin (finrank ℝ E₁ - (finrank ℝ E' + 1)) → ℝ)) ∞
       (fun p : TotalSpace (Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ)
@@ -180,6 +190,7 @@ private theorem contMDiff_totalSpace_leviOrthogonalPullbackMap
         (⟨p.proj, leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf p.proj p.snd⟩ :
           TotalSpace (Fin (finrank ℝ E₁ - (finrank ℝ E' + 1)) → ℝ)
             fun y ↦ leviOrthogonalPullback J D₁ (F ∘ f) y)) := by
+  obtain ⟨hgD, hginj⟩ := isHorizontalMap_comp_and_injective_mfderiv_comp hF hFx hFD hf hfD hinj
   set g := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous
   have hg : ContMDiff J I₁ ∞ g := hF.comp hf
   let := hD.isContMDiffDistribution.fiberBundle
@@ -212,10 +223,13 @@ private theorem contMDiff_totalSpace_leviOrthogonalPullbackMap
   -- Their images under the tangent map of `F`, read in `D₁` along `g` and then in `g^* D₁`.
   have h₂ : ContMDiffAt (J.prod 𝓘(ℝ, Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ))
       (I₁.prod 𝓘(ℝ, E₁)) ∞
-      (fun p ↦ (⟨g p.proj, mfderiv I I₁ F (f p.proj) p.snd.val.val⟩ : TangentBundle I₁ M₁)) p₀ :=
-    (hF.contMDiff_tangentMap (m := ∞) (by simp)).contMDiffAt.comp p₀ h₁
+      (fun p ↦ (⟨g p.proj, (leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf p.proj
+        p.snd).val.val⟩ : TangentBundle I₁ M₁)) p₀ :=
+    ((hF.contMDiff_tangentMap (m := ∞) (by simp)).contMDiffAt.comp p₀ h₁).congr_of_eventuallyEq
+      (.of_forall fun p ↦ congrArg (TotalSpace.mk (F (f p.proj)))
+        (leviOrthogonalPullbackMap_apply hD hD₁ hF hFx hFD hFD' hf p.proj p.snd))
   have h₃ := hD₁.isContMDiffDistribution.contMDiffAt_totalSpace_mk h₂
-    fun p ↦ hFD _ _ p.snd.val.property
+    fun p ↦ (leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf p.proj p.snd).val.property
   have h₄ : ContMDiffAt (J.prod 𝓘(ℝ, Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ))
       (J.prod 𝓘(ℝ, Fin (finrank ℝ E₁ - 1) → ℝ)) ∞ (fun p ↦ TotalSpace.mk'
         (Fin (finrank ℝ E₁ - 1) → ℝ) (E := (g : N → M₁) *ᵖ fun x ↦ D₁ x) p.proj
@@ -227,27 +241,31 @@ private theorem contMDiff_totalSpace_leviOrthogonalPullbackMap
 
 /-- **Contactomorphisms induce smooth maps of conformal symplectic normal bundles.** Let
 `F : M → M₁` be a smooth map with invertible differentials carrying the smooth contact structure
-`D` onto `D₁`, and let `f` be a smooth isotropic immersion of a nonempty manifold into `(M, D)`
-such that `F ∘ f` is again an isotropic immersion. Then the map `(y, [u]) ↦ (y, [dF u])` from the
-conformal symplectic normal bundle of `f` to that of `F ∘ f`, which is the isomorphism
-`TauCeti.conformalSymplecticNormalEquiv` on each fibre, is smooth on total spaces. The hypotheses
-`hgD` and `hginj` on `F ∘ f`, which follow from those on `f` and `F`, are the data naming its
-conformal symplectic normal bundle (`TauCeti.conformalSymplecticNormalPrebundle`). -/
+`D` onto `D₁`, and let `f` be a smooth isotropic immersion of a nonempty manifold into `(M, D)`.
+Then `F ∘ f` is again an isotropic immersion (`TauCeti.IsHorizontalMap.comp_left`,
+`TauCeti.injective_mfderiv_comp`), and the map `(y, [u]) ↦ (y, [dF u])` from the conformal
+symplectic normal bundle of `f` to that of `F ∘ f` (`TauCeti.conformalSymplecticNormalPrebundle`),
+which is the isomorphism `TauCeti.conformalSymplecticNormalEquiv` on each fibre, is smooth on total
+spaces. -/
 theorem contMDiff_totalSpace_conformalSymplecticNormalEquiv [Nonempty N]
     (hD : IsContactDistribution I ∞ D) (hD₁ : IsContactDistribution I₁ ∞ D₁) {f : K}
     (hf : ContMDiff J I ∞ f) (hfD : IsHorizontalMap J D f)
     (hinj : ∀ y, Injective (mfderiv J I f y)) (hF : ContMDiff I I₁ ∞ F)
     (hFx : ∀ x, (mfderiv I I₁ F x).IsInvertible)
     (hFD : ∀ x, ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
-    (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x)
-    (hgD : IsHorizontalMap J D₁ (F ∘ f)) (hginj : ∀ y, Injective (mfderiv J I₁ (F ∘ f) y)) :
+    (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) :
     letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).totalSpaceTopology
     letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toFiberBundle
     letI := (conformalSymplecticNormalPrebundle hD₁
-      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD
-        hginj).totalSpaceTopology
+      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf)
+      (hfD.comp_left (fun _ ↦ hF.mdifferentiableAt (by simp))
+        (fun _ ↦ hf.mdifferentiableAt (by simp)) fun y ↦ hFD (f y))
+      fun y ↦ injective_mfderiv_comp (g := F) (hFx (f y)).injective (hinj y)).totalSpaceTopology
     letI := (conformalSymplecticNormalPrebundle hD₁
-      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD hginj).toFiberBundle
+      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf)
+      (hfD.comp_left (fun _ ↦ hF.mdifferentiableAt (by simp))
+        (fun _ ↦ hf.mdifferentiableAt (by simp)) fun y ↦ hFD (f y))
+      fun y ↦ injective_mfderiv_comp (g := F) (hFx (f y)).injective (hinj y)).toFiberBundle
     ContMDiff (J.prod 𝓘(ℝ, Fin (finrank ℝ E - 2 * finrank ℝ E' - 1) → ℝ))
       (J.prod 𝓘(ℝ, Fin (finrank ℝ E₁ - 2 * finrank ℝ E' - 1) → ℝ)) ∞
       (fun p : TotalSpace (Fin (finrank ℝ E - 2 * finrank ℝ E' - 1) → ℝ)
@@ -260,6 +278,7 @@ theorem contMDiff_totalSpace_conformalSymplecticNormalEquiv [Nonempty N]
             (hD₁.isContMDiffDistribution.of_le (by simp)) hF.contMDiffAt
             (n := ∞) (by simp) (hFx _) (hFD _) (.of_forall hFD')
             (hf.mdifferentiableAt (by simp)) p.snd)) := by
+  obtain ⟨hgD, hginj⟩ := isHorizontalMap_comp_and_injective_mfderiv_comp hF hFx hFD hf hfD hinj
   set g := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous
   have hg : ContMDiff J I₁ ∞ g := hF.comp hf
   let := hD.isContMDiffDistribution.fiberBundle
@@ -296,13 +315,14 @@ theorem contMDiff_totalSpace_conformalSymplecticNormalEquiv [Nonempty N]
   refine (hT.contMDiff_totalSpace_mapQ hκ hT₁ hκ₁ (f := id)
     (leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf)
     (le_comap_leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf)
-    (contMDiff_totalSpace_leviOrthogonalPullbackMap hD hD₁ hf hfD hinj hF hFx hFD hFD' hgD
-      hginj)).congr fun p ↦ ?_
+    (contMDiff_totalSpace_leviOrthogonalPullbackMap hD hD₁ hf hfD hinj hF hFx hFD
+      hFD')).congr fun p ↦ ?_
   obtain ⟨y, a⟩ := p
   induction a using Submodule.Quotient.induction_on with
   | H u =>
     refine congrArg (TotalSpace.mk y) ((conformalSymplecticNormalEquiv_mk _ _ _ _ _ _ _ _ u
-      (leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf y u) rfl).trans ?_)
+      (leviOrthogonalPullbackMap hD hD₁ hF hFx hFD hFD' hf y u)
+      (leviOrthogonalPullbackMap_apply hD hD₁ hF hFx hFD hFD' hf y u)).trans ?_)
     -- After `mapQ_apply`, the two sides differ only by the projection `⟨y, [u]⟩.proj = y`.
     rw [Submodule.mapQ_apply]
     rfl
@@ -319,19 +339,25 @@ theorem exists_bundleDiffeomorph_conformalSymplecticNormalEquiv [Nonempty N]
     (hinj : ∀ y, Injective (mfderiv J I f y)) (hF : ContMDiff I I₁ ∞ F)
     (hFx : ∀ x, (mfderiv I I₁ F x).IsInvertible)
     (hFD : ∀ x, ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
-    (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x)
-    (hgD : IsHorizontalMap J D₁ (F ∘ f)) (hginj : ∀ y, Injective (mfderiv J I₁ (F ∘ f) y)) :
+    (hFD' : ∀ x, ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) :
     letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).totalSpaceTopology
     letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toFiberBundle
     letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toVectorBundle
     letI := (conformalSymplecticNormalPrebundle hD₁
-      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD
-        hginj).totalSpaceTopology
+      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf)
+      (hfD.comp_left (fun _ ↦ hF.mdifferentiableAt (by simp))
+        (fun _ ↦ hf.mdifferentiableAt (by simp)) fun y ↦ hFD (f y))
+      fun y ↦ injective_mfderiv_comp (g := F) (hFx (f y)).injective (hinj y)).totalSpaceTopology
     letI := (conformalSymplecticNormalPrebundle hD₁
-      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD hginj).toFiberBundle
+      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf)
+      (hfD.comp_left (fun _ ↦ hF.mdifferentiableAt (by simp))
+        (fun _ ↦ hf.mdifferentiableAt (by simp)) fun y ↦ hFD (f y))
+      fun y ↦ injective_mfderiv_comp (g := F) (hFx (f y)).injective (hinj y)).toFiberBundle
     letI := (conformalSymplecticNormalPrebundle hD₁
-      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD
-        hginj).toVectorBundle
+      (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf)
+      (hfD.comp_left (fun _ ↦ hF.mdifferentiableAt (by simp))
+        (fun _ ↦ hf.mdifferentiableAt (by simp)) fun y ↦ hFD (f y))
+      fun y ↦ injective_mfderiv_comp (g := F) (hFx (f y)).injective (hinj y)).toVectorBundle
     ∃ Φ : TotalSpace (Fin (finrank ℝ E - 2 * finrank ℝ E' - 1) → ℝ)
         (fun y ↦ ConformalSymplecticNormal J D f y) ≃ₘ^∞⟮
           J.prod 𝓘(ℝ, Fin (finrank ℝ E - 2 * finrank ℝ E' - 1) → ℝ),
@@ -347,6 +373,7 @@ theorem exists_bundleDiffeomorph_conformalSymplecticNormalEquiv [Nonempty N]
             (hD₁.isContMDiffDistribution.of_le (by simp)) hF.contMDiffAt
             (n := ∞) (by simp) (hFx _) (hFD _) (.of_forall hFD')
             (hf.mdifferentiableAt (by simp)) p.snd) := by
+  obtain ⟨hgD, hginj⟩ := isHorizontalMap_comp_and_injective_mfderiv_comp hF hFx hFD hf hfD hinj
   let := (conformalSymplecticNormalPrebundle hD hf hfD hinj).totalSpaceTopology
   let := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toFiberBundle
   let := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toVectorBundle
@@ -354,9 +381,11 @@ theorem exists_bundleDiffeomorph_conformalSymplecticNormalEquiv [Nonempty N]
     (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD
       hginj).totalSpaceTopology
   let := (conformalSymplecticNormalPrebundle hD₁
-    (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD hginj).toFiberBundle
+    (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD
+      hginj).toFiberBundle
   let := (conformalSymplecticNormalPrebundle hD₁
-    (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD hginj).toVectorBundle
+    (f := ContinuousMap.mk (F ∘ f) (hF.comp hf).continuous) (hF.comp hf) hgD
+      hginj).toVectorBundle
   -- The fibres are finite-dimensional Hausdorff topological vector spaces, so the linear
   -- isomorphisms of fibres are continuous.
   let e (y : N) := by
@@ -381,8 +410,11 @@ theorem exists_bundleDiffeomorph_conformalSymplecticNormalEquiv [Nonempty N]
     exact (conformalSymplecticNormalEquiv J D f y (hD.isContMDiffDistribution.of_le (by simp))
       (hD₁.isContMDiffDistribution.of_le (by simp)) hF.contMDiffAt (n := ∞) (by simp) (hFx _)
       (hFD _) (.of_forall hFD') (hf.mdifferentiableAt (by simp))).toContinuousLinearEquiv
+  -- `e y` is the fibre isomorphism made continuous by `LinearEquiv.toContinuousLinearEquiv`, the
+  -- same function by definition (`LinearEquiv.coe_toContinuousLinearEquiv'`). That lemma needs the
+  -- fibre instances installed only inside `e`, so the last step is closed by `rfl`.
   exact ⟨bundleDiffeomorph e (contMDiff_totalSpace_conformalSymplecticNormalEquiv hD hD₁ hf hfD
-    hinj hF hFx hFD hFD' hgD hginj), fun p ↦ (bundleDiffeomorph_apply _ _ p).trans rfl⟩
+    hinj hF hFx hFD hFD'), fun p ↦ (bundleDiffeomorph_apply _ _ p).trans rfl⟩
 
 end Bundle
 
