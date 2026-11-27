@@ -10,7 +10,6 @@ public import TauCeti.Analysis.PDE.Vortex.Index
 public import TauCeti.Analysis.PDE.Vortex.Moduli.Symmetry
 public import TauCeti.Analysis.PDE.Vortex.Moduli.Topology
 public import TauCeti.Topology.Sym.Basic
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Normalization checks for framed plane vortices
@@ -145,13 +144,10 @@ theorem norm_gaugeFixedOperator_vacuumField_const (v : EuclideanSpace ℝ (Fin 4
 the vacuum, the framed degree-`0` vortex, is bijective. -/
 theorem bijective_sobolevGaugeFixedOperator_vacuumField {a : Lp (EuclideanSpace ℝ (Fin 4)) ⊤ μ⊤}
     (ha : a =ᵐ[μ⊤] vacuumField) : Function.Bijective (sobolevGaugeFixedOperator a) := by
-  refine bijective_sobolevGaugeFixedOperator contDiff_vacuumField (fun i n _ ↦ ?_)
-    equation_vacuumField
+  refine bijective_sobolevGaugeFixedOperator contDiff_vacuumField
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_vacuumField_apply_le i n) equation_vacuumField
     (by rw [show sectionValue vacuumField = 1 from funext sectionValue_vacuumField]
         exact tendsto_const_nhds) ha
-  -- The coordinates of the vacuum are constant.
-  rw [vacuumField_eq_const]
-  exact ⟨_, norm_iteratedFDeriv_const_le n _⟩
 
 /-! ### The moduli space -/
 

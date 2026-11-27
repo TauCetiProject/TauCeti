@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -1034,6 +1035,12 @@ theorem vacuumField_eq_const : vacuumField = fun _ ↦ vacuumField 0 :=
 theorem contDiff_vacuumField {n : WithTop ℕ∞} : ContDiff ℝ n vacuumField := by
   rw [vacuumField_eq_const]
   exact contDiff_const
+
+/-- The coordinates of the vacuum, a constant field, have bounded derivatives of every order. -/
+theorem exists_norm_iteratedFDeriv_vacuumField_apply_le (i : Fin 4) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ vacuumField z i) z‖ ≤ C := by
+  rw [vacuumField_eq_const]
+  exact ⟨_, norm_iteratedFDeriv_const_le n (vacuumField 0 i)⟩
 
 /-- The zero phase acts as the identity. -/
 @[simp]
