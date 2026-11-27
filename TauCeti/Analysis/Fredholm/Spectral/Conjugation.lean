@@ -26,9 +26,11 @@ Isometric conjugation preserves the spectrum and commutes with the continuous fu
 it preserves ranks, so it preserves the ranks of spectral projections. Hence the conjugated path
 has the same local eigenvalue counts (`TauCeti.spectralCount_conjStarAlgEquiv`), the same spectral
 cuts (`TauCeti.isSpectralCutOn_conjStarAlgEquiv_iff`) and the same spectral flow potentials
-(`TauCeti.isSpectralFlowPotential_conjStarAlgEquiv_iff`) as `A`. These are pointwise statements, so
-no continuity of `U` in `t` is needed: the spectral flow only sees the eigenvalues of each `A t`,
-which isometric conjugation does not move.
+(`TauCeti.isSpectralFlowPotential_conjStarAlgEquiv_iff`) as `A`, and so the same spectral flow.
+These are pointwise statements, so no continuity of `U` in `t`, and no hypothesis on `A`, is
+needed: the spectral flow only sees the eigenvalues of each `A t`, which isometric conjugation does
+not move. The same holds for paths on a compactly embedded common domain, in
+`TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Conjugation`.
 
 ## Main results
 
@@ -88,13 +90,13 @@ theorem isSpectralFlowPotential_conjStarAlgEquiv_iff {a b : ℝ} {F : ℝ → �
   simp only [isSpectralFlowPotential_iff, isSpectralCutOn_conjStarAlgEquiv_iff,
     spectralCount_conjStarAlgEquiv]
 
-/-- **Isometric changes of trivialization preserve the spectral flow.** For a continuous path `A`
-of self-adjoint Fredholm operators on `[a, b]` and any family `U` of linear isometric equivalences
-`H ≃ₗᵢ[𝕜] K`, the conjugated path `t ↦ U t ∘ A t ∘ (U t)⁻¹` has the same spectral flow. -/
-theorem spectralFlow_conjStarAlgEquiv {a b : ℝ} (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
-    (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) (hF : ∀ t ∈ Icc a b, (A t).IsFredholm) :
+/-- **Isometric changes of trivialization preserve the spectral flow.** For any path `A` of
+operators on `H` and any family `U` of linear isometric equivalences `H ≃ₗᵢ[𝕜] K`, the conjugated
+path `t ↦ U t ∘ A t ∘ (U t)⁻¹` has the same spectral flow. -/
+@[simp]
+theorem spectralFlow_conjStarAlgEquiv (a b : ℝ) :
     spectralFlow (fun t ↦ (U t).conjStarAlgEquiv (A t)) a b = spectralFlow A a b :=
-  spectralFlow_eq_of_isSpectralFlowPotential_iff hab hA hsa hF fun _ ↦
+  spectralFlow_eq_of_isSpectralFlowPotential_iff fun _ ↦
     isSpectralFlowPotential_conjStarAlgEquiv_iff U
 
 end TauCeti

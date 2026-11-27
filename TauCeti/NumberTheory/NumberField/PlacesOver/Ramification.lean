@@ -13,11 +13,12 @@ import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 # Ramification vocabulary for finite places
 
 A finite place of an extension lies over a finite place of the base when their prime ideals
-lie over one another. Its local degree is the product of the ramification index and the residue
-degree. The local degrees above any fixed place sum to the degree of the extension. Over a finite
-set `S` of places of the base, `NumberField.FinitePlace.placesAbove F S` collects the places above
-it, and a product over them of local-degree powers of values of the base places is the
-`[F : K]`-th power of the product over `S` (`NumberField.FinitePlace.prod_placesAbove`).
+lie over one another; every finite place lies over the place below it
+(`NumberField.FinitePlace.under`). Its local degree is the product of the ramification index and
+the residue degree. The local degrees above any fixed place sum to the degree of the extension.
+Over a finite set `S` of places of the base, `NumberField.FinitePlace.placesAbove F S` collects
+the places above it, and a product over them of local-degree powers of values of the base places
+is the `[F : K]`-th power of the product over `S` (`NumberField.FinitePlace.prod_placesAbove`).
 
 Unlike at infinite places, lying over in this sense does not mean equality of the restricted
 absolute values: `w (algebraMap K F x) = v x ^ w.localDegree K`. The two meanings agree exactly
@@ -55,6 +56,22 @@ protected abbrev LiesOver (w : FinitePlace F) (v : FinitePlace K) : Prop :=
 theorem mk_liesOver_mk_iff (w : HeightOneSpectrum (𝓞 F)) (v : HeightOneSpectrum (𝓞 K)) :
     (mk w).LiesOver (mk v) ↔ w.asIdeal.LiesOver v.asIdeal := by
   simp only [FinitePlace.LiesOver, maximalIdeal_mk]
+
+variable (K) in
+/-- The finite place of `K` below a finite place `w` of `F`: the place of the prime of `𝓞 K`
+under the prime of `w`. -/
+noncomputable def under (w : FinitePlace F) : FinitePlace K :=
+  mk (w.maximalIdeal.under (𝓞 K))
+
+@[simp]
+theorem maximalIdeal_under (w : FinitePlace F) :
+    (w.under K).maximalIdeal = w.maximalIdeal.under (𝓞 K) :=
+  maximalIdeal_mk _
+
+/-- A finite place lies over the finite place below it. -/
+instance (w : FinitePlace F) : w.LiesOver (w.under K) := by
+  rw [FinitePlace.LiesOver, maximalIdeal_under]
+  exact ⟨rfl⟩
 
 variable (K) in
 /-- The local degree of a finite place over `K`: ramification index times residue degree. -/

@@ -41,9 +41,12 @@ generating functions are invariant under the diagonal translation `(x, X) ↦ (x
 `W` is invariant under the diagonal translation `x ↦ x + 1` of configurations
 (`TauCeti.periodic_cyclicAction`), and so are its derivative and its critical set; what matters of
 a critical configuration is its image in the quotient of `ℤ/N → ℝ` by the diagonal integers
-`AddSubgroup.zmultiples 1`. On this quotient the dictionary is injective on the annulus point
-`(x_0 mod 1, y_0)`: two periodic chains have the same
-initial annulus point exactly when their positions differ by a diagonal integer translation
+`AddSubgroup.zmultiples 1`. The *block* `TauCeti.cyclicBlock W` of the configurations whose every
+edge `(x_i, x_(i+1))` lies in `W_i` is invariant under the diagonal integers too, when the sets
+`W_i` are invariant under `(x, X) ↦ (x + 1, X + 1)`
+(`TauCeti.add_zsmul_one_mem_cyclicBlock_iff`). On the quotient the dictionary is injective on the
+annulus point `(x_0 mod 1, y_0)`: two periodic chains have the same initial annulus point exactly
+when their positions differ by a diagonal integer translation
 (`TauCeti.prodMap_coe_eq_prodMap_coe_iff_mk_eq_mk_of_isStripGenerating`). Hence two distinct
 critical points of `W` on the quotient give two periodic chains whose fixed points `z_0` are
 distinct points of the annulus (`TauCeti.exists_periodic_prodMap_coe_ne_of_isStripGenerating`), so
@@ -227,6 +230,16 @@ end IsStripGenerating
 
 variable {S : ZMod N → ℝ × ℝ → ℝ} {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {D W : ZMod N → Set (ℝ × ℝ)}
 
+/-- The **block** of configurations with edges in the sets `W_i`: the configurations `q` with
+`(q_i, q_(i+1)) ∈ W_i` for every `i`. -/
+def cyclicBlock (W : ZMod N → Set (ℝ × ℝ)) : Set (ZMod N → ℝ) :=
+  {q | ∀ i, (q i, q (i + 1)) ∈ W i}
+
+omit [NeZero N] in
+@[simp]
+theorem mem_cyclicBlock {q : ZMod N → ℝ} : q ∈ cyclicBlock W ↔ ∀ i, (q i, q (i + 1)) ∈ W i :=
+  Iff.rfl
+
 omit [NeZero N] in
 /-- Along a periodic chain, each state is the source point over the positions of the state and
 its successor. -/
@@ -249,7 +262,7 @@ configuration to the source points `(q_i, -∂₁ S_i(q_i, q_(i+1)))`. -/
 theorem exists_equiv_periodic_of_isStripGenerating
     (hgen : ∀ i, IsStripGenerating (S i) (F i) (D i) (W i)) :
     ∃ e : {z : ZMod N → ℝ × ℝ // ∀ i, z i ∈ D i ∧ F i (z i) = z (i + 1)} ≃
-        {q : ZMod N → ℝ // (∀ i, (q i, q (i + 1)) ∈ W i) ∧ fderiv ℝ (cyclicAction S) q = 0},
+        {q : ZMod N → ℝ // q ∈ cyclicBlock W ∧ fderiv ℝ (cyclicAction S) q = 0},
       (∀ z i, (e z : ZMod N → ℝ) i = (z.val i).1) ∧
         ∀ q i, (e.symm q : ZMod N → ℝ × ℝ) i =
           stripGeneratingSource (S i) (q.val i, q.val (i + 1)) := by
@@ -259,7 +272,7 @@ theorem exists_equiv_periodic_of_isStripGenerating
     rw [← (hz i).2]
     exact (hgen i).mapsTo (hz i).1
   refine ⟨
-    { toFun := fun z ↦ ⟨fun i ↦ (z.val i).1, hmem z.val z.property,
+    { toFun := fun z ↦ ⟨fun i ↦ (z.val i).1, mem_cyclicBlock.2 (hmem z.val z.property),
         (fderiv_cyclicAction_eq_zero_iff fun i ↦
           (hgen i).differentiableAt (hmem z.val z.property i)).2
           fun i ↦ by
@@ -268,10 +281,10 @@ theorem exists_equiv_periodic_of_isStripGenerating
             rw [(z.property (i - 1)).2, sub_add_cancel] at h
             rw [h, stripGeneratingSource_eq_of_chain hgen z.property]⟩
       invFun := fun q ↦ ⟨fun i ↦ stripGeneratingSource (S i) (q.val i, q.val (i + 1)), fun i ↦ by
-        refine ⟨(hgen i).stripGeneratingSource_mem (q.property.1 i),
-          ((hgen i).apply_stripGeneratingSource (q.property.1 i)).trans ?_⟩
+        refine ⟨(hgen i).stripGeneratingSource_mem (mem_cyclicBlock.1 q.property.1 i),
+          ((hgen i).apply_stripGeneratingSource (mem_cyclicBlock.1 q.property.1 i)).trans ?_⟩
         have h := (fderiv_cyclicAction_eq_zero_iff fun i ↦
-          (hgen i).differentiableAt (q.property.1 i)).1
+          (hgen i).differentiableAt (mem_cyclicBlock.1 q.property.1 i)).1
           q.property.2 (i + 1)
         rwa [add_sub_cancel_right] at h⟩
       left_inv := fun z ↦ Subtype.ext <| funext fun i ↦
@@ -288,14 +301,13 @@ private theorem add_zsmul_one_apply (q : ZMod N → ℝ) (k : ℤ) (i : ZMod N) 
   simp
 
 omit [NeZero N] in
-/-- An integer diagonal translate of a configuration with edges in the `W_i` has edges in the
-`W_i`, if each `W_i` is invariant under `(x, X) ↦ (x + 1, X + 1)`. -/
-private theorem mem_of_add_zsmul_one (hW : ∀ i x, x + (1, 1) ∈ W i ↔ x ∈ W i)
-    {q : ZMod N → ℝ} (hq : ∀ i, (q i, q (i + 1)) ∈ W i) (k : ℤ) (i : ZMod N) :
-    ((q + k • (1 : ZMod N → ℝ)) i, (q + k • (1 : ZMod N → ℝ)) (i + 1)) ∈ W i := by
+/-- **The block is invariant under the diagonal integers** when every `W_i` is invariant under the
+diagonal translation `(x, X) ↦ (x + 1, X + 1)`. -/
+theorem add_zsmul_one_mem_cyclicBlock_iff (hW : ∀ i x, x + (1, 1) ∈ W i ↔ x ∈ W i)
+    (q : ZMod N → ℝ) (k : ℤ) : q + k • (1 : ZMod N → ℝ) ∈ cyclicBlock W ↔ q ∈ cyclicBlock W := by
+  refine forall_congr' fun i ↦ ?_
   have hP : Function.Periodic (· ∈ W i) ((1, 1) : ℝ × ℝ) := fun x ↦ propext (hW i x)
-  have h := (hP.zsmul k (q i, q (i + 1))).mpr (hq i)
-  simpa [add_zsmul_one_apply] using h
+  simpa [add_zsmul_one_apply] using Iff.of_eq (hP.zsmul k (q i, q (i + 1)))
 
 /-- Two periodic chains whose initial states differ by an integer horizontal translation `k` have
 positions differing by the diagonal translation by `k`: the translate by `k` of the positions of
@@ -308,9 +320,10 @@ private theorem chain_fst_eq_add_of_eq_add
     (hz' : ∀ i, z' i ∈ D i ∧ F i (z' i) = z' (i + 1)) {k : ℤ} (h0 : z' 0 = z 0 + ((k : ℝ), 0))
     (i : ZMod N) : (z' i).1 = (z i).1 + k := by
   obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_isStripGenerating hgen
-  let r : {q : ZMod N → ℝ // (∀ i, (q i, q (i + 1)) ∈ W i) ∧
+  let r : {q : ZMod N → ℝ // q ∈ cyclicBlock W ∧
       fderiv ℝ (cyclicAction S) q = 0} :=
-    ⟨e ⟨z, hz⟩ + k • (1 : ZMod N → ℝ), mem_of_add_zsmul_one hWper (e ⟨z, hz⟩).property.1 k,
+    ⟨e ⟨z, hz⟩ + k • (1 : ZMod N → ℝ),
+      (add_zsmul_one_mem_cyclicBlock_iff hWper _ k).2 (e ⟨z, hz⟩).property.1,
       (((periodic_cyclicAction hS).zsmul k).fderiv (𝕜 := ℝ) _).trans (e ⟨z, hz⟩).property.2⟩
   -- The chain of `r` starts at `z'_0`, so by uniqueness of chains it is `z'`.
   have hr : (e.symm r).val = z' := by
@@ -378,8 +391,8 @@ intermediate states, which are not deck translates of each other. -/
 theorem exists_periodic_prodMap_coe_ne_of_isStripGenerating
     (hgen : ∀ i, IsStripGenerating (S i) (F i) (D i) (W i))
     (hS : ∀ i, Function.Periodic (S i) (1, 1)) (hWper : ∀ i x, x + (1, 1) ∈ W i ↔ x ∈ W i)
-    {q q' : ZMod N → ℝ} (hq : (∀ i, (q i, q (i + 1)) ∈ W i) ∧ fderiv ℝ (cyclicAction S) q = 0)
-    (hq' : (∀ i, (q' i, q' (i + 1)) ∈ W i) ∧ fderiv ℝ (cyclicAction S) q' = 0)
+    {q q' : ZMod N → ℝ} (hq : q ∈ cyclicBlock W ∧ fderiv ℝ (cyclicAction S) q = 0)
+    (hq' : q' ∈ cyclicBlock W ∧ fderiv ℝ (cyclicAction S) q' = 0)
     (hne : (QuotientAddGroup.mk q : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ)) ≠
       QuotientAddGroup.mk q') :
     ∃ z z' : ZMod N → ℝ × ℝ, (∀ i, z i ∈ D i ∧ F i (z i) = z (i + 1)) ∧
@@ -387,7 +400,7 @@ theorem exists_periodic_prodMap_coe_ne_of_isStripGenerating
       (∀ i, (z' i).1 = q' i) ∧
       Prod.map ((↑) : ℝ → AddCircle (1 : ℝ)) id (z 0) ≠ Prod.map (↑) id (z' 0) := by
   obtain ⟨e, he, -⟩ := exists_equiv_periodic_of_isStripGenerating hgen
-  have hpos (r : {q : ZMod N → ℝ // (∀ i, (q i, q (i + 1)) ∈ W i) ∧
+  have hpos (r : {q : ZMod N → ℝ // q ∈ cyclicBlock W ∧
       fderiv ℝ (cyclicAction S) q = 0}) (i : ZMod N) : ((e.symm r).val i).1 = r.val i := by
     rw [← he, Equiv.apply_symm_apply]
   refine ⟨(e.symm ⟨q, hq⟩).val, (e.symm ⟨q', hq'⟩).val, (e.symm _).property, (e.symm _).property,

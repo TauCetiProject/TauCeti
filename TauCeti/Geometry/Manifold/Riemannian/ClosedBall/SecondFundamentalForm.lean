@@ -20,14 +20,19 @@ For the Euclidean metric on the closed unit ball of a real inner product space `
 `II_q(u, w) = ⟨dι u, dι w⟩`,
 
 where `ι : ∂B → B` is the inclusion of the boundary manifold
-(`TauCeti.boundarySecondFundamentalForm_closedBall`). The proof extends the outward unit normal by
-the radial vector field `x ↦ x`, the pullback along the inclusion `B → E` of the identity vector
-field of `E`. The inclusion is a local Riemannian isometry
+(`TauCeti.boundarySecondFundamentalForm_closedBall`; as an equality of bilinear forms,
+`TauCeti.boundarySecondFundamentalForm_closedBall_eq_boundaryInducedForm`). The proof extends
+the outward unit normal by the radial vector field `x ↦ x`, the pullback along the inclusion
+`B → E` of the identity vector field of `E`. The inclusion is a local Riemannian isometry
 (`TauCeti.isLocalRiemannianIsometry_subtypeVal_closedBall`), so the Levi-Civita derivative of the
 radial field in the direction `v` is `v`, and `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩` is the induced
 metric.
 
-With the outward-normal convention, the unit sphere therefore has `II = h`.
+With the outward-normal convention, the unit sphere therefore has `II = h`. Replacing the outward
+normal by the inward normal in `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩` instead gives
+`⟨∇_{dι u} N, dι w⟩ = -h(u, w)` for every extension `N` of the inward unit normal
+(`TauCeti.inner_leviCivitaConnection_closedBall_of_eq_inwardUnitNormal`): that convention would
+give the unit ball `II = -h`.
 -/
 
 public section
@@ -78,5 +83,44 @@ theorem boundarySecondFundamentalForm_closedBall
   rw [show fderiv ℝ Y ((q : closedBall (0 : E) 1) : E) = ContinuousLinearMap.id ℝ E by
     simp only [Y]; exact fderiv_fun_id] at hΓ
   exact congrArg (fun v ↦ ⟪v, _⟫) (hΓ.trans (ContinuousLinearMap.id_apply _))
+
+/-- **The inward-normal convention gives the wrong sign on the unit ball.** For every vector
+field `N` on the closed unit ball, differentiable at `q` and equal to the inward unit normal at
+the boundary points near `q`, `⟨∇_{dι u} N, dι w⟩ = -⟨dι u, dι w⟩`: with the inward normal in place
+of the outward normal in `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`, the unit sphere would have
+`II = -h`. -/
+theorem inner_leviCivitaConnection_closedBall_of_eq_inwardUnitNormal
+    (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1))
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
+    {N : (y : closedBall (0 : E) 1) → TangentSpace (𝓡∂ (n + 1)) y}
+    (hN : MDifferentiableAt (𝓡∂ (n + 1)) ((𝓡∂ (n + 1)).prod 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))))
+      (fun y ↦ (⟨y, N y⟩ : TotalSpace (EuclideanSpace ℝ (Fin (n + 1)))
+        (fun y : closedBall (0 : E) 1 ↦ TangentSpace (𝓡∂ (n + 1)) y)))
+      (q : closedBall (0 : E) 1))
+    (hNν : ∀ᶠ p : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) in 𝓝 q,
+      N p = inwardUnitNormal p) :
+    ⟪CovariantDerivative.leviCivitaConnection (𝓡∂ (n + 1)) (closedBall (0 : E) 1) N q
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) → closedBall (0 : E) 1)
+          q u),
+      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) → closedBall (0 : E) 1)
+        q w⟫ =
+      -⟪mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) → closedBall (0 : E) 1)
+          q u,
+        mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) → closedBall (0 : E) 1)
+          q w⟫ := by
+  rw [inner_leviCivitaConnection_of_eq_inwardUnitNormal q u w hN hNν,
+    boundarySecondFundamentalForm_closedBall]
+
+/-- The second fundamental form of the unit sphere bounding the closed unit ball is the induced
+metric: `II = h`. -/
+theorem boundarySecondFundamentalForm_closedBall_eq_boundaryInducedForm
+    (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
+    boundarySecondFundamentalForm q = boundaryInducedForm q := by
+  ext u w
+  rw [boundarySecondFundamentalForm_closedBall, boundaryInducedForm_apply]
 
 end TauCeti

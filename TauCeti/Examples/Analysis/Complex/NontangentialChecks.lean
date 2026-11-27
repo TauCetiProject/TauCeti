@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Function
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Nontangential.Limit
+public import TauCeti.MeasureTheory.Integral.MaximalFunction.Indicator
 
 /-!
 # Checks for nontangential cones and maximal bounds on the half-plane
@@ -25,6 +26,12 @@ the nontangential maximal function of Poisson integrals, in the namespace
 * `h ≡ 1`, in `L¹(Π)` but not in `L¹`: `P[h] ≡ 1` on the upper half-plane and `M_1 P[h] ≡ 1`
   (`TauCeti.upperHalfPlanePoissonIntegralFun_const`,
   `nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_one`);
+* `h = 1_{[0, 1]}` at `x = 2`: `P[h](2 + i) = (arctan 2 - π / 4) / π`, which lies in `(0, 1 / 4)`,
+  while the maximal function of `h` at `2` is `1 / 4`, attained at radius `2`, so the cone
+  comparison `P[h](2 + i) ≤ 3 M h(2)` holds
+  (`upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I`,
+  `maximalFunction_indicator_Icc_zero_one_two`,
+  `ofReal_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I_le`);
 * the vertical approach `x + it`, `t → 0⁺`, is nontangential, and the nontangential filter for a
   positive aperture is nontrivial (`nontangentialFilter_one_neBot`).
 -/
@@ -92,5 +99,46 @@ theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_one (x : �
 /-- The nontangential filter of aperture one at `x` is nontrivial. -/
 theorem nontangentialFilter_one_neBot (x : ℝ) : (nontangentialFilter 1 x).NeBot :=
   nontangentialFilter_neBot one_pos x
+
+/-! ### The cone comparison for `h = 1_{[0, 1]}` at `x = 2` -/
+
+/-- **`P[1_{[0, 1]}](2 + i) = (arctan 2 - π / 4) / π`**, about `0.102`. -/
+theorem upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I :
+    upperHalfPlanePoissonIntegral (volume.restrict (Set.Icc 0 1)) (2 + I) =
+      (Real.arctan 2 - π / 4) / π := by
+  rw [upperHalfPlanePoissonIntegral_volume_restrict_Icc zero_le_one]
+  norm_num [Real.arctan_neg, Real.arctan_one]
+  ring
+
+/-- `P[1_{[0, 1]}](2 + i)` lies strictly between `0` and `1 / 4`, since
+`π / 4 = arctan 1 < arctan 2 < π / 2`. -/
+theorem upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I_mem_Ioo :
+    upperHalfPlanePoissonIntegral (volume.restrict (Set.Icc 0 1)) (2 + I) ∈ Set.Ioo 0 (1 / 4) := by
+  rw [upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I]
+  have h1 : π / 4 < Real.arctan 2 := by
+    rw [← Real.arctan_one]; exact Real.arctan_strictMono (by norm_num)
+  have h2 := Real.arctan_lt_pi_div_two 2
+  constructor
+  · exact div_pos (by linarith) Real.pi_pos
+  · rw [div_lt_iff₀ Real.pi_pos]; linarith
+
+/-- **The maximal function of `1_{[0, 1]}` at `2` is `1 / 4`**, attained at radius `2`: the ball
+`B(2, r)` meets `[0, 1]` in a set of length at most `r / 2`, with equality for `r = 2`. -/
+theorem maximalFunction_indicator_Icc_zero_one_two :
+    maximalFunction volume ((Set.Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ)) 2 = 1 / 4 := by
+  rw [maximalFunction_indicator_Icc_of_right_le zero_le_one one_le_two,
+    ENNReal.ofReal_div_of_pos (by norm_num)]
+  norm_num
+
+/-- **The cone comparison at `x = 2`**: `P[1_{[0, 1]}](2 + i) ≈ 0.102` is at most `3` times the
+maximal function `1 / 4` of `1_{[0, 1]}` at `2`. -/
+theorem ofReal_upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I_le :
+    ENNReal.ofReal (upperHalfPlanePoissonIntegral (volume.restrict (Set.Icc 0 1)) (2 + I)) ≤
+      3 * maximalFunction volume ((Set.Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ)) 2 := by
+  rw [maximalFunction_indicator_Icc_of_right_le zero_le_one one_le_two, ← ENNReal.ofReal_ofNat 3,
+    ← ENNReal.ofReal_mul (by norm_num)]
+  exact ENNReal.ofReal_le_ofReal
+    (upperHalfPlanePoissonIntegral_volume_restrict_Icc_zero_one_two_add_I_mem_Ioo.2.le.trans
+      (by norm_num))
 
 end TauCeti.Examples.Nontangential

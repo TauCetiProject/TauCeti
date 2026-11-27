@@ -19,6 +19,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.Analysis.Sobolev.BesselPotential.PrescribedFourier
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.MeasureTheory.Measure.Comap
 
@@ -187,30 +188,12 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (
   -- The right-hand side is the tempered distribution `w M`, for `M = ⟨η⟩ ^ s T (φ e_η)` square
   -- integrable and the weight `w = ⟨η⟩ ^ (-s)` of temperate growth.
   obtain ⟨s, hs⟩ := T.exists_memLp_one_add_norm_sq_rpow_smul_localFourier φ
-  set w : E → ℂ := fun η ↦ (((1 + ‖η‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)
-  have hw : w.HasTemperateGrowth := by fun_prop
-  have hwM (η : E) :
-      w η • (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η = T.localFourier φ η := by
-    have hpos : (0 : ℝ) < 1 + ‖η‖ ^ 2 := by positivity
-    have hne : ((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) ≠ 0 := (Real.rpow_pos_of_pos hpos _).ne'
-    simp only [w, neg_div, Real.rpow_neg hpos.le, smul_eq_mul, Complex.real_smul, ofReal_inv,
-      ← mul_assoc]
-    rw [inv_mul_cancel₀ (by exact_mod_cast hne), one_mul]
-  have key (ψ : 𝓢(E, ℂ)) :
-      TemperedDistribution.smulLeftCLM ℂ w (hs.toLp _ : 𝓢'(E, ℂ)) ψ =
-        ∫ η, ψ η • T.localFourier φ η := by
-    rw [TemperedDistribution.smulLeftCLM_apply_apply, Lp.toTemperedDistribution_apply]
-    refine integral_congr_ae (hs.coeFn_toLp.mono fun η hη ↦ ?_)
-    dsimp only at hη ⊢
-    rw [hη, SchwartzMap.smulLeftCLM_apply_apply hw]
-    conv_rhs => rw [← hwM η]
-    simp only [smul_eq_mul, Complex.real_smul]
-    ring
-  have h : 𝓕 (T.cutoffTempered φ) =
-      TemperedDistribution.smulLeftCLM ℂ w (hs.toLp _ : 𝓢'(E, ℂ)) :=
+  have h : 𝓕 (T.cutoffTempered φ) = TemperedDistribution.smulLeftCLM ℂ
+      (fun η : E ↦ (((1 + ‖η‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)) (hs.toLp _ : 𝓢'(E, ℂ)) :=
     TemperedDistribution.ext_real fun ψ hψ ↦ by
-      rw [key, fourier_cutoffTempered_apply_of_hasCompactSupport T φ (hψ.comp_left ofReal_zero)]
-  rw [h, key]
+      rw [TemperedDistribution.smulLeftCLM_one_add_norm_sq_rpow_neg_toLp_apply,
+        fourier_cutoffTempered_apply_of_hasCompactSupport T φ (hψ.comp_left ofReal_zero)]
+  rw [h, TemperedDistribution.smulLeftCLM_one_add_norm_sq_rpow_neg_toLp_apply]
 
 /-- **Fourier inversion for `φ T`.** Pairing the localized Fourier transform of `T` with the inverse
 Fourier transform of a Schwartz function `f` gives `φ T` evaluated at `f`:
@@ -221,6 +204,36 @@ theorem integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω,
     ← TemperedDistribution.fourier_apply, fourier_cutoffTempered_apply,
     FourierTransform.fourier_fourierInv_eq]
   simp only [smul_eq_mul]
+
+/-- The inverse Fourier transform of a real test function `ψ`, read as a complex Schwartz function,
+is the inverse Fourier transform of `x ↦ (ψ x : ℂ)`. -/
+theorem fourierInv_toSchwartzMapCLM_postcompCLM_ofRealCLM (ψ : 𝓓(Ω, ℝ)) :
+    ⇑(𝓕⁻ (toSchwartzMapCLM ℝ (postcompCLM (𝕜 := ℝ) ofRealCLM ψ) : 𝓢(E, ℂ)) : 𝓢(E, ℂ)) =
+      𝓕⁻ (fun x ↦ (ψ x : ℂ)) := by
+  rw [SchwartzMap.fourierInv_coe]
+  congr 1
+  ext x
+  simp
+
+/-- **Fourier inversion against a distribution.** If a cutoff `φ` is one on the support of a
+test function `ψ`, then `T ψ = ∫ 𝓕⁻ ψ (η) T (φ e_η) dη`. -/
+theorem complexPairing_eq_integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(Ω, ℂ)}
+    (hφ : ∀ x ∈ tsupport ψ, φ x = 1) :
+    T.complexPairing ψ = ∫ η, 𝓕⁻ (toSchwartzMapCLM ℝ ψ) η * T.localFourier φ η := by
+  rw [integral_fourierInv_mul_localFourier, cutoffTempered_apply T φ (χ := ψ)]
+  intro x
+  by_cases hx : x ∈ tsupport ψ
+  · simp [hφ x hx]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
+/-- **Fourier inversion against a distribution, for real test functions.** If a cutoff `φ` is one
+on the support of a real test function `ψ`, then `T ψ = ∫ 𝓕⁻ ψ (η) T (φ e_η) dη`. -/
+theorem apply_eq_integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)}
+    {ψ : 𝓓(Ω, ℝ)} (hφ : ∀ x ∈ tsupport ψ, φ x = 1) :
+    T ψ = ∫ η, 𝓕⁻ (fun x ↦ (ψ x : ℂ)) η * T.localFourier φ η := by
+  rw [← fourierInv_toSchwartzMapCLM_postcompCLM_ofRealCLM, ← complexPairing_postcompCLM_ofRealCLM,
+    complexPairing_eq_integral_fourierInv_mul_localFourier T fun x hx ↦
+      hφ x (tsupport_comp_subset (g := ofRealCLM) (by simp) ψ hx)]
 
 /-- **Fourier inversion for `φ T`, shifted.** Averaging the localized Fourier transform of `T`
 against the inverse Fourier transform of a Schwartz function `a` multiplies the cutoff by `a`:

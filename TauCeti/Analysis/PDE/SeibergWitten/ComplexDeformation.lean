@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.ASDDeformation
+public import TauCeti.Analysis.PDE.SeibergWitten.ASDDeformation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.AlmostComplex
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.AlmostComplexType
 

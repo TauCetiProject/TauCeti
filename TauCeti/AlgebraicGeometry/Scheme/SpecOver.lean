@@ -49,6 +49,8 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
   `Spec.map (CommRingCat.ofHom (algebraMap R R))`.
 * `AlgebraicGeometry.Scheme.Hom.isOver_left`: the underlying morphism of a morphism
   `Over.mk (X ↘ S) ⟶ Over.mk (Y ↘ S)` is a morphism over `S`.
+* `AlgebraicGeometry.Scheme.isOver_spec`: the structure morphism `X ↘ Spec R` is a morphism over
+  `Spec R` (where `Spec R` lies over itself via `AlgebraicGeometry.specOverSpec`).
 * `TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom`: morphisms `Spec B ⟶ Spec A` over `Spec R`
   are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset`: a morphism over
@@ -146,6 +148,16 @@ instance isOver_left {S X Y : Scheme.{u}} [X.Over S] [Y.Over S]
   ⟨Over.w g⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme
+
+/-- The structure morphism `X ↘ Spec R` of a scheme `X` over `Spec R` is a morphism over `Spec R`,
+where `Spec R` lies over itself via `AlgebraicGeometry.specOverSpec`. -/
+instance isOver_spec (X : Scheme.{u}) (R : Type u) [CommRing R] [X.Over (Spec (.of R))] :
+    (X ↘ Spec (.of R)).IsOver (Spec (.of R)) where
+  comp_over := by simp [specOverSpec_over]
+
+end AlgebraicGeometry.Scheme
 
 namespace TauCeti.AlgebraicGeometry
 

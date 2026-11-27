@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+import Mathlib.Algebra.Algebra.Rat
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
+import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 
 /-!
 # Basic identities for cyclotomic polynomials
@@ -34,11 +38,15 @@ Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
 `Polynomial.natDegree_cyclotomic_comp_X_add_one` record that the shifted cyclotomic polynomial
 `Φ_n(X + 1)` is monic of degree `φ(n)`, and `Polynomial.cyclotomic_comp_X_add_one_dvd` shows that
 `Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. The first two are used for the shifted
-prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`. For a
-prime `p`, `Polynomial.coeff_cyclotomic_prime_comp_X_add_one` gives the coefficients of
-`Φ_p(X + 1)` as the binomial coefficients `p choose (n + 1)`; this is the explicit form behind the
-Eisenstein property of `Φ_p(X + 1)` at `p`, and it computes the Newton polygon of `Φ_p(X + 1)` over
-a `p`-adic field.
+prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`. Over a
+commutative `ℚ`-algebra, `Polynomial.isCoprime_cyclotomic` and
+`Polynomial.isCoprime_cyclotomic_comp_X_add_one` show that `Φ_m` and `Φ_n` (and hence `Φ_m(X + 1)`
+and `Φ_n(X + 1)`) are coprime for `m ≠ n`, so over a characteristic-zero domain no nonunit
+polynomial can divide both (`Polynomial.not_dvd_cyclotomic_of_dvd`,
+`Polynomial.not_dvd_cyclotomic_comp_X_add_one_of_dvd`). For a prime `p`,
+`Polynomial.coeff_cyclotomic_prime_comp_X_add_one` gives the coefficients of `Φ_p(X + 1)` as the
+binomial coefficients `p choose (n + 1)`; this is the explicit form behind the Eisenstein property
+of `Φ_p(X + 1)` at `p`, and it computes the Newton polygon of `Φ_p(X + 1)` over a `p`-adic field.
 -/
 
 public section
@@ -131,5 +139,53 @@ theorem cyclotomic_comp_X_add_one_dvd {m n : ℕ} (h : m ∣ n) :
   simpa [Polynomial.map_comp] using _root_.map_dvd (mapRingHom (Int.castRingHom R)) hZ
 
 end Ring
+
+/-- Over a commutative `ℚ`-algebra, the cyclotomic polynomials `Φ_m` and `Φ_n` are coprime for
+`m ≠ n`. -/
+theorem isCoprime_cyclotomic {R : Type*} [CommRing R] [Algebra ℚ R] {m n : ℕ} (h : m ≠ n) :
+    IsCoprime (cyclotomic m R) (cyclotomic n R) := by
+  simpa using (cyclotomic.isCoprime_rat h).map (mapRingHom (algebraMap ℚ R))
+
+/-- Over a commutative `ℚ`-algebra, the shifted cyclotomic polynomials `Φ_m(X + 1)` and
+`Φ_n(X + 1)` are coprime for `m ≠ n`. -/
+theorem isCoprime_cyclotomic_comp_X_add_one {R : Type*} [CommRing R] [Algebra ℚ R] {m n : ℕ}
+    (h : m ≠ n) : IsCoprime ((cyclotomic m R).comp (X + 1)) ((cyclotomic n R).comp (X + 1)) := by
+  simpa using (isCoprime_cyclotomic h).map (compRingHom (X + 1 : R[X]))
+
+/-- Over a characteristic-zero integral domain, a nonunit polynomial dividing `Φ_n` divides no
+`Φ_m` with `m ≠ n`. -/
+theorem not_dvd_cyclotomic_of_dvd {R : Type*} [CommRing R] [IsDomain R] [CharZero R] {F : R[X]}
+    (hFu : ¬ IsUnit F) {m n : ℕ} (hmn : m ≠ n) (hdn : F ∣ cyclotomic n R) :
+    ¬ F ∣ cyclotomic m R := by
+  intro hdm
+  let φ := algebraMap R (FractionRing R)
+  have hcop : IsCoprime ((cyclotomic m R).map φ) ((cyclotomic n R).map φ) := by
+    simpa using isCoprime_cyclotomic (R := FractionRing R) hmn
+  have hu : IsUnit (F.map φ) :=
+    hcop.isUnit_of_dvd' (Polynomial.map_dvd φ hdm) (Polynomial.map_dvd φ hdn)
+  have hdeg : F.natDegree = 0 := by
+    rw [← natDegree_map_eq_of_injective (IsFractionRing.injective R (FractionRing R))]
+    exact natDegree_eq_zero_of_isUnit hu
+  obtain ⟨G, hFG⟩ := hdn
+  have h1 : F.coeff 0 * G.leadingCoeff = 1 := by
+    rw [← hdeg, ← leadingCoeff, ← leadingCoeff_mul, ← hFG, (cyclotomic.monic n R).leadingCoeff]
+  exact hFu (eq_C_of_natDegree_eq_zero hdeg ▸ (IsUnit.of_mul_eq_one _ h1).map C)
+
+/-- Over a characteristic-zero integral domain, a nonunit polynomial dividing `Φ_n(X + 1)` divides
+no `Φ_m(X + 1)` with `m ≠ n`. -/
+theorem not_dvd_cyclotomic_comp_X_add_one_of_dvd {R : Type*} [CommRing R] [IsDomain R]
+    [CharZero R] {F : R[X]} (hFu : ¬ IsUnit F) {m n : ℕ} (hmn : m ≠ n)
+    (hdn : F ∣ (cyclotomic n R).comp (X + 1)) :
+    ¬ F ∣ (cyclotomic m R).comp (X + 1) := by
+  intro hdm
+  have h1 (P : R[X]) : (P.comp (X - 1)).comp (X + 1) = P := by
+    rw [comp_assoc, sub_comp, X_comp, one_comp, add_sub_cancel_right, comp_X]
+  have h2 (P : R[X]) : (P.comp (X + 1)).comp (X - 1) = P := by
+    rw [comp_assoc, add_comp, X_comp, one_comp, sub_add_cancel, comp_X]
+  have hFu' : ¬ IsUnit (F.comp (X - 1)) := fun hu ↦
+    hFu (by rw [← h1 F]; exact hu.map (compRingHom (X + 1 : R[X])))
+  exact not_dvd_cyclotomic_of_dvd hFu' hmn
+    (by rw [← h2 (cyclotomic n R)]; exact _root_.map_dvd (compRingHom (X - 1 : R[X])) hdn)
+    (by rw [← h2 (cyclotomic m R)]; exact _root_.map_dvd (compRingHom (X - 1 : R[X])) hdm)
 
 end Polynomial

@@ -122,12 +122,10 @@ theorem enorm_upperHalfPlanePoissonIntegralFun_le (h : ℝ → ℂ) {z : ℂ} (h
         hint.aestronglyMeasurable).congr (.of_forall fun s => ?_)
       simp only [Pi.smul_apply', Pi.inv_apply]
       rw [smul_smul, inv_mul_cancel₀ (upperHalfPlanePoissonKernel_pos hz s).ne', one_smul]
-    rw [upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonLIntegral_def,
-      lintegral_withDensity_eq_lintegral_mul₀ hmeas.eNorm
-        (measurable_upperHalfPlanePoissonKernel z).ennreal_ofReal.aemeasurable]
+    rw [upperHalfPlanePoissonIntegralFun_def,
+      upperHalfPlanePoissonLIntegral_withDensity hmeas.eNorm]
     refine (eNorm_integral_le_lintegral_eNorm _).trans_eq (lintegral_congr fun s => ?_)
-    rw [eNorm_smul, Real.eNorm_of_nonneg (upperHalfPlanePoissonKernel_nonneg hz.le s),
-      Pi.mul_apply, mul_comm]
+    rw [eNorm_smul, Real.eNorm_of_nonneg (upperHalfPlanePoissonKernel_nonneg hz.le s), mul_comm]
   · rw [upperHalfPlanePoissonIntegralFun_def, integral_undef hint, eNorm_zero]
     exact zero_le
 
@@ -140,6 +138,24 @@ theorem integrable_upperHalfPlanePoissonKernel_smul {E : Type*} [NormedAddCommGr
     ((isPoissonFinite_withDensity_enorm hh).integrable_upperHalfPlanePoissonKernel z)
     (measurable_upperHalfPlanePoissonKernel z).aestronglyMeasurable
     (aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure hh)
+
+/-- **The Poisson integral of a difference**: `P[h - g] = P[h] - P[g]` for `h, g ∈ L¹(Π)`. -/
+theorem upperHalfPlanePoissonIntegralFun_sub {h g : ℝ → ℂ}
+    (hh : Integrable h upperHalfPlanePoissonMeasure)
+    (hg : Integrable g upperHalfPlanePoissonMeasure) (z : ℂ) :
+    upperHalfPlanePoissonIntegralFun (fun s => h s - g s) z =
+      upperHalfPlanePoissonIntegralFun h z - upperHalfPlanePoissonIntegralFun g z := by
+  simp only [upperHalfPlanePoissonIntegralFun_def, smul_sub]
+  exact integral_sub (integrable_upperHalfPlanePoissonKernel_smul hh z)
+    (integrable_upperHalfPlanePoissonKernel_smul hg z)
+
+/-- The Poisson integral of `h - c` is `P[h] - c` on the upper half-plane, for `h ∈ L¹(Π)`. -/
+theorem upperHalfPlanePoissonIntegralFun_sub_const {h : ℝ → ℂ}
+    (hh : Integrable h upperHalfPlanePoissonMeasure) (c : ℂ) {z : ℂ} (hz : 0 < z.im) :
+    upperHalfPlanePoissonIntegralFun (fun s => h s - c) z =
+      upperHalfPlanePoissonIntegralFun h z - c := by
+  rw [upperHalfPlanePoissonIntegralFun_sub hh (integrable_const c),
+    upperHalfPlanePoissonIntegralFun_const c hz]
 
 /-- The real part of `P[h]` is the Poisson integral of the real part of `h`. -/
 theorem re_upperHalfPlanePoissonIntegralFun {h : ℝ → ℂ}

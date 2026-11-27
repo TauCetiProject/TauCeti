@@ -8,7 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.Regular
 
 /-!
-# Cofinality of beth numbers
+# Beth numbers: cofinality and iterated exponentials
 
 The beth function `o ↦ ℶ_ o` is normal (`Cardinal.isNormal_beth`), and so is its composite with
 `Cardinal.ord`. A normal function preserves the cofinality of limit ordinals, so at a limit
@@ -17,12 +17,21 @@ ordinal of a regular cardinal `c` produces a strong limit cardinal `ℶ_ c.ord` 
 exactly `c`; this is the standard way of producing strong limit cardinals of prescribed
 cofinality, which is what size-bounding arguments with cutoff cardinals need.
 
+The iterated exponential `ℶₙ(κ)`, with `ℶ₀(κ) = κ` and `ℶₙ₊₁(κ) = 2 ^ ℶₙ(κ)`, generalises the
+finite steps of the beth function: `ℶₙ(ℶ_ o) = ℶ_ (o + n)`.
+
+## Main definitions
+
+* `Cardinal.iteratedTwoPow κ n`: the iterated exponential `ℶₙ(κ)`.
+
 ## Main results
 
 * `Cardinal.isNormal_ord_beth`: `o ↦ (ℶ_ o).ord` is a normal function.
 * `Cardinal.cof_ord_beth`: at a limit ordinal `o`, `(ℶ_ o).ord.cof = o.cof`.
 * `Cardinal.IsRegular.cof_ord_beth_ord`: for a regular cardinal `c`, `(ℶ_ c.ord).ord.cof = c`.
 * `Cardinal.isStrongLimit_beth_ord`: for an infinite cardinal `c`, `ℶ_ c.ord` is a strong limit.
+* `Cardinal.le_iteratedTwoPow`: `κ ≤ ℶₙ(κ)`.
+* `Cardinal.iteratedTwoPow_beth`: `ℶₙ(ℶ_ o) = ℶ_ (o + n)`.
 -/
 
 public section
@@ -51,5 +60,31 @@ theorem IsRegular.cof_ord_beth_ord {c : Cardinal.{u}} (hc : c.IsRegular) :
 limit cardinal. -/
 theorem isStrongLimit_beth_ord {c : Cardinal.{u}} (hc : ℵ₀ ≤ c) : IsStrongLimit (ℶ_ c.ord) :=
   isStrongLimit_beth.2 (isSuccLimit_ord hc).isSuccPrelimit
+
+/-- The iterated exponential `ℶₙ(κ)`: `ℶ₀(κ) = κ` and `ℶₙ₊₁(κ) = 2 ^ ℶₙ(κ)`. -/
+noncomputable def iteratedTwoPow (κ : Cardinal.{u}) : ℕ → Cardinal.{u}
+  | 0 => κ
+  | n + 1 => 2 ^ iteratedTwoPow κ n
+
+@[simp]
+theorem iteratedTwoPow_zero (κ : Cardinal.{u}) : iteratedTwoPow κ 0 = κ :=
+  (rfl)
+
+@[simp]
+theorem iteratedTwoPow_succ (κ : Cardinal.{u}) (n : ℕ) :
+    iteratedTwoPow κ (n + 1) = 2 ^ iteratedTwoPow κ n :=
+  (rfl)
+
+/-- The iterated exponential `ℶₙ(κ)` is at least `κ`. -/
+theorem le_iteratedTwoPow (κ : Cardinal.{u}) (n : ℕ) : κ ≤ iteratedTwoPow κ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => exact ih.trans (by simpa using (cantor _).le)
+
+/-- Iterating the exponential `n` times from `ℶ_ o` gives `ℶ_ (o + n)`. -/
+theorem iteratedTwoPow_beth (o : Ordinal.{u}) (n : ℕ) : iteratedTwoPow (ℶ_ o) n = ℶ_ (o + n) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [iteratedTwoPow_succ, ih, Nat.cast_succ, ← add_assoc, beth_add_one]
 
 end Cardinal

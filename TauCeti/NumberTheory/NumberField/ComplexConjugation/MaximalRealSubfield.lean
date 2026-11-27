@@ -49,6 +49,10 @@ real under a complex embedding, so it is `±1`.
 * `NumberField.IsCMField.algebraMap_norm_eq_mul_complexConj`: the norm from `K` to `K⁺` is
   `x * complexConj K x`, and `NumberField.IsCMField.complexEmbedding_algebraMap_norm`: under a
   complex embedding it is `φ x * star (φ x)`.
+* `NumberField.comap_subtype_maximalRealSubfield`: if `K` is algebraic over a subfield `E`, the
+  maximal real subfield of `E` is `E ∩ K⁺`.
+* `NumberField.map_maximalRealSubfield`: an isomorphism of fields `K ≃+* K'` carries `K⁺` onto
+  `K'⁺`.
 * `NumberField.CMExtension.maximalRealSubfield_eq_fieldRange`: for a CM extension `K / F`, `K⁺`
   is the image of `F` in `K`.
 * `NumberField.CMExtension.mem_range_algebraMap_iff_star_eq`: for a CM extension `K / F`, an
@@ -133,6 +137,33 @@ theorem mem_maximalRealSubfield_iff_star_eq (φ : K →+* ℂ) (x : K) :
   rw [← hconj, hcomm, φ.injective ((hconj x).trans hx)]
 
 end IsAbelianGalois
+
+namespace NumberField
+
+/-- **The maximal real subfield of a subfield over which `K` is algebraic.** If `K` is algebraic
+over a subfield `E`, the maximal real subfield of `E` consists of the elements of `E` lying in
+`K⁺`: every complex embedding of `E` extends to one of `K`. -/
+theorem comap_subtype_maximalRealSubfield {K : Type*} [Field K] (E : Subfield K)
+    [Algebra.IsAlgebraic E K] :
+    (maximalRealSubfield K).comap E.subtype = maximalRealSubfield E := by
+  ext x
+  rw [Subfield.mem_comap, mem_maximalRealSubfield_iff, mem_maximalRealSubfield_iff]
+  refine ⟨fun h ψ ↦ ?_, fun h φ ↦ by simpa only [RingHom.comp_apply] using h (φ.comp E.subtype)⟩
+  rw [← ComplexEmbedding.lift_algebraMap_apply K ψ x]
+  exact h (ComplexEmbedding.lift K ψ)
+
+/-- **An isomorphism of fields carries the maximal real subfield onto the maximal real
+subfield.** -/
+theorem map_maximalRealSubfield {K K' : Type*} [Field K] [Field K'] (σ : K ≃+* K') :
+    (maximalRealSubfield K).map (σ : K →+* K') = maximalRealSubfield K' := by
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨σ.symm y, fun φ ↦ ?_, σ.apply_symm_apply y⟩⟩
+  · rintro ⟨x, hx, rfl⟩ ψ
+    exact hx (ψ.comp (σ : K →+* K'))
+  · have := hy (φ.comp (σ.symm : K' →+* K))
+    simpa using this
+
+end NumberField
 
 namespace NumberField.CMExtension
 

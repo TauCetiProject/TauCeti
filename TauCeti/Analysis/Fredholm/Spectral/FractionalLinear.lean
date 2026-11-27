@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Fredholm.Spectral.Flow
 import TauCeti.Algebra.Algebra.Spectrum
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Spectral flow under a fractional linear change of operator

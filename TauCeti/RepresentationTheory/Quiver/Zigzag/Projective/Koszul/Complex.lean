@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.Dart
+public import TauCeti.Combinatorics.SimpleGraph.Dart.Basic
 public import TauCeti.Combinatorics.SimpleGraph.NeighborChoice
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Augmentation
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Corner

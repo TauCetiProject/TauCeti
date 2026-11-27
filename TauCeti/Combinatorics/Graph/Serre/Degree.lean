@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import Mathlib.Data.Set.Card
 
-import TauCeti.Combinatorics.SimpleGraph.Dart
+import TauCeti.Combinatorics.SimpleGraph.Dart.Basic
 
 /-!
 # Degrees of vertices of Serre graphs
