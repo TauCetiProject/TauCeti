@@ -117,6 +117,10 @@ theorem not_oddSquarefree_single_add_single {γ : Γ} (hγ : par γ = 1) :
 def oddDegree : (Γ →₀ ℕ) →+ ℕ :=
   Finsupp.weight fun γ => if par γ = 1 then 1 else 0
 
+theorem oddDegree_apply (J : Γ →₀ ℕ) :
+    oddDegree par J = J.sum fun γ n => if par γ = 1 then n else 0 := by
+  simp [oddDegree, Finsupp.weight_apply]
+
 @[simp]
 theorem oddDegree_single (γ : Γ) (n : ℕ) :
     oddDegree par (Finsupp.single γ n) = if par γ = 1 then n else 0 := by
@@ -133,6 +137,14 @@ transpositions of odd variables needed to normal-order `p^K p^L`, so that
 def koszulExponent : (Γ →₀ ℕ) →+ (Γ →₀ ℕ) →+ ℕ :=
   Finsupp.liftAddHom fun γ => (Finsupp.liftAddHom fun η =>
     if η < γ ∧ par γ = 1 ∧ par η = 1 then AddMonoidHom.mul else 0).flip
+
+theorem koszulExponent_apply (K L : Γ →₀ ℕ) :
+    koszulExponent par K L = K.sum fun γ m => L.sum fun η n =>
+      if η < γ ∧ par γ = 1 ∧ par η = 1 then n * m else 0 := by
+  simp only [koszulExponent, Finsupp.liftAddHom_apply, AddMonoidHom.flip_apply, Finsupp.sum,
+    AddMonoidHom.finsetSum_apply]
+  refine Finset.sum_congr rfl fun γ _ => Finset.sum_congr rfl fun η _ => ?_
+  split_ifs <;> simp
 
 @[simp]
 theorem koszulExponent_single_single (γ η : Γ) (m n : ℕ) :
@@ -459,6 +471,12 @@ theorem coeff_zero_C (a : Q) : (C par σ a).coeff 0 = a :=
 
 theorem coeff_C_of_ne_zero {J : Γ →₀ ℕ} (hJ : J ≠ 0) (a : Q) : (C par σ a).coeff J = 0 :=
   coeff_monomial_ne hJ a
+
+theorem coeff_C [DecidableEq Γ] (J : Γ →₀ ℕ) (a : Q) :
+    (C par σ a).coeff J = if J = 0 then a else 0 := by
+  split_ifs with h
+  · exact h ▸ coeff_zero_C a
+  · exact coeff_C_of_ne_zero h a
 
 /-- Left multiplication by a constant `a` multiplies every coefficient on the left by `a`. -/
 @[simp]
