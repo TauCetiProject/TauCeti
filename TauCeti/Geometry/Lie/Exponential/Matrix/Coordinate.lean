@@ -66,16 +66,6 @@ theorem analyticAt_generalLinearToPoint_expUnit_apply (X : Matrix (Fin n) (Fin n
     ((mem_rationalFunctions_iff_exists_generalLinearToPoint_apply_eq (k := ℝ)).2 ⟨f, fun _ ↦ rfl⟩)
   exact (contMDiff_iff_contDiff.1 (hf.comp (contMDiff_expUnit_smul X))).contDiffAt.analyticAt
 
-/-- The real points `exp (u • X)` of `GLₙ`, as characters of the coordinate Hopf algebra. -/
-private def expPoint (X : Matrix (Fin n) (Fin n) ℝ) (u : ℝ) : coordinateHopfAlgebra ℝ n →ₐ[ℝ] ℝ :=
-  (generalLinearToPoint (R := ℝ) n (expUnit (u • X))).ofConv
-
-/-- The coordinate function of a generic entry along the exponential curve is the corresponding
-entry of the unit `exp (u • X)`. -/
-private theorem expPoint_genericMatrix (X : Matrix (Fin n) (Fin n) ℝ) (u : ℝ) (i j : Fin n) :
-    expPoint X u (genericMatrix ℝ n i j) = (expUnit (u • X) : Matrix (Fin n) (Fin n) ℝ) i j := by
-  rw [expPoint, genericMatrix_apply, generalLinearToPoint_apply]
-
 /-- **The exponential curve of a tangent vector is an integral curve of its left-invariant vector
 field.** Let `d` be a tangent vector at the identity of `GLₙ` over `ℝ`, with matrix `X` and
 left-invariant vector field `D`. For every element `f` of the coordinate Hopf algebra, the function
@@ -90,17 +80,22 @@ theorem hasDerivAt_generalLinearToPoint_expUnit_apply
         (Bialgebra.leftInvariantDerivation d f)) t := by
   set X := tangentMatrix n d
   set D := Bialgebra.leftInvariantDerivation d
-  refine forall_of_genericMatrix ℝ n
-    (P := fun f ↦ ∀ t, HasDerivAt ((expPoint X) · f) ((expPoint X) t (D f)) t)
-    (fun s hs a ha t ↦ D.hasDerivAt_apply_of_mem_adjoin (expPoint X) (fun b hb ↦ hs b hb t) ha)
-    (fun a _ h t ↦ D.hasDerivAt_apply_ringInverse (expPoint X) (h t)) (fun i j t ↦ ?_) f t
+  -- The curve of characters `u ↦ exp (u • X)` of `O(GLₙ)`; the motive below is the statement with
+  -- this local abbreviation, which unfolds by `let`-reduction.
+  let p (u : ℝ) := (generalLinearToPoint (R := ℝ) n (expUnit (u • X))).ofConv
+  refine coordinateHopfAlgebra_induction ℝ n
+    (motive := fun f ↦ ∀ t, HasDerivAt (p · f) (p t (D f)) t)
+    (fun s hs a ha t ↦ D.hasDerivAt_apply_of_mem_adjoin p (fun b hb ↦ hs b hb t) ha)
+    (fun a _ h t ↦ D.hasDerivAt_apply_ringInverse p (h t)) (fun i j t ↦ ?_) f t
   -- On a generic entry `D x_ij = ∑ₖ X_kj x_ik`, and `exp (u • X)` has derivative
   -- `exp (t • X) * X`.
   have h := Matrix.hasDerivAt_exp_smul_apply X i j t
   rw [Matrix.mul_apply] at h
-  simp only [expPoint_genericMatrix, expUnit_coe, D, leftInvariantDerivation_genericMatrix,
-    map_sum, map_smul, smul_eq_mul]
-  simp only [mul_comm] at h ⊢
+  simp only [p, D, leftInvariantDerivation_genericMatrix]
+  simp only [map_sum, map_smul, smul_eq_mul, genericMatrix_apply, generalLinearToPoint_apply,
+    expUnit_coe]
+  -- Write the summands `X_kj * exp (t • X)_ik` in the order `exp (t • X)_ik * X_kj` of `h`.
+  rw [Finset.sum_congr rfl fun k _ ↦ mul_comm (X k j) _]
   -- `expUnit_coe` gives the exponential for the topology of the operator norm on matrices, while
   -- `h` uses the entrywise topology; the two topologies agree.
   convert h using 4 <;> exact Matrix.linftyOpTopologicalSpace_eq _ _ _

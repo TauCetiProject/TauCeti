@@ -49,8 +49,8 @@ of the coordinate morphism, and hence injectivity of that morphism.
   determinant times an adjugate entry.
 * `TauCeti.GeneralLinear.adjoin_genericMatrix_union_antipode_determinant`: the generic entries
   and the inverse determinant generate the coordinate algebra.
-* `TauCeti.GeneralLinear.forall_of_genericMatrix`: the resulting induction principle, checking a
-  property on the generic entries.
+* `TauCeti.GeneralLinear.coordinateHopfAlgebra_induction`: the resulting induction principle,
+  checking a property on the generic entries.
 * `TauCeti.GeneralLinear.determinantCoordinateMap`: the coordinate Hopf-algebra morphism from
   `D(Multiplicative ℤ)` to `GLₙ`.
 * `TauCeti.GeneralLinear.determinantCoordinateMap_single`: its value on every group-algebra
@@ -145,13 +145,15 @@ theorem adjoin_genericMatrix_union_antipode_determinant :
 the elements of the coordinate Hopf algebra which holds on the generic entries, passes from a set
 to the subalgebra it generates, and passes from a unit to its inverse, holds everywhere: the
 generic entries and the inverse determinant generate the coordinate algebra. -/
-theorem forall_of_genericMatrix {P : coordinateHopfAlgebra R n → Prop}
-    (hadjoin : ∀ s : Set (coordinateHopfAlgebra R n), (∀ a ∈ s, P a) →
-      ∀ a ∈ Algebra.adjoin R s, P a)
-    (hinv : ∀ a, IsUnit a → P a → P (Ring.inverse a))
-    (hentry : ∀ i j, P (genericMatrix R n i j)) (f : coordinateHopfAlgebra R n) : P f := by
+@[elab_as_elim]
+theorem coordinateHopfAlgebra_induction {motive : coordinateHopfAlgebra R n → Prop}
+    (hadjoin : ∀ s : Set (coordinateHopfAlgebra R n), (∀ a ∈ s, motive a) →
+      ∀ a ∈ Algebra.adjoin R s, motive a)
+    (hinv : ∀ a, IsUnit a → motive a → motive (Ring.inverse a))
+    (hentry : ∀ i j, motive (genericMatrix R n i j)) (f : coordinateHopfAlgebra R n) :
+    motive f := by
   let entries := Set.range fun ij : Fin n × Fin n ↦ genericMatrix R n ij.1 ij.2
-  have hentries : ∀ a ∈ entries, P a := by
+  have hentries : ∀ a ∈ entries, motive a := by
     rintro _ ⟨ij, rfl⟩
     exact hentry ij.1 ij.2
   -- The determinant is a polynomial in the entries.

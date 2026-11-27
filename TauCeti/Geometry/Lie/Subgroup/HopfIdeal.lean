@@ -85,9 +85,8 @@ variable (I : HopfIdeal ℝ (coordinateHopfAlgebra ℝ n))
 private theorem generalLinearToPoint_expUnit_zero_eq_zero (X : Matrix (Fin n) (Fin n) ℝ)
     {f : coordinateHopfAlgebra ℝ n} (hf : f ∈ I) :
     (generalLinearToPoint (R := ℝ) n (expUnit ((0 : ℝ) • X))).ofConv f = 0 := by
-  have h := (hopfIdealPointsSubgroup n I ℝ).one_mem
-  rw [mem_hopfIdealPointsSubgroup_iff] at h
-  simpa only [zero_smul, expUnit_zero, pointsMulEquiv_symm_apply] using h f hf
+  rw [zero_smul, expUnit_zero]
+  exact (mem_hopfIdealPointsSubgroup_iff_generalLinearToPoint n I ℝ 1).1 (one_mem _) f hf
 
 /-- **The exponential line of a vector of the Lie algebra lies in the real points.** For a closed
 subgroup `G` of `GLₙ` over `ℝ` cut out by a Hopf ideal `I`, and a tangent vector `d` at the identity
@@ -99,7 +98,7 @@ theorem expUnit_smul_mem_hopfIdealPointsSubgroup
     expUnit (t • tangentMatrix n d) ∈ hopfIdealPointsSubgroup n I ℝ := by
   set X := tangentMatrix n d
   set D := Bialgebra.leftInvariantDerivation d
-  rw [mem_hopfIdealPointsSubgroup_iff, pointsMulEquiv_symm_apply]
+  rw [mem_hopfIdealPointsSubgroup_iff_generalLinearToPoint]
   intro f hf
   -- Differentiation along the curve intertwines `D` with `deriv`, and `D` preserves `I`, so every
   -- derivative at `0` of the analytic function `u ↦ f (exp (u • X))` is the value at the identity
@@ -130,15 +129,9 @@ theorem forall_expUnit_smul_mem_hopfIdealPointsSubgroup_iff
   refine ⟨fun h ↦ (HopfIdeal.mem_lieSubalgebra_iff I d).2 fun f hf ↦ ?_,
     expUnit_smul_mem_hopfIdealPointsSubgroup I⟩
   -- The derivative at `0` of the vanishing function `u ↦ f (exp (u • X))` is `d f`.
-  have hzero : (fun u : ℝ ↦
-      (generalLinearToPoint (R := ℝ) n (expUnit (u • tangentMatrix n d))).ofConv f) = 0 :=
-    funext fun u ↦ by
-      have hu := h u
-      rw [mem_hopfIdealPointsSubgroup_iff, pointsMulEquiv_symm_apply] at hu
-      exact hu f hf
-  have hderiv := hasDerivAt_generalLinearToPoint_expUnit_apply d f 0
-  rw [hzero] at hderiv
-  have h0 := hderiv.unique (hasDerivAt_const (0 : ℝ) (0 : ℝ))
+  have h0 := (hasDerivAt_generalLinearToPoint_expUnit_apply d f 0).unique
+    ((hasDerivAt_const (0 : ℝ) (0 : ℝ)).congr_of_eventuallyEq (.of_forall fun u ↦
+      (mem_hopfIdealPointsSubgroup_iff_generalLinearToPoint n I ℝ _).1 (h u) f hf))
   rw [zero_smul, expUnit_zero, generalLinearToPoint_one, AlgHom.convOne_apply,
     Bialgebra.counit_leftInvariantDerivation, Algebra.algebraMap_self_apply] at h0
   exact (Bialgebra.CounitAlgebra.algEquivSelf ℝ _ ℝ).injective (h0.trans (map_zero _).symm)
