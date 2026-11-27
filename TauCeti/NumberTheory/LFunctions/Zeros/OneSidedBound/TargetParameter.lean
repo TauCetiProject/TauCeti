@@ -104,6 +104,40 @@ theorem strictAnti_targetParameter_iff {k κ g : ℕ} :
         have hgap : (0 : ℤ) < 2 * g := by omega
         nlinarith only [hgap]
 
+/-- A difference from a stem entry to a tail entry is at least the base weight when the gap
+pays for the possible negative part of the stem. -/
+theorem le_targetParameter_sub_of_lt_stem {a κ g i j : ℕ}
+    (hg : a ≤ (a + 1) / 2 + 2 * g) (hi : i < a) :
+    (κ : ℤ) ≤ targetParameter (a + 1) κ g i - targetParameter (a + 1) κ g (a + j) := by
+  have hrow := targetParameter_sub_one_add (k := a + 1) (by omega) κ g j
+  simp only [Nat.add_sub_cancel] at hrow
+  rw [targetParameter_of_succ_lt _ _ (by omega), hrow]
+  push_cast
+  have h : (a : ℤ) ≤ ((a + 1) / 2 : ℕ) + 2 * (g : ℤ) := by exact_mod_cast hg
+  push_cast at h
+  have hi' : (i : ℤ) + 1 ≤ a := by exact_mod_cast hi
+  nlinarith only [h, hi', mul_nonneg (Nat.cast_nonneg (α := ℤ) j) (Nat.cast_nonneg g)]
+
+/-- A difference to the `j`-th tail entry is no larger than its lift weight, provided the
+half-gap bounds the nonnegative part of the stem. -/
+theorem targetParameter_sub_le_liftWeight {a κ g i j : ℕ}
+    (hg : (a + 1) / 2 ≤ g + 1) :
+    targetParameter (a + 1) κ g i - targetParameter (a + 1) κ g (a + j) ≤
+      (κ + (2 * (j + 1) + 1) * g : ℕ) := by
+  have hrow := targetParameter_sub_one_add (k := a + 1) (by omega) κ g j
+  simp only [Nat.add_sub_cancel] at hrow
+  rw [hrow]
+  suffices targetParameter (a + 1) κ g i ≤ g by
+    push_cast
+    linarith only [this]
+  by_cases hs : i < a
+  · rw [targetParameter_of_succ_lt _ _ (by omega)]
+    omega
+  · rw [targetParameter_of_le_succ _ _ (by omega)]
+    have h : (0 : ℤ) ≤ ((i : ℤ) + 2 - (↑(a + 1) : ℤ)) * (2 * g) :=
+      mul_nonneg (by omega) (by positivity)
+    exact (neg_nonpos.mpr (add_nonneg (Nat.cast_nonneg κ) h)).trans (Nat.cast_nonneg g)
+
 /-- Every doubled row entry is at distance at least `2g` from the doubled negative lift centre
 `-2(κ + (2j + 1)g)` when `κ + 2jg` is at least `⌈k/2⌉ - 1`. -/
 theorem le_abs_two_mul_targetParameter_add {k κ g i j : ℕ}

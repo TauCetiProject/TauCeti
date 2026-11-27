@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Stirling
+public import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Algebra.Order.Floor.Semiring
+import Mathlib.Analysis.SpecialFunctions.Log.Sum
 
 /-!
 # Two-sided bounds on `log ⌊x⌋!` with half-logarithmic error
@@ -43,7 +45,21 @@ every real `x ≥ 0`.
 public section
 
 open Nat hiding log
-open Stirling
+open Stirling Finset
+
+/-- The logarithms of the distances from `j` to the earlier indices sum to `log (j!)`. -/
+theorem Fin.sum_log_sub_eq_log_factorial {n : ℕ} (j : Fin n) :
+    ∑ i ∈ Finset.Iio j, Real.log ((j : ℝ) - i) = Real.log (j.val.factorial : ℝ) := by
+  have h : (∑ i ∈ Iio j, Real.log ((j : ℝ) - i)) =
+      ∑ i ∈ range j.val, Real.log ((j : ℝ) - i) := by
+    rw [← Nat.Iio_eq_range, ← Fin.map_valEmbedding_Iio, sum_map]
+    rfl
+  rw [h, ← sum_range_reflect (fun i : ℕ ↦ Real.log ((j : ℝ) - i))]
+  refine (sum_congr rfl fun i hi ↦ ?_).trans (Real.sum_log_add_one_eq_log_factorial j.val)
+  have hi' := mem_range.mp hi
+  have he : j.val - 1 - i + (i + 1) = j.val := by omega
+  have he' : ((j.val - 1 - i : ℕ) : ℝ) + ((i : ℝ) + 1) = (j : ℝ) := by exact_mod_cast he
+  exact congrArg Real.log (by linarith only [he'])
 
 namespace Real
 
