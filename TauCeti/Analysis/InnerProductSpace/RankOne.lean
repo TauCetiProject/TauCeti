@@ -89,13 +89,6 @@ theorem norm_rankOneDivNormSq (y : F) (x : E) :
     abs_of_nonneg (norm_nonneg x), norm_rankOne]
   field_simp [norm_ne_zero_iff.mpr hx]
 
-/-- Every normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 y x` is compact. -/
-theorem isCompactOperator_rankOneDivNormSq (y : F) (x : E) :
-    IsCompactOperator (rankOneDivNormSq 𝕜 y x) := by
-  rw [rankOneDivNormSq_def, InnerProductSpace.rankOne_def']
-  exact ((isCompactOperator_of_locallyCompactSpace_rng
-    (ContinuousLinearMap.toSpanSingleton 𝕜 y)).comp_clm _).smul _
-
 end TauCeti
 
 namespace InnerProductSpace
@@ -110,6 +103,21 @@ theorem isCompactOperator_rankOne {𝕜 E F : Type*} [RCLike 𝕜]
     (ContinuousLinearMap.toSpanSingleton 𝕜 x)).comp_clm _
 
 end InnerProductSpace
+
+namespace TauCeti
+
+open InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Every normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 y x` is compact. -/
+theorem isCompactOperator_rankOneDivNormSq (y : F) (x : E) :
+    IsCompactOperator (rankOneDivNormSq 𝕜 y x) := by
+  rw [rankOneDivNormSq_def]
+  exact (isCompactOperator_rankOne y x).smul _
+
+end TauCeti
 
 namespace ContinuousLinearMap
 

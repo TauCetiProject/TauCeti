@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Int.Defs
+public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Tactic.Abel
@@ -38,7 +39,10 @@ the translations by `ℤ²` and the rotation `ρ(x, y) = (-y, x - y)` of order t
   `TriFace.edges` and its edge of direction `k`, `TriFace.edge`.
 * `TauCeti.TriEdge.whiteFace`, `TauCeti.TriEdge.blackFace`, `TauCeti.TriEdge.faces`: the two faces
   containing an edge.
+* `TauCeti.TriFace.across`: the face across the edge of direction `k` of a face.
 * `TauCeti.vertexFaces`: the six faces containing a vertex.
+* `TauCeti.TriEdge.endpoints`: the unordered pair of endpoints of an edge, which determines it
+  (`TauCeti.TriEdge.endpoints_injective`).
 * The additive actions of `ℤ × ℤ` by translation on edges, faces and configurations
   `TriEdge → Bool` (the last one Mathlib's `arrowAddAction`).
 * `TauCeti.latticeRot`, `TauCeti.TriEdge.rot`, `TauCeti.TriFace.rot`: the rotation `ρ` on vertices,
@@ -51,6 +55,8 @@ the translations by `ℤ²` and the rotation `ρ(x, y) = (-y, x - y)` of order t
   each direction.
 * `TauCeti.TriFace.eq_of_mem_edges_of_mem_edges`, `TauCeti.TriFace.isWhite_ne_of_mem_edges`: two
   distinct faces share at most one edge, and faces sharing an edge have opposite colours.
+* `TauCeti.TriFace.edge_mem_edges_iff`, `TauCeti.TriFace.across_across`: the faces containing the
+  edge `f.edge k` are `f` and `f.across k`, and crossing the same edge twice returns to `f`.
 * `TauCeti.mem_vertexFaces`, `TauCeti.card_vertexFaces`: exactly six faces contain a vertex.
 * `TauCeti.TriEdge.vadd_eq_self_iff`, `TauCeti.TriFace.vadd_eq_self_iff`: translations act freely.
 * `TauCeti.setOf_vadd_eq_true`: the edge set of a translated configuration is the translated edge
@@ -85,6 +91,16 @@ def latticeDir : Fin 3 → ℤ × ℤ := ![(1, 0), (0, 1), (1, 1)]
 
 @[simp] theorem latticeDir_two : latticeDir 2 = (1, 1) := (rfl)
 
+/-- A step along `e₂` and then along `e₁` is a step along `e₃`. -/
+@[simp] theorem add_latticeDir_one_add_latticeDir_zero (v : ℤ × ℤ) :
+    v + (0, 1) + (1, 0) = v + (1, 1) := by
+  ext <;> simp [add_assoc]
+
+/-- A step along `e₁` and then along `e₂` is a step along `e₃`. -/
+@[simp] theorem add_latticeDir_zero_add_latticeDir_one (v : ℤ × ℤ) :
+    v + (1, 0) + (0, 1) = v + (1, 1) := by
+  ext <;> simp [add_assoc]
+
 /-- An edge of the triangular lattice: the segment from `v` to `v + latticeDir k`. Every edge of
 the lattice has exactly one such name. -/
 @[ext]
@@ -112,6 +128,10 @@ def target (e : TriEdge) : ℤ × ℤ := e.v + latticeDir e.k
 
 @[simp] theorem target_mk (v : ℤ × ℤ) (k : Fin 3) : (⟨v, k⟩ : TriEdge).target = v + latticeDir k :=
   (rfl)
+
+theorem v_ne_target (e : TriEdge) : e.v ≠ e.target := by
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  fin_cases k <;> simp [Prod.ext_iff]
 
 /-- The white face containing an edge: `W(v)` for `(v, 1)` and `(v, 3)`, and `W(v - e₁)` for
 `(v, 2)`. -/
@@ -203,6 +223,21 @@ theorem edge_mem_edges (f : TriFace) (k : Fin 3) : f.edge k ∈ f.edges :=
 theorem edge_injective (f : TriFace) : Function.Injective f.edge :=
   fun k k' h => by simpa using congrArg TriEdge.k h
 
+/-- A face meets a set of edges in exactly one edge when exactly one of its three edges, indexed by
+direction, lies in the set. -/
+theorem existsUnique_mem_edges_iff (f : TriFace) (M : Set TriEdge) :
+    (∃! e, e ∈ M ∧ e ∈ f.edges) ↔ ∃! k : Fin 3, f.edge k ∈ M := by
+  constructor
+  · rintro ⟨e, ⟨heM, hef⟩, hu⟩
+    rw [mem_edges_iff_edge_eq] at hef
+    refine ⟨e.k, show f.edge e.k ∈ M by rw [hef]; exact heM, fun k hk => ?_⟩
+    have := congrArg TriEdge.k (hu _ ⟨hk, f.edge_mem_edges k⟩)
+    rwa [edge_k] at this
+  · rintro ⟨k, hk, hu⟩
+    refine ⟨f.edge k, ⟨hk, f.edge_mem_edges k⟩, fun e ⟨heM, hef⟩ => ?_⟩
+    rw [mem_edges_iff_edge_eq] at hef
+    rw [← hef, hu e.k (show f.edge e.k ∈ M by rw [hef]; exact heM)]
+
 /-- A face has three edges. -/
 @[simp] theorem card_edges (f : TriFace) : f.edges.card = 3 := by
   have : f.edges = Finset.univ.image f.edge := by
@@ -222,6 +257,14 @@ theorem isWhite_ne_of_mem_edges {f g : TriFace} {e : TriEdge} (hfg : f ≠ g) (h
     (hg : e ∈ g.edges) : f.isWhite ≠ g.isWhite := by
   rw [mem_edges_iff] at hf hg
   rcases hf with rfl | rfl <;> rcases hg with rfl | rfl <;> simp_all
+
+/-- Three faces containing an edge: the third is one of two distinct ones, since an edge lies in
+exactly two faces. -/
+theorem eq_or_eq_of_mem_edges {e : TriEdge} {f g h : TriFace} (hfg : f ≠ g)
+    (hf : e ∈ f.edges) (hg : e ∈ g.edges) (hh : e ∈ h.edges) : h = f ∨ h = g := by
+  rw [mem_edges_iff] at hf hg hh
+  rcases hf with rfl | rfl <;> rcases hg with rfl | rfl <;> rcases hh with rfl | rfl <;>
+    simp_all
 
 /-- Two distinct faces share at most one edge. -/
 theorem eq_of_mem_edges_of_mem_edges {f g : TriFace} {e e' : TriEdge} (hfg : f ≠ g)
@@ -286,7 +329,85 @@ theorem eq_blackFace_of_mem_edges {e : TriEdge} {f : TriFace} (he : e ∈ f.edge
   · simp at hf
   · exact h
 
+/-- An edge is determined by its lozenge. -/
+theorem faces_injective : Function.Injective faces := by
+  intro e e' h
+  have hw : e.whiteFace ∈ e'.faces := h ▸ mem_faces.2 e.mem_whiteFace_edges
+  have hb : e.blackFace ∈ e'.faces := h ▸ mem_faces.2 e.mem_blackFace_edges
+  rw [faces_def, Finset.mem_insert, Finset.mem_singleton] at hw hb
+  refine eq_of_whiteFace_eq_of_blackFace_eq (hw.resolve_right fun h' => ?_)
+    (hb.resolve_left fun h' => ?_)
+  · simpa using congrArg TriFace.isWhite h'
+  · simpa using congrArg TriFace.isWhite h'
+
 end TriEdge
+
+/-- An edge of a face also lies in a second face. -/
+theorem TriFace.exists_ne_mem_edges {e : TriEdge} {f : TriFace} (he : e ∈ f.edges) :
+    ∃ g, g ≠ f ∧ e ∈ g.edges := by
+  rcases mem_edges_iff.1 he with rfl | rfl
+  exacts [⟨_, e.whiteFace_ne_blackFace.symm, e.mem_blackFace_edges⟩,
+    ⟨_, e.whiteFace_ne_blackFace, e.mem_whiteFace_edges⟩]
+
+/-! ### The face across an edge -/
+
+namespace TriFace
+
+/-- The face across the edge of direction `k` of `f`. -/
+def across (f : TriFace) (k : Fin 3) : TriFace :=
+  if f.isWhite then (f.edge k).blackFace else (f.edge k).whiteFace
+
+theorem across_def (f : TriFace) (k : Fin 3) :
+    f.across k = if f.isWhite then (f.edge k).blackFace else (f.edge k).whiteFace := (rfl)
+
+/-- The faces across the edges of `W(v)` are `B(v − e₂)`, `B(v + e₁)` and `B(v)`. -/
+@[simp] theorem across_mk_true (v : ℤ × ℤ) (k : Fin 3) :
+    (⟨v, true⟩ : TriFace).across k =
+      ⟨if k = 0 then v - (0, 1) else if k = 1 then v + (1, 0) else v, false⟩ := by
+  fin_cases k <;> rfl
+
+/-- The faces across the edges of `B(v)` are `W(v + e₂)`, `W(v − e₁)` and `W(v)`. -/
+@[simp] theorem across_mk_false (v : ℤ × ℤ) (k : Fin 3) :
+    (⟨v, false⟩ : TriFace).across k =
+      ⟨if k = 0 then v + (0, 1) else if k = 1 then v - (1, 0) else v, true⟩ := by
+  fin_cases k <;> rfl
+
+@[simp] theorem isWhite_across (f : TriFace) (k : Fin 3) : (f.across k).isWhite = !f.isWhite := by
+  rw [across_def]
+  cases f.isWhite <;> simp
+
+@[simp] theorem edge_mem_edges_across (f : TriFace) (k : Fin 3) :
+    f.edge k ∈ (f.across k).edges := by
+  rw [across_def]
+  split_ifs
+  · exact (f.edge k).mem_blackFace_edges
+  · exact (f.edge k).mem_whiteFace_edges
+
+@[simp] theorem edge_across (f : TriFace) (k : Fin 3) : (f.across k).edge k = f.edge k := by
+  have := mem_edges_iff_edge_eq.1 (f.edge_mem_edges_across k)
+  rwa [edge_k] at this
+
+theorem across_ne (f : TriFace) (k : Fin 3) : f.across k ≠ f := fun h => by
+  have := congrArg isWhite h
+  cases hf : f.isWhite <;> simp [hf] at this
+
+/-- A face other than `f` containing the edge `f.edge k` is the face across it. -/
+theorem eq_across_of_mem_edges {f g : TriFace} {k : Fin 3} (hg : f.edge k ∈ g.edges)
+    (hne : g ≠ f) : g = f.across k :=
+  (eq_or_eq_of_mem_edges (across_ne f k).symm (f.edge_mem_edges k) (f.edge_mem_edges_across k)
+    hg).resolve_left hne
+
+/-- The two faces containing the edge `f.edge k` are `f` and the face across it. -/
+theorem edge_mem_edges_iff {f g : TriFace} {k : Fin 3} :
+    f.edge k ∈ g.edges ↔ g = f ∨ g = f.across k := by
+  refine ⟨fun hg => or_iff_not_imp_left.2 (eq_across_of_mem_edges hg), ?_⟩
+  rintro (rfl | rfl)
+  exacts [g.edge_mem_edges k, f.edge_mem_edges_across k]
+
+@[simp] theorem across_across (f : TriFace) (k : Fin 3) : (f.across k).across k = f :=
+  (eq_across_of_mem_edges ((edge_across f k).symm ▸ f.edge_mem_edges k) (across_ne f k).symm).symm
+
+end TriFace
 
 /-! ### The six faces at a vertex -/
 
@@ -386,6 +507,11 @@ namespace TriEdge
   simp [faces, Finset.vadd_finset_insert]
 
 end TriEdge
+
+@[simp] theorem TriFace.across_vadd (w : ℤ × ℤ) (f : TriFace) (k : Fin 3) :
+    (w +ᵥ f).across k = w +ᵥ f.across k := by
+  rw [across_def, across_def, vadd_isWhite, edge_vadd]
+  split_ifs <;> simp
 
 @[simp] theorem vertexFaces_add (w v : ℤ × ℤ) : vertexFaces (w + v) = w +ᵥ vertexFaces v := by
   simp [vertexFaces, Finset.vadd_finset_insert, add_sub_assoc]
@@ -579,6 +705,10 @@ theorem rot_mem_edges_rot {e : TriEdge} {f : TriFace} :
     rot e ∈ (TriFace.rot f).edges ↔ e ∈ f.edges := by
   rw [TriFace.edges_rot, Finset.mem_map_equiv, Equiv.symm_apply_apply]
 
+theorem vadd_mem_edges_vadd {w : ℤ × ℤ} {e : TriEdge} {f : TriFace} :
+    w +ᵥ e ∈ (w +ᵥ f).edges ↔ e ∈ f.edges := by
+  rw [TriFace.edges_vadd, Finset.vadd_mem_vadd_finset_iff]
+
 @[simp] theorem whiteFace_rot (e : TriEdge) : (rot e).whiteFace = TriFace.rot e.whiteFace :=
   (eq_whiteFace_of_mem_edges (rot_mem_edges_rot.2 e.mem_whiteFace_edges) (by simp)).symm
 
@@ -598,5 +728,79 @@ theorem vertexFaces_rot (v : ℤ × ℤ) :
   rw [Finset.mem_map_equiv, Equiv.symm_apply_apply, mem_vertexFaces, mem_vertexFaces,
     TriFace.vertices_rot, Finset.mem_map_equiv]
   simp
+
+/-! ### Endpoints of edges -/
+
+namespace TriEdge
+
+/-- The unordered pair `s(v, v + e_k)` of endpoints of an edge. -/
+def endpoints (e : TriEdge) : Sym2 (ℤ × ℤ) := s(e.v, e.target)
+
+theorem endpoints_def (e : TriEdge) : e.endpoints = s(e.v, e.target) := (rfl)
+
+@[simp] theorem mem_endpoints {e : TriEdge} {u : ℤ × ℤ} :
+    u ∈ e.endpoints ↔ u = e.v ∨ u = e.target := Sym2.mem_iff
+
+theorem not_isDiag_endpoints (e : TriEdge) : ¬e.endpoints.IsDiag :=
+  Sym2.mk_isDiag_iff.not.2 e.v_ne_target
+
+@[simp] theorem endpoints_vadd (w : ℤ × ℤ) (e : TriEdge) :
+    (w +ᵥ e).endpoints = e.endpoints.map (w + ·) := by
+  simp [endpoints]
+
+@[simp] theorem endpoints_rot (e : TriEdge) : (rot e).endpoints = e.endpoints.map latticeRot := by
+  simp only [endpoints, rot_v, target_rot, Sym2.map_mk]
+  split_ifs
+  · rfl
+  · exact Sym2.eq_swap
+
+/-- An edge is determined by its endpoints. -/
+theorem endpoints_injective : Function.Injective endpoints := by
+  rintro ⟨⟨x, y⟩, k⟩ ⟨⟨x', y'⟩, k'⟩ h
+  fin_cases k <;> fin_cases k' <;> simp [endpoints, TriEdge.ext_iff] at h ⊢ <;>
+    omega
+
+end TriEdge
+
+namespace TriFace
+
+/-- Two distinct vertices of a face are the endpoints of an edge of the face. -/
+theorem exists_mem_edges_endpoints_eq {f : TriFace} {u u' : ℤ × ℤ} (hu : u ∈ f.vertices)
+    (hu' : u' ∈ f.vertices) (h : u ≠ u') : ∃ e ∈ f.edges, e.endpoints = s(u, u') := by
+  obtain ⟨⟨a, b⟩, c⟩ := f
+  cases c <;> simp only [vertices_mk_true, vertices_mk_false, Finset.mem_insert,
+    Finset.mem_singleton] at hu hu' <;>
+    rcases hu with rfl | rfl | rfl <;> rcases hu' with rfl | rfl | rfl <;>
+    first
+    | exact absurd rfl h
+    | simp [TriEdge.endpoints, Prod.ext_iff]
+
+/-- The endpoints of an edge of a face are vertices of the face. -/
+theorem mem_vertices_of_mem_endpoints {f : TriFace} {e : TriEdge} {u : ℤ × ℤ}
+    (he : e ∈ f.edges) (hu : u ∈ e.endpoints) : u ∈ f.vertices := by
+  rcases TriEdge.mem_endpoints.1 hu with rfl | rfl
+  exacts [v_mem_vertices_of_mem_edges he, target_mem_vertices_of_mem_edges he]
+
+/-- The vertices of a face are the endpoints of any two distinct edges of the face. -/
+theorem mem_vertices_iff_of_ne {f : TriFace} {i j : Fin 3} (hij : i ≠ j) {u : ℤ × ℤ} :
+    u ∈ f.vertices ↔ u ∈ (f.edge i).endpoints ∨ u ∈ (f.edge j).endpoints := by
+  refine ⟨fun hu => ?_, fun hu => hu.elim (mem_vertices_of_mem_endpoints (f.edge_mem_edges i))
+    (mem_vertices_of_mem_endpoints (f.edge_mem_edges j))⟩
+  obtain ⟨⟨x, y⟩, _ | _⟩ := f <;> fin_cases i <;> fin_cases j <;>
+    simp_all [Prod.ext_iff] <;> omega
+
+/-- A face has only one vertex off each of its edges. -/
+theorem eq_of_notMem_endpoints {f : TriFace} {i : Fin 3} {u u' : ℤ × ℤ}
+    (hu : u ∈ f.vertices) (hu' : u' ∈ f.vertices) (h : u ∉ (f.edge i).endpoints)
+    (h' : u' ∉ (f.edge i).endpoints) : u = u' := by
+  obtain ⟨⟨x, y⟩, _ | _⟩ := f <;> fin_cases i <;> simp_all [Prod.ext_iff] <;> omega
+
+/-- The vertex of a face off one edge lies on each other edge. -/
+theorem mem_endpoints_of_notMem {f : TriFace} {i j : Fin 3} (hij : i ≠ j)
+    {u : ℤ × ℤ} (hu : u ∈ f.vertices) (hui : u ∉ (f.edge i).endpoints) :
+    u ∈ (f.edge j).endpoints :=
+  ((mem_vertices_iff_of_ne hij).1 hu).resolve_left hui
+
+end TriFace
 
 end TauCeti

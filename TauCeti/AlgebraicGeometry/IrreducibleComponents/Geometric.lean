@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 public import Mathlib.FieldTheory.SeparableClosure
 public import TauCeti.AlgebraicGeometry.IrreducibleComponents.Basic
 public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.RingTheory.Spectrum.Prime.ComponentDescent
 import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import TauCeti.Algebra.TensorProduct.CommonOverfield
+import TauCeti.AlgebraicGeometry.Scheme.SpecAlgHom
 import TauCeti.Topology.Irreducible
 
 /-!
@@ -85,7 +86,7 @@ theorem exists_finiteDimensional_forall_bijOn_closure_image_irreducibleComponent
   refine ⟨E, hE, fun F hF XF XL pF fF g fL HF HL ↦ ?_⟩
   have HFL : IsPullback (g ≫ pF) fL f (Spec.algebraMap K L) := by
     have := HL.paste_horiz HF
-    rwa [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq] at this
+    rwa [Spec.algebraMap_comp_algebraMap] at this
   -- The charts `Spec (F ⊗[K] A i)` of `X_F` and `Spec (L ⊗[K] A i)` of `X_L`, the base changes
   -- of the charts `Spec (A i)` of `X`.
   have hT' (S : Type u) [Field S] [Algebra K S] (i : ι) : IsPullback
@@ -178,7 +179,7 @@ theorem exists_forall_bijOn_preimage_irreducibleComponents {K : Type u} [Field K
     have : IsScalarTower E Ω N := .of_algHom d.right
     have hMΩ : Spec.algebraMap M N ≫ Spec.algebraMap E M =
         Spec.algebraMap Ω N ≫ Spec.algebraMap E Ω := by
-      simp only [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
+      simp only [Spec.algebraMap_comp_algebraMap]
     -- `X_N ⟶ X_M` is surjective, and `X_N ⟶ X_E` factors through `X_Ω` as a base change of
     -- `Spec N ⟶ Spec Ω`.
     let hN := pullback.fst fM (Spec.algebraMap M N)
@@ -203,16 +204,14 @@ theorem exists_forall_bijOn_preimage_irreducibleComponents {K : Type u} [Field K
   intro F _ _ _ _ XF pF fF HF M _ _ XM h fM HM
   -- Compare both extensions to the same base change over `E`, then cancel its component
   -- bijection to obtain the component bijection over `F`.
-  have HKF : Spec.algebraMap K F = Spec.algebraMap E F ≫ Spec.algebraMap K E := by
-    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
-  rw [HKF] at HF
+  rw [← Spec.algebraMap_comp_algebraMap K E F] at HF
   have HE := IsPullback.of_hasPullback f (Spec.algebraMap K E)
   have HFE := IsPullback.of_right' HF HE
   have hF := hgeom HE F HFE
   let _ : Algebra E M := ((algebraMap F M).comp (algebraMap E F)).toAlgebra
   have : IsScalarTower E F M := .of_algebraMap_eq' rfl
   have HME := HM.paste_horiz HFE
-  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq] at HME
+  rw [Spec.algebraMap_comp_algebraMap] at HME
   have hM := hgeom HE M HME
   have hc : BijOn ((h ⁻¹' ·) ∘ (HE.lift pF (fF ≫ Spec.algebraMap E F) HF.w ⁻¹' ·))
       (irreducibleComponents _) (irreducibleComponents XM) := by

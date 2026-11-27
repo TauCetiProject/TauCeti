@@ -6,10 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Int.Units
+public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.Perm.Sign
 
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import Mathlib.Data.Nat.Prime.Basic
+import TauCeti.GroupTheory.Perm.OrbitCount.Basic
+import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
 # The sign indicator of a subgroup
@@ -33,6 +38,12 @@ sign-valued character used to prove bimultiplicativity of the Hilbert symbol.
   criterion.
 * `Subgroup.signIndicator_mul_iff_index_le_two`: the finite-index form of the criterion.
 * `Subgroup.signIndicatorHom`: the resulting homomorphism when the index divides two.
+* `Subgroup.quotientSign`: the sign of the permutation action of `G` on `G ⧸ H` for a
+  finite-index subgroup `H`, with `Subgroup.quotientSign_apply` (it is `Equiv.Perm.sign` of
+  `MulAction.toPermHom G (G ⧸ H) g` for any instances), `Subgroup.quotientSign_apply_of_mem` (it
+  is `1` on a normal `H`) and `Subgroup.quotientSign_apply_of_notMem_of_index_prime` (it is
+  `(-1) ^ (l - 1)` off a normal `H` of prime index `l`, where `G` permutes the `l` cosets in a
+  single cycle).
 
 ## References
 
@@ -145,5 +156,51 @@ theorem signIndicatorHom_surjective_iff_index_eq_two (H : Subgroup G)
     Function.Surjective (H.signIndicatorHom hindex) ↔ H.index = 2 := by
   rw [H.signIndicatorHom_surjective_iff hindex, Ne, ← index_eq_one]
   rcases (Nat.dvd_prime Nat.prime_two).mp hindex with hindex | hindex <;> simp [hindex]
+
+/-- **The sign of the coset action.** For a finite-index subgroup `H ≤ G`, the sign of the
+permutation by which `g` acts on the cosets `G ⧸ H`. -/
+noncomputable def quotientSign (H : Subgroup G) [H.FiniteIndex] : G →* ℤˣ :=
+  letI := H.fintypeQuotientOfFiniteIndex
+  letI := Classical.decEq (G ⧸ H)
+  Equiv.Perm.sign.comp (MulAction.toPermHom G (G ⧸ H))
+
+/-- The sign of the coset action is the sign of the permutation `MulAction.toPermHom G (G ⧸ H) g`
+of the cosets, for any choice of `Fintype` and `DecidableEq` instances on `G ⧸ H`. -/
+theorem quotientSign_apply (H : Subgroup G) [H.FiniteIndex] [Fintype (G ⧸ H)]
+    [DecidableEq (G ⧸ H)] (g : G) :
+    H.quotientSign g = Equiv.Perm.sign (MulAction.toPermHom G (G ⧸ H) g) := by
+  rw [quotientSign, MonoidHom.comp_apply]
+  congr <;> exact Subsingleton.elim _ _
+
+/-- The sign of the coset action is `1` on a normal subgroup, which acts trivially on the cosets. -/
+@[simp]
+theorem quotientSign_apply_of_mem (H : Subgroup G) [H.Normal] [H.FiniteIndex] {g : G}
+    (hg : g ∈ H) : H.quotientSign g = 1 := by
+  let := H.fintypeQuotientOfFiniteIndex
+  let := Classical.decEq (G ⧸ H)
+  have h1 : MulAction.toPermHom G (G ⧸ H) g = 1 :=
+    Equiv.ext fun q ↦ TauCeti.smul_quotient_eq_self_of_mem hg q
+  rw [quotientSign_apply, h1, map_one]
+
+/-- Off a normal subgroup `H` of prime index `l`, the sign of the coset action is `(-1) ^ (l - 1)`:
+the element permutes the `l` cosets in a single cycle. -/
+theorem quotientSign_apply_of_notMem_of_index_prime (H : Subgroup G) [H.Normal] [H.FiniteIndex]
+    {l : ℕ} (hl : l.Prime) (hH : H.index = l) {g : G} (hg : g ∉ H) :
+    H.quotientSign g = (-1) ^ (l - 1) := by
+  let := H.fintypeQuotientOfFiniteIndex
+  let := Classical.decEq (G ⧸ H)
+  have htop := zpowers_mk_eq_top_of_index_prime H hl hH hg
+  -- Every coset is a power of `g` applied to any other, so the action of `g` has one orbit.
+  have hcyc : ∀ x y : G ⧸ H, (MulAction.toPermHom G (G ⧸ H) g).SameCycle x y := fun x y ↦ by
+    obtain ⟨i, hi⟩ := mem_zpowers_iff.mp (htop ▸ mem_top (y * x⁻¹))
+    refine ⟨i, ?_⟩
+    obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective x
+    rw [← map_zpow, MulAction.toPermHom_apply, MulAction.toPerm_apply, MulAction.Quotient.smul_mk,
+      smul_eq_mul, QuotientGroup.mk_mul, QuotientGroup.mk_zpow, hi, inv_mul_cancel_right]
+  have : Nonempty (G ⧸ H) := ⟨1⟩
+  have hcard : Fintype.card (G ⧸ H) = l := by
+    rw [← hH, index_eq_card, Nat.card_eq_fintype_card]
+  rw [quotientSign_apply, Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount,
+    TauCeti.orbitCount_eq_one_of_forall_sameCycle hcyc, hcard]
 
 end Subgroup

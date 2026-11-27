@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 

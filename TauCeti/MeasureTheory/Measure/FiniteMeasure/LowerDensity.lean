@@ -73,8 +73,7 @@ theorem le_measure_closedBall_of_tendsto [l.NeBot] (hμ : Tendsto μ l (𝓝 ν)
     ENNReal.ofReal (c * ρ ^ d) ≤ (ν : Measure X) (closedBall x ρ) :=
   -- The portmanteau theorem bounds the limit superior on the closed ball by its `ν`-mass.
   Measure.le_measure_closedBall_of_limsup_le
-    (fun _ hε ↦ (hZ.eventually_exists_dist_lt hx hε).mono fun _ ⟨y, hy, hxy⟩ ↦
-      ⟨y, hy, by rwa [dist_comm]⟩)
+    (fun _ hε ↦ hZ.isKuratowskiLimit.eventually_exists_dist_lt hx hε)
     hh univ_mem (hdens.mono fun _ hi y hy ↦ hi y hy.1) hρ hρρ₀
     (limsup_measure_closed_le_of_tendsto hμ isClosed_closedBall)
 
@@ -91,8 +90,9 @@ theorem mul_hausdorffMeasure_le_measure_of_tendsto [l.NeBot] (hμ : Tendsto μ l
     {U : Set X} (hU : IsOpen U) (hZU : (Z₀ : Set X) ⊆ U) :
     ENNReal.ofReal (c / 2 ^ d) * μH[d] (Z₀ : Set X) ≤ (ν : Measure X) U :=
   Measure.mul_hausdorffMeasure_le_measure_of_isOpen _ hU hZU fun _ hx ↦
-    Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall hρ₀ fun _ hρ hρρ₀ ↦
-      le_measure_closedBall_of_tendsto hμ hZ hh hdens hx hρ hρρ₀
+    Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall <| Eventually.frequently <|
+      eventually_of_mem (Ioc_mem_nhdsGT hρ₀) fun _ hρ ↦
+        le_measure_closedBall_of_tendsto hμ hZ hh hdens hx hρ.1 hρ.2
 
 /-- **The limit set has finite Hausdorff measure.** Under the hypotheses of
 `MeasureTheory.FiniteMeasure.le_measure_closedBall_of_tendsto`, with `c > 0` and `ρ₀ > 0`, the

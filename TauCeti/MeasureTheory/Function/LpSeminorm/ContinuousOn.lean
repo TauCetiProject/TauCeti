@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import TauCeti.MeasureTheory.Function.EssSup
+import TauCeti.MeasureTheory.Measure.Support
 
 /-!
 # Continuous functions and the `L^∞` seminorm
@@ -18,6 +21,9 @@ every measurable `s ⊆ K` (`ContinuousOn.memLp_top_restrict_of_subset_isCompact
 covers the usual case of an open interval `(a, b)` inside the compact interval `[a, b]`. This is the
 continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-measure counterpart
 of `Continuous.memLp_top_of_hasCompactSupport`.
+
+Without compactness, a function continuous on a measurable set `s` and bounded there lies in
+`L^∞(μ.restrict s)` (`ContinuousOn.memLp_top_restrict_of_bound`).
 
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
@@ -30,7 +36,11 @@ every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the inte
 
 In the other direction, for a measure that charges every nonempty open set
 (`MeasureTheory.Measure.IsOpenPosMeasure`), the `L^∞` seminorm bounds the value of `f` at every
-point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`).
+point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`), and its restriction to a
+neighbourhood `s` of `x` bounds `f x` when `f` is continuous at `x` within `s`
+(`ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict`). In particular, on a nonempty open interval
+`(a, b) ⊆ ℝ`, the real-valued `L^∞` norm of the identity function equals `max |a| |b|`
+(`MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo`).
 -/
 
 public section
@@ -51,24 +61,42 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
   refine memLp_top_of_bound_eNorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
   filter_upwards [ae_restrict_mem hs] with x hx using eNorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
 
+/-- A function continuous and bounded on a measurable set `s` is essentially bounded on `s`. -/
+theorem ContinuousOn.memLp_top_restrict_of_bound [SecondCountableTopologyEither X E] {f : X → E}
+    {s : Set X} {μ : Measure X} (hf : ContinuousOn f s) (hs : MeasurableSet s) (C : ℝ)
+    (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : MemLp f ∞ (μ.restrict s) :=
+  memLp_top_of_bound_eNorm (hf.aestronglyMeasurable hs) C.toNNReal <| (ae_restrict_iff' hs).2 <|
+    .of_forall fun x hx ↦ (ofReal_norm (f x)).symm.trans_le (ENNReal.ofReal_le_ofReal (hC x hx))
+
 omit [OpensMeasurableSpace X] in
-/-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
-at `x` and the measure charges every nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞}`. -/
-theorem ContinuousAt.eNorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E}
-    {x : X} (hf : ContinuousAt f x) : ‖f x‖ₑ ≤ eLpNorm f ∞ μ := by
-  by_cases hm : AEStronglyMeasurable f μ
+/-- **The essential supremum on a neighbourhood dominates a value at a point of continuity.** If
+`s` is a neighbourhood of `x`, `f` is continuous at `x` within `s`, and the measure charges every
+nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞(μ.restrict s)}`. -/
+theorem ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict {μ : Measure X} [μ.IsOpenPosMeasure]
+    {f : X → E} {s : Set X} {x : X} (hf : ContinuousWithinAt f s x) (hs : s ∈ nhds x) :
+    ‖f x‖ₑ ≤ eLpNorm f ∞ (μ.restrict s) := by
+  by_cases hm : AEStronglyMeasurable f (μ.restrict s)
   swap
   · rw [eLpNorm_of_not_aestronglyMeasurable hm]
     exact le_top
   by_contra h
   push Not at h
-  -- Near `x`, `‖f‖ₑ` exceeds the essential supremum on a neighbourhood, of positive measure.
-  have hV := hf.eNorm.eventually_const_lt h
-  have hae : ∀ᵐ y ∂μ, ‖f y‖ₑ ≤ eLpNorm f ∞ μ := by
+  -- Near `x`, `‖f‖ₑ` exceeds the essential supremum on `s`, on a neighbourhood inside `s`.
+  have hV := (hf.continuousAt hs).eNorm.eventually_const_lt h
+  have hae : ∀ᵐ y ∂μ.restrict s, ‖f y‖ₑ ≤ eLpNorm f ∞ (μ.restrict s) := by
     rw [eLpNorm_exponent_top hm]
-    exact eNorm_ae_le_eLpNormEssSup f μ
-  have h0 : μ {y | eLpNorm f ∞ μ < ‖f y‖ₑ} = 0 := by simpa only [ae_iff, not_le] using hae
-  exact (μ.measure_pos_of_mem_nhds hV).ne' h0
+    exact eNorm_ae_le_eLpNormEssSup f _
+  have h0 : μ.restrict s {y | eLpNorm f ∞ (μ.restrict s) < ‖f y‖ₑ} = 0 := by
+    simpa only [ae_iff, not_le] using hae
+  exact (μ.measure_pos_of_mem_nhds (Filter.inter_mem hV hs)).ne'
+    (le_antisymm ((Measure.le_restrict_apply _ _).trans h0.le) zero_le)
+
+omit [OpensMeasurableSpace X] in
+/-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
+at `x` and the measure charges every nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞}`. -/
+theorem ContinuousAt.eNorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E}
+    {x : X} (hf : ContinuousAt f x) : ‖f x‖ₑ ≤ eLpNorm f ∞ μ := by
+  simpa using hf.continuousWithinAt.eNorm_le_eLpNorm_top_restrict (μ := μ) Filter.univ_mem
 
 section CLMComp
 
@@ -93,3 +121,24 @@ theorem Continuous.eLpNorm_eq_integral_rpow_norm {F : Type*} [NormedAddCommGroup
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hpt : p ≠ ∞) :
     eLpNorm f p μ = ENNReal.ofReal ((∫ x, ‖f x‖ ^ p.toReal ∂μ) ^ p.toReal⁻¹) :=
   (hf.memLp_of_hasCompactSupport (.of_compactSpace f)).eLpNorm_eq_integral_rpow_norm hp0 hpt
+
+/-- For an open-positive measure `μ` on `ℝ` and a nonempty open interval `(a, b)`, the real-valued
+`L^∞` norm of the identity function is `max |a| |b|`. -/
+@[simp]
+theorem MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo (μ : Measure ℝ)
+    [μ.IsOpenPosMeasure] {a b : ℝ} (hab : a < b) :
+    lpNorm (id : ℝ → ℝ) ∞ (μ.restrict (Set.Ioo a b)) = max |a| |b| := by
+  rw [← toReal_eLpNorm, eLpNorm_exponent_top continuous_id.aestronglyMeasurable,
+    eLpNormEssSup_eq_essSup_eNorm]
+  simp only [id_eq]
+  rw [TauCeti.essSup_eq_iSup_support _ continuous_eNorm.lowerSemicontinuous Measure.support_mem_ae,
+    Measure.support_restrict_of_isOpen μ isOpen_Ioo, closure_Ioo hab.ne]
+  have hsup : (⨆ x ∈ Set.Icc a b, ‖x‖ₑ) = ENNReal.ofReal (max |a| |b|) := by
+    refine le_antisymm (iSup₂_le fun x hx => ?_) ?_
+    · rw [Real.eNorm_eq_ofReal_abs]
+      exact ENNReal.ofReal_le_ofReal (abs_le_max_abs_abs hx.1 hx.2)
+    · rw [ENNReal.ofReal_max]
+      exact max_le
+        (le_iSup₂_of_le a (Set.left_mem_Icc.2 hab.le) (Real.eNorm_eq_ofReal_abs a).ge)
+        (le_iSup₂_of_le b (Set.right_mem_Icc.2 hab.le) (Real.eNorm_eq_ofReal_abs b).ge)
+  rw [hsup, ENNReal.toReal_ofReal (le_max_of_le_left (abs_nonneg a))]

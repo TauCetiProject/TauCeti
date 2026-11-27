@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 import Mathlib.Topology.Homotopy.Product
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
@@ -102,6 +103,7 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 * `TauCeti.GLSymplectic.graphUnitaryFrame`: a continuous unitary frame of `T Γ(A)`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex`: the Conley–Zehnder index of a path of symplectic
   matrices.
+* `TauCeti.diagonalExpPath`: the path `t ↦ diag (e^{i b t})` of diagonal unitary matrices.
 
 ## Main results
 
@@ -122,6 +124,8 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
   path of diagonal unitary matrices.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`: the
   normalization on rotations, `CZ = -∑ j, sign α_j`.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_diagonalExpPath`: the realified path
+  `t ↦ diag (e^{i b t})` has index `-n (⌊b / 2π⌋ + ⌈b / 2π⌉)`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_sum`: the direct-sum axiom.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_two_mul_maslovIndex`: the index of a loop is
   `-2 μ`.
@@ -612,6 +616,41 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unit
     Int.ceil_zero, add_zero, Int.cast_zero, sub_zero]
   exact floor_add_ceil_div_eq_sign_of_abs_lt (hα j)
 
+end GLSymplectic
+
+variable (n) in
+/-- The path `t ↦ diag (e^{i b t})`, `t ∈ [0, 1]`, of diagonal unitary matrices, all of whose
+diagonal entries turn at the same angular speed `b`. -/
+noncomputable def diagonalExpPath (b : ℝ) :
+    Path (unitaryTorusHom n fun _ ↦ Circle.exp (b * (0 : I)))
+      (unitaryTorusHom n fun _ ↦ Circle.exp (b * (1 : I))) where
+  toFun t := unitaryTorusHom n fun _ ↦ Circle.exp (b * t)
+  continuous_toFun := by fun_prop
+  source' := rfl
+  target' := rfl
+
+/-- At time `t`, the path `TauCeti.diagonalExpPath n b` is the diagonal matrix
+`diag (e^{i b t})`. -/
+@[simp]
+theorem coe_diagonalExpPath_apply (b : ℝ) (t : I) :
+    ((diagonalExpPath n b t : unitaryGroup n ℂ) : Matrix n n ℂ) =
+      diagonal fun _ ↦ Complex.exp ((b * t : ℝ) * Complex.I) := by
+  simp only [diagonalExpPath, Path.coe_mk_mk, coe_unitaryTorusHom, Circle.coe_exp]
+
+namespace GLSymplectic
+
+/-- The realified path `t ↦ diag (e^{i b t})` of `TauCeti.diagonalExpPath` has Conley–Zehnder
+index `-card n (⌊b / 2π⌋ + ⌈b / 2π⌉)`. -/
+theorem conleyZehnderIndex_map_ofUnitary_diagonalExpPath (b : ℝ) :
+    conleyZehnderIndex ((diagonalExpPath n b).map continuous_ofUnitary) =
+      -(Fintype.card n : ℝ) * (⌊b / (2 * Real.pi)⌋ + ⌈b / (2 * Real.pi)⌉ : ℤ) := by
+  rw [conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal _ (θ := fun _ t ↦ b * t)
+    (fun _ ↦ by fun_prop) (coe_diagonalExpPath_apply b)]
+  simp only [Set.Icc.coe_one, Set.Icc.coe_zero, mul_one, mul_zero, zero_div, Int.floor_zero,
+    Int.ceil_zero, add_zero, Int.cast_zero, sub_zero, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul]
+  ring
+
 /-! ### Direct sums -/
 
 section Sum
@@ -679,16 +718,14 @@ private theorem detCircle_graphUnitaryFrame_sq (A : GLSymplectic n ℝ) :
   have hu : (detCircle (graphUnitaryFrame A) : ℂ) = (detCircle T : ℂ) * (r * d) := by
     rw [coe_detCircle, coe_detCircle, graphUnitaryFrame, det_mul, hr, coe_graphFrameUnit]
   -- Both determinants lie on the unit circle.
-  have hconj (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
-    rw [← Circle.coe_inv_eq_conj, ← Circle.coe_mul, mul_inv_cancel, Circle.coe_one]
-  have huu := hconj (detCircle (graphUnitaryFrame A))
+  have huu := Circle.coe_mul_conj (detCircle (graphUnitaryFrame A))
   rw [hu, map_mul, map_mul, conj_ofReal] at huu
   have hd : conj d ≠ 0 := (map_ne_zero _).2 (det_graphFrame_ne_zero A)
   refine Circle.ext ?_
   rw [Circle.coe_pow, Circle.coe_mul, Circle.coe_pow, coe_graphPhase, hu, mul_div_assoc',
     eq_div_iff hd]
   linear_combination ((detCircle T : ℂ) ^ 2 * d) * huu -
-    ((detCircle T : ℂ) ^ 2 * d * r ^ 2 * d * conj d) * hconj (detCircle T)
+    ((detCircle T : ℂ) ^ 2 * d * r ^ 2 * d * conj d) * Circle.coe_mul_conj (detCircle T)
 
 /-- **The Conley–Zehnder index of a loop.** A loop `γ` of symplectic matrices has
 Conley–Zehnder index `-2 μ(γ)`, where `μ` is the Maslov index of loops of symplectic matrices. -/

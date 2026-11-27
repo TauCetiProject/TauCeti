@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
-public import TauCeti.Geometry.Symplectic.Liouville.Radial
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
 # Isotropic and Lagrangian maps into a complex inner product space
@@ -33,6 +36,12 @@ coordinates, satisfies `dλ = Im ⟪·, ·⟫_ℂ`, and it pulls back to a close
 isotropic map (`TauCeti.isClosed_mpullback_radialPrimitive_imInnerSymplecticForm`). Its periods
 along the boundary loops of holomorphic discs with Lagrangian boundary are their symplectic areas.
 
+At the other end of the dimension range, a map `f` of an open subset of `E` into `E` whose
+derivative preserves `Im ⟪·, ·⟫_ℂ` has injective derivative, since the form is nondegenerate
+(`LinearMap.BilinForm.Isometry.injective`), and is therefore a local diffeomorphism by the
+inverse function theorem (`TauCeti.isLocalDiffeomorphOn_of_forall_im_inner_fderiv`). This is how a
+symplectic embedding of a ball into `ℂⁿ` is read as a partial diffeomorphism onto its image.
+
 ## Main results
 
 * `TauCeti.isIsotropicMap_imInnerSymplecticForm_iff`: isotropy of a map into `E` is the vanishing
@@ -44,6 +53,8 @@ along the boundary loops of holomorphic discs with Lagrangian boundary are their
   whose real and imaginary parts form a Lagrangian map into `ℝⁿ × ℝⁿ`.
 * `TauCeti.isClosed_mpullback_radialPrimitive_imInnerSymplecticForm`: the radial primitive pulls
   back to a closed form along an isotropic map.
+* `TauCeti.isLocalDiffeomorphOn_of_forall_im_inner_fderiv`: a `C¹` map of an open subset of `E`
+  into `E` whose derivative preserves `Im ⟪·, ·⟫_ℂ` is a local diffeomorphism.
 
 ## References
 
@@ -116,5 +127,21 @@ theorem isClosed_mpullback_radialPrimitive_imInnerSymplecticForm [IsManifold J �
     (SmoothForm.mpullback f hf (imInnerSymplecticForm E).radialPrimitive).IsClosed :=
   (imInnerSymplecticForm E).isClosed_mpullback_radialPrimitive hf
     (isIsotropicMap_imInnerSymplecticForm_iff.2 h)
+
+/-- **A map preserving the standard symplectic form is a local diffeomorphism.** If `f` is `Cⁿ`,
+`n ≥ 1`, on an open subset `s` of `E`, and its derivative preserves `Im ⟪·, ·⟫_ℂ` at every point of
+`s`, then `f` is a `Cⁿ` local diffeomorphism on `s`. -/
+theorem isLocalDiffeomorphOn_of_forall_im_inner_fderiv {f : E → E} {s : Set E} {n : WithTop ℕ∞}
+    (hf : ContDiffOn ℝ n f s) (hs : IsOpen s) (hn : 1 ≤ n)
+    (hω : ∀ x ∈ s, ∀ v w, (⟪fderiv ℝ f x v, fderiv ℝ f x w⟫_ℂ).im = (⟪v, w⟫_ℂ).im) :
+    IsLocalDiffeomorphOn 𝓘(ℝ, E) 𝓘(ℝ, E) n f s := by
+  have : FiniteDimensional ℝ E := FiniteDimensional.complexToReal E
+  rintro ⟨x, hx⟩
+  refine isLocalDiffeomorphAt_of_injective_mfderiv (contMDiffOn_iff_contDiffOn.2 hf) hs hx
+    BoundarylessManifold.isInteriorPoint hn ?_ rfl
+  rw [mfderiv_eq_fderiv]
+  exact LinearMap.BilinForm.Isometry.injective (B := (imInnerSymplecticForm E).toBilinForm)
+    (B' := (imInnerSymplecticForm E).toBilinForm)
+    ⟨(fderiv ℝ f x).toLinearMap, by simpa using hω x hx⟩ (imInnerSymplecticForm E).nondegenerate.1
 
 end TauCeti

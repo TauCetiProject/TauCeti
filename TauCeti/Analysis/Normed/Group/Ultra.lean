@@ -19,7 +19,11 @@ common point `y`, the triangle inequality reads `‖x - z‖ ≤ max ‖x - y‖
 same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`. Consequently a dense
 subset attains every nonzero norm (`IsUltrametricDist.exists_norm_eq_of_denseRange'`, additively
 `IsUltrametricDist.exists_norm_eq_of_denseRange`): passing to a completion adds no new nonzero
-norms.
+norms. Likewise `max ‖x‖ r = max ‖y‖ r` whenever `‖x - y‖ ≤ r`
+(`IsUltrametricDist.max_norm_eq_of_norm_sub_le`). In a commutative ultrametric group, a common
+weighted bound `‖f i‖ * w ≤ B` (`w, B ≥ 0`) passes to a finite product or sum without dividing by
+`w` (`IsUltrametricDist.norm_prod_mul_le_of_forall_le`, additively
+`IsUltrametricDist.norm_sum_mul_le_of_forall_le`).
 
 A separable ultrametric additive group with a strictly decreasing sequence of norms `‖cₙ‖`
 bounded away from `0` is not spherically complete: there are decreasing closed balls of radii
@@ -72,6 +76,17 @@ theorem norm_div_le_max_norm_div (x y z : S) : ‖x / z‖ ≤ max ‖x / y‖ �
   rw [norm_div_rev z y, ← div_mul_div_cancel x y z]
   exact norm_mul_le_max _ _
 
+/-- In an ultrametric group, `max ‖x‖ r` does not change when `x` moves by at most `r`: if
+`‖x / y‖ ≤ r` then `max ‖x‖ r = max ‖y‖ r`. -/
+@[to_additive /-- In an ultrametric additive group, `max ‖x‖ r` does not change when `x` moves by
+at most `r`: if `‖x - y‖ ≤ r` then `max ‖x‖ r = max ‖y‖ r`. -/]
+theorem max_norm_eq_of_norm_div_le {x y : S} {r : ℝ} (h : ‖x / y‖ ≤ r) :
+    max ‖x‖ r = max ‖y‖ r := by
+  have key {a b : S} (h : ‖a / b‖ ≤ r) : max ‖a‖ r ≤ max ‖b‖ r :=
+    max_le (norm_le_of_norm_div_le (le_max_left _ _) (h.trans (le_max_right _ _)))
+      (le_max_right _ _)
+  exact le_antisymm (key h) (key (norm_div_rev x y ▸ h))
+
 /-- **A dense subset attains every nonzero norm** of an ultrametric group: if `f` has dense range
 and `‖y‖ ≠ 0`, then `‖f a‖ = ‖y‖` for some `a`. -/
 @[to_additive exists_norm_eq_of_denseRange /-- **A dense subset attains every nonzero norm** of an
@@ -83,6 +98,25 @@ theorem exists_norm_eq_of_denseRange' {α : Type*} {f : α → S} (hf : DenseRan
   rw [dist_eq_norm_inv_mul] at ha
   refine ⟨a, ?_⟩
   rw [← mul_inv_cancel_left y (f a), norm_mul_eq_max_of_norm_ne_norm ha.ne', max_eq_left ha.le]
+
+section CommGroup
+
+variable {M ι : Type*} [SeminormedCommGroup M] [IsUltrametricDist M]
+
+/-- Weighted ultrametric inequality for finite products: if `0 ≤ w`, `0 ≤ B`, and `‖f i‖ * w ≤ B`
+for every `i ∈ s`, then `‖∏ i ∈ s, f i‖ * w ≤ B` without dividing by `w`. -/
+@[to_additive norm_sum_mul_le_of_forall_le /-- Weighted ultrametric inequality for finite sums: if
+`0 ≤ w`, `0 ≤ B`, and `‖f i‖ * w ≤ B` for every `i ∈ s`, then `‖∑ i ∈ s, f i‖ * w ≤ B` without
+dividing by `w`. -/]
+theorem norm_prod_mul_le_of_forall_le {s : Finset ι} {f : ι → M} {w B : ℝ}
+    (hw : 0 ≤ w) (hB : 0 ≤ B) (hf : ∀ i ∈ s, ‖f i‖ * w ≤ B) :
+    ‖∏ i ∈ s, f i‖ * w ≤ B := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simpa using hB
+  · obtain ⟨i, hi, hle⟩ := exists_norm_finsetProd_le_of_nonempty hs f
+    exact (mul_le_mul_of_nonneg_right hle hw).trans (hf i hi)
+
+end CommGroup
 
 section SphericalCompleteness
 

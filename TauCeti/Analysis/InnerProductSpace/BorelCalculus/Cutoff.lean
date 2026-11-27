@@ -106,7 +106,7 @@ theorem spectralCutoff_mem_twoSidedIdeal (a : H →L[ℂ] H) [IsStarNormal a]
     BoundedBorelFunction.ofContinuousMap ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))
   have hprod : idSym * g = BoundedBorelFunction.indicator B hB 1 := by
     ext z
-    simp only [idSym, g, BoundedBorelFunction.mul_apply, BoundedBorelFunction.indicator_apply,
+    simp only [idSym, g, _root_.mul_apply, BoundedBorelFunction.indicator_apply,
       BoundedBorelFunction.truncate_apply, BoundedBorelFunction.ofContinuousMap_apply,
       ContinuousMap.restrict_apply, ContinuousMap.id_apply]
     by_cases hz : z ∈ B
@@ -115,7 +115,7 @@ theorem spectralCutoff_mem_twoSidedIdeal (a : H →L[ℂ] H) [IsStarNormal a]
         rw [Set.mem_ofPred_eq, norm_inv]
         exact (inv_le_inv₀ hnorm_pos hε).mpr hz
       rw [Set.indicator_of_mem hle, Set.indicator_of_mem hz,
-        BoundedBorelFunction.one_apply, mul_inv_cancel₀ (norm_pos_iff.mp hnorm_pos)]
+        _root_.one_apply, mul_inv_cancel₀ (norm_pos_iff.mp hnorm_pos)]
     · have hlt : ‖(z : ℂ)‖ < ε := not_le.mp hz
       rw [Set.indicator_of_notMem hz]
       rcases eq_or_ne (z : ℂ) 0 with hz0 | hz0

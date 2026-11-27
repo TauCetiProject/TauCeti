@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
+import TauCeti.Algebra.Module.Projective.LinearMap
 import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
@@ -64,6 +65,15 @@ free in that degree and zero above it, while in the top degree it need not be to
 * `TopPair.singularKronecker_bijective_of_projective_homology` and
   `TopPair.singularKroneckerEquivOfProjectiveHomology`: the same for relative cohomology of a
   pair whose relative homology is projective.
+* `TopCat.singularKroneckerLinearEquivOfProjectiveHomology` and
+  `TopPair.singularKroneckerLinearEquivOfProjectiveHomology`: the same isomorphisms into the
+  modules of `k`-linear maps `Hₙ(X; R) →ₗ[k] M` and `Hₙ(X, A; R) →ₗ[k] M`.
+* `TopCat.isZero_singularCohomology_of_projective_homology_lt`,
+  `TopCat.finite_singularCohomology_of_projective_homology_lt` and
+  `TopCat.free_singularCohomology_of_projective_homology_lt`: with projective homology below
+  degree `n`, `Hⁿ(X; R, M)` vanishes when `Hₙ(X; R)` does, is finitely generated when `Hₙ(X; R)`
+  is projective and finitely generated and `M` is finitely generated, and is free when `Hₙ(X; R)`
+  is free of finite rank and `M` is free.
 * `TopCat.singularKronecker_bijective_of_projective_homology_lt` and
   `TopCat.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt`: the Kronecker map
   is bijective in degree `n` when the homology is projective below `n`, so that an injective map
@@ -72,6 +82,10 @@ free in that degree and zero above it, while in the top degree it need not be to
   is injective on `H¹` of every space.
 * `TopCat.singularKroneckerEquivOne`: for free coefficients the Kronecker map is an isomorphism
   `H¹(X; R, M) ≃ₗ[k] Hom(H₁(X; R), M)` for every space `X`.
+* `TopCat.singularCohomology_one_ext`: for free coefficients a class of `H¹(X; R, M)` is
+  determined by its Kronecker pairings.
+* `TopCat.isAddTorsionFree_singularCohomology_one`: for free `R` and torsion-free `M`,
+  `H¹(X; R, M)` is torsion-free.
 * `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
   bijective in degree `n` when the relative homology is projective below `n`, for instance when it
   vanishes there.
@@ -112,7 +126,7 @@ namespace TopCat
 
 section ProjectiveHomologyBelow
 
-variable {k : Type w} [CommRing k] (X : TopCat.{w}) {R : ModuleCat.{w} k} [Module.Projective k R]
+variable {k : Type*} [CommRing k] (X : TopCat.{w}) {R : ModuleCat.{w} k} [Module.Projective k R]
 
 /-- **The universal coefficient theorem below the first non-projective homology**, over any
 commutative ring `k`: for a projective coefficient module `R`, if the singular homology modules
@@ -173,11 +187,72 @@ lemma singularKroneckerEquivOne_apply [Module.Free k R] (M : ModuleCat.{w} k)
     X.singularKroneckerEquivOne M α = X.singularKronecker k 1 α :=
   (rfl)
 
+/-- **A class of `H¹` is determined by its Kronecker pairings**: for a free coefficient module `R`,
+two classes of `H¹(X; R, M)` that pair equally with every class of `H₁(X; R)` are equal, because
+the Kronecker map is injective in degree one (`TopCat.singularKroneckerEquivOne`). -/
+theorem singularCohomology_one_ext [Module.Free k R] {M : ModuleCat.{w} k}
+    {α β : X.singularCohomology R k M 1}
+    (h : ∀ c, X.singularKronecker k 1 α c = X.singularKronecker k 1 β c) : α = β :=
+  (X.singularKroneckerEquivOne M).injective (ModuleCat.hom_ext (LinearMap.ext h))
+
+/-- **`H¹` with torsion-free coefficients is torsion-free**: for a free coefficient module `R` and a
+module `M` without additive torsion, `H¹(X; R, M)` has no nonzero element of finite order, because
+the Kronecker map identifies it with `Hom(H₁(X; R), M)`
+(`TopCat.singularKroneckerEquivOne`). For instance `H¹(X; ℤ)` is torsion-free for every space
+`X`. -/
+instance isAddTorsionFree_singularCohomology_one [Module.Free k R] (M : ModuleCat.{w} k)
+    [IsAddTorsionFree M] : IsAddTorsionFree (X.singularCohomology R k M 1) :=
+  Function.Injective.isAddTorsionFree
+    { toFun α := ⇑(X.singularKroneckerEquivOne M α).hom
+      map_zero' := by simp
+      map_add' α β := by simp }
+    fun _ _ h ↦ X.singularCohomology_one_ext (congrFun h)
+
+/-- **Cohomology vanishes where homology vanishes above projective homology**: for a projective
+coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n` and `Hₙ(X; R) = 0`, then
+`Hⁿ(X; R, M) = 0` for every module `M`, since the universal coefficient theorem identifies it with
+`Hom(Hₙ(X; R), M)`. -/
+theorem isZero_singularCohomology_of_projective_homology_lt (M : ModuleCat.{w} k) {n : ℕ}
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+    (hn : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)) :
+    IsZero (X.singularCohomology R k M n) := by
+  have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X ⟶ M) :=
+    ⟨hn.eq_of_src⟩
+  have := (X.singularKronecker_bijective_of_projective_homology_lt M n h).1.subsingleton
+  exact ModuleCat.isZero_of_subsingleton _
+
+/-- **Cohomology is finitely generated where homology is finitely generated and projective**: for a
+projective coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n`, `Hₙ(X; R)` is finitely
+generated and projective and `M` is finitely generated, then `Hⁿ(X; R, M)` is finitely generated,
+being `Hom(Hₙ(X; R), M)` by the universal coefficient theorem
+(`Module.Finite.linearMap_of_projective`). -/
+theorem finite_singularCohomology_of_projective_homology_lt (M : ModuleCat.{w} k) (n : ℕ)
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+    [Module.Projective k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    [Module.Finite k M] : Module.Finite k (X.singularCohomology R k M n) :=
+  Module.Finite.equiv (LinearEquiv.ofBijective _
+    (X.singularKronecker_bijective_of_projective_homology_lt M n h) ≪≫ₗ
+      ModuleCat.homLinearEquiv).symm
+
+/-- **Cohomology is free where homology is free of finite rank above projective homology**: for a
+projective coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n`, `Hₙ(X; R)` is free and
+finitely generated and `M` is free, then `Hⁿ(X; R, M)` is free, being `Hom(Hₙ(X; R), M)` by the
+universal coefficient theorem. -/
+theorem free_singularCohomology_of_projective_homology_lt (M : ModuleCat.{w} k) (n : ℕ)
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+    [Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    [Module.Free k M] : Module.Free k (X.singularCohomology R k M n) :=
+  Module.Free.of_equiv (LinearEquiv.ofBijective _
+    (X.singularKronecker_bijective_of_projective_homology_lt M n h) ≪≫ₗ
+      ModuleCat.homLinearEquiv).symm
+
 end ProjectiveHomologyBelow
 
 section ProjectiveHomology
 
-variable {k : Type w} [CommRing k] (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
+variable {k : Type*} [CommRing k] (X : TopCat.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
   [hX : ∀ n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
 
 /-- **The universal coefficient theorem with projective homology**, over any commutative ring `k`:
@@ -204,6 +279,34 @@ lemma singularKroneckerEquivOfProjectiveHomology_apply (n : ℕ)
     (α : X.singularCohomology R k M n) :
     X.singularKroneckerEquivOfProjectiveHomology R M n α = X.singularKronecker k n α :=
   (rfl)
+
+/-- **The universal coefficient isomorphism with projective homology, into linear maps**: the
+equivalence `TopCat.singularKroneckerEquivOfProjectiveHomology`, with the morphisms
+`Hₙ(X; R) ⟶ M` read as `k`-linear maps, `Hⁿ(X; R, M) ≃ₗ[k] (Hₙ(X; R) →ₗ[k] M)`. -/
+def singularKroneckerLinearEquivOfProjectiveHomology (n : ℕ) :
+    X.singularCohomology R k M n ≃ₗ[k]
+      (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X →ₗ[k] M) :=
+  X.singularKroneckerEquivOfProjectiveHomology R M n ≪≫ₗ ModuleCat.homLinearEquiv
+
+/-- The equivalence `TopCat.singularKroneckerLinearEquivOfProjectiveHomology` is the linear map
+underlying the Kronecker map. -/
+@[simp]
+lemma singularKroneckerLinearEquivOfProjectiveHomology_apply (n : ℕ)
+    (α : X.singularCohomology R k M n) :
+    X.singularKroneckerLinearEquivOfProjectiveHomology R M n α =
+      (X.singularKronecker k n α).hom :=
+  (rfl)
+
+/-- The inverse of `TopCat.singularKroneckerLinearEquivOfProjectiveHomology` sends a linear map
+`φ : Hₙ(X; R) →ₗ[k] M` to the class whose Kronecker pairing is `φ`. -/
+@[simp]
+lemma singularKronecker_singularKroneckerLinearEquivOfProjectiveHomology_symm (n : ℕ)
+    (φ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X →ₗ[k] M) :
+    X.singularKronecker k n ((X.singularKroneckerLinearEquivOfProjectiveHomology R M n).symm φ) =
+      ModuleCat.ofHom φ := by
+  ext x
+  rw [← singularKroneckerLinearEquivOfProjectiveHomology_apply, LinearEquiv.apply_symm_apply,
+    ModuleCat.hom_ofHom]
 
 end ProjectiveHomology
 
@@ -294,10 +397,7 @@ def singularUniversalCoefficientEquiv (n : ℕ) :
     X.singularCohomology R k M (n + 1) ≃ₗ[k]
       Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1 ×
         (((singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj R).obj X ⟶ M) :=
-  ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-    (X.singularExtToCohomology_injective R M n)
-    ⟨X.singularKroneckerSection R M (n + 1),
-      LinearMap.ext (X.singularKronecker_singularKroneckerSection R M (n + 1))⟩).val
+  TauCeti.ChainComplex.universalCoefficientEquiv k ((toSSet.obj X).chainComplex R) M rfl
 
 /-- The inverse of the splitting `TopCat.singularUniversalCoefficientEquiv` restricts to the
 inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor. -/
@@ -305,19 +405,17 @@ inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor
 lemma singularUniversalCoefficientEquiv_symm_inl (n : ℕ)
     (e : Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1) :
     (X.singularUniversalCoefficientEquiv R M n).symm (e, 0) = X.singularExtToCohomology R M n e :=
-  (LinearMap.congr_fun
-    ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-      (X.singularExtToCohomology_injective R M n) _).property.left e).symm
+  TauCeti.ChainComplex.universalCoefficientEquiv_symm_inl (X := (toSSet.obj X).chainComplex R) rfl e
 
 /-- The second component of the splitting `TopCat.singularUniversalCoefficientEquiv` is the
 Kronecker map. -/
 @[simp]
 lemma singularUniversalCoefficientEquiv_apply_snd (n : ℕ)
     (x : X.singularCohomology R k M (n + 1)) :
-    (X.singularUniversalCoefficientEquiv R M n x).2 = X.singularKronecker k (n + 1) x :=
-  (LinearMap.congr_fun
-    ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-      (X.singularExtToCohomology_injective R M n) _).property.right x).symm
+    (X.singularUniversalCoefficientEquiv R M n x).2 = X.singularKronecker k (n + 1) x := by
+  rw [singularKronecker_def]
+  exact TauCeti.ChainComplex.universalCoefficientEquiv_apply_snd
+    (X := (toSSet.obj X).chainComplex R) rfl x
 
 variable {X} in
 /-- **Naturality of the universal coefficient sequence** in the space: for a continuous map
@@ -429,6 +527,32 @@ lemma singularKroneckerEquivOfProjectiveHomology_apply (n : ℕ)
     (α : P.singularCohomology R k M n) :
     P.singularKroneckerEquivOfProjectiveHomology R M n α = P.singularKronecker k n α :=
   (rfl)
+
+/-- **The relative universal coefficient isomorphism with projective homology, into linear maps**:
+the equivalence `TopPair.singularKroneckerEquivOfProjectiveHomology`, with the morphisms
+`Hₙ(X, A; R) ⟶ M` read as `k`-linear maps, `Hⁿ(X, A; R, M) ≃ₗ[k] (Hₙ(X, A; R) →ₗ[k] M)`. -/
+def singularKroneckerLinearEquivOfProjectiveHomology (n : ℕ) :
+    P.singularCohomology R k M n ≃ₗ[k] (P.singularHomology (C := ModuleCat.{w} k) R n →ₗ[k] M) :=
+  P.singularKroneckerEquivOfProjectiveHomology R M n ≪≫ₗ ModuleCat.homLinearEquiv
+
+/-- The equivalence `TopPair.singularKroneckerLinearEquivOfProjectiveHomology` is the linear map
+underlying the relative Kronecker map. -/
+@[simp]
+lemma singularKroneckerLinearEquivOfProjectiveHomology_apply (n : ℕ)
+    (α : P.singularCohomology R k M n) :
+    P.singularKroneckerLinearEquivOfProjectiveHomology R M n α = (P.singularKronecker k n α).hom :=
+  (rfl)
+
+/-- The inverse of `TopPair.singularKroneckerLinearEquivOfProjectiveHomology` sends a linear map
+`φ : Hₙ(X, A; R) →ₗ[k] M` to the class whose relative Kronecker pairing is `φ`. -/
+@[simp]
+lemma singularKronecker_singularKroneckerLinearEquivOfProjectiveHomology_symm (n : ℕ)
+    (φ : P.singularHomology (C := ModuleCat.{w} k) R n →ₗ[k] M) :
+    P.singularKronecker k n ((P.singularKroneckerLinearEquivOfProjectiveHomology R M n).symm φ) =
+      ModuleCat.ofHom φ := by
+  ext x
+  rw [← singularKroneckerLinearEquivOfProjectiveHomology_apply, LinearEquiv.apply_symm_apply,
+    ModuleCat.hom_ofHom]
 
 end ArbitraryCommRing
 

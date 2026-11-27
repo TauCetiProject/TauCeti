@@ -15,13 +15,13 @@ import TauCeti.RingTheory.Semisimple.EndAlgebra
 # Sanity checks for compact-operator ideals and the Calkin algebra
 
 This file collects concrete typeclass synthesis and specialization checks for
-`ContinuousLinearMap.compactIdeal` and `TauCeti.CalkinAlgebra`:
-* `↥(compactIdeal ℂ H)` synthesizes `NonUnitalCStarAlgebra` and `CalkinAlgebra H` synthesizes
-  `CStarAlgebra`.
-* On finite-dimensional complex Euclidean spaces `EuclideanSpace ℂ (Fin d)`, `compactIdeal` is `⊤`,
-  the endomorphism algebra has only `⊥` and `⊤` as two-sided ideals, and `CalkinAlgebra` is a
-  subsingleton.
-* On `ℓ²(ℕ, ℂ)`, `CalkinAlgebra ℓ²(ℕ, ℂ)` synthesizes `IsSimpleRing` with zero hypotheses.
+`TauCeti.compactOperatorIdeal` and `TauCeti.CalkinAlgebra`:
+* `↥(compactOperatorIdeal ℂ H)` synthesizes `NonUnitalCStarAlgebra` and `CalkinAlgebra ℂ H`
+  synthesizes `CStarAlgebra`.
+* On `EuclideanSpace ℂ (Fin d)`, `compactOperatorIdeal` is `⊤`, on `EuclideanSpace ℂ (Fin 2)` the
+  endomorphism algebra has only `⊥` and `⊤` as two-sided ideals, and for finite `n` the Calkin
+  algebra `CalkinAlgebra ℂ (EuclideanSpace ℂ n)` is a subsingleton.
+* On `ℓ²(ℕ, ℂ)`, `CalkinAlgebra ℂ ℓ²(ℕ, ℂ)` synthesizes `IsSimpleRing` with zero hypotheses.
 -/
 
 public noncomputable section
@@ -32,19 +32,20 @@ section
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
--- Verify that `↥(compactIdeal ℂ H)` automatically carries a `NonUnitalCStarAlgebra` structure.
-example : NonUnitalCStarAlgebra ↥(ContinuousLinearMap.compactIdeal ℂ H) := inferInstance
+-- Verify that `↥(compactOperatorIdeal ℂ H)` automatically carries a `NonUnitalCStarAlgebra`
+-- structure.
+example : NonUnitalCStarAlgebra ↥(TauCeti.compactOperatorIdeal ℂ H) := inferInstance
 
--- Verify that `CalkinAlgebra H` inherits a unital `CStarAlgebra` structure automatically.
-example : CStarAlgebra (TauCeti.CalkinAlgebra H) := inferInstance
+-- Verify that `CalkinAlgebra ℂ H` inherits a unital `CStarAlgebra` structure automatically.
+example : CStarAlgebra (TauCeti.CalkinAlgebra ℂ H) := inferInstance
 
 end
 
 section
 
 -- Sanity checks on finite-dimensional complex Euclidean spaces.
-example (d : ℕ) : ContinuousLinearMap.compactIdeal ℂ (EuclideanSpace ℂ (Fin d)) = ⊤ :=
-  ContinuousLinearMap.compactIdeal_eq_top
+example (d : ℕ) : TauCeti.compactOperatorIdeal ℂ (EuclideanSpace ℂ (Fin d)) = ⊤ :=
+  TauCeti.compactOperatorIdeal_eq_top
 
 example (I : TwoSidedIdeal (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2))) :
     I = ⊥ ∨ I = ⊤ :=
@@ -54,12 +55,12 @@ example (I : TwoSidedIdeal (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace 
   IsSimpleOrder.eq_bot_or_eq_top I
 
 example (n : Type*) [Fintype n] :
-    Subsingleton (TauCeti.CalkinAlgebra (EuclideanSpace ℂ n)) :=
+    Subsingleton (TauCeti.CalkinAlgebra ℂ (EuclideanSpace ℂ n)) :=
   inferInstance
 
 end
 
 -- Non-vacuity check on `ℓ²(ℕ, ℂ)` with zero hypotheses.
-example : IsSimpleRing (TauCeti.CalkinAlgebra ℓ²(ℕ, ℂ)) := inferInstance
+example : IsSimpleRing (TauCeti.CalkinAlgebra ℂ ℓ²(ℕ, ℂ)) := inferInstance
 
 end

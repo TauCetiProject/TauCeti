@@ -213,7 +213,7 @@ private theorem compactDomain_moving_barrier [I.Boundaryless] [T2Space M]
       ((hasDerivAt_id t).sub_const a)
     simpa only [Function.comp_def, id_eq, mul_one] using h
   -- Weak comparison uses only C¹ slices; this conversion retains the installed metric.
-  apply compactDomain_heat_comparison (fun t ↦ (g t).ofLE (m := 1) (by simp))
+  apply compactDomain_heat_comparison (fun t ↦ (g t).ofLE (m := 1) (by simp)) le_rfl
     hU hC hCU B Bd f v hBC hf
     (fun t _ x _ ↦ hBd t x) hderiv (fun t _ ↦ hBs t) hsmooth
   · intro x hx

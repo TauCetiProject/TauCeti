@@ -55,10 +55,8 @@ variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
 /-- The topological closure of a proper two-sided ideal in a normed ring with summable geometric
 series is proper. -/
 theorem topologicalClosure_ne_top {I : TwoSidedIdeal R} (hI : I ≠ ⊤) :
-    I.topologicalClosure ≠ ⊤ := by
-  rw [ne_eq, ← one_mem_iff, ← mem_asIdeal, asIdeal_topologicalClosure, ← Ideal.ne_top_iff_one]
-  exact I.asIdeal.closure_ne_top
-    ((Ideal.ne_top_iff_one _).mpr (by rwa [mem_asIdeal, one_mem_iff]))
+    I.topologicalClosure ≠ ⊤ :=
+  topologicalClosure_ne_top_of_isOpen_isUnit Units.isOpen hI
 
 /-- A maximal two-sided ideal in a normed ring with summable geometric series equals its
 topological closure. -/
@@ -81,11 +79,8 @@ variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
 /-- A nontrivial unital normed ring with summable geometric series whose only closed two-sided
 ideals are `⊥` and `⊤` is algebraically simple. -/
 theorem of_forall_isClosed_eq_bot_or_eq_top [Nontrivial R]
-    (h : ∀ I : TwoSidedIdeal R, IsClosed (I : Set R) → I = ⊥ ∨ I = ⊤) : IsSimpleRing R := by
-  refine of_eq_bot_or_eq_top fun I ↦ or_iff_not_imp_right.mpr fun hI ↦ ?_
-  rcases h I.topologicalClosure I.isClosed_topologicalClosure with hbot | htop
-  · exact le_bot_iff.mp (hbot ▸ I.le_topologicalClosure)
-  · exact absurd htop (TwoSidedIdeal.topologicalClosure_ne_top hI)
+    (h : ∀ I : TwoSidedIdeal R, IsClosed (I : Set R) → I = ⊥ ∨ I = ⊤) : IsSimpleRing R :=
+  of_eq_bot_or_eq_top (TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed Units.isOpen h)
 
 end IsSimpleRing
 

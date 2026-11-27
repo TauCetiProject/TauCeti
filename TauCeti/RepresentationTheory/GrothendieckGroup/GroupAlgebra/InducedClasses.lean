@@ -33,11 +33,10 @@ Two instances are the ones the induction theorems are stated with: `TauCeti.indC
 classes induced from cyclic subgroups, and `TauCeti.indCyclicCoprimeK0 ℓ`, the classes induced
 from cyclic subgroups of order prime to `ℓ`. Both are everything when `G` is itself cyclic (of
 order prime to `ℓ` in the second case), since the whole group is then a member of the family and
-induction from `⊤` is surjective (`TauCeti.indClassesK0_eq_top`). Induction from `⊤` is in fact
-inverse to restriction to `⊤`, induction along an isomorphism of groups being restriction along
-its inverse (`TauCeti.Rep.indFunctorMulEquivIso`), so the computations at `⊤` are over a
-commutative ring, like the definitions; only the ideal property needs the ring structure of
-`G₀(k[G])` and hence a field.
+induction from `⊤` is surjective (`TauCeti.indClassesK0_eq_top`). Inducing the restriction to `⊤`
+back from `⊤` returns the representation (`Representation.indTopEquiv`), so the computations at
+`⊤` are over a commutative ring, like the definitions; only the ideal property needs the ring
+structure of `G₀(k[G])` and hence a field.
 
 ## Main definitions
 
@@ -175,14 +174,9 @@ theorem indClassesK0_eq_top {P : Subgroup G → Prop} (hP : P ⊤) : indClassesK
   have hM : (ExactK0.of M : ExactK0 (finiteModulesExactStructure k[G])) =
       ExactK0.of (FGModuleCat.of _ σ.asModule) :=
     ExactK0.of_congr (Representation.ofModule'AsModuleEquiv M.obj).symm.toFGModuleCatIso
-  -- Induction from `⊤` undoes restriction to it: induction along the isomorphism
-  -- `Subgroup.topEquiv` is restriction along its inverse (`TauCeti.Rep.indFunctorMulEquivIso`).
-  let e : (Representation.ind (⊤ : Subgroup G).subtype
-      (σ.comp (⊤ : Subgroup G).subtype)).Equiv σ :=
-    Representation.equivOfIso ((Rep.indFunctorMulEquivIso (k := k)
-      (Subgroup.topEquiv (G := G))).app (Rep.of (σ.comp (⊤ : Subgroup G).subtype)))
+  -- Induction from `⊤` undoes restriction to it (`Representation.indTopEquiv`).
   rw [SetLike.mem_coe, hM,
-    ← indK0_of_asModule_of_equiv k ⊤ (σ.comp (⊤ : Subgroup G).subtype) σ e]
+    ← indK0_of_asModule_of_equiv k ⊤ (σ.comp (⊤ : Subgroup G).subtype) σ σ.indTopEquiv]
   exact indK0_mem_indClassesK0 k hP _
 
 end CommRing

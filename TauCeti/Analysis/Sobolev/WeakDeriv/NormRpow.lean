@@ -48,8 +48,9 @@ they are multiples of the coordinates of the gradient `p ‖x‖ ^ (p - 2) x` of
 second weak derivatives of norm powers are their classical ones.
 
 The radial field `x ↦ ‖x‖ ^ p • x`, the gradient of `‖x‖ ^ (p + 2) / (p + 2)`, is weakly
-differentiable with its classical derivative for `p > -1`, where it is continuous, by the removable
-point lemma; at `p = -1`, the unit radial field, it is assembled from the coordinates above.
+differentiable with its classical derivative for `p > -max 1 d`: in dimension zero every function
+is constant, and otherwise, including the unit radial field at `p = -1`, it is assembled from the
+coordinates above.
 
 ## Main declarations
 
@@ -59,13 +60,18 @@ point lemma; at `p = -1`, the unit radial field, it is assembled from the coordi
   `1 - d < s ≤ 0`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow`: the classical derivative is a weak derivative on every
   open set for `s > 1 - d`.
+* `TauCeti.HasWeakFDerivOn.neg_finrank_lt_sub_one_mul_of_integrableOn`: for `s ≠ 0`, a weak
+  derivative of the power agrees with the classical one away from the origin, so it is
+  `p`-integrable near the origin only when `(s - 1) p > -d`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`: for `s > -d`, the products `‖x‖ ^ s ⟪x, v⟫` are
   weakly differentiable on every open set, with their classical derivatives.
 * `TauCeti.abs_norm_rpow_mul_inner_le`, `TauCeti.norm_norm_rpow_smul_innerSL_add_le`: the products
   are bounded by `‖v‖ ‖x‖ ^ (s + 1)` and their derivatives by `(1 + |s|) ‖v‖ ‖x‖ ^ s`.
-* `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`: for `p > -1`, the radial field `‖x‖ ^ p • x` is
-  weakly differentiable on every open set, with its classical derivative.
-* `TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_smul_self`: for `d ≥ 2`, so is the unit radial field.
+* `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`: for `p > -max 1 d`, the radial field
+  `‖x‖ ^ p • x` is weakly differentiable on every open set, with its classical derivative; for
+  `p ≤ -1` it is unbounded or discontinuous at the origin.
+* `TauCeti.locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow`: for `p > -1`, the `d`-th power
+  of the norm of that derivative is locally integrable.
 -/
 
 public section
@@ -257,6 +263,41 @@ theorem hasWeakFDerivOn_norm_rpow (hs : 1 - (Module.finrank ℝ E : ℝ) < s) (�
       (continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le).continuousOn
       ((locallyIntegrable_norm_rpow_smul_innerSL hs).locallyIntegrableOn _)
       fun x hx ↦ hasFDerivAt_norm_rpow_of_ne s hx.2
+
+/-- **Weak derivatives of non-integrable norm powers.** Let `s ≠ 0` and let `D` be a weak
+derivative of `x ↦ ‖x‖ ^ s` on an open set containing a ball `B(0, r)` with `r > 0`. If
+`‖D‖ ^ p` is integrable on that ball, then `(s - 1) p > -dim E`. -/
+theorem HasWeakFDerivOn.neg_finrank_lt_sub_one_mul_of_integrableOn [Nontrivial E]
+    {Ω : Opens E} {D : E → E →L[ℝ] ℝ} (hD : HasWeakFDerivOn μ Ω (fun x : E => ‖x‖ ^ s) D)
+    (hs0 : s ≠ 0) {r : ℝ} (hr : 0 < r) (hrΩ : Metric.ball (0 : E) r ⊆ Ω) {p : ℝ}
+    (hint : IntegrableOn (fun x => ‖D x‖ ^ p) (Metric.ball 0 r) μ) :
+    -(Module.finrank ℝ E : ℝ) < (s - 1) * p := by
+  -- On the punctured ball, `D` is the classical derivative.
+  let W : Opens E := ⟨Metric.ball 0 r, Metric.isOpen_ball⟩ ⊓ ⟨{0}ᶜ, isOpen_compl_singleton⟩
+  have hdiff : ∀ x ∈ (W : Set E), HasFDerivAt (fun x : E => ‖x‖ ^ s)
+      ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) x := fun x hx => hasFDerivAt_norm_rpow_of_ne s hx.2
+  have hcont : ContinuousOn (fderiv ℝ fun x : E => ‖x‖ ^ s) W := by
+    have hc : ContinuousOn (fun x : E => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) W :=
+      fun x hx => ((continuousAt_const.mul ((continuous_norm.continuousAt).rpow_const
+        (Or.inl (norm_ne_zero_iff.2 hx.2)))).smul
+          (innerSL ℝ).continuous.continuousAt).continuousWithinAt
+    exact hc.congr fun x hx => (hdiff x hx).fderiv
+  have hae := (hD.mono (fun x hx => hrΩ hx.1 : W ≤ Ω)).ae_eq_fderiv
+    (hcont.locallyIntegrableOn W.isOpen.measurableSet)
+    fun x hx => (hdiff x hx).differentiableAt
+  have hae' := (ae_restrict_iff' W.isOpen.measurableSet).1 hae
+  -- So `|s| ‖x‖ ^ (s - 1)` is `p`-integrable on the ball.
+  have hball : IntegrableOn (fun x : E => |s| ^ p * ‖x‖ ^ ((s - 1) * p))
+      (Metric.ball 0 r) μ := by
+    refine hint.congr ?_
+    filter_upwards [ae_restrict_of_ae hae', ae_restrict_mem measurableSet_ball,
+      ae_restrict_of_ae (Measure.ae_ne μ (0 : E))] with x hx hxb hx0
+    rw [hx ⟨hxb, hx0⟩, norm_fderiv_norm_rpow_of_ne s hx0,
+      Real.mul_rpow (abs_nonneg s) (Real.rpow_nonneg (norm_nonneg x) _),
+      ← Real.rpow_mul (norm_nonneg x)]
+  have hpos : (0 : ℝ) < |s| ^ p := Real.rpow_pos_of_pos (abs_pos.2 hs0) _
+  rwa [IntegrableOn, integrable_const_mul_iff hpos.ne'.isUnit, ← IntegrableOn,
+    integrableOn_norm_rpow_ball_iff hr] at hball
 
 /-! ### Norm powers times a coordinate -/
 
@@ -478,39 +519,54 @@ theorem locallyIntegrable_rpow_smul_id_add_smulRight {p : ℝ}
   rw [Real.norm_of_nonneg (by positivity)]
   exact norm_rpow_smul_id_add_smulRight_le p x
 
-/-- **The weak derivative of the radial field.** For `p > -1`, the radial field
+/-- For `p > -1` the `n`-th power of the norm of the classical derivative of the radial field
+`x ↦ ‖x‖ ^ p • x` away from the origin, `n = dim E`, is locally integrable: it is
+`O(‖x‖ ^ (p n))` and `p n > -n`. -/
+theorem locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow {p : ℝ} (hp : -1 < p) :
+    LocallyIntegrable (fun x : E ↦ ‖‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
+      ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x‖ ^ Module.finrank ℝ E) μ := by
+  rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hd | hd
+  · simpa only [hd, pow_zero] using locallyIntegrable_const (μ := μ) (1 : ℝ)
+  have hd' : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
+  have hpow : LocallyIntegrable (fun x : E ↦ ‖x‖ ^ (p * Module.finrank ℝ E)) μ := by
+    simpa only [zero_sub, norm_neg] using
+      locallyIntegrable_norm_sub_rpow (mu := μ) (by nlinarith) (0 : E)
+  have hmeas := (locallyIntegrable_rpow_smul_id_add_smulRight (μ := μ)
+    (by linarith : -(Module.finrank ℝ E : ℝ) < p)).aestronglyMeasurable.norm.pow
+      (Module.finrank ℝ E)
+  refine (hpow.smul ((1 + |p|) ^ Module.finrank ℝ E)).mono hmeas (ae_of_all _ fun x ↦ ?_)
+  simp only [Pi.smul_apply, smul_eq_mul, norm_pow, norm_mul, Real.norm_eq_abs, abs_norm,
+    abs_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ 1 + |p|), Real.rpow_mul_natCast (norm_nonneg x),
+    ← mul_pow]
+  gcongr
+  exact norm_rpow_smul_id_add_smulRight_le p x
+
+/-- **The weak derivative of the radial field.** For `p > -max 1 (dim E)`, that is for `p > -1` in
+every dimension, including zero, and for `p > -dim E` in positive dimension, the radial field
 `x ↦ ‖x‖ ^ p • x` has its classical derivative `‖x‖ ^ p id + p ‖x‖ ^ (p - 2) ⟪x, ·⟫ x`, taken away
-from the origin, as weak derivative on every open set. -/
-theorem hasWeakFDerivOn_norm_rpow_smul_self {p : ℝ} (hp : -1 < p) (Ω : Opens E) :
+from the origin, as weak derivative on every open set. For `p ≤ -1` the field is unbounded or
+discontinuous at the origin; at `p = -1` it is the unit radial field `x / ‖x‖`. The derivative has
+size `O(‖x‖ ^ p)`, locally integrable exactly when `p > -dim E`. -/
+theorem hasWeakFDerivOn_norm_rpow_smul_self {p : ℝ}
+    (hp : -max 1 (Module.finrank ℝ E : ℝ) < p) (Ω : Opens E) :
     HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ p • x)
       (fun x ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
         ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) := by
-  refine hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
-    (continuous_norm_rpow_smul_self hp).continuousOn (LocallyIntegrable.locallyIntegrableOn ?_ _)
-    fun _ hx ↦ hasFDerivAt_norm_rpow_smul_self_of_ne p hx.2
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hd | hd
   · -- A space of dimension zero is a point, on which every function is constant.
     have : Subsingleton E := Module.finrank_zero_iff.1 hd
-    exact (continuous_of_const fun x y ↦ by rw [Subsingleton.elim x y]).locallyIntegrable
-  · have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
-    exact locallyIntegrable_rpow_smul_id_add_smulRight (by linarith)
-
-/-- **The weak derivative of the unit radial field.** If `dim E ≥ 2`, the unit radial field
-`x ↦ ‖x‖⁻¹ • x`, which is discontinuous at the origin, has its classical derivative
-`‖x‖⁻¹ id - ‖x‖⁻³ ⟪x, ·⟫ x`, taken away from the origin, as weak derivative on every open set. This
-is the exponent `p = -1` of `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`. -/
-theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ E)
-    (Ω : Opens E) :
-    HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) • x)
-      (fun x ↦ ‖x‖ ^ (-1 : ℝ) • ContinuousLinearMap.id ℝ E +
-        ((-1 * ‖x‖ ^ ((-1 : ℝ) - 2)) • innerSL ℝ x).smulRight x) := by
+    exact hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
+      (continuous_of_const fun x y ↦ by rw [Subsingleton.elim x y]).continuousOn
+      ((continuous_of_const fun x y ↦ by rw [Subsingleton.elim x y]).locallyIntegrable
+        |>.locallyIntegrableOn _)
+      fun _ hx ↦ hasFDerivAt_norm_rpow_smul_self_of_ne p hx.2
+  have hp' : -(Module.finrank ℝ E : ℝ) < p := by
+    rwa [max_eq_right (by exact_mod_cast hd)] at hp
   set b := stdOrthonormalBasis ℝ E
   refine (hasWeakFDerivOn_iff_coordinates b.toBasis).2 fun i ↦ ?_
-  -- The coordinates are the components `‖x‖⁻¹ ⟪x, bᵢ⟫` of the unit radial field.
-  have hs : -(Module.finrank ℝ E : ℝ) < -1 := by
-    have : (1 : ℝ) < Module.finrank ℝ E := by exact_mod_cast hd
-    linarith
-  convert hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) hs (b i) Ω using 1
+  -- The coordinates are the products `‖x‖ ^ p ⟪x, bᵢ⟫`.
+  convert hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) hp' (b i) Ω using 1
   · funext x
     simp [OrthonormalBasis.repr_apply_apply, real_inner_comm]
   · funext x
@@ -518,7 +574,6 @@ theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ
     simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
       Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
       OrthonormalBasis.repr_apply_apply]
-    rw [show (-1 : ℝ) - 2 = -3 by norm_num]
     simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.smulRight_apply, coe_innerSL_apply, smul_eq_mul, inner_add_right,
       inner_smul_right, real_inner_comm]

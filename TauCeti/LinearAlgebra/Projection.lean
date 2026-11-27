@@ -24,7 +24,9 @@ sum to the identity, `TauCeti.sum_coe_internalProjection`.
 
 For a single complementary pair `F₀`, `F₁`, the projection onto `F₁` also computes any linear map
 vanishing on `F₀` from its values on a basis of `F₁`
-(`Submodule.apply_eq_sum_repr_projectionOnto`).
+(`Submodule.apply_eq_sum_repr_projectionOnto`). When `F₀` is the kernel of a linear form `f` and
+`F₁` the line spanned by a vector `v` with `f v = 1`, the projection onto `F₀` is
+`w ↦ w - f w • v` (`Submodule.projection_ker_span_singleton_apply`).
 
 Moving a map `f : α → M` by multiples of a vector `d` which lies on none of its secant lines keeps
 it injective (`TauCeti.injective_sub_smul`). This is the algebraic step of projecting along a
@@ -45,8 +47,12 @@ remains injective.
   sum to the identity.
 * `DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection`: the
   component supplied by the inverse direct-sum equivalence is the internal projection.
+* `Submodule.projection_map_apply_of_mem`: an additive homomorphism preserving the two
+  summands commutes with the projections.
 * `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
   its values on a basis of a complement of `F₀`.
+* `Submodule.projection_ker_span_singleton_apply`: the projection onto the kernel of a linear
+  form `f` along a vector `v` with `f v = 1` is `w ↦ w - f w • v`.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
   multiple of `d`.
 
@@ -182,6 +188,25 @@ namespace Submodule
 variable {R : Type u} {V : Type v} {M : Type w} [Ring R] [AddCommGroup V] [Module R V]
   [AddCommGroup M] [Module R M]
 
+/-- An additive homomorphism sending each summand into the corresponding summand
+commutes with the projections onto the first summands. -/
+theorem projection_map_apply_of_mem {R S M N : Type*} [Ring R] [Ring S]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module S N]
+    {p q : Submodule R M} {p' q' : Submodule S N}
+    (hpq : IsCompl p q) (hpq' : IsCompl p' q') (φ : M →+ N)
+    (hp : ∀ x ∈ p, φ x ∈ p') (hq : ∀ x ∈ q, φ x ∈ q') (x : M) :
+    p'.projection q' hpq' (φ x) = φ (p.projection q hpq x) := by
+  have h := congrArg φ (projection_add_projection_eq_self hpq x)
+  rw [map_add] at h
+  have hp' := hp _ (projection_apply_mem hpq x)
+  have hq' := hq _ (projection_apply_mem hpq.symm x)
+  calc
+    _ = p'.projection q' hpq' (φ (p.projection q hpq x) + φ (q.projection p hpq.symm x)) :=
+      congrArg (p'.projection q' hpq') h.symm
+    _ = _ := by
+      rw [map_add, projection_apply_of_mem_left hpq' hp',
+        projection_apply_of_mem_right hpq' hq', add_zero]
+
 /-- A linear map vanishing on `F₀` is computed from its values on a basis `b` of a complement
 `F₁` of `F₀`, through the coordinates of the projection onto `F₁`. -/
 theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : Submodule R V}
@@ -192,5 +217,15 @@ theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : 
     simpa using LinearMap.congr_fun (subtype_comp_projectionOnto_add_eq_id hF) v
   conv_lhs => rw [← hpq, map_add, hD, zero_add, ← b.sum_repr (F₁.projectionOnto F₀ hF.symm v)]
   simp only [coe_sum, coe_smul, map_sum, map_smul]
+
+/-- The projection onto the kernel of a linear form `f` along the line spanned by a vector `v` with
+`f v = 1` is `w ↦ w - f w • v`. -/
+theorem projection_ker_span_singleton_apply {f : V →ₗ[R] R} {v : V} (hv : f v = 1)
+    (h : IsCompl (LinearMap.ker f) (R ∙ v)) (w : V) :
+    (LinearMap.ker f).projection (R ∙ v) h w = w - f w • v := by
+  have hk : w - f w • v ∈ LinearMap.ker f := by simp [hv]
+  conv_lhs => rw [← sub_add_cancel w (f w • v)]
+  rw [map_add, projection_apply_of_mem_left h hk,
+    projection_apply_of_mem_right h (smul_mem _ _ (mem_span_singleton_self v)), add_zero]
 
 end Submodule

@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+public import TauCeti.RingTheory.Ideal.Span
+import TauCeti.RingTheory.Ideal.Basic
+import Mathlib.RingTheory.IntegralDomain
 
 /-!
 # Elements in the maximal ideal of a local ring
@@ -15,6 +19,19 @@ In a commutative local semiring, every nonunit belongs to the unique maximal ide
 maximal ideal (`TauCeti.IsLocalRing.mem_maximalIdeal_of_not_dvd`), and every irreducible element
 lies in `IsLocalRing.maximalIdeal R` (`Irreducible.mem_maximalIdeal`) and is never a product of two
 elements of `IsLocalRing.maximalIdeal R` (`Irreducible.ne_mul_of_mem_maximalIdeal`).
+
+In a commutative local ring, `1 - xⁿ` is a unit for every `x` in the maximal ideal and every
+`n ≠ 0` (`TauCeti.IsLocalRing.isUnit_one_sub_pow_of_mem_maximalIdeal`).
+
+In a commutative local ring, a minimal nonzero ideal is annihilated by the maximal ideal
+(`IsAtom.maximalIdeal_mul_eq_bot`).
+
+For a homomorphism `f` of commutative local rings, the maximal ideal of the target is the greatest
+ideal whose contraction along `f` is contained in the maximal ideal of the source
+(`Ideal.isGreatest_comap_le_maximalIdeal`).
+
+In a local domain that is not a field, such as a discrete valuation ring, the maximal ideal is
+infinite (`TauCeti.IsLocalRing.infinite_maximalIdeal`).
 -/
 
 public section
@@ -26,6 +43,22 @@ ideal. -/
 theorem mem_maximalIdeal_of_not_dvd {R : Type*} [CommSemiring R] [IsLocalRing R] {f a : R}
     (hfa : ¬ f ∣ a) : f ∈ _root_.IsLocalRing.maximalIdeal R :=
   of_not_not fun h ↦ hfa (_root_.IsLocalRing.notMem_maximalIdeal.mp h).dvd
+
+/-- In a local domain that is not a field, such as a discrete valuation ring, the maximal ideal is
+infinite. -/
+theorem infinite_maximalIdeal {R : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
+    (hR : ¬ IsField R) : (_root_.IsLocalRing.maximalIdeal R : Set R).Infinite :=
+  -- A finite domain is a field, so `R` is infinite, and its nonzero maximal ideal is infinite.
+  have : Infinite R := not_finite_iff_infinite.mp fun _ ↦ hR (Finite.isField_of_domain R)
+  Ideal.infinite_of_ne_bot (_root_.IsLocalRing.isField_iff_maximalIdeal_eq.not.mp hR)
+
+/-- In a commutative local ring, `1 - xⁿ` is a unit for every `x` in the maximal ideal and every
+`n ≠ 0`. -/
+theorem isUnit_one_sub_pow_of_mem_maximalIdeal {R : Type*} [CommRing R] [IsLocalRing R] {x : R}
+    (hx : x ∈ _root_.IsLocalRing.maximalIdeal R) {n : ℕ} (hn : n ≠ 0) : IsUnit (1 - x ^ n) :=
+  _root_.IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _
+    ((_root_.IsLocalRing.mem_maximalIdeal _).mp
+      (Ideal.pow_mem_of_mem _ hx _ (Nat.pos_of_ne_zero hn)))
 
 end TauCeti.IsLocalRing
 
@@ -46,3 +79,33 @@ theorem ne_mul_of_mem_maximalIdeal {c x y : R} (hc : Irreducible c)
     ((IsLocalRing.mem_maximalIdeal y).mp hy)
 
 end Irreducible
+
+/-- In a commutative local ring, a minimal nonzero ideal `I` is annihilated by the maximal
+ideal. -/
+theorem IsAtom.maximalIdeal_mul_eq_bot {R : Type*} [CommRing R] [IsLocalRing R] {I : Ideal R}
+    (hI : IsAtom I) : IsLocalRing.maximalIdeal R * I = ⊥ := by
+  -- Otherwise `𝔪 I = I` by minimality, and a generator `t` of `I` satisfies `t = x t` for some
+  -- `x ∈ 𝔪`, forcing `t = 0` as `1 - x` is a unit.
+  obtain ⟨t, ht, ht0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI.1
+  refine (hI.le_iff.mp Ideal.mul_le_right).resolve_right fun h ↦ ht0 ?_
+  have htm : t ∈ IsLocalRing.maximalIdeal R * Ideal.span {t} := by
+    rwa [hI.span_singleton_eq ht ht0, h]
+  obtain ⟨x, hx, hxt⟩ := Ideal.mem_mul_span_singleton.mp htm
+  have hunit := IsLocalRing.isUnit_one_sub_self_of_mem_nonunits x hx
+  rw [← hunit.mul_right_eq_zero, sub_mul, one_mul, hxt, sub_self]
+
+namespace Ideal
+
+/-- For any homomorphism `f` of local rings, the maximal ideal of the target is the greatest ideal
+contracting into the maximal ideal of the source. For instance, if `V` is a field inside a
+local domain `W` and `p = 0`, then `p.map f = 0` while the greatest ideal of `W` contracting into
+`p` is the maximal ideal of `W`. -/
+theorem isGreatest_comap_le_maximalIdeal {V W : Type*} [CommSemiring V] [CommSemiring W]
+    (f : V →+* W) [IsLocalRing V] [IsLocalRing W] :
+    IsGreatest {J : Ideal W | J.comap f ≤ IsLocalRing.maximalIdeal V}
+      (IsLocalRing.maximalIdeal W) :=
+  ⟨IsLocalRing.le_maximalIdeal (comap_ne_top f (IsLocalRing.maximalIdeal.isMaximal W).ne_top),
+    fun J hJ ↦ IsLocalRing.le_maximalIdeal fun h ↦
+    (IsLocalRing.maximalIdeal.isMaximal V).ne_top (top_le_iff.mp (by simpa [h] using hJ))⟩
+
+end Ideal

@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Complex.Isometry
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.MeasureTheory.Integral.NormRpow
+public import TauCeti.MeasureTheory.Measure.LogarithmicPotential.Basic
 public import TauCeti.Probability.Distributions.Uniform.Ball.Basic
+import TauCeti.Probability.Distributions.Uniform.Ball.LogarithmicPotential
 
 /-!
 # The circular law
@@ -34,6 +36,14 @@ The circular law is the uniform probability measure on the open unit disc of `�
 * `TauCeti.Probability.integral_pow_circularLaw`: `∫ z ^ k = 0` for `k ≠ 0`.
 * `TauCeti.Probability.integral_pow_mul_conj_pow_circularLaw`: `∫ z ^ p * conj z ^ q = 0` for
   `p ≠ q`, and `1 / (p + 1)` for `p = q`.
+* `TauCeti.Probability.logarithmicPotential_circularLaw_of_norm_lt_one` and
+  `TauCeti.Probability.logarithmicPotential_circularLaw_of_one_le_norm`: the logarithmic potential
+  `∫ log ‖z - w‖` is `(‖z‖ ^ 2 - 1) / 2` on the open unit disc and `log ‖z‖` off it.
+
+## References
+
+* C. Bordenave, D. Chafaï, *Around the circular law*, Probab. Surveys 9 (2012), §4.1, (4.2), for
+  the logarithmic potential, defined there with the opposite sign.
 -/
 
 public section
@@ -162,5 +172,21 @@ theorem integral_pow_mul_conj_pow_circularLaw (p q : ℕ) :
 @[simp]
 theorem integral_pow_circularLaw {k : ℕ} (hk : k ≠ 0) : ∫ z, z ^ k ∂circularLaw = 0 := by
   simpa [hk] using (integral_pow_mul_conj_pow_circularLaw k 0)
+
+/-- **The logarithmic potential of the circular law on the unit disc.** For `‖z‖ < 1`,
+`∫ log ‖z - w‖ ∂circularLaw(w) = (‖z‖ ^ 2 - 1) / 2`. -/
+theorem logarithmicPotential_circularLaw_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) :
+    circularLaw.logarithmicPotential z = (‖z‖ ^ 2 - 1) / 2 := by
+  rw [circularLaw_def,
+    logarithmicPotential_uniformBallMeasure_of_norm_sub_lt 0 (by rwa [sub_zero])]
+  simp
+
+/-- **The logarithmic potential of the circular law off the unit disc.** For `1 ≤ ‖z‖`,
+`∫ log ‖z - w‖ ∂circularLaw(w) = log ‖z‖`, the potential of the point mass at `0`. -/
+theorem logarithmicPotential_circularLaw_of_one_le_norm {z : ℂ} (hz : 1 ≤ ‖z‖) :
+    circularLaw.logarithmicPotential z = Real.log ‖z‖ := by
+  rw [circularLaw_def,
+    logarithmicPotential_uniformBallMeasure_of_le_norm_sub 0 zero_le_one (by rwa [sub_zero]),
+    sub_zero]
 
 end TauCeti.Probability

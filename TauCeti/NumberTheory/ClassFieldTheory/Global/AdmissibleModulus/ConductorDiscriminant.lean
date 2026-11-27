@@ -47,6 +47,10 @@ This gives the formula at every finite place
   conductor–discriminant formula at a finite place.
 * `TauCeti.ClassFieldTheory.relDiscr_eq_finprod_finitePart_abelianConductor`: the
   conductor–discriminant formula `𝔡_{L/K} = ∏_χ 𝔣(χ)`.
+* `TauCeti.ClassFieldTheory.count_relDiscr_eq_finsum_abelianConductor_exponent`: the formula at a
+  finite place for complex characters, with multiplicities counted in prime factorizations.
+* `TauCeti.ClassFieldTheory.relDiscr_eq_finitePart_abelianConductor_pow`: in prime degree `p`,
+  `𝔡_{L/K} = 𝔣^{p - 1}`, where `𝔣` is the finite part of the conductor of `L/K`.
 
 ## References
 
@@ -124,5 +128,52 @@ theorem relDiscr_eq_finprod_finitePart_abelianConductor (M : Type*) [CommMonoid 
   exact Finset.sum_congr rfl fun χ _ ↦ by
     rw [Modulus.exponent_eq_multiplicity,
       (hfin (Modulus.finitePart_ne_zero _)).emultiplicity_eq_multiplicity]
+
+variable (K L) in
+/-- **The conductor–discriminant formula at a finite place, for complex characters.** For a finite
+abelian extension `L/K` of number fields and a finite place `v` of `K`, the number of times `v`
+occurs in the prime factorization of the relative discriminant of `L/K` is the sum, over the
+characters `ψ : Gal(L/K) →* ℂˣ`, of the number of times it occurs in the finite parts of the
+conductors of the fixed fields of their kernels. -/
+theorem count_relDiscr_eq_finsum_abelianConductor_exponent (v : HeightOneSpectrum (𝓞 K)) :
+    (UniqueFactorizationMonoid.normalizedFactors (relDiscr (𝓞 K) (𝓞 L))).count v.asIdeal =
+      ∑ᶠ ψ : Gal(L/K) →* ℂˣ,
+        (UniqueFactorizationMonoid.normalizedFactors
+          (abelianConductor K (fixedField ψ.ker)).finitePart).count v.asIdeal := by
+  have : NeZero (Monoid.exponent Gal(L/K)) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  simp only [Modulus.count_normalizedFactors_finitePart]
+  rw [v.count_normalizedFactors_eq_multiplicity relDiscr_ne_bot,
+    multiplicity_relDiscr_eq_finsum_exponent_abelianConductor ℂ v]
+
+variable (K L) in
+open scoped IsMulCommutative in
+/-- **The conductor–discriminant formula in prime degree.** For an abelian extension `L/K` of
+number fields of prime degree `p`, the relative discriminant of `L/K` is the `(p - 1)`-st power of
+the finite part of its conductor, `𝔡_{L/K} = 𝔣^{p - 1}`. -/
+theorem relDiscr_eq_finitePart_abelianConductor_pow (hp : (Module.finrank K L).Prime) :
+    relDiscr (𝓞 K) (𝓞 L) = (abelianConductor K L).finitePart ^ (Module.finrank K L - 1) := by
+  classical
+  have : NeZero (Monoid.exponent Gal(L/K)) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  have := Fintype.ofFinite (Gal(L/K) →* ℂˣ)
+  have hcard : Nat.card Gal(L/K) = Module.finrank K L := IsGalois.card_aut_eq_finrank K L
+  have : Fact (Nat.card Gal(L/K)).Prime := ⟨hcard ▸ hp⟩
+  -- In a group of prime order every character is trivial or injective, so it cuts out `K` or `L`.
+  have h𝔣 (χ : Gal(L/K) →* ℂˣ) : (abelianConductor K (fixedField χ.ker)).finitePart =
+      if χ = 1 then 1 else (abelianConductor K L).finitePart := by
+    split_ifs with hχ
+    · rw [hχ, MonoidHom.ker_one, IsGalois.fixedField_top,
+        abelianConductor_eq_of_algEquiv (IntermediateField.botEquiv K L), abelianConductor_self,
+        Modulus.one_finitePart, Ideal.one_eq_top]
+    · rw [(χ.ker.eq_bot_or_eq_top_of_prime_card).resolve_right (hχ ∘ MonoidHom.ker_eq_top_iff.1),
+        fixedField_bot, abelianConductor_eq_of_algEquiv IntermediateField.topEquiv]
+  -- There are `p - 1` nontrivial characters.
+  have hcount : (Finset.univ.filter fun χ : Gal(L/K) →* ℂˣ ↦ χ ≠ 1).card =
+      Module.finrank K L - 1 := by
+    rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
+      ← Nat.card_eq_fintype_card, CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity Gal(L/K) ℂ,
+      hcard]
+  rw [relDiscr_eq_finprod_finitePart_abelianConductor ℂ, finprod_eq_prod_of_fintype]
+  simp_rw [h𝔣]
+  simp [Finset.prod_ite, hcount, Ideal.top_pow]
 
 end TauCeti.ClassFieldTheory

@@ -108,17 +108,11 @@ theorem moduleFinite_integralClosure_of_isFunctionField {k : Type u} {F : Type v
     P.mem_integers_iff.mpr
       (P.forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr hti r r.property)
   let p : HeightOneSpectrum R := P.center hR
-  let _ : Algebra R P.integers := ((algebraMap R F).codRestrict P.integers hR).toAlgebra
-  have : IsScalarTower R P.integers F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower R P.integers F' := .of_algebraMap_eq fun x ↦
-    IsScalarTower.algebraMap_apply R F F' x
-  let eR : HeightOneSpectrum.valuationSubringAtPrime F p ≃ₐ[R] P.integers :=
-    AlgEquiv.ofRingEquiv
-      (f := RingEquiv.subringCongr
-        (congrArg ValuationSubring.toSubring (P.valuationSubringAtPrime_eq_integers hR)))
-      fun _ ↦ rfl
+  let _ := P.integersAlgebra hR
+  have := P.isScalarTower_integers hR
+  have := P.isScalarTower_integers_extension (F' := F') hR
   have : IsLocalization p.asIdeal.primeCompl P.integers :=
-    IsLocalization.isLocalization_of_algEquiv p.asIdeal.primeCompl eR
+    P.isLocalization_integers_center hR
   exact TauCeti.finite_integralClosure_of_isLocalization p.asIdeal.primeCompl P.integers F'
 
 section IntegralConstants
@@ -128,33 +122,7 @@ variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-/-- The scalar tower `k → 𝒪_P → F'` under `algebraIntegersExtension`. -/
-private theorem isScalarTower_constants_integers (P : Place k F) :
-    IsScalarTower k P.integers F' :=
-  .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-
 variable [Algebra.IsIntegral k k']
-
-/-- The constants `k'` lie in the local integral closure `𝒪'_P` whenever `k' / k` is integral,
-endowing `𝒪'_P` with a `k'`-algebra structure. -/
-@[instance_reducible]
-private noncomputable def algebraConstantsIntegralClosure (P : Place k F) :
-    Algebra k' (integralClosure P.integers F') :=
-  letI := isScalarTower_constants_integers (F' := F') P
-  ((algebraMap k' F').codRestrict (integralClosure P.integers F') fun c ↦
-    (mem_integralClosure_iff P.integers F').mpr
-      (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top).toAlgebra
-
-/-- The `k'`-algebra `algebraConstantsIntegralClosure` on `𝒪'_P` is compatible with the inclusion
-into `F'`. -/
-private theorem isScalarTower_constants_integralClosure (P : Place k F) :
-    letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
-    IsScalarTower k' (integralClosure P.integers F') F' :=
-  letI := algebraConstantsIntegralClosure (k' := k') (F' := F') P
-  .of_algebraMap_eq fun _ ↦ by
-    rw [Subalgebra.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
 
 variable [FiniteDimensional F F']
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LowPass
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.ProductSpectrum
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Annulus
@@ -218,35 +219,9 @@ theorem lowPass_smul_lowPass (N M : ℕ) (u : BesovSpace ℂ φ s p₁ q) (v : B
         ∑ j ∈ Finset.range M, (u.block j •
           ∑ k ∈ (Finset.range M).filter (fun k ↦ k ≤ j + N ∧ j ≤ k + N), v.block k :
             Lp F r (volume : Measure E)) := by
-  set g : ℕ → ℕ → Lp F r (volume : Measure E) := fun k l ↦ u.block k • v.block l
-  set P := Finset.range M ×ˢ Finset.range M
-  -- Expand every term as a sum of products of blocks over a set of pairs of indices.
-  have hL : (u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) = ∑ x ∈ P, g x.1 x.2 := by
-    rw [lowPass_eq_sum, lowPass_eq_sum, Lp.sum_smul, Finset.sum_product]
-    simp only [Lp.smul_sum, g]
-  have hT : ∑ j ∈ Finset.range M, (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) =
-      ∑ x ∈ P.filter (fun x ↦ x.1 + N < x.2), g x.1 x.2 := by
-    rw [Finset.sum_finset_product_right' _ (Finset.range M) (fun l ↦ Finset.range (l - N))
-      fun x ↦ by simp only [P, Finset.mem_filter, Finset.mem_product, Finset.mem_range]; omega]
-    simp only [lowPass_eq_sum, Lp.sum_smul, g]
-  have hT' : ∑ j ∈ Finset.range M, (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) =
-      ∑ x ∈ P.filter (fun x ↦ x.2 + N < x.1), g x.1 x.2 := by
-    rw [Finset.sum_finset_product' _ (Finset.range M) (fun k ↦ Finset.range (k - N))
-      fun x ↦ by simp only [P, Finset.mem_filter, Finset.mem_product, Finset.mem_range]; omega]
-    simp only [lowPass_eq_sum, Lp.smul_sum, g]
-  have hR : ∑ j ∈ Finset.range M, (u.block j •
-        ∑ k ∈ (Finset.range M).filter (fun k ↦ k ≤ j + N ∧ j ≤ k + N), v.block k :
-          Lp F r (volume : Measure E)) =
-      ∑ x ∈ P.filter (fun x ↦ x.2 ≤ x.1 + N ∧ x.1 ≤ x.2 + N), g x.1 x.2 := by
-    rw [Finset.sum_finset_product' _ (Finset.range M)
-      (fun k ↦ (Finset.range M).filter (fun l ↦ l ≤ k + N ∧ k ≤ l + N))
-      fun x ↦ by simp only [P, Finset.mem_filter, Finset.mem_product, Finset.mem_range]; tauto]
-    simp only [Lp.smul_sum, g]
-  -- The three conditions on a pair of indices are exclusive and exhaustive.
-  rw [hL, hT, hT', hR, Finset.sum_filter, Finset.sum_filter, Finset.sum_filter,
-    ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  split_ifs <;> first | (exfalso; omega) | simp
+  rw [lowPass_eq_sum, lowPass_eq_sum, Lp.sum_smul,
+    Finset.sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _, Finset.sum_range_sum_range_split_gap N]
+  simp only [lowPass_eq_sum, Lp.sum_smul, Lp.smul_sum]
 
 end Decomposition
 
