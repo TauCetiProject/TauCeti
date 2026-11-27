@@ -73,44 +73,47 @@ theorem externalCoact_coassoc :
           (B ⊗[R] C) ∘ₗ externalCoact (R := R) (B := B) (C := C) =
       Coalgebra.comul.lTensor (M ⊗[R] N) ∘ₗ
         externalCoact (R := R) (B := B) (C := C) := by
-  -- Shuffle the two coassociativity equations into the common three-factor target.
+  let f := coact (R := R) (C := B) (M := M)
+  let g := coact (R := R) (C := C) (M := N)
+  let S := (tensorTensorTensorComm R M B N C).toLinearMap
   let F := tensorTensorTensorComm R M (B ⊗[R] B) N (C ⊗[R] C) ≪≫ₗ
     TensorProduct.congr (LinearEquiv.refl R (M ⊗[R] N))
       (tensorTensorTensorComm R B B C C)
-  refine TensorProduct.ext' fun m n ↦ ?_
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, externalCoact_tmul]
-  convert congrArg F (congrArg₂ (fun a b ↦ a ⊗ₜ[R] b)
-    (coassoc_apply (R := R) (C := B) m) (coassoc_apply (R := R) (C := C) n)) using 1
-  · dsimp [F, externalCoact]
-    induction coact (R := R) (C := B) m using TensorProduct.inductionOn with
-    | add p q hp hq => simp only [add_tmul, map_add, hp, hq]
-    | tmul m b =>
-      induction coact (R := R) (C := C) n using TensorProduct.inductionOn with
-      | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
-      | tmul n c =>
-        simp only [tensorTensorTensorComm_tmul, LinearMap.rTensor_tmul,
-          LinearMap.comp_apply, map_tmul]
-        induction coact (R := R) (C := B) m using TensorProduct.inductionOn with
-        | add p q hp hq => simp only [add_tmul, map_add, hp, hq]
-        | tmul m b =>
-          induction coact (R := R) (C := C) n using TensorProduct.inductionOn with
-          | add p q hp hq => simp only [tmul_add, add_tmul, map_add, hp, hq]
-          | tmul n c => rfl
-  · dsimp [F, externalCoact]
-    induction coact (R := R) (C := B) m using TensorProduct.inductionOn with
-    | add p q hp hq => simp only [add_tmul, map_add, hp, hq]
-    | tmul m b =>
-      induction coact (R := R) (C := C) n using TensorProduct.inductionOn with
-      | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
-      | tmul n c =>
-        simp only [LinearMap.lTensor_tmul, tensorTensorTensorComm_tmul,
-          comul_tmul]
-        induction Coalgebra.comul (R := R) b using TensorProduct.inductionOn with
-        | add p q hp hq => simp only [add_tmul, tmul_add, map_add, hp, hq]
-        | tmul b b' =>
-          induction Coalgebra.comul (R := R) c using TensorProduct.inductionOn with
-          | add p q hp hq => simp only [tmul_add, map_add, hp, hq]
-          | tmul c c' => rfl
+  -- Rebracketing before or after the two shuffles gives the same six-factor map.
+  have hs : TensorProduct.assoc R (M ⊗[R] N) (B ⊗[R] C) (B ⊗[R] C) ∘ₗ
+      S.rTensor (B ⊗[R] C) ∘ₗ
+        (tensorTensorTensorComm R (M ⊗[R] B) B (N ⊗[R] C) C).toLinearMap =
+      F.toLinearMap ∘ₗ map (TensorProduct.assoc R M B B).toLinearMap
+        (TensorProduct.assoc R N C C).toLinearMap := by
+    ext m b₁ b₂ n c₁ c₂
+    simp [S, F]
+  have hn : (map f g).rTensor (B ⊗[R] C) ∘ₗ S =
+      (tensorTensorTensorComm R (M ⊗[R] B) B (N ⊗[R] C) C).toLinearMap ∘ₗ
+        map (f.rTensor B) (g.rTensor C) := by
+    simpa only [LinearMap.rTensor_def, map_id] using
+      (tensorTensorTensorComm_comp_map R f (LinearMap.id : B →ₗ[R] B)
+        g (LinearMap.id : C →ₗ[R] C)).symm
+  have hc : Coalgebra.comul.lTensor (M ⊗[R] N) ∘ₗ S =
+      F.toLinearMap ∘ₗ map (Coalgebra.comul.lTensor M) (Coalgebra.comul.lTensor N) := by
+    simp only [TensorProduct.comul_def, AlgebraTensorModule.tensorTensorTensorComm_eq,
+      AlgebraTensorModule.map_eq, LinearMap.lTensor_comp, LinearMap.comp_assoc]
+    simp only [LinearMap.lTensor_def]
+    have h := tensorTensorTensorComm_comp_map R (LinearMap.id : M →ₗ[R] M)
+      (Coalgebra.comul (R := R) (A := B)) (LinearMap.id : N →ₗ[R] N)
+      (Coalgebra.comul (R := R) (A := C))
+    simp only [map_id] at h
+    rw [← h]
+    simp only [F, LinearEquiv.coe_trans, TensorProduct.toLinearMap_congr,
+      LinearEquiv.refl_toLinearMap, LinearMap.comp_assoc]
+  -- Naturality moves the second coactions through the shuffle; the two comodule
+  -- laws then identify the resulting map with comultiplication on the coefficients.
+  simp only [externalCoact_def, LinearMap.rTensor_comp, LinearMap.comp_assoc]
+  rw [← LinearMap.comp_assoc (map f g) S ((map f g).rTensor _), hn]
+  simp only [← LinearMap.comp_assoc] at hs ⊢
+  rw [hs]
+  simp only [f, g, LinearMap.comp_assoc, ← map_comp, coact_coassoc]
+  rw [map_comp, ← LinearMap.comp_assoc, ← hc]
+  simp only [S, LinearMap.comp_assoc]
 
 /-- Applying the tensor-product counit to the external coaction recovers the vector. -/
 theorem externalCoact_counit :
@@ -153,9 +156,8 @@ theorem externalTensor_coact :
 theorem externalCoact_regular :
     externalCoact (R := R) (B := B) (C := C) (M := B) (N := C) =
       Coalgebra.comul := by
-  rw [externalCoact_def, TensorProduct.comul_def,
-    AlgebraTensorModule.tensorTensorTensorComm_eq]
-  rfl
+  simp only [externalCoact_def, TensorProduct.comul_def,
+    AlgebraTensorModule.tensorTensorTensorComm_eq, AlgebraTensorModule.map_eq, instSelf_coact]
 
 variable {M' N' : Type*}
 variable [AddCommMonoid M'] [Module R M'] [Comodule R B M']
