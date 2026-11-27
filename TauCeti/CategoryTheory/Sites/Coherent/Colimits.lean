@@ -25,10 +25,12 @@ open CategoryTheory Limits
 namespace CategoryTheory.Sheaf
 
 variable {C A J : Type*} [Category* C] [Category* A] [Category* J]
-  [Preregular C] [FinitaryExtensive C] [HasPullbacks C] [HasColimitsOfShape J A]
+  [Preregular C] [FinitaryExtensive C]
+  [hpb : ∀ {Y X : C} (f : Y ⟶ X) [EffectiveEpi f], HasPullback f f] [HasColimitsOfShape J A]
 
 /-- A colimit of coherent sheaves is computed pointwise when the colimit functor
-in the coefficient category preserves finite limits. -/
+in the coefficient category preserves finite limits. If only kernel pairs of effective
+epimorphisms are available, supply them explicitly as `hpb`. -/
 noncomputable instance createsColimitsOfShapeCoherent
     [PreservesFiniteLimits (colim (J := J) (C := A))] :
     CreatesColimitsOfShape J (sheafToPresheaf (coherentTopology C) A) where
@@ -38,14 +40,14 @@ noncomputable instance createsColimitsOfShapeCoherent
     let G := F ⋙ sheafToPresheaf (coherentTopology C) A
     let e : c.pt ≅ G.flip ⋙ colim := hc.coconePointUniqueUpToIso (pointwiseIsColimit G)
     rw [Presheaf.isSheaf_of_iso_iff e]
-    apply Presheaf.isSheaf_coherent_of_hasPullbacks_comp
-    rw [Presheaf.isSheaf_iff_preservesFiniteProducts_and_equalizerCondition]
+    refine Presheaf.isSheaf_coherent_of_hasPullbacks_comp G.flip colim (h := hpb) ?_
+    rw [Presheaf.isSheaf_iff_preservesFiniteProducts_and_equalizerCondition (h := hpb)]
     constructor
     · exact ⟨fun _ ↦ preservesLimitsOfShape_of_evaluation G.flip _ fun j ↦
         inferInstanceAs (PreservesLimitsOfShape _ (F.obj j).obj)⟩
     · intro X B π _ p hp
       refine ⟨evaluationJointlyReflectsLimits _ fun j ↦ ?_⟩
-      have h := (Presheaf.isSheaf_iff_preservesFiniteProducts_and_equalizerCondition
+      have h := (Presheaf.isSheaf_iff_preservesFiniteProducts_and_equalizerCondition (h := hpb)
         (F.obj j).obj).mp (F.obj j).property
       exact (isLimitMapConeForkEquiv _ _).symm (h.2 π p hp).some
 
