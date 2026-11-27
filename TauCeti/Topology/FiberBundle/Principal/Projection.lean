@@ -102,127 +102,51 @@ theorem op_actionDivisionOrOne_smul {x y : E} (hxy : f x = f y) :
 
 section Free
 
-private theorem op_smul_eq_self_imp_of_eq {x y : E} (hxy : f x = f y)
-    (hfree : ∀ g : G, op g • x = x → g = 1) (g : G) (hg : op g • y = y) : g = 1 := by
-  obtain ⟨h, rfl⟩ := (horbit x y).1 hxy
-  have hstab : MulAction.stabilizer Gᵐᵒᵖ x = ⊥ :=
-    (Subgroup.eq_bot_iff_forall _).2 fun k hk ↦ MulOpposite.unop_injective (hfree (unop k) hk)
-  have hstab' : MulAction.stabilizer Gᵐᵒᵖ (op h • x) = ⊥ := by
-    rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, hstab, Subgroup.map_bot]
-  exact MulOpposite.op_injective ((Subgroup.eq_bot_iff_forall _).1 hstab' (op g) hg)
-
-omit horbit in
-@[instance_reducible]
-private noncomputable def mapFiberTorsor
-    (horbit : ∀ x y : E, f x = f y ↔ ∃ g : G, op g • x = y) {x₀ : E}
-    (hfree : ∀ g : G, op g • x₀ = x₀ → g = 1) :
-    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-    Torsor Gᵐᵒᵖ (MapFiber f (f x₀)) :=
-  letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-  { nonempty := ⟨⟨x₀, rfl⟩⟩
-    sdiv q p := op (actionDivision horbit (p.property.trans q.property.symm))
-    sdiv_smul' q p := Subtype.ext
-      ((MapFiber.coe_smul (apply_smul_eq_of_orbit_eq_fiber horbit) _ _).trans
-        (op_actionDivision_smul horbit _))
-    smul_sdiv' g p := by
-      apply MulOpposite.unop_injective
-      simp only [MulOpposite.unop_op]
-      refine (op_smul_left_inj_of_op_smul_eq_self_imp
-        (op_smul_eq_self_imp_of_eq horbit p.property.symm hfree)).1 ?_
-      rw [op_actionDivision_smul]
-      exact MapFiber.coe_smul _ g p }
-
-private theorem mapFiberTorsor_sdiv {x₀ : E} (hfree : ∀ g : G, op g • x₀ = x₀ → g = 1)
-    (q p : MapFiber f (f x₀)) :
-    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-    letI := mapFiberTorsor horbit hfree
-    q /ₛ p = op (actionDivision horbit (p.property.trans q.property.symm)) :=
-  rfl
-
 /-- When the right `G`-action is free at `x`, `actionDivision horbit hxy` is uniquely characterized
 by `op g • x = y`. -/
 theorem actionDivision_eq_iff {x y : E} (hfree : ∀ g : G, op g • x = x → g = 1)
     (hxy : f x = f y) {g : G} :
-    actionDivision horbit hxy = g ↔ op g • x = y :=
-  letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-  letI := mapFiberTorsor horbit hfree
-  by
-    have hsmul : (op g • (⟨x, rfl⟩ : MapFiber f (f x))) =
-        ⟨op g • x, apply_op_smul_eq_of_orbit_eq_fiber horbit g x⟩ :=
-      Subtype.ext (MapFiber.coe_smul _ _ _)
-    rw [← MulOpposite.op_injective.eq_iff,
-      ← mapFiberTorsor_sdiv horbit hfree ⟨y, hxy.symm⟩ ⟨x, rfl⟩,
-      ← eq_smul_iff_sdiv_eq (⟨y, hxy.symm⟩ : MapFiber f (f x)) (op g) ⟨x, rfl⟩,
-      hsmul, Subtype.ext_iff]
-    exact eq_comm
+    actionDivision horbit hxy = g ↔ op g • x = y := by
+  rw [← op_smul_left_inj_of_op_smul_eq_self_imp hfree, op_actionDivision_smul, eq_comm]
 
 /-- Dividing a point `x` by itself under a free action at `x` yields `1`. -/
 theorem actionDivision_self {x : E} (hfree : ∀ g : G, op g • x = x → g = 1) :
     actionDivision horbit (rfl : f x = f x) = 1 :=
-  letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-  letI := mapFiberTorsor horbit hfree
-  congrArg MulOpposite.unop (sdiv_self (⟨x, rfl⟩ : MapFiber f (f x)))
+  (actionDivision_eq_iff horbit hfree rfl).2 (by rw [op_one, one_smul])
 
 /-- Right equivariance of `actionDivision` in the second argument. -/
 theorem actionDivision_op_smul_right {x y : E} (hfree : ∀ g : G, op g • x = x → g = 1)
     (g : G) (hxy : f x = f (op g • y)) :
     actionDivision horbit hxy =
       actionDivision horbit (hxy.trans (apply_op_smul_eq_of_orbit_eq_fiber horbit g y)) * g :=
-  letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-  letI := mapFiberTorsor horbit hfree
-  by
-    have hsmul : (op g •
-        (⟨y, (hxy.trans (apply_op_smul_eq_of_orbit_eq_fiber horbit g y)).symm⟩ :
-          MapFiber f (f x))) = ⟨op g • y, hxy.symm⟩ :=
-      Subtype.ext (MapFiber.coe_smul _ _ _)
-    have h := congrArg MulOpposite.unop (smul_sdiv_assoc (op g)
-      (⟨y, (hxy.trans (apply_op_smul_eq_of_orbit_eq_fiber horbit g y)).symm⟩ : MapFiber f (f x))
-      ⟨x, rfl⟩)
-    rw [hsmul, mapFiberTorsor_sdiv horbit hfree, mapFiberTorsor_sdiv horbit hfree] at h
-    simpa only [MulOpposite.unop_mul, MulOpposite.unop_op] using h
+  (actionDivision_eq_iff horbit hfree hxy).2 (by rw [op_mul, mul_smul, op_actionDivision_smul])
 
 /-- Equivariance of `actionDivision` in the first argument. -/
 theorem actionDivision_op_smul_left {x y : E} (hfree : ∀ g : G, op g • x = x → g = 1)
     (g : G) (hxy : f (op g • x) = f y) :
     actionDivision horbit hxy = g⁻¹ *
       actionDivision horbit ((apply_op_smul_eq_of_orbit_eq_fiber horbit g x).symm.trans hxy) :=
-  letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-  letI := mapFiberTorsor horbit hfree
-  by
-    have hsmul : (op g • (⟨x, rfl⟩ : MapFiber f (f x))) =
-        ⟨op g • x, apply_op_smul_eq_of_orbit_eq_fiber horbit g x⟩ :=
-      Subtype.ext (MapFiber.coe_smul _ _ _)
-    have h := congrArg MulOpposite.unop (sdiv_smul_eq_sdiv_div
-      (⟨y, ((apply_op_smul_eq_of_orbit_eq_fiber horbit g x).symm.trans hxy).symm⟩ :
-        MapFiber f (f x))
-      ⟨x, rfl⟩ (op g))
-    rw [hsmul, mapFiberTorsor_sdiv horbit hfree, mapFiberTorsor_sdiv horbit hfree] at h
-    simpa only [div_eq_mul_inv, MulOpposite.unop_mul, MulOpposite.unop_inv, MulOpposite.unop_op]
-      using h
+  (actionDivision_eq_iff horbit (op_smul_eq_self_imp_of_op_smul hfree g) hxy).2 (by
+    rw [op_mul, mul_smul, ← mul_smul (op g⁻¹), ← op_mul, mul_inv_cancel, op_one, one_smul,
+      op_actionDivision_smul])
 
 /-- Cocycle multiplicativity of `actionDivision` across three points in the same fibre. -/
 theorem actionDivision_mul_actionDivision {x y z : E} (hfree : ∀ g : G, op g • x = x → g = 1)
     (hxy : f x = f y) (hyz : f y = f z) :
     actionDivision horbit hxy * actionDivision horbit hyz =
       actionDivision horbit (hxy.trans hyz) :=
-  letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-  letI := mapFiberTorsor horbit hfree
-  by
-    have h := congrArg MulOpposite.unop
-      (sdiv_mul_sdiv_cancel (⟨z, (hxy.trans hyz).symm⟩ : MapFiber f (f x))
-        ⟨y, hxy.symm⟩ ⟨x, rfl⟩)
-    rw [mapFiberTorsor_sdiv horbit hfree, mapFiberTorsor_sdiv horbit hfree,
-      mapFiberTorsor_sdiv horbit hfree] at h
-    simpa only [MulOpposite.unop_mul, MulOpposite.unop_op] using h
+  ((actionDivision_eq_iff horbit hfree (hxy.trans hyz)).2 (by
+    rw [op_mul, mul_smul, op_actionDivision_smul, op_actionDivision_smul])).symm
 
 /-- Inverting `actionDivision` swaps its arguments. -/
 theorem inv_actionDivision {x y : E} (hfree : ∀ g : G, op g • x = x → g = 1)
     (hxy : f x = f y) :
-    (actionDivision horbit hxy)⁻¹ = actionDivision horbit hxy.symm :=
-  letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
-  letI := mapFiberTorsor horbit hfree
-  congrArg MulOpposite.unop
-    (inv_sdiv_eq_sdiv_rev (⟨y, hxy.symm⟩ : MapFiber f (f x)) ⟨x, rfl⟩)
+    (actionDivision horbit hxy)⁻¹ = actionDivision horbit hxy.symm := by
+  have hfree' : ∀ k : G, op k • y = y → k = 1 := by
+    obtain ⟨h, rfl⟩ := (horbit x y).1 hxy
+    exact op_smul_eq_self_imp_of_op_smul hfree h
+  exact ((actionDivision_eq_iff horbit hfree' hxy.symm).2
+    (by rw [op_inv, inv_smul_eq_iff, op_actionDivision_smul])).symm
 
 end Free
 

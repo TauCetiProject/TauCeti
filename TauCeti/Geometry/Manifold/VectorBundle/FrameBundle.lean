@@ -137,7 +137,7 @@ trivializations are `C^k` diffeomorphisms onto open subsets of `B × GL n 𝕜`.
 theorem isContMDiff_atlas (σ : F ≃L[𝕜] (Fin n → 𝕜)) :
     (atlas E σ).IsContMDiff k IB 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜)
       (IB.prod 𝓘(𝕜, (Fin n → 𝕜) →L[𝕜] F)) := by
-  refine ⟨?_, ?_⟩ <;> rw [atlas_charts] <;> rintro _ ⟨b, rfl⟩
+  refine ⟨?_, ?_⟩ <;> rw [atlas, MapFiber.Atlas.charts_ofTrivAt] <;> rintro _ ⟨b, rfl⟩
   · exact (trivializationAt F E b).contMDiffOn_frameBundle σ
   · exact (trivializationAt F E b).contMDiffOn_frameBundle_symm σ
 

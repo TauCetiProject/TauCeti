@@ -41,8 +41,9 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
    is also free along `s` and orbit-exact it is injective with image `p ⁻¹' U`, giving
    `contMDiffOn_sectionCoord`. Under the stronger model hypothesis `[IP.Boundaryless]`, these
    charts yield `C^n` principal bundle structures on `MapFiber p`, a `G`-equivariant `C^n`
-   diffeomorphism `ManifoldTotalSpace G (MapFiber p) ≃ₘ^n P` over `B`, and `C^n` regularity of
-   `actionDivisionOrOne` (`contMDiffWithinAt_actionDivisionOrOne`).
+   diffeomorphism `ManifoldTotalSpace G (MapFiber p) ≃ₘ^n P` over `B`, and (when
+   `[LieGroup IG n G]`) `C^n` regularity of `actionDivisionOrOne`
+   (`contMDiffWithinAt_actionDivisionOrOne`).
 2. **Finite-dimensional `C^n` criterion (`1 ≤ n`, over `[RCLike 𝕜]`):** injectivity of
    `d(g ↦ op g • x)_1` and `finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the
    vertical-range condition by rank-nullity (`range_mfderiv_op_smul_one_eq_ker_of_finrank_eq`),

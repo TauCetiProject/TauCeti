@@ -210,8 +210,10 @@ theorem principalBundle_reductionFiber [SMulMemIff H S] :
     PrincipalBundle H (ReductionFiber S) :=
   hS.atlas.principalBundle_of_homeomorph _ _ _
     (fun x φ g ↦ reductionTotalSpaceEquiv_smul g ⟨x, φ⟩) fun t ht p hp g ↦ by
-    rw [hS.atlas_charts] at ht
+    rw [IsLocallyTrivialReduction.atlas, MapFiber.Atlas.charts_ofTrivAt] at ht
     obtain ⟨x, rfl⟩ := ht
+    dsimp only at hp ⊢
+    rw [← hS.atlas_trivAt x] at hp ⊢
     rw [SMulMemIff.smul_eq_mk g p ((SMulMemIff.smul_mem_iff p.property).2 g.property)]
     exact congrArg Prod.snd (hS.atlas_trivAt_mk_smul x g p _ hp)
 
