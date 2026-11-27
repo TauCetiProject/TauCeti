@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.HeisenbergModel.Fock.Basic
-import TauCeti.Analysis.Matrix.Kronecker
+import TauCeti.Analysis.Matrix.L2OpNorm
 
 /-!
 # Commuting unitary actions on matrix Fock space
@@ -57,18 +57,12 @@ variable [Fintype R] [Fintype C]
 def pairHom : unitaryGroup ε × unitaryGroup ε' →* unitaryGroup (pairSigns ε ε') where
   toFun p := Matrix.unitaryGroupOf.ofMatrix (isUnit_signMatrix (ε := pairSigns ε ε'))
     (((p.1 : GL R ℂ) : Matrix R R ℂ) ⊗ₖ ((p.2⁻¹ : GL C ℂ) : Matrix C C ℂ)ᵀ) (by
-      have hg := (Matrix.mem_unitaryGroupOf_iff' (isUnit_signMatrix (ε := ε'))).mp p.2⁻¹.property
-      rw [inv_signMatrix] at hg
-      have ht := congrArg Matrix.transpose hg
-      -- Transposition turns preservation of the inverse form into preservation by the dual.
-      have hd : star (((p.2⁻¹ : GL C ℂ) : Matrix C C ℂ)ᵀ) * signMatrix ε' *
-          ((p.2⁻¹ : GL C ℂ) : Matrix C C ℂ)ᵀ = signMatrix ε' := by
-        simpa [transpose_mul, star_eq_conjTranspose, signMatrix_eq_diagonal, Matrix.mul_assoc,
-          conjTranspose_transpose_eq_transpose_conjTranspose] using ht
       rw [signMatrix_pairSigns, star_eq_conjTranspose, conjTranspose_kronecker,
-        ← mul_kronecker_mul, ← mul_kronecker_mul]
+        ← mul_kronecker_mul, ← mul_kronecker_mul, ← star_eq_conjTranspose,
+        ← star_eq_conjTranspose]
       exact congrArg₂ (fun a b ↦ a ⊗ₖ b)
-        (Matrix.mem_unitaryGroupOf_iff.mp p.1.property) hd)
+        (Matrix.mem_unitaryGroupOf_iff.mp p.1.property)
+        (star_transpose_inv_mul_signMatrix_mul_transpose_inv p.2))
   map_one' := by
     apply Matrix.unitaryGroupOf.ext
     simp [Matrix.unitaryGroupOf.val_ofMatrix]
@@ -89,8 +83,7 @@ theorem pairHom_apply (p : unitaryGroup ε × unitaryGroup ε') (i j : R × C) :
     ((pairHom ε ε' p : GL (R × C) ℂ) : Matrix (R × C) (R × C) ℂ) i j =
       ((p.1 : GL R ℂ) : Matrix R R ℂ) i.1 j.1 *
         ((p.2⁻¹ : GL C ℂ) : Matrix C C ℂ) j.2 i.2 := by
-  rw [pairHom_val]
-  rfl
+  rw [pairHom_val, kroneckerMap_apply, transpose_apply]
 
 /-- The entry action is left multiplication and inverse right multiplication on matrices. -/
 theorem pairHom_smul (p : unitaryGroup ε × unitaryGroup ε') (x : Matrix R C ℂ) :
@@ -124,7 +117,8 @@ def pairCharacter (γ γ' : ℤ) : unitaryGroup ε × unitaryGroup ε' →* ℂ�
   map_one' := by simp
   map_mul' p q := by simp [mul_zpow, mul_left_comm, mul_assoc]
 
-/-- Evaluate the determinant character. Explicit rewriting preserves the norm simplifier. -/
+-- Not `@[simp]`, so that the simplifier can still apply `norm_pairCharacter`.
+/-- The determinant character evaluates to `det h ^ γ * det g ^ γ'`. -/
 theorem pairCharacter_apply (γ γ' : ℤ) (p : unitaryGroup ε × unitaryGroup ε') :
     pairCharacter ε ε' γ γ' p = (p.1 : GL R ℂ).det ^ γ * (p.2 : GL C ℂ).det ^ γ' := (rfl)
 
@@ -165,14 +159,16 @@ def pairWeil (γ γ' : ℤ) : unitaryGroup ε × unitaryGroup ε' →*
   map_one' := by simp
   map_mul' p q := by
     simp only [map_mul, Units.val_mul, smul_mul_assoc, mul_smul_comm, smul_smul]
-    rw [mul_comm]
+    rw [mul_comm (pairCharacter ε ε' γ γ' q : ℂ)]
 
 /-- Unfold the determinant twist without unfolding the underlying Weil representation. -/
 theorem pairWeil_def (γ γ' : ℤ) (p : unitaryGroup ε × unitaryGroup ε') :
     pairWeil ε ε' γ γ' p =
       (pairCharacter ε ε' γ γ' p : ℂ) • weilRep _ (pairHom ε ε' p) := (rfl)
 
-/-- Evaluate the twisted action. Explicit rewriting preserves the inner-form simplifier. -/
+-- Not `@[simp]`, so that the simplifier can still apply `innerSL_pairWeil`.
+/-- The twisted action on a vector is the determinant character times the Weil action of
+`h x g⁻¹`. -/
 theorem pairWeil_apply (γ γ' : ℤ) (p : unitaryGroup ε × unitaryGroup ε')
     (v : FockSpace (pairSigns ε ε')) :
     pairWeil ε ε' γ γ' p v =
@@ -184,10 +180,10 @@ theorem innerSL_pairWeil (γ γ' : ℤ) (p : unitaryGroup ε × unitaryGroup ε'
     (v w : FockSpace (pairSigns ε ε')) :
     ReproducingModel.innerSL (pairWeil ε ε' γ γ' p v) (pairWeil ε ε' γ γ' p w) =
       ReproducingModel.innerSL v w := by
-  simp only [pairWeil_apply, map_smulₛₗ, smul_apply, RingHom.id_apply, starRingEnd_apply,
-    smul_eq_mul]
-  rw [mul_left_comm, ← mul_assoc, Complex.star_def, ← Complex.normSq_eq_conj_mul_self,
-    Complex.normSq_eq_norm_sq, norm_pairCharacter, one_pow, Complex.ofReal_one, one_mul]
+  have hχ : (pairCharacter ε ε' γ γ' p : ℂ) * conj (pairCharacter ε ε' γ γ' p : ℂ) = 1 := by
+    rw [Complex.mul_conj', norm_pairCharacter, Complex.ofReal_one, one_pow]
+  simp only [pairWeil_apply, map_smulₛₗ, smul_apply, RingHom.id_apply, smul_eq_mul]
+  rw [← mul_assoc, hχ, one_mul]
   exact ReproducingModel.innerSL_weilRep (multiplier _) (pairHom ε ε' p) v w cocycle_multiplier
 
 /-- The determinant-twisted action is jointly continuous. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
@@ -29,6 +30,8 @@ rather than restricting scalars, so that no algebra diamond arises.
 
 * `Matrix.l2_opNorm_map_star`, `Matrix.l2_opNorm_transpose`: entrywise conjugation and
   transposition preserve the Euclidean operator norm.
+* `Matrix.l2_opNorm_kronecker_le`: the operator norm of a rectangular Kronecker product is at
+  most the product of the operator norms of its factors.
 
 * `Matrix.opNorm_toEuclideanLin`: the operator-norm unitarily invariant seminorm of
   `A.toEuclideanLin` equals the scoped `ℓ²` operator norm of `A`.
@@ -333,8 +336,8 @@ theorem l2_opNorm_map_star {m : Type*} [Fintype m] (A : Matrix m n 𝕜) :
 @[simp]
 theorem l2_opNorm_transpose {m : Type*} [Fintype m] [DecidableEq m]
     (A : Matrix m n 𝕜) : ‖Aᵀ‖ = ‖A‖ := by
-  simpa only [conjTranspose, RCLike.star_def, l2_opNorm_map_star]
-    using l2_opNorm_conjTranspose A
+  rw [← l2_opNorm_conjTranspose Aᵀ, transpose_conjTranspose]
+  exact l2_opNorm_map_star A
 
 omit [DecidableEq n] in
 /-- **Large-sieve duality.** For a rectangular matrix `A` and `C ≥ 0`, the inequality
@@ -435,5 +438,35 @@ theorem l2_opNorm_single {m n 𝕜 : Type*} [Fintype m] [Fintype n]
       ← diagonal_single, l2_opNorm_diagonal]
     rw [Pi.norm_single, norm_mul, norm_star]
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp (by simpa [pow_two] using hs)
+
+
+open scoped Kronecker in
+/-- The Euclidean operator norm of a rectangular Kronecker product is at most the product
+of the Euclidean operator norms. Empty row and column types are allowed. -/
+theorem l2_opNorm_kronecker_le {m n p q 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [Fintype p]
+    [Fintype q] [DecidableEq n] [DecidableEq q] (A : Matrix m n 𝕜) (B : Matrix p q 𝕜) :
+    ‖A ⊗ₖ B‖ ≤ ‖A‖ * ‖B‖ := by
+  apply (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).mp
+  rw [mul_pow]
+  apply (l2_opNorm_sq_le_iff (mul_nonneg (sq_nonneg _) (sq_nonneg _))).mpr
+  intro v
+  let w (r : n) (i : p) := (B *ᵥ fun j ↦ v (r, j)) i
+  have he (i : m) (k : p) : ((A ⊗ₖ B) *ᵥ v) (i, k) = (A *ᵥ fun r ↦ w r k) i := by
+    simp only [mulVec, dotProduct, kroneckerMap_apply, Fintype.sum_prod_type, w,
+      Finset.mul_sum]
+    exact Finset.sum_congr rfl fun r _ ↦ Finset.sum_congr rfl fun c _ ↦ by ring
+  calc
+    ∑ i, ‖((A ⊗ₖ B) *ᵥ v) i‖ ^ 2 = ∑ k, ∑ i, ‖(A *ᵥ fun r ↦ w r k) i‖ ^ 2 := by
+      simp only [Fintype.sum_prod_type, he]
+      exact Finset.sum_comm
+    _ ≤ ∑ k, ‖A‖ ^ 2 * ∑ r, ‖w r k‖ ^ 2 :=
+      Finset.sum_le_sum fun k _ ↦ A.sum_norm_sq_mulVec_le _
+    _ = ‖A‖ ^ 2 * ∑ r, ∑ k, ‖w r k‖ ^ 2 := by
+      rw [← Finset.mul_sum, Finset.sum_comm]
+    _ ≤ ‖A‖ ^ 2 * ∑ r, ‖B‖ ^ 2 * ∑ j, ‖v (r, j)‖ ^ 2 := by
+      gcongr with r
+      exact B.sum_norm_sq_mulVec_le _
+    _ = (‖A‖ ^ 2 * ‖B‖ ^ 2) * ∑ i, ‖v i‖ ^ 2 := by
+      simp [Fintype.sum_prod_type, Finset.mul_sum, mul_assoc]
 
 end Matrix
