@@ -22,9 +22,9 @@ These representatives are locally constant on the overlap and compose on triple 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`,
 `Mei/Geometry/Manifold/IntegralAffine/Basic.lean` (Apache 2.0).
-The pointwise chart changes are adapted from Claude Code's
-`Mei/Geometry/Manifold/IntegralAffine/TangentLattice.lean` at commit
-`bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0).
+The pointwise chart changes are adapted from `yuma-mizuno-lean/Mei`, commit
+`bf3986029ff4d3eb4025d4067489511b0724374e`,
+`Mei/Geometry/Manifold/IntegralAffine/TangentLattice.lean` (Apache 2.0).
 -/
 
 public section
