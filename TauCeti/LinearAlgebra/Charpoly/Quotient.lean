@@ -34,6 +34,8 @@ multiplicative counterpart of the additivity of the trace `LinearMap.trace_eq_ad
 
 * `LinearMap.charpoly_dvd_of_injective_of_comp_eq_comp`: the characteristic polynomial of an
   endomorphism divides that of any endomorphism containing it through an injective intertwiner.
+* `LinearMap.charpoly_dvd_of_surjective_of_comp_eq_comp`: the characteristic polynomial of an
+  endomorphism divides that of any endomorphism mapping onto it through a surjective intertwiner.
 
 * `LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ`: the characteristic polynomial of
   `f` is the product of those of its restriction to `W` and of the endomorphism it induces on
@@ -165,6 +167,17 @@ theorem charpoly_dvd_of_injective_of_comp_eq_comp (f : V →ₗ[K] V) (g : U →
       (congrArg g (LinearEquiv.ofInjective_symm_apply j x))
   refine ⟨(W.mapQ W g hW).charpoly, ?_⟩
   rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W g hW, ← he, e.charpoly_conj]
+
+/-- If a surjective linear map `p` satisfies `p.comp g = f.comp p`, the characteristic polynomial
+of `f` divides that of `g`. -/
+theorem charpoly_dvd_of_surjective_of_comp_eq_comp (f : V →ₗ[K] V) (g : U →ₗ[K] U)
+    (p : U →ₗ[K] V) (hp : Function.Surjective p) (h : p.comp g = f.comp p) :
+    f.charpoly ∣ g.charpoly := by
+  have hW : ker p ≤ (ker p).comap g := fun x hx ↦ by
+    rw [Submodule.mem_comap, mem_ker, ← comp_apply, h, comp_apply, mem_ker.mp hx, map_zero]
+  refine ⟨(g.restrict hW).charpoly, ?_⟩
+  rw [charpoly_eq_mul_of_exact (ker p).injective_subtype hp (exact_subtype_ker_map p)
+    (subtype_comp_restrict hW).symm h, mul_comm]
 
 end LinearMap
 

@@ -11,8 +11,11 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.LinearAlgebra.Charpoly.Degree
 public import TauCeti.NumberTheory.WeilNumber.Basic
 public import TauCeti.NumberTheory.WeilNumber.IotaWeight
+public import TauCeti.NumberTheory.WeilNumber.Pure
 public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
+
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # Representations pure of a weight outside a set of places
@@ -52,6 +55,12 @@ size greater than `1` for `ι`-purity. A representation of rank zero has charact
 numerical Tate character over `ℂ`, pure of weight `-2` and not integral, and the sum of the trivial
 and Tate lines, pure of no weight.
 
+Purity and `ι`-purity of a given weight pass to subrepresentations and quotients, and to extensions
+whose middle term is unramified outside `T`: the characteristic polynomial of Frobenius on the
+middle term is the product of those on the two ends. They are also preserved and reflected by
+direct sums. Integral characteristic polynomials are preserved by direct sums, but do not pass to
+summands in general.
+
 ## Main definitions
 
 * `Representation.IsUnramifiedOutside ρ I T`: each `I v` with `v ∉ T` acts trivially.
@@ -64,6 +73,8 @@ and Tate lines, pure of no weight.
 
 * `Representation.isPureOutside_iff_forall_mem_aroots`: purity may be tested on the roots in any
   algebraically closed field over `E`.
+* `Representation.isPureOutside_iff_forall_isPure`: purity outside `T` is purity, in the sense of
+  `TauCeti.IsPure`, of every Frobenius endomorphism outside `T`.
 * `Representation.IsPureOutside.isIotaPureOutside`: purity of weight `w` implies `ι`-purity of
   weight `w` for every `ι : E →+* ℂ`.
 * `Representation.isIotaPureOutside_iff_isIotaPure`: over an algebraically closed `E`, `ι`-purity
@@ -74,10 +85,21 @@ and Tate lines, pure of no weight.
   a nonzero representation is unique when one place lies outside `T`.
 * `Representation.isPureOutside_ofLinearCharacter_iff` and its analogues: the predicates for the
   line on which `G` acts through a character `χ`.
+* `Representation.IsPureOutside.of_injective`, `Representation.IsPureOutside.of_surjective`:
+  subrepresentations and quotients of a pure representation are pure of the same weight.
+* `Representation.isPureOutside_iff_of_exact`: in a short exact sequence whose middle term is
+  unramified outside `T`, the middle term is pure of weight `w` if and only if both ends are.
+* `Representation.isPureOutside_prod_iff`: a direct sum is pure of weight `w` if and only if both
+  summands are.
+* `Representation.IsIotaPureOutside.of_injective` and its analogues: the same statements for
+  `ι`-purity.
+* `Representation.HasIntegralCharpolyOutside.prod`: a direct sum of representations with integral
+  characteristic polynomials has integral characteristic polynomials.
 
 ## References
 
-* P. Deligne, *La conjecture de Weil. II*, Publ. Math. IHÉS 52 (1980), §1.2, (1.2.2)–(1.2.6).
+* P. Deligne, *La conjecture de Weil. II*, Publ. Math. IHÉS 52 (1980), §1.2, (1.2.2)–(1.2.6);
+  the stability properties are (1.2.5)(i).
 * B. Lawrence, A. Venkatesh, *Diophantine problems and p-adic period mappings*, Invent. Math.
   221 (2020), §2.3 and Lemma 2.3.
 -/
@@ -131,6 +153,34 @@ theorem isUnramifiedOutside_ofLinearCharacter_iff (χ : G →* kˣ) :
     (ofLinearCharacter χ).IsUnramifiedOutside I T ↔ ∀ v ∉ T, ∀ g ∈ I v, χ g = 1 := by
   simp [isUnramifiedOutside_iff]
 
+variable {V₁ V₂ : Type*} [AddCommMonoid V₁] [Module k V₁] [AddCommMonoid V₂] [Module k V₂]
+  {ρ₁ : Representation k G V₁} {ρ₂ : Representation k G V₂}
+
+/-- A representation mapping injectively into one unramified outside `T` is unramified
+outside `T`. -/
+theorem IsUnramifiedOutside.of_injective (h : ρ.IsUnramifiedOutside I T)
+    (i : IntertwiningMap ρ₁ ρ) (hi : Function.Injective i) : ρ₁.IsUnramifiedOutside I T :=
+  fun v hv g hg ↦ LinearMap.ext fun x ↦ hi <| by
+    simpa [h v hv g hg] using IntertwiningMap.isIntertwining ρ₁ ρ i g x
+
+/-- A representation onto which one unramified outside `T` maps surjectively is unramified
+outside `T`. -/
+theorem IsUnramifiedOutside.of_surjective (h : ρ.IsUnramifiedOutside I T)
+    (π : IntertwiningMap ρ ρ₂) (hπ : Function.Surjective π) : ρ₂.IsUnramifiedOutside I T :=
+  fun v hv g hg ↦ LinearMap.ext fun y ↦ by
+    obtain ⟨x, rfl⟩ := hπ y
+    simpa [h v hv g hg] using (IntertwiningMap.isIntertwining ρ ρ₂ π g x).symm
+
+/-- A direct sum of representations is unramified outside `T` if and only if both summands
+are. -/
+@[simp]
+theorem isUnramifiedOutside_prod_iff :
+    (ρ₁.prod ρ₂).IsUnramifiedOutside I T ↔
+      ρ₁.IsUnramifiedOutside I T ∧ ρ₂.IsUnramifiedOutside I T := by
+  refine ⟨fun h ↦ ⟨h.of_surjective _ (IntertwiningMap.fst_surjective ρ₁ ρ₂),
+    h.of_surjective _ (IntertwiningMap.snd_surjective ρ₁ ρ₂)⟩, fun ⟨h₁, h₂⟩ v hv g hg ↦ ?_⟩
+  exact LinearMap.ext fun x ↦ by simp [h₁ v hv g hg, h₂ v hv g hg]
+
 end IsUnramifiedOutside
 
 variable {E G V κ : Type*} [Field E] [Group G] [AddCommGroup V] [Module E V]
@@ -160,6 +210,12 @@ structure IsPureOutside (w : ℤ) : Prop where
 theorem isPureOutside_iff {w : ℤ} : ρ.IsPureOutside I F q T w ↔ ρ.IsUnramifiedOutside I T ∧
     ∀ v ∉ T, ∀ α ∈ (ρ (F v)).charpoly.aroots (AlgebraicClosure E), IsWeilNumber (q v : ℝ) w α :=
   ⟨fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂⟩⟩
+
+/-- A representation is pure of weight `w` outside `T` exactly when it is unramified outside `T`
+and every Frobenius endomorphism `ρ (F v)`, `v ∉ T`, is pure of weight `w` relative to `q v`. -/
+theorem isPureOutside_iff_forall_isPure {w : ℤ} : ρ.IsPureOutside I F q T w ↔
+    ρ.IsUnramifiedOutside I T ∧ ∀ v ∉ T, IsPure (q v : ℝ) w (ρ (F v)) := by
+  simp only [isPureOutside_iff, isPure_iff_forall_mem_aroots (AlgebraicClosure E)]
 
 /-- Purity may be tested on the characteristic roots in any algebraically closed field `Ω`
 over `E`. Taking `Ω = E` gives the test on `charpoly.roots` when `E` is algebraically closed. -/
@@ -406,6 +462,122 @@ theorem hasIntegralCharpolyOutside_ofLinearCharacter_iff (χ : G →* Rˣ) :
 
 end HasIntegralCharpolyOutside
 
+/-! ### Subrepresentations, quotients, extensions and direct sums -/
+
+section Subquotient
+
+variable {V₁ V₂ : Type*} [AddCommGroup V₁] [Module E V₁] [FiniteDimensional E V₁]
+  [AddCommGroup V₂] [Module E V₂] [FiniteDimensional E V₂] {ρ₁ : Representation E G V₁}
+  {ρ₂ : Representation E G V₂}
+
+section IsPureOutside
+
+variable [Algebra ℚ E] {w : ℤ}
+
+/-- A representation mapping injectively into one pure of weight `w` outside `T`, such as a
+subrepresentation, is pure of weight `w` outside `T`. -/
+theorem IsPureOutside.of_injective (h : ρ.IsPureOutside I F q T w) (i : IntertwiningMap ρ₁ ρ)
+    (hi : Function.Injective i) : ρ₁.IsPureOutside I F q T w := by
+  rw [isPureOutside_iff_forall_isPure] at h ⊢
+  exact ⟨h.1.of_injective i hi, fun v hv ↦
+    (h.2 v hv).of_injective (i := i.toLinearMap) hi (i.isIntertwining' (F v)).symm⟩
+
+/-- A representation onto which one pure of weight `w` outside `T` maps surjectively, such as a
+quotient, is pure of weight `w` outside `T`. -/
+theorem IsPureOutside.of_surjective (h : ρ.IsPureOutside I F q T w) (π : IntertwiningMap ρ ρ₂)
+    (hπ : Function.Surjective π) : ρ₂.IsPureOutside I F q T w := by
+  rw [isPureOutside_iff_forall_isPure] at h ⊢
+  exact ⟨h.1.of_surjective π hπ, fun v hv ↦
+    (h.2 v hv).of_surjective (π := π.toLinearMap) hπ (π.isIntertwining' (F v))⟩
+
+/-- **Purity along a short exact sequence.** Let `0 → ρ₁ → ρ → ρ₂ → 0` be a short exact sequence
+of representations, with `ρ` unramified outside `T`. Then `ρ` is pure of weight `w` outside `T` if
+and only if `ρ₁` and `ρ₂` both are. Unramifiedness of `ρ` is needed for the converse: it does not
+follow from that of `ρ₁` and `ρ₂`. -/
+theorem isPureOutside_iff_of_exact (i : IntertwiningMap ρ₁ ρ) (π : IntertwiningMap ρ ρ₂)
+    (hi : Function.Injective i) (hπ : Function.Surjective π) (hex : Function.Exact i π)
+    (hρ : ρ.IsUnramifiedOutside I T) :
+    ρ.IsPureOutside I F q T w ↔ ρ₁.IsPureOutside I F q T w ∧ ρ₂.IsPureOutside I F q T w := by
+  simp only [isPureOutside_iff_forall_isPure, hρ, hρ.of_injective i hi, hρ.of_surjective π hπ,
+    true_and, ← forall₂_and]
+  exact forall₂_congr fun v _ ↦ isPure_iff_of_exact (i := i.toLinearMap) (π := π.toLinearMap)
+    hi hπ hex (i.isIntertwining' (F v)).symm (π.isIntertwining' (F v))
+
+/-- A direct sum of representations is pure of weight `w` outside `T` if and only if both summands
+are. -/
+@[simp]
+theorem isPureOutside_prod_iff : (ρ₁.prod ρ₂).IsPureOutside I F q T w ↔
+    ρ₁.IsPureOutside I F q T w ∧ ρ₂.IsPureOutside I F q T w := by
+  simp only [isPureOutside_iff_forall_isPure, isUnramifiedOutside_prod_iff,
+    isPure_iff_of_charpoly_eq_mul (charpoly_prod_apply _ _ _), imp_and, forall_and]
+  tauto
+
+end IsPureOutside
+
+section IsIotaPureOutside
+
+variable {r : ℝ}
+
+/-- A representation mapping injectively into one `ι`-pure of weight `r` outside `T`, such as a
+subrepresentation, is `ι`-pure of weight `r` outside `T`. -/
+theorem IsIotaPureOutside.of_injective (h : ρ.IsIotaPureOutside ι I F q T r)
+    (i : IntertwiningMap ρ₁ ρ) (hi : Function.Injective i) : ρ₁.IsIotaPureOutside ι I F q T r :=
+  ⟨h.isUnramifiedOutside.of_injective i hi, fun v hv z hz ↦ h.norm_eq v hv z <|
+    Multiset.mem_of_le (roots.le_of_dvd ((ρ (F v)).charpoly_monic.map ι).ne_zero <| map_dvd ι <|
+      LinearMap.charpoly_dvd_of_injective_of_comp_eq_comp _ _ _ hi (i.isIntertwining' (F v))) hz⟩
+
+/-- A representation onto which one `ι`-pure of weight `r` outside `T` maps surjectively, such as
+a quotient, is `ι`-pure of weight `r` outside `T`. -/
+theorem IsIotaPureOutside.of_surjective (h : ρ.IsIotaPureOutside ι I F q T r)
+    (π : IntertwiningMap ρ ρ₂) (hπ : Function.Surjective π) : ρ₂.IsIotaPureOutside ι I F q T r :=
+  ⟨h.isUnramifiedOutside.of_surjective π hπ, fun v hv z hz ↦ h.norm_eq v hv z <|
+    Multiset.mem_of_le (roots.le_of_dvd ((ρ (F v)).charpoly_monic.map ι).ne_zero <| map_dvd ι <|
+      LinearMap.charpoly_dvd_of_surjective_of_comp_eq_comp _ _ _ hπ (π.isIntertwining' (F v))) hz⟩
+
+/-- **`ι`-purity along a short exact sequence.** Let `0 → ρ₁ → ρ → ρ₂ → 0` be a short exact
+sequence of representations, with `ρ` unramified outside `T`. Then `ρ` is `ι`-pure of weight `r`
+outside `T` if and only if `ρ₁` and `ρ₂` both are. -/
+theorem isIotaPureOutside_iff_of_exact (i : IntertwiningMap ρ₁ ρ) (π : IntertwiningMap ρ ρ₂)
+    (hi : Function.Injective i) (hπ : Function.Surjective π) (hex : Function.Exact i π)
+    (hρ : ρ.IsUnramifiedOutside I T) : ρ.IsIotaPureOutside ι I F q T r ↔
+      ρ₁.IsIotaPureOutside ι I F q T r ∧ ρ₂.IsIotaPureOutside ι I F q T r := by
+  simp only [isIotaPureOutside_iff, hρ, hρ.of_injective i hi, hρ.of_surjective π hπ, true_and,
+    ← forall₂_and]
+  refine forall₂_congr fun v _ ↦ ?_
+  rw [LinearMap.charpoly_eq_mul_of_exact (f := ρ (F v)) hi hπ hex (i.isIntertwining' (F v)).symm
+    (π.isIntertwining' (F v)), Polynomial.map_mul,
+    roots_mul (((ρ₁ (F v)).charpoly_monic.map ι).mul ((ρ₂ (F v)).charpoly_monic.map ι)).ne_zero]
+  simp only [Multiset.mem_add, or_imp, forall_and]
+
+/-- A direct sum of representations is `ι`-pure of weight `r` outside `T` if and only if both
+summands are. -/
+@[simp]
+theorem isIotaPureOutside_prod_iff : (ρ₁.prod ρ₂).IsIotaPureOutside ι I F q T r ↔
+    ρ₁.IsIotaPureOutside ι I F q T r ∧ ρ₂.IsIotaPureOutside ι I F q T r := by
+  simp only [isIotaPureOutside_iff, isUnramifiedOutside_prod_iff, charpoly_prod_apply,
+    Polynomial.map_mul,
+    roots_mul (((ρ₁ _).charpoly_monic.map ι).mul ((ρ₂ _).charpoly_monic.map ι)).ne_zero,
+    Multiset.mem_add, or_imp, forall_and]
+  tauto
+
+end IsIotaPureOutside
+
+/-- A direct sum of representations with integral characteristic polynomials outside `T` has
+integral characteristic polynomials outside `T`. The converse fails: the diagonal operator with
+eigenvalues `√2` and `-√2` has characteristic polynomial `X ^ 2 - 2`, while those of its two
+eigenlines, `X ∓ √2`, are not integral. -/
+theorem HasIntegralCharpolyOutside.prod {R W₁ W₂ : Type*} [CommRing R] [AddCommGroup W₁]
+    [Module R W₁] [Module.Free R W₁] [Module.Finite R W₁] [AddCommGroup W₂] [Module R W₂]
+    [Module.Free R W₂] [Module.Finite R W₂] {σ₁ : Representation R G W₁}
+    {σ₂ : Representation R G W₂} (h₁ : σ₁.HasIntegralCharpolyOutside I F T)
+    (h₂ : σ₂.HasIntegralCharpolyOutside I F T) : (σ₁.prod σ₂).HasIntegralCharpolyOutside I F T :=
+  ⟨isUnramifiedOutside_prod_iff.mpr ⟨h₁.isUnramifiedOutside, h₂.isUnramifiedOutside⟩,
+    fun v hv ↦ by
+      rw [charpoly_prod_apply]
+      exact mul_mem (h₁.charpoly_mem_lifts v hv) (h₂.charpoly_mem_lifts v hv)⟩
+
+end Subquotient
+
 /-! ### Examples
 
 Over `ℂ`, with places the primes `p`, trivial inertia, residue sizes `p`, and Frobenius at `p`
@@ -452,17 +624,10 @@ it has eigenvalues `1` and `2⁻¹`, of weights `0` and `-2`. -/
 example (w : ℤ) : ¬((trivial ℂ ℂˣ ℂ).prod (ofLinearCharacter (MonoidHom.id ℂˣ))).IsPureOutside
     (fun _ ↦ ⊥) tateFrob (fun p ↦ (p : ℕ)) ∅ w := by
   intro h
-  let p : Nat.Primes := ⟨2, Nat.prime_two⟩
-  have hmem (z : ℂ) (hz : z = 1 ∨ z = ((tateFrob p : ℂˣ) : ℂ)) :
-      z ∈ (((trivial ℂ ℂˣ ℂ).prod (ofLinearCharacter (MonoidHom.id ℂˣ))) (tateFrob p)
-        ).charpoly.aroots ℂ := by
-    refine mem_aroots.mpr ⟨(LinearMap.charpoly_monic _).ne_zero, ?_⟩
-    simp only [charpoly_prod_apply, charpoly_trivial_apply, charpoly_ofLinearCharacter_apply]
-    rcases hz with rfl | rfl <;> simp
-  have h1 := (h.isWeilNumber_of_mem_aroots (Set.notMem_empty p) (hmem 1 (.inl rfl))).unique
-    (isWeilNumber_one (K := ℂ) (by norm_num))
-  have h2 := (h.isWeilNumber_of_mem_aroots (Set.notMem_empty p) (hmem _ (.inr rfl))).unique
-    (isWeilNumber_tateFrob p)
+  rw [isPureOutside_prod_iff] at h
+  have h2 : (⟨2, Nat.prime_two⟩ : Nat.Primes) ∉ (∅ : Set Nat.Primes) := Set.notMem_empty _
+  have h1 := h.1.unique (isPureOutside_trivial ℂ fun p _ ↦ p.prop.one_lt) h2
+  have h2 := h.2.unique isPureOutside_tate h2
   omega
 
 /- A representation of rank zero is pure of every weight. -/
