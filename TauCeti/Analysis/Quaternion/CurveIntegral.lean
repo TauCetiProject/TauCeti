@@ -108,7 +108,7 @@ theorem sum_curveIntegral_segment_ijSquare_mul (q₀ : ℍ) (δ : ℝ) :
     ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate 4 k)), ContinuousLinearMap.mul ℝ ℍ q =
       ⟨0, 0, 0, 2 * δ ^ 2⟩ := by
   intro p
-  have h := sum_curveIntegral_segment_mul_const_add_mul p 0 1
+  have h := sum_curveIntegral_segment_mul_const_add_const_mul p 0 1
   simp only [zero_add, one_mul] at h
   rw [h, sum_mul_sub_mul_ijSquare]
   ext <;> norm_num [← mul_assoc]
@@ -121,7 +121,7 @@ theorem sum_curveIntegral_segment_ijSquare_mul_flip (q₀ : ℍ) (δ : ℝ) :
     ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate 4 k)), (ContinuousLinearMap.mul ℝ ℍ).flip q =
       ⟨0, 0, 0, -2 * δ ^ 2⟩ := by
   intro p
-  have h := sum_curveIntegral_segment_mul_flip_add_mul_const p 0 1
+  have h := sum_curveIntegral_segment_mul_flip_const_add_mul_const p 0 1
   simp only [zero_add, mul_one] at h
   rw [h, sum_mul_sub_mul_ijSquare_rev]
   ext <;> norm_num [← mul_assoc]

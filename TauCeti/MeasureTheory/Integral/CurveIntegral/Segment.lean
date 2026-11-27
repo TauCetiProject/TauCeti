@@ -55,9 +55,10 @@ is not commutative.
   `1`-forms along a segment.
 * `AffineMap.curveIntegral_segment_mul`, `AffineMap.curveIntegral_segment_mul_flip`: the ordered
   integrals of `g(x) dx` and `dx g(x)` along a segment, for real-affine `g` in a normed ring.
-* `TauCeti.sum_curveIntegral_segment_mul_const_add_mul`,
-  `TauCeti.sum_curveIntegral_segment_mul_flip_add_mul_const`: the integrals of `(a + b x) dx` and
-  `dx (a + x b)` around a closed polygon, as commutator sums of consecutive vertices.
+* `TauCeti.sum_curveIntegral_segment_mul_const_add_const_mul`,
+  `TauCeti.sum_curveIntegral_segment_mul_flip_const_add_mul_const`: the integrals of
+  `(a + b x) dx` and `dx (a + x b)` around a closed polygon, as commutator sums of consecutive
+  vertices.
 * `TauCeti.sum_curveIntegral_segment_mul_of_eqOn`,
   `TauCeti.sum_curveIntegral_segment_mul_flip_of_eqOn`: the same for `f dx` and `dx f`, when `f`
   agrees with `x ↦ a + b x`, respectively `x ↦ a + x b`, on a set containing the edges.
@@ -215,7 +216,7 @@ variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℝ A] [IsScalarTower 
 /-- The integral of `(a + b x) dx` around the closed polygon with vertices `p 0, …, p (n - 1)` is
 `b / 2` times the sum of the commutators `p k * p (k + 1) - p (k + 1) * p k` of consecutive
 vertices. It vanishes when `A` is commutative, but not in general. -/
-theorem sum_curveIntegral_segment_mul_const_add_mul (p : Fin n → A) (a b : A) :
+theorem sum_curveIntegral_segment_mul_const_add_const_mul (p : Fin n → A) (a b : A) :
     ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)), ContinuousLinearMap.mul ℝ A (a + b * x) =
       (2 : ℝ)⁻¹ • (b * ∑ k, (p k * p (finRotate n k) - p (finRotate n k) * p k)) := by
   let g : A →ᵃ[ℝ] A := AffineMap.const ℝ A a + (LinearMap.mulLeft ℝ b).toAffineMap
@@ -236,7 +237,7 @@ theorem sum_curveIntegral_segment_mul_const_add_mul (p : Fin n → A) (a b : A) 
 /-- The integral of `dx (a + x b)` around the closed polygon with vertices `p 0, …, p (n - 1)` is
 half the sum of the commutators `p (k + 1) * p k - p k * p (k + 1)` of consecutive vertices,
 times `b`. It vanishes when `A` is commutative, but not in general. -/
-theorem sum_curveIntegral_segment_mul_flip_add_mul_const (p : Fin n → A) (a b : A) :
+theorem sum_curveIntegral_segment_mul_flip_const_add_mul_const (p : Fin n → A) (a b : A) :
     ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)),
         (ContinuousLinearMap.mul ℝ A).flip (a + x * b) =
       (2 : ℝ)⁻¹ • ((∑ k, (p (finRotate n k) * p k - p k * p (finRotate n k))) * b) := by
@@ -262,7 +263,7 @@ theorem sum_curveIntegral_segment_mul_of_eqOn {f : A → A} {s : Set A} {a b : A
     (hp : ∀ k, segment ℝ (p k) (p (finRotate n k)) ⊆ s) :
     ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)), ContinuousLinearMap.mul ℝ A (f x) =
       (2 : ℝ)⁻¹ • (b * ∑ k, (p k * p (finRotate n k) - p (finRotate n k) * p k)) := by
-  rw [← sum_curveIntegral_segment_mul_const_add_mul p a b]
+  rw [← sum_curveIntegral_segment_mul_const_add_const_mul p a b]
   refine Finset.sum_congr rfl fun k _ ↦ curveIntegral_congr ?_
   rw [Path.range_segment]
   intro x hx
@@ -275,7 +276,7 @@ theorem sum_curveIntegral_segment_mul_flip_of_eqOn {f : A → A} {s : Set A} {a 
     (hp : ∀ k, segment ℝ (p k) (p (finRotate n k)) ⊆ s) :
     ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)), (ContinuousLinearMap.mul ℝ A).flip (f x) =
       (2 : ℝ)⁻¹ • ((∑ k, (p (finRotate n k) * p k - p k * p (finRotate n k))) * b) := by
-  rw [← sum_curveIntegral_segment_mul_flip_add_mul_const p a b]
+  rw [← sum_curveIntegral_segment_mul_flip_const_add_mul_const p a b]
   refine Finset.sum_congr rfl fun k _ ↦ curveIntegral_congr ?_
   rw [Path.range_segment]
   intro x hx
