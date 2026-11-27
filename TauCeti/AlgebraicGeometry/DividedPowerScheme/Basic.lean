@@ -222,18 +222,21 @@ theorem isPDThickening_iff (X : DividedPowerScheme.{u}) :
   rw [AlgebraicGeometry.isThickening_iff_ker_le_nilradical, ker_subschemeι]
 
 /-- Equip ordinary schemes with the zero divided power ideal. -/
-@[expose, implicit_reducible] def trivial : Scheme.{u} ⥤ DividedPowerScheme.{u} where
-  obj T :=
-    { scheme := T
-      ideal := ⊥
-      dividedPowers U := DividedPowers.ofRingEquiv (e := RingEquiv.refl _)
-        (by rw [Ideal.map_bot, sections_bot]) (dividedPowersBot Γ(T, U))
-      isDPMorphism_res _ := by
-        apply DividedPowers.IsDPMorphism.on_span (S := ∅) <;> simp [sections_bot] }
-  map f := Hom.mkOfApp f fun _ ↦ by
+@[expose, implicit_reducible] def trivial : Scheme.{u} ⥤ DividedPowerScheme.{u} :=
+  have isDPMorphism {T T' : Scheme.{u}} {U : T.Opens} {V : T'.Opens}
+      {hU : DividedPowers ((⊥ : T.IdealSheafData).sections U)}
+      {hV : DividedPowers ((⊥ : T'.IdealSheafData).sections V)}
+      (f : Γ(T, U) →+* Γ(T', V)) : DividedPowers.IsDPMorphism hU hV f := by
     apply DividedPowers.IsDPMorphism.on_span (S := ∅) <;> simp [sections_bot]
-  map_id _ := Hom.ext (by simp only [Hom.mkOfApp_hom, Hom.id_hom])
-  map_comp _ _ := Hom.ext (by simp only [Hom.mkOfApp_hom, Hom.comp_hom])
+  { obj T :=
+      { scheme := T
+        ideal := ⊥
+        dividedPowers U := DividedPowers.ofRingEquiv (e := RingEquiv.refl _)
+          (by rw [Ideal.map_bot, sections_bot]) (dividedPowersBot Γ(T, U))
+        isDPMorphism_res i := isDPMorphism (T.presheaf.map i.op).hom }
+    map f := Hom.mkOfApp f fun U ↦ isDPMorphism (f.app U).hom
+    map_id _ := Hom.ext (by simp only [Hom.mkOfApp_hom, Hom.id_hom])
+    map_comp _ _ := Hom.ext (by simp only [Hom.mkOfApp_hom, Hom.comp_hom]) }
 
 /-- The ambient scheme of a trivial divided power scheme is the original scheme. -/
 @[simp]
@@ -310,13 +313,11 @@ def trivialAdjunction : trivial.{u} ⊣ closedFiberFunctor.{u} :=
       homEquiv_naturality_left_symm := by
         intro T T' X f g
         apply Hom.ext
-        rw [Hom.comp_hom, trivialHomEquiv_symm_hom, trivialHomEquiv_symm_hom, trivial_map_hom]
-        exact Category.assoc f g X.closedFiberι
+        simp [trivialHomEquiv_symm_hom]
       homEquiv_naturality_right := by
         intro T X Y f g
-        rw [← cancel_mono Y.closedFiberι, trivialHomEquiv_comp_ι, closedFiberFunctor_map,
-          Category.assoc, Hom.closedFiberMap_comp_ι, ← Category.assoc, trivialHomEquiv_comp_ι,
-          Hom.comp_hom] }
+        rw [← cancel_mono Y.closedFiberι]
+        simp [trivialHomEquiv_comp_ι, reassoc_of% trivialHomEquiv_comp_ι] }
 
 /-- The factorization supplied by the adjunction recovers the ambient map after the inclusion. -/
 @[reassoc (attr := simp)]
