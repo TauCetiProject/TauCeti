@@ -67,6 +67,10 @@ violates `c ⬝ᵥ x ≤ δ`. No topology or separation theorem is used.
 * J. Farkas, *Theorie der einfachen Ungleichungen*, J. Reine Angew. Math. **124** (1902), 1–27.
 * A. Schrijver, *Theory of Linear and Integer Programming*, Wiley, 1986, §7.3, Corollaries 7.1e
   and 7.1h.
+* J. M. Borwein, A. S. Lewis, *Convex Analysis and Nonlinear Optimization*, 2nd ed., Springer,
+  2006, Lemma 2.2.7 (the standard form `Matrix.exists_nonneg_mulVec_eq_iff`).
+* S. Boyd, L. Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §5.8 (the
+  standard form `Matrix.exists_nonneg_mulVec_eq_iff`).
 -/
 
 public section
@@ -242,7 +246,8 @@ theorem not_exists_mulVec_le_and_mulVec_eq_iff [Fintype I] [Fintype J] (A : Matr
     exact (h.trans_lt hlt).false
 
 /-- **Farkas' lemma** for the standard system `A *ᵥ x = b`, `0 ≤ x`: it has a solution exactly
-when no `y` has `0 ≤ Aᵀ *ᵥ y` and `b ⬝ᵥ y < 0`. -/
+when no `y` has `0 ≤ Aᵀ *ᵥ y` and `b ⬝ᵥ y < 0` (Borwein–Lewis, Lemma 2.2.7; Boyd–Vandenberghe,
+§5.8). -/
 theorem exists_nonneg_mulVec_eq_iff [Fintype I] (A : Matrix I ι K) (b : I → K) :
     (∃ x, 0 ≤ x ∧ A *ᵥ x = b) ↔ ¬∃ y, 0 ≤ Aᵀ *ᵥ y ∧ b ⬝ᵥ y < 0 := by
   classical
