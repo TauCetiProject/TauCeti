@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Grassmannian.StableLocus
+public import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
 # Grassmannians of quotient modules
@@ -82,20 +83,12 @@ theorem comap_injective (f : M →ₗ[R] P) (hf : Function.Surjective f) :
   apply Submodule.comap_injective_of_surjective hf
   simpa using congrArg toSubmodule h
 
-private theorem surjective_lift_mkQ (N : G(k, M; R)) (f : M →ₗ[R] P)
-    (hf : Function.Surjective f) (hN : LinearMap.ker f ≤ N.toSubmodule) :
-    Function.Surjective (f.liftOfSurjective hf
-      ⟨N.toSubmodule.mkQ, (Submodule.ker_mkQ N.toSubmodule).symm ▸ hN⟩) := by
-  intro q
-  obtain ⟨m, hm⟩ := N.toSubmodule.mkQ_surjective q
-  exact ⟨f m, (LinearMap.equivOfSurjective_apply _ _).trans hm⟩
-
 /-- A quotient of `M` whose kernel contains `ker f` descends along the surjection `f`. -/
 noncomputable def descend (N : G(k, M; R)) (f : M →ₗ[R] P) (hf : Function.Surjective f)
     (hN : LinearMap.ker f ≤ N.toSubmodule) : G(k, P; R) :=
   ofSurjective (f.liftOfSurjective hf
     ⟨N.toSubmodule.mkQ, (Submodule.ker_mkQ N.toSubmodule).symm ▸ hN⟩)
-    (surjective_lift_mkQ N f hf hN) N.rankAtStalk_eq
+    (f.liftOfSurjective_surjective hf _ _ N.toSubmodule.mkQ_surjective) N.rankAtStalk_eq
 
 /-- Pulling back a descended quotient recovers the original kernel. -/
 @[simp]
@@ -176,7 +169,6 @@ theorem map_comap_baseChange (N : G(k, A ⊗[R] P; A)) (f : M →ₗ[R] P)
 
 /-- Inverse image along an equivariant surjection preserves the equations of stability,
 including their nilpotent scheme structure. -/
-@[simp]
 theorem stableLocus_comap (N : G(k, A ⊗[R] P; A)) (f : M →ₗ[R] P)
     (hf : Function.Surjective f) (t : Module.End R M) (u : Module.End R P)
     (h : f.comp t = u.comp f) :

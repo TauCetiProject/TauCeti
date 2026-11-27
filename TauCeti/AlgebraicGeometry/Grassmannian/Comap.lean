@@ -193,7 +193,6 @@ theorem ker_grassmannianComap :
   rw [grassmannianComap, Scheme.Hom.ker_comp_of_isIso, Scheme.IdealSheafData.ker_subschemeι]
 
 /-- An equivariant surjection pulls back the stable locus scheme-theoretically. -/
-@[simp]
 theorem comap_grassmannianComap_schemeStableLocus (t : Module.End R M) (u : Module.End R P)
     (h : f.comp t = u.comp f) :
     (schemeStableLocus k t).comap (f.grassmannianComap hf k) = schemeStableLocus k u := by
