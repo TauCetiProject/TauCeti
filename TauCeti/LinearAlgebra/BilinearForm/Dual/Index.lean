@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
 public import TauCeti.Algebra.Module.Lattice
 import Mathlib.LinearAlgebra.FreeModule.PID
-import TauCeti.LinearAlgebra.BilinearForm.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
 import TauCeti.LinearAlgebra.SesquilinearForm.DualSubmodule
 
 /-!

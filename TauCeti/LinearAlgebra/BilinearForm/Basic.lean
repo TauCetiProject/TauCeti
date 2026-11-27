@@ -43,7 +43,6 @@ maps valued in an arbitrary module.
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
-* `Module.Basis.dualBasis_isUnitSMul_apply`: the dual basis of a basis rescaled by units.
 * `LinearMap.BilinForm.restrict_eq_compl₁₂`: restriction is pullback along inclusion.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_iff`: anisotropy is diagonal vanishing
   only at zero.
@@ -367,21 +366,5 @@ theorem dualBasis_smul_apply {K V ι : Type*} [Field K] [AddCommGroup V]
   refine congrFun (((c • B).dualBasis_eq_iff _ b fun i ↦ c⁻¹ • B.dualBasis hB b i).mpr
     fun i j ↦ ?_) i
   simp [LinearMap.BilinForm.apply_dualBasis_left, hc]
-
-/-- Rescaling the vectors of a basis `b` by units `w i` rescales the dual basis for a nondegenerate
-bilinear form by the inverse units: the basis dual to `w • b` is `w⁻¹ •` the basis dual to `b`. -/
-@[simp]
-theorem dualBasis_isUnitSMul_apply {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
-    [Finite ι] [DecidableEq ι] (b : Module.Basis ι K V) (B : LinearMap.BilinForm K V)
-    (hB : B.Nondegenerate) {w : ι → K} (hw : ∀ i, IsUnit (w i)) (i : ι) :
-    B.dualBasis hB (b.isUnitSMul hw) i = (w i)⁻¹ • B.dualBasis hB b i := by
-  -- `(w i)⁻¹ • B.dualBasis hB b i` pairs with `w j • b j` to `δᵢⱼ`
-  refine congrFun ((B.dualBasis_eq_iff hB _ fun i ↦ (w i)⁻¹ • B.dualBasis hB b i).mpr
-    fun i j ↦ ?_) i
-  simp only [Module.Basis.isUnitSMul_apply, map_smul, LinearMap.smul_apply, smul_eq_mul,
-    LinearMap.BilinForm.apply_dualBasis_left]
-  split_ifs with hij
-  · rw [hij, mul_one, mul_inv_cancel₀ (hw i).ne_zero]
-  · rw [mul_zero, mul_zero]
 
 end Module.Basis

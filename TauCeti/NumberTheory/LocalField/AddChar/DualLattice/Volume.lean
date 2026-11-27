@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import TauCeti.NumberTheory.LocalField.AddChar.DualLattice
+public import TauCeti.NumberTheory.LocalField.AddChar.DualLattice.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.LinearAlgebra.BilinearForm.Dual.Index
 import TauCeti.MeasureTheory.Group.Measure
@@ -145,7 +145,7 @@ theorem existsUnique_isAddHaarMeasure_measure_mul_measure_characterAnnihilator_e
     rw [h, hμ', one_smul]
   -- The Haar measure `μ₀` giving `L` mass one, rescaled by `μ₀ A ^ (-1 / 2)`.
   let L₀ : TopologicalSpace.PositiveCompacts V := ⟨⟨L, IsFullLattice.isCompact L⟩, by
-    change (interior (L : Set V)).Nonempty
+    dsimp only
     rw [(IsFullLattice.isOpen L).interior_eq]
     exact ⟨0, L.zero_mem⟩⟩
   let μ₀ := Measure.addHaarMeasure L₀
