@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.NerveAdjunction
-public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Limits.Final
 public import TauCeti.AlgebraicTopology.Quasicategory.Final
-public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Coslice
-public import TauCeti.CategoryTheory.Comma.StructuredArrow.Pullback
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Comma
 
 /-!
 # Finality for maps of nerves
@@ -38,23 +35,6 @@ namespace CategoryTheory.Functor
 open nerve
 
 variable {C D : Type u} [Category.{u} C] [Category.{u} D]
-
-/-- The nerve of the structured arrow category over `x` is the pullback of the nerve
-map of `F` along the simplicial coslice projection at `x`. -/
-theorem isPullback_nerveMap_structuredArrow_coslice (F : C ⥤ D) (x : D) :
-    IsPullback (nerveMap (StructuredArrow.proj x F))
-      (nerveMap (StructuredArrow.pre x F (𝟭 D)) ≫ (cosliceIso x).hom)
-      (nerveMap F) (coslice.π (SSet.const (nerveEquiv.symm x) : Δ[0] ⟶ nerve D)) := by
-  have : nerveFunctor.{u, u}.IsRightAdjoint := nerveAdjunction.isRightAdjoint
-  have h : IsPullback (nerveMap (StructuredArrow.proj x F))
-      (nerveMap (StructuredArrow.pre x F (𝟭 D))) (nerveMap F) (nerveMap (Under.forget x)) :=
-    (StructuredArrow.isPullback_proj_pre x F (𝟭 D)).map nerveFunctor
-  refine h.of_iso (Iso.refl _) (Iso.refl _) (cosliceIso x) (Iso.refl _) ?_ ?_ ?_ ?_
-  · simp only [Iso.refl_hom, Category.comp_id, Category.id_comp]
-  · simp only [Iso.refl_hom, Category.id_comp]
-  · simp only [Iso.refl_hom, Category.comp_id, Category.id_comp]
-  · rw [Iso.refl_hom, Category.comp_id]
-    exact (cosliceIso_hom_comp_π x).symm
 
 /-- A map of nerves is final exactly when the structured arrow categories have weakly
 contractible nerves, the comma-category condition of HTT Theorem 4.1.3.1. -/
