@@ -28,8 +28,8 @@ The splitting is natural: intertwining maps commute with `e_K`, hence preserve b
 * `Representation.smoothAverageEquivProd σ hK`: the splitting `V ≃ V^K × ker e_K` as an equivalence
   of representations of `K`, with `K` acting trivially on the first factor.
 * `Representation.IntertwiningMap.comp_smoothAverageHom`: naturality, `f ∘ e_K = e_K ∘ f`, with
-  `Representation.IntertwiningMap.map_range_smoothAverageHom_le` and
-  `Representation.IntertwiningMap.map_ker_smoothAverageHom_le`.
+  `Representation.IntertwiningMap.apply_mem_range_smoothAverageHom` and
+  `Representation.IntertwiningMap.apply_mem_ker_smoothAverageHom`.
 
 ## References
 
@@ -70,13 +70,16 @@ theorem toSubmodule_ker_smoothAverageHom :
     (σ.smoothAverageHom hK).ker.toSubmodule = Coinvariants.ker σ := by
   rw [IntertwiningMap.ker_toSubmodule, toLinearMap_smoothAverageHom, ker_smoothAverage]
 
+/-- A vector lies in the range of `e_K` if and only if it is invariant. -/
+theorem mem_range_smoothAverageHom_iff {v : V} :
+    v ∈ (σ.smoothAverageHom hK).range ↔ v ∈ invariants σ := by
+  rw [← Subrepresentation.mem_toSubmodule, toSubmodule_range_smoothAverageHom]
+
 /-- `K` acts trivially on the range of `e_K`, the invariants. -/
 instance isTrivial_range_smoothAverageHom :
     (σ.smoothAverageHom hK).range.toRepresentation.IsTrivial where
   out k := LinearMap.ext fun v ↦ Subtype.ext <| by
-    have hv : (v : V) ∈ invariants σ := by
-      rw [← toSubmodule_range_smoothAverageHom σ hK]
-      exact v.property
+    have hv : (v : V) ∈ invariants σ := (σ.mem_range_smoothAverageHom_iff hK).1 v.property
     rw [Subrepresentation.coe_toRepresentation_apply, hv k, LinearMap.id_apply]
 
 /-- **The invariants are a direct summand**: the range and the kernel of `e_K` are complementary
@@ -98,17 +101,25 @@ noncomputable def smoothAverageEquivProd :
 @[simp]
 theorem coe_smoothAverageEquivProd_apply_fst (v : V) :
     ((σ.smoothAverageEquivProd hK v).1 : V) = σ.smoothAverage hK v := by
-  have h1 : σ.smoothAverage hK v ∈ (σ.smoothAverageHom hK).range.toSubmodule := by
-    rw [toSubmodule_range_smoothAverageHom]
-    exact σ.smoothAverage_apply_mem_invariants hK v
-  have h2 : v - σ.smoothAverage hK v ∈ (σ.smoothAverageHom hK).ker.toSubmodule := by
-    rw [IntertwiningMap.ker_toSubmodule, toLinearMap_smoothAverageHom, LinearMap.mem_ker, map_sub,
-      smoothAverage_smoothAverage, sub_self]
-  rw [smoothAverageEquivProd, Subrepresentation.equivProdOfIsCompl_apply]
-  conv_lhs => rw [show v = σ.smoothAverage hK v + (v - σ.smoothAverage hK v) by abel]
-  rw [map_add, Submodule.prodEquivOfIsCompl_symm_apply_left _ _ _ ⟨_, h1⟩,
-    Submodule.prodEquivOfIsCompl_symm_apply_right _ _ _ ⟨_, h2⟩]
-  simp
+  rw [smoothAverageEquivProd, Subrepresentation.equivProdOfIsCompl_apply,
+    Submodule.prodEquivOfIsCompl_symm_apply, Submodule.coe_projectionOnto_apply]
+  exact (LinearMap.congr_fun
+    (LinearMap.IsIdempotentElem.eq_projection (σ.smoothAverage_comp_smoothAverage hK)) v).symm
+
+/-- The inverse of the splitting adds the two components back together. -/
+@[simp]
+theorem smoothAverageEquivProd_symm_apply
+    (p : (σ.smoothAverageHom hK).range.toSubmodule × (σ.smoothAverageHom hK).ker.toSubmodule) :
+    (σ.smoothAverageEquivProd hK).symm p = (p.1 : V) + p.2 :=
+  Subrepresentation.equivProdOfIsCompl_symm_apply _ p
+
+/-- The second component of the splitting of `v` is `v - e_K v`. -/
+@[simp]
+theorem coe_smoothAverageEquivProd_apply_snd (v : V) :
+    ((σ.smoothAverageEquivProd hK v).2 : V) = v - σ.smoothAverage hK v := by
+  have h := (σ.smoothAverageEquivProd hK).symm_apply_apply v
+  rw [smoothAverageEquivProd_symm_apply, coe_smoothAverageEquivProd_apply_fst] at h
+  exact eq_sub_of_add_eq' h
 
 variable {σ} in
 /-- **The splitting is natural**: an intertwining map between smooth representations commutes with
@@ -122,7 +133,7 @@ theorem IntertwiningMap.comp_smoothAverageHom {ρ : Representation A K W} [IsSmo
 
 variable {σ} in
 /-- An intertwining map sends the invariant summand into the invariant summand. -/
-theorem IntertwiningMap.map_range_smoothAverageHom_le {ρ : Representation A K W} [IsSmooth ρ]
+theorem IntertwiningMap.apply_mem_range_smoothAverageHom {ρ : Representation A K W} [IsSmooth ρ]
     (f : σ.IntertwiningMap ρ) {v : V} (hv : v ∈ (σ.smoothAverageHom hK).range) :
     f v ∈ (ρ.smoothAverageHom hK).range := by
   obtain ⟨w, rfl⟩ := hv
@@ -130,7 +141,7 @@ theorem IntertwiningMap.map_range_smoothAverageHom_le {ρ : Representation A K W
 
 variable {σ} in
 /-- An intertwining map sends the kernel summand into the kernel summand. -/
-theorem IntertwiningMap.map_ker_smoothAverageHom_le {ρ : Representation A K W} [IsSmooth ρ]
+theorem IntertwiningMap.apply_mem_ker_smoothAverageHom {ρ : Representation A K W} [IsSmooth ρ]
     (f : σ.IntertwiningMap ρ) {v : V} (hv : v ∈ (σ.smoothAverageHom hK).ker) :
     f v ∈ (ρ.smoothAverageHom hK).ker := by
   rw [IntertwiningMap.mem_ker, smoothAverageHom_apply] at hv ⊢
