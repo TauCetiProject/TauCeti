@@ -68,28 +68,19 @@ variable [CompactSpace X] [T2Space X] [CompactSpace Y] [T2Space Y]
 /-- **Stone–Weierstrass**: the functions `(x, y) ↦ Σ fᵢ x * gᵢ y` are dense in `C(X × Y, 𝕜)`. -/
 theorem denseRange_continuousMapTensorHom : DenseRange (continuousMapTensorHom 𝕜 X Y) := by
   let S : StarSubalgebra 𝕜 C(X × Y, 𝕜) :=
-    { carrier := Set.range (continuousMapTensorHom 𝕜 X Y)
-      mul_mem' := by
-        rintro _ _ ⟨a, rfl⟩ ⟨b, rfl⟩
-        exact ⟨a * b, map_mul _ a b⟩
-      add_mem' := by
-        rintro _ _ ⟨a, rfl⟩ ⟨b, rfl⟩
-        exact ⟨a + b, map_add _ a b⟩
-      algebraMap_mem' := fun c ↦ ⟨c • (1 ⊗ₜ 1), by ext; simp [Algebra.algebraMap_eq_smul_one]⟩
-      star_mem' := by
-        rintro _ ⟨a, rfl⟩
-        exact ⟨star a, map_star _ a⟩ }
+    (continuousMapTensorHom 𝕜 X Y).range.toStarSubalgebra
+      ((NonUnitalStarAlgHom.mem_range _).2 ⟨1 ⊗ₜ 1, by ext; simp⟩)
   have hsep : S.SeparatesPoints := by
     rintro ⟨x, y⟩ ⟨x', y'⟩ hne
     by_cases hx : x = x'
     · subst hx
       obtain ⟨g, hg, hgy⟩ :=
         separatesPoints_continuous_of_t35Space (fun h ↦ hne (by rw [h]) : y ≠ y')
-      exact ⟨_, ⟨_, ⟨1 ⊗ₜ ⟨fun t ↦ (g t : 𝕜), RCLike.continuous_ofReal.comp hg⟩, rfl⟩, rfl⟩,
-        by simpa using hgy⟩
+      exact ⟨_, ⟨_, NonUnitalStarAlgHom.mem_range_self _
+        (1 ⊗ₜ ⟨fun t ↦ (g t : 𝕜), RCLike.continuous_ofReal.comp hg⟩), rfl⟩, by simpa using hgy⟩
     · obtain ⟨f, hf, hfx⟩ := separatesPoints_continuous_of_t35Space hx
-      exact ⟨_, ⟨_, ⟨⟨fun t ↦ (f t : 𝕜), RCLike.continuous_ofReal.comp hf⟩ ⊗ₜ 1, rfl⟩, rfl⟩,
-        by simpa using hfx⟩
+      exact ⟨_, ⟨_, NonUnitalStarAlgHom.mem_range_self _
+        (⟨fun t ↦ (f t : 𝕜), RCLike.continuous_ofReal.comp hf⟩ ⊗ₜ 1), rfl⟩, by simpa using hfx⟩
   have h := ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints S hsep
   rw [DenseRange, dense_iff_closure_eq]
   have := congr_arg (fun T : StarSubalgebra 𝕜 C(X × Y, 𝕜) ↦ (T : Set C(X × Y, 𝕜))) h
