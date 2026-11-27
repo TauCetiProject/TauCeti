@@ -20,19 +20,19 @@ file descends the singular shuffle map
 `TopCat.shuffle X Y R S : C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` to the three relative settings:
 
 * `TopCat.shuffleRel`: the relative shuffle map
-  `C(X, B; R) ⊗ C(Y; S) ⟶ C(X × Y, fst⁻¹(B); R ⊗ S)`, with one factor relative, characterized by
+  `C(X, A; R) ⊗ C(Y; S) ⟶ C(X × Y, fst⁻¹(A); R ⊗ S)`, with one factor relative, characterized by
   `TopCat.singularChainComplexπ_tensorHom_id_shuffleRel` and natural via
   `TopCat.shuffleRel_naturality`.
-* `TopCat.relativeShuffle`: the small-chain relative shuffle map
+* `TopCat.relativeShuffleToSmallChains`: the small-chain relative shuffle map
   `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)` into the quotient by singular
   simplices lying in `A × Y` or `X × B`, characterized by
-  `TopCat.singularChainComplexπ_tensorHom_relativeShuffle` and natural in both pairs
-  (`TopCat.relativeShuffle_naturality`) and coefficients
-  (`TopCat.relativeShuffle_coefficient_naturality`).
+  `TopCat.singularChainComplexπ_tensorHom_relativeShuffleToSmallChains` and natural in both pairs
+  (`TopCat.relativeShuffleToSmallChains_naturality`) and coefficients
+  (`TopCat.relativeShuffleToSmallChains_coefficient_naturality`).
 * `TopCat.shufflePair`: the relative shuffle map of a product of two pairs
   `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)`, obtained by postcomposing
-  `TopCat.relativeShuffle` with `TopCat.smallSingularSubcomplexPairToUnion`
-  (`TopCat.relativeShuffle_comp_smallSingularSubcomplexPairToUnion`), characterized by
+  `TopCat.relativeShuffleToSmallChains` with `TopCat.smallSingularSubcomplexPairToUnion`
+  (`TopCat.relativeShuffleToSmallChains_comp_smallSingularSubcomplexPairToUnion`), characterized by
   `TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair` and
   `TopCat.id_tensorHom_singularChainComplexπ_shufflePair`, and natural in pairs
   (`TopCat.shufflePair_naturality`) and coefficients (`TopCat.shufflePair_coefficient_naturality`).
@@ -200,7 +200,7 @@ section Fixed
 
 variable (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C)
 
-private def leftRelativeShuffle :
+private def leftRelativeShuffleToSmallChains :
     (TopPair.ofSubset A).singularChainComplex R ⊗ (toSSet.obj Y).chainComplex S ⟶
       ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex
         (R ⊗ S) :=
@@ -210,9 +210,9 @@ private def leftRelativeShuffle :
       (R ⊗ S)
 
 @[reassoc]
-private lemma singularChainComplexπ_tensorHom_id_leftRelativeShuffle :
+private lemma singularChainComplexπ_tensorHom_id_leftRelativeShuffleToSmallChains :
     ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ 𝟙 ((toSSet.obj Y).chainComplex S)) ≫
-        leftRelativeShuffle X Y A B R S =
+        leftRelativeShuffleToSmallChains X Y A B R S =
       shuffle X Y R S ≫
         ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ
           (R ⊗ S) := by
@@ -228,13 +228,14 @@ private lemma singularChainComplexπ_tensorHom_id_leftRelativeShuffle :
         (Matrix.cons_val_zero _ _).superset)).symm
     rw [toSmallPair_right] at h
     exact h.trans ((congrArg (· ≫ _) (SSet.chainComplexMap_id _ _)).trans (Category.id_comp _))
-  rw [leftRelativeShuffle, ← Category.assoc, singularChainComplexπ_tensorHom_id_shuffleRel]
+  rw [leftRelativeShuffleToSmallChains, ← Category.assoc,
+    singularChainComplexπ_tensorHom_id_shuffleRel]
   exact (Category.assoc _ _ _).trans (whisker_eq _ hπ')
 
-private lemma id_tensorHom_chainComplexMap_comp_leftRelativeShuffle :
+private lemma id_tensorHom_chainComplexMap_comp_leftRelativeShuffleToSmallChains :
     (𝟙 ((TopPair.ofSubset A).singularChainComplex R) ⊗ₘ
         SSet.chainComplexMap (TopPair.toSSetPair.obj (TopPair.ofSubset B)).hom S) ≫
-      leftRelativeShuffle X Y A B R S = 0 := by
+      leftRelativeShuffleToSmallChains X Y A B R S = 0 := by
   let pA := (TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
     𝟙 ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.chainComplex S)
   rw [← cancel_epi pA, comp_zero]
@@ -247,14 +248,15 @@ private lemma id_tensorHom_chainComplexMap_comp_leftRelativeShuffle :
   calc _ = (𝟙 ((toSSet.obj X).chainComplex R) ⊗ₘ
             SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) S) ≫
           ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ 𝟙 ((toSSet.obj Y).chainComplex S)) ≫
-          leftRelativeShuffle X Y A B R S :=
+          leftRelativeShuffleToSmallChains X Y A B R S :=
         (Category.assoc _ _ _).symm.trans <| (eq_whisker hcomm _).trans (Category.assoc _ _ _)
     _ = (𝟙 ((toSSet.obj X).chainComplex R) ⊗ₘ
             SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) S) ≫
           shuffle X Y R S ≫
           ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ
             (R ⊗ S) :=
-        whisker_eq _ (singularChainComplexπ_tensorHom_id_leftRelativeShuffle X Y A B R S)
+        whisker_eq _
+          (singularChainComplexπ_tensorHom_id_leftRelativeShuffleToSmallChains X Y A B R S)
     _ = 0 :=
         (Category.assoc _ _ _).symm.trans <| (eq_whisker hnat _).trans <|
           (Category.assoc _ _ _).trans <|
@@ -262,73 +264,84 @@ private lemma id_tensorHom_chainComplexMap_comp_leftRelativeShuffle :
               (TauCeti.chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero
                 _ _ hf (R ⊗ S))).trans comp_zero
 
-/-- **The relative shuffle map** `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)`,
-descending `TopCat.shuffle X Y R S` to chains relative to `fst⁻¹(A)` and `snd⁻¹(B)`. -/
-def relativeShuffle :
+/-- **The relative shuffle map to small chains**
+`C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)`, descending
+`TopCat.shuffle X Y R S` to chains relative to `fst⁻¹(A)` and `snd⁻¹(B)`. -/
+def relativeShuffleToSmallChains :
     (TopPair.ofSubset A).singularChainComplex R ⊗ (TopPair.ofSubset B).singularChainComplex S ⟶
       ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplex
         (R ⊗ S) :=
   have hS := shortExact_tensorLeftShortComplex_singularChainComplexShortComplex X Y A B R S
-  (CokernelCofork.IsColimit.desc' hS.gIsCokernel (leftRelativeShuffle X Y A B R S)
-    (id_tensorHom_chainComplexMap_comp_leftRelativeShuffle X Y A B R S)).val
+  (CokernelCofork.IsColimit.desc' hS.gIsCokernel
+    (leftRelativeShuffleToSmallChains X Y A B R S)
+    (id_tensorHom_chainComplexMap_comp_leftRelativeShuffleToSmallChains X Y A B R S)).val
 
 @[reassoc]
-private lemma id_tensorHom_singularChainComplexπ_relativeShuffle :
+private lemma id_tensorHom_singularChainComplexπ_relativeShuffleToSmallChains :
     (𝟙 ((TopPair.ofSubset A).singularChainComplex R) ⊗ₘ
-        (TopPair.ofSubset B).singularChainComplexπ S) ≫ relativeShuffle X Y A B R S =
-      leftRelativeShuffle X Y A B R S :=
+        (TopPair.ofSubset B).singularChainComplexπ S) ≫ relativeShuffleToSmallChains X Y A B R S =
+      leftRelativeShuffleToSmallChains X Y A B R S :=
   have hS := shortExact_tensorLeftShortComplex_singularChainComplexShortComplex X Y A B R S
   (CokernelCofork.IsColimit.desc' hS.gIsCokernel _
-    (id_tensorHom_chainComplexMap_comp_leftRelativeShuffle X Y A B R S)).property
+    (id_tensorHom_chainComplexMap_comp_leftRelativeShuffleToSmallChains X Y A B R S)).property
 
-/-- `relativeShuffle` is characterized by precomposing with `π_A ⊗ π_B`. -/
+/-- `relativeShuffleToSmallChains` is characterized by precomposing with `π_A ⊗ π_B`. -/
 @[reassoc (attr := simp)]
-lemma singularChainComplexπ_tensorHom_relativeShuffle :
+lemma singularChainComplexπ_tensorHom_relativeShuffleToSmallChains :
     ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
-        (TopPair.ofSubset B).singularChainComplexπ S) ≫ relativeShuffle X Y A B R S =
+        (TopPair.ofSubset B).singularChainComplexπ S) ≫
+        relativeShuffleToSmallChains X Y A B R S =
       shuffle X Y R S ≫
         ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ
           (R ⊗ S) :=
-  (congrArg (· ≫ relativeShuffle X Y A B R S)
+  (congrArg (· ≫ relativeShuffleToSmallChains X Y A B R S)
     (singularChainComplexπ_tensorHom_singularChainComplexπ_eq X Y A B R S)).trans
     ((Category.assoc _ _ _).trans
-      ((congrArg (_ ≫ ·) (id_tensorHom_singularChainComplexπ_relativeShuffle X Y A B R S)).trans
-        (singularChainComplexπ_tensorHom_id_leftRelativeShuffle X Y A B R S)))
+      ((congrArg (_ ≫ ·)
+          (id_tensorHom_singularChainComplexπ_relativeShuffleToSmallChains X Y A B R S)).trans
+        (singularChainComplexπ_tensorHom_id_leftRelativeShuffleToSmallChains X Y A B R S)))
 
 end Fixed
 
-/-- **Naturality of `relativeShuffle`** in maps carrying `A` into `A'` and `B` into `B'`. -/
+/-- **Naturality of `relativeShuffleToSmallChains`** in maps carrying `A` into `A'` and `B` into
+`B'`. -/
 @[reassoc]
-lemma relativeShuffle_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B : Set Y}
+lemma relativeShuffleToSmallChains_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B : Set Y}
     {A' : Set X'} {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
     (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') (R S : C) :
     (TopPair.singularChainComplexMap (TopPair.ofSubsetMap f hf) R ⊗ₘ
         TopPair.singularChainComplexMap (TopPair.ofSubsetMap g hg) S) ≫
-        relativeShuffle X' Y' A' B' R S =
-      relativeShuffle X Y A B R S ≫
-        SSetPair.chainComplexMap (smallSingularSubcomplexPairMap (f ⊗ₘ g)
-          (mapsTo_tensorHom_preimage_fst f g hf) (mapsTo_tensorHom_preimage_snd f g hg))
+        relativeShuffleToSmallChains X' Y' A' B' R S =
+      relativeShuffleToSmallChains X Y A B R S ≫
+        SSetPair.chainComplexMap
+          (smallSingularSubcomplexPairMap ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]
+            ![fst X' Y' ⁻¹' A', snd X' Y' ⁻¹' B'] (f ⊗ₘ g) id
+            (Fin.forall_fin_two.2 ⟨mapsTo_tensorHom_preimage_fst f g hf,
+              mapsTo_tensorHom_preimage_snd f g hg⟩))
           (R ⊗ S) := by
   let : MonoidalCategory (ChainComplex C ℕ) := monoidalCategory C (ComplexShape.down ℕ)
-  have hπ := SSetPair.chainComplexπ_naturality (R ⊗ S) (smallSingularSubcomplexPairMap (f ⊗ₘ g)
-    (mapsTo_tensorHom_preimage_fst f g hf) (mapsTo_tensorHom_preimage_snd f g hg))
+  have hπ := SSetPair.chainComplexπ_naturality (R ⊗ S)
+    (smallSingularSubcomplexPairMap ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]
+      ![fst X' Y' ⁻¹' A', snd X' Y' ⁻¹' B'] (f ⊗ₘ g) id
+      (Fin.forall_fin_two.2 ⟨mapsTo_tensorHom_preimage_fst f g hf,
+        mapsTo_tensorHom_preimage_snd f g hg⟩))
   have hA := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hf) R
   have hB := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap g hg) S
   rw [smallSingularSubcomplexPairMap_right] at hπ
   rw [TopPair.ofSubsetMap_fst] at hA hB
   exact TauCeti.tensorHom_comp_eq_of_epi_tensorHom hA.symm hB.symm
-    (singularChainComplexπ_tensorHom_relativeShuffle X Y A B R S)
-    (singularChainComplexπ_tensorHom_relativeShuffle X' Y' A' B' R S)
+    (singularChainComplexπ_tensorHom_relativeShuffleToSmallChains X Y A B R S)
+    (singularChainComplexπ_tensorHom_relativeShuffleToSmallChains X' Y' A' B' R S)
     (shuffle_naturality f g R S) hπ
 
-/-- **Naturality of the relative shuffle map** in both coefficient objects. -/
+/-- **Naturality of the relative shuffle map to small chains** in both coefficient objects. -/
 @[reassoc]
-lemma relativeShuffle_coefficient_naturality (X Y : TopCat.{w}) (A : Set X) (B : Set Y)
-    {R S R' S' : C} (φ : R ⟶ R') (ψ : S ⟶ S') :
+lemma relativeShuffleToSmallChains_coefficient_naturality (X Y : TopCat.{w}) (A : Set X)
+    (B : Set Y) {R S R' S' : C} (φ : R ⟶ R') (ψ : S ⟶ S') :
     ((TopPair.ofSubset A).singularChainComplexCoefficientMap φ ⊗ₘ
         (TopPair.ofSubset B).singularChainComplexCoefficientMap ψ) ≫
-        relativeShuffle X Y A B R' S' =
-      relativeShuffle X Y A B R S ≫
+        relativeShuffleToSmallChains X Y A B R' S' =
+      relativeShuffleToSmallChains X Y A B R S ≫
         ((SSetPair.chainComplexFunctor C).map (φ ⊗ₘ ψ)).app
           ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair := by
   let : MonoidalCategory (ChainComplex C ℕ) := monoidalCategory C (ComplexShape.down ℕ)
@@ -337,8 +350,8 @@ lemma relativeShuffle_coefficient_naturality (X Y : TopCat.{w}) (A : Set X) (B :
   have hA := (TopPair.ofSubset A).singularChainComplexπ_comp_singularChainComplexCoefficientMap φ
   have hB := (TopPair.ofSubset B).singularChainComplexπ_comp_singularChainComplexCoefficientMap ψ
   exact TauCeti.tensorHom_comp_eq_of_epi_tensorHom hA hB
-    (singularChainComplexπ_tensorHom_relativeShuffle X Y A B R S)
-    (singularChainComplexπ_tensorHom_relativeShuffle X Y A B R' S')
+    (singularChainComplexπ_tensorHom_relativeShuffleToSmallChains X Y A B R S)
+    (singularChainComplexπ_tensorHom_relativeShuffleToSmallChains X Y A B R' S')
     (shuffle_coefficient_naturality X Y φ ψ) hπ
 
 end RelativeShuffle
@@ -349,20 +362,21 @@ variable (X Y : TopCat.{w}) (A : Set X) (B : Set Y) (R S : C)
 
 /-- **The shuffle map of a product of two pairs**,
 `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)`, obtained by postcomposing
-`TopCat.relativeShuffle` with `TopCat.smallSingularSubcomplexPairToUnion`. It is characterized by
-`TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair` and
+`TopCat.relativeShuffleToSmallChains` with `TopCat.smallSingularSubcomplexPairToUnion`. It is
+characterized by `TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair` and
 `TopCat.id_tensorHom_singularChainComplexπ_shufflePair`. -/
 def shufflePair :
     (TopPair.ofSubset A).singularChainComplex R ⊗ (TopPair.ofSubset B).singularChainComplex S ⟶
       (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex (R ⊗ S) :=
-  relativeShuffle X Y A B R S ≫
+  relativeShuffleToSmallChains X Y A B R S ≫
     SSetPair.chainComplexMap
       (smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)) (R ⊗ S)
 
-/-- `relativeShuffle` followed by `smallSingularSubcomplexPairToUnion` is `TopCat.shufflePair`. -/
+/-- `relativeShuffleToSmallChains` followed by `smallSingularSubcomplexPairToUnion` is
+`TopCat.shufflePair`. -/
 @[reassoc]
-lemma relativeShuffle_comp_smallSingularSubcomplexPairToUnion :
-    relativeShuffle X Y A B R S ≫
+lemma relativeShuffleToSmallChains_comp_smallSingularSubcomplexPairToUnion :
+    relativeShuffleToSmallChains X Y A B R S ≫
       SSetPair.chainComplexMap
         (smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)) (R ⊗ S) =
       shufflePair X Y A B R S :=
@@ -377,7 +391,8 @@ theorem id_tensorHom_singularChainComplexπ_shufflePair :
       shuffleRel X Y A R S ≫ TopPair.singularChainComplexMap
         (TopPair.ofSubsetMap (𝟙 _) fun _ hz ↦ Or.inl hz) (R ⊗ S) :=
   (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ _) (id_tensorHom_singularChainComplexπ_relativeShuffle X Y A B R S)).trans <|
+    (congrArg (· ≫ _)
+      (id_tensorHom_singularChainComplexπ_relativeShuffleToSmallChains X Y A B R S)).trans <|
       (Category.assoc _ _ _).trans <| whisker_eq _ <|
         (((SSetPair.chainComplexFunctor C).obj (R ⊗ S)).map_comp _ _).symm.trans <|
           congrArg (SSetPair.chainComplexMap · (R ⊗ S))
@@ -393,7 +408,8 @@ theorem singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair :
       shuffle X Y R S ≫
         (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplexπ (R ⊗ S) :=
   (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ _) (singularChainComplexπ_tensorHom_relativeShuffle X Y A B R S)).trans <|
+    (congrArg (· ≫ _)
+      (singularChainComplexπ_tensorHom_relativeShuffleToSmallChains X Y A B R S)).trans <|
       (Category.assoc _ _ _).trans <| whisker_eq _ <|
         chainComplexπ_smallSingularSubcomplexPairToUnion (R ⊗ S)
           (fst X Y ⁻¹' A) (snd X Y ⁻¹' B)
@@ -409,7 +425,7 @@ theorem shufflePair_naturality {X' Y' : TopCat.{w}} {A' : Set X'} {B' : Set Y'} 
       shufflePair X Y A B R S ≫ TopPair.singularChainComplexMap
         (TopPair.ofSubsetMap (f ⊗ₘ g) (mapsTo_tensorHom_preimage_union f g hf hg)) (R ⊗ S) := by
   refine (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ _) (relativeShuffle_naturality f g hf hg R S)).trans <|
+    (congrArg (· ≫ _) (relativeShuffleToSmallChains_naturality f g hf hg R S)).trans <|
       (Category.assoc _ _ _).trans <|
         (whisker_eq _ ?_).trans (Category.assoc _ _ _).symm
   rw [← ((SSetPair.chainComplexFunctor C).obj (R ⊗ S)).map_comp,
@@ -427,7 +443,8 @@ lemma shufflePair_coefficient_naturality {R S R' S' : C} (φ : R ⟶ R') (ψ : S
       shufflePair X Y A B R S ≫
         (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplexCoefficientMap
           (φ ⊗ₘ ψ) := by
-  rw [shufflePair, shufflePair, relativeShuffle_coefficient_naturality_assoc, Category.assoc]
+  rw [shufflePair, shufflePair, relativeShuffleToSmallChains_coefficient_naturality_assoc,
+    Category.assoc]
   exact whisker_eq _ (((SSetPair.chainComplexFunctor C).map (φ ⊗ₘ ψ)).naturality
     (smallSingularSubcomplexPairToUnion (fst X Y ⁻¹' A) (snd X Y ⁻¹' B))).symm
 

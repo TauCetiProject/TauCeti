@@ -34,8 +34,10 @@ small-chain equivalence and prove excision.
 * `TopCat.toSmallSingularSubcomplex`: the singular simplicial set of a subset of a member of the
   family maps into the small subcomplex.
 * `TopCat.chainComplexMap_f_toSmallSingularSubcomplex_ι`: the inclusion law for subordinate chains.
-* `TopCat.chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero`: a chain map vanishing on the
-  singular chains of each member of the family vanishes on the small chains.
+* `TopCat.chainComplexMap_f_smallSingularSubcomplex_ι_comp_eq_zero` and
+  `TopCat.chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero`: a morphism in degree `n` (or a
+  chain map) vanishing on the singular chains of each member of the family vanishes on the small
+  chains.
 * `TopCat.smallSingularSubcomplex` is affinely stable (`SSet.Subcomplex.IsAffineStable`), so
   barycentric subdivision and its prism operator restrict to it
   (`TauCeti.subcomplexSubdivisionHomotopy`).
@@ -191,6 +193,27 @@ lemma toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap (S : ι → Set 
     smallSingularSubcomplexMap_ι, toSmallSingularSubcomplex_ι_assoc, toSmallSingularSubcomplex_ι,
     ← Functor.map_comp, ← Functor.map_comp, ofHom_subtypeVal_comp f hAB]
 
+/-- A morphism out of degree `n` of the singular chains of `X` vanishes on degree `n` of the
+chains of the singular simplices lying in some member of the family `U` as soon as it vanishes on
+degree `n` of the singular chains of each member. -/
+lemma chainComplexMap_f_smallSingularSubcomplex_ι_comp_eq_zero {C : Type u} [Category.{v} C]
+    [Preadditive C] [HasCoproducts.{w} C] {T : C} {Z : C} (n : ℕ)
+    (F : ((toSSet.obj X).chainComplex T).X n ⟶ Z)
+    (hF : ∀ i, (SSet.chainComplexMap
+      (toSSet.map (ofHom (ContinuousMap.subtypeVal (U i)))) T).f n ≫ F = 0) :
+    (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι T).f n ≫ F = 0 := by
+  refine SSet.chainComplex_hom_ext fun σ ↦ ?_
+  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ.val).1 σ.property
+  -- `σ` is the image of a singular simplex of `U i`
+  obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff (U i) _ σ.val).2 hi
+  have h : (toSSet.obj (of (U i))).ιChainComplex (R := T) τ ≫
+      (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U i))))
+        T).f n ≫ F = 0 := by
+    rw [hF, comp_zero]
+  rw [SSet.ι_chainComplexMap_f_assoc, hτ] at h
+  simp only [comp_zero, SSet.ι_chainComplexMap_f_assoc]
+  exact h
+
 /-- A chain map out of the singular chains of `X` vanishes on the chains of the singular simplices
 lying in some member of the family `U` as soon as it vanishes on the singular chains of each
 member. -/
@@ -201,18 +224,8 @@ lemma chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero {C : Type u} [Cate
       (toSSet.map (ofHom (ContinuousMap.subtypeVal (U i)))) T ≫ F = 0) :
     SSet.chainComplexMap (X.smallSingularSubcomplex U).ι T ≫ F = 0 := by
   ext n : 1
-  refine SSet.chainComplex_hom_ext fun σ ↦ ?_
-  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ.val).1 σ.property
-  -- `σ` is the image of a singular simplex of `U i`
-  obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff (U i) _ σ.val).2 hi
-  have h : (toSSet.obj (of (U i))).ιChainComplex (R := T) τ ≫
-      (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U i))))
-        T).f n ≫ F.f n = 0 := by
-    rw [← HomologicalComplex.comp_f, hF, HomologicalComplex.zero_f, comp_zero]
-  rw [SSet.ι_chainComplexMap_f_assoc, hτ] at h
-  simp only [HomologicalComplex.comp_f, HomologicalComplex.zero_f, comp_zero,
-    SSet.ι_chainComplexMap_f_assoc]
-  exact h
+  exact chainComplexMap_f_smallSingularSubcomplex_ι_comp_eq_zero U n (F.f n) fun i ↦ by
+    rw [← HomologicalComplex.comp_f, hF, HomologicalComplex.zero_f]
 
 end TopCat
 

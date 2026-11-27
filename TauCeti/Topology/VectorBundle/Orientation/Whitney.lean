@@ -215,7 +215,9 @@ theorem isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso
       Module.finrank_prod.symm g₁ g₂).2 ⟨hg₁, hg₂⟩)
 
 /-- **The normalized product class of an oriented direct sum is a Thom class** over any commutative
-ring `K` when `g₁` and `g₂` generate the local cohomology of the model fibres. -/
+ring `K`, with scalar coefficients `ModuleCat.of K K` and standard left-unitor pairings
+`(λ_ (ModuleCat.of K K)).inv` and `(λ_ (ModuleCat.of K K)).hom`, when `g₁` and `g₂` generate the
+local cohomology of the model fibres. -/
 theorem isThomClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
     (o₂ : VectorBundleOrientation F₂ E₂ (Fin n)) (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n)
     (ω₁ : Orientation ℝ F₁ (Fin m)) (ω₂ : Orientation ℝ F₂ (Fin n))

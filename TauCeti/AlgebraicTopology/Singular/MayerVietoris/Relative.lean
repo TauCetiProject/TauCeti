@@ -509,20 +509,23 @@ lemma relativeMayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
   have hnat := SSetPair.mayerVietorisδ_naturality R
     (TopPair.toSSetPair.map (TopPair.ofSubsetMap f (hfU.inter_inter hfV)))
     (TopPair.toSSetPair.map (TopPair.ofSubsetMap f hfU))
-    (TopPair.toSSetPair.map (TopPair.ofSubsetMap f hfV)) (smallSingularSubcomplexPairMap f hfU hfV)
+    (TopPair.toSSetPair.map (TopPair.ofSubsetMap f hfV))
+    (smallSingularSubcomplexPairMap ![U, V] ![U', V'] f id (Fin.forall_fin_two.2 ⟨hfU, hfV⟩))
     (isPushout_left U V) (isPushout_right U V) (isPushout_left U' V') (isPushout_right U' V')
     ?_ ?_ ?_ ?_ n m h
   · rw [relativeMayerVietorisδ, relativeMayerVietorisδ, Category.assoc, hnat, ← Category.assoc,
       ← Category.assoc]
     congr 1
     rw [IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv, ← SSetPair.homologyMap_comp,
-      ← SSetPair.homologyMap_comp, smallSingularSubcomplexPairToUnion_comp_ofSubsetMap]
+      ← SSetPair.homologyMap_comp, smallSingularSubcomplexPairToUnion_comp_ofSubsetMap f hfU hfV]
   · simp only [← Functor.map_comp]
     exact congrArg _ (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
   · simp only [← Functor.map_comp]
     exact congrArg _ (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
-  · exact toSmallPair_comp_smallSingularSubcomplexPairMap f hfU hfV _ _ hfU
-  · exact toSmallPair_comp_smallSingularSubcomplexPairMap f hfU hfV _ _ hfV
+  · exact toSmallPair_comp_smallSingularSubcomplexPairMap ![U, V] ![U', V'] f id
+      (Fin.forall_fin_two.2 ⟨hfU, hfV⟩) _ _ hfU
+  · exact toSmallPair_comp_smallSingularSubcomplexPairMap ![U, V] ![U', V'] f id
+      (Fin.forall_fin_two.2 ⟨hfU, hfV⟩) _ _ hfV
 
 /-! ### The Mayer–Vietoris sequence of two pairs -/
 

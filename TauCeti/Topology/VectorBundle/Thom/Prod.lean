@@ -33,8 +33,11 @@ commutative base ring `k`.
 Over a commutative ring `K`, for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphisms `u, μ`,
 `TauCeti.thomPairCup` produces a Thom class of `E₁ ⊕ E₂` iff both factors are Thom classes
 (`TauCeti.isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso`, with scalar-unitor specialization
-`TauCeti.isThomClass_thomPairCup_iff`), giving unoriented Whitney formulas when `Subsingleton Kˣ`
-(`TauCeti.IsThomClass.eq_thomPairCup_of_subsingleton_units`).
+`TauCeti.isThomClass_thomPairCup_iff`), giving unoriented Whitney formulas identifying any given
+scalar Thom class of `E₁ ⊕ E₂` (and its Euler class) with `TauCeti.thomPairCup` of given scalar
+Thom classes of `E₁` and `E₂` when `Subsingleton Kˣ`
+(`TauCeti.IsThomClass.eq_thomPairCup_of_subsingleton_units`, whose product is a Thom class by
+`TauCeti.IsThomClass.thomPairCup`).
 
 ## Main definitions
 
@@ -55,7 +58,10 @@ Over a commutative ring `K`, for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomor
 * `TauCeti.IsThomClass.thomPairCup_of_linearEquiv_of_isIso` and `TauCeti.IsThomClass.thomPairCup`:
   `thomPairCup` preserves `TauCeti.IsThomClass`.
 * `TauCeti.IsThomClass.eq_thomPairCup_of_subsingleton_units`,
-  `TauCeti.IsThomClass.eulerClass_eq_singularCup_of_subsingleton_units`: unoriented Whitney cases.
+  `TauCeti.IsThomClass.eulerClass_eq_singularCup_of_subsingleton_units`: unoriented Whitney
+  formulas identifying any given scalar Thom class of `E₁ ⊕ E₂` (and its Euler class) with the
+  product of given scalar Thom classes of `E₁` and `E₂` (whose product is a Thom class by
+  `TauCeti.IsThomClass.thomPairCup`) when `Subsingleton Kˣ`.
 
 ## References
 
@@ -328,7 +334,9 @@ theorem IsThomClass.thomPairCup_of_linearEquiv_of_isIso
   have := (isThomClass_iff.1 ha₂).1
   (isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso eR₁ eR₂ eM₁ eM₂ a₁ a₂).2 ⟨ha₁, ha₂⟩
 
-/-- **The product of two Thom classes is a Thom class of the direct sum** over any `CommRing K`. -/
+/-- **The product of two scalar Thom classes is a Thom class of the direct sum** over any
+`CommRing K`, taking coefficients in `ModuleCat.of K K` with the standard left-unitor pairings
+`(λ_ (ModuleCat.of K K)).inv` and `(λ_ (ModuleCat.of K K)).hom`. -/
 theorem IsThomClass.thomPairCup
     {a₁ : (thomPair F₁ E₁).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (Module.finrank ℝ F₁)}
@@ -344,7 +352,10 @@ theorem IsThomClass.thomPairCup
   have := (isThomClass_iff.1 ha₂).1
   (isThomClass_thomPairCup_iff a₁ a₂).2 ⟨ha₁, ha₂⟩
 
-/-- **Whitney product formula for unoriented Thom classes** when `Subsingleton Kˣ`. -/
+/-- **Whitney product formula for unoriented scalar Thom classes** when `Subsingleton Kˣ`: any
+given Thom class `u₁₂` of `E₁ ⊕ E₂` agrees with `TauCeti.thomPairCup` of given Thom classes
+`u₁`, `u₂` of `E₁`, `E₂` (whose product is a Thom class by `TauCeti.IsThomClass.thomPairCup`),
+with coefficients in `ModuleCat.of K K` and standard left-unitor pairings. -/
 theorem IsThomClass.eq_thomPairCup_of_subsingleton_units [Subsingleton Kˣ]
     {u₁ : (thomPair F₁ E₁).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (Module.finrank ℝ F₁)}
@@ -363,7 +374,11 @@ theorem IsThomClass.eq_thomPairCup_of_subsingleton_units [Subsingleton Kˣ]
   (existsUnique_isThomClass_of_subsingleton_units K (F := F₁ × F₂) (E := E₁ ×ᵇ E₂)).unique
     hu₁₂ (hu₁.thomPairCup hu₂)
 
-/-- **Whitney product formula for unoriented Euler classes** when `Subsingleton Kˣ`. -/
+/-- **Whitney product formula for unoriented scalar Euler classes** when `Subsingleton Kˣ`: the
+Euler class of any given Thom class `u₁₂` of `E₁ ⊕ E₂` is the cup product of the Euler classes of
+given Thom classes `u₁`, `u₂` of `E₁`, `E₂` (whose product is a Thom class by
+`TauCeti.IsThomClass.thomPairCup`), with coefficients in `ModuleCat.of K K` and standard
+left-unitor pairings. -/
 theorem IsThomClass.eulerClass_eq_singularCup_of_subsingleton_units [Subsingleton Kˣ]
     {u₁ : (thomPair F₁ E₁).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (Module.finrank ℝ F₁)}

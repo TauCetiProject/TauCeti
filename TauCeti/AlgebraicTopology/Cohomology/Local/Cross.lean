@@ -206,15 +206,6 @@ theorem complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPai
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex S').X
         ((ComplexShape.down ℕ).prev q)))]
-    [PreservesColimitsOfShape WalkingParallelPair
-      (tensorLeft (((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularChainComplex
-        R).homology p))]
-    [PreservesColimitsOfShape WalkingParallelPair
-      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex
-        S).cycles q))]
-    [PreservesColimitsOfShape WalkingParallelPair
-      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex S).X
-        ((ComplexShape.down ℕ).prev q)))]
     (g₁ : (TopPair.ofSubset (X := TopCat.of V₁) ({x₁}ᶜ : Set V₁)).singularCohomology R k M p)
     (g₂ : (TopPair.ofSubset (X := TopCat.of V₂) ({x₂}ᶜ : Set V₂)).singularCohomology S k N q) :
     complSingletonPairHomologyCross x₁ x₂ v p q n h ≫
@@ -250,15 +241,6 @@ theorem complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPai
         S').cycles q))]
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex S').X
-        ((ComplexShape.down ℕ).prev q)))]
-    [PreservesColimitsOfShape WalkingParallelPair
-      (tensorLeft (((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularChainComplex
-        R).homology p))]
-    [PreservesColimitsOfShape WalkingParallelPair
-      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex
-        S).cycles q))]
-    [PreservesColimitsOfShape WalkingParallelPair
-      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex S).X
         ((ComplexShape.down ℕ).prev q)))]
     (g₁ : (TopPair.ofSubset (X := TopCat.of V₁) ({x₁}ᶜ : Set V₁)).singularCohomology R k M p')
     (g₂ : (TopPair.ofSubset (X := TopCat.of V₂) ({x₂}ᶜ : Set V₂)).singularCohomology S k N q') :

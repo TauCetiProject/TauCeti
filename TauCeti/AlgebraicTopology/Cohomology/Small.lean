@@ -17,12 +17,15 @@ an open cover `U` of `X` is a quasi-isomorphism
 (`TauCeti.quasiIso_cochainComplexMap_smallSingularSubcomplex_ι`), giving the natural isomorphism
 `TauCeti.smallSingularCohomologyIso`.
 
-For two subsets `U` and `V` of `X` that are open in `U ∪ V`, restricting cochains along
-`TopCat.smallSingularSubcomplexToUnion U V` and `TopCat.smallSingularSubcomplexPairToUnion U V`
+For a family of subsets `U : ι → Set X` with each member open in `⋃ i, U i`, restricting cochains
+along `TopCat.smallSingularSubcomplexToIUnion U` and `TopCat.smallSingularSubcomplexPairToIUnion U`
 is likewise a quasi-isomorphism
-(`TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion`,
-`TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexPairToUnion`), inducing isomorphisms on
-cohomology (`TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`).
+(`TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexToIUnion`,
+`TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexPairToIUnion`), inducing isomorphisms on
+cohomology (`TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToIUnion`), with
+binary-union specializations `TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion`,
+`TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexPairToUnion`, and
+`TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`.
 
 ## References
 
@@ -90,6 +93,49 @@ open TauCeti.ChainComplex
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   (k : Type*) [Ring k] [Linear k C] (M : C) {X : TopCat.{w}}
+
+/-- The singular simplices of `X` lying in some member of `U` compute the cohomology of
+`⋃ i, U i`, since `TopCat.smallSingularSubcomplexToIUnion` induces a chain homotopy equivalence
+when each `U i` is open in `⋃ j, U j`. -/
+lemma quasiIso_cochainComplexMap_smallSingularSubcomplexToIUnion {ι : Type*} (U : ι → Set X)
+    (hU : ∀ i, IsOpen ((↑) ⁻¹' U i : Set ↥(⋃ j, U j))) :
+    QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
+      (smallSingularSubcomplexToIUnion U)) := by
+  have := ((smallSingularSubcomplexToIUnionChainHomotopyEquiv R U hU).linearYonedaFunctorMap k
+    M).quasiIso_hom
+  rwa [HomotopyEquiv.linearYonedaFunctorMap_hom,
+    smallSingularSubcomplexToIUnionChainHomotopyEquiv_hom] at this
+
+/-- The cohomology of `X` relative to its singular simplices lying in a member of `U` is that of
+`(X, ⋃ i, U i)`, by the small-chain theorem for the cover of `⋃ i, U i` by the traces of `U i`. -/
+lemma quasiIso_cochainComplexMap_smallSingularSubcomplexPairToIUnion {ι : Type*} (U : ι → Set X)
+    (hU : ∀ i, IsOpen ((↑) ⁻¹' U i : Set ↥(⋃ j, U j))) :
+    QuasiIso (SSetPair.cochainComplexMap (R := R) (k := k) (M := M)
+      (smallSingularSubcomplexPairToIUnion U)) := by
+  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
+      (smallSingularSubcomplexPairToIUnion U).left) := by
+    rw [smallSingularSubcomplexPairToIUnion_left]
+    exact quasiIso_cochainComplexMap_smallSingularSubcomplexToIUnion R k M U hU
+  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
+      (smallSingularSubcomplexPairToIUnion U).right) := by
+    have : IsIso (SSet.chainComplexMap (smallSingularSubcomplexPairToIUnion U).right R) := by
+      rw [chainComplexMap_smallSingularSubcomplexPairToIUnion_right]
+      exact IsIso.id _
+    have : IsIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
+        (smallSingularSubcomplexPairToIUnion U).right) :=
+      Functor.map_isIso (linearYonedaFunctor k M) _
+    exact quasiIso_of_isIso _
+  exact SSetPair.quasiIso_cochainComplexMap _
+
+/-- When each `U i` is open in `⋃ j, U j`, restricting cochains of `(X, ⋃ i, U i)` to the chains
+of `X` relative to its singular simplices lying in a member of `U` is an isomorphism on
+cohomology. -/
+lemma isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToIUnion {ι : Type*}
+    (U : ι → Set X) (hU : ∀ i, IsOpen ((↑) ⁻¹' U i : Set ↥(⋃ j, U j))) (n : ℕ) :
+    IsIso (HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (R := R) (k := k) (M := M)
+      (smallSingularSubcomplexPairToIUnion U)) n) := by
+  have := quasiIso_cochainComplexMap_smallSingularSubcomplexPairToIUnion R k M U hU
+  infer_instance
 
 /-- The singular simplices of `X` lying in `U` or in `V` compute the cohomology of `U ∪ V`, since
 `TopCat.smallSingularSubcomplexToUnion` induces a chain homotopy equivalence when `U` and `V` are
