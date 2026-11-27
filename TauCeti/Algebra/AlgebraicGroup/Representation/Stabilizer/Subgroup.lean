@@ -8,23 +8,19 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
-public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 
 /-!
-# Subrepresentations along morphisms and under closed subgroups
+# Subrepresentations under closed subgroups
 
 Let `M` be a representation of an affine group `G = Spec H` over a field `k`. A subspace `W ≤ M`
 is a subrepresentation exactly when its stabilizer Hopf ideal is `⊥`
-(`Submodule.stabilizerHopfIdeal_eq_bot_iff`). This file records two consequences.
-
-* An injective morphism of representations `f : V → W` does not change stabilizers: `f(L)` and
-  `L` have the same stabilizer Hopf ideal (`Submodule.stabilizerHopfIdeal_map_of_injective`).
-* For the closed subgroup cut out by a Hopf ideal `I`, the subspaces stable under the subgroup
-  are those whose stabilizer Hopf ideal lies below `I`. So `M`, as a representation of the
-  subgroup, is completely reducible exactly when every such subspace has a complement of the same
-  kind (`TauCeti.Comodule.isCompletelyReducible_corestrict_mkQuotient_iff`). This is the form in
-  which the semisimplicity of a representation is checked through the stabilizers of subspaces,
-  as for the Mumford–Tate group of a polarizable Hodge structure.
+(`Submodule.stabilizerHopfIdeal_eq_bot_iff`). For the closed subgroup cut out by a Hopf ideal
+`I`, the subspaces stable under the subgroup are therefore those whose stabilizer Hopf ideal lies
+below `I`. So `M`, as a representation of the subgroup, is completely reducible exactly when every
+such subspace has a complement of the same kind
+(`TauCeti.Comodule.isCompletelyReducible_corestrict_mkQuotient_iff`). This is the form in which
+the semisimplicity of a representation is checked through the stabilizers of subspaces, as for
+the Mumford–Tate group of a polarizable Hodge structure.
 
 ## References
 
@@ -32,26 +28,6 @@ is a subrepresentation exactly when its stabilizer Hopf ideal is `⊥`
 -/
 
 public section
-
-namespace Submodule
-
-variable {k H V W : Type*} [Field k] [CommRing H] [HopfAlgebra k H] [AddCommGroup V]
-  [Module k V] [TauCeti.Comodule k H V] [AddCommGroup W] [Module k W] [TauCeti.Comodule k H W]
-
-/-- **Stabilizers along an injective morphism.** An injective morphism `f : V → W` of
-representations does not change stabilizers: `f(L)` and `L` have the same stabilizer Hopf ideal. -/
-theorem stabilizerHopfIdeal_map_of_injective (f : TauCeti.Comodule.Hom k H V W)
-    (hf : Function.Injective f) (L : Submodule k V) :
-    (L.map f.toLinearMap).stabilizerHopfIdeal H = L.stabilizerHopfIdeal H := by
-  refine eq_of_forall_ge_iff fun J ↦ ?_
-  -- Test both stabilizers against the quotient point `H → H ⧸ J`, whose kernel is `J`.
-  let g := WithConv.toConv (Ideal.Quotient.mkₐ k J.toIdeal)
-  have hJ : RingHom.ker g.ofConv = J.toIdeal := Ideal.Quotient.mkₐ_ker k _
-  rw [← TauCeti.HopfIdeal.toIdeal_le_toIdeal, ← TauCeti.HopfIdeal.toIdeal_le_toIdeal, ← hJ,
-    stabilizerHopfIdeal_le_ker_iff, stabilizerHopfIdeal_le_ker_iff]
-  exact TauCeti.Comodule.Hom.map_endOfPoint_baseChange_eq_iff f hf L _
-
-end Submodule
 
 namespace TauCeti.Comodule
 
