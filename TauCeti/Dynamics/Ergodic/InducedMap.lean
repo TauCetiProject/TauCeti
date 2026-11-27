@@ -19,7 +19,7 @@ preserves the restriction `μ.restrict A` (`TauCeti.measurePreserving_inducedMap
 normalized restriction `(μ A)⁻¹ • μ.restrict A`
 (`TauCeti.measurePreserving_inducedMap_smul`). No invertibility is needed: the return time is
 finite almost everywhere on `A` by Poincaré recurrence
-(`TauCeti.ae_positiveReturnTime_ne_top`). For measurable `B ⊆ A`, splitting
+(`TauCeti.ae_mem_imp_positiveReturnTime_ne_top`). For measurable `B ⊆ A`, splitting
 `μ B = μ (T⁻¹ B)` according to whether `x ∈ A` gives
 
 `μ B = ∑_{1 ≤ k ≤ n} μ (A ∩ {τ = k} ∩ T^[k]⁻¹ B) + μ D_n`,
@@ -70,7 +70,7 @@ theorem inducedMap_eq_iterate_of_positiveReturnTime_eq {T : X → X} {A : Set X}
 
 /-- Where the return time is infinite, the induced map fixes the point. -/
 @[simp]
-theorem inducedMap_of_eq_top {T : X → X} {A : Set X} {x : X}
+theorem inducedMap_eq_self_of_positiveReturnTime_eq_top {T : X → X} {A : Set X} {x : X}
     (h : positiveReturnTime T A x = ⊤) : inducedMap T A x = x := by
   simp [inducedMap_def, h]
 
@@ -88,16 +88,11 @@ variable [MeasurableSpace X]
 
 /-- The induced map of a measurable map to a measurable set is measurable. -/
 theorem measurable_inducedMap {T : X → X} (hT : Measurable T) {A : Set X} (hA : MeasurableSet A) :
-    Measurable (inducedMap T A) := by
-  intro S hS
-  have hτ : Measurable fun x ↦ (positiveReturnTime T A x).toNat :=
-    measurable_from_top.comp (measurable_positiveReturnTime hT hA)
-  have : inducedMap T A ⁻¹' S =
-      ⋃ n : ℕ, (fun x ↦ (positiveReturnTime T A x).toNat) ⁻¹' {n} ∩ T^[n] ⁻¹' S := by
-    ext x
-    simp [inducedMap_def]
-  rw [this]
-  exact .iUnion fun n ↦ (hτ (measurableSet_singleton n)).inter (hT.iterate n hS)
+    Measurable (inducedMap T A) :=
+  (measurable_from_prod_countable_left (f := fun p : X × ℕ ↦ T^[p.2] p.1)
+    fun n ↦ hT.iterate n).comp
+    (measurable_id.prodMk ((measurable_from_top (f := ENat.toNat)).comp
+      (measurable_positiveReturnTime hT hA)))
 
 variable {μ : Measure X}
 
@@ -171,7 +166,7 @@ theorem preimage_firstEntrySet_inter (hBA : B ⊆ A) (n : ℕ) :
 omit [MeasurableSpace X] in
 /-- Splitting `T⁻¹ (firstEntrySet n)` according to `A`: the part outside `A` is
 `firstEntrySet (n + 1)`. -/
-theorem preimage_firstEntrySet_diff (n : ℕ) :
+theorem preimage_firstEntrySet_sdiff (n : ℕ) :
     T ⁻¹' firstEntrySet T A B n \ A = firstEntrySet T A B (n + 1) := by
   ext x
   simp only [Set.mem_sdiff, mem_preimage, mem_firstEntrySet_iff]
@@ -217,7 +212,7 @@ theorem measure_eq_sum_returnSet_add (hT : MeasurePreserving T μ μ) (hA : Meas
     rw [ih, Finset.sum_range_succ, add_assoc, ← hT.measure_preimage
       (measurableSet_firstEntrySet hT.measurable hA hB n).nullMeasurableSet,
       ← measure_inter_add_sdiff _ hA, preimage_firstEntrySet_inter hBA,
-      preimage_firstEntrySet_diff]
+      preimage_firstEntrySet_sdiff]
 
 /-- `μ B` is the sum of the measures of the return sets. -/
 theorem measure_eq_tsum_returnSet [IsFiniteMeasure μ] (hT : MeasurePreserving T μ μ)
@@ -240,7 +235,8 @@ theorem measure_inter_inducedMap_preimage [IsFiniteMeasure μ] (hT : MeasurePres
   rw [measure_eq_tsum_returnSet hT hA hB hBA, ← measure_iUnion pairwise_disjoint_returnSet
     (measurableSet_returnSet hT.measurable hA hB)]
   refine measure_congr (eventuallyEqSet_iff.2 ?_)
-  filter_upwards [ae_positiveReturnTime_ne_top hT.conservative hA.nullMeasurableSet] with x hx
+  filter_upwards [ae_mem_imp_positiveReturnTime_ne_top hT.conservative hA.nullMeasurableSet]
+    with x hx
   simp only [mem_iUnion, mem_returnSet_iff, mem_inter_iff, mem_preimage]
   constructor
   · rintro ⟨hxA, hxB⟩
@@ -269,7 +265,8 @@ theorem measurePreserving_inducedMap [IsFiniteMeasure μ] {T : X → X}
       Measure.restrict_apply hS, ← measure_inter_inducedMap_preimage hT hA (hS.inter hA)
         inter_subset_right]
     refine measure_congr (eventuallyEqSet_iff.2 ?_)
-    filter_upwards [ae_positiveReturnTime_ne_top hT.conservative hA.nullMeasurableSet] with x hx
+    filter_upwards [ae_mem_imp_positiveReturnTime_ne_top hT.conservative hA.nullMeasurableSet]
+      with x hx
     simp only [mem_inter_iff, mem_preimage]
     exact ⟨fun h ↦ ⟨h.2, h.1, inducedMap_mem (hx h.2)⟩, fun h ↦ ⟨h.2.1, h.1⟩⟩
 
