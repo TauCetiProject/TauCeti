@@ -98,14 +98,18 @@ end NoZeroDivisors
 /-! ### The roots of an irreducible polynomial, with multiplicity
 
 Let `P` be irreducible of degree `d` over `k` with `q` elements, and let `x` be a root of `P` in a
-field `K ⊇ k`. The roots of `P` in `K`, counted with multiplicity, are the Frobenius conjugates
-`x, x ^ q, …, x ^ q ^ (d - 1)`, and those of `P ^ j` are `x ^ q ^ i` for `i < j d`.
-`pow_card_pow_eq_self_iff` sharpens `pow_card_pow_natDegree_minpoly` to an iff. -/
+`k`-algebra `K` that is a domain. The roots of `P` in `K`, counted with multiplicity, are the
+Frobenius conjugates `x, x ^ q, …, x ^ q ^ (d - 1)`, and those of `P ^ j` are `x ^ q ^ i` for
+`i < j d`. `pow_card_pow_eq_self_iff` sharpens `pow_card_pow_natDegree_minpoly` to an iff, and
+needs only a nontrivial, possibly noncommutative, `K`. -/
 
 section IrreducibleRoots
 
-variable {k K : Type*} [Field k] [Fintype k] [Field K] [Algebra k K] {P : k[X]}
-  (hP : Irreducible P) {x : K} (hx : aeval x P = 0)
+variable {k K : Type*} [Field k] [Fintype k] {P : k[X]}
+
+section Ring
+
+variable [Ring K] [Nontrivial K] [Algebra k K] (hP : Irreducible P) {x : K} (hx : aeval x P = 0)
 
 include hP hx
 
@@ -114,13 +118,22 @@ theorem pow_card_pow_eq_self_iff {n : ℕ} : x ^ Fintype.card k ^ n = x ↔ P.na
   rw [hP.natDegree_dvd_iff_dvd_X_pow_card_pow_sub_X, ← hP.dvd_iff_aeval_eq_zero hx]
   simp [sub_eq_zero, Nat.card_eq_fintype_card]
 
+end Ring
+
+variable [CommRing K] [IsDomain K] [Algebra k K] (hP : Irreducible P) {x : K}
+  (hx : aeval x P = 0)
+
+include hP hx
+
 /-- `x ^ q ^ a = x ^ q ^ b` if and only if `a ≡ b` modulo the degree of `P`. -/
 theorem pow_card_pow_eq_pow_card_pow_iff {a b : ℕ} :
     x ^ Fintype.card k ^ a = x ^ Fintype.card k ^ b ↔ a ≡ b [MOD P.natDegree] := by
-  -- The Frobenius is injective: cancel it until one exponent is `0`.
+  -- The Frobenius is additive, so injective on a domain: cancel it until one exponent is `0`.
   have h_inj {u v : K} : u ^ Fintype.card k = v ^ Fintype.card k ↔ u = v := by
-    simpa [_root_.FiniteField.coe_frobeniusAlgHom] using
-      (_root_.FiniteField.frobeniusAlgHom k K).injective.eq_iff (a := u) (b := v)
+    refine ⟨fun h ↦ ?_, congrArg (· ^ Fintype.card k)⟩
+    have h_sub := map_sub (_root_.FiniteField.frobeniusAlgHom k K) u v
+    simp only [_root_.FiniteField.frobeniusAlgHom_apply, h, sub_self] at h_sub
+    exact sub_eq_zero.1 (pow_eq_zero_iff Fintype.card_ne_zero |>.1 h_sub)
   induction a, b using Nat.recDiagAux with
   | zero_left n =>
     simpa [eq_comm, Nat.modEq_iff_dvd' n.zero_le] using pow_card_pow_eq_self_iff hP hx
