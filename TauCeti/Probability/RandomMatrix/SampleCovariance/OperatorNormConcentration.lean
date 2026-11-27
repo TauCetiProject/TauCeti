@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import TauCeti.Probability.Moments.SubGaussian.IsotropicRows
 public import TauCeti.Probability.Moments.SubGaussian.Vector
-import TauCeti.Probability.Moments.SubGaussian.Basic
 
 /-!
 # Operator-norm concentration of sample second moments
@@ -71,11 +70,9 @@ theorem measureReal_norm_sampleSecondMoment_sub_one_gt_le (hindep : iIndepFun x 
   -- The sample second moment of the rows of `A` is the normalized Gram matrix of `A`.
   have hS : TauCeti.sampleSecondMoment (fun i ↦ x i ω) - 1 =
       N⁻¹ • ((A ω)ᵀ * A ω - N • 1) := by
-    have h : TauCeti.sampleSecondMoment (fun i ↦ x i ω) = N⁻¹ • ((A ω)ᵀ * A ω) := by
-      have h := (Matrix.sampleCovariance_eq_sampleSecondMoment (A ω)ᵀ).symm
-      rwa [Matrix.sampleCovariance_def, conjTranspose_eq_transpose_of_trivial,
-        transpose_transpose, one_div] at h
-    rw [h, smul_sub, smul_smul, inv_mul_cancel₀ hN.ne', one_smul]
+    have hmap : (Matrix.of fun i ↦ x i ω).map star = Matrix.of fun i ↦ x i ω := by ext; simp
+    rw [TauCeti.sampleSecondMoment_eq_inv_smul_transpose_mul, hmap, smul_sub, smul_smul,
+      inv_mul_cancel₀ hN.ne', one_smul]
   rw [hS, norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hN.le), lt_inv_mul_iff₀ hN] at hω
   have hthr : N * (12288 * c * (s / √N + (s / √N) ^ 2)) = 12288 * c * (√N * s + s ^ 2) := by
     field_simp
@@ -128,18 +125,21 @@ theorem norm_sampleCovariance_sub_le :
       ((12288 * K ^ 2 * (√(p : ℝ) + t) / √(n : ℝ)) ^ 2)}
   have hε : 0 ≤ ε := by positivity
   have hcover : Set.univ ⊆ good ∪ bad := by
-    intro ω _
-    by_contra h
-    simp only [Set.mem_union, not_or, good, bad, Set.mem_ofPred_eq, not_le, not_lt] at h
     rcases Nat.eq_zero_or_pos p with rfl | hp
-    · rw [Subsingleton.elim (_ - 1) 0, norm_zero] at h
-      exact h.1.not_ge (by positivity)
+    · intro ω _
+      left
+      simp only [good, Set.mem_ofPred_eq]
+      rw [Subsingleton.elim (_ - 1) 0, norm_zero]
+      positivity
     -- Isotropy forces the proxy to be at least one.
     have hK : 1 ≤ (K : ℝ) ^ 2 := by
       have hu : ‖EuclideanSpace.single (⟨0, hp⟩ : Fin p) (1 : ℝ)‖ = 1 := by simp
       have := (hsub' ⟨0, hn⟩ _ hu).integral_sq_le
       rw [hiso' _ _ hu] at this
       exact_mod_cast this
+    intro ω _
+    by_contra h
+    simp only [Set.mem_union, not_or, good, bad, Set.mem_ofPred_eq, not_le, not_lt] at h
     have hscale : 12288 * (K : ℝ) ^ 2 * (√(p : ℝ) + t) / √(n : ℝ) = 12288 * (K : ℝ) ^ 2 * ε := by
       simp [ε, mul_div_assoc]
     rw [hscale] at h
