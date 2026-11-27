@@ -10,7 +10,6 @@ public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.AdelicFrame
 public import TauCeti.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Smooth.Basic
-public import TauCeti.RepresentationTheory.WeightSpace
 
 /-!
 # Algebraic modular forms on a hermitian space with an adelic frame
@@ -165,8 +164,8 @@ theorem algebraicModularForms_toRepresentation_apply_val_apply
     (g h : finiteAdelicUnitaryGroup E ι) (φ : V.algebraicModularForms ρ) :
     ((V.algebraicModularForms ρ).toRepresentation g φ :
       coindV V.finiteRationalEmbedding (V.coefficientRep ρ)).val h =
-        (φ : coindV V.finiteRationalEmbedding (V.coefficientRep ρ)).val (h * g) :=
-  (rfl)
+        (φ : coindV V.finiteRationalEmbedding (V.coefficientRep ρ)).val (h * g) := by
+  simp only [Subrepresentation.coe_toRepresentation_apply, coind_apply_coe_apply]
 
 /-! ### Forms of a level -/
 
@@ -186,8 +185,7 @@ theorem mem_algebraicModularFormsOfLevel_iff {K : Subgroup (finiteAdelicUnitaryG
     φ ∈ V.algebraicModularFormsOfLevel ρ K χ ↔
       φ ∈ V.algebraicModularForms ρ ∧ ∀ (k : K) g, φ.val (g * k) = χ k • φ.val g := by
   simp only [algebraicModularFormsOfLevel, Submodule.mem_inf, Subrepresentation.mem_toSubmodule,
-    mem_weightSpace, MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
-    Subtype.ext_iff, funext_iff, coind_apply_coe_apply, Submodule.coe_smul, Pi.smul_apply]
+    mem_weightSpace_coind_comp_subtype_iff]
 
 /-- **Forms of an open level.** For an open subgroup `K` of `G_f`, the forms of level `(K, 1)` are
 all the coinduced functions invariant under right translation by `K`: these are automatically
@@ -197,10 +195,8 @@ theorem algebraicModularFormsOfLevel_one_of_isOpen {K : Subgroup (finiteAdelicUn
     V.algebraicModularFormsOfLevel ρ K 1 =
       weightSpace ((coind V.finiteRationalEmbedding (V.coefficientRep ρ)).comp K.subtype) 1 := by
   refine inf_eq_right.2 fun φ hφ ↦ (V.mem_algebraicModularForms_iff ρ).2 ⟨⟨K, hK⟩, fun u hu g ↦ ?_⟩
-  have h := mem_weightSpace.1 hφ ⟨u, hu⟩
-  simp only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype, MonoidHom.one_apply,
-    one_smul, Subtype.ext_iff, funext_iff, coind_apply_coe_apply] at h
-  exact h g
+  simpa only [MonoidHom.one_apply, one_smul] using
+    mem_weightSpace_coind_comp_subtype_iff.1 hφ ⟨u, hu⟩ g
 
 /-- Forms of level `(K, χ)` are forms of level `(K', χ|_{K'})` for every `K' ≤ K`. -/
 theorem algebraicModularFormsOfLevel_mono {K K' : Subgroup (finiteAdelicUnitaryGroup E ι)}

@@ -14,6 +14,7 @@ public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.OfMulAction
+public import TauCeti.RepresentationTheory.WeightSpace
 public import TauCeti.GroupTheory.GroupAction.PiTransport
 
 /-!
@@ -148,6 +149,21 @@ theorem isOpen_ker_coind {φ : G →* H} (hφ : IsOpenMap φ) [φ.range.FiniteIn
   exact Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hS.mem_nhds h1) hSK)
 
 end OpenKernel
+
+section WeightSpace
+
+variable {k G H V : Type*} [CommSemiring k] [Monoid G] [Group H] [AddCommMonoid V] [Module k V]
+  {φ : G →* H} {ρ : Representation k G V}
+
+/-- A coinduced function lies in the character weight space for a subgroup exactly when right
+translation by each subgroup element scales its values by the character. -/
+theorem mem_weightSpace_coind_comp_subtype_iff {K : Subgroup H} {χ : K →* k} {f : coindV φ ρ} :
+    f ∈ weightSpace ((coind φ ρ).comp K.subtype) χ ↔
+      ∀ (h : K) h₁, f.val (h₁ * h) = χ h • f.val h₁ := by
+  simp only [mem_weightSpace, MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
+    Subtype.ext_iff, funext_iff, coind_apply_coe_apply, Submodule.coe_smul, Pi.smul_apply]
+
+end WeightSpace
 
 section Stabilizer
 
