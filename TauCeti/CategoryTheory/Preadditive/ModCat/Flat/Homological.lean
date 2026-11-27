@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Triangulated.Opposite.Pretriangulated
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Flat.LeftExact
 
 import Mathlib.Algebra.Homology.ShortComplex.Ab
-import Mathlib.CategoryTheory.Triangulated.WeakKernels
+import TauCeti.CategoryTheory.Triangulated.WeakCokernels
 
 /-!
 # Flat modules over pretriangulated categories
@@ -36,20 +36,16 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasShi
 /-- Over a pretriangulated category, a module is flat precisely when it sends distinguished
 triangles in the opposite category to exact sequences. -/
 theorem flat_iff_isHomological (F : ModCat.{w} C) : F.Flat ↔ F.obj.IsHomological := by
-  have : F.obj.Additive := (additiveFunctor_iff F.obj).mp F.property
-  have weakCokernel (T : Triangle Cᵒᵖ) (hT : T ∈ distTriang Cᵒᵖ) :
-      IsWeakCokernel T.mor₂.unop T.mor₁.unop :=
-    IsWeakCokernel.of_isWeakLimit (h := comp_distTriang_mor_zero₁₂ T hT)
-      (isWeakLimitKernelForkOfDistTriangle T hT)
   refine ⟨fun hF ↦ ⟨fun T hT ↦ ?_⟩, fun hF ↦ ?_⟩
   · let S := (shortComplexOfDistTriangle T hT).map F.obj
-    exact S.ab_exact_iff_function_exact.mpr (Flat.exact_of_isWeakCokernel (weakCokernel T hT))
+    exact S.ab_exact_iff_function_exact.mpr
+      (Flat.exact_of_isWeakCokernel (isWeakCokernel_of_distTriang hT))
   · apply (flat_iff_exists_exact_weakCokernel F).mpr
     intro X Y f
     obtain ⟨Z, q, k, hT⟩ := distinguished_cocone_triangle₁ f.op
     let T := Triangle.mk q f.op k
     let S := (shortComplexOfDistTriangle T hT).map F.obj
-    exact ⟨Z.unop, q.unop, weakCokernel T hT,
+    exact ⟨Z.unop, q.unop, isWeakCokernel_of_distTriang hT,
       S.ab_exact_iff_function_exact.mp (F.obj.map_distinguished_exact T hT)⟩
 
 end TauCeti.ModCat

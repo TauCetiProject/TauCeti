@@ -40,8 +40,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] {F : ModCat.{w} C}
 theorem Flat.exact_of_isWeakCokernel [F.Flat] {X Y Z : C} {f : X ⟶ Y} {q : Y ⟶ Z}
     (hq : IsWeakCokernel f q) :
     Function.Exact (F.obj.map q.op) (F.obj.map f.op) := by
-  have : F.obj.Additive := (additiveFunctor_iff F.obj).mp F.property
-  obtain ⟨hfq, hfac⟩ := isWeakCokernel_iff.mp hq
   intro y
   constructor
   · intro hy
@@ -49,12 +47,12 @@ theorem Flat.exact_of_isWeakCokernel [F.Flat] {X Y Z : C} {f : X ⟶ Y} {q : Y �
     obtain ⟨m, W, z, α, hy', hα⟩ :=
       isTrivialRelation_def.mp (Flat.isTrivialRelation (fun _ : Fin 1 ↦ f) (fun _ ↦ y) hr)
     have h (i : Fin m) : f ≫ α i 0 = 0 := by simpa using hα i
-    choose l hl using fun i ↦ hfac (α i 0) (h i)
+    choose l hl using fun i ↦ hq.exists_desc (α i 0) (h i)
     refine ⟨∑ i, F.obj.map (l i).op (z i), ?_⟩
     simpa only [map_sum, ← ConcreteCategory.comp_apply,
       ← Functor.map_comp, ← op_comp, hl] using (hy' 0).symm
   · rintro ⟨z, rfl⟩
-    have h : q.op ≫ f.op = 0 := by simp [← op_comp, hfq]
+    have h : q.op ≫ f.op = 0 := by simp [← op_comp, hq.comp_eq_zero]
     simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, h, Functor.map_zero,
       AddCommGrpCat.zero_apply]
 
@@ -63,7 +61,6 @@ private theorem flat_of_exists_exact [HasFiniteBiproducts C]
       Function.Exact (F.obj.map q.op) (F.obj.map f.op)) : F.Flat where
   isTrivialRelation {X n Y} β y hy := by
     classical
-    have : F.obj.Additive := (additiveFunctor_iff F.obj).mp F.property
     -- Assemble the row and all its coefficients into a relation at the biproduct.
     let f : X ⟶ ⨁ Y := biproduct.lift β
     let t : F.obj.obj (op (⨁ Y)) := ∑ j, F.obj.map (biproduct.π Y j).op (y j)
@@ -99,7 +96,7 @@ theorem flat_iff_exists_exact_weakCokernel [HasFiniteBiproducts C] [HasWeakKerne
     obtain ⟨Z, q, hq⟩ := exists_isWeakCokernel f
     exact ⟨Z, q, hq, Flat.exact_of_isWeakCokernel hq⟩
   · obtain ⟨Z, q, hq, he⟩ := h f
-    exact ⟨Z, q, (isWeakCokernel_iff.mp hq).1, he⟩
+    exact ⟨Z, q, hq.comp_eq_zero, he⟩
 
 /-- Over an additive category with weak cokernels, a module is flat exactly when it maps
 every weak cokernel pair to an exact sequence. -/
@@ -114,23 +111,21 @@ theorem flat_iff_exact_of_isWeakCokernel [HasFiniteBiproducts C] [HasWeakKernels
   exact ⟨Z, q, hq, h f q hq⟩
 
 /-- A flat module preserves monomorphisms in the opposite category. -/
-theorem Flat.mono_map [F.Flat] {X Y : Cᵒᵖ} (f : X ⟶ Y) [Mono f] :
+theorem Flat.map_mono [F.Flat] {X Y : Cᵒᵖ} (f : X ⟶ Y) [Mono f] :
     Mono (F.obj.map f) := by
-  have : F.obj.Additive := (additiveFunctor_iff F.obj).mp F.property
-  have hq : IsWeakCokernel f.unop (0 : X.unop ⟶ X.unop) := isWeakCokernel_iff.mpr
-    ⟨comp_zero, fun _ k hk ↦ ⟨0, by simp [zero_of_epi_comp f.unop hk]⟩⟩
+  have hq := IsWeakCokernel.zero_of_epi f.unop
   refine (AddCommGrpCat.mono_iff_injective _).mpr ((injective_iff_map_eq_zero _).mpr ?_)
   intro x hx
   obtain ⟨y, hy⟩ := (Flat.exact_of_isWeakCokernel (F := F) hq x).mp (by simpa using hx)
   simpa only [op_zero, Functor.map_zero, AddCommGrpCat.zero_apply] using hy.symm
 
-private theorem flat_preservesKernel [F.Flat] {X Y : Cᵒᵖ} (f : X ⟶ Y) [HasKernel f] :
+/-- A flat module preserves every existing kernel in the opposite category. -/
+theorem Flat.preservesLimit_parallelPair_zero [F.Flat] {X Y : Cᵒᵖ} (f : X ⟶ Y) [HasKernel f] :
     PreservesLimit (parallelPair f 0) F.obj := by
-  have : F.obj.Additive := (additiveFunctor_iff F.obj).mp F.property
   let S := (ShortComplex.mk (kernel.ι f) f (kernel.condition f)).map F.obj
-  have hq := IsWeakCokernel.of_isWeakLimit (h := kernel.condition f) (kernelIsKernel f).isWeakLimit
+  have hq := IsWeakCokernel.of_isLimit (h := kernel.condition f) (kernelIsKernel f)
   have he : S.Exact := S.ab_exact_iff_function_exact.mpr (Flat.exact_of_isWeakCokernel hq)
-  have : Mono S.f := Flat.mono_map (kernel.ι f)
+  have : Mono S.f := Flat.map_mono (kernel.ι f)
   exact preservesLimit_of_preserves_limit_cone (kernelIsKernel f)
     ((isLimitMapConeForkEquiv' F.obj (kernel.condition f)).symm he.fIsKernel)
 
@@ -138,18 +133,17 @@ private theorem flat_preservesKernel [F.Flat] {X Y : Cᵒᵖ} (f : X ⟶ Y) [Has
 limits by the contravariant functor. -/
 theorem flat_iff_preservesFiniteLimits [HasFiniteBiproducts C] [HasCokernels C] (F : ModCat.{w} C) :
     F.Flat ↔ PreservesFiniteLimits F.obj := by
-  have : F.obj.Additive := (additiveFunctor_iff F.obj).mp F.property
   let : HasCoequalizers C := Preadditive.hasCoequalizers_of_hasCokernels
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · let : HasBinaryBiproducts Cᵒᵖ := .of_hasBinaryProducts
     let {X Y : Cᵒᵖ} (f : X ⟶ Y) : PreservesLimit (parallelPair f 0) F.obj :=
-      flat_preservesKernel f
+      Flat.preservesLimit_parallelPair_zero f
     exact F.obj.preservesFiniteLimits_of_preservesKernels
   · apply (flat_iff_exists_exact_weakCokernel F).mpr
     intro X Y f
     let S := (ShortComplex.mk (kernel.ι f.op) f.op (kernel.condition f.op)).map F.obj
     have he : S.Exact := S.exact_of_f_is_kernel (isLimitOfHasKernelOfPreservesLimit F.obj f.op)
-    exact ⟨_, _, IsWeakCokernel.of_isWeakLimit (h := kernel.condition f.op)
-      (kernelIsKernel f.op).isWeakLimit, S.ab_exact_iff_function_exact.mp he⟩
+    exact ⟨_, _, IsWeakCokernel.of_isLimit (h := kernel.condition f.op) (kernelIsKernel f.op),
+      S.ab_exact_iff_function_exact.mp he⟩
 
 end TauCeti.ModCat
