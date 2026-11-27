@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.LinearAlgebra.Eigenspace.Split
 import TauCeti.LinearAlgebra.End.FiniteOrder
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Brauer characters
@@ -285,11 +286,8 @@ theorem brauerCharacter_baseChange [HasEnoughRootsOfUnity k m] (k' : Type*) [Fie
     rw [brauerCharacter_of_coprime p τ' _ hg, baseChange_apply, LinearMap.charpoly_baseChange,
       LinearMap.charpoly_eq_prod_of_apply_eq_smul b hb, Polynomial.map_prod,
       brauerCharacter_eq_sum_of_apply_eq_smul p τ ρ hg b hb]
-    simp only [Polynomial.map_sub, map_X, map_C, Finset.prod_eq_multiset_prod]
-    have : Finset.univ.val.map (fun i ↦ X - C (algebraMap k k' (d i))) =
-        (Finset.univ.val.map (fun i ↦ algebraMap k k' (d i))).map (fun a ↦ X - C a) := by
-      rw [Multiset.map_map]; rfl
-    rw [this, roots_multiset_prod_X_sub_C, Multiset.map_map]
+    simp only [Polynomial.map_sub, map_X, map_C]
+    rw [roots_prod_X_sub_C_map, Multiset.map_map]
     exact Finset.sum_congr rfl fun i _ ↦ hτ _ (hd i)
   · rw [brauerCharacter_of_not_coprime p τ' _ hg, brauerCharacter_of_not_coprime p τ ρ hg]
 

@@ -61,11 +61,6 @@ theorem brauerCharacter_cubeRootLine (hp : p.Coprime 3) (ζ : rootsOfUnity 3 k) 
   rw [brauerCharacter_ofLinearCharacter p τ _ hg, Subgroup.coe_subtype,
     TauCeti.rootsOfUnityLift_coe]
 
-/-- The coercion of `μ₃(L)` into `L` is injective. -/
-theorem coe_rootsOfUnity_injective :
-    Function.Injective fun ζ : rootsOfUnity 3 L ↦ ((ζ : Lˣ) : L) :=
-  Units.val_injective.comp Subtype.val_injective
-
 /-- For `ζ ≠ 1` in `μ₃`, `ζ⁻¹ ≠ ζ`. -/
 theorem inv_ne_self {G : Type*} [CommGroup G] {ζ : G} (h3 : ζ ^ 3 = 1) (hζ : ζ ≠ 1) :
     ζ⁻¹ ≠ ζ := by
@@ -84,7 +79,7 @@ theorem brauerCharacter_cubeRootLine_ne (hp : p.Coprime 3) {ζ : rootsOfUnity 3 
   rw [brauerCharacter_cubeRootLine, brauerCharacter_cubeRootLine p τ hp]
   · intro h
     refine inv_ne_self (pow_three_eq_one ζ) hζ
-      (τ.injective (coe_rootsOfUnity_injective h))
+      (τ.injective (rootsOfUnity.coe_injective h))
   · exact hp
 
 /-- **Duals.** The dual of the line has Brauer character `τ ζ⁻¹` at `ζ`. -/
@@ -100,7 +95,7 @@ theorem brauerCharacter_dual_cubeRootLine_ne (hp : p.Coprime 3) {ζ : rootsOfUni
   rw [brauerCharacter_dual_cubeRootLine p τ hp, brauerCharacter_cubeRootLine p τ hp]
   intro h
   exact inv_ne_self (pow_three_eq_one ζ) hζ
-    (τ.injective (coe_rootsOfUnity_injective h))
+    (τ.injective (rootsOfUnity.coe_injective h))
 
 /-- **The eigenvalue reading.** Over a domain `L`, the sum of the line and its dual has Brauer
 character `-1` at `ζ ≠ 1`: the two eigenvalues `ζ, ζ⁻¹` lift to the two primitive cube roots of
@@ -111,7 +106,7 @@ theorem brauerCharacter_prod_dual_cubeRootLine [IsDomain L] (hp : p.Coprime 3)
   rw [brauerCharacter_prod, brauerCharacter_dual_cubeRootLine p τ hp,
     brauerCharacter_cubeRootLine p τ hp, map_inv]
   set x : L := ((τ ζ : Lˣ) : L)
-  have hx1 : x ≠ 1 := fun h ↦ hζ (τ.injective (coe_rootsOfUnity_injective (h.trans (by simp))))
+  have hx1 : x ≠ 1 := fun h ↦ hζ (τ.injective (rootsOfUnity.coe_injective (h.trans (by simp))))
   have hx3 : x ^ 3 = 1 := by
     simp only [x, ← Units.val_pow_eq_pow_val, ← SubmonoidClass.coe_pow, pow_three_eq_one,
       OneMemClass.coe_one, Units.val_one]

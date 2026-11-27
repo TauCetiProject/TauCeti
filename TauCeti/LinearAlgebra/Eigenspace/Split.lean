@@ -15,6 +15,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Diagonalization by a split separable annihilating polynomial
@@ -154,10 +155,7 @@ theorem charpoly_eq_prod_of_apply_eq_smul {f : M →ₗ[R] M} (b : Basis ι R M)
 theorem roots_charpoly_of_apply_eq_smul [IsDomain R] {f : M →ₗ[R] M} (b : Basis ι R M)
     {d : ι → R} (hf : ∀ i, f (b i) = d i • b i) :
     f.charpoly.roots = Finset.univ.val.map d := by
-  rw [charpoly_eq_prod_of_apply_eq_smul b hf, Finset.prod_eq_multiset_prod]
-  have : Finset.univ.val.map (fun i ↦ X - C (d i)) =
-      (Finset.univ.val.map d).map (fun a ↦ X - C a) := by rw [Multiset.map_map]; rfl
-  rw [this, roots_multiset_prod_X_sub_C]
+  rw [charpoly_eq_prod_of_apply_eq_smul b hf, roots_prod_X_sub_C_map]
 
 end LinearMap
 
