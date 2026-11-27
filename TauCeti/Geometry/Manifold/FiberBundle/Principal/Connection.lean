@@ -147,8 +147,7 @@ theorem mpullback_op_smul [PrincipalBundle G P] (hA : IsConnectionForm A) (g : G
     SmoothForm.mpullback (fun x : ManifoldTotalSpace G P ↦ op g • x) (contMDiff_const_smul (op g))
         A =
       SmoothForm.mapCoeff (F := EG) (G := EG) (Lie.adjointContinuousLinearMap (I := IG) g⁻¹) A := by
-  refine Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
-  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
+  refine SmoothBundleForm.ext_eval₁ fun x w ↦ ?_
   rw [SmoothForm.mpullback_apply_one, hA.apply_mfderiv_op_smul,
     SmoothForm.coe_mapCoeff (F := EG) (G := EG) (Lie.adjointContinuousLinearMap (I := IG) g⁻¹)]
   exact (RoughForm.mapCoeff_apply (F := EG) (G := EG) (Lie.adjointContinuousLinearMap (I := IG) g⁻¹)

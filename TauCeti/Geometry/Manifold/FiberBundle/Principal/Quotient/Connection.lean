@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Manifold.FiberBundle.Principal.Connection
 public import TauCeti.Geometry.Manifold.FiberBundle.Principal.Quotient
 
+import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
+
 /-!
 # Connection forms of free proper quotients
 
@@ -265,11 +267,8 @@ theorem mpullback_smul_mapCoeff_orbitConnectionForm
   -- `ν ∘ Ad(g) = Ad*_(g⁻¹) ν = ν`, read as continuous linear maps of the model space.
   have hνg : (LinearMap.toContinuousLinearMap ν : E →L[ℝ] ℝ).comp
       (Lie.adjointContinuousLinearMap (I := I) g) = LinearMap.toContinuousLinearMap ν :=
-    ContinuousLinearMap.ext fun X ↦ by
-      have h := LinearMap.congr_fun
-        ((congrArg (Lie.coadjointRepresentation ℝ I G g⁻¹) hν.symm).trans
-          (Representation.inv_self_apply _ g ν)) X
-      rwa [Lie.coadjointRepresentation_apply, inv_inv] at h
+    ContinuousLinearMap.ext
+      (Lie.mem_stabilizer_coadjointRepresentation_iff.1 (Representation.mem_stabilizer.2 hν))
   rw [SmoothForm.mpullback_mapCoeff, mpullback_smul_orbitConnectionForm hA,
     ← LinearMap.comp_apply, ← SmoothForm.mapCoeff_comp (F := E) (G := E)
       (LinearMap.toContinuousLinearMap ν) (Lie.adjointContinuousLinearMap (I := I) g)]
