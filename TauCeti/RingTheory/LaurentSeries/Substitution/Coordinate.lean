@@ -46,6 +46,8 @@ The final examples check the composition order for `φ = 2 X` and `ψ = X + X²`
 * `TauCeti.LaurentSeries.substAlgEquiv φ`: the substitution automorphism `f ↦ f (φ)` of `R⸨X⸩`.
 * `TauCeti.LaurentSeries.substAlgEquivHom`: `φ ↦ σ_φ` as a homomorphism to the opposite of the
   automorphism group.
+* `TauCeti.LaurentSeries.substAlgEquivRestrictScalars k φ`: `σ_φ` as an automorphism of
+  `k`-algebras for a `k`-algebra `R`, with the coefficientwise `k`-algebra structure of `R⸨X⸩`.
 
 ## Main results
 
@@ -263,6 +265,37 @@ theorem substAlgEquiv_homothety (a : Rˣ) :
   AlgEquiv.coe_toAlgHom_injective (algHom_eq_substAlgEquiv _ _ fun p ↦ by
     rw [AlgEquiv.coe_toAlgHom, rescale_coe, FormalCoordinate.substAlgEquiv_apply,
       FormalCoordinate.toPowerSeries_homothety, rescale_eq_subst]).symm
+
+/-! ### Substitution over a base ring of the coefficients -/
+
+section RestrictScalars
+
+-- The coefficientwise `k`-algebra structure on Laurent series, as in `CommAlgCat.laurentSeries`.
+attribute [local instance 1100] HahnSeries.instAlgebra
+
+variable (k : Type*) [CommSemiring k] [Algebra k R]
+
+/-- The substitution automorphism `σ_φ` of `R⸨X⸩` as an automorphism of `k`-algebras, for a
+`k`-algebra `R` and the coefficientwise `k`-algebra structure `HahnSeries.instAlgebra` of `R⸨X⸩`,
+the one carried by the loop groups `G(R⸨X⸩)`. Since `substAlgEquiv φ` is `R`-linear for the
+structure inherited from `R⟦X⟧`, which agrees with the coefficientwise one only propositionally,
+`AlgEquiv.restrictScalars` does not apply directly. Statements using it select the
+coefficientwise structure with `attribute [local instance 1100] HahnSeries.instAlgebra`. -/
+noncomputable def substAlgEquivRestrictScalars (φ : FormalCoordinate R) : R⸨X⸩ ≃ₐ[k] R⸨X⸩ :=
+  -- `substAlgEquiv φ` is stated for the `R`-algebra structure inherited from `R⟦X⟧`, which the
+  -- local instance would otherwise replace by the coefficientwise one.
+  .ofRingEquiv (f := @AlgEquiv.toRingEquiv _ _ _ _ _ _ (powerSeriesAlgebra ℤ R)
+      (powerSeriesAlgebra ℤ R) (substAlgEquiv φ)) fun c ↦ by
+    rw [HahnSeries.algebraMap_apply, HahnSeries.C_apply]
+    exact substAlgEquiv_single_zero φ _
+
+/-- The `k`-algebra form of `σ_φ` has the same values as `σ_φ`. -/
+@[simp]
+theorem substAlgEquivRestrictScalars_apply (φ : FormalCoordinate R) (f : R⸨X⸩) :
+    substAlgEquivRestrictScalars k φ f = substAlgEquiv φ f :=
+  (rfl)
+
+end RestrictScalars
 
 /-! ### Differentiation and residues -/
 

@@ -55,10 +55,18 @@ finite-measure sets.
   form a closed set.
 * `MeasureTheory.LpToLpRestrictCLM_eq_zero_iff`: the restriction of an `Lᵖ` class to a set vanishes
   exactly when the class vanishes almost everywhere on that set.
+* `MeasureTheory.Lp.restrictOfSubsetL`: the restriction `Lᵖ(μ|t) → Lᵖ(μ|s)` for `s ⊆ t`, with
+  `MeasureTheory.Lp.coeFn_restrictOfSubsetL`, the bound
+  `MeasureTheory.Lp.norm_restrictOfSubsetL_le` and its compatibility
+  `MeasureTheory.Lp.restrictOfSubsetL_LpToLpRestrictCLM` with `MeasureTheory.LpToLpRestrictCLM`.
 * `MeasureTheory.MemLp.integrableOn_of_subset` and
   `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`: a function in `Lᵖ(t)`, `1 ≤ p`, is
   integrable on every subset of `t` of finite measure, and for `p = 2` so is its squared distance
   to any constant.
+* `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_two_le` and
+  `MeasureTheory.MemLp.integrableOn_norm_rpow_of_subset`: for a function in `Lᵖ(t)`, the squared
+  distance to any constant, `2 ≤ p`, and the `q`-th power of the norm, `0 < q ≤ p`, are integrable
+  on every subset of `t` of finite measure.
 * `MeasureTheory.MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow`: Hölder's
   inequality bounding the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure by
   `‖g‖²_{L^q(t)} μ(s)^{1 - 2/q}`, `2 ≤ q`.
@@ -284,6 +292,27 @@ theorem MemLp.integrableOn_norm_sub_sq_of_subset {F : Type*} [SeminormedAddCommG
   gcongr
   exact (norm_sub_le _ _).trans (le_abs_self _)
 
+/-- For a function `g` in `Lᵖ(t)`, `2 ≤ p`, the squared distance `‖g - c‖²` to a constant `c` is
+integrable on every subset `s ⊆ t` of finite measure. -/
+theorem MemLp.integrableOn_norm_sub_sq_of_two_le {F : Type*} [SeminormedAddCommGroup F]
+    {g : X → F} {p : ℝ≥0∞} (hg : MemLp g p (μ.restrict t)) (hp : 2 ≤ p) (hst : s ⊆ t)
+    (hs : μ s ≠ ⊤) (c : F) :
+    IntegrableOn (fun x ↦ ‖g x - c‖ ^ 2) s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  exact ((hg.mono_measure (Measure.restrict_mono hst le_rfl)).mono_exponent hp)
+    |>.integrableOn_norm_sub_sq_of_subset subset_rfl hs c
+
+/-- For a function `g` in `Lᵖ(t)` and `0 < q` with `q ≤ p`, the power `‖g‖ ^ q` is integrable on
+every subset `s ⊆ t` of finite measure. -/
+theorem MemLp.integrableOn_norm_rpow_of_subset {F : Type*} [NormedAddCommGroup F]
+    {g : X → F} {p : ℝ≥0∞} (hg : MemLp g p (μ.restrict t)) {q : ℝ} (hq : 0 < q)
+    (hqp : ENNReal.ofReal q ≤ p) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
+    IntegrableOn (fun x ↦ ‖g x‖ ^ q) s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have h := ((hg.mono_measure (Measure.restrict_mono hst le_rfl)).mono_exponent hqp)
+    |>.integrable_norm_rpow (by simp [hq]) ENNReal.ofReal_ne_top
+  rwa [ENNReal.toReal_ofReal hq.le] at h
+
 /-- **Hölder's inequality for the `L²` mass on a subset.** For `2 ≤ q` and a function `g` in
 `L^q(t)`, the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure is at most
 `‖g‖²_{L^q(t)} μ(s)^{1 - 2/q}`. -/
@@ -318,5 +347,42 @@ theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {F : Type*}
       ring
 
 end Subset
+
+section RestrictOfSubset
+
+open scoped ENNReal
+
+variable {X F : Type*} [MeasurableSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {μ : Measure X} {p : ℝ≥0∞} [Fact (1 ≤ p)] {s t : Set X}
+
+/-- The restriction `Lᵖ(μ|t) → Lᵖ(μ|s)` for `s ⊆ t`, as a continuous linear map: it sends the
+class of `f` on `t` to the class of `f` on `s`. -/
+def Lp.restrictOfSubsetL (hst : s ⊆ t) : Lp F p (μ.restrict t) →L[ℝ] Lp F p (μ.restrict s) :=
+  Lp.LpToLpOfMeasureLeSMul ENNReal.one_ne_top
+    ((Measure.restrict_mono_set μ hst).trans_eq (one_smul _ _).symm)
+
+/-- The restriction to `s ⊆ t` of an `Lᵖ(μ|t)` class agrees with it almost everywhere on `s`. -/
+theorem Lp.coeFn_restrictOfSubsetL (hst : s ⊆ t) (f : Lp F p (μ.restrict t)) :
+    Lp.restrictOfSubsetL hst f =ᵐ[μ.restrict s] f :=
+  Lp.coeFn_LpToLpOfMeasureLeSMul _ _ f
+
+/-- The restriction `Lᵖ(μ|t) → Lᵖ(μ|s)` has norm at most one. -/
+theorem Lp.norm_restrictOfSubsetL_le (hst : s ⊆ t) :
+    ‖(Lp.restrictOfSubsetL hst : Lp F p (μ.restrict t) →L[ℝ] Lp F p (μ.restrict s))‖ ≤ 1 :=
+  (Lp.norm_LpToLpOfMeasureLeSMul_le _ _).trans (by simp)
+
+/-- Restricting to `t` and then to `s ⊆ t` is restricting to `s`. -/
+@[simp]
+theorem Lp.restrictOfSubsetL_LpToLpRestrictCLM {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 F]
+    [IsBoundedSMul 𝕜 F] (hst : s ⊆ t) (f : Lp F p μ) :
+    Lp.restrictOfSubsetL hst (LpToLpRestrictCLM X F 𝕜 μ p t f) =
+      LpToLpRestrictCLM X F 𝕜 μ p s f := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_restrictOfSubsetL hst (LpToLpRestrictCLM X F 𝕜 μ p t f),
+    ae_restrict_of_ae_restrict_of_subset hst (LpToLpRestrictCLM_coeFn 𝕜 t f),
+    LpToLpRestrictCLM_coeFn 𝕜 s f] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+
+end RestrictOfSubset
 
 end MeasureTheory

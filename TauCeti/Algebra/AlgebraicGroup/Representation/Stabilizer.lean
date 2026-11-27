@@ -45,6 +45,8 @@ The last statement is the infinitesimal input to the comparison of `G`-stable an
   rational points carrying `W` onto itself.
 * `Submodule.stabilizerHopfIdeal_le_iff`: its universal property among Hopf ideals.
 * `Submodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `W` is a subcomodule.
+* `Submodule.stabilizerHopfIdeal_map_of_injective`: an injective morphism of representations
+  does not change stabilizers.
 * `Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the stabilizer of
   `W` under the differentiated representation.
 
@@ -335,6 +337,26 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker,
     W.stabilizerHopfIdeal_le_ker_iff g, hbc, ← map_comp, hcomp, map_comp]
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
+
+section Map
+
+variable {V W : Type*} [AddCommGroup V] [Module k V] [Comodule k H V] [AddCommGroup W]
+  [Module k W] [Comodule k H W]
+
+/-- **Stabilizers along an injective morphism.** An injective morphism `f : V → W` of
+representations does not change stabilizers: `f(L)` and `L` have the same stabilizer Hopf ideal. -/
+theorem stabilizerHopfIdeal_map_of_injective (f : Comodule.Hom k H V W)
+    (hf : Function.Injective f) (L : Submodule k V) :
+    (L.map f.toLinearMap).stabilizerHopfIdeal H = L.stabilizerHopfIdeal H := by
+  refine eq_of_forall_ge_iff fun J ↦ ?_
+  -- Test both stabilizers against the quotient point `H → H ⧸ J`, whose kernel is `J`.
+  let g := WithConv.toConv (Ideal.Quotient.mkₐ k J.toIdeal)
+  have hJ : RingHom.ker g.ofConv = J.toIdeal := Ideal.Quotient.mkₐ_ker k _
+  rw [← HopfIdeal.toIdeal_le_toIdeal, ← HopfIdeal.toIdeal_le_toIdeal, ← hJ,
+    stabilizerHopfIdeal_le_ker_iff, stabilizerHopfIdeal_le_ker_iff]
+  exact Comodule.Hom.map_endOfPoint_baseChange_eq_iff f hf L _
+
+end Map
 
 end Hopf
 

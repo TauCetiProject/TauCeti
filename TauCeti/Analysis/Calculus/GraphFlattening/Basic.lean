@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.MetricSpace.Holder
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -19,13 +20,18 @@ import TauCeti.Topology.MetricSpace.Holder
 For a continuous real function `γ` on a topological space `E`, the shear
 `(t, y) ↦ (t - γ(y), y)` is an ambient homeomorphism of the product `WithLp 2 (ℝ × E)`.
 It carries the region `γ(y) < t` to the positive normal half-space and its graph to
-height zero. Its inverse adds `γ(y)` to the normal coordinate.
+height zero. Its inverse adds `γ(y)` to the normal coordinate, and so pulls the model domain
+`TauCeti.normalEpigraph φ` back to `TauCeti.normalHalfSpace 0`
+(`TauCeti.coe_normalHalfSpace_eq_preimage_graphFlattening_symm`).
 
 At points where `γ` is differentiable, the derivative is the linear shear
 `(s, z) ↦ (s - Dγ(y) z, z)`. Its determinant is one and its operator norm is at
 most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. The shear differs from the
 identity by the height alone, so its iterated derivatives of order at least two are bounded by
-those of `γ`, and so are those of its inverse. For a `K`-Lipschitz `γ`,
+those of `γ`, and so are those of its inverse. A Hölder bound on `Dγ` over a set of tangential
+points passes with the same constant to the derivatives of the shear and of its inverse over the
+points above that set; for `α = 1` this makes them Lipschitz when `Dγ` is, which is the
+`C^{1,1}` case of a boundary chart. For a `K`-Lipschitz `γ`,
 both the shear and its inverse are `(1 + K)`-Lipschitz. Two shears differ pointwise by the
 difference of their heights. These are the chart estimates used to
 transfer Sobolev trace and extension operators from a half-space to a domain with a graph
@@ -102,6 +108,14 @@ theorem graphFlattening_image_eq (γ : E → ℝ) (hγ : Continuous γ) :
   ext x
   rw [(graphFlattening γ hγ).image_eq_preimage_symm]
   simp
+
+/-- Inverse graph flattening pulls the region above the graph of `φ` back to the half-space
+`{0 < t}`. -/
+theorem coe_normalHalfSpace_eq_preimage_graphFlattening_symm (φ : C(E, ℝ)) :
+    (normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) =
+      (graphFlattening φ φ.continuous).symm ⁻¹' normalEpigraph φ := by
+  rw [← Homeomorph.image_eq_preimage_symm, coe_normalEpigraph, graphFlattening_image_lt,
+    coe_normalHalfSpace]
 
 variable [AddCommGroup E] [Module ℝ E] in
 private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous γ) :
@@ -279,29 +293,56 @@ theorem norm_fderiv_graphFlattening_le_one_add {γ : E → ℝ} {L : ℝ}
   (norm_fderiv_graphFlattening_le hγ.continuous
     (hγ x.snd)).trans (add_le_add le_rfl (hL x.snd))
 
+/-- Two linear graph shears are at operator distance at most the distance of their height
+functionals: they differ by the difference of the functionals placed in the normal coordinate. -/
+theorem dist_graphFlatteningL_le (L₁ L₂ : E →L[ℝ] ℝ) :
+    dist (graphFlatteningL L₁).toContinuousLinearMap (graphFlatteningL L₂).toContinuousLinearMap ≤
+      dist L₁ L₂ := by
+  rw [dist_eq_norm, dist_eq_norm]
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun x => ?_
+  have hx : ((graphFlatteningL L₁).toContinuousLinearMap -
+      (graphFlatteningL L₂).toContinuousLinearMap) x = WithLp.toLp 2 ((L₂ - L₁) x.snd, 0) := by
+    apply (WithLp.ext_iff 2).2
+    apply Prod.ext <;> simp
+  rw [hx, WithLp.norm_toLp_fst, norm_sub_rev L₁]
+  exact ((L₂ - L₁).le_opNorm _).trans
+    (mul_le_mul_of_nonneg_left (WithLp.norm_snd_le (x := x)) (norm_nonneg _))
+
+/-- **Hölder continuity of the derivative of graph flattening, on a set.** If `γ` is differentiable
+at the points of `t` and `Dγ` is `α`-Hölder on `t` with constant `K`, then the derivative of graph
+flattening is `α`-Hölder with constant `K` on the points whose tangential coordinate lies in `t`. -/
+theorem holderOnWith_fderiv_graphFlattening {γ : E → ℝ} (hγ : Continuous γ) {t : Set E}
+    (hγt : ∀ y ∈ t, DifferentiableAt ℝ γ y) {K α : ℝ≥0} (hK : HolderOnWith K α (fderiv ℝ γ) t) :
+    HolderOnWith K α (fderiv ℝ (graphFlattening γ hγ)) {x | x.snd ∈ t} := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [fderiv_graphFlattening hγ (hγt _ hx), fderiv_graphFlattening hγ (hγt _ hy)]
+  refine (dist_graphFlatteningL_le _ _).trans ((hK.dist_le hx hy).trans ?_)
+  gcongr
+  rw [dist_eq_norm, dist_eq_norm]
+  exact WithLp.norm_snd_le (x := x - y)
+
 /-- **Hölder continuity of the derivative of graph flattening.** If `Dγ` is `α`-Hölder with
 constant `K`, so is the derivative of graph flattening: two linear shears differ by the difference
 of their height functionals placed in the normal coordinate. -/
 theorem holderWith_fderiv_graphFlattening {γ : E → ℝ} (hγ : Differentiable ℝ γ) {K α : ℝ≥0}
     (hK : HolderWith K α (fderiv ℝ γ)) :
-    HolderWith K α (fderiv ℝ (graphFlattening γ hγ.continuous)) := by
-  have hdist (L₁ L₂ : E →L[ℝ] ℝ) : dist (graphFlatteningL L₁).toContinuousLinearMap
-      (graphFlatteningL L₂).toContinuousLinearMap ≤ dist L₁ L₂ := by
-    rw [dist_eq_norm, dist_eq_norm]
-    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun x => ?_
-    have hx : ((graphFlatteningL L₁).toContinuousLinearMap -
-        (graphFlatteningL L₂).toContinuousLinearMap) x = WithLp.toLp 2 ((L₂ - L₁) x.snd, 0) := by
-      apply (WithLp.ext_iff 2).2
-      apply Prod.ext <;> simp
-    rw [hx, WithLp.norm_toLp_fst, norm_sub_rev L₁]
-    exact ((L₂ - L₁).le_opNorm _).trans
-      (mul_le_mul_of_nonneg_left (WithLp.norm_snd_le (x := x)) (norm_nonneg _))
-  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
-  rw [fderiv_graphFlattening hγ.continuous (hγ _), fderiv_graphFlattening hγ.continuous (hγ _)]
-  refine (hdist _ _).trans ((hK.dist_le _ _).trans ?_)
-  gcongr
-  rw [dist_eq_norm, dist_eq_norm]
-  exact WithLp.norm_snd_le (x := x - y)
+    HolderWith K α (fderiv ℝ (graphFlattening γ hγ.continuous)) :=
+  holderOnWith_univ.1 (by
+    simpa using holderOnWith_fderiv_graphFlattening hγ.continuous (fun y _ => hγ y)
+      (holderOnWith_univ.2 hK))
+
+/-- **Hölder continuity of the derivative of inverse graph flattening, on a set.** If `γ` is
+differentiable at the points of `t` and `Dγ` is `α`-Hölder on `t` with constant `K`, then the
+derivative of inverse graph flattening is `α`-Hölder with constant `K` on the points whose
+tangential coordinate lies in `t`. -/
+theorem holderOnWith_fderiv_graphFlattening_symm {γ : E → ℝ} (hγ : Continuous γ) {t : Set E}
+    (hγt : ∀ y ∈ t, DifferentiableAt ℝ γ y) {K α : ℝ≥0} (hK : HolderOnWith K α (fderiv ℝ γ) t) :
+    HolderOnWith K α (fderiv ℝ (graphFlattening γ hγ).symm) {x | x.snd ∈ t} := by
+  rw [graphFlattening_symm]
+  refine holderOnWith_fderiv_graphFlattening hγ.neg (fun y hy => (hγt y hy).neg) ?_
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [fderiv_neg, fderiv_neg, dist_neg_neg]
+  exact hK.dist_le hx hy
 
 /-- The derivative of inverse graph flattening has norm at most `1 + ‖Dγ(y)‖` at a
 differentiability point of the height. -/

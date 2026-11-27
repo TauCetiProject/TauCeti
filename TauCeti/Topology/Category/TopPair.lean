@@ -65,9 +65,11 @@ projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
 them, and so their union, into each other (`TopCat.mapsTo_tensorHom_preimage_fst`,
-`TopCat.mapsTo_tensorHom_preimage_union`). The pair `(X × Y, X × B)` of `TopPair.prodLeft`
-includes into this pair (`TopPair.prodLeftToPreimageUnion`). The product `A × Y` of the subspace
-`A` with `Y` is homeomorphic to the preimage of `A` under the first projection
+`TopCat.mapsTo_tensorHom_preimage_union`). For points `x` and `y`, the union of the preimages of
+`X ∖ {x}` and `Y ∖ {y}` is the complement of `(x, y)`
+(`TopCat.preimage_fst_compl_union_preimage_snd_compl`). The pair `(X × Y, X × B)` of
+`TopPair.prodLeft` includes into this pair (`TopPair.prodLeftToPreimageUnion`). The product `A × Y`
+of the subspace `A` with `Y` is homeomorphic to the preimage of `A` under the first projection
 (`TopCat.prodPreimageFstIso`).
 
 For a map `π : X → Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
@@ -819,6 +821,15 @@ lemma mapsTo_tensorHom_preimage_union {A' : Set X'} {B' : Set Y'} (f : X ⟶ X')
     (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') :
     Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst X' Y' ⁻¹' A' ∪ snd X' Y' ⁻¹' B') :=
   (mapsTo_tensorHom_preimage_fst f g hf).union_union (mapsTo_tensorHom_preimage_snd f g hg)
+
+/-- The union of the preimages of `X ∖ {x}` and `Y ∖ {y}` under the projections of `X × Y` is the
+complement of the point `(x, y)`. -/
+lemma preimage_fst_compl_union_preimage_snd_compl (x : X) (y : Y) :
+    fst X Y ⁻¹' ({x}ᶜ : Set X) ∪ snd X Y ⁻¹' ({y}ᶜ : Set Y) = {(x, y)}ᶜ := by
+  -- The cartesian projections of `TopCat` are `Prod.fst` and `Prod.snd` by definition, and Mathlib
+  -- has no lemma rewriting them as such.
+  change Prod.fst ⁻¹' {x}ᶜ ∪ Prod.snd ⁻¹' {y}ᶜ = ({(x, y)}ᶜ : Set (X × Y))
+  rw [← Set.singleton_prod_singleton, Set.compl_prod_eq_union, Set.prod_univ, Set.univ_prod]
 
 variable (X Y A) in
 /-- The homeomorphism `A × Y ≅ fst⁻¹(A)` between the product of the subspace `A ⊆ X` with `Y`

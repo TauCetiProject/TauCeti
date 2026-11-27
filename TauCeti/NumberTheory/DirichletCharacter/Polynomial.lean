@@ -14,7 +14,7 @@ import TauCeti.Algebra.GroupWithZero.Divisibility
 import TauCeti.Data.ZMod.OrderOf
 import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Products of linear Euler factors over Dirichlet characters

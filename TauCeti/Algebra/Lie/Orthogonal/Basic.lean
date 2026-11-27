@@ -53,11 +53,18 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   `LieAlgebra.Orthogonal.star_indefiniteDiagonal`: it squares to one, so is its own inverse,
   its diagonal entries are `±1`, hence nonzero, it is the block matrix `fromBlocks 1 0 0 (-1)`, and
   it is Hermitian, that is, self-adjoint.
+* `LieAlgebra.Orthogonal.indefiniteDiagonal_of_isEmpty`: with no negative coordinates it is the
+  identity matrix.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mulVec_apply` and
   `LieAlgebra.Orthogonal.vecMul_indefiniteDiagonal_apply`: it scales the coordinates of a vector by
   its diagonal entries.
 * `LieAlgebra.Orthogonal.mem_so'` and `LieAlgebra.Orthogonal.mem_so'_iff_forall`: membership in
   the indefinite orthogonal Lie algebra is the matrix equation `Xᵀ J = J (-X)`, or entrywise.
+* `LieAlgebra.Orthogonal.diag_eq_zero_of_mem_so'`,
+  `LieAlgebra.Orthogonal.apply_inr_inl_of_mem_so'` and
+  `LieAlgebra.Orthogonal.apply_inr_inr_of_mem_so'`: entrywise, an element of `𝔰𝔬(p, q)` has zero
+  diagonal (without additive torsion), transposed off-diagonal blocks and a skew-symmetric lower
+  diagonal block.
 * `LieAlgebra.Orthogonal.transpose_mem_so'` and `LieAlgebra.Orthogonal.conjTranspose_mem_so'`: the
   indefinite orthogonal Lie algebra is closed under transpose, and under conjugate transpose over
   a star ring.
@@ -119,6 +126,18 @@ theorem indefiniteDiagonal_mul_indefiniteDiagonal :
   rw [indefiniteDiagonal, diagonal_mul_diagonal, ← diagonal_one]
   congr 1
   ext (i | i) <;> simp
+
+omit [Fintype p] [Fintype q] in
+open Matrix in
+/-- With no negative coordinates, the Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite
+form is the identity. -/
+@[simp]
+theorem indefiniteDiagonal_of_isEmpty [IsEmpty q] : indefiniteDiagonal p q R = 1 := by
+  rw [indefiniteDiagonal, ← diagonal_one]
+  congr 1
+  ext (i | i)
+  · rfl
+  · exact isEmptyElim i
 
 open Matrix in
 /-- Multiplying twice on the left by the Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite
@@ -201,6 +220,24 @@ theorem mem_so'_iff_forall (N : Matrix (p ⊕ q) (p ⊕ q) R) :
       ∀ a b, N b a * indefiniteDiagonal p q R b b = -(indefiniteDiagonal p q R a a * N a b) := by
   rw [mem_so', ← Matrix.ext_iff]
   simp [indefiniteDiagonal, Matrix.mul_diagonal, Matrix.diagonal_mul]
+
+/-- The diagonal of an element of `𝔰𝔬(p, q)` vanishes when `R` has no additive torsion. -/
+theorem diag_eq_zero_of_mem_so' [IsAddTorsionFree R] {X : Matrix (p ⊕ q) (p ⊕ q) R}
+    (hX : X ∈ so' p q R) : X.diag = 0 := by
+  funext a
+  have h := (mem_so'_iff_forall X).mp hX a a
+  rcases a with a | a <;> simpa [indefiniteDiagonal, self_eq_neg, neg_eq_self] using h
+
+/-- The off-diagonal blocks of an element of `𝔰𝔬(p, q)` are transposes of each other. -/
+theorem apply_inr_inl_of_mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} (hX : X ∈ so' p q R) (i : p)
+    (j : q) : X (.inr j) (.inl i) = X (.inl i) (.inr j) := by
+  simpa [indefiniteDiagonal] using (mem_so'_iff_forall X).mp hX (.inl i) (.inr j)
+
+/-- The lower diagonal block of an element of `𝔰𝔬(p, q)` is skew-symmetric. -/
+theorem apply_inr_inr_of_mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} (hX : X ∈ so' p q R)
+    (j j' : q) : X (.inr j') (.inr j) = -X (.inr j) (.inr j') := by
+  simpa [indefiniteDiagonal, neg_eq_iff_eq_neg] using
+    (mem_so'_iff_forall X).mp hX (.inr j) (.inr j')
 
 open Matrix in
 /-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under transpose. -/

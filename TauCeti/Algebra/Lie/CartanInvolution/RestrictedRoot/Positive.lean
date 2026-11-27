@@ -5,686 +5,384 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.RootSystem
-public import TauCeti.LinearAlgebra.RootSystem.Chamber
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
-public import Mathlib.LinearAlgebra.RootSystem.BaseExists
-import Mathlib.Algebra.Module.Submodule.Union
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
+public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Decomposition
+public import Mathlib.Algebra.Lie.Engel
 
 /-!
-# Positive restricted root systems, Weyl chambers, and simple restricted roots
+# The positive restricted root space `𝔫`
 
-Let `θ` be a Cartan involution of a real semisimple Lie algebra `𝔤₀` and `𝔞` a maximal
-abelian subspace of its `-1`-eigenspace `𝔭`. Any element `H₀ ∈ 𝔞` avoiding every root
-hyperplane `ker λ` (`λ ∈ Σ`) partitions the restricted roots `Σ` into positive roots
-`Σ⁺(H₀) = {λ ∈ Σ | λ(H₀) > 0}` (`Submodule.positiveRestrictedRoots`) and negative roots
-`-Σ⁺(H₀)`, and determines the positive restricted root space
-`𝔫 = ⨁_{λ ∈ Σ⁺} 𝔤_λ` (`Submodule.positiveRestrictedRootSpace`).
+Let `𝔞` be a submodule of a Lie algebra `L` over an ordered ring and `H₀ ∈ 𝔞`. The restricted
+roots `λ` with `λ(H₀) > 0` form the positive system `Σ⁺` cut out by `H₀`, and the sum of their
+restricted root spaces is
 
-Passing to the indivisible reduced subsystem `Σ_indiv` (`indivisibleRestrictedRootPairing`), the
-open Weyl chambers of `Σ` in `𝔞` are the open dominant chambers
-`(indivisibleRestrictedRootPairing).flip.openDominantChamber b.flip` indexed by bases `b` of
-`Σ_indiv`. This file establishes:
+`𝔫 = ⊕_{λ ∈ Σ⁺} 𝔤_λ` (`Submodule.positiveRestrictedRootSpace 𝔞 H₀`).
 
-* existence of regular elements in `𝔞` (`Submodule.exists_regular_restrictedRoots`) and hence of
-  positive restricted root systems;
-* the explicit bijection between positive restricted root systems `Σ⁺` and bases `b` of
-  `Σ_indiv` (`LieEquiv.IsCartanInvolution.baseEquivPositiveRestrictedRootSystem`), with every `H₀`
-  in the open dominant chamber of `b.flip` in `𝔞` inducing `Σ⁺(b)`;
-* integrality and sign of restricted root coordinates: relative to `b`, every restricted root is
-  either a `ℤ`-linear combination of `b.support` with all coefficients `≥ 0` or one with all
-  coefficients `≤ 0`
-  (`LieEquiv.IsCartanInvolution.exists_int_nonneg_or_nonpos_of_mem_restrictedRoots`), with the sign
-  determined by membership in `Σ⁺(b)`
-  (`LieEquiv.IsCartanInvolution.exists_nat_eq_sum_of_mem_positiveRestrictedRootsOfBase`,
-  `LieEquiv.IsCartanInvolution.exists_int_nonpos_eq_sum_of_notMem_positiveRestrictedRootsOfBase`);
-* the transitive and simply transitive action of the restricted Weyl group `W(Σ)` on positive
-  restricted root systems
-  (`LieEquiv.IsCartanInvolution.existsUnique_weylGroup_smul_positiveRestrictedRoots`), obtained by
-  transporting `RootPairing.Base.existsUnique_map_eq` along `restrictedWeylGroupEquiv`.
+Since `[𝔤_λ, 𝔤_μ] ⊆ 𝔤_{λ + μ}` and `λ(H₀) > 0`, `μ(H₀) ≥ 0` give `(λ + μ)(H₀) > 0`, the space `𝔫` is
+a Lie subalgebra (`Submodule.positiveRestrictedRootSubalgebra`), normalized by `𝔞` and by the
+centralizer `𝔤_0` of `𝔞`. If `L` is Noetherian, each `ad x`, `x ∈ 𝔫`, strictly raises the value at
+`H₀` of the restricted roots involved, which takes finitely many values, so a power of `ad x` kills
+`𝔫` and `𝔫` is a nilpotent Lie algebra. If moreover the restricted root spaces span `L`, `ad x` is
+nilpotent on `L`, and by Engel's theorem `𝔫` acts nilpotently on `L`. For an automorphism `θ`
+with `𝔞 ⊆ 𝔭`, `θ` maps `𝔫` onto the negative counterpart `𝔫⁻ = positiveRestrictedRootSpace 𝔞 (-H₀)`,
+and `𝔤_0 + 𝔫` meets `𝔫⁻` trivially.
+
+For a Cartan involution of a real Lie algebra and an abelian `𝔞 ⊆ 𝔭` these hypotheses hold. For
+`𝔞` maximal abelian and `H₀` regular, `𝔫` is the Lie algebra of the nilpotent factor `N` of the
+Iwasawa decomposition `G = KAN` of a real semisimple Lie group, and an ideal of the minimal
+parabolic subalgebra `𝔤_0 ⊕ 𝔫 = 𝔪 ⊕ 𝔞 ⊕ 𝔫`. The Lie algebra decompositions `𝔤₀ = 𝔫⁻ ⊕ 𝔤_0 ⊕ 𝔫`
+and `𝔤₀ = 𝔨 ⊕ 𝔞 ⊕ 𝔫` are in `TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Iwasawa`.
 
 ## Main definitions
 
-* `Submodule.positiveRestrictedRoots`: the positive restricted roots `{λ ∈ Σ | 0 < λ(H₀)}`
-  associated to `H₀ ∈ 𝔞`.
-* `Submodule.positiveRestrictedRootSpace`: the sum `⨆ λ ∈ Σ⁺(H₀), 𝔤_λ` of the positive
-  restricted root spaces.
-* `Submodule.IsPositiveRestrictedRootSystem`: predicate that `S ⊆ Σ` arises from some regular
-  element `H₀ ∈ 𝔞`.
-* `LieEquiv.IsCartanInvolution.positiveRestrictedRootsOfBase`: the positive restricted root system
-  `Σ ∩ posRootCone(b)` induced by a base `b` of `Σ_indiv`.
-* `LieEquiv.IsCartanInvolution.baseEquivPositiveRestrictedRootSystem`: the equivalence between bases
-  of `Σ_indiv` and positive restricted root systems.
+* `Submodule.positiveRestrictedRootSpace`: the sum `𝔫` of the restricted root spaces of the
+  restricted roots positive at `H₀`.
+* `Submodule.positiveRestrictedRootSubalgebra`: `𝔫` as a Lie subalgebra.
 
 ## Main results
 
-* `Submodule.exists_regular_restrictedRoots`: there exists `H₀ ∈ 𝔞` on which no restricted root
-  vanishes.
-* `positiveRestrictedRootsOfBase_eq_positiveRestrictedRoots_of_mem_openDominantChamber`: every
-  `H₀` in the open dominant chamber of `b.flip` induces `Σ⁺(b)`.
-* `LieEquiv.IsCartanInvolution.exists_int_nonneg_or_nonpos_of_mem_restrictedRoots`: every
-  restricted root is a `ℤ`-linear combination of the simple restricted roots with all coefficients
-  `≥ 0` or all `≤ 0`.
-* `LieEquiv.IsCartanInvolution.existsUnique_weylGroup_smul_positiveRestrictedRoots`: `W(Σ)` acts
-  simply transitively on the positive restricted root systems.
+* `Submodule.positiveRestrictedRootSpace_le_iff`: `𝔫 ≤ N` exactly when `𝔤_λ ≤ N` for every `λ`
+  with `λ(H₀) > 0`; `Submodule.apply_mem_of_mem_positiveRestrictedRootSpace` is its form for the
+  image of `𝔫` under a linear map.
+* `Submodule.lie_mem_positiveRestrictedRootSpace`: `[𝔫, 𝔫] ⊆ 𝔫`.
+* `Submodule.lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace`: `[𝔤_μ, 𝔫] ⊆ 𝔫` for
+  `μ(H₀) ≥ 0`, in particular for `μ = 0`.
+* `Submodule.lie_mem_positiveRestrictedRootSpace_of_mem`: `[𝔞, 𝔫] ⊆ 𝔫`.
+* `Submodule.disjoint_restrictedRootSpace_zero_sup_positiveRestrictedRootSpace`: `𝔤_0 + 𝔫` and
+  `𝔫⁻` are independent; `Submodule.disjoint_restrictedRootSpace_zero_positiveRestrictedRootSpace`
+  and `Submodule.disjoint_positiveRestrictedRootSpace`: `𝔤_0 ∩ 𝔫 = 0`, and `𝔞 ∩ 𝔫 = 0` for abelian
+  `𝔞`.
+* `LieEquiv.map_positiveRestrictedRootSpace`: `θ 𝔫 = 𝔫⁻` for `𝔞 ⊆ 𝔭`.
+* `Submodule.lieRing_isNilpotent_positiveRestrictedRootSubalgebra`: `𝔫` is a nilpotent Lie
+  algebra if `L` is torsion-free and Noetherian over a linearly ordered commutative ring;
+  `LieEquiv.IsCartanInvolution.lieRing_isNilpotent_positiveRestrictedRootSubalgebra` is its form
+  for a Lie algebra with a Cartan involution.
+* `Submodule.isNilpotent_ad_of_mem_positiveRestrictedRootSpace`,
+  `Submodule.lieModule_isNilpotent_positiveRestrictedRootSubalgebra`: if moreover the restricted
+  root spaces span `L`, `ad x` is nilpotent for `x ∈ 𝔫` and `𝔫` acts nilpotently on `L`.
+* `LieEquiv.IsCartanInvolution.lieModule_isNilpotent_positiveRestrictedRootSubalgebra`: the same
+  for a Cartan involution of a real Lie algebra and an abelian `𝔞 ⊆ 𝔭`.
 
 ## References
 
-* A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Chapter VI, §5.
-* S. Helgason, *Differential Geometry, Lie Groups, and Symmetric Spaces*, Chapter VII, §2.
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Chapter VI, §4, Proposition 6.40 and
+  the definition of `𝔫` before Proposition 6.43.
 -/
 
 public section
 
-open LieAlgebra LieModule Module
+open LieAlgebra Module
 
 namespace Submodule
 
-section Positive
+section Preorder
 
-variable {R L : Type*} [CommRing R] [LT R] [LieRing L] [LieAlgebra R L]
+variable {R L : Type*} [CommRing R] [Preorder R] [LieRing L] [LieAlgebra R L]
+  {𝔞 : Submodule R L} {H₀ : 𝔞} {μ : Dual R 𝔞} {x y : L}
 
-/-- The **positive restricted roots** defined by `H₀ ∈ 𝔞`: those restricted roots `λ ∈ Σ`
-with `0 < λ(H₀)`. -/
-def positiveRestrictedRoots (𝔞 : Submodule R L) (H₀ : 𝔞) : Set (Dual R 𝔞) :=
-  {μ ∈ 𝔞.restrictedRoots | 0 < μ H₀}
-
-/-- The **positive restricted root space** defined by `H₀ ∈ 𝔞`: the sum
-`⨆ λ ∈ Σ⁺(H₀), 𝔤_λ`. -/
+/-- The positive restricted root space `𝔫 = ⊕_{λ ∈ Σ⁺} 𝔤_λ` of a submodule `𝔞` and `H₀ ∈ 𝔞`: the
+sum of the restricted root spaces `𝔤_λ` of the restricted roots `λ` with `λ(H₀) > 0`. -/
 def positiveRestrictedRootSpace (𝔞 : Submodule R L) (H₀ : 𝔞) : Submodule R L :=
-  ⨆ μ ∈ 𝔞.positiveRestrictedRoots H₀, 𝔞.restrictedRootSpace μ
+  ⨆ (μ ∈ 𝔞.restrictedRoots) (_ : 0 < μ H₀), 𝔞.restrictedRootSpace μ
 
-/-- Predicate that a subset `S ⊆ 𝔞*` is the system of **positive restricted roots** cut out by
-some regular element `H₀ ∈ 𝔞`. -/
-def IsPositiveRestrictedRootSystem (𝔞 : Submodule R L) (S : Set (Dual R 𝔞)) : Prop :=
-  ∃ H₀ : 𝔞,
-    (∀ μ ∈ 𝔞.restrictedRoots, μ H₀ ≠ 0) ∧ S = 𝔞.positiveRestrictedRoots H₀
-
-variable {𝔞 : Submodule R L} {H₀ : 𝔞} {μ : Dual R 𝔞}
-
-@[simp]
-theorem mem_positiveRestrictedRoots :
-    μ ∈ 𝔞.positiveRestrictedRoots H₀ ↔ μ ∈ 𝔞.restrictedRoots ∧ 0 < μ H₀ :=
-  Iff.rfl
-
-/-- Every positive restricted root is a restricted root. -/
-theorem positiveRestrictedRoots_subset :
-    𝔞.positiveRestrictedRoots H₀ ⊆ 𝔞.restrictedRoots :=
-  fun _ h ↦ h.left
-
-/-- A positive restricted root pairs positively with `H₀`. -/
-theorem pos_of_mem_positiveRestrictedRoots (hμ : μ ∈ 𝔞.positiveRestrictedRoots H₀) :
-    0 < μ H₀ :=
-  hμ.right
-
-/-- Every positive restricted root is nonzero. -/
-theorem ne_zero_of_mem_positiveRestrictedRoots (hμ : μ ∈ 𝔞.positiveRestrictedRoots H₀) :
-    μ ≠ 0 :=
-  (mem_restrictedRoots.mp hμ.left).left
-
-/-- If `R` is a domain and `L` is torsion-free and Noetherian over `R`, there are finitely many
-positive restricted roots. -/
-theorem finite_positiveRestrictedRoots [IsDomain R] [IsTorsionFree R L] [IsNoetherian R L] :
-    (𝔞.positiveRestrictedRoots H₀).Finite :=
-  finite_restrictedRoots.subset positiveRestrictedRoots_subset
-
-/-- The zero subspace has no positive restricted roots. -/
-@[simp]
-theorem positiveRestrictedRoots_bot (H : (⊥ : Submodule R L)) :
-    (⊥ : Submodule R L).positiveRestrictedRoots H = ∅ := by
-  simp [positiveRestrictedRoots]
-
-/-- Every positive restricted root space lies in `positiveRestrictedRootSpace`. -/
-theorem restrictedRootSpace_le_positiveRestrictedRootSpace
-    (hμ : μ ∈ 𝔞.positiveRestrictedRoots H₀) :
-    𝔞.restrictedRootSpace μ ≤ 𝔞.positiveRestrictedRootSpace H₀ :=
-  le_biSup (fun ν ↦ 𝔞.restrictedRootSpace ν) hμ
-
-/-- Unfolding lemma for `positiveRestrictedRootSpace`. -/
-theorem positiveRestrictedRootSpace_def :
+/-- `𝔫` is the sum of the restricted root spaces of all functionals positive at `H₀`: those that
+are not restricted roots contribute `0`. -/
+theorem positiveRestrictedRootSpace_eq_iSup :
     𝔞.positiveRestrictedRootSpace H₀ =
-      ⨆ μ ∈ 𝔞.positiveRestrictedRoots H₀, 𝔞.restrictedRootSpace μ :=
-  (rfl)
+      ⨆ (μ : Dual R 𝔞) (_ : 0 < μ H₀), 𝔞.restrictedRootSpace μ := by
+  refine le_antisymm (iSup₂_le fun μ _ ↦ iSup_le fun h ↦ le_iSup₂_of_le μ h le_rfl)
+    (iSup₂_le fun μ h ↦ ?_)
+  by_cases hbot : 𝔞.restrictedRootSpace μ = ⊥
+  · exact hbot.le.trans bot_le
+  have hμ : μ ≠ 0 := by
+    rintro rfl
+    exact lt_irrefl _ h
+  exact le_iSup₂_of_le μ (mem_restrictedRoots.mpr ⟨hμ, hbot⟩) (le_iSup_of_le h le_rfl)
 
-/-- `positiveRestrictedRootSpace` is bounded by `N` iff each positive restricted root space is
-bounded by `N`. -/
+/-- `𝔫` contains the restricted root space of every functional positive at `H₀`. -/
+theorem restrictedRootSpace_le_positiveRestrictedRootSpace (h : 0 < μ H₀) :
+    𝔞.restrictedRootSpace μ ≤ 𝔞.positiveRestrictedRootSpace H₀ := by
+  rw [positiveRestrictedRootSpace_eq_iSup]
+  exact le_iSup₂_of_le μ h le_rfl
+
+/-- `𝔫` lies in a submodule `N` exactly when `N` contains the restricted root space of every
+functional positive at `H₀`. -/
 theorem positiveRestrictedRootSpace_le_iff {N : Submodule R L} :
     𝔞.positiveRestrictedRootSpace H₀ ≤ N ↔
-      ∀ μ ∈ 𝔞.positiveRestrictedRoots H₀, 𝔞.restrictedRootSpace μ ≤ N := by
-  rw [positiveRestrictedRootSpace_def, iSup₂_le_iff]
+      ∀ μ : Dual R 𝔞, 0 < μ H₀ → 𝔞.restrictedRootSpace μ ≤ N := by
+  rw [positiveRestrictedRootSpace_eq_iSup]
+  exact iSup₂_le_iff
 
-theorem isPositiveRestrictedRootSystem_iff {S : Set (Dual R 𝔞)} :
-    𝔞.IsPositiveRestrictedRootSystem S ↔
-      ∃ H₀ : 𝔞,
-        (∀ μ ∈ 𝔞.restrictedRoots, μ H₀ ≠ 0) ∧
-          S = 𝔞.positiveRestrictedRoots H₀ :=
+/-- A linear map sends `𝔫` into a submodule `N` when it sends the restricted root space of every
+functional positive at `H₀` into `N`. -/
+theorem apply_mem_of_mem_positiveRestrictedRootSpace {M : Type*} [AddCommGroup M] [Module R M]
+    {N : Submodule R M} (f : L →ₗ[R] M)
+    (hf : ∀ μ : Dual R 𝔞, 0 < μ H₀ → ∀ z ∈ 𝔞.restrictedRootSpace μ, f z ∈ N)
+    (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) : f y ∈ N :=
+  mem_comap.mp <| positiveRestrictedRootSpace_le_iff.mpr
+    (fun μ hμ z hz ↦ mem_comap.mpr (hf μ hμ z hz)) hy
+
+/-- **`𝔞` normalizes `𝔫`**: `[x, y] ∈ 𝔫` for `x ∈ 𝔞` and `y ∈ 𝔫`. -/
+theorem lie_mem_positiveRestrictedRootSpace_of_mem (hx : x ∈ 𝔞)
+    (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) :
+    ⁅x, y⁆ ∈ 𝔞.positiveRestrictedRootSpace H₀ := by
+  rw [← ad_apply R]
+  refine apply_mem_of_mem_positiveRestrictedRootSpace _ (fun μ hμ z hz ↦ ?_) hy
+  rw [ad_apply, mem_restrictedRootSpace.mp hz ⟨x, hx⟩]
+  exact smul_mem _ _ (restrictedRootSpace_le_positiveRestrictedRootSpace hμ hz)
+
+/-- The zero subspace has `𝔫 = 0`: it has no restricted roots. -/
+@[simp]
+theorem positiveRestrictedRootSpace_bot (H₀ : (⊥ : Submodule R L)) :
+    (⊥ : Submodule R L).positiveRestrictedRootSpace H₀ = ⊥ := by
+  simp [positiveRestrictedRootSpace]
+
+/-- `𝔤_0` and `𝔫` are independent. -/
+theorem disjoint_restrictedRootSpace_zero_positiveRestrictedRootSpace [IsDomain R]
+    [IsTorsionFree R L] :
+    Disjoint (𝔞.restrictedRootSpace 0) (𝔞.positiveRestrictedRootSpace H₀) := by
+  refine (iSupIndep_restrictedRootSpace.disjoint_biSup (y := {μ | 0 < μ H₀})
+    (by simp)).mono_right ?_
+  exact positiveRestrictedRootSpace_le_iff.mpr fun μ hμ ↦ le_biSup _ hμ
+
+/-- An abelian submodule `𝔞` and `𝔫` are independent. -/
+theorem disjoint_positiveRestrictedRootSpace [IsDomain R] [IsTorsionFree R L]
+    (hab : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) : Disjoint 𝔞 (𝔞.positiveRestrictedRootSpace H₀) :=
+  disjoint_restrictedRootSpace_zero_positiveRestrictedRootSpace.mono_left
+    (le_restrictedRootSpace_zero hab)
+
+end Preorder
+
+section OrderedRing
+
+variable {R L : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R] [LieRing L]
+  [LieAlgebra R L] {𝔞 : Submodule R L} {H₀ : 𝔞} {μ : Dual R 𝔞} {x y : L}
+
+/-- **`[𝔤_μ, 𝔫] ⊆ 𝔫` for `μ(H₀) ≥ 0`**: the bracket raises the value at `H₀`. -/
+theorem lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace (hμ : 0 ≤ μ H₀)
+    (hx : x ∈ 𝔞.restrictedRootSpace μ) (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) :
+    ⁅x, y⁆ ∈ 𝔞.positiveRestrictedRootSpace H₀ := by
+  rw [← ad_apply R]
+  refine apply_mem_of_mem_positiveRestrictedRootSpace _ (fun ν hν z hz ↦ ?_) hy
+  rw [ad_apply]
+  refine restrictedRootSpace_le_positiveRestrictedRootSpace ?_ (lie_mem_restrictedRootSpace hx hz)
+  rw [LinearMap.add_apply]
+  exact add_pos_of_nonneg_of_pos hμ hν
+
+/-- **The centralizer `𝔤_0` of `𝔞` normalizes `𝔫`.** -/
+theorem lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace_zero
+    (hx : x ∈ 𝔞.restrictedRootSpace 0) (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) :
+    ⁅x, y⁆ ∈ 𝔞.positiveRestrictedRootSpace H₀ :=
+  lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace le_rfl hx hy
+
+/-- **`𝔫` is closed under the bracket.** -/
+theorem lie_mem_positiveRestrictedRootSpace (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀)
+    (hy : y ∈ 𝔞.positiveRestrictedRootSpace H₀) : ⁅x, y⁆ ∈ 𝔞.positiveRestrictedRootSpace H₀ := by
+  rw [← lie_skew, neg_mem_iff, ← ad_apply R]
+  refine apply_mem_of_mem_positiveRestrictedRootSpace _ (fun μ hμ z hz ↦ ?_) hx
+  rw [ad_apply, ← lie_skew, neg_mem_iff]
+  exact lie_mem_positiveRestrictedRootSpace_of_mem_restrictedRootSpace hμ.le hz hy
+
+variable (𝔞 H₀) in
+/-- The positive restricted root space `𝔫 = ⊕_{λ ∈ Σ⁺} 𝔤_λ` as a Lie subalgebra. -/
+def positiveRestrictedRootSubalgebra : LieSubalgebra R L where
+  toSubmodule := 𝔞.positiveRestrictedRootSpace H₀
+  lie_mem' := lie_mem_positiveRestrictedRootSpace
+
+@[simp]
+theorem toSubmodule_positiveRestrictedRootSubalgebra :
+    (𝔞.positiveRestrictedRootSubalgebra H₀).toSubmodule = 𝔞.positiveRestrictedRootSpace H₀ :=
+  SetLike.ext fun _ ↦ Iff.rfl
+
+@[simp]
+theorem mem_positiveRestrictedRootSubalgebra :
+    x ∈ 𝔞.positiveRestrictedRootSubalgebra H₀ ↔ x ∈ 𝔞.positiveRestrictedRootSpace H₀ :=
   Iff.rfl
 
-/-- Every member of a positive restricted root system is a restricted root. -/
-theorem IsPositiveRestrictedRootSystem.subset {S : Set (Dual R 𝔞)}
-    (hS : 𝔞.IsPositiveRestrictedRootSystem S) :
-    S ⊆ 𝔞.restrictedRoots := by
-  obtain ⟨_, _, rfl⟩ := hS
-  exact positiveRestrictedRoots_subset
+/-- `𝔫⁻ = positiveRestrictedRootSpace 𝔞 (-H₀)` is the sum of the restricted root spaces of the
+functionals negative at `H₀`. -/
+theorem positiveRestrictedRootSpace_neg_le_iff {N : Submodule R L} :
+    𝔞.positiveRestrictedRootSpace (-H₀) ≤ N ↔
+      ∀ μ : Dual R 𝔞, μ H₀ < 0 → 𝔞.restrictedRootSpace μ ≤ N := by
+  simp only [positiveRestrictedRootSpace_le_iff, map_neg, neg_pos]
 
-/-- A positive restricted root system is finite under domain, torsion-free, and Noetherian
-hypotheses. -/
-theorem IsPositiveRestrictedRootSystem.finite [IsDomain R] [IsTorsionFree R L] [IsNoetherian R L]
-    {S : Set (Dual R 𝔞)} (hS : 𝔞.IsPositiveRestrictedRootSystem S) : S.Finite :=
-  finite_restrictedRoots.subset hS.subset
+/-- **`𝔤_0 + 𝔫` and `𝔫⁻` are independent**: the restricted root spaces of functionals with
+`λ(H₀) ≥ 0` and with `λ(H₀) < 0` are independent. -/
+theorem disjoint_restrictedRootSpace_zero_sup_positiveRestrictedRootSpace [IsDomain R]
+    [IsTorsionFree R L] :
+    Disjoint (𝔞.restrictedRootSpace 0 ⊔ 𝔞.positiveRestrictedRootSpace H₀)
+      (𝔞.positiveRestrictedRootSpace (-H₀)) := by
+  refine (iSupIndep_restrictedRootSpace.disjoint_biSup_biSup
+    (s := {μ | 0 ≤ μ H₀}) (t := {μ | μ H₀ < 0})
+    (Set.disjoint_left.mpr fun μ h h' ↦ not_lt_of_ge h h')).mono
+    (sup_le (le_biSup _ (by simp))
+      (positiveRestrictedRootSpace_le_iff.mpr fun μ hμ ↦ le_biSup _ hμ.le))
+    (positiveRestrictedRootSpace_neg_le_iff.mpr fun μ hμ ↦ le_biSup _ hμ)
 
-end Positive
+end OrderedRing
 
-section RegularExists
+/-! ### Nilpotence of `𝔫` -/
 
-/-- **Existence of regular elements in `𝔞`**: over an infinite field `K`, if `L` is
-Noetherian over `K`, there exists `H₀ ∈ 𝔞` such that `λ(H₀) ≠ 0` for every restricted root
-`λ ∈ Σ`. -/
-theorem exists_regular_restrictedRoots {K L : Type*} [Field K] [Infinite K]
-    [LieRing L] [LieAlgebra K L] [IsNoetherian K L] (𝔞 : Submodule K L) :
-    ∃ H₀ : 𝔞, ∀ μ ∈ 𝔞.restrictedRoots, μ H₀ ≠ 0 := by
-  have : Finite 𝔞.restrictedRoots := finite_restrictedRoots.to_subtype
-  simpa using Module.Dual.exists_forall_ne_zero_of_forall_exists
-    (fun μ : 𝔞.restrictedRoots ↦ (μ : Dual K 𝔞))
-    fun μ ↦ DFunLike.ne_iff.mp (mem_restrictedRoots.mp μ.property).left
+section LinearOrderedRing
 
-/-- Over an infinite ordered field `K`, if `L` is Noetherian over `K`, there exists at least one
-positive restricted root system for `𝔞`. -/
-theorem exists_isPositiveRestrictedRootSystem {K L : Type*} [Field K] [Infinite K] [LT K]
-    [LieRing L] [LieAlgebra K L] [IsNoetherian K L] (𝔞 : Submodule K L) :
-    ∃ S : Set (Dual K 𝔞), 𝔞.IsPositiveRestrictedRootSystem S := by
-  obtain ⟨H₀, hreg⟩ := 𝔞.exists_regular_restrictedRoots
-  exact ⟨𝔞.positiveRestrictedRoots H₀, H₀, hreg, rfl⟩
+variable {K L : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+  [LieAlgebra K L] {𝔞 : Submodule K L} {H₀ : 𝔞} {ν : Dual K 𝔞} {x z : L}
 
-end RegularExists
+/-- `ad x`, `x ∈ 𝔫`, carries `𝔤_ν` into the sum of the restricted root spaces of the functionals
+whose value at `H₀` exceeds `ν(H₀)`. -/
+private theorem lie_mem_iSup_lt_of_mem_positiveRestrictedRootSpace
+    (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀) (hz : z ∈ 𝔞.restrictedRootSpace ν) :
+    ⁅x, z⁆ ∈ ⨆ (μ : Dual K 𝔞) (_ : ν H₀ < μ H₀), 𝔞.restrictedRootSpace μ := by
+  rw [← lie_skew, neg_mem_iff, ← ad_apply K]
+  refine apply_mem_of_mem_positiveRestrictedRootSpace _ (fun μ hμ y hy ↦ ?_) hx
+  have hlt : ν H₀ < (ν + μ) H₀ := by
+    rw [LinearMap.add_apply]
+    exact lt_add_of_pos_right _ hμ
+  rw [ad_apply]
+  exact mem_iSup_of_mem (ν + μ) (mem_iSup_of_mem hlt (lie_mem_restrictedRootSpace hz hy))
 
-section Ordered
+/-- `ad x`, `x ∈ 𝔫`, has a power killing the sum of the restricted root spaces of the functionals
+whose value at `H₀` exceeds `t`. -/
+private theorem exists_iSup_lt_le_ker_ad_pow [IsTorsionFree K L] [IsNoetherian K L]
+    (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀) (t : K) :
+    ∃ n : ℕ, ⨆ (μ : Dual K 𝔞) (_ : t < μ H₀), 𝔞.restrictedRootSpace μ ≤
+      LinearMap.ker ((ad K L x) ^ n) := by
+  have hfin : {μ : Dual K 𝔞 | 𝔞.restrictedRootSpace μ ≠ ⊥}.Finite :=
+    finite_ne_bot_of_iSupIndep iSupIndep_restrictedRootSpace
+  set F := hfin.toFinset
+  -- By induction on the number of nonzero restricted root spaces with value `> t` at `H₀`, a power
+  -- of `ad x` bounded by that number kills their sum.
+  have key (n : ℕ) : ∀ t : K, (F.filter (t < · H₀)).card ≤ n →
+      ⨆ (μ : Dual K 𝔞) (_ : t < μ H₀), 𝔞.restrictedRootSpace μ ≤
+        LinearMap.ker ((ad K L x) ^ n) := by
+    induction n with
+    | zero =>
+      intro t ht
+      refine iSup₂_le fun μ hμ ↦ ?_
+      by_contra hbot
+      have hmem : μ ∈ F.filter (t < · H₀) := by
+        simp only [Finset.mem_filter, Set.Finite.mem_toFinset, F]
+        exact ⟨fun h ↦ hbot (h.le.trans bot_le), hμ⟩
+      exact (Finset.card_pos.mpr ⟨μ, hmem⟩).ne' (Nat.le_zero.mp ht)
+    | succ n ih =>
+      intro t ht
+      refine iSup₂_le fun μ hμ ↦ ?_
+      by_cases hbot : 𝔞.restrictedRootSpace μ = ⊥
+      · exact hbot.le.trans bot_le
+      intro z hz
+      have hsub : F.filter (μ H₀ < · H₀) ⊂ F.filter (t < · H₀) := by
+        refine (Finset.ssubset_iff_of_subset fun ν h ↦ ?_).mpr ⟨μ, ?_, ?_⟩
+        · simp only [Finset.mem_filter] at h ⊢
+          exact ⟨h.1, hμ.trans h.2⟩
+        · simp only [Finset.mem_filter, Set.Finite.mem_toFinset, F]
+          exact ⟨hbot, hμ⟩
+        · simp
+      have hz' := ih (μ H₀) (by have := Finset.card_lt_card hsub; omega)
+        (lie_mem_iSup_lt_of_mem_positiveRestrictedRootSpace hx hz)
+      rw [LinearMap.mem_ker, pow_succ, mul_apply_eq_comp, ad_apply]
+      exact LinearMap.mem_ker.mp hz'
+  exact ⟨_, key _ t le_rfl⟩
 
-variable {R L : Type*} [CommRing R] [PartialOrder R] [IsOrderedAddMonoid R] [LieRing L]
-  [LieAlgebra R L] {𝔞 : Submodule R L} {H₀ : 𝔞} {μ ν : Dual R 𝔞}
+/-- **`ad x` is nilpotent for `x ∈ 𝔫`.** If the restricted root spaces of `𝔞` span a torsion-free
+Noetherian Lie algebra `L` over a linearly ordered commutative ring, then `ad x` is nilpotent for
+every `x` in the positive restricted root space `𝔫`. -/
+theorem isNilpotent_ad_of_mem_positiveRestrictedRootSpace [IsTorsionFree K L] [IsNoetherian K L]
+    (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤)
+    (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀) : IsNilpotent (ad K L x) := by
+  have hfin : {μ : Dual K 𝔞 | 𝔞.restrictedRootSpace μ ≠ ⊥}.Finite :=
+    finite_ne_bot_of_iSupIndep iSupIndep_restrictedRootSpace
+  -- Take `t` below the value at `H₀` of every functional with nonzero restricted root space.
+  obtain ⟨b, hb⟩ := (hfin.image fun μ ↦ μ H₀).bddBelow
+  obtain ⟨n, hn⟩ := exists_iSup_lt_le_ker_ad_pow hx (b - 1)
+  refine ⟨n, LinearMap.ext fun y ↦ ?_⟩
+  rw [LinearMap.zero_apply, ← LinearMap.mem_ker]
+  refine hn ?_
+  refine (hspan.symm.le.trans (iSup_le fun μ ↦ ?_)) mem_top
+  by_cases hbot : 𝔞.restrictedRootSpace μ = ⊥
+  · exact hbot.le.trans bot_le
+  exact le_iSup₂_of_le μ ((sub_one_lt b).trans_le (hb ⟨μ, hbot, rfl⟩)) le_rfl
 
-/-- Positive restricted roots are closed under sums that remain restricted roots. -/
-theorem add_mem_positiveRestrictedRoots (hμ : μ ∈ 𝔞.positiveRestrictedRoots H₀)
-    (hν : ν ∈ 𝔞.positiveRestrictedRoots H₀) (hadd : μ + ν ∈ 𝔞.restrictedRoots) :
-    μ + ν ∈ 𝔞.positiveRestrictedRoots H₀ :=
-  ⟨hadd, by simpa only [LinearMap.add_apply] using add_pos hμ.right hν.right⟩
+/-- **`𝔫` acts nilpotently on `L`.** If the restricted root spaces of `𝔞` span a torsion-free
+Noetherian Lie algebra `L` over a linearly ordered commutative ring, the positive restricted root
+subalgebra acts nilpotently on `L` by Engel's theorem. -/
+theorem lieModule_isNilpotent_positiveRestrictedRootSubalgebra [IsTorsionFree K L]
+    [IsNoetherian K L] (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤) :
+    LieModule.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) L := by
+  refine (LieModule.isNilpotent_iff_forall' (R := K)).mpr fun x ↦ ?_
+  convert isNilpotent_ad_of_mem_positiveRestrictedRootSpace (K := K) hspan x.property using 1
+  ext y
+  simp
 
-/-- A positive restricted root system is closed under sums that remain restricted roots. -/
-theorem IsPositiveRestrictedRootSystem.add_mem {S : Set (Dual R 𝔞)}
-    (hS : 𝔞.IsPositiveRestrictedRootSystem S) (hμ : μ ∈ S) (hν : ν ∈ S)
-    (hadd : μ + ν ∈ 𝔞.restrictedRoots) : μ + ν ∈ S := by
-  obtain ⟨_, _, rfl⟩ := hS
-  exact add_mem_positiveRestrictedRoots hμ hν hadd
+/-- **`𝔫` is a nilpotent Lie algebra.** For a torsion-free Noetherian Lie algebra `L` over a
+linearly ordered commutative ring, the positive restricted root subalgebra is nilpotent: for
+`x ∈ 𝔫`, a power of `ad x` kills `𝔫`. -/
+theorem lieRing_isNilpotent_positiveRestrictedRootSubalgebra [IsTorsionFree K L]
+    [IsNoetherian K L] : LieRing.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) := by
+  refine (LieAlgebra.isNilpotent_iff_forall (R := K)).mpr fun x ↦ ?_
+  obtain ⟨n, hn⟩ := exists_iSup_lt_le_ker_ad_pow x.property 0
+  rw [← positiveRestrictedRootSpace_eq_iSup] at hn
+  refine ⟨n, LinearMap.ext fun y ↦ Subtype.ext ?_⟩
+  have h := LinearMap.congr_fun (Module.End.commute_pow_left_of_commute
+    ((𝔞.positiveRestrictedRootSubalgebra H₀).ad_comp_incl_eq x) n) y
+  simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieSubalgebra.coe_incl] at h
+  rw [LinearMap.mem_ker.mp (hn y.property)] at h
+  rw [← h, LinearMap.zero_apply, ZeroMemClass.coe_zero]
 
-/-- No positive restricted root system contains both `λ` and `-λ`. -/
-theorem neg_notMem_positiveRestrictedRoots_of_mem
-    (hμ : μ ∈ 𝔞.positiveRestrictedRoots H₀) :
-    -μ ∉ 𝔞.positiveRestrictedRoots H₀ := by
-  intro hneg
-  exact hμ.right.not_gt (by simpa only [LinearMap.neg_apply, neg_pos] using hneg.right)
-
-/-- A positive restricted root system cannot contain both `λ` and `-λ`. -/
-theorem IsPositiveRestrictedRootSystem.neg_notMem_of_mem {S : Set (Dual R 𝔞)}
-    (hS : 𝔞.IsPositiveRestrictedRootSystem S) (hμ : μ ∈ S) : -μ ∉ S := by
-  obtain ⟨_, _, rfl⟩ := hS
-  exact neg_notMem_positiveRestrictedRoots_of_mem hμ
-
-/-- `Σ⁺(H₀)` and `-Σ⁺(H₀)` are disjoint. -/
-theorem disjoint_positiveRestrictedRoots_neg :
-    Disjoint (𝔞.positiveRestrictedRoots H₀)
-      (Neg.neg '' 𝔞.positiveRestrictedRoots H₀) := by
-  rw [Set.disjoint_left]
-  rintro μ hμ ⟨ν, hν, rfl⟩
-  exact neg_notMem_positiveRestrictedRoots_of_mem hν hμ
-
-/-- A positive restricted root system is disjoint from its negative. -/
-theorem IsPositiveRestrictedRootSystem.disjoint_neg {S : Set (Dual R 𝔞)}
-    (hS : 𝔞.IsPositiveRestrictedRootSystem S) : Disjoint S (Neg.neg '' S) := by
-  obtain ⟨_, _, rfl⟩ := hS
-  exact disjoint_positiveRestrictedRoots_neg
-
-end Ordered
-
-section LinearOrdered
-
-variable {R L : Type*} [CommRing R] [LinearOrder R] [IsOrderedAddMonoid R] [LieRing L]
-  [LieAlgebra R L] {θ : L ≃ₗ⁅R⁆ L} {𝔞 : Submodule R L}
-
-/-- For a regular `H₀ ∈ 𝔞` and `λ ∈ Σ`, `-λ ∈ Σ⁺(H₀)` iff
-`λ ∉ Σ⁺(H₀)`. -/
-theorem neg_mem_positiveRestrictedRoots_iff_notMem (h𝔞 : 𝔞 ≤ θ.cartanP) {H₀ : 𝔞}
-    (hreg : ∀ μ ∈ 𝔞.restrictedRoots, μ H₀ ≠ 0) {μ : Dual R 𝔞}
-    (hμ : μ ∈ 𝔞.restrictedRoots) :
-    -μ ∈ 𝔞.positiveRestrictedRoots H₀ ↔ μ ∉ 𝔞.positiveRestrictedRoots H₀ := by
-  have hneg : -μ ∈ 𝔞.restrictedRoots := (LieEquiv.neg_mem_restrictedRoots_iff h𝔞).mpr hμ
-  simp only [mem_positiveRestrictedRoots, hμ, hneg, true_and, LinearMap.neg_apply, neg_pos]
-  exact ⟨fun h hpos ↦ hpos.not_gt h, fun h ↦ lt_of_le_of_ne (not_lt.mp h) (hreg μ hμ)⟩
-
-/-- For any positive restricted root system `S` and `λ ∈ Σ`, `-λ ∈ S` iff `λ ∉ S`. -/
-theorem IsPositiveRestrictedRootSystem.neg_mem_iff_notMem (h𝔞 : 𝔞 ≤ θ.cartanP)
-    {S : Set (Dual R 𝔞)} (hS : 𝔞.IsPositiveRestrictedRootSystem S) {μ : Dual R 𝔞}
-    (hμ : μ ∈ 𝔞.restrictedRoots) :
-    -μ ∈ S ↔ μ ∉ S := by
-  obtain ⟨H₀, hreg, rfl⟩ := hS
-  exact neg_mem_positiveRestrictedRoots_iff_notMem h𝔞 hreg hμ
-
-/-- For any positive restricted root system `S` and `λ ∈ Σ`, either `λ ∈ S` or
-`-λ ∈ S`. -/
-theorem IsPositiveRestrictedRootSystem.mem_or_neg_mem (h𝔞 : 𝔞 ≤ θ.cartanP)
-    {S : Set (Dual R 𝔞)} (hS : 𝔞.IsPositiveRestrictedRootSystem S) {μ : Dual R 𝔞}
-    (hμ : μ ∈ 𝔞.restrictedRoots) :
-    μ ∈ S ∨ -μ ∈ S := by
-  rw [hS.neg_mem_iff_notMem h𝔞 hμ]
-  exact em _
-
-/-- For a regular `H₀ ∈ 𝔞`, `Σ⁺(H₀) ∪ (-Σ⁺(H₀)) = Σ`. -/
-theorem positiveRestrictedRoots_union_neg (h𝔞 : 𝔞 ≤ θ.cartanP) {H₀ : 𝔞}
-    (hreg : ∀ μ ∈ 𝔞.restrictedRoots, μ H₀ ≠ 0) :
-    𝔞.positiveRestrictedRoots H₀ ∪ Neg.neg '' 𝔞.positiveRestrictedRoots H₀ =
-      𝔞.restrictedRoots := by
-  ext μ
-  constructor
-  · rintro (hμ | ⟨ν, hν, rfl⟩)
-    · exact hμ.left
-    · exact (LieEquiv.neg_mem_restrictedRoots_iff h𝔞).mpr hν.left
-  · intro hμ
-    by_cases hpos : μ ∈ 𝔞.positiveRestrictedRoots H₀
-    · exact Or.inl hpos
-    · refine Or.inr ⟨-μ, ?_, neg_neg μ⟩
-      exact (neg_mem_positiveRestrictedRoots_iff_notMem h𝔞 hreg hμ).mpr hpos
-
-/-- Every positive restricted root system partitions `Σ` as `S ∪ (-S)`. -/
-theorem IsPositiveRestrictedRootSystem.union_neg (h𝔞 : 𝔞 ≤ θ.cartanP)
-    {S : Set (Dual R 𝔞)} (hS : 𝔞.IsPositiveRestrictedRootSystem S) :
-    S ∪ Neg.neg '' S = 𝔞.restrictedRoots := by
-  obtain ⟨H₀, hreg, rfl⟩ := hS
-  exact positiveRestrictedRoots_union_neg h𝔞 hreg
-
-/-- Half the restricted roots are positive: `2 * |Σ⁺| = |Σ|`. -/
-theorem IsPositiveRestrictedRootSystem.two_mul_ncard [IsDomain R] [IsTorsionFree R L]
-    [IsNoetherian R L] (h𝔞 : 𝔞 ≤ θ.cartanP) {S : Set (Dual R 𝔞)}
-    (hS : 𝔞.IsPositiveRestrictedRootSystem S) :
-    2 * S.ncard = 𝔞.restrictedRoots.ncard := by
-  have hfin : S.Finite := hS.finite
-  have hneg_fin : (Neg.neg '' S).Finite := hfin.image _
-  have hcard : (Neg.neg '' S).ncard = S.ncard :=
-    Set.ncard_image_of_injective S neg_injective
-  calc
-    2 * S.ncard = S.ncard + S.ncard := two_mul _
-    _ = S.ncard + (Neg.neg '' S).ncard := by rw [hcard]
-    _ = (S ∪ Neg.neg '' S).ncard := (Set.ncard_union_eq hS.disjoint_neg hfin hneg_fin).symm
-    _ = 𝔞.restrictedRoots.ncard := by rw [hS.union_neg h𝔞]
-
-end LinearOrdered
+end LinearOrderedRing
 
 end Submodule
+
+namespace LieEquiv
+
+open Submodule
+
+variable {R L : Type*} [CommRing R] [Preorder R] [LieRing L] [LieAlgebra R L] {θ : L ≃ₗ⁅R⁆ L}
+  {𝔞 : Submodule R L}
+
+/-- **`θ 𝔫 = 𝔫⁻`.** For `𝔞 ⊆ 𝔭`, an automorphism `θ` maps the positive restricted root space of
+`H₀` onto that of `-H₀`, the sum of the restricted root spaces of the functionals negative at
+`H₀`. -/
+theorem map_positiveRestrictedRootSpace (h𝔞 : 𝔞 ≤ θ.cartanP) (H₀ : 𝔞) :
+    (𝔞.positiveRestrictedRootSpace H₀).map (θ : L →ₗ[R] L) =
+      𝔞.positiveRestrictedRootSpace (-H₀) := by
+  simp only [positiveRestrictedRootSpace_eq_iSup, Submodule.map_iSup, map_restrictedRootSpace h𝔞]
+  refine le_antisymm (iSup₂_le fun μ h ↦ le_iSup₂_of_le (-μ) (by simpa using h) le_rfl)
+    (iSup₂_le fun μ h ↦ le_iSup₂_of_le (-μ) (by simpa using h) (by rw [neg_neg]))
+
+end LieEquiv
 
 namespace LieEquiv.IsCartanInvolution
 
 open Submodule
 
-section BasesAndChambers
+section Real
 
-variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {θ : L ≃ₗ⁅ℝ⁆ L}
-  {𝔞 : Submodule ℝ L} (hθ : θ.IsCartanInvolution) (h𝔞 : θ.IsMaximalAbelianInP 𝔞)
+variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {θ : L ≃ₗ⁅ℝ⁆ L} {𝔞 : Submodule ℝ L}
 
-/-- `H ∈ 𝔞` is a regular weight of the flipped indivisible root system iff no restricted root
-(including the divisible ones) vanishes at `H`. -/
-theorem isRegularWeight_flip_indivisible_iff (H : 𝔞) :
-    (hθ.indivisibleRestrictedRootPairing h𝔞).flip.IsRegularWeight H ↔
-      ∀ μ ∈ 𝔞.restrictedRoots, μ H ≠ 0 := by
-  rw [RootPairing.isRegularWeight_iff]
-  constructor
-  · intro h μ hμ
-    rcases hθ.mem_indivisibleRestrictedRoots_or_exists_eq_two_smul h𝔞 hμ with
-      hindiv | ⟨γ, hγ, rfl⟩
-    · simpa only [indivisibleRestrictedRootPairing_flip_coroot'_apply] using
-        h ⟨μ, hindiv⟩
-    · have h0 := h ⟨γ, hγ⟩
-      rw [indivisibleRestrictedRootPairing_flip_coroot'_apply] at h0
-      rw [LinearMap.smul_apply, smul_eq_mul]
-      exact mul_ne_zero two_ne_zero h0
-  · intro h γ
-    rw [indivisibleRestrictedRootPairing_flip_coroot'_apply]
-    exact h γ.val (mem_indivisibleRestrictedRoots.mp γ.property).left
+/-- **`𝔫` acts nilpotently.** For a Cartan involution `θ` of a real Lie algebra and an abelian
+subspace `𝔞` of `𝔭`, the positive restricted root subalgebra of any `H₀ ∈ 𝔞` acts nilpotently on
+the Lie algebra. -/
+theorem lieModule_isNilpotent_positiveRestrictedRootSubalgebra (hθ : θ.IsCartanInvolution)
+    (h𝔞 : 𝔞 ≤ θ.cartanP) (hab : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) (H₀ : 𝔞) :
+    LieModule.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) L :=
+  have := hθ.finiteDimensional
+  Submodule.lieModule_isNilpotent_positiveRestrictedRootSubalgebra
+    (hθ.iSup_restrictedRootSpace_eq_top h𝔞 hab)
 
-/-- Membership in the open dominant chamber of `b.flip` inside `𝔞` means every simple
-restricted root is strictly positive on `H`. -/
-theorem mem_openDominantChamber_flip_indivisible_iff
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) (H : 𝔞) :
-    H ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber b.flip ↔
-      ∀ α ∈ b.support, 0 < (α : Dual ℝ 𝔞) H := by
-  simp only [RootPairing.mem_openDominantChamber, RootPairing.Base.flip_support,
-    indivisibleRestrictedRootPairing_flip_coroot'_apply]
+end Real
 
-/-- Membership in the closed dominant chamber of `b.flip` inside `𝔞` means every simple
-restricted root is nonnegative on `H`. -/
-theorem mem_dominantChamber_flip_indivisible_iff
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) (H : 𝔞) :
-    H ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.dominantChamber b.flip ↔
-      ∀ α ∈ b.support, 0 ≤ (α : Dual ℝ 𝔞) H := by
-  simp only [RootPairing.mem_dominantChamber, RootPairing.Base.flip_support,
-    indivisibleRestrictedRootPairing_flip_coroot'_apply]
+section LinearOrderedField
 
-private theorem root'_pos_of_mem_openDominantChamber_flip
-    {b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base} {H₀ : 𝔞}
-    (hH₀ :
-      H₀ ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber b.flip) :
-    ∀ α ∈ b.support, 0 < (hθ.indivisibleRestrictedRootPairing h𝔞).root' α H₀ := by
-  intro α hα
-  rw [indivisibleRestrictedRootPairing_root'_apply]
-  exact (hθ.mem_openDominantChamber_flip_indivisible_iff h𝔞 b H₀).mp hH₀ α hα
+variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+  [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L} {𝔞 : Submodule K L}
 
-/-- Every `H₀` in the open Weyl chamber of `b.flip` in `𝔞` is regular for `Σ`: no restricted root
-vanishes at `H₀`. -/
-theorem ne_zero_of_mem_openDominantChamber_flip_indivisible
-    {b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base} {H₀ : 𝔞}
-    (hH₀ :
-      H₀ ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber b.flip)
-    {μ : Dual ℝ 𝔞} (hμ : μ ∈ 𝔞.restrictedRoots) :
-    μ H₀ ≠ 0 :=
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  (hθ.isRegularWeight_flip_indivisible_iff h𝔞 H₀).mp
-    (RootPairing.isRegularWeight_of_mem_openDominantChamber _ b.flip hH₀) μ hμ
+/-- **`𝔫` is a nilpotent Lie algebra.** For a Cartan involution `θ` of a Lie algebra over a
+linearly ordered field and any subspace `𝔞`, the positive restricted root subalgebra of any
+`H₀ ∈ 𝔞` is nilpotent. -/
+theorem lieRing_isNilpotent_positiveRestrictedRootSubalgebra (hθ : θ.IsCartanInvolution)
+    (H₀ : 𝔞) : LieRing.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) :=
+  have := hθ.finiteDimensional
+  Submodule.lieRing_isNilpotent_positiveRestrictedRootSubalgebra
 
-/-- An indivisible restricted root that pairs positively with an element of the open Weyl chamber
-of `b.flip` is a positive root for `b`. -/
-theorem isPos_of_pos_of_mem_openDominantChamber
-    {b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base} {H₀ : 𝔞}
-    (hH₀ :
-      H₀ ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber b.flip)
-    {γ : 𝔞.indivisibleRestrictedRoots} (hγ : 0 < (γ : Dual ℝ 𝔞) H₀) :
-    b.IsPos γ := by
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  by_contra hnot
-  have hlt := RootPairing.root'_neg_of_not_isPos
-    (hθ.root'_pos_of_mem_openDominantChamber_flip h𝔞 hH₀) hnot
-  rw [indivisibleRestrictedRootPairing_root'_apply] at hlt
-  exact hγ.not_gt hlt
-
-/-- The **positive restricted roots determined by a base** `b` of `Σ_indiv`: the restricted
-roots lying in the nonnegative integer cone `TauCeti.posRootCone` generated by `b`. -/
-noncomputable def positiveRestrictedRootsOfBase
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) : Set (Dual ℝ 𝔞) :=
-  {μ ∈ 𝔞.restrictedRoots |
-    μ ∈ TauCeti.posRootCone (hθ.indivisibleRestrictedRootPairing h𝔞) b}
-
-@[simp]
-theorem mem_positiveRestrictedRootsOfBase
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) {μ : Dual ℝ 𝔞} :
-    μ ∈ hθ.positiveRestrictedRootsOfBase h𝔞 b ↔
-      μ ∈ 𝔞.restrictedRoots ∧
-        μ ∈ TauCeti.posRootCone (hθ.indivisibleRestrictedRootPairing h𝔞) b :=
-  Iff.rfl
-
-theorem positiveRestrictedRootsOfBase_subset
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) :
-    hθ.positiveRestrictedRootsOfBase h𝔞 b ⊆ 𝔞.restrictedRoots :=
-  fun _ h ↦ h.left
-
-/-- An indivisible restricted root belongs to `Σ⁺(b)` iff it is positive for `b`. -/
-theorem mem_positiveRestrictedRootsOfBase_iff_isPos
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base)
-    (γ : 𝔞.indivisibleRestrictedRoots) :
-    (γ : Dual ℝ 𝔞) ∈ hθ.positiveRestrictedRootsOfBase h𝔞 b ↔ b.IsPos γ := by
-  rw [mem_positiveRestrictedRootsOfBase,
-    and_iff_right (mem_indivisibleRestrictedRoots.mp γ.property).left,
-    ← indivisibleRestrictedRootPairing_root_apply hθ h𝔞 γ,
-    ← TauCeti.mem_posRoots_iff_root_mem_posRootCone, TauCeti.mem_posRoots]
-
-/-- Every simple restricted root belongs to `Σ⁺(b)`. -/
-theorem mem_positiveRestrictedRootsOfBase_of_mem_support
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base)
-    {α : 𝔞.indivisibleRestrictedRoots} (hα : α ∈ b.support) :
-    (α : Dual ℝ 𝔞) ∈ hθ.positiveRestrictedRootsOfBase h𝔞 b :=
-  (hθ.mem_positiveRestrictedRootsOfBase_iff_isPos h𝔞 b α).mpr (b.isPos_of_mem_support hα)
-
-/-- **Chamber characterization of positive systems.** Every `H₀` in the open Weyl chamber of
-`b.flip` in `𝔞` cuts out `positiveRestrictedRootsOfBase hθ h𝔞 b`. -/
-theorem positiveRestrictedRootsOfBase_eq_positiveRestrictedRoots_of_mem_openDominantChamber
-    {b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base} {H₀ : 𝔞}
-    (hH₀ :
-      H₀ ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber b.flip) :
-    hθ.positiveRestrictedRootsOfBase h𝔞 b = 𝔞.positiveRestrictedRoots H₀ := by
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  ext μ
-  simp only [mem_positiveRestrictedRootsOfBase, mem_positiveRestrictedRoots]
-  refine ⟨fun ⟨hμ, hcone⟩ ↦ ⟨hμ, ?_⟩, fun ⟨hμ, hgt⟩ ↦ ⟨hμ, ?_⟩⟩
-  · have hnonneg := RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone
-      (fun α hα ↦ (hθ.root'_pos_of_mem_openDominantChamber_flip h𝔞 hH₀ α hα).le) hcone
-    rw [indivisibleRestrictedRootPairing_toLinearMap_apply] at hnonneg
-    exact lt_of_le_of_ne hnonneg
-      (Ne.symm (hθ.ne_zero_of_mem_openDominantChamber_flip_indivisible h𝔞 hH₀ hμ))
-  · rcases hθ.mem_indivisibleRestrictedRoots_or_exists_eq_two_smul h𝔞 hμ with
-      hindiv | ⟨γ, hγ, rfl⟩
-    · have hγpos := hθ.isPos_of_pos_of_mem_openDominantChamber h𝔞 hH₀
-        (γ := ⟨μ, hindiv⟩) hgt
-      simpa only [indivisibleRestrictedRootPairing_root_apply] using
-        TauCeti.root_mem_posRootCone_of_mem_posRoots (hθ.indivisibleRestrictedRootPairing h𝔞) b
-          ((TauCeti.mem_posRoots _ b _).mpr hγpos)
-    · have hγgt : 0 < γ H₀ := by
-        simpa only [LinearMap.smul_apply, smul_eq_mul, Nat.ofNat_pos, mul_pos_iff_of_pos_left]
-          using hgt
-      have hγpos := hθ.isPos_of_pos_of_mem_openDominantChamber h𝔞 hH₀ (γ := ⟨γ, hγ⟩) hγgt
-      have hmem := TauCeti.root_mem_posRootCone_of_mem_posRoots
-        (hθ.indivisibleRestrictedRootPairing h𝔞) b ((TauCeti.mem_posRoots _ b _).mpr hγpos)
-      simpa only [indivisibleRestrictedRootPairing_root_apply, two_smul] using
-        AddSubmonoid.add_mem _ hmem hmem
-
-/-- Every base `b` of `Σ_indiv` yields a positive restricted root system. -/
-theorem isPositiveRestrictedRootSystem_positiveRestrictedRootsOfBase
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) :
-    𝔞.IsPositiveRestrictedRootSystem (hθ.positiveRestrictedRootsOfBase h𝔞 b) := by
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  obtain ⟨H₀, hH₀⟩ :=
-    TauCeti.openDominantChamber_nonempty (hθ.indivisibleRestrictedRootPairing h𝔞).flip b.flip
-  exact ⟨H₀, fun _ hμ ↦ hθ.ne_zero_of_mem_openDominantChamber_flip_indivisible h𝔞 hH₀ hμ,
-    hθ.positiveRestrictedRootsOfBase_eq_positiveRestrictedRoots_of_mem_openDominantChamber
-      h𝔞 hH₀⟩
-
-/-- Every positive restricted root system equals `positiveRestrictedRootsOfBase b` for some base `b`
-of `Σ_indiv`. -/
-theorem exists_base_positiveRestrictedRootsOfBase_eq {S : Set (Dual ℝ 𝔞)}
-    (hS : 𝔞.IsPositiveRestrictedRootSystem S) :
-    ∃ b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base,
-      hθ.positiveRestrictedRootsOfBase h𝔞 b = S := by
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  obtain ⟨H₀, hreg, rfl⟩ := hS
-  obtain ⟨b₀⟩ := (hθ.indivisibleRestrictedRootPairing h𝔞).nonempty_base
-  obtain ⟨u, hu⟩ := RootPairing.exists_mem_dominantChamber
-    (hθ.indivisibleRestrictedRootPairing h𝔞).flip b₀.flip H₀
-  have hu_reg : (hθ.indivisibleRestrictedRootPairing h𝔞).flip.IsRegularWeight (u • H₀) :=
-    (RootPairing.isRegularWeight_smul _ u H₀).mpr
-      ((hθ.isRegularWeight_flip_indivisible_iff h𝔞 H₀).mpr hreg)
-  have hu_open := RootPairing.mem_openDominantChamber_of_isRegularWeight _ b₀.flip hu hu_reg
-  have hH₀_open : H₀ ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber
-      (b₀.flip.map (u⁻¹ : (hθ.indivisibleRestrictedRootPairing h𝔞).flip.Aut)) := by
-    rw [← RootPairing.smul_openDominantChamber]
-    refine ⟨u • H₀, hu_open, ?_⟩
-    simp only [← Subgroup.coe_inv, ← Subgroup.smul_def, inv_smul_smul]
-  refine
-    ⟨(b₀.flip.map (u⁻¹ : (hθ.indivisibleRestrictedRootPairing h𝔞).flip.Aut)).flip, ?_⟩
-  exact
-    hθ.positiveRestrictedRootsOfBase_eq_positiveRestrictedRoots_of_mem_openDominantChamber
-      h𝔞 hH₀_open
-
-/-- Different bases of `Σ_indiv` determine different positive restricted root systems. -/
-theorem positiveRestrictedRootsOfBase_injective :
-    Function.Injective (hθ.positiveRestrictedRootsOfBase h𝔞) := by
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  intro b₁ b₂ hEq
-  have hpos :
-      ∀ γ : 𝔞.indivisibleRestrictedRoots, b₁.IsPos γ ↔ b₂.IsPos γ := fun γ ↦ by
-    have hmem : (γ : Dual ℝ 𝔞) ∈ hθ.positiveRestrictedRootsOfBase h𝔞 b₁ ↔
-        (γ : Dual ℝ 𝔞) ∈ hθ.positiveRestrictedRootsOfBase h𝔞 b₂ := by
-      rw [hEq]
-    simpa only [mem_positiveRestrictedRootsOfBase_iff_isPos] using hmem
-  ext γ
-  simp only [TauCeti.mem_support_iff_isPos_and_forall_ne_add, hpos,
-    indivisibleRestrictedRootPairing_root_apply]
-
-/-- **Bijection between bases of `Σ_indiv` and positive restricted root systems.** -/
-noncomputable def baseEquivPositiveRestrictedRootSystem :
-    (hθ.indivisibleRestrictedRootPairing h𝔞).Base ≃
-      {S : Set (Dual ℝ 𝔞) // 𝔞.IsPositiveRestrictedRootSystem S} :=
-  Equiv.ofBijective
-    (fun b ↦ ⟨hθ.positiveRestrictedRootsOfBase h𝔞 b,
-      hθ.isPositiveRestrictedRootSystem_positiveRestrictedRootsOfBase h𝔞 b⟩)
-    ⟨fun _ _ h ↦ hθ.positiveRestrictedRootsOfBase_injective h𝔞 (congrArg Subtype.val h),
-      fun ⟨S, hS⟩ ↦ by
-        obtain ⟨b, hb⟩ := hθ.exists_base_positiveRestrictedRootsOfBase_eq h𝔞 hS
-        exact ⟨b, Subtype.ext hb⟩⟩
-
-@[simp]
-theorem baseEquivPositiveRestrictedRootSystem_apply
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) :
-    (hθ.baseEquivPositiveRestrictedRootSystem h𝔞 b : Set (Dual ℝ 𝔞)) =
-      hθ.positiveRestrictedRootsOfBase h𝔞 b :=
-  (rfl)
-
-/-! ### Simple restricted roots and integer coordinates -/
-
-/-- Every positive restricted root for `b` is a nonnegative integer combination of the simple
-restricted roots of `b`. -/
-theorem exists_nat_eq_sum_of_mem_positiveRestrictedRootsOfBase
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) {μ : Dual ℝ 𝔞}
-    (hμ : μ ∈ hθ.positiveRestrictedRootsOfBase h𝔞 b) :
-    ∃ c : b.support → ℕ, μ = ∑ α : b.support, c α • (α.val : Dual ℝ 𝔞) := by
-  obtain ⟨f, hf⟩ :=
-    (TauCeti.mem_posRootCone (hθ.indivisibleRestrictedRootPairing h𝔞) b).mp hμ.right
-  refine ⟨fun α ↦ f α.val, ?_⟩
-  rw [hf, ← Finset.sum_coe_sort b.support]
-  simp only [indivisibleRestrictedRootPairing_root_apply]
-
-/-- Every restricted root outside `Σ⁺(b)` is a nonpositive integer combination of the simple
-restricted roots of `b`. -/
-theorem exists_int_nonpos_eq_sum_of_notMem_positiveRestrictedRootsOfBase
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) {μ : Dual ℝ 𝔞}
-    (hμ : μ ∈ 𝔞.restrictedRoots) (hnot : μ ∉ hθ.positiveRestrictedRootsOfBase h𝔞 b) :
-    ∃ c : b.support → ℤ,
-      (∀ α, c α ≤ 0) ∧ μ = ∑ α : b.support, c α • (α.val : Dual ℝ 𝔞) := by
-  have hS := hθ.isPositiveRestrictedRootSystem_positiveRestrictedRootsOfBase h𝔞 b
-  have hneg : -μ ∈ hθ.positiveRestrictedRootsOfBase h𝔞 b :=
-    (hS.neg_mem_iff_notMem h𝔞.le_cartanP hμ).mpr hnot
-  obtain ⟨f, hf⟩ := hθ.exists_nat_eq_sum_of_mem_positiveRestrictedRootsOfBase h𝔞 b hneg
-  refine ⟨fun α ↦ -(f α : ℤ),
-    fun α ↦ Int.neg_nonpos_of_nonneg (Int.natCast_nonneg _), ?_⟩
-  calc
-    μ = -(-μ) := (neg_neg μ).symm
-    _ = -∑ α : b.support, f α • (α.val : Dual ℝ 𝔞) := by rw [hf]
-    _ = ∑ α : b.support, (-(f α : ℤ)) • (α.val : Dual ℝ 𝔞) := by
-      rw [← Finset.sum_neg_distrib]
-      refine Finset.sum_congr rfl fun α _ ↦ ?_
-      rw [neg_smul, natCast_zsmul]
-
-/-- **Integrality and sign of restricted root coordinates**: relative to a base `b` of `Σ_indiv`,
-every restricted root is either a `ℤ`-linear combination of `b.support` with all coefficients `≥ 0`
-or one with all coefficients `≤ 0`. See `exists_nat_eq_sum_of_mem_positiveRestrictedRootsOfBase`
-and `exists_int_nonpos_eq_sum_of_notMem_positiveRestrictedRootsOfBase` for the versions separated by
-membership in `Σ⁺(b)`. -/
-theorem exists_int_nonneg_or_nonpos_of_mem_restrictedRoots
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) {μ : Dual ℝ 𝔞}
-    (hμ : μ ∈ 𝔞.restrictedRoots) :
-    (∃ c : b.support → ℤ,
-        (∀ α, 0 ≤ c α) ∧ μ = ∑ α : b.support, c α • (α.val : Dual ℝ 𝔞)) ∨
-      (∃ c : b.support → ℤ,
-        (∀ α, c α ≤ 0) ∧ μ = ∑ α : b.support, c α • (α.val : Dual ℝ 𝔞)) := by
-  by_cases hpos : μ ∈ hθ.positiveRestrictedRootsOfBase h𝔞 b
-  · obtain ⟨f, hf⟩ := hθ.exists_nat_eq_sum_of_mem_positiveRestrictedRootsOfBase h𝔞 b hpos
-    exact Or.inl ⟨fun α ↦ f α, fun α ↦ Int.natCast_nonneg _,
-      by simpa only [natCast_zsmul] using hf⟩
-  · exact Or.inr
-      (hθ.exists_int_nonpos_eq_sum_of_notMem_positiveRestrictedRootsOfBase h𝔞 b hμ hpos)
-
-/-! ### Weyl group action on positive restricted root systems -/
-
-section WeylAction
-
-open Pointwise
-
-/-- A Weyl-group element `w ∈ W(Σ)` acts on `Σ⁺(H₀)` by sending it to
-`Σ⁺(w⁻¹ • H₀)` (via the coweight action on `𝔞`). -/
-theorem smul_positiveRestrictedRoots (w : (hθ.restrictedRootPairing h𝔞).weylGroup)
-    (H₀ : 𝔞) :
-    w • 𝔞.positiveRestrictedRoots H₀ =
-      𝔞.positiveRestrictedRoots
-        (((w⁻¹ : (hθ.restrictedRootPairing h𝔞).Aut)).coweightEquiv H₀) := by
-  ext μ
-  rw [Set.mem_smul_set_iff_inv_smul_mem, mem_positiveRestrictedRoots, mem_positiveRestrictedRoots,
-    hθ.smul_mem_restrictedRoots_iff h𝔞 w⁻¹, ← Subgroup.coe_inv,
-    hθ.restrictedRootPairing_weylGroup_smul_apply h𝔞]
-
-/-- The Weyl group `W(Σ)` preserves the property of being a positive restricted root system. -/
-theorem isPositiveRestrictedRootSystem_smul (w : (hθ.restrictedRootPairing h𝔞).weylGroup)
-    {S : Set (Dual ℝ 𝔞)} (hS : 𝔞.IsPositiveRestrictedRootSystem S) :
-    𝔞.IsPositiveRestrictedRootSystem (w • S) := by
-  obtain ⟨H₀, hreg, rfl⟩ := hS
-  refine ⟨((w⁻¹ : (hθ.restrictedRootPairing h𝔞).Aut)).coweightEquiv H₀,
-    fun μ hμ ↦ ?_, hθ.smul_positiveRestrictedRoots h𝔞 w H₀⟩
-  rw [← Subgroup.coe_inv, ← hθ.restrictedRootPairing_weylGroup_smul_apply h𝔞 w⁻¹]
-  exact hreg _ ((hθ.smul_mem_restrictedRoots_iff h𝔞 w⁻¹).mpr hμ)
-
-/-- The action of `W(Σ)` on positive restricted root systems matches the transport of bases of
-`Σ_indiv` along `restrictedWeylGroupEquiv`. -/
-theorem smul_positiveRestrictedRootsOfBase (w : (hθ.restrictedRootPairing h𝔞).weylGroup)
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) :
-    w • hθ.positiveRestrictedRootsOfBase h𝔞 b =
-      hθ.positiveRestrictedRootsOfBase h𝔞
-        (b.map (hθ.restrictedWeylGroupEquiv h𝔞 w :
-          (hθ.indivisibleRestrictedRootPairing h𝔞).Aut)) := by
-  ext μ
-  rw [Set.mem_smul_set_iff_inv_smul_mem, mem_positiveRestrictedRootsOfBase,
-    mem_positiveRestrictedRootsOfBase, hθ.smul_mem_restrictedRoots_iff h𝔞 w⁻¹,
-    TauCeti.posRootCone_map, AddSubmonoid.mem_map]
-  refine and_congr Iff.rfl ⟨fun hmem ↦ ⟨w⁻¹ • μ, hmem, ?_⟩, ?_⟩
-  · rw [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
-      ← RootPairing.Equiv.smul_eq_weightEquiv, ← Subgroup.smul_def,
-      hθ.restrictedWeylGroupEquiv_smul, smul_inv_smul]
-  · rintro ⟨ν, hν, hEq⟩
-    rw [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
-      ← RootPairing.Equiv.smul_eq_weightEquiv, ← Subgroup.smul_def] at hEq
-    rwa [← hEq, hθ.restrictedWeylGroupEquiv_smul, inv_smul_smul]
-
-/-- **Simple transitivity of `W(Σ)` on positive restricted root systems.** For any two positive
-restricted root systems `S₁` and `S₂`, there exists a unique `w ∈ W(Σ)` such that
-`w • S₁ = S₂`. -/
-theorem existsUnique_weylGroup_smul_positiveRestrictedRoots {S₁ S₂ : Set (Dual ℝ 𝔞)}
-    (hS₁ : 𝔞.IsPositiveRestrictedRootSystem S₁)
-    (hS₂ : 𝔞.IsPositiveRestrictedRootSystem S₂) :
-    ∃! w : (hθ.restrictedRootPairing h𝔞).weylGroup, w • S₁ = S₂ := by
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  obtain ⟨b₁, rfl⟩ := hθ.exists_base_positiveRestrictedRootsOfBase_eq h𝔞 hS₁
-  obtain ⟨b₂, rfl⟩ := hθ.exists_base_positiveRestrictedRootsOfBase_eq h𝔞 hS₂
-  obtain ⟨w', hw', hw'_uniq⟩ := RootPairing.Base.existsUnique_map_eq b₁ b₂
-  refine ⟨(hθ.restrictedWeylGroupEquiv h𝔞).symm w', ?_, fun v hv ↦ ?_⟩
-  · dsimp only
-    rw [hθ.smul_positiveRestrictedRootsOfBase h𝔞, MulEquiv.apply_symm_apply, hw']
-  · dsimp only at hv
-    rw [hθ.smul_positiveRestrictedRootsOfBase h𝔞] at hv
-    have hmap : b₁.map (hθ.restrictedWeylGroupEquiv h𝔞 v :
-        (hθ.indivisibleRestrictedRootPairing h𝔞).Aut) = b₂ :=
-      hθ.positiveRestrictedRootsOfBase_injective h𝔞 hv
-    exact (hθ.restrictedWeylGroupEquiv h𝔞).eq_symm_apply.mpr (hw'_uniq _ hmap)
-
-/-- Every `H ∈ 𝔞` is conjugate by some `w ∈ W(Σ)` (via its coweight action) into the closed
-dominant Weyl chamber of `b.flip`. -/
-theorem exists_weylGroup_coweightEquiv_mem_dominantChamber
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) (H : 𝔞) :
-    ∃ w : (hθ.restrictedRootPairing h𝔞).weylGroup,
-      (w : (hθ.restrictedRootPairing h𝔞).Aut).coweightEquiv H ∈
-        (hθ.indivisibleRestrictedRootPairing h𝔞).flip.dominantChamber b.flip := by
-  have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  obtain ⟨u, hu⟩ :=
-    RootPairing.exists_mem_dominantChamber
-      (hθ.indivisibleRestrictedRootPairing h𝔞).flip b.flip H
-  obtain ⟨w', hw'⟩ := RootPairing.exists_weylGroup_coweightEquiv_eq_flip_smul _ u
-  refine ⟨(hθ.restrictedWeylGroupEquiv h𝔞).symm w', ?_⟩
-  rw [← hθ.coweightEquiv_restrictedWeylGroupEquiv h𝔞, MulEquiv.apply_symm_apply, hw']
-  exact hu
-
-end WeylAction
-
-end BasesAndChambers
+end LinearOrderedField
 
 end LieEquiv.IsCartanInvolution

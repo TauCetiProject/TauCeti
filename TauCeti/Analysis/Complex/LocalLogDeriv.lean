@@ -56,8 +56,12 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
   and its horizontal-strip specialization converting a centre lower bound `b ≤ ‖f z₀‖` and sphere
   bound `‖f w‖ ≤ c * K` (`1 < K₀ ≤ K`) into an upper bound `A * log K` for the retained-zero sum,
   with `A` depending only on `(R, b, c, K₀)`.
+* `TauCeti.exists_norm_logDeriv_sub_finsum_divisor_le`: the nested-radii lemma with a constant
+  depending only on the radii, uniformly for `‖z - z₀‖ ≤ r`.
 * `TauCeti.neg_re_logDeriv_add_sub_inv_le_max_mul`: local-to-global single-zero extension
   combining a local retained-zero bound with a half-plane bound.
+* `AnalyticOnNhd.exists_logDeriv_sub_finsum_divisor_extension`: after subtracting the
+  partial fractions of the zeros in a closed disc, `logDeriv f` extends analytically across them.
 
 ## Implementation notes
 
@@ -101,6 +105,42 @@ variable {f : ℂ → ℂ} {z₀ : ℂ} {r R : ℝ}
 open Complex
 open scoped ComplexConjugate
 
+-- Away from the zeros, removing the inner-disc partial fractions from `logDeriv f` leaves the
+-- logarithmic derivative of the zero-free cofactor of `finprod_zpow_factorization`.
+private lemma logDeriv_sub_finsum_divisor_eq_logDeriv_cofactor {z : ℂ}
+    (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)) (hrR : r ≤ R)
+    (hz : z ∈ closedBall z₀ r) (hfz : f z ≠ 0) :
+    logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r) ρ : ℂ) / (z - ρ) =
+      logDeriv (toMeromorphicNFOn
+        ((∏ᶠ ρ, (· - ρ) ^ divisor f (closedBall z₀ r) ρ)⁻¹ • f)
+        (divisor f (closedBall z₀ r)).support) z := by
+  classical
+  have hzR : z ∈ closedBall z₀ R := closedBall_subset_closedBall hrR hz
+  let D := divisor f (closedBall z₀ r)
+  obtain ⟨hG, hG0, hglobal, _⟩ := hf.finprod_zpow_factorization hrR ⟨z, hzR, hfz⟩
+  have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
+  have hDz : D z = 0 := (hf z hzR).divisor_apply_eq_zero hfz
+  have h := Function.FactorizedRational.logDeriv_sub_sum_eq hfin hDz
+    (hG z hzR).differentiableAt (hG0 z hz) (.of_eq (funext fun w ↦ congrFun hglobal w))
+  rw [← finsum_eq_sum_of_support_subset (fun ρ ↦ (D ρ : ℂ) / (z - ρ))
+    (s := hfin.toFinset)
+    (fun ρ hρ ↦ hfin.mem_toFinset.mpr fun hzero ↦ hρ (by simp [hzero]))] at h
+  simpa only [D] using h
+
+/-- Subtracting the fractions `m / (z - ρ)` for zeros `ρ` in the closed disc, with
+multiplicity `m`, gives a logarithmic derivative that extends analytically across those zeros. -/
+theorem exists_logDeriv_sub_finsum_divisor_extension
+    (hf : AnalyticOnNhd ℂ f (closedBall z₀ r)) :
+    ∃ g : ℂ → ℂ, AnalyticOnNhd ℂ g (closedBall z₀ r) ∧
+      ∀ z ∈ closedBall z₀ r, f z ≠ 0 →
+        logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r) ρ : ℂ) / (z - ρ) = g z := by
+  classical
+  by_cases h₀ : ∃ z ∈ closedBall z₀ r, f z ≠ 0
+  · obtain ⟨hG, hG0, -, -⟩ := hf.finprod_zpow_factorization le_rfl h₀
+    exact ⟨_, fun z hz ↦ (hG z hz).deriv.div (hG z hz) (hG0 z hz),
+      fun z hz hfz ↦ logDeriv_sub_finsum_divisor_eq_logDeriv_cofactor hf le_rfl hz hfz⟩
+  · exact ⟨0, fun _ _ ↦ analyticAt_const, fun z hz hfz ↦ (h₀ ⟨z, hz, hfz⟩).elim⟩
+
 -- Remove the inner-disc zeros and identify the remaining logarithmic derivative once.
 private lemma exists_factor_logDeriv_eq {z : ℂ}
     (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)) (hrR : r ≤ R)
@@ -126,16 +166,8 @@ private lemma exists_factor_logDeriv_eq {z : ℂ}
     exact congrFun hglobal w
   have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
   have hD (ρ : ℂ) : 0 ≤ D ρ := (hf.mono (closedBall_subset_closedBall hrR)).divisor_nonneg ρ
-  refine ⟨G, hfin, hD, Function.FactorizedRational.finprod_apply_eq_prod hfin, hG, hG0, hfG, ?_⟩
-  have hDz : D z = 0 := (hf z (ball_subset_closedBall hzR)).divisor_apply_eq_zero hfz
-  have hfPG : f =ᶠ[𝓝 z] (∏ᶠ ρ, (· - ρ) ^ D ρ) * G :=
-    .of_eq (funext fun w ↦ congrFun hglobal w)
-  have h := Function.FactorizedRational.logDeriv_sub_sum_eq hfin hDz
-    (hG z (ball_subset_closedBall hzR)).differentiableAt (hG0 z (ball_subset_closedBall hzb)) hfPG
-  rw [← finsum_eq_sum_of_support_subset (fun ρ ↦ (D ρ : ℂ) / (z - ρ))
-    (s := hfin.toFinset)
-    (fun ρ hρ ↦ hfin.mem_toFinset.mpr fun hzero ↦ hρ (by simp [hzero]))] at h
-  simpa only [D] using h
+  exact ⟨G, hfin, hD, Function.FactorizedRational.finprod_apply_eq_prod hfin, hG, hG0, hfG,
+    logDeriv_sub_finsum_divisor_eq_logDeriv_cofactor hf hrR (ball_subset_closedBall hzb) hfz⟩
 
 -- Sum the logarithmic derivatives of the finite reflected product with integer multiplicities.
 private lemma norm_logDeriv_reflected_prod_le {S : Finset ℂ} {n : ℂ → ℤ} {z : ℂ}
@@ -491,6 +523,28 @@ theorem neg_re_logDeriv_add_sub_inv_le {σ₀ σ B : ℝ} {ρ : ℂ}
 end AnalyticOnNhd
 
 namespace TauCeti
+
+/-- **Uniform form of Landau's local lemma for nested radii.** For radii `r < r' < R` there is a
+constant `A`, depending only on `r, r', R`, with the following property. Let `f` be analytic on
+`closedBall z₀ R` with `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`. Then at every `z` with
+`‖z - z₀‖ ≤ r` and `f z ≠ 0`, `logDeriv f z` differs from the divisor sum over
+`closedBall z₀ r'` by at most `A log M`. -/
+theorem exists_norm_logDeriv_sub_finsum_divisor_le {r r' R : ℝ} (hrr' : r < r') (hr'R : r' < R) :
+    ∃ A : ℝ, ∀ {f : ℂ → ℂ} {z₀ z : ℂ} {M : ℝ}, AnalyticOnNhd ℂ f (closedBall z₀ R) →
+      (∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) → f z₀ ≠ 0 → ‖z - z₀‖ ≤ r → f z ≠ 0 →
+        ‖logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r') ρ : ℂ) / (z - ρ)‖ ≤
+          A * Real.log M := by
+  refine ⟨4 * (r' + r) / (r' - r) ^ 2 + r' / ((R ^ 2 - r' * r) * Real.log (R / r')),
+    fun {f z₀ z M} hf hM hz₀ hz hfz ↦ ?_⟩
+  have hd := norm_nonneg (z - z₀)
+  have hlog : 0 < Real.log (R / r') := Real.log_pos ((one_lt_div (by linarith)).mpr hr'R)
+  have hR : 0 < R ^ 2 - r' * r := by nlinarith
+  have hM1 : 1 ≤ M :=
+    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
+      (by linarith) hz₀ hM
+  refine (hf.norm_logDeriv_sub_finsum_divisor_le hr'R hM (hz.trans_lt hrr') hfz).trans
+    (mul_le_mul_of_nonneg_right ?_ (Real.log_nonneg hM1))
+  gcongr <;> nlinarith
 
 /-- **Uniform disc form of Landau's retained-zero inequality.** Fix a nonzero radius `R ≠ 0`, a
 centre lower bound `b > 0`, a growth factor `c`, and a base `K₀ > 1`. There is a constant `A > 0`

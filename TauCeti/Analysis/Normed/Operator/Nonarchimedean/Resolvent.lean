@@ -11,7 +11,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import TauCeti.Topology.Algebra.InfiniteSum.LinearRecurrence
 import TauCeti.Algebra.Ring.Commute
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # The Fredholm resolvent of a row-compact operator
