@@ -13,10 +13,10 @@ import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 # Minimal injective resolutions
 
 An injective resolution is minimal when its cycles are essential in the corresponding injective
-terms. If a class of objects is closed under taking injective envelopes and their cokernels, every
-object in that class has a minimal injective resolution with all its terms in the class. This
-applies, in particular, to finitely generated modules over an Artin algebra. The construction
-iterates the same injective-envelope step as
+terms. If every object in a class has an injective envelope whose target and cokernel lie in the
+class, every object in the class has a minimal injective resolution with all its terms in the
+class. This applies, in particular, to finitely generated modules over an Artin algebra. The
+construction iterates the same injective-envelope step as
 `CategoryTheory.ComposableArrows.exists_isMinimalInjectiveCoresolution` for finite coresolutions.
 
 For the use of minimal injective resolutions in dominant dimension, see Auslander, Reiten and
@@ -160,8 +160,7 @@ include hQ in
 /-- Repeated injective envelopes give a minimal injective resolution whose terms lie in the
 given class, provided every object in the class has an envelope with target and cokernel in the
 class. -/
-theorem _root_.TauCeti.exists_isMinimal_injectiveResolution_of_closedUnder_envelopes
-    {Y : C} (hY : Q Y) :
+theorem _root_.TauCeti.exists_isMinimal_injectiveResolution {Y : C} (hY : Q Y) :
     ∃ I : InjectiveResolution Y, I.IsMinimal ∧ ∀ n, Q (I.cocomplex.X n) := by
   let X : Subtype Q := ⟨Y, hY⟩
   let I : InjectiveResolution Y :=

@@ -44,7 +44,7 @@ theorem exists_isMinimal_injectiveResolution_of_finite {A : Type v} [Ring A]
     (M : ModuleCat.{w} A) (R : Type u) [CommRing R] [IsArtinianRing R] [Algebra R A]
     [Module.Finite R A] [Small.{w} A] [Module.Finite A M] :
     ∃ I : InjectiveResolution M, I.IsMinimal ∧ ∀ n, Module.Finite A (I.cocomplex.X n) := by
-  refine TauCeti.exists_isMinimal_injectiveResolution_of_closedUnder_envelopes
+  refine TauCeti.exists_isMinimal_injectiveResolution
     (Q := fun N : ModuleCat.{w} A ↦ Module.Finite A N) (Y := M) ?_ inferInstance
   intro N hN
   obtain ⟨J, _, _, hJ, i, hi⟩ := exists_isInjectiveEnvelope_finite R (A := A) N
