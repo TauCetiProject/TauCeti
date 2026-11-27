@@ -28,6 +28,7 @@ infinite-order elements, such as those used for Euclidean triangle groups.
   a set.
 * `AffineEquiv.toGL`: the embedding of the affine group of a commutative ring `R` into
   `GL (Fin 2) R` sending `x ↦ a * x + b` to the matrix `!![a, b; 0, 1]`.
+* `LinearEquiv.toAffineEquivHom`: `LinearEquiv.toAffineEquiv` as a monoid homomorphism.
 
 ## Main results
 
@@ -185,6 +186,27 @@ theorem eq_homothetyUnitsMulHom_of_linear_one_ne_one (f : K ≃ᵃ[K] K) (hf : f
 end Field
 
 end AffineEquiv
+
+namespace LinearEquiv
+
+variable {k V : Type*} [Ring k] [AddCommGroup V] [Module k V]
+
+/-- `LinearEquiv.toAffineEquiv` as a monoid homomorphism. -/
+def toAffineEquivHom : (V ≃ₗ[k] V) →* (V ≃ᵃ[k] V) where
+  toFun := LinearEquiv.toAffineEquiv
+  map_one' := AffineEquiv.ext fun x ↦ by
+    simp only [LinearEquiv.coe_toAffineEquiv, FunLike.coe_one_eq_id, AffineEquiv.coe_one]
+  map_mul' f g := AffineEquiv.ext fun x ↦ by
+    simp only [LinearEquiv.coe_toAffineEquiv, _root_.mul_apply_eq_comp, AffineEquiv.coe_mul,
+      Function.comp_apply]
+
+/-- Application of `LinearEquiv.toAffineEquivHom`. -/
+@[simp]
+theorem toAffineEquivHom_apply (e : V ≃ₗ[k] V) :
+    (toAffineEquivHom : (V ≃ₗ[k] V) →* (V ≃ᵃ[k] V)) e = e.toAffineEquiv :=
+  (rfl)
+
+end LinearEquiv
 
 namespace TauCeti
 

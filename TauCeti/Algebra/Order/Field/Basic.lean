@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Order.ConditionallyCompleteLattice.Indexed
+import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
@@ -122,11 +123,37 @@ zero only at `0`.
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
   scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.exists_pos_lt_one_forall_mul_lt`: for a finite family of nonnegative displacements `d`
+  and positive tolerances `tol`, some `t ∈ (0, 1)` satisfies `t * d j < tol j` for every `j`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- Choosing one positive step `t ∈ (0, 1)` below finitely many positive tolerances `tol j`
+relative to nonnegative displacements `d j`. -/
+theorem exists_pos_lt_one_forall_mul_lt {ι R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Finite ι] (d tol : ι → R)
+    (hd : ∀ j, 0 ≤ d j) (htol : ∀ j, 0 < tol j) :
+    ∃ t : R, 0 < t ∧ t < 1 ∧ ∀ j, t * d j < tol j := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · exact ⟨1 / 2, half_pos one_pos, half_lt_self one_pos, fun j ↦ hι.elim j⟩
+  · let _ := Fintype.ofFinite ι
+    let bound (j : ι) : R := min 1 (tol j) / (d j + 1)
+    have hb_pos (j : ι) : 0 < bound j := div_pos (lt_min one_pos (htol j)) (by linarith [hd j])
+    have hb_le (j : ι) : bound j ≤ 1 :=
+      (div_le_one (by linarith [hd j])).mpr ((min_le_left _ _).trans (by linarith [hd j]))
+    let m := Finset.univ.inf' Finset.univ_nonempty bound
+    have hm_pos : 0 < m := (Finset.lt_inf'_iff _).mpr fun j _ ↦ hb_pos j
+    obtain ⟨j₀⟩ := hι
+    have hm_le : m ≤ 1 := (Finset.inf'_le _ (Finset.mem_univ j₀)).trans (hb_le j₀)
+    refine ⟨m / 2, half_pos hm_pos, by linarith, fun j ↦ ?_⟩
+    have htm : (m / 2) * (d j + 1) < min 1 (tol j) :=
+      (lt_div_iff₀ (by linarith [hd j])).mp
+        (lt_of_lt_of_le (half_lt_self hm_pos) (Finset.inf'_le bound (Finset.mem_univ j)))
+    have hle : (m / 2) * d j ≤ (m / 2) * (d j + 1) := by nlinarith [half_pos hm_pos]
+    exact hle.trans_lt (htm.trans_le (min_le_right _ _))
 
 /-- Normalizing by a nonzero square converts a scale inequality into a bound on time. -/
 theorem two_mul_sq_inv_mul_lt_one_iff {K : Type*} [Field K] [LinearOrder K]
