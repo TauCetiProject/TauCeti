@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Spectral.ShiftedResolventTransform
 import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
+import TauCeti.Analysis.Normed.Operator.Spectrum
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.LocallyConstant.Preconnected
 import TauCeti.Topology.Order.Interval.Basic
@@ -555,14 +556,10 @@ theorem domainSpectralFlow_one [FiniteDimensional 𝕜 H] {A : ℝ → H →L[�
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hA
   set c : ℝ := max C 0 + 1
   have hc : 0 < c := by positivity
-  have hunit (t : ℝ) (ht : t ∈ Icc a b) : IsUnit ((c : 𝕜) • (1 : H →L[𝕜] H) - A t) := by
-    have hnot : (c : 𝕜) ∉ spectrum 𝕜 (A t) := fun hmem ↦ by
-      have := spectrum.norm_le_norm_of_mem hmem
-      rw [RCLike.norm_ofReal, abs_of_pos hc] at this
-      linarith [hC t ht, le_max_left C 0]
-    rwa [spectrum.notMem_iff, Algebra.algebraMap_eq_smul_one] at hnot
   have hinv (t : ℝ) (ht : t ∈ Icc a b) : ((c : 𝕜) • (1 : H →L[𝕜] H) - A t).IsInvertible :=
-    ContinuousLinearMap.isInvertible_iff_isUnit.2 (hunit t ht)
+    ContinuousLinearMap.isInvertible_smul_one_sub_of_norm_lt <| by
+      rw [RCLike.norm_ofReal, abs_of_pos hc]
+      linarith [hC t ht, le_max_left C 0]
   have hsymm (t : ℝ) (ht : t ∈ Icc a b) (x y : H) : ⟪A t x, (1 : H →L[𝕜] H) y⟫ =
       ⟪(1 : H →L[𝕜] H) x, A t y⟫ := (hsa t ht).isSymmetric x y
   have hι : IsCompactOperator (1 : H →L[𝕜] H) :=

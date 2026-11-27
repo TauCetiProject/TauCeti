@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Projectivization.CoordLine
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Canonical
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Pullback

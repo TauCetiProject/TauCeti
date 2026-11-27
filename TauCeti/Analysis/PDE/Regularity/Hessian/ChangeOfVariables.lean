@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
+public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Hessian
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
-import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Hessian
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Non-divergence-form equations under a change of variables
@@ -51,7 +53,16 @@ then `v` solves
 `tr (A' ∘ D²v) + ⟪b', ∇v⟫ + (c ∘ Φ) v = f ∘ Φ`
 
 with `A'(x) = N(x) A(Φ x) N(x)†` and `b'(x) = N(x) (b(Φ x) - ∑ᵢ D²Φ(x) eᵢ (A'(x)† eᵢ))`, where the
-second derivatives of `Φ` itself produce the first-order correction.
+second derivatives of `Φ` itself produce the first-order correction. This form needs only a
+locally Lipschitz derivative of `Φ`, whose derivative `D²Φ` exists almost everywhere by
+Rademacher's theorem
+(`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_of_firstOrder_eq_w1pCompL`), so
+it holds along changes of variables of class `C^{1,1}`
+(`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compOfLipschitzFDerivL_add_inner_add_mul_eq`), the
+ones that flatten the boundary of a domain of class `C^{1,1}`. Its first-order coefficient is
+bounded when `N`, `A`, `b` and `D²Φ` are (`OrthonormalBasis.norm_apply_sub_sum_le`) and
+measurable when `N`, `A ∘ Φ` and `b ∘ Φ` are
+(`OrthonormalBasis.aestronglyMeasurable_apply_sub_sum`).
 
 For the standard orthonormal basis, the coefficients `A'` and `b'` of the first equation are
 `TauCeti.PDE.nondivPullbackPrincipal` and `TauCeti.PDE.nondivPullbackDrift`, and the transformed
@@ -198,6 +209,76 @@ theorem norm_fderiv_apply_add_sum_le {F : Type*} [NormedAddCommGroup F] [InnerPr
     simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) => hterm i
 
 end Coefficients
+
+end TauCeti.PDE
+
+namespace OrthonormalBasis
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- **The drift of the equation transformed with a right inverse is bounded.** For an orthonormal
+basis `(eᵢ)`, operators with `‖N‖ ≤ L'` and `‖A₀‖ ≤ Λ`, a bilinear map with `‖S‖ ≤ M` and a vector
+with `‖b₀‖ ≤ β`, the first-order coefficient `N (b₀ - ∑ᵢ S eᵢ (N A₀† N† eᵢ))` of
+`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_of_firstOrder_eq_w1pCompL`,
+where `S = D²Φ(x)`, has norm at most `L' (β + n M L'² Λ)`, with `n` the size of the basis. -/
+theorem norm_apply_sub_sum_le {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ F)
+    {N A₀ : F →L[ℝ] F} {S : F →L[ℝ] F →L[ℝ] F} {b₀ : F} {L' M Λ β : ℝ} (hN : ‖N‖ ≤ L')
+    (hS : ‖S‖ ≤ M) (hA₀ : ‖A₀‖ ≤ Λ) (hb₀ : ‖b₀‖ ≤ β) :
+    ‖N (b₀ - ∑ i, S (e i) (N (A₀.adjoint (N.adjoint (e i)))))‖ ≤
+      L' * (β + Fintype.card ι * (M * (L' ^ 2 * Λ))) := by
+  have hL' : 0 ≤ L' := (norm_nonneg N).trans hN
+  have hM : 0 ≤ M := (norm_nonneg S).trans hS
+  have hΛ : 0 ≤ Λ := (norm_nonneg A₀).trans hA₀
+  have hterm (i : ι) : ‖S (e i) (N (A₀.adjoint (N.adjoint (e i))))‖ ≤ M * (L' ^ 2 * Λ) := by
+    have hNa : ‖N.adjoint (e i)‖ ≤ L' := by
+      refine (N.adjoint.le_opNorm _).trans ?_
+      rw [LinearIsometryEquiv.norm_map, e.norm_eq_one, mul_one]
+      exact hN
+    have hAa : ‖A₀.adjoint (N.adjoint (e i))‖ ≤ Λ * L' := by
+      refine (A₀.adjoint.le_opNorm _).trans ?_
+      rw [LinearIsometryEquiv.norm_map]
+      exact mul_le_mul hA₀ hNa (norm_nonneg _) hΛ
+    have hNA : ‖N (A₀.adjoint (N.adjoint (e i)))‖ ≤ L' ^ 2 * Λ :=
+      calc _ ≤ L' * (Λ * L') := (N.le_opNorm _).trans (mul_le_mul hN hAa (norm_nonneg _) hL')
+        _ = L' ^ 2 * Λ := by ring
+    refine (S.le_opNorm₂ _ _).trans ?_
+    rw [e.norm_eq_one, mul_one]
+    exact mul_le_mul hS hNA (norm_nonneg _) hM
+  refine (N.le_opNorm _).trans (mul_le_mul hN ?_ (norm_nonneg _) hL')
+  refine (norm_sub_le _ _).trans (add_le_add hb₀ ?_)
+  refine (norm_sum_le _ _).trans ?_
+  simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) => hterm i
+
+/-- **The drift of the equation transformed with a right inverse is measurable.** For an
+orthonormal basis `(eᵢ)`, a map `Φ`, and almost everywhere strongly measurable fields `N`,
+`A ∘ Φ` and `b ∘ Φ`, the first-order coefficient `N (b ∘ Φ - ∑ᵢ D²Φ eᵢ (N (A ∘ Φ)† N† eᵢ))` of
+`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_of_firstOrder_eq_w1pCompL` is
+almost everywhere strongly measurable. No regularity of `Φ` is needed: `D²Φ` is measurable. -/
+theorem aestronglyMeasurable_apply_sub_sum {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+    {μ : Measure F} {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ F) {Φ : F → F}
+    {N A : F → F →L[ℝ] F} {b : F → F} (hN : AEStronglyMeasurable N μ)
+    (hA : AEStronglyMeasurable (fun x => A (Φ x)) μ)
+    (hb : AEStronglyMeasurable (fun x => b (Φ x)) μ) :
+    AEStronglyMeasurable (fun x => N x (b (Φ x) - ∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i)
+      (N x ((A (Φ x)).adjoint ((N x).adjoint (e i)))))) μ := by
+  have happly := (isBoundedBilinearMap_apply (𝕜 := ℝ) (E := F) (F := F)).continuous
+  have hadj {T : F → F →L[ℝ] F} (hT : AEStronglyMeasurable T μ) :
+      AEStronglyMeasurable (fun x => (T x).adjoint) μ :=
+    ContinuousLinearMap.adjoint.continuous.comp_aestronglyMeasurable hT
+  have hD2 : AEStronglyMeasurable (fderiv ℝ (fderiv ℝ Φ)) μ :=
+    (measurable_fderiv ℝ (fderiv ℝ Φ)).aestronglyMeasurable
+  refine happly.comp_aestronglyMeasurable₂ hN
+    (hb.sub (Finset.aestronglyMeasurable_fun_sum _ fun i _ => ?_))
+  exact happly.comp_aestronglyMeasurable₂ (hD2.apply_continuousLinearMap (e i))
+    (happly.comp_aestronglyMeasurable₂ hN (happly.comp_aestronglyMeasurable₂ (hadj hA)
+      ((hadj hN).apply_continuousLinearMap (e i))))
+
+end OrthonormalBasis
+
+namespace TauCeti.PDE
+
+open Wkp
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -442,6 +523,79 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq {ι : Type*
   filter_upwards [hΦ.ae_comp hkey, ae_restrict_mem U.isOpen.measurableSet] with x hx hxU
   rwa [hΦ.injOn (hΨ.mapsTo (hΦ.mapsTo hxU)) hxU (hΦΨ (hΦ.mapsTo hxU))] at hx
 
+/-- **A non-divergence-form equation under a change of variables with locally Lipschitz
+derivative.** Let `Φ` be a change of variables of order one from `U` into `V` whose derivative is
+locally Lipschitz on `U`, let `N(x)` be a right inverse of `DΦ(x)` for `x ∈ U`, and let
+`1 ≤ p < ∞`. If `u ∈ W^{2,p}(V)` is a strong solution of `tr (A ∘ D²u) + ⟪b, ∇u⟫ + γ u = f`
+almost everywhere in `V`, and `w ∈ W^{2,p}(U)` has the value `u ∘ Φ`, in the sense that its
+first-order part is the first-order change of variables of that of `u`, then `w` is a strong
+solution of
+
+`tr (A' ∘ D²w) + ⟪b', ∇w⟫ + γ(Φ x) w = f(Φ x)` almost everywhere in `U`,
+
+where `A'(x) = N(x) A(Φ x) N(x)†` and, for any orthonormal basis `(eᵢ)` of `E`,
+`b'(x) = N(x) (b(Φ x) - ∑ᵢ D²Φ(x) eᵢ (N(x) A(Φ x)† N(x)† eᵢ))`. Here `D²Φ(x)` is the derivative
+of `DΦ`, which exists almost everywhere on `U` by Rademacher's theorem. This covers changes of
+variables of order two
+(`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq_of_fderiv_comp_eq_id`)
+and of class `C^{1,1}`
+(`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compOfLipschitzFDerivL_add_inner_add_mul_eq`). -/
+theorem ae_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_of_firstOrder_eq_w1pCompL
+    (h : IsChangeOfVariables 1 U V Φ L c) (hΦ : LocallyLipschitzOn (U : Set E) (fderiv ℝ Φ))
+    (hp : p ≠ ⊤) {N : E → E →L[ℝ] E}
+    (hN : ∀ x ∈ (U : Set E), fderiv ℝ Φ x ∘L N x = ContinuousLinearMap.id ℝ E)
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ E)
+    {A : E → E →L[ℝ] E} {b : E → E} {γ f : E → ℝ} {u : Wkp mu V p 2} {w : Wkp mu U p 2}
+    (hw : firstOrder 1 w = h.w1pCompL hp (firstOrder 1 u))
+    (hu : ∀ᵐ y ∂mu.restrict V, traceCLM ℝ E (A y ∘L iteratedGradient 1 u y) +
+      ⟪b y, iteratedGradient 0 (lowerOrder 1 u) y⟫_ℝ + γ y * value 2 u y = f y) :
+    ∀ᵐ x ∂mu.restrict U,
+      traceCLM ℝ E ((N x ∘L A (Φ x) ∘L (N x).adjoint) ∘L iteratedGradient 1 w x) +
+        ⟪N x (b (Φ x) - ∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i)
+            (N x ((A (Φ x)).adjoint ((N x).adjoint (e i))))),
+          iteratedGradient 0 (lowerOrder 1 w) x⟫_ℝ +
+        γ (Φ x) * value 2 w x = f (Φ x) := by
+  have hgrad : W1p.gradient (firstOrder 1 w) =ᵐ[mu.restrict U]
+      fun x => (fderiv ℝ Φ x).adjoint (W1p.gradient (firstOrder 1 u) (Φ x)) := by
+    rw [hw]
+    exact W1p.gradient_compL_ae Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos
+      h.le_abs_det _
+  have hval : value 2 w =ᵐ[mu.restrict U] fun x => value 2 u (Φ x) := by
+    rw [← value_firstOrder, hw]
+    filter_upwards [h.value_w1pCompL_ae hp (firstOrder 1 u)] with x hx
+    rw [hx, value_firstOrder]
+  filter_upwards [h.ae_comp hu, inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL h hΦ hp u hw,
+    hgrad, hval, ae_restrict_mem U.isOpen.measurableSet] with x hux hD hg hv hx
+  rw [← gradient_firstOrder_one, hg, gradient_firstOrder_one]
+  set M := fderiv ℝ Φ x
+  set g := iteratedGradient 0 (lowerOrder 1 u) (Φ x)
+  set A' := N x ∘L A (Φ x) ∘L (N x).adjoint with hA'def
+  have hMN := hN x hx
+  have hA' : ∀ z, A'.adjoint z = N x ((A (Φ x)).adjoint ((N x).adjoint z)) := fun z => by
+    simp [A', ContinuousLinearMap.adjoint_comp]
+  -- The trace of `A' ∘ D²w`, computed on the basis `e`.
+  have htr : traceCLM ℝ E (A' ∘L iteratedGradient 1 (w) x) =
+      traceCLM ℝ E (A (Φ x) ∘L iteratedGradient 1 u (Φ x)) +
+        ⟪∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i) (A'.adjoint (e i)), g⟫_ℝ := by
+    have hH (f : E) : (iteratedGradient 1 (w) x -
+        M.adjoint ∘L iteratedGradient 1 u (Φ x) ∘L M) f =
+          (fderiv ℝ (fderiv ℝ Φ) x f).adjoint g := by
+      refine ext_inner_right ℝ fun f' => ?_
+      rw [sub_apply, inner_sub_left, hD f f', ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.comp_apply, ContinuousLinearMap.adjoint_inner_left,
+        ContinuousLinearMap.adjoint_inner_left, add_sub_cancel_left]
+    rw [← sub_add_cancel (iteratedGradient 1 (w) x)
+        (M.adjoint ∘L iteratedGradient 1 u (Φ x) ∘L M), ContinuousLinearMap.comp_add,
+      map_add, hA'def, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id hMN,
+      ContinuousLinearMap.traceCLM_comp_eq_sum_inner _ e _ g hH, add_comm]
+  -- The drift: `⟪N z, M† g⟫ = ⟪z, g⟫` since `M N = 1`.
+  have hdrift (z : E) : ⟪N x z, M.adjoint g⟫_ℝ = ⟪z, g⟫_ℝ := by
+    rw [ContinuousLinearMap.adjoint_inner_right]
+    simpa using congrArg (fun z' => ⟪z', g⟫_ℝ) (congrArg (fun T => T z) hMN)
+  rw [htr, hv, hdrift, ← hux]
+  simp only [hA', inner_sub_left]
+  ring
+
 /-- **A non-divergence-form equation under a change of variables, with a right inverse of the
 derivative.** Let `Φ` be a change of variables of order two from `U` into `V`, let `N(x)` be a
 right inverse of `DΦ(x)` for `x ∈ U`, and let `1 ≤ p < ∞`. If `u ∈ W^{2,p}(V)` is a strong solution
@@ -466,39 +620,40 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq_of_fderiv_c
         ⟪N x (b (Φ x) - ∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i)
             (N x ((A (Φ x)).adjoint ((N x).adjoint (e i))))),
           iteratedGradient 0 (lowerOrder 1 (compL h u)) x⟫_ℝ +
-        γ (Φ x) * value 2 (compL h u) x = f (Φ x) := by
-  filter_upwards [h.ae_comp hu, inner_iteratedGradient_compL_ae h hp u,
-    gradient_firstOrder_compL_ae h u, value_compL_ae h u,
-    ae_restrict_mem U.isOpen.measurableSet] with x hux hD hg hv hx
-  rw [← gradient_firstOrder_one, hg, gradient_firstOrder_one]
-  set M := fderiv ℝ Φ x
-  set g := iteratedGradient 0 (lowerOrder 1 u) (Φ x)
-  set A' := N x ∘L A (Φ x) ∘L (N x).adjoint with hA'def
-  have hMN := hN x hx
-  have hA' : ∀ z, A'.adjoint z = N x ((A (Φ x)).adjoint ((N x).adjoint z)) := fun z => by
-    simp [A', ContinuousLinearMap.adjoint_comp]
-  -- The trace of `A' ∘ D²w`, computed on the basis `e`.
-  have htr : traceCLM ℝ E (A' ∘L iteratedGradient 1 (compL h u) x) =
-      traceCLM ℝ E (A (Φ x) ∘L iteratedGradient 1 u (Φ x)) +
-        ⟪∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i) (A'.adjoint (e i)), g⟫_ℝ := by
-    have hH (f : E) : (iteratedGradient 1 (compL h u) x -
-        M.adjoint ∘L iteratedGradient 1 u (Φ x) ∘L M) f =
-          (fderiv ℝ (fderiv ℝ Φ) x f).adjoint g := by
-      refine ext_inner_right ℝ fun f' => ?_
-      rw [sub_apply, inner_sub_left, hD f f', ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.comp_apply, ContinuousLinearMap.adjoint_inner_left,
-        ContinuousLinearMap.adjoint_inner_left, add_sub_cancel_left]
-    rw [← sub_add_cancel (iteratedGradient 1 (compL h u) x)
-        (M.adjoint ∘L iteratedGradient 1 u (Φ x) ∘L M), ContinuousLinearMap.comp_add,
-      map_add, hA'def, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id hMN,
-      ContinuousLinearMap.traceCLM_comp_eq_sum_inner _ e _ g hH, add_comm]
-  -- The drift: `⟪N z, M† g⟫ = ⟪z, g⟫` since `M N = 1`.
-  have hdrift (z : E) : ⟪N x z, M.adjoint g⟫_ℝ = ⟪z, g⟫_ℝ := by
-    rw [ContinuousLinearMap.adjoint_inner_right]
-    simpa using congrArg (fun z' => ⟪z', g⟫_ℝ) (congrArg (fun T => T z) hMN)
-  rw [htr, hv, hdrift, ← hux]
-  simp only [hA', inner_sub_left]
-  ring
+        γ (Φ x) * value 2 (compL h u) x = f (Φ x) :=
+  -- `DΦ` is `C¹` on the open set `U`, hence locally Lipschitz there.
+  ae_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_of_firstOrder_eq_w1pCompL
+    (h.mono one_le_two) (h.contDiffOn_fderiv.locallyLipschitzOn_of_isOpen U.isOpen) hp hN e
+    (firstOrder_compL h hp u) hu
+
+/-- **A non-divergence-form equation under a change of variables of class `C^{1,1}`.** Let `Φ` be a
+change of variables of order one from `U` into `V` whose derivative is `M`-Lipschitz on `U`, let
+`N(x)` be a right inverse of `DΦ(x)` for `x ∈ U`, and let `1 ≤ p < ∞`. If `u ∈ W^{2,p}(V)` is a
+strong solution of `tr (A ∘ D²u) + ⟪b, ∇u⟫ + γ u = f` almost everywhere in `V`, then
+`w = u ∘ Φ` (`TauCeti.Wkp.compOfLipschitzFDerivL`) is a strong solution of
+
+`tr (A' ∘ D²w) + ⟪b', ∇w⟫ + γ(Φ x) w = f(Φ x)` almost everywhere in `U`,
+
+where `A'(x) = N(x) A(Φ x) N(x)†` and, for any orthonormal basis `(eᵢ)` of `E`,
+`b'(x) = N(x) (b(Φ x) - ∑ᵢ D²Φ(x) eᵢ (N(x) A(Φ x)† N(x)† eᵢ))`, with `‖D²Φ(x)‖ ≤ M` almost
+everywhere. -/
+theorem ae_traceCLM_comp_iteratedGradient_compOfLipschitzFDerivL_add_inner_add_mul_eq
+    (h : IsChangeOfVariables 1 U V Φ L c) {M : NNReal} (hM : LipschitzOnWith M (fderiv ℝ Φ) U)
+    (hp : p ≠ ⊤) {N : E → E →L[ℝ] E}
+    (hN : ∀ x ∈ (U : Set E), fderiv ℝ Φ x ∘L N x = ContinuousLinearMap.id ℝ E)
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ E)
+    {A : E → E →L[ℝ] E} {b : E → E} {γ f : E → ℝ} {u : Wkp mu V p 2}
+    (hu : ∀ᵐ y ∂mu.restrict V, traceCLM ℝ E (A y ∘L iteratedGradient 1 u y) +
+      ⟪b y, iteratedGradient 0 (lowerOrder 1 u) y⟫_ℝ + γ y * value 2 u y = f y) :
+    ∀ᵐ x ∂mu.restrict U,
+      traceCLM ℝ E ((N x ∘L A (Φ x) ∘L (N x).adjoint) ∘L
+          iteratedGradient 1 (compOfLipschitzFDerivL h hM hp u) x) +
+        ⟪N x (b (Φ x) - ∑ i, fderiv ℝ (fderiv ℝ Φ) x (e i)
+            (N x ((A (Φ x)).adjoint ((N x).adjoint (e i))))),
+          iteratedGradient 0 (lowerOrder 1 (compOfLipschitzFDerivL h hM hp u)) x⟫_ℝ +
+        γ (Φ x) * value 2 (compOfLipschitzFDerivL h hM hp u) x = f (Φ x) :=
+  ae_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_of_firstOrder_eq_w1pCompL h
+    hM.locallyLipschitzOn hp hN e (firstOrder_compOfLipschitzFDerivL h hM hp u) hu
 
 /-- **The pulled-back equation in terms of `nondivPullbackPrincipal` and `nondivPullbackDrift`.**
 If `u ∈ W^{2,p}(V)` solves `tr (A ∘ D²u) + ⟪b, ∇u⟫ + c₀ u = f` almost everywhere on `V`, then

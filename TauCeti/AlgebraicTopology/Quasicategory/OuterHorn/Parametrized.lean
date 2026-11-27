@@ -31,13 +31,21 @@ domain of the extension problem, as it does for `1 ≤ m` or `1 ≤ n`, the exte
 pairing (`SSet.Subcomplex.PairingCore.exists_ext_of_hornFilling`) thus reduces the problem to
 inner horn filling and Joyal's theorem (`SSet.Quasicategory.exists_fill_of_ne_last`). The case
 `m = 0`, a prism `Δ[1] ⊗ Δ[n]` with given start and sides, is used for right fibrations in
-`TauCeti.AlgebraicTopology.Quasicategory.RightFibration.KanComplex`.
+`TauCeti.AlgebraicTopology.Quasicategory.RightFibration.KanComplex`, and, with its mirror image
+along `Λ[1, 1]` obtained by reversing the vertices of the prism, for the quasicategory of
+equivalences in `TauCeti.AlgebraicTopology.Quasicategory.Isom`.
 
 ## Main results
 
 * `SSet.prodStdSimplex.exists_ext_unionProd_horn_zero`: a map from
   `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])` to a quasicategory which is defined on the vertical
   edge `(0, 0) ⟶ (1, 0)` and sends it to an equivalence extends to `Δ[m + 1] ⊗ Δ[n]`.
+* `SSet.prodStdSimplex.exists_ext_unionProd_horn_one_zero`,
+  `SSet.prodStdSimplex.exists_ext_unionProd_horn_one_one`: a map from
+  `(Λ[1, i] ⊗ Δ[n + 1]) ∪ (Δ[1] ⊗ ∂Δ[n + 1])` to a quasicategory which sends the vertical edges to
+  equivalences extends to `Δ[1] ⊗ Δ[n + 1]`. For `i = 0` this is the case `m = 0` of
+  `SSet.prodStdSimplex.exists_ext_unionProd_horn_zero`; for `i = 1` it follows by reversing the
+  vertices of the prism.
 * `SSet.Quasicategory.exists_ext_cylinder_boundary`: a cylinder on a simplex extends a given
   start and boundary cylinder when its initial vertical edge is an equivalence.
 * `SSet.Quasicategory.exists_lift_pre_horn_zero`: over the horns whose initial edge is an
@@ -98,6 +106,99 @@ theorem exists_ext_unionProd_horn_zero [Quasicategory C] {m n : ℕ}
     (⟨_, hmem⟩ : (unionProd Λ[m + 1, 0] ∂Δ[n] : SSet.{u}) _⦋1⦌)) hg
   exact (Edge.isEquivalence_iff_of_edge_eq (e := Edge.mk' _) (e' := Edge.mk' _)
     ((congrArg (g.app _) he).trans hg')).2 ha
+
+/-- A `1`-simplex of `Δ[1] ⊗ Δ[n + 1]` whose second component is constant at a vertex lies in
+`Δ[1] ⊗ ∂Δ[n + 1]`, hence in `(A ⊗ Δ[n + 1]) ∪ (Δ[1] ⊗ ∂Δ[n + 1])` for every subcomplex `A`. -/
+lemma const_mem_unionProd_boundary {n : ℕ} (A : (Δ[1] : SSet.{u}).Subcomplex) (t : Fin (n + 2))
+    (s : Δ[1] _⦋1⦌) :
+    (s, stdSimplex.const (n + 1) t _) ∈ (unionProd A ∂Δ[n + 1]).obj (Opposite.op ⦋1⦌) := by
+  refine (mem_unionProd_iff _ _ _).2 (Or.inl ?_)
+  rw [mem_boundary_iff_notMem_range]
+  obtain ⟨j, hj⟩ := exists_ne t
+  exact ⟨j, by rintro ⟨i, hi⟩; exact hj hi.symm⟩
+
+/-- **Extension along a prism over the source vertex.** Let `C` be a quasicategory. A map
+`(Λ[1, 0] ⊗ Δ[n + 1]) ∪ (Δ[1] ⊗ ∂Δ[n + 1]) ⟶ C` extends to `Δ[1] ⊗ Δ[n + 1]` provided that it
+sends every vertical edge `(0, t) ⟶ (1, t)` to an equivalence. This is the case `m = 0` of
+`SSet.prodStdSimplex.exists_ext_unionProd_horn_zero`: the vertical edges lie in
+`Δ[1] ⊗ ∂Δ[n + 1]`. -/
+theorem exists_ext_unionProd_horn_one_zero [Quasicategory C] {n : ℕ}
+    (a : (unionProd Λ[1, 0] ∂Δ[n + 1] : SSet.{u}) ⟶ C)
+    (ha : ∀ t : Fin (n + 2), (Edge.mk' (a.app _ ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _),
+      stdSimplex.const (n + 1) t _), const_mem_unionProd_boundary _ t _⟩)).IsEquivalence) :
+    ∃ b : Δ[1] ⊗ Δ[n + 1] ⟶ C, (unionProd Λ[1, 0] ∂Δ[n + 1]).ι ≫ b = a :=
+  exists_ext_unionProd_horn_zero a (const_mem_unionProd_boundary _ 0 _) (ha 0)
+
+/-- The isomorphism `Δ[1] ⊗ Δ[n + 1] ≅ (Δ[1] ⊗ Δ[n + 1])ᵒᵖ` reversing the vertices of the prism. -/
+private noncomputable def prismOpIso (n : ℕ) :
+    (Δ[1] ⊗ Δ[n + 1] : SSet.{u}) ≅ opFunctor.obj (Δ[1] ⊗ Δ[n + 1]) :=
+  ((stdSimplex.opIso _).symm ⊗ᵢ (stdSimplex.opIso _).symm) ≪≫ Functor.Monoidal.μIso opFunctor _ _
+
+/-- Reversing the vertices of the prism carries `Λ[1, 1]` to `Λ[1, 0]`. -/
+private lemma preimage_prismOpIso_hom (n : ℕ) :
+    (unionProd.{u} Λ[1, 0] ∂Δ[n + 1]).op.preimage (prismOpIso n).hom =
+      unionProd.{u} Λ[1, 1] ∂Δ[n + 1] := by
+  dsimp [prismOpIso]
+  rw [preimage_comp, preimage_op_unionProd, preimage_unionProd, op_boundary, op_horn]
+  -- The remaining reversed horn index is `(0 : Fin 2).rev`, definitionally `1`.
+  rfl
+
+/-- The vertex reversal of the prism, restricted to `(Λ[1, 0] ⊗ Δ[n + 1]) ∪ (Δ[1] ⊗ ∂Δ[n + 1])`,
+sends the vertical edge at `t` to the vertical edge at `t.rev`. -/
+private lemma isoOfPreimageEq_prismOpIso_hom_app {n : ℕ} (t : Fin (n + 2)) :
+    (isoOfPreimageEq (prismOpIso.{u} n).symm (preimage_prismOpIso_hom n)).hom.app _
+      ((Subcomplex.opIso _).hom.app _ (opObjEquiv.symm
+        ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) t _),
+          const_mem_unionProd_boundary _ t _⟩)) =
+      ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) t.rev _),
+        const_mem_unionProd_boundary _ t.rev _⟩ := by
+  apply Subtype.ext
+  have h₁ := congr(($(isoOfPreimageEq_hom_ι (prismOpIso.{u} n).symm
+    (preimage_prismOpIso_hom n))).app _ ((Subcomplex.opIso _).hom.app _
+      (opObjEquiv.symm ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) t _),
+        const_mem_unionProd_boundary _ t _⟩)))
+  have h₂ := congr(($(Subcomplex.opIso_hom_ι (unionProd.{u} Λ[1, 0] ∂Δ[n + 1]))).app _
+    (opObjEquiv.symm ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) t _),
+      const_mem_unionProd_boundary _ t _⟩))
+  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply] at h₁ h₂
+  refine h₁.trans ?_
+  rw [h₂, opFunctor_map, Iso.symm_hom]
+  refine Prod.ext (stdSimplex.ext _ _ fun i ↦ ?_) (stdSimplex.ext _ _ fun i ↦ ?_) <;>
+    fin_cases i <;> rfl
+
+/-- **Extension along a prism over the target vertex.** Let `C` be a quasicategory. A map
+`(Λ[1, 1] ⊗ Δ[n + 1]) ∪ (Δ[1] ⊗ ∂Δ[n + 1]) ⟶ C` extends to `Δ[1] ⊗ Δ[n + 1]` provided that it
+sends every vertical edge `(0, t) ⟶ (1, t)` to an equivalence. Reversing the vertices of
+`Δ[1] ⊗ Δ[n + 1]` exchanges `Λ[1, 1]` with `Λ[1, 0]`, so this is
+`SSet.prodStdSimplex.exists_ext_unionProd_horn_one_zero` for the opposite of `C`. -/
+theorem exists_ext_unionProd_horn_one_one [Quasicategory C] {n : ℕ}
+    (a : (unionProd Λ[1, 1] ∂Δ[n + 1] : SSet.{u}) ⟶ C)
+    (ha : ∀ t : Fin (n + 2), (Edge.mk' (a.app _ ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _),
+      stdSimplex.const (n + 1) t _), const_mem_unionProd_boundary _ t _⟩)).IsEquivalence) :
+    ∃ b : Δ[1] ⊗ Δ[n + 1] ⟶ C, (unionProd Λ[1, 1] ∂Δ[n + 1]).ι ≫ b = a := by
+  let E := isoOfPreimageEq (prismOpIso.{u} n).symm (preimage_prismOpIso_hom n)
+  -- Maps from the opposite of a simplicial set to `C` are maps to the opposite of `C`.
+  let adj : opFunctor.{u} ⊣ opFunctor := opEquivalence.toAdjunction
+  let ψ : (unionProd Λ[1, 0] ∂Δ[n + 1] : SSet.{u}) ⟶ C.op :=
+    adj.homEquiv _ _ ((Subcomplex.opIso _).hom ≫ E.hom ≫ a)
+  obtain ⟨b, hb⟩ := exists_ext_unionProd_horn_one_zero (C := C.op) ψ fun t ↦ by
+    -- The reversal sends the vertical edge at `t` to the vertical edge at `t.rev`.
+    have hψ : ψ.app _ ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) t _),
+        const_mem_unionProd_boundary _ t _⟩ = C.opObjEquiv.symm (a.app _
+          ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) t.rev _),
+            const_mem_unionProd_boundary _ t.rev _⟩) := by
+      dsimp only [ψ, adj]
+      rw [opEquivalence_toAdjunction_homEquiv_app, NatTrans.comp_app, NatTrans.comp_app,
+        ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+        isoOfPreimageEq_prismOpIso_hom_app]
+    rw [hψ, Edge.isEquivalence_mk'_opObjEquiv_symm_iff]
+    exact ha t.rev
+  refine ⟨(prismOpIso n).hom ≫ (adj.homEquiv _ _).symm b, ?_⟩
+  have h₁ : (unionProd Λ[1, 1] ∂Δ[n + 1]).ι ≫ (prismOpIso n).hom =
+      E.inv ≫ (Subcomplex.opIso _).inv ≫ opFunctor.map (unionProd Λ[1, 0] ∂Δ[n + 1]).ι := by
+    rw [Subcomplex.opIso_inv_opFunctor_map_ι, isoOfPreimageEq_inv_ι, Iso.symm_inv]
+  rw [reassoc_of% h₁, ← Adjunction.homEquiv_naturality_left_symm, hb, Equiv.symm_apply_apply,
+    Iso.inv_hom_id_assoc, Iso.inv_hom_id_assoc]
 
 end prodStdSimplex
 
