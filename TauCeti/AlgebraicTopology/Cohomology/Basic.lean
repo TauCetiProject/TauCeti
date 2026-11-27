@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.GroupTheory.OrderOfElement
+public import TauCeti.Algebra.Category.ModuleCat.RatAddCircle
 public import TauCeti.Algebra.Homology.Linear
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
@@ -38,7 +39,8 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
 * `TopCat.bijective_smul_singularCohomology`: multiplication by a scalar `r` on `Hⁿ(X; R, M)` is
   bijective when `r • 𝟙 M` is an isomorphism, and
   `TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology`: so `Hⁿ(X; R, M)` has no torsion when
-  every positive integer acts invertibly on `M`, for instance for `M = ℚ`.
+  every positive integer acts invertibly on `M`, with
+  `TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology_rat` the instance `M = ℚ`.
 * `TopCat.singularCohomologyChainCoefficientMap` and `TopCat.singularCohomologyChainCoefficientIso`:
   the change of chain coefficients on singular cohomology, contravariantly functorial in the
   coefficient morphism and natural in the space
@@ -231,6 +233,14 @@ theorem eq_zero_of_isOfFinAddOrder_singularCohomology
   obtain ⟨m, hm, hmx⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.1 hx
   refine (X.bijective_smul_singularCohomology n (hM m hm.ne')).1 ?_
   simp only [smul_zero, Nat.cast_smul_eq_nsmul, hmx]
+
+/-- **Rational cohomology has no torsion**: a class of finite additive order in `Hⁿ(X; R, ℚ)` is
+zero, since multiplication by a nonzero integer is an automorphism of `ℚ`. -/
+theorem eq_zero_of_isOfFinAddOrder_singularCohomology_rat {X : TopCat.{0}}
+    {R : ModuleCat.{0} ℤ} {n : ℕ} {x : X.singularCohomology R ℤ (ModuleCat.of ℤ ℚ) n}
+    (hx : IsOfFinAddOrder x) : x = 0 :=
+  X.eq_zero_of_isOfFinAddOrder_singularCohomology
+    (fun _ hm ↦ ModuleCat.isIso_zsmul_id_rat (Int.natCast_ne_zero.2 hm)) hx
 
 end Scalar
 

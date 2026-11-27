@@ -46,8 +46,6 @@ The pairing is natural in the space (`TopCat.torsionLinkingPairing_naturality`).
 
 * `TopCat.torsionLinkingPairing`: the torsion linking pairing against an integral homology class,
   with `TopCat.torsionLinkingPairing_apply` its value through any Bockstein lift.
-* `TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology_rat`: cohomology with coefficients in `ℚ`
-  has no torsion.
 * `TopCat.exists_singularCohomologyBockstein_eq_of_mem_torsion`: a torsion class of integral
   cohomology is the Bockstein of a class with values in `ℚ/ℤ`.
 * `TopCat.singularCup_eq_of_singularCohomologyBockstein_eq`: classes with values in `ℚ/ℤ` with the
@@ -73,13 +71,6 @@ attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 namespace TopCat
 
 variable {X : TopCat.{0}}
-
-/-- **Rational cohomology has no torsion**: a class of finite additive order in `Hⁿ(X; R, ℚ)` is
-zero, since multiplication by a nonzero integer is an automorphism of `ℚ`. -/
-theorem eq_zero_of_isOfFinAddOrder_singularCohomology_rat {R : ModuleCat.{0} ℤ} {n : ℕ}
-    {x : X.singularCohomology R ℤ (ModuleCat.of ℤ ℚ) n} (hx : IsOfFinAddOrder x) : x = 0 :=
-  X.eq_zero_of_isOfFinAddOrder_singularCohomology
-    (fun _ hm ↦ isIso_zsmul_id_rat (Int.natCast_ne_zero.2 hm)) hx
 
 /-- **Torsion integral classes are Bocksteins**: a torsion class `α ∈ Hᵖ⁺¹(X; ℤ)` is the Bockstein
 `β u` of a class `u ∈ Hᵖ(X; ℚ/ℤ)`, for the coefficient sequence `0 ⟶ ℤ ⟶ ℚ ⟶ ℚ/ℤ ⟶ 0`. -/
