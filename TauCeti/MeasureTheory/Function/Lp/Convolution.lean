@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # Convolution with an integrable kernel as an operator on `Lᵖ`
@@ -34,6 +35,15 @@ convolution semigroup rests:
   `‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p`;
 * **associativity**: convolving with `k₁ ⋆ k₂` is convolving with `k₂` and then with `k₁`.
 
+It also proves that the dilations `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` of any integrable kernel, with
+`d` the dimension of `E`, form an approximate identity: `k_ε ⋆ f → (∫ k) • f` in `Lᵖ` as
+`ε → 0⁺`, with no sign, normalization or support condition on `k`. This is proved for real or
+complex kernels acting on Banach-valued functions through the `Lᵖ`-valued integral of
+translates: after the substitution `y = ε • z` the integrand is `k(z) • f(· - ε • z)`, which tends
+to `k(z) • f` and is dominated by `‖k(z)‖ ‖f‖_p`. The underlying convergence of dilated-kernel
+averages of a bounded function continuous at `0`, `TauCeti.tendsto_integral_comp_inv_smul_smul`,
+is in `TauCeti.MeasureTheory.Integral.Dilation`.
+
 ## Main declarations
 
 * `TauCeti.convolutionLp`: convolution with a real kernel as a continuous linear operator on
@@ -54,13 +64,22 @@ convolution semigroup rests:
 * `TauCeti.integrable_convolution_integrand_restrict`: on a set of finite measure, the
   convolution integrand `(x, y) ↦ k(y) • f(x - y)` of an `L¹` kernel and an `Lᵖ` function is
   integrable, which justifies local Fubini arguments.
+* `TauCeti.compLpL_convolutionLp`: convolution commutes with postcomposition by a continuous
+  linear map between Banach spaces.
+* `TauCeti.tendsto_integral_comp_inv_smul_smul_translateLp`: for an integrable real or complex
+  kernel `k`, the averages `∫ y, k_ε(y) • f(· - y) dμ(y)` converge to `(∫ k) • f` in `Lᵖ`.
+* `TauCeti.tendsto_convolutionLp_comp_inv_smul`: for a real kernel, `k_ε ⋆ f → (∫ k) • f` in
+  `Lᵖ` as `ε → 0⁺`, and `TauCeti.norm_convolutionLp_comp_inv_smul_le` bounds the operator norms
+  of these convolutions by `∫ ‖k‖`, uniformly in `ε`.
 
 ## References
 
 * G. B. Folland, *Real Analysis: Modern Techniques and Their Applications*, 2nd ed.,
-  Section 8.2.
+  Section 8.2; Theorem 8.14 for dilations of an integrable kernel.
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
   Theorem 4.15.
+* T. Hytönen, J. van Neerven, M. Veraar and L. Weis, *Analysis in Banach Spaces, Volume I*,
+  Proposition 1.2.32, for Banach-valued functions.
 -/
 
 public section
@@ -326,5 +345,75 @@ theorem integral_convolutionLp [CompleteSpace F] (k : E → ℝ) (f : Lp F 1 μ)
   · rw [convolutionLp_of_not_integrable ENNReal.one_ne_top hk, integral_undef hk, zero_smul,
       _root_.zero_apply, integral_congr_ae (Lp.coeFn_zero F 1 μ)]
     exact integral_zero E F
+
+/-- Convolution commutes with postcomposition by a continuous linear map between Banach spaces:
+`L ∘ (k ⋆ f) = k ⋆ (L ∘ f)`. -/
+theorem compLpL_convolutionLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace F] [CompleteSpace G] (hp : p ≠ ∞) (k : E → ℝ) (L : F →L[ℝ] G)
+    (f : Lp F p μ) :
+    L.compLpL p μ (convolutionLp hp k μ f) = convolutionLp hp k μ (L.compLpL p μ f) := by
+  by_cases hk : Integrable k μ
+  · rw [convolutionLp_apply hp hk, convolutionLp_apply hp hk,
+      ← (L.compLpL p μ).integral_comp_comm (integrable_smul_translateLp hp hk f)]
+    simp only [map_smul, ContinuousLinearMap.compLpL_translateLp]
+  · simp only [convolutionLp_of_not_integrable hp hk, _root_.zero_apply, map_zero]
+
+open Filter Module
+open scoped Topology
+
+/-! ### Dilations of an integrable kernel
+
+For `ε > 0` the dilation `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` of a kernel `k`, where `d` is the dimension of
+`E`, has the same integral as `k`. The averages of a bounded function `g` continuous at `0` against
+`k_ε` converge to `(∫ k) • g 0` as `ε → 0⁺` (`TauCeti.tendsto_integral_comp_inv_smul_smul`). No
+sign, normalization or support condition on `k` is needed, and the kernel may be real or complex.
+Applied to the translates `y ↦ f(· - y)` of an `Lᵖ` function, this is the `Lᵖ` convergence of the
+dilated convolutions `k_ε ⋆ f` to `(∫ k) • f`. -/
+
+section Dilation
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedSpace 𝕜 V]
+  [IsScalarTower ℝ 𝕜 V]
+
+/-- **Dilations of an integrable kernel act as an approximate identity on `Lᵖ`.** For an
+integrable real or complex kernel `k`, `1 ≤ p < ∞` and `f ∈ Lᵖ(μ; V)` with `V` a Banach space,
+the averages `∫ y, k_ε(y) • f(· - y) dμ(y)` of the translates of `f` against the dilations
+`k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` converge to `(∫ k) • f` in `Lᵖ` as `ε → 0⁺`. -/
+theorem tendsto_integral_comp_inv_smul_smul_translateLp [CompleteSpace V] (hp : p ≠ ∞)
+    {k : E → 𝕜} (hk : Integrable k μ) (f : Lp V p μ) :
+    Tendsto (fun ε : ℝ ↦
+        ∫ y, ((ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) • μ.translateLp p (-y) f ∂μ)
+      (𝓝[>] 0) (𝓝 ((∫ y, k y ∂μ) • f)) := by
+  have hτ : Continuous fun y : E ↦ μ.translateLp p (-y) f :=
+    (Measure.continuous_translateLp hp f).comp continuous_neg
+  simpa only [neg_zero, Measure.translateLp_zero] using
+    tendsto_integral_comp_inv_smul_smul hk hτ.aestronglyMeasurable
+      (ae_of_all _ fun y ↦ (LinearIsometryEquiv.norm_map _ f).le) hτ.continuousAt
+
+end Dilation
+
+/-- **Dilations of an integrable kernel form an approximate identity for convolution.** For an
+integrable real kernel `k`, `1 ≤ p < ∞` and `f ∈ Lᵖ(μ; F)` with `F` a Banach space, convolution
+with the dilations `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` converges strongly: `k_ε ⋆ f → (∫ k) • f` in `Lᵖ` as
+`ε → 0⁺`. -/
+theorem tendsto_convolutionLp_comp_inv_smul [CompleteSpace F] (hp : p ≠ ∞) {k : E → ℝ}
+    (hk : Integrable k μ) (f : Lp F p μ) :
+    Tendsto (fun ε : ℝ ↦ convolutionLp hp (fun y ↦ (ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) μ f)
+      (𝓝[>] 0) (𝓝 ((∫ y, k y ∂μ) • f)) :=
+  (tendsto_integral_comp_inv_smul_smul_translateLp hp hk f).congr'
+    (eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) ↦ by
+      have hkε : Integrable (fun y ↦ (ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) μ := by
+        simpa only [smul_eq_mul] using (hk.comp_smul (inv_ne_zero hε.ne')).const_mul _
+      exact (convolutionLp_apply hp hkε f).symm)
+
+/-- **Young's inequality for dilated kernels.** For `ε > 0`, convolution with the dilation
+`ε⁻ᵈ k(ε⁻¹ • ·)` of a real kernel `k` has operator norm at most `∫ ‖k‖`, uniformly in `ε`. -/
+theorem norm_convolutionLp_comp_inv_smul_le (hp : p ≠ ∞) (k : E → ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ‖convolutionLp (F := F) hp (fun y ↦ (ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) μ‖ ≤
+      ∫ y, ‖k y‖ ∂μ := by
+  refine (norm_convolutionLp_le hp _).trans_eq ?_
+  simp_rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 (pow_nonneg hε.le _))]
+  rw [integral_const_mul, Measure.integral_comp_inv_smul_of_nonneg μ (fun y ↦ ‖k y‖) hε.le,
+    smul_eq_mul, inv_mul_cancel_left₀ (pow_ne_zero _ hε.ne')]
 
 end TauCeti
