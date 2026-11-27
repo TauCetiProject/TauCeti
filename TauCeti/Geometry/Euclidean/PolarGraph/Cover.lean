@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Complex.CoveringMap
 public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
