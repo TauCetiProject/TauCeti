@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Continued.FunctionalEquation
 public import TauCeti.NumberTheory.LFunctions.GammaFactor.Vertical
-import TauCeti.NumberTheory.LFunctions.GammaFactor.Order
 import TauCeti.NumberTheory.LSeries.Continuity
 
 /-!
@@ -17,19 +16,20 @@ For an analytic L-function record `d` with conductor `N`, gamma factor `γ`, roo
 continued function `L = d.continuedL`, this file proves the two edge estimates behind the
 convexity bound on the strip `-δ ≤ Re s ≤ 1 + δ`.
 
-* **The right edge.** With Dirichlet agreement, `L` is the Dirichlet series `∑ a(k) k ^ (-s)` on
-  `Re s > 1`, so for `σ > 1` it is bounded on the closed half-plane `σ ≤ Re s` by
-  `∑ ‖a(k)‖ k ^ (-σ)` (`HasDirichletAgreement.norm_continuedL_le`); under
-  `HasAverageCoefficientGrowth` this sum is finite for every `σ > 1`. When it diverges, `LSeries`
-  takes the value `0` on the strip `1 < Re s < σ`, so `L` vanishes on an open set, hence
-  identically, and the bound holds with both sides `0`.
-* **The reflection.** Solving the functional equation of `L` against the dual record gives
-  `L(s) = ε N ^ (1/2 - s) (γ^∨(1 - s) / γ(s)) L^∨(1 - s)` at every point `s` such that `γ^∨` is
-  regular and `L^∨` is analytic at `1 - s` (`HasFunctionalEquation.continuedL_eq_of_analyticAt`).
-  This includes the poles of `γ`, where the quotient takes the value `0`.
-* **The left edge.** On the line `Re s = -δ`, `δ > 0`, the reflection evaluates the dual
-  function on the right edge `Re (1 - s) = 1 + δ`, and the dual coefficients have the same
-  norms. With the conductor-uniform estimate
+* **The right edge.** For a record with Dirichlet agreement and real `σ > 1`, `L` is bounded on
+  the closed half-plane `σ ≤ Re s` by `∑ ‖a(k)‖ k ^ (-σ)`
+  (`HasDirichletAgreement.norm_continuedL_le`). When the completion is globally meromorphic, `L`
+  is the Dirichlet series `∑ a(k) k ^ (-s)` on `Re s > 1`
+  (`HasDirichletAgreement.continuedL_eq_LSeries`) and the bound is that of the series; otherwise
+  `L` is the zero function by construction. Under `HasAverageCoefficientGrowth` the sum is finite
+  for every `σ > 1`. When it diverges, `LSeries` takes the value `0` on the strip
+  `1 < Re s < σ`, so `L` vanishes on an open set, hence identically, and the bound holds with both
+  sides `0`.
+* **The left edge.** On the line `Re s = -δ`, `δ > 0`, the functional equation solved for `L`,
+  `L(s) = ε N ^ (1/2 - s) (γ^∨(1 - s) / γ(s)) L^∨(1 - s)`
+  (`HasFunctionalEquation.continuedL_eq_of_analyticAt`), evaluates the dual function on the right
+  edge `Re (1 - s) = 1 + δ`, and the dual coefficients have the same norms. With the
+  conductor-uniform estimate
   `exists_norm_conductor_cpow_mul_dual_gammaFactor_div_neg_line_le_analyticConductorAt_rpow` for
   the archimedean factor, this gives
   `‖L(s)‖ ≤ C (∑ ‖a(k)‖ k ^ (-(1 + δ))) 𝔮(s) ^ (1/2 + δ)` with `𝔮 = d.analyticConductorAt`
@@ -94,35 +94,6 @@ theorem HasDirichletAgreement.norm_continuedL_le (hD : d.HasDirichletAgreement) 
       exact tsum_nonneg fun _ ↦ norm_nonneg _
   · rw [hD.continuedL_eq_zero_of_not_LSeriesSummable hσ hsum s, norm_zero]
     exact tsum_nonneg fun _ ↦ norm_nonneg _
-
-/-- **The functional equation solved for the continued function.** If the dual gamma factor is
-regular at `1 - s` and the dual continued function is analytic there, then
-`L(s) = ε N ^ (1/2 - s) (γ^∨(1 - s) / γ(s)) L^∨(1 - s)`.
-No regularity of `γ` at `s` is assumed: at a pole of `γ` the quotient takes Mathlib's value `0`,
-and so does `L(s)`. -/
-theorem HasFunctionalEquation.continuedL_eq_of_analyticAt (hfe : d.HasFunctionalEquation)
-    {s : ℂ} (hγ : d.dual.gammaFactor (1 - s) ≠ 0)
-    (ha : AnalyticAt ℂ d.dual.continuedL (1 - s)) :
-    d.continuedL s = d.rootNumber * ((d.conductor : ℕ) : ℂ) ^ (1 / 2 - s) *
-      (d.dual.gammaFactor (1 - s) / d.gammaFactor s) * d.dual.continuedL (1 - s) := by
-  have hquot : (fun z ↦ d.dual.gammaFactor (1 - z) / d.gammaFactor z) =
-      fun z ↦ d.dual.gammaFactor (1 - z) * d.invGammaFactor z := by
-    funext z
-    rw [invGammaFactor_def, div_eq_mul_inv]
-  have h1 : AnalyticAt ℂ (fun z ↦ d.dual.gammaFactor (1 - z) / d.gammaFactor z) s := by
-    rw [hquot]
-    exact ((d.dual.analyticAt_gammaFactor hγ).comp (by fun_prop)).mul
-      (d.analyticAt_invGammaFactor s)
-  have h2 : AnalyticAt ℂ (fun z ↦ d.dual.continuedL (1 - z)) s := ha.comp (by fun_prop)
-  have hg : ContinuousAt (fun z ↦ d.rootNumber * ((d.conductor : ℕ) : ℂ) ^ (1 / 2 - z) *
-      (d.dual.gammaFactor (1 - z) / d.gammaFactor z) * d.dual.continuedL (1 - z)) s :=
-    (((analyticAt_const.mul (d.analyticAt_conductor_cpow (g := fun z ↦ 1 / 2 - z)
-      (by fun_prop))).mul h1).mul h2).continuousAt
-  refine continuedL_eq_of_eventuallyEq hg ?_
-  filter_upwards [hfe.gammaFactor_mul_continuedL_eventuallyEq s,
-    d.eventually_gammaFactor_ne_zero s] with z hz hγz
-  rw [← mul_div_cancel_left₀ (d.continuedL z) hγz, hz]
-  ring
 
 /-- **The left edge of the convexity strip, uniformly in the conductor.** Fix `δ > 0`, a degree
 `n`, a bound `M` for the gamma shifts and a margin `ε > 0` keeping the reflected shifts inside the
