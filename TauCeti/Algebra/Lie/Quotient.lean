@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors, Codex
 module
 
 public import Mathlib.Algebra.Lie.Quotient
-public import Mathlib.Algebra.Lie.Solvable
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.Algebra.Lie.Abelian
 import TauCeti.Algebra.Lie.Basic
@@ -64,9 +63,6 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
 * `LieIdeal.isCompl_map_incl`: a complement of `I ∩ P` inside a supplement `P` of `I` is a
   complement of `I` in `L`.
-* `LieHom.derivedSeries_eq_top_of_surjective` and `LieIdeal.derivedSeries_quotient_eq_top`:
-  surjective homomorphisms and quotients preserve `derivedSeries R _ k = ⊤` (in particular,
-  perfectness).
 
 The transitions `LieIdeal.factor` and their lemmas are adapted from
 `Mei/Algebra/Lie/Quotient/Map.lean` in
@@ -294,22 +290,7 @@ noncomputable def quotKerEquivOfSurjective (f : L →ₗ⁅R⁆ L') (hf : Functi
 theorem quotKerEquivOfSurjective_apply_mk (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) (x : L) :
     f.quotKerEquivOfSurjective hf (LieSubmodule.Quotient.mk x) = f x := (rfl)
 
-/-- A surjective Lie algebra homomorphism preserves `derivedSeries R _ k = ⊤` (in particular, the
-image of a perfect Lie algebra is perfect). -/
-theorem derivedSeries_eq_top_of_surjective {f : L →ₗ⁅R⁆ L'} (hf : Function.Surjective f)
-    {k : ℕ} (hk : LieAlgebra.derivedSeries R L k = ⊤) :
-    LieAlgebra.derivedSeries R L' k = ⊤ := by
-  rw [← LieIdeal.derivedSeries_map_eq k hf, hk, ← f.idealRange_eq_map,
-    f.idealRange_eq_top_of_surjective hf]
-
 end LieHom
-
-/-- A quotient of a Lie algebra with `derivedSeries R L k = ⊤` (in particular, a quotient of a
-perfect Lie algebra) again satisfies `derivedSeries R (L ⧸ I) k = ⊤`. -/
-theorem LieIdeal.derivedSeries_quotient_eq_top {R L : Type*} [CommRing R] [LieRing L]
-    [LieAlgebra R L] (I : LieIdeal R L) {k : ℕ} (hk : LieAlgebra.derivedSeries R L k = ⊤) :
-    LieAlgebra.derivedSeries R (L ⧸ I) k = ⊤ :=
-  I.mkQ.derivedSeries_eq_top_of_surjective I.surjective_mkQ hk
 
 namespace TauCeti
 

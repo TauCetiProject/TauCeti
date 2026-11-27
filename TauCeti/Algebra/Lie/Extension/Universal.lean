@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.Extension.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Lie.BaseChange.Perfect
 import TauCeti.Algebra.Lie.Cochain
+import TauCeti.Algebra.Lie.Perfect
 import TauCeti.Algebra.Lie.Quotient
 
 /-!
@@ -271,7 +272,8 @@ theorem lie_top_ker_eq_ker_of_surjective
   have hπQ_surj : Function.Surjective πQ := fun p ↦
     let ⟨y, hy⟩ := ((proj_surjective c₀).comp hf) p; ⟨q y, (hπQ_q y).trans hy⟩
   let Z : LieIdeal K (G ⧸ J) := LieIdeal.map q I
-  have hQ_perf : derivedSeries K (G ⧸ J) 1 = ⊤ := J.derivedSeries_quotient_eq_top hperf
+  have hQ_perf : derivedSeries K (G ⧸ J) 1 = ⊤ :=
+    J.mkQ.derivedSeries_eq_top_of_surjective J.surjective_mkQ hperf
   have hZ_le : Z ≤ πQ.ker := fun z hz ↦ by
     obtain ⟨⟨x, hxI⟩, rfl⟩ := LieIdeal.mem_map_of_surjective J.surjective_mkQ hz
     rw [LieHom.mem_ker, hπQ_q]; exact hI_le_ker hxI
