@@ -68,7 +68,7 @@ theorem isKInjective_restrictFunctor_mapHomologicalComplex_obj {X Y : Scheme.{u}
   have hU (U : Y.Opens) (J : CochainComplex Y.Modules ℤ) [J.IsKInjective] :
       CochainComplex.IsKInjective
         (((restrictFunctor U.ι).mapHomologicalComplex (.up ℤ)).obj J) := by
-    exact CochainComplex.isKInjective_map_of_adjunction (extensionByZeroAdjunction U) J
+    exact CochainComplex.isKInjective_map_of_adjunction (extendByZeroAdjunction U) J
   let e := f.isoOpensRange
   let i : restrictFunctor f.opensRange.ι ⋙ restrictFunctor e.hom ≅ restrictFunctor f :=
     (restrictFunctorComp e.hom f.opensRange.ι).symm ≪≫ restrictFunctorCongr f.isoOpensRange_hom_ι

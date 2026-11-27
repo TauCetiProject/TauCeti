@@ -12,7 +12,7 @@ import Mathlib.CategoryTheory.Adjunction.Triple
 /-!
 # Extension by zero from an open subscheme
 
-For an open subscheme `U` of `X`, `Scheme.Modules.extensionByZero U` is the exact left
+For an open subscheme `U` of `X`, `Scheme.Modules.extendByZero U` is the exact left
 adjoint of restriction. Its adjunction unit is invertible, so extending a module sheaf by
 zero and then restricting to `U` recovers that module sheaf.
 
@@ -39,49 +39,49 @@ namespace AlgebraicGeometry.Scheme.Modules
 variable {X : Scheme.{u}} (U : X.Opens)
 
 /-- Extension by zero of module sheaves from the open subscheme `U` to `X`. -/
-def extensionByZero : U.toScheme.Modules ⥤ X.Modules :=
+def extendByZero : U.toScheme.Modules ⥤ X.Modules :=
   (overEquiv U).inverse ⋙
     SheafOfModules.pullback.{u} (F := Over.forget U) (𝟙 (X.ringCatSheaf.over U))
 
 /-- Extension by zero is left adjoint to restriction to the open subscheme. -/
-def extensionByZeroAdjunction : extensionByZero U ⊣ restrictFunctor U.ι :=
+def extendByZeroAdjunction : extendByZero U ⊣ restrictFunctor U.ι :=
   ((overEquiv U).symm.toAdjunction.comp
     (SheafOfModules.pullbackPushforwardAdjunction (F := Over.forget U)
       (𝟙 (X.ringCatSheaf.over U)))).ofNatIsoRight (overFunctorEquiv U)
 
-instance : (extensionByZero U).IsLeftAdjoint :=
-  (extensionByZeroAdjunction U).isLeftAdjoint
+instance : (extendByZero U).IsLeftAdjoint :=
+  (extendByZeroAdjunction U).isLeftAdjoint
 
 /-- Extension by zero is left exact; together with its left-adjoint property this gives
 exactness on arbitrary module sheaves. -/
-instance preservesFiniteLimits_extensionByZero : PreservesFiniteLimits (extensionByZero U) :=
+instance preservesFiniteLimits_extendByZero : PreservesFiniteLimits (extendByZero U) :=
   inferInstanceAs (PreservesFiniteLimits ((overEquiv U).inverse ⋙
     SheafOfModules.pullback.{u} (F := Over.forget U) (𝟙 (X.ringCatSheaf.over U))))
 
-instance : (extensionByZero U).Additive :=
-  (extensionByZero U).additive_of_preserves_binary_products
+instance : (extendByZero U).Additive :=
+  (extendByZero U).additive_of_preserves_binary_products
 
 /-- A module sheaf on `U` is recovered by restricting its extension by zero. -/
-instance isIso_extensionByZeroAdjunction_unit : IsIso (extensionByZeroAdjunction U).unit :=
+instance isIso_extendByZeroAdjunction_unit : IsIso (extendByZeroAdjunction U).unit :=
   (Adjunction.Triple.isIso_unit_iff_isIso_counit
-    (⟨extensionByZeroAdjunction U, restrictAdjunction U.ι⟩)).mpr inferInstance
+    (⟨extendByZeroAdjunction U, restrictAdjunction U.ι⟩)).mpr inferInstance
 
 /-- The inverse of the adjunction unit identifies restriction of extension by zero with
 the identity functor on module sheaves on `U`. -/
-def extensionByZeroCompRestrictIso :
-    extensionByZero U ⋙ restrictFunctor U.ι ≅ 𝟭 U.toScheme.Modules :=
-  (asIso (extensionByZeroAdjunction U).unit).symm
+def extendByZeroCompRestrictIso :
+    extendByZero U ⋙ restrictFunctor U.ι ≅ 𝟭 U.toScheme.Modules :=
+  (asIso (extendByZeroAdjunction U).unit).symm
 
 @[simp]
-lemma extensionByZeroCompRestrictIso_hom_app (N : U.toScheme.Modules) :
-    (extensionByZeroCompRestrictIso U).hom.app N =
-      inv ((extensionByZeroAdjunction U).unit.app N) := by
-  simp [extensionByZeroCompRestrictIso]
+lemma extendByZeroCompRestrictIso_hom_app (N : U.toScheme.Modules) :
+    (extendByZeroCompRestrictIso U).hom.app N =
+      inv ((extendByZeroAdjunction U).unit.app N) := by
+  simp [extendByZeroCompRestrictIso]
 
 @[simp]
-lemma extensionByZeroCompRestrictIso_inv_app (N : U.toScheme.Modules) :
-    (extensionByZeroCompRestrictIso U).inv.app N =
-      (extensionByZeroAdjunction U).unit.app N :=
+lemma extendByZeroCompRestrictIso_inv_app (N : U.toScheme.Modules) :
+    (extendByZeroCompRestrictIso U).inv.app N =
+      (extendByZeroAdjunction U).unit.app N :=
   (rfl)
 
 end AlgebraicGeometry.Scheme.Modules
