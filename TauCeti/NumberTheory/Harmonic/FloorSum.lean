@@ -10,14 +10,14 @@ public import TauCeti.NumberTheory.Harmonic.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Tactic.Linarith
 
 /-!
 # Floor sums and harmonic numbers
 
 For `x` in a linearly ordered field with a floor function and the `M`-th harmonic number `H_M`,
-the floor sum `∑_{0 < a ≤ M} ⌊x / a⌋` lies between `x * H_M - M` and, for `x ≥ 0`, `x * H_M`:
-each term `⌊x / a⌋ = ⌊⌊x⌋ / a⌋` is within one of `x / a`. This is the comparison used to
+the floor sum `∑_{0 < a ≤ M} ⌊x / a⌋₊`, in which `⌊x / a⌋₊ = ⌊x⌋₊ / a` (natural division), is at
+least `x * H_M - M` for every `x` and at most `x * H_M` for `x ≥ 0`: each term satisfies
+`x / a - 1 < ⌊x / a⌋₊`, and `⌊x / a⌋₊ ≤ x / a` when `x ≥ 0`. This is the comparison used to
 evaluate the sum in Dirichlet's hyperbola method.
 
 ## Main results

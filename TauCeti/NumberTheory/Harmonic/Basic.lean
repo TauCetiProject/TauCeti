@@ -35,10 +35,7 @@ theorem cast_harmonic_eq_sum_range {K : Type*} [DivisionRing K] [CharZero K] (n 
 `∑_{0 < a ≤ n} 1 / a` there. -/
 theorem cast_harmonic_eq_sum_Ioc {K : Type*} [DivisionRing K] [CharZero K] (n : ℕ) :
     (harmonic n : K) = ∑ a ∈ Finset.Ioc 0 n, (a : K)⁻¹ := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [harmonic_succ, Rat.cast_add, Rat.cast_inv, Rat.cast_natCast,
-      Finset.sum_Ioc_succ_top n.zero_le, ih]
+  rw [cast_harmonic_eq_sum_range, Finset.range_eq_Ico,
+    Finset.sum_Ico_add' (fun a : ℕ ↦ (a : K)⁻¹) 0 n 1, Finset.Ico_add_one_add_one_eq_Ioc]
 
 end TauCeti

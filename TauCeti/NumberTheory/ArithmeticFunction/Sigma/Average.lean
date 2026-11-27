@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 public import TauCeti.NumberTheory.Harmonic.Remainder
+import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.Harmonic.FloorSum
@@ -32,9 +34,9 @@ the harmonic sum `∑_{a ≤ M} 1 / a` is `log M + γ` up to `1 / (2M)`
 
 ## Main results
 
-* `TauCeti.sum_Ioc_sigma_zero_add_sqrt_sq`: the hyperbola identity
-  `∑_{n ≤ N} τ(n) + ⌊√N⌋² = 2 ∑_{a ≤ ⌊√N⌋} ⌊N / a⌋`, and
-  `TauCeti.sum_Ioc_sigma_zero_natFloor_add_sq`, the same with a real cutoff.
+* `TauCeti.sum_Ioc_sigma_zero_natFloor_add_sq`: the hyperbola identity
+  `∑_{n ≤ x} τ(n) + ⌊√x⌋² = 2 ∑_{a ≤ √x} ⌊x / a⌋` with a real cutoff; the natural-number form
+  `TauCeti.sum_Ioc_sigma_zero_add_sqrt_sq` is in `Sigma/Basic.lean`.
 * `TauCeti.abs_sum_Ioc_sigma_zero_sub_le`:
   `|∑_{n ≤ x} τ(n) - (x log x + (2γ - 1) x)| ≤ 6 √x` for `x ≥ 0`.
 * `TauCeti.isBigO_sum_Ioc_sigma_zero_sub`: the error is `O(√x)` as `x → ∞`.
@@ -51,51 +53,6 @@ open Finset Real
 open scoped ArithmeticFunction.sigma
 
 namespace TauCeti
-
-/-- For `a` above `√N`, the multiples `a b ≤ N` have `b ≤ √N`, so they are counted by `N / a`. -/
-private theorem card_filter_mul_le_of_sqrt_lt {N a : ℕ} (ha : N.sqrt < a) :
-    #{b ∈ Ioc 0 N.sqrt | a * b ≤ N} = N / a := by
-  have ha0 : 0 < a := Nat.zero_lt_of_lt ha
-  have h : {b ∈ Ioc 0 N.sqrt | a * b ≤ N} = Ioc 0 (N / a) := by
-    ext b
-    simp only [mem_filter, mem_Ioc, Nat.le_div_iff_mul_le ha0, mul_comm a b]
-    refine ⟨fun ⟨⟨hb0, _⟩, h⟩ ↦ ⟨hb0, h⟩, fun ⟨hb0, h⟩ ↦ ⟨⟨hb0, ?_⟩, h⟩⟩
-    by_contra hb
-    have hN : N < (N.sqrt + 1) * (N.sqrt + 1) := Nat.sqrt_lt.1 (Nat.lt_add_one N.sqrt)
-    nlinarith
-  rw [h, Nat.card_Ioc, Nat.sub_zero]
-
-/-- For `b ≥ 1`, the `a` in `(√N, N]` with `a b ≤ N` are those in `(√N, N / b]`. -/
-private theorem card_filter_mul_le_of_pos {N b : ℕ} (hb : 0 < b) :
-    #{a ∈ Ioc N.sqrt N | a * b ≤ N} = N / b - N.sqrt := by
-  have h : {a ∈ Ioc N.sqrt N | a * b ≤ N} = Ioc N.sqrt (N / b) := by
-    ext a
-    simp only [mem_filter, mem_Ioc, Nat.le_div_iff_mul_le hb]
-    exact ⟨fun ⟨⟨h₁, _⟩, h⟩ ↦ ⟨h₁, h⟩,
-      fun ⟨h₁, h⟩ ↦ ⟨⟨h₁, (Nat.le_mul_of_pos_right a hb).trans h⟩, h⟩⟩
-  rw [h, Nat.card_Ioc]
-
-/-- **Dirichlet's hyperbola identity** for the divisor function:
-`∑_{n ≤ N} τ(n) + M² = 2 ∑_{a ≤ M} ⌊N / a⌋`, where `M = ⌊√N⌋`. -/
-theorem sum_Ioc_sigma_zero_add_sqrt_sq (N : ℕ) :
-    ∑ n ∈ Ioc 0 N, σ 0 n + N.sqrt ^ 2 = 2 * ∑ a ∈ Ioc 0 N.sqrt, N / a := by
-  have hswap : ∑ a ∈ Ioc N.sqrt N, N / a = ∑ b ∈ Ioc 0 N.sqrt, (N / b - N.sqrt) :=
-    calc ∑ a ∈ Ioc N.sqrt N, N / a
-        = ∑ a ∈ Ioc N.sqrt N, ∑ b ∈ Ioc 0 N.sqrt, if a * b ≤ N then 1 else 0 :=
-          sum_congr rfl fun a ha ↦ by
-            rw [← card_filter, card_filter_mul_le_of_sqrt_lt (mem_Ioc.1 ha).1]
-      _ = ∑ b ∈ Ioc 0 N.sqrt, ∑ a ∈ Ioc N.sqrt N, if a * b ≤ N then 1 else 0 := sum_comm
-      _ = ∑ b ∈ Ioc 0 N.sqrt, (N / b - N.sqrt) :=
-          sum_congr rfl fun b hb ↦ by
-            rw [← card_filter, card_filter_mul_le_of_pos (mem_Ioc.1 hb).1]
-  have hge : ∀ b ∈ Ioc 0 N.sqrt, N.sqrt ≤ N / b := fun b hb ↦ by
-    rw [Nat.le_div_iff_mul_le (mem_Ioc.1 hb).1]
-    exact (Nat.mul_le_mul_left _ (mem_Ioc.1 hb).2).trans (Nat.sqrt_le N)
-  have hsq : N.sqrt ^ 2 = ∑ _b ∈ Ioc 0 N.sqrt, N.sqrt := by simp [sq]
-  rw [ArithmeticFunction.sum_Ioc_sigma0_eq_sum_div,
-    ← sum_Ioc_consecutive (fun a ↦ N / a) (Nat.zero_le _) (Nat.sqrt_le_self N), hswap, hsq,
-    add_assoc, ← sum_add_distrib, two_mul]
-  exact congrArg _ (sum_congr rfl fun b hb ↦ Nat.sub_add_cancel (hge b hb))
 
 /-! ### The average order -/
 
@@ -116,12 +73,7 @@ private theorem abs_mul_log_add_le_of_lt_one {x : ℝ} (hx : 0 ≤ x) (hx1 : x <
   have hxs : x = √x * √x := (mul_self_sqrt hx).symm
   have hlog : log x = 2 * log √x := by rw [log_sqrt hx]; ring
   have hlog_le : log √x ≤ 0 := log_nonpos hs.le hs1.le
-  have hlog_ge : √x * log √x ≥ √x - 1 := by
-    have h := log_le_sub_one_of_pos (inv_pos.2 hs)
-    rw [log_inv] at h
-    have h' := mul_le_mul_of_nonneg_left h hs.le
-    rw [mul_sub, mul_inv_cancel₀ hs.ne'] at h'
-    linarith
+  have hlog_ge : √x - 1 ≤ √x * log √x := self_sub_one_le_mul_log (sqrt_nonneg x)
   have hγ₁ := one_half_lt_eulerMascheroniConstant
   have hγ₂ := eulerMascheroniConstant_lt_two_thirds
   have hprod : x * log x = 2 * √x * (√x * log √x) := by rw [hlog]; nlinarith [hxs]
