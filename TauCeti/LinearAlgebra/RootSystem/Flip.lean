@@ -296,6 +296,8 @@ theorem autFlip_smul_index (f : P.Aut) (i : ι) : autFlip P f • i = f • i :=
 @[simp]
 theorem autFlip_smul_coweight (f : P.Aut) (y : N) :
     autFlip P f • y = f.coweightEquiv.symm y :=
+  -- `P.flip.Aut` acts on the weight space `N` of `P.flip` via `weightHom P.flip`, so
+  -- `autFlip P f • y` unfolds definitionally to `(autFlip P f).weightEquiv y`.
   congrArg (fun e : N ≃ₗ[R] N ↦ e y) (weightEquiv_autFlip f)
 
 open Pointwise in

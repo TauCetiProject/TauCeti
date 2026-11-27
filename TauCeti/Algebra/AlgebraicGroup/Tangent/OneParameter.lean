@@ -158,12 +158,10 @@ theorem expPointAt_eq_toConv_expPoint (t : R) :
     expPointAt d hd t =
       WithConv.toConv (expPoint (t • d)
         (exists_iterate_leftInvariantDerivation_smul_eq_zero hd t)) := by
-  have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
-    (leftInvariantDerivation (R := R) (H := H)).toLinearMap.map_smul t d
   apply WithConv.ext
   ext x
   rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply]
-  simp only [hsmul]
+  simp only [leftInvariantDerivation_smul]
   rw [Derivation.taylorExpAt_eq_taylorExp_smul]
 
 /-- The polynomial flow of an invariant vector field is translation by its
@@ -171,10 +169,8 @@ exponential curve. -/
 theorem taylorExpAt_leftInvariantDerivation_apply (t : R) (h : H) :
     (leftInvariantDerivation d).taylorExpAt hd t h =
       tensorComponent (expPointAt d hd t).ofConv.toLinearMap (Coalgebra.comul (R := R) h) := by
-  have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
-    (leftInvariantDerivation (R := R) (H := H)).toLinearMap.map_smul t d
   rw [expPointAt_eq_toConv_expPoint, Derivation.taylorExpAt_eq_taylorExp_smul]
-  simpa only [hsmul] using taylorExp_leftInvariantDerivation_apply (t • d)
+  simpa only [leftInvariantDerivation_smul] using taylorExp_leftInvariantDerivation_apply (t • d)
     (exists_iterate_leftInvariantDerivation_smul_eq_zero hd t) h
 
 /-- Substitute the sum of two independent parameters in the exponential curve. -/

@@ -111,6 +111,12 @@ theorem toLinearMap_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R
     (leftInvariantDerivation d).toLinearMap = Comodule.differential (R := R) (H := H) (M := H) d :=
   Derivation.coe_mk'_linearMap _ _
 
+/-- Scalar multiplication commutes with taking the left-invariant derivation. -/
+@[simp]
+theorem leftInvariantDerivation_smul (t : R) (d : Derivation R H (CounitAlgebra R H R)) :
+    leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
+  (leftInvariantDerivation (R := R) (H := H)).toLinearMap.map_smul t d
+
 /-- The left-invariant derivation contracts the comultiplication against the tangent vector. -/
 theorem leftInvariantDerivation_apply (d : Derivation R H (CounitAlgebra R H R)) (h : H) :
     leftInvariantDerivation d h =
@@ -210,9 +216,8 @@ theorem exists_iterate_leftInvariantDerivation_smul_eq_zero
     {d : Derivation R H (CounitAlgebra R H R)}
     (hd : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) (t : R) :
     ∀ h, ∃ n, (leftInvariantDerivation (t • d))^[n] h = 0 := by
-  have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
-    (leftInvariantDerivation (R := R) (H := H)).toLinearMap.map_smul t d
-  simpa only [hsmul] using (leftInvariantDerivation d).exists_iterate_smul_eq_zero hd t
+  simpa only [leftInvariantDerivation_smul] using
+    (leftInvariantDerivation d).exists_iterate_smul_eq_zero hd t
 
 end TauCeti.Bialgebra
 

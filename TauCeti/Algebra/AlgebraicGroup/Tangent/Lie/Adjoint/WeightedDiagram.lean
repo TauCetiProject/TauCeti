@@ -192,6 +192,15 @@ theorem dominantVectorOrbit_ne_mk_zero (b : (LieAlgebra.IsKilling.rootSystem �
   rw [map_zero] at hg
   exact t.e_ne_zero hg.symm
 
+/-- Every dominant nilpotent orbit is `ad`-nilpotent. -/
+@[simp]
+theorem isNilpotentAd_dominantVectorOrbit (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
+    (h : b.dominantNeutralElements) :
+    (b.dominantVectorOrbit (k := k) (H := H) h).IsNilpotentAd := by
+  obtain ⟨e, f, t, he⟩ := b.exists_isSl2Triple_and_dominantVectorOrbit_eq_mk h
+  rw [he, Comodule.VectorOrbit.isNilpotentAd_mk_iff]
+  exact t.isNilpotent_toEnd_e (K := k) (M := Module.Dual k (Bialgebra.CotangentSpace k H))
+
 end FiniteType
 
 end RootPairing.Base
@@ -269,10 +278,7 @@ theorem range_dominantVectorOrbit (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Ba
         O.IsNilpotentAd ∧ O ≠ Comodule.VectorOrbit.mk 0} := by
   refine Set.Subset.antisymm ?_ ?_
   · rintro _ ⟨h, rfl⟩
-    refine ⟨?_, b.dominantVectorOrbit_ne_mk_zero h⟩
-    obtain ⟨e, f, t, he⟩ := b.exists_isSl2Triple_and_dominantVectorOrbit_eq_mk h
-    rw [he, Comodule.VectorOrbit.isNilpotentAd_mk_iff]
-    exact t.isNilpotent_toEnd_e (K := k) (M := Module.Dual k (Bialgebra.CotangentSpace k H))
+    exact ⟨b.isNilpotentAd_dominantVectorOrbit h, b.dominantVectorOrbit_ne_mk_zero h⟩
   · rintro O ⟨hO, h0⟩
     obtain ⟨e, rfl⟩ := Comodule.VectorOrbit.mk_surjective O
     have he : IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) :=
@@ -590,11 +596,7 @@ private noncomputable def optionDominantToNilpotentOrbit
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     Option b.dominantNeutralElements → {O : Comodule.VectorOrbit k H 𝔤 // O.IsNilpotentAd}
   | none => ⟨Comodule.VectorOrbit.mk 0, Comodule.VectorOrbit.isNilpotentAd_mk_zero⟩
-  | some h =>
-    ⟨b.dominantVectorOrbit h, by
-      obtain ⟨e, f, t, he⟩ := b.exists_isSl2Triple_and_dominantVectorOrbit_eq_mk (H := H) h
-      rw [he, Comodule.VectorOrbit.isNilpotentAd_mk_iff]
-      exact t.isNilpotent_toEnd_e (K := k) (M := 𝔤)⟩
+  | some h => ⟨b.dominantVectorOrbit h, b.isNilpotentAd_dominantVectorOrbit (H := H) h⟩
 
 private theorem optionDominantToNilpotentOrbit_bijective
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
