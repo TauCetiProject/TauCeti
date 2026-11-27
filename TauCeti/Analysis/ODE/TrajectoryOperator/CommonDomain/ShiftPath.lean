@@ -85,6 +85,10 @@ variable (ι B) in
 private def eigenSum (S : Finset ℝ) : Submodule ℝ D :=
   S.sup fun c ↦ (c • ι - B).ker
 
+/-- `x` solves `B x = c • ι x` exactly when it lies in the kernel of `c • ι - B`. -/
+private theorem mem_ker_smul_sub_iff {c : ℝ} {x : D} : x ∈ (c • ι - B).ker ↔ B x = c • ι x := by
+  simp [sub_eq_zero, eq_comm (a := B x)]
+
 private theorem ker_le_eigenSum {S : Finset ℝ} {c : ℝ} (hc : c ∈ S) :
     (c • ι - B).ker ≤ eigenSum ι B S :=
   Finset.le_sup (f := fun c ↦ (c • ι - B).ker) hc
@@ -102,14 +106,10 @@ private theorem injective_eigenSum (hSymm : ∀ x y, ⟪B x, ι y⟫_ℝ = ⟪ι
   classical
   rw [← LinearMap.ker_eq_bot, eq_bot_iff]
   rintro ⟨x, hx⟩ hιx
-  rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.subtype_apply,
-    ContinuousLinearMap.coe_coe] at hιx
+  replace hιx : ι x = 0 := by simpa using hιx
   rw [eigenSum, Finset.sup_eq_iSup, Submodule.mem_iSup_finset_iff_exists_sum] at hx
   obtain ⟨μ, rfl⟩ := hx
-  have hμ (c : ℝ) : B (μ c) = (c : ℝ) • ι (μ c) := by
-    have h := LinearMap.map_coe_ker _ (μ c)
-    rw [ContinuousLinearMap.coe_coe, sub_apply, smul_apply, sub_eq_zero] at h
-    exact h.symm
+  have hμ (c : ℝ) : B (μ c) = c • ι (μ c) := mem_ker_smul_sub_iff.1 (μ c).property
   -- Each component is killed by `ι`, hence by `c₀ • ι - B`.
   have hzero (c : ℝ) (hc : c ∈ S) : (μ c : D) = 0 := by
     have h := congrArg (fun v ↦ ⟪ι (μ c), v⟫_ℝ) hιx
@@ -127,9 +127,8 @@ private theorem apply_mem_range_eigenSum {S : Finset ℝ} {x : D} (hx : x ∈ ei
     B x ∈ LinearMap.range ((ι : D →ₗ[ℝ] H) ∘ₗ (eigenSum ι B S).subtype) := by
   have hle : eigenSum ι B S ≤ (LinearMap.range ((ι : D →ₗ[ℝ] H) ∘ₗ
       (eigenSum ι B S).subtype)).comap (B : D →ₗ[ℝ] H) := Finset.sup_le fun c hc y hy ↦ by
-    have hy' := LinearMap.mem_ker.1 hy
-    rw [ContinuousLinearMap.coe_coe, sub_apply, smul_apply, sub_eq_zero] at hy'
-    exact ⟨⟨c • y, (eigenSum ι B S).smul_mem c (ker_le_eigenSum hc hy)⟩, by simp [hy'.symm]⟩
+    exact ⟨⟨c • y, (eigenSum ι B S).smul_mem c (ker_le_eigenSum hc hy)⟩,
+      by simp [mem_ker_smul_sub_iff.1 hy]⟩
   exact hle hx
 
 end Eigenvectors
@@ -165,11 +164,9 @@ private def eigenLift : eigenImage ι V →L[ℝ] D :=
     eigenImage ι V →L[ℝ] V)
 
 private theorem apply_eigenLift (f : eigenImage ι V) : ι (eigenLift hV f) = f := by
-  have h := congrArg Subtype.val ((LinearEquiv.ofInjective _ hV).apply_symm_apply f)
-  rw [LinearEquiv.ofInjective_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-    ContinuousLinearMap.coe_coe] at h
-  rw [eigenLift, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-    ContinuousLinearEquiv.coe_coe, LinearEquiv.coe_toContinuousLinearEquiv', h]
+  have h := LinearEquiv.ofInjective_symm_apply (f := (ι : D →ₗ[ℝ] H) ∘ₗ V.subtype) (h := hV) f
+  simp only [LinearMap.comp_apply, Submodule.subtype_apply, ContinuousLinearMap.coe_coe] at h
+  simpa [eigenLift] using h
 
 private theorem eigenLift_mem (f : eigenImage ι V) : eigenLift hV f ∈ V :=
   ((LinearEquiv.ofInjective _ hV).symm f).property
@@ -316,7 +313,7 @@ solution of `B x = c • ι x` lies in `V`, then `B' - c • ι'` is invertible.
 private theorem isInvertible_complBlock_sub_smul [CompleteSpace D]
     (hι : IsCompactOperator ι) (hB : ∀ v ∈ V, B v ∈ eigenImage ι V)
     (hSymm : ∀ x y, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) {c₀ : ℝ}
-    (h₀ : (B - c₀ • ι).IsInvertible) {c : ℝ} (hc : ∀ x, (c • ι - B) x = 0 → x ∈ V) :
+    (h₀ : (B - c₀ • ι).IsInvertible) {c : ℝ} (hc : ∀ x ∈ (c • ι - B).ker, x ∈ V) :
     (complBlock ι B V - c • complEmbedding ι V).IsInvertible := by
   -- The second block of the invertible shift at `c₀` is invertible.
   have h₀' : (c₀ • complEmbedding ι V - complBlock ι B V).IsInvertible := by
@@ -328,10 +325,9 @@ private theorem isInvertible_complBlock_sub_smul [CompleteSpace D]
     injective_iff_map_eq_zero]
   intro d hd
   -- A vector of `D'` in the kernel is an eigenvector, so it lies in `V`, and `ι d ∈ F ∩ Fᗮ`.
-  have hd' : (c • ι - B) d = 0 := by
-    have := congrArg Subtype.val hd
-    simpa [coe_complBlock hB hSymm, coe_complEmbedding] using this
-  have hdV := hc d hd'
+  have hd' : c • ι d = B d := by
+    simpa [coe_complBlock hB hSymm, coe_complEmbedding, sub_eq_zero] using congrArg Subtype.val hd
+  have hdV := hc d (mem_ker_smul_sub_iff.2 hd'.symm)
   have hι0 : ((ι : D →ₗ[ℝ] H) ∘ₗ V.subtype) ⟨d, hdV⟩ = 0 :=
     Submodule.disjoint_def.1 (eigenImage ι V).orthogonal_disjoint _ ⟨⟨d, hdV⟩, rfl⟩ d.property
   have hd0 : (⟨d, hdV⟩ : V) = 0 := hV (hι0.trans (map_zero _).symm)
@@ -353,7 +349,7 @@ private theorem eventually_index_eq_domainSpectralFlow_of_ker_le (hι : IsCompac
     (hV : Injective ((ι : D →ₗ[ℝ] H) ∘ₗ V.subtype)) (hB : ∀ v ∈ V, B v ∈ eigenImage ι V)
     {lam : ℝ → ℝ} (hlam : Continuous lam) {cbot ctop : ℝ} (hbot : Tendsto lam atBot (𝓝 cbot))
     (htop : Tendsto lam atTop (𝓝 ctop)) (hBbot : (B - cbot • ι).IsInvertible)
-    (hBtop : (B - ctop • ι).IsInvertible) (hker : ∀ s x, (lam s • ι - B) x = 0 → x ∈ V)
+    (hBtop : (B - ctop • ι).IsInvertible) (hker : ∀ s, ∀ x ∈ (lam s • ι - B).ker, x ∈ V)
     (AL : Lp (D →L[ℝ] H) ∞ μ₀) (hAL : AL =ᵐ[μ₀] fun s ↦ B - lam s • ι) :
     ∀ᶠ ab in atBot ×ˢ atTop,
       (familyDomainTrajectoryOperator (p := 2) ι AL).index =
@@ -424,7 +420,8 @@ theorem eventually_index_familyDomainTrajectoryOperator_sub_smul_eq_domainSpectr
     (injective_eigenSum hSymm h₀.bijective.1 _) (fun v hv ↦ apply_mem_range_eigenSum hv) hlam hbot
     htop hBbot hBtop (fun s x hx ↦ ?_) AL hAL
   by_cases hs : (lam s • ι - B).IsInvertible
-  · rw [hs.bijective.1 (hx.trans (map_zero _).symm)]
+  · have hx0 : (lam s • ι - B) x = (lam s • ι - B) 0 := by simpa using hx
+    rw [hs.bijective.1 hx0]
     exact zero_mem _
   · refine ker_le_eigenSum (hS.mem_toFinset.2 ⟨mem_Icc.2 (abs_le.1 ?_), hs⟩) hx
     simpa using hM s
