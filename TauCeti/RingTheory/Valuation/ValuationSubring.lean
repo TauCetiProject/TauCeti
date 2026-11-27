@@ -21,7 +21,10 @@ valuation subring whose pullback contains it, and among finitely many elements o
 all zero, one of largest valuation divides all the others in the valuation subring. A ring
 embedded in a field is itself a field if no proper valuation subring contains its image. The
 valuation ring of a surjective valuation is a proper subring once the units of its target are
-nontrivial.
+nontrivial. Two elements of the valuation subring `O` of a valuation `v` have the same residue
+exactly when their difference has valuation `< 1`, and, for a ring endomorphism `τ` preserving
+`O` and `y ∈ O` with `y − τ y` a unit, integrality of `a + τ a`, `b + τ b` and `a + y b` forces
+integrality of `b`, as used for traces along an involution of a local field.
 
 For a group acting on `L` by ring automorphisms, the translate `g • A` of a valuation subring is
 its pullback along `g⁻¹`, with units and nonunits translated accordingly; automorphisms fixing a
@@ -56,6 +59,11 @@ subfield `K` do not change the restriction to `K`.
 * `Valuation.valuationSubring_ne_top_of_surjective`: for a surjective valuation from a field into
   a linearly ordered commutative group with zero `Γ₀` with `Γ₀ˣ` nontrivial, the valuation ring is
   a proper subring.
+* `Valuation.residue_eq_residue_iff_sub_lt_one`: two elements of the valuation subring of `v` have
+  the same reduction exactly when their difference has valuation `< 1`.
+* `Valuation.mem_valuationSubring_of_add_mul_mem`: for a ring endomorphism `τ` preserving the
+  valuation subring `O` and `y ∈ O` with `y − τ y` a unit of `O`, if `a + τ a`, `b + τ b` and
+  `a + y b` lie in `O`, then so does `b`.
 * `TauCeti.exists_valuationRing_of_isPrime_le`: a prime `P` and an ideal `Q ⊇ P` of an algebra
   over a local ring `V`, lying over the zero ideal and the maximal ideal of `V`, yield a map from
   the algebra to a valuation domain that is injective and local on `V`.
@@ -260,6 +268,35 @@ variable {K : Type*} [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero �
 theorem valuationSubring_ne_top_of_surjective [Nontrivial Γ₀ˣ] (v : Valuation K Γ₀)
     (hv : Function.Surjective v) : v.valuationSubring ≠ ⊤ :=
   fun h ↦ (valuationSubring_eq_top_iff v).mp h (isNontrivial_of_surjective hv)
+
+/-- Two elements of the valuation subring of `v` have the same reduction in its residue field
+exactly when their difference has valuation `< 1`. -/
+theorem residue_eq_residue_iff_sub_lt_one (v : Valuation K Γ₀) {x y : v.valuationSubring} :
+    IsLocalRing.residue _ x = IsLocalRing.residue _ y ↔ v ((x : K) - y) < 1 := by
+  rw [← sub_eq_zero, ← _root_.map_sub, IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff,
+    AddSubgroupClass.coe_sub]
+
+/-- **Integrality from a twisted sum.** Let `τ` be a ring endomorphism of `K` mapping the
+valuation subring `O` of `v` into itself, and `y ∈ O` with `v (y − τ y) = 1`. If `a + τ a`,
+`b + τ b` and `a + y b` lie in `O`, then so does `b`: applying `τ` to `a + y b` shows that
+`a + (τ y) b ∈ O`, so `(y − τ y) b ∈ O`. -/
+theorem mem_valuationSubring_of_add_mul_mem {v : Valuation K Γ₀} {τ : K →+* K}
+    (hτ : ∀ x ∈ v.valuationSubring, τ x ∈ v.valuationSubring) {y a b : K}
+    (hy : y ∈ v.valuationSubring) (hyτ : v (y - τ y) = 1) (ha : a + τ a ∈ v.valuationSubring)
+    (hb : b + τ b ∈ v.valuationSubring) (hab : a + y * b ∈ v.valuationSubring) :
+    b ∈ v.valuationSubring := by
+  have h₁ : a + τ y * b ∈ v.valuationSubring := by
+    have e : a + τ y * b = (a + τ a) + τ y * (b + τ b) - τ (a + y * b) := by
+      rw [map_add, map_mul]
+      ring
+    rw [e]
+    exact sub_mem (add_mem ha (mul_mem (hτ y hy) hb)) (hτ _ hab)
+  have h₂ : (y - τ y) * b ∈ v.valuationSubring := by
+    have e : (y - τ y) * b = (a + y * b) - (a + τ y * b) := by ring
+    rw [e]
+    exact sub_mem hab h₁
+  rw [mem_valuationSubring_iff, map_mul, hyτ, one_mul] at h₂
+  exact (mem_valuationSubring_iff _ _).2 h₂
 
 end Valuation
 
