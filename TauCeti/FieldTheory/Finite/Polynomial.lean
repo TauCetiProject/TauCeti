@@ -25,10 +25,7 @@ elements (`Polynomial.separable_X_pow_card_pow_sub_X`).
 
 Over a finite field with `q` elements, `(X - a) ^ q = X ^ q - a` (`Polynomial.X_sub_C_pow_natCard`),
 so `(X - a) ^ q` divides `A(X, X ^ q) - A(X, a)` for `A ∈ K[X][Y]`
-(`Polynomial.X_sub_C_pow_natCard_dvd_eval_sub_eval`). If `f ∈ K[X]` and `A ∈ K[X][Y]` are nonzero
-with `deg_Y A + deg f < q`, some `a ∈ K` has `f(a) ≠ 0` and `A(X, a) ≠ 0`
-(`Polynomial.exists_eval_ne_zero_and_eval_C_ne_zero`): otherwise `A · f` vanishes at the `q`
-points `C a`, but it is nonzero of degree less than `q`.
+(`Polynomial.X_sub_C_pow_natCard_dvd_eval_sub_eval`).
 -/
 
 public section
@@ -110,23 +107,6 @@ theorem X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval (a : K) (f : K[X]) :
   | inr _ =>
     rw [Nat.card_eq_zero_of_infinite, pow_zero]
     exact one_dvd _
-
-/-- If `f ≠ 0` in `K[X]` and `A ≠ 0` in `K[X][X]` have degrees with sum less than `#K`, some
-`a ∈ K` has `f a ≠ 0` and `A (C a) ≠ 0`. -/
-theorem exists_eval_ne_zero_and_eval_C_ne_zero {f : K[X]} (hf : f ≠ 0) {A : K[X][X]} (hA : A ≠ 0)
-    (hdeg : A.natDegree + f.natDegree < Nat.card K) :
-    ∃ a : K, f.eval a ≠ 0 ∧ A.eval (C a) ≠ 0 := by
-  have := Fintype.ofFinite K
-  by_contra! H
-  -- `A * f(X)` vanishes at every `C a`, and it has fewer than `#K` roots unless it is zero.
-  refine mul_ne_zero hA ((Polynomial.map_ne_zero_iff C_injective).2 hf)
-    (eq_zero_of_natDegree_lt_card_of_eval_eq_zero (A * f.map C) C_injective (fun a ↦ ?_) ?_)
-  · rw [eval_mul, eval_map, eval₂_at_apply]
-    by_cases ha : f.eval a = 0
-    · rw [ha, C_0, mul_zero]
-    · rw [H a ha, zero_mul]
-  · rw [← Nat.card_eq_fintype_card]
-    exact natDegree_mul_le.trans_lt ((Nat.add_le_add_left natDegree_map_le _).trans_lt hdeg)
 
 end Finite
 

@@ -14,9 +14,9 @@ import TauCeti.FieldTheory.Kummer.Capelli
 # Binomials over a rational function field
 
 Let `F` be a field and `K` a fraction field of `F[X]`, such as `FractionRing F[X]` or `RatFunc F`.
-For `c ∈ F` with `c ≠ 0` and `f ∈ F[X]`, the binomial `Tᵉ - c / f` is irreducible over `K` when
-`f` is not of the form
-`C b * hˡ` for any `ℓ > 1` dividing `e` (`Polynomial.irreducible_X_pow_sub_C_div`).
+For `e ≠ 0`, `c ∈ F` with `c ≠ 0` and `f ∈ F[X]`, the binomial `Tᵉ - c / f` is irreducible over
+`K` when `f` is not of the form `C b * hˡ` for any `ℓ > 1` dividing `e`
+(`Polynomial.irreducible_X_pow_sub_C_div`).
 
 The proof applies Capelli's theorem (`TauCeti.X_pow_sub_C_irreducible_of_forall_prime`). If
 `bˡ = d / f` for some `b ∈ K` and a nonzero constant `d`, then `b⁻¹` is a root of the monic
@@ -35,8 +35,8 @@ namespace Polynomial
 
 variable {F : Type*} [Field F]
 
-/-- Over a fraction field `K` of `F[X]`, the binomial `Tᵉ - c / f` is irreducible when `c ≠ 0`
-and `f` is not of the form `C b * hˡ` for any `ℓ > 1` dividing `e`. -/
+/-- Over a fraction field `K` of `F[X]`, the binomial `Tᵉ - c / f` is irreducible when `e ≠ 0`,
+`c ≠ 0` and `f` is not of the form `C b * hˡ` for any `ℓ > 1` dividing `e`. -/
 theorem irreducible_X_pow_sub_C_div {K : Type*} [Field K] [Algebra F[X] K] [IsFractionRing F[X] K]
     {e : ℕ} (he : e ≠ 0) {f : F[X]} {c : F} (hc : c ≠ 0)
     (hf : ∀ (b : F) (h : F[X]) (ℓ : ℕ), 1 < ℓ → ℓ ∣ e → f ≠ C b * h ^ ℓ) :
