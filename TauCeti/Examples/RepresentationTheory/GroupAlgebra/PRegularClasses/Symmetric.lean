@@ -66,29 +66,21 @@ theorem mk_mem_pRegularConjClasses_three_iff (g : S₃) :
 
 /-- `g` is conjugate to `ρ` exactly when it is a `3`-cycle. -/
 private theorem isConj_ρ_iff (g : S₃) : IsConj g ρ ↔ g ≠ 1 ∧ g * g * g = 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := h
-    have ho := SemiconjBy.orderOf_eq (c : S₃) hc
-    rw [orderOf_eq, orderOf_eq] at ho
-    have hρ1 : ρ ≠ 1 := by decide
-    have hρ3 : ρ * ρ * ρ = 1 := by decide
-    simp only [hρ1, hρ3, ite_false, ite_true] at ho
-    split_ifs at ho with h1 h3 <;> first | omega | exact ⟨h1, h3⟩
-  · exact isConj_of_classOfS₃_eq g ρ (by
-      simp only [classOfS₃, h.1, h.2, ite_false, ite_true]; decide)
+  refine ⟨fun h ↦ ?_, fun h ↦ isConj_of_classOfS₃_eq g ρ ?_⟩
+  · have hc : classOfS₃ g = 1 := classOfS₃_eq_of_isConj g ρ h
+    simp only [classOfS₃] at hc
+    split_ifs at hc with h1 h3 <;> first | exact ⟨h1, h3⟩ | exact absurd hc (by decide)
+  · simp only [classOfS₃, h.1, h.2, ite_false, ite_true]; decide
 
 /-- `g` is conjugate to `s` exactly when it is a transposition. -/
 private theorem isConj_s_iff (g : S₃) : IsConj g s ↔ g ≠ 1 ∧ g * g = 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := h
-    have ho := SemiconjBy.orderOf_eq (c : S₃) hc
-    rw [orderOf_eq, orderOf_eq] at ho
-    have hs1 : s ≠ 1 := by decide
-    have hs3 : s * s * s ≠ 1 := by decide
-    simp only [hs1, hs3, ite_false] at ho
-    split_ifs at ho with h1 h3 <;> first | omega | exact ⟨h1, mul_self_eq_one_of_ne g h3⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ isConj_of_classOfS₃_eq g s ?_⟩
+  · have hc : classOfS₃ g = 2 := classOfS₃_eq_of_isConj g s h
+    simp only [classOfS₃] at hc
+    split_ifs at hc with h1 h3 <;>
+      first | exact ⟨h1, mul_self_eq_one_of_ne g h3⟩ | exact absurd hc (by decide)
   · have h3 : g * g * g ≠ 1 := by rw [h.2, one_mul]; exact h.1
-    exact isConj_of_classOfS₃_eq g s (by simp only [classOfS₃, h.1, h3, ite_false]; decide)
+    simp only [classOfS₃, h.1, h3, ite_false]; decide
 
 /-- The class of `1` differs from the class of every `x ≠ 1`. -/
 private theorem mk_one_ne_mk {x : S₃} (hx : x ≠ 1) : ConjClasses.mk 1 ≠ ConjClasses.mk x := by

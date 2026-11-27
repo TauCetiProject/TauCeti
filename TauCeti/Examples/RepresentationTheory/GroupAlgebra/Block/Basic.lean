@@ -322,6 +322,12 @@ theorem isConj_of_classOfS₃_eq (g h : S₃) (hgh : classOfS₃ g = classOfS₃
   simp only [isConj_iff, classOfS₃]
   decide +kernel
 
+/-- Conjugate elements of `S₃` have the same `classOfS₃`. -/
+theorem classOfS₃_eq_of_isConj (g h : S₃) (hgh : IsConj g h) : classOfS₃ g = classOfS₃ h := by
+  revert g h
+  simp only [isConj_iff, classOfS₃]
+  decide +kernel
+
 /-- `1 + ρ + ρ²` is central in `𝔽₂[S₃]`. -/
 theorem one_add_of_ρ_add_of_ρ_sq_mem_center :
     1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) ∈
