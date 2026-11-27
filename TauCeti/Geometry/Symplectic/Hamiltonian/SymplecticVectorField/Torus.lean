@@ -265,8 +265,10 @@ theorem exists_isHamiltonianVectorField_torusConstVectorField_smul_torusVolumeFo
   -- The coefficients of the area form are `A (v 0 w 1 - w 0 v 1)`.
   have key (w : Fin 2 → ℝ) :
       ((A • torusVolumeForm p).val 0 : (Fin 2 → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) ![v, w] =
-        A * (v 0 * w 1 - w 0 * v 1) :=
-    congrArg (A * ·) (torusVolumeForm_fin_two_apply p 0 v w)
+        A * (v 0 * w 1 - w 0 * v 1) := by
+    rw [Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+    -- The tangent space at `0` is the model space `Fin 2 → ℝ`, where `v` and `w` live.
+    exact congrArg (A * ·) (torusVolumeForm_fin_two_apply p 0 v w)
   refine ⟨fun h ↦ or_iff_not_imp_left.2 fun hA ↦ funext fun i ↦ ?_, fun hAv w ↦ ?_⟩
   · -- Test against `e_1` and `e_0`.
     have h₀ := ((key ![0, 1]).symm.trans (h ![0, 1]))

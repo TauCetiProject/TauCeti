@@ -148,25 +148,6 @@ section Coordinates
 variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
   [AddCommMonoid N] [Module R N] [TopologicalSpace N]
 
-/-- **A two-form in coordinates.** In the coordinates of a basis `b`, a two-form `ω` is
-`ω(u, v) = ∑ᵢ ∑ⱼ uᵢ vⱼ ω(bᵢ, bⱼ)`. -/
-theorem apply_vecCons_eq_sum_repr {ι : Type*} [Fintype ι] (b : Module.Basis ι R M)
-    (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
-    ω ![u, v] = ∑ i, ∑ j, (b.repr u i * b.repr v j) • ω ![b i, b j] := by
-  -- `ω` is linear in each argument (`MultilinearMap.toLinearMap`), so expand both in `b`.
-  have h (m : Fin 2 → M) (k : Fin 2) (x : M) :
-      ω (Function.update m k x) = ∑ i, b.repr x i • ω (Function.update m k (b i)) := by
-    simpa [b.sum_repr] using
-      _root_.map_sum (ω.toMultilinearMap.toLinearMap m k) (fun i ↦ b.repr x i • b i) Finset.univ
-  have h₀ (x y z : M) : Function.update ![x, y] 0 z = ![z, y] := by
-    ext k; fin_cases k <;> simp
-  have h₁ (x y z : M) : Function.update ![x, y] 1 z = ![x, z] := by
-    ext k; fin_cases k <;> simp
-  have hu := h ![u, v] 0 u
-  have hv (x : M) := h ![x, v] 1 v
-  simp only [h₀, h₁] at hu hv
-  simp only [hu, hv, Finset.smul_sum, smul_smul]
-
 /-- **A two-form in the coordinates of its second argument.** In the coordinates of a basis `b`, a
 two-form `ω` is `ω(u, v) = ∑ⱼ vⱼ ω(u, bⱼ)`. -/
 theorem apply_vecCons_eq_sum_repr_right {ι : Type*} [Fintype ι] (b : Module.Basis ι R M)
@@ -178,6 +159,22 @@ theorem apply_vecCons_eq_sum_repr_right {ι : Type*} [Fintype ι] (b : Module.Ba
   simpa [b.sum_repr, h] using
     _root_.map_sum (ω.toMultilinearMap.toLinearMap ![u, v] 1) (fun j ↦ b.repr v j • b j)
       Finset.univ
+
+/-- **A two-form in coordinates.** In the coordinates of a basis `b`, a two-form `ω` is
+`ω(u, v) = ∑ᵢ ∑ⱼ uᵢ vⱼ ω(bᵢ, bⱼ)`. -/
+theorem apply_vecCons_eq_sum_repr {ι : Type*} [Fintype ι] (b : Module.Basis ι R M)
+    (ω : M [⋀^Fin 2]→L[R] N) (u v : M) :
+    ω ![u, v] = ∑ i, ∑ j, (b.repr u i * b.repr v j) • ω ![b i, b j] := by
+  -- `ω(·, v)` is linear (`MultilinearMap.toLinearMap`), so expand `u` in `b`; then expand the
+  -- second argument with `apply_vecCons_eq_sum_repr_right`.
+  have hu : ω ![u, v] = ∑ i, b.repr u i • ω ![b i, v] := by
+    have h (x : M) : Function.update ![u, v] 0 x = ![x, v] := by
+      ext k; fin_cases k <;> simp
+    simpa [b.sum_repr, h] using
+      _root_.map_sum (ω.toMultilinearMap.toLinearMap ![u, v] 0) (fun i ↦ b.repr u i • b i)
+        Finset.univ
+  rw [hu]
+  simp only [apply_vecCons_eq_sum_repr_right b ω _ v, Finset.smul_sum, smul_smul]
 
 end Coordinates
 
