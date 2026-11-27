@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel.Index
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel.Index.Dedekind
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Splitting
 
@@ -30,8 +30,8 @@ example (hζ : IsPrimitiveRoot ζ 4) :
   have hN : Ideal.absNorm P = 5 := NumberField.GaussianRationals.absNorm_span_two_add
     hζ.minpoly_toInteger_eq_X_sq_add_one (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ)
   have hp : Irreducible P := Ideal.irreducible_of_irreducible_absNorm (by rw [hN]; decide)
-  have : Finite (𝓞 K ⧸ P) := (Ideal.absNorm_ne_zero_iff P).mp (by simp [hN])
-  rw [GL2K0.index_eq_prod_absNorm_pow_mul P]
+  have : Finite (𝓞 K ⧸ P) := Ring.HasFiniteQuotients.finiteQuotient hp.ne_zero
+  rw [GL2K0.index_eq_prod_absNorm_pow_mul P hp.ne_zero]
   simp [factors_eq_normalizedFactors, normalizedFactors_irreducible hp, hN]
 
 example (hζ : IsPrimitiveRoot ζ 4) :
@@ -51,7 +51,7 @@ example (hζ : IsPrimitiveRoot ζ 4) :
       NumberField.GaussianRationals.two_add_mul_two_sub_eq_five hmin]
   have : Finite (𝓞 K ⧸ (P * Q)) := Ring.HasFiniteQuotients.finiteQuotient
     (mul_ne_zero hp.ne_zero hq.ne_zero)
-  rw [← hPQ, GL2K0.index_eq_prod_absNorm_pow_mul]
+  rw [← hPQ, GL2K0.index_eq_prod_absNorm_pow_mul _ (mul_ne_zero hp.ne_zero hq.ne_zero)]
   norm_num [factors_eq_normalizedFactors, normalizedFactors_mul hp.ne_zero hq.ne_zero,
     normalizedFactors_irreducible hp, normalizedFactors_irreducible hq, hne, Ne.symm hne, hP, hQ]
 

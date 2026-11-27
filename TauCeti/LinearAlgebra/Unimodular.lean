@@ -273,14 +273,42 @@ theorem TauCeti.Module.isUnimodular_pi_prod_iff {R S ι : Type*} [Semiring R] [S
 
 /-- A row over a family of semirings is unimodular exactly when its projection to every
 factor is unimodular. -/
-theorem TauCeti.Module.isUnimodular_pi_pi_iff {ι κ : Type*} [Finite ι] {B : κ → Type*}
+theorem TauCeti.Module.isUnimodular_pi_pi_iff {ι κ : Type*} {B : κ → Type*}
     [∀ k, Semiring (B k)]
     {v : ι → ∀ k, B k} :
     Module.IsUnimodular (∀ k, B k) v ↔ ∀ k, Module.IsUnimodular (B k) (fun i ↦ v i k) := by
-  refine ⟨fun h k ↦ h.ringHom_comp (Pi.evalRingHom B k), fun h ↦ ?_⟩
-  have := Fintype.ofFinite ι
-  choose b hb using fun k ↦ isUnimodular_pi_iff.mp (h k)
-  exact isUnimodular_pi_iff.mpr ⟨fun i k ↦ b k i, funext fun k ↦ by simpa using hb k⟩
+  classical
+  rw [Module.isUnimodular_iff]
+  constructor
+  · rintro ⟨f, hf⟩ k
+    -- Restrict the functional to vectors supported in the `k`th ring factor.
+    have hsingle (a : B k) (w : ι → ∀ j, B j) :
+        (fun i ↦ Pi.single k (a * w i k)) = (Pi.single k a : ∀ j, B j) • w :=
+      funext fun i ↦ Pi.single_mul_left (f := w i) a
+    refine Module.isUnimodular_iff.mpr ⟨{
+      toFun := fun w ↦ f (fun i ↦ Pi.single k (w i)) k
+      map_add' := fun x y ↦ by
+        have h : (fun i ↦ Pi.single k ((x + y) i)) =
+            (fun i ↦ Pi.single k (x i)) + (fun i ↦ Pi.single k (y i)) :=
+          funext fun i ↦ Pi.single_add k (x i) (y i)
+        rw [h, map_add]
+        rfl
+      map_smul' := fun a w ↦ by
+        simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
+        have hw := hsingle a (fun i ↦ Pi.single k (w i))
+        simp only [Pi.single_eq_same] at hw
+        rw [hw, map_smul]
+        simp [smul_eq_mul] }, ?_⟩
+    have h := hsingle 1 v
+    simp only [one_mul] at h
+    simp [h, hf, smul_eq_mul]
+  · intro h
+    choose f hf using fun k ↦ Module.isUnimodular_iff.mp (h k)
+    exact ⟨{
+      toFun := fun w k ↦ f k (fun i ↦ w i k)
+      map_add' := fun x y ↦ funext fun k ↦ (f k).map_add (fun i ↦ x i k) (fun i ↦ y i k)
+      map_smul' := fun a w ↦ funext fun k ↦ (f k).map_smul (a k) (fun i ↦ w i k) },
+      funext hf⟩
 
 namespace TauCeti
 

@@ -53,6 +53,7 @@ theorem card_isUnimodular_prod :
   exact Nat.card_congr (((Equiv.arrowProdEquivProdArrow ι (fun _ ↦ R) (fun _ ↦ S)).subtypeEquiv
     fun _ ↦ isUnimodular_pi_prod_iff).trans (Equiv.subtypeProdEquivProd))
 
+omit [Finite ι] in
 variable (ι) in
 /-- The number of unimodular rows over a finite product of semirings is the product of
 the numbers of unimodular rows over its factors. -/

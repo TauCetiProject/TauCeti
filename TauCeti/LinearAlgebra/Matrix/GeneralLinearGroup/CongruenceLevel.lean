@@ -7,6 +7,8 @@ module
 
 -- `TauCeti.GL2Borel` and its diagonal projection `TauCeti.GL2Borel.diag` define the two levels.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
+-- Bottom-row lifts take values in the elementary subgroup.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 -- The counts of units and unimodular rows of a finite local ring give the indices.
 public import TauCeti.RingTheory.LocalRing.Card
 -- The coset equivalences require Bass stable range at most one for the quotient ring.
@@ -62,12 +64,14 @@ elementary matrices over `A`. This identifies
   (`TauCeti.GL2K0.rightCosetEquiv`), modelled as the orbits of `(A ⧸ I)ˣ` on
   `TauCeti.Module.unimodularSubMulAction`.
 
-Counting unimodular rows and units of the local ring `A ⧸ I` then gives the indices. With `q` the
-size of the residue field of `A`, `I ≠ A` and `A ⧸ I` finite,
+Now assume `A` is local. Counting unimodular rows and units of `A ⧸ I` gives the indices.
+With `q` the size of the residue field of `A`, `I ≠ A` and `A ⧸ I` finite,
 
 * `q² · [GL₂(A) : K₁(I)] = #(A ⧸ I)² · (q² - 1)`,
 * `q · [GL₂(A) : K₀(I)] = #(A ⧸ I) · (q + 1)`, and
-* `q · [K₀(I) : K₁(I)] = #(A ⧸ I) · (q - 1)`, the number of units of `A ⧸ I`.
+* `q · [K₀(I) : K₁(I)] = #(A ⧸ I) · (q - 1)`.
+
+The relative index `[K₀(I) : K₁(I)]` is the number of units of `A ⧸ I`.
 
 For a discrete valuation ring with finite residue field and `e ≥ 1`, where `#(A ⧸ 𝔭ᵉ) = qᵉ`,
 these read
@@ -342,16 +346,17 @@ theorem GL2K1.relIndex_GL2K0_eq_card_units :
 /-! ### Lifting over a quotient of stable range at most one -/
 
 /-- When the quotient ring has stable range at most one, every unimodular row modulo `I` lifts
-to the bottom row of an invertible matrix over `A`. -/
+to the bottom row of an elementary matrix over `A`, which has determinant one by
+`elementarySubgroup_le_ker_det`. -/
 theorem exists_bottomRowMod_eq (h : HasStableRangeLE (A ⧸ I) 1) {v : Fin 2 → A ⧸ I}
     (hv : Module.IsUnimodular (A ⧸ I) v) :
-    ∃ g : GL (Fin 2) A, bottomRowMod I g = v := by
+    ∃ g ∈ elementarySubgroup (Fin 2) A, bottomRowMod I g = v := by
   obtain ⟨e, he, hve⟩ := h.exists_vecMul_elementarySubgroup_eq_single (by simp) hv 1
-  obtain ⟨g, _, hg⟩ := (Ideal.Quotient.mk I).exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq
+  obtain ⟨g, hg, hge⟩ := (Ideal.Quotient.mk I).exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq
     Ideal.Quotient.mk_surjective he
-  -- The equality supplied by elementary lifting is entrywise reduction on GL.
-  have hmap : GeneralLinearGroup.map (Ideal.Quotient.mk I) g = e := hg
-  refine ⟨g⁻¹, ?_⟩
+  have hmap : GeneralLinearGroup.map (Ideal.Quotient.mk I) g = e := by
+    simpa only [GeneralLinearGroup.map] using hge
+  refine ⟨g⁻¹, inv_mem hg, ?_⟩
   rw [← single_one_vecMul_map, map_inv, hmap]
   exact ((GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv e _ _).mp hve).symm
 
@@ -367,7 +372,7 @@ noncomputable def GL2K1.rightCosetEquiv (h : HasStableRangeLE (A ⧸ I) 1) :
       rintro ⟨g⟩ ⟨g'⟩ h
       exact Quotient.sound (GL2K1.rightRel_iff.mpr (congrArg Subtype.val h)),
     fun v ↦
-      let ⟨g, hg⟩ := exists_bottomRowMod_eq I h v.property
+      let ⟨g, _, hg⟩ := exists_bottomRowMod_eq I h v.property
       ⟨Quotient.mk _ g, Subtype.ext hg⟩⟩
 
 @[simp]
@@ -394,7 +399,7 @@ noncomputable def GL2K0.rightCosetEquiv (h : HasStableRangeLE (A ⧸ I) 1) :
       exact Quotient.sound (GL2K0.rightRel_iff.mpr ⟨u⁻¹, by rw [← hu', inv_smul_smul]⟩),
     by
       rintro ⟨v⟩
-      obtain ⟨g, hg⟩ :=
+      obtain ⟨g, -, hg⟩ :=
         exists_bottomRowMod_eq I h (TauCeti.Module.mem_unimodularSubMulAction.mp v.property)
       exact ⟨Quotient.mk _ g, congrArg (Quotient.mk _) (Subtype.ext hg)⟩⟩
 

@@ -18,8 +18,6 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 import TauCeti.LinearAlgebra.Unimodular
 import TauCeti.Algebra.Module.Submodule.Pointwise
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.Ideal.Quotient.Semilocal
-import TauCeti.RingTheory.StableRange.Commutative
 
 /-!
 # The standard order `O₀(I)` and the lattices of `K₀(I)`
@@ -257,8 +255,9 @@ theorem exists_eq_smul_lattice [IsLocalRing A] {L : Submodule A (Fin 2 → A)}
     have hx' : f x = 1 := by simpa [f] using hx
     rw [hf] at hx'
     simpa [mul_comm] using hx'
-  obtain ⟨γ, hγ⟩ :=
-    exists_bottomRowMod_eq I (hasStableRangeLE_one_of_finite_maximalSpectrum _) hv
+  have hstable := (hasStableRangeLE_one_of_isLocalRing A).of_surjective
+    (f := Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
+  obtain ⟨γ, -, hγ⟩ := exists_bottomRowMod_eq I hstable hv
   have hγv (j : Fin 2) : v j = Ideal.Quotient.mk I ((γ : Matrix (Fin 2) (Fin 2) A) 1 j) :=
     (congrFun hγ j).symm.trans (bottomRowMod_apply I γ j)
   -- So `x ∈ L ↔ f x = 0 ↔ (γ x)₁ ∈ I ↔ x ∈ γ⁻¹ (A ⊕ I)`.
