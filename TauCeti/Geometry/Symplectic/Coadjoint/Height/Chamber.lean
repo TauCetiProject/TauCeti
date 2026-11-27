@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Poincare
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.OrbitSpace
+public import TauCeti.Geometry.Convex.Cone.ClosedChamber
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Algebra.Field.ULift
 import TauCeti.Topology.Algebra.Module.ModuleTopology
@@ -64,11 +65,6 @@ the Lie algebra of a maximal torus together with a regular element
 (`TauCeti.Lie.IsMaximalTorus.exists_isRootPlaneDecomposition`), so these statements apply to every
 compact connected Lie group.
 
-## Main definitions
-
-* `TauCeti.closedChamber`: the closed chamber `{p | α_i(p) α_i(X) ≥ 0 for every i}` of `X` for a
-  family of linear forms `α_i`, closed in finite dimension (`TauCeti.isClosed_closedChamber`).
-
 ## Main results
 
 All in the namespace `TauCeti.IsRootPlaneDecomposition`:
@@ -101,39 +97,6 @@ open Function Module Manifold Topology TauCeti TauCeti.Lie
 open scoped Manifold ContDiff Finset
 
 universe u
-
-namespace TauCeti
-
-/-! ### The closed chamber of a family of linear forms -/
-
-section ClosedChamber
-
-variable {ι V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- **The closed chamber of `X`.** For linear forms `α_i` on a real vector space `V` and `X ∈ V`,
-the closed convex cone `{p | α_i(p) α_i(X) ≥ 0 for every i}` of the points at which no `α_i` has
-the sign opposite to its sign at `X`. For the roots of a root-plane decomposition and an `X` at
-which no root vanishes, this is the closed Weyl chamber containing `X`. -/
-def closedChamber (α : ι → Dual ℝ V) (X : V) : Set V :=
-  {p | ∀ i, 0 ≤ α i p * α i X}
-
-@[simp]
-theorem mem_closedChamber {α : ι → Dual ℝ V} {X p : V} :
-    p ∈ closedChamber α X ↔ ∀ i, 0 ≤ α i p * α i X :=
-  Iff.rfl
-
-/-- The closed chamber of `X` is closed in a finite-dimensional Hausdorff topological vector
-space. -/
-theorem isClosed_closedChamber [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V]
-    [T2Space V] [FiniteDimensional ℝ V] (α : ι → Dual ℝ V) (X : V) :
-    IsClosed (closedChamber α X) := by
-  simp only [closedChamber, Set.ofPred_forall]
-  exact isClosed_iInter fun i ↦ isClosed_le continuous_const
-    ((α i).continuous_of_finiteDimensional.mul continuous_const)
-
-end ClosedChamber
-
-end TauCeti
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
   isClosed_stabilizer_coadjointRepresentation
