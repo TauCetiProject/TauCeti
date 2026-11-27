@@ -109,7 +109,8 @@ private theorem flip_end_Icc {M : Type*} [AddCommGroup M] [Module ℤ_[2] M]
       -(∏ i ∈ Finset.Icc k d, hk.constituentSign i) := by
   have hd_mem := Finset.mem_Icc.mpr ⟨hkd, le_rfl⟩
   refine ⟨compartmentOddity_eq_of_flip_right
-    (fun i hi ↦ hk.constituentSignBool_and_oddity_eq_of_eq h1 hB (hlt i hi))
+    (fun i hi ↦ ⟨hk.constituentSignBool_eq_of_eq h1 (hlt i hi),
+      hk.constituentOddity_eq_of_eq h1 hB (hlt i hi)⟩)
     (hk.constituentSignBool_eq_not_of_constituentSign_eq_neg h1 hsd) htd, ?_⟩
   rw [← Finset.mul_prod_erase _ _ hd_mem, ← Finset.mul_prod_erase _ _ hd_mem, hsd, neg_mul]
   congr 2
@@ -234,8 +235,8 @@ private theorem exists_compartment_end {Nk : ℕ → Submodule ℤ_[2] M}
   rcases eq_or_lt_of_le hi.1 with rfl | hki
   · exact hodd_k
   · have him1 : i - 1 < d := by omega
-    exact fun he ↦ Nat.find_min hex him1
-      ⟨by omega, by simpa only [show i - 1 + 1 = i by omega] using he⟩
+    have hpred : i - 1 + 1 = i := Nat.sub_add_cancel (by omega)
+    exact fun he ↦ Nat.find_min hex him1 ⟨by omega, by simpa only [hpred] using he⟩
 
 private theorem exists_flip_end_of_compartment
     {M' : Type*} [AddCommGroup M'] [Module ℤ_[2] M'] [Module.Free ℤ_[2] M']
@@ -262,14 +263,14 @@ private theorem exists_flip_end_of_compartment
         hSd
     · obtain ⟨N1, h1, ha, hdk, -, hok, -⟩ :=
         hk.exists_signWalk_add_two_of_odd_of_odd hB hodd_d heven_d2
-      obtain ⟨hsd, htd⟩ := hk.constituentSign_eq_neg_and_oddity_eq_add_four_of_isSquare_five
-        h1 hB hdk hok
-      exact ⟨N1, h1, fun i hi ↦ ha i (by omega) (by omega), hsd, htd⟩
+      exact ⟨N1, h1, fun i hi ↦ ha i (by omega) (by omega),
+        hk.constituentSign_eq_neg_of_isSquare_five h1 hdk,
+        by simpa [map_ofNat] using hk.constituentOddity_eq_add_of_eight_dvd h1 hB (δ := 4) hok⟩
   · obtain ⟨N1, h1, ha, hdk, -, hok⟩ :=
       hk.exists_signWalk_succ_of_odd_of_even hB hodd_d heven_d1 hbot
-    obtain ⟨hsd, htd⟩ := hk.constituentSign_eq_neg_and_oddity_eq_add_four_of_isSquare_five
-      h1 hB hdk hok
-    exact ⟨N1, h1, fun i hi ↦ ha i (by omega) (by omega), hsd, htd⟩
+    exact ⟨N1, h1, fun i hi ↦ ha i (by omega) (by omega),
+      hk.constituentSign_eq_neg_of_isSquare_five h1 hdk,
+      by simpa [map_ofNat] using hk.constituentOddity_eq_add_of_eight_dvd h1 hB (δ := 4) hok⟩
 
 /-- Align the compartment invariants `(compartmentOddity, ∏ constituentSign)` on `[k, d]` without
 disturbing constituents `i < k`. -/

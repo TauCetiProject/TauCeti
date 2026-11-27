@@ -26,8 +26,6 @@ the product with one factor removed by the full product leaves the inverse of th
 * `Finset.prod_eq_of_eq_outside_two`, `Finset.sum_eq_of_eq_outside_two`: two functions on a finite
   set that agree outside `{a, b}` and have equal products (sums) on `{a, b}` have equal products
   (sums) on the whole set.
-* `Finset.prod_eq_of_eq_outside_one`, `Finset.sum_eq_of_eq_outside_one`: two functions on a finite
-  set that agree outside `{a}` and agree at `a` have equal products (sums) on the whole set.
 -/
 
 public section
@@ -89,17 +87,5 @@ theorem prod_eq_of_eq_outside_two {ι M : Type*} [CommMonoid M] {s : Finset ι}
   refine prod_congr rfl fun i hi ↦ ?_
   rw [mem_erase, mem_erase] at hi
   exact hout i hi.2.2 hi.2.1 hi.1
-
-/-- Two functions on a finite set `s` that agree outside `{a}` and agree at `a` have equal
-products on `s`. -/
-@[to_additive sum_eq_of_eq_outside_one
-/-- Two functions on a finite set `s` that agree outside `{a}` and agree at `a` have equal
-sums on `s`. -/]
-theorem prod_eq_of_eq_outside_one {ι M : Type*} [CommMonoid M] {s : Finset ι}
-    {a : ι} {f g : ι → M}
-    (hout : ∀ i ∈ s, i ≠ a → f i = g i) (hsingle : f a = g a) :
-    ∏ i ∈ s, f i = ∏ i ∈ s, g i := by
-  classical
-  exact prod_congr rfl fun i hi ↦ if h : i = a then h ▸ hsingle else hout i hi h
 
 end Finset

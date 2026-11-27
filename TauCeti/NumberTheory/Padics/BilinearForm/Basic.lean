@@ -84,8 +84,8 @@ theorem not_equivalent_toBilin'_diagonal_one_one_three_three_padicInt_two :
   decide
 
 /-- The forms `⟨2, -2⟩` and `2 • U` are not isometric over `ℤ_[2]`: both have scale `2`,
-rank `2`, determinant `-4`, and oddity `0`, yet `2 • U` takes values in `4 ℤ_[2]` while
-`⟨2, -2⟩` represents `2`. -/
+rank `2`, determinant `-4`, and oddity `0`, yet all self-pairings of `2 • U` lie in `4 ℤ_[2]`
+while `⟨2, -2⟩` represents `2`. -/
 theorem not_equivalent_toBilin'_diagonal_two_neg_two_two_smul_hyperbolic :
     ¬(Matrix.toBilin' (Matrix.diagonal ![2, -2] : Matrix (Fin 2) (Fin 2) ℤ_[2])).Equivalent
       (Matrix.toBilin' ((2 : ℤ_[2]) • !![0, 1; 1, 0])) := by
