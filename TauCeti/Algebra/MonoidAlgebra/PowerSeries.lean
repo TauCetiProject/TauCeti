@@ -41,8 +41,6 @@ product `C × ℤ_p` becomes a power-series ring over `ℤ_p[C]`.
   `A` divides the image of `x ∈ A⟦X⟧[M]` exactly when it divides, in `A⟦X⟧`, the coefficient of
   `x` at every `m ∈ M`; `MonoidAlgebra.map_singleOneRingHom_dvd_iff` is the finite-`M` form for an
   arbitrary `ψ ∈ A[M]⟦X⟧`.
-* `MonoidAlgebra.liftNC_eq_sum`: finite-sum expansion of `MonoidAlgebra.liftNC` over a finite
-  indexing type.
 -/
 
 public section
@@ -50,13 +48,6 @@ public section
 namespace MonoidAlgebra
 
 open PowerSeries
-
-/-- Over a finite indexing type `M`, `MonoidAlgebra.liftNC f g x` is the finite sum over `M` of
-`f (x.coeff m) * g m`. -/
-theorem liftNC_eq_sum {A B M : Type*} [Semiring A] [NonUnitalNonAssocSemiring B] [Fintype M]
-    (f : A →+ B) (g : M → B) (x : MonoidAlgebra A M) :
-    liftNC f g x = ∑ m : M, f (x.coeff m) * g m :=
-  Finsupp.sum_fintype x.coeff (fun m a ↦ f a * g m) fun _ ↦ by simp
 
 variable (R : Type*) [CommSemiring R] (A : Type*) [Semiring A] [Algebra R A]
   (M : Type*) [Monoid M]

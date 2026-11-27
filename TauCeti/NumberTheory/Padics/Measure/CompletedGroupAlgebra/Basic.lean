@@ -562,6 +562,30 @@ variable {Γ K : Type*} [CommGroup Γ] [TopologicalSpace Γ] [IsTopologicalGroup
   [CompactSpace Γ] [TotallyDisconnectedSpace Γ]
   [CommRing K] [IsDomain K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
 
+/-- Integrating a continuous character that factors through a finite quotient `Γ ⧸ U` against `μ`
+equals evaluating `ψ.charEval` on the finite projection of `μ` at level `U`. -/
+private theorem characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection
+    {Γ R : Type*} [CommGroup Γ] [TopologicalSpace Γ] [CompactSpace Γ]
+    [ContinuousMul Γ] [LocallyCompactSpace Γ] [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R]
+    {U : OpenNormalSubgroup Γ} (ψ : (Γ ⧸ U.toSubgroup) →* Rˣ) (μ : D(Γ, R)) :
+    (ContinuousMonoidHom.comp ⟨Units.coeHom R, Units.continuous_val⟩
+      ⟨ψ.comp U.toSubgroup.quotientMkContinuousMonoidHom.toMonoidHom,
+        (continuous_of_discreteTopology (f := ⇑ψ)).comp
+          U.toSubgroup.quotientMkContinuousMonoidHom.continuous⟩).characterIntegralAlgHom μ =
+      ψ.charEval (U.toSubgroup.quotientMkContinuousMonoidHom.finiteProjectionAlgHom μ) := by
+  let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+  rw [ψ.charEval_eq_sum, ← proj_toCompletedGroupAlgebra,
+    ContinuousMonoidHom.characterIntegralAlgHom_apply,
+    apply_eq_sum_coeff_proj_toCompletedGroupAlgebra (R := R) (U := U) μ
+      (F := ((ContinuousMonoidHom.comp ⟨Units.coeHom R, Units.continuous_val⟩
+        ⟨ψ.comp U.toSubgroup.quotientMkContinuousMonoidHom.toMonoidHom,
+          (continuous_of_discreteTopology (f := ⇑ψ)).comp
+            U.toSubgroup.quotientMkContinuousMonoidHom.continuous⟩) : C(Γ, R)))
+      (g := fun a ↦ (ψ a : R)) (funext fun x ↦ congrArg (fun y ↦ (ψ y : R))
+        (Subgroup.quotientMkContinuousMonoidHom_apply U.toSubgroup x).symm)]
+  exact Finset.sum_congr rfl fun a _ ↦ mul_comm _ _
+
 /-- A measure on a profinite commutative group valued in a Hausdorff domain with enough roots of
 unity for every open normal quotient is determined by its integrals against finite-order
 continuous characters. -/
@@ -580,27 +604,16 @@ theorem eq_of_forall_isOfFinOrder_characterIntegralAlgHom_eq
   have := hroots U
   refine TauCeti.eq_of_forall_charEval_eq fun ψ ↦ ?_
   let q := U.toSubgroup.quotientMkContinuousMonoidHom
-  let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
-  let ψ' : (Γ ⧸ U.toSubgroup) →ₜ* K := ⟨(Units.coeHom K).comp ψ, continuous_of_discreteTopology⟩
   let κ : Γ →ₜ* Kˣ :=
     ⟨ψ.comp q.toMonoidHom,
       (continuous_of_discreteTopology (f := ⇑ψ)).comp q.continuous⟩
-  have hchar (ρ : D(Γ, K)) :
-      ψ.charEval (q.finiteProjectionAlgHom ρ) =
-        (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩
-          κ).characterIntegralAlgHom ρ := by
-    rw [ψ.charEval_eq_sum]
-    simpa [q, ψ', mul_comm] using
-      (apply_eq_sum_coeff_proj_toCompletedGroupAlgebra (R := K) (U := U) ρ
-        (F := (ContinuousMonoidHom.comp ⟨Units.coeHom K, Units.continuous_val⟩ κ : C(Γ, K)))
-        (g := ψ') (funext fun x ↦ congrArg (fun y ↦ (ψ y : K))
-          (Subgroup.quotientMkContinuousMonoidHom_apply U.toSubgroup x).symm)).symm
   have hfin : IsOfFinOrder κ :=
     isOfFinOrder_iff_pow_eq_one.mpr
       ⟨Monoid.exponent (Γ ⧸ U.toSubgroup), Monoid.ExponentExists.of_finite.exponent_pos, by
         ext x
         simp [κ, q, ← map_pow, Monoid.pow_exponent_eq_one]⟩
-  rw [hchar μ, hchar ν]
+  rw [← characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection ψ μ,
+    ← characterIntegralAlgHom_comp_quotientMk_eq_charEval_finiteProjection ψ ν]
   exact h κ hfin
 
 end CharacterSeparation

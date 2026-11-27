@@ -201,14 +201,9 @@ multiplicative norm sends `[γ] - 1` to an element of norm at least `1`. -/
 theorem not_exists_continuous_ringHom_of_one_le_norm {K : Type*} [SeminormedRing K]
     [NormMulClass K] {z : K} (hz : 1 ≤ ‖z‖) :
     ¬∃ φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K,
-      Continuous φ ∧ φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = z := by
-  refine not_exists_continuous_ringHom_of_not_tendsto_pow fun h ↦ ?_
-  have hlim : Tendsto (fun n : ℕ ↦ ‖z ^ (n + 1)‖) atTop (𝓝 0) :=
-    (tendsto_zero_iff_norm_tendsto_zero.mp h).comp (tendsto_add_atTop_nat 1)
-  have hle : (1 : ℝ) ≤ 0 := ge_of_tendsto hlim <| Eventually.of_forall fun n ↦ by
-    rw [norm_pow_succ]
-    exact one_le_pow₀ hz
-  norm_num at hle
+      Continuous φ ∧ φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = z :=
+  not_exists_continuous_ringHom_of_not_tendsto_pow fun h ↦
+    hz.not_gt (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one.mp h)
 end Universal
 
 /-! ### Adic specialisation into complete linearly topologised `ℤ_p`-algebras -/

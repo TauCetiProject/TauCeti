@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Algebra.MonoidAlgebra.PowerSeries
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # Continuity and series expansions for power series over finite monoid algebras

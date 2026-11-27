@@ -567,23 +567,6 @@ theorem tendsto_coord_pow_of_normedAlgebra (κ : WeightSpace p K) :
 
 variable [CompleteSpace K]
 
-/-- The weight in a complete ultrametric normed commutative `ℚ_p`-algebra `K` with finite part `η`
-and topologically nilpotent coordinate `t`, avoiding `Algebra ℤ_[p] K` diamonds. -/
-noncomputable def ofCoordOfNormedAlgebra (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) (t : K)
-    (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : WeightSpace p K :=
-  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K; ofCoord η t ht
-
-@[simp] theorem finiteChar_ofCoordOfNormedAlgebra (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ)
-    (t : K) (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : (ofCoordOfNormedAlgebra η t ht).finiteChar = η :=
-  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K; finiteChar_ofCoord η t ht
-@[simp] theorem coord_ofCoordOfNormedAlgebra (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) (t : K)
-    (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : (ofCoordOfNormedAlgebra η t ht).coord = t :=
-  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K; coord_ofCoord η t ht
-@[simp] theorem ofCoordOfNormedAlgebra_finiteChar_coord (κ : WeightSpace p K) :
-    ofCoordOfNormedAlgebra κ.finiteChar κ.coord κ.tendsto_coord_pow_of_normedAlgebra = κ :=
-  letI := padicIntAlgebra p K; haveI := isBoundedSMul_padicIntAlgebra p K
-  κ.ofCoord_finiteChar_coord
-
 /-- **Universal property of weights in a complete ultrametric normed `ℚ_p`-algebra.** -/
 theorem existsUnique_character_of_tendsto_pow_of_normedAlgebra
     (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) {t : K} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :

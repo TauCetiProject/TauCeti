@@ -71,6 +71,8 @@ none of the further theory built on it.
   unit `u` of `M` conjugates the indices of the coefficients.
 * `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
   `∑ m, x_m • F m`.
+* `MonoidAlgebra.liftNC_eq_sum`: finite-sum expansion of `MonoidAlgebra.liftNC` over a finite
+  indexing type.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
   group, as a convolution.
 
@@ -434,6 +436,13 @@ theorem lift_apply_eq_sum {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra
     [Fintype M] (F : M →* A) (x : MonoidAlgebra R M) :
     lift R A M F x = ∑ m, x.coeff m • F m := by
   rw [lift_apply, Finsupp.sum_fintype _ _ (by simp)]
+
+/-- Over a finite indexing type `M`, `MonoidAlgebra.liftNC f g x` is the finite sum over `M` of
+`f (x.coeff m) * g m`. -/
+theorem liftNC_eq_sum {A B M : Type*} [Semiring A] [NonUnitalNonAssocSemiring B] [Fintype M]
+    (f : A →+ B) (g : M → B) (x : MonoidAlgebra A M) :
+    liftNC f g x = ∑ m : M, f (x.coeff m) * g m :=
+  Finsupp.sum_fintype x.coeff (fun m a ↦ f a * g m) fun _ ↦ by simp
 
 /-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
 theorem coeff_mul_eq_sum {k G : Type*} [Semiring k] [Group G] [Fintype G]
