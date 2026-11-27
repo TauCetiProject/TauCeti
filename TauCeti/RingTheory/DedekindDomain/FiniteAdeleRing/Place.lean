@@ -46,6 +46,8 @@ places; it is a closed embedding as well.
   is the set of finite adeles vanishing away from `v`;
   `IsDedekindDomain.FiniteAdeleRing.isClosedEmbedding_ofAdicCompletion` is the multiplicative
   counterpart.
+* `IsDedekindDomain.FiniteAdeleRing.sum_single_apply`: a finite sum of finite adeles supported at
+  the places of `S` has the prescribed components at `S` and `0` elsewhere.
 * `IsDedekindDomain.FiniteAdeleRing.tendsto_ofAdicCompletion_cofinite`: local integers placed at
   single places tend to `1` in the finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.single_mem_integralAdeles_iff`: a finite adele supported at
