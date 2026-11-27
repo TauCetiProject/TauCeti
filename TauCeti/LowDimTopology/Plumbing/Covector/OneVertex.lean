@@ -131,11 +131,6 @@ private theorem exists_covectorCube_eq (C : (oneVertexPlumbing (-1)).CovectorCub
     (show E ⊆ {0} from fun i _ => Finset.mem_singleton.2 (Subsingleton.elim i 0)) with h | h <;>
     simp [h]
 
-private theorem covectorCube_mk_empty_ne_mk_singleton
-    (K L : (oneVertexPlumbing (-1)).characteristicVectors) :
-    (⟨K, ∅⟩ : (oneVertexPlumbing (-1)).CovectorCube) ≠ ⟨L, {0}⟩ := by
-  simp
-
 /-! ### The differential -/
 
 /-- The differential of the one-dimensional generator `[2 m + 1, {v}]` is
@@ -176,9 +171,7 @@ private theorem covectorDifferentialOnGenerator_apply_singleton
     (oneVertexPlumbing (-1)).covectorDifferentialOnGenerator C ⟨K, {0}⟩ = 0 := by
   obtain ⟨j, rfl | rfl⟩ := exists_covectorCube_eq C
   · simp
-  · rw [covectorDifferentialOnGenerator_oddCovector_singleton, Finsupp.add_apply,
-      Finsupp.single_eq_of_ne (covectorCube_mk_empty_ne_mk_singleton _ _).symm,
-      Finsupp.single_eq_of_ne (covectorCube_mk_empty_ne_mk_singleton _ _).symm, add_zero]
+  · simp [covectorDifferentialOnGenerator_oddCovector_singleton]
 
 /-- The component of the completed differential at `[2 m + 1, ∅]` is
 `U ^ max(0, -m) b_m + U ^ max(0, m + 1) b_{m + 1}`, where `b_j` is the component of the chain at
@@ -343,10 +336,7 @@ private theorem exists_sub_smul_single_canonicalCube_mem_range
     by_cases hm : m = -1
     · -- The equation at `m = -1` is the choice of the multiple of `[K₀, ∅]`.
       subst hm
-      rw [Pi.single_eq_same, mul_one, show (-(-1 : ℤ)).toNat = 1 by omega,
-        show ((-1 : ℤ) + 1).toNat = 0 by omega, pow_one, pow_zero, one_mul,
-        show (-1 : ℤ) + 1 = 0 by omega]
-      ring
+      simp
     · rw [Pi.single_eq_of_ne (by simpa [oddCovector_injective.eq_iff] using hm), mul_zero,
         sub_zero, ← hb m hm]
   · rw [completedCovectorDifferential_apply_singleton, Pi.sub_apply, Pi.smul_apply,
@@ -377,10 +367,9 @@ theorem oneVertexPlumbing_neg_one_completedCovectorHomologyCycleMap_bijective
         rw [← canonicalCube, canonicalCube_eq]
         simpa [oddCovector_injective.eq_iff] using hm), smul_zero]
   have h := congrFun hw canonicalCube
-  rw [Pi.smul_apply, Pi.single_eq_same, smul_eq_mul, mul_one, canonicalCube_eq,
-    completedCovectorDifferential_apply_oddCovector_empty, hw0, hw0, mul_zero, mul_zero,
-    add_zero] at h
-  exact h.symm
+  rw [Pi.smul_apply, Pi.single_eq_same, canonicalCube_eq,
+    completedCovectorDifferential_apply_oddCovector_empty, hw0, hw0] at h
+  simpa using h.symm
 
 /-- **The completed lattice homology of the `(-1)`-framed vertex is `𝔽₂[[U]]`**, the class of the
 generator `[K₀, ∅]` of the canonical characteristic covector corresponding to `1`. The boundary of
