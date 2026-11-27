@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-public import TauCeti.NumberTheory.Height.FamilyOverPairs
+public import TauCeti.NumberTheory.Height.FamilyOverPairs.Basic
 
 /-!
 # Twisted lattices
