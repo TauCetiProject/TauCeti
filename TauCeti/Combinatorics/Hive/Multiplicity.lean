@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
+public import TauCeti.Combinatorics.Hive.Schur
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 import Mathlib.Analysis.Complex.Polynomial.Basic
@@ -13,7 +13,6 @@ import TauCeti.Combinatorics.Hive.GelfandTsetlin
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.LittlewoodRichardson
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
 import TauCeti.RepresentationTheory.FDRep.DirectSum
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
 
 /-!
 # Tensor-product multiplicities, Schur expansions, and invariants via integer hives
@@ -23,31 +22,26 @@ Combining the object-level hive-to-Littlewood–Richardson equivalence of
 Schur polynomials (`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`) and the
 rational Weyl-module decomposition (`TauCeti.nonempty_equiv_tprod_rationalWeylRep`), this file
 identifies integer hive counts with tensor-product multiplicities and invariant dimensions of
-`GL n ℂ`:
+`GL n ℂ`, and specializes the finite-alphabet Schur expansion
+(`TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount` in
+`TauCeti.Combinatorics.Hive.Schur`):
 
-* **Schur-polynomial expansion** (`TauCeti.Hive.schur_mul_eq_finsum_hiveCount`): for polynomial
-  dominant weights `λ, μ` of `GL n` and any commutative semiring `R`, the product
-  `s_λ · s_μ` in `n` variables expands as the finitely supported sum
-  `∑ᶠ γ : DominantWeight n, (hiveCount (productBoundary λ μ γ) : R) • s_γ`. In strictly more than
-  `n` variables this fails (`TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`), since the
-  rank-`n` hive model suppresses shapes with more than `n` rows.
+* **Schur-polynomial expansion transport and sharpness**: coefficient-ring transport, evaluation
+  transport, rank-lowering specialization along `Fin.snoc · 0`, and sharpness of the `N ≤ n`
+  variable bound (`TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`), since the rank-`n`
+  hive model suppresses shapes with more than `n` rows.
 * **Intertwiner multiplicity** (`TauCeti.Hive.finrank_hom_eq_hiveCount`): for arbitrary signed
   dominant weights `λ, μ, γ` of `GL n ℂ`, the complex dimension of the intertwiner space
   `rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n λ ⊗ rationalWeylFDRep ℂ n μ` in
   `FDRep ℂ (GL (Fin n) ℂ)` equals `hiveCount (productBoundary λ μ γ)`.
-* **Input symmetry** (`TauCeti.Hive.hiveCount_comm`): `hiveCount (productBoundary λ μ γ) =
-  hiveCount (productBoundary μ λ γ)`, read directly from the braiding of `FDRep ℂ (GL (Fin n) ℂ)`.
 * **Trilinear invariants** (`TauCeti.Hive.finrank_invariants_eq_hiveCount`): for arbitrary signed
   dominant weights `λ, μ, ν` of `GL n ℂ`, the invariant dimension
   `dim_ℂ Hom(𝟙_, V_λ ⊗ V_μ ⊗ V_ν)` equals the cyclic hive count `hiveCount ![λ.val, μ.val, ν.val]`.
 
 ## Main results
 
-* `TauCeti.Hive.schur_mul_eq_finsum_hiveCount`: finite-alphabet Schur-polynomial expansion with
-  `hiveCount` coefficients.
 * `TauCeti.Hive.finrank_hom_eq_hiveCount`: Hom-space dimension between rational Weyl modules equals
   `hiveCount (productBoundary lam μ γ)`.
-* `TauCeti.Hive.hiveCount_comm`: symmetry of `hiveCount (productBoundary l m p)` in `l` and `m`.
 * `TauCeti.Hive.finrank_invariants_eq_hiveCount`: dimension of `GL n ℂ`-invariants in
   `V_lam ⊗ V_μ ⊗ V_ν` equals `hiveCount ![lam.val, μ.val, ν.val]`.
 * `TauCeti.Hive.finrank_hom_two_std_std`, `TauCeti.Hive.finrank_invariants_two_std_checks`,
@@ -60,8 +54,8 @@ identifies integer hive counts with tensor-product multiplicities and invariant 
 
 * A. Knutson and T. Tao, *The honeycomb model of `GL_n(ℂ)` tensor products I: Proof of the
   saturation conjecture*, J. Amer. Math. Soc. **12** (1999), 1055–1090, Theorem 4 and Appendix 2.
-* A. Knutson, T. Tao, and C. Woodward, *A positive proof of the Littlewood–Richardson rule using the
-  octahedron recurrence*, Electron. J. Combin. **11** (2004), Research Paper 61, Theorem 1.
+* A. Knutson, T. Tao, and C. Woodward, *A positive proof of the Littlewood–Richardson rule using
+  the octahedron recurrence*, Electron. J. Combin. **11** (2004), Research Paper 61, Theorem 1.
 -/
 
 public section
@@ -71,52 +65,6 @@ open CategoryTheory MonoidalCategory Matrix MvPolynomial YoungDiagram
 namespace TauCeti.Hive
 
 /-! ### Finite-alphabet Schur-polynomial expansion -/
-
-/-- **The hive model of the Littlewood–Richardson rule for Schur polynomials**: for polynomial
-dominant weights `λ` and `μ` of `GL n` and any commutative semiring `R`, the product `s_λ · s_μ` in
-`n` variables expands over all dominant weights `γ` of `GL n` with coefficients
-`hiveCount (productBoundary λ μ γ)`. Non-polynomial weights `γ` have hive count zero, and only
-finitely many `γ` contribute. -/
-theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
-    (lam μ : DominantWeight n) (hl : lam.IsPolynomial) (hm : μ.IsPolynomial) :
-    diagramSchurPoly n R lam.shape * diagramSchurPoly n R μ.shape =
-      ∑ᶠ γ : DominantWeight n,
-        (hiveCount (productBoundary lam μ γ) : R) •
-          diagramSchurPoly n R γ.shape := by
-  classical
-  let Sub := {ν : (lam.shape.card + μ.shape.card).Partition // (ofPartition ν).colLen 0 ≤ n}
-  let emb : Sub → DominantWeight n := fun ν => weightOfShape n (ofPartition ν.val)
-  have hemb_inj : Function.Injective emb := fun ν₁ ν₂ h => Subtype.ext <|
-    YoungDiagram.ofPartition_injective <|
-      calc ofPartition ν₁.val = (emb ν₁).shape := (shape_weightOfShape ν₁.property).symm
-        _ = (emb ν₂).shape := congrArg DominantWeight.shape h
-        _ = ofPartition ν₂.val := shape_weightOfShape ν₂.property
-  have hsupp : Function.support
-      (fun γ : DominantWeight n =>
-        (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape) ⊆
-      (Finset.univ.image emb : Finset (DominantWeight n)) := by
-    intro γ hγ
-    rw [Function.mem_support] at hγ
-    have hcnt : hiveCount (productBoundary lam μ γ) ≠ 0 := fun h0 => by
-      simp [h0] at hγ
-    rw [hiveCount_productBoundary_of_isPolynomial hl hm] at hcnt
-    by_cases hpol : γ.IsPolynomial
-    · simp only [hpol, ↓reduceIte] at hcnt
-      have hne : Nonempty (LRTableau lam.shape γ.shape μ.shape) :=
-        not_isEmpty_iff.mp fun _ => hcnt Nat.card_of_isEmpty
-      obtain ⟨T⟩ := hne
-      refine Finset.mem_coe.mpr (Finset.mem_image.mpr
-        ⟨⟨γ.shape.toPartition T.card_eq, by simp⟩, Finset.mem_univ _, ?_⟩)
-      simp [emb, weightOfShape_shape hpol]
-    · simp [hpol] at hcnt
-  rw [finsum_eq_sum_of_support_subset _ hsupp, Finset.sum_image fun _ _ _ _ h => hemb_inj h,
-    diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
-    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le]
-  refine Finset.sum_congr rfl fun ν _ => ?_
-  have hsh : (emb ν).shape = ofPartition ν.val := shape_weightOfShape ν.property
-  have hpol : (emb ν).IsPolynomial := isPolynomial_weightOfShape n (ofPartition ν.val)
-  rw [hiveCount_productBoundary_of_isPolynomial hl hm]
-  simp only [hpol, ↓reduceIte, hsh, Nat.cast_smul_eq_nsmul]
 
 private theorem finite_support_hiveCount_smul_diagramSchurPoly {n : ℕ} {R : Type*}
     [CommSemiring R] (lam μ : DominantWeight n) :
@@ -170,11 +118,12 @@ theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly {n : ℕ} {R : Ty
       ∑ᶠ γ : DominantWeight n,
         (hiveCount (productBoundary (weightOfShape n lam.shape) (weightOfShape n μ.shape) γ) :
           R) • diagramSchurPoly n R γ.shape := by
-  rw [← schur_mul_eq_finsum_hiveCount lam μ hl hm, map_mul,
+  simp_rw [Nat.cast_smul_eq_nsmul]
+  rw [← diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl hl hm, map_mul,
     aeval_snoc_zero_diagramSchurPoly, aeval_snoc_zero_diagramSchurPoly,
     ← shape_weightOfShape hln, ← shape_weightOfShape hmn,
-    schur_mul_eq_finsum_hiveCount _ _ (isPolynomial_weightOfShape _ _)
-      (isPolynomial_weightOfShape _ _),
+    diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl
+      (isPolynomial_weightOfShape _ _) (isPolynomial_weightOfShape _ _),
     shape_weightOfShape hln, shape_weightOfShape hmn]
 
 /-- Setting the last variable to `0` annihilates the `(n + 1)`-variable hive-indexed Schur
@@ -186,7 +135,8 @@ theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_eq_zero {n : ℕ}
     aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0)
         (∑ᶠ γ : DominantWeight (n + 1),
           (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly (n + 1) R γ.shape) = 0 := by
-  rw [← schur_mul_eq_finsum_hiveCount lam μ hl hm, map_mul,
+  simp_rw [Nat.cast_smul_eq_nsmul]
+  rw [← diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl hl hm, map_mul,
     aeval_snoc_zero_diagramSchurPoly, aeval_snoc_zero_diagramSchurPoly]
   rcases hlt with h | h
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen h, zero_mul]
@@ -286,14 +236,6 @@ theorem finrank_hom_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
   refine Finset.sum_congr rfl fun ν _ => ?_
   simp only [finrank_hom_rationalWeylFDRep, Finset.sum_const, Finset.card_univ, smul_eq_mul,
     mul_boole, card_boundedYamanouchi_eq_natCard_lrTableau ν.property]
-
-/-- **Symmetry of hive counts in the two inputs**: `c^p_{l, m} = c^p_{m, l}` for all dominant
-weights `l, m, p` of `GL n`. -/
-theorem hiveCount_comm {n : ℕ} (l m p : DominantWeight n) :
-    hiveCount (productBoundary l m p) = hiveCount (productBoundary m l p) := by
-  rw [← finrank_hom_eq_hiveCount, ← finrank_hom_eq_hiveCount]
-  exact (Linear.homCongr ℂ (Iso.refl _)
-    (β_ (rationalWeylFDRep ℂ n l) (rationalWeylFDRep ℂ n m))).finrank_eq
 
 /-- Reduces `Hom(𝟙, V_λ ⊗ V_μ ⊗ V_ν)` to `Hom(V_{ν*}, V_λ ⊗ V_μ)` by decomposing `V_λ ⊗ V_μ`
 into irreducibles `⊕_p V_σ`, evaluating `dim Hom(𝟙, V_σ ⊗ V_ν) = δ_{ν*, σ} = dim Hom(V_{ν*}, V_σ)`
@@ -421,7 +363,8 @@ private theorem shape_eq_of_one_two (w₁ : DominantWeight 1) (w₂ : DominantWe
   | i + 2 =>
     rw [w₁.rowLen_shape_eq_zero_of_le (by omega), w₂.rowLen_shape_eq_zero_of_le (by omega)]
 
-/-- Sharpness of the `n`-variable alphabet in `schur_mul_eq_finsum_hiveCount`: for rank `1` weights
+/-- Sharpness of the `N ≤ n` alphabet bound in
+`diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: for rank `1` weights
 `λ = μ = (1)` evaluated in `2` variables, `s_{(1)}² = s_{(2)} + s_{(1, 1)}`, whereas the rank-`1`
 hive sum produces only `s_{(2)}` and omits the nonzero term `s_{(1, 1)}`. -/
 theorem schur_mul_two_vars_ne_finsum_hiveCount_one :
@@ -458,7 +401,9 @@ theorem schur_mul_two_vars_ne_finsum_hiveCount_one :
     exact hδ rfl
   have hlhs₂ : diagramSchurPoly 2 ℤ ω.shape * diagramSchurPoly 2 ℤ ω.shape =
       diagramSchurPoly 2 ℤ sym₂.shape + diagramSchurPoly 2 ℤ det₂.shape := by
-    rw [shape_eq_of_one_two ω std₂ rfl rfl, schur_mul_eq_finsum_hiveCount std₂ std₂ hstd₂ hstd₂,
+    simp_rw [Nat.cast_smul_eq_nsmul] at hsupp₂ ⊢
+    rw [shape_eq_of_one_two ω std₂ rfl rfl,
+      diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount le_rfl hstd₂ hstd₂,
       finsum_eq_sum_of_support_subset _ hsupp₂, Finset.sum_pair (by decide : sym₂ ≠ det₂),
       hiveCount_two_std_std_eq, hiveCount_two_std_std_eq]
     simp [sym₂, det₂]

@@ -23,18 +23,19 @@ weights `λ, μ : DominantWeight n`, any `N ≤ n`, and any commutative semiring
 
 in `N` variables (`MvPolynomial (Fin N) R`). Non-polynomial weights `γ` and weights of total size
 distinct from `|λ| + |μ|` have zero hive count, while Young diagrams of more than `n` rows vanish in
-`N ≤ n` variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). This generalizes the `N = n`
-statement `TauCeti.Hive.schur_mul_eq_finsum_hiveCount` in
-`TauCeti.Combinatorics.Hive.Multiplicity` without requiring representation theory; sharpness of the
-`N ≤ n` bound is recorded there as `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`, and
-input-swap symmetry of `hiveCount` is `TauCeti.Hive.hiveCount_comm` (with the purely
-polynomial/combinatorial proof on Young diagrams in `YoungDiagram.natCard_lrTableau_comm`).
+`N ≤ n` variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`) without requiring
+representation theory; sharpness of the `N ≤ n` bound is recorded in
+`TauCeti.Combinatorics.Hive.Multiplicity` as
+`TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`, and input-swap symmetry of `hiveCount`
+is `TauCeti.Hive.hiveCount_comm` (via `YoungDiagram.natCard_lrTableau_comm`).
 
 ## Main results
 
 * `TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: **the hive model of the
   Littlewood–Richardson rule** for Schur polynomials in `N ≤ n` variables over any commutative
   semiring.
+* `TauCeti.Hive.hiveCount_comm`: **input symmetry** `hiveCount (productBoundary l m p) =
+  hiveCount (productBoundary m l p)` without representation-theory imports.
 
 ## References
 
@@ -104,5 +105,14 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n N : ℕ} (h
   congr 1
   rw [hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ
     (isPolynomial_weightOfShape n (ofPartition ν.val)), shape_weightOfShape ν.property]
+
+/-- **Symmetry of hive counts in the two inputs**: `c^p_{l, m} = c^p_{m, l}` for all dominant
+weights `l, m, p` of `GL n`. -/
+theorem hiveCount_comm {n : ℕ} (l m p : DominantWeight n) :
+    hiveCount (productBoundary l m p) = hiveCount (productBoundary m l p) := by
+  rw [hiveCount_productBoundary, hiveCount_productBoundary, add_comm l.detShift m.detShift]
+  split_ifs
+  · exact YoungDiagram.natCard_lrTableau_comm _ _ _
+  · rfl
 
 end TauCeti.Hive
