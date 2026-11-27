@@ -54,7 +54,8 @@ transfer to the norm of `H1`. Pointwise, the weight is at least `|w - c_q|⁻²`
 of every end
 (`TauCeti.Floer.inv_norm_sub_endCenter_sq_le_cylindricalWeight`,
 `TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`), and on the end `q` it is at most
-`5 |w - c_q|⁻²` (`TauCeti.Floer.norm_sub_endCenter_sq_mul_cylindricalWeight_le`): the distance
+`5 |w - c_q|⁻²` (`TauCeti.Floer.norm_sub_endCenter_sq_mul_cylindricalWeight_le`,
+`TauCeti.Floer.norm_sub_endCenter_sq_le_mul_inv_cylindricalWeight`): the distance
 `|w - c_q|` to the center of the end is, up to the constant `2π`, the conformal factor of the end
 chart. In the positive end chart this distance is `|φ'_q(s, t) - c_q| = |b_q| exp (∓2πs)`
 (`TauCeti.Floer.norm_equivRealProdCLM_symm_positiveEndChart_sub_endCenter`). Far from the
@@ -274,6 +275,16 @@ theorem norm_sub_endCenter_sq_mul_cylindricalWeight_le (q : Puncture) {z : ℝ �
   rw [det_fderiv_endChart, hφ] at h'
   have hπ : 0 < 4 * π ^ 2 := by positivity
   nlinarith
+
+/-- On the part `±s ≥ 0` of the end `q`, the squared distance `|w - c_q|²` to the center of the end
+is at most `5 ρ(w)⁻¹` for the cylindrical weight `ρ`: the form of
+`norm_sub_endCenter_sq_mul_cylindricalWeight_le` that compares `|w - c_q|²` with the weight `ρ⁻¹`
+on the formal adjoint. -/
+theorem norm_sub_endCenter_sq_le_mul_inv_cylindricalWeight (q : Puncture) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (h : 0 ≤ (positiveEndCoord q z).1) :
+    ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 ≤ 5 * (cylindricalWeight z)⁻¹ := by
+  rw [← div_eq_mul_inv, le_div_iff₀ (isWeight_cylindricalWeight.pos z hz)]
+  exact norm_sub_endCenter_sq_mul_cylindricalWeight_le q hz h
 
 /-- The distance from a point of the positive end chart of `q` to the center of the end:
 `|φ'_q(s, t) - c_q| = |b_q| exp (∓2πs)`, with the sign of the end. -/
