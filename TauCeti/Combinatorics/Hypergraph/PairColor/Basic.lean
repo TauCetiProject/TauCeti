@@ -234,13 +234,13 @@ theorem swapDistinctPair_val (p : {p : V × V // p.1 ≠ p.2}) :
 
 /-- Swapping an ordered distinct pair twice returns the original pair. -/
 @[simp]
-theorem swapDistinctPair_swap (p : {p : V × V // p.1 ≠ p.2}) :
+theorem swapDistinctPair_swapDistinctPair (p : {p : V × V // p.1 ≠ p.2}) :
     swapDistinctPair (swapDistinctPair p) = p :=
   Subtype.ext (Prod.swap_swap p.val)
 
 /-- Swapping ordered distinct pairs is injective. -/
 theorem swapDistinctPair_injective : Function.Injective (swapDistinctPair (V := V)) :=
-  Function.Involutive.injective swapDistinctPair_swap
+  Function.Involutive.injective swapDistinctPair_swapDistinctPair
 
 /-- Swapping an ordered distinct pair applies palette reversal to its color. -/
 @[simp]

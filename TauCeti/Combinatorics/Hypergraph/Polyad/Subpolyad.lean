@@ -19,7 +19,8 @@ special case, supplied by `Subpolyad3.ofSubcells`.
 Subpolyads are extensional in their three selected pair graphs and form a finite type, even
 without a finite pair palette, of exact cardinality
 `2 ^ (#pairSupport₀₁ + #pairSupport₀₂ + #pairSupport₁₂)` (`TauCeti.card_subpolyad3_eq`), bounded
-in terms of cell sizes by `TauCeti.card_subpolyad3_le_mul_card` and in terms of `|V|` by
+in terms of cell sizes by `TauCeti.card_subpolyad3_le_mul_card` and
+`TauCeti.card_subpolyad3_le_of_card_cell_le`, and in terms of `|V|` by
 `TauCeti.card_subpolyad3_le`. Their supports lie in the parent support. Nonempty finite
 intersections are formed coordinatewise and their supports are the intersections of the supports.
 The subcell constructor accepts arbitrary vertex sets and intersects with the parent pair supports,
@@ -149,17 +150,23 @@ theorem card_subpolyad3_le_mul_card (P : Polyad3 S) :
   · exact hle fun p hp ↦ ⟨((P.mem_pairSupport₀₂ p).1 hp).1, ((P.mem_pairSupport₀₂ p).1 hp).2.1⟩
   · exact hle fun p hp ↦ ⟨((P.mem_pairSupport₁₂ p).1 hp).1, ((P.mem_pairSupport₁₂ p).1 hp).2.1⟩
 
+/-- If each cell of a polyad `P` has cardinality at most `m`, then `P` has at most
+`2 ^ (3 * m ^ 2)` subpolyads. -/
+theorem card_subpolyad3_le_of_card_cell_le (P : Polyad3 S) {m : ℕ}
+    (hcells : ∀ i : Fin 3, #(P.cell i) ≤ m) :
+    Fintype.card (Subpolyad3 P) ≤ 2 ^ (3 * m ^ 2) := by
+  refine (card_subpolyad3_le_mul_card P).trans (Nat.pow_le_pow_right two_pos ?_)
+  have h0 : #P.c₀ ≤ m := P.cell_zero ▸ hcells 0
+  have h1 : #P.c₁ ≤ m := P.cell_one ▸ hcells 1
+  have h2 : #P.c₂ ≤ m := P.cell_two ▸ hcells 2
+  calc #P.c₀ * #P.c₁ + #P.c₀ * #P.c₂ + #P.c₁ * #P.c₂
+      ≤ m * m + m * m + m * m := by gcongr
+    _ = 3 * m ^ 2 := by ring
+
 /-- The number of subpolyads of a polyad on a host `V` is at most `2 ^ (3 * |V|²)`. -/
 theorem card_subpolyad3_le (P : Polyad3 S) :
-    Fintype.card (Subpolyad3 P) ≤ 2 ^ (3 * Fintype.card V ^ 2) := by
-  refine (card_subpolyad3_le_mul_card P).trans (Nat.pow_le_pow_right two_pos ?_)
-  have h0 : #P.c₀ ≤ Fintype.card V := P.c₀.card_le_univ
-  have h1 : #P.c₁ ≤ Fintype.card V := P.c₁.card_le_univ
-  have h2 : #P.c₂ ≤ Fintype.card V := P.c₂.card_le_univ
-  calc #P.c₀ * #P.c₁ + #P.c₀ * #P.c₂ + #P.c₁ * #P.c₂
-      ≤ Fintype.card V * Fintype.card V + Fintype.card V * Fintype.card V +
-          Fintype.card V * Fintype.card V := by gcongr
-    _ = 3 * Fintype.card V ^ 2 := by ring
+    Fintype.card (Subpolyad3 P) ≤ 2 ^ (3 * Fintype.card V ^ 2) :=
+  card_subpolyad3_le_of_card_cell_le P fun _ ↦ card_le_univ _
 
 namespace Subpolyad3
 
@@ -589,7 +596,7 @@ theorem swapDistinctPair_mem_pairGraph (Q : Subpolyad3 P) {i j : Fin 3} (hij : i
       fun h ↦ mem_image.2 ⟨q, h, rfl⟩⟩
   have himg' (E : Finset {p : V × V // p.1 ≠ p.2}) :
       swapDistinctPair p ∈ E ↔ p ∈ E.image swapDistinctPair := by
-    simpa [swapDistinctPair_swap] using (himg E (swapDistinctPair p)).symm
+    simpa [swapDistinctPair_swapDistinctPair] using (himg E (swapDistinctPair p)).symm
   match i, j with
   | 0, 1 | 0, 2 | 1, 2 => exact himg _ p
   | 1, 0 | 2, 0 | 2, 1 => exact himg' _

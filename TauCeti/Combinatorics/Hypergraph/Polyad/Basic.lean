@@ -619,7 +619,7 @@ theorem mem_pairSupportAt (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j)
     · rintro ⟨hpB, hpA, hpc⟩
       refine mem_image.2
         ⟨swapDistinctPair p, (hs _).2 ⟨by simpa using hpA, by simpa using hpB, ?_⟩,
-          swapDistinctPair_swap p⟩
+          swapDistinctPair_swapDistinctPair p⟩
       rw [S.pairColors.color_swapDistinctPair, hpc, S.pairColors.rev_rev]
   fin_cases i <;> fin_cases j <;> dsimp at hij ⊢ <;>
     first

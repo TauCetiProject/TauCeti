@@ -77,6 +77,28 @@ private theorem isGoodFinePolyad_perm_iff (H : Colored3Graph κ V) {D : TriadicC
     IsGoodFinePolyad H η γ s (Q.perm σ) ↔ IsGoodFinePolyad H η γ s Q := by
   simp [IsGoodFinePolyad]
 
+/-- Arithmetic threshold ensuring the exponential concentration factor in
+`two_mul_add_one_mul_exp_lt_of_le_two_pow` is below `1` when `γ * s ^ 3 ≤ supp` and
+`(q + 14) / (2 * η ^ 2 * γ) ≤ s`. -/
+private theorem le_two_mul_sq_mul_of_le_div {q s : ℕ} {η γ supp : ℝ}
+    (hs : 1 ≤ s) (hη : 0 < η) (hγ : 0 < γ) (hsize : γ * (s : ℝ) ^ 3 ≤ supp)
+    (hs_req : ((q : ℝ) + 14) / (2 * η ^ 2 * γ) ≤ s) :
+    ((12 * s ^ 2 : ℕ) : ℝ) + q + 2 ≤ 2 * η ^ 2 * supp := by
+  have hs2 : (1 : ℝ) ≤ (s : ℝ) ^ 2 := by
+    have : (1 : ℝ) ≤ s := Nat.one_le_cast.2 hs
+    nlinarith
+  have hreq' : (q : ℝ) + 14 ≤ 2 * η ^ 2 * γ * s := by
+    rwa [div_le_iff₀' (by positivity)] at hs_req
+  have h1 : ((12 * s ^ 2 : ℕ) : ℝ) + q + 2 ≤ ((q : ℝ) + 14) * (s : ℝ) ^ 2 := by
+    push_cast
+    have : (0 : ℝ) ≤ q := Nat.cast_nonneg _
+    nlinarith
+  have h2 : ((q : ℝ) + 14) * (s : ℝ) ^ 2 ≤ 2 * η ^ 2 * (γ * (s : ℝ) ^ 3) := by
+    calc _ ≤ (2 * η ^ 2 * γ * s) * (s : ℝ) ^ 2 :=
+          mul_le_mul_of_nonneg_right hreq' (sq_nonneg _)
+      _ = 2 * η ^ 2 * (γ * (s : ℝ) ^ 3) := by ring
+  linarith [mul_le_mul_of_nonneg_left hsize (by positivity : (0 : ℝ) ≤ 2 * η ^ 2)]
+
 /-- Local coupled recoloring on the unordered support of a single good fine polyad `Q`. -/
 private theorem exists_local_coupled_recoloring (H : Colored3Graph κ V)
     {C D : TriadicComplex3 V} (π : Fin D.pairColorCount → Fin C.pairColorCount)
@@ -103,34 +125,19 @@ private theorem exists_local_coupled_recoloring (H : Colored3Graph κ V)
     (card_pos.1 (Nat.cast_pos.1 hQpos)).mono
       (Polyad3.support_subset_coarsen hVeq.le π (fun p ↦ (hπ p).symm) Q)
   have hcardΩ : #Q.unorderedSupport = #Q.support := hdist.card_unorderedSupport
-  have hIcard : Fintype.card (Subpolyad3 Q) ≤ 2 ^ (12 * s ^ 2) := by
-    refine (card_subpolyad3_le_mul_card Q).trans (Nat.pow_le_pow_right two_pos ?_)
-    have h0 := hcells Q.c₀ Q.hc₀; have h1 := hcells Q.c₁ Q.hc₁; have h2 := hcells Q.c₂ Q.hc₂
-    calc #Q.c₀ * #Q.c₁ + #Q.c₀ * #Q.c₂ + #Q.c₁ * #Q.c₂
-        ≤ (2 * s) * (2 * s) + (2 * s) * (2 * s) + (2 * s) * (2 * s) := by gcongr
-      _ = 12 * s ^ 2 := by ring
+  -- Count subpolyads of `Q` and verify the concentration threshold.
+  have hIcard : Fintype.card (Subpolyad3 Q) ≤ 2 ^ (12 * s ^ 2) :=
+    (card_subpolyad3_le_of_card_cell_le Q fun i ↦ hcells _ (Q.cell_mem_parts i)).trans_eq
+      (by congr 1; ring)
   have hN_bound :
       ((12 * s ^ 2 : ℕ) : ℝ) + Fintype.card κ + 2 ≤ 2 * η ^ 2 * #Q.unorderedSupport := by
     rw [hcardΩ]
-    have hs2 : (1 : ℝ) ≤ (s : ℝ) ^ 2 := by
-      have : (1 : ℝ) ≤ s := Nat.one_le_cast.2 hs
-      nlinarith
-    have hreq' : (Fintype.card κ : ℝ) + 14 ≤ 2 * η ^ 2 * γ * s := by
-      rwa [div_le_iff₀' (by positivity)] at hs_req
-    have h1 : ((12 * s ^ 2 : ℕ) : ℝ) + Fintype.card κ + 2 ≤
-        ((Fintype.card κ : ℝ) + 14) * (s : ℝ) ^ 2 := by
-      push_cast
-      have : (0 : ℝ) ≤ Fintype.card κ := Nat.cast_nonneg _
-      nlinarith
-    have h2 : ((Fintype.card κ : ℝ) + 14) * (s : ℝ) ^ 2 ≤ 2 * η ^ 2 * (γ * (s : ℝ) ^ 3) := by
-      calc _ ≤ (2 * η ^ 2 * γ * s) * (s : ℝ) ^ 2 :=
-            mul_le_mul_of_nonneg_right hreq' (sq_nonneg _)
-        _ = 2 * η ^ 2 * (γ * (s : ℝ) ^ 3) := by ring
-    linarith [mul_le_mul_of_nonneg_left hsize (by positivity : (0 : ℝ) ≤ 2 * η ^ 2)]
+    exact le_two_mul_sq_mul_of_le_div hs hη hγ hsize hs_req
   have hub : 2 * (Fintype.card (Subpolyad3 Q) + 1 : ℝ) * Fintype.card κ *
       Real.exp (-2 * (η * #Q.support) ^ 2 / #Q.unorderedSupport) < 1 := by
     rw [← hcardΩ]
     exact two_mul_add_one_mul_exp_lt_of_le_two_pow hIcard hN_bound
+  -- Rewrite unordered-support counts via `H.relativeDensity` / `H.relDensityOn`.
   have hQcount (c : κ) : (#{e ∈ Q.unorderedSupport | H.color e = c} : ℝ) =
       (H.relativeDensity c Q : ℝ) * #Q.support := by
     rw [hdist.card_filter_unorderedSupport H c, H.relativeDensity_def]
@@ -146,6 +153,7 @@ private theorem exists_local_coupled_recoloring (H : Colored3Graph κ V)
     rw [hScount, hQcount, hcardΩ, S.card_unorderedSupport hdist,
       mul_div_cancel_right₀ _ hQpos.ne', ← sub_mul, abs_mul, Nat.abs_cast]
     exact hreg.abs_relDensityOn_sub_mul_card_le c S
+  -- Apply `exists_recoloring_abs_card_filter_sub_mul_card_le` toward the coarse target densities.
   have hp0 (c : κ) : 0 ≤ (H.relativeDensity c (Q.coarsen hVeq.le π) : ℝ) :=
     mod_cast H.relativeDensity_nonneg c _
   have hp1 : ∑ c : κ, (H.relativeDensity c (Q.coarsen hVeq.le π) : ℝ) = 1 :=
