@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
 public import TauCeti.Dynamics.Entropy.Pressure
 import Mathlib.Algebra.Order.Floor.Extended
 import TauCeti.Analysis.Asymptotics.ExpGrowth
+import TauCeti.Data.EReal.Quantale
 
 /-!
 # The spanning-set form of topological pressure
@@ -24,13 +25,15 @@ P_cover(T, φ) = ⨆ U ∈ 𝓤 X, limsup_{n → ∞} (1/n) log inf { ∑_{x ∈
 and proves that the two agree for a uniformly continuous map `T` and a uniformly continuous
 potential `φ` on a compact uniform space (`TauCeti.coverPressure_eq_topologicalPressure`).
 
-* A net of maximal cardinality for `U` is a dynamical cover for `U ○ U` (the argument of
-  Mathlib's `Dynamics.coverMincard_le_netMaxcard`), so the cover sum for `U ○ U` is at most the
-  net sum for `U` (`TauCeti.pressureCoverSum_comp_le_pressureNetSum`).
+* A net of maximal cardinality for `U` is a dynamical cover for `U ○ U`
+  (`Dynamics.IsDynNetIn.isDynCoverOf_comp`, the argument of Mathlib's
+  `Dynamics.coverMincard_le_netMaxcard`), so the cover sum for `U ○ U` is at most the net sum for
+  `U` (`TauCeti.pressureCoverSum_comp_le_pressureNetSum`).
 * If `V ⊆ U` and `φ` varies by at most `δ` across `V`, sending each point of a `(U, n)`-net to a
   point of a `(V, n)`-cover that shadows it is injective, and the Birkhoff sums at the two points
   differ by at most `n δ`, so the net sum for `U` is at most `exp (n δ)` times the cover sum for
-  `V` (`TauCeti.pressureNetSum_le_pressureCoverSum_add_const`). Letting `δ → 0` uses uniform
+  `V` (`TauCeti.pressureNetSum_le_pressureCoverSum_add_const`). The injection is the argument of
+  Mathlib's `Dynamics.IsDynNetIn.card_le_card_of_isDynCoverOf`. Letting `δ → 0` uses uniform
   continuity of `φ`.
 
 ## Main definitions
@@ -49,6 +52,8 @@ potential `φ` on a compact uniform space (`TauCeti.coverPressure_eq_topological
 * `TauCeti.coverPressure_eq_topologicalPressure`: the two agree.
 * `TauCeti.coverPressure_zero`: for the zero potential the spanning form is Mathlib's
   `Dynamics.coverEntropy`.
+* `TauCeti.coverPressure_mono`, `TauCeti.coverPressure_add_const`: the spanning form is monotone
+  in the potential, and adding a constant to the potential adds it to the spanning form.
 
 ## References
 
@@ -63,7 +68,7 @@ namespace TauCeti
 open Dynamics Set Filter ExpGrowth
 open scoped ENNReal Uniformity SetRel
 
-variable {X : Type*} {T : X → X} {φ : X → ℝ} {U V : SetRel X X} {n : ℕ}
+variable {X : Type*} {T : X → X} {φ ψ : X → ℝ} {U V : SetRel X X} {n : ℕ}
 
 /-- The spanning pressure sum at entourage `U` and time `n`: the infimum, over finite
 `(U, n)`-dynamical covers `s` of `X`, of `∑ x ∈ s, exp (birkhoffSum T φ n x)`. -/
@@ -87,6 +92,12 @@ theorem _root_.Dynamics.IsDynCoverOf.pressureCoverSum_le {s : Finset X}
     pressureCoverSum T φ U n ≤ ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x)) :=
   iInf₂_le (f := fun (s : Finset X) (_ : IsDynCoverOf T univ U n s) ↦
     ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x))) s hs
+
+/-- The spanning pressure sum is at least `a` exactly when every cover sum is. -/
+theorem le_pressureCoverSum_iff {a : ℝ≥0∞} :
+    a ≤ pressureCoverSum T φ U n ↔ ∀ s : Finset X, IsDynCoverOf T univ U n s →
+      a ≤ ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x)) :=
+  le_iInf₂_iff
 
 theorem pressureCoverSum_def :
     pressureCoverSum T φ U n = ⨅ (s : Finset X) (_ : IsDynCoverOf T univ U n s),
@@ -116,6 +127,12 @@ theorem coverPressureEntourage_le_coverPressure [UniformSpace X] (h : U ∈ 𝓤
     coverPressureEntourage T φ U ≤ coverPressure T φ :=
   le_iSup₂ (f := fun U (_ : U ∈ 𝓤 X) ↦ coverPressureEntourage T φ U) U h
 
+/-- The spanning pressure is at most `a` exactly when the spanning pressure at every entourage of
+the uniformity is. -/
+theorem coverPressure_le_iff [UniformSpace X] {a : EReal} :
+    coverPressure T φ ≤ a ↔ ∀ U ∈ 𝓤 X, coverPressureEntourage T φ U ≤ a :=
+  iSup₂_le_iff
+
 /-- For the zero potential the spanning pressure sum is the minimal cardinality
 `coverMincard T univ U n` of a `(U, n)`-dynamical cover. -/
 @[simp]
@@ -123,13 +140,29 @@ theorem pressureCoverSum_zero (T : X → X) (U : SetRel X X) (n : ℕ) :
     pressureCoverSum T 0 U n = coverMincard T univ U n := by
   simp [pressureCoverSum, coverMincard, Pi.zero_def, ENat.toENNReal_iInf]
 
+/-- For the zero potential the spanning pressure at an entourage is Mathlib's cover entropy. -/
+@[simp]
+theorem coverPressureEntourage_zero (T : X → X) (U : SetRel X X) :
+    coverPressureEntourage T 0 U = coverEntropyEntourage T univ U :=
+  congrArg expGrowthSup (funext (pressureCoverSum_zero T U))
+
 /-- For the zero potential the spanning pressure is Mathlib's topological entropy. -/
 @[simp]
 theorem coverPressure_zero [UniformSpace X] (T : X → X) :
     coverPressure T 0 = coverEntropy T univ := by
-  simp only [coverPressure, coverPressureEntourage, coverEntropy, coverEntropyEntourage]
-  exact iSup_congr fun U ↦ iSup_congr fun _ ↦
-    congrArg expGrowthSup (funext fun n ↦ pressureCoverSum_zero T U n)
+  simp only [coverPressure, coverPressureEntourage_zero, coverEntropy]
+
+/-- The spanning pressure sums are monotone in the potential. -/
+theorem pressureCoverSum_mono (h : φ ≤ ψ) (U : SetRel X X) (n : ℕ) :
+    pressureCoverSum T φ U n ≤ pressureCoverSum T ψ U n := by
+  refine iInf₂_mono fun s _ ↦ Finset.sum_le_sum fun x _ ↦ ?_
+  refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)
+  exact Finset.sum_le_sum fun k _ ↦ h _
+
+/-- The spanning pressure is monotone in the potential. -/
+theorem coverPressure_mono [UniformSpace X] (h : φ ≤ ψ) :
+    coverPressure T φ ≤ coverPressure T ψ :=
+  iSup₂_mono fun U _ ↦ expGrowthSup_monotone fun n ↦ pressureCoverSum_mono h U n
 
 /-- Adding a constant `c` to the potential multiplies the spanning pressure sum at time `n` by
 `exp (n * c)`. -/
@@ -137,37 +170,47 @@ theorem pressureCoverSum_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) (U :
     pressureCoverSum T (fun x ↦ φ x + c) U n =
       ENNReal.ofReal (Real.exp (n * c)) * pressureCoverSum T φ U n := by
   have h0 : ENNReal.ofReal (Real.exp (n * c)) ≠ 0 := (ENNReal.ofReal_pos.2 (Real.exp_pos _)).ne'
-  simp only [pressureCoverSum, ENNReal.mul_iInf_of_ne h0 ENNReal.ofReal_ne_top, Finset.mul_sum]
+  rw [← Pi.add_def φ fun _ ↦ c]
+  simp only [pressureCoverSum, ENNReal.mul_iInf_of_ne h0 ENNReal.ofReal_ne_top, Finset.mul_sum,
+    birkhoffSum_add_apply, birkhoffSum_const, Pi.smul_apply, nsmul_eq_mul, Real.exp_add]
   refine iInf_congr fun s ↦ iInf_congr fun _ ↦ Finset.sum_congr rfl fun x _ ↦ ?_
-  have hb : birkhoffSum T (fun x ↦ φ x + c) n x = birkhoffSum T φ n x + n * c := by
-    simp [birkhoffSum, Finset.sum_add_distrib]
-  rw [hb, Real.exp_add, mul_comm, ENNReal.ofReal_mul (Real.exp_pos _).le]
+  rw [mul_comm, ENNReal.ofReal_mul (Real.exp_pos _).le]
+
+/-- Adding a constant `c` to the potential multiplies the spanning pressure sum at time `n` by
+`EReal.exp (c * n)`: the form of `pressureCoverSum_add_const` used with growth rates. -/
+theorem pressureCoverSum_add_const_eq_exp_mul (T : X → X) (φ : X → ℝ) (c : ℝ) (U : SetRel X X)
+    (n : ℕ) :
+    pressureCoverSum T (fun x ↦ φ x + c) U n = EReal.exp (c * n) * pressureCoverSum T φ U n := by
+  simp [pressureCoverSum_add_const, ← EReal.exp_coe, mul_comm]
 
 /-- Adding a constant `c` to the potential adds `c` to the spanning pressure at every
 entourage. -/
 theorem coverPressureEntourage_add_const (T : X → X) (φ : X → ℝ) (c : ℝ) (U : SetRel X X) :
     coverPressureEntourage T (fun x ↦ φ x + c) U = coverPressureEntourage T φ U + c := by
-  have h : ∀ n : ℕ, pressureCoverSum T (fun x ↦ φ x + c) U n =
-      EReal.exp (c * n) * pressureCoverSum T φ U n := fun n ↦ by
-    simp [pressureCoverSum_add_const, ← EReal.exp_coe, mul_comm]
-  rw [coverPressureEntourage_def, coverPressureEntourage_def, funext h,
-    ExpGrowth.expGrowthSup_exp_mul, add_comm]
+  rw [coverPressureEntourage_def, coverPressureEntourage_def,
+    funext (pressureCoverSum_add_const_eq_exp_mul T φ c U), expGrowthSup_exp_mul, add_comm]
 
-/-- **Maximal nets are covers.** If some `(U, n)`-dynamical net has maximal cardinality, the
-spanning pressure sum for `U ○ U` is at most the pressure sum for `U`. -/
-theorem pressureCoverSum_comp_le_pressureNetSum [U.IsRefl] [U.IsSymm]
-    (h : netMaxcard T univ U n < ⊤) :
-    pressureCoverSum T φ (U ○ U) n ≤ pressureNetSum T φ U n := by
+/-- Adding a constant `c` to the potential adds `c` to the spanning pressure. -/
+theorem coverPressure_add_const [UniformSpace X] (T : X → X) (φ : X → ℝ) (c : ℝ) :
+    coverPressure T (fun x ↦ φ x + c) = coverPressure T φ + c := by
+  simp only [coverPressure, coverPressureEntourage_add_const, iSup_subtype',
+    AddQuantale.iSup_add_distrib]
+
+/-- **Maximal nets are covers.** A `(U, n)`-dynamical net of `F` of maximal cardinality is a
+`(U ○ U, n)`-dynamical cover of `F`. The proof is the argument of Mathlib's
+`Dynamics.coverMincard_le_netMaxcard`: a point left uncovered could be added to the net. -/
+theorem _root_.Dynamics.IsDynNetIn.isDynCoverOf_comp {F : Set X} [U.IsRefl] [U.IsSymm]
+    {s : Finset X} (s_net : IsDynNetIn T F U n s) (s_card : (s.card : ℕ∞) = netMaxcard T F U n) :
+    IsDynCoverOf T F (U ○ U) n s := by
   classical
-  obtain ⟨s, s_net, s_card⟩ := (netMaxcard_finite_iff T univ U n).1 h
-  refine le_trans ?_ s_net.sum_le_pressureNetSum
-  refine IsDynCoverOf.pressureCoverSum_le ?_
+  -- If `s` is not a cover, then we can add to `s` a point `x` which is not covered
+  -- and get a new net. This contradicts the maximality of `s`.
   rw [IsDynCoverOf, SetRel.isCover_iff_subset_iUnion_ball]
   by_contra hcov
-  obtain ⟨x, -, x_uncov⟩ := not_subset.1 hcov
+  obtain ⟨x, x_F, x_uncov⟩ := not_subset.1 hcov
   simp only [Finset.mem_coe, mem_iUnion, exists_prop, not_exists, not_and] at x_uncov
-  have larger_net : IsDynNetIn T univ U n (insert x s) := by
-    refine ⟨subset_univ _, pairwiseDisjoint_insert.2 ⟨s_net.2, ?_⟩⟩
+  have larger_net : IsDynNetIn T F U n (insert x s) := by
+    refine ⟨insert_subset x_F s_net.1, pairwiseDisjoint_insert.2 ⟨s_net.2, ?_⟩⟩
     refine fun y y_s _ ↦ disjoint_left.2 fun z z_x z_y ↦ x_uncov y y_s ?_
     exact mem_ball_dynEntourage_comp T n x y (nonempty_of_mem ⟨z_x, z_y⟩)
   rw [← s.coe_insert x] at larger_net
@@ -177,13 +220,23 @@ theorem pressureCoverSum_comp_le_pressureNetSum [U.IsRefl] [U.IsSymm]
   exact x_uncov x x_s (SetRel.ball_mono (dynEntourage_monotone T n SetRel.left_subset_comp) x <|
     SetRel.rfl (dynEntourage T U n))
 
-/-- **Nets inject into covers.** If `V ⊆ U` and `φ b ≤ φ a + δ` whenever `(a, b) ∈ V`, the pressure
-sum for `U` is at most the spanning pressure sum for `V` of the potential `φ + δ`. -/
+/-- If some `(U, n)`-dynamical net has maximal cardinality, the spanning pressure sum for `U ○ U`
+is at most the pressure sum for `U`. -/
+theorem pressureCoverSum_comp_le_pressureNetSum [U.IsRefl] [U.IsSymm]
+    (h : netMaxcard T univ U n < ⊤) :
+    pressureCoverSum T φ (U ○ U) n ≤ pressureNetSum T φ U n := by
+  obtain ⟨s, s_net, s_card⟩ := (netMaxcard_finite_iff T univ U n).1 h
+  exact (s_net.isDynCoverOf_comp s_card).pressureCoverSum_le.trans s_net.sum_le_pressureNetSum
+
+/-- **Nets inject into covers.** If `V ⊆ U` and `φ a ≤ φ b + δ` whenever `(a, b) ∈ V`, the pressure
+sum for `U` is at most the spanning pressure sum for `V` of the potential `φ + δ`. The injection
+from a net into a cover is the argument of Mathlib's
+`Dynamics.IsDynNetIn.card_le_card_of_isDynCoverOf`. -/
 theorem pressureNetSum_le_pressureCoverSum_add_const (hVU : V ⊆ U) {δ : ℝ}
     (hφ : ∀ a b, (a, b) ∈ V → φ a ≤ φ b + δ) :
     pressureNetSum T φ U n ≤ pressureCoverSum T (fun x ↦ φ x + δ) V n := by
   classical
-  refine pressureNetSum_le_iff.2 fun s s_net ↦ le_iInf₂ fun t t_cover ↦ ?_
+  refine pressureNetSum_le_iff.2 fun s s_net ↦ le_pressureCoverSum_iff.2 fun t t_cover ↦ ?_
   -- Send each point of the net to a point of the cover that shadows it.
   have hf : ∀ x ∈ s, ∃ y ∈ t, (x, y) ∈ dynEntourage T V n := fun x _ ↦ by
     obtain ⟨y, hy, hxy⟩ := t_cover (mem_univ x)
