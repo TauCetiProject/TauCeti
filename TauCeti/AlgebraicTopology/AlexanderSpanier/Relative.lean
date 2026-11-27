@@ -41,7 +41,8 @@ A **map of pairs** `f : (Y, B) → (X, A)`, a continuous map `f : Y → X` sendi
 relative cochains back to relative cochains
 (`TauCeti.AlexanderSpanier.relativeCochainComplexMap`), compatibly with the pullback of absolute
 cochains along `f`
-(`TauCeti.AlexanderSpanier.relativeCochainComplexMap_comp_relativeCochainComplexι`) and
+(`TauCeti.AlexanderSpanier.relativeCochainComplexMap_comp_relativeCochainComplexι`, elementwise
+`TauCeti.AlexanderSpanier.relativeCochainComplexι_f_relativeCochainComplexMap_f_apply`) and
 functorially in `f`.
 
 ## References
@@ -223,6 +224,18 @@ lemma relativeCochainComplexMap_comp_relativeCochainComplexι (f : C(Y, X))
     relativeCochainComplexMap R M A B f hf ≫ relativeCochainComplexι R M B =
       relativeCochainComplexι R M A ≫ cochainComplexMap R M f :=
   kernel.lift_ι _ _ _
+
+/-- Elementwise form of `relativeCochainComplexMap_comp_relativeCochainComplexι`: a relative cochain
+pulled back along a map of pairs, viewed as an absolute cochain, is the pullback of the underlying
+absolute cochain. -/
+@[simp]
+lemma relativeCochainComplexι_f_relativeCochainComplexMap_f_apply (f : C(Y, X))
+    (hf : Set.MapsTo f B A) (n : ℕ) (c : (relativeCochainComplex R M A).X n) :
+    ((relativeCochainComplexι R M B).f n).hom
+        (((relativeCochainComplexMap R M A B f hf).f n).hom c) =
+      ((cochainComplexMap R M f).f n).hom (((relativeCochainComplexι R M A).f n).hom c) := by
+  rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
+    ← HomologicalComplex.comp_f, relativeCochainComplexMap_comp_relativeCochainComplexι]
 
 /-- The pullback of relative cochains along the identity map of pairs is the identity. -/
 @[simp]

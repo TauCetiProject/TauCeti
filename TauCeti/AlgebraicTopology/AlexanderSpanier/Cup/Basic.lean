@@ -206,6 +206,11 @@ variable (R X Λ) in
 def oneCochain : (cochainComplex R X Λ).X 0 :=
   cochainClass R X Λ 0 1
 
+variable (R X Λ) in
+/-- The unit cochain is the class of the constant function `1`. -/
+theorem oneCochain_def : oneCochain R X Λ = cochainClass R X Λ 0 1 :=
+  (rfl)
+
 /-- The unit cochain is a cocycle. -/
 @[simp]
 theorem d_oneCochain : ((cochainComplex R X Λ).d 0 1).hom (oneCochain R X Λ) = 0 := by
@@ -285,6 +290,7 @@ theorem cohomologyCup_homologyπ {p q n : ℕ} (h : p + q = n)
 
 /-- **Naturality** of the cup product in Alexander–Spanier cohomology: the map induced by a
 continuous map `f` is multiplicative. -/
+@[simp]
 theorem cohomologyMap_cohomologyCup {Y : Type u} [TopologicalSpace Y] (f : C(Y, X))
     {p q n : ℕ} (h : p + q = n) (α : cohomology R X Λ p) (β : cohomology R X Λ q) :
     (cohomologyMap R Λ f n).hom (cohomologyCup R X Λ p q n h α β) =
@@ -298,14 +304,9 @@ theorem cohomologyCup_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m + r
     (h₃ : q + r = l) (h₄ : p + l = n) (α : cohomology R X Λ p) (β : cohomology R X Λ q)
     (γ : cohomology R X Λ r) :
     cohomologyCup R X Λ m r n h₂ (cohomologyCup R X Λ p q m h₁ α β) γ =
-      cohomologyCup R X Λ p l n h₄ α (cohomologyCup R X Λ q r l h₃ β γ) := by
-  obtain ⟨a, rfl⟩ := (cochainComplex R X Λ).moduleCat_homologyπ_surjective p α
-  obtain ⟨b, rfl⟩ := (cochainComplex R X Λ).moduleCat_homologyπ_surjective q β
-  obtain ⟨c, rfl⟩ := (cochainComplex R X Λ).moduleCat_homologyπ_surjective r γ
-  simp only [cohomologyCup_homologyπ]
-  congr 1
-  apply (cochainComplex R X Λ).moduleCat_iCycles_injective
-  simp [cup_assoc h₁ h₂ h₃ h₄]
+      cohomologyCup R X Λ p l n h₄ α (cohomologyCup R X Λ q r l h₃ β γ) :=
+  TauCeti.CochainComplex.moduleCatHomologyMap₂_assoc _ _ _ _ _ _ _ _ h₁ h₂ h₃ h₄
+    (cup_assoc h₁ h₂ h₃ h₄) α β γ
 
 variable (R X Λ) in
 /-- The **unit class** `1 ∈ H⁰(X; Λ)`: the class of the unit cocycle, the constant function `1`. -/
@@ -333,30 +334,20 @@ theorem cohomologyZeroIso_hom_cohomologyOne :
 @[simp]
 theorem cohomologyMap_cohomologyOne {Y : Type u} [TopologicalSpace Y] (f : C(Y, X)) :
     (cohomologyMap R Λ f 0).hom (cohomologyOne R X Λ) = cohomologyOne R Y Λ := by
-  rw [cohomologyOne_def, cohomologyOne_def, moduleCat_homologyMap_homologyπ]
-  congr 1
-  apply (cochainComplex R Y Λ).moduleCat_iCycles_injective
-  simp [moduleCat_iCycles_cyclesMap_apply]
+  rw [cohomologyOne_def, cohomologyOne_def, homologyMap_homologyπ_moduleCatCyclesMk]
+  congr 2
 
 /-- The unit class is a left unit for the cup product in cohomology. -/
 @[simp]
 theorem cohomologyOne_cohomologyCup {q : ℕ} (β : cohomology R X Λ q) :
-    cohomologyCup R X Λ 0 q q (zero_add q) (cohomologyOne R X Λ) β = β := by
-  obtain ⟨b, rfl⟩ := (cochainComplex R X Λ).moduleCat_homologyπ_surjective q β
-  rw [cohomologyOne_def, cohomologyCup_homologyπ]
-  congr 1
-  apply (cochainComplex R X Λ).moduleCat_iCycles_injective
-  simp
+    cohomologyCup R X Λ 0 q q (zero_add q) (cohomologyOne R X Λ) β = β :=
+  TauCeti.CochainComplex.moduleCatHomologyMap₂_unit_left _ _ _ d_oneCochain oneCochain_cup β
 
 /-- The unit class is a right unit for the cup product in cohomology. -/
 @[simp]
 theorem cohomologyCup_cohomologyOne {p : ℕ} (α : cohomology R X Λ p) :
-    cohomologyCup R X Λ p 0 p (add_zero p) α (cohomologyOne R X Λ) = α := by
-  obtain ⟨a, rfl⟩ := (cochainComplex R X Λ).moduleCat_homologyπ_surjective p α
-  rw [cohomologyOne_def, cohomologyCup_homologyπ]
-  congr 1
-  apply (cochainComplex R X Λ).moduleCat_iCycles_injective
-  simp
+    cohomologyCup R X Λ p 0 p (add_zero p) α (cohomologyOne R X Λ) = α :=
+  TauCeti.CochainComplex.moduleCatHomologyMap₂_unit_right _ _ _ d_oneCochain cup_oneCochain α
 
 end Cohomology
 

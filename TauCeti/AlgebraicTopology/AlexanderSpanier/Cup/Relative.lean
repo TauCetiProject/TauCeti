@@ -67,13 +67,10 @@ private lemma cup_mem_range_relativeCochainComplexι (a : (cochainComplex R X Λ
     (b : (relativeCochainComplex R Λ A).X q) :
     cup R X Λ p q n h a (((relativeCochainComplexι R Λ A).f q).hom b) ∈
       LinearMap.range ((relativeCochainComplexι R Λ A).f n).hom := by
-  have hb : ((restriction R Λ A).f q).hom (((relativeCochainComplexι R Λ A).f q).hom b) = 0 := by
-    rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
-      relativeCochainComplexι_comp_restriction]
-    simp
-  rw [range_relativeCochainComplexι_f, LinearMap.mem_ker, restriction, cochainComplexMap_f_cup]
-  rw [restriction] at hb
-  rw [hb, map_zero]
+  have hb : ((restriction R Λ A).f q).hom (((relativeCochainComplexι R Λ A).f q).hom b) = 0 :=
+    LinearMap.mem_ker.1 (range_relativeCochainComplexι_f R Λ A q ▸ LinearMap.mem_range_self _ b)
+  rw [range_relativeCochainComplexι_f, LinearMap.mem_ker]
+  simp [restriction, hb]
 
 variable (R Λ) (p q n) in
 /-- The **relative cup product** of Alexander–Spanier cochains
@@ -132,14 +129,8 @@ theorem relativeCochainComplexMap_f_relativeCup {Y : Type u} [TopologicalSpace Y
     ((relativeCochainComplexMap R Λ A B f hf).f n).hom (relativeCup R Λ A p q n h a b) =
       relativeCup R Λ B p q n h (((cochainComplexMap R Λ f).f p).hom a)
         (((relativeCochainComplexMap R Λ A B f hf).f q).hom b) := by
-  have hι (k : ℕ) (c : (relativeCochainComplex R Λ A).X k) :
-      ((relativeCochainComplexι R Λ B).f k).hom
-          (((relativeCochainComplexMap R Λ A B f hf).f k).hom c) =
-        ((cochainComplexMap R Λ f).f k).hom (((relativeCochainComplexι R Λ A).f k).hom c) := by
-    rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
-      ← HomologicalComplex.comp_f, relativeCochainComplexMap_comp_relativeCochainComplexι]
   apply relativeCochainComplexι_f_injective R Λ B n
-  simp [hι]
+  simp
 
 end Cochain
 
@@ -153,6 +144,15 @@ def relativeCohomologyCup (p q n : ℕ) (h : p + q = n) :
     cohomology R X Λ p →ₗ[R] relativeCohomology R Λ A q →ₗ[R] relativeCohomology R Λ A n :=
   TauCeti.CochainComplex.moduleCatHomologyMap₂ (relativeCup R Λ A)
     (fun _ _ _ h a b ↦ d_relativeCup A h a b) p q n h
+
+variable (R Λ) in
+/-- The relative cup product in cohomology is the product on cohomology induced by the relative
+cup product of cochains. -/
+theorem relativeCohomologyCup_def (p q n : ℕ) (h : p + q = n) :
+    relativeCohomologyCup R Λ A p q n h =
+      TauCeti.CochainComplex.moduleCatHomologyMap₂ (relativeCup R Λ A)
+        (fun _ _ _ h a b ↦ d_relativeCup A h a b) p q n h :=
+  (rfl)
 
 /-- The relative cup product of the classes of two cocycles is the class of their relative cup
 product. -/
@@ -168,6 +168,7 @@ theorem relativeCohomologyCup_homologyπ {p q n : ℕ} (h : p + q = n)
 
 /-- The map `H^*(X, A; Λ) → H^*(X; Λ)` intertwines the relative and the absolute cup products:
 `j (α ⌣ β) = α ⌣ j β`. -/
+@[simp]
 theorem relativeCohomologyMap_relativeCohomologyCup {p q n : ℕ} (h : p + q = n)
     (α : cohomology R X Λ p) (β : relativeCohomology R Λ A q) :
     (relativeCohomologyMap R Λ A n).hom (relativeCohomologyCup R Λ A p q n h α β) =
@@ -186,26 +187,21 @@ theorem relativeCohomologyCup_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂
     (γ : relativeCohomology R Λ A r) :
     relativeCohomologyCup R Λ A m r n h₂ (cohomologyCup R X Λ p q m h₁ α β) γ =
       relativeCohomologyCup R Λ A p l n h₄ α (relativeCohomologyCup R Λ A q r l h₃ β γ) := by
-  obtain ⟨a, rfl⟩ := (cochainComplex R X Λ).moduleCat_homologyπ_surjective p α
-  obtain ⟨b, rfl⟩ := (cochainComplex R X Λ).moduleCat_homologyπ_surjective q β
-  obtain ⟨c, rfl⟩ := (relativeCochainComplex R Λ A).moduleCat_homologyπ_surjective r γ
-  simp only [cohomologyCup_homologyπ, relativeCohomologyCup_homologyπ]
-  congr 1
-  apply (relativeCochainComplex R Λ A).moduleCat_iCycles_injective
-  simp [relativeCup_assoc A h₁ h₂ h₃ h₄]
+  rw [cohomologyCup_def]
+  exact TauCeti.CochainComplex.moduleCatHomologyMap₂_assoc _ _ _ _ _ _ _ _ h₁ h₂ h₃ h₄
+    (relativeCup_assoc A h₁ h₂ h₃ h₄) α β γ
 
 /-- The unit class is a unit for the relative cup product in cohomology. -/
 @[simp]
 theorem cohomologyOne_relativeCohomologyCup {q : ℕ} (γ : relativeCohomology R Λ A q) :
     relativeCohomologyCup R Λ A 0 q q (zero_add q) (cohomologyOne R X Λ) γ = γ := by
-  obtain ⟨c, rfl⟩ := (relativeCochainComplex R Λ A).moduleCat_homologyπ_surjective q γ
-  rw [cohomologyOne_def, relativeCohomologyCup_homologyπ]
-  congr 1
-  apply (relativeCochainComplex R Λ A).moduleCat_iCycles_injective
-  simp
+  rw [cohomologyOne_def]
+  exact TauCeti.CochainComplex.moduleCatHomologyMap₂_unit_left _ _ _ d_oneCochain
+    (oneCochain_relativeCup A) γ
 
 /-- **Naturality** of the relative cup product in cohomology under maps of pairs
 `f : (Y, B) → (X, A)`: `f^* (α ⌣ β) = f^* α ⌣ f^* β`. -/
+@[simp]
 theorem homologyMap_relativeCochainComplexMap_relativeCohomologyCup {Y : Type u}
     [TopologicalSpace Y] (B : Set Y) (f : C(Y, X)) (hf : Set.MapsTo f B A) {p q n : ℕ}
     (h : p + q = n) (α : cohomology R X Λ p) (β : relativeCohomology R Λ A q) :
