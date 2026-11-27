@@ -271,6 +271,7 @@ theorem fromBlocksOne_specialUnitaryStabilizerHomeomorph_symm_apply (m : ℕ)
 
 /-- The element of `SU(m)` corresponding to an element `A` of the stabilizer is the lower right
 `m × m` block of `A`. -/
+@[simp]
 theorem coe_specialUnitaryStabilizerHomeomorph_symm_apply (m : ℕ)
     (A : specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m)) :
     (((specialUnitaryStabilizerHomeomorph 𝕜 r m).symm A : specialUnitaryGroup (Fin m) 𝕜) :

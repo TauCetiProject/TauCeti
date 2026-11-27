@@ -49,6 +49,8 @@ fibre is a bijection onto the base.
 * `Bundle.Trivialization.coe_restrOpen`, `Bundle.Trivialization.coe_restrOpen_symm`,
   `Bundle.Trivialization.restrOpen_baseSet`: the restriction of a trivialization to an open set of
   the base keeps its forward and inverse maps and intersects its base set with that set.
+* `Bundle.Trivialization.transFiberHomeomorph_symm_apply`: the inverse of a trivialization whose
+  fibre is changed along a homeomorphism `h` applies `h.symm` to the fibre coordinate first.
 * `Bundle.Trivialization.op_smul_symm`, `Bundle.Trivialization.op_smul_symm_one`, and
   `Bundle.Trivialization.op_snd_smul_symm_one`: for a right-equivariant trivialization, the
   inverse turns right multiplication into the right action and recovers points over `e.baseSet`
@@ -126,6 +128,15 @@ of its base set with `s`. -/
 @[simp]
 theorem restrOpen_baseSet (e : Trivialization F proj) (s : Set B) (hs : IsOpen s) :
     (e.restrOpen s hs).baseSet = e.baseSet ∩ s :=
+  (rfl)
+
+/-- The inverse of a trivialization whose fibre is changed along a homeomorphism `h` applies
+`h.symm` to the fibre coordinate before the original inverse. -/
+@[simp]
+theorem transFiberHomeomorph_symm_apply {F' : Type*} [TopologicalSpace F']
+    (e : Trivialization F proj) (h : F ≃ₜ F') (x : B × F') :
+    (e.transFiberHomeomorph h).toOpenPartialHomeomorph.symm x =
+      e.toOpenPartialHomeomorph.symm (x.1, h.symm x.2) :=
   (rfl)
 
 /-- For a trivialization `e` of `proj`, the preimage of an open subset of `e.baseSet` is open. -/

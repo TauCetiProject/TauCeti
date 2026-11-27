@@ -246,7 +246,7 @@ theorem contMDiff_fromBlocksOne (r m : ℕ) :
         fromBlocks 1 0 0 0 + fromBlocks 0 0 0 (B : Matrix (Fin m) (Fin m) 𝕜) := by
       simp [fromBlocks_add]
     rw [coe_fromBlocksOne, hB, ← coe_reindexLinearEquiv ℝ, map_add]
-    rfl
+    simp [L, B₀]
   simp only [h]
   exact contMDiff_const.add (L.toContinuousLinearMap.contDiff.contMDiff.comp contMDiff_val)
 
