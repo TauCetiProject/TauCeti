@@ -236,6 +236,18 @@ theorem mem_sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     x ∈ sobolevVortexSubMulAction (hs := hs) hk ↔ x ∈ sobolevVortices f m k :=
   Iff.rfl
 
+/-- A vortex of `sobolevVortexSubMulAction` is continuous. -/
+theorem continuous_sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
+    (y : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
+    Continuous (y : ℂ → EuclideanSpace ℝ (Fin 4)) :=
+  (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).1.continuous
+
+/-- A vortex of `sobolevVortexSubMulAction` solves the vortex equation everywhere. -/
+theorem equation_sobolevVortexSubMulAction_eq_zero {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
+    (y : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) (z : ℂ) :
+    equation (y : ℂ → EuclideanSpace ℝ (Fin 4)) z = 0 :=
+  (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).2 z
+
 /-- **The divisor on the Sobolev moduli of framed vortices.** For `k ≥ 4` the zero divisor descends
 to the `G_(k+1)`-orbits of `C²` vortices of `A_m^k`. -/
 def sobolevVortexModuliDivisor {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
