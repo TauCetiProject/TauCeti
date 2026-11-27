@@ -62,6 +62,9 @@ endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap
 In the quotient of a possibly noncommutative ring by `I ^ n` (or any two-sided ideal containing
 `I ^ n`), the `n`-th power of the image of `I` vanishes (`Ideal.map_mk_pow_self` and
 `Ideal.map_mk_pow_eq_bot_of_le`).
+
+Left scalar multiplication on a residue class is multiplication of representatives
+(`Ideal.Quotient.smul_mk`).
 -/
 
 public section
@@ -213,6 +216,13 @@ theorem Quotient.linearCombination_mk_map_apply {S ι : Type*} [CommRing S] [Alg
   simp [Fintype.linearCombination_apply, map_sum, Algebra.smul_def]
 
 end CommRing
+
+-- Not `@[simp]`: `map_mul` further expands the right-hand side to `mk I r * mk I s`, whereas
+-- callers want a single residue class.
+/-- Left scalar multiplication of a residue class in `R ⧸ I` by `r : R` is the class of `r * s`. -/
+theorem Quotient.smul_mk {R : Type*} [Ring R] (I : Ideal R) [I.IsTwoSided] (r s : R) :
+    r • Quotient.mk I s = Quotient.mk I (r * s) := by
+  rw [← Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul, Quotient.mk_eq_mk]
 
 /-- For an element `p` of a commutative `R`-algebra `B`, the sequence `B → B → B ⧸ (p)`, whose
 first map is multiplication by `p`, is exact. -/

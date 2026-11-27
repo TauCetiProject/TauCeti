@@ -247,7 +247,7 @@ theorem chartRestrictL_surjective {n : ℕ} [IsManifold closedUpperHalfPlaneMode
 section Extension
 
 variable {n : ℕ} [IsManifold closedUpperHalfPlaneModel n M]
-  [ContMDiffVectorBundle n F V closedUpperHalfPlaneModel]
+  [ContMDiffVectorBundle n F V closedUpperHalfPlaneModel] [IsManifold closedUpperHalfPlaneModel 1 M]
 
 variable (A p k) in
 /-- For a `Cⁿ` bundle with `1 ≤ n` and `k ≤ n` and a closed subset `L` of the domain of chart `i`,
@@ -255,8 +255,6 @@ the chart-`i` components of the elements of `W^{k,p}(V)` vanishing off `L` form 
 equivalence onto the chart-`i` tuples vanishing off `L`. -/
 def chartRestrictEquiv (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Set M} (hL : IsClosed L)
     (hLi : L ⊆ A.dom i) : aeZeroOff A p k L ≃ₗ[ℝ] chartAeZeroOff A p k i L :=
-  letI : IsManifold closedUpperHalfPlaneModel 1 M :=
-    IsManifold.of_le (n := n) (by exact_mod_cast hn)
   A.halfSectionChartData.chartRestrictEquiv volume p k (chartRestrictL_injective hLi)
     (chartRestrictL_surjective hn hkn hL hLi)
 
@@ -264,8 +262,6 @@ def chartRestrictEquiv (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Set M} 
 theorem chartRestrictEquiv_apply (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (w : aeZeroOff A p k L) :
     chartRestrictEquiv A p k hn hkn hL hLi w = chartRestrictL A p k i L w :=
-  letI : IsManifold closedUpperHalfPlaneModel 1 M :=
-    IsManifold.of_le (n := n) (by exact_mod_cast hn)
   SectionChartData.chartRestrictEquiv_apply (chartRestrictL_injective hLi)
     (chartRestrictL_surjective hn hkn hL hLi) w
 
@@ -277,16 +273,12 @@ functions. This is a continuous linear map from the closed subspace
 (`TauCeti.SectionChartData.extendByZeroL`). -/
 def extendByZeroL (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Set M} (hL : IsClosed L)
     (hLi : L ⊆ A.dom i) : chartAeZeroOff A p k i L →L[ℝ] BorderedSobolevSection A p k :=
-  letI : IsManifold closedUpperHalfPlaneModel 1 M :=
-    IsManifold.of_le (n := n) (by exact_mod_cast hn)
   A.halfSectionChartData.extendByZeroL volume p k (chartRestrictL_injective hLi)
     (chartRestrictL_surjective hn hkn hL hLi)
 
 theorem extendByZeroL_apply (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (g : chartAeZeroOff A p k i L) :
     extendByZeroL hn hkn hL hLi g = (chartRestrictEquiv A p k hn hkn hL hLi).symm g :=
-  letI : IsManifold closedUpperHalfPlaneModel 1 M :=
-    IsManifold.of_le (n := n) (by exact_mod_cast hn)
   SectionChartData.extendByZeroL_apply (chartRestrictL_injective hLi)
     (chartRestrictL_surjective hn hkn hL hLi) g
 
@@ -294,8 +286,6 @@ theorem extendByZeroL_apply (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Se
 theorem extendByZeroL_mem_aeZeroOff (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (g : chartAeZeroOff A p k i L) :
     extendByZeroL hn hkn hL hLi g ∈ aeZeroOff A p k L :=
-  letI : IsManifold closedUpperHalfPlaneModel 1 M :=
-    IsManifold.of_le (n := n) (by exact_mod_cast hn)
   SectionChartData.extendByZeroL_mem_aeZeroOn (chartRestrictL_injective hLi)
     (chartRestrictL_surjective hn hkn hL hLi) g
 
@@ -304,8 +294,6 @@ theorem extendByZeroL_mem_aeZeroOff (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n}
 theorem chartRestrictL_extendByZeroL (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (g : chartAeZeroOff A p k i L) :
     chartRestrictL A p k i L ⟨_, extendByZeroL_mem_aeZeroOff hn hkn hL hLi g⟩ = g :=
-  letI : IsManifold closedUpperHalfPlaneModel 1 M :=
-    IsManifold.of_le (n := n) (by exact_mod_cast hn)
   SectionChartData.chartRestrictL_extendByZeroL (chartRestrictL_injective hLi)
     (chartRestrictL_surjective hn hkn hL hLi) g
 
@@ -316,8 +304,6 @@ theorem extendByZeroL_apply_self (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L
     ((extendByZeroL hn hkn hL hLi g : BorderedSobolevSection A p k) :
       A.halfSectionChartData.SobolevData volume p k) i =
       (g : Fin (finrank ℝ F) → Wkp volume (A.halfImage i) p k) :=
-  letI : IsManifold closedUpperHalfPlaneModel 1 M :=
-    IsManifold.of_le (n := n) (by exact_mod_cast hn)
   SectionChartData.extendByZeroL_apply_self (chartRestrictL_injective hLi)
     (chartRestrictL_surjective hn hkn hL hLi) g
 
@@ -326,8 +312,6 @@ theorem extendByZeroL_apply_self (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L
 theorem extendByZeroL_chartRestrictL (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fin A.n} {L : Set M}
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (w : aeZeroOff A p k L) :
     extendByZeroL hn hkn hL hLi (chartRestrictL A p k i L w) = w :=
-  letI : IsManifold closedUpperHalfPlaneModel 1 M :=
-    IsManifold.of_le (n := n) (by exact_mod_cast hn)
   SectionChartData.extendByZeroL_chartRestrictL (chartRestrictL_injective hLi)
     (chartRestrictL_surjective hn hkn hL hLi) w
 
@@ -337,10 +321,9 @@ theorem tendsto_of_tendsto_chartRestrictL (hn : 1 ≤ n) (hkn : k ≤ n) {i : Fi
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) {ι : Type*} {l : Filter ι} {a : ι → aeZeroOff A p k L}
     {u : aeZeroOff A p k L}
     (h : Tendsto (fun m ↦ chartRestrictL A p k i L (a m)) l (𝓝 (chartRestrictL A p k i L u))) :
-    Tendsto a l (𝓝 u) := by
-  have hE := ((extendByZeroL hn hkn hL hLi).continuous.tendsto _).comp h
-  simp only [Function.comp_def, extendByZeroL_chartRestrictL] at hE
-  exact tendsto_subtype_rng.2 hE
+    Tendsto a l (𝓝 u) :=
+  SectionChartData.tendsto_of_tendsto_chartRestrictL (chartRestrictL_injective hLi)
+    (chartRestrictL_surjective hn hkn hL hLi) h
 
 end Extension
 

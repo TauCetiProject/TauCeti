@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
 
+import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
+
 /-!
 # Monoidal composition coherence of quasicoherent pullback
 
@@ -181,18 +183,9 @@ theorem pullback_comp_δ (E F : QuasicoherentSheaf Z) :
   exact pullbackComp_tensor_transport f g E F (pullbackComp_eqToHom f g)
 
 /-- The canonical composition isomorphism of quasicoherent pullback is monoidal. -/
-instance isMonoidal_pullbackComp_hom : NatTrans.IsMonoidal (pullbackComp f g).hom where
-  unit := by
-    rw [← cancel_mono (CategoryTheory.Functor.OplaxMonoidal.η (pullback (f ≫ g)))]
-    rw [Category.assoc]
-    erw [← pullback_comp_η f g]
-    simp only [Functor.Monoidal.ε_η]
-  tensor E F := by
-    rw [← cancel_epi (CategoryTheory.Functor.OplaxMonoidal.δ (pullback g ⋙ pullback f) E F),
-      ← cancel_mono (CategoryTheory.Functor.OplaxMonoidal.δ (pullback (f ≫ g)) E F)]
-    simp only [Category.assoc, CategoryTheory.Functor.Monoidal.δ_μ_assoc,
-      CategoryTheory.Functor.Monoidal.μ_δ, Category.comp_id]
-    exact (pullback_comp_δ f g E F).symm
+instance isMonoidal_pullbackComp_hom : NatTrans.IsMonoidal (pullbackComp f g).hom := by
+  exact NatTrans.IsMonoidal.of_oplax (pullbackComp f g).hom
+    (pullback_comp_η f g).symm (fun E F ↦ (pullback_comp_δ f g E F).symm)
 
 end
 

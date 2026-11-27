@@ -136,6 +136,34 @@ theorem sturmCoeffsₗ_injective :
 
 end ModularForm
 
+namespace CuspForm
+
+/-- **Cusp forms of small weight times index vanish.** If `k · [𝒮ℒ : 𝒢 ⊓ 𝒮ℒ] < 12`, the Sturm
+bound is `0`, which the vanishing constant term of a cusp form at `∞` already exceeds; so every
+cusp form of weight `k` for `𝒢` is zero. At `𝒢 = 𝒮ℒ` this recovers the vanishing of cusp forms of
+level one and weight `k < 12`. -/
+theorem eq_zero_of_mul_card_quotient_lt_twelve {𝒢 : Subgroup (GL (Fin 2) ℝ)}
+    [𝒢.IsFiniteRelIndex 𝒮ℒ] [𝒢.HasDetOne] [DiscreteTopology 𝒢.strictPeriods] {k : ℤ}
+    (h : k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) < 12) (f : CuspForm 𝒢 k) : f = 0 := by
+  refine toModularFormₗ_injective ?_
+  rw [map_zero]
+  refine ModularForm.sturm_bound_finiteIndex _ ?_
+  rw [show (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 = 0 by omega]
+  refine lt_of_lt_of_le (by norm_num) (PowerSeries.nat_le_order (n := 1) _ fun i hi ↦ ?_)
+  obtain rfl : i = 0 := by omega
+  rw [show ⇑(toModularFormₗ f) = ⇑f from funext (toModularFormₗ_apply f)]
+  exact CuspFormClass.qExpansion_coeff_zero f
+    TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex 𝒢.strictWidthInfty_mem_strictPeriods
+
+/-- **Cusp forms of small weight times index vanish**, for a finite-index subgroup `Γ` of
+`SL(2, ℤ)`: if `k · [SL(2, ℤ) : Γ] < 12`, every cusp form of weight `k` for `Γ` is zero. -/
+theorem eq_zero_of_mul_index_lt_twelve {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex] {k : ℤ}
+    (h : k * Γ.index < 12) (f : CuspForm (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)) k) :
+    f = 0 :=
+  eq_zero_of_mul_card_quotient_lt_twelve ((Γ.card_quotient_mapGL_eq_index).symm ▸ h) f
+
+end CuspForm
+
 namespace TauCeti
 
 /-- **Finite-dimensionality of modular forms.** As a corollary of the Sturm bound, the space

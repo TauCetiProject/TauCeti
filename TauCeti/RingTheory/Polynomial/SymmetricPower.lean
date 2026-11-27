@@ -54,7 +54,16 @@ are separate later steps.
   inverts `toMonic`, so `Sym K n` is equivalent to the monic polynomials of degree `n`.
 * `Sym.coeffEquiv`: the resulting chart `Sym K n ≃ (Fin n → K)`, with
   `Sym.coeffEquiv_apply` naming its coordinates as the signed elementary symmetric
-  functions and `Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map.
+  functions, `Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map, and
+  `Sym.coeffEquiv_symm_esymm` recovering a multiset from its elementary symmetric functions.
+* `Sym.exists_esymm_eq`: every tuple of values is the tuple of elementary symmetric functions of
+  some unordered `n`-tuple.
+* `Sym.ofEsymm`: the inverse chart in unsigned coordinates, the unordered tuple with prescribed
+  elementary symmetric functions (`Sym.esymm_ofEsymm`, `Sym.esymm_ofEsymm_of_mem`), which they
+  determine (`Sym.eq_ofEsymm_iff`, `Sym.ofEsymm_esymm`); `Sym.coeffEquiv_ofEsymm` gives its chart
+  coordinates.
+* `Sym.coeffEquiv_symm_translateCoeff`: translating the lower coefficients by
+  `TauCeti.Polynomial.translateCoeff a` moves every point of the tuple by `-a`.
 * `Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`: membership in the basepoint
   divisor is characterized by an affine equation in the chart.
 * `Sym.coeffEquiv_one_apply` and `Sym.coeffEquiv_two_apply`: the chart in degrees
@@ -345,6 +354,41 @@ theorem coeffEquiv_symm_coeff_of_monic {p : K[X]} (hp : p.Monic) (hdeg : p.natDe
     (((coeffEquiv K n).symm (fun i => p.coeff i) : Sym K n) : Multiset K) = p.roots := by
   rw [coeffEquiv_symm_apply, TauCeti.Polynomial.monicOfCoeff_coeff hp hdeg]
 
+/-- The inverse chart recovers an `n`-element multiset from its elementary symmetric functions,
+in decreasing order and with alternating signs. This is `Sym.coeffEquiv_apply` read backwards. -/
+@[simp]
+theorem coeffEquiv_symm_esymm {s : Multiset K} (hs : Multiset.card s = n) :
+    (coeffEquiv K n).symm (fun i : Fin n => (-1) ^ (n - (i : ℕ)) * s.esymm (n - (i : ℕ))) =
+      Sym.mk s hs := by
+  rw [Equiv.symm_apply_eq]
+  funext i
+  exact (coeffEquiv_apply (Sym.mk s hs) i).symm
+
+/-- **Every coefficient tuple comes from a tuple of roots.** For any prescribed values `c j`, there
+is an unordered `n`-tuple whose `j`-th elementary symmetric function is `c j` for `1 ≤ j ≤ n`:
+the roots of `Xⁿ - c₁ Xⁿ⁻¹ + ⋯ + (-1)ⁿ cₙ`. -/
+theorem exists_esymm_eq (c : ℕ → K) :
+    ∃ s : Sym K n, ∀ j ∈ Finset.Icc 1 n, (s : Multiset K).esymm j = c j := by
+  refine ⟨(coeffEquiv K n).symm fun i => (-1) ^ (n - (i : ℕ)) * c (n - i), fun j hj => ?_⟩
+  obtain ⟨hj₁, hjn⟩ := Finset.mem_Icc.1 hj
+  have hi := congrFun ((coeffEquiv K n).apply_symm_apply
+    fun i : Fin n => (-1) ^ (n - (i : ℕ)) * c (n - i)) ⟨n - j, by omega⟩
+  rw [coeffEquiv_apply] at hi
+  simp only [Nat.sub_sub_self hjn] at hi
+  exact mul_left_cancel₀ (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)) hi
+
+/-- In the elementary symmetric chart, translating the coefficients translates the tuple: the
+roots of `P_c(· + a)` are those of `P_c` moved by `-a`. -/
+theorem coeffEquiv_symm_translateCoeff (a : K) (c : Fin n → K) :
+    (coeffEquiv K n).symm (TauCeti.Polynomial.translateCoeff a c) =
+      ((coeffEquiv K n).symm c).map (· - a) := by
+  apply Sym.coe_injective
+  have h := roots_comp_C_mul_X_add_C (TauCeti.Polynomial.monicOfCoeff c) 1 a isUnit_one
+  rw [C_1, one_mul] at h
+  rw [coeffEquiv_symm_apply, Sym.coe_map, coeffEquiv_symm_apply,
+    TauCeti.Polynomial.monicOfCoeff_translateCoeff, taylor_apply, h]
+  simp
+
 /-- **The tuples through a point satisfy an affine equation in the elementary symmetric chart.** A
 point `a` belongs to `s` exactly when the monic polynomial whose lower coefficients are the
 coordinates of `s` vanishes at `a`. For `0 < n`, the equation has coefficient `1` on the
@@ -374,11 +418,54 @@ coefficient coordinate. -/
 private theorem esymm_succ_eq_neg_one_pow_mul_coeffEquiv (s : Sym K n) (j : Fin n) :
     (s : Multiset K).esymm ((j : ℕ) + 1) =
       (-1 : K) ^ ((j : ℕ) + 1) * coeffEquiv K n s j.rev := by
-  rw [coeffEquiv_apply, Fin.val_rev, Nat.sub_sub_self (by have := j.isLt; omega)]
-  have hsign : (-1 : K) ^ ((j : ℕ) + 1) * (-1 : K) ^ ((j : ℕ) + 1) = 1 := by
-    rw [← pow_add, ← Nat.two_mul, pow_mul]
-    norm_num
-  rw [← mul_assoc, hsign, one_mul]
+  rw [coeffEquiv_apply, Fin.val_rev, Nat.sub_sub_self (by have := j.isLt; omega), ← mul_assoc,
+    pow_mul_pow_eq_one _ (by rw [neg_one_mul, neg_neg]), one_mul]
+
+/-- The unordered `n`-tuple with prescribed elementary symmetric functions: its elementary
+symmetric functions `e₁, …, eₙ` are `d 0, …, d (n - 1)` (`Sym.esymm_ofEsymm`). It is the root
+multiset of `Xⁿ - d 0 X^(n-1) + d 1 X^(n-2) - ⋯ + (-1)ⁿ d (n - 1)`, read through the elementary
+symmetric chart. -/
+noncomputable def ofEsymm (d : Fin n → K) : Sym K n :=
+  (coeffEquiv K n).symm fun i => (-1) ^ (n - (i : ℕ)) * d i.rev
+
+/-- The coordinates of `Sym.ofEsymm d` in the elementary symmetric chart are the signed,
+reversed entries of `d`. -/
+theorem coeffEquiv_ofEsymm (d : Fin n → K) (i : Fin n) :
+    coeffEquiv K n (ofEsymm d) i = (-1) ^ (n - (i : ℕ)) * d i.rev := by
+  rw [ofEsymm, Equiv.apply_symm_apply]
+
+/-- The elementary symmetric functions of `Sym.ofEsymm d` are the prescribed ones. -/
+@[simp]
+theorem esymm_ofEsymm (d : Fin n → K) (i : Fin n) :
+    ((ofEsymm d : Sym K n) : Multiset K).esymm ((i : ℕ) + 1) = d i := by
+  rw [esymm_succ_eq_neg_one_pow_mul_coeffEquiv, coeffEquiv_ofEsymm, Fin.rev_rev, Fin.val_rev,
+    show n - (n - ((i : ℕ) + 1)) = (i : ℕ) + 1 by omega, ← mul_assoc,
+    pow_mul_pow_eq_one _ (by rw [neg_one_mul, neg_neg]), one_mul]
+
+/-- The elementary symmetric functions of `Sym.ofEsymm`, indexed by `j ∈ [1, n]`: if the
+prescribed values are `e 1, …, e n`, then `e_j` of the tuple is `e j`. -/
+theorem esymm_ofEsymm_of_mem {j : ℕ} (hj : j ∈ Finset.Icc 1 n) (e : ℕ → K) :
+    ((ofEsymm (fun i : Fin n => e (i + 1)) : Sym K n) : Multiset K).esymm j = e j := by
+  obtain ⟨hj1, hjn⟩ := Finset.mem_Icc.1 hj
+  obtain ⟨i, rfl⟩ : ∃ i : Fin n, (i : ℕ) + 1 = j := ⟨⟨j - 1, by omega⟩, by simp; omega⟩
+  exact esymm_ofEsymm _ i
+
+/-- An unordered tuple is determined by its elementary symmetric functions: `s` is
+`Sym.ofEsymm d` exactly when its elementary symmetric functions `e₁, …, eₙ` are
+`d 0, …, d (n - 1)`. -/
+theorem eq_ofEsymm_iff {s : Sym K n} {d : Fin n → K} :
+    s = ofEsymm d ↔ ∀ i : Fin n, (s : Multiset K).esymm ((i : ℕ) + 1) = d i := by
+  refine ⟨fun h => h ▸ esymm_ofEsymm d, fun h => ?_⟩
+  rw [← (coeffEquiv K n).injective.eq_iff]
+  funext i
+  rw [coeffEquiv_ofEsymm, coeffEquiv_apply, ← h, Fin.val_rev,
+    show n - ((i : ℕ) + 1) + 1 = n - (i : ℕ) by omega]
+
+/-- Rebuilding an unordered tuple from its own elementary symmetric functions gives it back. -/
+@[simp]
+theorem ofEsymm_esymm (s : Sym K n) :
+    ofEsymm (fun i : Fin n => (s : Multiset K).esymm ((i : ℕ) + 1)) = s :=
+  (eq_ofEsymm_iff.2 fun _ => rfl).symm
 
 end AlgClosed
 

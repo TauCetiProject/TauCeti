@@ -27,7 +27,8 @@ result applies to ideals extended from a common commutative semiring, without as
 commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
-homomorphism `f` for which `f r` is a unit.
+homomorphism `f` for which `f r` is a unit. An ideal extended along a ring homomorphism into a
+finite product is the product of its component extensions.
 
 If the images of any two elements of `I` are comparable for divisibility, as when the source or
 target is a valuation ring, the extension of `I` consists of the multiples of images of elements
@@ -155,6 +156,18 @@ theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semir
     ((span_singleton_le_iff_mem _).mpr (mem_map_of_mem f ht))
   have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
   rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
+
+/-- An ideal extended along a ring homomorphism into a finite product equals the product of its
+component extensions. -/
+theorem map_eq_pi_of_map_evalRingHom {ι : Type*} [Finite ι] {A : Type*} {R : ι → Type*}
+    [Semiring A] [∀ i, Semiring (R i)] (I : Ideal A) (f : A →+* ∀ i, R i)
+    (J : ∀ i, Ideal (R i)) (h : ∀ i, I.map ((Pi.evalRingHom R i).comp f) = J i) :
+    I.map f = pi J := by
+  have hpi : I.map f = pi (piOrderIso (I.map f)) := (piOrderIso.symm_apply_apply (I.map f)).symm
+  rw [hpi]
+  congr 1
+  ext i : 1
+  rw [← map_evalRingHom_pi (I := piOrderIso (I.map f)) i, ← hpi, map_map, h i]
 
 /-- If the images under `f` of any two elements of an ideal `I` are comparable for divisibility,
 then an element lies in the extension `I.map f` if and only if it is divisible by `f a` for some

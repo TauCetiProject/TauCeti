@@ -17,7 +17,7 @@ import TauCeti.Topology.Algebra.Order.Floor
 
 Let `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` be the Sobolev realization of the linearized Floer
 operator along a map `u` of the cylinder into a finite-dimensional symplectic vector space `V`
-(`TauCeti.SymplecticForm.floerSobolevOperator`), for Floer data `(J, K_s, K_t)`. Varying the
+(`TauCeti.SymplecticForm.floerSobolevOperator 2`), for Floer data `(J, K_s, K_t)`. Varying the
 Hamiltonian `K_s` by `δK` changes the Floer operator by `-X_{δK}(u)`. The **universal operator**
 adds these variations to `D_u`, `(ξ, δK) ↦ D_u ξ - X_{δK}(u)`. This file proves that it is onto
 `L²` as soon as `D_u` has closed range of finite codimension, as a Fredholm operator does, even
@@ -36,7 +36,7 @@ Floer data rests, for the free Hamiltonian directions of an inhomogeneous core.
 
 The proof is the standard one (McDuff–Salamon, Proposition 3.2.1). The statements and the closing
 argument follow the Morse analogue
-`TauCeti.range_trajectoryOperator_sup_span_metricVariations_eq_top` in
+`TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG` in
 `TauCeti.Analysis.Calculus.Morse.MorseSmale.MetricVariation`.
 
 * **Closed range.** The range of `D_u` is closed and of finite codimension, so every subspace
@@ -177,12 +177,12 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 `∫ ⟪h, D_u ξ⟫ = 0`, for every `C²` map `ξ` with compact support in the open strip `ℝ × (0, 1)`. -/
 private theorem integral_inner_floerLinearization_eq_zero
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) {h : Lp V 2 stripMeasure}
-    (hh : ∀ x, ⟪h, ω.floerSobolevOperator J Ks Kt u x⟫_ℝ = 0) {ξ : ℝ × ℝ → V}
+    (hh : ∀ x, ⟪h, ω.floerSobolevOperator 2 J Ks Kt u x⟫_ℝ = 0) {ξ : ℝ × ℝ → V}
     (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
     (hξS : tsupport ξ ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
     ∫ z, ⟪h z, ω.floerLinearization J Ks Kt u ξ z⟫_ℝ = 0 := by
   set ξp : testSection V := ⟨_, comp_fract_mem_testSection hξ hξc hξS⟩
-  have h0 := hh ⟨jetLp (testSection V) ξp, jetLp_mem_jetClosure ξp⟩
+  have h0 := hh ⟨jetLp 2 (testSection V) ξp, jetLp_mem_jetClosure ξp⟩
   rw [MeasureTheory.L2.inner_def] at h0
   have hΩ : ∀ᵐ z ∂stripMeasure, z ∈ univ ×ˢ Ioo (0 : ℝ) 1 := by
     rw [stripMeasure_eq_restrict_univ_prod_Ioo]
@@ -190,7 +190,7 @@ private theorem integral_inner_floerLinearization_eq_zero
   -- On the open strip the periodization agrees with `ξ` near every point.
   rw [integral_congr_ae (g := fun z ↦ ⟪h z, ω.floerLinearization J Ks Kt u ξ z⟫_ℝ)
     (by
-      filter_upwards [floerSobolevOperator_jetLp_ae_eq ω hM ξp, hΩ] with z hz hzΩ
+      filter_upwards [floerSobolevOperator_jetLp_ae_eq ω (p := 2) hM ξp, hΩ] with z hz hzΩ
       rw [hz, ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u
         (apply_fract_snd_eventuallyEq_self hzΩ.2)]),
     integral_stripMeasure] at h0
@@ -242,13 +242,13 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
     (hKt : ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, ContDiffAt ℝ 3 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, ContDiffAt ℝ 2 u z)
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure)
-    (hDc : IsClosed ((ω.floerSobolevOperator J Ks Kt u).range : Set (Lp V 2 stripMeasure)))
-    (hDf : (ω.floerSobolevOperator J Ks Kt u).range.CoFG) (hU : IsOpen U) (hUne : U.Nonempty)
+    (hDc : IsClosed ((ω.floerSobolevOperator 2 J Ks Kt u).range : Set (Lp V 2 stripMeasure)))
+    (hDf : (ω.floerSobolevOperator 2 J Ks Kt u).range.CoFG) (hU : IsOpen U) (hUne : U.Nonempty)
     (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1) (hW : ∀ z ∈ U, W ∈ 𝓝 (z, u z)) :
-    (ω.floerSobolevOperator J Ks Kt u).range ⊔
+    (ω.floerSobolevOperator 2 J Ks Kt u).range ⊔
       Submodule.span ℝ (ω.hamiltonianVariations J Ks Kt u W) = ⊤ := by
   set Ω : Set (ℝ × ℝ) := univ ×ˢ Ioo (0 : ℝ) 1
-  set D := ω.floerSobolevOperator J Ks Kt u
+  set D := ω.floerSobolevOperator 2 J Ks Kt u
   set T := ω.hamiltonianVariations J Ks Kt u W
   -- The sum contains the closed range of `D_u`, of finite codimension, so it is closed, and it is
   -- everything once its orthogonal complement is trivial.
@@ -307,11 +307,11 @@ theorem exists_finset_subset_hamiltonianVariations_range_floerSobolevOperator_su
     (hKt : ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, ContDiffAt ℝ 3 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, ContDiffAt ℝ 2 u z)
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure)
-    (hDc : IsClosed ((ω.floerSobolevOperator J Ks Kt u).range : Set (Lp V 2 stripMeasure)))
-    (hDf : (ω.floerSobolevOperator J Ks Kt u).range.CoFG) (hU : IsOpen U) (hUne : U.Nonempty)
+    (hDc : IsClosed ((ω.floerSobolevOperator 2 J Ks Kt u).range : Set (Lp V 2 stripMeasure)))
+    (hDf : (ω.floerSobolevOperator 2 J Ks Kt u).range.CoFG) (hU : IsOpen U) (hUne : U.Nonempty)
     (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1) (hW : ∀ z ∈ U, W ∈ 𝓝 (z, u z)) :
     ∃ t : Finset (Lp V 2 stripMeasure), (t : Set _) ⊆ ω.hamiltonianVariations J Ks Kt u W ∧
-      (ω.floerSobolevOperator J Ks Kt u).range ⊔ Submodule.span ℝ t = ⊤ :=
+      (ω.floerSobolevOperator 2 J Ks Kt u).range ⊔ Submodule.span ℝ t = ⊤ :=
   have := hDf
   Submodule.exists_finset_subset_sup_span_eq_top
     (range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top hJ hJJ hKs hKt hu hM hDc hDf
@@ -356,7 +356,7 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_comp
         (Icc 0 1))
     (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1)
     {W : Set ((ℝ × ℝ) × F)} (hW : ∀ z ∈ U, W ∈ 𝓝 (z, u z)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) u).range ⊔
       Submodule.span ℝ (ω.hamiltonianVariations
         (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u
