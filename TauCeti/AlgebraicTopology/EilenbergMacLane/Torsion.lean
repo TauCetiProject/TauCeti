@@ -48,13 +48,11 @@ space with `S`-torsion homology has `S`-torsion homotopy groups.
   `H_{i + 1}(K(A, n); R) = 0` for an `S`-torsion abelian group `A` and a localization `R` of `ℤ`
   at `S`.
 * `TauCeti.IsEilenbergMacLaneSpace.isTorsion'_singularHomology`,
-  `TauCeti.IsEilenbergMacLaneSpace.isSubmonoidTorsion_singularHomology`,
   `TauCeti.satisfiesEilenbergMacLaneAxiom_isSubmonoidTorsion`:
   if `A` is `S`-torsion, then `H_{i + 1}(K(A, n); ℤ)` is `S`-torsion, verifying
   `CategoryTheory.ObjectProperty.SatisfiesEilenbergMacLaneAxiom` for `S`-torsion.
 * `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_rat`,
-  `TauCeti.IsEilenbergMacLaneSpace.isAddTorsion_singularHomology`,
-  `TauCeti.IsEilenbergMacLaneSpace.isTorsion_singularHomology`:
+  `TauCeti.IsEilenbergMacLaneSpace.isAddTorsion_singularHomology`:
   if `A` is torsion, then `H_{i + 1}(K(A, n); ℚ) = 0` and `H_{i + 1}(K(A, n); ℤ)` is torsion.
 
 ## References
@@ -132,17 +130,6 @@ theorem isTorsion'_singularHomology
   (isTorsion'_singularChains_int_homology_iff S (Localization S) (TopCat.of X) (i + 1)).2
     (hX.subsingleton_singularHomology_of_isTorsion' hA (Localization S) i)
 
-/-- **Serre's `K(A, n)` property for the `S`-torsion Serre class.** If `A` belongs to
-`AddCommGrpCat.isSubmonoidTorsion S`, then so does `H_{i + 1}(K(A, n); ℤ)` for every `i`. -/
-theorem isSubmonoidTorsion_singularHomology
-    {A : AddCommGrpCat.{0}} {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
-    (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x)
-    {S : Submonoid ℤ} (hA : AddCommGrpCat.isSubmonoidTorsion S A) (i : ℕ) :
-    AddCommGrpCat.isSubmonoidTorsion S
-      (AddCommGrpCat.of (((singularChains ℤ).obj (TopCat.of X)).homology (i + 1))) :=
-  (AddCommGrpCat.prop_isSubmonoidTorsion_iff S _).2 <|
-    hX.isTorsion'_singularHomology ((AddCommGrpCat.prop_isSubmonoidTorsion_iff S A).1 hA) i
-
 /-- **Rational acyclicity of `K(A, n)` for a torsion abelian group `A`**:
 `H_{i + 1}(K(A, n); ℚ) = 0` for `n ≥ 1` and `i : ℕ`. -/
 theorem subsingleton_singularHomology_rat
@@ -161,17 +148,6 @@ theorem isAddTorsion_singularHomology
     IsAddTorsion (((singularChains ℤ).obj (TopCat.of X)).homology (i + 1)) :=
   (isAddTorsion_singularChains_homology_iff (TopCat.of X) (i + 1)).2
     (hX.subsingleton_singularHomology_rat hA i)
-
-/-- **Serre's `K(A, n)` property for the torsion Serre class.** If `A` belongs to
-`AddCommGrpCat.isTorsion`, then so does `H_{i + 1}(K(A, n); ℤ)` for every `i`. -/
-theorem isTorsion_singularHomology
-    {A : AddCommGrpCat.{0}} {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
-    (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x)
-    (hA : AddCommGrpCat.isTorsion A) (i : ℕ) :
-    AddCommGrpCat.isTorsion
-      (AddCommGrpCat.of (((singularChains ℤ).obj (TopCat.of X)).homology (i + 1))) :=
-  (AddCommGrpCat.prop_isTorsion_iff _).2 <|
-    hX.isAddTorsion_singularHomology ((AddCommGrpCat.prop_isTorsion_iff A).1 hA) i
 
 end IsEilenbergMacLaneSpace
 

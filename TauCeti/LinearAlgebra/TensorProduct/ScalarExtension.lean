@@ -49,7 +49,6 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
   whose image in `Q` is a unit has an `R`-linear right inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
-* `LinearMap.baseChange_bijective`: base change of a bijective linear map is bijective.
 * `TensorProduct.congrIntModule`: `A`-linear equivalence between tensor products `A ⊗[ℤ] M`
   built from any two `ℤ`-module structures on a commutative ring `A`.
 -/
@@ -214,12 +213,6 @@ theorem injective_lTensor_iff_injective_lTensor_restrictScalars (f : N →ₗ[B]
     ext z
     simp [cancelBaseChangeLeft_lTensor]
   rw [this, EquivLike.comp_injective, EquivLike.injective_comp]
-
-/-- Base change of a bijective linear map is bijective. -/
-theorem baseChange_bijective {R A M N : Type*} [CommSemiring R] [CommSemiring A]
-    [Algebra R A] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    {f : M →ₗ[R] N} (hf : Function.Bijective f) : Function.Bijective (f.baseChange A) :=
-  ((LinearEquiv.ofBijective f hf).baseChange R A M N).bijective
 
 end LinearMap
 
