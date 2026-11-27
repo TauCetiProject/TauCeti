@@ -34,12 +34,6 @@ open Matrix QuaternionGroup TauCeti.Examples.RepresentationTheory.GallagherSpeci
 /-- Sums over `Q₈`. Local, so that `Nat.card N` stays in simp-normal form elsewhere. -/
 noncomputable local instance fintypeN : Fintype N := Fintype.ofFinite _
 
-/-- `Q₈` has index `3` in `SL(2, 3)`. -/
-theorem index_N : N.index = 3 := by
-  have h := N.card_mul_index
-  rw [natCard_sl2ZModThreeQuaternionSubgroup, natCard_sl2_zmod_three] at h
-  omega
-
 /-- The character `χ₃` of degree three of `SL(2, 3)`. -/
 noncomputable abbrev χ₃ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ :=
   specialLinearTwoThreeCharacter ⟨3, by decide⟩
@@ -81,11 +75,6 @@ private theorem table_three_of_pow_four :
   simp only [specialLinearTwoThreeExactCharacterTable_apply]
   decide +kernel
 
-/-- The image of `a 2` is `-1`. -/
-private theorem hom_a_two : sl2ZModThreeQuaternionHom (a 2) = -1 := by
-  rw [sl2ZModThreeQuaternionHom_a, show (ZMod.cast (2 : ZMod (2 * 2)) : ℤ) = 2 by decide,
-    zpow_ofNat, sl2ZModThreeI_sq]
-
 /-- `χ₃` is `3` at `±1` and `-1` at the other elements of `Q₈`. -/
 private theorem χ₃_equiv (x : QuaternionGroup 2) :
     χ₃ (sl2ZModThreeQuaternionEquiv x) = if x = 1 ∨ x = a 2 then 3 else -1 := by
@@ -95,7 +84,7 @@ private theorem χ₃_equiv (x : QuaternionGroup 2) :
   have h1 : sl2ZModThreeQuaternionHom x = 1 ↔ x = 1 := by
     rw [← map_one sl2ZModThreeQuaternionHom, hinj.eq_iff]
   have h2 : sl2ZModThreeQuaternionHom x = -1 ↔ x = a 2 := by
-    rw [← hom_a_two, hinj.eq_iff]
+    rw [← sl2ZModThreeQuaternionHom_a_two, hinj.eq_iff]
   rw [χ₃, specialLinearTwoThreeCharacter_apply, coe_sl2ZModThreeQuaternionEquiv,
     table_three_of_pow_four _ h4]
   simp only [h1, h2]
@@ -129,7 +118,7 @@ private theorem degree_eq {i : SpecialLinearTwoThreeClassIndex} {n : ℕ}
 
 /-- **The degree ratio of `χ₃` over `θ'` is `3`**, which divides `|SL(2, 3) : Q₈| = 3`. -/
 theorem χ₃_one_eq : χ₃ 1 = 3 * θ' 1 ∧ 3 ∣ N.index := by
-  refine ⟨?_, by rw [index_N]⟩
+  refine ⟨?_, by rw [index_sl2ZModThreeQuaternionSubgroup]⟩
   rw [θ'_one, mul_one, χ₃, character_one_eq (n := 3) (degree_eq (by decide))]
   norm_num
 
