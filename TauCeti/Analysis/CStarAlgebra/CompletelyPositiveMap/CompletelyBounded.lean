@@ -131,10 +131,9 @@ theorem norm_mapCStarMatrix_apply_le (φ : A →CP B) {c : ℝ≥0} (hφ : ∀ a
     rw [smul_apply, NNReal.smul_def, norm_smul_of_nonneg (by positivity), NNReal.coe_inv,
       inv_mul_le_iff₀ hc']
     exact hφ a
-  have hx : φ.mapCStarMatrix n x = (c : ℂ) • (c⁻¹ • φ).mapCStarMatrix n x :=
-    CStarMatrix.ext fun i j ↦ by
-      simp [CStarMatrix.map_apply, NNReal.smul_def, smul_smul, hc]
-  rw [hx, norm_smul, Complex.norm_real, Real.norm_of_nonneg hc'.le]
+  have hφc : φ = c • (c⁻¹ • φ) := by rw [smul_smul, mul_inv_cancel₀ hc, one_smul]
+  rw [hφc, mapCStarMatrix_smul, smul_apply, NNReal.smul_def, norm_smul,
+    Real.norm_of_nonneg hc'.le]
   gcongr
   exact key _ hψ
 

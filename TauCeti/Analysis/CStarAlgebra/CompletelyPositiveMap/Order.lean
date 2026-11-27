@@ -186,6 +186,13 @@ def comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : A₁ →CP A₃ :=
   ext x i j
   simp
 
+/-- The amplification of an `ℝ≥0`-multiple is the same multiple of the amplification. -/
+@[simp] theorem mapCStarMatrix_smul (c : ℝ≥0) (φ : A₁ →CP A₂) (n : Type*) [Fintype n] :
+    (c • φ).mapCStarMatrix n = c • φ.mapCStarMatrix n :=
+  ext fun x ↦ by
+    rw [smul_apply, mapCStarMatrix_apply, mapCStarMatrix_apply]
+    exact CStarMatrix.ext fun _ _ ↦ rfl
+
 /-- Converting a composite of non-unital star algebra homomorphisms to a completely positive map
 composes the converted maps. -/
 @[simp] theorem _root_.CompletelyPositiveMapClass.toCompletelyPositiveLinearMap_comp
