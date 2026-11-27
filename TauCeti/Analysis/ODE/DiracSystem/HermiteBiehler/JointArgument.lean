@@ -7,10 +7,9 @@ module
 
 public import TauCeti.Analysis.ODE.DiracSystem.HermiteBiehler.Basic
 import Mathlib.Analysis.Complex.BranchLogRoot
-import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Analysis.Complex.ContinuousLog.Basic
+import TauCeti.Analysis.Convex.SimplyConnected
 import TauCeti.Analysis.ODE.DiracSystem.ZeroFree
-import TauCeti.Analysis.ODE.Propagator.ParameterContinuity
 
 /-!
 # The argument of the Dirac Hermite–Biehler function as a function of `(t, x)`
@@ -21,9 +20,6 @@ Let `q` be a potential, locally integrable on `[0, ∞)`, with Dirac fundamental
 
 ## Main results
 
-* `TauCeti.continuousOn_diracFundamentalMatrix_apply_prod`: every entry of `M_q(t, z)` is jointly
-  continuous in `(t, z)` on `[0, T] × ℂ` when `q` is integrable on `[0, T]`; hence so is `E`
-  (`TauCeti.continuousOn_diracHermiteBiehler_prod`).
 * `TauCeti.exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp_prod`: `E(t, x)` has an
   argument `φ(t, x)`, jointly continuous on `[0, ∞) × ℝ`, with `φ(0, x) = 0` and
   `E(t, x) = |E(t, x)| e^{iφ(t, x)}`.
@@ -31,12 +27,11 @@ Let `q` be a potential, locally integrable on `[0, ∞)`, with Dirac fundamental
 
 ## Implementation notes
 
-Joint continuity is `TauCeti.continuousOn_propagator_parameter`, since the Dirac coefficient is
-affine in `z`. `E(t, x)` does not vanish for real `x`
-(`TauCeti.diracFundamentalMatrix_sub_I_mul_ne_zero`), so the continuous function
-`(t, x) ↦ E(max t 0, x)` on the simply connected plane has a continuous logarithm `L`
-(`Complex.exists_continuousOn_eqOn_exp_comp`). As `E(0, x) = 1`, the imaginary part of
-`L(t, x) - L(0, x)` is the argument.
+`E(t, z)` is jointly continuous in `(t, z)` (`TauCeti.continuousOn_diracHermiteBiehler_prod`)
+and does not vanish for real `z = x` (`TauCeti.diracFundamentalMatrix_sub_I_mul_ne_zero`), so
+the continuous function `(t, x) ↦ E(max t 0, x)` on the simply connected plane has a continuous
+logarithm `L` (`Complex.exists_continuousOn_eqOn_exp_comp`). As `E(0, x) = 1`, the imaginary part
+of `L(t, x) - L(0, x)` is the argument.
 
 ## References
 
@@ -50,62 +45,7 @@ open MeasureTheory Set Matrix Complex Filter Topology
 
 namespace TauCeti
 
-variable {q : ℝ → ℂ} {T : ℝ}
-
-/-- **Joint continuity of the fundamental matrix.** If `q` is integrable on `[0, T]`, every entry
-of `M_q(t, z)` is continuous in `(t, z)` on `[0, T] × ℂ`. -/
-theorem continuousOn_diracFundamentalMatrix_apply_prod (hq : IntegrableOn q (Icc 0 T))
-    (i j : Fin 2) :
-    ContinuousOn (fun p : ℝ × ℂ ↦ diracFundamentalMatrix q p.1 p.2 i j) (Icc 0 T ×ˢ univ) := by
-  rcases lt_or_ge T 0 with hT | hT
-  · simp [Icc_eq_empty_of_lt hT]
-  set Tm := toEuclideanCLM (n := Fin 2) (𝕜 := ℂ)
-  set P : ℝ → ℂ → EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2) :=
-    fun t z ↦ Tm (diracCoeff q z t)
-  -- The coefficient is `P t 0 + z • G` for the constant operator `G = -Ω`.
-  set G : EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2) := Tm !![0, -1; 1, 0]
-  have hP (t : ℝ) (z : ℂ) : P t z = P t 0 + z • G := by
-    simp only [P, G, ← map_smul, ← map_add]
-    congr 1
-    ext a b
-    fin_cases a <;> fin_cases b <;> simp [diracCoeff_def] <;> ring
-  have hint : IntegrableOn (fun t ↦ P t 0) (Icc 0 T) :=
-    integrableOn_toEuclideanCLM_diracCoeff hq 0
-  have hcont := continuousOn_propagator_parameter (P := P) (U := univ) (a := 0) (b := T)
-    (fun z _ ↦ (integrableOn_toEuclideanCLM_diracCoeff hq z).aestronglyMeasurable)
-    (ae_of_all _ fun t _ ↦ (continuous_const.add
-      (continuous_id.smul continuous_const)).continuousOn.congr fun z _ ↦ hP t z)
-    (fun K _ hK ↦ by
-      obtain ⟨R, hR⟩ := hK.isBounded.exists_norm_le
-      refine ⟨fun t ↦ ‖P t 0‖ + R * ‖G‖, hint.norm.add (integrableOn_const
-        measure_Icc_lt_top.ne), fun z hz ↦ ae_of_all _ fun t _ ↦ ?_⟩
-      rw [hP t z]
-      refine (norm_add_le _ _).trans (add_le_add_right ?_ _)
-      rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right (hR z hz) (norm_nonneg _))
-  -- The entry functional `X ↦ (X e_j)_i` on operators.
-  let L : (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2)) →L[ℂ] ℂ :=
-    (EuclideanSpace.proj i).comp
-      (ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin 2)) (EuclideanSpace.single j 1))
-  have hL (A : Matrix (Fin 2) (Fin 2) ℂ) : L (Tm A) = A i j := by simp [L, Tm]
-  have hM : (fun p : ℝ × ℂ ↦ diracFundamentalMatrix q p.1 p.2 i j) =
-      fun p ↦ L (propagator (fun t ↦ P t p.2) p.1 0) := by
-    ext1 p
-    change _ = L (propagator (fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff q p.2 s))
-      p.1 0)
-    rw [← toEuclideanCLM_diracFundamentalMatrix, hL]
-  rw [hM]
-  refine L.continuous.comp_continuousOn
-    ((hcont.comp (f := fun p : ℝ × ℂ ↦ ((p.1, (0 : ℝ)), p.2)) (by fun_prop) fun p hp ↦ ?_))
-  exact ⟨⟨hp.1, ⟨le_rfl, hT⟩⟩, mem_univ _⟩
-
-/-- **Joint continuity of `E`.** If `q` is integrable on `[0, T]`, `E(t, z)` is continuous in
-`(t, z)` on `[0, T] × ℂ`. -/
-theorem continuousOn_diracHermiteBiehler_prod (hq : IntegrableOn q (Icc 0 T)) :
-    ContinuousOn (fun p : ℝ × ℂ ↦ diracHermiteBiehler q p.1 p.2) (Icc 0 T ×ˢ univ) := by
-  simp_rw [diracHermiteBiehler_def]
-  exact (continuousOn_diracFundamentalMatrix_apply_prod hq 0 0).sub
-    (continuousOn_const.mul (continuousOn_diracFundamentalMatrix_apply_prod hq 1 0))
+variable {q : ℝ → ℂ}
 
 /-- The function `(t, x) ↦ E(max t 0, x)` is continuous on the plane. -/
 private theorem continuous_diracHermiteBiehler_max (hq : LocallyIntegrableOn q (Ici 0)) :
@@ -125,12 +65,6 @@ private theorem continuous_diracHermiteBiehler_max (hq : LocallyIntegrableOn q (
   simp only [mem_ofPred_eq, T]
   linarith [le_max_left p₀.1 0]
 
-/-- The plane `ℝ × ℝ` is simply connected. -/
-private theorem isSimplyConnected_univ_prod : IsSimplyConnected (univ : Set (ℝ × ℝ)) :=
-  have : ContractibleSpace (univ : Set (ℝ × ℝ)) :=
-    Convex.contractibleSpace convex_univ univ_nonempty
-  SimplyConnectedSpace.ofContractible _
-
 /-- **A jointly continuous argument of `E` on the real axis.** For `q` locally integrable on
 `[0, ∞)`, there is `φ : ℝ × ℝ → ℝ`, continuous on `[0, ∞) × ℝ`, with `φ(0, x) = 0` and
 `E(t, x) = |E(t, x)| e^{iφ(t, x)}` for `t ≥ 0` and real `x`. -/
@@ -145,7 +79,8 @@ theorem exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp_prod
     simp only [g, diracHermiteBiehler_def] at hp
     exact diracFundamentalMatrix_sub_I_mul_ne_zero hq (le_max_right p.1 0)
       (z := (p.2 : ℂ)) (by simp) 0 hp
-  obtain ⟨L, hLc, hLg⟩ := exists_continuousOn_eqOn_exp_comp isSimplyConnected_univ_prod
+  obtain ⟨L, hLc, hLg⟩ := exists_continuousOn_eqOn_exp_comp
+    (convex_univ.isSimplyConnected univ_nonempty)
     isOpen_univ (continuous_diracHermiteBiehler_max hq).continuousOn hg0
   have hLc' : Continuous L := continuousOn_univ.1 hLc
   have hexp (p : ℝ × ℝ) : exp (L p) = g p := hLg (mem_univ p)
@@ -160,10 +95,15 @@ theorem exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp_prod
   have hI0 : exp (I * (L (0, x)).im) = 1 := by
     rw [← h0]; congr 1; apply Complex.ext <;> simp [hre0]
   have hgt : g (t, x) = diracHermiteBiehler q t x := by simp [g, max_eq_left ht]
-  rw [← hgt, ← hexp, norm_exp, ofReal_sub, mul_sub, exp_sub, hI0, div_one, ofReal_exp,
-    ← exp_add]
-  congr 1
-  apply Complex.ext <;> simp
+  -- Splitting `w = Re w + i Im w` gives `exp w = |exp w| e^{i Im w}`.
+  have hpolar (w : ℂ) : exp w = ‖exp w‖ * exp (I * w.im) := by
+    rw [norm_exp, ofReal_exp, ← exp_add]
+    congr 1
+    apply Complex.ext <;> simp
+  have hshift : exp (I * ((L (t, x)).im - (L (0, x)).im : ℝ)) = exp (I * (L (t, x)).im) := by
+    rw [ofReal_sub, mul_sub, exp_sub, hI0, div_one]
+  rw [hshift, ← hgt, ← hexp]
+  exact hpolar _
 
 /-- **Uniqueness of the argument.** For `q` locally integrable on `[0, ∞)`, two functions
 continuous on `[0, ∞) × ℝ`, vanishing at `t = 0` and arguments of `E(t, x)` there, agree on
