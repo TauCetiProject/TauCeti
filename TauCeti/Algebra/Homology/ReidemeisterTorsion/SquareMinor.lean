@@ -175,8 +175,9 @@ theorem torsionBracket_eq_det_squareMinor {i j k : ι} (hi : cs.prev j = i) (hk 
       simp [this, hb₁, minorFamily]
     · have : Fin.cast hn' (splitEquiv hn j (.inr m)) = Fin.natAdd (q j) (Fin.cast h₂ m) :=
         Fin.ext (by simp [splitEquiv_inr])
-      simp [this, minorFamily, squareMinorLift]
-      rfl
+      rw [Function.comp_apply, Function.comp_apply, this, Fin.append_right,
+        Equiv.symm_apply_apply]
+      simp [minorFamily, squareMinorLift, splitEquiv_inr]
   rw [torsionBracket_eq_det_append c _ _ _ _ _ _ _ hn', hfam, ← Basis.det_reindex,
     det_minorFamily]
 
@@ -291,6 +292,7 @@ include hA
 
 /-- A complex whose square minors `torsionMinor c hn hpq j` are all invertible is acyclic. -/
 theorem acyclic_of_det_torsionMinor_ne_zero : C.Acyclic := fun i ↦ by
+  simp only [torsionMinor_eq_squareMinor] at hA
   simpa using exactAt_of_det_squareMinor_ne_zero (c := c) (hn := hn) (j := i - 1 + 1)
     (by simp) (by simp) (hA (i - 1 + 1)) (hA (i - 1))
 
@@ -305,14 +307,16 @@ theorem reidemeisterTorsion_eq_finprod_det_torsionMinor (hfin : {i | n i ≠ 0}.
   have hshift : ∏ᶠ j : ℤ, (torsionMinor c hn hpq j).det ^ ((j + 1).negOnePow : ℤ) =
       ∏ᶠ j : ℤ, (torsionMinor c hn hpq (j + 1)).det ^ ((j + 1 + 1).negOnePow : ℤ) :=
     (finprod_comp_equiv (Equiv.addRight 1)).symm
+  have hA' (j : ℤ) : (squareMinor c hn j (j + 1) (hpq j)).det ≠ 0 := by
+    simpa only [torsionMinor_eq_squareMinor] using hA j
   rw [reidemeisterTorsion_eq_finprod (c := c) hfin (acyclic_of_det_torsionMinor_ne_zero hA)
-      (fun j ↦ squareMinorBoundaryBasis (hA j) (hA (j + 1)))
+      (fun j ↦ squareMinorBoundaryBasis (hA' j) (hA' (j + 1)))
       (fun j ↦ squareMinorLift c hn j (j + 1) (hpq j))
-      (fun j r ↦ (coe_squareMinorBoundaryBasis (hA j) (hA (j + 1)) r).symm),
+      (fun j r ↦ (coe_squareMinorBoundaryBasis (hA' j) (hA' (j + 1)) r).symm),
     hshift]
   refine finprod_congr fun j ↦ ?_
   rw [torsionBracket_eq_det_squareMinor c hn _ _ _ _ _
-    (coe_squareMinorBoundaryBasis (hA (j + 1)) (hA (j + 1 + 1)))]
+    (coe_squareMinorBoundaryBasis (hA' (j + 1)) (hA' (j + 1 + 1)))]
   simp only [Int.negOnePow_succ, neg_neg, torsionMinor_eq_squareMinor]
 
 end HomologicalComplex

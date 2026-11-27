@@ -115,7 +115,8 @@ theorem acyclic_of_det_parityTorsionMinor_ne_zero
   have h₂ : p i = q (i + 1) := by simpa [hi] using hpq (i + 1)
   refine exactAt_of_det_squareMinor_ne_zero (c := c) (hn := hn) (h₁ := hpq i) (h₂ := h₂)
     ((ComplexShape.up _).prev_eq' hi) ((ComplexShape.up _).next_eq' rfl) ?_ ?_
-  · exact hA i
+  · rw [← parityTorsionMinor_eq_squareMinor c hn hpq rfl]
+    exact hA i
   · rw [← parityTorsionMinor_eq_squareMinor c hn hpq hi]
     exact hA (i + 1)
 
