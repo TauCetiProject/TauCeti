@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.HeatKernel.Generator
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import Mathlib.Topology.Algebra.Module.LinearPMap
-public import TauCeti.Analysis.Fourier.LaplacianSymbol
+public import TauCeti.Analysis.Fourier.Laplacian.Symbol
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Smoothing
