@@ -42,7 +42,7 @@ similar to `g`, since the Sylvester map `y ↦ g y - y g` between the two blocks
 * `TauCeti.HallAlgebra.blockAverage_fun_mul_moebius`: `δ(B · μ)(a, b) = μ(a) μ(b) B(a ⊕ b)`.
 * `TauCeti.HallAlgebra.conj_moebius`: `μ` is real.
 * `TauCeti.HallAlgebra.greenCuspidal_mul_constOne`: `C_η ∗ 𝟙 = -β_η`.
-* `TauCeti.HallAlgebra.greenCuspidal_of_dim_eq_zero`,
+* `TauCeti.HallAlgebra.greenCuspidal_eq_zero_of_dim_eq_zero`,
   `TauCeti.HallAlgebra.isCuspidal_greenCuspidal`: `C_η` vanishes in size `0` and is cuspidal.
 * `TauCeti.HallAlgebra.IsCuspidal.exists_charpoly_eq_pow`: if `A` is cuspidal and `A(g) ≠ 0`, the
   characteristic polynomial of `g` is a power of an irreducible polynomial.
@@ -306,7 +306,7 @@ private theorem greenCuspidal_eq_neg_moebius_mul :
     ring
   simp only [h_terms, ← Finset.mul_sum, sum_moebius_invtRestrict_eq_one_apply, one_apply]
   split_ifs with h
-  · simp [eigenvalueSum_of_dim_eq_zero K η h]
+  · simp [eigenvalueSum_eq_zero_of_dim_eq_zero K η h]
   · simp
 
 /-- **`C_η ∗ 𝟙 = -β_η`.** -/
@@ -317,13 +317,14 @@ theorem greenCuspidal_mul_constOne :
     moebius_mul_constOne, mul_one]
 
 /-- `C_η` vanishes on the class of size `0`. -/
-theorem greenCuspidal_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) :
+theorem greenCuspidal_eq_zero_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) :
     greenCuspidal K η o = 0 := by
   have := Fintype.ofFinite o.rep.invtSubmodule
   have : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
   rw [← ofEnd_rep o, greenCuspidal_ofEnd, finsum_eq_sum_of_fintype]
   refine Finset.sum_eq_zero fun U _ ↦ ?_
-  rw [eigenvalueSum_of_dim_eq_zero K η (by simp [Module.finrank_zero_of_subsingleton]), zero_mul]
+  rw [eigenvalueSum_eq_zero_of_dim_eq_zero K η (by simp [Module.finrank_zero_of_subsingleton]),
+    zero_mul]
 
 end Green
 

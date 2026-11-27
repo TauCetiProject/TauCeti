@@ -507,7 +507,7 @@ theorem eigenvalueSum_ofEnd_prodMap (η : K → ℂ) (a : Module.End k V) (b : M
   eigenvalueSum_ofEnd_eq_add_of_charpoly_eq_mul K η (LinearMap.charpoly_prodMap a b)
 
 /-- The eigenvalue sum vanishes on the class of size `0`. -/
-theorem eigenvalueSum_of_dim_eq_zero (η : K → ℂ) {o : SimilarityClass k} (h : o.dim = 0) :
+theorem eigenvalueSum_eq_zero_of_dim_eq_zero (η : K → ℂ) {o : SimilarityClass k} (h : o.dim = 0) :
     eigenvalueSum K η o = 0 := by
   have : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
   rw [← ofEnd_rep o, eigenvalueSum_ofEnd, LinearMap.charpoly_eq_one_of_subsingleton]
