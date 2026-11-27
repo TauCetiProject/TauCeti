@@ -16,6 +16,10 @@ Evaluation at `1` identifies the continuous additive homomorphisms from `ℤ_[p]
 `x ↦ PadicInt.toZModPow k x * a`. Density of the ordinary integers gives uniqueness;
 continuity of the truncation map gives existence. The exponent `k` may be zero.
 
+The same argument shows that evaluation at `1` identifies the continuous additive homomorphisms
+from `ℤ_[p]` to any Hausdorff topological `ℤ_[p]`-module `A`, such as `ℤ_[p]` or `ℚ_[p]`, with `A`
+(`PadicInt.continuousAddHomEquiv`); the homomorphism with value `a` at `1` is `x ↦ x • a`.
+
 The multiplicative encoding identifies the continuous `ZMod (p ^ k)`-dual with the
 coefficient ring as a module. This is the coefficient calculation for first continuous cohomology
 with trivial action, developed in `TauCeti.NumberTheory.Padics.Cohomology`.
@@ -152,5 +156,58 @@ theorem continuousZModDualEquiv_symm_apply (a : ZMod (p ^ k)) (x : ℤ_[p]) :
       (Multiplicative.ofAdd x)) = toZModPow k x * a := by
   rw [TauCeti.continuousZModDual.padicInt_apply_eq_toZModPow_mul_eval_one]
   exact congrArg (toZModPow k x * ·) ((continuousZModDualEquiv k).apply_symm_apply a)
+
+end PadicInt
+
+/-! ### Continuous homomorphisms into a topological `ℤ_[p]`-module -/
+
+namespace ContinuousAddMonoidHom
+
+variable {p : ℕ} [Fact p.Prime] {A : Type*} [AddCommGroup A] [Module ℤ_[p] A]
+  [TopologicalSpace A] [T2Space A] [ContinuousSMul ℤ_[p] A]
+
+/-- A continuous additive homomorphism from `ℤ_[p]` to a Hausdorff topological `ℤ_[p]`-module is
+scalar multiplication on its value at `1`: both sides are continuous and agree on the dense
+image of `ℤ`. -/
+theorem padicInt_apply_eq_smul_apply_one (φ : ℤ_[p] →ₜ+ A) (x : ℤ_[p]) :
+    φ x = x • φ 1 := by
+  have hcont : Continuous (fun x : ℤ_[p] ↦ x • φ 1) := continuous_id.smul continuous_const
+  have h := PadicInt.denseRange_intCast.equalizer φ.continuous hcont
+    (funext fun n ↦ by
+      calc
+        φ (n : ℤ_[p]) = φ (n • (1 : ℤ_[p])) := by rw [zsmul_one]
+        _ = n • φ 1 := map_zsmul φ n 1
+        _ = (n : ℤ_[p]) • φ 1 := (Int.cast_smul_eq_zsmul ℤ_[p] n (φ 1)).symm)
+  exact congrFun h x
+
+end ContinuousAddMonoidHom
+
+namespace PadicInt
+
+variable {p : ℕ} [Fact p.Prime] (A : Type*) [AddCommGroup A] [Module ℤ_[p] A]
+  [TopologicalSpace A] [IsTopologicalAddGroup A] [T2Space A] [ContinuousSMul ℤ_[p] A]
+
+/-- Evaluation at `1` identifies the continuous additive homomorphisms from `ℤ_[p]` to a
+Hausdorff topological `ℤ_[p]`-module `A` with `A`. Its inverse sends `a` to `x ↦ x • a`. -/
+noncomputable def continuousAddHomEquiv : (ℤ_[p] →ₜ+ A) ≃+ A where
+  toFun φ := φ 1
+  invFun a :=
+    { toFun := fun x ↦ x • a
+      map_zero' := zero_smul ℤ_[p] a
+      map_add' := fun x y ↦ add_smul x y a
+      continuous_toFun := continuous_id.smul continuous_const }
+  left_inv φ := by
+    ext x
+    exact (φ.padicInt_apply_eq_smul_apply_one x).symm
+  right_inv a := one_smul ℤ_[p] a
+  map_add' _ _ := (rfl)
+
+/-- The equivalence evaluates a homomorphism at `1`. -/
+@[simp] theorem continuousAddHomEquiv_apply (φ : ℤ_[p] →ₜ+ A) :
+    continuousAddHomEquiv A φ = φ 1 := (rfl)
+
+/-- The homomorphism with value `a` at `1` is `x ↦ x • a`. -/
+@[simp] theorem continuousAddHomEquiv_symm_apply (a : A) (x : ℤ_[p]) :
+    (continuousAddHomEquiv (p := p) A).symm a x = x • a := (rfl)
 
 end PadicInt
