@@ -984,6 +984,8 @@ namespace LinearMap
 
 section TripleProduct
 
+section CommSemiring
+
 variable {R E F E' F' : Type*} [CommSemiring R] [AddCommMonoid E] [Module R E] [AddCommMonoid F]
   [Module R F] [AddCommMonoid E'] [Module R E'] [AddCommMonoid F'] [Module R F']
 
@@ -996,6 +998,10 @@ theorem snd_snd_apply_eq_mul (S : E × F × R →ₗ[R] E' × F' × R)
     ext <;> simp
   rw [hy, map_add, map_smul, Prod.snd_add, Prod.snd_add, hS _ rfl]
   simp [mul_comm]
+
+end CommSemiring
+
+variable {R E : Type*} [Semiring R] [AddCommMonoid E] [Module R E]
 
 /-- **A linear map on `R × R × R` in the standard basis.** A linear map `L` out of `R × R × R`
 sends `v = (x, y, z)` to `x • L (1, 0, 0) + y • L (0, 1, 0) + z • L (0, 0, 1)`. -/
