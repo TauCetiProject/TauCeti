@@ -39,6 +39,8 @@ Euler system of cyclotomic units, with Euler polynomial `1 - X` at every prime `
 
 ## Main results
 
+* `IsPrimitiveRoot.sub_one_norm_eq_one_of_not_isPrimePow`: the norm of `ζ - 1` at non-prime-power
+  orders, for an irreducible cyclotomic polynomial.
 * `IsPrimitiveRoot.norm_norm_one_sub_of_dvd`: the relation when `ℓ ∣ n`.
 * `IsPrimitiveRoot.norm_norm_one_sub_mul_autEquivPow_symm_inv_apply`: the relation for a prime
   `ℓ ∤ n`, with the inverse arithmetic Frobenius given by `IsCyclotomicExtension.autEquivPow`.
@@ -48,6 +50,9 @@ Euler system of cyclotomic units, with Euler polynomial `1 - X` at every prime `
 ## References
 
 * K. Rubin, *Euler Systems*, Annals of Mathematics Studies 147, Chapter III, §2.1 and Remark 2.1.
+* The norm-one result follows the target `New.Parameters.norm_zeta_sub_one_eq_one` in
+  `lsernau/grh-lean`, `New/Derivatives/Field/WeilData.lean` at `72fead1`, and uses Mathlib's
+  `IsPrimitiveRoot.sub_one_norm_eq_eval_cyclotomic`.
 -/
 
 public section
@@ -55,6 +60,35 @@ public section
 open Polynomial
 
 namespace IsPrimitiveRoot
+
+/-- If `Φₙ` is irreducible over the base and `n > 1` is not a prime power, the difference
+between a primitive `n`-th root and `1` has relative norm `1`. -/
+theorem sub_one_norm_eq_one_of_not_isPrimePow {K E : Type*} [Field K] [Field E] [Algebra K E]
+    {n : ℕ} {ζ : E} (hζ : IsPrimitiveRoot ζ n)
+    (hirr : Irreducible (cyclotomic n K)) (hn : 1 < n) (hpow : ¬ IsPrimePow n) :
+    Algebra.norm K (ζ - 1) = 1 := by
+  have hgt : 2 < n := by
+    by_contra! hn'
+    have he : n = 2 := by omega
+    exact hpow (he ▸ Nat.prime_two.isPrimePow)
+  have : NeZero n := NeZero.of_gt hn
+  have hΦ : (cyclotomic n ℤ).eval 1 = 1 := by
+    apply eval_one_cyclotomic_not_prime_pow
+    intro p hp k he
+    cases k with
+    | zero => simp at he; omega
+    | succ k => exact hpow ((isPrimePow_nat_iff n).2 ⟨p, k + 1, hp, Nat.succ_pos _, he⟩)
+  let L := IntermediateField.adjoin K {ζ}
+  let z : L := IntermediateField.AdjoinSimple.gen K ζ
+  have hzMap : algebraMap L E z = ζ := IntermediateField.AdjoinSimple.coe_gen K ζ
+  have hz : IsPrimitiveRoot z n := by
+    apply IsPrimitiveRoot.of_map_of_injective (f := algebraMap L E) _ (algebraMap L E).injective
+    rwa [hzMap]
+  have : IsCyclotomicExtension {n} K L := hζ.intermediateField_adjoin_isCyclotomicExtension K
+  have hnorm : Algebra.norm K (z - 1) = 1 := by
+    rw [hz.sub_one_norm_eq_eval_cyclotomic hgt hirr, hΦ, Int.cast_one]
+  have hsub : algebraMap L E (z - 1) = ζ - 1 := by rw [map_sub, hzMap, map_one]
+  rw [← hsub, ← Algebra.norm_norm (S := L), Algebra.norm_algebraMap, map_pow, hnorm, one_pow]
 
 variable {F M N : Type*} [Field F] [Field M] [CommRing N] [IsDomain N] [Algebra F M] [Algebra F N]
   [Algebra M N] [IsScalarTower F M N] {n ℓ : ℕ} [NeZero n] [IsCyclotomicExtension {n} F M]

@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.NumberField.Norm
 public import TauCeti.GroupTheory.OrderOfElement.NegOne
 public import TauCeti.NumberTheory.NumberField.CMField.Basic
 
+import TauCeti.NumberTheory.Cyclotomic.NormRelation
+
 /-!
 # Roots of unity as quotients of relative norm-one units
 
@@ -22,47 +24,12 @@ have conjugate quotients `-1` and `-ζ`, so its quotient is `ζ`.
 ## References
 
 * `lsernau/grh-lean`, `New/Derivatives/Field/WeilData.lean` at `72fead1`,
-  `New.Parameters.exists_unit_prod_phi_eq_one_and_mul_star_eq` and
-  `New.Parameters.norm_zeta_sub_one_eq_one`.
-* The norm input is Mathlib's `IsPrimitiveRoot.sub_one_norm_eq_eval_cyclotomic`.
+  `New.Parameters.exists_unit_prod_phi_eq_one_and_mul_star_eq`.
 -/
 
 public section
 
 open NumberField Polynomial
-
-namespace IsPrimitiveRoot
-
-/-- If `Φₙ` is irreducible over the base and `n > 1` is not a prime power, the difference
-between a primitive `n`-th root and `1` has relative norm `1`. -/
-theorem sub_one_norm_eq_one_of_not_isPrimePow {K E : Type*} [Field K] [Field E] [Algebra K E]
-    {n : ℕ} {ζ : E} (hζ : IsPrimitiveRoot ζ n)
-    (hirr : Irreducible (cyclotomic n K)) (hn : 1 < n) (hpow : ¬ IsPrimePow n) :
-    Algebra.norm K (ζ - 1) = 1 := by
-  have hgt : 2 < n := by
-    by_contra! hn'
-    have he : n = 2 := by omega
-    exact hpow (he ▸ Nat.prime_two.isPrimePow)
-  have : NeZero n := NeZero.of_gt hn
-  have hΦ : (cyclotomic n ℤ).eval 1 = 1 := by
-    apply eval_one_cyclotomic_not_prime_pow
-    intro p hp k he
-    cases k with
-    | zero => simp at he; omega
-    | succ k => exact hpow ((isPrimePow_nat_iff n).2 ⟨p, k + 1, hp, Nat.succ_pos _, he⟩)
-  let L := IntermediateField.adjoin K {ζ}
-  let z : L := IntermediateField.AdjoinSimple.gen K ζ
-  have hzMap : algebraMap L E z = ζ := IntermediateField.AdjoinSimple.coe_gen K ζ
-  have hz : IsPrimitiveRoot z n := by
-    apply IsPrimitiveRoot.of_map_of_injective (f := algebraMap L E) _ (algebraMap L E).injective
-    rwa [hzMap]
-  have : IsCyclotomicExtension {n} K L := hζ.intermediateField_adjoin_isCyclotomicExtension K
-  have hnorm : Algebra.norm K (z - 1) = 1 := by
-    rw [hz.sub_one_norm_eq_eval_cyclotomic hgt hirr, hΦ, Int.cast_one]
-  have hsub : algebraMap L E (z - 1) = ζ - 1 := by rw [map_sub, hzMap, map_one]
-  rw [← hsub, ← Algebra.norm_norm (S := L), Algebra.norm_algebraMap, map_pow, hnorm, one_pow]
-
-end IsPrimitiveRoot
 
 namespace NumberField.IsCMField
 
