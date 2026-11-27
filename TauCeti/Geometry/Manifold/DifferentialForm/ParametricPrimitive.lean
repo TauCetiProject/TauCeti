@@ -47,6 +47,8 @@ of a manifold are open, the local formula then gives joint regularity at every p
 
 * `TauCeti.exists_contMDiff_mvfderiv_eq_of_forall_exists`: a `C^r` family of exact one-forms has
   a `C^r` family of primitives vanishing at a base point.
+* `TauCeti.exists_contMDiff_eventuallyEq_sub`: given primitives of the slices, a `C^r` function
+  on `M × P` differing from each of them by a locally constant function.
 
 ## References
 
@@ -302,10 +304,11 @@ private theorem contMDiff_sub_of_mem_connectedComponent {r : ℕ∞}
     exact contMDiff_const
   exact hclopen.connectedComponent_subset hc hx
 
-/-- **Primitives normalized on each connected component.** There is a `C^r` function on `M × P`
-which near every point of each slice `M × {p}` differs from the primitive `f p` by a constant: the
-primitives normalized at a chosen base point of each connected component. -/
-private theorem exists_contMDiff_eventuallyEq_sub {r : ℕ∞}
+/-- **Primitives normalized on each connected component.** Let `B` be a `C^r` one-form on `M × P`
+and let each `f p` be a differentiable primitive of the slice of `B` at `p`. There is a `C^r`
+function on `M × P` which near every point of each slice `M × {p}` differs from `f p` by a
+constant: the primitives normalized at a chosen base point of each connected component. -/
+theorem exists_contMDiff_eventuallyEq_sub {r : ℕ∞}
     {B : RoughForm (I.prod IP) (M × P) V 1} (hB : IsSmoothForm (I.prod IP) r B) [CompleteSpace V]
     {f : P → M → V} (hf : ∀ p, MDifferentiable I 𝓘(ℝ, V) (f p))
     (hfB : ∀ (p : P) (x : M) (v : E), mvfderiv I (f p) x v = B (x, p) ![(v, (0 : G))]) :
