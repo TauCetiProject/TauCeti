@@ -28,9 +28,9 @@ real inner product space `E` of dimension `n`. For a Schwartz function `f` the b
 So `2^{js} ‖Pⱼ f‖₂` is bounded over `j ∈ ℤ` exactly when the low-frequency weight `2^{j(s + n/2)}`
 stays bounded as `j → -∞`, that is for `s ≥ -n/2`
 (`SchwartzMap.exists_two_rpow_mul_norm_fourierMultiplierCLM_littlewoodPaley_le`): every Schwartz
-function lies in `\dot B^s_{2,∞}` for `s ≥ -n/2` (`SchwartzMap.memHomogeneousBesov`). The bound
-`s ≥ -n/2` cannot be lowered in general, since `‖Pⱼ f‖₂` is comparable to `2^{jn/2} |𝓕 f (0)|`
-as `j → -∞`.
+function lies in `\dot B^s_{2,∞}` for `s ≥ -n/2` (`SchwartzMap.memHomogeneousBesov_two_top`).
+The bound `s ≥ -n/2` cannot be lowered in general, since `‖Pⱼ f‖₂` is comparable to
+`2^{jn/2} |𝓕 f (0)|` as `j → -∞`.
 
 With `σ = -s ≤ n/2` the bound reads `‖Pⱼ f‖₂ ≤ C 2^{jσ}`. Against the blocks of an element of
 `\dot B^σ_{2,1}` it makes the pairings with a Schwartz test function absolutely summable, which is
@@ -86,8 +86,9 @@ theorem exists_two_rpow_mul_norm_fourierMultiplierCLM_littlewoodPaley_le (f : �
     have hexp : ((2 : ℝ) ^ j) ^ (n * ((1 : ℝ≥0∞).toReal⁻¹ - (2 : ℝ≥0∞).toReal⁻¹)) =
         (2 : ℝ) ^ (n / 2 * j) := by
       rw [← Real.rpow_intCast, ← Real.rpow_mul zero_le_two]
-      norm_num
-      ring_nf
+      congr 1
+      simp only [ENNReal.toReal_one, ENNReal.toReal_ofNat]
+      ring
     have h := hC j m hm (f.toLp 2)
     rw [eLpNorm_congr_ae (f.coeFn_toLp 2 volume), hexp, mul_right_comm] at h
     rw [Lp.norm_def, ← ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2 ^ (n / 2 * j)),
@@ -111,8 +112,10 @@ theorem exists_two_rpow_mul_norm_fourierMultiplierCLM_littlewoodPaley_le (f : �
     nlinarith [(Int.cast_lt_zero.2 hj : (j : ℝ) < 0)]
 
 /-- **Schwartz functions lie in `\dot B^s_{2,∞}` for `s ≥ -n/2`**, where `n` is the dimension of
-`E`: the weighted blocks `2^{js} ‖Pⱼ f‖₂` of a Schwartz function `f` are bounded over `j ∈ ℤ`. -/
-theorem memHomogeneousBesov (f : 𝓢(E, F)) (φ : ContDiffBump (0 : E)) {s : ℝ}
+`E`: the weighted blocks `2^{js} ‖Pⱼ f‖₂` of a Schwartz function `f` are bounded over `j ∈ ℤ`.
+This is the case `p = 2`, `q = ∞` of the homogeneous Besov membership, the exponents of the `L²`
+multiplier calculus. -/
+theorem memHomogeneousBesov_two_top (f : 𝓢(E, F)) (φ : ContDiffBump (0 : E)) {s : ℝ}
     (hs : -((Module.finrank ℝ E : ℝ) / 2) ≤ s) :
     (f : 𝓢'(E, F)).MemHomogeneousBesov φ s 2 ∞ := by
   obtain ⟨C, hC⟩ := f.exists_two_rpow_mul_norm_fourierMultiplierCLM_littlewoodPaley_le φ hs

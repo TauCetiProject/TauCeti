@@ -413,12 +413,18 @@ section Velocity
 
 variable {σ : ℝ}
 
-/-- The pairings `⟪ψ, cos(tD) Pⱼ g⟫` are bounded by `K 2^{jσ} ‖Pⱼ g‖₂`, uniformly in `t` and in
-`g ∈ \dot B^σ_{2,1}`, for `σ ≤ n / 2`. -/
-private theorem exists_norm_inner_waveCosPropagator_block_le
-    (hσ : σ ≤ (Module.finrank ℝ E : ℝ) / 2) (ψ : 𝓢(E, ℂ)) :
-    ∃ K : ℝ, ∀ (g : HomogeneousBesovSpace ℂ φ σ 2 1) (j : ℤ) (t : ℝ),
-      ‖⟪ψ.toLp 2, waveCosPropagator ℂ t (g.block j)⟫_ℂ‖ ≤ K * ‖g.weightedBlocks j‖ := by
+/-- The pairing of a Schwartz function with an `L²` function is the `L²` inner product. -/
+private theorem integral_inner_eq_inner_toLp (ψ : 𝓢(E, ℂ)) (h : Lp ℂ 2 (volume : Measure E)) :
+    ∫ x, ⟪ψ x, h x⟫_ℂ = ⟪ψ.toLp 2, h⟫_ℂ := by
+  rw [L2.inner_def]
+  exact integral_congr_ae (by filter_upwards [ψ.coeFn_toLp 2] with x hx; rw [hx])
+
+/-- For `g ∈ \dot B^σ_{2,1}` and `σ ≤ n / 2`, the pairings `⟪ψ, cos(tD) Pⱼ g⟫` are bounded,
+uniformly in `t`, by a summable sequence, namely `K 2^{jσ} ‖Pⱼ g‖₂`. -/
+private theorem exists_summable_norm_inner_waveCosPropagator_block_le
+    (hσ : σ ≤ (Module.finrank ℝ E : ℝ) / 2) (ψ : 𝓢(E, ℂ)) (g : HomogeneousBesovSpace ℂ φ σ 2 1) :
+    ∃ u : ℤ → ℝ, Summable u ∧ ∀ (j : ℤ) (t : ℝ),
+      ‖⟪ψ.toLp 2, waveCosPropagator ℂ t (g.block j)⟫_ℂ‖ ≤ u j := by
   obtain ⟨C, hC⟩ := ψ.exists_two_rpow_mul_norm_fourierMultiplierCLM_littlewoodPaley_le φ
     (s := -σ) (by linarith)
   set m : ℤ → Lp ℂ ∞ (volume : Measure E) := fun j ↦ (φ.memLp_ofReal_littlewoodPaley j ∞).toLp _
@@ -431,7 +437,10 @@ private theorem exists_norm_inner_waveCosPropagator_block_le
     have h := hC k (m k) (hm k)
     rw [neg_mul, Real.rpow_neg zero_le_two, inv_mul_le_iff₀ (by positivity)] at h
     linarith
-  refine ⟨C * ∑ d ∈ Finset.Ico (-(L : ℤ)) L, (2 : ℝ) ^ (σ * d), fun g j t ↦ ?_⟩
+  set K := C * ∑ d ∈ Finset.Ico (-(L : ℤ)) L, (2 : ℝ) ^ (σ * d)
+  refine ⟨fun j ↦ K * ‖g.weightedBlocks j‖,
+    by simpa using ((lp.memℓp g.weightedBlocks).summable (by simp)).mul_left K, fun j t ↦ ?_⟩
+  dsimp only [K]
   rw [← hL hm g j, map_sum, inner_sum, HomogeneousBesovSpace.norm_weightedBlocks_apply,
     Finset.mul_sum, Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun d _ ↦ ?_)
@@ -456,8 +465,7 @@ private theorem exists_norm_inner_waveCosPropagator_block_le
 `∑ⱼ D⁻¹ sin(tD) Pⱼ g` converges to `U(t)` in `L^r`, as for the limits of
 `ContDiffBump.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveSinPropagator_block`. Then for
 every Schwartz function `ψ` the pairing `t ↦ ∫ conj (ψ(x)) U(t)(x) dx` is differentiable, with
-derivative the absolutely convergent series `∑ⱼ ⟪ψ, cos(tD) Pⱼ g⟫`: weakly,
-`∂ₜU(t) = ∑ⱼ cos(tD) Pⱼ g`. -/
+derivative `∑' j, ⟪ψ, cos(tD) Pⱼ g⟫`. -/
 theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
     (hσ : σ ≤ (Module.finrank ℝ E : ℝ) / 2) {g : HomogeneousBesovSpace ℂ φ σ 2 1}
     {U : ℝ → Lp ℂ r (volume : Measure E)}
@@ -467,9 +475,6 @@ theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
     HasDerivAt (fun t ↦ ∫ x, ⟪ψ x, U t x⟫_ℂ)
       (∑' j, ∫ x, ⟪ψ x, waveCosPropagator ℂ t (g.block j) x⟫_ℂ) t := by
   have := (ENNReal.HolderConjugate.conjExponent (Fact.out : (1 : ℝ≥0∞) ≤ r)).symm
-  have hpair (h : Lp ℂ 2 (volume : Measure E)) : ∫ x, ⟪ψ x, h x⟫_ℂ = ⟪ψ.toLp 2, h⟫_ℂ := by
-    rw [L2.inner_def]
-    exact integral_congr_ae (by filter_upwards [ψ.coeFn_toLp 2] with x hx; rw [hx])
   -- At every time the pairing of `U(τ)` is the sum of the pairings of the pieces.
   have hsum (τ : ℝ) : HasSum (fun j ↦ ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ)
       (∫ x, ⟪ψ x, U τ x⟫_ℂ) := by
@@ -479,16 +484,13 @@ theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
     rw [HasSum, tendsto_iff_edist_tendsto_0]
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
       fun s ↦ ?_
-    rw [← inner_sum, ← hpair, edist_comm, eDist_eq_eNorm_sub, ← integral_sub
+    rw [← inner_sum, ← integral_inner_eq_inner_toLp, edist_comm, eDist_eq_eNorm_sub, ← integral_sub
       ((ψ.memLp (ENNReal.conjExponent r) volume).integrable_inner_of_holderConjugate
         (Lp.memLp (U τ)))
       ((ψ.memLp 2 volume).integrable_inner_of_holderConjugate (Lp.memLp _))]
     simp_rw [← inner_sub_right]
     exact enorm_integral_inner_le (u := ψ)
-  obtain ⟨K, hK⟩ := φ.exists_norm_inner_waveCosPropagator_block_le hσ ψ
-  have hsummable : Summable fun j ↦ K * ‖g.weightedBlocks j‖ := by
-    have h := (memℓp_gen_iff (p := 1) (by simp)).1 (lp.memℓp g.weightedBlocks)
-    simpa using h.mul_left K
+  obtain ⟨u, hu, hK⟩ := φ.exists_summable_norm_inner_waveCosPropagator_block_le hσ ψ g
   have hder (j : ℤ) (τ : ℝ) : HasDerivAt
       (fun τ ↦ ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ)
       ⟪ψ.toLp 2, waveCosPropagator ℂ τ (g.block j)⟫_ℂ τ := by
@@ -498,8 +500,8 @@ theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
   have heq : (fun τ ↦ ∫ x, ⟪ψ x, U τ x⟫_ℂ) =
       fun τ ↦ ∑' j, ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ :=
     funext fun τ ↦ (hsum τ).tsum_eq.symm
-  rw [heq, tsum_congr fun j ↦ hpair (waveCosPropagator ℂ t (g.block j))]
-  exact hasDerivAt_tsum hsummable hder (fun j τ ↦ hK g j τ) (hsum 0).summable t
+  rw [heq, tsum_congr fun j ↦ integral_inner_eq_inner_toLp ψ (waveCosPropagator ℂ t (g.block j))]
+  exact hasDerivAt_tsum hu hder hK (hsum 0).summable t
 
 /-- **The `D⁻¹ sin(tD)` evolution of Besov data attains its initial velocity.** Let `σ ≤ n / 2`, let
 `g ∈ \dot B^σ_{2,1}`, and let `U : ℝ → L^r` be such that for every `t` the dyadic series
@@ -518,9 +520,8 @@ theorem hasDerivAt_integral_mul_of_tendsto_sum_waveSinPropagator_block
       eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveSinPropagator ℂ t (g.block j))) r volume) atTop (𝓝 0))
     (ψ : 𝓢(E, ℂ)) :
     HasDerivAt (fun t ↦ ∫ x, ψ x * U t x)
-      (HomogeneousBesovSpace.realization (hσ.lt_or_eq.imp
-        (fun h ↦ by simpa [div_eq_mul_inv] using h) fun h ↦ ⟨by simp [h, div_eq_mul_inv], le_rfl⟩)
-        g ψ) 0 := by
+      (HomogeneousBesovSpace.realization
+        (HomogeneousBesovSpace.realizationCondition_two_of_le hσ le_rfl) g ψ) 0 := by
   set χ := SchwartzMap.conjCLM ψ
   -- `ψ x * v = ⟪conj (ψ x), v⟫`.
   have hconj (v : E → ℂ) : (fun x ↦ ψ x * v x) = fun x ↦ ⟪χ x, v x⟫_ℂ := by
@@ -532,16 +533,11 @@ theorem hasDerivAt_integral_mul_of_tendsto_sum_waveSinPropagator_block
   · ext t
     rw [hconj]
   -- The realisation of `g` is the sum of its blocks, which converges absolutely against `ψ`.
-  obtain ⟨K, hK⟩ := φ.exists_norm_inner_waveCosPropagator_block_le hσ χ
+  obtain ⟨u, hu, hK⟩ := φ.exists_summable_norm_inner_waveCosPropagator_block_le hσ χ g
   have hsummable : Summable fun j ↦ ∫ x, ⟪χ x, g.block j x⟫_ℂ := by
-    refine Summable.of_norm_bounded (g := fun j ↦ K * ‖g.weightedBlocks j‖) ?_ fun j ↦ ?_
-    · have h := (memℓp_gen_iff (p := 1) (by simp)).1 (lp.memℓp g.weightedBlocks)
-      simpa using h.mul_left K
-    · have := hK g j 0
-      rw [waveCosPropagator_zero, ContinuousLinearMap.id_apply, L2.inner_def] at this
-      refine (le_of_eq ?_).trans this
-      congr 1
-      exact integral_congr_ae (by filter_upwards [χ.coeFn_toLp 2] with x hx; rw [hx])
+    refine Summable.of_norm_bounded hu fun j ↦ ?_
+    rw [integral_inner_eq_inner_toLp]
+    simpa using hK j 0
   have htsum : Tendsto (fun s : Finset ℤ ↦ ∑ j ∈ s, ∫ x, ⟪χ x, g.block j x⟫_ℂ) atTop
       (𝓝 (∑' j, ∫ x, ⟪χ x, g.block j x⟫_ℂ)) :=
     hsummable.hasSum
