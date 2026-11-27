@@ -27,7 +27,7 @@ relative to `E_K / K⁺`: the decomposition group of `u` in `Gal(E_K / K⁺) = {
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.inertiaDeg_under_maximalRealSubfield_maximalRealOrCMSubfield`:
+* `Ideal.inertiaDeg_under_maximalRealSubfield_maximalRealOrCMSubfield`:
   for an ideal `P` of `𝓞 K`, the ideals below `P` in `𝓞 E_K⁺` and in `𝓞 K⁺` have the same
   inertia degree over `ℤ`.
 * `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_complexConj_smul_eq`: `v` is friendly if and
@@ -46,42 +46,34 @@ open NumberField TauCeti.NumberField
 
 open scoped Pointwise
 
-namespace IsDedekindDomain.HeightOneSpectrum
-
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The isomorphism `E_K⁺ ≃+* K⁺` induced by the inclusion `E_K ≤ K`. -/
-private noncomputable def maximalRealSubfieldEquiv :
-    maximalRealSubfield (maximalRealOrCMSubfield K) ≃+* maximalRealSubfield K :=
-  RingEquiv.ofBijective
-    (((maximalRealOrCMSubfield K).subtype.comp
-      (maximalRealSubfield (maximalRealOrCMSubfield K)).subtype).codRestrict _ fun x ↦ by
-        rw [← map_maximalRealSubfield_maximalRealOrCMSubfield]
-        exact ⟨x, x.property, rfl⟩)
-    ⟨RingHom.injective _, fun y ↦ by
-      have hy : (y : K) ∈ (maximalRealSubfield (maximalRealOrCMSubfield K)).map
-          (maximalRealOrCMSubfield K).subtype := by
-        rw [map_maximalRealSubfield_maximalRealOrCMSubfield]
-        exact y.property
-      obtain ⟨x, hx, hxy⟩ := hy
-      exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩⟩
+namespace Ideal
 
 /-- **The places of `E_K⁺` and `K⁺` below an ideal have the same inertia degree.** For an ideal
 `P` of `𝓞 K`, the ideal of `𝓞 E_K⁺` below the ideal of `𝓞 E_K` under `P` corresponds to the
-ideal of `𝓞 K⁺` under `P` through `E_K⁺ = K⁺`, so both have the same inertia degree over `ℤ`. -/
+ideal of `𝓞 K⁺` under `P` through `E_K⁺ ≃+* K⁺`, so both have the same inertia degree over `ℤ`. -/
 theorem inertiaDeg_under_maximalRealSubfield_maximalRealOrCMSubfield (P : Ideal (𝓞 K)) :
     ((P.under (𝓞 (maximalRealOrCMSubfield K))).under
         (𝓞 (maximalRealSubfield (maximalRealOrCMSubfield K)))).inertiaDeg ℤ =
       (P.under (𝓞 (maximalRealSubfield K))).inertiaDeg ℤ := by
-  set φ := RingOfIntegers.mapRingEquiv (maximalRealSubfieldEquiv (K := K))
+  set φ := RingOfIntegers.mapRingEquiv (maximalRealSubfieldMaximalRealOrCMSubfieldEquiv (K := K))
   have hP : (P.under (𝓞 (maximalRealOrCMSubfield K))).under
       (𝓞 (maximalRealSubfield (maximalRealOrCMSubfield K))) =
         (P.under (𝓞 (maximalRealSubfield K))).comap φ.toIntAlgEquiv := by
     ext x
-    simp only [Ideal.mem_comap]
-    exact Iff.of_eq (congrArg (· ∈ P) (RingOfIntegers.ext rfl))
-  rw [← Ideal.inertiaDeg_map_algEquiv φ.toIntAlgEquiv, hP,
-    Ideal.map_comap_of_surjective _ φ.toIntAlgEquiv.surjective]
+    simp only [Ideal.mem_comap, RingEquiv.coe_toIntAlgEquiv]
+    refine Iff.of_eq (congrArg (· ∈ P) (RingOfIntegers.ext ?_))
+    -- The algebra maps between rings of integers restrict those between the fields, which are
+    -- the inclusions of subfields.
+    simp [φ, RingHom.algebraMap_toAlgebra, RingOfIntegers.mapRingHom_apply,
+      Algebra.algebraMap_ofSubsemiring_apply]
+  rw [← inertiaDeg_map_algEquiv φ.toIntAlgEquiv, hP,
+    map_comap_of_surjective _ φ.toIntAlgEquiv.surjective]
+
+end Ideal
+
+namespace IsDedekindDomain.HeightOneSpectrum
 
 /-- **Friendly places through complex conjugation.** A place `v` of a number field `K` is friendly
 if and only if it is unramified over `ℚ` and, when the largest totally real or CM subfield `E_K`
@@ -99,7 +91,7 @@ theorem isFriendly_iff_complexConj_smul_eq (v : HeightOneSpectrum (𝓞 K)) :
   have hu : u.ramificationIdx ℤ = 1 := by
     rw [Ideal.ramificationIdx_tower u v.asIdeal, mul_eq_one] at he
     exact he.1
-  rw [← inertiaDeg_under_maximalRealSubfield_maximalRealOrCMSubfield,
+  rw [← Ideal.inertiaDeg_under_maximalRealSubfield_maximalRealOrCMSubfield,
     IsCMField.inertiaDeg_eq_two_mul_iff_complexConj_smul_eq u hu]
 
 end IsDedekindDomain.HeightOneSpectrum
