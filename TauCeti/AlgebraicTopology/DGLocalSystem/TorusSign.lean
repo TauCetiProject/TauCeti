@@ -208,6 +208,13 @@ theorem torusSign_ρ_rotationLoop (γ : MooreFreeLoopSpace Q) :
   rw [torusSign_ρ_apply, torusClassHom_fundamentalGroupHom_rotationLoop, map_zero, hilbertSign_zero,
     map_one]
 
+/-- **The torus sign is defined over `ℤ`**: extending its coefficients along a ring homomorphism
+`φ : R →+* R'` gives the torus sign with coefficients in `R'`. -/
+@[simp]
+theorem mapRingHom_torusSign {R' : Type*} [CommRing R'] (φ : R →+* R')
+    (γ : MooreFreeLoopSpace Q) : mapRingHom φ (torusSign R c γ) = torusSign R' c γ :=
+  mapRingHom_ofMonodromy_unitsMap_comp φ _
+
 end RankOneLocalSystem
 
 end TauCeti

@@ -40,15 +40,19 @@ With local coefficients a homotopy acts on coefficients by transport along the p
 (`TopCat.Homotopy.twistedHomologyMap_eq_comp`), so the second half needs more than for constant
 coefficients. For a compact `K ⊆ Fⱼ` and a compact `K' ⊆ X` containing `gⱼ(K)`, it asks for a map
 `e : K' → Fᵢ` with a homotopy `G` from `gᵢ ∘ e` to the inclusion of `K'` and a homotopy `H` on `K`
-from `e ∘ gⱼ` to the map `Fⱼ → Fᵢ` of the diagram, which agree over `X`: at every point of `K` the
-image under `gᵢ` of the path traced by `H` is homotopic to the path traced by `G`. Transport along
-`H` and along `G` then identify the coefficients in the same way. This is the content of
+from `e ∘ gⱼ` to the map `Fⱼ → Fᵢ` of the diagram, which agree over `X` as far as `M` sees: at every
+point of `K`, transport in `M` along the image under `gᵢ` of the path traced by `H` equals transport
+along the path traced by `G`. This holds when the two paths are homotopic, and for a local system
+pulled back along a map `X → Z` as soon as their images in `Z` are homotopic. Transport along `H`
+and along `G` then identify the coefficients in the same way. This is the content of
 `homologyMap_overTwistedChainComplexMap_eq_comp`: a triangle of spaces over `X` that commutes up to
 such coherent homotopies commutes on twisted homology. With constant coefficients transport is
 trivial, and `TauCeti.isColimitMapCoconeSingularHomologyOfCompactApprox` needs no such condition.
 
 For broken geodesics, `e` is the sampling of a loop at equally spaced times, `G` straightens its
-arcs into geodesic segments, and `H` slides the vertices of a broken geodesic along it.
+arcs into geodesic segments, and `H` slides the vertices of a broken geodesic along it. Both keep
+the base point of the loops, so the condition holds for local systems pulled back along the
+evaluation of free loops at their base point.
 
 ## Main results
 
@@ -116,8 +120,9 @@ be a cocone over a diagram of spaces. Suppose that for every compact subset `K` 
 of the diagram and every compact subset `K'` of the apex containing the image of `K` under the leg
 `c.ι.app j`, there are a morphism `f : j ⟶ i` and a map `e : K' → F i` with a homotopy `G` from
 `c.ι.app i ∘ e` to the inclusion of `K'`, and a homotopy `H` on `K` from `e ∘ c.ι.app j` to
-`F.map f`, such that at every point `x` of `K` the image of the path traced by `H` in the apex is
-homotopic to the path traced by `G`. Then a class of the twisted homology of `F j`, with
+`F.map f`, such that at every point `x` of `K` transport in `M` along the image of the path traced
+by `H` in the apex equals transport along the path traced by `G`, as it does when the two paths are
+homotopic. Then a class of the twisted homology of `F j`, with
 coefficients in the pullback of a local system `M` on the apex, which vanishes in the apex already
 vanishes in some `F i`. -/
 theorem exists_homologyMap_overTwistedChainComplexMap_eq_zero_of_homotopic
@@ -126,9 +131,10 @@ theorem exists_homologyMap_overTwistedChainComplexMap_eq_zero_of_homotopic
         (G : ((c.ι.app i).hom.comp e).Homotopy (ContinuousMap.subtypeVal K'))
         (H : (e.comp ⟨hKK'.restrict, (c.ι.app j).hom.continuous.restrict hKK'⟩).Homotopy
           ((F.map f).hom.comp (ContinuousMap.subtypeVal K))),
-        ∀ x : K, ((H.evalAt x).map (c.ι.app i).hom.continuous).Homotopic
-          ((G.evalAt ⟨c.ι.app j x, hKK' x.property⟩).cast rfl
-            (ConcreteCategory.congr_hom (c.w f) x.val)))
+        ∀ x : K, M.map (Path.Homotopic.Quotient.mk ((H.evalAt x).map
+            (c.ι.app i).hom.continuous) : FundamentalGroupoid.mk _ ⟶ FundamentalGroupoid.mk _) =
+          M.map (Path.Homotopic.Quotient.mk ((G.evalAt ⟨c.ι.app j x, hKK' x.property⟩).cast rfl
+            (ConcreteCategory.congr_hom (c.w f) x.val))))
     {k : ℕ} {j : J} (z : ((pullback (c.ι.app j).hom).obj M).twistedHomology k)
     (hz : twistedHomologyMap (c.ι.app j) M k z = 0) :
     ∃ (i : J) (f : j ⟶ i),
@@ -199,9 +205,10 @@ def isColimitWhiskerOverTwistedHomologyCoconeOfCompactApprox [IsFiltered J]
         (G : ((c.ι.app i).hom.comp e).Homotopy (ContinuousMap.subtypeVal K'))
         (H : (e.comp ⟨hKK'.restrict, (c.ι.app j).hom.continuous.restrict hKK'⟩).Homotopy
           ((F.map f).hom.comp (ContinuousMap.subtypeVal K))),
-        ∀ x : K, ((H.evalAt x).map (c.ι.app i).hom.continuous).Homotopic
-          ((G.evalAt ⟨c.ι.app j x, hKK' x.property⟩).cast rfl
-            (ConcreteCategory.congr_hom (c.w f) x.val)))
+        ∀ x : K, M.map (Path.Homotopic.Quotient.mk ((H.evalAt x).map
+            (c.ι.app i).hom.continuous) : FundamentalGroupoid.mk _ ⟶ FundamentalGroupoid.mk _) =
+          M.map (Path.Homotopic.Quotient.mk ((G.evalAt ⟨c.ι.app j x, hKK' x.property⟩).cast rfl
+            (ConcreteCategory.congr_hom (c.w f) x.val))))
     (k : ℕ) :
     IsColimit ((overTwistedHomologyCocone M k).whisker (F.toOver c.pt c.ι.app c.w)) :=
   ModuleCat.isColimitOfJointlySurjective _

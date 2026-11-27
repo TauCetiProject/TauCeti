@@ -12,11 +12,12 @@ public import TauCeti.LinearAlgebra.Matrix.PosDef.Quaternion
 import Mathlib.Algebra.Algebra.Prod
 import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 import TauCeti.Algebra.CentralSimple.Real
+import TauCeti.Algebra.Star.Basic
 import TauCeti.Algebra.Star.Pi
 import TauCeti.Algebra.Star.Positive
 import TauCeti.Algebra.Star.Rosati.Matrix.Factor
 import TauCeti.RingTheory.CentralIdempotent
-import TauCeti.RingTheory.Semisimple.Star
+import TauCeti.RingTheory.Semisimple.Star.Basic
 
 /-!
 # Real Rosati decomposition and positivity comparison
@@ -279,7 +280,7 @@ theorem realRosatiDecomposition {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E
         ∀ s : E, IsRosatiPositive t s ↔
           (∀ i, ((e s).1 i).PosDef) ∧ (∀ i, ((e s).2.1 i).PosDef) ∧
           (∀ i, ((e s).2.2 i).QuatPosDef) := by
-  have : IsProperStar E := isProperStar_of_trace_mul_star_pos t (map_zero t) hpos
+  have : IsProperStar E := isProperStar_of_forall_pos_mul_star t.toAddMonoidHom hpos
   have : IsSemisimpleRing E := isSemisimpleRing_of_trace_mul_star_pos t hpos
   obtain ⟨n, D, d, _, _, _, hd, ⟨eW⟩⟩ :=
     IsSemisimpleRing.exists_algEquiv_pi_matrix_divisionRing_finite ℝ E

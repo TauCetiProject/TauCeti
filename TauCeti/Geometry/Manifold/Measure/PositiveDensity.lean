@@ -44,6 +44,8 @@ positive constant factor.
 
 ## Main results
 
+* `TauCeti.IsPositiveDensityMeasure.exists_density`: the chart densities with respect to an
+  additive Haar measure on the model.
 * `TauCeti.isPositiveDensityMeasure_iff_of_isAddHaarMeasure`: one additive Haar measure on the
   model suffices to test the definition.
 * `TauCeti.IsPositiveDensityMeasure.measure_eq_zero_iff_image_of_subset`: a subset of a chart
@@ -89,6 +91,17 @@ def IsPositiveDensityMeasure (μ : Measure M) : Prop :=
     ContinuousOn w (extChartAt I x).target ∧ (∀ y ∈ (extChartAt I x).target, 0 < w y) ∧
     (μ.restrict (extChartAt I x).source).map (extChartAt I x) =
       (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y)
+
+/-- **The chart densities.** In the preferred chart at `x`, a positive continuous density measure
+reads as an additive Haar measure `ν` on the model weighted by a continuous function that is
+positive on the chart target. -/
+theorem IsPositiveDensityMeasure.exists_density (hμ : IsPositiveDensityMeasure I μ) (x : M)
+    (ν : Measure E) [ν.IsAddHaarMeasure] :
+    ∃ w : E → ℝ, ContinuousOn w (extChartAt I x).target ∧
+      (∀ y ∈ (extChartAt I x).target, 0 < w y) ∧
+      (μ.restrict (extChartAt I x).source).map (extChartAt I x) =
+        (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
+  hμ x ν
 
 /-- **Haar independence.** A measure on a manifold with a finite-dimensional model is a positive
 continuous density measure as soon as it has strictly positive continuous chart densities with

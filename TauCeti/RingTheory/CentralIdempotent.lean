@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.Prod
-public import Mathlib.Algebra.Star.Basic
+public import Mathlib.Algebra.Star.Module
 public import Mathlib.Data.Set.Card
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.SimpleRing.Field
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Star.Center
-import Mathlib.Algebra.Star.Module
 
 /-!
 # Central idempotents
@@ -41,6 +40,10 @@ The last section applies that dichotomy in the other direction: a surjection of 
 `A × A ↠ B` onto a *simple* `B` sends `(1, 0)` to a central idempotent, so one of the two blocks
 already maps onto `B` (`AlgHom.exists_algHom_surjective_of_prod`).
 
+A proper involution (`IsProperStar`) fixes every central idempotent `e`: `x = e (1 - e*)` has
+`x* x = (1 - e) e* e (1 - e*) = 0`, so `e = e e*`, and symmetrically `e* = e* e`
+(`TauCeti.star_eq_self_of_mem_centralIdempotents`).
+
 ## Main definitions
 
 * `TauCeti.centralIdempotents R`: the set of central idempotents of `R`.
@@ -56,9 +59,10 @@ already maps onto `B` (`AlgHom.exists_algHom_surjective_of_prod`).
 * `TauCeti.card_centralIdempotents_pi`: the count is multiplicative over a finite product, whence
   `TauCeti.card_centralIdempotents_pi_of_isSimpleRing`: a finite product of simple rings has
   `2 ^ (number of factors)` central idempotents.
-* `TauCeti.star_mem_centralIdempotents`, `TauCeti.star_eq_of_mem_centralIdempotents`,
-  `RingEquiv.star_symm_single_one`: star preserves central idempotents, fixes them in
-  proper star rings, and hence fixes coordinate idempotents of product decompositions.
+* `TauCeti.star_eq_self_of_mem_centralIdempotents`: a proper involution fixes every central
+  idempotent.
+* `TauCeti.star_mem_centralIdempotents`, `RingEquiv.star_symm_single_one`: star preserves central
+  idempotents, and in proper star rings fixes coordinate idempotents of product decompositions.
 * `AlgHom.exists_algHom_surjective_of_prod`: a surjection of algebras `A × A ↠ B` onto a simple
   ring restricts to a surjection along one of the two coordinates.
 
@@ -97,6 +101,28 @@ theorem mul_comm_of_mem_centralIdempotents {e : R} (he : e ∈ centralIdempotent
     e * x = x * e :=
   (Subring.mem_center_iff.mp he.2 x).symm
 
+/-- **A proper involution fixes every central idempotent.** -/
+theorem star_eq_self_of_mem_centralIdempotents [StarRing R] [IsProperStar R] {e : R}
+    (he : e ∈ centralIdempotents R) : star e = e := by
+  have hc : ∀ y, e * y = y * e := mul_comm_of_mem_centralIdempotents he
+  have hcs : ∀ y, star e * y = y * star e := fun y ↦ by
+    simpa using congrArg star (hc (star y)).symm
+  -- For an idempotent `f` with `f*` central, `x = f (1 - f*)` has
+  -- `x* x = (1 - f) (f* f) (1 - f*) = ((1 - f) f) (f* (1 - f*)) = 0`, so `f = f f*`.
+  have key : ∀ f : R, IsIdempotentElem f → (∀ y, star f * y = y * star f) → f = f * star f :=
+      fun f hff hcf ↦ by
+    have h1 : (1 - f) * f = 0 := by rw [sub_mul, one_mul, hff.eq, sub_self]
+    have h0 : star (f * (1 - star f)) * (f * (1 - star f)) = 0 := by
+      calc _ = (1 - f) * (star f * f) * (1 - star f) := by simp [star_mul, mul_assoc]
+        _ = 0 := by rw [hcf f, ← mul_assoc, h1, zero_mul, zero_mul]
+    have := star_mul_self_eq_zero.mp h0
+    rwa [mul_sub, mul_one, sub_eq_zero] at this
+  have hee := isIdempotentElem_of_mem_centralIdempotents he
+  have h₁ := key e hee hcs
+  have h₂ := key (star e) (IsIdempotentElem.star_iff.mpr hee) (by simpa using hc)
+  rw [star_star, hcs e] at h₂
+  rw [h₂, ← h₁]
+
 theorem zero_mem_centralIdempotents : (0 : R) ∈ centralIdempotents R :=
   ⟨IsIdempotentElem.zero, Subring.zero_mem _⟩
 
@@ -107,21 +133,6 @@ theorem one_mem_centralIdempotents : (1 : R) ∈ centralIdempotents R :=
 theorem star_mem_centralIdempotents [StarRing R] {e : R} (he : e ∈ centralIdempotents R) :
     star e ∈ centralIdempotents R :=
   ⟨IsIdempotentElem.star he.1, Set.star_mem_center he.2⟩
-
-/-- In a star ring with proper star, every central idempotent is fixed by `star`. -/
-theorem star_eq_of_mem_centralIdempotents [StarRing R] [IsProperStar R] {e : R}
-    (he : e ∈ centralIdempotents R) : star e = e := by
-  have hse := star_mem_centralIdempotents he
-  have h1e : (1 - e) * e = 0 := by rw [sub_mul, one_mul, he.1.eq, sub_self]
-  have hprod : star (e * (1 - star e)) * (e * (1 - star e)) = 0 := by
-    calc star (e * (1 - star e)) * (e * (1 - star e))
-        = (1 - e) * star e * e * (1 - star e) := by simp [mul_assoc]
-      _ = (1 - e) * e * star e * (1 - star e) := by
-          rw [mul_assoc (1 - e) (star e) e, mul_comm_of_mem_centralIdempotents hse e, ← mul_assoc]
-      _ = 0 := by simp [h1e]
-  have hee : e = e * star e :=
-    sub_eq_zero.mp (by simpa [mul_sub] using star_mul_self_eq_zero.mp hprod)
-  exact (congrArg star hee).trans (by rw [star_mul, star_star, ← hee])
 
 end TauCeti
 
@@ -299,7 +310,7 @@ product decomposition is fixed by `star`. -/
 theorem star_symm_single_one {E : Type*} [Ring E] [StarRing E] [IsProperStar E] {ι : Type*}
     [DecidableEq ι] {A : ι → Type*} [∀ i, Ring (A i)] (e : E ≃+* ∀ i, A i) (i : ι) :
     star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1) := by
-  refine star_eq_of_mem_centralIdempotents (e.symm.map_mem_centralIdempotents
+  refine star_eq_self_of_mem_centralIdempotents (e.symm.map_mem_centralIdempotents
     ((mem_centralIdempotents_pi A).mpr fun j ↦ ?_))
   by_cases hj : j = i
   · subst hj; simpa using one_mem_centralIdempotents (R := A j)

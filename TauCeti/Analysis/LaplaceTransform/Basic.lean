@@ -34,7 +34,8 @@ the integral to `z`.
 * Congruence, uniqueness, and linearity: `HasLaplace.unique`, `HasLaplace.congr_ae`,
   `hasLaplace_congr_Ioi`, `hasLaplace_restrict_Ici_iff`, `hasLaplace_zero`, `HasLaplace.add`,
   `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`, `HasLaplace.const_smul`,
-  `ContinuousLinearMap.hasLaplace`, and `HasLaplace.conj` (complex conjugation).
+  `ContinuousLinearMap.hasLaplace`, `HasLaplace.conj` (complex conjugation), and
+  `HasLaplace.ofReal_re_of_conj` (real-part averaging).
 * Scaling, shifts, and half-plane convergence: `hasLaplace_cexp_mul_smul_iff` (frequency shift),
   `HasLaplace.comp_mul_left` and `hasLaplace_comp_mul_left_iff` (positive time dilation),
   `HasLaplace.indicator_Ici_comp_sub_right` (right-shift on `[a, ∞)` for `0 ≤ a`),
@@ -280,6 +281,17 @@ theorem HasLaplace.conj {f : ℝ → ℂ} {s z : ℂ} {μ : Measure ℝ}
   refine ⟨?_, ?_⟩
   · exact Complex.conjCLE.toContinuousLinearEquiv.integrable_comp_iff.mpr h.integrable
   · rw [integral_conj, h.integral_eq]
+
+open scoped ComplexConjugate in
+/-- If a complex input and its conjugate have Laplace transforms at the same parameter,
+then the real part of the input has transform equal to the average of those values. -/
+theorem HasLaplace.ofReal_re_of_conj {f : ℝ → ℂ} {s z z' : ℂ} {μ : Measure ℝ}
+    (h : HasLaplace f s z μ) (h' : HasLaplace (fun u ↦ conj (f u)) s z' μ) :
+    HasLaplace (fun u ↦ ((f u).re : ℂ)) s ((z + z') / 2) μ := by
+  have heq (u : ℝ) : (2 : ℂ)⁻¹ * (f u + conj (f u)) = ((f u).re : ℂ) := by
+    simpa only [div_eq_inv_mul] using (Complex.re_eq_add_conj (f u)).symm
+  simpa only [Pi.smul_apply, smul_eq_mul, heq, div_eq_inv_mul] using
+    (h.fun_add h').fun_const_smul (2 : ℂ)⁻¹
 
 /-- Multiplying `f(t)` by `exp (w * t)` shifts the Laplace parameter from `s` to `s - w`. -/
 theorem hasLaplace_cexp_mul_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

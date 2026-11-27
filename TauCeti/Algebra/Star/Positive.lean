@@ -13,26 +13,15 @@ import Mathlib.Tactic.NoncommRing
 import TauCeti.Algebra.Order.Archimedean.Real.Basic
 
 /-!
-# Properness and real-linearity from positive star functionals
+# Real-linearity from positive star functionals
 
-A zero-preserving real functional strictly positive on `x * star x` forces `IsProperStar`
-(`TauCeti.isProperStar_of_trace_mul_star_pos`); on a real star algebra, real-linearity plus strict
-positivity on `x * star x` forces `StarModule ℝ E` (`TauCeti.starModule_of_trace_mul_star_pos`).
+On a real star algebra, real-linearity plus strict positivity on `x * star x` forces
+`StarModule ℝ E` (`TauCeti.starModule_of_trace_mul_star_pos`).
 -/
 
 public section
 
 namespace TauCeti
-
-/-- A zero-preserving real functional strictly positive on `x * star x` forces an involutive star
-to be proper (`star x * x = 0 → x = 0`). -/
-theorem isProperStar_of_trace_mul_star_pos {E : Type*} [MulZeroClass E] [InvolutiveStar E]
-    (t : E → ℝ) (ht0 : t 0 = 0) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
-    IsProperStar E where
-  eq_zero_of_star_mul_self_eq_zero {x} hx := by_contra fun hx0 ↦ by
-    by_cases hsx : star x = 0
-    · exact (hpos x hx0).ne' (by rw [hsx, mul_zero, ht0])
-    · exact (hpos (star x) hsx).ne' (by rw [star_star, hx, ht0])
 
 /-- **Automatic real-linearity of the involution.** Positivity of `t (x * star x)` on nonzero
 elements forces `star` to fix every real scalar (`StarModule ℝ E`). -/
