@@ -332,9 +332,10 @@ associative composition maps `ι` with values in the subspaces `A x y`. If the m
 `ind y < ind x`, then there is a homotopy from `S` to `S'`.
 
 For the compactified trajectory spaces of a Morse function, `M x y` is a compact manifold with
-corners of dimension `ind x - ind y - 1` and boundary `A x y`, which has no homology in that
-degree, so the injectivity holds. The push-forwards of the homotopy then relate the
-Barraud–Cornea cocycles of `S` and `S'` by a continuation cocycle
+corners of dimension `ind x - ind y - 1` with collared boundary `A x y`, so the injectivity
+holds by `TauCeti.injective_homologyMap_cokernel_π_of_isCollared`; the resulting specialization is
+`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy_of_isCollared`. The push-forwards
+of the homotopy then relate the Barraud–Cornea cocycles of `S` and `S'` by a continuation cocycle
 (`TauCeti.TwistingChainSystem.Homotopy.continuationCocycle`). -/
 theorem IsRepresenting.nonempty_homotopy (hS : S.IsRepresenting A μ)
     (hS' : S'.IsRepresenting A μ)
@@ -430,10 +431,12 @@ classes `ν x y` of `H_{ind x - indQ y}(N x y, B x y)`, for associative composit
 `N x y` themselves, included by the identities.
 
 For the compactified spaces of continuation trajectories of a homotopy of Morse functions,
-`N x y` is a compact manifold with corners of dimension `ind x - indQ y` and boundary `B x y`,
-which has no homology in that degree, so the injectivity holds. The push-forwards of the
-parametrized chain system then relate the continuation cocycles of `T₀` and `T₁` by a
-parametrized cocycle
+`N x y` is a compact manifold with corners of dimension `ind x - indQ y` with collared boundary
+`B x y`, so the injectivity holds by `TauCeti.injective_homologyMap_cokernel_π_of_isCollared`; the
+resulting specialization is
+`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedChainSystem_of_isCollared`.
+The push-forwards of the parametrized chain system then relate the continuation cocycles of `T₀`
+and `T₁` by a parametrized cocycle
 (`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedCocycle`), so the
 continuation maps of the two systems are chain homotopic: for continuation trajectory spaces
 satisfying these hypotheses, the induced continuation map does not depend on the choice of
