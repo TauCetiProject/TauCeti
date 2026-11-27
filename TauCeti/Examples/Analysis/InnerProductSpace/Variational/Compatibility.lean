@@ -31,9 +31,9 @@ dimensional, and the form
   (`ker_flip_witnessForm_ne_ker`), of the same dimension `1`, as the index-zero statement
   `IsCompactOperator.finrank_ker_flip_eq_finrank_ker_of_garding` requires.
 * By the compatibility theorem, `B(u, ·) = ⟪f, ·⟫` is solvable exactly when `f₁ = 0`
-  (`exists_forall_witnessForm_eq_inner_iff`): the range of `L` is `span (1, 0) = (ker Lᵀ)ᗮ`
-  (`range_toEuclideanCLM_witnessMatrix`), and the solutions for `f = (f₀, 0)` are `f + ker L`
-  (`forall_witnessForm_eq_inner_iff`).
+  (`exists_forall_witnessForm_eq_inner_iff`): the range of `L` is `(ker Lᵀ)ᗮ`, the vectors with
+  `f₁ = 0` (`range_toEuclideanCLM_witnessMatrix`), and the solutions for `f = (f₀, 0)` are
+  `f + ker L` (`forall_witnessForm_eq_inner_iff`).
 * The condition against the kernel is neither sufficient nor necessary. `f = (1, 1)` is
   orthogonal to the kernel (`inner_one_one_eq_zero_of_mem_ker`) and gives no solution
   (`not_exists_forall_witnessForm_eq_inner_one_one`,
@@ -71,8 +71,8 @@ def witnessForm :
 
 /-- The form is `⟪L u, v⟫`. -/
 theorem witnessForm_apply_eq_inner (u v : EuclideanSpace ℝ (Fin 2)) :
-    witnessForm u v = ⟪Matrix.toEuclideanCLM (𝕜 := ℝ) witnessMatrix u, v⟫ :=
-  (rfl)
+    witnessForm u v = ⟪Matrix.toEuclideanCLM (𝕜 := ℝ) witnessMatrix u, v⟫ := by
+  simp only [witnessForm, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
 
 /-- The values of the form: `B(u, v) = (u₀ + u₁) v₀`. -/
 @[simp]
@@ -125,7 +125,9 @@ theorem ker_witnessForm : witnessForm.ker = ℝ ∙ !₂[-1, 1] := by
   rw [mem_ker_witnessForm_iff, Submodule.mem_span_singleton]
   refine ⟨fun h ↦ ⟨u 1, ?_⟩, fun ⟨t, ht⟩ ↦ ?_⟩
   · ext i
-    fin_cases i <;> simp; linarith
+    fin_cases i
+    · simpa using (eq_neg_of_add_eq_zero_left h).symm
+    · simp
   · subst ht
     simp
 
@@ -194,7 +196,7 @@ theorem forall_witnessForm_eq_inner_iff (u f : EuclideanSpace ℝ (Fin 2)) :
     exact ⟨h₁.symm, by linarith⟩
   · linear_combination v 0 * h₂ + (v 0 - v 1) * h₁
 
-/-- **The range of `L` is `span (1, 0) = (ker Lᵀ)ᗮ`.** -/
+/-- **The range of `L` is `(ker Lᵀ)ᗮ`**, the vectors with `f₁ = 0`. -/
 theorem range_toEuclideanCLM_witnessMatrix :
     (Matrix.toEuclideanCLM (𝕜 := ℝ) witnessMatrix).range = witnessForm.flip.kerᗮ := by
   ext f
