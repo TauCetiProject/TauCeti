@@ -275,7 +275,7 @@ noncomputable def targetToQuotient (P : StandardEtalePresentation Aplus ϖ Cplus
 theorem targetToQuotient_π (P : StandardEtalePresentation Aplus ϖ Cplus)
     (f : tateSeries P.N A) :
     P.targetToQuotient.toRingHom (P.π f) = Ideal.Quotient.mk P.ideal f := by
-  change P.targetToQuotient.toRingHom (P.toPairHom.toRingHom f) = Ideal.Quotient.mk P.ideal f
+  rw [← AlgHom.coe_toRingHom, ← P.toPairHom_toRingHom]
   simp [targetToQuotient, -toPairHom_toRingHom]
 
 @[simp]
@@ -451,8 +451,16 @@ noncomputable def ofQuotient (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformize
   isQuotientMap_π := (QuotientRing.isOpenQuotientMap_mk _).isQuotientMap
   ker_π := Ideal.mk_ker
   mem_plus_iff c := by
-    rw [Pair.quotient_plus, tateSeriesPair_plus, Subalgebra.mem_toSubring, mem_integralClosure_iff]
-    exact Iff.rfl
+    let I := (Ideal.span (Set.range F)).closure
+    have hmk : (Ideal.Quotient.mkₐ A I : tateSeries N A →+* tateSeries N A ⧸ I) =
+        Ideal.Quotient.mk I :=
+      RingHom.ext fun x ↦ congrFun (Ideal.Quotient.mkₐ_eq_mk A I) x
+    have halg : algebraMap ((tateSeriesPlus N A Aplus.plus).map (Ideal.Quotient.mk I))
+        (tateSeries N A ⧸ I) =
+        ((tateSeriesPlus N A Aplus.plus).map (Ideal.Quotient.mk I)).subtype :=
+      RingHom.ext fun x ↦ Algebra.algebraMap_ofSubsemiring_apply _ x
+    rw [Pair.quotient_plus, tateSeriesPair_plus, Subalgebra.mem_toSubring, mem_integralClosure_iff,
+      IsIntegral, hmk, halg]
   exists_unit_jacobian := hu
 
 @[simp]
@@ -488,8 +496,7 @@ noncomputable def identity (Aplus : Pair A) (ϖ : A) (hϖ : IsPseudoUniformizer 
   let T₀ : Fin 0 → Set A := fun _ ↦ ({1} : Set A)
   let e : tateSeries 0 A ≃+* A := weightedRestrictedSubringFinZeroEquiv T₀
   let π₀ : tateSeries 0 A →ₐ[A] A :=
-    { toFun := e, map_one' := e.map_one, map_mul' := e.map_mul, map_zero' := e.map_zero,
-      map_add' := e.map_add,
+    { toRingHom := e.toRingHom
       commutes' a := by simp [e, weightedRestrictedSubringFinZeroEquiv_apply] }
   { isPseudoUniformizer := hϖ
     N := 0
@@ -513,7 +520,8 @@ noncomputable def identity (Aplus : Pair A) (ϖ : A) (hϖ : IsPseudoUniformizer 
         refine ⟨?_, fun hx ↦ ⟨algebraMap A (tateSeries 0 A) x,
           algebraMap_mem_tateSeriesPlus_iff.mpr hx, π₀.commutes x⟩⟩
         rintro ⟨f, hf, rfl⟩
-        have hπf : (π₀ : tateSeries 0 A →+* A) f = weightedRestrictedSubringFinZeroEquiv T₀ f := rfl
+        have hπf : (π₀ : tateSeries 0 A →+* A) f = weightedRestrictedSubringFinZeroEquiv T₀ f := by
+          simp only [π₀, e, AlgHom.coe_mk, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
         rw [hπf, weightedRestrictedSubringFinZeroEquiv_apply,
           ← MvPowerSeries.coeff_zero_eq_constantCoeff_apply]
         exact mem_tateSeriesPlus_iff.mp hf 0

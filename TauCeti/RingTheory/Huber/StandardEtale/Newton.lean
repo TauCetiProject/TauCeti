@@ -74,11 +74,16 @@ theorem existsUnique_weightedEval_tateSeries_eq_zero
     (hFt : ∀ i, ∃ r : P.ringOfDefinition,
       weightedEval (RingHom.id C) (fun l ↦ (t l : C)) (F i : MvPowerSeries (Fin N) C) =
         (ϖ : C) ^ e * (r : C)) :
-    ∃! u : Fin N → P.ringOfDefinition,
-      (∀ i, ϖ ^ (k + 1) ∣ u i - t i) ∧
+    ∃ u : Fin N → P.ringOfDefinition,
+      ((∀ i, ϖ ^ (k + 1) ∣ u i - t i) ∧
       (∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C))
         (F i : MvPowerSeries (Fin N) C) = 0) ∧
-      (∀ i, ϖ ^ (e - k) ∣ u i - t i) := by
+      (∀ i, ϖ ^ (e - k) ∣ u i - t i)) ∧
+      ∀ v : Fin N → P.ringOfDefinition,
+        (∀ i, ϖ ^ (k + 1) ∣ v i - t i) →
+        (∀ i, weightedEval (RingHom.id C) (fun l ↦ (v l : C))
+          (F i : MvPowerSeries (Fin N) C) = 0) →
+        v = u := by
   have hFres (i) := mem_weightedRestrictedSubring.mp (F i).property
   have hF₀ (i) := mem_tateSeriesPlus_iff.mp (hF i)
   have hFt_smul (i) : weightedEval (RingHom.id C) (fun l ↦ (t l : C))
@@ -94,7 +99,7 @@ theorem existsUnique_weightedEval_tateSeries_eq_zero
     existsUnique_weightedEval_eq_zero P hϖ hFres hF₀ t hJ hFt_base
   exact ⟨u, ⟨hu_mod, hu_zero,
     pow_dvd_sub_of_weightedEval_eq_zero P hϖ.isUnit hFres hF₀ hJ hFt_smul hu_mod hu_zero⟩,
-    fun u' ⟨hu'_mod, hu'_zero, _⟩ ↦ hu_uniq u' ⟨hu'_mod, hu'_zero⟩⟩
+    fun v hv_mod hv_zero ↦ hu_uniq v ⟨hv_mod, hv_zero⟩⟩
 
 /-- **Uniqueness of zeros in `t + ϖ ^ (k + 1) C₀^N`:** any two zeros `u, u' ∈ P.ringOfDefinition^N`
 of `F` congruent to `t` modulo `ϖ ^ (k + 1)` are equal, provided the Jacobian of `F` at `t` has an
