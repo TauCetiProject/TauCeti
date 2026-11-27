@@ -66,16 +66,11 @@ theorem convolution_def (n : ℕ) (x y : A) :
     convolution γ ε n x y = ∑ k ∈ antidiagonal n, γ.dpow k.1 x * ε.dpow k.2 y :=
   (rfl)
 
-/-- The convolution is the `n`-th coefficient of the product of the exponential series. -/
-theorem convolution_eq_coeff_exp_mul (n : ℕ) (x y : A) :
-    convolution γ ε n x y = PowerSeries.coeff n (γ.exp x * ε.exp y) := by
-  simp [convolution_def, PowerSeries.coeff_mul, exp]
-
 /-- `convolution γ ε n x y` is the `n`-th coefficient of `γ.exp x * ε.exp y`. -/
 @[simp]
 theorem coeff_exp_mul_exp (n : ℕ) (x y : A) :
-    PowerSeries.coeff n (γ.exp x * ε.exp y) = convolution γ ε n x y :=
-  (convolution_eq_coeff_exp_mul γ ε n x y).symm
+    PowerSeries.coeff n (γ.exp x * ε.exp y) = convolution γ ε n x y := by
+  simp [convolution_def, PowerSeries.coeff_mul, exp]
 
 /-- Exchanging the two structures and the two arguments leaves the convolution unchanged. -/
 theorem convolution_comm (n : ℕ) (x y : A) : convolution γ ε n x y = convolution ε γ n y x := by
@@ -157,7 +152,7 @@ theorem convolution_add (n : ℕ) {x x' y y' : A} (hx : x ∈ I) (hx' : x' ∈ I
     (hy' : y' ∈ J) :
     convolution γ ε n (x + x') (y + y') =
       ∑ k ∈ antidiagonal n, convolution γ ε k.1 x y * convolution γ ε k.2 x' y' := by
-  simp only [convolution_eq_coeff_exp_mul, γ.exp_add hx hx', ε.exp_add hy hy']
+  simp only [← coeff_exp_mul_exp, γ.exp_add hx hx', ε.exp_add hy hy']
   rw [← PowerSeries.coeff_mul, mul_mul_mul_comm]
 
 /-- If `I ⊓ J = I * J`, any divided power structures on `I` and on `J` agree on `I ⊓ J`. -/
@@ -197,7 +192,7 @@ theorem convolution_eq_of_add_eq (h : ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε
     rw [← γ.exp_add hx' hw.1, add_sub_cancel]
   have hy₀ : ε.exp y' = ε.exp (x - x') * ε.exp y := by
     rw [← ε.exp_add hw.2 hy, sub_add_eq_add_sub, hxy, add_sub_cancel_left]
-  rw [convolution_eq_coeff_exp_mul, convolution_eq_coeff_exp_mul, hx₀, hy₀, hexp, mul_assoc]
+  rw [← coeff_exp_mul_exp, ← coeff_exp_mul_exp, hx₀, hy₀, hexp, mul_assoc]
 
 variable {γ ε} (h : ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε.dpow n w)
 
