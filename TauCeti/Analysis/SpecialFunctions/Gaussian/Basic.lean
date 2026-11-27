@@ -24,7 +24,8 @@ the uniform bound `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)
 the linear growth `α r exp (-α r²) t ≤ exp (-α (r - t)²) - exp (-α r²)` for `α ≥ 0` and
 `0 ≤ t ≤ r`, which makes a Gaussian a barrier with a positive inward slope at a sphere,
 the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-shift bounds for
-`z ↦ exp (δ * (z - θ) ^ 2)`, together with the complex derivative of `w ↦ exp (a (w - b)²)`.
+`z ↦ exp (δ * (z - θ) ^ 2)`, the real derivatives of `e^{∓x²/2}`, together with the complex
+derivative of `w ↦ exp (a (w - b)²)`.
 
 ## Main results
 
@@ -45,6 +46,8 @@ the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-sh
   `TauCeti.norm_exp_ofReal_mul_sq_mul_add_mul_I_sq_le`: vertical-shift Gaussian decay bounds.
 * `TauCeti.tendsto_exp_sub_mul_sq_cocompact`,
   `TauCeti.tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul`: cocompact decay and uniform damping.
+* `TauCeti.hasDerivAt_exp_neg_sq_div_two`, `TauCeti.hasDerivAt_exp_sq_div_two`: the derivatives
+  of the standard Gaussian weight `e^{-x²/2}` and of its reciprocal `e^{x²/2}`.
 * `Complex.hasDerivAt_cexp_mul_sub_sq`: the complex derivative of `w ↦ exp (a (w - b)²)`, for
   complex `a` and `b`; Gaussian kernels such as `z ↦ exp (-(c (t - z))²)` and
   `w ↦ exp (-(z + w)² / 2)` are the cases `a = -c²`, `b = t` and `a = -1/2`, `b = -z`.
@@ -261,6 +264,19 @@ theorem tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul {E : Type*} [Seminorme
     have := (mul_lt_mul_of_pos_left hft (by positivity : 0 < Real.exp 1 + 1)).trans_eq
       (mul_div_cancel₀ ε (by positivity))
     linarith [mul_le_mul_of_nonneg_right hexp (norm_nonneg (f t))]
+
+/-- The derivative of the standard Gaussian weight `e^{-x²/2}` is `-x e^{-x²/2}`. -/
+theorem hasDerivAt_exp_neg_sq_div_two (x : ℝ) :
+    HasDerivAt (fun u : ℝ => Real.exp (-(u ^ 2 / 2))) (Real.exp (-(x ^ 2 / 2)) * -x) x := by
+  convert ((hasDerivAt_pow 2 x).div_const 2).fun_neg.exp using 1
+  ring
+
+/-- The derivative of the reciprocal `e^{x²/2}` of the standard Gaussian weight is
+`x e^{x²/2}`. -/
+theorem hasDerivAt_exp_sq_div_two (x : ℝ) :
+    HasDerivAt (fun u : ℝ => Real.exp (u ^ 2 / 2)) (Real.exp (x ^ 2 / 2) * x) x := by
+  convert ((hasDerivAt_pow 2 x).div_const 2).exp using 1
+  ring
 
 end TauCeti
 
