@@ -247,6 +247,16 @@ def chartSobolevPairing (v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, 
   (integralInner μ v).extendOfNorm (toChartSobolevSpace he ψ s)
 
 variable {he ψ}
+
+omit [T2Space M] in
+/-- The pairing with the zero function vanishes. -/
+@[simp]
+theorem chartSobolevPairing_zero (s : ℝ) : chartSobolevPairing μ he ψ 0 s = 0 :=
+  chartSobolevSpace_ext he ψ fun u ↦ by
+    rw [chartSobolevPairing, LinearMap.extendOfNorm_eq (denseRange_toChartSobolevSpace he ψ s)
+      ⟨0, fun w ↦ by simp [integralInner_apply]⟩]
+    simp [integralInner_apply]
+
 variable (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
   (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
 
@@ -291,11 +301,6 @@ theorem chartSobolevPairing_smul (c : ℂ) (v : C^∞⟮𝓘(ℝ, CoordinateSpac
     funext x
     simp only [RCLike.inner_apply, map_mul]
     ring
-
-/-- The pairing with the zero function vanishes. -/
-@[simp]
-theorem chartSobolevPairing_zero (s : ℝ) : chartSobolevPairing μ he ψ 0 s = 0 :=
-  chartSobolevPairing_eq hμ hψ _ fun u ↦ by simp
 
 /-- **The pairings of different orders agree.** For `r ≤ s`, pairing an element of `H^s(M)` with a
 smooth function is pairing its image under the inclusion `H^s(M) ⊆ H^r(M)`. -/
@@ -395,6 +400,6 @@ theorem chartSobolevPairing_apply_eq_zero_of_mem_range
   obtain ⟨x, rfl⟩ := hf
   rw [← ContinuousLinearMap.comp_apply,
     chartSobolevPairing_comp_of_forall_integral_inner_eq hμ hψ hφ hPQ hL, hv]
-  simp [chartSobolevPairing_zero hμ hψ]
+  simp
 
 end TauCeti
