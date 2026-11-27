@@ -5,13 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Data.Set.Card
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.GroupAction.Defs
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Data.Multiset.MapFold
+import Mathlib.GroupTheory.Index
 import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.SetTheory.Cardinal.NatCard
 
@@ -33,6 +38,9 @@ a point by the size of the orbit of that point.
   natural cardinality.
 * `MulAction.orbitRel.Quotient.card_filter_quotient_mk`: the fiber of the orbit quotient
   map has the cardinality of the corresponding orbit.
+* `MulAction.inv_natCard_mul_sum_eq_sum_quotient`: for a function constant on orbits,
+  `|G|⁻¹ ∑ₓ f x` is the sum over the orbits of `|G_x|⁻¹ f x`, each point weighted by the inverse
+  order of its stabilizer.
 
 * `Equiv.map_card_orbit_eq_of_image_orbit_eq`: a bijection carrying the orbits of one action onto
   the orbits of another preserves the multiset of orbit sizes.
@@ -57,6 +65,30 @@ orbit is infinite, then both sides are `0`. -/
 theorem natCard_orbit_zpowers {G β : Type*} [Group G] [MulAction G β] (a : G) (b : β) :
     Nat.card (orbit (Subgroup.zpowers a) b) = Function.minimalPeriod (a • ·) b :=
   (Nat.card_congr (orbitZPowersEquiv a b)).trans (Nat.card_zmod _)
+
+/-- **Weighting the points of a finite action by their stabilizers.** For a finite group `G`
+acting on a finite type `X` and a function `f` constant on the orbits,
+`|G|⁻¹ ∑ₓ f x = ∑_{orbits} |G_x|⁻¹ f x`, where the right side evaluates at one chosen point `x` of
+each orbit. By orbit–stabilizer, an orbit has `|G| / |G_x|` points: averaging over `G` counts a
+point with isotropy `G_x` with weight `|G_x|⁻¹`. -/
+theorem inv_natCard_mul_sum_eq_sum_quotient {G X K : Type*} [Group G] [Finite G] [MulAction G X]
+    [Fintype X] [Fintype (orbitRel.Quotient G X)] [DivisionRing K] [CharZero K] (f : X → K)
+    (hf : ∀ (g : G) (x : X), f (g • x) = f x) :
+    (Nat.card G : K)⁻¹ * ∑ x, f x =
+      ∑ ω : orbitRel.Quotient G X, (Nat.card (stabilizer G ω.out) : K)⁻¹ * f ω.out := by
+  classical
+  rw [← (selfEquivSigmaOrbits G X).symm.sum_comp, Fintype.sum_sigma, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun ω _ ↦ ?_
+  have hconst (y : orbit G ω.out) : f ((selfEquivSigmaOrbits G X).symm ⟨ω, y⟩) = f ω.out := by
+    obtain ⟨_, g, rfl⟩ := y
+    exact hf g _
+  rw [Finset.sum_congr rfl fun y _ ↦ hconst y, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq, ← index_stabilizer, ← mul_assoc]
+  congr 1
+  have hG : (Nat.card G : K) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hS : (Nat.card (stabilizer G ω.out) : K) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  rw [inv_mul_eq_iff_eq_mul₀ hG, ← (stabilizer G ω.out).card_mul_index, Nat.cast_mul,
+    (Nat.cast_commute _ _).eq, mul_inv_cancel_right₀ hS]
 
 end MulAction
 
