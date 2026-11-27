@@ -895,6 +895,13 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   intro v
   exact (φ.val x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
+/-- The bilinear form represented by a degree-two smooth form at a point is nondegenerate exactly
+when its kernel is trivial: since the form is alternating, separation on one side suffices. -/
+theorem nondegenerate_bilinFormAt_iff_ker_eq_bot (φ : SmoothForm I M ℝ 2) (x : M) :
+    (φ.bilinFormAt x).Nondegenerate ↔ LinearMap.ker (φ.bilinFormAt x) = ⊥ :=
+  (φ.isAlt_bilinFormAt x).isRefl.nondegenerate_iff_separatingLeft.trans
+    LinearMap.separatingLeft_iff_ker_eq_bot
+
 /-- The bilinear form represented by a degree-two smooth form at a point vanishes exactly when the
 form vanishes there. -/
 @[simp]
