@@ -59,6 +59,8 @@ orientations, and the antipodal map has orientation sign `(-1)^(n+1)` for every 
 * `Orientation.isOrientationPreservingAt_unitSphereEquiv`,
   `Orientation.isOrientationReversingAt_unitSphereEquiv`: a linear isometry preserves the
   outward-normal orientation when its determinant is positive and reverses it when negative.
+* `TauCeti.det_mfderiv_unitSphereEquiv_neg`: a linear isometry of negative determinant fixing a
+  point `u` of the sphere has a differential of negative determinant at `u`.
 * `Orientation.mpullback_neg_sphereVolumeForm`: the antipodal map pulls the volume form of `Sⁿ`
   back to `(-1)^(n+1)` times itself.
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
@@ -257,6 +259,31 @@ theorem _root_.Orientation.isOrientationReversingAt_unitSphereEquiv
   rw [Orientation.sphereOrientation]
   exact Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
     he (o.mpullback_unitSphereEquiv_sphereVolumeForm e u)
+
+/-- **A linear isometry of negative determinant fixing `u` has a differential of negative
+determinant at `u`.** The tangent spaces of `Sⁿ` at `u` and at `e u = u` are both the model space
+`EuclideanSpace ℝ (Fin n)`, and the differential of `e` reverses the outward-normal orientation
+there. For instance, a reflection across a hyperplane containing `u`. -/
+theorem det_mfderiv_unitSphereEquiv_neg {e : E ≃ₗᵢ[ℝ] E}
+    (he : LinearMap.det (e.toLinearEquiv : E →ₗ[ℝ] E) < 0) {u : sphere (0 : E) 1}
+    (hu : e u = u) :
+    LinearMap.det ((mfderiv (𝓡 n) (𝓡 n) e.unitSphereEquiv u).toLinearMap :
+      EuclideanSpace ℝ (Fin n) →ₗ[ℝ] EuclideanSpace ℝ (Fin n)) < 0 := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have heu : e.unitSphereEquiv u = u :=
+    Subtype.ext (by rw [LinearIsometryEquiv.coe_unitSphereEquiv_apply, hu])
+  let o := (finBasisOfFinrankEq ℝ E (Fact.out : finrank ℝ E = n + 1)).orientation
+  obtain ⟨f, hf, ho⟩ := (Manifold.Orientation.isOrientationReversingAt_iff _ _ _ _).1
+    (o.isOrientationReversingAt_unitSphereEquiv he u)
+  -- All tangent spaces of the sphere are `EuclideanSpace ℝ (Fin n)`, so the orientations of the
+  -- sphere at `u` and at `e u = u` can be compared.
+  let O : sphere (0 : E) 1 → Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n) :=
+    fun q ↦ o.sphereOrientation.orientationAt q
+  let f' : EuclideanSpace ℝ (Fin n) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) := f.toLinearEquiv
+  have h := (Orientation.map_eq_neg_iff_det_neg (O u) f' (by simp)).1
+    (ho.trans (congrArg (fun q ↦ -O q) heu))
+  rwa [show (f' : EuclideanSpace ℝ (Fin n) →ₗ[ℝ] EuclideanSpace ℝ (Fin n)) = _ from
+    congrArg ContinuousLinearMap.toLinearMap hf] at h
 
 /-- The antipodal map `u ↦ -u` pulls the volume form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the
 sphere back to `(-1)^(n+1)` times itself: it is the restriction of `-1`, of determinant

@@ -8,10 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.SphereCircle
 public import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus.NegativeOrientation
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-public import TauCeti.Geometry.Manifold.Orientation.Sphere
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Morse.Prod
 import TauCeti.Geometry.Manifold.Morse.ScalarComposition
+import TauCeti.Geometry.Manifold.Orientation.Sphere
 
 /-!
 # A Morse–Bott function on an oriented mapping torus of `S² × S¹`
@@ -332,29 +332,6 @@ private theorem criticalHessian_sphereCircleHeight_inl_neg (u : sphere (0 : E) 1
   rw [h0, add_zero]
   exact hmax
 
-/-- The differential at `u` of the reflection `ρ` of the sphere across `v^⊥`, which fixes `u`, has
-negative determinant: `ρ` reverses the orientation of the sphere. -/
-private theorem det_mfderiv_reflection_unitSphereEquiv_neg (hv : v ≠ 0)
-    (huv : ⟪v, (u : E)⟫_ℝ = 0) :
-    LinearMap.det ((mfderiv (𝓡 2) (𝓡 2) (ℝ ∙ v)ᗮ.reflection.unitSphereEquiv u).toLinearMap :
-      EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) < 0 := by
-  have hρu : (ℝ ∙ v)ᗮ.reflection.unitSphereEquiv u = u := Subtype.ext (by
-    simpa using reflection_orthogonal_singleton_eq_self_of_inner_eq_zero huv)
-  let o := (finBasisOfFinrankEq ℝ E (Fact.out : finrank ℝ E = 2 + 1)).orientation
-  obtain ⟨e, he, ho⟩ := (Manifold.Orientation.isOrientationReversingAt_iff _ _ _ _).1
-    (o.isOrientationReversingAt_unitSphereEquiv (e := (ℝ ∙ v)ᗮ.reflection)
-      (by rw [← LinearEquiv.coe_det, linearEquiv_det_reflection_orthogonal_singleton hv]
-          exact neg_one_lt_zero) u)
-  -- All tangent spaces of the sphere are `EuclideanSpace ℝ (Fin 2)`, so the orientations of the
-  -- sphere at `u` and at `ρ u = u` can be compared.
-  let O : sphere (0 : E) 1 → Orientation ℝ (EuclideanSpace ℝ (Fin 2)) (Fin 2) :=
-    fun q ↦ o.sphereOrientation.orientationAt q
-  let e' : EuclideanSpace ℝ (Fin 2) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin 2) := e.toLinearEquiv
-  have h := (Orientation.map_eq_neg_iff_det_neg (O u) e' (by simp)).1
-    (ho.trans (congrArg (fun q ↦ -O q) hρu))
-  rwa [show (e' : EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) = _ from
-    congrArg ContinuousLinearMap.toLinearMap he] at h
-
 /-- The Morse index of the function on the mapping torus is `2` along the critical circle through
 `(u, -1)`, the circle `(N, π)`. -/
 theorem manifoldMorseIndex_sphereCircleCriticalCircle_of_eq_self_neg_one
@@ -434,13 +411,18 @@ theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_sphereCircleCritical
   have hA (a : EuclideanSpace ℝ (Fin 2)) :
       mfderiv ((𝓡 2).prod (𝓡 1)) ((𝓡 2).prod (𝓡 1)) (sphereCircleReflection v) (p, -1) (j a) =
         j (A a) := by
-    rw [coe_sphereCircleReflection,
-      mfderiv_prodMap ((LinearIsometryEquiv.contMDiff_unitSphereEquiv (n := 2) (k := 2) (m := 1)
-        _).mdifferentiableAt one_ne_zero)
+    -- `j a` is `(a, 0)`, read in the tangent space of the product.
+    have hj : j a = (Manifold.tangentSpaceProdEquiv (I := 𝓡 2) (J := 𝓡 1)
+        ((p, -1) : sphere (0 : E) 1 × sphere (0 : ℂ) 1)).symm (a, 0) :=
+      (Manifold.tangentSpaceProdEquiv_symm_apply _ _).symm
+    rw [coe_sphereCircleReflection, hj,
+      Manifold.mfderiv_prodMap_apply
+        ((LinearIsometryEquiv.contMDiff_unitSphereEquiv (n := 2) (k := 2) (m := 1)
+          _).mdifferentiableAt one_ne_zero)
         ((LinearIsometryEquiv.contMDiff_unitSphereEquiv (n := 1) (k := 1) (m := 1)
-          _).mdifferentiableAt one_ne_zero)]
-    exact Prod.ext rfl
-      (mfderiv (𝓡 1) (𝓡 1) Complex.conjLIE.unitSphereEquiv (-1 : sphere (0 : ℂ) 1)).map_zero
+          _).mdifferentiableAt one_ne_zero), map_zero, Manifold.tangentSpaceProdEquiv_symm_apply]
+    -- Both sides are now `(A a, 0)`, by the definitions of `A` and of `j = LinearMap.inl`.
+    rfl
   exact SmoothMappingTorus.isEmpty_vectorBundleOrientation_negativeNormalSpace_of_det_neg hn
     (h := sphereCircleHeight p ε) (hh := sphereCircleHeight_sphereCircleReflection huv ε)
     (sphereCircleCriticalCircle_coe huv hε.ne' _)
@@ -449,7 +431,10 @@ theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_sphereCircleCritical
       (WithTop.coe_le_coe.2 le_top)) hdim g
     (manifoldMorseIndex_sphereCircleCriticalCircle_of_eq_self_neg_one huv hε hx)
     (V := EuclideanSpace ℝ (Fin 2)) finrank_euclideanSpace_fin j A hA
-    (det_mfderiv_reflection_unitSphereEquiv_neg hv huv)
+    (det_mfderiv_unitSphereEquiv_neg (by
+      rw [← LinearEquiv.coe_det, linearEquiv_det_reflection_orthogonal_singleton hv]
+      exact neg_one_lt_zero)
+      (by simpa using reflection_orthogonal_singleton_eq_self_of_inner_eq_zero huv))
     (criticalHessian_sphereCircleHeight_inl_neg p ε)
 
 end NegativeNormal

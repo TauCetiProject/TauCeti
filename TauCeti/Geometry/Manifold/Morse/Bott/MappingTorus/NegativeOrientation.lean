@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
-import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.Instances.MappingTorus.Vertical
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
 import TauCeti.Topology.FiberBundle.Pullback
 
@@ -48,6 +48,9 @@ circle `(N, π)` while preserving the orientation of its whole normal space
   `dφₓ` acts with negative determinant on a space of directions of dimension the Morse index on
   which the Hessian of `h` is negative definite, the negative normal bundle of the critical circle
   through `x` is not orientable, for every `C^k` fibre metric.
+* `TauCeti.SmoothMappingTorus.continuous_normalClass_mfderiv_mk`: the normal classes of the
+  vertical vectors `d[t, ·]ₓ w` along a circle `t ↦ [t, x]` form a continuous path in its normal
+  bundle.
 
 ## References
 
@@ -70,32 +73,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   [LocallyCompactSpace M] {φ : M ≃ₘ⟮I, I⟯ M} {x : M}
 
-/-- The vertical vectors `d[t, ·]ₓ w` along the suspension orbit through `x` depend continuously on
-`t`: on `ℝ × M` they form the constant vector field `(0, w)` along `t ↦ (t, x)`. -/
-private theorem continuous_mfderiv_mk (w : TangentSpace I x) :
-    Continuous fun t : ℝ ↦ (⟨mk φ t x, mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w⟩ :
-      TangentBundle (𝓘(ℝ).prod I) (SmoothMappingTorus φ)) := by
-  have hc : Continuous fun t : ℝ ↦ (⟨(t, x), (0, w)⟩ :
-      TangentBundle (𝓘(ℝ).prod I) (ℝ × M)) :=
-    (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ)) (M := ℝ) (I' := I) (M' := M)
-      (n := 0)).continuous.comp
-      ((Trivialization.continuous_zeroSection ℝ (E := TangentSpace 𝓘(ℝ, ℝ) (M := ℝ))).prodMk
-        (continuous_const (y := (⟨x, w⟩ : TangentBundle I M))))
-  refine ((contMDiff_uncurry_mk φ).continuous_tangentMap (by simp)).comp hc |>.congr fun t ↦ ?_
-  rw [Function.comp_apply, tangentMap, mfderiv_mk_apply φ (by simp),
-    Manifold.tangentSpaceProdEquiv_symm_apply]
-  simp only [Function.uncurry_apply_pair]
-  -- The two sides differ only by implicit fibre-type arguments of the tangent bundle, which agree
-  -- definitionally.
-  rfl
-
-
 variable [FiniteDimensional ℝ E] (hn : (∞ : ℕ∞ω) ≠ 0)
   {c : SmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (AddCircle ((1 : ℕ) : ℝ)) (SmoothMappingTorus φ)}
 
 /-- The normal classes of the vertical vectors `d[t, ·]ₓ w` at the points `c t = [t, x]` of a
 circle `c` form a continuous path in the normal bundle of `c`. -/
-private theorem continuous_normalClass_mfderiv_mk (hc : ∀ t : ℝ, c t = mk φ t x)
+theorem continuous_normalClass_mfderiv_mk (hc : ∀ t : ℝ, c t = mk φ t x)
     {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
     (hdim : finrank ℝ P = finrank ℝ (ℝ × E) - finrank ℝ ℝ) (w : TangentSpace I x) :
     letI := c.normalSpaceFiberBundle hn hdim
@@ -108,20 +91,12 @@ private theorem continuous_normalClass_mfderiv_mk (hc : ∀ t : ℝ, c t = mk φ
       mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w⟩ :
         TotalSpace (ℝ × E) (⇑c *ᵖ (TangentSpace (𝓘(ℝ).prod I)))) :=
     Pullback.continuous_iff.2 ⟨AddCircle.continuous_mk' (p := ((1 : ℕ) : ℝ)),
-      (continuous_mfderiv_mk w).congr fun t ↦ TotalSpace.ext (hc t).symm HEq.rfl⟩
+      (continuous_mfderiv_mk φ x w).congr fun t ↦ TotalSpace.ext (hc t).symm HEq.rfl⟩
   refine ((c.contMDiff_normalQuotientMap hn (m := 0) (by simp) hdim).continuous.comp hq).congr
     fun t ↦ ?_
   rw [Function.comp_apply, SmoothEmbedding.normalQuotientMap_apply]
 
 variable [I.Boundaryless]
-
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] [I.Boundaryless] in
-/-- The point `x` of a circle `c : t ↦ [t, x]` in the mapping torus is fixed by `φ`, since
-`[0, φ x] = [1, x] = c 1 = c 0 = [0, x]`. -/
-private theorem apply_eq_of_forall_apply_eq_mk (hc : ∀ t : ℝ, c t = mk φ t x) : φ x = x := by
-  refine mk_injective φ 0 ?_
-  rw [← mk_add_one, ← hc, ← hc]
-  exact congrArg c (by simp)
 
 omit [FiniteDimensional ℝ E] in
 /-- Along a critical circle `c : t ↦ [t, x]` of the function induced by `h`, the normal Hessian on
@@ -152,13 +127,12 @@ private theorem totalSpaceMk_negativeNormalProjection_one {f : SmoothMappingToru
         TotalSpace F' fun s ↦ hs.negativeNormalSpace hn g s) =
       ⟨((0 : ℝ) : AddCircle ((1 : ℕ) : ℝ)), ⟨hs.negativeNormalProjection hn g _
         (c.isImmersion.normalClass _ hn (mfderiv I (𝓘(ℝ).prod I) (mk φ 0) x w')), hu'⟩⟩ := by
-  -- Read on `ℝ × E`, `d[1, ·]ₓ w = d[0, ·]_{φ x} (dφₓ w) = d[0, ·]ₓ w'`.
-  have hvec : (mfderiv I (𝓘(ℝ).prod I) (mk φ 1) x w : ℝ × E) =
-      mfderiv I (𝓘(ℝ).prod I) (mk φ 0) x w' := by
-    have h1 := mfderiv_mk_add_one φ (by simp) 0 x w
-    rw [zero_add, hw] at h1
-    exact h1.trans (congrArg (fun T : E →L[ℝ] ℝ × E ↦ T w')
-      (mfderiv_congr_point (apply_eq_of_forall_apply_eq_mk hc)))
+  -- `x` is fixed by `φ`, since `[1, x] = c 1 = c 0 = [0, x]`, so `d[1, ·]ₓ w = d[0, ·]ₓ w'`.
+  have hx : φ x = x := (mk_add_one_eq_mk_iff φ 0 x).1 (by
+    rw [zero_add, ← hc, ← hc]
+    exact congrArg c (by simp))
+  have hvec : mfderiv I (𝓘(ℝ).prod I) (mk φ 1) x w = mfderiv I (𝓘(ℝ).prod I) (mk φ 0) x w' := by
+    rw [← hw, ← mfderiv_mk_add_one_of_apply_eq φ (by simp) hx, zero_add]
   -- Projected normal classes over equal points of the circle with the same representative agree.
   have hmk {s s' : AddCircle ((1 : ℕ) : ℝ)} (hss : s = s') (u : ℝ × E) (hu hu') :
       (⟨s, ⟨hs.negativeNormalProjection hn g s (c.isImmersion.normalClass s hn u), hu⟩⟩ :

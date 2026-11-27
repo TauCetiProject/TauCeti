@@ -15,10 +15,9 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
+import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus.NegativeOrientation
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Morse.Prod
-import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
-import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 
 /-!
@@ -274,29 +273,6 @@ theorem negativeNormalSpace_criticalCircle_one_eq_top
   induction s using QuotientAddGroup.induction_on with | H t => ?_
   rw [criticalCircle_coe, manifoldMorseIndex_height_mk_one]
 
-/-- The vertical tangent vectors `d[t, ·]₁ w` at the points `[t, 1]` of the maximum circle depend
-continuously on `t`: on the cylinder they form the constant vector field `(0, w)` along
-`t ↦ (t, 1)`. -/
-private theorem continuous_mfderiv_mk_one (w : TangentSpace (𝓡 1) (1 : sphere (0 : ℂ) 1)) :
-    Continuous fun t : ℝ ↦ (⟨mk t 1, mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk t) 1 w⟩ :
-      TangentBundle (𝓘(ℝ).prod (𝓡 1)) KleinBottle) := by
-  have hc : Continuous fun t : ℝ ↦ (⟨(t, 1), (0, w)⟩ :
-      TangentBundle (𝓘(ℝ).prod (𝓡 1)) (ℝ × sphere (0 : ℂ) 1)) :=
-    (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ)) (M := ℝ) (I' := 𝓡 1)
-      (M' := sphere (0 : ℂ) 1) (n := 0)).continuous.comp
-      ((Trivialization.continuous_zeroSection ℝ (E := TangentSpace 𝓘(ℝ, ℝ) (M := ℝ))).prodMk
-        (continuous_const (y := (⟨1, w⟩ : TangentBundle (𝓡 1) (sphere (0 : ℂ) 1)))))
-  refine ((SmoothMappingTorus.contMDiff_uncurry_mk conjCircleDiffeomorph).continuous_tangentMap
-    (by simp)).comp hc |>.congr fun t ↦ ?_
-  rw [Function.comp_apply, tangentMap,
-    SmoothMappingTorus.mfderiv_mk_apply conjCircleDiffeomorph (by simp),
-    Manifold.tangentSpaceProdEquiv_symm_apply]
-  simp only [Function.uncurry_apply_pair]
-  -- The two sides now differ only by the abbreviation `mk t 1` for
-  -- `SmoothMappingTorus.mk conjCircleDiffeomorph t 1` and by implicit fibre-type arguments of the
-  -- tangent bundle, which agree definitionally.
-  rfl
-
 /-- A nonzero vertical vector at a point of the maximum circle is not tangent to the circle, so
 its normal class does not vanish. -/
 private theorem normalClass_mfderiv_mk_one_ne_zero {w : TangentSpace (𝓡 1) (1 : sphere (0 : ℂ) 1)}
@@ -341,34 +317,10 @@ is `-d[0, ·]₁ w`, since conjugation acts by `-1` on the tangent line of the c
 private theorem mfderiv_mk_one_one_eq_neg (w : TangentSpace (𝓡 1) (1 : sphere (0 : ℂ) 1)) :
     mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk 1) 1 w =
       -mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk 0) 1 w := by
-  have h1 := SmoothMappingTorus.mfderiv_mk_add_one conjCircleDiffeomorph (by simp) 0 1 w
+  have h1 := SmoothMappingTorus.mfderiv_mk_add_one_of_apply_eq conjCircleDiffeomorph (by simp)
+    conjCircleDiffeomorph_one 0 w
   rw [zero_add, mfderiv_conjCircleDiffeomorph_one] at h1
-  exact h1.trans ((congrArg (fun L : EuclideanSpace ℝ (Fin 1) →L[ℝ] ℝ × EuclideanSpace ℝ (Fin 1) ↦
-    L (-w)) (mfderiv_congr_point conjCircleDiffeomorph_one)).trans (map_neg _ w))
-
-/-- The normal classes of the vertical vectors `d[t, ·]₁ w` at the points `[t, 1]` of the maximum
-circle form a continuous path in its normal bundle. -/
-private theorem continuous_normalClass_mfderiv_mk_one {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] [FiniteDimensional ℝ W]
-    (hdim : finrank ℝ W = finrank ℝ (ℝ × EuclideanSpace ℝ (Fin 1)) - finrank ℝ ℝ)
-    (w : TangentSpace (𝓡 1) (1 : sphere (0 : ℂ) 1)) :
-    letI := (criticalCircle 1 (.inl rfl)).normalSpaceFiberBundle hn hdim
-    Continuous fun t : ℝ ↦ (⟨(t : AddCircle ((1 : ℕ) : ℝ)),
-      (criticalCircle 1 (.inl rfl)).isImmersion.normalClass t hn
-        (mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk t) 1 w)⟩ :
-      TotalSpace W fun s ↦ (criticalCircle 1 (.inl rfl)).isImmersion.NormalSpace s hn) := by
-  let c := criticalCircle 1 (.inl rfl)
-  let := c.normalSpaceFiberBundle hn hdim
-  -- The vertical vectors form a continuous path in the pulled-back tangent bundle.
-  have hq : Continuous fun t : ℝ ↦ (⟨(t : AddCircle ((1 : ℕ) : ℝ)),
-      mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk t) 1 w⟩ :
-        TotalSpace (ℝ × EuclideanSpace ℝ (Fin 1)) (⇑c *ᵖ (TangentSpace (𝓘(ℝ).prod (𝓡 1))))) :=
-    Pullback.continuous_iff.2 ⟨AddCircle.continuous_mk' (p := ((1 : ℕ) : ℝ)),
-      (continuous_mfderiv_mk_one w).congr fun t ↦ TotalSpace.ext (criticalCircle_coe _ t).symm
-        HEq.rfl⟩
-  refine ((c.contMDiff_normalQuotientMap hn (m := 0) (by simp) hdim).continuous.comp hq).congr
-    fun t ↦ ?_
-  rw [Function.comp_apply, SmoothEmbedding.normalQuotientMap_apply]
+  exact h1.trans (map_neg _ w)
 
 /-- **The negative normal line of the maximum circle is not orientable.** Let `g` be a fibre
 metric on the normal bundle of the maximum circle `C₁ = {θ = 0}` of the height function
@@ -422,7 +374,7 @@ theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_criticalCircle_one
   have hcont : Continuous (ν w) :=
     (isEmbedding_totalSpace_subbundle W (Fin 1 → ℝ)
       (h.negativeNormalSpace hn g)).isInducing.continuous_iff.2
-      (continuous_normalClass_mfderiv_mk_one hn hdim w)
+      (SmoothMappingTorus.continuous_normalClass_mfderiv_mk hn (criticalCircle_coe _) hdim w)
   refine VectorBundleOrientation.isEmpty_of_continuous_of_eq_deck (by simp)
     ((zeroSectionComplOrientation (by simp)).continuous.comp (hcont.subtype_mk hν)) (x := 0)
     (y := 1) ?_
