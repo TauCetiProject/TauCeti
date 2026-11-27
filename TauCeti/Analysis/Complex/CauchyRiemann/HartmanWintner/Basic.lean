@@ -38,8 +38,10 @@ polynomials of degree `k` on the plane with values in `X` are exactly the maps
 polynomial of degree `k`, together with its derivative asymptotic. On a connected open set the
 first alternative propagates: `u` then vanishes on all of `Ω`
 (`TauCeti.eqOn_zero_or_exists_isLittleO_sub_re_pow_smul`). This finite-order expansion is the
-analytic input to the Micallef–White normal form of a pseudoholomorphic curve near a point,
-once isothermal coordinates have flattened a variable elliptic principal part to the Laplacian.
+analytic input to the Micallef–White normal form of a pseudoholomorphic curve near a point.
+Isothermal coordinates flatten a variable elliptic principal part to a multiple of the Laplacian,
+which extends the expansion to such operators
+(`TauCeti.eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul_of_elliptic`).
 
 ## The proof
 
