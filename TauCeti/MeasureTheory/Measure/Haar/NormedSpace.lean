@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
@@ -66,6 +67,10 @@ gives a set of measure one.
   nontrivial space.
 * `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball`: the ratio of the real measures
   of two balls is the ratio of their radii raised to the dimension.
+* `MeasureTheory.Measure.setAverage_ball_le_div_pow_mul_setAverage_ball`,
+  `MeasureTheory.Measure.rpow_inv_setAverage_ball_le_div_pow_mul`: the average of a nonnegative
+  function over a ball `B(x, r) ⊆ B(y, s)` is at most `(s / r)ⁿ` times its average over `B(y, s)`,
+  and likewise for `q`-th roots of the averages, `q ≥ 1`.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
   dimension `n`.
 * `MeasureTheory.Measure.addHaar_real_ball_half_rpow_le`:
@@ -210,6 +215,51 @@ theorem addHaar_real_ball_div_addHaar_real_ball
     mu.real (ball y s) / mu.real (ball x r) = (s / r) ^ finrank ℝ E := by
   rw [mu.addHaar_real_ball_of_pos y hs, mu.addHaar_real_ball_of_pos x hr,
     mul_div_mul_right _ _ (Metric.measureReal_ball_pos mu 0 one_pos).ne', div_pow]
+
+/-- The average of a nonnegative function over a ball `B(x, r)` contained in a ball `B(y, s)` is at
+most `(s / r)ⁿ` times its average over `B(y, s)`, in dimension `n`. -/
+theorem setAverage_ball_le_div_pow_mul_setAverage_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {f : E → ℝ} (hf0 : ∀ z, 0 ≤ f z) {x y : E} {r s : ℝ} (hr : 0 < r)
+    (hsub : ball x r ⊆ ball y s) (hf : IntegrableOn f (ball y s) mu) :
+    ⨍ z in ball x r, f z ∂mu ≤ (s / r) ^ finrank ℝ E * ⨍ z in ball y s, f z ∂mu := by
+  have hs : 0 < s := dist_nonneg.trans_lt (mem_ball.1 (hsub (mem_ball_self hr)))
+  have hmr : 0 < mu.real (ball x r) := measureReal_ball_pos mu x hr
+  have hms : 0 < mu.real (ball y s) := measureReal_ball_pos mu y hs
+  have hint : ∫ z in ball x r, f z ∂mu ≤ ∫ z in ball y s, f z ∂mu :=
+    setIntegral_mono_set hf (Filter.Eventually.of_forall fun z => hf0 z)
+      (Filter.Eventually.of_forall hsub)
+  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul,
+    ← mu.addHaar_real_ball_div_addHaar_real_ball x y hr hs]
+  calc (mu.real (ball x r))⁻¹ * ∫ z in ball x r, f z ∂mu
+      ≤ (mu.real (ball x r))⁻¹ * ∫ z in ball y s, f z ∂mu := by gcongr
+    _ = mu.real (ball y s) / mu.real (ball x r) *
+          ((mu.real (ball y s))⁻¹ * ∫ z in ball y s, f z ∂mu) := by
+        field_simp
+
+/-- The `q`-th root, `q ≥ 1`, of the average of a nonnegative function over a ball `B(x, r)`
+contained in a ball `B(y, s)` with `r ≤ s` is at most `(s / r)ⁿ` times that of its average over
+`B(y, s)`, in dimension `n`. -/
+theorem rpow_inv_setAverage_ball_le_div_pow_mul
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {f : E → ℝ} (hf0 : ∀ z, 0 ≤ f z) {x y : E} {r s q : ℝ} (hr : 0 < r) (hrs : r ≤ s)
+    (hsub : ball x r ⊆ ball y s) (hf : IntegrableOn f (ball y s) mu) (hq : 1 ≤ q) :
+    (⨍ z in ball x r, f z ∂mu) ^ q⁻¹ ≤
+      (s / r) ^ finrank ℝ E * (⨍ z in ball y s, f z ∂mu) ^ q⁻¹ := by
+  have hratio : 1 ≤ (s / r) ^ finrank ℝ E := one_le_pow₀ ((one_le_div hr).2 hrs)
+  have h0 : 0 ≤ ⨍ z in ball y s, f z ∂mu := average_nonneg hf0
+  calc (⨍ z in ball x r, f z ∂mu) ^ q⁻¹
+      ≤ ((s / r) ^ finrank ℝ E * ⨍ z in ball y s, f z ∂mu) ^ q⁻¹ := by
+        gcongr
+        · exact average_nonneg hf0
+        · exact mu.setAverage_ball_le_div_pow_mul_setAverage_ball hf0 hr hsub hf
+    _ = ((s / r) ^ finrank ℝ E) ^ q⁻¹ * (⨍ z in ball y s, f z ∂mu) ^ q⁻¹ :=
+        Real.mul_rpow (by positivity) h0
+    _ ≤ (s / r) ^ finrank ℝ E * (⨍ z in ball y s, f z ∂mu) ^ q⁻¹ := by
+        gcongr
+        exact Real.rpow_le_self_of_one_le hratio (inv_le_one_of_one_le₀ hq)
 
 /-- The square root of the real measure of a ball of radius `R` is `R ^ (n / 2)` times that of the
 unit ball, where `n` is the dimension. -/

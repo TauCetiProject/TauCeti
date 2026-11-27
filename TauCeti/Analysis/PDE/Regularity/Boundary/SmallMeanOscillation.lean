@@ -7,14 +7,16 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.MeanOscillation
 public import TauCeti.Analysis.PDE.Regularity.MeanOscillation
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.PDE.Regularity.SharpFunctionMethod
 import TauCeti.Analysis.Sobolev.W1p.HyperplaneReflection
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Restriction
-import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Average.Oscillation
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The `W^{1,p}` estimate up to a flat boundary for coefficients of small mean oscillation
@@ -27,7 +29,7 @@ off `H` and solve
 that is `∫_H ⟨a ∇u, ∇φ⟩ = ∫_H ⟨G, ∇φ⟩` for every test function `φ` on `H`, so that `u` has zero
 boundary values on the hyperplane. Suppose that `a` is measurable and bounded by `Λ` on `H` and has
 small mean oscillation on the half-balls: for every ball `B` centred in the closed half-space, some
-constant matrix `A`, uniformly elliptic with constants `0 < λ ≤ Λ` and neither symmetric nor
+constant matrix `A`, uniformly elliptic with constants `0 < λ ≤ Λ`, not assumed symmetric or
 invariant under the reflection in the hyperplane, has `⨍_{B ∩ H} ‖a - A‖ ≤ δ`, in the operator norm
 of the attached bilinear forms. This file proves the a priori estimate
 
@@ -38,12 +40,12 @@ for every such `u` whose gradient lies in `Lᵖ`, with `C` and the threshold `δ
 boundary counterpart of the whole-space estimate
 `TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`.
 
-The estimate `TauCeti.PDE.exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le` asks
-instead for small mean oscillation of the coefficient reflected across the hyperplane, which reduces
-the problem to the whole space. That hypothesis fails for coefficients of vanishing mean
-oscillation in general: on a ball centred on the hyperplane the reflected coefficient is close to
-`A` above it and to the reflected matrix `R A R` below it, and these differ unless the conormal of
-`A` is normal. Here only `a` on `H` enters, as in the boundary mean oscillation estimate
+Asking instead for small mean oscillation of the coefficient reflected across the hyperplane
+(`TauCeti.PDE.reflectPrincipal`) would reduce the problem to the whole space. That hypothesis fails
+for coefficients of vanishing mean oscillation in general: on a ball centred on the hyperplane the
+reflected coefficient is close to `A` above it and to the reflected matrix `R A R` below it, and
+these differ unless the conormal of `A` is normal. Here only `a` on `H` enters, as in the boundary
+mean oscillation estimate
 `TauCeti.PDE.exists_setAverage_ball_inter_norm_gradient_sub_inner_setAverage_div_smul_sq_le`, which
 freezes the coefficients at an arbitrary elliptic matrix.
 
@@ -73,7 +75,9 @@ average of `‖g‖²`.
 ## Main declarations
 
 * `TauCeti.PDE.exists_eLpNorm_gradient_le_of_setAverage_inter_le`: the `W^{1,p}` estimate up to a
-  flat boundary for coefficients of small mean oscillation on the half-balls, `2 < p < ∞`.
+  flat boundary for coefficients of small mean oscillation on the half-balls, `2 < p < ∞`. Its
+  special case for coefficients close to one elliptic matrix is
+  `TauCeti.PDE.exists_eLpNorm_gradient_le_of_norm_sub_le_of_ae_gradient_eq_zero`.
 
 ## References
 
@@ -99,102 +103,23 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- The average of a nonnegative function over a ball `B(c, ρ)` inside `B(c', s)` is at most
-`(s/ρ)^(n+1)` times its average over `B(c', s)`. -/
-private theorem setAverage_ball_le_mul_setAverage_ball {f : E → ℝ} (hf0 : ∀ x, 0 ≤ f x)
-    {c c' : E} {ρ s : ℝ} (hρ : 0 < ρ) (hsub : ball c ρ ⊆ ball c' s)
-    (hf : IntegrableOn f (ball c' s)) :
-    ⨍ x in ball c ρ, f x ≤ (s / ρ) ^ (n + 1) * ⨍ x in ball c' s, f x := by
-  have hs : 0 < s := dist_nonneg.trans_lt (mem_ball.1 (hsub (mem_ball_self hρ)))
-  have hV : 0 < (volume : Measure E).real (ball 0 1) :=
-    measureReal_ball_pos (volume : Measure E) (0 : E) one_pos
-  have hball (x : E) (t : ℝ) (ht : 0 ≤ t) : (volume : Measure E).real (ball x t) =
-      t ^ (n + 1) * (volume : Measure E).real (ball 0 1) := by
-    rw [Measure.addHaar_real_ball _ _ ht, finrank_euclideanSpace_fin]
-  have hint : ∫ x in ball c ρ, f x ≤ ∫ x in ball c' s, f x :=
-    setIntegral_mono_set hf (Filter.Eventually.of_forall fun x => hf0 x)
-      (Filter.Eventually.of_forall hsub)
-  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, hball _ _ hρ.le, hball _ _ hs.le]
-  calc (ρ ^ (n + 1) * (volume : Measure E).real (ball 0 1))⁻¹ * ∫ x in ball c ρ, f x
-      ≤ (ρ ^ (n + 1) * (volume : Measure E).real (ball 0 1))⁻¹ * ∫ x in ball c' s, f x := by
-        gcongr
-    _ = (s / ρ) ^ (n + 1) * ((s ^ (n + 1) * (volume : Measure E).real (ball 0 1))⁻¹ *
-          ∫ x in ball c' s, f x) := by
-        rw [div_pow]
-        field_simp
-
-/-- The root `(⨍_{B(c, ρ)} f)^(1/q)` of an average, for `q ≥ 1`, compared with that over a larger
-ball as in `setAverage_ball_le_mul_setAverage_ball`. -/
-private theorem setAverage_ball_rpow_inv_le {f : E → ℝ} (hf0 : ∀ x, 0 ≤ f x) {c c' : E}
-    {ρ s q : ℝ} (hρ : 0 < ρ) (hρs : ρ ≤ s) (hsub : ball c ρ ⊆ ball c' s)
-    (hf : IntegrableOn f (ball c' s)) (hq : 1 ≤ q) :
-    (⨍ x in ball c ρ, f x) ^ q⁻¹ ≤ (s / ρ) ^ (n + 1) * (⨍ x in ball c' s, f x) ^ q⁻¹ := by
-  have hratio : 1 ≤ (s / ρ) ^ (n + 1) := one_le_pow₀ ((one_le_div hρ).2 hρs)
-  have h0 : 0 ≤ ⨍ x in ball c' s, f x := average_nonneg hf0
-  calc (⨍ x in ball c ρ, f x) ^ q⁻¹
-      ≤ ((s / ρ) ^ (n + 1) * ⨍ x in ball c' s, f x) ^ q⁻¹ := by
-        gcongr
-        · exact average_nonneg hf0
-        · exact setAverage_ball_le_mul_setAverage_ball hf0 hρ hsub hf
-    _ = ((s / ρ) ^ (n + 1)) ^ q⁻¹ * (⨍ x in ball c' s, f x) ^ q⁻¹ :=
-        Real.mul_rpow (by positivity) h0
-    _ ≤ (s / ρ) ^ (n + 1) * (⨍ x in ball c' s, f x) ^ q⁻¹ := by
-        gcongr
-        exact Real.rpow_le_self_of_one_le hratio (inv_le_one_of_one_le₀ hq)
-
-/-- The square mean oscillation of `g` on a ball is at most its square mean deviation from any
-constant. -/
-private theorem setAverage_norm_sub_setAverage_sq_le {g : E → E} {c Q : E} {ρ : ℝ}
-    (hg : IntegrableOn g (ball c ρ)) (hgQ : IntegrableOn (fun x => ‖g x - Q‖ ^ 2) (ball c ρ)) :
-    ⨍ x in ball c ρ, ‖g x - ⨍ y in ball c ρ, g y‖ ^ 2 ≤ ⨍ x in ball c ρ, ‖g x - Q‖ ^ 2 := by
-  have h := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq
-    measure_ball_lt_top.ne hg hgQ
-  have hm : 0 ≤ ((volume : Measure E).real (ball c ρ))⁻¹ := by positivity
-  simpa only [setAverage_eq, smul_eq_mul] using mul_le_mul_of_nonneg_left h hm
-
-/-- A field in `Lᵖ`, `2 ≤ p`, has its square deviation from each constant integrable on every
-ball. -/
-private theorem integrableOn_ball_norm_sub_sq {g : E → E} {p : ℝ≥0∞} (hg : MemLp g p volume)
-    (h2p : 2 ≤ p) (x : E) (r : ℝ) (Q : E) : IntegrableOn (fun y => ‖g y - Q‖ ^ 2) (ball x r) := by
-  have : IsFiniteMeasure (volume.restrict (ball x r)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  exact ((hg.restrict _).mono_exponent h2p).integrableOn_norm_sub_sq_of_subset subset_rfl
-    measure_ball_lt_top.ne Q
-
-/-- A field in `Lᵖ`, `2 ≤ p`, has its square norm integrable on every ball. -/
-private theorem integrableOn_ball_norm_sq {g : E → E} {p : ℝ≥0∞} (hg : MemLp g p volume)
-    (h2p : 2 ≤ p) (x : E) (r : ℝ) : IntegrableOn (fun y => ‖g y‖ ^ 2) (ball x r) := by
-  simpa using integrableOn_ball_norm_sub_sq hg h2p x r 0
-
-/-- A field in `Lᵖ`, `2q ≤ p`, has its norm to the power `2q` integrable on every ball. -/
-private theorem integrableOn_ball_norm_rpow {g : E → E} {p : ℝ≥0∞} (hg : MemLp g p volume)
-    {q : ℝ} (hq : 0 < q) (hqp : ENNReal.ofReal (2 * q) ≤ p) (x : E) (r : ℝ) :
-    IntegrableOn (fun y => ‖g y‖ ^ (2 * q)) (ball x r) := by
-  have : IsFiniteMeasure (volume.restrict (ball x r)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have h := ((hg.restrict (ball x r)).mono_exponent hqp).integrable_norm_rpow
-    (by simp [hq]) ENNReal.ofReal_ne_top
-  rwa [ENNReal.toReal_ofReal (by linarith)] at h
-
-/-- A field in `Lᵖ`, `1 ≤ p`, is integrable on every ball. -/
-private theorem integrableOn_ball_of_memLp {g : E → E} {p : ℝ≥0∞} (hg : MemLp g p volume)
-    (hp : 1 ≤ p) (x : E) (r : ℝ) : IntegrableOn g (ball x r) := by
-  have : IsFiniteMeasure (volume.restrict (ball x r)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  exact ((hg.restrict _).mono_exponent hp).integrable le_rfl
-
 /-- The trivial bound: the square mean oscillation of `g ∈ Lᵖ`, `2 ≤ p`, on `B(c, t)` is at most
 `(R/t)^(n+1)` times the average of `‖g‖²` over `B(c, R)`, for `t ≤ R`. -/
 private theorem setAverage_norm_sub_setAverage_sq_le_mul {g : E → E} {p : ℝ≥0∞}
     (hg : MemLp g p volume) (h2p : 2 ≤ p) {c : E} {t R : ℝ} (ht : 0 < t) (htR : t ≤ R) :
     ⨍ x in ball c t, ‖g x - ⨍ y in ball c t, g y‖ ^ 2 ≤
       (R / t) ^ (n + 1) * ⨍ x in ball c R, ‖g x‖ ^ 2 := by
-  refine (setAverage_norm_sub_setAverage_sq_le
-    (integrableOn_ball_of_memLp hg (one_le_two.trans h2p) c t)
-    (integrableOn_ball_norm_sub_sq hg h2p c t 0)).trans ?_
+  refine (setAverage_norm_sub_setAverage_sq_le_setAverage_norm_sub_sq measure_ball_lt_top.ne
+    ((hg.restrict (ball c t)).integrableOn_of_subset (one_le_two.trans h2p) subset_rfl
+      measure_ball_lt_top.ne)
+    ((hg.restrict (ball c t)).integrableOn_norm_sub_sq_of_two_le h2p subset_rfl
+      measure_ball_lt_top.ne 0)).trans ?_
   simp only [sub_zero]
-  exact setAverage_ball_le_mul_setAverage_ball (fun x => by positivity) ht (ball_subset_ball htR)
-    (integrableOn_ball_norm_sq hg h2p c R)
+  have h := (volume : Measure E).setAverage_ball_le_div_pow_mul_setAverage_ball
+    (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ 2) ht (ball_subset_ball htR)
+    (by simpa using ((hg.restrict (ball c R)).integrableOn_norm_sub_sq_of_two_le h2p subset_rfl
+      measure_ball_lt_top.ne 0))
+  rwa [finrank_euclideanSpace_fin] at h
 
 /-- The factor `((2Λ)^(2q' - 1) δ)^(1/q')` of the coefficient deviation is nonnegative as soon as
 `δ` bounds an average of a nonnegative function and some matrix is elliptic with upper constant
@@ -208,65 +133,6 @@ private theorem deviation_factor_nonneg {lam Lam δ q' r : ℝ} {c : E}
   exact Real.rpow_nonneg (mul_nonneg (Real.rpow_nonneg (by linarith) _)
     ((average_nonneg hθ).trans hδ)) _
 
-/-- Averages over balls are carried by the reflection `ρ` in a hyperplane: the average of `f ∘ ρ`
-over `B(ρ c, s)` is the average of `f` over `B(c, s)`. -/
-private theorem setAverage_ball_comp_hyperplaneReflection {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (ν : E) (c₀ : ℝ) (f : E → F) (c : E) (s : ℝ) :
-    ⨍ x in ball (hyperplaneReflection ν c₀ c) s, f (hyperplaneReflection ν c₀ x) =
-      ⨍ x in ball c s, f x := by
-  set e := (hyperplaneReflection ν c₀).toHomeomorph.toMeasurableEquiv
-  have he : (volume : Measure E).map e = (1 : ℝ≥0∞) • volume := by
-    rw [one_smul]
-    exact (measurePreserving_hyperplaneReflection (volume : Measure E) ν c₀).map_eq
-  have hpre : hyperplaneReflection ν c₀ ⁻¹' ball c s = ball (hyperplaneReflection ν c₀ c) s := by
-    simpa using (hyperplaneReflection ν c₀).toIsometryEquiv.preimage_ball c s
-  have h := setAverage_comp_preimage_of_map_eq_smul he one_ne_zero ENNReal.one_ne_top f (ball c s)
-  rwa [show ⇑e = ⇑(hyperplaneReflection ν c₀) from rfl, hpre] at h
-
-/-- A function invariant under the reflection `ρ` in the hyperplane `{⟪x, ν⟫ = c₀}` has the same
-average over a ball centred on the hyperplane as over its upper half `B(z, t) ∩ {c₀ < ⟪x, ν⟫}`. -/
-private theorem setAverage_ball_eq_setAverage_ball_inter {ν : E} (hν : ν ≠ 0) {c₀ : ℝ} {z : E}
-    (hz : ⟪z, ν⟫_ℝ = c₀) {f : E → ℝ} (hf : ∀ x, f (hyperplaneReflection ν c₀ x) = f x) {t : ℝ}
-    (hfi : IntegrableOn f (ball z t)) :
-    ⨍ x in ball z t, f x = ⨍ x in ball z t ∩ {x | c₀ < ⟪x, ν⟫_ℝ}, f x := by
-  set Hs : Set E := {x | c₀ < ⟪x, ν⟫_ℝ}
-  have hHm : MeasurableSet Hs :=
-    measurableSet_lt measurable_const (continuous_id.inner continuous_const).measurable
-  have hρ := measurePreserving_hyperplaneReflection (volume : Measure E) ν c₀
-  -- The reflection carries the lower half-ball onto the upper one.
-  have hpre : hyperplaneReflection ν c₀ ⁻¹' (ball z t ∩ Hs) = ball z t ∩ {x | ⟪x, ν⟫_ℝ < c₀} := by
-    ext x
-    have hd : dist (hyperplaneReflection ν c₀ x) z = dist x z := by
-      conv_lhs => rw [← hyperplaneReflection_eq_self_of_inner_eq hz]
-      exact (hyperplaneReflection ν c₀).dist_map x z
-    simp only [mem_preimage, mem_inter_iff, mem_ball, mem_ofPred_eq, Hs, hd,
-      inner_hyperplaneReflection hν]
-    constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨h1, by linarith⟩
-  have hlow : ∫ x in ball z t \ Hs, f x = ∫ x in ball z t ∩ Hs, f x := by
-    have hae : (ball z t \ Hs : Set E) =ᵐ[volume] ball z t ∩ {x | ⟪x, ν⟫_ℝ < c₀} := by
-      rw [sdiff_eq]
-      refine Filter.EventuallyEqSet.inter Filter.EventuallyEqSet.rfl ?_
-      have : (Hsᶜ : Set E) = {x | ⟪x, ν⟫_ℝ ≤ c₀} := by ext x; simp [Hs]
-      rw [this]
-      exact setOf_inner_le_ae_eq_setOf_inner_lt hν c₀
-    rw [setIntegral_congr_set hae, ← hpre]
-    have h := hρ.setIntegral_preimage_emb
-      (hyperplaneReflection ν c₀).toHomeomorph.measurableEmbedding f (ball z t ∩ Hs)
-    simp only [hf] at h
-    exact h
-  have hsplit := integral_inter_add_sdiff hHm hfi
-  have hmeas : (volume : Measure E).real (ball z t) =
-      2 * (volume : Measure E).real (ball z t ∩ Hs) := by
-    rw [inter_comm, measureReal_def, measureReal_def,
-      Measure.addHaar_setOf_lt_inner_inter_ball volume hν hz, ENNReal.toReal_div,
-      ENNReal.toReal_ofNat]
-    ring
-  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, ← hsplit, hlow, hmeas]
-  rcases eq_or_ne ((volume : Measure E).real (ball z t ∩ Hs)) 0 with h0 | h0
-  · simp [h0]
-  · field_simp
-    ring
-
 /-- **Half-ball averages as ball averages.** Let `z` lie on the boundary hyperplane of
 `H = {c₀ < ⟪x, ν⟫}`, and let `f'` agree with `f` almost everywhere on `H`. If `φ ∘ f'` is invariant
 under the reflection `ρ` in the hyperplane and integrable on `B(z, t)`, its average there is the
@@ -278,7 +144,8 @@ private theorem setAverage_ball_inter_eq_setAverage_ball {H : Opens E} {ν : E} 
     (hi : IntegrableOn (fun x => φ (f' x)) (ball z t)) :
     ⨍ x in ball z t ∩ H, φ (f x) = ⨍ x in ball z t, φ (f' x) := by
   have hHs : (H : Set E) = {x | c₀ < ⟪x, ν⟫_ℝ} := Set.ext hH
-  rw [setAverage_ball_eq_setAverage_ball_inter hν hz hφ hi, ← hHs]
+  rw [setAverage_ball_eq_setAverage_setOf_lt_inner_inter_ball hν hz hφ hi, ← hHs,
+    inter_comm (H : Set E)]
   refine average_congr ?_
   have h := (ae_restrict_iff' H.isOpen.measurableSet).2 hf
   exact ae_restrict_of_ae_restrict_of_subset inter_subset_right
@@ -407,6 +274,8 @@ private theorem exists_boundary_step {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : 
       ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ 2 * Lam :=
     fun x hx => (norm_sub_le (matrixBilinearForm (a x)) (matrixBilinearForm A)).trans (by
       linarith [hbd x hx.2, hA.opNorm_matrixBilinearForm_le hx.1])
+  -- The boundary estimate is stated on `U ⊓ H`; transport the weak formulation from `H` to
+  -- `⊤ ⊓ H`, which equals `H` only propositionally.
   have hu' : ∀ V : Opens E, V = H → ∀ hV : V ≤ ⊤, ∀ φ : 𝓓(V, ℝ),
       energyFormH1 a 0 0 (W1p.restrictL hV u) (W1p.ofTestFunctionₗ volume V 2 φ) =
         ∫ x in V, ⟪G x, ∇ (φ : E → ℝ) x⟫_ℝ := by
@@ -426,19 +295,23 @@ private theorem exists_boundary_step {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : 
       LinearIsometryEquiv.norm_map]
   have hgnorm0 (x : E) : ‖g (hyperplaneReflection ν c₀ x)‖ = ‖g x‖ := by
     simpa using hgnorm 0 (by simp) x
+  have hgi (t : ℝ) (Q : E) : IntegrableOn (fun x => ‖g x - Q‖ ^ 2) (ball z t) :=
+    (hgp.restrict (ball z t)).integrableOn_norm_sub_sq_of_two_le h2p subset_rfl
+      measure_ball_lt_top.ne Q
   have hLHS := setAverage_ball_inter_eq_setAverage_ball hν hH hz (t := s) (f := W1p.gradient u)
-    (φ := fun v => ‖v - P‖ ^ 2) hgH (fun x => by simp only [hgnorm P hRP])
-    (integrableOn_ball_norm_sub_sq hgp h2p z s P)
+    (φ := fun v => ‖v - P‖ ^ 2) hgH (fun x => by simp only [hgnorm P hRP]) (hgi s P)
   have hg2r := setAverage_ball_inter_eq_setAverage_ball hν hH hz (t := r)
     (f := W1p.gradient u) (φ := fun v => ‖v - (0 : ℝ) • ν‖ ^ 2) hgH
-    (fun x => by simp only [zero_smul, sub_zero, hgnorm0])
-    (by simpa using integrableOn_ball_norm_sq hgp h2p z r)
+    (fun x => by simp only [zero_smul, sub_zero, hgnorm0]) (by simpa using hgi r 0)
   have hG2r := setAverage_ball_inter_eq_setAverage_ball hν hH hz (t := r) (f := G) (f' := G')
     (φ := fun v => ‖v - 0‖ ^ 2) (Filter.Eventually.of_forall hG'H)
-    (fun x => by simp only [sub_zero, hG'ρ]) (by simpa using integrableOn_ball_norm_sq hG'p h2p z r)
+    (fun x => by simp only [sub_zero, hG'ρ])
+    ((hG'p.restrict (ball z r)).integrableOn_norm_sub_sq_of_two_le h2p subset_rfl
+      measure_ball_lt_top.ne 0)
   have hgqr := setAverage_ball_inter_eq_setAverage_ball hν hH hz (t := r) (f := W1p.gradient u)
     (φ := fun v => ‖v‖ ^ (2 * q)) hgH (fun x => by simp only [hgnorm0])
-    (integrableOn_ball_norm_rpow hgp hq.pos hqp z r)
+    ((hgp.restrict (ball z r)).integrableOn_norm_rpow_of_subset (mul_pos two_pos hq.pos) hqp
+      subset_rfl measure_ball_lt_top.ne)
   simp only [zero_smul, sub_zero] at hg2r hG2r
   simp only [zero_smul, sub_zero] at key
   rw [← hLHS]
@@ -449,20 +322,6 @@ private theorem exists_boundary_step {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : 
   have hq'0 : 0 ≤ q'⁻¹ := inv_nonneg.2 hq.symm.pos.le
   gcongr
   exact Real.rpow_nonneg (average_nonneg fun x => by positivity) _
-
-/-- The foot `z = c - ((⟪c, ν⟫ - c₀) / ‖ν‖²) ν` of the perpendicular from `c` to the hyperplane
-`{⟪x, ν⟫ = c₀}` lies on it, at distance `(⟪c, ν⟫ - c₀) / ‖ν‖` from `c`. -/
-private theorem inner_foot_and_dist_foot {ν : E} (hν : ν ≠ 0) (c₀ : ℝ) (c : E) :
-    ⟪c - ((⟪c, ν⟫_ℝ - c₀) / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = c₀ ∧
-      dist c (c - ((⟪c, ν⟫_ℝ - c₀) / ‖ν‖ ^ 2) • ν) = |⟪c, ν⟫_ℝ - c₀| / ‖ν‖ := by
-  have hν0 : ‖ν‖ ≠ 0 := norm_ne_zero_iff.2 hν
-  constructor
-  · rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
-    field_simp
-    ring
-  · rw [dist_eq_norm, sub_sub_cancel, norm_smul, Real.norm_eq_abs, abs_div,
-      abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖ν‖ ^ 2)]
-    field_simp
 
 /-- **The boundary bound.** Let `c` lie in the closed half-space at distance `d` from the
 hyperplane, and let `d ≤ t` and `4t ≤ R`. The square mean oscillation of `g` on `B(c, t)` is
@@ -495,8 +354,7 @@ private theorem exists_boundary_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) :
   intro H ν c₀ a u G g G' p c t R δ q q' hν hH ham hbd hosc hu0 hu hgH hgρ hG'H hG'ρ h2p hgp hG'p
     hq hqp hc ht hdt htR
   have hR : 0 < R := by linarith
-  set z := c - ((⟪c, ν⟫_ℝ - c₀) / ‖ν‖ ^ 2) • ν
-  obtain ⟨hz, hcz⟩ := inner_foot_and_dist_foot hν c₀ c
+  obtain ⟨z, hz, hcz⟩ := exists_inner_eq_and_dist_eq hν c c₀
   rw [abs_of_nonneg (sub_nonneg.2 hc)] at hcz
   -- The balls involved: `B(c, t) ⊆ B(z, 2t)` and `B(z, R/2) ⊆ B(c, R)`.
   have hsub₁ : ball c t ⊆ ball z (2 * t) := fun x hx => by
@@ -509,22 +367,29 @@ private theorem exists_boundary_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) :
   obtain ⟨P, hP⟩ := hstep hν hH ham hbd hu0 hu hgH hgρ hG'H hG'ρ h2p hgp hG'p hq hqp hz
     (by linarith : (0 : ℝ) < 2 * t) (by linarith : 2 * t ≤ R / 2) hA hδ
   -- The oscillation on `B(c, t)` is at most the deviation from `P` on `B(z, 2t)`.
-  have h1 := (setAverage_norm_sub_setAverage_sq_le
-    (integrableOn_ball_of_memLp hgp (one_le_two.trans h2p) c t)
-    (integrableOn_ball_norm_sub_sq hgp h2p c t P)).trans
-    (setAverage_ball_le_mul_setAverage_ball (fun x => by positivity) ht hsub₁
-      (integrableOn_ball_norm_sub_sq hgp h2p z (2 * t) P))
-  rw [show 2 * t / t = 2 by field_simp] at h1
+  have hgi {f : E → E} (hf : MemLp f p volume) (x : E) (r : ℝ) (Q : E) :
+      IntegrableOn (fun y => ‖f y - Q‖ ^ 2) (ball x r) :=
+    (hf.restrict (ball x r)).integrableOn_norm_sub_sq_of_two_le h2p subset_rfl
+      measure_ball_lt_top.ne Q
+  have h1 := (setAverage_norm_sub_setAverage_sq_le_setAverage_norm_sub_sq measure_ball_lt_top.ne
+    ((hgp.restrict (ball c t)).integrableOn_of_subset (one_le_two.trans h2p) subset_rfl
+      measure_ball_lt_top.ne) (hgi hgp c t P)).trans
+    ((volume : Measure E).setAverage_ball_le_div_pow_mul_setAverage_ball (fun x => by positivity)
+      ht hsub₁ (hgi hgp z (2 * t) P))
+  rw [show 2 * t / t = 2 by field_simp, finrank_euclideanSpace_fin] at h1
   -- Pass from `B(z, R/2)` to `B(c, R)`.
   have hR2 : R / (R / 2) = 2 := by field_simp
-  have hX := setAverage_ball_le_mul_setAverage_ball (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ 2)
-    (by linarith : 0 < R / 2) hsub₂ (integrableOn_ball_norm_sq hgp h2p c R)
-  have hY := setAverage_ball_le_mul_setAverage_ball (fun x => by positivity : ∀ x, 0 ≤ ‖G' x‖ ^ 2)
-    (by linarith : 0 < R / 2) hsub₂ (integrableOn_ball_norm_sq hG'p h2p c R)
-  have hZ := setAverage_ball_rpow_inv_le (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ (2 * q))
-    (by linarith : 0 < R / 2) (by linarith) hsub₂ (integrableOn_ball_norm_rpow hgp hq.pos hqp c R)
-    hq.lt.le
-  rw [hR2] at hX hY hZ
+  have hX := (volume : Measure E).setAverage_ball_le_div_pow_mul_setAverage_ball
+    (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ 2) (by linarith : 0 < R / 2) hsub₂
+    (by simpa using hgi hgp c R 0)
+  have hY := (volume : Measure E).setAverage_ball_le_div_pow_mul_setAverage_ball
+    (fun x => by positivity : ∀ x, 0 ≤ ‖G' x‖ ^ 2) (by linarith : 0 < R / 2) hsub₂
+    (by simpa using hgi hG'p c R 0)
+  have hZ := (volume : Measure E).rpow_inv_setAverage_ball_le_div_pow_mul
+    (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ (2 * q)) (by linarith : 0 < R / 2) (by linarith)
+    hsub₂ ((hgp.restrict (ball c R)).integrableOn_norm_rpow_of_subset (mul_pos two_pos hq.pos)
+      hqp subset_rfl measure_ball_lt_top.ne) hq.lt.le
+  rw [hR2, finrank_euclideanSpace_fin] at hX hY hZ
   set D := ((2 * Lam) ^ (2 * q' - 1) * δ) ^ q'⁻¹
   have hD : 0 ≤ D := deviation_factor_nonneg hA (by linarith) (fun x => by positivity) hδ
   set X := ⨍ x in ball c R, ‖g x‖ ^ 2
@@ -591,10 +456,15 @@ private theorem exists_interior_chain (lam Lam : ℝ) : ∃ C : ℝ, 0 < C ∧
   rw [inter_eq_left.2 hball] at hδ
   have h := hstep ham hbd hu hgH hG'H h2p hgp hG'p hq hqp hρ hρt hball hA hδ
   -- Pass from `B(c, t)` to `B(c, R)` in the forcing terms.
-  have hY := setAverage_ball_le_mul_setAverage_ball (fun x => by positivity : ∀ x, 0 ≤ ‖G' x‖ ^ 2)
-    ht (ball_subset_ball htR) (integrableOn_ball_norm_sq hG'p h2p c R)
-  have hZ := setAverage_ball_rpow_inv_le (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ (2 * q))
-    ht htR (ball_subset_ball htR) (integrableOn_ball_norm_rpow hgp hq.pos hqp c R) hq.lt.le
+  have hY := (volume : Measure E).setAverage_ball_le_div_pow_mul_setAverage_ball
+    (fun x => by positivity : ∀ x, 0 ≤ ‖G' x‖ ^ 2) ht (ball_subset_ball htR)
+    (by simpa using ((hG'p.restrict (ball c R)).integrableOn_norm_sub_sq_of_two_le h2p subset_rfl
+      measure_ball_lt_top.ne 0))
+  have hZ := (volume : Measure E).rpow_inv_setAverage_ball_le_div_pow_mul
+    (fun x => by positivity : ∀ x, 0 ≤ ‖g x‖ ^ (2 * q)) ht htR (ball_subset_ball htR)
+    ((hgp.restrict (ball c R)).integrableOn_norm_rpow_of_subset (mul_pos two_pos hq.pos) hqp
+      subset_rfl measure_ball_lt_top.ne) hq.lt.le
+  rw [finrank_euclideanSpace_fin] at hY hZ
   set D := ((2 * Lam) ^ (2 * q' - 1) * δ) ^ q'⁻¹
   have hD : 0 ≤ D := deviation_factor_nonneg hA ht (fun x => by positivity) hδ
   set X := ⨍ x in ball c R, ‖g x‖ ^ 2
@@ -631,20 +501,6 @@ private theorem exists_interior_chain (lam Lam : ℝ) : ∃ C : ℝ, 0 < C ∧
               mul_le_mul hρt' hRt (by positivity) zero_le_one
           _ = (R / ρ) ^ (n + 1) := one_mul _
     _ = _ := by ring
-
-/-- A ball about `c` of radius at most the distance `(⟪c, ν⟫ - c₀) / ‖ν‖` from `c` to the
-hyperplane lies in the open half-space `H = {c₀ < ⟪x, ν⟫}`. -/
-private theorem ball_subset_of_le_div_norm {H : Set E} {ν : E} (hν : ν ≠ 0) {c₀ : ℝ}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {c : E} {t : ℝ} (ht : t ≤ (⟪c, ν⟫_ℝ - c₀) / ‖ν‖) :
-    ball c t ⊆ H := fun x hx => by
-  have hν0 : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  rw [le_div_iff₀ hν0] at ht
-  have h1 : |⟪x - c, ν⟫_ℝ| ≤ ‖x - c‖ * ‖ν‖ := abs_real_inner_le_norm _ _
-  have h2 : ‖x - c‖ * ‖ν‖ < t * ‖ν‖ := by
-    gcongr
-    rwa [← dist_eq_norm, ← mem_ball]
-  rw [hH, show ⟪x, ν⟫_ℝ = ⟪c, ν⟫_ℝ + ⟪x - c, ν⟫_ℝ by rw [inner_sub_left]; ring]
-  linarith [neg_abs_le ⟪x - c, ν⟫_ℝ]
 
 /-- The constant `16^(n+3) (C_I + 1) (C_B + 1)` dominates every constant arising in the case
 split of `exists_upper_bound`. -/
@@ -745,7 +601,8 @@ private theorem exists_upper_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : �
   set d := (⟪c, ν⟫_ℝ - c₀) / ‖ν‖
   rcases le_or_gt (R / 4) d with hd | hd
   · -- `d ≥ R/4`: the interior step on `B(c, R/4) ⊆ H`, after the trivial bound there.
-    have hball := ball_subset_of_le_div_norm hν hH hd
+    have hball : ball c (R / 4) ⊆ H := fun x hx => (hH x).2 (ball_subset_setOf_lt_inner hν
+      (by linarith [(le_div_iff₀ (norm_pos_iff.2 hν)).1 hd]) hx)
     have hρt : ρ ≤ R / 4 := by rw [hR_def]; nlinarith
     have htriv : ⨍ x in ball c (R / 4), ‖g x - ⨍ y in ball c (R / 4), g y‖ ^ 2 ≤
         (16 * 4 ^ (n + 1)) * (R / 4 / R) ^ 2 * X + 0 * (R / (R / 4)) ^ (n + 1) * W := by
@@ -765,7 +622,8 @@ private theorem exists_upper_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : �
       hρ hdρ (by rw [hR_def]; nlinarith)
     exact ⟨CB, CB, hMB, hMB, h⟩
   · -- `ρ < d < R/4`: the interior step on `B(c, d)`, then the boundary bound there.
-    have hball := ball_subset_of_le_div_norm hν hH le_rfl (c := c)
+    have hball : ball c d ⊆ H := fun x hx => (hH x).2 (ball_subset_setOf_lt_inner hν
+      (by linarith [(le_div_iff₀ (norm_pos_iff.2 hν)).1 (le_refl d)]) hx)
     have hb := hbdry (R := R) hν hH ham hbd hosc hu0 hu hgH hgρ hG'H hG'ρ h2p hgp hG'p hq hqp hc
       (hρ.trans hdρ) le_rfl (by linarith)
     have h := hchain ham hbd hosc hu hgH hG'H h2p hgp hG'p hq hqp hc hρ hdρ.le (by linarith)
@@ -831,9 +689,11 @@ private theorem exists_ball_bound {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) : ∃
     rw [hgρ, show -R (g x) - m' = -R (g x - -R m') by
       rw [map_sub, map_neg, Submodule.reflection_reflection]; abel, norm_neg,
       LinearIsometryEquiv.norm_map]
-  refine (setAverage_norm_sub_setAverage_sq_le
-    (integrableOn_ball_of_memLp hgp (one_le_two.trans h2p) c ρ)
-    (integrableOn_ball_norm_sub_sq hgp h2p c ρ (-R m'))).trans ?_
+  refine (setAverage_norm_sub_setAverage_sq_le_setAverage_norm_sub_sq measure_ball_lt_top.ne
+    ((hgp.restrict (ball c ρ)).integrableOn_of_subset (one_le_two.trans h2p) subset_rfl
+      measure_ball_lt_top.ne)
+    ((hgp.restrict (ball c ρ)).integrableOn_norm_sub_sq_of_two_le h2p subset_rfl
+      measure_ball_lt_top.ne (-R m'))).trans ?_
   rw [hosc_eq, hinv _ hgn2, hinv _ hG'n, hinv _ (hgn (2 * q))]
   exact hup hν hH ham hbd hosc hu0 hu hgH hgρ hG'H hG'ρ h2p hgp hG'p hq hqp hc' hρ hκ
 
