@@ -327,38 +327,19 @@ private theorem mem_iUnion_image2_concatLevelRecords_of_chain {k : ℕ} {x : Fin
       image2 (concatLevelRecords c (hc q hq.1))
         (hX.morseTrajectoryRecords p q ((c ⁻¹' Ioo (f q) (f p)).domRestrict c))
         (hX.morseBrokenTrajectoryRecords q r ((c ⁻¹' Ioo (f r) (f q)).domRestrict c)) := by
-  set q := x 1 with hq
+  set q := x 1
   have hanti := hX.strictAnti_apply_of_chain hne hz
   have hfq : f q ∈ Ioo (f r) (f p) := by
     rw [← hx0, ← hxk]
     exact ⟨hanti Fin.one_lt_last, hanti Fin.zero_lt_one⟩
-  -- The values of `f` on the component `j` lie between those at the ends of the step `j`.
-  have hcomp (j : Fin (k + 2)) (t : ℝ) :
-      f (hX.flow t (z j)) ∈ Icc (f (x j.succ)) (f (x j.castSucc)) :=
-    hX.mem_Icc_of_mem_unstableSet_inter_stableSet
-      (hX.flow.isInvariant_unstableSet_inter_stableSet _ _ t (hz j))
   refine mem_iUnion₂.2 ⟨q, ⟨hxc 1, fun h ↦ hfq.2.ne (congrArg f h),
     fun h ↦ hfq.1.ne' (congrArg f h)⟩,
-    fun i ↦ w ⟨i, hfq.1.trans i.property.1, i.property.2⟩, ?_,
-    fun i ↦ w ⟨i, i.property.1, i.property.2.trans hfq.2⟩, ?_, funext fun i ↦ ?_⟩
-  -- Above `f q`, the record is that of the first component.
-  · exact hX.mem_morseTrajectoryRecords.2 ⟨z 0, by simpa [← hx0] using hz 0, fun i ↦ ⟨(hw _).1,
-      hX.exists_flow_eq_of_mem_Ioo hz hw (j := 0) (by
-        have hi : f q < c i ∧ c i < f p := i.property
-        simpa [hx0] using hi)⟩⟩
-  -- Below `f q`, it is a broken trajectory along the rest of the chain.
-  · refine hX.mem_morseBrokenTrajectoryRecords.2 ⟨k + 1, Fin.tail x, Fin.tail z,
-      by simp [Fin.tail, hq], by simpa [Fin.tail] using hxk, fun j ↦ hxc _, fun j ↦ ?_,
-      fun j ↦ ?_, fun i ↦ ?_⟩
-    · simpa [Fin.tail, ← Fin.succ_castSucc] using hne j.succ
-    · simpa [Fin.tail, ← Fin.succ_castSucc] using hz j.succ
-    obtain ⟨hwc, j, t, ht⟩ := hw ⟨i, i.property.1, i.property.2.trans hfq.2⟩
-    induction j using Fin.cases with
-    | zero =>
-      have h := hcomp 0 t
-      rw [ht, hwc] at h
-      exact absurd i.property.2 (not_lt.2 (by simpa [hq] using h.1))
-    | succ j => exact ⟨hwc, j, t, ht⟩
+    fun i ↦ w ⟨i, hfq.1.trans i.property.1, i.property.2⟩,
+    hX.mem_morseTrajectoryRecords_of_chain hx0 rfl hz (fun _ ↦ hw _) fun i ↦ i.property,
+    fun i ↦ w ⟨i, i.property.1, i.property.2.trans hfq.2⟩,
+    hX.mem_morseBrokenTrajectoryRecords_of_chain rfl hxk hxc hne hz (fun _ ↦ hw _)
+      fun i ↦ i.property.2,
+    funext fun i ↦ ?_⟩
   -- The two parts concatenate to the record, since no level is `f q`.
   · rcases lt_or_gt_of_ne (hc q (hxc 1) i) with h | h
     · rw [concatLevelRecords_of_gt _ _ _ h]
@@ -389,10 +370,7 @@ theorem morseBrokenTrajectoryRecords_eq_union (hpr : p ≠ r)
   -- unbroken, and otherwise it splits at its first breaking point.
   obtain _ | _ | k := k
   · exact absurd (hx0.symm.trans hxk) hpr
-  · refine Or.inl (hX.mem_morseTrajectoryRecords.2 ⟨z 0, by simpa [← hx0, ← hxk] using hz 0,
-      fun i ↦ ?_⟩)
-    obtain ⟨hwc, j, t, ht⟩ := hw i
-    exact ⟨hwc, t, by rwa [Fin.fin_one_eq_zero j] at ht⟩
+  · exact Or.inl (hX.mem_morseTrajectoryRecords_of_chain hx0 hxk hz hw fun i ↦ i.property)
   · exact Or.inr (hX.mem_iUnion_image2_concatLevelRecords_of_chain hx0 hxk hxc hne hz hw hc)
 
 end Split

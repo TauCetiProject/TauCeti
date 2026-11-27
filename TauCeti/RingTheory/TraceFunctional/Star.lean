@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Star.Module
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Basic.Complex.Basic
 import Mathlib.Algebra.Module.Torsion.Field
+import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -22,11 +23,13 @@ star, this form is Hermitian. If it is also tracial, its multiplication-pairing 
 star-stable and equals the kernel of the sesquilinear form. No positivity is assumed: these
 facts apply before deciding whether a trace gives a Hilbert space after quotient and completion.
 
-Over `ℂ`, traciality can be tested on the pairs `(star a, a)`:
-`LinearMap.forall_map_mul_comm_iff_forall_map_star_mul_self` says that a complex linear map `f`
-on a possibly nonunital star algebra satisfies `f (a * b) = f (b * a)` for all `a, b` as soon as
-`f (star a * a) = f (a * star a)` for all `a`. This is polarization: the sesquilinear forms
-`(a, b) ↦ f (star a * b)` and `(a, b) ↦ f (b * star a)` agree on the diagonal, hence everywhere.
+Over `ℂ`, traciality reduces to self-adjoint elements
+(`LinearMap.forall_map_mul_comm_iff_forall_isSelfAdjoint`) and can be tested on the pairs
+`(star a, a)`: `LinearMap.forall_map_mul_comm_iff_forall_map_star_mul_self` says that a complex
+linear map `f` on a possibly nonunital star algebra satisfies `f (a * b) = f (b * a)` for all `a, b`
+as soon as `f (star a * a) = f (a * star a)` for all `a`. This is polarization: the sesquilinear
+forms `(a, b) ↦ f (star a * b)` and `(a, b) ↦ f (b * star a)` agree on the diagonal, hence
+everywhere.
 
 ## References
 
@@ -89,6 +92,19 @@ section Polarization
 
 variable {A M : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] [AddCommGroup M] [Module ℂ M]
+
+/-- **Cartesian reduction of traciality.** A complex linear map `f` on a possibly nonunital star
+algebra vanishes on all commutators if and only if it vanishes on commutators of self-adjoint
+elements. -/
+theorem forall_map_mul_comm_iff_forall_isSelfAdjoint (f : A →ₗ[ℂ] M) :
+    (∀ a b, f (a * b) = f (b * a)) ↔
+      ∀ a b, IsSelfAdjoint a → IsSelfAdjoint b → f (a * b) = f (b * a) :=
+  ⟨fun h a b _ _ => h a b, fun h x y => by
+    have key : (LinearMap.mul ℂ A).compr₂ f = ((LinearMap.mul ℂ A).compr₂ f).flip :=
+      LinearMap.ext_on span_selfAdjoint fun a ha =>
+        LinearMap.ext_on span_selfAdjoint fun b hb => by
+          simpa using h a b (selfAdjoint.mem_iff.mp ha) (selfAdjoint.mem_iff.mp hb)
+    simpa using LinearMap.congr_fun₂ key x y⟩
 
 /-- **Polarization criterion for traciality.** A complex linear map `f` on a possibly nonunital
 star algebra satisfies `f (a * b) = f (b * a)` for all `a, b` exactly when

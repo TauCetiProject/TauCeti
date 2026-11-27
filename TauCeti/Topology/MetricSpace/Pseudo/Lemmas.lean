@@ -10,7 +10,7 @@ public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Algebra.Support
 
 /-!
-# Balls and annuli in pseudo-metric spaces
+# Balls, annuli, and convergence in pseudo-metric spaces
 
 Open balls in locally compact pseudometric spaces are locally compact. Every neighbourhood of a
 point contains a closed ball about it of arbitrarily small positive radius
@@ -23,13 +23,16 @@ support of a function lies outside its closed support
 
 Of pairwise disjoint balls, a point of one of them lying in the union of their shrunk concentric
 balls lies in its own shrunk ball (`Metric.mem_ball_mul_of_mem_iUnion`).
+
+If `dist (x i) u ^ n ≤ g i` eventually along a filter `l` with `g → 0`, then `x → u` along `l`
+(`TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero`).
 -/
 
 public section
 
 namespace TauCeti
 
-open Metric Set Topology
+open Filter Metric Set Topology
 
 variable {X : Type*} [PseudoMetricSpace X]
 
@@ -74,5 +77,14 @@ theorem _root_.Metric.mem_ball_mul_of_mem_iUnion {ι : Type*} {c : ι → X} {r 
   · exact hj
   · exact absurd hwi (Set.disjoint_left.1 (hdisj hij)
       (ball_subset_ball (mul_le_of_le_one_right (hr j) (ht j)) hj))
+
+/-- If `dist (x i) u ^ n ≤ g i` eventually along `l` and `g` tends to `0`, then `x` tends to `u`
+along `l`. -/
+theorem tendsto_of_dist_pow_le_of_tendsto_zero {ι : Type*} {l : Filter ι} {x : ι → X} {u : X}
+    {n : ℕ} {g : ι → ℝ} (hle : ∀ᶠ i in l, dist (x i) u ^ n ≤ g i) (hg : Tendsto g l (𝓝 0)) :
+    Tendsto x l (𝓝 u) := by
+  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
+  filter_upwards [hle, hg.eventually (gt_mem_nhds (pow_pos hε n))] with i hi hgi
+  exact lt_of_pow_lt_pow_left₀ n hε.le (hi.trans_lt hgi)
 
 end TauCeti

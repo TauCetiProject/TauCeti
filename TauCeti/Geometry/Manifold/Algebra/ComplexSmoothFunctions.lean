@@ -23,15 +23,19 @@ complexifies to a complex-linear map between complex-valued ones
 (`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution. Conjugating
 the input and output of a complex-linear map, `f ↦ conj (P (conj f))`, gives a complex-linear map
 (`ContMDiffMap.intrinsicConj`); it fixes exactly the complexifications of real-linear maps
-(`ContMDiffMap.intrinsicConj_eq_self_iff`), so every complex-linear map is `A + i B` with `A`
+(`ContMDiffMap.intrinsicConj_eq_self_iff`), so every complex-linear map `P` is `A + i B` with `A`
 and `B` complexifications
-(`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`).
+(`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`), namely of
+`u ↦ Re (P u)` and `u ↦ Im (P u)` on real-valued functions
+(`ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp`).
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
 For a diffeomorphism it is a complex algebra isomorphism (`Diffeomorph.compRightComplexAlgEquiv`),
 and conjugating by it carries the complex-linear operators on the functions on one manifold to
-those on the other (`Diffeomorph.pushforwardOperator`), functorially in the diffeomorphism.
+those on the other (`Diffeomorph.pushforwardOperator`), functorially in the diffeomorphism. An
+operator is invariant under the pushforward along a self-diffeomorphism exactly when it commutes
+with precomposition by it (`Diffeomorph.pushforwardOperator_eq_self_iff`).
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -190,6 +194,20 @@ theorem ofReal_injective :
     Function.Injective (ofReal (I := I) (M := M) (n := n)) := by
   intro f g h
   simpa using congrArg re h
+
+/-- **Splitting by a partition of unity.** If real-valued smooth functions `ρ i` add up to `1` on a
+set `K` containing the support of a complex-valued smooth function `g`, then `g` is the sum of the
+products `ρ i · g`. -/
+theorem eq_sum_mulLeft_ofReal {ι : Type*} (s : Finset ι) (ρ : ι → C^n⟮I, M; ℝ⟯) {K : Set M}
+    {g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} (hg : Function.support g ⊆ K)
+    (hρ : ∀ x ∈ K, ∑ i ∈ s, ρ i x = 1) :
+    g = ∑ i ∈ s, LinearMap.mulLeft ℂ (ofReal (ρ i)) g := by
+  ext x
+  simp only [coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply, coe_mul, Pi.mul_apply,
+    ofReal_apply, ← Finset.sum_mul]
+  by_cases hx : x ∈ K
+  · rw [← Complex.ofReal_sum, hρ x hx, Complex.ofReal_one, one_mul]
+  · rw [Function.notMem_support.1 fun h ↦ hx (hg h), mul_zero]
 
 /-- Real and imaginary parts reconstruct the original smooth function. -/
 theorem ofReal_re_add_I_smul_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
@@ -534,6 +552,16 @@ theorem exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq
   rw [hA, hB, smul_smul, hI]
   module
 
+/-- **Real and imaginary parts of an operator, explicitly.** Every complex-linear map `P` between
+complex-valued smooth functions is `A + i B` for the complexifications of the real-linear maps
+`A u = Re (P u)` and `B u = Im (P u)` on real-valued functions `u`. -/
+theorem complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp
+    (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    complexifyLinearMap (re ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) +
+      Complex.I • complexifyLinearMap (im ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) = P :=
+  linearMap_ext_ofReal fun u ↦ by
+    simpa [complexifyLinearMap_ofReal] using ofReal_re_add_I_smul_im (P (ofReal u))
+
 variable {U V : TopologicalSpace.Opens M}
 
 /-- Real part commutes with restriction to an open subset. -/
@@ -700,5 +728,17 @@ theorem pushforwardOperator_trans {E'' H'' P : Type*} [NormedAddCommGroup E''] [
     pushforwardOperator (Φ.trans Ψ) = (pushforwardOperator Φ).trans (pushforwardOperator Ψ) := by
   ext P u x
   simp [compRightComplexAlgEquiv_trans]
+
+/-- An operator is invariant under the pushforward along `Φ` exactly when it commutes with
+precomposition by `Φ`: `P (u ∘ Φ) = (P u) ∘ Φ` for every `u`. -/
+theorem pushforwardOperator_eq_self_iff (Φ : M ≃ₘ^n⟮I, I⟯ M)
+    {P : Module.End ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} :
+    pushforwardOperator Φ P = P ↔
+      ∀ u, P (compRightComplexAlgEquiv Φ u) = compRightComplexAlgEquiv Φ (P u) := by
+  refine ⟨fun h u ↦ ContMDiffMap.ext fun x ↦ ?_, fun h ↦ LinearMap.ext fun u ↦
+    ContMDiffMap.ext fun y ↦ ?_⟩
+  · conv_rhs => rw [compRightComplexAlgEquiv_apply, ← h, pushforwardOperator_apply_apply,
+      Φ.symm_apply_apply]
+  · rw [pushforwardOperator_apply_apply, h, compRightComplexAlgEquiv_apply, Φ.apply_symm_apply]
 
 end Diffeomorph

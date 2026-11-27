@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.GaussPoint
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty.Basic
 public import TauCeti.RingTheory.WittVector.IntervalRing.Basic
 
 /-!

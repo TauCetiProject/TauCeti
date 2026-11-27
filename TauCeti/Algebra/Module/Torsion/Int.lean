@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.QuotSMulTop
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.FieldTheory.Finiteness
+import TauCeti.RingTheory.Finiteness.Nakayama
 
 /-!
 # Torsion and reduction of abelian groups
@@ -22,7 +23,9 @@ and the reduction `M ⧸ nM = QuotSMulTop n M` of a finitely generated abelian g
 are recorded as instances, so that such groups meet the finiteness hypotheses of constructions that
 take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module. The reduction `M ⧸ 2M` is
 moreover a vector space over `ZMod 2`, whose dimension is the rank of `M` when `M` is finite free;
-quadratic forms reduced modulo two live on it.
+quadratic forms reduced modulo two live on it. Torsion-freeness is tested one prime at a time: an
+abelian group without `p`-torsion for every prime `p` is torsion-free, and by Nakayama's lemma over
+`ℤ` a finitely generated abelian group on which every prime acts surjectively is zero.
 
 ## Main results
 
@@ -37,6 +40,10 @@ quadratic forms reduced modulo two live on it.
   additive equivalences.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
+* `TauCeti.hasUniqueDiv_of_forall_prime`: an abelian group on which every prime acts injectively
+  is torsion-free.
+* `TauCeti.subsingleton_of_forall_prime_surjective`: a finitely generated abelian group on which
+  every prime acts surjectively is zero.
 -/
 
 public section
@@ -123,6 +130,42 @@ theorem span_range_mk_ofMul_eq_top_iff {G ι : Type*} [CommGroup G] (ε : ι →
     _ ↔ e (Subgroup.closure (Set.range ε) ⊔ CommGroup.torsion G) = e ⊤ := by
         rw [map_sup, hclosure, htors, map_top]
     _ ↔ _ := e.injective.eq_iff
+
+/-- Multiplication by a nonzero natural number on an abelian group is a composite of
+multiplications by primes, so it has every property of maps that holds for multiplication by
+primes and for the identity and is stable under composition. -/
+private theorem nsmul_of_forall_prime {M : Type*} [AddCommGroup M] {P : (M → M) → Prop}
+    (hid : P id) (hcomp : ∀ f g, P f → P g → P (f ∘ g))
+    (hprime : ∀ p : ℕ, p.Prime → P fun x ↦ p • x) {n : ℕ} (hn : n ≠ 0) : P fun x ↦ n • x := by
+  induction n using induction_on_primes with
+  | zero => exact absurd rfl hn
+  | one => exact (funext fun x ↦ (one_smul ℕ x).symm : (id : M → M) = fun x ↦ 1 • x) ▸ hid
+  | prime_mul p a hp ha =>
+    rw [show (fun x : M ↦ (p * a) • x) = (fun x ↦ p • x) ∘ fun x ↦ a • x from
+      funext fun x ↦ mul_smul p a x]
+    exact hcomp _ _ (hprime p hp) (ha (right_ne_zero_of_mul hn))
+
+/-- **Torsion-freeness is tested on primes.** An abelian group on which multiplication by every
+prime is injective is torsion-free: every nonzero natural number is a product of primes. -/
+theorem hasUniqueDiv_of_forall_prime {M : Type*} [AddCommGroup M]
+    (h : ∀ p : ℕ, p.Prime → Function.Injective fun x : M ↦ p • x) : HasUniqueDiv M where
+  nsmul_right_injective _ hn :=
+    nsmul_of_forall_prime Function.injective_id (fun _ _ ↦ .comp) h hn
+
+/-- **Vanishing is tested on primes, for finitely generated abelian groups.** A finitely generated
+abelian group on which multiplication by every prime is surjective is zero, by Nakayama's lemma
+over `ℤ`. The `ℤ`-module structure may be any one, since it is unique. -/
+theorem subsingleton_of_forall_prime_surjective {M : Type*} [AddCommGroup M] [Module ℤ M]
+    [Module.Finite ℤ M] (h : ∀ p : ℕ, p.Prime → Function.Surjective fun x : M ↦ p • x) :
+    Subsingleton M := by
+  obtain rfl : ‹Module ℤ M› = AddCommGroup.toIntModule M := Subsingleton.elim _ _
+  refine subsingleton_of_forall_eq 0 fun a ↦ (Submodule.eq_bot_iff _).1
+    (Submodule.eq_bot_of_forall_prime_le_smul Module.Finite.fg_top fun p hp x _ ↦ ?_) a
+    Submodule.mem_top
+  obtain ⟨y, rfl⟩ := h p hp x
+  beta_reduce
+  rw [← natCast_zsmul]
+  exact Submodule.smul_mem_smul (Ideal.mem_span_singleton_self _) Submodule.mem_top
 
 /-- For a submonoid `S` of `ℤ`, being `S`-torsion, every element killed by an element of `S`, is
 invariant under additive equivalences of abelian groups, for the canonical action of `ℤ`. This is

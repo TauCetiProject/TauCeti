@@ -16,6 +16,7 @@ import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Submodule
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import TauCeti.Algebra.Module.Submodule.Pointwise
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Basis
 
 /-!
@@ -25,10 +26,14 @@ This file provides generic results about full submodules over commutative algebr
 bases and ranks of full submodules to their ambient spaces. It also extends integral linear
 equivalences between full submodules to linear equivalences of their ambient modules, and proves
 that surjective linear maps preserve full lattices over fraction fields, as do finite
-products. Injective linear maps pull back full lattices over localizations of Noetherian
-commutative rings. Scalar extension of a free full lattice recovers its ambient module. Finally,
-the stabilizer of a free full lattice `L` in the ambient automorphism group is the automorphism
-group of `L`, hence `GL_n` of the coefficients in a basis of `L`.
+products and translation by a group acting linearly over both scalar rings. Injective linear
+maps pull back full lattices over localizations of Noetherian commutative rings. Scalar extension
+of a free full lattice recovers its ambient module. Over a discrete valuation ring with maximal
+ideal `𝔪`, the maximal ideal and every nonzero scalar of the fraction field translate submodules as
+powers of a uniformizer do, so no homothety moves a submodule between `𝔪 N` and `N` to another
+one strictly between them. Finally, the stabilizer of a free full lattice `L` in the ambient
+automorphism group is the automorphism group of `L`, hence `GL_n` of the coefficients in a basis
+of `L`.
 
 ## Main declarations
 
@@ -52,6 +57,8 @@ group of `L`, hence `GL_n` of the coefficients in a basis of `L`.
 * `Module.Finite.of_isFullLattice`: a module containing a full lattice is finite.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
+* `Submodule.IsLattice.pointwise_smul`, `Submodule.IsFullLattice.pointwise_smul`: a group acting by
+  maps linear over both scalar rings moves (full) lattices to (full) lattices.
 * `Submodule.IsFullLattice.pi`: the product of a finite family of full lattices is a full lattice.
 * `Submodule.IsFullLattice.prod`: the product of two full lattices is a full lattice.
 * `LinearEquiv.extendOfIsFullLattice`: extension of an `R`-linear equivalence between
@@ -70,6 +77,16 @@ group of `L`, hence `GL_n` of the coefficients in a basis of `L`.
   finitely generated submodule into a submodule spanning the ambient space over `K`.
 * `Submodule.IsFullLattice.exists_maximalIdeal_pow_smul_le`: over a discrete valuation ring, a power
   of the maximal ideal multiplies a finitely generated submodule into a full lattice.
+* `Submodule.maximalIdeal_smul_eq_units_smul`: over a discrete valuation ring, the maximal ideal
+  multiplies submodules as a uniformizer does.
+* `Submodule.exists_units_maximalIdeal_smul_eq`: over a discrete valuation ring, some uniformizer,
+  viewed as a nonzero scalar of the fraction field, multiplies every submodule as `𝔪` does.
+* `Submodule.exists_smul_eq_zpow_smul`: over a discrete valuation ring, every nonzero scalar of
+  the fraction field translates submodules as a power of a uniformizer does.
+* `Submodule.smul_eq_self_of_maximalIdeal_smul_lt`: a homothety placing a submodule `M` between
+  `𝔪 N` and `N` strictly between them fixes `M`.
+* `Submodule.IsFullLattice.of_maximalIdeal_smul_le`: over a discrete valuation ring, a submodule
+  between `𝔪 L` and a full lattice `L` is a full lattice.
 * `Submodule.stabilizerMulEquiv`: the stabilizer of a free full lattice `L` in `V ≃ₗ[K] V` is
   isomorphic to `L ≃ₗ[R] L` by restriction.
 * `Module.Basis.stabilizerMulEquivGL`: in an `R`-basis of `L`, that stabilizer is `GL ι R`, and
@@ -350,7 +367,71 @@ theorem isFullLattice_map (S : Submodule R V) [S.IsFullLattice A] (f : V →ₗ[
     simp [Submodule.map_coe, Submodule.span_image, _root_.Submodule.IsFullLattice.span_eq_top,
       LinearMap.range_eq_top.mpr hf]
 
+/-- A linear equivalence over the fraction field preserves and reflects full lattices. -/
+theorem isFullLattice_map_iff (S : Submodule R V) (f : V ≃ₗ[A] W) :
+    (S.map (f.toLinearMap.restrictScalars R)).IsFullLattice A ↔ S.IsFullLattice A := by
+  constructor
+  · intro h
+    let := h
+    have hmap := isFullLattice_map (S.map (f.toLinearMap.restrictScalars R))
+      f.symm.toLinearMap f.symm.surjective
+    simpa only [← map_comp, ← LinearMap.restrictScalars_comp, LinearEquiv.symm_comp,
+      LinearMap.restrictScalars_id, map_id] using hmap
+  · intro h
+    let := h
+    exact isFullLattice_map S f.toLinearMap f.surjective
+
 end Map
+
+section Pointwise
+
+open scoped Pointwise
+
+variable {R A V G : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+variable [Group G] [DistribMulAction G V] [SMulCommClass G R V] [SMulCommClass G A V]
+
+/-- A group acting on `V` by maps that are linear over both `R` and `A` moves lattices to
+lattices. This generalizes `Submodule.IsLattice.smul`, the action of the units of `A`. -/
+instance IsLattice.pointwise_smul (M : Submodule R V) [M.IsLattice A] (g : G) :
+    (g • M).IsLattice A where
+  fg := (IsLattice.fg A M).map _
+  linearIndepOn s hsM hs := by
+    rw [coe_pointwise_smul, Set.subset_smul_set_iff] at hsM
+    rw [← linearIndepOn_id_smul_set_iff g⁻¹] at hs ⊢
+    exact IsLattice.linearIndepOn _ hsM hs
+
+/-- A group acting on `V` by maps that are linear over both `R` and `A` moves full lattices to
+full lattices. This generalizes `Submodule.IsFullLattice.smul`, the action of the units of
+`A`. -/
+instance IsFullLattice.pointwise_smul (M : Submodule R V) [M.IsFullLattice A] (g : G) :
+    (g • M).IsFullLattice A where
+  span_eq_top := by
+    rw [coe_pointwise_smul, span_smul, _root_.Submodule.IsFullLattice.span_eq_top, smul_top]
+
+end Pointwise
+
+section Subsingleton
+
+variable {R A V : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+
+/-- Every submodule of a subsingleton module is a full lattice. -/
+theorem IsFullLattice.of_subsingleton (S : Submodule R V) [Subsingleton V] :
+    S.IsFullLattice A where
+  fg := by
+    rw [eq_bot_of_subsingleton (p := S)]
+    exact fg_bot
+  linearIndepOn := by
+    intro s _ hs
+    rcases subsingleton_or_nontrivial A with hA | hA
+    · exact linearIndependent_of_subsingleton
+    · have : Nontrivial R := (algebraMap R A).domain_nontrivial
+      have : IsEmpty s := (linearIndependent_subsingleton_iff _).mp hs
+      exact linearIndependent_empty_type
+  span_eq_top := Subsingleton.elim _ _
+
+end Subsingleton
 
 section Comap
 
@@ -729,5 +810,85 @@ theorem _root_.Submodule.IsFullLattice.exists_maximalIdeal_pow_smul_le [IsDiscre
   obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp (hm ▸ hs)
   rw [mul_smul]
   exact S.smul_mem c (hr x hx)
+
+section Pointwise
+
+open scoped Pointwise
+
+variable [IsDiscreteValuationRing R]
+
+omit [IsFractionRing R K] in
+/-- Over a discrete valuation ring, the maximal ideal multiplies a submodule as a uniformizer,
+viewed as a nonzero scalar of `K`, does. -/
+theorem _root_.Submodule.maximalIdeal_smul_eq_units_smul {ϖ : R} (hϖ : Irreducible ϖ) {π : Kˣ}
+    (hπ : (π : K) = algebraMap R K ϖ) (N : Submodule R V') :
+    IsLocalRing.maximalIdeal R • N = π • N := by
+  rw [hϖ.maximalIdeal_eq, Submodule.ideal_span_singleton_smul,
+    Submodule.units_smul_eq_smul_of_val_eq hπ]
+
+variable (R K V') in
+/-- Over a discrete valuation ring, the maximal ideal multiplies every submodule as a uniformizer,
+viewed as a nonzero scalar of the fraction field, does. -/
+theorem _root_.Submodule.exists_units_maximalIdeal_smul_eq :
+    ∃ (ϖ : R) (π : Kˣ), Irreducible ϖ ∧ (π : K) = algebraMap R K ϖ ∧
+      ∀ N : Submodule R V', IsLocalRing.maximalIdeal R • N = π • N := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  have hϖ0 : algebraMap R K ϖ ≠ 0 :=
+    (map_ne_zero_iff _ (IsFractionRing.injective R K)).2 hϖ.ne_zero
+  exact ⟨ϖ, Units.mk0 _ hϖ0, hϖ, rfl,
+    Submodule.maximalIdeal_smul_eq_units_smul hϖ (Units.val_mk0 hϖ0)⟩
+
+/-- On submodules over a discrete valuation ring, every nonzero scalar of its fraction field acts
+as an integral power of a uniformizer, since it is a unit of the ring times such a power. -/
+theorem _root_.Submodule.exists_smul_eq_zpow_smul {ϖ : R} (hϖ : Irreducible ϖ) {π : Kˣ}
+    (hπ : (π : K) = algebraMap R K ϖ) (a : Kˣ) :
+    ∃ n : ℤ, ∀ N : Submodule R V', a • N = π ^ n • N := by
+  obtain ⟨n, u, hu⟩ :=
+    IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible hϖ a.ne_zero
+  have hau : a = Units.map (algebraMap R K).toMonoidHom u * π ^ n := by
+    ext
+    rw [hu, Units.smul_def, Algebra.smul_def]
+    simp [hπ]
+  refine ⟨n, fun N => ?_⟩
+  rw [hau, mul_smul]
+  exact (Submodule.units_smul_eq_smul_of_val_eq (c := (u : R)) rfl _).trans
+    (Submodule.smul_eq_self_of_isUnit u.isUnit)
+
+/-- **Rigidity of the submodules between `𝔪 N` and `N`.** Over a discrete valuation ring with
+maximal ideal `𝔪`, if `M` lies between `𝔪 N` and `N`, a homothety which places `M` strictly
+between them fixes `M`. -/
+theorem _root_.Submodule.smul_eq_self_of_maximalIdeal_smul_lt {a : Kˣ} {N M : Submodule R V'}
+    (hM : IsLocalRing.maximalIdeal R • N ≤ M) (hMN : M ≤ N)
+    (h₁ : IsLocalRing.maximalIdeal R • N < a • M) (h₂ : a • M < N) : a • M = M := by
+  obtain ⟨ϖ, π, hϖ, hπ, h𝔪⟩ := Submodule.exists_units_maximalIdeal_smul_eq R K V'
+  obtain ⟨n, ha⟩ := Submodule.exists_smul_eq_zpow_smul (V' := V') hϖ hπ a
+  rw [h𝔪] at hM h₁
+  rw [ha] at h₁ h₂ ⊢
+  rcases lt_trichotomy n 0 with hn | rfl | hn
+  · -- For `n < 0`, `ϖⁿ M` contains `ϖ⁻¹ M`, which contains `ϖ⁻¹ ϖ N = N`.
+    refine absurd h₂ (not_lt_of_ge ?_)
+    calc N = π ^ (-1 : ℤ) • π • N := by rw [zpow_neg_one, inv_smul_smul]
+      _ ≤ π ^ (-1 : ℤ) • M := Submodule.pointwise_smul_le_pointwise_smul_iff.2 hM
+      _ ≤ π ^ n • M := Submodule.zpow_smul_le_zpow_smul hπ (by omega) M
+  · rw [zpow_zero, one_smul]
+  · -- For `n > 0`, `ϖⁿ M` lies in `ϖ M`, which lies in `ϖ N`.
+    refine absurd h₁ (not_lt_of_ge ?_)
+    calc π ^ n • M ≤ π ^ (1 : ℤ) • M := Submodule.zpow_smul_le_zpow_smul hπ (by omega) M
+      _ ≤ π • N := by
+        rw [zpow_one]
+        exact Submodule.pointwise_smul_le_pointwise_smul_iff.2 hMN
+
+variable (K) in
+/-- Over a discrete valuation ring with maximal ideal `𝔪`, every submodule between `𝔪 L` and a full
+lattice `L` is a full lattice. -/
+theorem _root_.Submodule.IsFullLattice.of_maximalIdeal_smul_le {L M : Submodule R V'}
+    [L.IsFullLattice K] (h₁ : IsLocalRing.maximalIdeal R • L ≤ M) (h₂ : M ≤ L) :
+    M.IsFullLattice K := by
+  have : M.IsLattice K := IsLattice.mono K h₂
+  obtain ⟨-, π, -, -, h𝔪⟩ := Submodule.exists_units_maximalIdeal_smul_eq R K V'
+  -- `𝔪 L = ϖ L` is the translate of `L` by the unit `ϖ` of `K`, hence a full lattice.
+  exact IsFullLattice.of_le K (M := π • L) ((h𝔪 L).symm.le.trans h₁)
+
+end Pointwise
 
 end Submodule.IsLattice

@@ -19,7 +19,8 @@ everything already stated about `E` as a normed space is unchanged.
 The typical embedding is the second factor of a Euclidean product: a linear isometry equivalence
 `e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)` restricts to `y ↦ e⁻¹ (0, y)`
 (`LinearIsometryEquiv.symmInr`), and `E` is finite-dimensional when `F` is
-(`LinearIsometryEquiv.finiteDimensional_snd`). This is how the tangential model `E` of a boundary
+(`LinearIsometryEquiv.finiteDimensional_snd`), of dimension one less
+(`LinearIsometryEquiv.finrank_snd`). This is how the tangential model `E` of a boundary
 chart of a domain in an inner product space `F` inherits an inner product, and with it the
 Euclidean structure the model-space theory of Lipschitz domains needs.
 
@@ -30,6 +31,7 @@ Euclidean structure the model-space theory of Lipschitz domains needs.
 * `LinearIsometryEquiv.symmInr`: the inclusion of the second factor of `WithLp 2 (ℝ × E)` in `F`.
 * `LinearIsometryEquiv.finiteDimensional_snd`: the second factor `E` is finite-dimensional when `F`
   is.
+* `LinearIsometryEquiv.finrank_snd`: the second factor `E` has dimension `finrank ℝ F - 1`.
 -/
 
 public section
@@ -83,5 +85,14 @@ embeds in `F` by `LinearIsometryEquiv.symmInr`. -/
 theorem finiteDimensional_snd [FiniteDimensional ℝ F] (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) :
     FiniteDimensional ℝ E :=
   Module.Finite.of_injective e.symmInr.toLinearMap e.symmInr.injective
+
+/-- The second factor `E` of `WithLp 2 (ℝ × E)` has dimension one less than `F`, when `F` is
+finite-dimensional. -/
+theorem finrank_snd [FiniteDimensional ℝ F] (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) :
+    Module.finrank ℝ E = Module.finrank ℝ F - 1 := by
+  have _ : FiniteDimensional ℝ E := e.finiteDimensional_snd
+  rw [e.toLinearEquiv.finrank_eq, (WithLp.linearEquiv 2 ℝ (ℝ × E)).finrank_eq,
+    Module.finrank_prod, Module.finrank_self]
+  omega
 
 end LinearIsometryEquiv

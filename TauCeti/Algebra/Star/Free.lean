@@ -13,8 +13,9 @@ import TauCeti.Algebra.FreeAlgebra
 # Word reversal on the free algebra
 
 Mathlib's `star` on `FreeAlgebra R X` reverses words. This file records that it commutes with
-scalar multiplication, so it is `R`-linear even though `R` carries no star structure, and that it
-does not change the constant term `FreeAlgebra.algebraMapInv`.
+scalar multiplication, so it is `R`-linear even though `R` carries no star structure, that it
+does not change the constant term `FreeAlgebra.algebraMapInv`, and that the algebra equivalence
+`FreeAlgebra.starHom` is word reversal into the opposite algebra.
 -/
 
 public section
@@ -36,5 +37,9 @@ theorem algebraMapInv_star (a : FreeAlgebra R X) : algebraMapInv (star a) = alge
   | grade1 x => simp
   | mul a b ha hb => simp [ha, hb, mul_comm]
   | add a b ha hb => simp [ha, hb]
+
+/-- The algebra equivalence `FreeAlgebra.starHom` is word reversal into the opposite algebra. -/
+@[simp]
+theorem starHom_apply (a : FreeAlgebra R X) : starHom a = MulOpposite.op (star a) := rfl
 
 end FreeAlgebra

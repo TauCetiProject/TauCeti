@@ -14,12 +14,15 @@ import Mathlib.Tactic.Ring
 
 This module collects operator identities independent of projection-valued measures.
 
-* `LinearMap.inner_polarization` recovers `⟪ψ, T ξ⟫` from four diagonal values.
+* `LinearMap.inner_polarization` recovers `⟪ψ, T ξ⟫` from four diagonal values, and
+  `LinearMap.norm_inner_le_add` bounds `‖⟪ψ, T ξ⟫‖` by a quarter of the sum of their norms.
 * `LinearMap.norm_sub_sq_of_isSymmetric_idempotent_absorption` computes the squared
   distance between `S x` and `T x` when `S` is a symmetric idempotent absorbed by `T`.
 * `ContinuousLinearMap.eq_of_diagonal` uses complex polarization to identify operators from
   their diagonal inner products.
 * `ContinuousLinearMap.adjoint_ofReal_smul`: the adjoint commutes with real scalars.
+* `ContinuousLinearMap.adjoint_apply_one`: the adjoint of an operator on the scalars takes the
+  conjugate value at `1`.
 * `ContinuousLinearMap.norm_apply_sq_of_adjoint_comp_eq_smul`: if `T† T = c` for a real scalar
   `c`, then `‖T x‖² = c ‖x‖²`.
 * `ContinuousLinearMap.adjoint_smul_comp_smul`: multiplying `T` by a scalar `c` multiplies
@@ -28,9 +31,9 @@ This module collects operator identities independent of projection-valued measur
   `ContinuousLinearMap.ofReal_smul_comp_adjoint_ofReal_smul`: if `T† T` (respectively `T T†`)
   is a real scalar `s`, then the same product for `c T` is `c² s`.
 
-The first two identities use only linearity, so they are stated for linear maps on
-seminormed inner product spaces; apply them to a continuous linear map `T` through its
-coercion `(T : E →ₗ[𝕜] E)`.
+The first two identities and the polarization bound use only linearity, so they are stated
+for linear maps on seminormed inner product spaces; apply them to a continuous linear map `T`
+through its coercion `(T : E →ₗ[𝕜] E)`.
 
 Use `eq_of_diagonal` to identify bounded complex-linear operators when
 their diagonal inner products agree on every vector. Use
@@ -60,6 +63,26 @@ theorem inner_polarization {H : Type*} [SeminormedAddCommGroup H] [InnerProductS
   rw [← inner_conj_symm ψ, inner_map_polarization' T ξ ψ]
   simp only [map_div₀, map_sub, map_add, map_mul, inner_conj_symm, Complex.conj_I, map_ofNat]
   ring
+
+/-- The polarization bound for the sesquilinear form of a linear operator: `‖⟪ψ, T ξ⟫‖` is at most
+a quarter of the sum of the four diagonal values `‖⟪v, T v⟫‖` for `v = ξ + ψ`, `ξ - ψ`,
+`ξ + i ψ` and `ξ - i ψ`. -/
+theorem norm_inner_le_add {H : Type*} [SeminormedAddCommGroup H] [InnerProductSpace ℂ H]
+    (T : H →ₗ[ℂ] H) (ψ ξ : H) :
+    ‖⟪ψ, T ξ⟫_ℂ‖ ≤ (‖⟪ξ + ψ, T (ξ + ψ)⟫_ℂ‖ + ‖⟪ξ - ψ, T (ξ - ψ)⟫_ℂ‖ +
+      ‖⟪ξ + Complex.I • ψ, T (ξ + Complex.I • ψ)⟫_ℂ‖ +
+      ‖⟪ξ - Complex.I • ψ, T (ξ - Complex.I • ψ)⟫_ℂ‖) / 4 := by
+  rw [← T.inner_polarization ψ ξ, norm_mul, one_div, norm_inv, RCLike.norm_ofNat,
+    inv_mul_eq_div]
+  gcongr
+  generalize ⟪ξ + ψ, T (ξ + ψ)⟫_ℂ = a, ⟪ξ - ψ, T (ξ - ψ)⟫_ℂ = b,
+    ⟪ξ + Complex.I • ψ, T (ξ + Complex.I • ψ)⟫_ℂ = c,
+    ⟪ξ - Complex.I • ψ, T (ξ - Complex.I • ψ)⟫_ℂ = d
+  have h₁ := norm_sub_le (a + Complex.I * c - b) (Complex.I * d)
+  have h₂ := norm_sub_le (a + Complex.I * c) b
+  have h₃ := norm_add_le a (Complex.I * c)
+  rw [norm_mul, Complex.norm_I, one_mul] at h₁ h₃
+  linarith
 
 /-- Over either the real or complex scalars, if `S` is symmetric, idempotent,
 and satisfies `S * T = S`, then the squared norm of `(S - T) x` is the difference
@@ -94,6 +117,13 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- An operator on the scalars is multiplication by its value `T 1`, and its adjoint is
+multiplication by the conjugate value: `T† 1 = conj (T 1)`. -/
+theorem adjoint_apply_one (T : 𝕜 →L[𝕜] 𝕜) : T.adjoint 1 = starRingEnd 𝕜 (T 1) := by
+  have h := T.adjoint_inner_left 1 1
+  simp only [RCLike.inner_apply, map_one, mul_one, one_mul] at h
+  rw [← h, starRingEnd_self_apply]
 
 /-- The adjoint commutes with multiplication by a real scalar. -/
 theorem adjoint_ofReal_smul (r : ℝ) (T : E →L[𝕜] F) :

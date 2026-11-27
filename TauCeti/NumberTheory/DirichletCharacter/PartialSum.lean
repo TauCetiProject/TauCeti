@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Defs
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
+import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Analysis.SpecialFunctions.Log.Monotone
 import Mathlib.Data.Nat.Periodic
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.Nat.Interval
 import TauCeti.Data.ZMod.FinEquiv
@@ -80,6 +85,51 @@ theorem isBigO_sum_Icc_one {F : Type*} [NormedField F]
   isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ by simpa using χ.norm_sum_Icc_le_level hχ n⟩
 
 end Level
+
+/-- A level-zero Dirichlet character contributes only at `1` on the naturals, so its
+weighted sum vanishes if the weight vanishes at `1`. -/
+theorem sum_mul_eq_zero_of_level_zero {R : Type*} [CommSemiring R]
+    (χ : DirichletCharacter R 0) (s : Finset ℕ) (f : ℕ → R) (hf : f 1 = 0) :
+    ∑ n ∈ s, χ n * f n = 0 := by
+  refine sum_eq_zero fun n _ ↦ ?_
+  by_cases hn : n = 1
+  · simp only [hn, hf, mul_zero]
+  · have hunit : ¬ IsUnit (n : ZMod 0) := by
+      simpa only [ZMod.isUnit_iff_coprime, Nat.coprime_zero_right] using hn
+    rw [χ.map_nonunit hunit, zero_mul]
+
+/-- The partial sums of `χ(n) log n / n` are uniformly bounded for any nonprincipal
+complex Dirichlet character. -/
+theorem exists_norm_sum_mul_log_div_le (χ : DirichletCharacter ℂ N) (hχ : χ ≠ 1) :
+    ∃ B : ℝ, ∀ m : ℕ, ‖∑ n ∈ Ioc 0 m, χ n * (Real.log n : ℂ) / (n : ℂ)‖ ≤ B := by
+  by_cases hN : N = 0
+  · subst N
+    refine ⟨0, fun m ↦ ?_⟩
+    simp_rw [mul_div_assoc]
+    rw [χ.sum_mul_eq_zero_of_level_zero (Ioc 0 m) (fun n ↦ (Real.log n : ℂ) / n) (by simp),
+      norm_zero]
+  let _ : NeZero N := ⟨hN⟩
+  let w (n : ℕ) : ℝ := Real.log n / (n : ℝ)
+  have hanti : AntitoneOn w (Set.Ioi 2) := by
+    intro a ha b hb hab
+    have hmem (n : ℕ) (hn : n ∈ Set.Ioi 2) : (n : ℝ) ∈ Set.Ici (Real.exp 1) := by
+      have hn' : 3 ≤ n := Nat.succ_le_of_lt (Set.mem_Ioi.mp hn)
+      exact Real.exp_one_lt_three.le.trans (by exact_mod_cast hn')
+    exact Real.log_div_self_antitoneOn (hmem a ha) (hmem b hb) (by exact_mod_cast hab)
+  have htail (m : ℕ) := TauCeti.norm_sum_Ioc_smul_le (a := fun n ↦ χ n) hanti
+    (fun n hn ↦ div_nonneg (Real.log_nonneg (by exact_mod_cast (Nat.one_le_of_lt hn)))
+      (Nat.cast_nonneg n)) (χ.norm_sum_Icc_le_level hχ) m
+  have hw (n : ℕ) : w n • χ n = χ n * (Real.log n : ℂ) / (n : ℂ) := by
+    simp only [w, Complex.real_smul, Complex.ofReal_div, Complex.ofReal_natCast]
+    ring
+  simp only [hw] at htail
+  refine ⟨(∑ n ∈ Ioc (0 : ℕ) 2, ‖χ n * (Real.log n : ℂ) / (n : ℂ)‖) + 2 * N * w 3, fun m ↦ ?_⟩
+  by_cases hm : 2 ≤ m
+  · rw [← sum_Ioc_consecutive _ (by decide : 0 ≤ 2) hm]
+    exact (norm_add_le _ _).trans (add_le_add (norm_sum_le _ _) (htail m))
+  · refine ((norm_sum_le _ _).trans (sum_le_sum_of_subset_of_nonneg
+      (Ioc_subset_Ioc_right (le_of_not_ge hm)) fun _ _ _ ↦ norm_nonneg _)).trans ?_
+    exact le_add_of_nonneg_right (by positivity)
 
 section Sieve
 
