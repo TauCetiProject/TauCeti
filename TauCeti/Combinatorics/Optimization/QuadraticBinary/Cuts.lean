@@ -362,8 +362,7 @@ theorem cutWeight_eq_ising {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι → Bo
     ring
   have hcancel : (∑ i, ∑ j, w i j * spin x i / 4) = ∑ i, ∑ j, w i j * spin x j / 4 := by
     rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hw.apply]
+    simp [hw.apply]
   rw [h1, hcancel]
   ring
 
@@ -427,45 +426,37 @@ theorem isSymm_quboCutMatrix (Q : Matrix ι ι ℝ) : (quboCutMatrix Q).IsSymm :
   ext a b
   cases a <;> cases b <;> simp [add_comm]
 
+/-- The entries of `quboCutMatrix Q` sum to `-(∑ i, ∑ j, Q i j)`. -/
+theorem sum_quboCutMatrix (Q : Matrix ι ι ℝ) :
+    ∑ a : Option ι, ∑ b : Option ι, quboCutMatrix Q a b = -(∑ i, ∑ j, Q i j) := by
+  simp only [Fintype.sum_option, quboCutMatrix_none_none, quboCutMatrix_none_some,
+    quboCutMatrix_some_none, quboCutMatrix_some_some, zero_add, Finset.sum_add_distrib,
+    neg_div, add_div, Finset.sum_neg_distrib, ← Finset.sum_div]
+  rw [Finset.sum_comm (f := fun i j ↦ Q j i)]
+  ring
+
+/-- `quboCutMatrix Q` is the symmetrization of `isingAncillaMatrix Q` with external field
+`fun i ↦ -(∑ j, (Q i j + Q j i))`. -/
+theorem quboCutMatrix_eq_symmetrize_isingAncillaMatrix (Q : Matrix ι ι ℝ) :
+    quboCutMatrix Q =
+      (1 / 2 : ℝ) • (isingAncillaMatrix Q (fun i ↦ -(∑ j, (Q i j + Q j i))) +
+        (isingAncillaMatrix Q (fun i ↦ -(∑ j, (Q i j + Q j i))))ᵀ) := by
+  ext a b
+  cases a <;> cases b <;> simp <;> ring
+
 /-- Every quadratic pseudo-Boolean function `qubo Q` on `ι`, evaluated at the xor projection
 `y ↦ (i ↦ xor (y (some i)) (y none))` where the ancilla `none` sets the reference side, equals
 `-cutWeight (quboCutMatrix Q) y` with no additive constant. -/
 theorem qubo_eq_neg_cutWeight (Q : Matrix ι ι ℝ) (y : Option ι → Bool) :
     qubo Q (fun i ↦ xor (y (some i)) (y none)) = -cutWeight (quboCutMatrix Q) y := by
-  let h : ι → ℝ := fun i ↦ -(∑ j, (Q i j + Q j i)) / 4
-  have htotal : (∑ a : Option ι, ∑ b : Option ι, quboCutMatrix Q a b) = -(∑ i, ∑ j, Q i j) := by
-    simp only [Fintype.sum_option, quboCutMatrix_none_none, quboCutMatrix_none_some,
-      quboCutMatrix_some_none, quboCutMatrix_some_some, zero_add, Finset.sum_add_distrib]
-    have hss : (∑ i, ∑ j, (Q i j + Q j i) / 2) = ∑ i, ∑ j, Q i j := by
-      have hswap : (∑ i, ∑ j, Q j i) = ∑ i, ∑ j, Q i j := Finset.sum_comm
-      calc
-        ∑ i, ∑ j, (Q i j + Q j i) / 2
-          = ((∑ i, ∑ j, Q i j) + ∑ i, ∑ j, Q j i) / 2 := by
-              simp only [← Finset.sum_div, Finset.sum_add_distrib]
-        _ = ∑ i, ∑ j, Q i j := by rw [hswap]; ring
-    have hsn : (∑ i, -(∑ k, Q i k + ∑ k, Q k i) / 2) = -(∑ i, ∑ j, Q i j) := by
-      have hswap : (∑ i, ∑ k, Q k i) = ∑ i, ∑ k, Q i k := Finset.sum_comm
-      simp only [neg_div, Finset.sum_neg_distrib, ← Finset.sum_div, Finset.sum_add_distrib,
-        hswap]
-      ring
-    rw [hss, hsn]
+  have hfield :
+      ((1 / 4 : ℝ) • fun i ↦ -(∑ j, (Q i j + Q j i))) = fun i ↦ -(∑ j, (Q i j + Q j i)) / 4 := by
+    ext i
+    simp only [Pi.smul_apply, smul_eq_mul]
     ring
-  have hising_eq :
-      ising ((1 / 4 : ℝ) • quboCutMatrix Q) 0 y =
-        ising (isingAncillaMatrix ((1 / 4 : ℝ) • Q) h) 0 y := by
-    have hsymm :
-        (1 / 4 : ℝ) • quboCutMatrix Q =
-          (1 / 2 : ℝ) • (isingAncillaMatrix ((1 / 4 : ℝ) • Q) h +
-            (isingAncillaMatrix ((1 / 4 : ℝ) • Q) h)ᵀ) := by
-      ext a b
-      cases a <;> cases b <;>
-        simp only [Matrix.smul_apply, Matrix.add_apply, Matrix.transpose_apply, smul_eq_mul,
-          quboCutMatrix_none_none, quboCutMatrix_none_some, quboCutMatrix_some_none,
-          quboCutMatrix_some_some, isingAncillaMatrix_none_none, isingAncillaMatrix_none_some,
-          isingAncillaMatrix_some_none, isingAncillaMatrix_some_some, h] <;> ring
-    rw [hsymm, ising_symmetrize]
-  rw [cutWeight_eq_ising (isSymm_quboCutMatrix Q) y, htotal, hising_eq, ising_ancilla,
-    qubo_eq_ising]
+  rw [cutWeight_eq_ising (isSymm_quboCutMatrix Q) y, sum_quboCutMatrix, ← smul_zero (1 / 4 : ℝ),
+    ising_smul, quboCutMatrix_eq_symmetrize_isingAncillaMatrix, ising_symmetrize, ising_ancilla,
+    qubo_eq_ising, ← ising_smul, hfield]
   ring
 
 /-- The global infimum of `qubo Q` equals minus the max-cut supremum of `quboCutMatrix Q`. -/

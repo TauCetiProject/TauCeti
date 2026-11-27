@@ -407,41 +407,57 @@ private theorem ising_alternating_pair [DecidableEq ι] (J : Matrix ι ι ℝ) (
     ising J h (fun _ ↦ false) - ising J h (fun k ↦ decide (k = i)) -
         ising J h (fun k ↦ decide (k = j)) + ising J h (fun k ↦ decide (k = i ∨ k = j)) =
       4 * (J i j + J j i) := by
-  let y₀ : ι → Bool := fun _ ↦ false
-  let yi : ι → Bool := fun k ↦ decide (k = i)
-  let yj : ι → Bool := fun k ↦ decide (k = j)
-  let yij : ι → Bool := fun k ↦ decide (k = i ∨ k = j)
+  let δi : ι → ℝ := fun k ↦ if k = i then 1 else 0
+  let δj : ι → ℝ := fun k ↦ if k = j then 1 else 0
+  have hspin0 (k : ι) : spin (fun _ ↦ false) k = 1 := rfl
+  have hspini (k : ι) : spin (fun m ↦ decide (m = i)) k = 1 - 2 * δi k := by
+    by_cases hk : k = i <;> simp [δi, hk]; norm_num
+  have hspinj (k : ι) : spin (fun m ↦ decide (m = j)) k = 1 - 2 * δj k := by
+    by_cases hk : k = j <;> simp [δj, hk]; norm_num
+  have hspinij (k : ι) : spin (fun m ↦ decide (m = i ∨ m = j)) k = 1 - 2 * δi k - 2 * δj k := by
+    by_cases hki : k = i
+    · simp [δi, δj, hki, hij]
+      norm_num
+    · by_cases hkj : k = j <;> simp [δi, δj, hki, hkj, hij.symm]; norm_num
   have hlin :
-      (∑ k, h k * spin y₀ k) - (∑ k, h k * spin yi k) - (∑ k, h k * spin yj k) +
-          (∑ k, h k * spin yij k) = 0 := by
-    simp only [← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-    refine Finset.sum_eq_zero fun k _ ↦ ?_
-    by_cases hki : k = i <;> by_cases hkj : k = j <;>
-      simp [y₀, yi, yj, yij, hki, hkj, hij, hij.symm]
+      (∑ k, h k * spin (fun _ ↦ false) k) - (∑ k, h k * spin (fun m ↦ decide (m = i)) k) -
+          (∑ k, h k * spin (fun m ↦ decide (m = j)) k) +
+          (∑ k, h k * spin (fun m ↦ decide (m = i ∨ m = j)) k) =
+        0 := by
+    simp only [hspin0, hspini, hspinj, hspinij, ← Finset.sum_sub_distrib,
+      ← Finset.sum_add_distrib]
+    exact Finset.sum_eq_zero fun k _ ↦ by ring
   have hterm (a b : ι) :
-      J a b * spin y₀ a * spin y₀ b - J a b * spin yi a * spin yi b -
-          J a b * spin yj a * spin yj b + J a b * spin yij a * spin yij b =
-        if (a = i ∧ b = j) ∨ (a = j ∧ b = i) then 4 * J a b else 0 := by
-    by_cases hai : a = i <;> by_cases haj : a = j <;>
-      by_cases hbi : b = i <;> by_cases hbj : b = j <;>
-      simp only [y₀, yi, yj, yij, hai, haj, hbi, hbj, hij, hij.symm, decide_true, decide_false,
-        spin_of_false, spin_of_true, and_true, and_false, or_self, or_true, or_false,
-        ↓reduceIte] <;> ring
+      J a b * 1 * 1 - J a b * (1 - 2 * δi a) * (1 - 2 * δi b) -
+          J a b * (1 - 2 * δj a) * (1 - 2 * δj b) +
+          J a b * (1 - 2 * δi a - 2 * δj a) * (1 - 2 * δi b - 2 * δj b) =
+        4 * J a b * δi a * δj b + 4 * J a b * δj a * δi b := by
+    ring
+  have hsum (u v : ι) (δu δv : ι → ℝ) (hu : ∀ k, δu k = if k = u then 1 else 0)
+      (hv : ∀ k, δv k = if k = v then 1 else 0) :
+      (∑ a, ∑ b, 4 * J a b * δu a * δv b) = 4 * J u v := by
+    rw [Fintype.sum_eq_single u _]
+    · rw [Fintype.sum_eq_single v _]
+      · simp [hu u, hv v]
+      · intro b hb
+        rw [hv b, ite_eq_right_iff.mpr fun hbu ↦ (hb hbu).elim]
+        ring
+    · intro a ha
+      exact Finset.sum_eq_zero fun b _ ↦ by
+        rw [hu a, ite_eq_right_iff.mpr fun hau ↦ (ha hau).elim]
+        ring
   have hq :
-      (∑ a, ∑ b, J a b * spin y₀ a * spin y₀ b) - (∑ a, ∑ b, J a b * spin yi a * spin yi b) -
-          (∑ a, ∑ b, J a b * spin yj a * spin yj b) +
-          (∑ a, ∑ b, J a b * spin yij a * spin yij b) =
+      (∑ a, ∑ b, J a b * spin (fun _ ↦ false) a * spin (fun _ ↦ false) b) -
+          (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = i)) a * spin (fun m ↦ decide (m = i)) b) -
+          (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = j)) a * spin (fun m ↦ decide (m = j)) b) +
+          (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = i ∨ m = j)) a *
+            spin (fun m ↦ decide (m = i ∨ m = j)) b) =
         4 * (J i j + J j i) := by
-    simp only [← Finset.sum_sub_distrib, ← Finset.sum_add_distrib, hterm]
-    rw [Finset.sum_eq_add i j hij]
-    · rw [Finset.sum_eq_single j (fun b _ hbj ↦ by simp [hij, hbj]) (by simp),
-        Finset.sum_eq_single i (fun b _ hbi ↦ by simp [hij.symm, hbi]) (by simp)]
-      simp only [hij, hij.symm, and_self, or_false, false_or, ↓reduceIte]
-      ring
-    · intro a _ hai
-      exact Finset.sum_eq_zero fun b _ ↦ by simp [hai.1, hai.2]
-    · simp
-    · simp
+    simp only [hspin0, hspini, hspinj, hspinij, ← Finset.sum_sub_distrib,
+      ← Finset.sum_add_distrib]
+    simp_rw [hterm, Finset.sum_add_distrib]
+    rw [hsum i j δi δj (fun _ ↦ rfl) (fun _ ↦ rfl), hsum j i δj δi (fun _ ↦ rfl) (fun _ ↦ rfl)]
+    ring
   simp only [ising_def]
   linarith
 
@@ -479,6 +495,12 @@ theorem ising_sub_trace_eq_iff (J₁ J₂ : Matrix ι ι ℝ) (h₁ h₂ : ι �
 
 /-! ### Equivalence between QUBO and Ising models -/
 
+private theorem sum_add_transpose_mul (M : Matrix ι ι ℝ) (f : ι → ℝ) :
+    ∑ i, (∑ j, (M i j + M j i)) * f i =
+      (∑ i, ∑ j, M i j * f i) + ∑ i, ∑ j, M i j * f j := by
+  simp only [Finset.sum_add_distrib, add_mul, Finset.sum_mul]
+  rw [Finset.sum_comm (f := fun i j ↦ M i j * f j)]
+
 /-- Every quadratic pseudo-Boolean function is an Ising energy plus an explicit constant. -/
 theorem qubo_eq_ising (Q : Matrix ι ι ℝ) (x : ι → Bool) :
     qubo Q x = ising ((1 / 4 : ℝ) • Q) (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) x +
@@ -487,23 +509,16 @@ theorem qubo_eq_ising (Q : Matrix ι ι ℝ) (x : ι → Bool) :
   have h1 :
       (∑ i, ∑ j, Q i j * ((1 - spin x i) / 2) * ((1 - spin x j) / 2)) =
         (∑ i, ∑ j, (1 / 4 * Q i j) * spin x i * spin x j) -
-          (∑ i, ∑ j, Q i j * spin x i / 4) - (∑ i, ∑ j, Q i j * spin x j / 4) +
+          ((∑ i, ∑ j, Q i j * spin x i) + ∑ i, ∑ j, Q i j * spin x j) / 4 +
           (∑ i, ∑ j, Q i j) / 4 := by
     simp only [Finset.sum_div, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
     ring
   have h2 :
       (∑ i, -(∑ j, (Q i j + Q j i)) / 4 * spin x i) =
-        -(∑ i, ∑ j, Q i j * spin x i / 4) - (∑ i, ∑ j, Q i j * spin x j / 4) := by
-    have hswap : (∑ i, ∑ j, Q i j * spin x j / 4) = ∑ i, ∑ j, Q j i * spin x i / 4 :=
-      Finset.sum_comm
-    rw [hswap]
-    have hrow (i : ι) :
-        -(∑ j, (Q i j + Q j i)) / 4 * spin x i =
-          -(∑ j, Q i j * spin x i / 4) - ∑ j, Q j i * spin x i / 4 := by
-      simp only [Finset.sum_add_distrib, ← Finset.sum_div, ← Finset.sum_mul]
-      ring
-    simp_rw [hrow, Finset.sum_sub_distrib, Finset.sum_neg_distrib]
+        -((∑ i, ∑ j, Q i j * spin x i) + ∑ i, ∑ j, Q i j * spin x j) / 4 := by
+    simp only [neg_div, div_mul_eq_mul_div, neg_mul, Finset.sum_neg_distrib, ← Finset.sum_div,
+      sum_add_transpose_mul]
   rw [h1, h2]
   ring
 
@@ -531,15 +546,14 @@ theorem ising_eq_qubo [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (
       (∑ i, 2 * (∑ j, (J i j + J j i) + h i) * bit x i) =
         2 * (∑ i, ∑ j, J i j * bit x i) + 2 * (∑ i, ∑ j, J i j * bit x j) +
           2 * ∑ i, h i * bit x i := by
-    have hswap : (∑ i, ∑ j, J i j * bit x j) = ∑ i, ∑ j, J j i * bit x i := Finset.sum_comm
-    rw [hswap]
-    have hrow (i : ι) :
-        2 * (∑ j, (J i j + J j i) + h i) * bit x i =
-          2 * (∑ j, J i j * bit x i) + 2 * (∑ j, J j i * bit x i) + 2 * (h i * bit x i) := by
-      have hsum : (∑ j, (J i j + J j i)) = (∑ j, J i j) + ∑ j, J j i := Finset.sum_add_distrib
-      rw [hsum, ← Finset.sum_mul, ← Finset.sum_mul]
-      ring
-    simp_rw [hrow, Finset.sum_add_distrib, ← Finset.mul_sum]
+    calc
+      (∑ i, 2 * (∑ j, (J i j + J j i) + h i) * bit x i)
+        = 2 * (∑ i, (∑ j, (J i j + J j i)) * bit x i) + 2 * ∑ i, h i * bit x i := by
+            simp only [mul_add, add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum]
+      _ = 2 * (∑ i, ∑ j, J i j * bit x i) + 2 * (∑ i, ∑ j, J i j * bit x j) +
+            2 * ∑ i, h i * bit x i := by
+            rw [sum_add_transpose_mul J (bit x)]
+            ring
   rw [hquad, hlin, hdiag]
   ring
 
@@ -736,22 +750,24 @@ private theorem sum_powersetCard_two_mul_prod_bit [Fintype ι] [DecidableEq ι] 
   refine Finset.sum_congr rfl fun S hS ↦ ?_
   obtain ⟨_, hScard⟩ := Finset.mem_powersetCard.mp hS
   obtain ⟨a, b, hab, rfl⟩ := Finset.card_eq_two.mp hScard
+  have hpair (u v : ι) : ({u, v} : Finset ι) = {a, b} ↔ (u = a ∧ v = b) ∨ (u = b ∧ v = a) := by
+    rw [Finset.ext_iff]
+    refine ⟨fun h ↦ ?_, fun h x ↦ ?_⟩
+    · have := (h u).mp (Finset.mem_insert_self u {v})
+      have := (h v).mp (Finset.mem_insert_of_mem (Finset.mem_singleton_self v))
+      have := (h a).mpr (Finset.mem_insert_self a {b})
+      have := (h b).mpr (Finset.mem_insert_of_mem (Finset.mem_singleton_self b))
+      grind
+    · simp only [Finset.mem_insert, Finset.mem_singleton]
+      rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> tauto
   have hfib :
       ((Finset.univ ×ˢ Finset.univ).filter (fun p : ι × ι ↦ p.1 ≠ p.2)).filter
           (fun p : ι × ι ↦ ({p.1, p.2} : Finset ι) = {a, b}) =
         {(a, b), (b, a)} := by
     ext ⟨u, v⟩
     simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_univ, true_and,
-      Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq, Finset.Subset.antisymm_iff,
-      Finset.subset_iff]
-    constructor
-    · rintro ⟨_, h1, _⟩
-      have hu : u = a ∨ u = b := h1 (Or.inl rfl)
-      have hv : v = a ∨ v = b := h1 (Or.inr rfl)
-      rcases hu with rfl | rfl <;> rcases hv with rfl | rfl <;> simp_all
-    · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
-      · exact ⟨hab, fun z hz ↦ by simp_all, fun z hz ↦ by simp_all⟩
-      · exact ⟨hab.symm, fun z hz ↦ by simp_all [or_comm], fun z hz ↦ by simp_all [or_comm]⟩
+      Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq, hpair]
+    grind
   rw [hfib, Finset.sum_pair (by simp [hab]), hd2 a b hab, Finset.prod_pair hab]
   ring
 
