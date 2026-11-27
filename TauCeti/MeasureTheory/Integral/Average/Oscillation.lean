@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -34,9 +36,6 @@ mean oscillation of a sum `g = v + w` into that of `v` on `B_ρ` and the `L^γ` 
   `γ ≥ 1`.
 * `TauCeti.setIntegral_norm_sub_setAverage_le_two_mul` and
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: its cases `γ = 1` and `γ = 2`.
-* `TauCeti.integrableOn_norm_rpow_of_memLp` and `TauCeti.integrableOn_norm_sub_const_rpow`: the
-  integrability of `‖g‖^γ` for `g ∈ L^γ(s)`, and of `‖g - c‖^γ` along with `‖g‖^γ` on a set of
-  finite measure.
 * `TauCeti.setAverage_norm_sub_setAverage_rpow_le_add`: the `L^γ` mean oscillation of `v + w` on a
   ball, through that of `v` and the `L^γ` average of `w` on a larger concentric ball.
 -/
@@ -45,33 +44,8 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Metric Module
+open _root_.MeasureTheory Metric Module
 open scoped ENNReal
-
-section Integrability
-
-variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {s : Set X}
-
-/-- A function in `L^γ(s)`, `0 < γ`, has `‖g‖^γ` integrable on `s`. -/
-theorem integrableOn_norm_rpow_of_memLp {g : X → F} {γ : ℝ} (hγ0 : 0 < γ)
-    (hg : MemLp g (ENNReal.ofReal γ) (μ.restrict s)) :
-    IntegrableOn (fun x ↦ ‖g x‖ ^ γ) s μ := by
-  have h := hg.integrable_norm_rpow (by simpa using hγ0) ENNReal.ofReal_ne_top
-  rwa [ENNReal.toReal_ofReal hγ0.le] at h
-
-/-- On a set of finite measure, `‖g - c‖^γ` is integrable along with `‖g‖^γ`, for `γ ≥ 1` and every
-constant `c`. -/
-theorem integrableOn_norm_sub_const_rpow {g : X → F} (hs : μ s ≠ ⊤) {γ : ℝ} (hγ : 1 ≤ γ)
-    (hgm : AEStronglyMeasurable g (μ.restrict s)) (hg : IntegrableOn (fun x ↦ ‖g x‖ ^ γ) s μ)
-    (c : F) : IntegrableOn (fun x ↦ ‖g x - c‖ ^ γ) s μ := by
-  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
-  have hm : MemLp g (ENNReal.ofReal γ) (μ.restrict s) :=
-    (integrable_norm_rpow_iff hgm (by simpa using hγ0) ENNReal.ofReal_ne_top).1
-      (by rwa [ENNReal.toReal_ofReal hγ0.le])
-  exact integrableOn_norm_rpow_of_memLp hγ0 (hm.sub (memLp_const c))
-
-end Integrability
 
 section Comparison
 
@@ -91,8 +65,8 @@ theorem setIntegral_norm_sub_setAverage_rpow_le (hs : μ s ≠ ⊤) (hf : Integr
   have hpt : p ≠ ⊤ := ENNReal.ofReal_ne_top
   have hpγ : p.toReal = γ := ENNReal.toReal_ofReal hγ0.le
   have hmc : MemLp (fun x ↦ f x - c) p (μ.restrict s) :=
-    (integrable_norm_rpow_iff (hf.sub (integrableOn_const hs)).aestronglyMeasurable hp0 hpt).1
-      (by rwa [hpγ])
+    (memLp_ofReal_iff_integrable_norm_rpow hγ0
+      (hf.sub (integrableOn_const hs)).aestronglyMeasurable).2 hfc
   have hma : MemLp (fun x ↦ f x - ⨍ y in s, f y ∂μ) p (μ.restrict s) :=
     (hmc.add (memLp_const (c - ⨍ y in s, f y ∂μ))).ae_eq (ae_of_all _ fun x ↦ by
       simp only [Pi.add_apply]

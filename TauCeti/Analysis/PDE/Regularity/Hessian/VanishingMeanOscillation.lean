@@ -44,9 +44,10 @@ with `C` and the threshold `δ` depending only on `n`, `p`, `λ` and `Λ`
 vanishing mean oscillation the threshold is reached below some radius `r₀`, and on every ball of
 radius `R ≤ r₀`
 `‖D²u‖_{Lᵖ(B_{R/2})} ≤ C (‖f‖_{Lᵖ(B_R)} + R⁻² ‖u‖_{Lᵖ(B_R)})`
-(`TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`). The restriction `p > 2` is that of
-the whole-space estimate for coefficients of small mean oscillation; the interior estimate treats
-the principal part alone.
+(`TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`). The localization in this file is
+proved only for `p > 2`, although the whole-space estimate for coefficients of small mean
+oscillation that it invokes holds for `1 < p < ∞`; the interior estimate treats the principal part
+alone.
 
 Averaging the `p`-th powers of the interior estimates over all centres turns them into the estimate
 on the whole space (`TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`): for `a` uniformly

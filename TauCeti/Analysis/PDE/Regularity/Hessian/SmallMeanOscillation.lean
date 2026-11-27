@@ -14,6 +14,7 @@ import TauCeti.Analysis.PDE.Regularity.SharpFunctionMethod
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average.Oscillation
@@ -255,11 +256,9 @@ private theorem setAverage_norm_contraction_rpow_le {A : Matrix (Fin (n + 1)) (F
   have hK : 0 ≤ K := (norm_nonneg (matrixBilinearForm (a c) - matrixBilinearForm A)).trans
     (haK c (mem_ball_self hr))
   -- `‖H‖^γ` is integrable on `B_r`, since `γ ≤ γ q`.
-  have hHγ : Integrable (fun x => ‖H x‖ ^ γ) (volume.restrict (ball c r)) := by
-    have h := (hH.mono_exponent (ENNReal.ofReal_le_ofReal
-      (le_mul_of_one_le_right hγ0.le hq.lt.le))).integrable_norm_rpow
-      (by simpa using hγ0) ENNReal.ofReal_ne_top
-    rwa [ENNReal.toReal_ofReal hγ0.le] at h
+  have hHγ : Integrable (fun x => ‖H x‖ ^ γ) (volume.restrict (ball c r)) :=
+    (memLp_ofReal_iff_integrable_norm_rpow hγ0 hH.aestronglyMeasurable).1
+      (hH.mono_exponent (ENNReal.ofReal_le_ofReal (le_mul_of_one_le_right hγ0.le hq.lt.le)))
   have hθH : Integrable (fun x => θ x ^ γ * ‖H x‖ ^ γ) (volume.restrict (ball c r)) := by
     refine (hHγ.const_mul (K ^ γ)).mono' ((hθm.aemeasurable.pow_const γ).mul
       hHγ.aemeasurable).aestronglyMeasurable (hθ.mono fun x hx => ?_)
@@ -302,7 +301,7 @@ private theorem exists_setAverage_norm_iteratedGradient_sub_rpow_le {lam Lam CD 
     (hCD : FrozenBallSolvable n lam Lam γ CD)
     {s : ℝ≥0∞} [Fact (1 ≤ s)] (hγs : ENNReal.ofReal γ ≤ s)
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ s 2)
-    {p : ℝ≥0∞} (hp : 1 ≤ p) (hγp : ENNReal.ofReal γ ≤ p)
+    {p : ℝ≥0∞} (hγp : ENNReal.ofReal γ ≤ p)
     (hgp : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
       EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) p volume)
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c : EuclideanSpace ℝ (Fin (n + 1))}
@@ -348,7 +347,7 @@ private theorem exists_setAverage_norm_iteratedGradient_sub_rpow_le {lam Lam CD 
     rw [← Matrix.contraction_apply, h1, Pi.sub_apply, map_sub, Matrix.contraction_apply A
       (Wkp.iteratedGradient 1 w x), h2, h3, sub_self]
   have hvγ : IntegrableOn (fun x => ‖Wkp.iteratedGradient 1 v x‖ ^ γ) (ball c r) :=
-    integrableOn_norm_rpow_of_memLp hγ0 (Lp.memLp _)
+    (memLp_ofReal_iff_integrable_norm_rpow hγ0 (Lp.aestronglyMeasurable _)).1 (Lp.memLp _)
   have hdec := setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_inner_eq_zero
     hA.pos hAell (hA.toQuadraticForm'_le (mem_ball_self hr)) v subset_rfl heqv hγ1.le (c := 0)
     (by simpa using hvγ) hρ.le hρr
@@ -362,10 +361,11 @@ private theorem exists_setAverage_norm_iteratedGradient_sub_rpow_le {lam Lam CD 
     (by unfold hessianDecayConst; positivity) ?_ ?_ ?_ ?_ hvγ ?_ hdec⟩
   · filter_upwards [hDv, hUB] with x h1 h2
     rw [← h2, h1, Pi.sub_apply, sub_add_cancel]
-  · exact (hgp.restrict (ball c r)).integrable hp
+  · exact (hgp.restrict (ball c r)).integrable ((Fact.out : 1 ≤ ENNReal.ofReal γ).trans hγp)
   · exact (Lp.memLp (Wkp.iteratedGradient 1 v)).integrable (Fact.out : 1 ≤ ENNReal.ofReal γ)
-  · exact integrableOn_norm_rpow_of_memLp hγ0 ((hgp.restrict (ball c r)).mono_exponent hγp)
-  · exact integrableOn_norm_rpow_of_memLp hγ0 (Lp.memLp _)
+  · exact (memLp_ofReal_iff_integrable_norm_rpow hγ0 hgp.aestronglyMeasurable.restrict).1
+      ((hgp.restrict (ball c r)).mono_exponent hγp)
+  · exact (memLp_ofReal_iff_integrable_norm_rpow hγ0 (Lp.aestronglyMeasurable _)).1 (Lp.memLp _)
 
 
 /-- The constant of the decaying term in the one-ball estimate in `L^γ`. -/
@@ -388,7 +388,7 @@ private theorem setAverage_norm_iteratedGradient_sub_rpow_le {lam Lam CD : ℝ}
     (ha : AEStronglyMeasurable a volume) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
     {s : ℝ≥0∞} [Fact (1 ≤ s)] (hγs : ENNReal.ofReal γ ≤ s)
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ s 2)
-    {p : ℝ≥0∞} (hp : 1 ≤ p) (hγp : ENNReal.ofReal γ ≤ p)
+    {p : ℝ≥0∞} (hγp : ENNReal.ofReal γ ≤ p)
     (hgp : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
       EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) p volume)
     {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hfp : MemLp f p volume)
@@ -414,13 +414,14 @@ private theorem setAverage_norm_iteratedGradient_sub_rpow_le {lam Lam CD : ℝ}
   have : IsFiniteMeasure (volume.restrict (ball c (κ * ρ))) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   obtain ⟨W, hW, hsplit⟩ :=
-    exists_setAverage_norm_iteratedGradient_sub_rpow_le hCD0 hγ1 hCD hγs u hp hγp hgp hρ hκ hA
+    exists_setAverage_norm_iteratedGradient_sub_rpow_le hCD0 hγ1 hCD hγs u hγp hgp hρ hκ hA
   -- The frozen right-hand side, through the equation and the coefficient deviation.
   have hF := setAverage_norm_contraction_rpow_le (A := A) hr hγ1.le ha.restrict
     (fun x _ => (norm_sub_le (matrixBilinearForm (a x)) (matrixBilinearForm A)).trans
       ((add_le_add (hbd x) hAΛ).trans_eq (two_mul Lam).symm)) hδ hq
     ((hgp.restrict (ball c (κ * ρ))).mono_exponent hqp)
-    (integrableOn_norm_rpow_of_memLp hγ0 ((hfp.restrict (ball c (κ * ρ))).mono_exponent hγp))
+    ((memLp_ofReal_iff_integrable_norm_rpow hγ0 hfp.aestronglyMeasurable.restrict).1
+      ((hfp.restrict (ball c (κ * ρ))).mono_exponent hγp))
     (ae_restrict_of_ae hu)
   have hK : 0 ≤ 2 ^ (2 * γ - 1) * (2 ^ (γ - 1) * hessianDecayConst n lam Lam ^ γ + 1) := by
     unfold hessianDecayConst
@@ -507,7 +508,7 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le
   -- Freeze the coefficients on `B_{κρ}` and apply the mean oscillation estimate on one ball.
   obtain ⟨A, hA, hδA⟩ := hosc c (κ * ρ) (mul_pos (zero_lt_one.trans_le hκ) hρ)
   exact (setAverage_norm_iteratedGradient_sub_rpow_le (le_max_right CD 0) hγ1 hCD' ha hbd
-    ((le_min hγp.le hγ2).trans hps) u hp.le hγp.le hgp hfp hu hq hqp hρ hκ hA hδA).trans_eq
+    ((le_min hγp.le hγ2).trans hps) u hγp.le hgp hfp hu hq hqp hρ hκ hA hδA).trans_eq
     (by ring)
 
 end PDE
