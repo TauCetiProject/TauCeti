@@ -59,7 +59,8 @@ Such families of cutoffs exist on every compact manifold
 * `TauCeti.chartReading`: the chart readings of a smooth function, in `⨁ᵢ H^s(ℝⁿ)`.
 * `TauCeti.chartSobolevSpace`: the closure of the chart readings of smooth functions.
 * `TauCeti.toChartSobolevSpace`: a smooth function as an element of `H^s(M)`.
-* `TauCeti.chartSobolevInclusion`: the inclusion `H^s(M) ⊆ H^r(M)` for `r ≤ s`.
+* `TauCeti.chartSobolevInclusion`: the inclusion `H^s(M) ⊆ H^r(M)` for `r ≤ s`, injective by
+  `TauCeti.chartSobolevInclusion_injective`.
 * `TauCeti.chartSobolevExtension`: the continuous extension `H^s(M) → H^t(M)` of an operator on
   smooth functions satisfying an a priori estimate.
 * `TauCeti.chartSobolevSpaceCongr`: the isomorphism between the spaces of two chart partitions.
@@ -218,6 +219,15 @@ theorem chartSobolevInclusion_toChartSobolevSpace (h : r ≤ s)
   ext1
   ext1 i
   simp
+
+/-- The inclusion `H^s(M) ⊆ H^r(M)` is injective, as the inclusions `H^s(ℝⁿ) ⊆ H^r(ℝⁿ)` of its
+components are. -/
+theorem chartSobolevInclusion_injective (h : r ≤ s) :
+    Function.Injective (chartSobolevInclusion he ψ h) := fun x y hxy ↦ by
+  ext1
+  ext1 i
+  refine BesselPotentialSpace.inclusion_injective h ?_
+  rw [← coe_chartSobolevInclusion_apply, ← coe_chartSobolevInclusion_apply, hxy]
 
 /-- The inclusion `H^s(M) ⊆ H^r(M)` does not increase norms. -/
 theorem norm_chartSobolevInclusion_apply_le (h : r ≤ s) (x : chartSobolevSpace he ψ s) :

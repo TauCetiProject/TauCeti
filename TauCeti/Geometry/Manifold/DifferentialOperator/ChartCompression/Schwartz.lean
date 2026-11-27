@@ -81,6 +81,21 @@ theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
     cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
   e.complexCutoffPushforward_apply he ψ u y
 
+omit [T2Space M] in
+/-- On the chart source, the reading of `u` in the chart is `(ψ ∘ e) · u` read through `e`. -/
+theorem cutoffPushforwardSchwartz_apply_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∈ e.source) :
+    cutoffPushforwardSchwartz he ψ u (e x) = (ψ (e x) : ℂ) * u x := by
+  rw [cutoffPushforwardSchwartz_apply, e.left_inv hx, Complex.real_smul]
+
+omit [T2Space M] in
+/-- The reading `ψ · (u ∘ e⁻¹)` of a function in a chart vanishes outside the support of `ψ`. -/
+theorem support_cutoffPushforwardSchwartz_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    Function.support (cutoffPushforwardSchwartz he ψ u) ⊆ tsupport ψ := fun y hy ↦ by
+  refine subset_tsupport _ fun h ↦ hy ?_
+  rw [cutoffPushforwardSchwartz_apply, h, zero_smul]
+
 /-- **Multiplying by a cutoff read through a chart.** Multiplying a function `g` on `M` by a
 cutoff `τ` in the chart `e`, read on `M` as `τ ∘ e` extended by `0`, is pushing `g` forward to the
 chart as the Schwartz function `τ · (g ∘ e⁻¹)` and pulling it back to `M` through a cutoff `χ`
