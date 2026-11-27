@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
+import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.NormalOrientation
 import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus.NegativeOrientation
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Morse.Prod
