@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Basic.Real.Sign
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.MeanInequalitiesPow
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.PowSign
+import TauCeti.Basic.Real.Sign
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -19,13 +21,18 @@ For `0 ≤ p ≤ 1` the power `t ↦ t ^ p` is `p`-Hölder on `[0, ∞)` with co
 `(a + b) ^ p ≤ a ^ p + b ^ p` of Mathlib's `Real.rpow_add_le_add_rpow`, applied to `b` and
 `a - b`. It is the estimate showing that cone-point functions such as `‖z‖ ^ p` are `p`-Hölder.
 
-The odd power `|x| ^ (p - 1) * x = sign(x) |x| ^ p` is `p`-Hölder on all of `ℝ` with constant
-`2` (`Real.holderWith_abs_rpow_sub_one_mul_self`): on each half-line it is `± |x| ^ p`, and for
-`x, y` of opposite signs both `|x|` and `|y|` are at most `|x - y|`. It is the derivative of
-`|x| ^ (p + 1) / (p + 1)`, which is therefore `C^{1,p}`.
+The signed powers `|x|^β sgn(x)^j` are `β`-Hölder on all of `ℝ` with constant `2`, for `β ≤ 1`
+(`TauCeti.holderWith_abs_rpow_mul_sign_pow`): on one side of the origin this is the Hölder bound
+of the cusp `|x| ^ β` (`TauCeti.holderWith_norm_rpow`), and across it both values are at most
+`|x - y|^β` in absolute value (`TauCeti.abs_abs_rpow_mul_sign_pow_le`, in
+`TauCeti.Analysis.SpecialFunctions.Pow.PowSign`). For `j = 1` this is the odd power
+`sign(x) |x| ^ β`. When `0 < β ≤ 1` it is the derivative of `|x| ^ (β + 1) / (β + 1)`, which is
+therefore `C^{1,β}`; at `β = 0` that primitive is `|x|`, which is not differentiable at `0`.
 -/
 
 public section
+
+open scoped NNReal
 
 namespace Real
 
@@ -41,40 +48,42 @@ theorem abs_rpow_sub_rpow_le {a b p : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hp : 0
     abs_of_nonneg (sub_nonneg.mpr hab)]
   linarith
 
-/-- The odd power `x ↦ |x| ^ (p - 1) * x`, that is `sign(x) |x| ^ p`, is `p`-Hölder on `ℝ` with
-constant `2`, for `0 < p ≤ 1`. -/
-theorem holderWith_abs_rpow_sub_one_mul_self {p : NNReal} (hp₀ : 0 < p) (hp₁ : p ≤ 1) :
-    HolderWith 2 p (fun x : ℝ ↦ |x| ^ ((p : ℝ) - 1) * x) := by
-  have hp₀' : (0 : ℝ) < p := NNReal.coe_pos.2 hp₀
-  -- On `[0, ∞)` the odd power is `x ^ p`.
-  have hnonneg {x : ℝ} (hx : 0 ≤ x) : |x| ^ ((p : ℝ) - 1) * x = x ^ (p : ℝ) := by
-    rw [abs_of_nonneg hx, ← rpow_eq_rpow_sub_one_mul hx hp₀'.ne']
-  -- The bound for `x ≥ 0`; the case `x ≤ 0` follows since the function is odd.
-  have key : ∀ x y : ℝ, 0 ≤ x →
-      |(|x| ^ ((p : ℝ) - 1) * x) - |y| ^ ((p : ℝ) - 1) * y| ≤ 2 * |x - y| ^ (p : ℝ) := by
-    intro x y hx
-    have h0 : 0 ≤ |x - y| ^ (p : ℝ) := by positivity
-    rw [hnonneg hx]
-    rcases le_total 0 y with hy | hy
-    · rw [hnonneg hy]
-      linarith [abs_rpow_sub_rpow_le hx hy hp₀'.le (by exact_mod_cast hp₁)]
-    · have hy' : |y| ^ ((p : ℝ) - 1) * y = -((-y) ^ (p : ℝ)) := by
-        rw [← hnonneg (neg_nonneg.2 hy), abs_neg]
-        ring
-      have hxy : |x - y| = x - y := abs_of_nonneg (by linarith)
-      have h1 : x ^ (p : ℝ) ≤ |x - y| ^ (p : ℝ) := rpow_le_rpow hx (by linarith) hp₀'.le
-      have h2 : (-y) ^ (p : ℝ) ≤ |x - y| ^ (p : ℝ) :=
-        rpow_le_rpow (by linarith) (by linarith) hp₀'.le
-      rw [hy', sub_neg_eq_add, abs_of_nonneg (add_nonneg (rpow_nonneg hx _)
-        (rpow_nonneg (neg_nonneg.2 hy) _))]
-      linarith
-  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ ↦ ?_)
-  simp only [dist_eq, NNReal.coe_ofNat]
-  rcases le_total 0 x with hx | hx
-  · exact key x y hx
-  · have h := key (-x) (-y) (neg_nonneg.2 hx)
-    rw [abs_neg x, abs_neg y, show -x - -y = -(x - y) by ring, abs_neg] at h
-    rwa [show (|x| ^ ((p : ℝ) - 1) * -x) - |y| ^ ((p : ℝ) - 1) * -y =
-      -((|x| ^ ((p : ℝ) - 1) * x) - |y| ^ ((p : ℝ) - 1) * y) by ring, abs_neg] at h
-
 end Real
+
+namespace TauCeti
+
+/-- For `β ≤ 1`, the signed power `|x|^β sgn(x)^j` is `β`-Hölder with constant `2`. -/
+theorem holderWith_abs_rpow_mul_sign_pow {β : ℝ≥0} (hβ1 : β ≤ 1) (j : ℕ) :
+    HolderWith 2 β (fun x : ℝ ↦ |x| ^ (β : ℝ) * Real.sign x ^ j) := by
+  refine holderOnWith_univ.mp (HolderOnWith.of_dist_le fun x _ y _ ↦ ?_)
+  rw [Real.dist_eq, Real.dist_eq, NNReal.coe_ofNat]
+  have hxy : 0 ≤ |x - y| ^ (β : ℝ) := Real.rpow_nonneg (abs_nonneg _) _
+  by_cases hs : Real.sign x ^ j = Real.sign y ^ j
+  · -- Equal signs: the Hölder bound of the cusp `|x| ^ β`.
+    have hcusp := (holderWith_norm_rpow (E := ℝ) hβ1).dist_le x y
+    rw [Real.dist_eq, Real.dist_eq, NNReal.coe_one, one_mul, Real.norm_eq_abs,
+      Real.norm_eq_abs] at hcusp
+    rw [hs, ← sub_mul, abs_mul]
+    calc |(|x| ^ (β : ℝ) - |y| ^ (β : ℝ))| * |Real.sign y ^ j|
+        ≤ |(|x| ^ (β : ℝ) - |y| ^ (β : ℝ))| :=
+          mul_le_of_le_one_right (abs_nonneg _) (Real.abs_sign_pow_le_one y j)
+      _ ≤ 2 * |x - y| ^ (β : ℝ) := by linarith
+  · -- Different signs: `x` and `y` lie on opposite sides of `0`, so both are at most `|x - y|`.
+    have hmul : x * y ≤ 0 := by
+      by_contra h
+      rcases pos_and_pos_or_neg_and_neg_of_mul_pos (not_le.1 h) with ⟨hx, hy⟩ | ⟨hx, hy⟩
+      · exact hs (by rw [Real.sign_of_pos hx, Real.sign_of_pos hy])
+      · exact hs (by rw [Real.sign_of_neg hx, Real.sign_of_neg hy])
+    have hx : |x| ≤ |x - y| := sq_le_sq.mp (by nlinarith)
+    have hy : |y| ≤ |x - y| := sq_le_sq.mp (by nlinarith)
+    calc |(|x| ^ (β : ℝ) * Real.sign x ^ j - |y| ^ (β : ℝ) * Real.sign y ^ j)|
+        ≤ |(|x| ^ (β : ℝ) * Real.sign x ^ j)| + |(|y| ^ (β : ℝ) * Real.sign y ^ j)| :=
+          abs_sub _ _
+      _ ≤ |x| ^ (β : ℝ) + |y| ^ (β : ℝ) :=
+          add_le_add (abs_abs_rpow_mul_sign_pow_le j x) (abs_abs_rpow_mul_sign_pow_le j y)
+      _ ≤ |x - y| ^ (β : ℝ) + |x - y| ^ (β : ℝ) :=
+          add_le_add (Real.rpow_le_rpow (abs_nonneg _) hx β.coe_nonneg)
+            (Real.rpow_le_rpow (abs_nonneg _) hy β.coe_nonneg)
+      _ = 2 * |x - y| ^ (β : ℝ) := by ring
+
+end TauCeti
