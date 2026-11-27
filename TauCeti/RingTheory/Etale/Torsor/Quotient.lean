@@ -30,20 +30,20 @@ variable {G A B : Type*} [Group G] [Finite G] [CommRing A] [CommRing B] [Algebra
 
 /-- Restricting a finite étale torsor to a subgroup makes the algebra a torsor over the
 subgroup's fixed subalgebra. -/
-theorem over_fixedPoints (h : IsFiniteEtaleTorsor G A B) (N : Subgroup G) :
+instance subgroup [h : IsFiniteEtaleTorsor G A B] (N : Subgroup G) :
     IsFiniteEtaleTorsor N (FixedPoints.subalgebra A B N) B := by
   refine isFiniteEtaleTorsor_iff.mpr ⟨?_, inferInstance, fun n hn ↦ ?_⟩
   · exact (faithfulSMul_iff_algebraMap_injective _ _).mpr Subtype.val_injective
   exact (isFiniteEtaleTorsor_iff.mp h).2.2 (n : G) (by simpa using hn)
 
-private theorem span_range_quotient_smul_sub (h : IsFiniteEtaleTorsor G A B) (N : Subgroup G)
+private theorem span_range_quotient_smul_sub [h : IsFiniteEtaleTorsor G A B] (N : Subgroup G)
     [N.Normal] (g : G) (hg : g ∉ N) :
     Ideal.span (Set.range fun x : FixedPoints.subalgebra A B N ↦ (g : G ⧸ N) • x - x) = ⊤ := by
   classical
   let _ := Fintype.ofFinite N
   let C := FixedPoints.subalgebra A B N
   let I : Ideal C := Ideal.span (Set.range fun x : C ↦ (g : G ⧸ N) • x - x)
-  have := (h.over_fixedPoints N).finite
+  have := (subgroup (A := A) (B := B) N).finite
   apply (Ideal.map_eq_top_iff (algebraMap C B) Subtype.val_injective
     (IsIntegral.of_finite C)).mp
   -- Start with the Galois coordinate vector for the identity. Summing over the subgroup on
@@ -80,7 +80,7 @@ private theorem span_range_quotient_smul_sub (h : IsFiniteEtaleTorsor G A B) (N 
 
 /-- The fixed subalgebra of a normal subgroup of a finite étale torsor is a finite étale
 torsor under the quotient group, with its canonical action on the fixed subalgebra. -/
-theorem quotient (h : IsFiniteEtaleTorsor G A B) (N : Subgroup G) [N.Normal] :
+instance quotient [h : IsFiniteEtaleTorsor G A B] (N : Subgroup G) [N.Normal] :
     IsFiniteEtaleTorsor (G ⧸ N) A (FixedPoints.subalgebra A B N) := by
   have := IsFiniteEtaleTorsor.isInvariant (h := h)
   have := h.faithfullyFlat
@@ -88,6 +88,6 @@ theorem quotient (h : IsFiniteEtaleTorsor G A B) (N : Subgroup G) [N.Normal] :
   · refine (faithfulSMul_iff_algebraMap_injective _ _).mpr fun x y hxy ↦ ?_
     exact FaithfulSMul.algebraMap_injective A B (congrArg Subtype.val hxy)
   obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective N q
-  exact span_range_quotient_smul_sub h N g (fun hg ↦ hq ((QuotientGroup.eq_one_iff g).mpr hg))
+  exact span_range_quotient_smul_sub N g (fun hg ↦ hq ((QuotientGroup.eq_one_iff g).mpr hg))
 
 end TauCeti.Algebra.IsFiniteEtaleTorsor
