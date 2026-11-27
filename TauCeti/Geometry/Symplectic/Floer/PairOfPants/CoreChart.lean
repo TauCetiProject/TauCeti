@@ -9,12 +9,15 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 import TauCeti.MeasureTheory.Integral.PolarCoord
+import TauCeti.Geometry.Manifold.ContMDiff.Fract
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -54,8 +57,18 @@ concatenation of the end loops of the inputs `0` and `1` at height `0`, both sta
 (`TauCeti.Floer.pairOfPantsCoreChart_mk_zero`), and at `s = 1` through the points of the output
 circle `‖w‖ = 2` on the same rays from `1/2` (`TauCeti.Floer.pairOfPantsCoreChart_mk_one`,
 `TauCeti.Floer.norm_symm_pairOfPantsCoreChart_mk_one`). It thus runs once clockwise around that
-circle, like the end loop of the output at height `0`, but at the speed of the angle about `1/2`
-rather than about `0`; this file does not compare the two loops.
+circle, like the end loop `t ↦ 2 e^{-2πit}` of the output at height `0`, but at the speed of the
+angle about `1/2` rather than about `0`.
+
+The **output cylinder** `TauCeti.Floer.pairOfPantsOutputCylinder` compares the two loops. It is a
+smooth map of the cylinder into the output circle
+(`TauCeti.Floer.contDiff_pairOfPantsOutputCylinder`,
+`TauCeti.Floer.norm_symm_pairOfPantsOutputCylinder`) from the output loop of the core chart at
+`s = 0` (`TauCeti.Floer.pairOfPantsOutputCylinder_mk_zero`) to the output end loop at height `0`
+at `s = 1` (`TauCeti.Floer.pairOfPantsOutputCylinder_mk_one`). Seen from `1/2`, the points of the
+output circle are those at the distance `R θ` on the ray at the angle `θ`, so a loop in the circle
+is determined by a lift of its angle about `1/2`; the output cylinder interpolates affinely between
+such lifts for the two loops, which both decrease by `2π` over a period.
 
 For a map `u` of the pair of pants into a manifold `M`:
 
@@ -72,10 +85,22 @@ For a map `u` of the pair of pants into a manifold `M`:
   core of `u`, give a map ending at the output loop, whose integral is that over `D₀` plus that
   over `D₁` minus the integral of `u^* φ` over `S₀`
   (`TauCeti.Floer.rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart`).
+* **The output cylinder.** If `u` is `C²` on `S`, then `u` composed with the output cylinder is a
+  cylinder from the loop of `u` along the output loop of the core chart to the loop of `u` along
+  the output end at height `0` (`TauCeti.Floer.isLoopCylinder_comp_pairOfPantsOutputCylinder`).
+  Since the output cylinder runs in a circle, its integral vanishes for every two-form
+  (`TauCeti.Floer.rectangleIntegral_comp_pairOfPantsOutputCylinder`, an instance of
+  `TauCeti.rectangleIntegral_comp_real`).
+* **The glued disc of the output end loop.** Following the map of the previous item by the output
+  cylinder of `u` gives the glued disc `TauCeti.Floer.pairOfPantsGluedDisc`. For discs `D₀`, `D₁`
+  with a common centre and a common seam it is a disc with the same centre bounding the loop of
+  `u` along the output end at height `0` (`TauCeti.Floer.isLoopCylinder_pairOfPantsGluedDisc`),
+  and its integral is that over `D₀` plus that over `D₁` minus the integral of `u^* φ` over `S₀`
+  (`TauCeti.Floer.rectangleIntegral_pairOfPantsGluedDisc`).
 
 This is the form in which the topological term `∫ u^* ω` of the energy identity of a Floer pair of
-pants is expressed through caps: on `S₀` it is the area of the caps of the inputs minus the area
-of the cap of the output obtained by gluing them to `u`.
+pants is expressed through caps: on `S₀` it is the area of the caps of the input end loops minus
+the area of the cap of the output end loop obtained by gluing them to `u`.
 
 The area formula is proved in polar coordinates about `1/2`: by Fubini's theorem with the angle
 outermost (`Complex.integral_comp_polarCoord_symm`), the integral over `S₀` is an iterated
@@ -933,5 +958,374 @@ theorem rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart
     (contMDiff_comp_pairOfPantsCoreChart hu) hmatch 0 1,
     rectangleIntegral_loopwiseTrans hφ hD₀ hD₁ h₀₁ h₁₀ 0 1,
     rectangleIntegral_comp_pairOfPantsCoreChart hφ hu, ← sub_eq_add_neg]
+
+/-! ### From the output loop of the core chart to the output end loop -/
+
+/-- The point of the output circle `‖w‖ = 2` on the ray from `1/2` at the angle `θ`. -/
+private def outputCirclePoint (θ : ℝ) : ℂ :=
+  circleMap (1 / 2) (coreOuterRadius θ) θ
+
+private theorem norm_outputCirclePoint (θ : ℝ) : ‖outputCirclePoint θ‖ = 2 := by
+  have h := norm_sq_circleMap_half (coreOuterRadius θ) θ
+  have h' := coreOuterRadius_sq_add θ
+  have hn := norm_nonneg (outputCirclePoint θ)
+  rw [outputCirclePoint] at hn ⊢
+  nlinarith
+
+private theorem outputCirclePoint_add_two_pi (θ : ℝ) :
+    outputCirclePoint (θ + 2 * π) = outputCirclePoint θ := by
+  rw [outputCirclePoint, outputCirclePoint, coreOuterRadius_add_two_pi, periodic_circleMap]
+
+private theorem contDiff_outputCirclePoint {n : ℕ∞} : ContDiff ℝ n outputCirclePoint := by
+  have h := ContDiff.comp (g := fun p : ℝ × ℝ ↦ (1 / 2 : ℂ) + Complex.polarCoord.symm p)
+    (f := fun θ : ℝ ↦ (coreOuterRadius θ, θ)) (TauCeti.contDiff_add_polarCoord_symm (n := n) _)
+    ((contDiff_coreOuterRadius (n := n)).prodMk contDiff_id)
+  convert h using 1
+  funext θ
+  simp only [Function.comp_apply, TauCeti.add_polarCoord_symm_eq_circleMap, outputCirclePoint]
+
+/-- A point of the ray from `1/2` at the angle `θ` lies on the output circle exactly at the
+distance `coreOuterRadius θ` from `1/2`. -/
+private theorem coreOuterRadius_eq_of_norm_circleMap {r θ : ℝ} (hr : 0 < r)
+    (h : ‖circleMap (1 / 2 : ℂ) r θ‖ = 2) : coreOuterRadius θ = r := by
+  have h₁ := norm_sq_circleMap_half r θ
+  have h₂ := coreOuterRadius_sq_add θ
+  have h₃ := one_lt_coreOuterRadius θ
+  have hc := Real.neg_one_le_cos θ
+  rw [h] at h₁
+  -- Both radii are positive roots of `ρ² + ρ cos θ = 15/4`.
+  have hprod : (coreOuterRadius θ - r) * (coreOuterRadius θ + r + Real.cos θ) = 0 := by
+    linear_combination h₂ + h₁
+  rcases mul_eq_zero.1 hprod with h | h <;> linarith
+
+/-- On the output circle, the end of a lobe is the point of the circle at the angle of the
+lobe. -/
+private theorem coreLobe_mk_one (a : ℝ) {r : ℝ} (hr : r ∈ Icc 0 1) :
+    coreLobe a (1, r) = Complex.equivRealProdCLM (outputCirclePoint (lobeAngle a r)) := by
+  rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
+    add_sub_cancel, outputCirclePoint]
+
+/-- The correction `g(t) - 2t` to the uniform angle `-π/2 - 2πt` about `1/2` along the output
+loop of the core chart, where `g(t) = β(6t - 1) + β(6t - 4)` runs from `0` to `2` over `[0, 1]`
+and `β` is the smooth transition. -/
+private def coreAngleCorrection (t : ℝ) : ℝ :=
+  smoothTransition (6 * t - 1) + smoothTransition (6 * t - 4) - 2 * t
+
+private theorem contDiff_coreAngleCorrection {n : ℕ∞} : ContDiff ℝ n coreAngleCorrection := by
+  unfold coreAngleCorrection
+  exact ((smoothTransition.contDiff.comp (by fun_prop)).add
+    (smoothTransition.contDiff.comp (by fun_prop))).sub (by fun_prop)
+
+/-- Near `t = 0` the correction is `-2t` on both sides of the seam `t ≡ 0`. -/
+private theorem coreAngleCorrection_add_one {t : ℝ} (ht₀ : -(1 / 6) < t) (ht : t < 0) :
+    coreAngleCorrection (t + 1) = coreAngleCorrection t := by
+  rw [coreAngleCorrection, coreAngleCorrection, smoothTransition.one_of_one_le (by linarith),
+    smoothTransition.one_of_one_le (by linarith), smoothTransition.zero_of_nonpos (by linarith),
+    smoothTransition.zero_of_nonpos (by linarith)]
+  ring
+
+private theorem contDiff_coreAngleCorrection_fract {n : ℕ∞} :
+    ContDiff ℝ n fun t ↦ coreAngleCorrection (Int.fract t) := by
+  have hG : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, ℝ) n
+      fun p : ℝ × ℝ ↦ coreAngleCorrection p.2 :=
+    contMDiff_prod_modelWithCornersSelf_iff.2
+      (contDiff_coreAngleCorrection.comp contDiff_snd).contMDiff
+  have h := contMDiff_iff_contDiff.1 <| contMDiff_prod_modelWithCornersSelf_iff.1 <|
+    hG.comp_fract_snd (ε := 1 / 6) (by norm_num) fun _ _ ht₀ ht ↦
+      coreAngleCorrection_add_one (by linarith) ht
+  exact h.comp ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id)
+
+/-- The angle about `1/2` of the output loop of the core chart: a smooth lift, decreasing by `2π`
+over each period. -/
+private def coreOutputAngle (t : ℝ) : ℝ :=
+  -(π / 2) - 2 * π * t - π * coreAngleCorrection (Int.fract t)
+
+private theorem contDiff_coreOutputAngle {n : ℕ∞} : ContDiff ℝ n coreOutputAngle := by
+  unfold coreOutputAngle
+  exact (contDiff_const.sub (by fun_prop)).sub
+    (contDiff_const.mul contDiff_coreAngleCorrection_fract)
+
+private theorem coreOutputAngle_add_one (t : ℝ) :
+    coreOutputAngle (t + 1) = coreOutputAngle t - 2 * π := by
+  rw [coreOutputAngle, coreOutputAngle, Int.fract_add_one]
+  ring
+
+/-- Over one period, the output loop of the core chart is the output circle at the angle
+`coreOutputAngle t` about `1/2`. -/
+private theorem pairOfPantsCoreChart_mk_one_eq_outputCirclePoint {t : ℝ} (ht₀ : 0 ≤ t)
+    (ht₁ : t < 1) :
+    pairOfPantsCoreChart (1, t) =
+      Complex.equivRealProdCLM (outputCirclePoint (coreOutputAngle t)) := by
+  have hβ (x : ℝ) : smoothTransition x ∈ Icc 0 1 :=
+    ⟨smoothTransition.nonneg x, smoothTransition.le_one x⟩
+  rw [coreOutputAngle, coreAngleCorrection, Int.fract_eq_self.2 ⟨ht₀, ht₁⟩]
+  rcases le_or_gt t (1 / 2) with ht | ht
+  · -- On the side of the input end `0`, the second transition has not started.
+    rw [pairOfPantsCoreChart, loopwiseTrans_of_le _ _ ht₀ ht, coreLobe_mk_one _ (hβ _),
+      smoothTransition.zero_of_nonpos (by linarith : 6 * t - 4 ≤ 0), lobeAngle]
+    congr 2
+    ring
+  · -- On the side of the input end `1`, the first transition is over.
+    rw [pairOfPantsCoreChart, loopwiseTrans_of_lt _ _ ht ht₁, coreLobe_mk_one _ (hβ _),
+      smoothTransition.one_of_one_le (by linarith : 1 ≤ 6 * t - 1), lobeAngle]
+    congr 2
+    ring
+
+/-- The number `2 - e^{2πit}/2`, which is `e^{2πit} (w - 1/2)` for the point `w = 2e^{-2πit}` of
+the output end loop at height `0`. -/
+private def endOutputOffset (t : ℝ) : ℂ :=
+  2 - Complex.exp (↑(2 * π * t) * Complex.I) / 2
+
+private theorem re_endOutputOffset_pos (t : ℝ) : 0 < (endOutputOffset t).re := by
+  have h := Complex.re_le_norm (Complex.exp (↑(2 * π * t) * Complex.I))
+  rw [Complex.norm_exp_ofReal_mul_I] at h
+  simp only [endOutputOffset, Complex.sub_re, Complex.re_ofNat, Complex.div_ofNat_re]
+  linarith
+
+private theorem contDiff_endOutputOffset {n : ℕ∞} : ContDiff ℝ n endOutputOffset := by
+  unfold endOutputOffset
+  simp only [← Complex.ofRealCLM_apply]
+  fun_prop
+
+private theorem endOutputOffset_add_one (t : ℝ) : endOutputOffset (t + 1) = endOutputOffset t := by
+  rw [endOutputOffset, endOutputOffset,
+    show (↑(2 * π * (t + 1)) : ℂ) * Complex.I =
+      ↑(2 * π * t) * Complex.I + 2 * π * Complex.I by push_cast; ring,
+    Complex.exp_add, Complex.exp_two_pi_mul_I, mul_one]
+
+/-- The angle about `1/2` of the output end loop `t ↦ 2e^{-2πit}` at height `0`: a smooth lift,
+decreasing by `2π` over each period. -/
+private def endOutputAngle (t : ℝ) : ℝ :=
+  -(2 * π * t) + (Complex.log (endOutputOffset t)).im
+
+private theorem contDiff_endOutputAngle {n : ℕ∞} : ContDiff ℝ n endOutputAngle := by
+  refine (contDiff_const.mul contDiff_id).neg.add (contDiff_iff_contDiffAt.2 fun t ↦ ?_)
+  have hlog := (Complex.contDiffAt_log (n := n)
+    (Complex.mem_slitPlane_iff.2 (.inl (re_endOutputOffset_pos t)))).restrict_scalars ℝ
+  exact Complex.imCLM.contDiff.contDiffAt.comp t
+    (hlog.comp t contDiff_endOutputOffset.contDiffAt)
+
+private theorem endOutputAngle_add_one (t : ℝ) :
+    endOutputAngle (t + 1) = endOutputAngle t - 2 * π := by
+  rw [endOutputAngle, endOutputAngle, endOutputOffset_add_one]
+  ring
+
+/-- The output end loop at height `0` is the output circle at the angle `endOutputAngle t` about
+`1/2`. -/
+private theorem outputCirclePoint_endOutputAngle (t : ℝ) :
+    outputCirclePoint (endOutputAngle t) =
+      Puncture.inf.cylindricalEndLift (↑(0 : ℝ) + ↑t * Complex.I) := by
+  have hz : endOutputOffset t ≠ 0 := fun h ↦ by
+    simpa [h] using re_endOutputOffset_pos t
+  have he : Complex.exp (↑(2 * π * t) * Complex.I) ≠ 0 := Complex.exp_ne_zero _
+  -- The end loop is `2 e⁻¹` for `e = e^{2πit}`, and `2 e⁻¹ - 1/2 = e⁻¹ (2 - e/2)`.
+  have hend : Puncture.inf.cylindricalEndLift (↑(0 : ℝ) + ↑t * Complex.I) =
+      2 * (Complex.exp (↑(2 * π * t) * Complex.I))⁻¹ := by
+    rw [Puncture.cylindricalEndLift_inf, ← Complex.exp_neg]
+    beta_reduce
+    congr 2
+    push_cast
+    ring
+  have hcirc : circleMap (1 / 2 : ℂ) ‖endOutputOffset t‖ (endOutputAngle t) =
+      2 * (Complex.exp (↑(2 * π * t) * Complex.I))⁻¹ := by
+    have hexp : Complex.exp (↑(endOutputAngle t) * Complex.I) =
+        (Complex.exp (↑(2 * π * t) * Complex.I))⁻¹ *
+          Complex.exp (↑(Complex.arg (endOutputOffset t)) * Complex.I) := by
+      rw [endOutputAngle, Complex.log_im, ← Complex.exp_neg, ← Complex.exp_add]
+      congr 1
+      push_cast
+      ring
+    rw [circleMap, hexp, mul_left_comm, Complex.norm_mul_exp_arg_mul_I, endOutputOffset]
+    field_simp
+    ring
+  have hr : coreOuterRadius (endOutputAngle t) = ‖endOutputOffset t‖ :=
+    coreOuterRadius_eq_of_norm_circleMap (norm_pos_iff.2 hz) <| by
+      rw [hcirc, norm_mul, norm_inv, Complex.norm_exp_ofReal_mul_I]
+      norm_num
+  rw [outputCirclePoint, hr, hcirc, hend]
+
+/-- The angle about `1/2` along the output cylinder: the affine interpolation between the angles
+of the output loop of the core chart and of the output end loop. -/
+private def outputCylinderAngle (z : ℝ × ℝ) : ℝ :=
+  (1 - z.1) * coreOutputAngle z.2 + z.1 * endOutputAngle z.2
+
+private theorem contDiff_outputCylinderAngle {n : ℕ∞} : ContDiff ℝ n outputCylinderAngle := by
+  unfold outputCylinderAngle
+  exact ((contDiff_const.sub contDiff_fst).mul (contDiff_coreOutputAngle.comp contDiff_snd)).add
+    (contDiff_fst.mul (contDiff_endOutputAngle.comp contDiff_snd))
+
+/-- The **output cylinder** of the pair of pants `S = ℂ ∖ {0, 1}`, in the real coordinates
+`ℝ × ℝ ≃ ℂ`: a smooth map, `1`-periodic in its second variable, into the output circle `‖w‖ = 2`
+of `S`, from the output loop of the core chart `TauCeti.Floer.pairOfPantsCoreChart` at `s = 0`
+to the end loop `t ↦ 2 e^{-2πit}` of the output end at height `0` at `s = 1`. The two loops run
+once clockwise around the circle, at the speeds of the angles about `1/2` and about `0`
+respectively; the output cylinder interpolates the angles about `1/2` of their points. -/
+def pairOfPantsOutputCylinder (z : ℝ × ℝ) : ℝ × ℝ :=
+  Complex.equivRealProdCLM (outputCirclePoint (outputCylinderAngle z))
+
+/-- The output cylinder is `1`-periodic in its second variable. -/
+@[simp]
+theorem pairOfPantsOutputCylinder_apply_add_one (s t : ℝ) :
+    pairOfPantsOutputCylinder (s, t + 1) = pairOfPantsOutputCylinder (s, t) := by
+  have h : (1 - s) * (coreOutputAngle t - 2 * π) + s * (endOutputAngle t - 2 * π) + 2 * π =
+      (1 - s) * coreOutputAngle t + s * endOutputAngle t := by ring
+  rw [pairOfPantsOutputCylinder, pairOfPantsOutputCylinder, outputCylinderAngle,
+    outputCylinderAngle, coreOutputAngle_add_one, endOutputAngle_add_one, ← h,
+    outputCirclePoint_add_two_pi]
+
+/-- The output cylinder is smooth. -/
+theorem contDiff_pairOfPantsOutputCylinder {n : ℕ∞} : ContDiff ℝ n pairOfPantsOutputCylinder :=
+  Complex.equivRealProdCLM.contDiff.comp
+    (contDiff_outputCirclePoint.comp contDiff_outputCylinderAngle)
+
+/-- The output cylinder runs in the output circle `‖w‖ = 2`. -/
+theorem norm_symm_pairOfPantsOutputCylinder (z : ℝ × ℝ) :
+    ‖Complex.equivRealProdCLM.symm (pairOfPantsOutputCylinder z)‖ = 2 := by
+  rw [pairOfPantsOutputCylinder, ContinuousLinearEquiv.symm_apply_apply, norm_outputCirclePoint]
+
+private theorem outputCirclePoint_mem_thricePuncturedSphereReal (θ : ℝ) :
+    Complex.equivRealProdCLM (outputCirclePoint θ) ∈ thricePuncturedSphereReal := by
+  have h := norm_outputCirclePoint θ
+  rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
+  refine ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩
+  · rw [h0, norm_zero] at h
+    norm_num at h
+  · rw [h1, norm_one] at h
+    norm_num at h
+
+/-- The output cylinder takes values in the pair of pants. -/
+theorem pairOfPantsOutputCylinder_mem_thricePuncturedSphereReal (z : ℝ × ℝ) :
+    pairOfPantsOutputCylinder z ∈ thricePuncturedSphereReal :=
+  outputCirclePoint_mem_thricePuncturedSphereReal _
+
+/-- **The output cylinder starts at the output loop of the core chart.** -/
+theorem pairOfPantsOutputCylinder_mk_zero (t : ℝ) :
+    pairOfPantsOutputCylinder (0, t) = pairOfPantsCoreChart (1, t) := by
+  -- Both sides are `1`-periodic in `t`, so it suffices to compare them over one period.
+  have hper : Function.Periodic (fun t ↦ pairOfPantsOutputCylinder (0, t)) 1 := fun t ↦
+    pairOfPantsOutputCylinder_apply_add_one 0 t
+  have hper' : Function.Periodic (fun t ↦ pairOfPantsCoreChart (1, t)) 1 := fun t ↦
+    pairOfPantsCoreChart_apply_add_one 1 t
+  have h := hper.sub_int_mul_eq (x := t) ⌊t⌋
+  have h' := hper'.sub_int_mul_eq (x := t) ⌊t⌋
+  simp only [mul_one, Int.self_sub_floor] at h h'
+  rw [← h, ← h', pairOfPantsCoreChart_mk_one_eq_outputCirclePoint (Int.fract_nonneg t)
+    (Int.fract_lt_one t), pairOfPantsOutputCylinder, outputCylinderAngle]
+  simp
+
+/-- **The output cylinder ends at the output end loop at height `0`.** -/
+theorem pairOfPantsOutputCylinder_mk_one (t : ℝ) :
+    pairOfPantsOutputCylinder (1, t) = endChart Puncture.inf (0, t) := by
+  rw [pairOfPantsOutputCylinder, outputCylinderAngle, endChart_mk,
+    ← outputCirclePoint_endOutputAngle]
+  simp
+
+/-- **The output cylinder has zero area.** For a map `u` of the pair of pants into a manifold `M`
+which is `C¹` on `S`, and every two-form `φ` on `M`, the integral of `φ` over `u` composed with
+the output cylinder vanishes, since the output cylinder runs in a circle. -/
+theorem rectangleIntegral_comp_pairOfPantsOutputCylinder {φ : RoughForm I M F 2}
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (a b : ℝ × ℝ) :
+    rectangleIntegral φ (u ∘ pairOfPantsOutputCylinder) a b = 0 := by
+  have hγ : ContMDiff 𝓘(ℝ) I 1 (u ∘ Complex.equivRealProdCLM ∘ outputCirclePoint) :=
+    hu.comp_contMDiff (Complex.equivRealProdCLM.contDiff.comp contDiff_outputCirclePoint).contMDiff
+      outputCirclePoint_mem_thricePuncturedSphereReal
+  exact rectangleIntegral_comp_real φ (hγ.mdifferentiable one_ne_zero)
+    (contDiff_outputCylinderAngle.differentiable one_ne_zero) a b
+
+private theorem contMDiff_comp_pairOfPantsOutputCylinder {n : ℕ∞} {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u thricePuncturedSphereReal) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (u ∘ pairOfPantsOutputCylinder) :=
+  hu.comp_contMDiff contDiff_pairOfPantsOutputCylinder.contMDiff
+    pairOfPantsOutputCylinder_mem_thricePuncturedSphereReal
+
+/-- **The output cylinder as a cylinder.** For a map `u` of the pair of pants into a manifold `M`
+which is `C²` on `S`, the composite of `u` with the output cylinder is a cylinder from the loop of
+`u` along the output loop of the core chart to the loop of `u` along the output end at height
+`0`. -/
+theorem isLoopCylinder_comp_pairOfPantsOutputCylinder {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 2 u thricePuncturedSphereReal) :
+    IsLoopCylinder I (u ∘ pairOfPantsOutputCylinder) (fun t ↦ u (pairOfPantsCoreChart (1, t)))
+      fun t ↦ u (endChart Puncture.inf (0, t)) where
+  contMDiff := contMDiff_comp_pairOfPantsOutputCylinder hu
+  apply_add_one z := by
+    simp only [Function.comp_apply, pairOfPantsOutputCylinder_apply_add_one]
+  apply_zero t := by rw [Function.comp_apply, pairOfPantsOutputCylinder_mk_zero]
+  apply_one t := by rw [Function.comp_apply, pairOfPantsOutputCylinder_mk_one]
+
+/-! ### Discs of the output end loop glued from discs of the input end loops -/
+
+/-- The **disc of the output end loop glued from discs of the input end loops** along a map `u`
+of the pair of pants: the maps `D₀` and `D₁`, discs bounding the loops of `u` along the input ends
+`0` and `1` at height `0`, placed side by side, followed by the core of `u` and by its output
+cylinder. When `D₀` and `D₁` are discs sharing their seam, it is a disc bounding the loop of `u`
+along the output end at height `0`
+(`TauCeti.Floer.isLoopCylinder_pairOfPantsGluedDisc`). -/
+def pairOfPantsGluedDisc (D₀ D₁ u : ℝ × ℝ → M) : ℝ × ℝ → M :=
+  rectangleTrans (rectangleTrans (loopwiseTrans D₀ D₁) (u ∘ pairOfPantsCoreChart))
+    (u ∘ pairOfPantsOutputCylinder)
+
+omit [TopologicalSpace M] in
+theorem pairOfPantsGluedDisc_def (D₀ D₁ u : ℝ × ℝ → M) :
+    pairOfPantsGluedDisc D₀ D₁ u =
+      rectangleTrans (rectangleTrans (loopwiseTrans D₀ D₁) (u ∘ pairOfPantsCoreChart))
+        (u ∘ pairOfPantsOutputCylinder) :=
+  (rfl)
+
+/-- **The glued disc is a disc of the output end loop.** Let `u` be a map of the pair of pants
+into a manifold `M`, `C²` on `S`, and let `D₀` and `D₁` be discs centred at a common point `x`
+bounding the loops of `u` along the input ends `0` and `1` at height `0`, which share their seam,
+`D₀ (s, 1) = D₁ (s, 0)` and `D₁ (s, 1) = D₀ (s, 0)`. Then the glued disc is a disc centred at `x`
+bounding the loop of `u` along the output end at height `0`. -/
+theorem isLoopCylinder_pairOfPantsGluedDisc {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 2 u thricePuncturedSphereReal) {D₀ D₁ : ℝ × ℝ → M} {x : M}
+    (hD₀ : IsLoopCylinder I D₀ (fun _ ↦ x) fun t ↦ u (endChart Puncture.zero (0, t)))
+    (hD₁ : IsLoopCylinder I D₁ (fun _ ↦ x) fun t ↦ u (endChart Puncture.one (0, t)))
+    (h₀₁ : ∀ s, D₀ (s, 1) = D₁ (s, 0)) (h₁₀ : ∀ s, D₁ (s, 1) = D₀ (s, 0)) :
+    IsLoopCylinder I (pairOfPantsGluedDisc D₀ D₁ u) (fun _ ↦ x)
+      fun t ↦ u (endChart Puncture.inf (0, t)) := by
+  have hloop : IsLoopCylinder I (loopwiseTrans D₀ D₁) (fun _ ↦ x)
+      (fun t ↦ loopwiseTrans (fun z ↦ u (endChart Puncture.zero (0, z.2)))
+        (fun z ↦ u (endChart Puncture.one (0, z.2))) (0, t)) :=
+    { contMDiff := contMDiff_loopwiseTrans hD₀.contMDiff hD₁.contMDiff h₀₁ h₁₀
+      apply_add_one := fun z ↦ loopwiseTrans_apply_add_one D₀ D₁ z.1 z.2
+      apply_zero := fun _ ↦ loopwiseTrans_mem (A := {x}) (fun r _ ↦ hD₀.apply_zero r)
+        (fun r _ ↦ hD₁.apply_zero r)
+      apply_one := fun _ ↦ loopwiseTrans_congr (fun r _ ↦ hD₀.apply_one r)
+        (fun r _ ↦ hD₁.apply_one r) }
+  exact (hloop.trans (isLoopCylinder_comp_pairOfPantsCoreChart hu)).trans
+    (isLoopCylinder_comp_pairOfPantsOutputCylinder hu)
+
+/-- **The area of the glued disc.** Let `u` be a map of the pair of pants into a manifold `M`,
+`C¹` on `S`, and let `D₀` and `D₁` be `C¹` maps of the plane which end at `s = 1` at the loops of
+`u` along the input ends `0` and `1` at height `0` and share their seam. Then for every continuous
+two-form `φ` the integral of `φ` over the glued disc is the sum of the integrals over `D₀` and
+`D₁` minus the integral of `u^* φ` over the truncation `S₀` at height `0`. With
+`TauCeti.Floer.isLoopCylinder_pairOfPantsGluedDisc`, this is the area of the cap of the output
+end loop at height `0` obtained by gluing caps of the input end loops to `u`. -/
+theorem rectangleIntegral_pairOfPantsGluedDisc [IsManifold I 1 M] {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {D₀ D₁ : ℝ × ℝ → M}
+    (hD₀ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 D₀) (hD₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 D₁)
+    (h₀₁ : ∀ s, D₀ (s, 1) = D₁ (s, 0)) (h₁₀ : ∀ s, D₁ (s, 1) = D₀ (s, 0))
+    (h₀ : ∀ t, D₀ (1, t) = u (endChart Puncture.zero (0, t)))
+    (h₁ : ∀ t, D₁ (1, t) = u (endChart Puncture.one (0, t))) :
+    rectangleIntegral φ (pairOfPantsGluedDisc D₀ D₁ u) (0, 0) (1, 1) =
+      rectangleIntegral φ D₀ (0, 0) (1, 1) + rectangleIntegral φ D₁ (0, 0) (1, 1) -
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation 0,
+          φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
+  have hmatch (t : ℝ) : loopwiseTrans D₀ D₁ (1, t) = (u ∘ pairOfPantsCoreChart) (0, t) := by
+    rw [Function.comp_apply, pairOfPantsCoreChart_mk_zero, apply_loopwiseTrans u]
+    exact loopwiseTrans_congr (fun r _ ↦ h₀ r) (fun r _ ↦ h₁ r)
+  have hfirst := contMDiff_rectangleTrans (contMDiff_loopwiseTrans hD₀ hD₁ h₀₁ h₁₀)
+    (contMDiff_comp_pairOfPantsCoreChart hu) hmatch
+  rw [pairOfPantsGluedDisc, rectangleIntegral_rectangleTrans hφ hfirst
+      (contMDiff_comp_pairOfPantsOutputCylinder hu)
+      (fun t ↦ by
+        rw [rectangleTrans_apply_one, Function.comp_apply, Function.comp_apply,
+          pairOfPantsOutputCylinder_mk_zero]) 0 1,
+    rectangleIntegral_comp_pairOfPantsOutputCylinder hu,
+    rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart hφ hu hD₀ hD₁ h₀₁ h₁₀
+      h₀ h₁, add_zero]
 
 end TauCeti.Floer

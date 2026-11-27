@@ -91,6 +91,8 @@ contracts with `∂ₜ` first.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
 * `TauCeti.rectangleIntegral_const`: the integral over a constant map vanishes.
+* `TauCeti.rectangleIntegral_comp_real`: the integral over a map factoring through a
+  differentiable real function vanishes.
 * `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
 * `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate,
   and `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` change of parameter.
@@ -301,6 +303,37 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
 theorem rectangleIntegral_const (φ : RoughForm I M F 2) (x : M) (a b : ℝ × ℝ) :
     rectangleIntegral φ (fun _ ↦ x) a b = 0 :=
   rectangleIntegral_comp_fst φ (fun _ ↦ x) a b
+
+/-- The integral of a two-form over a map `γ ∘ Θ` that factors through a differentiable function
+`Θ : ℝ × ℝ → ℝ` and a differentiable curve `γ` vanishes: both partial derivatives of `γ ∘ Θ` are
+multiples of the velocity of `γ`. For instance a homotopy of loops running inside a circle has
+zero area. -/
+theorem rectangleIntegral_comp_real (φ : RoughForm I M F 2) {γ : ℝ → M} {Θ : ℝ × ℝ → ℝ}
+    (hγ : MDifferentiable 𝓘(ℝ) I γ) (hΘ : Differentiable ℝ Θ) (a b : ℝ × ℝ) :
+    rectangleIntegral φ (γ ∘ Θ) a b = 0 := by
+  have h (z : ℝ × ℝ) : φ ((γ ∘ Θ) z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z (1, 0),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z (0, 1)] = 0 := by
+    -- Each partial derivative is `c • w` for the velocity `w` of `γ` at `Θ z`.
+    have hv (v : ℝ × ℝ) : mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z v =
+        fderiv ℝ Θ z v • mfderiv 𝓘(ℝ) I γ (Θ z) 1 := by
+      have hcomp : mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z =
+          (mfderiv 𝓘(ℝ) I γ (Θ z)).comp (fderiv ℝ Θ z) :=
+        ((hγ (Θ z)).hasMFDerivAt.comp z (hΘ z).hasFDerivAt.hasMFDerivAt).mfderiv
+      rw [hcomp]
+      calc mfderiv 𝓘(ℝ) I γ (Θ z) (fderiv ℝ Θ z v)
+          = mfderiv 𝓘(ℝ) I γ (Θ z) (fderiv ℝ Θ z v • (1 : ℝ)) := by rw [smul_eq_mul, mul_one]
+        _ = fderiv ℝ Θ z v • mfderiv 𝓘(ℝ) I γ (Θ z) 1 :=
+          (mfderiv 𝓘(ℝ) I γ (Θ z)).map_smul _ _
+    have hsmul : ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z (1, 0),
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) z (0, 1)] =
+        fun i ↦ ![fderiv ℝ Θ z (1, 0), fderiv ℝ Θ z (0, 1)] i •
+          ![mfderiv 𝓘(ℝ) I γ (Θ z) 1, mfderiv 𝓘(ℝ) I γ (Θ z) 1] i := by
+      ext1 i
+      fin_cases i <;> simp [hv]
+    rw [hsmul, ContinuousAlternatingMap.map_smul_univ,
+      (φ _).map_eq_zero_of_eq _ (i := 0) (j := 1) rfl (by decide), smul_zero]
+  rw [rectangleIntegral_eq]
+  simp only [h, intervalIntegral.integral_zero]
 
 /-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
 `u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/
