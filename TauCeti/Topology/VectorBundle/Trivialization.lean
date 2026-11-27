@@ -12,6 +12,7 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Smul
@@ -704,12 +705,6 @@ section Fibre
 
 variable {b : B} {v : E b} (hv : v ≠ 0)
 
-include hF in
-/-- A fibre of a vector bundle whose model fibre is a line is a line. -/
-private theorem finrank_fiber : Module.finrank 𝕜 (E b) = 1 := by
-  rw [← hF, ((trivializationAt F E b).continuousLinearEquivAt 𝕜 b
-    (FiberBundle.mem_baseSet_trivializationAt' b)).toLinearEquiv.finrank_eq]
-
 /-- **The coordinate along a nonzero vector of a line.** A fibre `E b` of a vector bundle whose
 model fibre `F` has dimension one is a line, so a nonzero vector `v ∈ E b` is a basis: every
 `w ∈ E b` is `c • v` for a unique scalar `c`. This is the continuous linear equivalence `w ↦ c`,
@@ -719,8 +714,8 @@ def lineCoord : E b ≃L[𝕜] 𝕜 :=
   letI := FiberBundle.t2Space F E b
   letI := VectorBundle.isTopologicalAddGroup 𝕜 F E b
   letI := VectorBundle.continuousSMul 𝕜 F E b
-  let φ := (FiniteDimensional.basisSingleton Unit (finrank_fiber hF) v hv).equivFun.trans
-    (LinearEquiv.funUnique Unit 𝕜 𝕜)
+  let φ := (FiniteDimensional.basisSingleton Unit ((VectorBundle.finrank_eq 𝕜 F E b).trans hF) v
+    hv).equivFun.trans (LinearEquiv.funUnique Unit 𝕜 𝕜)
   have hφ (c : 𝕜) : φ.symm c = c • v := by simp [φ, Module.Basis.equivFun_symm_apply]
   { φ with
     continuous_toFun := (LinearMap.continuous_iff_isClosed_ker φ.toLinearMap).2 <| by
