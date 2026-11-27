@@ -26,6 +26,8 @@ differentiable, so the predicate is meaningful for differentiable maps.
 
 * `TauCeti.IsHorizontalMap`: maps whose tangent images lie in a distribution.
 * `TauCeti.IsHorizontalMap.comp`: precomposing a horizontal map keeps it horizontal.
+* `TauCeti.IsHorizontalMap.comp_left`: postcomposing with a map whose differential carries one
+  distribution into another gives a horizontal map.
 * `TauCeti.IsHorizontalMap.eventually_sub_mem`: coordinates whose differential takes the
   distribution into a closed subspace are locally constant modulo that subspace along
   horizontal differentiable maps.
@@ -104,6 +106,18 @@ theorem IsHorizontalMap.comp {g : P → N} (hf : IsHorizontalMap J D f)
     IsHorizontalMap K D (f ∘ g) := fun x ↦ by
   rw [mfderiv_comp x (hfg x) (hg x)]
   exact (LinearMap.range_comp_le_range _ _).trans (hf (g x))
+
+/-- Postcomposing a differentiable horizontal map `f` with a map `ψ`, differentiable along `f`,
+whose differential carries `D` into a distribution `D'` along `f`, gives a horizontal map for
+`D'`. -/
+theorem IsHorizontalMap.comp_left {D' : Π z : P, Submodule 𝕜 (TangentSpace K z)} {ψ : M → P}
+    (hf : IsHorizontalMap J D f) (hψ : ∀ y, MDifferentiableAt I K ψ (f y))
+    (hf' : ∀ y, MDifferentiableAt J I f y)
+    (hψD : ∀ y, ∀ v ∈ D (f y), mfderiv I K ψ (f y) v ∈ D' (ψ (f y))) :
+    IsHorizontalMap J D' (ψ ∘ f) := fun y ↦ by
+  rw [mfderiv_comp y (hψ y) (hf' y)]
+  rintro _ ⟨v, rfl⟩
+  exact hψD y _ (hf y ⟨v, rfl⟩)
 
 /-- **Independence of the parametrization.** Precomposing with a diffeomorphism of the source
 does not change whether a map is horizontal. -/
