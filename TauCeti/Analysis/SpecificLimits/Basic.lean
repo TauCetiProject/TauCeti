@@ -20,6 +20,8 @@ sequences of different ratios.
   and `0 < v m` frequently, then `v n → +∞`.
 * `TauCeti.eventually_div_pow_le_div_pow`: for `0 < d < r`, the geometric sequence `M / r ^ k`
   is eventually at most `δ / d ^ (k + 1)`, for every `δ > 0`.
+* `TauCeti.tendsto_add_div_succ`: `(n + a) / (n + 1) → 1`.
+* `TauCeti.tendsto_inv_succ_smul_const`: `(n + 1)⁻¹ • c → 0`.
 -/
 
 public section
@@ -55,5 +57,19 @@ theorem eventually_div_pow_le_div_pow (M : ℝ) {δ d r : ℝ} (hδ : 0 < δ) (h
         rw [div_pow, pow_succ]
         field_simp
     _ ≤ δ * r ^ k := mul_le_mul_of_nonneg_right hk hrk.le
+
+/-- For any shift `a`, `((n : 𝕜) + a) / ((n + 1 : ℕ) : 𝕜)` converges to `1`. -/
+theorem tendsto_add_div_succ {𝕜 : Type*} [Semifield 𝕜] [CharZero 𝕜] [TopologicalSpace 𝕜]
+    [ContinuousSMul ℚ≥0 𝕜] [IsTopologicalSemiring 𝕜] [ContinuousInv₀ 𝕜] (a : 𝕜) :
+    Tendsto (fun n : ℕ ↦ ((n : 𝕜) + a) / ((n + 1 : ℕ) : 𝕜)) atTop (nhds 1) := by
+  simpa [add_comm, Nat.cast_add, Nat.cast_one] using
+    tendsto_add_mul_div_add_mul_atTop_nhds a 1 1 (one_ne_zero : (1 : 𝕜) ≠ 0)
+
+/-- `((n + 1 : ℕ) : 𝕜)⁻¹ • c → 0` for any constant `c : E`. -/
+theorem tendsto_inv_succ_smul_const {𝕜 : Type*} [DivisionSemiring 𝕜] [CharZero 𝕜]
+    [TopologicalSpace 𝕜] [ContinuousSMul ℚ≥0 𝕜] {E : Type*} [Zero E] [SMulWithZero 𝕜 E]
+    [TopologicalSpace E] [ContinuousSMul 𝕜 E] (c : E) :
+    Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : 𝕜)⁻¹ • c) atTop (nhds 0) := by
+  simpa [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := 𝕜)).smul_const c
 
 end TauCeti

@@ -79,7 +79,7 @@ theorem linear_equidistributionInt_tfae (α β : UnitAddTorus d) :
       TotallyAsympEquidistributedInt (fun n : ℤ ↦ n • α + β)
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure,
       TorusIrrational α] := by
-  tfae_have 3 → 2 := fun hα ↦ totallyAsympEquidistributedInt_of_forall_affine fun Q hQ R ↦ by
+  tfae_have 3 → 2 := fun hα ↦ totallyAsympEquidistributedInt_iff_forall_affine.mpr fun Q hQ R ↦ by
     rw [(funext fun n ↦ by
       rw [add_zsmul, mul_zsmul, natCast_zsmul, smul_comm, add_assoc] :
       (fun n : ℕ ↦ (Q * (n : ℤ) + R) • α + β) = fun n : ℕ ↦ n • (Q • α) + (R • α + β))]

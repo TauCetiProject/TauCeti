@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Analysis.SpecificLimits.Basic
 
 /-!
 # Cesàro averages under shifts, finite modifications, residue decompositions, and real cutoffs
@@ -28,12 +28,6 @@ public section
 open Filter Finset Topology
 
 namespace TauCeti
-
-/-- For any real shift `a`, `((n : ℝ) + a) / ((n + 1 : ℕ) : ℝ)` converges to `1`. -/
-private theorem tendsto_add_div_succ (a : ℝ) :
-    Tendsto (fun n : ℕ ↦ ((n : ℝ) + a) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) := by
-  simpa using (tendsto_add_mul_div_add_mul_atTop_nhds a 1 1 (one_ne_zero : (1 : ℝ) ≠ 0)).congr
-    fun n ↦ by ring
 
 /-- For `q > 0` and `r < q`, `((n + q - r) / q) / (n + 1)` converges to `q⁻¹`. -/
 theorem tendsto_add_sub_div_div_succ {q r : ℕ} (hq : 0 < q) (hr : r < q) :
@@ -58,17 +52,12 @@ section Seminormed
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- `((n + 1 : ℕ) : ℝ)⁻¹ • c → 0` for any constant vector `c : E`. -/
-private theorem tendsto_inv_succ_smul_const (c : E) :
-    Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • c) atTop (𝓝 0) := by
-  simpa [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const c
-
 /-- Changing finitely many terms does not alter convergence or limit of Cesàro averages. -/
 theorem tendsto_cesaro_congr_of_eventuallyEq {f g : ℕ → E} {L : E} (hfg : f =ᶠ[atTop] g) :
     Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i) atTop (𝓝 L) ↔
       Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), g i) atTop (𝓝 L) := by
   obtain ⟨N, hN⟩ := eventually_atTop.mp hfg
-  have hlim := tendsto_inv_succ_smul_const (∑ i ∈ range N, (f i - g i))
+  have hlim := tendsto_inv_succ_smul_const (𝕜 := ℝ) (∑ i ∈ range N, (f i - g i))
   have hdiff : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i -
       ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), g i) atTop (𝓝 0) := by
     refine hlim.congr' (eventually_atTop.mpr ⟨N, fun n hn ↦ ?_⟩); dsimp only
@@ -85,7 +74,7 @@ theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
       ∑ i ∈ range (n + m + 1), f i := by
     conv_rhs => rw [(by omega : n + m + 1 = m + (n + 1)), sum_range_add, add_comm]
     exact congrArg (· + ∑ i ∈ range m, f i) (sum_congr rfl fun i _ ↦ by rw [Nat.add_comm])
-  have hprefix := tendsto_inv_succ_smul_const (∑ i ∈ range m, f i)
+  have hprefix := tendsto_inv_succ_smul_const (𝕜 := ℝ) (∑ i ∈ range m, f i)
   constructor
   · intro hB
     have hratio : Tendsto (fun n : ℕ ↦ ((n - m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) :=
@@ -96,21 +85,17 @@ theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
       (by simpa using (hratio.smul (hB.comp (tendsto_sub_atTop_nat m))).add hprefix)
     filter_upwards [eventually_ge_atTop m] with n hn
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-    rw [Nat.add_sub_cancel, smul_smul, ← hsum k]
-    push_cast
-    rw [show ((k : ℝ) + 1) / ((k : ℝ) + m + 1) * ((k : ℝ) + 1)⁻¹ = ((k : ℝ) + m + 1)⁻¹ by
-      field_simp]
-    module
+    rw [Nat.add_sub_cancel, smul_smul, div_eq_mul_inv, mul_right_comm,
+      mul_inv_cancel₀ (by positivity), one_mul, ← smul_add, hsum k]
+    simp only [Nat.cast_add, Nat.cast_one]
   · intro hA
     have hratio : Tendsto (fun n : ℕ ↦ ((n + m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) :=
       (tendsto_add_div_succ ((m : ℝ) + 1)).congr fun n ↦ by push_cast; ring
     refine Tendsto.congr (fun n ↦ ?_)
       (by simpa using (hratio.smul (hA.comp (tendsto_add_atTop_nat m))).sub hprefix)
-    rw [smul_smul, ← hsum n]
-    push_cast
-    rw [show ((n : ℝ) + m + 1) / ((n : ℝ) + 1) * ((n : ℝ) + m + 1)⁻¹ = ((n : ℝ) + 1)⁻¹ by
-      field_simp]
-    module
+    rw [smul_smul, div_eq_mul_inv, mul_right_comm, mul_inv_cancel₀ (by positivity), one_mul,
+      ← hsum n, smul_add, add_sub_cancel_right]
+    simp only [Nat.cast_add, Nat.cast_one]
 
 /-- If a sequence has Cesàro limits along every residue class modulo `q > 0`, its Cesàro averages
 converge to the average of those limits. -/

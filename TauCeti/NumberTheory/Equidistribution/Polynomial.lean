@@ -101,7 +101,7 @@ private theorem totallyAsympEquidistributedInt_poly_of_forall_addOrderOf {d : Ty
     (h6 : ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ Icc 1 s, addOrderOf (∑ i, k i • α j i) = 0) :
     TotallyAsympEquidistributedInt (fun n : ℤ ↦ ∑ j ∈ range (s + 1), n ^ j • α j)
       (volume : Measure (UnitAddTorus d)).toProbabilityMeasure :=
-  totallyAsympEquidistributedInt_of_forall_affine fun Q hQ R ↦
+  totallyAsympEquidistributedInt_iff_forall_affine.mpr fun Q hQ R ↦
     asympEquidistributed_unitAddTorus_iff_forall_linear_comb.mpr fun k hk ↦ by
       simp_rw [(fun n : ℕ ↦ (by
         rw [← UnitAddTorus.pairing_apply, map_sum]

@@ -308,12 +308,18 @@ theorem totallyAsympEquidistributedInt_def {x : ℤ → X} {μ : ProbabilityMeas
     TotallyAsympEquidistributedInt x μ ↔
       ∀ q : ℕ, 0 < q → ∀ r : ℤ, AsympEquidistributedInt (fun n ↦ x (q * n + r)) μ := Iff.rfl
 
-/-- A sequence `x : ℤ → X` is totally two-sided equidistributed for `μ` if every one-sided
+/-- A sequence `x : ℤ → X` is totally two-sided equidistributed for `μ` iff every one-sided
 affine progression `n ↦ x (Q * n + R)` (`Q ≠ 0`) is equidistributed for `μ`. -/
-theorem totallyAsympEquidistributedInt_of_forall_affine {x : ℤ → X} {μ : ProbabilityMeasure X}
-    (h : ∀ Q : ℤ, Q ≠ 0 → ∀ R : ℤ, AsympEquidistributed (fun n : ℕ ↦ x (Q * n + R)) μ) :
-    TotallyAsympEquidistributedInt x μ := by
-  refine fun q hq r ↦ ⟨?_, ?_⟩
+theorem totallyAsympEquidistributedInt_iff_forall_affine {x : ℤ → X} {μ : ProbabilityMeasure X} :
+    TotallyAsympEquidistributedInt x μ ↔
+      ∀ Q : ℤ, Q ≠ 0 → ∀ R : ℤ, AsympEquidistributed (fun n : ℕ ↦ x (Q * n + R)) μ := by
+  refine ⟨fun hx Q hQ R ↦ ?_, fun h q hq r ↦ ⟨?_, ?_⟩⟩
+  · rcases lt_or_gt_of_ne hQ with hQneg | hQpos
+    · have hneg :=
+        (asympEquidistributedInt_neg_iff.mpr (hx Q.natAbs (Int.natAbs_pos.mpr hQ) R)).natCast
+      simpa only [Int.ofNat_natAbs_of_nonpos hQneg.le, mul_neg, neg_mul, neg_neg] using hneg
+    · simpa only [Int.natAbs_of_nonneg hQpos.le] using
+        (hx Q.natAbs (Int.natAbs_pos.mpr hQ) R).natCast
   · simpa only [mul_add, mul_one, add_assoc] using
       h (q : ℤ) (Int.natCast_ne_zero.mpr hq.ne') ((q : ℤ) + r)
   · convert h (-(q : ℤ)) (neg_ne_zero.mpr (Int.natCast_ne_zero.mpr hq.ne')) (r - (q : ℤ)) using 3
