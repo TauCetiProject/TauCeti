@@ -17,9 +17,8 @@ import TauCeti.Data.ZMod.Units
 
 We work in the unit group modulo the cyclotomic order, which labels the infinite places of
 an imaginary quadratic cyclotomic tower. An integer acts through its residue if it is prime
-to the order and through the identity otherwise. This convention is harmless for the weighted
-prime sums: the Legendre-weighted von Mangoldt coefficients vanish at nonunits. Reducing the
-label of `-n` to the base modulus tests exactly the residue class used in the short prime sum.
+to the order and through the identity otherwise. Reducing the label of `-n` to the base modulus
+tests exactly the residue class used in the short prime sum.
 
 ## References
 
@@ -53,9 +52,9 @@ theorem isUnit_intCast_q₁_iff (s : ℕ) (a : ℤ) :
     (hp.coprime_iff_not_dvd.mp (h.coprime_dvd_left ha)) (P.dvd_q₀_of_dvd_q₁ hp hq)
 
 /-- For an integer invertible modulo `q₀`, the underlying residue of its label is its cast. -/
-@[simp] theorem coe_placeOfInt_of_isUnit (s : ℕ) {a : ℤ} (ha : IsUnit (a : ZMod P.q₀)) :
+@[simp] theorem val_placeOfInt_of_isUnit (s : ℕ) {a : ℤ} (ha : IsUnit (a : ZMod P.q₀)) :
     (P.placeOfInt s a : ZMod (P.q₁ s)) = a := by
-  rw [placeOfInt_def, Units.coe_unitOrOne_of_isUnit ((P.isUnit_intCast_q₁_iff s a).mpr ha)]
+  rw [placeOfInt_def, Units.val_unitOrOne_of_isUnit ((P.isUnit_intCast_q₁_iff s a).mpr ha)]
 
 /-- An integer not invertible modulo `q₀` has identity label. -/
 @[simp] theorem placeOfInt_of_not_isUnit (s : ℕ) {a : ℤ} (ha : ¬ IsUnit (a : ZMod P.q₀)) :
@@ -68,9 +67,9 @@ theorem isUnit_intCast_q₁_iff (s : ℕ) (a : ℤ) :
   simp [placeOfInt_def]
 
 /-- On integers invertible at the base, reduction to any divisor of `q₁` gives the residue. -/
-@[simp] theorem coe_unitsMap_placeOfInt_of_isUnit {s m : ℕ} (hm : m ∣ P.q₁ s) {a : ℤ}
+@[simp] theorem val_unitsMap_placeOfInt_of_isUnit {s m : ℕ} (hm : m ∣ P.q₁ s) {a : ℤ}
     (ha : IsUnit (a : ZMod P.q₀)) : (ZMod.unitsMap hm (P.placeOfInt s a) : ZMod m) = a := by
-  rw [ZMod.unitsMap_val, P.coe_placeOfInt_of_isUnit s ha, ZMod.cast_intCast hm]
+  rw [ZMod.unitsMap_val, P.val_placeOfInt_of_isUnit s ha, ZMod.cast_intCast hm]
 
 /-- Reduction to the base commutes with the unit-or-identity convention. -/
 @[simp] theorem unitsMap_placeOfInt (s : ℕ) (a : ℤ) :
@@ -88,23 +87,6 @@ theorem unitsMap_placeOfInt_eq_neg_one_iff (s : ℕ) (a : ℤ) :
   rw [P.unitsMap_placeOfInt, Units.unitOrOne_eq_iff_of_ne_one h]
   simpa only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one] using
     ZMod.intCast_eq_intCast_iff a (-1) P.q₀
-
-/-- The Legendre-weighted von Mangoldt coefficient vanishes off the units of the tower. -/
-theorem primeWeight_eq_zero_of_not_isUnit (s q n : ℕ) (hn : ¬ IsUnit (n : ZMod (P.q₁ s))) :
-    primeWeight P.d q n = 0 := by
-  rw [primeWeight_def]
-  split_ifs with h
-  · by_cases hΛ : ArithmeticFunction.vonMangoldt n = 0
-    · simp [hΛ]
-    obtain ⟨p, k, hp, _, rfl⟩ := ArithmeticFunction.vonMangoldt_ne_zero_iff.mp hΛ
-    have hpd : p ∣ P.q₁ s := by
-      by_contra hpd
-      exact hn ((ZMod.isUnit_iff_coprime _ _).mpr
-        ((hp.nat_prime.coprime_iff_not_dvd.mpr hpd).pow_left k))
-    have hs := map_pow (legendreSym.hom P.d) (p : ℤ) k
-    simp only [legendreSym.hom_apply, P.legendreSym_eq_one_of_dvd_q₁ hpd, one_pow] at hs
-    simp [Nat.cast_pow, hs]
-  · rfl
 
 /-- Restricting the unrestricted weight to the `-1` fiber of the label of `-n` gives precisely
 `λ_q₀(n)`, the weight of the base progression `n ≡ 1 (mod q₀)`. -/
