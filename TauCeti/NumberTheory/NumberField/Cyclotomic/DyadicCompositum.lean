@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.Cyclotomic.CompatibleTower
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 import Mathlib.Algebra.Order.Archimedean.Basic
 import TauCeti.FieldTheory.IntermediateField.CompositumDegree
-import TauCeti.FieldTheory.IntermediateField.Map
 import TauCeti.NumberTheory.NumberField.Cyclotomic.MaximalRealSubfield
 
 /-!
@@ -28,47 +27,9 @@ public section
 
 open IntermediateField
 
-namespace IsPrimitiveRoot
-
-/-- The subfield generated over `ℚ` by the sum of a primitive root of unity of order
-`m > 2` and its inverse has degree `φ(m)/2`, even in a larger ambient field. -/
-theorem finrank_adjoin_add_inv_rat {L : Type*} [Field L] [CharZero L] {m : ℕ} {ζ : L}
-    (hζ : IsPrimitiveRoot ζ m) (hm : 2 < m) :
-    Module.finrank ℚ ℚ⟮ζ + ζ⁻¹⟯ = m.totient / 2 := by
-  let E : IntermediateField ℚ L := ℚ⟮ζ⟯
-  let z : E := ⟨ζ, mem_adjoin_simple_self ℚ ζ⟩
-  have hz : IsPrimitiveRoot z m := IsPrimitiveRoot.coe_submonoidClass_iff.mp hζ
-  let : NeZero m := ⟨by omega⟩
-  let : IsCyclotomicExtension {m} ℚ E := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
-  have : NumberField E := IsCyclotomicExtension.numberField {m} ℚ E
-  have hincl : algebraMap E L (z + z⁻¹) = ζ + ζ⁻¹ := by
-    rw [map_add, map_inv₀]
-    rfl
-  let e := adjoinSimpleAlgebraMapEquiv ℚ L (z + z⁻¹)
-  rw [← hincl, ← e.toLinearEquiv.finrank_eq]
-  have hreal := hz.toSubfield_adjoin_add_inv_eq_maximalRealSubfield (k := ℚ)
-  exact (congrArg (fun F : Subfield E ↦ Module.finrank ℚ F) hreal).trans
-    (TauCeti.IsCyclotomicExtension.Rat.finrank_rat_maximalRealSubfield m E hm)
-
-end IsPrimitiveRoot
-
 namespace TauCeti.CompatibleCyclotomicTower
 
 variable {L : Type*} [Field L] [CharZero L] (T : CompatibleCyclotomicTower L)
-
-/-- The real subfields of the successive `2 ^ (n + 2)`-cyclotomic layers are nested. -/
-theorem monotone_adjoin_add_inv_two_pow :
-    Monotone (fun n : ℕ ↦ ℚ⟮T.root (2 ^ (n + 2)) + (T.root (2 ^ (n + 2)))⁻¹⟯) := by
-  refine monotone_nat_of_le_succ fun n ↦ adjoin_simple_le_iff.mpr ?_
-  let z := T.root (2 ^ (n + 1 + 2))
-  have hz : z ≠ 0 := (T.isPrimitiveRoot_root _).ne_zero (NeZero.ne _)
-  have hz2 : z ^ 2 = T.root (2 ^ (n + 2)) := by
-    simpa only [z, ← pow_succ] using T.root_mul_pow (2 ^ (n + 2)) 2
-  have heq : z ^ 2 + (z ^ 2)⁻¹ = (z + z⁻¹) ^ 2 - 2 := by
-    field_simp
-    ring
-  rw [← hz2, heq]
-  exact sub_mem (pow_mem (mem_adjoin_simple_self ℚ (z + z⁻¹)) _) (ofNat_mem _ _)
 
 /-- For a fixed finite extension `M` of `ℚ`, the degrees of its composita with the real
 cyclotomic layers at levels `2 ^ (n + 2)` are eventually `c * 2 ^ n`. -/
@@ -87,7 +48,7 @@ theorem exists_finrank_sup_adjoin_add_inv_two_pow_eq (M : IntermediateField ℚ 
       Nat.totient_prime_pow_succ Nat.prime_two]
     simp [pow_succ]
   obtain ⟨c, hc, hc', n₀, h⟩ :=
-    exists_finrank_sup_eq_mul_finrank M E T.monotone_adjoin_add_inv_two_pow
+    exists_finrank_sup_eq_mul_finrank M E (T.monotone_adjoin_add_inv_two_pow ℚ)
   exact ⟨c, hc, hc', n₀, fun n hn ↦ by rw [h n hn, hdeg]⟩
 
 /-- The compositum degree can be placed within a factor of two of any sufficiently large real

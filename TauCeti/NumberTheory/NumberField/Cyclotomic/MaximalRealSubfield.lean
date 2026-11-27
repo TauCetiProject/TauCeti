@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Norm.Defs
 import Mathlib.Analysis.Complex.Basic
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.FieldTheory.IntermediateField.Map
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealSubfield
 
@@ -68,6 +69,8 @@ the namespace `TauCeti.IsCyclotomicExtension.Rat`.
   the maximal real subfield.
 * `finrank_rat_maximalRealSubfield`: for `n > 2` the maximal real subfield has degree `φ(n) / 2`
   over `ℚ`.
+* `IsPrimitiveRoot.finrank_adjoin_add_inv_rat`: for a primitive root of unity `ζ` of order
+  `m > 2` in any field of characteristic zero, `ℚ(ζ + ζ⁻¹)` has degree `φ(m) / 2` over `ℚ`.
 
 Over a totally real base `k`, for `K = k(μₙ)` and a primitive `n`-th root of unity `ζ`:
 
@@ -354,6 +357,26 @@ theorem toSubfield_adjoin_add_inv_eq_maximalRealSubfield [NeZero n] (hζ : IsPri
     exact one_mem _
   · rw [hζ.eq_neg_one_of_two_right]
     exact neg_mem (one_mem _)
+
+/-- The subfield generated over `ℚ` by the sum of a primitive root of unity of order
+`m > 2` and its inverse has degree `φ(m)/2`, even in a larger ambient field. -/
+theorem finrank_adjoin_add_inv_rat {L : Type*} [Field L] [CharZero L] {m : ℕ} {ζ : L}
+    (hζ : IsPrimitiveRoot ζ m) (hm : 2 < m) :
+    Module.finrank ℚ ℚ⟮ζ + ζ⁻¹⟯ = m.totient / 2 := by
+  let E : IntermediateField ℚ L := ℚ⟮ζ⟯
+  let z : E := ⟨ζ, mem_adjoin_simple_self ℚ ζ⟩
+  have hz : IsPrimitiveRoot z m := IsPrimitiveRoot.coe_submonoidClass_iff.mp hζ
+  let : NeZero m := ⟨by omega⟩
+  let : IsCyclotomicExtension {m} ℚ E := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
+  have : NumberField E := IsCyclotomicExtension.numberField {m} ℚ E
+  have hincl : algebraMap E L (z + z⁻¹) = ζ + ζ⁻¹ := by
+    rw [map_add, map_inv₀]
+    rfl
+  let e := adjoinSimpleAlgebraMapEquiv ℚ L (z + z⁻¹)
+  rw [← hincl, ← e.toLinearEquiv.finrank_eq]
+  have hreal := hz.toSubfield_adjoin_add_inv_eq_maximalRealSubfield (k := ℚ)
+  exact (congrArg (fun F : Subfield E ↦ Module.finrank ℚ F) hreal).trans
+    (TauCeti.IsCyclotomicExtension.Rat.finrank_rat_maximalRealSubfield m E hm)
 
 variable (k K) in
 include k in
