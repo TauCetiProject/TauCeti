@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.CStarAlgebra.Ideal
+public import TauCeti.Analysis.CStarAlgebra.Lift
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Algebra.Star.Subalgebra
@@ -42,6 +43,8 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 * `NonUnitalStarAlgHom.isClosed_range`, `StarAlgHom.isClosed_range`,
   `TwoSidedIdeal.isClosed_map_mk`, and `TwoSidedIdeal.isClosed_sup`: `⋆`-homomorphism ranges,
   images of closed ideals in quotients, and sums `I ⊔ J` of closed ideals are automatically closed.
+* `TwoSidedIdeal.Quotient.exists_norm_mk_eq`: every class in a C⋆-quotient has a representative
+  attaining the quotient norm.
 * `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
   of another is dominated by it in norm.
 * `NonUnitalStarAlgHom.exists_mem_comap_norm_sub_lt`: the distance from `a` to the preimage of a
@@ -427,6 +430,14 @@ theorem toNonUnitalStarAlgHom_liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf 
   (rfl)
 
 end Unital
+
+/-- In the quotient of a C⋆-algebra by a closed two-sided ideal, every class has a representative
+whose norm equals the quotient norm: the infimum in `TwoSidedIdeal.Quotient.norm_mk_eq` is
+attained. -/
+theorem exists_norm_mk_eq {A : Type*} [NonUnitalCStarAlgebra A] {I : TwoSidedIdeal A}
+    [IsClosed (I : Set A)] (x : A ⧸ I) : ∃ a : A, mk I a = x ∧ ‖a‖ = ‖x‖ := by
+  simpa only [mkStarAlgHom_apply] using
+    NonUnitalStarAlgHom.exists_apply_eq_norm_eq (mkStarAlgHom I) (mkStarAlgHom_surjective I x)
 
 end TwoSidedIdeal.Quotient
 

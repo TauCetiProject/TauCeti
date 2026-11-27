@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
+public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
+public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.RCLike.ContinuousMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.Ordered
 import Mathlib.MeasureTheory.Function.Holder
@@ -46,6 +49,10 @@ any Borel-compatible measure `μ` (`ContinuousLinearMap.integrable_bilin_continu
 `f ↦ ∫ x, B (f x) (g x) ∂μ` defines a continuous `𝕜`-linear operator
 `ContinuousLinearMap.continuousMapIntegralCLM : C(X, E) →L[𝕜] G` of norm at most
 `‖B‖ * ∫ x, ‖g x‖ ∂μ`.
+
+Against a continuous nonnegative real weight `w` on a compact space, the functional
+`f ↦ ∫ w(x) f(x) ∂μ` is the positive continuous linear map
+`ContinuousMap.weightedIntegral`, with operator norm equal to `∫ w ∂μ`.
 -/
 
 public section
@@ -243,3 +250,50 @@ theorem continuousMapIntegralCLM_zero_right (B : E →L[𝕜] F →L[𝕜] G) :
 end IntegralCLM
 
 end ContinuousLinearMap
+
+namespace ContinuousMap
+
+open scoped ComplexOrder
+open Filter PositiveLinearMap
+
+variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
+  [OpensMeasurableSpace X]
+variable (μ : Measure X) [IsFiniteMeasure μ]
+
+/-! ### Weighted integrals `∫ w(x) f(x) ∂μ` -/
+
+/-- Integration against a continuous nonnegative real weight on a compact space. -/
+noncomputable def weightedIntegral (w : C(X, ℝ)) (hw : ∀ x, 0 ≤ w x) :
+    C(X, ℂ) →P[ℂ] ℂ :=
+  PositiveContinuousLinearMap.mk₀
+    (ContinuousLinearMap.continuousMapIntegralCLM (μ := μ)
+      (ContinuousLinearMap.mul ℂ ℂ) (g := fun x => (w x : ℂ))
+      ((Complex.continuous_ofReal.comp w.continuous).integrable_of_compactSpace))
+    fun f hf => by
+      rw [ContinuousLinearMap.continuousMapIntegralCLM_apply]
+      refine integral_nonneg fun x => ?_
+      have : 0 ≤ (w x : ℂ) := (RCLike.ofReal_nonneg (K := ℂ)).mpr (hw x)
+      exact mul_nonneg (hf x) this
+
+@[simp]
+theorem weightedIntegral_apply (w : C(X, ℝ)) (hw : ∀ x, 0 ≤ w x) (f : C(X, ℂ)) :
+    weightedIntegral μ w hw f = ∫ x, (w x : ℂ) * f x ∂μ := by
+  rw [weightedIntegral, PositiveContinuousLinearMap.mk₀_apply,
+    ContinuousLinearMap.continuousMapIntegralCLM_apply]
+  exact integral_congr_ae (.of_forall fun x => mul_comm (f x) _)
+
+theorem weightedIntegral_one (w : C(X, ℝ)) (hw : ∀ x, 0 ≤ w x) :
+    weightedIntegral μ w hw (1 : C(X, ℂ)) = ((∫ x, w x ∂μ : ℝ) : ℂ) := by
+  simp only [weightedIntegral_apply, ContinuousMap.one_apply, mul_one]
+  exact integral_complex_ofReal (f := (w : X → ℝ))
+
+/-- A nonnegative continuous weight gives a positive functional of norm equal to its integral. -/
+theorem norm_weightedIntegral (w : C(X, ℝ)) (hw : ∀ x, 0 ≤ w x) :
+    ‖(weightedIntegral μ w hw).toContinuousLinearMap‖ = ∫ x, w x ∂μ := by
+  have h := PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one (weightedIntegral μ w hw)
+  have h1 := weightedIntegral_one μ w hw
+  have : (‖(weightedIntegral μ w hw).toContinuousLinearMap‖ : ℂ) = ((∫ x, w x ∂μ : ℝ) : ℂ) := by
+    simpa [h1] using h
+  exact_mod_cast this
+
+end ContinuousMap

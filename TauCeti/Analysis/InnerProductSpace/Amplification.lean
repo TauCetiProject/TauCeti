@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.Projection.ExtendByZero
 public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 import TauCeti.Analysis.InnerProductSpace.PiL2
@@ -33,6 +34,13 @@ Amplification turns statements about finitely many vectors of `H` into statement
 vector of the Hilbert sum; in particular, `PiLp.diagStarAlgHom_mem_centralizer_centralizer` sends
 the double commutant `s''` of any set of operators `s` into the double commutant of its diagonal
 copy, which is how the von Neumann density theorem passes from one vector to finitely many.
+
+When the coordinates of a vector `ξ` are linearly independent, the finite Gram construction
+`ContinuousLinearMap.exists_apply_eq_of_linearIndependent` produces a bounded operator realizing
+any prescribed images of those coordinates, so the diagonal orbit fills the Hilbert sum
+(`PiLp.range_diagStarAlgHom_apply_eq_univ_of_linearIndependent`). The elementary relation
+operator `PiLp.relationCLM` records linear combinations of coordinates and intertwines with
+diagonal amplifications (`PiLp.relationCLM_mul_diagStarAlgHom`).
 -/
 
 public section
@@ -154,7 +162,23 @@ end ContinuousLinearMap
 
 namespace PiLp
 
-variable [Fintype ι] [CompleteSpace H]
+variable [Fintype ι]
+
+/-- The continuous linear map sending `v` to the constant family with value `∑ₖ cₖ • vₖ`. -/
+noncomputable def relationCLM (c : ι → 𝕜) :
+    PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H) :=
+  (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.toContinuousLinearMap ∘L
+    ContinuousLinearMap.pi (fun _ : ι =>
+      ∑ k : ι, (c k) • (PiLp.proj 2 (fun _ : ι => H) k))
+
+/-- Evaluating the relation operator recovers the linear combination of coordinates. -/
+@[simp]
+theorem relationCLM_apply (c : ι → 𝕜) (v : PiLp 2 (fun _ : ι => H)) (i : ι) :
+    relationCLM (H := H) (𝕜 := 𝕜) c v i = ∑ k, c k • (v k : H) := by
+  open ContinuousLinearMap in
+  simp [relationCLM]
+
+variable [CompleteSpace H]
 
 variable (𝕜 H ι) in
 /-- The diagonal amplification `s ↦ s ⊕ ⋯ ⊕ s` of operators on `H` to the Hilbert sum of copies
@@ -213,6 +237,23 @@ theorem diagStarAlgHom_mem_centralizer_centralizer {s : Set (H →L[𝕜] H)} {x
   refine Finset.sum_congr rfl fun j _ => ?_
   rw [diagStarAlgHom_apply]
   simpa using DFunLike.congr_fun (hx _ (hentry i j)) (w j)
+
+/-- Under linear independence of coordinates, the diagonal orbit of `ξ` is the whole Hilbert sum. -/
+theorem range_diagStarAlgHom_apply_eq_univ_of_linearIndependent
+    {ξ : PiLp 2 (fun _ : ι => H)} (hξ : LinearIndependent 𝕜 (fun i : ι => (ξ i : H))) :
+    Set.range (fun T : H →L[𝕜] H => diagStarAlgHom 𝕜 H ι T ξ) = Set.univ := by
+  ext η
+  simp only [Set.mem_range, Set.mem_univ, iff_true]
+  obtain ⟨T, hT⟩ :=
+    ContinuousLinearMap.exists_apply_eq_of_linearIndependent hξ fun i => η i
+  exact ⟨T, by ext i; simpa using hT i⟩
+
+theorem relationCLM_mul_diagStarAlgHom (c : ι → 𝕜) (T : H →L[𝕜] H) :
+    relationCLM (H := H) (𝕜 := 𝕜) c * diagStarAlgHom 𝕜 H ι T =
+      diagStarAlgHom 𝕜 H ι T * relationCLM (H := H) (𝕜 := 𝕜) c := by
+  open ContinuousLinearMap in
+  ext v i
+  simp [mul_apply_eq_comp, map_sum, map_smul]
 
 end PiLp
 

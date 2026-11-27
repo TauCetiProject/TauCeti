@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.LinearAlgebra.Dimension.Finite
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
@@ -44,11 +47,42 @@ orthogonal projection `U.starProjection`. Conversely, any bounded operator `T : 
   `Submodule.eq_extendByZero_add_extendByZero_orthogonal_of_commute`: zero-extended compressions
   equal `U.starProjection * y * U.starProjection`, simplify under one-sided invariance of `U` or
   `Uᗮ`, and split operators commuting with `U.starProjection` across `U` and `Uᗮ`.
+* `ContinuousLinearMap.exists_apply_eq_of_linearIndependent`: a linearly independent finite family
+  may be sent to any prescribed images by a bounded operator, extending from the span by the
+  orthogonal projection.
 -/
 
 public section
 
 noncomputable section
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- **Finite Gram construction.** A linearly independent family of vectors may be sent to any
+prescribed family of images by a bounded operator on `E`, extending from the finite-dimensional
+span by the orthogonal projection. -/
+theorem exists_apply_eq_of_linearIndependent
+    {ι : Type*} [Finite ι] {ξ : ι → E} (hξ : LinearIndependent 𝕜 ξ) (η : ι → E) :
+    ∃ T : E →L[𝕜] E, ∀ i, T (ξ i) = η i := by
+  classical
+  let _ := Fintype.ofFinite ι
+  let V := Submodule.span 𝕜 (Set.range ξ)
+  let b : Module.Basis ι 𝕜 V := Module.Basis.span hξ
+  have : FiniteDimensional 𝕜 V := b.finiteDimensional_of_finite
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
+  let f : V →L[𝕜] E := b.constrL η
+  refine ⟨f.comp V.orthogonalProjectionOnto, fun i => ?_⟩
+  have hi : ξ i ∈ V := Submodule.subset_span (Set.mem_range_self i)
+  have hproj : V.orthogonalProjectionOnto (ξ i) = ⟨ξ i, hi⟩ :=
+    Subtype.ext (V.starProjection_eq_self_iff.2 hi)
+  have hb : (b i : E) = ξ i := Module.Basis.coe_span_apply hξ i
+  calc f (V.orthogonalProjectionOnto (ξ i)) = f ⟨ξ i, hi⟩ := by rw [hproj]
+    _ = f (b i) := by congr 1; exact Subtype.ext hb.symm
+    _ = η i := Module.Basis.constrL_basis b η i
+
+end ContinuousLinearMap
 
 namespace Submodule
 

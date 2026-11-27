@@ -26,6 +26,7 @@ order (`lp.isLUB_range_diagonalTruncation`, and along `Finset.range n` on `ℓ²
 
 ## Main declarations
 
+* `lp.star_diagonalCLM`: the adjoint of `lp.diagonalCLM d` on `ℓ²` is `lp.diagonalCLM (star d)`.
 * `lp.isSelfAdjoint_diagonalCLM_iff`: `lp.diagonalCLM d` on `ℓ²` is self-adjoint iff
   `∀ i, star (d i) = d i`.
 * `lp.isPositive_diagonalCLM_iff`, `lp.diagonalCLM_le_diagonalCLM_iff`,
@@ -47,6 +48,21 @@ open scoped lp ENNReal NNReal Topology InnerProductSpace ComplexConjugate Comple
 namespace lp
 
 variable {ι 𝕜 : Type*} [RCLike 𝕜]
+
+/-- The adjoint of a diagonal operator on `ℓ²` is the diagonal operator of the conjugated
+coefficients. -/
+@[simp]
+theorem star_diagonalCLM (d : ℓ^∞(ι, 𝕜)) :
+    star (diagonalCLM (p := 2) d) = diagonalCLM (star d) := by
+  rw [ContinuousLinearMap.star_eq_adjoint]
+  refine ContinuousLinearMap.ext fun x => ext_inner_left 𝕜 fun y => ?_
+  -- `⟪y, A† x⟫ = ⟪A y, x⟫`.
+  rw [ContinuousLinearMap.adjoint_inner_right]
+  simp only [lp.inner_eq_tsum, diagonalCLM_apply]
+  refine tsum_congr fun i => ?_
+  -- `⟪dᵢ yᵢ, xᵢ⟫ = ⟪yᵢ, (star dᵢ) xᵢ⟫`.
+  rw [← smul_eq_mul (α := 𝕜), ← smul_eq_mul (α := 𝕜), inner_smul_left, inner_smul_right,
+    lp.star_apply, RCLike.star_def]
 
 /-- A bounded diagonal operator on `ℓ²(ι, 𝕜)` is self-adjoint if and only if each diagonal entry is
 fixed by conjugation. -/

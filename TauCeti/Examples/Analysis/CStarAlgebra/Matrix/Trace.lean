@@ -28,6 +28,9 @@ the matrix unit written `e₁₁` in the literature is `matrixUnit 0 0` here.
   matrix of `tr_2` is `(1/2)·1`, and that of the state `x ↦ x₁₁` is `e₁₁`.
 * `c = diag(1, 0) = e₁₁`, `x = e₁₂` in `M_2`: `cxc = 0` and
   `‖x - cxc‖₂ = 2^{-1/2} ≤ 2 · 2^{-1/2} = 2‖x‖‖c - 1‖₂`.
+* Unnormalized vs normalized trace maps: on `M₂` the unnormalized trace has operator norm `2`
+  while the normalized trace has norm `1`; on `M₃` the unnormalized trace is thrice the
+  normalized one.
 -/
 
 public section
@@ -152,5 +155,17 @@ example : matrixUnit (0 : Fin 2) 0 * matrixUnit 0 1 * matrixUnit 0 0 = 0 ∧
     ext a b
     fin_cases a <;> fin_cases b <;> simp
   exact ⟨by simp, by simp, by simp [hc, norm_matrixUnit]⟩
+
+/-! ### Unnormalized vs normalized trace maps -/
+
+/-- On `M₂` the unnormalized trace has norm `2`, while the normalized trace has norm `1`. -/
+example : ‖(traceMap (Fin 2)).toContinuousLinearMap‖ = 2 ∧
+    ‖(normalizedTraceMap (Fin 2)).toContinuousLinearMap‖ = 1 :=
+  ⟨by simpa using norm_traceMap (Fin 2), norm_normalizedTraceMap (Fin 2)⟩
+
+/-- The unnormalized trace is `k` times the normalized trace. -/
+example (x : CStarMatrix (Fin 3) (Fin 3) ℂ) :
+    traceMap (Fin 3) x = 3 * normalizedTraceMap (Fin 3) x := by
+  simp [traceMap_eq_card_smul_normalizedTraceMap, nsmul_eq_mul]
 
 end TauCeti.MatrixTraceExample
