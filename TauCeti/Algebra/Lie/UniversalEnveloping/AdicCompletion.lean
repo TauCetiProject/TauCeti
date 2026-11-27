@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
 public import TauCeti.RingTheory.AdicCompletion.ScalarIdeal
 
 import TauCeti.RingTheory.Ideal.Operations
-import TauCeti.LinearAlgebra.Submodule.Quotient
+import TauCeti.LinearAlgebra.Basis.ExtendedIdeal
 import TauCeti.RingTheory.AdicCompletion.Finite
 
 /-!
@@ -115,63 +115,30 @@ theorem mem_scalarAdicFiltration_iff (n : ℕ) (x : U) :
   rw [Ideal.algFiltration_ideal, ← Submodule.restrictScalars_mem R,
     ← Ideal.pow_smul_top_eq_restrictScalars_map_pow, b.pbwBasis.mem_smul_top_iff]
 
-/-- The PBW coordinate map before taking the quotient, with coefficients reduced mod `Iⁿ`. -/
-private noncomputable def adicPBWRepr (n : ℕ) :
-    U →ₗ[R] ((ι →₀ ℕ) →₀ (R ⧸ I ^ n)) :=
-  (Finsupp.mapRange.linearMap (I ^ n).mkQ).comp b.pbwBasis.repr.toLinearMap
-
-/-- Reduced PBW coordinates are obtained by reducing each ordinary PBW coefficient. -/
-@[simp]
-private theorem adicPBWRepr_apply (n : ℕ) (x : U) (α : ι →₀ ℕ) :
-    adicPBWRepr I b n x α = Ideal.Quotient.mk (I ^ n) (b.pbwBasis.repr x α) := (rfl)
-
-/-- Every finitely supported family of residues lifts to a finite PBW sum. -/
-private theorem adicPBWRepr_surjective (n : ℕ) : Function.Surjective (adicPBWRepr I b n) :=
-  (Finsupp.mapRange_surjective (I ^ n).mkQ (map_zero _)
-    (Submodule.mkQ_surjective _)).comp b.pbwBasis.repr.surjective
-
-/-- The reduced PBW coordinates have exactly the scalar-adic ideal as kernel. -/
-private theorem adicPBWRepr_ker (n : ℕ) :
-    LinearMap.ker (adicPBWRepr I b n) =
-      ((I.map (algebraMap R U)) ^ n).restrictScalars R := by
-  ext x
-  rw [LinearMap.mem_ker, Submodule.restrictScalars_mem]
-  rw [← Ideal.algFiltration_ideal (I.map (algebraMap R U)) n]
-  rw [mem_scalarAdicFiltration_iff I b]
-  simp only [Finsupp.ext_iff, adicPBWRepr_apply, Finsupp.zero_apply,
-    Ideal.Quotient.eq_zero_iff_mem]
-
 /-- Finite-order scalar-adic quotients of the enveloping algebra are precisely finite PBW sums
 with coefficients in `R / Iⁿ`. This is a linear equivalence, since PBW coordinates need
 not preserve multiplication. -/
 noncomputable def adicPBWEquiv (n : ℕ) :
     (U ⧸ (I.map (algebraMap R U)) ^ n) ≃ₗ[R] ((ι →₀ ℕ) →₀ (R ⧸ I ^ n)) :=
-  (Ideal.Quotient.mkₐ R ((I.map (algebraMap R U)) ^ n)).toLinearMap
-    |>.equivOfSurjectiveOfKerEq (adicPBWRepr I b n)
-      (Ideal.Quotient.mkₐ_surjective R _) (adicPBWRepr_surjective I b n) (by
-        rw [adicPBWRepr_ker]
-        ext x
-        simp [Ideal.Quotient.eq_zero_iff_mem])
+  (Ideal.quotientEquivAlgOfEq R (Ideal.map_algebraMap_pow I n).symm).toLinearEquiv ≪≫ₗ
+    b.pbwBasis.quotientEquiv (I ^ n)
 
 /-- The finite-order quotient equivalence computes on every ordinary enveloping element. -/
 @[simp]
 theorem adicPBWEquiv_mk (n : ℕ) (x : U) (α : ι →₀ ℕ) :
     adicPBWEquiv I b n (Ideal.Quotient.mk ((I.map (algebraMap R U)) ^ n) x) α =
       Ideal.Quotient.mk (I ^ n) (b.pbwBasis.repr x α) := by
-  -- Observe the private reduced-coordinate map at one exponent.
-  change _ = adicPBWRepr I b n x α
-  exact congrArg (fun c : ((ι →₀ ℕ) →₀ (R ⧸ I ^ n)) => c α)
-    (LinearMap.equivOfSurjectiveOfKerEq_apply
-      (Ideal.Quotient.mkₐ R ((I.map (algebraMap R U)) ^ n)).toLinearMap
-      (adicPBWRepr I b n) _ _ _ x)
+  simp [adicPBWEquiv]
 
 /-- Reduction of finite-order quotients reduces each PBW coefficient by the scalar quotient map. -/
 theorem adicPBWEquiv_factor {m n : ℕ} (h : m ≤ n)
     (x : U ⧸ (I.map (algebraMap R U)) ^ n) (α : ι →₀ ℕ) :
     adicPBWEquiv I b m (Ideal.Quotient.factor (Ideal.pow_le_pow_right h) x) α =
       Ideal.Quotient.factor (Ideal.pow_le_pow_right h) (adicPBWEquiv I b n x α) := by
+  simp only [adicPBWEquiv, LinearEquiv.trans_apply, AlgEquiv.toLinearEquiv_apply]
+  rw [← b.pbwBasis.quotientEquiv_factor (Ideal.pow_le_pow_right h)]
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp only [Ideal.Quotient.factor_mk, adicPBWEquiv_mk]
+  simp only [Ideal.Quotient.factor_mk, Ideal.quotientEquivAlgOfEq_mk]
 
 /-- Freeness of the Lie algebra and separatedness of the base suffice for the ordinary
 inclusion into the integral completion; finite rank and completeness are not needed. -/

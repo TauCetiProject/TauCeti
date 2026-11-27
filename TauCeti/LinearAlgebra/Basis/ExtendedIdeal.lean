@@ -8,8 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Quotient
+public import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.LinearAlgebra.Matrix.ToLin
-import TauCeti.RingTheory.Ideal.Extended
+import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -36,6 +37,8 @@ determinant of an `A`-valued matrix coordinatewise.
 
 ## Main definitions
 
+* `Module.Basis.quotientEquiv`: coordinates modulo an extended ideal in an algebra that may
+  be noncommutative, as a linear equivalence over the original scalar ring.
 * `Module.Basis.quotient`: the basis of `A ⧸ J A` over `R ⧸ J` given by the classes of a basis of
   `A` over `R`.
 
@@ -79,6 +82,43 @@ end Coordinates
 end LinearMap
 
 namespace Module.Basis
+
+section QuotientEquiv
+
+variable [CommRing R] [Ring A] [Algebra R A]
+
+/-- Coordinates modulo an extended scalar ideal are finitely supported families of scalar
+residue classes. The algebra need not be commutative, and the equivalence is linear over `R`. -/
+noncomputable def quotientEquiv (b : Basis ι R A) (J : Ideal R) :
+    (A ⧸ J.map (algebraMap R A)) ≃ₗ[R] (ι →₀ R ⧸ J) :=
+  (Submodule.quotEquivOfEqRestrictScalars (J • (⊤ : Submodule R A))
+      (J.map (algebraMap R A)) (Ideal.smul_top_eq_restrictScalars_map J)).symm ≪≫ₗ
+    (TensorProduct.quotTensorEquivQuotSMul A J).symm ≪≫ₗ
+      (b.baseChange (R ⧸ J)).repr.restrictScalars R
+
+/-- The quotient coordinates of a representative are its original coordinates reduced
+modulo the scalar ideal. -/
+@[simp]
+theorem quotientEquiv_mk (b : Basis ι R A) (J : Ideal R) (x : A) (i : ι) :
+    b.quotientEquiv J (Ideal.Quotient.mk _ x) i =
+      Ideal.Quotient.mk J (b.repr x i) := by
+  simp only [quotientEquiv, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply]
+  rw [← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEqRestrictScalars_symm_mk
+      (J • (⊤ : Submodule R A))
+      (J.map (algebraMap R A)) (Ideal.smul_top_eq_restrictScalars_map J) x,
+    TensorProduct.quotTensorEquivQuotSMul_symm_mk, baseChange_repr_tmul]
+  simp [Algebra.smul_def]
+
+/-- Reduction along an inclusion of scalar ideals reduces each coordinate by the scalar
+quotient map. -/
+theorem quotientEquiv_factor (b : Basis ι R A) {J K : Ideal R} (h : J ≤ K)
+    (x : A ⧸ J.map (algebraMap R A)) (i : ι) :
+    b.quotientEquiv K (Ideal.Quotient.factor (Ideal.map_mono h) x) i =
+      Ideal.Quotient.factor h (b.quotientEquiv J x i) := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp only [Ideal.Quotient.factor_mk, quotientEquiv_mk]
+
+end QuotientEquiv
 
 section Quotient
 

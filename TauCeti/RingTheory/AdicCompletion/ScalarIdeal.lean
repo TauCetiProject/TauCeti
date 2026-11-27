@@ -108,33 +108,17 @@ private def toExtendedIdealCompletion :
     simp only [TauCeti.AlgFiltration.projection_apply, map_smul, RingHom.id_apply]
 
 private def ofExtendedIdealCompletion :
-    (I.map (algebraMap R A)).algFiltration.completion →ₗ[R] AdicCompletion I A where
-  toFun x := ⟨fun n => transitionMap I A (Nat.le_succ n)
-    ((filtrationQuotientEquiv I (n + 1)).symm
-      ((I.map (algebraMap R A)).algFiltration.projection n x)), by
+    (I.map (algebraMap R A)).algFiltration.completion →ₗ[R] AdicCompletion I A :=
+  lift I (fun n => (transitionMap I A (Nat.le_succ n)).comp
+    ((filtrationQuotientEquiv I (n + 1)).symm.toLinearMap.comp
+      ((I.map (algebraMap R A)).algFiltration.projectionₐ (R := R) n).toLinearMap)) (by
     intro m n h
-    dsimp only
+    ext x
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
+      TauCeti.AlgFiltration.projectionₐ_apply]
     rw [← (I.map (algebraMap R A)).algFiltration.factor_projection h x]
     rw [← transitionMap_filtrationQuotientEquiv_symm I (Nat.add_le_add_right h 1)]
-    simp only [transitionMap, Submodule.factor_comp_apply]⟩
-  map_add' x y := by
-    apply AdicCompletion.ext
-    intro n
-    -- The coordinate of this compatible-family subtype is the displayed quotient class.
-    change transitionMap I A (Nat.le_succ n)
-      ((filtrationQuotientEquiv I (n + 1)).symm
-        ((I.map (algebraMap R A)).algFiltration.projection n (x + y))) = _
-    simp only [map_add]
-    rfl
-  map_smul' r x := by
-    apply AdicCompletion.ext
-    intro n
-    -- The coordinate of this compatible-family subtype is the displayed quotient class.
-    change transitionMap I A (Nat.le_succ n)
-      ((filtrationQuotientEquiv I (n + 1)).symm
-        ((I.map (algebraMap R A)).algFiltration.projection n (r • x))) = _
-    simp only [projection_smul, map_smul, RingHom.id_apply]
-    rfl
+    simp only [transitionMap, Submodule.factor_comp_apply])
 
 private theorem projection_toExtendedIdealCompletion (k : ℕ) (x : AdicCompletion I A) :
     (I.map (algebraMap R A)).algFiltration.projection k (toExtendedIdealCompletion I x) =
@@ -146,7 +130,12 @@ private theorem eval_ofExtendedIdealCompletion (n : ℕ)
     (x : (I.map (algebraMap R A)).algFiltration.completion) :
     eval I A n (ofExtendedIdealCompletion I x) =
       transitionMap I A (Nat.le_succ n) ((filtrationQuotientEquiv I (n + 1)).symm
-        ((I.map (algebraMap R A)).algFiltration.projection n x)) := rfl
+        ((I.map (algebraMap R A)).algFiltration.projection n x)) := by
+  unfold ofExtendedIdealCompletion
+  generalize_proofs
+  have h := eval_lift_apply I _ (by assumption) n x
+  simpa only [eval_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    AlgHom.toLinearMap_apply, TauCeti.AlgFiltration.projectionₐ_apply] using h
 
 /-- The completion of the extended ideal filtration agrees, as an `R`-module, with the
 module-adic completion. No commutativity of `A` is needed. -/
