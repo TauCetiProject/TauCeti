@@ -83,10 +83,11 @@ theorem map_charTwist_comp_tprod (D' : WeilDeligneParameter E W' V' deg' (q ^ f)
       tprod ((leftRegular E W).comp ι) D'.r g ∘ₗ
         TensorProduct.map (MonoidAlgebra.charTwist (omega deg hq)).toLinearMap D'.N := by
   ext w v
-  -- The exponent identity `deg (ι g) + deg w - f deg' g = deg w`.
-  have hexp := zpow_deg_map_mul_mul_zpow_neg ι f hf hq g w
-  rw [map_mul, toAdd_mul, zpow_add₀ hq, Nat.cast_pow, zpow_neg, mul_comm] at hexp
-  simp [N_apply_r_apply, TensorProduct.smul_tmul', hexp]
+  -- `q ^ deg (ι g) = (q ^ f) ^ deg' g` cancels the factor `((q ^ f) ^ deg' g)⁻¹` from `N'`.
+  have hdeg : (q : E) ^ (deg (ι g)).toAdd = ((q : E) ^ f) ^ (deg' g).toAdd := by
+    rw [hf, zpow_mul, zpow_natCast]
+  simp [N_apply_r_apply, TensorProduct.smul_tmul', hdeg,
+    inv_mul_cancel_left₀ (zpow_ne_zero _ (pow_ne_zero _ hq))]
 
 /-- **The monodromy of the tensor model** `IndV ι r' = (E[W] ⊗ V')_{W'}`:
 `⟦w ⊗ v⟧ ↦ q ^ deg w • ⟦w ⊗ N' v⟧`, the left-coset formula `g ⊗ v ↦ q ^ (-deg g) • g ⊗ N' v`
@@ -146,7 +147,11 @@ theorem ind_mul_indVN_mul_ind_inv (D' : WeilDeligneParameter E W' V' deg' (q ^ f
   rw [LinearMap.comp_apply]
   conv_rhs => rw [LinearMap.comp_apply]
   simp only [mul_apply_eq_comp, ind_mk, inv_inv, indVN_mk, map_smul, mul_inv_cancel_right,
-    LinearMap.smul_apply, smul_smul, map_mul, toAdd_mul, zpow_add₀ hq, mul_comm]
+    LinearMap.smul_apply, smul_smul]
+  -- The scalars: `q ^ deg (w x) = q ^ deg x * q ^ deg w`.
+  congr 1
+  rw [map_mul, toAdd_mul, zpow_add₀ hq]
+  ring
 
 section FiniteIndex
 
