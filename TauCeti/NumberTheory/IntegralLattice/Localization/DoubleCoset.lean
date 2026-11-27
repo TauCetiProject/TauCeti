@@ -267,13 +267,21 @@ theorem adelicTranslateDiagonalIsometry_apply (γ : orthogonalGroup L.norm) (v :
     L.adelicTranslateDiagonalIsometry g γ v = (γ : V ≃ₗ[ℚ] V) v :=
   (rfl)
 
-/-- The isometry `g • L ≅ γ g • L` given by a rational isometry `γ` is proper exactly when `γ`
-has positive determinant. -/
-@[simp]
-theorem isProper_adelicTranslateDiagonalIsometry_iff (γ : orthogonalGroup L.norm) :
-    (L.adelicTranslateDiagonalIsometry g γ).IsProper ↔
-      0 < (LinearEquiv.det (γ : V ≃ₗ[ℚ] V) : ℚ) :=
-  Isometry.isProper_iff _
+/-- **Every isometry of translates comes from a rational isometry**: an isometry
+`e : g • L ≅ h • L` is the ambient action of some `γ ∈ O(V)(ℚ)`, and then `γ g • L = h • L`. -/
+theorem exists_coe_eq_toLinearEquiv_and_adelicTranslate_eq
+    {h : L.orthogonalCompactOpens.finiteAdelicOrthogonal}
+    (e : Isometry (L.adelicTranslate g) (L.adelicTranslate h)) :
+    ∃ γ : orthogonalGroup L.norm, (γ : V ≃ₗ[ℚ] V) = e.toLinearEquiv ∧
+      L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ * g) =
+        L.adelicTranslate h := by
+  let γ : orthogonalGroup L.norm := (MulEquiv.subgroupCongr L.orthogonalGroup_norm).symm
+    (L.form.isometryGroupEquivIsometryEquiv.symm e.toIsometryEquiv)
+  have hγe : (γ : V ≃ₗ[ℚ] V) = e.toLinearEquiv := LinearEquiv.ext <| congrFun
+    (L.form.coe_isometryGroupEquivIsometryEquiv_symm e.toIsometryEquiv)
+  exact ⟨γ, hγe, IntegralLattice.ext
+    ((L.adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier g γ).trans
+      (hγe ▸ e.map_carrier)) rfl⟩
 
 /-- **A translate of `L` lies in the genus of `L`.** -/
 theorem sameGenus_adelicTranslate : L.SameGenus (L.adelicTranslate g) := by
@@ -351,14 +359,7 @@ theorem doubleCosetClass_injective : Function.Injective L.doubleCosetClass := by
   obtain ⟨g, rfl⟩ := Quotient.mk_surjective c
   obtain ⟨h, rfl⟩ := Quotient.mk_surjective d
   obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp hcd
-  let γ : orthogonalGroup L.norm := (MulEquiv.subgroupCongr L.orthogonalGroup_norm).symm
-    (L.form.isometryGroupEquivIsometryEquiv.symm e.toIsometryEquiv)
-  have hγe : (γ : V ≃ₗ[ℚ] V) = e.toLinearEquiv := LinearEquiv.ext <| congrFun
-    (L.form.coe_isometryGroupEquivIsometryEquiv_symm e.toIsometryEquiv)
-  have hγ : L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ * g) =
-      L.adelicTranslate h :=
-    IntegralLattice.ext ((L.adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier g γ).trans
-      (hγe ▸ e.map_carrier)) rfl
+  obtain ⟨γ, -, hγ⟩ := L.exists_coe_eq_toLinearEquiv_and_adelicTranslate_eq g e
   refine DoubleCoset.eq.mpr ⟨_, ⟨γ, rfl⟩, _, (L.adelicTranslate_eq_adelicTranslate_iff).mp hγ, ?_⟩
   group
 
@@ -418,8 +419,9 @@ noncomputable def properDoubleCosetClass :
       -- The rational isometry `γ` has determinant one, so it gives a proper isometry.
       refine Isometry.IsProper.properIsometryClass_eq
         (e := L.adelicTranslateDiagonalIsometry _ (specialOrthogonalToOrthogonal L.norm γ)) ?_
-      rw [isProper_adelicTranslateDiagonalIsometry_iff, coe_specialOrthogonalToOrthogonal,
-        det_coe_specialOrthogonalGroup, Units.val_one]
+      refine (Isometry.isProper_iff _).mpr (?_ : 0 < (LinearEquiv.det
+        ((specialOrthogonalToOrthogonal L.norm γ : orthogonalGroup L.norm) : V ≃ₗ[ℚ] V) : ℚ))
+      rw [coe_specialOrthogonalToOrthogonal, det_coe_specialOrthogonalGroup, Units.val_one]
       exact one_pos
 
 /-- The proper class of the double coset of `g` is the proper class of `g • L`. -/
@@ -444,26 +446,17 @@ theorem properDoubleCosetClass_injective : Function.Injective L.properDoubleCose
   obtain ⟨g, rfl⟩ := Quotient.mk_surjective c
   obtain ⟨h, rfl⟩ := Quotient.mk_surjective d
   obtain ⟨e, he⟩ := properIsometryClass_eq_properIsometryClass_iff.mp hcd
-  let γ : orthogonalGroup L.norm := (MulEquiv.subgroupCongr L.orthogonalGroup_norm).symm
-    (L.form.isometryGroupEquivIsometryEquiv.symm e.toIsometryEquiv)
-  have hγe : (γ : V ≃ₗ[ℚ] V) = e.toLinearEquiv := LinearEquiv.ext <| congrFun
-    (L.form.coe_isometryGroupEquivIsometryEquiv_symm e.toIsometryEquiv)
-  -- The determinant of `γ` is positive and squares to one, so `γ` lies in `SO(V)(ℚ)`.
-  have hγ1 : orthogonalDet L.norm γ = 1 := by
-    have hs := congrArg (fun u : ℚˣ ↦ (u : ℚ))
-      (orthogonalDet_sq (nondegenerate_polar_iff.mpr L.nondegenerate_norm).1 γ)
-    have hpos : 0 < (orthogonalDet L.norm γ : ℚ) := by
-      rw [orthogonalDet_apply, hγe]
-      exact (Isometry.isProper_iff e).mp he
-    exact Units.ext ((sq_eq_one_iff.mp hs).resolve_right fun h ↦ by linarith)
+  obtain ⟨γ, hγe, hγh⟩ := L.exists_coe_eq_toLinearEquiv_and_adelicTranslate_eq _ e
+  -- The determinant of `γ` is `±1` and positive, so `γ` lies in `SO(V)(ℚ)`.
+  have hγ1 : orthogonalDet L.norm γ = 1 :=
+    (orthogonalDet_eq_one_or_eq_neg_one (nondegenerate_polar_iff.mpr L.nondegenerate_norm).1
+      γ).resolve_right fun h1 ↦ by
+        have hpos := (Isometry.isProper_iff e).mp he
+        rw [← hγe, ← orthogonalDet_apply, h1, Units.val_neg, Units.val_one] at hpos
+        norm_num at hpos
   obtain ⟨δ, hδ⟩ : γ ∈ (specialOrthogonalToOrthogonal L.norm).range := by
     rwa [range_specialOrthogonalToOrthogonal, mem_specialOrthogonalWithin_iff,
       ← orthogonalDet_apply]
-  have hγh : L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ *
-        L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal g) =
-      L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal h) :=
-    IntegralLattice.ext ((L.adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier _ γ).trans
-      (hγe ▸ e.map_carrier)) rfl
   rw [← hδ, ← finiteAdelicSpecialOrthogonalToOrthogonal_finiteAdelicSpecialOrthogonalDiagonal,
     ← map_mul, adelicTranslate_eq_adelicTranslate_iff, ← map_inv, ← map_mul,
     finiteAdelicSpecialOrthogonalToOrthogonal_mem_integralSubgroup_iff] at hγh

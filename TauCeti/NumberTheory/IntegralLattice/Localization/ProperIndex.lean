@@ -116,29 +116,18 @@ theorem relIndex_localStabilizer_eq_two (hn : 0 < Module.finrank ℤ L) :
 theorem exists_mem_localStabilizer_mul_mem_specialOrthogonalWithin
     (g : orthogonalGroup (L.norm.baseChange ℚ_[p])) :
     ∃ k ∈ L.localStabilizer p, g * k ∈ specialOrthogonalWithin (L.norm.baseChange ℚ_[p]) := by
-  by_cases hg : g ∈ specialOrthogonalWithin (L.norm.baseChange ℚ_[p])
-  · exact ⟨1, one_mem _, by rwa [mul_one]⟩
   have := L.finiteDimensional
-  -- An improper isometry lives on a nonzero space, where the form of `L` is nonzero.
-  have hn : 0 < Module.finrank ℤ L := by
-    refine Nat.pos_of_ne_zero fun hn ↦ hg ?_
+  rcases (Module.finrank ℤ L).eq_zero_or_pos with hn | hn
+  · -- In rank zero the only isometry is the identity, which is proper.
     have hV : Module.finrank ℚ_[p] (ℚ_[p] ⊗[ℚ] V) = 0 := by
       rw [Module.finrank_baseChange, ← L.finrank_carrier, hn]
-    rw [mem_specialOrthogonalWithin_iff]
+    refine ⟨1, one_mem _, ?_⟩
+    rw [mul_one, mem_specialOrthogonalWithin_iff]
     exact Units.ext ((LinearEquiv.coe_det _).trans (LinearMap.det_eq_one_of_finrank_eq_zero hV _))
-  have : Nontrivial V := Module.finrank_pos_iff.mp (L.finrank_carrier ▸ hn)
-  obtain ⟨k, hk, hkdet⟩ :=
-    L.exists_mem_localStabilizer_orthogonalDet_eq_neg_one p L.form_nondegenerate.ne_zero
-  -- The determinant of `g` is a square root of unity other than `1`, so it is `-1`.
-  have hQ := QuadraticForm.Nondegenerate.baseChange (A := ℚ_[p]) L.nondegenerate_norm
-  have hs := congrArg (fun u : ℚ_[p]ˣ ↦ (u : ℚ_[p]))
-    (orthogonalDet_sq (nondegenerate_polar_iff.mpr hQ).1 g)
-  have hgdet : orthogonalDet (L.norm.baseChange ℚ_[p]) g = -1 := by
-    refine Units.ext ((sq_eq_one_iff.mp hs).resolve_left fun h ↦ hg ?_)
-    rw [mem_specialOrthogonalWithin_iff, ← orthogonalDet_apply]
-    exact Units.ext h
-  refine ⟨k, hk, ?_⟩
-  rw [mem_specialOrthogonalWithin_iff, ← orthogonalDet_apply, map_mul, hgdet, hkdet]
-  norm_num
+  · have : Nontrivial V := Module.finrank_pos_iff.mp (L.finrank_carrier ▸ hn)
+    have hQ := QuadraticForm.Nondegenerate.baseChange (A := ℚ_[p]) L.nondegenerate_norm
+    exact (L.localStabilizer p).exists_mem_mul_mem_specialOrthogonalWithin
+      (nondegenerate_polar_iff.mpr hQ).1
+      (L.exists_mem_localStabilizer_orthogonalDet_eq_neg_one p L.form_nondegenerate.ne_zero) g
 
 end TauCeti.IntegralLattice
