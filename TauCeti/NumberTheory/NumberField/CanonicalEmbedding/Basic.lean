@@ -51,6 +51,8 @@ equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
 * `TauCeti.NumberField.mixedEmbedding.coe_integerLatticeEquiv` and
   `TauCeti.NumberField.mixedEmbedding.mixedEmbedding_integerLatticeEquiv_symm`: coercing
   `integerLatticeEquiv K x` and `(integerLatticeEquiv K).symm y` into `mixedSpace K`.
+* `NumberField.mixedEmbedding.norm_eq_prod_mul_prod`: `mixedEmbedding.norm x` is the product of
+  `‖x.1 w‖` over the real places times the product of `‖x.2 w‖ ^ 2` over the complex places.
 -/
 
 public section
@@ -176,3 +178,20 @@ theorem norm_mixedEmbedding {K : Type*} [Field K] [NumberField K] (x : K) :
     exact mixedEmbedding.normAtPlace_le_norm (InfinitePlace.mk φ) (mixedEmbedding K x)
 
 end TauCeti.NumberField
+
+namespace NumberField.mixedEmbedding
+
+open scoped Classical in
+/-- The norm `N(x)` of a point of the mixed space is the product of the absolute values of its
+real coordinates and of the squared absolute values of its complex coordinates. -/
+protected theorem norm_eq_prod_mul_prod {K : Type*} [Field K] [NumberField K]
+    (x : mixedSpace K) :
+    mixedEmbedding.norm x = (∏ w, ‖x.1 w‖) * ∏ w, ‖x.2 w‖ ^ 2 := by
+  rw [mixedEmbedding.norm_apply, prod_eq_prod_mul_prod]
+  congr 1
+  · exact Finset.prod_congr rfl fun w _ ↦ by
+      rw [normAtPlace_apply_of_isReal w.prop, mult_isReal w, pow_one]
+  · exact Finset.prod_congr rfl fun w _ ↦ by
+      rw [normAtPlace_apply_of_isComplex w.prop, mult_isComplex w]
+
+end NumberField.mixedEmbedding

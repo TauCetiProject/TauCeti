@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 public import TauCeti.RingTheory.NormTrace.Pi
 public import TauCeti.RingTheory.NormTrace.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Affine
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 
 /-!
 # The volume scaling of multiplication on the mixed space
@@ -66,12 +67,12 @@ variable [NumberField K]
 than `algebraNorm_apply` when the norm feeds a measure-scaling lemma such as
 `Measure.addHaar_image_linearMap`, which asks for the absolute value. -/
 theorem abs_algebraNorm (c : mixedSpace K) : |Algebra.norm ℝ c| = mixedEmbedding.norm c := by
-  -- Both sides are the same product of local absolute values: a real place contributes `|c.1 w|`
-  -- with `mult w = 1`, a complex place `Complex.normSq (c.2 w) = ‖c.2 w‖ ^ 2` with `mult w = 2`.
-  rw [algebraNorm_apply, abs_mul, Finset.abs_prod, Finset.abs_prod, mixedEmbedding.norm_apply,
-    InfinitePlace.prod_eq_prod_mul_prod]
-  simp [normAtPlace_apply_of_isReal, normAtPlace_apply_of_isComplex, Complex.normSq_eq_norm_sq,
-    Subtype.prop]
+  -- Both sides are the same product of local absolute values: a real place contributes `|c.1 w|`,
+  -- a complex place `Complex.normSq (c.2 w) = ‖c.2 w‖ ^ 2`.
+  classical
+  rw [algebraNorm_apply, abs_mul, Finset.abs_prod, Finset.abs_prod,
+    mixedEmbedding.norm_eq_prod_mul_prod]
+  simp [Complex.normSq_eq_norm_sq]
 
 open scoped Classical in
 /-- **Multiplication by `c` scales volume by the mixed norm of `c`.**  The set `A` is arbitrary,
