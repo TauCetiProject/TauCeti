@@ -214,8 +214,7 @@ is the regularized Gauss series. -/
 theorem eulerIntegralShift_eq_regularizedGaussHGFun {p q : ℕ} {a b c z : ℂ}
     (hb : -(p : ℝ) < b.re) (hcb : (p : ℝ) - q < c.re - b.re) (hz : ‖z‖ < 1) :
     eulerIntegralShift p q a b c z = regularizedGaussHGFun a b c z := by
-  have hzs : 1 - z ∈ slitPlane := by
-    simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (z := -z) (by simpa using hz)
+  have hzs : 1 - z ∈ slitPlane := one_sub_mem_slitPlane_of_norm_lt_one hz
   suffices h : ∀ {p q : ℕ} {a b c : ℂ}, (a, b, c, z) ∈ eulerIntegralShiftRegion p q →
       eulerIntegralShift p q a b c z = regularizedGaussHGFun a b c z from h ⟨hb, hcb, hzs⟩
   intro p q a b c hx
