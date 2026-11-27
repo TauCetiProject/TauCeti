@@ -108,21 +108,29 @@ theorem ae_atom_subset_orbit (η : SubordinatePartition G μ V Y) :
 
 /-- Relabeling a subordinate partition by a measurable equivalence of standard Borel spaces gives a
 subordinate partition with the same atoms. -/
-@[expose, simps]
 def relabel (η : SubordinatePartition G μ V Y) [MeasurableSpace Y'] [StandardBorelSpace Y']
     (e : Y ≃ᵐ Y') : SubordinatePartition G μ V Y' where
   label := e ∘ η.label
   measurable_label := e.measurable.comp η.measurable_label
   ae_isSubordinateAt := η.ae_isSubordinateAt.mono fun _ hx ↦ hx.comp_injective e.injective
 
+@[simp]
+theorem relabel_label (η : SubordinatePartition G μ V Y) [MeasurableSpace Y']
+    [StandardBorelSpace Y'] (e : Y ≃ᵐ Y') (x : X) : (η.relabel e).label x = e (η.label x) :=
+  (rfl)
+
 /-- A partition subordinate to `V` for `μ` is subordinate to `V` for every measure absolutely
 continuous with respect to `μ`. -/
-@[expose, simps]
 def ofAbsolutelyContinuous (η : SubordinatePartition G μ V Y) (h : ν ≪ μ) :
     SubordinatePartition G ν V Y where
   label := η.label
   measurable_label := η.measurable_label
   ae_isSubordinateAt := h.ae_le η.ae_isSubordinateAt
+
+@[simp]
+theorem ofAbsolutelyContinuous_label (η : SubordinatePartition G μ V Y) (h : ν ≪ μ) :
+    (η.ofAbsolutelyContinuous h).label = η.label :=
+  (rfl)
 
 omit [MeasurableSpace Y] [StandardBorelSpace Y] in
 /-- The translate of a label subordinate to `V` at `g⁻¹ • x` by an element `g` of the normalizer
@@ -150,7 +158,6 @@ variable [MeasurableConstSMul G X]
 /-- **Transport by the normalizer.** For `g` in the normalizer of `V`, the translate
 `x ↦ η.label (g⁻¹ • x)` of a partition subordinate to `V` for `μ` is subordinate to `V` for the
 pushforward of `μ` under `g • ·`. -/
-@[expose, simps]
 def translate [SeparatelyContinuousMul G] (η : SubordinatePartition G μ V Y) {g : G}
     (hg : g ∈ Subgroup.normalizer (V : Set G)) : SubordinatePartition G (μ.map (g • ·)) V Y where
   label x := η.label (g⁻¹ • x)
@@ -158,6 +165,12 @@ def translate [SeparatelyContinuousMul G] (η : SubordinatePartition G μ V Y) {
   ae_isSubordinateAt := by
     rw [(measurableEmbedding_const_smul g).ae_map_iff]
     exact η.ae_isSubordinateAt.mono fun x hx ↦ IsSubordinateAt.translate hg (by simpa using hx)
+
+@[simp]
+theorem translate_label [SeparatelyContinuousMul G] (η : SubordinatePartition G μ V Y) {g : G}
+    (hg : g ∈ Subgroup.normalizer (V : Set G)) (x : X) :
+    (η.translate hg).label x = η.label (g⁻¹ • x) :=
+  (rfl)
 
 end SubordinatePartition
 
