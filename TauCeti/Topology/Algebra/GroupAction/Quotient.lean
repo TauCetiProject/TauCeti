@@ -9,6 +9,7 @@ public import Mathlib.Data.Bundle
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.Homeomorph.Quotient
 
@@ -48,11 +49,15 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 * `TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact`: for an action by
   homeomorphisms of a weakly locally compact space, the orbit space is compact exactly when some
   compact set meets every orbit.
+* `QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`: its specialization to the right
+  action of a subgroup `Γ`: in a weakly locally compact group with separately continuous
+  multiplication, `G ⧸ Γ` is compact exactly when `K * Γ = G` for a compact set `K`.
 * `TauCeti.AddAction.orbitRelQuotientHomeomorphMultiplicative` and
   `TauCeti.MulAction.orbitRelQuotientHomeomorphAdditive`: canonical homeomorphisms identifying the
   orbit space of an action of `G` with that of `Multiplicative G` or `Additive G`.
 
-Both compactness statements have additive versions for `AddAction.orbitRel.Quotient`.
+The compactness statements have additive versions, for `AddAction.orbitRel.Quotient` and for
+`G ⧸ Γ` with `K + Γ = G`.
 -/
 
 public section
@@ -173,6 +178,43 @@ theorem MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact [Continuous
   exact ⟨g, hy⟩
 
 end Compact
+
+end TauCeti
+
+namespace QuotientGroup
+
+open Set
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G] {Γ : Subgroup G}
+
+/-- In a weakly locally compact group with separately continuous multiplication, `G ⧸ Γ` is
+compact exactly when `K * Γ = G` for some compact set `K`. This is
+`TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact` for the right action of `Γ`
+on `G`, whose orbit space is `G ⧸ Γ`. -/
+@[to_additive /-- In a weakly locally compact additive group with separately continuous addition,
+`G ⧸ Γ` is compact exactly when `K + Γ = G` for some compact set `K`. This is
+`TauCeti.AddAction.compactSpace_orbitRelQuotient_iff_exists_isCompact` for the action of `Γ` on `G`
+by right addition, whose orbit space is `G ⧸ Γ`. -/]
+theorem compactSpace_iff_exists_isCompact_mul_eq_univ [TopologicalSpace G]
+    [SeparatelyContinuousMul G] [WeaklyLocallyCompactSpace G] :
+    CompactSpace (G ⧸ Γ) ↔ ∃ K : Set G, IsCompact K ∧ K * (Γ : Set G) = univ := by
+  -- `G ⧸ Γ` is by definition `MulAction.orbitRel.Quotient Γ.op G`, since `QuotientGroup.leftRel Γ`
+  -- is by definition `MulAction.orbitRel Γ.op G`.
+  refine (TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact (G := Γ.op)
+    (X := G)).trans (exists_congr fun K ↦ and_congr_right fun _ ↦ ?_)
+  -- A compact set meets every orbit of `Γ.op` exactly when it meets every left coset of `Γ`.
+  rw [← image_mk_eq_univ_iff, eq_univ_iff_forall, mk_surjective.forall]
+  refine forall_congr' fun x ↦ ⟨fun ⟨γ, hγ⟩ ↦ ⟨_, hγ, ?_⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
+  · rw [Subgroup.smul_def, MulOpposite.smul_eq_mul_unop]
+    exact mk_mul_of_mem x (Subgroup.mem_op.1 γ.property)
+  · refine ⟨⟨MulOpposite.op (x⁻¹ * y), Subgroup.mem_op.2 (QuotientGroup.eq.1 hyx.symm)⟩, ?_⟩
+    rwa [Subgroup.mk_smul, op_smul_eq_mul, mul_inv_cancel_left]
+
+end QuotientGroup
+
+namespace TauCeti
 
 section TypeTags
 

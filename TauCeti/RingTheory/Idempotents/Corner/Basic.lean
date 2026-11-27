@@ -30,6 +30,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 * `IsIdempotentElem.compress`: the compression `x ↦ e * x * e` of `A` onto the corner ring `eAe`.
 * `IsIdempotentElem.Corner.instAlgebra`: the corner `eAe` of an idempotent of a nonunital
   `R`-algebra is a unital `R`-algebra.
+* `IsIdempotentElem.compressAlgHom`: for a central idempotent `e` of an `R`-algebra `A`, the
+  compression `x ↦ e * x` is a surjective `R`-algebra map `A →ₐ[R] eAe`.
 * `IsIdempotentElem.cornerFunctional`: the compression `x ↦ φ x / φ e` of a linear functional `φ`
   to the corner `eAe`, normalised at its unit `e`.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
@@ -48,6 +50,7 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 ## Main results
 
 * `TauCeti.mem_cornerSubmodule_iff`: the fixed-point characterization of an idempotent corner.
+* `TauCeti.mul_mem_cornerSubmodule`: the Peirce multiplication rule `(eAf)(fAg) ⊆ eAg`.
 * `TauCeti.mem_span_singleton_of_mem_cornerSubmodule`: the corner `eAf` lies in the left ideal
   `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
@@ -90,6 +93,18 @@ theorem cornerSubmodule_def (e f : A) :
 /-- Cutting an element down by `e` on the left and `f` on the right lands in the corner `eAf`. -/
 theorem mul_mul_mem_cornerSubmodule (e f x : A) : e * x * f ∈ cornerSubmodule k e f :=
   ⟨x, by simp only [LinearMap.mulLeftRight_apply]⟩
+
+variable {k} in
+/-- **The Peirce multiplication rule** `(eAf)(fAg) ⊆ eAg`. No idempotency is needed. -/
+theorem mul_mem_cornerSubmodule {e f g x y : A} (hx : x ∈ cornerSubmodule k e f)
+    (hy : y ∈ cornerSubmodule k f g) : x * y ∈ cornerSubmodule k e g := by
+  rw [cornerSubmodule_def, LinearMap.mem_range] at hx hy
+  obtain ⟨a, rfl⟩ := hx
+  obtain ⟨b, rfl⟩ := hy
+  simp only [LinearMap.mulLeftRight_apply]
+  have h : e * a * f * (f * b * g) = e * (a * f * (f * b)) * g := by simp only [mul_assoc]
+  rw [h]
+  exact mul_mul_mem_cornerSubmodule k e g _
 
 /-- For idempotents `e` and `f`, an element belongs to the corner `eAf` exactly when multiplying it
 by `e` on the left and by `f` on the right fixes it. -/
@@ -302,6 +317,47 @@ theorem val_list_prod_map_compress (l : List A) :
   induction l with
   | nil => simp
   | cons x l ih => simp [ih, mul_assoc, he.mul_self_mul]
+
+section AlgHom
+
+variable (R : Type v) [CommSemiring R] [Algebra R A] (hc : IsMulCentral e)
+
+/-- The compression `x ↦ e * x` of `A` onto the corner `eAe` of a central idempotent `e`, as a
+homomorphism of `R`-algebras. -/
+def compressAlgHom : A →ₐ[R] he.Corner where
+  toFun := he.compress
+  map_one' := he.compress_one
+  map_mul' x y := Subtype.ext <| by
+    rw [Corner.val_mul, he.val_compress_of_commute (hc.comm _),
+      he.val_compress_of_commute (hc.comm x), he.val_compress_of_commute (hc.comm y),
+      ← (hc.comm x).mul_mul_mul_comm, he.eq]
+  map_zero' := he.compress_zero
+  map_add' := he.compress_add
+  commutes' := he.compress_algebraMap
+
+/-- The compression algebra map is the compression `x ↦ e * x * e`. -/
+theorem compressAlgHom_apply (x : A) : he.compressAlgHom R hc x = he.compress x := (rfl)
+
+/-- The compression of `x` to the corner of a central idempotent `e` is `e * x`. -/
+@[simp]
+theorem val_compressAlgHom (x : A) : (he.compressAlgHom R hc x).val = e * x :=
+  he.val_compress_of_commute (hc.comm x)
+
+/-- The compression algebra map fixes the elements of the corner. -/
+@[simp]
+theorem compressAlgHom_val (y : he.Corner) : he.compressAlgHom R hc y.val = y :=
+  he.compress_val y
+
+/-- The compression algebra map sends `e` to the unit of the corner. -/
+@[simp]
+theorem compressAlgHom_self : he.compressAlgHom R hc e = 1 :=
+  Subtype.ext <| by rw [val_compressAlgHom, he.eq, Corner.val_one]
+
+/-- The compression onto the corner of a central idempotent is surjective. -/
+theorem compressAlgHom_surjective : Function.Surjective (he.compressAlgHom R hc) :=
+  fun y ↦ ⟨y.val, he.compressAlgHom_val R hc y⟩
+
+end AlgHom
 
 end Semiring
 

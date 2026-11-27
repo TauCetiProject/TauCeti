@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
 public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
-public import TauCeti.Topology.VectorBundle.Thom.TwistedHomology
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Descent
 
 /-!
 # The cohomology across a Morse–Bott level from the Thom isomorphism of the negative normal bundle
@@ -35,20 +35,18 @@ cohomology of `S`, shifted up by the index.
   `K = ℤ`, and with no orientation when `2 = 0` in `K`, as for `K = ZMod 2`
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`).
 * For a non-orientable negative normal bundle the cohomology of `S` must be twisted by the
-  orientation local system `o(ν⁻)`. If `2` is invertible in `K` and `N` is an injective `K`-module,
-  for instance `K = N = ℚ`, then `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` with no
-  orientation of `ν⁻` (`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`), by the
+  orientation local system `o(ν⁻)`. For every commutative ring `K` and every `K`-module `N`, for
+  instance `K = N = ℤ`, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` with no orientation
+  of `ν⁻` (`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`), by the
   twisted Thom isomorphism in cohomology
-  (`TauCeti.VectorBundleOrientationCover.thomPairSingularCohomologyEquivTwistedCohomology`).
+  (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`, in the namespace
+  `TauCeti.VectorBundleOrientationCover`).
 
 These are the cohomology forms of the homology statements in
 `TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class`, and the actual-negative-bundle forms of
 `TauCeti.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass` and its
 corollaries, which assume that `f` is already in a quadratic normal form on a tube and that the
-negative disc bundle is parametrized by the disc bundle of some vector bundle. With twisted
-coefficients the cohomology across the level is computed here only over rings in which `2` is
-invertible and with injective values; over `ℤ` it needs the twisted Thom isomorphism with arbitrary
-coefficients, which this file does not treat.
+negative disc bundle is parametrized by the disc bundle of some vector bundle.
 
 The Thom isomorphism needs the model fibre `Fin r → ℝ` of `ν⁻` in the universe of its base, so the
 manifolds, their models and the coefficient ring here live in `Type`.
@@ -64,8 +62,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 * `nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`: the same for
   every `ν⁻` when `2 = 0` in `K`.
 * `nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`: for every `ν⁻`, oriented or
-  not, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` when `2` is invertible in `K` and `N` is
-  injective.
+  not, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` for every commutative ring `K` and
+  every `K`-module `N`.
 
 ## References
 
@@ -103,7 +101,7 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
   (g : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
   (hV : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric))
@@ -205,7 +203,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_e
   have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
   let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := P)
-    (E := fun s ↦ i.NormalSpace s hn)
+    (E := fun s ↦ i.isImmersion.NormalSpace s hn)
   have hV := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
     (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr).hasLocalSubbundleFrames
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
@@ -226,11 +224,9 @@ negative normal bundle.** Under the hypotheses of
 normal bundle `ν⁻` of rank `r` be orientable or not, with orientation local system `o(ν⁻)`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). Then
 `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` in every degree `p`, for every commutative
-ring `K` in which `2` is invertible and every injective `K`-module `N`; for instance `K = N = ℚ`,
-or any vector space `N` over a field `K` of characteristic other than `2`. -/
+ring `K` and every `K`-module `N`, for instance `K = N = ℤ`. -/
 theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology
-    (K : Type) [CommRing K] [Invertible (2 : K)] (N : ModuleCat.{0} K) [Injective N] {p m : ℕ}
-    (hm : r + p = m) :
+    (K : Type) [CommRing K] (N : ModuleCat.{0} K) {p m : ℕ} (hm : r + p = m) :
     letI := i.normalSpaceFiberBundle hn hdim
     haveI := i.normalSpaceVectorBundle hn hdim
     letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
@@ -248,15 +244,16 @@ theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology
   -- The negative normal spaces have the dimension of the Morse index.
   have hr := h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV
   -- The band has the cohomology of the Thom pair of `ν⁻`, which the twisted Thom isomorphism
-  -- computes, normalized by an orientation of the model fibre and a generator of
-  -- `Hʳ(ℝʳ, ℝʳ ∖ {0}; K) ≅ K`.
+  -- computes.
   obtain ⟨e⟩ := h.nonempty_singularCohomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
     hcrit hdim g hr (ModuleCat.of K K) K N m
-  obtain ⟨u, hu⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
-    (OpenPartialHomeomorph.refl (Fin r → ℝ)) (mem_univ 0)
-  exact ⟨e ≪≫ (VectorBundleOrientationCover.thomPairSingularCohomologyEquivTwistedCohomology
-    (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (by simp)
-    (Pi.basisFun ℝ (Fin r)).orientation hu (by rw [finrank_fin_fun]; omega) N).toModuleIso⟩
+  obtain ⟨e'⟩ := open VectorBundleOrientationCover in
+    nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem
+      (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (ι := Fin r) (by simp)
+      K N p
+  have hpm : p + finrank ℝ (Fin r → ℝ) = m := by rw [finrank_fin_fun]; omega
+  rw [hpm] at e'
+  exact ⟨e ≪≫ e'⟩
 
 end ThomClass
 

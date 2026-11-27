@@ -19,7 +19,11 @@ class `μ ∈ Hₖ(M)` at the points of `B` are all read off from a single class
 if `μ` vanishes in the local homology at the points of a set `D`, it vanishes there at every point
 of the closure of `D` (`TauCeti.singularHomologyToLocalHomology_eq_zero_of_mem_closure`), and if
 its local classes generate at the points of `D`, they generate at every point of the closure of
-`D` (`TauCeti.span_singularHomologyToLocalHomology_eq_top_of_mem_closure`).
+`D` (`TauCeti.span_singularHomologyToLocalHomology_eq_top_of_mem_closure`). The same holds for a
+class `θ ∈ Hₖ(M, M ∖ U)` along an open set `U`, whose local classes are defined at the points of
+`U`: choosing `B` inside `U`, the set of points of `U` where they vanish is open and closed in `U`,
+so they vanish on a preconnected subset of `U` as soon as they vanish at one of its points
+(`TauCeti.localHomologyRestriction_eq_zero_of_isPreconnected`).
 
 On a compact manifold of dimension `n`, a class of `Hₙ(M)` is determined by its local classes
 (`TauCeti.existsUnique_singularHomology_localHomologyRestriction_eq_of_invariant`). Hence it is
@@ -40,6 +44,9 @@ faces meet.
 
 * `TauCeti.singularHomologyToLocalHomology_eq_zero_of_mem_closure`: the local classes of a class
   vanish on the closure of the set where they vanish.
+* `TauCeti.localHomologyRestriction_eq_zero_of_isPreconnected`: the local classes of a class
+  along an open set `U` vanish on a preconnected subset of `U` as soon as they vanish at one of its
+  points.
 * `TauCeti.singularHomology_ext_of_dense`: on a compact `n`-manifold, two classes of `Hₙ(M)` with
   the same local classes at the points of a dense set are equal.
 * `TauCeti.singularHomology_ext_of_dense_iUnion`: the same for the images in `Hₙ(M, M ∖ Uᵢ)`,
@@ -121,6 +128,45 @@ theorem span_singularHomologyToLocalHomology_eq_top_of_mem_closure [T2Space M]
   rw [singularHomologyToLocalHomology_eq_localHomologyRestriction N hxB]
   exact (asIso (localHomologyRestriction N (singleton_subset_iff.2 hxB) k)).toLinearEquiv
     |>.span_singleton_apply_eq_top_iff.2 hβ
+
+/-- **The local classes of a class along an open set vanish on whole preconnected sets.** Let `U`
+be an open subset of `M`, let `θ ∈ Hₖ(M, M ∖ U; N)`, and let `S ⊆ U` be preconnected. If the image
+of `θ` in the local homology `Hₖ(M, M ∖ {x}; N)` vanishes at one point `x` of `S`, it vanishes at
+every point of `S`: near each point of `U`, the local classes of `θ` are the restrictions of its
+image along a compact neighbourhood inside `U`, to which every restriction is isomorphic, so the
+set of points of `U` where they vanish is open and closed in `U`. -/
+theorem localHomologyRestriction_eq_zero_of_isPreconnected [T2Space M] [ChartedSpace E M]
+    [FiniteDimensional ℝ E] {U S : Set M} (hU : IsOpen U) (hS : IsPreconnected S) (hSU : S ⊆ U)
+    {k : ℕ} {θ : (localHomology N U k : ModuleCat.{w} Λ)} {x y : M} (hx : x ∈ S) (hy : y ∈ S)
+    (hθ : localHomologyRestriction N (singleton_subset_iff.2 (hSU hx)) k θ = 0) :
+    localHomologyRestriction N (singleton_subset_iff.2 (hSU hy)) k θ = 0 := by
+  -- Near a point `z` of `U`, the local class at `w` vanishes exactly when the local class at `z`
+  -- does.
+  have hloc (z : M) (hz : z ∈ U) : ∀ᶠ w in 𝓝 z, ∀ hw : w ∈ U,
+      (localHomologyRestriction N (singleton_subset_iff.2 hw) k θ = 0 ↔
+        localHomologyRestriction N (singleton_subset_iff.2 hz) k θ = 0) := by
+    obtain ⟨B, hB, -, hBU, hiso⟩ :=
+      exists_isCompact_subset_mem_nhds_isIso_localHomologyRestriction (E := E) N (hU.mem_nhds hz) k
+    have hzero (w : M) (hwB : w ∈ B) (hw : w ∈ U) :
+        localHomologyRestriction N (singleton_subset_iff.2 hw) k θ = 0 ↔
+          localHomologyRestriction N hBU k θ = 0 := by
+      have := hiso w hwB
+      have hinj := (ModuleCat.mono_iff_injective
+        (localHomologyRestriction N (singleton_subset_iff.2 hwB) k)).1 inferInstance
+      rw [← localHomologyRestriction_comp_apply N (singleton_subset_iff.2 hwB) hBU]
+      exact ⟨fun h ↦ hinj (h.trans (map_zero _).symm), fun h ↦ by rw [h, map_zero]⟩
+    filter_upwards [hB] with w hwB hw
+    rw [hzero w hwB hw, hzero z (mem_of_mem_nhds hB) hz]
+  -- So vanishing of the local class is a locally constant condition on `S`.
+  have := isPreconnected_iff_preconnectedSpace.1 hS
+  let f : S → Prop := fun z ↦
+    localHomologyRestriction N (singleton_subset_iff.2 (hSU z.property)) k θ = 0
+  have hf : IsLocallyConstant f := by
+    refine (IsLocallyConstant.iff_eventually_eq f).2 fun z ↦ ?_
+    filter_upwards [(continuous_subtypeVal.tendsto z).eventually (hloc z (hSU z.property))]
+      with w hw
+    exact propext (hw (hSU w.property))
+  exact Eq.mp (hf.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩) hθ
 
 /-- **A class whose local classes generate on a dense set is a fundamental class.** If the image
 of `μ ∈ Hₙ(M; N)` in the local homology `Hₙ(M, M ∖ {y}; N)` generates it at every point `y` of a

@@ -217,6 +217,19 @@ theorem range_openInclusion (U : Opens M) :
     exact ⟨(restrictOpen U).symm ⟨z, hz⟩,
       congrArg Subtype.val ((restrictOpen U).apply_symm_apply ⟨z, hz⟩)⟩
 
+/-- The differential of the cotangent inclusion is surjective at every point, since the inclusion
+is the restriction identification followed by the inclusion of an open subset. -/
+theorem mfderiv_openInclusion_surjective (U : Opens M) (z : CotangentBundle I U) :
+    Function.Surjective (mfderiv (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))
+      (openInclusion (I := I) U) z) := by
+  have hι : openInclusion (I := I) U = Subtype.val ∘ restrictOpen U :=
+    funext fun z ↦ (coe_restrictOpen U z).symm
+  rw [hι, mfderiv_comp z (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
+    ((restrictOpen U).contMDiff.mdifferentiableAt (by simp)), Manifold.mfderiv_subtype_val,
+    ContinuousLinearMap.coe_comp]
+  exact (Manifold.tangentSpaceOpenEquiv _).surjective.comp
+    ((restrictOpen U).isInvertible_mfderiv (by simp)).surjective
+
 /-- Restricting an ambient covector pairs it with the differential of the base inclusion. -/
 theorem restrictOpen_symm_snd_apply (U : Opens M) (z : overOpen (I := I) U)
     (v : TangentSpace I ((restrictOpen U).symm z).proj) :

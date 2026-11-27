@@ -56,8 +56,7 @@ theorem isSemisimpleRepresentation_of_comp_subtype (ρ : Representation k G V) (
   have : Fintype (G ⧸ H) := Subgroup.fintypeQuotientOfFiniteIndex
   refine ⟨fun W ↦ ?_⟩
   -- An `H`-equivariant projection `π` of `V` onto `W`.
-  obtain ⟨π₀, hπid₀, hπH₀⟩ := Subrepresentation.exists_equivariant_projection
-    (⟨W.toSubmodule, fun h ↦ W.apply_mem_toSubmodule h⟩ : Subrepresentation (ρ.comp H.subtype))
+  obtain ⟨π₀, hπid₀, hπH₀⟩ := Subrepresentation.exists_equivariant_projection (W.res H.subtype)
   let π : V →ₗ[k] V := W.toSubmodule.subtype ∘ₗ π₀
   have hπW (x : V) : π x ∈ W.toSubmodule := (π₀ x).property
   have hπid (x : V) (hx : x ∈ W.toSubmodule) : π x = x := congrArg Subtype.val (hπid₀ ⟨x, hx⟩)

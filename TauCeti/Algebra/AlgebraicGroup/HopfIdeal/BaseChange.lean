@@ -56,6 +56,8 @@ along `h ↦ 1 ⊗ h`.
   equality of Hopf ideals.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_comapOfIso`: base change commutes with pulling a
   Hopf ideal back along an ambient isomorphism.
+* `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_comapOfSurjective_baseChangeSelfIso_inv`: base
+  change along the identity of the base ring recovers the original Hopf ideal.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le`: the subgroup generated
   by a base-changed family sits inside the base change of the subgroup it generates.
 * `Module.Basis.coefficientHopfIdeal`: the smallest Hopf ideal whose scalar extension contains
@@ -239,6 +241,21 @@ theorem baseChangeHopfIdeal_comapOfIso (J : HopfIdeal k L) (e : H ≅ L) :
   · intro hx
     apply (ConcreteCategory.bijective_of_isIso qIsoK.hom).1
     rw [map_zero, hpoint, hx]
+
+/-- **Base change along the identity is trivial on closed subgroups**: pulling the base change
+`k ⊗[k] J` back along `H ≅ k ⊗[k] H` recovers `J`. -/
+@[simp]
+theorem baseChangeHopfIdeal_comapOfSurjective_baseChangeSelfIso_inv
+    {H : _root_.CommHopfAlgCat.{u} k} (J : HopfIdeal k H) :
+    (baseChangeHopfIdeal (K := k) J).comapOfSurjective H.baseChangeSelfIso.inv.hom
+        (ConcreteCategory.bijective_of_isIso H.baseChangeSelfIso.inv).2 = J := by
+  ext h
+  rw [HopfIdeal.mem_comapOfSurjective, _root_.CommHopfAlgCat.baseChangeSelfIso_inv_apply]
+  refine ⟨fun hh ↦ ?_, one_tmul_mem_baseChangeHopfIdeal⟩
+  rw [mem_baseChangeHopfIdeal_iff, baseChangeMap_apply_tmul] at hh
+  rw [← mkQuotient_eq_zero_iff H J h]
+  simpa only [_root_.Bialgebra.TensorProduct.lid_tmul, one_smul, map_zero] using
+    congrArg (_root_.Bialgebra.TensorProduct.lid k (CommHopfAlgCat.quotient H J)) hh
 
 /-- Along an injective scalar map, base change reflects containment of Hopf ideals when the
 quotient by the larger ideal is flat over the base. In particular, this applies to every field
@@ -912,6 +929,51 @@ theorem baseChangeMap_liftQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
       simpa only [baseChangeFunctor_map, Category.assoc] using
         congrArg (fun g ↦ g ≫ liftQuotient J' f' hf')
           (baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom J J' e hJ).symm
+
+/-- The inverse of the transported quotient base-change isomorphism commutes with the quotient
+morphisms. -/
+@[reassoc]
+theorem mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv
+    {H' : _root_.CommHopfAlgCat.{max w v} K} (J : HopfIdeal k H) (J' : HopfIdeal K H')
+    (e : baseChange (K := K) H ≅ H')
+    (hJ : (baseChangeHopfIdeal (K := K) J).map e.hom.hom = J') :
+    mkQuotient H' J' ≫ (quotientBaseChangeIsoOfMapEq J J' e hJ).inv =
+      e.inv ≫ baseChangeMap (K := K) (mkQuotient H J) := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom, Iso.inv_hom_id_assoc]
+
+/-- **Quotient isomorphisms are natural under base change.** Let `φ : H₁ ≅ H₂` over `k` and
+`φ' : H₁' ≅ H₂'` over `K` induce isomorphisms of Hopf-ideal quotients, and let `t₁`, `t₂` be
+morphisms from the base changes of the quotients over `k` to the quotients over `K` which are
+compatible with morphisms `e₁`, `e₂` of the ambient Hopf algebras, such as
+`quotientBaseChangeIsoOfMapEq` (`baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom`).
+If `φ` and `φ'` commute with `e₁` and `e₂`, then the induced quotient isomorphisms commute with
+`t₁` and `t₂`. -/
+@[reassoc]
+theorem baseChangeMap_quotientIsoOfComapEq_hom_comp
+    {H₁ H₂ : _root_.CommHopfAlgCat.{v} k} {H₁' H₂' : _root_.CommHopfAlgCat.{max w v} K}
+    (φ : H₁ ≅ H₂) (I₂ : HopfIdeal k H₂) {I₁ : HopfIdeal k H₁}
+    (hI : I₂.comapOfSurjective φ.hom.hom (ConcreteCategory.bijective_of_isIso φ.hom).2 = I₁)
+    (φ' : H₁' ≅ H₂') (I₂' : HopfIdeal K H₂') {I₁' : HopfIdeal K H₁'}
+    (hI' :
+      I₂'.comapOfSurjective φ'.hom.hom (ConcreteCategory.bijective_of_isIso φ'.hom).2 = I₁')
+    {e₁ : baseChange (K := K) H₁ ⟶ H₁'} {e₂ : baseChange (K := K) H₂ ⟶ H₂'}
+    {t₁ : baseChange (K := K) (quotient H₁ I₁) ⟶ quotient H₁' I₁'}
+    {t₂ : baseChange (K := K) (quotient H₂ I₂) ⟶ quotient H₂' I₂'}
+    (ht₁ : baseChangeMap (K := K) (mkQuotient H₁ I₁) ≫ t₁ = e₁ ≫ mkQuotient H₁' I₁')
+    (ht₂ : baseChangeMap (K := K) (mkQuotient H₂ I₂) ≫ t₂ = e₂ ≫ mkQuotient H₂' I₂')
+    (hφ : baseChangeMap (K := K) φ.hom ≫ e₂ = e₁ ≫ φ'.hom) :
+    baseChangeMap (K := K) (quotientIsoOfComapEq φ I₂ hI).hom ≫ t₂ =
+      t₁ ≫ (quotientIsoOfComapEq φ' I₂' hI').hom := by
+  let F := baseChangeFunctor (k := k) (K := K)
+  have := ConcreteCategory.epi_of_surjective _
+    (baseChangeMap_surjective (K := K) _ (mkQuotient_surjective H₁ I₁))
+  rw [← baseChangeFunctor_map] at this ⊢
+  apply (cancel_epi (F.map (mkQuotient H₁ I₁))).mp
+  rw [← Category.assoc, ← Functor.map_comp, mkQuotient_comp_quotientIsoOfComapEq_hom,
+    Functor.map_comp, Category.assoc, baseChangeFunctor_map, baseChangeFunctor_map, ht₂,
+    reassoc_of% hφ, ← Category.assoc (baseChangeMap _), ht₁, Category.assoc,
+    mkQuotient_comp_quotientIsoOfComapEq_hom]
 
 /-- Transport `quotientBaseChangeIsoOfMapEq` to Hopf algebras that are only propositionally
 presented as the two quotients, as happens for sealed named quotients. -/

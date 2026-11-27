@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Strichartz.TTStar
 public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
@@ -40,9 +40,10 @@ Duhamel pairings `⟪W₊(t - s) Pⱼ F(s), G(t)⟫` and its retarded restrictio
 the frequency-localized estimates from which the wave Strichartz estimates with data in the
 homogeneous Sobolev space of order `γ` are assembled by Littlewood–Paley summation.
 
-At `q = ∞` every `r ≥ 2` is admissible, and for the Littlewood–Paley blocks the homogeneous and
-dual estimates hold with `γ = n / 2 - n / r` and `L¹` in time on the dual side. The endpoint
-`q = 2`, admissible in dimension `n ≥ 4`, is treated in `TauCeti.Analysis.PDE.Wave.Endpoint`.
+At `q = ∞` every `r ≥ 2` is admissible (`TauCeti.waveAdmissible_top_of_two_le`), and for the
+Littlewood–Paley blocks the homogeneous and dual estimates hold with `γ = n / 2 - n / r` and `L¹` in
+time on the dual side. The endpoint `q = 2`, admissible in dimension `n ≥ 4`, is treated in
+`TauCeti.Analysis.PDE.Wave.Endpoint`.
 
 ## The argument
 
@@ -145,6 +146,17 @@ theorem two_le_of_waveAdmissible {q r : ℝ≥0∞} (hr0 : r ≠ 0)
     linarith
   refine ENNReal.two_le_of_toReal_inv_le hr0 (le_of_mul_le_mul_left ?_ hn')
   linarith [ENNReal.toReal_nonneg (a := q⁻¹)]
+
+/-- In positive dimension `n`, every pair `(∞, r)` with `2 ≤ r` is wave-admissible:
+`2 / ∞ + (n - 1) / r ≤ (n - 1) / 2`. This is the converse of `TauCeti.two_le_of_waveAdmissible` at
+`q = ∞`, where dimension `1` is allowed. -/
+theorem waveAdmissible_top_of_two_le (hr : 2 ≤ r) (hE : 0 < Module.finrank ℝ E) :
+    2 * ((∞ : ℝ≥0∞)⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2 := by
+  have hn : (0 : ℝ) ≤ (Module.finrank ℝ E : ℝ) - 1 := by
+    have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hE
+    linarith
+  simpa [div_eq_mul_inv] using mul_le_mul_of_nonneg_left (ENNReal.toReal_inv_le_of_two_le hr) hn
 
 end WaveAdmissible
 

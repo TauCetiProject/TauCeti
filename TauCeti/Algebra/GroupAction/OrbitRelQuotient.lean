@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.Algebra.Group.Action.TypeTags
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.Transitive
@@ -35,6 +36,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   representative `Quotient.out` of that orbit.
 * `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
   on `G × U`, then distinct points of `U` lie in distinct orbits.
+* `TauCeti.MulAction.subsingleton_orbitRelQuotient`: a pretransitive action has at most one
+  orbit, so its orbit space is finite.
 * `TauCeti.MulAction.card_orbitRelQuotient_eq_one`: a pretransitive action on a nonempty type
   has exactly one orbit.
 * `TauCeti.MulAction.card_orbitRelQuotient_anti`: if there are finitely many `H`-orbits,
@@ -66,6 +69,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.orbitRelQuotientCongr` and `TauCeti.AddAction.orbitRelQuotientCongr`: an
   equivalence carrying one action to another along a group isomorphism induces an equivalence of
   orbit spaces.
+* `TauCeti.MulAction.orbitRelQuotientSMulEquiv`: translation by `g` identifies the orbits of a
+  subgroup `H` with those of its conjugate `gHg⁻¹`.
 * `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
   uniquely (`TauCeti.MulAction.eq_orbitRelQuotientLift_iff`). A surjection invariant under a
   generating set bounds the number of orbits from below on a finite type
@@ -252,6 +257,13 @@ theorem MulAction.injOn_quotientMk_slice {S : Type*} {σ : S → X} {U : Set S}
   have h1 := hinj (x₁ := (g, s')) (x₂ := (1, s)) ⟨Set.mem_univ _, hs'⟩ ⟨Set.mem_univ _, hs⟩
     (by simpa only [one_smul] using hg)
   exact (Prod.ext_iff.1 h1).2.symm
+
+/-- **A pretransitive action has at most one orbit**: Mathlib's
+`MulAction.pretransitive_iff_subsingleton_quotient` as an instance. In particular the orbit space
+is finite. -/
+instance MulAction.subsingleton_orbitRelQuotient [MulAction.IsPretransitive G X] :
+    Subsingleton (MulAction.orbitRel.Quotient G X) :=
+  (MulAction.pretransitive_iff_subsingleton_quotient G X).1 ‹_›
 
 /-- **A pretransitive action on a nonempty type has one orbit.** This is Mathlib's
 `MulAction.pretransitive_iff_unique_quotient_of_nonempty` in counting form. -/
@@ -756,6 +768,47 @@ theorem MulAction.orbitRelQuotientCongr_symm_mk (φ : G ≃* H) (e : X ≃ Y)
   (rfl)
 
 end Congr
+
+section SMulEquiv
+
+open scoped Pointwise
+
+/-- **Translation identifies the orbits of conjugate subgroups.** If `K = gHg⁻¹`, translation by
+`g` carries the `H`-orbits bijectively onto the `K`-orbits. The equation is taken as a hypothesis
+so that `K` may be any expression for the conjugate subgroup. -/
+noncomputable def MulAction.orbitRelQuotientSMulEquiv (g : G) {H K : Subgroup G}
+    (hHK : ConjAct.toConjAct g • H = K) :
+    MulAction.orbitRel.Quotient H X ≃ MulAction.orbitRel.Quotient K X :=
+  MulAction.orbitRelQuotientCongr ((Subgroup.equivSMul (ConjAct.toConjAct g) H).trans
+      (MulEquiv.subgroupCongr hHK)) (MulAction.toPerm g) fun h a ↦ by
+    simp [Subgroup.smul_def, ConjAct.smul_def, mul_smul]
+
+/-- `orbitRelQuotientSMulEquiv g hHK` is the orbit-space equivalence `orbitRelQuotientCongr`
+induced by translation by `g`, along the conjugation isomorphism `H ≃* K`. -/
+theorem MulAction.orbitRelQuotientSMulEquiv_eq_orbitRelQuotientCongr (g : G) {H K : Subgroup G}
+    (hHK : ConjAct.toConjAct g • H = K) :
+    MulAction.orbitRelQuotientSMulEquiv (X := X) g hHK =
+      MulAction.orbitRelQuotientCongr ((Subgroup.equivSMul (ConjAct.toConjAct g) H).trans
+        (MulEquiv.subgroupCongr hHK)) (MulAction.toPerm g) fun h a ↦ by
+          simp [Subgroup.smul_def, ConjAct.smul_def, mul_smul] :=
+  (rfl)
+
+/-- `orbitRelQuotientSMulEquiv g hHK` sends the `H`-orbit of `a` to the `K`-orbit of `g • a`. -/
+@[simp]
+theorem MulAction.orbitRelQuotientSMulEquiv_mk (g : G) {H K : Subgroup G}
+    (hHK : ConjAct.toConjAct g • H = K) (a : X) :
+    MulAction.orbitRelQuotientSMulEquiv g hHK (Quotient.mk'' a) = Quotient.mk'' (g • a) :=
+  MulAction.orbitRelQuotientCongr_mk _ _ _ a
+
+/-- The inverse of `orbitRelQuotientSMulEquiv g hHK` sends the `K`-orbit of `a` to the `H`-orbit
+of `g⁻¹ • a`. -/
+@[simp]
+theorem MulAction.orbitRelQuotientSMulEquiv_symm_mk (g : G) {H K : Subgroup G}
+    (hHK : ConjAct.toConjAct g • H = K) (a : X) :
+    (MulAction.orbitRelQuotientSMulEquiv g hHK).symm (Quotient.mk'' a) = Quotient.mk'' (g⁻¹ • a) :=
+  MulAction.orbitRelQuotientCongr_symm_mk _ _ _ a
+
+end SMulEquiv
 
 /-- **Containment of stabilizers in a normal subgroup is an orbit property.** The stabilizers
 along an orbit are conjugate, so one of them lies in a normal subgroup `N` exactly when the other

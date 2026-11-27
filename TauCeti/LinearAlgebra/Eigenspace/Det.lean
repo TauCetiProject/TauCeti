@@ -20,6 +20,8 @@ continuity arguments, since the determinant of an operator depends continuously 
 
 * `Module.End.hasEigenvalue_iff_det_sub_eq_zero`: `f` has the eigenvalue `μ` if and only if
   `det (f - μ • 1) = 0`.
+* `Module.End.det_smul_one_sub_ne_zero_iff`: the `μ`-eigenspace of `f` is trivial if and only if
+  `det (μ • 1 - f) ≠ 0`.
 -/
 
 public section
@@ -34,5 +36,12 @@ exactly when `det (f - μ • 1) = 0`. -/
 theorem hasEigenvalue_iff_det_sub_eq_zero (f : End R M) (μ : R) :
     f.HasEigenvalue μ ↔ LinearMap.det (f - μ • 1) = 0 := by
   rw [hasEigenvalue_iff, eigenspace_def, LinearMap.det_eq_zero_iff_ker_ne_bot]
+
+/-- The `μ`-eigenspace of an endomorphism `f` of a finite free module over an integral domain is
+trivial exactly when `det (μ • 1 - f) ≠ 0`. -/
+theorem det_smul_one_sub_ne_zero_iff (f : End R M) (μ : R) :
+    LinearMap.det (μ • 1 - f) ≠ 0 ↔ f.eigenspace μ = ⊥ := by
+  rw [Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, ← neg_sub, LinearMap.ker_neg,
+    eigenspace_def]
 
 end Module.End

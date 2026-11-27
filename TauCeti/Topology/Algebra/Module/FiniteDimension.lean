@@ -21,7 +21,7 @@ public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.LinearAlgebra.Basis.Semilinear
 -- Private: `Subspace.dual_finrank_eq` is used only inside proofs.
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.LinearAlgebra.Multilinear.Basis
+import TauCeti.Topology.Algebra.Module.Multilinear.ModuleTopology
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -94,6 +94,13 @@ over a stably finite semiring, a right inverse of a continuous endomorphism is a
 A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
 bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
 of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
+Every continuous linear map `L : E →L[𝕜] G` out of a finite-dimensional space is the finite sum
+of the rank-one maps `eᵏ ⊗ L(eₖ)`, `w ↦ eᵏ(w) L(eₖ)` (`ContinuousLinearMap.smulRight`), over a
+basis `(eₖ)` of `E` with coordinate functionals `(eᵏ)` (`Module.Basis.sum_coord_smulRight`). So a
+linear map out of `E →L[𝕜] G` is determined by its values on the rank-one maps `ξ ⊗ v`
+(`LinearMap.ext_smulRight`), and a linear map out of `E →L[𝕜] E' →L[𝕜] G` by its values on the
+rank-one maps `ξ ⊗ η ⊗ v` (`LinearMap.ext_smulRight_smulRight`). A continuous functional `ξ` is
+`∑ₖ ξ(eₖ) eᵏ` (`Module.Basis.sum_apply_smul_coord_toContinuousLinearMap`).
 
 A closed subspace `S` of finite codimension has a topological complement inside every dense
 subspace `D`: `Submodule.exists_le_isTopCompl_of_dense`. Consequently `S ⊔ D` is the whole space
@@ -308,19 +315,10 @@ variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedFie
 /-- A multilinear map on finitely many finite-dimensional Hausdorff topological vector spaces
 over a complete nontrivially normed field is continuous when its codomain is an additive
 commutative monoid with continuous addition and scalar multiplication. No bound is required. -/
-theorem continuous_of_finiteDimensional (f : MultilinearMap (RingHom.id 𝕜) M N) : Continuous f := by
-  classical
-  cases nonempty_fintype ι
-  set b : ∀ i, Module.Basis (Fin (Module.finrank 𝕜 (M i))) 𝕜 (M i) :=
-    fun i ↦ Module.finBasis 𝕜 (M i) with _
-  have key : ⇑f = fun m : ∀ i, M i ↦ ∑ r : ∀ i, Fin (Module.finrank 𝕜 (M i)),
-      (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) :=
-    funext (f.apply_eq_sum_prod_repr_smul b)
-  rw [key]
-  refine continuous_finsetSum _ fun r _ ↦ Continuous.smul ?_ continuous_const
-  refine continuous_finsetProd _ fun i _ ↦ ?_
-  exact (((b i).coord (r i)).continuous_of_finiteDimensional.comp
-    (continuous_apply i)).congr fun m ↦ Module.Basis.coord_apply _ _ _
+theorem continuous_of_finiteDimensional (f : MultilinearMap (RingHom.id 𝕜) M N) :
+    Continuous f :=
+  have := fun i ↦ isModuleTopologyOfFiniteDimensional (𝕜 := 𝕜) (E := M i)
+  IsModuleTopology.continuous_multilinearMap f
 
 end MultilinearMap
 
@@ -485,6 +483,56 @@ theorem comp_eq_sum_coord {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 end ContinuousLinearMap
 
+section SmulRight
+
+variable {𝕜 E G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E] [T2Space E]
+  [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  [ContinuousSMul 𝕜 G]
+
+/-- A continuous linear functional on a finite-dimensional space is the combination
+`∑ₖ ξ(eₖ) eᵏ` of the coordinate functionals `(eᵏ)` of a basis `(eₖ)`. -/
+theorem Module.Basis.sum_apply_smul_coord_toContinuousLinearMap {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 E) (ξ : E →L[𝕜] 𝕜) :
+    ∑ k, ξ (b k) • LinearMap.toContinuousLinearMap (b.coord k) = ξ := by
+  ext w
+  simpa using LinearMap.congr_fun (b.sum_dual_apply_smul_coord ξ.toLinearMap) w
+
+/-- A continuous linear map out of a finite-dimensional space is the sum of the rank-one maps
+`eᵏ ⊗ L(eₖ)` over a basis `(eₖ)` and its coordinate functionals `(eᵏ)`. -/
+theorem Module.Basis.sum_coord_smulRight {ι : Type*} [Fintype ι] (b : Module.Basis ι 𝕜 E)
+    (L : E →L[𝕜] G) :
+    ∑ k, (LinearMap.toContinuousLinearMap (b.coord k)).smulRight (L (b k)) = L := by
+  ext w
+  simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply,
+    LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
+  simp_rw [← map_smul, ← map_sum, b.sum_repr]
+
+/-- Linear maps out of the continuous linear maps `E →L[𝕜] G`, for a finite-dimensional `E`,
+agree as soon as they agree on the rank-one maps `ξ ⊗ v`. -/
+theorem LinearMap.ext_smulRight {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    {T T' : (E →L[𝕜] G) →ₗ[𝕜] W}
+    (h : ∀ (ξ : E →L[𝕜] 𝕜) (v : G), T (ξ.smulRight v) = T' (ξ.smulRight v)) : T = T' := by
+  refine LinearMap.ext fun L ↦ ?_
+  rw [← (Module.finBasis 𝕜 E).sum_coord_smulRight L]
+  simp only [map_sum, h]
+
+/-- Linear maps out of the continuous bilinear maps `E →L[𝕜] E' →L[𝕜] G`, for finite-dimensional
+`E` and `E'`, agree as soon as they agree on the rank-one maps `ξ ⊗ η ⊗ v`,
+`(u, w) ↦ ξ(u) η(w) v`. -/
+theorem LinearMap.ext_smulRight_smulRight {E' W : Type*} [AddCommGroup E'] [Module 𝕜 E']
+    [TopologicalSpace E'] [IsTopologicalAddGroup E'] [ContinuousSMul 𝕜 E'] [FiniteDimensional 𝕜 E']
+    [T2Space E'] [AddCommGroup W] [Module 𝕜 W] {T T' : (E →L[𝕜] E' →L[𝕜] G) →ₗ[𝕜] W}
+    (h : ∀ (ξ : E →L[𝕜] 𝕜) (η : E' →L[𝕜] 𝕜) (v : G),
+      T (ξ.smulRight (η.smulRight v)) = T' (ξ.smulRight (η.smulRight v))) :
+    T = T' :=
+  LinearMap.ext_smulRight fun ξ L ↦ LinearMap.congr_fun
+    (LinearMap.ext_smulRight (T := T ∘ₗ ξ.smulRightₗ) (T' := T' ∘ₗ ξ.smulRightₗ)
+      fun η v ↦ h ξ η v) L
+
+end SmulRight
+
 namespace Submodule
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
@@ -599,6 +647,14 @@ theorem isClosedEmbedding_of_injective {f : E →ᴬ[𝕜] F} (hf : Function.Inj
     (LinearMap.isClosedEmbedding_of_injective hker)
 
 end ContinuousAffineMap
+
+/-- The affine line `t ↦ y + t • e` through `y` in a nonzero direction `e` of a Hausdorff
+topological vector space is a closed embedding of the scalars. -/
+theorem TauCeti.isClosedEmbedding_add_smul_left {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module 𝕜 E]
+    [ContinuousSMul 𝕜 E] [T2Space E] (y : E) {e : E} (he : e ≠ 0) :
+    Topology.IsClosedEmbedding fun t : 𝕜 => y + t • e :=
+  (Homeomorph.addLeft y).isClosedEmbedding.comp (isClosedEmbedding_smul_left he)
 
 /-- **Finite quotients along a dense algebra map.** Let `f : A → B` be a `K`-algebra map with dense
 range into a topological `K`-algebra, and `J` an ideal of `B` with `B ⧸ J` Hausdorff. If

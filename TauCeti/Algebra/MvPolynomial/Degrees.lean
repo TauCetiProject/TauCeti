@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Variables
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
 # Degree bounds for multivariate polynomials
@@ -35,6 +36,8 @@ finitely generated algebra.
 * `MvPolynomial.totalDegree_eval₂_C_comp_le`: if every `f i` with `i ∈ p.vars` has total degree
   at most `D`, then `p.eval₂ (C.comp φ) f` has total degree at most `p.totalDegree * D`.
 * `MvPolynomial.totalDegree_aeval_le`: the same bound for `aeval f p`.
+* `MvPolynomial.totalDegree_det_le`: a determinant of polynomials of total degree at most `d` has
+  total degree at most `d` times the size of the matrix.
 -/
 
 public section
@@ -105,5 +108,16 @@ theorem totalDegree_aeval_le {σ τ R S : Type*} [CommSemiring R] [CommSemiring 
     (aeval f p).totalDegree ≤ p.totalDegree * D := by
   rw [aeval_def, IsScalarTower.algebraMap_eq R S (MvPolynomial τ S), algebraMap_eq]
   exact totalDegree_eval₂_C_comp_le p (algebraMap R S) hf
+
+/-- The determinant of a square matrix of polynomials of total degree at most `d` has total
+degree at most `d` times the size of the matrix. -/
+theorem totalDegree_det_le {R σ ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    {M : Matrix ι ι (MvPolynomial σ R)} {d : ℕ} (h : ∀ i j, (M i j).totalDegree ≤ d) :
+    M.det.totalDegree ≤ Fintype.card ι * d := by
+  rw [Matrix.det_apply]
+  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun τ _ ↦ ?_)
+  refine (totalDegree_smul_le _ _).trans ((totalDegree_finsetProd _ _).trans ?_)
+  calc ∑ i, (M (τ i) i).totalDegree ≤ ∑ _i : ι, d := Finset.sum_le_sum fun i _ ↦ h _ _
+    _ = Fintype.card ι * d := by simp
 
 end MvPolynomial

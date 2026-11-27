@@ -24,7 +24,8 @@ displacement smaller than the distance to a pole also gives a slit-plane quotien
 points in the right half-plane lies in the slit plane as well, and positive real scaling preserves
 it.
 
-For a point `z ≠ 1` of the unit circle, `-z` lies in the slit plane.
+For a point `z ≠ 1` of the unit circle, `-z` lies in the slit plane, and for a point `z ≠ 1` of
+the closed unit disc, `1 - z` has positive real part.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
@@ -42,19 +43,28 @@ half-plane about the winding point has slit-compatible chord ratios, so its inde
 is a principal logarithm. The plane slit along the complement of a convex real set `S` is open
 when `S` is, and star-shaped about every point of `S`
 (`TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`);
-it meets the real axis exactly in `S`. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is
-open, star-convex about every real point `x < 1` (in particular about `0`), and preconnected, and is
-preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
-`{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open, star-convex about `0`, and connected for `0 < m`.
+it meets the real axis exactly in `S`. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}`
+contains the open unit disc and is open, star-convex about every real point `x < 1` (in
+particular about `0`), and preconnected, and is preserved under scaling by `[0, 1]`. So, for
+every `m`, the pullback `{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open, star-convex about `0`, and
+connected for `0 < m`.
+
+The doubly cut plane `ℂ \ ((-∞, -1] ∪ [1, ∞)) = {z | 1 - z ∈ slitPlane ∧ 1 + z ∈ slitPlane}` is
+exactly where `1 - z²` lies in the slit plane, so it is open and connected; the Möbius map
+`z ↦ (1 + z) / (1 - z)` sends it bijectively onto the slit plane. On the cut plane
+`ℂ \ (-∞, 1] = {z | z - 1 ∈ slitPlane}`, which is open and star-convex about `2`, the points `z`,
+`z + 1`, `(z + 1) / (z - 1)` and `1 - z⁻²` lie in the slit plane, and so does `z² - 1` in the right
+half-plane.
 
 ## Main declarations
 
 * `Complex.closedBall_one_subset_slitPlane_iff`
 * `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`
-* `Complex.neg_mem_slitPlane_of_norm_eq_one`
+* `Complex.neg_mem_slitPlane_of_norm_eq_one`, `Complex.re_one_sub_pos`
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`,
   `Complex.one_sub_sub_neg_mul_ofReal_mem_slitPlane`,
   `IsCompact.exists_le_norm_one_sub_ofReal_mul`
+* `Complex.one_sub_mem_slitPlane_of_norm_lt_one`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
@@ -63,6 +73,17 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `Complex.isOpen_setOf_one_sub_pow_mem_slitPlane`,
   `Complex.starConvex_zero_setOf_one_sub_pow_mem_slitPlane`,
   `Complex.isConnected_setOf_one_sub_pow_mem_slitPlane`
+* `Complex.one_sub_sq_mem_slitPlane_iff`, `Complex.one_add_div_one_sub_mem_slitPlane_iff`,
+  `Complex.bijOn_one_add_div_one_sub`,
+  `Complex.isOpen_setOf_one_sub_mem_slitPlane_and_one_add_mem_slitPlane`,
+  `Complex.isConnected_setOf_one_sub_mem_slitPlane_and_one_add_mem_slitPlane`
+* `Complex.mem_slitPlane_of_sub_one_mem_slitPlane`,
+  `Complex.add_one_mem_slitPlane_of_sub_one_mem_slitPlane`,
+  `Complex.add_one_div_sub_one_mem_slitPlane`, `Complex.sq_sub_one_mem_slitPlane`,
+  `Complex.one_sub_inv_sq_mem_slitPlane_iff`, `Complex.one_sub_inv_sq_mem_slitPlane`
+* `Complex.isOpen_setOf_sub_one_mem_slitPlane`,
+  `Complex.starConvex_ofReal_setOf_sub_one_mem_slitPlane`,
+  `Complex.isConnected_setOf_sub_one_mem_slitPlane`
 * `TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`,
   `TauCeti.ofReal_mem_setOf_im_ne_zero_or_re_mem_iff`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
@@ -475,6 +496,14 @@ theorem neg_mem_slitPlane_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z �
   intro h
   exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
 
+/-- On the closed unit disc away from `1`, the point `1 - z` has positive real part. -/
+theorem re_one_sub_pos {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) : 0 < (1 - z).re := by
+  rw [sub_re, one_re, sub_pos]
+  refine (re_le_norm z).trans hz |>.lt_of_ne fun h ↦ hz1 ?_
+  have hnorm : ‖z‖ = 1 := le_antisymm hz (h ▸ re_le_norm z)
+  have him : z.im = 0 := abs_re_eq_norm.1 (by rw [h, hnorm, abs_one])
+  exact Complex.ext (by simpa using h) (by simpa using him)
+
 /-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
     {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - z * t ∈ slitPlane := by
@@ -508,6 +537,10 @@ theorem _root_.IsCompact.exists_le_norm_one_sub_ofReal_mul {K : Set ℂ} (hK : I
     norm_pos_iff.2 (slitPlane_ne_zero (one_sub_ofReal_mul_mem_slitPlane (hKΩ hp.2) hp.1))
   obtain ⟨δ, hδ, h⟩ := (isCompact_Icc.prod hK).exists_forall_le' (by fun_prop) hpos
   exact ⟨δ, hδ, fun z hz t ht => h (t, z) ⟨ht, hz⟩⟩
+
+/-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` contains the open unit disc. -/
+theorem one_sub_mem_slitPlane_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 1 - z ∈ slitPlane := by
+  simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (z := -z) (by simpa using hz)
 
 /-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
 theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
@@ -559,6 +592,194 @@ theorem isConnected_setOf_one_sub_pow_mem_slitPlane {m : ℕ} (hm : 0 < m) :
   have h0 : (0 : ℂ) ∈ {z : ℂ | 1 - z ^ m ∈ slitPlane} := by
     simp [zero_pow hm.ne', one_mem_slitPlane]
   exact ((starConvex_zero_setOf_one_sub_pow_mem_slitPlane m).isPathConnected h0).isConnected
+
+/-! ### The doubly cut plane `ℂ \ ((-∞, -1] ∪ [1, ∞))` -/
+
+/-- `1 - z²` lies in the slit plane exactly when `z` lies in the doubly cut plane
+`ℂ \ ((-∞, -1] ∪ [1, ∞))`. -/
+theorem one_sub_sq_mem_slitPlane_iff {z : ℂ} :
+    1 - z ^ 2 ∈ slitPlane ↔ 1 - z ∈ slitPlane ∧ 1 + z ∈ slitPlane := by
+  simp only [mem_slitPlane_iff, sub_re, add_re, one_re, sub_im, add_im, one_im, sq, mul_re,
+    mul_im]
+  by_cases hy : z.im = 0
+  · simp only [hy, mul_zero, sub_zero, zero_mul, add_zero, ne_eq, not_true_eq_false, or_false]
+    constructor
+    · intro h
+      constructor <;> nlinarith
+    · rintro ⟨h₁, h₂⟩
+      nlinarith
+  · have hy' : -z.im ≠ 0 := neg_ne_zero.2 hy
+    simp only [zero_sub, ne_eq, zero_add, hy, hy', not_false_eq_true, or_true, and_self,
+      iff_true]
+    by_cases hx : z.re = 0
+    · left
+      simp only [hx, zero_mul, zero_sub, sub_neg_eq_add]
+      nlinarith [sq_nonneg z.im]
+    · right
+      intro h
+      have : z.re * z.im = 0 := by linarith
+      exact (mul_ne_zero hx hy) this
+
+/-- The Möbius map `z ↦ (1 + z) / (1 - z)` takes a value in the slit plane exactly on the doubly
+cut plane `ℂ \ ((-∞, -1] ∪ [1, ∞))`. -/
+theorem one_add_div_one_sub_mem_slitPlane_iff {z : ℂ} :
+    (1 + z) / (1 - z) ∈ slitPlane ↔ 1 - z ∈ slitPlane ∧ 1 + z ∈ slitPlane := by
+  rcases eq_or_ne z 1 with rfl | hz
+  · simp [zero_notMem_slitPlane]
+  have hN : 0 < normSq (1 - z) := normSq_pos.2 (sub_ne_zero.2 hz.symm)
+  -- multiplying by `‖1 - z‖²` turns the quotient into `(1 + z) * conj (1 - z)`, whose real part is
+  -- `1 - ‖z‖²` and whose imaginary part is `2 * im z`
+  have hmul : ((normSq (1 - z) : ℝ) : ℂ) * ((1 + z) / (1 - z)) =
+      (1 + z) * (starRingEnd ℂ) (1 - z) := by
+    rw [← mul_conj, mul_comm (1 - z)]
+    field_simp [sub_ne_zero.2 hz.symm]
+  have hiff : (1 + z) / (1 - z) ∈ slitPlane ↔ (1 + z) * (starRingEnd ℂ) (1 - z) ∈ slitPlane := by
+    rw [← hmul]
+    refine ⟨TauCeti.ofReal_mul_mem_slitPlane hN, fun h => ?_⟩
+    simpa [hN.ne'] using TauCeti.ofReal_mul_mem_slitPlane (inv_pos.2 hN) h
+  rw [hiff]
+  simp only [mem_slitPlane_iff, mul_re, mul_im, add_re, add_im, sub_re, sub_im, one_re, one_im,
+    conj_re, conj_im]
+  by_cases hy : z.im = 0
+  · simp only [hy, mul_zero, sub_zero, ne_eq, neg_zero, not_true_eq_false, or_false, add_zero,
+      zero_mul]
+    constructor
+    · intro h
+      constructor <;> nlinarith
+    · rintro ⟨h₁, h₂⟩
+      nlinarith
+  · have hy' : -z.im ≠ 0 := neg_ne_zero.2 hy
+    simp only [zero_sub, ne_eq, zero_add, hy, hy', not_false_eq_true, or_true, and_self,
+      iff_true]
+    right
+    intro h
+    exact hy (by linarith)
+
+/-- The Möbius map `z ↦ (1 + z) / (1 - z)` is a bijection from the doubly cut plane
+`ℂ \ ((-∞, -1] ∪ [1, ∞))` onto the slit plane. -/
+theorem bijOn_one_add_div_one_sub :
+    Set.BijOn (fun z : ℂ => (1 + z) / (1 - z)) {z | 1 - z ∈ slitPlane ∧ 1 + z ∈ slitPlane}
+      slitPlane := by
+  refine ⟨fun z hz => one_add_div_one_sub_mem_slitPlane_iff.2 hz, fun z₁ hz₁ z₂ hz₂ h => ?_,
+    fun w hw => ?_⟩
+  · have h₁ := slitPlane_ne_zero hz₁.1
+    have h₂ := slitPlane_ne_zero hz₂.1
+    rw [div_eq_div_iff h₁ h₂] at h
+    linear_combination h / 2
+  · have hw₁ : w + 1 ≠ 0 := by
+      intro h
+      rw [eq_neg_of_add_eq_zero_left h] at hw
+      exact (by norm_num [mem_slitPlane_iff] : (-1 : ℂ) ∉ slitPlane) hw
+    have hz : (1 + (w - 1) / (w + 1)) / (1 - (w - 1) / (w + 1)) = w := by
+      field_simp
+      ring
+    exact ⟨(w - 1) / (w + 1), one_add_div_one_sub_mem_slitPlane_iff.1 (by rw [hz]; exact hw), hz⟩
+
+/-- The doubly cut plane `ℂ \ ((-∞, -1] ∪ [1, ∞))` is open. -/
+theorem isOpen_setOf_one_sub_mem_slitPlane_and_one_add_mem_slitPlane :
+    IsOpen {z : ℂ | 1 - z ∈ slitPlane ∧ 1 + z ∈ slitPlane} := by
+  simpa only [one_sub_sq_mem_slitPlane_iff] using isOpen_setOf_one_sub_pow_mem_slitPlane 2
+
+/-- The doubly cut plane `ℂ \ ((-∞, -1] ∪ [1, ∞))` is connected. -/
+theorem isConnected_setOf_one_sub_mem_slitPlane_and_one_add_mem_slitPlane :
+    IsConnected {z : ℂ | 1 - z ∈ slitPlane ∧ 1 + z ∈ slitPlane} := by
+  simpa only [one_sub_sq_mem_slitPlane_iff] using
+    isConnected_setOf_one_sub_pow_mem_slitPlane two_pos
+
+/-! ### The cut plane `ℂ \ (-∞, 1]` -/
+
+/-- A point of the cut plane `ℂ \ (-∞, 1]` lies in the slit plane. -/
+theorem mem_slitPlane_of_sub_one_mem_slitPlane {z : ℂ} (hz : z - 1 ∈ slitPlane) :
+    z ∈ slitPlane := by
+  simpa using TauCeti.add_ofReal_mem_slitPlane hz zero_le_one
+
+/-- On the cut plane `ℂ \ (-∞, 1]`, `z + 1` lies in the slit plane. -/
+theorem add_one_mem_slitPlane_of_sub_one_mem_slitPlane {z : ℂ} (hz : z - 1 ∈ slitPlane) :
+    z + 1 ∈ slitPlane := by
+  convert TauCeti.add_ofReal_mem_slitPlane hz zero_le_two using 1
+  push_cast
+  ring
+
+/-- On the cut plane `ℂ \ (-∞, 1]`, `(z + 1) / (z - 1)` lies in the slit plane. -/
+theorem add_one_div_sub_one_mem_slitPlane {z : ℂ} (hz : z - 1 ∈ slitPlane) :
+    (z + 1) / (z - 1) ∈ slitPlane := by
+  rcases lt_trichotomy z.im 0 with h | h | h
+  · exact TauCeti.div_mem_slitPlane_of_im_neg (by simpa using h) (by simpa using h)
+  · have hre : 1 < z.re := by
+      simpa [mem_slitPlane_iff, h] using hz
+    have hz' : z = (z.re : ℂ) := ext rfl (by simp [h])
+    rw [hz']
+    exact_mod_cast ofReal_mem_slitPlane.2 (div_pos (by linarith) (by linarith))
+  · exact TauCeti.div_mem_slitPlane_of_im_pos (by simpa using h) (by simpa using h)
+
+/-- On the part of the cut plane `ℂ \ (-∞, 1]` in the right half-plane, `z² - 1` lies in the slit
+plane. -/
+theorem sq_sub_one_mem_slitPlane {z : ℂ} (hz : z - 1 ∈ slitPlane) (hre : 0 < z.re) :
+    z ^ 2 - 1 ∈ slitPlane := by
+  rw [mem_slitPlane_iff] at hz ⊢
+  simp only [sub_re, one_re, sub_im, one_im, sub_zero, sq, mul_re, mul_im] at hz ⊢
+  by_cases hy : z.im = 0
+  · left
+    simp only [hy, ne_eq, not_true_eq_false, or_false] at hz
+    nlinarith
+  · right
+    intro h
+    exact mul_ne_zero hre.ne' hy (by linarith)
+
+/-- `1 - z⁻²` lies in the slit plane unless `z` is a nonzero real number in `[-1, 1]`: `z⁻²` lies in
+`[1, ∞)` only for `z ∈ [-1, 1]`. -/
+theorem one_sub_inv_sq_mem_slitPlane_iff {z : ℂ} :
+    1 - (z ^ 2)⁻¹ ∈ slitPlane ↔ z ∉ ofReal '' (Set.Icc (-1) 1 \ {0}) := by
+  rw [TauCeti.one_sub_inv_mem_slitPlane_iff]
+  refine not_congr ⟨?_, ?_⟩
+  · rintro ⟨t, ⟨ht₀, ht₁⟩, ht⟩
+    have hre : z.re ^ 2 - z.im ^ 2 = t := by
+      have := congrArg re ht
+      simp only [ofReal_re, sq, mul_re] at this
+      nlinarith
+    have him : z.re * z.im = 0 := by
+      have := congrArg im ht
+      simp only [ofReal_im, sq, mul_im] at this
+      linarith
+    have hy : z.im = 0 := by
+      rcases mul_eq_zero.1 him with h | h
+      · nlinarith [sq_nonneg z.im]
+      · exact h
+    have hx : z.re ≠ 0 := by
+      rintro h
+      rw [h, hy] at hre
+      linarith
+    refine ⟨z.re, ⟨⟨?_, ?_⟩, hx⟩, ext rfl (by simp [hy])⟩ <;> nlinarith [sq_nonneg (z.re + 1)]
+  · rintro ⟨x, ⟨⟨hx₁, hx₂⟩, hx₀⟩, rfl⟩
+    have hx₀' : x ≠ 0 := hx₀
+    refine ⟨x ^ 2, ⟨by positivity, by nlinarith⟩, by push_cast; ring⟩
+
+/-- On the cut plane `ℂ \ (-∞, 1]`, `1 - z⁻²` lies in the slit plane. -/
+theorem one_sub_inv_sq_mem_slitPlane {z : ℂ} (hz : z - 1 ∈ slitPlane) :
+    1 - (z ^ 2)⁻¹ ∈ slitPlane := by
+  rw [one_sub_inv_sq_mem_slitPlane_iff]
+  rintro ⟨x, ⟨⟨-, hx⟩, -⟩, rfl⟩
+  rw [← ofReal_one, ← ofReal_sub, ofReal_mem_slitPlane] at hz
+  linarith
+
+/-- The cut plane `ℂ \ (-∞, 1]` is open. -/
+theorem isOpen_setOf_sub_one_mem_slitPlane : IsOpen {z : ℂ | z - 1 ∈ slitPlane} :=
+  isOpen_slitPlane.preimage (continuous_id.sub continuous_const)
+
+/-- The cut plane `ℂ \ (-∞, 1]` is star-convex about every real number `x > 1`. -/
+theorem starConvex_ofReal_setOf_sub_one_mem_slitPlane {x : ℝ} (hx : 1 < x) :
+    StarConvex ℝ (x : ℂ) {z : ℂ | z - 1 ∈ slitPlane} := by
+  have h₁ : StarConvex ℝ ((-1 : ℂ) + x) slitPlane := by
+    rw [neg_add_eq_sub, ← ofReal_one, ← ofReal_sub]
+    exact starConvex_ofReal_slitPlane (sub_pos.2 hx)
+  convert h₁.preimage_add_right using 1
+  ext z
+  simp [neg_add_eq_sub]
+
+/-- The cut plane `ℂ \ (-∞, 1]` is connected. -/
+theorem isConnected_setOf_sub_one_mem_slitPlane : IsConnected {z : ℂ | z - 1 ∈ slitPlane} :=
+  ((starConvex_ofReal_setOf_sub_one_mem_slitPlane (x := 2) one_lt_two).isPathConnected
+    (by norm_num)).isConnected
 
 /-- A closed ball centered at `1` lies in the slit plane iff its radius is strictly less than
 `1`. -/

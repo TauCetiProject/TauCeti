@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import Mathlib.Analysis.Complex.RealDeriv
@@ -51,6 +53,7 @@ test function on `Ω` whose gradient obeys the product rule.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
 * `TestFunction.iteratedLineDerivOp_postcompCLM`: so do iterated directional derivatives.
+* `TestFunction.lineDerivCLM_lineDerivCLM_apply`: `∂_{v} (∂_{w} φ) x = D²φ(x) v w`.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -80,6 +83,17 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 @[simp]
 theorem lineDerivOp_apply (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = lineDeriv ℝ φ x v :=
   lineDerivCLM_apply_of_le le_top
+
+/-- The derivative of the restriction `t ↦ ψ (y + t • e)` of a test function to a line is the
+directional derivative of `ψ` along the line. This holds at every smoothness `n` and for every
+codomain, with both sides `0` when the restriction `s ↦ ψ (y + s • e)` is not differentiable at
+`t`. -/
+@[simp]
+theorem deriv_lineTestFunction {n : ℕ∞} (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) (t : ℝ) :
+    deriv (ψ.lineTestFunction y e he) t = lineDeriv ℝ ψ (y + t • e) e := by
+  rw [show ⇑(ψ.lineTestFunction y e he) = fun s : ℝ => ψ (y + s • e) from
+    funext (lineTestFunction_apply ψ y e he)]
+  exact TauCeti.deriv_comp_add_smul_eq_lineDeriv (ψ : E → F) y e t
 
 /-- The directional derivative of a test function is its Fréchet derivative applied to the
 direction. -/
@@ -205,6 +219,18 @@ theorem lineDeriv_lineDeriv_eq_fderiv_fderiv (φ : 𝓓(Ω, F)) (v w x : E) :
   simp_rw [hφ]
   exact (((φ.contDiff.fderiv_right (by simp)).clm_apply contDiff_const).differentiable
     one_ne_zero x).lineDeriv_eq_fderiv
+
+/-- Two directional derivatives of a test function evaluate to its second Fréchet derivative:
+`∂_{v} (∂_{w} φ) x = D²φ(x) v w`. -/
+theorem lineDerivCLM_lineDerivCLM_apply (φ : 𝓓(Ω, F)) (v w x : E) :
+    (lineDerivCLM ℝ v (lineDerivCLM ℝ w φ : 𝓓(Ω, F)) : 𝓓(Ω, F)) x =
+      fderiv ℝ (fderiv ℝ (φ : E → F)) x v w := by
+  have hd : DifferentiableAt ℝ (fderiv ℝ (φ : E → F)) x :=
+    (φ.contDiff.fderiv_right (m := 1) (by simp)).differentiable one_ne_zero x
+  rw [coe_lineDerivCLM, coe_lineDerivCLM]
+  dsimp only
+  rw [lineDeriv_lineDeriv_eq_fderiv_fderiv]
+  simp [fderiv_clm_apply hd (differentiableAt_const _)]
 
 /-- **Directional derivatives of test functions commute.** -/
 theorem lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w : E) : ∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ) := by

@@ -29,8 +29,9 @@ The full sequence is also obtained from the short exact sequence of singular cha
 infinite cyclic cover `F × ℝ → T_φ` (`TauCeti.MappingTorus.cyclicCoverShortComplex_shortExact`),
 transported to `F` along the projection `F × ℝ → F`.  This gives the connecting morphism
 `TauCeti.MappingTorus.wangδ`, exactness at all three terms, and surjectivity of the fibre
-inclusion on degree-zero homology.  For a path-connected fibre the monodromy acts trivially on
-`H₀(F)`, so `wangδ` is surjective onto `H₀(F)` (`TauCeti.MappingTorus.epi_wangδ_zero`).  With
+inclusion on degree-zero homology.  When the monodromy acts trivially on `Hₙ(F)`, `wangδ` is
+surjective onto `Hₙ(F)` (`TauCeti.MappingTorus.epi_wangδ_of_homologyMap_monodromyChainMap_eq_id`);
+for a path-connected fibre this holds on `H₀(F)` (`TauCeti.MappingTorus.epi_wangδ_zero`).  With
 coefficients in a commutative ring `k`, exactness identifies the cokernel of `𝟙 - φ_*` on
 `Hₙ(F)` with the image of the fibre in `Hₙ(T_φ)` (`TauCeti.MappingTorus.wangCokernelEquiv`).
 When the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` is onto, this gives the Wang short exact
@@ -283,6 +284,13 @@ theorem mono_homologyMap_fibreInclusionChainMap (n : ℕ)
     (hφ : homologyMap (monodromyChainMap φ R) n = 𝟙 _) :
     Mono (homologyMap (fibreInclusionChainMap φ R) n) :=
   (wang_exact₂ φ R n).mono_g (by simp [hφ])
+
+/-- If the monodromy acts trivially on `Hₙ(F)`, the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)`
+is an epimorphism. -/
+theorem epi_wangδ_of_homologyMap_monodromyChainMap_eq_id (n : ℕ)
+    (hφ : homologyMap (monodromyChainMap φ R) n = 𝟙 _) :
+    Epi (wangδ φ R n) :=
+  (wang_exact₁ φ R n).epi_f (by simp [hφ])
 
 /-- If `𝟙 - φ_*` is a monomorphism on `Hₙ(F)` and the monodromy acts trivially on `Hₙ₊₁(F)`, the
 fibre inclusion is an isomorphism `Hₙ₊₁(F) ≅ Hₙ₊₁(T_φ)`. -/

@@ -112,6 +112,26 @@ theorem faceBarycenter_apply (K : AbstractSimplicialComplex ι) (σ : Face K) (v
   rw [Finset.card_image_of_injOn hinj.injOn, Finset.sum_image hinj.injOn]
   simp [Finsupp.single_apply]
 
+/-- The support of the barycenter of a face is that face. -/
+@[simp]
+theorem support_faceBarycenter (K : AbstractSimplicialComplex ι) (σ : Face K) :
+    (faceBarycenter K σ).support = σ.val := by
+  ext v
+  by_cases hv : v ∈ σ.val
+  · have hcard : (σ.val.card : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Finset.card_ne_zero_of_mem hv)
+    simp [Finsupp.mem_support_iff, hv, hcard]
+  · simp [Finsupp.mem_support_iff, hv]
+
+/-- The coordinates of the barycenter of a face `σ` sum to one over every finite set containing
+`σ`. -/
+theorem sum_faceBarycenter_eq_one_of_subset (K : AbstractSimplicialComplex ι) (σ : Face K)
+    {s : Finset ι} (hσs : σ.val ⊆ s) : ∑ v ∈ s, faceBarycenter K σ v = 1 := by
+  have hcard : (σ.val.card : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (K.isRelLowerSet_faces.prop_of_mem σ.property).card_pos.ne'
+  simp only [faceBarycenter_apply]
+  rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr hσs, Finset.sum_const, nsmul_eq_mul,
+    mul_inv_cancel₀ hcard]
+
 /-- The topology induced by the coordinatewise topology on `ι → ℝ`. These are the domain
 topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
@@ -152,6 +172,18 @@ theorem mem_standardGeometricComplex_faces_iff (K : AbstractSimplicialComplex ι
     Geometry.SimplicialComplex.ofAffineIndependent, PreAbstractSimplicialComplex.map,
     Set.mem_image]
   aesop
+
+/-- The underlying precomplex of the standard geometric complex is the coordinate relabeling
+of the original precomplex. -/
+theorem toPreAbstractSimplicialComplex_standardGeometricComplex [DecidableEq (ι →₀ ℝ)]
+    (K : AbstractSimplicialComplex ι) :
+    K.standardGeometricComplex.toPreAbstractSimplicialComplex =
+      K.toPreAbstractSimplicialComplex.map (fun v => Finsupp.single v (1 : ℝ)) := by
+  apply SetLike.ext
+  intro τ
+  simpa only [PreAbstractSimplicialComplex.mem_faces, PreAbstractSimplicialComplex.mem_map_iff,
+    mem_toPreAbstractSimplicialComplex,
+    ← Finset.coe_inj, Finset.coe_image] using mem_standardGeometricComplex_faces_iff K τ
 
 /-- Include the realization of a face into the whole polyhedron. -/
 noncomputable def faceInclusion (K : AbstractSimplicialComplex ι) (σ : Face K) :
@@ -401,6 +433,19 @@ theorem StandardSimplex.lineMap_same {σ : Finset ι} (b : StandardSimplex σ) (
     StandardSimplex.lineMap b b t = b :=
   Subtype.ext (by simp)
 
+/-- The coordinates of a point of a segment in a closed simplex. -/
+theorem StandardSimplex.lineMap_apply {σ : Finset ι} (b x : StandardSimplex σ) (t : unitInterval)
+    (w : ι) : (StandardSimplex.lineMap b x t : ι →₀ ℝ) w = (1 - t) * b.val w + t * x.val w := by
+  simp [AffineMap.lineMap_apply_module]
+
+/-- The segment between two points of a closed coordinate simplex is continuous in its
+parameter. -/
+theorem StandardSimplex.continuous_lineMap {σ : Finset ι} (b x : StandardSimplex σ) :
+    Continuous (StandardSimplex.lineMap b x) := by
+  refine continuous_induced_rng.2 (continuous_pi fun w ↦ ?_)
+  simp only [Function.comp_apply, StandardSimplex.lineMap_apply]
+  fun_prop
+
 /-- The support of a realization point is an abstract face. -/
 theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.val.support ∈ K := by
   obtain ⟨σ, hσ, hx⟩ := mem_realization_iff.1 x.property
@@ -421,6 +466,12 @@ theorem support_mem (K : AbstractSimplicialComplex ι) (x : Realization K) : x.v
 /-- The minimal abstract face carrying a point of the realization. -/
 noncomputable def carrier (K : AbstractSimplicialComplex ι) (x : Realization K) : Face K :=
   ⟨x.val.support, support_mem K x⟩
+
+/-- A face of `K` is the support of a point of `|K|`, namely its barycenter. -/
+theorem exists_support_eq {K : AbstractSimplicialComplex ι} {σ : Finset ι} (hσ : σ ∈ K) :
+    ∃ x : Realization K, x.val.support = σ :=
+  ⟨⟨faceBarycenter K ⟨σ, hσ⟩, mem_realization_iff.2 ⟨σ, hσ, faceBarycenter_mem K ⟨σ, hσ⟩⟩⟩,
+    support_faceBarycenter K ⟨σ, hσ⟩⟩
 
 /-- The vertices of the carrier are exactly the nonzero barycentric coordinates. -/
 @[simp]
@@ -446,6 +497,27 @@ theorem Realization.nonneg (K : AbstractSimplicialComplex ι) (x : Realization K
 theorem Realization.sum_eq_one (K : AbstractSimplicialComplex ι) (x : Realization K) :
     x.val.sum (fun _ r => r) = 1 :=
   StandardSimplex.sum_eq_one ⟨x.val, mem_convexHull_carrier K x⟩
+
+/-- The barycentric coordinates of a realization point sum to one over every finite set containing
+its support. -/
+theorem Realization.sum_eq_one_of_support_subset (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {s : Finset ι} (hx : x.val.support ⊆ s) : ∑ v ∈ s, x.val v = 1 := by
+  rw [← Realization.sum_eq_one K x, Finsupp.sum_of_support_subset _ hx _ fun _ _ => rfl]
+
+/-- The segment between two points of `|K|` whose supports together span a face of `K` lies
+in `|K|`. -/
+theorem lineMap_mem_realization [DecidableEq ι] {K : AbstractSimplicialComplex ι}
+    {x y : Realization K} (h : x.val.support ∪ y.val.support ∈ K) (t : unitInterval) :
+    AffineMap.lineMap x.val y.val (t : ℝ) ∈ (standardGeometricComplex K).space := by
+  have hmem (z : Realization K) (hz : z.val.support ⊆ x.val.support ∪ y.val.support) :
+      z.val ∈ convexHull ℝ ((fun v => Finsupp.single v (1 : ℝ)) ''
+        ((x.val.support ∪ y.val.support : Finset ι) : Set ι)) :=
+    mem_standardSimplex_iff.2 ⟨Realization.nonneg K z, Realization.sum_eq_one K z, hz⟩
+  refine mem_realization_iff.2 ⟨_, h, ?_⟩
+  convert (convex_convexHull ℝ _).lineMap_mem (hmem x Finset.subset_union_left)
+    (hmem y Finset.subset_union_right) t.property using 2
+  ext
+  simp
 
 /-- Every barycentric coordinate of a realization point is at most one. -/
 theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K) (v : ι) :

@@ -11,7 +11,7 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Slice
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.Proper
-import TauCeti.Analysis.PDE.Vortex.FramedGauge.RealChart
+import TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothAction
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Topology.Algebra.GroupAction.SliceChart
 
@@ -130,11 +130,8 @@ theorem exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_smul_eq (hk : 3 ≤ k)
     exact contDiff_of_mem_realSobolevFunctions
       (finrank_real_complex_add_two_mul_lt_two_mul (n := 2) (by push_cast; linarith)) hφ
       (continuous_continuousRep hd F)
-  have hact : ⇑(expGauge hs F • y) = phaseGauge y (continuousRep F) := by
-    rw [coe_smul, toSubgroup_expGauge]
-    exact gaugeTransform_exp (hφ2.differentiable two_ne_zero) y
   have h0 := huniq y.continuous (differentiable_apply hk y 0) (differentiable_apply hk y 1) hy hφ2
-    (memLp_of_mem_realSobolevFunctions hφ) hF (by simpa only [hact] using hcoul)
+    (memLp_of_mem_realSobolevFunctions hφ) hF (by simpa only [coe_expGauge_smul] using hcoul)
   rw [continuousRep_injective hd (h0.trans (map_zero _).symm), AddChar.map_zero_eq_one]
 
 variable (hs) in
