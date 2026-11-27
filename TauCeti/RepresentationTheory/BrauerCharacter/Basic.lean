@@ -12,6 +12,8 @@ public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.LinearAlgebra.Eigenspace.Split
+import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 import TauCeti.LinearAlgebra.End.FiniteOrder
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -57,7 +59,8 @@ follows from the tensor product of eigenbases.
   sum of the lifted eigenvalues, so its values are sums of `dim V` roots of unity of `L`.
 * `Representation.brauerCharacter_tprod`: the Brauer character of a tensor product is the
   product.
-* `Representation.brauerCharacter_eq_of_dvd`: independence of the choice of `m` and `τ`.
+* `Representation.brauerCharacter_eq_of_dvd`: compatibility with a change of `m` to a multiple and
+  of `τ` to an isomorphism that agrees with it on the `m`-th roots of unity.
 * `Representation.brauerCharacter_baseChange`: invariance under scalar extension.
 
 ## References
@@ -159,9 +162,9 @@ theorem brauerCharacter_of_not_coprime {g : G} (hg : ¬ p.Coprime (orderOf g)) :
 /-- The Brauer character at `1` is the dimension. -/
 @[simp]
 theorem brauerCharacter_one : ρ.brauerCharacter p τ 1 = finrank k V := by
-  rw [brauerCharacter_of_coprime p τ ρ (by simp), map_one, LinearMap.charpoly_one, roots_pow,
-    ← C_1, roots_X_sub_C, Multiset.map_nsmul, Multiset.map_singleton, rootsOfUnityLift_one,
-    Multiset.sum_nsmul, Multiset.sum_singleton, nsmul_one]
+  rw [brauerCharacter_of_coprime p τ ρ (by simp), map_one, LinearMap.charpoly_one, ← C_1,
+    roots_pow, roots_X_sub_C]
+  simp [Multiset.map_nsmul, Multiset.sum_nsmul]
 
 variable {ρ σ} in
 /-- Isomorphic representations have the same Brauer character. -/
@@ -184,6 +187,7 @@ theorem brauerCharacter_eq_subrepresentation_add_quotient (U : Submodule k V)
   · simp [brauerCharacter_of_not_coprime p τ _ hg]
 
 /-- The Brauer character of a direct sum is the sum of the Brauer characters. -/
+@[simp]
 theorem brauerCharacter_prod (g : G) :
     (ρ.prod σ).brauerCharacter p τ g = ρ.brauerCharacter p τ g + σ.brauerCharacter p τ g := by
   by_cases hg : p.Coprime (orderOf g)
@@ -219,8 +223,7 @@ theorem brauerCharacter_eq_sum_of_apply_eq_smul {ι : Type*} [Fintype ι] {g : G
     (hb : ∀ i, ρ g (b i) = d i • b i) :
     ρ.brauerCharacter p τ g = ∑ i, rootsOfUnityLift τ (d i) := by
   rw [brauerCharacter_of_coprime p τ ρ hg, LinearMap.roots_charpoly_of_apply_eq_smul b hb,
-    Multiset.map_map]
-  rfl
+    Multiset.map_map, Function.comp_def, Finset.sum_map_val]
 
 variable {ρ} in
 /-- If the order of `g` divides `m` and `k` contains a primitive `m`-th root of unity, then `ρ g`
@@ -230,7 +233,7 @@ theorem exists_basis_apply_eq_smul [HasEnoughRootsOfUnity k m] {g : G} (hgm : or
       (∀ i, ρ g (b i) = d i • b i) ∧ ∀ i, d i ^ m = 1 := by
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k m
   exact Module.End.exists_basis_apply_eq_smul_of_pow_eq_one hζ
-    (by rw [← map_pow, orderOf_dvd_iff_pow_eq_one.1 hgm, map_one])
+    (orderOf_dvd_iff_pow_eq_one.1 ((orderOf_map_dvd ρ g).trans hgm))
 
 /-- The Brauer character of the one-dimensional representation of a character `χ : G →* kˣ`
 at a `p`-regular `g` is the lift of `χ g`. -/
@@ -239,17 +242,9 @@ theorem brauerCharacter_ofLinearCharacter (χ : G →* kˣ) {g : G} (hg : p.Copr
   rw [brauerCharacter_eq_sum_of_apply_eq_smul p τ _ hg (Basis.singleton Unit k) (d := fun _ ↦ χ g)
     fun _ ↦ by simp, Finset.univ_unique, Finset.sum_singleton]
 
-omit [NeZero m] in
-/-- If the order of `g` divides `m`, every root of the characteristic polynomial of `ρ g` is an
-`m`-th root of unity. -/
-theorem pow_eq_one_of_mem_roots_charpoly {g : G} (hgm : orderOf g ∣ m) {x : k}
-    (hx : x ∈ (ρ g).charpoly.roots) : x ^ m = 1 :=
-  Module.End.pow_eq_one_of_isRoot_charpoly
-    (by rw [← map_pow, orderOf_dvd_iff_pow_eq_one.1 hgm, map_one]) (isRoot_of_mem_roots hx)
-
 /-- **Values are sums of roots of unity.** If the order of `g` divides `m` and `k` contains a
-primitive `m`-th root of unity, the Brauer character at `g` is a sum of `dim V` roots of unity of
-`L` (or `0`, if `g` is not `p`-regular). -/
+primitive `m`-th root of unity, the Brauer character at a `p`-regular `g` is a sum of `dim V`
+roots of unity of `L`. -/
 theorem exists_brauerCharacter_eq_sum [HasEnoughRootsOfUnity k m] {g : G}
     (hg : p.Coprime (orderOf g)) (hgm : orderOf g ∣ m) :
     ∃ ζ : Fin (finrank k V) → rootsOfUnity m L,
@@ -259,9 +254,9 @@ theorem exists_brauerCharacter_eq_sum [HasEnoughRootsOfUnity k m] {g : G}
   rw [brauerCharacter_eq_sum_of_apply_eq_smul p τ ρ hg b hb]
   exact Finset.sum_congr rfl fun i _ ↦ rootsOfUnityLift_of_pow_eq_one τ (hd i)
 
-/-- **Independence of `m` and `τ`.** Let `τ'` be an isomorphism for `m'` that agrees with `τ` on
-the `m`-th roots of unity. At every element whose order divides `m`, the Brauer characters for
-`τ` and for `τ'` agree. -/
+/-- **Compatibility with a change of `m` and `τ`.** Let `τ'` be an isomorphism for some `m'`, for
+instance a multiple of `m`, that agrees with `τ` on the `m`-th roots of unity. At every element
+whose order divides `m`, the Brauer characters for `τ` and for `τ'` agree. -/
 theorem brauerCharacter_eq_of_dvd {m' : ℕ} [NeZero m']
     (τ' : rootsOfUnity m' k ≃* rootsOfUnity m' L)
     (hτ : ∀ x : k, x ^ m = 1 → rootsOfUnityLift τ' x = rootsOfUnityLift τ x) {g : G}
@@ -269,7 +264,8 @@ theorem brauerCharacter_eq_of_dvd {m' : ℕ} [NeZero m']
   by_cases hg : p.Coprime (orderOf g)
   · rw [brauerCharacter_of_coprime p τ' ρ hg, brauerCharacter_of_coprime p τ ρ hg]
     exact congrArg Multiset.sum (Multiset.map_congr rfl fun x hx ↦
-      hτ x (pow_eq_one_of_mem_roots_charpoly ρ hgm hx))
+      hτ x (Module.End.pow_eq_one_of_isRoot_charpoly
+        (orderOf_dvd_iff_pow_eq_one.1 ((orderOf_map_dvd ρ g).trans hgm)) (isRoot_of_mem_roots hx)))
   · rw [brauerCharacter_of_not_coprime p τ' ρ hg, brauerCharacter_of_not_coprime p τ ρ hg]
 
 /-- **Invariance under scalar extension.** Let `k'` be a field extension of `k` and `τ'` an
@@ -303,7 +299,8 @@ theorem brauerCharacter_tprod [HasEnoughRootsOfUnity k m] {g : G} (hgm : orderOf
       brauerCharacter_eq_sum_of_apply_eq_smul p τ σ hg c hc,
       brauerCharacter_eq_sum_of_apply_eq_smul p τ (ρ.tprod σ) hg (b.tensorProduct c)
         (d := fun x ↦ d x.1 * e x.2) (fun x ↦ by
-          rw [tprod_apply]; exact TensorProduct.map_tensorProduct_apply_eq_smul b c hb hc x),
+          rw [tprod_apply, Basis.tensorProduct_apply', TensorProduct.map_tmul, hb, hc,
+            TensorProduct.smul_tmul_smul]),
       Fintype.sum_prod_type, Finset.sum_mul_sum]
     exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
       rootsOfUnityLift_mul τ (hd i) (he j)

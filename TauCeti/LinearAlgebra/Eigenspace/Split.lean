@@ -8,14 +8,15 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.FieldTheory.Separable
-public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
+public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
-import TauCeti.RingTheory.Polynomial.Roots
+import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import Mathlib.RingTheory.Localization.FractionRing
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
 # Diagonalization by a split separable annihilating polynomial
@@ -29,10 +30,10 @@ endomorphisms only over an algebraically closed field
 one annihilating polynomial. The main case is `f ^ n = 1` with `n` invertible in `K` and `K`
 containing a primitive `n`-th root of unity.
 
-In finite dimension the eigenspaces then give a basis of eigenvectors. In such a basis the
-characteristic polynomial is `∏ i, (X - d i)`, with roots the eigenvalues `d i` counted with
-multiplicity, and the tensor product of two endomorphisms diagonal in bases `b` and `c` is
-diagonal in `b ⊗ c`, with the products of the eigenvalues.
+In finite dimension the eigenspaces then give a basis of eigenvectors. Over a domain `O`
+containing a primitive `n`-th root of unity, an endomorphism `f` of a finite free module with
+`f ^ n = 1` therefore has split characteristic polynomial: over the fraction field `f` is
+diagonal with eigenvalues `n`-th roots of unity, which are powers of the primitive root of `O`.
 
 ## Main results
 
@@ -44,10 +45,9 @@ diagonal in `b ⊗ c`, with the products of the eigenvalues.
   `f ^ n = 1`, when `K` contains a primitive `n`-th root of unity.
 * `Module.End.exists_basis_apply_eq_smul`: in finite dimension, spanning eigenspaces give a basis
   of eigenvectors; `Module.End.exists_basis_apply_eq_smul_of_pow_eq_one` for `f ^ n = 1`.
-* `LinearMap.charpoly_eq_prod_of_apply_eq_smul`, `LinearMap.roots_charpoly_of_apply_eq_smul`: the
-  characteristic polynomial and its roots in a basis of eigenvectors.
-* `TensorProduct.map_tensorProduct_apply_eq_smul`: the tensor product of two diagonal
-  endomorphisms is diagonal in the tensor product basis.
+* `Module.End.splits_charpoly_of_pow_eq_one`: an endomorphism `f` of a finite free module over a
+  domain containing a primitive `n`-th root of unity, with `f ^ n = 1`, has split characteristic
+  polynomial.
 -/
 
 public section
@@ -131,45 +131,34 @@ theorem exists_basis_apply_eq_smul_of_pow_eq_one [FiniteDimensional K V] {f : En
   rw [map_pow, aeval_X, hf, one_apply_eq_self, eval_pow, eval_X] at h
   exact smul_left_injective K (b.ne_zero i) (h.symm.trans (one_smul K _).symm)
 
+section Domain
+
+variable {O M : Type*} [CommRing O] [IsDomain O] [AddCommGroup M] [Module O M] [Module.Free O M]
+  [Module.Finite O M]
+
+/-- An endomorphism `f` of a finite free module over a domain containing a primitive `n`-th root
+of unity, with `f ^ n = 1`, has split characteristic polynomial: over the fraction field `f` is
+diagonal with eigenvalues `n`-th roots of unity, which are powers of the primitive root. -/
+theorem splits_charpoly_of_pow_eq_one {f : End O M} {n : ℕ} [NeZero n] {ζ : O}
+    (hζ : IsPrimitiveRoot ζ n) (hf : f ^ n = 1) : f.charpoly.Splits := by
+  let K := FractionRing O
+  have hinj : Function.Injective (algebraMap O K) := IsFractionRing.injective O K
+  have hζK : IsPrimitiveRoot (algebraMap O K ζ) n := hζ.map_of_injective hinj
+  have hfK : f.baseChange K ^ n = 1 := by
+    rw [← LinearMap.baseChange_pow, hf, Module.End.one_eq_id, LinearMap.baseChange_id,
+      Module.End.one_eq_id]
+  obtain ⟨b, d, hb, hd⟩ := exists_basis_apply_eq_smul_of_pow_eq_one hζK hfK
+  have hmap : f.charpoly.map (algebraMap O K) = ∏ i, (X - C (d i)) := by
+    rw [← LinearMap.charpoly_baseChange, LinearMap.charpoly_eq_prod_of_apply_eq_smul b hb]
+  refine Splits.of_splits_map_of_injective hinj ?_ fun a ha ↦ ?_
+  · rw [hmap]
+    exact Splits.prod fun i _ ↦ Splits.X_sub_C _
+  · rw [← LinearMap.charpoly_baseChange, LinearMap.roots_charpoly_of_apply_eq_smul b hb,
+      Multiset.mem_map] at ha
+    obtain ⟨i, -, rfl⟩ := ha
+    obtain ⟨j, -, hj⟩ := hζK.eq_pow_of_pow_eq_one (hd i)
+    exact ⟨ζ ^ j, by rw [map_pow, hj]⟩
+
+end Domain
+
 end Module.End
-
-namespace LinearMap
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
-  [Module.Finite R M] {ι : Type*} [Fintype ι]
-
-/-- The characteristic polynomial of an endomorphism diagonal in a basis `b`, with
-`f (b i) = d i • b i`, is `∏ i, (X - d i)`. -/
-theorem charpoly_eq_prod_of_apply_eq_smul {f : M →ₗ[R] M} (b : Basis ι R M) {d : ι → R}
-    (hf : ∀ i, f (b i) = d i • b i) : f.charpoly = ∏ i, (X - C (d i)) := by
-  classical
-  rw [← f.charpoly_toMatrix b, ← Matrix.charpoly_diagonal]
-  congr 1
-  ext i j
-  rw [LinearMap.toMatrix_apply, hf, map_smul, b.repr_self, Finsupp.smul_single, smul_eq_mul,
-    mul_one, Matrix.diagonal_apply, Finsupp.single_apply]
-  split_ifs with h h' h' <;> simp_all
-
-/-- The roots of the characteristic polynomial of an endomorphism diagonal in a basis `b`, with
-`f (b i) = d i • b i`, are the `d i`, counted with multiplicity. -/
-theorem roots_charpoly_of_apply_eq_smul [IsDomain R] {f : M →ₗ[R] M} (b : Basis ι R M)
-    {d : ι → R} (hf : ∀ i, f (b i) = d i • b i) :
-    f.charpoly.roots = Finset.univ.val.map d := by
-  rw [charpoly_eq_prod_of_apply_eq_smul b hf, roots_prod_X_sub_C_map]
-
-end LinearMap
-
-namespace TensorProduct
-
-variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {ι κ : Type*}
-
-/-- The tensor product of endomorphisms diagonal in bases `b` and `c` is diagonal in the tensor
-product basis, with the products of the eigenvalues. -/
-theorem map_tensorProduct_apply_eq_smul {f : M →ₗ[R] M} {g : N →ₗ[R] N} (b : Basis ι R M)
-    (c : Basis κ R N) {d : ι → R} {e : κ → R} (hf : ∀ i, f (b i) = d i • b i)
-    (hg : ∀ j, g (c j) = e j • c j) (x : ι × κ) :
-    map f g (b.tensorProduct c x) = (d x.1 * e x.2) • b.tensorProduct c x := by
-  rw [Basis.tensorProduct_apply', map_tmul, hf, hg, smul_tmul_smul]
-
-end TensorProduct

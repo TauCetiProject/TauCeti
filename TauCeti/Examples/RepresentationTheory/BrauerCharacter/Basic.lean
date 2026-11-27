@@ -24,7 +24,8 @@ instance `𝔽₄`), acting on the line `k` by multiplication, with `p` prime to
 * **The eigenvalue reading**: the sum of the line and its dual has Brauer character `-1` at
   `ζ ≠ 1` over every domain `L`, the sum of the two primitive cube roots of unity of `L`. Its
   trace in `k` is `ζ + ζ⁻¹ = -1`, which is `1` in characteristic `2`: casting the trace into `L`
-  gives `1 ≠ -1`.
+  gives `1`, which differs from `-1` when `L` does not have characteristic `2`, for instance for
+  `L = ℂ`.
 * **`C₂` at `p = 2`**: the regular representation of `C₂` over `𝔽₂` and the trivial
   representation on `𝔽₂ ⊕ 𝔽₂` have the same Brauer character, `2` at `1` and `0` at the
   generator, although only the second is semisimple: Brauer characters see composition factors,
@@ -46,12 +47,8 @@ noncomputable abbrev cubeRootLine (k : Type*) [Field k] : Representation k (root
   ofLinearCharacter (rootsOfUnity 3 k).subtype
 
 /-- Every element of `μ₃` cubes to `1`. -/
-theorem pow_three_eq_one {M : Type*} [CommMonoid M] (ζ : rootsOfUnity 3 M) : ζ ^ 3 = 1 :=
+private theorem pow_three_eq_one {M : Type*} [CommMonoid M] (ζ : rootsOfUnity 3 M) : ζ ^ 3 = 1 :=
   Subtype.ext (by simpa using (mem_rootsOfUnity 3 _).1 ζ.property)
-
-/-- An element of `μ₃(k)` other than `1` has order `3`. -/
-theorem orderOf_eq_three {ζ : rootsOfUnity 3 k} (hζ : ζ ≠ 1) : orderOf ζ = 3 :=
-  orderOf_eq_prime (pow_three_eq_one ζ) hζ
 
 /-- At `ζ ∈ μ₃(k)` the Brauer character of the line is `τ ζ`. -/
 theorem brauerCharacter_cubeRootLine (hp : p.Coprime 3) (ζ : rootsOfUnity 3 k) :
@@ -62,7 +59,7 @@ theorem brauerCharacter_cubeRootLine (hp : p.Coprime 3) (ζ : rootsOfUnity 3 k) 
     TauCeti.rootsOfUnityLift_coe]
 
 /-- For `ζ ≠ 1` in `μ₃`, `ζ⁻¹ ≠ ζ`. -/
-theorem inv_ne_self {G : Type*} [CommGroup G] {ζ : G} (h3 : ζ ^ 3 = 1) (hζ : ζ ≠ 1) :
+private theorem inv_ne_self {G : Type*} [CommGroup G] {ζ : G} (h3 : ζ ^ 3 = 1) (hζ : ζ ≠ 1) :
     ζ⁻¹ ≠ ζ := by
   intro h
   have h2 : ζ ^ 2 = 1 := by rw [sq, ← inv_mul_cancel ζ, h]
