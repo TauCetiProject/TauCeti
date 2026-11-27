@@ -134,13 +134,17 @@ def barraudCorneaCollapseCocycle
       (hX.length_morseLevelPath_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hc)) :
     ContinuationCocycle (hX.barraudCorneaCocycle hf hdense hθ₀ hc S)
       (hX.barraudCorneaCocycle hf hdense hθ₁ hc S) :=
-  TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle (S := S)
+  let ν := TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle (S := S)
     (c := ((↑) : criticalPoints 𝓘(ℝ, E) f → M))
     (e := fun x y ↦ (hX.morseLevelPath hf
       (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))).comp
         (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)))
     (fun _ _ _ ↦ hX.source_morseLevelPath ..) (fun _ _ _ ↦ hX.target_morseLevelPath ..)
     (hX.morseLevelPath_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hc) hθ₀ hθ₁ H T
+  { ν := ν.ν
+    mem_graded := ν.mem_graded
+    continuation := fun x y ↦ by
+      simpa only [barraudCorneaCocycle_eq_mooreTwistingCocycle] using ν.continuation x y }
 
 /-- The entries of the continuation cocycle of a homotopy of collapse maps: the point chain of the
 track of `H` at `x` on the diagonal, plus the push-forward of the chain of the marked homotopy
@@ -182,7 +186,7 @@ def dgMorseComplexCollapseHom
 /-- The continuation map of a homotopy of collapse maps is the continuation map of its continuation
 cocycle. -/
 @[simp]
-theorem dgMorseComplexCollapseHom_eq
+theorem dgMorseComplexCollapseHom_def
     (T : S.MarkedHomotopy
       (hX.length_morseLevelPath_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hc))
     (𝓕 : DGLocalSystem Y y₀ R) :
@@ -201,10 +205,17 @@ theorem quasiIso_dgMorseComplexCollapseHom (hMS : hX.IsMorseSmale)
       (hX.length_morseLevelPath_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hc))
     (𝓕 : DGLocalSystem Y y₀ R) :
     QuasiIso (hX.dgMorseComplexCollapseHom hf hdense hθ₀ hθ₁ hc H T 𝓕) :=
-  TwistingChainSystem.MarkedHomotopy.quasiIso_continuationHom_mooreHomotopyCocycle hθ₀ hθ₁ H
-    (fun x y hxy ↦ by
-      rw [hMS.morseBrokenTrajectorySpace_eq_empty_of_le hf (by exact_mod_cast hxy.le)]
-      infer_instance) T 𝓕.isDGRightModule
+  have hM {x y : criticalPoints 𝓘(ℝ, E) f} (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x =
+      manifoldMorseIndex 𝓘(ℝ, E) f y) : IsEmpty (hX.morseBrokenTrajectorySpace c x y) := by
+    rw [hMS.morseBrokenTrajectorySpace_eq_empty_of_le hf hxy.le]
+    infer_instance
+  ContinuationCocycle.quasiIso_continuationHom_of_isUnit_loopChainToGroupAlgebra
+    (hX.barraudCorneaCollapseCocycle hf hdense hθ₀ hθ₁ hc H T)
+    (fun _ _ hxy ↦ TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle_ν_eq_zero_of_ne hθ₀ hθ₁
+      H T (hM (by exact_mod_cast hxy)))
+    (fun _ ↦
+      TwistingChainSystem.MarkedHomotopy.isUnit_loopChainToGroupAlgebra_mooreHomotopyCocycle_ν
+        hθ₀ hθ₁ H T (hM rfl)) 𝓕.isDGRightModule
 
 /-- **The isomorphism of DG Morse homology given by a homotopy of collapse maps**, under the
 Morse–Smale condition: the map induced in each degree by the quasi-isomorphism

@@ -85,6 +85,9 @@ push-forwards of its chains along the restriction of `morseLoopEvaluation`.
   twisting cocycle of a twisting chain system on the compactified spaces of trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`: the entries of the Barraud–Cornea
   cocycle of a twisting chain system on the trajectory spaces.
+* `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_eq_mooreTwistingCocycle`: the
+  Barraud–Cornea cocycle is the twisting cocycle over the Moore loops of the evaluations of the
+  trajectory spaces into Moore paths.
 * `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_eq_twistingCocycle`: the Barraud–Cornea
   cocycle is the twisting cocycle of the evaluations of the trajectory spaces into Moore loops.
 
@@ -236,11 +239,8 @@ spaces form a twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `ind` is the
 representing chain system and `θ : M → M` is homotopic to the identity, this is the twisting cocycle
 of Barraud and Cornea, and the twisting cocycles of two representing chain systems are related
 through `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy` once its injectivity
-hypothesis `hinj` holds for the trajectory spaces. Its body is exposed so that the continuation
-cocycles between twisting cocycles over the Moore loops, such as that of a change of collapse map
-(`TauCeti.TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle`), are continuation cocycles
-between Barraud–Cornea cocycles. -/
-@[expose] noncomputable def barraudCorneaCocycle
+hypothesis `hinj` holds for the trajectory spaces. -/
+noncomputable def barraudCorneaCocycle
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
     TwistingCocycle (R := R) (A := loopChainAlgebra Y y₀ R)
       (cubicalChainGrading (MooreLoopSpace Y y₀) R)
@@ -264,6 +264,19 @@ theorem barraudCorneaCocycle_m
   (S.mooreTwistingCocycle_m _ _ hθ _ x y).trans <|
     congrArg (cubicalChainSumMap R · (S.chain x y)) <| ContinuousMap.ext fun _ ↦
       MooreLoopSpace.ext <| by simp
+
+/-- The Barraud–Cornea cocycle of `S` is the twisting cocycle of `S` over the Moore loops for the
+evaluations of the trajectory spaces into Moore paths. -/
+theorem barraudCorneaCocycle_eq_mooreTwistingCocycle
+    (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
+    hX.barraudCorneaCocycle hf hdense hθ hc S =
+      S.mooreTwistingCocycle (c := ((↑) : criticalPoints 𝓘(ℝ, E) f → M))
+        (e := fun x y ↦ (hX.morseLevelPath hf
+          (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))).comp
+            (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)))
+        (fun _ _ _ ↦ hX.source_morseLevelPath ..) (fun _ _ _ ↦ hX.target_morseLevelPath ..) hθ
+        (hX.morseLevelPath_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hc) :=
+  (rfl)
 
 /-- The Barraud–Cornea cocycle of `S` is the twisting cocycle of `S` for the evaluations of the
 trajectory spaces into Moore loops, the restrictions of `morseLoopEvaluation`. -/

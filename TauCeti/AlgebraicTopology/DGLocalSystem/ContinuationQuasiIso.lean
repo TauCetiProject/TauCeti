@@ -42,6 +42,11 @@ changing the collapse map does not change the twisted cohomology.
 * `TauCeti.ContinuationCocycle.quasiIso_continuationHom_of_isUnit_loopChainToGroupAlgebra`: a
   continuation cocycle over the loop chains whose diagonal entries are units in the group ring
   induces quasi-isomorphisms of twisted complexes.
+* `TauCeti.TwistingChainSystem.MarkedHomotopy.mooreHomotopyCocycle_ν_eq_zero_of_ne`: the
+  continuation cocycle of a homotopy of collapse maps vanishes off the diagonal where the space is
+  empty.
+* `TwistingChainSystem.MarkedHomotopy.isUnit_loopChainToGroupAlgebra_mooreHomotopyCocycle_ν`:
+  its diagonal entries are units in the group ring where the space is empty.
 * `TauCeti.TwistingChainSystem.MarkedHomotopy.quasiIso_continuationHom_mooreHomotopyCocycle`: the
   continuation map of a homotopy of collapse maps is a quasi-isomorphism when the spaces are
   empty between elements of equal index.
@@ -111,6 +116,28 @@ variable {P : Type uP} [Fintype P] [DecidableEq P] {ind : P → ℤ} {M : P → 
     𝒩]
   {dN : N →ₗ[R] N}
 
+/-- Off the diagonal, the continuation cocycle of a homotopy `H` between two collapse maps vanishes
+wherever the space `M x y` of the twisting chain system is empty: the marked space is then empty,
+so the chain of the marked homotopy `T` vanishes. -/
+theorem mooreHomotopyCocycle_ν_eq_zero_of_ne
+    (T : S.MarkedHomotopy (length_eq_add_of_eq_trans he₀ he₁ he)) {x y : P} (hM : IsEmpty (M x y))
+    (hne : x ≠ y) : (T.mooreHomotopyCocycle he₀ he₁ he hθ₀ hθ₁ H).ν x y = 0 := by
+  have : IsEmpty (markedSpace e x y) := ⟨fun p ↦ isEmptyElim p.val.1⟩
+  rw [mooreHomotopyCocycle_ν, Matrix.diagonal_apply_ne _ hne, zero_add,
+    Subsingleton.elim (T.chain x y) 0, map_zero]
+
+/-- The diagonal entry at `x` of the continuation cocycle of a homotopy `H` between two collapse
+maps is a unit of the group ring `R[π₁(X, x₀)]` when the space `M x x` of the twisting chain system
+is empty: it is then the point chain of the track of `H` at `x`, a loop at `x₀`. -/
+theorem isUnit_loopChainToGroupAlgebra_mooreHomotopyCocycle_ν
+    (T : S.MarkedHomotopy (length_eq_add_of_eq_trans he₀ he₁ he)) {x : P} (hM : IsEmpty (M x x)) :
+    IsUnit (loopChainToGroupAlgebra X x₀ R
+      ((T.mooreHomotopyCocycle he₀ he₁ he hθ₀ hθ₁ H).ν x x)) := by
+  have : IsEmpty (markedSpace e x x) := ⟨fun p ↦ isEmptyElim p.val.1⟩
+  rw [mooreHomotopyCocycle_ν, Matrix.diagonal_apply_eq, Subsingleton.elim (T.chain x x) 0, map_zero,
+    add_zero, loopChainToGroupAlgebra_cubicalChainPoint, ← MonoidAlgebra.of_apply]
+  exact (Group.isUnit _).map _
+
 /-- **Changing the collapse map does not change the twisted cohomology.** Let `T` be a marked
 homotopy of a twisting chain system `S` whose spaces `M x y` are empty between elements of equal
 index, as the trajectory spaces of a Morse–Smale pair are. Then the continuation cocycle of a
@@ -123,19 +150,10 @@ theorem quasiIso_continuationHom_mooreHomotopyCocycle
     (hM : ∀ x y, ind x = ind y → IsEmpty (M x y))
     (T : S.MarkedHomotopy (length_eq_add_of_eq_trans he₀ he₁ he))
     (hN : IsDGRightModule (loopChain_isDGAlgebra X x₀ R) 𝒩 dN) :
-    QuasiIso ((T.mooreHomotopyCocycle he₀ he₁ he hθ₀ hθ₁ H).continuationHom hN) := by
-  -- Between elements of equal index the marked spaces are empty, so the chains of `T` vanish.
-  have hT {x y : P} (hxy : ind x = ind y) :
-      cubicalChainSumMap R (markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H x y) (T.chain x y) = 0 := by
-    have := hM x y hxy
-    have : IsEmpty (markedSpace e x y) := ⟨fun p ↦ isEmptyElim p.val.1⟩
-    rw [Subsingleton.elim (T.chain x y) 0, map_zero]
-  refine ContinuationCocycle.quasiIso_continuationHom_of_isUnit_loopChainToGroupAlgebra _
-    (fun x y hxy hne ↦ ?_) (fun x ↦ ?_) hN
-  · rw [mooreHomotopyCocycle_ν, Matrix.diagonal_apply_ne _ hne, zero_add, hT hxy]
-  · rw [mooreHomotopyCocycle_ν, Matrix.diagonal_apply_eq, hT rfl, add_zero,
-      loopChainToGroupAlgebra_cubicalChainPoint, ← MonoidAlgebra.of_apply]
-    exact (Group.isUnit _).map _
+    QuasiIso ((T.mooreHomotopyCocycle he₀ he₁ he hθ₀ hθ₁ H).continuationHom hN) :=
+  ContinuationCocycle.quasiIso_continuationHom_of_isUnit_loopChainToGroupAlgebra _
+    (fun x y hxy ↦ mooreHomotopyCocycle_ν_eq_zero_of_ne hθ₀ hθ₁ H T (hM x y hxy))
+    (fun x ↦ isUnit_loopChainToGroupAlgebra_mooreHomotopyCocycle_ν hθ₀ hθ₁ H T (hM x x rfl)) hN
 
 end TwistingChainSystem.MarkedHomotopy
 
