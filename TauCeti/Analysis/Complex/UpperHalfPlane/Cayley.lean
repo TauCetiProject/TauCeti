@@ -74,8 +74,7 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.cayleyAngle`: the angle `θ = π + 2 arctan x`, with `e^{iθ} = (x - i) / (x + i)`
   (`TauCeti.exp_cayleyAngle` in `Circle`, `TauCeti.exp_cayleyAngle_mul_I` in `ℂ`), derivative
   `2 / (1 + x ^ 2)` (`TauCeti.hasDerivAt_cayleyAngle`) and range `(0, 2π)`
-  (`TauCeti.range_cayleyAngle`); the inverse Cayley coordinate inverts it
-  (`TauCeti.inverseCayleyCoord_exp_cayleyAngle_mul_I`).
+  (`TauCeti.range_cayleyAngle`).
 * `TauCeti.I_mul_one_add_div_one_sub_ofReal_mul_sub_I_div_add_I` and
   `TauCeti.re_I_mul_one_add_div_one_sub_ofReal_mul_sub_I_div_add_I`: the inverse transform on the
   radius `r ↦ r (x - i) / (x + i)` of the disc, in closed form, and its real part in terms of its
@@ -720,13 +719,3 @@ theorem inverseCayleyCoord_eq_neg_im_div {w : ℂ} (hw : ‖w‖ = 1) :
     linear_combination w.im * hre
 
 end Complex
-
-namespace TauCeti
-
-/-- The inverse Cayley coordinate inverts the Cayley angle: it sends `e^{iθ}`,
-`θ = π + 2 arctan x`, to `x`. -/
-theorem inverseCayleyCoord_exp_cayleyAngle_mul_I (x : ℝ) :
-    inverseCayleyCoord (exp (cayleyAngle x * I)) = x := by
-  rw [exp_cayleyAngle_mul_I, inverseCayleyCoord_cayley, ofReal_re]
-
-end TauCeti

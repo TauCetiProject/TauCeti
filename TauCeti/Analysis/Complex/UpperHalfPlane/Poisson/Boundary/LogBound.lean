@@ -81,8 +81,8 @@ theorem circleAverage_comp_inverseCayleyCoord (h : ℝ → E) :
   rw [circleAverage_def, intervalIntegral.integral_of_le two_pi_pos.le,
     integral_Ioc_eq_integral_Ioo, himg, ← integral_smul]
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  simp only [circleMap_zero_one, inverseCayleyCoord_exp_cayleyAngle_mul_I, smul_smul,
-    upperHalfPlanePoissonKernel_I]
+  simp only [circleMap_zero_one, exp_cayleyAngle_mul_I, inverseCayleyCoord_cayley, ofReal_re,
+    smul_smul, upperHalfPlanePoissonKernel_I]
   rw [abs_of_pos (by positivity)]
   congr 1
   field_simp
@@ -100,8 +100,8 @@ theorem integrable_upperHalfPlanePoissonMeasure_of_circleIntegrable {h : ℝ →
     cayleyAngle_injective.injOn, integrableOn_univ] at hIoo
   rw [integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul]
   refine (hIoo.smul (1 / 2 : ℝ)).congr (.of_forall fun x ↦ ?_)
-  simp only [Pi.smul_apply, circleMap_zero_one, inverseCayleyCoord_exp_cayleyAngle_mul_I,
-    smul_smul]
+  simp only [Pi.smul_apply, circleMap_zero_one, exp_cayleyAngle_mul_I, inverseCayleyCoord_cayley,
+    ofReal_re, smul_smul]
   rw [abs_of_pos (by positivity)]
   congr 1
   ring
