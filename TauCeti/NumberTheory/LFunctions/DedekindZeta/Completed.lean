@@ -39,9 +39,8 @@ then gives:
 * analyticity of `Λ_K` away from `s = 0` and `s = 1`, where it has simple poles with residues
   `∓ 2 ^ (r₁ + r₂) h R / w`, `h` the class number, `R` the regulator and `w` the number of roots
   of unity in `K`;
-* the functional equation `Λ_K(1 - s) = Λ_K(s)` and reflection symmetry
-  `Λ_K(conj s) = conj (Λ_K(s))`. The trace dual `I ↦ I^∨ = 𝔡⁻¹ I⁻¹` induces the bijection
-  `[I] ↦ [𝔡]⁻¹ [I]⁻¹` of the class group, so Hecke's functional equation
+* the functional equation `Λ_K(1 - s) = Λ_K(s)`. The trace dual `I ↦ I^∨ = 𝔡⁻¹ I⁻¹` induces the
+  bijection `[I] ↦ [𝔡]⁻¹ [I]⁻¹` of the class group, so Hecke's functional equation
   `Z(I, 1 - s) = Z(I^∨, s)` for the partial functions sums to that of `Λ_K`.
 
 Dividing by the archimedean factor, whose reciprocal `|d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂`
@@ -75,14 +74,11 @@ to order `Units.rank K` with leading coefficient `-h R / w`.
   former poles it takes the value of the residue of `Λ_K` at `1`.
   The identity `completedPartialZeta_eq_mellinKernelFEPair_Λ` uses Neukirch's normalization
   (Chapter VII, §5).
-* `TauCeti.LFunctions.completedDedekindZeta_one_sub`,
-  `TauCeti.LFunctions.completedDedekindZeta_one_sub_eventuallyEq`,
-  `TauCeti.LFunctions.completedDedekindZeta_conj`: the functional equation `Λ_K(1 - s) = Λ_K(s)`
-  for every `s : ℂ` (pointwise and as punctured germs) and reflection symmetry
-  `Λ_K(conj s) = conj (Λ_K(s))`.
+* `TauCeti.LFunctions.completedDedekindZeta_one_sub`: the functional equation
+  `Λ_K(1 - s) = Λ_K(s)` for every `s : ℂ`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`,
-  `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_mul_completedDedekindZeta`: away from `0` and
-  `1` (and as punctured germs everywhere),
+  `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul`: away from
+  `0` and `1` (and as punctured germs everywhere),
   `ζ_K(s) = |d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂ Λ_K(s)`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`: `dedekindZetaC K` agrees with
   `NumberField.dedekindZeta K` on `Re s > 1`.
@@ -112,7 +108,7 @@ to order `Units.rank K` with leading coefficient `-h R / w`.
 public section
 noncomputable section
 
-open Complex ComplexConjugate Filter NumberField NumberField.InfinitePlace NumberField.Units Set
+open Complex Filter NumberField NumberField.InfinitePlace NumberField.Units Set
   TauCeti.GlobalNumberFields
 open scoped nonZeroDivisors Topology
 
@@ -444,13 +440,6 @@ theorem completedDedekindZeta_one_sub (s : ℂ) :
   exact (Equiv.sum_comp ((Equiv.inv _).trans (Equiv.mulRight d))
     fun c ↦ completedPartialZeta (FractionalIdeal.dualEquiv ℤ ℚ (rep c)) s).symm
 
-/-- **Functional equation of the completed Dedekind zeta function, as germs:**
-`Λ_K(1 - z) = Λ_K(z)` on a punctured neighborhood of every `s : ℂ` (including the poles `0` and
-`1`). -/
-theorem completedDedekindZeta_one_sub_eventuallyEq (s : ℂ) :
-    (fun z ↦ completedDedekindZeta K (1 - z)) =ᶠ[𝓝[≠] s] completedDedekindZeta K :=
-  Eventually.of_forall (completedDedekindZeta_one_sub K)
-
 /-! ### The continued Dedekind zeta function -/
 
 section Continued
@@ -648,23 +637,16 @@ theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
 
 /-- **Relation between `ζ_K` and `Λ_K`, as germs.** At every complex number `s` (including `0`
 and `1`), `dedekindZetaC K` has the punctured germ of
-`|d_K| ^ (-z / 2) Γ_ℝ(z)⁻¹ ^ r₁ Γ_ℂ(z)⁻¹ ^ r₂ Λ_K(z)`. -/
-theorem dedekindZetaC_eventuallyEq_mul_completedDedekindZeta (s : ℂ) :
-    dedekindZetaC K =ᶠ[𝓝[≠] s] fun z ↦
-      ((|discr K| : ℤ) : ℂ) ^ (-z / 2) * (Gammaℝ z)⁻¹ ^ nrRealPlaces K *
-        (Gammaℂ z)⁻¹ ^ nrComplexPlaces K * completedDedekindZeta K z := by
+`invDedekindZetaCompletionFactor K z * completedDedekindZeta K z`. -/
+theorem dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul (s : ℂ) :
+    dedekindZetaC K =ᶠ[𝓝[≠] s]
+      fun z ↦ invDedekindZetaCompletionFactor K z * completedDedekindZeta K z := by
   have ev_ne (c : ℂ) : ∀ᶠ z in 𝓝[≠] s, z ≠ c := by
     rcases eq_or_ne s c with rfl | hsc
     · exact self_mem_nhdsWithin
     · exact nhdsWithin_le_nhds (isOpen_ne.mem_nhds hsc)
   filter_upwards [ev_ne 0, ev_ne 1] with z hz0 hz1
-  exact dedekindZetaC_eq_mul_completedDedekindZeta K hz0 hz1
-
-private theorem dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul (s : ℂ) :
-    dedekindZetaC K =ᶠ[𝓝[≠] s]
-      fun z ↦ invDedekindZetaCompletionFactor K z * completedDedekindZeta K z := by
-  simpa only [← invDedekindZetaCompletionFactor_def] using
-    dedekindZetaC_eventuallyEq_mul_completedDedekindZeta K s
+  rw [dedekindZetaC_eq_mul_completedDedekindZeta K hz0 hz1, invDedekindZetaCompletionFactor_def]
 
 private theorem meromorphicOrderAt_invDedekindZetaCompletionFactor_zero :
     meromorphicOrderAt (invDedekindZetaCompletionFactor K) 0 =
@@ -696,13 +678,16 @@ private theorem meromorphicOrderAt_invDedekindZetaCompletionFactor_zero :
     fun_meromorphicOrderAt_mul (analyticAt_discr_inv_cpow K 0).meromorphicAt hGℝ_an.meromorphicAt,
     hdiscr_ord, hGℝ_ord, hGℂ_ord, zero_add]
 
+private theorem rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces :
+    Units.rank K + 1 = nrRealPlaces K + nrComplexPlaces K := by
+  rw [Units.rank_add_one, Nat.card_eq_fintype_card,
+    InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+
 /-- **Order of vanishing of `ζ_K` at `s = 0`** (Neukirch VII (5.11)):
 `meromorphicOrderAt (dedekindZetaC K) 0 = Units.rank K = r₁ + r₂ - 1`. -/
 theorem meromorphicOrderAt_dedekindZetaC_zero :
     meromorphicOrderAt (dedekindZetaC K) 0 = (Units.rank K : ℤ) := by
-  have hrank : Units.rank K + 1 = nrRealPlaces K + nrComplexPlaces K := by
-    rw [Units.rank_add_one, Nat.card_eq_fintype_card,
-      InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+  have hrank := rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
   rw [meromorphicOrderAt_congr
       (dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul K 0),
     fun_meromorphicOrderAt_mul (analyticAt_invDedekindZetaCompletionFactor K 0).meromorphicAt
@@ -727,9 +712,7 @@ private theorem dedekindZetaC_zero_factor_identity {z : ℂ} (hz0 : z ≠ 0)
     z * completedDedekindZeta K z * ((|discr K| : ℤ) : ℂ) ^ (-z / 2) *
         ((z * Gammaℝ z)⁻¹ ^ nrRealPlaces K * (z * Gammaℂ z)⁻¹ ^ nrComplexPlaces K) =
       dedekindZetaC K z / z ^ Units.rank K := by
-  have hrank : Units.rank K + 1 = nrRealPlaces K + nrComplexPlaces K := by
-    rw [Units.rank_add_one, Nat.card_eq_fintype_card,
-      InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+  have hrank := rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
   rw [hz, invDedekindZetaCompletionFactor_def]
   simp only [mul_inv, mul_pow]
   have hzpow : z * (z⁻¹ ^ nrRealPlaces K * z⁻¹ ^ nrComplexPlaces K) = (z ^ Units.rank K)⁻¹ := by

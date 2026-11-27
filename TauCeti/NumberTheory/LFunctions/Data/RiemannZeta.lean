@@ -9,8 +9,6 @@ public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
-import TauCeti.Data.Finsupp.Order
-import TauCeti.NumberTheory.LFunctions.Data.PolarDivisor
 
 /-!
 # The completed L-function card of the Riemann zeta function
@@ -106,8 +104,8 @@ theorem riemannZetaData_dual : riemannZetaData.dual = riemannZetaData := by
   · simp
   · simp
   · simp [completedRiemannZeta_conj]
-  · rw [AnalyticLFunctionData.dual_polarOrder_apply, riemannZetaData_polarOrder]
-    exact single_zero_add_single_one_conj _
+  · simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
+      map_eq_one_iff _ (starRingEnd ℂ).injective]
 
 /-- On `Re s > 1`, the completed Riemann zeta function is `Γ_ℝ(s) ζ(s)`, the completion of the
 Dirichlet series with all coefficients `1`. -/
@@ -130,22 +128,28 @@ theorem riemannZetaData_hasMeromorphicContinuation :
     riemannZetaData.HasMeromorphicContinuation where
   meromorphic := meromorphic_completedRiemannZeta
   meromorphicOrderAt_eq p hp := by
-    rw [riemannZetaData_polarOrder] at hp ⊢
-    rcases (Finsupp.single_add_single_ne_zero_iff one_ne_zero one_ne_zero p).mp hp with rfl | rfl
-    · simp [meromorphicOrderAt_completedRiemannZeta_zero]
-    · simp [meromorphicOrderAt_completedRiemannZeta_one]
+    by_cases h0 : p = 0
+    · subst h0
+      simp [meromorphicOrderAt_completedRiemannZeta_zero]
+    by_cases h1 : p = 1
+    · subst h1
+      simp [meromorphicOrderAt_completedRiemannZeta_one]
+    simp [Ne.symm h0, Ne.symm h1] at hp
   analyticAt p hp := by
-    rw [riemannZetaData_polarOrder] at hp
-    obtain ⟨h0, h1⟩ := (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero p).mp hp
-    exact analyticAt_completedRiemannZeta h0 h1
+    refine analyticAt_completedRiemannZeta ?_ ?_ <;> rintro rfl <;> simp at hp
 
 /-- The functional equation `Λ(s) = Λ(1 - s)` of the completed Riemann zeta function, with root
 number `1`. -/
 theorem riemannZetaData_hasFunctionalEquation : riemannZetaData.HasFunctionalEquation where
   norm_rootNumber := by simp
   polarOrder_one_sub_conj s := by
-    rw [riemannZetaData_polarOrder]
-    exact single_zero_add_single_one_one_sub_conj s
+    have hconj (z : ℂ) : riemannZetaData.polarOrder (conj z) = riemannZetaData.polarOrder z := by
+      rw [← AnalyticLFunctionData.dual_polarOrder_apply, riemannZetaData_dual]
+    have e0 : (0 : ℂ) = 1 - s ↔ 1 = s := by rw [eq_comm, sub_eq_zero]
+    have e1 : (1 : ℂ) = 1 - s ↔ 0 = s := by rw [eq_comm, sub_eq_self, eq_comm]
+    rw [← map_one (starRingEnd ℂ), ← map_sub, hconj]
+    simp only [riemannZetaData_polarOrder, Finsupp.add_apply, Finsupp.single_apply, e0, e1]
+    rw [add_comm]
   completed_eq s _ _ := by
     rw [riemannZetaData_dual, riemannZetaData_rootNumber, one_mul, riemannZetaData_completed,
       completedRiemannZeta_one_sub]
@@ -161,9 +165,9 @@ theorem ofSeries_riemannZetaData :
     riemannZetaData_hasDirichletAgreement riemannZetaData_hasMeromorphicContinuation
     riemannZetaData_hasFunctionalEquation
   · intro s hs
-    rw [riemannZetaData_polarOrder]
-    exact (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero s).mpr
-      ⟨by rintro rfl; norm_num at hs, by rintro rfl; norm_num at hs⟩
+    have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
+    have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
+    simp [Ne.symm h0, Ne.symm h1]
   · have heq : riemannZetaData.completed 2 = Gammaℝ 2 * LSeries riemannZetaData.coeff 2 := by
       simpa using riemannZetaData_hasDirichletAgreement.completed_eq 2 (by norm_num)
     have hL : LSeries riemannZetaData.coeff 2 = riemannZeta 2 :=
