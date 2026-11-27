@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.FDeriv.Const
+import TauCeti.Analysis.Sobolev.Wkp.BoundedMultiplication
 import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
@@ -348,46 +347,17 @@ theorem exists_mem_wkp0Submodule_iteratedGradient_ae_eq {q : ENNReal} [Fact (1 �
 almost everywhere on `Ω`.
 
 The hypothesis asks for as many derivatives of `ψ` as the Sobolev order. No bound on `ψ` or its
-derivatives is assumed: they are bounded on the compact set `closure Ω`, which is all the proof
-uses. The set `U` need not be open, so `ψ` may be `Cᵏ` only up to the
-boundary of `Ω`, as for the chart reading of a smooth function on a manifold with boundary. On
-`Ω` the derivative of `ψ` within `U` is its derivative. -/
+derivatives is assumed: they are bounded on the compact set `closure Ω`, so this is a case of
+`TauCeti.Wkp.exists_value_ae_eq_mul_of_bddDerivOn`. The set `U` need not be open, so `ψ` may be
+`Cᵏ` only up to the boundary of `Ω`, as for the chart reading of a smooth function on a manifold
+with boundary. On `Ω` the derivative of `ψ` within `U` is its derivative. -/
 theorem exists_value_ae_eq_mul_of_contDiffOn {U : Set E} (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     {psi : E → ℝ} (hpsi : ContDiffOn ℝ k psi U) (u : Wkp mu Omega p k) :
     ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
-      fun x => psi x * value k u x := by
-  -- A function continuous on `U` is bounded on `Ω`, so multiplying by it preserves `Lᵖ(Ω)`.
-  have hLp : ∀ {phi : E → ℝ}, ContinuousOn phi U → ∀ f : Lp ℝ p (mu.restrict Omega),
-      ∃ g : Lp ℝ p (mu.restrict Omega), (g : E → ℝ) =ᵐ[mu.restrict Omega]
-        fun x => phi x * f x := fun {phi} hphi f => by
-    have h : MemLp (fun x => phi x * f x) p (mu.restrict Omega) :=
-      ((hphi.mono hΩU).memLp_top_restrict_of_subset_isCompact hΩ Omega.isOpen.measurableSet
-        subset_closure).fun_mul (Lp.memLp f)
-    exact ⟨h.toLp _, h.coeFn_toLp⟩
-  induction k generalizing psi with
-  | zero => simpa only [value_zero] using hLp hpsi.continuousOn (value 0 u)
-  | succ k ih =>
-    obtain ⟨g, hg⟩ := hLp hpsi.continuousOn (value (k + 1) u)
-    set b := stdOrthonormalBasis ℝ E
-    refine (exists_value_eq_of_forall_hasWeakLineDerivOn b g k fun i => ?_).imp
-      fun w (hw : value (k + 1) w = g) => hw ▸ hg
-    -- `∂ᵢ(ψ u) = ψ ∂ᵢu + (∂ᵢψ) u`, and both summands lie in `W^{k,p}(Ω)` by induction. On `Ω` the
-    -- derivative of `ψ` is its derivative within `U`, which is `Cᵏ` on `U`.
-    obtain ⟨d, hd⟩ := exists_hasWeakLineDerivOn_value k u (b i)
-    obtain ⟨w₁, hw₁⟩ := ih (hpsi.of_le (by simp)) d
-    obtain ⟨w₂, hw₂⟩ := ih ((hpsi.fderivWithin hU (by simp)).clm_apply contDiffOn_const)
-      (lowerOrder k u)
-    refine ⟨w₁ + w₂, (((hd.contDiffOn_smul_of_ne_zero (hpsi.mono (subset_closure.trans hΩU))
-      (by simp)).congr_ae
-      ?_).congr_ae_deriv ?_)⟩
-    · filter_upwards [hg] with x hx
-      rw [hx, smul_eq_mul]
-    · filter_upwards [value_add k w₁ w₂ ▸ Lp.coeFn_add (value k w₁) (value k w₂), hw₁, hw₂,
-        ae_restrict_mem Omega.isOpen.measurableSet] with x hx h₁ h₂ hxΩ
-      rw [hx, Pi.add_apply, h₁, h₂, ← value_succ, smul_eq_mul, smul_eq_mul,
-        fderivWithin_of_mem_nhds (Filter.mem_of_superset (Omega.isOpen.mem_nhds hxΩ)
-          (subset_closure.trans hΩU))]
+      fun x => psi x * value k u x :=
+  exists_value_ae_eq_mul_of_bddDerivOn
+    (hpsi.bddDerivOn_of_isCompact_closure hU Omega.isOpen hΩ hΩU) u
 
 /-- **Multiplication by a compactly supported smooth function in `W^{k,p}`.** If `ψ` is smooth with
 compact support and `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of
@@ -424,63 +394,3 @@ theorem exists_value_ae_eq_mul_of_hasCompactSupport (k : ℕ) {psi : E → ℝ}
 end Wkp
 
 end TauCeti
-
-section Multipliers
-
-open Filter MeasureTheory Set TopologicalSpace
-open scoped ContDiff ENNReal
-
-namespace TauCeti.Wkp
-
-variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] {U K : Set E}
-
-/-- Multiplication by a smooth coefficient preserves `W^{k,p}(Ω)` if the coefficient
-is smooth on an open neighbourhood of `closure Ω` and constant off a compact set there. -/
-theorem exists_value_ae_eq_mul_of_eqOn_compl_isCompact (k : ℕ)
-    {ψ : E → ℝ} {c : ℝ} (hU : IsOpen U) (hΩU : closure (Omega : Set E) ⊆ U)
-    (hK : IsCompact K) (hψ : ContDiffOn ℝ ∞ ψ U)
-    (hψc : EqOn ψ (fun _ ↦ c) (U \ K)) (u : Wkp mu Omega p k) :
-    ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
-      fun x ↦ ψ x * value k u x := by
-  obtain ⟨χ, hχ, -, hχ1, hχc, hχU⟩ :=
-    (hK.inter_right isClosed_closure).exists_contDiff_cutoff hU
-      (fun _ hx ↦ hΩU hx.2)
-  let ψ₀ : E → ℝ := fun x ↦ χ x * (ψ x - c)
-  have hψ₀ : ContDiff ℝ ∞ ψ₀ :=
-    (hψ.sub contDiffOn_const).contDiff_smul_of_tsupport_subset hU hχ.contDiffOn hχU
-  have hψ₀c : HasCompactSupport ψ₀ :=
-    hχc.mul_right
-  obtain ⟨v, hv⟩ := exists_value_ae_eq_mul_of_hasCompactSupport k hψ₀ hψ₀c u
-  refine ⟨v + c • u, ?_⟩
-  filter_upwards [value_add_ae k v (c • u), value_smul_ae k c u, hv,
-    ae_restrict_mem Omega.isOpen.measurableSet] with x h₁ h₂ h₃ hx
-  have h : ψ₀ x = ψ x - c := by
-    dsimp only [ψ₀]
-    by_cases hxK : x ∈ K
-    · have hχx : χ x = 1 := interior_subset (hχ1 ⟨hxK, subset_closure hx⟩)
-      rw [hχx, one_mul]
-    · have hψx : ψ x = c := hψc ⟨hΩU (subset_closure hx), hxK⟩
-      rw [hψx, sub_self, mul_zero]
-  rw [h₁, Pi.add_apply, h₂, Pi.smul_apply, h₃, h, smul_eq_mul]
-  ring
-
-/-- Multiplication by a directional derivative of a smooth function constant off a compact
-set preserves `W^{k,p}(Ω)`, including on unbounded domains. -/
-theorem exists_value_ae_eq_mul_fderiv_of_eqOn_const (k : ℕ)
-    {c : E → ℝ} {c₀ : ℝ} (hK : IsCompact K) (hc : ContDiff ℝ ∞ c)
-    (hconst : EqOn c (fun _ ↦ c₀) Kᶜ) (v : E) (u : Wkp mu Omega p k) :
-    ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
-      fun x ↦ fderiv ℝ c x v * value k u x := by
-  have hd : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ c x v) :=
-    (hc.fderiv_right (by simp)).clm_apply contDiff_const
-  have hs : HasCompactSupport (fun x ↦ fderiv ℝ c x v) := by
-    apply HasCompactSupport.intro hK
-    intro x hx
-    simp [fderiv_eq_zero_of_eqOn_const ℝ hK.isClosed.isOpen_compl hconst hx]
-  exact exists_value_ae_eq_mul_of_hasCompactSupport k hd hs u
-
-end TauCeti.Wkp
-
-end Multipliers

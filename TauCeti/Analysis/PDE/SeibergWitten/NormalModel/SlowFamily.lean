@@ -105,21 +105,6 @@ section KernelComponent
 variable {x κ : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
   {ν : Measure ℂ} [ν.IsAddHaarMeasure]
 
-/-- The term `L_x* η` of the paired row is integrable against a `C¹` field `κ` and, when
-`L_x κ = 0`, integrates to zero against it, as `L_x*` is the formal adjoint of `L_x`. -/
-private theorem integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (hx : Continuous x)
-    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
-    (hκ : ContDiff ℝ 1 κ) (hLκ : ∀ z, Vortex.gaugeFixedOperator x κ z = 0) :
-    Integrable (fun z ↦ ⟪κ z, Vortex.gaugeFixedAdjoint x η z⟫) ν ∧
-      ∫ z, ⟪κ z, Vortex.gaugeFixedAdjoint x η z⟫ ∂ν = 0 := by
-  have hcont : Continuous fun z ↦ ⟪κ z, Vortex.gaugeFixedAdjoint x η z⟫ :=
-    hκ.continuous.inner (Vortex.continuous_gaugeFixedAdjoint hx hη)
-  refine ⟨hcont.integrable_of_hasCompactSupport
-    ((Vortex.hasCompactSupport_gaugeFixedAdjoint (x := x) hηc).mono fun z hz h0 ↦
-      hz (by simp only [h0, inner_zero_right])), ?_⟩
-  rw [← Vortex.integral_inner_gaugeFixedOperator hκ hη (Or.inr hηc)]
-  simp [hLκ]
-
 /-- **The pairing of the paired row of the frozen normal model with the kernel.** Let `x` be a
 continuous plane field, `Ξ` and `Η` compactly supported `C¹` families of plane fields over the
 base, and `κ` a `C¹` field with `L_x κ = 0`. Pairing the paired row
@@ -140,8 +125,11 @@ theorem integral_inner_gaugeFixedAdjoint_add_pairedBaseCoupling (hx : Continuous
         fderiv ℝ (fun w' ↦ ∫ z, ⟪Vortex.variationComplexStructure (κ z), Ξ (w', z)⟫ ∂ν) w I := by
   have hJκ : ContDiff ℝ 1 fun z ↦ Vortex.variationComplexStructure (κ z) :=
     Vortex.variationComplexStructure.contDiff.comp hκ
-  obtain ⟨hintL, hL⟩ := integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (ν := ν) hx
-    (η := fun z' ↦ Η (w, z')) (hΗ.comp (contDiff_prodMk_right w)) (hΗc.comp_prodMk_right w) hκ hLκ
+  have hΗw : ContDiff ℝ 1 fun z' ↦ Η (w, z') := hΗ.comp (contDiff_prodMk_right w)
+  have hintL := Vortex.integrable_inner_gaugeFixedAdjoint (μ := ν) hx hκ.continuous hΗw
+    (hΗc.comp_prodMk_right w)
+  have hL := Vortex.integral_inner_gaugeFixedAdjoint_eq_zero (μ := ν) hκ hΗw
+    (.inr (hΗc.comp_prodMk_right w)) hLκ
   have hint₁ := integrable_inner_fderiv_apply_of_contDiff_of_hasCompactSupport (ν := ν) hΞ hΞc
     hκ.continuous w 1
   have hintI := integrable_inner_fderiv_apply_of_contDiff_of_hasCompactSupport (ν := ν) hΞ hΞc
