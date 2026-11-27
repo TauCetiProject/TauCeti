@@ -12,7 +12,8 @@ public import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 This file transfers the probability-generating function and exponential-transform theory of the
 Bernoulli measure to random variables carrying that law. The probability-generating function uses
-the native natural-valued law, while exponential moments use the real-valued law on `{0, 1}`.
+the native natural-valued law. Exponential integrability allows arbitrary real support points,
+while the moment- and cumulant-generating formulas use the real-valued law on `{0, 1}`.
 
 ## Main results
 
@@ -46,17 +47,17 @@ theorem pgf_bernoulliMeasure {X : Ω → ℕ} {p : unitInterval}
   (TauCeti.Probability.HasLaw.pgf_eq hX t).trans
     (TauCeti.Probability.pgf_bernoulliMeasure p t)
 
-/-- Every real exponential moment of a real-valued Bernoulli random variable is integrable. -/
-theorem integrable_exp_mul_bernoulliMeasure {X : Ω → ℝ} {p : unitInterval}
-    (hX : HasLaw X Ber((1 : ℝ), 0, p) P) (t : ℝ) :
+/-- Every real exponential moment of a real-valued two-point random variable is integrable. -/
+theorem integrable_exp_mul_bernoulliMeasure {X : Ω → ℝ} {a b : ℝ} {p : unitInterval}
+    (hX : HasLaw X Ber(a, b, p) P) (t : ℝ) :
     Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
   simpa only [Function.comp_def] using hX.integrable_fun_comp
-    (integrable_bernoulliMeasure (1 : ℝ) 0 p fun x ↦ Real.exp (t * x))
+    (integrable_bernoulliMeasure a b p fun x ↦ Real.exp (t * x))
 
-/-- The exact exponential-integrability domain of a real-valued Bernoulli random variable is all
+/-- The exact exponential-integrability domain of a real-valued two-point random variable is all
 of `ℝ`. -/
-theorem integrableExpSet_bernoulliMeasure {X : Ω → ℝ} {p : unitInterval}
-    (hX : HasLaw X Ber((1 : ℝ), 0, p) P) : integrableExpSet X P = Set.univ := by
+theorem integrableExpSet_bernoulliMeasure {X : Ω → ℝ} {a b : ℝ} {p : unitInterval}
+    (hX : HasLaw X Ber(a, b, p) P) : integrableExpSet X P = Set.univ := by
   ext t
   simpa only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true] using
     hX.integrable_exp_mul_bernoulliMeasure t
