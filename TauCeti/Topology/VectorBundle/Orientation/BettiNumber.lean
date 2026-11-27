@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.EulerCharacteristic
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology.Basic
@@ -36,10 +37,22 @@ Morse–Bott inequalities. This file compares them with the ordinary Betti numbe
   not (`TauCeti.VectorBundleOrientationCover.finrank_twistedHomology_zero_signLocalSystem`),
   while the ordinary zeroth Betti number of such a base is `1`. For the Möbius line over the
   circle, which is not orientable, the twisted zeroth Betti number over `ℚ` is `0`.
+* The twist never changes the alternating sum: since every fibre of `o(E)` has rank one, over a
+  division ring and a base of finite CW type `∑ⱼ (-1)ʲ dim Hⱼ(B; o(E) ⊗ K)` is the Euler
+  characteristic `χ(B)`
+  (`TauCeti.VectorBundleOrientationCover.finsum_finrank_twistedHomology_signLocalSystem`).
+  For the Möbius line over the circle over `ℚ` both sides vanish, although the twisted and the
+  ordinary Betti numbers differ in degrees `0` and `1`.
+
+Relabelling the frames of a bundle of rank `r` by `ULift (Fin r)`, which moves its model fibre to
+any universe, changes neither its orientation local system nor the dimensions of the homology with
+coefficients in it
+(`TauCeti.VectorBundleOrientationCover.finrank_twistedHomology_signLocalSystem_uLift`).
 
 The comparisons with `TauCeti.bettiNumber`, which takes the coefficient ring and the space in a
-common universe, are stated with the base, the fibres of `E`, the index type of orientations and
-the coefficients in one universe.
+common universe, are stated with the base, the fibres of `E` and the coefficients in one universe
+containing the index type of orientations, so that `Fin r` indexes the orientations over a base in
+any universe.
 
 ## References
 
@@ -139,13 +152,13 @@ end Iso
 
 section BettiNumber
 
-universe u
+universe u uι
 
-variable {B : Type u} [TopologicalSpace B]
+variable {B : Type (max u uι)} [TopologicalSpace B]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type u} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  {E : B → Type (max u uι)} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  {ι : Type u} [Fintype ι] {K : Type u} [Ring K] (hι : Fintype.card ι = finrank ℝ F)
+  {ι : Type uι} [Fintype ι] {K : Type (max u uι)} [Ring K] (hι : Fintype.card ι = finrank ℝ F)
 
 /-- **Twisted Betti numbers of an orientable bundle.** If `E` is orientable, the homology of `B`
 with coefficients in the orientation local system has the ordinary Betti numbers of `B`. -/
@@ -166,5 +179,69 @@ theorem VectorBundleOrientationCover.finrank_twistedHomology_signLocalSystem_of_
     (finrank_singularHomology_uLift_eq_bettiNumber K B n)
 
 end BettiNumber
+
+section ULift
+
+universe u uB uE w
+
+/-- **Relabelling the frames by `ULift (Fin r)`.** Moving the model fibre of a vector bundle `E` of
+rank `r` to another universe, by relabelling its frames by `ULift (Fin r)`, does not change its
+twisted Betti numbers. If the identity of the fibres is continuous from the total space with model
+fibre `ULift (Fin r) → ℝ` to that with model fibre `Fin r → ℝ`, the homologies with coefficients in
+the two orientation local systems, with orientations indexed by `Fin |ULift (Fin r)|` and by
+`Fin r`, have the same dimension. -/
+theorem VectorBundleOrientationCover.finrank_twistedHomology_signLocalSystem_uLift
+    {B : Type uB} [TopologicalSpace B] {E : B → Type uE} [∀ b, AddCommMonoid (E b)]
+    [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] {r : ℕ}
+    [TopologicalSpace (TotalSpace (Fin r → ℝ) E)] [FiberBundle (Fin r → ℝ) E]
+    [VectorBundle ℝ (Fin r → ℝ) E] [TopologicalSpace (TotalSpace (ULift.{w} (Fin r) → ℝ) E)]
+    [FiberBundle (ULift.{w} (Fin r) → ℝ) E] [VectorBundle ℝ (ULift.{w} (Fin r) → ℝ) E]
+    (hφ : Continuous fun v : TotalSpace (ULift.{w} (Fin r) → ℝ) E ↦
+      TotalSpace.mk' (Fin r → ℝ) v.proj v.snd)
+    {K : Type u} [Ring K] (m : ℕ) :
+    finrank K (twistedHomology.{u, uB, max uE u} (signLocalSystem (ULift.{w} (Fin r) → ℝ) E K
+      ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm)) m) =
+      finrank K (twistedHomology.{u, uB, max uE u} (signLocalSystem (Fin r → ℝ) E K
+        ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) m) := by
+  have hι : Fintype.card (Fin r) = finrank ℝ (ULift.{w} (Fin r) → ℝ) := by simp
+  -- The orientations are indexed by `Fin |ULift (Fin r)|`, that is by `Fin r`.
+  have hfin : ∀ a : ℕ, a = r → ∀ (ha : Fintype.card (Fin a) = finrank ℝ (ULift.{w} (Fin r) → ℝ)),
+      finrank K (twistedHomology.{u, uB, max uE u}
+        (signLocalSystem (ULift.{w} (Fin r) → ℝ) E K ha) m) =
+        finrank K (twistedHomology.{u, uB, max uE u}
+          (signLocalSystem (ULift.{w} (Fin r) → ℝ) E K hι) m) := by
+    rintro a rfl ha
+    rfl
+  rw [hfin _ (by simp)]
+  -- The identity of the fibres identifies the two orientation local systems.
+  exact (asIso (twistedHomologyCoefficientMap (signLocalSystemIsoOfFiberwise K
+    ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm) hι
+    (φ := fun _ ↦ ContinuousLinearEquiv.refl ℝ _) hφ).inv m)).toLinearEquiv.finrank_eq
+
+end ULift
+
+section EulerCharacteristic
+
+universe u uB uE uι
+
+variable {B : Type uB} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {E : B → Type uE} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {ι : Type uι} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
+
+/-- **The Euler characteristic with orientation-twisted coefficients.** Over a division ring `K`
+and a base `B` of finite CW type, the alternating sum of the dimensions of the homology of `B` with
+coefficients in the orientation local system of `E` is the Euler characteristic of `B`:
+`∑ⱼ (-1)ʲ dim Hⱼ(B; o(E) ⊗ K) = χ(B)`, whether or not `E` is orientable. -/
+theorem VectorBundleOrientationCover.finsum_finrank_twistedHomology_signLocalSystem
+    [FiniteCWType B] {K : Type u} [DivisionRing K] :
+    ∑ᶠ n : ℕ, (-1 : ℤ) ^ n *
+        finrank K (twistedHomology.{u, uB, max uE uι u} (signLocalSystem F E K hι) n) =
+      eulerChar B := by
+  rw [finsum_finrank_twistedHomology_of_finiteCWType B _ (finrank_signLocalSystem_obj hι),
+    Nat.cast_one, one_mul]
+
+end EulerCharacteristic
 
 end TauCeti

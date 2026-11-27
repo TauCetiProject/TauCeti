@@ -49,6 +49,7 @@ group.
 * `TauCeti.algebraMapInv_freeRemoveRight`: `Lᵢ` and `Rᵢ` have the same constant term.
 * `TauCeti.freeRemove_freeRemoveRight`: `Lᵢ Rⱼ = Rⱼ Lᵢ` when `χ i j = χ j i`.
 * `TauCeti.freeRemove_ι_pow_succ`: in rank one, `Lᵢ θᵢⁿ⁺¹ = (1 + χ i i + ⋯ + χ i iⁿ) θᵢⁿ`.
+* `TauCeti.freeRemove_ι_pow_of_ne`: `Lₖ θᵢⁿ = 0` for `k ≠ i`.
 
 ## Implementation notes
 
@@ -190,6 +191,13 @@ theorem freeRemove_ι_pow_succ (i : I) (n : ℕ) :
   | succ n ih =>
     rw [pow_succ', freeRemove_ι_mul, ih, Finset.sum_range_succ' _ (n + 1)]
     simp [smul_smul, Finset.mul_sum, add_smul, ← pow_succ', add_comm]
+
+/-- A left skew derivative kills every power of a different generator: `Lₖ θᵢⁿ = 0` for `k ≠ i`. -/
+theorem freeRemove_ι_pow_of_ne {k i : I} (hki : k ≠ i) (n : ℕ) :
+    freeRemove χ k (ι R i ^ n) = 0 := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ', freeRemove_ι_mul, ih]; simp [hki]
 
 /-! ### The right skew derivative -/
 

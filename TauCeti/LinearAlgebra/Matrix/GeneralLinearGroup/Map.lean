@@ -6,7 +6,11 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+-- `Matrix.GeneralLinearGroup.upperRightHom` occurs in the statement of `map_upperRightHom`.
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
+-- Non-public: diagonal matrices give the reverse inclusion in `map_det_ker_map_quotientMk`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!
 # Change of scalars on general linear groups
@@ -23,6 +27,10 @@ all of which a construction transporting a group of matrices along a change of s
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
 * `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
   `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
+* `Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`: the determinants of that kernel are the
+  units congruent to `1` modulo `I`.
+* `Matrix.GeneralLinearGroup.map_upperRightHom`: change of scalars sends the unipotent matrix
+  `[[1, b], [0, 1]]` to the unipotent matrix with entry `f b`.
 * `Matrix.GeneralLinearGroup.map_mem_glpos_iff`: a monotone ring hom preserves and reflects
   membership in the positive-determinant subgroups.
 * `Matrix.SpecialLinearGroup.map_mapGL_int`: over `ℤ`, applying any ring hom `S →+* T` after
@@ -62,6 +70,35 @@ theorem mem_ker_map_quotientMk_iff (I : Ideal R) {g : GL n R} :
   refine forall₂_congr fun i j ↦ ?_
   rw [Matrix.GeneralLinearGroup.map_apply, Matrix.GeneralLinearGroup.coe_one, ← Ideal.Quotient.eq,
     Matrix.one_apply, Matrix.one_apply, apply_ite (Ideal.Quotient.mk I), map_one, map_zero]
+
+/-- **The determinants of the principal level are the units congruent to `1`**: for a nonempty
+finite index type `n`, the image under `det` of `ker(GL_n(R) → GL_n(R ⧸ I))` is
+`ker(Rˣ → (R ⧸ I)ˣ)`. -/
+theorem map_det_ker_map_quotientMk [Nonempty n] (I : Ideal R) :
+    (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker.map det =
+      (Units.map (Ideal.Quotient.mk I : R →* R ⧸ I)).ker := by
+  -- `≤`: the determinant commutes with reduction; `≥`: a diagonal matrix with a single entry `u`.
+  refine le_antisymm ?_ fun u hu ↦ ?_
+  · rintro _ ⟨g, hg, rfl⟩
+    rw [MonoidHom.mem_ker, ← GeneralLinearGroup.map_det, MonoidHom.mem_ker.mp hg, map_one]
+  · let i : n := Classical.arbitrary n
+    refine ⟨TauCeti.diagGL (Pi.mulSingle i u), ?_, by
+      rw [TauCeti.det_diagGL, Fintype.prod_pi_mulSingle' i]⟩
+    rw [SetLike.mem_coe, MonoidHom.mem_ker, TauCeti.map_diagGL, ← map_one TauCeti.diagGL]
+    congr 1
+    funext j
+    rcases eq_or_ne j i with rfl | hj
+    · simpa using MonoidHom.mem_ker.mp hu
+    · simp [hj]
+
+/-- Change of scalars sends the unipotent matrix `[[1, b], [0, 1]]` to the unipotent matrix
+`[[1, f b], [0, 1]]`. -/
+-- Not a simp lemma: Mathlib's simp lemma `upperRightHom_apply` unfolds `upperRightHom b` on the
+-- left-hand side, so the `simpNF` linter rejects it.
+theorem map_upperRightHom (f : R →+* S) (b : R) :
+    Matrix.GeneralLinearGroup.map f (upperRightHom b) = upperRightHom (f b) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
 
 section StrictOrdered
 

@@ -139,6 +139,11 @@ theorem diagonal_def : diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRi
 
 variable {R K H}
 
+/-- The rational diagonal is post-composition with the structure map `K → 𝔸_K`. -/
+theorem diagonal_eq_mapValue :
+    diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) :=
+  (rfl)
+
 @[simp]
 theorem diagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
     diagonal R K H g h = algebraMap K (AdeleRing R K) (g h) := by

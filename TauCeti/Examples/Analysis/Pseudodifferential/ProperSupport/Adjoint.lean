@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 public import Mathlib.Analysis.InnerProductSpace.l2Space

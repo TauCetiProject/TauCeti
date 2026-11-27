@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import Mathlib.RingTheory.Ideal.Pointwise
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Valuation.Basic
+public import Mathlib.RingTheory.Valuation.ValuationSubring
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Centres of valuations on subrings
@@ -16,6 +19,10 @@ A valuation of a ring `K` that is bounded by `1` on the image of a commutative `
 `R → K` determines a prime ideal of `R`: the elements whose images have value strictly below `1`.
 When `K` is the fraction field of `R` and the valuation is nontrivial, this centre is nonzero. The
 value group may be any linearly ordered commutative group with zero.
+
+For a valuation subring `A` of a field `L` containing the image of `B`, the centre is the ideal of
+the elements of `B` that are nonunits of `A`; write `A.IsCenteredAt P` when `A` contains `B` with
+centre `P`. For a group acting compatibly on `B` and `L`, the centre of `g • A` is `g • P`.
 
 ## Main definitions and results
 
@@ -26,9 +33,27 @@ value group may be any linearly ordered commutative group with zero.
 * `Valuation.heightOneSpectrum`: the nonzero prime centre bundled as `HeightOneSpectrum R`.
   This structure records a nonzero prime ideal; it is a height one prime when `R` is Dedekind.
 * `Valuation.asIdeal_heightOneSpectrum`: the underlying ideal is the centre ideal.
+* `ValuationSubring.IsCenteredAt A P`: `A` contains `B` and `P` is its centre on `B`; it is
+  `Valuation.centerIdeal` of the valuation of `A` (`ValuationSubring.IsCenteredAt.eq_centerIdeal`).
+* `ValuationSubring.IsCenteredAt.smul`: the centre of `g • A` is `g • P`.
+
+The comparison of a valuation subring with the localization at its centre is in
+`TauCeti/RingTheory/Valuation/LocalizationAtCenter.lean`.
+
+## Provenance
+
+`ValuationSubring.IsCenteredAt.smul_sub_pow_mem_of_forall`, which restricts a `q`-power
+congruence from a valuation subring to its centre, is adapted from the restriction argument of
+the `riemann-hypothesis` formalisation (https://github.com/leanprover-community/riemann-hypothesis,
+branch `tc-galois-5-frobenius`, commit `c62bdab14fd`,
+`src/Lib/ClassField/Places/FrobeniusComparison.lean`, declaration `New.IsFrob.isArithFrobAt`).
+**Adapted, not copied**: it is stated here for any ring `B`, any group acting compatibly on `B`
+and `L`, and any exponent `q`, in terms of `ValuationSubring.IsCenteredAt`.
 -/
 
 public section
+
+open scoped Pointwise
 
 open IsDedekindDomain
 
@@ -112,3 +137,96 @@ theorem asIdeal_heightOneSpectrum [w.IsNontrivial]
     (heightOneSpectrum R w hR).asIdeal = centerIdeal R w hR := (rfl)
 
 end Valuation
+
+/-! ### Valuation subrings centred at an ideal -/
+
+namespace ValuationSubring
+
+variable {B L : Type*} [CommRing B] [Field L] [Algebra B L]
+
+/-- **A valuation subring centred at a prime.** The valuation subring `A` of `L` contains the
+image of `B`, and the elements of `B` that are nonunits of `A` form the ideal `P`. Then `P` is
+prime (`ValuationSubring.IsCenteredAt.isPrime`); it is Tau Ceti's `Valuation.centerIdeal` of the
+valuation of `A` (`ValuationSubring.IsCenteredAt.eq_centerIdeal`). -/
+structure IsCenteredAt (A : ValuationSubring L) (P : Ideal B) : Prop where
+  /-- The valuation subring contains the image of `B`. -/
+  algebraMap_mem (b : B) : algebraMap B L b ∈ A
+  /-- An element of `B` lies in `P` exactly when its image is a nonunit of `A`. -/
+  algebraMap_mem_nonunits_iff (b : B) : algebraMap B L b ∈ A.nonunits ↔ b ∈ P
+
+/-- A valuation subring containing the image of `B` is centred at the centre ideal of its
+valuation. -/
+theorem isCenteredAt_centerIdeal (A : ValuationSubring L)
+    (hA : ∀ b : B, A.valuation (algebraMap B L b) ≤ 1) :
+    A.IsCenteredAt (A.valuation.centerIdeal B hA) where
+  algebraMap_mem b := (A.valuation_le_one_iff _).mp (hA b)
+  algebraMap_mem_nonunits_iff b := by rw [mem_nonunits_iff, Valuation.mem_centerIdeal]
+
+namespace IsCenteredAt
+
+variable {A : ValuationSubring L} {P Q : Ideal B}
+
+/-- The valuation of `A` is at most `1` on the image of `B`. -/
+theorem valuation_algebraMap_le_one (h : A.IsCenteredAt P) (b : B) :
+    A.valuation (algebraMap B L b) ≤ 1 :=
+  (A.valuation_le_one_iff _).mpr (h.algebraMap_mem b)
+
+/-- The valuation of `A` is below `1` exactly on the image of `P`. -/
+theorem valuation_algebraMap_lt_one_iff (h : A.IsCenteredAt P) (b : B) :
+    A.valuation (algebraMap B L b) < 1 ↔ b ∈ P := by
+  rw [← mem_nonunits_iff, h.algebraMap_mem_nonunits_iff]
+
+/-- The valuation of `A` is `1` exactly on the image of the complement of `P`. -/
+theorem valuation_algebraMap_eq_one_iff (h : A.IsCenteredAt P) (b : B) :
+    A.valuation (algebraMap B L b) = 1 ↔ b ∉ P := by
+  rw [← h.valuation_algebraMap_lt_one_iff, not_lt, le_antisymm_iff,
+    and_iff_right (h.valuation_algebraMap_le_one b)]
+
+/-- The centre is Tau Ceti's `Valuation.centerIdeal` of the valuation of `A`. -/
+theorem eq_centerIdeal (h : A.IsCenteredAt P) :
+    P = A.valuation.centerIdeal B h.valuation_algebraMap_le_one := by
+  ext b
+  rw [Valuation.mem_centerIdeal, h.valuation_algebraMap_lt_one_iff]
+
+/-- The centre of a valuation subring is a prime ideal. -/
+theorem isPrime (h : A.IsCenteredAt P) : P.IsPrime :=
+  h.eq_centerIdeal ▸ Valuation.isPrime_centerIdeal _
+
+/-- A valuation subring has only one centre. -/
+theorem unique (h : A.IsCenteredAt P) (h' : A.IsCenteredAt Q) : P = Q := by
+  ext b
+  rw [← h.algebraMap_mem_nonunits_iff, h'.algebraMap_mem_nonunits_iff]
+
+section Action
+
+variable {G : Type*} [Group G] [MulSemiringAction G B] [MulSemiringAction G L]
+  [SMulDistribClass G B L]
+
+/-- **Equivariance of the centre**: if `A` is centred at `P`, then `g • A` is centred at
+`g • P`. -/
+theorem smul (h : A.IsCenteredAt P) (g : G) : (g • A).IsCenteredAt (g • P) where
+  algebraMap_mem b := by
+    rw [mem_pointwise_smul_iff_inv_smul_mem, ← algebraMap.smul']
+    exact h.algebraMap_mem _
+  algebraMap_mem_nonunits_iff b := by
+    rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, ← h.algebraMap_mem_nonunits_iff,
+      algebraMap.smul', ← smul_mem_nonunits_pointwise_smul_iff (g := g) (x := g⁻¹ • _),
+      smul_inv_smul]
+
+/-- The stabilizer of a valuation subring stabilizes its centre. -/
+theorem stabilizer_le (h : A.IsCenteredAt P) :
+    MulAction.stabilizer G A ≤ MulAction.stabilizer G P := fun g hg ↦
+  ((MulAction.mem_stabilizer_iff.mp hg ▸ h.smul g).unique h)
+
+/-- If `g` raises every element of `A` to the `q`-th power modulo the nonunits of `A`, it raises
+every element of `B` to the `q`-th power modulo the centre. -/
+theorem smul_sub_pow_mem_of_forall (h : A.IsCenteredAt P) {g : G} {q : ℕ}
+    (hg : ∀ x ∈ A, g • x - x ^ q ∈ A.nonunits) (b : B) : g • b - b ^ q ∈ P := by
+  rw [← h.algebraMap_mem_nonunits_iff, map_sub, map_pow, algebraMap.smul']
+  exact hg _ (h.algebraMap_mem b)
+
+end Action
+
+end IsCenteredAt
+
+end ValuationSubring

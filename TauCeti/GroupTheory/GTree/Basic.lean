@@ -26,14 +26,18 @@ such actions.
   onto it is surjective with the orbits as fibres.
 * An element is *elliptic* when it fixes a vertex and *hyperbolic* otherwise; a subgroup is
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
-  set, and an element is elliptic exactly when its translation length
-  `ℓ(g) = min_v d(v, g v)` vanishes. Translation length is invariant under conjugation and
-  inversion. A vertex `x` is moved by exactly `ℓ(g)` if and only if the reduced path from `x` to
-  `g • x` is followed by its translate under `g` without backtracking; the translates of the path
-  by the powers of `g` then line up into a reduced path, so `d(x, gⁿ x) = n d(x, g x)`, and `g` is
-  hyperbolic as soon as it moves `x`. In particular an element of finite order is elliptic. The
-  action maps convex sets of vertices to convex sets and commutes with convex hulls; the segment
-  from `x` to `(g h) x` lies in the union of `[x, g x]` and `g [x, h x]`.
+  set, an elliptic subgroup fixes a vertex of every nonempty convex set of vertices it preserves,
+  and a `G`-set whose point stabilizers are elliptic maps equivariantly to the vertices. An
+  element is elliptic exactly when its translation length `ℓ(g) = min_v d(v, g v)` vanishes.
+  Translation length is invariant under conjugation and inversion, it does not increase along an
+  equivariant map that does not increase distances, and equivariantly isomorphic trees have the
+  same translation lengths. A vertex `x` is moved by
+  exactly `ℓ(g)` if and only if the reduced path from `x` to `g • x` is followed by its translate
+  under `g` without backtracking; the translates of the path by the powers of `g` then line up
+  into a reduced path, so `d(x, gⁿ x) = n d(x, g x)`, and `g` is hyperbolic as soon as it moves
+  `x`. In particular an element of finite order is elliptic. The action maps convex sets of
+  vertices to convex sets and commutes with convex hulls; the segment from `x` to `(g h) x` lies
+  in the union of `[x, g x]` and `g [x, h x]`.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
   and it is *relative* to families `𝒜` and `ℋ` of subgroups when its dart stabilizers lie in `𝒜`
   and every member of `ℋ` is elliptic.
@@ -384,6 +388,34 @@ theorem isEllipticSubgroup_iff_forall {H : Subgroup G} :
     T.IsEllipticSubgroup H ↔ ∃ v : T.V, ∀ h ∈ H, h • v = v := by
   simp only [isEllipticSubgroup_iff, IsConcreteLE.le_iff, mem_stabilizer_iff]
 
+/-- An elliptic subgroup fixes a vertex of every nonempty convex set of vertices which it
+preserves: the vertex of the set nearest to a fixed vertex. -/
+theorem IsEllipticSubgroup.exists_fixed_mem_of_isConvex {H : Subgroup G}
+    (hH : T.IsEllipticSubgroup H) {C : Set T.V} (hC : T.IsConvex C) (hne : C.Nonempty)
+    (hinv : ∀ h ∈ H, ∀ x ∈ C, h • x ∈ C) : ∃ x ∈ C, ∀ h ∈ H, h • x = x := by
+  -- Let `a` be a vertex of `C` nearest to a vertex `v` fixed by `H`, and `h ∈ H`. The reduced path
+  -- from `v` to `a` meets `C` only at its end, so it continues to `h • a` without backtracking;
+  -- since `h • a` is as near to `v` as `a`, the continuation is trivial.
+  obtain ⟨v, hv⟩ := isEllipticSubgroup_iff_forall.mp hH
+  obtain ⟨a, ha, hmin⟩ := exists_forall_dist_le hne v
+  refine ⟨a, ha, fun h hh => ?_⟩
+  obtain ⟨q, hq, -⟩ := T.isTree.existsUnique_isReduced v a
+  obtain ⟨r, hr, -⟩ := T.isTree.existsUnique_isReduced a (h • a)
+  have hqr := T.isAcyclic.dist_eq_length (hC.isReduced_comp ha (hinv h hh a ha) hq
+    (fun e he => T.isAcyclic.src_notMem_of_forall_dist_le hmin hq (List.mem_of_mem_getLast? he))
+    hr)
+  have hdist := T.dist_smul h v a
+  rw [hv h hh] at hdist
+  rw [Quiver.Path.length_comp, ← T.isAcyclic.dist_eq_length hq,
+    ← T.isAcyclic.dist_eq_length hr] at hqr
+  exact ((dist_eq_zero_iff (T.nonempty_path _ _)).mp (by lia)).symm
+
+/-- A `G`-set whose point stabilizers are elliptic in `T` has an equivariant map to the vertices
+of `T`. -/
+theorem nonempty_mulActionHom_of_isEllipticSubgroup_stabilizer {X : Type*} [MulAction G X]
+    (hX : ∀ x : X, T.IsEllipticSubgroup (stabilizer G x)) : Nonempty (X →[G] T.V) :=
+  MulAction.nonempty_mulActionHom_iff.mpr fun x => isEllipticSubgroup_iff.mp (hX x)
+
 @[simp] theorem isElliptic_inv_iff {g : G} : T.IsElliptic g⁻¹ ↔ T.IsElliptic g :=
   exists_congr fun v => by rw [inv_smul_eq_iff, eq_comm]
 
@@ -618,6 +650,27 @@ theorem translationLength_pos_iff {g : G} : 0 < T.translationLength g ↔ T.IsHy
   unfold translationLength
   exact ((MulAction.surjective h).iInf_congr (h • ·) fun v => by
     simp only [mul_smul, inv_smul_smul, dist_smul]).symm
+
+/-- An equivariant map of vertices that does not increase distances does not increase translation
+lengths. -/
+theorem translationLength_le_of_dist_le {T' : GTree.{u', v'} G} (f : T.V →[G] T'.V)
+    (hf : ∀ x y : T.V, T'.dist (f x) (f y) ≤ T.dist x y) (g : G) :
+    T'.translationLength g ≤ T.translationLength g := by
+  obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
+  calc T'.translationLength g ≤ T'.dist (f v) (g • f v) := translationLength_le g (f v)
+    _ = T'.dist (f v) (f (g • v)) := by rw [map_smul]
+    _ ≤ T.translationLength g := (hf v (g • v)).trans hv.le
+
+/-- Translation lengths are invariant under equivariant isomorphisms of trees. -/
+theorem translationLength_eq_of_iso {T' : GTree.{u', v'} G} (φ : T.toSerreGraph.Iso T'.toSerreGraph)
+    (hφ : ∀ (g : G) (x : T.V), φ.equivV (g • x) = g • φ.equivV x) (g : G) :
+    T'.translationLength g = T.translationLength g := by
+  refine le_antisymm (translationLength_le_of_dist_le ⟨φ.equivV, hφ⟩
+    (fun x y => φ.toHom.dist_le (T.nonempty_path x y)) g)
+    (translationLength_le_of_dist_le ⟨φ.equivV.symm, fun h y => ?_⟩
+      (fun x y => φ.symm.toHom.dist_le (T'.nonempty_path x y)) g)
+  -- The inverse bijection is equivariant too.
+  simp [Equiv.symm_apply_eq, hφ]
 
 variable (T)
 

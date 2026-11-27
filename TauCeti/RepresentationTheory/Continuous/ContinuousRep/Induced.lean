@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Complement
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Hom
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -25,8 +25,11 @@ shows that, for a right transversal `S` of `H` (Mathlib's `Subgroup.IsComplement
 `S` is an `A`-linear homeomorphism from `indV H σ` onto `S → U`, with inverse
 `u ↦ (h * s ↦ σ h (u s))`. So for `H` of finite index the topology on `indV H σ` is the module
 topology when the one on `U` is. For `Γ` locally compact the action of `Γ` on `indV H σ` is
-jointly continuous, so `ind H σ` is a `TauCeti.ContinuousRep`. Its invariants are the constant
-functions with value in `U^H`, so evaluation at `1` identifies them with the invariants of `σ`.
+jointly continuous, so `ind H σ` is a `TauCeti.ContinuousRep`, functorial in `σ`. Its invariants
+are the constant functions with value in `U^H`, so evaluation at `1` identifies them with the
+invariants of `σ`. The element `e_u` supported on `H`, with `e_u h = σ h u`, generates the induced
+module: for `H` of finite index every element is a sum of translates of such elements, one for each
+coset of `H`.
 
 ## Main definitions
 
@@ -36,6 +39,8 @@ functions with value in `U^H`, so evaluation at `1` identifies them with the inv
 * `TauCeti.ContinuousRep.indVMk`: the element of the induced module given by an equivariant
   function, which is automatically continuous.
 * `TauCeti.ContinuousRep.ind`: the induced continuous representation.
+* `TauCeti.ContinuousRep.Hom.ind`, `TauCeti.ContinuousRep.Iso.ind`: functoriality of induction.
+* `TauCeti.ContinuousRep.indSingle`: the element `e_u` of the induced module supported on `H`.
 * `TauCeti.ContinuousRep.indVEquivPi`: evaluation on a right transversal, as a linear
   homeomorphism `indV H σ ≃L[A] (S → U)`.
 * `TauCeti.ContinuousRep.indInvariantsEquiv`: Shapiro's lemma on invariants,
@@ -51,6 +56,10 @@ functions with value in `U^H`, so evaluation at `1` identifies them with the inv
 * `TauCeti.ContinuousRep.isModuleTopology_indV`: for a finite right transversal, the topology of
   the induced module is the module topology.
 * `TauCeti.ContinuousRep.finrank_indV`: the induced module has rank `[Γ : H] · rank U`.
+* `TauCeti.ContinuousRep.ind_apply_indSingle`: `h • e_u = e_{σ h u}` for `h ∈ H`.
+* `TauCeti.ContinuousRep.Hom.ind_indSingle`: naturality of `e_u`, `f.ind e_u = e_{f u}`.
+* `TauCeti.ContinuousRep.finsum_ind_indSingle`: every element of the induced module is the sum of
+  its pieces on the cosets of `H`.
 -/
 
 public section
@@ -211,6 +220,179 @@ theorem toContRepresentation_ind (σ : ContinuousRep H A U) :
     rfl
 
 end Induced
+
+section Functoriality
+
+variable [LocallyCompactSpace Γ]
+
+variable {V W : Type*} [AddCommGroup V] [Module A V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [ContinuousSMul A V] [AddCommGroup W] [Module A W]
+  [TopologicalSpace W] [IsTopologicalAddGroup W] [ContinuousSMul A W]
+  {σ : ContinuousRep H A U} {τ : ContinuousRep H A V} {υ : ContinuousRep H A W}
+
+/-- **Functoriality of induction.** A morphism `f : σ ⟶ τ` of continuous representations of `H`
+induces the morphism `φ ↦ f ∘ φ` of induced representations. -/
+noncomputable def Hom.ind (f : Hom σ τ) :
+    Hom (ContinuousRep.ind H σ) (ContinuousRep.ind H τ) where
+  toFun φ := ⟨(⟨f, f.cont⟩ : C(U, V)).comp φ, (mem_indV _).2 fun h x => by
+    simp [(mem_indV _).1 φ.property h x, f.isIntertwining]⟩
+  map_add' _ _ := Subtype.ext (ContinuousMap.ext fun _ => map_add f _ _)
+  map_smul' _ _ := Subtype.ext (ContinuousMap.ext fun _ => map_smul f _ _)
+  isIntertwining' g := LinearMap.ext fun φ => Subtype.ext (ContinuousMap.ext fun x => by simp)
+  cont := ((ContinuousMap.continuous_postcomp _).comp continuous_subtypeVal).subtype_mk _
+
+@[simp]
+theorem Hom.ind_apply_apply (f : Hom σ τ) (φ : indV H σ) (x : Γ) :
+    (f.ind φ : C(Γ, V)) x = f ((φ : C(Γ, U)) x) := by
+  rw [← Hom.coe_toIntertwiningMap]
+  rfl
+
+@[simp]
+theorem Hom.ind_id : (Hom.id σ).ind = Hom.id (ContinuousRep.ind H σ) :=
+  Hom.ext fun _ => Subtype.ext (ContinuousMap.ext fun _ => by simp)
+
+@[simp]
+theorem Hom.ind_comp (f : Hom τ υ) (f' : Hom σ τ) : (f.comp f').ind = f.ind.comp f'.ind :=
+  Hom.ext fun _ => Subtype.ext (ContinuousMap.ext fun _ => by simp)
+
+/-- **Functoriality of induction** for isomorphisms: an isomorphism `σ ≅ τ` induces an
+isomorphism of induced representations. -/
+noncomputable def Iso.ind (e : Iso σ τ) :
+    Iso (ContinuousRep.ind H σ) (ContinuousRep.ind H τ) where
+  toRepresentationEquiv :=
+    { e.toHom.ind.toIntertwiningMap with
+      invFun := e.symm.toHom.ind
+      left_inv φ := Subtype.ext (ContinuousMap.ext fun x => by simp)
+      right_inv φ := Subtype.ext (ContinuousMap.ext fun x => by simp) }
+  continuous_toFun := e.toHom.ind.cont
+  continuous_invFun := e.symm.toHom.ind.cont
+
+@[simp]
+theorem Iso.ind_apply_apply (e : Iso σ τ) (φ : indV H σ) (x : Γ) :
+    (e.ind φ : C(Γ, V)) x = e ((φ : C(Γ, U)) x) := by
+  rw [← Iso.coe_toRepresentationEquiv, ← e.coe_toHom]
+  rfl
+
+@[simp]
+theorem Iso.ind_toHom (e : Iso σ τ) : e.ind.toHom = e.toHom.ind :=
+  Hom.ext fun _ => Subtype.ext (ContinuousMap.ext fun _ => by simp)
+
+@[simp]
+theorem Iso.symm_ind (e : Iso σ τ) : e.ind.symm = e.symm.ind :=
+  Iso.ext fun φ => e.ind.injective (Subtype.ext (ContinuousMap.ext fun _ => by simp))
+
+end Functoriality
+
+section Single
+
+variable (σ : ContinuousRep H A U) (hH : IsOpen (H : Set Γ))
+
+/-- The equivariant function supported on `H` with value `σ h u` at `h ∈ H`. -/
+private noncomputable def indSingleFun (u : U) (x : Γ) : U :=
+  open Classical in if hx : x ∈ H then σ ⟨x, hx⟩ u else 0
+
+omit [IsTopologicalGroup Γ] [TopologicalSpace A]
+  [IsTopologicalAddGroup U] [ContinuousSMul A U] in
+private theorem indSingleFun_of_mem (u : U) {x : Γ} (hx : x ∈ H) :
+    indSingleFun σ u x = σ ⟨x, hx⟩ u := by
+  simp [indSingleFun, hx]
+
+omit [IsTopologicalGroup Γ] [TopologicalSpace A]
+  [IsTopologicalAddGroup U] [ContinuousSMul A U] in
+private theorem indSingleFun_of_notMem (u : U) {x : Γ} (hx : x ∉ H) : indSingleFun σ u x = 0 := by
+  simp [indSingleFun, hx]
+
+omit [IsTopologicalGroup Γ] [TopologicalSpace A]
+  [IsTopologicalAddGroup U] [ContinuousSMul A U] in
+private theorem indSingleFun_mul (u : U) (h : H) (x : Γ) :
+    indSingleFun σ u (h * x) = σ h (indSingleFun σ u x) := by
+  by_cases hx : x ∈ H
+  · rw [indSingleFun_of_mem σ u (H.mul_mem h.property hx), indSingleFun_of_mem σ u hx,
+      ← mul_apply_eq_comp, ← map_mul, show (⟨h * x, _⟩ : H) = h * ⟨x, hx⟩ from Subtype.ext rfl]
+  · rw [indSingleFun_of_notMem σ u hx, map_zero,
+      indSingleFun_of_notMem σ u fun hm => hx ((H.mul_mem_cancel_left h.property).1 hm)]
+
+/-- The element `e_u` of the induced module supported on the open subgroup `H`, with value `σ h u`
+at `h ∈ H`. -/
+noncomputable def indSingle : U →L[A] indV H σ where
+  toFun u := indVMk σ hH (indSingleFun σ u) (indSingleFun_mul σ u)
+  map_add' u v := Subtype.ext (ContinuousMap.ext fun x => by
+    by_cases hx : x ∈ H <;> simp [indSingleFun, hx])
+  map_smul' a u := Subtype.ext (ContinuousMap.ext fun x => by
+    by_cases hx : x ∈ H <;> simp [indSingleFun, hx])
+  cont := by
+    refine Continuous.subtype_mk ?_ _
+    refine ((ContinuousMap.mk _ (continuous_uncurry_of_apply_mul σ hH
+      (F := fun u => indSingleFun σ u) (fun u => indSingleFun_mul σ u) fun x => ?_)).curry
+      |>.continuous).congr fun u => ContinuousMap.ext fun x =>
+      (indVMk_apply σ hH _ (indSingleFun_mul σ u) x).symm
+    by_cases hx : x ∈ H
+    · simpa [indSingleFun, hx] using σ.continuous_apply ⟨x, hx⟩
+    · simpa [indSingleFun, hx] using continuous_const
+
+private theorem indSingle_apply (u : U) (x : Γ) :
+    (indSingle σ hH u : C(Γ, U)) x = indSingleFun σ u x :=
+  indVMk_apply σ hH _ (indSingleFun_mul σ u) x
+
+@[simp]
+theorem indSingle_apply_of_mem (u : U) {x : Γ} (hx : x ∈ H) :
+    (indSingle σ hH u : C(Γ, U)) x = σ ⟨x, hx⟩ u := by
+  rw [indSingle_apply, indSingleFun_of_mem]
+
+@[simp]
+theorem indSingle_apply_of_notMem (u : U) {x : Γ} (hx : x ∉ H) :
+    (indSingle σ hH u : C(Γ, U)) x = 0 := by
+  rw [indSingle_apply, indSingleFun_of_notMem σ u hx]
+
+variable [LocallyCompactSpace Γ]
+
+/-- An element `h ∈ H` acts on `e_u` by acting on `u`: `h • e_u = e_{σ h u}`. -/
+@[simp]
+theorem ind_apply_indSingle (h : H) (u : U) :
+    ind H σ h (indSingle σ hH u) = indSingle σ hH (σ h u) := by
+  refine Subtype.ext (ContinuousMap.ext fun x => ?_)
+  rw [ind_apply_apply]
+  by_cases hx : x ∈ H
+  · rw [indSingle_apply_of_mem σ hH u (H.mul_mem hx h.property), indSingle_apply_of_mem σ hH _ hx,
+      ← mul_apply_eq_comp, ← map_mul, show (⟨x * h, _⟩ : H) = ⟨x, hx⟩ * h from Subtype.ext rfl]
+  · rw [indSingle_apply_of_notMem σ hH _ hx, indSingle_apply_of_notMem σ hH u fun hm =>
+      hx ((H.mul_mem_cancel_right h.property).1 hm)]
+
+variable {σ} in
+/-- **Naturality of `e_u`.** The morphism induced by `f : σ ⟶ τ` sends `e_u` to `e_{f u}`. -/
+@[simp]
+theorem Hom.ind_indSingle {V : Type*} [AddCommGroup V] [Module A V] [TopologicalSpace V]
+    [IsTopologicalAddGroup V] [ContinuousSMul A V] {τ : ContinuousRep H A V} (f : Hom σ τ)
+    (u : U) :
+    f.ind (indSingle σ hH u) = indSingle τ hH (f u) := by
+  refine Subtype.ext (ContinuousMap.ext fun x => ?_)
+  rw [Hom.ind_apply_apply]
+  by_cases hx : x ∈ H
+  · rw [indSingle_apply_of_mem σ hH u hx, indSingle_apply_of_mem τ hH _ hx, f.isIntertwining]
+  · rw [indSingle_apply_of_notMem σ hH u hx, indSingle_apply_of_notMem τ hH _ hx, map_zero]
+
+/-- **Decomposition along the cosets.** For `H` open of finite index, every element `φ` of the
+induced module is the sum over `x H ∈ Γ / H` of the translates `x • e_{φ x⁻¹}`, the piece of `φ`
+supported on the coset `H x⁻¹`. -/
+theorem finsum_ind_indSingle [H.FiniteIndex] (φ : indV H σ) :
+    ∑ᶠ q : Γ ⧸ H, ind H σ q.out (indSingle σ hH ((φ : C(Γ, U)) q.out⁻¹)) = φ := by
+  have := Fintype.ofFinite (Γ ⧸ H)
+  rw [finsum_eq_sum_of_fintype]
+  refine Subtype.ext (ContinuousMap.ext fun x => ?_)
+  rw [Submodule.coe_sum, ContinuousMap.sum_apply,
+    Finset.sum_eq_single_of_mem ((x⁻¹ : Γ) : Γ ⧸ H) (Finset.mem_univ _)]
+  · have hmem : x * Quotient.out ((x⁻¹ : Γ) : Γ ⧸ H) ∈ H := by
+      simpa using QuotientGroup.eq.1 (QuotientGroup.out_eq' ((x⁻¹ : Γ) : Γ ⧸ H)).symm
+    rw [ind_apply_apply, indSingle_apply_of_mem σ hH _ hmem, ← (mem_indV _).1 φ.property]
+    simp
+  · intro q _ hq
+    rw [ind_apply_apply, indSingle_apply_of_notMem σ hH]
+    -- `x * q.out ∈ H` would put `q.out` in the coset `x⁻¹ H`
+    intro hm
+    exact hq ((QuotientGroup.out_eq' q).symm.trans
+      (QuotientGroup.eq.2 (by simpa using H.inv_mem hm)))
+
+end Single
 
 section Transversal
 

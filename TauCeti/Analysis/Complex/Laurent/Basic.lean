@@ -18,6 +18,8 @@ This result does not assume that the function extends across the center: isolate
 singularities are allowed. When `f` is complex-differentiable on a circle with circle-integrable
 derivative, integrating around the circle also expresses the Laurent coefficients of `deriv f` in
 terms of those of `f` (`circleLaurentCoeff_deriv_of_differentiableAt`, `circleLaurentCoeff_deriv`).
+Iterating, the coefficient of degree `n - m` of the `m`-th derivative is the falling factorial
+`n (n - 1) ⋯ (n - m + 1)` times the coefficient of degree `n` (`circleLaurentCoeff_iteratedDeriv`).
 
 The construction uses Mathlib's Cauchy-Goursat theorem for annuli,
 `Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable`.
@@ -46,6 +48,11 @@ noncomputable def circleLaurentCoeff (f : ℂ → E) (c : ℂ) (R : ℝ) (n : �
 theorem circleLaurentCoeff_def (f : ℂ → E) (c : ℂ) (R : ℝ) (n : ℤ) :
     circleLaurentCoeff f c R n =
       (2 * π * I : ℂ)⁻¹ • ∮ z in C(c, R), (z - c) ^ (-n - 1) • f z := (rfl)
+
+/-- On the degenerate circle of radius zero every coefficient vanishes. -/
+@[simp] theorem circleLaurentCoeff_radius_zero (f : ℂ → E) (c : ℂ) (n : ℤ) :
+    circleLaurentCoeff f c 0 n = 0 := by
+  simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero]
 
 /-- The nonnegative Laurent coefficients are exactly the coefficients of Mathlib's
 Cauchy power series, even for the degenerate circle of radius zero. -/
@@ -81,7 +88,7 @@ degree `n` of `(z - c) ^ m • f z` is the coefficient of degree `n - m` of `f`.
 theorem circleLaurentCoeff_sub_zpow_smul_apply (f : ℂ → E) (c : ℂ) (R : ℝ) (m n : ℤ) :
     circleLaurentCoeff (fun z => (z - c) ^ m • f z) c R n = circleLaurentCoeff f c R (n - m) := by
   rcases eq_or_ne R 0 with (rfl | hR)
-  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero]
+  · simp only [circleLaurentCoeff_radius_zero]
   simp only [circleLaurentCoeff_def, circleIntegral]
   congr 1
   refine intervalIntegral.integral_congr fun θ _ => ?_
@@ -96,11 +103,19 @@ theorem circleLaurentCoeff_add {f g : ℂ → E} {c : ℂ} {R : ℝ}
     circleLaurentCoeff (fun z => f z + g z) c R n =
       circleLaurentCoeff f c R n + circleLaurentCoeff g c R n := by
   rcases eq_or_ne R 0 with (rfl | hR)
-  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero, add_zero]
+  · simp only [circleLaurentCoeff_radius_zero, add_zero]
   have hc : c ∉ sphere c |R| := by simpa [eq_comm] using hR
   simp only [circleLaurentCoeff_def, smul_add]
   rw [circleIntegral.integral_add (hf.sub_zpow_smul (-n - 1) hc)
     (hg.sub_zpow_smul (-n - 1) hc), smul_add]
+
+/-- Extracting coefficients commutes with subtraction of functions integrable on the circle. -/
+theorem circleLaurentCoeff_sub {f g : ℂ → E} {c : ℂ} {R : ℝ}
+    (hf : CircleIntegrable f c R) (hg : CircleIntegrable g c R) (n : ℤ) :
+    circleLaurentCoeff (fun z => f z - g z) c R n =
+      circleLaurentCoeff f c R n - circleLaurentCoeff g c R n := by
+  rw [eq_sub_iff_add_eq, ← circleLaurentCoeff_add (f := fun z => f z - g z) (hf.sub hg) hg n]
+  simp only [sub_add_cancel]
 
 /-- The Cauchy estimate for any integer Laurent coefficient, including negative degrees
 and the degenerate circle of radius zero. -/
@@ -108,8 +123,7 @@ theorem norm_circleLaurentCoeff_le {f : ℂ → E} {c : ℂ} {R M : ℝ} (hR : 0
     (hf : ∀ z ∈ sphere c R, ‖f z‖ ≤ M) (n : ℤ) :
     ‖circleLaurentCoeff f c R n‖ ≤ M * R ^ (-n) := by
   rcases hR.eq_or_lt with (rfl | hR)
-  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero,
-      norm_zero]
+  · simp only [circleLaurentCoeff_radius_zero, norm_zero]
     exact mul_nonneg ((norm_nonneg _).trans (hf c (by simp))) (zpow_nonneg le_rfl _)
   have hp : R * R ^ (-n - 1) = R ^ (-n) := by
     calc
@@ -250,5 +264,26 @@ theorem circleLaurentCoeff_deriv {f : ℂ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ
   exact circleLaurentCoeff_deriv_of_differentiableAt hρ_pos
     (fun z hz => (hf z (hsphere hz)).differentiableAt (hopen.mem_nhds (hsphere hz)))
     ((hdf.continuousOn.mono hsphere).circleIntegrable hρ_pos.le) n
+
+/-- For `f` complex-differentiable on an open set `U` containing the circle `|z - c| = ρ`
+(`0 < ρ`), the coefficient of degree `n - m` of the `m`-th derivative of `f` is the falling
+factorial `n (n - 1) ⋯ (n - m + 1)` times the coefficient of degree `n` of `f`. -/
+theorem circleLaurentCoeff_iteratedDeriv {f : ℂ → E} {c : ℂ} {ρ : ℝ} {U : Set ℂ}
+    (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hρ : 0 < ρ) (hsph : sphere c ρ ⊆ U) (m : ℕ)
+    (n : ℤ) :
+    circleLaurentCoeff (iteratedDeriv m f) c ρ (n - m) =
+      (descPochhammer ℂ m).eval (n : ℂ) • circleLaurentCoeff f c ρ n := by
+  induction m generalizing f n with
+  | zero => simp
+  | succ m ih =>
+    have hdeg : n - ((m + 1 : ℕ) : ℤ) = (n - 1) - m := by omega
+    have hdf : DifferentiableOn ℂ (deriv f) U := hf.deriv hU
+    rw [iteratedDeriv_succ', hdeg, ih hdf, circleLaurentCoeff_deriv_of_differentiableAt hρ
+        (fun z hz ↦ hf.differentiableAt (hU.mem_nhds (hsph hz)))
+        ((hdf.continuousOn.mono hsph).circleIntegrable hρ.le),
+      sub_add_cancel, smul_smul]
+    -- What remains is the recurrence `n · (n - 1)_m = n_{m + 1}` for the falling factorial.
+    congr 1
+    simp [descPochhammer_succ_left, mul_comm]
 
 end TauCeti

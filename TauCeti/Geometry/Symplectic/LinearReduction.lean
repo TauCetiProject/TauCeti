@@ -66,6 +66,9 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
   space of `⊤`, a symplectomorphism.
 * `TauCeti.SymplecticForm.reducedQuadraticForm ω U Q hQ`: the quadratic form `[u] ↦ Q u` on the
   reduced space, for a quadratic form `Q` whose polar form vanishes on `(U ∩ U^ω) × U`.
+* `TauCeti.SymplecticForm.reducedSpaceEquivOfSlice`: the identification `a ↦ [j a]` of a
+  symplectic slice `j : V₀ → U` with the reduced space, a symplectomorphism
+  (`TauCeti.SymplecticForm.isSymplectomorphism_reducedSpaceEquivOfSlice`).
 * `TauCeti.SymplecticForm.reducedSpaceCongr`: the symplectomorphism of reduced spaces induced by a
   linear symplectomorphism.
 * `TauCeti.SymplecticForm.reducedSpaceRepresentation`: the induced symplectic representation of a
@@ -335,6 +338,57 @@ theorem finrank_reducedSpace_orthogonal_add [FiniteDimensional ℝ V] (W : Submo
   omega
 
 end Finrank
+
+section Slice
+
+variable {V₀ : Type*} [AddCommGroup V₀] [Module ℝ V₀]
+  {ω : SymplecticForm V} {U : Submodule ℝ V} {ω₀ : SymplecticForm V₀} {j : V₀ →ₗ[ℝ] V}
+
+/-- A linear map `j : V₀ → V` with image in `U` pulling `ω` back to a symplectic form `ω₀` is
+injective modulo `U ∩ U^ω`: the map `a ↦ [j a]` into the reduced space has trivial kernel. -/
+private theorem injective_mkQ_comp_codRestrict (hjU : ∀ a, j a ∈ U)
+    (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b) :
+    Function.Injective ((LinearMap.ker (ω.toBilinForm.restrict U)).mkQ ∘ₗ j.codRestrict U hjU) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro a ha
+  rw [LinearMap.comp_apply, Submodule.mkQ_apply, ReducedSpace.mk_eq_zero_iff,
+    LinearMap.codRestrict_apply] at ha
+  exact ω₀.nondegenerate.1 a fun b ↦ (hjω a b).symm.trans (mem_orthogonal_iff'.1 ha _ (hjU b))
+
+variable (ω U ω₀ j) in
+/-- A **symplectic slice** of the reduced space of `U`: a linear map `j : V₀ → V` with image in
+`U` that pulls `ω` back to a symplectic form `ω₀`, from a space of the dimension of the reduced
+space `U ⧸ (U ∩ U^ω)`, induces the linear equivalence `a ↦ [j a]` onto it. It is a
+symplectomorphism (`TauCeti.SymplecticForm.isSymplectomorphism_reducedSpaceEquivOfSlice`), so the
+reduced space may be computed in the coordinates of `V₀`. -/
+noncomputable def reducedSpaceEquivOfSlice [FiniteDimensional ℝ V₀] [FiniteDimensional ℝ U]
+    (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) : V₀ ≃ₗ[ℝ] ω.ReducedSpace U :=
+  LinearEquiv.ofBijective ((LinearMap.ker (ω.toBilinForm.restrict U)).mkQ ∘ₗ j.codRestrict U hjU)
+    ⟨injective_mkQ_comp_codRestrict hjU hjω,
+      (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hd).1
+        (injective_mkQ_comp_codRestrict hjU hjω)⟩
+
+/-- The symplectic slice sends `a` to the class of `j a` in the reduced space. -/
+@[simp]
+theorem reducedSpaceEquivOfSlice_apply [FiniteDimensional ℝ V₀] [FiniteDimensional ℝ U]
+    (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) (a : V₀) :
+    reducedSpaceEquivOfSlice ω U ω₀ j hjU hjω hd a = Submodule.Quotient.mk ⟨j a, hjU a⟩ :=
+  (rfl)
+
+/-- The identification of a symplectic slice with the reduced space is a symplectomorphism from
+`ω₀` to the reduced form. -/
+theorem isSymplectomorphism_reducedSpaceEquivOfSlice [FiniteDimensional ℝ V₀]
+    [FiniteDimensional ℝ U] (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) :
+    IsSymplectomorphism ω₀ (ω.reduction U) (reducedSpaceEquivOfSlice ω U ω₀ j hjU hjω hd) := by
+  rw [isSymplectomorphism_iff]
+  intro a b
+  rw [reducedSpaceEquivOfSlice_apply, reducedSpaceEquivOfSlice_apply, reduction_mk]
+  exact hjω a b
+
+end Slice
 
 section Functoriality
 

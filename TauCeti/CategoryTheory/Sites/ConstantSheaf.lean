@@ -11,7 +11,11 @@ public import Mathlib.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Limits.Final
 
 /-!
-# Pullback and change of coefficients of constant sheaves
+# Constant sheaves: restriction, vanishing, pullback and change of coefficients
+
+On any site, the constant sheaf with value `A` is the sheafification of the constant presheaf,
+whose restriction maps are identities; so restricting the image of `A` in the sections over `U`
+gives its image over `V`.
 
 Let `u : C ⥤ D` be a continuous functor from a site `(C, J)` to a site `(D, K)`, whose sheaf
 pushforward `u_* : Sheaf K A ⥤ Sheaf J A` has the left adjoint `u^* = u.sheafPullback A J K`.
@@ -27,8 +31,17 @@ with apex `X` over `F`, restricted along `u` in the first case.
 For a functor `G : A ⥤ B` preserving sheafification, the sheafified composite with `G` sends the
 constant sheaf with value `X` to the constant sheaf with value `G X`, on any site.
 
+Separately, since the constant sheaf functor is left adjoint to sections over a terminal object
+`T`, a constant sheaf whose sections over `T` vanish is zero
+(`CategoryTheory.Sheaf.isZero_of_isConstant_of_isZero_obj`).
+
 ## Main declarations
 
+* `CategoryTheory.toSheafify_app_const_comp_map`: restricting the image of `A` in the sections
+  of the constant sheaf over `U` to `V` gives its image over `V`; its elementwise form is
+  `CategoryTheory.toSheafify_app_const_map_apply`.
+* `CategoryTheory.Sheaf.isZero_of_isConstant_of_isZero_obj`: a constant sheaf with vanishing
+  sections over a terminal object is zero.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom`: the comparison `u^* (X_J) ⟶ X_K`.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom_naturality`: the comparison is natural
   in `X`.
@@ -44,6 +57,38 @@ constant sheaf with value `X` to the constant sheaf with value `G X`, on any sit
 public section
 
 open CategoryTheory Limits
+
+namespace CategoryTheory
+
+section ConstantPresheafRestriction
+
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Category* D]
+  [HasWeakSheafify J D]
+
+/-- On any site, restricting the image of `A` in the sections of the constant sheaf over `U`
+along `i : U ⟶ V` gives the image of `A` over `V`, since the constant presheaf has identity
+restrictions. -/
+@[reassoc (attr := simp)]
+theorem toSheafify_app_const_comp_map (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) :
+    (toSheafify J ((Functor.const _).obj A)).app U ≫ ((constantSheaf J D).obj A).obj.map i =
+      (toSheafify J ((Functor.const _).obj A)).app V :=
+  -- `((constantSheaf J D).obj A).obj` is by definition the sheafification of the constant
+  -- presheaf, whose restriction maps are identities.
+  ((toSheafify J ((Functor.const _).obj A)).naturality i).symm.trans (by simp)
+
+/-- The elementwise form of `toSheafify_app_const_comp_map`: restricting the image of `a : A` in
+the sections of the constant sheaf over `U` along `i : U ⟶ V` gives the image of `a` over `V`. -/
+@[simp]
+theorem toSheafify_app_const_map_apply {FD : D → D → Type*} {CD : D → Type*}
+    [∀ X Y, FunLike (FD X Y) (CD X) (CD Y)] [ConcreteCategory D FD]
+    (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) (a : ToType A) :
+    ((constantSheaf J D).obj A).obj.map i ((toSheafify J ((Functor.const _).obj A)).app U a) =
+      (toSheafify J ((Functor.const _).obj A)).app V a := by
+  rw [← ConcreteCategory.comp_apply, toSheafify_app_const_comp_map]
+
+end ConstantPresheafRestriction
+
+end CategoryTheory
 
 namespace CategoryTheory.Functor
 
@@ -167,7 +212,36 @@ end
 
 end CategoryTheory.Functor
 
+namespace CategoryTheory
+universe v u vA uA
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  {A : Type uA} [Category.{vA} A] [HasWeakSheafify J A]
+
+/-- The constant-sheaf adjunction evaluates the sheafification hom at a terminal object. -/
+lemma constantSheafAdj_homEquiv_apply {T : C} (hT : IsTerminal T) (M : A) (F : Sheaf J A)
+    (f : (constantSheaf J A).obj M ⟶ F) :
+    (constantSheafAdj J A hT).homEquiv M F f =
+      ((sheafificationAdjunction J A).homEquiv ((Functor.const Cᵒᵖ).obj M) F f).app
+        (Opposite.op T) := by
+  rw [constantSheafAdj, Adjunction.comp_homEquiv]
+  -- The constant-presheaf adjunction has identity unit; evaluation extracts this component.
+  change 𝟙 M ≫ _ = _
+  exact Category.id_comp _
+
+/-- The constant-sheaf adjunction is compatible with a map of terminal objects. -/
+lemma constantSheafAdj_homEquiv_comp_map {S T : C} (hS : IsTerminal S) (hT : IsTerminal T)
+    (i : S ⟶ T) (M : A) (F : Sheaf J A) (f : (constantSheaf J A).obj M ⟶ F) :
+    (constantSheafAdj J A hT).homEquiv M F f ≫ F.obj.map i.op =
+      (constantSheafAdj J A hS).homEquiv M F f := by
+  simp only [constantSheafAdj_homEquiv_apply]
+  exact (((sheafificationAdjunction J A).homEquiv
+    ((Functor.const Cᵒᵖ).obj M) F f).naturality i.op).symm.trans (Category.id_comp _)
+
+end CategoryTheory
+
 namespace CategoryTheory.Sheaf
+
+section
 
 variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {A B : Type*} [Category* A]
   [Category* B] (G : A ⥤ B) [HasWeakSheafify J A] [HasWeakSheafify J B]
@@ -199,5 +273,25 @@ lemma constantSheafCompComposeAndSheafifyIso_inv_app (X : A) :
       (presheafToSheaf J B).map ((Functor.compConstIso Cᵒᵖ G).hom.app X) ≫
         (presheafToSheafCompComposeAndSheafifyIso J G).inv.app ((Functor.const Cᵒᵖ).obj X) :=
   (rfl)
+
+end
+
+section
+
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Category* D]
+  [Preadditive D] [HasWeakSheafify J D]
+
+/-- A constant sheaf whose sections over a terminal object `T` vanish is zero: by the adjunction
+`constantSheafAdj`, endomorphisms of the constant sheaf on `N` are maps from `N` to its sections
+over `T`. -/
+theorem isZero_of_isConstant_of_isZero_obj {T : C} (hT : IsTerminal T) (F : Sheaf J D)
+    [F.IsConstant J] (hF : IsZero (F.obj.obj (Opposite.op T))) : IsZero F := by
+  obtain ⟨N, ⟨e⟩⟩ := F.mem_essImage_of_isConstant
+  refine (IsZero.iff_id_eq_zero F).2 ?_
+  have h := ((constantSheafAdj J D hT).homEquiv N F).injective
+    (a₁ := e.hom ≫ 𝟙 F) (a₂ := e.hom ≫ 0) (hF.eq_of_tgt _ _)
+  simpa using congr(e.inv ≫ $h)
+
+end
 
 end CategoryTheory.Sheaf

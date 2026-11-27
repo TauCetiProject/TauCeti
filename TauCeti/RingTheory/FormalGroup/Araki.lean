@@ -17,6 +17,10 @@ law over a ring in which all primes other than `p` are units, this gives the ful
 expansion of the `p`-series as a formal-group sum in the degrees `p ^ i`. The formula
 is stated coefficientwise using finite sums, which specify all coefficients of the infinite sum.
 
+Over a `ℚ`-algebra the Araki coefficients are triangular in the logarithm: `a_n` is
+`(p - p ^ (p ^ n)) ℓ_n` plus a function of `ℓ_k` and `a_k` for `k < n`, where `ℓ_k` is the
+degree-`p ^ k` coefficient of the logarithm (`FormalGroup.arakiCoeff_sub_arakiCoeff`).
+
 ## References
 
 * D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Appendix A2,
@@ -114,5 +118,39 @@ theorem natCast_mul_coeff_log_eq_sum_arakiCoeff [Algebra ℚ R] (hF : F.IsPTypic
       PowerSeries.subst_smul (.X_pow hjp), PowerSeries.subst_X (.X_pow hjp)]
   have hpow : p ^ n = p ^ j * p ^ (n - j) := by rw [← pow_add, Nat.add_sub_of_le hjn]
   rw [hL, ← hs, hpow, PowerSeries.coeff_expand_mul, PowerSeries.coeff_rescale, mul_comm]
+
+
+/-- **The Araki coefficients are triangular in the logarithm.** Let `F` and `G` be `p`-typical laws
+over a `ℚ`-algebra whose logarithms agree in the degrees `p ^ k` for `k < n`. Then
+`a_n(F) - a_n(G) = (p - p ^ (p ^ n)) (ℓ_n(F) - ℓ_n(G))`, where `ℓ_n` is the degree-`p ^ n`
+coefficient of the logarithm. In particular `a_n(F) = a_n(G)` when the logarithms also agree in
+degree `p ^ n`. -/
+theorem arakiCoeff_sub_arakiCoeff [Algebra ℚ R] (hF : F.IsPTypical p) (G : FormalGroup R)
+    [G.IsComm] (hG : G.IsPTypical p) {n : ℕ}
+    (h : ∀ k < n, coeff (p ^ k) F.log = coeff (p ^ k) G.log) :
+    F.arakiCoeff hp n - G.arakiCoeff hp n =
+      ((p : R) - (p : R) ^ p ^ n) * (coeff (p ^ n) F.log - coeff (p ^ n) G.log) := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    rcases n with _ | m
+    · simp
+    -- split off the terms `j = m + 1` and `j = 0` of Araki's logarithm recursion
+    have key (H : FormalGroup R) [H.IsComm] (hH : H.IsPTypical p) :
+        ((p : R) - (p : R) ^ p ^ (m + 1)) * coeff (p ^ (m + 1)) H.log = H.arakiCoeff hp (m + 1) +
+          ∑ j ∈ range m, coeff (p ^ (m - j)) H.log * H.arakiCoeff hp (j + 1) ^ p ^ (m - j) := by
+      have e := H.natCast_mul_coeff_log_eq_sum_arakiCoeff hp hH (m + 1)
+      rw [sum_range_succ, sum_range_succ'] at e
+      simp only [Nat.sub_self, pow_zero, coeff_one_log, pow_one, one_mul, Nat.sub_zero,
+        arakiCoeff_zero, Nat.add_sub_add_right] at e
+      linear_combination e
+    -- the lower Araki coefficients agree by induction
+    have ha (j : ℕ) (hj : j ≤ m) : F.arakiCoeff hp j = G.arakiCoeff hp j := by
+      have := ih j (by omega) fun k hk ↦ h k (by omega)
+      rwa [h j (by omega), sub_self, mul_zero, sub_eq_zero] at this
+    have hs : ∑ j ∈ range m, coeff (p ^ (m - j)) F.log * F.arakiCoeff hp (j + 1) ^ p ^ (m - j) =
+        ∑ j ∈ range m, coeff (p ^ (m - j)) G.log * G.arakiCoeff hp (j + 1) ^ p ^ (m - j) :=
+      sum_congr rfl fun j hj ↦ by
+        rw [h _ (by omega), ha _ (by have := mem_range.1 hj; omega)]
+    linear_combination key G hG - key F hF - hs
 
 end FormalGroup

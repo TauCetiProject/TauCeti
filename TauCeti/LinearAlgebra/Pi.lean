@@ -19,11 +19,13 @@ import TauCeti.Logic.Equiv.Set
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `∀ i, M i` consists of the families
 vanishing outside `s`, the `Pi` analogue of `Finsupp.supported`; such submodules for disjoint
 supports meet in `⊥`, the families vanishing on `s` and those vanishing off `s` are complementary,
-and over a finite index type these coordinate subspaces are compatible with base change along a
-ring map. This file also records the linear splitting of a dependent product along a predicate on
-the indices, the extension of a linear automorphism of `κ → M` to `ι → M` along an injective map
-`κ → ι`, the linear splittings of a `Fin (n + 1)`-indexed product into its initial segment and its
-last coordinate and of a `Fin (m + n)`-indexed product into its two blocks, and the
+a submodule of `ι → R` containing the standard basis vector at each coordinate where it does not
+vanish is complemented by the families vanishing there, and over a finite index type these
+coordinate subspaces are compatible with base change along a ring map. This file also records the
+linear splitting of a dependent product along a predicate on the indices, the extension of a linear
+automorphism of `κ → M` to `ι → M` along an injective map `κ → ι`, the linear splittings of a
+`Fin (n + 1)`-indexed product into its initial segment and its last coordinate and of a
+`Fin (m + n)`-indexed product into its two blocks, and the
 determinant of a coordinatewise endomorphism of a finite dependent product, which is used in
 finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
 product.
@@ -44,6 +46,8 @@ weights.
 * `Submodule.span_image_map_pi_bot`: over a finite index type, the families vanishing on `J` with
   coefficients in `S` are spanned by the coordinatewise images under a ring map `R →+* S` of
   those with coefficients in `R`.
+* `Submodule.isCompl_pi_bot_of_single_mem`: a submodule of `ι → R` containing `Pi.single i 1` at
+  every coordinate `i` where it does not vanish is complemented by the families vanishing there.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
   coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
   the image coordinate.
@@ -65,8 +69,12 @@ weights.
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
   disjoint finite sets `s` and `t` into a family on `s ∪ t`.
+* `LinearEquiv.conj_lsmul_eq_piMap`: conjugating by an `A`-linear equivalence onto a product
+  turns the action of `a : A` into the coordinatewise action of `a` on the factors.
 * `LinearMap.compLeft_single`: applying a linear map coordinatewise to the one-point family
   `Pi.single i x` gives the one-point family `Pi.single i (f x)`.
+* `LinearMap.map_single_one_one_eq_sub`: a linear map on `Fin 2 → K` takes `Pi.single 1 1` to
+  the difference of its values at `1` and at `Pi.single 0 1`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -152,6 +160,25 @@ public theorem span_image_map_pi_bot {R S ι : Type*} [Semiring R] [Semiring S] 
         by_cases hj : j = i
         · subst hj; simp
         · simp [hj]
+
+/-- **A coordinate complement.** If a submodule `W` of `ι → R` contains the standard basis vector
+`Pi.single i 1` at every coordinate `i` on which some vector of `W` does not vanish, then `W` is
+complemented by the families vanishing at all those coordinates. -/
+public theorem isCompl_pi_bot_of_single_mem {R ι : Type*} [Semiring R] [Finite ι] [DecidableEq ι]
+    {W : Submodule R (ι → R)} (hW : ∀ i, (∃ w ∈ W, w i ≠ 0) → Pi.single i 1 ∈ W) :
+    IsCompl W (pi {i | ∃ w ∈ W, w i ≠ 0} fun _ ↦ ⊥) := by
+  have := Fintype.ofFinite ι
+  refine ⟨disjoint_def.mpr fun v hv hv' ↦ funext fun i ↦ by_contra fun h ↦
+    h ((mem_bot R).mp (mem_pi.mp hv' i ⟨v, hv, h⟩)), ?_⟩
+  rw [codisjoint_iff, eq_top_iff']
+  intro v
+  rw [← Finset.univ_sum_single v]
+  refine sum_mem fun i _ ↦ ?_
+  by_cases hi : ∃ w ∈ W, w i ≠ 0
+  · rw [← mul_one (v i), ← smul_eq_mul, Pi.single_smul']
+    exact mem_sup_left (W.smul_mem _ (hW i hi))
+  · exact mem_sup_right <| mem_pi.mpr fun j hj ↦
+      (mem_bot R).mpr (Pi.single_eq_of_ne (by rintro rfl; exact hi hj) _)
 
 /-- **Infinitely many submodules.** For an infinite index type, `ι → R` has infinitely many
 submodules over a nontrivial semiring `R`: the lines spanned by the coordinate vectors are
@@ -378,6 +405,18 @@ public theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
 
 end FinsetUnion
 
+/-- **An equivalence onto a product diagonalizes the action of scalars.** Conjugating by an
+`A`-linear equivalence `e : M ≃ₗ[A] ∀ i, N i`, viewed over `R`, turns the action of `a : A` on `M`
+into the coordinatewise action `LinearMap.piMap` of `a` on the factors. -/
+public theorem conj_lsmul_eq_piMap {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {ι : Type*} {N : ι → Type*}
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] [∀ i, Module A (N i)]
+    [∀ i, IsScalarTower R A (N i)] (e : M ≃ₗ[A] ∀ i, N i) (a : A) :
+    (e.restrictScalars R).conj (Algebra.lsmul R R M a) =
+      LinearMap.piMap fun i => Algebra.lsmul R R (N i) a := by
+  refine LinearMap.ext fun y => funext fun x => ?_
+  simp [LinearEquiv.conj_apply]
+
 end LinearEquiv
 
 namespace LinearMap
@@ -444,6 +483,14 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   have := finite_of_surjective_pi Φ hΦ
   rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
   exact finrank_range_add_finrank_ker Φ
+
+/-- For a linear map `A` on `Fin 2 → K`, the value at `Pi.single 1 1` is the difference of the
+values at `1` and at `Pi.single 0 1`, since `1 = Pi.single 0 1 + Pi.single 1 1`. -/
+public theorem map_single_one_one_eq_sub {K V : Type*} [Semiring K] [AddCommGroup V] [Module K V]
+    (A : (Fin 2 → K) →ₗ[K] V) : A (Pi.single 1 1) = A 1 - A (Pi.single 0 1) := by
+  rw [eq_sub_iff_add_eq, ← map_add, add_comm]
+  congr 1
+  simpa [Fin.sum_univ_two] using Finset.univ_sum_single (1 : Fin 2 → K)
 
 end LinearMap
 

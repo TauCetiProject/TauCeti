@@ -36,7 +36,7 @@ The general form serves modules `M'` which are base changes without being tensor
 construction: for affine opens `V ≤ U` of a scheme `X` and a quasi-coherent `𝒪_X`-module `E`,
 restriction induces an isomorphism `Γ(X, V) ⊗[Γ(X, U)] Γ(E, U) ≃ₗ[Γ(X, V)] Γ(E, V)`, but the two
 modules are not definitionally identified
-(`TauCeti.AlgebraicGeometry.Grassmannian.Relative`).
+(`TauCeti.AlgebraicGeometry.Grassmannian.Relative.Basic`).
 
 ## Main definitions
 
@@ -48,6 +48,8 @@ modules are not definitionally identified
 * `IsBaseChange.toSchemeHom_comp_grassmannianSchemeHom`: the morphism on points.
 * `IsBaseChange.isPullback_grassmannianSchemeHom`: **base change**; `G(k, M')` is the fibre
   product of `G(k, M)` and `Spec R'` over `Spec R`.
+* `IsBaseChange.isIso_grassmannianSchemeHom`: along a bijective `algebraMap R R'`, the morphism
+  `G(k, M') ⟶ G(k, M)` is an isomorphism.
 * `IsBaseChange.grassmannianSchemeHom_comp`: the morphisms for two successive base changes
   compose to the morphism for the composite base change.
 * `Module.Grassmannian.toSchemeHom_comp_baseChangeHom` and
@@ -185,6 +187,15 @@ theorem isPullback_grassmannianSchemeHom :
   obtain ⟨N', rfl⟩ := exists_toSchemeHom_eq (A := B) c hc₂
   rw [toSchemeHom_comp_grassmannianSchemeHom] at hc₁
   rw [← toSchemeHom_injective hc₁, Equiv.symm_apply_apply]
+
+variable (k) in
+/-- Along a bijective `algebraMap R R'`, the morphism `G(k, M') ⟶ G(k, M)` is an isomorphism: it is
+the base change of `G(k, M)` along the isomorphism `Spec R' ⟶ Spec R`. -/
+theorem isIso_grassmannianSchemeHom (h : Function.Bijective (algebraMap R R')) :
+    IsIso (grassmannianSchemeHom hf k) := by
+  have : IsIso (CommRingCat.ofHom (algebraMap R R')) :=
+    (ConcreteCategory.isIso_iff_bijective _).mpr h
+  exact (hf.isPullback_grassmannianSchemeHom k).flip.isIso_snd_of_isIso
 
 section Comp
 

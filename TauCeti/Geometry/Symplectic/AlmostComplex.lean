@@ -52,6 +52,8 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.AlmostComplexStructure.bilinForm_apply_left_eq_neg_apply_right` and
   `TauCeti.AlmostComplexStructure.bilinForm_apply_apply_self_eq_zero`: a bilinear form preserved
   by `J` satisfies `g (J v, w) = -g (v, J w)`, and `g (v, J v) = 0` when it is symmetric.
+* `TauCeti.AlmostComplexStructure.bilinForm_apply_left_symm`: an alternating form `B` preserved by
+  `J` satisfies `B (J v, w) = B (J w, v)`.
 * `TauCeti.AlmostComplexStructure.restrict`: the restriction of `J` to a `J`-invariant subspace.
 * `TauCeti.IsComplexLinearMap.restrict`: a complex-linear map preserving a `J`-invariant subspace
   restricts to a complex-linear map of the restricted structure.
@@ -66,7 +68,9 @@ on tangent fibers rather than restating the linear algebra.
   variations `Y` of `J`, and `TauCeti.SymplecticForm.compatibleTangentSpace ω J`: the variations
   that are moreover skew-adjoint for `ω`. Among variations anticommuting with `J`, skew-adjointness
   for `ω` is self-adjointness for `ω(·, J ·)`
-  (`TauCeti.SymplecticForm.mem_compatibleTangentSpace_iff_isSelfAdjoint`). The smooth
+  (`TauCeti.SymplecticForm.mem_compatibleTangentSpace_iff_isSelfAdjoint`). The variations of `J` are
+  its complex-antilinear endomorphisms
+  (`TauCeti.AlmostComplexStructure.tangentSpace_eq_complexAntilinearMaps`). The smooth
   characterizations of these spaces as velocities of curves of tame, respectively compatible,
   structures are in `TauCeti.Geometry.Symplectic.Cayley.Tangent`.
 * `TauCeti.AlmostComplexStructure.add_mul_mul_mem_tangentSpace` and
@@ -343,6 +347,13 @@ theorem bilinForm_apply_left_eq_neg_apply_right (J : AlmostComplexStructure V)
   rw [apply_apply, map_neg] at h
   rw [← h, neg_neg]
 
+/-- An alternating bilinear form preserved by `J` becomes symmetric after precomposing its first
+slot with `J`: `B (J v) w = B (J w) v`. -/
+theorem bilinForm_apply_left_symm (J : AlmostComplexStructure V) {B : LinearMap.BilinForm ℝ V}
+    (hB : B.IsAlt) (hBJ : ∀ v w, B (J v) (J w) = B v w) (v w : V) :
+    B (J v) w = B (J w) v := by
+  rw [J.bilinForm_apply_left_eq_neg_apply_right hBJ, hB.neg_eq]
+
 /-- A symmetric bilinear form preserved by `J` pairs every vector `v` trivially with `J v`. -/
 theorem bilinForm_apply_apply_self_eq_zero (J : AlmostComplexStructure V)
     {g : LinearMap.BilinForm ℝ V} (hg : g.IsSymm) (hgJ : ∀ v w, g (J v) (J w) = g v w)
@@ -385,6 +396,13 @@ theorem mem_tangentSpace_iff_apply {J : AlmostComplexStructure V} {Y : Module.En
   refine forall_congr' fun v => ?_
   simp only [LinearMap.add_apply, mul_apply_eq_comp, LinearMap.zero_apply]
   exact add_eq_zero_iff_eq_neg
+
+/-- The variations of `J` are its complex-antilinear endomorphisms. -/
+theorem tangentSpace_eq_complexAntilinearMaps (J : AlmostComplexStructure V) :
+    J.tangentSpace = complexAntilinearMaps J.toLinearMap J.toLinearMap := by
+  ext Y
+  rw [mem_tangentSpace_iff_apply, mem_complexAntilinearMaps]
+  exact ⟨isComplexAntilinear_of_apply, IsComplexAntilinear.apply⟩
 
 /-- Averaging an endomorphism with its conjugate by `J` gives a variation of `J`: `Y + J Y J`
 anticommutes with `J` for every `Y`. -/
@@ -746,6 +764,12 @@ lemma separatingLeft (ω : SymplecticForm V) :
 lemma separatingRight (ω : SymplecticForm V) :
     ω.toBilinForm.SeparatingRight :=
   (LinearMap.IsRefl.nondegenerate_iff_separatingRight ω.isRefl).mp ω.nondegenerate
+
+/-- A vector is determined by its pairings under `ω`. -/
+theorem eq_of_forall_apply_eq (ω : SymplecticForm V) {x y : V} (h : ∀ w, ω x w = ω y w) :
+    x = y :=
+  LinearMap.ker_eq_bot.1 (LinearMap.separatingLeft_iff_ker_eq_bot.1 ω.separatingLeft)
+    (LinearMap.ext h)
 
 /-- Nondegeneracy supplies a **hyperbolic partner**: every nonzero vector `x` admits a vector `y`
 with `ω x y = 1`. -/

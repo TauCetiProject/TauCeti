@@ -19,7 +19,7 @@ product topology on the entries. So a sequence, or more generally a function alo
 converges in `SL(n, R)` exactly when each of its entries converges. For the same reason `SL(n, R)`
 acts jointly continuously on column vectors, and it is second countable when `R` is; over a
 topological ring, so then is its quotient `PSL(n, R)`. Over a `T1` topological ring it is a closed
-subset of the matrices, so it is σ-compact when `R` is.
+subset of the matrices, so it is σ-compact, or compact, when `R` is.
 
 ## Main results
 
@@ -29,6 +29,8 @@ subset of the matrices, so it is σ-compact when `R` is.
   column vectors.
 * `Matrix.SpecialLinearGroup.instSigmaCompactSpace`: over a σ-compact `T1` topological ring,
   `SL(n, R)` is σ-compact.
+* `Matrix.SpecialLinearGroup.instCompactSpace`: over a compact `T1` topological ring, `SL(n, R)`
+  is compact.
 * `Matrix.SpecialLinearGroup.instSecondCountableTopology`: over a second-countable ring,
   `SL(n, R)` is second countable, and hence so is its quotient `PSL(n, R)`.
 * `Matrix.SpecialLinearGroup.exists_tendsto_dilation_conj`: a sequence in `SL(2, ℝ)` whose first
@@ -64,6 +66,12 @@ instance instContinuousSMulVec [ContinuousAdd R] [ContinuousMul R] :
 instance instSigmaCompactSpace [IsTopologicalRing R] [T1Space R] [SigmaCompactSpace R] :
     SigmaCompactSpace (SpecialLinearGroup n R) :=
   isClosedEmbedding_val.sigmaCompactSpace
+
+/-- Over a compact `T1` topological ring, `SL(n, R)` is compact, as a closed subset of the compact
+space of matrices. -/
+instance instCompactSpace [IsTopologicalRing R] [T1Space R] [CompactSpace R] :
+    CompactSpace (SpecialLinearGroup n R) :=
+  isClosedEmbedding_val.compactSpace
 
 /-- Over a second-countable ring, `SL(n, R)` is second countable, as a subspace of the
 second-countable space of matrices.

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Eval.SMul
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Polynomial.DegreeLT
+public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Algebra.Polynomial.Taylor
 public import TauCeti.LinearAlgebra.Matrix.ConfluentVandermonde
 public import TauCeti.RingTheory.Polynomial.DegreeLT
@@ -16,6 +17,7 @@ import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Hermite interpolation
@@ -40,9 +42,11 @@ the Chinese remainder isomorphism `R[X] ⧸ (∏ i, (X - a i) ^ m i) ≃ ∏ i, 
 followed by the Taylor coordinates `TauCeti.taylorJetQuotientEquiv` at each node.
 
 For nodes indexed by `Fin r`, the matrix of `Polynomial.hermiteJet a m` from the monomial basis
-`Polynomial.degreeLT.basis R M` to the lexicographically ordered standard basis of the jet space is
-`Matrix.confluentVandermonde a m` (`Polynomial.toMatrix_hermiteJet`), and the inverse matrix
-`(Matrix.confluentVandermonde a m)⁻¹` represents the interpolation operator
+`Polynomial.degreeLT.basis R M` to the lexicographically ordered standard basis
+`TauCeti.lexJetBasis R m` of the jet space is `Matrix.confluentVandermonde a m`
+(`Polynomial.toMatrix_hermiteJet`), so the Hermite jet map is bijective iff the confluent
+Vandermonde determinant is a unit (`Polynomial.hermiteJet_bijective_iff_isUnit_det`), and the
+inverse matrix `(Matrix.confluentVandermonde a m)⁻¹` represents the interpolation operator
 `(Polynomial.hermiteJetEquiv ha m).symm` and lists the coefficients of `Polynomial.hermiteBasis`.
 Combining this matrix identification with `Matrix.isUnit_det_confluentVandermonde_iff` gives the
 exact `↔` characterizations of bijectivity for both Hasse and ordinary-derivative Hermite
@@ -58,6 +62,8 @@ interpolation over arbitrary commutative rings and fields (`Polynomial.hermiteJe
 * `Polynomial.hermiteJetEquiv`: for nodes with unit differences, Hermite interpolation as a linear
   equivalence; its inverse sends a jet datum to its interpolation polynomial.
 * `Polynomial.hermiteBasis`: the basis of `degreeLT R (∑ i, m i)` dual to the Hasse jets.
+* `TauCeti.lexJetBasis R m`: the standard basis of the jet space `∀ i, Fin (m i) → R`, indexed
+  by `Fin (∑ i, m i)` through `finSigmaFinEquiv`.
 
 ## Main results
 
@@ -81,14 +87,23 @@ interpolation over arbitrary commutative rings and fields (`Polynomial.hermiteJe
   jets.
 * `Polynomial.hasseJet_map`, `Polynomial.hermiteJet_map`, `Polynomial.map_hermiteJetEquiv_symm`:
   the jet maps and interpolation commute with ring homomorphisms.
+* `Polynomial.hermiteBasis_eq_of_dvd_taylor_mul_sub_one`,
+  `Polynomial.hermiteBasis_eq_prod_mul_pow_mul_taylor`: each Hermite basis polynomial factors as
+  `(∏ i ≠ r, (X - C (a i)) ^ m i) * (X - C (a r)) ^ s` times the Taylor shift at `-a r` of the
+  inverse modulo `X ^ (m r - s)` of the local complementary product, constructed from truncated
+  geometric series.
 * `Polynomial.ordinaryHermiteJet_bijective`,
-  `Polynomial.ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub`: the same interpolation with
-  ordinary derivatives, when the factorials `k !` with `k < m i` are units.
-* `Polynomial.toMatrix_hermiteJet`, `Polynomial.toMatrix_hermiteJet_piBasis`,
+  `Polynomial.ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub`,
+  `Polynomial.eval_iterate_derivative_smul_hermiteBasis`: the same interpolation and scaled basis
+  Kronecker-delta formula with ordinary derivatives, when the required factorials are invertible.
+* `Polynomial.toMatrix_hermiteJet`, `Polynomial.toLin_confluentVandermonde`,
+  `Polynomial.toMatrix_hermiteJet_piBasis`,
   `Polynomial.toMatrix_hermiteJetEquiv_symm`, `Polynomial.hermiteBasis_toMatrix_degreeLT_basis`,
   and `Polynomial.degreeLT_basis_toMatrix_hermiteBasis`: `hermiteJet a m`,
   `(hermiteJetEquiv ha m).symm`, and `hermiteBasis ha m` in coordinates are
   `Matrix.confluentVandermonde a m` and its inverse.
+* `Polynomial.hermiteJet_bijective_iff_isUnit_det`: for nodes indexed by `Fin r`, the Hermite jet
+  map is bijective iff `det (confluentVandermonde a m)` is a unit.
 * `Polynomial.hermiteJet_bijective_iff`, `Polynomial.hermiteJet_bijective_iff_ne`,
   `Polynomial.ordinaryHermiteJet_bijective_iff`, and
   `Polynomial.ordinaryHermiteJet_bijective_iff_ne`: exact `↔` characterizations of when Hasse
@@ -107,6 +122,33 @@ public section
 
 open Function Finset
 open scoped Matrix Nat
+
+namespace TauCeti
+
+variable {R : Type*} [Semiring R]
+
+variable (R) in
+/-- The standard basis of the jet space `∀ i, Fin (m i) → R`, indexed by `Fin (∑ i, m i)` in the
+lexicographic order `finSigmaFinEquiv ⟨i, k⟩` of the jets. -/
+noncomputable def lexJetBasis {r : ℕ} (m : Fin r → ℕ) :
+    Module.Basis (Fin (∑ i, m i)) R (∀ i, Fin (m i) → R) :=
+  (Pi.basis fun i => Pi.basisFun R (Fin (m i))).reindex finSigmaFinEquiv
+
+/-- The coordinate of a jet datum at the position `ρ` is its entry at the jet
+`finSigmaFinEquiv.symm ρ`. -/
+@[simp]
+theorem lexJetBasis_repr {r : ℕ} (m : Fin r → ℕ) (c : ∀ i, Fin (m i) → R) (ρ : Fin (∑ i, m i)) :
+    (lexJetBasis R m).repr c ρ = c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 := by
+  simp [lexJetBasis]
+
+/-- The basis vector at the position `ρ` is the indicator of the jet `finSigmaFinEquiv.symm ρ`. -/
+@[simp]
+theorem lexJetBasis_apply {r : ℕ} (m : Fin r → ℕ) (ρ : Fin (∑ i, m i)) :
+    lexJetBasis R m ρ =
+      Pi.single (finSigmaFinEquiv.symm ρ).1 (Pi.single (finSigmaFinEquiv.symm ρ).2 1) := by
+  simp [lexJetBasis, Pi.basis_apply]
+
+end TauCeti
 
 namespace Polynomial
 
@@ -206,17 +248,21 @@ variable {r : ℕ}
 
 /-- **The matrix of the Hermite jet map is the confluent Vandermonde matrix.** With respect to the
 monomial basis `degreeLT.basis R (∑ i, m i)` of `degreeLT R (∑ i, m i)` and the lexicographically
-ordered standard basis of the jet space `∀ i : Fin r, Fin (m i) → R`, the matrix of
-`hermiteJet a m` is `Matrix.confluentVandermonde a m`. -/
+ordered standard basis `TauCeti.lexJetBasis R m` of the jet space `∀ i : Fin r, Fin (m i) → R`,
+the matrix of `hermiteJet a m` is `Matrix.confluentVandermonde a m`. -/
 @[simp]
 theorem toMatrix_hermiteJet (a : Fin r → R) (m : Fin r → ℕ) :
-    LinearMap.toMatrix (degreeLT.basis R (∑ i, m i))
-      ((Pi.basis fun i => Pi.basisFun R (Fin (m i))).reindex finSigmaFinEquiv)
-      (hermiteJet a m) =
+    LinearMap.toMatrix (degreeLT.basis R (∑ i, m i)) (TauCeti.lexJetBasis R m) (hermiteJet a m) =
       Matrix.confluentVandermonde a m := by
   ext ρ j
-  simp [LinearMap.toMatrix_apply, Matrix.confluentVandermonde_apply, Pi.basis_repr,
-    Pi.basisFun_repr]
+  simp [LinearMap.toMatrix_apply, Matrix.confluentVandermonde_apply]
+
+/-- The Hermite jet map is the linear map of the confluent Vandermonde matrix in the monomial
+basis and the lexicographic jet basis. -/
+theorem toLin_confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
+    Matrix.toLin (degreeLT.basis R (∑ i, m i)) (TauCeti.lexJetBasis R m)
+      (Matrix.confluentVandermonde a m) = hermiteJet a m := by
+  rw [← toMatrix_hermiteJet, Matrix.toLin_toMatrix]
 
 /-- Multiplying the coefficient vector of `f ∈ degreeLT R (∑ i, m i)` by
 `Matrix.confluentVandermonde a m` computes the Hasse jets of `f` in lexicographic order. -/
@@ -224,14 +270,13 @@ theorem confluentVandermonde_mulVec_degreeLTEquiv (a : Fin r → R) (m : Fin r �
     (f : degreeLT R (∑ i, m i)) :
     Matrix.confluentVandermonde a m *ᵥ degreeLTEquiv R (∑ i, m i) f =
       fun ρ => hermiteJet a m f (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 := by
-  have h := LinearMap.toMatrix_mulVec_repr (degreeLT.basis R (∑ i, m i))
-    ((Pi.basis fun i => Pi.basisFun R (Fin (m i))).reindex finSigmaFinEquiv)
+  have h := LinearMap.toMatrix_mulVec_repr (degreeLT.basis R (∑ i, m i)) (TauCeti.lexJetBasis R m)
     (hermiteJet a m) f
   have hf : ⇑((degreeLT.basis R (∑ i, m i)).repr f) = degreeLTEquiv R (∑ i, m i) f :=
     _root_.funext fun j => degreeLT.basis_repr j f
   rw [toMatrix_hermiteJet, hf] at h
   ext ρ
-  simpa [Pi.basis_repr, Pi.basisFun_repr] using congr_fun h ρ
+  simpa using congr_fun h ρ
 
 end CommSemiring
 
@@ -484,6 +529,131 @@ theorem ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub
   rw [h]
   exact e.bijective.comp (hermiteJet_bijective_of_pairwise_isUnit_sub ha m)
 
+/-- **Local Taylor-inverse formula for the Hermite basis.** If `h` has degree below `m x.1 - x.2`
+and inverts the Taylor shift at `a x.1` of `∏ i ≠ x.1, (X - C (a i)) ^ m i` modulo
+`X ^ (m x.1 - x.2)`, then the Hermite basis polynomial at `x` is
+`(∏ i ≠ x.1, (X - C (a i)) ^ m i) * (X - C (a x.1)) ^ x.2 * taylor (-a x.1) h`. -/
+theorem hermiteBasis_eq_of_dvd_taylor_mul_sub_one [DecidableEq ι] (x : Σ i, Fin (m i))
+    {h : R[X]} (hdeg : h.degree < ↑(m x.1 - x.2))
+    (hdvd : X ^ (m x.1 - x.2) ∣
+      taylor (a x.1) (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) * h - 1) :
+    (hermiteBasis ha m x : R[X]) =
+      (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) * (X - C (a x.1)) ^ (x.2 : ℕ) *
+        taylor (-a x.1) h := by
+  nontriviality R
+  rw [hermiteBasis_apply]
+  symm
+  set Q : R[X] := ∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i
+  set f : R[X] := Q * (X - C (a x.1)) ^ (x.2 : ℕ) * taylor (-a x.1) h
+  refine (eq_hermiteJetEquiv_symm_iff ha m).2 ⟨?_, fun i k ↦ ?_⟩
+  · have hQ : Monic Q := monic_prod_X_sub_C_pow (univ.erase x.1) a m
+    have hP : Monic (Q * (X - C (a x.1)) ^ (x.2 : ℕ)) := hQ.mul ((monic_X_sub_C _).pow _)
+    have hsum : (∑ i ∈ univ.erase x.1, m i) + x.2 + (m x.1 - x.2) = ∑ i, m i := by
+      rw [add_assoc, Nat.add_sub_of_le x.2.isLt.le, sum_erase_add _ _ (mem_univ x.1)]
+    calc f.degree
+        ≤ (Q * (X - C (a x.1)) ^ (x.2 : ℕ)).degree + (taylor (-a x.1) h).degree := degree_mul_le _ _
+      _ = ↑((∑ i ∈ univ.erase x.1, m i) + x.2) + h.degree := by
+          rw [degree_eq_natDegree hP.ne_zero, hQ.natDegree_mul ((monic_X_sub_C _).pow _),
+            natDegree_prod_X_sub_C_pow, (monic_X_sub_C _).natDegree_pow, natDegree_X_sub_C,
+            mul_one, degree_taylor]
+      _ < ↑((∑ i ∈ univ.erase x.1, m i) + x.2) + ↑(m x.1 - x.2) :=
+          WithBot.add_lt_add_left WithBot.coe_ne_bot hdeg
+      _ = ↑(∑ i, m i) := by rw [← Nat.cast_add, hsum]
+  · by_cases hi : i = x.1
+    · subst hi
+      have htf : taylor (a x.1) f = X ^ (x.2 : ℕ) * (taylor (a x.1) Q * h) := by
+        rw [taylor_mul, taylor_mul_X_sub_C_pow, taylor_taylor, add_neg_cancel, taylor_zero]
+        ring
+      have hdvd' : X ^ m x.1 ∣ taylor (a x.1) f - X ^ (x.2 : ℕ) := by
+        conv_lhs => rw [← Nat.add_sub_of_le x.2.isLt.le, pow_add]
+        rw [htf, ← mul_sub_one]
+        exact mul_dvd_mul_left _ hdvd
+      have hk := X_pow_dvd_iff.1 hdvd' k k.isLt
+      rw [coeff_sub, sub_eq_zero, taylor_coeff, coeff_X_pow] at hk
+      rw [hk]
+      simp [Pi.single_apply, Fin.ext_iff]
+    · have hdvdQ : (X - C (a i)) ^ m i ∣ f :=
+        (dvd_prod_of_mem _ (mem_erase.2 ⟨hi, mem_univ i⟩)).trans
+          ((dvd_mul_right _ _).trans (dvd_mul_right _ _))
+      rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.1 hdvdQ k k.isLt,
+        Pi.single_eq_of_ne hi, Pi.zero_apply]
+
+/-- When there is only one node, the Hermite basis polynomials are the Taylor monomials
+`(X - C (a x.1)) ^ x.2`. -/
+@[simp]
+theorem hermiteBasis_of_subsingleton [Subsingleton ι] (x : Σ i, Fin (m i)) :
+    (hermiteBasis ha m x : R[X]) = (X - C (a x.1)) ^ (x.2 : ℕ) := by
+  let : DecidableEq ι := fun _ _ ↦ isTrue (Subsingleton.elim _ _)
+  have hempty : univ.erase x.1 = (∅ : Finset ι) :=
+    eq_empty_of_forall_notMem fun i hi ↦ (mem_erase.1 hi).1 (Subsingleton.elim i x.1)
+  have hpos : 0 < m x.1 - x.2 := Nat.sub_pos_of_lt x.2.isLt
+  have hdeg : (1 : R[X]).degree < ↑(m x.1 - x.2) :=
+    degree_one_le.trans_lt (Nat.cast_pos.2 hpos)
+  simpa [hempty] using hermiteBasis_eq_of_dvd_taylor_mul_sub_one ha m x hdeg (by simp [hempty])
+
+/-- **Explicit truncated-geometric-series formula for the Hermite basis.** Given inverses `v i` of
+`a x.1 - a i` for `i ≠ x.1`, each shifted linear factor `X + C (a x.1 - a i)` has formal power
+series inverse `C (v i) * ∑ k, (-v i) ^ k * X ^ k`. Truncating the product of their `m i`-th powers
+below degree `m x.1 - x.2` via `PowerSeries.trunc` gives the local factor of
+`hermiteBasis ha m x`. -/
+theorem hermiteBasis_eq_prod_mul_pow_mul_taylor [DecidableEq ι] (x : Σ i, Fin (m i)) {v : ι → R}
+    (hv : ∀ i, i ≠ x.1 → (a x.1 - a i) * v i = 1) :
+    (hermiteBasis ha m x : R[X]) =
+      (∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i) * (X - C (a x.1)) ^ (x.2 : ℕ) *
+        taylor (-a x.1) (PowerSeries.trunc (m x.1 - x.2)
+          (∏ i ∈ univ.erase x.1,
+            (PowerSeries.C (v i) * PowerSeries.mk fun k ↦ (-v i) ^ k) ^ m i)) := by
+  set N : ℕ := m x.1 - x.2
+  let g : ι → PowerSeries R := fun i ↦ PowerSeries.C (v i) * PowerSeries.mk fun k ↦ (-v i) ^ k
+  let G : PowerSeries R := ∏ i ∈ univ.erase x.1, g i ^ m i
+  refine hermiteBasis_eq_of_dvd_taylor_mul_sub_one ha m x (PowerSeries.degree_trunc_lt G N) ?_
+  set Q : R[X] := ∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i
+  have hinv : ((taylor (a x.1) Q : R[X]) : PowerSeries R) * G = 1 := by
+    have htQ : ((taylor (a x.1) Q : R[X]) : PowerSeries R) =
+        ∏ i ∈ univ.erase x.1, ((taylor (a x.1) (X - C (a i)) : R[X]) : PowerSeries R) ^ m i := by
+      simp only [Q, ← coeToPowerSeries.ringHom_apply, ← taylorAlgHom_apply, map_prod, map_pow]
+    rw [htQ, ← prod_mul_distrib]
+    refine prod_eq_one fun i hi ↦ ?_
+    rw [← mul_pow]
+    have hlin : ((taylor (a x.1) (X - C (a i)) : R[X]) : PowerSeries R) * PowerSeries.C (v i) =
+        1 - PowerSeries.C (-v i) * PowerSeries.X := by
+      have ht : taylor (a x.1) (X - C (a i)) = X + C (a x.1 - a i) := by
+        simp [taylor_apply, sub_eq_add_neg, add_assoc]
+      rw [ht, Polynomial.coe_add, Polynomial.coe_X, Polynomial.coe_C, add_mul,
+        ← PowerSeries.C.map_mul, hv i (mem_erase.1 hi).1, map_one, map_neg]
+      ring
+    dsimp only [g]
+    rw [← mul_assoc, hlin, mul_comm, TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one,
+      one_pow]
+  rw [X_pow_dvd_iff]
+  intro d hd
+  rw [coeff_sub, sub_eq_zero]
+  calc (taylor (a x.1) Q * PowerSeries.trunc N G).coeff d
+      = PowerSeries.coeff d ((taylor (a x.1) Q : PowerSeries R) *
+          (PowerSeries.trunc N G : PowerSeries R)) := by
+          rw [← Polynomial.coeff_coe, Polynomial.coe_mul]
+    _ = (PowerSeries.trunc N ((taylor (a x.1) Q : PowerSeries R) *
+          (PowerSeries.trunc N G : PowerSeries R))).coeff d := by
+          rw [PowerSeries.coeff_trunc, ite_eq_left hd]
+    _ = (PowerSeries.trunc N (1 : PowerSeries R)).coeff d := by
+          rw [PowerSeries.trunc_mul_trunc, hinv]
+    _ = (1 : R[X]).coeff d := by
+          rw [PowerSeries.coeff_trunc, ite_eq_left hd, ← Polynomial.coe_one, Polynomial.coeff_coe]
+
+/-- Scaling a Hermite basis polynomial by an inverse `u` of `(x.2)!` yields Kronecker-delta values
+for the ordinary derivatives `(derivative^[j] _).eval (a i)` of orders `j < m i`. -/
+theorem eval_iterate_derivative_smul_hermiteBasis [DecidableEq ι] (x : Σ i, Fin (m i)) {u : R}
+    (hu : ((x.2 : ℕ)! : R) * u = 1) (i : ι) {j : ℕ} (hj : j < m i) :
+    (derivative^[j] (u • (hermiteBasis ha m x : R[X]))).eval (a i) =
+      if i = x.1 ∧ j = x.2 then 1 else 0 := by
+  have hev := eval_hasseDeriv_hermiteBasis ha m x i ⟨j, hj⟩
+  by_cases h : i = x.1 ∧ j = x.2
+  · rcases h with ⟨rfl, rfl⟩
+    have hx : (⟨x.1, ⟨x.2, hj⟩⟩ : Σ i, Fin (m i)) = x := by ext <;> rfl
+    simp [← factorial_smul_hasseDeriv, hev, hx, mul_comm _ u ▸ hu]
+  · have hx : x ≠ ⟨i, ⟨j, hj⟩⟩ := fun h' ↦ h ⟨(congr_arg Sigma.fst h').symm, by subst h'; rfl⟩
+    simp [← factorial_smul_hasseDeriv, hev, hx, h]
+
 end CommRing
 
 section ConfluentVandermonde
@@ -551,9 +721,8 @@ lexicographically ordered standard jet basis to the monomial basis is
 @[simp]
 theorem toMatrix_hermiteJetEquiv_symm
     (ha : Pairwise fun i j => IsUnit (a i - a j)) (m : Fin r → ℕ) :
-    LinearMap.toMatrix
-      ((Pi.basis fun i => Pi.basisFun R (Fin (m i))).reindex finSigmaFinEquiv)
-      (degreeLT.basis R (∑ i, m i)) (hermiteJetEquiv ha m).symm.toLinearMap =
+    LinearMap.toMatrix (TauCeti.lexJetBasis R m) (degreeLT.basis R (∑ i, m i))
+      (hermiteJetEquiv ha m).symm.toLinearMap =
       (Matrix.confluentVandermonde a m)⁻¹ := by
   rw [← degreeLT_basis_toMatrix_hermiteBasis_reindex ha m]
   ext j ρ
@@ -567,15 +736,19 @@ theorem confluentVandermonde_inv_mulVec
     (Matrix.confluentVandermonde a m)⁻¹ *ᵥ
         (fun ρ => c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2) =
       degreeLTEquiv R (∑ i, m i) ((hermiteJetEquiv ha m).symm c) := by
-  have h := LinearMap.toMatrix_mulVec_repr
-    ((Pi.basis fun i => Pi.basisFun R (Fin (m i))).reindex finSigmaFinEquiv)
-    (degreeLT.basis R (∑ i, m i)) (hermiteJetEquiv ha m).symm.toLinearMap c
-  have hc : ⇑(((Pi.basis fun i => Pi.basisFun R (Fin (m i))).reindex finSigmaFinEquiv).repr c) =
-      fun ρ => c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 := by
-    ext ρ
-    simp [Pi.basis_repr, Pi.basisFun_repr]
+  have h := LinearMap.toMatrix_mulVec_repr (TauCeti.lexJetBasis R m) (degreeLT.basis R (∑ i, m i))
+    (hermiteJetEquiv ha m).symm.toLinearMap c
+  have hc : ⇑((TauCeti.lexJetBasis R m).repr c) =
+      fun ρ => c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 :=
+    _root_.funext (TauCeti.lexJetBasis_repr m c)
   rw [toMatrix_hermiteJetEquiv_symm, hc] at h
   exact h.trans (_root_.funext fun j => degreeLT.basis_repr j _)
+
+/-- The Hermite jet map is bijective iff the confluent Vandermonde determinant is a unit. -/
+theorem hermiteJet_bijective_iff_isUnit_det (a : Fin r → R) (m : Fin r → ℕ) :
+    Bijective (hermiteJet a m) ↔ IsUnit (Matrix.confluentVandermonde a m).det := by
+  rw [← toMatrix_hermiteJet]
+  exact (LinearMap.isUnit_det_toMatrix_iff_bijective _ _ _).symm
 
 end Fin
 
@@ -598,9 +771,7 @@ theorem hermiteJet_bijective_iff {a : ι → R} {m : ι → ℕ} :
     ext f j k
     simp [eR, eL, d]
   rw [← EquivLike.bijective_comp eL, ← EquivLike.comp_bijective _ eR, ← hcomp,
-    ← LinearMap.isUnit_det_toMatrix_iff_bijective (degreeLT.basis R (∑ j, (m ∘ d) j))
-      ((Pi.basis fun j => Pi.basisFun R (Fin ((m ∘ d) j))).reindex finSigmaFinEquiv),
-    toMatrix_hermiteJet, Matrix.isUnit_det_confluentVandermonde_iff]
+    hermiteJet_bijective_iff_isUnit_det, Matrix.isUnit_det_confluentVandermonde_iff]
   exact ⟨fun h i j hij hi hj => by
       simpa [d] using h (e i) (e j) (e.injective.ne hij) (by simpa [d] using hi)
         (by simpa [d] using hj),
@@ -757,6 +928,24 @@ example : ((hermiteJetEquiv (a := ![(0 : ℤ), 1])
   · rw [Fin.sum_univ_two]
     exact max_lt (by simp) ((degree_X_pow_le 2).trans_lt (by decide))
   · fin_cases i <;> fin_cases k <;> simp [hasseDeriv_one]
+
+/-- The matrix of the Hermite jet map at the double node `0` and the simple node `1`. -/
+example : LinearMap.toMatrix (degreeLT.basis ℤ (∑ i, ![2, 1] i)) (TauCeti.lexJetBasis ℤ ![2, 1])
+    (hermiteJet ![(0 : ℤ), 1] ![2, 1]) = !![1, 0, 0; 0, 1, 0; 1, 1, 1] := by
+  rw [toMatrix_hermiteJet]
+  ext ρ j
+  obtain ⟨⟨i, k⟩, rfl⟩ := finSigmaFinEquiv.surjective ρ
+  rw [Matrix.confluentVandermonde_finSigmaFinEquiv]
+  fin_cases i <;> fin_cases k <;> fin_cases j <;> decide
+
+/-- The nodes `(1, 0)` give the matrix `[[1, 1], [1, 0]]`, whose determinant `-1` pins the sign. -/
+example : LinearMap.toMatrix (degreeLT.basis ℤ (∑ i, ![1, 1] i)) (TauCeti.lexJetBasis ℤ ![1, 1])
+    (hermiteJet ![(1 : ℤ), 0] ![1, 1]) = !![1, 1; 1, 0] := by
+  rw [toMatrix_hermiteJet]
+  ext ρ j
+  obtain ⟨⟨i, k⟩, rfl⟩ := finSigmaFinEquiv.surjective ρ
+  rw [Matrix.confluentVandermonde_finSigmaFinEquiv]
+  fin_cases i <;> fin_cases k <;> fin_cases j <;> decide
 
 /-- A repeated node of multiplicity `0` does not obstruct Hermite interpolation: `a = ![0, 0, 1]`
 is not injective, yet `hermiteJet ![(0 : ℤ), 0, 1] ![1, 0, 1]` is bijective. -/

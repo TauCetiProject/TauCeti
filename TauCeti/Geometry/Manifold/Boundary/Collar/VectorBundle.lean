@@ -168,11 +168,6 @@ private def targetBase (c : SmoothCollar n ∞ M) {ε : ℝ} (hε : ε < 1) :
       ((contMDiff_inclusion hsub).comp contMDiff_snd))⟩
 
 
-local instance depthHausdorff (ε : ℝ) : T2Space (normalIioOpens ε) := by
-  let : T2Space (EuclideanHalfSpace 1) :=
-    (𝓡∂ 1).isClosedEmbedding.toIsEmbedding.t2Space
-  infer_instance
-
 variable (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F]
   (V : M → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]

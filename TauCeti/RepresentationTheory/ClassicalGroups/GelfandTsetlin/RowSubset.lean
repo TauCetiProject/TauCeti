@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
+public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Weight
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.GroupTheory.Finiteness
@@ -33,6 +34,8 @@ determinant shift `TauCeti.GTPattern.shift 1`.
 
 * `TauCeti.GTPattern.rowSubset_univ`: the pattern of all rows is the constant pattern `1`.
 * `TauCeti.GTPattern.rowSubset_injective`: distinct row subsets give distinct patterns.
+* `TauCeti.GTPattern.rowWeight_rowSubset`: the weight of the pattern of `I` is the indicator
+  of `I`.
 * `TauCeti.GTPattern.mem_range_rowSubset`: the row-subset patterns are exactly the patterns with
   entries in `{0, 1}`.
 * `TauCeti.GTPattern.closure_range_rowSubset`: the row-subset patterns generate the nonnegative
@@ -105,30 +108,41 @@ theorem rowSubset_univ : rowSubset (univ : Finset (Fin n)) = const n 1 := by
   · simp only [h, true_and, and_true, min_eq_right h]
   · simp [h]
 
-/-- In the pattern of `I`, row `j ≤ n` has exactly `#{r ∈ I | r < j}` nonzero entries. -/
-private theorem card_filter_rowSubset_ne_zero (I : Finset (Fin n)) {j : ℕ} (hj : j ≤ n) :
-    #{c ∈ range j | rowSubset I c j ≠ 0} = #{r ∈ I | r.val < j} := by
-  have hk := card_filter_val_lt_le I j
-  have : {c ∈ range j | rowSubset I c j ≠ 0} = range #{r ∈ I | r.val < j} := by
-    ext c
-    simp only [mem_filter, mem_range, rowSubset_apply, hj, true_and, ne_eq, ite_eq_right_iff,
-      one_ne_zero, imp_false, not_not]
-    omega
-  rw [this, card_range]
+/-- The first `i` entries of row `j ≤ n` of the pattern of `I` sum to `min i #{r ∈ I | r < j}`. -/
+theorem sum_range_rowSubset (I : Finset (Fin n)) {j : ℕ} (hj : j ≤ n) (i : ℕ) :
+    ∑ c ∈ range i, rowSubset I c j = (min i #{r ∈ I | r.val < j} : ℕ) := by
+  induction i with
+  | zero => simp
+  | succ i ih =>
+    rw [sum_range_succ, ih, rowSubset_apply]
+    split_ifs <;> omega
+
+/-- Row `j ≤ n` of the pattern of `I` sums to `#{r ∈ I | r < j}`. -/
+@[simp]
+theorem rowSum_rowSubset (I : Finset (Fin n)) {j : ℕ} (hj : j ≤ n) :
+    (rowSubset I).rowSum j = #{r ∈ I | r.val < j} := by
+  rw [rowSum_def, sum_range_rowSubset I hj, min_eq_right (card_filter_val_lt_le I j)]
+
+/-- The weight of the pattern of `I` is the indicator of `I`. -/
+@[simp]
+theorem rowWeight_rowSubset (I : Finset (Fin n)) :
+    (rowSubset I).rowWeight = fun r => if r ∈ I then 1 else 0 := by
+  funext r
+  have h := card_filter_castSucc_lt_succ I r
+  simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at h
+  rw [rowWeight_eq_rowSum_sub, rowSum_rowSubset I r.isLt, rowSum_rowSubset I r.isLt.le, h]
+  split_ifs <;> simp
 
 /-- **Distinct row subsets give distinct patterns**, so the row-subset patterns are `2 ^ n`
 distinct patterns. -/
 theorem rowSubset_injective : Function.Injective (rowSubset (n := n)) := by
   intro I J h
-  have hcount : ∀ j, j ≤ n → #{r ∈ I | r.val < j} = #{r ∈ J | r.val < j} := fun j hj => by
-    rw [← card_filter_rowSubset_ne_zero I hj, ← card_filter_rowSubset_ne_zero J hj, h]
-  -- A row `r` belongs to `I` exactly when the count increases from row `r` to row `r + 1`.
+  -- The weight of the pattern of `I` is the indicator of `I`.
+  have hw := congrArg rowWeight h
+  simp only [rowWeight_rowSubset] at hw
   ext r
-  have hI := card_filter_castSucc_lt_succ I r
-  have hJ := card_filter_castSucc_lt_succ J r
-  simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at hI hJ
-  rw [hcount _ r.isLt, hcount _ r.isLt.le] at hI
-  split_ifs at hI hJ <;> simp_all
+  have := congrFun hw r
+  by_cases hI : r ∈ I <;> by_cases hJ : r ∈ J <;> simp_all
 
 /-! ### The row-subset patterns generate the nonnegative patterns -/
 
