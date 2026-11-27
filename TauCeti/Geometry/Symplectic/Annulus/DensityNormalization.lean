@@ -19,6 +19,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem.DomRestrict
 import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -534,21 +535,13 @@ theorem det_fderiv_stripDensityNormalization_pos (hρ : ContDiff ℝ 1 ρ)
 it has invertible strict derivative. -/
 private theorem isOpenMap_domRestrict_stripDensityNormalization (hρ : ContDiff ℝ 1 ρ)
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
-    IsOpenMap ((stripDensityNormalizationSource ρ).domRestrict (stripDensityNormalization ρ)) := by
-  refine isOpenMap_iff_nhds_le.2 fun ⟨p, hp⟩ ↦ ?_
-  have hdet := (det_fderiv_stripDensityNormalization_pos hρ hpos hp).ne'
-  have hΦ : HasStrictFDerivAt (stripDensityNormalization ρ)
-      ((fderiv ℝ (stripDensityNormalization ρ) p).toContinuousLinearEquivOfDetNeZero hdet :
-        (ℝ × ℝ) →L[ℝ] ℝ × ℝ) p := by
-    rw [ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero]
-    exact hasStrictFDerivAt_stripDensityNormalization hρ
-      (stripColumnMean_pos_of_forall hρ.continuous.continuousOn hpos p.1).ne'
-  -- The source is open, so the neighbourhoods of `p` in it map onto those in the plane; the
-  -- restricted map is `Φ` composed with the inclusion of the source, which closes the goal.
-  have hnhds := map_nhds_subtypeVal_eq_nhds hp
-    ((isOpen_stripDensityNormalizationSource hρ.continuous).mem_nhds hp)
-  rw [domRestrict_apply, ← hΦ.map_nhds_eq_of_equiv, ← hnhds, Filter.map_map]
-  rfl
+    IsOpenMap ((stripDensityNormalizationSource ρ).domRestrict (stripDensityNormalization ρ)) :=
+  isOpenMap_domRestrict_of_hasStrictFDerivAt_of_isInvertible
+    (isOpen_stripDensityNormalizationSource hρ.continuous)
+    (fun p _ ↦ hasStrictFDerivAt_stripDensityNormalization hρ
+      (stripColumnMean_pos_of_forall hρ.continuous.continuousOn hpos p.1).ne')
+    fun _ hp ↦ ⟨_, ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _
+      (det_fderiv_stripDensityNormalization_pos hρ hpos hp).ne'⟩
 
 /-- The density normalization of a `C¹` density positive on the strip, as an open partial
 homeomorphism of the plane with source `TauCeti.stripDensityNormalizationSource ρ`, an open

@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.TangentCone.Chart
@@ -37,6 +38,9 @@ open set.
 * `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
   invertible, and so is the derivative of its inverse (`TauCeti.isInvertible_mfderiv_chart_symm`)
   and the derivative read in the model space (`TauCeti.isInvertible_mvfderiv_chart`).
+* `TauCeti.mfderiv_chart_symm_apply_eq_symm_apply`: the derivative of the inverse chart inverts the
+  derivative of the chart, and `TauCeti.continuousOn_mk_mfderiv_chart_symm`: the tangent vector
+  which a chart reads as a fixed vector of the model space varies continuously along its source.
 * `TauCeti.hasMFDerivAt_iff_hasFDerivAt_comp_chartAt_symm`: a map into a normed space has a given
   derivative if and only if its expression in the preferred chart does.
 * `TauCeti.contDiffAt_symm_trans_of_mem_maximalAtlas`: a transition map between two charts of the
@@ -147,6 +151,37 @@ theorem isInvertible_mvfderiv_chart (he : e ∈ IsManifold.maximalAtlas 𝓘(�
   unfold mvfderiv
   exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e y), rfl⟩
     (isInvertible_mfderiv_chart he hy)
+
+/-- The derivative of the inverse of a chart of the `C^1` maximal atlas, at the image of a point of
+the source, inverts the derivative of the chart. -/
+theorem mfderiv_chart_symm_apply_eq_symm_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
+    {y : M} (hy : y ∈ e.source) (L : TangentSpace 𝓘(𝕜, E) y ≃L[𝕜] TangentSpace 𝓘(𝕜, E) (e y))
+    (hL : (L : TangentSpace 𝓘(𝕜, E) y →L[𝕜] _) = mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e y)
+    (v : TangentSpace 𝓘(𝕜, E) (e y)) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e.symm (e y) v = L.symm v := by
+  have h := e.mfderiv_symm_apply_mfderiv_apply hy (mdifferentiableAt_of_mem_maximalAtlas he hy)
+    (mdifferentiableAt_symm_of_mem_maximalAtlas he (e.map_source hy)) (L.symm v)
+  rwa [← hL, ContinuousLinearEquiv.coe_coe, L.apply_symm_apply] at h
+
+/-- Along the source of a chart of the `C^1` maximal atlas, the tangent vector at `y` which the
+chart reads as a fixed vector `v` of the model space varies continuously in the tangent bundle. -/
+theorem continuousOn_mk_mfderiv_chart_symm [IsManifold 𝓘(𝕜, E) 1 M]
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M) (v : E) :
+    ContinuousOn (fun y ↦ (⟨y, mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e.symm (e y) v⟩ : TangentBundle 𝓘(𝕜, E) M))
+      e.source := by
+  -- The derivative of the inverse chart is continuous over its open target.
+  have hT : ContinuousOn (tangentMap 𝓘(𝕜, E) 𝓘(𝕜, E) e.symm)
+      (Bundle.TotalSpace.proj ⁻¹' e.target) := by
+    refine (ContMDiffOn.continuousOn_tangentMapWithin (contMDiffOn_symm_of_mem_maximalAtlas he)
+      le_rfl e.open_target.uniqueMDiffOn).congr fun p hp ↦ ?_
+    exact (tangentMapWithin_eq_tangentMap (e.open_target.uniqueMDiffOn _ hp)
+      (mdifferentiableAt_symm_of_mem_maximalAtlas he hp)).symm
+  have hin : ContinuousOn (fun y ↦ (⟨e y, v⟩ : TangentBundle 𝓘(𝕜, E) E)) e.source :=
+    (tangentBundleModelSpaceHomeomorph 𝓘(𝕜, E)).symm.continuous.comp_continuousOn
+      (e.continuousOn.prodMk continuousOn_const)
+  refine (hT.comp hin fun y hy ↦ e.map_source hy).congr fun y hy ↦ ?_
+  simp only [Function.comp_apply, tangentMap]
+  exact Bundle.TotalSpace.ext (e.left_inv hy).symm (by rw [e.left_inv hy])
 
 /-- Where `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, the differential of
 `f` vanishes at `y` in the source if and only if the Fréchet derivative of `h` vanishes at `e y`. -/

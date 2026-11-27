@@ -511,18 +511,15 @@ private theorem reidemeisterTorsionWithHomology_eq_mul_of_adapted_cycles
     hn.subset fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega
   have hn₃ : {i | n₃ i ≠ 0}.Finite :=
     hn.subset fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega
-  have hS' := (shortExact_iff_degreewise_shortExact S).1 hS
-  have hf (i : ℤ) : Function.Injective (S.f.f i).hom := (hS' i).moduleCat_injective_f
-  have hfg (i : ℤ) : Function.Exact (S.f.f i).hom (S.g.f i).hom :=
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 (hS' i).exact
-  have hg (i : ℤ) : Function.Surjective (S.g.f i).hom := (hS' i).moduleCat_surjective_g
+  have hf := hS.moduleCat_injective_f_f
+  have hfg := hS.moduleCat_exact_f_f
+  have hg := hS.moduleCat_surjective_g_f
   -- Assemble boundary bases `β₂` and lifts `s₂` for `S.X₂` from chosen boundary bases and lifts of
   -- `S.X₁` and `S.X₃` together with the connecting-map lifts `(w₂, z₁₁)`.
-  let t (j : ℤ) (k : Fin (finrank F (LinearMap.range (S.X₃.d (j + 1) j).hom))) : S.X₂.X (j + 1) :=
-    Function.surjInv (hg (j + 1)) (chosenBoundaryLift S.X₃ c₃ (j + 1) j k)
+  let t (j : ℤ) := shortExactBoundaryLift hg c₃ (j + 1) j
   have ht (j : ℤ) (k) : (S.X₃.d (j + 1) j).hom ((S.g.f (j + 1)).hom (t j k)) =
-      chosenBoundaryBasis S.X₃ c₃ (j + 1) j k := by
-    rw [Function.surjInv_eq (hg (j + 1)), chosenBoundaryLift_spec]
+      chosenBoundaryBasis S.X₃ c₃ (j + 1) j k :=
+    shortExactBoundaryLift_spec hg c₃ (j + 1) j k
   let β₂ (j : ℤ) := shortExactBoundaryBasisWithHomology hS (hf j) (hfg j)
     (chosenBoundaryBasis S.X₁ c₁ (j + 1) j) (u₁ j) (w₂ j) (z₁₁ j) (hw₂ j) (hz₁₁ j)
     (chosenBoundaryBasis S.X₃ c₃ (j + 1) j) (t j) (ht j)
