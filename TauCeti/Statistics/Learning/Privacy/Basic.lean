@@ -25,8 +25,8 @@ record). A release kernel `Q : X → Measure Y` is `ε`-locally private
 (`TauCeti.IsLocallyPrivate Q ε`) when `Q(B | x) ≤ e^ε Q(B | x')` for all inputs `x, x'` and
 measurable `B`; this is `ε`-differential privacy of `Q` on data sets of one record.
 
-The privacy inequality is stated for the real values `Measure.real` of the measures, as in the
-roadmap; for finite measures and `δ ≥ 0` it is equivalent to the same inequality in `ℝ≥0∞`
+The privacy inequality is stated for the real values `Measure.real` of the measures; for finite
+measures and `δ ≥ 0` it is equivalent to the same inequality in `ℝ≥0∞`
 (`TauCeti.isDifferentiallyPrivate_iff_measure_le`), in which form it extends from events to
 functions with values in `[0, 1]` (`TauCeti.IsDifferentiallyPrivate.lintegral_le`).
 
@@ -34,13 +34,14 @@ functions with values in `[0, 1]` (`TauCeti.IsDifferentiallyPrivate.lintegral_le
 
 * `TauCeti.IsDifferentiallyPrivate.lintegral_le`: the function form of the privacy inequality,
   `∫⁻ f d(M D) ≤ e^ε ∫⁻ f d(M D') + δ` for `f ≤ 1`.
-* `TauCeti.IsDifferentiallyPrivate.postProcess`: post-processing by a Markov kernel preserves
-  `(ε, δ)`-differential privacy (Dwork–Roth, Prop 2.1, p. 19).
+* `TauCeti.IsDifferentiallyPrivate.postProcess`: for algorithms with finite measures as values,
+  post-processing by a Markov kernel preserves `(ε, δ)`-differential privacy (Dwork–Roth,
+  Prop 2.1, p. 19).
 * `TauCeti.IsDifferentiallyPrivate.measureReal_le_of_hammingDist_le`: group privacy, an
   `ε`-differentially private algorithm compares data sets at Hamming distance at most `k` with the
   factor `e^(kε)` (Dwork–Roth, Thm 2.2, p. 20).
-* `TauCeti.isDifferentiallyPrivate_postProcess`: the two previous results in the form of the
-  roadmap.
+* `TauCeti.isDifferentiallyPrivate_postProcess`: the conjunction of post-processing, for
+  probability measures as values and Markov kernels, and group privacy for `δ = 0`.
 * `TauCeti.isLocallyPrivate_iff_isDifferentiallyPrivate`: local privacy is differential privacy
   on data sets of one record; `TauCeti.IsLocallyPrivate.postProcess` is post-processing for it.
 
@@ -86,8 +87,7 @@ theorem IsDifferentiallyPrivate.measureReal_le (h : IsDifferentiallyPrivate M ε
     (M D).real A ≤ Real.exp ε * (M D').real A + δ :=
   h D D' hD A hA
 
-/-- Once there is a data set, the additive parameter of a private algorithm is nonnegative (take
-the empty event). -/
+/-- Once there is a data set, the additive parameter of a private algorithm is nonnegative. -/
 theorem IsDifferentiallyPrivate.delta_nonneg (h : IsDifferentiallyPrivate M ε δ)
     (D : Fin n → X) : 0 ≤ δ := by
   simpa using h.measureReal_le (D := D) (D' := D) (by simp) MeasurableSet.empty
@@ -153,10 +153,10 @@ theorem IsDifferentiallyPrivate.measureReal_le_of_hammingDist_le
         push_cast
         ring
 
-/-- **Post-processing and group privacy** (Dwork–Roth, Prop 2.1 and Thm 2.2), in the form of the
-roadmap: a Markov kernel applied to a private release with probability measures as values is
-private with the same parameters, and an `ε`-private algorithm compares data sets at Hamming
-distance at most `k` with the factor `e^(kε)`. -/
+/-- **Post-processing and group privacy** (Dwork–Roth, Prop 2.1 and Thm 2.2): a Markov kernel
+applied to a private release with probability measures as values is private with the same
+parameters, and an `ε`-private algorithm compares data sets at Hamming distance at most `k` with
+the factor `e^(kε)`. -/
 theorem isDifferentiallyPrivate_postProcess (M : (Fin n → X) → Measure Y)
     (hM : ∀ D, IsProbabilityMeasure (M D)) (ε δ : ℝ) (hdp : IsDifferentiallyPrivate M ε δ) :
     (∀ K : Kernel Y Y', IsMarkovKernel K → IsDifferentiallyPrivate (fun D ↦ K ∘ₘ M D) ε δ) ∧
@@ -220,23 +220,16 @@ theorem isLocallyPrivate_iff_isDifferentiallyPrivate [DecidableEq X] :
     IsLocallyPrivate Q ε ↔ IsDifferentiallyPrivate (fun D : Fin 1 → X ↦ Q (D 0)) ε 0 := by
   refine ⟨fun h D D' _ A hA ↦ by simpa using h.measureReal_le (D 0) (D' 0) hA,
     fun h x x' B hB ↦ ?_⟩
-  have hD : hammingDist (fun _ : Fin 1 ↦ x) (fun _ ↦ x') ≤ 1 :=
-    hammingDist_le_card_fintype.trans_eq (Fintype.card_fin 1)
-  simpa using h.measureReal_le hD hB
+  simpa using h.measureReal_le (hammingDist_le_one_of_subsingleton (fun _ ↦ x) fun _ ↦ x') hB
 
 /-- For finite measures, local privacy is the same inequality in `ℝ≥0∞`:
 `Q x B ≤ e^ε Q x' B`. -/
 theorem isLocallyPrivate_iff_measure_le (hQ : ∀ x, IsFiniteMeasure (Q x)) :
     IsLocallyPrivate Q ε ↔
       ∀ x x' : X, ∀ B : Set Y, MeasurableSet B → Q x B ≤ ENNReal.ofReal (Real.exp ε) * Q x' B := by
-  classical
-  rw [isLocallyPrivate_iff_isDifferentiallyPrivate,
-    isDifferentiallyPrivate_iff_measure_le (fun D ↦ hQ (D 0)) le_rfl]
-  refine ⟨fun h x x' B hB ↦ ?_, fun h D D' _ A hA ↦ ?_⟩
-  · have hD : hammingDist (fun _ : Fin 1 ↦ x) (fun _ ↦ x') ≤ 1 :=
-      hammingDist_le_card_fintype.trans_eq (Fintype.card_fin 1)
-    simpa using h _ _ hD B hB
-  · simpa using h (D 0) (D' 0) A hA
+  refine forall₃_congr fun x x' B ↦ forall_congr' fun _ ↦ ?_
+  rw [← ofReal_measureReal, ← ofReal_measureReal (μ := Q x'),
+    ← ENNReal.ofReal_mul (Real.exp_pos ε).le, ENNReal.ofReal_le_ofReal_iff (by positivity)]
 
 /-- **Post-processing** for local privacy: applying a Markov kernel (or the zero kernel) to the
 releases of an `ε`-locally private kernel with finite measures as values gives an `ε`-locally

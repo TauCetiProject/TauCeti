@@ -50,10 +50,12 @@ meets every closed ball of radius `D`
 lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
 `CKSD/Nonparametric/LowerBounds/Testing.lean` (`CKSD.sum_pow_hammingDist_eq`,
 `CKSD.exists_hamming_packing`).
-Changing one coordinate moves a word by distance at most one, and two words at distance at most
-`k + 1` are joined through a word at distance at most `1` from the first and `k` from the second
-(`TauCeti.exists_hammingDist_le_one_and_hammingDist_le`), the step of an induction along a path of
-single-coordinate changes.
+
+This file also proves that changing one coordinate moves a word by distance at most one, that two
+words with a subsingleton index type are at distance at most one, and that two words at distance
+at most `k + 1` are joined through a word at distance at most `1` from the first and `k` from the
+second (`TauCeti.exists_hammingDist_le_one_and_hammingDist_le`), the step of an induction along a
+path of single-coordinate changes.
 -/
 
 public section
@@ -367,6 +369,13 @@ theorem hammingDist_update_add_one {x y : ∀ i, β i} {i : ι} (h : x i ≠ y i
     · simp
     · simp [hj]
   rw [hammingDist, hset, Finset.card_erase_add_one (by simpa using h), hammingDist]
+
+omit [DecidableEq ι] in
+/-- Two words over a subsingleton index type, such as data sets of one record, are at Hamming
+distance at most `1`. -/
+theorem hammingDist_le_one_of_subsingleton [Subsingleton ι] (x y : ∀ i, β i) :
+    hammingDist x y ≤ 1 :=
+  hammingDist_le_card_fintype.trans (Fintype.card_le_one_iff_subsingleton.2 ‹_›)
 
 omit [DecidableEq ι] in
 /-- Two words at Hamming distance at most `k + 1` are joined through a word at distance at most

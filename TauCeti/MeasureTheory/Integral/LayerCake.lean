@@ -69,7 +69,9 @@ of the shifted tail is the extended integral of a truncated difference. A finite
 therefore makes every shifted tail integrable.
 
 Finally, an affine domination `μ s ≤ c * ν s + δ` of measures on all measurable sets extends to
-the integrals of functions with values in `[0, 1]`, with the constant `δ` paid once.
+the integrals of functions with values in `[0, 1]`, with the constant `δ` paid once. This follows
+the first stage of the proof of `CKSD.isDifferentiallyPrivate_compProd` in lean-CKSD
+(<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Learning/Privacy/Basic.lean`.
 
 ## Main statements
 
@@ -869,8 +871,10 @@ section AffineDomination
 
 /-- **Affine domination extends from sets to functions.** If `μ s ≤ c * ν s + δ` for every
 measurable set `s`, then `∫⁻ f ∂μ ≤ c * ∫⁻ f ∂ν + δ` for every function `f` with values at
-most `1`: the constant `δ` is paid once, since the levels of `f` fill an interval of length at
-most `1`. -/
+most `1`: the additive constant `δ` is not multiplied.
+
+Adapted from the first stage of the proof of `CKSD.isDifferentiallyPrivate_compProd` in lean-CKSD
+(<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Learning/Privacy/Basic.lean`. -/
 theorem lintegral_le_mul_lintegral_add_of_forall_measure_le {μ ν : Measure α} {c δ : ℝ≥0∞}
     (h : ∀ s, MeasurableSet s → μ s ≤ c * ν s + δ) {f : α → ℝ≥0∞} (hf : ∀ x, f x ≤ 1) :
     ∫⁻ x, f x ∂μ ≤ c * ∫⁻ x, f x ∂ν + δ := by
@@ -888,8 +892,8 @@ theorem lintegral_le_mul_lintegral_add_of_forall_measure_le {μ ν : Measure α}
         exact ht (by simpa using this)
       simp [hempty]
   have hδ : ∫⁻ t in Ioi 0, (Iic (1 : ℝ)).indicator (fun _ ↦ δ) t ≤ δ := by
-    rw [lintegral_indicator_const measurableSet_Iic, Measure.restrict_apply measurableSet_Iic,
-      Iic_inter_Ioi, Real.volume_Ioc, sub_zero, ENNReal.ofReal_one, mul_one]
+    simp [lintegral_indicator_const measurableSet_Iic, Measure.restrict_apply measurableSet_Iic,
+      Iic_inter_Ioi]
   calc ∫⁻ x, f x ∂μ = ∫⁻ t in Ioi 0, μ {x | ENNReal.ofReal t ≤ g x} := by
         rw [hfg, lintegral_eq_lintegral_measure_ofReal_le μ hg.aemeasurable]
     _ ≤ ∫⁻ t in Ioi 0, (c * ν {x | ENNReal.ofReal t ≤ g x} +
