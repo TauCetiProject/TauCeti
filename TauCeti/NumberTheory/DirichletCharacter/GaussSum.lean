@@ -157,13 +157,13 @@ theorem map_gaussSumOfPrimitiveRoot (χ : DirichletCharacter ℤ N) {ζ : L}
         gaussSumOfPrimitiveRoot χ hζ := by
   -- The values of `χ` at units are `±1`, so `χ ^ 2 = 1` and `σ` fixes the root of unity `-1`.
   have hχ : χ.ringHomComp (Int.castRingHom L) ^ 2 = 1 := by
-    refine MulChar.ext fun u ↦ ?_
-    rw [MulChar.pow_apply_coe, MulChar.ringHomComp_apply, ← map_pow, ← MulChar.coe_toUnitHom,
-      ← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one, map_one, MulChar.one_apply_coe]
+    ext u
+    have h := Int.isUnit_sq (χ.toUnitHom u).isUnit
+    rw [MulChar.coe_toUnitHom] at h
+    simp [MulChar.pow_apply_coe, ← Int.cast_pow, h]
   have hψ : AddChar.zmodChar N hζ.pow_eq_one ^ N = 1 := by
     ext x
-    rw [_root_.pow_apply, ← map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
-      map_zero_eq_one, _root_.one_apply]
+    simp [← AddChar.map_nsmul_eq_pow]
   have h := TauCeti.map_gaussSum_eq_inv_apply_mul hχ hψ (IsPrimitiveRoot.neg_one 0 (by norm_num))
     hζ (σ := (σ : L →+* L)) (by simp) (hζ.autToPow_spec ℚ σ).symm
     (by rw [ZMod.natCast_zmod_val]; exact Units.isUnit _)

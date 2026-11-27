@@ -35,8 +35,8 @@ fixes `ζ`, which sends `g(χ, ψ)` to `g(χ ^ t, ψ)`.
 
 Over a finite field, Mathlib's `gaussSum_pow_eq_prod_jacobiSum` writes `g(χ, ψ) ^ m` for a
 primitive `ψ` and `m = orderOf χ ≥ 2` as `χ (-1) #F` times a product of Jacobi sums, all of which
-lie in `ℤ[μ]`. So `g(χ, ψ) ^ m ∈ ℤ[μ]` whenever `χ ^ m = 1`, which is also the statement that
-`g(χ, ψ) ^ m` is fixed by every `σ_c`.
+lie in `ℤ[μ]`. So `g(χ, ψ) ^ m ∈ ℤ[μ]` whenever `χ ^ m = 1`, and in particular every `σ_c`
+fixes `g(χ, ψ) ^ m`.
 
 ## Main results
 
@@ -121,9 +121,7 @@ theorem map_gaussSum_eq_gaussSum_pow {χ : MulChar R R'} {ψ : AddChar R R'} {m 
 end FiniteRing
 
 /-- **The `m`-th power of a Gauss sum.** Over a finite field, if `χ ^ m = 1` and `μ` is a
-primitive `m`-th root of unity, then `g(χ, ψ) ^ m ∈ ℤ[μ]`. For `m = orderOf χ ≥ 2` and `ψ ≠ 1`
-this is Mathlib's `gaussSum_pow_eq_prod_jacobiSum`; for `ψ = 1` the Gauss sum is a sum of values
-of `χ`. -/
+primitive `m`-th root of unity, then `g(χ, ψ) ^ m ∈ ℤ[μ]`. -/
 theorem gaussSum_pow_mem_algebraAdjoin {F R : Type*} [Field F] [Fintype F] [CommRing R]
     [IsDomain R] {χ : MulChar F R} (ψ : AddChar F R) {m : ℕ} [NeZero m] (hχ : χ ^ m = 1) {μ : R}
     (hμ : IsPrimitiveRoot μ m) : gaussSum χ ψ ^ m ∈ Algebra.adjoin ℤ {μ} := by

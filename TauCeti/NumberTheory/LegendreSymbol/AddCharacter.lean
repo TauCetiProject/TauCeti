@@ -102,7 +102,7 @@ theorem _root_.MonoidHom.compAddChar_eq_pow {A S : Type*} [AddMonoid A] [CommRin
   ext x
   obtain ⟨k, -, hk⟩ := hζ.eq_pow_of_pow_eq_one (ξ := ψ x) <| by
     rw [← _root_.pow_apply, hψ, _root_.one_apply]
-  change σ (ψ x) = _
+  rw [MonoidHom.coe_compAddChar, Function.comp_apply]
   rw [_root_.pow_apply, ← hk, map_pow, hσ, ← pow_mul, ← pow_mul, mul_comm]
 
 variable {R R' : Type*} [CommRing R] [Nontrivial R] [CommMonoid R']
