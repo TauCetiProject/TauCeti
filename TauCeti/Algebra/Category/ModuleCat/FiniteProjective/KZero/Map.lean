@@ -72,6 +72,11 @@ of scalars of the left `Rᵐᵒᵖ`-module `P` along `fᵐᵒᵖ : Rᵐᵒᵖ �
 def map (f : R →+* S) : KZero R →+ KZero S :=
   SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars
 
+/-- `TauCeti.KZero.map` is `TauCeti.SplitK0.map` of extension of scalars along `RingHom.op f`. -/
+theorem map_eq_splitK0Map (f : R →+* S) :
+    map f = SplitK0.map.{u, u} (RingHom.op f).finiteProjectiveModulesExtendScalars := by
+  rfl
+
 /-- `K₀(f)` sends the class of `P` to the class of its extension of scalars. -/
 @[simp]
 theorem map_of (f : R →+* S) (P : FiniteProjectiveRight R) :

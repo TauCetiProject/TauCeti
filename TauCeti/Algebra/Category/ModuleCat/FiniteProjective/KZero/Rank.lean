@@ -290,39 +290,6 @@ instance FiniteProjectiveModules.isAddTorsionFree_splitK0 (B : Type u) [Ring B]
     inferInstance
   e.injective.isAddTorsionFree e.toAddMonoidHom
 
-/-- `K₀` of a division ring `D` is `ℤ`, with the class of the free right module of rank one going
-to `1`. -/
-theorem kZero_divisionRing (D : Type u) [DivisionRing D] :
-    ∃ e : KZero D ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Dᵐᵒᵖ)) = 1 :=
-  ⟨FiniteProjectiveModules.rankEquiv Dᵐᵒᵖ fun _ ↦ inferInstance,
-    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
-
-/-- `K₀` of a possibly noncommutative local ring `R` is `ℤ`, with the class of the free right
-module of rank one going to `1`: every finitely generated projective module is free, and a local
-ring has invariant basis number. -/
-theorem kZero_of_isLocalRing (R : Type u) [Ring R] [IsLocalRing R] :
-    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 :=
-  ⟨FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun P ↦
-      have := Module.free_of_projective_of_isLocalRing (R := Rᵐᵒᵖ) (M := P.obj)
-      inferInstance,
-    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
-
-/-- `K₀` of a commutative principal ideal domain `R` is `ℤ`, with the class of the free right
-module of rank one going to `1`: every finitely generated projective module is free. -/
-theorem kZero_of_isPrincipalIdealRing (R : Type u) [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] :
-    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 := by
-  have : IsPrincipalIdealRing Rᵐᵒᵖ :=
-    .of_surjective (RingEquiv.toOpposite R) (RingEquiv.toOpposite R).surjective
-  exact ⟨FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun _ ↦
-      Module.IsStablyFree.of_projective_of_isPrincipalIdealRing,
-    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
-
-/-- `K₀(ℤ)` is `ℤ`, with the class of the free module of rank one going to `1`. -/
-theorem kZero_int :
-    ∃ e : KZero ℤ ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular ℤᵐᵒᵖ)) = 1 :=
-  kZero_of_isPrincipalIdealRing ℤ
-
 namespace KZero
 
 section IsPrincipalIdealRing
@@ -353,5 +320,35 @@ right `R`-module maps to its rank, computed as `Module.finrank` over `Rᵐᵒᵖ
 end IsPrincipalIdealRing
 
 end KZero
+
+/-- `K₀` of a division ring `D` is `ℤ`, with the class of the free right module of rank one going
+to `1`. -/
+theorem kZero_divisionRing (D : Type u) [DivisionRing D] :
+    ∃ e : KZero D ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Dᵐᵒᵖ)) = 1 :=
+  ⟨KZero.rankEquivOfIsPrincipalIdealRing D,
+    KZero.regular_def D ▸ KZero.rankEquivOfIsPrincipalIdealRing_regular D⟩
+
+/-- `K₀` of a possibly noncommutative local ring `R` is `ℤ`, with the class of the free right
+module of rank one going to `1`: every finitely generated projective module is free, and a local
+ring has invariant basis number. -/
+theorem kZero_of_isLocalRing (R : Type u) [Ring R] [IsLocalRing R] :
+    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 :=
+  ⟨FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun P ↦
+      have := Module.free_of_projective_of_isLocalRing (R := Rᵐᵒᵖ) (M := P.obj)
+      inferInstance,
+    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
+
+/-- `K₀` of a commutative principal ideal domain `R` is `ℤ`, with the class of the free right
+module of rank one going to `1`: every finitely generated projective module is free. -/
+theorem kZero_of_isPrincipalIdealRing (R : Type u) [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] :
+    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 :=
+  ⟨KZero.rankEquivOfIsPrincipalIdealRing R,
+    KZero.regular_def R ▸ KZero.rankEquivOfIsPrincipalIdealRing_regular R⟩
+
+/-- `K₀(ℤ)` is `ℤ`, with the class of the free module of rank one going to `1`. -/
+theorem kZero_int :
+    ∃ e : KZero ℤ ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular ℤᵐᵒᵖ)) = 1 :=
+  kZero_of_isPrincipalIdealRing ℤ
 
 end TauCeti

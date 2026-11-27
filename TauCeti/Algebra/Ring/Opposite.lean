@@ -34,6 +34,10 @@ end RingHom
 
 namespace RingEquiv
 
+/-- Taking the opposite of a ring isomorphism commutes with coercion to a ring homomorphism. -/
+theorem toRingHom_op {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    (e : R ≃+* S) : (RingEquiv.op e).toRingHom = RingHom.op e.toRingHom := by ext; rfl
+
 section Prod
 
 variable (R S : Type*) [Mul R] [Add R] [Mul S] [Add S]

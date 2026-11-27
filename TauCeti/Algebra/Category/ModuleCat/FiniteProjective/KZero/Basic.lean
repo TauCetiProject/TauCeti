@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Map
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 
@@ -59,22 +58,17 @@ noncomputable def kZeroEquiv (e : R ≃+* S) : KZero R ≃+ KZero S :=
   (ModuleCat.restrictScalarsEquivalenceOfRingEquiv
     (RingEquiv.op e)).symm.finiteProjectiveModulesSplitK0Equiv
 
+/-- As an additive homomorphism, `e.kZeroEquiv` agrees with `TauCeti.KZero.map e.toRingHom`. -/
+theorem toAddMonoidHom_kZeroEquiv (e : R ≃+* S) :
+    (e.kZeroEquiv : KZero R →+ KZero S) = KZero.map e.toRingHom := by
+  rw [KZero.map_eq_splitK0Map, ← RingEquiv.toRingHom_op,
+    RingEquiv.splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars]
+  rfl
+
+/-- Applying `e.kZeroEquiv` agrees with `TauCeti.KZero.map e.toRingHom`. -/
 @[simp] theorem kZeroEquiv_apply (e : R ≃+* S) (x : KZero R) :
-    e.kZeroEquiv x = KZero.map e.toRingHom x := by
-  induction x using SplitK0.induction_on with
-  | zero => simp
-  | of P =>
-    have heq : (RingEquiv.op e).toRingHom = RingHom.op e.toRingHom := RingHom.ext fun _ ↦ rfl
-    have h := DFunLike.congr_fun
-      (RingEquiv.splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars
-        (RingEquiv.op e)) (SplitK0.of.{u} P)
-    rw [heq] at h
-    simp only [Equivalence.finiteProjectiveModulesSplitK0Equiv_toAddMonoidHom,
-      SplitK0.map_of] at h
-    simpa only [kZeroEquiv, Equivalence.finiteProjectiveModulesSplitK0Equiv_of,
-      KZero.map_of] using h.symm
-  | neg _ hx => simp [hx]
-  | add _ _ hx hy => simp [hx, hy]
+    e.kZeroEquiv x = KZero.map e.toRingHom x :=
+  DFunLike.congr_fun (toAddMonoidHom_kZeroEquiv e) x
 
 @[simp] theorem kZeroEquiv_symm (e : R ≃+* S) :
     e.kZeroEquiv.symm = e.symm.kZeroEquiv := by

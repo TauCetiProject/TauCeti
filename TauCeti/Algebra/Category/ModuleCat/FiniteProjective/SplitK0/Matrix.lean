@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Matrix
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 
-import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
-
 /-!
 # Matrix Morita invariance on split `K₀` of finitely generated projective modules
 

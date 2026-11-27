@@ -54,11 +54,13 @@ Artinian ring, in the indecomposable-projective and simple bases.
 
 ## Main definitions
 
-* `ModuleCat.isFG` and `TauCeti.finiteProjectiveModules`: the two object properties.
 * `TauCeti.finiteModulesExactStructure`, `TauCeti.finiteProjectiveModulesExactStructure` and
-  `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on them, and on
-  the modules admitting finite resolutions by finitely generated projectives, by the canonical
-  exact structure of `ModuleCat R`.
+  `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on
+  `ModuleCat.isFG` (imported from `TauCeti/Algebra/Category/FGModuleCat/Basic.lean`),
+  `TauCeti.finiteProjectiveModules` (imported from
+  `TauCeti/Algebra/Category/ModuleCat/FiniteProjective/Basic.lean`), and on the modules
+  admitting finite resolutions by finitely generated projectives, by the canonical exact structure
+  of `ModuleCat R`.
 * `TauCeti.cartanMap`: the Cartan map `K₀(proj R) ⟶ G₀(mod R)`.
 * `TauCeti.moduleResolutionEquiv`: the resolution theorem in `ModuleCat R`, comparing `K₀(proj R)`
   with the Grothendieck group of the modules admitting finite resolutions by finitely generated
