@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Calculus.DifferentialForm.Codifferential
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -26,7 +27,9 @@ the direction `eᵢ`. This file computes the exterior derivative `extDeriv`, the
   multiplication `TauCeti.wedgeCovector u`;
 * `δω = -∑ᵢ ι_{eᵢ} ∂ᵢω` (`Orientation.codifferential_eq_neg_sum_curryLeft`), where the interior
   product `ι_u α` is `α.curryLeft u`. Although the codifferential is built from the Hodge star of
-  the orientation, it is a first-order operator in contractions alone;
+  the orientation, it is a first-order operator in contractions alone. In particular it obeys the
+  Leibniz rule `δ(c ω) = c δω - ι_{∇c} ω` for a scalar function `c`
+  (`Orientation.codifferential_function_smul`);
 * `δ d ω + d δ ω = -Δω` for forms of class `C²`
   (`Orientation.codifferential_extDeriv_add_extDeriv_codifferential_eq_neg_laplacian`), where
   `Δ = ∑ᵢ ∂ᵢ²` is Mathlib's Laplacian of maps from an inner product space, acting on the form as a
@@ -108,6 +111,23 @@ theorem codifferential_eq_neg_sum_curryLeft (b : OrthonormalBasis ι ℝ V)
     LinearEquiv.coe_toContinuousLinearEquiv',
     o.neg_one_pow_smul_formHodgeStar_wedgeCovector_formHodgeStar _ hkl hlk,
     ContinuousAlternatingMap.curryLeftFlipL_apply_apply, Finset.sum_neg_distrib]
+
+/-- **The Leibniz rule for the codifferential**: `δ(c ω) = c δω - ι_{∇c} ω` at a point where the
+function `c` and the form `ω` are differentiable. -/
+theorem codifferential_function_smul (hkl : k + 1 + l = finrank ℝ V) {c : V → ℝ}
+    {ω : V → V [⋀^Fin (k + 1)]→L[ℝ] ℝ} {x : V} (hc : DifferentiableAt ℝ c x)
+    (hω : DifferentiableAt ℝ ω x) :
+    o.codifferential hkl (fun y ↦ c y • ω y) x =
+      c x • o.codifferential hkl ω x - (ω x).curryLeft (gradient c x) := by
+  set b := stdOrthonormalBasis ℝ V
+  rw [o.codifferential_eq_neg_sum_curryLeft b, o.codifferential_eq_neg_sum_curryLeft b,
+    fderiv_fun_smul hc hω, ← b.sum_repr' (gradient c x), map_sum, smul_neg, Finset.smul_sum,
+    ← Finset.sum_neg_distrib, ← Finset.sum_neg_distrib, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [real_inner_comm, inner_gradient_left]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
+    ← ContinuousAlternatingMap.curryLeftFlipL_apply_apply, map_add, map_smul]
+  abel
 
 /-! ### The Hodge Laplacian -/
 
