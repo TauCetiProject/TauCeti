@@ -54,6 +54,13 @@ def cyclotomicInertia (f : (ZMod N)ˣ →* G) (p : ℕ) : Subgroup G :=
       ∃ u : (ZMod N)ˣ, ZMod.unitsMap (Nat.ordCompl_dvd N p) u = 1 ∧ f u = g := by
   simp [cyclotomicInertia, Subgroup.mem_map]
 
+/-- Inertia whose image is a pair `{1, σ}` with `σ ≠ 1` is nontrivial. -/
+theorem cyclotomicInertia_ne_bot_of_coe_eq_pair (f : (ZMod N)ˣ →* G) {σ : G}
+    (hI : (f.cyclotomicInertia p : Set G) = {1, σ}) (hσ : σ ≠ 1) :
+    f.cyclotomicInertia p ≠ ⊥ := by
+  rintro he
+  exact hσ (by simpa [he] using hI.symm.subset (Set.mem_insert_of_mem 1 rfl))
+
 variable [NeZero N]
 
 /-- The power `p ^ i` of the prime-to-`p` part of `N` lifts to the units modulo `N`. -/
@@ -192,7 +199,7 @@ open scoped Classical in
 /-- At a prime with two inertia elements, one outside the quadratic kernel, twice the mean
 of a function restricted to the complement of the kernel is its value at the unique element
 outside the kernel. -/
-theorem two_nsmul_expect_frobeniusCoset_of_inertia_pair {V : Type*}
+theorem two_nsmul_expect_frobeniusCoset_of_coe_cyclotomicInertia_eq_pair {V : Type*}
     [AddCommMonoid V] [Module ℚ≥0 V]
     (f : (ZMod N)ˣ →* G) (q : G →* Kˣ) (hq : q * q = 1) (hp : p.Prime)
     {g σ : G} (hg : g ∈ f.frobeniusCoset hp 1)
@@ -210,7 +217,7 @@ theorem two_nsmul_expect_frobeniusCoset_of_inertia_pair {V : Type*}
 open scoped Classical in
 /-- At a prime with trivial inertia, the mean off the quadratic kernel is the value at
 `g ^ k` if `g` is outside the kernel and `k` is odd, and zero otherwise. -/
-theorem expect_frobeniusCoset_apply_ne_one_of_inertia_eq_bot {V : Type*}
+theorem expect_frobeniusCoset_apply_ne_one_of_cyclotomicInertia_eq_bot {V : Type*}
     [AddCommMonoid V] [Module ℚ≥0 V]
     (f : (ZMod N)ˣ →* G) (q : G →* Kˣ) (hq : q * q = 1) (hp : p.Prime) {g : G}
     (hg : g ∈ f.frobeniusCoset hp 1) (hI : f.cyclotomicInertia p = ⊥) (k : ℕ) (W : G → V) :
