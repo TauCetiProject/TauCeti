@@ -232,9 +232,7 @@ into modules is a left adjoint, so it preserves epimorphisms, and it is faithful
 them. -/
 theorem NondegMod.epi_iff_surjective {M N : NondegMod.{v} A H} (f : M ⟶ N) :
     Epi f ↔ Function.Surjective f.hom.hom :=
-  ⟨fun _ ↦ (ModuleCat.epi_iff_surjective _).1
-      (inferInstanceAs (Epi ((nondegenerateModuleProperty.{v} A H).ι.map f))),
-    fun hf ↦ (nondegenerateModuleProperty.{v} A H).ι.epi_of_epi_map
-      ((ModuleCat.epi_iff_surjective _).2 hf)⟩
+  ((nondegenerateModuleProperty.{v} A H).ι.epi_map_iff_epi f).symm.trans
+    (ModuleCat.epi_iff_surjective _)
 
 end TauCeti
