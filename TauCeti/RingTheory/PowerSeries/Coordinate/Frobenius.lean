@@ -59,8 +59,7 @@ theorem coeff_pow_of_add_C_mul_pow_eq_X (hk : k ≠ 0) (hf : f + C s * f ^ p ^ k
 theorem coeff_pow_of_add_C_mul_pow_eq_X_of_pow_eq_self (hk : k ≠ 0) (hs : s ^ p ^ k = s)
     (hf : f + C s * f ^ p ^ k = X) (m : ℕ) : coeff ((p ^ k) ^ m) f = (-s) ^ m := by
   have hneg : (-s) ^ p ^ k = -s := by
-    change iterateFrobenius R p k (-s) = -s
-    rw [map_neg, iterateFrobenius_def, hs]
+    rw [← iterateFrobenius_def (R := R) p k (-s), map_neg, iterateFrobenius_def, hs]
   have hiter (i : ℕ) : (-s) ^ (p ^ k) ^ i = -s := by
     induction i with
     | zero => simp
