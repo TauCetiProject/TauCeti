@@ -9,7 +9,7 @@ public import TauCeti.Analysis.ODE.DiracSystem.Scattering
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.ODE.Gronwall.CoshSinh
 import TauCeti.Analysis.ODE.Propagator
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The Dyson bounds for the scattering functions
@@ -99,14 +99,18 @@ private theorem bm_bn_eq (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) {s : ℝ
     congr 1
     · simp
     refine integral_congr fun r _ ↦ ?_
-    simp [Fin.sum_univ_two, diracScatteringCoeff_def]
+    simp only [Fin.isValue, euclideanEntryCLM_apply, diracScatteringCoeff_def, neg_mul, of_apply,
+      cons_val', cons_val_one, cons_val_fin_one, Fin.sum_univ_two, cons_val_zero, mul_zero,
+      add_zero]
     ring
   · rw [hback 1 0, (by simp : euclideanEntryCLM ℂ (1 : Fin 2) 0 1 = 0), zero_add,
       ← intervalIntegral.integral_const_mul]
     refine integral_congr fun r _ ↦ ?_
     have he : exp (2 * I * ((r - s) * z)) = exp (-2 * I * (s * z)) * exp (2 * I * (r * z)) := by
       rw [← exp_add]; ring_nf
-    simp [Fin.sum_univ_two, diracScatteringCoeff_def, he]
+    simp only [neg_mul, Fin.isValue, euclideanEntryCLM_apply, diracScatteringCoeff_def, of_apply,
+      cons_val', cons_val_zero, cons_val_fin_one, Fin.sum_univ_two, mul_zero, cons_val_one,
+      zero_add, he]
     ring
 
 /-- The core estimate: for every `s ∈ [0, t]`, `|m(s)| ≤ cosh Lₛ`, `|n(s)| ≤ sinh Lₛ` and
@@ -118,12 +122,12 @@ private theorem bounds_aux (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) (hz : 
   obtain ⟨hmc, hnc⟩ := continuousOn_bm_bn (z := z) hq ht
   have hqn : IntegrableOn (fun r ↦ ‖q r‖) (Icc 0 t) := hq.norm
   have hsub {s : ℝ} (hs : s ∈ Icc 0 t) : uIcc s t ⊆ Icc 0 t := uIcc_subset_Icc hs ⟨ht, le_rfl⟩
-  have hmint := hqn.mul_continuousOn hmc.norm isCompact_Icc
-  have hnint := hqn.mul_continuousOn hnc.norm isCompact_Icc
+  have hqi {s : ℝ} (hs : s ∈ Icc 0 t) : IntervalIntegrable (fun r ↦ ‖q r‖) volume s t :=
+    (hqn.mono_set (hsub hs)).intervalIntegrable
   have hnle (s : ℝ) (hs : s ∈ Icc 0 t) : ‖bn q z t s‖ ≤ ∫ r in s..t, ‖q r‖ * ‖bm q z t r‖ := by
     rw [(bm_bn_eq hq ht hs).2]
     refine norm_integral_le_of_norm_le hs.2 (ae_of_all _ fun r hr ↦ ?_)
-      (hmint.mono_set (hsub hs)).intervalIntegrable
+      ((hqi hs).mul_continuousOn (hmc.norm.mono (hsub hs)))
     rw [norm_mul, norm_mul]
     calc ‖exp (2 * I * ((r - s) * z))‖ * ‖q r‖ * ‖bm q z t r‖ ≤ 1 * ‖q r‖ * ‖bm q z t r‖ := by
           gcongr
@@ -133,7 +137,7 @@ private theorem bounds_aux (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) (hz : 
       ‖bm q z t s - 1‖ ≤ ∫ r in s..t, ‖q r‖ * ‖bn q z t r‖ := by
     rw [(bm_bn_eq hq ht hs).1, add_sub_cancel_left]
     refine norm_integral_le_of_norm_le hs.2 (ae_of_all _ fun r _ ↦ ?_)
-      (hnint.mono_set (hsub hs)).intervalIntegrable
+      ((hqi hs).mul_continuousOn (hnc.norm.mono (hsub hs)))
     rw [norm_mul, RCLike.norm_conj]
   have hmle (s : ℝ) (hs : s ∈ Icc 0 t) : ‖bm q z t s‖ ≤ 1 + ∫ r in s..t, ‖q r‖ * ‖bn q z t r‖ := by
     calc ‖bm q z t s‖ = ‖1 + (bm q z t s - 1)‖ := by rw [add_sub_cancel]
@@ -144,9 +148,9 @@ private theorem bounds_aux (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) (hz : 
   refine ⟨(hcmp s hs).1, (hcmp s hs).2, (hm1le s hs).trans ?_⟩
   -- `∫ₛᵗ |q| |n| ≤ ∫ₛᵗ |q| sinh L = cosh Lₛ - 1`.
   rw [cosh_integral_eq_one_add_integral hqn hs, add_sub_cancel_left]
-  refine integral_mono_on hs.2 (hnint.mono_set (hsub hs)).intervalIntegrable
-    ((hqn.mul_continuousOn (Real.continuous_sinh.comp_continuousOn
-      hqn.continuousOn_intervalIntegral_left) isCompact_Icc).mono_set (hsub hs)).intervalIntegrable
+  refine integral_mono_on hs.2 ((hqi hs).mul_continuousOn (hnc.norm.mono (hsub hs)))
+    ((hqi hs).mul_continuousOn ((Real.continuous_sinh.comp_continuousOn
+      hqn.continuousOn_intervalIntegral_left).mono (hsub hs)))
     fun r hr ↦ mul_le_mul_of_nonneg_left (hcmp r ⟨hs.1.trans hr.1, hr.2⟩).2 (norm_nonneg _)
 
 /-- At `s = 0` the bottom row of `N(t, s)` is `(b(t, z), a(t, z))`. -/
@@ -186,11 +190,14 @@ theorem norm_diracScatteringB_sub_integral_le (hq : IntegrableOn q (Icc 0 t)) (h
       Real.sinh (∫ s in (0 : ℝ)..t, ‖q s‖) - ∫ s in (0 : ℝ)..t, ‖q s‖ := by
   set m := bm q z t
   have h0 : (0 : ℝ) ∈ Icc 0 t := ⟨le_rfl, ht⟩
-  have hmc : ContinuousOn m (Icc 0 t) := (continuousOn_bm_bn hq ht).1
   have hqn : IntegrableOn (fun r ↦ ‖q r‖) (Icc 0 t) := hq.norm
-  have hLc := hqn.continuousOn_intervalIntegral_left
   have hsub : uIcc 0 t ⊆ Icc 0 t := uIcc_subset_Icc h0 ⟨ht, le_rfl⟩
-  have he : ContinuousOn (fun r : ℝ ↦ exp (2 * I * (r * z))) (Icc 0 t) := by fun_prop
+  have hqi : IntervalIntegrable q volume 0 t := (hq.mono_set hsub).intervalIntegrable
+  have hqni : IntervalIntegrable (fun r ↦ ‖q r‖) volume 0 t :=
+    (hqn.mono_set hsub).intervalIntegrable
+  have hmc : ContinuousOn m (uIcc 0 t) := (continuousOn_bm_bn hq ht).1.mono hsub
+  have hLc := hqn.continuousOn_intervalIntegral_left.mono hsub
+  have he : ContinuousOn (fun r : ℝ ↦ exp (2 * I * (r * z))) (uIcc 0 t) := by fun_prop
   -- `b - ∫ q e^{2isz} = ∫ e^{2isz} q (m - 1)`.
   have hb : diracScatteringB q t z - ∫ s in (0 : ℝ)..t, q s * exp (2 * I * (s * z)) =
       ∫ r in (0 : ℝ)..t, exp (2 * I * (r * z)) * q r * (m r - 1) := by
@@ -200,15 +207,14 @@ theorem norm_diracScatteringB_sub_integral_le (hq : IntegrableOn q (Icc 0 t)) (h
     · refine integral_congr fun r _ ↦ ?_
       simp only [m]
       ring
-    · exact (((IntegrableOn.continuousOn_mul he hq isCompact_Icc).mul_continuousOn hmc
-        isCompact_Icc).mono_set hsub).intervalIntegrable
-    · exact ((hq.mul_continuousOn he isCompact_Icc).mono_set hsub).intervalIntegrable
+    · exact (hqi.continuousOn_mul he).mul_continuousOn hmc
+    · exact hqi.mul_continuousOn he
   rw [hb, sinh_integral_eq_integral hqn h0]
   calc ‖∫ r in (0 : ℝ)..t, exp (2 * I * (r * z)) * q r * (m r - 1)‖
       ≤ ∫ r in (0 : ℝ)..t, ‖q r‖ * (Real.cosh (∫ u in r..t, ‖q u‖) - 1) := by
         refine norm_integral_le_of_norm_le ht (ae_of_all _ fun r hr ↦ ?_)
-          ((hqn.mul_continuousOn ((Real.continuous_cosh.comp_continuousOn hLc).sub
-            continuousOn_const) isCompact_Icc).mono_set hsub).intervalIntegrable
+          (hqni.mul_continuousOn ((Real.continuous_cosh.comp_continuousOn hLc).sub
+            continuousOn_const))
         have hr' : r ∈ Icc 0 t := Ioc_subset_Icc_self hr
         rw [norm_mul, norm_mul]
         calc ‖exp (2 * I * (r * z))‖ * ‖q r‖ * ‖m r - 1‖ ≤ 1 * ‖q r‖ * ‖m r - 1‖ := by
@@ -219,8 +225,6 @@ theorem norm_diracScatteringB_sub_integral_le (hq : IntegrableOn q (Icc 0 t)) (h
     _ = (∫ r in (0 : ℝ)..t, ‖q r‖ * Real.cosh (∫ u in r..t, ‖q u‖)) - ∫ r in (0 : ℝ)..t, ‖q r‖ := by
         simp_rw [mul_sub, mul_one]
         exact intervalIntegral.integral_sub
-          ((hqn.mul_continuousOn (Real.continuous_cosh.comp_continuousOn hLc)
-            isCompact_Icc).mono_set hsub).intervalIntegrable
-          (hqn.mono_set hsub).intervalIntegrable
+          (hqni.mul_continuousOn (Real.continuous_cosh.comp_continuousOn hLc)) hqni
 
 end TauCeti

@@ -53,8 +53,7 @@ fundamental-theorem results to curves.
   with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
   with base point in the integrability interval are absolutely continuous in any real normed space;
-  `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_left`,
-  `MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left` and
+  `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_left` and
   `IntervalIntegrable.ae_hasDerivAt_intervalIntegral_left` treat a variable lower limit, and
   `IntervalIntegrable.comp_intervalIntegral_left_eq_add_integral` is the resulting chain rule for
   `φ (∫ r in s..c, k r)`.
@@ -314,18 +313,6 @@ theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_left
     AbsolutelyContinuousOnInterval (fun t ↦ ∫ v in t..c, f v) a b := by
   simpa only [intervalIntegral.integral_symm c, Pi.neg_def] using
     (hf.absolutelyContinuousOnInterval_intervalIntegral' hc).neg
-
-/-- An interval integral `s ↦ ∫ r in s..b, f r` with variable lower limit is continuous on
-`[a, b]` when `f` is integrable on `[a, b]`. This is the `Icc` form of Mathlib's
-`intervalIntegral.continuousOn_primitive_interval_left`. -/
-theorem MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {f : ℝ → F} {a b : ℝ} (hf : IntegrableOn f (Icc a b)) :
-    ContinuousOn (fun s ↦ ∫ r in s..b, f r) (Icc a b) := by
-  rcases le_or_gt a b with hab | hab
-  · rw [← uIcc_of_le hab] at hf ⊢
-    exact intervalIntegral.continuousOn_primitive_interval_left hf
-  · simp [Icc_eq_empty_of_lt hab]
 
 /-- An interval integral with variable lower limit has derivative `-f t` at almost every `t` of
 the integrability interval, provided its fixed upper limit belongs to that interval. -/
