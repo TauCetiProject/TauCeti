@@ -117,6 +117,7 @@ open Bundle Manifold
 open scoped ContDiff Manifold
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 namespace TauCeti
 
@@ -379,7 +380,7 @@ theorem momentMap_unitary_apply_eq_inner_angularMomentum
   rw [inner_angularMomentum, momentMap_unitary_eq_cotangentMomentMap_comp]
   obtain ⟨u, hu⟩ := euclideanSoThreeEquiv.surjective
     (orthogonalLieAlgebraEquiv (EuclideanSpace ℝ (Fin 3)) ξ)
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ← hu, LinearEquiv.symm_apply_apply,
+  simp only [LinearMap.comp_apply, LieEquiv.coe_toLieHom, ← hu, LinearEquiv.symm_apply_apply,
     LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, cotangentMomentMap_apply]
   exact congrArg z.snd (LinearMap.congr_fun (coe_euclideanSoThreeEquiv u) z.proj)
 

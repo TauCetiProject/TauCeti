@@ -23,7 +23,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Von
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Mellin
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
-import TauCeti.NumberTheory.LSeries.RiemannZeta.RieszMellin
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Riesz.Mellin
 
 /-!
 # First Riesz remainders for primitive Dirichlet characters
@@ -218,6 +218,13 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
       simpa only [map_one] using χ.character.logDeriv_LFunction_inv_conj 1
     simp [rieszRemainder_of_ne_one hi, rieszRemainder_of_ne_one hχ, character_inv,
       rieszSum_def, hlog, ← MulChar.star_apply']
+
+/-- The conductor-one first Riesz remainder is real. -/
+theorem ofReal_re_rieszRemainder_one (y : ℝ) :
+    (((1 : PrimitiveDirichletCharacter).rieszRemainder y).re : ℂ) =
+      (1 : PrimitiveDirichletCharacter).rieszRemainder y := by
+  refine Complex.conj_eq_iff_re.mp ?_
+  simpa only [inv_one] using (rieszRemainder_inv 1 y).symm
 
 /-- For `1 < s.re`, the remainder in logarithmic coordinates has one-sided Laplace transform
 given by the meromorphic Riesz expression. -/
