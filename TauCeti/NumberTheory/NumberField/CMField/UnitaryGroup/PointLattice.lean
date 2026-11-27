@@ -15,7 +15,8 @@ For a hermitian space with adelic frame `V = (J, x)` and a finite unitary point 
 The form `V.finiteForm y z = y* J z` makes this module self-dual: integrality of the
 pairings with its vectors characterizes membership. Moreover, inclusion of two such modules
 is equivalent to equality, and to membership of the relative point in the standard integral
-unitary subgroup. Thus the lattices are indexed exactly by its right cosets.
+unitary subgroup. Thus the lattices are indexed exactly by the left cosets `g K₀` of the
+standard integral unitary subgroup.
 
 These are modules over the integral finite adeles, rather than the modules of rational
 integral vectors `V.lattice`. The latter are recovered by intersecting with the rational
@@ -57,54 +58,38 @@ theorem mem_finiteLattice_iff (g : finiteAdelicUnitaryGroup E ι) (z : ι → �
         FiniteAdeleRing.integralAdeles (𝓞 E) E := by
   simp [finiteLattice, Submodule.mem_pi, Submodule.mem_one, Subalgebra.algebraMap_eq]
 
-/-- The finite hermitian pairing in rational coordinates, conjugate-linear in the first vector. -/
-def finiteForm (y z : ι → 𝔸ᶠ[E]) : 𝔸ᶠ[E] :=
-  star y ⬝ᵥ (V.gram.map (algebraMap E 𝔸ᶠ[E]) *ᵥ z)
+/-- The finite hermitian pairing `y* J z` in rational coordinates: the sesquilinear form of the
+Gram matrix, conjugate-linear in the first vector. -/
+def finiteForm : (ι → 𝔸ᶠ[E]) →ₗ⋆[𝔸ᶠ[E]] (ι → 𝔸ᶠ[E]) →ₗ[𝔸ᶠ[E]] 𝔸ᶠ[E] :=
+  Matrix.toLinearMapₛₗ₂' 𝔸ᶠ[E] (starRingEnd 𝔸ᶠ[E]) (RingHom.id 𝔸ᶠ[E])
+    (V.gram.map (algebraMap E 𝔸ᶠ[E]))
 
 /-- The defining formula for the finite pairing. -/
 theorem finiteForm_def (y z : ι → 𝔸ᶠ[E]) :
-    V.finiteForm y z = star y ⬝ᵥ (V.gram.map (algebraMap E 𝔸ᶠ[E]) *ᵥ z) := (rfl)
-
-/-- The finite pairing vanishes on a zero first argument. -/
-@[simp]
-theorem finiteForm_zero_left (z : ι → 𝔸ᶠ[E]) : V.finiteForm 0 z = 0 := by
-  simp [finiteForm_def]
-
-/-- The finite pairing vanishes on a zero second argument. -/
-@[simp]
-theorem finiteForm_zero_right (y : ι → 𝔸ᶠ[E]) : V.finiteForm y 0 = 0 := by
-  simp [finiteForm_def]
-
-/-- The finite pairing is additive in its first argument. -/
-@[simp]
-theorem finiteForm_add_left (y y' z : ι → 𝔸ᶠ[E]) :
-    V.finiteForm (y + y') z = V.finiteForm y z + V.finiteForm y' z := by
-  simp [finiteForm_def, add_dotProduct]
-
-/-- The finite pairing is additive in its second argument. -/
-@[simp]
-theorem finiteForm_add_right (y z z' : ι → 𝔸ᶠ[E]) :
-    V.finiteForm y (z + z') = V.finiteForm y z + V.finiteForm y z' := by
-  simp [finiteForm_def, mulVec_add, dotProduct_add]
-
-/-- Scaling the first vector conjugates the scalar. -/
-@[simp]
-theorem finiteForm_smul_left (a : 𝔸ᶠ[E]) (y z : ι → 𝔸ᶠ[E]) :
-    V.finiteForm (a • y) z = star a * V.finiteForm y z := by
-  simp [finiteForm_def, smul_dotProduct, smul_eq_mul]
-
-/-- The finite pairing is linear in the second vector. -/
-@[simp]
-theorem finiteForm_smul_right (a : 𝔸ᶠ[E]) (y z : ι → 𝔸ᶠ[E]) :
-    V.finiteForm y (a • z) = a * V.finiteForm y z := by
-  simp [finiteForm_def, mulVec_smul, dotProduct_smul, smul_eq_mul]
+    V.finiteForm y z = star y ⬝ᵥ (V.gram.map (algebraMap E 𝔸ᶠ[E]) *ᵥ z) := by
+  simp only [finiteForm, Matrix.toLinearMapₛₗ₂'_apply, dotProduct, mulVec, Finset.mul_sum,
+    starRingEnd_apply, RingHom.id_apply, smul_eq_mul, Pi.star_apply]
+  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
 
 /-- Swapping the vectors conjugates the finite pairing. -/
 @[simp]
 theorem star_finiteForm (y z : ι → 𝔸ᶠ[E]) :
     star (V.finiteForm y z) = V.finiteForm z y := by
+  rw [finiteForm_def, finiteForm_def]
   exact (V.isHermitian_gram.map (algebraMap E 𝔸ᶠ[E])
     (fun a ↦ algebraMap_star_comm a)).star_dotProduct_mulVec_comm y z
+
+/-- Coordinates in the moved finite frame invert the moved frame. -/
+private theorem inv_mulVec_frame_mulVec (g : finiteAdelicUnitaryGroup E ι) (y : ι → 𝔸ᶠ[E]) :
+    (↑(V.frame.2 * g)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ ((↑(V.frame.2 * g) : Matrix ι ι 𝔸ᶠ[E]) *ᵥ y) =
+      y := by
+  rw [mulVec_mulVec, Units.inv_mul, one_mulVec]
+
+/-- The moved finite frame inverts its coordinates. -/
+private theorem frame_mulVec_inv_mulVec (g : finiteAdelicUnitaryGroup E ι) (y : ι → 𝔸ᶠ[E]) :
+    (↑(V.frame.2 * g) : Matrix ι ι 𝔸ᶠ[E]) *ᵥ ((↑(V.frame.2 * g)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ y) =
+      y := by
+  rw [mulVec_mulVec, Units.mul_inv, one_mulVec]
 
 /-- In the moved finite frame the pairing is the standard hermitian dot product. -/
 theorem finiteForm_mulVec (g : finiteAdelicUnitaryGroup E ι) (y z : ι → 𝔸ᶠ[E]) :
@@ -122,23 +107,18 @@ theorem finiteForm_eq_dotProduct (g : finiteAdelicUnitaryGroup E ι) (y z : ι �
     V.finiteForm y z =
       star ((↑(V.frame.2 * g)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ y) ⬝ᵥ
         ((↑(V.frame.2 * g)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ z) := by
-  have h := V.finiteForm_mulVec g
-    ((↑(V.frame.2 * g)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ y)
-    ((↑(V.frame.2 * g)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ z)
-  simpa only [mulVec_mulVec, ← Units.val_mul, mul_inv_cancel,
-    Units.val_one, one_mulVec] using h
+  rw [← V.finiteForm_mulVec g, V.frame_mulVec_inv_mulVec, V.frame_mulVec_inv_mulVec]
 
 /-- Multiplication by the moved finite frame identifies integral vectors with its lattice. -/
 theorem mulVec_mem_finiteLattice_iff (g : finiteAdelicUnitaryGroup E ι) (y : ι → 𝔸ᶠ[E]) :
     (↑(V.frame.2 * g) : Matrix ι ι 𝔸ᶠ[E]) *ᵥ y ∈ V.finiteLattice g ↔
       ∀ i, y i ∈ FiniteAdeleRing.integralAdeles (𝓞 E) E := by
-  rw [V.mem_finiteLattice_iff]
-  simp only [mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mulVec]
+  rw [V.mem_finiteLattice_iff, V.inv_mulVec_frame_mulVec]
 
-/-- Each column of the moved frame is a vector of its finite lattice. -/
-theorem col_mem_finiteLattice (g : finiteAdelicUnitaryGroup E ι) (i : ι) :
-    (↑(V.frame.2 * g) : Matrix ι ι 𝔸ᶠ[E]).col i ∈ V.finiteLattice g := by
-  rw [← mulVec_single_one, V.mulVec_mem_finiteLattice_iff]
+/-- Each column `x_f g eᵢ` of the moved frame is a vector of its finite lattice. -/
+theorem mulVec_single_one_mem_finiteLattice (g : finiteAdelicUnitaryGroup E ι) (i : ι) :
+    (↑(V.frame.2 * g) : Matrix ι ι 𝔸ᶠ[E]) *ᵥ Pi.single i 1 ∈ V.finiteLattice g := by
+  rw [V.mulVec_mem_finiteLattice_iff]
   intro j
   by_cases hij : i = j <;> simp [hij]
 
@@ -158,18 +138,14 @@ theorem mem_finiteLattice_iff_finiteForm (g : finiteAdelicUnitaryGroup E ι) (z 
   refine ⟨fun hz y hy ↦ V.finiteForm_mem_integralAdeles g hy hz, fun h ↦ ?_⟩
   rw [V.mem_finiteLattice_iff]
   intro i
-  have hy := V.col_mem_finiteLattice g i
-  rw [← mulVec_single_one] at hy
-  have h' := h _ hy
-  rw [V.finiteForm_eq_dotProduct g] at h'
-  simpa only [mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-    one_mulVec, Pi.star_single, star_one, single_dotProduct, one_mul] using h'
+  have h' := h _ (V.mulVec_single_one_mem_finiteLattice g i)
+  rw [V.finiteForm_eq_dotProduct g, V.inv_mulVec_frame_mulVec] at h'
+  simpa only [Pi.star_single, star_one, single_dotProduct, one_mul] using h'
 
 /-- Inclusion of point lattices is membership of the relative point in the integral subgroup. -/
 theorem finiteLattice_le_iff (g h : finiteAdelicUnitaryGroup E ι) :
     V.finiteLattice h ≤ V.finiteLattice g ↔
       g⁻¹ * h ∈ integralAdelicUnitaryGroup E ι := by
-  rw [mem_integralAdelicUnitaryGroup_iff]
   have hcoords (y : ι → 𝔸ᶠ[E]) :
       (↑(V.frame.2 * g)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ
         ((↑(V.frame.2 * h) : Matrix ι ι 𝔸ᶠ[E]) *ᵥ y) =
@@ -177,21 +153,13 @@ theorem finiteLattice_le_iff (g h : finiteAdelicUnitaryGroup E ι) :
             Matrix ι ι 𝔸ᶠ[E]) *ᵥ y := by
     simp only [mulVec_mulVec, ← Units.val_mul, _root_.mul_inv_rev,
       mul_assoc, inv_mul_cancel_left, Subgroup.coe_mul, Subgroup.coe_inv]
-  refine ⟨fun hle i j ↦ ?_, fun hint y hy ↦ ?_⟩
-  · have hj := V.col_mem_finiteLattice h j
-    rw [← mulVec_single_one] at hj
-    have := (V.mem_finiteLattice_iff g _).1 (hle hj) i
-    rw [hcoords, mulVec_single_one] at this
-    exact this
+  refine ⟨fun hle ↦ mem_integralAdelicUnitaryGroup_iff.2 fun i j ↦ ?_, fun hint y hy ↦ ?_⟩
+  · have := (V.mem_finiteLattice_iff g _).1 (hle (V.mulVec_single_one_mem_finiteLattice h j)) i
+    rwa [hcoords, mulVec_single_one] at this
   · rw [V.mem_finiteLattice_iff] at hy ⊢
-    have hcancel : (↑(V.frame.2 * g)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ y =
-        (↑((g⁻¹ * h : finiteAdelicUnitaryGroup E ι) : GL ι 𝔸ᶠ[E]) :
-          Matrix ι ι 𝔸ᶠ[E]) *ᵥ ((↑(V.frame.2 * h)⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ y) := by
-      rw [← hcoords]
-      simp only [mulVec_mulVec, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-        mul_one]
-    rw [hcancel]
-    exact fun i ↦ Subalgebra.sum_mem _ fun j _ ↦ Subalgebra.mul_mem _ (hint i j) (hy j)
+    rw [← V.frame_mulVec_inv_mulVec h y, hcoords]
+    exact (FiniteAdeleRing.forall_mulVec_mem_integralAdeles_iff
+      (mem_integralAdelicUnitaryGroup_iff_mem_range_integralGL.1 hint)).2 hy
 
 /-- Two self-dual point lattices cannot be strictly included in one another. -/
 theorem finiteLattice_eq_of_le {g h : finiteAdelicUnitaryGroup E ι}
@@ -200,14 +168,15 @@ theorem finiteLattice_eq_of_le {g h : finiteAdelicUnitaryGroup E ι}
   rw [V.finiteLattice_le_iff] at hgh ⊢
   simpa using (integralAdelicUnitaryGroup E ι).inv_mem hgh
 
-/-- Equality of lattices is equality of right cosets of the standard integral subgroup. -/
+/-- Equality of lattices is equality of the left cosets `g K₀ = h K₀` of the standard integral
+subgroup. -/
 theorem finiteLattice_eq_iff (g h : finiteAdelicUnitaryGroup E ι) :
     V.finiteLattice g = V.finiteLattice h ↔ g⁻¹ * h ∈ integralAdelicUnitaryGroup E ι := by
   rw [← V.finiteLattice_le_iff]
   exact ⟨fun h ↦ h.ge, fun h ↦ (V.finiteLattice_eq_of_le h).symm⟩
 
 /-- Right multiplication by an integral unitary point leaves the lattice unchanged. -/
-theorem finiteLattice_mul_of_mem (g k : finiteAdelicUnitaryGroup E ι)
+theorem finiteLattice_mul_of_mem_integralAdelicUnitaryGroup (g k : finiteAdelicUnitaryGroup E ι)
     (hk : k ∈ integralAdelicUnitaryGroup E ι) : V.finiteLattice (g * k) = V.finiteLattice g := by
   symm
   simpa [V.finiteLattice_eq_iff] using hk
