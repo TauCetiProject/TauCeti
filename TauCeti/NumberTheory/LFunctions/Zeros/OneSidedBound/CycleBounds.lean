@@ -61,9 +61,18 @@ theorem cutoff_pow_l₀_le_sqrt {x₁ b : ℝ} {s : ℕ} (hx₁ : 0 < x₁)
   refine cutoff_pow_le_sqrt_of_le_log hx₁ hlog ?_ hb₀ hb
   by_cases h : s = 0
   · subst s
-    simp [l₀_def]
+    have hl : (l₀ 0 : ℝ) = 81 := by norm_num [l₀_def]
     linarith
   · exact (by exact_mod_cast l₀_le h : (l₀ s : ℝ) ≤ 81 * s).trans (by gcongr)
+
+/-- A natural power with base at least three dominates the exponential of its exponent. -/
+private theorem exp_le_nat_pow_of_three_le {y : ℝ} {p n : ℕ} (hp : 3 ≤ p) (hy : y ≤ n) :
+    exp y ≤ (p : ℝ) ^ n := by
+  have hp' : exp 1 ≤ (p : ℝ) := exp_one_lt_three.le.trans (by exact_mod_cast hp)
+  calc
+    exp y ≤ exp n := exp_le_exp.mpr hy
+    _ = exp 1 ^ n := by rw [← exp_natCast_mul, mul_one]
+    _ ≤ (p : ℝ) ^ n := pow_le_pow_left₀ (exp_nonneg _) hp' _
 
 /-- The orbit length forces the residue size to dominate the fourth power of the
 jet order `x * b`. Only `p ≥ 3`, rather than primality, is needed. -/
@@ -76,9 +85,7 @@ theorem jet_order_pow_four_le_residue_size {x b : ℝ} {m p j : ℕ}
   have hb : 0 < b := hx.trans_le hxb
   have hB4 : log b ^ 4 ≤ m := by
     apply le_of_pow_le_pow_left₀ two_ne_zero (Nat.cast_nonneg m)
-    rw [← pow_mul]
-    norm_num
-    exact hscale.trans hm
+    simpa only [← pow_mul, Nat.reduceMul] using hscale.trans hm
   have hm' : 8 * log b ≤ m := by
     calc
       8 * log b ≤ log b ^ 3 * log b := by
@@ -93,14 +100,7 @@ theorem jet_order_pow_four_le_residue_size {x b : ℝ} {m p j : ℕ}
     _ = exp (8 * log b) := by
       rw [← Nat.cast_ofNat (R := ℝ) (n := 8), exp_natCast_mul, exp_log hb]
       ring
-    _ ≤ exp m := exp_le_exp.mpr hm'
-    _ = exp 1 ^ m := by rw [← exp_natCast_mul, mul_one]
-    _ ≤ (p : ℝ) ^ m := by gcongr; exact exp_one_lt_three.le.trans (by exact_mod_cast hp)
-    _ ≤ (p : ℝ) ^ j := by
-      have hp1 : 1 ≤ (p : ℝ) := by
-        norm_cast
-        omega
-      exact pow_le_pow_right₀ hp1 hj
+    _ ≤ (p : ℝ) ^ j := exp_le_nat_pow_of_three_le hp (hm'.trans (by exact_mod_cast hj))
 
 /-- The logarithmic factor of the cycle degree condition fits inside `√b`.
 Here `e` is the step exponent and `n` is the number of letters. -/
@@ -126,26 +126,27 @@ private theorem cycle_log_factor_le_sqrt {x x₁ b : ℝ} {m k f e n p : ℕ}
       rw [le_sqrt hx₁.le ((sq_nonneg x₁).trans hb)]
       exact hb
 
+/-- The power separation of the cutoffs gives a logarithmic separation, with `log x ≥ 1`. -/
+private theorem cycle_cutoff_log_separation {x x₁ : ℝ} (hx : 3 ≤ x) (hcut : x ^ 235 ≤ x₁) :
+    1 ≤ log x ∧ 235 * log x ≤ log x₁ := by
+  have hx₀ : 0 < x := by linarith
+  refine ⟨(le_log_iff_exp_le hx₀).2 (exp_one_lt_three.le.trans hx), ?_⟩
+  simpa only [log_pow, Nat.cast_ofNat] using log_le_log (pow_pos hx₀ _) hcut
+
 /-- The block length grows at most logarithmically in the chain length, uniformly in the
 base `p ≥ 3`. The larger cutoff scale here lets us avoid an extra additive constant. -/
 private theorem clog_le_log_cutoff {x x₁ : ℝ} {p m : ℕ} (hx : 4 ≤ x)
     (hcut : x ^ 235 ≤ x₁) (hm : (m : ℝ) ^ 2 ≤ 4 * x) (hp : 3 ≤ p) :
     (Nat.clog p m : ℝ) ≤ log x₁ := by
-  have hlogx : 1 ≤ log x := (le_log_iff_exp_le (by linarith)).2
-    (exp_one_lt_three.le.trans (by linarith))
+  obtain ⟨hlogx, hlogcut⟩ := cycle_cutoff_log_separation (by linarith) hcut
   let r := ⌈log x⌉₊
   have hx' : x ≤ (p : ℝ) ^ r := calc
     x = exp (log x) := (exp_log (by linarith)).symm
-    _ ≤ exp r := exp_le_exp.mpr (Nat.le_ceil _)
-    _ = exp 1 ^ r := by rw [← exp_natCast_mul, mul_one]
-    _ ≤ (p : ℝ) ^ r := by gcongr; exact exp_one_lt_three.le.trans (by exact_mod_cast hp)
+    _ ≤ (p : ℝ) ^ r := exp_le_nat_pow_of_three_le hp (Nat.le_ceil _)
   have hm' : (m : ℝ) ≤ x := by
     apply le_of_pow_le_pow_left₀ two_ne_zero (by linarith)
     exact hm.trans (by nlinarith)
   have hr : Nat.clog p m ≤ r := Nat.clog_le_of_le_pow (by exact_mod_cast hm'.trans hx')
-  have h := log_le_log (pow_pos (by linarith : 0 < x) _) hcut
-  rw [log_pow] at h
-  norm_num at h
   have hceil : (r : ℝ) < log x + 1 := Nat.ceil_lt_add_one (by linarith)
   exact (by exact_mod_cast hr : (Nat.clog p m : ℝ) ≤ r).trans (by linarith)
 
@@ -169,13 +170,8 @@ logarithm, which is needed to compare `x₁` with `√b`. -/
 private theorem cycle_cutoff_log_bounds {x x₁ b : ℝ} (hx : 4 ≤ x)
     (hcut : x ^ 235 ≤ x₁) (hsmall : log x₁ ^ 6 ≤ log b) :
     235 ≤ log x₁ ∧ 2 * log x₁ ≤ log b := by
-  have hlogx : 1 ≤ log x := (le_log_iff_exp_le (by linarith)).2
-    (exp_one_lt_three.le.trans (by linarith))
-  have hlogx₁ : 235 ≤ log x₁ := by
-    have h := log_le_log (pow_pos (by linarith : 0 < x) _) hcut
-    rw [log_pow] at h
-    norm_num at h
-    linarith
+  obtain ⟨hlogx, hlogcut⟩ := cycle_cutoff_log_separation (by linarith) hcut
+  have hlogx₁ : 235 ≤ log x₁ := by linarith
   refine ⟨hlogx₁, ?_⟩
   calc
     2 * log x₁ ≤ log x₁ ^ 2 := by
@@ -221,10 +217,11 @@ theorem frobenius_cycle_degree_bounds {x x₁ b : ℝ} {m k f n p e : ℕ}
       ((le_self_pow₀ (by linarith) (by decide : 8 ≠ 0)).trans hlarge))
   have hr := clog_le_log_cutoff hx hcut hm' hp
   have hr' := (hr.trans hlog₁).trans (le_self_pow₀ hx1 two_ne_zero)
-  have hm1 : 1 ≤ m := Nat.pos_of_ne_zero fun hm₀ ↦ by simp [hm₀] at hm; linarith
+  have hm1 : 1 ≤ m := Nat.one_le_iff_ne_zero.mpr fun hm₀ ↦
+    (not_le_of_gt (by linarith : 0 < x)) (by
+      simpa only [hm₀, Nat.cast_zero, zero_pow two_ne_zero] using hm)
   have hne := mul_ne_zero_iff.mp (Nat.ne_of_gt (hm1.trans hlen))
-  have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hne.2
-  have hf1 : 1 ≤ f := hn1.trans hn
+  have hf1 : 1 ≤ f := (Nat.one_le_iff_ne_zero.mpr hne.2).trans hn
   have he₀ : 0 < e := Nat.pos_of_ne_zero hne.1
   refine ⟨he₀.trans_le he, ?_, ⟨by positivity, ?_⟩,
     jet_order_pow_four_le_residue_size hB hlarge hxb hm hp hlen, ?_⟩
