@@ -76,13 +76,17 @@ theorem coeff_pow_of_add_C_mul_pow_eq_X_of_pow_eq_self (hq : 1 < p ^ k) (hs : s 
   | zero => simp
   | succ m ih => rw [Finset.sum_range_succ, pow_add, ih, hiter, pow_succ]
 
-/-- In exponential characteristic `p`, put `q = p^k`. A solution of `f + C s * f^q = X` with
-zero constant term has zero coefficient outside the powers of `q`. For `q = 1`, the equation
-forces the degree-one coefficient to be an inverse of `1 + s`. -/
-theorem coeff_eq_zero_of_add_C_mul_pow_eq_X (hf : f + C s * f ^ p ^ k = X)
-    (hf₀ : constantCoeff f = 0) {n : ℕ} (hn : ∀ m : ℕ, n ≠ (p ^ k) ^ m) : coeff n f = 0 := by
+/-- In exponential characteristic `p`, put `q = p^k`. For a solution of `f + C s * f^q = X`,
+a coefficient outside the powers of `q` is the constant term in degree zero and vanishes in
+positive degree. When `q = 1`, this gives vanishing at every positive degree other than one. -/
+theorem coeff_eq_ite_of_add_C_mul_pow_eq_X (hf : f + C s * f ^ p ^ k = X)
+    {n : ℕ} (hn : ∀ m : ℕ, n ≠ (p ^ k) ^ m) :
+    coeff n f = if n = 0 then constantCoeff f else 0 := by
   by_cases hq₁ : p ^ k = 1
-  · have hlinear (i : ℕ) : (1 + s) * coeff i f = if i = 1 then 1 else 0 := by
+  · obtain rfl | hn₀ := Nat.eq_zero_or_pos n
+    · simp
+    rw [ite_eq_right hn₀.ne']
+    have hlinear (i : ℕ) : (1 + s) * coeff i f = if i = 1 then 1 else 0 := by
       simpa only [hq₁, pow_one, map_add, coeff_C_mul, coeff_X, add_mul, one_mul]
         using congrArg (coeff (R := R) i) hf
     have hone : (1 + s) * coeff 1 f = 1 := by simpa using hlinear 1
@@ -98,7 +102,8 @@ theorem coeff_eq_zero_of_add_C_mul_pow_eq_X (hf : f + C s * f ^ p ^ k = X)
   induction n using Nat.strong_induction_on with
   | ind n ih =>
     obtain rfl | hn₀ := Nat.eq_zero_or_pos n
-    · simpa using hf₀
+    · simp
+    rw [ite_eq_right hn₀.ne']
     have hn₁ : n ≠ 1 := by simpa using hn 0
     rw [coeff_of_add_C_mul_pow_eq_X hf, ite_eq_right hn₁]
     by_cases hdiv : p ^ k ∣ n
@@ -106,7 +111,7 @@ theorem coeff_eq_zero_of_add_C_mul_pow_eq_X (hf : f + C s * f ^ p ^ k = X)
       have hr : 0 < r := Nat.pos_of_mul_pos_left hn₀
       have hlt : r < p ^ k * r := by simpa using Nat.mul_lt_mul_of_pos_right hq hr
       have hoff (m : ℕ) : r ≠ (p ^ k) ^ m := fun e ↦ hn (m + 1) (by rw [pow_succ', e])
-      simp [Nat.mul_div_cancel_left _ (by omega : 0 < p ^ k), ih r hlt hoff,
+      simp [Nat.mul_div_cancel_left _ (by omega : 0 < p ^ k), ih r hlt hoff, hr.ne',
         zero_pow (by omega : p ^ k ≠ 0)]
     · simp [hdiv, zero_pow (by omega : p ^ k ≠ 0)]
 
