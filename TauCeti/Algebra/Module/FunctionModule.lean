@@ -119,11 +119,6 @@ theorem apply_mkQ_mem_functionModule
   rwa [show (N.toFunctionModule Φ z p Ψ : G → O ⧸ Ideal.span {p}) = _ from
     funext (coe_toFunctionModule_apply Ψ)] at h
 
-/-- A linear map vanishing at the `v` with `Φ v ∈ N` vanishes on `Φ⁻¹(N)`. -/
-private theorem comap_le_ker {M : Type*} [AddCommGroup M] [Module O M] {Ψ : V →ₗ[O] M}
-    (hΨ : ∀ v, Φ v ∈ N → Ψ v = 0) : (N.restrictScalars O).comap Φ ≤ LinearMap.ker Ψ :=
-  fun v hv ↦ LinearMap.mem_ker.2 (hΨ v (by simpa using hv))
-
 /-- The members of the module of functions of `N` are the functions `g ↦ Ψ (z g)` for the
 `O`-linear `Ψ : V → O ⧸ (p)` vanishing on `Φ⁻¹(N)`. -/
 @[simp]
