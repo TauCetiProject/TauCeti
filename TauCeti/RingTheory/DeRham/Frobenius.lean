@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DeRham.Differential
+import TauCeti.RingTheory.Derivation.Basic
 
 /-!
 # Frobenius linearity of the de Rham differential
 
-`TauCeti.DeRham.d_pow_smul_of_natCast_eq_zero` gives Frobenius linearity in prime
-characteristic. It uses `TauCeti.DeRham.d_elementary` and `Derivation.leibniz_pow` to show
-that the differential commutes with multiplication by powers whose exponent vanishes in the
-ring. This is the scalar identity for the action through relative Frobenius in Bhatt,
+`TauCeti.DeRham.d_pow_smul_of_natCast_eq_zero` gives the scalar identity for powers whose
+exponent vanishes in the ring. In prime characteristic, `TauCeti.DeRham.d_frobenius_smul`
+gives the scalar identity for the action through relative Frobenius in Bhatt,
 *p-adic derived de Rham cohomology*, Notation 3.1.
+
+The underlying scalar law is `TauCeti.DeRham.d_smul_of_D_eq_zero` for scalars with vanishing
+Kähler differential. In characteristic `p`, `Derivation.map_pow_eq_zero_of_charP` gives
+vanishing on `p`-th powers.
 -/
 
 public section
@@ -29,18 +33,14 @@ variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] {n : ℕ}
 `b ^ m`. In prime characteristic this is linearity for the action through Frobenius. -/
 theorem d_pow_smul_of_natCast_eq_zero {m : ℕ} (b : B) (ω : Forms A B n) (hm : (m : B) = 0) :
     d A B n (b ^ m • ω) = b ^ m • d A B n ω := by
-  have hD : D A B (b ^ m) = 0 := by
-    rw [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul B, hm, zero_smul]
-  have hcomm :
-      d A B n ∘ₗ DistribSMul.toLinearMap A (Forms A B n) (b ^ m) =
-        DistribSMul.toLinearMap A (Forms A B (n + 1)) (b ^ m) ∘ₗ d A B n := by
-    refine forms_hom_ext fun c v => ?_
-    have hsmul : b ^ m • elementary A c v = elementary A (b ^ m * c) v := by
-      simp only [elementary_def, mul_smul]
-    simp only [LinearMap.comp_apply, DistribSMul.toLinearMap_apply, hsmul,
-      d_elementary, Derivation.leibniz, hD, smul_zero, add_zero]
-    exact (exteriorPower.ιMulti B (n + 1)).map_vecCons_smul _ _ _
-  simpa only [LinearMap.comp_apply, DistribSMul.toLinearMap_apply] using
-    LinearMap.congr_fun hcomm ω
+  refine d_smul_of_D_eq_zero ?_ ω
+  rw [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul B, hm, zero_smul]
+
+/-- In characteristic `p`, the de Rham differential commutes with multiplication by
+`p`-th powers. This gives the scalar identity for the action through Frobenius in prime
+characteristic. -/
+theorem d_frobenius_smul (p : ℕ) [CharP B p] (b : B) (ω : Forms A B n) :
+    d A B n (b ^ p • ω) = b ^ p • d A B n ω :=
+  d_smul_of_D_eq_zero ((D A B).map_pow_eq_zero_of_charP b) ω
 
 end TauCeti.DeRham
