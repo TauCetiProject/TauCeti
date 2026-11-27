@@ -143,12 +143,13 @@ private theorem hasFDerivAt_shear (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (
     (hp : p.fst ∈ Ω) :
     HasFDerivAt (shear hf.continuousOn)
       (ContinuousLinearMap.id ℝ _ + inrL2 ℝ E E' ∘L fderiv ℝ f p.fst ∘L fstL 2 ℝ E E') p := by
-  have hfd : HasFDerivAt f (fderiv ℝ f p.fst) p.fst := (differentiableAt_of_mem hf hp).hasFDerivAt
-  have h : ⇑(shear hf.continuousOn) = fun q ↦ q + inrL2 ℝ E E' (f q.fst) :=
-    funext (shear_apply hf.continuousOn)
-  rw [h]
-  exact (hasFDerivAt_id p).add
-    ((inrL2 ℝ E E').hasFDerivAt.comp p (hfd.comp p (fstL 2 ℝ E E').hasFDerivAt))
+  have hfd : HasFDerivAt f (fderiv ℝ f p.fst) ((inlL2 ℝ E E' ∘L fstL 2 ℝ E E') p).fst := by
+    simpa using (differentiableAt_of_mem hf hp).hasFDerivAt
+  have hg : HasFDerivAt (fun q : WithLp 2 (E × E') ↦ inrL2 ℝ E E' (f q.fst))
+      (inrL2 ℝ E E' ∘L fderiv ℝ f p.fst ∘L fstL 2 ℝ E E') ((inlL2 ℝ E E' ∘L fstL 2 ℝ E E') p) :=
+    (inrL2 ℝ E E').hasFDerivAt.comp _ (hfd.comp _ (fstL 2 ℝ E E').hasFDerivAt)
+  exact ((inlL2 ℝ E E' ∘L fstL 2 ℝ E E').hasFDerivAt_projectionGraphChart_symm _ _ _ _
+    hg).congr_fderiv (by ext; simp)
 
 private theorem surjective_fderiv_shear (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (E × E')}
     (hp : p.fst ∈ Ω) : Surjective (fderiv ℝ (shear hf.continuousOn) p) := fun w ↦
