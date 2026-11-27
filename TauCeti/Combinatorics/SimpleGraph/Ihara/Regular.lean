@@ -74,7 +74,11 @@ theorem charpolyRev_hashimotoMatrix_of_isRegularOfDegree (hG : G.IsRegularOfDegr
     ext i j
     by_cases hij : i = j
     · subst hij
-      simp [Matrix.natCast_apply]
+      simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_right, RingHom.mapMatrix_apply,
+        coe_evalRingHom, map_apply, Matrix.add_apply, Matrix.sub_apply, one_apply_eq,
+        Matrix.smul_apply, adjMatrix_apply, SimpleGraph.irrefl, ↓reduceIte, smul_eq_mul, mul_zero,
+        sub_zero, Matrix.natCast_apply, eval_add, eval_one, eval_mul, eval_pow, eval_X,
+        eval_natCast, scalar_apply, diagonal_apply_eq, add_right_inj]
       ring
     · simp [one_apply_ne hij, Matrix.natCast_apply, hij, apply_ite (eval t)]
   -- `c - t A = c (1 - (t / c) A)` for the unit `c = 1 + q t²`, and `1 - s A` is diagonalised by
@@ -87,7 +91,8 @@ theorem charpolyRev_hashimotoMatrix_of_isRegularOfDegree (hG : G.IsRegularOfDegr
     (G.isHermitian_adjMatrix ℝ).det_one_sub_smul, ← card_univ, ← prod_const, ← prod_mul_distrib,
     map_prod]
   refine prod_congr rfl fun v _ ↦ ?_
-  simp
+  simp only [RCLike.ofReal_real_eq_id, id_eq, map_natCast, coe_evalRingHom, eval_add, eval_sub,
+    eval_one, eval_mul, eval_C, eval_X, eval_natCast, eval_pow]
   field_simp
   ring
 
@@ -107,22 +112,22 @@ theorem charpoly_hashimotoMatrix_of_isRegularOfDegree (hG : G.IsRegularOfDegree 
     have := hG.card_le_card_edgeFinset (by omega)
     omega
   -- Both sides agree at every `t ≠ 0`: `det (t - B) = t ^ (2e) det (1 - t⁻¹ B)`.
-  refine eq_of_infinite_eval_eq _ _ ((Set.finite_singleton (0 : ℝ)).infinite_compl.mono ?_)
-  intro t (ht : t ≠ 0)
-  have hdet : B.charpoly.eval t = t ^ Fintype.card G.Dart * B.charpolyRev.eval t⁻¹ := by
-    rw [eval_charpoly, eval_charpolyRev_eq_det_one_sub_smul, ← det_smul, smul_sub, smul_smul,
-      mul_inv_cancel₀ ht, one_smul, smul_one_eq_diagonal, scalar_apply]
-  have hpow : (t ^ 2) ^ Fintype.card V = ∏ _v : V, t ^ 2 := by simp
-  rw [Set.mem_ofPred_eq, hdet, charpolyRev_hashimotoMatrix_of_isRegularOfDegree hG hq, hcard,
-    pow_add, pow_mul, pow_mul, hpow]
+  refine eq_of_infinite_eval_eq _ _ ((Set.finite_singleton (0 : ℝ)).infinite_compl.mono
+    fun t ht ↦ ?_)
+  have ht : t ≠ 0 := Set.mem_compl_singleton_iff.1 ht
+  have hpow : (t ^ 2) ^ Fintype.card V = ∏ _v : V, t ^ 2 := by
+    rw [prod_const, card_univ]
+  rw [Set.mem_ofPred_eq, B.eval_charpoly_eq_pow_mul_eval_charpolyRev (mul_inv_cancel₀ ht),
+    charpolyRev_hashimotoMatrix_of_isRegularOfDegree hG hq, hcard, pow_add, pow_mul, pow_mul, hpow]
   simp only [eval_mul, eval_pow, eval_prod]
   rw [mul_mul_mul_comm, ← mul_pow, ← prod_mul_distrib]
   congr 1
   · congr 1
-    simp
+    simp only [eval_sub, eval_one, eval_pow, eval_X, inv_pow]
     field_simp
   · refine prod_congr rfl fun v _ ↦ ?_
-    simp
+    simp only [map_natCast, eval_add, eval_sub, eval_one, eval_mul, eval_C, eval_X, eval_natCast,
+      eval_pow, inv_pow]
     field_simp
 
 end SimpleGraph
