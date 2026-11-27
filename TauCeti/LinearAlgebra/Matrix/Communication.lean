@@ -154,6 +154,11 @@ theorem isIrreducibleGenerator_transpose_iff :
   simp only [isIrreducibleGenerator_iff, leadsTo_transpose_iff]
   exact forall_comm
 
+/-- Between distinct states, the chain of `Matrix.LeadsTo` has positive length. -/
+theorem LeadsTo.transGen_of_ne (h : B.LeadsTo i j) (hij : i ≠ j) :
+    TransGen (fun a b ↦ a ≠ b ∧ 0 < B a b) i j :=
+  (reflTransGen_iff_eq_or_transGen.mp h).resolve_left hij.symm
+
 /-- On at most one state every matrix is an irreducible generator. -/
 theorem isIrreducibleGenerator_of_subsingleton [Subsingleton n] (B : Matrix n n R) :
     B.IsIrreducibleGenerator :=
@@ -164,11 +169,7 @@ entries, of positive length, through every state. -/
 theorem IsIrreducibleGenerator.transGen_self [Nontrivial n] (h : B.IsIrreducibleGenerator)
     (i : n) : TransGen (fun a b ↦ a ≠ b ∧ 0 < B a b) i i := by
   obtain ⟨j, hji⟩ := exists_ne i
-  obtain (rfl | hij) := reflTransGen_iff_eq_or_transGen.mp (h i j)
-  · exact absurd rfl hji
-  obtain (rfl | hji') := reflTransGen_iff_eq_or_transGen.mp (h j i)
-  · exact absurd rfl hji
-  exact hij.trans hji'
+  exact ((h i j).transGen_of_ne hji.symm).trans ((h j i).transGen_of_ne hji)
 
 end LeadsTo
 
@@ -227,9 +228,7 @@ theorem isIrreducible_iff_isIrreducibleGenerator (hA : ∀ i j, 0 ≤ A i j) :
   have hmono := TransGen.mono (r := fun a b ↦ a ≠ b ∧ 0 < A a b) fun _ _ h ↦ h.2
   rcases eq_or_ne i j with rfl | hij
   · exact hmono _ _ (h.transGen_self i)
-  · obtain (rfl | h') := reflTransGen_iff_eq_or_transGen.mp (h i j)
-    · exact absurd rfl hij
-    · exact hmono _ _ h'
+  · exact hmono _ _ ((h i j).transGen_of_ne hij)
 
 end Nonneg
 
@@ -244,8 +243,7 @@ theorem one_add_inv_smul_nonneg_iff (hr : 0 < r) :
     (∀ i j, 0 ≤ (1 + r⁻¹ • B) i j) ↔ B.IsMetzler ∧ ∀ i, -B i i ≤ r := by
   have hdiag (i : n) : 0 ≤ (1 + r⁻¹ • B) i i ↔ -B i i ≤ r := by
     simp only [Matrix.add_apply, one_apply_eq, Matrix.smul_apply, smul_eq_mul]
-    rw [← mul_le_mul_iff_of_pos_left hr, mul_add, mul_inv_cancel_left₀ hr.ne']
-    constructor <;> intro h <;> linarith
+    constructor <;> intro h <;> nlinarith [mul_inv_cancel₀ hr.ne', inv_pos.mpr hr]
   have hoff {i j : n} (hij : i ≠ j) : 0 ≤ (1 + r⁻¹ • B) i j ↔ 0 ≤ B i j := by
     simp [one_apply_ne hij, mul_nonneg_iff_of_pos_left (inv_pos.mpr hr)]
   refine ⟨fun h ↦ ⟨isMetzler_iff.mpr fun i j hij ↦ (hoff hij).mp (h i j),
