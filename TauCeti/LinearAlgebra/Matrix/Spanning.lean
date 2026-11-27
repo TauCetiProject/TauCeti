@@ -224,7 +224,7 @@ theorem exists_eq_smul_map_of_inv_apply_mul_apply_mem_range [Semiring O] [IsDoma
   set D : Matrix n n O := Matrix.of fun i j ↦ ∑ kl : n × n, r kl * p i j kl.1 kl.2
   have hBα (i j : n) : B i j * α = f (D i j) := by
     simp [D, α, Finset.mul_sum, map_sum, hp, mul_left_comm]
-  have hfd : f d = B i₀ j₀ * α := by rw [hBα, ← hr]; rfl
+  have hfd : f d = B i₀ j₀ * α := by rw [hBα, ← hr]; simp only [D, Matrix.of_apply]
   -- `p i j k l = D i j * c k l`, after cancelling `d` in `O`.
   have hpDc (i j k l : n) : p i j k l = D i j * c k l := by
     refine mul_right_cancel₀ hd0 (hf ?_)
