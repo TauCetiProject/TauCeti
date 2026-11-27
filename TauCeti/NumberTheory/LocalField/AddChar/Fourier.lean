@@ -215,18 +215,6 @@ private theorem integrable_indicator_sub (μ : Measure V) [μ.IsAddRightInvarian
       (integrableOn_const (C := c) hM.measure_lt_top.ne eNorm_ne_top)) a
 
 omit [FiniteDimensional K V] in
-/-- **The first transform of a coset indicator.** -/
-private theorem fourierIntegral_indicator_sub (μ : Measure V) [μ.IsAddRightInvariant]
-    (M : Submodule 𝒪[K] V) [M.IsFullLattice K] (c : E) (a : V) :
-    fourierIntegral ψ μ B (fun v ↦ (M : Set V).indicator (fun _ ↦ c) (v - a)) =
-      fun w ↦ ψ (B.flip w (-a)) • (M.characterAnnihilator ψ B : Set V).indicator
-        (fun _ ↦ μ.real (M : Set V) • c) w := by
-  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup K V
-  have h := fourierIntegral_indicator_addSubgroup_comp_sub_right ψ μ B (U := M.toAddSubgroup)
-    (Submodule.IsFullLattice.isOpen M).measurableSet c a
-  simpa [← Submodule.toAddSubgroup_characterAnnihilator] using h
-
-omit [FiniteDimensional K V] in
 /-- **Inversion for a coset indicator.** Transforming `1_(a + M) • c` for `(μ, B)` and then for
 `(ν, B.flip)` gives `x ↦ 1_(a + M)(-x) • (μ(M) ν(M^∨)) • c`. -/
 private theorem fourierIntegral_fourierIntegral_indicator_sub (hψ : Continuous ψ) (h1 : ψ ≠ 1)
@@ -239,8 +227,13 @@ private theorem fourierIntegral_fourierIntegral_indicator_sub (hψ : Continuous 
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup K V
   have h0 := AddChar.setOf_eq_one_mem_nhds_zero hψ
   have hA := Submodule.isFullLattice_characterAnnihilator h0 h1 hB M
+  have h₁ := fourierIntegral_indicator_addSubgroup_comp_sub_right ψ μ B (U := M.toAddSubgroup)
+    (Submodule.IsFullLattice.isOpen M).measurableSet c a
   -- The phase `ψ (-B a w)` is the modulation by `ψ (B.flip w (-a))`.
-  rw [fourierIntegral_indicator_sub μ M c a, fourierIntegral_char_smul]
+  have hphase (w : V) : ψ (-B a w) = ψ (B.flip w (-a)) := by simp
+  simp only [← Submodule.toAddSubgroup_characterAnnihilator, Submodule.coe_toAddSubgroup,
+    hphase] at h₁
+  rw [h₁, fourierIntegral_char_smul]
   ext x
   have h := congrFun (fourierIntegral_indicator_addSubgroup ψ ν B.flip
     (U := (M.characterAnnihilator ψ B).toAddSubgroup)
@@ -280,7 +273,10 @@ theorem fourierIntegral_fourierIntegral_of_periodic (hψ : Continuous ψ) (h1 : 
       (IsModuleTopology.continuous_bilinear_of_finite_left B.flip) a).2
       (integrable_indicator_sub ν (M.characterAnnihilator ψ B) (μ.real (M : Set V) • f a) 0)
     refine hφ.congr (Eventually.of_forall fun w ↦ ?_)
-    simp [g, fourierIntegral_indicator_sub μ M (f a) a]
+    have h₁ := fourierIntegral_indicator_addSubgroup_comp_sub_right ψ μ B (U := M.toAddSubgroup)
+      (Submodule.IsFullLattice.isOpen M).measurableSet (f a) a
+    simp only [← Submodule.toAddSubgroup_characterAnnihilator, Submodule.coe_toAddSubgroup] at h₁
+    simp [g, h₁]
   rw [hfg, fourierIntegral_finsetSum hψ μ B s fun a _ ↦ integrable_indicator_sub μ M _ a,
     fourierIntegral_finsetSum hψ ν B.flip s fun a _ ↦ hint a]
   ext x
