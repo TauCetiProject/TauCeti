@@ -101,10 +101,9 @@ attribute [local instance] InnerProductSpace.complexToReal
 inner product `Re ⟪·, ·⟫_ℂ` (`InnerProductSpace.complexToReal`). -/
 theorem orthonormal_imInnerSymplecticBasis (e : OrthonormalBasis ι ℂ G) :
     Orthonormal ℝ e.imInnerSymplecticBasis := by
-  -- It is the orthonormal family `(e_j, i e_j)` relabelled by `ι ⊕ ι`.
-  convert e.orthonormal.complexToReal.comp _
-    (SymplecticForm.darbouxIndexEquiv ι).symm.injective using 1
-  ext (j | j) <;> simp
+  -- It is the real orthonormal basis `e.complexToReal` reindexed by `ι ⊕ ι`.
+  rw [imInnerSymplecticBasis, ← e.toBasis_complexToReal, ← OrthonormalBasis.reindex_toBasis]
+  exact (e.complexToReal.reindex (SymplecticForm.darbouxIndexEquiv ι)).orthonormal
 
 end ComplexToReal
 
