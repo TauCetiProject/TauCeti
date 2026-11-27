@@ -7,31 +7,29 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.Euclidean
 
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-
 /-!
 # Examples: the normal connection of a plane in `ℝ⁴`
 
 Let `f : ℝ² → ℝ⁴`, `(x₀, x₁) ↦ (x₀, x₁, 0, 0)` be the inclusion of a coordinate plane, and `∂x` the
-constant field `e₀` on `ℝ²`. The normal space at every point is spanned by `e₂` and `e₃`, and the
-normal connection of a field `ν` along `f` whose derivative is normal is that derivative
-(`TauCeti.immersionNormalConnection_model_space`). With `x = x₀`:
+constant field `e₀` on `ℝ²`. The normal space at every point is spanned by `e₂` and `e₃`. The
+normal connection of a field `ν` along `f` is the normal part of the derivative of `ν`
+(`TauCeti.immersionNormalConnection_model_space`), so when the `∂x`-derivative of `ν` is normal it
+is `∇^⊥_{∂x} ν` (`TauCeti.NormalConnectionPlaneCheck.immersionNormalConnection_incl`). Basis
+vectors are indexed from `0`. With `x = x₀`:
 
 * the constant normal field `e₂` is parallel: `∇^⊥_{∂x} e₂ = 0`
   (`TauCeti.NormalConnectionPlaneCheck.immersionNormalConnection_const`);
-* `∇^⊥_{∂x} (x e₂) = e₂ ≠ 0`, as the Leibniz rule requires; the operation that is identically `0`
-  satisfies it for `e₂` but not for `x e₂`
+* `∇^⊥_{∂x} (x e₂) = e₂ ≠ 0`, consistent with the Leibniz rule since `∂x x = 1` and `e₂` is
+  parallel; the operation that is identically `0` agrees with `∇^⊥` on `e₂` but not on `x e₂`
   (`TauCeti.NormalConnectionPlaneCheck.immersionNormalConnection_coord_smul`);
 * for the rotating normal frame `n₁ = cos x e₂ + sin x e₃`, `n₂ = -sin x e₂ + cos x e₃`,
   `∇^⊥_{∂x} n₁ = n₂` and `∇^⊥_{∂x} n₂ = -n₁`
   (`TauCeti.NormalConnectionPlaneCheck.immersionNormalConnection_n₁`,
-  `TauCeti.NormalConnectionPlaneCheck.immersionNormalConnection_n₂`). So the connection matrix in
-  this frame is skew, and the derivative of `⟪n₁, n₂⟫ = 0` along `∂x` is
-  `⟪∇^⊥ n₁, n₂⟫ + ⟪n₁, ∇^⊥ n₂⟫ = 1 - 1 = 0`
-  (`TauCeti.NormalConnectionPlaneCheck.inner_immersionNormalConnection_n₁_add`).
-
-These are the normal-connection Checks of the RiemannianGeometry roadmap, R5a, with the roadmap's
-`e₃`, `e₄` written `e₂`, `e₃` (indices from `0`).
+  `TauCeti.NormalConnectionPlaneCheck.immersionNormalConnection_n₂`);
+* `⟪∇^⊥_{∂x} n₁, n₂⟫ = 1` and `⟪n₁, ∇^⊥_{∂x} n₂⟫ = -1`
+  (`TauCeti.NormalConnectionPlaneCheck.inner_immersionNormalConnection_n₁_n₂`,
+  `TauCeti.NormalConnectionPlaneCheck.inner_n₁_immersionNormalConnection_n₂`). Their sum is `0`,
+  as metric compatibility requires of the derivative of the constant `⟪n₁, n₂⟫ = 0`.
 -/
 
 public section
@@ -79,20 +77,14 @@ theorem inner_incl_eq_zero (u : ℝ²) {w : ℝ⁴} (h0 : w 0 = 0) (h1 : w 1 = 0
 theorem mem_orthogonalNormalSpace_incl {x : ℝ²} {w : ℝ⁴} (h0 : w 0 = 0) (h1 : w 1 = 0) :
     (w : TangentSpace 𝓘(ℝ, ℝ⁴) (incl x)) ∈
       orthogonalNormalSpace 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ⁴) (fun y ↦ incl y) x := by
-  rw [orthogonalNormalSpace_def]
-  refine (Submodule.mem_orthogonal
-    (LinearMap.range (mfderiv 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ⁴) (fun y ↦ incl y) x).toLinearMap) _).2 ?_
-  rintro _ ⟨u, rfl⟩
-  have hd : mfderiv 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ⁴) (fun y ↦ incl y) x u = incl u :=
-    DFunLike.congr_fun incl.hasFDerivAt.hasMFDerivAt.mfderiv u
-  change ⟪(mfderiv 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ⁴) (fun y ↦ incl y) x u : ℝ⁴), w⟫_ℝ = 0
-  rw [hd]
+  refine mem_orthogonalNormalSpace_iff.2 fun u ↦ ?_
+  rw [incl.hasFDerivAt.hasMFDerivAt.mfderiv]
   exact inner_incl_eq_zero u h0 h1
 
 /-- The normal connection along `∂x` of a field `n` along the plane whose derivative in the
 direction `e₀` has vanishing first two coordinates is that derivative. -/
-theorem immersionNormalConnection_incl {n : ℝ² → ℝ⁴} {x : ℝ²} {d : ℝ⁴}
-    (hn : HasFDerivAt n (fderiv ℝ n x) x) (hd : fderiv ℝ n x (EuclideanSpace.single 0 1) = d)
+theorem immersionNormalConnection_incl {n : ℝ² → ℝ⁴} {n' : ℝ² →L[ℝ] ℝ⁴} {x : ℝ²} {d : ℝ⁴}
+    (hn : HasFDerivAt n n' x) (hd : n' (EuclideanSpace.single 0 1) = d)
     (h0 : d 0 = 0) (h1 : d 1 = 0) :
     immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, ℝ⁴) ℝ⁴) (fun y ↦ incl y)
       (fun y ↦ (n y : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x = d := by
@@ -107,14 +99,11 @@ theorem immersionNormalConnection_incl {n : ℝ² → ℝ⁴} {x : ℝ²} {d : �
 /-- **A constant normal field is parallel**: `∇^⊥_{∂x} e₂ = 0`. -/
 theorem immersionNormalConnection_const (x : ℝ²) :
     immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, ℝ⁴) ℝ⁴) (fun y ↦ incl y)
-      (fun _ ↦ (e 2 : TangentSpace 𝓘(ℝ, ℝ⁴) (incl x))) dx x = 0 := by
-  have h := immersionNormalConnection_incl (n := fun _ ↦ e 2) (x := x) (d := 0)
-    ((hasFDerivAt_const (e 2) x).congr_fderiv (fderiv_const_apply (e 2)).symm)
-    (by simp) (by simp) (by simp)
-  exact h
+      (fun y ↦ (e 2 : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x = 0 :=
+  immersionNormalConnection_incl (d := 0) (hasFDerivAt_const (e 2) x) (by simp) (by simp) (by simp)
 
-/-- **The Leibniz rule for the normal connection**: `∇^⊥_{∂x} (x e₂) = e₂`, which is nonzero,
-while `e₂` itself is parallel. -/
+/-- **`∇^⊥_{∂x} (x e₂) = e₂`**, which is nonzero, consistent with the Leibniz rule since `∂x x = 1`
+and `e₂` is parallel. -/
 theorem immersionNormalConnection_coord_smul (x : ℝ²) :
     immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, ℝ⁴) ℝ⁴) (fun y ↦ incl y)
       (fun y ↦ (y 0 • e 2 : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x = e 2 ∧ e 2 ≠ 0 := by
@@ -124,8 +113,7 @@ theorem immersionNormalConnection_coord_smul (x : ℝ²) :
   have hn : HasFDerivAt (fun y : ℝ² ↦ y 0 • e 2) ((π₀).smulRight (e 2)) x := by
     rw [hfun]
     exact (π₀).hasFDerivAt.smul_const (e 2)
-  refine ⟨immersionNormalConnection_incl (hn.fderiv ▸ hn) (by simp [hn.fderiv]) (by simp)
-    (by simp), ?_⟩
+  refine ⟨immersionNormalConnection_incl hn (by simp) (by simp) (by simp), ?_⟩
   simp
 
 /-- The first vector `n₁ = cos x e₂ + sin x e₃` of the rotating normal frame. -/
@@ -163,32 +151,33 @@ theorem hasFDerivAt_n₂ (x : ℝ²) : HasFDerivAt n₂ ((π₀).smulRight (-n�
 theorem immersionNormalConnection_n₁ (x : ℝ²) :
     immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, ℝ⁴) ℝ⁴) (fun y ↦ incl y)
       (fun y ↦ (n₁ y : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x = n₂ x :=
-  immersionNormalConnection_incl ((hasFDerivAt_n₁ x).fderiv ▸ hasFDerivAt_n₁ x)
-    (by simp [(hasFDerivAt_n₁ x).fderiv]) (by simp [n₂]) (by simp [n₂])
+  immersionNormalConnection_incl (hasFDerivAt_n₁ x) (by simp) (by simp [n₂]) (by simp [n₂])
 
 /-- **The rotating normal frame, second vector**: `∇^⊥_{∂x} n₂ = -n₁`. -/
 theorem immersionNormalConnection_n₂ (x : ℝ²) :
     immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, ℝ⁴) ℝ⁴) (fun y ↦ incl y)
       (fun y ↦ (n₂ y : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x = -n₁ x :=
-  immersionNormalConnection_incl ((hasFDerivAt_n₂ x).fderiv ▸ hasFDerivAt_n₂ x)
-    (by simp [(hasFDerivAt_n₂ x).fderiv]) (by simp [n₁]) (by simp [n₁])
+  immersionNormalConnection_incl (hasFDerivAt_n₂ x) (by simp) (by simp [n₁]) (by simp [n₁])
 
-/-- **The connection matrix of the rotating frame is skew**: `⟪∇^⊥_{∂x} n₁, n₂⟫ = 1` and
-`⟪n₁, ∇^⊥_{∂x} n₂⟫ = -1`, so the derivative of `⟪n₁, n₂⟫ = 0` along `∂x` is `1 - 1 = 0`. -/
-theorem inner_immersionNormalConnection_n₁_add (x : ℝ²) :
+/-- `⟪∇^⊥_{∂x} n₁, n₂⟫ = 1`. -/
+theorem inner_immersionNormalConnection_n₁_n₂ (x : ℝ²) :
     ⟪immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, ℝ⁴) ℝ⁴) (fun y ↦ incl y)
-        (fun y ↦ (n₁ y : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x, n₂ x⟫_ℝ = 1 ∧
-      ⟪(n₁ x : TangentSpace 𝓘(ℝ, ℝ⁴) (incl x)),
-        immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, ℝ⁴) ℝ⁴) (fun y ↦ incl y)
-          (fun y ↦ (n₂ y : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x⟫_ℝ = -1 := by
-  rw [immersionNormalConnection_n₁, immersionNormalConnection_n₂]
-  change ⟪n₂ x, n₂ x⟫_ℝ = 1 ∧ ⟪n₁ x, -n₁ x⟫_ℝ = -1
-  have h2 : ⟪n₂ x, n₂ x⟫_ℝ = 1 := by
+        (fun y ↦ (n₁ y : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x, n₂ x⟫_ℝ = 1 := by
+  have h : ⟪n₂ x, n₂ x⟫_ℝ = 1 := by
     simp only [n₂, PiLp.inner_apply, Fin.sum_univ_four]
     simp
-  have h1 : ⟪n₁ x, n₁ x⟫_ℝ = 1 := by
+  rw [immersionNormalConnection_n₁]
+  exact h
+
+/-- `⟪n₁, ∇^⊥_{∂x} n₂⟫ = -1`. -/
+theorem inner_n₁_immersionNormalConnection_n₂ (x : ℝ²) :
+    ⟪(n₁ x : TangentSpace 𝓘(ℝ, ℝ⁴) (incl x)),
+      immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, ℝ⁴) ℝ⁴) (fun y ↦ incl y)
+        (fun y ↦ (n₂ y : TangentSpace 𝓘(ℝ, ℝ⁴) (incl y))) dx x⟫_ℝ = -1 := by
+  have h : ⟪n₁ x, n₁ x⟫_ℝ = 1 := by
     simp only [n₁, PiLp.inner_apply, Fin.sum_univ_four]
     simp
-  exact ⟨h2, by rw [inner_neg_right, h1]⟩
+  rw [immersionNormalConnection_n₂, inner_neg_right]
+  exact congrArg Neg.neg h
 
 end TauCeti.NormalConnectionPlaneCheck
