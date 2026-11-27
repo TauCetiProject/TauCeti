@@ -11,7 +11,6 @@ public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Topology.MappingSpace.Based
 public import TauCeti.Topology.MappingSpace.Group
 import TauCeti.Topology.Circle.Arc
-import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # Based maps into the circle from a simply connected compact space
@@ -25,9 +24,9 @@ principal argument of `f / f₀`, which is continuous because `Y` is compact and
 uniformly close to `1`. So postcomposition with `Circle.exp` is a homeomorphism
 `Map_*(Y, ℝ) ≃ₜ Map_*(Y, S¹)`. Since `Map_*(Y, ℝ)` is a linear subspace of `C(Y, ℝ)`, it is
 contractible, and therefore so is `Map_*(Y, S¹)`. Combined with the decomposition
-`C(Y, S¹) ≃ₜ S¹ × Map_*(Y, S¹)` of maps into a topological group
-(`TauCeti.mappingSpaceGroupHomeomorph`), evaluation at `y₀` is a homotopy equivalence
-`C(Y, S¹) ≃ₕ S¹`.
+`C(Y, S¹) ≃ₜ S¹ × Map_*(Y, S¹)` of maps into a topological group, evaluation at `y₀` is a
+homotopy equivalence `C(Y, S¹) ≃ₕ S¹`: this is `TauCeti.mappingSpaceGroupHomotopyEquiv y₀`
+for `G = Circle`, whose contractibility hypothesis `Circle.contractibleSpace_basedMap` supplies.
 
 For `Y = S²` this is the statement that `Map_*(S², S¹)`, a model of `Ω²S¹`, is contractible and
 that `Map(S², S¹) ≃ S¹ × Map_*(S², S¹)` is homotopy equivalent to `S¹`.
@@ -40,8 +39,6 @@ that `Map(S², S¹) ≃ S¹ × Map_*(S², S¹)` is homotopy equivalent to `S¹`.
 * `Circle.basedMapExpHomeomorph`: `Map_*(Y, ℝ) ≃ₜ Map_*(Y, S¹)`, postcomposition with
   `Circle.exp`.
 * `Circle.contractibleSpace_basedMap`: `Map_*(Y, S¹)` is contractible.
-* `Circle.continuousMapHomotopyEquiv`: evaluation at `y₀` is a homotopy equivalence
-  `C(Y, S¹) ≃ₕ S¹`, with homotopy inverse the constant maps.
 
 ## References
 
@@ -187,45 +184,11 @@ instance contractibleSpace_basedMap (y₀ : Y) : ContractibleSpace (BasedMap Y C
   have hconv : Convex ℝ {θ : C(Y, ℝ) | θ y₀ = 0} := by
     intro θ hθ η hη a b _ _ _
     simp_all
+  -- the set `{θ | θ y₀ = 0}` coerces to the subtype `{θ // θ y₀ = 0}`, which is
+  -- `BasedMap Y ℝ y₀ 0` by definition, so the convex set's contractibility is that of `Map_*(Y, ℝ)`
   have : ContractibleSpace (BasedMap Y ℝ y₀ 0) :=
     hconv.contractibleSpace ⟨0, ContinuousMap.zero_apply y₀⟩
   exact (basedMapExpHomeomorph y₀).symm.contractibleSpace
-
-/-- **Maps into the circle are homotopy equivalent to the circle.** For a compact, simply
-connected and locally path-connected space `Y`, evaluation at a point `y₀` is a homotopy
-equivalence `C(Y, S¹) ≃ₕ S¹`, with homotopy inverse the constant maps. -/
-def continuousMapHomotopyEquiv (y₀ : Y) : ContinuousMap.HomotopyEquiv C(Y, Circle) Circle where
-  toFun := ⟨fun f ↦ f y₀, continuous_eval_const y₀⟩
-  invFun := ⟨ContinuousMap.const Y, ContinuousMap.continuous_const'⟩
-  left_inv := by
-    -- evaluation is `C(Y, S¹) ≃ₜ S¹ × Map_*(Y, S¹) ≃ₕ S¹`, collapsing the contractible factor,
-    -- and the constant maps are a right inverse of it, hence a homotopy inverse
-    let e := (mappingSpaceGroupHomeomorph (G := Circle) y₀).symm.toHomotopyEquiv.trans
-      (ContinuousMap.HomotopyEquiv.prodContractible Circle (BasedMap Y Circle y₀ 1))
-    have he : e.toFun = ⟨fun f ↦ f y₀, continuous_eval_const y₀⟩ := by
-      ext f
-      simp [e, -Homeomorph.symm_toHomotopyEquiv]
-    refine ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id ?_ (he ▸ e.left_inv)
-    convert ContinuousMap.Homotopic.refl (ContinuousMap.id Circle) using 1
-    ext z
-    simp
-  right_inv := by
-    convert ContinuousMap.Homotopic.refl (ContinuousMap.id Circle) using 1
-    ext z
-    simp
-
-/-- `Circle.continuousMapHomotopyEquiv` is evaluation at the basepoint. -/
-@[simp]
-theorem continuousMapHomotopyEquiv_apply (y₀ : Y) (f : C(Y, Circle)) :
-    continuousMapHomotopyEquiv y₀ f = f y₀ :=
-  (rfl)
-
-/-- The homotopy inverse of `Circle.continuousMapHomotopyEquiv` sends a point to the constant
-map. -/
-@[simp]
-theorem continuousMapHomotopyEquiv_symm_apply (y₀ : Y) (z : Circle) :
-    (continuousMapHomotopyEquiv y₀).symm z = ContinuousMap.const Y z :=
-  (rfl)
 
 end Compact
 
