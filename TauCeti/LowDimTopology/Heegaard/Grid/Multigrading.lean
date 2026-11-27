@@ -100,10 +100,20 @@ basepoints `Sum.inl c` of the `O`-markings in the columns `c` of `q`. -/
 def componentOBasepoints (q : G.Components) : Finset (Fin n ⊕ Fin n) :=
   (G.componentColumns q).map .inl
 
+/-- The `w`-basepoints of a component as the image of its columns under `Sum.inl`. -/
+theorem componentOBasepoints_def (q : G.Components) :
+    G.componentOBasepoints q = (G.componentColumns q).map .inl :=
+  (rfl)
+
 /-- The `z`-basepoints of the link component `q` in the Heegaard diagram of a grid diagram: the
 basepoints `Sum.inr c` of the `X`-markings in the columns `c` of `q`. -/
 def componentXBasepoints (q : G.Components) : Finset (Fin n ⊕ Fin n) :=
   (G.componentColumns q).map .inr
+
+/-- The `z`-basepoints of a component as the image of its columns under `Sum.inr`. -/
+theorem componentXBasepoints_def (q : G.Components) :
+    G.componentXBasepoints q = (G.componentColumns q).map .inr :=
+  (rfl)
 
 variable {G}
 
