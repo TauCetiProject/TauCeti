@@ -244,7 +244,8 @@ variable {A' : Matrix n n R} {b : GL n R} {K : Type*} [Semifield K] [Algebra K R
 theorem isUnit_of_star_mul_smul_mul_eq (hA : IsUnit A) (ht : t ≠ 0)
     (hb : star (b : Matrix n n R) * (t • A) * b = A') : IsUnit A' := by
   rw [← hb]
-  exact ((b.isUnit.star).mul (hA.smul (Units.mk0 t ht))).mul b.isUnit
+  have htA : IsUnit (t • A) := by simpa [Units.smul_def] using hA.smul (Units.mk0 t ht)
+  exact ((b.isUnit.star).mul htA).mul b.isUnit
 
 /-- The congruence `bᴴ (t A) b = A'` inverted: `(b⁻¹)ᴴ (t⁻¹ A') b⁻¹ = A`. -/
 theorem star_inv_mul_smul_mul_inv (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A') :
@@ -383,10 +384,9 @@ theorem coe_transport_symm_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * 
     {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') (g : unitaryGroupOf A') :
     ((((transport ht hb hab).symm g : unitaryGroupOf A) : GL n R) : Matrix n n R) =
       (a : Matrix n n R)⁻¹ * ((g : GL n R) : Matrix n n R) * (b : Matrix n n R)⁻¹ := by
-  have h : (((transport ht hb hab).symm g : unitaryGroupOf A) : GL n R) = a⁻¹ * g * b⁻¹ := by
-    change b * ((⟨a * b, hab⟩ : unitaryGroupOf A')⁻¹ * g : unitaryGroupOf A') * b⁻¹ = _
-    simp [mul_assoc]
-  rw [h, Units.val_mul, Units.val_mul, coe_units_inv, coe_units_inv]
+  obtain ⟨h, rfl⟩ := (transport ht hb hab).surjective g
+  rw [Equiv.symm_apply_apply, coe_transport_apply]
+  simp [Matrix.mul_assoc]
 
 end Congruence
 
