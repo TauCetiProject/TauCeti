@@ -44,6 +44,9 @@ subfield `K` do not change the restriction to `K`.
   valuation subring is a field.
 * `RingHom.exists_valuationSubring_mem_and_image_subset_nonunits`: a ring map to a field whose
   kernel lies in a proper ideal `Q` maps into a valuation subring with `Q` sent to its nonunits.
+* `RingHom.exists_valuationSubring_mem_and_mem_nonunits_iff`: for a ring map `φ` to a field and
+  a prime `𝔭` containing its kernel, some valuation subring contains `φ(R)`, and `φ r` is a
+  nonunit of it exactly when `r ∈ 𝔭`.
 * `ValuationSubring.pointwise_smul_eq_comap`: the translate `g • A` is the pullback of `A` along
   the action of `g⁻¹`.
 * `ValuationSubring.comap_algebraMap_pointwise_smul`: translates of `A` by automorphisms fixing
@@ -195,6 +198,32 @@ theorem exists_valuationSubring_mem_and_image_subset_nonunits {R L : Type*} [Com
   obtain ⟨W, hrange, hnon⟩ := Ideal.image_subset_nonunits_valuationSubring _ hQ'
   exact ⟨W, fun x ↦ hrange ⟨x, rfl⟩, fun x hx ↦
     hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩⟩
+
+/-- **A valuation subring dominating a prime.** Let `φ : R →+* L` be a ring map to a field and
+`𝔭` a prime ideal of `R` containing the kernel of `φ`. Some valuation subring `V` of `L` contains
+`φ(R)`, and `φ r` is a nonunit of `V` exactly when `r ∈ 𝔭`. -/
+theorem exists_valuationSubring_mem_and_mem_nonunits_iff {R L : Type*} [CommRing R] [Field L]
+    (φ : R →+* L) (𝔭 : Ideal R) [𝔭.IsPrime] (hker : RingHom.ker φ ≤ 𝔭) :
+    ∃ V : ValuationSubring L, (∀ r, φ r ∈ V) ∧ ∀ r, φ r ∈ V.nonunits ↔ r ∈ 𝔭 := by
+  -- the image `P` of `𝔭` in the range of `φ` is prime, and pulls back to `𝔭`
+  have hφ : Function.Surjective φ.rangeRestrict := φ.rangeRestrict_surjective
+  have hker' : RingHom.ker φ.rangeRestrict ≤ 𝔭 := by rwa [RingHom.ker_rangeRestrict]
+  let P : Ideal φ.range := 𝔭.map φ.rangeRestrict
+  have : P.IsPrime := Ideal.map_isPrime_of_surjective hφ hker'
+  have hP (r : R) : φ.rangeRestrict r ∈ P ↔ r ∈ 𝔭 := by
+    rw [← Ideal.mem_comap, Ideal.comap_map_of_surjective' _ hφ, sup_eq_left.mpr hker']
+  -- a valuation subring `V` dominating the localisation of the range of `φ` at `P`
+  obtain ⟨V, hle, hloc⟩ := (LocalSubring.ofPrime φ.range P).exists_le_valuationSubring
+  have hmem (r : R) : φ r ∈ V := hle (LocalSubring.le_ofPrime _ _ (φ.rangeRestrict r).property)
+  -- domination: `φ r` is a unit of `V` exactly when `r ∉ 𝔭`
+  have hunit (r : R) : IsUnit (⟨φ r, hmem r⟩ : V) ↔ r ∉ 𝔭 := by
+    rw [← hP, ← Ideal.mem_primeCompl_iff, ← IsLocalization.AtPrime.isUnit_to_map_iff
+      (LocalSubring.ofPrime φ.range P).toSubring P, ← isUnit_map_iff (Subring.inclusion hle)]
+    -- both elements of `V` have underlying element `φ r` of `L`
+    rfl
+  refine ⟨V, hmem, fun r ↦ ?_⟩
+  rw [ValuationSubring.coe_mem_nonunits_iff (a := ⟨φ r, hmem r⟩), IsLocalRing.mem_maximalIdeal,
+    mem_nonunits_iff, hunit, not_not]
 
 /-- A ring embedded in a field `L` is a field if its image lies in no valuation subring of `L`
 other than `L` itself. -/

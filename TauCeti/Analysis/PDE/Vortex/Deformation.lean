@@ -254,6 +254,12 @@ theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
   simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
 
+/-- A lower bound `c² < 4 (p² + q²)` on the squared modulus of the section in the real field
+coordinates bounds its modulus: `c < |α|`. -/
+theorem lt_norm_sectionValue_of_sq_lt {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} {c : ℝ}
+    (h : c ^ 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) : c < ‖sectionValue x z‖ :=
+  lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by rwa [sq_norm_sectionValue])
+
 /-- The potential `P = |α|² / 4` in terms of the section `α`. -/
 theorem ofReal_sq_add_sq_eq_conj_sectionValue_mul_sectionValue_div_four
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
