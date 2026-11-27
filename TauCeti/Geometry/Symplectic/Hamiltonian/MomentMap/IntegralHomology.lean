@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.CWModel.Lacunary
+public import TauCeti.Geometry.Manifold.Morse.CWModel.Cohomology
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
 
 /-!
-# The integral homology of a Hamiltonian torus manifold with isolated fixed points
+# The integral homology and cohomology of a Hamiltonian torus manifold with isolated fixed points
 
 Let a compact Lie group `G` act smoothly by symplectomorphisms on a compact boundaryless manifold
 `M` with a nondegenerate two-form `σ` and moment map `μ`, and suppose that every fixed point of the
@@ -43,9 +43,27 @@ points make the homology of `M` that of a space with only even cells:
 * its rank is the Betti number over every division ring
   (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_singularHomology_int_eq_bettiNumber`).
 
+Since the integral homology is free in every degree, the universal coefficient theorem computes the
+cohomology, through the integral cohomology results for Morse functions in
+`TauCeti/Geometry/Manifold/Morse/CWModel/Cohomology.lean`:
+
+* for every abelian group `A`, `Hⁿ(M; A)` is the group `A^F` of functions on the set `F` of fixed
+  points at which `μ^ξ` has Morse index `n`
+  (`TauCeti.SmoothTwoForm.IsMomentMap.nonempty_singularCohomology_int_linearEquiv_pi`), so the rank
+  of `Hⁿ(M; ℤ)` is the number of these fixed points
+  (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_singularCohomology_int_eq_ncard`);
+* for a torus, `Hⁿ(M; A)` vanishes in odd degrees
+  (`TauCeti.SmoothTwoForm.IsMomentMap.isZero_singularCohomology_int_of_odd`), it is free when `A` is
+  free and finitely generated when `A` is
+  (`TauCeti.SmoothTwoForm.IsMomentMap.free_singularCohomology_int`,
+  `TauCeti.SmoothTwoForm.IsMomentMap.finite_singularCohomology_int`), and the rank of `Hⁿ(M; ℤ)` is
+  the Betti number over every division ring
+  (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_singularCohomology_int_eq_bettiNumber`).
+
 The integral coefficients are the integers lifted to the universe of `M`, as for the singular
 homology of a space in an arbitrary universe. These conclusions use the isolation of the fixed
-points: a trivial action on a symplectic two-torus has one fixed component, but `H₁` has rank two.
+points: a trivial action on a symplectic two-torus has one fixed component, but `H₁` and `H¹` have
+rank two.
 Closedness of `σ` and equivariance of `μ` are not used.
 
 ## References
@@ -195,5 +213,96 @@ theorem finrank_singularHomology_int_eq_bettiNumber
     h.bettiNumber_eq_ncard hσ hσG k hξ hiso]
 
 end Torus
+
+/-! ### Integral cohomology -/
+
+section Cohomology
+
+/-- **Cohomology is a product over the fixed points.** For a compact Lie group acting smoothly by
+symplectomorphisms of a compact manifold, with moment map `μ`, all of whose fixed points are
+isolated, and for `ξ` such that the closure of `{exp (t ξ) | t ∈ ℝ}` is the whole group, the
+cohomology `Hⁿ(M; A)` with coefficients in an abelian group `A` is the group `A^F` of functions on
+the set `F` of fixed points at which `μ^ξ` has Morse index `n`. -/
+theorem nonempty_singularCohomology_int_linearEquiv_pi (hξ : Lie.closedOneParameterSubgroup ξ = ⊤)
+    (hiso : ∀ p ∈ MulAction.fixedPoints G M, ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints G M → q = p)
+    (A : Type u) [AddCommGroup A] (n : ℕ) :
+    Nonempty ((TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ
+        (ModuleCat.of ℤ A) n ≃ₗ[ℤ]
+      (↥{p ∈ MulAction.fixedPoints G M | manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n} → A)) := by
+  rw [← h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
+  exact (h.isMorse_of_eq_top hσ hξ hiso)
+    |>.nonempty_singularCohomology_int_linearEquiv_pi_of_forall_ne_add_one
+    (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) A n
+
+/-- **The rank of integral cohomology counts fixed points.** For a compact Lie group acting
+smoothly by symplectomorphisms of a compact manifold, with moment map `μ`, all of whose fixed points
+are isolated, and for `ξ` such that the closure of `{exp (t ξ) | t ∈ ℝ}` is the whole group, the
+rank of `Hⁿ(M; ℤ)` is the number of fixed points at which `μ^ξ` has Morse index `n`. -/
+theorem finrank_singularCohomology_int_eq_ncard (hξ : Lie.closedOneParameterSubgroup ξ = ⊤)
+    (hiso : ∀ p ∈ MulAction.fixedPoints G M, ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints G M → q = p)
+    (n : ℕ) :
+    finrank ℤ ((TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ
+        (ModuleCat.of ℤ (ULift.{u} ℤ)) n) =
+      {p ∈ MulAction.fixedPoints G M | manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n}.ncard := by
+  rw [← h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
+  exact (h.isMorse_of_eq_top hσ hξ hiso)
+    |>.finrank_singularCohomology_int_eq_ncard_of_forall_ne_add_one
+    (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) n
+
+section Torus
+
+variable [IsMulCommutative G] [PreconnectedSpace G]
+
+/-- **Odd cohomology vanishes.** For a torus acting smoothly by symplectomorphisms of a compact
+manifold, with a moment map and isolated fixed points, the cohomology `Hⁿ(M; A)` vanishes in odd
+degrees `n`, for every abelian group `A` of coefficients. -/
+theorem isZero_singularCohomology_int_of_odd
+    (hiso : ∀ p ∈ MulAction.fixedPoints G M, ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints G M → q = p)
+    (A : Type u) [AddCommGroup A] {n : ℕ} (hn : Odd n) :
+    IsZero ((TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ
+      (ModuleCat.of ℤ A) n) := by
+  obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
+  exact (h.isMorse_of_eq_top hσ hξ hiso).isZero_singularCohomology_int_of_odd
+    (fun _ hp ↦ h.even_manifoldMorseIndex hσ hσG hp) A hn
+
+/-- **Cohomology is free.** For a torus acting smoothly by symplectomorphisms of a compact manifold,
+with a moment map and isolated fixed points, the cohomology `Hⁿ(M; A)` is a free abelian group in
+every degree when `A` is free; in particular the integral cohomology is free. -/
+theorem free_singularCohomology_int
+    (hiso : ∀ p ∈ MulAction.fixedPoints G M, ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints G M → q = p)
+    (A : Type u) [AddCommGroup A] [Module.Free ℤ A] (n : ℕ) :
+    Module.Free ℤ ((TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ
+      (ModuleCat.of ℤ A) n) := by
+  obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
+  exact (h.isMorse_of_eq_top hσ hξ hiso).free_singularCohomology_int_of_forall_ne_add_one
+    (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) A n
+
+/-- **Cohomology is finitely generated.** For a torus acting smoothly by symplectomorphisms of a
+compact manifold, with a moment map and isolated fixed points, the cohomology `Hⁿ(M; A)` is a
+finitely generated abelian group in every degree when `A` is finitely generated. -/
+theorem finite_singularCohomology_int
+    (hiso : ∀ p ∈ MulAction.fixedPoints G M, ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints G M → q = p)
+    (A : Type u) [AddCommGroup A] [Module.Finite ℤ A] (n : ℕ) :
+    Module.Finite ℤ ((TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ
+      (ModuleCat.of ℤ A) n) := by
+  obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
+  exact (h.isMorse_of_eq_top hσ hξ hiso).finite_singularCohomology_int_of_forall_ne_add_one
+    (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) A n
+
+/-- **Integral cohomology ranks are Betti numbers.** For a torus acting smoothly by
+symplectomorphisms of a compact manifold, with a moment map and isolated fixed points, the rank of
+the integral cohomology in each degree is the Betti number over every division ring `k`. -/
+theorem finrank_singularCohomology_int_eq_bettiNumber
+    (hiso : ∀ p ∈ MulAction.fixedPoints G M, ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints G M → q = p)
+    (k : Type u) [DivisionRing k] (n : ℕ) :
+    finrank ℤ ((TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{u} ℤ)) ℤ
+      (ModuleCat.of ℤ (ULift.{u} ℤ)) n) = bettiNumber k M n := by
+  obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
+  rw [h.finrank_singularCohomology_int_eq_ncard hσ hσG hξ hiso,
+    h.bettiNumber_eq_ncard hσ hσG k hξ hiso]
+
+end Torus
+
+end Cohomology
 
 end TauCeti.SmoothTwoForm.IsMomentMap

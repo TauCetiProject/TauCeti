@@ -181,6 +181,11 @@ theorem killingForm_restrict_pos (hθ : θ.IsCartanInvolution) {𝔞 : Submodule
   exact hθ.killingForm_apply_self_pos_of_mem_cartanP (h𝔞 H.property)
     (Submodule.coe_eq_zero.not.mpr hH)
 
+/-- The Killing form restricted to a subspace of `𝔭` has positive definite quadratic map. -/
+theorem posDef_killingForm_restrict (hθ : θ.IsCartanInvolution) {𝔞 : Submodule K L}
+    (h𝔞 : 𝔞 ≤ θ.cartanP) : ((killingForm K L).restrict 𝔞).toQuadraticMap.PosDef :=
+  (LinearMap.BilinForm.posDef_toQuadraticMap_iff _).mpr (hθ.killingForm_restrict_pos h𝔞)
+
 omit [IsStrictOrderedRing K] in
 /-- The twisted Killing form of a Cartan involution is symmetric. -/
 theorem isSymm_twistedKillingForm (hθ : θ.IsCartanInvolution) : θ.twistedKillingForm.IsSymm :=
@@ -214,11 +219,7 @@ theorem finiteDimensional (hθ : θ.IsCartanInvolution) : FiniteDimensional K L 
 /-- The Killing form restricted to a subspace of `𝔭` is nondegenerate. -/
 theorem nondegenerate_killingForm_restrict (hθ : θ.IsCartanInvolution) {𝔞 : Submodule K L}
     (h𝔞 : 𝔞 ≤ θ.cartanP) : ((killingForm K L).restrict 𝔞).Nondegenerate :=
-  have := hθ.finiteDimensional
-  LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
-    (LinearMap.BilinForm.separatingLeft_of_anisotropic fun H hH ↦ by
-      by_contra hne
-      exact (hθ.killingForm_restrict_pos h𝔞 H hne).ne' hH)
+  LinearMap.BilinForm.nondegenerate_of_anisotropic _ (hθ.posDef_killingForm_restrict h𝔞).anisotropic
 
 omit [IsStrictOrderedRing K] in
 /-- A Lie algebra with a Cartan involution is semisimple. -/
