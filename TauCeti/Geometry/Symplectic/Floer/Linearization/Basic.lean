@@ -17,7 +17,9 @@ import TauCeti.Topology.Constructions.SumProd
 
 The nonlinear operator is `∂s u - X_Ks + J(z,u)(∂t u - X_Kt)`. For the cylindrical datum
 `K = H_t dt` and `J_t` independent of `s` it commutes with translations in `s`
-(`floerOperator_comp_sub`). We differentiate it along
+(`floerOperator_comp_sub`). It is quasilinear: it is `∂s u + J(z, u) ∂t u + G(z, u)` for the
+zeroth-order term `G = -X_Ks - J X_Kt` (`floerZerothOrder`,
+`floerOperator_eq_add_floerZerothOrder`). We differentiate it along
 jointly `C²` families of maps and Hamiltonians and differentiable families of endomorphisms.
 The formula includes the target derivative of `J`, both Hamiltonian linearizations, and the
 independent parameter variations of `K` and `J`. Domain dependence of the coefficients is
@@ -25,10 +27,10 @@ allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of en
 the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. For a constant almost
-complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
-(`floerLinearization_const_eq`), so it vanishes at a point exactly when
-`∂s ξ = -J ∂t ξ + J dX_H(u) ξ` there (`floerLinearization_const_eq_zero_iff`), and on a direction
-`(s, t) ↦ ζ(s)` it is `ζ' - J dX_H(u) ζ` (`floerLinearization_comp_fst`). On a direction
+complex structure `J` and `K = H dt`, with `H` allowed to depend on the domain point, it is
+`∂s ξ + J (∂t ξ - dX_H(u) ξ)` (`floerLinearization_const_eq`), so it vanishes at a point exactly
+when `∂s ξ = -J ∂t ξ + J dX_H(u) ξ` there (`floerLinearization_const_eq_zero_iff`), and on a
+direction `(s, t) ↦ ζ(s)` it is `ζ' - J dX_H(u) ζ` (`floerLinearization_comp_fst`). On a direction
 multiplied by a function `f` of both variables it acts as `f D ξ + (∂s f) ξ + (∂t f) J ξ`
 (`floerLinearization_fun_smul`), a case of the same rule
 for any operator `∂s + J ∂t + A` (`TauCeti.cauchyRiemann_fun_smul` in
@@ -223,6 +225,31 @@ theorem floerOperator_sub_floerOperator (ω : SymplecticForm V)
   simp only [floerOperator_def, fderiv_sub hu hv, _root_.sub_apply, map_sub]
   abel
 
+/-- The zeroth-order term `G(z, y) = -X_{K_s(z)}(y) - J(z, y) X_{K_t(z)}(y)` of the Floer operator,
+which is `∂s u + J(u) ∂t u + G(u)`
+(`TauCeti.SymplecticForm.floerOperator_eq_add_floerZerothOrder`). -/
+noncomputable def floerZerothOrder (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) (y : V) : V :=
+  -ω.hamiltonianVectorField (Ks z) y - J z y (ω.hamiltonianVectorField (Kt z) y)
+
+/-- The defining formula of the zeroth-order term of the Floer operator. -/
+theorem floerZerothOrder_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) (y : V) :
+    ω.floerZerothOrder J Ks Kt z y =
+      -ω.hamiltonianVectorField (Ks z) y - J z y (ω.hamiltonianVectorField (Kt z) y) :=
+  (rfl)
+
+/-- **The Floer operator is quasilinear.** It is `∂s u + J(u) ∂t u + G(u)` for the zeroth-order
+term `G = -X_{K_s} - J X_{K_t}`. -/
+theorem floerOperator_eq_add_floerZerothOrder (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerOperator J Ks Kt u z =
+      fderiv ℝ u z (1, 0) + J z (u z) (fderiv ℝ u z (0, 1)) +
+        ω.floerZerothOrder J Ks Kt z (u z) := by
+  rw [floerOperator_def, floerZerothOrder_def, stdComplexLineReal_eq, stdComplexLineImag_eq,
+    map_sub]
+  abel
+
 /-- **Translation invariance of the Floer operator.** For the cylindrical datum `K = H_t dt` and a
 structure `J_t` independent of `s`, the Floer operator of the translate `w ↦ f(w - (R, 0))` at `z`
 is the Floer operator of `f` at `z - (R, 0)`. -/
@@ -275,39 +302,38 @@ theorem floerLinearization_def (ω : SymplecticForm V)
   (rfl)
 
 /-- **The linearized Floer operator for a constant structure and `K = H dt`.** For a constant
-almost complex structure `J` and an autonomous Hamiltonian `H`, the linearized Floer operator
-along `u` is `D ξ = ∂s ξ + J (∂t ξ - dX_H(u) ξ)`. -/
+almost complex structure `J` and Hamiltonians `H_z` depending on the domain point, the linearized
+Floer operator of `K = H dt` along `u` is `D ξ = ∂s ξ + J (∂t ξ - dX_{H_z}(u) ξ)`. -/
 theorem floerLinearization_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (H : V → ℝ) (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u ξ z =
+    (H : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) H u ξ z =
       fderiv ℝ ξ z (1, 0) +
-        J (fderiv ℝ ξ z (0, 1) - fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
+        J (fderiv ℝ ξ z (0, 1) - fderiv ℝ (ω.hamiltonianVectorField (H z)) (u z) (ξ z)) := by
   simp [floerLinearization_def, hamiltonianVectorField_const, stdComplexLineReal_eq,
     stdComplexLineImag_eq]
 
 /-- **The zero equation for a constant structure and `K = H dt`.** Along any map `u`, the linearized
 Floer operator of `K = H dt` with the constant structure `J` vanishes at the point `z` exactly when
-`∂s ξ = -J ∂t ξ + J dX_H(u) ξ` holds at `z`. The partial derivatives are Mathlib's totalized
+`∂s ξ = -J ∂t ξ + J dX_{H_z}(u) ξ` holds at `z`. The partial derivatives are Mathlib's totalized
 `fderiv`, so neither side asserts that `ξ` is differentiable at `z`. -/
 theorem floerLinearization_const_eq_zero_iff (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (H : V → ℝ) {u ξ : ℝ × ℝ → V} {z : ℝ × ℝ} :
-    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u ξ z = 0 ↔
+    (H : ℝ × ℝ → V → ℝ) {u ξ : ℝ × ℝ → V} {z : ℝ × ℝ} :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) H u ξ z =
+        0 ↔
       fderiv ℝ ξ z (1, 0) =
-        -J (fderiv ℝ ξ z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
+        -J (fderiv ℝ ξ z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField (H z)) (u z) (ξ z)) := by
   rw [floerLinearization_const_eq, map_sub]
   constructor <;> intro h <;> linear_combination (norm := module) h
 
 /-- **The linearized operator on directions that do not depend on `t`.** Along any map `u`, the
 linearized Floer operator of `K = H dt` with the constant structure `J`, applied to the direction
-`(s, t) ↦ ζ(s)`, is `ζ'(s) - J dX_H(u(z)) ζ(s)` at `z = (s, t)`. Here `ζ'` is Mathlib's totalized
-`deriv`, so no differentiability of `ζ` is assumed. -/
+`(s, t) ↦ ζ(s)`, is `ζ'(s) - J dX_{H_z}(u(z)) ζ(s)` at `z = (s, t)`. Here `ζ'` is Mathlib's
+totalized `deriv`, so no differentiability of `ζ` is assumed. -/
 theorem floerLinearization_comp_fst (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (H : V → ℝ) (u : ℝ × ℝ → V) (ζ : ℝ → V) (z : ℝ × ℝ) :
-    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) u (fun w ↦ ζ w.1) z =
-      deriv ζ z.1 - J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ζ z.1)) := by
+    (H : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (ζ : ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) H u
+        (fun w ↦ ζ w.1) z =
+      deriv ζ z.1 - J (fderiv ℝ (ω.hamiltonianVectorField (H z)) (u z) (ζ z.1)) := by
   rw [floerLinearization_const_eq, fderiv_comp_fst]
   simp [sub_eq_add_neg]
 

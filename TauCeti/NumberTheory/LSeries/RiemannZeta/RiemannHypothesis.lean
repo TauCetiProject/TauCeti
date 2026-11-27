@@ -35,6 +35,9 @@ The divisor form of the same hypothesis, through the completed zeta function, is
   `RiemannHypothesis ↔ ∀ s, 1/2 < re s → riemannZeta s ≠ 0`.
 * `TauCeti.riemannHypothesis_iff_zeroFreeRightOf`:
   `RiemannHypothesis ↔ ZeroFreeRightOf (1 / 2) riemannZeta`.
+* `TauCeti.riemannHypothesis_iff_mem_Ioo`: `RiemannHypothesis` is equivalent to every zero of
+  `riemannZeta` in the open critical strip `0 < re s < 1` lying on `re s = 1 / 2`, since the
+  nontrivial zeros lie in that strip (`TauCeti.re_mem_Ioo_of_riemannZeta_eq_zero`).
 
 ## References
 
@@ -64,8 +67,8 @@ theorem riemannHypothesis_iff_riemannZeta_ne_zero :
       exact riemannZeta_one_ne_zero hs
     -- a trivial zero `-2(n + 1)` has negative real part
     have htriv : ¬∃ n : ℕ, s = -2 * (n + 1) := fun ⟨n, hn⟩ => by
-      have : s.re = -2 * (n + 1) := by simp [hn]
-      linarith [n.cast_nonneg (α := ℝ)]
+      subst hn
+      linarith [re_neg_two_mul_nat_add_one_lt_zero n]
     linarith [h s hs htriv hs1]
   · refine le_antisymm (not_lt.mp fun hgt => h s hgt hs) (not_lt.mp fun hlt => ?_)
     -- a zero left of the line is reflected to the zero `1 - s` right of it
@@ -77,5 +80,17 @@ The pole at `1`, of order `-1`, is allowed. -/
 theorem riemannHypothesis_iff_zeroFreeRightOf :
     RiemannHypothesis ↔ ZeroFreeRightOf (1 / 2) riemannZeta := by
   rw [riemannHypothesis_iff_riemannZeta_ne_zero, zeroFreeRightOf_riemannZeta_iff]
+
+/-- **The Riemann hypothesis**, strip form: it holds exactly when every zero of `riemannZeta` in
+the open critical strip `0 < re s < 1` lies on the critical line `re s = 1 / 2`. -/
+theorem riemannHypothesis_iff_mem_Ioo :
+    RiemannHypothesis ↔ ∀ s : ℂ, riemannZeta s = 0 → s.re ∈ Set.Ioo 0 1 → s.re = 1 / 2 := by
+  refine ⟨fun h s hs hre => h s hs (fun ⟨n, hn⟩ => ?_) ?_, fun h s hs htriv _ =>
+    h s hs (re_mem_Ioo_of_riemannZeta_eq_zero hs htriv)⟩
+  · -- a trivial zero `-2(n + 1)` has negative real part
+    subst hn
+    exact (re_neg_two_mul_nat_add_one_lt_zero n).not_gt hre.1
+  · rintro rfl
+    simp at hre
 
 end TauCeti

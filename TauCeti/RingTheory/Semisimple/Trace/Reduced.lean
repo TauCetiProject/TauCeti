@@ -63,6 +63,8 @@ In characteristic `0`, the case of the definition, each `d_c` is invertible in `
   `tr_F(L_b) = d_c · Trd_{B/F}(b)`
   (`TauCeti.Algebra.trace_mulLeft_eq_idealDeg_mul_semisimpleReducedTrace` in characteristic `0`,
   where `d_c > 0` by `TauCeti.Algebra.idealDeg_pos`).
+* `TauCeti.Algebra.trace_mulLeft_pos_iff_semisimpleReducedTrace_pos`: over an ordered field,
+  `tr_F(L_b) > 0` exactly when `Trd_{B/F}(b) > 0`, for `b` in a simple factor.
 * `TauCeti.Algebra.semisimpleReducedTrace_eq_trace`: the reduced trace of a field extension
   `E / F` is the field trace `Algebra.trace F E`.
 * `TauCeti.Algebra.semisimpleReducedTrace_matrix`: in characteristic `0`, the reduced trace of
@@ -295,6 +297,16 @@ theorem trace_mulLeft_eq_idealDeg_mul_semisimpleReducedTrace [CharZero F] {c : S
     LinearMap.trace F B (LinearMap.mulLeft F b) = idealDeg F c * semisimpleReducedTrace F B b :=
   trace_mulLeft_eq_idealDeg_mul_semisimpleReducedTrace_of_ne_zero hc
     (by exact_mod_cast (idealDeg_pos hc).ne') hb
+
+/-- **The regular and reduced traces have the same sign on each simple factor.** Over an ordered
+field, for `b` in an isotypic component `c` of a finite-dimensional semisimple algebra, the trace
+of left multiplication by `b` is positive exactly when the reduced trace of `b` is: the first is
+`idealDeg F c > 0` times the second. -/
+theorem trace_mulLeft_pos_iff_semisimpleReducedTrace_pos [LinearOrder F] [IsStrictOrderedRing F]
+    {c : Submodule B B} (hc : c ∈ isotypicComponents B B) {b : B} (hb : b ∈ c) :
+    0 < LinearMap.trace F B (LinearMap.mulLeft F b) ↔ 0 < semisimpleReducedTrace F B b := by
+  rw [trace_mulLeft_eq_idealDeg_mul_semisimpleReducedTrace hc hb]
+  exact mul_pos_iff_of_pos_left (by exact_mod_cast idealDeg_pos hc)
 
 end Semisimple
 

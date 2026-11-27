@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.SetTheory.Cardinal.Partition.Pigeonhole
+public import TauCeti.SetTheory.Cardinal.Partition.ErdosRado
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -20,7 +20,11 @@ public statements only:
   and the pair colouring `y mod 2` (the larger point) does not make `{0, 1, 2}` end-homogeneous;
 * a set with at most two points, such as `{0, 1}`, is end-homogeneous for every pair colouring;
 * `0 → (0)¹_0` and `3 → (2)¹_2` hold and `2 → (2)¹_2` fails;
-* the pigeonhole instance `ℵ₁ → (ℵ₁)¹_ℵ₀`.
+* the pigeonhole instance `ℵ₁ → (ℵ₁)¹_ℵ₀`;
+* the iterated exponential at small arguments: `2, 4, 16` from `2`, `0, 1, 2` from `0`, and
+  `ℶ₂(3) = 256`;
+* the Erdős–Rado theorem for pairs, `(2 ^ κ)⁺ → (κ⁺)²_κ`, and its instances `ℶ₁⁺ → (ℵ₁)²_ℵ₀` and
+  `ℶ₂⁺ → (ℵ₁)³_ℵ₀`.
 -/
 
 public section
@@ -105,5 +109,31 @@ example : ¬ PartitionRel.{0} 2 2 1 2 := fun h ↦ by
 -- The pigeonhole instance `ℵ₁ → (ℵ₁)¹_ℵ₀`.
 example : PartitionRel.{0} ℵ₁ ℵ₁ 1 ℵ₀ :=
   partitionRel_one_of_isRegular isRegular_aleph_one aleph0_lt_aleph_one
+
+-- The iterated exponential from `2` starts `2, 4, 16`, and from `0` it starts `0, 1, 2`.
+example : iteratedTwoPow 2 0 = 2 ∧ iteratedTwoPow 2 1 = 4 ∧ iteratedTwoPow 2 2 = 16 := by
+  simp only [iteratedTwoPow_succ, iteratedTwoPow_zero]
+  norm_cast
+
+example : iteratedTwoPow 0 0 = 0 ∧ iteratedTwoPow 0 1 = 1 ∧ iteratedTwoPow 0 2 = 2 := by
+  simp only [iteratedTwoPow_succ, iteratedTwoPow_zero]
+  norm_cast
+
+-- The exponents nest rather than multiply: `ℶ₂(3) = 2 ^ (2 ^ 3) = 256`.
+example : iteratedTwoPow 3 2 = 256 := by
+  simp only [iteratedTwoPow_succ, iteratedTwoPow_zero]
+  norm_cast
+
+-- The Erdős–Rado theorem for pairs, `(2 ^ κ)⁺ → (κ⁺)²_κ`.
+example {κ : Cardinal.{0}} (hκ : ℵ₀ ≤ κ) :
+    PartitionRel (Order.succ (2 ^ κ)) (Order.succ κ) 2 κ := by
+  simpa using erdos_rado hκ 1
+
+-- `ℶ₁⁺ → (ℵ₁)²_ℵ₀` and `ℶ₂⁺ → (ℵ₁)³_ℵ₀`.
+example : PartitionRel.{0} (Order.succ (ℶ_ 1)) ℵ₁ 2 ℵ₀ := by
+  simpa using erdos_rado_beth 0 1
+
+example : PartitionRel.{0} (Order.succ (ℶ_ 2)) ℵ₁ 3 ℵ₀ := by
+  simpa using erdos_rado_beth 0 2
 
 end TauCeti.Examples.Partition

@@ -30,6 +30,18 @@ of `TauCeti.IsFactorMap`, which is the case of a single map; the additive versio
 * `TauCeti.IsFactorMapSMul.id`, `TauCeti.IsFactorMapSMul.comp`: factor maps contain the identity
   and compose.
 * `TauCeti.IsFactorMapSMul.of_map_smul`: an equivariant measure-preserving map is a factor map.
+  `TauCeti.IsFactorMapSMul.of_measurableEquiv_symm`: so is the inverse of an equivariant
+  measure-preserving measurable equivalence. More generally,
+  `TauCeti.IsFactorMapSMul.of_measure_compl_eq_zero` needs equivariance only on a conull set.
+* `TauCeti.IsFactorMapSMul.exists_measurableSet_mapsTo_smul`: **invariant conull realization**.
+  A factor map of actions of a countable monoid acting by measurable quasi-measure-preserving maps
+  intertwines every parameter exactly on a measurable conull set that is forward invariant under
+  the action; `TauCeti.isFactorMapSMul_iff_exists_measurableSet` is the equivalence with the
+  conull-set definition. The invariant set comes from
+  `MeasureTheory.exists_measurableSet_mapsTo_smul_of_ae`; the single-map version is
+  `TauCeti.isFactorMap_iff_exists_measurableSet`. The realization needs a countable monoid, such as
+  `ℕ` or `ℤ`; for uncountable ones, such as the `ℝ`-parameter of a flow, only the converse
+  `TauCeti.IsFactorMapVAdd.of_measure_compl_eq_zero` applies.
 * `TauCeti.IsFactorMapSMul.toPUnit`: the constant map to a point is a factor map onto the trivial
   action.
 * `TauCeti.IsFactorMapSMul.prodMap`, `TauCeti.IsFactorMapSMul.fst`,
@@ -101,6 +113,22 @@ protected theorem id (μ : Measure X) : IsFactorMapSMul M id μ μ :=
 theorem of_map_smul (hπ : MeasurePreserving π μ ν) (h : ∀ (m : M) (x : X), π (m • x) = m • π x) :
     IsFactorMapSMul M π μ ν :=
   ⟨hπ, fun m ↦ .of_eq (funext fun x ↦ h m x)⟩
+
+/-- The inverse of an equivariant measure-preserving measurable equivalence is a factor map. -/
+@[to_additive /-- The inverse of an equivariant measure-preserving measurable equivalence of
+additive actions is a factor map. -/]
+theorem of_measurableEquiv_symm {e : X ≃ᵐ Y} (he : MeasurePreserving e μ ν)
+    (h : ∀ (m : M) (x : X), e (m • x) = m • e x) : IsFactorMapSMul M e.symm ν μ :=
+  of_map_smul he.symm fun m y ↦ by
+    rw [← e.symm_apply_apply (m • e.symm y), h, e.apply_symm_apply]
+
+/-- A measure-preserving map that intertwines every parameter exactly on a conull set is a factor
+map of the actions. -/
+@[to_additive /-- A measure-preserving map that intertwines every parameter exactly on a conull
+set is a factor map of the additive actions. -/]
+theorem of_measure_compl_eq_zero (hπ : MeasurePreserving π μ ν) {X₀ : Set X} (h0 : μ X₀ᶜ = 0)
+    (h : ∀ m : M, ∀ x ∈ X₀, π (m • x) = m • π x) : IsFactorMapSMul M π μ ν :=
+  ⟨hπ, fun m ↦ by filter_upwards [mem_ae_iff.mpr h0] with x hx using h m x hx⟩
 
 /-- Factor maps compose. -/
 @[to_additive /-- Factor maps compose. -/]
@@ -175,6 +203,26 @@ theorem ergodicSMul [ErgodicSMul M X μ] [MeasurableConstSMul M Y]
 
 end SMul
 
+section Monoid
+
+variable [Monoid M] [MulAction M X] [MeasurableConstSMul M X] [SMul M Y] [Countable M]
+
+/-- **Invariant conull realization.** A factor map of actions of a countable monoid acting by
+measurable quasi-measure-preserving maps intertwines every parameter exactly on a measurable
+conull set that is forward invariant under the action. -/
+@[to_additive /-- **Invariant conull realization.** A factor map of additive actions of a
+countable additive monoid acting by measurable quasi-measure-preserving maps intertwines every
+parameter exactly on a measurable conull set that is forward invariant under the action. -/]
+theorem exists_measurableSet_mapsTo_smul (h : IsFactorMapSMul M π μ ν)
+    (hM : ∀ m : M, QuasiMeasurePreserving (m • ·) μ μ) :
+    ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ (∀ m : M, Set.MapsTo (m • ·) X₀ X₀) ∧
+      ∀ m : M, ∀ x ∈ X₀, π (m • x) = m • π x := by
+  obtain ⟨X₀, hm, h0, hmaps, hX₀⟩ := exists_measurableSet_mapsTo_smul_of_ae hM
+    (p := fun x ↦ ∀ m : M, π (m • x) = m • π x) (ae_all_iff.mpr h.comp_smul_ae_eq)
+  exact ⟨X₀, hm, h0, hmaps, fun m x hx ↦ hX₀ x hx m⟩
+
+end Monoid
+
 section Prod
 
 variable {X' Y' : Type*} [MeasurableSpace X'] [MeasurableSpace Y'] {μ' : Measure X'}
@@ -210,5 +258,20 @@ protected theorem snd [IsProbabilityMeasure μ] [SFinite μ'] :
 end Prod
 
 end IsFactorMapSMul
+
+/-- For a countable monoid acting by measurable quasi-measure-preserving maps, a
+measure-preserving map is a factor map of the actions exactly when it intertwines every parameter
+on a measurable conull set that is forward invariant under the action. -/
+@[to_additive /-- For a countable additive monoid acting by measurable quasi-measure-preserving
+maps, a measure-preserving map is a factor map of the additive actions exactly when it intertwines
+every parameter on a measurable conull set that is forward invariant under the action. -/]
+theorem isFactorMapSMul_iff_exists_measurableSet [Monoid M] [MulAction M X]
+    [MeasurableConstSMul M X] [SMul M Y] [Countable M]
+    (hM : ∀ m : M, QuasiMeasurePreserving (m • ·) μ μ)
+    (hπ : MeasurePreserving π μ ν) :
+    IsFactorMapSMul M π μ ν ↔ ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧
+      (∀ m : M, Set.MapsTo (m • ·) X₀ X₀) ∧ ∀ m : M, ∀ x ∈ X₀, π (m • x) = m • π x :=
+  ⟨fun h ↦ h.exists_measurableSet_mapsTo_smul hM, fun ⟨_, _, h0, _, h⟩ ↦
+    .of_measure_compl_eq_zero hπ h0 h⟩
 
 end TauCeti

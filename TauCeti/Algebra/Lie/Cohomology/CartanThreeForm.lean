@@ -42,7 +42,9 @@ trivially.
 * On a triple with `⁅y, z⁆ = x` it takes the value `B x x`
   (`LinearMap.BilinMap.cartanThreeForm_apply_of_lie_eq`). So for an anisotropic form, such as the
   negative-definite Killing form of a compact semisimple Lie algebra, the Cartan three-form
-  vanishes exactly when `L` is abelian (`LinearMap.BilinMap.cartanThreeForm_eq_zero_iff`). For
+  vanishes exactly when `L` is abelian (`LinearMap.BilinMap.cartanThreeForm_eq_zero_iff`), and its
+  pullback along an injective morphism out of a non-abelian Lie algebra is nonzero
+  (`LinearMap.BilinMap.cartanThreeForm_compLinearMap_ne_zero`). For
   the basis `e₁, e₂, e₃` of `𝔰𝔲(2)` with `⁅e₂, e₃⁆ = e₁` and its cyclic permutations, and a
   Lie algebra morphism `f` from `𝔰𝔲(2)`, the pulled-back form takes the value
   `B(f e₁, f e₁)` on `(e₁, e₂, e₃)`.
@@ -60,6 +62,8 @@ trivially.
 * `LinearMap.BilinMap.cartanThreeForm_compl₁₂`: naturality under Lie algebra morphisms.
 * `LinearMap.BilinMap.cartanThreeForm_eq_zero_iff`: for an anisotropic form, it vanishes exactly
   on abelian Lie algebras.
+* `LinearMap.BilinMap.cartanThreeForm_compLinearMap_ne_zero`: for an anisotropic form, its
+  pullback along an injective morphism out of a non-abelian Lie algebra is nonzero.
 
 ## References
 
@@ -133,6 +137,17 @@ theorem cartanThreeForm_eq_zero_iff (hani : B.toQuadraticMap.Anisotropic) :
   have hval := cartanThreeForm_apply_of_lie_eq (hB := hB) (rfl : ⁅y, z⁆ = ⁅y, z⁆)
   rw [h, zero_apply] at hval
   rw [toQuadraticMap_apply, ← hval]
+
+/-- **The Cartan three-form detects injective morphisms out of non-abelian Lie algebras.** For an
+anisotropic form `B` and an injective Lie algebra morphism `φ : L' → L` with `L'` not abelian, the
+pullback of the Cartan three-form of `B` along `φ` is nonzero: it is the Cartan three-form of the
+anisotropic form `B(φ ·, φ ·)` on `L'`. -/
+theorem cartanThreeForm_compLinearMap_ne_zero (hani : B.toQuadraticMap.Anisotropic)
+    {L' : Type*} [LieRing L'] [LieAlgebra R L'] {φ : L' →ₗ⁅R⁆ L} (hφ : Function.Injective φ)
+    (hL' : ¬IsLieAbelian L') : (B.cartanThreeForm hB).compLinearMap φ.toLinearMap ≠ 0 := by
+  rw [← cartanThreeForm_compl₁₂, Ne, cartanThreeForm_eq_zero_iff]
+  · exact hL'
+  · exact fun x hx ↦ hφ ((hani _ hx).trans (map_zero φ).symm)
 
 section Trivial
 

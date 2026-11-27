@@ -17,7 +17,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 import TauCeti.Geometry.Manifold.Diffeomorph.Extend
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 
@@ -74,14 +74,15 @@ The construction is natural. With the cut-off `ρ` given rather than chosen
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff`), it only needs
 `dβ = σ₁ - σ₀` on the support of `ρ`, and `Φ` commutes with every diffeomorphism `g` which
 preserves `σ₀`, `σ₁`, `β` and `ρ`: such a `g` carries the Moser field to itself, so it commutes with
-its flow (`TauCeti.apply_timeDependentFlowOf_of_mfderiv_eq`). This is the input of the equivariant
+its flow (`MDifferentiable.apply_timeDependentFlowOf`). This is the input of the equivariant
 relative Moser theorem, in `TauCeti.Geometry.Symplectic.Manifold.RelativeMoser.Equivariant`.
 
 For the submanifold version, the relative Poincaré lemma
 (`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`) writes `σ₁ - σ₀`, whose
 pullback along `f` vanishes, as `dβ` on a tubular neighbourhood `W` of `f(Q)`, with `β` vanishing
 along `f(Q)`. At the points where `σ₁ - σ₀` itself vanishes as a full ambient tensor, `β` has zero
-first jet. Moser's argument on the open submanifold `W` gives a compactly supported
+first jet (`TauCeti.SmoothTwoForm.exists_relative_primitive_sub_of_mpullback_eq`, shared with the
+equivariant version). Moser's argument on the open submanifold `W` gives a compactly supported
 diffeomorphism of `W`, which extends by the identity to `M`.
 
 ## Main results
@@ -143,9 +144,10 @@ private theorem mpullback_prodMk_moserFamily_coe (σ₀ σ₁ : SmoothTwoForm I 
 
 /-- Where `σ₁` agrees with `σ₀`, every point of the path `σ₀ + s (σ₁ - σ₀)` has the bilinear form of
 `σ₀`. -/
-private theorem bilinFormAt_add_smul_sub_of_eq {σ₀ σ₁ : SmoothTwoForm I M} {x : M}
-    (h : (σ₁ - σ₀).val x = 0) (s : ℝ) :
+theorem bilinFormAt_add_smul_sub_of_eq {σ₀ σ₁ : SmoothTwoForm I M} {x : M}
+    (h : σ₁.val x = σ₀.val x) (s : ℝ) :
     (σ₀ + s • (σ₁ - σ₀)).bilinFormAt x = σ₀.bilinFormAt x := by
+  have h : (σ₁ - σ₀).val x = 0 := by rw [AddSubgroupClass.coe_sub, Pi.sub_apply, h, sub_self]
   ext v w
   simp only [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
     SmoothForm.add_toRoughForm, Pi.add_apply, SetLike.val_smul, Pi.smul_apply, h, smul_zero,
@@ -523,8 +525,9 @@ theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff {σ₀ σ₁ : 
   rotate_left
   · -- The flow of a natural field commutes with the symmetry.
     rw [hΦ]
-    exact (apply_timeDependentFlowOf_of_mfderiv_eq hc hX₁ hX₁ (g.mdifferentiable (by simp))
-      (mfderiv_moserField hinv g hg₀ hg₁ hgβ hgρ) 0 1 x).symm
+    exact ((g.mdifferentiable (by simp)).apply_timeDependentFlowOf hX₁ hX₁
+      (mfderiv_moserField hinv g hg₀ hg₁ hgβ hgρ)
+      ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)).symm
   -- The trajectories starting near `K` stay, up to time `1`, where `ρ = 1` near each point.
   set V := {y : M | ∀ᶠ z in 𝓝 y, ρ z = 1}
   have hKV : K ⊆ V := fun x hx ↦ (eventually_nhdsSet_iff_forall.1 hρ1) x hx
@@ -579,6 +582,35 @@ theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub
     h₀ h₁ hρ hρc (fun x _ ↦ congrFun hβ x) (fun x hx ↦ hndN x (hρN hx)) hK hβK hρ1
   exact ⟨Φ, hΦK, ⟨tsupport ρ, hρc, hΦρ⟩, hΦ, hΦ1⟩
 
+/-- **A primitive of `σ₁ - σ₀` near a submanifold along which the pullbacks agree.** Let `σ₀`,
+`σ₁` be closed two-forms on a boundaryless second-countable Hausdorff manifold `M` whose pullbacks
+along an embedded submanifold `f : Q → M` agree. Then on an open neighbourhood `W` of `f(Q)` the
+restriction of `σ₁ - σ₀` has a smooth primitive `β` which vanishes along `f(Q)` and has zero first
+jet at every point `f q` where `σ₁ - σ₀` vanishes. -/
+theorem exists_relative_primitive_sub_of_mpullback_eq [SecondCountableTopology M]
+    {E' H' Q : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
+    [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
+    (f : SmoothEmbedding J I ∞ Q M) {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ₀.IsClosed)
+    (h₁ : σ₁.IsClosed)
+    (hf : SmoothForm.mpullback f f.contMDiff σ₁ = SmoothForm.mpullback f f.contMDiff σ₀) :
+    ∃ (W : TopologicalSpace.Opens M) (hfW : range f ⊆ W) (β : RoughForm I W ℝ 1),
+      IsSmoothForm I ∞ β ∧ mextDeriv β = mpullback I I (Subtype.val : W → M) (σ₁ - σ₀).val ∧
+      (∀ q, β ⟨f q, hfW (mem_range_self q)⟩ = 0) ∧
+      ∀ q, (σ₁ - σ₀).val (f q) = 0 →
+        HasFDerivAt (RoughForm.inChartAt β ⟨f q, hfW (mem_range_self q)⟩)
+          (0 : E →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ)
+          (extChartAt I (⟨f q, hfW (mem_range_self q)⟩ : W) ⟨f q, hfW (mem_range_self q)⟩) := by
+  have hpull : mpullback J I f (σ₁ - σ₀).val = 0 := by
+    have h := congrArg Subtype.val hf
+    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback] at h
+    rw [AddSubgroupClass.coe_sub, mpullback_sub, h, sub_self]
+  -- This is the relative Poincaré lemma on a tubular neighbourhood of `f(Q)`.
+  obtain ⟨W, -, hfW, hprim⟩ := f.exists_isSmoothForm_relative_primitive (F := ℝ) isOpen_univ
+    (subset_univ _)
+  exact ⟨W, hfW, hprim (k := 1) (r := ⊤) le_top (σ₁ - σ₀).isSmoothForm
+    ((SmoothForm.isClosed_def _).1 (h₁.sub h₀)) hpull⟩
+
 /-- **The relative Moser theorem for forms with equal pullbacks.** Let `σ₀`, `σ₁` be closed
 two-forms on a boundaryless second-countable Hausdorff manifold `M` whose pullbacks along a compact
 embedded submanifold `f : Q → M` agree, and suppose that the path `σ₀ + s (σ₁ - σ₀)`,
@@ -600,16 +632,10 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq
       (∀ᶠ x in 𝓝ˢ (range f), (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x) ∧
       ∀ q, σ₁.val (f q) = σ₀.val (f q) →
         mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
-  have hpull : mpullback J I f (σ₁ - σ₀).val = 0 := by
-    have h := congrArg Subtype.val hf
-    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback] at h
-    rw [AddSubgroupClass.coe_sub, mpullback_sub, h, sub_self]
-  -- The relative Poincaré lemma gives a primitive of `σ₁ - σ₀` on a tubular neighbourhood `W` of
-  -- `f(Q)`, vanishing along `f(Q)`, with zero first jet wherever `σ₁ - σ₀` vanishes.
-  obtain ⟨W, -, hfW, hprim⟩ := f.exists_isSmoothForm_relative_primitive (F := ℝ) isOpen_univ
-    (subset_univ _)
-  obtain ⟨βW, hβW, hdβW, hβW0, hβW1⟩ := hprim (k := 1) (r := ⊤) le_top (σ₁ - σ₀).isSmoothForm
-    ((SmoothForm.isClosed_def _).1 (h₁.sub h₀)) hpull
+  -- A primitive of `σ₁ - σ₀` on a neighbourhood `W` of `f(Q)`, vanishing along `f(Q)`, with zero
+  -- first jet wherever `σ₁ - σ₀` vanishes.
+  obtain ⟨W, hfW, βW, hβW, hdβW, hβW0, hβW1⟩ :=
+    exists_relative_primitive_sub_of_mpullback_eq f h₀ h₁ hf
   -- Moser's argument runs on the open submanifold `W`, with the restricted forms.
   let res := SmoothForm.mpullback (I := I) (I' := I) (F := ℝ) (k := 2) (Subtype.val : W → M)
     contMDiff_subtypeVal
@@ -633,21 +659,13 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq
       mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
     have hη : (σ₁ - σ₀).val (f q) = 0 := by
       rw [AddSubgroupClass.coe_sub, Pi.sub_apply, hq, sub_self]
-    exact ContinuousLinearMap.ext fun v ↦
-      (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I) hcomp.symm v).symm.trans
-        (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q hη)) v)
-  refine ⟨Φ, fun q ↦ (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q))),
-    ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩, ?_, hΦ1⟩
-  -- On `W`, the pullback by `Φ` is the pullback by `Ψ` of the restricted forms.
-  obtain ⟨U, ⟨hU, hKU⟩, hUΨ⟩ := (hasBasis_nhdsSet (range g)).mem_iff.1 hΨ
-  refine mem_of_superset ((W.isOpen.isOpenEmbedding_subtypeVal.isOpenMap U hU).mem_nhdsSet.2 ?_)
-    ?_
-  · rintro _ ⟨q, rfl⟩
-    exact ⟨g q, hKU (mem_range_self q), rfl⟩
-  · rintro _ ⟨z, hz, rfl⟩
-    rw [mem_ofPred_eq, ← SmoothForm.coe_mpullback_subtype_val_apply,
-      SmoothForm.mpullback_mpullback_of_comp_eq _ _ Ψ.contMDiff contMDiff_subtypeVal hcomp]
-    exact (hUΨ hz).trans (SmoothForm.coe_mpullback_subtype_val_apply σ₀ z)
+    exact (Manifold.mfderiv_eq_id_iff_of_comp_subtype_val hcomp.symm).1
+      (hΨ1 (g q) (mem_range_self q) (hβW1 q hη))
+  have hrange : Subtype.val '' range g = range f := (range_comp _ _).symm
+  exact ⟨Φ, fun q ↦ (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q))),
+    ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩,
+    hrange ▸ SmoothForm.eventually_mpullback_eq_of_subtype_val_comp_eq Φ.contMDiff Ψ.contMDiff
+      hcomp hΨ, hΦ1⟩
 
 /-- **The relative Moser theorem.** Let `σ₀`, `σ₁` be closed two-forms on a boundaryless
 second-countable Hausdorff manifold `M` which agree, as bilinear forms on the full tangent spaces of
@@ -666,14 +684,11 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
     ∃ Φ : M ≃ₘ⟮I, I⟯ M, (∀ q, Φ (f q) = f q) ∧ (∃ C, IsCompact C ∧ ∀ x ∉ C, Φ x = x) ∧
       (∀ᶠ x in 𝓝ˢ (range f), (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x) ∧
       ∀ q, mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
-  have hη (q : Q) : (σ₁ - σ₀).val (f q) = 0 := by
-    rw [AddSubgroupClass.coe_sub, Pi.sub_apply, heq q, sub_self]
   -- The forms agree along `f(Q)`, so do their pullbacks, and the path is constantly `σ₀` there.
   obtain ⟨Φ, hΦf, hΦC, hΦ, hΦ1⟩ :=
     exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq f h₀ h₁
-      (Subtype.ext (funext fun q ↦ ContinuousAlternatingMap.ext fun v ↦ by
-        rw [SmoothForm.mpullback_apply, SmoothForm.mpullback_apply, heq q]))
-      fun q s _ ↦ bilinFormAt_add_smul_sub_of_eq (hη q) s ▸ hnd q
+      (SmoothForm.mpullback_eq_of_forall_apply_eq f.contMDiff heq)
+      fun q s _ ↦ bilinFormAt_add_smul_sub_of_eq (heq q) s ▸ hnd q
   exact ⟨Φ, hΦf, hΦC, hΦ, fun q ↦ hΦ1 q (heq q)⟩
 
 open TopologicalSpace in

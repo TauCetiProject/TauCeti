@@ -19,7 +19,7 @@ Its data do not depend on `s`, so its translates `u(· + c, ·)` are Floer traje
 the infinitesimal translation `∂s u` solves the linearized equation `D_u (∂s u) = 0`
 (`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero`). This file shows
 that `∂s u` is an element of the kernel of the Sobolev realization
-`D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator`) as soon
+`D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator 2`) as soon
 as it is square integrable on the cylinder, as it is for a trajectory of finite energy
 (`TauCeti.SymplecticForm.exists_mem_ker_floerSobolevOperator_valueL_eq`). Since `D_u` satisfies the
 semi-Fredholm estimate, the jet of `∂s u` is square integrable
@@ -99,7 +99,7 @@ theorem exists_mem_ker_floerSobolevOperator_valueL_eq (ω : SymplecticForm V) {H
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
         (Icc 0 1))
     (hξ : MemLp (fun z ↦ fderiv ℝ u z (1, 0)) 2 stripMeasure) :
-    ∃ x ∈ (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    ∃ x ∈ (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) u).ker,
       valueL 2 x = hξ.toLp fun z ↦ fderiv ℝ u z (1, 0) := by
   have hξd : ContDiff ℝ 2 fun z ↦ fderiv ℝ u z (1, 0) :=
@@ -157,7 +157,7 @@ theorem ker_floerSobolevOperator_ne_bot (ω : SymplecticForm V) {H : ℝ → V �
         (Icc 0 1))
     (hξ : MemLp (fun z ↦ fderiv ℝ u z (1, 0)) 2 stripMeasure)
     (hne : ∃ z, fderiv ℝ u z (1, 0) ≠ 0) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) u).ker ≠ ⊥ := by
   obtain ⟨x, hx, hval⟩ := exists_mem_ker_floerSobolevOperator_valueL_eq ω hX hH hxm hndm hxp hndp
     hJ hJxm hJxp hu hJu hper hF huxm huxp hδm hδp hξ

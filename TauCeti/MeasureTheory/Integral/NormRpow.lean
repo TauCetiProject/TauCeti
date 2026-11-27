@@ -46,7 +46,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `TauCeti.integrableOn_norm_rpow_compl_closedBall_iff`,
   `TauCeti.memLp_norm_rpow_compl_closedBall_iff`: integrability and `Lᵖ` membership outside a
-  ball, and `TauCeti.integral_norm_rpow_compl_closedBall`: the exact integral there for
+  ball, `TauCeti.integrableAtFilter_norm_rpow_cobounded`: integrability at infinity for
+  `s < -d`, and `TauCeti.integral_norm_rpow_compl_closedBall`: the exact integral there for
   `s < -d`.
 * `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a power of the distance to a point is
   never integrable over the whole space, for an additive Haar measure on a nontrivial space.
@@ -198,6 +199,15 @@ theorem integrableOn_norm_rpow_compl_closedBall_iff [Nontrivial E] {s R : ℝ} (
     integrableOn_iff_integrable_of_support_subset hsupp,
     integrable_indicator_iff measurableSet_Ioi, integrableOn_Ioi_rpow_iff hR] at hrad
   exact hrad.trans (by dsimp [d]; constructor <;> intro h <;> linarith)
+
+/-- A norm power is integrable at infinity when its exponent is below the negative dimension. -/
+theorem integrableAtFilter_norm_rpow_cobounded {s : ℝ} (hs : s < -(Module.finrank ℝ E : ℝ)) :
+    IntegrableAtFilter (fun x : E => ‖x‖ ^ s) (Bornology.cobounded E) mu := by
+  refine ⟨(closedBall 0 1)ᶜ, (hasBasis_cobounded_compl_closedBall 0).mem_of_mem trivial, ?_⟩
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- On the trivial space, the exterior of the unit ball is empty.
+    exact integrableOn_empty.mono_set fun x hx => hx (by simp [Subsingleton.elim x 0])
+  · exact (integrableOn_norm_rpow_compl_closedBall_iff one_pos).2 hs
 
 /-- For a finite nonzero exponent `p`, a norm power lies in `Lᵖ` outside a positive-radius closed
 ball exactly when `s p < -dim E`. -/

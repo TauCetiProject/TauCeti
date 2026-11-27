@@ -131,8 +131,9 @@ lemma transitionIdIso_naturality (i : I) {T T' : Cᵒᵖ} (a : T ⟶ T')
     (transitionIdIso D i T' (((D.obj (.mk i)).map a.toLoc).toFunctor.obj X)).hom =
       ((D.map (𝟙 i).toLoc).naturality a.toLoc).hom.toNatTrans.app X ≫
         ((D.obj (.mk i)).map a.toLoc).toFunctor.map (transitionIdIso D i T X).hom := by
-  have h := Pseudofunctor.StrongTrans.Modification.naturality_app (D.mapId (.mk i)).hom.as
+  have h := Pseudofunctor.StrongTrans.app_comp_naturalityObjIso_hom (D.mapId (.mk i)).hom
     a.toLoc X
+  simp only [Pseudofunctor.StrongTrans.naturalityObjIso_hom] at h
   rw [Pseudofunctor.StrongTrans.id_naturality_hom_app] at h
   rw [transitionIdIso_hom, transitionIdIso_hom]
   -- The identity in `h` lives over an object that is only definitionally the target of the
@@ -149,8 +150,9 @@ lemma transitionCompIso_naturality {i j k : I} (f : i ⟶ j) (g : j ⟶ k) {T T'
         (transition D g T').map (((D.map f.toLoc).naturality a.toLoc).hom.toNatTrans.app X) ≫
           ((D.map g.toLoc).naturality a.toLoc).hom.toNatTrans.app
             ((transition D f T).obj X) := by
-  have h := Pseudofunctor.StrongTrans.Modification.naturality_app
-    (D.mapComp f.toLoc g.toLoc).hom.as a.toLoc X
+  have h := Pseudofunctor.StrongTrans.app_comp_naturalityObjIso_hom
+    (D.mapComp f.toLoc g.toLoc).hom a.toLoc X
+  simp only [Pseudofunctor.StrongTrans.naturalityObjIso_hom] at h
   rw [Pseudofunctor.StrongTrans.comp_naturality_hom_app] at h
   rw [transitionCompIso_hom, transitionCompIso_hom]
   exact h.symm
@@ -762,7 +764,8 @@ def liftNaturality {X Y : LocallyDiscrete Cᵒᵖ} (g : X ⟶ Y) :
   NatIso.ofComponents
     (fun k ↦ Fiber.isoMk (fun i ↦ (Cat.Hom.toNatIso ((c.π i).naturality g)).app k)
       (fun i j f ↦ by
-        have h := Pseudofunctor.StrongTrans.Modification.naturality_app (c.iso f).hom.as g k
+        have h := Pseudofunctor.StrongTrans.app_comp_naturalityObjIso_hom (c.iso f).hom g k
+        simp only [Pseudofunctor.StrongTrans.naturalityObjIso_hom] at h
         rw [Pseudofunctor.StrongTrans.comp_naturality_hom_app] at h
         exact (Category.assoc _ _ _).symm.trans h.symm))
     (fun φ ↦ Fiber.hom_ext fun i ↦ ((c.π i).naturality g).hom.toNatTrans.naturality φ)
@@ -890,7 +893,8 @@ private lemma naturality_hom {i : I} (m : φ ≫ π D i ⟶ ψ ≫ π D i) {X Y 
         Fiber.Hom.hom ((ψ.naturality g).hom.toNatTrans.app k) i =
       Fiber.Hom.hom ((φ.naturality g).hom.toNatTrans.app k) i ≫
         ((D.obj (.mk i)).map g).toFunctor.map ((m.as.app X).toNatTrans.app k) := by
-  have h := Pseudofunctor.StrongTrans.Modification.naturality_app m.as g k
+  have h := Pseudofunctor.StrongTrans.app_comp_naturalityObjIso_hom m g k
+  simp only [Pseudofunctor.StrongTrans.naturalityObjIso_hom] at h
   rw [Pseudofunctor.StrongTrans.comp_naturality_hom_app,
     Pseudofunctor.StrongTrans.comp_naturality_hom_app] at h
   -- The naturality isomorphisms of `π D i` are identities.

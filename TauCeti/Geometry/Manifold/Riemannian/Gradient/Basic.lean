@@ -68,7 +68,9 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
   the length of the gradient. This is how coordinate estimates for `df` become metric estimates.
 * `TauCeti.Manifold.eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`: the
   sharp converse, comparing the length of the gradient near `p` with the length, for the metric
-  at `p`, of the coordinate differential, up to a factor arbitrarily close to `1`.
+  at `p`, of the coordinate differential, up to a factor arbitrarily close to `1`, and
+  `TauCeti.Manifold.exists_eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`, its
+  coarser form bounding the gradient by a fixed multiple of the plain coordinate differential.
 -/
 
 public section
@@ -142,6 +144,37 @@ theorem mvfderiv_apply_neg_mgradient :
 @[simp]
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
+
+/-- The differential of `f` in the direction of its gradient is positive exactly where the
+differential does not vanish. -/
+theorem mvfderiv_apply_mgradient_pos_iff :
+    0 < mvfderiv I f x (mgradient I f x) ↔ mvfderiv I f x ≠ 0 := by
+  rw [mvfderiv_apply_mgradient, real_inner_self_pos, Ne, mgradient_eq_zero_iff]
+
+section Comp
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {ι : N → M} {y : N}
+  {u : TangentSpace J y}
+
+/-- If a map `ι` sends a tangent vector `u` to the gradient of `f` at a point where `df` does not
+vanish, then `f ∘ ι` increases in the direction `u`. -/
+theorem mvfderiv_comp_apply_pos_of_mfderiv_eq_mgradient (hf : MDifferentiableAt I 𝓘(ℝ) f (ι y))
+    (hι : MDifferentiableAt J I ι y) (hu : mfderiv J I ι y u = mgradient I f (ι y))
+    (hdf : mvfderiv I f (ι y) ≠ 0) : 0 < mvfderiv J (f ∘ ι) y u := by
+  rw [mvfderiv_comp_apply y hf hι, hu]
+  exact mvfderiv_apply_mgradient_pos_iff.2 hdf
+
+/-- If a map `ι` sends a tangent vector `u` to minus the gradient of `f` at a point where `df` does
+not vanish, then `f ∘ ι` decreases in the direction `u`. -/
+theorem mvfderiv_comp_apply_neg_of_mfderiv_eq_neg_mgradient
+    (hf : MDifferentiableAt I 𝓘(ℝ) f (ι y)) (hι : MDifferentiableAt J I ι y)
+    (hu : mfderiv J I ι y u = -mgradient I f (ι y)) (hdf : mvfderiv I f (ι y) ≠ 0) :
+    mvfderiv J (f ∘ ι) y u < 0 := by
+  rw [mvfderiv_comp_apply y hf hι, hu, map_neg, neg_lt_zero]
+  exact mvfderiv_apply_mgradient_pos_iff.2 hdf
+
+end Comp
 
 /-- The gradient vanishes outside the topological support of the function. -/
 theorem mgradient_eq_zero_of_notMem_tsupport (hx : x ∉ tsupport f) :
@@ -235,6 +268,18 @@ theorem norm_sq_mgradient_add_smul {g : M → ℝ} (hf : MDifferentiable I 𝓘(
 theorem mgradient_neg : mgradient I (-f) x = -mgradient I f x := by
   rw [mgradient, mgradient, mvfderiv_neg]
   exact (rieszDual (I := I) x).toLinearEquiv.map_neg _
+
+/-- The gradient of `a - f` is the opposite of the gradient of `f`. -/
+@[simp]
+theorem mgradient_const_sub (a : ℝ) : mgradient I (fun y ↦ a - f y) x = -mgradient I f x := by
+  rw [← mgradient_neg, mgradient, mgradient, mvfderiv_neg]
+  congr 1
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
+  · rw [mvfderiv_fun_sub mdifferentiableAt_const hf, mvfderiv_const, zero_sub]
+  · have hf' : ¬MDifferentiableAt I 𝓘(ℝ) (fun y ↦ a - f y) x := fun h ↦
+      hf (by simpa [Pi.sub_def] using (mdifferentiableAt_const (c := a)).sub h)
+    simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt hf']
 
 /-- **Reversing time in a negative gradient trajectory.** If `γ` is an integral curve of `-grad f`,
 then `t ↦ γ (-t)` is an integral curve of `-grad (-f)`. -/
@@ -509,6 +554,24 @@ theorem eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm
     rfl
   rw [norm_mgradient_eq_norm_mvfderiv, hfac, mul_comm]
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr)
+
+/-- **The gradient is controlled by the plain differential in a chart.** For a continuous metric,
+near `p` the Riemannian length of the gradient of `f` is at most a fixed multiple, independent of
+`f`, of the operator norm of the coordinate differential of `f` in the extended chart at `p`. -/
+theorem exists_eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 p, ∀ f : M → ℝ,
+      DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) →
+      ‖mgradient I f y‖ ≤ C * ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ := by
+  set e := (trivializationAt E (TangentSpace I) p).continuousLinearMapAt ℝ p
+  refine ⟨2 * (‖e‖ + 1), by positivity, ?_⟩
+  filter_upwards [eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm (I := I) p
+    one_lt_two] with y hy f hf
+  refine (hy f hf).trans ?_
+  rw [mul_assoc]
+  gcongr
+  rw [mul_comm]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr; linarith)
 
 /-- **Every tangent vector is a gradient.** On a finite-dimensional Hausdorff smooth manifold with a
 Riemannian metric, every tangent vector `w` at `x` is the gradient at `x` of a smooth function. -/
