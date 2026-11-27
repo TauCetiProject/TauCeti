@@ -51,6 +51,8 @@ inclusion.
   integrable on `(c, ∞)` for any `c : ℝ` when `0 < a`, and for `0 < c` is integrable on `(c, ∞)`
   precisely when `a < 0`, or `a = 0` and `s < -1`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
+* `TauCeti.integrable_mul_exp_mul_abs_of_le`: if `f x * exp (b * |x|)` is integrable, then so is
+  `f x * exp (a * |x|)` for `a ≤ b`.
 * `TauCeti.memLp_exp_neg_mul_abs`: it lies in every `Lᵖ`.
 * `TauCeti.memLp_exp_neg_mul_Ioi`: the decaying exponential `exp (-a t)` lies in every `Lᵖ` of a
   right half-line.
@@ -415,6 +417,22 @@ theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     Integrable (fun x : ℝ ↦ Real.exp (-(a * |x|))) := by
   simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
     (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
+
+/-- Lowering an exponential weight preserves integrability on the line: if `x ↦ f x * exp (b |x|)`
+is integrable, then so is `x ↦ f x * exp (a |x|)` for `a ≤ b`, the product of the first function
+with the bounded continuous function `x ↦ exp (-((b - a) |x|))`. -/
+theorem integrable_mul_exp_mul_abs_of_le {f : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hf : Integrable (fun x ↦ f x * Real.exp (b * |x|))) :
+    Integrable (fun x ↦ f x * Real.exp (a * |x|)) := by
+  have heq : (fun x ↦ f x * Real.exp (a * |x|)) =
+      fun x ↦ f x * Real.exp (b * |x|) * Real.exp (-((b - a) * |x|)) := by
+    ext x
+    rw [mul_assoc, ← Real.exp_add]
+    ring_nf
+  rw [heq]
+  refine hf.mul_bdd (c := 1) (by fun_prop) (.of_forall fun x ↦ ?_)
+  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+  exact Real.exp_le_one_iff.2 (neg_nonpos.2 (mul_nonneg (sub_nonneg.2 hab) (abs_nonneg x)))
 
 /-- The two-sided exponential lies in every `Lᵖ` space of the line when `0 < a`. -/
 theorem memLp_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :

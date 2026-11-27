@@ -17,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Basic.Real.Sign
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.Order.Monotone.Odd
+import TauCeti.Analysis.SpecialFunctions.Exp.BoundedVariation
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.Topology.EMetricSpace.BoundedVariation
 
@@ -54,6 +55,9 @@ it is meaningful for every real `c`, and nothing below assumes `c ≥ 0`.
 
 * `TauCeti.WeilTestFunction.integrable_mul_cexp`: for an admissible `F`, the integrand of the
   transform is integrable on the closed strip `-c ≤ Re s ≤ 1 + c`.
+* `TauCeti.weilTransform_add`, `TauCeti.weilTransform_sub`, `TauCeti.weilTransform_const_smul`,
+  `TauCeti.weilTransform_neg`: linearity of the transform, under integrability of the integrands
+  for sums and differences.
 * `TauCeti.WeilTestFunction.comp_neg`: the reflection `x ↦ F (-x)` of an admissible function is
   admissible for the same `c`; `TauCeti.weilTransform_comp_neg` reflects the transform in `1/2`.
 * `TauCeti.WeilTestFunction.add`, `TauCeti.WeilTestFunction.const_smul`: real linear combinations
@@ -97,6 +101,51 @@ a totalized Bochner integral: its value is `0` wherever the integrand is not int
 noncomputable def weilTransform (F : ℝ → ℝ) (s : ℂ) : ℂ :=
   ∫ x : ℝ, (F x : ℂ) * Complex.exp ((s - 1 / 2) * x)
 
+/-- The defining formula of `weilTransform`. -/
+theorem weilTransform_def (F : ℝ → ℝ) (s : ℂ) :
+    weilTransform F s = ∫ x : ℝ, (F x : ℂ) * Complex.exp ((s - 1 / 2) * x) :=
+  (rfl)
+
+/-- The transform of the zero function vanishes. -/
+@[simp]
+theorem weilTransform_zero (s : ℂ) : weilTransform 0 s = 0 := by
+  simp [weilTransform]
+
+/-- The transform is additive where both integrands are integrable. -/
+theorem weilTransform_add {F G : ℝ → ℝ} {s : ℂ}
+    (hF : Integrable fun x : ℝ ↦ (F x : ℂ) * Complex.exp ((s - 1 / 2) * x))
+    (hG : Integrable fun x : ℝ ↦ (G x : ℂ) * Complex.exp ((s - 1 / 2) * x)) :
+    weilTransform (F + G) s = weilTransform F s + weilTransform G s := by
+  rw [weilTransform, weilTransform, weilTransform, ← integral_add hF hG]
+  congr 1 with x
+  push_cast [Pi.add_apply]
+  ring
+
+/-- The transform is subtractive where both integrands are integrable. -/
+theorem weilTransform_sub {F G : ℝ → ℝ} {s : ℂ}
+    (hF : Integrable fun x : ℝ ↦ (F x : ℂ) * Complex.exp ((s - 1 / 2) * x))
+    (hG : Integrable fun x : ℝ ↦ (G x : ℂ) * Complex.exp ((s - 1 / 2) * x)) :
+    weilTransform (F - G) s = weilTransform F s - weilTransform G s := by
+  rw [weilTransform, weilTransform, weilTransform, ← integral_sub hF hG]
+  congr 1 with x
+  push_cast [Pi.sub_apply]
+  ring
+
+/-- The transform commutes with real scalars, with no integrability hypothesis. -/
+theorem weilTransform_const_smul (r : ℝ) (F : ℝ → ℝ) (s : ℂ) :
+    weilTransform (r • F) s = r * weilTransform F s := by
+  rw [weilTransform, weilTransform, ← integral_const_mul]
+  congr 1 with x
+  push_cast [Pi.smul_apply, smul_eq_mul]
+  ring
+
+/-- The transform commutes with negation, with no integrability hypothesis. -/
+theorem weilTransform_neg (F : ℝ → ℝ) (s : ℂ) : weilTransform (-F) s = -weilTransform F s := by
+  rw [weilTransform, weilTransform, ← integral_neg]
+  congr 1 with x
+  push_cast [Pi.neg_apply]
+  ring
+
 /-- Reflecting the test function reflects its transform in the point `1 / 2`. -/
 theorem weilTransform_comp_neg (F : ℝ → ℝ) (s : ℂ) :
     weilTransform (fun x ↦ F (-x)) s = weilTransform F (1 - s) := by
@@ -105,47 +154,6 @@ theorem weilTransform_comp_neg (F : ℝ → ℝ) (s : ℂ) :
   congr 1 with x
   push_cast
   ring_nf
-
-/-- `x ↦ exp (-(δ |x|))` has bounded variation on `ℝ` for `δ ≥ 0`: it increases on `(-∞, 0]` and
-decreases on `[0, ∞)`, with values in `(0, 1]`. -/
-private theorem boundedVariationOn_exp_neg_mul_abs {δ : ℝ} (hδ : 0 ≤ δ) :
-    BoundedVariationOn (fun x : ℝ ↦ Real.exp (-(δ * |x|))) univ := by
-  set g : ℝ → ℝ := fun x ↦ Real.exp (-(δ * |x|))
-  have hbound (x : ℝ) : |g x| ≤ 1 := by
-    rw [abs_of_pos (Real.exp_pos _)]
-    exact Real.exp_le_one_iff.2 (neg_nonpos.2 (mul_nonneg hδ (abs_nonneg x)))
-  have hleft : BoundedVariationOn g (Iic 0) := by
-    refine MonotoneOn.boundedVariationOn (fun x hx y hy hxy ↦ ?_) fun x _ ↦ hbound x
-    simp only [g, Real.exp_le_exp, neg_le_neg_iff]
-    rw [abs_of_nonpos hx, abs_of_nonpos hy]
-    nlinarith
-  have hright : BoundedVariationOn (-g) (Ici 0) := by
-    refine MonotoneOn.boundedVariationOn (fun x hx y hy hxy ↦ ?_) fun x _ ↦ by
-      simpa using hbound x
-    simp only [g, Pi.neg_apply, neg_le_neg_iff, Real.exp_le_exp]
-    rw [abs_of_nonneg hx, abs_of_nonneg hy]
-    nlinarith
-  have h := eVariationOn.union g (isGreatest_Iic (a := (0 : ℝ))) isLeast_Ici
-  rw [Iic_union_Ici] at h
-  rw [BoundedVariationOn, h]
-  exact ENNReal.add_ne_top.2 ⟨hleft, by simpa [BoundedVariationOn] using hright⟩
-
-/-- Lowering the exponential weight preserves integrability and bounded variation. -/
-private theorem integrable_boundedVariationOn_of_le {F : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (h : Integrable (fun x : ℝ ↦ F x * Real.exp (b * |x|)) ∧
-      BoundedVariationOn (fun x ↦ F x * Real.exp (b * |x|)) univ) :
-    Integrable (fun x : ℝ ↦ F x * Real.exp (a * |x|)) ∧
-      BoundedVariationOn (fun x ↦ F x * Real.exp (a * |x|)) univ := by
-  have heq : (fun x ↦ F x * Real.exp (a * |x|)) =
-      fun x ↦ F x * Real.exp (b * |x|) * Real.exp (-((b - a) * |x|)) := by
-    ext x
-    rw [mul_assoc, ← Real.exp_add]
-    ring_nf
-  rw [heq]
-  refine ⟨h.1.mul_bdd (c := 1) (by fun_prop) (Eventually.of_forall fun x ↦ ?_),
-    h.2.fun_mul (boundedVariationOn_exp_neg_mul_abs (sub_nonneg.2 hab))⟩
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-  exact Real.exp_le_one_iff.2 (neg_nonpos.2 (mul_nonneg (sub_nonneg.2 hab) (abs_nonneg x)))
 
 namespace WeilTestFunction
 
@@ -218,10 +226,12 @@ protected theorem add (hF : WeilTestFunction c F) (hG : WeilTestFunction c G) :
     WeilTestFunction c (F + G) := by
   obtain ⟨ε₁, hε₁, hF₁⟩ := hF.exists_integrable_boundedVariationOn
   obtain ⟨ε₂, hε₂, hG₂⟩ := hG.exists_integrable_boundedVariationOn
-  have hF' := integrable_boundedVariationOn_of_le
-    (by linarith [min_le_left ε₁ ε₂] : 1 / 2 + c + min ε₁ ε₂ ≤ 1 / 2 + c + ε₁) hF₁
-  have hG' := integrable_boundedVariationOn_of_le
-    (by linarith [min_le_right ε₁ ε₂] : 1 / 2 + c + min ε₁ ε₂ ≤ 1 / 2 + c + ε₂) hG₂
+  have h₁ : 1 / 2 + c + min ε₁ ε₂ ≤ 1 / 2 + c + ε₁ := by linarith [min_le_left ε₁ ε₂]
+  have h₂ : 1 / 2 + c + min ε₁ ε₂ ≤ 1 / 2 + c + ε₂ := by linarith [min_le_right ε₁ ε₂]
+  have hF' := And.intro (integrable_mul_exp_mul_abs_of_le h₁ hF₁.1)
+    (boundedVariationOn_mul_exp_mul_abs_of_le h₁ hF₁.2)
+  have hG' := And.intro (integrable_mul_exp_mul_abs_of_le h₂ hG₂.1)
+    (boundedVariationOn_mul_exp_mul_abs_of_le h₂ hG₂.2)
   have hsum : (fun x ↦ (F + G) x * Real.exp ((1 / 2 + c + min ε₁ ε₂) * |x|)) =
       (fun x ↦ F x * Real.exp ((1 / 2 + c + min ε₁ ε₂) * |x|)) +
         fun x ↦ G x * Real.exp ((1 / 2 + c + min ε₁ ε₂) * |x|) := by
@@ -333,9 +343,6 @@ theorem mem_weilTestFunctionSubmodule {c : ℝ} {F : ℝ → ℝ} :
   Iff.rfl
 
 /-! ### Checks -/
-
-example (s : ℂ) : weilTransform 0 s = 0 := by
-  simp [weilTransform]
 
 /-- The difference quotient at `0` of `x ↦ exp (-|x|)` jumps from `1` to `-1` across `0`. Adding
 `Real.sign` removes the jump and leaves an odd monotone function with values in `[-1, 1]`. -/
