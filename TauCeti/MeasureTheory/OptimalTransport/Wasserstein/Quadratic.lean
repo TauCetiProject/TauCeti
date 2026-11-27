@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 
 /-!
@@ -20,8 +20,11 @@ theory out of general Wasserstein imports.
 
 * `TauCeti.wassersteinEDist_two_sq_eq_two_mul_transportCost` — `W₂(μ, ν) ^ 2` equals twice the
   transport cost of `‖x - y‖ ^ 2 / 2`.
+* `TauCeti.wassersteinEDist_ne_top_iff_transportCost_norm_sub_sq_div_two_ne_top` — finiteness of
+  `W₂` distance is equivalent to finiteness of the quadratic transport cost for `‖x - y‖ ^ 2 / 2`.
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top` — finite `W₂`
-  distance implies finite quadratic transport cost for `‖x - y‖ ^ 2 / 2`.
+  distance implies finite quadratic transport cost for `‖x - y‖ ^ 2 / 2` without topology or
+  second-countability hypotheses.
 * `TauCeti.isCyclicallyMonotone_support_of_eLpNorm_eq` — a coupling realizing finite quadratic
   Wasserstein distance has cyclically monotone support for the cost `‖x - y‖ ^ 2 / 2`.
 -/
@@ -75,6 +78,16 @@ theorem wassersteinEDist_two_sq_eq_two_mul_transportCost (μ ν : Measure E) :
   congr 1
   funext z
   exact edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two z
+
+/-- On a second countable seminormed additive group with open sets measurable, the `2`-Wasserstein
+distance is finite if and only if the quadratic transport cost for `‖x - y‖ ^ 2 / 2` is finite. -/
+theorem wassersteinEDist_ne_top_iff_transportCost_norm_sub_sq_div_two_ne_top (μ ν : Measure E) :
+    wassersteinEDist 2 μ ν ≠ ∞ ↔
+      transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+  refine ⟨transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top, fun hfin ↦ ?_⟩
+  rw [← (ENNReal.pow_ne_top_iff (n := 2)).trans (or_iff_left two_ne_zero),
+    wassersteinEDist_two_sq_eq_two_mul_transportCost]
+  exact ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfin
 
 /-- **Optimal quadratic Wasserstein plans have cyclically monotone support.** If `π` is a coupling
 of a finite measure `μ` and a measure `ν` at finite quadratic Wasserstein distance whose quadratic

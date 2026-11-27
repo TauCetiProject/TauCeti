@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Rockafellar
-public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Basic
 
 /-!
 # The quadratic cost and convex analysis
 
 On a real inner product space `E`, the quadratic transport cost `c (x, y) = ‖x - y‖ ^ 2 / 2`
 differs from the pairing cost `-⟪x, y⟫` by the split term `‖x‖ ^ 2 / 2 + ‖y‖ ^ 2 / 2`
-(`TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic`, which also identifies the
+(`TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Basic`, which also identifies the
 `c`-cyclically monotone sets of the quadratic cost with the classically cyclically monotone
 sets). Split terms are absorbed by the `c`-transform vocabulary, so the whole `c`-transform
 theory of the quadratic cost is the Legendre–Fenchel theory of the inner product: a potential

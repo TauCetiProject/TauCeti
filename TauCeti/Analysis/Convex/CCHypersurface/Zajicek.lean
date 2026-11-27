@@ -13,11 +13,10 @@ import Mathlib.Analysis.Convex.Gauge
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Pairing
 import TauCeti.Analysis.Calculus.FDeriv.Basic
+import TauCeti.Analysis.Convex.CCHypersurface.Corner
 import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.Convex.Separation
 import TauCeti.Analysis.Convex.SubgradientImage
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Zajíček's theorem and countable `c - c` coverings
@@ -30,13 +29,12 @@ extended-real convex functions, and frontiers of convex sets.
 
 ## Main declarations
 
-* `TauCeti.exists_isCCHypersurface_of_subdifferential_separation`,
+* `TauCeti.exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner`,
+  `TauCeti.exists_isCCHypersurface_of_subdifferential_separation`,
   `TauCeti.exists_countable_isCCHypersurface_cover_not_subsingleton_subdifferential`,
   `TauCeti.exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableAt_toReal`,
   `Convex.exists_countable_isCCHypersurface_cover_frontier` — countable `c - c` coverings.
-* `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_max_add_inner_eq`,
-  `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_add_sub_two_mul_eq`,
-  `TauCeti.exists_convexOn_subset_not_differentiableAt_iff`,
+* `TauCeti.exists_convexOn_subset_not_differentiableAt_iff`,
   `TauCeti.exists_convexOn_subset_not_differentiableAt_iff_nat` — Zajíček's theorem.
 
 ## References
@@ -59,6 +57,42 @@ namespace TauCeti
 section SubdifferentialSeparation
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **Global convex Lipschitz interpolation on a hyperplane slice.** Given a set `S : Set E`
+and a selection `α : S → E` of subgradients of `u : E → EReal` bounded in norm by `M` with
+constant component `c` along a unit vector `e`, there exists a globally convex,
+`M.toNNReal`-Lipschitz function `F : ↥(ℝ ∙ e)ᗮ → ℝ` whose value at the orthogonal projection
+of each `x ∈ S` is `(u x).toReal - c * ⟪x, e⟫`. -/
+theorem exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner {u : E → EReal} {e : E}
+    (he : ‖e‖ = 1) {M : ℝ} (c : ℝ) {S : Set E} (α : S → E)
+    (hα : ∀ x : S, α x ∈ subdifferential (innerₗ E) u x ∧ ‖α x‖ ≤ M ∧ inner ℝ (α x) e = c) :
+    ∃ F : ↥(ℝ ∙ e)ᗮ → ℝ, ConvexOn ℝ univ F ∧ LipschitzWith M.toNNReal F ∧
+      ∀ x : S, F ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) = (u x).toReal - c * inner ℝ (x : E) e := by
+  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
+  obtain ⟨F, hconv, hlip, hF⟩ := exists_convexOn_lipschitzWith_apply_eq
+    (x := fun x : S => P x) (p := fun x : S => P (α x))
+    (a := fun x : S => (u x).toReal - c * inner ℝ (x : E) e) (L := M.toNNReal)
+    (fun x => (Submodule.norm_orthogonalProjectionOnto_apply_le _ _).trans
+      ((hα x).2.1.trans (le_max_left _ _)))
+    fun x₁ x₂ => by
+      have hsubg : (u x₁).toReal + inner ℝ ((x₂ : E) - x₁) (α x₁) ≤ (u x₂).toReal := by
+        simpa only [innerₗ_apply_apply] using toReal_add_le_toReal_of_mem_subdifferential
+          (innerₗ E) (hα x₁).1 (ne_top_of_mem_subdifferential (innerₗ E) (hα x₂).1)
+      have hαeq : (P (α x₁) : E) + c • e = α x₁ := by
+        have h := (ℝ ∙ e).starProjection_add_starProjection_orthogonal (α x₁)
+        rwa [Submodule.starProjection_unit_singleton ℝ he (α x₁), Submodule.starProjection_apply,
+          real_inner_comm, (hα x₁).2.2, add_comm] at h
+      have hdec : inner ℝ ((x₂ : E) - x₁) (α x₁) =
+          inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e :=
+        calc inner ℝ ((x₂ : E) - x₁) (α x₁)
+            = inner ℝ ((x₂ : E) - x₁) ((P (α x₁) : E) + c • e) := by rw [hαeq]
+          _ = inner ℝ ((x₂ : E) - x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
+                rw [inner_add_right, real_inner_smul_right]
+          _ = inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
+                rw [← Submodule.inner_orthogonalProjectionOnto_eq_of_mem_right, map_sub]
+      simp only [inner_sub_left] at hdec hsubg ⊢
+      linarith
+  exact ⟨F, hconv, hlip, hF⟩
 
 /-- **Single-slice subdifferential separation lies in a `c - c` hypersurface.** In any real inner
 product space `E`, for any `u : E → EReal`, unit vector `e`, `a < b`, and `M : ℝ`, the set of
@@ -199,72 +233,6 @@ end FiniteDimensionalCovers
 section Zajicek
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- **Lipschitz branch representation of a `c - c` hypersurface on a ball.** Given a `c - c`
-hypersurface `s ⊆ E` and `R : ℝ`, there exist a unit vector `e : E` and globally Lipschitz convex
-branches `f', g' : ↥(ℝ ∙ e)ᗮ → ℝ` such that `x ↦ max (f' (P x)) (g' (P x) + ⟪x, e⟫)` (where `P`
-is orthogonal projection onto `(ℝ ∙ e)ᗮ`) is convex and Lipschitz on `E`, and the two branches agree
-on `s ∩ closedBall 0 R`. -/
-theorem IsCCHypersurface.exists_convexOn_lipschitzWith_max_add_inner_eq {s : Set E}
-    (hs : IsCCHypersurface s) (R : ℝ) :
-    ∃ (e : E) (_ : ‖e‖ = 1) (Lf Lg : ℝ≥0) (f' g' : ↥(ℝ ∙ e)ᗮ → ℝ),
-      ConvexOn ℝ univ f' ∧ ConvexOn ℝ univ g' ∧ LipschitzWith Lf f' ∧ LipschitzWith Lg g' ∧
-      ConvexOn ℝ univ (fun x : E => max (f' ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x))
-        (g' ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) + inner ℝ x e)) ∧
-      LipschitzWith (max Lf (Lg + 1)) (fun x : E => max (f' ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x))
-        (g' ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) + inner ℝ x e)) ∧
-      ∀ x ∈ s ∩ closedBall 0 R, g' ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) + inner ℝ x e =
-        f' ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) := by
-  obtain ⟨e, he, f, g, -, -, hf, hg, hs_eq⟩ := isCCHypersurface_def.1 hs
-  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  obtain ⟨Lf, f', hf', hLf', hff'⟩ := hf.exists_convexOn_lipschitzWith_eqOn isOpen_univ
-    (isCompact_closedBall 0 (max R 0)) (subset_univ _)
-  obtain ⟨Lg, g', hg', hLg', hgg'⟩ := hg.exists_convexOn_lipschitzWith_eqOn isOpen_univ
-    (isCompact_closedBall 0 (max R 0)) (subset_univ _)
-  have hlip_in : LipschitzWith 1 (fun x : E => inner ℝ x e) := LipschitzWith.mk_one fun _ _ => by
-    rw [Real.dist_eq, ← inner_sub_left, dist_eq_norm]
-    exact (abs_real_inner_le_norm _ _).trans_eq (by rw [he, mul_one])
-  refine ⟨e, he, Lf, Lg, f', g', hf', hg', hLf', hLg',
-    (hf'.comp_linearMap P.toLinearMap).sup ((hg'.comp_linearMap P.toLinearMap).add
-      ⟨convex_univ, fun _ _ _ _ _ _ _ _ _ => by simp [inner_add_left, real_inner_smul_left]⟩),
-    ((hLf'.comp (Submodule.lipschitzWith_orthogonalProjectionOnto _)).weaken (by simp)).max
-      (((hLg'.comp (Submodule.lipschitzWith_orthogonalProjectionOnto _)).weaken (by simp) :
-        LipschitzWith Lg (fun x => g' (P x))).add hlip_in),
-    fun x ⟨hxs, hxR⟩ => ?_⟩
-  have hPx : P x ∈ closedBall (0 : ↥(ℝ ∙ e)ᗮ) (max R 0) := mem_closedBall_zero_iff.2 <|
-    (norm_orthogonalProjectionOnto_apply_le _ x).trans <|
-      (mem_closedBall_zero_iff.1 hxR).trans (le_max_left R 0)
-  rw [hs_eq, mem_ofPred_eq] at hxs
-  rw [← hff' hPx, ← hgg' hPx, hxs]
-  ring
-
-/-- **Lipschitz convex potential with unit second-difference slope along a `c - c` hypersurface.**
-Given a `c - c` hypersurface `s ⊆ E` and `R : ℝ`, there exist `K : ℝ≥0`, a unit vector `e : E`, and
-a `K`-Lipschitz convex `ψ : E → ℝ` with `ψ 0 = 0` and
-`ψ (x + t • e) + ψ (x - t • e) - 2 * ψ x = t` for every `x ∈ s ∩ closedBall 0 R` and `t ≥ 0`. -/
-theorem IsCCHypersurface.exists_convexOn_lipschitzWith_add_sub_two_mul_eq {s : Set E}
-    (hs : IsCCHypersurface s) (R : ℝ) :
-    ∃ (K : ℝ≥0) (e : E) (_ : ‖e‖ = 1) (ψ : E → ℝ),
-      ConvexOn ℝ univ ψ ∧ ψ 0 = 0 ∧ LipschitzWith K ψ ∧
-      ∀ x ∈ s ∩ closedBall 0 R, ∀ t : ℝ, 0 ≤ t →
-        ψ (x + t • e) + ψ (x - t • e) - 2 * ψ x = t := by
-  obtain ⟨e, he, Lf, Lg, f', g', -, -, -, -, hconv₀, hlip₀, heq_on⟩ :=
-    hs.exists_convexOn_lipschitzWith_max_add_inner_eq R
-  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  let ψ : E → ℝ := fun x => max (f' (P x)) (g' (P x) + inner ℝ x e) - max (f' 0) (g' 0)
-  refine ⟨max Lf (Lg + 1), e, he, ψ, hconv₀.add_const (-max (f' 0) (g' 0)), by simp [ψ, P],
-    (hlip₀.sub (.const _)).weaken (by simp), fun x hx t ht => ?_⟩
-  have hin (s : ℝ) : inner ℝ (x + s • e) e = inner ℝ x e + s := by
-    simp [inner_add_left, real_inner_smul_left, he]
-  have hin_sub : inner ℝ (x - t • e) e = inner ℝ x e - t := by
-    simpa [sub_eq_add_neg, neg_smul] using hin (-t)
-  simp only [ψ, P, map_add, map_sub, map_smul,
-    orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
-    smul_zero, add_zero, sub_zero, hin t, hin_sub]
-  rw [← add_assoc, ← add_sub_assoc (g' _), heq_on x hx,
-    max_eq_right (le_add_of_nonneg_right ht),
-    max_eq_left (sub_le_self _ ht), max_self]
-  ring
 
 private theorem exists_convexOn_subset_not_differentiableAt_of_seq (s : ℕ → Set E)
     (hs : ∀ n, IsCCHypersurface (s n)) :

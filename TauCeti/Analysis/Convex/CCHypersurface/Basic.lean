@@ -274,9 +274,9 @@ theorem IsLipschitzHypersurface.image_continuousLinearEquiv {F : Type*} [NormedA
     [InnerProductSpace ℝ F] {s : Set E} (hs : IsLipschitzHypersurface s) (L : E ≃L[ℝ] F) :
     IsLipschitzHypersurface (L '' s) := by
   obtain ⟨e, he, _, h, hh, rfl⟩ := hs
-  obtain ⟨e', he', c, hc, B, ℓ, himg⟩ := image_continuousLinearEquiv_setOf_inner_eq L he h
-  have hmul : LipschitzWith ⟨c, hc.le⟩ (c * ·) := LipschitzWith.of_dist_le_mul fun _ _ =>
-    by rw [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos hc, Real.dist_eq]; exact le_rfl
+  obtain ⟨e', he', c, _, B, ℓ, himg⟩ := image_continuousLinearEquiv_setOf_inner_eq L he h
+  have hmul : LipschitzWith ‖c‖₊ (c * ·) := by
+    simpa only [smul_eq_mul] using lipschitzWith_smul (β := ℝ) c
   exact himg ▸ isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith he'
     ((hmul.comp (hh.comp B.lipschitzWith)).sub ℓ.lipschitzWith)
 

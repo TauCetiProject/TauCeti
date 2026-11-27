@@ -7,9 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import TauCeti.Analysis.Convex.CCHypersurface.Basic
-import TauCeti.Analysis.Convex.CCHypersurface.Zajicek
+import TauCeti.Analysis.Convex.CCHypersurface.Corner
 import TauCeti.Analysis.Convex.MeasurableSubgradient
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Borel measurable subgradient splitting on `c - c` hypersurfaces

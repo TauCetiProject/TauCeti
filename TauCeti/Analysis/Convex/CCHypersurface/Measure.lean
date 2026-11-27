@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Group.Measure
 public import TauCeti.Analysis.Convex.CCHypersurface.Basic
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 

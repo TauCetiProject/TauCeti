@@ -10,9 +10,8 @@ public import TauCeti.Analysis.Convex.CCHypersurface.Regular.Basic
 public import TauCeti.Analysis.Convex.Differentiability
 public import TauCeti.Analysis.Convex.MongeAmpere.Transport
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic
-public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
-public import TauCeti.MeasureTheory.OptimalTransport.Cost.QuadraticOptimality
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Optimality
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
@@ -56,16 +55,17 @@ inverse maps.
 
 Conversely, between finite measures with finite second moments on any real inner product space,
 every plan concentrated on the subdifferential graph of a function `u : E → EReal` is optimal
-(`TauCeti.MeasureTheory.OptimalTransport.Cost.QuadraticOptimality`),
-and so is every transport map selecting a subgradient of `u` almost everywhere, in particular the
-gradient of a convex function. Expanding the square, the quadratic cost of a plan is a fixed
-second-moment term minus its correlation `∫ ⟪x, y⟫`, and on the subdifferential graph of a
-Legendre–Fenchel conjugate the Fenchel–Young inequality `⟪x, y⟫ ≤ u x + u⋆ y` is an equality. The
-real representatives of `u` and `u⋆` are integrable, being squeezed between affine functions and
-the correlation, so integrating Fenchel–Young against any other coupling bounds its correlation
-by that of the given plan. A general `u` is first replaced, through Rockafellar's theorem, by a
-conjugate whose subdifferential graph contains its own. With the forward direction this gives the
-Knott–Smith optimality criterion on separable spaces.
+(`TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Optimality`),
+and so is every transport map selecting a subgradient of `u` almost everywhere — in particular, on
+a Hilbert space, the gradient `∇ u` of a convex function `u` that never takes `⊥` and has finite,
+differentiable real representative source-almost everywhere. Expanding the square, the quadratic
+cost of a plan is a fixed second-moment term minus its correlation `∫ ⟪x, y⟫`, and on the
+subdifferential graph of a Legendre–Fenchel conjugate the Fenchel–Young inequality
+`⟪x, y⟫ ≤ u x + u⋆ y` is an equality. The real representatives of `u` and `u⋆` are integrable,
+being squeezed between affine functions and the correlation, so integrating Fenchel–Young against
+any other coupling bounds its correlation by that of the given plan. A general `u` is first
+replaced, through Rockafellar's theorem, by a conjugate whose subdifferential graph contains its
+own. With the forward direction this gives the Knott–Smith optimality criterion on separable spaces.
 
 For Monge–Ampère results, absolute continuity uses an arbitrary additive Haar measure `ρ`, which
 for `E = ℝⁿ` covers Lebesgue measure. The real representative `x ↦ (u x).toReal` is the function
@@ -76,9 +76,6 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
 
 ## Main statements
 
-* `TauCeti.IsOptimalCoupling.exists_support_subset_subdifferential` — on any real inner product
-  space, for a finite source `μ`, the support of an optimal quadratic plan of finite cost lies in
-  the subdifferential graph of a proper lower semicontinuous convex function;
 * `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential_of_ae_differentiableAt` — on a real
   Hilbert space, a plan concentrated on the subdifferential graph of a function `u` that avoids
   `⊤` near `μ`-almost every point with differentiable real representative there is the graph plan
@@ -147,8 +144,9 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   of the effective domain of `u`, with `g₀ x = 0` for `ρ`-almost every `x` outside it;
 * `TauCeti.isKantorovichOptimalTransportMap_of_ae_mem_subdifferential` and
   `TauCeti.isKantorovichOptimalTransportMap_gradient` — the converse of Brenier's theorem: a
-  transport map selecting subgradients of a function, such as the gradient of a convex function,
-  is an optimal transport map;
+  transport map selecting subgradients of a function almost everywhere — such as the gradient
+  `∇ u` of a convex function never taking `⊥` whose real representative is finite and
+  differentiable almost everywhere — is an optimal transport map;
 * `TauCeti.IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential` — the **Knott–Smith
   optimality criterion**: on a separable space, a plan between marginals with finite second
   moments is optimal exactly when it is concentrated on the subdifferential graph of a proper
@@ -177,49 +175,6 @@ section InnerProduct
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
   [OpensMeasurableSpace (E × E)] {μ ν : Measure E} {π σ : Measure (E × E)}
-
-/-- **The support of an optimal quadratic plan lies in a subdifferential graph.** On a real inner
-product space, if `π` is an optimal plan of finite cost for `‖x - y‖ ^ 2 / 2` between finite
-measures, there is a proper (never `⊥`, and finite somewhere) convex, lower semicontinuous
-`u : E → EReal` such that every `(x, y)` in the support of `π` has `y ∈ ∂u(x)`. -/
-theorem IsOptimalCoupling.exists_support_subset_subdifferential [IsFiniteMeasure μ]
-    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
-    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
-    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
-      (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧
-        π.support ⊆ {p | p.2 ∈ subdifferential (innerₗ E) u p.1} := by
-  -- The function is a Legendre–Fenchel conjugate `g⋆`; it is proper because some point of the
-  -- support carries a subgradient, or, for an empty support, because `g = 0` is finite and has
-  -- `g⋆ 0 = 0`.
-  obtain ⟨g, hsub, hbot, htop⟩ : ∃ g : E → EReal,
-      π.support ⊆ {p | p.2 ∈ subdifferential (innerₗ E) (fenchelConjugate (innerₗ E) g) p.1} ∧
-        (∀ x, fenchelConjugate (innerₗ E) g x ≠ ⊥) ∧ ∃ x, fenchelConjugate (innerₗ E) g x ≠ ⊤ := by
-    rcases π.support.eq_empty_or_nonempty with hπ | ⟨z, hz⟩
-    · refine ⟨fun _ => 0, by simp [hπ],
-        fenchelConjugate_ne_bot (innerₗ E) (x := 0) EReal.zero_ne_top, 0, ?_⟩
-      exact ((fenchelConjugate_le (innerₗ E) fun x => by simp).trans_lt EReal.zero_lt_top).ne
-    · have hcm : IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2) π.support :=
-        (isCyclicallyMonotone_ofReal_iff fun _ => by positivity).1
-          (h.isCyclicallyMonotone_support continuous_ofReal_norm_sub_sq_div_two hfin)
-      obtain ⟨g, hg⟩ := hcm.exists_fenchelConjugate_innerₗ_subset_subdifferential
-      exact ⟨g, hg, apply_ne_bot_of_mem_subdifferential (innerₗ E) (hg hz), z.1,
-        ne_top_of_mem_subdifferential (innerₗ E) (hg hz)⟩
-  exact ⟨_, convex_epigraph_fenchelConjugate (innerₗ E) g,
-    lowerSemicontinuous_fenchelConjugate_innerₗ g, hbot, htop, hsub⟩
-
-/-- **An optimal quadratic plan concentrates on a subdifferential graph.** On a separable real
-inner product space, if `π` is an optimal plan of finite cost for `‖x - y‖ ^ 2 / 2` between finite
-measures, there is a proper convex, lower semicontinuous `u : E → EReal` such that `y ∈ ∂u(x)`
-for `π`-almost every `(x, y)`. -/
-private theorem IsOptimalCoupling.exists_ae_mem_subdifferential [SecondCountableTopology E]
-    [IsFiniteMeasure μ]
-    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
-    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
-    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
-      (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧ ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-  obtain ⟨u, hconv, hlsc, hbot, htop, hsub⟩ := h.exists_support_subset_subdifferential hfin
-  refine ⟨u, hconv, hlsc, hbot, htop, ?_⟩
-  filter_upwards [π.support_mem_ae] with z hz using hsub hz
 
 omit [OpensMeasurableSpace (E × E)] in
 /-- **Reciprocity along a plan.** If `y ∈ ∂u(x)` for `π`-almost every `(x, y)`, then

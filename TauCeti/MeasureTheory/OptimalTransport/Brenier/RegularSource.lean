@@ -12,23 +12,24 @@ import TauCeti.Analysis.Convex.CCHypersurface.MeasurableSplitting
 /-!
 # Regular sources for quadratic optimal transport
 
-Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier/Basic.lean`) holds whenever the
-source law `μ` on a finite-dimensional real inner product space `E` is a finite **`c - c`-regular**
-measure (`TauCeti.IsCCRegular μ`) and the quadratic transport cost is finite, strictly
-generalizing absolute continuity with respect to additive Haar measure (e.g. atomless singular
-measures on `ℝ`, or product Cantor measures on `ℝ²`).
+By Gangbo–McCann (1996), Brenier's theorem
+(`TauCeti/MeasureTheory/OptimalTransport/Brenier/Basic.lean`) holds whenever the source law `μ` on
+a finite-dimensional real inner product space `E` is a finite **`c - c`-regular** measure
+(`TauCeti.IsCCRegular μ`) and the quadratic transport cost is finite, strictly generalizing
+absolute continuity with respect to additive Haar measure (e.g. atomless singular measures on `ℝ`,
+or product Cantor measures on `ℝ²`).
 
-This module proves the converse / sharp characterization of Gangbo–McCann (1996) and
-Ambrosio–Gigli (2013, Theorem 1.26): a finite measure `μ` of finite second moment is
-`c - c`-regular iff for every finite target `ν` of the same total mass and finite second moment,
-every quadratic optimal coupling is induced by a measurable transport map (note uniqueness *alone*
-holds trivially for Dirac masses).
+This module proves Gigli's converse (necessity) construction (Gigli 2011; Ambrosio–Gigli 2013,
+Theorem 1.26) and combines it with Gangbo–McCann's sufficiency theorem to give the sharp
+characterization: a finite measure `μ` of finite second moment is `c - c`-regular iff for every
+finite target `ν` of the same total mass and finite second moment, every quadratic optimal coupling
+is induced by a measurable transport map (note uniqueness *alone* holds trivially for Dirac masses).
 
 ## Main statements
 
 * `TauCeti.exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular`,
   `TauCeti.isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan`, and its existence
-  and uniqueness counterpart — **Ambrosio–Gigli Theorem 1.26** in `MemLp` form.
+  and uniqueness counterpart — **Gigli's converse and Ambrosio–Gigli Theorem 1.26** in `MemLp` form.
 * In `TauCeti.WassersteinSpace`: `isCCRegular_iff_forall_isOptimalCoupling_exists_eq_graphPlan` and
   `isCCRegular_iff_forall_exists_isKantorovichOptimalTransportMap_and_unique_isOptimalCoupling`
   — **Ambrosio–Gigli Theorem 1.26** on `WassersteinSpace 2 E`.
@@ -38,7 +39,9 @@ holds trivially for Dirac masses).
 * L. Zajíček, *On the differentiation of convex functions in finite and infinite dimensional
   spaces*, Czechoslovak Math. J. 29 (1979), 340–348.
 * W. Gangbo and R. J. McCann, *The geometry of optimal transportation*, Acta Math. 177 (1996),
-  113–161.
+  113–161, for the sufficiency of `c - c`-regularity.
+* N. Gigli, *On the inverse implication of Brenier–McCann theorems and the structure of
+  (P₂(M), W₂)*, Methods Appl. Anal. 18 (2011), 127–158, for necessity.
 * L. Ambrosio and N. Gigli, *A user's guide to optimal transport*, LNM 2062, Springer, 2013,
   Definition 1.25 and Theorem 1.26.
 * C. Villani, *Topics in Optimal Transportation*, GSM 58, AMS, 2003, §2.1.3 and §2.4.

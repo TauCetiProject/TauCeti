@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Gaussian.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
-public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Basic
 public import TauCeti.MeasureTheory.Measure.FrechetMean.TwoPoint
 public import Mathlib.Probability.Distributions.Gaussian.Fernique
 

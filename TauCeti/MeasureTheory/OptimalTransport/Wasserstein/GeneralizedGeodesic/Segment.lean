@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Stability
-import TauCeti.MeasureTheory.OptimalTransport.Cost.QuadraticOptimality
+import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Optimality
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quadratic
 
 /-!
@@ -201,11 +201,9 @@ theorem IsGeneralizedGeodesicPlan.isOptimalCoupling_map [IsFiniteMeasure μ]
   have hS : IsCyclicallyMonotone (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2 / 2) S := by
     refine IsCyclicallyMonotone.closure (by fun_prop) ?_
     have hfin {ν' : Measure E} {π' : Measure (E × E)} (hc : IsCoupling π' μ ν')
-        (hν' : MemLp id 2 ν') : wassersteinEDist 2 μ ν' ≠ ∞ := fun h => by
-      have hsq := wassersteinEDist_two_sq_eq_two_mul_transportCost μ ν'
-      rw [h, ENNReal.top_pow two_ne_zero] at hsq
-      exact ENNReal.mul_ne_top ENNReal.ofNat_ne_top
-        (hc.transportCost_norm_sub_sq_div_two_ne_top hμ hν') hsq.symm
+        (hν' : MemLp id 2 ν') : wassersteinEDist 2 μ ν' ≠ ∞ :=
+      (wassersteinEDist_ne_top_iff_transportCost_norm_sub_sq_div_two_ne_top μ ν').2
+        (hc.transportCost_norm_sub_sq_div_two_ne_top hμ hν')
     have h₀ := isCyclicallyMonotone_support_of_eLpNorm_eq
       (hfin hγ.isCoupling_left hν₀) hγ.isCoupling_left hγ.eLpNorm_left
     have h₁ := isCyclicallyMonotone_support_of_eLpNorm_eq

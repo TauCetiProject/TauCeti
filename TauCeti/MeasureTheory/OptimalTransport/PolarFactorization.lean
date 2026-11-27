@@ -18,10 +18,11 @@ transport cost from the law of `U`. **Brenier's polar factorization theorem** wr
 
 `U = ∇u ∘ s` almost everywhere,
 
-where `u : E → EReal` is convex and `s : α → E` has law `P`, that is, `s` is measure-preserving
-from `(α, m)` to `(E, P)`. A vector field thus factors as a measure-preserving map followed by the
-gradient of a convex function, as a square matrix factors as an orthogonal matrix followed by a
-positive semidefinite one. The two factors are unique in different senses.
+where `u : E → EReal` is convex, `U` is almost-everywhere measurable, and `s : α → E` is
+almost-everywhere measurable with pushforward `P` (`HasLaw s P m`). A vector field thus factors as
+an almost-everywhere measurable map of law `P` followed by the gradient of a convex function, as a
+square matrix factors as an orthogonal matrix followed by a positive semidefinite one. The two
+factors are unique in different senses.
 
 * The gradient `∇u` is the *monotone rearrangement* of `U` on `(E, P)`: it is the Brenier map
   from `P` to the law of `U`, so it is determined `P`-almost everywhere. Among gradients of convex

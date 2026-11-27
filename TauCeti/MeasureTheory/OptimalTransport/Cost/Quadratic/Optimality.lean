@@ -6,15 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 
 /-!
 # Quadratic optimality criteria for cyclically monotone plans
 
-Between finite measures with finite second moments on a real inner product space, every coupling
-concentrated on a `c`-cyclically monotone set for the quadratic cost `‖x - y‖ ^ 2 / 2` — and in
-particular every coupling concentrated on the subdifferential graph of any function `u : E → EReal`
-— is an optimal quadratic transport plan.
+Between finite measures on a real inner product space, every optimal quadratic plan of finite cost
+for `‖x - y‖ ^ 2 / 2` has support — and on separable spaces almost every pair — contained in the
+subdifferential graph of a proper lower semicontinuous convex function `u : E → EReal`
+(`TauCeti.IsOptimalCoupling.exists_support_subset_subdifferential`,
+`TauCeti.IsOptimalCoupling.exists_ae_mem_subdifferential`).
+
+Conversely, between finite measures with finite second moments on a real inner product space, every
+coupling concentrated on a `c`-cyclically monotone set for the quadratic cost `‖x - y‖ ^ 2 / 2` —
+and in particular every coupling concentrated on the subdifferential graph of any function
+`u : E → EReal` — is an optimal quadratic transport plan.
 
 Expanding the square writes the quadratic cost of a coupling as a fixed second-moment term minus its
 correlation `∫ ⟪x, y⟫`. By Rockafellar's theorem, a cyclically monotone set lies in the
@@ -25,6 +32,12 @@ any other coupling bounds its correlation by that of the given plan.
 
 ## Main statements
 
+* `TauCeti.IsOptimalCoupling.exists_support_subset_subdifferential` — on any real inner product
+  space, for a finite source `μ`, the support of an optimal quadratic plan of finite cost lies in
+  the subdifferential graph of a proper lower semicontinuous convex function;
+* `TauCeti.IsOptimalCoupling.exists_ae_mem_subdifferential` — on a separable real inner product
+  space, an optimal quadratic plan of finite cost concentrates almost everywhere on the
+  subdifferential graph of a proper lower semicontinuous convex function;
 * `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two` — a coupling
   of finite measures with finite second moments concentrated on a `c`-cyclically monotone set for
   `‖x - y‖ ^ 2 / 2` is optimal;
@@ -52,6 +65,50 @@ section InnerProduct
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
   {μ ν : Measure E} {π σ : Measure (E × E)}
+
+/-- **The support of an optimal quadratic plan lies in a subdifferential graph.** On a real inner
+product space, if `π` is an optimal plan of finite cost for `‖x - y‖ ^ 2 / 2` between finite
+measures, there is a proper (never `⊥`, and finite somewhere) convex, lower semicontinuous
+`u : E → EReal` such that every `(x, y)` in the support of `π` has `y ∈ ∂u(x)`. -/
+theorem IsOptimalCoupling.exists_support_subset_subdifferential
+    [OpensMeasurableSpace (E × E)] [IsFiniteMeasure μ]
+    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧
+        π.support ⊆ {p | p.2 ∈ subdifferential (innerₗ E) u p.1} := by
+  -- The function is a Legendre–Fenchel conjugate `g⋆`; it is proper because some point of the
+  -- support carries a subgradient, or, for an empty support, because `g = 0` is finite and has
+  -- `g⋆ 0 = 0`.
+  obtain ⟨g, hsub, hbot, htop⟩ : ∃ g : E → EReal,
+      π.support ⊆ {p | p.2 ∈ subdifferential (innerₗ E) (fenchelConjugate (innerₗ E) g) p.1} ∧
+        (∀ x, fenchelConjugate (innerₗ E) g x ≠ ⊥) ∧ ∃ x, fenchelConjugate (innerₗ E) g x ≠ ⊤ := by
+    rcases π.support.eq_empty_or_nonempty with hπ | ⟨z, hz⟩
+    · refine ⟨fun _ => 0, by simp [hπ],
+        fenchelConjugate_ne_bot (innerₗ E) (x := 0) EReal.zero_ne_top, 0, ?_⟩
+      exact ((fenchelConjugate_le (innerₗ E) fun x => by simp).trans_lt EReal.zero_lt_top).ne
+    · have hcm : IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2) π.support :=
+        (isCyclicallyMonotone_ofReal_iff fun _ => by positivity).1
+          (h.isCyclicallyMonotone_support continuous_ofReal_norm_sub_sq_div_two hfin)
+      obtain ⟨g, hg⟩ := hcm.exists_fenchelConjugate_innerₗ_subset_subdifferential
+      exact ⟨g, hg, apply_ne_bot_of_mem_subdifferential (innerₗ E) (hg hz), z.1,
+        ne_top_of_mem_subdifferential (innerₗ E) (hg hz)⟩
+  exact ⟨_, convex_epigraph_fenchelConjugate (innerₗ E) g,
+    lowerSemicontinuous_fenchelConjugate_innerₗ g, hbot, htop, hsub⟩
+
+/-- **An optimal quadratic plan concentrates on a subdifferential graph.** On a separable real
+inner product space, if `π` is an optimal plan of finite cost for `‖x - y‖ ^ 2 / 2` between finite
+measures, there is a proper convex, lower semicontinuous `u : E → EReal` such that `y ∈ ∂u(x)`
+for `π`-almost every `(x, y)`. -/
+theorem IsOptimalCoupling.exists_ae_mem_subdifferential
+    [OpensMeasurableSpace (E × E)] [SecondCountableTopology E] [IsFiniteMeasure μ]
+    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧ ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
+  obtain ⟨u, hconv, hlsc, hbot, htop, hsub⟩ := h.exists_support_subset_subdifferential hfin
+  refine ⟨u, hconv, hlsc, hbot, htop, ?_⟩
+  filter_upwards [π.support_mem_ae] with z hz using hsub hz
 
 /-- For a coupling `π` of finite measures with finite second moments concentrated on the
 subdifferential graph of `u`, the real representatives of `u` and of its conjugate `v` are

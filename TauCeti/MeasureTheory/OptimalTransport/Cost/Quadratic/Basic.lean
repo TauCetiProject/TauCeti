@@ -144,9 +144,8 @@ theorem isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two
 theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top {μ ν : Measure F}
     {σ : Measure (F × F)} (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
     transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
-  have hnorm {g : Measure F} (hg : MemLp id 2 g) : MemLp (fun x : F => ‖x‖) 2 g := by
-    have hae : AEStronglyMeasurable (fun x : F => ‖x‖) g := hg.aestronglyMeasurable.norm
-    simpa [MemLp, eLpNorm, eLpNorm', hae, hg.aestronglyMeasurable] using hg.eLpNorm_lt_top
+  have hnorm {g : Measure F} (hg : MemLp id 2 g) : MemLp (fun x : F => ‖x‖) 2 g :=
+    hg.congr_eNorm hg.aestronglyMeasurable.norm (.of_forall fun _ => (eNorm_norm _).symm)
   have h1 := (hnorm hμ).comp_measurePreserving hσ.measurePreserving_fst
   have h2 := (hnorm hν).comp_measurePreserving hσ.measurePreserving_snd
   have hdiff : MemLp (fun z : F × F => ‖z.1 - z.2‖) 2 σ :=
@@ -262,7 +261,5 @@ theorem _root_.ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two {α : Type
   rw [hσ.lintegral_norm_sub_sq_div_two hμ hν, integral_map hpair (h₁.inner h₂)]
 
 end TauCeti
-
-end
 
 end

@@ -30,9 +30,9 @@ differentiable at that point.
   derivative is surjective.
 * `TauCeti.differentiableAt_and_of_differentiableAt_comb`: if two combinations `a F + b G` and
   `c F + d G` with `a d - b c ≠ 0` are differentiable at a point, so are `F` and `G`.
-* `TauCeti.not_differentiableAt_of_add_sub_two_mul_ge`: a linear lower bound on the symmetric
-  second difference `u (x + t • v) + u (x - t • v) - 2 * u x` for small `t > 0` precludes
-  differentiability at `x`.
+* `TauCeti.not_differentiableAt_of_add_sub_two_mul_ge`: a linear lower bound with strictly
+  positive slope on the symmetric second difference `u (x + t • v) + u (x - t • v) - 2 * u x` for
+  small `t > 0` precludes differentiability at `x`.
 * `Asymptotics.IsBigO.hasFDerivWithinAt_zero`, `Asymptotics.IsBigO.hasFDerivAt_zero`: a function
   dominated near a point by a function with zero value and zero derivative there has zero
   derivative there as well.
