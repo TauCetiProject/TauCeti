@@ -131,7 +131,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFr
     (SchwartzMap.toBesselPotentialSpaceCLM_injective s 2)
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
-        hθc hθs s)
+        hθc hθs ENNReal.one_lt_two ENNReal.ofNat_ne_top s)
     _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
       (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
     he he' φ t' χ hχ ℓ ψ t ρ hρ hρψ b
@@ -170,7 +170,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFr
     (SchwartzMap.toBesselPotentialSpaceCLM_injective s 2)
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
-        hθc hθs s)
+        hθc hθs ENNReal.one_lt_two ENNReal.ofNat_ne_top s)
     _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
       (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
     he φ t' χ hχ ℓ he' ψ hψ t ρ hρ hρψ b
@@ -213,7 +213,7 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cuto
     (SchwartzMap.toBesselPotentialSpaceCLM_injective s 2)
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
-        hθc hθs s)
+        hθc hθs ENNReal.one_lt_two ENNReal.ofNat_ne_top s)
     _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
       (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
     he φ t' χ hχ ℓ he' ψ hψ t ρ hρ hρψ b
