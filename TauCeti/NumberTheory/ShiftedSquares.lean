@@ -22,7 +22,7 @@ type cubic surfaces `x₁² + x₂² + x₃² - x₁ x₂ x₃ = k`.
 
 ## Main results
 
-* `Nat.isSquare_intCast_sub_iff`: the integer `k - c` is a square exactly when `k = u² + c` for a
+* `Nat.isSquare_natCast_sub_iff`: the integer `k - c` is a square exactly when `k = u² + c` for a
   natural number `u`.
 * `Nat.card_filter_Iic_isSquare_sub`: the number of `k ≤ N` with `k - c` a square is
   `⌊√(N - c)⌋ + 1` if `c ≤ N` and `0` otherwise; `Nat.card_filter_Icc_one_isSquare_sub` is the
@@ -45,7 +45,7 @@ variable {c k N : ℕ}
 
 /-- For natural numbers `k` and `c`, the integer `k - c` is a square exactly when `k = u² + c` for
 a natural number `u`. -/
-theorem isSquare_intCast_sub_iff : IsSquare ((k : ℤ) - c) ↔ ∃ u : ℕ, u ^ 2 + c = k := by
+theorem isSquare_natCast_sub_iff : IsSquare ((k : ℤ) - c) ↔ ∃ u : ℕ, u ^ 2 + c = k := by
   constructor
   · rintro ⟨z, hz⟩
     refine ⟨z.natAbs, ?_⟩
@@ -61,7 +61,7 @@ theorem isSquare_intCast_sub_iff : IsSquare ((k : ℤ) - c) ↔ ∃ u : ℕ, u ^
 theorem filter_Iic_isSquare_sub (hc : c ≤ N) :
     {k ∈ Iic N | IsSquare (((k : ℕ) : ℤ) - c)} = (Iic (N - c).sqrt).image fun u ↦ u ^ 2 + c := by
   ext k
-  simp only [mem_filter, mem_Iic, mem_image, Nat.le_sqrt', isSquare_intCast_sub_iff]
+  simp only [mem_filter, mem_Iic, mem_image, Nat.le_sqrt', isSquare_natCast_sub_iff]
   constructor
   · rintro ⟨hk, u, rfl⟩
     exact ⟨u, by omega, rfl⟩
@@ -78,7 +78,7 @@ theorem card_filter_Iic_isSquare_sub (c N : ℕ) :
         Nat.pow_left_injective two_ne_zero (Nat.add_right_cancel h), Nat.card_Iic]
   · rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
     intro k hk hsq
-    obtain ⟨u, rfl⟩ := isSquare_intCast_sub_iff.1 hsq
+    obtain ⟨u, rfl⟩ := isSquare_natCast_sub_iff.1 hsq
     exact hc ((Nat.le_add_left c (u ^ 2)).trans (mem_Iic.1 hk))
 
 /-- For `c ≥ 1`, the number of `1 ≤ k ≤ N` with `k - c` a square is `⌊√(N - c)⌋ + 1` if `c ≤ N`,
@@ -90,7 +90,7 @@ theorem card_filter_Icc_one_isSquare_sub (hc : 0 < c) (N : ℕ) :
   ext k
   simp only [mem_filter, mem_Icc, mem_Iic]
   refine ⟨fun ⟨⟨_, h⟩, hs⟩ ↦ ⟨h, hs⟩, fun ⟨h, hs⟩ ↦ ⟨⟨?_, h⟩, hs⟩⟩
-  obtain ⟨u, rfl⟩ := isSquare_intCast_sub_iff.1 hs
+  obtain ⟨u, rfl⟩ := isSquare_natCast_sub_iff.1 hs
   omega
 
 /-- For a real cutoff `K`, the number of natural numbers `k ≤ K` with `k - c` a square is at most
