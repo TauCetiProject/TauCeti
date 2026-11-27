@@ -46,9 +46,10 @@ strong connectivity of the directed graph of its positive off-diagonal entries, 
 
 * `Matrix.leadsTo_iff_reflTransGen_pos`: steps along positive diagonal entries may be allowed in
   the chains without changing `Matrix.LeadsTo`.
-* `Matrix.LeadsTo.mono`: `Matrix.LeadsTo` only depends on which off-diagonal entries are positive;
-  in particular it is unchanged by transposition (with the states swapped), by adding a diagonal
-  matrix and by multiplication by a positive scalar.
+* `Matrix.LeadsTo.mono`: `Matrix.LeadsTo` only depends on which off-diagonal entries are positive.
+* `Matrix.leadsTo_transpose_iff`, `Matrix.leadsTo_add_diagonal_iff`, `Matrix.leadsTo_smul_iff`,
+  `Matrix.leadsTo_one_add_smul_iff`: `Matrix.LeadsTo` is unchanged by transposition (with the
+  states swapped), by adding a diagonal matrix and by multiplication by a positive scalar.
 * `Matrix.LeadsTo.mem_of_mem`: a set of states that no positive off-diagonal entry leaves is closed
   under `Matrix.LeadsTo`.
 * `Matrix.isIrreducible_iff_isIrreducibleGenerator`: on two or more states, an entrywise
@@ -242,11 +243,11 @@ Metzler and every diagonal entry of `B` is at least `-r`. -/
 theorem one_add_inv_smul_nonneg_iff (hr : 0 < r) :
     (∀ i j, 0 ≤ (1 + r⁻¹ • B) i j) ↔ B.IsMetzler ∧ ∀ i, -B i i ≤ r := by
   have hdiag (i : n) : 0 ≤ (1 + r⁻¹ • B) i i ↔ -B i i ≤ r := by
-    rw [Matrix.add_apply, one_apply_eq, Matrix.smul_apply, smul_eq_mul, ← neg_le_iff_add_nonneg',
-      le_inv_mul_iff₀ hr, mul_neg_one, neg_le]
+    simp only [Matrix.add_apply, one_apply_eq, Matrix.smul_apply, smul_eq_mul]
+    rw [← mul_le_mul_iff_of_pos_left hr, mul_add, mul_inv_cancel_left₀ hr.ne']
+    constructor <;> intro h <;> linarith
   have hoff {i j : n} (hij : i ≠ j) : 0 ≤ (1 + r⁻¹ • B) i j ↔ 0 ≤ B i j := by
-    rw [Matrix.add_apply, one_apply_ne hij, zero_add, Matrix.smul_apply, smul_eq_mul,
-      mul_nonneg_iff_of_pos_left (inv_pos.mpr hr)]
+    simp [one_apply_ne hij, mul_nonneg_iff_of_pos_left (inv_pos.mpr hr)]
   refine ⟨fun h ↦ ⟨isMetzler_iff.mpr fun i j hij ↦ (hoff hij).mp (h i j),
     fun i ↦ (hdiag i).mp (h i i)⟩,
     fun ⟨hB, hd⟩ i j ↦ ?_⟩
