@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Evalu
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Morrey
 public import TauCeti.LinearAlgebra.Determinant.Augmentation
 import TauCeti.LinearAlgebra.Complex.Finrank
-import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.VectorBundle.FiniteDimensional
 
 /-!
@@ -38,19 +37,19 @@ theory of operators extended by finitely many constraints
   sections `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval`
   (`TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval_eq_domRestrict`). So `D_p^x` is onto
   exactly when `D_p` is onto and every family of values at the points is taken by a smooth
-  solution of `D ξ = 0` (`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevLIncidence_iff`),
+  solution of `D ξ = 0` (`TauCeti.IsRealCauchyRiemannOperator.sobolevLIncidence_surjective_iff`),
   and it is injective exactly when no nonzero smooth solution vanishes at all the points
-  (`TauCeti.IsRealCauchyRiemannOperator.injective_sobolevLIncidence_iff`). Surjectivity of `D_p^x`
+  (`TauCeti.IsRealCauchyRiemannOperator.sobolevLIncidence_injective_iff`). Surjectivity of `D_p^x`
   is the linearized transversality of the point constraints, which these criteria reduce to the
   values of the smooth solutions of `D ξ = 0` at the points.
-* **Line bundles.** For a line bundle `L` of degree `d = c₁(L)[M] ≥ -1` with
+* **Line bundles.** For a line bundle `L` of degree `d = c₁(L)[M]` with
   `2 (d + 1) ≤ ind D_p`, the index given by the Riemann–Roch theorem on the sphere, the incidence
   operator at `k ≤ d + 1` distinct points is onto
-  (`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevLIncidence_of_le_index`), and its kernel
+  (`TauCeti.IsRealCauchyRiemannOperator.sobolevLIncidence_surjective_of_le_index`), and its kernel
   has real dimension `2 (d + 1 - k)`
-  (`TauCeti.IsRealCauchyRiemannOperator.finrank_ker_sobolevLIncidence_of_le_index`): each point
+  (`TauCeti.IsRealCauchyRiemannOperator.finrank_ker_sobolevLIncidence_eq_of_le_index`): each point
   constraint removes two real dimensions. At exactly `d + 1` distinct points it is bijective
-  (`TauCeti.IsRealCauchyRiemannOperator.bijective_sobolevLIncidence_of_le_index`).
+  (`TauCeti.IsRealCauchyRiemannOperator.sobolevLIncidence_bijective_of_le_index`).
 * **The incidence orientation map.** When `D_p^x` is bijective, the determinant line of `D_p` is
   identified with the determinant line of `Π i, V (x i)`
   (`TauCeti.IsRealCauchyRiemannOperator.sobolevLDetLineEquivPi`), by sending an exterior product
@@ -69,9 +68,9 @@ theory of operators extended by finitely many constraints
 
 * `TauCeti.IsRealCauchyRiemannOperator.index_sobolevLIncidence`:
   `ind D_p^x = ind D_p - 2 n · #ι`.
-* `TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevLIncidence_iff`: regularity of the
+* `TauCeti.IsRealCauchyRiemannOperator.sobolevLIncidence_surjective_iff`: regularity of the
   constrained problem through the evaluation of smooth kernel elements.
-* `TauCeti.IsRealCauchyRiemannOperator.bijective_sobolevLIncidence_of_le_index`: on a line bundle
+* `TauCeti.IsRealCauchyRiemannOperator.sobolevLIncidence_bijective_of_le_index`: on a line bundle
   of degree `d` with `2 (d + 1) ≤ ind D_p`, the incidence operator at `d + 1` distinct points is
   bijective.
 
@@ -127,12 +126,21 @@ def sobolevLIncidence (hc : SobolevSection.HasContinuousRepresentatives A volume
     SobolevSection A volume p 1 →L[ℝ] zeroOneSobolevSections A volume p 0 × Π i, V (x i) :=
   (hD.sobolevL A hDs volume p).prod (ContinuousLinearMap.pi fun i ↦ SobolevSection.evalL hc (x i))
 
+/-- The incidence operator is `D_p` augmented by the point evaluation, as an instance of the
+general constraint theory of `ContinuousLinearMap.prod`. -/
+theorem sobolevLIncidence_def (hc : SobolevSection.HasContinuousRepresentatives A volume p 1)
+    {ι : Type*} (x : ι → M) :
+    sobolevLIncidence A hD hDs hc x =
+      (hD.sobolevL A hDs volume p).prod
+        (ContinuousLinearMap.pi fun i ↦ SobolevSection.evalL hc (x i)) :=
+  (rfl)
+
 @[simp]
 theorem sobolevLIncidence_apply (hc : SobolevSection.HasContinuousRepresentatives A volume p 1)
     {ι : Type*} (x : ι → M) (w : SobolevSection A volume p 1) :
     sobolevLIncidence A hD hDs hc x w =
       (hD.sobolevL A hDs volume p w, fun i ↦ SobolevSection.toSection w (x i)) := by
-  simp [sobolevLIncidence]
+  simp [sobolevLIncidence_def]
 
 /-- The evaluation of a kernel element at the points is the evaluation of its continuous
 representative. -/
@@ -163,31 +171,27 @@ theorem kerSobolevLEval_eq_domRestrict (hp : 1 < p)
 /-- **Regularity of the constrained problem.** The incidence operator is onto exactly when `D_p` is
 onto and every family of values at the points is the family of values of a smooth solution of
 `D ξ = 0`. -/
-theorem surjective_sobolevLIncidence_iff (hp : 1 < p)
+theorem sobolevLIncidence_surjective_iff (hp : 1 < p)
     (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) {ι : Type*} (x : ι → M) :
     Surjective (sobolevLIncidence A hD hDs hc x) ↔
       Surjective (hD.sobolevL A hDs volume p) ∧ Surjective (kerSobolevLEval A hD hDs hp x) := by
-  rw [sobolevLIncidence, ContinuousLinearMap.surjective_prod_iff,
-    kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
-  rfl
+  rw [sobolevLIncidence_def, ContinuousLinearMap.surjective_prod_iff,
+    ← ContinuousLinearMap.coe_coe (ContinuousLinearMap.domRestrict _ _),
+    ContinuousLinearMap.toLinearMap_domRestrict, kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
 
 /-- The incidence operator is injective exactly when no nonzero element of the kernel of `D_p`, a
 smooth solution of `D ξ = 0`, vanishes at all the points. -/
-theorem injective_sobolevLIncidence_iff (hp : 1 < p)
+theorem sobolevLIncidence_injective_iff (hp : 1 < p)
     (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) {ι : Type*} (x : ι → M) :
     Injective (sobolevLIncidence A hD hDs hc x) ↔ Injective (kerSobolevLEval A hD hDs hp x) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
-    exact LinearMap.injective_domRestrict_of_injective_prod h
-  · rw [← ContinuousLinearMap.coe_coe, injective_iff_map_eq_zero]
-    intro w hw
-    have hDw : w ∈ (hD.sobolevL A hDs volume p).ker := by
-      simpa using congrArg Prod.fst hw
-    -- A kernel element vanishing at all the points is zero.
-    have hev : kerSobolevLEval A hD hDs hp x ⟨w, hDw⟩ = 0 := funext fun i ↦ by
-      rw [kerSobolevLEval_apply_eq_toSection]
-      simpa using congrFun (congrArg Prod.snd hw) i
-    exact congrArg Subtype.val (h (hev.trans (map_zero _).symm))
+  -- Both kernels are trivial together, since `ContinuousLinearMap.kerProdEquiv` identifies them.
+  rw [kerSobolevLEval_eq_domRestrict A hD hDs hp hc, sobolevLIncidence_def,
+    ← ContinuousLinearMap.coe_coe (ContinuousLinearMap.prod _ _),
+    ← ContinuousLinearMap.toLinearMap_domRestrict,
+    ← LinearMap.ker_eq_bot (M := SobolevSection A volume p 1),
+    ← LinearMap.ker_eq_bot (M := (hD.sobolevL A hDs volume p).ker),
+    ← Submodule.subsingleton_iff_eq_bot, ← Submodule.subsingleton_iff_eq_bot]
+  exact (ContinuousLinearMap.kerProdEquiv _ _).toEquiv.subsingleton_congr.symm
 
 /-- **The incidence operator is Fredholm.** For `1 < p < ∞` and finitely many points, the
 incidence operator differs from `D_p` by the finite-rank evaluation, so it is Fredholm. -/
@@ -214,7 +218,7 @@ theorem index_sobolevLIncidence (hp : 1 < p) (hp_top : p ≠ ⊤)
     rw [finrank_real_eq_two_mul_finrank_complex]
     push_cast
     ring
-  rw [sobolevLIncidence, ContinuousLinearMap.index_prod, VectorBundle.finrank_pi ℝ F V, hfin]
+  rw [sobolevLIncidence_def, ContinuousLinearMap.index_prod, VectorBundle.finrank_pi ℝ F V, hfin]
 
 end Incidence
 
@@ -245,40 +249,40 @@ include hd in
 Cauchy–Riemann operator on a complex line bundle `L` of degree `d = c₁(L)[M]`, at more than `d`
 distinct points, is injective: a smooth solution of `D ξ = 0` vanishing at more than `d` points is
 zero. -/
-theorem injective_sobolevLIncidence (hp : 1 < p)
+theorem sobolevLIncidence_injective (hp : 1 < p)
     (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) {ι : Type*} {x : ι → M}
     (hx : Injective x) (hlt : d < Nat.card ι) :
     Injective (sobolevLIncidence A hD hDs hc x) :=
-  (injective_sobolevLIncidence_iff A hD hDs hp hc x).2
+  (sobolevLIncidence_injective_iff A hD hDs hp hc x).2
     (kerSobolevLEval_injective A hD hDs hp hx (by rwa [hd]))
 
 include hd in
 /-- **Automatic regularity of point constraints.** On a compact connected Riemann surface, let `D`
 be a smooth real Cauchy–Riemann operator on a complex line bundle `L` of degree
-`d = c₁(L)[M] ≥ -1`, whose realization `W^{1,p}(M, L) → Lᵖ(M, Λ^{0,1} ⊗ L)`, `1 < p < ∞`, has
+`d = c₁(L)[M]`, whose realization `W^{1,p}(M, L) → Lᵖ(M, Λ^{0,1} ⊗ L)`, `1 < p < ∞`, has
 index at least `2 (d + 1)`. Then the incidence operator at at most `d + 1` distinct points is
 onto. -/
-theorem surjective_sobolevLIncidence_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤)
-    (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) (hd₁ : -1 ≤ d)
+theorem sobolevLIncidence_surjective_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hc : SobolevSection.HasContinuousRepresentatives A volume p 1)
     {ι : Type*} [Finite ι] {x : ι → M} (hx : Injective x) (hcard : Nat.card ι ≤ d + 1)
     (hind : 2 * (d + 1) ≤ (hD.sobolevL A hDs volume p).index) :
     Surjective (sobolevLIncidence A hD hDs hc x) :=
-  (surjective_sobolevLIncidence_iff A hD hDs hp hc x).2
-    ⟨sobolevL_surjective_of_le_index A hD hDs hd hp hp_top hd₁ hind,
+  (sobolevLIncidence_surjective_iff A hD hDs hp hc x).2
+    ⟨sobolevL_surjective_of_le_index A hD hDs hd hp hp_top (by omega) hind,
       kerSobolevLEval_surjective_of_le_index A hD hDs hd hp hx hcard hind⟩
 
 include hd in
 /-- **Each point constraint removes two real dimensions.** Under the hypotheses of
-`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevLIncidence_of_le_index`, the kernel of the
+`TauCeti.IsRealCauchyRiemannOperator.sobolevLIncidence_surjective_of_le_index`, the kernel of the
 incidence operator at `k ≤ d + 1` distinct points, the space of smooth solutions of `D ξ = 0`
 vanishing at the points, has real dimension `2 (d + 1 - k)`. -/
-theorem finrank_ker_sobolevLIncidence_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤)
-    (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) (hd₁ : -1 ≤ d)
+theorem finrank_ker_sobolevLIncidence_eq_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hc : SobolevSection.HasContinuousRepresentatives A volume p 1)
     {ι : Type*} [Finite ι] {x : ι → M} (hx : Injective x) (hcard : Nat.card ι ≤ d + 1)
     (hind : 2 * (d + 1) ≤ (hD.sobolevL A hDs volume p).index) :
     (finrank ℝ (sobolevLIncidence A hD hDs hc x).ker : ℤ) = 2 * (d + 1 - Nat.card ι) := by
   have hsurj :=
-    surjective_sobolevLIncidence_of_le_index A hD hDs hd hp hp_top hc hd₁ hx hcard hind
+    sobolevLIncidence_surjective_of_le_index A hD hDs hd hp hp_top hc hx hcard hind
   have := (isFredholm_sobolevLIncidence A hD hDs hp hp_top hc x).finite_ker
   have hindex := index_sobolevLIncidence A hD hDs hp hp_top hc x
   have hle := index_sobolevL_le A hD hDs hd hp
@@ -289,15 +293,15 @@ theorem finrank_ker_sobolevLIncidence_of_le_index (hp : 1 < p) (hp_top : p ≠ �
 
 include hd in
 /-- **The incidence operator at `d + 1` points is an isomorphism.** Under the hypotheses of
-`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevLIncidence_of_le_index`, the incidence
+`TauCeti.IsRealCauchyRiemannOperator.sobolevLIncidence_surjective_of_le_index`, the incidence
 operator at exactly `d + 1` distinct points is bijective. -/
-theorem bijective_sobolevLIncidence_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤)
-    (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) (hd₁ : -1 ≤ d)
+theorem sobolevLIncidence_bijective_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hc : SobolevSection.HasContinuousRepresentatives A volume p 1)
     {ι : Type*} [Finite ι] {x : ι → M} (hx : Injective x) (hcard : Nat.card ι = d + 1)
     (hind : 2 * (d + 1) ≤ (hD.sobolevL A hDs volume p).index) :
     Bijective (sobolevLIncidence A hD hDs hc x) :=
-  ⟨injective_sobolevLIncidence A hD hDs hd hp hc hx (by omega),
-    surjective_sobolevLIncidence_of_le_index A hD hDs hd hp hp_top hc hd₁ hx hcard.le hind⟩
+  ⟨sobolevLIncidence_injective A hD hDs hd hp hc hx (by omega),
+    sobolevLIncidence_surjective_of_le_index A hD hDs hd hp hp_top hc hx hcard.le hind⟩
 
 end LineBundle
 
@@ -332,7 +336,11 @@ def sobolevLDetLineEquivPi (hc : SobolevSection.HasContinuousRepresentatives A v
         SobolevSection A volume p 1 →ₗ[ℝ] zeroOneSobolevSections A volume p 0).detLine ≃ₗ[ℝ]
       TauCeti.detLine ℝ (Π i, V (x i)) :=
   have := VectorBundle.finiteDimensional_pi ℝ F V x
-  LinearMap.detLineEquivOfBijectiveProd _ _ h
+  LinearMap.detLineEquivOfBijectiveProd _
+    (ContinuousLinearMap.pi fun i ↦ SobolevSection.evalL hc (x i) :
+      SobolevSection A volume p 1 →ₗ[ℝ] Π i, V (x i))
+    (by rwa [sobolevLIncidence_def, ← ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.coe_prod] at h)
 
 /-- **The value of the incidence orientation map.** For a family `u` of `dim (ker D_p)` kernel
 elements, the exterior product of `u` tensored with `φ` goes to the exterior product of the values
@@ -358,6 +366,7 @@ theorem coe_sobolevLDetLineEquivPi_tmul (hp : 1 < p)
       φ (exteriorPower.ιMulti ℝ _ e) •
         ExteriorAlgebra.ιMulti ℝ _ (kerSobolevLEval A hD hDs hp x ∘ u) := by
   have := VectorBundle.finiteDimensional_pi ℝ F V x
+  rw [sobolevLIncidence_def, ← ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_prod] at h
   rw [kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
   exact LinearMap.coe_detLineEquivOfBijectiveProd_tmul _ _ h u φ e
 
