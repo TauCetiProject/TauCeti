@@ -7,20 +7,21 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.SphereChart
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
-# Smooth boundary charts of an annulus
+# Boundary charts of an annulus
 
 Let `y` be a point of `ℝⁿ⁺¹ = EuclideanSpace ℝ (Fin (n + 1))` and `0 < r < R`. This file shows
-that the annulus `A = ball y R ∩ (closedBall y r)ᶜ` has smooth boundary in the form that the
+that the annulus `A = ball y R ∩ (closedBall y r)ᶜ` has `C^{1,α}` boundary in the form that the
 `C^{1,β}` estimates up to the boundary take as input
 (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_isBounded` and its Morrey-datum version):
 at every frontier point `x` of `A` there are rigid coordinates `e : ℝⁿ⁺¹ ≃ ℝ × ℝⁿ` with
 `e x = 0` in which, inside a small cylinder, `A` is the region strictly above the graph of a
-smooth compactly supported function `γ : ℝⁿ → ℝ` with `γ 0 = 0` and `α`-Hölder derivative, for
-every `α ≤ 1` (`TauCeti.exists_affineIsometryEquiv_graph_of_mem_frontier_annulus`).
+`C¹` function `γ : ℝⁿ → ℝ` with `γ 0 = 0` and `α`-Hölder derivative, for every `α ≤ 1`
+(`TauCeti.exists_affineIsometryEquiv_graph_of_mem_frontier_annulus`).
 
 The base of every chart is the same space `ℝⁿ`, as those estimates require; the tangent space
 `(ℝ ∙ ν)ᗮ` of the sphere at a point with normal `ν` is identified with `ℝⁿ` by a linear
@@ -157,9 +158,8 @@ local notation "F" => EuclideanSpace ℝ (Fin (n + 1))
 private def orthogonalSpanEquiv (μ : F) (hμ : ‖μ‖ = 1) :
     (ℝ ∙ μ)ᗮ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) :=
   haveI : Fact (Module.finrank ℝ F = n + 1) := ⟨finrank_euclideanSpace_fin⟩
-  ((stdOrthonormalBasis ℝ (ℝ ∙ μ)ᗮ).reindex (finCongr
-    (Submodule.finrank_orthogonal_span_singleton (norm_ne_zero_iff.1 (by rw [hμ]; exact
-      one_ne_zero))))).repr
+  (OrthonormalBasis.fromOrthogonalSpanSingleton n
+    (norm_ne_zero_iff.1 (by rw [hμ]; exact one_ne_zero))).repr
 
 /-- The rigid coordinates at `x` in the direction `μ`: `x` goes to the origin and `-μ` to the
 first axis, `(sphereChart x μ hμ).symm (t, w) = x - t μ + w`, with `w` read in the tangent space
@@ -206,13 +206,6 @@ private theorem norm_sphereChart_symm_sub_sq (x μ : F) (hμ : ‖μ‖ = 1) (s 
     abel
   rw [h, norm_add_sq_real, norm_smul, inner_smul_left, hinner, hμ, Real.norm_eq_abs, hw]
   simp [sq_abs]
-
-/-- The frontier of the annulus `ball y R ∩ (closedBall y r)ᶜ` lies on its two bounding spheres. -/
-theorem frontier_ball_inter_compl_closedBall_subset {X : Type*} [PseudoMetricSpace X] (y : X)
-    (r R : ℝ) : frontier (ball y R ∩ (closedBall y r)ᶜ) ⊆ sphere y R ∪ sphere y r :=
-  (frontier_inter_subset _ _).trans (union_subset_union
-    (inter_subset_left.trans frontier_ball_subset_sphere)
-    (inter_subset_right.trans ((frontier_compl _).subset.trans frontier_closedBall_subset_sphere)))
 
 /-- The conclusion of `exists_affineIsometryEquiv_graph_of_mem_frontier_annulus` at a point `x`
 for a set `A`. -/
@@ -288,9 +281,9 @@ private theorem hasGraphChart_of_mem_sphere_inner {y x : F} {r R : ℝ} (hr : 0 
   nlinarith [abs_nonneg z.fst, norm_nonneg z.snd, sq_abs z.fst, neg_abs_le z.fst,
     le_abs_self z.fst]
 
-/-- **Smooth boundary charts of an annulus.** Let `0 < r < R` and let `x` be a frontier point of
-the annulus `A = ball y R ∩ (closedBall y r)ᶜ` of `ℝⁿ⁺¹`. There are rigid coordinates
-`e : ℝⁿ⁺¹ ≃ ℝ × ℝⁿ` with `e x = 0` and a smooth function `γ : ℝⁿ → ℝ` with `γ 0 = 0` whose
+/-- **`C^{1,α}` boundary charts of an annulus.** Let `0 < r < R` and let `x` be a frontier point
+of the annulus `A = ball y R ∩ (closedBall y r)ᶜ` of `ℝⁿ⁺¹`. There are rigid coordinates
+`e : ℝⁿ⁺¹ ≃ ℝ × ℝⁿ` with `e x = 0` and a `C¹` function `γ : ℝⁿ → ℝ` with `γ 0 = 0` whose
 derivative is `α`-Hölder, `α ≤ 1`, such that inside the normal cylinder of half-height `h₀` and
 radius `r₀` about the origin, `A` is the region strictly above the graph of `γ`. -/
 theorem exists_affineIsometryEquiv_graph_of_mem_frontier_annulus {y x : F} {r R : ℝ} (hr : 0 < r)

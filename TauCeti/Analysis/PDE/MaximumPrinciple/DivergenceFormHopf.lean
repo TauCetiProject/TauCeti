@@ -9,8 +9,8 @@ public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundedDoma
 import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.LpDrift
-import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundedDomain
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Annulus
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 import TauCeti.Analysis.PDE.EnergyForm.SmallDrift
 import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
 import TauCeti.Analysis.PDE.MaximumPrinciple.HopfLemma

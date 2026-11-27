@@ -17,8 +17,9 @@ point contains a closed ball about it of arbitrarily small positive radius
 (`TauCeti.exists_pos_lt_closedBall_subset`).
 
 The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two boundary spheres
-(`TauCeti.frontier_closedBall_sdiff_ball_subset`). A point outside a closed ball containing the
-support of a function lies outside its closed support
+(`TauCeti.frontier_closedBall_sdiff_ball_subset`), and so does that of the open annulus
+`ball y R ∩ (closedBall y r)ᶜ` (`TauCeti.frontier_ball_inter_compl_closedBall_subset`). A point
+outside a closed ball containing the support of a function lies outside its closed support
 (`TauCeti.notMem_tsupport_of_support_subset_closedBall`).
 
 Of pairwise disjoint balls, a point of one of them lying in the union of their shrunk concentric
@@ -57,6 +58,14 @@ theorem frontier_closedBall_sdiff_ball_subset (y : X) (r R : ℝ) :
   · exact inter_subset_left.trans frontier_closedBall_subset_sphere
   · rw [frontier_compl]
     exact inter_subset_right.trans frontier_ball_subset_sphere
+
+/-- The frontier of the open annulus `ball y R ∩ (closedBall y r)ᶜ` lies on its two bounding
+spheres. -/
+theorem frontier_ball_inter_compl_closedBall_subset (y : X) (r R : ℝ) :
+    frontier (ball y R ∩ (closedBall y r)ᶜ) ⊆ sphere y R ∪ sphere y r :=
+  (frontier_inter_subset _ _).trans (union_subset_union
+    (inter_subset_left.trans frontier_ball_subset_sphere)
+    (inter_subset_right.trans ((frontier_compl _).subset.trans frontier_closedBall_subset_sphere)))
 
 /-- A point outside a closed ball containing the support of `f` lies outside its closed
 support. -/
