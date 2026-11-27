@@ -52,6 +52,9 @@ the base, stalk, and function-field algebra structures form a scalar tower.
 * `Scheme.Hom.exists_isFractionRing_functionField_of_isOpenImmersion`: an affine open chart
   `ι : Spec R ⟶ Y` of an integral scheme `Y` embeds `R` into `Y.functionField` as a fraction
   field, compatibly with `Y.fromSpecStalk (genericPoint Y)`.
+* `IsAffineOpen.specMap_germToFunctionField_fromSpec`: for a nonempty affine open `U` of an
+  irreducible scheme `X`, `X.fromSpecStalk (genericPoint X)` factors through `hU.fromSpec` via
+  `X.germToFunctionField U`.
 * `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionRing`: an integral scheme over `Spec k`
   has a nonempty affine open `U` whose sections are a `k`-algebra with fraction field the function
   field, compatibly with the structure morphism.
@@ -443,6 +446,21 @@ theorem exists_isFractionRing_functionField_of_isOpenImmersion
       simp only [RingHom.algebraMap_toAlgebra]; rfl), hSpecα⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.IsAffineOpen
+
+/-- For any nonempty affine open `U` of an irreducible scheme `X`,
+`X.fromSpecStalk (genericPoint X)` factors through `hU.fromSpec` via `X.germToFunctionField U`. -/
+@[reassoc]
+theorem specMap_germToFunctionField_fromSpec {X : Scheme.{u}} [IrreducibleSpace X]
+    {U : X.Opens} (hU : IsAffineOpen U) [Nonempty U] :
+    Spec.map (X.germToFunctionField U) ≫ hU.fromSpec = X.fromSpecStalk (genericPoint X) := by
+  have hxU : genericPoint X ∈ U :=
+    ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
+  rw [← hU.fromSpecStalk_eq_fromSpecStalk hxU, IsAffineOpen.fromSpecStalk,
+    Scheme.germToFunctionField]
+
+end AlgebraicGeometry.IsAffineOpen
 
 namespace TauCeti.AlgebraicGeometry
 

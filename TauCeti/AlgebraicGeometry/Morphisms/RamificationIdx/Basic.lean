@@ -232,32 +232,31 @@ theorem ramificationIdxAt_specMap {R S : Type u} [CommRing R] [CommRing S] [Alge
   let p := PrimeSpectrum.comap φ.hom q
   have : p.asIdeal.IsPrime := p.isPrime; have : q.asIdeal.LiesOver p.asIdeal := ⟨rfl⟩
   let Rp := Localization.AtPrime p.asIdeal; let Sq := Localization.AtPrime q.asIdeal
-  let : Algebra Rp Sq := (Localization.localRingHom p.asIdeal q.asIdeal φ.hom rfl).toAlgebra
+  let fLoc : Rp →+* Sq := Localization.localRingHom p.asIdeal q.asIdeal φ.hom rfl
+  let : Algebra Rp Sq := fLoc.toAlgebra
   have : IsScalarTower R Rp Sq := .of_algebraMap_eq fun r ↦
     (Localization.localRingHom_to_map p.asIdeal q.asIdeal φ.hom rfl r).symm
   have : IsLocalHom (algebraMap Rp Sq) :=
     Localization.isLocalHom_localRingHom p.asIdeal q.asIdeal φ.hom rfl
   let SR := (Spec (.of R)).presheaf.stalk ((Spec.map φ) q)
   let SS := (Spec (.of S)).presheaf.stalk q
-  let ep : CommRingCat.of Rp ≅ SR := (AlgebraicGeometry.Spec.stalkIso (.of R) p).symm
-  let eq : SS ≅ CommRingCat.of Sq := AlgebraicGeometry.Spec.stalkIso (.of S) q
-  let : Algebra Rp SR := ep.hom.hom.toAlgebra
   let : Algebra SR SS := ((Spec.map φ).stalkMap q).hom.toAlgebra
-  let : Algebra SR Sq := (((Spec.map φ).stalkMap q) ≫ eq.hom).hom.toAlgebra
-  have hsq : ep.hom ≫ (Spec.map φ).stalkMap q ≫ eq.hom = CommRingCat.ofHom (algebraMap Rp Sq) :=
-    (Iso.inv_comp_eq ep.symm).mpr ((Iso.comp_inv_eq eq).mp <|
-      (Category.assoc ep.symm.hom _ eq.inv).trans (localRingHom_comp_stalkIso φ q)).symm
-  have : IsScalarTower Rp SR Sq := .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom hsq).symm
-  let algEq : SS ≃ₐ[SR] Sq := AlgEquiv.ofRingEquiv (f := eq.commRingCatIsoToRingEquiv) fun x ↦ by
-    rw [← RingEquiv.coe_toRingHom, Iso.commRingCatIsoToRingEquiv_toRingHom,
-      RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp,
-      RingHom.comp_apply]
-  have : IsLocalHom algEq.toRingHom := ⟨fun a ha ↦ (isUnit_map_iff algEq a).mp ha⟩
-  have hmax : (maximalIdeal SS).map algEq = maximalIdeal Sq := by
-    rw [← maximalIdeal_comap algEq.toRingHom]
-    exact Ideal.map_comap_of_surjective algEq.toRingHom algEq.surjective _
-  rw [ramificationIdxAt_def, ← Ideal.ramificationIdx_map_algEquiv algEq, hmax,
-    Ideal.ramificationIdx_eq_of_surjective (ConcreteCategory.bijective_of_isIso ep.hom).surjective,
+  let ep : CommRingCat.of Rp ≅ SR := (AlgebraicGeometry.Spec.stalkIso (.of R) p).symm
+  let eq : CommRingCat.of Sq ≅ SS := (AlgebraicGeometry.Spec.stalkIso (.of S) q).symm
+  have he : ∀ r : Rp, eq.commRingCatIsoToRingEquiv (algebraMap Rp Sq r) =
+      algebraMap SR SS (ep.commRingCatIsoToRingEquiv r) := fun r ↦ by
+    have hsq : ep.hom ≫ (Spec.map φ).stalkMap q = CommRingCat.ofHom fLoc ≫ eq.hom :=
+      ((Iso.eq_inv_comp (AlgebraicGeometry.Spec.stalkIso (.of R) p)).mpr
+        (Scheme.localRingHom_comp_stalkIso φ q)).symm
+    have heR : (ep.commRingCatIsoToRingEquiv : Rp →+* SR) = ep.hom.hom :=
+      Iso.commRingCatIsoToRingEquiv_toRingHom ep
+    have heS : (eq.commRingCatIsoToRingEquiv : Sq →+* SS) = eq.hom.hom :=
+      Iso.commRingCatIsoToRingEquiv_toRingHom eq
+    rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra,
+      ← RingEquiv.coe_toRingHom, ← RingEquiv.coe_toRingHom, heR, heS,
+      ← CommRingCat.hom_ofHom fLoc, ← RingHom.comp_apply, ← CommRingCat.hom_comp,
+      ← hsq, CommRingCat.hom_comp, RingHom.comp_apply]
+  rw [ramificationIdxAt_def, Ideal.ramificationIdx_maximalIdeal_eq_of_ringEquiv_square _ _ he,
     Ideal.ramificationIdx_maximalIdeal_localization_of_liesOver p.asIdeal q.asIdeal]
 
 /-- **Comparison of `ramificationIdxAt` in a commutative square** with flat left stalk map and

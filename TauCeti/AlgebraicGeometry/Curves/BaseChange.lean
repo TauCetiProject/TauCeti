@@ -44,10 +44,8 @@ theorem IsCurveOver.of_isPullback {k L : Type u} [Field k] [Field L] [Algebra k 
   have hDom : IsDominant gX := TauCeti.isDominant_of_isPullback_spec HX
   let _ : Algebra X.functionField X'.functionField := gX.functionFieldMap.hom.toAlgebra
   let _ : Algebra k X'.functionField :=
-    ((algebraMap L X'.functionField).comp (algebraMap k L)).toAlgebra
-  have : IsScalarTower k L X'.functionField := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k X.functionField X'.functionField := .of_algebraMap_eq fun c ↦
-    (TauCeti.AlgebraicGeometry.functionFieldMap_baseChange_algebraMap HX c).symm
+    TauCeti.AlgebraicGeometry.baseChangeFunctionFieldAlgebra k L X'
+  obtain ⟨_, _⟩ := TauCeti.AlgebraicGeometry.isScalarTower_functionField_of_isPullback HX
   exact isCurveOver_iff.mpr ⟨hInt, hProp,
     (TauCeti.AlgebraicGeometry.isFunctionField_functionField_iff L).mp <|
       (IsCurveOver.isFunctionField (k := k) (X := X)).of_constantCompositum_eq_top_of_linearDisjoint

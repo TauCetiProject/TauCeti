@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalRing.Localization
+import TauCeti.RingTheory.RamificationInertia.Bijective
 
 /-!
 # Ramification index under localization
@@ -20,6 +21,8 @@ This file relates `Ideal.ramificationIdx` at a prime to local rings:
   `(maximalIdeal S).ramificationIdx R`.
 * `Ideal.ramificationIdx_maximalIdeal_localization`,
   `Ideal.ramificationIdx_maximalIdeal_localization_of_liesOver`: localization invariance.
+* `Ideal.ramificationIdx_maximalIdeal_eq_of_ringEquiv_square`: invariance under a commuting square
+  of ring isomorphisms of local rings.
 * `Ideal.ramificationIdx_eq_of_isLocalHom_square`: horizontal invariance in a local-ring square
   with vertical ramification indices `1` (flatness only on `A → B`).
 -/
@@ -115,5 +118,25 @@ theorem ramificationIdx_eq_of_isLocalHom_square {R S A B : Type*} [CommRing R] [
       IsLocalRing.ramificationIdx_maximalIdeal_eq_one_iff.mp hRS]
   rw [hBS, ramificationIdx_tower (R := R) (IsLocalRing.maximalIdeal A)
     (IsLocalRing.maximalIdeal B), hAB, mul_one]
+
+/-- For local rings related by a commuting square of ring isomorphisms, the ramification indices
+of their maximal ideals agree. -/
+theorem ramificationIdx_maximalIdeal_eq_of_ringEquiv_square {R₁ R₂ S₁ S₂ : Type*}
+    [CommRing R₁] [CommRing R₂] [CommRing S₁] [CommRing S₂]
+    [IsLocalRing S₁] [IsLocalRing S₂] [Algebra R₁ S₁] [Algebra R₂ S₂]
+    (eR : R₁ ≃+* R₂) (eS : S₁ ≃+* S₂)
+    (he : ∀ r : R₁, eS (algebraMap R₁ S₁ r) = algebraMap R₂ S₂ (eR r)) :
+    (IsLocalRing.maximalIdeal S₂).ramificationIdx R₂ =
+      (IsLocalRing.maximalIdeal S₁).ramificationIdx R₁ := by
+  let : Algebra R₁ R₂ := eR.toRingHom.toAlgebra
+  let : Algebra R₁ S₂ := (eS.toRingHom.comp (algebraMap R₁ S₁)).toAlgebra
+  have : IsScalarTower R₁ R₂ S₂ := .of_algebraMap_eq fun r ↦ he r
+  let e : S₁ ≃ₐ[R₁] S₂ := AlgEquiv.ofRingEquiv (f := eS) fun _ ↦ rfl
+  have : IsLocalHom e.toRingHom := ⟨fun a ha ↦ (isUnit_map_iff e a).mp ha⟩
+  have hmax : (IsLocalRing.maximalIdeal S₁).map e = IsLocalRing.maximalIdeal S₂ := by
+    rw [← IsLocalRing.maximalIdeal_comap e.toRingHom]
+    exact map_comap_of_surjective _ e.surjective _
+  rw [ramificationIdx_eq_of_surjective (R := R₁) (S := R₂) eR.surjective, ← hmax,
+    ramificationIdx_map_algEquiv e]
 
 end Ideal
