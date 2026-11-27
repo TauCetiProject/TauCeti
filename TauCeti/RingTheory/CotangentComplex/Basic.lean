@@ -25,12 +25,19 @@ along its augmentation. The resulting simplicial `B`-module has terms
 cohomological degrees, represents the cotangent complex in the derived category.
 The terms are free over `B`, with basis the differentials of the variables of
 the corresponding polynomial algebra.
+Evaluation identifies the degree-zero homology with `Ω[B⁄A]`, sending the
+class of the basis vector indexed by `x : B` to `D A B x`.
 
 ## Main declarations
 
 * `Algebra.CotangentComplex.simplicialModel` is the standard simplicial module.
 * `Algebra.CotangentComplex.cochainModel` is its alternating cochain model.
 * `Algebra.CotangentComplex` is the corresponding object of the derived category.
+* `Algebra.CotangentComplex.toKaehler` is evaluation on degree-zero forms.
+* `Algebra.CotangentComplex.toKaehler_hom_simplicialModelBasis_zero` computes the evaluation
+  comparison on degree-zero basis vectors.
+* `Algebra.CotangentComplex.chainHomologyZeroIso` and
+  `Algebra.CotangentComplex.homologyZeroIso` identify degree-zero homology with `Ω[B⁄A]`.
 
 ## References
 
@@ -54,17 +61,37 @@ variable (A B : Type u) [CommRing A] [CommRing B] [Algebra A B]
 abbrev simplicialModel : SimplicialObject (ModuleCat.{u} B) :=
   ((CommAlgCat.polynomialAugmentedResolution A).obj (CommAlgCat.of A B)).kaehlerDifferential
 
+private abbrev polynomialResolution :=
+  (CommAlgCat.polynomialAugmentedResolution A).obj (CommAlgCat.of A B)
+
+private abbrev augmentation (n : ℕ) :=
+  (polynomialResolution A B).hom.app (op (SimplexCategory.mk n))
+
 /-- The differentials of the outer polynomial variables give a basis after extending scalars
 along the augmentation. -/
 def simplicialModelBasis (n : ℕ) :
     Basis (((CommAlgCat.polynomialComonad A).resolutionStage n).obj (CommAlgCat.of A B)) B
-      ((simplicialModel A B).obj (op (SimplexCategory.mk n))) := by
-  simp only [simplicialModel, SimplicialObject.Augmented.kaehlerDifferential, Functor.comp_obj]
-  let ε := ((CommAlgCat.polynomialAugmentedResolution A).obj (CommAlgCat.of A B)).hom.app
-    (op (SimplexCategory.mk n))
-  letI : Algebra (MvPolynomial (((CommAlgCat.polynomialComonad A).resolutionStage n).obj
-      (CommAlgCat.of A B)) A) B := ε.hom.toAlgebra
-  exact (KaehlerDifferential.mvPolynomialBasis A _).baseChange B
+      ((simplicialModel A B).obj (op (SimplexCategory.mk n))) :=
+  let σ := ((CommAlgCat.polynomialComonad A).resolutionStage n).obj (CommAlgCat.of A B)
+  letI : Algebra (MvPolynomial σ A) B := (augmentation A B n).hom.toAlgebra
+  ((mvPolynomialBasis A σ).baseChange B : Basis σ B (B ⊗[MvPolynomial σ A] Ω[MvPolynomial σ A⁄A]))
+
+/-- The basis vector indexed by `x` is the differential of the corresponding variable, tensored
+with `1`. -/
+@[simp] lemma simplicialModelBasis_apply (n : ℕ)
+    (x : ((CommAlgCat.polynomialComonad A).resolutionStage n).obj (CommAlgCat.of A B)) :
+    let ε := ((CommAlgCat.polynomialAugmentedResolution A).obj (CommAlgCat.of A B)).hom.app
+      (op (SimplexCategory.mk n))
+    let σ := ((CommAlgCat.polynomialComonad A).resolutionStage n).obj (CommAlgCat.of A B)
+    letI : Algebra (MvPolynomial σ A) B := ε.hom.toAlgebra
+    let basis : Basis σ B (B ⊗[MvPolynomial σ A] Ω[MvPolynomial σ A⁄A]) :=
+      simplicialModelBasis A B n
+    let dx : B ⊗[MvPolynomial σ A] Ω[MvPolynomial σ A⁄A] := 1 ⊗ₜ D A _ (MvPolynomial.X x)
+    basis x = dx := by
+  let σ := ((CommAlgCat.polynomialComonad A).resolutionStage n).obj (CommAlgCat.of A B)
+  let : Algebra (MvPolynomial σ A) B := (augmentation A B n).hom.toAlgebra
+  exact (Basis.baseChange_apply B (mvPolynomialBasis A σ) x).trans
+    (congrArg (fun y ↦ (1 : B) ⊗ₜ[MvPolynomial σ A] y) (mvPolynomialBasis_apply A σ x))
 
 /-- The alternating face complex of the standard simplicial module. -/
 abbrev chainModel : ChainComplex (ModuleCat.{u} B) ℕ :=
@@ -98,28 +125,31 @@ def cochainModelXIso (n : ℕ) :
 
 section HomologyZero
 
-private abbrev polynomialResolution :=
-  (CommAlgCat.polynomialAugmentedResolution A).obj (CommAlgCat.of A B)
-
-private abbrev augmentation (n : ℕ) :=
-  (polynomialResolution A B).hom.app (op (SimplexCategory.mk n))
-
 private abbrev augmentationZero : MvPolynomial B A →ₐ[A] B :=
   (augmentation A B 0).hom
 
 private abbrev augmentationOne : MvPolynomial (MvPolynomial B A) A →ₐ[A] B :=
   (augmentation A B 1).hom
 
+private lemma augmentationZero_isScalarTower :
+    letI : Algebra (MvPolynomial B A) B := (augmentationZero A B).toAlgebra
+    IsScalarTower A (MvPolynomial B A) B := by
+  let : Algebra (MvPolynomial B A) B := (augmentationZero A B).toAlgebra
+  exact .of_algebraMap_eq' (augmentationZero A B).comp_algebraMap.symm
+
 /-- The first alternating differential sends a generator indexed by a polynomial `x` to the
 difference between its differential and the differential of the variable indexed by its value. -/
-private lemma chainModel_d_one_zero_tmul (b : B) (x : MvPolynomial B A) :
-    letI := (augmentationZero A B).toAlgebra
-    letI := (augmentationOne A B).toAlgebra
+lemma chainModel_d_one_zero_tmul_D_X (b : B) (x : MvPolynomial B A) :
+    let P := (CommAlgCat.polynomialAugmentedResolution A).obj (CommAlgCat.of A B)
+    let ε₀ : MvPolynomial B A →ₐ[A] B := (P.hom.app (op (SimplexCategory.mk 0))).hom
+    letI := ε₀.toAlgebra
+    letI : Algebra (MvPolynomial (MvPolynomial B A) A) B :=
+      (P.hom.app (op (SimplexCategory.mk 1))).hom.toAlgebra
     let dx : B ⊗[MvPolynomial (MvPolynomial B A) A] Ω[MvPolynomial (MvPolynomial B A) A⁄A] :=
       b ⊗ₜ D A _ (MvPolynomial.X x)
     ((chainModel A B).d 1 0).hom dx =
       b ⊗ₜ[MvPolynomial B A] D A _ x -
-        b ⊗ₜ[MvPolynomial B A] D A _ (MvPolynomial.X (augmentationZero A B x)) := by
+        b ⊗ₜ[MvPolynomial B A] D A _ (MvPolynomial.X (ε₀ x)) := by
   let d₀ : (chainModel A B).X 1 ⟶ (chainModel A B).X 0 := (simplicialModel A B).δ (0 : Fin 2)
   let d₁ : (chainModel A B).X 1 ⟶ (chainModel A B).X 0 := (simplicialModel A B).δ (1 : Fin 2)
   have hd : (chainModel A B).d 1 0 = d₀ - d₁ := by
@@ -128,19 +158,14 @@ private lemma chainModel_d_one_zero_tmul (b : B) (x : MvPolynomial B A) :
   have hd' : ((chainModel A B).d 1 0).hom = d₀.hom - d₁.hom :=
     (congrArg ModuleCat.Hom.hom hd).trans (ModuleCat.hom_sub _ _)
   refine (LinearMap.congr_fun hd' _).trans ?_
-  -- Interpret the two simplicial operators as maps of polynomial algebras over the augmentation.
-  change CommAlgCat.kaehlerDifferentialOverMap
-      ((Over.lift (polynomialResolution A B).left (polynomialResolution A B).hom).map
-        (SimplexCategory.δ (0 : Fin 2)).op) _ -
-    CommAlgCat.kaehlerDifferentialOverMap
-      ((Over.lift (polynomialResolution A B).left (polynomialResolution A B).hom).map
-        (SimplexCategory.δ (1 : Fin 2)).op) _ = _
-  let F := Over.lift (polynomialResolution A B).left (polynomialResolution A B).hom
+  dsimp only [d₀, d₁, LinearMap.sub_apply, SimplicialObject.δ, simplicialModel]
   refine (congrArg₂ (· - ·)
-    (CommAlgCat.kaehlerDifferentialOverMap_tmul_D (F.map (SimplexCategory.δ (0 : Fin 2)).op)
-      b (MvPolynomial.X x))
-    (CommAlgCat.kaehlerDifferentialOverMap_tmul_D (F.map (SimplexCategory.δ (1 : Fin 2)).op)
-      b (MvPolynomial.X x))).trans ?_
+    ((polynomialResolution A B).kaehlerDifferential_map_tmul_D
+      (SimplexCategory.δ (0 : Fin 2)).op b (MvPolynomial.X x))
+    ((polynomialResolution A B).kaehlerDifferential_map_tmul_D
+      (SimplexCategory.δ (1 : Fin 2)).op b (MvPolynomial.X x))).trans ?_
+  -- The augmented resolution's left projection is the polynomial simplicial resolution,
+  -- so its algebra maps at the two simplex operators are the corresponding faces below.
   have h₀ : (((CommAlgCat.polynomialSimplicialResolution A).obj (CommAlgCat.of A B)).δ
       (0 : Fin 2)).hom (MvPolynomial.X x) = x := by
     exact (DFunLike.congr_fun
@@ -157,64 +182,45 @@ private lemma chainModel_d_one_zero_tmul (b : B) (x : MvPolynomial B A) :
     b ⊗ₜ D A _ y
   exact congrArg₂ (· - ·) (congrArg tensorD h₀) (congrArg tensorD h₁)
 
-private lemma augmentationZero_X (x : B) : augmentationZero A B (MvPolynomial.X x) = x :=
-  (DFunLike.congr_fun
-    (CommAlgCat.polynomialAugmentedResolution_hom_app_zero_hom A (CommAlgCat.of A B)) _).trans
-      (MvPolynomial.aeval_X (R := A) (_root_.id : B → B) x)
-
-private lemma augmentationZero_surjective : Function.Surjective (augmentationZero A B) :=
-  fun x ↦ ⟨MvPolynomial.X x, augmentationZero_X A B x⟩
-
 /-- The evaluation augmentation induces a map from degree zero to the differential module
 of the target algebra. -/
-def toKaehler : (chainModel A B).X 0 ⟶ ModuleCat.of B Ω[B⁄A] := by
+def toKaehler : (chainModel A B).X 0 ⟶ ModuleCat.of B Ω[B⁄A] :=
   letI : Algebra (MvPolynomial B A) B := (augmentationZero A B).toAlgebra
-  haveI : IsScalarTower A (MvPolynomial B A) B :=
-    .of_algebraMap_eq' (augmentationZero A B).comp_algebraMap.symm
-  let f : B ⊗[MvPolynomial B A] Ω[MvPolynomial B A⁄A] →ₗ[B] Ω[B⁄A] :=
-    mapBaseChange A (MvPolynomial B A) B
-  let g : ModuleCat.of B (B ⊗[MvPolynomial B A] Ω[MvPolynomial B A⁄A]) ⟶
-      ModuleCat.of B Ω[B⁄A] := ModuleCat.ofHom f
-  exact g
+  haveI := augmentationZero_isScalarTower A B
+  (ModuleCat.ofHom (mapBaseChange A (MvPolynomial B A) B) :
+    ModuleCat.of B (B ⊗[MvPolynomial B A] Ω[MvPolynomial B A⁄A]) ⟶ ModuleCat.of B Ω[B⁄A])
 
 /-- The map on degree-zero forms applies the augmentation to the element being differentiated. -/
-private lemma toKaehler_tmul_D (b : B) (x : MvPolynomial B A) :
-    letI := (augmentationZero A B).toAlgebra
+@[simp] lemma toKaehler_tmul_D (b : B) (x : MvPolynomial B A) :
+    let ε : MvPolynomial B A →ₐ[A] B :=
+      (((CommAlgCat.polynomialAugmentedResolution A).obj (CommAlgCat.of A B)).hom.app
+        (op (SimplexCategory.mk 0))).hom
+    letI := ε.toAlgebra
+    let evaluate : (B ⊗[MvPolynomial B A] Ω[MvPolynomial B A⁄A]) →ₗ[B] Ω[B⁄A] :=
+      (toKaehler A B).hom
     let dx : B ⊗[MvPolynomial B A] Ω[MvPolynomial B A⁄A] := b ⊗ₜ D A _ x
-    (toKaehler A B).hom dx = b • D A B (augmentationZero A B x) := by
+    evaluate dx = b • D A B (ε x) := by
   let : Algebra (MvPolynomial B A) B := (augmentationZero A B).toAlgebra
-  have : IsScalarTower A (MvPolynomial B A) B :=
-    .of_algebraMap_eq' (augmentationZero A B).comp_algebraMap.symm
+  have := augmentationZero_isScalarTower A B
   exact (mapBaseChange_tmul A (MvPolynomial B A) B b (D A _ x)).trans
     (congrArg (b • ·) (map_D A A (MvPolynomial B A) B x))
 
-private lemma toKaehler_surjective : Function.Surjective (toKaehler A B).hom := by
+/-- Evaluation surjects onto the differential module of the target algebra. -/
+lemma toKaehler_surjective : Function.Surjective (toKaehler A B).hom := by
   let : Algebra (MvPolynomial B A) B := (augmentationZero A B).toAlgebra
-  have : IsScalarTower A (MvPolynomial B A) B :=
-    .of_algebraMap_eq' (augmentationZero A B).comp_algebraMap.symm
-  exact mapBaseChange_surjective A (MvPolynomial B A) B (augmentationZero_surjective A B)
+  have := augmentationZero_isScalarTower A B
+  exact mapBaseChange_surjective A (MvPolynomial B A) B
+    (CommAlgCat.polynomialAugmentedResolution_hom_app_zero_hom_surjective A (CommAlgCat.of A B))
 
 /-- The degree-zero comparison sends the basis vector indexed by `x` to the universal
 differential of `x`. -/
-lemma toKaehler_hom_basis_zero (x : B) :
+@[simp↓]
+lemma toKaehler_hom_simplicialModelBasis_zero (x : B) :
     (toKaehler A B).hom (simplicialModelBasis A B 0 x) = D A B x := by
-  let : Algebra (MvPolynomial B A) B := (augmentationZero A B).toAlgebra
-  let dx : B ⊗[MvPolynomial B A] Ω[MvPolynomial B A⁄A] := 1 ⊗ₜ D A _ (MvPolynomial.X x)
-  have h : simplicialModelBasis A B 0 x = dx :=
-    (Basis.baseChange_apply B (mvPolynomialBasis A B) x).trans
-      (congrArg (fun y ↦ (1 : B) ⊗ₜ[MvPolynomial B A] y) (mvPolynomialBasis_apply A B x))
-  exact (congrArg (toKaehler A B).hom h).trans <|
-    (toKaehler_tmul_D A B 1 (MvPolynomial.X x)).trans (by rw [augmentationZero_X, one_smul])
-
-private lemma simplicialModelBasis_one_apply (x : MvPolynomial B A) :
-    letI := (augmentationOne A B).toAlgebra
-    let dx : B ⊗[MvPolynomial (MvPolynomial B A) A] Ω[MvPolynomial (MvPolynomial B A) A⁄A] :=
-      1 ⊗ₜ D A _ (MvPolynomial.X x)
-    simplicialModelBasis A B 1 x = dx := by
-  let : Algebra (MvPolynomial (MvPolynomial B A) A) B := (augmentationOne A B).toAlgebra
-  exact (Basis.baseChange_apply B (mvPolynomialBasis A (MvPolynomial B A)) x).trans
-    (congrArg (fun y ↦ (1 : B) ⊗ₜ[MvPolynomial (MvPolynomial B A) A] y)
-      (mvPolynomialBasis_apply A (MvPolynomial B A) x))
+  refine (congrArg (toKaehler A B).hom (simplicialModelBasis_apply A B 0 x)).trans <|
+    (toKaehler_tmul_D A B 1 (MvPolynomial.X x)).trans ?_
+  exact (one_smul B _).trans <| congrArg (D A B)
+    (CommAlgCat.polynomialAugmentedResolution_hom_app_zero_hom_X A (CommAlgCat.of A B) x)
 
 /-- The degree-zero comparison kills the first differential of the cotangent complex. -/
 @[reassoc]
@@ -226,15 +232,17 @@ lemma d_one_zero_comp_toKaehler : (chainModel A B).d 1 0 ≫ toKaehler A B = 0 :
   let d := ((chainModel A B).d 1 0).hom
   let g := (toKaehler A B).hom
   let dx (y : MvPolynomial B A) : B ⊗[MvPolynomial B A] Ω[MvPolynomial B A⁄A] := 1 ⊗ₜ D A _ y
-  have h := (congrArg d (simplicialModelBasis_one_apply A B x)).trans
-    (chainModel_d_one_zero_tmul A B 1 x)
+  have h := (congrArg d (simplicialModelBasis_apply A B 1 x)).trans
+    (chainModel_d_one_zero_tmul_D_X A B 1 x)
   calc
     _ = g (dx x - dx (MvPolynomial.X (augmentationZero A B x))) := congrArg g h
     _ = g (dx x) - g (dx (MvPolynomial.X (augmentationZero A B x))) := map_sub _ _ _
     _ = 0 := by
-      exact (congrArg₂ (· - ·) (toKaehler_tmul_D A B 1 x)
-        (toKaehler_tmul_D A B 1 (MvPolynomial.X (augmentationZero A B x)))).trans
-          (by rw [augmentationZero_X, sub_self])
+      refine (congrArg₂ (· - ·) (toKaehler_tmul_D A B 1 x)
+        (toKaehler_tmul_D A B 1 (MvPolynomial.X (augmentationZero A B x)))).trans ?_
+      exact sub_eq_zero.mpr <| (congrArg (fun y ↦ (1 : B) • D A B y)
+        (CommAlgCat.polynomialAugmentedResolution_hom_app_zero_hom_X A (CommAlgCat.of A B)
+          (augmentationZero A B x))).symm
 
 /-- Every vector killed by the degree-zero comparison comes from the first differential. -/
 private lemma mem_range_d_one_zero_of_toKaehler_eq_zero (z : (chainModel A B).X 0)
@@ -242,21 +250,22 @@ private lemma mem_range_d_one_zero_of_toKaehler_eq_zero (z : (chainModel A B).X 
     z ∈ Set.range ((chainModel A B).d 1 0).hom := by
   let : Algebra (MvPolynomial B A) B := (augmentationZero A B).toAlgebra
   let : Algebra (MvPolynomial (MvPolynomial B A) A) B := (augmentationOne A B).toAlgebra
-  have : IsScalarTower A (MvPolynomial B A) B :=
-    .of_algebraMap_eq' (augmentationZero A B).comp_algebraMap.symm
+  have := augmentationZero_isScalarTower A B
   have hexact := exact_kerCotangentToTensor_mapBaseChange A (MvPolynomial B A) B
-    (augmentationZero_surjective A B)
+    (CommAlgCat.polynomialAugmentedResolution_hom_app_zero_hom_surjective A (CommAlgCat.of A B))
   obtain ⟨z', hz'⟩ := (hexact z).mp hz
   obtain ⟨x, rfl⟩ := Ideal.toCotangent_surjective _ z'
   let dx (y : MvPolynomial B A) :
       B ⊗[MvPolynomial (MvPolynomial B A) A] Ω[MvPolynomial (MvPolynomial B A) A⁄A] :=
     1 ⊗ₜ D A _ (MvPolynomial.X y)
+  -- Subtract the generator indexed by zero so both faces contributing the variable `X 0`
+  -- cancel when `x` lies in the augmentation kernel.
   refine ⟨dx x.val - dx 0, ?_⟩
   have hx : augmentationZero A B x.val = 0 := RingHom.mem_ker.mp x.property
   let d := ((chainModel A B).d 1 0).hom
   have h := (map_sub d (dx x.val) (dx 0)).trans
-    (congrArg₂ (· - ·) (chainModel_d_one_zero_tmul A B 1 x.val)
-      (chainModel_d_one_zero_tmul A B 1 0))
+    (congrArg₂ (· - ·) (chainModel_d_one_zero_tmul_D_X A B 1 x.val)
+      (chainModel_d_one_zero_tmul_D_X A B 1 0))
   refine h.trans ?_
   let ω (y : MvPolynomial B A) : B ⊗[MvPolynomial B A] Ω[MvPolynomial B A⁄A] := 1 ⊗ₜ D A _ y
   -- Work in the concrete tensor product so the additive identities match the displayed tensors.
@@ -267,7 +276,8 @@ private lemma mem_range_d_one_zero_of_toKaehler_eq_zero (z : (chainModel A B).X 
     (kerCotangentToTensor_toCotangent A (MvPolynomial B A) B x).symm.trans hz'
   simpa [ω, hx, sub_neg_eq_add] using hω
 
-private lemma toKaehler_exact :
+/-- The kernel of the degree-zero comparison is the image of the first differential. -/
+lemma toKaehler_exact :
     Function.Exact ((chainModel A B).d 1 0).hom (toKaehler A B).hom := by
   intro z
   refine ⟨mem_range_d_one_zero_of_toKaehler_eq_zero A B z, ?_⟩
@@ -296,7 +306,9 @@ lemma homologyπ_comp_chainHomologyZeroIso_hom :
   have h : (chainHomologyZeroData A B).cyclesIso.hom = ((chainModel A B).sc' 1 0 0).iCycles :=
     (Category.comp_id _).symm.trans (chainHomologyZeroData A B).cyclesIso_hom_comp_i
   rw [h, ← Category.assoc, HomologicalComplex.cyclesIsoSc'_hom_iCycles]
-  rfl
+  dsimp only [chainHomologyZeroData]
+  rw [ShortComplex.LeftHomologyData.ofIsColimitCokernelCofork_π,
+    Limits.CokernelCofork.π_ofπ]
 
 end HomologyZero
 
@@ -324,5 +336,30 @@ def homologyZeroIso :
   (DerivedCategory.homologyFunctorFactors (ModuleCat.{u} B) 0).app (cochainModel A B) ≪≫
     (chainModel A B).extendHomologyIso ComplexShape.embeddingDownNat (j := 0) (by simp) ≪≫
     chainHomologyZeroIso A B
+
+/-- Pulling the derived homology comparison back to the cycles of the cochain model gives
+evaluation on the degree-zero terms. -/
+@[reassoc]
+lemma homologyπ_comp_homologyZeroIso_hom :
+    (cochainModel A B).homologyπ 0 ≫
+        ((DerivedCategory.homologyFunctorFactors (ModuleCat.{u} B) 0).app (cochainModel A B)).inv ≫
+        eqToHom (congrArg (DerivedCategory.homologyFunctor (ModuleCat.{u} B) 0).obj
+          (eq_Q_obj_cochainModel A B).symm) ≫
+        (homologyZeroIso A B).hom =
+      (cochainModel A B).iCycles 0 ≫ (cochainModelXIso A B 0).hom ≫ toKaehler A B := by
+  let α := (DerivedCategory.homologyFunctorFactors (ModuleCat.{u} B) 0).app (cochainModel A B)
+  let β := (chainModel A B).extendHomologyIso ComplexShape.embeddingDownNat
+    (j := 0) (j' := 0) (by simp)
+  -- The transport names the definitional equality between the derived object and its model.
+  -- Reduce it to the identity before cancelling the two copies of the localization isomorphism.
+  change (cochainModel A B).homologyπ 0 ≫ α.inv ≫ 𝟙 _ ≫
+    (α ≪≫ β ≪≫ chainHomologyZeroIso A B).hom = _
+  simp only [Category.id_comp, Iso.trans_hom, Iso.inv_hom_id_assoc]
+  let e := ComplexShape.embeddingDownNat
+  have h : e.f 0 = 0 := ComplexShape.embeddingDownNat_f 0
+  let γ := (chainModel A B).extendCyclesIso e h
+  exact ((chainModel A B).homologyπ_extendHomologyIso_hom_assoc e h _).trans <|
+    (congrArg (γ.hom ≫ ·) (homologyπ_comp_chainHomologyZeroIso_hom A B)).trans <|
+      (chainModel A B).extendCyclesIso_hom_iCycles_assoc e h (toKaehler A B)
 
 end Algebra.CotangentComplex

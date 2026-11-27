@@ -123,4 +123,18 @@ abbrev kaehlerDifferential (P : SimplicialObject.Augmented (CommAlgCat.{v} A)) :
     SimplicialObject (ModuleCat.{v} P.right) :=
   Over.lift P.left P.hom ⋙ P.right.kaehlerDifferentialOver
 
+/-- A simplicial operator sends a tensor of a differential to the tensor of the differential
+of its image under the corresponding algebra map. -/
+lemma kaehlerDifferential_map_tmul_D
+    (P : SimplicialObject.Augmented (CommAlgCat.{v} A)) {i j : SimplexCategoryᵒᵖ}
+    (f : i ⟶ j) (b : P.right) (x : P.left.obj i) :
+    letI : Algebra (P.left.obj i) P.right := (P.hom.app i).hom.toAlgebra
+    letI : Algebra (P.left.obj j) P.right := (P.hom.app j).hom.toAlgebra
+    let dx : P.right ⊗[P.left.obj i] Ω[P.left.obj i⁄A] := b ⊗ₜ D A _ x
+    let dy : P.right ⊗[P.left.obj j] Ω[P.left.obj j⁄A] := b ⊗ₜ D A _ (P.left.map f x)
+    (P.kaehlerDifferential.map f).hom dx = dy := by
+  simp only [kaehlerDifferential, Functor.comp_map, CommAlgCat.kaehlerDifferentialOver_map_hom]
+  -- The lift uses the augmentation on objects and leaves the underlying algebra map unchanged.
+  exact CommAlgCat.kaehlerDifferentialOverMap_tmul_D ((Over.lift P.left P.hom).map f) b x
+
 end CategoryTheory.SimplicialObject.Augmented

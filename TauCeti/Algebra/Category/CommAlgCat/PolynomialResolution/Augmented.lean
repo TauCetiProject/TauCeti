@@ -69,6 +69,20 @@ lemma polynomialAugmentedResolution_hom_app_zero_hom
     ((polynomialComonad R).simplicialResolutionAugmentation_app_zero B)).trans
       (polynomialComonad_ε_app_hom R B)
 
+/-- The degree-zero augmentation sends the variable indexed by `b` to `b`. -/
+lemma polynomialAugmentedResolution_hom_app_zero_hom_X
+    (B : CommAlgCat.{max u v} R) (b : B) :
+    (((polynomialAugmentedResolution R).obj B).hom.app
+      (op (SimplexCategory.mk 0))).hom (MvPolynomial.X b) = b :=
+  (DFunLike.congr_fun (polynomialAugmentedResolution_hom_app_zero_hom R B) _).trans
+    (MvPolynomial.aeval_X (id : B → B) b)
+
+/-- The degree-zero augmentation is surjective. -/
+lemma polynomialAugmentedResolution_hom_app_zero_hom_surjective (B : CommAlgCat.{max u v} R) :
+    Function.Surjective (((polynomialAugmentedResolution R).obj B).hom.app
+      (op (SimplexCategory.mk 0))).hom :=
+  fun b ↦ ⟨MvPolynomial.X b, polynomialAugmentedResolution_hom_app_zero_hom_X R B b⟩
+
 /-- The map on the simplicial algebra is the usual polynomial resolution map. -/
 lemma polynomialAugmentedResolution_map_left {B B' : CommAlgCat.{max u v} R}
     (f : B ⟶ B') :
