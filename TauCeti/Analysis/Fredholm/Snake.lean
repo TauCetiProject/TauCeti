@@ -36,10 +36,8 @@ completeness nor norms: it holds for Fredholm maps between topological vector sp
 Some exactness hypotheses are not needed in each two-out-of-three statement and are omitted: for
 example, the middle map is Fredholm without injectivity of `f₁` or surjectivity of `g₂`.
 
-We also record the specialization to upper-triangular block operators (`upperTriangularBlock A B D`)
-— including two-out-of-three Fredholmness on Hausdorff TVSs over a complete
-`NontriviallyNormedField` via shear factorization — and the composition snake diagram
-(`compSnakeMiddle T S`).
+We also record the specialization of index additivity to upper-triangular block operators
+(`upperTriangularBlock A B D`) and the composition snake diagram (`compSnakeMiddle T S`).
 
 ## Main declarations
 
@@ -50,9 +48,10 @@ We also record the specialization to upper-triangular block operators (`upperTri
   `ContinuousLinearMap.IsFredholm.index_eq_add_of_exact_of_left_middle`, and
   `ContinuousLinearMap.IsFredholm.index_eq_add_of_exact_of_middle_right`: the index is additive
   along a map of short exact sequences.
-* `ContinuousLinearMap.index_upperTriangularBlock` and companions, plus
-  `ContinuousLinearMap.IsFredholm.upperTriangularBlock`, `of_upperTriangularBlock_right`, and
-  `of_upperTriangularBlock_left`: index additivity and two-out-of-three for upper-triangular blocks.
+* `ContinuousLinearMap.index_upperTriangularBlock`,
+  `ContinuousLinearMap.index_upperTriangularBlock_of_left`, and
+  `ContinuousLinearMap.index_upperTriangularBlock_of_right`: index additivity for upper-triangular
+  blocks.
 * `ContinuousLinearMap.isFredholm_compSnakeMiddle_iff`: `(compSnakeMiddle T S).IsFredholm ↔
   (S ∘L T).IsFredholm`.
 
@@ -249,52 +248,6 @@ theorem index_upperTriangularBlock_of_right
     (A.upperTriangularBlock_comp_inl B D).symm (A.snd_comp_upperTriangularBlock B D)
 
 end FredholmBlockIndex
-
-section TVSBlock
-
-variable {E₁ E₂ F₁ F₂ : Type*}
-  [TopologicalSpace E₁] [AddCommGroup E₁] [Module 𝕜 E₁]
-  [TopologicalSpace E₂] [AddCommGroup E₂] [Module 𝕜 E₂]
-  [TopologicalSpace F₁] [AddCommGroup F₁] [Module 𝕜 F₁] [IsTopologicalAddGroup F₁]
-  [TopologicalSpace F₂] [AddCommGroup F₂] [Module 𝕜 F₂]
-  [CompleteSpace 𝕜]
-  [IsTopologicalAddGroup E₁] [ContinuousSMul 𝕜 E₁] [T2Space E₁]
-  [IsTopologicalAddGroup E₂] [ContinuousSMul 𝕜 E₂] [T2Space E₂]
-  [ContinuousSMul 𝕜 F₁] [T2Space F₁]
-  [IsTopologicalAddGroup F₂] [ContinuousSMul 𝕜 F₂] [T2Space F₂]
-
-/-- Between Hausdorff topological vector spaces over a complete `NontriviallyNormedField`, an
-upper-triangular block operator with Fredholm diagonal blocks `A` and `D` is Fredholm for any
-continuous off-diagonal block `B`. -/
-theorem IsFredholm.upperTriangularBlock {A : E₁ →L[𝕜] F₁} (hA : A.IsFredholm) (B : E₂ →L[𝕜] F₁)
-    {D : E₂ →L[𝕜] F₂} (hD : D.IsFredholm) :
-    (ContinuousLinearMap.upperTriangularBlock A B D).IsFredholm := by
-  rw [A.upperTriangularBlock_eq_prodMap_comp_shear_comp_prodMap B D]
-  exact (IsFredholm.id.prodMap hD).comp ((hA.prodMap .id).equiv_comp B.upperTriangularBlockShear)
-
-/-- Two-out-of-three for upper-triangular blocks (bottom-right block): if
-`upperTriangularBlock A B D` and `A` are Fredholm between Hausdorff topological vector spaces over
-a complete `NontriviallyNormedField`, then `D` is Fredholm. -/
-theorem IsFredholm.of_upperTriangularBlock_right
-    {A : E₁ →L[𝕜] F₁} {B : E₂ →L[𝕜] F₁} {D : E₂ →L[𝕜] F₂}
-    (hM : (ContinuousLinearMap.upperTriangularBlock A B D).IsFredholm) (hA : A.IsFredholm) :
-    D.IsFredholm := by
-  rw [A.upperTriangularBlock_eq_prodMap_comp_shear_comp_prodMap B D] at hM
-  exact (((((hA.prodMap .id).equiv_comp B.upperTriangularBlockShear).comp_iff_left).mp
-    hM)).of_prodMap_right
-
-/-- Two-out-of-three for upper-triangular blocks (top-left block): if `upperTriangularBlock A B D`
-and `D` are Fredholm between Hausdorff topological vector spaces over a complete
-`NontriviallyNormedField`, then `A` is Fredholm. -/
-theorem IsFredholm.of_upperTriangularBlock_left
-    {A : E₁ →L[𝕜] F₁} {B : E₂ →L[𝕜] F₁} {D : E₂ →L[𝕜] F₂}
-    (hM : (ContinuousLinearMap.upperTriangularBlock A B D).IsFredholm) (hD : D.IsFredholm) :
-    A.IsFredholm := by
-  rw [A.upperTriangularBlock_eq_prodMap_comp_shear_comp_prodMap B D, ← comp_assoc] at hM
-  exact (((((IsFredholm.id.prodMap hD).comp_equiv B.upperTriangularBlockShear).comp_iff_right).mp
-    hM)).of_prodMap_left
-
-end TVSBlock
 
 section FredholmCompSnake
 

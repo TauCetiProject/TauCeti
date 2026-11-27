@@ -63,23 +63,19 @@ noncomputable def orthogonalLeftInverse : H →L[𝕜] E :=
     f.range.orthogonalProjectionOnto
 
 /-- Defining equation for `f.orthogonalLeftInverse`. -/
-theorem orthogonalLeftInverse_def :
+theorem orthogonalLeftInverse_def [f.range.HasOrthogonalProjection] :
     f.orthogonalLeftInverse hf hclo =
       (f.equivRange hf
         (by simpa only [LinearMap.coe_range, coe_coe] using hclo)).symm.toContinuousLinearMap ∘L
-        (@Submodule.orthogonalProjectionOnto 𝕜 H _ _ _ f.range
-          (@Submodule.HasOrthogonalProjection.ofCompleteSpace 𝕜 H _ _ _ f.range
-            hclo.completeSpace_coe)) := by
+        f.range.orthogonalProjectionOnto := by
   rw [orthogonalLeftInverse]
 
 /-- Evaluation formula for `f.orthogonalLeftInverse`: project `y` orthogonally onto `range f`
 and apply the inverse of `f.equivRange`. -/
-theorem orthogonalLeftInverse_apply (y : H) :
+theorem orthogonalLeftInverse_apply [f.range.HasOrthogonalProjection] (y : H) :
     f.orthogonalLeftInverse hf hclo y =
       (f.equivRange hf (by simpa only [LinearMap.coe_range, coe_coe] using hclo)).symm
-        (@Submodule.orthogonalProjectionOnto 𝕜 H _ _ _ f.range
-          (@Submodule.HasOrthogonalProjection.ofCompleteSpace 𝕜 H _ _ _ f.range
-            hclo.completeSpace_coe) y) := by
+        (f.range.orthogonalProjectionOnto y) := by
   simp only [orthogonalLeftInverse, comp_apply, ContinuousLinearEquiv.coe_coe]
 
 /-- `f.orthogonalLeftInverse` is a left inverse of `f`. -/
@@ -104,12 +100,8 @@ theorem leftInverse_orthogonalLeftInverse :
 
 /-- Composing `f` on the left of its orthogonal left inverse recovers the orthogonal projection
 onto `range f`. -/
-@[simp] theorem self_comp_orthogonalLeftInverse :
-    f ∘L f.orthogonalLeftInverse hf hclo =
-      @Submodule.starProjection 𝕜 H _ _ _ f.range
-        (@Submodule.HasOrthogonalProjection.ofCompleteSpace 𝕜 H _ _ _ f.range
-          hclo.completeSpace_coe) := by
-  have : CompleteSpace f.range := hclo.completeSpace_coe
+@[simp] theorem self_comp_orthogonalLeftInverse [f.range.HasOrthogonalProjection] :
+    f ∘L f.orthogonalLeftInverse hf hclo = f.range.starProjection := by
   have hclo' : IsClosed (Set.range f) := by simpa only [LinearMap.coe_range, coe_coe] using hclo
   ext y
   set u := (f.equivRange hf hclo').symm (f.range.orthogonalProjectionOnto y)
@@ -153,39 +145,42 @@ end LeftInverse
 has a continuous linear left inverse. Unlike
 `ContinuousLinearMap.HasLeftInverse.of_injective_of_isClosed_range_of_closedComplement_range`, no
 closed-complement hypothesis is needed because `H` is a Hilbert space. -/
-theorem HasLeftInverse.of_injective_of_isClosed_range {f : E →L[𝕜] H}
+theorem HasLeftInverse.of_injective_of_isClosed_range_of_innerProductSpace {f : E →L[𝕜] H}
     (hf : Function.Injective f) (hclo : IsClosed (f.range : Set H)) : f.HasLeftInverse :=
   ⟨f.orthogonalLeftInverse hf hclo, f.leftInverse_orthogonalLeftInverse hf hclo⟩
 
 /-- In an exact sequence `0 → E --f--> H` followed by `H --q--> G`, with `E` a Banach space, `H` a
 Hilbert space, and `G` a `T₁` topological module, `f` admits a continuous linear left inverse. -/
-theorem HasLeftInverse.of_injective_of_exact {G : Type*} [TopologicalSpace G] [AddCommMonoid G]
-    [Module 𝕜 G] [T1Space G] {f : E →L[𝕜] H} {q : H →L[𝕜] G}
+theorem HasLeftInverse.of_injective_of_exact_of_innerProductSpace {G : Type*} [TopologicalSpace G]
+    [AddCommMonoid G] [Module 𝕜 G] [T1Space G] {f : E →L[𝕜] H} {q : H →L[𝕜] G}
     (hf : Function.Injective f) (hfq : Function.Exact f q) : f.HasLeftInverse :=
-  .of_injective_of_isClosed_range hf hfq.isClosed_range
+  .of_injective_of_isClosed_range_of_innerProductSpace hf hfq.isClosed_range
 
 section RightInverse
 variable (g : H →L[𝕜] F) (hg : Function.Surjective g)
+
+omit [CompleteSpace F] in
+/-- A surjective continuous linear map from a Hilbert space restricts to a map onto `⊤` on the
+orthogonal complement of its kernel. -/
+theorem range_comp_subtypeL_orthogonal_eq_top (hg : Function.Surjective g) :
+    (g ∘L g.kerᗮ.subtypeL).range = ⊤ :=
+  have : CompleteSpace g.ker := g.isClosed_ker.completeSpace_coe
+  g.range_comp_subtypeL_orthogonal.trans (LinearMap.range_eq_top.2 hg)
 
 /-- The **orthogonal right inverse** of a surjective continuous linear map `g : H →L[𝕜] F` from a
 Hilbert space onto a Banach space: invert the bounded bijection `g|_{(ker g)ᗮ} : (ker g)ᗮ → F` via
 `ContinuousLinearEquiv.ofBijective` and include `(ker g)ᗮ` into `H`. -/
 noncomputable def orthogonalRightInverseOfSurjective : F →L[𝕜] H :=
-  have : CompleteSpace g.ker := g.isClosed_ker.completeSpace_coe
   g.kerᗮ.subtypeL ∘L
     (ContinuousLinearEquiv.ofBijective (g ∘L g.kerᗮ.subtypeL) g.ker_comp_subtypeL_orthogonal
-      (g.range_comp_subtypeL_orthogonal.trans
-        (LinearMap.range_eq_top.2 hg))).symm.toContinuousLinearMap
+      (range_comp_subtypeL_orthogonal_eq_top g hg)).symm.toContinuousLinearMap
 
 /-- Defining equation for `g.orthogonalRightInverseOfSurjective`. -/
 theorem orthogonalRightInverseOfSurjective_def :
     g.orthogonalRightInverseOfSurjective hg =
       g.kerᗮ.subtypeL ∘L
         (ContinuousLinearEquiv.ofBijective (g ∘L g.kerᗮ.subtypeL) g.ker_comp_subtypeL_orthogonal
-          (by
-            have : CompleteSpace g.ker := g.isClosed_ker.completeSpace_coe
-            exact g.range_comp_subtypeL_orthogonal.trans
-              (LinearMap.range_eq_top.2 hg))).symm.toContinuousLinearMap := by
+          (range_comp_subtypeL_orthogonal_eq_top g hg)).symm.toContinuousLinearMap := by
   rw [orthogonalRightInverseOfSurjective]
 
 /-- Evaluation formula for `g.orthogonalRightInverseOfSurjective`: apply the inverse of the
@@ -193,10 +188,7 @@ restriction `g ∘L g.kerᗮ.subtypeL : g.kerᗮ →L[𝕜] F` and coerce into `
 theorem orthogonalRightInverseOfSurjective_apply (y : F) :
     g.orthogonalRightInverseOfSurjective hg y =
       ((ContinuousLinearEquiv.ofBijective (g ∘L g.kerᗮ.subtypeL) g.ker_comp_subtypeL_orthogonal
-        (by
-          have : CompleteSpace g.ker := g.isClosed_ker.completeSpace_coe
-          exact g.range_comp_subtypeL_orthogonal.trans
-            (LinearMap.range_eq_top.2 hg))).symm y : H) := by
+        (range_comp_subtypeL_orthogonal_eq_top g hg)).symm y : H) := by
   simp only [orthogonalRightInverseOfSurjective, comp_apply, Submodule.subtypeL_apply,
     ContinuousLinearEquiv.coe_coe]
 
@@ -220,8 +212,7 @@ projection onto `(ker g)ᗮ`. -/
     g.orthogonalRightInverseOfSurjective hg ∘L g = g.kerᗮ.starProjection := by
   have : CompleteSpace g.ker := g.isClosed_ker.completeSpace_coe
   set e := ContinuousLinearEquiv.ofBijective (g ∘L g.kerᗮ.subtypeL)
-    g.ker_comp_subtypeL_orthogonal
-    (g.range_comp_subtypeL_orthogonal.trans (LinearMap.range_eq_top.2 hg))
+    g.ker_comp_subtypeL_orthogonal (range_comp_subtypeL_orthogonal_eq_top g hg)
   ext x
   have hx : e (g.kerᗮ.orthogonalProjectionOnto x) = g x := by
     simp only [e, ContinuousLinearEquiv.coeFn_ofBijective, comp_apply, Submodule.subtypeL_apply,
@@ -264,8 +255,8 @@ end RightInverse
 
 /-- Every surjective continuous linear map from a Hilbert space onto a Banach space admits a
 continuous linear right inverse. -/
-theorem HasRightInverse.of_surjective {g : H →L[𝕜] F} (hg : Function.Surjective g) :
-    g.HasRightInverse :=
+theorem HasRightInverse.of_surjective_of_innerProductSpace {g : H →L[𝕜] F}
+    (hg : Function.Surjective g) : g.HasRightInverse :=
   ⟨g.orthogonalRightInverseOfSurjective hg, g.rightInverse_orthogonalRightInverseOfSurjective hg⟩
 
 end OrthogonalInverses

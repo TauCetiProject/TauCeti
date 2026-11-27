@@ -18,7 +18,8 @@ and binary products `M₁ × M₂`.
 * `ContinuousLinearMap.eq_smul_id_of_unique`: every continuous linear endomorphism of a
   one-coordinate space `ι → R` over a topological commutative semiring `R` with continuous scalar
   multiplication is a scalar multiple of the identity.
-* `TauCeti.prodMap_id`: the `prodMap` of two continuous linear identities is the identity.
+* `ContinuousLinearMap.prodMap_id`: the `prodMap` of two continuous linear identities is the
+  identity.
 * `ContinuousLinearMap.update_proj_apply`: the family `Function.update (fun m ↦ proj m) i α`,
   which replaces the projection to the coordinate `i` by `α`, evaluates at `j` and `v` to the
   coordinate `j` of `Function.update v i (α v)`.
@@ -73,10 +74,6 @@ theorem mem_ker_pi_proj_comp {q : M →L[R] ∀ i, φ i} {t : Set ι} {v : M} :
 
 end Pi
 
-end ContinuousLinearMap
-
-namespace TauCeti
-
 /-- The product map of two continuous linear identities is the identity on the product. -/
 @[simp]
 theorem prodMap_id {R M₁ M₂ : Type*} [Semiring R]
@@ -86,4 +83,4 @@ theorem prodMap_id {R M₁ M₂ : Type*} [Semiring R]
       ContinuousLinearMap.id R (M₁ × M₂) :=
   rfl
 
-end TauCeti
+end ContinuousLinearMap

@@ -98,8 +98,8 @@ theorem mapQL_comp {R₃ M₃ : Type*} [Ring R₃] [TopologicalSpace M₃] [AddC
   refine p.comp_mkQL_injective ?_
   dsimp only
   rw [mapQL_comp_mkQL, ContinuousLinearMap.comp_assoc, mapQL_comp_mkQL,
-    ← ContinuousLinearMap.comp_assoc (q.mapQL r g hg), mapQL_comp_mkQL]
-  rfl
+    ← ContinuousLinearMap.comp_assoc (q.mapQL r g hg), mapQL_comp_mkQL,
+    ContinuousLinearMap.comp_assoc]
 
 end MapQL
 

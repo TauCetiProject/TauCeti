@@ -24,11 +24,11 @@ We bundle the algebraic connecting map `Function.Exact.snakeδ : ker T₃ →ₗ
 continuous linear map in two settings:
 
 * Given a continuous linear right inverse `σ` of `f₂` and left inverse `ρ` of `g₁`,
-  `TauCeti.snakeδL` equals `T₁.range.mkQL ∘L ρ ∘L T₂ ∘L σ ∘L T₃.ker.subtypeL`, independent of
-  `(σ, ρ)` (`TauCeti.snakeδL_eq_snakeδL`).
+  `Function.Exact.snakeδL` equals `T₁.range.mkQL ∘L ρ ∘L T₂ ∘L σ ∘L T₃.ker.subtypeL`, independent
+  of `(σ, ρ)` (`Function.Exact.snakeδL_eq_snakeδL`).
 * Over a commutative ring, whenever `f₂` is an open quotient map and `g₁` is a topological
   embedding, `TauCeti.continuous_snakeδ_of_isOpenQuotientMap_of_isEmbedding` proves continuity
-  directly without splittings, bundled as `TauCeti.snakeδLOfIsOpenQuotientMap`.
+  directly without splittings, bundled as `Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding`.
 
 Specializing to `ContinuousLinearMap.upperTriangularBlock A B D` yields
 `ContinuousLinearMap.snakeδL_upperTriangularBlock_eq`, and specializing further to
@@ -105,18 +105,8 @@ theorem kerMapL_injective (h : g ∘L T₁ = T₂ ∘L f) (hf : Function.Injecti
 theorem exact_kerMapL (hf : Function.Exact f₁ f₂) (hg₁ : Function.Injective g₁)
     (h₁₂ : g₁ ∘L T₁ = T₂ ∘L f₁) (h₂₃ : g₂ ∘L T₂ = T₃ ∘L f₂) :
     Function.Exact (kerMapL h₁₂) (kerMapL h₂₃) := by
-  rintro ⟨y, hy⟩
-  constructor
-  · intro h0
-    obtain ⟨x, rfl⟩ := (hf y).1 (congrArg Subtype.val h0)
-    refine ⟨⟨x, hg₁ ?_⟩, rfl⟩
-    rw [map_zero, ContinuousLinearMap.coe_coe, ← ContinuousLinearMap.comp_apply g₁ T₁, h₁₂,
-      ContinuousLinearMap.comp_apply]
-    exact hy
-  · rintro ⟨⟨x, _⟩, hxy⟩
-    ext
-    rw [← hxy, coe_kerMapL_apply, coe_kerMapL_apply, hf.apply_apply_eq_zero,
-      ZeroMemClass.coe_zero]
+  rw [coe_kerMapL, coe_kerMapL]
+  exact hf.restrict_ker hg₁ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)
 
 end KerMapL
 
@@ -144,8 +134,8 @@ theorem cokerMapL_mk (h : g ∘L T₁ = T₂ ∘L f) (y : F₁) :
 @[simp, norm_cast] theorem toLinearMap_cokerMapL (h : g ∘L T₁ = T₂ ∘L f) :
     (cokerMapL h).toLinearMap =
       T₁.range.mapQ T₂.range g.toLinearMap
-        (LinearMap.range_le_comap_range_of_comp_eq (toLinearMap_comp_eq h)) := by
-  ext y; exact (cokerMapL_mk h y).trans rfl
+        (LinearMap.range_le_comap_range_of_comp_eq (toLinearMap_comp_eq h)) :=
+  Submodule.toLinearMap_mapQL ..
 
 @[simp] theorem coe_cokerMapL (h : g ∘L T₁ = T₂ ∘L f) :
     ⇑(cokerMapL h) =
@@ -167,12 +157,8 @@ theorem cokerMapL_comp (h₁₂ : g₁ ∘L T₁ = T₂ ∘L f₁) (h₂₃ : g�
     (h₁₃ : (g₂ ∘L g₁) ∘L T₁ = T₃ ∘L (f₂ ∘L f₁) := by
       rw [ContinuousLinearMap.comp_assoc, h₁₂, ← ContinuousLinearMap.comp_assoc, h₂₃,
         ContinuousLinearMap.comp_assoc]) :
-    cokerMapL h₁₃ = cokerMapL h₂₃ ∘L cokerMapL h₁₂ := by
-  refine T₁.range.comp_mkQL_injective ?_
-  dsimp only
-  rw [cokerMapL_comp_mkQL, ContinuousLinearMap.comp_assoc, cokerMapL_comp_mkQL,
-    ← ContinuousLinearMap.comp_assoc (cokerMapL h₂₃), cokerMapL_comp_mkQL]
-  rfl
+    cokerMapL h₁₃ = cokerMapL h₂₃ ∘L cokerMapL h₁₂ :=
+  T₁.range.mapQL_comp T₂.range T₃.range g₁ g₂ _ _
 
 /-- If `g` is surjective, then the induced continuous linear map on quotient cokernels is
 surjective. -/
@@ -184,15 +170,17 @@ theorem cokerMapL_surjective (h : g ∘L T₁ = T₂ ∘L f) (hg : Function.Surj
 theorem exact_cokerMapL (hf₂ : Function.Surjective f₂) (hg : Function.Exact g₁ g₂)
     (h₁₂ : g₁ ∘L T₁ = T₂ ∘L f₁) (h₂₃ : g₂ ∘L T₂ = T₃ ∘L f₂) :
     Function.Exact (cokerMapL h₁₂) (cokerMapL h₂₃) := by
-  rw [coe_cokerMapL, coe_cokerMapL,
-    (hg : Function.Exact g₁.toLinearMap g₂.toLinearMap).exact_mapQ_iff]
-  rintro _ ⟨-, z, rfl⟩
-  obtain ⟨w, rfl⟩ := hf₂ z
-  exact ⟨T₂ w, ⟨w, rfl⟩, DFunLike.congr_fun h₂₃ w⟩
+  rw [coe_cokerMapL, coe_cokerMapL]
+  exact hg.mapQ_range hf₂ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)
 
 end CokerMapL
 
+end TauCeti
+
 section ContinuousSnake
+
+open TauCeti
+open ContinuousLinearMap (toLinearMap_comp_eq)
 
 universe u u₁ u₂ u₃ v₁ v₂ v₃
 
@@ -209,10 +197,17 @@ variable {R : Type u} [Ring R]
   {T₁ : E₁ →L[R] F₁} {T₂ : E₂ →L[R] F₂} {T₃ : E₃ →L[R] F₃}
   {f₁ : E₁ →L[R] E₂} {f₂ : E₂ →L[R] E₃} {g₁ : F₁ →L[R] F₂} {g₂ : F₂ →L[R] F₃}
 
+private theorem exists_preimage_apply_of_rightInverse (hg : Function.Exact g₁ g₂)
+    (h₂₃ : g₂ ∘L T₂ = T₃ ∘L f₂) {σ : E₃ →L[R] E₂} (hσ : Function.RightInverse σ f₂)
+    (x₃ : T₃.ker) : ∃ y₁ : F₁, g₁ y₁ = T₂ (σ x₃) :=
+  (hg (T₂ (σ x₃))).mp <| by
+    rw [← ContinuousLinearMap.comp_apply g₂ T₂, h₂₃, ContinuousLinearMap.comp_apply, hσ x₃]
+    exact LinearMap.mem_ker.mp x₃.property
+
 /-- Continuous connecting linear map `ker T₃ →L[R] F₁ ⧸ range T₁` of a snake diagram whose top
 surjection `f₂` has a continuous linear right inverse `σ` and whose bottom injection `g₁` has a
 continuous linear left inverse `ρ`. -/
-def snakeδL (_hf : Function.Exact f₁ f₂) (_hg : Function.Exact g₁ g₂)
+def Function.Exact.snakeδL (_hf : Function.Exact f₁ f₂) (_hg : Function.Exact g₁ g₂)
     (_h₁₂ : g₁ ∘L T₁ = T₂ ∘L f₁) (_h₂₃ : g₂ ∘L T₂ = T₃ ∘L f₂)
     {σ : E₃ →L[R] E₂} (_hσ : Function.RightInverse σ f₂)
     {ρ : F₂ →L[R] F₁} (_hρ : Function.LeftInverse ρ g₁) :
@@ -225,16 +220,17 @@ variable (hf : Function.Exact f₁ f₂) (hg : Function.Exact g₁ g₂)
   {σ : E₃ →L[R] E₂} (hσ : Function.RightInverse σ f₂)
   {ρ : F₂ →L[R] F₁} (hρ : Function.LeftInverse ρ g₁)
 
-theorem snakeδL_def :
-    snakeδL hf hg h₁₂ h₂₃ hσ hρ = T₁.range.mkQL ∘L ρ ∘L T₂ ∘L σ ∘L T₃.ker.subtypeL := (rfl)
+theorem Function.Exact.snakeδL_def :
+    hf.snakeδL hg h₁₂ h₂₃ hσ hρ = T₁.range.mkQL ∘L ρ ∘L T₂ ∘L σ ∘L T₃.ker.subtypeL := (rfl)
 
-@[simp] theorem snakeδL_apply (x₃ : T₃.ker) :
-    snakeδL hf hg h₁₂ h₂₃ hσ hρ x₃ = Submodule.Quotient.mk (ρ (T₂ (σ x₃))) := (rfl)
+@[simp] theorem Function.Exact.snakeδL_apply (x₃ : T₃.ker) :
+    hf.snakeδL hg h₁₂ h₂₃ hσ hρ x₃ = Submodule.Quotient.mk (ρ (T₂ (σ x₃))) := (rfl)
 
-/-- Diagram-chase formula for `TauCeti.snakeδL`: if `f₂ x₂ = x₃` and `g₁ y₁ = T₂ x₂`, then
+/-- Diagram-chase formula for `Function.Exact.snakeδL`: if `f₂ x₂ = x₃` and `g₁ y₁ = T₂ x₂`, then
 `snakeδL` sends `x₃` to the class of `y₁` modulo `range T₁`. -/
-theorem snakeδL_eq (x₃ : T₃.ker) (x₂ : E₂) (y₁ : F₁) (hx₂ : f₂ x₂ = x₃) (hy₁ : g₁ y₁ = T₂ x₂) :
-    snakeδL hf hg h₁₂ h₂₃ hσ hρ x₃ = Submodule.Quotient.mk y₁ := by
+theorem Function.Exact.snakeδL_eq (x₃ : T₃.ker) (x₂ : E₂) (y₁ : F₁) (hx₂ : f₂ x₂ = x₃)
+    (hy₁ : g₁ y₁ = T₂ x₂) :
+    hf.snakeδL hg h₁₂ h₂₃ hσ hρ x₃ = Submodule.Quotient.mk y₁ := by
   obtain ⟨x₁, hx₁⟩ := (hf (σ x₃ - x₂)).mp <| by rw [map_sub, hσ x₃, hx₂, sub_self]
   have hy : ρ (T₂ (σ x₃)) = y₁ + T₁ x₁ := by
     have hdiff : T₂ (σ x₃) - g₁ y₁ = g₁ (T₁ x₁) := by
@@ -248,14 +244,13 @@ theorem snakeδL_eq (x₃ : T₃.ker) (x₂ : E₂) (y₁ : F₁) (hx₂ : f₂ 
   exact (Submodule.Quotient.eq (p := T₁.range)).2 <| by simp [sub_eq_add_neg]
 
 /-- Exactness of the continuous snake sequence at `ker T₃`. -/
-theorem exact_kerMapL_snakeδL : Function.Exact (kerMapL h₂₃) (snakeδL hf hg h₁₂ h₂₃ hσ hρ) := by
+theorem Function.Exact.exact_kerMapL_snakeδL :
+    Function.Exact (kerMapL h₂₃) (hf.snakeδL hg h₁₂ h₂₃ hσ hρ) := by
   intro x₃
   constructor
   · intro hx
     obtain ⟨x₁, hx₁⟩ := (Submodule.Quotient.mk_eq_zero _).1 hx
-    obtain ⟨y₁, hy₁⟩ := (hg (T₂ (σ x₃))).mp <| by
-      rw [← ContinuousLinearMap.comp_apply g₂ T₂, h₂₃, ContinuousLinearMap.comp_apply, hσ x₃]
-      exact LinearMap.mem_ker.mp x₃.property
+    obtain ⟨y₁, hy₁⟩ := exists_preimage_apply_of_rightInverse hg h₂₃ hσ x₃
     have hρy : y₁ = T₁ x₁ := by
       have hx₁' : ρ (T₂ (σ x₃)) = T₁ x₁ := by simpa [snakeδL_apply] using hx₁.symm
       rw [← hρ y₁, hy₁, hx₁']
@@ -264,15 +259,16 @@ theorem exact_kerMapL_snakeδL : Function.Exact (kerMapL h₂₃) (snakeδL hf h
         ← ContinuousLinearMap.comp_apply T₂ f₁, ← h₁₂, ContinuousLinearMap.comp_apply,
         ← hρy, hy₁, sub_self]
     refine ⟨⟨σ x₃ - f₁ x₁, hmem⟩, Subtype.ext ?_⟩
-    change f₂ (σ x₃ - f₁ x₁) = x₃
+    rw [coe_kerMapL_apply]
     simp [hσ x₃, hf.apply_apply_eq_zero]
   · rintro ⟨x₂, rfl⟩
     have hx₂ : T₂ (x₂ : E₂) = 0 := LinearMap.mem_ker.mp x₂.property
-    exact (snakeδL_eq hf hg h₁₂ h₂₃ hσ hρ (kerMapL h₂₃ x₂) x₂ 0 rfl (by simp [hx₂])).trans
+    exact (hf.snakeδL_eq hg h₁₂ h₂₃ hσ hρ (kerMapL h₂₃ x₂) x₂ 0 rfl (by simp [hx₂])).trans
       (Submodule.Quotient.mk_zero T₁.range)
 
 /-- Exactness of the continuous snake sequence at `F₁ ⧸ range T₁`. -/
-theorem exact_snakeδL_cokerMapL : Function.Exact (snakeδL hf hg h₁₂ h₂₃ hσ hρ) (cokerMapL h₁₂) := by
+theorem Function.Exact.exact_snakeδL_cokerMapL :
+    Function.Exact (hf.snakeδL hg h₁₂ h₂₃ hσ hρ) (cokerMapL h₁₂) := by
   intro q
   obtain ⟨y₁, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   constructor
@@ -283,13 +279,11 @@ theorem exact_snakeδL_cokerMapL : Function.Exact (snakeδL hf hg h₁₂ h₂�
     have hx₃ : f₂ x₂ ∈ T₃.ker := by
       rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ← ContinuousLinearMap.comp_apply T₃ f₂,
         ← h₂₃, ContinuousLinearMap.comp_apply, hx₂, hg.apply_apply_eq_zero]
-    exact ⟨⟨f₂ x₂, hx₃⟩, snakeδL_eq hf hg h₁₂ h₂₃ hσ hρ ⟨f₂ x₂, hx₃⟩ x₂ y₁ rfl hx₂.symm⟩
+    exact ⟨⟨f₂ x₂, hx₃⟩, hf.snakeδL_eq hg h₁₂ h₂₃ hσ hρ ⟨f₂ x₂, hx₃⟩ x₂ y₁ rfl hx₂.symm⟩
   · rintro ⟨x₃, hx₃⟩
-    obtain ⟨y₁', hy₁'⟩ := (hg (T₂ (σ x₃))).mp <| by
-      rw [← ContinuousLinearMap.comp_apply g₂ T₂, h₂₃, ContinuousLinearMap.comp_apply, hσ x₃]
-      exact LinearMap.mem_ker.mp x₃.property
+    obtain ⟨y₁', hy₁'⟩ := exists_preimage_apply_of_rightInverse hg h₂₃ hσ x₃
     have hq : (Submodule.Quotient.mk y₁ : F₁ ⧸ T₁.range) = Submodule.Quotient.mk y₁' :=
-      hx₃.symm.trans (snakeδL_eq hf hg h₁₂ h₂₃ hσ hρ x₃ (σ x₃) y₁' (hσ x₃) hy₁')
+      hx₃.symm.trans (hf.snakeδL_eq hg h₁₂ h₂₃ hσ hρ x₃ (σ x₃) y₁' (hσ x₃) hy₁')
     obtain ⟨x₁, hx₁⟩ := (Submodule.Quotient.eq (p := T₁.range)).1 hq
     rw [ContinuousLinearMap.coe_coe] at hx₁
     have hy₁_eq : y₁ = T₁ x₁ + y₁' := eq_add_of_sub_eq hx₁.symm
@@ -300,19 +294,17 @@ theorem exact_snakeδL_cokerMapL : Function.Exact (snakeδL hf hg h₁₂ h₂�
 
 end
 
-/-- **Splitting independence of `TauCeti.snakeδL`**: any two choices `(σ, ρ)` and `(σ', ρ')` of
-continuous linear splittings induce the same continuous connecting map. -/
-theorem snakeδL_eq_snakeδL (hf : Function.Exact f₁ f₂) (hg : Function.Exact g₁ g₂)
+/-- **Splitting independence of `Function.Exact.snakeδL`**: any two choices `(σ, ρ)` and `(σ', ρ')`
+of continuous linear splittings induce the same continuous connecting map. -/
+theorem Function.Exact.snakeδL_eq_snakeδL (hf : Function.Exact f₁ f₂) (hg : Function.Exact g₁ g₂)
     (h₁₂ : g₁ ∘L T₁ = T₂ ∘L f₁) (h₂₃ : g₂ ∘L T₂ = T₃ ∘L f₂)
     {σ σ' : E₃ →L[R] E₂} (hσ : Function.RightInverse σ f₂) (hσ' : Function.RightInverse σ' f₂)
     {ρ ρ' : F₂ →L[R] F₁} (hρ : Function.LeftInverse ρ g₁) (hρ' : Function.LeftInverse ρ' g₁) :
-    snakeδL hf hg h₁₂ h₂₃ hσ hρ = snakeδL hf hg h₁₂ h₂₃ hσ' hρ' := by
+    hf.snakeδL hg h₁₂ h₂₃ hσ hρ = hf.snakeδL hg h₁₂ h₂₃ hσ' hρ' := by
   ext x₃
-  obtain ⟨y₁', hy₁'⟩ := (hg (T₂ (σ' x₃))).mp <| by
-    rw [← ContinuousLinearMap.comp_apply g₂ T₂, h₂₃, ContinuousLinearMap.comp_apply, hσ' x₃]
-    exact LinearMap.mem_ker.mp x₃.property
-  exact (snakeδL_eq hf hg h₁₂ h₂₃ hσ hρ x₃ (σ' x₃) y₁' (hσ' x₃) hy₁').trans
-    (snakeδL_eq hf hg h₁₂ h₂₃ hσ' hρ' x₃ (σ' x₃) y₁' (hσ' x₃) hy₁').symm
+  obtain ⟨y₁', hy₁'⟩ := exists_preimage_apply_of_rightInverse hg h₂₃ hσ' x₃
+  exact (hf.snakeδL_eq hg h₁₂ h₂₃ hσ hρ x₃ (σ' x₃) y₁' (hσ' x₃) hy₁').trans
+    (hf.snakeδL_eq hg h₁₂ h₂₃ hσ' hρ' x₃ (σ' x₃) y₁' (hσ' x₃) hy₁').symm
 
 end Ring
 
@@ -329,26 +321,26 @@ variable {R : Type u} [CommRing R]
   {T₁ : E₁ →L[R] F₁} {T₂ : E₂ →L[R] F₂} {T₃ : E₃ →L[R] F₃}
   {f₁ : E₁ →L[R] E₂} {f₂ : E₂ →L[R] E₃} {g₁ : F₁ →L[R] F₂} {g₂ : F₂ →L[R] F₃}
 
-/-- The underlying linear map of `TauCeti.snakeδL` is the algebraic snake connecting map
+/-- The underlying linear map of `Function.Exact.snakeδL` is the algebraic snake connecting map
 `Function.Exact.snakeδ`. -/
-@[simp, norm_cast] theorem toLinearMap_snakeδL (hf : Function.Exact f₁ f₂)
+@[simp, norm_cast] theorem Function.Exact.toLinearMap_snakeδL (hf : Function.Exact f₁ f₂)
     (hg : Function.Exact g₁ g₂) (h₁₂ : g₁ ∘L T₁ = T₂ ∘L f₁) (h₂₃ : g₂ ∘L T₂ = T₃ ∘L f₂)
     {σ : E₃ →L[R] E₂} (hσ : Function.RightInverse σ f₂)
     {ρ : F₂ →L[R] F₁} (hρ : Function.LeftInverse ρ g₁) :
-    (snakeδL hf hg h₁₂ h₂₃ hσ hρ).toLinearMap =
+    (hf.snakeδL hg h₁₂ h₂₃ hσ hρ).toLinearMap =
       hf.snakeδ hg hσ.surjective hρ.injective (toLinearMap_comp_eq h₁₂)
         (toLinearMap_comp_eq h₂₃) :=
   (hf.snakeδ_eq_of_rightInverse_of_leftInverse hg (toLinearMap_comp_eq h₁₂)
     (toLinearMap_comp_eq h₂₃) hσ hρ).symm
 
-theorem coe_snakeδL (hf : Function.Exact f₁ f₂) (hg : Function.Exact g₁ g₂)
+theorem Function.Exact.coe_snakeδL (hf : Function.Exact f₁ f₂) (hg : Function.Exact g₁ g₂)
     (h₁₂ : g₁ ∘L T₁ = T₂ ∘L f₁) (h₂₃ : g₂ ∘L T₂ = T₃ ∘L f₂)
     {σ : E₃ →L[R] E₂} (hσ : Function.RightInverse σ f₂)
     {ρ : F₂ →L[R] F₁} (hρ : Function.LeftInverse ρ g₁) :
-    ⇑(snakeδL hf hg h₁₂ h₂₃ hσ hρ) =
+    ⇑(hf.snakeδL hg h₁₂ h₂₃ hσ hρ) =
       hf.snakeδ hg hσ.surjective hρ.injective (toLinearMap_comp_eq h₁₂)
         (toLinearMap_comp_eq h₂₃) :=
-  congrArg DFunLike.coe (toLinearMap_snakeδL hf hg h₁₂ h₂₃ hσ hρ)
+  congrArg DFunLike.coe (hf.toLinearMap_snakeδL hg h₁₂ h₂₃ hσ hρ)
 
 section
 variable (hf : Function.Exact f₁ f₂) (hf₂ : IsOpenQuotientMap f₂)
@@ -360,7 +352,7 @@ include hf hf₂ hg hg₁ h₁₂ h₂₃
 /-- **Automatic continuity of the snake connecting map**: if `f₂` is an open quotient map and `g₁`
 is a topological embedding in a commuting diagram with exact rows, then `Function.Exact.snakeδ` is
 continuous, with no splitting hypotheses. -/
-theorem continuous_snakeδ_of_isOpenQuotientMap_of_isEmbedding :
+theorem TauCeti.continuous_snakeδ_of_isOpenQuotientMap_of_isEmbedding :
     Continuous (hf.snakeδ hg hf₂.surjective hg₁.injective
       (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)) := by
   let p := (T₃.ker : Set E₃).restrictPreimage f₂
@@ -382,46 +374,50 @@ theorem continuous_snakeδ_of_isOpenQuotientMap_of_isEmbedding :
 
 /-- Continuous snake connecting map bundled without splittings whenever `f₂` is an open quotient map
 and `g₁` is a topological embedding. -/
-noncomputable def snakeδLOfIsOpenQuotientMap : T₃.ker →L[R] F₁ ⧸ T₁.range :=
+noncomputable def Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding :
+    T₃.ker →L[R] F₁ ⧸ T₁.range :=
   { hf.snakeδ hg hf₂.surjective hg₁.injective (toLinearMap_comp_eq h₁₂)
       (toLinearMap_comp_eq h₂₃) with
     cont := continuous_snakeδ_of_isOpenQuotientMap_of_isEmbedding hf hf₂ hg hg₁ h₁₂ h₂₃ }
 
-@[simp, norm_cast] theorem toLinearMap_snakeδLOfIsOpenQuotientMap :
-    (snakeδLOfIsOpenQuotientMap hf hf₂ hg hg₁ h₁₂ h₂₃).toLinearMap =
+@[simp, norm_cast] theorem Function.Exact.toLinearMap_snakeδLOfIsOpenQuotientMapOfIsEmbedding :
+    (hf.snakeδLOfIsOpenQuotientMapOfIsEmbedding hf₂ hg hg₁ h₁₂ h₂₃).toLinearMap =
       hf.snakeδ hg hf₂.surjective hg₁.injective (toLinearMap_comp_eq h₁₂)
         (toLinearMap_comp_eq h₂₃) := (rfl)
 
-@[simp] theorem coe_snakeδLOfIsOpenQuotientMap :
-    ⇑(snakeδLOfIsOpenQuotientMap hf hf₂ hg hg₁ h₁₂ h₂₃) =
+@[simp] theorem Function.Exact.coe_snakeδLOfIsOpenQuotientMapOfIsEmbedding :
+    ⇑(hf.snakeδLOfIsOpenQuotientMapOfIsEmbedding hf₂ hg hg₁ h₁₂ h₂₃) =
       hf.snakeδ hg hf₂.surjective hg₁.injective (toLinearMap_comp_eq h₁₂)
         (toLinearMap_comp_eq h₂₃) := (rfl)
 
-/-- Diagram-chase formula for `TauCeti.snakeδLOfIsOpenQuotientMap`. -/
-theorem snakeδLOfIsOpenQuotientMap_eq (x₃ : T₃.ker) (x₂ : E₂) (y₁ : F₁)
+/-- Diagram-chase formula for `Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding`. -/
+theorem Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding_eq (x₃ : T₃.ker) (x₂ : E₂) (y₁ : F₁)
     (hx₂ : f₂ x₂ = x₃) (hy₁ : g₁ y₁ = T₂ x₂) :
-    snakeδLOfIsOpenQuotientMap hf hf₂ hg hg₁ h₁₂ h₂₃ x₃ = Submodule.Quotient.mk y₁ :=
+    hf.snakeδLOfIsOpenQuotientMapOfIsEmbedding hf₂ hg hg₁ h₁₂ h₂₃ x₃ = Submodule.Quotient.mk y₁ :=
   hf.snakeδ_apply hg hf₂.surjective hg₁.injective _ _ x₃ x₂ hx₂ y₁ hy₁
 
-/-- When continuous linear splittings `(σ, ρ)` also exist, `TauCeti.snakeδLOfIsOpenQuotientMap`
-agrees with `TauCeti.snakeδL`. -/
-theorem snakeδLOfIsOpenQuotientMap_eq_snakeδL
+/-- When continuous linear splittings `(σ, ρ)` also exist,
+`Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding` agrees with `Function.Exact.snakeδL`. -/
+theorem Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding_eq_snakeδL
     {σ : E₃ →L[R] E₂} (hσ : Function.RightInverse σ f₂)
     {ρ : F₂ →L[R] F₁} (hρ : Function.LeftInverse ρ g₁) :
-    snakeδLOfIsOpenQuotientMap hf hf₂ hg hg₁ h₁₂ h₂₃ = snakeδL hf hg h₁₂ h₂₃ hσ hρ :=
-  ContinuousLinearMap.coe_injective (toLinearMap_snakeδL hf hg h₁₂ h₂₃ hσ hρ).symm
+    hf.snakeδLOfIsOpenQuotientMapOfIsEmbedding hf₂ hg hg₁ h₁₂ h₂₃ =
+      hf.snakeδL hg h₁₂ h₂₃ hσ hρ :=
+  ContinuousLinearMap.coe_injective (hf.toLinearMap_snakeδL hg h₁₂ h₂₃ hσ hρ).symm
 
-/-- Exactness of `TauCeti.snakeδLOfIsOpenQuotientMap` at `ker T₃`. -/
-theorem exact_kerMapL_snakeδLOfIsOpenQuotientMap :
-    Function.Exact (kerMapL h₂₃) (snakeδLOfIsOpenQuotientMap hf hf₂ hg hg₁ h₁₂ h₂₃) := by
-  simpa only [coe_kerMapL, coe_snakeδLOfIsOpenQuotientMap] using
+/-- Exactness of `Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding` at `ker T₃`. -/
+theorem Function.Exact.exact_kerMapL_snakeδLOfIsOpenQuotientMapOfIsEmbedding :
+    Function.Exact (kerMapL h₂₃)
+      (hf.snakeδLOfIsOpenQuotientMapOfIsEmbedding hf₂ hg hg₁ h₁₂ h₂₃) := by
+  simpa only [coe_kerMapL, coe_snakeδLOfIsOpenQuotientMapOfIsEmbedding] using
     hf.restrict_ker_snakeδ hg hf₂.surjective hg₁.injective
       (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)
 
-/-- Exactness of `TauCeti.snakeδLOfIsOpenQuotientMap` at `F₁ ⧸ range T₁`. -/
-theorem exact_snakeδLOfIsOpenQuotientMap_cokerMapL :
-    Function.Exact (snakeδLOfIsOpenQuotientMap hf hf₂ hg hg₁ h₁₂ h₂₃) (cokerMapL h₁₂) := by
-  simpa only [coe_snakeδLOfIsOpenQuotientMap, coe_cokerMapL] using
+/-- Exactness of `Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding` at `F₁ ⧸ range T₁`. -/
+theorem Function.Exact.exact_snakeδLOfIsOpenQuotientMapOfIsEmbedding_cokerMapL :
+    Function.Exact (hf.snakeδLOfIsOpenQuotientMapOfIsEmbedding hf₂ hg hg₁ h₁₂ h₂₃)
+      (cokerMapL h₁₂) := by
+  simpa only [coe_snakeδLOfIsOpenQuotientMapOfIsEmbedding, coe_cokerMapL] using
     hf.snakeδ_mapQ_range hg hf₂.surjective hg₁.injective
       (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)
 
@@ -430,8 +426,6 @@ end
 end CommRing
 
 end ContinuousSnake
-
-end TauCeti
 
 namespace ContinuousLinearMap
 
@@ -449,12 +443,12 @@ theorem snakeδL_upperTriangularBlock_eq
     (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) (D : E₂ →L[R] F₂)
     {σ : E₂ →L[R] E₁ × E₂} (hσ : Function.RightInverse σ (snd R E₁ E₂))
     {ρ : F₁ × F₂ →L[R] F₁} (hρ : Function.LeftInverse ρ (inl R F₁ F₂)) :
-    TauCeti.snakeδL .inl_snd .inl_snd
+    (Function.Exact.inl_snd).snakeδL .inl_snd
       (A.upperTriangularBlock_comp_inl B D).symm (A.snd_comp_upperTriangularBlock B D) hσ hρ =
         A.range.mkQL ∘L B ∘L D.ker.subtypeL := by
-  refine (TauCeti.snakeδL_eq_snakeδL _ _ _ _ hσ (σ' := inr R E₁ E₂) (fun _ ↦ rfl)
+  refine (Function.Exact.snakeδL_eq_snakeδL _ _ _ _ hσ (σ' := inr R E₁ E₂) (fun _ ↦ rfl)
     hρ (ρ' := fst R F₁ F₂) (fun _ ↦ rfl)).trans ?_
-  ext y; simp [TauCeti.snakeδL]
+  ext y; simp [Function.Exact.snakeδL]
 
 end BlockSnake
 
@@ -540,7 +534,7 @@ theorem compSnakeMiddle_def :
 theorem snakeδL_compSnakeMiddle_eq
     {σ : F →L[R] E × F} (hσ : Function.RightInverse σ (snd R E F))
     {ρ : F × G →L[R] F} (hρ : Function.LeftInverse ρ (inl R F G)) :
-    TauCeti.snakeδL .inl_snd .inl_snd
+    (Function.Exact.inl_snd).snakeδL .inl_snd
       (T.compSnakeMiddle_comp_inl S).symm (T.snd_comp_compSnakeMiddle S) hσ hρ =
         -(T.range.mkQL ∘L S.ker.subtypeL) :=
   (snakeδL_upperTriangularBlock_eq T (-ContinuousLinearMap.id R F) S hσ hρ).trans (by ext; simp)
@@ -557,31 +551,35 @@ theorem compSnakeMiddle_eq_comp_prodMap_comp [IsTopologicalAddGroup G] :
   apply ContinuousLinearMap.ext; rintro ⟨x, y⟩
   ext <;> simp [sub_eq_add_neg]
 
-/-- `compSnakeMiddle T S` has the same index as the composite `S ∘L T`, with no finiteness or
-topological-group assumptions on `E` or `G`. -/
-@[simp] theorem index_compSnakeMiddle : (compSnakeMiddle T S).index = (S ∘L T).index := by
-  let eCod : (F × G) ≃ₗ[R] (F × G) :=
-    (LinearEquiv.refl R F).skewProd (LinearEquiv.refl R G) S.toLinearMap
-  let eDom : (F × E) ≃ₗ[R] (E × F) :=
-    (LinearEquiv.prodComm R F E).trans
-      ((LinearEquiv.refl R E).skewProd (LinearEquiv.neg R) T.toLinearMap)
-  have hconj : eCod.toLinearMap ∘ₗ (compSnakeMiddle T S).toLinearMap ∘ₗ eDom.toLinearMap =
-      LinearMap.id.prodMap (S ∘L T).toLinearMap := by
-    apply LinearMap.ext; rintro ⟨v, x⟩; ext <;> simp [eCod, eDom, sub_eq_add_neg, add_comm]
-  have hidx := congrArg LinearMap.index hconj
-  rw [LinearMap.index_equiv_comp, LinearMap.index_comp_equiv] at hidx
-  rw [index_def, hidx, index_eq_finrank_sub, LinearMap.index_eq_finrank_sub,
+omit [TopologicalSpace E] [TopologicalSpace F] [IsTopologicalAddGroup F] [TopologicalSpace G] in
+private theorem index_id_prodMap (U : E →ₗ[R] G) :
+    (LinearMap.id (R := R) (M := F) |>.prodMap U).index = U.index := by
+  rw [LinearMap.index_eq_finrank_sub, LinearMap.index_eq_finrank_sub,
     LinearMap.ker_prodMap, LinearMap.ker_id, LinearMap.range_prodMap, LinearMap.range_id]
-  have hker : Module.finrank R ((⊥ : Submodule R F).prod (S ∘L T).ker) =
-      Module.finrank R (S ∘L T).ker := by
+  have hker : Module.finrank R ((⊥ : Submodule R F).prod U.ker) = Module.finrank R U.ker := by
     let : Unique (⊥ : Submodule R F) := uniqueOfSubsingleton 0
     exact (Submodule.prodEquiv _ _ ≪≫ₗ LinearEquiv.uniqueProd).finrank_eq
-  have hcoker : Module.finrank R ((F × G) ⧸ (⊤ : Submodule R F).prod (S ∘L T).range) =
-      Module.finrank R (G ⧸ (S ∘L T).range) := by
+  have hcoker : Module.finrank R ((F × G) ⧸ (⊤ : Submodule R F).prod U.range) =
+      Module.finrank R (G ⧸ U.range) := by
     have : Subsingleton (F ⧸ (⊤ : Submodule R F)) := Submodule.Quotient.subsingleton_iff.mpr rfl
     let : Unique (F ⧸ (⊤ : Submodule R F)) := uniqueOfSubsingleton 0
     exact (Submodule.quotientProdEquiv _ _ ≪≫ₗ LinearEquiv.uniqueProd).finrank_eq
   rw [hker, hcoker]
+
+/-- `compSnakeMiddle T S` has the same index as the composite `S ∘L T`, with no finiteness or
+topological-group assumptions on `E` or `G`. -/
+@[simp] theorem index_compSnakeMiddle : (compSnakeMiddle T S).index = (S ∘L T).index := by
+  -- Use `LinearEquiv` for the codomain shear so no `[IsTopologicalAddGroup G]` is needed.
+  let eCod : (F × G) ≃ₗ[R] (F × G) :=
+    (LinearEquiv.refl R F).skewProd (LinearEquiv.refl R G) S.toLinearMap
+  let eDom : (F × E) ≃ₗ[R] (E × F) := T.compSnakeMiddleDomEquiv.symm.toLinearEquiv
+  have hconj : eCod.toLinearMap ∘ₗ (compSnakeMiddle T S).toLinearMap ∘ₗ eDom.toLinearMap =
+      LinearMap.id.prodMap (S ∘L T).toLinearMap := by
+    apply LinearMap.ext; rintro ⟨v, x⟩; ext <;> simp [eCod, eDom, sub_eq_add_neg]
+  have hidx := congrArg LinearMap.index hconj
+  rw [LinearMap.index_equiv_comp, LinearMap.index_comp_equiv, index_id_prodMap] at hidx
+  rw [index_def, index_def]
+  exact hidx
 
 end CompSnake
 

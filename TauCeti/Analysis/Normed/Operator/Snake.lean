@@ -20,10 +20,12 @@ topological module, the Banach open mapping theorem makes `f₂` an open quotien
 (whose range equals the closed kernel of `g₂` because `F₃` is `T₁`) a topological embedding.
 Consequently `Function.Exact.snakeδ` is automatically continuous
 (`TauCeti.continuous_snakeδ`), with no splitting or Hilbert-space assumptions; in particular,
-Hilbert short exact diagrams over `RCLike` fields are covered directly by typeclass inference,
-and `TauCeti.snakeδLOfIsOpenQuotientMap` bundles the connecting map via
+Hilbert short exact diagrams over `RCLike` fields are covered directly by typeclass inference.
+`TauCeti.continuous_snakeδ` supplies the hypotheses of
+`TauCeti.continuous_snakeδ_of_isOpenQuotientMap_of_isEmbedding` via
 `ContinuousLinearMap.isOpenQuotientMap_iff_surjective` and
-`ContinuousLinearMap.isEmbedding_iff_injective_and_isClosed_range`.
+`ContinuousLinearMap.isEmbedding_iff_injective_and_isClosed_range`, and bundling is left to
+`Function.Exact.snakeδLOfIsOpenQuotientMapOfIsEmbedding` with those hypotheses.
 
 ## References
 
