@@ -54,8 +54,8 @@ can only increase it. At a single place the two bounds read
 * `NumberField.InfinitePlace.exp_neg_le_apply_sub_one`: Liouville's inequality
   `|x - 1|_v ≥ exp (-([K : ℚ] log 2 + h(x)))` for `x ≠ 1` at an infinite place.
 * `NumberField.InfinitePlace.exp_neg_le_apply_prod_zpow_sub_one`: Liouville's inequality for
-  `∏ j, α j ^ s j - 1` at an infinite place.
-* `NumberField.exp_neg_le_norm_prod_zpow_sub_one_of_le`: the same under a complex embedding, with
+  `∏ j ∈ t, α j ^ s j - 1` at an infinite place.
+* `RingHom.exp_neg_le_norm_prod_zpow_sub_one_of_le`: the same under a complex embedding, with
   bounds on the heights of the `α j` and on the exponents `|s j|`.
 
 The logarithmic form of the single-place bounds, for the normalized absolute value at a place, is
@@ -69,6 +69,13 @@ The logarithmic form of the single-place bounds, for the normalized absolute val
 The same statements, along the same route, are formalized in Ralf Stephan's
 `rwst/Subspace-Theorems` at `09835cb23557ae5ae0cf55a9c4ab9055f5d60338`, file
 `DiophantineApproximation/FundamentalInequality.lean` (Apache 2.0).
+
+The Liouville bounds for products of powers are adapted from split 5 of the
+[lookahead development](https://github.com/roed-math/TauCeti-w2-fresh/tree/lookahead/DiophantineApproximationAndTranscendence/waldschmidt-interpolation-rank)
+of Waldschmidt's interpolation rank argument, at commit `490d2d4`
+(<https://github.com/roed-math/TauCeti-w2-fresh/tree/490d2d42b068e7f3910b4660ba01f5d8f94445b2>).
+There they are proved for the product directly; here they are derived from the bound for a
+general `x ≠ 1`, `NumberField.InfinitePlace.exp_neg_le_apply_sub_one`.
 -/
 
 public section
@@ -218,32 +225,33 @@ theorem InfinitePlace.exp_neg_le_apply_sub_one (v : InfinitePlace K) {x : K} (hx
     _ ≤ v (x - 1) :=
         (v.inv_mulHeight₁_le_min_one_apply (sub_ne_zero.mpr hx)).trans (min_le_right _ _)
 
-/-- **Liouville's inequality** for a product of powers: if `∏ j, α j ^ s j ≠ 1`, then at every
-infinite place `v`, `|∏ j, α j ^ s j - 1|_v ≥ exp (-([K : ℚ] log 2 + ∑ j, |s j| h(α j)))`, where
-`h` is the logarithmic height `logHeight₁`. -/
+/-- **Liouville's inequality** for a product of powers: if `∏ j ∈ t, α j ^ s j ≠ 1`, then at
+every infinite place `v`,
+`|∏ j ∈ t, α j ^ s j - 1|_v ≥ exp (-([K : ℚ] log 2 + ∑ j ∈ t, |s j| h(α j)))`, where `h` is the
+logarithmic height `logHeight₁`. -/
 theorem InfinitePlace.exp_neg_le_apply_prod_zpow_sub_one (v : InfinitePlace K) {ι : Type*}
-    [Fintype ι] (α : ι → K) (s : ι → ℤ) (h : ∏ j, α j ^ s j ≠ 1) :
-    Real.exp (-(Module.finrank ℚ K * Real.log 2 + ∑ j, |(s j : ℝ)| * logHeight₁ (α j))) ≤
-      v (∏ j, α j ^ s j - 1) := by
+    (t : Finset ι) (α : ι → K) (s : ι → ℤ) (h : ∏ j ∈ t, α j ^ s j ≠ 1) :
+    Real.exp (-(Module.finrank ℚ K * Real.log 2 + ∑ j ∈ t, |(s j : ℝ)| * logHeight₁ (α j))) ≤
+      v (∏ j ∈ t, α j ^ s j - 1) := by
   refine le_trans ?_ (v.exp_neg_le_apply_sub_one h)
   rw [Real.exp_le_exp, neg_le_neg_iff, add_le_add_iff_left]
   refine (logHeight₁_prod_le _ _).trans_eq (Finset.sum_congr rfl fun j _ ↦ ?_)
   rw [logHeight₁_zpow, Nat.cast_natAbs, Int.cast_abs]
 
 /-- Liouville's inequality under a complex embedding, with bounds `h(α j) ≤ a j` on the heights
-and `|s j| ≤ R` on the exponents: if `∏ j, α j ^ s j ≠ 1`, then
-`‖∏ j, φ (α j) ^ s j - 1‖ ≥ exp (-([K : ℚ] log 2 + R ∑ j, a j))`. -/
-theorem exp_neg_le_norm_prod_zpow_sub_one_of_le (φ : K →+* ℂ) {ι : Type*} [Fintype ι]
-    (α : ι → K) (s : ι → ℤ) (h : ∏ j, α j ^ s j ≠ 1) {a : ι → ℝ} {R : ℝ}
-    (ha : ∀ j, logHeight₁ (α j) ≤ a j) (hs : ∀ j, |(s j : ℝ)| ≤ R) :
-    Real.exp (-(Module.finrank ℚ K * Real.log 2 + R * ∑ j, a j)) ≤
-      ‖∏ j, φ (α j) ^ s j - 1‖ := by
+and `|s j| ≤ R` on the exponents for `j ∈ t`: if `∏ j ∈ t, α j ^ s j ≠ 1`, then
+`‖∏ j ∈ t, φ (α j) ^ s j - 1‖ ≥ exp (-([K : ℚ] log 2 + R ∑ j ∈ t, a j))`. -/
+theorem _root_.RingHom.exp_neg_le_norm_prod_zpow_sub_one_of_le (φ : K →+* ℂ) {ι : Type*}
+    (t : Finset ι) (α : ι → K) (s : ι → ℤ) (h : ∏ j ∈ t, α j ^ s j ≠ 1) {a : ι → ℝ} {R : ℝ}
+    (ha : ∀ j ∈ t, logHeight₁ (α j) ≤ a j) (hs : ∀ j ∈ t, |(s j : ℝ)| ≤ R) :
+    Real.exp (-(Module.finrank ℚ K * Real.log 2 + R * ∑ j ∈ t, a j)) ≤
+      ‖∏ j ∈ t, φ (α j) ^ s j - 1‖ := by
   refine le_trans ?_ (by
     simpa only [InfinitePlace.apply, map_sub, map_prod, map_zpow₀, map_one] using
-      (InfinitePlace.mk φ).exp_neg_le_apply_prod_zpow_sub_one α s h)
+      (InfinitePlace.mk φ).exp_neg_le_apply_prod_zpow_sub_one t α s h)
   rw [Real.exp_le_exp, neg_le_neg_iff, add_le_add_iff_left, Finset.mul_sum]
-  exact Finset.sum_le_sum fun j _ ↦
-    mul_le_mul (hs j) (ha j) (zero_le_logHeight₁ _) ((abs_nonneg _).trans (hs j))
+  exact Finset.sum_le_sum fun j hj ↦
+    mul_le_mul (hs j hj) (ha j hj) (zero_le_logHeight₁ _) ((abs_nonneg _).trans (hs j hj))
 
 /-! ### Examples -/
 

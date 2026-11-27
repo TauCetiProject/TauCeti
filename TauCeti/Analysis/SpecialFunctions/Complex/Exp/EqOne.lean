@@ -14,11 +14,14 @@ The solutions of `exp ν = 1` are the points of `2π i ℤ` (`Complex.exp_eq_one
 `exp ν = -1` are the points of `π i (2 ℤ + 1)`. Measuring them by their norm: the only solution of
 `exp ν = 1` with `‖ν‖ < 2π` is `ν = 0`, and every solution of `exp ν = -1` has `π ≤ ‖ν‖`. These
 are the bounds that keep the eigenvalues `1` and `-1` away from the exponential of a small matrix.
+Conversely, `exp ν` far from `1` keeps `ν` away from `0`: `min 1 (‖exp ν - 1‖ / 2) ≤ ‖ν‖`, by
+`Complex.norm_exp_sub_one_le`.
 
 ## Main results
 
 * `Complex.eq_zero_of_exp_eq_one_of_norm_lt`: `exp ν = 1` and `‖ν‖ < 2π` imply `ν = 0`.
 * `Complex.pi_le_norm_of_exp_eq_neg_one`: `exp ν = -1` implies `π ≤ ‖ν‖`.
+* `Complex.min_one_norm_exp_sub_one_div_two_le_norm`: `min 1 (‖exp ν - 1‖ / 2) ≤ ‖ν‖`.
 -/
 
 public section
@@ -51,5 +54,13 @@ theorem pi_le_norm_of_exp_eq_neg_one {ν : ℂ} (hν : exp ν = -1) : Real.pi �
     rw [hν', norm_mul, norm_intCast]
     simp [abs_of_pos Real.pi_pos]
   nlinarith [Real.pi_pos]
+
+/-- The distance of `exp ν` from `1` bounds `ν` from below: `min 1 (‖exp ν - 1‖ / 2) ≤ ‖ν‖`,
+since `‖exp ν - 1‖ ≤ 2 ‖ν‖` for `‖ν‖ ≤ 1` (`Complex.norm_exp_sub_one_le`). -/
+theorem min_one_norm_exp_sub_one_div_two_le_norm (ν : ℂ) : min 1 (‖exp ν - 1‖ / 2) ≤ ‖ν‖ := by
+  rcases le_or_gt ‖ν‖ 1 with h | h
+  · exact min_le_of_right_le (div_le_of_le_mul₀ zero_le_two (norm_nonneg _)
+      (by linarith [norm_exp_sub_one_le h]))
+  · exact min_le_of_left_le h.le
 
 end Complex

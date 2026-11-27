@@ -82,8 +82,12 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
   `e₀` is `V' · y + R e₀` for a subspace `V' ≤ V` containing the coefficient vector.
 * `TauCeti.finrank_map_waldschmidtPointMap_sup`: if `V` contains the coefficient vector, then
   `V · y + R e₀` has the same rank as `V`.
+* `TauCeti.eq_neg_div_of_intCast_mem_span_snoc`: a nonzero integral vector `s` on the line
+  through the coefficient vector has nonzero last coordinate `sₘ`, and `β_k = -s_k / sₘ`.
 * `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm`: a linear form with nonzero last
   coefficient `cₘ` is `-cₘ` times the normalized linear form.
+* `TauCeti.intCast_mul_waldschmidtLinearForm_eq_neg_sum`: if `β₀ = 0` and `β_k = -s_k / sₘ`, then
+  `sₘ Λ = -(s₁ λ₁ + ⋯ + sₘ λₘ)`.
 * `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm_comp_swap`: normalization at an
   arbitrary nonzero coefficient `c_k`, after exchanging `λ_k` and `λₘ`.
 * `TauCeti.waldschmidtNormalize_map`, `TauCeti.waldschmidtNormalize_mem`: the normalized
@@ -168,6 +172,20 @@ theorem add_sum_mul_eq_neg_mul_waldschmidtLinearForm {K : Type*} [Field K] (ι :
   rw [hsum]
   field_simp
   ring
+
+/-- Rational coefficients turn the linear form into an integral one: if `β₀ = 0` and
+`β_k = -s_k / sₘ` for `1 ≤ k < m` (as `TauCeti.eq_neg_div_of_intCast_mem_span_snoc`
+provides), then `sₘ Λ = -(s₁ λ₁ + ⋯ + sₘ λₘ)`. -/
+theorem intCast_mul_waldschmidtLinearForm_eq_neg_sum (l b : Fin (n + 1) → ℂ)
+    {s : Fin (n + 1) → ℤ} (hlast : s (Fin.last n) ≠ 0) (hb₀ : b 0 = 0)
+    (hb : ∀ k : Fin n, b k.succ = -(s k.castSucc : ℂ) / s (Fin.last n)) :
+    (s (Fin.last n) : ℂ) * waldschmidtLinearForm l b = -∑ j, (s j : ℂ) * l j := by
+  have hb' : b = waldschmidtNormalize 0 fun j ↦ (s j : ℂ) :=
+    funext (Fin.cases (by simp [hb₀]) (by simp [hb]))
+  have h := add_sum_mul_eq_neg_mul_waldschmidtLinearForm (RingHom.id ℂ) l 0 (fun j ↦ (s j : ℂ))
+    (Int.cast_ne_zero.2 hlast)
+  simp only [RingHom.id_apply, zero_add] at h
+  rw [hb', h, neg_mul, neg_neg]
 
 section Normalize
 
@@ -391,6 +409,25 @@ theorem comap_waldschmidtPointMap_span_single (b : Fin (n + 1) → R) :
     exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
   · rw [Submodule.mem_comap, waldschmidtPointMap_snoc, Submodule.mem_span_singleton]
     exact ⟨-b 0, by rw [← Pi.single_smul, smul_eq_mul, mul_one]⟩
+
+/-- A nonzero integral vector `s` on the line through the coefficient vector
+`c = (β₁, …, β_{m-1}, -1)` is a rational coefficient relation: its last coordinate `sₘ` is
+nonzero and `β_k = -s_k / sₘ` for `1 ≤ k < m`. Span membership gives no bound on the size of
+`s`. -/
+theorem eq_neg_div_of_intCast_mem_span_snoc {K : Type*} [Field K] [CharZero K]
+    (b : Fin (n + 1) → K) {s : Fin (n + 1) → ℤ} (hs : s ≠ 0)
+    (hmem : (fun i ↦ (s i : K)) ∈ K ∙ Fin.snoc (fun k : Fin n ↦ b k.succ) (-1)) :
+    s (Fin.last n) ≠ 0 ∧ ∀ k : Fin n, b k.succ = -(s k.castSucc : K) / s (Fin.last n) := by
+  rw [← comap_waldschmidtPointMap_span_single, Submodule.mem_comap] at hmem
+  have hv := eq_neg_smul_snoc_of_waldschmidtPointMap_mem b hmem
+  have hlast : s (Fin.last n) ≠ 0 := by
+    refine fun h ↦ hs (funext fun i ↦ ?_)
+    simpa [h] using congrFun hv i
+  refine ⟨hlast, fun k ↦ ?_⟩
+  have := congrFun hv k.castSucc
+  simp only [Pi.smul_apply, Fin.snoc_castSucc, smul_eq_mul] at this
+  rw [eq_div_iff (Int.cast_ne_zero.2 hlast), this]
+  ring
 
 /-- A subspace `V` of indices containing the coefficient vector `c = (β₁, …, β_{m-1}, -1)` is
 recovered from the subspace `V · y + R e₀` spanned by its grid points and the direction `e₀` of
