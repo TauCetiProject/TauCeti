@@ -469,13 +469,9 @@ private theorem eventually_sub_normalChartLift_mem_range
         ν ((extChartAt I x).symm z)) :
     ∀ᶠ z in 𝓝 (extChartAt I x x), (ξ - f.normalChartLift hn ν x) z ∈
       Set.range (fderiv ℝ (writtenInExtChartAt I I' x f) z) := by
-  have hsymm := continuousAt_extChartAt_symm (I := I) x
-  have hsrc : (f : M → X) ⁻¹' (chartAt H' (f x)).source ∈
-      𝓝 ((extChartAt I x).symm (extChartAt I x x)) := by
-    rw [extChartAt_to_inv]
-    exact f.contMDiff.continuous.continuousAt.preimage_mem_nhds
-      ((chartAt H' (f x)).open_source.mem_nhds (mem_chart_source H' (f x)))
-  filter_upwards [extChartAt_target_mem_nhds (I := I) x, hsymm.preimage_mem_nhds hsrc, hlift]
+  have hsrc : (f : M → X) ⁻¹' (chartAt H' (f x)).source ∈ 𝓝 x :=
+    f.contMDiff.continuous.continuousAt.preimage_mem_nhds (chart_source_mem_nhds H' (f x))
+  filter_upwards [extChartAt_target_mem_nhds (I := I) x, extChartAt_preimage_mem_nhds hsrc, hlift]
     with z hz hzf hzν
   set y := (extChartAt I x).symm z
   set T := trivializationAt V (TangentSpace I') (f x)
@@ -549,9 +545,7 @@ theorem normalClass_cauchyRiemannLinearization_eq_of_lift
     filter_upwards [hη] with z hz
     rw [Pi.add_apply, ← hz, Pi.sub_apply, add_sub_cancel]
   -- Near the centre `u` solves the Cauchy–Riemann equation for the structures read in charts.
-  have hhol := eventually_cauchyRiemannOperator_writtenInExtChartAt_eq_zero (x := x)
-    (hf.mono fun y hy ↦ ⟨hy, f.contMDiff.continuous.continuousAt⟩)
-    f.contMDiff.continuous.continuousAt
+  have hhol := eventually_cauchyRiemannOperator_writtenInExtChartAt_eq_zero hf
   have hj : DifferentiableAt ℝ (j.inChart x) c :=
     ((j.contDiffOn_inChart x).contDiffAt (extChartAt_target_mem_nhds x)).differentiableAt
       (by simp)
@@ -569,10 +563,7 @@ theorem normalClass_cauchyRiemannLinearization_eq_of_lift
   rw [hL, cauchyRiemannLinearization_add _ _ _ _ _ _ hℓ (hdu.clm_apply ha)]
   rw [add_apply, cauchyRiemannLinearization_fderiv_apply (j.inChart x) _ u a c v hu ha hj hJ hhol,
     hfx.fderiv_writtenInExtChartAt]
-  have hB : f.normalChartLinearization hn j J ν x v =
-      cauchyRiemannLinearization (j.inChart x c) (J.inChart (f x)) u
-        (f.normalChartLift hn ν x) c v := rfl
-  rw [hB]
+  rw [normalChartLinearization_def]
   -- The ambient vectors live in `TangentSpace I' (f x)`, whose additive structure is that of `V`.
   exact (f.isImmersion.normalClass_eq_iff x hn _ _).2
     ((f.isImmersion.mem_tangentRange_iff x hn _).2 ⟨_, (add_sub_cancel_left _ _).symm⟩)
@@ -621,12 +612,9 @@ theorem normalCauchyRiemannOperator_eq_of_riemannianBundle
       f.isImmersion.normalClass ((extChartAt I x).symm z) hn
         ((trivializationAt V (TangentSpace I') (f x)).symm (f ((extChartAt I x).symm z))
           (letI := g₁; f.normalChartLift hn μ x z)) = μ ((extChartAt I x).symm z) := by
-    have hsrc : (f : M → X) ⁻¹' (chartAt H' (f x)).source ∈
-        𝓝 ((extChartAt I x).symm (extChartAt I x x)) := by
-      rw [extChartAt_to_inv]
-      exact f.contMDiff.continuous.continuousAt.preimage_mem_nhds
-        ((chartAt H' (f x)).open_source.mem_nhds (mem_chart_source H' (f x)))
-    filter_upwards [(continuousAt_extChartAt_symm (I := I) x).preimage_mem_nhds hsrc] with z hz
+    have hsrc : (f : M → X) ⁻¹' (chartAt H' (f x)).source ∈ 𝓝 x :=
+      f.contMDiff.continuous.continuousAt.preimage_mem_nhds (chart_source_mem_nhds H' (f x))
+    filter_upwards [extChartAt_preimage_mem_nhds (I := I) hsrc] with z hz
     let := g₁
     exact normalClass_trivializationAt_symm_normalChartLift μ hz
   have hξ : DifferentiableAt ℝ (letI := g₁; f.normalChartLift hn μ x) (extChartAt I x x) := by

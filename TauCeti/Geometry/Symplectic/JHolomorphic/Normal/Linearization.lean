@@ -92,7 +92,6 @@ theorem normalCauchyRiemannLinearization_smul
 /-- For `u` C² at `x` and J-holomorphic near `x` for a source structure `j` differentiable at `x`,
 with `J` differentiable at `u x`, infinitesimal reparametrizations differentiable at `x` vanish in
 the normal quotient of the linearization with the source structure frozen at `j x`. -/
-@[simp]
 theorem normalCauchyRiemannLinearization_fderiv_apply
     (j : U → U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (a : U → U) (x : U)
     (hu : ContDiffAt ℝ 2 u x) (ha : DifferentiableAt ℝ a x) (hj : DifferentiableAt ℝ j x)

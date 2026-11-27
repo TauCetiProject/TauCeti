@@ -248,12 +248,11 @@ theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero
 
 /-- Away from the chart centre, the coordinate expression of `u` in the charts at `x` and at `u x`
 solves the Cauchy–Riemann equation at every chart point `z` whose point `y` is one where `u` is
-pseudoholomorphic and continuous and lands in the target chart, for the source structure read in
-the chart at `x` at `z`. -/
+pseudoholomorphic and lands in the target chart, for the source structure read in the chart at `x`
+at `z`. -/
 theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero_of_mem
     {z : E} (hz : z ∈ (extChartAt I x).target)
     (hu : IsPseudoholomorphicAt j J u ((extChartAt I x).symm z))
-    (hc : ContinuousAt u ((extChartAt I x).symm z))
     (hw : u ((extChartAt I x).symm z) ∈ (extChartAt I' (u x)).source) :
     cauchyRiemannOperator (j.inChart x z) (J.inChart (u x))
       (writtenInExtChartAt I I' x u) z = 0 := by
@@ -272,27 +271,22 @@ theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero_
   ext v
   rw [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero]
   refine J.fderiv_extChartAt_comp_apply_eq_inChart (u x) (u := u ∘ (extChartAt I x).symm)
-    (hc.comp (continuousAt_extChartAt_symm'' hz)) hw ?_
+    (hu.mdifferentiableAt.continuousAt.comp (continuousAt_extChartAt_symm'' hz)) hw ?_
   rw [mfderiv_comp z hu.mdifferentiableAt hsymm]
   exact (congrArg (mfderiv I I' u _) (hj v)).trans (hu.mfderiv_apply_commute _)
 
-/-- If `u` is continuous at `x` and pseudoholomorphic near `x`, its coordinate expression in the
-charts at `x` and at `u x` solves the Cauchy–Riemann equation near the chart centre, for the
-source structure read in the chart at `x`. -/
+/-- If `u` is pseudoholomorphic near `x`, its coordinate expression in the charts at `x` and at
+`u x` solves the Cauchy–Riemann equation near the chart centre, for the source structure read in
+the chart at `x`. -/
 theorem eventually_cauchyRiemannOperator_writtenInExtChartAt_eq_zero
-    (hu : ∀ᶠ y in 𝓝 x, IsPseudoholomorphicAt j J u y ∧ ContinuousAt u y)
-    (hc : ContinuousAt u x) :
+    (hu : ∀ᶠ y in 𝓝 x, IsPseudoholomorphicAt j J u y) :
     ∀ᶠ z in 𝓝 (extChartAt I x x), cauchyRiemannOperator (j.inChart x z) (J.inChart (u x))
       (writtenInExtChartAt I I' x u) z = 0 := by
-  have hsymm := continuousAt_extChartAt_symm (I := I) x
-  have hsrc : u ⁻¹' (extChartAt I' (u x)).source ∈
-      𝓝 ((extChartAt I x).symm (extChartAt I x x)) := by
-    rw [extChartAt_to_inv]
-    exact hc.preimage_mem_nhds (extChartAt_source_mem_nhds (u x))
-  rw [← extChartAt_to_inv (I := I) x] at hu
-  filter_upwards [extChartAt_target_mem_nhds (I := I) x, hsymm.preimage_mem_nhds hu,
-    hsymm.preimage_mem_nhds hsrc] with z hz hzu hzc
-  exact hzu.1.cauchyRiemannOperator_writtenInExtChartAt_eq_zero_of_mem hz hzu.2 hzc
+  have hc : ContinuousAt u x := hu.self_of_nhds.mdifferentiableAt.continuousAt
+  filter_upwards [extChartAt_target_mem_nhds (I := I) x, extChartAt_preimage_mem_nhds hu,
+    extChartAt_preimage_mem_nhds
+      (hc.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I') (u x)))] with z hz hzu hzc
+  exact hzu.cauchyRiemannOperator_writtenInExtChartAt_eq_zero_of_mem hz hzc
 
 end Chart
 
