@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
-public import Mathlib.Combinatorics.SimpleGraph.Density
+public import TauCeti.Combinatorics.SimpleGraph.Density
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Fintype.Order
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
@@ -35,8 +35,8 @@ whose isoperimetric constants are bounded away from `0` is a family of expanders
 * `SimpleGraph.card_edgeBoundary_compl`: `|∂Sᶜ| = |∂S|`.
 * `SimpleGraph.sum_degree_eq_card_interedges_add_card_edgeBoundary`: the degrees in `S` add up
   to the ordered adjacent pairs inside `S` plus `|∂S|`; the former number is even
-  (`SimpleGraph.even_card_interedges_self`). Hence in a connected graph with even degrees every
-  nonempty proper set has at least two boundary edges
+  (`SimpleGraph.even_card_interedges_self`). Hence in a connected graph every nonempty proper set
+  whose vertices have even degrees has at least two boundary edges
   (`SimpleGraph.Connected.two_le_card_edgeBoundary_of_even_degree`).
 * `SimpleGraph.exists_isoperimetricConstant_eq` and `SimpleGraph.isoperimetricConstant_le`: for
   `n ≥ 2` the infimum is attained and bounds every admissible set.
@@ -140,17 +140,6 @@ theorem Connected.edgeBoundary_nonempty (hG : G.Connected) {S : Finset V} (hS : 
   obtain ⟨v, -, hv⟩ := exists_of_ssubset (ssubset_univ_iff.2 hS')
   exact (hG.preconnected u v).edgeBoundary_nonempty hu hv
 
-/-- The number of ordered adjacent pairs from `S` to `T` is the sum over `x ∈ S` of the number of
-neighbours of `x` in `T`. -/
-theorem card_interedges_eq_sum (S T : Finset V) :
-    #(G.interedges S T) = ∑ x ∈ S, #(G.neighborFinset x ∩ T) := by
-  rw [interedges_def, card_filter, sum_product]
-  refine sum_congr rfl fun x _ ↦ ?_
-  rw [← card_filter, ← filter_mem_eq_inter, neighborFinset_eq_filter, filter_filter]
-  congr 1
-  ext y
-  simp [and_comm]
-
 /-- The degrees of the vertices of `S` add up to the number of ordered adjacent pairs inside `S`
 plus the size of the edge boundary of `S`. -/
 theorem sum_degree_eq_card_interedges_add_card_edgeBoundary (S : Finset V) :
@@ -158,26 +147,6 @@ theorem sum_degree_eq_card_interedges_add_card_edgeBoundary (S : Finset V) :
   rw [edgeBoundary_def, card_interedges_eq_sum, card_interedges_eq_sum, ← sum_add_distrib]
   refine sum_congr rfl fun x _ ↦ ?_
   rw [← card_neighborFinset_eq_degree, ← sdiff_eq_inter_compl, card_inter_add_card_sdiff]
-
-omit [Fintype V] [DecidableEq V] in
-/-- The ordered adjacent pairs inside a vertex set come in pairs `(a, b)`, `(b, a)` with `a ≠ b`,
-so there is an even number of them. -/
-theorem even_card_interedges_self (S : Finset V) : Even #(G.interedges S S) := by
-  classical
-  rw [card_eq_sum_card_image (fun p : V × V ↦ s(p.1, p.2)), sum_const_nat (m := 2) fun z hz ↦ ?_]
-  · exact even_two.mul_left _
-  obtain ⟨⟨a, b⟩, hab, rfl⟩ := mem_image.1 hz
-  rw [mk_mem_interedges_iff] at hab
-  have hfib : {p ∈ G.interedges S S | s(p.1, p.2) = s(a, b)} = {(a, b), (b, a)} := by
-    ext ⟨c, d⟩
-    simp only [mem_filter, mk_mem_interedges_iff, mem_insert, mem_singleton, Prod.mk.injEq]
-    constructor
-    · rintro ⟨-, h⟩
-      exact Sym2.eq_iff.1 h
-    · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
-      · exact ⟨hab, rfl⟩
-      · exact ⟨⟨hab.2.1, hab.1, hab.2.2.symm⟩, Sym2.eq_swap⟩
-  rw [hfib, card_pair fun h ↦ hab.2.2.ne (Prod.mk.inj h).1]
 
 variable {G} in
 /-- In a `k`-regular graph, `k |S|` is the number of ordered adjacent pairs inside `S` plus the
@@ -189,14 +158,14 @@ theorem IsRegularOfDegree.mul_card_eq_card_interedges_add_card_edgeBoundary {k :
     sum_const, smul_eq_mul, mul_comm]
 
 variable {G} in
-/-- In a connected graph all of whose degrees are even, every nonempty proper vertex set has at
-least two boundary edges: the boundary is nonempty by connectedness, and of even size because
-the degrees in `S` add up to an even number. -/
-theorem Connected.two_le_card_edgeBoundary_of_even_degree (hG : G.Connected)
-    (hdeg : ∀ v, Even (G.degree v)) {S : Finset V} (hS : S.Nonempty) (hS' : S ≠ univ) :
+/-- In a connected graph, every nonempty proper vertex set `S` whose vertices all have even degree
+has at least two boundary edges: the boundary is nonempty by connectedness, and of even size
+because the degrees in `S` add up to an even number. -/
+theorem Connected.two_le_card_edgeBoundary_of_even_degree (hG : G.Connected) {S : Finset V}
+    (hdeg : ∀ v ∈ S, Even (G.degree v)) (hS : S.Nonempty) (hS' : S ≠ univ) :
     2 ≤ #(G.edgeBoundary S) := by
   have hsum := G.sum_degree_eq_card_interedges_add_card_edgeBoundary S
-  have hev : Even (∑ x ∈ S, G.degree x) := Finset.even_sum _ fun v _ ↦ hdeg v
+  have hev : Even (∑ x ∈ S, G.degree x) := Finset.even_sum _ hdeg
   obtain ⟨r, hr⟩ := hev
   obtain ⟨t, ht⟩ := G.even_card_interedges_self S
   have hpos := (hG.edgeBoundary_nonempty hS hS').card_pos
@@ -223,15 +192,6 @@ private theorem nonempty_admissible (hV : 2 ≤ Fintype.card V) :
     Nonempty {S : Finset V // S.Nonempty ∧ 2 * #S ≤ Fintype.card V} := by
   obtain ⟨v⟩ := Fintype.card_pos_iff.1 (by omega : 0 < Fintype.card V)
   exact ⟨⟨{v}, singleton_nonempty v, by simpa using hV⟩⟩
-
-omit [DecidableEq V] in
-/-- A nonempty admissible set is a proper subset. -/
-private theorem ne_univ_of_two_mul_card_le {S : Finset V} (hS : S.Nonempty)
-    (hS' : 2 * #S ≤ Fintype.card V) : S ≠ univ := by
-  rintro rfl
-  have := hS.card_pos
-  rw [card_univ] at this hS'
-  omega
 
 /-- The isoperimetric constant bounds `|∂S| / |S|` for every admissible set `S`. -/
 theorem isoperimetricConstant_le {S : Finset V} (hS : S.Nonempty)
@@ -302,8 +262,9 @@ theorem isoperimetricConstant_pos_iff_connected (hV : 2 ≤ Fintype.card V) :
     fun hG ↦ ?_⟩
   obtain ⟨S, hS, hS', heq⟩ := G.exists_isoperimetricConstant_eq hV
   rw [heq]
-  have := (hG.edgeBoundary_nonempty hS (ne_univ_of_two_mul_card_le hS hS')).card_pos
   have := hS.card_pos
+  have := (hG.edgeBoundary_nonempty hS
+    ((card_lt_iff_ne_univ S).1 (by omega))).card_pos
   positivity
 
 /-- The isoperimetric constant is at most the degree of any vertex: on at least two vertices take
@@ -399,11 +360,12 @@ theorem isoperimetricConstant_cycleGraph {n : ℕ} (hn : 3 ≤ n) :
           rw [hcard]
           gcongr
           exact_mod_cast hle
-  · have hne := ne_univ_of_two_mul_card_le hS hS'
+  · have := hS.card_pos
+    have hne := (card_lt_iff_ne_univ S).1 (by omega)
     have hconn : (cycleGraph n).Connected := by
       obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
       exact connected_cycleGraph_add_one
-    have h2 := hconn.two_le_card_edgeBoundary_of_even_degree (fun v ↦ by
+    have h2 := hconn.two_le_card_edgeBoundary_of_even_degree (fun v _ ↦ by
       obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
       rw [cycleGraph_degree_three_le]
       exact even_two) hS hne
