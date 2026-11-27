@@ -230,16 +230,16 @@ module, is the inclusion `LinearMap.single` of the `j`-th coordinate. -/
 theorem ι_biproductIsoPi_hom {J : Type} [Finite J] [DecidableEq J] (f : J → ModuleCat.{v} R)
     (j : J) :
     biproduct.ι f j ≫ (biproductIsoPi f).hom = ofHom (LinearMap.single R (fun j ↦ f j) j) := by
-  let := Fintype.ofFinite J
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro x
-  have h := congrArg (DirectSum.linearEquivFunOnFintype R J fun j ↦ (f j : Type v))
-    (TauCeti.biproductDirectSumEquiv_ι f j x)
-  simp only [TauCeti.biproductDirectSumEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.apply_symm_apply, DirectSum.linearEquivFunOnFintype_lof] at h
-  rw [Iso.toLinearEquiv_apply] at h
-  simpa only [hom_comp, LinearMap.comp_apply, hom_ofHom, LinearMap.single_apply] using h
+  rw [← Iso.eq_comp_inv]
+  apply biproduct.hom_ext
+  intro i
+  rw [Category.assoc, biproductIsoPi_inv_comp_π]
+  by_cases h : i = j
+  · subst i
+    rw [biproduct.ι_π_self, ← ofHom_comp, LinearMap.proj_comp_single_same]
+    rfl
+  · rw [biproduct.ι_π_ne _ (Ne.symm h), ← ofHom_comp, LinearMap.proj_comp_single_ne _ _ _ _ h]
+    rfl
 
 end ModuleCat
 

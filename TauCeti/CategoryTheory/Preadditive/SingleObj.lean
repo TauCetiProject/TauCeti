@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.CategoryTheory.Linear.Basic
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.SingleObj
 public import TauCeti.CategoryTheory.SingleObj
+
+import Mathlib.Algebra.Algebra.Basic
 
 /-!
 # Linear structure on the one-object category of an algebra

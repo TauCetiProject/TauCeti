@@ -371,6 +371,18 @@ theorem additiveCongrLeft_functor_map_hom {F G : C ⥤+ E} (φ : F ⟶ G) :
     (e.additiveCongrLeft.functor.map φ).hom = Functor.whiskerLeft e.inverse φ.hom :=
   rfl
 
+/-- Precomposition along an additive equivalence preserves addition of natural transformations. -/
+instance : (e.additiveCongrLeft (E := E)).functor.Additive where
+  map_add {_ _ f g} := by
+    ext X
+    rw [additiveCongrLeft_functor_map_hom, Functor.whiskerLeft_app]
+    -- Addition in each full subcategory is inherited from natural transformations.
+    change (f.hom + g.hom).app (e.inverse.obj X) =
+      ((e.additiveCongrLeft.functor.map f).hom + (e.additiveCongrLeft.functor.map g).hom).app X
+    rw [NatTrans.app_add, NatTrans.app_add]
+    simp only [additiveCongrLeft_functor_map_hom, Functor.whiskerLeft_app]
+    rfl
+
 /-- The inverse of `e.additiveCongrLeft` precomposes an additive functor out of `D`
 with `e.functor`. -/
 @[simp]
