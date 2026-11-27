@@ -520,6 +520,18 @@ theorem transport_symm {x y : X} (L : LocalCoefficientSystem.{u, v, w} R X)
   rw [h]
   exact L.map_id_apply _ a
 
+/-- Transport along a path class whose ends are moved by equalities is the transport along the
+class, conjugated by the transports along the constant classes that move the ends. -/
+theorem transport_cast {a b a' b' : X} (L : LocalCoefficientSystem.{u, v, w} R X)
+    (p : Path.Homotopic.Quotient a b) (ha : a' = a) (hb : b' = b) :
+    transport L (p.cast ha hb) =
+      ((transport L ((Path.Homotopic.Quotient.refl a').cast rfl ha.symm)).trans
+        (transport L p)).trans
+          (transport L ((Path.Homotopic.Quotient.refl b').cast rfl hb.symm)).symm := by
+  subst ha hb
+  ext v
+  simp
+
 /-- Transport commutes with a morphism of local coefficient systems. -/
 theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R X}
     (η : L ⟶ K) (p : Path.Homotopic.Quotient x y)

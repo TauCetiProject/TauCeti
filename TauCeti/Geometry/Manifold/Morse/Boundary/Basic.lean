@@ -93,6 +93,11 @@ theorem mem_morseTrajectorySlice {p q z : M} :
       z ∈ hX.flow.unstableSet p ∧ z ∈ hX.flow.stableSet q ∧ f z = (f p + f q) / 2 := by
   simp only [morseTrajectorySlice, mem_inter_iff, mem_ofPred_eq, and_assoc]
 
+/-- The points of the middle-level slice lie on trajectories from `p` to `q`. -/
+theorem morseTrajectorySlice_subset (p q : M) :
+    hX.morseTrajectorySlice p q ⊆ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
+  inter_subset_left
+
 /-- The middle-level slice of trajectories between distinct points is empty unless the value of
 `f` drops strictly from the source to the target. -/
 theorem value_lt_of_mem_morseTrajectorySlice {p q z : M}
