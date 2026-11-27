@@ -32,7 +32,7 @@ upper half-plane `ℂ₊` with
   `Im z = y > 0`, `∫ |F(x + iy)|^p dx ≤ ‖F‖_p^p`.
 * `TauCeti.MemUpperHalfPlaneHardy.rpow_norm_le`: the **point bound**
   `|F(z)|^p ≤ 2 ‖F‖_p^p / (π Im z)` for `F ∈ H^p(ℂ₊)`, `1 ≤ p < ∞` and `z ∈ ℂ₊`.
-* `TauCeti.not_memUpperHalfPlaneHardy_const`: a nonzero constant is in no `H^p(ℂ₊)`, `p < ∞`.
+* `TauCeti.not_memUpperHalfPlaneHardy_const`: a nonzero constant is in no `H^p(ℂ₊)`, `0 < p < ∞`.
 
 The point bound: for `0 < r < Im z`, the mean-value property of the harmonic function `F` on the
 disc `D(z, r)` (`InnerProductSpace.HarmonicOnNhd.setAverage_ball_eq`) and Hölder's bound on an
@@ -216,8 +216,8 @@ theorem MemUpperHalfPlaneHardy.rpow_norm_le {p : ℝ} (hp : 1 ≤ p)
 
 /-! ### Checks -/
 
-/-- **A nonzero constant is not in `H^p(ℂ₊)`** for `p < ∞`: its `L^p` norm on every horizontal line
-is infinite. -/
+/-- **A nonzero constant is not in `H^p(ℂ₊)`** for `0 < p < ∞`: its `L^p` norm on every horizontal
+line is infinite. -/
 theorem not_memUpperHalfPlaneHardy_const {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {c : ℂ}
     (hc : c ≠ 0) : ¬ MemUpperHalfPlaneHardy p (fun _ ↦ c) := by
   rintro ⟨-, hlt⟩
