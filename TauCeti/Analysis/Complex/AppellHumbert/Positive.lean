@@ -25,7 +25,7 @@ continuous bilinear forms, `IsCompact.exists_pos_forall_mul_norm_sq_le`).
 
 **The parts of `B`.** The form `B` is real linear in its first and complex linear in its second
 variable. Its part that is complex linear in both variables,
-`B₁ (u, v) = (B (u, v) - i B (i u, v)) / 2` (`TauCeti.AppellHumbertData.symmetricPart`), is
+`B₁ (u, v) = (B (u, v) - i B (i u, v)) / 2` (`TauCeti.AppellHumbertData.complexBilinearPart`), is
 symmetric because the real part of `B` is; so `B - B₁`
 (`TauCeti.AppellHumbertData.hermitianPart`) has the same Riemann form as `B`, and its real part on
 the diagonal is `Re (B - B₁) (u, u) = π E (i u, u)`. For a positive datum this grows like `‖u‖²`.
@@ -33,14 +33,15 @@ the diagonal is `Re (B - B₁) (u, u) = π E (i u, u)`. For a positive datum thi
 ## Main declarations
 
 * `TauCeti.AppellHumbertData.IsPositive`: positivity of the Riemann form.
-* `TauCeti.AppellHumbertData.symmetricPart`, `TauCeti.AppellHumbertData.hermitianPart`: the complex
-  bilinear part of `B` and the rest.
+* `TauCeti.AppellHumbertData.complexBilinearPart`, `TauCeti.AppellHumbertData.hermitianPart`: the
+  complex bilinear part of `B` and the rest.
 
 ## Provenance
 
-`TauCeti.AppellHumbertData.symmetricPart_comm` is adapted from `New.IsAppellHumbert.linearPart_symm`
-(file `src/Lib/Shimura/ComplexTheta/DimensionFormula.lean`) in grh-lean
-(https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0, Copyright 2026 Anthropic, PBC).
+`TauCeti.AppellHumbertData.complexBilinearPart_comm` is adapted from
+`New.IsAppellHumbert.linearPart_symm` (file `src/Lib/Shimura/ComplexTheta/DimensionFormula.lean`)
+in grh-lean (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0, Copyright 2026
+Anthropic, PBC).
 
 ## References
 
@@ -107,8 +108,8 @@ theorem re_form_I_smul (u v : V) : (D.form (I • u) v).re = -(D.form v u).im :=
   ring
 
 /-- The **complex bilinear part** `B₁ (u, v) = (B (u, v) - i B (i u, v)) / 2` of the form `B` of an
-Appell–Humbert datum. It is symmetric (`TauCeti.AppellHumbertData.symmetricPart_comm`). -/
-noncomputable def symmetricPart : V →L[ℂ] V →L[ℂ] ℂ where
+Appell–Humbert datum. It is symmetric (`TauCeti.AppellHumbertData.complexBilinearPart_comm`). -/
+noncomputable def complexBilinearPart : V →L[ℂ] V →L[ℂ] ℂ where
   toFun u := (2 : ℂ)⁻¹ • (D.form u - I • D.form (I • u))
   map_add' u v := by
     simp only [smul_add, map_add]
@@ -135,18 +136,19 @@ noncomputable def symmetricPart : V →L[ℂ] V →L[ℂ] ℂ where
   cont := by fun_prop
 
 /-- The defining formula of the complex bilinear part of `B`. -/
-theorem symmetricPart_apply (u v : V) :
-    D.symmetricPart u v = (D.form u v - I * D.form (I • u) v) / 2 := by
-  simp [symmetricPart, div_eq_inv_mul]
+theorem complexBilinearPart_apply (u v : V) :
+    D.complexBilinearPart u v = (D.form u v - I * D.form (I • u) v) / 2 := by
+  simp [complexBilinearPart, div_eq_inv_mul]
 
 /-- The complex bilinear part of `B` is symmetric, as the real part of `B` is. -/
-theorem symmetricPart_comm (u v : V) : D.symmetricPart u v = D.symmetricPart v u := by
+theorem complexBilinearPart_comm (u v : V) :
+    D.complexBilinearPart u v = D.complexBilinearPart v u := by
   have hre (u v : V) : (D.form (I • u) v).im = (D.form (I • v) u).im := by
     have h := D.re_form_comm (I • u) (I • v)
     simp only [(D.form _).map_smul, smul_eq_mul, mul_re, I_re, I_im, zero_mul, one_mul,
       zero_sub] at h
     linarith
-  rw [symmetricPart_apply, symmetricPart_apply]
+  rw [complexBilinearPart_apply, complexBilinearPart_apply]
   congr 1
   apply Complex.ext
   · simp only [sub_re, mul_re, I_re, I_im, zero_mul, one_mul, zero_sub, sub_neg_eq_add,
@@ -158,30 +160,30 @@ theorem symmetricPart_comm (u v : V) : D.symmetricPart u v = D.symmetricPart v u
 linear in its first variable, and `B - B₁ = π H (·₂, ·₁)` for a Hermitian form `H`. It has the
 same Riemann form as `B` (`TauCeti.AppellHumbertData.hermitianPart_sub_hermitianPart`). -/
 noncomputable def hermitianPart : V →L[ℝ] V →L[ℂ] ℂ :=
-  D.form - D.symmetricPart.restrictScalars ℝ
+  D.form - D.complexBilinearPart.restrictScalars ℝ
 
 /-- The defining formula of the Hermitian part of `B`. -/
 theorem hermitianPart_apply (u v : V) :
-    D.hermitianPart u v = D.form u v - D.symmetricPart u v := (rfl)
+    D.hermitianPart u v = D.form u v - D.complexBilinearPart u v := (rfl)
 
 /-- The Hermitian part of `B` has the same Riemann form as `B`:
 `(B - B₁) (v, u) - (B - B₁) (u, v) = 2πi E (u, v)`. -/
 theorem hermitianPart_sub_hermitianPart (u v : V) :
     D.hermitianPart v u - D.hermitianPart u v = 2 * π * I * D.riemannForm u v := by
-  rw [hermitianPart_apply, hermitianPart_apply, D.symmetricPart_comm v u, ← D.form_sub_form]
+  rw [hermitianPart_apply, hermitianPart_apply, D.complexBilinearPart_comm v u, ← D.form_sub_form]
   ring
 
 /-- On the diagonal, the real part of the Hermitian part of `B` is `π E (i u, u)`. -/
 theorem re_hermitianPart_self (u : V) : (D.hermitianPart u u).re = π * D.riemannForm (I • u) u := by
-  rw [hermitianPart_apply, symmetricPart_apply, riemannForm_apply, (D.form u).map_smul,
+  rw [hermitianPart_apply, complexBilinearPart_apply, riemannForm_apply, (D.form u).map_smul,
     smul_eq_mul]
   simp only [sub_re, div_ofNat_re, mul_re, I_re, I_im, sub_im, mul_im]
   field_simp
   ring
 
 /-- The imaginary parts of `B` and of its complex bilinear part agree on the diagonal. -/
-theorem im_symmetricPart_self (u : V) : (D.symmetricPart u u).im = (D.form u u).im := by
-  rw [symmetricPart_apply, div_ofNat_im, sub_im, mul_im, I_re, I_im, re_form_I_smul]
+theorem im_complexBilinearPart_self (u : V) : (D.complexBilinearPart u u).im = (D.form u u).im := by
+  rw [complexBilinearPart_apply, div_ofNat_im, sub_im, mul_im, I_re, I_im, re_form_I_smul]
   ring
 
 end TauCeti.AppellHumbertData

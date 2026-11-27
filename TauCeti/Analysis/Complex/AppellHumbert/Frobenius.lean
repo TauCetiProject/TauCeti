@@ -116,7 +116,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {L : Submodule �
 /-- The integrand `exp (-B₁ (b, b) / 2) conj ((U_x f) (0)) (U_x g) (b)` of the pairing of `f` and
 `g` at `b`, as a function of `x`. -/
 private noncomputable def pairingIntegrand (f g : V → ℂ) (b x : V) : ℂ :=
-  exp (-(D.symmetricPart b b / 2)) *
+  exp (-(D.complexBilinearPart b b / 2)) *
     (conj (D.twistedTranslate x f 0) * D.twistedTranslate x g b)
 
 variable {D}
@@ -139,7 +139,7 @@ private theorem pairingIntegrand_add {f g : V → ℂ} (hf : f ∈ D.thetaSpace)
 /-- The pairing integrand of continuous functions is continuous in `x`. -/
 private theorem continuous_pairingIntegrand {f g : V → ℂ} (hf : Continuous f) (hg : Continuous g)
     (b : V) : Continuous (D.pairingIntegrand f g b) := by
-  have h : D.pairingIntegrand f g b = fun x ↦ exp (-(D.symmetricPart b b / 2)) *
+  have h : D.pairingIntegrand f g b = fun x ↦ exp (-(D.complexBilinearPart b b / 2)) *
       (conj (exp (-(D.form x 0 + D.form x x / 2)) * f (0 + x)) *
         (exp (-(D.form x b + D.form x x / 2)) * g (b + x))) := by
     funext x
@@ -152,22 +152,22 @@ private theorem continuous_pairingIntegrand {f g : V → ℂ} (hf : Continuous f
 private theorem pairingIntegrand_neg_add (f g : V → ℂ) (b x : V) :
     D.pairingIntegrand g f (-b) (x + b) = conj (D.pairingIntegrand f g b x) := by
   -- The exponents agree: their difference is `i (2 Im (B₁ (b, b)) / 2 - Im B (b, b))` = 0.
-  have h_exp : -(D.symmetricPart (-b) (-b) / 2) +
+  have h_exp : -(D.complexBilinearPart (-b) (-b) / 2) +
       (conj (-(D.form (x + b) 0 + D.form (x + b) (x + b) / 2)) +
         -(D.form (x + b) (-b) + D.form (x + b) (x + b) / 2)) =
-      conj (-(D.symmetricPart b b / 2)) + (-(D.form x 0 + D.form x x / 2) +
+      conj (-(D.complexBilinearPart b b / 2)) + (-(D.form x 0 + D.form x x / 2) +
         conj (-(D.form x b + D.form x x / 2))) := by
     apply Complex.ext
     · simp only [map_neg, map_add, _root_.neg_apply, neg_neg, neg_re, add_re,
         div_ofNat_re, conj_re, _root_.add_apply, map_zero, zero_re]
       linarith [D.re_form_comm x b]
     · simp only [map_neg, map_add, _root_.neg_apply, neg_neg, neg_im, add_im,
-        div_ofNat_im, conj_im, _root_.add_apply, map_zero, zero_im, D.im_symmetricPart_self]
+        div_ofNat_im, conj_im, _root_.add_apply, map_zero, zero_im, D.im_complexBilinearPart_self]
       ring
   simp only [pairingIntegrand, twistedTranslate_apply, map_mul, conj_conj, ← exp_conj]
   rw [show (0 : V) + (x + b) = x + b by simp, show -b + (x + b) = 0 + x by abel,
     show b + x = x + b by abel]
-  calc _ = exp (-(D.symmetricPart (-b) (-b) / 2) +
+  calc _ = exp (-(D.complexBilinearPart (-b) (-b) / 2) +
         (conj (-(D.form (x + b) 0 + D.form (x + b) (x + b) / 2)) +
         -(D.form (x + b) (-b) + D.form (x + b) (x + b) / 2))) *
           (conj (g (x + b)) * f (0 + x)) := by
@@ -206,8 +206,8 @@ private theorem exists_pairingIntegrand_twistedTranslate_right (a b : V) :
     ∃ κ : ℂ, κ ≠ 0 ∧ ∀ (f g : V → ℂ) (x : V),
       D.pairingIntegrand f (D.twistedTranslate a g) (b - a) x =
         κ * (exp (2 * π * I * D.riemannForm a x) * D.pairingIntegrand f g b x) := by
-  refine ⟨exp (-(D.symmetricPart (b - a) (b - a) / 2)) *
-      exp (-(D.form a (b - a) + D.form a a / 2)) / exp (-(D.symmetricPart b b / 2)),
+  refine ⟨exp (-(D.complexBilinearPart (b - a) (b - a) / 2)) *
+      exp (-(D.form a (b - a) + D.form a a / 2)) / exp (-(D.complexBilinearPart b b / 2)),
     by simp [exp_ne_zero], fun f g x ↦ ?_⟩
   have h := D.twistedTranslate_twistedTranslate_eq_smul_swap x a g
   simp only [pairingIntegrand, h, Pi.smul_apply, smul_eq_mul, Circle.coe_exp,
@@ -220,7 +220,7 @@ not depend on the functions. -/
 private theorem exists_pairingIntegrand_sub_self (y z : V) :
     ∃ κ : ℂ, κ ≠ 0 ∧ ∀ f g : V → ℂ,
       D.pairingIntegrand f g (z - y) y = κ * (conj (f y) * g z) := by
-  refine ⟨exp (-(D.symmetricPart (z - y) (z - y) / 2)) * conj (exp (-(D.form y y / 2))) *
+  refine ⟨exp (-(D.complexBilinearPart (z - y) (z - y) / 2)) * conj (exp (-(D.form y y / 2))) *
       exp (-(D.form y (z - y) + D.form y y / 2)), by simp [exp_ne_zero], fun f g ↦ ?_⟩
   simp only [pairingIntegrand, twistedTranslate_apply, map_zero, zero_add, sub_add_cancel,
     map_mul]
@@ -261,11 +261,11 @@ private theorem differentiable_torusMean_pairingIntegrand {f g : V → ℂ} (hf 
     simp only [w, twistedTranslate_apply]
     fun_prop
   set F : V × ((V →L[ℂ] ℂ) × V) → ℂ := fun p ↦
-    exp (-(D.symmetricPart p.1 p.1 / 2) + p.2.1 p.1) * g (p.1 + p.2.2)
+    exp (-(D.complexBilinearPart p.1 p.1 / 2) + p.2.1 p.1) * g (p.1 + p.2.2)
   have hF : Differentiable ℂ F := by
     have hg' := differentiable_of_mem_thetaSpace hg
-    have hB₁ := D.symmetricPart.differentiable_apply_self
-    have h1 : Differentiable ℂ fun p : V × ((V →L[ℂ] ℂ) × V) ↦ D.symmetricPart p.1 p.1 :=
+    have hB₁ := D.complexBilinearPart.differentiable_apply_self
+    have h1 : Differentiable ℂ fun p : V × ((V →L[ℂ] ℂ) × V) ↦ D.complexBilinearPart p.1 p.1 :=
       hB₁.comp differentiable_fst
     have h2 : Differentiable ℂ fun p : V × ((V →L[ℂ] ℂ) × V) ↦ p.2.1 p.1 :=
       (differentiable_fst.comp differentiable_snd).clm_apply differentiable_fst

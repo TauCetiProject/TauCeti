@@ -22,7 +22,7 @@ normed space `V`, with Riemann form `E` (`TauCeti.AppellHumbertData`). This file
 theta functions of a datum with positive Riemann form (`TauCeti.AppellHumbertData.IsPositive`) do
 not all vanish (`TauCeti.AppellHumbertData.IsPositive.exists_mem_thetaSpace_ne_zero`), the first
 step of Frobenius' dimension formula. It uses the decomposition of `B` into its complex bilinear
-part `B₁` (`TauCeti.AppellHumbertData.symmetricPart`) and the rest `B - B₁`
+part `B₁` (`TauCeti.AppellHumbertData.complexBilinearPart`) and the rest `B - B₁`
 (`TauCeti.AppellHumbertData.hermitianPart`), whose real part on the diagonal is
 `π E (i u, u)`; for a positive datum this grows like `‖u‖²`.
 
@@ -79,24 +79,24 @@ of an Appell–Humbert datum, for a linear form `ξ`, where `e` is the factor of
 the complex bilinear part of `B`. For a positive datum it converges and is a theta function
 (`TauCeti.AppellHumbertData.poincareSeries_mem_thetaSpace`). -/
 noncomputable def poincareSeries (ξ : V →L[ℂ] ℂ) (y : V) : ℂ :=
-  ∑' l : L, (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l))
+  ∑' l : L, (D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l))
 
 /-- The Poincaré series as its sum. -/
 theorem poincareSeries_def (ξ : V →L[ℂ] ℂ) (y : V) :
     D.poincareSeries ξ y =
-      ∑' l : L, (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l)) :=
+      ∑' l : L, (D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l)) :=
   (rfl)
 
 /-- The terms of the Poincaré series, rearranged: the exponent is
 `B₁ (y, y) / 2 + ξ y - (B - B₁) (l, y) - (B - B₁) (l, l) / 2 + ξ l`. -/
 theorem factor_inv_mul_exp_eq (ξ : V →L[ℂ] ℂ) (y : V) (l : L) :
-    (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l)) =
-      (D.semichar l : ℂ)⁻¹ * exp (D.symmetricPart y y / 2 + ξ y +
+    (D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l)) =
+      (D.semichar l : ℂ)⁻¹ * exp (D.complexBilinearPart y y / 2 + ξ y +
         (-D.hermitianPart l y - D.hermitianPart l l / 2 + ξ l)) := by
   rw [factor_def, mul_inv, mul_assoc, ← exp_neg, ← exp_add]
   congr 2
   simp only [map_add, _root_.add_apply, hermitianPart_apply,
-    D.symmetricPart_comm y (l : V)]
+    D.complexBilinearPart_comm y (l : V)]
   ring
 
 variable {D}
@@ -106,13 +106,13 @@ variable {D}
 theorem IsPositive.exists_norm_factor_inv_mul_exp_le [FiniteDimensional ℂ V] (hD : D.IsPositive)
     (ξ : V →L[ℂ] ℂ) (R : ℝ) :
     ∃ c > 0, ∃ K : ℝ, ∀ y ∈ closedBall (0 : V) R, ∀ l : L,
-      ‖(D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l))‖ ≤
+      ‖(D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l))‖ ≤
         K * Real.exp (-c * ‖(l : V)‖ ^ 2) := by
   obtain ⟨c, hc, hle⟩ := hD.exists_pos_mul_sq_le
   set A := ‖D.hermitianPart‖ * R + ‖ξ‖
   set c' := π * c / 4
   have hc' : 0 < c' := by positivity
-  refine ⟨c', hc', Real.exp (‖D.symmetricPart‖ * R ^ 2 / 2 + ‖ξ‖ * R + A ^ 2 / c'),
+  refine ⟨c', hc', Real.exp (‖D.complexBilinearPart‖ * R ^ 2 / 2 + ‖ξ‖ * R + A ^ 2 / c'),
     fun y hy l ↦ ?_⟩
   have hy' : ‖y‖ ≤ R := by simpa using hy
   have hR : 0 ≤ R := (norm_nonneg y).trans hy'
@@ -121,10 +121,11 @@ theorem IsPositive.exists_norm_factor_inv_mul_exp_le [FiniteDimensional ℂ V] (
     ← Real.exp_add]
   refine Real.exp_le_exp.mpr ?_
   -- Bound each piece of the real part of the exponent.
-  have h1 : (D.symmetricPart y y / 2).re ≤ ‖D.symmetricPart‖ * R ^ 2 / 2 := by
-    have := (D.symmetricPart y y).re_le_norm.trans (D.symmetricPart.le_opNorm₂ y y)
+  have h1 : (D.complexBilinearPart y y / 2).re ≤ ‖D.complexBilinearPart‖ * R ^ 2 / 2 := by
+    have := (D.complexBilinearPart y y).re_le_norm.trans (D.complexBilinearPart.le_opNorm₂ y y)
     rw [div_ofNat_re]
-    nlinarith [norm_nonneg y, norm_nonneg D.symmetricPart, mul_le_mul hy' hy' (norm_nonneg y) hR]
+    nlinarith [norm_nonneg y, norm_nonneg D.complexBilinearPart,
+      mul_le_mul hy' hy' (norm_nonneg y) hR]
   have h2 : (ξ y).re ≤ ‖ξ‖ * R :=
     (ξ y).re_le_norm.trans ((ξ.le_opNorm y).trans (by gcongr))
   have h3 : (-D.hermitianPart l y).re ≤ ‖D.hermitianPart‖ * R * t := by
@@ -153,14 +154,15 @@ theorem IsPositive.exists_norm_factor_inv_mul_exp_le [FiniteDimensional ℂ V] (
 /-- A term of the Poincaré series is an entire function of `y`. -/
 theorem differentiable_factor_inv_mul_exp (ξ : V →L[ℂ] ℂ) (l : L) :
     Differentiable ℂ fun y : V ↦
-      (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l)) := by
-  have h : (fun y : V ↦ (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l)))
+      (D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l)) := by
+  have h : (fun y : V ↦
+        (D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l)))
       = fun y ↦ (D.semichar l : ℂ)⁻¹ * exp (-(D.form l y + D.form l l / 2) +
-        (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l))) := by
+        (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l))) := by
     funext y
     rw [factor_def, mul_inv, ← exp_neg, mul_assoc, ← exp_add]
-  have hB₁ : Differentiable ℂ fun y : V ↦ D.symmetricPart (y + l) (y + l) :=
-    D.symmetricPart.differentiable_apply_self.comp (differentiable_id.add_const _)
+  have hB₁ : Differentiable ℂ fun y : V ↦ D.complexBilinearPart (y + l) (y + l) :=
+    D.complexBilinearPart.differentiable_apply_self.comp (differentiable_id.add_const _)
   rw [h]
   fun_prop
 
@@ -168,7 +170,7 @@ theorem differentiable_factor_inv_mul_exp (ξ : V →L[ℂ] ℂ) (l : L) :
 the Fourier series `∑_{l ∈ L} χ (l)⁻¹ exp (-(B - B₁) (l, l) / 2) exp (2πi E (l, y))`. -/
 theorem poincareSeries_hermitianPart (y : V) :
     D.poincareSeries (D.hermitianPart y) y =
-      exp (D.symmetricPart y y / 2 + D.hermitianPart y y) *
+      exp (D.complexBilinearPart y y / 2 + D.hermitianPart y y) *
         ∑' l : L, (D.semichar l : ℂ)⁻¹ * exp (-(D.hermitianPart l l / 2)) *
           exp (2 * π * I * D.riemannForm l y) := by
   rw [poincareSeries_def, ← tsum_mul_left]
@@ -183,7 +185,7 @@ variable [FiniteDimensional ℂ V] [DiscreteTopology L]
 /-- For a positive datum the terms of the Poincaré series are summable. -/
 theorem IsPositive.summable_factor_inv_mul_exp (hD : D.IsPositive) (ξ : V →L[ℂ] ℂ) (y : V) :
     Summable fun l : L ↦
-      (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l)) := by
+      (D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l)) := by
   obtain ⟨c, hc, K, hK⟩ := hD.exists_norm_factor_inv_mul_exp_le ξ ‖y‖
   refine Summable.of_norm_bounded ((ZLattice.summable_exp_neg_mul_norm_add_sq L hc 0).mul_left K)
     fun l ↦ ?_
@@ -199,7 +201,8 @@ theorem IsPositive.poincareSeries_mem_thetaSpace (hD : D.IsPositive) (ξ : V →
     have hu : Summable fun l : L ↦ K * Real.exp (-c * ‖(l : V)‖ ^ 2) := by
       simpa using (ZLattice.summable_exp_neg_mul_norm_add_sq L hc 0).mul_left K
     have htend := tendstoUniformlyOn_tsum hu (s := ball (0 : V) (‖y₀‖ + 1))
-      (f := fun l y ↦ (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l)))
+      (f := fun l y ↦
+        (D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l)))
       fun l y hy ↦ hK y (ball_subset_closedBall hy) l
     have hdiff : DifferentiableOn ℂ (D.poincareSeries ξ) (ball (0 : V) (‖y₀‖ + 1)) :=
       htend.differentiableOn (.of_forall fun t ↦ (Differentiable.fun_sum fun l _ ↦
@@ -207,15 +210,15 @@ theorem IsPositive.poincareSeries_mem_thetaSpace (hD : D.IsPositive) (ξ : V →
     exact hdiff.differentiableAt (isOpen_ball.mem_nhds (by simp))
   · -- The cocycle law shifts the summation index by `m`.
     have h (l : L) : (D.factor l (y + m))⁻¹ *
-        exp (D.symmetricPart (y + m + l) (y + m + l) / 2 + ξ (y + m + l)) =
+        exp (D.complexBilinearPart (y + m + l) (y + m + l) / 2 + ξ (y + m + l)) =
           D.factor m y * ((D.factor (l + m) y)⁻¹ *
-            exp (D.symmetricPart (y + ↑(l + m)) (y + ↑(l + m)) / 2 + ξ (y + ↑(l + m)))) := by
+            exp (D.complexBilinearPart (y + ↑(l + m)) (y + ↑(l + m)) / 2 + ξ (y + ↑(l + m)))) := by
       rw [D.factor_cocycle l m y, Submodule.coe_add, add_comm (l : V) m, ← add_assoc]
       field_simp [D.factor_ne_zero]
     simp only [poincareSeries_def, h, tsum_mul_left]
     congr 1
     exact (Equiv.addRight m).tsum_eq fun l ↦
-      (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l))
+      (D.factor l y)⁻¹ * exp (D.complexBilinearPart (y + l) (y + l) / 2 + ξ (y + l))
 
 /-- For a positive datum the Fourier coefficients `χ (l)⁻¹ exp (-(B - B₁) (l, l) / 2)` of the
 Poincaré series on the diagonal are absolutely summable. -/
