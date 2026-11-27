@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.AppellHumbert.ComplexLattice
+public import TauCeti.Analysis.Complex.AppellHumbert.Positive
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.GroupTheory.IndexNSmul
@@ -51,6 +52,8 @@ constant `s₂` given by Legendre's relation; nothing here uses that description
 
 ## Main results
 
+* `ZLattice.isPositive_appellHumbertData`, `ZLattice.isPositive_sigmaSignData`: the Riemann
+  forms of `(H, χ)` and `(H, ε)` are positive.
 * `ZLattice.finrank_thetaSpace_nsmul_appellHumbertData`: `dim Th_m(Λ, χ) = m` for `m ≠ 0`.
 * `PeriodPair.weierstrassPMulSq_mem_thetaSpace`,
   `PeriodPair.thetaSpace_two_eq_span_weierstrassPMulSq`: `Th_2(Λ, χ)` is spanned by `℘ f²`
@@ -99,11 +102,24 @@ open scoped Real ComplexConjugate
 
 namespace ZLattice
 
-/-! ### The dimension of the theta spaces -/
+/-! ### Positivity -/
 
 variable {Λ : Submodule ℤ ℂ} [DiscreteTopology Λ] [IsZLattice ℝ Λ]
 
 variable {χ : Λ → Circle} (hχ : IsAppellHumbertMultiplier Λ χ)
+
+/-- The Riemann form `E = Im H` of the Appell–Humbert datum `(H, χ)` of a lattice is positive. -/
+theorem isPositive_appellHumbertData : (appellHumbertData Λ χ hχ).IsPositive :=
+  (AppellHumbertData.isPositive_iff _).mpr fun _ hu ↦ by
+    simpa [smul_eq_mul] using riemannForm_appellHumbertData_I_mul_self_pos hχ hu
+
+variable (Λ) in
+/-- The Riemann form of the datum `(H, ε)` of a lattice is positive. -/
+theorem isPositive_sigmaSignData : (sigmaSignData Λ).IsPositive := by
+  rw [sigmaSignData_def]
+  exact isPositive_appellHumbertData _
+
+/-! ### The dimension of the theta spaces -/
 
 /-- The Riemann form of `m • (H, χ)` is `E (m x, y)`. -/
 private theorem riemannForm_nsmul_appellHumbertData (m : ℕ) (x y : ℂ) :
@@ -130,10 +146,7 @@ dimension formula `(dim Θ)² = [Λ^⊥ : Λ]` for `m • (H, χ)`, whose dual l
 theorem finrank_thetaSpace_nsmul_appellHumbertData {m : ℕ} (hm : m ≠ 0) :
     finrank ℂ (m • appellHumbertData Λ χ hχ).thetaSpace = m := by
   set D := m • appellHumbertData Λ χ hχ
-  have hD : D.IsPositive := (AppellHumbertData.isPositive_iff D).mpr fun u hu ↦ by
-    rw [AppellHumbertData.riemannForm_nsmul, LinearMap.smul_apply, LinearMap.smul_apply,
-      nsmul_eq_mul, smul_eq_mul]
-    exact mul_pos (by positivity) (riemannForm_appellHumbertData_I_mul_self_pos hχ hu)
+  have hD : D.IsPositive := (isPositive_appellHumbertData hχ).nsmul hm
   set Λ' := D.riemannForm.dualSubmodule Λ
   have hmem (x : Λ') : (m : ℂ) * x ∈ Λ :=
     (mem_dualSubmodule_riemannForm_nsmul_appellHumbertData_iff hχ).mp x.property
@@ -407,13 +420,8 @@ derivative `1` at `0`. -/
 theorem exists_mem_thetaSpace_sigmaSignData_deriv_eq_one :
     ∃ f ∈ (sigmaSignData L.lattice).thetaSpace, deriv f 0 = 1 := by
   -- A nonzero theta function is odd, so it vanishes at `0`, and its derivative there is not zero.
-  have hpos : (sigmaSignData L.lattice).IsPositive :=
-    (AppellHumbertData.isPositive_iff _).mpr fun u hu ↦ by
-      simpa [sigmaSignData_def, smul_eq_mul] using
-        riemannForm_appellHumbertData_I_mul_self_pos
-          (isAppellHumbertMultiplier_sigmaSign L.lattice) hu
-  obtain ⟨g, hg, hg_ne⟩ :=
-    AppellHumbertData.IsPositive.exists_mem_thetaSpace_ne_zero (L := L.lattice) hpos
+  obtain ⟨g, hg, hg_ne⟩ := AppellHumbertData.IsPositive.exists_mem_thetaSpace_ne_zero
+    (L := L.lattice) (isPositive_sigmaSignData L.lattice)
   have h_deriv := deriv_ne_zero_of_mem_thetaSpace
     (mem_thetaSpace_appellHumbertData_of_mem_sigmaSignData hg) hg_ne
     (apply_zero_of_mem_thetaSpace_sigmaSignData hg) (zero_mem _)
