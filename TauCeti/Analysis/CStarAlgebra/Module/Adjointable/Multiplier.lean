@@ -24,8 +24,8 @@ topology on norm-bounded sets with strong-* convergence on `E`.
 
 1. **Nondegeneracy and approximate units of `K_A(E)`.** By the separation lemmas in
    `TauCeti.Analysis.CStarAlgebra.Module.Adjointable.Compact`
-   (`eq_of_forall_compactOperator_apply_eq`, `eq_of_forall_compactOperator_comp_eq`,
-   `eq_of_forall_comp_compactOperator_eq`), `K_A(E)` acts nondegenerately without completeness.
+   (`eq_of_forall_compactOperator_apply_eq`, `eq_of_forall_comp_compactOperator_eq`,
+   `eq_of_forall_compactOperator_comp_eq`), `K_A(E)` acts nondegenerately without completeness.
    When `E` is complete, the special factorization `x = ⟪y, y⟫_A • y`
    (`CStarModule.existsUnique_inner_self_smul_eq`) exhibits every vector `x : E` as `θ_{y, y} y`
    (`exists_rankOne_self_apply_eq`), hence as `k y` for some `k : K_A(E)`
@@ -111,6 +111,13 @@ private theorem mem_compactOperatorIdeal_toNonUnitalStarSubalgebra {T : Adjointa
     T ∈ (compactOperatorIdeal A E).toNonUnitalStarSubalgebra ↔ T ∈ compactOperator A E E :=
   (TwoSidedIdeal.mem_toNonUnitalStarSubalgebra _).trans mem_compactOperatorIdeal
 
+private theorem exists_compactOperatorIdeal_toNonUnitalStarSubalgebra_apply_eq (x : E) :
+    ∃ (k : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) (y : E),
+      (k : AdjointableMap A E E) y = x := by
+  obtain ⟨k', y, hk'⟩ := exists_compactOperatorIdeal_apply_eq (A := A) x
+  exact ⟨(compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv k', y, by
+    rw [TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply, hk']⟩
+
 /-- Centralizer evaluation identity: `u ((m.fst k) y) = (m.snd u) (k y)`. -/
 private theorem coe_apply_fst_apply
     (m : 𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra))
@@ -129,9 +136,8 @@ private theorem coe_apply_fst_apply
 `x = k y` with `k : K_A(E)` and setting `m x := (m.fst k) y`. -/
 private noncomputable def multiplierApply
     (m : 𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra)) (x : E) : E :=
-  let h := exists_compactOperatorIdeal_apply_eq (A := A) x
-  ((m.fst ((compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv h.choose) :
-    AdjointableMap A E E) h.choose_spec.choose)
+  let h := exists_compactOperatorIdeal_toNonUnitalStarSubalgebra_apply_eq (A := A) x
+  ((m.fst h.choose : AdjointableMap A E E) h.choose_spec.choose)
 
 private theorem multiplierApply_eq_of_apply_eq
     (m : 𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra))
@@ -149,21 +155,18 @@ private theorem multiplierApply_apply_compactOperator
     (m : 𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra))
     (k : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) (y : E) :
     multiplierApply m ((k : AdjointableMap A E E) y) = (m.fst k : AdjointableMap A E E) y :=
-  let h := exists_compactOperatorIdeal_apply_eq (A := A) ((k : AdjointableMap A E E) y)
-  multiplierApply_eq_of_apply_eq m <| by
-    rw [TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply]
-    exact h.choose_spec.choose_spec
+  let h := exists_compactOperatorIdeal_toNonUnitalStarSubalgebra_apply_eq (A := A)
+    ((k : AdjointableMap A E E) y)
+  multiplierApply_eq_of_apply_eq m h.choose_spec.choose_spec
 
 private theorem isAdjointPair_multiplierApply
     (m : 𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra)) (x₁ x₂ : E) :
     inner A (multiplierApply m x₁) x₂ = inner A x₁ (multiplierApply (star m) x₂) := by
-  obtain ⟨k₁', y₁, hk₁'⟩ := exists_compactOperatorIdeal_apply_eq (A := A) x₁
-  obtain ⟨k₂', y₂, hk₂'⟩ := exists_compactOperatorIdeal_apply_eq (A := A) x₂
-  let k₁ := (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv k₁'
-  let k₂ := (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv k₂'
-  rw [← hk₁', ← hk₂',
-    ← (compactOperatorIdeal A E).coe_toNonUnitalStarSubalgebraEquiv_apply k₁',
-    ← (compactOperatorIdeal A E).coe_toNonUnitalStarSubalgebraEquiv_apply k₂',
+  obtain ⟨k₁, y₁, hk₁⟩ :=
+    exists_compactOperatorIdeal_toNonUnitalStarSubalgebra_apply_eq (A := A) x₁
+  obtain ⟨k₂, y₂, hk₂⟩ :=
+    exists_compactOperatorIdeal_toNonUnitalStarSubalgebra_apply_eq (A := A) x₂
+  rw [← hk₁, ← hk₂,
     multiplierApply_apply_compactOperator m k₁ y₁,
     multiplierApply_apply_compactOperator (star m) k₂ y₂]
   have hcent : star k₂ * m.fst k₁ = star ((star m).fst k₂) * k₁ := by
@@ -210,9 +213,9 @@ noncomputable def multiplierStarAlgEquiv :
   { toFun := ψ
     invFun := ofMultiplier
     left_inv T := ext fun x ↦ by
-      obtain ⟨k', y, hk'⟩ := exists_compactOperatorIdeal_apply_eq (A := A) x
-      rw [← hk', ← (compactOperatorIdeal A E).coe_toNonUnitalStarSubalgebraEquiv_apply k',
-        ofMultiplier_apply_compactOperator]
+      obtain ⟨k, y, hk⟩ :=
+        exists_compactOperatorIdeal_toNonUnitalStarSubalgebra_apply_eq (A := A) x
+      rw [← hk, ofMultiplier_apply_compactOperator]
       dsimp only [ψ]
       rw [I.coe_multiplierHom_fst_apply, mul_apply_eq_comp]
     right_inv m := DoubleCentralizer.ext_fst fun k ↦ Subtype.ext <| ext fun y ↦ by
@@ -262,7 +265,7 @@ theorem multiplierStarAlgEquiv_symm_coe
 /-- Multiplying `(multiplierStarAlgEquiv A E).symm m` on the right by `k : K_A(E)` yields
 `(m.fst k : L_A(E))`. -/
 @[simp]
-theorem multiplierStarAlgEquiv_symm_mul_compactOperator
+theorem multiplierStarAlgEquiv_symm_mul_coe
     (m : 𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra))
     (k : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) :
     (multiplierStarAlgEquiv A E).symm m * (k : AdjointableMap A E E) =
@@ -272,7 +275,7 @@ theorem multiplierStarAlgEquiv_symm_mul_compactOperator
 /-- Multiplying `(multiplierStarAlgEquiv A E).symm m` on the left by `k : K_A(E)` yields
 `(m.snd k : L_A(E))`. -/
 @[simp]
-theorem compactOperator_mul_multiplierStarAlgEquiv_symm
+theorem coe_mul_multiplierStarAlgEquiv_symm
     (k : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra)
     (m : 𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra)) :
     (k : AdjointableMap A E E) * (multiplierStarAlgEquiv A E).symm m =
@@ -282,12 +285,12 @@ theorem compactOperator_mul_multiplierStarAlgEquiv_symm
 /-- Evaluating `(multiplierStarAlgEquiv A E).symm m` on a factored vector `k y` gives
 `(m.fst k : L_A(E)) y`. -/
 @[simp]
-theorem multiplierStarAlgEquiv_symm_apply_compactOperator
+theorem multiplierStarAlgEquiv_symm_apply_coe_apply
     (m : 𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra))
     (k : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) (y : E) :
     (multiplierStarAlgEquiv A E).symm m ((k : AdjointableMap A E E) y) =
       (m.fst k : AdjointableMap A E E) y := by
-  rw [← mul_apply_eq_comp, multiplierStarAlgEquiv_symm_mul_compactOperator]
+  rw [← mul_apply_eq_comp, multiplierStarAlgEquiv_symm_mul_coe]
 
 /-- The adjoint of `(multiplierStarAlgEquiv A E).symm m` is
 `(multiplierStarAlgEquiv A E).symm (star m)`. -/
@@ -307,50 +310,35 @@ theorem tendsto_fst_apply_multiplierStarAlgEquiv_symm_apply_of_tendsto_mul_right
     Tendsto (fun e : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra ↦
         ((m.fst e : AdjointableMap A E E) x)) l
       (𝓝 ((multiplierStarAlgEquiv A E).symm m x)) := by
-  obtain ⟨k', y, hk'⟩ := exists_compactOperatorIdeal_apply_eq (A := A) x
-  let k := (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv k'
-  have hk : (k : AdjointableMap A E E) y = x := by
-    rw [TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply, hk']
+  obtain ⟨k, y, hk⟩ := exists_compactOperatorIdeal_toNonUnitalStarSubalgebra_apply_eq (A := A) x
   rw [← hk]
   have heval : Continuous fun e : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra ↦
       ((m.fst e : AdjointableMap A E E) y) :=
     ((continuous_apply y).comp continuous_subtypeVal).comp m.fst.continuous
-  rw [multiplierStarAlgEquiv_symm_apply_compactOperator]
+  rw [multiplierStarAlgEquiv_symm_apply_coe_apply]
   refine ((heval.tendsto k).comp (hl k)).congr fun e ↦ ?_
   rw [Function.comp_apply, DoubleCentralizer.fst_mul]
   simp [mul_apply_eq_comp]
 
-/-- Along any right-multiplication approximate identity filter `l` on `K_A(E)` (with no norm bound
-assumed), `e x → x` in `E` for every `x : E`. -/
-theorem tendsto_compactOperatorIdeal_apply_of_tendsto_mul_right
-    {l : Filter (compactOperatorIdeal A E)}
-    (hl : ∀ k : compactOperatorIdeal A E, Tendsto (· * k) l (𝓝 k)) (x : E) :
-    Tendsto (fun e : compactOperatorIdeal A E ↦ (e : AdjointableMap A E E) x) l (𝓝 x) := by
-  let e := (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv
-  have he_cont : Continuous e :=
-    continuous_induced_rng.mpr <| continuous_subtypeVal.congr fun u ↦
-      ((compactOperatorIdeal A E).coe_toNonUnitalStarSubalgebraEquiv_apply u).symm
-  have he : ∀ k : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra,
-      Tendsto (· * k) (l.map e) (𝓝 k) := fun k ↦ by
-    have hlim := (he_cont.tendsto (e.symm k)).comp (hl (e.symm k))
-    have hfn : (fun u ↦ e (u * e.symm k)) = fun u ↦ e u * k := by
-      funext u
-      exact Subtype.ext <| by
-        simp only [e, TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply,
-          MulMemClass.coe_mul, TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_symm_apply]
-    have hlim' : Tendsto (fun u ↦ e u * k) l (𝓝 k) := by
-      change Tendsto (fun u ↦ e (u * e.symm k)) l (𝓝 (e (e.symm k))) at hlim
-      rwa [hfn, StarAlgEquiv.apply_symm_apply] at hlim
-    exact Filter.tendsto_map'_iff.mpr hlim'
-  simpa [Function.comp_def, e, TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply] using
-    tendsto_fst_apply_multiplierStarAlgEquiv_symm_apply_of_tendsto_mul_right he 1 x
+private theorem continuous_toNonUnitalStarSubalgebraEquiv :
+    Continuous (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv :=
+  continuous_induced_rng.mpr <| continuous_subtypeVal.congr fun u ↦
+    ((compactOperatorIdeal A E).coe_toNonUnitalStarSubalgebraEquiv_apply u).symm
 
 /-- Along any approximate unit `l` of `K_A(E)`, `e x → x` in `E` for every `x : E`
 (Lance, Proposition 2.2). -/
 theorem tendsto_compactOperatorIdeal_apply_of_isApproximateUnit
     {l : Filter (compactOperatorIdeal A E)} (hl : l.IsApproximateUnit) (x : E) :
-    Tendsto (fun e : compactOperatorIdeal A E ↦ (e : AdjointableMap A E E) x) l (𝓝 x) :=
-  tendsto_compactOperatorIdeal_apply_of_tendsto_mul_right hl.tendsto_mul_right x
+    Tendsto (fun e : compactOperatorIdeal A E ↦ (e : AdjointableMap A E E) x) l (𝓝 x) := by
+  let eqv := (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv
+  have hlim := (tendsto_fst_apply_multiplierStarAlgEquiv_symm_apply_of_tendsto_mul_right
+    (hl.map eqv.toNonUnitalStarAlgHom continuous_toNonUnitalStarSubalgebraEquiv
+      eqv.surjective).tendsto_mul_right 1 x).comp tendsto_map
+  rw [map_one, one_def, id_apply] at hlim
+  exact hlim.congr fun u ↦ by
+    simp only [Function.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+      DoubleCentralizer.one_fst, one_apply_eq_self, eqv,
+      TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply]
 
 /-- Along the canonical increasing approximate unit of `K_A(E)`, `e x → x` for every `x : E`. -/
 theorem tendsto_approximateUnit_compactOperatorIdeal_apply (x : E) :
@@ -473,6 +461,7 @@ theorem multiplierStrictStarAlgEquiv_coe
       (k : 𝓜ₛ(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra)) :=
   DoubleCentralizerStrict.toDoubleCentralizer_injective (multiplierStarAlgEquiv_coe k)
 
+@[simp]
 theorem multiplierStrictStarAlgEquiv_symm_coe
     (k : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) :
     (multiplierStrictStarAlgEquiv A E).symm
@@ -486,17 +475,14 @@ globally strictly continuous on `𝓜ₛ(ℂ, K_A(E))` (without norm-boundedness
 theorem continuous_apply_multiplierStrictStarAlgEquiv_symm (x : E) :
     Continuous fun m : 𝓜ₛ(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) ↦
       (multiplierStrictStarAlgEquiv A E).symm m x := by
-  obtain ⟨k', y, hk'⟩ := exists_compactOperatorIdeal_apply_eq (A := A) x
-  let k := (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv k'
-  have hk : (k : AdjointableMap A E E) y = x := by
-    rw [TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply, hk']
+  obtain ⟨k, y, hk⟩ := exists_compactOperatorIdeal_toNonUnitalStarSubalgebra_apply_eq (A := A) x
   rw [← hk]
   have heval :
       Continuous fun m : 𝓜ₛ(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) ↦
         ((m.toDoubleCentralizer.fst k : AdjointableMap A E E) y) :=
     ((continuous_apply y).comp continuous_subtypeVal).comp
       (DoubleCentralizerStrict.continuous_fst_apply k)
-  exact heval.congr fun m ↦ (multiplierStarAlgEquiv_symm_apply_compactOperator
+  exact heval.congr fun m ↦ (multiplierStarAlgEquiv_symm_apply_coe_apply
     m.toDoubleCentralizer k y).symm
 
 /-- **Global strict-to-strong-* continuity on `L_A(E)`:** for every `x : E`, evaluation of the
@@ -563,7 +549,7 @@ theorem tendsto_multiplierStrictStarAlgEquiv_of_eventually_norm_le {ι : Type*} 
   refine ⟨fun k ↦ ?_, fun k ↦ ?_⟩
   · rw [isometry_subtypeVal.tendsto_nhds_iff]
     simpa [Function.comp_def, mul_def] using
-      tendsto_comp_of_mem_compactOperator_of_eventually_norm_le hC hf
+      tendsto_comp_compactOperator_of_eventually_norm_le hC hf
         (mem_compactOperatorIdeal_toNonUnitalStarSubalgebra.mp k.property)
   · rw [isometry_subtypeVal.tendsto_nhds_iff]
     simpa [Function.comp_def, mul_def] using
@@ -586,6 +572,16 @@ theorem tendsto_multiplierStrictStarAlgEquiv_iff_of_eventually_norm_le {ι : Typ
     fun ⟨h₁, h₂⟩ ↦
       tendsto_multiplierStrictStarAlgEquiv_of_eventually_norm_le hC h₁ h₂⟩
 
+private theorem induced_eq_induced_of_tendsto_iff {s α β : Type*}
+    [TopologicalSpace α] [TopologicalSpace β] (σ : s → α) (τ : s → β)
+    (hiff : ∀ {l : Filter s} {x : s}, Tendsto σ l (𝓝 (σ x)) ↔ Tendsto τ l (𝓝 (τ x))) :
+    TopologicalSpace.induced σ inferInstance = TopologicalSpace.induced τ inferInstance := by
+  refine TopologicalSpace.ext_nhds fun x ↦ ?_
+  rw [nhds_induced, nhds_induced]
+  exact le_antisymm
+    (tendsto_iff_comap.mp (hiff.mp tendsto_comap))
+    (tendsto_iff_comap.mp (hiff.mpr tendsto_comap))
+
 /-- **Strict topology on norm-bounded sets.** On every bounded subset `s` of `L_A(E)`, the
 topology induced from `𝓜ₛ(ℂ, K_A(E))` coincides with the strong-* topology induced by
 `T ↦ (T, T.adjoint)` into `(E →Lₚₜ[ℂ] E) × (E →Lₚₜ[ℂ] E)`. -/
@@ -601,34 +597,11 @@ theorem induced_multiplierStrictStarAlgEquiv_eq_induced_pointwiseConvergenceCLM_
   obtain ⟨C, hC⟩ := hs.subset_closedBall 0
   have hC' : ∀ T : s, ‖(T : AdjointableMap A E E)‖ ≤ C := fun T ↦ by
     simpa [Metric.mem_closedBall, dist_zero_right] using hC T.property
-  let σ : s → 𝓜ₛ(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) :=
-    fun T ↦ multiplierStrictStarAlgEquiv A E T
-  let τ : s → (E →Lₚₜ[ℂ] E) × (E →Lₚₜ[ℂ] E) := fun T ↦
-    (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) E E
-        (T : AdjointableMap A E E).toContinuousLinearMap,
-      ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) E E
-        (T : AdjointableMap A E E).adjoint.toContinuousLinearMap)
-  have hiff {l : Filter s} {T₀ : s} :
-      Tendsto σ l (𝓝 (σ T₀)) ↔ Tendsto τ l (𝓝 (τ T₀)) := by
-    rw [Prod.tendsto_iff, PointwiseConvergenceCLM.tendsto_iff_forall_tendsto,
-      PointwiseConvergenceCLM.tendsto_iff_forall_tendsto]
-    exact tendsto_multiplierStrictStarAlgEquiv_iff_of_eventually_norm_le
-      (Eventually.of_forall fun T ↦ hC' T)
-  have hcont_σ : @Continuous s _ (TopologicalSpace.induced τ inferInstance) _ σ :=
-    @continuous_iff_continuousAt s _ (TopologicalSpace.induced τ inferInstance) _ σ |>.mpr
-      fun T₁ ↦ hiff.mpr <|
-        (@continuous_iff_continuousAt s _ (TopologicalSpace.induced τ inferInstance) _ τ).mp
-          continuous_induced_dom T₁
-  have hcont_τ : @Continuous s _ (TopologicalSpace.induced σ inferInstance) _ τ :=
-    @continuous_iff_continuousAt s _ (TopologicalSpace.induced σ inferInstance) _ τ |>.mpr
-      fun T₁ ↦ hiff.mp <|
-        (@continuous_iff_continuousAt s _ (TopologicalSpace.induced σ inferInstance) _ σ).mp
-          continuous_induced_dom T₁
-  exact le_antisymm
-    ((@continuous_iff_le_induced (t₁ := TopologicalSpace.induced σ inferInstance)
-      (f := τ)).mp hcont_τ)
-    ((@continuous_iff_le_induced (t₁ := TopologicalSpace.induced τ inferInstance)
-      (f := σ)).mp hcont_σ)
+  refine induced_eq_induced_of_tendsto_iff _ _ fun {l T₀} ↦ ?_
+  rw [Prod.tendsto_iff, PointwiseConvergenceCLM.tendsto_iff_forall_tendsto,
+    PointwiseConvergenceCLM.tendsto_iff_forall_tendsto]
+  exact tendsto_multiplierStrictStarAlgEquiv_iff_of_eventually_norm_le
+    (Eventually.of_forall fun T ↦ hC' T)
 
 /-- The module-compact operators `K_A(E)` are strictly dense in `L_A(E)` (via
 `multiplierStrictStarAlgEquiv A E`). -/
@@ -666,43 +639,35 @@ theorem closure_multiplierStrictStarAlgEquiv_image_closedBall (R : ℝ) :
   rw [himg, ← hset]
   exact DoubleCentralizerStrict.closure_image_closedBall R
 
-/-- Along any approximate unit `l` of `(compactOperatorIdeal A E).toNonUnitalStarSubalgebra`,
-`T * e → T` strictly for every `T : L_A(E)`. -/
+/-- Along any approximate unit `l` of `K_A(E)`, `T * e → T` strictly for every `T : L_A(E)`. -/
 theorem tendsto_multiplierStrictStarAlgEquiv_mul_coe_of_isApproximateUnit
-    {l : Filter (compactOperatorIdeal A E).toNonUnitalStarSubalgebra} (hl : l.IsApproximateUnit)
+    {l : Filter (compactOperatorIdeal A E)} (hl : l.IsApproximateUnit)
     (T : AdjointableMap A E E) :
-    Tendsto (fun e : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra ↦
+    Tendsto (fun e : compactOperatorIdeal A E ↦
         multiplierStrictStarAlgEquiv A E (T * (e : AdjointableMap A E E))) l
       (𝓝 (multiplierStrictStarAlgEquiv A E T)) := by
-  have heq : (fun e : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra ↦
-        multiplierStrictStarAlgEquiv A E (T * (e : AdjointableMap A E E))) =
-      fun e ↦ ((multiplierStrictStarAlgEquiv A E T).toDoubleCentralizer.fst e :
-        𝓜ₛ(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra)) := by
-    funext e
-    rw [toDoubleCentralizer_multiplierStrictStarAlgEquiv, ← coe_multiplierStarAlgEquiv_fst T e,
-      multiplierStrictStarAlgEquiv_coe]
-  rw [heq]
-  exact DoubleCentralizerStrict.tendsto_coe_fst_of_isApproximateUnit hl
-    (multiplierStrictStarAlgEquiv A E T)
+  let eqv := (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv
+  refine ((DoubleCentralizerStrict.tendsto_coe_fst_of_isApproximateUnit
+    (hl.map eqv.toNonUnitalStarAlgHom continuous_toNonUnitalStarSubalgebraEquiv eqv.surjective)
+    (multiplierStrictStarAlgEquiv A E T)).comp tendsto_map).congr fun e ↦ ?_
+  rw [Function.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+    toDoubleCentralizer_multiplierStrictStarAlgEquiv, ← multiplierStrictStarAlgEquiv_coe,
+    coe_multiplierStarAlgEquiv_fst, TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply]
 
-/-- Along any approximate unit `l` of `(compactOperatorIdeal A E).toNonUnitalStarSubalgebra`,
-`e * T → T` strictly for every `T : L_A(E)`. -/
+/-- Along any approximate unit `l` of `K_A(E)`, `e * T → T` strictly for every `T : L_A(E)`. -/
 theorem tendsto_multiplierStrictStarAlgEquiv_coe_mul_of_isApproximateUnit
-    {l : Filter (compactOperatorIdeal A E).toNonUnitalStarSubalgebra} (hl : l.IsApproximateUnit)
+    {l : Filter (compactOperatorIdeal A E)} (hl : l.IsApproximateUnit)
     (T : AdjointableMap A E E) :
-    Tendsto (fun e : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra ↦
+    Tendsto (fun e : compactOperatorIdeal A E ↦
         multiplierStrictStarAlgEquiv A E ((e : AdjointableMap A E E) * T)) l
       (𝓝 (multiplierStrictStarAlgEquiv A E T)) := by
-  have heq : (fun e : (compactOperatorIdeal A E).toNonUnitalStarSubalgebra ↦
-        multiplierStrictStarAlgEquiv A E ((e : AdjointableMap A E E) * T)) =
-      fun e ↦ ((multiplierStrictStarAlgEquiv A E T).toDoubleCentralizer.snd e :
-        𝓜ₛ(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra)) := by
-    funext e
-    rw [toDoubleCentralizer_multiplierStrictStarAlgEquiv, ← coe_multiplierStarAlgEquiv_snd T e,
-      multiplierStrictStarAlgEquiv_coe]
-  rw [heq]
-  exact DoubleCentralizerStrict.tendsto_coe_snd_of_isApproximateUnit hl
-    (multiplierStrictStarAlgEquiv A E T)
+  let eqv := (compactOperatorIdeal A E).toNonUnitalStarSubalgebraEquiv
+  refine ((DoubleCentralizerStrict.tendsto_coe_snd_of_isApproximateUnit
+    (hl.map eqv.toNonUnitalStarAlgHom continuous_toNonUnitalStarSubalgebraEquiv eqv.surjective)
+    (multiplierStrictStarAlgEquiv A E T)).comp tendsto_map).congr fun e ↦ ?_
+  rw [Function.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+    toDoubleCentralizer_multiplierStrictStarAlgEquiv, ← multiplierStrictStarAlgEquiv_coe,
+    coe_multiplierStarAlgEquiv_snd, TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply]
 
 end Complete
 

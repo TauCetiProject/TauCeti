@@ -47,10 +47,10 @@ bimodules.
   `AdjointableMap A E E`. For complete `E` it is therefore a nonunital C⋆-algebra, by
   `TwoSidedIdeal.nonUnitalCStarAlgebra` in `TauCeti.Analysis.CStarAlgebra.Ideal`.
 * `TauCeti.AdjointableMap.eq_of_forall_compactOperator_apply_eq`,
-  `TauCeti.AdjointableMap.eq_of_forall_compactOperator_comp_eq`, and
-  `TauCeti.AdjointableMap.eq_of_forall_comp_compactOperator_eq`: module-compact operators separate
+  `TauCeti.AdjointableMap.eq_of_forall_comp_compactOperator_eq`, and
+  `TauCeti.AdjointableMap.eq_of_forall_compactOperator_comp_eq`: module-compact operators separate
   vectors and adjointable operators on both sides.
-* `TauCeti.AdjointableMap.tendsto_comp_of_mem_compactOperator_of_eventually_norm_le` and
+* `TauCeti.AdjointableMap.tendsto_comp_compactOperator_of_eventually_norm_le` and
   `TauCeti.AdjointableMap.tendsto_compactOperator_comp_of_eventually_norm_le`: bounded strongly
   convergent (respectively adjoint-strongly convergent) nets converge in operator norm after
   composing with a module-compact operator.
@@ -353,7 +353,7 @@ theorem eq_of_forall_compactOperator_apply_eq {x y : E}
 
 /-- An adjointable operator `T : L_A(E, F)` whose composition with every module-compact
 operator vanishes on the right is zero. -/
-theorem eq_zero_of_forall_compactOperator_comp_eq_zero {T : AdjointableMap A E F}
+theorem eq_zero_of_forall_comp_compactOperator_eq_zero {T : AdjointableMap A E F}
     (h : ∀ k ∈ compactOperator A E E, T.comp k = 0) : T = 0 := by
   refine ext fun x ↦ eq_zero_of_rankOne_self_apply_eq_zero (A := A) ?_
   have happ : (T.comp (rankOne A x (T.adjoint (T x)))) x = 0 := by
@@ -362,25 +362,25 @@ theorem eq_zero_of_forall_compactOperator_comp_eq_zero {T : AdjointableMap A E F
 
 /-- Two adjointable operators `S, T : L_A(E, F)` satisfying `S ∘ k = T ∘ k` for all
 `k ∈ K_A(E)` are equal. -/
-theorem eq_of_forall_compactOperator_comp_eq {S T : AdjointableMap A E F}
+theorem eq_of_forall_comp_compactOperator_eq {S T : AdjointableMap A E F}
     (h : ∀ k ∈ compactOperator A E E, S.comp k = T.comp k) : S = T :=
-  sub_eq_zero.mp <| eq_zero_of_forall_compactOperator_comp_eq_zero fun k hk ↦ by
+  sub_eq_zero.mp <| eq_zero_of_forall_comp_compactOperator_eq_zero fun k hk ↦ by
     rw [sub_comp, h k hk, sub_self]
 
 /-- An adjointable operator `T : L_A(E, F)` whose composition with every module-compact
 operator vanishes on the left is zero. -/
-theorem eq_zero_of_forall_comp_compactOperator_eq_zero {T : AdjointableMap A E F}
+theorem eq_zero_of_forall_compactOperator_comp_eq_zero {T : AdjointableMap A E F}
     (h : ∀ k ∈ compactOperator A F F, k.comp T = 0) : T = 0 := by
   rw [← adjoint_eq_zero_iff]
-  refine eq_zero_of_forall_compactOperator_comp_eq_zero fun k hk ↦ ?_
+  refine eq_zero_of_forall_comp_compactOperator_eq_zero fun k hk ↦ ?_
   have hkT := congrArg adjoint (h k.adjoint (adjoint_mem_compactOperator hk))
   simpa [adjoint_comp] using hkT
 
 /-- Two adjointable operators `S, T : L_A(E, F)` satisfying `k ∘ S = k ∘ T` for all
 `k ∈ K_A(F)` are equal. -/
-theorem eq_of_forall_comp_compactOperator_eq {S T : AdjointableMap A E F}
+theorem eq_of_forall_compactOperator_comp_eq {S T : AdjointableMap A E F}
     (h : ∀ k ∈ compactOperator A F F, k.comp S = k.comp T) : S = T :=
-  sub_eq_zero.mp <| eq_zero_of_forall_comp_compactOperator_eq_zero fun k hk ↦ by
+  sub_eq_zero.mp <| eq_zero_of_forall_compactOperator_comp_eq_zero fun k hk ↦ by
     rw [comp_sub, h k hk, sub_self]
 
 variable (A E) in
@@ -414,7 +414,7 @@ section StrongToNorm
 
 /-- Along any filter of adjointable operators converging strongly on `E`, composition on the right
 with a finite sum of rank-one operators converges in operator norm. -/
-theorem tendsto_comp_sum_rankOne_of_tendsto
+private theorem tendsto_comp_sum_rankOne_of_tendsto
     {ι : Type*} {l : Filter ι} {f : ι → AdjointableMap A E F} {T : AdjointableMap A E F}
     (hf : ∀ x : E, Tendsto (fun i ↦ f i x) l (𝓝 (T x)))
     {n : ℕ} (x : Fin n → E) (y : Fin n → G) :
@@ -436,7 +436,7 @@ theorem tendsto_comp_sum_rankOne_of_tendsto
 /-- Along any norm-bounded filter of adjointable operators converging strongly on `E`,
 composition on the right with any module-compact operator `k ∈ K_A(G, E)` converges in operator
 norm. -/
-theorem tendsto_comp_of_mem_compactOperator_of_eventually_norm_le
+theorem tendsto_comp_compactOperator_of_eventually_norm_le
     {ι : Type*} {l : Filter ι} {f : ι → AdjointableMap A E F} {T : AdjointableMap A E F}
     {C : ℝ} (hC : ∀ᶠ i in l, ‖f i‖ ≤ C)
     (hf : ∀ x : E, Tendsto (fun i ↦ f i x) l (𝓝 (T x)))
@@ -484,7 +484,7 @@ theorem tendsto_compactOperator_comp_of_eventually_norm_le
   have hC_adj : ∀ᶠ i in l, ‖(f i).adjoint‖ ≤ C := by
     filter_upwards [hC] with i hi
     simpa [norm_adjoint] using hi
-  have hcomp := tendsto_comp_of_mem_compactOperator_of_eventually_norm_le hC_adj hf_adj
+  have hcomp := tendsto_comp_compactOperator_of_eventually_norm_le hC_adj hf_adj
     (adjoint_mem_compactOperator hk)
   have hadj := continuous_adjoint.continuousAt.tendsto.comp hcomp
   simpa [Function.comp_def, ← adjoint_comp] using hadj
