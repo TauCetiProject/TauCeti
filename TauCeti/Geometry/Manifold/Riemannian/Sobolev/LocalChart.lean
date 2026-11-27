@@ -31,11 +31,12 @@ is locally `W^{1,2}` in charts is approximated in the `H¹` norm by smooth funct
 
 The statement is local. Near a point `p`, the chart density is bounded and the Riemannian length
 of a gradient is at most a fixed multiple of the length of the coordinate gradient
-(`TauCeti.Manifold.eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`). Hence a
-smooth function `Φ` on `M` supported in a fixed compact set `Q` of the chart neighbourhood, and
-equal to a test function `ϑ` in the chart, has `‖Φ‖_{H¹} ≤ A ‖ϑ‖_{W^{1,2}}` with `A` independent
-of `Φ`; this uses the comparison of integrals over a chart neighbourhood with integrals in
-coordinates (`TauCeti.exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`).
+(`TauCeti.Manifold.exists_eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`).
+Hence a smooth function `Φ` on `M` supported in a fixed compact set `Q` of the chart
+neighbourhood, and equal to a test function `ϑ` in the chart, has `‖Φ‖_{H¹} ≤ A ‖ϑ‖_{W^{1,2}}`
+with `A` independent of `Φ`; this uses the comparison of integrals over a chart neighbourhood
+with integrals in coordinates
+(`TauCeti.exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`).
 
 Let `χ` be a smooth function supported near `p`. In the chart, `χ f` is the product of the chart
 reading of `f`, an element of `W^{1,2}(Ω)`, with a compactly supported smooth function, so it is
