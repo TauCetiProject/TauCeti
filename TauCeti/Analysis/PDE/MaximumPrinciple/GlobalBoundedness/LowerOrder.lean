@@ -72,6 +72,8 @@ whole operator.
 * `TauCeti.PDE.exists_ae_value_le_add_of_memLp_drift`: the weak maximum principle with data for a
   drift in `L^q`.
 * `TauCeti.PDE.exists_ae_value_le_add_of_drift`: the same for a bounded drift.
+* `TauCeti.PDE.exists_ae_abs_value_le_add_of_sub_mem_w1p0Submodule`: the two-sided bound for weak
+  solutions with a bounded drift that take bounded boundary values.
 
 ## References
 
@@ -1202,5 +1204,76 @@ theorem exists_ae_value_le_add_of_drift [Nonempty ι] {q : ℝ≥0} (hq : 2 < (q
   rw [← energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner hab
     (memLp_top_of_bound hb _ hb_ae) (memLp_top_of_bound hc _ hc_ae)]
   exact hu v hv
+
+/-- **Global boundedness of weak solutions with bounded boundary values** (Gilbarg–Trudinger,
+Theorem 8.16, two-sided). Let `n ≥ 1` be the dimension, let `q > n` with `q > 2`, and let `B ≥ 0`
+bound the dimensionless drift size. There is `C > 0`, depending only on `n`, `q`, `B` and the
+normalization of the additive Haar measure `mu`, with the following property. Let `Ω` have finite
+measure, let `a` be measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `b` be
+a measurable drift with `‖b‖ ≤ β` and `β |Ω| ^ (1/n) ≤ B λ`, let `c` be bounded, measurable and
+nonnegative, and let `f ∈ L^{q/2}(Ω)` and `F ∈ L^q(Ω; ℝⁿ)`. If `u ∈ H¹(Ω)` is a weak solution of
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f + ∂ᵢFⁱ` in `Ω`,
+
+that is `a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`, which takes the boundary values
+of some `g ∈ H¹(Ω)`, `u - g ∈ H¹₀(Ω)`, with `|g| ≤ k` almost everywhere in `Ω`, then almost
+everywhere in `Ω`
+
+`|u| ≤ k + C (‖f‖_{q/2} |Ω| ^ (2/n - 2/q) + ‖F‖_q |Ω| ^ (1/n - 1/q)) / λ`.
+
+This is `TauCeti.PDE.exists_ae_value_le_add_of_drift` applied to `u` and to `-u` at the level `k`;
+the boundary values of `u` are at most `k` because those of `g` are
+(`TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_sub_mem`). -/
+theorem exists_ae_abs_value_le_add_of_sub_mem_w1p0Submodule [Nonempty ι] {q : ℝ≥0}
+    (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) (B : ℝ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {c : EuclideanSpace ℝ ι → ℝ} {lam Lam beta gamma : ℝ} {f : EuclideanSpace ℝ ι → ℝ}
+      {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u g : W1p mu Omega 2} {k : ℝ},
+      mu Omega ≠ ∞ →
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) → AEStronglyMeasurable b (mu.restrict Omega) →
+      AEStronglyMeasurable c (mu.restrict Omega) →
+      (∀ x ∈ Omega, ‖b x‖ ≤ beta) → (∀ x ∈ Omega, ‖c x‖ ≤ gamma) → (∀ x ∈ Omega, 0 ≤ c x) →
+      beta * mu.real Omega ^ (Fintype.card ι : ℝ)⁻¹ ≤ B * lam →
+      MemLp f (q / 2 : ℝ≥0) (mu.restrict Omega) → MemLp F q (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
+      u - g ∈ w1p0Submodule mu Omega 2 → (∀ᵐ x ∂mu.restrict Omega, |W1p.value g x| ≤ k) →
+      ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤
+        k + C * (((eLpNorm f (q / 2 : ℝ≥0) (mu.restrict Omega)).toReal *
+            mu.real Omega ^ (2 / (Fintype.card ι : ℝ) - 2 / (q : ℝ)) +
+          (eLpNorm F q (mu.restrict Omega)).toReal *
+            mu.real Omega ^ ((Fintype.card ι : ℝ)⁻¹ - (q : ℝ)⁻¹)) / lam) := by
+  obtain ⟨C, hC, hbound⟩ := exists_ae_value_le_add_of_drift (mu := mu) hq hqn B
+  refine ⟨C, hC, fun {Omega a b c lam Lam beta gamma f F u g k} hOmega h ha hb hc hb_bound
+    hc_bound hc_nonneg hsmall hf hF hu hug hg => ?_⟩
+  -- For `k < 0` the bound `|g| ≤ k` makes `Ω` null, and the conclusion holds vacuously.
+  rcases lt_or_ge k 0 with hk | hk
+  · filter_upwards [hg] with x hx
+    exact absurd ((abs_nonneg _).trans hx) hk.not_ge
+  -- The bound from above for `u`, and for `-u`, a weak solution with data `-f`, `-F`, `-g`.
+  have hup := hbound (u := u) hk hOmega h ha hb hc hb_bound hc_bound hc_nonneg hsmall hf hF
+    (fun v _ => (hu v).le) (W1p.posPartAbove_mem_w1p0Submodule_of_sub_mem (by norm_num) hk hug
+      (hg.mono fun x hx => (le_abs_self _).trans hx))
+  have hneg : -u - -g ∈ w1p0Submodule mu Omega 2 := by
+    rw [neg_sub_neg, ← neg_sub]
+    exact (w1p0Submodule mu Omega 2).toSubmodule.neg_mem hug
+  have hlo := hbound (u := -u) (g := fun x => -f x) (F := fun x => -F x) hk hOmega h ha hb hc
+    hb_bound hc_bound hc_nonneg hsmall hf.neg hF.neg (fun v _ => by
+      rw [← neg_one_smul ℝ u, energyFormH1_smul_left, hu v]
+      simp only [neg_mul, one_mul, inner_neg_left, integral_neg]
+      linarith)
+    (W1p.posPartAbove_mem_w1p0Submodule_of_sub_mem (by norm_num) hk hneg (by
+      filter_upwards [W1p.value_neg_ae g, hg] with x h₁ h₂
+      rw [h₁, Pi.neg_apply]
+      exact (neg_le_abs _).trans h₂))
+  have hf' : eLpNorm (fun x => -f x) (q / 2 : ℝ≥0) (mu.restrict Omega) =
+      eLpNorm f (q / 2 : ℝ≥0) (mu.restrict Omega) := eLpNorm_neg _ _ _
+  have hF' : eLpNorm (fun x => -F x) q (mu.restrict Omega) = eLpNorm F q (mu.restrict Omega) :=
+    eLpNorm_neg _ _ _
+  rw [hf', hF'] at hlo
+  exact (W1p.ae_abs_value_le_iff subset_rfl).2 ⟨hup, hlo⟩
 
 end TauCeti.PDE

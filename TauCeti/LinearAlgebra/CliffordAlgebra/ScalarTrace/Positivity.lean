@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Radical
 import Mathlib.Basic.Complex.BigOperators
 import TauCeti.Basic.Complex.BigOperators
-import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
+import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.IteratedFDeriv
 public import TauCeti.Analysis.Holder.OpenSet.Comp.Left
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.Calculus.DiffContOnCl
+import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Holder.Bilinear
 import TauCeti.Analysis.Holder.OpenSet.Zero
 
@@ -38,6 +40,9 @@ holomorphic curves.
   of the germ at the evaluation point; in particular
   (`TauCeti.CkHolderSpaceOn.conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend`) of the
   extension to the closure.
+* `TauCeti.CkHolderSpaceOn.diffContOnCl_closureExtend_of_conjWirtingerDerivL_eq_zero`: on a convex
+  open set, an element of the kernel extends to a function holomorphic on `Ω` and continuous on its
+  closure.
 * `TauCeti.CkHolderSpaceOn.conjWirtingerDerivL_compLeftL`: it commutes with postcomposition by a
   complex-linear map, for instance with the coordinate projections of `ℂⁿ`.
 * `TauCeti.CkHolderSpaceOn.wirtingerDerivL`: the operator
@@ -88,6 +93,20 @@ theorem conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend
     (u : CkHolderSpaceOn 1 α Ω F) (z : Ω) :
     conjWirtingerDerivL α Ω F u z = conjWirtingerDeriv u.closureExtend z 1 :=
   conjWirtingerDerivL_apply u z (u.closureExtend_eventuallyEq_extend z.property).symm
+
+/-- **Elements of the kernel are holomorphic.** On a convex open set `Ω`, an element of
+`C^{1,α}(Ω, F)` with complete values and vanishing Cauchy–Riemann derivative extends to a function
+holomorphic on `Ω` and continuous on the closure of `Ω`. -/
+theorem diffContOnCl_closureExtend_of_conjWirtingerDerivL_eq_zero [CompleteSpace F]
+    (hΩ : Convex ℝ (Ω : Set ℂ)) {u : CkHolderSpaceOn 1 α Ω F}
+    (hu : conjWirtingerDerivL α Ω F u = 0) : DiffContOnCl ℂ u.closureExtend Ω := by
+  refine ⟨fun z hz ↦ ?_, u.continuousOn_closureExtend hΩ⟩
+  have hd : DifferentiableAt ℝ u.closureExtend z :=
+    u.differentiableOn_closureExtend.differentiableAt (Ω.isOpen.mem_nhds hz)
+  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hd).2 ?_
+    ).differentiableWithinAt
+  rw [← conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend u ⟨z, hz⟩, hu,
+    HolderSpace.zero_apply]
 
 /-- The Cauchy–Riemann operator on `C^{1,α}(Ω)` commutes with postcomposition by a continuous
 complex-linear map `L`: `∂(L ∘ u)/∂(conj z) = L ∘ ∂u/∂(conj z)`. -/

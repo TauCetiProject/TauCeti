@@ -36,8 +36,9 @@ the imaginary part is `Im Ω = (Ω - Ωᴴ) / 2i`.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_im_map_ofReal_of_transpose_eq`: for a symmetric complex matrix `Ω`, the complex
   matrix of `Im Ω` is `(Ω - Ωᴴ) / 2i`.
-* `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_one`, `Matrix.trace_map_ofReal`: the entrywise
-  coercion is multiplicative, preserves the identity and commutes with the trace.
+* `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_mulVec`, `Matrix.map_ofReal_one`,
+  `Matrix.trace_map_ofReal`: the entrywise coercion is multiplicative, commutes with `mulVec`,
+  preserves the identity and commutes with the trace.
 * `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
   complex matrix.
 * `Matrix.det_map_ofReal`: the determinant of a real matrix is unchanged as a complex matrix.
@@ -314,6 +315,12 @@ theorem map_im_map_ofReal_of_transpose_eq {Ω : Matrix n n ℂ} (h : Ωᵀ = Ω)
 theorem map_ofReal_mul [Fintype m] (X : Matrix l m ℝ) (Y : Matrix m n ℝ) :
     (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
   Matrix.map_mul (f := Complex.ofRealHom)
+
+/-- The entrywise coercion of real matrices to complex matrices commutes with `mulVec`. -/
+@[simp]
+theorem map_ofReal_mulVec [Fintype n] (X : Matrix m n ℝ) (z : n → ℝ) :
+    X.map ((↑) : ℝ → ℂ) *ᵥ (fun i ↦ (z i : ℂ)) = fun i ↦ ((X *ᵥ z) i : ℂ) :=
+  funext fun i ↦ (RingHom.map_mulVec Complex.ofRealHom X z i).symm
 
 /-- The entrywise coercion of the real identity matrix is the complex identity matrix. -/
 theorem map_ofReal_one [DecidableEq n] : (1 : Matrix n n ℝ).map ((↑) : ℝ → ℂ) = 1 :=

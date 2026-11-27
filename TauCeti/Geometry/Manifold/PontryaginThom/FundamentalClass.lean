@@ -151,12 +151,8 @@ private def tubeLocalPairMap (h : IsFramedTube f τ) (s : S) :
 private lemma isIso_singularHomologyMap_tubeLocalPairMap [T1Space M] (h : IsFramedTube f τ)
     (s : S) {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A] (N : A) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (tubeLocalPairMap h s) N n) := by
-  have hU : fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ ∪
-      snd (TopCat.of V) (TopCat.of S) ⁻¹' ({s}ᶜ : Set (TopCat.of S)) = ({((0 : V), s)})ᶜ := by
-    ext ⟨v, x⟩
-    -- The projections of the product in `TopCat` are those of `V × S`.
-    change (v ≠ 0 ∨ x ≠ s) ↔ ¬((v, x) = ((0 : V), s))
-    rw [Prod.ext_iff, not_and_or]
+  have hU := TopCat.preimage_fst_compl_union_preimage_snd_compl (X := TopCat.of V)
+    (Y := TopCat.of S) (0 : V) s
   -- Transport the excision isomorphism at `(0, s)` along the equality of subsets and along
   -- `h.tubeMap (0, s) = f s`.
   have key : ∀ (U : Set (TopCat.of V ⊗ TopCat.of S : TopCat)) (y : M), U = {((0 : V), s)}ᶜ →
