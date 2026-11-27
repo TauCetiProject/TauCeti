@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import TauCeti.Probability.Moments.Determinacy
 import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Chi.Moments
 import TauCeti.Probability.Distributions.Gaussian.Symmetry
@@ -39,6 +40,8 @@ The formulas follow the standard calculation in, for example, Johnson, Kotz, and
 * `integral_sq_gaussianReal` evaluates the second raw moment.
 * `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
   first-moment integrability for one or two Gaussian coordinates.
+* `isMomentDeterminate_gaussianReal`: a real Gaussian law is determined by its moments, so the
+  method of moments applies to Gaussian limits.
 -/
 
 public section
@@ -149,5 +152,13 @@ theorem centralMoment_id_two_mul_add_one_gaussianReal (m : ℝ) (v : ℝ≥0) (n
     centralMoment id (2 * n + 1) (gaussianReal m v) = 0 :=
   (centralMoment_eq_integral_sub_pow (X := id) integral_id_gaussianReal _).trans
     (integral_sub_pow_two_mul_add_one_gaussianReal m v n)
+
+/-- **A real Gaussian law is determined by its moments**: every measure on `ℝ` with the finite
+moments of `gaussianReal m v` is `gaussianReal m v`. -/
+@[simp]
+theorem isMomentDeterminate_gaussianReal (m : ℝ) (v : ℝ≥0) :
+    (gaussianReal m v).IsMomentDeterminate :=
+  .of_integrable_exp_mul_abs one_pos (integrable_exp_mul_abs (X := id)
+    (integrable_exp_mul_gaussianReal 1) (integrable_exp_mul_gaussianReal (-1)))
 
 end TauCeti.Probability

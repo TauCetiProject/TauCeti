@@ -81,18 +81,9 @@ private theorem eqOn_zero_snd_of_cauchyRiemann {Ω : Set ℂ} (hΩ : IsOpen Ω)
     (hA : ∀ w ∈ Ω, ‖A (v w) - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ ≤ C * ‖(v w).2‖)
     {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (hfreq : ∃ᶠ w in 𝓝[≠] z₀, (v w).2 = 0) :
     EqOn (fun w ↦ (v w).2) 0 Ω := by
-  refine eqOn_zero_of_frequently_eq_zero_of_norm_add_I_smul_le hΩ hΩc hv.snd
-    (M := fun w ↦ C * ‖fderiv ℝ v w I‖) (fun w hw ↦ ?_) (fun w hw ↦ ?_) hz₀ hfreq
-  · -- `M` is continuous, hence locally bounded above
-    have hcont : ContinuousAt (fun w ↦ C * ‖fderiv ℝ v w I‖) w :=
-      continuousAt_const.mul ((((hv.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
-        continuousOn_const).continuousAt (hΩ.mem_nhds hw)).norm)
-    exact ⟨_, hcont.eventually_mem (Iic_mem_nhds (lt_add_one _))⟩
-  · rw [((hv.differentiableOn one_ne_zero w hw).differentiableAt
-      (hΩ.mem_nhds hw)).hasFDerivAt.snd.fderiv]
-    calc ‖(fderiv ℝ v w 1).2 + I • (fderiv ℝ v w I).2‖
-        ≤ C * ‖(v w).2‖ * ‖fderiv ℝ v w I‖ := norm_snd_add_I_smul_snd_le (hA w hw) (hCR w hw)
-      _ = C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by ring
+  obtain ⟨hM, hle⟩ := norm_fderiv_snd_add_I_smul_le_of_contDiffOn hΩ (A := fun w ↦ A (v w)) hv
+    hCR hA
+  exact eqOn_zero_of_frequently_eq_zero_of_norm_add_I_smul_le hΩ hΩc hv.snd hM hle hz₀ hfreq
 
 end Normal
 

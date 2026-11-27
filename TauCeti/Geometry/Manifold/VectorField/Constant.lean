@@ -30,6 +30,9 @@ noncomputable def constVectorField (v : E) : (z : E) → TangentSpace 𝓘(ℝ, 
 /-- Under `NormedSpace.fromTangentSpace`, `constVectorField` evaluates to `v`. -/
 theorem constVectorField_apply (v z : E) :
     constVectorField v z = (NormedSpace.fromTangentSpace z).symm v := (rfl)
+/-- The constant vector field with value `v` is the constant function `v`, each tangent space of
+`E` being `E` itself. -/
+theorem constVectorField_eq (v : E) : constVectorField v = fun _ ↦ v := (rfl)
 /-- The section `z ↦ ⟨z, v⟩` of `T E` is smooth (bare-pair form). -/
 theorem contMDiff_tangentBundle_mk_const (v : E) {n : WithTop ℕ∞} :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n (fun z ↦ (⟨z, v⟩ : TangentBundle 𝓘(ℝ, E) E)) :=

@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import TauCeti.Analysis.Matrix.Cayley
-import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The real subspace of `ℂⁿ` and its images under matrices
@@ -66,6 +65,8 @@ Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a
 * `Matrix.lagrangianChart_mul_mul_inv`: an invertible real matrix `P` maps the chart subspace of
   `S` onto that of `P S P⁻¹`; for orthogonal `O` this is the chart of `O S Oᵀ`
   (`Matrix.lagrangianChart_mul_mul_transpose`).
+* `Matrix.realImage_one_add_I_smul_eq_lagrangianChart_inv`: the graph `{x + i A x}` of an
+  invertible real matrix `A` is the chart subspace of `A⁻¹`.
 * `Matrix.lagrangianChart_fromBlocks_diagonal`: the chart subspace of a block-diagonal matrix is the
   direct sum of the chart subspaces of its blocks.
 
@@ -256,8 +257,9 @@ theorem realImage_map_star_eq_of_realImage_eq {M N : Matrix n n ℂ}
   have hval (P : Matrix n n ℂ) {x : EuclideanSpace ℂ n} (hx : x ∈ realSubspace n) (i : n) :
       toEuclideanCLM (𝕜 := ℂ) (P.map star) x i = star (toEuclideanCLM (𝕜 := ℂ) P x i) := by
     simp only [toEuclideanCLM_apply, ofLp_toLpLin, toLin'_apply]
-    rw [map_star_mulVec_of_star_eq P
-      (funext fun j ↦ Complex.conj_eq_iff_im.2 (mem_realSubspace.1 hx j)), Pi.star_apply]
+    have hxs : star (WithLp.ofLp x) = WithLp.ofLp x :=
+      funext fun j ↦ Complex.conj_eq_iff_im.2 (mem_realSubspace.1 hx j)
+    rw [← conjTranspose_transpose, mulVec_transpose, vecMul_conjTranspose, hxs, Pi.star_apply]
   have key {M N : Matrix n n ℂ} (hMN : M.realImage ≤ N.realImage) :
       (M.map star).realImage ≤ (N.map star).realImage := by
     intro v hv
@@ -403,10 +405,7 @@ theorem lagrangianChartFrame_apply (S : Matrix n n ℝ) (i j : n) :
 theorem lagrangianChartFrame_mul (S : Matrix n n ℝ) :
     S.lagrangianChartFrame * (S.map ((↑) : ℝ → ℂ) - Complex.I • 1) =
       (S * S + 1).map ((↑) : ℝ → ℂ) := by
-  have h : (S * S).map ((↑) : ℝ → ℂ) = S.map (↑) * S.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  rw [lagrangianChartFrame, Matrix.map_add _ Complex.ofReal_add, h,
-    Matrix.map_one _ (by simp) (by simp)]
+  rw [lagrangianChartFrame, Matrix.map_add _ Complex.ofReal_add, map_ofReal_mul, map_ofReal_one]
   simp [add_mul, mul_sub, smul_smul]
   abel
 
@@ -629,6 +628,18 @@ theorem lagrangianChart_mul_mul_transpose {O : Matrix n n ℝ} (hO : O ∈ ortho
   have hO' : Oᵀ * O = 1 := (mem_orthogonalGroup_iff' n ℝ).1 hO
   rw [← inv_eq_left_inv hO']
   exact lagrangianChart_mul_mul_inv ((isUnit_iff_isUnit_det O).2 (isUnit_det_of_left_inverse hO')) S
+
+/-- **The graph of an invertible matrix is a chart subspace.** For an invertible real matrix `A`,
+the graph `{x + i A x | x ∈ ℝⁿ}`, the image of `ℝⁿ` under `1 + i A`, is the subspace
+`{A⁻¹ y + i y | y ∈ ℝⁿ}`, since `1 + i A = (A⁻¹ + i) A` and `A` maps `ℝⁿ` onto itself. -/
+theorem realImage_one_add_I_smul_eq_lagrangianChart_inv {A : Matrix n n ℝ} (hA : IsUnit A) :
+    (1 + Complex.I • A.map ((↑) : ℝ → ℂ)).realImage = A⁻¹.lagrangianChart := by
+  have h : (1 : Matrix n n ℂ) + Complex.I • A.map (↑) =
+      A⁻¹.lagrangianChartFrame * A.map (↑) := by
+    rw [lagrangianChartFrame_def, Matrix.add_mul, ← map_ofReal_mul,
+      nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).1 hA), map_ofReal_one, Matrix.smul_mul,
+      Matrix.one_mul, add_comm]
+  rw [h, realImage_mul_map_ofReal _ hA, lagrangianChart_def]
 
 section Sum
 

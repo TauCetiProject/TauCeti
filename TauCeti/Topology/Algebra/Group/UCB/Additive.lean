@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.TypeTags
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
 public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 
@@ -12,13 +13,14 @@ public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 # Type-tag equivalences on `AddUCB` and `UCB`
 
 The Banach algebra `TauCeti.AddUCB A` of bounded functions on a topological additive group `A`
-that are uniformly continuous under small left addition, together with its left translations
-`TauCeti.AddUCB.leftTranslation` and pullback `TauCeti.AddUCB.compRightAlgHom`, lives in
-`TauCeti.Topology.Algebra.Group.UCB.Basic`, `Translation`, and `CompRight`.
+that are uniformly continuous under small left addition, together with its left and right
+translations `TauCeti.AddUCB.leftTranslation`, `TauCeti.AddUCB.rightTranslation`, and pullback
+`TauCeti.AddUCB.compRightAlgHom`, lives in `TauCeti.Topology.Algebra.Group.UCB.Basic`,
+`Translation`, and `CompRight`.
 
 This file supplies the order-preserving isometric `ℝ`-algebra equivalences identifying `AddUCB A`
 with `TauCeti.UCB (Multiplicative A)` and `TauCeti.UCB G` with `AddUCB (Additive G)`, intertwining
-additive and multiplicative left translations.
+additive and multiplicative left and right translations.
 
 ## Main definitions
 
@@ -36,8 +38,12 @@ additive and multiplicative left translations.
   `TauCeti.mem_ucb_iff_compContinuous_mem_addUcb`: membership in `addUcb` and `ucb` corresponds
   under precomposition with `Multiplicative.toAdd` and `Additive.toMul`.
 * `TauCeti.AddUCB.equivMultiplicative_leftTranslation`,
-  `TauCeti.UCB.equivAdditive_leftTranslation`: the type-tag equivalences intertwine additive and
-  multiplicative left translations.
+  `TauCeti.AddUCB.equivMultiplicative_rightTranslation`,
+  `TauCeti.AddUCB.equivMultiplicative_symm_rightTranslation`,
+  `TauCeti.UCB.equivAdditive_leftTranslation`,
+  `TauCeti.UCB.equivAdditive_rightTranslation`,
+  `TauCeti.UCB.equivAdditive_symm_rightTranslation`: the type-tag equivalences intertwine
+  additive and multiplicative left and right translations.
 
 ## References
 
@@ -197,6 +203,44 @@ theorem equivMultiplicative_symm_leftTranslation (g : Multiplicative A)
   ext x
   simp
 
+/-- `equivMultiplicative` intertwines additive right translation by `a` with multiplicative right
+translation by `Multiplicative.ofAdd a`. -/
+@[simp]
+theorem equivMultiplicative_rightTranslation (a : A) (f : AddUCB A) :
+    equivMultiplicative (rightTranslation a f) =
+      UCB.rightTranslation (ofAdd a) (equivMultiplicative f) := by
+  ext x
+  simp
+
+/-- `equivMultiplicative.symm` intertwines multiplicative right translation by `g` with additive
+right translation by `g.toAdd`. -/
+@[simp]
+theorem equivMultiplicative_symm_rightTranslation (g : Multiplicative A)
+    (f : UCB (Multiplicative A)) :
+    equivMultiplicative.symm (UCB.rightTranslation g f) =
+      rightTranslation g.toAdd (equivMultiplicative.symm f) := by
+  ext x
+  simp
+
+/-- `equivMultiplicative` intertwines pullback along `φ` with pullback along
+`ContinuousAddMonoidHom.toMultiplicative φ`. -/
+@[simp]
+theorem equivMultiplicative_compRightAlgHom {B : Type*} [AddGroup B] [TopologicalSpace B]
+    [IsTopologicalAddGroup B] (φ : A →ₜ+ B) (f : AddUCB B) :
+    equivMultiplicative (compRightAlgHom φ f) =
+      UCB.compRightAlgHom φ.toMultiplicative (equivMultiplicative f) := by
+  ext x
+  simp
+
+/-- `equivMultiplicative.symm` intertwines pullback along
+`ContinuousAddMonoidHom.toMultiplicative φ` with pullback along `φ`. -/
+@[simp]
+theorem equivMultiplicative_symm_compRightAlgHom {B : Type*} [AddGroup B] [TopologicalSpace B]
+    [IsTopologicalAddGroup B] (φ : A →ₜ+ B) (f : UCB (Multiplicative B)) :
+    equivMultiplicative.symm (UCB.compRightAlgHom φ.toMultiplicative f) =
+      compRightAlgHom φ (equivMultiplicative.symm f) := by
+  rw [AlgEquiv.symm_apply_eq, equivMultiplicative_compRightAlgHom, AlgEquiv.apply_symm_apply]
+
 end AddUCB
 
 namespace UCB
@@ -294,6 +338,42 @@ theorem equivAdditive_symm_leftTranslation (a : Additive G) (f : AddUCB (Additiv
       leftTranslation a.toMul (equivAdditive.symm f) := by
   ext x
   simp
+
+/-- `equivAdditive` intertwines multiplicative right translation by `g` with additive right
+translation by `Additive.ofMul g`. -/
+@[simp]
+theorem equivAdditive_rightTranslation (g : G) (f : UCB G) :
+    equivAdditive (rightTranslation g f) = AddUCB.rightTranslation (ofMul g) (equivAdditive f) := by
+  ext x
+  simp
+
+/-- `equivAdditive.symm` intertwines additive right translation by `a` with multiplicative right
+translation by `a.toMul`. -/
+@[simp]
+theorem equivAdditive_symm_rightTranslation (a : Additive G) (f : AddUCB (Additive G)) :
+    equivAdditive.symm (AddUCB.rightTranslation a f) =
+      rightTranslation a.toMul (equivAdditive.symm f) := by
+  ext x
+  simp
+
+/-- `equivAdditive` intertwines pullback along `φ` with pullback along
+`ContinuousMonoidHom.toAdditive φ`. -/
+@[simp]
+theorem equivAdditive_compRightAlgHom {H : Type*} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (φ : G →ₜ* H) (f : UCB H) :
+    equivAdditive (compRightAlgHom φ f) =
+      AddUCB.compRightAlgHom φ.toAdditive (equivAdditive f) := by
+  ext x
+  simp
+
+/-- `equivAdditive.symm` intertwines pullback along `ContinuousMonoidHom.toAdditive φ` with
+pullback along `φ`. -/
+@[simp]
+theorem equivAdditive_symm_compRightAlgHom {H : Type*} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (φ : G →ₜ* H) (f : AddUCB (Additive H)) :
+    equivAdditive.symm (AddUCB.compRightAlgHom φ.toAdditive f) =
+      compRightAlgHom φ (equivAdditive.symm f) := by
+  rw [AlgEquiv.symm_apply_eq, equivAdditive_compRightAlgHom, AlgEquiv.apply_symm_apply]
 
 end Additive
 

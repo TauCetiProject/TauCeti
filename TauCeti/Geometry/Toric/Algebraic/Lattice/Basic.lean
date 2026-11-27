@@ -15,6 +15,8 @@ public import TauCeti.Algebra.Module.ZLattice.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+import TauCeti.LinearAlgebra.Dual.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import Mathlib.Topology.DiscreteSubset
@@ -46,6 +48,8 @@ forcing the integral and real ranks to agree.
 * `TauCeti.Toric.IsIntegralLattice.injective`, `TauCeti.Toric.IsIntegralLattice.span_range_eq_top`
   and `TauCeti.Toric.IsIntegralLattice.finrank_eq`: an integral lattice is injective with full
   real span, and the integral rank of `N` equals the real dimension of `V`.
+* `TauCeti.Toric.IsIntegralLattice.finiteIndex_range`: a map of integral lattices in the same
+  real vector space compatible with them has image of finite index.
 * `TauCeti.Toric.linearIndependent_comp_iff_of_liftBaseChange_injective`: when the real-linear
   map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (as it is when `i` extends scalars from `ℤ`
   to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of integral vectors is linearly
@@ -60,6 +64,8 @@ forcing the integral and real ranks to agree.
   real-linear functional, additively in the character.
 * `TauCeti.Toric.IsIntegralLattice.exists_realCharacter_apply_eq`: every additive real-valued
   function on the integral characters is evaluation at a point of `V`.
+* `TauCeti.Toric.IsIntegralLattice.finrank_span_image`: the real span of the image of a
+  sublattice has dimension the integral rank of the sublattice.
 * `TauCeti.Toric.IsIntegralLattice.eq_of_isPrimitive_of_eq_smul`: two primitive lattice vectors
   whose images point in the same direction are equal.
 * `TauCeti.Toric.IsIntegralLattice.prod`: products of integral lattices are integral lattices for
@@ -175,6 +181,24 @@ theorem IsIntegralLattice.finrank_eq (h : IsIntegralLattice i) :
   rw [← Module.finrank_baseChange (R := ℝ) (S := ℤ) (M' := N),
     h.isBaseChange.equiv.finrank_eq]
 
+/-- A map `f : N' →+ N` compatible with integral lattices `i'` and `i` in the same real vector
+space has image of finite index: the two lattices have the same rank. -/
+theorem IsIntegralLattice.finiteIndex_range {N' : Type*} [AddCommGroup N'] {i' : N' →+ V}
+    {f : N' →+ N} (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    (hf : ∀ n, i' n = i (f n)) : f.range.FiniteIndex := by
+  have := hi.free
+  have := hi.finite
+  have hinj : Function.Injective f.toIntLinearMap := fun a b hab ↦
+    hi'.injective (by simp only [hf, AddMonoidHom.coe_toIntLinearMap] at hab ⊢; rw [hab])
+  have : Finite (N ⧸ AddSubgroup.toIntSubmodule f.range) := by
+    rw [← AddMonoidHom.coe_toIntLinearMap_range]
+    exact Submodule.finiteQuotientOfFreeOfRankEq _
+      (by rw [LinearMap.finrank_range_of_inj hinj, hi'.finrank_eq, hi.finrank_eq])
+  -- The quotient by a submodule is defined as the quotient by its underlying additive subgroup,
+  -- and the subgroup underlying `AddSubgroup.toIntSubmodule f.range` is `f.range` itself.
+  have : Finite (N ⧸ f.range) := this
+  exact AddSubgroup.finiteIndex_of_finite_quotient
+
 /-- An integral lattice sits in a finite-dimensional real vector space. -/
 theorem IsIntegralLattice.finiteDimensional (h : IsIntegralLattice i) :
     FiniteDimensional ℝ V := by
@@ -198,6 +222,27 @@ theorem IsIntegralLattice.linearIndependent_basis {ι : Type*} (h : IsIntegralLa
   have hB (j : ι) : h.isBaseChange.basis b j = i (b j) := by
     simpa using h.isBaseChange.basis_apply b j
   exact funext hB ▸ (h.isBaseChange.basis b).linearIndependent
+
+/-- The real span of the image of a sublattice has real dimension equal to the integral rank of
+the sublattice. -/
+theorem IsIntegralLattice.finrank_span_image (h : IsIntegralLattice i) (L : Submodule ℤ N) :
+    Module.finrank ℝ (Submodule.span ℝ (i '' L)) = Module.finrank ℤ L := by
+  have := h.free
+  have := h.finite
+  let b := Module.finBasis ℤ L
+  have hli : LinearIndependent ℝ (i ∘ (L.subtype ∘ b)) :=
+    (linearIndependent_comp_iff_of_liftBaseChange_injective
+      h.isBaseChange.liftBaseChange_injective).2
+      (b.linearIndependent.map' L.subtype (Submodule.ker_subtype L))
+  have hL : Submodule.span ℤ (Set.range (L.subtype ∘ b)) = L := by
+    rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top]
+  -- An integral basis of the sublattice maps to a real basis of the real span of its image.
+  have hspan :
+      Submodule.span ℝ (i '' L) = Submodule.span ℝ (Set.range (i ∘ (L.subtype ∘ b))) := by
+    conv_lhs => rw [← hL]
+    rw [← AddMonoidHom.coe_toIntLinearMap i, ← Submodule.map_coe, Submodule.map_span,
+      Submodule.span_span_of_tower, ← Set.range_comp]
+  rw [hspan, finrank_span_eq_card hli, Fintype.card_fin]
 
 end Basic
 
@@ -250,6 +295,16 @@ theorem IsIntegralLattice.realCharacter_apply (h : IsIntegralLattice i)
     (m : N →+ ℤ) (n : N) : h.realCharacter m (i n) = (m n : ℝ) := by
   simpa [IsIntegralLattice.realCharacter] using
     h.isBaseChange.toDual_comp_apply m.toIntLinearMap n
+
+/-- For prescribed characters, contraction adds a transverse lattice line to their
+common real kernel. No independence or codimension assumption is needed. -/
+theorem IsIntegralLattice.ker_realCharacter_apply_smul_sub_apply_smul (h : IsIntegralLattice i)
+    (f g : N →+ ℤ) (v : N)
+    (hv : i v ∉ (h.realCharacter f).ker ⊓ (h.realCharacter g).ker) :
+    (h.realCharacter (f v • g - g v • f)).ker =
+      (h.realCharacter f).ker ⊓ (h.realCharacter g).ker ⊔ ℝ ∙ i v := by
+  simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ] using
+    LinearMap.ker_apply_smul_sub_apply_smul (h.realCharacter f) (h.realCharacter g) hv
 
 /-- A real-linear functional agreeing with an integral character on lattice points is *the* real
 extension of that character. -/
@@ -487,6 +542,43 @@ theorem dualBasis_apply_apply [DecidableEq κ] (b : Basis κ ℤ N) (j k : κ) :
     h.dualBasis b j (i (b k)) = if k = j then 1 else 0 := by
   rw [← h.dualBasis_repr, Basis.repr_self, Finsupp.single_apply]
   exact if_congr eq_comm rfl rfl
+
+/-- A functional on `V` is determined by its values on an integral basis `b`: it is the
+combination of the dual basis of `b` with these values as coefficients. -/
+@[simp]
+theorem sum_apply_mul_dualBasis_apply [Fintype κ] (b : Basis κ ℤ N) (x : StrongDual ℝ V) (z : V) :
+    ∑ j, x (i (b j)) * h.dualBasis b j z = x z := by
+  conv_rhs => rw [← (h.dualBasis b).sum_repr x]
+  simp [dualBasis_repr]
+
+/-- A vector of `V` is the combination of the lattice vectors `i (b j)` with its values on the
+dual basis of `b` as coefficients. -/
+@[simp]
+theorem sum_dualBasis_apply_smul [Fintype κ] (b : Basis κ ℤ N) (z : V) :
+    ∑ j, h.dualBasis b j z • i (b j) = z := by
+  have := h.finiteDimensional
+  classical
+  conv_rhs => rw [← (h.isBaseChange.basis b).sum_repr z]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [dualBasis, IsBaseChange.basis_apply]
+
+/-- A vector of `V` vanishing on every vector of the dual basis of `b` but one, `l₀`, is its
+value there times the matching lattice vector `i (b l₀)`. -/
+theorem eq_smul_of_dualBasis_apply_eq_zero {b : Basis κ ℤ N} {z : V} {l₀ : κ}
+    (hz : ∀ l, l ≠ l₀ → h.dualBasis b l z = 0) : z = h.dualBasis b l₀ z • i (b l₀) := by
+  have := Fintype.ofFinite κ
+  conv_lhs => rw [← h.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_single l₀ (fun l _ hl ↦ by rw [hz l hl, zero_smul]) (by simp)
+
+/-- A nonzero vector of `V` that is nonnegative on the dual basis of `b` is positive on one of its
+vectors. -/
+theorem exists_dualBasis_apply_pos {b : Basis κ ℤ N} {z : V} (hz : z ≠ 0)
+    (ht : ∀ m, 0 ≤ h.dualBasis b m z) : ∃ m, 0 < h.dualBasis b m z := by
+  have := Fintype.ofFinite κ
+  by_contra! hneg
+  refine hz ?_
+  rw [← h.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_zero fun k _ ↦ by rw [le_antisymm (hneg k) (ht k), zero_smul]
 
 /-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
 it takes integer values on the lattice. In particular this span does not depend on `b`. -/

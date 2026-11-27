@@ -47,13 +47,18 @@ only along a null frontier, is itself a fundamental domain.
   translated frontiers, whose translates cover almost everything and have pairwise disjoint
   interiors, is a fundamental domain. This is how a closed tile of a tessellation, such
   as a fundamental polygon, becomes a measurable fundamental domain.
+* `MeasureTheory.IsFundamentalDomain.congr_set`: a set a.e. equal to a fundamental domain is one.
 * `MeasureTheory.IsFundamentalDomain.measure_le_of_aedisjoint_smul`: a set a.e. disjoint from its
   nonidentity translates has measure at most that of a fundamental domain.
+* `MeasureTheory.IsFundamentalDomain.measure_le_of_subset_iUnion_smul`: a fundamental domain has
+  measure at most that of any set whose translates cover it.
 * `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul`,
   `MeasureTheory.covolume_eq_card_mul_covolume`: for an invariant measure the covolume is
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
 * `MeasureTheory.covolume_eq_index_mul_covolume`: the same multiplicativity at finite index, with
   the index as a natural number.
+* `MeasureTheory.covolume_smul_measure`: for an invariant measure, scaling the measure by `c`
+  scales the covolume by `c`.
 
 Ported from the
 [AINTLIB `LeanModularForms` project](https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms),
@@ -67,7 +72,7 @@ namespace MeasureTheory
 
 open Measure Set
 
-open scoped Pointwise
+open scoped ENNReal Pointwise
 
 /-- **Transversal coset tiling of a fundamental domain.** If `s` is a fundamental domain
 for a group `G` acting on `α`, `H ≤ G` a subgroup, and `r : ι → G` a family such that
@@ -307,6 +312,28 @@ theorem IsFundamentalDomain.of_disjoint_smul_interior {G α : Type*} [Group G] [
       exact hint hxg hx.1
     exact measure_mono_null hsub (measure_union_null (h_frontier g) (h_frontier h))
 
+/-- **A set a.e. equal to a fundamental domain is a fundamental domain.** Fundamental domains are
+determined only up to null sets: changing `s` on a null set, for instance by choosing which
+boundary points of a polygon to keep, gives another fundamental domain, provided the translations
+are quasi-measure-preserving and the group is countable. -/
+@[to_additive /-- **A set a.e. equal to an additive fundamental domain is an additive fundamental
+domain**, for a countable group acting by quasi-measure-preserving translations. -/]
+theorem IsFundamentalDomain.congr_set {G α : Type*} [Group G] [MulAction G α]
+    [MeasurableSpace α] [Countable G] {μ : Measure α} {s t : Set α}
+    (h : IsFundamentalDomain G s μ) (hst : s =ᵐ[μ] t)
+    (h_qmp : ∀ g : G, QuasiMeasurePreserving (g • · : α → α) μ μ) :
+    IsFundamentalDomain G t μ where
+  nullMeasurableSet := h.nullMeasurableSet.congr hst
+  ae_covers := by
+    have hmem : ∀ᵐ x ∂μ, ∀ g : G, (g • x ∈ s ↔ g • x ∈ t) :=
+      ae_all_iff.2 fun g ↦ ((h_qmp g).preimage_ae_eq hst).mem_iff
+    filter_upwards [h.ae_covers, hmem] with x ⟨g, hg⟩ hx
+    exact ⟨g, (hx g).1 hg⟩
+  aedisjoint g g' hne := by
+    have key (g : G) : g • t =ᵐ[μ] g • s := by
+      simpa only [preimage_smul_inv] using (h_qmp g⁻¹).preimage_ae_eq hst.symm
+    exact (h.aedisjoint hne).congr (key g) (key g')
+
 /-- **A set a.e. disjoint from its translates is no larger than a fundamental domain.** If a
 null-measurable set `t` is a.e. disjoint from each of its translates by nonidentity elements, so
 that it embeds in the orbit space up to a null set, then its measure is at most that of any
@@ -321,6 +348,20 @@ theorem IsFundamentalDomain.measure_le_of_aedisjoint_smul {G α : Type*} [Group 
   hs.measure_le_of_pairwise_disjoint ht <| (pairwise_aedisjoint_of_aedisjoint_forall_ne_one hd
     fun g ↦ (measurePreserving_smul g μ).quasiMeasurePreserving).mono fun _ _ h ↦
       h.mono inter_subset_left inter_subset_left
+
+/-- **A fundamental domain is no larger than a set whose translates cover it.** If the translates
+of `t` cover a fundamental domain `s`, for instance because they cover the whole space, then
+`μ s ≤ μ t`. -/
+@[to_additive /-- **A fundamental domain is no larger than a set whose translates cover it.** If
+the translates of `t` cover an additive fundamental domain `s`, then `μ s ≤ μ t`. -/]
+theorem IsFundamentalDomain.measure_le_of_subset_iUnion_smul {G α : Type*} [Group G]
+    [MulAction G α] [MeasurableSpace α] [Countable G] [MeasurableConstSMul G α] {μ : Measure α}
+    [SMulInvariantMeasure G α μ] {s t : Set α} (hs : IsFundamentalDomain G s μ)
+    (hst : s ⊆ ⋃ g : G, g • t) : μ s ≤ μ t :=
+  calc μ s ≤ μ (⋃ g : G, g • t ∩ s) := measure_mono <| by
+        rw [← iUnion_inter]; exact subset_inter hst subset_rfl
+    _ ≤ ∑' g : G, μ (g • t ∩ s) := measure_iUnion_le _
+    _ = μ t := (hs.measure_eq_tsum t).symm
 
 /-- **Covolume is positive**: a countable group acting with a fundamental domain for a nonzero
 invariant measure has positive covolume. -/
@@ -378,5 +419,24 @@ theorem covolume_eq_index_mul_covolume {G α : Type*} [Group G] [MulAction G α]
     covolume Δ α μ = (Δ.subgroupOf Γ).index * covolume Γ α μ := by
   rw [covolume_eq_card_mul_covolume h, ENat.card_eq_coe_natCard, ENat.toENNReal_coe,
     Subgroup.index]
+
+/-- **Covolume scales with the measure**: multiplying the measure by `c` multiplies the covolume
+by `c`. -/
+@[to_additive (attr := simp) addCovolume_smul_measure /-- **Covolume scales with the measure**:
+multiplying the measure by `c` multiplies the additive covolume by `c`. -/]
+theorem covolume_smul_measure {G α : Type*} [Group G] [MulAction G α] [MeasurableSpace α]
+    [Countable G] [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ]
+    (c : ℝ≥0∞) : covolume G α (c • μ) = c * covolume G α μ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp only [zero_smul, zero_mul]
+    unfold covolume
+    split_ifs <;> simp
+  by_cases h : HasFundamentalDomain G α μ
+  · obtain ⟨s, hs⟩ := h.ExistsIsFundamentalDomain
+    rw [(hs.mono smul_absolutelyContinuous).covolume_eq_volume, hs.covolume_eq_volume,
+      smul_apply, smul_eq_mul]
+  · have h' : ¬HasFundamentalDomain G α (c • μ) := fun ⟨⟨s, hs⟩⟩ =>
+      h ⟨⟨s, hs.mono (absolutelyContinuous_smul hc)⟩⟩
+    simp [covolume, h, h']
 
 end MeasureTheory

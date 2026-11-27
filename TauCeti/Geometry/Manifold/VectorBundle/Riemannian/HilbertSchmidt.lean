@@ -24,6 +24,9 @@ regular as `A` and `B`. In a chart it is read off with the inverse Gram matrix o
 * `ContMDiffAt.hilbertSchmidtInner_bundle`: the pairing of two `V`-valued one-forms that are `C^n`
   at a point is `C^n` at that point.
 * `ContMDiff.hilbertSchmidtInner_bundle`: the pairing of two `C^n` `V`-valued one-forms is `C^n`.
+* `Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL`: for a continuous
+  `V`-valued one-form `A`, the covectors `⟪A x, ·⟫` read in a trivialization of `Hom(TM, V)`
+  depend continuously on `x`.
 -/
 
 public section
@@ -64,8 +67,8 @@ theorem ContMDiffAt.hilbertSchmidtInner_bundle {x : M}
       =ᶠ[𝓝 x] fun y ↦ (A y).hilbertSchmidtInner (B y) := by
     filter_upwards [(chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy
     simp only [ContinuousLinearMap.hilbertSchmidtInner_def,
-      bilinFormTrace_eq_sum_chartInvGramMatrix x hy, LinearMap.compl₁₂_apply, innerₗ_apply_apply,
-      ContinuousLinearMap.coe_coe]
+      metricTrace_eq_sum_chartInvGramMatrix x hy, LinearMap.compl₁₂_apply, innerₗ_apply_apply,
+      ContinuousLinearMap.coe_coe, smul_eq_mul]
   refine ContMDiffAt.congr_of_eventuallyEq ?_ heq.symm
   refine contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦ ?_
   exact ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := n) x i j).contMDiffAt hbase).mul
@@ -81,3 +84,33 @@ theorem ContMDiff.hilbertSchmidtInner_bundle
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (B x))) :
     ContMDiff I 𝓘(ℝ) n fun x ↦ (A x).hilbertSchmidtInner (B x) :=
   fun x ↦ (hA x).hilbertSchmidtInner_bundle (hB x)
+
+/-- **Pairing with a continuous one-form in a trivialization.** For a `V`-valued one-form `A`
+continuous on an open subset `s` of the base set of a trivialization `e` of the bundle
+`Hom(TM, V)`, the Hilbert–Schmidt covectors `⟪A x, ·⟫` read in `e`,
+`x ↦ ⟪A x, ·⟫ ∘L e.symmL ℝ x`, depend continuously on `x ∈ s`. Here the metrics on `TM` and `V`
+need only be continuous. -/
+theorem Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 0 F V] [FiniteDimensional ℝ F]
+    (e : Trivialization (E →L[ℝ] F)
+      (π (E →L[ℝ] F) (fun x : M ↦ TangentSpace I x →L[ℝ] V x))) [e.IsLinear ℝ]
+    {s : Set M} (hs : IsOpen s) (hse : s ⊆ e.baseSet)
+    (hA : ContinuousOn
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (A y)) s) :
+    ContinuousOn (fun x ↦ (A x).hilbertSchmidtInnerL ∘L e.symmL ℝ x) s := by
+  have : IsManifold I (0 + 1) M := by rwa [zero_add]
+  refine continuousOn_clm_apply.2 fun c ↦ ?_
+  -- The one-form `y ↦ e.symm y c` is continuous on `s`.
+  have hc : ContinuousOn (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (e.symm y c)) s :=
+    (e.continuousOn_symm.mono (Set.prod_mono hse subset_rfl)).comp
+      (continuousOn_id.prodMk continuousOn_const) fun x hx ↦ ⟨hx, Set.mem_univ c⟩
+  have hA' := contMDiffOn_zero_iff (I := I) (I' := I.prod 𝓘(ℝ, E →L[ℝ] F)) |>.2 hA
+  have hc' := contMDiffOn_zero_iff (I := I) (I' := I.prod 𝓘(ℝ, E →L[ℝ] F)) |>.2 hc
+  refine (contMDiffOn_zero_iff (I := I) (I' := 𝓘(ℝ))).1 (fun x hx ↦ ?_)
+  refine (((hA'.contMDiffAt (hs.mem_nhds hx)).hilbertSchmidtInner_bundle
+    (hc'.contMDiffAt (hs.mem_nhds hx))).congr_of_eventuallyEq ?_).contMDiffWithinAt
+  filter_upwards [e.open_baseSet.mem_nhds (hse hx)] with y hy
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.hilbertSchmidtInnerL_apply,
+    e.symmL_apply hy]

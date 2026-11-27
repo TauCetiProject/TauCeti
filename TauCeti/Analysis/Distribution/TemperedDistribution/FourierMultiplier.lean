@@ -49,8 +49,9 @@ the starting point of Bernstein's inequalities.
 * `TemperedDistribution.isVanishingOn_fourier_fourierMultiplierCLM`: the Fourier transform of a
   multiplier vanishes wherever its symbol does.
 * `TemperedDistribution.isVanishingOn_fourier_lineDerivOp`,
-  `TemperedDistribution.isVanishingOn_fourier_iteratedLineDerivOp`: derivatives preserve the
-  vanishing of the Fourier transform.
+  `TemperedDistribution.isVanishingOn_fourier_iteratedLineDerivOp`,
+  `TemperedDistribution.isVanishingOn_fourier_laplacian`: derivatives and the Laplacian preserve
+  the vanishing of the Fourier transform.
 -/
 
 public section
@@ -58,7 +59,7 @@ public section
 namespace TemperedDistribution
 
 open Distribution
-open scoped SchwartzMap FourierTransform LineDeriv
+open scoped SchwartzMap FourierTransform LineDeriv Laplacian
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -83,8 +84,7 @@ theorem fourierMultiplierCLM_apply_apply_transpose (g : E → ℂ) (u : 𝓢'(E,
   · rw [fourierMultiplierCLM_apply_apply, SchwartzMap.fourier_smulLeftCLM_fourierInv_eq hgt]
   have hgt' : ¬ (fun ξ ↦ g (-ξ)).HasTemperateGrowth := fun h ↦ hgt <| by
     simpa [Function.comp_def] using h.comp (by fun_prop : (fun ξ : E ↦ -ξ).HasTemperateGrowth)
-  simp [hgt, SchwartzMap.fourierMultiplierCLM_apply,
-    SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hgt']
+  simp [hgt, hgt', SchwartzMap.fourierMultiplierCLM_apply]
 
 /-- **Multipliers with even symbols are symmetric.** If the symbol `g` is even, the Fourier
 multiplier `T_g` on tempered distributions is the transpose of the one on Schwartz functions:
@@ -149,6 +149,17 @@ theorem isVanishingOn_fourier_iteratedLineDerivOp {u : 𝓢'(E, F)} {s : Set E}
     rw [LineDeriv.iteratedLineDerivOp_succ_left]
     exact isVanishingOn_fourier_lineDerivOp (ih _) _
 
+/-- **The Laplacian does not enlarge the spectrum.** If the Fourier transform of `u` vanishes on
+`s`, so does that of `Δ u`. -/
+theorem isVanishingOn_fourier_laplacian {u : 𝓢'(E, F)} {s : Set E}
+    (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) s) :
+    IsVanishingOn (𝓕 (Δ u : 𝓢'(E, F)) : 𝓢'(E, F)) s := by
+  intro ψ hψ
+  rw [laplacian_eq_sum (stdOrthonormalBasis ℝ E), fourier_apply, sum_apply]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  rw [← fourier_apply]
+  exact isVanishingOn_fourier_lineDerivOp (isVanishingOn_fourier_lineDerivOp hu _) _ ψ hψ
+
 /-- **A multiplier localizes the spectrum to the support of its symbol.** If the symbol `g`
 vanishes on `s`, then the Fourier transform of `fourierMultiplierCLM F g u` vanishes on `s`, for
 every tempered distribution `u`. -/
@@ -163,7 +174,7 @@ theorem isVanishingOn_fourier_fourierMultiplierCLM {g : E → ℂ} {s : Set E}
       by_cases hξ : ξ ∈ s
       · rw [hgs ξ hξ, zero_smul]
       · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hξ (hψ h), smul_zero]
-    · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+    · simp [hg]
   rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_apply_apply,
     h, map_zero]
 

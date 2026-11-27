@@ -1,0 +1,263 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Computability.SingleOracle.Code
+public import TauCeti.Computability.TuringDegree
+import TauCeti.Computability.SingleOracle.Primrec
+import TauCeti.Computability.SingleOracle.Staged.Search
+import TauCeti.Data.PFun.Basic
+
+/-!
+# Uniform domain compilers for oracle programs
+
+This file provides primitive-recursive domain combinators on oracle programs
+`TauCeti.Oracle.Single.Code`: finite unions (`unionList`, `union`), range-to-domain conversion
+(`rangeDom`), partial images (`imageDom`), and existential projections (`projDom`). They are built
+from a single uniform dovetailing search over finite oracle prefixes via
+`exists_code_dom_iff_exists_answers` and `curry`. Every index compiler is primitive recursive and
+oracle-independent; the dovetailing compilers require a total oracle because prefix search queries
+oracle addresses below the current fuel bound.
+
+Direct domain combinators (`interList`, `restrictId`) live alongside the basic code equations in
+`TauCeti.Computability.SingleOracle.Code`, and the corresponding constant-zero-oracle
+specializations for ordinary `Nat.Partrec.Code` live in `TauCeti.Computability.Partrec.Domain`.
+
+## Main definitions
+
+* `TauCeti.Oracle.Single.Code.unionList`, `TauCeti.Oracle.Single.Code.union`: uniform
+  finite-union compilers.
+* `TauCeti.Oracle.Single.Code.rangeDom`: uniform range-to-domain compiler.
+* `TauCeti.Oracle.Single.Code.imageDom`: uniform partial-image compiler.
+* `TauCeti.Oracle.Single.Code.projDom`: uniform projection compiler.
+
+## References
+
+* R. I. Soare, *Recursively Enumerable Sets and Degrees*, Springer, 1987, Chapters II.1–2 and
+  III.1.
+-/
+
+public section
+
+open Encodable Denumerable
+
+namespace TauCeti.Oracle.Single.Code
+
+/-! ### Uniform dovetailing compilers for total oracles -/
+
+/-- Bounded predicate for finite list union: at fuel `k` against oracle prefix `l`, some program in
+the coded list halts on the given input. -/
+private def unionSearchPred (q : ℕ × ℕ × List ℕ) : Bool :=
+  (ofNat (List Code) q.1.unpair.1).any fun c =>
+    (evaln (fun z => q.2.2[z]?) q.2.1 c q.1.unpair.2).isSome
+
+private theorem primrec_unionSearchPred : Primrec unionSearchPred := by
+  open Primrec in
+  refine list_any
+    ((Primrec.ofNat (List Code)).comp (fst.comp (Primrec.unpair.comp fst))) <|
+      Primrec₂.mk ?_
+  exact option_isSome.comp <| primrec_evaln_list.comp <|
+    (snd.comp (snd.comp fst)).pair <| (fst.comp (snd.comp fst)).pair <|
+      snd.pair (snd.comp (Primrec.unpair.comp (fst.comp fst)))
+
+private theorem exists_unionListBody :
+    ∃ u : Code, ∀ (O : ℕ → ℕ) (cs : List Code) (x : ℕ),
+      (eval (O : ℕ →. ℕ) u (Nat.pair (encode cs) x)).Dom ↔
+        ∃ c ∈ cs, (eval (O : ℕ →. ℕ) c x).Dom := by
+  obtain ⟨u, hu⟩ := exists_code_dom_iff_exists_answers primrec_unionSearchPred
+  refine ⟨u, fun O cs x => ?_⟩
+  rw [hu O (Nat.pair (encode cs) x)]
+  simp only [unionSearchPred, Nat.unpair_pair, ofNat_encode, List.any_eq_true,
+    Option.isSome_iff_exists, Part.dom_iff_mem, mem_eval_iff_exists_evaln_range_map]
+  exact ⟨fun ⟨k, c, hc, d, hd⟩ => ⟨c, hc, d.output, k, d, hd, rfl⟩,
+    fun ⟨c, hc, _, k, d, hd, _⟩ => ⟨k, c, hc, d, hd⟩⟩
+
+/-- Uniform finite-union compiler on lists of oracle programs. Relative to every total oracle `O`,
+its domain is the union of the domains of the programs in `cs`. -/
+noncomputable def unionList (cs : List Code) : Code :=
+  curry exists_unionListBody.choose (encode cs)
+
+/-- Finite union of program lists is primitive recursive. -/
+theorem primrec_unionList : Primrec unionList :=
+  primrec₂_curry.comp (Primrec.const _) Primrec.encode
+
+/-- Relative to every total oracle, the domain of `unionList cs` is the union of the domains of
+the programs in `cs`. -/
+@[simp]
+theorem dom_eval_unionList (O : ℕ → ℕ) (cs : List Code) :
+    (eval (O : ℕ →. ℕ) (unionList cs)).Dom = ⋃ c ∈ cs, (eval (O : ℕ →. ℕ) c).Dom := by
+  ext x
+  simp only [PFun.Dom, Set.mem_ofPred_eq, unionList, eval_curry,
+    exists_unionListBody.choose_spec, Set.mem_iUnion, exists_prop]
+
+/-- Relative to the oracle of a set `Z`, the domain of `unionList cs` is the union of the
+domains of the programs in `cs`. -/
+@[simp]
+theorem dom_eval_unionList_oracle (Z : Set ℕ) (cs : List Code) :
+    (eval Z.oracle (unionList cs)).Dom = ⋃ c ∈ cs, (eval Z.oracle c).Dom := by
+  simp [Set.oracle_eq_indicator]
+
+/-- Uniform binary-union compiler for oracle programs. -/
+noncomputable def union (cf cg : Code) : Code :=
+  unionList [cf, cg]
+
+/-- Unfolding equation for `union` as a two-element list union. -/
+theorem union_def (cf cg : Code) : union cf cg = unionList [cf, cg] :=
+  (rfl)
+
+/-- Binary union of oracle programs is primitive recursive. -/
+theorem primrec₂_union : Primrec₂ union :=
+  primrec_unionList.comp
+    (Primrec.list_cons.comp Primrec.fst
+      (Primrec.list_cons.comp Primrec.snd (Primrec.const [])))
+
+/-- Relative to every total oracle, the domain of `union cf cg` is the union of the two domains. -/
+@[simp]
+theorem dom_eval_union (O : ℕ → ℕ) (cf cg : Code) :
+    (eval (O : ℕ →. ℕ) (union cf cg)).Dom =
+      (eval (O : ℕ →. ℕ) cf).Dom ∪ (eval (O : ℕ →. ℕ) cg).Dom := by
+  ext x
+  simp [union]
+
+/-- Relative to the oracle of a set `Z`, the domain of `union cf cg` is the union of the two
+domains. -/
+@[simp]
+theorem dom_eval_union_oracle (Z : Set ℕ) (cf cg : Code) :
+    (eval Z.oracle (union cf cg)).Dom = (eval Z.oracle cf).Dom ∪ (eval Z.oracle cg).Dom := by
+  simp [Set.oracle_eq_indicator]
+
+/-- Bounded predicate for range-to-domain conversion: at fuel `k` against oracle prefix `l`, the
+coded program halts on input `k.unpair.1` with output `y`. -/
+private def rangeSearchPred (q : ℕ × ℕ × List ℕ) : Bool :=
+  (evaln (fun z => q.2.2[z]?) q.2.1 (ofNat Code q.1.unpair.1) q.2.1.unpair.1).casesOn
+    false fun d => decide (d.output = q.1.unpair.2)
+
+private theorem primrec_rangeSearchPred : Primrec rangeSearchPred := by
+  open Primrec in
+  have hrun : Primrec fun q : ℕ × ℕ × List ℕ =>
+      evaln (fun z => q.2.2[z]?) q.2.1 (ofNat Code q.1.unpair.1) q.2.1.unpair.1 :=
+    primrec_evaln_list.comp <| (snd.comp snd).pair <| (fst.comp snd).pair <|
+      ((Primrec.ofNat Code).comp (fst.comp (Primrec.unpair.comp fst))).pair
+        (fst.comp (Primrec.unpair.comp (fst.comp snd)))
+  exact option_casesOn hrun (const false) <| Primrec₂.mk <|
+    Primrec.eq.decide.comp (Halt.primrec_output.comp snd)
+      (snd.comp (Primrec.unpair.comp (fst.comp fst)))
+
+private theorem exists_rangeDomBody :
+    ∃ r : Code, ∀ (O : ℕ → ℕ) (f : Code) (y : ℕ),
+      (eval (O : ℕ →. ℕ) r (Nat.pair (encode f) y)).Dom ↔
+        y ∈ (eval (O : ℕ →. ℕ) f).ran := by
+  obtain ⟨r, hr⟩ := exists_code_dom_iff_exists_answers primrec_rangeSearchPred
+  refine ⟨r, fun O f y => ?_⟩
+  rw [hr O (Nat.pair (encode f) y)]
+  simp only [rangeSearchPred, Nat.unpair_pair, ofNat_encode, PFun.ran, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨k, hk⟩
+    cases h : evaln (fun z => ((List.range k).map O)[z]?) k f k.unpair.1 with
+    | none => simp only [h, Bool.false_eq_true] at hk
+    | some d =>
+      simp only [h, decide_eq_true_eq] at hk
+      exact ⟨k.unpair.1, mem_eval_iff_exists_evaln_range_map.2 ⟨k, d, h, hk⟩⟩
+  · rintro ⟨x, hx⟩
+    obtain ⟨s, d, hs, hout⟩ := mem_eval_iff_exists_evaln_range_map.1 hx
+    refine ⟨Nat.pair x s, ?_⟩
+    have hmon : evaln (fun z => ((List.range (Nat.pair x s)).map O)[z]?) (Nat.pair x s) f x =
+        some d := by
+      rw [evaln_range_map] at hs ⊢
+      exact evaln_mono (Nat.right_le_pair x s) hs
+    simp only [Nat.unpair_pair, hmon, hout, decide_true]
+
+/-- Uniform range-to-domain compiler: relative to every total oracle `O`, the domain of
+`rangeDom f` is the range of `eval O f`. -/
+noncomputable def rangeDom (f : Code) : Code :=
+  curry exists_rangeDomBody.choose (encode f)
+
+/-- Range-to-domain compilation is primitive recursive on programs. -/
+theorem primrec_rangeDom : Primrec rangeDom :=
+  primrec₂_curry.comp (Primrec.const _) Primrec.encode
+
+/-- Relative to every total oracle, the domain of `rangeDom f` is the range of `f`. -/
+@[simp]
+theorem dom_eval_rangeDom (O : ℕ → ℕ) (f : Code) :
+    (eval (O : ℕ →. ℕ) (rangeDom f)).Dom = (eval (O : ℕ →. ℕ) f).ran := by
+  ext y
+  simp only [PFun.Dom, Set.mem_ofPred_eq, rangeDom, eval_curry, exists_rangeDomBody.choose_spec]
+
+/-- Relative to the oracle of a set `Z`, the domain of `rangeDom f` is the range of `f`. -/
+@[simp]
+theorem dom_eval_rangeDom_oracle (Z : Set ℕ) (f : Code) :
+    (eval Z.oracle (rangeDom f)).Dom = (eval Z.oracle f).ran := by
+  simp [Set.oracle_eq_indicator]
+
+/-- Uniform partial-image compiler: relative to every total oracle `O`, the domain of
+`imageDom f c` is the image of `(eval O c).Dom` under `eval O f`. -/
+noncomputable def imageDom (f c : Code) : Code :=
+  rangeDom (comp f (restrictId c))
+
+/-- Unfolding equation for `imageDom` as `rangeDom (comp f (restrictId c))`. -/
+theorem imageDom_def (f c : Code) : imageDom f c = rangeDom (comp f (restrictId c)) :=
+  (rfl)
+
+/-- Partial-image compilation is primitive recursive in both programs. -/
+theorem primrec₂_imageDom : Primrec₂ imageDom :=
+  primrec_rangeDom.comp
+    (primrec₂_comp.comp Primrec.fst (primrec_restrictId.comp Primrec.snd))
+
+/-- Relative to every total oracle, the domain of `imageDom f c` is the partial image of the
+domain of `c` under `f`. -/
+@[simp]
+theorem dom_eval_imageDom (O : ℕ → ℕ) (f c : Code) :
+    (eval (O : ℕ →. ℕ) (imageDom f c)).Dom =
+      (eval (O : ℕ →. ℕ) f).image (eval (O : ℕ →. ℕ) c).Dom := by
+  have hrestrict : eval (O : ℕ →. ℕ) (restrictId c) =
+      fun x => (eval (O : ℕ →. ℕ) c x).map fun _ => x :=
+    funext (eval_restrictId (O : ℕ →. ℕ) c)
+  rw [imageDom, dom_eval_rangeDom, eval_comp_eq, PFun.ran_comp, hrestrict, PFun.ran_map_const]
+
+/-- Relative to the oracle of a set `Z`, the domain of `imageDom f c` is the partial image of the
+domain of `c` under `f`. -/
+@[simp]
+theorem dom_eval_imageDom_oracle (Z : Set ℕ) (f c : Code) :
+    (eval Z.oracle (imageDom f c)).Dom = (eval Z.oracle f).image (eval Z.oracle c).Dom := by
+  simp [Set.oracle_eq_indicator]
+
+/-- Uniform existential-projection compiler: relative to every total oracle `O`, `x` lies in the
+domain of `projDom c` iff `Nat.pair x y` lies in the domain of `c` for some `y`. -/
+noncomputable def projDom (c : Code) : Code :=
+  imageDom left c
+
+/-- Unfolding equation for `projDom` as `imageDom left c`. -/
+theorem projDom_def (c : Code) : projDom c = imageDom left c :=
+  (rfl)
+
+/-- Existential projection on program domains is primitive recursive. -/
+theorem primrec_projDom : Primrec projDom :=
+  primrec₂_imageDom.comp (Primrec.const left) Primrec.id
+
+/-- Relative to every total oracle, the domain of `projDom c` is the first-coordinate projection of
+the domain of `c` under Mathlib's `Nat.pair`. -/
+@[simp]
+theorem dom_eval_projDom (O : ℕ → ℕ) (c : Code) :
+    (eval (O : ℕ →. ℕ) (projDom c)).Dom =
+      {x | ∃ y, Nat.pair x y ∈ (eval (O : ℕ →. ℕ) c).Dom} := by
+  ext x
+  simp only [projDom, dom_eval_imageDom, PFun.mem_image, eval_left, Part.mem_some_iff,
+    Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨p.unpair.2, by simpa using hp⟩
+  · rintro ⟨y, hy⟩
+    exact ⟨Nat.pair x y, hy, by simp⟩
+
+/-- Relative to the oracle of a set `Z`, the domain of `projDom c` is the first-coordinate
+projection of the domain of `c` under Mathlib's `Nat.pair`. -/
+@[simp]
+theorem dom_eval_projDom_oracle (Z : Set ℕ) (c : Code) :
+    (eval Z.oracle (projDom c)).Dom =
+      {x | ∃ y, Nat.pair x y ∈ (eval Z.oracle c).Dom} := by
+  simp [Set.oracle_eq_indicator]
+
+end TauCeti.Oracle.Single.Code

@@ -49,14 +49,19 @@ derivative applies.
 * `TauCeti.SmoothForm.contMDiffAt_apply_vectorField`,
   `TauCeti.SmoothForm.contMDiff_apply_vectorField`: a smooth real one-form evaluated on a vector
   field that is `C^n` at a point (resp. everywhere) is `C^n` there.
-* `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`: the section of a pulled-back one-form
-  evaluates a tangent vector through the differential of the map.
+* `TauCeti.SmoothForm.degreeOneEquiv_apply_inj`: a smooth one-form at `x` is determined by its
+  section at `x`.
+* `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`,
+  `TauCeti.SmoothForm.degreeOneEquiv_mpullback`: the section of a pulled-back one-form evaluates a
+  tangent vector through the differential of the map, so it is the original section composed with
+  the differential.
 * `TauCeti.isLocalFrameOn_degreeOneEquiv_iff`: real one-forms are a frame of the cotangent bundle
   on a set exactly when their values are a basis of every cotangent space over it.
 * `TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`: the section of the exterior derivative `df` of a
   smooth function is its manifold derivative.
-* `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a jointly `C^(n+1)`
-  family of functions are jointly `C^n`.
+* `ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv_uncurry`,
+  `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a family of functions
+  which is jointly `C^(n+1)` at a point (resp. everywhere) are jointly `C^n` there.
 -/
 
 public section
@@ -228,6 +233,30 @@ section OnceDifferentiable
 
 variable [IsManifold I 1 M]
 
+/-- **The differential of a family which is jointly `C^(n+1)` at a point is jointly `C^n` there.**
+For a family of functions `f : N → M → F` which is jointly `C^(n+1)` at `q ∈ N × M`, the
+differentials `(p, x) ↦ d(f p)_x` form a map into the bundle of linear maps
+`TangentSpace I x →L[ℝ] F`, lying over the projection `N × M → M`, which is `C^n` at `q`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv_uncurry {E' H' N : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+    {n : WithTop ℕ∞} {f : N → M → F} {q : N × M}
+    (hf : ContMDiffAt (J.prod I) 𝓘(ℝ, F) (n + 1) (Function.uncurry f) q) :
+    ContMDiffAt (J.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun q : N × M ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) q.2 (mvfderiv I (f q.1) q.2)) q := by
+  have hf' : ContMDiffAt ((J.prod I).prod I) 𝓘(ℝ, F) (n + 1) (fun p : (N × M) × M ↦ f p.1.1 p.2)
+      (q, q.2) :=
+    hf.comp (q, q.2) ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
+  have hd := ContMDiffAt.mfderiv (fun p : N × M ↦ f p.1) Prod.snd hf' contMDiffAt_snd le_rfl
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_snd, hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ ?_)⟩
+  -- In the trivial bundle and in the tangent bundle of the model space `F`, the coordinate
+  -- changes are the identity, and `mvfderiv` is `mfderiv` read in `F`.
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
+    inTangentCoordinates, TangentBundle.continuousLinearMapAt_model_space]
+  rfl
+
 /-- **The differential of a jointly `C^(n+1)` family is jointly `C^n`.** For a family of functions
 `f : N → M → F` which is jointly `C^(n+1)` on `N × M`, the differentials `(p, x) ↦ d(f p)_x` form a
 `C^n` map into the bundle of linear maps `TangentSpace I x →L[ℝ] F`, lying over the projection
@@ -239,20 +268,8 @@ theorem _root_.ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry {E' H' N : Type
     {n : WithTop ℕ∞} {f : N → M → F}
     (hf : ContMDiff (J.prod I) 𝓘(ℝ, F) (n + 1) (Function.uncurry f)) :
     ContMDiff (J.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun q : N × M ↦ TotalSpace.mk' (E →L[ℝ] F)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) q.2 (mvfderiv I (f q.1) q.2)) := by
-  intro q
-  have hf' : ContMDiffAt ((J.prod I).prod I) 𝓘(ℝ, F) (n + 1) (fun p : (N × M) × M ↦ f p.1.1 p.2)
-      (q, q.2) :=
-    (hf _).comp (q, q.2) ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
-  have hd := ContMDiffAt.mfderiv (fun p : N × M ↦ f p.1) Prod.snd hf' contMDiffAt_snd le_rfl
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_snd, hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ ?_)⟩
-  -- In the trivial bundle and in the tangent bundle of the model space `F`, the coordinate
-  -- changes are the identity, and `mvfderiv` is `mfderiv` read in `F`.
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
-    inTangentCoordinates, TangentBundle.continuousLinearMapAt_model_space]
-  rfl
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) q.2 (mvfderiv I (f q.1) q.2)) :=
+  fun q ↦ (hf q).contMDiffAt_totalSpaceMk_mvfderiv_uncurry
 
 namespace SmoothForm
 
@@ -329,19 +346,43 @@ theorem degreeOneEquiv_coe_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentS
     (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) v = φ.val x ![v] := by
   rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply_vec]
 
+/-- The sections of two smooth one-forms agree at `x` exactly when the forms agree at `x`. -/
+theorem degreeOneEquiv_apply_inj {φ ψ : SmoothForm I M F 1} {x : M} :
+    degreeOneEquiv φ x = degreeOneEquiv ψ x ↔ φ.val x = ψ.val x := by
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_,
+    fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
+  · have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
+    rw [hv, ← degreeOneEquiv_apply_apply, ← degreeOneEquiv_apply_apply, h]
+  · rw [degreeOneEquiv_apply_apply, degreeOneEquiv_apply_apply, h]
+
+/-- The section of a smooth one-form vanishes at `x` exactly when the form vanishes at `x`. -/
+theorem degreeOneEquiv_apply_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :
+    degreeOneEquiv φ x = 0 ↔ φ.val x = 0 := by
+  have h := degreeOneEquiv_apply_inj (φ := φ) (ψ := 0) (x := x)
+  rw [map_zero] at h
+  simpa using h
+
 /-- The section of a smooth one-form, read as a linear map, vanishes at `x` exactly when the form
 vanishes at `x`. -/
 theorem degreeOneEquiv_coe_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :
     (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) = 0 ↔ φ.val x = 0 := by
-  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ LinearMap.ext fun v ↦ ?_⟩
-  · have hv : ![v 0] = v := by
-      ext i
-      fin_cases i
-      rfl
-    rw [← hv, ← degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
-      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-  · rw [degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
-      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  rw [← ContinuousLinearMap.toLinearMap_zero, ContinuousLinearMap.coe_inj,
+    degreeOneEquiv_apply_eq_zero_iff]
+
+/-- The section of a smooth one-form is nonzero at `x` when the form does not vanish at `x`. -/
+theorem degreeOneEquiv_ne_zero {φ : SmoothForm I M F 1} {x : M} (h : φ.val x ≠ 0) :
+    degreeOneEquiv φ x ≠ 0 := fun h' ↦
+  h (degreeOneEquiv_coe_eq_zero_iff.1 (congrArg ContinuousLinearMap.toLinearMap h'))
+
+/-- If `ψ = c φ` at `x`, the sections of `ψ` and `φ` at `x` differ by the factor `c`. -/
+theorem degreeOneEquiv_eq_smul {φ ψ : SmoothForm I M F 1} {x : M} {c : ℝ}
+    (h : ψ.val x = c • φ.val x) : degreeOneEquiv ψ x = c • degreeOneEquiv φ x :=
+  ContinuousLinearMap.ext fun v ↦ by simp [h]
+
+/-- The sections of `ψ` and `φ` at `x` differ by the factor `c` exactly when `ψ = c φ` at `x`. -/
+theorem degreeOneEquiv_eq_smul_iff {φ ψ : SmoothForm I M F 1} {x : M} {c : ℝ} :
+    degreeOneEquiv ψ x = c • degreeOneEquiv φ x ↔ ψ.val x = c • φ.val x := by
+  simpa using degreeOneEquiv_apply_inj (φ := ψ) (ψ := c • φ) (x := x)
 
 /-- The linear functional `RoughForm.eval` of a smooth real one-form at `x` is its section, read as
 a linear map. -/
@@ -365,6 +406,15 @@ theorem degreeOneEquiv_mpullback_apply {E' H' M' : Type*} [NormedAddCommGroup E'
     (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
     degreeOneEquiv (mpullback f hf φ) x v = degreeOneEquiv φ (f x) (mfderiv I I' f x v) :=
   mpullback_apply f hf φ x _
+
+/-- The section of the pullback of a smooth one-form `φ` along `f` at `x` is the section of `φ` at
+`f x` composed with the differential `df_x`. -/
+theorem degreeOneEquiv_mpullback {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' 1 M'] {f : M → M'} (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 1) (x : M) :
+    degreeOneEquiv (mpullback f hf φ) x = degreeOneEquiv φ (f x) ∘L mfderiv I I' f x :=
+  ContinuousLinearMap.ext (degreeOneEquiv_mpullback_apply hf φ x)
 
 end SmoothForm
 

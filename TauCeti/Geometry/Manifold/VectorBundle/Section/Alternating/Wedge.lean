@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap.Wedge
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Wedge products of alternating bundle sections

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.ContMDiff.Sigma
+public import TauCeti.Logic.Equiv.Sum
 
 /-!
 # Diffeomorphisms of disjoint unions acting componentwise
@@ -24,6 +25,8 @@ diffeomorphisms of a disjoint union supported on a single component.
 * `Diffeomorph.sigmaCongrRightHom`: the same construction as a group homomorphism.
 * `Diffeomorph.sigmaFiber`: restriction of an index-preserving diffeomorphism to a fibre.
   Reassembling the restrictions by `sigmaCongrRight` recovers the original diffeomorphism.
+* `Diffeomorph.sumSigmaDistrib`: a disjoint union indexed by `ι₁ ⊕ ι₂` is the binary disjoint
+  union of the parts indexed by `ι₁` and by `ι₂`, the smooth form of `Equiv.sumSigmaDistrib`.
 -/
 
 public section
@@ -126,5 +129,70 @@ theorem mk_sigmaFiber_apply (e : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, M' i)
 theorem sigmaCongrRight_sigmaFiber (e : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, M' i)
     (h : ∀ x, (e x).1 = x.1) : sigmaCongrRight (e.sigmaFiber h) = e :=
   Diffeomorph.ext fun ⟨i, x⟩ ↦ mk_sigmaFiber_apply e h i x
+
+section SumSigmaDistrib
+
+variable {ι₁ ι₂ : Type*} {N : ι₁ ⊕ ι₂ → Type*} [∀ i, TopologicalSpace (N i)]
+  [∀ i, ChartedSpace H (N i)]
+
+variable (I n N) in
+/-- **Splitting a disjoint union indexed by a sum.** The disjoint union of a family indexed by
+`ι₁ ⊕ ι₂` is diffeomorphic to the binary disjoint union of its parts indexed by `ι₁` and by `ι₂`.
+This is the smooth form of `Equiv.sumSigmaDistrib`. -/
+def sumSigmaDistrib : (Σ i, N i) ≃ₘ^n⟮I, I⟯ (Σ i, N (.inl i)) ⊕ (Σ i, N (.inr i)) where
+  toEquiv := Equiv.sumSigmaDistrib N
+  contMDiff_toFun := TauCeti.contMDiff_sigma_iff.mpr fun
+    | .inl i => ContMDiff.inl.comp (TauCeti.contMDiff_sigmaMk (M := fun i ↦ N (.inl i)) i)
+    | .inr i => ContMDiff.inr.comp (TauCeti.contMDiff_sigmaMk (M := fun i ↦ N (.inr i)) i)
+  contMDiff_invFun := by
+    convert (ContMDiff.sigmaMap (f := Sum.inl) (g := fun _ ↦ id) fun _ ↦ contMDiff_id).sumElim
+      (ContMDiff.sigmaMap (f := Sum.inr) (g := fun _ ↦ id) fun _ ↦ contMDiff_id) using 1
+    funext x
+    rcases x with ⟨i, x⟩ | ⟨i, x⟩ <;> simp [Sigma.map]
+
+/-- The underlying equivalence of the splitting is `Equiv.sumSigmaDistrib`. -/
+@[simp]
+theorem sumSigmaDistrib_toEquiv : (sumSigmaDistrib I n N).toEquiv = Equiv.sumSigmaDistrib N :=
+  (rfl)
+
+/-- Splitting sends a point of a component indexed by `ι₁` to the first summand. -/
+@[simp]
+theorem sumSigmaDistrib_apply_inl (i : ι₁) (x : N (.inl i)) :
+    sumSigmaDistrib I n N ⟨.inl i, x⟩ = .inl ⟨i, x⟩ := by
+  rw [← coe_toEquiv, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_apply]
+
+/-- Splitting sends a point of a component indexed by `ι₂` to the second summand. -/
+@[simp]
+theorem sumSigmaDistrib_apply_inr (i : ι₂) (x : N (.inr i)) :
+    sumSigmaDistrib I n N ⟨.inr i, x⟩ = .inr ⟨i, x⟩ := by
+  rw [← coe_toEquiv, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_apply]
+
+/-- Splitting sends the part indexed by `ι₁`, included along `Sum.inl`, to the first summand. -/
+@[simp]
+theorem sumSigmaDistrib_apply_sigmaMap_inl (x : Σ i, N (.inl i)) :
+    sumSigmaDistrib I n N (Sigma.map Sum.inl (fun _ ↦ id) x) = .inl x := by
+  rw [← coe_toEquiv, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_apply_sigmaMap_inl]
+
+/-- Splitting sends the part indexed by `ι₂`, included along `Sum.inr`, to the second summand. -/
+@[simp]
+theorem sumSigmaDistrib_apply_sigmaMap_inr (x : Σ i, N (.inr i)) :
+    sumSigmaDistrib I n N (Sigma.map Sum.inr (fun _ ↦ id) x) = .inr x := by
+  rw [← coe_toEquiv, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_apply_sigmaMap_inr]
+
+/-- The inverse of splitting includes the first summand along `Sum.inl`. -/
+@[simp]
+theorem sumSigmaDistrib_symm_apply_inl (x : Σ i, N (.inl i)) :
+    (sumSigmaDistrib I n N).symm (.inl x) = Sigma.map Sum.inl (fun _ ↦ id) x := by
+  rw [← toEquiv_coe_symm, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_symm_apply,
+    Sum.elim_inl, Sigma.map, id]
+
+/-- The inverse of splitting includes the second summand along `Sum.inr`. -/
+@[simp]
+theorem sumSigmaDistrib_symm_apply_inr (x : Σ i, N (.inr i)) :
+    (sumSigmaDistrib I n N).symm (.inr x) = Sigma.map Sum.inr (fun _ ↦ id) x := by
+  rw [← toEquiv_coe_symm, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_symm_apply,
+    Sum.elim_inr, Sigma.map, id]
+
+end SumSigmaDistrib
 
 end Diffeomorph

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 public import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Topology.MetricSpace.Antilipschitz
 

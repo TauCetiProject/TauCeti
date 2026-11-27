@@ -83,6 +83,8 @@ tangent model `L ⧸ L_ν` of the orbit, and the dimension of the orbit, are in
   `TauCeti.IsRootPlaneDecomposition.sigPos_toQuadraticMap_heightHessian`: the Morse index and the
   positive index.
 * `TauCeti.IsRootPlaneDecomposition.ker_heightHessian_eq_ker_ad_iff`: nondegeneracy.
+* `TauCeti.IsRootPlaneDecomposition.exists_mem_apply_ne_zero`: with nonzero roots, a separating
+  invariant form stays separating on `t`.
 
 ## References
 
@@ -151,6 +153,14 @@ theorem isSymm_heightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
   refine ⟨fun A C ↦ ?_⟩
   simp only [heightHessian_apply, neg_inj]
   exact hB.apply_lie_lie_comm hXp A C
+
+/-- **The height Hessian as a form on generators of the coadjoint orbit.** For an invariant form,
+`h_(p,X)(A, C) = (B p)(⁅⁅X, C⁆, A⁆)`. When `⁅X, p⁆ = 0`, the right side is the Hessian of the
+height `f_X` at the critical point `B p` of the coadjoint orbit, evaluated on the generators of `A`
+and `C`. -/
+theorem heightHessian_apply_eq_apply_lie_lie (hB : B.lieInvariant L) (A C : L) :
+    B.heightHessian p X A C = B p ⁅⁅X, C⁆, A⁆ := by
+  rw [heightHessian_apply, ← lie_skew C X, map_neg, hB A p, ← lie_skew ⁅X, C⁆ A, map_neg, neg_neg]
 
 end LinearMap.BilinForm
 
@@ -239,6 +249,21 @@ theorem exists_eq_add_sum [Fintype ι] (hD : IsRootPlaneDecomposition B t α E J
   obtain ⟨H, hH, y, hy, rfl⟩ := Submodule.mem_sup.mp hx
   obtain ⟨a, rfl⟩ := (Submodule.mem_iSup_finset_iff_exists_sum E y).mp hy
   exact ⟨H, hH, a, rfl⟩
+
+/-- **A separating invariant form stays separating on `t`.** In a root-plane decomposition with
+nonzero roots for a separating invariant form `B`, every nonzero `v ∈ t` pairs nontrivially with
+some element of `t`: the root planes are orthogonal to `t`
+(`TauCeti.IsRootPlane.apply_eq_zero_of_forall_lie_eq_zero`), so `t` carries all of `B v`. -/
+theorem exists_mem_apply_ne_zero [NoZeroDivisors R] (hD : IsRootPlaneDecomposition B t α E J)
+    (hB : B.lieInvariant L) (hsep : B.SeparatingLeft) (hα : ∀ i, α i ≠ 0) {v : L} (hv : v ∈ t)
+    (hv0 : v ≠ 0) : ∃ H ∈ t, B v H ≠ 0 := by
+  by_contra! h
+  -- `B v` vanishes on `t` and on every plane, hence on `t ⊔ ⨆ i, E i = L`.
+  have hle : t ⊔ ⨆ i, E i ≤ LinearMap.ker (B v) :=
+    sup_le (fun H hH ↦ LinearMap.mem_ker.2 (h H hH)) <| iSup_le fun i w hw ↦
+      LinearMap.mem_ker.2 <| (hD.isRootPlane i).apply_eq_zero_of_forall_lie_eq_zero hB (hα i)
+        (fun H' ↦ hD.lie_eq_zero H'.property hv) ⟨w, hw⟩
+  exact hv0 (hsep v fun w ↦ LinearMap.mem_ker.1 (hle (hD.sup_eq_top ▸ Submodule.mem_top)))
 
 /-- **The Hessian of a height in a root-plane decomposition is diagonal.** For `p, X ∈ t`,
 vectors `H, H'` of `t` and `a, b` with one vector in each plane `E i`, `i ∈ s`,

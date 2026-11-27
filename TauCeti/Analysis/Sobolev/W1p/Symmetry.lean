@@ -25,6 +25,8 @@ a test function `ψ`, the first weak derivatives of `u` pair symmetrically with 
   function in the direction `z` is `⟪∇u, z⟫`.
 * `TauCeti.W1p.hasWeakLineDerivOn_inner_gradient_comm`: second weak derivatives of a
   `W^{1,p}` function are symmetric.
+* `TauCeti.W1p.inner_gradient_ae_eq_of_hasWeakLineDerivOn`: the same symmetry for first
+  derivatives given as elements `d, d'` of `W^{1,p}(Ω)`, `∂_w d = ∂_y d'`.
 * `TauCeti.W1p.integral_lineDeriv_smul_inner_gradient_comm`: first derivatives of a test function
   and of a `W^{1,p}` function pair symmetrically.
 -/
@@ -52,6 +54,20 @@ theorem W1p.hasWeakLineDerivOn_inner_gradient_comm {U : W1p μ Ω p} {y w : E} {
     (hG : HasWeakLineDerivOn μ Ω (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G w) :
     HasWeakLineDerivOn μ Ω (fun x => ⟪W1p.gradient U x, w⟫_ℝ) G y :=
   (W1p.hasWeakLineDerivOn_inner_gradient U y).comm hG (W1p.hasWeakLineDerivOn_inner_gradient U w)
+
+/-- **Second derivatives of a Sobolev function are symmetric, through its first derivatives.** If
+`d, d' ∈ W^{1,p}(Ω)` are the weak derivatives of `u` in the directions `y` and `w`, then
+`∂_w d = ∂_y d'` almost everywhere on `Ω`. -/
+theorem W1p.inner_gradient_ae_eq_of_hasWeakLineDerivOn [BorelSpace E] {U d d' : W1p μ Ω p}
+    {y w : E}
+    (hd : HasWeakLineDerivOn μ Ω (W1p.value U) (W1p.value d) y)
+    (hd' : HasWeakLineDerivOn μ Ω (W1p.value U) (W1p.value d') w) :
+    (fun x => ⟪W1p.gradient d x, w⟫_ℝ) =ᵐ[μ.restrict Ω] fun x => ⟪W1p.gradient d' x, y⟫_ℝ :=
+  -- Both are weak derivatives of `∂_w u` in the direction `y`.
+  (W1p.hasWeakLineDerivOn_inner_gradient_comm ((W1p.hasWeakLineDerivOn_inner_gradient d w).congr_ae
+    (hd.ae_eq (W1p.hasWeakLineDerivOn_inner_gradient U y)))).ae_eq
+    ((W1p.hasWeakLineDerivOn_inner_gradient d' y).congr_ae
+      (hd'.ae_eq (W1p.hasWeakLineDerivOn_inner_gradient U w)))
 
 open LineDeriv in
 /-- **Symmetric pairing of first derivatives.** For `u ∈ W^{1,p}(Ω)`, a test function `ψ` on `Ω`

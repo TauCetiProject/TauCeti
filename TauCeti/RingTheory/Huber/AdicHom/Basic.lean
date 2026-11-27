@@ -126,6 +126,10 @@ theorem id [IsHuberRing A] : IsAdicHom (RingHom.id A) := by
       (fun _ hx ↦ hx) = RingHom.id _ := by ext; rfl
   simp [h]
 
+/-- The structure map of a Huber ring as an algebra over itself is adic. -/
+instance algebraMap_self [IsHuberRing A] : IsAdicHom (algebraMap A A) :=
+  IsAdicHom.id
+
 /-- An open quotient homomorphism from a Huber ring is adic. -/
 theorem of_isOpenQuotientMap [IsHuberRing A] (hf : IsOpenQuotientMap f) :
     IsAdicHom f := by

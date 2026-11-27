@@ -14,10 +14,10 @@ import Mathlib.Algebra.Category.ModuleCat.EpiMono
 /-!
 # Homology of subcomplexes
 
-The bottom subobject of a homological complex and the quotient by its top subobject have
-vanishing homology. These facts apply to any complex shape, assuming only that the homology
-in the requested degree exists. They supply the vanishing conditions at the ends of a finite
-filtration.
+The bottom subobject of a homological complex, the quotient by its top subobject and the quotient
+of a subobject by an equal one have vanishing homology. These facts apply to any complex shape,
+assuming only that the homology in the requested degree exists. They supply the vanishing conditions
+at the ends of a finite filtration and between equal stages of a filtration.
 
 We also record how quasi-isomorphisms interact with subobjects: the inclusion of
 `Subobject.mk f` is a quasi-isomorphism exactly when `f` is, and when the inclusion of a
@@ -54,6 +54,14 @@ lemma isZero_homology_cokernel_of_eq_top (S : Subobject K) (hS : S = ⊤)
     [HasCokernel S.arrow] (i : ι) [(cokernel S.arrow).HasHomology i] :
     IsZero ((cokernel S.arrow).homology i) := by
   have : IsIso S.arrow := by rw [hS]; infer_instance
+  exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) i).isZero_homology
+
+/-- The quotient of a subcomplex by an equal subcomplex has vanishing homology. -/
+lemma isZero_homology_cokernel_ofLE_of_eq {X Y : Subobject K} (hXY : X = Y)
+    [HasCokernel (ofLE X Y hXY.le)] (i : ι) [(cokernel (ofLE X Y hXY.le)).HasHomology i] :
+    IsZero ((cokernel (ofLE X Y hXY.le)).homology i) := by
+  subst hXY
+  have : IsIso (ofLE X X le_rfl) := by rw [ofLE_refl]; infer_instance
   exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) i).isZero_homology
 
 section QuasiIso

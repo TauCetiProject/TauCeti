@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.GuitartExact.KanExtension
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
 public import Mathlib.Topology.Sheaves.Functors
-public import TauCeti.CategoryTheory.Sites.DenseSubsite
+public import TauCeti.CategoryTheory.Sites.DenseSubsite.Basic
 public import TauCeti.CategoryTheory.Sites.IsSheafFor
 public import TauCeti.CategoryTheory.Sites.TopologicalBasis
 public import TauCeti.CategoryTheory.Thin
