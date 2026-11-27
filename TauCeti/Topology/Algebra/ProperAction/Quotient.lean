@@ -28,7 +28,7 @@ that this residual action inherits continuity and properness from the action of 
   (`t2Space_quotient_mulAction_of_properSMul`), and weakly locally compact, so properness is tested
   on compact sets (`MulAction.properSMul_iff_isCompact_setOfPred_inter_nonempty`). Every compact
   set `U'` of `X ⧸ N` is the image of a compact set `U` of `X`, the intersection of the preimage of
-  `U'` with a compact set whose image covers `U'` (`IsOpenMap.exists_isCompact_subset_image`). For
+  `U'` with a compact set whose image covers `U'` (`IsOpenMap.exists_isCompact_image_eq`). For
   compact sets `U` and `V` of `X` with images `U'` and `V'`, the elements `[g]` with
   `[g] • U' ∩ V' ≠ ∅` are the images of the elements `h` with `h • U ∩ V ≠ ∅`: if `n • g • u = v`
   with `n ∈ N`, then `h = n g` has the same image as `g`. These form a compact set because `G`
@@ -94,11 +94,9 @@ instance properSMul_quotientGroup [SeparatelyContinuousMul G] [ProperSMul G X]
   have := hπ.weaklyLocallyCompactSpace
   -- Every compact set of the orbit space is the image of a compact set of `X`.
   have hlift {U' : Set (orbitRel.Quotient N X)} (hU' : IsCompact U') :
-      ∃ U : Set X, IsCompact U ∧ Quotient.mk _ '' U = U' := by
-    obtain ⟨K, hK, hU'K⟩ := hπ.isOpenMap.exists_isCompact_subset_image hU'
+      ∃ U : Set X, IsCompact U ∧ Quotient.mk _ '' U = U' :=
+    hπ.isOpenMap.exists_isCompact_image_eq hπ.continuous hU' hU'.isClosed
       (hπ.surjective.range_eq ▸ subset_univ _)
-    refine ⟨K ∩ Quotient.mk _ ⁻¹' U', hK.inter_right (hU'.isClosed.preimage hπ.continuous), ?_⟩
-    rw [image_inter_preimage, inter_eq_right.2 hU'K]
   rw [MulAction.properSMul_iff_isCompact_setOfPred_inter_nonempty]
   intro U' V' hU' hV'
   obtain ⟨U, hU, rfl⟩ := hlift hU'
@@ -107,7 +105,7 @@ instance properSMul_quotientGroup [SeparatelyContinuousMul G] [ProperSMul G X]
     QuotientGroup.continuous_mk using 1
   ext q
   induction q using QuotientGroup.induction_on with | H g =>
-  simp only [mem_ofPred_eq, mem_image]
+  simp only [mem_ofPred_eq, mem_image, Set.Nonempty, mem_inter_iff, mem_smul_set]
   constructor
   · rintro ⟨_, ⟨_, ⟨u, hu, rfl⟩, rfl⟩, v, hv, hgv⟩
     -- `[g] • [u] = [v]` means `n • g • u = v` for some `n ∈ N`, and `[n * g] = [g]`.
