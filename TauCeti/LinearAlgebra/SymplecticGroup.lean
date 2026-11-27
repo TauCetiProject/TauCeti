@@ -434,7 +434,7 @@ scalar `b`. Where `N = 1 - b • (J * (Ψ - 1))` is invertible, it is symplectic
 `Ψ + 1 - (2 * b) • (J * (Ψ - 1))` (`Matrix.symplecticShear_add_one_mul`), and congruence by `N`
 takes its matrix `Φᵀ * J - J * Φ` to `Ψᵀ * J - J * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1))`
 (`Matrix.transpose_mul_transpose_mul_J_sub_J_mul_symplecticShear_mul`). -/
-@[expose] noncomputable def symplecticShear (b : R) (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) :
+noncomputable def symplecticShear (b : R) (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) :
     Matrix (l ⊕ l) (l ⊕ l) R :=
   1 + (Ψ - 1) * (1 - b • (J l R * (Ψ - 1)))⁻¹
 
@@ -456,8 +456,12 @@ private theorem transpose_mul_J_mul_one_sub_smul_J_mul (b : R) (D : Matrix (l �
     ← Matrix.mul_assoc (J l R) (J l R), J_squared, neg_one_mul, Matrix.mul_neg, smul_neg,
     sub_neg_eq_add]
 
+/-- The defining formula of `symplecticShear`, for unfolding it outside this file. -/
+theorem symplecticShear_def (b : R) (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) :
+    symplecticShear b Ψ = 1 + (Ψ - 1) * (1 - b • (J l R * (Ψ - 1)))⁻¹ := (rfl)
+
 /-- The shear by `0` is the identity. -/
-theorem symplecticShear_zero (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) : symplecticShear 0 Ψ = Ψ := by
+@[simp] theorem symplecticShear_zero (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) : symplecticShear 0 Ψ = Ψ := by
   simp [symplecticShear]
 
 /-- Where `N = 1 - b • (J * (Ψ - 1))` is invertible, `symplecticShear b Ψ * N` is

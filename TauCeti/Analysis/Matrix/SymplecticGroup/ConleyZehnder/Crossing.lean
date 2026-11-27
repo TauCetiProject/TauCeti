@@ -189,7 +189,7 @@ private theorem exists_path_shear_and_conleyZehnderIndex_eq {A B : GLSymplectic 
   let G : I × I → symplecticGroup n ℝ := fun p ↦ ⟨symplecticShear ((p.1 : ℝ) * b) (m p.2),
     symplecticShear_mem (mem_iff_mem_symplecticGroup.1 (γ p.2).property) (hN p.1 p.2)⟩
   have hS : Continuous fun p : I × I ↦ symplecticShear ((p.1 : ℝ) * b) (m p.2) := by
-    simp only [symplecticShear]
+    simp only [symplecticShear_def]
     exact continuous_const.add (((hm.comp continuous_snd).sub continuous_const).matrix_mul hinv)
   have hG : Continuous G := hS.subtype_mk _
   let F : C(I × I, GLSymplectic n ℝ) :=
