@@ -162,12 +162,18 @@ variable [HasBiproductsOfShape J C]
 theorem isInflation_biproduct {X Y : J → C} {i : ∀ j, X j ⟶ Y j}
     (hi : ∀ j, E.IsInflation (i j)) : E.IsInflation (biproduct.map i) := by
   choose Z p w hS using fun j ↦ (E.isInflation_iff (i j)).mp (hi j)
+  -- Rewriting cannot key through the unexposed `IsInflation` abbrev.
+  change E.inflations _
+  rw [← shortComplexBiproduct_f (fun j ↦ ShortComplex.mk (i j) (p j) (w j))]
   exact E.isInflation_f (E.conflation_biproduct hS)
 
 /-- The direct sum of a finite family of deflations is a deflation. -/
 theorem isDeflation_biproduct {Y Z : J → C} {p : ∀ j, Y j ⟶ Z j}
     (hp : ∀ j, E.IsDeflation (p j)) : E.IsDeflation (biproduct.map p) := by
   choose X i w hS using fun j ↦ (E.isDeflation_iff (p j)).mp (hp j)
+  -- Rewriting cannot key through the unexposed `IsDeflation` abbrev.
+  change E.deflations _
+  rw [← shortComplexBiproduct_g (fun j ↦ ShortComplex.mk (i j) (p j) (w j))]
   exact E.isDeflation_g (E.conflation_biproduct hS)
 
 end ConflationClass
