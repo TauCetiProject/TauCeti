@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.PowerBounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean

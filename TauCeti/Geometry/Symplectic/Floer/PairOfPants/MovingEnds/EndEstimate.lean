@@ -329,7 +329,8 @@ theorem
   refine ⟨C, R, hR, fun ξ hξ hξc hξR ↦ ?_⟩
   obtain ⟨b, hb⟩ := exists_forall_notMem_Ioo_positiveEndChart_inf_eq_zero hξc hξR
   exact hest hξ hb (ω.integrable_norm_floerLinearization_sq_puncturedSpherePerturbation hH hHs
-    hHout hHouts ha (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith))
+    hHout hHouts ha (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne
+      (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) (by linarith))
     hJ hu hξ hξc (hξR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))
 
 /-! ### The formal adjoint -/
@@ -549,7 +550,8 @@ exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdj
   obtain ⟨b, hb⟩ := exists_forall_notMem_Ioo_positiveEndChart_inf_eq_zero hηc hηR
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
     hH hHs hHout hHouts ha
-    (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith))
+    (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne
+      (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) (by linarith))
     (fun ζ hζ ↦ hJ ζ (by linarith))
     (fun ζ hζ ↦ (hu ζ (by linarith)).of_le one_le_two) (by fun_prop) (hη.of_le one_le_two) hηc
     (hηR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))).trans_eq ?_

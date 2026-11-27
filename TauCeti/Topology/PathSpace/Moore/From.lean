@@ -80,6 +80,10 @@ def toMoorePath (γ : MoorePathFrom X b) : MoorePath X := γ.val
 theorem toMoorePath_mk (γ : MoorePath X) (h : γ.source = b) :
     toMoorePath (b := b) ⟨γ, h⟩ = γ := (rfl)
 
+/-- `toMoorePath` is the coercion to the underlying subtype value. This is for rewriting through
+maps of subtypes, such as `Homeomorph.subtype`, whose simp lemmas are stated with the coercion. -/
+theorem toMoorePath_eq_coe (γ : MoorePathFrom X b) : γ.toMoorePath = (γ : MoorePath X) := (rfl)
+
 @[ext]
 theorem ext {γ δ : MoorePathFrom X b} (h : γ.toMoorePath = δ.toMoorePath) : γ = δ :=
   Subtype.ext h
