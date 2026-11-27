@@ -22,6 +22,7 @@ structure; its identities are empty paths and its composition is concatenation o
 * `TauCeti.pathCategory`: the free category on an explicitly supplied quiver, on its objects.
 * `Quiver.pathCategory_id` and `Quiver.pathCategory_comp`: its identities and composition, as
   operations on `Quiver.Path`.
+* `Quiver.Hom.toPath_injective`: singleton paths determine their generating arrows.
 * `CategoryTheory.Functor.map_eq_mapPath`: singleton preservation determines the action on paths.
 -/
 
@@ -47,6 +48,13 @@ open CategoryTheory TauCeti
 
 variable {O : Type u}
 
+/-- The singleton-path embedding of a quiver's arrows is injective. -/
+theorem Hom.toPath_injective [Q : Quiver.{h} O] {a b : O} :
+    Function.Injective (@Hom.toPath O Q a b) := by
+  intro f g hfg
+  unfold Hom.toPath at hfg
+  exact eq_of_heq (Path.hom_heq_of_cons_eq_cons hfg)
+
 /-- The identity morphism of the path category is the empty path. -/
 @[simp]
 theorem pathCategory_id (Q : Quiver.{h} O) (a : O) :
@@ -65,7 +73,11 @@ end Quiver
 namespace CategoryTheory.Functor
 
 /-- A functor between path categories that preserves singleton paths acts on every path
-by extending its map on generators. The generator map shares the functor's object map. -/
+by extending its map on generators. The generator map shares the functor's object map.
+
+`Paths O` is definitionally `O`, and `TauCeti.pathCategory O Q` is `Paths.categoryPaths`.
+Thus this also applies to functors on the original object types with explicit path-category
+structures, without changing their object or morphism maps. -/
 theorem map_eq_mapPath {O₁ : Type u₁} [Q₁ : Quiver.{h₁} O₁]
     {O₂ : Type u₂} [Q₂ : Quiver.{h₂} O₂]
     (F : Paths O₁ ⥤ Paths O₂)

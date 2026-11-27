@@ -90,6 +90,7 @@ theorem vPrefunctor_map (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
 theorem hMap_eq_mapPath (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
     (p : @Quiver.Path O₁ H₁ a b) :
     F.hMap p = @Prefunctor.mapPath O₁ H₁ O₂ H₂ F.hPrefunctor a b p :=
+  -- Paths O is definitionally O, and pathCategory is Paths.categoryPaths.
   F.hFunctor.map_eq_mapPath (Q₁ := H₁) (Q₂ := H₂)
     (fun f ↦ F.hGenerator f) (fun f ↦ F.hMap_toPath f) p
 
@@ -98,6 +99,7 @@ theorem hMap_eq_mapPath (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
 theorem vMap_eq_mapPath (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
     (p : @Quiver.Path O₁ V₁ a b) :
     F.vMap p = @Prefunctor.mapPath O₁ V₁ O₂ V₂ F.vPrefunctor a b p :=
+  -- Paths O is definitionally O, and pathCategory is Paths.categoryPaths.
   F.vFunctor.map_eq_mapPath (Q₁ := V₁) (Q₂ := V₂)
     (fun f ↦ F.vGenerator f) (fun f ↦ F.vMap_toPath f) p
 
@@ -111,12 +113,10 @@ theorem ext {F G : ImplicitDoubleFunctor D₁ D₂}
   cases h
   have hh : @Fh = @Gh := by
     funext a b f
-    exact eq_of_heq (@Quiver.Path.hom_heq_of_cons_eq_cons O₂ H₂ _ _ _ _ _ _ _ _
-      ((hFh f).symm.trans (hGh f)))
+    exact Quiver.Hom.toPath_injective (Q := H₂) ((hFh f).symm.trans (hGh f))
   have hv : @Fv = @Gv := by
     funext a b f
-    exact eq_of_heq (@Quiver.Path.hom_heq_of_cons_eq_cons O₂ V₂ _ _ _ _ _ _ _ _
-      ((hFv f).symm.trans (hGv f)))
+    exact Quiver.Hom.toPath_injective (Q := V₂) ((hFv f).symm.trans (hGv f))
   cases hh
   cases hv
   rfl
