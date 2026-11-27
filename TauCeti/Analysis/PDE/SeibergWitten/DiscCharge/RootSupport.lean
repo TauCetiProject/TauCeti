@@ -53,7 +53,8 @@ within every `ρ > ε` of a point of `S` the density does not vanish
 (`TauCeti.SeibergWitten.exists_mem_closedBall_dist_lt_ne_zero`), and a subdisc of radius `ρ₁`
 carrying charge `κ` has a point of `S` within `ρ` once `ε < (ρ - ρ₁) (κ - ν)`, where `ν` bounds
 the negative mass (`TauCeti.SeibergWitten.exists_mem_dist_lt_of_le_setIntegral`). Both are
-tested against a tent function.
+tested against a tent function; the second uses a Lipschitz plateau
+(`TauCeti.SeibergWitten.exists_lipschitzWith_one_plateau`).
 
 ## References
 
@@ -110,6 +111,22 @@ theorem exists_mem_closedBall_dist_lt_ne_zero {f : ℂ → ℝ} {R ε ρ : ℝ} 
   rw [hint, mul_zero, zero_sub, abs_neg, abs_of_nonneg (by linarith)] at this
   linarith
 
+/-- **A Lipschitz plateau.** For `0 ≤ t ≤ 1`, a centre `w₀` and a radius `ρ`, there is a
+`1`-Lipschitz function `g` with values in `[0, t]`, equal to `t` within `ρ - t` of `w₀` and to `0`
+at distance at least `ρ` from `w₀`, namely `max (min t (ρ - |w - w₀|)) 0`. It is a test function
+for the bounded-Lipschitz distance that separates a disc from the complement of a larger one. -/
+theorem exists_lipschitzWith_one_plateau {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (w₀ : ℂ) (ρ : ℝ) :
+    ∃ g : ℂ → ℝ, LipschitzWith 1 g ∧ (∀ w, 0 ≤ g w ∧ g w ≤ t) ∧ (∀ w, |g w| ≤ 1) ∧
+      (∀ w, dist w w₀ ≤ ρ - t → g w = t) ∧ ∀ w, ρ ≤ dist w w₀ → g w = 0 := by
+  refine ⟨fun w ↦ max (min t (ρ - dist w w₀)) 0, ?_, fun w ↦ ⟨le_max_right _ _,
+    max_le (min_le_left _ _) ht₀⟩, fun w ↦ ?_, fun w hw ↦ ?_, fun w hw ↦ ?_⟩
+  · simpa using (((LipschitzWith.const ρ).sub (LipschitzWith.dist_left w₀)).const_min t).max_const 0
+  · rw [abs_of_nonneg (le_max_right _ _)]
+    exact max_le ((min_le_left _ _).trans ht₁) zero_le_one
+  · dsimp only
+    rw [min_eq_left (by linarith), max_eq_left ht₀]
+  · exact max_eq_right ((min_le_right _ _).trans (by linarith))
+
 /-- **A charged subdisc is near a point of the approximating multiset.** Let `f` be a density,
 integrable on the closed disc of radius `R`, whose normalized slice `f dλ / 2π` on that disc is
 within `ε` of the counting measure of a multiset `S`, against every `1`-Lipschitz function bounded
@@ -129,17 +146,11 @@ theorem exists_mem_dist_lt_of_le_setIntegral {f : ℂ → ℝ} {R ε ρ₁ ρ κ
   have ht₀ : 0 < t := by linarith
   -- The tent `g`, equal to `t` on the subdisc and to `0` off the open disc of radius `ρ`,
   -- vanishes at every point of `S`.
-  set g : ℂ → ℝ := fun w ↦ max (min t (ρ - dist w w₀)) 0 with hg
-  have hgL : LipschitzWith 1 g := by
-    simpa using (((LipschitzWith.const ρ).sub (LipschitzWith.dist_left w₀)).const_min t).max_const 0
-  have hg₀ (w : ℂ) : 0 ≤ g w := le_max_right _ _
-  have hgt (w : ℂ) : g w ≤ t := max_le (min_le_left _ _) ht₀.le
-  have hg₁ (w : ℂ) : |g w| ≤ 1 := by
-    rw [abs_of_nonneg (hg₀ w)]
-    linarith [hgt w]
+  obtain ⟨g, hgL, hgt, hg₁, hg_in, hg_out⟩ :=
+    exists_lipschitzWith_one_plateau ht₀.le (by linarith) w₀ ρ
   have hgS : (S.map g).sum = 0 := Multiset.sum_eq_zero fun x hx ↦ by
     obtain ⟨y, hy, rfl⟩ := Multiset.mem_map.1 hx
-    exact max_eq_right <| (min_le_right _ _).trans (by linarith [hS' y hy])
+    exact hg_out y (hS' y hy)
   have hupper := hS g hgL hg₁
   rw [hgS, sub_zero] at hupper
   -- Pointwise on the disc, `f g ≥ t f 1_{B₁} - t f⁻`, where `B₁` is the subdisc.
@@ -148,13 +159,10 @@ theorem exists_mem_dist_lt_of_le_setIntegral {f : ℂ → ℝ} {R ε ρ₁ ρ κ
     intro w _
     have hpn := posPart_sub_negPart (f w)
     by_cases hw : w ∈ closedBall w₀ ρ₁
-    · have : g w = t := by
-        simp only [hg]
-        rw [min_eq_left (by linarith [mem_closedBall.1 hw]), max_eq_left ht₀.le]
-      rw [indicator_of_mem hw, this]
+    · rw [indicator_of_mem hw, hg_in w (by linarith [mem_closedBall.1 hw])]
       nlinarith [negPart_nonneg (f w)]
     · rw [indicator_of_notMem hw]
-      nlinarith [hg₀ w, hgt w, posPart_nonneg (f w), negPart_nonneg (f w)]
+      nlinarith [(hgt w).1, (hgt w).2, posPart_nonneg (f w), negPart_nonneg (f w)]
   have hind : IntegrableOn (fun w ↦ t * (closedBall w₀ ρ₁).indicator f w) (closedBall 0 R) :=
     (hf.indicator measurableSet_closedBall).const_mul t
   have hneg : IntegrableOn (fun w ↦ t * (f w)⁻) (closedBall 0 R) := hf.neg_part.const_mul t

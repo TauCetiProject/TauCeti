@@ -20,8 +20,9 @@ the field itself carries a local integer charge around every circle in the vacuu
 the enclosed disc (`TauCeti.SeibergWitten.exists_int_integral_cutoffCurrent_comp_closedBall`).
 `TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.RootSupport` compares the roots of `P` with the
 places where the slice lives, as sets. This file compares them with multiplicity: once the
-negative mass and the Newton variance of the slice are small, the charge of a circle bounding a
-vacuum annulus is the number of roots of `P` it encloses, counted with multiplicity.
+negative mass and the Newton variance of the slice are small, the charge of a circle of radius
+`ρ₁` bounding a vacuum annulus of width `κ` is the number of roots of `P` within `ρ₁ + κ / 2` of
+its centre, counted with multiplicity: no root lies in the middle of the annulus.
 
 **The vacuum annulus has no roots.** Let `f` be a density whose normalized slice `f dλ / 2π` on
 the closed disc of radius `R` is within `ε` of the counting measure of a multiset `S` against
@@ -31,7 +32,8 @@ between `ρ₁ + κ / 4` and `ρ₁ + 3 κ / 4`
 (`TauCeti.SeibergWitten.dist_notMem_Icc_of_forall_eq_zero`): near a point of `S` the density does
 not vanish (`TauCeti.SeibergWitten.exists_mem_closedBall_dist_lt_ne_zero`).
 
-**The charge counts the enclosed points.** Test the slice against the plateau function equal to
+**The charge counts the points inside the middle circle of the annulus.** Test the slice against
+the plateau function (`TauCeti.SeibergWitten.exists_lipschitzWith_one_plateau`) equal to
 `t = min (κ / 2) 1` within `ρ₁ + κ / 4` of `w₀` and to `0` beyond `ρ₁ + 3 κ / 4`. On the closed
 disc of radius `ρ₁` it equals `t`, on the annulus the density vanishes, and beyond it the plateau
 vanishes, so the slice integrates it to `t` times the charge `(2π)⁻¹ ∫_{|w - w₀| ≤ ρ₁} f`. Since no
@@ -58,14 +60,16 @@ which the coupled equations have to supply, is a hypothesis.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.abs_inv_mul_setIntegral_sub_countP_le`: the charge of a disc bounding an
-  annulus where the density vanishes is within `ε / min (κ / 2) 1` of the number of enclosed
-  points of a multiset approximating the slice within `ε`.
+* `TauCeti.SeibergWitten.abs_inv_mul_setIntegral_sub_countP_le`: the charge of a disc of radius
+  `ρ₁` bounding an annulus of width `κ` where the density vanishes is within `ε / min (κ / 2) 1`
+  of the number of points within `ρ₁ + κ / 2` of its centre of a multiset approximating the slice
+  within `ε`.
 * `TauCeti.SeibergWitten.exists_forall_abs_setIntegral_sub_countP_roots_le`: the same for the
   roots of the Newton polynomial of a slice with small negative mass and Newton variance.
 * `TauCeti.SeibergWitten.exists_forall_windingNumber_eq_countP_roots`: the winding number of the
-  field around a circle bounding a vacuum annulus is the number of enclosed roots of the Newton
-  polynomial of its slice, counted with multiplicity.
+  field around a circle of radius `ρ₁` bounding a vacuum annulus of width `κ` is the number of
+  roots of the Newton polynomial of its slice within `ρ₁ + κ / 2` of its centre, counted with
+  multiplicity.
 
 ## References
 
@@ -84,7 +88,7 @@ namespace TauCeti.SeibergWitten
 
 universe u
 
-/-! ### Charges and enclosed points of a bounded-Lipschitz approximation -/
+/-! ### Charges and points of a bounded-Lipschitz approximation inside an empty annulus -/
 
 section Approximation
 
@@ -128,11 +132,12 @@ private theorem setIntegral_mul_eq_mul_setIntegral {g : ℂ → ℝ} {t : ℝ}
     · rw [hzero w hw (not_le.1 h₁) h₂, zero_mul]
     · rw [hout (not_lt.1 h₂), mul_zero]
 
-/-- **The charge of a disc bounding an empty annulus counts the enclosed points.** Let `f` be a
-density whose normalized slice `f dλ / 2π` on the closed disc of radius `R` is within `ε` of the
-counting measure of a multiset `S`, against every `1`-Lipschitz function bounded by `1`. Suppose
-that the closed disc of radius `ρ₁` about `w₀` lies in that disc, that `f` vanishes on the open
-annulus `ρ₁ < |w - w₀| < ρ₁ + κ`, and that `ε < min (κ / 4) 1`. Then the normalized charge
+/-- **The charge of a disc bounding an empty annulus counts the points inside the middle circle of
+the annulus.** Let `f` be a density whose normalized slice `f dλ / 2π` on the closed disc of
+radius `R` is within `ε` of the counting measure of a multiset `S`, against every `1`-Lipschitz
+function bounded by `1`. Suppose that the closed disc of radius `ρ₁` about `w₀` lies in that
+disc, that `f` vanishes on the open annulus `ρ₁ < |w - w₀| < ρ₁ + κ`, and that
+`ε < min (κ / 4) 1`. Then the normalized charge
 `(2π)⁻¹ ∫ f` of the closed disc of radius `ρ₁` about `w₀` is within `ε / min (κ / 2) 1` of the
 number of points of `S`, counted with multiplicity, within `ρ₁ + κ / 2` of `w₀`. -/
 theorem abs_inv_mul_setIntegral_sub_countP_le
@@ -151,23 +156,15 @@ theorem abs_inv_mul_setIntegral_sub_countP_le
   have ht₀ : 0 < t := lt_min (by linarith) one_pos
   -- The plateau `g`, equal to `t` within `ρ₁ + κ / 4` of `w₀` and to `0` beyond
   -- `ρ₁ + 3 κ / 4`.
-  set g : ℂ → ℝ := fun w ↦ max (min t (ρ₁ + 3 * κ / 4 - dist w w₀)) 0 with hg
-  have hgL : LipschitzWith 1 g := by
-    simpa using (((LipschitzWith.const (ρ₁ + 3 * κ / 4)).sub
-      (LipschitzWith.dist_left w₀)).const_min t).max_const 0
-  have hg₀ (w : ℂ) : 0 ≤ g w := le_max_right _ _
-  have hg₁ (w : ℂ) : |g w| ≤ 1 := by
-    rw [abs_of_nonneg (hg₀ w)]
-    exact max_le ((min_le_left _ _).trans (min_le_right _ _)) zero_le_one
-  have hg_in {w : ℂ} (hw : dist w w₀ ≤ ρ₁ + κ / 4) : g w = t := by
-    simp only [hg]
-    rw [min_eq_left (by linarith [min_le_left (κ / 2) 1]), max_eq_left ht₀.le]
-  have hg_out {w : ℂ} (hw : ρ₁ + 3 * κ / 4 ≤ dist w w₀) : g w = 0 :=
-    max_eq_right ((min_le_right _ _).trans (by linarith))
+  obtain ⟨g, hgL, -, hg₁, hg_in', hg_out⟩ :=
+    exists_lipschitzWith_one_plateau ht₀.le (min_le_right _ _) w₀ (ρ₁ + 3 * κ / 4)
+  have hg_in {w : ℂ} (hw : dist w w₀ ≤ ρ₁ + κ / 4) : g w = t :=
+    hg_in' w (by linarith [min_le_left (κ / 2) 1])
   -- The slice integrates `g` to `t` times the charge of the disc of radius `ρ₁`.
   have hint := setIntegral_mul_eq_mul_setIntegral hsub hzero (fun {w} h ↦ hg_in (w := w)
-    (by linarith)) (fun {w} h ↦ hg_out (w := w) (by linarith))
-  -- The counting measure integrates `g` to `t` times the number of enclosed points.
+    (by linarith)) (fun {w} h ↦ hg_out w (by linarith))
+  -- The counting measure integrates `g` to `t` times the number of points within
+  -- `ρ₁ + κ / 2` of `w₀`.
   have hsum : (S.map g).sum = t * S.countP (fun V ↦ dist V w₀ < ρ₁ + κ / 2) := by
     have hgS : ∀ V ∈ S, g V = if dist V w₀ < ρ₁ + κ / 2 then t else 0 := by
       intro V hV
@@ -175,7 +172,7 @@ theorem abs_inv_mul_setIntegral_sub_countP_le
       rw [mem_Icc, not_and_or, not_le, not_le] at hgap
       split_ifs with h
       · exact hg_in (by rcases hgap with h' | h' <;> linarith)
-      · exact hg_out (by rcases hgap with h' | h' <;> linarith)
+      · exact hg_out V (by rcases hgap with h' | h' <;> linarith)
     have hite (T : Multiset ℂ) : (T.map fun V ↦ if dist V w₀ < ρ₁ + κ / 2 then t else 0).sum =
         t * T.countP (fun V ↦ dist V w₀ < ρ₁ + κ / 2) := by
       induction T using Multiset.induction_on with
@@ -185,24 +182,27 @@ theorem abs_inv_mul_setIntegral_sub_countP_le
         split_ifs <;> push_cast <;> ring
     rw [Multiset.map_congr rfl hgS, hite]
   have hS' := hS g hgL hg₁
-  rw [hint, hsum, ← mul_assoc, mul_comm (2 * π)⁻¹ t, mul_assoc, ← mul_sub, abs_mul,
-    abs_of_pos ht₀] at hS'
-  rw [le_div_iff₀ ht₀, mul_comm]
-  exact hS'
+  have e : (2 * π)⁻¹ * (∫ w in closedBall 0 R, f w * g w) - (S.map g).sum =
+      t * ((2 * π)⁻¹ * (∫ w in closedBall w₀ ρ₁, f w) -
+        S.countP (fun V ↦ dist V w₀ < ρ₁ + κ / 2)) := by
+    rw [hint, hsum]; ring
+  rw [e, abs_mul, abs_of_pos ht₀] at hS'
+  rw [le_div_iff₀ ht₀]
+  linarith
 
 end Approximation
 
 /-! ### Roots of the Newton polynomial of a slice -/
 
-/-- **The charge of a disc bounding an empty annulus counts the enclosed Newton roots.** For
-every width `κ > 0` and tolerance `η > 0` there is `δ > 0`, depending only on `m`, `R`, `κ` and
-`η`, with the following property. Let `f` be a density integrable on the closed disc of radius
-`R` whose normalized slice has mass `m`, negative mass at most `δ` and Newton variance `∫ |P|² dμ⁺`
-at most `δ`, where `P` is the Newton polynomial of degree `m` of its moments. If the closed disc of
-radius `ρ₁` about `w₀` lies in that disc and `f` vanishes on the open annulus
-`ρ₁ < |w - w₀| < ρ₁ + κ`, then the normalized charge `(2π)⁻¹ ∫ f` of the closed disc of radius
-`ρ₁` about `w₀` is within `η` of the number of roots of `P`, counted with multiplicity, within
-`ρ₁ + κ / 2` of `w₀`. -/
+/-- **The charge of a disc bounding an empty annulus counts the Newton roots inside the middle
+circle of the annulus.** For every width `κ > 0` and tolerance `η > 0` there is `δ > 0`,
+depending only on `m`, `R`, `κ` and `η`, with the following property. Let `f` be a density
+integrable on the closed disc of radius `R` whose normalized slice has mass `m`, negative mass at
+most `δ` and Newton variance `∫ |P|² dμ⁺` at most `δ`, where `P` is the Newton polynomial of
+degree `m` of its moments. If the closed disc of radius `ρ₁` about `w₀` lies in that disc and `f`
+vanishes on the open annulus `ρ₁ < |w - w₀| < ρ₁ + κ`, then the normalized charge `(2π)⁻¹ ∫ f`
+of the closed disc of radius `ρ₁` about `w₀` is within `η` of the number of roots of `P`, counted
+with multiplicity, within `ρ₁ + κ / 2` of `w₀`. -/
 theorem exists_forall_abs_setIntegral_sub_countP_roots_le (m : ℕ) (R : ℝ) {κ η : ℝ}
     (hκ : 0 < κ) (hη : 0 < η) :
     ∃ δ > 0, ∀ f : ℂ → ℝ, IntegrableOn f (closedBall 0 R) →
@@ -235,7 +235,8 @@ theorem exists_forall_abs_setIntegral_sub_countP_roots_le (m : ℕ) (R : ℝ) {�
 
 /-! ### The slices of the cutoff current -/
 
-/-- **The winding number of the field around a vacuum circle counts the enclosed Newton roots.**
+/-- **The winding number of the field around a vacuum circle counts the Newton roots inside the
+middle circle of the vacuum annulus.**
 For every width `κ > 0` there is a tolerance `δ > 0`, depending only on `m`, `R` and `κ`, with
 the following property. Let `Θ` be the cutoff current of a `C²` pair `(b, α)`, for a `C¹` cutoff
 `χ` vanishing near `0` and equal to `1` on `(c, ∞)`, and let `f` be its slice density along a `C²`
@@ -290,7 +291,8 @@ theorem exists_forall_windingNumber_eq_countP_roots (m : ℕ) (R : ℝ) {κ : �
     ∫ w, w ^ k ∂negSliceMeasure (sliceDensity χ b α σ) R) m).roots.countP
       (fun V ↦ dist V w₀ < ρ₁ + κ / 2)
   have hnk : |((n - k : ℤ) : ℝ)| < 1 := by push_cast; linarith [hcount]
-  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, abs_lt] at hnk
+  have hnk' : |n - (k : ℤ)| < 1 := by exact_mod_cast hnk
+  have := abs_lt.1 hnk'
   rw [hn]
   exact_mod_cast (by omega : n = k)
 
