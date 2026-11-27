@@ -613,31 +613,8 @@ theorem tendsto_measure_le_enorm_mul [SeminormedAddGroup E] [IsFiniteMeasure μ]
     (hg : AEStronglyMeasurable g μ) {f : ι → α → ℝ≥0∞}
     (hf : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ μ {x | ε ≤ f i x}) l (𝓝 0))
     {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun i ↦ μ {x | ε ≤ ‖g x‖ₑ * f i x}) l (𝓝 0) := by
-  rw [ENNReal.tendsto_nhds_zero]
-  intro η hη
-  have hη2 : 0 < η / 2 := ENNReal.div_pos hη.ne' ENNReal.ofNat_ne_top
-  -- Outside a set of measure at most `η / 2`, the factor is bounded by some `R`.
-  obtain ⟨R, hR⟩ := ((ENNReal.tendsto_nhds_zero.mp (tendsto_measure_dist_ge_atTop hg 0))
-    (η / 2) hη2).exists
-  have hRε : 0 < ε / ENNReal.ofReal R := ENNReal.div_pos hε.ne' ENNReal.ofReal_ne_top
-  filter_upwards [ENNReal.tendsto_nhds_zero.mp (hf _ hRε) (η / 2) hη2] with i hi
-  have hsub : {x | ε ≤ ‖g x‖ₑ * f i x} ⊆
-      {x | R ≤ dist (g x) 0} ∪ {x | ε / ENNReal.ofReal R ≤ f i x} := by
-    intro x hx
-    rw [Set.mem_ofPred_eq] at hx
-    by_cases hgx : R ≤ dist (g x) 0
-    · exact Or.inl hgx
-    · right
-      have hle : ‖g x‖ₑ ≤ ENNReal.ofReal R := by
-        rw [← ofReal_norm, ← dist_zero_right]
-        exact ENNReal.ofReal_le_ofReal (not_le.mp hgx).le
-      exact ENNReal.div_le_of_le_mul' (hx.trans (mul_le_mul_left hle _))
-  calc μ {x | ε ≤ ‖g x‖ₑ * f i x}
-      ≤ μ {x | R ≤ dist (g x) 0} + μ {x | ε / ENNReal.ofReal R ≤ f i x} :=
-        (measure_mono hsub).trans (measure_union_le _ _)
-    _ ≤ η / 2 + η / 2 := add_le_add hR hi
-    _ = η := ENNReal.add_halves η
+    Tendsto (fun i ↦ μ {x | ε ≤ ‖g x‖ₑ * f i x}) l (𝓝 0) :=
+  TauCeti.tendsto_measure_ge_zero_mul_of_ae_lt_top hg.eNorm (.of_forall fun _ ↦ eNorm_lt_top) hf hε
 
 /-- Deterministic four-tail deviation estimate for a binary map uniformly continuous on a ball:
 outside the two cutoff tails for the limit pair `(g₁, g₂)` and the two proximity tails for
