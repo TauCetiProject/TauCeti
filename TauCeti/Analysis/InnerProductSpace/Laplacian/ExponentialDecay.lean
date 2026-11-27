@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
+import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.Gradient
@@ -87,6 +88,8 @@ zeros of the spinor.
 * `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: the case of the constant potential `c²`.
 * `TauCeti.le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian`: the version with a forcing of
   size `B exp (-c ‖x‖)` and a potential `V ≥ a² > c²`.
+* `TauCeti.norm_le_mul_exp_add_div_mul_exp_of_norm_laplacian_sub_smul_le`: the same bound for the
+  norm of a vector-valued `D` with `‖Δ D - V • D‖ ≤ B exp (-c ‖x‖)`.
 * `TauCeti.le_mul_cosh_div_cosh_of_mul_le_laplacian`: a subsolution of `-Δ + V`,
   `V ≥ k² + n k / a`, on a closed ball is bounded at the centre by
   `M cosh (k a) / cosh (k √(R² + a²))`.
@@ -270,6 +273,49 @@ theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R 
       simpa [hb] using (tendsto_exp_neg_mul_norm_cocompact (E := E) hc).const_mul A
     rw [Pi.sub_def]
     simpa only [sub_zero] using hlim.sub hexp
+
+/-- **Forced exterior comparison for vector-valued functions.** Let `D : E → G` be `C²` outside
+the open ball of radius `R > 0` and tend to zero at infinity, with `‖Δ D - V • D‖ ≤ B exp (-c ‖x‖)`
+outside the closed ball for a potential `V ≥ a²` and rates `0 < c < a`. If `‖D‖ ≤ M` on the
+boundary sphere, then for `‖x‖ ≥ R`,
+
+`‖D x‖ ≤ M exp (-c (‖x‖ - R)) + B / (a² - c²) exp (-c ‖x‖)`.
+
+Each norming functional of `D` is a forced subsolution of `-Δ + V`, to which
+`TauCeti.le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian` applies. -/
+theorem norm_le_mul_exp_add_div_mul_exp_of_norm_laplacian_sub_smul_le {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {D : E → G} {V : E → ℝ} {R a c M B : ℝ}
+    (hR : 0 < R) (hc : 0 < c) (hca : c < a) (hM : 0 ≤ M) (hB : 0 ≤ B)
+    (hcd : ∀ x, R ≤ ‖x‖ → ContDiffAt ℝ 2 D x) (hV : ∀ x, R < ‖x‖ → a ^ 2 ≤ V x)
+    (hforce : ∀ x, R < ‖x‖ → ‖Δ D x - V x • D x‖ ≤ B * Real.exp (-(c * ‖x‖)))
+    (hbdry : ∀ x, ‖x‖ = R → ‖D x‖ ≤ M) (hlim : Tendsto D (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    ‖D x‖ ≤ M * Real.exp (-(c * (‖x‖ - R))) + B / (a ^ 2 - c ^ 2) * Real.exp (-(c * ‖x‖)) := by
+  rcases eq_or_ne ‖D x‖ 0 with hDx | hDx
+  · rw [hDx]
+    have : 0 < a ^ 2 - c ^ 2 := by nlinarith
+    positivity
+  obtain ⟨φ, hφ1, hφx⟩ := exists_dual_vector ℝ (D x) hDx
+  have hφle : ∀ v : G, φ v ≤ ‖v‖ := fun v ↦
+    (le_abs_self _).trans ((φ.le_opNorm v).trans (by rw [hφ1, one_mul]))
+  have hcomp := le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian (u := fun y ↦ φ (D y))
+    (V := V) hR hc hca hM hB
+    (fun y hy ↦ (φ.continuous.continuousAt.comp (hcd y hy).continuousAt).continuousWithinAt)
+    (fun y hy ↦ φ.contDiff.contDiffAt.comp y (hcd y hy.le)) hV (fun y hy ↦ ?_)
+    (fun y hy ↦ (hφle _).trans (hbdry y hy))
+    (by simpa [Function.comp_def] using (φ.continuous.tendsto 0).comp hlim) hx
+  · simp only [hφx] at hcomp
+    exact hcomp
+  · -- The equation for `φ ∘ D`.
+    have hΔ : Δ (fun y ↦ φ (D y)) y = φ (Δ D y) :=
+      (hcd y hy.le).laplacian_CLM_comp_left (l := (φ : G →L[ℝ] ℝ))
+    rw [hΔ]
+    have hlow : -(B * Real.exp (-(c * ‖y‖))) ≤ φ (Δ D y - V y • D y) := by
+      have := (hφle (-(Δ D y - V y • D y))).trans ((norm_neg _).le.trans (hforce y hy))
+      rw [map_neg] at this
+      linarith
+    rw [map_sub, map_smul, smul_eq_mul] at hlow
+    linarith
 
 /-! ### Decay into a ball -/
 

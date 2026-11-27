@@ -16,7 +16,8 @@ import TauCeti.CategoryTheory.Linear.Endomorphism
 
 This file evaluates Mathlib's pullbacks `groupCohomology.mapCocycles₁` and
 `groupCohomology.mapCocycles₂` of a `1`-cocycle and a `2`-cocycle along a compatible pair
-`(f, φ)` at group elements, without unfolding the cochain map.
+`(f, φ)` at group elements, without unfolding the cochain map, and characterises the classes in
+`H¹(G, A)` that restrict to zero on a subgroup.
 
 It also records that `cochainsFunctor k G` and `Hⁿ(G, -)` are additive, `k`-linear functors on
 `Rep k G`, so that the map `groupCohomology.map (MonoidHom.id G) φ n` induced by a morphism `φ` of
@@ -40,6 +41,8 @@ if `c` is a biproduct bicone of `A` and `B`, for instance the concrete product
   annihilate `Hⁿ(G, A)` in every degree.
 * `TauCeti.groupCohomology.smul_bijective` and `TauCeti.groupCohomology.nsmul_bijective`: a
   bijective scalar action on `A` induces a bijective scalar action on `Hⁿ(G, A)`.
+* `groupCohomology.resNatTrans_app_H1π_eq_zero_iff`: a class in `H¹(G, A)` restricts to zero on a
+  subgroup `S` iff a representing cocycle is a coboundary on `S`.
 * `CategoryTheory.Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv`: the cohomology of a
   biproduct is the product of the cohomologies.
 -/
@@ -168,6 +171,22 @@ theorem smul_eq_zero_of_forall_smul_eq_zero {A : Rep k G} {c : k} {n : ℕ}
 theorem natCard_V_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
     Nat.card A • x = 0 :=
   nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
+
+/-- A class in `H¹(G, A)` restricts to zero on a subgroup `S ≤ G` iff some, hence every,
+representing cocycle is a coboundary `g ↦ ρ g v - v` on `S`. -/
+theorem resNatTrans_app_H1π_eq_zero_iff {S : Subgroup G} (A : Rep k G) (f : cocycles₁ A) :
+    (resNatTrans k S.subtype 1).app A (H1π A f) = 0 ↔ ∃ v : A, ∀ g ∈ S, A.ρ g v - v = f g := by
+  rw [resNatTrans_app, H1π_comp_map_apply, H1π_eq_zero_iff]
+  constructor
+  · rintro ⟨v, hv⟩
+    refine ⟨v, fun g hg ↦ ?_⟩
+    have h := congrFun hv ⟨g, hg⟩
+    rw [d₀₁_hom_apply, mapCocycles₁_apply] at h
+    exact h
+  · rintro ⟨v, hv⟩
+    refine ⟨v, funext fun g ↦ ?_⟩
+    rw [d₀₁_hom_apply, mapCocycles₁_apply]
+    exact hv g g.property
 
 end groupCohomology
 

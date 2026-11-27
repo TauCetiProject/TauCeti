@@ -32,8 +32,9 @@ parametrized by the longer circle `AddCircle p`. Its pullback of the time form a
 behaviour are recorded with the time form (`AddCircle.mpullback_coverMap_timeForm`) and the
 orientation of the circle (`AddCircle.isOrientationPreservingAt_coverMap`).
 
-The product quotient maps `ℝ × ℝ → AddCircle p × ℝ` and `ℝ × ℝ → ℝ × AddCircle p` are also local
-diffeomorphisms, the first with derivative the identity in the real tangent coordinates.
+The product quotient maps `ℝ × ℝ → AddCircle p × ℝ` and, for a real normed space `E`,
+`E × ℝ → E × AddCircle p` are also local diffeomorphisms, with derivative the identity in the real
+tangent coordinates.
 
 ## Main definitions
 
@@ -107,14 +108,39 @@ theorem isLocalDiffeomorph_prodMap_coe_id (n : ℕ∞ω) :
   exact (isLocalDiffeomorph_coe p n).prodMap
     (Diffeomorph.refl 𝓘(ℝ) ℝ n).isLocalDiffeomorph
 
-/-- The quotient map on the second factor of the real plane is a local diffeomorphism onto the
-circle cylinder, for every differentiability order. -/
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- For a real normed space `E`, the quotient map on the last factor of `E × ℝ` is a local
+diffeomorphism onto `E × AddCircle p`, for every differentiability order. For `E = ℝ` this is the
+circle cylinder. -/
 theorem isLocalDiffeomorph_prodMap_id_coe (n : ℕ∞ω) :
-    IsLocalDiffeomorph 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) n
-      (Prod.map (id : ℝ → ℝ) ((↑) : ℝ → AddCircle p)) := by
+    IsLocalDiffeomorph 𝓘(ℝ, E × ℝ) (𝓘(ℝ, E).prod 𝓘(ℝ)) n
+      (Prod.map (id : E → E) ((↑) : ℝ → AddCircle p)) := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-  exact (Diffeomorph.refl 𝓘(ℝ) ℝ n).isLocalDiffeomorph.prodMap
+  exact (Diffeomorph.refl 𝓘(ℝ, E) E n).isLocalDiffeomorph.prodMap
     (isLocalDiffeomorph_coe p n)
+
+/-- For a real normed space `E`, the quotient map `E × ℝ → E × AddCircle p` has derivative the
+identity of `E × ℝ`, the tangent spaces of the circle being read in its charts. -/
+@[simp]
+theorem mfderiv_prodMap_id_coe (x : E × ℝ) :
+    mfderiv 𝓘(ℝ, E × ℝ) (𝓘(ℝ, E).prod 𝓘(ℝ))
+      (Prod.map (id : E → E) ((↑) : ℝ → AddCircle p)) x =
+      ContinuousLinearMap.id ℝ (E × ℝ) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  rw [mfderiv_prodMap mdifferentiableAt_id (hasMFDerivAt_coe p x.2).mdifferentiableAt,
+    mfderiv_id, mfderiv_coe]
+  -- The product tangent model is `E × ℝ`; both factor derivatives are identities.
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  exact Prod.ext (ContinuousLinearMap.id_apply (R₁ := ℝ) (v.1 : E))
+    (ContinuousLinearMap.id_apply (R₁ := ℝ) (v.2 : ℝ))
+
+/-- For a real normed space `E`, the differential of the quotient map `E × ℝ → E × AddCircle p`
+sends each tangent vector to itself, the tangent spaces of the circle being read in its charts. -/
+theorem mfderiv_prodMap_id_coe_apply (x : E × ℝ) (v : TangentSpace 𝓘(ℝ, E × ℝ) x) :
+    mfderiv 𝓘(ℝ, E × ℝ) (𝓘(ℝ, E).prod 𝓘(ℝ))
+      (Prod.map (id : E → E) ((↑) : ℝ → AddCircle p)) x v = v :=
+  congr($(mfderiv_prodMap_id_coe p x) v)
 
 /-- The product quotient map onto the circle cylinder has derivative the identity in the real
 plane model of its tangent spaces. -/

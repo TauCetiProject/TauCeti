@@ -28,8 +28,9 @@ This file deduces that **the adjoint weight spaces and the roots commute with ba
   assumption;
 * `S ⊗[R] 𝔤_α ≃ₗ[S] 𝔤_{S,α}`, again without flatness since `𝔤_α` is a direct summand, so a free
   root space keeps its rank;
-* for faithfully flat `S`, in particular for every field extension, `G_S` and `G` have the same
-  nontrivial adjoint weights.
+* when `R → S` is injective, for instance faithfully flat, `G_S` and `G` have the same nontrivial
+  adjoint weights: the Lie algebra is projective, so its scalar extension along `R → S` is
+  injective.
 
 For a chosen split maximal torus `T` (`TauCeti.SplitMaximalTorus`) and its base change
 `T.baseChange S` these specialize to the root spaces and the roots of the split pair `(G, T)`:
@@ -42,8 +43,8 @@ For a chosen split maximal torus `T` (`TauCeti.SplitMaximalTorus`) and its base 
 * `Derivation.adjointWeightSpaceBaseChangeEquiv`: the linear equivalence
   `S ⊗[R] 𝔤_α ≃ₗ[S] 𝔤_{S,α}`.
 * `Derivation.finrank_adjointWeightSpace_baseChange`: a free weight space keeps its rank.
-* `Derivation.nontrivialAdjointWeights_baseChange`: for faithfully flat `S`, the nontrivial adjoint
-  weights are unchanged.
+* `Derivation.nontrivialAdjointWeights_baseChange`: along an injective map `R → S`, the nontrivial
+  adjoint weights are unchanged.
 * `TauCeti.SplitMaximalTorus.adjointWeightSpace_baseChange`,
   `TauCeti.SplitMaximalTorus.finrank_adjointWeightSpace_baseChange` and
   `TauCeti.SplitMaximalTorus.nontrivialAdjointWeights_baseChange`: the root spaces, their
@@ -138,23 +139,27 @@ theorem finrank_adjointWeightSpace_baseChange [Nontrivial S]
   rw [← (adjointWeightSpaceBaseChangeEquiv π πS hπ α).finrank_eq, Module.finrank_baseChange]
 
 
-section FaithfullyFlat
+section FaithfulSMul
 
-variable [Module.FaithfullyFlat R S]
+variable [FaithfulSMul R S]
 
-/-- Under faithfully flat base change an adjoint weight space vanishes exactly when the original
-one does. -/
+/-- Along an injective scalar map `R → S`, for instance a faithfully flat one, an adjoint weight
+space vanishes after base change exactly when the original one does. -/
 theorem adjointWeightSpace_baseChange_eq_bot_iff (π : H →ₐc[R] MonoidAlgebra R M)
     (πS : S ⊗[R] H →ₐc[S] MonoidAlgebra S M)
     (hπ : ∀ h, πS (1 ⊗ₜ h) = MonoidAlgebra.mapAlgHom M (Algebra.ofId R S) (π h)) (α : M) :
     adjointWeightSpace πS α = ⊥ ↔ adjointWeightSpace π α = ⊥ := by
+  -- The Lie algebra is projective, hence flat, so `x ↦ 1 ⊗ x` is injective along `R → S`.
   rw [adjointWeightSpace_baseChange π πS hπ α,
-    Submodule.map_eq_bot_iff (e := cotangentDualBaseChangeEquiv R S H),
-    ← Submodule.baseChange_bot (A := S), Submodule.baseChange_inj]
+    Submodule.map_eq_bot_iff (e := cotangentDualBaseChangeEquiv R S H), ← le_bot_iff,
+    Submodule.baseChange_le_iff_le_comap, Submodule.restrictScalars_bot, ← LinearMap.ker,
+    LinearMap.ker_eq_bot.mpr (Module.Flat.tensorProduct_mk_injective R
+      (Module.Dual R (Bialgebra.CotangentSpace R H)) S), le_bot_iff]
 
-/-- **The nontrivial adjoint weights are invariant under faithfully flat base change**, in
-particular under every field extension. For a split maximal torus of a reductive group these are
-the roots. -/
+/-- **The nontrivial adjoint weights are invariant under base change along an injective scalar
+map**, in particular under every faithfully flat base change, every field extension and the map
+from `ℤ` to a ring of characteristic zero. For a split maximal torus of a reductive group these
+are the roots. -/
 theorem nontrivialAdjointWeights_baseChange (π : H →ₐc[R] MonoidAlgebra R M)
     (πS : S ⊗[R] H →ₐc[S] MonoidAlgebra S M)
     (hπ : ∀ h, πS (1 ⊗ₜ h) = MonoidAlgebra.mapAlgHom M (Algebra.ofId R S) (π h)) :
@@ -163,7 +168,7 @@ theorem nontrivialAdjointWeights_baseChange (π : H →ₐc[R] MonoidAlgebra R M
   simp only [mem_nontrivialAdjointWeights, ne_eq,
     adjointWeightSpace_baseChange_eq_bot_iff π πS hπ α]
 
-end FaithfullyFlat
+end FaithfulSMul
 
 end Derivation
 
@@ -189,9 +194,10 @@ theorem adjointWeightSpace_baseChange (T : SplitMaximalTorus R H r)
         (Derivation.cotangentDualBaseChangeEquiv R S H).toLinearMap :=
   Derivation.adjointWeightSpace_baseChange _ _ (baseChange_coordinateMap_hom_one_tmul S T) α
 
-/-- **The roots of a chosen split maximal torus are invariant under faithfully flat base change**,
-in particular under every field extension. -/
-theorem nontrivialAdjointWeights_baseChange [Module.FaithfullyFlat R S]
+/-- **The roots of a chosen split maximal torus are invariant under base change along an injective
+scalar map**, in particular under every faithfully flat base change, every field extension and the
+map from `ℤ` to a ring of characteristic zero. -/
+theorem nontrivialAdjointWeights_baseChange [FaithfulSMul R S]
     (T : SplitMaximalTorus R H r) :
     Derivation.nontrivialAdjointWeights (T.baseChange S).coordinateMap.hom =
       Derivation.nontrivialAdjointWeights T.coordinateMap.hom :=

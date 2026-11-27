@@ -99,6 +99,8 @@ quadratic forms with the subgroup preserving both summands.
   of one factor, the inclusion of the smaller fibre product in the fibre product of `α` and `β`.
 * `LinearMap.kerEquivKerIdProdMap`: the kernel of `g` is the kernel of `id × g`, embedded in the
   second factor.
+* `LinearMap.snd_snd_apply_eq_mul`: a linear map `E × F × R → E' × F' × R` carrying the
+  hyperplane `z = 0` into itself multiplies the `z` coordinate by that of the image of `(0, 0, 1)`.
 * `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
   coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
   and fixes the third basis vector.
@@ -968,6 +970,23 @@ theorem map_prodAssoc_prod {R E F G : Type*} [Semiring R] [AddCommMonoid E] [Mod
 end Module.Basis
 
 namespace LinearMap
+
+section TripleProduct
+
+variable {R E F E' F' : Type*} [CommSemiring R] [AddCommMonoid E] [Module R E] [AddCommMonoid F]
+  [Module R F] [AddCommMonoid E'] [Module R E'] [AddCommMonoid F'] [Module R F']
+
+/-- A linear map `E × F × R → E' × F' × R` carrying the hyperplane `z = 0` into `z = 0`
+multiplies the `z` coordinate by the `z` coordinate of the image of `(0, 0, 1)`. -/
+theorem snd_snd_apply_eq_mul (S : E × F × R →ₗ[R] E' × F' × R)
+    (hS : ∀ y : E × F × R, y.2.2 = 0 → (S y).2.2 = 0) (y : E × F × R) :
+    (S y).2.2 = (S (0, 0, 1)).2.2 * y.2.2 := by
+  have hy : y = (y.1, y.2.1, 0) + y.2.2 • ((0, 0, 1) : E × F × R) := by
+    ext <;> simp
+  rw [hy, map_add, map_smul, Prod.snd_add, Prod.snd_add, hS _ rfl]
+  simp [mul_comm]
+
+end TripleProduct
 
 variable {R : Type*} [Ring R] [HasUniqueDiv R]
 
