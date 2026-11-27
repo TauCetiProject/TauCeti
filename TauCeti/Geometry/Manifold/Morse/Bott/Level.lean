@@ -34,6 +34,11 @@ principle for convexity (`IsProperMap.isPreconnected_preimage_singleton_of_isCon
 that the levels of `f` are preconnected
 (`TauCeti.isPreconnected_preimage_singleton_of_forall_mem_criticalPoints_exists_isConvexChart`,
 `TauCeti.IsMorseBottFamily.isPreconnected_preimage_singleton`).
+The same charts show that local minima of such functions are global
+(`TauCeti.isMinOn_of_isLocalMin_of_forall_mem_criticalPoints_exists_isConvexChart`). A point of a
+Morse–Bott critical submanifold at which the Morse index is zero is a local minimum, since there
+`f = f (i s) + ‖b‖²` in Morse–Bott coordinates (`isLocalMin_of_manifoldMorseIndex_eq_zero` in the
+namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`).
 
 The hypothesis on the indices is needed: the height function of a circle has index zero and
 coindex one at its minimum, and its levels between the two critical values are pairs of points.
@@ -48,6 +53,11 @@ coindex one at its minimum, and its levels between the two critical values are p
   preconnected levels.
 * `TauCeti.IsMorseBottFamily.isPreconnected_preimage_singleton`: the levels of a Morse–Bott function
   without critical points of index or coindex one are preconnected.
+* `TauCeti.isMinOn_of_isLocalMin_of_forall_mem_criticalPoints_exists_isConvexChart`: such a
+  function attains its minimum at each of its local minima.
+* `isLocalMin_of_manifoldMorseIndex_eq_zero`, in the namespace
+  `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`: a Morse–Bott critical point of index
+  zero is a local minimum.
 
 ## References
 
@@ -166,11 +176,38 @@ theorem exists_isConvexChart (hi : i.IsNondegenerateCriticalSubmanifold f) (hn :
     omega
   · simp [he]
 
+/-- **A Morse–Bott critical point of index zero is a local minimum.** Let `i : S → M` be a
+nondegenerate critical submanifold of a function `f`, `C³` near `i s`, with `i` of class `C³`. If
+the Morse index of `f` at `i s` is zero, then `f` has a local minimum at `i s`: in Morse–Bott
+coordinates `f = f (i s) + ‖b‖²`. -/
+theorem isLocalMin_of_manifoldMorseIndex_eq_zero (hi : i.IsNondegenerateCriticalSubmanifold f)
+    (hn : 3 ≤ n) (s : S) (hf : ∀ᶠ y in 𝓝 (i s), ContMDiffAt I 𝓘(ℝ) 3 f y)
+    (h0 : manifoldMorseIndex I f (i s) = 0) : IsLocalMin f (i s) := by
+  obtain ⟨e, hsrc, -, hfe⟩ := hi.exists_openPartialHomeomorph_eqOn hn
+    (i.isImmersion.isImmersionOfComplement_complement s) hf
+  filter_upwards [e.open_source.mem_nhds hsrc] with y hy
+  rw [hfe hy, h0]
+  exact le_add_of_nonneg_right (Finset.sum_nonneg fun j _ ↦ by simp [sq_nonneg])
+
 end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
 /-! ### Connected levels -/
 
 section Level
+
+/-- A `C¹` function with convexity charts at its critical points has convexity charts at all
+points: at a regular point the submersion normal form supplies one. -/
+private theorem forall_exists_isConvexChart_of_forall_mem_criticalPoints [IsManifold I 1 M]
+    (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hloc : ∀ x ∈ criticalPoints I f, ∃ U, x ∈ U ∧ IsConvexChart f U) (x : M) :
+    ∃ U, x ∈ U ∧ IsConvexChart f U := by
+  by_cases hx : x ∈ criticalPoints I f
+  · exact hloc x hx
+  -- A regular point has a surjective differential.
+  obtain ⟨U, -, hxU, hU⟩ := hf.contMDiffOn.exists_isConvexChart_subset_of_surjective_mfderiv
+    isOpen_univ (mem_univ x) le_rfl
+    (isRegularPoint_iff.1 (isRegularPoint_iff_notMem_criticalPoints.2 hx)) univ_mem
+  exact ⟨U, hxU, hU⟩
 
 variable [T2Space M] [CompactSpace M] [PreconnectedSpace M]
 
@@ -183,16 +220,19 @@ theorem isPreconnected_preimage_singleton_of_forall_mem_criticalPoints_exists_is
     [IsManifold I 1 M]
     (hf : ContMDiff I 𝓘(ℝ) 1 f)
     (hloc : ∀ x ∈ criticalPoints I f, ∃ U, x ∈ U ∧ IsConvexChart f U) (c : ℝ) :
-    IsPreconnected (f ⁻¹' {c}) := by
-  refine hf.continuous.isProperMap.isPreconnected_preimage_singleton_of_isConvexChart
-    (fun x ↦ ?_) c
-  by_cases hx : x ∈ criticalPoints I f
-  · exact hloc x hx
-  -- A regular point has a surjective differential.
-  obtain ⟨U, -, hxU, hU⟩ := hf.contMDiffOn.exists_isConvexChart_subset_of_surjective_mfderiv
-    isOpen_univ (mem_univ x) le_rfl
-    (isRegularPoint_iff.1 (isRegularPoint_iff_notMem_criticalPoints.2 hx)) univ_mem
-  exact ⟨U, hxU, hU⟩
+    IsPreconnected (f ⁻¹' {c}) :=
+  hf.continuous.isProperMap.isPreconnected_preimage_singleton_of_isConvexChart
+    (forall_exists_isConvexChart_of_forall_mem_criticalPoints hf hloc) c
+
+/-- **Local minima from local convexity at the critical points.** Let `f` be a `C¹` function on a
+compact connected boundaryless finite-dimensional manifold. If every critical point of `f` lies in
+a convexity chart of `f`, then `f` attains its minimum at each of its local minima. -/
+theorem isMinOn_of_isLocalMin_of_forall_mem_criticalPoints_exists_isConvexChart
+    [IsManifold I 1 M] (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hloc : ∀ x ∈ criticalPoints I f, ∃ U, x ∈ U ∧ IsConvexChart f U) {x : M}
+    (hx : IsLocalMin f x) : IsMinOn f univ x :=
+  hf.continuous.isProperMap.isMinOn_of_isLocalMin_of_isConvexChart
+    (forall_exists_isConvexChart_of_forall_mem_criticalPoints hf hloc) hx
 
 /-- **The levels of a Morse–Bott function without index or coindex one are connected.** Let a
 family of `C³` embeddings exhibit `f` as a Morse–Bott function on a compact connected boundaryless
