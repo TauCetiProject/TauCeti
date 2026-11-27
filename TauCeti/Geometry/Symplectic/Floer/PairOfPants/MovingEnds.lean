@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Manifold.ContMDiff.Prod

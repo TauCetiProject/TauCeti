@@ -52,8 +52,12 @@ parametrix of the two-ended cylinder
   (`eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_lt`, in the namespace
   `TauCeti.SymplecticForm`).
   When the stationary operator is invertible, the inverse rotation followed by its inverse is a
-  right inverse of this model, and the abstract end piece applies with `ε` as small as desired
-  (`exists_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer`, in the
+  right inverse of this model, so any operator whose coefficient field read along the chart
+  converges to the end model in `L^∞` far out on the end has an end piece with `ε` as small as
+  desired (`TauCeti.Floer.HasEndParametrixPiece`,
+  `TauCeti.Floer.hasEndParametrixPiece_of_tendsto_endModelCoeff`). This
+  applies to the linearized operator of a pair of pants
+  (`hasEndParametrixPiece_floerConformalJetCoeff`, in the
   namespace `TauCeti.SymplecticForm`).
 
 The contribution of the compact part of `S`, and the assembly of the three ends and the core into a
@@ -322,6 +326,58 @@ theorem exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer
 
 end Parametrix
 
+section EndPiece
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- A first-order operator `D` on the pair of pants `S`, realized through its coefficient field `M`
+on conformal jets, **has an end piece of a right parametrix** on the end `q` when there is a
+bounded operator `Q : L²(ℝ × S¹, V) → W^{1,2}(ℝ × S¹, V)` such that for every `ε > 0` and every
+cutoff `β` living far enough out on `q` (vanishing, with its derivative, on the part `s ≤ T₀` of the
+band of `φ'_q`, with derivative vanishing beyond some height `T₁`, and bounded by `B` as in
+`TauCeti.Floer.endTransfer_mem_H1`), `D` applied to the transfer `β · (Q h ∘ ψ)` along the end chart
+is the transfer by the `L²` isometry `TauCeti.Floer.positiveEndChartLp` of `β(φ'_q) h + K h + E h`,
+with `K` compact and `‖E‖ ≤ B ε`. -/
+def HasEndParametrixPiece (q : Puncture) (M : ℝ × ℝ → V × V × V →L[ℝ] V) : Prop :=
+  ∃ Q : Lp V 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V, ∀ ε > 0, ∃ T₀ : ℝ,
+    ∀ {β : ℝ × ℝ → ℝ} {B T₁ : ℝ}, ContDiff ℝ 1 β →
+      (∀ z ∈ tsupport β, Complex.equivRealProdCLM.symm z ≠ q.endCenter →
+        z ∈ thricePuncturedSphereReal) →
+      (∀ z, Complex.equivRealProdCLM.symm z ≠ q.endCenter →
+        |β z| ≤ B ∧ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ *
+          (√(cylindricalWeight z) * |β z|) ≤ B ∧
+          ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ * ‖fderiv ℝ β z‖ ≤ B) →
+      (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ → β (positiveEndChart q ζ) = 0) →
+      (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → fderiv ℝ β (positiveEndChart q ζ) = 0) →
+      ∃ K E : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure, IsCompactOperator K ∧
+        ‖E‖ ≤ B * ε ∧ ∀ h, ((positiveEndChartLp q).symm (jetOperator 2
+          (volume.restrict thricePuncturedSphereReal) M (endTransfer q β (Q h))) :
+            ℝ × ℝ → V) =ᵐ[stripMeasure]
+          fun ζ ↦ β (positiveEndChart q ζ) • h ζ + K h ζ + E h ζ
+
+/-- The definition of an end piece of a right parametrix, whose body is not exposed outside this
+module. -/
+theorem hasEndParametrixPiece_def (q : Puncture) (M : ℝ × ℝ → V × V × V →L[ℝ] V) :
+    HasEndParametrixPiece q M ↔
+      ∃ Q : Lp V 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V, ∀ ε > 0, ∃ T₀ : ℝ,
+        ∀ {β : ℝ × ℝ → ℝ} {B T₁ : ℝ}, ContDiff ℝ 1 β →
+          (∀ z ∈ tsupport β, Complex.equivRealProdCLM.symm z ≠ q.endCenter →
+            z ∈ thricePuncturedSphereReal) →
+          (∀ z, Complex.equivRealProdCLM.symm z ≠ q.endCenter →
+            |β z| ≤ B ∧ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ *
+              (√(cylindricalWeight z) * |β z|) ≤ B ∧
+              ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ * ‖fderiv ℝ β z‖ ≤ B) →
+          (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ → β (positiveEndChart q ζ) = 0) →
+          (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → fderiv ℝ β (positiveEndChart q ζ) = 0) →
+          ∃ K E : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure, IsCompactOperator K ∧
+            ‖E‖ ≤ B * ε ∧ ∀ h, ((positiveEndChartLp q).symm (jetOperator 2
+              (volume.restrict thricePuncturedSphereReal) M (endTransfer q β (Q h))) :
+                ℝ × ℝ → V) =ᵐ[stripMeasure]
+              fun ζ ↦ β (positiveEndChart q ζ) • h ζ + K h ζ + E h ζ :=
+  Iff.rfl
+
+end EndPiece
+
 section Rotation
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
@@ -437,6 +493,54 @@ private theorem exists_forall_jetOperator_endRotation_comp_stationaryJetCoeff_eq
   rw [h₁, ContinuousLinearMap.comp_apply, ← h₂, ContinuousLinearMap.comp_apply, hinv, h₃, h₄,
     endRotation_one_apply_endRotation_neg_one]
 
+/-- **The end contribution to a right parametrix, from convergence to the end model.** Let `D` be
+a first-order operator on the pair of pants `S` with an essentially bounded coefficient field `M`
+on conformal jets, and let the stationary cylinder operator `∂s + L_t (∂t - S_t)` of continuous
+loops be invertible on `W^{1,2}(ℝ × S¹, V)`. Suppose that far out on the end `q` the coefficient
+field of `D` read along the positive end chart `φ'_q` with the cutoff `1` converges in `L^∞` to the
+end model `TauCeti.Floer.endModelCoeff q L S`: for every `ε > 0`, beyond some height it is within
+`ε` of the end model almost everywhere.
+
+Then `D` has an end piece of a right parametrix on the end `q`
+(`TauCeti.Floer.HasEndParametrixPiece`): its operator `Q` is the inverse of the end model, the
+inverse rotation of the chart followed by the inverse of the stationary operator. -/
+theorem hasEndParametrixPiece_of_tendsto_endModelCoeff (q : Puncture)
+    {M : ℝ × ℝ → V × V × V →L[ℝ] V} (hM : MemLp M ∞ (volume.restrict thricePuncturedSphereReal))
+    {L : ℝ → AlmostComplexStructure V}
+    (hL : Continuous fun t ↦ (L t).toLinearMap.toContinuousLinearMap) {S : ℝ → V →L[ℝ] V}
+    (hS : Continuous S) (hD : (stationarySobolevOperator L S).IsInvertible)
+    (hMG : ∀ ε > 0, ∃ T₀ : ℝ, ∀ᵐ ζ ∂stripMeasure, T₀ < ζ.1 →
+      ‖(M (positiveEndChart q ζ)).comp (endTransferCoeff q (fun _ ↦ 1) ζ) -
+        endModelCoeff q L S ζ‖ ≤ ε) :
+    HasEndParametrixPiece q M := by
+  rw [hasEndParametrixPiece_def]
+  -- The end model is the stationary cylinder operator followed by the rotation of the chart.
+  have hGeq : (fun ζ ↦ (endRotation q L 1 ζ).comp (stationaryJetCoeff L S ζ)) =
+      endModelCoeff q L S := by
+    funext ζ
+    rw [endRotation_one, endModelCoeff_def, endModelRotation_def]
+  have hG := memLp_endRotation_comp_stationaryJetCoeff q hL hS
+  rw [hGeq] at hG
+  obtain ⟨Q, hQ⟩ := exists_forall_jetOperator_endRotation_comp_stationaryJetCoeff_eq q hL hS hD
+  rw [hGeq] at hQ
+  refine ⟨Q, fun ε hε ↦ ?_⟩
+  -- Far out on the end, the operator read along the chart is within `ε / (‖Q‖ + 1)` of the model.
+  set ε' := ε / (‖Q‖ + 1)
+  have hε' : 0 < ε' := by positivity
+  obtain ⟨T₀, hT₀⟩ := hMG ε' hε'
+  refine ⟨T₀, fun {β B T₁} hβ hβS hB hβ₀ hdβ ↦ ?_⟩
+  obtain ⟨K, E, hK, hE, hid⟩ :=
+    exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer_ae_eq q hM hG hQ
+      hβ hβS hB hβ₀ hdβ hε'.le hT₀
+  refine ⟨K, E, hK, hE.trans ?_, hid⟩
+  have hB0 : 0 ≤ B :=
+    (abs_nonneg _).trans (hB _ (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q 0)).1
+  have hQε : ε' * ‖Q‖ ≤ ε := by
+    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+    nlinarith [norm_nonneg Q]
+  calc B * ε' * ‖Q‖ = B * (ε' * ‖Q‖) := by ring
+    _ ≤ B * ε := by gcongr
+
 end Rotation
 
 end TauCeti.Floer
@@ -459,13 +563,12 @@ operator `∂s + J_q(t, x(t)) (∂t - dX_{H'_q(t)}(x(t)))` be invertible on `W^{
 is at a nondegenerate orbit for compatible structures
 (`isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatible`).
 
-Then there is a bounded operator `Q : L²(ℝ × S¹, V) → W^{1,2}(ℝ × S¹, V)` such that for every
-`ε > 0` and every cutoff `β` living far enough out on the end `q` (vanishing, with its derivative,
-on the part `s ≤ T₀` of the band of `φ'_q`, with derivative vanishing beyond some height `T₁`, and
-bounded by `B` as in `TauCeti.Floer.endTransfer_mem_H1`), the linearized operator `D_u` applied to
-the transfer `β · (Q h ∘ ψ)` along the end chart is the transfer by the `L²` isometry
-`TauCeti.Floer.positiveEndChartLp` of `β(φ'_q) h + K h + E h`, with `K` compact and `‖E‖ ≤ B ε`. -/
-theorem exists_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer
+Then the linearized operator `D_u` has an end piece of a right parametrix on the end `q`
+(`TauCeti.Floer.HasEndParametrixPiece`): an operator `Q : L²(ℝ × S¹, V) → W^{1,2}(ℝ × S¹, V)` such
+that `D_u` applied to the transfer `β · (Q h ∘ ψ)` along the end chart, for every cutoff `β` living
+far enough out on `q`, is the transfer of `β(φ'_q) h + K h + E h`, with `K` compact and
+`‖E‖ ≤ B ε`. -/
+theorem hasEndParametrixPiece_floerConformalJetCoeff
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) {q : Puncture}
     (hHs : ContDiff ℝ 2 (uncurry (H q)))
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Jq : ℝ → V → AlmostComplexStructure V}
@@ -491,61 +594,16 @@ theorem exists_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoef
         (s, t)) 0 atTop (Icc 0 1))
     (hD : ContinuousLinearMap.IsInvertible (stationarySobolevOperator (fun t ↦ Jq t (x t))
       fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (x t))) :
-    ∃ Q : Lp V 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V, ∀ ε > 0, ∃ T₀ : ℝ,
-      ∀ {β : ℝ × ℝ → ℝ} {B T₁ : ℝ}, ContDiff ℝ 1 β →
-        (∀ z ∈ tsupport β, Complex.equivRealProdCLM.symm z ≠ q.endCenter →
-          z ∈ thricePuncturedSphereReal) →
-        (∀ z, Complex.equivRealProdCLM.symm z ≠ q.endCenter →
-          |β z| ≤ B ∧ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ *
-            (√(cylindricalWeight z) * |β z|) ≤ B ∧
-            ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ * ‖fderiv ℝ β z‖ ≤ B) →
-        (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ → β (positiveEndChart q ζ) = 0) →
-        (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → fderiv ℝ β (positiveEndChart q ζ) = 0) →
-        ∃ K E : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure, IsCompactOperator K ∧
-          ‖E‖ ≤ B * ε ∧ ∀ h, ((positiveEndChartLp q).symm (jetOperator 2
-            (volume.restrict thricePuncturedSphereReal) (ω.floerConformalJetCoeff cylindricalWeight
-              (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u)
-                (endTransfer q β (Q h))) : ℝ × ℝ → V) =ᵐ[stripMeasure]
-            fun ζ ↦ β (positiveEndChart q ζ) • h ζ + K h ζ + E h ζ := by
-  set Jx : ℝ → AlmostComplexStructure V := fun t ↦ Jq t (x t)
-  set S : ℝ → V →L[ℝ] V :=
-    fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (x t)
-  have hJx : Continuous fun t ↦ (Jx t).toLinearMap.toContinuousLinearMap :=
-    hJq.continuous.comp (continuous_id.prodMk hxc)
-  have hS : Continuous S := (continuous_fderiv_slice_right
-    (f := fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1)
-      (contDiff_uncurry_positiveEndHamiltonian hHs))).comp (continuous_id.prodMk hxc)
-  -- The end model, the stationary cylinder operator followed by the rotation of the chart, has a
-  -- right inverse.
-  have hG := memLp_endRotation_comp_stationaryJetCoeff q hJx hS
-  obtain ⟨Q, hQ⟩ := exists_forall_jetOperator_endRotation_comp_stationaryJetCoeff_eq q hJx hS hD
-  refine ⟨Q, fun ε hε ↦ ?_⟩
+    HasEndParametrixPiece q (ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) := by
   -- Far out on the end, the operator read along the chart is close to the end model.
-  set ε' := ε / (‖Q‖ + 1)
-  have hε' : 0 < ε' := by positivity
+  refine hasEndParametrixPiece_of_tendsto_endModelCoeff q hM
+    (hJq.continuous.comp (continuous_id.prodMk hxc))
+    (ω.continuous_fderiv_hamiltonianVectorField_positiveEndHamiltonian hHs hxc) hD fun ε hε ↦ ?_
   obtain ⟨T₀, hT₀⟩ := eventually_atTop.1
     (ω.eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_lt hH hHs hJq
-      hJend hKend hu hfl (β := fun _ ↦ 1) (fun _ _ ↦ ⟨rfl, by simp⟩) hxc hux hδ hε')
-  refine ⟨T₀, fun {β B T₁} hβ hβS hB hβ₀ hdβ ↦ ?_⟩
-  have hMG : ∀ᵐ ζ ∂stripMeasure, T₀ < ζ.1 →
-      ‖(ω.floerConformalJetCoeff cylindricalWeight
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
-          (positiveEndChart q ζ)).comp (endTransferCoeff q (fun _ ↦ 1) ζ) -
-        (endRotation q Jx 1 ζ).comp (stationaryJetCoeff Jx S ζ)‖ ≤ ε' :=
-    ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun ζ hζ hT ↦ by
-      rw [endRotation_one]
-      simpa only [endModelCoeff_def, endModelRotation_def] using (hT₀ ζ.1 hT.le ζ.2 hζ.2).le
-  obtain ⟨K, E, hK, hE, hid⟩ :=
-    exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer_ae_eq q hM hG hQ
-      hβ hβS hB hβ₀ hdβ hε'.le hMG
-  refine ⟨K, E, hK, hE.trans ?_, hid⟩
-  have hB0 : 0 ≤ B :=
-    (abs_nonneg _).trans (hB _ (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q 0)).1
-  have hQε : ε' * ‖Q‖ ≤ ε := by
-    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-    nlinarith [norm_nonneg Q]
-  calc B * ε' * ‖Q‖ = B * (ε' * ‖Q‖) := by ring
-    _ ≤ B * ε := by gcongr
+      hJend hKend hu hfl (β := fun _ ↦ 1) (fun _ _ ↦ ⟨rfl, by simp⟩) hxc hux hδ hε)
+  exact ⟨T₀, ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc)
+    fun ζ hζ hT ↦ (hT₀ ζ.1 hT.le ζ.2 hζ.2).le⟩
 
 end TauCeti.SymplecticForm

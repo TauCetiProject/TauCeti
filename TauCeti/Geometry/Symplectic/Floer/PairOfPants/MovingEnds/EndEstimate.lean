@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Topology.Instances.Real.TSupport

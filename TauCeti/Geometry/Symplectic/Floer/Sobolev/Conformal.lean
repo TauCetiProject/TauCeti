@@ -110,6 +110,18 @@ theorem floerConformalJetCoeff_congr_data (ω : SymplecticForm V) (ρ : ℝ × �
   rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
     ω.floerLinearizationCoeff_congr_data u hJ hKs hKt, hJ]
 
+/-- The coefficient field on conformal jets of the translate by `v` of Floer data is that of the
+data at the translated point, with the weight still read at the original point. -/
+theorem floerConformalJetCoeff_comp_add_right (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v z : ℝ × ℝ) :
+    ω.floerConformalJetCoeff ρ (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) z =
+      firstOrderJetCoeff (J (z + v) (u (z + v)))
+        ((√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u (z + v)) :=
+  ContinuousLinearMap.ext fun a ↦ by
+    simp only [floerConformalJetCoeff_apply, firstOrderJetCoeff_apply, smul_apply,
+      floerLinearizationCoeff_apply, fderiv_comp_add_right]
+
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
 @[simp]

@@ -24,10 +24,14 @@ sphere, which moves nets built from arbitrary approximants onto the sphere.
   over a closed set `S` of directions is closed.
 * `NormedSpace.normalize_apply_normalize`: a map commuting with nonnegative dilations commutes
   with normalization up to normalization.
+* `NormedSpace.normalize_eq_div_norm`: in a normed field over `ℝ`, such as `ℂ`, normalization is
+  division by the norm.
 * `NormedSpace.dist_normalize_le_two_mul_dist`: `dist x (normalize y) ≤ 2 * dist x y` for a unit
   vector `x`.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
 * `TauCeti.norm_mul_dist_sphereDirection_le`: `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`.
+* `NormedSpace.tendsto_normalize_sub_normalize_sub_cobounded`: far out, translating by a fixed
+  vector barely changes the direction.
 
 ## Main definitions
 
@@ -76,6 +80,12 @@ theorem _root_.NormedSpace.normalize_apply_normalize {g : E → E}
   have hz' : normalize z = ‖z‖⁻¹ • z := (rfl)
   rw [hz', hg _ (inv_nonneg.2 (norm_nonneg z)),
     normalize_smul_of_pos (inv_pos.2 (norm_pos_iff.2 hz))]
+
+/-- In a normed field that is a normed algebra over `ℝ`, such as `ℂ`, normalization is division by
+the norm. -/
+theorem _root_.NormedSpace.normalize_eq_div_norm {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    (x : 𝕜) : normalize x = x / algebraMap ℝ 𝕜 ‖x‖ := by
+  rw [normalize, Algebra.smul_def, map_inv₀, div_eq_inv_mul]
 
 /-- Normalizing `y` at most doubles its distance to a unit vector `x`. This includes `y = 0`,
 whose normalization is `0`. -/
@@ -176,6 +186,22 @@ theorem norm_mul_dist_sphereDirection_le (x y : E) :
         simpa [norm_smul, hu] using norm_add_le ((‖y‖ - ‖x‖) • u) (x - y)
     _ ≤ 2 * ‖x - y‖ := by
         linarith [abs_norm_sub_norm_le y x, norm_sub_rev y x]
+
+/-- Far out, translating by a fixed vector `c` barely changes the direction: the directions of `x`
+and `x - c` differ by at most `2 ‖c‖ / ‖x‖`, which vanishes as `‖x‖ → ∞`. -/
+theorem _root_.NormedSpace.tendsto_normalize_sub_normalize_sub_cobounded (c : E) :
+    Tendsto (fun x ↦ normalize x - normalize (x - c)) (Bornology.cobounded E) (𝓝 0) := by
+  have h : Tendsto (fun x : E ↦ 2 * ‖c‖ / ‖x‖) (Bornology.cobounded E) (𝓝 0) :=
+    tendsto_const_nhds.div_atTop tendsto_norm_cobounded_atTop
+  refine squeeze_zero_norm' ((eventually_cobounded_le_norm (‖c‖ + 1)).mono fun x hx ↦ ?_) h
+  have hx0 : x ≠ 0 := norm_pos_iff.1 (by linarith [norm_nonneg c])
+  have hxc : x - c ≠ 0 := norm_pos_iff.1 (by linarith [norm_sub_norm_le x c])
+  have hd := norm_mul_dist_sphereDirection_le
+    ⟨normalize x, mem_sphere_zero_iff_norm.2 (norm_normalize hx0)⟩ (x - c) x
+  rw [Subtype.dist_eq, dist_eq_norm, coe_sphereDirection_of_ne_zero _ hxc,
+    coe_sphereDirection_of_ne_zero _ hx0, sub_sub_cancel_left, norm_neg, norm_sub_rev] at hd
+  rw [le_div_iff₀ (norm_pos_iff.2 hx0), mul_comm]
+  exact hd
 
 end Direction
 

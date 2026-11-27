@@ -60,6 +60,8 @@ A real number vanishes in `UnitAddCircle = ℝ/ℤ` exactly when it is an intege
   `AddCircle.exists_tendsto_add_int_mul_of_tendsto_coe` — a real function whose classes in the
   circle stay near, or tend to, a point lifts near, or tends to, one of its lifts, on a
   preconnected set or along a filter with a preconnected basis.
+* `Function.Periodic.exists_uniformContinuous_eq_comp_circleExp` — a continuous function of period
+  one factors through `t ↦ exp (2πit)` by a uniformly continuous function on `Circle`.
 * `Function.Injective.secant_ne_zero` — a short forward secant of an injective circle map is nonzero
   when its defining function has no zeros off the diagonal.
 * `UnitAddCircle.coe_eq_zero_iff` — a real number vanishes in `ℝ/ℤ` exactly when it is an
@@ -314,6 +316,27 @@ theorem secant_ne_zero {X Y : Type*} [Zero Y] {T : ℝ} [Fact (0 < T)]
   exact hw.1.ne' ((AddCircle.coe_eq_zero_iff_of_mem_Ico ⟨hw.1.le, hw.2⟩).1 hw0)
 
 end Function.Injective
+
+namespace Function.Periodic
+
+/-- **A continuous periodic function is uniformly continuous on the circle.** A continuous function
+`g` of period one on `ℝ` factors through `t ↦ exp (2π i t)` by a uniformly continuous function on
+the circle: points `t`, `t'` whose images on the circle are close have close values. -/
+theorem exists_uniformContinuous_eq_comp_circleExp {E : Type*} [UniformSpace E]
+    {g : ℝ → E} (hp : Periodic g 1) (hg : Continuous g) :
+    ∃ G : Circle → E, UniformContinuous G ∧ ∀ t, g t = G (Circle.exp (2 * Real.pi * t)) := by
+  -- `g` descends to the compact circle `AddCircle 1 ≃ₜ Circle`.
+  set e : AddCircle (1 : ℝ) ≃ₜ Circle := AddCircle.homeomorphCircle one_ne_zero
+  have hl : Continuous hp.lift :=
+    (QuotientAddGroup.isQuotientMap_mk (AddSubgroup.zmultiples (1 : ℝ))).continuous_iff.2 hg
+  refine ⟨hp.lift ∘ e.symm,
+    CompactSpace.uniformContinuous_of_continuous (hl.comp e.symm.continuous), fun t ↦ ?_⟩
+  have he : e.symm (Circle.exp (2 * Real.pi * t)) = (t : AddCircle (1 : ℝ)) := by
+    rw [Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply, AddCircle.toCircle_apply_mk,
+      div_one]
+  rw [Function.comp_apply, he, hp.lift_coe]
+
+end Function.Periodic
 
 namespace TauCeti
 

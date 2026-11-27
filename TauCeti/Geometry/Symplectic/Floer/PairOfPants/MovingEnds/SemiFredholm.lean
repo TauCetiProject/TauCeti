@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
 import TauCeti.Topology.Separation.Basic
 
