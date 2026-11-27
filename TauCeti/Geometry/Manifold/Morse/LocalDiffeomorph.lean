@@ -20,8 +20,9 @@ of `π` is invertible, the chain rule shows that `x` is a critical point of `f �
 For nondegeneracy, let `M` and `M'` be boundaryless. In the preferred charts at `x` and `π x`, the
 coordinate expression of `f ∘ π` is that of `f` composed with the coordinate expression of `π`,
 whose derivative at the chart image of `x` is invertible, and nondegeneracy is invariant under
-such a change of coordinates; the two models may differ.
-For the Morse index and the kernel of the critical Hessian, let the models agree. Near
+such a change of coordinates; the two models may differ. They may also differ for the kernel of
+the critical Hessian at a critical point, which the second-order chain rule shows the differential
+of `π` carries onto the kernel for `f`. For the Morse index, let the models agree. Near
 `x`, a chart of `M'` at `π x` composed with `π` is a chart of the maximal atlas of `M`, and in it
 the coordinate expression of `f ∘ π` is the coordinate expression of `f`. Since the Morse index
 of a `C²` function at a critical point can be read in any chart of the maximal atlas, it is
@@ -32,8 +33,9 @@ preimages of those of `f`, with the same nondegeneracy and indices.
 
 ## Main results
 
-* `IsLocalDiffeomorphAt.isManifoldNondegenerateCriticalPoint_comp_iff`: the same for
-  nondegenerate critical points, for local diffeomorphisms between possibly different models.
+* `IsLocalDiffeomorphAt.isManifoldNondegenerateCriticalPoint_comp_iff`: `x` is a nondegenerate
+  critical point of `f ∘ π` exactly when `π x` is one of `f`, for local diffeomorphisms between
+  boundaryless manifolds with possibly different models.
 * `IsLocalDiffeomorphAt.manifoldMorseIndex_comp`: at a critical point the Morse index of `f ∘ π`
   at `x` is that of `f` at `π x`.
 * `IsLocalDiffeomorphAt.ker_criticalHessian_eq_map`: at a critical point the differential of `π`
@@ -77,22 +79,45 @@ theorem isManifoldNondegenerateCriticalPoint_comp_iff
   · exact iff_of_false (fun h ↦ hf ((hπ.contMDiffAt_comp_iff hn).1 h.contMDiffAt))
       fun h ↦ hf h.contMDiffAt
   have hπd : MDifferentiableAt I I' π x := hπ.mdifferentiableAt hn0
-  have hy : writtenInExtChartAt I I' x π (extChartAt I x x) = extChartAt I' (π x) (π x) := by
-    simp [writtenInExtChartAt]
+  have hy : writtenInExtChartAt I I' x π (extChartAt I x x) = extChartAt I' (π x) (π x) :=
+    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
   -- Near the chart image of `x`, the coordinate expression of `f ∘ π` is that of `f` composed
   -- with the coordinate expression of `π`, whose derivative there is the invertible `dπ`.
-  have heq : (f ∘ π) ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x x)]
-      (f ∘ (extChartAt I' (π x)).symm) ∘ writtenInExtChartAt I I' x π := by
-    simpa [writtenInExtChartAt, I.range_eq_univ, Function.comp_assoc] using
-      writtenInExtChartAt_comp (I := I) (I' := I') (I'' := 𝓘(ℝ)) (f := π) (g := f) (s := univ)
-        hπd.continuousAt.continuousWithinAt
+  have heq := hπd.continuousAt.comp_comp_extChartAt_symm_eventuallyEq (I := I) (I' := I') f
   have hinv : (fderiv ℝ (writtenInExtChartAt I I' x π) (extChartAt I x x)).IsInvertible := by
     rw [writtenInExtChartAt, ← hπd.mfderiv_eq_fderiv_extChartAt_conj rfl]
     exact hπ.isInvertible_mfderiv hn0
   rw [isManifoldNondegenerateCriticalPoint_iff, isManifoldNondegenerateCriticalPoint_iff, ← hy,
     ← isNondegenerateCriticalPoint_comp_iff (hy ▸ hf.contDiffAt_comp_extChartAt_symm)
       (hπ.contMDiffAt.of_le hn).contDiffAt_writtenInExtChartAt hinv]
-  exact ⟨fun h ↦ h.congr_of_eventuallyEq heq, fun h ↦ h.congr_of_eventuallyEq heq.symm⟩
+  exact heq.isNondegenerateCriticalPoint_iff
+
+/-- **The kernel of the critical Hessian under a local diffeomorphism.** If `π` is a `C^n` local
+diffeomorphism at `x` with `2 ≤ n`, and `π x` is a critical point of a function `f` which is `C²`
+there, then the differential of `π` at `x` carries the kernel of the critical Hessian of `f ∘ π`
+at `x` onto the kernel of the critical Hessian of `f` at `π x`. This is how a degenerate direction,
+such as the tangent direction of a Morse–Bott critical submanifold, is read on a covering space. -/
+theorem ker_criticalHessian_eq_map
+    (hπ : IsLocalDiffeomorphAt I I' n π x) (hn : 2 ≤ n) {f : M' → ℝ}
+    (hf : ContMDiffAt I' 𝓘(ℝ) 2 f (π x)) (hcrit : π x ∈ criticalPoints I' f) :
+    (criticalHessian I' f (π x)).ker =
+      (criticalHessian I (f ∘ π) x).ker.map (mfderiv I I' π x).toLinearMap := by
+  have hD := hπ.isInvertible_mfderiv (two_pos.trans_le hn).ne'
+  -- The second-order chain rule at the critical point `π x`.
+  have hcomp (u w : TangentSpace I x) : criticalHessian I (f ∘ π) x u w =
+      criticalHessian I' f (π x) (mfderiv I I' π x u) (mfderiv I I' π x w) :=
+    criticalHessian_comp_apply rfl hf (hπ.contMDiffAt.of_le hn) hcrit u w
+  ext v
+  simp only [Submodule.mem_map, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+  constructor
+  · intro hv
+    obtain ⟨u, rfl⟩ := hD.surjective v
+    refine ⟨u, ContinuousLinearMap.ext fun w ↦ ?_, rfl⟩
+    rw [hcomp, hv, zero_apply, zero_apply]
+  · rintro ⟨u, hu, rfl⟩
+    refine ContinuousLinearMap.ext fun w ↦ ?_
+    obtain ⟨w, rfl⟩ := hD.surjective w
+    rw [← hcomp, hu, zero_apply, zero_apply]
 
 end Models
 
@@ -122,34 +147,6 @@ theorem manifoldMorseIndex_comp
     manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (π x))
       (mem_chart_source H (π x)) hf (mem_criticalPoints.1 hcrit),
     morseIndex_congr_of_eventuallyEq hcomp', hpt]
-
-omit [IsManifold I n M] [IsManifold I n M'] in
-/-- **The kernel of the critical Hessian under a local diffeomorphism.** If `π` is a `C^n` local
-diffeomorphism at `x` with `2 ≤ n`, and `π x` is a critical point of a function `f` which is `C²`
-there, then the differential of `π` at `x` carries the kernel of the critical Hessian of `f ∘ π`
-at `x` onto the kernel of the critical Hessian of `f` at `π x`. This is how a degenerate direction,
-such as the tangent direction of a Morse–Bott critical submanifold, is read on a covering space. -/
-theorem ker_criticalHessian_eq_map
-    (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 2 ≤ n) {f : M' → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f (π x)) (hcrit : π x ∈ criticalPoints I f) :
-    (criticalHessian I f (π x)).ker =
-      (criticalHessian I (f ∘ π) x).ker.map (mfderiv I I π x).toLinearMap := by
-  have hD := hπ.isInvertible_mfderiv (two_pos.trans_le hn).ne'
-  -- The second-order chain rule at the critical point `π x`.
-  have hcomp (u w : TangentSpace I x) : criticalHessian I (f ∘ π) x u w =
-      criticalHessian I f (π x) (mfderiv I I π x u) (mfderiv I I π x w) :=
-    criticalHessian_comp_apply rfl hf (hπ.contMDiffAt.of_le hn) hcrit u w
-  ext v
-  simp only [Submodule.mem_map, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-  constructor
-  · intro hv
-    obtain ⟨u, rfl⟩ := hD.surjective v
-    refine ⟨u, ContinuousLinearMap.ext fun w ↦ ?_, rfl⟩
-    rw [hcomp, hv, zero_apply, zero_apply]
-  · rintro ⟨u, hu, rfl⟩
-    refine ContinuousLinearMap.ext fun w ↦ ?_
-    obtain ⟨w, rfl⟩ := hD.surjective w
-    rw [← hcomp, hu, zero_apply, zero_apply]
 
 end IsLocalDiffeomorphAt
 

@@ -34,6 +34,8 @@ manifold, rather than to a function on one global coordinate space.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint`: a nondegenerate critical point of a
   real-valued function on a smooth manifold.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.contMDiffAt`: such a function is `C²` at the point.
+* `Filter.EventuallyEq.isManifoldNondegenerateCriticalPoint_iff`: nondegeneracy at a point depends
+  only on the germ of the function there.
 * `TauCeti.IsMorseOn`: a smooth function whose critical points in a set are nondegenerate.
 * `TauCeti.IsMorse`: a Morse function on the whole manifold.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_modelSpace_iff` and
@@ -100,6 +102,13 @@ theorem IsManifoldNondegenerateCriticalPoint.congr_of_eventuallyEq {I : ModelWit
   have ht := (continuousAt_extChartAt_symm (I := I) x).tendsto
   rw [extChartAt_to_inv] at ht
   exact h.congr_of_eventuallyEq (hfg.comp_tendsto ht)
+
+/-- Whether `x` is a nondegenerate critical point depends only on the germ of the function at `x`.
+-/
+theorem _root_.Filter.EventuallyEq.isManifoldNondegenerateCriticalPoint_iff
+    {I : ModelWithCorners ℝ E H} (hfg : f =ᶠ[𝓝 x] g) :
+    IsManifoldNondegenerateCriticalPoint I f x ↔ IsManifoldNondegenerateCriticalPoint I g x :=
+  ⟨fun h ↦ h.congr_of_eventuallyEq hfg, fun h ↦ h.congr_of_eventuallyEq hfg.symm⟩
 
 /-- On a normed vector space with its self-model manifold structure, a manifold nondegenerate
 critical point is exactly a nondegenerate critical point in the existing calculus sense. -/

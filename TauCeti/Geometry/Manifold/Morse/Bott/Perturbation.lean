@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Morse.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Perturbing a Morse–Bott function by a function on a critical submanifold
@@ -118,18 +119,6 @@ private theorem comp_extChartAt_symm_eventuallyEq (a : B) (φ : B → ℝ) {z₀
   rw [Prod.mk.eta] at h
   simp only [comp_apply, h, zeroSection_proj]
 
-omit [IB.Boundaryless] [IsManifold IB 2 B] [ContMDiffVectorBundle 2 F E IB] in
-/-- Over the base set of the trivialization at `a`, a vector has fibre coordinate `0` in that
-trivialization exactly when it is a zero vector. -/
-private theorem trivializationAt_snd_eq_zero_iff (a : B) {x : TotalSpace F E}
-    (hx : x.proj ∈ (trivializationAt F E a).baseSet) :
-    (trivializationAt F E a x).2 = 0 ↔ x = zeroSection F E x.proj := by
-  obtain ⟨b, v⟩ := x
-  rw [(trivializationAt F E a).apply_eq_prod_continuousLinearEquivAt ℝ b hx v,
-    map_eq_zero_iff _ (ContinuousLinearEquiv.injective _)]
-  -- `zeroSection F E b` is `⟨b, 0⟩` by definition.
-  exact TotalSpace.mk_inj.symm
-
 omit [IsManifold IB 2 B] [ContMDiffVectorBundle 2 F E IB] in
 /-- The coordinate expression of a function which is `C²` at the zero vector `0_a`, in the chart of
 the total space at `0_a`, is `C²` at the image `(a', 0)` of `0_a`. -/
@@ -207,9 +196,7 @@ private theorem eventually_forall_mem_criticalPoints_add_comp_proj_iff (a : B)
   filter_upwards [(continuousAt_extChartAt (zeroSection F E a)).eventually hP, hsrc]
     with x hx ⟨hxe, hxc⟩ φ hφ
   have hxc' : x.proj ∈ (extChartAt IB a).source := by rwa [extChartAt_source]
-  have hxs : x ∈ (chartAt (ModelProd HB F) (zeroSection F E a)).source := by
-    rw [← extChartAt_source (I := IB.prod 𝓘(ℝ, F)), Bundle.mem_extChartAt_source_iff]
-    exact ⟨hxe, hxc'⟩
+  have hxs : x ∈ τ.source := (Bundle.mem_extChartAt_source_iff _ _).2 ⟨hxe, hxc'⟩
   have hτx : τ x = (extChartAt IB a x.proj, (trivializationAt F E a x).2) :=
     Bundle.extChartAt_apply_of_mem_baseSet _ hxe
   -- The coordinate expression of `φ` is differentiable at the coordinate of `x.proj`.
@@ -220,13 +207,14 @@ private theorem eventually_forall_mem_criticalPoints_add_comp_proj_iff (a : B)
   have heq := comp_extChartAt_symm_eventuallyEq (g := g) a φ (z₀ := τ x)
     (by rw [hτx]; exact (extChartAt IB a).map_source hxc')
     (by rw [hτx, (extChartAt IB a).left_inv hxc']; exact hxe)
-  rw [mem_criticalPoints, mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-    (IsManifold.chart_mem_maximalAtlas (zeroSection F E a)) hxs]
-  change fderiv ℝ ((fun y ↦ g y + φ y.proj) ∘ τ.symm) (τ x) = 0 ↔ _
-  rw [heq.fderiv_eq, hx _ hΦ, mem_criticalPoints,
-    mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero (IsManifold.chart_mem_maximalAtlas a) hxc,
-    hτx, trivializationAt_snd_eq_zero_iff a hxe]
-  rfl
+  -- `zeroSection F E b` is `⟨b, 0⟩` by definition.
+  have hx0 : x.snd = 0 ↔ x = zeroSection F E x.proj := by
+    obtain ⟨b, v⟩ := x
+    exact TotalSpace.mk_inj.symm
+  rw [mem_criticalPoints, mvfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hxs,
+    heq.fderiv_eq, hx _ hΦ, mem_criticalPoints,
+    mvfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hxc', hτx]
+  simp only [(trivializationAt F E a).snd_apply_eq_zero_iff ℝ hxe, hx0]
 
 /-- **Critical points of a perturbation by a function on the base, near a Morse–Bott zero
 section.** Let `g` be a function on the total space of a `C²` vector bundle `E → B` with
@@ -275,7 +263,7 @@ theorem isManifoldNondegenerateCriticalPoint_add_comp_proj_zeroSection_iff
     ← isNondegenerateCriticalPoint_add_comp_fst_iff (chart_contDiffAt b hg)
       (chart_eventually_fderiv_eq_zero b hcrit) (chart_ker_le b hker)
       hφ.contDiffAt_comp_extChartAt_symm]
-  exact ⟨fun h ↦ h.congr_of_eventuallyEq heq, fun h ↦ h.congr_of_eventuallyEq heq.symm⟩
+  exact heq.isNondegenerateCriticalPoint_iff
 
 /-- **The Morse index of a perturbation by a function on the base, at a critical zero section.**
 If `g` is `C²` at `0_b`, every zero vector is a critical point of `g`, and `φ` is `C²` at `b`, then
@@ -355,13 +343,9 @@ private theorem zeroSection_hypotheses :
   -- of the critical submanifold.
   let d : TangentSpace I (i s) := mfderiv (J.prod 𝓘(ℝ, F)) I Θ (zeroSection F V s) v
   have hv' : d ∈ (criticalHessian I f (i s)).ker := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-    refine ContinuousLinearMap.ext fun w ↦ ?_
-    obtain ⟨u, rfl⟩ := hD.surjective w
-    have hvu := congr($(LinearMap.mem_ker.1 hv) u)
-    rw [ContinuousLinearMap.coe_coe, criticalHessian_comp_apply (hΘi s) (h.contMDiffAt s)
-      ((hloc s).contMDiffAt.of_le hm) (h.mem_criticalPoints s) v u] at hvu
-    exact hvu
+    have hd := (hloc s).ker_criticalHessian_eq_map hm (hf s) (hcrit s) ▸
+      Submodule.mem_map_of_mem hv
+    rwa [hΘi s] at hd
   obtain ⟨u, hu⟩ := LinearMap.mem_range.1 (h.ker_criticalHessian_le s hv')
   refine ⟨u, hD.injective ?_⟩
   -- Since `i = Θ ∘ 0`, the differential of `i` is `dΘ` composed with that of the zero section.
@@ -429,8 +413,7 @@ theorem isManifoldNondegenerateCriticalPoint_add_comp_iff (s : S) {φ : S → �
   have heq := add_comp_eventuallyEq (f := f) φ (hΘ s)
   rw [← hΘi s, ← (PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ Θ
     (hΘ s)).isManifoldNondegenerateCriticalPoint_comp_iff hm]
-  exact Iff.trans
-    ⟨fun h' ↦ h'.congr_of_eventuallyEq heq, fun h' ↦ h'.congr_of_eventuallyEq heq.symm⟩
+  exact heq.isManifoldNondegenerateCriticalPoint_iff.trans
     (isManifoldNondegenerateCriticalPoint_add_comp_proj_zeroSection_iff (hg s) hcrit (hker s) hφ)
 
 /-- **The Morse index of a perturbation by a function on a Morse–Bott critical submanifold.** With

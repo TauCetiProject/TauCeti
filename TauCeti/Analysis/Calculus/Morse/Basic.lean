@@ -82,8 +82,9 @@ the notion be read off in any chart.
 * `TauCeti.isNondegenerateCriticalPoint_iff_separatingLeft`: in finite dimensions the converse
   holds too, so nondegeneracy is twice continuous differentiability together with the classical
   condition that the Hessian bilinear form have trivial radical.
-* `TauCeti.IsNondegenerateCriticalPoint.congr_of_eventuallyEq`: nondegeneracy at a point depends
-  only on the germ of the function there.
+* `TauCeti.IsNondegenerateCriticalPoint.congr_of_eventuallyEq` and
+  `Filter.EventuallyEq.isNondegenerateCriticalPoint_iff`: nondegeneracy at a point depends only on
+  the germ of the function there.
 * `TauCeti.IsNondegenerateCriticalPoint.eventually_fderiv_ne_zero`: a nondegenerate critical point
   is isolated among critical points.
 * `TauCeti.HasNondegenerateCriticalPointsOn.isDiscrete_setOfPred_fderiv_eq_zero`: a critical
@@ -221,6 +222,12 @@ theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
     IsNondegenerateCriticalPoint g x :=
   ⟨h.contDiffAt.congr_of_eventuallyEq hg.symm, by rw [hg.symm.fderiv_eq, h.fderiv_eq_zero],
     by rw [hg.symm.fderiv.fderiv_eq]; exact h.isInvertible⟩
+
+/-- Whether `x` is a nondegenerate critical point depends only on the germ of the function at `x`.
+-/
+theorem _root_.Filter.EventuallyEq.isNondegenerateCriticalPoint_iff {g : E → ℝ}
+    (hfg : f =ᶠ[𝓝 x] g) : IsNondegenerateCriticalPoint f x ↔ IsNondegenerateCriticalPoint g x :=
+  ⟨fun h ↦ h.congr_of_eventuallyEq hfg, fun h ↦ h.congr_of_eventuallyEq hfg.symm⟩
 
 /-- **A nondegenerate critical point is isolated.** Near such a point the differential of `f`
 vanishes only at the point itself: the case `c = 0` of `TauCeti.eventually_fderiv_ne`, proved in
