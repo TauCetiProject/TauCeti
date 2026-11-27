@@ -79,6 +79,14 @@ theorem indicator_add_of_mem {l : W} (hl : l ∈ L) (w : W) :
   · have hwl : w + l ∉ L := fun h ↦ hw (by simpa using L.sub_mem h hl)
     simp [indicator_of_notMem, hw, hwl]
 
+/-- A function with the semicharacter law on `L` that is even and takes the value `1` at `0` has
+values `±1` on `L`: `σ a ^ 2 = σ a * σ (-a) = σ 0 = 1`. -/
+private theorem semichar_sq_of_zero_of_neg (h0 : σ 0 = 1) (hneg : ∀ a ∈ L, σ (-a) = σ a) {a : W}
+    (ha : a ∈ L) : σ a ^ 2 = 1 := by
+  have h := hσ a ha (-a) (L.neg_mem ha)
+  rw [add_neg_cancel, h0, hneg a ha, apply_neg, apply_self, mul_one] at h
+  rw [sq, h]
+
 variable (hσ₂ : ∀ a ∈ L, σ a ^ 2 = 1)
 include hσ₂
 
@@ -103,16 +111,33 @@ private theorem semichar_neg {a : W} (ha : a ∈ L) : σ (-a) = σ a := by
   rw [add_neg_cancel, semichar_zero hσ hσ₂, apply_neg, apply_self, mul_one] at h
   linear_combination (-σ (-a)) * hσ₂ a ha - σ a * h
 
+/-- Translation of the extension by zero of a semicharacter by the negative of an element of `L`.
+-/
+private theorem indicator_sub_of_mem {l : W} (hl : l ∈ L) (w : W) :
+    (L : Set W).indicator σ (w - l) = (L : Set W).indicator σ w * σ l * β l w := by
+  rw [sub_eq_add_neg, indicator_add_of_mem hσ (L.neg_mem hl), semichar_neg hσ hσ₂ hl, apply_neg]
+
 /-- The extension by zero of a semicharacter is an eigenfunction of the Heisenberg translations
 by `L`: `β l x * e (x - l) = σ l * e x` for `l ∈ L`. -/
 theorem apply_mul_indicator_sub_of_mem {l : W} (hl : l ∈ L) (x : W) :
     β l x * (L : Set W).indicator σ (x - l) = σ l * (L : Set W).indicator σ x := by
-  rw [sub_eq_add_neg, β.indicator_add_of_mem hσ (L.neg_mem hl), semichar_neg hσ hσ₂ hl, apply_neg]
+  rw [indicator_sub_of_mem hσ hσ₂ hl]
   by_cases hx : x ∈ L
   · linear_combination σ l * (L : Set W).indicator σ x * apply_sq_eq_one_of_mem hσ hσ₂ hl hx
   · simp [indicator_of_notMem, hx]
 
 end Semicharacter
+
+/-- The integrand of the twisted convolution of the extension by zero of a function on `L`
+vanishes everywhere when `x - y ∉ L`. -/
+private theorem indicator_mul_indicator_sub_eq_zero {x y : W} (hxy : x - y ∉ L) (z : W) :
+    (L : Set W).indicator σ z *
+      (β z y * (β (z + y) x * (L : Set W).indicator σ (x - (z + y)))) = 0 := by
+  by_cases hz : z ∈ L
+  · have hsplit : x - y = x - (z + y) + z := by abel
+    have : x - (z + y) ∉ L := fun h ↦ hxy (hsplit ▸ L.add_mem h hz)
+    simp [indicator_of_notMem this]
+  · simp [indicator_of_notMem hz]
 
 section Vacuum
 
@@ -133,20 +158,14 @@ private theorem integral_mul_indicator_of_mem (hLm : MeasurableSet (L : Set W)) 
     congr 1 with z
     by_cases hz : z ∈ L
     · have hzy := L.add_mem hz hy
-      rw [sub_eq_add_neg, β.indicator_add_of_mem hσ (L.neg_mem hzy), semichar_neg hσ hσ₂ hzy,
-        hσ z hz y hy, apply_neg]
+      rw [indicator_sub_of_mem hσ hσ₂ hzy, hσ z hz y hy]
       simp only [indicator_of_mem hz, indicator_of_mem hx]
       linear_combination (σ y * σ x * β z y ^ 2 * β (z + y) x ^ 2) * hσ₂ z hz +
         (σ y * σ x * β (z + y) x ^ 2) * apply_sq_eq_one_of_mem hσ hσ₂ hz hy +
         (σ y * σ x) * apply_sq_eq_one_of_mem hσ hσ₂ hzy hx
     · simp [indicator_of_notMem, hz]
-  · have h0 (z : W) : (L : Set W).indicator σ z *
-        (β z y * (β (z + y) x * (L : Set W).indicator σ (x - (z + y)))) = 0 := by
-      by_cases hz : z ∈ L
-      · have : x - (z + y) ∉ L := fun h ↦ hx (by simpa using L.add_mem h (L.add_mem hz hy))
-        simp [indicator_of_notMem this]
-      · simp [indicator_of_notMem hz]
-    simp [h0, indicator_of_notMem hx]
+  · have hxy : x - y ∉ L := fun h ↦ hx (by simpa using L.add_mem h hy)
+    simp [β.indicator_mul_indicator_sub_eq_zero hxy, indicator_of_notMem hx]
 
 /-- For `y ∉ L` the twisted convolution integral of the extension by zero of a semicharacter
 vanishes when `L` is self-dual: if `x - y ∈ L` its integrand is a multiple of the character
@@ -171,21 +190,14 @@ private theorem integral_mul_indicator_of_notMem [MeasurableAdd W] [μ.IsAddLeft
     rw [← mul_zero (σ l * β y l), ← hchar, ← integral_const_mul]
     congr 1 with z
     by_cases hz : z ∈ L
-    · have hshift : y + l - (z + y) = l + -z := by abel
-      rw [hshift, β.indicator_add_of_mem hσ (L.neg_mem hz), semichar_neg hσ hσ₂ hz, apply_neg,
-        map_add_left, map_add_right, map_add_right, apply_self]
+    · have hshift : y + l - (z + y) = l - z := by abel
+      rw [hshift, indicator_sub_of_mem hσ hσ₂ hz, map_add_left, map_add_right, map_add_right,
+        apply_self]
       simp only [indicator_of_mem hz, indicator_of_mem hl]
       linear_combination (σ l * β y l * β z y ^ 2 * β z l ^ 2) * hσ₂ z hz +
         (σ l * β y l * β z y ^ 2) * apply_sq_eq_one_of_mem hσ hσ₂ hz hl
     · simp [indicator_of_notMem hz]
-  · have h0 (z : W) : (L : Set W).indicator σ z *
-        (β z y * (β (z + y) x * (L : Set W).indicator σ (x - (z + y)))) = 0 := by
-      by_cases hz : z ∈ L
-      · have hsplit : x - y = x - (z + y) + z := by abel
-        have : x - (z + y) ∉ L := fun h ↦ hxy (hsplit ▸ L.add_mem h hz)
-        simp [indicator_of_notMem this]
-      · simp [indicator_of_notMem hz]
-    simp [h0]
+  · simp [β.indicator_mul_indicator_sub_eq_zero hxy]
 
 /-- The extension by zero of a semicharacter `σ` of an open subgroup `L` of measure one, for a
 Heisenberg datum `β` for which `L` is self-dual (every `y` with `β z y ^ 2 = 1` for all `z ∈ L`
@@ -243,14 +255,10 @@ theorem heisenbergRep_vacuum_of_mem (hσ : ∀ a ∈ L, ∀ b ∈ L, σ (a + b) 
     {l : W} (hl : l ∈ L) :
     heisenbergRep l (vacuum : ReproducingModel β μ ((L : Set W).indicator σ)) =
       σ l • vacuum := by
-  -- A vacuum is even with value `1` at `0`, which forces `σ a ^ 2 = σ a * σ (-a) = σ 0 = 1`.
-  have hσ₂ (a : W) (ha : a ∈ L) : σ a ^ 2 = 1 := by
-    have h0 : σ 0 = 1 := by simpa using he.apply_zero
-    have hneg : σ (-a) = σ a := by simpa [ha] using he.apply_neg a
-    have h := hσ a ha (-a) (L.neg_mem ha)
-    rw [add_neg_cancel, h0, hneg, HeisenbergDatum.apply_neg, HeisenbergDatum.apply_self,
-      mul_one] at h
-    rw [sq, h]
+  -- A vacuum is even with value `1` at `0`, which forces `σ a ^ 2 = 1` on `L`.
+  have hσ₂ (a : W) (ha : a ∈ L) : σ a ^ 2 = 1 :=
+    HeisenbergDatum.semichar_sq_of_zero_of_neg hσ (by simpa using he.apply_zero)
+      (fun b hb ↦ by simpa [hb] using he.apply_neg b) ha
   refine ReproducingModel.ext fun x ↦ ?_
   rw [heisenbergRep_apply, vacuum_apply, smul_apply, vacuum_apply]
   exact β.apply_mul_indicator_sub_of_mem hσ hσ₂ hl x
