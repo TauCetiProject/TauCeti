@@ -38,6 +38,12 @@ The file then proves the three-gap theorem, for every real `α` and with no case
 rational and irrational `α`: every gap is `etaPos α N`, `etaNeg α N` or their sum, so that at
 most three distinct gap lengths occur.
 
+Finally it counts the gaps of each length. With `returnPos α N` and `returnNeg α N` the least
+indices of the points `etaPos α N` and `1 - etaNeg α N`, and when the first `N` points are
+distinct and `2 ≤ N`, there are `N - returnPos α N` gaps `etaPos α N`, `N - returnNeg α N` gaps
+`etaNeg α N` and `returnPos α N + returnNeg α N - N` gaps `etaPos α N + etaNeg α N`. For
+irrational `α` the three lengths are distinct, and these numbers are their multiplicities.
+
 All declarations are in the namespace `TauCeti.Rotation`.
 
 ## Main definitions
@@ -45,6 +51,8 @@ All declarations are in the namespace `TauCeti.Rotation`.
 * `orbitFract`: the fractional parts of `n * α` for `n < N`, as a `Finset ℝ`.
 * `gaps`: the multiset of gaps between consecutive points, with the wrap-around gap.
 * `etaPos`, `etaNeg`: the least positive point and the wrap-around gap.
+* `returnPos`, `returnNeg`: the return indices, the least indices of the points `etaPos α N`
+  and `1 - etaNeg α N`.
 
 ## Main statements
 
@@ -79,6 +87,28 @@ All declarations are in the namespace `TauCeti.Rotation`.
 * `card_toFinset_gaps_le_three`: **the three-gap theorem**. For every real `α` and every `N`
   there are at most three distinct gap lengths.
 * `toFinset_gaps_eq_of_card_eq_three`: when exactly three lengths occur, they are these three.
+* `fract_returnPos_mul`, `fract_returnNeg_mul`: the points of index `returnPos α N` and
+  `returnNeg α N` are `etaPos α N` and `1 - etaNeg α N`.
+* `returnPos_le`, `returnNeg_le`, `returnPos_lt`, `returnNeg_lt`: the return indices are the
+  least indices of their points, and for `0 < N` they are below `N`.
+* `returnPos_eq_of_irrational`, `returnNeg_eq_of_irrational`: for irrational `α` they are the
+  only indices of their points.
+* `card_orbitFract_eq_iff`: there are `N` points exactly when the points of index below `N` are
+  distinct.
+* `le_returnPos_add_returnNeg`: when the first `N` points are distinct and `2 ≤ N`, the return
+  indices add up to at least `N`.
+* `gaps_eq_map_range_of_forall`, `gaps_eq_map_range`: when the first `N` points are distinct,
+  the multiset of gaps is the image of the indices below `N` under the gap from the point of
+  index `n`; for `2 ≤ N` this gap is `etaPos α N` if `n + returnPos α N < N`, otherwise
+  `etaNeg α N` if `returnNeg α N ≤ n`, and otherwise `etaPos α N + etaNeg α N`.
+* `gaps_eq_replicate_add`: **the multiplicities**. When the first `N` points are distinct and
+  `2 ≤ N`, the multiset of gaps consists of `N - returnPos α N` copies of `etaPos α N`,
+  `N - returnNeg α N` copies of `etaNeg α N` and `returnPos α N + returnNeg α N - N` copies of
+  `etaPos α N + etaNeg α N`.
+* `etaPos_ne_etaNeg`: for irrational `α`, the lengths `etaPos α N` and `etaNeg α N` differ.
+* `count_etaPos_gaps`, `count_etaNeg_gaps`, `count_etaPos_add_etaNeg_gaps`: for irrational
+  `α`, the three lengths occur `N - returnPos α N`, `N - returnNeg α N` and
+  `returnPos α N + returnNeg α N - N` times (the first and the last for `2 ≤ N`).
 
 `mem_gaps_iff_exists` describes the gaps through the points alone: the gap from a point
 `y` is `z - y` for the least point `z` above `y`, and `1 - y` when `y` is the largest point.
@@ -100,7 +130,8 @@ The point of index `j - i` or `i + j` is computed from the points of index `i` a
 ## References
 
 * P. Alessandri and V. Berthé, *Three distance theorems and combinatorics on words*,
-  Enseign. Math. 44 (1998), 103–132.
+  Enseign. Math. 44 (1998), 103–132. The three multiplicities are those of the *Three distance
+  theorem* of §3.
 * F. M. Liang, *A short proof of the 3d distance theorem*, Discrete Math. 28 (1979), 325–326.
 * D. Kunert, three-gap theorem formalization in Lean (`dkunert/three-gap-theorem-lean`, MIT). The
   shape of the definitions `orbitFract`, `gaps`, `etaPos` and `etaNeg` (uniform in `α`, through
@@ -633,6 +664,253 @@ theorem card_toFinset_gaps_le_three (α : ℝ) (N : ℕ) : #(gaps α N).toFinset
 theorem toFinset_gaps_eq_of_card_eq_three (h : #(gaps α N).toFinset = 3) :
     (gaps α N).toFinset = {etaPos α N, etaNeg α N, etaPos α N + etaNeg α N} :=
   eq_of_subset_of_card_le (gaps_toFinset_subset α N) (card_le_three.trans_eq h.symm)
+
+/-! ### The return indices and the multiplicities
+
+The return index `returnPos α N` is the least index of the least positive point, and
+`returnNeg α N` is the least index of the largest point. When the first `N` points are distinct
+and `2 ≤ N`, the gap from the point of index `n` is `etaPos α N` for the `N - returnPos α N`
+indices with `n + returnPos α N < N`, it is `etaNeg α N` for the `N - returnNeg α N` indices
+with `returnNeg α N ≤ n`, and it is `etaPos α N + etaNeg α N` for the other indices. -/
+
+/-- The return index `r⁺`: the least index `n` with `Int.fract (n * α) = etaPos α N`. When the
+orbit has at least two points, it is the least index of the least positive point. -/
+noncomputable def returnPos (α : ℝ) (N : ℕ) : ℕ :=
+  sInf {n : ℕ | Int.fract (n * α) = etaPos α N}
+
+/-- The return index `r⁻`: the least index `n` with `Int.fract (n * α) = 1 - etaNeg α N`. For
+`0 < N`, it is the least index of the largest point. -/
+noncomputable def returnNeg (α : ℝ) (N : ℕ) : ℕ :=
+  sInf {n : ℕ | Int.fract (n * α) = 1 - etaNeg α N}
+
+/-- The index `returnPos α N` is at most every index of the point `etaPos α N`. -/
+theorem returnPos_le {n : ℕ} (h : Int.fract (n * α) = etaPos α N) : returnPos α N ≤ n :=
+  Nat.sInf_le h
+
+/-- The index `returnNeg α N` is at most every index of the point `1 - etaNeg α N`. -/
+theorem returnNeg_le {n : ℕ} (h : Int.fract (n * α) = 1 - etaNeg α N) : returnNeg α N ≤ n :=
+  Nat.sInf_le h
+
+/-- The point of index `returnPos α N` is `etaPos α N`. -/
+theorem fract_returnPos_mul (α : ℝ) (N : ℕ) : Int.fract (returnPos α N * α) = etaPos α N := by
+  refine Nat.sInf_mem (s := {n : ℕ | Int.fract (n * α) = etaPos α N}) ?_
+  rcases lt_or_ge #(orbitFract α N) 2 with h | h
+  · exact ⟨0, by simp [etaPos_of_card_lt_two h]⟩
+  · obtain ⟨n, -, hn⟩ := mem_orbitFract.1 (mem_coe.1 (isLeast_etaPos h).1.1)
+    exact ⟨n, hn⟩
+
+/-- The point of index `returnNeg α N` is `1 - etaNeg α N`. -/
+theorem fract_returnNeg_mul (α : ℝ) (N : ℕ) :
+    Int.fract (returnNeg α N * α) = 1 - etaNeg α N := by
+  refine Nat.sInf_mem (s := {n : ℕ | Int.fract (n * α) = 1 - etaNeg α N}) ?_
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · exact ⟨0, by simp⟩
+  · obtain ⟨n, -, hn⟩ := mem_orbitFract.1 (mem_coe.1 (isGreatest_one_sub_etaNeg α hN).1)
+    exact ⟨n, hn⟩
+
+/-- For `0 < N`, `returnPos α N` is an index below `N`. -/
+theorem returnPos_lt (α : ℝ) (hN : 0 < N) : returnPos α N < N := by
+  rcases lt_or_ge #(orbitFract α N) 2 with h | h
+  · exact (returnPos_le (n := 0) (by simp [etaPos_of_card_lt_two h])).trans_lt hN
+  · obtain ⟨n, hnN, hn⟩ := mem_orbitFract.1 (mem_coe.1 (isLeast_etaPos h).1.1)
+    exact (returnPos_le hn).trans_lt hnN
+
+/-- For `0 < N`, `returnNeg α N` is an index below `N`. -/
+theorem returnNeg_lt (α : ℝ) (hN : 0 < N) : returnNeg α N < N := by
+  obtain ⟨n, hnN, hn⟩ := mem_orbitFract.1 (mem_coe.1 (isGreatest_one_sub_etaNeg α hN).1)
+  exact (returnNeg_le hn).trans_lt hnN
+
+/-- For irrational `α`, the index `returnPos α N` is the only index of the point `etaPos α N`. -/
+theorem returnPos_eq_of_irrational (hα : Irrational α) {n : ℕ}
+    (h : Int.fract (n * α) = etaPos α N) : returnPos α N = n :=
+  hα.injective_fract_natCast_mul ((fract_returnPos_mul α N).trans h.symm)
+
+/-- For irrational `α`, the index `returnNeg α N` is the only index of the point
+`1 - etaNeg α N`. -/
+theorem returnNeg_eq_of_irrational (hα : Irrational α) {n : ℕ}
+    (h : Int.fract (n * α) = 1 - etaNeg α N) : returnNeg α N = n :=
+  hα.injective_fract_natCast_mul ((fract_returnNeg_mul α N).trans h.symm)
+
+/-- The orbit has `N` points exactly when the points of index below `N` are distinct. -/
+theorem card_orbitFract_eq_iff :
+    #(orbitFract α N) = N ↔ Set.InjOn (fun n : ℕ => Int.fract (n * α)) (Set.Iio N) := by
+  rw [← coe_range, ← card_image_iff, card_range, orbitFract]
+
+/-- When the first `N` points are distinct and `2 ≤ N`, the two return indices add up to at
+least `N`. -/
+theorem le_returnPos_add_returnNeg (hN : 2 ≤ N) (h : #(orbitFract α N) = N) :
+    N ≤ returnPos α N + returnNeg α N := by
+  have hcard : 2 ≤ #(orbitFract α N) := h.symm ▸ hN
+  have hr := fract_returnPos_mul α N
+  have hs := fract_returnNeg_mul α N
+  have ha := etaPos_pos hcard
+  have hb := etaNeg_pos α N
+  by_contra hlt
+  have hmem := fract_natCast_mul_mem_orbitFract α (N := N)
+    (n := returnPos α N + returnNeg α N) (by omega)
+  rcases lt_or_ge (Int.fract (returnPos α N * α) + Int.fract (returnNeg α N * α)) 1 with h1 | h1
+  · -- The point of index `returnPos α N + returnNeg α N` would be above the largest point.
+    have h2 := Int.fract_natCast_add_mul_of_lt h1
+    have := le_one_sub_etaNeg_of_mem hmem
+    linarith
+  · -- It would be a point below `etaPos α N`, hence the point `0` of index `0`.
+    have h2 := Int.fract_natCast_add_mul_of_le h1
+    have h0 : Int.fract (↑(returnPos α N + returnNeg α N) * α) = 0 := by
+      by_contra h0
+      have := etaPos_le_of_mem hmem h0
+      linarith
+    have h3 : returnPos α N + returnNeg α N = 0 :=
+      card_orbitFract_eq_iff.1 h (Set.mem_Iio.2 (by omega)) (Set.mem_Iio.2 (by omega))
+        (by simpa using h0)
+    have h4 : returnPos α N = 0 := by omega
+    rw [h4, Nat.cast_zero, zero_mul, Int.fract_zero] at hr
+    linarith
+
+/-- When the first `N` points are distinct, the multiset of gaps is the image of the indices
+below `N` under any function `c` such that `c n` is the gap from the point of index `n`. -/
+theorem gaps_eq_map_range_of_forall (h : #(orbitFract α N) = N) {c : ℕ → ℝ}
+    (hc : ∀ n < N, (∀ z, IsLeast ((orbitFract α N : Set ℝ) ∩ Set.Ioi (Int.fract (n * α))) z →
+      c n = z - Int.fract (n * α)) ∧
+        (IsGreatest (orbitFract α N : Set ℝ) (Int.fract (n * α)) → c n = 1 - Int.fract (n * α))) :
+    gaps α N = (Multiset.range N).map c := by
+  have hinj := card_orbitFract_eq_iff.1 h
+  set l := (orbitFract α N).sort (· ≤ ·) with hl
+  have hs : l.SortedLT := sortedLT_sort _
+  have hset : (orbitFract α N : Set ℝ) = {x | x ∈ l} := by ext; simp [hl]
+  -- The function `F` sends the point of index `n < N` to `c n`.
+  let F : ℝ → ℝ := fun y => c (Function.invFunOn (fun n : ℕ => Int.fract (n * α)) (Set.Iio N) y)
+  have hF : ∀ n < N, F (Int.fract (n * α)) = c n := fun n hn =>
+    congrArg c (hinj.leftInvOn_invFunOn (Set.mem_Iio.2 hn))
+  have key : List.zipWith (· - ·) (l.tail ++ [1]) l = l.map F := by
+    refine List.ext_getElem (by simp; omega) fun i _ h₂ => ?_
+    have hi : i < l.length := by simpa using h₂
+    obtain ⟨n, hn, hn'⟩ := mem_orbitFract.1 ((mem_sort _).1 (List.getElem_mem hi))
+    rw [List.getElem_zipWith_sub_tail_append_singleton, List.getElem_map]
+    by_cases h' : i + 1 < l.length
+    · have h1 := hs.isLeast_inter_Ioi_getElem_succ h'
+      rw [← hset, ← hn'] at h1
+      rw [dite_eq_left h', ← hn', hF n hn, (hc n hn).1 _ h1]
+    · have h1 := hs.sortedLE.isGreatest_getElem_of_not_succ_lt hi h'
+      rw [← hset, ← hn'] at h1
+      rw [dite_eq_right h', ← hn', hF n hn, (hc n hn).2 h1]
+  rw [gaps_eq_coe, ← hl, key, ← Multiset.map_coe, hl, sort_eq, orbitFract,
+    image_val_of_injOn (by rwa [coe_range]), Multiset.map_map]
+  exact Multiset.map_congr rfl fun n hn => hF n (Multiset.mem_range.1 hn)
+
+/-- When the first `N` points are distinct and `2 ≤ N`, the gap from the point of index `n` is
+`etaPos α N` if `n + returnPos α N < N`, it is `etaNeg α N` if `N ≤ n + returnPos α N` and
+`returnNeg α N ≤ n`, and it is `etaPos α N + etaNeg α N` otherwise. -/
+theorem gaps_eq_map_range (hN : 2 ≤ N) (h : #(orbitFract α N) = N) :
+    gaps α N = (Multiset.range N).map fun n =>
+      if n + returnPos α N < N then etaPos α N
+      else if returnNeg α N ≤ n then etaNeg α N else etaPos α N + etaNeg α N := by
+  have hinj := card_orbitFract_eq_iff.1 h
+  have hr := fract_returnPos_mul α N
+  have hs := fract_returnNeg_mul α N
+  have hrN := returnPos_lt α (N := N) (by omega)
+  have hsN := returnNeg_lt α (N := N) (by omega)
+  have hrs := le_returnPos_add_returnNeg hN h
+  refine gaps_eq_map_range_of_forall h fun n hn => ⟨fun z hz => ?_, fun hmax => ?_⟩
+  · split_ifs with h1 h2
+    · exact (sub_eq_etaPos_of_add_lt hr h1 hz).symm
+    · exact (sub_eq_etaNeg_of_le hs h2 hn hz).symm
+    · -- The two return indices are the only indices below `N` of their points.
+      refine (sub_eq_etaPos_add_etaNeg (fun j hj => ?_) (fun j hj => ?_) hz).symm
+      · by_contra hlt
+        have : j = returnPos α N :=
+          hinj (Set.mem_Iio.2 (by omega)) (Set.mem_Iio.2 hrN) (hj.trans hr.symm)
+        omega
+      · by_contra hle
+        have : j = returnNeg α N :=
+          hinj (Set.mem_Iio.2 (by omega)) (Set.mem_Iio.2 hsN) (hj.trans hs.symm)
+        omega
+  · -- The largest point has the index `returnNeg α N` only.
+    have hmax' := hmax.unique (isGreatest_one_sub_etaNeg α (N := N) (by omega))
+    have hns : n = returnNeg α N :=
+      hinj (Set.mem_Iio.2 hn) (Set.mem_Iio.2 hsN) (hmax'.trans hs.symm)
+    rw [ite_eq_right (by omega), ite_eq_left hns.ge, hmax', sub_sub_cancel]
+
+/-- **The multiplicities of the three gap lengths.** When the first `N` points are distinct and
+`2 ≤ N`, the multiset of gaps consists of `N - returnPos α N` copies of `etaPos α N`,
+`N - returnNeg α N` copies of `etaNeg α N` and `returnPos α N + returnNeg α N - N` copies of
+`etaPos α N + etaNeg α N`. -/
+theorem gaps_eq_replicate_add (hN : 2 ≤ N) (h : #(orbitFract α N) = N) :
+    gaps α N = Multiset.replicate (N - returnPos α N) (etaPos α N) +
+      Multiset.replicate (N - returnNeg α N) (etaNeg α N) +
+        Multiset.replicate (returnPos α N + returnNeg α N - N) (etaPos α N + etaNeg α N) := by
+  have hrN := returnPos_lt α (N := N) (by omega)
+  have hsN := returnNeg_lt α (N := N) (by omega)
+  have hrs := le_returnPos_add_returnNeg hN h
+  -- The indices below `N - returnPos α N`, then those below `returnNeg α N`, then the others.
+  have hsplit : Multiset.range N = Multiset.range (N - returnPos α N) +
+      ((Multiset.range (returnPos α N + returnNeg α N - N)).map (N - returnPos α N + ·) +
+        (Multiset.range (N - returnNeg α N)).map (returnNeg α N + ·)) := by
+    have e : N = N - returnPos α N +
+        (returnPos α N + returnNeg α N - N + (N - returnNeg α N)) := by omega
+    conv_lhs => rw [e]
+    rw [Multiset.range_add, Multiset.range_add, Multiset.map_add, Multiset.map_map]
+    refine congrArg _ (congrArg _ (Multiset.map_congr rfl fun n _ => ?_))
+    simp only [Function.comp_apply]
+    omega
+  rw [gaps_eq_map_range hN h, hsplit, Multiset.map_add, Multiset.map_add, Multiset.map_map,
+    Multiset.map_map, add_assoc,
+    add_comm (Multiset.replicate (N - returnNeg α N) (etaNeg α N))]
+  refine congrArg₂ _ ?_ (congrArg₂ _ ?_ ?_) <;>
+    refine Multiset.eq_replicate.2 ⟨by simp, fun b hb => ?_⟩ <;>
+    obtain ⟨n, hn, rfl⟩ := Multiset.mem_map.1 hb <;>
+    rw [Multiset.mem_range] at hn
+  · exact ite_eq_left (by omega)
+  · simp only [Function.comp_apply]
+    rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+  · simp only [Function.comp_apply]
+    rw [ite_eq_right (by omega), ite_eq_left (by omega)]
+
+/-- For irrational `α`, the two return lengths are different. -/
+theorem etaPos_ne_etaNeg (hα : Irrational α) (N : ℕ) : etaPos α N ≠ etaNeg α N := by
+  have h := card_orbitFract_of_irrational hα N
+  rcases lt_or_ge N 2 with hN | hN
+  · rw [etaPos_of_card_lt_two (h.trans_lt hN)]
+    exact (etaNeg_pos α N).ne
+  intro heq
+  have hr := fract_returnPos_mul α N
+  have hs := fract_returnNeg_mul α N
+  have h2 := Int.fract_natCast_add_mul_of_le (a := α) (i := returnPos α N)
+    (j := returnNeg α N) (by rw [hr, hs, heq, add_sub_cancel])
+  rw [hr, hs, heq, add_sub_cancel, sub_self] at h2
+  have h3 : returnPos α N + returnNeg α N = 0 :=
+    hα.injective_fract_natCast_mul (by simpa using h2)
+  have := le_returnPos_add_returnNeg hN h
+  omega
+
+/-- **Multiplicity of the gap `etaPos α N`**: for irrational `α` and `2 ≤ N`, it occurs
+`N - returnPos α N` times. -/
+theorem count_etaPos_gaps (hα : Irrational α) (hN : 2 ≤ N) :
+    (gaps α N).count (etaPos α N) = N - returnPos α N := by
+  have h := card_orbitFract_of_irrational hα N
+  simp [gaps_eq_replicate_add hN h, Multiset.count_replicate, (etaPos_ne_etaNeg hα N).symm,
+    (etaNeg_pos α N).ne']
+
+/-- **Multiplicity of the gap `etaNeg α N`**: for irrational `α`, it occurs
+`N - returnNeg α N` times. -/
+theorem count_etaNeg_gaps (hα : Irrational α) (N : ℕ) :
+    (gaps α N).count (etaNeg α N) = N - returnNeg α N := by
+  have h := card_orbitFract_of_irrational hα N
+  rcases lt_or_ge N 2 with hN | hN
+  · have hs := returnNeg_le (α := α) (N := N) (n := 0)
+    interval_cases N
+    · simp
+    · simp [etaNeg] at hs ⊢
+      omega
+  · simp [gaps_eq_replicate_add hN h, Multiset.count_replicate, etaPos_ne_etaNeg hα N,
+      (etaPos_pos (h.symm ▸ hN)).ne']
+
+/-- **Multiplicity of the gap `etaPos α N + etaNeg α N`**: for irrational `α` and `2 ≤ N`, it
+occurs `returnPos α N + returnNeg α N - N` times. -/
+theorem count_etaPos_add_etaNeg_gaps (hα : Irrational α) (hN : 2 ≤ N) :
+    (gaps α N).count (etaPos α N + etaNeg α N) = returnPos α N + returnNeg α N - N := by
+  have h := card_orbitFract_of_irrational hα N
+  simp [gaps_eq_replicate_add hN h, Multiset.count_replicate, (etaPos_pos (h.symm ▸ hN)).ne',
+    (etaNeg_pos α N).ne']
 
 end Rotation
 
