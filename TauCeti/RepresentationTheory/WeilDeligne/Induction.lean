@@ -29,7 +29,14 @@ Induction is right adjoint to restriction: morphisms from the restriction of a p
 (`TauCeti.WeilDeligneParameter.restrictIndHomEquiv`, Frobenius reciprocity), by
 `φ ↦ (v ↦ (w ↦ φ (r(w) v)))` with inverse evaluation at `1`. These maps adapt Mathlib's
 `Rep.resCoindToHom` and `Rep.resCoindHomEquiv` (the hom-equivalence of `Rep.resCoindAdjunction`)
-to parameters with monodromy.
+to parameters with monodromy. Induction is functorial (`TauCeti.WeilDeligneParameter.Hom.ind`,
+`F ↦ φ ∘ F`, built on Mathlib's `Representation.coindMap`, the action of `Rep.coindFunctor` on
+morphisms; and `TauCeti.WeilDeligneParameter.Iso.ind`), and Frobenius reciprocity is natural in
+both parameters
+(`TauCeti.WeilDeligneParameter.Hom.toInd_comp`,
+`TauCeti.WeilDeligneParameter.Hom.toInd_comp_restrict`, and for the inverse direction
+`TauCeti.WeilDeligneParameter.Hom.ofInd_comp`,
+`TauCeti.WeilDeligneParameter.Hom.ofInd_comp_restrict`).
 
 ## Main definitions
 
@@ -38,6 +45,8 @@ to parameters with monodromy.
 * `TauCeti.WeilDeligneParameter.ind`: the induced parameter along an open map `ι` with image of
   finite index.
 * `TauCeti.WeilDeligneParameter.restrictIndHomEquiv`: Frobenius reciprocity.
+* `TauCeti.WeilDeligneParameter.Hom.ind`, `TauCeti.WeilDeligneParameter.Iso.ind`: the induction
+  of morphisms and isomorphisms of parameters.
 
 ## Main results
 
@@ -242,6 +251,135 @@ theorem restrictIndHomEquiv_symm_apply (D : WeilDeligneParameter E W V deg q)
     (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (Ψ : Hom D (ind ι f hf hq hι D')) :
     (restrictIndHomEquiv hι hιc D D').symm Ψ = Ψ.ofInd hι hιc :=
   (rfl)
+
+section Functoriality
+
+variable {V'' : Type*} [AddCommGroup V''] [Module E V'']
+
+/-- **Functoriality of induction**: a morphism `φ : D₁' → D₂'` of parameters for `W'` induces the
+morphism `F ↦ φ ∘ F` between the induced parameters. Its underlying intertwining map is
+Mathlib's `Representation.coindMap`; only compatibility with the monodromy is new. -/
+def Hom.ind {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (φ : Hom D₁' D₂') :
+    Hom (D₁'.ind ι f hf hq hι) (D₂'.ind ι f hf hq hι) where
+  toIntertwiningMap := coindMap ι φ.toIntertwiningMap
+  comp_N := by
+    refine LinearMap.ext fun F ↦ Subtype.ext (funext fun w ↦ ?_)
+    simp [φ.map_N_apply]
+
+@[simp]
+theorem Hom.ind_apply_val {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (φ : Hom D₁' D₂')
+    (F : coindV ι D₁'.r) (w : W) :
+    ((φ.ind hι : Hom (D₁'.ind ι f hf hq hι) (D₂'.ind ι f hf hq hι)) F).val w =
+      φ (F.val w) :=
+  coindMap_coe_apply_apply ι D₁'.r D₂'.r φ.toIntertwiningMap F w
+
+/-- Induction preserves identities. -/
+@[simp]
+theorem Hom.ind_id (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) :
+    (Hom.id D').ind hι = Hom.id (D'.ind ι f hf hq hι) := by
+  ext F w
+  simp
+
+/-- Induction preserves composition. -/
+@[simp]
+theorem Hom.ind_comp {V''' : Type*} [AddCommGroup V'''] [Module E V''']
+    {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)}
+    {D₃' : WeilDeligneParameter E W' V''' deg' (q ^ f)} (ψ : Hom D₂' D₃') (φ : Hom D₁' D₂') :
+    ((ψ.comp φ).ind hι : Hom (D₁'.ind ι f hf hq hι) _) = (ψ.ind hι).comp (φ.ind hι) := by
+  ext F w
+  simp
+
+/-- An isomorphism `D₁' ≅ D₂'` of parameters for `W'` induces an isomorphism between the induced
+parameters. -/
+def Iso.ind {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (φ : Iso D₁' D₂') :
+    Iso (D₁'.ind ι f hf hq hι) (D₂'.ind ι f hf hq hι) :=
+  Iso.ofBijective (φ.toHom.ind hι) (Function.bijective_iff_has_inverse.2
+    ⟨(φ.symm.toHom.ind hι : Hom (D₂'.ind ι f hf hq hι) (D₁'.ind ι f hf hq hι)),
+      fun F ↦ by ext w; simp, fun F ↦ by ext w; simp⟩)
+
+@[simp]
+theorem Iso.ind_apply_val {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (φ : Iso D₁' D₂')
+    (F : coindV ι D₁'.r) (w : W) :
+    ((φ.ind hι : Iso (D₁'.ind ι f hf hq hι) (D₂'.ind ι f hf hq hι)) F).val w =
+      φ (F.val w) := by
+  simp [Iso.ind]
+
+@[simp]
+theorem Iso.toHom_ind {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (φ : Iso D₁' D₂') :
+    ((φ.ind hι).toHom : Hom (D₁'.ind ι f hf hq hι) (D₂'.ind ι f hf hq hι)) = φ.toHom.ind hι := by
+  ext F w
+  simp
+
+@[simp]
+theorem Iso.ind_refl (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) :
+    (Iso.refl D').ind hι = Iso.refl (D'.ind ι f hf hq hι) :=
+  Iso.ext (LinearEquiv.ext fun F ↦ Subtype.ext (funext fun w ↦ by simp))
+
+@[simp]
+theorem Iso.ind_trans {V''' : Type*} [AddCommGroup V'''] [Module E V''']
+    {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)}
+    {D₃' : WeilDeligneParameter E W' V''' deg' (q ^ f)} (φ : Iso D₁' D₂') (ψ : Iso D₂' D₃') :
+    ((φ.trans ψ).ind hι : Iso (D₁'.ind ι f hf hq hι) _) = (φ.ind hι).trans (ψ.ind hι) :=
+  Iso.ext (LinearEquiv.ext fun F ↦ Subtype.ext (funext fun w ↦ by simp))
+
+@[simp]
+theorem Iso.ind_symm {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (φ : Iso D₁' D₂') :
+    ((φ.ind hι).symm : Iso (D₂'.ind ι f hf hq hι) (D₁'.ind ι f hf hq hι)) = φ.symm.ind hι :=
+  Iso.ext (LinearEquiv.ext fun F ↦
+    (φ.ind hι).injective (((φ.ind hι).apply_symm_apply F).trans (by ext w; simp)))
+
+/-- Frobenius reciprocity is natural in the parameter for `W'`: composing with `ψ : D₁' → D₂'`
+corresponds to composing with its induction. -/
+theorem Hom.toInd_comp {D : WeilDeligneParameter E W V deg q}
+    {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (ψ : Hom D₁' D₂')
+    (φ : Hom (D.restrict ι hιc f hf) D₁') :
+    ((ψ.comp φ).toInd hι hιc : Hom D (D₂'.ind ι f hf hq hι)) =
+      (ψ.ind hι).comp (φ.toInd hι hιc) := by
+  ext v w
+  simp
+
+/-- Frobenius reciprocity is natural in the parameter for `W`: precomposing with the restriction
+of `g : D₀ → D` corresponds to precomposing with `g`. -/
+theorem Hom.toInd_comp_restrict {V₀ : Type*} [AddCommGroup V₀] [Module E V₀]
+    {D₀ : WeilDeligneParameter E W V₀ deg q} {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W' V' deg' (q ^ f)} (φ : Hom (D.restrict ι hιc f hf) D')
+    (g : Hom D₀ D) :
+    ((φ.comp g.restrict).toInd hι hιc : Hom D₀ (D'.ind ι f hf hq hι)) =
+      (φ.toInd hι hιc).comp g := by
+  ext v w
+  simp [g.map_r_apply]
+
+/-- Naturality of the inverse of Frobenius reciprocity in the parameter for `W'`: composing with
+the induction of `ψ : D₁' → D₂'` corresponds to composing with `ψ`. -/
+theorem Hom.ofInd_comp {D : WeilDeligneParameter E W V deg q}
+    {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (ψ : Hom D₁' D₂')
+    (Ψ : Hom D (D₁'.ind ι f hf hq hι)) :
+    ((ψ.ind hι).comp Ψ).ofInd hι hιc = ψ.comp (Ψ.ofInd hι hιc) := by
+  ext v
+  simp
+
+/-- Naturality of the inverse of Frobenius reciprocity in the parameter for `W`: precomposing
+with `g : D₀ → D` corresponds to precomposing with the restriction of `g`. -/
+theorem Hom.ofInd_comp_restrict {V₀ : Type*} [AddCommGroup V₀] [Module E V₀]
+    {D₀ : WeilDeligneParameter E W V₀ deg q} {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W' V' deg' (q ^ f)} (Ψ : Hom D (D'.ind ι f hf hq hι))
+    (g : Hom D₀ D) :
+    (Ψ.comp g).ofInd hι hιc =
+      (Ψ.ofInd hι hιc).comp (g.restrict : Hom (D₀.restrict ι hιc f hf) _) := by
+  ext v
+  simp
+
+end Functoriality
 
 end Topology
 
