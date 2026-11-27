@@ -25,6 +25,7 @@ polynomials, and every nonzero word of the code has weight at least `n - k + 1`.
 ## Main results
 
 * `TauCeti.grsCode a v k`: the generalized Reed–Solomon code.
+* `TauCeti.grsCode_zero`: with parameter `0` the code is zero.
 * `TauCeti.finrank_grsCode`: for `k ≤ n` the code has dimension `k`.
 * `TauCeti.le_hammingMinDist_grsCode`: for `1 ≤ k ≤ n` the minimum distance is at least
   `n - k + 1`.
@@ -69,6 +70,15 @@ theorem mem_grsCode_iff {k : ℕ} {x : ι → F} :
 theorem grsEval_mem_grsCode {k : ℕ} {p : F[X]} (hp : p ∈ degreeLT F k) :
     grsEval a v p ∈ grsCode a v k :=
   mem_grsCode_iff.2 ⟨p, hp, rfl⟩
+
+/-- With parameter `0` the code is zero: the only polynomial of degree less than `0` is `0`. -/
+@[simp]
+theorem grsCode_zero (a v : ι → F) : grsCode a v 0 = ⊥ := by
+  refine eq_bot_iff.2 fun x hx ↦ ?_
+  obtain ⟨p, hp, rfl⟩ := mem_grsCode_iff.1 hx
+  rw [mem_degreeLT, Nat.cast_zero, Nat.WithBot.lt_zero_iff, degree_eq_bot] at hp
+  rw [hp, map_zero]
+  exact zero_mem _
 
 /-- A polynomial of degree less than `k` is zero if its word vanishes on a set `s` of at least `k`
 coordinates with distinct points and nonzero multipliers. -/
