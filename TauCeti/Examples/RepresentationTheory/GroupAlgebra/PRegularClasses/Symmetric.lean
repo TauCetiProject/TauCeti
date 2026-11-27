@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block.Basic
 public import TauCeti.RepresentationTheory.GroupAlgebra.PRegularClasses
+import TauCeti.Algebra.Group.Conj
 import TauCeti.Algebra.MonoidAlgebra.NotReduced
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 
@@ -64,10 +65,6 @@ theorem mk_mem_pRegularConjClasses_three_iff (g : S₃) :
     exact iff_of_false (by decide) h2
   · exact iff_of_true (by decide) (mul_self_eq_one_of_ne g h3)
 
-/-- The class of `1` differs from the class of every `x ≠ 1`. -/
-private theorem mk_one_ne_mk {x : S₃} (hx : x ≠ 1) : ConjClasses.mk 1 ≠ ConjClasses.mk x := by
-  rwa [Ne, ConjClasses.mk_eq_mk_iff_isConj, isConj_one_right]
-
 /-- If the classes in a set `C` are those of the `g` with `P g`, and the elements conjugate to
 `x` are those `g ≠ 1` with `P g`, where `P 1` holds, then `C` consists of the classes of `1` and
 `x`. -/
@@ -99,11 +96,13 @@ theorem pRegularConjClasses_three :
 
 /-- `S₃` has two `2`-regular classes. -/
 theorem card_pRegularConjClasses_two : Nat.card (pRegularConjClasses 2 S₃) = 2 := by
-  rw [pRegularConjClasses_two, Nat.card_coe_set_eq, Set.ncard_pair (mk_one_ne_mk (by decide))]
+  rw [pRegularConjClasses_two, Nat.card_coe_set_eq, Set.ncard_pair
+    (ConjClasses.mk_one_eq_mk_iff.not.2 (by decide))]
 
 /-- `S₃` has two `3`-regular classes. -/
 theorem card_pRegularConjClasses_three : Nat.card (pRegularConjClasses 3 S₃) = 2 := by
-  rw [pRegularConjClasses_three, Nat.card_coe_set_eq, Set.ncard_pair (mk_one_ne_mk (by decide))]
+  rw [pRegularConjClasses_three, Nat.card_coe_set_eq, Set.ncard_pair
+    (ConjClasses.mk_one_eq_mk_iff.not.2 (by decide))]
 
 section CommRing
 
@@ -116,7 +115,7 @@ theorem single_s_sub_one_notMem_commutatorSubmodule [Nontrivial k] :
   intro h
   have h0 := commutatorSubmodule_le_ker_classCoeff k (ConjClasses.mk s) h
   rw [LinearMap.mem_ker, map_sub, one_def, classCoeff_single, classCoeff_single] at h0
-  simp [mk_one_ne_mk (show s ≠ 1 by decide)] at h0
+  simp at h0
 
 /-- In characteristic `2`, an involution `t` of `S₃` satisfies `(t - 1)² = 0`, so `t ≡ 1` modulo
 `T(k[S₃])`. -/
