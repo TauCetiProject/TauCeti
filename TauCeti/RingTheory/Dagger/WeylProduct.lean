@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Algebra.Ring.Commutator
 import TauCeti.NumberTheory.Padics.Factorial
 
@@ -46,12 +47,18 @@ every complete normed commutative ring with an ultrametric norm and `‖1‖ = 1
 
 ## Main results
 
+* `TauCeti.Dagger.coeff_weylMul_eq_sum_range`: on polynomial arrays, the series defining the
+  coefficients of `weylMul` are finite sums.
 * `TauCeti.Dagger.sum_mul_sum_eq_sum_coeff_weylMul`: on polynomial arrays, `weylMul` computes the
   product in any algebra with `∂ x = x ∂ + c`.
+* `TauCeti.Dagger.norm_weylMulTerm_le`, `TauCeti.Dagger.norm_coeff_weylMul_le`: if both arrays
+  are bounded by `C η^{|ν|}`, then `‖weylMulTerm c f g m n s‖ ≤ C² ‖s! c^s‖ η^{2s} η^{m+n}`, and
+  the coefficients of `weylMul c f g` are bounded by `C² M η^{|ν|}` for every bound `M` of
+  `‖s! c^s‖ η^{2s}`.
 * `TauCeti.Dagger.summable_weylMulTerm`: for overconvergent arrays the series over `s` converges.
-* `TauCeti.Dagger.weylMul_mem_washnitzerAlgebra`: the product of two overconvergent arrays is
-  overconvergent; `TauCeti.Dagger.weylMul_inv_mem_washnitzerAlgebra` is the case `c = π⁻¹` with
-  `π ^ (p - 1) = -p`.
+* `TauCeti.Dagger.weylMul_mem_washnitzerAlgebra`: the product array `weylMul c f g` of two
+  overconvergent arrays is overconvergent; `TauCeti.Dagger.weylMul_inv_mem_washnitzerAlgebra` is
+  the case `c = π⁻¹` with `π ^ (p - 1) = -p`.
 
 ## References
 
@@ -84,32 +91,6 @@ noncomputable def weylMulTerm (c : K) (f g : MvPowerSeries (Fin 2) K) (m n s : �
     coeff (single 0 i + single 1 (j + s)) f * coeff (single 0 (m - i + s) + single 1 (n - j)) g *
       ((((j + s).choose s * (m - i + s).choose s * s ! : ℕ) : K) * c ^ s)
 
-/-- Shifting the summation index by `s` does not change a sum over `range N` whose terms vanish
-below `s` and from `N` on. -/
-private theorem sum_range_eq_sum_range_add {M : Type*} [AddCommMonoid M] {N : ℕ} (s : ℕ)
-    {G : ℕ → M} (hG : ∀ v, v < s ∨ N ≤ v → G v = 0) :
-    ∑ v ∈ range N, G v = ∑ v ∈ range N, G (v + s) := by
-  rw [sum_subset (range_subset_range.2 (Nat.le_add_left N s))
-      fun v _ hv ↦ hG v (.inr (by simpa using hv)), sum_range_add,
-    sum_eq_zero fun v hv ↦ hG v (.inl (mem_range.1 hv)), zero_add]
-  simp only [add_comm s]
-
-/-- Grouping a double sum over `range N × range N` by the sum `m` of the two indices, when the
-terms vanish as soon as one index reaches `N`. -/
-private theorem sum_range_sum_range_eq_sum_range_sum_range {M : Type*} [AddCommMonoid M] {N : ℕ}
-    {H : ℕ → ℕ → M} (hH : ∀ u v, N ≤ u ∨ N ≤ v → H u v = 0) :
-    ∑ u ∈ range N, ∑ v ∈ range N, H u v =
-      ∑ m ∈ range (2 * N), ∑ u ∈ range (m + 1), H u (m - u) := by
-  rw [← sum_product' (f := H),
-    ← sum_fiberwise_of_maps_to (g := fun q : ℕ × ℕ ↦ q.1 + q.2) (t := range (2 * N))
-      fun q hq ↦ by simp only [mem_product, mem_range] at hq ⊢; omega]
-  refine sum_congr rfl fun m _ ↦ ?_
-  rw [← Nat.sum_antidiagonal_eq_sum_range_succ H]
-  refine sum_subset_zero_on_sdiff (fun q hq ↦ mem_antidiagonal.2 (mem_filter.1 hq).2)
-    (fun q hq ↦ ?_) fun _ _ ↦ rfl
-  rw [Finset.mem_sdiff, mem_antidiagonal, mem_filter, mem_product, mem_range, mem_range] at hq
-  exact hH _ _ (by omega)
-
 /-- **Reindexing the contractions of a product.** Fix the number `s` of contractions. The products
 `(x^i ∂^J) (x^k ∂^l)` with `J, k ≥ s` and all indices below `N` are in bijection with the data
 `m < 2N`, `n < 2N`, `i ≤ m`, `j ≤ n`, via `J = j + s`, `k = m - i + s` and `l = n - j`, so that
@@ -122,20 +103,25 @@ private theorem sum_range_four_eq_sum_range_four {M : Type*} [AddCommMonoid M] {
         F i (j + s) (m - i + s) (n - j) := by
   calc ∑ i ∈ range N, ∑ J ∈ range N, ∑ k ∈ range N, ∑ l ∈ range N, F i J k l
       = ∑ i ∈ range N, ∑ j ∈ range N, ∑ k ∈ range N, ∑ l ∈ range N, F i (j + s) (k + s) l :=
-        sum_congr rfl fun i _ ↦ (sum_range_eq_sum_range_add s fun J hJ ↦
+        sum_congr rfl fun i _ ↦ (sum_range_eq_sum_range_add_of_eq_zero s fun J hJ ↦
           sum_eq_zero fun k _ ↦ sum_eq_zero fun l _ ↦ hF _ _ _ _ (by omega)).trans <|
-            sum_congr rfl fun j _ ↦ sum_range_eq_sum_range_add s fun k hk ↦
+            sum_congr rfl fun j _ ↦ sum_range_eq_sum_range_add_of_eq_zero s fun k hk ↦
               sum_eq_zero fun l _ ↦ hF _ _ _ _ (by omega)
     _ = ∑ i ∈ range N, ∑ k ∈ range N, ∑ j ∈ range N, ∑ l ∈ range N, F i (j + s) (k + s) l :=
         sum_congr rfl fun _ _ ↦ sum_comm
     _ = ∑ m ∈ range (2 * N), ∑ i ∈ range (m + 1), ∑ j ∈ range N, ∑ l ∈ range N,
           F i (j + s) (m - i + s) l :=
-        sum_range_sum_range_eq_sum_range_sum_range fun i k hik ↦
-          sum_eq_zero fun j _ ↦ sum_eq_zero fun l _ ↦ hF _ _ _ _ (by omega)
+        (sum_range_add_antidiagonal_of_support N N
+          (fun q ↦ ∑ j ∈ range N, ∑ l ∈ range N, F q.1 (j + s) (q.2 + s) l)
+          fun i k hik ↦ sum_eq_zero fun j _ ↦ sum_eq_zero fun l _ ↦
+            hF _ _ _ _ (by omega)).symm.trans
+          (by rw [two_mul]; simp_rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk])
     _ = ∑ m ∈ range (2 * N), ∑ i ∈ range (m + 1), ∑ n ∈ range (2 * N), ∑ j ∈ range (n + 1),
           F i (j + s) (m - i + s) (n - j) :=
         sum_congr rfl fun m _ ↦ sum_congr rfl fun i _ ↦
-          sum_range_sum_range_eq_sum_range_sum_range fun j l hjl ↦ hF _ _ _ _ (by omega)
+          (sum_range_add_antidiagonal_of_support N N (fun q ↦ F i (q.1 + s) (m - i + s) q.2)
+            fun j l hjl ↦ hF _ _ _ _ (by omega)).symm.trans
+            (by rw [two_mul]; simp_rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk])
     _ = _ := sum_congr rfl fun _ _ ↦ sum_comm
 
 /-- A coefficient array supported in `[0, N) × [0, N)` vanishes at `(i, j)` once `i` or `j`
@@ -183,18 +169,17 @@ theorem coeff_weylMul (c : K) (f g : MvPowerSeries (Fin 2) K) (ν : Fin 2 →₀
     coeff ν (weylMul c f g) = ∑' s, weylMulTerm c f g (ν 0) (ν 1) s :=
   coeff_apply _ _
 
-/-- If `f` is supported in `[0, N) × [0, N)`, only the terms `s < N` contribute to the
-coefficients of `weylMul c f g`, since `f_{i,j+s} = 0` once `j + s ≥ N`. -/
-private theorem coeff_single_add_single_weylMul {c : K} {f g : MvPowerSeries (Fin 2) K} {N : ℕ}
-    (hf : ∀ ν, coeff ν f ≠ 0 → ν 0 < N ∧ ν 1 < N) (m n : ℕ) :
-    coeff (single 0 m + single 1 n) (weylMul c f g) = ∑ s ∈ range N, weylMulTerm c f g m n s := by
-  have hvan : ∀ s ∉ range N, weylMulTerm c f g m n s = 0 := fun s hs ↦
+/-- **`weylMul` on polynomial arrays is a finite sum.** If `f` is supported in `[0, N) × [0, N)`,
+only the terms `s < N` contribute to the coefficients of `weylMul c f g`, since `f_{i,j+s} = 0`
+once `j + s ≥ N`. -/
+theorem coeff_weylMul_eq_sum_range {c : K} {f g : MvPowerSeries (Fin 2) K} {N : ℕ}
+    (hf : ∀ ν, coeff ν f ≠ 0 → ν 0 < N ∧ ν 1 < N) (ν : Fin 2 →₀ ℕ) :
+    coeff ν (weylMul c f g) = ∑ s ∈ range N, weylMulTerm c f g (ν 0) (ν 1) s := by
+  have hvan : ∀ s ∉ range N, weylMulTerm c f g (ν 0) (ν 1) s = 0 := fun s hs ↦
     sum_eq_zero fun i _ ↦ sum_eq_zero fun j _ ↦ by
       rw [coeff_single_add_single_eq_zero hf (.inr (by simp only [mem_range, not_lt] at hs; omega))]
       simp
-  have h0 : (single 0 m + single 1 n : Fin 2 →₀ ℕ) 0 = m := by simp
-  have h1 : (single 0 m + single 1 n : Fin 2 →₀ ℕ) 1 = n := by simp
-  rw [coeff_weylMul, h0, h1, tsum_eq_sum hvan]
+  rw [coeff_weylMul, tsum_eq_sum hvan]
 
 /-- **`weylMul` computes products of polynomial operators.** Let `x` and `d` be elements of a
 `K`-algebra with `d * x = x * d + c`, and let `f`, `g` be coefficient arrays supported in
@@ -246,7 +231,9 @@ theorem sum_mul_sum_eq_sum_coeff_weylMul {c : K} {x d : A}
         sum_comm.trans (sum_congr rfl fun _ _ ↦ sum_comm)
     _ = _ := by
         refine sum_congr rfl fun m _ ↦ sum_congr rfl fun n _ ↦ ?_
-        rw [coeff_single_add_single_weylMul hf, sum_smul]
+        have h0 : (single 0 m + single 1 n : Fin 2 →₀ ℕ) 0 = m := by simp
+        have h1 : (single 0 m + single 1 n : Fin 2 →₀ ℕ) 1 = n := by simp
+        rw [coeff_weylMul_eq_sum_range hf, h0, h1, sum_smul]
         refine sum_congr rfl fun s _ ↦ ?_
         simp only [weylMulTerm, sum_smul]
         refine sum_congr rfl fun i hi ↦ sum_congr rfl fun j hj ↦ ?_
@@ -268,7 +255,7 @@ private theorem degree_single_add_single (i j : ℕ) :
 `0 < η < 1`. -/
 private theorem exists_norm_coeff_le_of_mem (hf : f ∈ washnitzerAlgebra (Fin 2) K)
     (hg : g ∈ washnitzerAlgebra (Fin 2) K) :
-    ∃ η : ℝ, 0 < η ∧ η < 1 ∧ ∃ C : ℝ, 0 ≤ C ∧ ∀ ν : Fin 2 →₀ ℕ,
+    ∃ η : ℝ, 0 < η ∧ η < 1 ∧ ∃ C : ℝ, ∀ ν : Fin 2 →₀ ℕ,
       ‖coeff ν f‖ ≤ C * η ^ ν.degree ∧ ‖coeff ν g‖ ≤ C * η ^ ν.degree := by
   obtain ⟨ρ, hρ, C, hC⟩ := mem_washnitzerAlgebra_iff_norm_coeff_le.1 hf
   obtain ⟨ρ', hρ', C', hC'⟩ := mem_washnitzerAlgebra_iff_norm_coeff_le.1 hg
@@ -280,10 +267,20 @@ private theorem exists_norm_coeff_le_of_mem (hf : f ∈ washnitzerAlgebra (Fin 2
     exact mul_le_mul hD (pow_le_pow_left₀ (inv_nonneg.2 (hρ0.trans_le hr).le) (inv_anti₀ hρ0 hr) _)
       (pow_nonneg (inv_nonneg.2 (hρ0.trans_le hr).le) _) (le_max_right _ _)
   refine ⟨(min ρ ρ')⁻¹, inv_pos.2 hρ0, inv_lt_one_of_one_lt₀ (lt_min hρ hρ'), max (max C C') 0,
-    le_max_right _ _, fun ν ↦ ⟨(hC ν).trans (hle (min_le_left _ _) ?_ ν),
+    fun ν ↦ ⟨(hC ν).trans (hle (min_le_left _ _) ?_ ν),
       (hC' ν).trans (hle (min_le_right _ _) ?_ ν)⟩⟩
   · exact (le_max_left _ _).trans (le_max_left _ _)
   · exact (le_max_right _ _).trans (le_max_left _ _)
+
+omit [IsUltrametricDist K] in
+/-- A coefficient bound `‖a_ν‖ ≤ C η^{|ν|}` forces `0 ≤ C`, and `0 ≤ η` unless `C = 0`. -/
+private theorem nonneg_and_nonneg_or_eq_zero_of_norm_coeff_le {η C : ℝ}
+    (h : ∀ ν : Fin 2 →₀ ℕ, ‖coeff ν f‖ ≤ C * η ^ ν.degree) : 0 ≤ C ∧ (0 ≤ η ∨ C = 0) := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (h 0)
+  refine ⟨hC, or_iff_not_imp_left.2 fun hη ↦ ?_⟩
+  have h1 := (norm_nonneg _).trans (h (single 0 1))
+  rw [Finsupp.degree_single, pow_one] at h1
+  nlinarith
 
 variable [NormOneClass K] (p : ℕ) [Fact p.Prime] {c : K}
 
@@ -291,10 +288,15 @@ variable [NormOneClass K] (p : ℕ) [Fact p.Prime] {c : K}
 `s`-th term of the coefficient of `x^m ∂^n` is bounded by `C² ‖s! c^s‖ η^{2s} η^{m+n}`: each of
 its summands is a product of two coefficients of total degree `m + n + 2s` with an integer
 multiple of `s! c^s`. -/
-private theorem norm_weylMulTerm_le {η C : ℝ} (hη : 0 ≤ η) (hC : 0 ≤ C)
+theorem norm_weylMulTerm_le {η C : ℝ}
     (hfg : ∀ ν : Fin 2 →₀ ℕ, ‖coeff ν f‖ ≤ C * η ^ ν.degree ∧ ‖coeff ν g‖ ≤ C * η ^ ν.degree)
     (m n s : ℕ) :
     ‖weylMulTerm c f g m n s‖ ≤ C ^ 2 * (‖(s ! : K) * c ^ s‖ * (η ^ 2) ^ s) * η ^ (m + n) := by
+  obtain ⟨hC, hη | rfl⟩ := nonneg_and_nonneg_or_eq_zero_of_norm_coeff_le fun ν ↦ (hfg ν).1
+  swap
+  · -- If `C = 0`, both arrays vanish.
+    have h0 (ν : Fin 2 →₀ ℕ) : coeff ν f = 0 ∧ coeff ν g = 0 := by simpa using hfg ν
+    simp [weylMulTerm, h0]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun i hi ↦
     IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun j hj ↦ ?_
   rw [mem_range, Nat.lt_succ_iff] at hi hj
@@ -317,27 +319,46 @@ private theorem norm_weylMulTerm_le {η C : ℝ} (hη : 0 ≤ η) (hC : 0 ≤ C)
     _ = C ^ 2 * ‖(s ! : K) * c ^ s‖ * η ^ (i + (j + s) + (m - i + s + (n - j))) := by ring
     _ = C ^ 2 * (‖(s ! : K) * c ^ s‖ * (η ^ 2) ^ s) * η ^ (m + n) := by rw [hdeg]; ring
 
+/-- **The coefficient bound of a product** (Kedlaya, Proposition 4.1.3). If both coefficient
+arrays are bounded by `C η^{|ν|}` and `‖s! c^s‖ η^{2s} ≤ M` for every `s`, then the coefficients
+of `weylMul c f g` are bounded by `C² M η^{|ν|}`: the product keeps the decay rate `η`. When
+`‖c‖ ^ (p - 1) ≤ ‖p‖⁻¹` and `0 ≤ η < 1`, such an `M` exists, because `‖s! c^s‖ η^{2s} → 0`
+(`TauCeti.tendsto_norm_factorial_mul_pow_mul_pow`). -/
+theorem norm_coeff_weylMul_le {η C M : ℝ}
+    (hfg : ∀ ν : Fin 2 →₀ ℕ, ‖coeff ν f‖ ≤ C * η ^ ν.degree ∧ ‖coeff ν g‖ ≤ C * η ^ ν.degree)
+    (hM : ∀ s : ℕ, ‖(s ! : K) * c ^ s‖ * (η ^ 2) ^ s ≤ M) (ν : Fin 2 →₀ ℕ) :
+    ‖coeff ν (weylMul c f g)‖ ≤ C ^ 2 * M * η ^ ν.degree := by
+  obtain ⟨hC, hη | rfl⟩ := nonneg_and_nonneg_or_eq_zero_of_norm_coeff_le fun ν ↦ (hfg ν).1
+  swap
+  · -- If `C = 0`, both arrays vanish.
+    have h0 (ν : Fin 2 →₀ ℕ) : coeff ν f = 0 ∧ coeff ν g = 0 := by simpa using hfg ν
+    simp [weylMulTerm, h0]
+  have hM0 : 0 ≤ M :=
+    (by positivity : (0 : ℝ) ≤ ‖((0 ! : ℕ) : K) * c ^ 0‖ * (η ^ 2) ^ 0).trans (hM 0)
+  rw [coeff_weylMul, Finsupp.degree_eq_sum, Fin.sum_univ_two]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun s ↦ ?_
+  refine (norm_weylMulTerm_le hfg _ _ s).trans ?_
+  gcongr
+  exact hM s
+
 /-- **The product of two overconvergent operators is overconvergent** (Kedlaya,
 Proposition 4.1.3). If `‖c‖ ^ (p - 1) ≤ ‖p‖⁻¹` and `f`, `g` are overconvergent coefficient
-arrays, then so is their product `weylMul c f g`. -/
+arrays, then so is the coefficient array `weylMul c f g`. Its coefficients are the sums
+`∑' s, weylMulTerm c f g m n s`, so it is the coefficient array of the product when these series
+converge, for instance when `K` is complete (`TauCeti.Dagger.summable_weylMulTerm`). -/
 theorem weylMul_mem_washnitzerAlgebra (hc : ‖c‖ ^ (p - 1) ≤ ‖(p : K)‖⁻¹)
     (hf : f ∈ washnitzerAlgebra (Fin 2) K) (hg : g ∈ washnitzerAlgebra (Fin 2) K) :
     weylMul c f g ∈ washnitzerAlgebra (Fin 2) K := by
-  obtain ⟨η, hη0, hη1, C, hC, hfg⟩ := exists_norm_coeff_le_of_mem hf hg
+  obtain ⟨η, hη0, hη1, C, hfg⟩ := exists_norm_coeff_le_of_mem hf hg
   have hη2 : |η ^ 2| < 1 := by
     rw [abs_of_nonneg (by positivity)]
     exact pow_lt_one₀ hη0.le hη1 two_ne_zero
   -- `‖s! c^s‖ η^{2s}` tends to zero, so it is bounded by some `M`.
   obtain ⟨M, hM⟩ := (tendsto_norm_factorial_mul_pow_mul_pow p hc hη2).bddAbove_range
-  have hM0 : 0 ≤ M := (by positivity : (0 : ℝ) ≤ ‖((0 ! : ℕ) : K) * c ^ 0‖ * (η ^ 2) ^ 0).trans
-    (hM ⟨0, rfl⟩)
   refine mem_washnitzerAlgebra_iff_norm_coeff_le.2 ⟨η⁻¹, one_lt_inv₀ hη0 |>.2 hη1, C ^ 2 * M,
     fun ν ↦ ?_⟩
-  rw [coeff_weylMul, inv_pow, inv_inv, Finsupp.degree_eq_sum, Fin.sum_univ_two]
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun s ↦ ?_
-  refine (norm_weylMulTerm_le hη0.le hC hfg _ _ s).trans ?_
-  gcongr
-  exact hM ⟨s, rfl⟩
+  rw [inv_pow, inv_inv]
+  exact norm_coeff_weylMul_le hfg (fun s ↦ hM ⟨s, rfl⟩) ν
 
 variable [CompleteSpace K]
 
@@ -348,21 +369,23 @@ and `f`, `g` are overconvergent coefficient arrays, then for every `m` and `n` t
 theorem summable_weylMulTerm (hc : ‖c‖ ^ (p - 1) ≤ ‖(p : K)‖⁻¹)
     (hf : f ∈ washnitzerAlgebra (Fin 2) K) (hg : g ∈ washnitzerAlgebra (Fin 2) K) (m n : ℕ) :
     Summable (weylMulTerm c f g m n) := by
-  obtain ⟨η, hη0, hη1, C, hC, hfg⟩ := exists_norm_coeff_le_of_mem hf hg
+  obtain ⟨η, hη0, hη1, C, hfg⟩ := exists_norm_coeff_le_of_mem hf hg
   have hη2 : |η ^ 2| < 1 := by
     rw [abs_of_nonneg (by positivity)]
     exact pow_lt_one₀ hη0.le hη1 two_ne_zero
   refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
   rw [Nat.cofinite_eq_atTop]
-  refine squeeze_zero_norm (norm_weylMulTerm_le hη0.le hC hfg m n) ?_
+  refine squeeze_zero_norm (norm_weylMulTerm_le hfg m n) ?_
   simpa using ((tendsto_norm_factorial_mul_pow_mul_pow p hc hη2).const_mul (C ^ 2)).mul_const
     (η ^ (m + n))
 
 end Analytic
 
 /-- **Kedlaya's overconvergent product.** Let `π ∈ K` satisfy `π ^ (p - 1) = -p`, the
-normalisation of Dwork's `π`. In the Weyl algebra with `∂ x - x ∂ = π⁻¹`, the product of two
-overconvergent coefficient arrays is overconvergent. -/
+normalisation of Dwork's `π`. In the Weyl algebra with `∂ x - x ∂ = π⁻¹`, the coefficient array
+`weylMul π⁻¹ f g` of two overconvergent coefficient arrays is overconvergent. It is the
+coefficient array of their product when the series defining it converge, for instance when `K` is
+complete (`TauCeti.Dagger.summable_weylMulTerm`). -/
 theorem weylMul_inv_mem_washnitzerAlgebra {K : Type*} [NormedField K] [IsUltrametricDist K]
     (p : ℕ) [Fact p.Prime] {f g : MvPowerSeries (Fin 2) K} {π : K} (hπ : π ^ (p - 1) = -p)
     (hf : f ∈ washnitzerAlgebra (Fin 2) K) (hg : g ∈ washnitzerAlgebra (Fin 2) K) :

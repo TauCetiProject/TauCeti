@@ -43,9 +43,9 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
   `TauCeti.div_sub_logb_le_multiplicity_prod_factorial`: its form for a multi-index `κ`,
   `v_p(∏ᵢ κᵢ!) ≥ |κ| / (p - 1) - #supp(κ) (⌊log_p |κ|⌋ + 1)`, and the weaker form with
   `log_p max(|κ|, 1) + 1`.
-* `TauCeti.norm_factorial_mul_pow_le`: in an ultrametric normed field, if `‖c‖ ^ (p - 1) ≤ ‖p‖⁻¹`
-  (for instance `c = π⁻¹` with `π ^ (p - 1) = -p`), then `‖s! c ^ s‖ ≤ ‖p‖⁻¹ ^ (⌊log_p s⌋ + 1)`;
-  consequently `‖s! c ^ s‖ η ^ s → 0` for `|η| < 1`
+* `TauCeti.norm_factorial_mul_pow_le`: in an ultrametric normed ring with `‖1‖ = 1` and
+  `(p : K) ≠ 0`, if `‖c‖ ^ (p - 1) ≤ ‖p‖⁻¹` (for instance `c = π⁻¹` with `π ^ (p - 1) = -p`),
+  then `‖s! c ^ s‖ ≤ ‖p‖⁻¹ ^ (⌊log_p s⌋ + 1)`; consequently `‖s! c ^ s‖ η ^ s → 0` for `|η| < 1`
   (`TauCeti.tendsto_norm_factorial_mul_pow_mul_pow`).
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
@@ -196,9 +196,9 @@ theorem norm_factorial_mul_pow_le {K : Type*} [NormedRing K] [NormOneClass K]
       gcongr
       exact le_sub_one_mul_multiplicity_factorial_add_log p s
     _ = (q⁻¹ ^ (Nat.log p s + 1)) ^ (p - 1) := by
-      rw [mul_add, pow_add, ← mul_assoc, ← pow_mul, ← pow_mul,
-        mul_comm (multiplicity p s !) (p - 1), ← mul_pow, mul_inv_cancel₀ hq0.ne', one_pow,
-        one_mul, mul_comm (p - 1)]
+      simp only [inv_pow]
+      field_simp [hq0.ne']
+      ring
 
 open Nat in
 /-- **`s! c ^ s` grows more slowly than any exponential.** Under the hypotheses of
