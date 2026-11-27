@@ -5,9 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Realization
 public import TauCeti.Analysis.PDE.Strichartz.HomogeneousBesov
 public import TauCeti.Analysis.PDE.Wave.Propagator
 import TauCeti.Analysis.Fourier.Bernstein
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Schwartz
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.MeasureTheory.Function.Holder
+import Mathlib.Analysis.Calculus.SmoothSeries
+import Mathlib.Order.Filter.AtTopBot.Interval
+import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Analysis.PDE.Wave.TimeExponentTwo
 import TauCeti.Analysis.PDE.Wave.WeakSolution
@@ -33,8 +42,9 @@ functions, so `cos(tD)` and `D⁻¹ sin(tD)` have no a priori meaning on them. F
 
 whose pieces are the evolutions of the `L²` blocks of the data, and shows that these series
 converge to some limit `U`, determined for almost every `t`, which serves as the evolution, with
-the Strichartz bound. It builds no evolution operator on these Besov spaces, and it shows that the
-limits attain the data only for the position datum at the pairs `(∞, r)` (see below). For each
+the Strichartz bound. It builds no evolution operator on these Besov spaces; the attainment of the
+position datum is shown at the pairs `(∞, r)`, and that of the velocity datum in the sense of
+distributions (see below). For each
 series there is `U : ℝ → L^r` such that the partial sums converge to `U(t)` in `L^r` for almost
 every time `t` and to `U` in `L^q_t L^r_x`, with
 
@@ -72,13 +82,25 @@ of the blocks of `f` in `L^r`, so that `U(t) → ∑ⱼ Pⱼ f` in `L^r` as `t �
 (`ContDiffBump.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveCosPropagator_block`). For
 `g ∈ \dot B^{γ - 1}_{2,1}` the series `∑ⱼ D⁻¹ sin(tD) Pⱼ g` converges in the same way, to a
 continuous `U` with `U(0) = 0`
-(`ContDiffBump.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveSinPropagator_block`). The
-attainment of the velocity datum `∂ₜU(0) = g` is not proved here. These follow from the
+(`ContDiffBump.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveSinPropagator_block`). These
+follow from the
 frequency-localized estimates at every time
 (`ContDiffBump.exists_eLpNorm_waveCosPropagator_littlewoodPaley_le`) and the continuity of each
 block in `L^r`, which is Bernstein's inequality
 (`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le`) applied to the
 continuous `L²` evolution.
+
+The `D⁻¹ sin(tD)` evolution attains the velocity datum `g ∈ \dot B^σ_{2,1}`, `σ ≤ n / 2`, in the
+sense of distributions. If the series `∑ⱼ D⁻¹ sin(tD) Pⱼ g` converges to `U(t)` in `L^r` at every
+time, then for every Schwartz function `ψ` the pairing `t ↦ ∫ conj (ψ(x)) U(t)(x) dx` is
+differentiable, with derivative `∑ⱼ ⟪ψ, cos(tD) Pⱼ g⟫`
+(`ContDiffBump.hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block`). At `t = 0`
+this is `∂ₜU(0) = g`: the derivative of `∫ ψ(x) U(t)(x) dx` at `t = 0` is the value at `ψ` of the
+realisation `∑ⱼ Pⱼ g` of `g` as a tempered distribution
+(`ContDiffBump.hasDerivAt_integral_mul_of_tendsto_sum_waveSinPropagator_block`). The series of
+derivatives converges absolutely and uniformly in `t` because the blocks of a Schwartz function
+satisfy `‖Pₖ ψ‖₂ ≤ C 2^{kσ}` for `σ ≤ n / 2`
+(`SchwartzMap.exists_two_rpow_mul_norm_fourierMultiplierCLM_littlewoodPaley_le`).
 
 Each piece obeys the frequency-localized Strichartz estimate
 `‖cos(tD) Pⱼ x‖_{L^q_t L^r_x} ≤ C 2^{jγ} ‖x‖₂`, and its `D⁻¹ sin(tD)` counterpart with
@@ -372,5 +394,168 @@ theorem exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveSinPropagator_block (
   rw [Pi.sub_apply, hx, Pi.zero_apply, sub_zero]
 
 end Continuous
+
+/-! ### The initial velocity
+
+The `D⁻¹ sin(tD)` evolution of `g ∈ \dot B^σ_{2,1}` has the initial velocity `g` in the sense of
+distributions. Tested against a Schwartz function `ψ`, the pieces `⟪ψ, D⁻¹ sin(tD) Pⱼ g⟫` are
+differentiable in `t` with derivatives `⟪ψ, cos(tD) Pⱼ g⟫`, and these are bounded uniformly in `t`
+by a summable sequence: the block `Pⱼ g` is reproduced by the blocks `P_{j + d}`, `|d| ≤ L`, which
+are self-adjoint and commute with `cos(tD)`, so
+
+`|⟪ψ, cos(tD) Pⱼ g⟫| ≤ ∑_{|d| ≤ L} ‖P_{j + d} ψ‖₂ ‖Pⱼ g‖₂ ≤ C 2^{jσ} ‖Pⱼ g‖₂`
+
+by the bounds `‖Pₖ ψ‖₂ ≤ C 2^{kσ}` of Schwartz functions for `σ ≤ n / 2`
+(`SchwartzMap.exists_two_rpow_mul_norm_fourierMultiplierCLM_littlewoodPaley_le`). So the series of
+pairings may be differentiated term by term (`hasDerivAt_tsum`). -/
+
+section Velocity
+
+variable {σ : ℝ}
+
+/-- The pairings `⟪ψ, cos(tD) Pⱼ g⟫` are bounded by `K 2^{jσ} ‖Pⱼ g‖₂`, uniformly in `t` and in
+`g ∈ \dot B^σ_{2,1}`, for `σ ≤ n / 2`. -/
+private theorem exists_norm_inner_waveCosPropagator_block_le
+    (hσ : σ ≤ (Module.finrank ℝ E : ℝ) / 2) (ψ : 𝓢(E, ℂ)) :
+    ∃ K : ℝ, ∀ (g : HomogeneousBesovSpace ℂ φ σ 2 1) (j : ℤ) (t : ℝ),
+      ‖⟪ψ.toLp 2, waveCosPropagator ℂ t (g.block j)⟫_ℂ‖ ≤ K * ‖g.weightedBlocks j‖ := by
+  obtain ⟨C, hC⟩ := ψ.exists_two_rpow_mul_norm_fourierMultiplierCLM_littlewoodPaley_le φ
+    (s := -σ) (by linarith)
+  set m : ℤ → Lp ℂ ∞ (volume : Measure E) := fun j ↦ (φ.memLp_ofReal_littlewoodPaley j ∞).toLp _
+  have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
+    (φ.memLp_ofReal_littlewoodPaley j ∞).coeFn_toLp
+  obtain ⟨L, hL⟩ := HomogeneousBesovSpace.exists_sum_fourierMultiplierCLM_block_eq
+    (G := ℂ) (s := σ) (q := 1) φ
+  -- `‖Pₖ ψ‖₂ ≤ C 2^{kσ}`.
+  have hψ (k : ℤ) : ‖Lp.fourierMultiplierCLM ℂ (m k) (ψ.toLp 2)‖ ≤ C * (2 : ℝ) ^ (σ * k) := by
+    have h := hC k (m k) (hm k)
+    rw [neg_mul, Real.rpow_neg zero_le_two, inv_mul_le_iff₀ (by positivity)] at h
+    linarith
+  refine ⟨C * ∑ d ∈ Finset.Ico (-(L : ℤ)) L, (2 : ℝ) ^ (σ * d), fun g j t ↦ ?_⟩
+  rw [← hL hm g j, map_sum, inner_sum, HomogeneousBesovSpace.norm_weightedBlocks_apply,
+    Finset.mul_sum, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun d _ ↦ ?_)
+  -- Move `P_{d + j}` onto `ψ`, then use `‖cos(tD)‖ ≤ 1`.
+  have hsym (x y : Lp ℂ 2 (volume : Measure E)) :
+      ⟪x, Lp.fourierMultiplierCLM ℂ (m (d + j)) y⟫_ℂ =
+        ⟪Lp.fourierMultiplierCLM ℂ (m (d + j)) x, y⟫_ℂ :=
+    ((Lp.isSelfAdjoint_fourierMultiplierCLM
+      (Lp.star_eq_self_of_ae_eq_ofReal (hm (d + j)))).isSymmetric x y).symm
+  rw [← fourierMultiplierCLM_waveCosPropagator_apply, hsym]
+  refine (norm_inner_le_norm _ _).trans ?_
+  have hcos : ‖waveCosPropagator ℂ t (g.block j)‖ ≤ ‖g.block j‖ :=
+    ((waveCosPropagator ℂ t).le_opNorm _).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosPropagator_le t))
+  have h2 : C * (2 : ℝ) ^ (σ * ((d + j : ℤ) : ℝ)) = C * 2 ^ (σ * d) * 2 ^ (σ * j) := by
+    rw [Int.cast_add, mul_add, Real.rpow_add two_pos, mul_assoc]
+  rw [← mul_assoc, ← h2]
+  exact mul_le_mul (hψ (d + j)) hcos (norm_nonneg _) ((norm_nonneg _).trans (hψ (d + j)))
+
+/-- **The velocity of the `D⁻¹ sin(tD)` evolution of Besov data.** Let `σ ≤ n / 2`, let
+`g ∈ \dot B^σ_{2,1}`, and let `U : ℝ → L^r` be such that for every `t` the dyadic series
+`∑ⱼ D⁻¹ sin(tD) Pⱼ g` converges to `U(t)` in `L^r`, as for the limits of
+`ContDiffBump.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveSinPropagator_block`. Then for
+every Schwartz function `ψ` the pairing `t ↦ ∫ conj (ψ(x)) U(t)(x) dx` is differentiable, with
+derivative the absolutely convergent series `∑ⱼ ⟪ψ, cos(tD) Pⱼ g⟫`: weakly,
+`∂ₜU(t) = ∑ⱼ cos(tD) Pⱼ g`. -/
+theorem hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block
+    (hσ : σ ≤ (Module.finrank ℝ E : ℝ) / 2) {g : HomogeneousBesovSpace ℂ φ σ 2 1}
+    {U : ℝ → Lp ℂ r (volume : Measure E)}
+    (hU : ∀ t, Tendsto (fun s : Finset ℤ ↦
+      eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveSinPropagator ℂ t (g.block j))) r volume) atTop (𝓝 0))
+    (ψ : 𝓢(E, ℂ)) (t : ℝ) :
+    HasDerivAt (fun t ↦ ∫ x, ⟪ψ x, U t x⟫_ℂ)
+      (∑' j, ∫ x, ⟪ψ x, waveCosPropagator ℂ t (g.block j) x⟫_ℂ) t := by
+  have := (ENNReal.HolderConjugate.conjExponent (Fact.out : (1 : ℝ≥0∞) ≤ r)).symm
+  have hpair (h : Lp ℂ 2 (volume : Measure E)) : ∫ x, ⟪ψ x, h x⟫_ℂ = ⟪ψ.toLp 2, h⟫_ℂ := by
+    rw [L2.inner_def]
+    exact integral_congr_ae (by filter_upwards [ψ.coeFn_toLp 2] with x hx; rw [hx])
+  -- At every time the pairing of `U(τ)` is the sum of the pairings of the pieces.
+  have hsum (τ : ℝ) : HasSum (fun j ↦ ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ)
+      (∫ x, ⟪ψ x, U τ x⟫_ℂ) := by
+    have hlim := ENNReal.Tendsto.const_mul (hU τ)
+      (Or.inr (ψ.memLp (ENNReal.conjExponent r) volume).eLpNorm_ne_top)
+    rw [mul_zero] at hlim
+    rw [HasSum, tendsto_iff_edist_tendsto_0]
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
+      fun s ↦ ?_
+    rw [← inner_sum, ← hpair, edist_comm, eDist_eq_eNorm_sub, ← integral_sub
+      ((ψ.memLp (ENNReal.conjExponent r) volume).integrable_inner_of_holderConjugate
+        (Lp.memLp (U τ)))
+      ((ψ.memLp 2 volume).integrable_inner_of_holderConjugate (Lp.memLp _))]
+    simp_rw [← inner_sub_right]
+    exact enorm_integral_inner_le (u := ψ)
+  obtain ⟨K, hK⟩ := φ.exists_norm_inner_waveCosPropagator_block_le hσ ψ
+  have hsummable : Summable fun j ↦ K * ‖g.weightedBlocks j‖ := by
+    have h := (memℓp_gen_iff (p := 1) (by simp)).1 (lp.memℓp g.weightedBlocks)
+    simpa using h.mul_left K
+  have hder (j : ℤ) (τ : ℝ) : HasDerivAt
+      (fun τ ↦ ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ)
+      ⟪ψ.toLp 2, waveCosPropagator ℂ τ (g.block j)⟫_ℂ τ := by
+    have h := (hasDerivAt_const τ (ψ.toLp 2)).inner ℂ (hasDerivAt_waveSinPropagator_apply
+      (g.block j) τ)
+    rwa [inner_zero_left, add_zero] at h
+  have heq : (fun τ ↦ ∫ x, ⟪ψ x, U τ x⟫_ℂ) =
+      fun τ ↦ ∑' j, ⟪ψ.toLp 2, waveSinPropagator ℂ τ (g.block j)⟫_ℂ :=
+    funext fun τ ↦ (hsum τ).tsum_eq.symm
+  rw [heq, tsum_congr fun j ↦ hpair (waveCosPropagator ℂ t (g.block j))]
+  exact hasDerivAt_tsum hsummable hder (fun j τ ↦ hK g j τ) (hsum 0).summable t
+
+/-- **The `D⁻¹ sin(tD)` evolution of Besov data attains its initial velocity.** Let `σ ≤ n / 2`, let
+`g ∈ \dot B^σ_{2,1}`, and let `U : ℝ → L^r` be such that for every `t` the dyadic series
+`∑ⱼ D⁻¹ sin(tD) Pⱼ g` converges to `U(t)` in `L^r`, as for the limits of
+`ContDiffBump.exists_continuous_tendsto_iSup_eLpNorm_sub_sum_waveSinPropagator_block`. Then
+`∂ₜU(0) = g` in the sense of distributions: for every Schwartz function `ψ`,
+
+`d/dt|_{t = 0} ∫ ψ(x) U(t)(x) dx = ⟨g, ψ⟩`,
+
+where `g` is realised as the tempered distribution `∑ⱼ Pⱼ g`
+(`TauCeti.HomogeneousBesovSpace.realization`). -/
+theorem hasDerivAt_integral_mul_of_tendsto_sum_waveSinPropagator_block
+    (hσ : σ ≤ (Module.finrank ℝ E : ℝ) / 2) {g : HomogeneousBesovSpace ℂ φ σ 2 1}
+    {U : ℝ → Lp ℂ r (volume : Measure E)}
+    (hU : ∀ t, Tendsto (fun s : Finset ℤ ↦
+      eLpNorm (⇑(U t) - ⇑(∑ j ∈ s, waveSinPropagator ℂ t (g.block j))) r volume) atTop (𝓝 0))
+    (ψ : 𝓢(E, ℂ)) :
+    HasDerivAt (fun t ↦ ∫ x, ψ x * U t x)
+      (HomogeneousBesovSpace.realization (hσ.lt_or_eq.imp
+        (fun h ↦ by simpa [div_eq_mul_inv] using h) fun h ↦ ⟨by simp [h, div_eq_mul_inv], le_rfl⟩)
+        g ψ) 0 := by
+  set χ := SchwartzMap.conjCLM ψ
+  -- `ψ x * v = ⟪conj (ψ x), v⟫`.
+  have hconj (v : E → ℂ) : (fun x ↦ ψ x * v x) = fun x ↦ ⟪χ x, v x⟫_ℂ := by
+    ext x
+    rw [SchwartzMap.conjCLM_apply, RCLike.inner_apply, RCLike.conj_conj, mul_comm]
+  have h := φ.hasDerivAt_integral_inner_of_tendsto_sum_waveSinPropagator_block hσ hU χ 0
+  simp only [waveCosPropagator_zero, ContinuousLinearMap.id_apply] at h
+  convert h using 1
+  · ext t
+    rw [hconj]
+  -- The realisation of `g` is the sum of its blocks, which converges absolutely against `ψ`.
+  obtain ⟨K, hK⟩ := φ.exists_norm_inner_waveCosPropagator_block_le hσ χ
+  have hsummable : Summable fun j ↦ ∫ x, ⟪χ x, g.block j x⟫_ℂ := by
+    refine Summable.of_norm_bounded (g := fun j ↦ K * ‖g.weightedBlocks j‖) ?_ fun j ↦ ?_
+    · have h := (memℓp_gen_iff (p := 1) (by simp)).1 (lp.memℓp g.weightedBlocks)
+      simpa using h.mul_left K
+    · have := hK g j 0
+      rw [waveCosPropagator_zero, ContinuousLinearMap.id_apply, L2.inner_def] at this
+      refine (le_of_eq ?_).trans this
+      congr 1
+      exact integral_congr_ae (by filter_upwards [χ.coeFn_toLp 2] with x hx; rw [hx])
+  have htsum : Tendsto (fun s : Finset ℤ ↦ ∑ j ∈ s, ∫ x, ⟪χ x, g.block j x⟫_ℂ) atTop
+      (𝓝 (∑' j, ∫ x, ⟪χ x, g.block j x⟫_ℂ)) :=
+    hsummable.hasSum
+  refine tendsto_nhds_unique (((continuous_eval_const ψ).tendsto _).comp
+    (HomogeneousBesovSpace.tendsto_sum_realization _ g))
+    ((htsum.comp Finset.tendsto_Ioc_atBot_prod_atTop).congr fun ab ↦ ?_)
+  have heval (u : ℤ → 𝓢'(E, ℂ)) (s : Finset ℤ) : (∑ j ∈ s, u j) ψ = ∑ j ∈ s, u j ψ :=
+    map_sum (PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) ℂ ψ) u s
+  simp only [Function.comp_apply, heval]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [← HomogeneousBesovSpace.coe_block, Lp.toTemperedDistribution_apply]
+  simp_rw [smul_eq_mul]
+  rw [hconj]
+
+end Velocity
 
 end ContDiffBump
