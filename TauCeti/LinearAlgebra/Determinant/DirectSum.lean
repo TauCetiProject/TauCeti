@@ -99,6 +99,10 @@ given by bijectivity multiply
   `TauCeti.detLineDualProdEquiv_tmul_comp_detLineCongr_prodCongr`.
 * `TauCeti.detLineTensorDualProdEquiv`: the isomorphism
   `(det U₁ ⊗ (det V₁)^*) ⊗ (det U₂ ⊗ (det V₂)^*) ≃ det (U₁ × U₂) ⊗ (det (V₁ × V₂))^*`.
+* `TauCeti.detLineDualProdEquiv_assoc`,
+  `TauCeti.congr_detLineCongr_prodAssoc_detLineTensorDualProdEquiv`: like
+  `TauCeti.detLineProdEquiv`, the dual product and the gathering isomorphism are associative,
+  without a sign.
 * `TauCeti.detLineFourTermEquiv_prodMap`: the four-term isomorphism of a product of exact
   sequences is the product of the four-term isomorphisms, up to a Koszul sign.
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodCongr`: naturality under products of commuting
@@ -400,6 +404,75 @@ theorem detLineDualProdEquiv_tmul_comp_detLineCongr_prodCongr {V₁' V₂' : Typ
   induction t using TensorProduct.inductionOn with
   | add s t hs ht => simp only [map_add, hs, ht]
   | tmul c₁ c₂ => simp [detLineCongr_prodCongr_detLineProdEquiv]
+
+variable {U₃ V₃ : Type*} [AddCommGroup U₃] [Module K U₃] [AddCommGroup V₃] [Module K V₃]
+  [FiniteDimensional K U₃] [FiniteDimensional K V₃]
+
+/-- **Associativity of `TauCeti.detLineDualProdEquiv`.** The product of three functionals on
+`det V₁`, `det V₂` and `det V₃`, formed as `(φ₁ φ₂) φ₃` on `det ((V₁ × V₂) × V₃)`, is the
+product `φ₁ (φ₂ φ₃)` on `det (V₁ × (V₂ × V₃))` pulled back along the associator. Like the
+associativity of `TauCeti.detLineProdEquiv`, this involves no sign. -/
+theorem detLineDualProdEquiv_assoc (φ₁ : Dual K (detLine K V₁)) (φ₂ : Dual K (detLine K V₂))
+    (φ₃ : Dual K (detLine K V₃)) :
+    detLineDualProdEquiv K (V₁ × V₂) V₃ (detLineDualProdEquiv K V₁ V₂ (φ₁ ⊗ₜ φ₂) ⊗ₜ φ₃) =
+      detLineDualProdEquiv K V₁ (V₂ × V₃) (φ₁ ⊗ₜ detLineDualProdEquiv K V₂ V₃ (φ₂ ⊗ₜ φ₃)) ∘ₗ
+        (LinearEquiv.prodAssoc K V₁ V₂ V₃).detLineCongr.toLinearMap := by
+  refine LinearMap.ext fun w ↦ ?_
+  obtain ⟨t, rfl⟩ := (detLineProdEquiv K (V₁ × V₂) V₃).surjective w
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simp only [map_add, hs, ht]
+  | tmul y c₃ =>
+    obtain ⟨s, rfl⟩ := (detLineProdEquiv K V₁ V₂).surjective y
+    induction s using TensorProduct.inductionOn with
+    | add s t hs ht => simp only [map_add, add_tmul, hs, ht]
+    | tmul c₁ c₂ =>
+      have h := detLineCongr_prodAssoc_detLineProdEquiv ((c₁ ⊗ₜ c₂) ⊗ₜ c₃)
+      simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, assoc_tmul,
+        LinearEquiv.coe_coe] at h
+      simp [h, mul_assoc]
+
+/-- **Associativity of `TauCeti.detLineTensorDualProdEquiv`.** The two ways of gathering
+`(det U₁ ⊗ (det V₁)^*) ⊗ (det U₂ ⊗ (det V₂)^*) ⊗ (det U₃ ⊗ (det V₃)^*)` into the determinant
+line and the dual determinant line of a product of three spaces agree under the associators
+`(U₁ × U₂) × U₃ ≃ U₁ × (U₂ × U₃)` and `(V₁ × V₂) × V₃ ≃ V₁ × (V₂ × V₃)`, with no sign. -/
+theorem congr_detLineCongr_prodAssoc_detLineTensorDualProdEquiv
+    (t : ((detLine K U₁ ⊗[K] Dual K (detLine K V₁)) ⊗[K]
+      (detLine K U₂ ⊗[K] Dual K (detLine K V₂))) ⊗[K] (detLine K U₃ ⊗[K] Dual K (detLine K V₃))) :
+    TensorProduct.congr (LinearEquiv.prodAssoc K U₁ U₂ U₃).detLineCongr
+        (LinearEquiv.prodAssoc K V₁ V₂ V₃).detLineCongr.symm.dualMap
+        (detLineTensorDualProdEquiv K (U₁ × U₂) (V₁ × V₂) U₃ V₃
+          ((detLineTensorDualProdEquiv K U₁ V₁ U₂ V₂).toLinearMap.rTensor _ t)) =
+      detLineTensorDualProdEquiv K U₁ V₁ (U₂ × U₃) (V₂ × V₃)
+        ((detLineTensorDualProdEquiv K U₂ V₂ U₃ V₃).toLinearMap.lTensor _
+          (TensorProduct.assoc K _ _ _ t)) := by
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simp only [map_add, hs, ht]
+  | tmul x x₃ =>
+    induction x using TensorProduct.inductionOn with
+    | add s t hs ht => simp only [add_tmul, map_add, hs, ht]
+    | tmul x₁ x₂ =>
+      induction x₁ using TensorProduct.inductionOn with
+      | add s t hs ht => simp only [add_tmul, map_add, hs, ht]
+      | tmul a₁ φ₁ =>
+        induction x₂ using TensorProduct.inductionOn with
+        | add s t hs ht => simp only [add_tmul, tmul_add, map_add, hs, ht]
+        | tmul a₂ φ₂ =>
+          induction x₃ using TensorProduct.inductionOn with
+          | add s t hs ht => simp only [tmul_add, map_add, hs, ht]
+          | tmul a₃ φ₃ =>
+            have h := detLineCongr_prodAssoc_detLineProdEquiv ((a₁ ⊗ₜ a₂) ⊗ₜ a₃)
+            simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, assoc_tmul,
+              LinearEquiv.coe_coe] at h
+            have hφ : (LinearEquiv.prodAssoc K V₁ V₂ V₃).detLineCongr.symm.dualMap
+                (detLineDualProdEquiv K (V₁ × V₂) V₃
+                  (detLineDualProdEquiv K V₁ V₂ (φ₁ ⊗ₜ φ₂) ⊗ₜ φ₃)) =
+                detLineDualProdEquiv K V₁ (V₂ × V₃)
+                  (φ₁ ⊗ₜ detLineDualProdEquiv K V₂ V₃ (φ₂ ⊗ₜ φ₃)) := by
+              refine LinearMap.ext fun w ↦ ?_
+              rw [LinearEquiv.dualMap_apply, detLineDualProdEquiv_assoc, LinearMap.comp_apply,
+                LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+            simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, assoc_tmul,
+              LinearEquiv.coe_coe, detLineTensorDualProdEquiv_tmul, congr_tmul, h, hφ]
 
 end TensorDual
 
