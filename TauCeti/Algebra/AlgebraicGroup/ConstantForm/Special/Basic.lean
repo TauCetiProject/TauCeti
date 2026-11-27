@@ -118,6 +118,13 @@ theorem finiteTypeCoordinateHopfAlgebra_obj :
 noncomputable abbrev groupScheme :=
   CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n C)
 
+/-- The determinant-one subgroup scheme is the quotient spectrum of its defining Hopf ideal. -/
+theorem groupScheme_def :
+    groupScheme R n C =
+      CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n C) :=
+  (rfl)
+
 /-- The inclusion of the determinant-one subgroup scheme into the constant-form group scheme. -/
 noncomputable def inclusion :
     groupScheme R n C ⟶ ConstantForm.groupScheme R n C :=
