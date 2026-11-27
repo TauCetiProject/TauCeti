@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.BaseChange
 -- Non-public: the semisimplicity of base change for modules over an algebra, and the action of

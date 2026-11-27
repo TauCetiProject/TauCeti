@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Semisimple
-public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Instances.Matrix
 -- Non-public: used only inside proofs.
@@ -84,11 +82,13 @@ pairing.** Suppose that the only element `f` of the span of the operators `ρ g`
 `g ↦ φ (ρ g)` is continuous for every linear functional `φ` on `End_k(V)`. No assumption on the
 characteristic of `k` is made. -/
 theorem continuous_linearMap_apply_of_continuous_character_of_nondegenerate
-    [IsTopologicalAddGroup k] [ContinuousConstSMul k k] [ContinuousConstSMul Gᵐᵒᵖ G]
+    [ContinuousAdd k] [ContinuousConstSMul k k] [ContinuousConstSMul Gᵐᵒᵖ G]
     (ρ : Representation k G V)
     (hρ : ∀ f ∈ Submodule.span k (Set.range ρ), (∀ g, LinearMap.trace k V (f * ρ g) = 0) → f = 0)
     (hχ : Continuous ρ.character) (φ : Module.End k V →ₗ[k] k) :
     Continuous fun g ↦ φ (ρ g) := by
+  have : ContinuousNeg k := ContinuousNeg.of_continuousConstSMul k k
+  have : IsTopologicalAddGroup k := {}
   have := finiteDimensional_of_nondegenerate ρ hρ
   let S := Submodule.span k (Set.range ρ)
   -- The functionals `x ↦ tr(x ρ(h))` on `S` span its dual, by nondegeneracy.
@@ -121,7 +121,7 @@ Over a topological field of characteristic zero, if `ρ` is a finite-dimensional
 representation whose character is continuous, then `g ↦ φ (ρ g)` is continuous for every linear
 functional `φ` on `End_k(V)`; for instance every matrix coefficient of `ρ` is continuous. -/
 theorem continuous_linearMap_apply_of_continuous_character [CharZero k] [FiniteDimensional k V]
-    [IsTopologicalAddGroup k] [ContinuousConstSMul k k] [ContinuousConstSMul Gᵐᵒᵖ G]
+    [ContinuousAdd k] [ContinuousConstSMul k k] [ContinuousConstSMul Gᵐᵒᵖ G]
     (ρ : Representation k G V)
     [ρ.IsSemisimpleRepresentation] (hχ : Continuous ρ.character) (φ : Module.End k V →ₗ[k] k) :
     Continuous fun g ↦ φ (ρ g) :=
@@ -131,7 +131,7 @@ theorem continuous_linearMap_apply_of_continuous_character [CharZero k] [FiniteD
 /-- A representation with nondegenerate trace pairing and continuous character acts jointly
 continuously on its vector space with the module topology, in any characteristic. -/
 theorem continuous_action_of_continuous_character_of_nondegenerate
-    [IsTopologicalRing k] [ContinuousConstSMul Gᵐᵒᵖ G] [TopologicalSpace V]
+    [IsTopologicalSemiring k] [ContinuousConstSMul Gᵐᵒᵖ G] [TopologicalSpace V]
     [IsModuleTopology k V] (ρ : Representation k G V)
     (hρ : ∀ f ∈ Submodule.span k (Set.range ρ), (∀ g, LinearMap.trace k V (f * ρ g) = 0) → f = 0)
     (hχ : Continuous ρ.character) : Continuous fun p : G × V ↦ ρ p.1 p.2 := by
@@ -146,7 +146,7 @@ theorem continuous_action_of_continuous_character_of_nondegenerate
 field of characteristic zero, a finite-dimensional semisimple representation whose character is
 continuous acts jointly continuously on `V` with its module topology. -/
 theorem continuous_action_of_continuous_character [CharZero k] [FiniteDimensional k V]
-    [IsTopologicalRing k] [ContinuousConstSMul Gᵐᵒᵖ G] [TopologicalSpace V]
+    [IsTopologicalSemiring k] [ContinuousConstSMul Gᵐᵒᵖ G] [TopologicalSpace V]
     [IsModuleTopology k V] (ρ : Representation k G V)
     [ρ.IsSemisimpleRepresentation] (hχ : Continuous ρ.character) :
     Continuous fun p : G × V ↦ ρ p.1 p.2 :=
@@ -162,7 +162,7 @@ variable {G k n : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G�
 
 /-- A matrix representation with nondegenerate trace pairing on the span of its operators is
 continuous whenever its trace is continuous, in any characteristic. -/
-theorem continuous_of_continuous_trace_of_nondegenerate [IsTopologicalAddGroup k]
+theorem continuous_of_continuous_trace_of_nondegenerate [ContinuousAdd k]
     [ContinuousConstSMul k k] (r : G →* GL n k)
     (hρ : ∀ f ∈ Submodule.span k (Set.range
       ((Units.coeHom _).comp (Matrix.GeneralLinearGroup.toLin.toMonoidHom.comp r) :
@@ -188,7 +188,7 @@ topological field of characteristic zero and `r : G →* GL_n(k)` a homomorphism
 continuous right translations and continuous inversion whose representation on `k ^ n` is
 semisimple. If `g ↦ tr(r g)` is continuous, then `r` is continuous for the topology of `GL_n(k)`
 as the units of the matrix ring. -/
-theorem continuous_of_continuous_trace [CharZero k] [IsTopologicalAddGroup k]
+theorem continuous_of_continuous_trace [CharZero k] [ContinuousAdd k]
     [ContinuousConstSMul k k] (r : G →* GL n k)
     [Representation.IsSemisimpleRepresentation
       ((Units.coeHom _).comp (Matrix.GeneralLinearGroup.toLin.toMonoidHom.comp r) :

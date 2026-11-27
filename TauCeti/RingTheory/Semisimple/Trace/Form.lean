@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
-public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.RingTheory.Trace.Regular
 import Mathlib.RingTheory.Artinian.Ring
 import TauCeti.LinearAlgebra.Trace.Nilpotent

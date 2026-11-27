@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Trace
 
 import Mathlib.LinearAlgebra.Charpoly.Basic
 import Mathlib.LinearAlgebra.PID
-import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.Algebra.Ring.Commutator
 import TauCeti.LinearAlgebra.Trace.Idempotent
 
@@ -222,7 +221,7 @@ namespace AlgHom
 /-- An element of an algebra faithfully acting on a finite-dimensional vector space is nilpotent
 if its products with all elements have trace zero, in characteristic zero. -/
 theorem isNilpotent_of_forall_trace_mul_eq_zero {K A M : Type*} [Field K] [CharZero K]
-    [Ring A] [Algebra K A] [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+    [Semiring A] [Algebra K A] [AddCommGroup M] [Module K M] [FiniteDimensional K M]
     (φ : A →ₐ[K] Module.End K M) (hφ : Function.Injective φ) {x : A}
     (h : ∀ y, LinearMap.trace K M (φ (y * x)) = 0) : IsNilpotent x := by
   refine (IsNilpotent.map_iff hφ).mp ?_

@@ -7,8 +7,6 @@ module
 
 public import Mathlib.RepresentationTheory.Semisimple
 
-import TauCeti.RingTheory.SimpleModule.Basic
-
 /-!
 # Semisimplicity over the image algebra
 

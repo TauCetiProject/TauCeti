@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.LinearAlgebra.Trace
-public import Mathlib.RingTheory.Finiteness.Defs
-public import Mathlib.RingTheory.SimpleModule.Basic
 -- Non-public: the trace criterion for nilpotence and the Jacobson radical are used only
 -- inside the proof of `Subalgebra.eq_zero_of_forall_trace_mul_eq_zero`.
-import Mathlib.RingTheory.Jacobson.Semiprimary
 import TauCeti.LinearAlgebra.Trace.Nilpotent
 import TauCeti.RingTheory.Jacobson.Basic
 
