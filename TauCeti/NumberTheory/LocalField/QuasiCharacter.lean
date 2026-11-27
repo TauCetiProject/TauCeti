@@ -52,8 +52,9 @@ that Tate's local theory uses.
 * `TauCeti.characterConductorExp_mul_normalizedAbsCpowCharacter`: `c(ω ω_s) = c(ω)`.
 * `TauCeti.existsUnique_norm_coe_apply_eq_normalizedAbsoluteValue_rpow`: the exponent exists and
   is unique.
-* `TauCeti.characterExponent_normalizedAbsCpowCharacter`, `TauCeti.characterExponent_mul`:
-  the exponent of `ω_s` is `re s`, and exponents add.
+* `TauCeti.characterExponent_normalizedAbsCpowCharacter`, `TauCeti.characterExponent_mul`,
+  `TauCeti.characterExponent_inv`: the exponent of `ω_s` is `re s`, exponents add, and the
+  exponent of `ω⁻¹` is minus that of `ω`.
 * `TauCeti.norm_coe_mul_normalizedAbsCpowCharacter_neg_characterExponent`: `ω ω_{-σ}` is
   unitary.
 
@@ -79,8 +80,12 @@ variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-! ### Positivity of `q` -/
 
-private theorem natCard_residueField_ne_zero_complex : (Nat.card 𝓀[K] : ℂ) ≠ 0 := by
-  exact_mod_cast (natCard_residueField_pos (K := K) (R := ℝ)).ne'
+variable {K} in
+/-- The cardinality `q` of the residue field is nonzero in every additive monoid with one of
+characteristic zero (for instance `ℂ`). -/
+theorem natCard_residueField_ne_zero {R : Type*} [AddMonoidWithOne R] [CharZero R] :
+    (Nat.card 𝓀[K] : R) ≠ 0 :=
+  Nat.cast_ne_zero.2 Nat.card_pos.ne'
 
 private theorem log_natCard_residueField_ne_zero : Real.log (Nat.card 𝓀[K]) ≠ 0 :=
   Real.log_ne_zero_of_pos_of_ne_one (natCard_residueField_pos (K := K) (R := ℝ))
@@ -180,7 +185,7 @@ theorem coe_normalizedAbsCpowCharacter_apply_of_isUniformizer (s : ℂ) {ϖ : K�
 theorem normalizedAbsCpowCharacter_eq_iff {s t : ℂ} :
     normalizedAbsCpowCharacter K s = normalizedAbsCpowCharacter K t ↔
       ∃ n : ℤ, s = t + n * (2 * Real.pi * I / Real.log (Nat.card 𝓀[K])) := by
-  have hq := natCard_residueField_ne_zero_complex K
+  have hq := natCard_residueField_ne_zero (K := K) (R := ℂ)
   have hlog := log_natCard_residueField_ne_zero_complex K
   rw [normalizedAbsCpowCharacter_eq_unramifiedCharacter,
     normalizedAbsCpowCharacter_eq_unramifiedCharacter, (unramifiedCharacter_injective K).eq_iff,
@@ -205,7 +210,7 @@ theorem normalizedAbsCpowCharacter_eq_iff {s t : ℂ} :
 trivial on `U(K,0) = 𝒪[K]ˣ` exactly when it is `ω_s` for some `s : ℂ`. -/
 theorem exists_eq_normalizedAbsCpowCharacter_iff {ω : Kˣ →ₜ* ℂˣ} :
     (∃ s : ℂ, ω = normalizedAbsCpowCharacter K s) ↔ unitFiltration K 0 ≤ ω.ker := by
-  have hq := natCard_residueField_ne_zero_complex K
+  have hq := natCard_residueField_ne_zero (K := K) (R := ℂ)
   have hlog := log_natCard_residueField_ne_zero_complex K
   have hker : unitFiltration K 0 ≤ ω.ker ↔ ∀ u : Kˣ, valuation K (u : K) = 1 → ω u = 1 :=
     ⟨fun h u hu ↦ h ((mem_unitFiltration_zero u).2 hu),
@@ -326,6 +331,21 @@ variable (K) in
 @[simp]
 theorem characterExponent_one : characterExponent K (1 : Kˣ →ₜ* ℂˣ) = 0 := by
   simpa using characterExponent_normalizedAbsCpowCharacter (K := K) 0
+
+/-- The exponent of `ω⁻¹` is minus that of `ω`. -/
+@[simp]
+theorem characterExponent_inv (ω : Kˣ →ₜ* ℂˣ) :
+    characterExponent K ω⁻¹ = -characterExponent K ω := by
+  have h := characterExponent_mul ω ω⁻¹
+  rw [mul_inv_cancel, characterExponent_one] at h
+  linarith
+
+/-- The reflection `s ↦ 1 - s` maps the half-plane `re s + r < 1`, where `r` is the exponent of
+`ω`, into the half-plane `0 < re s' + r'` for the exponent `r' = -r` of `ω⁻¹`. -/
+theorem one_sub_re_add_characterExponent_inv_pos {ω : Kˣ →ₜ* ℂˣ} {s : ℂ}
+    (hs : s.re + characterExponent K ω < 1) : 0 < (1 - s).re + characterExponent K ω⁻¹ := by
+  rw [characterExponent_inv, sub_re, one_re]
+  linarith
 
 /-- A quasi-character has exponent `0` exactly when it is unitary. -/
 theorem characterExponent_eq_zero_iff (ω : Kˣ →ₜ* ℂˣ) :

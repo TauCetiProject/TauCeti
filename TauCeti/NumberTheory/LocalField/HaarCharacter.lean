@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
+public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.MeasureTheory.Group.LocalFieldScaling
 import TauCeti.NumberTheory.LocalField.Topology
@@ -40,7 +41,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
 
 * `TauCeti.integerPositiveCompacts`: the ring of integers as a compact set with nonempty
   interior, the normalizing set of Mathlib's `MeasureTheory.Measure.addHaarMeasure`.
-  Its indicator `1_𝒪` is continuous with compact support (`TauCeti.continuous_indicator_integer`,
+  Its indicator `1_𝒪` is continuous, locally constant and of compact support
+  (`TauCeti.continuous_indicator_integer`, `TauCeti.isLocallyConstant_indicator_integer`,
   `TauCeti.hasCompactSupport_indicator_integer`).
 
 ## Main results
@@ -108,6 +110,12 @@ theorem coe_integerPositiveCompacts : (integerPositiveCompacts K : Set K) = 𝒪
 theorem continuous_indicator_integer {M : Type*} [TopologicalSpace M] [Zero M] [One M] :
     Continuous ((𝒪[K] : Set K).indicator (1 : K → M)) :=
   (Valuation.isClopen_integer (v := valuation K)).continuous_indicator continuous_const
+
+/-- The indicator `1_𝒪` of the ring of integers is locally constant: `𝒪[K]` is clopen. -/
+theorem isLocallyConstant_indicator_integer {M : Type*} [Zero M] [One M] :
+    IsLocallyConstant ((𝒪[K] : Set K).indicator (1 : K → M)) :=
+  ((LocallyConstant.const K (1 : M)).indicator
+    (Valuation.isClopen_integer (v := valuation K))).isLocallyConstant
 
 /-- The indicator `1_𝒪` of the ring of integers has compact support. -/
 theorem hasCompactSupport_indicator_integer {M : Type*} [Zero M] [One M] :

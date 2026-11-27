@@ -29,6 +29,8 @@ The measurable structure on `Kˣ` is Mathlib's `Units.instMeasurableSpace`, pull
   (`TauCeti.unitsHaar_unitFiltration_zero`).
 * `TauCeti.unitsHaar_eq_iff`: `TauCeti.unitsHaar K` is the only σ-finite left-invariant measure on
   `Kˣ` giving `𝒪[K]ˣ` mass one.
+* `TauCeti.measureReal_unitFiltration_pos`: every `U(K,n)` has positive finite mass for every
+  Haar measure on `Kˣ`.
 -/
 
 public section
@@ -53,6 +55,15 @@ theorem coe_unitsIntegerPositiveCompacts :
   (rfl)
 
 variable [MeasurableSpace K] [BorelSpace K]
+
+omit [BorelSpace K] in
+variable {K} in
+/-- Every step `U(K,n)` of the unit filtration has positive finite mass for a Haar measure on
+`Kˣ`: it is a compact open subgroup. -/
+theorem measureReal_unitFiltration_pos (ν : Measure Kˣ) [ν.IsHaarMeasure] (n : ℕ) :
+    0 < ν.real (unitFiltration K n) :=
+  ENNReal.toReal_pos ((isOpen_unitFiltration n).measure_ne_zero ν ⟨1, one_mem _⟩)
+    (isCompact_unitFiltration n).measure_lt_top.ne
 
 /-- **The normalized Haar measure `d^×x` on `Kˣ`**: the Haar measure of the locally compact group
 `Kˣ` giving the units `𝒪[K]ˣ` of the ring of integers mass one. -/

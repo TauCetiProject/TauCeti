@@ -34,9 +34,10 @@ give the meromorphic continuation of `z(s, ω; f)`:
 
 Applied to the gamma factor `γ(s, ω, ψ) = z(1 - s, ω⁻¹; 𝓕f₀) / ν(U(K, c(ω)))` of
 `TauCeti.NumberTheory.LocalField.TateZeta.FunctionalEquation`, this shows that `γ` is entire for
-ramified `ω`, and that `L(1 - s, ω⁻¹)⁻¹ γ(s, ω, ψ)` is entire for unramified `ω`. In particular
-both sides of the local functional equation `z(1 - s, ω⁻¹; 𝓕f) = γ(s, ω, ψ) z(s, ω; f)` continue
-meromorphically, and their continuations agree by the identity theorem.
+ramified `ω`, and that `L(1 - s, ω⁻¹)⁻¹ γ(s, ω, ψ)` is entire for unramified `ω`. These entire
+functions are the input for continuing both sides of the local functional equation
+`z(1 - s, ω⁻¹; 𝓕f) = γ(s, ω, ψ) z(s, ω; f)` meromorphically; that packaged meromorphic statement
+is not formalized here.
 
 ## Main results
 
@@ -115,8 +116,7 @@ theorem differentiable_localZetaIntegral_of_forall_valuationShell (ν : Measure 
     [ν.IsHaarMeasure] (ω : Kˣ →ₜ* ℂˣ) {g : K → ℂ} (hg : Continuous g) {a b : ℤ}
     (hgab : ∀ n, n < a ∨ b ≤ n → ∀ x ∈ valuationShell K n, g x = 0) :
     Differentiable ℂ (𝔷[ν] ω g) := by
-  have hq : (Nat.card 𝓀[K] : ℂ) ≠ 0 := by
-    exact_mod_cast (zero_lt_one.trans (one_lt_natCard_residueField (K := K) (R := ℝ))).ne'
+  have hq : (Nat.card 𝓀[K] : ℂ) ≠ 0 := natCard_residueField_ne_zero
   rw [show 𝔷[ν] ω g = fun s ↦ _ from funext
     (localZetaIntegral_eq_sum_of_forall_valuationShell ν ω hg hgab)]
   refine Differentiable.fun_sum fun n _ ↦ (Differentiable.zpow ?_ (Or.inl fun s ↦ ?_)).const_mul _
@@ -195,15 +195,14 @@ theorem exists_differentiable_eqOn_mul_localZetaIntegral_of_unramified (ν : Mea
       EqOn (fun s ↦ (1 - ω ϖ * (Nat.card 𝓀[K] : ℂ) ^ (-s)) * 𝔷[ν] ω f s) P
         {s | 0 < s.re + characterExponent K ω} := by
   obtain ⟨P, hP, hfP⟩ := exists_differentiable_localZetaIntegral_eq_add ν ω hf hfc
-  have hq : (Nat.card 𝓀[K] : ℂ) ≠ 0 := by
-    exact_mod_cast (zero_lt_one.trans (one_lt_natCard_residueField (K := K) (R := ℝ))).ne'
+  have hq : (Nat.card 𝓀[K] : ℂ) ≠ 0 := natCard_residueField_ne_zero
   refine ⟨fun s ↦ (1 - ω ϖ * (Nat.card 𝓀[K] : ℂ) ^ (-s)) * P s +
       f 0 * ν.real (unitFiltration K 0 : Set Kˣ), ?_, fun s hs ↦ ?_⟩
   · exact ((differentiable_const _).sub ((differentiable_neg.const_cpow (Or.inl hq)).const_mul
       _)).mul hP |>.add_const _
   · simp only
     rw [hfP s hs, localZetaIntegral_indicator_integer_of_unramified ν hω hϖ hs]
-    have hX := one_sub_mul_natCard_cpow_ne_zero hϖ hs
+    have hX := one_sub_apply_mul_natCard_cpow_ne_zero hϖ hs
     field_simp
 
 /-! ### Continuation of the gamma factor -/
@@ -216,10 +215,7 @@ theorem exists_differentiable_eqOn_gammaFactor_of_ramified (hψ : Continuous ψ)
     {ω : Kˣ →ₜ* ℂˣ} (hω : ¬ unitFiltration K 0 ≤ ω.ker) :
     ∃ G : ℂ → ℂ, Differentiable ℂ G ∧
       EqOn (gammaFactor ω μ ψ) G {s | s.re + characterExponent K ω < 1} := by
-  have hω' : ¬ unitFiltration K 0 ≤ (ω⁻¹).ker := fun h ↦ hω fun u hu ↦ by
-    have h' : ω⁻¹ u = 1 := h hu
-    rw [ContinuousMonoidHom.inv_apply, inv_eq_one] at h'
-    exact h'
+  have hω' : ¬ unitFiltration K 0 ≤ (ω⁻¹).ker := by rwa [ContinuousMonoidHom.ker_inv]
   obtain ⟨hl, hc⟩ := isLocallyConstant_hasCompactSupport_fourierIntegral μ hψ h1
     (isLocallyConstant_gammaTestFunction ω) (hasCompactSupport_gammaTestFunction ω)
   obtain ⟨P, hP, hzP⟩ := exists_differentiable_eqOn_localZetaIntegral_of_ramified (unitsHaar K)
@@ -227,10 +223,8 @@ theorem exists_differentiable_eqOn_gammaFactor_of_ramified (hψ : Continuous ψ)
   refine ⟨fun s ↦ P (1 - s) / (unitsHaar K).real
     (unitFiltration K (ClassFieldTheory.characterConductorExp K ω)),
     ((hP.comp ((differentiable_const 1).sub differentiable_id)).div_const _), fun s hs ↦ ?_⟩
-  change s.re + characterExponent K ω < 1 at hs
   dsimp only
-  rw [gammaFactor_eq ω μ ψ (unitsHaar K), hzP (show 0 < (1 - s).re + characterExponent K ω⁻¹ by
-    rw [sub_re, one_re, characterExponent_inv]; linarith)]
+  rw [gammaFactor_eq ω μ ψ (unitsHaar K), hzP (one_sub_re_add_characterExponent_inv_pos hs)]
 
 /-- **The gamma factor of an unramified character is meromorphic.** For `ω` trivial on
 `𝒪[K]ˣ` and a uniformizer `ϖ`, `s ↦ (1 - ω(ϖ)⁻¹ q ^ (-(1 - s))) γ(s, ω, ψ)` agrees on the
@@ -241,10 +235,7 @@ theorem exists_differentiable_eqOn_mul_gammaFactor_of_unramified (hψ : Continuo
     ∃ G : ℂ → ℂ, Differentiable ℂ G ∧
       EqOn (fun s ↦ (1 - (ω ϖ : ℂ)⁻¹ * (Nat.card 𝓀[K] : ℂ) ^ (-(1 - s))) * gammaFactor ω μ ψ s) G
         {s | s.re + characterExponent K ω < 1} := by
-  have hω' : unitFiltration K 0 ≤ (ω⁻¹).ker := fun u hu ↦ by
-    have h : ω u = 1 := hω hu
-    change ω⁻¹ u = 1
-    rw [ContinuousMonoidHom.inv_apply, h, inv_one]
+  have hω' : unitFiltration K 0 ≤ (ω⁻¹).ker := by rwa [ContinuousMonoidHom.ker_inv]
   obtain ⟨hl, hc⟩ := isLocallyConstant_hasCompactSupport_fourierIntegral μ hψ h1
     (isLocallyConstant_gammaTestFunction ω) (hasCompactSupport_gammaTestFunction ω)
   obtain ⟨P, hP, hzP⟩ := exists_differentiable_eqOn_mul_localZetaIntegral_of_unramified
@@ -252,9 +243,7 @@ theorem exists_differentiable_eqOn_mul_gammaFactor_of_unramified (hψ : Continuo
   refine ⟨fun s ↦ P (1 - s) / (unitsHaar K).real
     (unitFiltration K (ClassFieldTheory.characterConductorExp K ω)),
     ((hP.comp ((differentiable_const 1).sub differentiable_id)).div_const _), fun s hs ↦ ?_⟩
-  change s.re + characterExponent K ω < 1 at hs
-  have h := hzP (show 0 < (1 - s).re + characterExponent K ω⁻¹ by
-    rw [sub_re, one_re, characterExponent_inv]; linarith)
+  have h := hzP (one_sub_re_add_characterExponent_inv_pos hs)
   simp only [ContinuousMonoidHom.inv_apply, Units.val_inv_eq_inv_val] at h
   dsimp only
   rw [gammaFactor_eq ω μ ψ (unitsHaar K), mul_div_assoc', h]

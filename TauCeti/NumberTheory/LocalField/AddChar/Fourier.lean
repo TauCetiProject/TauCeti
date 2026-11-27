@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.AddChar.DualLattice
 public import TauCeti.NumberTheory.LocalField.Lattice
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Fourier.FinsetSum
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.Topology.Algebra.AddChar
@@ -63,6 +64,9 @@ formula and the double duality `Submodule.characterAnnihilator_characterAnnihila
   `S(V)`, in both orders, for measures with `μ(L) ν(L^∨) = 1` for every lattice `L`.
 * `LocallyConstant.compactlySupportedFourier_bijective`: for such a measure `μ = ν`, the transform
   is a bijection of `C_c^∞(V, E)`.
+* `VectorFourier.fourierIntegral_neg_mul_apply`,
+  `VectorFourier.integral_mul_fourierIntegral_mul_comm`: on `V = K` with the form `-(x y)`, the
+  transform has the positive kernel `ψ(x y)`, and `∫ f 𝓕g(· t) = ∫ g 𝓕f(· t)`.
 
 ## References
 
@@ -75,6 +79,56 @@ public section
 
 open Filter Topology ValuativeRel MeasureTheory Function Set
 open scoped Pointwise
+
+/-! ### The transform with the positive kernel `ψ(x y)` on a field -/
+
+section NegMul
+
+variable {K : Type*} [Field K]
+
+/-- The form `-(x y)` on a field is nondegenerate; it is the form for which Mathlib's
+`VectorFourier.fourierIntegral` has the positive kernel `ψ(x y)`. -/
+theorem LinearMap.BilinForm.nondegenerate_neg_mul :
+    (-LinearMap.mul K K : LinearMap.BilinForm K K).Nondegenerate :=
+  ⟨fun x hx ↦ by simpa using hx 1, fun y hy ↦ by simpa using hy 1⟩
+
+namespace VectorFourier
+
+/-- With the form `-(x y)`, the Fourier transform has the positive kernel:
+`𝓕 f (y) = ∫ ψ(x y) f(x) dμ(x)`. -/
+theorem fourierIntegral_neg_mul_apply [MeasurableSpace K] (ψ : AddChar K Circle) (μ : Measure K)
+    (f : K → ℂ) (y : K) :
+    fourierIntegral ψ μ (-LinearMap.mul K K) f y = ∫ x, (ψ (x * y) : ℂ) * f x ∂μ := by
+  simp [fourierIntegral, Circle.smul_def]
+
+/-- **Symmetry of the Fourier pairing.** For the transform with kernel `ψ(x y)`, integrable `f`,
+`g` and every `t`, `∫ f(x) 𝓕g(x t) dμ(x) = ∫ g(x) 𝓕f(x t) dμ(x)`: both are
+`∫∫ f(x) g(y) ψ(x y t)`. -/
+theorem integral_mul_fourierIntegral_mul_comm [TopologicalSpace K] [IsTopologicalRing K]
+    [SecondCountableTopology K] [MeasurableSpace K] [BorelSpace K] {ψ : AddChar K Circle}
+    (hψ : Continuous ψ) (μ : Measure K) [SFinite μ] {f g : K → ℂ} (hf : Integrable f μ)
+    (hg : Integrable g μ) (t : K) :
+    ∫ x, f x * fourierIntegral ψ μ (-LinearMap.mul K K) g (x * t) ∂μ =
+      ∫ x, g x * fourierIntegral ψ μ (-LinearMap.mul K K) f (x * t) ∂μ := by
+  simp_rw [fourierIntegral_neg_mul_apply, ← integral_const_mul]
+  have hk : Continuous fun z : K × K ↦ (ψ (z.2 * (z.1 * t)) : ℂ) :=
+    continuous_subtypeVal.comp
+      (hψ.comp (continuous_snd.mul (continuous_fst.mul continuous_const)))
+  have hm : AEStronglyMeasurable (fun z : K × K ↦ f z.1 * ((ψ (z.2 * (z.1 * t)) : ℂ) * g z.2))
+      (μ.prod μ) :=
+    hf.1.comp_fst.mul (hk.aestronglyMeasurable.mul hg.1.comp_snd)
+  have hint : Integrable (fun z : K × K ↦ f z.1 * ((ψ (z.2 * (z.1 * t)) : ℂ) * g z.2))
+      (μ.prod μ) :=
+    (hf.norm.mul_prod hg.norm).mono' hm (ae_of_all _ fun z ↦ by simp)
+  rw [integral_integral_swap hint]
+  refine integral_congr_ae (ae_of_all _ fun y ↦ integral_congr_ae (ae_of_all _ fun x ↦ ?_))
+  simp only
+  rw [show y * (x * t) = x * (y * t) by ring]
+  ring
+
+end VectorFourier
+
+end NegMul
 
 variable {K V : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]

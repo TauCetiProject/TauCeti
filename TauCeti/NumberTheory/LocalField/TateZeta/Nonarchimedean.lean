@@ -46,8 +46,9 @@ and `dₙ = 0` for `n < -N`, which converges absolutely for `re s + r > 0`.
   for `re s + r > 0`; for unitary `ω` this is the half-plane `re s > 0`.
 * `TauCeti.TateZeta.differentiableOn_localZetaIntegral`: `s ↦ z(s, ω; f)` is holomorphic on
   `re s + r > 0`.
-* `TauCeti.TateZeta.norm_apply_mul_natCard_cpow_lt_one`: `‖ω(ϖ) q ^ (-s)‖ < 1` for a
-  uniformizer `ϖ` and `re s + r > 0`.
+* `TauCeti.TateZeta.norm_apply_mul_natCard_cpow_lt_one`,
+  `TauCeti.TateZeta.one_sub_apply_mul_natCard_cpow_ne_zero`: `‖ω(ϖ) q ^ (-s)‖ < 1`, so
+  `1 - ω(ϖ) q ^ (-s) ≠ 0`, for a uniformizer `ϖ` and `re s + r > 0`.
 * `TauCeti.TateZeta.localZetaIntegral_indicator_integer_of_unramified`: for `ω` unramified,
   `z(s, ω; 1_𝒪) = ν(𝒪[K]ˣ) (1 - ω(ϖ) q ^ (-s))⁻¹` on `re s + r > 0`, where `ϖ` is a uniformizer;
   with the normalized measure `TauCeti.unitsHaar K` (`ν(𝒪[K]ˣ) = 1`) this is the local
@@ -122,6 +123,13 @@ theorem norm_apply_mul_natCard_cpow_lt_one {ω : Kˣ →ₜ* ℂˣ} {ϖ : Kˣ} (
   rw [norm_mul, norm_apply_of_mem_valuationShell ω hϖ1, zpow_one, ← ofReal_natCast,
     norm_cpow_eq_rpow_re_of_pos hq₀, neg_re, ← Real.rpow_add hq₀]
   exact Real.rpow_lt_one_of_one_lt_of_neg hq (by linarith)
+
+/-- For a uniformizer `ϖ` and `re s + r > 0`, where `r` is the exponent of `ω`,
+`1 - ω(ϖ) q ^ (-s) ≠ 0`: the second term has norm `q ^ (-(re s + r)) < 1`. -/
+theorem one_sub_apply_mul_natCard_cpow_ne_zero {ω : Kˣ →ₜ* ℂˣ} {ϖ : Kˣ}
+    (hϖ : IsUniformizer K ϖ) {s : ℂ} (hs : 0 < s.re + characterExponent K ω) :
+    1 - (ω ϖ : ℂ) * (Nat.card 𝓀[K] : ℂ) ^ (-s) ≠ 0 := fun h ↦
+  (norm_apply_mul_natCard_cpow_lt_one hϖ hs).ne (by rw [← sub_eq_zero.1 h, norm_one])
 
 variable [MeasurableSpace K] [BorelSpace K]
 
