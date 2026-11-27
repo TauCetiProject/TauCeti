@@ -112,6 +112,7 @@ def rangeIdeal : TwoSidedIdeal (MaxTensorProduct A B) :=
       rw [map_star, hw, star_mul, map_star, star_star, star_star, hz])
 
 /-- Membership in `rangeIdeal A J` is membership in the image of `A ⊗max J`. -/
+@[simp]
 theorem mem_rangeIdeal {x : MaxTensorProduct A B} :
     x ∈ rangeIdeal A J ↔ x ∈ Set.range (map (NonUnitalStarAlgHom.id ℂ A) J.starAlgHom) :=
   TwoSidedIdeal.mem_mk' ..
@@ -167,24 +168,32 @@ def liftQuotient :
   lift ((mkUnitalStarAlgHom (rangeIdeal A J)).comp (includeLeft A B)).toNonUnitalStarAlgHom
     (quotientIncludeRight J).toNonUnitalStarAlgHom fun a b ↦ by
       obtain ⟨b, rfl⟩ := mk_surjective J b
+      -- `lift` sees the quotients through their non-unital C*-algebra instances, which agree
+      -- with the unital ones only up to unfolding, so `StarAlgHom.coe_toNonUnitalStarAlgHom`
+      -- does not rewrite here
       change Commute (mkUnitalStarAlgHom (rangeIdeal A J) (includeLeft A B a))
         (quotientIncludeRight J (mk J b))
       rw [quotientIncludeRight_mk, ← includeRight_apply, ← mkUnitalStarAlgHom_apply]
       exact (commute_includeLeft_includeRight a b).map (mkUnitalStarAlgHom (rangeIdeal A J))
 
+/-- `liftQuotient J` sends `a ⊗ [b]` to the class of `a ⊗ b`. -/
+@[simp]
+theorem liftQuotient_of_tmul (a : A) (b : B) :
+    liftQuotient J (of A (B ⧸ J) (a ⊗ₜ mk J b)) = mk (rangeIdeal A J) (of A B (a ⊗ₜ b)) := by
+  refine (lift_of_tmul _ _ _ _ _).trans ?_
+  -- as in `liftQuotient`, the coercions of the unital homomorphisms only unfold by `change`
+  change mkUnitalStarAlgHom _ (includeLeft A B a) * quotientIncludeRight J (mk J b) = _
+  rw [quotientIncludeRight_mk, ← includeRight_apply, ← mkUnitalStarAlgHom_apply, ← map_mul,
+    includeLeft_mul_includeRight, mkUnitalStarAlgHom_apply]
+
 /-- The quotient map by the image of `A ⊗max J` factors through `A ⊗max (B/J)`. -/
+@[simp]
 theorem liftQuotient_map_mkStarAlgHom (x : MaxTensorProduct A B) :
     liftQuotient J (map (NonUnitalStarAlgHom.id ℂ A) (mkStarAlgHom J) x) =
       mk (rangeIdeal A J) x := by
   have h : (liftQuotient J).comp
       (map (NonUnitalStarAlgHom.id ℂ A) (mkStarAlgHom J)) = mkStarAlgHom (rangeIdeal A J) :=
-    starAlgHom_ext fun a b ↦ by
-      rw [NonUnitalStarAlgHom.comp_apply, map_of_tmul, liftQuotient]
-      refine (lift_of_tmul _ _ _ _ _).trans ?_
-      rw [NonUnitalStarAlgHom.coe_id, id_eq, mkStarAlgHom_apply, mkStarAlgHom_apply]
-      change mkUnitalStarAlgHom _ (includeLeft A B a) * quotientIncludeRight J (mk J b) = _
-      rw [quotientIncludeRight_mk, mkUnitalStarAlgHom_apply, includeLeft_apply, ← map_mul,
-        ← map_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+    starAlgHom_ext fun a b ↦ by simp
   simpa using congr($h x)
 
 /-- **The maximal tensor product is exact** on closed-ideal sequences: for unital `A` and `B`
