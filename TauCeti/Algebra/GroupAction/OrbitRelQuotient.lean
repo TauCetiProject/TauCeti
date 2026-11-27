@@ -103,7 +103,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
 * `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
   quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
-  (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
+  (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version. Freeness of `G` at a
+  point is freeness of `H` at it together with freeness of `G ⧸ H` at its `H`-orbit
+  (`MulAction.orbitRel.Quotient.stabilizer_mk_eq_bot_of_stabilizer_eq_bot`,
+  `MulAction.orbitRel.Quotient.stabilizer_eq_bot_of_stabilizer_mk_eq_bot`).
 * `MulAction.orbitRel.Quotient.instMulActionOfSMulCommClass`: an action commuting with that of
   `K` acts on the space of `K`-orbits by translating representatives
   (`MulAction.orbitRel.Quotient.smul_mk`, `MulAction.orbitRel.Quotient.smul_comp_mk`,
@@ -1066,6 +1069,46 @@ instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P
     induction g' using QuotientGroup.induction_on with | H g' =>
     induction x using Quotient.inductionOn' with
     | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
+
+variable {H}
+
+/-- **Freeness descends to the quotient group.** If `G` acts freely at `p`, then `G ⧸ H` acts
+freely at the `H`-orbit of `p`. -/
+@[to_additive /-- **Freeness descends to the quotient group.** If `G` acts freely at `p`, then
+`G ⧸ H` acts freely at the `H`-orbit of `p`. -/]
+theorem stabilizer_mk_eq_bot_of_stabilizer_eq_bot {p : P} (hp : stabilizer G p = ⊥) :
+    stabilizer (G ⧸ H) (Quotient.mk'' p : orbitRel.Quotient H P) = ⊥ := by
+  refine eq_bot_iff.2 fun r hr ↦ ?_
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective r
+  rw [mem_stabilizer_iff, mk_smul_mk] at hr
+  -- `g • p` and `p` lie in one `H`-orbit, so `k⁻¹ g` fixes `p` for some `k ∈ H`.
+  obtain ⟨k, hk⟩ := mem_orbit_iff.1 (orbitRel_apply.1 (Quotient.exact hr))
+  rw [Subgroup.smul_def] at hk
+  have hkg : (k : G)⁻¹ * g ∈ stabilizer G p := by
+    rw [mem_stabilizer_iff, mul_smul, ← hk, inv_smul_smul]
+  rw [hp, Subgroup.mem_bot, inv_mul_eq_one] at hkg
+  rw [Subgroup.mem_bot, ← hkg, QuotientGroup.eq_one_iff]
+  exact k.property
+
+/-- **Freeness in stages.** If `H` acts freely at `p` and `G ⧸ H` acts freely at the `H`-orbit
+of `p`, then `G` acts freely at `p`. -/
+@[to_additive /-- **Freeness in stages.** If `H` acts freely at `p` and `G ⧸ H` acts freely at
+the `H`-orbit of `p`, then `G` acts freely at `p`. -/]
+theorem stabilizer_eq_bot_of_stabilizer_mk_eq_bot {p : P} (hH : stabilizer H p = ⊥)
+    (hq : stabilizer (G ⧸ H) (Quotient.mk'' p : orbitRel.Quotient H P) = ⊥) :
+    stabilizer G p = ⊥ := by
+  refine eq_bot_iff.2 fun g hg ↦ ?_
+  rw [mem_stabilizer_iff] at hg
+  -- The image of `g` in `G ⧸ H` fixes the orbit of `p`, so `g ∈ H`.
+  have hgH : g ∈ H := by
+    rw [← QuotientGroup.eq_one_iff (N := H) g, ← Subgroup.mem_bot, ← hq, mem_stabilizer_iff,
+      mk_smul_mk, hg]
+  -- As an element of `H`, `g` fixes `p`, so it is trivial.
+  have : (⟨g, hgH⟩ : H) ∈ stabilizer H p := by
+    rw [mem_stabilizer_iff, Subgroup.smul_def]
+    exact hg
+  rw [hH] at this
+  exact Subgroup.mem_bot.2 (congrArg Subtype.val (Subgroup.mem_bot.1 this))
 
 end MulAction.orbitRel.Quotient
 

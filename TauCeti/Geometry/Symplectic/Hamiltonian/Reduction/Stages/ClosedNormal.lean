@@ -622,20 +622,18 @@ theorem stabilizer_eq_bot_of_stabilizer_quotient_eq_bot (hμ : σ.IsEquivariantM
     have := LinearMap.congr_fun (hμ₁ z) ξ
     rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at this
     rw [this, hx, LinearMap.zero_apply, LinearMap.zero_apply]
+  -- `N` acts freely at `z`, so `G` does by freeness in stages.
+  have hNz : MulAction.stabilizer N z = ⊥ := by
+    refine eq_bot_iff.2 fun k hk ↦ ?_
+    rw [← hfree x ((hμ.comp_subtype_ofIsClosed hN).mem_levelSubMulAction.1 z.property),
+      MulAction.mem_stabilizer_iff, Subgroup.smul_def]
+    rw [MulAction.mem_stabilizer_iff, Subgroup.smul_def] at hk
+    exact (hμ.coe_smul_subtypeLevelMulAction hN k z).symm.trans (congrArg Subtype.val hk)
+  have hGz := MulAction.orbitRel.Quotient.stabilizer_eq_bot_of_stabilizer_mk_eq_bot hNz
+    (hfree₂ _ hz)
   refine eq_bot_iff.2 fun g hg ↦ ?_
-  rw [MulAction.mem_stabilizer_iff] at hg
-  -- The image of `g` in `G ⧸ N` fixes `[x]`, so `g ∈ N`.
-  have hgz : g • z = z := Subtype.ext ((hμ.coe_smul_subtypeLevelMulAction hN g z).trans hg)
-  have hgN : g ∈ N := by
-    rw [← QuotientGroup.eq_one_iff (N := N) g, ← Subgroup.mem_bot,
-      ← hfree₂ _ hz, MulAction.mem_stabilizer_iff,
-      MulAction.orbitRel.Quotient.mk_smul_mk, hgz]
-  -- As an element of `N`, `g` fixes `x`, so it is trivial.
-  have : (⟨g, hgN⟩ : N) ∈ MulAction.stabilizer N x := by
-    rw [MulAction.mem_stabilizer_iff, Subgroup.smul_def]
-    exact hg
-  rw [hfree x ((hμ.comp_subtype_ofIsClosed hN).mem_levelSubMulAction.1 z.property)] at this
-  exact Subgroup.mem_bot.2 (congrArg Subtype.val (Subgroup.mem_bot.1 this))
+  rw [← hGz, MulAction.mem_stabilizer_iff]
+  exact Subtype.ext ((hμ.coe_smul_subtypeLevelMulAction hN g z).trans hg)
 
 omit [I'.Boundaryless] in
 /-- **Freeness at zero gives freeness of the residual action.** Let `μ₁` be a map on
@@ -668,16 +666,10 @@ theorem stabilizer_quotient_eq_bot_of_stabilizer_eq_bot (hμ : σ.IsEquivariantM
   intro μ₁ hμ₁ hfree y hy
   obtain ⟨z, rfl⟩ := Quotient.mk_surjective y
   have hz : μ z = 0 := by rw [← hμ₁ z, hy, LinearMap.zero_comp]
-  refine eq_bot_iff.2 fun r hr ↦ ?_
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective r
-  rw [MulAction.mem_stabilizer_iff, MulAction.orbitRel.Quotient.mk_smul_mk] at hr
-  -- `g • z` and `z` lie in one `N`-orbit, so `k⁻¹ g` fixes `z` for some `k ∈ N`.
-  obtain ⟨k, hk⟩ := (hμ.quotientMk_eq_quotientMk_iff_subtypeLevel hN (g • z) z).1 hr
-  rw [hμ.coe_smul_subtypeLevelMulAction hN, Subgroup.smul_def] at hk
-  have hkg : (k : G)⁻¹ * g ∈ MulAction.stabilizer G (z : M) := by
-    rw [MulAction.mem_stabilizer_iff, mul_smul, ← hk, inv_smul_smul]
-  rw [hfree z hz, Subgroup.mem_bot, inv_mul_eq_one] at hkg
-  rw [Subgroup.mem_bot, ← hkg, QuotientGroup.eq_one_iff]
-  exact k.property
+  -- `G` acts freely at `z`, so `G ⧸ N` acts freely at its orbit.
+  refine MulAction.orbitRel.Quotient.stabilizer_mk_eq_bot_of_stabilizer_eq_bot
+    (eq_bot_iff.2 fun g hg ↦ ?_)
+  rw [← hfree z hz, MulAction.mem_stabilizer_iff, ← hμ.coe_smul_subtypeLevelMulAction hN,
+    MulAction.mem_stabilizer_iff.1 hg]
 
 end TauCeti.SmoothTwoForm.IsEquivariantMomentMap
