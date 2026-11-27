@@ -62,7 +62,9 @@ datum `(B, χ_b)` (`TauCeti.AppellHumbertData.ofCanonicalSemichar`).
 The data form an additive group (`B` adds, `χ` multiplies), which corresponds to the tensor product
 of line bundles; on theta functions, products and powers land in the theta functions of the sum
 and of the multiple (`TauCeti.AppellHumbertData.mul_mem_thetaSpace_add`,
-`TauCeti.AppellHumbertData.pow_mem_thetaSpace_nsmul`).
+`TauCeti.AppellHumbertData.pow_mem_thetaSpace_nsmul`), and so does `f (z + v) f (z - v)` for a
+theta function `f` of `D`
+(`TauCeti.AppellHumbertData.apply_add_mul_apply_sub_mem_thetaSpace_two_nsmul`).
 
 The convention for `H`, complex linear in the first variable with `E = Im H`, is that of
 `TauCeti.AlmostComplexStructure.RiemannForm.hermitian`, which builds `H` from an integral
@@ -548,6 +550,32 @@ theorem pow_mem_thetaSpace_nsmul {f : V → ℂ} (hf : f ∈ D.thetaSpace) (n : 
     f ^ n ∈ (n • D).thetaSpace :=
   ⟨Differentiable.pow (differentiable_of_mem_thetaSpace hf) n, fun l z ↦ by
     simp only [Pi.pow_apply, hf.2 l z, factor_nsmul, mul_pow]⟩
+
+variable {D} in
+/-- For a theta function `f` of `D` and `v ∈ V`, the function `z ↦ f (z + v) f (z - v)` is a theta
+function of `2 D`: the factors of automorphy at `z + v` and `z - v` multiply to the square of the
+one at `z`. -/
+theorem apply_add_mul_apply_sub_mem_thetaSpace_two_nsmul {f : V → ℂ} (hf : f ∈ D.thetaSpace)
+    (v : V) :
+    (fun z ↦ f (z + v) * f (z - v)) ∈ (2 • D).thetaSpace := by
+  have hdiff := differentiable_of_mem_thetaSpace hf
+  refine (mem_thetaSpace_iff _).mpr ⟨(hdiff.comp (differentiable_id.add_const v)).mul
+    (hdiff.comp (differentiable_id.sub_const v)), fun l z ↦ ?_⟩
+  have h_exp : D.form l (z + v) + D.form l l / 2 + (D.form l (z - v) + D.form l l / 2) =
+      2 * (D.form l z + D.form l l / 2) := by
+    simp only [map_add, map_sub]
+    ring
+  have h₁ : f (z + l + v) = D.factor l (z + v) * f (z + v) := by
+    rw [add_right_comm]
+    exact apply_add_of_mem_thetaSpace hf l (z + v)
+  have h₂ : f (z + l - v) = D.factor l (z - v) * f (z - v) := by
+    rw [add_sub_right_comm]
+    exact apply_add_of_mem_thetaSpace hf l (z - v)
+  have h_prod : exp (D.form l (z + v) + D.form l l / 2) * exp (D.form l (z - v) + D.form l l / 2) =
+      exp (D.form l z + D.form l l / 2) ^ 2 := by
+    rw [← exp_add, h_exp, sq, ← exp_add, two_mul]
+  rw [h₁, h₂, factor_nsmul, factor_def, factor_def, factor_def]
+  linear_combination ((D.semichar l : ℂ) ^ 2 * f (z + v) * f (z - v)) * h_prod
 
 variable {D D'} in
 /-- **Change of the symmetric part.** If two Appell–Humbert data have the same Riemann form and the
