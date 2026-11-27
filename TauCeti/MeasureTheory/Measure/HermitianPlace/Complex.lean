@@ -7,9 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.MeasureTheory.Measure.HermitianPlace.Basic
-import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
-import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.SpecialFunctions.Gaussian.FourierTransform
+import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
@@ -104,6 +104,12 @@ noncomputable def imaginaryAxisEquiv : ℝ ≃ₜ+ skewAdjoint ℂ where
 theorem coe_imaginaryAxisEquiv (t : ℝ) : (imaginaryAxisEquiv t : ℂ) = t * I := by
   simp [imaginaryAxisEquiv]
 
+/-- The inverse of the imaginary axis sends a skew element `z` to its imaginary part. -/
+@[simp]
+theorem imaginaryAxisEquiv_symm_apply (z : skewAdjoint ℂ) :
+    imaginaryAxisEquiv.symm z = (z : ℂ).im :=
+  (rfl)
+
 /-- `(a, b) ↦ -ia + b` carries the product of two copies of the image of Lebesgue measure under
 `t ↦ it` to Lebesgue measure on `ℂ`. -/
 theorem map_prod_imaginaryAxisEquiv :
@@ -116,12 +122,6 @@ theorem map_prod_imaginaryAxisEquiv :
   congr 1
   ext p : 1
   apply Complex.ext <;> simp
-
-/-- The Gaussian `exp(-|v|²)` is integrable on `ℂ`. -/
-private theorem integrable_rexp_neg_norm_sq : Integrable fun v : ℂ ↦ Real.exp (-‖v‖ ^ 2) := by
-  have h := GaussianFourier.integrable_cexp_neg_mul_sq_norm_add (V := ℂ) (b := 1) (by simp) 0 0
-  refine h.norm.congr (Filter.Eventually.of_forall fun v ↦ ?_)
-  simp [Complex.norm_exp, ← ofReal_pow]
 
 /-- The transform `w ↦ ∫ G(v) ψ(conj v * w) dv` of the Gaussian `G(v) = exp(-|v|²)` under the
 character `ψ(x) = exp(x - conj x)` is `π exp(-|w|²)`. -/
@@ -154,20 +154,13 @@ theorem lintegral_enorm_integral_gaussian_mul_complexChar :
       ‖(π : ℂ) * Complex.exp (-‖w‖ ^ 2)‖ₑ = ENNReal.ofReal (π * Real.exp (-‖w‖ ^ 2)) := by
     rw [← ofReal_norm, norm_mul, Complex.norm_exp]
     simp [abs_of_pos Real.pi_pos, ← ofReal_pow]
-  simp_rw [integral_gaussian_mul_complexChar, h]
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_rexp_neg_norm_sq.const_mul π)
-    (Filter.Eventually.of_forall fun w ↦ by positivity), integral_const_mul]
+  have hi := integrable_rexp_neg_mul_sq_norm (E := ℂ) one_pos
   have hg := GaussianFourier.integral_rexp_neg_mul_sq_norm (V := ℂ) (b := 1) one_pos
-  simp only [neg_mul, one_mul, Complex.finrank_real_complex, div_one] at hg
-  rw [hg]
+  simp only [neg_mul, one_mul, Complex.finrank_real_complex, div_one] at hi hg
+  simp_rw [integral_gaussian_mul_complexChar, h]
+  rw [← ofReal_integral_eq_lintegral_ofReal (hi.const_mul π)
+    (Filter.Eventually.of_forall fun w ↦ by positivity), integral_const_mul, hg]
   norm_num [sq]
-
-/-- `u ↦ |u|⁻¹` is locally integrable on `ℂ`. -/
-private theorem locallyIntegrable_norm_inv : LocallyIntegrable fun u : ℂ ↦ ‖u‖⁻¹ := by
-  refine locallyIntegrable_of_norm_le_rpow (μ := volume) (C := 1) (α := 1)
-    (by simp) (by simp) (Filter.Eventually.of_forall fun u ↦ ?_)
-    (continuous_norm.measurable.inv).aestronglyMeasurable
-  simp [Real.rpow_neg_one]
 
 /-- The complex numbers with complex conjugation are a place, with `τ = 1/2`, `δ = i/2`, `ν` the
 image of Lebesgue measure under `t ↦ it`, the modulus `mod x = |x|²`, the character
@@ -191,11 +184,14 @@ noncomputable def complex : HermitianPlace ℂ where
   ψ := complexChar
   continuous_ψ := continuous_complexChar
   plancherelConst := ENNReal.ofReal (π ^ 2)
-  exists_damping_kernel := ⟨fun v ↦ Real.exp (-‖v‖ ^ 2), by fun_prop, integrable_rexp_neg_norm_sq,
+  exists_damping_kernel := ⟨fun v ↦ Real.exp (-‖v‖ ^ 2), by fun_prop,
+    by simpa using integrable_rexp_neg_mul_sq_norm (E := ℂ) one_pos,
     fun _ ↦ (Real.exp_pos _).le, by simp,
     (lintegral_enorm_integral_gaussian_mul_complexChar).le⟩
   ae_isUnit := (Measure.ae_ne volume 0).mono fun _ hx ↦ isUnit_iff_ne_zero.2 hx
-  exists_locallyIntegrable := ⟨fun u ↦ ‖u‖⁻¹, locallyIntegrable_norm_inv, fun u ↦ by
+  exists_locallyIntegrable := ⟨fun u ↦ ‖u‖⁻¹, by
+    simpa [Real.rpow_neg_one] using locallyIntegrable_norm_sub_rpow (mu := volume) (s := -1)
+      (by simp [Complex.finrank_real_complex]) (0 : ℂ), fun u ↦ by
     simp [← ofReal_norm, ENNReal.ofReal_inv_of_pos (norm_pos_iff.2 u.ne_zero), ENNReal.inv_pow]⟩
 
 @[simp] theorem complex_τ : complex.τ = 2⁻¹ := (rfl)

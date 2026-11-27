@@ -8,7 +8,11 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 
 /-!
-# The Fourier transform of the theta-series Gaussian
+# Integrability of the real Gaussian; the Fourier transform of the theta-series Gaussian
+
+The real Gaussian `x ↦ exp (-b ‖x‖²)` with `0 < b` is integrable on a finite-dimensional real
+inner product space (`TauCeti.integrable_rexp_neg_mul_sq_norm`), the integrability statement
+behind Mathlib's `GaussianFourier.integral_rexp_neg_mul_sq_norm`.
 
 On a finite-dimensional real inner product space `E` of dimension `n`, the Gaussian
 `x ↦ exp (π i τ ‖x‖²)` with `0 < im τ` is the case `b = -π i τ` of the Gaussian
@@ -24,6 +28,8 @@ with the complex power `cpow`, and for even `n = 2k` the factor is the integer p
 
 ## Main declarations
 
+* `TauCeti.integrable_rexp_neg_mul_sq_norm`: the real Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b`, is
+  integrable.
 * `TauCeti.fourier_cexp_pi_mul_I_mul_norm_sq_mul`: the Fourier transform of
   `x ↦ exp (π i τ ‖x‖²)`, with the factor `(τ / i) ^ (-n / 2)`.
 * `TauCeti.fourier_cexp_pi_mul_I_mul_norm_sq_mul_of_finrank_eq`: the same in even rank `2k`, with
@@ -43,6 +49,15 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
 
 namespace TauCeti
+
+open MeasureTheory in
+/-- The real Gaussian `x ↦ exp (-b ‖x‖²)` is integrable on a finite-dimensional real inner product
+space for every `b > 0`. -/
+theorem integrable_rexp_neg_mul_sq_norm {b : ℝ} (hb : 0 < b) :
+    Integrable fun x : E ↦ Real.exp (-b * ‖x‖ ^ 2) := by
+  refine (GaussianFourier.integrable_cexp_neg_mul_sq_norm_add (V := E) (b := b)
+    (by simpa using hb) 0 0).norm.congr (.of_forall fun x ↦ ?_)
+  simp [Complex.norm_exp, ← ofReal_pow]
 
 /-- **The Fourier transform of the Gaussian `x ↦ exp (π i τ ‖x‖²)`**: for `0 < im τ` and
 `n = finrank ℝ E`,

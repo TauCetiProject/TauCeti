@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.Topology.Instances.Matrix
+import TauCeti.MeasureTheory.Group.MeasurableEquiv
 
 /-!
 # Places for hermitian analysis
@@ -51,8 +52,9 @@ additive Haar measure) are typeclass assumptions of the results that use them.
   of a unit is a positive real number, inverted by inversion, and the modulus is even.
 * `TauCeti.HermitianPlace.map_mulVec_volume`: a matrix with unit determinant, on `A^ι` for any
   finite type `ι`, scales Haar measure by the inverse modulus of its determinant.
-* `TauCeti.HermitianPlace.lintegral_comp_smul`, `TauCeti.HermitianPlace.integral_comp_smul`:
-  the change of variables `v ↦ u • v` on `A^ι` for a unit `u`.
+* `TauCeti.HermitianPlace.lintegral_comp_smul`, `TauCeti.HermitianPlace.integral_comp_smul`,
+  `TauCeti.HermitianPlace.integrable_comp_smul`: the change of variables `v ↦ u • v` on `A^ι` for
+  a unit `u`.
 * `TauCeti.HermitianPlace.exists_seq_units_tendsto_zero`: there is a sequence of units tending
   to `0`.
 
@@ -234,17 +236,23 @@ theorem map_smul_volume (u : Aˣ) :
 /-- The change of variables `v ↦ u • v` on `A^ι` for a unit `u`, for lower integrals. -/
 theorem lintegral_comp_smul (u : Aˣ) (f : (ι → A) → ℝ≥0∞) :
     ∫⁻ v, f ((u : A) • v) = (P.modulus u)⁻¹ ^ Fintype.card ι * ∫⁻ v, f v := by
-  have he : MeasurableEmbedding ((u : A) • · : (ι → A) → ι → A) :=
-    (Homeomorph.smul u).measurableEmbedding
-  rw [← he.lintegral_map, P.map_smul_volume, lintegral_smul_measure, smul_eq_mul]
+  rw [← u.isUnit.measurableEmbedding_const_smul.lintegral_map, P.map_smul_volume,
+    lintegral_smul_measure, smul_eq_mul]
 
 /-- The change of variables `v ↦ u • v` on `A^ι` for a unit `u`, for Bochner integrals. -/
 theorem integral_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (u : Aˣ)
     (f : (ι → A) → E) :
     ∫ v, f ((u : A) • v) = ((P.modulus u)⁻¹ ^ Fintype.card ι).toReal • ∫ v, f v := by
-  have he : MeasurableEmbedding ((u : A) • · : (ι → A) → ι → A) :=
-    (Homeomorph.smul u).measurableEmbedding
-  rw [← he.integral_map, P.map_smul_volume, integral_smul_measure]
+  rw [← u.isUnit.measurableEmbedding_const_smul.integral_map, P.map_smul_volume,
+    integral_smul_measure]
+
+include P in
+/-- The change of variables `v ↦ u • v` on `A^ι` for a unit `u` preserves integrability. -/
+theorem integrable_comp_smul {E : Type*} [NormedAddCommGroup E] (u : Aˣ) {f : (ι → A) → E}
+    (hf : Integrable f) : Integrable fun v ↦ f ((u : A) • v) :=
+  u.isUnit.measurableEmbedding_const_smul.integrable_map_iff.mp <| by
+    rw [P.map_smul_volume]
+    exact hf.smul_measure (ENNReal.pow_ne_top (ENNReal.inv_ne_top.2 (P.modulus_units_ne_zero u)))
 
 end ChangeOfVariables
 

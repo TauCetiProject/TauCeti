@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Bessel
 public import TauCeti.MeasureTheory.Measure.HermitianPlace.Basic
 public import TauCeti.Topology.Algebra.Star.SkewAdjoint
 import TauCeti.MeasureTheory.Constructions.Polish.Units
+import TauCeti.MeasureTheory.Integral.CompactlySupported
 import TauCeti.MeasureTheory.Measure.Disintegration.Continuous
 
 /-!
@@ -42,9 +43,11 @@ quadric `x*Jx = δ⁻¹β`, and the continuity makes the family unique at every 
 
 ## Main results
 
-* `TauCeti.HermitianPlace.quadricChart_quadratic`: the chart lands on the quadric over units.
+* `TauCeti.HermitianPlace.star_quadricChart_dotProduct_splitGram_mulVec`: the chart lands on the
+  quadric over units.
 * `TauCeti.HermitianPlace.lintegral_quadricMeasure`, `TauCeti.HermitianPlace.ae_quadricMeasure`:
   integration against the quadric measure, and its support.
+* `TauCeti.HermitianPlace.IsDisintegration.regular`: the fibres of a disintegration are regular.
 * `TauCeti.HermitianPlace.IsDisintegration.unique`: a measure has at most one disintegration
   along a form.
 
@@ -99,7 +102,8 @@ theorem quadricChart_inr_inl (i : ι) : P.quadricChart T β p (.inr (.inl i)) = 
 theorem quadricChart_inr_inr (a : Fin 1) : P.quadricChart T β p (.inr (.inr a)) = p.1 := (rfl)
 
 /-- The chart lands on the quadric `h(v, v) = δ⁻¹β` over the units `t`, for hermitian `T`. -/
-theorem quadricChart_quadratic {T : Matrix ι ι A} (hT : T.IsHermitian) {p} (hp : IsUnit p.1) :
+theorem star_quadricChart_dotProduct_splitGram_mulVec {T : Matrix ι ι A} (hT : T.IsHermitian) {p}
+    (hp : IsUnit p.1) :
     star (P.quadricChart T β p) ⬝ᵥ splitGram 1 T *ᵥ P.quadricChart T β p = ↑P.δ⁻¹ * β := by
   obtain ⟨t, w, a⟩ := p
   have hr : star t * Ring.inverse (star t) = 1 := Ring.mul_inverse_cancel _ hp.star
@@ -142,7 +146,7 @@ theorem ae_quadricMeasure {T : Matrix ι ι A} (hT : T.IsHermitian) :
     (isClosed_eq (by fun_prop) continuous_const).measurableSet
   rw [quadricMeasure, ae_map_iff (P.measurable_quadricChart T β).aemeasurable hs]
   exact (Measure.quasiMeasurePreserving_fst.ae P.ae_isUnit).mono fun p hp ↦
-    P.quadricChart_quadratic β hT hp
+    P.star_quadricChart_dotProduct_splitGram_mulVec β hT hp
 
 variable [LocallyCompactSpace A] [(volume : Measure A).IsAddHaarMeasure]
 
@@ -171,6 +175,14 @@ structure IsDisintegration (J : Matrix ι ι A) (μ : Measure (ι → A))
   lintegral_eq (f : A × (ι → A) → ℝ≥0∞) (hf : Measurable f) :
     ∫⁻ x, f (star x ⬝ᵥ J *ᵥ x, x) ∂μ = ∫⁻ β, ∫⁻ x, f (↑P.δ⁻¹ * β, x) ∂l β ∂P.ν
 
+/-- The fibres of a disintegration are regular: the integrals of compactly supported continuous
+functions against them are finite, so they are finite on compact sets. -/
+theorem IsDisintegration.regular [PolishSpace A] [BorelSpace A] [LocallyCompactSpace A]
+    {J : Matrix ι ι A} {μ : Measure (ι → A)} {l : skewAdjoint A → Measure (ι → A)}
+    (hl : P.IsDisintegration J μ l) (β : skewAdjoint A) : (l β).Regular :=
+  have := isFiniteMeasureOnCompacts_of_lintegral_lt_top fun f ↦ hl.lintegral_lt_top f β
+  Measure.Regular.of_sigmaCompactSpace_of_isLocallyFiniteMeasure _
+
 /-- **Disintegrations are unique**: two families that disintegrate the same measure along the
 same form agree at every skew element. -/
 theorem IsDisintegration.unique [IsTopologicalRing A] [ContinuousStar A] [PolishSpace A]
@@ -178,12 +190,8 @@ theorem IsDisintegration.unique [IsTopologicalRing A] [ContinuousStar A] [Polish
     {l l' : skewAdjoint A → Measure (ι → A)} (hl : P.IsDisintegration J μ l)
     (hl' : P.IsDisintegration J μ l') : l = l' := by
   classical
-  have : ∀ β, (l β).Regular := fun β ↦
-    have := isFiniteMeasureOnCompacts_of_lintegral_lt_top fun f ↦ hl.lintegral_lt_top f β
-    Measure.Regular.of_sigmaCompactSpace_of_isLocallyFiniteMeasure _
-  have : ∀ β, (l' β).Regular := fun β ↦
-    have := isFiniteMeasureOnCompacts_of_lintegral_lt_top fun f ↦ hl'.lintegral_lt_top f β
-    Measure.Regular.of_sigmaCompactSpace_of_isLocallyFiniteMeasure _
+  have := hl.regular
+  have := hl'.regular
   -- The skew element `β` with `δ⁻¹β = c`, read off measurably from `c`.
   set g : A → A := fun c ↦ if ↑P.δ * c ∈ skewAdjoint A then ↑P.δ * c else 0
   have hg_mem (c : A) : g c ∈ skewAdjoint A := by
@@ -192,7 +200,7 @@ theorem IsDisintegration.unique [IsTopologicalRing A] [ContinuousStar A] [Polish
     exacts [h, zero_mem _]
   set π : A → skewAdjoint A := fun c ↦ ⟨g c, hg_mem c⟩
   have hg : Measurable g := Measurable.ite
-    (isClosed_skewAdjoint.measurableSet.preimage (measurable_const_mul _))
+    (TauCeti.isClosed_skewAdjoint.measurableSet.preimage (measurable_const_mul _))
     (measurable_const_mul _) measurable_const
   have hπ : Measurable π := hg.subtype_mk
   have hπδ (β : skewAdjoint A) : π (↑P.δ⁻¹ * β) = β := by

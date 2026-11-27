@@ -300,12 +300,7 @@ theorem lintegral_enorm_integral_sq_le (η : Aˣ) {f : (ι → A) → ℂ} (hf :
   have hD : Integrable D := Integrable.fintype_prod fun _ ↦ hGi
   have hDc : Continuous D := continuous_finsetProd _ fun i _ ↦ hGc.comp (continuous_apply i)
   -- The damped weights `v ↦ D (u n • v)`.
-  have hW (n : ℕ) : Integrable fun v ↦ D ((u n : A) • v) := by
-    have he : MeasurableEmbedding ((u n : A) • · : (ι → A) → ι → A) :=
-      (Homeomorph.smul (u n)).measurableEmbedding
-    refine (he.integrable_map_iff (g := D)).mp ?_
-    rw [P.map_smul_volume]
-    exact hD.smul_measure (ENNReal.pow_ne_top (ENNReal.inv_ne_top.2 (P.modulus_units_ne_zero _)))
+  have hW (n : ℕ) : Integrable fun v ↦ D ((u n : A) • v) := P.integrable_comp_smul (u n) hD
   have hbound (n : ℕ) : ∫⁻ v, ENNReal.ofReal (D ((u n : A) • v)) * ‖F v‖ₑ ^ 2 ≤
       (P.plancherelConst / P.modulus η) ^ Fintype.card ι * ∫⁻ w, ‖f w‖ₑ ^ 2 := by
     refine (P.lintegral_ofReal_mul_enorm_integral_sq_le η

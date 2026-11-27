@@ -17,12 +17,12 @@ public import Mathlib.Topology.Separation.Hausdorff
 
 In a Hausdorff additive group with continuous negation and continuous star operation, the
 skew-adjoint elements `{x | star x = -x}` form a closed subgroup
-(`isClosed_skewAdjoint`). In particular they form a locally compact group when the ambient group
-is locally compact, which is what a Haar measure on them needs.
+(`TauCeti.isClosed_skewAdjoint`). In particular they form a locally compact group when the
+ambient group is locally compact, which is what a Haar measure on them needs.
 
 ## Main results
 
-* `isClosed_skewAdjoint`: the skew-adjoint elements form a closed set.
+* `TauCeti.isClosed_skewAdjoint`: the skew-adjoint elements form a closed set.
 * `skewAdjoint.instLocallyCompactSpace`, `skewAdjoint.instSecondCountableTopology`: they form a
   locally compact (resp. second countable) space when the ambient space does.
 -/
@@ -32,15 +32,19 @@ public section
 variable {R : Type*} [AddCommGroup R] [StarAddMonoid R] [TopologicalSpace R] [ContinuousStar R]
   [ContinuousNeg R] [T2Space R]
 
+namespace TauCeti
+
 /-- The skew-adjoint elements of a Hausdorff topological star group form a closed set. -/
 theorem isClosed_skewAdjoint : IsClosed (skewAdjoint R : Set R) :=
   isClosed_eq continuous_star continuous_neg
+
+end TauCeti
 
 /-- The skew-adjoint elements of a locally compact Hausdorff topological star group form a locally
 compact space. -/
 instance skewAdjoint.instLocallyCompactSpace [LocallyCompactSpace R] :
     LocallyCompactSpace (skewAdjoint R) :=
-  isClosed_skewAdjoint.locallyCompactSpace
+  TauCeti.isClosed_skewAdjoint.locallyCompactSpace
 
 /-- The skew-adjoint elements of a second countable topological star group form a second
 countable space. -/
