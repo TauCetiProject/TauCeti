@@ -54,6 +54,11 @@ So the equation tested on `∂ₛ` alone loses no information.
   the product of the chart targets. It is twice the term read in the tangent trivializations,
   applied to `1` (`TauCeti.InhomogeneousTerm.chartTerm_chartAt`), and that reading is `Cⁿ` on
   the product of the chart sources (`TauCeti.DomainDependentHomSection.contMDiffOn_inCoordinates`).
+* `TauCeti.InhomogeneousTerm.contDiffOn_chartTermExtend_chartAt`: over a domain modelled on `ℂ`
+  with corners, such as a Riemann surface with boundary, the term read in the preferred extended
+  charts is jointly `Cⁿ` on the product of the extended chart targets, which is regularity up to
+  the boundary (`TauCeti.InhomogeneousTerm.chartTermExtend_chartAt` is the reading in the
+  tangent trivializations).
 * `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_eq_zero`: over a two-dimensional domain,
   an inhomogeneous term vanishes at a point exactly when it vanishes on one nonzero tangent vector
   there; `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_one_eq_zero` is the case of the
@@ -387,6 +392,71 @@ theorem chartTermExtend_apply_eq_chartTerm_apply (ν : InhomogeneousTerm jQ JQ)
 
 end Extend
 
+/-! ### Preferred extended charts of a domain modelled on `ℂ` with corners -/
+
+section PreferredChartsExtend
+
+variable [I.Boundaryless] {HQ Q : Type*} [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ ℂ HQ}
+  [TopologicalSpace Q] [ChartedSpace HQ Q] [IsManifold IQ ∞ Q]
+  {jQ : ContMDiffAlmostComplexStructure IQ n Q}
+  {JQ : ContMDiffAlmostComplexStructureFamily I M IQ Q n}
+
+/-- In the preferred extended charts of a domain modelled on `ℂ` with corners, an inhomogeneous
+term read through `chartTermExtend` is twice its reading in the tangent trivializations at `x`
+and `y`, applied to `1`. -/
+theorem chartTermExtend_chartAt (ν : InhomogeneousTerm jQ JQ) (x : Q) (y : M) {z : ℂ}
+    (hz : z ∈ (extChartAt IQ x).target) {v : E} (hv : v ∈ (extChartAt I y).target) :
+    ν.chartTermExtend (chartAt HQ x) ((chartAt H y).extendTrans I (Homeomorph.refl E)) z v =
+      (2 : ℝ) • ContinuousLinearMap.inCoordinates ℂ (TangentSpace IQ) E (TangentSpace I) x
+        ((extChartAt IQ x).symm z) y ((extChartAt I y).symm v)
+        (ν.val ((extChartAt IQ x).symm z, (extChartAt I y).symm v)) 1 := by
+  have hx : (extChartAt IQ x).symm z ∈ (chartAt HQ x).source := by
+    rw [← extChartAt_source IQ]
+    exact (extChartAt IQ x).map_target hz
+  have hy : (extChartAt I y).symm v ∈ (chartAt H y).source := by
+    rw [← extChartAt_source I]
+    exact (extChartAt I y).map_target hv
+  have hψ : ⇑((chartAt H y).extendTrans I (Homeomorph.refl E)) = extChartAt I y :=
+    (chartAt H y).coe_extendTrans_refl I
+  have hψs : ⇑((chartAt H y).extendTrans I (Homeomorph.refl E)).symm = (extChartAt I y).symm :=
+    (chartAt H y).coe_symm_extendTrans_refl I
+  simp only [chartTermExtend_apply, ContinuousLinearMap.inCoordinates,
+    ContinuousLinearMap.comp_apply]
+  rw [TangentBundle.continuousLinearMapAt_trivializationAt hy,
+    TangentBundle.symmL_trivializationAt hx, hψ, hψs, (extChartAt IQ x).right_inv hz]
+  rw [DomainDependentHomSection.tangentHom_apply]
+  -- `mvfderiv` is `mfderiv` followed by the identification of `TangentSpace 𝓘(ℝ, E) _` with `E`,
+  -- and the composite evaluates by `comp_apply`; the identification is the identity, so both
+  -- sides agree by definition. Rewriting with `mvfderiv_apply_eq_mfderiv_apply` or `comp_apply`
+  -- fails here, since `1 : ℂ` is read as a tangent vector only up to that identification.
+  rfl
+
+/-- In the preferred extended charts of a domain modelled on `ℂ` with corners, an inhomogeneous
+term read through `chartTermExtend` is jointly `Cⁿ` on the product of the extended chart targets.
+Over the closed upper half-plane this is regularity up to the boundary. -/
+theorem contDiffOn_chartTermExtend_chartAt (ν : InhomogeneousTerm jQ JQ) (x : Q) (y : M) :
+    ContDiffOn ℝ n (fun q : ℂ × E ↦
+        ν.chartTermExtend (chartAt HQ x) ((chartAt H y).extendTrans I (Homeomorph.refl E)) q.1
+          q.2)
+      ((extChartAt IQ x).target ×ˢ (extChartAt I y).target) := by
+  have hmaps : Set.MapsTo (extChartAt (IQ.prod I) (x, y)).symm
+      (extChartAt (IQ.prod I) (x, y)).target ((chartAt HQ x).source ×ˢ (chartAt H y).source) :=
+    fun q hq ↦ by
+      simpa [extChartAt_source] using (extChartAt (IQ.prod I) (x, y)).map_target hq
+  have h := contMDiffOn_iff_contDiffOn.1 ((ν.val.contMDiffOn_inCoordinates x y).comp
+    (contMDiffOn_extChartAt_symm (x, y)) hmaps)
+  rw [extChartAt_prod_target] at h
+  refine ((h.clm_apply (contDiffOn_const (c := (1 : ℂ)))).const_smul (2 : ℝ)).congr
+    fun q hq ↦ ?_
+  have hs : (extChartAt (IQ.prod I) (x, y)).symm q =
+      ((extChartAt IQ x).symm q.1, (extChartAt I y).symm q.2) :=
+    extChartAt_prod_symm_apply _ _
+  rw [ν.chartTermExtend_chartAt x y hq.1 hq.2]
+  exact congrArg (fun r : Q × M ↦ (2 : ℝ) • ContinuousLinearMap.inCoordinates ℂ
+    (TangentSpace IQ) E (TangentSpace I) x r.1 y r.2 (ν.val r) 1) hs.symm
+
+end PreferredChartsExtend
+
 /-! ### Preferred charts of a domain modelled on `ℂ` -/
 
 section PreferredCharts
@@ -394,6 +464,14 @@ section PreferredCharts
 variable [I.Boundaryless] {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℝ, ℂ) ∞ Y] {jY : ContMDiffAlmostComplexStructure 𝓘(ℝ, ℂ) n Y}
   {JY : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) Y n}
+
+omit [I.Boundaryless] in
+/-- In the preferred chart of a domain modelled on `ℂ`, `chartTerm` is `chartTermExtend`. -/
+private theorem chartTerm_chartAt_eq_chartTermExtend (ν : InhomogeneousTerm jY JY) (x : Y)
+    (ψ : OpenPartialHomeomorph M G) (z : ℂ) (v : G) :
+    ν.chartTerm (chartAt ℂ x) ψ z v = ν.chartTermExtend (chartAt ℂ x) ψ z v :=
+  (ν.chartTermExtend_apply_eq_chartTerm_apply _ _ ψ (by simp)
+    (Filter.EventuallyEq.of_eq (by simp)) v).symm
 
 /-- In the preferred charts, an inhomogeneous term read through `chartTerm` is twice its reading
 in the tangent trivializations at `x` and `y`, applied to `1`. -/
@@ -403,28 +481,8 @@ theorem chartTerm_chartAt (ν : InhomogeneousTerm jY JY) (x : Y) (y : M) {z : �
       (2 : ℝ) • ContinuousLinearMap.inCoordinates ℂ (TangentSpace 𝓘(ℝ, ℂ)) E (TangentSpace I) x
         ((chartAt ℂ x).symm z) y ((extChartAt I y).symm v)
         (ν.val ((chartAt ℂ x).symm z, (extChartAt I y).symm v)) 1 := by
-  have hx : (chartAt ℂ x).symm z ∈ (chartAt ℂ x).source := (chartAt ℂ x).map_target hz
-  have hy : (extChartAt I y).symm v ∈ (chartAt H y).source := by
-    rw [← extChartAt_source I]
-    exact (extChartAt I y).map_target hv
-  have hψ : ⇑((chartAt H y).extendTrans I (Homeomorph.refl E)) = extChartAt I y :=
-    (chartAt H y).coe_extendTrans_refl I
-  have hψs : ⇑((chartAt H y).extendTrans I (Homeomorph.refl E)).symm = (extChartAt I y).symm :=
-    (chartAt H y).coe_symm_extendTrans_refl I
-  simp only [chartTerm_apply, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
-  rw [TangentBundle.continuousLinearMapAt_trivializationAt hy,
-    TangentBundle.symmL_trivializationAt hx, hψ, hψs]
-  have h1 : mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x).symm (Set.range 𝓘(ℝ, ℂ))
-      (extChartAt 𝓘(ℝ, ℂ) x ((chartAt ℂ x).symm z)) =
-        mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (chartAt ℂ x).symm z := by
-    simp only [mfld_simps, Set.range_id, mfderivWithin_univ]
-    rw [(chartAt ℂ x).right_inv hz]
-  rw [h1, DomainDependentHomSection.tangentHom_apply]
-  -- `mvfderiv` is `mfderiv` followed by the identification of `TangentSpace 𝓘(ℝ, E) _` with `E`,
-  -- and the composite evaluates by `comp_apply`; the identification is the identity, so both
-  -- sides agree by definition. Rewriting with `mvfderiv_apply_eq_mfderiv_apply` or `comp_apply`
-  -- fails here, since `1 : ℂ` is read as a tangent vector only up to that identification.
-  rfl
+  rw [chartTerm_chartAt_eq_chartTermExtend]
+  simpa using ν.chartTermExtend_chartAt x y (z := z) (by simpa using hz) hv
 
 /-- In the preferred charts, an inhomogeneous term read through `chartTerm` is jointly `Cⁿ` on
 the product of the chart targets. -/
@@ -432,23 +490,7 @@ theorem contDiffOn_chartTerm_chartAt (ν : InhomogeneousTerm jY JY) (x : Y) (y :
     ContDiffOn ℝ n (fun q : ℂ × E ↦
         ν.chartTerm (chartAt ℂ x) ((chartAt H y).extendTrans I (Homeomorph.refl E)) q.1 q.2)
       ((chartAt ℂ x).target ×ˢ (extChartAt I y).target) := by
-  have hmaps : Set.MapsTo (extChartAt (𝓘(ℝ, ℂ).prod I) (x, y)).symm
-      (extChartAt (𝓘(ℝ, ℂ).prod I) (x, y)).target ((chartAt ℂ x).source ×ˢ (chartAt H y).source) :=
-    fun q hq ↦ by
-      simpa [extChartAt_source] using (extChartAt (𝓘(ℝ, ℂ).prod I) (x, y)).map_target hq
-  have h := contMDiffOn_iff_contDiffOn.1 ((ν.val.contMDiffOn_inCoordinates x y).comp
-    (contMDiffOn_extChartAt_symm (x, y)) hmaps)
-  rw [extChartAt_prod_target] at h
-  refine (((h.clm_apply (contDiffOn_const (c := (1 : ℂ)))).const_smul (2 : ℝ)).congr
-    fun q hq ↦ ?_).mono fun q hq ↦ ⟨by simpa using hq.1, hq.2⟩
-  have hq1 : q.1 ∈ (chartAt ℂ x).target := by simpa using hq.1
-  have hs : (extChartAt (𝓘(ℝ, ℂ).prod I) (x, y)).symm q =
-      ((chartAt ℂ x).symm q.1, (extChartAt I y).symm q.2) := by
-    rw [extChartAt_prod_symm_apply]
-    simp
-  rw [ν.chartTerm_chartAt x y hq1 hq.2]
-  exact congrArg (fun r : Y × M ↦ (2 : ℝ) • ContinuousLinearMap.inCoordinates ℂ
-    (TangentSpace 𝓘(ℝ, ℂ)) E (TangentSpace I) x r.1 y r.2 (ν.val r) 1) hs.symm
+  simpa [chartTerm_chartAt_eq_chartTermExtend] using ν.contDiffOn_chartTermExtend_chartAt x y
 
 end PreferredCharts
 
