@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Invariant.Profinite
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Decomposition
-import TauCeti.NumberTheory.NumberField.IntegralClosure
 import TauCeti.RingTheory.Invariant.Galois
 
 /-!
@@ -45,15 +44,14 @@ namespace TauCeti.GaloisRep
 
 variable {F : Type*} [Field F]
 
-/-- For a perfect field `F`, the elements of `O` fixed by `G_F` are those of `𝓞 F`. This is
-`NumberField.isInvariant_integralClosure` for `Gal(F^alg/F)`, whose fixed field is `F` (Mathlib's
-`IsGaloisGroup.of_isGalois`); `G_F` is that group with no action instance of its own on `F^alg`,
-so the instance is transported by hand. -/
+/-- For a perfect field `F`, the elements of `O` fixed by `G_F` are those of `𝓞 F`. -/
 instance isInvariant_integralClosure [PerfectField F] :
     Algebra.IsInvariant (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))
-      (Field.absoluteGaloisGroup F) :=
-  inferInstanceAs (Algebra.IsInvariant (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))
-    (AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F))
+      (Field.absoluteGaloisGroup F) where
+  isInvariant x hx := by
+    obtain ⟨r, hr⟩ := (InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed F
+      (x : AlgebraicClosure F)).2 ⟨x.property, fun σ ↦ (smul_integralClosure_eq_iff σ x).1 (hx σ)⟩
+    exact ⟨r, Subtype.ext hr⟩
 
 variable (F) in
 /-- The action of `G_F` on `O` is continuous for the discrete topology on `O`. -/
