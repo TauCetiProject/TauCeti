@@ -145,7 +145,7 @@ theorem diagGL_mem_map_iwahoriOne_iff {t : m → Kˣ} :
 theorem diagGL_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular {t : m → Kˣ}
     (ht : Monotone fun i ↦ A.valuation (t i : K)) {u : GL m K}
     (hu : u ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)))
-    (hutri : ∀ ⦃i j : m⦄, j < i → (u : Matrix m m K) i j = 0) :
+    (hutri : (u : Matrix m m K).IsUpperTriangular) :
     diagGL t * u * (diagGL t)⁻¹ ∈
       (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) := by
   obtain ⟨h1, -, hdiag⟩ := (mem_map_iwahoriOne_iff A).mp hu
@@ -166,7 +166,7 @@ keeps it in `I₁`. -/
 theorem diagGL_inv_mul_mem_map_iwahoriOne_of_isLowerTriangular {t : m → Kˣ}
     (ht : Monotone fun i ↦ A.valuation (t i : K)) {l : GL m K}
     (hl : l ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)))
-    (hltri : ∀ ⦃i j : m⦄, i < j → (l : Matrix m m K) i j = 0) :
+    (hltri : (l : Matrix m m K).IsLowerTriangular) :
     (diagGL t)⁻¹ * l * diagGL t ∈
       (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) := by
   obtain ⟨h1, hlow, hdiag⟩ := (mem_map_iwahoriOne_iff A).mp hl
@@ -195,7 +195,7 @@ theorem exists_upperTriangular_mul_conj_mem_map_iwahoriOne {t : m → Kˣ}
     (ht : Monotone fun i ↦ A.valuation (t i : K)) {x : GL m K}
     (hx : x ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))) :
     ∃ u ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)),
-      (∀ ⦃i j : m⦄, j < i → (u : Matrix m m K) i j = 0) ∧
+      (u : Matrix m m K).IsUpperTriangular ∧
       (diagGL t)⁻¹ * (u⁻¹ * x) * diagGL t ∈
         (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) := by
   rcases Subgroup.mem_map.mp hx with ⟨xA, hxA, rfl⟩
