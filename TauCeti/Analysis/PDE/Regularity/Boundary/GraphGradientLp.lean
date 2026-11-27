@@ -23,7 +23,7 @@ continuous. Let `u ∈ H¹(ℝ^{n+1})` vanish off `Ω` and solve
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in `Ω`,
 
-that is `∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω ⟨G, ∇v⟩` for every `v ∈ H¹₀(Ω)`, with `G ∈ L²(Ω) ∩ Lᵖ(Ω)`. This file
+that is `∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω ⟨G, ∇v⟩` for every `v ∈ H¹₀(Ω)`, with `G ∈ Lᵖ(Ω)`. This file
 proves the `W^{1,p}` estimate up to the curved boundary,
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ(Ω)}`, `2 < p < ∞`,
@@ -348,8 +348,8 @@ elliptic with constants `λ, Λ` and not necessarily symmetric, and let `s` be a
 which `Dγ` is within `δ` of `Dγ(x₀)` and on whose part in `Ω` the bilinear form of `a`, measurable
 on `Ω`, is within `δ` of that of `A`, in operator norm. Let `u ∈ H¹(ℝ^{n+1})` vanish off `Ω`, let
 `∇u` vanish off `s`, and let `u` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in `Ω`, that is
-`∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω ⟨G, ∇v⟩` for every `v ∈ H¹₀(Ω)`, with `G ∈ L²(Ω) ∩ Lᵖ(Ω)`. If `∇u` lies in
-`Lᵖ`, then
+`∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω ⟨G, ∇v⟩` for every `v ∈ H¹₀(Ω)`, with `G ∈ Lᵖ(Ω)`. If `∇u` lies in `Lᵖ`,
+then
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ(Ω)}`.
 
@@ -372,8 +372,7 @@ theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_graph {p : ℝ≥0∞} (hp 
           (∀ v : W1p0 volume Ω 2,
             energyFormH1 a 0 0 (W1p.restrictL (le_top : Ω ≤ ⊤) u) (v : W1p volume Ω 2) =
               ∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) →
-          MemLp (W1p.gradient u : E → E) p volume →
-          MemLp G 2 (volume.restrict Ω) → MemLp G p (volume.restrict Ω) →
+          MemLp (W1p.gradient u : E → E) p volume → MemLp G p (volume.restrict Ω) →
           eLpNorm (W1p.gradient u : E → E) p volume ≤ C * eLpNorm G p (volume.restrict Ω) := by
   obtain ⟨C₀, δ₀, hδ₀, hflat⟩ := exists_eLpNorm_gradient_le_of_norm_sub_le_of_ae_gradient_eq_zero
     (n := n) hp hp_top (1 * lam / (1 + K) ^ 2)
@@ -381,7 +380,7 @@ theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_graph {p : ℝ≥0∞} (hp 
   set D : ℝ := (1 + K) ^ 2 + 2 * |Lam| * (1 + K)
   have hD : 0 < D := by positivity
   refine ⟨(1 + K) ^ 2 * C₀, δ₀ / D, div_pos hδ₀ hD, ?_⟩
-  intro Ω ν γ a A s x₀ hν hγd hγν hK hΩ hs ha hA hγs has u G hu0 hus hu hgp hG2 hGp
+  intro Ω ν γ a A s x₀ hν hγd hγν hK hΩ hs ha hA hγs has u G hu0 hus hu hgp hGp
   -- The half-space `H = {0 < ⟪y, ν⟫}`, carried onto `Ω` by the shear `Φ = shearAlong γ ν`.
   let H : Opens E := ⟨{y | 0 < ⟪y, ν⟫_ℝ}, isOpen_lt continuous_const (by fun_prop)⟩
   have hΩ' : (Ω : Set E) = {x | γ x < ⟪x, ν⟫_ℝ} := Set.ext hΩ
@@ -399,7 +398,6 @@ theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_graph {p : ℝ≥0∞} (hp 
     rw [h1, h2 hy, map_zero]
   obtain ⟨hvp, hgv⟩ := memLp_and_eLpNorm_le_of_eq_adjoint_shearAlong hν hγd hγν hK
     (by simpa using Lp.aestronglyMeasurable (W1p.gradient v)) hv_grad hgp
-  obtain ⟨hG'2, -⟩ := memLp_pullbackDrift_shearAlong_and_eLpNorm_le hν hγd hγν hK hpre hmpH hG2
   obtain ⟨hG'p, hG'⟩ := memLp_pullbackDrift_shearAlong_and_eLpNorm_le hν hγd hγν hK hpre hmpH hGp
   -- The flat estimate, with the constant matrix `A' = DΨ(x₀) A DΨ(x₀)ᵀ`.
   have hflat' := hflat (H := H) (ν := ν) (c₀ := 0) (a := pullbackPrincipal (shearAlong γ ν) a)
@@ -413,7 +411,7 @@ theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_graph {p : ℝ≥0∞} (hp 
       (has _ hys (by rw [← SetLike.mem_coe, ← hpre] at hyH; exact hyH)) (hγs _ hys)).trans
       (div_mul_cancel₀ δ₀ hD.ne').le)
     v (pullbackDrift (shearAlong γ ν) G) hv0 hvs
-    (energyFormH1_pullbackPrincipal_shearAlong_eq hν hγd hγν hK hpre hmpH hv_val hu) hvp hG'2 hG'p
+    (energyFormH1_pullbackPrincipal_shearAlong_eq hν hγd hγν hK hpre hmpH hv_val hu) hvp hG'p
   -- Back to `Ω`: the norms of `∇u` and `G` are those of `∇v` and `G'` up to factors `1 + K`.
   calc eLpNorm (W1p.gradient u : E → E) p volume ≤
         ENNReal.ofReal (1 + K) * eLpNorm (W1p.gradient v : E → E) p volume := hgv
