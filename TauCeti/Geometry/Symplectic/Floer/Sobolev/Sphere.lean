@@ -680,10 +680,12 @@ private theorem orthogonal_range_floerConformalSobolevOperator_sphereWeight_cons
       (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0).rangeᗮ =
       ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun h hh ↦ ?_
-  have hM := ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight (T := 0)
-    (J₀ := J₀.toLinearMap.toContinuousLinearMap) (u := 0) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl)
-    (fun _ _ _ ↦ rfl) (fun _ ↦ contDiffAt_const) (fun _ ↦ contDiffAt_const)
-    (fun _ ↦ contDiffAt_const) contDiff_const
+  have hM : MemLp (ω.floerConformalJetCoeff sphereWeight
+      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0) ∞
+      (volume.restrict univ) := by
+    -- For constant data the coefficient field is constant (`floerConformalJetCoeff_const`).
+    rw [ω.floerConformalJetCoeff_const]
+    exact memLp_top_const_eNorm eNorm_ne_top
   obtain ⟨η, hηc, hae, hD⟩ := ω.exists_contDiffOn_ae_eq_forall_floerLinearizationAdjoint_eq_zero
     isWeight_sphereWeight (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ J₀.toContinuousLinearMap_mul_self)
     (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ contDiffAt_const) hM hh

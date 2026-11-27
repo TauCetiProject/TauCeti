@@ -260,9 +260,10 @@ theorem eq_zero_of_floerLinearizationAdjoint_const_eq_zero (hJ₀ : ω.Invariant
     filter_upwards [(isCompact_closedBall (0 : ℂ) 1).compl_mem_cocompact] with s hs
     have hs1 : 1 < ‖s‖ := by simpa using hs
     have hs0 : s ≠ 0 := norm_pos_iff.1 (one_pos.trans hs1)
+    -- Apply the transformation law of `g` at `s⁻¹`; the factors `s⁻²` and `s²` cancel.
     rw [Pi.neg_apply, hgeq s⁻¹ (by simpa [norm_inv] using inv_lt_one_of_one_lt₀ hs1)
-      (inv_ne_zero hs0), inv_inv, inv_pow, inv_inv, neg_smul, smul_neg, neg_neg, smul_smul,
-      inv_mul_cancel₀ (pow_ne_zero _ hs0), one_smul]) _
+      (inv_ne_zero hs0)]
+    simp [hs0]) _
   simpa [G, re_covectorComplexify] using congrArg Complex.re hG0
 
 end TauCeti.SymplecticForm
