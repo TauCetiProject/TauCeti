@@ -39,6 +39,8 @@ discrete valuation ring.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
+* `Scheme.Hom.isIso_lift_subschemeι_vanishingIdeal`: a reduced closed subscheme
+  with image `Z` is isomorphic to the reduced induced closed subscheme on `Z`.
 * `Scheme.IdealSheafData.comap_vanishingIdeal_of_isOpenImmersion`,
   `Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range`, and
   `Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_apply`: pullback of vanishing
@@ -130,6 +132,29 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
       rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
       exact h ⟨y, rfl⟩
   exact (X.mem_zeroLocus_iff _ _).mp hZ s hs hy
+
+/-- A closed immersion from a reduced scheme with image `Z` identifies its source with the
+reduced induced closed subscheme on `Z`. The canonical lift commutes with the inclusions by
+`IsClosedImmersion.lift_fac`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_lift_subschemeι_vanishingIdeal
+    {Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X)
+    [IsClosedImmersion f] {Z : Closeds X} (h : Set.range f = Z) :
+    IsIso (IsClosedImmersion.lift (vanishingIdeal Z).subschemeι f
+      (by simpa using vanishingIdeal_le_ker_of_range_subset f h.le)) := by
+  let e := IsClosedImmersion.lift (vanishingIdeal Z).subschemeι f
+    (by simpa using vanishingIdeal_le_ker_of_range_subset f h.le)
+  have he : e ≫ (vanishingIdeal Z).subschemeι = f := IsClosedImmersion.lift_fac _ _ _
+  have : IsClosedImmersion (e ≫ (vanishingIdeal Z).subschemeι) := by
+    rw [he]
+    infer_instance
+  have := IsClosedImmersion.of_comp_isClosedImmersion e (vanishingIdeal Z).subschemeι
+  have : Surjective e := by
+    constructor
+    intro y
+    obtain ⟨z, hz⟩ := h.ge y.property
+    refine ⟨z, (vanishingIdeal Z).subschemeι.isClosedEmbedding.injective ?_⟩
+    rw [← Scheme.Hom.comp_apply, he, subschemeι_apply, hz]
+  exact isIso_of_isClosedImmersion_of_surjective e
 
 /-- The reduction `X.nilradical.subscheme` of a scheme is reduced. -/
 instance _root_.AlgebraicGeometry.Scheme.isReduced_subscheme_nilradical (X : Scheme.{u}) :
