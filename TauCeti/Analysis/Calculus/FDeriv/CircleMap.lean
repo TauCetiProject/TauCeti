@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
@@ -34,6 +35,8 @@ by the derivative of `u` within that set.
 * `TauCeti.deriv_comp_circleMap_eq_fderivWithin`: the velocity of the loop
   `θ ↦ u(z₀ + ρ e^{iθ})` is the derivative of `u` within any set containing the nearby arc of the
   circle, applied to the tangent vector `i ρ e^{iθ}`.
+* `TauCeti.continuous_deriv_comp_circleMap`: for `u` of class `C¹` on an open set containing the
+  circle, the velocity of the loop `θ ↦ u(z₀ + ρ e^{iθ})` is continuous.
 * `TauCeti.norm_sub_le_of_norm_fderiv_le_circle`: if `‖du‖ ≤ L` along the arc of the circle of
   radius `ρ` about `z₀` between the angles `θ₁` and `θ₂`, then the images of its endpoints are at
   distance at most `L ρ |θ₂ - θ₁|`.
@@ -66,6 +69,20 @@ theorem deriv_comp_circleMap_eq_fderivWithin {s : Set ℂ} {ρ θ : ℝ}
     deriv (fun θ ↦ u (circleMap z₀ ρ θ)) θ =
       fderivWithin ℝ u s (circleMap z₀ ρ θ) (circleMap 0 ρ θ * I) :=
   (hu.hasFDerivWithinAt.comp_hasDerivAt θ (hasDerivAt_circleMap z₀ ρ θ) hs).deriv
+
+/-- If `u : ℂ → E` is of class `C¹` on an open set `s` containing the circle of radius `|ρ|` about
+`z₀`, then the velocity `θ ↦ (u ∘ circleMap z₀ ρ)'(θ)` of the loop traced by `u` is continuous. -/
+theorem continuous_deriv_comp_circleMap {s : Set ℂ} {ρ : ℝ} (hs : IsOpen s)
+    (hsub : sphere z₀ |ρ| ⊆ s) (hu : ContDiffOn ℝ 1 u s) :
+    Continuous fun θ ↦ deriv (fun t ↦ u (circleMap z₀ ρ t)) θ := by
+  have hmem (θ : ℝ) : circleMap z₀ ρ θ ∈ s := hsub (circleMap_mem_sphere' z₀ ρ θ)
+  have heq : (fun θ ↦ deriv (fun t ↦ u (circleMap z₀ ρ t)) θ) =
+      fun θ ↦ fderiv ℝ u (circleMap z₀ ρ θ) (circleMap 0 ρ θ * I) := funext fun θ ↦
+    (((hu.differentiableOn one_ne_zero _ (hmem θ)).differentiableAt
+      (hs.mem_nhds (hmem θ))).hasFDerivAt.comp_hasDerivAt θ (hasDerivAt_circleMap z₀ ρ θ)).deriv
+  rw [heq]
+  exact ((hu.continuousOn_fderiv_of_isOpen hs le_rfl).comp_continuous
+    (continuous_circleMap z₀ ρ) hmem).clm_apply (by fun_prop)
 
 /-- If `u : ℂ → E` is differentiable with `‖du‖ ≤ L` along the arc of the circle of radius
 `ρ ≥ 0` about `z₀` between the angles `θ₁` and `θ₂`, then the images of the endpoints of the arc

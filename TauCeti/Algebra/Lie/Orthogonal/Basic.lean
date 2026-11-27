@@ -60,6 +60,11 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   its diagonal entries.
 * `LieAlgebra.Orthogonal.mem_so'` and `LieAlgebra.Orthogonal.mem_so'_iff_forall`: membership in
   the indefinite orthogonal Lie algebra is the matrix equation `Xᵀ J = J (-X)`, or entrywise.
+* `LieAlgebra.Orthogonal.diag_eq_zero_of_mem_so'`,
+  `LieAlgebra.Orthogonal.apply_inr_inl_of_mem_so'` and
+  `LieAlgebra.Orthogonal.apply_inr_inr_of_mem_so'`: entrywise, an element of `𝔰𝔬(p, q)` has zero
+  diagonal (without additive torsion), transposed off-diagonal blocks and a skew-symmetric lower
+  diagonal block.
 * `LieAlgebra.Orthogonal.transpose_mem_so'` and `LieAlgebra.Orthogonal.conjTranspose_mem_so'`: the
   indefinite orthogonal Lie algebra is closed under transpose, and under conjugate transpose over
   a star ring.
@@ -215,6 +220,24 @@ theorem mem_so'_iff_forall (N : Matrix (p ⊕ q) (p ⊕ q) R) :
       ∀ a b, N b a * indefiniteDiagonal p q R b b = -(indefiniteDiagonal p q R a a * N a b) := by
   rw [mem_so', ← Matrix.ext_iff]
   simp [indefiniteDiagonal, Matrix.mul_diagonal, Matrix.diagonal_mul]
+
+/-- The diagonal of an element of `𝔰𝔬(p, q)` vanishes when `R` has no additive torsion. -/
+theorem diag_eq_zero_of_mem_so' [IsAddTorsionFree R] {X : Matrix (p ⊕ q) (p ⊕ q) R}
+    (hX : X ∈ so' p q R) : X.diag = 0 := by
+  funext a
+  have h := (mem_so'_iff_forall X).mp hX a a
+  rcases a with a | a <;> simpa [indefiniteDiagonal, self_eq_neg, neg_eq_self] using h
+
+/-- The off-diagonal blocks of an element of `𝔰𝔬(p, q)` are transposes of each other. -/
+theorem apply_inr_inl_of_mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} (hX : X ∈ so' p q R) (i : p)
+    (j : q) : X (.inr j) (.inl i) = X (.inl i) (.inr j) := by
+  simpa [indefiniteDiagonal] using (mem_so'_iff_forall X).mp hX (.inl i) (.inr j)
+
+/-- The lower diagonal block of an element of `𝔰𝔬(p, q)` is skew-symmetric. -/
+theorem apply_inr_inr_of_mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} (hX : X ∈ so' p q R)
+    (j j' : q) : X (.inr j') (.inr j) = -X (.inr j) (.inr j') := by
+  simpa [indefiniteDiagonal, neg_eq_iff_eq_neg] using
+    (mem_so'_iff_forall X).mp hX (.inr j) (.inr j')
 
 open Matrix in
 /-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under transpose. -/

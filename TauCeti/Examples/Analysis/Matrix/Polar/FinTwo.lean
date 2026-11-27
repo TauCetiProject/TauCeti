@@ -21,6 +21,11 @@ Two computations with the explicit polar factors of `TauCeti.Analysis.Matrix.Pol
 * **A shear (`coe_polarRetraction_shear`).** For `g = [[1, 1], [0, 1]]`, the trace of `g gᴴ` is `3`
   and `g + (g⁻¹)ᴴ = [[2, 1], [-1, 2]]`, so the unitary factor is the rotation
   `[[2, 1], [-1, 2]] / √5`, not the identity, although `g` is unipotent.
+* **The identity and `-g = (-U) P`.** At `g = 1`, `P = (1 + 1) / √(tr 1 + 2) = 1`, and the
+  normalized-segment deformation `Matrix.SpecialLinearGroup.polarSegmentHomotopy` fixes `1` at
+  every time. The unitary factor changes sign with `g`, so `-g = (-U) P`.
+* **The right positive factor of `diag(2, 1/2)`.** `H = gᴴ g = diag(4, 1/4)`, so
+  `P = √H = diag(2, 1/2)`, with `P² = H` and `det P = 1`.
 -/
 
 public section
@@ -28,7 +33,7 @@ public section
 noncomputable section
 
 open Matrix
-open scoped MatrixOrder ComplexOrder
+open scoped unitInterval MatrixOrder ComplexOrder
 
 namespace TauCeti.PolarFinTwoExample
 
@@ -119,5 +124,45 @@ theorem coe_polarRetraction_shear :
   congr 1
   ext i j
   fin_cases i <;> fin_cases j <;> norm_num
+
+/-! ### The identity and `-g = (-U) P` -/
+
+example : (√(RCLike.re (1 : Matrix (Fin 2) (Fin 2) ℂ).trace + 2))⁻¹ •
+    ((1 : Matrix (Fin 2) (Fin 2) ℂ) + 1) = 1 := by
+  rw [show RCLike.re (1 : Matrix (Fin 2) (Fin 2) ℂ).trace + 2 = 2 ^ 2 by simp; norm_num,
+    Real.sqrt_sq zero_le_two, ← two_smul ℝ, smul_smul]
+  norm_num
+
+example (s : I) : SpecialLinearGroup.polarSegmentHomotopy ℂ (s, 1) = 1 :=
+  (SpecialLinearGroup.polarSegmentHomotopy ℂ).eq_fst s ⟨1, map_one _⟩
+
+example (g : SpecialLinearGroup (Fin 2) ℂ) :
+    (SpecialLinearGroup.polarRetraction (Fin 2) ℂ (-g) : Matrix (Fin 2) (Fin 2) ℂ) =
+      -(SpecialLinearGroup.polarRetraction (Fin 2) ℂ g : Matrix (Fin 2) (Fin 2) ℂ) :=
+  SpecialLinearGroup.coe_polarRetraction_neg g
+
+/-! ### The right positive factor of `diag(2, 1/2)` -/
+
+/-- For `g = diag(2, 1/2)`, `H = gᴴ g = diag(4, 1/4)`. -/
+theorem star_mul_diagTwoHalf :
+    star (diagTwoHalf 𝕜 : Matrix (Fin 2) (Fin 2) 𝕜) * (diagTwoHalf 𝕜 : Matrix (Fin 2) (Fin 2) 𝕜) =
+      !![4, 0; 0, 1 / 4] := by
+  rw [coe_diagTwoHalf]
+  ext i j
+  rw [Matrix.mul_apply, Fin.sum_univ_two]
+  fin_cases i <;> fin_cases j <;> norm_num
+
+/-- **The right positive factor of `diag(2, 1/2)`**: `P = √(gᴴ g) = diag(2, 1/2)`. -/
+theorem sqrt_star_mul_diagTwoHalf :
+    CFC.sqrt (star (diagTwoHalf 𝕜 : Matrix (Fin 2) (Fin 2) 𝕜) *
+      (diagTwoHalf 𝕜 : Matrix (Fin 2) (Fin 2) 𝕜)) = !![2, 0; 0, 1 / 2] := by
+  rw [← sqrt_mul_star_diagTwoHalf, star_mul_diagTwoHalf, diagTwoHalf_mul_star]
+
+example : (!![2, 0; 0, 1 / 2] : Matrix (Fin 2) (Fin 2) 𝕜) * !![2, 0; 0, 1 / 2] =
+    !![4, 0; 0, 1 / 4] ∧ (!![2, 0; 0, 1 / 2] : Matrix (Fin 2) (Fin 2) 𝕜).det = 1 := by
+  constructor
+  · ext i j
+    fin_cases i <;> fin_cases j <;> norm_num [mul_apply, Fin.sum_univ_two]
+  · norm_num [det_fin_two_of]
 
 end TauCeti.PolarFinTwoExample
