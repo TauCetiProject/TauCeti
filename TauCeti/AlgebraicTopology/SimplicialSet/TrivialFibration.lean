@@ -257,15 +257,23 @@ theorem rlp_monomorphisms_iff {p : X ⟶ Y} :
     have := isSplitEpi_of_rlp_monomorphisms hp
     ⟨.ofRLP hp (section_ p) (IsSplitEpi.id p)⟩⟩, fun ⟨_, ⟨h⟩⟩ ↦ h.rlp_monomorphisms⟩
 
+/-- A trivial fibration of simplicial sets admits a simplicial homotopy inverse, without any
+Kan complex assumptions on its source or target. -/
+theorem exists_homotopy_inverse_of_rlp_monomorphisms {p : X ⟶ Y}
+    (hp : (monomorphisms SSet.{u}).rlp p) :
+    ∃ g : Y ⟶ X, Nonempty (Homotopy (p ≫ g) (𝟙 X)) ∧ Nonempty (Homotopy (g ≫ p) (𝟙 Y)) := by
+  have := isSplitEpi_of_rlp_monomorphisms hp
+  let h := Shrinking.ofRLP hp (section_ p) (IsSplitEpi.id p)
+  exact ⟨h.section_, ⟨h.homotopy⟩, ⟨.ofEq (congrArg _ h.section_comp)⟩⟩
+
 /-- A morphism with the right lifting property with respect to all monomorphisms (a trivial
 fibration) induces a bijection on connected components. -/
 lemma bijective_mapπ₀_of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) :
     Function.Bijective (mapπ₀ p) := by
-  have := isSplitEpi_of_rlp_monomorphisms hp
-  let h := Shrinking.ofRLP hp (section_ p) (IsSplitEpi.id p)
-  refine Function.bijective_iff_has_inverse.2 ⟨mapπ₀ h.section_, fun c ↦ ?_, fun c ↦ ?_⟩
-  · rw [← mapπ₀_comp_apply, h.homotopy.mapπ₀_eq, mapπ₀_id_apply]
-  · rw [← mapπ₀_comp_apply, h.section_comp, mapπ₀_id_apply]
+  obtain ⟨g, ⟨H₁⟩, ⟨H₂⟩⟩ := exists_homotopy_inverse_of_rlp_monomorphisms hp
+  refine Function.bijective_iff_has_inverse.2 ⟨mapπ₀ g, fun c ↦ ?_, fun c ↦ ?_⟩
+  · rw [← mapπ₀_comp_apply, H₁.mapπ₀_eq, mapπ₀_id_apply]
+  · rw [← mapπ₀_comp_apply, H₂.mapπ₀_eq, mapπ₀_id_apply]
 
 /-- The opposite of a map `p` has the right lifting property with respect to `∂Δ[n] ⟶ Δ[n]`
 exactly when `p` has it. -/

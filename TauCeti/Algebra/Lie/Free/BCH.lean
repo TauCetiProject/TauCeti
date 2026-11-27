@@ -46,6 +46,7 @@ of the canonical map from the free nilpotent Lie algebra into the truncated enve
 * `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_bchElement`: the image of `bchElement c` is
   `log (exp X * exp Y)`.
 * `TauCeti.FreeLieAlgebra.factor_bchElement`: the elements of different classes are compatible.
+* `TauCeti.FreeLieAlgebra.bchElement_one`: the element of class one is `X + Y`.
 * `TauCeti.FreeLieAlgebra.bchElement_three`: the element of class three is the cubic
   Baker–Campbell–Hausdorff polynomial.
 * `TauCeti.FreeLieAlgebra.bchElement_two`: the element of class two is `X + Y + ½ ⁅X, Y⁆`.
@@ -149,6 +150,20 @@ theorem factor_bchElement {c d : ℕ} (h : c ≤ d) :
     ← (isNilpotent_lowerCentralQuotientι ℚ 𝔣 d _).map_exp, exp_lowerCentralQuotientι_bchElement,
     map_mul, (isNilpotent_mk_ι ℚ 𝔣 d X).map_exp, (isNilpotent_mk_ι ℚ 𝔣 d Y).map_exp,
     Ideal.Quotient.factor_mk, Ideal.Quotient.factor_mk]
+
+/-- The Baker–Campbell–Hausdorff element of class one is `X + Y`: modulo brackets, the product
+of exponentials is the exponential of the sum. -/
+theorem bchElement_one : bchElement 1 = LieSubmodule.Quotient.mk (X + Y) := by
+  -- In `U(𝔣) ⧸ (U⁺) ^ 2` any two classes of Lie elements have zero product, so they commute.
+  have h : ∀ a b : 𝔣, Ideal.Quotient.mk (J ^ (1 + 1)) (ι a) * Ideal.Quotient.mk _ (ι b) = 0 :=
+    fun a b => by
+      rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem, Submodule.pow_succ, Submodule.pow_one]
+      exact Ideal.mul_mem_mul (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation ℚ 𝔣 a))
+        (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation ℚ 𝔣 b))
+  symm
+  rw [eq_bchElement_iff, lowerCentralQuotientι_mk, map_add, map_add]
+  exact IsNilpotent.exp_add_of_commute ((h X Y).trans (h Y X).symm) (isNilpotent_mk_ι ℚ 𝔣 1 X)
+    (isNilpotent_mk_ι ℚ 𝔣 1 Y)
 
 /-- **The Baker–Campbell–Hausdorff element through degree three**: the element of class three is
 `X + Y + ½ ⁅X, Y⁆ + 1/12 (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)`. -/
