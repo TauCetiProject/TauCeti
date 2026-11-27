@@ -28,7 +28,7 @@ in `TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg`.
 
 ## Main results
 
-* `Real.eulerMascheroniConstant_eq_integral_sub_integral`:
+* `TauCeti.eulerMascheroniConstant_eq_integral_sub_integral`:
   `γ = ∫ t in 0..1, (1 - exp (-t)) / t - ∫ t in Ioi 1, exp (-t) / t`.
 
 ## References
@@ -39,9 +39,9 @@ in `TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg`.
 
 public section
 
-open Filter MeasureTheory Set
+open Filter MeasureTheory Real Set
 
-namespace Real
+namespace TauCeti
 
 /-- **Integral representation of the Euler–Mascheroni constant**:
 `γ = ∫ t in 0..1, (1 - exp (-t)) / t - ∫ t in Ioi 1, exp (-t) / t`. -/
@@ -65,10 +65,10 @@ theorem eulerMascheroniConstant_eq_integral_sub_integral :
         have hd1 : HasDerivAt (fun u : ℝ ↦ exp (-u)) (-exp (-t)) t := by
           simpa using (hasDerivAt_neg t).exp
         exact ((hd1.mul (hasDerivAt_log ht0.ne')).neg).congr_deriv (by ring))
-      (hint_log.sub (TauCeti.integrableOn_exp_neg_div_Ioi one_pos))
+      (hint_log.sub (integrableOn_exp_neg_div_Ioi one_pos))
       (by simpa [mul_comm] using tendsto_log_mul_exp_neg_atTop.neg)
     rw [log_one, mul_zero, neg_zero, sub_zero,
-      integral_sub hint_log (TauCeti.integrableOn_exp_neg_div_Ioi one_pos)] at hFTC
+      integral_sub hint_log (integrableOn_exp_neg_div_Ioi one_pos)] at hFTC
     linarith
   have hsplit : (∫ t in Ioi (0 : ℝ), log t * exp (-t)) =
       (∫ t in Ioc (0 : ℝ) 1, log t * exp (-t)) +
@@ -80,4 +80,4 @@ theorem eulerMascheroniConstant_eq_integral_sub_integral :
   rw [h1, h2, eulerMascheroniConstant_eq_neg_integral_log, hsplit]
   ring
 
-end Real
+end TauCeti

@@ -18,12 +18,12 @@ between its arguments. In particular it is strictly positive, including when the
 coincide. It is jointly real analytic, including on the diagonal. These divided differences
 are the scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
 
-At base point `0`, `TauCeti.Real.dslope_exp_zero_of_ne` identifies `dslope exp 0 u` with
+At base point `0`, `TauCeti.dslope_exp_zero_of_ne` identifies `dslope exp 0 u` with
 `(exp u - 1) / u` away from `0`, so `(exp u - 1) / u` agrees almost everywhere with a continuous
-function and is interval integrable on every closed interval
-(`TauCeti.Real.intervalIntegrable_exp_sub_one_div`), with Taylor series
-`∑' n, u ^ n / (n + 1)!` (`TauCeti.Real.hasSum_dslope_exp_zero`). Termwise integration and
-quantitative estimates for the resulting exponential-integral series live in
+function (`TauCeti.continuous_dslope_exp_zero`) and is interval integrable on every closed interval
+(`Real.intervalIntegrable_exp_sub_one_div`), with Taylor series
+`∑' n, u ^ n / (n + 1)!` (`Real.hasSum_dslope_exp_zero`, `Real.dslope_exp_zero_eq_tsum`). Termwise
+integration and quantitative estimates for the resulting exponential-integral series live in
 `TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries`.
 -/
 
@@ -80,9 +80,9 @@ theorem contDiff_dslope_exp (m : ℕ∞ω) :
 
 end Real
 
-open Real
+namespace TauCeti
 
-namespace TauCeti.Real
+open _root_.Real
 
 /-- Away from `0`, `dslope exp 0 u = (exp u - 1) / u`. -/
 theorem dslope_exp_zero_of_ne {u : ℝ} (hu : u ≠ 0) :
@@ -93,6 +93,10 @@ theorem dslope_exp_zero_of_ne {u : ℝ} (hu : u ≠ 0) :
 @[fun_prop]
 theorem continuous_dslope_exp_zero : Continuous (dslope exp 0) :=
   (contDiff_dslope_exp 0).continuous.comp (continuous_const.prodMk continuous_id)
+
+end TauCeti
+
+namespace Real
 
 /-- Power series for `dslope exp 0`: `∑' n, u ^ n / (n + 1)! = dslope exp 0 u` for all `u : ℝ`. -/
 theorem hasSum_dslope_exp_zero (u : ℝ) :
@@ -118,10 +122,10 @@ theorem hasSum_dslope_exp_zero (u : ℝ) :
       ext n
       rw [pow_succ']
       ring
-    rw [dslope_exp_zero_of_ne hu, ← eq_div_of_mul_eq hu (mul_comm _ u ▸ heq)]
+    rw [TauCeti.dslope_exp_zero_of_ne hu, ← eq_div_of_mul_eq hu (mul_comm _ u ▸ heq)]
     exact hsumm.hasSum
 
-/-- `tsum` form of `TauCeti.Real.hasSum_dslope_exp_zero`. -/
+/-- `tsum` form of `Real.hasSum_dslope_exp_zero`. -/
 theorem dslope_exp_zero_eq_tsum (u : ℝ) :
     dslope exp 0 u = ∑' n : ℕ, u ^ n / ((n + 1)! : ℝ) :=
   (hasSum_dslope_exp_zero u).tsum_eq.symm
@@ -130,8 +134,8 @@ theorem dslope_exp_zero_eq_tsum (u : ℝ) :
 (including across `0`). -/
 theorem intervalIntegrable_exp_sub_one_div (a b : ℝ) :
     IntervalIntegrable (fun u : ℝ ↦ (exp u - 1) / u) volume a b := by
-  refine (continuous_dslope_exp_zero.intervalIntegrable a b).congr_ae ?_
+  refine (TauCeti.continuous_dslope_exp_zero.intervalIntegrable a b).congr_ae ?_
   filter_upwards [ae_restrict_of_ae (volume.ae_ne (0 : ℝ))] with u hu
-  exact dslope_exp_zero_of_ne hu
+  exact TauCeti.dslope_exp_zero_of_ne hu
 
-end TauCeti.Real
+end Real

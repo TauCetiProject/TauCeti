@@ -46,8 +46,8 @@ in explicit prime-counting estimates.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
-* `Real.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
-* `Real.le_log_log_two` and `Real.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
+* `TauCeti.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
+* `TauCeti.le_log_log_two` and `TauCeti.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
@@ -84,31 +84,6 @@ theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := b
   rw [log_div hx.ne' two_ne_zero] at h
   rw [div_le_iff₀ hx]
   linarith [log_le_sub_one_of_pos zero_lt_two]
-
-/-- Explicit decimal lower bound `0.4054 < log (3 / 2)`. -/
-theorem lt_log_three_halves : (0.4054 : ℝ) < log (3 / 2) := by
-  rw [lt_log_iff_exp_lt (by norm_num)]
-  have hb := exp_bound' (x := (0.4054 : ℝ)) (by norm_num) (by norm_num) (n := 6) (by decide)
-  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
-  norm_num at hb ⊢
-  linarith
-
-/-- Lower bound `-0.366513 ≤ log (log 2)`. -/
-theorem le_log_log_two : (-0.366513 : ℝ) ≤ log (log 2) := by
-  rw [le_log_iff_exp_le (log_pos one_lt_two), exp_neg]
-  refine (inv_le_of_inv_le₀ (by norm_num : (0 : ℝ) < 0.6931471803) ?_).trans log_two_gt_d9.le
-  refine le_trans ?_ (sum_le_exp_of_nonneg (x := (0.366513 : ℝ)) (by norm_num) 8)
-  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
-  norm_num
-
-/-- Upper bound `log (log 2) ≤ -0.366512`. -/
-theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
-  rw [log_le_iff_le_exp (log_pos one_lt_two), exp_neg]
-  refine log_two_lt_d9.le.trans (le_inv_of_le_inv₀ (exp_pos _) ?_)
-  have hb := exp_bound' (x := (0.366512 : ℝ)) (by norm_num) (by norm_num) (n := 8) (by decide)
-  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
-  norm_num at hb
-  linarith
 
 /-- Near `1` from below the logarithm is controlled by the distance to `1`: for `1 / 2 ≤ x ≤ 1`,
 `|log x| ≤ 2 (1 - x)`. -/
@@ -178,3 +153,34 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
       (log_natCast_nonneg N)
 
 end Real
+
+namespace TauCeti
+
+open _root_.Real
+
+/-- Explicit decimal lower bound `0.4054 < log (3 / 2)`. -/
+theorem lt_log_three_halves : (0.4054 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  have hb := exp_bound' (x := (0.4054 : ℝ)) (by norm_num) (by norm_num) (n := 6) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb ⊢
+  linarith
+
+/-- Lower bound `-0.366513 ≤ log (log 2)`. -/
+theorem le_log_log_two : (-0.366513 : ℝ) ≤ log (log 2) := by
+  rw [le_log_iff_exp_le (log_pos one_lt_two), exp_neg]
+  refine (inv_le_of_inv_le₀ (by norm_num : (0 : ℝ) < 0.6931471803) ?_).trans log_two_gt_d9.le
+  refine le_trans ?_ (sum_le_exp_of_nonneg (x := (0.366513 : ℝ)) (by norm_num) 8)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
+
+/-- Upper bound `log (log 2) ≤ -0.366512`. -/
+theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
+  rw [log_le_iff_le_exp (log_pos one_lt_two), exp_neg]
+  refine log_two_lt_d9.le.trans (le_inv_of_le_inv₀ (exp_pos _) ?_)
+  have hb := exp_bound' (x := (0.366512 : ℝ)) (by norm_num) (by norm_num) (n := 8) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb
+  linarith
+
+end TauCeti

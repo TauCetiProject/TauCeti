@@ -23,15 +23,15 @@ the origin:
 
 * `Real.continuousAt_inv_log_zero`: `(log x)⁻¹ → 0` as `x → 0`, so with Mathlib's conventions
   `log 0 = 0` and `0⁻¹ = 0` the function `x ↦ (log x)⁻¹` is continuous at the origin;
-* `Real.continuousAt_inv_log_sub_inv_sub_one_zero`,
-  `Real.tendsto_inv_log_sub_inv_sub_one_nhdsNE_one`,
-  `Real.continuousOn_update_inv_log_sub_inv_sub_one`,
-  `Real.exists_abs_inv_log_sub_inv_sub_one_le`: `(log t)⁻¹ - (t - 1)⁻¹` is continuous at
+* `TauCeti.continuousAt_inv_log_sub_inv_sub_one_zero`,
+  `TauCeti.tendsto_inv_log_sub_inv_sub_one_nhdsNE_one`,
+  `TauCeti.continuousOn_update_inv_log_sub_inv_sub_one`,
+  `TauCeti.exists_abs_inv_log_sub_inv_sub_one_le`: `(log t)⁻¹ - (t - 1)⁻¹` is continuous at
   `0` (with value `1`), tends to `1 / 2` as `t → 1`, `t ≠ 1`, extends continuously across
   `t = 1` on `[0, ∞)`, and is bounded in absolute value on `[a, b]` for `a ≥ 0`;
-* `Real.tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsNE_zero`,
-  `Real.continuousAt_inv_log_one_add_add_inv_log_one_sub_one`,
-  `Real.abs_inv_log_one_add_add_inv_log_one_sub_le`: the symmetric profile
+* `TauCeti.tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsNE_zero`,
+  `TauCeti.continuousAt_inv_log_one_add_add_inv_log_one_sub_one`,
+  `TauCeti.abs_inv_log_one_add_add_inv_log_one_sub_le`: the symmetric profile
   `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` tends to `1` as `u → 0`, `u ≠ 0`, is continuous at `1`, and
   satisfies `|(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3` on `(0, 1 / 2]`;
 * `Real.abs_log_log_inv_le`: for `0 ≤ x < e⁻¹`, `|log log (1 / x)| ≤ log (1 / x)`.
@@ -54,6 +54,45 @@ namespace Real
 theorem continuousAt_inv_log_zero : ContinuousAt (fun x ↦ (log x)⁻¹) 0 := by
   rw [← continuousWithinAt_compl_self, ContinuousWithinAt]
   simpa [Function.comp_def] using tendsto_inv_atBot_zero.comp tendsto_log_nhdsNE_zero
+
+/-- For `0 ≤ x < e⁻¹`, `|log log (1 / x)| ≤ log (1 / x)`. -/
+theorem abs_log_log_inv_le {x : ℝ} (hx : 0 ≤ x) (hx1 : x < exp (-1)) :
+    |log (log x⁻¹)| ≤ -log x := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  have hlog : log x < -1 := (log_lt_iff_lt_exp hx).2 hx1
+  have hx' : 1 < log x⁻¹ := by rw [log_inv]; linarith
+  rw [abs_of_pos (log_pos hx')]
+  have := log_le_sub_one_of_pos (zero_lt_one.trans hx')
+  rw [log_inv] at this ⊢
+  linarith
+
+/-- The derivative of the radial profile: `d/dr log log (c / r) = -(r log (c / r))⁻¹` wherever
+`r ∉ {0, c, -c}`. For `c = 0` both sides vanish. -/
+theorem hasDerivAt_log_log_const_div {c r : ℝ} (hr : r ≠ 0) (hrc : r ≠ c) (hrc' : r ≠ -c) :
+    HasDerivAt (fun s : ℝ => log (log (c / s))) (-(r * log (c / r))⁻¹) r := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simpa using hasDerivAt_const r (0 : ℝ)
+  have h1 : c / r ≠ 1 := fun h => hrc ((div_eq_one_iff_eq hr).1 h).symm
+  have h2 : c / r ≠ -1 := fun h => hrc' (by rw [div_eq_iff hr] at h; linarith)
+  have hL : log (c / r) ≠ 0 := log_ne_zero.2 ⟨div_ne_zero hc hr, h1, h2⟩
+  refine ((hasDerivAt_log_const_div hc hr).log hL).congr_deriv ?_
+  field_simp
+
+/-- The radial profile `log log (c / r)` tends to `∞` as `r → 0`, for `c ≠ 0`. -/
+theorem tendsto_log_log_const_div_nhdsNE_zero {c : ℝ} (hc : c ≠ 0) :
+    Tendsto (fun r : ℝ => log (log (c / r))) (𝓝[≠] 0) atTop := by
+  have h : Tendsto (fun r : ℝ => log c + -log r) (𝓝[≠] 0) atTop :=
+    tendsto_atTop_add_const_left _ _ (tendsto_neg_atBot_atTop.comp tendsto_log_nhdsNE_zero)
+  refine tendsto_log_atTop.comp (h.congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with r hr
+  rw [log_div hc hr, sub_eq_add_neg]
+
+end Real
+
+namespace TauCeti
+
+open _root_.Real
 
 /-- `t ↦ (log t)⁻¹ - (t - 1)⁻¹` is continuous at `0`, where it takes the value `1`. -/
 theorem continuousAt_inv_log_sub_inv_sub_one_zero :
@@ -224,37 +263,4 @@ theorem abs_inv_log_one_add_add_inv_log_one_sub_le {u : ℝ} (hu0 : 0 < u) (hu :
           hnum_le (by positivity) hden_ge
     _ = 16 * log (4 / 3) / 3 := by field_simp [hu0.ne']; ring
 
-/-- For `0 ≤ x < e⁻¹`, `|log log (1 / x)| ≤ log (1 / x)`. -/
-theorem abs_log_log_inv_le {x : ℝ} (hx : 0 ≤ x) (hx1 : x < exp (-1)) :
-    |log (log x⁻¹)| ≤ -log x := by
-  rcases hx.eq_or_lt with rfl | hx
-  · simp
-  have hlog : log x < -1 := (log_lt_iff_lt_exp hx).2 hx1
-  have hx' : 1 < log x⁻¹ := by rw [log_inv]; linarith
-  rw [abs_of_pos (log_pos hx')]
-  have := log_le_sub_one_of_pos (zero_lt_one.trans hx')
-  rw [log_inv] at this ⊢
-  linarith
-
-/-- The derivative of the radial profile: `d/dr log log (c / r) = -(r log (c / r))⁻¹` wherever
-`r ∉ {0, c, -c}`. For `c = 0` both sides vanish. -/
-theorem hasDerivAt_log_log_const_div {c r : ℝ} (hr : r ≠ 0) (hrc : r ≠ c) (hrc' : r ≠ -c) :
-    HasDerivAt (fun s : ℝ => log (log (c / s))) (-(r * log (c / r))⁻¹) r := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simpa using hasDerivAt_const r (0 : ℝ)
-  have h1 : c / r ≠ 1 := fun h => hrc ((div_eq_one_iff_eq hr).1 h).symm
-  have h2 : c / r ≠ -1 := fun h => hrc' (by rw [div_eq_iff hr] at h; linarith)
-  have hL : log (c / r) ≠ 0 := log_ne_zero.2 ⟨div_ne_zero hc hr, h1, h2⟩
-  refine ((hasDerivAt_log_const_div hc hr).log hL).congr_deriv ?_
-  field_simp
-
-/-- The radial profile `log log (c / r)` tends to `∞` as `r → 0`, for `c ≠ 0`. -/
-theorem tendsto_log_log_const_div_nhdsNE_zero {c : ℝ} (hc : c ≠ 0) :
-    Tendsto (fun r : ℝ => log (log (c / r))) (𝓝[≠] 0) atTop := by
-  have h : Tendsto (fun r : ℝ => log c + -log r) (𝓝[≠] 0) atTop :=
-    tendsto_atTop_add_const_left _ _ (tendsto_neg_atBot_atTop.comp tendsto_log_nhdsNE_zero)
-  refine tendsto_log_atTop.comp (h.congr' ?_)
-  filter_upwards [self_mem_nhdsWithin] with r hr
-  rw [log_div hc hr, sub_eq_add_neg]
-
-end Real
+end TauCeti

@@ -28,10 +28,10 @@ machinery.
 
 ## Main results
 
-* `Real.integrableOn_log_mul_exp_neg_Ioi`: `t ↦ log t * exp (-t)` is integrable on `(0, ∞)`.
-* `Real.tendsto_log_mul_exp_neg_atTop`: `log t * exp (-t) → 0` as `t → ∞`.
-* `Real.continuous_one_sub_exp_neg_mul_log`: `t ↦ (1 - exp (-t)) * log t` is continuous on `ℝ`.
-* `Real.one_sub_exp_neg_mul_log_eq`: integration by parts on `[0, z]` for `z ≥ 0`.
+* `TauCeti.integrableOn_log_mul_exp_neg_Ioi`: `t ↦ log t * exp (-t)` is integrable on `(0, ∞)`.
+* `TauCeti.tendsto_log_mul_exp_neg_atTop`: `log t * exp (-t) → 0` as `t → ∞`.
+* `TauCeti.continuous_one_sub_exp_neg_mul_log`: `t ↦ (1 - exp (-t)) * log t` is continuous on `ℝ`.
+* `TauCeti.one_sub_exp_neg_mul_log_eq`: integration by parts on `[0, z]` for `z ≥ 0`.
 
 ## References
 
@@ -40,10 +40,10 @@ machinery.
 
 public section
 
-open Filter MeasureTheory Set
+open Filter MeasureTheory Real Set
 open scoped Topology
 
-namespace Real
+namespace TauCeti
 
 /-- `t ↦ log t * exp (-t)` is integrable on `(0, ∞)`. -/
 theorem integrableOn_log_mul_exp_neg_Ioi :
@@ -76,11 +76,11 @@ theorem continuous_one_sub_exp_neg_mul_log :
     ext t
     by_cases ht : t = 0
     · simp [ht]
-    · rw [TauCeti.Real.dslope_exp_zero_of_ne (neg_ne_zero.mpr ht)]
+    · rw [dslope_exp_zero_of_ne (neg_ne_zero.mpr ht)]
       field_simp [ht]
       ring
   rw [heq]
-  exact (TauCeti.Real.continuous_dslope_exp_zero.comp continuous_neg).mul continuous_mul_log
+  exact (continuous_dslope_exp_zero.comp continuous_neg).mul continuous_mul_log
 
 /-- Integration by parts for `∫ t in 0..z, (1 - exp (-t)) / t` at `z ≥ 0`. -/
 theorem one_sub_exp_neg_mul_log_eq {z : ℝ} (hz : 0 ≤ z) :
@@ -96,7 +96,7 @@ theorem one_sub_exp_neg_mul_log_eq {z : ℝ} (hz : 0 ≤ z) :
     rw [heq]
     simpa only [neg_zero, neg_neg] using
       (IntervalIntegrable.iff_comp_neg (a := 0) (b := -z)).mp
-        (TauCeti.Real.intervalIntegrable_exp_sub_one_div 0 (-z))
+        (intervalIntegrable_exp_sub_one_div 0 (-z))
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hz
     continuous_one_sub_exp_neg_mul_log.continuousOn
     (f' := fun t : ℝ ↦ log t * exp (-t) + (1 - exp (-t)) / t)
@@ -109,4 +109,4 @@ theorem one_sub_exp_neg_mul_log_eq {z : ℝ} (hz : 0 ≤ z) :
     neg_zero, exp_zero, sub_self, zero_mul, sub_zero] at hFTC
   exact hFTC.symm
 
-end Real
+end TauCeti

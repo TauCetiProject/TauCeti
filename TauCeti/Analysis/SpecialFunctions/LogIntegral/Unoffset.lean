@@ -58,7 +58,7 @@ from either side, and to `+∞` at infinity. From `γ > 1 / 2` (Mathlib), `log (
   `TauCeti.Real.li_zero`, `TauCeti.Real.li_one`, `TauCeti.Real.li_neg_eq` — the unoffset logarithmic
   integral and its normalization lemmas.
 * `TauCeti.Real.liSeries`, `TauCeti.Real.liSeries_def`, `TauCeti.Real.li_eq_add_liSeries`,
-  `TauCeti.Real.summable_liSeries`, `TauCeti.Real.hasSum_liSeries`,
+  `TauCeti.Real.hasSum_liSeries`,
   `TauCeti.Real.hasDerivAt_liSeries`, `TauCeti.Real.hasDerivAt_liSeries_of_ne_zero`,
   `TauCeti.Real.hasDerivAt_liSeries_zero`, `TauCeti.Real.continuous_liSeries`,
   `TauCeti.Real.liSeries_zero`, `TauCeti.Real.sum_range_le_liSeries` — the entire part
@@ -155,16 +155,11 @@ theorem liSeries_def (y : ℝ) :
 theorem li_eq_add_liSeries (x : ℝ) :
     li x = eulerMascheroniConstant + log (log x) + liSeries (log x) := (rfl)
 
-/-- The series `liSeries y` converges absolutely for every real `y`; at `y = log x` its terms are
-those of `li_def`. -/
-theorem summable_liSeries (y : ℝ) :
-    Summable fun n : ℕ ↦ y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) :=
-  summable_pow_div_mul_factorial y
-
 /-- The series `∑_{n ≥ 1} yⁿ / (n · n!)` sums to `liSeries y`. -/
 theorem hasSum_liSeries (y : ℝ) :
-    HasSum (fun n : ℕ ↦ y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) (liSeries y) :=
-  (summable_liSeries y).hasSum
+    HasSum (fun n : ℕ ↦ y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) (liSeries y) := by
+  rw [liSeries_def]
+  exact (summable_pow_div_mul_factorial y).hasSum
 
 /-- The termwise derivative `∑_{n ≥ 0} yⁿ / (n + 1)!` of `liSeries`. -/
 theorem hasDerivAt_liSeries (y : ℝ) :
@@ -199,8 +194,11 @@ theorem hasDerivAt_liSeries_zero : HasDerivAt liSeries 1 0 := by
   simp
 
 /-- The series `liSeries` is continuous. -/
-theorem continuous_liSeries : Continuous liSeries :=
-  continuous_tsum_pow_div_mul_factorial
+theorem continuous_liSeries : Continuous liSeries := by
+  have hdef : liSeries = fun y : ℝ ↦ ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) :=
+    funext liSeries_def
+  rw [hdef]
+  exact continuous_tsum_pow_div_mul_factorial
 
 /-- The series `liSeries` vanishes at `0`. -/
 @[simp]
@@ -209,8 +207,9 @@ theorem liSeries_zero : liSeries 0 = 0 := by
 
 /-- The first `k` terms of `liSeries` bound it below for `y ≥ 0`. -/
 theorem sum_range_le_liSeries {y : ℝ} (hy : 0 ≤ y) (k : ℕ) :
-    ∑ n ∈ Finset.range k, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) ≤ liSeries y :=
-  sum_range_le_tsum_pow_div_mul_factorial hy k
+    ∑ n ∈ Finset.range k, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) ≤ liSeries y := by
+  rw [liSeries_def]
+  exact sum_range_le_tsum_pow_div_mul_factorial hy k
 
 /-! ### Derivative, regularity, and behaviour at `0⁺` -/
 
@@ -271,23 +270,23 @@ kernel `log t * exp (-t)`. -/
 theorem li_eq_add_log_neg_log_mul_add_integral {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) :
     li x = eulerMascheroniConstant + log (-log x) * x +
       ∫ t in Ioc 0 (-log x), log t * exp (-t) := by
-  set z : ℝ := -log x
+  set z : ℝ := -log x with hz_def
   have hz : 0 < z := neg_pos.mpr (log_neg hx0 hx1)
+  have hz_neg : -z = log x := by rw [hz_def, neg_neg]
+  have hexp_neg_z : exp (-z) = x := by rw [hz_neg, exp_log hx0]
   have hseries : (∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) =
       -(∫ t in (0 : ℝ)..z, (1 - exp (-t)) / t) := by
     rw [← integral_exp_sub_one_div_eq_tsum (log x)]
     have hsub := intervalIntegral.integral_comp_neg (a := (0 : ℝ)) (b := z)
       (f := fun u : ℝ ↦ (exp u - 1) / u)
-    rw [neg_zero, show -z = log x from neg_neg (log x),
-      intervalIntegral.integral_symm (0 : ℝ) (log x)] at hsub
+    rw [neg_zero, hz_neg, intervalIntegral.integral_symm (0 : ℝ) (log x)] at hsub
     rw [neg_eq_iff_eq_neg.mp hsub.symm]
     congr 1
     exact intervalIntegral.integral_congr fun t _ ↦ by ring
   have hibp := one_sub_exp_neg_mul_log_eq hz.le
-  rw [show exp (-z) = x from by rw [show -z = log x from neg_neg _, exp_log hx0]] at hibp
+  rw [hexp_neg_z] at hibp
   have hlogz : log (log x) = log z := (log_neg_eq_log (log x)).symm
   rw [li_def, hseries, hlogz]
-  change _ = eulerMascheroniConstant + log z * x + ∫ t in Ioc 0 z, log t * exp (-t)
   linarith
 
 /-- `li x → 0` as `x → 0⁺`. -/

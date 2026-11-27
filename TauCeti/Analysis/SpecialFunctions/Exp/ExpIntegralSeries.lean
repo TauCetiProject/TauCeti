@@ -25,17 +25,15 @@ dominated convergence and monotonicity proofs.
 
 ## Main declarations
 
-* `TauCeti.Real.summable_pow_div_mul_factorial`: absolute convergence for every `y : ℝ`.
-* `TauCeti.Real.integral_dslope_exp_zero_eq_tsum` and
-  `TauCeti.Real.integral_exp_sub_one_div_eq_tsum`: termwise integration identities on `[0, y]`.
-* `TauCeti.Real.hasDerivAt_tsum_pow_div_mul_factorial`,
-  `TauCeti.Real.continuous_tsum_pow_div_mul_factorial`,
-  `TauCeti.Real.strictMono_tsum_pow_div_mul_factorial`,
-  `TauCeti.Real.tsum_pow_div_mul_factorial_mono`: derivative `dslope exp 0 y`, continuity, and
-  strict monotonicity on `ℝ`.
-* `TauCeti.Real.sum_range_le_tsum_pow_div_mul_factorial` and
-  `TauCeti.Real.tsum_pow_div_mul_factorial_le_sum_range_add`: partial-sum lower bound for `y ≥ 0`
-  and geometric-tail upper bound for `0 ≤ y < N + 2`.
+* `Real.summable_pow_div_mul_factorial`: absolute convergence for every `y : ℝ`.
+* `Real.integral_dslope_exp_zero_eq_tsum` and `Real.integral_exp_sub_one_div_eq_tsum`: termwise
+  integration identities on `[0, y]`.
+* `Real.hasDerivAt_tsum_pow_div_mul_factorial`, `TauCeti.continuous_tsum_pow_div_mul_factorial`,
+  `TauCeti.strictMono_tsum_pow_div_mul_factorial`, `TauCeti.tsum_pow_div_mul_factorial_mono`:
+  derivative `dslope exp 0 y`, continuity, and strict monotonicity on `ℝ`.
+* `TauCeti.sum_range_le_tsum_pow_div_mul_factorial` and
+  `TauCeti.tsum_pow_div_mul_factorial_le_sum_range_add`: partial-sum lower bound for `y ≥ 0` and
+  geometric-tail upper bound for `0 ≤ y < N + 2`.
 
 ## References
 
@@ -47,7 +45,7 @@ public section
 open Filter MeasureTheory Set Real
 open scoped Nat
 
-namespace TauCeti.Real
+namespace Real
 
 /-- The series `∑_{n ≥ 1} y^n / (n * n!)` converges absolutely for every real `y`. -/
 theorem summable_pow_div_mul_factorial (y : ℝ) :
@@ -101,7 +99,7 @@ theorem integral_exp_sub_one_div_eq_tsum (y : ℝ) :
   rw [← integral_dslope_exp_zero_eq_tsum]
   refine intervalIntegral.integral_congr_ae ?_
   filter_upwards [volume.ae_ne (0 : ℝ)] with u hu _
-  exact (dslope_exp_zero_of_ne hu).symm
+  exact (TauCeti.dslope_exp_zero_of_ne hu).symm
 
 /-- The entire-part series `y ↦ ∑_{n ≥ 1} y^n / (n * n!)` has derivative `dslope exp 0 y` at every
 real `y`. -/
@@ -113,9 +111,13 @@ theorem hasDerivAt_tsum_pow_div_mul_factorial (y : ℝ) :
     funext fun t ↦ (integral_dslope_exp_zero_eq_tsum t).symm
   rw [heq]
   exact intervalIntegral.integral_hasDerivAt_right
-    (continuous_dslope_exp_zero.intervalIntegrable 0 y)
-    continuous_dslope_exp_zero.stronglyMeasurable.stronglyMeasurableAtFilter
-    continuous_dslope_exp_zero.continuousAt
+    (TauCeti.continuous_dslope_exp_zero.intervalIntegrable 0 y)
+    TauCeti.continuous_dslope_exp_zero.stronglyMeasurable.stronglyMeasurableAtFilter
+    TauCeti.continuous_dslope_exp_zero.continuousAt
+
+end Real
+
+namespace TauCeti
 
 /-- The entire-part series `y ↦ ∑_{n ≥ 1} y^n / (n * n!)` is continuous on `ℝ`. -/
 @[fun_prop]
@@ -185,4 +187,4 @@ theorem tsum_pow_div_mul_factorial_le_sum_range_add {y : ℝ} (hy : 0 ≤ y) {N 
     _ = a N / (1 - r) := by
         rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, div_eq_mul_inv]
 
-end TauCeti.Real
+end TauCeti

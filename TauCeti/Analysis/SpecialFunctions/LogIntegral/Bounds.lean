@@ -172,7 +172,8 @@ theorem logIntegral_eq_log_div_add_tsum_sub {x : ℝ} (hx : 1 < x) :
   ring
 
 private theorem log_eight : log (8 : ℝ) = 3 * log 2 := by
-  rw [show (8 : ℝ) = 2 ^ 3 by norm_num, log_pow]
+  have h8 : (8 : ℝ) = 2 ^ 3 := by norm_num
+  rw [h8, log_pow]
   norm_num
 
 private theorem log_div_log_two_eq_one_add {L : ℝ} (hL : 0 < L) :
