@@ -341,7 +341,7 @@ private lemma setIntegral_ball_min_neg_log_le (hα : Continuous α) (hα₀ : �
   rw [← integral_const_mul]
   exact setIntegral_mono_on (hint (by fun_prop (disch := exact fun x ↦ (hpos x).ne')))
     (hint (by fun_prop)) measurableSet_ball fun x _ ↦
-      Real.min_neg_log_one_le_two_mul_one_sub (hpos x) (pow_le_one₀ (norm_nonneg _) (hα₁ x))
+      Real.min_neg_log_one_le_two_mul_one_sub (pow_le_one₀ (norm_nonneg _) (hα₁ x))
 
 /-- **Zero-free flat vortex fields with codimension-two defect growth are the vacuum.** Let `J` be
 orthogonal on a nontrivial space of dimension `n`, `(eᵢ)` an orthonormal basis, `κ ≥ 0`, and let

@@ -583,7 +583,7 @@ private lemma integral_toSphere_sub_le_of_lt_zero [Nontrivial E]
       (hψs.trans Ioo_subset_Icc_self)
     have hψ1 : ContDiff ℝ 1 ψ := hψ.of_le (by simp)
     have hdψ : Continuous (deriv ψ) := hψ1.continuous_deriv le_rfl
-    have hI₁ := hψc.integrable_mul_deriv hψ1
+    have hI₁ := hψc.integrable_id_mul_deriv hψ1
     have hIΦ : Integrable fun x ↦ deriv ψ x * Φ x := by
       refine IntegrableOn.integrable_of_forall_notMem_eq_zero (s := tsupport ψ)
         ((hdψ.continuousOn.mul (hΦc.mono ?_)).integrableOn_compact hψc) fun x hx ↦ ?_
@@ -602,7 +602,7 @@ private lemma integral_toSphere_sub_le_of_lt_zero [Nontrivial E]
           ext x
           ring
       _ ≤ 0 := by
-          rw [hψc.integral_mul_deriv_eq_neg_integral hψ1]
+          rw [hψc.integral_id_mul_deriv_eq_neg_integral hψ1]
           linarith
   have h := hmono ⟨har₁, by linarith⟩ ⟨by linarith, hr₂R⟩ hr
   simp only at h

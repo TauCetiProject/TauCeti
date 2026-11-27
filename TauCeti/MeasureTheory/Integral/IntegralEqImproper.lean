@@ -44,8 +44,8 @@ and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For a compactly
 supported `C¹` function `ψ` on `ℝ`, the function `x ↦ x ψ' x` is integrable
-(`HasCompactSupport.integrable_mul_deriv`) and integration by parts gives `∫ x ψ' x = -∫ ψ`
-(`HasCompactSupport.integral_mul_deriv_eq_neg_integral`). For general
+(`HasCompactSupport.integrable_id_mul_deriv`) and integration by parts gives `∫ x ψ' x = -∫ ψ`
+(`HasCompactSupport.integral_id_mul_deriv_eq_neg_integral`). For general
 Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
 change of variables `y = c + b * x` (`0 < b`) on `Ioi a`. Splitting `(c, ∞)` at two points bounds
 the norm of an integral over it by the integrals of majorants of its integrand on the three pieces
@@ -291,18 +291,18 @@ open MeasureTheory
 variable {ψ : ℝ → ℝ}
 
 /-- For a compactly supported `C¹` function `ψ` on `ℝ`, the function `x ↦ x ψ' x` is integrable. -/
-theorem HasCompactSupport.integrable_mul_deriv (hψc : HasCompactSupport ψ) (hψ : ContDiff ℝ 1 ψ) :
-    Integrable fun x ↦ x * deriv ψ x :=
+theorem HasCompactSupport.integrable_id_mul_deriv (hψc : HasCompactSupport ψ)
+    (hψ : ContDiff ℝ 1 ψ) : Integrable fun x ↦ x * deriv ψ x :=
   (continuous_id.mul (hψ.continuous_deriv le_rfl)).integrable_of_hasCompactSupport
     (hψc.deriv.mul_left (f := fun x : ℝ ↦ x))
 
 /-- **Integration by parts against the identity.** For a compactly supported `C¹` function `ψ`
 on `ℝ`, `∫ x ψ' x = -∫ ψ`. -/
-theorem HasCompactSupport.integral_mul_deriv_eq_neg_integral (hψc : HasCompactSupport ψ)
+theorem HasCompactSupport.integral_id_mul_deriv_eq_neg_integral (hψc : HasCompactSupport ψ)
     (hψ : ContDiff ℝ 1 ψ) : ∫ x, x * deriv ψ x = -∫ x, ψ x := by
   have h := integral_mul_deriv_eq_deriv_mul_of_integrable (u := fun x : ℝ ↦ x)
     (u' := fun _ ↦ 1) (v := ψ) (v' := deriv ψ) (fun x _ ↦ hasDerivAt_id x)
-    (fun x _ ↦ (hψ.differentiable one_ne_zero x).hasDerivAt) (hψc.integrable_mul_deriv hψ)
+    (fun x _ ↦ (hψ.differentiable one_ne_zero x).hasDerivAt) (hψc.integrable_id_mul_deriv hψ)
     ((continuous_const.mul hψ.continuous).integrable_of_hasCompactSupport
       (hψc.mul_left (f := fun _ : ℝ ↦ (1 : ℝ))))
     ((continuous_id.mul hψ.continuous).integrable_of_hasCompactSupport
