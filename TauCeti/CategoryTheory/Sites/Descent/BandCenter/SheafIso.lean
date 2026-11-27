@@ -102,10 +102,12 @@ map is `centerFromBandingPresheaf`. -/
 noncomputable def centerFromBandingPresheafIso : A.obj ≅ IntrinsicBandSections.presheaf F :=
   NatIso.ofComponents
     (fun U ↦ (MulEquiv.toAdditiveRight (b.centerFromBandingEquiv U.unop)).toAddCommGrpIso)
-    (fun f ↦ AddCommGrpCat.ext fun a ↦ congrArg Additive.ofMul <|
-      (b.centerFromBandingEquiv_apply _ _).trans <|
-        (b.restrict_centerFromBanding f.unop (.ofAdd a)).symm.trans <|
-          congrArg _ (b.centerFromBandingEquiv_apply _ _).symm)
+    (fun f ↦ by
+      have h (U : Cᵒᵖ) :
+          (MulEquiv.toAdditiveRight (b.centerFromBandingEquiv U.unop)).toAddCommGrpIso.hom =
+            b.centerFromBandingPresheaf.app U :=
+        AddCommGrpCat.ext fun a ↦ congrArg Additive.ofMul (b.centerFromBandingEquiv_apply _ _)
+      simpa only [h] using b.centerFromBandingPresheaf.naturality f)
 
 /-- The forward map of `centerFromBandingPresheafIso` is `centerFromBandingPresheaf`. -/
 @[simp]
