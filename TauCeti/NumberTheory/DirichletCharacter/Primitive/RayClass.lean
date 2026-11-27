@@ -172,17 +172,17 @@ theorem toPrimitiveRayClassCharacter_inv (ψ : PrimitiveDirichletCharacter) :
   rw [of_inv, of_character, map_inv, PrimitiveRayClassCharacter.of_inv] at h
   rw [h, toPrimitiveRayClassCharacter_apply]
 
-/-- Lifting `(toPrimitiveRayClassCharacter ψ).toDirichletCharacter` to `ψ.level` recovers
-`ψ.character`. -/
+/-- Lifting `(toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter` to `ψ.level`
+recovers `ψ.character`. -/
 theorem changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter
     (ψ : PrimitiveDirichletCharacter) :
     DirichletCharacter.changeLevel (dvd_of_eq (absNorm_conductor_toPrimitiveRayClassCharacter ψ))
-      (toPrimitiveRayClassCharacter ψ).toDirichletCharacter = ψ.character := by
+      (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter = ψ.character := by
   let η := (ratDirichletEquiv ψ.level (NeZero.ne (ψ.level : ℕ))).symm ψ.character
   have h1 : ∀ (ξ : PrimitiveRayClassCharacter ℚ),
       ξ = PrimitiveRayClassCharacter.of η →
       ∀ (h : Ideal.absNorm ξ.conductor.finitePart ∣ ψ.level),
-      DirichletCharacter.changeLevel h ξ.toDirichletCharacter = ψ.character := by
+      DirichletCharacter.changeLevel h ξ.character.toDirichletCharacter = ψ.character := by
     rintro _ rfl h
     have hdvd : Ideal.absNorm (PrimitiveRayClassCharacter.of η).conductor.finitePart ∣
         Ideal.absNorm (ratModulus ψ.level (NeZero.ne (ψ.level : ℕ))).finitePart :=
@@ -197,7 +197,7 @@ theorem changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter
 @[simp]
 theorem toDirichletCharacter_toPrimitiveRayClassCharacter_intCast
     (ψ : PrimitiveDirichletCharacter) (m : ℤ) :
-    (toPrimitiveRayClassCharacter ψ).toDirichletCharacter m = ψ.character m := by
+    (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter m = ψ.character m := by
   have hm := (toPrimitiveRayClassCharacter ψ).isPrimitive_toDirichletCharacter
     |>.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq
       (dvd_of_eq (absNorm_conductor_toPrimitiveRayClassCharacter ψ))
@@ -208,14 +208,15 @@ theorem toDirichletCharacter_toPrimitiveRayClassCharacter_intCast
 @[simp]
 theorem toDirichletCharacter_toPrimitiveRayClassCharacter_natCast
     (ψ : PrimitiveDirichletCharacter) (m : ℕ) :
-    (toPrimitiveRayClassCharacter ψ).toDirichletCharacter m = ψ.character m := by
+    (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter m = ψ.character m := by
   simpa only [Int.cast_natCast] using
     toDirichletCharacter_toPrimitiveRayClassCharacter_intCast ψ (m : ℤ)
 
 @[simp]
 theorem LFunction_toDirichletCharacter_toPrimitiveRayClassCharacter
     (ψ : PrimitiveDirichletCharacter) :
-    (toPrimitiveRayClassCharacter ψ).toDirichletCharacter.LFunction = ψ.character.LFunction :=
+    (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter.LFunction =
+      ψ.character.LFunction :=
   DirichletCharacter.LFunction_eq_of_changeLevel_eq
     (absNorm_conductor_toPrimitiveRayClassCharacter ψ)
     (changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter ψ)
@@ -230,7 +231,7 @@ theorem toPrimitiveRayClassCharacter_symm_of {𝔪 : Modulus ℚ} (η : RayClass
 
 theorem toPrimitiveRayClassCharacter_symm_eq_of_toDirichletCharacter
     (ψ : PrimitiveRayClassCharacter ℚ) :
-    toPrimitiveRayClassCharacter.symm ψ = of ψ.toDirichletCharacter := by
+    toPrimitiveRayClassCharacter.symm ψ = of ψ.character.toDirichletCharacter := by
   simpa only [PrimitiveRayClassCharacter.of_character] using
     toPrimitiveRayClassCharacter_symm_of ψ.character
 

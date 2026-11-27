@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Rat
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
 
 /-!
 # The rational Hecke-to-Dirichlet L-function dictionary

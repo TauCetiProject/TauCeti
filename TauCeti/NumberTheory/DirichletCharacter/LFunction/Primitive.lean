@@ -43,9 +43,8 @@ For a nonzero modulus `n`, associating to each `χ : DirichletCharacter ℂ n` i
 * `DirichletCharacter.LFunction_eq_riemannZeta_of_eq_one`,
   `DirichletCharacter.LFunction_primitiveCharacter_one`: the continued `L`-function at level `1`
   (and of `(1 : DirichletCharacter ℂ n).primitiveCharacter`) equals `riemannZeta`.
-* `DirichletCharacter.IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq`,
-  `DirichletCharacter.IsPrimitive.LFunction_primitiveCharacter`: any primitive lift of `χ` (and
-  `χ` itself when primitive) has the same continued `L`-function as `χ.primitiveCharacter`.
+* `DirichletCharacter.IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq`: any primitive
+  lift of `χ` has the same continued `L`-function as `χ.primitiveCharacter`.
 * `DirichletCharacter.LFunction_primitiveCharacter_changeLevel`,
   `DirichletCharacter.LFunction_primitiveCharacter_eq_of_mul_eq_one`: raising the level does not
   change the primitive `L`-function, and characters `χ`, `ψ` with principal common-level product
@@ -91,13 +90,6 @@ theorem IsPrimitive.LFunction_eq_primitiveCharacter_of_changeLevel_eq {m n : ℕ
     ψ.LFunction = χ.primitiveCharacter.LFunction := by
   obtain ⟨rfl, rfl⟩ := hψ.eq_primitiveCharacter_of_changeLevel_eq hm hind
   rfl
-
-/-- For a primitive Dirichlet character `χ`, `χ.primitiveCharacter.LFunction` equals
-`χ.LFunction`. -/
-theorem IsPrimitive.LFunction_primitiveCharacter {n : ℕ} [NeZero n]
-    {χ : DirichletCharacter ℂ n} (hχ : χ.IsPrimitive) :
-    χ.primitiveCharacter.LFunction = χ.LFunction :=
-  (hχ.LFunction_eq_primitiveCharacter_of_changeLevel_eq dvd_rfl (changeLevel_self χ)).symm
 
 /-- Lifting a character `χ` of nonzero level `m` to a nonzero multiple `n` of `m` does not change
 the continued `L`-function of its primitive character. -/
