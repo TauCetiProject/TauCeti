@@ -98,6 +98,32 @@ namespace unitaryGroupOf
 
 variable {A : Matrix n n ℂ} {S : skewAdjoint.submodule ℝ (Matrix n n ℂ)}
 
+/-- The **source of the Cayley chart**: the skew-Hermitian `S` with `1 - A⁻¹ S / 2` invertible. -/
+def cayleyChartSource (A : Matrix n n ℂ) : Set (skewAdjoint.submodule ℝ (Matrix n n ℂ)) :=
+  {S | IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))}
+
+/-- Membership in the source of the Cayley chart. -/
+theorem mem_cayleyChartSource :
+    S ∈ cayleyChartSource A ↔ IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) :=
+  Iff.rfl
+
+/-- The source of the Cayley chart contains `0`, where the chart is `1`. -/
+@[simp]
+theorem zero_mem_cayleyChartSource : 0 ∈ cayleyChartSource A := by
+  simp [mem_cayleyChartSource]
+
+/-- A skew-Hermitian matrix belongs to the Cayley chart source exactly when the denominator
+has nonzero determinant. -/
+theorem mem_cayleyChartSource_iff_det_ne_zero :
+    S ∈ cayleyChartSource A ↔
+      (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))).det ≠ 0 := by
+  rw [mem_cayleyChartSource, isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
+
+/-- The base of the Cayley density is positive on the source of the chart. -/
+theorem normSq_det_pow_pos_of_mem_cayleyChartSource (hS : S ∈ cayleyChartSource A) :
+    0 < Complex.normSq (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))).det ^ Fintype.card n :=
+  pow_pos (Complex.normSq_pos.2 (mem_cayleyChartSource_iff_det_ne_zero.1 hS)) _
+
 /-- The **Cayley chart** of the unitary group of `A`: the matrix
 `c(-A⁻¹ S / 2) = (1 + A⁻¹ S / 2) (1 - A⁻¹ S / 2)⁻¹` attached to a skew-Hermitian matrix `S`. For
 Hermitian `A` it preserves the form of `A` where `1 - A⁻¹ S / 2` is invertible
@@ -156,8 +182,7 @@ bijection from the skew-Hermitian `S` with `1 - A⁻¹ S / 2` invertible onto th
 unitary group of `A` with `1 + g` invertible. Its inverse is `g ↦ -2 A c(g)`, where `c` is the
 Cayley transform. -/
 noncomputable def cayleyChartEquiv (hA : A.IsHermitian) (hA' : IsUnit A) :
-    {S : skewAdjoint.submodule ℝ (Matrix n n ℂ) //
-        IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))} ≃
+    ↥(cayleyChartSource A) ≃
       {g : unitaryGroupOf A // IsUnit (1 + ((g : GL n ℂ) : Matrix n n ℂ))} :=
   have hd : IsUnit A.det := (isUnit_iff_isUnit_det A).1 hA'
   have key (X : Matrix n n ℂ) : (2 : ℂ)⁻¹ • (A⁻¹ * (-(2 : ℂ) • (A * X))) = -X := by
@@ -169,7 +194,12 @@ noncomputable def cayleyChartEquiv (hA : A.IsHermitian) (hA' : IsUnit A) :
       invFun X := ⟨⟨-(2 : ℂ) • (A * X.val), skewAdjoint.mem_iff.2 <| by
           rw [star_smul, star_mul, star_eq_conjTranspose A, hA.eq,
             eq_neg_of_add_eq_zero_left X.property.1]
-          simp⟩, by rw [key, sub_neg_eq_add]; exact X.property.2⟩
+          simp⟩, by
+          apply mem_cayleyChartSource.2
+          -- The subtype coercion is the underlying skew-Hermitian matrix.
+          change IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (-(2 : ℂ) • (A * X.val))))
+          rw [key, sub_neg_eq_add]
+          exact X.property.2⟩
       left_inv S := Subtype.ext <| Subtype.ext <| by
         simp [smul_smul, mul_nonsing_inv_cancel_left _ _ hd]
       right_inv X := Subtype.ext <| by simp only [key, neg_neg] }
@@ -178,8 +208,7 @@ noncomputable def cayleyChartEquiv (hA : A.IsHermitian) (hA' : IsUnit A) :
 /-- The image of `S` under `Matrix.unitaryGroupOf.cayleyChartEquiv` is the Cayley chart at `S`. -/
 @[simp]
 theorem coe_cayleyChartEquiv_apply (hA : A.IsHermitian) (hA' : IsUnit A)
-    (S : {S : skewAdjoint.submodule ℝ (Matrix n n ℂ) //
-      IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))}) :
+    (S : cayleyChartSource A) :
     (((cayleyChartEquiv hA hA' S).val : GL n ℂ) : Matrix n n ℂ) = cayleyChart A S.val :=
   coe_cayleyEquiv_apply _ _ _
 
@@ -319,19 +348,6 @@ theorem det_codRestrict_mulLeft_comp_fderiv_cayleyChart (hA : A.IsHermitian) (hA
 end Calculus
 
 section Source
-
-/-- The **source of the Cayley chart**: the skew-Hermitian `S` with `1 - A⁻¹ S / 2` invertible. -/
-def cayleyChartSource (A : Matrix n n ℂ) : Set (skewAdjoint.submodule ℝ (Matrix n n ℂ)) :=
-  {S | IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))}
-
-/-- Membership in the source of the Cayley chart. -/
-theorem mem_cayleyChartSource :
-    S ∈ cayleyChartSource A ↔ IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) :=
-  Iff.rfl
-
-/-- The source of the Cayley chart contains `0`, where the chart is `1`. -/
-theorem zero_mem_cayleyChartSource : 0 ∈ cayleyChartSource A := by
-  simp [mem_cayleyChartSource]
 
 /-- The source of the Cayley chart is open. -/
 theorem isOpen_cayleyChartSource : IsOpen (cayleyChartSource A) := by

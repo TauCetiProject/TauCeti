@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.MeasurableSpace
+public import TauCeti.Algebra.MvPolynomial.Complex
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.MeasureTheory.Measure.Haar.CompactRing
 public import TauCeti.MeasureTheory.Measure.MvPolynomialZeroLocus
@@ -54,7 +55,8 @@ vanishes only on an additive-Haar-null set of `S`
 * `MvPolynomial.measure_setOf_eval_ofReal_eq_zero`: the real points of a complex polynomial that
   does not vanish at some real point are null for every σ-finite translation-invariant measure.
 * `MeasureTheory.Measure.addHaar_setOf_det_add_eq_zero`: the zero set of `S ↦ det (M + L S)`, for
-  `L` real linear on a finite-dimensional space and not identically zero, is additive-Haar-null.
+  `L` real linear on a finite-dimensional space, is additive-Haar-null unless
+  `det (M + L S)` vanishes identically.
 
 ## References
 
@@ -103,24 +105,10 @@ theorem measure_setOf_eval_ofReal_eq_zero (μ : Measure (ι → ℝ)) [SigmaFini
   -- At a real point every monomial is real, so `|P(x)|²` is the value of the real polynomial
   -- `Q = (Re P)² + (Im P)²`, where `Re P` and `Im P` take the real and imaginary parts of the
   -- coefficients.
-  have hmon (x : ι → ℝ) (d : ι →₀ ℕ) :
-      ∏ i ∈ d.support, (x i : ℂ) ^ d i = ((∏ i ∈ d.support, x i ^ d i : ℝ) : ℂ) := by
-    push_cast
-    rfl
   set Q : MvPolynomial ι ℝ := (∑ d ∈ P.support, monomial d (P.coeff d).re) ^ 2 +
     (∑ d ∈ P.support, monomial d (P.coeff d).im) ^ 2
   have hQ (x : ι → ℝ) : eval x Q = Complex.normSq (eval (fun i ↦ (x i : ℂ)) P) := by
-    have hre : (eval (fun i ↦ (x i : ℂ)) P).re =
-        eval x (∑ d ∈ P.support, monomial d (P.coeff d).re) := by
-      rw [eval_eq]
-      simp only [hmon, Complex.re_sum, Complex.re_mul_ofReal, _root_.map_sum, eval_monomial,
-        Finsupp.prod]
-    have him : (eval (fun i ↦ (x i : ℂ)) P).im =
-        eval x (∑ d ∈ P.support, monomial d (P.coeff d).im) := by
-      rw [eval_eq]
-      simp only [hmon, Complex.im_sum, Complex.im_mul_ofReal, _root_.map_sum, eval_monomial,
-        Finsupp.prod]
-    simp only [Q, map_add, map_pow, Complex.normSq_apply, ← hre, ← him]
+    simp only [Q, map_add, map_pow, Complex.normSq_apply, ← re_eval_ofReal, ← im_eval_ofReal]
     ring
   obtain ⟨x₀, hx₀⟩ := hP
   have hQ0 : Q ≠ 0 := fun h ↦ hx₀ <| by

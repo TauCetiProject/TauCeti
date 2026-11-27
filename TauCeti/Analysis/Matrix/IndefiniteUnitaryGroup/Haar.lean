@@ -8,14 +8,12 @@ module
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup.Cayley
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import Mathlib.Analysis.Matrix.MeasurableSpace
-public import Mathlib.MeasureTheory.Group.Measure
+public import TauCeti.MeasureTheory.Measure.Haar.SkewAdjoint
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.MeasureTheory.Measure.Haar.ZeroLocus
-import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Group.LIntegral
-import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # The Cayley measure is a Haar measure on the unitary group of a Hermitian form
@@ -26,7 +24,7 @@ such as `U(p, q)`. The Cayley chart `φ(S) = (1 + A⁻¹ S / 2) (1 - A⁻¹ S / 
 (`Matrix.unitaryGroupOf.cayleyChart`) parametrizes the elements `g` of `U(A)` with `1 + g`
 invertible by the skew-Hermitian matrices `S` with `D(S) = 1 - A⁻¹ S / 2` invertible. Given a
 measure `μ` on the skew-Hermitian matrices, the **Cayley measure** `μ^c` on `U(A)`
-(`Matrix.cayleyMeasure`) is the image under `φ` of the measure of density
+(`Matrix.unitaryGroupOf.cayleyMeasure`) is the image under `φ` of the measure of density
 `|det D(S)|^(-2 n)` (`Matrix.unitaryGroupOf.cayleyDensity`) with respect to `μ`. When `μ` is an
 additive Haar measure, `μ^c` is a left and right Haar measure on `U(A)`. Taking for `μ` the
 Lebesgue measure in the coordinates `Im S_aa`, `Re S_ab`, `Im S_ab` (`a < b`) divided by the
@@ -54,7 +52,7 @@ entries; measures and statements use the topology of entries.
 * `Matrix.unitaryGroupOf.cayleyChartUnitary A S`: the Cayley chart as a map to `U(A)`, equal to
   `1` off the source of the chart.
 * `Matrix.unitaryGroupOf.cayleyDensity A S`: the density `|det (1 - A⁻¹ S / 2)|^(-2 n)`.
-* `Matrix.cayleyMeasure A μ`: the Cayley measure on `U(A)`.
+* `Matrix.unitaryGroupOf.cayleyMeasure A μ`: the Cayley measure on `U(A)`.
 
 ## Main results
 
@@ -107,6 +105,13 @@ noncomputable def cayleyChartUnitary (A : Matrix n n ℂ)
     ⟨h.1.unit, mem_unitaryGroupOf_iff.2 (by rw [IsUnit.unit_spec]; exact h.2)⟩
   else 1
 
+/-- The Cayley chart with values in the unitary group sends zero to the identity. -/
+@[simp]
+theorem cayleyChartUnitary_zero (A : Matrix n n ℂ) : cayleyChartUnitary A 0 = 1 := by
+  classical
+  apply unitaryGroupOf.ext
+  simp [cayleyChartUnitary]
+
 /-- On the source of the chart, `Matrix.unitaryGroupOf.cayleyChartUnitary` is the Cayley chart. -/
 theorem coe_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A)
     (hS : S ∈ cayleyChartSource A) :
@@ -120,7 +125,7 @@ theorem coe_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A)
 bijection `Matrix.unitaryGroupOf.cayleyChartEquiv`. -/
 theorem cayleyChartUnitary_eq_cayleyChartEquiv (hA : A.IsHermitian) (hA' : IsUnit A)
     (hS : S ∈ cayleyChartSource A) :
-    cayleyChartUnitary A S = (cayleyChartEquiv hA hA' ⟨S, mem_cayleyChartSource.1 hS⟩).val :=
+    cayleyChartUnitary A S = (cayleyChartEquiv hA hA' ⟨S, hS⟩).val :=
   unitaryGroupOf.ext <| by rw [coe_cayleyChartUnitary hA hA' hS, coe_cayleyChartEquiv_apply]
 
 /-- Off the source of the chart, `Matrix.unitaryGroupOf.cayleyChartUnitary` is `1`. -/
@@ -182,14 +187,12 @@ theorem cayleyDensity_of_notMem (hS : S ∉ cayleyChartSource A) : cayleyDensity
     have : IsEmpty n := not_nonempty_iff.1 h
     exact hS (mem_cayleyChartSource.2 (isUnit_of_subsingleton _))
   have hdet : (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))).det = 0 := by
-    rwa [mem_cayleyChartSource, isUnit_iff_isUnit_det, isUnit_iff_ne_zero, not_not] at hS
+    simpa only [mem_cayleyChartSource_iff_det_ne_zero, not_not] using hS
   simp [cayleyDensity_def, hdet, Fintype.card_ne_zero]
 
 /-- The Cayley density is positive on the source of the chart. -/
 theorem cayleyDensity_pos (hS : S ∈ cayleyChartSource A) : 0 < cayleyDensity A S := by
-  have hdet : (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))).det ≠ 0 :=
-    ((isUnit_iff_isUnit_det _).1 (mem_cayleyChartSource.1 hS)).ne_zero
-  simpa [cayleyDensity_def] using pow_pos (normSq_pos.2 hdet) _
+  simpa [cayleyDensity_def] using normSq_det_pow_pos_of_mem_cayleyChartSource hS
 
 /-- The Cayley density is continuous on the source of the chart. -/
 theorem continuousOn_cayleyDensity :
@@ -197,8 +200,7 @@ theorem continuousOn_cayleyDensity :
   refine ENNReal.continuous_ofReal.comp_continuousOn
     (ContinuousOn.inv₀ ((Continuous.pow (by fun_prop) _).continuousOn) ?_)
   intro S hS
-  exact (pow_pos (normSq_pos.2
-    ((isUnit_iff_isUnit_det _).1 (mem_cayleyChartSource.1 hS)).ne_zero) _).ne'
+  exact (normSq_det_pow_pos_of_mem_cayleyChartSource hS).ne'
 
 /-- The Cayley density is measurable. -/
 theorem measurable_cayleyDensity : Measurable (cayleyDensity A) :=
@@ -235,8 +237,8 @@ theorem cayleyChartUnitary_neg (hA : A.IsHermitian) (hA' : IsUnit A)
     refine eq_inv_of_mul_eq_one_left (unitaryGroupOf.ext ?_)
     rw [Subgroup.coe_mul, Units.val_mul, coe_cayleyChartUnitary hA hA' hS,
       coe_cayleyChartUnitary hA hA' hS', cayleyChart_eq, cayleyChart_eq]
-    have h1 := (isUnit_iff_isUnit_det _).1 (mem_cayleyChartSource.1 hS')
-    have h2 := (isUnit_iff_isUnit_det _).1 (mem_cayleyChartSource.1 hS)
+    have h1 := isUnit_iff_ne_zero.2 (mem_cayleyChartSource_iff_det_ne_zero.1 hS')
+    have h2 := isUnit_iff_ne_zero.2 (mem_cayleyChartSource_iff_det_ne_zero.1 hS)
     simp only [NegMemClass.coe_neg, Matrix.mul_neg, smul_neg, sub_neg_eq_add] at h1 ⊢
     generalize (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)) = X at h1 h2 ⊢
     rw [Matrix.mul_assoc, ← Matrix.mul_assoc (1 + X)⁻¹, nonsing_inv_mul _ h1, Matrix.one_mul,
@@ -343,7 +345,7 @@ private theorem cayleyChartUnitary_cayleyChartInv (g : unitaryGroupOf A)
     cayleyChartInv A ((g : GL n ℂ) : Matrix n n ℂ) ∈ cayleyChartSource A ∧
       cayleyChartUnitary A (cayleyChartInv A ((g : GL n ℂ) : Matrix n n ℂ)) = g := by
   rw [cayleyChartInv_eq hA hA' g hg]
-  have hmem := mem_cayleyChartSource.2 ((cayleyChartEquiv hA hA').symm ⟨g, hg⟩).property
+  have hmem := ((cayleyChartEquiv hA hA').symm ⟨g, hg⟩).property
   refine ⟨hmem, ?_⟩
   rw [cayleyChartUnitary_eq_cayleyChartEquiv hA hA' hmem]
   simp
@@ -357,7 +359,7 @@ private theorem continuousOn_cayleyChartInv :
 private theorem cayleyTransition_mem {S} (hS : S ∈ transitionSource a) :
     cayleyTransition a S ∈ cayleyChartSource A := by
   rw [cayleyTransition_eq hA hA' a hS]
-  exact mem_cayleyChartSource.2 ((cayleyChartEquiv hA hA').symm _).property
+  exact ((cayleyChartEquiv hA hA').symm _).property
 
 private theorem cayleyChartUnitary_cayleyTransition {S} (hS : S ∈ transitionSource a) :
     cayleyChartUnitary A (cayleyTransition a S) = a * cayleyChartUnitary A S := by
@@ -489,17 +491,13 @@ private theorem ofReal_abs_det_mul_cayleyDensity {S} (hS : S ∈ transitionSourc
       cayleyDensity A (cayleyTransition a S) = cayleyDensity A S := by
   have hpos (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) (hS : S ∈ cayleyChartSource A) :
       0 < (normSq (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))).det ^ Fintype.card n)⁻¹ :=
-    inv_pos.2 (pow_pos (normSq_pos.2
-      ((isUnit_iff_isUnit_det _).1 (mem_cayleyChartSource.1 hS)).ne_zero) _)
+    inv_pos.2 (normSq_det_pow_pos_of_mem_cayleyChartSource hS)
   rw [cayleyDensity_def, cayleyDensity_def, ← ENNReal.ofReal_mul (abs_nonneg _),
     ← abs_of_pos (hpos _ (cayleyTransition_mem hA hA' a hS)), ← abs_mul,
     det_fderiv_cayleyTransition_mul hA hA' a hS, abs_of_pos (hpos _ hS.1)]
 
 end Transition
 
-end unitaryGroupOf
-
-open unitaryGroupOf in
 /-- The **Cayley measure** on the unitary group of `A` attached to a measure `μ` on the
 skew-Hermitian matrices: the image under the Cayley chart of the measure of density
 `|det (1 - A⁻¹ S / 2)|^(-2 n)` with respect to `μ`. For an invertible Hermitian `A` and an additive
@@ -508,8 +506,6 @@ Haar measure `μ` it is a left and right Haar measure on the unitary group of `A
 noncomputable def cayleyMeasure (A : Matrix n n ℂ) [MeasurableSpace (unitaryGroupOf A)]
     (μ : Measure (skewAdjoint.submodule ℝ (Matrix n n ℂ))) : Measure (unitaryGroupOf A) :=
   (μ.withDensity (cayleyDensity A)).map (cayleyChartUnitary A)
-
-namespace unitaryGroupOf
 
 variable {A : Matrix n n ℂ} (μ : Measure (skewAdjoint.submodule ℝ (Matrix n n ℂ)))
   [MeasurableSpace (unitaryGroupOf A)] [BorelSpace (unitaryGroupOf A)]
@@ -579,7 +575,7 @@ private theorem measure_setOf_not_isUnit_one_add_mul_cayleyChart (hA : A.IsHermi
     (Measure.addHaar_setOf_det_add_eq_zero μ (1 + (a : Matrix n n ℂ)) L ?_)
   · -- `(1 + a φ(S)) (1 - X) = (1 + a) + (a - 1) X` with `X = A⁻¹ S / 2`.
     obtain ⟨hS, hS'⟩ := hS
-    have hD := (isUnit_iff_isUnit_det _).1 (mem_cayleyChartSource.1 hS)
+    have hD := isUnit_iff_ne_zero.2 (mem_cayleyChartSource_iff_det_ne_zero.1 hS)
     have key : (1 + (a : Matrix n n ℂ) * cayleyChart A S) *
         (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) = 1 + (a : Matrix n n ℂ) + L S := by
       rw [cayleyChart_eq, hL, add_mul, one_mul, Matrix.mul_assoc, Matrix.mul_assoc,
@@ -602,52 +598,6 @@ private theorem measure_setOf_not_isUnit_one_add_mul_cayleyChart (hA : A.IsHermi
     simp only [Matrix.mul_smul, nonsing_inv_mul _ hd, Matrix.mul_one,
       smul_smul]
     module
-
-omit [DecidableEq n] in
-open scoped Matrix.Norms.Frobenius in
-/-- The Borel structure of the skew-Hermitian matrices for the topology of the Frobenius norm,
-which is the topology of entries up to unfolding. -/
-private theorem borelSpace_frobenius : @BorelSpace (skewAdjoint.submodule ℝ (Matrix n n ℂ))
-    NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace _ :=
-  ⟨by exact (@Subtype.borelSpace (Matrix n n ℂ) instTopologicalSpaceMatrix _ inferInstance
-    _).measurable_eq⟩
-
-omit [DecidableEq n] [MeasurableSpace (unitaryGroupOf A)] [BorelSpace (unitaryGroupOf A)] in
-open scoped Matrix.Norms.Frobenius in
-/-- An additive Haar measure for the topology of entries is one for the Frobenius topology. -/
-private theorem isAddHaarMeasure_frobenius :
-    @Measure.IsAddHaarMeasure (skewAdjoint.submodule ℝ (Matrix n n ℂ)) _
-      NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace _ μ := by
-  exact ‹μ.IsAddHaarMeasure›
-
-omit [Fintype n] [DecidableEq n] [MeasurableSpace (unitaryGroupOf A)]
-  [BorelSpace (unitaryGroupOf A)] in
-open scoped Matrix.Norms.Frobenius in
-private theorem isNegInvariant_of_isAddHaarMeasure [Finite n] : μ.IsNegInvariant := by
-  have := Fintype.ofFinite n
-  have := borelSpace_frobenius (n := n)
-  have := isAddHaarMeasure_frobenius μ
-  have := FiniteDimensional.proper_real (skewAdjoint.submodule ℝ (Matrix n n ℂ))
-  exact @Measure.IsAddHaarMeasure.isNegInvariant_of_regular _ _
-    NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace _ _ _ μ _ _ _
-
-omit [Fintype n] [DecidableEq n] [MeasurableSpace (unitaryGroupOf A)]
-  [BorelSpace (unitaryGroupOf A)] in
-open scoped Matrix.Norms.Frobenius in
-/-- The change of variables formula on the skew-Hermitian matrices, for a Haar measure of the
-topology of entries and derivatives for the Frobenius norm. -/
-private theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul_skew [Finite n]
-    {s : Set (skewAdjoint.submodule ℝ (Matrix n n ℂ))}
-    {f : skewAdjoint.submodule ℝ (Matrix n n ℂ) → skewAdjoint.submodule ℝ (Matrix n n ℂ)}
-    {f' : skewAdjoint.submodule ℝ (Matrix n n ℂ) →
-      skewAdjoint.submodule ℝ (Matrix n n ℂ) →L[ℝ] skewAdjoint.submodule ℝ (Matrix n n ℂ)}
-    (hs : MeasurableSet s) (hf' : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x) (hf : InjOn f s)
-    (g : skewAdjoint.submodule ℝ (Matrix n n ℂ) → ℝ≥0∞) :
-    ∫⁻ x in f '' s, g x ∂μ = ∫⁻ x in s, ENNReal.ofReal |(f' x).det| * g (f x) ∂μ := by
-  have := Fintype.ofFinite n
-  have := borelSpace_frobenius (n := n)
-  have := isAddHaarMeasure_frobenius μ
-  exact lintegral_image_eq_lintegral_abs_det_fderiv_mul μ hs hf' hf g
 
 open scoped Matrix.Norms.Frobenius in
 /-- Left invariance of integrals for the Cayley measure. For an invertible Hermitian `A`, an
@@ -675,7 +625,7 @@ private theorem lintegral_mul_left_cayleyMeasure (hA : A.IsHermitian) (hA' : IsU
     · exact Or.inl (hT ⟨hS', hb⟩)
     · exact Or.inr ⟨hS', hb⟩
   rw [hsupp a⁻¹ (transitionSource_inv_subset_image hA hA' a),
-    lintegral_image_eq_lintegral_abs_det_fderiv_mul_skew μ
+    μ.lintegral_image_eq_lintegral_abs_det_fderiv_mul_skewAdjoint
     (isOpen_transitionSource a).measurableSet
     (fun S hS ↦ (differentiableAt_cayleyTransition a hS).hasFDerivAt.hasFDerivWithinAt)
     (injOn_cayleyTransition hA hA' a),
@@ -697,7 +647,7 @@ In Cayley coordinates inversion is `S ↦ -S`, which preserves the density and `
 private theorem lintegral_inv_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A)
     {F : unitaryGroupOf A → ℝ≥0∞} (hF : Measurable F) :
     ∫⁻ g, F g⁻¹ ∂cayleyMeasure A μ = ∫⁻ g, F g ∂cayleyMeasure A μ := by
-  have := isNegInvariant_of_isAddHaarMeasure μ
+  have := μ.isNegInvariant_skewAdjoint
   rw [lintegral_cayleyMeasure μ hA hA' (F := fun g ↦ F g⁻¹) (hF.comp measurable_inv),
     lintegral_cayleyMeasure μ hA hA' hF,
     ← lintegral_neg_eq_self (μ := μ) (fun S ↦ cayleyDensity A S * F (cayleyChartUnitary A S))]
@@ -717,18 +667,6 @@ theorem isMulRightInvariant_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) 
   rw [← Measure.inv_eq_self (cayleyMeasure A μ)]
   infer_instance
 
-omit [Fintype n] [DecidableEq n] [MeasurableSpace (unitaryGroupOf A)]
-  [BorelSpace (unitaryGroupOf A)] [μ.IsAddHaarMeasure] in
-open scoped Matrix.Norms.Frobenius in
-/-- The skew-Hermitian matrices are locally compact, as a finite-dimensional normed space for the
-Frobenius norm, whose topology is the topology of entries. -/
-private theorem locallyCompactSpace_skewAdjoint [Finite n] :
-    LocallyCompactSpace (skewAdjoint.submodule ℝ (Matrix n n ℂ)) := by
-  have := Fintype.ofFinite n
-  have := FiniteDimensional.proper_real (skewAdjoint.submodule ℝ (Matrix n n ℂ))
-  exact (inferInstance : @LocallyCompactSpace (skewAdjoint.submodule ℝ (Matrix n n ℂ))
-    NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace)
-
 /-- **The Cayley measure is a Haar measure.** For an invertible Hermitian `A` and an additive Haar
 measure `μ` on the skew-Hermitian matrices, the Cayley measure is a left Haar measure on the
 unitary group of `A`; it is also right invariant
@@ -736,7 +674,6 @@ unitary group of `A`; it is also right invariant
 theorem isHaarMeasure_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
     (cayleyMeasure A μ).IsHaarMeasure := by
   have := isMulLeftInvariant_cayleyMeasure μ hA hA'
-  have := locallyCompactSpace_skewAdjoint (n := n)
   obtain ⟨K₀, hK₀, h0, hK₀s⟩ :=
     exists_compact_subset isOpen_cayleyChartSource (zero_mem_cayleyChartSource (A := A))
   have hf := continuousOn_cayleyChartUnitary hA hA'
@@ -746,9 +683,7 @@ theorem isHaarMeasure_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
   have hopen := isOpen_image_cayleyChartUnitary hA hA' isOpen_interior (interior_subset.trans hK₀s)
   have h1 : (1 : unitaryGroupOf A) ∈ interior K := by
     refine interior_maximal (image_mono interior_subset) hopen ⟨0, h0, ?_⟩
-    refine unitaryGroupOf.ext ?_
-    rw [coe_cayleyChartUnitary hA hA' zero_mem_cayleyChartSource, cayleyChart_zero,
-      OneMemClass.coe_one, Units.val_one]
+    exact cayleyChartUnitary_zero A
   have hKm : MeasurableSet K := hK.isClosed.measurableSet
   have hmeas : cayleyMeasure A μ K = ∫⁻ S in cayleyChartUnitary A ⁻¹' K, cayleyDensity A S ∂μ := by
     rw [cayleyMeasure_def, Measure.map_apply hfm hKm, withDensity_apply _ (hfm hKm)]

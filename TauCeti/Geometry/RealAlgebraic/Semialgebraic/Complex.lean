@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Complex.BigOperators
+public import TauCeti.Algebra.MvPolynomial.Complex
 public import TauCeti.Analysis.Complex.Euclidean.Space
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function
 
@@ -47,23 +47,11 @@ theorem isSemialgebraic_setOf_eval_ofReal_eq_zero (r : MvPolynomial σ ℂ) :
     IsSemialgebraic {a : σ → ℝ | eval (fun s ↦ (a s : ℂ)) r = 0} := by
   -- At a real point every monomial is real, so the real and imaginary parts of `r(a)` are the
   -- values of the coefficientwise real and imaginary parts of `r`.
-  have hmon (a : σ → ℝ) (d : σ →₀ ℕ) :
-      ∏ s ∈ d.support, (a s : ℂ) ^ d s = ((∏ s ∈ d.support, a s ^ d s : ℝ) : ℂ) := by
-    push_cast
-    rfl
-  have hre (a : σ → ℝ) : (eval (fun s ↦ (a s : ℂ)) r).re =
-      eval a (∑ d ∈ r.support, monomial d (r.coeff d).re) := by
-    rw [eval_eq]
-    simp only [hmon, re_sum, re_mul_ofReal, map_sum, eval_monomial, Finsupp.prod]
-  have him (a : σ → ℝ) : (eval (fun s ↦ (a s : ℂ)) r).im =
-      eval a (∑ d ∈ r.support, monomial d (r.coeff d).im) := by
-    rw [eval_eq]
-    simp only [hmon, im_sum, im_mul_ofReal, map_sum, eval_monomial, Finsupp.prod]
   have h : {a : σ → ℝ | eval (fun s ↦ (a s : ℂ)) r = 0} =
       {a | eval a (∑ d ∈ r.support, monomial d (r.coeff d).re) = 0} ∩
         {a | eval a (∑ d ∈ r.support, monomial d (r.coeff d).im) = 0} := by
     ext a
-    simp [Complex.ext_iff, hre, him]
+    simp [Complex.ext_iff, re_eval_ofReal, im_eval_ofReal]
   rw [h]
   exact (isSemialgebraic_eval_eq_zero _).inter (isSemialgebraic_eval_eq_zero _)
 
