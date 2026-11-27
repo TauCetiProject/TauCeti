@@ -263,7 +263,7 @@ private theorem map_coordinates {X Y : Model P} (g : (functor P S).obj X ⟶ (fu
 
 /-- The native matrix coordinates of a morphism between realized objects. Its inverse realizes
 matrices, without replacing the caller's chosen basis types or finite instances. -/
-def homLinearEquiv (X Y : Model P) :
+def coordinatesLinearEquiv (X Y : Model P) :
     ((functor P S).obj X ⟶ (functor P S).obj Y) ≃ₗ[R] (X ⟶ Y) :=
   { coordinates P S hEnd X Y with
     invFun := (functor P S).map
@@ -271,39 +271,39 @@ def homLinearEquiv (X Y : Model P) :
     right_inv := coordinates_map P S hEnd }
 
 /-- Evaluate a native matrix coordinate by pairing the corresponding inclusion and projection. -/
-theorem homLinearEquiv_apply {X Y : Model P}
+theorem coordinatesLinearEquiv_apply {X Y : Model P}
     (g : (functor P S).obj X ⟶ (functor P S).obj Y) (a : ι)
     (x : X.basis a) (y : Y.basis a) :
-    homLinearEquiv P S hEnd hOrth X Y g a x y =
+    coordinatesLinearEquiv P S hEnd hOrth X Y g a x y =
       homPairingOfBijective (hEnd a) _ (incl P S X a x) (g ≫ proj P S Y a y) := (rfl)
 
 /-- An entry of the coordinate matrix is characterized by the corresponding scalar component. -/
-theorem homLinearEquiv_apply_smul_id {X Y : Model P}
+theorem coordinatesLinearEquiv_apply_smul_id {X Y : Model P}
     (g : (functor P S).obj X ⟶ (functor P S).obj Y) (a : ι)
     (x : X.basis a) (y : Y.basis a) :
-    homLinearEquiv P S hEnd hOrth X Y g a x y • 𝟙 (S a) =
+    coordinatesLinearEquiv P S hEnd hOrth X Y g a x y • 𝟙 (S a) =
       incl P S X a x ≫ g ≫ proj P S Y a y :=
   homPairingOfBijective_smul_id _ _
 
 @[simp]
-theorem homLinearEquiv_symm_apply {X Y : Model P} (f : X ⟶ Y) :
-    (homLinearEquiv P S hEnd hOrth X Y).symm f = (functor P S).map f := (rfl)
+theorem coordinatesLinearEquiv_symm_apply {X Y : Model P} (f : X ⟶ Y) :
+    (coordinatesLinearEquiv P S hEnd hOrth X Y).symm f = (functor P S).map f := (rfl)
 
 @[simp]
-theorem homLinearEquiv_functor_map {X Y : Model P} (f : X ⟶ Y) :
-    homLinearEquiv P S hEnd hOrth X Y ((functor P S).map f) = f := by
-  rw [← homLinearEquiv_symm_apply P S hEnd hOrth]
+theorem coordinatesLinearEquiv_functor_map {X Y : Model P} (f : X ⟶ Y) :
+    coordinatesLinearEquiv P S hEnd hOrth X Y ((functor P S).map f) = f := by
+  rw [← coordinatesLinearEquiv_symm_apply P S hEnd hOrth]
   exact LinearEquiv.apply_symm_apply _ _
 
 @[simp]
-theorem functor_map_homLinearEquiv {X Y : Model P}
+theorem functor_map_coordinatesLinearEquiv {X Y : Model P}
     (g : (functor P S).obj X ⟶ (functor P S).obj Y) :
-    (functor P S).map (homLinearEquiv P S hEnd hOrth X Y g) = g := by
-  rw [← homLinearEquiv_symm_apply P S hEnd hOrth]
+    (functor P S).map (coordinatesLinearEquiv P S hEnd hOrth X Y g) = g := by
+  rw [← coordinatesLinearEquiv_symm_apply P S hEnd hOrth]
   exact LinearEquiv.symm_apply_apply _ _
 
 private def fullyFaithful : (functor P S).FullyFaithful :=
-  { preimage := fun {X Y} g ↦ homLinearEquiv P S hEnd hOrth X Y g
+  { preimage := fun {X Y} g ↦ coordinatesLinearEquiv P S hEnd hOrth X Y g
     map_preimage := fun {_ _} g ↦ map_coordinates P S hEnd hOrth g
     preimage_map := fun {_ _} f ↦ coordinates_map P S hEnd f }
 
