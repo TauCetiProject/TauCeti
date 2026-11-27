@@ -18,7 +18,8 @@ A family selects one coupling per source, each uniquely of lowest exponent at it
 prescribed partner degrees and at most the selected total source degree. This is the
 degree comparison for the extremal coefficient in `New.IsCouplingFamily.norm_coeff_pairExponent`
 in `grh/src/New/Derivatives/Sharpness/Couplings.lean` of
-[grh-lean](https://github.com/lsernau/grh-lean) at revision `72fead1).
+[grh-lean](https://github.com/lsernau/grh-lean) at commit `72fead1`
+(Apache 2.0, Copyright 2026 Anthropic, PBC).
 The proof uses `Finsupp.sum_mapDomain_index` to sum the degrees by their partners.
 -/
 
@@ -43,8 +44,7 @@ variable {ι κ : Type*} {S : Set ℕ} {pr : ℕ → ι → κ} {e : ι → ℕ}
 namespace IsCouplingFamily
 
 /-- Distinct selected couplings have distinct partners. -/
-theorem injective_partner (h : IsCouplingFamily S pr e) :
-    Injective (fun i ↦ pr (e i) i) := by
+theorem partner_injective (h : IsCouplingFamily S pr e) : Injective (fun i ↦ pr (e i) i) := by
   intro i j hij
   rcases le_total (e i) (e j) with hle | hle
   · exact congrArg Prod.fst (h.eq_of_exponent_le (h.mem i) hle hij)
@@ -86,15 +86,19 @@ theorem support_subset_range_of_sum_pow_mul_le (h : IsCouplingFamily S pr e)
   have hb : f a ∈ (m.mapDomain f).support := by
     rw [support_mapDomain_of_nonneg hnonneg]
     exact Finset.mem_image_of_mem f ham
-  rw [hfg, mapDomain_support_of_injective h.injective_partner] at hb
+  rw [hfg, mapDomain_support_of_injective h.partner_injective] at hb
   obtain ⟨i, _, hi⟩ := Finset.mem_image.mp hb
   have ha' : a.2 ≤ e i := by
     by_contra! hlt
-    have hltsum := Finset.sum_lt_sum
-      (fun b hb ↦ Nat.mul_le_mul_right (m b)
-        (Nat.pow_le_pow_right (zero_lt_one.trans hp) (hle b hb)))
-      ⟨a, ham, Nat.mul_lt_mul_of_pos_right (Nat.pow_lt_pow_right hp (by rwa [← hi, hu]))
-        (Nat.pos_of_ne_zero (mem_support_iff.mp ham))⟩
+    have hltsum : m.sum (fun b n ↦ p ^ u (f b) * n) < m.sum (fun b n ↦ p ^ b.2 * n) := by
+      simp only [Finsupp.sum]
+      refine Finset.sum_lt_sum (fun b hb ↦ ?_) ⟨a, ham, ?_⟩
+      · have hp' : 0 < p := zero_lt_one.trans hp
+        gcongr
+        exact hle b hb
+      · rw [← hi, hu]
+        exact Nat.mul_lt_mul_of_pos_right (Nat.pow_lt_pow_right hp hlt)
+          (Nat.pos_of_ne_zero (mem_support_iff.mp ham))
     exact (ne_of_gt (lt_of_lt_of_le hltsum hdegree)) hsum.symm
   exact ⟨i, (h.eq_of_exponent_le (hm a ham) ha' hi.symm).symm⟩
 
@@ -112,7 +116,7 @@ theorem eq_mapDomain_of_sum_pow_mul_le (h : IsCouplingFamily S pr e) {p : ℕ} (
   have hsupport := h.support_subset_range_of_sum_pow_mul_le hp hm hpartner hdegree
   have hf : InjOn f (range r) := by
     rintro _ ⟨i, rfl⟩ _ ⟨i', rfl⟩ hij
-    exact congrArg r (h.injective_partner hij)
+    exact congrArg r (h.partner_injective hij)
   refine mapDomain_injOn (range r) hf hsupport ?_ ?_
   · intro a ha
     obtain ⟨i, _, rfl⟩ := Finset.mem_image.mp (mapDomain_support ha)
