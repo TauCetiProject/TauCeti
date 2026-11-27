@@ -15,10 +15,10 @@ public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Data.Multiset.MapFold
 import Mathlib.GroupTheory.Index
 import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.SetTheory.Cardinal.NatCard
+import TauCeti.Data.Multiset.Fintype
 
 /-!
 # Orbit sizes and stabilizer-weighted orbit sums
@@ -131,17 +131,10 @@ theorem map_card_orbit_eq_of_image_orbit_eq {G G' X Y : Type*} [Group G] [Group 
     rw [orbitRel_apply, orbitRel_apply, ← h, e.injective.mem_set_image]
   -- `e` induces an equivalence of the orbit quotients preserving orbit sizes.
   let e' : orbitRel.Quotient G X ≃ orbitRel.Quotient G' Y := Quotient.congr e key
-  have hcard : ∀ ω : orbitRel.Quotient G X, Nat.card ω.orbit = Nat.card (e' ω).orbit := by
-    intro ω
-    refine Quotient.inductionOn' ω fun x => ?_
-    rw [orbitRel.Quotient.orbit_mk, Quotient.mk''_eq_mk, Quotient.congr_mk, ← Quotient.mk''_eq_mk,
-      orbitRel.Quotient.orbit_mk, ← h, Nat.card_image_of_injective e.injective]
-  calc (Finset.univ : Finset (orbitRel.Quotient G X)).val.map (fun ω => Nat.card ω.orbit)
-      = Finset.univ.val.map (fun ω => Nat.card (e' ω).orbit) :=
-        Multiset.map_congr rfl fun ω _ => hcard ω
-    _ = (Finset.univ.val.map e').map (fun ω => Nat.card ω.orbit) := by
-        rw [Multiset.map_map, Function.comp_def]
-    _ = _ := by rw [Multiset.map_univ_val_equiv]
+  refine Multiset.map_univ_val_eq_of_equiv e' fun ω => ?_
+  refine Quotient.inductionOn' ω fun x => ?_
+  rw [orbitRel.Quotient.orbit_mk, Quotient.mk''_eq_mk, Quotient.congr_mk, ← Quotient.mk''_eq_mk,
+    orbitRel.Quotient.orbit_mk, ← h, Nat.card_image_of_injective e.injective]
 
 open scoped Classical in
 /-- **Equivariant bijections preserve orbit sizes.** If `e : X ≃ Y` is a bijection between finite

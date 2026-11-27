@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.MeasureTheory.OptimalTransport.Disintegration
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Certificate
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
@@ -191,14 +192,8 @@ theorem fderiv_norm_sub_sq_div_two_injective {F : Type*} [NormedAddCommGroup F]
 theorem fderiv_sqrt_one_add_norm_sub_sq {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] (x y : F) :
     fderiv ℝ (fun x' ↦ √(1 + ‖x' - y‖ ^ 2)) x =
-      (√(1 + ‖x - y‖ ^ 2))⁻¹ • innerSL ℝ (x - y) := by
-  have hpos : 0 < 1 + ‖x - y‖ ^ 2 := by positivity
-  refine (HasFDerivAt.sqrt (((hasFDerivAt_id x).sub_const y).norm_sq.const_add 1)
-    hpos.ne').fderiv.trans ?_
-  ext v
-  simp only [id_eq, one_div, mul_inv_rev, map_sub, ContinuousLinearMap.comp_id, smul_apply,
-    sub_apply, innerSL_apply_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul]
-  field_simp
+      (√(1 + ‖x - y‖ ^ 2))⁻¹ • innerSL ℝ (x - y) :=
+  (hasFDerivAt_sqrt_add_norm_sub_sq (by positivity)).fderiv
 
 /-- The momentum `-Dₓ c (x, y)` of `y` at `x` for the cost `√(1 + ‖x - y‖ ^ 2)` is the inner
 product against the image `(y - x) / √(1 + ‖y - x‖ ^ 2)` of `y - x` in the unit ball. -/

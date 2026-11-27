@@ -75,6 +75,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `QuotientGroup.image_mk_eq_univ_iff`: a set `K` meets every left coset of `Γ` exactly when
   `K * Γ = G`.
 * `QuotientAddGroup.image_mk_eq_univ_iff`: the additive form, `K + Γ = G`.
+* `QuotientGroup.mk'_bot_injective` and `QuotientAddGroup.mk'_bot_injective`: the quotient map by
+  the trivial subgroup is injective.
 -/
 
 public section
@@ -370,5 +372,10 @@ theorem image_mk_eq_univ_iff {K : Set G} :
   refine ⟨fun h ↦ by rw [h, preimage_univ], fun h ↦ eq_univ_of_forall fun x ↦ ?_⟩
   obtain ⟨g, rfl⟩ := mk_surjective x
   exact (h ▸ mem_univ g : g ∈ _)
+
+/-- The quotient map of a group by its trivial subgroup is injective. -/
+@[to_additive /-- The quotient map of an additive group by its trivial subgroup is injective. -/]
+theorem mk'_bot_injective : Function.Injective (mk' (⊥ : Subgroup G)) :=
+  (mk' ⊥).ker_eq_bot_iff.mp (ker_mk' ⊥)
 
 end QuotientGroup
