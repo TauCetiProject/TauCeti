@@ -40,6 +40,9 @@ adjugate. Summing over the replaced row, or over the replaced column, gives in b
 `trace (adj A * B)` (`Matrix.sum_det_updateRow_eq_trace_adjugate_mul` and
 `Matrix.sum_det_updateCol_eq_trace_adjugate_mul`): Jacobi's formula for the derivative of `det` at
 `A` in the direction `B`, read row by row or column by column.
+
+For a matrix indexed by `Fin (n + 1)`, the corner entry of the adjugate is the leading principal
+minor of order `n` (`Matrix.adjugate_last_last_eq_det_submatrix_castSucc`).
 -/
 
 public section
@@ -172,5 +175,12 @@ theorem sum_det_updateCol_eq_trace_adjugate_mul {n : Type*} [Fintype n] [Decidab
     (A B : Matrix n n R) : ∑ j, (A.updateCol j fun i ↦ B i j).det = (adjugate A * B).trace := by
   simp only [← cramer_apply, cramer_eq_adjugate_mulVec, trace, diag_apply, Matrix.mul_apply, mulVec,
     dotProduct]
+
+/-- The corner entry of the adjugate of a matrix indexed by `Fin (n + 1)` is its leading principal
+minor of order `n`. -/
+theorem adjugate_last_last_eq_det_submatrix_castSucc {n : ℕ}
+    (Z : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
+    Z.adjugate (Fin.last n) (Fin.last n) = (Z.submatrix Fin.castSucc Fin.castSucc).det := by
+  simp [adjugate_fin_succ_eq_det_submatrix, ← two_mul, pow_mul]
 
 end Matrix

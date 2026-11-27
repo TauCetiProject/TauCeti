@@ -56,14 +56,13 @@ end Ideal
 
 namespace TauCeti
 
-/-- A maximal ideal of `B` containing `b` is the preimage of a maximal ideal of `B ⧸ bB`. -/
-theorem exists_maximalSpectrum_comap_mk_eq {B : Type*} [CommRing B] {b : B}
-    {m : MaximalSpectrum B} (hbm : b ∈ m.asIdeal) :
-    ∃ q : MaximalSpectrum (B ⧸ Ideal.span {b}),
-      q.asIdeal.comap (Ideal.Quotient.mk _) = m.asIdeal := by
-  have hle : Ideal.span {b} ≤ m.asIdeal := (Ideal.span_singleton_le_iff_mem _).2 hbm
-  exact ⟨⟨_, Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
-    (by rwa [Ideal.mk_ker])⟩, Ideal.comap_map_mk hle⟩
+/-- A maximal ideal of `B` containing the ideal `J` is the preimage of a maximal ideal of
+`B ⧸ J`. -/
+theorem exists_maximalSpectrum_comap_mk_eq {B : Type*} [CommRing B] {J : Ideal B}
+    {m : MaximalSpectrum B} (hJm : J ≤ m.asIdeal) :
+    ∃ q : MaximalSpectrum (B ⧸ J), q.asIdeal.comap (Ideal.Quotient.mk J) = m.asIdeal :=
+  ⟨⟨_, Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
+    (by rwa [Ideal.mk_ker])⟩, Ideal.comap_map_mk hJm⟩
 
 /-- For a domain `B` finite over a Noetherian domain `A` of dimension at most one, a nonzero
 `b : B` lies in only finitely many maximal ideals of `B`. -/

@@ -183,8 +183,9 @@ theorem SmoothTwoForm.IsNondegenerate.isContractibleLoopActionCritical (h : σ.I
   exists_isCap := hcap
   hasDerivAt w hwc hper h0 := by
     convert h.hasDerivAt_contractibleLoopAction_zero hw hH hcap hwc hper h0 using 1
-    exact (σ.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero horbit
-      (fun t ↦ (hwc (0, t)).mdifferentiableAt two_ne_zero) h0 0 1).symm
+    exact (σ.intervalIntegral_apply_sub_hamiltonianVectorField_eq_zero
+      (fun t _ ↦ (mem_periodicSolutions.mp horbit).1 t)
+      (fun t ↦ (hwc (0, t)).mdifferentiableAt two_ne_zero) h0).symm
 
 /-- **Critical points of the action are `1`-periodic orbits.** Let `σ` be a nondegenerate weakly
 exact two-form on a manifold without boundary modelled on a finite-dimensional space, and `H` a

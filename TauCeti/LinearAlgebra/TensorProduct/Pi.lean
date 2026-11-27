@@ -60,6 +60,8 @@ equivalence and is compatible with identities, composition and inverses.
 * `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
   corresponds to the pure tensor `1 ⊗ v`.
 * `TensorProduct.piScalarRight_rTensor`: `piScalarRight` is natural in the module.
+* `TensorProduct.one_tmul_single_ne_zero`: the basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is
+  nonzero over a nontrivial `A`.
 
 ## References
 
@@ -99,6 +101,26 @@ theorem piRightHom_comp_rTensor (f : N →ₗ[R] N') :
       LinearMap.piMap (fun i ↦ f.rTensor (M i)) ∘ₗ piRightHom R R N M :=
   TensorProduct.ext' fun _ _ ↦ rfl
 
+/-- Tensoring a map into a product and then comparing with the product of tensor products
+tensors each of its coordinate maps. -/
+@[simp]
+theorem piRightHom_lTensor_pi (S : Type*) [CommSemiring S] [Algebra R S] [Module S N]
+    [IsScalarTower R S N] (f : ∀ i, N' →ₗ[R] M i) (x : N ⊗[R] N') :
+    piRightHom R S N M ((LinearMap.pi f).lTensor N x) = fun i ↦ (f i).lTensor N x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => rfl
+  | add x y hx hy => simp [hx, hy, Pi.add_def]
+
+/-- For a finite family, a tensor over a product equals a pure tensor exactly when the
+corresponding coordinate equations hold. -/
+theorem lTensor_pi_eq_tmul_iff [Finite ι] (f : ∀ i, N' →ₗ[R] M i)
+    (x : N ⊗[R] N') (n : N) (z : ∀ i, M i) :
+    (LinearMap.pi f).lTensor N x = n ⊗ₜ[R] z ↔ ∀ i, (f i).lTensor N x = n ⊗ₜ[R] z i := by
+  classical
+  let := Fintype.ofFinite ι
+  rw [← (piRight R R N M).injective.eq_iff]
+  simp only [piRight_apply, piRightHom_lTensor_pi, piRightHom_tmul, funext_iff]
+
 end CommSemiring
 
 section PiScalarRight
@@ -131,6 +153,13 @@ theorem piScalarRight_rTensor (S : Type*) {S' N N' : Type*} [CommSemiring S] [Al
   induction x using TensorProduct.inductionOn with
   | tmul a f => ext i; simp
   | add x y hx hy => ext i; simp only [map_add, hx, hy, Pi.add_apply, Function.comp_apply]
+
+omit [Fintype ι] in
+/-- The basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is nonzero over a nontrivial `A`. -/
+theorem one_tmul_single_ne_zero [Nontrivial A] (i : ι) :
+    (1 : A) ⊗ₜ[R] (Pi.single i 1 : ι → R) ≠ 0 := by
+  intro h
+  simpa using congr_arg (fun w ↦ piScalarRightHom R A A ι w i) h
 
 end PiScalarRight
 

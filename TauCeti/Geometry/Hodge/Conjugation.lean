@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.Complex.Conjugation
+public import TauCeti.LinearAlgebra.TensorProduct.Pi
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.Basic.Complex.ConjZPow
@@ -33,6 +34,11 @@ models.
   of a real vector space, bundled as a Hodge conjugation.
 * `LinearMap.map_eigenspace_baseChange`: canonical conjugation carries each eigenspace of a
   complexified real-linear endomorphism to the eigenspace of the conjugate eigenvalue.
+* `Module.Basis.complexificationConjugation_toEquiv_baseChange`: canonical conjugation fixes the
+  complexification of a real basis.
+* `TauCeti.Hodge.Conjugation.tensorPiEquiv_complexificationConjugation`: in a basis fixed by a
+  conjugation, the coordinate identification `ℂ ⊗[ℝ] (ι → ℝ) ≃ W` intertwines the canonical
+  conjugation of the complexification with it.
 * `TauCeti.Hodge.Conjugation.tensorProduct`: the tensor product of two conjugations.
 * `TauCeti.Hodge.Conjugation.tensorProduct_toEquiv_tmul`: its action on pure tensors.
 * `TauCeti.Hodge.Conjugation.internalHom`: conjugation on the space of complex-linear maps,
@@ -174,6 +180,22 @@ theorem map_eigenspace_baseChange (f : V →ₗ[ℝ] V) (z : ℂ) :
 
 end LinearMap
 
+namespace Module.Basis
+
+open TauCeti
+open scoped TensorProduct
+
+universe u
+
+variable {V : Type u} [AddCommGroup V] [Module ℝ V] {ι : Type*}
+
+/-- The complexification of a real basis is fixed by the conjugation of `ℂ ⊗[ℝ] V`. -/
+theorem complexificationConjugation_toEquiv_baseChange (e : Module.Basis ι ℝ V) (i : ι) :
+    (Hodge.complexificationConjugation V).toEquiv (e.baseChange ℂ i) = e.baseChange ℂ i := by
+  rw [Module.Basis.baseChange_apply, Hodge.complexificationConjugation_toEquiv_tmul, map_one]
+
+end Module.Basis
+
 namespace TauCeti.Hodge
 
 open scoped TensorProduct
@@ -201,6 +223,17 @@ theorem repr_toEquiv_of_fixed (ω : Conjugation W) {ι : Type*} (e : Module.Basi
     e.repr (ω.toEquiv x) i = starRingEnd ℂ (e.repr x i) := by
   have h : ω.toEquiv = e.coordConj := e.ext' fun i ↦ by rw [he, e.coordConj_self]
   rw [h, e.repr_coordConj, starRingEnd_apply]
+
+/-- In a basis `e` of `W` fixed by a conjugation `ω`, the identification
+`ℂ ⊗[ℝ] (ι → ℝ) ≃ W` intertwines the canonical conjugation of the complexification with `ω`. -/
+theorem tensorPiEquiv_complexificationConjugation (ω : Conjugation W) {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (e : Module.Basis ι ℂ W) (he : ∀ i, ω.toEquiv (e i) = e i)
+    (x : ℂ ⊗[ℝ] (ι → ℝ)) :
+    e.tensorPiEquiv ℝ ((complexificationConjugation (ι → ℝ)).toEquiv x) =
+      ω.toEquiv (e.tensorPiEquiv ℝ x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul z y => simp [LinearEquiv.map_smulₛₗ, map_sum, he, -Complex.coe_smul]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 section TensorProduct
 

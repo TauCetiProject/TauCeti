@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Order.Filter.AtTopBot.Archimedean
 import Mathlib.Tactic.LinearCombination
 
@@ -55,6 +56,10 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 `c > 0`), `α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`, and the forward difference
 `√x (√(x + 1) - √x)` tends to `1/2` as `x → ∞`.
 
+The natural floor of a square root is the integer square root of the natural floor, also after
+dividing by a natural number `k`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k)`, which extends Mathlib's
+`Real.nat_floor_real_sqrt_eq_nat_sqrt` from natural numbers to real arguments.
+
 ## Main results
 
 * `Real.inv_sqrt_mul_sq`, `Real.div_sqrt_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` and
@@ -64,6 +69,7 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 * `Real.sqrt_mul_eq_mul_sqrt_div`: `√(x * y) = y * √(x / y)` for `0 ≤ y`.
 * `Real.sqrt_div_mul_mul_sqrt_div`: `√(u / t) * t * √(u / t) = u` for `0 ≤ u / t` and `t ≠ 0`.
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
+* `Real.inv_sqrt_le_of_inv_sq_le`: `(√ρ)⁻¹ ≤ d` when `0 < d` and `(d ^ 2)⁻¹ ≤ ρ`.
 * `Real.inv_sqrt_pow_mul_pow`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `0 < a` and `2p ≤ n`.
 * `Real.sqrt_natCast_pow_self_pos`: `0 < √n ^ n` for every natural number `n`.
 * `Real.one_sub_sq_two_mul_sqrt_div_one_add`: the complementary square of `2√k / (1 + k)`.
@@ -116,6 +122,12 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
   and `1 ≤ r`.
 * `Real.tendsto_sqrt_nhds_zero_iff`: an eventually nonnegative function tends to `0` exactly when
   its square root does.
+* `Nat.floor_sqrt_div_natCast`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k)` for real `x` and natural `k`.
+* `Real.nat_sqrt_floor_le_real_sqrt`, `Real.real_sqrt_lt_nat_sqrt_floor_add_one`,
+  `Real.nat_floor_real_sqrt_eq_nat_sqrt_floor`: for every real `x`, the natural square root of
+  `⌊x⌋₊` satisfies `Nat.sqrt ⌊x⌋₊ ≤ √x < Nat.sqrt ⌊x⌋₊ + 1`, so `⌊√x⌋₊ = Nat.sqrt ⌊x⌋₊`.
+* `TauCeti.sum_range_inv_sqrt_add_one_le`: the sum of the reciprocal square roots of `1` through
+  `n` is at most `2√n`.
 * `TauCeti.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
   divergence of the normalization of an `(n + 1) × (n + 1)` random matrix.
 
@@ -185,6 +197,12 @@ theorem inv_sqrt_mul_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : ((√a)⁻¹ * x) ^
 /-- Dividing by `√a` and squaring divides the square by `a`. -/
 theorem div_sqrt_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : (x / √a) ^ 2 = x ^ 2 / a := by
   rw [div_pow, sq_sqrt ha]
+
+/-- A lower bound `(d ^ 2)⁻¹ ≤ ρ` with `0 < d` bounds the inverse square root: `(√ρ)⁻¹ ≤ d`. -/
+theorem inv_sqrt_le_of_inv_sq_le {ρ d : ℝ} (hd : 0 < d) (h : (d ^ 2)⁻¹ ≤ ρ) : (√ρ)⁻¹ ≤ d := by
+  have h' := sqrt_le_sqrt h
+  rw [sqrt_inv, sqrt_sq hd.le] at h'
+  simpa using inv_anti₀ (inv_pos.2 hd) h'
 
 /-- A square factor comes out of a square root as its absolute value. -/
 theorem sqrt_sq_mul (x y : ℝ) : √(x ^ 2 * y) = |x| * √y := by
@@ -816,9 +834,65 @@ theorem tendsto_sqrt_nhds_zero_iff {α : Type*} {l : Filter α} {f : α → ℝ}
   refine (by simpa using h.pow 2 : Tendsto (fun x ↦ √(f x) ^ 2) l (𝓝 0)).congr' ?_
   filter_upwards [hf] with x hx using sq_sqrt hx
 
+/-- For every real `x`, the natural square root of `⌊x⌋₊` is at most `√x`. For `x < 0` both
+sides are zero. This extends Mathlib's `Real.nat_sqrt_le_real_sqrt` from natural to real `x`. -/
+theorem nat_sqrt_floor_le_real_sqrt (x : ℝ) : ((⌊x⌋₊.sqrt : ℕ) : ℝ) ≤ √x := by
+  rcases le_or_gt 0 x with hx | hx
+  · exact nat_sqrt_le_real_sqrt.trans (sqrt_le_sqrt (Nat.floor_le hx))
+  · simp [Nat.floor_of_nonpos hx.le, sqrt_eq_zero_of_nonpos hx.le]
+
+/-- For every real `x`, `√x` is less than the natural square root of `⌊x⌋₊` plus one. This
+extends Mathlib's `Real.real_sqrt_lt_nat_sqrt_succ` from natural to real `x`. -/
+theorem real_sqrt_lt_nat_sqrt_floor_add_one (x : ℝ) : √x < (⌊x⌋₊.sqrt : ℕ) + 1 := by
+  rw [sqrt_lt' (by positivity)]
+  have h : ((⌊x⌋₊ + 1 : ℕ) : ℝ) ≤ ((⌊x⌋₊.sqrt + 1) ^ 2 : ℕ) :=
+    Nat.cast_le.2 (Nat.add_one_le_iff.2 (Nat.sqrt_lt'.1 (Nat.lt_add_one _)))
+  push_cast at h
+  linarith [Nat.lt_floor_add_one x]
+
+/-- For every real `x`, the floor of `√x` is the natural square root of `⌊x⌋₊`. This extends
+Mathlib's `Real.nat_floor_real_sqrt_eq_nat_sqrt` from natural to real `x`. -/
+@[simp]
+theorem nat_floor_real_sqrt_eq_nat_sqrt_floor (x : ℝ) : ⌊√x⌋₊ = ⌊x⌋₊.sqrt :=
+  (Nat.floor_eq_iff (sqrt_nonneg x)).2
+    ⟨nat_sqrt_floor_le_real_sqrt x, real_sqrt_lt_nat_sqrt_floor_add_one x⟩
+
 end Real
 
+namespace Nat
+
+/-- For real `x` and natural `k`, the natural floor of `√(x / k)` is the integer square root of
+`⌊x⌋₊ / k`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k)`. -/
+theorem floor_sqrt_div_natCast (x : ℝ) (k : ℕ) :
+    ⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k) := by
+  rw [← Nat.floor_div_natCast]
+  rcases lt_or_ge (x / k) 0 with hy | hy
+  · rw [Real.sqrt_eq_zero'.2 hy.le, Nat.floor_zero, Nat.floor_eq_zero.2 (hy.trans one_pos),
+      Nat.sqrt_zero]
+  refine eq_of_forall_le_iff fun d ↦ ?_
+  rw [Nat.le_floor_iff (Real.sqrt_nonneg _), Real.le_sqrt (Nat.cast_nonneg _) hy, Nat.le_sqrt',
+    Nat.le_floor_iff hy, Nat.cast_pow]
+
+end Nat
+
 namespace TauCeti
+
+/-- The sum of the reciprocal square roots of the first `n` positive integers is at most `2√n`. -/
+theorem sum_range_inv_sqrt_add_one_le (n : ℕ) :
+    (∑ i ∈ Finset.range n, (√((i : ℝ) + 1))⁻¹) ≤ 2 * √(n : ℝ) := by
+  calc
+    _ ≤ ∑ i ∈ Finset.range n, 2 * (√((i : ℝ) + 1) - √(i : ℝ)) := by
+      refine Finset.sum_le_sum fun i _ ↦ ?_
+      have hpos : 0 < √((i : ℝ) + 1) := by positivity
+      have hsq := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (i : ℝ) + 1)
+      have hsq' := Real.sq_sqrt (Nat.cast_nonneg i : (0 : ℝ) ≤ i)
+      rw [inv_eq_one_div, div_le_iff₀ hpos]
+      nlinarith only [hsq, hsq', sq_nonneg (√((i : ℝ) + 1) - √(i : ℝ))]
+    _ = _ := by
+      rw [← Finset.mul_sum]
+      simp only [← Nat.cast_succ]
+      rw [Finset.sum_range_sub (fun i : ℕ ↦ √(i : ℝ))]
+      simp
 
 open Filter in
 /-- The square roots of the successive natural numbers `n + 1` tend to infinity. -/
