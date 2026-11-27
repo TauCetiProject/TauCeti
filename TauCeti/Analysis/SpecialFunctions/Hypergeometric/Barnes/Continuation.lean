@@ -30,9 +30,10 @@ overlap identities with Euler's normalized integral `Complex.eulerIntegral` (for
 and with the hypergeometric power series on `‖z‖ < 1` (DLMF 15.6.6), including negative real
 parameters and integer differences `a - b ∈ ℤ`.
 
-For `0 < Re a` and `0 < Re b < Re c`, `Complex.eulerIntegral_eq_hypergeometricMellinBarnes` already
-identifies `eulerIntegral a b c z` with `(Γ(a) Γ(b))⁻¹ * hypergeometricMellinBarnes a b c z σ`
-at any admissible negative abscissa `σ < 0` on `-z ∈ Complex.slitPlane`. Combining this with joint
+For `0 < Re a` and `0 < Re b < Re c`, `Complex.eulerIntegral_eq_mellinBarnes` (`MellinBarnes.lean`)
+together with abscissa-independence (`Complex.hypergeometricMellinBarnes_eq`) already identifies
+`eulerIntegral a b c z` with `(Γ(a) Γ(b))⁻¹ * hypergeometricMellinBarnes a b c z σ` at any
+admissible negative abscissa `σ < 0` on `-z ∈ Complex.slitPlane`. Combining this with joint
 holomorphy of `mellinBarnesIntegral` (`Complex.analyticOnNhd_mellinBarnesIntegral`),
 `eulerIntegral` (`Complex.analyticOnNhd_eulerIntegral`), and `regularizedGaussHGFun`
 (`AnalyticAt.regularizedGaussHGFun`), together with `Complex.regularizedGaussHGFun_eq_eulerIntegral`
@@ -62,7 +63,7 @@ representation to general parameters.
   values at excluded parameters, and joint cut-plane holomorphy for `a, b, c ∉ -ℕ`,
   `-z ∈ Complex.slitPlane`.
 * `Complex.eulerIntegral_eq_mellinBarnesRegularizedGaussHGFun`,
-  `Complex.eulerIntegral_eq_hypergeometricMellinBarnes_of_ne_neg_natCast`: overlap with Euler's
+  `Complex.eulerIntegral_eq_hypergeometricMellinBarnes`: overlap with Euler's
   integral for `0 < Re b < Re c`, `a ∉ -ℕ`, and `-z ∈ Complex.slitPlane`.
 * `Complex.regularizedGaussHGFun_eq_mellinBarnesRegularizedGaussHGFun`,
   `Complex.regularizedGaussHGFun_eq_hypergeometricMellinBarnes`,
@@ -91,6 +92,23 @@ open scoped Real Topology
 
 namespace Complex
 
+private theorem eulerIntegral_eq_hypergeometricMellinBarnes_of_re_pos {a b c z : ℂ}
+    (ha : 0 < a.re) (hb : 0 < b.re) (hbc : b.re < c.re) (hz : -z ∈ slitPlane) {σ : ℝ}
+    (hσ : σ < 0) (haσ : ∀ n : ℕ, a.re + σ ≠ -n) (hbσ : ∀ n : ℕ, b.re + σ ≠ -n) :
+    eulerIntegral a b c z = (Gamma a * Gamma b)⁻¹ * hypergeometricMellinBarnes a b c z σ := by
+  -- A line between `-min (Re a, Re b)` and `0`, with no poles to its right.
+  set σ' := max (-a.re) (-b.re) / 2
+  have ha' : -a.re < σ' := by have := le_max_left (-a.re) (-b.re); simp only [σ']; linarith
+  have hb' : -b.re < σ' := by have := le_max_right (-a.re) (-b.re); simp only [σ']; linarith
+  have hσ' : σ' < 0 := by simp only [σ']; linarith [max_lt (neg_neg_of_pos ha) (neg_neg_of_pos hb)]
+  have hpa : ∀ n : ℕ, a.re + σ' ≠ -n := fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)]
+  have hpb : ∀ n : ℕ, b.re + σ' ≠ -n := fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)]
+  rw [hypergeometricMellinBarnes_eq a b c hz hσ hσ' haσ hbσ hpa hpb,
+    hypergeometricMellinBarnes_eq_integral a b c z ha'.le hb'.le,
+    eulerIntegral_eq_mellinBarnes a hbc hz hσ' ha' hb']
+  simp only [hypergeometricMellinBarnesIntegrand_def, mul_inv]
+  ring
+
 private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -k) (hb : 0 < b.re) (hbc : b.re < c.re) (hz : -z ∈ slitPlane) :
     Gamma a * Gamma b * eulerIntegral a b c z = mellinBarnesIntegral a b c z := by
@@ -99,7 +117,7 @@ private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
       Gamma a' * Gamma b * eulerIntegral a' b c z = mellinBarnesIntegral a' b c z := by
     obtain ⟨σ, hσ, haσ, hbσ, hm⟩ :=
       exists_mellinBarnesIntegral_eq_hypergeometricMellinBarnes a' b c z
-    rw [hm, eulerIntegral_eq_hypergeometricMellinBarnes ha' hb hbc hz hσ haσ hbσ,
+    rw [hm, eulerIntegral_eq_hypergeometricMellinBarnes_of_re_pos ha' hb hbc hz hσ haσ hbσ,
       mul_inv_cancel_left₀ (mul_ne_zero (Gamma_ne_zero_of_re_pos ha') (Gamma_ne_zero_of_re_pos hb))]
   refine AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos ?_ ?_ (fun hw => hstep1 hw) ha
   · exact fun w hw => ((analyticAt_Gamma hw).mul analyticAt_const).mul
@@ -334,11 +352,11 @@ theorem eulerIntegral_eq_mellinBarnesRegularizedGaussHGFun {a b c z : ℂ} (ha :
     ← eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral ha hb hbc hz,
     inv_mul_cancel_left₀ (mul_ne_zero (Gamma_ne_zero ha) (Gamma_ne_zero_of_re_pos hb))]
 
-/-- **Separating-contour Mellin–Barnes representation of Euler's integral.** For `0 < Re b < Re c`,
-`a ∉ -ℕ`, `-z ∈ slitPlane`, and any admissible abscissa `σ < 0` avoiding `-Re a - ℕ` and
-`-Re b - ℕ`, Euler's normalized integral equals `(Γ(a) Γ(b))⁻¹` times
+/-- **Separating-contour Mellin–Barnes representation of Euler's integral** (DLMF 15.6.6). For
+`0 < Re b < Re c`, `a ∉ -ℕ`, `-z ∈ slitPlane`, and any admissible abscissa `σ < 0` avoiding
+`-Re a - ℕ` and `-Re b - ℕ`, Euler's normalized integral equals `(Γ(a) Γ(b))⁻¹` times
 `hypergeometricMellinBarnes a b c z σ`. -/
-theorem eulerIntegral_eq_hypergeometricMellinBarnes_of_ne_neg_natCast {a b c z : ℂ} {σ : ℝ}
+theorem eulerIntegral_eq_hypergeometricMellinBarnes {a b c z : ℂ} {σ : ℝ}
     (ha : ∀ k : ℕ, a ≠ -k) (hb : 0 < b.re) (hbc : b.re < c.re) (hσ : σ < 0)
     (haσ : ∀ k : ℕ, a.re + σ ≠ -k) (hbσ : ∀ k : ℕ, b.re + σ ≠ -k) (hz : -z ∈ slitPlane) :
     eulerIntegral a b c z = (Gamma a * Gamma b)⁻¹ * hypergeometricMellinBarnes a b c z σ := by
