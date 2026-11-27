@@ -30,8 +30,8 @@ a small integral matrix (`TauCeti.LinearAlgebra.Matrix.ReductionKernel`).
 
 ## Main results
 
-* `Matrix.finite_setOf_det_smul_add_eq_zero`: a pencil `t • A + B` with a nonsingular member
-  has only finitely many singular parameters.
+* `Matrix.finite_setOf_det_smul_add_eq_zero`: if some member of a pencil `t • A + B` over a
+  domain has nonzero determinant, then only finitely many parameters `t` give zero determinant.
 * `Polynomial.eval_det_X_add_C`: `det (X • A + B)`, evaluated at `t`, is `det (t • A + B)`.
 * `Submodule.eq_span_singleton_of_mem_of_det_ne_zero`: over a field with more than `n` elements,
   a subspace of `n × n` matrices whose invertible elements are the nonzero multiples of one
@@ -61,8 +61,8 @@ namespace Matrix
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [IsDomain R]
 
-/-- A matrix pencil over a domain has only finitely many singular parameters if it has a
-nonsingular member. -/
+/-- If some member `t₀ • A + B` of a matrix pencil over a domain has nonzero determinant, then the
+parameters `t` with `det (t • A + B) = 0` form a finite set. -/
 theorem finite_setOf_det_smul_add_eq_zero (A B : Matrix n n R)
     (h : ∃ t₀ : R, (t₀ • A + B).det ≠ 0) :
     {t : R | (t • A + B).det = 0}.Finite := by

@@ -37,7 +37,7 @@ vanishing on a subset of `G` of positive measure is zero
 `haarProb G` with normalized restricted additive Haar measure
 (`MeasureTheory.Measure.haarProb_eq_smul_comap`) with the nullity in `M_n(R)`.
 
-Over `ℝ`, the real points of a complex polynomial that does not vanish at some real point form a
+Over `ℝ`, the real zeros of a complex polynomial that does not vanish at some real point form a
 null set (`MvPolynomial.measure_setOf_eval_ofReal_eq_zero`): they are the zero set of the real
 polynomial `(Re P)² + (Im P)²`, whose coefficients are built from the real and imaginary parts of
 those of `P`. In coordinates this applies to determinants of affine families of complex matrices
@@ -52,7 +52,7 @@ vanishes only on an additive-Haar-null set of `S`
 * `Matrix.measure_setOf_eval_algebraMap_eq_zero`: the same on `M_n(R)`.
 * `Matrix.haarProb_setOf_eval_algebraMap_eq_zero`: the zero set on a compact open matrix group of
   a nonzero polynomial over `E` is Haar-null.
-* `MvPolynomial.measure_setOf_eval_ofReal_eq_zero`: the real points of a complex polynomial that
+* `MvPolynomial.measure_setOf_eval_ofReal_eq_zero`: the real zeros of a complex polynomial that
   does not vanish at some real point are null for every σ-finite translation-invariant measure.
 * `MeasureTheory.Measure.addHaar_setOf_det_add_eq_zero`: the zero set of `S ↦ det (M + L S)`, for
   `L` real linear on a finite-dimensional space, is additive-Haar-null unless
@@ -95,7 +95,7 @@ theorem measure_setOf_eval_algebraMap_eq_zero (μ : Measure (ι → R)) [SigmaFi
   obtain ⟨Q, hQ, hPQ⟩ := exists_ne_zero_eval_algebraMap_eq_zero_iff_eval_eq_zero R P hP
   simpa only [hPQ] using measure_setOf_eval_eq_zero μ Q hQ
 
-/-- **Null real zero loci of complex polynomials.** The real points of a complex polynomial in
+/-- **Null real zero loci of complex polynomials.** The real zeros of a complex polynomial in
 finitely many variables that does not vanish at some real point form a null set, for every
 σ-finite translation-invariant measure on `ℝ^ι`. -/
 theorem measure_setOf_eval_ofReal_eq_zero (μ : Measure (ι → ℝ)) [SigmaFinite μ]

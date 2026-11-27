@@ -133,6 +133,11 @@ theorem cayleyDensity_of_notMem (hS : S ∉ cayleyChartSource A) : cayleyDensity
     simpa only [mem_cayleyChartSource_iff_det_ne_zero, not_not] using hS
   simp [cayleyDensity_def, hdet, Fintype.card_ne_zero]
 
+/-- The Cayley density is `1` at the origin of the chart. -/
+@[simp]
+theorem cayleyDensity_zero (A : Matrix n n ℂ) : cayleyDensity A 0 = 1 := by
+  simp [cayleyDensity_def]
+
 /-- The Cayley density is positive on the source of the chart. -/
 theorem cayleyDensity_pos (hS : S ∈ cayleyChartSource A) : 0 < cayleyDensity A S := by
   simpa [cayleyDensity_def] using normSq_det_pow_pos_of_mem_cayleyChartSource hS
@@ -149,49 +154,12 @@ theorem continuousOn_cayleyDensity :
 theorem measurable_cayleyDensity : Measurable (cayleyDensity A) :=
   ((Continuous.measurable (Continuous.pow (by fun_prop) _)).inv).ennreal_ofReal
 
-/-- The determinant `det (1 + A⁻¹ S / 2)` at `-S` is the conjugate of `det (1 - A⁻¹ S / 2)`. -/
-private theorem det_one_sub_neg (hA : A.IsHermitian) (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-    (1 - (2 : ℂ)⁻¹ • (A⁻¹ * ((-S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) : Matrix n n ℂ))).det =
-      star (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))).det := by
-  have hS : star (S : Matrix n n ℂ) = -S := skewAdjoint.mem_iff.1 S.property
-  have hA' : star A⁻¹ = A⁻¹ := by
-    rw [star_eq_conjTranspose, conjTranspose_nonsing_inv, hA.eq]
-  rw [← det_conjTranspose, ← star_eq_conjTranspose]
-  simp only [star_sub, star_one, star_smul, star_mul, hS, hA', star_inv₀, star_ofNat,
-    NegMemClass.coe_neg, Matrix.mul_neg, Matrix.neg_mul, smul_neg, sub_neg_eq_add]
-  rw [← Matrix.smul_mul, det_one_add_mul_comm, Matrix.mul_smul]
-
-/-- The source of the Cayley chart is invariant under `S ↦ -S`. -/
-@[simp]
-theorem neg_mem_cayleyChartSource (hA : A.IsHermitian) :
-    -S ∈ cayleyChartSource A ↔ S ∈ cayleyChartSource A := by
-  simp only [mem_cayleyChartSource, isUnit_iff_isUnit_det, det_one_sub_neg hA, isUnit_star]
-
 /-- The Cayley density is invariant under `S ↦ -S`. -/
 @[simp]
 theorem cayleyDensity_neg (hA : A.IsHermitian) (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     cayleyDensity A (-S) = cayleyDensity A S := by
-  rw [cayleyDensity_def, cayleyDensity_def, det_one_sub_neg hA, Complex.star_def, normSq_conj]
-
-/-- The Cayley chart sends `-S` to the inverse of its value at `S`. -/
-@[simp]
-theorem cayleyChartUnitary_neg (hA : A.IsHermitian) (hA' : IsUnit A)
-    (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-    cayleyChartUnitary A (-S) = (cayleyChartUnitary A S)⁻¹ := by
-  by_cases hS : S ∈ cayleyChartSource A
-  · have hS' := (neg_mem_cayleyChartSource hA).2 hS
-    refine eq_inv_of_mul_eq_one_left (unitaryGroupOf.ext ?_)
-    rw [Subgroup.coe_mul, Units.val_mul, coe_cayleyChartUnitary hA hA' hS,
-      coe_cayleyChartUnitary hA hA' hS', cayleyChart_eq, cayleyChart_eq]
-    have h1 := isUnit_iff_ne_zero.2 (mem_cayleyChartSource_iff_det_ne_zero.1 hS')
-    have h2 := isUnit_iff_ne_zero.2 (mem_cayleyChartSource_iff_det_ne_zero.1 hS)
-    simp only [NegMemClass.coe_neg, Matrix.mul_neg, smul_neg, sub_neg_eq_add] at h1 ⊢
-    generalize (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)) = X at h1 h2 ⊢
-    rw [Matrix.mul_assoc, ← Matrix.mul_assoc (1 + X)⁻¹, nonsing_inv_mul _ h1, Matrix.one_mul,
-      ← sub_eq_add_neg, mul_nonsing_inv _ h2]
-    simp
-  · rw [cayleyChartUnitary_of_notMem hS,
-      cayleyChartUnitary_of_notMem (mt (neg_mem_cayleyChartSource hA).1 hS), inv_one]
+  rw [cayleyDensity_def, cayleyDensity_def, det_one_sub_smul_inv_mul_neg hA, Complex.star_def,
+    normSq_conj]
 
 section Transition
 
@@ -254,8 +222,7 @@ private theorem injOn_cayleyTransition : InjOn (cayleyTransition a) (transitionS
     have := congrArg (cayleyChartUnitary A) h
     rw [cayleyChartUnitary_cayleyTransition hA hA' a hS,
       cayleyChartUnitary_cayleyTransition hA hA' a hS', mul_right_inj] at this
-    apply injOn_cayleyChart hA' hS.1 hS'.1
-    rw [← coe_cayleyChartUnitary hA hA' hS.1, ← coe_cayleyChartUnitary hA hA' hS'.1, this]
+    exact injOn_cayleyChartUnitary hA hA' hS.1 hS'.1 this
 
 /-- The image of `transitionSource a` under the transition map contains `transitionSource a⁻¹`:
 `τ_a (τ_{a⁻¹} S) = S` there. -/
@@ -270,10 +237,8 @@ private theorem transitionSource_inv_subset_image :
     rwa [← coe_cayleyChartUnitary hA hA' hS'.1, ← mul_inv_cancel_left a (cayleyChartUnitary A S'),
       ← hfT, Subgroup.coe_mul, Units.val_mul, coe_cayleyChartUnitary hA hA' hT] at h
   refine ⟨_, hT', ?_⟩
-  apply injOn_cayleyChart hA' (cayleyTransition_mem hA hA' a hT') hS'.1
-  rw [← coe_cayleyChartUnitary hA hA' (cayleyTransition_mem hA hA' a hT'),
-    ← coe_cayleyChartUnitary hA hA' hS'.1, cayleyChartUnitary_cayleyTransition hA hA' a hT', hfT,
-    mul_inv_cancel_left]
+  apply injOn_cayleyChartUnitary hA hA' (cayleyTransition_mem hA hA' a hT') hS'.1
+  rw [cayleyChartUnitary_cayleyTransition hA hA' a hT', hfT, mul_inv_cancel_left]
 
 omit hA hA' in
 open scoped Matrix.Norms.Frobenius in
@@ -479,7 +444,7 @@ private theorem lintegral_inv_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A
   rw [lintegral_cayleyMeasure μ hA hA' (F := fun g ↦ F g⁻¹) (hF.comp measurable_inv),
     lintegral_cayleyMeasure μ hA hA' hF,
     ← lintegral_neg_eq_self (μ := μ) (fun S ↦ cayleyDensity A S * F (cayleyChartUnitary A S))]
-  simp only [cayleyDensity_neg hA, cayleyChartUnitary_neg hA hA']
+  simp only [cayleyDensity_neg hA, cayleyChartUnitary_neg hA]
 
 /-- **The Cayley measure is invariant under inversion.** -/
 theorem isInvInvariant_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
@@ -532,8 +497,7 @@ theorem isHaarMeasure_cayleyMeasure (hA : A.IsHermitian) (hA' : IsUnit A) :
       · by_cases hS' : S ∈ cayleyChartSource A
         · rw [indicator_of_mem hS]
           obtain ⟨S₀, hS₀, hS₀'⟩ : cayleyChartUnitary A S ∈ cayleyChartUnitary A '' K₀ := hS
-          have : S₀ = S := injOn_cayleyChart hA' (hK₀s hS₀) hS' <| by
-            rw [← coe_cayleyChartUnitary hA hA' (hK₀s hS₀), hS₀', coe_cayleyChartUnitary hA hA' hS']
+          have : S₀ = S := injOn_cayleyChartUnitary hA hA' (hK₀s hS₀) hS' hS₀'
           rw [indicator_of_mem (this ▸ hS₀)]
         · rw [indicator_of_mem hS, cayleyDensity_of_notMem hS']
           exact bot_le
