@@ -41,6 +41,8 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 * `TauCeti.ConstructionB.sumHalf`: half the coordinate sum modulo two, with kernel
   `ker_sumHalf` and surjectivity `sumHalf_surjective`.
 * `TauCeti.ConstructionB.relIndex_lattice`: Construction B has index two in Construction A.
+* `TauCeti.ConstructionB.mem_constructionALattice_iff`: Construction A is the union of
+  Construction B and its translate by `2 eᵢ`.
 * `TauCeti.ConstructionB.integralLattice`: Construction B as an integral lattice, with
   `discriminant_integralLattice` and `isEven_integralLattice`.
 
@@ -218,6 +220,31 @@ theorem relIndex_lattice [Nonempty ι] (hC : BinaryCode.IsEven C) :
   rw [AddSubgroup.relIndex, ← ker_sumHalf C hC, AddSubgroup.index_ker,
     AddMonoidHom.range_eq_top.mpr (sumHalf_surjective C hC), AddSubgroup.card_top,
     Nat.card_zmod]
+
+/-- **Construction A is the union of Construction B and its translate by `2 eᵢ`**, for an even
+binary code and any coordinate `i`: a Construction A vector either lies in Construction B or
+differs from a Construction B vector by `2 eᵢ`. -/
+theorem mem_constructionALattice_iff [DecidableEq ι] (hC : BinaryCode.IsEven C) (i : ι)
+    (x : ι → ℚ) :
+    x ∈ ConstructionA.lattice 2 C.toAddSubgroup ↔
+      x ∈ lattice C ∨ x - Pi.single i (2 : ℚ) ∈ lattice C := by
+  have he := ConstructionA.single_mem_lattice 2 C.toAddSubgroup i
+  rw [mem_lattice, mem_lattice]
+  constructor
+  · intro hx
+    -- The coordinate sum is `2 k`. Either `k` is even, or subtracting `2 eᵢ` lowers the sum by
+    -- two to a multiple of four.
+    obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC hx
+    rcases Int.even_or_odd k with ⟨l, rfl⟩ | ⟨l, rfl⟩
+    · exact Or.inl ⟨hx, l, by rw [hk]; push_cast; ring⟩
+    · refine Or.inr ⟨sub_mem hx he, l, ?_⟩
+      simp only [Pi.sub_apply, Finset.sum_sub_distrib, hk, Finset.sum_pi_single', Finset.mem_univ,
+        ↓reduceIte]
+      push_cast
+      ring
+  · rintro (⟨hx, -⟩ | ⟨hx, -⟩)
+    · exact hx
+    · simpa only [Nat.cast_ofNat, sub_add_cancel] using add_mem hx he
 
 /-! ### The integral lattice -/
 

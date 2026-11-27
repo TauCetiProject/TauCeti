@@ -145,10 +145,8 @@ theorem mpullback_sphereSymplectizationDiffeomorph_constSmooth :
         (SmoothForm.mpullback (Subtype.val : puncturedSpace E → E) contMDiff_subtypeVal
           ω.constSmooth) =
       mextDerivₗ (𝓘(ℝ).prod (𝓡 n)) 1 (ω.sphereContactForm n).symplectization := by
-  have hω : ω.constSmooth = mextDerivₗ 𝓘(ℝ, E) 1 ω.radialPrimitive :=
-    Subtype.ext ((mextDerivₗ_apply (I := 𝓘(ℝ, E)) 1 _).trans ω.mextDeriv_radialPrimitive).symm
-  rw [hω, ← SmoothForm.mextDerivₗ_mpullback, ← SmoothForm.mextDerivₗ_mpullback,
-    mpullback_sphereSymplectizationDiffeomorph_radialPrimitive]
+  rw [← ω.mextDerivₗ_radialPrimitive, ← SmoothForm.mextDerivₗ_mpullback,
+    ← SmoothForm.mextDerivₗ_mpullback, mpullback_sphereSymplectizationDiffeomorph_radialPrimitive]
 
 end SymplecticForm
 

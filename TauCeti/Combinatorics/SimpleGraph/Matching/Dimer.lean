@@ -59,7 +59,9 @@ the restrictions to `F` of its members are exactly those configurations `η`
 `ω₂` that agree on the edges outside `F` sharing a vertex with an edge of `F`, the restrictions to
 `F` of their completion sets coincide (`SimpleGraph.image_restrict_dimerCompletionSet_eq`).
 For any `ω`, the gluing of `η` to `ω` is a dimer configuration exactly when `η` is such a
-restriction (`SimpleGraph.isDimerConfiguration_updateFinset_iff`).
+restriction (`SimpleGraph.isDimerConfiguration_updateFinset_iff`), so gluing `η` to `ω₁` or to `ω₂`
+as above gives a dimer configuration in the same cases
+(`SimpleGraph.isDimerConfiguration_updateFinset_congr`).
 
 ## References
 
@@ -467,5 +469,17 @@ theorem image_restrict_dimerCompletionSet_eq {F : Finset G.edgeSet} {ω₁ ω₂
   ext η
   rw [mem_image_restrict_dimerCompletionSet h₁, mem_image_restrict_dimerCompletionSet h₂]
   exact forall_congr' fun v => forall_congr' fun hv => key η v hv
+
+/-- For two dimer configurations that agree on the edges outside `F` sharing a vertex with an edge
+of `F`, the gluing of a configuration `η` on `F` to one is a dimer configuration exactly when its
+gluing to the other is. -/
+theorem isDimerConfiguration_updateFinset_congr [DecidableEq G.edgeSet] {F : Finset G.edgeSet}
+    {ω₁ ω₂ : G.edgeSet → Bool} (h₁ : G.IsDimerConfiguration ω₁) (h₂ : G.IsDimerConfiguration ω₂)
+    (h : ∀ e ∉ F, (∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)) → ω₁ e = ω₂ e)
+    (η : F → Bool) :
+    G.IsDimerConfiguration (updateFinset ω₁ F η) ↔
+      G.IsDimerConfiguration (updateFinset ω₂ F η) := by
+  rw [isDimerConfiguration_updateFinset_iff, isDimerConfiguration_updateFinset_iff,
+    image_restrict_dimerCompletionSet_eq h₁ h₂ h]
 
 end SimpleGraph

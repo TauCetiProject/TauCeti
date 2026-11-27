@@ -603,6 +603,16 @@ theorem RiemannSurface.GermFactorsThrough.notMem_criticalValuePreimage {z ζ : S
     ζ ∉ criticalValuePreimage I u :=
   (mem_criticalValuePreimage_iff_of_apply_eq h.apply_eq).not.1 hz
 
+/-- **Coincidence of branches is symmetric off `u⁻¹(u(Crit u))`.** For a `C²` pseudoholomorphic
+map `u` from a Riemann surface and a point `z` outside the preimage of its critical values, if the
+branch of `u` at `z` factors holomorphically through its branch at `ζ`, then the branch at `ζ`
+factors holomorphically through the branch at `z`. -/
+theorem RiemannSurface.GermFactorsThrough.symm_of_notMem_criticalValuePreimage {z ζ : S}
+    (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
+    (h : GermFactorsThrough u z u ζ) (hz : z ∉ criticalValuePreimage I u) :
+    GermFactorsThrough u ζ u z :=
+  h.symm (hu.of_le one_le_two) hJu hu hJu (mfderiv_ne_zero_of_notMem_criticalValuePreimage hz)
+
 /-! ### Compact Riemann surfaces -/
 
 /-- **Finite fibres.** On a compact connected Riemann surface, a nonconstant `C¹`

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.LinearAlgebra.Matrix.Determinant.Column
 
 /-!
@@ -43,6 +44,19 @@ theorem quantumMinor_eq_columnDet (E : Matrix ι ι A) (u : K) (a b : Fin n → 
       (of fun i j => (if a i = b j then algebraMap K A (u - (j.val : K)) else 0) +
         E (a i) (b j)).columnDet :=
   (rfl)
+
+/-- An element commuting with the entries in the selected rows and columns also commutes with
+the quantum minor. -/
+theorem commute_quantumMinor (E : Matrix ι ι A) (u : K) (a b : Fin n → ι) {x : A}
+    (h : ∀ i j, Commute (E (a i) (b j)) x) : Commute (E.quantumMinor u a b) x := by
+  rw [quantumMinor_eq_columnDet]
+  apply commute_columnDet
+  intro i j
+  simp only [of_apply]
+  refine Commute.add_left ?_ (h i j)
+  split_ifs
+  · exact Algebra.commutes _ _
+  · exact Commute.zero_left _
 
 /-- The empty quantum minor is one. -/
 @[simp] theorem quantumMinor_fin_zero (E : Matrix ι ι A) (u : K) (a b : Fin 0 → ι) :
@@ -97,5 +111,20 @@ theorem quantumMinor_succ_column_last (E : Matrix ι ι A) (u : K) (a b : Fin (n
   simp only [quantumMinor_eq_columnDet, columnDet_succ_column_last, of_apply, Fin.val_last]
   refine Finset.sum_congr rfl fun i _ => ?_
   congr 3
+
+/-- A quantum minor lies in any subalgebra containing the entries selected by its row and
+column tuples. -/
+theorem quantumMinor_mem_subalgebra (E : Matrix ι ι A) (u : K) (a b : Fin n → ι)
+    {S : Subalgebra K A} (hS : ∀ i j, E (a i) (b j) ∈ S) : E.quantumMinor u a b ∈ S := by
+  rw [quantumMinor_eq_columnDet, columnDet_apply]
+  refine S.sum_mem fun σ _ ↦ ?_
+  rw [Units.smul_def]
+  refine S.zsmul_mem (list_prod_mem fun x hx ↦ ?_) _
+  obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hx
+  simp only [of_apply]
+  refine S.add_mem ?_ (hS _ _)
+  split_ifs
+  · exact S.algebraMap_mem _
+  · exact S.zero_mem
 
 end Matrix
