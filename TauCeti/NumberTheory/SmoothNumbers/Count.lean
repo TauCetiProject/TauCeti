@@ -101,6 +101,7 @@ theorem smoothCount_natCast (N k : ℕ) :
 @[gcongr]
 theorem smoothCount_mono {x₁ x₂ y₁ y₂ : ℝ} (hx : x₁ ≤ x₂) (hy : y₁ ≤ y₂) :
     smoothCount x₁ y₁ ≤ smoothCount x₂ y₂ := by
+  rw [smoothCount_def, smoothCount_def]
   refine card_le_card fun n hn ↦ ?_
   rw [Nat.mem_smoothNumbersUpTo] at hn ⊢
   exact ⟨hn.1.trans (Nat.floor_mono hx),
@@ -125,13 +126,14 @@ theorem smoothCount_eq_natFloor {x y : ℝ} (h : x ≤ y) : smoothCount x y = �
 counted for every `y`. -/
 @[simp]
 theorem smoothCount_pos {x y : ℝ} : 0 < smoothCount x y ↔ 1 ≤ x := by
-  refine ⟨fun h ↦ ?_, fun h ↦ card_pos.2 ⟨1, ?_⟩⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · by_contra hx
     have := smoothCount_le_natFloor x y
     rw [Nat.floor_eq_zero.2 (not_le.1 hx)] at this
     omega
-  · exact Nat.mem_smoothNumbersUpTo.2
-      ⟨Nat.le_floor (by simpa using h), Nat.mem_smoothNumbers.2 ⟨one_ne_zero, by simp⟩⟩
+  · rw [smoothCount_def]
+    exact card_pos.2 ⟨1, Nat.mem_smoothNumbersUpTo.2
+      ⟨Nat.le_floor (by simpa using h), Nat.mem_smoothNumbers.2 ⟨one_ne_zero, by simp⟩⟩⟩
 
 /-- `Ψ(x, y)` vanishes exactly when `x < 1`. -/
 @[simp]
