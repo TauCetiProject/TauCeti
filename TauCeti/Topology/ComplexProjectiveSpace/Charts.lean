@@ -122,6 +122,14 @@ theorem affineVector_apply_succAbove (k : Fin (n + 1)) (z : Fin n → ℂ) (j : 
     affineVector k z (k.succAbove j) = z j := by
   simp [affineVector]
 
+/-- The homogeneous coordinate vector of the centre of the chart `X_k ≠ 0` is the basis vector
+`e_k`. -/
+@[simp]
+theorem affineVector_zero (k : Fin (n + 1)) :
+    affineVector k (0 : Fin n → ℂ) = EuclideanSpace.single k 1 := by
+  ext i
+  induction i using Fin.succAboveCases k <;> simp [Fin.succAbove_ne]
+
 /-- The homogeneous coordinate vector of an affine point is nonzero. -/
 theorem affineVector_ne_zero (k : Fin (n + 1)) (z : Fin n → ℂ) :
     affineVector k z ≠ 0 := by
@@ -182,6 +190,13 @@ theorem coe_affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) :
     (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) =
       ‖affineVector k z‖⁻¹ • affineVector k z := by
   rw [affineUnitVector, coe_normalizeToSphere_apply, NormedSpace.normalize]
+
+/-- The unit representative of the centre of the chart `X_k ≠ 0` is the basis vector `e_k`. -/
+@[simp]
+theorem coe_affineUnitVector_zero (k : Fin (n + 1)) :
+    (affineUnitVector k (0 : Fin n → ℂ) : EuclideanSpace ℂ (Fin (n + 1))) =
+      EuclideanSpace.single k 1 := by
+  simp [coe_affineUnitVector_apply]
 
 /-- The coordinates of the unit representative `w / ‖w‖` of an affine point. -/
 theorem affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) (i : Fin (n + 1)) :

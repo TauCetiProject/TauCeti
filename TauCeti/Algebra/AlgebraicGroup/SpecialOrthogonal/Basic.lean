@@ -151,6 +151,13 @@ noncomputable def groupScheme :=
   CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra R n)
     (definingHopfIdeal R n)
 
+/-- The special orthogonal subgroup scheme is the quotient spectrum of its defining Hopf ideal. -/
+theorem groupScheme_def :
+    groupScheme R n =
+      CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n) :=
+  (rfl)
+
 /-- The quotient-spectrum presentation of the special orthogonal group scheme. -/
 private noncomputable def groupSchemeι :=
   CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra R n)
@@ -170,6 +177,30 @@ private theorem inclusion_hom_left :
   rw [inclusion]
   unfold groupSchemeι
   rfl
+
+/-- The special orthogonal inclusion is the spectrum of the quotient coordinate morphism, between
+the named identifications of the two group schemes. -/
+theorem inclusion_eq_eqToHom_comp_hopfSpec_map :
+    inclusion R n =
+      eqToHom (groupScheme_def R n) ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R n).op ≫
+        eqToHom (GeneralLinear.groupScheme_def R n).symm := by
+  rw [inclusion, coordinateMap_def]
+  unfold groupSchemeι
+  simp only [eqToIso.hom, CommHopfAlgCat.quotientSpecι_def]
+  -- The leading `eqToHom (groupScheme_def R n)` is the identity, since `groupScheme_def` holds by
+  -- `rfl`. It cannot be rewritten away with `eqToHom_refl`: `groupScheme` is a plain definition,
+  -- so its two sides are not reducibly equal, and the remaining goal is closed definitionally.
+  rfl
+
+/-- The inclusion of `SOₙ` into `GLₙ` is the Hopf-ideal inclusion at its defining Hopf ideal,
+after the quotient-spectrum presentation `groupScheme_def`. -/
+theorem inclusion_eq_eqToHom_comp_hopfIdealInclusion :
+    inclusion R n =
+      eqToHom (groupScheme_def R n) ≫
+        GeneralLinear.hopfIdealInclusion R n (definingHopfIdeal R n) := by
+  rw [inclusion_eq_eqToHom_comp_hopfSpec_map, GeneralLinear.hopfIdealInclusion_def,
+    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def]
 
 /-- The special orthogonal inclusion into the named general linear group scheme is a closed
 immersion. -/

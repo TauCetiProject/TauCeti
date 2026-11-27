@@ -5,38 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.AlgClosure
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Uniformizer
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
 /-!
 # Parameter changes act trivially on the Galois group of `K⸨X⸩`
 
-Let `K` be an algebraically closed field of characteristic zero, `F = K⸨X⸩` and `P` the Puiseux
-field, an algebraic closure of `F`. Since `P` is algebraically closed, a `K`-algebra
-automorphism `τ` of `F`, such as the substitution `f ↦ f (φ)` of a formal coordinate `φ`, lifts
-to a `K`-algebra automorphism `ρ` of `P` (`AlgEquiv.exists_algEquiv_apply_algebraMap`). Since
-`ρ` preserves `F`, conjugation by `ρ` is an automorphism `σ ↦ ρ σ ρ⁻¹` of the Galois group
-`Gal(P/F)`. This file proves that this conjugation is the identity whenever `τ` sends the
-parameter `t` to a uniformizer of `F`: every lift `ρ` commutes with every Galois automorphism `σ`.
-In particular any two lifts of `τ` induce the same conjugation, and the identification of
-`Gal(P/F)` with the Tate module `lim_n μₙ(K)` is unchanged by transport along a change of
-parameter.
+Let `K` be an algebraically closed field of characteristic zero, `F = K⸨X⸩` and `L` an algebraic
+closure of `F`, such as the Puiseux field or Mathlib's `AlgebraicClosure F`. Since `L` is
+algebraically closed, a `K`-algebra automorphism `τ` of `F`, such as the substitution `f ↦ f (φ)`
+of a formal coordinate `φ`, lifts to an automorphism `ρ` of `L`
+(`RingEquiv.exists_ringEquiv_apply_algebraMap`), which is `K`-linear since `τ` is. Since `ρ`
+preserves `F`, conjugation by `ρ` is an automorphism `σ ↦ ρ σ ρ⁻¹` of the Galois group
+`Gal(L/F)`. This file proves that this conjugation
+is the identity whenever `τ` sends the parameter `t` to a uniformizer of `F`: every lift `ρ`
+commutes with every Galois automorphism `σ`. In particular any two lifts of `τ` induce the same
+conjugation, and the identification of `Gal(L/F)` with the Tate module `lim_n μₙ(K)` is unchanged
+by transport along a change of parameter. For `L = AlgebraicClosure F` the Galois group is the
+absolute Galois group `Field.absoluteGaloisGroup F`.
 
-The proof compares the characters `θₙ (g) = g (α) / α` of `σ` and of `ρ σ ρ⁻¹`. Take the `n`-th
-root `α = ρ (t ^ (1 / n))` of the uniformizer `π = τ (t)`. Since `ρ` fixes the constants `K`,
-`ρ σ ρ⁻¹` multiplies `α` by the same root of unity by which `σ` multiplies `t ^ (1 / n)`. The
-character `θₙ (ρ σ ρ⁻¹)` does not depend on the uniformizer or on its root
-(`TauCeti.puiseuxField.apply_eq_algebraMap_proj_galEquivTateModule_mul`), so `σ` and `ρ σ ρ⁻¹`
-have the same image in the Tate module `lim_n μₙ(K)`, and hence are equal.
+The proof first treats the Puiseux field `P`, comparing the characters `θₙ (g) = g (α) / α` of
+`σ` and of `ρ σ ρ⁻¹`. Take the `n`-th root `α = ρ (t ^ (1 / n))` of the uniformizer `π = τ (t)`.
+Since `ρ` fixes the constants `K`, `ρ σ ρ⁻¹` multiplies `α` by the same root of unity by which `σ`
+multiplies `t ^ (1 / n)`. The character `θₙ (ρ σ ρ⁻¹)` does not depend on the uniformizer or on
+its root (`TauCeti.puiseuxField.apply_eq_algebraMap_proj_galEquivTateModule_mul`), so `σ` and
+`ρ σ ρ⁻¹` have the same image in the Tate module `lim_n μₙ(K)`, and hence are equal. A general
+algebraic closure `L` is `F`-isomorphic to `P`, and the statement is transported along such an
+isomorphism.
 
 ## Main results
 
-* `TauCeti.puiseuxField.apply_comm_of_apply_algebraMap`: a lift `ρ` of a `K`-algebra automorphism
-  of `F` sending `t` to a uniformizer satisfies `ρ (σ x) = σ (ρ x)` for every Galois automorphism
-  `σ` of `P` over `F`.
-* `TauCeti.puiseuxField.commute_restrictScalars_of_apply_algebraMap`: the same statement as
-  commutation in the group of `K`-algebra automorphisms of `P`.
-* `TauCeti.puiseuxField.commute_restrictScalars_of_apply_algebraMap_substAlgEquiv`: lifts of the
+* `TauCeti.puiseuxField.apply_comm_of_apply_algebraMap`: on an algebraic closure `L` of `F`, a
+  lift `ρ` of a `K`-algebra automorphism of `F` sending `t` to a uniformizer satisfies
+  `ρ (σ x) = σ (ρ x)` for every Galois automorphism `σ` of `L` over `F`.
+* `TauCeti.puiseuxField.commute_toRingEquiv_of_apply_algebraMap`: the same statement as
+  commutation in the group of ring automorphisms of `L`.
+* `TauCeti.puiseuxField.commute_toRingEquiv_of_apply_algebraMap_substAlgEquiv`: lifts of the
   substitution automorphism of a formal coordinate commute with the Galois group.
 -/
 
@@ -48,11 +53,9 @@ namespace TauCeti.puiseuxField
 
 variable {K : Type*} [Field K] [IsAlgClosed K] [CharZero K]
 
-/-- **Parameter changes commute with the Galois group.** Let `τ` be a `K`-algebra automorphism
-of `K⸨X⸩` sending the parameter `t` to a uniformizer, and `ρ` a `K`-algebra automorphism of the
-Puiseux field extending `τ`. Then `ρ` commutes with every Galois automorphism `σ` of the Puiseux
-field over `K⸨X⸩`: conjugation by `ρ` is trivial on the Galois group. -/
-theorem apply_comm_of_apply_algebraMap {τ : K⸨X⸩ ≃ₐ[K] K⸨X⸩}
+/-- The case of `TauCeti.puiseuxField.apply_comm_of_apply_algebraMap` where the algebraic
+closure is the Puiseux field itself, proved by comparing characters `θₙ`. -/
+private theorem apply_comm_of_apply_algebraMap_puiseuxField {τ : K⸨X⸩ ≃ₐ[K] K⸨X⸩}
     (hτ : (τ (HahnSeries.single 1 1)).order = 1) {ρ : puiseuxField K ≃ₐ[K] puiseuxField K}
     (hρ : ∀ f, ρ (algebraMap K⸨X⸩ (puiseuxField K) f) = algebraMap K⸨X⸩ (puiseuxField K) (τ f))
     (σ : Gal(puiseuxField K/K⸨X⸩)) (x : puiseuxField K) :
@@ -86,26 +89,50 @@ theorem apply_comm_of_apply_algebraMap {τ : K⸨X⸩ ≃ₐ[K] K⸨X⸩}
   exact Subtype.ext <| Units.ext <| (algebraMap K (puiseuxField K)).injective
     (mul_right_cancel₀ hα0 hcα).symm
 
-/-- **Parameter changes commute with the Galois group**, as commutation in the group of
-`K`-algebra automorphisms of the Puiseux field: a lift `ρ` of a `K`-algebra automorphism of
-`K⸨X⸩` sending `t` to a uniformizer commutes with every Galois automorphism over `K⸨X⸩`. -/
-theorem commute_restrictScalars_of_apply_algebraMap {τ : K⸨X⸩ ≃ₐ[K] K⸨X⸩}
-    (hτ : (τ (HahnSeries.single 1 1)).order = 1) {ρ : puiseuxField K ≃ₐ[K] puiseuxField K}
-    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ (puiseuxField K) f) = algebraMap K⸨X⸩ (puiseuxField K) (τ f))
-    (σ : Gal(puiseuxField K/K⸨X⸩)) :
-    Commute ρ (σ.restrictScalars K) :=
-  AlgEquiv.ext (apply_comm_of_apply_algebraMap hτ hρ σ)
+variable {L : Type*} [Field L] [Algebra K⸨X⸩ L] [IsAlgClosure K⸨X⸩ L]
 
-/-- **Coordinate changes commute with the Galois group.** A `K`-algebra automorphism of the
-Puiseux field extending the substitution automorphism `f ↦ f (φ)` of a formal coordinate `φ`
+/-- **Parameter changes commute with the Galois group.** Let `L` be an algebraic closure of
+`K⸨X⸩`, such as the Puiseux field or `AlgebraicClosure K⸨X⸩`, `τ` a `K`-algebra automorphism of
+`K⸨X⸩` sending the parameter `t` to a uniformizer, and `ρ` an automorphism of `L` extending `τ`,
+which is then `K`-linear. Then `ρ` commutes with every Galois automorphism `σ` of `L` over
+`K⸨X⸩`: conjugation by `ρ` is trivial on the Galois group. -/
+theorem apply_comm_of_apply_algebraMap {τ : K⸨X⸩ ≃ₐ[K] K⸨X⸩}
+    (hτ : (τ (HahnSeries.single 1 1)).order = 1) {ρ : L ≃+* L}
+    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ L f) = algebraMap K⸨X⸩ L (τ f)) (σ : Gal(L/K⸨X⸩)) (x : L) :
+    ρ (σ x) = σ (ρ x) := by
+  -- Transport `ρ` to the Puiseux field along an isomorphism `e` with `L`; it fixes `K` there,
+  -- since `τ` does.
+  let e := IsAlgClosure.equiv K⸨X⸩ (puiseuxField K) L
+  have hρ' (f : K⸨X⸩) : e.symm (ρ (e (algebraMap K⸨X⸩ (puiseuxField K) f))) =
+      algebraMap K⸨X⸩ (puiseuxField K) (τ f) := by
+    simp [hρ]
+  let ρ' : puiseuxField K ≃ₐ[K] puiseuxField K :=
+    AlgEquiv.ofRingEquiv (f := e.toRingEquiv.trans (ρ.trans e.symm.toRingEquiv)) fun k ↦ by
+      simpa [IsScalarTower.algebraMap_apply K K⸨X⸩ (puiseuxField K)] using hρ' (algebraMap K _ k)
+  have h := apply_comm_of_apply_algebraMap_puiseuxField hτ (ρ := ρ') hρ' (e.symm.autCongr σ)
+    (e.symm x)
+  simpa [ρ', AlgEquiv.autCongr_apply] using h
+
+/-- **Parameter changes commute with the Galois group**, as commutation in the group of ring
+automorphisms of an algebraic closure `L` of `K⸨X⸩`: a lift `ρ` of a `K`-algebra automorphism of
+`K⸨X⸩` sending `t` to a uniformizer commutes with every Galois automorphism over `K⸨X⸩`. For
+`L = AlgebraicClosure K⸨X⸩` these are the elements of `Field.absoluteGaloisGroup K⸨X⸩`, so any two
+lifts induce the same conjugation on it, the identity. -/
+theorem commute_toRingEquiv_of_apply_algebraMap {τ : K⸨X⸩ ≃ₐ[K] K⸨X⸩}
+    (hτ : (τ (HahnSeries.single 1 1)).order = 1) {ρ : RingAut L}
+    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ L f) = algebraMap K⸨X⸩ L (τ f)) (σ : Gal(L/K⸨X⸩)) :
+    Commute ρ σ.toRingEquiv :=
+  RingEquiv.ext (apply_comm_of_apply_algebraMap hτ hρ σ)
+
+/-- **Coordinate changes commute with the Galois group.** An automorphism of an algebraic closure
+`L` of `K⸨X⸩` extending the substitution automorphism `f ↦ f (φ)` of a formal coordinate `φ`
 commutes with every Galois automorphism over `K⸨X⸩`. -/
-theorem commute_restrictScalars_of_apply_algebraMap_substAlgEquiv (φ : FormalCoordinate K)
-    {ρ : puiseuxField K ≃ₐ[K] puiseuxField K}
-    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ (puiseuxField K) f) =
-      algebraMap K⸨X⸩ (puiseuxField K) (LaurentSeries.substAlgEquiv φ f))
-    (σ : Gal(puiseuxField K/K⸨X⸩)) :
-    Commute ρ (σ.restrictScalars K) := by
-  refine commute_restrictScalars_of_apply_algebraMap ?_ hρ σ
+theorem commute_toRingEquiv_of_apply_algebraMap_substAlgEquiv (φ : FormalCoordinate K)
+    {ρ : RingAut L}
+    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ L f) = algebraMap K⸨X⸩ L (LaurentSeries.substAlgEquiv φ f))
+    (σ : Gal(L/K⸨X⸩)) :
+    Commute ρ σ.toRingEquiv := by
+  refine commute_toRingEquiv_of_apply_algebraMap ?_ hρ σ
   rw [LaurentSeries.coe_substAlgEquiv, LaurentSeries.substAlgHom_single_one,
     PowerSeries.order_coe, φ.order_toPowerSeries]
   rfl

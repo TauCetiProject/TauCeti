@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Level
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Equiv
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
+import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
 /-!
@@ -114,7 +115,7 @@ variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 V] (φ : f.DefiningFunctio
 
 /-- The identification of the normal space at `y` with `P` by the differential of the defining
 function chosen at `x`, for `y` in its base set. -/
-def normalEquiv (x : M) {y : M} (hy : y ∈ φ.baseSet x) : f.NormalSpace y hn ≃L[𝕜] P :=
+def normalEquiv (x : M) {y : M} (hy : y ∈ φ.baseSet x) : f.isImmersion.NormalSpace y hn ≃L[𝕜] P :=
   f.normalSpaceEquivOfLevel y hn (φ.eventually_eq x hy) (φ.isRegularPoint x hy) hdim
 
 /-- The defining function chosen at `x` sends the normal class of an ambient tangent vector to
@@ -122,7 +123,8 @@ its differential. -/
 @[simp]
 theorem normalEquiv_normalClass (x : M) {y : M} (hy : y ∈ φ.baseSet x)
     (v : TangentSpace J (f y)) :
-    φ.normalEquiv hn hdim x hy (f.normalClass y hn v) = mfderiv J 𝓘(𝕜, P) (φ x) (f y) v :=
+    φ.normalEquiv hn hdim x hy (f.isImmersion.normalClass y hn v) =
+      mfderiv J 𝓘(𝕜, P) (φ x) (f y) v :=
   f.normalSpaceEquivOfLevel_normalClass y hn _ _ hdim v
 
 /-- The transition from the defining function chosen at `x₀` to the one chosen at `x₁`: at a
@@ -138,7 +140,7 @@ def coordChange (x₀ x₁ y : M) : P →L[𝕜] P :=
 
 /-- The transition between two defining functions intertwines their normal identifications. -/
 theorem coordChange_normalEquiv {x₀ x₁ y : M} (h₀ : y ∈ φ.baseSet x₀) (h₁ : y ∈ φ.baseSet x₁)
-    (v : f.NormalSpace y hn) :
+    (v : f.isImmersion.NormalSpace y hn) :
     φ.coordChange hn hdim x₀ x₁ y (φ.normalEquiv hn hdim x₀ h₀ v) =
       φ.normalEquiv hn hdim x₁ h₁ v := by
   simp [coordChange, h₀, h₁]
@@ -177,7 +179,7 @@ defining function chosen at `x₀` to the one chosen at `x₁` is multiplication
 class of an ambient tangent vector `v`, `normalEquiv` is `d(φ x)(v)` (`normalEquiv_normalClass`). -/
 theorem coordChange_apply_eq_div_mul (φ : f.DefiningFunctions 𝕜)
     (hdim : finrank 𝕜 E + finrank 𝕜 𝕜 = finrank 𝕜 V) {x₀ x₁ y : M} (h₀ : y ∈ φ.baseSet x₀)
-    (h₁ : y ∈ φ.baseSet x₁) {ν : f.NormalSpace y hn} (hν : ν ≠ 0) (w : 𝕜) :
+    (h₁ : y ∈ φ.baseSet x₁) {ν : f.isImmersion.NormalSpace y hn} (hν : ν ≠ 0) (w : 𝕜) :
     φ.coordChange hn hdim x₀ x₁ y w =
       φ.normalEquiv hn hdim x₁ h₁ ν / φ.normalEquiv hn hdim x₀ h₀ ν * w := by
   have ha : φ.normalEquiv hn hdim x₀ h₀ ν ≠ 0 := by
@@ -310,7 +312,7 @@ include hdim in
 /-- The differential of the defining function chosen at `x` vanishes exactly on the vectors
 tangent to the embedded submanifold. -/
 theorem mfderiv_eq_zero_iff (x : M) (v : TangentSpace J (f x)) :
-    mfderiv J 𝓘(𝕜, P) (φ x) (f x) v = 0 ↔ v ∈ f.tangentRange x hn := by
+    mfderiv J 𝓘(𝕜, P) (φ x) (f x) v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn := by
   rw [f.tangentRange_eq_ker_mfderiv x hn (φ.eventually_eq x (φ.mem_baseSet x))
     (φ.isRegularPoint x (φ.mem_baseSet x)) hdim, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
 
@@ -321,7 +323,7 @@ is a `C^m` map from the intrinsic normal bundle to the transition-cocycle model.
 theorem contMDiff_normalEquiv (hm : m + 1 ≤ n) :
     letI := f.normalSpaceFiberBundle hn (P := P) (Nat.eq_sub_of_add_eq' hdim)
     ContMDiff (I.prod 𝓘(𝕜, P)) (I.prod 𝓘(𝕜, P)) m
-      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
+      (fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
         TotalSpace.mk' P (E := (φ.core hn hdim).Fiber) p.proj
           (φ.normalEquiv hn hdim p.proj (φ.mem_baseSet p.proj) p.snd)) := by
   let := f.normalSpaceFiberBundle hn (P := P) (Nat.eq_sub_of_add_eq' hdim)
@@ -342,7 +344,7 @@ the holomorphic line bundle whose transitions are the ratios of the normal deriv
 equations (`coordChange_apply_eq_div_mul`). -/
 def normalBundleDiffeomorph (hm : m + 1 ≤ n) :
     letI := f.normalSpaceFiberBundle hn (P := P) (Nat.eq_sub_of_add_eq' hdim)
-    TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(𝕜, P), I.prod 𝓘(𝕜, P)⟯
+    TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(𝕜, P), I.prod 𝓘(𝕜, P)⟯
       (φ.core hn hdim).TotalSpace :=
   letI := f.normalSpaceFiberBundle hn (P := P) (Nat.eq_sub_of_add_eq' hdim)
   letI := f.normalSpaceVectorBundle hn (P := P) (Nat.eq_sub_of_add_eq' hdim)
@@ -353,7 +355,7 @@ def normalBundleDiffeomorph (hm : m + 1 ≤ n) :
 defining function chosen at `x`. -/
 @[simp]
 theorem normalBundleDiffeomorph_apply (hm : m + 1 ≤ n)
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :
     letI := f.normalSpaceFiberBundle hn (P := P) (Nat.eq_sub_of_add_eq' hdim)
     φ.normalBundleDiffeomorph hn hdim hm p =
       ⟨p.proj, φ.normalEquiv hn hdim p.proj (φ.mem_baseSet p.proj) p.snd⟩ :=
@@ -376,7 +378,7 @@ theorem normalBundleDiffeomorph_symm_apply (hm : m + 1 ≤ n) (q : (φ.core hn h
 identification of the normal spaces by the differential of the defining function chosen at
 `x₀`: the defining function at `x₀` trivializes the normal bundle over its base set. -/
 theorem localTriv_core_normalBundleDiffeomorph (hm : m + 1 ≤ n) {x₀ : M}
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) (hp : p.proj ∈ φ.baseSet x₀) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) (hp : p.proj ∈ φ.baseSet x₀) :
     letI := f.normalSpaceFiberBundle hn (P := P) (Nat.eq_sub_of_add_eq' hdim)
     (φ.core hn hdim).localTriv x₀ (φ.normalBundleDiffeomorph hn hdim hm p) =
       (p.proj, φ.normalEquiv hn hdim x₀ hp p.snd) := by
@@ -401,22 +403,12 @@ theorem exists_definingFunction [FiniteDimensional 𝕜 P] (f : SmoothEmbedding 
       (∀ y ∈ U, ∀ᶠ z in 𝓝 y, g (f z) = g (f y)) ∧
       (∀ y ∈ U, IsRegularPoint J 𝓘(𝕜, P) g (f y)) := by
   have h := f.isImmersion.isImmersionAt x
-  have : FiniteDimensional 𝕜 (E × h.complement) :=
-    h.equiv.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional 𝕜 E :=
-    Module.Finite.of_surjective (LinearMap.fst 𝕜 E h.complement) LinearMap.fst_surjective
-  have : FiniteDimensional 𝕜 h.complement :=
-    Module.Finite.of_surjective (LinearMap.snd 𝕜 E h.complement) LinearMap.snd_surjective
-  have hC : finrank 𝕜 h.complement = finrank 𝕜 P := by
-    have := h.equiv.toLinearEquiv.finrank_eq
-    rw [Module.finrank_prod] at this
-    omega
+  obtain ⟨c⟩ := h.nonempty_complement_continuousLinearEquiv (Nat.eq_sub_of_add_eq' hdim)
   -- The second coordinate of the chart `h.codChart`, identified with `P`.
-  let T : V →L[𝕜] P := (ContinuousLinearEquiv.ofFinrankEq hC).toContinuousLinearMap ∘L
+  let T : V →L[𝕜] P := c.toContinuousLinearMap ∘L
     ContinuousLinearMap.snd 𝕜 E h.complement ∘L h.equiv.symm.toContinuousLinearMap
   have hT : Surjective T :=
-    (ContinuousLinearEquiv.ofFinrankEq hC).surjective.comp
-      (Prod.snd_surjective.comp h.equiv.symm.surjective)
+    c.surjective.comp (Prod.snd_surjective.comp h.equiv.symm.surjective)
   have hzero (y : M) (hy : y ∈ h.domChart.source) : (T ∘ h.codChart.extend J) (f y) = 0 := by
     have hw := h.writtenInCharts ((h.domChart.extend I).map_source (by simpa using hy))
     simp only [Function.comp_apply, (h.domChart.extend I).left_inv (by simpa using hy)] at hw

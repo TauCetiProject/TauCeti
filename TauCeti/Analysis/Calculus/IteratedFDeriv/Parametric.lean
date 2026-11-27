@@ -19,6 +19,8 @@ data attached to `x`.
 
 ## Main results
 
+* `ContDiffAt.iteratedFDeriv_snd`: the iterated derivative `(x, w) ↦ D^i (f x) w` in the second
+  variable is jointly `C^m`.
 * `ContDiffAt.iteratedFDeriv`: the parametric iterated derivative is `C^m`.
 -/
 
@@ -33,7 +35,7 @@ variable {𝕜 X E F : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The iterated derivative in the second variable of a jointly `C^n` map is jointly `C^m`, when
 `m + i ≤ n`. -/
-private theorem contDiffAt_iteratedFDeriv_snd {f : X → E → F} {p : X × E}
+protected theorem ContDiffAt.iteratedFDeriv_snd {f : X → E → F} {p : X × E}
     (hf : ContDiffAt 𝕜 n (uncurry f) p) {i : ℕ} (hmn : m + i ≤ n) :
     ContDiffAt 𝕜 m (fun q : X × E ↦ iteratedFDeriv 𝕜 i (f q.1) q.2) p := by
   induction i generalizing m with
@@ -57,5 +59,5 @@ private theorem contDiffAt_iteratedFDeriv_snd {f : X → E → F} {p : X × E}
 protected theorem ContDiffAt.iteratedFDeriv {f : X → E → F} {g : X → E} {x₀ : X} {i : ℕ}
     (hf : ContDiffAt 𝕜 n (uncurry f) (x₀, g x₀)) (hg : ContDiffAt 𝕜 m g x₀) (hmn : m + i ≤ n) :
     ContDiffAt 𝕜 m (fun x ↦ iteratedFDeriv 𝕜 i (f x) (g x)) x₀ :=
-  (contDiffAt_iteratedFDeriv_snd (f := f) hf hmn).comp (f := fun x ↦ (x, g x)) x₀
+  (hf.iteratedFDeriv_snd hmn).comp (f := fun x ↦ (x, g x)) x₀
     (contDiffAt_id.prodMk hg)

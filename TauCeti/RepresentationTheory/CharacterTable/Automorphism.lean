@@ -10,6 +10,8 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.Algebra.Group.Conj
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.LinearAlgebra.Trace.Basic
+import TauCeti.RepresentationTheory.CharacterTable.Determined
+import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -33,6 +35,9 @@ the invariant classes are compared with the classes of the fixed-point subgroup.
 * `MonoidHom.comp_mem_irreducibleCharacters` and `MulEquiv.comp_mem_irreducibleCharacters_iff`:
   precomposing with a surjective homomorphism, respectively an isomorphism, preserves irreducible
   characters.
+* `Representation.isIrreducible_of_character_comp_mem_irreducibleCharacters`: over a field of
+  characteristic zero, a representation whose restriction to a finite group has an irreducible
+  character is irreducible.
 * `TauCeti.instMulActionMulAutIrreducibleCharacters`: the action of `MulAut G` on the irreducible
   characters, computed by `MulAut.smul_irreducibleCharacters_apply`; its fixed points are described
   by `TauCeti.mem_fixedBy_irreducibleCharacters_iff`.
@@ -84,6 +89,27 @@ theorem _root_.MulEquiv.comp_mem_irreducibleCharacters_iff {H : Type w} [Group H
   refine ⟨fun h ↦ ?_, (e : H →* G).comp_mem_irreducibleCharacters e.surjective⟩
   simpa [Function.comp_assoc] using
     e.symm.toMonoidHom.comp_mem_irreducibleCharacters e.symm.surjective h
+
+/-- **An isomorphism matches the irreducible characters**: precomposition with `e : H ≃* G` is a
+bijection from the irreducible characters of `G` onto those of `H`. -/
+theorem _root_.MulEquiv.bijOn_comp_irreducibleCharacters {H : Type w} [Group H] (e : H ≃* G) :
+    Set.BijOn (fun χ : G → k => χ ∘ e) (irreducibleCharacters k G) (irreducibleCharacters k H) :=
+  ⟨fun _ hχ => e.comp_mem_irreducibleCharacters_iff.2 hχ,
+    e.surjective.injective_comp_right.injOn,
+    fun χ hχ => ⟨χ ∘ e.symm, e.symm.comp_mem_irreducibleCharacters_iff.2 hχ, by
+      simp [Function.comp_assoc]⟩⟩
+
+/-- A finite-dimensional representation of `G` over a field of characteristic zero whose
+restriction along `f : H →* G`, for a finite group `H`, has an irreducible character is
+irreducible. -/
+theorem _root_.Representation.isIrreducible_of_character_comp_mem_irreducibleCharacters
+    [CharZero k] {H : Type w} [Group H] [Finite H] {V : Type*} [AddCommGroup V] [Module k V]
+    [FiniteDimensional k V] (ρ : Representation k G V) (f : H →* G)
+    (h : ρ.character ∘ f ∈ irreducibleCharacters k H) : ρ.IsIrreducible := by
+  obtain ⟨m, ρ₀, hρ₀, hc⟩ := mem_irreducibleCharacters_iff.1 h
+  obtain ⟨E⟩ := Representation.nonempty_equiv_of_character_eq ρ₀ (ρ.comp f) hc
+  have := E.isIrreducible hρ₀
+  exact Representation.IsIrreducible.of_comp f
 
 /-- **Automorphisms permute the irreducible characters**: an automorphism `σ` sends `χ` to
 `g ↦ χ (σ⁻¹ g)`, the character of the representation precomposed with `σ⁻¹`. The inverse makes this

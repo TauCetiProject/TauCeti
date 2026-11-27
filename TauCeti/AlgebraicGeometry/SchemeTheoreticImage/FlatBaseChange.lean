@@ -96,3 +96,21 @@ theorem toImage_imagePullbackIso_hom :
   simp
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+universe u
+
+/-- **Schematic images of ideal sheaves commute with flat base change** when the restriction of
+`f` to the closed subscheme `I.subscheme` is quasi-compact. If `f' : U ⟶ V` is the base change of
+`f : X ⟶ Y` along a flat morphism `iV : V ⟶ Y` and `I.subschemeι ≫ f` is quasi-compact, then
+pulling the schematic image `I.map f` back along `iV` gives the schematic image along `f'` of the
+inverse image `I.comap iU`. -/
+theorem comap_map_of_isPullback_of_flat {X U V Y : Scheme.{u}} (I : X.IdealSheafData)
+    {f : X ⟶ Y} {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [Flat iV]
+    [QuasiCompact (I.subschemeι ≫ f)] (H : IsPullback f' iU iV f) :
+    (I.map f).comap iV = (I.comap iU).map f' :=
+  ((I.subschemeι ≫ f).ker_eq_comap_of_isPullback_of_flat
+    (I.isPullback_subschemeMap_comap f H.flip)).symm
+
+end AlgebraicGeometry.Scheme.IdealSheafData

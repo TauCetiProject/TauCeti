@@ -70,7 +70,7 @@ variable (V) in
 `-A_X`. -/
 private abbrev skewEquiv : ⋀[ℝ]^2 V ≃ₗ[ℝ] skewAdjointLieSubalgebra (innerₗ V) :=
   LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
-    (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)
+    isSymm_innerₗ
 
 /-- The bracket of `so(V)` on bivectors, transported from the commutator of skew-adjoint
 endomorphisms. -/

@@ -111,6 +111,18 @@ theorem cubeState_eq_true_iff {S : Finset (Fin n)} {i : Fin n} :
 theorem cubeState_compl (S : Finset (Fin n)) (i : Fin n) : cubeState Sᶜ i = !cubeState S i := by
   simp [cubeState]
 
+-- Not `@[simp]`: statements about the extreme vertices are phrased with `cubeState ∅`.
+/-- The state of the initial vertex `∅` is the all-A state. -/
+theorem cubeState_empty : cubeState (∅ : Finset (Fin n)) = fun _ ↦ true := by
+  funext i
+  simp [cubeState]
+
+-- Not `@[simp]`: statements about the extreme vertices are phrased with `cubeState univ`.
+/-- The state of the terminal vertex `univ` is the all-B state. -/
+theorem cubeState_univ : cubeState (univ : Finset (Fin n)) = fun _ ↦ false := by
+  funext i
+  simp [cubeState]
+
 /-- The set of `B`-smoothings of the state of the vertex `S` is `S`. -/
 theorem filter_cubeState_eq_false (S : Finset (Fin n)) :
     ({i | cubeState S i = false} : Finset (Fin n)) = S := by

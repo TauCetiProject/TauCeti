@@ -7,7 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+public import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Reading the `ℤ/2`-grading: base cases, exterior bases, and ordered products
@@ -41,6 +43,11 @@ indexed by `s` has degree `s.card`, and — over a nontrivial ring, where a basi
 and the two graded pieces meet only in `0` — that degree is the *only* one it has. This statement
 belongs to the grading API independently of any spin representation.
 
+## Main definitions
+
+* `CliffordAlgebra.evenOddProdEquiv`: linear equivalence `(evenOdd Q 0 × evenOdd Q 1) ≃ₗ[R]
+  CliffordAlgebra Q` from the complementary `ℤ/2`-grading.
+
 ## Main results
 
 * `CliffordAlgebra.exists_algebraMap_of_mem_range_ι_pow_zero`: in the even base case the
@@ -52,12 +59,18 @@ belongs to the grading API independently of any spin representation.
   of degree `n`, and `CliffordAlgebra.prod_map_ι_mem_evenOdd_zero_of_even_length` and
   `CliffordAlgebra.prod_map_ι_mem_evenOdd_one_of_odd_length` read that off in the even and the odd
   case.
+* `CliffordAlgebra.evenOddProdEquiv_apply`,
+  `CliffordAlgebra.evenOddProdEquiv_symm_apply_of_mem_even`, and
+  `CliffordAlgebra.evenOddProdEquiv_symm_apply_of_mem_odd`: forward and homogeneous-summand
+  inverse evaluation of `evenOddProdEquiv`.
 * `CliffordAlgebra.involute_eq_uzpow_smul_of_mem_evenOdd`: the grade involution acts on the graded
   piece of parity `p` by `(-1) ^ p`.
 * `CliffordAlgebra.apply_smul_eq_involute_smul`: an operator on a Clifford module anticommuting
   with every vector intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
   invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
+* `CliffordAlgebra.mem_evenOdd_of_mul_eq_algebraMap`: an inverse up to a scalar of a homogeneous
+  element is homogeneous of the same parity.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
@@ -117,6 +130,32 @@ theorem prod_map_ι_mem_evenOdd_one_of_odd_length {l : List M} (hlen : Odd l.len
     rw [← ZMod.natCast_mod l.length 2, Nat.odd_iff.mp hlen, Nat.cast_one]
   exact h ▸ prod_map_ι_mem_evenOdd l
 
+/-- The canonical linear equivalence `(evenOdd Q 0 × evenOdd Q 1) ≃ₗ[R] CliffordAlgebra Q` from
+the complementary `ℤ/2`-grading of `CliffordAlgebra Q`. -/
+noncomputable def evenOddProdEquiv (Q : QuadraticForm R M) :
+    (evenOdd Q 0 × evenOdd Q 1) ≃ₗ[R] CliffordAlgebra Q :=
+  (evenOdd Q 0).prodEquivOfIsCompl (evenOdd Q 1) (evenOdd_isCompl Q)
+
+/-- `CliffordAlgebra.evenOddProdEquiv` sums the even and odd components. -/
+@[simp]
+theorem evenOddProdEquiv_apply (x : evenOdd Q 0 × evenOdd Q 1) :
+    evenOddProdEquiv Q x = (x.1 : CliffordAlgebra Q) + (x.2 : CliffordAlgebra Q) :=
+  Submodule.coe_prodEquivOfIsCompl' (evenOdd Q 0) (evenOdd Q 1) (evenOdd_isCompl Q) x
+
+/-- An even element maps under `(evenOddProdEquiv Q).symm` to `(⟨x, hx⟩, 0)`. -/
+@[simp]
+theorem evenOddProdEquiv_symm_apply_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 0) :
+    (evenOddProdEquiv Q).symm x = (⟨x, hx⟩, 0) :=
+  Submodule.prodEquivOfIsCompl_symm_apply_left (evenOdd Q 0) (evenOdd Q 1) (evenOdd_isCompl Q)
+    ⟨x, hx⟩
+
+/-- An odd element maps under `(evenOddProdEquiv Q).symm` to `(0, ⟨x, hx⟩)`. -/
+@[simp]
+theorem evenOddProdEquiv_symm_apply_of_mem_odd {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 1) :
+    (evenOddProdEquiv Q).symm x = (0, ⟨x, hx⟩) :=
+  Submodule.prodEquivOfIsCompl_symm_apply_right (evenOdd Q 0) (evenOdd Q 1) (evenOdd_isCompl Q)
+    ⟨x, hx⟩
+
 /-! ### The graded pieces as eigenspaces of the grade involution -/
 
 section Involute
@@ -167,6 +206,17 @@ theorem involute_eq_neg_iff {x : CliffordAlgebra Q} : involute x = -x ↔ x ∈ 
   simpa [(isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2] using ho
 
 end Involute
+
+/-! ### Inverses of homogeneous elements -/
+
+/-- If `a ∈ evenOdd Q i` and `a * b = b * a = algebraMap f` for a scalar `f` with `f • b = b`,
+then `b ∈ evenOdd Q i`. This is `TauCeti.GradedAlgebra.mem_of_mul_eq_algebraMap` for the
+`ℤ/2`-grading, where `i + i = 0`. -/
+theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlgebra Q} {f : R}
+    (ha : a ∈ evenOdd Q i) (hb : f • b = b) (hab : a * b = algebraMap R _ f)
+    (hba : b * a = algebraMap R _ f) : b ∈ evenOdd Q i :=
+  TauCeti.GradedAlgebra.mem_of_mul_eq_algebraMap (evenOdd Q)
+    ((by decide : ∀ j : ZMod 2, j + j = 0) i) ha hb hab hba
 
 end CliffordAlgebra
 

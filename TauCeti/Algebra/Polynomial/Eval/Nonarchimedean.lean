@@ -20,6 +20,10 @@ term: `f (p.eval t) = f (leadingCoeff p * t ^ natDegree p)`
 (`IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`). This is the polynomial evaluation form of
 Mathlib's `IsNonarchimedean.apply_sum_eq_of_lt`, applied to `p.eval t = ∑ i ≤ d, aᵢ tⁱ`.
 
+More generally, a term `aₖ tᵏ` of any index that dominates every other term of index at most
+`natDegree p` gives the value: `f (p.eval t) = f (p.coeff k * t ^ k)`
+(`IsNonarchimedean.apply_eval_eq_coeff_mul_pow`).
+
 Let `f` be a nonnegative, submultiplicative, power-multiplicative and nonarchimedean function on a
 nontrivial ring `R`, with values in a linearly ordered monoid with zero in which multiplication
 on the right by a positive element is strictly monotone, such as a nonarchimedean
@@ -70,6 +74,28 @@ theorem IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow {R Γ : Type*} [Ring
   rw [eval_eq_sum_range]
   exact hf_na.apply_sum_eq_of_lt _ hf_neg (Finset.self_mem_range_succ _) fun j hj hjd ↦
     hp j ((Finset.mem_range_succ_iff.mp hj).lt_of_ne hjd)
+
+/-- **A dominant term of a polynomial gives its value**: for a nonarchimedean function `f` on a
+ring, with values in a linearly ordered type, that is invariant under negation, if
+`f (p.coeff i * t ^ i) < f (p.coeff k * t ^ k)` for every `i ≤ natDegree p` with `i ≠ k`, then
+`f (p.eval t) = f (p.coeff k * t ^ k)`. The index `k` need not be the degree of `p` (it is at
+most the degree, as `f 0` is the least value of `f`); for `k = natDegree p` this is
+`IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`. -/
+theorem IsNonarchimedean.apply_eval_eq_coeff_mul_pow {R Γ : Type*} [Ring R] [LinearOrder Γ]
+    {f : R → Γ} (hf_na : IsNonarchimedean f) (hf_neg : ∀ a, f (-a) = f a) {p : R[X]} {t : R}
+    {k : ℕ} (hp : ∀ i ≤ p.natDegree, i ≠ k → f (p.coeff i * t ^ i) < f (p.coeff k * t ^ k)) :
+    f (p.eval t) = f (p.coeff k * t ^ k) := by
+  have hk : k ≤ p.natDegree := by
+    by_contra! hk
+    -- `f 0 ≤ f a` for every `a`, by the nonarchimedean inequality for `a + -a`
+    have h0 := hf_na (p.coeff 0 * t ^ 0) (-(p.coeff 0 * t ^ 0))
+    rw [add_neg_cancel, hf_neg, max_self] at h0
+    have h := hp 0 (Nat.zero_le _) (by omega)
+    rw [coeff_eq_zero_of_natDegree_lt hk, zero_mul] at h
+    exact h0.not_gt h
+  rw [eval_eq_sum_range]
+  exact hf_na.apply_sum_eq_of_lt _ hf_neg (Finset.mem_range_succ_iff.mpr hk)
+    fun j hj hjk ↦ hp j (Finset.mem_range_succ_iff.mp hj) hjk
 
 namespace Polynomial.Monic
 

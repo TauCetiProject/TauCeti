@@ -86,8 +86,10 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
-  has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
-  coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
+  has distinct coordinates, `Finset.filter_ne_product_nonempty` finds such a pair when the first
+  factor has two elements and the second is nonempty, `Finset.card_filter_ne_product` counts the
+  pairs with distinct coordinates in any product by their first coordinate,
+  `Finset.card_filter_ne_product_comm`
   says that this count is symmetric in the two factors,
   `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
   half of the product when the second factor has at least two elements, and
@@ -219,6 +221,14 @@ theorem filter_ne_product_of_disjoint {α : Type*} {s t : Finset α} [DecidableE
     (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = s ×ˢ t :=
   filter_true_of_mem fun _ hp =>
     hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
+
+/-- A product whose first factor has two elements and whose second factor is nonempty contains a
+pair with distinct coordinates. -/
+theorem filter_ne_product_nonempty {α : Type*} {s t : Finset α} [DecidableEq α] (hs : 1 < #s)
+    (ht : t.Nonempty) : ((s ×ˢ t).filter fun p => p.1 ≠ p.2).Nonempty := by
+  obtain ⟨y, hy⟩ := ht
+  obtain ⟨x, hx, hxy⟩ := exists_mem_ne hs y
+  exact ⟨(x, y), mem_filter.2 ⟨mem_product.2 ⟨hx, hy⟩, hxy⟩⟩
 
 /-- A rectangle `X ×ˢ Y` of disjoint sets, with sides carrying an `ε`-fraction of the sides of a
 block `A ×ˢ B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
