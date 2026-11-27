@@ -41,6 +41,9 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 
 * `TemperedDistribution.besselPotential_two_eq_sub_laplacian`: the Bessel potential of order `2`
   is `1 - (2π)⁻² Δ`.
+* `TemperedDistribution.besselPotential_two_smulLeftCLM`,
+  `TemperedDistribution.smulLeftCLM_besselPotential_two`: the commutator of `J²` with
+  multiplication by a Schwartz function, with the derivatives on the distribution or outside.
 * `TemperedDistribution.besselPotential_eq_id_of_subsingleton`: on a zero-dimensional space every
   Bessel potential is the identity.
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
@@ -145,6 +148,38 @@ theorem besselPotential_two_eq_sub_laplacian (f : 𝓢'(E, F)) :
     rw [laplacian_eq_fourierMultiplierCLM, smul_smul, mul_neg,
       inv_mul_cancel₀ (by positivity), neg_one_smul]
   rw [hsplit, hΔ, sub_neg_eq_add]
+
+/-- The commutator of `J² = 1 - (2π)⁻² Δ` with multiplication by a Schwartz function `φ`, with
+the derivatives on `u`: `J² (φ u) = φ J² u - (2π)⁻² ∑ᵢ (∂ᵢ² φ u + 2 ∂ᵢ φ ∂ᵢ u)` for an
+orthonormal basis of `E`. -/
+theorem besselPotential_two_smulLeftCLM {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (φ : 𝓢(E, ℂ)) (u : 𝓢'(E, F)) :
+    besselPotential E F 2 (smulLeftCLM F (φ : E → ℂ) u) =
+      smulLeftCLM F (φ : E → ℂ) (besselPotential E F 2 u) - ((((2 * π) ^ 2)⁻¹ : ℝ) : ℂ) •
+        ∑ i, (smulLeftCLM F ((∂_{b i} (∂_{b i} φ) : 𝓢(E, ℂ)) : E → ℂ) u +
+          (smulLeftCLM F ((∂_{b i} φ : 𝓢(E, ℂ)) : E → ℂ) (∂_{b i} u) +
+            smulLeftCLM F ((∂_{b i} φ : 𝓢(E, ℂ)) : E → ℂ) (∂_{b i} u))) := by
+  rw [besselPotential_two_eq_sub_laplacian, besselPotential_two_eq_sub_laplacian,
+    RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.real_smul_eq_coe_smul (K := ℂ)]
+  simp only [laplacian_eq_sum b, map_sub, map_smul, map_sum,
+    lineDerivOp_smulLeftCLM_schwartzMap, LineDeriv.lineDerivOp_add, Finset.sum_add_distrib,
+    smul_add]
+  module
+
+/-- The commutator of `J² = 1 - (2π)⁻² Δ` with multiplication by a Schwartz function `φ`, with
+the derivatives outside: `φ J² w = J² (φ w) + (2π)⁻² ∑ᵢ (2 ∂ᵢ (∂ᵢ φ w) - ∂ᵢ² φ w)` for an
+orthonormal basis of `E`. -/
+theorem smulLeftCLM_besselPotential_two {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (φ : 𝓢(E, ℂ)) (w : 𝓢'(E, F)) :
+    smulLeftCLM F (φ : E → ℂ) (besselPotential E F 2 w) =
+      besselPotential E F 2 (smulLeftCLM F (φ : E → ℂ) w) + ((((2 * π) ^ 2)⁻¹ : ℝ) : ℂ) •
+        ∑ i, ((∂_{b i} (smulLeftCLM F ((∂_{b i} φ : 𝓢(E, ℂ)) : E → ℂ) w) +
+          ∂_{b i} (smulLeftCLM F ((∂_{b i} φ : 𝓢(E, ℂ)) : E → ℂ) w)) -
+          smulLeftCLM F ((∂_{b i} (∂_{b i} φ) : 𝓢(E, ℂ)) : E → ℂ) w) := by
+  rw [besselPotential_two_smulLeftCLM b]
+  simp only [lineDerivOp_smulLeftCLM_schwartzMap, Finset.sum_sub_distrib, Finset.sum_add_distrib,
+    smul_sub, smul_add]
+  abel
 
 /-- On a zero-dimensional space every Bessel potential is the identity: its symbol
 `(1 + ‖ξ‖²) ^ (s / 2)` is `1` at the only frequency `ξ = 0`. -/

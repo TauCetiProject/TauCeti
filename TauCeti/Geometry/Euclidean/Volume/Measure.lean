@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.Hausdorff
+import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -28,7 +29,8 @@ Lebesgue-null set in `E` is `μH[d]`- and `μHE[d]`-null for `d ≥ finrank ℝ 
 `TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`); conversely, every subset of `E`
 with finite `μHE[d]` measure for `d < finrank ℝ E` has Lebesgue volume zero
 (`TauCeti.volume_eq_zero_of_euclideanHausdorffMeasure_ne_top`). In dimension zero, Hausdorff
-measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the
+measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`), so `μHE[0]` gives `encard`
+on every set (`TauCeti.euclideanHausdorffMeasure_zero_apply`). In dimension one the
 normalizing constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence
 `μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with either
 normalization.
@@ -74,7 +76,10 @@ inequality holds on the hyperplane (`TauCeti.euclideanHausdorffMeasure_inter_set
 Isometries carry restricted Euclidean Hausdorff measure to its restriction on the image
 (`Isometry.map_euclideanHausdorffMeasure_restrict`), and an isometric equivalence carries it
 restricted to the frontier of a preimage to its restriction to the frontier of the set
-(`IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier`).
+(`IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier`). For an affine
+isometry of a finite-dimensional space `F` onto `ℝ × E`, the dimensions `dim F - 1` and `dim E`
+agree, which gives the form used for surface measure on domains of `F`:
+`AffineIsometryEquiv.measurePreserving_euclideanHausdorffMeasure_finrank_sub_one_restrict_frontier`.
 
 For a linear subspace `T` of dimension `k` of a finite-dimensional real inner product space,
 `μHE[k]⌞T` is the image of the Lebesgue measure of `T` under the inclusion
@@ -162,7 +167,30 @@ theorem IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_front
   exact (e.measurePreserving_euclideanHausdorffMeasure d).restrict_preimage
     isClosed_frontier.measurableSet
 
+namespace AffineIsometryEquiv
+
+/-- An affine isometry `g` of a finite-dimensional space `F` onto `ℝ × E`, with `s = g⁻¹ t`,
+carries `(dim F - 1)`-dimensional Euclidean Hausdorff measure restricted to `frontier s` to
+`(dim E)`-dimensional Euclidean Hausdorff measure restricted to `frontier t`. -/
+theorem measurePreserving_euclideanHausdorffMeasure_finrank_sub_one_restrict_frontier
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
+    [BorelSpace F] (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) {s : Set F} {t : Set (WithLp 2 (ℝ × E))}
+    (hst : s = g ⁻¹' t) :
+    MeasurePreserving g ((μHE[finrank ℝ F - 1] : Measure F).restrict (frontier s))
+      ((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict (frontier t)) := by
+  rw [g.linearIsometryEquiv.finrank_snd]
+  exact g.toIsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier hst _
+
+end AffineIsometryEquiv
+
 namespace TauCeti
+
+/-- The zero-dimensional Euclidean Hausdorff measure `μHE[0]` counts the points of any set,
+measurable or not, on every extended metric space. -/
+theorem euclideanHausdorffMeasure_zero_apply {X : Type*} [EMetricSpace X] [MeasurableSpace X]
+    [BorelSpace X] (s : Set X) : μHE[0] s = s.encard := by
+  rw [Measure.euclideanHausdorffMeasure_zero, hausdorffMeasure_zero_apply]
 
 open Measure in
 /-- Integrating `μHE[k] (g y)` pulls out the finite Euclidean normalization factor

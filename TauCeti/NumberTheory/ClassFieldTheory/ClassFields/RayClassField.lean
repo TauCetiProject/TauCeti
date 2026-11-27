@@ -108,6 +108,8 @@ whenever `L/K` is Galois and `𝔪` is invariant under `Gal(L/K)`-transport
   class group, the class number and the order of the narrow class group.
 * `TauCeti.ClassFieldTheory.hilbertClassField_eq_bot_iff`: the Hilbert class field is `K` itself
   exactly when `K` has class number one.
+* `TauCeti.ClassFieldTheory.exists_notMem_range_ideleClassNormMap_hilbertClassField`: when the
+  class group is nontrivial, not every idele class is a norm from the Hilbert class field.
 * `TauCeti.ClassFieldTheory.fieldRange_le_hilbertClassField_iff`: the Hilbert class field is the
   maximal abelian extension unramified at every finite and every infinite place.
 * `TauCeti.ClassFieldTheory.fieldRange_le_narrowHilbertClassField_iff`: the narrow Hilbert class
@@ -353,6 +355,22 @@ theorem finrank_hilbertClassField : Module.finrank K (hilbertClassField K) = cla
 /-- **The Hilbert class field is trivial exactly in class number one.** -/
 theorem hilbertClassField_eq_bot_iff : hilbertClassField K = ⊥ ↔ classNumber K = 1 := by
   rw [← IntermediateField.finrank_eq_one_iff, finrank_hilbertClassField]
+
+/-- **Not every idele class is a norm from a nontrivial Hilbert class field.** The norm group of
+the Hilbert class field is the trivial-modulus ray subgroup, the kernel of the quotient onto the
+class group, so any nontrivial ideal class lifts to an idele class outside it. -/
+theorem exists_notMem_range_ideleClassNormMap_hilbertClassField
+    [Nontrivial (ClassGroup (𝓞 K))] :
+    ∃ c : IdeleClassGroup (𝓞 K) K,
+      c ∉ (ideleClassNormMap K (hilbertClassField K) :
+        IdeleClassGroup (𝓞 (hilbertClassField K)) (hilbertClassField K) →*
+          IdeleClassGroup (𝓞 K) K).range := by
+  rw [range_ideleClassNormMap_rayClassField, ← ker_rayClassQuotient]
+  obtain ⟨x, hx⟩ := exists_ne (1 : ClassGroup (𝓞 K))
+  obtain ⟨c, hc⟩ := rayClassQuotient_surjective _ (oneEquivClassGroup.symm x)
+  refine ⟨c, fun h => hx ?_⟩
+  rw [MonoidHom.mem_ker, hc] at h
+  simpa using congrArg oneEquivClassGroup h
 
 /-- **Reciprocity for the narrow Hilbert class field**: the Artin map identifies the narrow class
 group of `K` with the Galois group of the narrow Hilbert class field: `rayClassArtinEquiv` at the
