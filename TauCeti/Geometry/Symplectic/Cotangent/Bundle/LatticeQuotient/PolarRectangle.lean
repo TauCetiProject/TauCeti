@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.DevelopingMap
-public import Mathlib.Analysis.SpecialFunctions.PolarCoord
+public import TauCeti.Analysis.SpecialFunctions.Complex.PolarCoord
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -118,12 +118,7 @@ theorem bijective_mfderiv_polarDevelopingMap (z : polarRectangle) :
     rw [coe_polarDevelopingMap, h]
     -- `rfl`: `NormedSpace.fromTangentSpace` is the identity equivalence of the model space.
     rfl
-  have hP : Bijective (fderivPolarCoordSymm z) := by
-    have hunit : IsUnit (fderivPolarCoordSymm z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-      rw [LinearMap.isUnit_iff_isUnit_det, ← ContinuousLinearMap.det,
-        det_fderivPolarCoordSymm]
-      exact hz.isUnit
-    exact (Module.End.isUnit_iff _).1 hunit
+  have hP : Bijective (fderivPolarCoordSymm z) := bijective_fderivPolarCoordSymm z hz
   rw [hd]
   exact (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm.bijective.comp hP
 

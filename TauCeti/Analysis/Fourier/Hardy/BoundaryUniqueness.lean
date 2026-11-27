@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
-public import TauCeti.Analysis.Complex.RadialUniqueness
+public import TauCeti.Analysis.Complex.Radial.Uniqueness
 public import TauCeti.Analysis.Fourier.Hardy.DiskFunction
 public import TauCeti.MeasureTheory.Measure.AddCircle
 

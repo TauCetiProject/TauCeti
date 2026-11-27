@@ -42,7 +42,11 @@ On final maps, a diffeotopy preserving `σ` with zero flux ends at a Hamiltonian
 preserving `σ` (`TauCeti.ker_endpointFlux`). Since the endpoint flux is onto
 (`TauCeti.endpointFlux_surjective`), this gives the exact sequence
 
-`1 → Ham(M, σ) → G_σ → H¹_dR(M) / Γ_σ → 0`.
+`1 → Ham(M, σ) → G_σ → H¹_dR(M) / Γ_σ → 0`,
+
+that is, an isomorphism `G_σ ⧸ Ham(M, σ) ≃* H¹_dR(M) / Γ_σ`
+(`TauCeti.quotientHamiltonianGroupEquiv`). In particular `Ham(M, σ) = G_σ` when
+`H¹_dR(M) = 0` (`TauCeti.hamiltonianGroup_eq_isotopyStabilizer`).
 
 The proof corrects `φ_t` by symplectic flows. Its velocity fields `X_t` are symplectic, and their
 classes `[ι_(X_t) σ]` are written in a basis `[ι_(Y i) σ]` of `H¹_dR(M)`, given by complete
@@ -77,6 +81,9 @@ Hamiltonian diffeotopy has zero flux, so the flux `∑ i, A i 1 [ι_(Y i) σ]` o
 * `TauCeti.Diffeotopy.final_mem_hamiltonianGroup_of_flux_eq_zero`: a diffeotopy preserving `σ` at
   every time with zero flux ends at a Hamiltonian diffeomorphism.
 * `TauCeti.ker_endpointFlux`: the kernel of the endpoint flux is the Hamiltonian group.
+* `TauCeti.quotientHamiltonianGroupEquiv`: the endpoint flux identifies `G_σ ⧸ Ham(M, σ)` with
+  `H¹_dR(M) / Γ_σ`.
+* `TauCeti.hamiltonianGroup_eq_isotopyStabilizer`: if `H¹_dR(M) = 0`, then `Ham(M, σ) = G_σ`.
 
 ## References
 
@@ -355,6 +362,42 @@ theorem mem_ker_pathClassFlux_iff (σ : closedForms I M 2)
       Diffeotopy.PathClass.mk_eq_mk_iff.2 hhom.symm⟩
   · rintro ⟨Ψ, hΨ, hmk⟩
     exact ⟨Ψ, hΨ, (Diffeotopy.PathClass.mk_eq_mk_iff.1 hmk).symm⟩
+
+/-- **The flux exact sequence.** On a compact connected boundaryless manifold with a symplectic
+form `σ`, the endpoint flux identifies the quotient of the group `G_σ` of final maps of
+diffeotopies preserving `σ` by the Hamiltonian group with `H¹_dR(M) / Γ_σ`. This is the exact
+sequence `1 → Ham(M, σ) → G_σ → H¹_dR(M) / Γ_σ → 0`, read through the first isomorphism theorem.
+The isomorphism sends the class of `φ` to its endpoint flux
+(`TauCeti.quotientHamiltonianGroupEquiv_mk`). -/
+def quotientHamiltonianGroupEquiv (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) :
+    isotopyStabilizer σ.val ⧸ (hamiltonianGroup σ.val).subgroupOf (isotopyStabilizer σ.val) ≃*
+      Multiplicative (deRhamCohomology I M 1 ⧸ fluxGroup σ) :=
+  (QuotientGroup.quotientMulEquivOfEq (ker_endpointFlux σ hσ).symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ (endpointFlux_surjective hσ))
+
+/-- The flux isomorphism `G_σ ⧸ Ham(M, σ) ≃* H¹_dR(M) / Γ_σ` sends the class of `φ` to the endpoint
+flux of `φ`. -/
+@[simp]
+theorem quotientHamiltonianGroupEquiv_mk (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) (φ : isotopyStabilizer σ.val) :
+    quotientHamiltonianGroupEquiv σ hσ φ = endpointFlux σ φ := by
+  simp only [quotientHamiltonianGroupEquiv, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk]
+  exact QuotientGroup.kerLift_mk _ _
+
+/-- **`Ham(M, σ) = G_σ` when `H¹_dR(M) = 0`.** On a compact
+connected boundaryless manifold with `H¹_dR(M) = 0` and a symplectic form `σ`, the Hamiltonian
+group `Ham(M, σ)` is the whole group `G_σ` of final maps of diffeotopies preserving `σ`: every
+flux vanishes, so every symplectic isotopy is homotopic to a Hamiltonian one. -/
+theorem hamiltonianGroup_eq_isotopyStabilizer [Subsingleton (deRhamCohomology I M 1)]
+    {σ : SmoothTwoForm I M} (hσ : σ.IsSymplectic) :
+    hamiltonianGroup σ = isotopyStabilizer σ := by
+  refine le_antisymm hamiltonianGroup_le_isotopyStabilizer fun φ hφ ↦ ?_
+  obtain ⟨Φ, hΦ, rfl⟩ := mem_isotopyStabilizer.1 hφ
+  exact Diffeotopy.final_mem_hamiltonianGroup_of_flux_eq_zero
+    ⟨σ, (mem_closedForms I σ).2 ((isClosed_def σ).1 hσ.isClosed)⟩
+    hσ.isNondegenerate hΦ (Subsingleton.elim _ _)
 
 end Kernel
 
