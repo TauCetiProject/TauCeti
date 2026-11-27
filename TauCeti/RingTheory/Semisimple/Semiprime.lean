@@ -29,9 +29,10 @@ reducedness, and the second statement extends `IsArtinianRing.isSemisimpleRing_o
 ## Main results
 
 * `IsSemisimpleRing.eq_zero_of_forall_mul_mul_eq_zero`: a semisimple ring is semiprime.
-* `IsSemiprimaryRing.isSemisimpleRing_of_forall_mul_mul_eq_zero`: a semiprime semiprimary ring,
-  for instance a semiprime Artinian ring, is semisimple.
-* `IsSemiprimaryRing.isSemisimpleRing_iff_forall_mul_mul_eq_zero`: the two together.
+* `IsSemiprimaryRing.isSemisimpleRing_of_forall_eq_zero_of_forall_mul_mul_eq_zero`: a semiprime
+  semiprimary ring, for instance a semiprime Artinian ring, is semisimple.
+* `IsSemiprimaryRing.isSemisimpleRing_iff_forall_eq_zero_of_forall_mul_mul_eq_zero`: the two
+  together.
 
 ## References
 
@@ -57,7 +58,7 @@ namespace IsSemiprimaryRing
 /-- **A semiprime semiprimary ring is semisimple.** If no nonzero `x` has `x * y * x = 0` for
 every `y`, then the Jacobson radical, which is nilpotent, vanishes. This applies to every Artinian
 ring. -/
-theorem isSemisimpleRing_of_forall_mul_mul_eq_zero [IsSemiprimaryRing R]
+theorem isSemisimpleRing_of_forall_eq_zero_of_forall_mul_mul_eq_zero [IsSemiprimaryRing R]
     (h : ∀ x : R, (∀ y, x * y * x = 0) → x = 0) : IsSemisimpleRing R := by
   set J := Ring.jacobson R
   -- If `J ^ (n + 2) = 0`, each `x ∈ J ^ (n + 1)` has `x * y * x ∈ J ^ (n + 1) * J = J ^ (n + 2)`.
@@ -87,9 +88,9 @@ theorem isSemisimpleRing_of_forall_mul_mul_eq_zero [IsSemiprimaryRing R]
 
 /-- **A semiprimary ring, for instance an Artinian ring, is semisimple exactly when it is
 semiprime**: when no nonzero `x` has `x * y * x = 0` for every `y`. -/
-theorem isSemisimpleRing_iff_forall_mul_mul_eq_zero [IsSemiprimaryRing R] :
+theorem isSemisimpleRing_iff_forall_eq_zero_of_forall_mul_mul_eq_zero [IsSemiprimaryRing R] :
     IsSemisimpleRing R ↔ ∀ x : R, (∀ y, x * y * x = 0) → x = 0 :=
   ⟨fun _ _ ↦ IsSemisimpleRing.eq_zero_of_forall_mul_mul_eq_zero,
-    isSemisimpleRing_of_forall_mul_mul_eq_zero⟩
+    isSemisimpleRing_of_forall_eq_zero_of_forall_mul_mul_eq_zero⟩
 
 end IsSemiprimaryRing

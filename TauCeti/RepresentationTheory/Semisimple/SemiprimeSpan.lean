@@ -19,22 +19,22 @@ import TauCeti.RingTheory.SimpleModule.Subalgebra
 Let `k` be a field and `G` a monoid. A family of elements of a `k`-algebra has *semiprime span*
 when no nonzero `x` in its `k`-span has `x * s * x = 0` for every member `s` of the family. For a
 representation `ρ` on a finite-dimensional space this characterizes semisimplicity
-(`Representation.isSemisimpleRepresentation_iff_forall_mul_mul_eq_zero`): the span of `ρ` is the
-image `A` of `k[G]` in `End_k(V)`, which is a semisimple ring exactly when `ρ` is semisimple, and a
-finite-dimensional algebra is semisimple exactly when it is semiprime.
+(`Representation.isSemisimpleRepresentation_iff_forall_eq_zero_of_forall_mul_mul_eq_zero`): the
+span of `ρ` is the image `A` of `k[G]` in `End_k(V)`, which is a semisimple ring exactly when `ρ` is
+semisimple, and a finite-dimensional algebra is semisimple exactly when it is semiprime.
 
 The point of the semiprime formulation is that it makes sense for a homomorphism `ρ : G →* B` into
 any finite-dimensional `k`-algebra `B`, and that it passes to every representation through which
 `ρ` factors: if the span of `ρ` is semiprime, then `g ↦ φ (ρ g)` is semisimple for every algebra
 map `φ : B → End_k(W)`, without any condition on `φ` or `W`
-(`MonoidHom.isSemisimpleRepresentation_comp_of_forall_mul_mul_eq_zero`). With the character
-theory of semisimple representations this gives the conjugacy statement: over a field of
-characteristic zero, a finite-dimensional semisimple representation `r` with
+(`MonoidHom.isSemisimpleRepresentation_comp_of_forall_eq_zero_of_forall_mul_mul_eq_zero`). With
+the character theory of semisimple representations this gives the conjugacy statement: over a
+field of characteristic zero, a finite-dimensional semisimple representation `r` with
 `tr r(g) = tr φ(ρ(g))` for all `g` is equivalent to `g ↦ φ (ρ g)`
-(`Representation.nonempty_equiv_of_trace_eq_of_forall_mul_mul_eq_zero`), and in matrix form some
-`Q ∈ GL_n(k)` has `r(g) Q = Q φ(ρ(g))` for all `g`
-(`MonoidHom.exists_mul_eq_mul_of_trace_eq_of_forall_mul_mul_eq_zero`). Neither statement needs
-`k` to be algebraically closed.
+(`Representation.nonempty_equiv_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zero`), and in
+matrix form some `Q ∈ GL_n(k)` has `r(g) Q = Q φ(ρ(g))` for all `g`
+(`MonoidHom.exists_mul_eq_mul_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zero`). Neither
+statement needs `k` to be algebraically closed.
 
 Finite-dimensionality of `B` cannot be dropped: the homomorphism `n ↦ X ^ n` from
 `Multiplicative ℕ` to `k[X]` has semiprime span, since `k[X]` is reduced, but composed with
@@ -54,15 +54,16 @@ span and the character theory of semisimple modules instead.
   image of `k[G]` is a semisimple ring, and conversely in finite dimension.
 * `Representation.eq_zero_of_mem_span_of_forall_mul_mul_eq_zero`: **a finite-dimensional
   semisimple representation has semiprime span.**
-* `MonoidHom.isSemisimpleRepresentation_comp_of_forall_mul_mul_eq_zero`: **a homomorphism into a
-  finite-dimensional algebra with semiprime span gives semisimple representations.**
-* `Representation.isSemisimpleRepresentation_iff_forall_mul_mul_eq_zero`: in finite dimension,
-  a representation is semisimple exactly when its span is semiprime.
-* `Representation.nonempty_equiv_of_trace_eq_of_forall_mul_mul_eq_zero`: **a semisimple
-  representation with the traces of `g ↦ φ (ρ g)`, for `ρ` with semiprime span, is equivalent to
-  it.**
-* `MonoidHom.exists_mul_eq_mul_of_trace_eq_of_forall_mul_mul_eq_zero`: the same for matrices,
-  `r(g) Q = Q φ(ρ(g))` with `Q ∈ GL_n(k)`.
+* `MonoidHom.isSemisimpleRepresentation_comp_of_forall_eq_zero_of_forall_mul_mul_eq_zero`: **a
+  homomorphism into a finite-dimensional algebra with semiprime span gives semisimple
+  representations.**
+* `Representation.isSemisimpleRepresentation_iff_forall_eq_zero_of_forall_mul_mul_eq_zero`: in
+  finite dimension, a representation is semisimple exactly when its span is semiprime.
+* `Representation.nonempty_equiv_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zero`: **a
+  semisimple representation with the traces of `g ↦ φ (ρ g)`, for `ρ` with semiprime span, is
+  equivalent to it.**
+* `MonoidHom.exists_mul_eq_mul_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zero`: the same
+  for matrices, `r(g) Q = Q φ(ρ(g))` with `Q ∈ GL_n(k)`.
 
 ## References
 
@@ -145,8 +146,9 @@ representations.** Let `ρ : G →* B` be such that no nonzero `x` in the span o
 `x * ρ g * x = 0` for every `g`. Then for every algebra map `φ : B → End_k(W)` the representation
 `g ↦ φ (ρ g)` is semisimple. The span of `ρ` is a semiprime, hence semisimple, finite-dimensional
 algebra, and the image of `k[G]` in `End_k(W)` is its image under `φ`. -/
-theorem isSemisimpleRepresentation_comp_of_forall_mul_mul_eq_zero [FiniteDimensional k B]
-    (ρ : G →* B) (hρ : ∀ x ∈ Submodule.span k (Set.range ρ), (∀ g, x * ρ g * x = 0) → x = 0)
+theorem isSemisimpleRepresentation_comp_of_forall_eq_zero_of_forall_mul_mul_eq_zero
+    [FiniteDimensional k B] (ρ : G →* B)
+    (hρ : ∀ x ∈ Submodule.span k (Set.range ρ), (∀ g, x * ρ g * x = 0) → x = 0)
     (φ : B →ₐ[k] Module.End k W) :
     Representation.IsSemisimpleRepresentation ((φ : B →* Module.End k W).comp ρ) := by
   set σ : Representation k G W := (φ : B →* Module.End k W).comp ρ
@@ -156,8 +158,9 @@ theorem isSemisimpleRepresentation_comp_of_forall_mul_mul_eq_zero [FiniteDimensi
   have : IsArtinianRing A := IsArtinianRing.of_finite k A
   have hmem (g : G) : ρ g ∈ A := ⟨MonoidAlgebra.of k G g, by simp⟩
   have : IsSemisimpleRing A :=
-    IsSemiprimaryRing.isSemisimpleRing_of_forall_mul_mul_eq_zero fun x hx ↦ Subtype.ext <|
-      hρ x (by rw [← hA]; exact x.property) fun g ↦ congrArg Subtype.val <| hx ⟨ρ g, hmem g⟩
+    IsSemiprimaryRing.isSemisimpleRing_of_forall_eq_zero_of_forall_mul_mul_eq_zero fun x hx ↦
+      Subtype.ext <| hρ x (by rw [← hA]; exact x.property) fun g ↦
+        congrArg Subtype.val <| hx ⟨ρ g, hmem g⟩
   -- The image of `k[G]` in `End_k(W)` is the image of `A` under `φ`.
   have hσ : σ.asAlgebraHom = φ.comp (MonoidAlgebra.lift k B G ρ) :=
     MonoidAlgebra.algHom_ext' (MonoidHom.ext fun g ↦ by simp [σ]) (by ext)
@@ -177,8 +180,8 @@ variable {k G V W : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
 /-- **Semisimplicity is semiprimeness of the span.** A finite-dimensional representation is
 semisimple exactly when no nonzero `k`-combination `x` of the operators `ρ g` has
 `x * ρ g * x = 0` for every `g`. -/
-theorem isSemisimpleRepresentation_iff_forall_mul_mul_eq_zero (ρ : Representation k G V)
-    [FiniteDimensional k V] :
+theorem isSemisimpleRepresentation_iff_forall_eq_zero_of_forall_mul_mul_eq_zero
+    (ρ : Representation k G V) [FiniteDimensional k V] :
     ρ.IsSemisimpleRepresentation ↔
       ∀ x ∈ Submodule.span k (Set.range ρ), (∀ g, x * ρ g * x = 0) → x = 0 := by
   refine ⟨fun _ _ hx ↦ eq_zero_of_mem_span_of_forall_mul_mul_eq_zero ρ hx, fun h ↦ ?_⟩
@@ -186,21 +189,23 @@ theorem isSemisimpleRepresentation_iff_forall_mul_mul_eq_zero (ρ : Representati
     ext
     simp
   rw [← hid]
-  exact ρ.isSemisimpleRepresentation_comp_of_forall_mul_mul_eq_zero h (AlgHom.id k _)
+  exact ρ.isSemisimpleRepresentation_comp_of_forall_eq_zero_of_forall_mul_mul_eq_zero h
+    (AlgHom.id k _)
 
 /-- **Conjugacy from a semiprime span.** Let `k` have characteristic zero, let `r` be a
 finite-dimensional semisimple representation of `G` on `V`, let `ρ : G →* B` take values in a
 finite-dimensional `k`-algebra with semiprime span, and let `φ : B → End_k(W)` be an algebra map,
 `W` finite-dimensional, with `tr r(g) = tr φ(ρ(g))` for every `g`. Then `r` is equivalent to
 `g ↦ φ (ρ g)`: some isomorphism `V ≃ W` carries each `r g` to `φ (ρ g)`. -/
-theorem nonempty_equiv_of_trace_eq_of_forall_mul_mul_eq_zero {B : Type*} [Ring B] [Algebra k B]
-    [CharZero k] [FiniteDimensional k V] [FiniteDimensional k W] [FiniteDimensional k B]
+theorem nonempty_equiv_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zero {B : Type*} [Ring B]
+    [Algebra k B] [CharZero k] [FiniteDimensional k V] [FiniteDimensional k W]
+    [FiniteDimensional k B]
     (r : Representation k G V) [r.IsSemisimpleRepresentation] (ρ : G →* B)
     (hρ : ∀ x ∈ Submodule.span k (Set.range ρ), (∀ g, x * ρ g * x = 0) → x = 0)
     (φ : B →ₐ[k] Module.End k W)
     (htr : ∀ g, LinearMap.trace k V (r g) = LinearMap.trace k W (φ (ρ g))) :
     Nonempty (r.Equiv ((φ : B →* Module.End k W).comp ρ)) := by
-  have := ρ.isSemisimpleRepresentation_comp_of_forall_mul_mul_eq_zero hρ φ
+  have := ρ.isSemisimpleRepresentation_comp_of_forall_eq_zero_of_forall_mul_mul_eq_zero hρ φ
   exact nonempty_equiv_of_character_eq_of_isSemisimpleRepresentation _ _
     (funext fun g ↦ by simp [character, htr g])
 
@@ -215,15 +220,16 @@ variable {k G B : Type*} [Field k] [Monoid G] [Ring B] [Algebra k B] {n : Type*}
 `r : G →* GL_n(k)` be semisimple, let `ρ : G →* B` take values in a finite-dimensional `k`-algebra
 with semiprime span, and let `φ : B → M_n(k)` be an algebra map with `tr r(g) = tr φ(ρ(g))` for
 every `g`. Then some `Q ∈ GL_n(k)` has `r(g) Q = Q φ(ρ(g))` for every `g`. -/
-theorem exists_mul_eq_mul_of_trace_eq_of_forall_mul_mul_eq_zero [CharZero k]
+theorem exists_mul_eq_mul_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zero [CharZero k]
     [FiniteDimensional k B] (r : G →* GL n k) [(Representation.ofGL r).IsSemisimpleRepresentation]
     (ρ : G →* B) (hρ : ∀ x ∈ Submodule.span k (Set.range ρ), (∀ g, x * ρ g * x = 0) → x = 0)
     (φ : B →ₐ[k] Matrix n n k) (htr : ∀ g, (r g : Matrix n n k).trace = (φ (ρ g)).trace) :
     ∃ Q : GL n k, ∀ g, (r g : Matrix n n k) * Q = Q * φ (ρ g) := by
   have hlin (M : Matrix n n k) : Matrix.toLinAlgEquiv' M = Matrix.toLin' M :=
     LinearMap.ext fun v ↦ by simp [Matrix.toLinAlgEquiv'_apply, Matrix.toLin'_apply]
-  obtain ⟨e⟩ := (Representation.ofGL r).nonempty_equiv_of_trace_eq_of_forall_mul_mul_eq_zero ρ hρ
-    (Matrix.toLinAlgEquiv'.toAlgHom.comp φ) fun g ↦ by simp [hlin, htr g]
+  obtain ⟨e⟩ :=
+    (Representation.ofGL r).nonempty_equiv_of_trace_eq_of_forall_eq_zero_of_forall_mul_mul_eq_zero
+      ρ hρ (Matrix.toLinAlgEquiv'.toAlgHom.comp φ) fun g ↦ by simp [hlin, htr g]
   -- `Q` is the matrix of the inverse of the equivalence `e`.
   set f := e.symm.toLinearEquiv
   refine ⟨⟨LinearMap.toMatrix' f, LinearMap.toMatrix' f.symm, ?_, ?_⟩,
