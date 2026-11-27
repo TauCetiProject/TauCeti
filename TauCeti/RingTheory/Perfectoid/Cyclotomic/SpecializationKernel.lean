@@ -54,7 +54,10 @@ coordinate argument behind it are adapted from `New.Period.mu_dvd_of_theta_frobE
 `New.Period.Witt.dvd_of_mem_of_constantCoeff_dvd` and the auxiliary
 `pow_pow_dvd_constantCoeff_mu_of_eq_mul` in `src/Lib/PadicHodge/PeriodRings/Ainf.lean` of
 grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), where
-they are proved for `C = ℂ_p` with a fixed compatible system of roots of unity.
+they are proved for `C = ℂ_p` with a fixed compatible system of roots of unity. The `τ` statements
+`PreTilt.frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero` and
+`PreTilt.mem_span_frobeniusEquiv_symm_mu_iff` follow `New.Period.tau_dvd_of_theta_frobEnd` in the
+same file.
 
 ## References
 

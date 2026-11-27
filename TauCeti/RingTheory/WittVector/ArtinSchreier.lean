@@ -33,8 +33,12 @@ adapted from `New.Period.Witt.exists_map_sub_mul_map_eq` and
 in grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0,
 Copyright 2026 Anthropic, PBC). The lifting proof uses Mathlib's adic surjectivity criterion;
 the finite-level exact sequence is developed here using the canonical p-adic constants.
-The polynomial-root step also follows `New.Variety.IsAbsIntegrallyClosed.exists_pow_sub_mul_eq`
-(file `src/Lib/General/Algebra/AbsIntegrallyClosed.lean`), using native algebraic closedness.
+The generalisation to absolutely integrally closed perfect rings follows grh-lean: the
+polynomial-root step follows `New.Variety.IsAbsIntegrallyClosed.exists_pow_sub_mul_eq`
+(file `src/Lib/General/Algebra/AbsIntegrallyClosed.lean`), taking the root from
+`TauCeti.IsAbsolutelyIntegrallyClosed.exists_root`. The application to `φ(c) - ξ ^ n * c = x` in
+`A_inf` follows `New.Period.Ainf.exists_frobEnd_sub_xi_pow_mul_eq` (file
+`src/Lib/PadicHodge/PeriodRings/Ainf.lean`).
 
 ## References
 
