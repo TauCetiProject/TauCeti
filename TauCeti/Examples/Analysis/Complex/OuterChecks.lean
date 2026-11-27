@@ -52,21 +52,24 @@ theorem not_exists_eqOn_cexp_I_mul_upperHalfPlaneOuter :
     filter_upwards [ae_tendsto_nontangentialFilter_norm_upperHalfPlaneOuter hh] with x hx
     have := nontangentialFilter_neBot one_pos x
     have hlim : Tendsto (fun z ↦ ‖upperHalfPlaneOuter h z‖) (nontangentialFilter 1 x)
-        (𝓝 (Real.exp (-0) / ‖c‖)) :=
-      (((Real.continuous_exp.tendsto _).comp (tendsto_im_nontangentialFilter 1 x).neg).div_const
-        _).congr' ((eventually_nontangentialFilter_abs_re_sub_le 1 x one_pos).mono
-          fun z hz ↦ (hnorm z hz.1).symm)
-    rw [← Real.log_exp (h x), tendsto_nhds_unique (hx 1) hlim, neg_zero, Real.exp_zero, one_div,
-      Real.log_inv]
+        (𝓝 (1 / ‖c‖)) := by
+      simpa using (((Real.continuous_exp.tendsto _).comp
+        (tendsto_im_nontangentialFilter 1 x).neg).div_const ‖c‖).congr'
+          ((eventually_nontangentialFilter_abs_re_sub_le 1 x one_pos).mono
+            fun z hz ↦ (hnorm z hz.1).symm)
+    simpa [Real.log_inv] using congrArg Real.log (tendsto_nhds_unique (hx 1) hlim)
   have hP : ∀ z ∈ upperHalfPlaneSet,
       ∫ x, upperHalfPlanePoissonKernel z x * h x = -Real.log ‖c‖ := fun z hz ↦ by
     rw [integral_congr_ae (g := fun x ↦ upperHalfPlanePoissonKernel z x * -Real.log ‖c‖)
       (hae.mono fun x hx ↦ by simp only [hx]), integral_mul_const,
       integral_upperHalfPlanePoissonKernel hz, one_mul]
   have h1 := hnorm I hI
-  rw [norm_upperHalfPlaneOuter hh, hP I hI, Real.exp_neg, Real.exp_log (norm_pos_iff.2 hc),
-    I_im, eq_div_iff hc', inv_mul_cancel₀ hc', eq_comm, Real.exp_eq_one_iff] at h1
-  norm_num at h1
+  rw [norm_upperHalfPlaneOuter hh, hP I hI] at h1
+  have : Real.exp (-1) = 1 := by
+    rw [Real.exp_neg, Real.exp_log (norm_pos_iff.2 hc)] at h1
+    field_simp at h1
+    simpa using h1.symm
+  simp at this
 
 /-- **A Blaschke factor is not outer**: `(z - i) / (z + i)` vanishes at `i`, so it is not `c O_h`
 on `ℂ₊` for any constant `c` and any `h`. -/
