@@ -307,6 +307,7 @@ def sectionCLM (hs : 1 < s) : (Fin 4 → realSubmodule ℂ h) →L[ℝ] ℂ →�
   (2 : ℂ) • (T.comp (ContinuousLinearMap.proj 2) + (I : ℂ) • T.comp (ContinuousLinearMap.proj 3))
 
 /-- `sectionCLM hs u` is the section of the field of continuous representatives of `u`. -/
+@[simp]
 theorem sectionCLM_apply (hs : 1 < s) (u : Fin 4 → realSubmodule ℂ h) (z : ℂ) :
     sectionCLM hs u z = sectionValue (continuousRepField u) z := by
   simp only [sectionCLM, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
@@ -320,17 +321,11 @@ def referenceSectionBCF (f : ContDiffBump (0 : ℝ)) (m : ℕ) : ℂ →ᵇ ℂ 
   .ofNormedAddCommGroup (referenceSection f m) (contDiff_referenceSection f m).continuous 1
     (norm_referenceSection_le_one f m)
 
-/-- The section of a field of `A_m^s`, `s > 1`, is `α_m` plus the section of its real
-coordinates. -/
-theorem referenceSectionBCF_add_sectionCLM_realSubRef (hs : 1 < s)
-    (x : SobolevFieldSpace f m s) (z : ℂ) :
-    (referenceSectionBCF f m + sectionCLM hs (x.realSubRef h)) z = sectionValue x z := by
-  conv_rhs => rw [← ofRealSubRef_realSubRef hs (h := h) x]
-  rw [add_apply, sectionCLM_apply, coe_ofRealSubRef]
-  simp only [referenceSectionBCF, BoundedContinuousFunction.coe_ofNormedAddCommGroup,
-    ← sectionValue_referenceField f m z, sectionValue_apply, Pi.add_apply, PiLp.add_apply]
-  push_cast
-  ring
+/-- `referenceSectionBCF f m` is the reference section `α_m`. -/
+@[simp]
+theorem coe_referenceSectionBCF (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
+    ⇑(referenceSectionBCF f m) = referenceSection f m :=
+  (rfl)
 
 /-- The section of the field of `A_m^s`, `s > 1`, with real coordinates `u ∈ (H^s_ℝ)⁴`, as a
 bounded continuous function, smooth in `u` (`contDiff_sectionBCF`). -/
@@ -342,10 +337,24 @@ def sectionBCF (f : ContDiffBump (0 : ℝ)) (m : ℕ) (hs : 1 < s)
 theorem contDiff_sectionBCF (hs : 1 < s) : ContDiff ℝ ∞ (sectionBCF (h := h) f m hs) :=
   contDiff_const.add (sectionCLM hs).contDiff
 
+/-- `sectionBCF f m hs u` is `α_m` plus the section of the field of continuous representatives
+of `u`. -/
+theorem sectionBCF_apply (f : ContDiffBump (0 : ℝ)) (m : ℕ) (hs : 1 < s)
+    (u : Fin 4 → realSubmodule ℂ h) (z : ℂ) :
+    sectionBCF f m hs u z = referenceSection f m z + sectionValue (continuousRepField u) z := by
+  rw [sectionBCF, add_apply, coe_referenceSectionBCF, sectionCLM_apply]
+
 /-- `sectionBCF` of the real coordinates of a field of `A_m^s` is its section. -/
+@[simp]
 theorem coe_sectionBCF_realSubRef (hs : 1 < s) (x : SobolevFieldSpace f m s) :
-    ⇑(sectionBCF f m hs (x.realSubRef h)) = sectionValue x :=
-  funext (referenceSectionBCF_add_sectionCLM_realSubRef hs x)
+    ⇑(sectionBCF f m hs (x.realSubRef h)) = sectionValue x := by
+  funext z
+  conv_rhs => rw [← ofRealSubRef_realSubRef hs (h := h) x]
+  rw [sectionBCF_apply, coe_ofRealSubRef]
+  simp only [← sectionValue_referenceField f m z, sectionValue_apply, Pi.add_apply,
+    PiLp.add_apply]
+  push_cast
+  ring
 
 /-- **The section is Lipschitz in the real coordinates.** For `s > 1` there is a constant `C ≥ 0`
 such that, at every point, the sections of two continuous fields of `A_m^s` differ by at most `C`
