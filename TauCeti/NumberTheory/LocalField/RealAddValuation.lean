@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.WithTop.Untop0
+public import TauCeti.NumberTheory.LocalField.AddValuation
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
-public import TauCeti.RingTheory.Valuation.ToAdditive
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 import TauCeti.NumberTheory.LocalField.FractionalIdeal
 
@@ -26,9 +26,11 @@ units of `𝒪[K]` have valuation `0`.
 
 ## Main results
 
-* `TauCeti.realAddValuation_of_ne_zero`, `TauCeti.untop₀_realAddValuation`,
-  `TauCeti.realAddValuation_zpow_of_ne_zero` and `TauCeti.eq_realAddValuation`: values on nonzero
-  elements, `untop₀` decoding, integer powers, and uniqueness.
+* `TauCeti.realAddValuation_of_ne_zero`,
+  `TauCeti.realAddValuation_eq_map_normalizedIntAddValuation`, `TauCeti.untop₀_realAddValuation`,
+  `TauCeti.realAddValuation_zpow_of_ne_zero`, and `TauCeti.eq_realAddValuation`: values on nonzero
+  elements, comparison with `normalizedIntAddValuation`, `untop₀` decoding, integer powers, and
+  uniqueness.
 * `TauCeti.realAddValuation_irreducible`, `TauCeti.realAddValuation_coe_integer`,
   `TauCeti.realAddValuation_natCast` and `TauCeti.realAddValuation_natCast_eq_nsmul`: values at
   uniformizers, integers and natural-number casts.
@@ -93,6 +95,14 @@ theorem realAddValuation_of_ne_zero {x : K} (hx : x ≠ 0) :
     normalizedValuationWithZero_coe (Units.mk0 x hx)
   rw [hcoe, ← WithZero.toAdd_unzero_eq_log WithZero.coe_ne_zero, WithZero.unzero_coe]
   exact realAddValuation_coe_unit (Units.mk0 x hx)
+
+/-- `realAddValuation K` is `normalizedIntAddValuation K` cast from `WithTop ℤ` to `WithTop ℝ`. -/
+theorem realAddValuation_eq_map_normalizedIntAddValuation (x : K) :
+    realAddValuation K x = (normalizedIntAddValuation K x).map ((↑) : ℤ → ℝ) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rw [realAddValuation_of_ne_zero hx, normalizedIntAddValuation_of_ne_zero hx,
+      ord_intValuation_eq_log_normalizedValuationWithZero, WithTop.map_coe]
 
 /-- Decoding `realAddValuation K x` via `WithTop.untop₀` gives `WithZero.log` cast to `ℝ`. -/
 @[simp]
@@ -170,25 +180,18 @@ theorem mem_maximalIdeal_zpow_iff_le_realAddValuation {x : K} {n : ℤ} :
 /-- On `𝒪[K]`, `realAddValuation` agrees with `IsDiscreteValuationRing.addVal` cast to `ℝ`. -/
 theorem realAddValuation_coe_integer (a : 𝒪[K]) :
     realAddValuation K (a : K) =
-      (IsDiscreteValuationRing.addVal 𝒪[K] a).recTopCoe ⊤ fun n : ℕ ↦ ((n : ℝ) : WithTop ℝ) := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp
-  · obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-    obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hπ
-    simp [IsDiscreteValuationRing.addVal_def' u hπ n, (realAddValuation K).map_mul,
-      (realAddValuation K).map_pow, realAddValuation_irreducible hπ]
+      (IsDiscreteValuationRing.addVal 𝒪[K] a).map ((↑) : ℕ → ℝ) := by
+  rw [realAddValuation_eq_map_normalizedIntAddValuation, normalizedIntAddValuation_coe_integer]
+  induction IsDiscreteValuationRing.addVal 𝒪[K] a using ENat.recTopCoe <;> simp
 
 /-- An element of `𝒪[K]` lies in `𝓂[K]` if and only if its `realAddValuation` is at least `1`. -/
 theorem mem_maximalIdeal_iff_one_le_realAddValuation {a : 𝒪[K]} :
     a ∈ 𝓂[K] ↔ 1 ≤ realAddValuation K (a : K) := by
   have hmem : a ∈ 𝓂[K] ↔ 1 ≤ IsDiscreteValuationRing.addVal 𝒪[K] a := by
     simpa using IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal (x := a) (n := 1)
-  rw [hmem, realAddValuation_coe_integer]
-  cases IsDiscreteValuationRing.addVal 𝒪[K] a using ENat.recTopCoe with
-  | top => simp
-  | coe n =>
-    simp only [ENat.recTopCoe_natCast, ← ENat.natCast_one, ENat.natCast_le_natCast,
-      ← WithTop.coe_one, WithTop.coe_le_coe, Nat.one_le_cast]
+  rw [hmem, realAddValuation_coe_integer,
+    ← (ENat.map_natCast_strictMono (α := ℝ)).le_iff_le, ENat.map_one, Nat.cast_one,
+    WithTop.coe_one]
 
 /-- An element of `𝒪[K]` lies in `𝓂[K]` if and only if its `realAddValuation` is positive. -/
 theorem mem_maximalIdeal_iff_realAddValuation_pos {a : 𝒪[K]} :

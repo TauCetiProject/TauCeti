@@ -30,7 +30,10 @@ along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1`
   `(-1) ^ pb.dim` times the minimal polynomial of the generator evaluated at `a`.
 * `PowerBasis.roots_map_minpoly_eq_map_algHom`: in a domain `E`, the roots of the minimal
   polynomial of the generator are the images of the generator under the `R`-algebra embeddings
-  `S →ₐ[R] E`, each counted once.
+  `S →ₐ[R] E`, each counted once, when enumerated by `Fin pb.dim`.
+* `PowerBasis.aroots_minpoly_eq_map_algHom`: when `(minpoly R pb.gen).aroots E` has no duplicates
+  in a domain `R`-algebra `E`, its roots are `σ pb.gen` over all `σ : S →ₐ[R] E`, without requiring
+  `minpoly R pb.gen` to split in `E`.
 -/
 
 public section
@@ -112,3 +115,25 @@ theorem PowerBasis.roots_map_minpoly_eq_map_algHom {R S E : Type*} [CommRing R] 
   rw [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin]
   exact (card_roots' _).trans (by
     rw [(minpoly.monic pb.isIntegral_gen).natDegree_map (algebraMap R E), pb.natDegree_minpoly])
+
+open Polynomial in
+/-- When the roots in a domain `R`-algebra `E` of the minimal polynomial of `pb.gen` have no
+duplicates (for instance when `minpoly R pb.gen` is separable), they are the images `σ pb.gen` over
+all `R`-algebra homomorphisms `σ : S →ₐ[R] E` (each occurring once), without requiring
+`minpoly R pb.gen` to split in `E`. -/
+theorem PowerBasis.aroots_minpoly_eq_map_algHom {R S E : Type*} [CommRing R] [Ring S]
+    [Algebra R S] [CommRing E] [IsDomain E] [Algebra R E] [Fintype (S →ₐ[R] E)]
+    (pb : PowerBasis R S) (hnodup : ((minpoly R pb.gen).aroots E).Nodup) :
+    (minpoly R pb.gen).aroots E =
+      (Finset.univ : Finset (S →ₐ[R] E)).val.map fun σ ↦ σ pb.gen := by
+  classical
+  let e : (S →ₐ[R] E) ≃ ↥((minpoly R pb.gen).aroots E).toFinset :=
+    (pb.liftEquiv' (B := E)).trans (Equiv.subtypeEquivRight fun _ ↦ Multiset.mem_toFinset.symm)
+  have hfun : (fun σ : S →ₐ[R] E ↦ σ pb.gen) = Subtype.val ∘ e :=
+    funext fun σ ↦ (pb.liftEquiv'_apply_coe σ).symm
+  have huniv : (Finset.univ : Finset ↥((minpoly R pb.gen).aroots E).toFinset) =
+      ((minpoly R pb.gen).aroots E).toFinset.attach := by
+    ext
+    simp
+  rw [hfun, ← Multiset.map_map, Multiset.map_univ_val_equiv, huniv, Finset.attach_val,
+    Multiset.attach_map_val, Multiset.toFinset_val, hnodup.dedup]

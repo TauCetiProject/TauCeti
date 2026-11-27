@@ -21,8 +21,13 @@ Two dimension formulas `n + d = N` and `n' + d' = N` with the same finite nonneg
 be compared: a larger second summand forces a smaller natural-number first summand. Additive
 cancellation fails in `WithBot ℕ∞` in general, because of `⊥` and `⊤`.
 
+Alongside `ENat.map_natCast_mul` from Mathlib, this file also records lemmas pushing
+`ENat.map Nat.cast` through addition and `ℕ`-scalar multiplication into `WithTop R`.
+
 ## Main results
 
+* `ENat.map_natCast_add` and `ENat.map_natCast_nsmul`: `ENat.map Nat.cast` preserves addition and
+  `ℕ`-scalar multiplication into `WithTop R`.
 * `ENat.coe_ne_zero_of_add_one_le`: a successor bound gives a nonzero extended order.
 * `ENat.WithBot.lt_natCast_of_add_one_eq`: if `c + 1 = k` with `k : ℕ`, then `c < k`.
 * `ENat.WithBot.natCast_le_natCast_of_add_eq_of_le`: if `n + d = N = n' + d'` with `d' ≤ d` and
@@ -32,6 +37,17 @@ cancellation fails in `WithBot ℕ∞` in general, because of `⊥` and `⊤`.
 public section
 
 namespace ENat
+
+/-- `ENat.map Nat.cast` preserves addition into `WithTop R`. -/
+@[simp]
+theorem map_natCast_add {R : Type*} [AddMonoidWithOne R] (a b : ℕ∞) :
+    (a + b).map (Nat.cast : ℕ → R) = a.map Nat.cast + b.map Nat.cast :=
+  ENat.map_add (Nat.castAddMonoidHom R) a b
+
+/-- `ENat.map Nat.cast` preserves `ℕ`-scalar multiplication into `WithTop R`. -/
+theorem map_natCast_nsmul {R : Type*} [AddMonoidWithOne R] (n : ℕ) (a : ℕ∞) :
+    (n • a).map (Nat.cast : ℕ → R) = n • a.map Nat.cast :=
+  (Nat.castAddMonoidHom R).ENatMap.map_nsmul n a
 
 /-- An extended order above a successor remains nonzero after adjoining a new top element. -/
 theorem coe_ne_zero_of_add_one_le {n r : ℕ∞} (h : n + 1 ≤ r) : (r : WithTop ℕ∞) ≠ 0 := by

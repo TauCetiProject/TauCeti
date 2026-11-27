@@ -45,9 +45,10 @@ negative-slope face structure, and conjugate root-difference invariance.
   `TauCeti.isFiniteFace_zero_newtonPolygon_ramificationPolynomial`: `p`-power contact abscissae on
   negative slopes and the horizontal tame face `[p ^ w, n]`.
 * `TauCeti.exists_pow_endpoints_of_isFiniteFace_of_neg`,
-  `TauCeti.exists_rat_neg_eq_and_den_dvd_of_isFiniteFace_of_neg` and
+  `TauCeti.exists_rat_neg_eq_and_den_dvd_of_isFiniteFace_of_neg`,
+  `TauCeti.newtonPolygon_ramificationPolynomial_one_eq_height`, and
   `TauCeti.unitSlope_newtonPolygon_ramificationPolynomial_eq_on_Ico_pow`: `p`-power endpoints,
-  rational slopes and constancy on `[p ^ k, p ^ (k + 1))`.
+  rational slopes, left endpoint `(1, height K L)`, and constancy on `[p ^ k, p ^ (k + 1))`.
 * `TauCeti.mem_conjugateBreaks_iff`, `TauCeti.conjugateBreaks_eq_of_irreducible`,
   `TauCeti.newtonSlopes_ramificationPolynomial_eq_map_conjugateBreaks` and
   `TauCeti.newtonPolygon_ramificationPolynomial_eq`: break membership, uniformizer invariance and
@@ -362,6 +363,18 @@ theorem newtonPolygon_ramificationPolynomial_one {φ : 𝒪[K][X]}
   rw [← htr, newtonPolygon_natTrailingDegree, trailingCoeff, htr,
     realAddValuation_coeff_one_ramificationPolynomial hφ hroot hgen]
 
+/-- **Left endpoint of the ramification polygon**: in separable `L = K(α)`, the ramification
+polygon starts at `(1, height K L)`. -/
+theorem newtonPolygon_ramificationPolynomial_one_eq_height {φ : 𝒪[K][X]}
+    (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
+    (hroot : ((φ.map (algebraMap 𝒪[K] K)).map (algebraMap K L)).IsRoot α) (hgen : K⟮α⟯ = ⊤) :
+    (ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α).newtonPolygon (realAddValuation L) 1 =
+      (height K L : WithTop ℝ) := by
+  have htr := natTrailingDegree_ramificationPolynomial hroot
+    (separable_ramificationPolynomial_of_eisenstein hφ hroot (Algebra.IsSeparable.isSeparable K α))
+  rw [← htr, newtonPolygon_natTrailingDegree, trailingCoeff, htr,
+    realAddValuation_coeff_one_ramificationPolynomial_eq_height hφ hroot hgen]
+
 /-- In a separable Eisenstein extension, the unit slopes of the ramification polygon are constant
 on every `p`-power interval `[p ^ k, p ^ (k + 1))` inside `[1, φ.natDegree)`. -/
 theorem unitSlope_newtonPolygon_ramificationPolynomial_eq_on_Ico_pow {φ : 𝒪[K][X]}
@@ -481,42 +494,6 @@ theorem conjugateBreaks_eq_of_irreducible [Module.Finite K L] (h : IsTotallyRami
   rw [untop₀_realAddValuation, untop₀_realAddValuation] at heq
   rw [Int.cast_injective heq]
 
-omit [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M]
-  [IsScalarTower K L M] [ValuativeExtension L M] in
-private theorem map_univ_algHom_eq_roots [Algebra.IsSeparable K L] [Module.Finite K L]
-    {φ : 𝒪[K][X]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
-    (hroot : ((φ.map (algebraMap 𝒪[K] K)).map (algebraMap K L)).IsRoot α) (hgen : K⟮α⟯ = ⊤) :
-    (Finset.univ : Finset (L →ₐ[K] M)).val.map (fun σ ↦ σ α) =
-      ((φ.map (algebraMap 𝒪[K] K)).map (algebraMap K M)).roots := by
-  classical
-  obtain ⟨hα, hroot', -, -, -, -⟩ :=
-    irreducible_and_realAddValuation_of_eisenstein_adjoin_eq_top hφ hroot hgen
-  set ξ : 𝒪[L] := ⟨α, hα⟩
-  have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
-  have hassoc := hφ.associated_minpoly hφ.isUnit_leadingCoeff hroot'
-  have hscale : φ = C φ.leadingCoeff * minpoly 𝒪[K] ξ :=
-    Polynomial.eq_leadingCoeff_mul_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) hassoc.dvd
-      (Polynomial.natDegree_le_natDegree (Polynomial.degree_eq_degree_of_associated hassoc).symm.le)
-  let pb : PowerBasis K L := PowerBasis.ofAdjoinSimpleEqTop (Algebra.IsIntegral.isIntegral α) hgen
-  have hpb : pb.gen = α := PowerBasis.ofAdjoinSimpleEqTop_gen _ hgen
-  have hmin : minpoly K α = (minpoly 𝒪[K] ξ).map (algebraMap 𝒪[K] K) := by
-    simpa only [Algebra.algebraMap_ofSubsemiring_apply] using
-      minpoly.isIntegrallyClosed_eq_field_fractions K L hint
-  have hroots : ((φ.map (algebraMap 𝒪[K] K)).map (algebraMap K M)).roots =
-      ((minpoly K pb.gen).map (algebraMap K M)).roots := by
-    rw [hpb, hmin, hscale, Polynomial.map_mul, map_C, Polynomial.map_mul, map_C,
-      Algebra.algebraMap_ofSubsemiring_apply, roots_C_mul _ ((map_ne_zero (algebraMap K M)).mpr
-        (ZeroMemClass.coe_eq_zero.not.mpr hφ.isUnit_leadingCoeff.ne_zero))]
-  refine (Multiset.Nodup.ext (Finset.univ.nodup.map fun _ _ h ↦
-    pb.algHom_ext (by simpa [hpb] using h)) (hroots ▸ nodup_roots
-      (Polynomial.Separable.map (Algebra.IsSeparable.isSeparable K pb.gen)))).mpr fun y ↦ ?_
-  rw [hroots, Multiset.mem_map]
-  refine ⟨fun ⟨σ, _, hy⟩ ↦ hy ▸ hpb ▸ (pb.liftEquiv' σ).property, fun hy ↦ ?_⟩
-  have hy0 : aeval y (minpoly K pb.gen) = 0 := by
-    rw [aeval_def, ← eval_map]
-    exact (mem_roots (map_monic_ne_zero (minpoly.monic pb.isIntegral_gen))).mp hy
-  exact ⟨pb.lift y hy0, Finset.mem_univ _, hpb ▸ pb.lift_gen y hy0⟩
-
 /-- **Newton-slope dictionary.** When `L = K(α)` is separable and `φ` splits over `M`, the finite
 Newton slopes of `ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α` are the negations of
 `conjugateBreaks K L M α`. -/
@@ -537,8 +514,8 @@ theorem newtonSlopes_ramificationPolynomial_eq_map_conjugateBreaks
       (realAddValuation L) (algebraMap L M) hepos realAddValuation_algebraMap,
     newtonSlopes_eq_map_roots (fun _ ↦ realAddValuation_eq_top_iff.mp)
       (splits_map_ramificationPolynomial α hsplit),
-    roots_map_ramificationPolynomial _ hα0, ← map_univ_algHom_eq_roots hφ hroot hgen,
-    Multiset.map_map, Multiset.filter_map, Multiset.map_map, conjugateBreaks_def,
+    roots_map_ramificationPolynomial_eq_map_algHom hφ hroot hgen,
+    Multiset.filter_map, Multiset.map_map, conjugateBreaks_def,
     Multiset.map_map, Multiset.map_map, Finset.filter_val]
   let pb : PowerBasis K L := PowerBasis.ofAdjoinSimpleEqTop (Algebra.IsIntegral.isIntegral α) hgen
   have hpb : pb.gen = α := PowerBasis.ofAdjoinSimpleEqTop_gen _ hgen

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Different.AlgEquiv
 public import TauCeti.NumberTheory.LocalField.Different.Wild
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
+import TauCeti.NumberTheory.LocalField.Different.Tower
 
 /-!
 # The height and the mean of an extension of local fields
@@ -30,9 +31,10 @@ Since `c = f · d(L/K)` for the different exponent `d(L/K)`
 ramified extension, `IntermediateField.wildExponent`, to every finite separable extension
 (`IntermediateField.wildExponent_eq_height`). It vanishes exactly in the tame case, is bounded by
 `v_L(e)` when `e` is nonzero in `L` (the upper half of Dedekind's different theorem), and both the
-height and the mean are invariants of the `K`-isomorphism class that are unchanged by passing to
-the top step `M/L` of a tower `M/L/K` with `L/K` unramified, in particular to the totally ramified
-top step `L/L₀` of the canonical tower `K ⊆ L₀ ⊆ L`.
+height and the mean are invariants of the `K`-isomorphism class that satisfy the tower laws
+`H(M/K) = H(M/L) + e(M/L) · H(L/K)` and `m(M/K) = m(L/K) + m(M/L) / e(L/K)`; in particular they
+are unchanged by passing to the top step `M/L` of a tower `M/L/K` with `L/K` unramified, such as
+the totally ramified top step `L/L₀` of the canonical tower `K ⊆ L₀ ⊆ L`.
 
 ## Main definitions
 
@@ -46,18 +48,21 @@ top step `L/L₀` of the canonical tower `K ⊆ L₀ ⊆ L`.
   `H + e = d + 1`.
 * `TauCeti.discriminantExponent_eq_inertiaDegree_mul_add_height`: `c = f (e - 1) + f H`, and
   its rational form `TauCeti.natCast_height`, `H = c / f - e + 1` in `ℚ`.
+* `TauCeti.IsTotallyRamified.height_eq`: `H = c + 1 - [L : K]` for totally ramified `L/K`.
 * `TauCeti.height_eq_zero_iff`: the height vanishes exactly for tamely ramified extensions.
 * `TauCeti.height_le_natCastValuation`: `H ≤ v_L(e)` when `e` is nonzero in `L`.
 * `TauCeti.height_eq_of_algEquiv`: the height is a `K`-isomorphism invariant.
-* `TauCeti.IsUnramified.height_tower_eq` and `TauCeti.height_unramifiedExtension_inertiaDegree`:
-  over an unramified base the height is that of the top step, in particular of the totally
-  ramified top step of the canonical tower.
+* `TauCeti.height_tower`, `TauCeti.IsTamelyRamified.height_tower_eq`,
+  `TauCeti.IsUnramified.height_tower_eq`, and `TauCeti.height_unramifiedExtension_inertiaDegree`:
+  the tower law `H(M/K) = H(M/L) + e(M/L) · H(L/K)` and invariance over tame or unramified bases,
+  in particular over the maximal unramified subextension.
 * `TauCeti.ramificationIndex_mul_mean` and
   `TauCeti.natCast_discriminantExponent_eq_inertiaDegree_mul_mean`: `e m = H` and
   `c = f (e - 1 + e m)`.
 * `TauCeti.mean_eq_zero_iff`, `TauCeti.mean_le_natCastValuation`, `TauCeti.mean_eq_of_algEquiv`,
+  `TauCeti.mean_tower`, `TauCeti.IsTamelyRamified.mean_tower_eq`,
   `TauCeti.IsUnramified.mean_tower_eq` and `TauCeti.mean_unramifiedExtension_inertiaDegree`: the
-  corresponding facts for the mean, the bound reading `m ≤ v_K(e)`.
+  corresponding facts and tower laws for the mean, the bound reading `m ≤ v_K(e)`.
 
 ## References
 
@@ -74,7 +79,10 @@ namespace TauCeti
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-  [Algebra.IsSeparable K L]
+
+section SingleExtension
+
+variable [Algebra.IsSeparable K L]
 
 /-- The **height** `H(L/K) = c / f + 1 - e` of a separable extension `L/K` of nonarchimedean
 local fields, where `c` is the discriminant exponent, `f` the inertia degree and `e` the
@@ -123,6 +131,13 @@ theorem discriminantExponent_eq_inertiaDegree_mul_add_height :
   rw [discriminantExponent_eq_inertiaDegree_mul_differentExponent,
     differentExponent_eq_ramificationIndex_sub_one_add_height, Nat.mul_add]
 
+variable {K L} in
+/-- For a totally ramified separable extension, the height is `c + 1 - [L : K]`. -/
+theorem IsTotallyRamified.height_eq (h : IsTotallyRamified K L) :
+    height K L = discriminantExponent K L + 1 - Module.finrank K L := by
+  rw [height_def, h.inertiaDegree_eq_one, Nat.div_one,
+    (isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 h]
+
 /-- The height in `ℚ`, without division in `ℕ` or truncated subtraction:
 `H(L/K) = c / f - e + 1`. -/
 theorem natCast_height :
@@ -146,6 +161,16 @@ theorem height_eq_zero_iff : height K L = 0 ↔ IsTamelyRamified K L := by
 /-- The height is positive exactly in the wild case. -/
 theorem height_pos_iff : 0 < height K L ↔ IsWildlyRamified K L := by
   rw [Nat.pos_iff_ne_zero, ne_eq, height_eq_zero_iff, not_isTamelyRamified_iff]
+
+variable {K L} in
+/-- A tamely ramified extension has height `0`. -/
+theorem IsTamelyRamified.height_eq_zero (h : IsTamelyRamified K L) : height K L = 0 :=
+  (height_eq_zero_iff K L).2 h
+
+/-- An unramified extension has height `0`. -/
+@[simp]
+theorem IsUnramified.height_eq_zero [IsUnramified K L] : height K L = 0 :=
+  (IsUnramified.isTamelyRamified K L).height_eq_zero
 
 /-- **The wild upper bound on the height**: if the ramification index `e` is nonzero in `L`, then
 `H(L/K) ≤ v_L(e)`. This is the upper half `d(L/K) ≤ e - 1 + v_L(e)` of Dedekind's different
@@ -205,6 +230,16 @@ theorem mean_eq_zero_iff : mean K L = 0 ↔ IsTamelyRamified K L := by
 theorem mean_pos_iff : 0 < mean K L ↔ IsWildlyRamified K L := by
   rw [(mean_nonneg K L).lt_iff_ne', ne_eq, mean_eq_zero_iff, not_isTamelyRamified_iff]
 
+variable {K L} in
+/-- A tamely ramified extension has mean `0`. -/
+theorem IsTamelyRamified.mean_eq_zero (h : IsTamelyRamified K L) : mean K L = 0 :=
+  (mean_eq_zero_iff K L).2 h
+
+/-- An unramified extension has mean `0`. -/
+@[simp]
+theorem IsUnramified.mean_eq_zero [IsUnramified K L] : mean K L = 0 :=
+  (IsUnramified.isTamelyRamified K L).mean_eq_zero
+
 /-- **The wild upper bound on the mean**: if the ramification index `e` is nonzero in `K`, then
 `m(L/K) ≤ v_K(e)`. Over `ℚ_p` the bound is `v_p(e)`, the exponent of the wild ramification
 index. -/
@@ -225,37 +260,96 @@ theorem mean_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M] [TopologicalS
     mean K L = mean K M := by
   rw [mean_def, mean_def, height_eq_of_algEquiv K L M e, ramificationIndex_eq_of_algEquiv K L M e]
 
+end SingleExtension
+
 section Tower
 
 variable (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
   [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
   [ValuativeExtension L M] [ValuativeExtension K M] [Algebra.IsSeparable K M]
 
-omit [Algebra.IsSeparable K L] in
+/-- **Transitivity of height in towers**: in a separable tower `M/L/K` of nonarchimedean local
+fields, `H(M/K) = H(M/L) + e(M/L) · H(L/K)`. -/
+theorem height_tower :
+    haveI := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+    haveI := Algebra.isSeparable_tower_top_of_isSeparable K L M
+    height K M = height L M + ramificationIndex L M * height K L := by
+  have := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+  have := Algebra.isSeparable_tower_top_of_isSeparable K L M
+  have heKL : 1 ≤ ramificationIndex K L := ramificationIndex_pos (K := K) (L := L)
+  have heLM : 1 ≤ ramificationIndex L M := ramificationIndex_pos (K := L) (L := M)
+  have heKM : 1 ≤ ramificationIndex K L * ramificationIndex L M := Nat.mul_pos heKL heLM
+  have hd : differentExponent K M =
+      differentExponent L M + ramificationIndex L M * differentExponent K L :=
+    differentExponent_tower K L M
+  rw [differentExponent_eq_ramificationIndex_sub_one_add_height K M,
+    differentExponent_eq_ramificationIndex_sub_one_add_height L M,
+    differentExponent_eq_ramificationIndex_sub_one_add_height K L,
+    ramificationIndex_tower (K := K) (L := L) M] at hd
+  zify [heKL, heLM, heKM] at hd ⊢
+  linarith
+
+/-- **Transitivity of mean in towers**: in a separable tower `M/L/K` of nonarchimedean local
+fields, `m(M/K) = m(L/K) + m(M/L) / e(L/K)`. -/
+theorem mean_tower :
+    haveI := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+    haveI := Algebra.isSeparable_tower_top_of_isSeparable K L M
+    mean K M = mean K L + mean L M / ramificationIndex K L := by
+  have := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+  have := Algebra.isSeparable_tower_top_of_isSeparable K L M
+  have heKL : (ramificationIndex K L : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (ramificationIndex_pos (K := K) (L := L)).ne'
+  have heLM : (ramificationIndex L M : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (ramificationIndex_pos (K := L) (L := M)).ne'
+  rw [mean_def, mean_def, mean_def, height_tower K L M,
+    ramificationIndex_tower (K := K) (L := L) M]
+  push_cast
+  field_simp
+  ring
+
+variable {K L} in
+/-- **The height over a tamely ramified base.** In a separable tower `M/L/K` with `L/K` tamely
+ramified, `H(M/L) = H(M/K)`. -/
+theorem IsTamelyRamified.height_tower_eq (h : IsTamelyRamified K L) :
+    haveI := Algebra.isSeparable_tower_top_of_isSeparable K L M
+    height L M = height K M := by
+  have := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+  have := Algebra.isSeparable_tower_top_of_isSeparable K L M
+  rw [height_tower K L M, h.height_eq_zero, mul_zero, add_zero]
+
+variable {L M} in
+/-- **The mean under a tamely ramified top step.** In a separable tower `M/L/K` with `M/L` tamely
+ramified, `m(M/K) = m(L/K)`. -/
+theorem IsTamelyRamified.mean_tower_eq (h : IsTamelyRamified L M) :
+    haveI := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+    mean K M = mean K L := by
+  have := Algebra.isSeparable_tower_bot_of_isSeparable K L M
+  have := Algebra.isSeparable_tower_top_of_isSeparable K L M
+  rw [mean_tower K L M, h.mean_eq_zero, zero_div, add_zero]
+
 /-- **The height over an unramified base.** In a tower `M/L/K` with `L/K` unramified,
 `H(M/L) = H(M/K)`. -/
 theorem IsUnramified.height_tower_eq [IsUnramified K L] :
     haveI := Algebra.isSeparable_tower_top_of_isSeparable K L M
-    height L M = height K M := by
-  have := Algebra.isSeparable_tower_top_of_isSeparable K L M
-  rw [height_eq_differentExponent_add_one_sub, height_eq_differentExponent_add_one_sub,
-    IsUnramified.ramificationIndex_tower_eq K L M, ← IsUnramified.differentExponent_tower_eq K L M]
+    height L M = height K M :=
+  (IsUnramified.isTamelyRamified K L).height_tower_eq M
 
-omit [Algebra.IsSeparable K L] in
 /-- **The mean over an unramified base.** In a tower `M/L/K` with `L/K` unramified,
 `m(M/L) = m(M/K)`. -/
 theorem IsUnramified.mean_tower_eq [IsUnramified K L] :
     haveI := Algebra.isSeparable_tower_top_of_isSeparable K L M
     mean L M = mean K M := by
+  have := Algebra.isSeparable_tower_bot_of_isSeparable K L M
   have := Algebra.isSeparable_tower_top_of_isSeparable K L M
-  rw [mean_def, mean_def, IsUnramified.height_tower_eq K L M,
-    IsUnramified.ramificationIndex_tower_eq K L M]
+  rw [mean_tower K L M, IsUnramified.mean_eq_zero K L,
+    IsUnramified.ramificationIndex_eq_one (K := K) (L := L), Nat.cast_one, div_one, zero_add]
 
 end Tower
 
 section TotallyRamified
 
-variable [ValuativeRel (unramifiedExtension K L (inertiaDegree K L))]
+variable [Algebra.IsSeparable K L]
+  [ValuativeRel (unramifiedExtension K L (inertiaDegree K L))]
   [TopologicalSpace (unramifiedExtension K L (inertiaDegree K L))]
   [IsNonarchimedeanLocalField (unramifiedExtension K L (inertiaDegree K L))]
   [ValuativeExtension K (unramifiedExtension K L (inertiaDegree K L))]

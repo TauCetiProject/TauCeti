@@ -57,14 +57,9 @@ theorem natCast_differentExponent_eq_addVal_aeval_derivative_of_eisenstein_adjoi
     (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
     (hgen : K⟮(ξ : L)⟯ = ⊤) :
     (differentExponent K L : ℕ∞) = addVal 𝒪[L] (aeval ξ (derivative f)) := by
-  have : Module.Finite K L := finite_of_valuativeExtension K L
   have hlc : IsUnit f.leadingCoeff := hf.isUnit_leadingCoeff
-  have hassoc : Associated (minpoly 𝒪[K] ξ) f := hf.associated_minpoly hlc hroot
   have hscale : f = Polynomial.C f.leadingCoeff * minpoly 𝒪[K] ξ :=
-    Polynomial.eq_leadingCoeff_mul_of_monic_of_dvd_of_natDegree_le
-      (minpoly.monic (IsIntegral.of_finite 𝒪[K] ξ)) hassoc.dvd
-      (Polynomial.natDegree_le_natDegree
-        (Polynomial.degree_eq_degree_of_associated hassoc).symm.le)
+    hf.eq_C_leadingCoeff_mul_minpoly hlc hroot
   calc
     (differentExponent K L : ℕ∞) =
         addVal 𝒪[L] (aeval ξ (derivative (minpoly 𝒪[K] ξ))) :=

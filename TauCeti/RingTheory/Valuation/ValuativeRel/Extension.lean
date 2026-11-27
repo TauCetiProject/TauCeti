@@ -13,6 +13,7 @@ public import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Valuation extensions from valuative relations
@@ -46,6 +47,10 @@ the two valuative topologies.
 * `TauCeti.algebraMap_integerRing_dvd_iff`: the map of valuation rings reflects divisibility.
 * `TauCeti.aroots_eq_map_roots_integerRing`: the roots in `L` of a monic polynomial over the
   valuation ring of `K` are its roots in the valuation ring of `L`.
+* `TauCeti.mem_integer_of_isUnit_leadingCoeff_of_isRoot` and
+  `TauCeti.isRoot_map_integerRing_iff`: any root in `L` of a polynomial over the valuation ring of
+  `K` with unit leading coefficient lies in the valuation ring of `L`, where root membership over
+  the valuation rings and over the fields coincide.
 * `ValuativeExtension.valuation_algebraMap_le_one_iff` and
   `ValuativeExtension.valuation_algebraMap_lt_one_iff`: a compatible extension preserves and
   reflects `valuation · ≤ 1` and `valuation · < 1`.
@@ -173,6 +178,32 @@ theorem aroots_eq_map_roots_integerRing {p : 𝒪ᵥ[K][X]} (hp : p.Monic) :
   have hv := Valuation.integer.integers (valuation L)
   exact RingHom.mem_range.2 <| hv.exists_of_le_one <| hv.isIntegral_iff_v_le_one.1 <|
     roots_mem_integralClosure (hp.map _) (by rwa [aroots_def])
+
+open Polynomial in
+/-- Any root `α : L` of a polynomial `φ : 𝒪ᵥ[K][X]` with unit leading coefficient lies in `𝒪ᵥ[L]`.
+-/
+theorem mem_integer_of_isUnit_leadingCoeff_of_isRoot {φ : 𝒪ᵥ[K][X]}
+    (hlc : IsUnit φ.leadingCoeff) {α : L}
+    (hroot : ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot α) :
+    α ∈ 𝒪ᵥ[L] := by
+  have hInt : IsIntegral 𝒪ᵥ[K] α :=
+    IsIntegral.of_isUnit_leadingCoeff hlc (by
+      rw [aeval_def, eval₂_eq_eval_map, IsScalarTower.algebraMap_eq 𝒪ᵥ[K] K L, ← Polynomial.map_map]
+      exact hroot.eq_zero)
+  exact (Valuation.mem_integer_iff (valuation L) α).mpr
+    ((Valuation.integer.integers (valuation L)).isIntegral_iff_v_le_one.mp hInt.tower_top)
+
+open Polynomial in
+/-- An integral element `ξ : 𝒪ᵥ[L]` is a root of `φ : 𝒪ᵥ[K][X]` over `𝒪ᵥ[L]` if and only if
+`(ξ : L)` is a root of `φ` mapped to `L[X]`. -/
+theorem isRoot_map_integerRing_iff {φ : 𝒪ᵥ[K][X]} {ξ : 𝒪ᵥ[L]} :
+    (φ.map (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L])).IsRoot ξ ↔
+      ((φ.map (algebraMap 𝒪ᵥ[K] K)).map (algebraMap K L)).IsRoot (ξ : L) := by
+  have hξ : (ξ : L) = algebraMap 𝒪ᵥ[L] L ξ :=
+    (Algebra.algebraMap_ofSubsemiring_apply 𝒪ᵥ[L] ξ).symm
+  rw [IsRoot.def, IsRoot.def, Polynomial.map_map, hξ, ← algebraMap_comp_algebraMap_integerRing,
+    ← Polynomial.map_map, eval_map_apply,
+    map_eq_zero_iff (algebraMap 𝒪ᵥ[L] L) (FaithfulSMul.algebraMap_injective 𝒪ᵥ[L] L)]
 
 end TauCeti
 

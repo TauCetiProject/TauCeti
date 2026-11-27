@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Eisenstein polynomials over local rings
@@ -17,6 +19,8 @@ Over a local ring, an Eisenstein polynomial at the maximal ideal has a unit lead
 
 * `Polynomial.IsEisensteinAt.exists_monic_aeval_eq_zero`: an Eisenstein polynomial can be scaled by
   a unit to a monic Eisenstein polynomial of the same degree with the same roots.
+* `Polynomial.IsEisensteinAt.isIntegral`: any root of an Eisenstein polynomial at the maximal ideal
+  of a local ring is integral over that ring.
 -/
 
 public section
@@ -46,5 +50,12 @@ theorem exists_monic_aeval_eq_zero (hf : f.IsEisensteinAt (maximalIdeal R)) (hx 
     exact Ideal.mul_mem_left _ _ (hf.mem (hdeg ▸ hn))
   · have := Ideal.mul_mem_left _ (u : R) h
     rwa [coeff_C_mul, ← mul_assoc, Units.mul_inv, one_mul] at this
+
+/-- Any root of an Eisenstein polynomial at the maximal ideal of a local ring is integral over that
+ring, since its leading coefficient is a unit. -/
+theorem isIntegral {R : Type*} [CommRing R] [IsLocalRing R] {S : Type*} [Ring S] [Algebra R S]
+    {f : R[X]} (hf : f.IsEisensteinAt (maximalIdeal R)) {x : S} (hx : aeval x f = 0) :
+    IsIntegral R x :=
+  IsIntegral.of_isUnit_leadingCoeff (notMem_maximalIdeal.mp hf.leading) hx
 
 end Polynomial.IsEisensteinAt

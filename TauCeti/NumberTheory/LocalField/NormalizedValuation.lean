@@ -39,6 +39,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
 * `TauCeti.normalizedValuation`: the normalized valuation `v_K^×` of a nonarchimedean local
   field, as a homomorphism from the unit group to `Multiplicative ℤ`.
 * `TauCeti.normalizedValuationWithZero`: its zero-preserving extension to all of the field.
+* `TauCeti.intValuation`: the multiplicative `ℤᵐ⁰`-valued `Valuation K ℤᵐ⁰` obtained by
+  transporting `ValuativeRel.valuation K` along `valueGroupWithZeroIsoInt K`.
 * `TauCeti.normalizedValuationMod`: the normalized valuation reduced modulo `n`, as an additive
   homomorphism `Additive Kˣ →+ ZMod n`.
 * `TauCeti.normalizedAbsoluteValue`: the normalized `ℚ≥0`-valued absolute value associated to
@@ -46,9 +48,11 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
 
 ## Main results
 
-* `TauCeti.toAdd_normalizedValuation_eq_neg_log`: the translation between the multiplicative
-  convention of `ValuativeRel.valuation` and the additive normalization.
-* `TauCeti.normalizedValuation_surjective`: the normalized value group is all of `ℤ`.
+* `TauCeti.toAdd_normalizedValuation_eq_neg_log` and `TauCeti.toAdd_normalizedValuation_eq_ord`:
+  the translation between the multiplicative convention of `ValuativeRel.valuation` (and
+  `Valuation.ord (intValuation K)`) and the additive normalization.
+* `TauCeti.intValuation_surjective` and `TauCeti.normalizedValuation_surjective`: surjectivity of
+  `intValuation K` onto `ℤᵐ⁰` and of the normalized value group onto `ℤ`.
 * `TauCeti.normalizedValuationMod_surjective`: every residue modulo `n` is the normalized
   valuation of a unit.
 * `TauCeti.normalizedValuation_irreducible`: an irreducible element of `𝒪[K]` has normalized
@@ -131,17 +135,28 @@ def normalizedValuationWithZero : K →*₀ ℤᵐ⁰ :=
     ((valueGroupWithZeroIsoInt K).toMonoidWithZeroHom.comp
       (valuation K).toMonoidWithZeroHom)
 
-private noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
+variable (K) in
+/-- The multiplicative valuation of a nonarchimedean local field `K` transported along
+`valueGroupWithZeroIsoInt K` to `ℤᵐ⁰`. -/
+noncomputable def intValuation : Valuation K ℤᵐ⁰ :=
   (valuation K).map (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰)
 
-private theorem intValuation_surjective : Function.Surjective (intValuation (K := K)) := by
+variable (K) in
+/-- The defining formula for `intValuation K`. -/
+theorem intValuation_def :
+    intValuation K =
+      (valuation K).map (valueGroupWithZeroIsoInt K : ValueGroupWithZero K →*₀o ℤᵐ⁰) :=
+  (rfl)
+
+/-- The `ℤᵐ⁰`-valued multiplicative valuation `intValuation K` is surjective. -/
+theorem intValuation_surjective : Function.Surjective (intValuation K) := by
   intro z
   obtain ⟨x, hx⟩ := ValuativeRel.valuation_surjective ((valueGroupWithZeroIsoInt K).symm z)
   refine ⟨x, ?_⟩
   simp [intValuation, hx]
 
 private theorem intValuation_valuationSubring :
-    (intValuation (K := K)).valuationSubring.toSubring = 𝒪[K] := by
+    (intValuation K).valuationSubring.toSubring = 𝒪[K] := by
   ext x
   -- Unfold mapped-valuation membership to expose the comparison transported by the order
   -- isomorphism; the valuation-subring API has no lemma stating this composite equality.
@@ -151,9 +166,9 @@ private theorem intValuation_valuationSubring :
       (a := valuation K x) (b := 1))
 
 private theorem intValuation_eq_maximalIdeal_valuation :
-    intValuation (K := K) = (IsDiscreteValuationRing.maximalIdeal 𝒪[K]).valuation K := by
-  have hv : Function.Surjective (intValuation (K := K)) := intValuation_surjective
-  have : IsDiscreteValuationRing (intValuation (K := K)).valuationSubring :=
+    intValuation K = (IsDiscreteValuationRing.maximalIdeal 𝒪[K]).valuation K := by
+  have hv : Function.Surjective (intValuation K) := intValuation_surjective
+  have : IsDiscreteValuationRing (intValuation K).valuationSubring :=
     Valuation.valuationSubring_isDiscreteValuationRing_of_surjective _ hv
   -- Both valuations are surjective and normalized, so it is enough to see that they have the
   -- same valuation subring, namely `𝒪[K]`.
@@ -161,7 +176,7 @@ private theorem intValuation_eq_maximalIdeal_valuation :
     (IsDedekindDomain.HeightOneSpectrum.valuation_surjective K _)
     ((Valuation.isEquiv_iff_valuationSubring ..).mpr ?_)
   refine ValuationSubring.eq_of_le_of_ne_top
-    (A := (intValuation (K := K)).valuationSubring) ?_ ?_
+    (A := (intValuation K).valuationSubring) ?_ ?_
   · intro x hx
     have hx' : x ∈ 𝒪[K] := by rwa [← intValuation_valuationSubring]
     exact IsDedekindDomain.HeightOneSpectrum.valuation_le_one
@@ -197,7 +212,7 @@ theorem _root_.Valuation.normalizedValuationWithZero_eq_inv_of_surjective
     (v : Valuation K ℤᵐ⁰) [v.Compatible]
     (hv : Function.Surjective v) (x : K) :
     normalizedValuationWithZero K x = (v x)⁻¹ := by
-  have h : intValuation (K := K) x = v x :=
+  have h : intValuation K x = v x :=
     DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective intValuation_surjective hv
       ((Valuation.isEquiv_map_self_of_strictMono _
           (EquivLike.injective (valueGroupWithZeroIsoInt K))).trans
@@ -213,8 +228,9 @@ theorem toAdd_normalizedValuation_eq_neg_log (x : Kˣ) :
       = -WithZero.log (valueGroupWithZeroIsoInt K (valuation K (x : K))) := by
   simp [normalizedValuation, ← WithZero.toAdd_unzero_eq_log]
 
-private theorem toAdd_normalizedValuation_eq_ord (x : Kˣ) :
-    (normalizedValuation K x).toAdd = Valuation.ord (intValuation (K := K)) (x : K) := by
+/-- On `Kˣ`, the additive normalized valuation agrees with `Valuation.ord (intValuation K)`. -/
+theorem toAdd_normalizedValuation_eq_ord (x : Kˣ) :
+    (normalizedValuation K x).toAdd = Valuation.ord (intValuation K) (x : K) := by
   rw [toAdd_normalizedValuation_eq_neg_log, Valuation.ord_def]
   -- Both sides now unfold to the logarithm of the transported valuation; there is no named
   -- bridge between these two nested homomorphism presentations.
@@ -230,16 +246,16 @@ theorem valueGroupWithZeroIsoInt_valuation (x : Kˣ) :
     valueGroupWithZeroIsoInt K (valuation K (x : K))
       = WithZero.exp (-(normalizedValuation K x).toAdd) := by
   rw [toAdd_normalizedValuation_eq_ord]
-  exact Valuation.valuation_eq_exp_neg_ord (intValuation (K := K))
-    ((intValuation (K := K)).ne_zero_iff.mpr x.ne_zero)
+  exact Valuation.valuation_eq_exp_neg_ord (intValuation K)
+    ((intValuation K).ne_zero_iff.mpr x.ne_zero)
 
 /-- The normalized valuation vanishes exactly on the elements of valuation `1`. -/
 @[simp]
 theorem normalizedValuation_eq_one_iff (x : Kˣ) :
     normalizedValuation K x = 1 ↔ valuation K (x : K) = 1 := by
   rw [← toAdd_eq_zero, toAdd_normalizedValuation_eq_ord,
-    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation (K := K))
-      ((intValuation (K := K)).ne_zero_iff.mpr x.ne_zero)]
+    Valuation.ord_eq_iff_valuation_eq_exp_neg (intValuation K)
+      ((intValuation K).ne_zero_iff.mpr x.ne_zero)]
   simp [intValuation]
 
 /-- The normalized valuation vanishes on every root of unity: `Multiplicative ℤ` is torsion
@@ -334,14 +350,14 @@ theorem mem_integer_iff_toAdd_normalizedValuation_nonneg (x : Kˣ) :
   simp only [map_one]
   -- Unfold the mapped valuation and its valuation-subring membership so that the generic
   -- order characterization applies; the API does not expose this as a rewrite lemma.
-  change intValuation (K := K) (x : K) ≤ 1 ↔
-    0 ≤ Valuation.ord (intValuation (K := K)) (x : K)
-  exact Valuation.mem_valuationSubring_iff_ord_nonneg (intValuation (K := K))
+  change intValuation K (x : K) ≤ 1 ↔
+    0 ≤ Valuation.ord (intValuation K) (x : K)
+  exact Valuation.mem_valuationSubring_iff_ord_nonneg (intValuation K)
 
 /-- The normalized value group of a nonarchimedean local field is all of `ℤ`. -/
 theorem normalizedValuation_surjective : Function.Surjective (normalizedValuation K) := by
   intro n
-  obtain ⟨x, hx⟩ := Valuation.ord_surjective (intValuation (K := K))
+  obtain ⟨x, hx⟩ := Valuation.ord_surjective (intValuation K)
     intValuation_surjective n.toAdd
   rcases eq_or_ne x 0 with rfl | hx0
   · have hn : n = 1 := by
@@ -494,11 +510,11 @@ variable (K) in
 For a nonzero element `x`, its value is `q ^ (-v_K(x))`, where
 `q = Nat.card 𝓀[K]` is the cardinality of the residue field. -/
 noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
-  (intValuation (K := K)).toAbsoluteValue
+  (intValuation K).toAbsoluteValue
     (WithZeroMulInt.toNNRat (one_lt_natCard_residueField (K := K)).ne_zero)
     (WithZeroMulInt.toNNRat_strictMono (one_lt_natCard_residueField (K := K))).monotone
     (fun _ ↦ map_eq_zero _)
-    (fun _ ↦ (intValuation (K := K)).zero_iff)
+    (fun _ ↦ (intValuation K).zero_iff)
 
 /-- The normalized absolute value is the rational power `q ^ (-v_K(x))` at every nonzero
 element, where `q` is the cardinality of the residue field. -/
