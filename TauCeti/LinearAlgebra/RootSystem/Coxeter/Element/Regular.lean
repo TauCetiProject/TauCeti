@@ -28,9 +28,10 @@ file proves Steinberg's theorem in three forms:
 1. **Complexified weight space (`ℂ ⊗[R] M`)**: over any characteristic-zero domain `R` with
    `[Algebra R ℂ]`, `c` has a regular `exp (2πi / h)`-eigenvector in `ℂ ⊗[R] M` with trivial Weyl
    stabilizer.
-2. **Algebraically closed fields `K` containing `ℝ`**: in `M` itself, `c` has a regular eigenvector
-   with trivial Weyl stabilizer whose eigenvalue `μ : K` is a primitive `h`-th root of unity; over
-   `ℂ`, the eigenvalue is `exp (2πi / h)`.
+2. **Fields `K` equipped with `φ : ℂ →+* K` and algebraically closed fields containing `ℝ`**: in
+   `M` itself, `c` has a regular eigenvector with trivial Weyl stabilizer whose eigenvalue is
+   `φ (exp (2πi / h))` (specializing to `exp (2πi / h)` over `ℂ` via `RingHom.id ℂ`, and to a
+   primitive `h`-th root of unity `μ : K` over any algebraically closed field containing `ℝ`).
 3. **Bipartite Coxeter element corollary**: specializing to
    `(weylCoxeterSystem P b).bipartiteCoxeterElement col`.
 
@@ -58,8 +59,6 @@ Weyl stabilizer.
   `φ : ℂ →+* K`, with trivial Weyl stabilizer.
 * `RootPairing.Base.exists_isRegularWeight_eigenvector_wordProd` / `_of_isFiniteType`:
   specialization to algebraically closed fields `K` containing `ℝ`.
-* `RootPairing.Base.exists_isRegularWeight_eigenvector_exp_two_pi_I_div_orderOf_wordProd` /
-  `_of_isFiniteType`: specialization to `ℂ` with explicit eigenvalue `exp (2πi / h)`.
 * `RootPairing.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot`:
   the bipartite Coxeter element has a regular eigenvector whose eigenvalue is a primitive root of
   unity of order equal to the order of the element.
@@ -295,36 +294,6 @@ theorem exists_isRegularWeight_eigenvector_wordProd [P.IsIrreducible] (b : P.Bas
 end AlgClosed
 
 end FieldRootSystem
-
-section Complex
-
-variable {ι M N : Type*} [AddCommGroup M] [Module ℂ M] [AddCommGroup N] [Module ℂ N]
-  {P : RootPairing ι ℂ M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
-
-/-- **Regular `exp (2πi / h)`-eigenvector in `M`** (Cartan-matrix form): over `ℂ`, the eigenvalue
-can be taken to be `exp (2πi / orderOf c)`. -/
-theorem exists_isRegularWeight_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType
-    [Nonempty ι] (b : P.Base) (hft : IsFiniteType b.cartanMatrix)
-    (hconn : (diagramGraph b.cartanMatrix).Preconnected)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    let c := wordProd P b l
-    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
-    ∃ v : M, v ≠ 0 ∧ c • v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
-      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ :=
-  b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType hft hconn hnd hall
-    (RingHom.id ℂ)
-
-/-- **Every Coxeter element of an irreducible finite complex crystallographic reduced root pairing
-has a regular `exp (2πi / h)`-eigenvector with trivial Weyl stabilizer.** -/
-theorem exists_isRegularWeight_eigenvector_exp_two_pi_I_div_orderOf_wordProd [P.IsIrreducible]
-    (b : P.Base) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    let c := wordProd P b l
-    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
-    ∃ v : M, v ≠ 0 ∧ c • v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
-      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ :=
-  b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom hnd hall (RingHom.id ℂ)
-
-end Complex
 
 end RootPairing.Base
 

@@ -44,6 +44,7 @@ import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
      (`card_quotient_sameCycle_weylGroupToPerm_wordProd`,
      `existsUnique_sameCycle_mem_inversions_wordProd`, `existsUnique_pow_mem_inversions_wordProd`,
      `natCard_eq_card_support_mul_orderOf_wordProd`,
+     `orderOf_wordProd_eq_natCard_div_card_support`,
      `two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd`,
      `ncard_posRoots_eq_card_support_mul_orderOf_wordProd_div_two`), plus `_of_isFiniteType` forms.
 
@@ -257,6 +258,16 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType :
         b.card_quotient_sameCycle_bipartite_of_isFiniteType hft hconn col,
         hu.choose_spec.orderOf_eq]
 
+/-- **Coxeter number as `h = |Φ| / r`** (Cartan-matrix form): when `b.cartanMatrix` is of finite
+type with preconnected Dynkin diagram, the order of any Coxeter element `wordProd P b l` equals
+`Nat.card ι / b.support.card`. -/
+theorem orderOf_wordProd_eq_natCard_div_card_support_of_isFiniteType [Nonempty ι] :
+    orderOf (wordProd P b l) = Nat.card ι / b.support.card := by
+  obtain ⟨j₀⟩ := ‹Nonempty ι›
+  obtain ⟨i, hi, _, _⟩ := exists_mem_support_weylGroupToPerm_eq b j₀
+  exact Nat.eq_div_of_mul_eq_right (Finset.card_pos.mpr ⟨i, hi⟩).ne'
+    (b.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType hft hconn hnd hall).symm
+
 /-- **Positive-root count formula `2 |Φ⁺| = r · h`** (Cartan-matrix form): when `b.cartanMatrix`
 is of finite type with preconnected Dynkin diagram, twice the number of positive roots equals
 `b.support.card * orderOf (wordProd P b l)`. -/
@@ -356,6 +367,15 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd :
       (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
   · have : IsEmpty ι := not_nonempty_iff.mp hne
     simp [Finset.eq_empty_iff_forall_notMem.mpr fun x _ ↦ IsEmpty.false x]
+
+/-- **Coxeter number as `h = |Φ| / r`**: for any nonempty irreducible finite crystallographic
+reduced root pairing and any Coxeter element `wordProd P b l`, the order of the Coxeter element
+equals `Nat.card ι / b.support.card`. -/
+theorem orderOf_wordProd_eq_natCard_div_card_support [Nonempty ι] :
+    orderOf (wordProd P b l) = Nat.card ι / b.support.card :=
+  have : NeZero (2 : R) := ⟨by norm_num⟩
+  b.orderOf_wordProd_eq_natCard_div_card_support_of_isFiniteType
+    (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
 
 /-- **Positive-root count formula `2 |Φ⁺| = r · h`** for an irreducible finite crystallographic
 reduced root pairing. -/
