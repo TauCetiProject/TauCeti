@@ -84,6 +84,8 @@ second factor, to the simplicial shuffle map, with the pair in the first factor.
 * `TopCat.isSplitMono_singularHomologyKunnethRel`, `TopCat.mono_singularHomologyCrossRel`: the
   relative Künneth map is a split monomorphism, and the relative cross product injective, when the
   cycles split off.
+* `TopCat.isIso_singularHomologyCrossRel_of_isZero`: the relative cross product is an isomorphism
+  when the cycles and the homology split off and the pair has relative homology in one degree only.
 
 ## References
 
@@ -511,6 +513,22 @@ instance mono_singularHomologyCrossRel (p q n : ℕ) (h : p + q = n) :
     Mono (singularHomologyCrossRel X Y B R S p q n h) :=
   have := isSplitMono_singularHomologyKunnethRel X Y B R S n
   ι_singularHomologyKunnethRel X Y B R S n p q h ▸ mono_comp _ _
+
+/-- **A relative cross product that is the whole relative Künneth map.** If the cycles and the
+homology of `C(X, B; R)` and `C(Y; S)` split off, for instance over a field, and `(X, B)` has no
+relative homology outside degree `p`, the relative cross product
+`Hₚ(X, B; R) ⊗ H_q(Y; S) ⟶ Hₙ(X × Y, fst⁻¹(B); R ⊗ S)` is an isomorphism: it is the summand
+`(p, q)` of the relative Künneth isomorphism, whose other summands vanish. -/
+theorem isIso_singularHomologyCrossRel_of_isZero
+    [∀ p, IsSplitEpi (((TopPair.ofSubset B).singularChainComplex R).homologyπ p)]
+    [∀ q, IsSplitEpi (((toSSet.obj Y).chainComplex S).homologyπ q)] (p q n : ℕ) (h : p + q = n)
+    (hB : ∀ a ≠ p, IsZero ((TopPair.ofSubset B).singularHomology R a)) :
+    IsIso (singularHomologyCrossRel X Y B R S p q n h) := by
+  have := GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left
+    (fun a ↦ (TopPair.ofSubset B).singularHomology R a)
+    (fun b ↦ ((singularHomologyFunctor _ b).obj S).obj Y) hB q n h
+  rw [← ι_singularHomologyKunnethRel]
+  infer_instance
 
 end Split
 
