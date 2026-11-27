@@ -72,9 +72,10 @@ sets forces the group to be locally compact
   hypotheses on the subgroup.
 * `Subgroup.measure_eq_inv_index`, `AddSubgroup.measure_eq_inv_index`: a left-invariant
   probability measure gives mass `n⁻¹` to a measurable subgroup of finite index `n`.
-* `Subgroup.relIndex_mul_measure_inf`, `Subgroup.measure_inf_eq_inv_relIndex`: for `K` compact and
-  `H` open in a topological group, `[K : H ∩ K] · μ(H ∩ K) = μ(K)` for a left-invariant `μ`, so
-  `μ(H ∩ K) = [K : H ∩ K]⁻¹` when `μ(K) = 1`.
+* `Subgroup.relIndex_mul_measure_inf`, `AddSubgroup.relIndex_mul_measure_inf`,
+  `Subgroup.measure_inf_eq_inv_relIndex`: for `K` compact and `H` open in a topological group,
+  `[K : H ∩ K] · μ(H ∩ K) = μ(K)` for a left-invariant `μ`, so `μ(H ∩ K) = [K : H ∩ K]⁻¹` when
+  `μ(K) = 1`.
 * `Measure.isMulLeftInvariant_volume_prod`, `Measure.isAddLeftInvariant_volume_prod`,
   `Measure.isMulRightInvariant_volume_prod`, `Measure.isAddRightInvariant_volume_prod`: the
   instances for the `volume` of a product of invariant measure spaces.
@@ -363,6 +364,9 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [T2Sp
 
 /-- For `K` compact, `H` open and `μ` left invariant, `[K : H ∩ K] · μ(H ∩ K) = μ(K)`: the cosets of
 `H ∩ K` in `K`, all of the same measure, partition `K`. -/
+@[to_additive AddSubgroup.relIndex_mul_measure_inf /-- For `K` compact, `H` open and `μ` left
+invariant in an additive topological group, `[K : H ∩ K] · μ(H ∩ K) = μ(K)`: the cosets of `H ∩ K`
+in `K`, all of the same measure, partition `K`. -/]
 theorem Subgroup.relIndex_mul_measure_inf (hK : IsCompact (K : Set G)) (hH : IsOpen (H : Set G))
     (μ : Measure G) [μ.IsMulLeftInvariant] :
     H.relIndex K * μ (H ⊓ K : Subgroup G) = μ K := by
