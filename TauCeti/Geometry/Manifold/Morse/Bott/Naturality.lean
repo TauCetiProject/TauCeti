@@ -495,20 +495,15 @@ theorem continuous_negativeNormalSpaceEquivOfComp_symm
   let := subbundleTopology P' (F' := F'') (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
   -- Both total spaces carry the topology induced from the ambient normal bundle, whatever their
   -- model fibre, so the map for `F''` is continuous because the one for `Fin r → ℝ` is.
-  have hj : Continuous fun v : TotalSpace F''
-      (fun s ↦ h'.negativeNormalSpace hn' g'.toRiemannianMetric s) ↦
-      (⟨v.proj, v.snd⟩ : TotalSpace (Fin r → ℝ)
-        fun s ↦ h'.negativeNormalSpace hn' g'.toRiemannianMetric s) :=
-    (isEmbedding_totalSpace_subbundle P' (Fin r → ℝ)
-      (h'.negativeNormalSpace hn' g'.toRiemannianMetric)).isInducing.continuous_iff.2
-        ((isEmbedding_totalSpace_subbundle P' F''
-          (h'.negativeNormalSpace hn' g'.toRiemannianMetric)).continuous.congr fun _ ↦ rfl)
   have hφ := (h.contMDiff_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim
     hdim' g g' hr).continuous
-  refine (isEmbedding_totalSpace_subbundle P F''
-    (h.negativeNormalSpace hn g.toRiemannianMetric)).isInducing.continuous_iff.2 ?_
-  exact (((isEmbedding_totalSpace_subbundle P (Fin r → ℝ)
-    (h.negativeNormalSpace hn g.toRiemannianMetric)).continuous.comp hφ).comp hj).congr fun _ ↦ rfl
+  exact ((subbundleTotalSpaceModelHomeomorph P (Fin r → ℝ) F''
+    (h.negativeNormalSpace hn g.toRiemannianMetric)).continuous.comp
+      (hφ.comp (subbundleTotalSpaceModelHomeomorph P' F'' (Fin r → ℝ)
+        (h'.negativeNormalSpace hn' g'.toRiemannianMetric)).continuous)).congr
+    fun v ↦ by
+      rw [Function.comp_apply, Function.comp_apply, subbundleTotalSpaceModelHomeomorph_apply,
+        subbundleTotalSpaceModelHomeomorph_apply]
 
 /-- **The negative normal bundles along a map are orientable together.** In the setting of
 `contMDiff_negativeNormalSpaceEquivOfComp`, the negative normal bundle of `i` relative to `g` is
@@ -688,8 +683,8 @@ def negativeNormalSpaceSignLocalSystemIsoOfComp
       g'.toRiemannianMetric ((hσ (i s)).of_le le_add_self) (hσs s)).toContinuousLinearEquiv.symm)
     (finrank_fintype_fun_eq_card ℝ).symm (finrank_fintype_fun_eq_card ℝ).symm
     (h.continuous_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim
-      hdim' g g' (r := Fintype.card κ) fun s ↦ by
-        rw [← h'.finrank_negativeNormalSpace hn' g'.toRiemannianMetric, hV'.finrank_eq])
+      hdim' g g' (h'.manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames hn'
+        g'.toRiemannianMetric hV'))
 
 /-- The isomorphism of orientation local systems of the negative normal bundles along a map is the
 one induced by the inverses of the fibrewise isomorphisms `negativeNormalSpaceEquivOfComp`
@@ -748,8 +743,8 @@ theorem negativeNormalSpaceSignLocalSystemIsoOfComp_def
             (hσs s)).toContinuousLinearEquiv.symm)
         (finrank_fintype_fun_eq_card ℝ).symm (finrank_fintype_fun_eq_card ℝ).symm
         (h.continuous_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim
-          hdim' g g' (r := Fintype.card κ) fun s ↦ by
-            rw [← h'.finrank_negativeNormalSpace hn' g'.toRiemannianMetric, hV'.finrank_eq]) :=
+          hdim' g g' (h'.manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames hn'
+            g'.toRiemannianMetric hV')) :=
   (rfl)
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

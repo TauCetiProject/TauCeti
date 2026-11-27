@@ -47,10 +47,10 @@ function exactly when the family `i = σ⁻¹ ∘ i'`, with the same pieces, exh
 families agree (`TauCeti.IsMorseBottFamily.morseBottCount_comp_diffeomorph`).
 
 The twisted homology of the pieces, which they contribute to the first page of the critical-band
-spectral sequence over every ring, is invariant as well. The contribution of a piece is its
-homology with coefficients in the orientation local system `o(ν⁻)` of its negative normal bundle.
-The differential of `σ` identifies the negative normal bundle of a piece of `f ∘ σ` with that of
-the corresponding piece of `f`
+spectral sequence over every commutative ring, `ℤ` included, is invariant as well. The
+contribution of a piece is its homology with coefficients in the orientation local system `o(ν⁻)`
+of its negative normal bundle. The differential of `σ` identifies the negative normal bundle of a
+piece of `f ∘ σ` with that of the corresponding piece of `f`
 (`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquivOfComp`),
 whatever fibre metrics and local frames define them, so their orientation local systems are
 isomorphic, and so are the twisted homologies of the piece with these coefficients, over every
@@ -273,7 +273,7 @@ end TauCeti
 
 The manifolds, their models and the pieces lie in one universe, as in the twisted identification
 across a critical level; the coefficient ring of the twisted homology may lie in any universe, and
-the twisted Betti numbers take a coefficient field in that same universe. -/
+the twisted Betti numbers take a coefficient field in the universe `u` of the manifolds. -/
 
 open Bundle CategoryTheory Module TauCeti.VectorBundleOrientationCover
   TauCeti.LocalCoefficientSystem
@@ -336,7 +336,8 @@ every degree `k`, this is the isomorphism `Hₖ(S j; o(ν⁻ j) ⊗ R) ≅ Hₖ(
 by the isomorphism of orientation local systems that `dσ` gives on the negative normal bundles
 (`negativeNormalSpaceSignLocalSystemIsoOfComp`, in the namespace
 `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`). The metrics `g` and `g'` need not
-correspond under `σ`. These groups are the contributions of the pieces to the first page of the
+correspond under `σ`. When `R` is commutative and `R` and `κ j` lie in the universe of the
+manifolds, these groups are the contributions of the pieces to the first page of the
 critical-band spectral sequence over `R`
 (`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`, in the
 namespace `TauCeti.IsMorseBottFamily`), so over `ℤ` they carry torsion, such as `ℤ/2` for a
