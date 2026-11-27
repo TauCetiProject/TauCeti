@@ -59,7 +59,7 @@ theorem IsHomogeneous.exists_dvd_isHomogeneous_not_sq_dvd {F : MvPolynomial (Fin
       ∀ a b : L, (a, b) ≠ (0, 0) → ¬(C a * X 0 + C b * X 1) ^ 2 ∣ G.map (Int.castRingHom L) := by
   set f : ℤ[X] := MvPolynomial.aeval ![Polynomial.X, 1] F
   set φ := Int.castRingHom L
-  have hfd : f.natDegree ≤ d := hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp
+  have hfd : f.natDegree ≤ d := hF.natDegree_aeval_X_one_le
   have hFf : f.homogenize d = F := homogenize_eq_of_isHomogeneous hF rfl
   -- The radical `g` of `f` in `ℤ[X]` divides `f`, and is separable over `ℚ`, hence over `L`.
   set g : ℤ[X] := radical f
