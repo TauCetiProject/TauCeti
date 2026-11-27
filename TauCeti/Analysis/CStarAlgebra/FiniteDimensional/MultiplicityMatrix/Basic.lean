@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Star.StarAlgHom
 import Mathlib.Data.Matrix.Block
 import TauCeti.Algebra.GroupWithZero.Pi
 import TauCeti.Algebra.Lie.GeneralLinear.Embedding
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.LinearAlgebra.Matrix.Submatrix
 import TauCeti.LinearAlgebra.Trace.Idempotent
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # The Hermitian dilation of an element of a C⋆-algebra
@@ -108,7 +108,8 @@ end Algebraic
 /-- The product of two Hermitian dilations is diagonal: `D(x) D(y) = diag(x y⋆, x⋆ y)`. -/
 theorem hermitianDilation_mul_hermitianDilation {A : Type*} [NonUnitalNonAssocSemiring A]
     [StarAddMonoid A] (x y : A) :
-    hermitianDilation x * hermitianDilation y = ofMatrix (diagonal ![x * star y, star x * y]) := by
+    hermitianDilation x * hermitianDilation y =
+      ofMatrix (Matrix.diagonal ![x * star y, star x * y]) := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [mul_apply, Fin.sum_univ_two]
 
@@ -124,7 +125,7 @@ theorem norm_sum_hermitianDilation_mul_hermitianDilation {ι : Type*} (s : Finse
     ‖∑ k ∈ s, hermitianDilation (x k) * hermitianDilation (y k)‖ =
       max ‖∑ k ∈ s, x k * star (y k)‖ ‖∑ k ∈ s, star (x k) * y k‖ := by
   have h : ∑ k ∈ s, hermitianDilation (x k) * hermitianDilation (y k) =
-      ofMatrix (diagonal ![∑ k ∈ s, x k * star (y k), ∑ k ∈ s, star (x k) * y k]) := by
+      ofMatrix (Matrix.diagonal ![∑ k ∈ s, x k * star (y k), ∑ k ∈ s, star (x k) * y k]) := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [sum_apply, hermitianDilation_mul_hermitianDilation]
   rw [h, norm_ofMatrix_diagonal_fin_two]

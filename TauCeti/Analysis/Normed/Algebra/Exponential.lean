@@ -19,7 +19,9 @@ In a complete normed algebra, the exponential agrees with this quadratic truncat
 order at the origin; this file records that estimate in `Asymptotics.IsBigO` form. The exponential
 is also multiplicative on scalar multiples of a fixed element (`NormedSpace.exp_add_smul`).
 The file also bounds the norm of the exponential by a scalar exponential, comparing the exponential
-series termwise with the series of `Real.exp`.
+series termwise with the series of `Real.exp`, and records closed-form exponentials for
+idempotents (`e ^ (n + 1) = e`), collapsing `exp (P * a)` (when `P` commutes with `a`) and
+`exp (z • e)` to linear expressions in the idempotent.
 
 The exponential is analytic at `0` with power series `NormedSpace.expSeries`, so the statement is
 the Taylor formula `HasFPowerSeriesAt.isBigO_sub_partialSum_pow` at `n = 3`, once the third partial
@@ -50,6 +52,8 @@ Baker--Campbell--Hausdorff expansion.
 * `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
   bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
+* `IsIdempotentElem.exp_smul`: closed form `exp (z • e) = 1 + (exp z - 1) • e` for an idempotent
+  `e`.
 -/
 
 public section
@@ -249,3 +253,29 @@ theorem norm_exp_smul_one_le [NormedAlgebra ℝ 𝔸] (h_one : ‖(1 : 𝔸)‖ 
   exact mul_le_of_le_one_right (Real.exp_nonneg c) h_one
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+variable {𝕂 A : Type*} [NontriviallyNormedField 𝕂] [CharZero 𝕂] [ContinuousSMul ℚ 𝕂]
+  [CompleteSpace 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A] [CompleteSpace A] {e : A}
+
+/-- In a complete normed algebra over a complete characteristic-zero normed field `𝕂` with
+continuous rational scaling (such as `ℝ` or `ℂ`), `exp (z • e) = 1 + (exp z - 1) • e` for any
+idempotent `e`. -/
+theorem exp_smul (he : IsIdempotentElem e) (z : 𝕂) :
+    NormedSpace.exp (z • e) = 1 + (NormedSpace.exp z - 1) • e := by
+  let a := algebraMap 𝕂 A z
+  have ha : Commute a e := Algebra.commutes z e
+  have hseries : HasSum (fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • (a * e) ^ (n + 1))
+      ((NormedSpace.exp a - 1) * e) :=
+    ((NormedSpace.hasSum_exp_sub_one 𝕂 a).map (AddMonoidHom.mulRight e)
+      (continuous_mul_const e)).congr_fun fun n ↦ by
+      simp [ha.mul_pow, he.pow_succ_eq]
+  have hfull : HasSum (fun n : ℕ ↦ (n.factorial⁻¹ : 𝕂) • (a * e) ^ n)
+      (1 + (NormedSpace.exp a - 1) * e) := by
+    rw [← hasSum_nat_add_iff' 1]; simpa [add_comm] using hseries
+  rw [Algebra.smul_def, (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕂) (a * e)).unique hfull,
+    ← NormedSpace.algebraMap_exp_comm, ← map_one (algebraMap 𝕂 A), ← map_sub,
+    ← Algebra.smul_def]
+
+end IsIdempotentElem

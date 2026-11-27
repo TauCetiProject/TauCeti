@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Matrix
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.Projection.Perturbation
 
 /-!

@@ -69,10 +69,10 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   supplies the conjugating self-adjoint unitary `!![1 - p, vᴴ; v, 1 - q]`.
 * `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_one_sub`: over a ring, `p ⊕ (1 - p)`
   is equivalent to the identity matrix.
-* `Matrix.isMurrayVonNeumannEquivalent_single_one` and
-  `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes are
-  equivalent, and over a commutative star ring with the strong rank condition equivalent
-  projections have equal rank.
+* `IsStarProjection.isMurrayVonNeumannEquivalent_single` and
+  `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes at a star
+  projection are equivalent, and over a commutative star ring with the strong rank condition
+  equivalent projections have equal rank.
 
 ## References
 
@@ -318,6 +318,39 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix 
   · rintro ⟨v, hv, rfl, rfl⟩
     exact hv.isMurrayVonNeumannEquivalent
 
+/-- Diagonal matrix units of any sizes at a star projection `p` are equivalent: `single j i p`
+implements `single i i p ∼ single j j p`. -/
+theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_single [DecidableEq m] [DecidableEq n]
+    {p : R} (hp : IsStarProjection p) (i : m) (j : n) :
+    IsMurrayVonNeumannEquivalent (single i i p) (single j j p) := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, single j i p, ?_, ?_⟩ <;>
+    simp [IsIdempotentElem, IsSelfAdjoint, star_eq_conjTranspose, hp.isIdempotentElem.eq,
+      hp.isSelfAdjoint.star_eq]
+
+/-- If `vᴴ * v = p` and `v * p = v`, then `p * vᴴ = vᴴ`. -/
+theorem mul_conjTranspose_eq_self_of_mul_eq {p : Matrix m m R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hv : v * p = v) : p * vᴴ = vᴴ := by
+  have hpH : pᴴ = p := by rw [← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
+  simpa [hpH] using congrArg conjTranspose hv
+
+/-- If `vᴴ * v = p`, `v * vᴴ = q`, and `v * p = v`, then `q * v = v`. -/
+theorem mul_self_eq_self_of_mul_eq {p : Matrix m m R} {q : Matrix n n R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) : q * v = v := by
+  rw [← hvq, Matrix.mul_assoc, hvp, hv]
+
+/-- If `vᴴ * v = p`, `v * vᴴ = q`, and `v * p = v`, then `vᴴ * q = vᴴ`. -/
+theorem conjTranspose_mul_eq_self_of_mul_eq {p : Matrix m m R} {q : Matrix n n R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) : vᴴ * q = vᴴ := by
+  have hqH : qᴴ = q := by rw [← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
+  simpa [hqH] using congrArg conjTranspose (mul_self_eq_self_of_mul_eq hvp hvq hv)
+
+/-- If `vᴴ * v = p`, `v * vᴴ = q`, and `v * p = v`, then `q` is idempotent. -/
+theorem isIdempotentElem_of_mul_conjTranspose_eq {p : Matrix m m R} {q : Matrix n n R}
+    {v : Matrix n m R} (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) :
+    IsIdempotentElem q := by
+  rw [IsIdempotentElem, ← hvq, Matrix.mul_assoc, hvq,
+    conjTranspose_mul_eq_self_of_mul_eq hvp hvq hv, hvq]
+
 /-- **Orthogonal sums.** If `p ∼ p'` and `q ∼ q'`, where `p` is orthogonal to `q` and `p'` to `q'`,
 then `p + q ∼ p' + q'`. -/
 theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n n R}
@@ -386,13 +419,6 @@ theorem isMurrayVonNeumannEquivalent_of_mem_unitary_mul_fromBlocks_mul_star [Dec
   have hq := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.mp h.isStarProjection_right).2
   exact h.trans (hq.isMurrayVonNeumannEquivalent_zero_fromBlocks (n := m)).symm
 
-/-- Diagonal matrix units of any sizes are equivalent: `single j i 1` implements
-`single i i 1 ∼ single j j 1`. -/
-theorem isMurrayVonNeumannEquivalent_single_one [DecidableEq m] [DecidableEq n] (i : m) (j : n) :
-    IsMurrayVonNeumannEquivalent (single i i (1 : R)) (single j j 1) := by
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, single j i 1, by simp, by simp⟩ <;>
-  simp [IsIdempotentElem, IsSelfAdjoint, star_eq_conjTranspose]
-
 /-- A diagonal matrix unit of any size is equivalent to the identity matrix of size one. Over `ℂ`
 this is the equivalence of `diag(1, 0)` with `1`, through the row `(1 0)`. -/
 theorem isMurrayVonNeumannEquivalent_single_one_one [DecidableEq m] [Unique n] (i : m) :
@@ -401,7 +427,7 @@ theorem isMurrayVonNeumannEquivalent_single_one_one [DecidableEq m] [Unique n] (
     ext a b
     rw [Unique.eq_default a, Unique.eq_default b, one_apply_eq, single_apply_same]
   rw [h]
-  exact isMurrayVonNeumannEquivalent_single_one i default
+  exact (IsStarProjection.one (R := R)).isMurrayVonNeumannEquivalent_single i default
 
 end Semiring
 
@@ -418,9 +444,53 @@ theorem isMurrayVonNeumannEquivalent_of_isStarProjection {v : Matrix n m R}
 
 end StarOrderedRing
 
+section NonAssocRing
+
+variable [NonAssocRing R] [StarRing R] [DecidableEq m] [DecidableEq n]
+
+/-- The stabilized block matrix `!![1 - p, vᴴ; v, 1 - q]` is self-adjoint whenever `vᴴ * v = p`
+and `v * vᴴ = q`. -/
+theorem isSelfAdjoint_fromBlocks_one_sub {p : Matrix m m R} {q : Matrix n n R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) :
+    IsSelfAdjoint (fromBlocks (1 - p) vᴴ v (1 - q)) := by
+  have hp : IsHermitian p := by
+    rw [IsHermitian, ← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
+  have hq : IsHermitian q := by
+    rw [IsHermitian, ← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
+  exact (IsHermitian.fromBlocks (isHermitian_one.sub hp) (conjTranspose_conjTranspose v)
+    (isHermitian_one.sub hq)).isSelfAdjoint
+
+end NonAssocRing
+
 section Ring
 
 variable [Ring R] [StarRing R] [DecidableEq m] [DecidableEq n]
+
+/-- The stabilized block matrix `!![1 - p, vᴴ; v, 1 - q]` is an involution whenever `vᴴ * v = p`,
+`v * vᴴ = q`, and `v * p = v`. -/
+theorem fromBlocks_one_sub_mul_self {p : Matrix m m R} {q : Matrix n n R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) :
+    fromBlocks (1 - p) vᴴ v (1 - q) * fromBlocks (1 - p) vᴴ v (1 - q) = 1 :=
+  fromBlocks_one_sub_mul_self_of_mul_eq hvp hvq (mul_conjTranspose_eq_self_of_mul_eq hvp hv) hv
+
+/-- The stabilized block matrix `!![1 - p, vᴴ; v, 1 - q]` is unitary whenever `vᴴ * v = p`,
+`v * vᴴ = q`, and `v * p = v`. -/
+theorem fromBlocks_one_sub_mem_unitary {p : Matrix m m R} {q : Matrix n n R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) :
+    fromBlocks (1 - p) vᴴ v (1 - q) ∈ unitary (Matrix (m ⊕ n) (m ⊕ n) R) := by
+  have hsa := (isSelfAdjoint_fromBlocks_one_sub hvp hvq).star_eq
+  have hsq := fromBlocks_one_sub_mul_self hvp hvq hv
+  exact ⟨by rw [hsa, hsq], by rw [hsa, hsq]⟩
+
+/-- The stabilized block matrix `!![1 - p, vᴴ; v, 1 - q]` conjugates `p ⊕ 0` to `0 ⊕ q` whenever
+`vᴴ * v = p`, `v * vᴴ = q`, and `v * p = v`. -/
+theorem fromBlocks_one_sub_mul_fromBlocks_mul_star {p : Matrix m m R} {q : Matrix n n R}
+    {v : Matrix n m R} (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) :
+    fromBlocks (1 - p) vᴴ v (1 - q) * fromBlocks p 0 0 0 *
+        star (fromBlocks (1 - p) vᴴ v (1 - q)) =
+      fromBlocks 0 0 0 q := by
+  rw [(isSelfAdjoint_fromBlocks_one_sub hvp hvq).star_eq,
+    fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq hvp hvq hv]
 
 /-- **Stabilized unitary conjugacy.** Equivalent matrix projections `p ∼ q` become unitarily
 conjugate after stabilization: if the partial isometry `v` implements `p ∼ q`, then the
@@ -429,23 +499,11 @@ theorem IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBl
     {p : Matrix m m R} {q : Matrix n n R} (h : IsMurrayVonNeumannEquivalent p q) :
     ∃ w : Matrix (m ⊕ n) (m ⊕ n) R, IsSelfAdjoint w ∧ w ∈ unitary _ ∧
       w * Matrix.fromBlocks p 0 0 0 * star w = Matrix.fromBlocks 0 0 0 q := by
-  have hp := h.isStarProjection_left
-  have hq := h.isStarProjection_right
   obtain ⟨v, hvp, hvq, hv⟩ := h.exists_mul_conjTranspose_mul_self_eq
   have hbe : v * p = v := by rw [← hvp, ← Matrix.mul_assoc, hv]
-  have hea : p * vᴴ = vᴴ := by
-    simpa [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
-      congr_arg conjTranspose hbe
-  have hw : IsSelfAdjoint (Matrix.fromBlocks (1 - p) vᴴ v (1 - q)) :=
-    (IsHermitian.fromBlocks (isHermitian_one.sub hp.isSelfAdjoint.isHermitian)
-      (conjTranspose_conjTranspose v)
-      (isHermitian_one.sub hq.isSelfAdjoint.isHermitian)).isSelfAdjoint
-  have hww := fromBlocks_one_sub_mul_self_of_mul_eq hvp hvq hea hbe
-  refine ⟨_, hw, ⟨?_, ?_⟩, ?_⟩
-  · rwa [hw.star_eq]
-  · rwa [hw.star_eq]
-  · rw [hw.star_eq,
-      fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq hvp hvq hbe]
+  exact ⟨_, isSelfAdjoint_fromBlocks_one_sub hvp hvq,
+    fromBlocks_one_sub_mem_unitary hvp hvq hbe,
+    fromBlocks_one_sub_mul_fromBlocks_mul_star hvp hvq hbe⟩
 
 /-- **Stabilized unitary conjugacy.** A matrix projection `p` is equivalent to `q` exactly when
 `p ⊕ 0` and `0 ⊕ q` are conjugate by a unitary. -/

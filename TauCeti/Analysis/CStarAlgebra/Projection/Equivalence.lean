@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block
 public import TauCeti.Algebra.Star.PartialIsometry
+public import Mathlib.Analysis.CStarAlgebra.Unitization
+import TauCeti.Algebra.Star.Projection.Basic
 import TauCeti.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Data.Matrix.ColumnRowPartitioned
@@ -19,11 +21,10 @@ projections of a rectangular matrix. The index types may differ, so this relatio
 a projection with its zero padding, without identifying different matrix sizes by casts.
 
 We prove reflexivity on projections, symmetry, transitivity, compatibility with block sums,
-and preservation by nonunital star homomorphisms. These are the relations needed to form the
-projection monoid. No unit, separability, or cancellation is assumed.
-
-The algebraic matrix calculations use Mathlib's underlying `Matrix` operations, which are the
-operations used to define `CStarMatrix` multiplication and conjugate transpose.
+corner embeddings, matrix units, reindexing, orthogonal sums, and preservation by nonunital star
+homomorphisms, as well as descent of unitary conjugacy in the forced unitization to Murray–von
+Neumann equivalence and the resulting projection setoid. No unit, separability, or cancellation is
+assumed.
 
 ## References
 
@@ -83,27 +84,52 @@ protected theorem zero : MurrayVonNeumannEquiv (0 : CStarMatrix m m A)
 /-- Block-diagonal sums of equivalent projections are equivalent. -/
 theorem fromBlocks {p' : CStarMatrix k k A} {q' : CStarMatrix l l A}
     (h : MurrayVonNeumannEquiv p q) (h' : MurrayVonNeumannEquiv p' q') :
-    MurrayVonNeumannEquiv (ofMatrix (Matrix.fromBlocks (ofMatrix.symm p) 0 0 (ofMatrix.symm p')))
-      (ofMatrix (Matrix.fromBlocks (ofMatrix.symm q) 0 0 (ofMatrix.symm q'))) := by
+    MurrayVonNeumannEquiv (CStarMatrix.fromBlocks p 0 0 p')
+      (CStarMatrix.fromBlocks q 0 0 q') := by
   obtain ⟨hp, hq, v, hv, hv'⟩ := h
   obtain ⟨hp', hq', w, hw, hw'⟩ := h'
-  refine ⟨⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hp'.isIdempotentElem,
-    hp.isSelfAdjoint.isHermitian.fromBlocks (by simp) hp'.isSelfAdjoint.isHermitian⟩,
-    ⟨hq.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hq'.isIdempotentElem,
-      hq.isSelfAdjoint.isHermitian.fromBlocks (by simp) hq'.isSelfAdjoint.isHermitian⟩,
-    ofMatrix (Matrix.fromBlocks (ofMatrix.symm v) 0 0 (ofMatrix.symm w)), ?_, ?_⟩
-  · apply ofMatrix.symm.injective
-    simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.fromBlocks_conjTranspose, Matrix.conjTranspose_zero,
-      Matrix.fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
-      using congrArg₂ (fun x y => Matrix.fromBlocks x 0 0 y)
-        (congrArg ofMatrix.symm hv) (congrArg ofMatrix.symm hw)
-  · apply ofMatrix.symm.injective
-    simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.fromBlocks_conjTranspose, Matrix.conjTranspose_zero,
-      Matrix.fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
-      using congrArg₂ (fun x y => Matrix.fromBlocks x 0 0 y)
-        (congrArg ofMatrix.symm hv') (congrArg ofMatrix.symm hw')
+  refine ⟨⟨?_, isSelfAdjoint_fromBlocks_zero₁₂_zero₂₁.mpr ⟨hp.isSelfAdjoint, hp'.isSelfAdjoint⟩⟩,
+    ⟨?_, isSelfAdjoint_fromBlocks_zero₁₂_zero₂₁.mpr ⟨hq.isSelfAdjoint, hq'.isSelfAdjoint⟩⟩,
+    CStarMatrix.fromBlocks v 0 0 w, ?_, ?_⟩
+  · rw [IsIdempotentElem, fromBlocks_multiply]
+    simp [hp.isIdempotentElem.eq, hp'.isIdempotentElem.eq]
+  · rw [IsIdempotentElem, fromBlocks_multiply]
+    simp [hq.isIdempotentElem.eq, hq'.isIdempotentElem.eq]
+  · simp [fromBlocks_conjTranspose, fromBlocks_multiply, hv, hw]
+  · simp [fromBlocks_conjTranspose, fromBlocks_multiply, hv', hw']
+
+/-- Upper-left corner embeddings of equivalent projections are equivalent. -/
+theorem inl {R : Type*} [Semiring R] [Module R A] (h : MurrayVonNeumannEquiv p q) :
+    MurrayVonNeumannEquiv (CStarMatrix.inl (n := k) (R := R) p)
+      (CStarMatrix.inl (n := l) (R := R) q) := by
+  simpa only [inl_apply] using h.fromBlocks .zero
+
+/-- Lower-right corner embeddings of equivalent projections are equivalent. -/
+theorem inr {R : Type*} [Semiring R] [Module R A] (h : MurrayVonNeumannEquiv p q) :
+    MurrayVonNeumannEquiv (CStarMatrix.inr (m := k) (R := R) p)
+      (CStarMatrix.inr (m := l) (R := R) q) := by
+  simpa only [inr_apply] using MurrayVonNeumannEquiv.zero.fromBlocks h
+
+/-- Diagonal matrix units supported by the same projection `a` at positions `i` and `j` are
+Murray–von Neumann equivalent. -/
+theorem single [DecidableEq m] [DecidableEq n] {a : A} (ha : IsStarProjection a) (i : m) (j : n) :
+    MurrayVonNeumannEquiv (CStarMatrix.single i i a) (CStarMatrix.single j j a) := by
+  refine ⟨?_, ?_, CStarMatrix.single j i a, ?_, ?_⟩
+  · simpa only [singleNonUnitalStarAlgHom_apply] using ha.map (singleNonUnitalStarAlgHom (R := ℕ) i)
+  · simpa only [singleNonUnitalStarAlgHom_apply] using ha.map (singleNonUnitalStarAlgHom (R := ℕ) j)
+  · simp [ha.isSelfAdjoint.star_eq, ha.isIdempotentElem.eq]
+  · simp [ha.isSelfAdjoint.star_eq, ha.isIdempotentElem.eq]
+
+/-- Reindexing equivalent projections along size equivalences preserves Murray–von Neumann
+equivalence. -/
+theorem reindexₐ {R m' n' : Type*} [Semiring R] [Module R A] [Fintype m'] [Fintype n']
+    (h : MurrayVonNeumannEquiv p q) (eₘ : m ≃ m') (eₙ : n ≃ n') :
+    MurrayVonNeumannEquiv (CStarMatrix.reindexₐ R A eₘ p) (CStarMatrix.reindexₐ R A eₙ q) := by
+  obtain ⟨hp, hq, v, hvp, hvq⟩ := h
+  refine ⟨hp.map (CStarMatrix.reindexₐ R A eₘ), hq.map (CStarMatrix.reindexₐ R A eₙ),
+    CStarMatrix.reindexₗ R A eₙ eₘ v, ?_, ?_⟩
+  · rw [reindexₗ_conjTranspose, reindexₗ_mul, hvp, reindexₗ_eq_reindexₐ]
+  · rw [reindexₗ_conjTranspose, reindexₗ_mul, hvq, reindexₗ_eq_reindexₐ]
 
 /-- A nonunital star ring homomorphism preserves rectangular equivalence entrywise. -/
 theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
@@ -111,50 +137,41 @@ theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
     (h : MurrayVonNeumannEquiv p q) (f : F) :
     MurrayVonNeumannEquiv (p.map f) (q.map f) := by
   obtain ⟨hp, hq, v, hv, hv'⟩ := h
-  have hpf : ofMatrix.symm (p.map f) = (ofMatrix.symm p).map f := rfl
-  have hqf : ofMatrix.symm (q.map f) = (ofMatrix.symm q).map f := rfl
-  have hvf : ofMatrix.symm (v.map f) = (ofMatrix.symm v).map f := rfl
-  have hf : Function.Semiconj f star star := map_star f
-  refine ⟨isStarProjection_iff'.mpr ⟨?_, ?_⟩, isStarProjection_iff'.mpr ⟨?_, ?_⟩, v.map f, ?_,
-    ?_⟩ <;> apply ofMatrix.symm.injective
-  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
-      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
-      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hp.isIdempotentElem.eq)
-  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
-      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
-      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hp.isSelfAdjoint.star_eq)
-  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
-      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
-      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hq.isIdempotentElem.eq)
-  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
-      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
-      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hq.isSelfAdjoint.star_eq)
-  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
-      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
-      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hv)
-  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
-      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
-      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hv')
+  refine ⟨isStarProjection_iff'.mpr ⟨?_, ?_⟩, isStarProjection_iff'.mpr ⟨?_, ?_⟩, v.map f, ?_, ?_⟩
+  · rw [← map_mul, hp.isIdempotentElem.eq]
+  · rw [star_eq_conjTranspose, ← map_conjTranspose, ← star_eq_conjTranspose,
+      hp.isSelfAdjoint.star_eq]
+  · rw [← map_mul, hq.isIdempotentElem.eq]
+  · rw [star_eq_conjTranspose, ← map_conjTranspose, ← star_eq_conjTranspose,
+      hq.isSelfAdjoint.star_eq]
+  · rw [← map_conjTranspose, ← map_mul, hv]
+  · rw [← map_conjTranspose, ← map_mul, hv']
+
+/-- A nonunital `⋆`-algebra homomorphism preserves Murray–von Neumann equivalence entrywise. -/
+theorem mapₙₐ {R : Type*} [Semiring R] [NonUnitalSemiring B] [StarRing B] [Module R A]
+    [Module R B] (h : MurrayVonNeumannEquiv p q) (f : A →⋆ₙₐ[R] B) :
+    MurrayVonNeumannEquiv (CStarMatrix.mapₙₐ f p) (CStarMatrix.mapₙₐ f q) := by
+  simpa only [mapₙₐ_eq_map] using h.map f
 
 /-- Padding a projection by a zero block does not change its rectangular equivalence class. -/
 theorem pad_zero (hp : IsStarProjection p) :
-    MurrayVonNeumannEquiv p
-      (ofMatrix (Matrix.fromBlocks (ofMatrix.symm p) 0 0 (0 : Matrix k k A))) := by
+    MurrayVonNeumannEquiv p (CStarMatrix.fromBlocks p 0 0 (0 : CStarMatrix k k A)) := by
   have hsa : (ofMatrix.symm p)ᴴ = ofMatrix.symm p := by
     simpa only [ofMatrix_symm_star] using congrArg ofMatrix.symm hp.isSelfAdjoint.star_eq
-  have hid : ofMatrix.symm p * ofMatrix.symm p = ofMatrix.symm p := by
-    simpa only [ofMatrix_symm_mul] using congrArg ofMatrix.symm hp.isIdempotentElem.eq
-  refine ⟨hp, ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ .zero,
-    hp.isSelfAdjoint.isHermitian.fromBlocks (by simp) Matrix.isHermitian_zero⟩,
-    ofMatrix (Matrix.fromRows (ofMatrix.symm p) (0 : Matrix k m A)), ?_, ?_⟩ <;>
+  have hid : ofMatrix.symm p * ofMatrix.symm p = ofMatrix.symm p :=
+    ofMatrix_symm_mul_eq hp.isIdempotentElem.eq
+  refine ⟨hp, ⟨?_, isSelfAdjoint_fromBlocks_zero₁₂_zero₂₁.mpr ⟨hp.isSelfAdjoint, .zero _⟩⟩,
+    ofMatrix (Matrix.fromRows (ofMatrix.symm p) (0 : Matrix k m A)), ?_, ?_⟩
+  · rw [IsIdempotentElem, fromBlocks_multiply]
+    simp [hp.isIdempotentElem.eq]
+  all_goals
     apply ofMatrix.symm.injective
-  · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
+    simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, ofMatrix_symm_fromBlocks,
+      ofMatrix_symm_zero, Equiv.symm_apply_apply,
       Matrix.conjTranspose_fromRows_eq_fromCols_conjTranspose, Matrix.conjTranspose_zero, hsa]
-    ext i j
+  · ext i j
     simpa [Matrix.mul_apply] using congrFun (congrFun hid i) j
-  · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.conjTranspose_fromRows_eq_fromCols_conjTranspose, Matrix.conjTranspose_zero, hsa]
-    ext (i | i) (j | j)
+  · ext (i | i) (j | j)
     · simpa [Matrix.mul_apply] using congrFun (congrFun hid i) j
     · simp [Matrix.mul_apply]
     · simp [Matrix.mul_apply]
@@ -186,8 +203,7 @@ protected theorem trans (h : MurrayVonNeumannEquiv p q) (h' : MurrayVonNeumannEq
     MurrayVonNeumannEquiv p r := by
   obtain ⟨v, hv, hv', hvp⟩ := h.exists_matrix_mul_eq_self
   obtain ⟨w, hw, hw', hwq⟩ := h'.exists_matrix_mul_eq_self
-  have hqv : q * v = v := by
-    rw [← hv', mul_assoc_rectangular, hv, hvp]
+  have hqv : q * v = v := mul_self_eq_self_of_mul_eq hv hv' hvp
   refine ⟨h.isStarProjection_left, h'.isStarProjection_right, w * v, ?_, ?_⟩
   · calc
       _ = v.conjTranspose * (w.conjTranspose * w) * v := by
@@ -199,6 +215,58 @@ protected theorem trans (h : MurrayVonNeumannEquiv p q) (h' : MurrayVonNeumannEq
         simp only [conjTranspose_mul, mul_assoc_rectangular]
       _ = w * w.conjTranspose := by rw [hv', hwq]
       _ = r := hw'
+
+/-- Orthogonal sums of Murray–von Neumann equivalent projections are equivalent. -/
+theorem add_of_mul_eq_zero {p₁ p₂ : CStarMatrix m m A} {q₁ q₂ : CStarMatrix n n A}
+    (h₁ : MurrayVonNeumannEquiv p₁ q₁) (h₂ : MurrayVonNeumannEquiv p₂ q₂)
+    (hp : p₁ * p₂ = 0) (hq : q₁ * q₂ = 0) :
+    MurrayVonNeumannEquiv (p₁ + p₂) (q₁ + q₂) := by
+  obtain ⟨v₁, hv₁p, hv₁q, hv₁⟩ := h₁.exists_matrix_mul_eq_self
+  obtain ⟨v₂, hv₂p, hv₂q, hv₂⟩ := h₂.exists_matrix_mul_eq_self
+  have hp' : p₂ * p₁ = 0 := by
+    have h := congrArg conjTranspose hp
+    rwa [conjTranspose_mul, ← star_eq_conjTranspose, ← star_eq_conjTranspose,
+      h₁.isStarProjection_left.isSelfAdjoint.star_eq,
+      h₂.isStarProjection_left.isSelfAdjoint.star_eq, conjTranspose_zero] at h
+  have hq' : q₂ * q₁ = 0 := by
+    have h := congrArg conjTranspose hq
+    rwa [conjTranspose_mul, ← star_eq_conjTranspose, ← star_eq_conjTranspose,
+      h₁.isStarProjection_right.isSelfAdjoint.star_eq,
+      h₂.isStarProjection_right.isSelfAdjoint.star_eq, conjTranspose_zero] at h
+  have hv₁_conj : p₁ * v₁.conjTranspose = v₁.conjTranspose :=
+    mul_conjTranspose_eq_self_of_mul_eq hv₁p hv₁
+  have hv₂_conj : p₂ * v₂.conjTranspose = v₂.conjTranspose :=
+    mul_conjTranspose_eq_self_of_mul_eq hv₂p hv₂
+  have hq₁v₁ : q₁ * v₁ = v₁ := mul_self_eq_self_of_mul_eq hv₁p hv₁q hv₁
+  have hv₁q₁ : v₁.conjTranspose * q₁ = v₁.conjTranspose :=
+    conjTranspose_mul_eq_self_of_mul_eq hv₁p hv₁q hv₁
+  have hq₂v₂ : q₂ * v₂ = v₂ := mul_self_eq_self_of_mul_eq hv₂p hv₂q hv₂
+  have hv₂q₂ : v₂.conjTranspose * q₂ = v₂.conjTranspose :=
+    conjTranspose_mul_eq_self_of_mul_eq hv₂p hv₂q hv₂
+  have h12_conj : v₁.conjTranspose * v₂ = 0 := by
+    calc
+      v₁.conjTranspose * v₂ = (v₁.conjTranspose * q₁) * (q₂ * v₂) := by rw [hv₁q₁, hq₂v₂]
+      _ = v₁.conjTranspose * (q₁ * q₂) * v₂ := by simp only [mul_assoc_rectangular]
+      _ = 0 := by rw [hq, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
+  have h21_conj : v₂.conjTranspose * v₁ = 0 := by
+    calc
+      v₂.conjTranspose * v₁ = (v₂.conjTranspose * q₂) * (q₁ * v₁) := by rw [hv₂q₂, hq₁v₁]
+      _ = v₂.conjTranspose * (q₂ * q₁) * v₁ := by simp only [mul_assoc_rectangular]
+      _ = 0 := by rw [hq', CStarMatrix.mul_zero, CStarMatrix.zero_mul]
+  have h12 : v₁ * v₂.conjTranspose = 0 := by
+    calc
+      v₁ * v₂.conjTranspose = (v₁ * p₁) * (p₂ * v₂.conjTranspose) := by rw [hv₁, hv₂_conj]
+      _ = v₁ * (p₁ * p₂) * v₂.conjTranspose := by simp only [mul_assoc_rectangular]
+      _ = 0 := by rw [hp, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
+  have h21 : v₂ * v₁.conjTranspose = 0 := by
+    calc
+      v₂ * v₁.conjTranspose = (v₂ * p₂) * (p₁ * v₁.conjTranspose) := by rw [hv₂, hv₁_conj]
+      _ = v₂ * (p₂ * p₁) * v₁.conjTranspose := by simp only [mul_assoc_rectangular]
+      _ = 0 := by rw [hp', CStarMatrix.mul_zero, CStarMatrix.zero_mul]
+  refine ⟨h₁.isStarProjection_left.add h₂.isStarProjection_left hp,
+    h₁.isStarProjection_right.add h₂.isStarProjection_right hq, v₁ + v₂, ?_, ?_⟩
+  · simp [CStarMatrix.add_mul, CStarMatrix.mul_add, hv₁p, hv₂p, h12_conj, h21_conj]
+  · simp [CStarMatrix.add_mul, CStarMatrix.mul_add, hv₁q, hv₂q, h12, h21]
 
 end MurrayVonNeumannEquiv
 
@@ -261,10 +329,51 @@ theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableE
         ← mul_assoc (star (u : CStarMatrix m m B)), Unitary.coe_star_mul_self,
         one_mul, ← mul_assoc p, hp.isIdempotentElem.eq], hp.isSelfAdjoint.conjugate u⟩
   refine ⟨hp, hq, (u : CStarMatrix m m B) * p, ?_, ?_⟩
-  · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
-    simp only [mul_assoc, ← mul_assoc (star (u : CStarMatrix m m B)),
-      Unitary.coe_star_mul_self, one_mul, hp.isIdempotentElem.eq]
-  · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
-    simp only [mul_assoc, ← mul_assoc p, hp.isIdempotentElem.eq]
+  · rw [← star_eq_conjTranspose]
+    exact hp.star_mul_mul_self_of_mem_unitary u.property
+  · rw [← star_eq_conjTranspose]
+    exact hp.mul_star_mul_eq_mul_mul_star _
+
+/-- If two matrix projections `p, q : CStarMatrix n n A` over a possibly non-unital `⋆`-algebra `A`
+become unitarily conjugate inside the unitization `Unitization R (CStarMatrix n n A)`, then `p` and
+`q` are Murray–von Neumann equivalent inside `CStarMatrix n n A`. -/
+theorem murrayVonNeumannEquiv_of_unitization_unitary_conj {R : Type*}
+    [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A] [Module R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
+    {p q : CStarMatrix n n A} (hp : IsStarProjection p)
+    {u : Unitization R (CStarMatrix n n A)}
+    (hu : u ∈ unitary (Unitization R (CStarMatrix n n A)))
+    (hconj : u * (p : Unitization R (CStarMatrix n n A)) * star u =
+      (q : Unitization R (CStarMatrix n n A))) :
+    MurrayVonNeumannEquiv p q := by
+  let M := CStarMatrix n n A
+  let v : M := (u * (p : Unitization R M)).snd
+  have hv_coe : (v : Unitization R M) = u * (p : Unitization R M) :=
+    Unitization.inr_snd_of_fst_eq_zero (by simp [Unitization.fst_mul, Unitization.fst_inr])
+  have hp_coe : IsStarProjection (p : Unitization R M) := hp.inr
+  have hq : IsStarProjection q := by
+    have hq_snd := Unitization.isStarProjection_snd_conj hp hu
+    rwa [hconj, Unitization.snd_inr] at hq_snd
+  refine (murrayVonNeumannEquiv_iff hp hq).mpr ⟨v, Unitization.inr_injective (R := R) ?_,
+    Unitization.inr_injective (R := R) ?_⟩
+  · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe]
+    exact hp_coe.star_mul_mul_self_of_mem_unitary hu
+  · rw [Unitization.inr_mul, ← star_eq_conjTranspose, Unitization.inr_star, hv_coe]
+    exact (hp_coe.mul_star_mul_eq_mul_mul_star u).trans hconj
+
+/-- Setoid of Murray–von Neumann equivalence on star projections of fixed size `n`. -/
+def murrayVonNeumannSetoid (n A : Type*) [Fintype n]
+    [NonUnitalSemiring A] [StarRing A] :
+    Setoid {p : CStarMatrix n n A // IsStarProjection p} where
+  r p q := MurrayVonNeumannEquiv p.val q.val
+  iseqv := ⟨fun p ↦ .refl p.property, .symm, .trans⟩
+
+/-- The relation of `murrayVonNeumannSetoid n A` is Murray–von Neumann equivalence on the underlying
+projections. -/
+@[simp] theorem murrayVonNeumannSetoid_r (n A : Type*) [Fintype n]
+    [NonUnitalSemiring A] [StarRing A]
+    (p q : {p : CStarMatrix n n A // IsStarProjection p}) :
+    (murrayVonNeumannSetoid n A).r p q ↔ MurrayVonNeumannEquiv p.val q.val :=
+  (Iff.rfl)
 
 end CStarMatrix

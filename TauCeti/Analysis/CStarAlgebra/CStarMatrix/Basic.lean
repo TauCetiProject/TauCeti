@@ -22,7 +22,6 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
-import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 import TauCeti.LinearAlgebra.Trace.Idempotent
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -90,8 +89,6 @@ embeddings into block-diagonal matrices.
   `CStarMatrix.eq_sum_piSingle_ofMatrix_single`, and
   `CStarMatrix.eq_sum_smul_piSingle_ofMatrix_single_one`: matrix-unit multiplication, adjoint, and
   spanning identities for C⋆-matrices and their products.
-* `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
-  a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`, `CStarMatrix.reindexₐ_apply_apply`:
   entries of finite sums, of `1 × 1` C⋆-matrices and of reindexed matrices, with
   `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
@@ -107,8 +104,8 @@ embeddings into block-diagonal matrices.
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.piStarAlgEquiv`: a matrix over a product is the family of its components,
   `M_m(Π B_i) ≃ Π M_m(B_i)`, as a star algebra isomorphism.
-* `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
-  in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
+* `CStarMatrix.diagonalNonUnitalStarAlgHom`: the constant-diagonal embedding `b ↦ diag(b, …, b)`
+  of `B` in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
   `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
 * `CStarMatrix.blockDiagonalSingle`: the corner embedding of `M_{n i}(B)` as the `i`-th diagonal
   block of `M_{Σ i, n i}(B)`, with `CStarMatrix.sum_blockDiagonalSingle`: a block-diagonal matrix
@@ -322,7 +319,7 @@ lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
 @[simp]
-lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_neg {m : Type*} [Neg A] (M : CStarMatrix m n A) :
     ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
@@ -424,22 +421,6 @@ lemma ofMatrix_symm_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [St
     {M : CStarMatrix n n A} :
     ofMatrix.symm M ∈ unitary (Matrix n n A) ↔ M ∈ unitary (CStarMatrix n n A) :=
   Iff.rfl
-
-/-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
-an idempotent `p` is supported on `p`. -/
-lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [NonUnitalRing A]
-    [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A] {p : CStarMatrix m m A}
-    (v : CStarMatrix n m A) (hp : IsIdempotentElem p) (hv : v.conjTranspose * v = p) :
-    v * p = v := by
-  have hp' : IsIdempotentElem (v.conjTranspose * v) := by
-    rw [hv]
-    exact hp
-  have hpM := congrArg ofMatrix.symm hp'.eq
-  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at hpM
-  have h := Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem (ofMatrix.symm v) hpM
-  rw [← hv]
-  apply ofMatrix.symm.injective
-  simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
 
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
@@ -550,7 +531,6 @@ variable {n A : Type*}
 
 /-- Multiplying two C⋆-matrix units with matching inner index yields a matrix unit with the product
 of their entries. -/
-@[simp]
 theorem ofMatrix_single_mul_ofMatrix_single_same {l m k : Type*} [Fintype m]
     [DecidableEq l] [DecidableEq m] [DecidableEq k] [NonUnitalNonAssocSemiring A]
     (i : l) (j : m) (p : k) (c d : A) :
@@ -559,7 +539,6 @@ theorem ofMatrix_single_mul_ofMatrix_single_same {l m k : Type*} [Fintype m]
   ofMatrix.symm.injective (by simp)
 
 /-- Multiplying two C⋆-matrix units with distinct inner indices yields zero. -/
-@[simp]
 theorem ofMatrix_single_mul_ofMatrix_single_of_ne {l m k : Type*} [Fintype m]
     [DecidableEq l] [DecidableEq m] [DecidableEq k] [NonUnitalNonAssocSemiring A]
     (i : l) {j j' : m} (h : j ≠ j') (p : k) (c d : A) :
@@ -583,7 +562,6 @@ theorem isIdempotentElem_ofMatrix_single_one [Fintype n] [DecidableEq n] [NonAss
 
 /-- The conjugate transpose of a C⋆-matrix unit swaps its indices and applies `star` to the
 entry. -/
-@[simp]
 theorem conjTranspose_ofMatrix_single {m : Type*} [DecidableEq m] [DecidableEq n]
     [AddMonoid A] [StarAddMonoid A] (i : m) (j : n) (a : A) :
     (ofMatrix (Matrix.single i j a)).conjTranspose = ofMatrix (Matrix.single j i (star a)) :=
@@ -1321,12 +1299,13 @@ variable {n A : Type*} [Fintype n] [DecidableEq n] [NonUnitalCStarAlgebra A] [Pa
 
 /-- A diagonal matrix over a C⋆-algebra has norm the largest norm of its diagonal entries: the
 diagonal matrices form a copy of `Aⁿ` with the sup norm. -/
-theorem norm_ofMatrix_diagonal (d : n → A) : ‖ofMatrix (diagonal d)‖ = ‖d‖ := by
+theorem norm_ofMatrix_diagonal (d : n → A) : ‖ofMatrix (Matrix.diagonal d)‖ = ‖d‖ := by
   refine le_antisymm ?_ ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => ?_)
   · rw [norm_def]
-    refine (toCLM (ofMatrix (diagonal d))).opNorm_le_bound (norm_nonneg d) fun v => ?_
-    have hv : toCLM (ofMatrix (diagonal d)) v = (equiv A (n → A)).symm fun j => v j * d j := by
-      simp [toCLM_apply_eq_sum, diagonal_apply]
+    refine (toCLM (ofMatrix (Matrix.diagonal d))).opNorm_le_bound (norm_nonneg d) fun v => ?_
+    have hv : toCLM (ofMatrix (Matrix.diagonal d)) v =
+        (equiv A (n → A)).symm fun j => v j * d j := by
+      simp [toCLM_apply_eq_sum, Matrix.diagonal_apply]
     rw [hv, ← sq_le_sq₀ (norm_nonneg _) (by positivity), mul_pow, norm_sq_eq A (x := v),
       norm_sq_eq A (x := (equiv A (n → A)).symm _), pi_inner, pi_inner]
     simp only [equiv_symm_pi_apply, inner_def]
@@ -1344,11 +1323,11 @@ theorem norm_ofMatrix_diagonal (d : n → A) : ‖ofMatrix (diagonal d)‖ = ‖
                 exact pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm d j) 2
       _ = ‖d‖ ^ 2 * ‖∑ j, v j * star (v j)‖ := by
           rw [← Finset.smul_sum, norm_smul, Real.norm_of_nonneg (by positivity)]
-  · simpa using norm_entry_le_norm (M := ofMatrix (diagonal d)) (i := i) (j := i)
+  · simpa using norm_entry_le_norm (M := ofMatrix (Matrix.diagonal d)) (i := i) (j := i)
 
 /-- A `2 × 2` diagonal matrix `diag(a, b)` over a C⋆-algebra has norm `max ‖a‖ ‖b‖`. -/
 theorem norm_ofMatrix_diagonal_fin_two (a b : A) :
-    ‖ofMatrix (diagonal ![a, b])‖ = max ‖a‖ ‖b‖ := by
+    ‖ofMatrix (Matrix.diagonal ![a, b])‖ = max ‖a‖ ‖b‖ := by
   rw [norm_ofMatrix_diagonal]
   refine le_antisymm ((pi_norm_le_iff_of_nonneg (by positivity)).2 fun i => ?_)
     (max_le (norm_le_pi_norm ![a, b] 0) (norm_le_pi_norm ![a, b] 1))

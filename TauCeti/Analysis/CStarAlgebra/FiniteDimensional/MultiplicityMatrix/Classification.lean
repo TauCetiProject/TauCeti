@@ -11,7 +11,7 @@ import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Algebra.GroupWithZero.Pi
 import TauCeti.Algebra.Star.Pi
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.Matrix.EuclideanCLM
 import TauCeti.Analysis.Matrix.EuclideanLin
 

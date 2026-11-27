@@ -14,7 +14,7 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 import Mathlib.Topology.Connected.Clopen
 import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Projection.Pair
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
 import TauCeti.Analysis.CStarAlgebra.Unitary.Connected
 
