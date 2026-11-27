@@ -491,6 +491,11 @@ theorem coeff_mul_C (x : SuperMvPowerSeries par σ) (a : Q) (J : Γ →₀ ℕ) 
     (x * C par σ a).coeff J = x.coeff J * (σ ^ oddDegree par J) a :=
   coeff_mul_monomial_zero x a J
 
+/-- The scalar action of `Q` is left multiplication by constants. -/
+theorem smul_eq_C_mul (x : SuperMvPowerSeries par σ) (a : Q) : a • x = C par σ a * x := by
+  ext J
+  simp [smul_eq_mul]
+
 theorem algebraMap_apply (r : R) :
     algebraMap R (SuperMvPowerSeries par σ) r = C par σ (algebraMap R Q r) := by
   rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, C_apply, map_smul, one_def]
