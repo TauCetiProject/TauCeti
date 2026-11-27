@@ -64,6 +64,8 @@ tangent inequality `f(ν) ≤ ∑_j ν_j ∂_j f(μ)` of a concave homogeneous f
   intersections of admissible cones, `Γ_1` and `Γ_n` are admissible.
 * `TauCeti.IsAdmissiblePair.sum_mul_fderiv_single`: Euler's identity.
 * `TauCeti.IsAdmissiblePair.pos_of_forall_pos`: an admissible pair is positive on `Γ_n`.
+* `TauCeti.IsAdmissiblePair.fderiv_one_single`: at `e = (1, …, 1)` every partial derivative is
+  `f(e) / n`, by symmetry and Euler's identity.
 * `TauCeti.IsAdmissiblePair.const_smul`, `TauCeti.IsAdmissiblePair.add`, and the corresponding
   `TauCeti.HasStructuralConstant.const_smul` and `TauCeti.HasStructuralConstant.add`: positive
   combinations of admissible pairs and their structural constants.
@@ -208,6 +210,38 @@ theorem sum_mul_fderiv_single (h : IsAdmissiblePair Γ f) (hμ : μ ∈ Γ) :
     ∑ j, μ j * fderiv ℝ f μ (Pi.single j 1) = f μ := by
   rw [← h.fderiv_apply_self hμ, ContinuousLinearMap.apply_eq_sum_smul_single]
   simp only [smul_eq_mul]
+
+/-- At the symmetric point `e = (1, …, 1)` the partial derivatives of an admissible pair are all
+equal, `∂_i f(e) = ∂_j f(e)`, by the symmetry of `f`. -/
+theorem fderiv_one_single_eq (h : IsAdmissiblePair Γ f) (i j : ι) :
+    fderiv ℝ f 1 (Pi.single i 1) = fderiv ℝ f 1 (Pi.single j 1) := by
+  have h1 : (1 : ι → ℝ) ∈ Γ := h.isAdmissibleCone.mem_of_forall_pos fun _ ↦ one_pos
+  set σ := Equiv.swap i j
+  -- The linear map `μ ↦ μ ∘ σ`, which fixes `e`.
+  let L : (ι → ℝ) →L[ℝ] ι → ℝ := ContinuousLinearMap.pi fun l ↦ ContinuousLinearMap.proj (σ l)
+  have hL (μ : ι → ℝ) : L μ = μ ∘ σ := rfl
+  have hd : HasFDerivAt f (fderiv ℝ f 1) (L 1) := by
+    rw [hL]
+    exact (h.differentiableAt h1).hasFDerivAt
+  have hcomp : HasFDerivAt f ((fderiv ℝ f 1).comp L) 1 := by
+    refine (hd.comp 1 L.hasFDerivAt).congr_of_eventuallyEq ?_
+    filter_upwards [h.isAdmissibleCone.isOpen.mem_nhds h1] with μ hμ
+    exact (h.apply_comp_perm σ hμ).symm
+  have hsingle : L (Pi.single i 1) = Pi.single j 1 := by
+    ext l
+    simp only [hL, Function.comp_apply, Pi.single_apply, σ, Equiv.swap_apply_eq_iff,
+      Equiv.swap_apply_left]
+  rw [← hsingle, ← ContinuousLinearMap.comp_apply, ← hcomp.fderiv]
+
+/-- At the symmetric point `e = (1, …, 1)` every partial derivative of an admissible pair is
+`∂_j f(e) = f(e) / n`, by Euler's identity and the symmetry of `f`. -/
+theorem fderiv_one_single (h : IsAdmissiblePair Γ f) (j : ι) :
+    fderiv ℝ f 1 (Pi.single j 1) = f 1 / Fintype.card ι := by
+  have := h.isAdmissibleCone.nonempty
+  have h1 : (1 : ι → ℝ) ∈ Γ := h.isAdmissibleCone.mem_of_forall_pos fun _ ↦ one_pos
+  have hn : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  rw [eq_div_iff hn, ← h.sum_mul_fderiv_single h1]
+  simp [h.fderiv_one_single_eq _ j, mul_comm]
 
 /-- An admissible pair is positive on the positive orthant `Γ_n`. -/
 theorem pos_of_forall_pos (h : IsAdmissiblePair Γ f) (hμ : ∀ i, 0 < μ i) : 0 < f μ := by
