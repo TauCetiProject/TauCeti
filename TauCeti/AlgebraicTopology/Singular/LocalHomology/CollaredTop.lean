@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
+public import TauCeti.AlgebraicTopology.Singular.Collar
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Compact
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Noncompact
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
-public import TauCeti.Geometry.Manifold.Boundary.Collar.Retraction
 
 /-!
 # Top homology of a space with compact collared boundary
@@ -84,13 +83,10 @@ theorem injective_singularHomologyπ_of_isCollared (hn : finrank ℝ E = n)
   let j : C(M, X) := ⟨ι, hι.continuous⟩
   -- The interior is a homotopy equivalence, so every class of `Hₙ(X)` comes from `Hₙ(M)`.
   have hsurj : Function.Surjective
-      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) R n).hom := by
-    have hj : TopCat.ofHom (hc.homotopyEquivOfRangeEq hι.isEmbedding hιf).toFun = TopCat.ofHom j :=
-      TopCat.hom_ext (ContinuousMap.ext fun x ↦
-        congrFun (hc.coe_homotopyEquivOfRangeEq hι.isEmbedding hιf) x)
-    have := (ConcreteCategory.bijective_of_isIso
-      ((hc.homotopyEquivOfRangeEq hι.isEmbedding hιf).singularHomologyIso R n).hom).2
-    rwa [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, hj] at this
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) R n).hom :=
+    have : IsIso (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) R n) :=
+      hc.isIso_singularHomologyMap_of_rangeEq hι.isEmbedding hιf R n
+    (ConcreteCategory.bijective_of_isIso _).2
   rw [injective_iff_map_eq_zero]
   intro α hα
   obtain ⟨β, rfl⟩ := hsurj α

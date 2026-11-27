@@ -16,9 +16,9 @@ import TauCeti.AlgebraicTopology.Singular.LocalHomology.Dense
 
 The local homology of a manifold is computed by singular chains, while relative cycles such as the
 fundamental chains of compactified trajectory spaces are cubical. This file reads facts about
-generators and local classes of local singular homology through the comparison isomorphisms
-between relative cubical and relative singular homology
-(`TopPair.singularCubicalHomologyIso`).
+generators and local classes of local singular homology, and the injectivity of top homology into
+homology relative to a collared boundary, through the comparison isomorphisms between relative
+cubical and relative singular homology (`TopPair.singularCubicalHomologyIso`).
 
 ## Main results
 
@@ -39,6 +39,10 @@ between relative cubical and relative singular homology
   of a relative class carried along a map that sends its subspace off an open set agree with
   those of an absolute class on a whole preconnected subset of the open set as soon as they agree
   at one of its points.
+* `TauCeti.injective_homologyMap_cokernel_π_of_isCollared`: for a manifold interior whose
+  complement `∂X` is compact and collared, the map `Hₙ(X) → Hₙ(X, ∂X)` on top-degree normalized
+  cubical homology is injective, the cubical form of
+  `TauCeti.injective_singularHomologyπ_of_isCollared`.
 -/
 
 public section
@@ -256,7 +260,6 @@ theorem homologyMap_cubicalChainComplexMap_ofSubsetMap_eq_of_isPreconnected {X :
   rw [hv x (hSU hx), hw x (hSU hx), ← sub_eq_zero, ← map_sub] at hvw
   rw [hv y (hSU hy), hw y (hSU hy), ← sub_eq_zero, ← map_sub]
   exact homologyMap_cubicalChainComplexMap_eq_zero_of_isPreconnected (E := E) hU hS hSU hx hy hvw
-
 
 /-- **The top cubical homology of a space with compact collared boundary embeds in its relative
 homology.** Let `X` be a Hausdorff space and `j : N → X` an open embedding of a manifold `N` of
