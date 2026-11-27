@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.FubiniStudySphere
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Clutching
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Symplectic
+public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 import Mathlib.Analysis.Calculus.FDeriv.Pi
+import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Generator
 
 /-!
 # The Fubini–Study area of a line in complex projective space
@@ -219,9 +221,6 @@ same class the first Chern number of the tangent bundle is `n + 2`
 (`TauCeti.ComplexProjectiveSpace.clutchingNumber_tangentSpace_lineSquare`). -/
 theorem sphereIntegral_fubiniStudyForm_lineSquare :
     sphereIntegral (fubiniStudyForm (n + 1)).val (affineParam 1 0) ⟦lineSquare n⟧ = 1 := by
-  have hφ : IsSmoothForm 𝓘(ℝ, Fin (n + 1) → ℂ) 1 (fubiniStudyForm (n + 1)).val :=
-    (fubiniStudyForm (n + 1)).isSmoothForm.of_le (by simp)
-  have hdφ := (SmoothForm.isClosed_def _).1 (isSymplectic_fubiniStudyForm (n := n + 1)).isClosed
   -- The line sphere is the image of the standard sphere of the Riemann sphere.
   have hmap : (⟦lineSquare n⟧ : HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1))
       (affineParam 1 0)) =
@@ -236,8 +235,20 @@ theorem sphereIntegral_fubiniStudyForm_lineSquare :
           (fubiniStudyForm (n + 1))).val ∞ ⟦riemannSphereSquare⟧ := by
     rintro _ rfl
     rw [SmoothForm.coe_mpullback]
-    exact (sphereIntegral_mpullback contMDiff_coordinateLine_real hφ hdφ _).symm
+    exact (sphereIntegral_mpullback contMDiff_coordinateLine_real
+      (isSmoothForm_fubiniStudyForm (n + 1)) (mextDeriv_fubiniStudyForm (n + 1)) _).symm
   rw [hmap, hnat _ coordinateLine_infty, mpullback_coordinateLine_fubiniStudyForm,
     OnePoint.sphereIntegral_fubiniStudyForm_riemannSphereSquare]
+
+/-- **The generator of `π₂(CPⁿ⁺¹)` has Fubini–Study area `1`**: it is the class of the coordinate
+line (`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_symm_ofAdd_one`). -/
+@[simp]
+theorem sphereIntegral_fubiniStudyForm_pi2MulEquivInt_symm_ofAdd_one :
+    sphereIntegral (fubiniStudyForm (n + 1)).val (mk (n + 1) (affineUnitVector 1 0))
+      ((pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm
+        (Multiplicative.ofAdd 1)) = 1 := by
+  rw [pi2MulEquivInt_symm_ofAdd_one]
+  exact (apply_lineClass n fun y a ↦ sphereIntegral (fubiniStudyForm (n + 1)).val y a).trans
+    sphereIntegral_fubiniStudyForm_lineSquare
 
 end TauCeti.ComplexProjectiveSpace
