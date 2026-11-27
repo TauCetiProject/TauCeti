@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialObject.II
 public import Mathlib.CategoryTheory.IsoCat
 public import TauCeti.AlgebraicTopology.SimplexCategory.Augmented
 public import TauCeti.AlgebraicTopology.SimplexCategory.EndpointPreserving
+public import TauCeti.AlgebraicTopology.SimplicialObject.II
 import TauCeti.Order.Hom.Adjoint
 
 /-!
@@ -54,31 +54,6 @@ the greatest `j` with `β j ≤ i` satisfies the same condition, so it is the in
 public section
 
 open CategoryTheory Opposite Simplicial
-
-namespace SimplexCategory
-
-namespace II
-
-/-- The Galois condition characterizing `II.map' f`: the elements below `II.map' f x` are the
-`i` with `f i < x`. -/
-@[simp]
-lemma castSucc_lt_map'_iff {n m : ℕ} (f : Fin (n + 1) →o Fin (m + 1)) (x : Fin (m + 2))
-    (i : Fin (n + 1)) : i.castSucc < map' f x ↔ (f i).castSucc < x := by
-  constructor
-  · intro h
-    by_contra! hx
-    rw [map'] at h
-    exact h.not_ge (Finset.min'_le _ _ ((castSucc_mem_finset_iff f x i).2 hx))
-  · intro h
-    by_contra! hle
-    obtain ⟨y, hy⟩ := Fin.eq_castSucc_of_ne_last (hle.trans_lt (Fin.castSucc_lt_last i)).ne
-    rw [← hy, Fin.castSucc_le_castSucc_iff] at hle
-    exact h.not_ge (((map'_eq_castSucc_iff f x y).1 hy.symm).1.trans
-      (Fin.castSucc_le_castSucc_iff.2 (f.monotone hle)))
-
-end II
-
-end SimplexCategory
 
 namespace TauCeti.SimplexCategory
 
