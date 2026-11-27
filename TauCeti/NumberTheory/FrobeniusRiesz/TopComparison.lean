@@ -118,7 +118,8 @@ scaled by the number of tops, after charging the norms at the common scale of in
 `I \ K` and an error of `4 x^(1/2+ε)`, where `ε` is the precision exponent. The natural
 number `o` bounds the size of the quotient, and `p` assigns each top in `S` to its coset. The
 cutoff depends only on `o`, the logarithmic budget `C`, and the precision exponent. -/
-theorem card_mul_cyclic_riesz_sum_le_projection (o : ℕ) (C : ℝ) {ε : ℝ} (hε : -(1 / 2) < ε) :
+theorem exists_forall_ge_card_mul_le_sum_re_weighted_characters (o : ℕ) (C : ℝ) {ε : ℝ}
+    (hε : -(1 / 2) < ε) :
     ∃ x₀ : ℝ, 3 ≤ x₀ ∧ ∀ x ≥ x₀,
       ∀ {α ι Q : Type*} [Group Q] [Fintype Q], Fintype.card Q ≤ o →
       ∀ (S : Finset α) (p : α → Q) (I K : Finset ι), K ⊆ I → I.card ≤ 4 * o →
