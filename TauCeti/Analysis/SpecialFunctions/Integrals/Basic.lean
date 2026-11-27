@@ -87,6 +87,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   normalized Poisson kernel on an oriented interval, with half weight at each endpoint.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
+* `TauCeti.integral_sub_inv`: `∫ t in a..b, (t - c)⁻¹ = log |b - c| - log |a - c|` for
+  `c ∉ uIcc a b`.
 * `Complex.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{z cos θ}`, for complex `z`.
 * `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp`: for integer `n`, the same
@@ -687,6 +689,18 @@ theorem integral_inv_add_abs {σ T : ℝ} (hσ : 0 < σ) (hT : 0 ≤ T) :
   rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hc.intervalIntegrable _ _)
     (hc.intervalIntegrable _ _), hneg, hpos]
   ring
+
+open Real Set in
+/-- The integral of `(t - c)⁻¹` over any interval avoiding `c` is `log |b - c| - log |a - c|`. -/
+theorem integral_sub_inv {a b c : ℝ} (hc : c ∉ uIcc a b) :
+    ∫ t in a..b, (t - c)⁻¹ = log |b - c| - log |a - c| := by
+  have h0 : (0 : ℝ) ∉ uIcc (a - c) (b - c) := fun h ↦ hc <| by
+    rcases mem_uIcc.mp h with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact mem_uIcc.mpr (Or.inl ⟨by linarith, by linarith⟩)
+    · exact mem_uIcc.mpr (Or.inr ⟨by linarith, by linarith⟩)
+  rw [intervalIntegral.integral_comp_sub_right (fun u : ℝ ↦ u⁻¹) c, integral_inv h0,
+    log_div (fun h ↦ h0 (h ▸ right_mem_uIcc)) (fun h ↦ h0 (h ▸ left_mem_uIcc)),
+    log_abs, log_abs]
 
 end TauCeti
 

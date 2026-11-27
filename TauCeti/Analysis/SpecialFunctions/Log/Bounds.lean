@@ -21,6 +21,10 @@ real cutoff `x` when passing between inclusive and strict prime sums. From `e² 
 (`Real.two_fifths_lt_log_three_halves`), which locates the zero of the unoffset logarithmic
 integral below `3 / 2`.
 
+This file also records the explicit decimal lower bound `0.4054 < log (3 / 2)` and the numerical
+enclosure `-0.366513 ≤ log (log 2) ≤ -0.366512` for the iterated logarithm at `2`, used in
+logarithmic-integral estimates.
+
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
 decay of `log x`, as for the modulus `|α|²` of a section tending to one.
@@ -49,6 +53,8 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
+* `TauCeti.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
+* `TauCeti.le_log_log_two` and `TauCeti.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
@@ -177,7 +183,7 @@ end Real
 
 namespace TauCeti
 
-open Real
+open _root_.Real
 
 /-- **A power with a small logarithm is at most `1 + 2 ε`.** For every real `z`, if `log z ≤ L`
 and `n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε`. -/
@@ -192,5 +198,30 @@ theorem pow_le_one_add_two_mul_of_log_le {z L ε : ℝ} {n : ℕ} (hzL : log z �
     _ ≤ 1 + 2 * ε := by
       rw [div_le_iff₀ (by linarith)]
       nlinarith [mul_nonneg hε0 (by linarith : (0 : ℝ) ≤ 1 - 2 * ε)]
+
+/-- Explicit decimal lower bound `0.4054 < log (3 / 2)`. -/
+theorem lt_log_three_halves : (0.4054 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  have hb := exp_bound' (x := (0.4054 : ℝ)) (by norm_num) (by norm_num) (n := 6) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb ⊢
+  linarith
+
+/-- Lower bound `-0.366513 ≤ log (log 2)`. -/
+theorem le_log_log_two : (-0.366513 : ℝ) ≤ log (log 2) := by
+  rw [le_log_iff_exp_le (log_pos one_lt_two), exp_neg]
+  refine (inv_le_of_inv_le₀ (by norm_num : (0 : ℝ) < 0.6931471803) ?_).trans log_two_gt_d9.le
+  refine le_trans ?_ (sum_le_exp_of_nonneg (x := (0.366513 : ℝ)) (by norm_num) 8)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
+
+/-- Upper bound `log (log 2) ≤ -0.366512`. -/
+theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
+  rw [log_le_iff_le_exp (log_pos one_lt_two), exp_neg]
+  refine log_two_lt_d9.le.trans (le_inv_of_le_inv₀ (exp_pos _) ?_)
+  have hb := exp_bound' (x := (0.366512 : ℝ)) (by norm_num) (by norm_num) (n := 8) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb
+  linarith
 
 end TauCeti
