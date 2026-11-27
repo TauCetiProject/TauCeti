@@ -794,11 +794,6 @@ theorem norm_iteratedGradient_compAffineEquiv_le (B : E ≃L[ℝ] E) (b : E)
         ‖iteratedGradient k u‖ :=
   norm_iteratedGradient_compAffineL_le B b (hUW ▸ mapsTo_preimage _ _) k u
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem abs_det_coe_symm_inv (B : E ≃L[ℝ] E) :
-    |LinearMap.det (B.symm : E →ₗ[ℝ] E)|⁻¹ = |LinearMap.det (B : E →ₗ[ℝ] E)| := by
-  rw [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, abs_inv, inv_inv]
-
 /-- **Reverse order-by-order seminorm scaling (`1 ≤ p ≤ ∞`).** For `F x = B x + b` with
 `U = F ⁻¹' W`,
 `|u|_{k+1,p,W} ≤ ‖B.symm‖ ^ (k + 1) * |det B| ^ (1 / p).toReal * |u ∘ F|_{k+1,p,U}`. -/
@@ -810,7 +805,7 @@ theorem norm_iteratedGradient_le_mul_norm_iteratedGradient_compAffineEquiv (B : 
   have h := norm_iteratedGradient_compAffineEquiv_le (μ := μ) (p := p) B.symm (-B.symm b)
     (B.toLinearEquiv.eq_preimage_symm_add_neg b hUW) k (compAffineEquiv μ B b hUW (k + 1) u)
   rw [← compAffineEquiv_symm μ B b hUW (k + 1), ContinuousLinearEquiv.symm_apply_apply] at h
-  rwa [abs_det_coe_symm_inv] at h
+  rwa [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, abs_inv, inv_inv] at h
 
 /-- **Forward `Wkp.seminorm` scaling on preimages (`1 ≤ p ≤ ∞`).** For `F x = B x + b` with
 `U = F ⁻¹' W` and any derivative order `j ≤ k`,
@@ -833,7 +828,7 @@ theorem seminorm_le_mul_seminorm_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
   have h := seminorm_compAffineEquiv_le (μ := μ) (p := p) B.symm (-B.symm b)
     (B.toLinearEquiv.eq_preimage_symm_add_neg b hUW) hj (compAffineEquiv μ B b hUW k u)
   rw [← compAffineEquiv_symm μ B b hUW k, ContinuousLinearEquiv.symm_apply_apply] at h
-  rwa [abs_det_coe_symm_inv] at h
+  rwa [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, abs_inv, inv_inv] at h
 
 /-- **Ciarlet forward geometric seminorm bound.** For `F x = B x + b`, if `U = F ⁻¹' W`, `W` is
 bounded, and `U` contains a ball of positive radius `ρ'`, then the `(k + 1)`-st weak derivative of
@@ -895,23 +890,15 @@ theorem seminorm_le_mul_seminorm_compAffineEquiv_of_ball_subset (B : E ≃L[ℝ]
 
 /-! ### Exact scaling for homotheties `x ↦ r • x + b` -/
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem abs_det_smulLeft_inv_rpow {r : ℝ} (hr : r ≠ 0) (p : ℝ≥0∞) :
-    |LinearMap.det
-        ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : E ≃L[ℝ] E) : E →ₗ[ℝ] E)|⁻¹ ^
-        (1 / p).toReal =
-      |r|⁻¹ ^ ((Module.finrank ℝ E : ℝ) / p.toReal) := by
-  rw [ContinuousLinearEquiv.det_smulLeft, Units.val_mk0, abs_pow, ← inv_pow,
-    ← Real.rpow_natCast |r|⁻¹, ← Real.rpow_mul (by positivity), one_div, ENNReal.toReal_inv,
-    div_eq_mul_inv]
-
 /-- **Exact order-zero dilation identity** along `x ↦ r • x + b` (`r ≠ 0`). -/
 theorem norm_value_compAffineEquiv_smulLeft {r : ℝ} (hr : r ≠ 0) (b : E)
     (hUW : (U : Set E) = (fun x ↦ ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) x + b) ⁻¹' W)
     (k : ℕ) (u : Wkp μ W p k) :
     ‖value k (compAffineEquiv μ (ContinuousLinearEquiv.smulLeft (Units.mk0 r hr)) b hUW k u)‖ =
       |r|⁻¹ ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖value k u‖ := by
-  rw [norm_value_compAffineEquiv, abs_det_smulLeft_inv_rpow]
+  rw [norm_value_compAffineEquiv, ContinuousLinearEquiv.det_smulLeft, Units.val_mk0, abs_pow,
+    ← inv_pow, ← Real.rpow_natCast |r|⁻¹, ← Real.rpow_mul (by positivity), one_div,
+    ENNReal.toReal_inv, div_eq_mul_inv]
 
 /-- **Exact order-`k + 1` dilation identity** along `x ↦ r • x + b` (`r ≠ 0`), valid for every
 order `k` and every exponent `1 ≤ p ≤ ∞`. -/
@@ -932,7 +919,9 @@ theorem norm_iteratedGradient_compAffineEquiv_smulLeft {r : ℝ} (hr : r ≠ 0) 
       ContinuousLinearMap.iteratedGradientPullback_id, smul_apply,
       ContinuousLinearMap.id_apply]
   rw [Lp.norm_eq_mul_abs_det_inv_rpow_of_ae_eq B b hUW (r ^ (k + 1)) hae,
-    abs_det_smulLeft_inv_rpow, Real.norm_eq_abs, abs_pow]
+    ContinuousLinearEquiv.det_smulLeft, Units.val_mk0, abs_pow, ← inv_pow,
+    ← Real.rpow_natCast |r|⁻¹, ← Real.rpow_mul (by positivity), one_div, ENNReal.toReal_inv,
+    div_eq_mul_inv, Real.norm_eq_abs, abs_pow]
 
 /-- **Exact `Wkp.seminorm` dilation identity** along `x ↦ r • x + b` (`r ≠ 0`), valid for every
 derivative order `j ≤ k` and every exponent `1 ≤ p ≤ ∞`. -/

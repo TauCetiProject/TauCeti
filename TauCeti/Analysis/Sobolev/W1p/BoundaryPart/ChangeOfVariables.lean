@@ -237,12 +237,16 @@ theorem Wkp.compAffineEquiv_mem_w1pVanishingOnSubmodule {E' : Type*}
   have h1 := Wkp.value_compAffineEquiv_ae (ν := nu) mu B b hUV 1 φV
   have hqmp := Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict mu nu B b
     (hUV ▸ mapsTo_preimage _ _)
+  -- `Wkp _ _ p 1` is definitionally `W1p _ _ p` via semireducible `sobolevStage 0`, so `rw`
+  -- cannot match `Wkp.value_one` across `T` without bridging `T` and `coe_coe` explicitly.
+  have hT : W1p.value (T φV) =
+      Wkp.value 1 (Wkp.compAffineEquiv (ν := nu) (p := p) mu B b hUV 1 φV) :=
+    (Wkp.value_one _).symm
   filter_upwards [h1,
     hqmp.ae (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ),
     W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : U ≤ ⊤) _]
     with x hx1 hx2 hx3
-  change (W1p.value (Wkp.compAffineEquiv (ν := nu) (p := p) mu B b hUV 1 φV) : E → ℝ) x = _
-  rw [← Wkp.value_one, hx1, Wkp.value_one, hx2, hx3, TestFunction.compOfIsProperMap_apply]
+  rw [hT, hx1, Wkp.value_one, hx2, hx3, TestFunction.compOfIsProperMap_apply]
 
 /-- A bound `‖u‖_p ≤ b` with `b ≤ 0` forces `u = 0`, so `u` satisfies every bound of
 Poincaré type. -/
@@ -274,9 +278,9 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_co
     simpa [w, Wkp.iteratedGradient_zero u, Wkp.iteratedGradient_zero w, pow_one, mul_assoc] using
       Wkp.norm_iteratedGradient_compAffineEquiv_le e 0 (by simpa using hUV) 0 u
   have hw : w ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ) := by
-    have hmem := Wkp.compAffineEquiv_mem_w1pVanishingOnSubmodule (nu := mu) mu e 0
-      (by simpa using hUV) hu
-    rwa [show ((fun x => e x + 0) ⁻¹' Γ) = e ⁻¹' Γ by simp] at hmem
+    have hmem : w ∈ w1pVanishingOnSubmodule mu U p ((fun x => e x + 0) ⁻¹' Γ) :=
+      Wkp.compAffineEquiv_mem_w1pVanishingOnSubmodule (nu := mu) mu e 0 (by simpa using hUV) hu
+    simpa only [add_zero] using hmem
   have h := hC w hw
   rw [hval] at h
   set K := |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal
