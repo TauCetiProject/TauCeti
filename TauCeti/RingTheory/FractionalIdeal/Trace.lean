@@ -54,8 +54,14 @@ theorem coeToSubmodule_trace (I : FractionalIdeal B⁰ L) :
       ((I : Submodule B L).restrictScalars A).map ((Algebra.trace K L).restrictScalars A) := (rfl)
 
 /-- Membership in the trace ideal is witnessed by a single element of the source ideal. -/
+@[simp]
 theorem mem_trace {I : FractionalIdeal B⁰ L} {x : K} :
     x ∈ I.trace A K ↔ ∃ y ∈ I, Algebra.trace K L y = x := Iff.rfl
+
+/-- The trace preserves inclusion of fractional ideals. -/
+theorem trace_mono {I J : FractionalIdeal B⁰ L} (h : I ≤ J) : I.trace A K ≤ J.trace A K := by
+  rw [← coeToSubmodule_le_coeToSubmodule, coeToSubmodule_trace, coeToSubmodule_trace]
+  exact Submodule.map_mono (Submodule.restrictScalars_mono A h)
 
 /-- The trace of the zero fractional ideal is zero. -/
 @[simp]

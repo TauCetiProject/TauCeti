@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FractionalIdeal.Trace
 public import TauCeti.RingTheory.DedekindDomain.Different.Trace
+import TauCeti.FieldTheory.Separable.FractionRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 
 /-!
@@ -44,11 +45,7 @@ theorem trace_maximalIdeal_zpow (m : ℤ) :
       (maximalIdeal A : FractionalIdeal A⁰ K) ^
         ((m + multiplicity (maximalIdeal B) (differentIdeal A B)) /
           (maximalIdeal B).ramificationIdx A) := by
-  have : Algebra.IsSeparable (FractionRing A) (FractionRing B) :=
-    Algebra.IsSeparable.of_equiv_equiv (FractionRing.algEquiv A K).symm.toRingEquiv
-      (FractionRing.algEquiv B L).symm.toRingEquiv
-      (RingHom.ext fun x ↦ IsFractionRing.algEquiv_commutes (FractionRing.algEquiv A K).symm
-        (FractionRing.algEquiv B L).symm x)
+  have := isSeparable_fractionRing_of_isFractionRing A B K L
   let e := (maximalIdeal B).ramificationIdx A
   let d := multiplicity (maximalIdeal B) (differentIdeal A B)
   let P : FractionalIdeal B⁰ L := maximalIdeal B

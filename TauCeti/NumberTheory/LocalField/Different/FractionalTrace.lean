@@ -42,7 +42,7 @@ theorem exists_trace_eq_iff_le_realAddValuation [Algebra.IsSeparable K L] (m : �
 
 /-- Measured in the extension field, the valuation of a trace gains at least the different
 exponent minus `e - 1`. This includes zero inputs and zero traces, with valuation `⊤`. -/
-theorem realAddValuation_add_differentExponent_le_trace (x : L) :
+theorem realAddValuation_add_differentExponent_le_realAddValuation_trace_add (x : L) :
     realAddValuation L x + differentExponent K L ≤
       realAddValuation L (algebraMap K L (Algebra.trace K L x)) +
         (ramificationIndex K L - 1 : ℕ) := by
