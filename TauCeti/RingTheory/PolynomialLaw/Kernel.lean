@@ -33,6 +33,8 @@ for algebras in any universe.
 * `PolynomialLaw.liftQ f K hK`: the law on `M ⧸ K` induced by `f` when `K ≤ Ker(f)`, with
   `PolynomialLaw.liftQ_comp_mkQ`.
 * `PolynomialLaw.exists_eq_comp_mkQ_iff_le_ker`: `f` factors through `M ⧸ K` iff `K ≤ Ker(f)`.
+* `PolynomialLaw.comap_mkQ_ker_liftQ`: the preimage in `M` of the kernel of `f.liftQ K hK` is
+  `Ker(f)`.
 * `PolynomialLaw.ker_liftQ`: the kernel of `f.liftQ K hK` is the image of `Ker(f)` in `M ⧸ K`.
 * `PolynomialLaw.isFaithful_liftQ_ker`: the law induced on `M ⧸ Ker(f)` is faithful.
 
@@ -107,9 +109,12 @@ theorem toFun'_add_lTensor_subtype {f : M →ₚₗ[R] N} {K : Submodule R M} (h
 theorem toFun_add_tmul_of_mem_ker {f : M →ₚₗ[R] N} {x : M} (hx : x ∈ f.ker) (S : Type*)
     [CommSemiring S] [Algebra R S] (b : S) (m : S ⊗[R] M) :
     f.toFun S (b ⊗ₜ x + m) = f.toFun S m := by
+  -- Lift `b` and `m` along some `ψ : MvPolynomial (Fin n) R →ₐ[R] S`. The polynomial ring lies
+  -- in the universe of `R`, where `hx` applies, and `isCompat_apply` carries the result to `S`.
   obtain ⟨n, ψ, p, q, rfl, rfl⟩ := exists_lift' m b
-  rw [← AlgHom.toLinearMap_apply, ← rTensor_tmul, ← map_add, ← isCompat_apply,
-    ← toFun'_eq_toFun, hx, toFun'_eq_toFun, isCompat_apply]
+  have h : ψ q ⊗ₜ x + ψ.toLinearMap.rTensor M p = ψ.toLinearMap.rTensor M (q ⊗ₜ x + p) := by
+    simp
+  rw [h, ← isCompat_apply, ← isCompat_apply, ← toFun'_eq_toFun, hx]
 
 end CommSemiring
 
@@ -181,7 +186,6 @@ def liftQ (f : M →ₚₗ[R] N) (K : Submodule R M) (hK : K ≤ f.ker) : (M ⧸
       rTensor_comp_lTensor]
 
 /-- The component of `f.liftQ K hK` at `S` evaluated at the image of `m ∈ S ⊗ M` is `f_S(m)`. -/
-@[simp]
 theorem liftQ_toFun'_lTensor_mkQ (hK : K ≤ f.ker) (S : Type u) [CommSemiring S] [Algebra R S]
     (m : S ⊗[R] M) : (f.liftQ K hK).toFun' S (K.mkQ.lTensor S m) = f.toFun' S m :=
   toFun'_eq_of_lTensor_mkQ_eq hK S
@@ -232,20 +236,22 @@ theorem exists_eq_comp_mkQ_iff_le_ker :
   exact (LinearMap.ker_toPolynomialLaw K.mkQ ▸ (Submodule.ker_mkQ K).ge).trans
     (ker_le_ker_comp g _)
 
+/-- The preimage in `M` of the kernel of the law induced on `M ⧸ K` is `Ker(f)`. -/
+theorem comap_mkQ_ker_liftQ (hK : K ≤ f.ker) : (f.liftQ K hK).ker.comap K.mkQ = f.ker := by
+  ext x
+  -- Both sides of the defining equation of `Ker(f.liftQ K hK)` at `K.mkQ x` lift to `S ⊗ M`.
+  have key (S : Type u) [CommSemiring S] [Algebra R S] (b : S) (m : S ⊗[R] M) :
+      (f.liftQ K hK).toFun' S (b ⊗ₜ K.mkQ x + K.mkQ.lTensor S m) = f.toFun' S (b ⊗ₜ x + m) := by
+    rw [← lTensor_tmul, ← map_add, liftQ_toFun'_lTensor_mkQ]
+  refine ⟨fun hx S _ _ b m ↦ ?_, fun hx S _ _ b y ↦ ?_⟩
+  · exact (key S b m).symm.trans ((hx S b _).trans (liftQ_toFun'_lTensor_mkQ hK S m))
+  · obtain ⟨m, rfl⟩ := K.mkQ.lTensor_surjective S K.mkQ_surjective y
+    exact (key S b m).trans ((hx S b m).trans (liftQ_toFun'_lTensor_mkQ hK S m).symm)
+
 /-- The kernel of the law induced on `M ⧸ K` is the image of `Ker(f)` in `M ⧸ K`. -/
 @[simp]
 theorem ker_liftQ (hK : K ≤ f.ker) : (f.liftQ K hK).ker = f.ker.map K.mkQ := by
-  have h : (f.liftQ K hK).ker.comap K.mkQ = f.ker := by
-    ext x
-    refine ⟨fun hx S _ _ b m ↦ ?_, fun hx S _ _ b y ↦ ?_⟩
-    · rw [← liftQ_toFun'_lTensor_mkQ hK S (b ⊗ₜ x + m), ← liftQ_toFun'_lTensor_mkQ hK S m,
-        map_add, lTensor_tmul]
-      exact hx S b _
-    · obtain ⟨m, rfl⟩ := K.mkQ.lTensor_surjective S K.mkQ_surjective y
-      have := hx S b m
-      rwa [← liftQ_toFun'_lTensor_mkQ hK, ← liftQ_toFun'_lTensor_mkQ hK S m, map_add,
-        lTensor_tmul] at this
-  rw [← h, Submodule.map_comap_eq_of_surjective K.mkQ_surjective]
+  rw [← comap_mkQ_ker_liftQ hK, Submodule.map_comap_eq_of_surjective K.mkQ_surjective]
 
 /-- **The law induced on `M ⧸ Ker(f)` is faithful.** -/
 theorem isFaithful_liftQ_ker : (f.liftQ f.ker le_rfl).IsFaithful := by
