@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Binomial
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Data.List.OfFn
-import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.Algebra.Algebra.Operations
 
 /-!
 # Bounded integral spans of ordered binomial products
@@ -112,7 +112,6 @@ theorem prod_ofFn_ringChoose_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r →
 
 /-- An integral submodule contains a stage exactly when it contains every product of bounded
 total degree. -/
-@[simp]
 theorem ringChooseFilteredSpan_le_iff {r : ℕ} {h : Fin r → R} {n : ℕ}
     {S : Submodule ℤ R} : ringChooseFilteredSpan h n ≤ S ↔
       ∀ a : Fin r → ℕ, ∑ i, a i ≤ n →
@@ -125,6 +124,23 @@ theorem ringChooseFilteredSpan_mono {r : ℕ} (h : Fin r → R) :
   intro m n hmn
   exact span_mono (Set.image_mono fun _ ha => ha.trans hmn)
 
+/-- The stages exhaust the unbounded integral additive span of ordered binomial products. -/
+theorem iSup_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R) :
+    (⨆ n, ringChooseFilteredSpan h n).toAddSubgroup =
+      AddSubgroup.closure
+        (Set.range fun a : Fin r → ℕ => (List.ofFn fun i => Ring.choose (h i) (a i)).prod) := by
+  rw [← span_int_eq_addSubgroupClosure]
+  apply congrArg Submodule.toAddSubgroup
+  apply le_antisymm
+  · refine iSup_le fun n => ?_
+    rw [ringChooseFilteredSpan_le_iff]
+    intro a _
+    exact subset_span ⟨a, rfl⟩
+  · rw [span_le]
+    rintro _ ⟨a, rfl⟩
+    exact mem_iSup_of_mem (∑ i, a i)
+      (prod_ofFn_ringChoose_mem_ringChooseFilteredSpan h a le_rfl)
+
 /-- Every stage contains one, the product with all exponents zero. -/
 @[simp]
 theorem one_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R) (n : ℕ) :
@@ -134,7 +150,7 @@ theorem one_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R) (n : ℕ) :
 
 /-- For an empty family every stage consists of the integral multiples of one. -/
 @[simp]
-theorem ringChooseFilteredSpan_isEmpty (h : Fin 0 → R) (n : ℕ) :
+theorem ringChooseFilteredSpan_fin_zero (h : Fin 0 → R) (n : ℕ) :
     ringChooseFilteredSpan h n = span ℤ {(1 : R)} := by
   apply le_antisymm
   · rw [ringChooseFilteredSpan_le_iff]
@@ -173,6 +189,47 @@ theorem mul_mem_ringChooseFilteredSpan_cons {r : ℕ} (x : R) (h : Fin r → R)
     simpa only [List.ofFn_succ, List.prod_cons, Fin.cons_zero, Fin.cons_succ] using
       prod_ofFn_ringChoose_mem_ringChooseFilteredSpan (Fin.cons x h) (Fin.cons i a) hdeg
   exact hmul (mul_mem_mul hu hv)
+
+/-- For a commuting family, multiplication of stages adds the total-degree bounds. -/
+theorem mul_le_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
+    (hcomm : ∀ i j, Commute (h i) (h j)) (m n : ℕ) :
+    ringChooseFilteredSpan h m * ringChooseFilteredSpan h n ≤
+      ringChooseFilteredSpan h (m + n) := by
+  induction r generalizing m n with
+  | zero => simp [ringChooseFilteredSpan_fin_zero, span_mul_span]
+  | succ r ih =>
+    rw [ringChooseFilteredSpan_def h m, ringChooseFilteredSpan_def h n, span_mul_span, span_le]
+    rintro _ ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩
+    dsimp only
+    rw [SetLike.mem_coe]
+    have htail := ih (fun i => h i.succ) (fun i j => hcomm i.succ j.succ)
+      (∑ i : Fin r, a i.succ) (∑ i : Fin r, b i.succ)
+      (mul_mem_mul
+        (prod_ofFn_ringChoose_mem_ringChooseFilteredSpan _ _ le_rfl)
+        (prod_ofFn_ringChoose_mem_ringChooseFilteredSpan _ _ le_rfl))
+    have hhead := mul_mem_span_ringChoose_Iic (h 0)
+      (subset_span ⟨a 0, Set.mem_Iic.mpr le_rfl, rfl⟩)
+      (subset_span ⟨b 0, Set.mem_Iic.mpr le_rfl, rfl⟩)
+    have hswap : Commute (List.ofFn fun i : Fin r => Ring.choose (h i.succ) (a i.succ)).prod
+        (Ring.choose (h 0) (b 0)) := by
+      apply Commute.list_prod_left
+      intro x hx
+      obtain ⟨i, rfl⟩ := List.mem_ofFn.mp hx
+      exact (hcomm i.succ 0).ringChoose _ _
+    have hmem := mul_mem_ringChooseFilteredSpan_cons (h 0) (fun i => h i.succ) hhead htail
+    have hdeg : a 0 + b 0 + ((∑ i : Fin r, a i.succ) + (∑ i : Fin r, b i.succ)) ≤ m + n := by
+      simp only [Set.mem_ofPred_eq, Fin.sum_univ_succ] at ha hb
+      omega
+    apply ringChooseFilteredSpan_mono h hdeg
+    simpa only [List.ofFn_succ, List.prod_cons, hswap.mul_mul_mul_comm,
+      ← Fin.tail_def, Fin.cons_self_tail] using hmem
+
+/-- Products of elements in two stages lie in the stage with the sum of their bounds. -/
+theorem mul_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
+    (hcomm : ∀ i j, Commute (h i) (h j)) {u v : R} {m n : ℕ}
+    (hu : u ∈ ringChooseFilteredSpan h m) (hv : v ∈ ringChooseFilteredSpan h n) :
+    u * v ∈ ringChooseFilteredSpan h (m + n) :=
+  mul_le_ringChooseFilteredSpan h hcomm m n (mul_mem_mul hu hv)
 
 /-- The degree-`n` binomial coefficient of an integer linear combination of a commuting family
 has an integral ordered expansion of total degree at most `n`. -/
