@@ -45,6 +45,11 @@ neighbourhood of `1` in it contains the trace of such a level.
 
 * V. Platonov, A. Rapinchuk, *Algebraic groups and number theory*, Pure and Applied Mathematics
   139, Academic Press (1994), §5.1.
+* The statement for integer levels and the approach through the topology of `Ô` follow
+  `New.exists_congruenceGL_subset` in `grh/src/Lib/Adelic/Unitary/CongruenceLevels.lean` of
+  grh-lean (https://github.com/lsernau/grh-lean at commit
+  `72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC); no
+  code is adapted from it.
 -/
 
 public section

@@ -160,18 +160,12 @@ theorem hasBasis_nhds_one_ker_map_quotientMk {ι : Sort*} {p : ι → Prop} {J :
       ((Matrix.GeneralLinearGroup.map (n := Fin n) (Ideal.Quotient.mk (J i))).ker :
         Set (Matrix.GeneralLinearGroup (Fin n) R)) := by
   have h := (HopfAlgebra.hasBasis_nhds_one_congruenceSubgroup (k := ℤ)
-    (H := coordinateHopfAlgebra ℤ n) hJ).map (pointsContinuousMulEquiv (k := ℤ) (R := R) n :
-      WithConv (coordinateHopfAlgebra ℤ n →ₐ[ℤ] R) ≃ₜ Matrix.GeneralLinearGroup (Fin n) R)
-  -- The underlying homeomorphism of `pointsContinuousMulEquiv` is a group isomorphism.
-  have h1 : (pointsContinuousMulEquiv (k := ℤ) (R := R) n :
-      WithConv (coordinateHopfAlgebra ℤ n →ₐ[ℤ] R) ≃ₜ Matrix.GeneralLinearGroup (Fin n) R) 1 = 1 :=
-    map_one (pointsContinuousMulEquiv n)
-  rw [Homeomorph.map_nhds_eq, h1] at h
+    (H := coordinateHopfAlgebra ℤ n) hJ).map
+      (Homeomorph.ofClass (pointsContinuousMulEquiv (k := ℤ) (R := R) n))
+  rw [Homeomorph.map_nhds_eq, Homeomorph.coe_ofClass, map_one] at h
   convert h using 2 with i
-  rw [← map_congruenceSubgroup (R := ℤ), ← coe_pointsContinuousMulEquiv, Subgroup.coe_map]
-  -- The homeomorphism and the group isomorphism underlying `pointsContinuousMulEquiv` have the
-  -- same function `pointsMulEquiv n`; Mathlib has no `simp` lemma identifying the coercions.
-  rfl
+  rw [← map_congruenceSubgroup (R := ℤ), Subgroup.coe_map, MulEquiv.coe_toMonoidHom]
+  simp only [pointsContinuousMulEquiv_apply]
 
 end PointTopology
 
