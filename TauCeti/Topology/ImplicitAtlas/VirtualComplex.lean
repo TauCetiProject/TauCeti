@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
-public import TauCeti.Topology.ImplicitAtlas.PartialComplex
+public import TauCeti.Topology.ImplicitAtlas.PartialComplex.Basic
 
 /-!
 # The virtual cochain complex of an implicit atlas
