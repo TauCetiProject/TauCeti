@@ -204,16 +204,6 @@ variable {ι : Type*} [Fintype ι] {e : ι → OpenPartialHomeomorph M (Coordina
   (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
   (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
 
-/-- A Schwartz function on `ℝⁿ` as a smooth function. -/
-private def schwartzToSmooth (b : 𝓢(CoordinateSpace n, ℂ)) :
-    C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯ :=
-  ⟨b, contMDiff_iff_contDiff.2 (b.smooth ⊤)⟩
-
-@[simp]
-private theorem schwartzToSmooth_apply (b : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n) :
-    schwartzToSmooth b y = b y :=
-  rfl
-
 /-- Coordinatewise bounds `‖x i‖ ≤ C i * g` with `0 ≤ g` bound the `Lᵖ` norm of `x` by
 `(∑ i, |C i|) * g`. -/
 private theorem norm_le_sum_abs_mul_of_forall_norm_apply_le {p : ENNReal} [Fact (1 ≤ p)]
@@ -233,12 +223,14 @@ private theorem exists_norm_chartReading_complexCutoffPullback_le
     (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     (σ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)) (s : ℝ) :
     ∃ C, ∀ b : 𝓢(CoordinateSpace n, ℂ),
-      ‖chartReading he ψ s (e'.complexCutoffPullback he' σ (schwartzToSmooth b))‖ ≤
+      ‖chartReading he ψ s
+          (e'.complexCutoffPullback he' σ (ContMDiffMap.ofContDiff b (b.smooth ⊤)))‖ ≤
         C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 b‖ := by
   -- In the chart `eᵢ`, the reading is `θᵢ · (b ∘ κᵢ)` for the overlap cutoff `θᵢ` and the
   -- transition map `κᵢ = e' ∘ eᵢ⁻¹`.
   have hC (i : ι) : ∃ C, ∀ b : 𝓢(CoordinateSpace n, ℂ),
-      ‖chartReading he ψ s (e'.complexCutoffPullback he' σ (schwartzToSmooth b)) i‖ ≤
+      ‖chartReading he ψ s
+          (e'.complexCutoffPullback he' σ (ContMDiffMap.ofContDiff b (b.smooth ⊤))) i‖ ≤
         C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 b‖ := by
     obtain ⟨hθ, hθc, hθs⟩ := overlapCutoff_spec he' (he i) (ψ i) σ
     obtain ⟨C, hC⟩ := BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp
@@ -253,7 +245,7 @@ private theorem exists_norm_chartReading_complexCutoffPullback_le
     congr 1
     by_cases hy : (e i).symm y ∈ e'.source
     · rw [complexCutoffPullback_apply_of_mem he' _ _ hy, cutoffPullback_one_apply_of_mem he' _ hy,
-        schwartzToSmooth_apply]
+        ContMDiffMap.coe_ofContDiff]
     · rw [complexCutoffPullback_apply_of_notMem he' _ _ hy,
         cutoffPullback_apply_of_notMem he' _ _ hy, zero_smul]
   choose C hC using hC
@@ -278,8 +270,8 @@ theorem exists_norm_chartReading_neg_le (hμ : HasSmoothPositiveDensity (Coordin
   rw [chartReading_apply]
   refine SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall s _
     (mul_nonneg (abs_nonneg _) hK) fun b ↦ ?_
-  have h := hσ i u (schwartzToSmooth b)
-  simp only [schwartzToSmooth_apply] at h
+  have h := hσ i u (ContMDiffMap.ofContDiff b (b.smooth ⊤))
+  simp only [ContMDiffMap.coe_ofContDiff] at h
   rw [← h, mul_comm |C i|, mul_assoc]
   exact (hu _).trans (mul_le_mul_of_nonneg_left
     ((hC i b).trans (mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _))) hK)
