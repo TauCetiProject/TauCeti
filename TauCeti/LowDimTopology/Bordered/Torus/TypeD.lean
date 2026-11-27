@@ -47,6 +47,10 @@ of `δ¹`; an arrow `x → y` labelled `a` below means that `a ⊗ y` is a term 
   over a ring of characteristic two. The model is bounded
   (`TauCeti.StrandsAlgebra.isBounded_torusBoundedRho₁₂TypeD`), so it can be paired with type `A`
   modules whose higher operations never vanish.
+* **The structure `δ¹ y = ρ₂₃ ⊗ y`** (`TauCeti.StrandsAlgebra.torusRho₂₃TypeD`), with one
+  generator `y` at `ι₁`: the same shape with the roles of the two idempotents exchanged, the chord
+  `ρ₂₃` starting and ending at the pair `{1, 3}`. It is the structure `N_∞` of the surgery exact
+  triangle of `TauCeti.LowDimTopology.Bordered.Torus.SurgeryTriangle`.
 * **The chains `torusChainTypeD n`** (`TauCeti.StrandsAlgebra.torusChainTypeD`), with a generator
   `x` at `ι₀` and generators `γ₀, …, γₙ` at `ι₁`, and arrows `x → γ₀` labelled `ρ₁`, `x → γₙ`
   labelled `ρ₃` and `γₗ₊₁ → γₗ` labelled `ρ₂₃`. This is the shape of the type `D` structure of the
@@ -62,6 +66,7 @@ are computed in `TauCeti.LowDimTopology.Bordered.Torus.Pairing`.
 ## Main definitions
 
 * `TauCeti.StrandsAlgebra.torusRho₁₂TypeD`: the type `D` structure `δ¹ x = ρ₁₂ ⊗ x`.
+* `TauCeti.StrandsAlgebra.torusRho₂₃TypeD`: the type `D` structure `δ¹ y = ρ₂₃ ⊗ y`.
 * `TauCeti.StrandsAlgebra.torusBoundedRho₁₂TypeD`: its bounded model with three generators.
 * `TauCeti.StrandsAlgebra.torusChainTypeD`: the chain with `n + 2` generators.
 
@@ -137,6 +142,31 @@ theorem not_isBounded_torusRho₁₂TypeD [Nontrivial R] : ¬(torusRho₁₂Type
   have := congrArg (PiTensorProduct.dualDistrib (PiTensorProduct.tprod R fun _ : Fin k ↦
     oneStrandChordCoord R genusOne.pair (by decide : (0 : Fin 4) < 2))) h
   simp [PiTensorProduct.dualDistrib_apply] at this
+
+/-- **The type `D` structure `δ¹ y = ρ₂₃ ⊗ y`** over the torus algebra: one generator `y` at the
+idempotent `ι₁ = I({1}) + I({3})` of the pair `genusOne.pair 1 = {1, 3}`, whose only coefficient is
+the chord `ρ₂₃` from `1` to `3`. Its structure equation `d ρ₂₃ + ρ₂₃ ρ₂₃ = 0` holds since a single
+strand has no crossing and `ρ₂₃` ends at `3`, where it does not start. -/
+def torusRho₂₃TypeD :
+    TypeDStructure (matchedSummandDifferential R genusOne.pair 1) (oneStrandIdem R genusOne.pair)
+      Unit where
+  idem _ := Set.rangeFactorization genusOne.pair 1
+  coeff := Matrix.of fun _ _ ↦ oneStrandChord R genusOne.pair (by decide : (1 : Fin 4) < 3)
+  idem_mul_coeff _ _ := by simp
+  coeff_mul_idem _ _ := by simp
+  map_coeff_add_coeff_mul_coeff := Matrix.ext fun _ _ ↦ by
+    simp [Matrix.mul_apply,
+      oneStrandChord_mul_oneStrandChord_of_ne _ _ _ (by decide : (3 : Fin 4) ≠ 1)]
+
+@[simp]
+theorem torusRho₂₃TypeD_idem (y : Unit) :
+    (torusRho₂₃TypeD R).idem y = Set.rangeFactorization genusOne.pair 1 :=
+  (rfl)
+
+@[simp]
+theorem torusRho₂₃TypeD_coeff (y z : Unit) :
+    (torusRho₂₃TypeD R).coeff y z = oneStrandChord R genusOne.pair (by decide : (1 : Fin 4) < 3) :=
+  (rfl)
 
 /-! ### A bounded model of `δ¹ x = ρ₁₂ ⊗ x` -/
 
