@@ -66,6 +66,9 @@ The right side is the bounded functional `TauCeti.PDE.mixedForcingL`, of norm at
 `‖f‖ + ‖T‖ ‖h‖`, so the coercive theory above applies to it. Every element of `H¹_Γ(Ω)` has zero
 trace on `Γ`, so the solution satisfies the Dirichlet condition `T u = T g` almost everywhere on
 `Γ` (`TauCeti.W1p.frontierTraceOfIsLipschitzDomain_ae_eq_of_sub_mem_w1pVanishingOnSubmodule`).
+When `Γ` is an admissible boundary part (`Set.IsAdmissibleBoundaryPart`), the converse holds by the
+trace characterization of `H¹_Γ(Ω)`, so the problem may be posed with the Dirichlet condition
+`T u = T g` on `Γ` in place of `u - g ∈ H¹_Γ(Ω)`, and it is still uniquely solvable.
 For `Γ = ∅` this is the Neumann problem with conormal derivative `h`; for `Γ` the whole frontier
 the boundary integral vanishes.
 
@@ -116,6 +119,9 @@ almost everywhere symmetric inverse-coercive `a`, no drift and `c ≥ 0`.
   theorem of the same name in the namespace `TauCeti.PDE.IsUniformlyEllipticAE`: the same on a
   bounded connected Lipschitz domain of `EuclideanSpace ℝ ι`, with a Dirichlet part of positive
   surface measure.
+* `existsUnique_frontierTraceOfIsLipschitzDomain_ae_eq_and_forall_energyFormH1_eq`, in the
+  namespace `TauCeti.PDE.IsUniformlyEllipticAE`: the same for an admissible Dirichlet part, with
+  the Dirichlet condition `T u = T g` on `Γ`.
 * `TauCeti.PDE.isMinOn_w1pVanishingOn_iff_forall_energyFormH1_eq`: Dirichlet's principle for the
   mixed problem, for a symmetric form nonnegative on `H¹_Γ(Ω)`.
 * `TauCeti.PDE.isMinOn_iff_mixedSolutionL_eq` and
@@ -870,6 +876,54 @@ theorem
   simpa only [mixedForcingL_apply] using
     hA.existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_isLipschitzDomain
       ha hc hb0 hc_nonneg hcoeff hΩ hb hconn hΓ g (mixedForcingL hΩ hb f h)
+
+/-- **The mixed problem with a Dirichlet condition on the trace.** Let `Ω` be a bounded connected
+open subset of `EuclideanSpace ℝ ι`, let `σ = μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1]` be
+codimension-one Hausdorff (surface) measure and `T` the trace, and let `Γ` be an admissible boundary
+part of `Ω` (`Set.IsAdmissibleBoundaryPart`), so that `Ω` is a Lipschitz domain, of positive
+`σ`-measure. For a measurable inverse-coercive principal coefficient `a`, a drift vanishing almost
+everywhere and an essentially bounded mass coefficient `c ≥ 0`, every Dirichlet datum
+`g ∈ H¹(Ω)`, interior datum `f ∈ L²(Ω)` and conormal datum `h ∈ L²(∂Ω \ Γ, σ)`, there is exactly
+one `u ∈ H¹(Ω)` with `T u = T g` `σ`-almost everywhere on `Γ` and
+
+`∫_Ω ⟨a ∇u, ∇v⟩ + c u v = ∫_Ω f v + ∫_{∂Ω \ Γ} h · T v dσ` for every `v ∈ H¹_Γ(Ω)`.
+
+By the trace characterization of `H¹_Γ(Ω)` for admissible `Γ`, the Dirichlet condition on the
+trace is the condition `u - g ∈ H¹_Γ(Ω)` of the weak formulation. -/
+theorem existsUnique_frontierTraceOfIsLipschitzDomain_ae_eq_and_forall_energyFormH1_eq
+    {E'' : Type*} [NormedAddCommGroup E''] [InnerProductSpace ℝ E''] [MeasurableSpace E'']
+    [BorelSpace E'']
+    (hA : IsUniformlyEllipticAE volume (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (volume.restrict Omega))
+    (hc : MemLp c ⊤ (volume.restrict Omega)) (hb0 : b =ᵐ[volume.restrict Omega] 0)
+    (hc_nonneg : ∀ᵐ x ∂volume.restrict Omega, 0 ≤ c x)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (volume.restrict Omega))
+    (hΓadm : (Omega : Set (EuclideanSpace ℝ ι)).IsAdmissibleBoundaryPart Γ E E'')
+    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΓ : (μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1] : Measure (EuclideanSpace ℝ ι))
+      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0)
+    (g : W1p volume Omega 2) (f : Lp ℝ 2 (volume.restrict Omega))
+    (h : Lp ℝ 2 ((μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1] : Measure (EuclideanSpace ℝ ι)).restrict
+      (frontier (Omega : Set (EuclideanSpace ℝ ι)) \ Γ))) :
+    ∃! u : W1p volume Omega 2,
+      W1p.frontierTraceOfIsLipschitzDomain ENNReal.ofNat_ne_top hΓadm.isLipschitzDomain hb u =ᵐ[
+        ((μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1] : Measure (EuclideanSpace ℝ ι)).restrict
+          (frontier (Omega : Set (EuclideanSpace ℝ ι)))).restrict Γ]
+        W1p.frontierTraceOfIsLipschitzDomain ENNReal.ofNat_ne_top hΓadm.isLipschitzDomain hb g ∧
+      ∀ v : W1pVanishingOn volume Omega 2 Γ, energyFormH1 a b c u v =
+        (∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x) +
+          ∫ y in frontier (Omega : Set (EuclideanSpace ℝ ι)) \ Γ, h y *
+            W1p.frontierTraceOfIsLipschitzDomain (mu := volume) (p := 2) ENNReal.ofNat_ne_top
+              hΓadm.isLipschitzDomain hb (v : W1p volume Omega 2) y
+                ∂μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1] := by
+  have hcoercive := hA.isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomain ha hc hb0 hc_nonneg
+    hcoeff hΓadm.isLipschitzDomain hb hconn hΓ
+  simpa only [mixedForcingL_apply,
+    hΓadm.sub_mem_w1pVanishingOnSubmodule_iff_frontierTraceOfIsLipschitzDomain_ae_eq (p := 2)
+      ENNReal.ofNat_ne_top hb] using
+    existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq hcoeff hcoercive g
+      (mixedForcingL hΓadm.isLipschitzDomain hb f h)
 
 end IsUniformlyEllipticAE
 
