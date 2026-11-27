@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra
+public import TauCeti.RingTheory.GradedAlgebra.Generators
 
 /-!
 # The Lie-degree grading of a universal enveloping algebra
@@ -49,32 +50,26 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The span of words in homogeneous Lie elements whose total degree is `n`. -/
 def homogeneousSubmodule (n : Γ) : Submodule R U :=
-  Submodule.span R {a | ∃ l : List (Σ i, ℒ i), (l.map Sigma.fst).sum = n ∧
-    (l.map (fun x => ι R (x.2 : L))).prod = a}
+  TauCeti.GradedAlgebra.wordSpan R (fun x : Σ i, ℒ i => ι R (x.2 : L)) Sigma.fst n
 
 /-- The word-span description of an enveloping homogeneous piece. -/
 theorem homogeneousSubmodule_def (n : Γ) :
     homogeneousSubmodule ℒ n =
-      Submodule.span R {a | ∃ l : List (Σ i, ℒ i), (l.map Sigma.fst).sum = n ∧
-        (l.map (fun x => ι R (x.2 : L))).prod = a} := (rfl)
+      TauCeti.GradedAlgebra.wordSpan R (fun x : Σ i, ℒ i => ι R (x.2 : L)) Sigma.fst n :=
+  (rfl)
 
 /-- A submodule contains a homogeneous piece exactly when it contains every word of that degree. -/
 theorem homogeneousSubmodule_le_iff (n : Γ) (p : Submodule R U) :
     homogeneousSubmodule ℒ n ≤ p ↔
       ∀ l : List (Σ i, ℒ i), (l.map Sigma.fst).sum = n →
-        (l.map (fun x => ι R (x.2 : L))).prod ∈ p := by
-  rw [homogeneousSubmodule_def, Submodule.span_le]
-  constructor
-  · intro h l hl
-    exact h ⟨l, hl, rfl⟩
-  · rintro h _ ⟨l, hl, rfl⟩
-    exact h l hl
+        (l.map (fun x => ι R (x.2 : L))).prod ∈ p :=
+  TauCeti.GradedAlgebra.wordSpan_le_iff n p
 
 /-- A homogeneous word belongs to the piece given by its total degree. -/
 theorem prod_mem_homogeneousSubmodule (l : List (Σ i, ℒ i)) :
     (l.map (fun x => ι R (x.2 : L))).prod ∈
       homogeneousSubmodule ℒ (l.map Sigma.fst).sum :=
-  Submodule.subset_span ⟨l, rfl, rfl⟩
+  TauCeti.GradedAlgebra.prod_mem_wordSpan _ _ l
 
 /-- Lie generators retain their original degree in the enveloping algebra. -/
 theorem ι_mem_homogeneousSubmodule {n : Γ} {x : L} (hx : x ∈ ℒ n) :
@@ -101,23 +96,15 @@ theorem homogeneousSubmodule_eq_bot_of_degree_neg (d : Γ →+ ℤ)
     (hneg : ∀ n, d n < 0 → ℒ n = ⊥) {n : Γ} (hn : d n < 0) :
     homogeneousSubmodule ℒ n = ⊥ := by
   apply le_antisymm _ bot_le
-  rw [homogeneousSubmodule_def, Submodule.span_le]
-  rintro a ⟨l, hl, rfl⟩
+  rw [homogeneousSubmodule_le_iff]
+  intro l hl
   exact (Submodule.mem_bot R).mpr
     (word_eq_zero_of_degree_neg ℒ d hneg l (by simpa only [hl] using hn))
 
 /-- The homogeneous word spans are compatible with the algebra product. -/
-instance homogeneousSubmodule_gradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule ℒ) where
-  one_mem := Submodule.subset_span ⟨[], by simp, rfl⟩
-  mul_mem := by
-    intro m n a b ha hb
-    have hmul : homogeneousSubmodule ℒ m * homogeneousSubmodule ℒ n ≤
-        homogeneousSubmodule ℒ (m + n) := by
-      rw [homogeneousSubmodule_def, homogeneousSubmodule_def,
-        Submodule.span_mul_span, Submodule.span_le]
-      rintro _ ⟨_, ⟨l, hl, rfl⟩, _, ⟨t, ht, rfl⟩, rfl⟩
-      simpa [hl, ht] using prod_mem_homogeneousSubmodule ℒ (l ++ t)
-    exact hmul (Submodule.mul_mem_mul ha hb)
+instance homogeneousSubmodule_gradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule ℒ) :=
+  inferInstanceAs (SetLike.GradedMonoid
+    (TauCeti.GradedAlgebra.wordSpan R (fun x : Σ i, ℒ i => ι R (x.2 : L)) Sigma.fst))
 
 variable [DecidableEq Γ] [GradedLieAlgebra ℒ]
 
@@ -203,36 +190,17 @@ private theorem coeAlgHom_comp_decomposeAlgHom :
     simp only [LieHom.coe_comp, Function.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply,
       AlgHom.id_apply, decomposeAlgHom_ι_apply, _root_.DirectSum.coeAlgHom_of]
 
-private theorem decomposeAlgHom_prod (l : List (Σ i, ℒ i)) :
-    decomposeAlgHom ℒ (l.map (fun x => ι R (x.2 : L))).prod =
-      _root_.DirectSum.of (fun n => ↥(homogeneousSubmodule ℒ n)) (l.map Sigma.fst).sum
-        ⟨(l.map (fun x => ι R (x.2 : L))).prod, prod_mem_homogeneousSubmodule ℒ l⟩ := by
-  induction l with
-  | nil => simp only [List.map_nil, List.prod_nil, map_one, _root_.DirectSum.one_def]; rfl
-  | cons x l ih =>
-    simp only [List.map_cons, List.prod_cons, map_mul, decomposeAlgHom_ι_apply, ih,
-      _root_.DirectSum.of_mul_of]
-    congr 1
-
 /-- The decomposition homomorphism places each homogeneous element in its prescribed summand. -/
 private theorem decomposeAlgHom_apply (n : Γ) (x : homogeneousSubmodule ℒ n) :
     decomposeAlgHom ℒ (x : U) =
       _root_.DirectSum.of (fun n => ↥(homogeneousSubmodule ℒ n)) n x := by
-  obtain ⟨x, hx⟩ := x
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨l, hl, rfl⟩ := hx
-    subst n
-    exact decomposeAlgHom_prod ℒ l
-  | zero =>
-    rw [map_zero]
-    exact (map_zero (_root_.DirectSum.of (fun n => ↥(homogeneousSubmodule ℒ n)) n)).symm
-  | add x y hx hy hxi hyi =>
-    rw [map_add, hxi, hyi, ← map_add]
-    rfl
-  | smul r x hx hxi =>
-    rw [map_smul, hxi, ← _root_.DirectSum.of_smul]
-    rfl
+  have hf (z : Σ i, ℒ i) :
+      decomposeAlgHom ℒ (ι R (z.2 : L)) ∈
+        _root_.DirectSum.summand R (fun n => ↥(homogeneousSubmodule ℒ n)) z.1 := by
+    rw [decomposeAlgHom_ι_apply ℒ z.2]
+    exact _root_.DirectSum.of_mem_summand (R := R) _ _
+  exact TauCeti.GradedAlgebra.algHom_apply_of_mem_wordSpan (decomposeAlgHom ℒ)
+    (AlgHom.congr_fun (coeAlgHom_comp_decomposeAlgHom ℒ)) hf x.property
 
 /-- The total Lie-degree pieces form an internal direct sum over an arbitrary commutative ring,
 without a basis hypothesis. -/

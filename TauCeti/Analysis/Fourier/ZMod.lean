@@ -12,7 +12,7 @@ import TauCeti.Data.ZMod.Count
 import TauCeti.Data.ZMod.FinEquiv
 
 /-!
-# The discrete Fourier transform on `ZMod N`: reductions and integrality
+# The discrete Fourier transform on `ZMod N`: bounds, reductions and integrality
 
 For `v ∣ N`, a function `f` on `ZMod v` pulls back to `ZMod N` along the reduction
 `j ↦ (j.val : ZMod v)`. Its discrete Fourier transform modulo `N` is supported on the multiples
@@ -30,6 +30,8 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 
 ## Main results
 
+* `ZMod.norm_invDFT_le_of_forall_norm_le`: a pointwise bound on a function also bounds every
+  coefficient of its inverse Fourier transform.
 * `ZMod.stdAddChar_intCast_natCast_mul`: the additive character modulo `m n` at `n x` is the
   additive character modulo `m` at `x`.
 * `ZMod.fourier_val_div_eq_stdAddChar`, `ZMod.fourier_natCast_div_eq_stdAddChar`: the Fourier mode
@@ -48,6 +50,20 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 public section
 
 namespace ZMod
+
+/-- The normalized inverse discrete Fourier transform preserves uniform norm bounds. -/
+theorem norm_invDFT_le_of_forall_norm_le {N : ℕ} [NeZero N] {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] {Φ : ZMod N → E} {C : ℝ}
+    (hΦ : ∀ a, ‖Φ a‖ ≤ C) (k : ZMod N) : ‖𝓕⁻ Φ k‖ ≤ C := by
+  rw [invDFT_apply]
+  simp only [norm_smul, norm_inv, Complex.norm_natCast]
+  calc
+    _ ≤ (N : ℝ)⁻¹ * ∑ a : ZMod N, ‖Φ a‖ := by
+      gcongr
+      simpa [norm_smul, AddChar.norm_apply] using
+        norm_sum_le Finset.univ (fun a : ZMod N ↦ stdAddChar (a * k) • Φ a)
+    _ ≤ (N : ℝ)⁻¹ * ∑ _a : ZMod N, C := by gcongr; exact hΦ _
+    _ = C := by simp [ZMod.card, nsmul_eq_mul, NeZero.ne N]
 
 variable {v N : ℕ} [NeZero v] [NeZero N] {E : Type*} [AddCommGroup E] [Module ℂ E]
 
