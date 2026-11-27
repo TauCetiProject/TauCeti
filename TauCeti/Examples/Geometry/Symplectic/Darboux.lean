@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Symplectic.ExistsCompatible
+import TauCeti.Geometry.Symplectic.Manifold.Plane
 
 /-!
 # Examples: Darboux charts in the plane and in `ℝ⁴`
@@ -116,9 +117,7 @@ theorem eval₂_expAreaForm (x : ℝ × ℝ) (v w : TangentSpace 𝓘(ℝ, ℝ �
     expAreaForm.eval₂ x v w = exp x.1 * (v.1 * w.2 - v.2 * w.1) := by
   rw [SmoothBundleForm.eval₂_apply, expAreaForm, SmoothForm.coe_funSMulₗ]
   simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-  rw [expFst_apply, ← SmoothBundleForm.eval₂_apply,
-    SymplecticForm.fromTangentSpace_constSmooth_apply, stdSymplecticForm_real_apply,
-    NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply]
+  rw [expFst_apply, ← SmoothBundleForm.eval₂_apply, eval₂_constSmooth_stdSymplecticForm]
 
 /-- The form `eˣ dx ∧ dy` is closed, as every two-form on the plane is. -/
 theorem isClosed_expAreaForm : expAreaForm.IsClosed :=

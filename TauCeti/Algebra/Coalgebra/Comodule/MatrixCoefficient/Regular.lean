@@ -35,6 +35,8 @@ generated-coefficient condition.
   regular comodule is contained in the coefficient space of the comodule it carries.
 * `TauCeti.Subcoalgebra.le_matrixCoefficientSubalgebra_toRegularSubcomodule`: a subcoalgebra is
   contained in the coefficient algebra of its restricted regular comodule.
+* `TauCeti.Subcoalgebra.matrixCoefficientSubmodule_toRegularSubcomodule`: over a field, a
+  subcoalgebra is exactly the coefficient space of its restricted regular comodule.
 
 ## References
 
@@ -188,6 +190,39 @@ theorem le_matrixCoefficientSubalgebra_toRegularSubcomodule (D : Subcoalgebra R 
   D.toRegularSubcomodule.toSubmodule_le_matrixCoefficientSubmodule.trans <|
     Comodule.matrixCoefficientSubmodule_le (R := R) (C := C)
       fun φ m ↦ Comodule.matrixCoefficient_mem_subalgebra (R := R) (C := C) φ m
+
+end Subcoalgebra
+
+namespace Subcoalgebra
+
+variable {K : Type u} {C : Type v} [Field K] [AddCommGroup C] [Module K C] [Coalgebra K C]
+
+/-- **A subcoalgebra is the coefficient space of its regular comodule.** The matrix coefficients
+of a subcoalgebra `D`, viewed as a subcomodule of the regular comodule, span exactly `D`: the
+coefficient `(φ ⊗ id) Δ(d)` of `d ∈ D` lies in `D` because `Δ(d)` lies in `D ⊗ D`. -/
+@[simp]
+theorem matrixCoefficientSubmodule_toRegularSubcomodule (D : Subcoalgebra K C) :
+    Comodule.matrixCoefficientSubmodule (R := K) (C := C) (M := D.toRegularSubcomodule) =
+      D.toSubmodule := by
+  refine le_antisymm (Comodule.matrixCoefficientSubmodule_le fun φ d ↦ ?_)
+    D.toRegularSubcomodule.toSubmodule_le_matrixCoefficientSubmodule
+  -- Extend `φ` to a functional on `C`, so that the coefficient is computed by `Δ` itself.
+  obtain ⟨g, hg⟩ := LinearMap.exists_leftInverse_of_injective
+    (SMulMemClass.subtype D.toRegularSubcomodule)
+    (LinearMap.ker_eq_bot.2 Subtype.val_injective)
+  have hφ : φ = (φ ∘ₗ g) ∘ₗ (Subcomodule.subtype D.toRegularSubcomodule).toLinearMap := by
+    rw [LinearMap.comp_assoc, Subcomodule.subtype_toLinearMap, hg, LinearMap.comp_id]
+  rw [hφ, ← Comodule.matrixCoefficient_map]
+  simp only [Comodule.matrixCoefficient_def, Comodule.instSelf_coact, Subcomodule.subtype_apply]
+  obtain ⟨t, ht⟩ := D.comul_mem d.property
+  rw [← ht]
+  clear ht
+  induction t using TensorProduct.inductionOn with
+  | tmul x y =>
+    simpa using D.toSubmodule.smul_mem _ y.property
+  | add x y hx hy =>
+    rw [map_add, map_add, map_add]
+    exact add_mem hx hy
 
 end Subcoalgebra
 

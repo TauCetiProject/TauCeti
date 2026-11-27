@@ -90,13 +90,13 @@ boundary values in `L₀` and `L₁` (`TauCeti.StripSobolev.H1`) to `L²(ℝ × 
 first-order operator `TauCeti.jetOperator` of the constant coefficient field
 `TauCeti.StripSobolev.cauchyRiemannJetCoeff J`, restricted to `H1`. -/
 noncomputable def cauchyRiemann : H1 L₀ L₁ →L[ℝ] Lp V 2 stripMeasure :=
-  (jetOperator stripMeasure fun _ ↦ cauchyRiemannJetCoeff J).comp (H1 L₀ L₁).subtypeL
+  (jetOperator 2 stripMeasure fun _ ↦ cauchyRiemannJetCoeff J).comp (H1 L₀ L₁).subtypeL
 
 /-- The Cauchy--Riemann operator is the first-order operator of its constant coefficient field on
 `L²` jets, restricted to `H1`. -/
 theorem cauchyRiemann_apply (x : H1 L₀ L₁) :
     cauchyRiemann J L₀ L₁ x =
-      jetOperator stripMeasure (fun _ ↦ cauchyRiemannJetCoeff J)
+      jetOperator 2 stripMeasure (fun _ ↦ cauchyRiemannJetCoeff J)
         (x : Lp (V × V × V) 2 stripMeasure) :=
   (rfl)
 
@@ -366,7 +366,8 @@ theorem finiteDimensional_ker_jetOperator_cauchyRiemannAddJetCoeff
     (hL : Disjoint L₀ L₁) {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
     FiniteDimensional ℝ
-      ((jetOperator stripMeasure (cauchyRiemannAddJetCoeff J A)).comp (H1 L₀ L₁).subtypeL).ker := by
+      ((jetOperator 2 stripMeasure (cauchyRiemannAddJetCoeff J A)).comp
+        (H1 L₀ L₁).subtypeL).ker := by
   obtain ⟨C, hC⟩ := exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff hg hL₀ hL₁ hL hA hAT
   exact finiteDimensional_ker_jetOperator_comp_subtypeL (memLp_cauchyRiemannAddJetCoeff hA hAT) hC
 
@@ -377,7 +378,8 @@ theorem isClosed_range_jetOperator_cauchyRiemannAddJetCoeff
     (hL : Disjoint L₀ L₁) {A : ℝ × ℝ → V →L[ℝ] V} (hA : Continuous A) {T : ℝ}
     (hAT : ∀ z : ℝ × ℝ, T < |z.1| → A z = 0) :
     IsClosed
-      (((jetOperator stripMeasure (cauchyRiemannAddJetCoeff J A)).comp (H1 L₀ L₁).subtypeL).range :
+      (((jetOperator 2 stripMeasure (cauchyRiemannAddJetCoeff J A)).comp
+        (H1 L₀ L₁).subtypeL).range :
         Set (Lp V 2 stripMeasure)) := by
   obtain ⟨C, hC⟩ := exists_hasSemiFredholmEstimate_cauchyRiemannAddJetCoeff hg hL₀ hL₁ hL hA hAT
   exact isClosed_range_jetOperator_comp_subtypeL (memLp_cauchyRiemannAddJetCoeff hA hAT) hC

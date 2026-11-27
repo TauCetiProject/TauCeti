@@ -66,7 +66,8 @@ A family `Φ : α → δ → γ` that is jointly continuous at every point of `�
 uniformly in its first argument as the second tends to `q`
 (`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
 on `α` or `δ`. For a flow, this gives locally uniform convergence of orbits from convergent
-initial points.
+initial points. In particular, a jointly continuous family converges locally uniformly along any
+parameter family tending to a point (`Continuous.tendstoLocallyUniformly_of_tendsto`).
 -/
 
 public section
@@ -286,3 +287,11 @@ theorem exists_tendstoLocallyUniformlyOn_iUnion_sdiff {γ κ : Type*} [UniformSp
   exact ⟨v, hv⟩
 
 end TauCeti
+
+/-- A jointly continuous family `Φ` converges locally uniformly to `Φ q` along any parameter
+family `p` tending to `q`. -/
+theorem Continuous.tendstoLocallyUniformly_of_tendsto {δ γ : Type*} [TopologicalSpace δ]
+    [UniformSpace γ] {Φ : δ → α → γ} (hΦ : Continuous (Function.uncurry Φ)) {p : ι → δ} {q : δ}
+    (hp : Tendsto p l (𝓝 q)) : TendstoLocallyUniformly (fun i ↦ Φ (p i)) (Φ q) l :=
+  TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun x d ↦ Φ d x)
+    (fun _ ↦ (hΦ.comp continuous_swap).continuousAt) hp
