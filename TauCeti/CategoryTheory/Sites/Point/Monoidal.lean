@@ -98,6 +98,7 @@ lemma presheafFiber_map_toTensorObj_comp_δ (F G : Sheaf J A) :
 
 /-- On germs, `OplaxMonoidal.δ Φ.sheafFiber F G` sends the germ of the image of a section of the
 sectionwise tensor product to the tensor product of the germs. -/
+@[simp]
 lemma toTensorObj_app_comp_toPresheafFiber_comp_δ (F G : Sheaf J A) (X : C)
     (x : Φ.fiber.obj X) :
     (Sheaf.toTensorObj F G).app (op X) ≫ Φ.toPresheafFiber X x (F ⊗ G).obj ≫
@@ -108,6 +109,7 @@ lemma toTensorObj_app_comp_toPresheafFiber_comp_δ (F G : Sheaf J A) (X : C)
   exact Φ.toPresheafFiber_δ X x F.obj G.obj
 
 -- Explicit: `@[reassoc]` leaves the `_assoc` lemma left-associated across `Point.sheafFiber`.
+@[simp]
 lemma toTensorObj_app_comp_toPresheafFiber_comp_δ_assoc (F G : Sheaf J A) (X : C)
     (x : Φ.fiber.obj X) {Z : A} (h : Φ.sheafFiber.obj F ⊗ Φ.sheafFiber.obj G ⟶ Z) :
     (Sheaf.toTensorObj F G).app (op X) ≫ Φ.toPresheafFiber X x (F ⊗ G).obj ≫

@@ -148,7 +148,7 @@ noncomputable def tensorUnitIsoConstantSheaf :
 variable (J A) in
 /-- Restricted along `Sheaf.toTensorUnit J A`, the identification of `𝟙_ (Sheaf J A)` with the
 constant sheaf `𝟙_ A` is the unit of sheafification of the constant presheaf `𝟙_ A`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma toTensorUnit_comp_tensorUnitIsoConstantSheaf_hom_hom :
     toTensorUnit J A ≫ (tensorUnitIsoConstantSheaf J A).hom.hom =
       CategoryTheory.toSheafify J ((Functor.const Cᵒᵖ).obj (𝟙_ A)) := by
