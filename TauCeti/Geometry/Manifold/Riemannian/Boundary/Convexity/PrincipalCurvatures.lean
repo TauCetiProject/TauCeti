@@ -21,6 +21,9 @@ the coordinates of `u`. Hence:
   (`TauCeti.isStrictlyConvexAt_iff_forall_boundaryPrincipalCurvatures_pos`), convex iff every
   principal curvature is nonnegative, and strictly concave iff every principal curvature is
   negative;
+* `II_q(u, u) ≥ c h_q(u, u)` for every `u ∈ T_q∂M` iff every principal curvature at `q` is at
+  least `c`, since `h_q(u, u) = ∑ᵢ uᵢ²`
+  (`TauCeti.forall_mul_boundaryInducedForm_le_boundarySecondFundamentalForm_iff`);
 * for `n ≥ 1`, strict convexity at `q` gives `H(q) > 0`
   (`TauCeti.IsStrictlyConvexAt.boundaryMeanCurvature_pos`), convexity gives `H(q) ≥ 0`
   (`TauCeti.IsConvexAt.boundaryMeanCurvature_nonneg`), and strict concavity gives `H(q) < 0`
@@ -66,6 +69,19 @@ theorem isStrictlyConvexAt_iff_forall_boundaryPrincipalCurvatures_pos
     rw [boundarySecondFundamentalForm_self_eq_sum]
     exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (h j).le (sq_nonneg _))
       ⟨i, Finset.mem_univ i, mul_pos (h i) (by positivity)⟩
+
+/-- **A lower bound for `II` is a lower bound for the principal curvatures**: at `q ∈ ∂M`,
+`II_q(u, u) ≥ c h_q(u, u)` for every `u ∈ T_q∂M` iff every principal curvature at `q` is at
+least `c`. -/
+theorem forall_mul_boundaryInducedForm_le_boundarySecondFundamentalForm_iff
+    {q : (𝓡∂ (n + 1)).boundary M} {c : ℝ} :
+    (∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q,
+        c * boundaryInducedForm q u u ≤ boundarySecondFundamentalForm q u u) ↔
+      ∀ i, c ≤ boundaryPrincipalCurvatures q i := by
+  refine ⟨fun h i ↦ by simpa using h (boundaryPrincipalDirection q i), fun h u ↦ ?_⟩
+  rw [boundaryInducedForm_self_eq_sum, boundarySecondFundamentalForm_self_eq_sum,
+    Finset.mul_sum]
+  exact Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (h i) (sq_nonneg _)
 
 /-- **Convexity through the principal curvatures**: the boundary is convex at `q` iff every
 principal curvature at `q` is nonnegative. -/
