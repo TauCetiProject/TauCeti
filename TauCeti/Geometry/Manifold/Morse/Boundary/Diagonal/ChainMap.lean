@@ -285,11 +285,19 @@ private def firstLeafBrokenRecords (p q r : M) (c₀ c₁ c₂ : ℝ) : Set (M �
     w.2.2.1 ∈ hX₁.flow.unstableSet b ∩ hX₁.flow.stableSet q ∧ f₁ w.2.2.1 = c₁ ∧
     w.2.2.2 = hX₂.lowerLevelPoint c₂ w.2.1}
 
+/-- Exchanging the last two components of a record, those of the two leaves. -/
+private def swapLeaves {α : Type*} [TopologicalSpace α] : α × α × α × α ≃ₜ α × α × α × α :=
+  (Homeomorph.refl α).prodCongr ((Homeomorph.refl α).prodCongr (Homeomorph.prodComm α α))
+
+@[simp]
+private theorem swapLeaves_apply {α : Type*} [TopologicalSpace α] (w : α × α × α × α) :
+    swapLeaves w = (w.1, w.2.1, w.2.2.2, w.2.2.1) :=
+  rfl
+
 /-- The records of the Y-flow lines broken at the second leaf: those broken at the first leaf for
 the triple with its two leaves exchanged, with the last two components exchanged. -/
 private def secondLeafBrokenRecords (p q r : M) (c₀ c₁ c₂ : ℝ) : Set (M × M × M × M) :=
-  (fun w : M × M × M × M ↦ (w.1, w.2.1, w.2.2.2, w.2.2.1)) ⁻¹'
-    hX₀.firstLeafBrokenRecords hX₂ hX₁ p r q c₀ c₂ c₁
+  swapLeaves ⁻¹' hX₀.firstLeafBrokenRecords hX₂ hX₁ p r q c₀ c₂ c₁
 
 /-- No Y-flow line breaks along two different edges. -/
 private theorem disjoint_brokenRecords (p q r : M) (c₀ c₁ c₂ : ℝ) :
@@ -508,7 +516,7 @@ private theorem finite_brokenRecords :
   exact (((finite_morseRootBrokenDiagonalSet h₀ hf₀ p q r fun _ ↦ hS).image _).union
     ((finite_morseFirstLeafBrokenDiagonalSet h₁ hf₁ p q r fun _ ↦ hS).image _)).union
     (((finite_morseSecondLeafBrokenDiagonalSet h₂ hf₂ p q r fun _ ↦ hS).image _).preimage
-      ((Equiv.refl M).prodCongr ((Equiv.refl M).prodCongr (Equiv.prodComm M M))).injective.injOn)
+      swapLeaves.injective.injOn)
 
 omit hind in
 /-- The records of the broken Y-flow lines are as many as the broken Y-flow lines. -/
@@ -528,10 +536,8 @@ private theorem ncard_brokenRecords :
     (hX₀.injOn_rootBrokenRecords hX₁ hX₂ hc₀ hgap₀).ncard_image,
     hX₀.firstLeafBrokenRecords_eq_image hX₁ hX₂ hc₁ hgap₁,
     (hX₀.injOn_firstLeafBrokenRecords hX₁ hX₂ hc₁ hgap₁).ncard_image,
-    secondLeafBrokenRecords, ncard_preimage_of_injective_subset_range
-      (f := fun w : M × M × M × M ↦ (w.1, w.2.1, w.2.2.2, w.2.2.1))
-      ((Equiv.refl M).prodCongr ((Equiv.refl M).prodCongr (Equiv.prodComm M M))).injective
-      fun w _ ↦ ⟨(w.1, w.2.1, w.2.2.2, w.2.2.1), rfl⟩,
+    secondLeafBrokenRecords, ncard_preimage_of_injective_subset_range swapLeaves.injective
+      fun w _ ↦ swapLeaves.surjective w,
     hX₀.firstLeafBrokenRecords_eq_image hX₂ hX₁ hc₂ hgap₂,
     (hX₀.injOn_firstLeafBrokenRecords hX₂ hX₁ hc₂ hgap₂).ncard_image,
     morseFirstLeafBrokenDiagonalSet_swap hX₀ hX₁ hX₂ p q r]
@@ -553,34 +559,20 @@ private theorem exists_nhds_homeomorph_of_mem_yRecords {w : M × M × M × M}
     ∃ N ∈ 𝓝 (⟨w, hw⟩ : closure (hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ '' hX₀.morseYSlice hX₁ hX₂ p q r)),
       ∃ V : Set ℝ, IsOpen V ∧ Nonempty (V ≃ₜ N) := by
   obtain ⟨x₀, hx₀, rfl⟩ := hwP
-  set S := hX₀.morseYSlice hX₁ hX₂ p q r
-  set P := hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ '' S
-  have hS (x) (hx : x ∈ S) := (hX₀.mem_morseYSlice hX₁ hX₂).1 hx
-  have hcont : ContinuousOn (hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂) S :=
-    ((hX₀.continuousOn_upperLevelPoint hc₀).mono fun x hx ↦ (hS x hx).1).prodMk
-      (continuousOn_id.prodMk
-        (((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono fun x hx ↦ (hS x hx).2.1).prodMk
-          ((hX₂.continuousOn_lowerLevelPoint hf₂ hc₂).mono fun x hx ↦ (hS x hx).2.2)))
-  -- The records of the points of `S` form a copy of `S`.
-  have hmemS (w : P) : (w : M × M × M × M).2.1 ∈ S := by
-    obtain ⟨_, x, hx, rfl⟩ := w
-    exact hx
-  let Φ : P ≃ₜ S :=
-    { toFun w := ⟨(w : M × M × M × M).2.1, hmemS w⟩
-      invFun x := ⟨hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ x, mem_image_of_mem _ x.property⟩
-      left_inv := by rintro ⟨_, ⟨x, hx, rfl⟩⟩; rfl
-      right_inv _ := rfl
-      continuous_toFun :=
-        ((continuous_fst.comp continuous_snd).comp continuous_subtypeVal).subtype_mk hmemS
-      continuous_invFun :=
-        (hcont.comp_continuous continuous_subtypeVal fun x ↦ x.property).subtype_mk _ }
-  -- `S` is a manifold modelled on a line `L`.
+  have hS (x) (hx : x ∈ hX₀.morseYSlice hX₁ hX₂ p q r) := (hX₀.mem_morseYSlice hX₁ hX₂).1 hx
+  -- The records of the points of the Y-slice, read back by their second component, form a copy
+  -- of the Y-slice, a manifold modelled on a line `L`.
   obtain ⟨L, hL, C, -, -⟩ := h.exists_morseYSlice_isManifold hf₀ ⟨x₀, hx₀⟩
   let _ := C
-  exact exists_nhds_homeomorph_of_isOpen_preimage_val (F := L)
+  exact exists_nhds_homeomorph_of_leftInvOn (F := L) (by omega)
+    (((hX₀.continuousOn_upperLevelPoint hc₀).mono fun x hx ↦ (hS x hx).1).prodMk
+      (continuousOn_id.prodMk
+        (((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono fun x hx ↦ (hS x hx).2.1).prodMk
+          ((hX₂.continuousOn_lowerLevelPoint hf₂ hc₂).mono fun x hx ↦ (hS x hx).2.2))))
+    (continuous_fst.comp continuous_snd) (fun _ _ ↦ rfl)
     (isLocallyClosed_iff_isOpen_coborder.2 (h.finite_closure_diff_yRecords h₀ h₁ h₂ hf₀ hf₁ hf₂
       hind hc₀ hgap₀ hc₁ hgap₁ hc₂ hgap₂).isClosed.isOpen_compl).isOpen_preimage_val_closure
-    (by omega) Φ hw (mem_image_of_mem _ hx₀)
+    hw (mem_image_of_mem _ hx₀)
 
 /-- **A Y-flow line broken at the root is an endpoint.** Its record lies in the closure of the
 records of the Y-slice, and has a neighbourhood there homeomorphic to a half-open interval
@@ -637,12 +629,9 @@ private theorem exists_homeomorph_Ico_of_mem_rootBrokenRecords {w : M × M × M 
     rcases hu with rfl | ⟨x, hxY, rfl⟩
     · exact ⟨mem_insert _ _, rfl⟩
     · rw [yRecord_apply] at huc ⊢
-      have hup := hX₀.upperLevelPoint_of_lt huc
-      have hex := hX₀.exists_flow_eq_of_mem_unstableSet ((hX₀.mem_morseYSlice hX₁ hX₂).1 hxY).1
-        hc₀ huc
-      refine ⟨Or.inr ⟨hxY, ?_, -Flow.levelCrossingTime hX₀.flow f₀ c₀ x, ?_⟩, rfl⟩ <;> dsimp only
-      · rw [hup, hX₀.apply_levelPoint hex, ha₁c]
-      · rw [hup, hX₀.levelPoint_def, Flow.map_neg_apply_map]
+      exact ⟨Or.inr ⟨hxY, (hX₀.apply_upperLevelPoint_of_mem_unstableSet
+        ((hX₀.mem_morseYSlice hX₁ hX₂).1 hxY).1 hc₀ huc).trans ha₁c.symm,
+        hX₀.exists_flow_upperLevelPoint_eq c₀ x⟩, rfl⟩
 
 /-- **A Y-flow line broken at the first leaf is an endpoint.** Its record lies in the closure of
 the records of the Y-slice, and has a neighbourhood there homeomorphic to a half-open interval
@@ -700,12 +689,9 @@ private theorem exists_homeomorph_Ico_of_mem_firstLeafBrokenRecords {w : M × M 
     rcases hu with rfl | ⟨x, hxY, rfl⟩
     · exact ⟨mem_insert _ _, rfl⟩
     · rw [yRecord_apply] at huc ⊢
-      have hlow := hX₁.lowerLevelPoint_of_lt huc
-      have hex := hX₁.exists_flow_eq_of_mem_stableSet ((hX₀.mem_morseYSlice hX₁ hX₂).1 hxY).2.1
-        hc₁ huc
-      refine ⟨Or.inr ⟨hxY, ?_, -Flow.levelCrossingTime hX₁.flow f₁ c₁ x, ?_⟩, rfl⟩ <;> dsimp only
-      · rw [hlow, hX₁.apply_levelPoint hex, ha₂c]
-      · rw [hlow, hX₁.levelPoint_def, Flow.map_neg_apply_map]
+      exact ⟨Or.inr ⟨hxY, (hX₁.apply_lowerLevelPoint_of_mem_stableSet
+        ((hX₀.mem_morseYSlice hX₁ hX₂).1 hxY).2.1 hc₁ huc).trans ha₂c.symm,
+        hX₁.exists_flow_lowerLevelPoint_eq c₁ x⟩, rfl⟩
 
 /-- **A Y-flow line broken at the second leaf is an endpoint.** Its record lies in the closure of
 the records of the Y-slice, and has a neighbourhood there homeomorphic to a half-open interval
@@ -722,22 +708,22 @@ private theorem exists_homeomorph_Ico_of_mem_secondLeafBrokenRecords {w : M × M
   -- Exchanging the leaves, the Y-flow line breaks at the first leaf of `(X₀, X₂, X₁)`.
   obtain ⟨hb', N, hN, δ, hδ, e, he⟩ :=
     h.swap.exists_homeomorph_Ico_of_mem_firstLeafBrokenRecords h₀ h₂ h₁ hf₀ hf₂ hf₁ (by omega)
-      hc₀ hgap₀ hc₂ hgap₂ hc₁ hgap₁ hw
+      hc₀ hgap₀ hc₂ hgap₂ hc₁ hgap₁ (mem_preimage.1 hw)
   -- Exchanging the last two components carries the records of `(X₀, X₂, X₁)` to those of
   -- `(X₀, X₁, X₂)`, hence the closure of the former onto that of the latter.
-  let σ := (Homeomorph.refl M).prodCongr ((Homeomorph.refl M).prodCongr (Homeomorph.prodComm M M))
-  have hσ (u : M × M × M × M) : σ u = (u.1, u.2.1, u.2.2.2, u.2.2.1) := rfl
-  have hσy : (fun x ↦ σ (hX₀.yRecord hX₂ hX₁ c₀ c₂ c₁ x)) = hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ := by
+  have hσy : (fun x ↦ swapLeaves (hX₀.yRecord hX₂ hX₁ c₀ c₂ c₁ x)) =
+      hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ := by
     funext x
-    simp only [hσ, yRecord_apply]
+    simp only [swapLeaves_apply, yRecord_apply]
   have hcl (u : M × M × M × M) :
       u ∈ closure (hX₀.yRecord hX₂ hX₁ c₀ c₂ c₁ '' hX₀.morseYSlice hX₂ hX₁ p r q) ↔
-        σ u ∈ closure (hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ '' hX₀.morseYSlice hX₁ hX₂ p q r) := by
-    rw [← σ.injective.mem_set_image, σ.image_closure, image_image, hσy, morseYSlice_comm]
+        swapLeaves u ∈ closure (hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ '' hX₀.morseYSlice hX₁ hX₂ p q r) := by
+    rw [← swapLeaves.injective.mem_set_image, swapLeaves.image_closure, image_image, hσy,
+      morseYSlice_comm]
   -- Transport the half-open chart along the induced homeomorphism of the closures.
-  let Φ := σ.subtype hcl
+  let Φ := swapLeaves.subtype hcl
   have hΦ : Φ ⟨_, hb'⟩ = ⟨w, (hcl _).1 hb'⟩ :=
-    Subtype.ext ((Homeomorph.subtype_apply_coe _ _ _).trans (hσ _))
+    Subtype.ext ((Homeomorph.subtype_apply_coe _ _ _).trans (by simp only [swapLeaves_apply]))
   refine ⟨(hcl _).1 hb', Φ '' N, hΦ ▸ Φ.isOpenMap.image_mem_nhds hN, δ, hδ, e.trans (Φ.image N),
     ?_⟩
   rw [Homeomorph.trans_apply, Homeomorph.image_apply_coe, he, hΦ]

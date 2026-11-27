@@ -326,31 +326,17 @@ private theorem exists_nhds_homeomorph_of_mem_pairRecords {q : M × M × M}
         (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r))),
       ∃ V : Set ℝ, IsOpen V ∧ Nonempty (V ≃ₜ N) := by
   obtain ⟨x₀, hx₀, rfl⟩ := hqP
-  set S := hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r
-  set P := hX₀.pairRecord hX₁ c₀ c₁ '' S
-  have hcont : ContinuousOn (hX₀.pairRecord hX₁ c₀ c₁) S :=
-    ((hX₀.continuousOn_upperLevelPoint hc₀).mono inter_subset_left).prodMk
-      (continuousOn_id.prodMk ((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono inter_subset_right))
-  -- The records of the points of `S` form a copy of `S`.
-  have hmemS (w : P) : (w : M × M × M).2.1 ∈ S := by
-    obtain ⟨_, x, hx, rfl⟩ := w
-    exact hx
-  let Φ : P ≃ₜ S :=
-    { toFun w := ⟨(w : M × M × M).2.1, hmemS w⟩
-      invFun x := ⟨hX₀.pairRecord hX₁ c₀ c₁ x, mem_image_of_mem _ x.property⟩
-      left_inv := by rintro ⟨_, ⟨x, hx, rfl⟩⟩; rfl
-      right_inv _ := rfl
-      continuous_toFun :=
-        ((continuous_fst.comp continuous_snd).comp continuous_subtypeVal).subtype_mk hmemS
-      continuous_invFun :=
-        (hcont.comp_continuous continuous_subtypeVal fun x ↦ x.property).subtype_mk _ }
-  -- `S` is a manifold modelled on a line `L`.
+  -- The records of the points of `S`, read back by their second component, form a copy of the
+  -- manifold `S`, modelled on a line `L`.
   obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_isManifold hf₀ ⟨x₀, hx₀⟩
   let _ := C
-  exact exists_nhds_homeomorph_of_isOpen_preimage_val (F := L)
+  exact exists_nhds_homeomorph_of_leftInvOn (F := L) (by omega)
+    (((hX₀.continuousOn_upperLevelPoint hc₀).mono inter_subset_left).prodMk
+      (continuousOn_id.prodMk ((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono inter_subset_right)))
+    (continuous_fst.comp continuous_snd) (fun _ _ ↦ rfl)
     (isLocallyClosed_iff_isOpen_coborder.2 (h.finite_closure_diff_pairRecords h₀ h₁ hf₀ hf₁ hind
       hc₀ hgap₀ hc₁ hgap₁).isClosed.isOpen_compl).isOpen_preimage_val_closure
-    (by omega) Φ hq (mem_image_of_mem _ hx₀)
+    hq (mem_image_of_mem _ hx₀)
 
 /-- **A configuration broken at the source is an endpoint.** The record of a configuration broken
 at the source lies in the closure of the records of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, and has a
@@ -404,11 +390,8 @@ private theorem exists_homeomorph_Ico_of_mem_sourceBrokenRecords {w : M × M × 
     rcases hq with rfl | ⟨x, hxS, rfl⟩
     · exact ⟨mem_insert _ _, rfl⟩
     · rw [pairRecord_apply] at hqc ⊢
-      have hup := hX₀.upperLevelPoint_of_lt hqc
-      refine ⟨Or.inr ⟨hxS, ?_, -Flow.levelCrossingTime hX₀.flow f₀ c₀ x, ?_⟩, rfl⟩ <;> dsimp only
-      · rw [hup, hX₀.apply_levelPoint (hX₀.exists_flow_eq_of_mem_unstableSet hxS.1 hc₀ hqc),
-          ha₁c]
-      · rw [hup, hX₀.levelPoint_def, Flow.map_neg_apply_map]
+      exact ⟨Or.inr ⟨hxS, (hX₀.apply_upperLevelPoint_of_mem_unstableSet hxS.1 hc₀ hqc).trans
+        ha₁c.symm, hX₀.exists_flow_upperLevelPoint_eq c₀ x⟩, rfl⟩
 
 /-- **A configuration broken at the target is an endpoint.** The record of a configuration broken
 at the target lies in the closure of the records of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, and has a

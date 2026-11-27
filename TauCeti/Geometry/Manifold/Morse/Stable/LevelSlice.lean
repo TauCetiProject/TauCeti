@@ -862,6 +862,36 @@ theorem lowerLevelPoint_eq_of_flow_eq {r x w : M} (hx : x ∈ hX.flow.stableSet 
   rw [hX.lowerLevelPoint_of_lt hcx, hX.levelPoint_eq hbr hxb (t := -t)
     (by rw [← ht, Flow.map_neg_apply_map, hw]), ← ht, Flow.map_neg_apply_map]
 
+/-- **The upper level point lies on the level.** If a point `x` of `W^u(p)` lies below the level
+`c < f p`, its upper level point lies on that level. -/
+theorem apply_upperLevelPoint_of_mem_unstableSet {p x : M} (hx : x ∈ hX.flow.unstableSet p)
+    {c : ℝ} (hcp : c < f p) (hxc : f x < c) : f (hX.upperLevelPoint c x) = c := by
+  rw [hX.upperLevelPoint_of_lt hxc, hX.apply_levelPoint (hX.exists_flow_eq_of_mem_unstableSet hx
+    hcp hxc)]
+
+/-- **The lower level point lies on the level.** If a point `x` of `W^s(r)` lies above the level
+`c > f r`, its lower level point lies on that level. -/
+theorem apply_lowerLevelPoint_of_mem_stableSet {r x : M} (hx : x ∈ hX.flow.stableSet r)
+    {c : ℝ} (hrc : f r < c) (hcx : c < f x) : f (hX.lowerLevelPoint c x) = c := by
+  rw [hX.lowerLevelPoint_of_lt hcx, hX.apply_levelPoint (hX.exists_flow_eq_of_mem_stableSet hx
+    hrc hcx)]
+
+/-- The orbit of the upper level point of `x` passes through `x`. -/
+theorem exists_flow_upperLevelPoint_eq (c : ℝ) (x : M) :
+    ∃ t, hX.flow t (hX.upperLevelPoint c x) = x := by
+  rcases le_or_gt c (f x) with hcx | hxc
+  · exact ⟨0, by rw [hX.upperLevelPoint_of_le hcx, Flow.map_zero_apply]⟩
+  · exact ⟨-Flow.levelCrossingTime hX.flow f c x, by
+      rw [hX.upperLevelPoint_of_lt hxc, levelPoint_def, Flow.map_neg_apply_map]⟩
+
+/-- The orbit of the lower level point of `x` passes through `x`. -/
+theorem exists_flow_lowerLevelPoint_eq (c : ℝ) (x : M) :
+    ∃ t, hX.flow t (hX.lowerLevelPoint c x) = x := by
+  rcases le_or_gt (f x) c with hxc | hcx
+  · exact ⟨0, by rw [hX.lowerLevelPoint_of_le hxc, Flow.map_zero_apply]⟩
+  · exact ⟨-Flow.levelCrossingTime hX.flow f c x, by
+      rw [hX.lowerLevelPoint_of_lt hcx, levelPoint_def, Flow.map_neg_apply_map]⟩
+
 /-- On `W^u(p)`, for `c < f p`, the upper level point on the level `c` is the lower level point
 for `-X` on the level `-c` of `-f`. -/
 theorem upperLevelPoint_eq_lowerLevelPoint_neg (hf : IsMorse 𝓘(ℝ, E) f) {p x : M}
