@@ -212,9 +212,9 @@ theorem proj_one_mfderiv_cubicEpigraph
           (Subtype.val : (𝓡∂ (1 + 1)).boundary cubicEpigraph → cubicEpigraph) q u)) := by
   let := cubicEpigraphChartedSpace
   have := isManifold_cubicEpigraph
-  have h0 := mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero
+  have h0 := (mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero_iff
     (contMDiff_cubicSub (k := 1)) (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2))
-    (isRegularValue_cubicSub 0) (mfderiv_subtypeVal_mem_boundaryTangentSpace q u)
+    (isRegularValue_cubicSub 0) _).2 (mfderiv_subtypeVal_mem_boundaryTangentSpace q u)
   rw [mvfderiv_eq_fderiv_apply, (hasFDerivAt_cubicSub _).fderiv] at h0
   have key : ∀ a : ℝ²,
       ((3 * (q : ℝ²) 0 ^ 2) • π₀ - π₁) a = 3 * (q : ℝ²) 0 ^ 2 * π₀ a - π₁ a := fun a ↦ by simp
@@ -274,10 +274,21 @@ private theorem exists_boundarySecondFundamentalForm_cubicEpigraph_eq_mul
         (Subtype.val : (𝓡∂ (1 + 1)).boundary cubicEpigraph → cubicEpigraph) q
   let b : LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) q) :=
     (LinearMap.mul ℝ ℝ).compl₁₂ (φ : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) q →ₗ[ℝ] ℝ) φ
-  -- `b u u` unfolds to `φ u * φ u`, the square of the first coordinate of `dj dι u`.
-  refine ⟨b, fun u hu ↦ mul_self_pos.2 (proj_zero_mfderiv_cubicEpigraph_ne_zero q hu), fun u ↦ ?_⟩
-  rw [boundarySecondFundamentalForm_cubicEpigraph_apply]
-  exact (by intro x a g; ring : ∀ x a g : ℝ, 6 * x * a * a / g = 6 * x / g * (a * a)) _ _ _
+  -- `b u u` is `φ u * φ u`, the square of the first coordinate of `dj dι u`.
+  have hb (u) : b u u = π₀ (mfderiv (𝓡∂ (1 + 1)) 𝓘(ℝ, ℝ²) (Subtype.val : cubicEpigraph → ℝ²) q
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) (𝓡∂ (1 + 1))
+        (Subtype.val : (𝓡∂ (1 + 1)).boundary cubicEpigraph → cubicEpigraph) q u)) *
+      π₀ (mfderiv (𝓡∂ (1 + 1)) 𝓘(ℝ, ℝ²) (Subtype.val : cubicEpigraph → ℝ²) q
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) (𝓡∂ (1 + 1))
+        (Subtype.val : (𝓡∂ (1 + 1)).boundary cubicEpigraph → cubicEpigraph) q u)) := by
+    simp only [b, φ, LinearMap.compl₁₂_apply, LinearMap.mul_apply', ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.comp_apply]
+    -- The inner composition is between tangent spaces, which `simp` does not match against `ℝ²`.
+    exact congrArg (fun a ↦ π₀ a * π₀ a) (ContinuousLinearMap.comp_apply _ _ u)
+  refine ⟨b, fun u hu ↦ hb u ▸ mul_self_pos.2 (proj_zero_mfderiv_cubicEpigraph_ne_zero q hu),
+    fun u ↦ ?_⟩
+  rw [boundarySecondFundamentalForm_cubicEpigraph_apply, hb]
+  ring
 
 /-- **Convexity of the cubic `y = x³`.** The boundary of the region above the cubic is convex at
 `q = (x, x³)` exactly when `x ≥ 0`. -/
