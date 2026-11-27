@@ -60,7 +60,7 @@ private def centralTorusEmbedding :
 private def centralTorusNormalCoord (x : AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-    (centralTorusEmbedding P hinj hP (u₀ := u₀) hn).NormalSpace x
+    (centralTorusEmbedding P hinj hP (u₀ := u₀) hn).isImmersion.NormalSpace x
       (ne_of_gt (zero_lt_one.trans_le hn)) ≃L[ℂ] ℂ := by
   letI := periodAddAction P
   letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
@@ -73,7 +73,7 @@ private def centralTorusNormalCoord (x : AddAction.orbitRel.Quotient (LinearMap.
   have hi : ⇑i = torusFamilyFiberMap P u₀ := by
     simp only [i, centralTorusEmbedding, SmoothEmbedding.coe_ofIsSmoothEmbedding]
   refine (i.normalSpaceEquivOfSurjective x hn₀ hs ?_).toContinuousLinearEquiv
-  rw [SmoothEmbedding.tangentRange, hi]
+  rw [Manifold.IsImmersion.tangentRange_def, hi]
   exact range_mfderiv_torusFamilyFiberMap P hinj hP hn u₀ x
 
 private theorem centralTorusNormalCoord_normalClass
@@ -81,7 +81,8 @@ private theorem centralTorusNormalCoord_normalClass
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     centralTorusNormalCoord P hinj hP hn x
-      ((centralTorusEmbedding P hinj hP hn).normalClass x (ne_of_gt (zero_lt_one.trans_le hn)) w) =
+      ((centralTorusEmbedding P hinj hP hn).isImmersion.normalClass x
+        (ne_of_gt (zero_lt_one.trans_le hn)) w) =
       mfderiv (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ)
         (((↑) : rootsOfUnityBall m r → ℂ) ∘ torusFamilyProjection P)
         (torusFamilyFiberMap P u₀ x) w := by
@@ -168,9 +169,10 @@ private def centralTorusNormalQuotientEquiv
     letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul
       (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) (fun l ↦ (hP l).continuous)
       (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
-    (centralTorusEmbedding P hinj hP hn).NormalSpace x (ne_of_gt (zero_lt_one.trans_le hn)) ≃L[ℂ]
+    (centralTorusEmbedding P hinj hP hn).isImmersion.NormalSpace x
+        (ne_of_gt (zero_lt_one.trans_le hn)) ≃L[ℂ]
       (torusFamilyMultipleFiberEmbedding P hinj hP R ρ hequiv b hb hone hmul hbmul hR hbc hfree
-        hu₀ hn).NormalSpace (Quotient.mk _ x) (ne_of_gt (zero_lt_one.trans_le hn)) := by
+        hu₀ hn).isImmersion.NormalSpace (Quotient.mk _ x) (ne_of_gt (zero_lt_one.trans_le hn)) := by
   letI := periodAddAction P
   letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
@@ -213,7 +215,8 @@ def torusFamilyMultipleFiberNormalCoord
       (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) (fun l ↦ (hP l).continuous)
       (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
     (torusFamilyMultipleFiberEmbedding P hinj hP R ρ hequiv b hb hone hmul hbmul hR hbc hfree
-        hu₀ hn).NormalSpace (Quotient.mk _ x) (ne_of_gt (zero_lt_one.trans_le hn)) ≃L[ℂ] ℂ :=
+        hu₀ hn).isImmersion.NormalSpace (Quotient.mk _ x)
+        (ne_of_gt (zero_lt_one.trans_le hn)) ≃L[ℂ] ℂ :=
   letI := periodAddAction P
   letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
@@ -248,7 +251,7 @@ theorem torusFamilyMultipleFiberNormalCoord_symm_mfderiv
         (fun y ↦ (↑(torusFamilyProjection P y) : ℂ))
         (torusFamilyFiberMap P u₀ x) w) =
       (torusFamilyMultipleFiberEmbedding P hinj hP R ρ hequiv b hb hone hmul hbmul hR hbc hfree
-        hu₀ hn).normalClass (Quotient.mk _ x) (ne_of_gt (zero_lt_one.trans_le hn))
+        hu₀ hn).isImmersion.normalClass (Quotient.mk _ x) (ne_of_gt (zero_lt_one.trans_le hn))
         (mfderiv (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E))
           (Quotient.mk (orbitRel (rootsOfUnity m ℂ)
             (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))))
@@ -270,8 +273,8 @@ theorem torusFamilyMultipleFiberNormalCoord_symm_mfderiv
     hR hbc hfree hu₀ hn
   let q := Quotient.mk
     (orbitRel (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
-  have hv : e (i.normalClass x (ne_of_gt (zero_lt_one.trans_le hn)) w) =
-      j.normalClass (Quotient.mk _ x) (ne_of_gt (zero_lt_one.trans_le hn))
+  have hv : e (i.isImmersion.normalClass x (ne_of_gt (zero_lt_one.trans_le hn)) w) =
+      j.isImmersion.normalClass (Quotient.mk _ x) (ne_of_gt (zero_lt_one.trans_le hn))
         (mfderiv (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) q (torusFamilyFiberMap P u₀ x) w) := by
     dsimp only [e, i]
     rw [centralTorusNormalQuotientEquiv]
@@ -279,7 +282,8 @@ theorem torusFamilyMultipleFiberNormalCoord_symm_mfderiv
     refine (SmoothEmbedding.normalSpaceEquiv_normalClass _ _ _ _ _ _ _ w).trans ?_
     have hi : centralTorusEmbedding P hinj hP (u₀ := u₀) hn x = torusFamilyFiberMap P u₀ x := by
       rw [centralTorusEmbedding, SmoothEmbedding.ofIsSmoothEmbedding_apply]
-    exact congrArg (fun z ↦ j.normalClass (Quotient.mk _ x) (ne_of_gt (zero_lt_one.trans_le hn))
+    exact congrArg (fun z ↦ j.isImmersion.normalClass (Quotient.mk _ x)
+      (ne_of_gt (zero_lt_one.trans_le hn))
       (mfderiv (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) q z w)) hi
   let c := centralTorusNormalCoord P hinj hP hn x
   have hc := centralTorusNormalCoord_normalClass P hinj hP hn x w
@@ -290,8 +294,8 @@ theorem torusFamilyMultipleFiberNormalCoord_symm_mfderiv
     _ = _ := by
       rw [hcoord]
       exact (e.symm.trans c).apply_symm_apply _
-    _ = c (i.normalClass x (ne_of_gt (zero_lt_one.trans_le hn)) w) := hc.symm
-    _ = (e.symm.trans c) (e (i.normalClass x (ne_of_gt (zero_lt_one.trans_le hn)) w)) :=
+    _ = c (i.isImmersion.normalClass x (ne_of_gt (zero_lt_one.trans_le hn)) w) := hc.symm
+    _ = (e.symm.trans c) (e (i.isImmersion.normalClass x (ne_of_gt (zero_lt_one.trans_le hn)) w)) :=
       (congrArg c (e.symm_apply_apply _)).symm
     _ = _ := congrArg (e.symm.trans c) hv
 
@@ -313,7 +317,8 @@ private theorem torusFamilyMultipleFiberNormalCoord_symm_smul_mfderiv
     let v := mfderiv (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ)
       (fun y ↦ (↑(torusFamilyProjection P y) : ℂ))
       (torusFamilyFiberMap P u₀ x) w
-    Bundle.TotalSpace.mk' (E := fun z ↦ i.NormalSpace z (ne_of_gt (zero_lt_one.trans_le hn)))
+    Bundle.TotalSpace.mk'
+      (E := fun z ↦ i.isImmersion.NormalSpace z (ne_of_gt (zero_lt_one.trans_le hn)))
       ℂ (Quotient.mk _ (g • x))
       ((torusFamilyMultipleFiberNormalCoord P hinj hP R ρ hequiv b hb hone hmul hbmul
         hR hbc hfree hu₀ hn (g • x)).symm (((g : ℂˣ) : ℂ) • v)) =
@@ -362,7 +367,8 @@ private theorem torusFamilyMultipleFiberNormalCoord_symm_smul_mfderiv
   have hqt : (Quotient.mk (orbitRel (rootsOfUnity m ℂ) _) (g • x)) = Quotient.mk _ x :=
     MulAction.orbitRel.Quotient.quotient_smul_eq
   let normalClass z (t : ℂ × E) :=
-    Bundle.TotalSpace.mk' (E := fun a ↦ i.NormalSpace a hn₀) ℂ z (i.normalClass z hn₀ t)
+    Bundle.TotalSpace.mk' (E := fun a ↦ i.isImmersion.NormalSpace a hn₀) ℂ z
+      (i.isImmersion.normalClass z hn₀ t)
   have hdiff := (congrArg (fun z ↦ mfderiv A A q z w') hgy).trans hd
   exact (congrArg (normalClass (Quotient.mk _ (g • x))) hdiff).trans
     (congrArg (fun z ↦ normalClass z (mfderiv A A q y w)) hqt)
@@ -385,7 +391,8 @@ theorem torusFamilyMultipleFiberNormalCoord_symm_smul
       (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
     let i := torusFamilyMultipleFiberEmbedding P hinj hP R ρ hequiv b hb hone hmul hbmul
       hR hbc hfree hu₀ hn
-    Bundle.TotalSpace.mk' (E := fun z ↦ i.NormalSpace z (ne_of_gt (zero_lt_one.trans_le hn)))
+    Bundle.TotalSpace.mk'
+      (E := fun z ↦ i.isImmersion.NormalSpace z (ne_of_gt (zero_lt_one.trans_le hn)))
       ℂ (Quotient.mk _ (g • x))
       ((torusFamilyMultipleFiberNormalCoord P hinj hP R ρ hequiv b hb hone hmul hbmul
         hR hbc hfree hu₀ hn (g • x)).symm (((g : ℂˣ) : ℂ) • v)) =

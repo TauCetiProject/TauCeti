@@ -32,14 +32,16 @@ extension and evaluation operations used to define dynamic parabolic subgroups a
   points, with injectivity given by `TauCeti.Cocharacter.ofPolyPoint_injective`.
 * `TauCeti.Cocharacter.evalZeroPoint`: evaluation of polynomial-valued points at the origin.
 * `TauCeti.Cocharacter.pointsHom` and `TauCeti.Cocharacter.genericPoint`: the map from
-  multiplicative-group points and its generic value.
+  multiplicative-group points and its generic value, which determines the cocharacter
+  (`TauCeti.Cocharacter.genericPoint_injective`).
 * `BialgHom.oppositeCocharacter`: the opposite cocharacter, with its point formulas
   `TauCeti.Cocharacter.pointsHom_oppositeCocharacter` and
   `TauCeti.Cocharacter.genericPoint_oppositeCocharacter`.
 * `BialgHom.powCocharacter`: the power `t ↦ λ(tⁿ)` of a cocharacter, with
   `BialgHom.powCocharacter_one`, `BialgHom.powCocharacter_powCocharacter`,
-  `BialgHom.powCocharacter_neg_one` (the power `λ⁻¹` is the opposite cocharacter) and the point
-  formula `BialgHom.pointsHom_powCocharacter`.
+  `BialgHom.powCocharacter_neg_one` (the power `λ⁻¹` is the opposite cocharacter),
+  `BialgHom.powCocharacter_apply_eq_zero_iff` (nonzero powers have the same kernel) and the
+  point formula `BialgHom.pointsHom_powCocharacter`.
 * `TauCeti.Cocharacter.mapValue_ofPolyPoint` and `TauCeti.Cocharacter.mapValue_evalZeroPoint`:
   naturality of inclusion and evaluation.
 -/
@@ -101,6 +103,14 @@ theorem powCocharacter_neg_one (l : H →ₐc[R] LaurentPolynomial R) :
     l.powCocharacter (-1) = l.oppositeCocharacter := by
   ext h k : 2
   simpa using Finsupp.mapDomain_apply_of_injective neg_injective (l h).coeff (-k)
+
+/-- A nonzero power of a cocharacter has the same kernel as the cocharacter: substituting `Tⁿ`
+for the Laurent variable is injective for `n ≠ 0`. -/
+theorem powCocharacter_apply_eq_zero_iff (l : H →ₐc[R] LaurentPolynomial R) {n : ℤ} (hn : n ≠ 0)
+    (h : H) : l.powCocharacter n h = 0 ↔ l h = 0 := by
+  rw [powCocharacter_apply]
+  exact (AddMonoidAlgebra.mapDomain_injective (mul_left_injective₀ hn)).eq_iff'
+    (AddMonoidAlgebra.mapDomain_zero _)
 
 end BialgHom
 
@@ -265,6 +275,15 @@ theorem genericPoint_ofConv (l : H →ₐc[R] LaurentPolynomial R) :
     simp [LaurentPolynomial.genericUnit_val]
   rw [genericPoint_eq_pointsHom, pointsHom_apply, BialgHom.mapDomain_apply,
     ofConv_toConv, he]
+
+/-- A cocharacter is determined by its generic point `l(T)` with values in `R[T;T⁻¹]`. -/
+theorem genericPoint_injective :
+    Function.Injective (genericPoint (R := R) (H := H) R) := by
+  intro l l' hll'
+  have h := congrArg WithConv.ofConv hll'
+  rw [genericPoint_ofConv, genericPoint_ofConv, Algebra.ofId_self,
+    AddMonoidAlgebra.mapAlgHom_id] at h
+  exact BialgHom.ext fun x ↦ DFunLike.congr_fun h x
 
 /-! ### Naturality in the value algebra -/
 

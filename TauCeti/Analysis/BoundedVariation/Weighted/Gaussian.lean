@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Weighted.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Probability.Distributions.Gaussian.Density
 
 /-!
@@ -17,11 +18,17 @@ Gaussian measure `ProbabilityTheory.stdGaussian E`
 (`TauCeti.withDensity_exp_neg_gaussianWeight`), so the Gaussian perimeter
 `TauCeti.gaussianPerimeter` is the weighted perimeter of this measure. The density comes from
 `TauCeti.Probability.stdGaussian_eq_withDensity_norm`.
+
+Consequences: the Gaussian density `e^{−W}` is Lebesgue integrable
+(`TauCeti.integrable_exp_neg_gaussianWeight`), and so is `⟪x, w⟫ e^{−W(x)}`
+(`TauCeti.integrable_inner_mul_exp_neg_gaussianWeight`); the Gaussian measure of a translate `v + A`
+is `∫_A e^{−⟨y, v⟩ − ‖v‖² / 2} e^{−W(y)} dy` (`TauCeti.measureReal_stdGaussian_vadd`).
 -/
 
 public section
 
 open MeasureTheory
+open scoped RealInnerProductSpace Pointwise
 
 namespace TauCeti
 
@@ -37,5 +44,37 @@ theorem withDensity_exp_neg_gaussianWeight :
   rw [Real.rpow_def_of_pos (by positivity), ← Real.exp_add, gaussianWeight_def]
   congr 2
   ring
+
+/-- The Gaussian density `e^{−W}` is Lebesgue integrable. -/
+theorem integrable_exp_neg_gaussianWeight :
+    Integrable fun x : E => Real.exp (-gaussianWeight E x) :=
+  MeasureTheory.integrable_of_eq_withDensity withDensity_exp_neg_gaussianWeight.symm
+    continuous_exp_neg_gaussianWeight.aemeasurable (ae_of_all _ fun _ => (Real.exp_pos _).le)
+
+/-- For every `w`, the function `x ↦ ⟪x, w⟫ e^{−W(x)}` is Lebesgue integrable: the linear form
+`⟪·, w⟫` is integrable against the standard Gaussian measure. -/
+theorem integrable_inner_mul_exp_neg_gaussianWeight (w : E) :
+    Integrable fun x : E => ⟪x, w⟫ * Real.exp (-gaussianWeight E x) := by
+  have h := ProbabilityTheory.IsGaussian.integrable_dual (ProbabilityTheory.stdGaussian E)
+    (innerSL ℝ w)
+  rw [← withDensity_exp_neg_gaussianWeight, MeasureTheory.integrable_withDensity_ofReal_iff
+    continuous_exp_neg_gaussianWeight.aemeasurable
+    (ae_of_all _ fun _ => (Real.exp_pos _).le)] at h
+  refine h.congr (ae_of_all _ fun x => ?_)
+  simp [real_inner_comm, mul_comm]
+
+/-- The Gaussian measure of a translate `v + A`, as an integral over `A`. -/
+theorem measureReal_stdGaussian_vadd (v : E) {A : Set E} (hA : NullMeasurableSet A) :
+    (ProbabilityTheory.stdGaussian E).real (v +ᵥ A) =
+      ∫ y in A, Real.exp (-(⟪y, v⟫ + ‖v‖ ^ 2 / 2)) * Real.exp (-gaussianWeight E y) := by
+  rw [← withDensity_exp_neg_gaussianWeight, MeasureTheory.measureReal_withDensity_ofReal
+    (ae_of_all _ fun _ => (Real.exp_pos _).le) (hA.vadd v)
+    continuous_exp_neg_gaussianWeight.aemeasurable]
+  have hpre : (fun y : E => y + v) ⁻¹' (v +ᵥ A) = A := by
+    ext y
+    simp [Set.mem_vadd_set, add_comm]
+  rw [← (measurePreserving_add_right volume v).setIntegral_preimage_emb
+    (MeasurableEquiv.addRight v).measurableEmbedding, hpre]
+  exact integral_congr_ae (ae_of_all _ fun y => exp_neg_gaussianWeight_add y v)
 
 end TauCeti

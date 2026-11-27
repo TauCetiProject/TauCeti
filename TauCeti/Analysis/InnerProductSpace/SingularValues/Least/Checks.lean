@@ -55,28 +55,12 @@ example : (toLin e.toBasis e.toBasis (diagonal ![(3 : ℝ), 1 / 2])).singularVal
   norm_num
 
 /-- The shear `[[1, 1], [0, 1]]` has minimal stretch `(√5 - 1) / 2` and operator norm
-`(√5 + 1) / 2`: its Gram operator has trace `3` and determinant `1`, so its squared singular values
-are `(3 ± √5) / 2`. -/
+`(√5 + 1) / 2`: its squared singular values are `(3 ± √5) / 2`
+(`Matrix.sq_singularValues_toLin_shear_fin_two` at `t = 1`). -/
 example : (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]).minimalStretch = (√5 - 1) / 2 ∧
     ‖toContinuousLinearMap (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1])‖ = (√5 + 1) / 2 := by
   have hE : finrank ℝ E = 2 := by rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
-  have hgram : adjoint (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]) ∘ₗ
-      toLin e.toBasis e.toBasis !![1, 1; 0, 1] = toLin e.toBasis e.toBasis !![1, 1; 1, 2] := by
-    rw [← toLin_conjTranspose e e, ← toLin_mul]
-    congr 1
-    ext i j
-    fin_cases i <;> fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_two]
-  have htr : trace ℝ E (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 1, 2]) = 3 := by
-    rw [trace_toLin_eq]
-    norm_num [Matrix.trace, Fin.sum_univ_two]
-  have hdet : (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 1, 2]).det = 1 := by
-    rw [det_toLin, Matrix.det_fin_two]
-    norm_num
-  have h0 := sq_singularValues_zero_of_finrank_eq_two
-    (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]) hE
-  have h1 := sq_singularValues_one_of_finrank_eq_two
-    (toLin e.toBasis e.toBasis !![(1 : ℝ), 1; 0, 1]) hE
-  rw [hgram, htr, hdet, RCLike.re_to_real, RCLike.re_to_real] at h0 h1
+  obtain ⟨h0, h1⟩ := sq_singularValues_toLin_shear_fin_two e 1
   norm_num at h0 h1
   have h5 : √5 ^ 2 = 5 := Real.sq_sqrt (by norm_num)
   have h5' : (1 : ℝ) ≤ √5 := Real.one_le_sqrt.mpr (by norm_num)

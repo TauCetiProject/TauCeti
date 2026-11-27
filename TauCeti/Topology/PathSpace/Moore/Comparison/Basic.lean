@@ -55,6 +55,8 @@ The detour through length `L + 1` avoids dividing by a length that could be zero
   `MooreLoopSpace X x ≃ₕ Path x x` with Mathlib's loop space.
 * `TauCeti.MooreLoopSpace.posLengthHomeomorph`: the Moore loops of positive length are homeomorphic
   to `(0, ∞) × Path x x`, by the length and `toPath`.
+* `TauCeti.MooreLoopSpace.lengthLevelHomeomorph`: for `L > 0`, the Moore loops of length `L` are
+  homeomorphic to `Path x x`, the restriction of `posLengthHomeomorph` to the length `L`.
 * `TauCeti.MooreLoopSpace.posLengthMap`: the Moore loop map of a continuous map, restricted to the
   Moore loops of positive length.
 
@@ -159,6 +161,21 @@ theorem toUnitPath_ofUnitPath (f : C(I, X)) : (ofUnitPath f).toUnitPath = f := b
   ext s
   rw [toUnitPath_apply, ofUnitPath_apply, length_ofUnitPath, one_mul]
   exact congr_arg f (projIcc_val zero_le_one s)
+
+/-- The image of `ofUnitPath f` under a continuous map is `ofUnitPath` of the image of `f`. -/
+@[simp]
+theorem map_ofUnitPath {Y : Type*} [TopologicalSpace Y] (F : C(X, Y)) (f : C(I, X)) :
+    (ofUnitPath f).map F = ofUnitPath (F.comp f) :=
+  ext (by rw [length_map, length_ofUnitPath, length_ofUnitPath]) fun t ↦ by
+    rw [map_apply, ofUnitPath_apply, ofUnitPath_apply, ContinuousMap.comp_apply]
+
+/-- Reparametrizing the image of a Moore path to the unit interval is taking the image of its
+reparametrization. -/
+@[simp]
+theorem toUnitPath_map {Y : Type*} [TopologicalSpace Y] (F : C(X, Y)) (γ : MoorePath X) :
+    (γ.map F).toUnitPath = F.comp γ.toUnitPath :=
+  ContinuousMap.ext fun s ↦ by
+    rw [toUnitPath_apply, map_apply, length_map, ContinuousMap.comp_apply, toUnitPath_apply]
 
 /-- The constant Moore path of length zero becomes the constant path. -/
 @[simp]
@@ -633,6 +650,39 @@ theorem coe_posLengthHomeomorph_symm_mk_toPath (γ : MooreLoopSpace X x) {L : �
     ((posLengthHomeomorph x).symm (⟨L, hL⟩, γ.toPath)).val = γ := by
   subst hγ
   exact congrArg Subtype.val ((posLengthHomeomorph x).symm_apply_apply ⟨γ, hL⟩)
+
+variable (x) in
+/-- **Moore loops of a fixed positive length are loops on the unit interval**: for `L > 0`, a Moore
+loop of length `L` is sent to its reparametrization to the unit interval, and a loop on the unit
+interval to the same loop run in time `L`. This is the restriction of
+`TauCeti.MooreLoopSpace.posLengthHomeomorph` to the length `L`. -/
+def lengthLevelHomeomorph {L : ℝ≥0} (hL : 0 < L) :
+    (length ⁻¹' {L} : Set (MooreLoopSpace X x)) ≃ₜ Path x x where
+  toFun γ := γ.val.toPath
+  invFun c := ⟨((posLengthHomeomorph x).symm (⟨L, hL⟩, c)).val,
+    length_posLengthHomeomorph_symm_apply _⟩
+  left_inv γ := Subtype.ext <| coe_posLengthHomeomorph_symm_mk_toPath γ.val hL γ.property
+  right_inv _ := toPath_posLengthHomeomorph_symm_apply _
+  continuous_toFun := continuous_toPath.comp continuous_subtypeVal
+  continuous_invFun := (continuous_subtypeVal.comp ((posLengthHomeomorph x).symm.continuous.comp
+    (continuous_const.prodMk continuous_id))).subtype_mk _
+
+@[simp]
+theorem lengthLevelHomeomorph_apply {L : ℝ≥0} (hL : 0 < L)
+    (γ : (length ⁻¹' {L} : Set (MooreLoopSpace X x))) :
+    lengthLevelHomeomorph x hL γ = γ.val.toPath :=
+  (rfl)
+
+@[simp]
+theorem toMoorePath_lengthLevelHomeomorph_symm_apply {L : ℝ≥0} (hL : 0 < L) (c : Path x x) :
+    ((lengthLevelHomeomorph x hL).symm c).val.toMoorePath = c.toMoorePath.rescale L :=
+  toMoorePath_posLengthHomeomorph_symm_apply (⟨L, hL⟩, c)
+
+/-- The inverse of `lengthLevelHomeomorph` at `c` has underlying path `c`. -/
+@[simp]
+theorem toPath_lengthLevelHomeomorph_symm_apply {L : ℝ≥0} (hL : 0 < L) (c : Path x x) :
+    ((lengthLevelHomeomorph x hL).symm c).val.toPath = c :=
+  toPath_posLengthHomeomorph_symm_apply _
 
 /-- Reparametrizing to the unit interval commutes with the Moore loop map of a continuous map. -/
 @[simp]

@@ -178,7 +178,7 @@ private theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_o
   have hO : IsOpen O := hu.continuousOn.isOpen_inter_preimage hΩ (isOpen_extChartAt_source x)
   have hBO : closedBall z₀ r ⊆ O := fun y hy ↦ ⟨hBΩ hy, (huN hy).1⟩
   obtain ⟨hcd, -⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub hO
-    (hu.mono inter_subset_left) (fun y hy ↦ hy.2) fun y hy ↦ hfl y hy.1
+    (hu.mono inter_subset_left) (by norm_num) (fun y hy ↦ hy.2) fun y hy ↦ hfl y hy.1
   have hcont : ContinuousOn (fun y ↦ fderiv ℝ (φ ∘ u) y stdComplexLineReal) (closedBall z₀ r) :=
     ((hcd.continuousOn_fderiv_of_isOpen hO (by norm_num)).clm_apply continuousOn_const).mono hBO
   exact hmv hr (ball_subset_closedBall.trans hBD) (hu.mono (ball_subset_closedBall.trans hBΩ))
@@ -572,7 +572,7 @@ private theorem IsNondegenerate.exists_ball_tendstoLocallyUniformlyOn_fderiv_ext
         rw [mem_preimage, ← extChartAt_source I]
         exact (huN n (ball_subset_closedBall hz)).1
   have hchart (n : ℕ) := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub
-    isOpen_ball (((hu (n + N)).mono hBS).of_le (by norm_cast))
+    isOpen_ball (((hu (n + N)).mono hBS).of_le (by norm_cast)) (by norm_num)
     (fun z hz ↦ (huN n (ball_subset_closedBall hz)).1) fun z hz ↦ hfl (n + N) z (hBS hz)
   -- Bounds on the energy densities give bounds on the derivatives in the chart.
   have hbd' (C : Set (ℝ × ℝ)) (hC : IsCompact C) (hCB : C ⊆ ball y r) :
@@ -677,31 +677,20 @@ theorem
       he_inj hS (sdiff_subset.trans hΩD) (fun n ↦ (hu (φ n)).mono sdiff_subset)
       (fun n ↦ (huK (φ n)).mono_left sdiff_subset) (fun n z hz ↦ hfl (φ n) z hz.1) hbd hv hvK
       hconv hpt hy hyα
-  -- In the chart at `v y`, the limit is `C¹` near `y` and solves the Floer equation at `y`.
-  have hvy (y : ℝ × ℝ) (hy : y ∈ S) : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 1 v y ∧
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (v y))
-        (ω.perturbedMFDeriv Ks Kt v y).toLinearMap := by
-    set χ := extChartAt I (v y)
-    obtain ⟨r, hr, -, hBs, hv1, -, heq⟩ := hloc (hvK hy) hy (mem_extChartAt_source (v y))
-    have hvB : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v (ball y r) :=
-      ((contMDiffOn_extChartAt_symm (n := 1) (v y)).comp (contMDiffOn_iff_contDiffOn.2 hv1)
-        fun z hz ↦ χ.map_source (hBs hz)).congr fun z hz ↦ (χ.left_inv (hBs hz)).symm
-    have hvyA := hvB.contMDiffAt (ball_mem_nhds y hr)
-    refine ⟨hvyA,
-      (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
-        (hvyA.mdifferentiableAt one_ne_zero) (mem_extChartAt_source (v y))).2 ?_⟩
-    simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
-      hamiltonianOneFormInChartAt_stdComplexLineImag, Function.comp_apply] using
-      heq y (mem_ball_self hr)
-  refine ⟨φ, hφ, Z, hZΩ, hcard, hconc, hbd, v, fun y hy ↦ (hvy y hy).1.contMDiffWithinAt, hvK,
-    hconv, hpt, fun α hα ↦ ?_, fun y hy ↦ (hvy y hy).2⟩
-  -- The convergence of the derivatives is local.
-  have hSα : IsOpen (S ∩ v ⁻¹' (extChartAt I α).source) :=
-    hv.isOpen_inter_preimage hS (isOpen_extChartAt_source α)
-  rw [hSα.tendstoLocallyUniformlyOn_iff_forall_tendsto]
-  rintro y ⟨hy, hyα⟩
-  obtain ⟨r, hr, -, -, -, hdconv, -⟩ := hloc hα hy hyα
-  exact isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto.1 hdconv y (mem_ball_self hr)
+  -- So the limit is `C¹` on `S`, and the derivatives converge in each chart.
+  obtain ⟨hvC1, hdconv⟩ :=
+    contMDiffOn_and_tendstoLocallyUniformlyOn_fderiv_extChartAt_comp_of_forall_exists_ball hS hv
+      hvK (Q := fun n ↦ u (φ n)) fun α hα y hy hyα ↦
+        (hloc hα hy hyα).imp fun _ ⟨hr, _, h₁, h₂, h₃, _⟩ ↦ ⟨hr, h₁, h₂, h₃⟩
+  refine ⟨φ, hφ, Z, hZΩ, hcard, hconc, hbd, v, hvC1, hvK, hconv, hpt, hdconv, fun y hy ↦ ?_⟩
+  -- In the chart at `v y`, the limit solves the Floer equation at `y`.
+  obtain ⟨r, hr, -, -, -, -, heq⟩ := hloc (hvK hy) hy (mem_extChartAt_source (v y))
+  refine (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+    (((hvC1 y hy).contMDiffAt (hS.mem_nhds hy)).mdifferentiableAt one_ne_zero)
+    (mem_extChartAt_source (v y))).2 ?_
+  simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
+    hamiltonianOneFormInChartAt_stdComplexLineImag, Function.comp_apply] using
+    heq y (mem_ball_self hr)
 
 
 omit [FiniteDimensional ℝ E] in

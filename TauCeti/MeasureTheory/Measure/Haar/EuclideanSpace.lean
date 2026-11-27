@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Additive Haar measures on Euclidean space and Lebesgue measure on `ι → ℝ`

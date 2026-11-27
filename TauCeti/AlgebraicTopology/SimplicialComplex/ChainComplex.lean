@@ -28,7 +28,9 @@ signs are central, so the coefficient ring need not be commutative.
 The comparison with the cellular chain complex of the realization is separate.  Both complexes
 are indexed by `RealizationCell`, so that comparison reduces to computing the cellular incidence
 coefficients in these ordered coordinates.  The support of each simplicial cell boundary is
-identified explicitly with its codimension-one faces.
+identified explicitly with its codimension-one faces; in particular the boundary of a multiple of
+a positive-dimensional cell vanishes only when the coefficient does
+(`TauCeti.OrderedSimplicialChain.boundary_single_eq_zero_iff`).
 
 ## Main definitions
 
@@ -171,6 +173,17 @@ theorem boundary_single {n : ℕ}
     ((Commute.neg_one_right a).pow_right j).eq
   simp only [boundary, linearCombination_single, boundaryCell, Finset.smul_sum, smul_single,
     smul_eq_mul, mul_one, hc]
+
+/-- The boundary of a multiple of a positive-dimensional cell vanishes only when the coefficient
+does: the face opposite the first vertex carries that coefficient. -/
+theorem boundary_single_eq_zero_iff {n : ℕ}
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1)) (a : R) :
+    boundary R n (single c a) = 0 ↔ a = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, single_zero, map_zero]⟩
+  have h0 := congrArg (fun z ↦ z (c.face 0)) h
+  simpa only [boundary_single, Finsupp.finsetSum_apply, Finsupp.smul_apply, single_apply,
+    c.face_injective.eq_iff, smul_ite, smul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
+    Fin.val_zero, pow_zero, one_smul, Finsupp.coe_zero, Pi.zero_apply] using h0
 
 variable {R} in
 /-- Every cell in the support of the image, under a linear map, of the boundary of a cell lies in

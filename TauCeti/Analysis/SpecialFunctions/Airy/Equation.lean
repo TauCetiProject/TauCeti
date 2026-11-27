@@ -177,9 +177,10 @@ theorem wronskian_eq_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
     (hg : Differentiable ℂ g) (hf' : ∀ z, deriv^[2] f z = z * f z)
     (hg' : ∀ z, deriv^[2] g z = z * g z) (z w : ℂ) :
     f z * deriv g z - deriv f z * g z = f w * deriv g w - deriv f w * g w := by
-  have h := wronskian_eq_of_hasDerivAt (q := id) (fun t => (hg t).hasDerivAt)
-    (hasDerivAt_deriv_of_airy_ode hg hg') (fun t => (hf t).hasDerivAt)
-    (hasDerivAt_deriv_of_airy_ode hf hf') z w
+  have h := wronskian_eq_of_hasDerivAt (q := id) isOpen_univ isPreconnected_univ
+    (fun t _ => (hg t).hasDerivAt) (fun t _ => hasDerivAt_deriv_of_airy_ode hg hg' t)
+    (fun t _ => (hf t).hasDerivAt) (fun t _ => hasDerivAt_deriv_of_airy_ode hf hf' t)
+    (Set.mem_univ z) (Set.mem_univ w)
   linear_combination h
 
 /-- **The Wronskian** `𝒲{Ai, Bi} = 1/π` (DLMF 9.2.7). -/

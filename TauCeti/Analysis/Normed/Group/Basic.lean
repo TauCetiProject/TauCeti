@@ -18,10 +18,10 @@ In a seminormed additive group, the squared distance between two points is at mo
 of their squared distances to any third point: the triangle inequality through `c`, squared with
 `(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`; likewise the squared norm of a sum of three vectors is at most
 three times the sum of their squared norms. The extended norm satisfies the triangle inequality
-`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, and membership in an open ball of extended radius is an
-extended-norm bound. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
-`c > 0` bounds `‖a‖²` by `2 / c * r + 2 ‖b‖²`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a
-squared distance is at most `1`.
+`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, membership in an open ball of extended radius is an
+extended-norm bound, and `‖x‖ₑ < ENNReal.ofReal r` exactly when `‖x‖ < r`. Through the point
+`b`, a bound `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by `2 / c * r + 2 ‖b‖²`. The
+reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared distance is at most `1`.
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
 
@@ -64,6 +64,7 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
 * `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub` -- the triangle inequality for the extended norm.
 * `TauCeti.mem_eball_iff_eNorm` -- `b ∈ eball a r ↔ ‖b - a‖ₑ < r`.
+* `TauCeti.eNorm_lt_ofReal_iff` -- `‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r`.
 * `TauCeti.norm_sq_le_of_mul_norm_sub_sq_le` -- `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by
   `2 / c * r + 2 ‖b‖²`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
@@ -106,6 +107,13 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
+/-- A real norm bound `‖f x‖ ≤ L * ‖x‖` yields a nonnegative real bound `C = max L 0`. -/
+theorem exists_nnreal_norm_le_of_norm_le {α β : Type*} [SeminormedAddGroup α] [Norm β]
+    {f : α → β} {L : ℝ} (hf : ∀ x, ‖f x‖ ≤ L * ‖x‖) :
+    ∃ C : ℝ≥0, ∀ x, ‖f x‖ ≤ C * ‖x‖ :=
+  ⟨⟨max L 0, le_max_right L 0⟩, fun x ↦
+    (hf x).trans (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg x))⟩
+
 /-- **Squared triangle inequality.** The squared distance from `a` to `b` is at most twice the sum
 of the squared distances from `a` and from `b` to an intermediate point `c`. -/
 theorem norm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E) :
@@ -132,6 +140,12 @@ norm distance to `a` is less than `r`, the extended-radius form of `mem_ball_iff
 theorem mem_eball_iff_eNorm {E : Type*} [SeminormedAddCommGroup E] {a b : E} {r : ℝ≥0∞} :
     b ∈ eball a r ↔ ‖b - a‖ₑ < r := by
   rw [mem_eball, eDist_eq_eNorm_sub]
+
+/-- The extended norm of `x` is below `ENNReal.ofReal r` exactly when its norm is below `r`. -/
+@[simp]
+theorem eNorm_lt_ofReal_iff {E : Type*} [SeminormedAddGroup E] {x : E} {r : ℝ} :
+    ‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r := by
+  simpa using edist_lt_ofReal (x := x) (y := 0)
 
 /-- If `c ‖a - b‖² ≤ r` with `c > 0`, then `‖a‖² ≤ 2 / c * r + 2 ‖b‖²`: the squared triangle
 inequality through `b`. -/
