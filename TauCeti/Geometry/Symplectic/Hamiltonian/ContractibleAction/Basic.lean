@@ -14,7 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 Loops in a manifold `M` are `1`-periodic maps `γ : ℝ → M`. A **cylinder** from a loop `γ₀` to a
 loop `γ₁` (`TauCeti.IsLoopCylinder`) is a `C²` map `w : ℝ × ℝ → M`, `1`-periodic in its second
 coordinate `t`, with `w (0, ·) = γ₀` and `w (1, ·) = γ₁`. Cylinders compose
-(`TauCeti.IsLoopCylinder.trans`, by `TauCeti.rectangleTrans`) and reverse
+(`TauCeti.IsLoopCylinder.trans`, by `TauCeti.rectangleTrans`), are concatenated loopwise
+(`TauCeti.IsLoopCylinder.loopwiseTrans`, by `TauCeti.loopwiseTrans`) and reverse
 (`TauCeti.IsLoopCylinder.symm`), and their images under `C²` maps are cylinders
 (`TauCeti.IsLoopCylinder.comp`). A **cap** of `γ` (`TauCeti.IsCap`) is a cylinder from `γ` to a
 constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. Every `C²` map of the
@@ -179,6 +180,20 @@ theorem trans (hw₁ : IsLoopCylinder I w₁ γ₀ γ₁) (hw₂ : IsLoopCylinde
   apply_add_one := rectangleTrans_apply_add_snd hw₁.apply_add_one hw₂.apply_add_one
   apply_zero t := by rw [rectangleTrans_apply_zero, hw₁.apply_zero]
   apply_one t := by rw [rectangleTrans_apply_one, hw₂.apply_one]
+
+/-- The loopwise concatenation of a cylinder from `γ₀` to `γ₁` and a cylinder from `γ₀'` to `γ₁'`,
+each ending in `t` where the other starts, is a cylinder from the loopwise concatenation of `γ₀`
+and `γ₀'` to that of `γ₁` and `γ₁'`. -/
+theorem loopwiseTrans {w₁ w₂ : ℝ × ℝ → M} {γ₀ γ₁ γ₀' γ₁' : ℝ → M}
+    (hw₁ : IsLoopCylinder I w₁ γ₀ γ₁) (hw₂ : IsLoopCylinder I w₂ γ₀' γ₁')
+    (h₁ : ∀ s, w₁ (s, 1) = w₂ (s, 0)) (h₂ : ∀ s, w₂ (s, 1) = w₁ (s, 0)) :
+    IsLoopCylinder I (TauCeti.loopwiseTrans w₁ w₂)
+      (fun t ↦ TauCeti.loopwiseTrans (fun z ↦ γ₀ z.2) (fun z ↦ γ₀' z.2) (0, t))
+      (fun t ↦ TauCeti.loopwiseTrans (fun z ↦ γ₁ z.2) (fun z ↦ γ₁' z.2) (0, t)) where
+  contMDiff := contMDiff_loopwiseTrans hw₁.contMDiff hw₂.contMDiff h₁ h₂
+  apply_add_one z := loopwiseTrans_apply_add_one w₁ w₂ z.1 z.2
+  apply_zero _ := loopwiseTrans_congr (fun r _ ↦ hw₁.apply_zero r) (fun r _ ↦ hw₂.apply_zero r)
+  apply_one _ := loopwiseTrans_congr (fun r _ ↦ hw₁.apply_one r) (fun r _ ↦ hw₂.apply_one r)
 
 /-- Reversing the first coordinate of a cylinder from `γ₀` to `γ₁` gives a cylinder from `γ₁` to
 `γ₀`. -/
