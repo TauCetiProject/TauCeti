@@ -40,8 +40,8 @@ notions agree.
   `s` has a locally bounded derivative at the interior points of `s`.
 * `HasStrictFDerivAt.continuousAt_of_eventually_hasFDerivAt`: a derivative field that is the
   strict derivative at `x` is continuous at `x`.
-* `contDiff_one_of_forall_hasStrictFDerivAt`: a map that is strictly differentiable at every point
-  is `C¹`.
+* `TauCeti.contDiff_one_of_forall_hasStrictFDerivAt`: a map that is strictly differentiable at
+  every point is `C¹`.
 -/
 
 public section
@@ -113,6 +113,8 @@ theorem HasStrictFDerivAt.continuousAt_of_eventually_hasFDerivAt {f' : E → E �
   rw [dist_eq_norm]
   exact ((hy.sub (f' x).hasFDerivAt).le_of_lipschitzOn hsy hlip).trans_lt (half_lt_self hε)
 
+namespace TauCeti
+
 /-- **Strict differentiability everywhere gives `C¹`.** A map with strict derivative `f' x` at
 every point `x` is `C¹`. -/
 theorem contDiff_one_of_forall_hasStrictFDerivAt {f' : E → E →L[𝕜] F}
@@ -120,5 +122,7 @@ theorem contDiff_one_of_forall_hasStrictFDerivAt {f' : E → E →L[𝕜] F}
   contDiff_one_iff_hasFDerivAt.2 ⟨f', continuous_iff_continuousAt.2 fun x ↦
     (hf x).continuousAt_of_eventually_hasFDerivAt
       (Filter.Eventually.of_forall fun y ↦ (hf y).hasFDerivAt), fun x ↦ (hf x).hasFDerivAt⟩
+
+end TauCeti
 
 end

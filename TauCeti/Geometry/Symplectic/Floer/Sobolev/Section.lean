@@ -93,6 +93,10 @@ jets of differentiable sections, and has the same derivative.
   differentiable, with derivative the linearization of the Floer coefficients.
 * `TauCeti.SymplecticForm.contDiff_floerSection`: under the same hypotheses, the Floer section is
   `C¹`.
+* `TauCeti.SymplecticForm.floerJetCoeff_eq_firstOrderJetCoeff`: the coefficient field of the
+  Sobolev realization of the linearized Floer operator, in terms of the derivatives `J'`, `G'`.
+* `TauCeti.SymplecticForm.memLp_top_floerJetCoeff`: this coefficient field is essentially bounded
+  when `J`, `J'`, `G'` and `∂t u` are.
 * `TauCeti.SymplecticForm.quasilinearLinearization_eq_floerSobolevOperator`: at a point whose
   value has bounded classical `t`-derivative equal to its weak one, the linearization of the Floer
   coefficients is the Sobolev realization of the linearized Floer operator.
@@ -258,6 +262,59 @@ open StripSobolev (stripMeasure)
 
 variable {J' : ℝ × ℝ → V → V →L[ℝ] V →L[ℝ] V} {G' : ℝ × ℝ → V → V →L[ℝ] V}
 
+/-- **The Floer coefficient field in terms of derivatives.** Where `J(z, ·)` and the zeroth-order
+term `G(z, ·) = -X_{K_s(z)} - J(z, ·) X_{K_t(z)}` have derivatives `J'` and `G'` at `u z`, and the
+Hamiltonian vector fields are differentiable there, the coefficient field of the Sobolev
+realization of the linearized Floer operator along `u` is `(J(z, u z), J'(·) ∂t u + G')` at `z`. -/
+theorem floerJetCoeff_eq_firstOrderJetCoeff {u : ℝ × ℝ → V} {z : ℝ × ℝ}
+    {J'₀ : V →L[ℝ] V →L[ℝ] V} {G'₀ : V →L[ℝ] V} (hJ : HasFDerivAt (J z) J'₀ (u z))
+    (hG : HasFDerivAt (ω.floerZerothOrder J Ks Kt z) G'₀ (u z))
+    (hKs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks z)) (u z))
+    (hKt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt z)) (u z)) :
+    ω.floerJetCoeff J Ks Kt u z =
+      firstOrderJetCoeff (J z (u z)) (J'₀.flip (fderiv ℝ u z (0, 1)) + G'₀) := by
+  rw [floerJetCoeff_def, floerLinearizationCoeff_eq_flip_add_fderiv_floerZerothOrder ω
+    hJ.differentiableAt hKs hKt, hJ.fderiv, hG.fderiv]
+
+/-- **The Floer coefficient field is essentially bounded.** Let `J` be bounded and continuous, and
+let `J'`, `G'` be bounded, continuous derivatives in `y` of `J` and of the zeroth-order term
+`G = -X_{K_s} - J X_{K_t}` along an almost everywhere strongly measurable map `u`, the Hamiltonian
+vector fields being differentiable along `u`. If `∂t u` is essentially bounded, the coefficient
+field of the Sobolev realization of the linearized Floer operator along `u` is in `L^∞`. -/
+theorem memLp_top_floerJetCoeff (hJc : Continuous (Function.uncurry J))
+    (hJ'c : Continuous (Function.uncurry J')) (hG'c : Continuous (Function.uncurry G'))
+    {u : ℝ × ℝ → V} (hu : AEStronglyMeasurable u μ) {B C : ℝ} {K L : ℝ≥0}
+    (hJC : ∀ z y, ‖J z y‖ ≤ C) (hJ'K : ∀ z y, ‖J' z y‖ ≤ K) (hG'K : ∀ z y, ‖G' z y‖ ≤ L)
+    (hJ : ∀ z, HasFDerivAt (J z) (J' z (u z)) (u z))
+    (hG : ∀ z, HasFDerivAt (ω.floerZerothOrder J Ks Kt z) (G' z (u z)) (u z))
+    (hKs : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks z)) (u z))
+    (hKt : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt z)) (u z))
+    (huB : ∀ᵐ z ∂μ, ‖fderiv ℝ u z (0, 1)‖ ≤ B) :
+    MemLp (ω.floerJetCoeff J Ks Kt u) ∞ μ := by
+  have hcoeff (z : ℝ × ℝ) :=
+    floerJetCoeff_eq_firstOrderJetCoeff (hJ z) (hG z) (hKs z) (hKt z)
+  refine memLp_top_of_bound ?_ (1 + C + (K * B + L)) ?_
+  · rw [funext hcoeff]
+    have hΦ : Continuous fun q : (V →L[ℝ] V) × ((V →L[ℝ] V →L[ℝ] V) × V) × (V →L[ℝ] V) ↦
+        firstOrderJetCoeff q.1 (q.2.1.1.flip q.2.1.2 + q.2.2) :=
+      continuous_iff_continuousAt.2 fun q ↦ continuousAt_firstOrderJetCoeff
+        continuous_fst.continuousAt
+        ((((ContinuousLinearMap.flipₗᵢ ℝ V V V).continuous.comp continuous_snd.fst.fst).clm_apply
+          continuous_snd.fst.snd).add continuous_snd.snd).continuousAt
+    have hy (Φ : ℝ × ℝ → V → V →L[ℝ] V) (hΦc : Continuous (Function.uncurry Φ)) :
+        AEStronglyMeasurable (fun z ↦ Φ z (u z)) μ :=
+      hΦc.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk hu)
+    exact hΦ.comp_aestronglyMeasurable ((hy J hJc).prodMk
+      ((hJ'c.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk hu)).prodMk
+        (aestronglyMeasurable_fderiv_apply u) |>.prodMk (hy G' hG'c)))
+  · filter_upwards [huB] with z hz
+    rw [hcoeff]
+    refine (norm_firstOrderJetCoeff_le _ _).trans (add_le_add (add_le_add_right (hJC _ _) _) ?_)
+    refine (norm_add_le _ _).trans (add_le_add ?_ (hG'K _ _))
+    refine ((J' z (u z)).flip.le_opNorm _).trans ?_
+    rw [ContinuousLinearMap.opNorm_flip]
+    exact mul_le_mul (hJ'K _ _) hz (norm_nonneg _) K.coe_nonneg
+
 /-- **The linearization of the Floer coefficients is the linearized Floer operator.** Let
 `2 < p < ∞`, let `∂t w` be bounded, let `J` be bounded and continuous, and let `J'`, `G'` be
 bounded, continuous derivatives in `y` of `J` and of the zeroth-order term
@@ -286,44 +343,18 @@ theorem quasilinearLinearization_eq_floerSobolevOperator (hp : 2 < p) (hpt : p �
     quasilinearLinearization (continuousValue p) J J' G' w (fun z ↦ fderiv ℝ w z (0, 1)) x₀ =
       ω.floerSobolevOperator p J Ks Kt (w + ⇑(continuousValue p x₀)) := by
   set u₀ := w + ⇑(continuousValue p x₀)
-  -- the coefficient field of `D_{u₀}` in terms of `J'` and `G'`; `u₀ z` unfolds to the point
-  -- `w z + continuousValue p x₀ z` of the hypotheses
-  have hcoeff (z : ℝ × ℝ) : ω.floerJetCoeff J Ks Kt u₀ z = firstOrderJetCoeff (J z (u₀ z))
-      ((J' z (u₀ z)).flip (fderiv ℝ u₀ z (0, 1)) + G' z (u₀ z)) := by
-    have hJz : HasFDerivAt (J z) (J' z (u₀ z)) (u₀ z) := hJ z
-    have hGz : HasFDerivAt (ω.floerZerothOrder J Ks Kt z) (G' z (u₀ z)) (u₀ z) := hG z
-    rw [floerJetCoeff_def, floerLinearizationCoeff_eq_flip_add_fderiv_floerZerothOrder ω
-      hJz.differentiableAt (hKs z) (hKt z), hJz.fderiv, hGz.fderiv]
-  have hu₀ : AEStronglyMeasurable u₀ stripMeasure :=
-    hw.add (continuousValue p x₀).continuous.aestronglyMeasurable
-  have hM : MemLp (ω.floerJetCoeff J Ks Kt u₀) ∞ stripMeasure := by
-    refine memLp_top_of_bound ?_ (1 + C + (K * B' + L)) ?_
-    · rw [funext hcoeff]
-      have hΦ : Continuous fun q : (V →L[ℝ] V) × ((V →L[ℝ] V →L[ℝ] V) × V) × (V →L[ℝ] V) ↦
-          firstOrderJetCoeff q.1 (q.2.1.1.flip q.2.1.2 + q.2.2) :=
-        continuous_iff_continuousAt.2 fun q ↦ continuousAt_firstOrderJetCoeff
-          continuous_fst.continuousAt
-          ((((ContinuousLinearMap.flipₗᵢ ℝ V V V).continuous.comp continuous_snd.fst.fst).clm_apply
-            continuous_snd.fst.snd).add continuous_snd.snd).continuousAt
-      have hy (Φ : ℝ × ℝ → V → V →L[ℝ] V) (hΦc : Continuous (Function.uncurry Φ)) :
-          AEStronglyMeasurable (fun z ↦ Φ z (u₀ z)) stripMeasure :=
-        hΦc.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk hu₀)
-      exact hΦ.comp_aestronglyMeasurable ((hy J hJc).prodMk
-        ((hJ'c.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk hu₀)).prodMk
-          (aestronglyMeasurable_fderiv_apply u₀) |>.prodMk (hy G' hG'c)))
-    · filter_upwards [hx₀B] with z hz
-      rw [hcoeff]
-      refine (norm_firstOrderJetCoeff_le _ _).trans (add_le_add (add_le_add_right (hJC _ _) _) ?_)
-      refine (norm_add_le _ _).trans (add_le_add ?_ (hG'K _ _))
-      refine ((J' z (u₀ z)).flip.le_opNorm _).trans ?_
-      rw [ContinuousLinearMap.opNorm_flip]
-      exact mul_le_mul (hJ'K _ _) hz (norm_nonneg _) K.coe_nonneg
+  -- `u₀ z` unfolds to the point `w z + continuousValue p x₀ z` of the hypotheses
+  have hM : MemLp (ω.floerJetCoeff J Ks Kt u₀) ∞ stripMeasure :=
+    memLp_top_floerJetCoeff hJc hJ'c hG'c
+      (hw.add (continuousValue p x₀).continuous.aestronglyMeasurable) hJC hJ'K hG'K hJ hG hKs hKt
+      hx₀B
   refine ContinuousLinearMap.ext fun h ↦ Lp.ext ?_
   filter_upwards [quasilinearLinearization_apply_ae (e := continuousValue p) hJc hJ'c hG'c hw
       (aestronglyMeasurable_fderiv_apply w) hwB hJC hJ'K hG'K x₀ h,
     coeFn_floerSobolevOperator ω hM h, hx₀, fst_ae_eq_continuousValue hp hpt h]
     with z e₁ e₂ e₃ e₄
-  rw [e₁, e₂, hcoeff, firstOrderJetCoeff_apply, e₃, ← e₄]
+  rw [e₁, e₂, floerJetCoeff_eq_firstOrderJetCoeff (hJ z) (hG z) (hKs z) (hKt z),
+    firstOrderJetCoeff_apply, e₃, ← e₄]
   simp only [u₀, Pi.add_apply, add_apply, ContinuousLinearMap.flip_apply, map_add]
   abel
 
