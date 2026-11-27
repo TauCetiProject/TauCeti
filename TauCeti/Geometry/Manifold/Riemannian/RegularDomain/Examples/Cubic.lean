@@ -15,11 +15,11 @@ The region `M = {y ≥ x³}` above the cubic in the Euclidean plane is the regio
 `w''(x) = 6x`:
 
 * the boundary is convex at `q = (x, x³)` exactly when `x ≥ 0`
-  (`TauCeti.isConvexAt_cubicEpigraph_iff`), and strictly convex exactly when `x > 0`
-  (`TauCeti.isStrictlyConvexAt_cubicEpigraph_iff`);
+  (`TauCeti.isConvexAt_graphEpigraph_pow_three_iff`), and strictly convex exactly when `x > 0`
+  (`TauCeti.isStrictlyConvexAt_graphEpigraph_pow_three_iff`);
 * the set of points of the boundary at which it is convex is not open
-  (`TauCeti.not_isOpen_setOf_isConvexAt_cubicEpigraph`): it contains the origin, but not the
-  points `(-t, -t³)`, `t > 0`, which tend to it.
+  (`TauCeti.not_isOpen_setOf_isConvexAt_graphEpigraph_pow_three`): it contains the origin, but
+  not the points `(-t, -t³)`, `t > 0`, which tend to it.
 
 So convexity of the boundary, without strictness, is not an open condition.
 -/
@@ -38,7 +38,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- **Convexity of the cubic `y = x³`.** The boundary of the region above the cubic is convex at
 `q = (x, x³)` exactly when `x ≥ 0`. -/
-theorem isConvexAt_cubicEpigraph_iff
+theorem isConvexAt_graphEpigraph_pow_three_iff
     (q : letI := graphEpigraphChartedSpace (contDiff_fun_id.pow 3)
       (𝓡∂ (1 + 1)).boundary (graphEpigraph fun x : ℝ ↦ x ^ 3)) :
     letI := graphEpigraphChartedSpace (contDiff_fun_id.pow 3)
@@ -51,7 +51,7 @@ theorem isConvexAt_cubicEpigraph_iff
 
 /-- **Strict convexity of the cubic `y = x³`.** The boundary of the region above the cubic is
 strictly convex at `q = (x, x³)` exactly when `x > 0`. -/
-theorem isStrictlyConvexAt_cubicEpigraph_iff
+theorem isStrictlyConvexAt_graphEpigraph_pow_three_iff
     (q : letI := graphEpigraphChartedSpace (contDiff_fun_id.pow 3)
       (𝓡∂ (1 + 1)).boundary (graphEpigraph fun x : ℝ ↦ x ^ 3)) :
     letI := graphEpigraphChartedSpace (contDiff_fun_id.pow 3)
@@ -65,7 +65,7 @@ theorem isStrictlyConvexAt_cubicEpigraph_iff
 /-- **Convexity is not an open condition.** The set of points of the cubic `y = x³` at which the
 boundary of the region above it is convex is `{x ≥ 0}`, which is not open in the boundary: the
 points `(-t, -t³)`, `t > 0`, are not in it and tend to the origin, which is. -/
-theorem not_isOpen_setOf_isConvexAt_cubicEpigraph :
+theorem not_isOpen_setOf_isConvexAt_graphEpigraph_pow_three :
     letI := graphEpigraphChartedSpace (contDiff_fun_id.pow 3)
     haveI := isManifold_graphEpigraph (contDiff_fun_id.pow 3)
     letI := graphEpigraphRiemannianBundle (contDiff_fun_id.pow 3)
@@ -90,14 +90,14 @@ theorem not_isOpen_setOf_isConvexAt_cubicEpigraph :
     exact (PiLp.continuous_toLp 2 _).comp (by fun_prop)
   intro hU
   have h0 : (0 : ℝ) ∈ γ ⁻¹' {q | IsConvexAt q} := by
-    rw [Set.mem_preimage, Set.mem_ofPred_eq, isConvexAt_cubicEpigraph_iff]
+    rw [Set.mem_preimage, Set.mem_ofPred_eq, isConvexAt_graphEpigraph_pow_three_iff]
     simp [γ]
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (hU.preimage hγ) 0 h0
   have ht : ε / 2 ∈ Metric.ball (0 : ℝ) ε := by
     rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_pos (half_pos hε)]
     exact half_lt_self hε
   have h := hball ht
-  rw [Set.mem_preimage, Set.mem_ofPred_eq, isConvexAt_cubicEpigraph_iff] at h
+  rw [Set.mem_preimage, Set.mem_ofPred_eq, isConvexAt_graphEpigraph_pow_three_iff] at h
   simp only [γ, Matrix.cons_val_zero, Left.nonneg_neg_iff] at h
   linarith
 
