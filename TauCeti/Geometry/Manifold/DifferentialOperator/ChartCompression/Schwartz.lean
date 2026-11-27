@@ -32,6 +32,9 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
 
 * `OpenPartialHomeomorph.overlapCutoff_spec`: the overlap cutoff is smooth with compact support in
   the source of the transition map.
+* `mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback_eq_complexCutoffPullback` (in the
+  `OpenPartialHomeomorph` namespace): a cutoff `τ` read on `M` absorbs a pullback through a cutoff
+  equal to `1` on the support of `τ`.
 * `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
   function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
   by a cutoff equal to `1` on the support of `τ`.
@@ -80,6 +83,24 @@ theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
     cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
   e.complexCutoffPushforward_apply he ψ u y
+
+/-- **Absorbing a cutoff into a pullback.** Multiplying the pullback `(χ₁ f) ∘ e` by a cutoff `τ`
+read on `M` through the chart, where `χ₁` equals `1` on the support of `τ`, gives the pullback
+`(τ f) ∘ e`. -/
+theorem mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback_eq_complexCutoffPullback
+    {τ χ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ₁ : ∀ y ∈ tsupport τ, χ₁ y = 1)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) :
+    LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e.cutoffPullback he τ 1))
+      (e.complexCutoffPullback he χ₁ f) = e.complexCutoffPullback he τ f := by
+  ext p
+  by_cases hp : p ∈ e.source
+  · simp only [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+      ContMDiffMap.ofReal_apply, cutoffPullback_one_apply_of_mem he _ hp,
+      complexCutoffPullback_apply_of_mem he _ _ hp]
+    by_cases hτ : τ (e p) = 0
+    · simp [hτ]
+    · rw [hχ₁ _ (subset_tsupport _ hτ), one_smul, Complex.real_smul]
+  · simp [complexCutoffPullback_apply_of_notMem he _ _ hp]
 
 /-- **Multiplying by a cutoff read through a chart.** Multiplying a function `g` on `M` by a
 cutoff `τ` in the chart `e`, read on `M` as `τ ∘ e` extended by `0`, is pushing `g` forward to the
