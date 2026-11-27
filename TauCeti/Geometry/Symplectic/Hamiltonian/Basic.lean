@@ -164,6 +164,13 @@ theorem Invariant.associatedBilinForm_hamiltonianVectorField {ω : SymplecticFor
     ω.associatedBilinForm J (J (ω.hamiltonianVectorField H x)) w = fderiv ℝ H x w := by
   rw [associatedBilinForm_apply, (ω.invariant_iff J).mp hJ, apply_hamiltonianVectorField]
 
+/-- The symplectic pairing of two maps of class `C^n` at a point is of class `C^n` there. -/
+theorem contDiffAt_apply_comp (ω : SymplecticForm V) {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {p q : E → V} {x : E} {n : WithTop ℕ∞} (hp : ContDiffAt ℝ n p x)
+    (hq : ContDiffAt ℝ n q x) : ContDiffAt ℝ n (fun z ↦ ω (p z) (q z)) x := by
+  simpa only [Function.comp_apply, LinearMap.toContinuousBilinearMap_apply] using
+    (ω.toBilinForm.toContinuousBilinearMap.contDiff.contDiffAt.comp x hp).clm_apply hq
+
 /-- A `C^(n+1)` Hamiltonian has a `C^n` Hamiltonian vector field. -/
 theorem contDiff_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
     {n : WithTop ℕ∞} (hH : ContDiff ℝ (n + 1) H) :

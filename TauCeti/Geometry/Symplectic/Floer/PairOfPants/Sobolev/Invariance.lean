@@ -599,15 +599,10 @@ private theorem sub_eq_zero_and_fderiv_sub_eq_zero_of_lt_fst_positiveEndCoord
 private theorem contDiffAt_apply_fderiv_stdComplexLineImag (ω : SymplecticForm V)
     {d : ℝ × ℝ → V} {z : ℝ × ℝ} (y : V) (hd : ContDiffAt ℝ 3 d z) :
     ContDiffAt ℝ 2 (fun p : (ℝ × ℝ) × V ↦ ω (fderiv ℝ d p.1 stdComplexLineImag) p.2) (z, y) := by
-  set B := ω.toBilinForm.toContinuousBilinearMap
-  have hB : (fun p : (ℝ × ℝ) × V ↦ ω (fderiv ℝ d p.1 stdComplexLineImag) p.2) =
-      fun p ↦ B (fderiv ℝ d p.1 stdComplexLineImag) p.2 :=
-    funext fun p ↦ (LinearMap.toContinuousBilinearMap_apply _ _ _).symm
   have hdt : ContDiffAt ℝ 2 ((fun w ↦ fderiv ℝ d w stdComplexLineImag) ∘ Prod.fst) (z, y) :=
     (((hd.fderiv_right (m := 2) (by norm_num)).clm_apply contDiffAt_const).comp (z, y)
       contDiffAt_fst)
-  rw [hB]
-  exact (B.contDiff.contDiffAt.comp (z, y) hdt).clm_apply contDiffAt_snd
+  exact ω.contDiffAt_apply_comp hdt contDiffAt_snd
 
 /-- Along a map `u'` with `u' - u` of class `C³` on `S`, the pair-of-pants operator is the operator
 along `u` of the data read at the target point moved by `u' - u`, with `K_t` corrected by

@@ -481,11 +481,9 @@ theorem floerLinearizationCoeff_fun_add_eq_comp_add_right (ω : SymplecticForm V
     have ht : Filter.Tendsto (· + d z) (𝓝 (u z)) (𝓝 (u z + d z)) :=
       (continuous_id.add continuous_const).tendsto' _ _ rfl
     filter_upwards [ht.eventually hKt] with y hy
-    -- `ω(c, ·)` is the continuous linear map `ω.toBilinForm.toContinuousBilinearMap c`.
-    have hc : DifferentiableAt ℝ (fun y ↦ ω c y) y := by
-      rw [show (fun y ↦ ω c y) = ω.toBilinForm.toContinuousBilinearMap c from
-        funext fun y ↦ (LinearMap.toContinuousBilinearMap_apply _ c y).symm]
-      exact (ω.toBilinForm.toContinuousBilinearMap c).differentiableAt
+    have hc : DifferentiableAt ℝ (fun y ↦ ω c y) y :=
+      (ω.contDiffAt_apply_comp (n := 1) contDiffAt_const contDiffAt_id).differentiableAt
+        one_ne_zero
     have h := ω.hamiltonianVectorField_sub ((differentiableAt_comp_add_right _).2 hy) hc
     rw [hamiltonianVectorField_comp_add_right, hamiltonianVectorField_apply_left] at h
     exact h
