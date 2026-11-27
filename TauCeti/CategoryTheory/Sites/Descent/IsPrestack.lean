@@ -323,16 +323,12 @@ variable (F) in
 /-- **Postcomposition with a morphism `φ : N ⟶ N'`** as a morphism of presheaves of morphisms
 `F.presheafHom M N ⟶ F.presheafHom M N'`: at `(Y, f)` a local morphism `p : f^* M ⟶ f^* N` goes
 to `p ≫ f^* φ`. -/
-@[expose]
 def presheafHomPostcomp (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S))} (φ : N ⟶ N') :
     F.presheafHom M N ⟶ F.presheafHom M N' where
   app T := TypeCat.ofHom fun p ↦ p ≫ (F.map T.unop.hom.op.toLoc).toFunctor.map φ
   naturality T T' g := by
     ext p
-    change pullHom p g.unop.left T'.unop.hom T'.unop.hom ≫
-        (F.map T'.unop.hom.op.toLoc).toFunctor.map φ =
-      pullHom (p ≫ (F.map T.unop.hom.op.toLoc).toFunctor.map φ) g.unop.left T'.unop.hom
-        T'.unop.hom
+    dsimp
     rw [pullHom_comp _ _ g.unop.left T'.unop.hom T'.unop.hom T'.unop.hom (Over.w g.unop)
       (Over.w g.unop) (Over.w g.unop), pullHom_map]
 
@@ -351,12 +347,10 @@ def presheafHomFunctor (M : F.obj (.mk (op S))) :
   map φ := F.presheafHomPostcomp M φ
   map_id N := by
     ext T p
-    change p ≫ _ = p
-    simp
+    simp [presheafHomPostcomp]
   map_comp φ ψ := by
     ext T p
-    change p ≫ _ = (p ≫ _) ≫ _
-    simp
+    simp [presheafHomPostcomp]
 
 variable (F) in
 /-- For a prestack, the sheaves of morphisms out of `M`, as a functor of the target:
