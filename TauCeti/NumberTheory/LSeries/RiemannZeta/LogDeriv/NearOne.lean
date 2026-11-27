@@ -33,6 +33,7 @@ Its negative logarithmic derivative is continuous wherever `ζ` does not vanish,
 
 * `TauCeti.logDeriv_riemannZeta_add_inv_sub_one`
 * `TauCeti.logDerivFinitePart_riemannZeta_one`
+* `TauCeti.tendsto_logDeriv_riemannZeta_add_inv`: `ζ′/ζ(s) + (s - 1)⁻¹ → γ` as `s → 1`.
 * `DirichletCharacter.LFunctionTrivChar₁_one_eq_riemannZeta₁`: `(s - 1) ζ(s)` is Mathlib's
   `riemannZeta₁`.
 * `DirichletCharacter.logDeriv_LFunctionTrivChar₁_one_zero` and
@@ -69,6 +70,16 @@ theorem logDeriv_riemannZeta_add_inv_sub_one {s : ℂ} (hs : s ≠ 1) (hζ : rie
   · filter_upwards [log_deriv_riemannZeta_eq_neg_inv_sub_add] with s hs
     simp [logDeriv_apply, hs, meromorphicOrderAt_riemannZeta_one]
     ring
+
+open Filter Topology in
+/-- `ζ′/ζ(s) + (s - 1)⁻¹` tends to Euler's constant as `s → 1`. -/
+theorem tendsto_logDeriv_riemannZeta_add_inv :
+    Tendsto (fun s : ℂ ↦ logDeriv riemannZeta s + (s - 1)⁻¹) (𝓝[≠] 1)
+      (𝓝 (Real.eulerMascheroniConstant : ℂ)) := by
+  have hzero := log_deriv_riemannZeta_add_inv_sub_sub_isLittleO.tendsto_zero_of_tendsto
+    (tendsto_const_nhds (x := (1 : ℂ)))
+  simpa only [← logDeriv_apply, sub_add_cancel, zero_add] using
+    hzero.add_const (Real.eulerMascheroniConstant : ℂ)
 
 end TauCeti
 
