@@ -402,20 +402,20 @@ section AbelSummation
 
 open MeasureTheory
 
-variable {N : ℕ} (χ : DirichletCharacter ℂ N)
+variable {F : Type*} [RCLike F] {N : ℕ} (χ : DirichletCharacter F N)
 
 /-- **Abel summation over one period.** For a nonprincipal character `χ` of level `N` and a
 function `g` with derivative `g'` on `[1, N]`, `g'` integrable there, integrating `g'` against
 the partial sums `S(t) = ∑_{k=1}^{⌊t⌋} χ(k)` over `(1, N]` gives `-∑_{k=1}^N χ(k) g(k)`: Abel's
 summation formula has the boundary term `S(N) g(N)`, which vanishes since `S(N) = 0`
 (`intervalSum_level_eq_zero`). -/
-theorem integral_Ioc_one_level_sum_mul_eq (hχ : χ ≠ 1) {g g' : ℝ → ℂ}
+theorem integral_Ioc_one_level_sum_mul_eq (hχ : χ ≠ 1) {g g' : ℝ → F}
     (hg : ∀ t ∈ Set.Icc (1 : ℝ) N, HasDerivAt g (g' t) t)
     (hint : IntegrableOn g' (Set.Icc (1 : ℝ) N)) :
     ∫ t in Set.Ioc (1 : ℝ) (N : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t =
       -∑ k ∈ Icc 1 N, χ k * g (k : ℕ) := by
-  let c : ℕ → ℂ := fun k ↦ if k = 0 then 0 else χ k
-  have hsum (w : ℕ → ℂ) (m : ℕ) : ∑ k ∈ Icc 0 m, w k * c k = ∑ k ∈ Icc 1 m, χ k * w k := by
+  let c : ℕ → F := fun k ↦ if k = 0 then 0 else χ k
+  have hsum (w : ℕ → F) (m : ℕ) : ∑ k ∈ Icc 0 m, w k * c k = ∑ k ∈ Icc 1 m, χ k * w k := by
     rw [Icc_eq_cons_Ioc (Nat.zero_le m), sum_cons, ← Icc_add_one_left_eq_Ioc]
     simp only [c, ↓reduceIte, mul_zero, zero_add]
     refine sum_congr rfl fun k hk ↦ ?_
