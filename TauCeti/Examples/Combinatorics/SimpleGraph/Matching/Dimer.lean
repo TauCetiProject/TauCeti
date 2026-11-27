@@ -21,9 +21,9 @@ public import Mathlib.Data.ZMod.Basic
   two different singletons, while their sets of restrictions to `F` agree: the completion set
   itself is not determined by `ω` near `F`, only its restrictions to `F` are
   (`dimerCompletionSet_empty_evenConfig_ne_oddConfig`,
-  `image_restrict_dimerCompletionSet_empty_eq`). Translation by `n` (`shift n`, acting on
-  configurations by `shiftConfig n`) swaps the even and the odd edges when `n` is odd
-  (`shiftConfig_evenConfig_of_odd`).
+  `image_restrict_dimerCompletionSet_empty_eq`). Translation by `n` (`shift n`, moving a
+  configuration `ω` to `e ↦ ω ((shift n)⁻¹ • e)`) swaps the even and the odd edges when `n` is
+  odd (`evenConfig_shift_inv_smul_of_odd`).
 * **Local finiteness is needed for closedness.** On the vertices `c, d, x_n, y_n` (`n : ℕ`) with
   edges `c x_n`, `d y_n`, `x_n y_n`, the perfect matchings
   `M_k = {c x_k, d y_k} ∪ {x_n y_n : n ≠ k}` converge coordinatewise to the rungs
@@ -243,31 +243,17 @@ theorem shift_symm_apply (n a : ℤ) : (shift n).symm a = a - n :=
 theorem shift_inv_apply (n a : ℤ) : (shift n)⁻¹ a = a - n :=
   (rfl)
 
-/-- `(shift n).symm` moves the edge `{a, a + 1}` to `{a - n, a - n + 1}`. -/
-theorem shift_symm_mapEdgeSet_edge (n a : ℤ) :
-    (shift n).symm.mapEdgeSet (edge a) = edge (a - n) :=
+/-- `(shift n)⁻¹` moves the edge `{a, a + 1}` to `{a - n, a - n + 1}`. Not a simp lemma: the
+simp lemma `SimpleGraph.Iso.smul_eq_mapEdgeSet` rewrites its left-hand side first. -/
+theorem shift_inv_smul_edge (n a : ℤ) : (shift n)⁻¹ • edge a = edge (a - n) :=
   Subtype.ext <| by simp [coe_edge, sub_add_eq_add_sub]
 
-/-- The configuration `ω` translated by `n`: `(τω)(e) = ω(τ⁻¹ e)`. -/
-def shiftConfig (n : ℤ) (ω : (nnGraph ℤ).edgeSet → Bool) : (nnGraph ℤ).edgeSet → Bool :=
-  fun e => ω ((shift n).symm.mapEdgeSet e)
-
-/-- The value of the translated configuration at `e` is the value of `ω` at `τ⁻¹ e`. -/
-theorem shiftConfig_apply (n : ℤ) (ω : (nnGraph ℤ).edgeSet → Bool) (e : (nnGraph ℤ).edgeSet) :
-    shiftConfig n ω e = ω ((shift n).symm.mapEdgeSet e) := by
-  simp only [shiftConfig]
-
-/-- The translated configuration at the edge `{a, a + 1}` is `ω` at `{a - n, a - n + 1}`. -/
-@[simp]
-theorem shiftConfig_edge (n : ℤ) (ω : (nnGraph ℤ).edgeSet → Bool) (a : ℤ) :
-    shiftConfig n ω (edge a) = ω (edge (a - n)) := by
-  rw [shiftConfig_apply, shift_symm_mapEdgeSet_edge]
-
-/-- Translation by an odd number swaps the even and the odd edges. -/
-theorem shiftConfig_evenConfig_of_odd {n : ℤ} (hn : Odd n) :
-    shiftConfig n evenConfig = oddConfig := by
-  funext e
+/-- Translation by an odd number swaps the even and the odd edges: the configuration
+`e ↦ evenConfig ((shift n)⁻¹ • e)` is `oddConfig`. -/
+theorem evenConfig_shift_inv_smul_of_odd {n : ℤ} (hn : Odd n) (e : (nnGraph ℤ).edgeSet) :
+    evenConfig ((shift n)⁻¹ • e) = oddConfig e := by
   obtain ⟨a, rfl⟩ := exists_edge_eq e
+  rw [shift_inv_smul_edge]
   simp [evenConfig_edge, oddConfig_edge, Int.odd_sub, ← Int.not_odd_iff_even, hn]
 
 /-- The group `2ℤ`, written multiplicatively as `Multiplicative ℤ` with `ofAdd 1` acting as

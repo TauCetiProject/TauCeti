@@ -24,15 +24,16 @@ the line under translation by one, and the hexagon `C₆` under the trivial grou
   measure on `𝔛(ℤ)` is invariant), while the midpoint is not
   (`not_ergodicSMul_diracMidpoint`): the event "the edge `{0, 1}` is present", the point `evenPt`,
   is `2ℤ`-invariant of measure `1/2`.
-* **Gibbs measures need not be invariant.** With `ℤ` acting on the line by translation by one
-  (`shiftConfig 1`), which swaps the even and the odd edges (`shiftConfig_evenConfig_of_odd`),
-  `δ_even` is dimer Gibbs (`isDimerGibbs_dirac_evenConfig`) but moved to `δ_odd`
-  (`map_shiftConfig_one_dirac_evenConfig_ne`).
-* **The group must be infinite.** On the hexagon `C₆` with unit weights, under the trivial group
-  (for which every measure is invariant), the only dimer Gibbs measure `(δ_{M_a} + δ_{M_b})/2` is
-  the midpoint of `δ_{M_a}` and `δ_{M_b}`, which are not dimer Gibbs
-  (`not_isDimerGibbs_one_dirac_hexConfig`): the dimer Gibbs measures do not form a face of the
-  probability measures (`not_isExtreme_setOf_isDimerGibbs_one_hexagon`).
+* **Gibbs measures need not be invariant.** Translation by one, the pushforward under
+  `fun ω e => ω ((shift 1)⁻¹ • e)`, swaps the even and the odd edges
+  (`evenConfig_shift_inv_smul_of_odd`), so it does not fix `δ_even`, which is dimer Gibbs
+  (`isDimerGibbs_dirac_evenConfig`, `map_shift_one_dirac_evenConfig_ne`).
+* **A finite-group counterexample to the face property.** On the hexagon `C₆` with unit weights,
+  the only dimer Gibbs measure `(δ_{M_a} + δ_{M_b})/2` is the midpoint of `δ_{M_a}` and
+  `δ_{M_b}`, which are not dimer Gibbs (`not_isDimerGibbs_one_dirac_hexConfig`): the dimer Gibbs
+  measures do not form a face of the probability measures
+  (`not_isExtreme_setOf_isDimerGibbs_one_hexagon`). Under the trivial group every probability
+  measure is invariant, so they are not a face of the invariant probability measures either.
 -/
 
 public section
@@ -104,16 +105,13 @@ theorem not_ergodicSMul_diracMidpoint :
 
 /-! ### Gibbs measures need not be invariant -/
 
-/-- Translating configurations by `n` is measurable. -/
-theorem measurable_shiftConfig (n : ℤ) : Measurable (shiftConfig n) :=
-  measurable_pi_iff.2 fun e => by
-    simpa only [shiftConfig_apply] using measurable_pi_apply ((shift n).symm.mapEdgeSet e)
-
-/-- **Gibbs measures need not be invariant**: translation by one moves the dimer Gibbs measure
-`δ_even` (`isDimerGibbs_dirac_evenConfig`) to `δ_odd`. -/
-theorem map_shiftConfig_one_dirac_evenConfig_ne :
-    (Measure.dirac evenConfig).map (shiftConfig 1) ≠ Measure.dirac evenConfig := by
-  rw [Measure.map_dirac' (measurable_shiftConfig 1), shiftConfig_evenConfig_of_odd odd_one]
+/-- **Gibbs measures need not be invariant**: translation by one does not fix the dimer Gibbs
+measure `δ_even` (`isDimerGibbs_dirac_evenConfig`). -/
+theorem map_shift_one_dirac_evenConfig_ne :
+    (Measure.dirac evenConfig).map (fun ω e => ω ((shift 1)⁻¹ • e)) ≠
+      Measure.dirac evenConfig := by
+  rw [Measure.map_dirac' (Measurable.of_eval fun e => measurable_pi_apply _)]
+  simp only [evenConfig_shift_inv_smul_of_odd odd_one]
   intro h
   have hs : MeasurableSet
       {ω : (nnGraph ℤ).edgeSet → Bool | ω (DimerConfiguration.edge 0) = true} :=
@@ -122,13 +120,13 @@ theorem map_shiftConfig_one_dirac_evenConfig_ne :
     {ω | ω (DimerConfiguration.edge 0) = true}) h
   simp [Measure.dirac_apply' _ hs] at this
 
-/-! ### The group must be infinite -/
+/-! ### A finite-group counterexample to the face property -/
 
-/-- **The face statement fails for a finite group.** Under the trivial group every probability
-measure on the configurations of the hexagon is invariant, and the dimer Gibbs measures for unit
-weights do not form a face of them: the Gibbs measure `(δ_{M_a} + δ_{M_b})/2` lies in the open
-segment between `δ_{M_a}` and `δ_{M_b}`, which are not Gibbs
-(`not_isDimerGibbs_one_dirac_hexConfig`). -/
+/-- **The dimer Gibbs measures need not be a face.** With unit weights on the hexagon, the dimer
+Gibbs measures are not a face of the probability measures: the Gibbs measure
+`(δ_{M_a} + δ_{M_b})/2` lies in the open segment between `δ_{M_a}` and `δ_{M_b}`, which are not
+Gibbs (`not_isDimerGibbs_one_dirac_hexConfig`). Under the trivial group every probability measure
+is invariant, so they are not a face of the invariant probability measures either. -/
 theorem not_isExtreme_setOf_isDimerGibbs_one_hexagon :
     ¬ IsExtreme ℝ≥0∞ {μ : Measure ((nnGraph (ZMod 6)).edgeSet → Bool) | IsProbabilityMeasure μ}
       {μ | (nnGraph (ZMod 6)).IsDimerGibbs 1 μ} := fun h =>
