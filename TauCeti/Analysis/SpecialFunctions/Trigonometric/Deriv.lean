@@ -23,6 +23,9 @@ second derivatives of `t ↦ cos (c t)` are `-c sin (c t)` and `-c² cos (c t)`
 (`TauCeti.deriv_cos_mul`, `TauCeti.deriv_deriv_cos_mul`). For a `C²` function `ζ`, the second
 derivative of `t ↦ ζ(t) cos(k t + θ)` is
 `ζ'' cos(k t + θ) - 2 k ζ' sin(k t + θ) - k² ζ cos(k t + θ)` (`TauCeti.iteratedDeriv_two_mul_cos`).
+The shifted waves `t ↦ sin (c (t - a))` and `t ↦ cos (c (t - a))` have derivatives
+`c cos (c (t - a))` and `-c sin (c (t - a))` (`TauCeti.hasDerivAt_sin_mul_sub`,
+`TauCeti.hasDerivAt_cos_mul_sub`).
 Where `cos t ≠ 0`, the first and second derivatives of `log (cos t)` are `-tan t` and
 `-(1 / cos t ^ 2)` (`TauCeti.deriv_log_cos`, `TauCeti.iteratedDeriv_two_log_cos`).
 
@@ -64,6 +67,18 @@ theorem deriv_sin_mul (c t : ℝ) : deriv (fun s ↦ sin (c * s)) t = c * cos (c
 /-- The derivative of `t ↦ cos (c t)` is `-c sin (c t)`. -/
 theorem deriv_cos_mul (c t : ℝ) : deriv (fun s ↦ cos (c * s)) t = -(c * sin (c * t)) := by
   rw [deriv_comp_mul_left (f := cos), Real.deriv_cos, smul_eq_mul, mul_neg]
+
+/-- `t ↦ sin (c (t - a))` has derivative `c cos (c (t - a))`. -/
+theorem hasDerivAt_sin_mul_sub (c a t : ℝ) :
+    HasDerivAt (fun s ↦ sin (c * (s - a))) (c * cos (c * (t - a))) t := by
+  convert (((hasDerivAt_id' t).sub_const a).const_mul c).sin using 1
+  ring
+
+/-- `t ↦ cos (c (t - a))` has derivative `-c sin (c (t - a))`. -/
+theorem hasDerivAt_cos_mul_sub (c a t : ℝ) :
+    HasDerivAt (fun s ↦ cos (c * (s - a))) (-c * sin (c * (t - a))) t := by
+  convert (((hasDerivAt_id' t).sub_const a).const_mul c).cos using 1
+  ring
 
 /-- The second derivative of `t ↦ cos (c t)` is `-c² cos (c t)`. -/
 theorem deriv_deriv_cos_mul (c t : ℝ) :

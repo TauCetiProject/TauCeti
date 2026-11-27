@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.FieldTheory.Finite.Irreducible
 public import TauCeti.FieldTheory.Finite.MinpolyOrbit
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.Irreducible
 
+import TauCeti.Data.Nat.Totient.LowerBound
 import TauCeti.FieldTheory.Finite.RootsOfUnity
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Primitive polynomials over a finite field
@@ -25,7 +28,9 @@ and `Polynomial.isPrimitivePolynomial_iff_orderOf_eq` to pass to a root in any o
 
 The roots of the primitive polynomials of degree `r` in an extension `L` of degree `r` are the
 generators of the cyclic group `Lˣ`, of which there are `φ (q ^ r - 1)`, and each such polynomial
-has exactly `r` of them, so `φ (q ^ r - 1) = r · #{primitive polynomials of degree r}`.
+has exactly `r` of them, so `φ (q ^ r - 1) = r · #{primitive polynomials of degree r}`. With the
+elementary lower bound `m ≤ φ(m) (2 log m + 1)` for the totient this shows that at most a share
+`exp(-1 / (2r (2r log q + 1)))` of the monic polynomials of degree `r` are not primitive.
 
 This is not Mathlib's `Polynomial.IsPrimitive`, which asks that the coefficients have no common
 non-unit divisor.
@@ -48,12 +53,17 @@ non-unit divisor.
   `φ (q ^ r - 1) = r · #{primitive polynomials of degree r}`.
 * `Polynomial.totient_le_mul_ncard_isPrimitivePolynomial`: the lower bound
   `φ (q ^ r - 1) ≤ r · #{primitive polynomials of degree r}`.
+* `Polynomial.ncard_monic_not_isPrimitivePolynomial_div_le_exp`: the monic polynomials of degree
+  `r` that are not primitive make up at most a share `exp(-1 / (2r (2r log q + 1)))` of all
+  `q ^ r` of them.
 
 ## References
 
 * R. Lidl and H. Niederreiter, *Finite Fields*, Encyclopedia of Mathematics and its Applications
   20, Addison-Wesley (1983), ch. 3 (primitive polynomials and their number).
-* The lower bound is `New.totient_le_mul_card_isPrimitivePolynomial` of the folder `grh` of
+* The lower bound and the share of non-primitive polynomials follow
+  `New.totient_le_mul_card_isPrimitivePolynomial` and `New.card_not_primitive_mul_le` in
+  `New/Spanning/MainTerm/BadTypes.lean` of the folder `grh` of
   https://github.com/lsernau/grh-lean at commit 72fead102f663d5c7a407964a13dc0cf9d977207.
 -/
 
@@ -258,5 +268,42 @@ elements, `φ (q ^ r - 1) ≤ r · #{primitive polynomials of degree r}`; equali
 theorem totient_le_mul_ncard_isPrimitivePolynomial (r : ℕ) :
     φ (Nat.card K ^ r - 1) ≤ r * {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r}.ncard :=
   (totient_eq_mul_ncard_isPrimitivePolynomial r).le
+
+/-- **Few monic polynomials are not primitive.** Over a finite field with `q` elements, the monic
+polynomials of degree `r` that are not primitive make up at most a share
+`exp(-1 / (2r (2r log q + 1)))` of all `q ^ r` monic polynomials of degree `r`. This combines
+`φ (q ^ r - 1) ≤ r · #{primitive polynomials of degree r}` with
+`TauCeti.Nat.one_sub_totient_pow_sub_one_div_le_exp`. For `r = 0` both sides are `1`. -/
+theorem ncard_monic_not_isPrimitivePolynomial_div_le_exp (r : ℕ) :
+    ({p : K[X] | p.Monic ∧ p.natDegree = r ∧ ¬p.IsPrimitivePolynomial}.ncard : ℝ) /
+        (Nat.card K : ℝ) ^ r ≤
+      Real.exp (-(1 / (2 * r * (2 * r * Real.log (Nat.card K) + 1)))) := by
+  set P := {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r}.ncard
+  set N := {p : K[X] | p.Monic ∧ p.natDegree = r ∧ ¬p.IsPrimitivePolynomial}.ncard
+  have hPN : (P : ℝ) + N = (Nat.card K : ℝ) ^ r := by
+    have := ncard_monic_pred_add_ncard_monic_not_pred K r IsPrimitivePolynomial
+      (fun _ hp ↦ hp.monic)
+    have hset : {p : K[X] | p.natDegree = r ∧ p.IsPrimitivePolynomial} =
+        {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r} := by
+      ext p
+      exact and_comm
+    rw [hset] at this
+    exact_mod_cast this
+  have hφ : (φ (Nat.card K ^ r - 1) : ℝ) ≤ r * P := by
+    exact_mod_cast totient_le_mul_ncard_isPrimitivePolynomial r
+  have hqr : (0 : ℝ) < (Nat.card K : ℝ) ^ r := pow_pos (Nat.cast_pos.mpr Nat.card_pos) r
+  have hN : (N : ℝ) / (Nat.card K : ℝ) ^ r = 1 - P / (Nat.card K : ℝ) ^ r := by
+    rw [eq_sub_iff_add_eq, ← add_div, add_comm, hPN, div_self hqr.ne']
+  have hP : (φ (Nat.card K ^ r - 1) : ℝ) / (r * (Nat.card K : ℝ) ^ r) ≤
+      P / (Nat.card K : ℝ) ^ r := by
+    rcases Nat.eq_zero_or_pos r with rfl | hr
+    · simp
+    rw [← div_div]
+    gcongr
+    rw [div_le_iff₀ (Nat.cast_pos.mpr hr)]
+    linarith
+  rw [hN]
+  exact (sub_le_sub_left hP 1).trans
+    (TauCeti.Nat.one_sub_totient_pow_sub_one_div_le_exp Finite.one_lt_card r)
 
 end Polynomial

@@ -583,9 +583,9 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables
       (hΨs.of_le (by simp)).contDiffOn hsmooth i j
   -- `H³` regularity near the flat boundary, since `u ∘ Φ` solves `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ`.
   exact UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace (H := H)
-    (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip hsm'
-    (energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦ' hΨ' (fun x _ => hΨΦ x)
-      (fun y _ => hΦΨ y) hu) hu0' hV hVU
+    (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip hsm' 1 (fun v => by
+      simpa only [Wkp.value_one] using energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦ' hΨ'
+        (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hu v) hu0' hV hVU
 
 /-- **Local `H³` regularity near a smooth boundary portion.** Let `Ω` be open, and suppose that
 in rigid coordinates `e` centred at `x₀ = e⁻¹ 0`, inside the normal cylinder of half-height `h₀`
