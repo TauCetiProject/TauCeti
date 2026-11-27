@@ -46,6 +46,16 @@ theorem restrict_empty (F : CNF V) : F.restrict ∅ = F := by
 theorem empty_restrict (M : Clause V) : (∅ : CNF V).restrict M = ∅ := by
   simp [restrict]
 
+/-- Restriction distributes over union of clausal formulas. -/
+@[simp]
+theorem restrict_union (F G : CNF V) (M : Clause V) :
+    (F ∪ G).restrict M = F.restrict M ∪ G.restrict M := by
+  simp only [restrict, Finset.filter_union, Finset.image_union]
+
+/-- Restriction by a fixed set of literals preserves inclusion of clausal formulas. -/
+theorem restrict_mono {G : CNF V} (h : F ⊆ G) : F.restrict M ⊆ G.restrict M :=
+  Finset.image_subset_image (Finset.filter_subset_filter _ h)
+
 /-- Setting `l` to true deletes the clauses containing it and erases its negation from the rest. -/
 theorem restrict_singleton (F : CNF V) (l : Literal V) :
     F.restrict {l} = (F.filter (l ∉ ·)).image (·.erase l.negate) := by
@@ -63,7 +73,17 @@ theorem disjoint_vars_restrict (F : CNF V) (M : Clause V) :
   obtain ⟨hbC, hbM⟩ := Finset.mem_sdiff.mp hb
   by_cases h : c = b
   · exact Finset.disjoint_left.mp hd hbC (h ▸ hc)
-  · exact hbM (Finset.mem_image.mpr ⟨(v, c), hc, Prod.ext rfl (Bool.not_eq.mpr h)⟩)
+  · exact hbM (Finset.mem_image.mpr
+      ⟨(v, c), hc, (Literal.negate_mk v c).trans (Prod.ext rfl (Bool.not_eq.mpr h))⟩)
+
+/-- Every variable of a restricted formula occurs in the original formula and is unassigned. -/
+theorem vars_restrict_subset (F : CNF V) (M : Clause V) :
+    (F.restrict M).vars ⊆ F.vars \ M.vars := by
+  refine Finset.subset_sdiff.mpr ⟨?_, F.disjoint_vars_restrict M⟩
+  intro v hv
+  obtain ⟨D, hD, hvD⟩ := mem_vars.mp hv
+  obtain ⟨C, hC, _, rfl⟩ := mem_restrict.mp hD
+  exact subset_vars_of_mem hC (Clause.vars_mono Finset.sdiff_subset hvD)
 
 /-- If the opposite polarity is absent, restricting by `l` simply deletes its clauses. -/
 theorem restrict_singleton_eq_filter (h : ∀ C ∈ F, l.negate ∉ C) :
@@ -133,7 +153,7 @@ theorem satisfiable_restrict_singleton_iff :
     Satisfiable (F.restrict {l} : Set (Clause V)) ↔ ∃ τ, Models τ F ∧ τ l.1 = l.2 := by
   rw [satisfiable_restrict_iff]
   · simp
-  · simp [Clause.isTautology_iff, Literal.negate, Prod.ext_iff]
+  · simp [Clause.isTautology_iff, Prod.ext_iff]
 
 /-- Splitting on either polarity of a variable preserves satisfiability. -/
 theorem satisfiable_iff_restrict_or_restrict_negate :
