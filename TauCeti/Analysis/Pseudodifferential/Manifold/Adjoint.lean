@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 import TauCeti.Analysis.Pseudodifferential.Manifold.FormalAdjoint
 import TauCeti.Analysis.Pseudodifferential.Manifold.PatchedQuantization
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Formal adjoints of classical pseudodifferential operators on a manifold
@@ -417,18 +418,6 @@ section SigmaCompact
 
 variable [BorelSpace M] [IsFiniteMeasureOnCompacts μ]
 
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
-/-- For a measure finite on compact sets, the pairing of two smooth functions one of which has
-compact support is integrable. -/
-private theorem integrable_inner_of_hasCompactSupport
-    {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-    (h : HasCompactSupport f ∨ HasCompactSupport g) :
-    Integrable (fun x ↦ inner ℂ (f x) (g x)) μ := by
-  refine (f.contMDiff.continuous.inner g.contMDiff.continuous).integrable_of_hasCompactSupport ?_
-  rcases h with h | h
-  · exact h.mono fun x hx h0 ↦ hx (by simp [h0])
-  · exact h.mono fun x hx h0 ↦ hx (by simp [h0])
-
 /-- **Formal adjoints of localized operators.** If `ρ` and `τ` are cutoffs in two charts and `P` is
 a classical pseudodifferential operator of order `m`, then `ρ P τ`, with the cutoffs read on `M`,
 has a formal adjoint for `μ` which is a classical pseudodifferential operator of order `m`. Indeed
@@ -488,14 +477,15 @@ private theorem integral_inner_eq_sum_sum_mulLeft_comp_comp_mulLeft {ι : Type*}
         map_one, one_mul]
     · simp [image_eq_zero_of_notMem_tsupport hx]
   have hint (w : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-      Integrable (fun x ↦ inner ℂ (w x) (v x)) μ := integrable_inner_of_hasCompactSupport (.inr hv)
+      Integrable (fun x ↦ inner ℂ (w x) (v x)) μ :=
+    w.contMDiff.continuous.integrable_inner_of_hasCompactSupport_right v.contMDiff.continuous hv
   simp_rw [hPu]
   rw [integral_finsetSum _ fun i _ ↦ hint _]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   conv_lhs => rw [hu, map_sum, Finset.mul_sum, ContMDiffMap.coe_sum]
   simp only [Finset.sum_apply, sum_inner]
   rw [integral_finsetSum _ fun j _ ↦ hint _]
-  rfl
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply]
 
 omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
 /-- **Pairing with a locally finite sum.** If `u` has compact support and, at the points of its
@@ -509,7 +499,9 @@ private theorem integral_inner_locallyFiniteSum_eq_sum {κ : Type*}
     (hF : ∀ p, ∀ x ∈ tsupport u, Q p v x ≠ 0 → p ∈ F) :
     ∫ x, inner ℂ (u x) (ContMDiffMap.locallyFiniteSum Q hQ v x) ∂μ =
       ∑ p ∈ F, ∫ x, inner ℂ (u x) (Q p v x) ∂μ := by
-  rw [← integral_finsetSum _ fun p _ ↦ integrable_inner_of_hasCompactSupport (.inl hu)]
+  rw [← integral_finsetSum _ fun p _ ↦
+    u.contMDiff.continuous.integrable_inner_of_hasCompactSupport_left
+      (Q p v).contMDiff.continuous hu]
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
   dsimp only
   by_cases hx : x ∈ tsupport u
@@ -606,7 +598,7 @@ private theorem mem_tsupport_and_exists_of_mulLeft_comp_comp_mulLeft_apply_ne_ze
   obtain ⟨y, hy⟩ : ∃ y, (h₁ * f) y ≠ 0 := by
     by_contra! hy
     have h0 : h₁ * f = 0 := ContMDiffMap.ext fun y ↦ by simpa using hy y
-    exact right_ne_zero_of_mul hx (by rw [h0, map_zero]; rfl)
+    exact right_ne_zero_of_mul hx (by rw [h0, map_zero, ContMDiffMap.coe_zero, Pi.zero_apply])
   rw [ContMDiffMap.coe_mul, Pi.mul_apply] at hy
   exact ⟨subset_tsupport _ (left_ne_zero_of_mul hx), y,
     subset_tsupport _ (left_ne_zero_of_mul hy), right_ne_zero_of_mul hy⟩

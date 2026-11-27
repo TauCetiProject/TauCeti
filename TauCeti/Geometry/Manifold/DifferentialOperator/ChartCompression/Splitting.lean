@@ -23,9 +23,9 @@ but the maximal atlas contains a chart whose source contains both, with disjoint
 in every chart of the maximal atlas, each piece `φᵢ P ψᵢ` is then described by a single chart
 compression of `P`. No compactness of `M` is needed, since `ρ` and `τ` have compact supports.
 
-On a compact manifold `P` itself is such a finite sum: for cutoffs `ρₖ` in charts whose pullbacks
-add up to `1` (`IsCompact.exists_sum_cutoffPullback_eq_one`) and, for each `k`, a partition of unity
-`σₖᵢ` of `M`, every operator is `P = ∑ₖ ∑ᵢ ρₖ P σₖᵢ`.
+On a compact manifold `ρ P` and `P` itself are such finite sums: for cutoffs `ρₖ` in charts whose
+pullbacks add up to `1` (`IsCompact.exists_sum_cutoffPullback_eq_one`), every operator is
+`ρ P = ∑ₗ ρ P ρₗ` and `P = ∑ₖ ∑ₗ ρₖ P ρₗ`, and each piece splits as above.
 
 ## Main results
 
@@ -130,27 +130,24 @@ theorem exists_forall_mulLeft_comp_eq_sum_mulLeft_comp_comp_mulLeft
         LinearMap.mulLeft ℂ (e.complexCutoffPullback he ρ 1) ∘ₗ P =
           ∑ i, LinearMap.mulLeft ℂ ((e' i).complexCutoffPullback (he' i) (φ i) 1) ∘ₗ P ∘ₗ
             LinearMap.mulLeft ℂ ((e' i).complexCutoffPullback (he' i) (ψ i) 1) := by
-  -- A partition of unity `σᵢ` of `M` whose pieces lie in charts `e'ᵢ` agreeing with `e` over the
-  -- support of `ρ`; each `σᵢ` is the pullback of a cutoff `τᵢ` in `e'ᵢ`.
-  obtain ⟨ι, _, σ, e', hσ, he'⟩ := isCompact_univ.exists_smoothPartition_mem_maximalAtlas_eqOn_symm
-    he ρ.hasCompactSupport.isCompact ρ.tsupport_subset
-  choose he'a hσc hσe hρe hEq using he'
-  choose τ hτ using fun i ↦ OpenPartialHomeomorph.exists_cutoffPullback_one_eq (he'a i) (hσc i)
-    (hσe i)
-  -- The cutoff `ρ`, read in the chart `e'ᵢ`, has the same pullback to `M` as in `e`.
-  let ρ' (i : ι) : 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ) :=
-    ⟨ρ, ρ.contDiff, ρ.hasCompactSupport, hρe i⟩
-  refine ⟨ι, inferInstance, e', he'a, ρ', τ, fun P ↦ ?_⟩
-  have hρ' (i : ι) : (e' i).complexCutoffPullback (he'a i) (ρ' i) = e.complexCutoffPullback he ρ :=
-    (e.complexCutoffPullback_congr he (he'a i) (ψ' := ρ' i) rfl (hEq i).symm).symm
-  -- `ρ P u = ∑ᵢ ρ P (σᵢ u)`, since `∑ᵢ σᵢ = 1`.
+  -- Cutoffs `τₗ` in the charts at finitely many points `cₗ`, with pullbacks adding up to `1`;
+  -- each `ρ P τₗ` splits along cutoffs in common charts.
+  obtain ⟨N, c, τ, hτ⟩ := isCompact_univ.exists_sum_cutoffPullback_eq_one (E := E) (M := M)
+  choose ι _ e' he' φ ψ hP using fun l ↦
+    exists_forall_mulLeft_comp_comp_mulLeft_eq_sum_mulLeft_comp_comp_mulLeft he ρ
+      (IsManifold.chart_mem_maximalAtlas (c l)) (τ l)
+  refine ⟨Σ l, ι l, inferInstance, fun p ↦ e' _ p.2, fun p ↦ he' _ p.2, fun p ↦ φ _ p.2,
+    fun p ↦ ψ _ p.2, fun P ↦ ?_⟩
+  simp only [Fintype.sum_sigma, ← hP]
+  -- `ρ P u = ∑ₗ ρ P (τₗ u)`, since `∑ₗ τₗ = 1`.
   ext u p
-  have hσ1 : ∑ i, (e' i).complexCutoffPullback (he'a i) (τ i) 1 * u = u := by
+  have hτ1 : ∑ l, (chartAt E (c l)).complexCutoffPullback
+      (IsManifold.chart_mem_maximalAtlas (c l)) (τ l) 1 * u = u := by
     ext q
-    simp [← Finset.sum_mul, OpenPartialHomeomorph.complexCutoffPullback_one_apply, hτ,
-      ← Complex.ofReal_sum, hσ q (mem_univ q)]
-  simp only [hρ', LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.sum_apply,
-    ← Finset.mul_sum, ← map_sum, hσ1]
+    simp [← Finset.sum_mul, OpenPartialHomeomorph.complexCutoffPullback_one_apply,
+      ← Complex.ofReal_sum, hτ q (mem_univ q)]
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.sum_apply,
+    ← Finset.mul_sum, ← map_sum, hτ1]
 
 /-- **Splitting operators along pairs of cutoffs in common charts.** On a compact manifold modelled
 on a nontrivial finite-dimensional real space, there are finitely many charts `eᵢ` of the maximal
