@@ -10,6 +10,8 @@ module
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.RingTheory.Coprime.Basic
+import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.RingTheory.Ideal.Quotient.Basic
 -- `Fin.prod_castLE_dvd_prod_of_injective`, used only inside proofs below.
 import TauCeti.Algebra.BigOperators.Fin
 
@@ -93,6 +95,28 @@ every coordinate of `v`, then it divides every coordinate of `N *ᵥ v`. -/
 theorem dvd_mulVec_apply [Fintype n] {v : n → S} {c : S} (hc : ∀ j, c ∣ v j) (N : Matrix m n S)
     (i : m) : c ∣ (N *ᵥ v) i :=
   Finset.dvd_sum fun j _ ↦ (hc j).mul_left _
+
+/-- If `d` divides a dot product and `d^(p^e)` divides the prime `p`, then `d^(p^e)` divides
+the dot product of the entrywise `p^e`-th powers. -/
+theorem pow_dvd_dotProduct_pow {R : Type*} [CommRing R] [Fintype n] {p e : ℕ}
+    (hp : p.Prime) {d : R} (hd : d ^ (p ^ e) ∣ (p : R)) {x y : n → R} (h : d ∣ x ⬝ᵥ y) :
+    d ^ (p ^ e) ∣ (fun i ↦ x i ^ (p ^ e)) ⬝ᵥ (fun i ↦ y i ^ (p ^ e)) := by
+  let I : Ideal R := Ideal.span {d ^ (p ^ e)}
+  let ρ := Ideal.Quotient.mk I
+  have h0 (r : R) : ρ r = 0 ↔ d ^ (p ^ e) ∣ r :=
+    Ideal.Quotient.eq_zero_iff_mem.trans Ideal.mem_span_singleton
+  by_cases hI : I = ⊤
+  · exact (h0 _).1 (Ideal.Quotient.eq_zero_iff_mem.mpr (hI ▸ Submodule.mem_top))
+  have : Nontrivial (R ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
+  have : Fact p.Prime := ⟨hp⟩
+  have : CharP (R ⧸ I) p := (CharP.charP_iff_prime_eq_zero hp).2 (by
+    rw [← map_natCast ρ]
+    exact (h0 _).2 hd)
+  have hpow := (h0 _).2 (pow_dvd_pow_of_dvd h (p ^ e))
+  simp only [dotProduct, map_pow, map_sum, map_mul] at hpow
+  apply (h0 _).1
+  simpa only [dotProduct, map_sum, map_mul, map_pow, ← mul_pow, ← sum_pow_char_pow p e]
+    using hpow
 
 /-- **Every common divisor of the entries divides every diagonal entry.** Each `d k` is the
 `(k, k)` entry of `L * A * R`, hence an `S`-combination of the entries of `A`. -/
