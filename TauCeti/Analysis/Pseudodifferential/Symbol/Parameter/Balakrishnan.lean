@@ -55,10 +55,11 @@ and the integral of a truncated right parametrix `Bₙ` of `a` with at least one
 For `m = 2` this identifies the leading term of Seeley's symbol of the power `A^{-σ}`, of order
 `-2 σ`, with the pointwise power of the full symbol wherever the latter is strictly positive.
 
-**Quantization.** The quantization of the integral is the integral of the quantizations, the
-operator form of Balakrishnan's formula with `(A + t)⁻¹` replaced by `Op(b(-t))`:
+**Quantization.** Write `B_σ(b)` for the Balakrishnan integral of `b`. Its quantization is the
+integral of the quantizations, the operator form of Balakrishnan's formula with `(A + t)⁻¹`
+replaced by `Op(b(-t))`:
 
-`Op(b^σ) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) dt`,
+`Op(B_σ(b)) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) dt`,
 
 on Schwartz functions at each point
 (`TauCeti.ParameterSymbol.quantizeSchwartzValue_balakrishnanIntegral`) and, for `b` vanishing at
@@ -306,11 +307,11 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddComm
 /-- **Quantization of a Balakrishnan integral, on Schwartz functions.** For a Schwartz function `u`
 and a position `x`,
 
-`Op(b^σ) u (x) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) u (x) dt`,
+`Op(B_σ(b)) u (x) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) u (x) dt`,
 
-where `b^σ` is the Balakrishnan integral of `b`. For a resolvent parametrix `b` of an operator `A`,
-the right side is Balakrishnan's formula for `A ^ (-σ)` with the resolvents `(A + t)⁻¹` replaced by
-the quantizations `Op(b(-t))`. -/
+where `B_σ(b)` is the Balakrishnan integral of `b`. For a resolvent parametrix `b` of an operator
+`A`, the right side is Balakrishnan's formula for `A ^ (-σ)` with the resolvents `(A + t)⁻¹`
+replaced by the quantizations `Op(b(-t))`. -/
 theorem quantizeSchwartzValue_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue (b.balakrishnanIntegral hΛ hσ hm).coefficient u x =
@@ -339,9 +340,9 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [Complet
 
 /-- **Quantization of a Balakrishnan integral, on Sobolev spaces.** Let `b` vanish at the positions
 outside a compact set `K`, and let `m - 2 σ + 2 < m' ≤ 0`. As bounded operators
-`H^s → H^{s - m'}`, the quantization of the Balakrishnan integral `b^σ` of `b` is
+`H^s → H^{s - m'}`, the quantization of the Balakrishnan integral `B_σ(b)` of `b` is
 
-`Op(b^σ) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) dt`,
+`Op(B_σ(b)) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) dt`,
 
 a Bochner integral of operators. For a resolvent parametrix `b` of an operator `A`, this is
 Balakrishnan's formula for `A ^ (-σ)` with the resolvents `(A + t)⁻¹` replaced by the operators
