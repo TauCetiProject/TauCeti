@@ -22,8 +22,9 @@ expands a linear map on matrices along the matrix units, and
 `Matrix.submodule_eq_top_of_single_one_mem` shows that the matrix units span all matrices.
 
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
-algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
-associativity.
+algebra homomorphism, and `Matrix.singleNonUnitalStarRingHom` bundles the same corner as a
+nonunital star ring homomorphism. They are accompanied by column, row, and entry matrix-unit
+identities valid without associativity.
 
 Two off-diagonal matrix units witness that transposition does not preserve all products.
 
@@ -115,6 +116,21 @@ def singleNonUnitalAlgHom [Monoid R] [DistribMulAction R A] (r : n) : A →ₙ�
 @[simp] theorem singleNonUnitalAlgHom_toLinearMap [Semiring R] [Module R A] (r : n) :
     (singleNonUnitalAlgHom R (A := A) r : A →ₗ[R] Matrix n n A) = singleLinearMap R r r := (rfl)
 end SingleCorner
+
+section SingleStarCorner
+variable (A : Type*) {n : Type*} [NonUnitalNonAssocSemiring A] [StarRing A] [Fintype n]
+  [DecidableEq n]
+
+/-- The diagonal corner embedding `x ↦ Matrix.single r r x` as a nonunital star ring
+homomorphism. -/
+def singleNonUnitalStarRingHom (r : n) : A →⋆ₙ+* Matrix n n A where
+  __ := (singleAddMonoidHom r r : A →+ Matrix n n A)
+  map_mul' x y := (single_mul_single_same x r r r y).symm
+  map_star' x := (conjTranspose_single r r x).symm
+/-- Evaluating `Matrix.singleNonUnitalStarRingHom` places its input in the `(r, r)` entry. -/
+@[simp] theorem singleNonUnitalStarRingHom_apply (r : n) (x : A) :
+    singleNonUnitalStarRingHom A r x = single r r x := (rfl)
+end SingleStarCorner
 
 section NonAssoc
 variable {l m n o p A : Type*} [NonAssocSemiring A]
