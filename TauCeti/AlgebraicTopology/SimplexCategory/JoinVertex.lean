@@ -204,6 +204,15 @@ theorem vertexJoin_map_succ {m n : SimplexCategory} (f : m ⟶ n) (i : Fin (m.le
   rw [rev_map_apply, Fin.rev_rev]
   exact (Fin.rev_castSucc _).trans (congrArg Fin.succ (Fin.rev_rev _))
 
+/-- A morphism out of `⦋m.len + 1⦌` is determined by its values on the initial vertex and on the
+other `m.len + 1` vertices. -/
+theorem hom_ext_zero_succ {m n : SimplexCategory} {f g : ⦋m.len + 1⦌ ⟶ n}
+    (h₀ : f.toOrderHom 0 = g.toOrderHom 0)
+    (h : ∀ i : Fin (m.len + 1), f.toOrderHom i.succ = g.toOrderHom i.succ) : f = g := by
+  ext i : 3
+  cases i using Fin.cases
+  exacts [h₀, h _]
+
 /-- The join with an initial vertex preserves the initial vertex. -/
 @[reassoc]
 theorem const_zero_comp_vertexJoin_map {x : SimplexCategory} {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :

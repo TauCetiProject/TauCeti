@@ -21,7 +21,10 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
   `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` are the ends `ι₀` and `ι₁` of the cylinder, after the projection to `X`;
   `SSet.fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one` and `_zero` state the same after
   the inverse isomorphism `X ≅ X ⊗ Δ[0]`.
-* `SSet.whiskerLeft_horn_one_zero_ι`: the inclusion `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` is the end `ι₀`.
+* `SSet.whiskerLeft_horn_one_zero_ι`, `SSet.whiskerLeft_horn_one_one_ι`: the inclusions
+  `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` and `X ⊗ Λ[1, 1] ⟶ X ⊗ Δ[1]` are the ends `ι₀` and `ι₁`.
+* `SSet.lift_const_zero_eq_comp_ι₀`, `SSet.lift_const_one_eq_comp_ι₁`: a map into the cylinder
+  which is constant on the interval factors through an end.
 * `SSet.range_ι₀_inf_range_ι₁`: the two ends of the cylinder are disjoint.
 * `SSet.verticalEdge`: the edge `{v} × Δ[1]` of the cylinder over a vertex `v`, along which a
   homotopy moves the image of `v`; its endpoints are `(v, 0)` and `(v, 1)`
@@ -105,6 +108,30 @@ lemma fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero (X : SSet.{w}) :
 projection `X ⊗ Λ[1, 0] ⟶ X`. -/
 lemma whiskerLeft_horn_one_zero_ι (X : SSet.{w}) : X ◁ Λ[1, 0].ι = fst X _ ≫ ι₀ :=
   CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [horn_one_ι_eq_const, comp_const])
+
+/-- The inclusion `X ⊗ Λ[1, 1] ⟶ X ⊗ Δ[1]` is the end `X ⊗ {1}` of the cylinder, after the
+projection `X ⊗ Λ[1, 1] ⟶ X`. -/
+lemma whiskerLeft_horn_one_one_ι (X : SSet.{w}) : X ◁ Λ[1, 1].ι = fst X _ ≫ ι₁ :=
+  CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [horn_one_ι_eq_const, comp_const])
+
+/-- A map into the cylinder `X ⊗ Δ[1]` whose second component is constant at the vertex `0`
+factors through the end `X ⊗ {0}`. -/
+lemma lift_const_zero_eq_comp_ι₀ {Z X : SSet.{w}} (f : Z ⟶ X) :
+    lift f (const (stdSimplex.obj₀Equiv.symm 0)) = f ≫ ι₀ :=
+  CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [comp_const])
+
+/-- A map into the cylinder `X ⊗ Δ[1]` whose second component is constant at the vertex `1`
+factors through the end `X ⊗ {1}`. -/
+lemma lift_const_one_eq_comp_ι₁ {Z X : SSet.{w}} (f : Z ⟶ X) :
+    lift f (const (stdSimplex.obj₀Equiv.symm 1)) = f ≫ ι₁ :=
+  CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [comp_const])
+
+/-- For a section `g` of the projection `X ⊗ Δ[1] ⟶ X` of the cylinder, applying `g` to the second
+factor of `A ⊗ X` and then forgetting the interval coordinate is the braiding `A ⊗ X ⟶ X ⊗ A`. -/
+lemma whiskerLeft_comp_lift_snd_fst {A X : SSet.{w}} (g : X ⟶ X ⊗ Δ[1])
+    (hg : g ≫ fst _ _ = 𝟙 X) :
+    A ◁ g ≫ lift (snd _ _ ≫ fst _ _) (fst _ _) = (β_ A X).hom := by
+  rw [comp_lift, whiskerLeft_snd_assoc, hg, Category.comp_id, whiskerLeft_fst, lift_snd_fst]
 
 /-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
 inclusion of `A ⊗ (X ⊗ {0})` to that of `(A ⊗ X) ⊗ {0}`. -/

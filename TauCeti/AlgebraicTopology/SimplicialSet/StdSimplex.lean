@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
+public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.Data.Finset.Sort
 
 /-!
@@ -49,7 +50,14 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
 * `SSet.stdSimplex.isConnected`: standard simplices are connected.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
-  `Δ[n]` to its identity.
+  `Δ[n]` to its identity, which fixes the initial vertex
+  (`SSet.stdSimplex.lift_const_zero_contraction_h`); for `n = 1` it is the minimum of the two
+  coordinates of `Δ[1] ⊗ Δ[1]`.
+* `SSet.stdSimplex.contractionLast`: the homotopy from the identity of `Δ[n]` to the constant map
+  at its last vertex, which fixes the last vertex
+  (`SSet.stdSimplex.lift_const_last_contractionLast_h`); for `n = 1` it is the maximum.
+* `SSet.stdSimplex.objEquiv_objMk₁_zero`, `SSet.stdSimplex.objEquiv_objMk₁_last`: the extreme
+  simplices `objMk₁ 0` and `objMk₁ (Fin.last _)` of `Δ[1]` are constant.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
 * `SSet.Edge.yonedaEquiv_symm_edge_app_zero`, `SSet.Edge.yonedaEquiv_symm_edge_app_one`: the map
   `Δ[1] ⟶ X` given by an edge sends the vertices `0` and `1` to its source and target.
@@ -276,6 +284,66 @@ noncomputable def contraction (n : ℕ) :
     ext ⟨⟨m⟩⟩ p
     rfl
   rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+
+/-- The contraction of `Δ[n]` onto its initial vertex fixes that vertex. -/
+@[reassoc]
+lemma lift_const_zero_contraction_h {Z : SSet.{u}} (n : ℕ) (f : Z ⟶ Δ[1]) :
+    lift (SSet.const (obj₀Equiv.symm 0)) f ≫ (contraction n).h =
+      SSet.const (obj₀Equiv.symm 0) := by
+  ext ⟨⟨m⟩⟩ z i
+  -- The value at a vertex is computed by the defining formula of the contraction.
+  change ((if f.app _ z i = 0 then 0 else 0 : Fin (n + 1)) : ℕ) = 0
+  split_ifs <;> rfl
+
+/-- The contraction of the standard simplex `Δ[n]` onto its last vertex: the homotopy from the
+identity to the constant map at `Fin.last n` which is the identity over the vertex `0` of `Δ[1]`
+and the constant map at `Fin.last n` over the vertex `1`. -/
+noncomputable def contractionLast (n : ℕ) :
+    Homotopy (𝟙 Δ[n]) (SSet.const (obj₀Equiv.symm (Fin.last n))) where
+  h :=
+    { app m := ↾fun p ↦ objMk
+        ⟨fun k ↦ if asOrderHom p.2 k = 0 then asOrderHom p.1 k else Fin.last n,
+          fun k l hkl ↦ by
+            dsimp only
+            split_ifs with hk hl hl
+            · exact (asOrderHom p.1).monotone hkl
+            · exact Fin.le_last _
+            · exact absurd (Fin.le_zero_iff.1 (hl ▸ (asOrderHom p.2).monotone hkl)) hk
+            · exact le_rfl⟩
+      -- The formula is computed vertexwise, so it commutes with reindexing by definition.
+      naturality m m' φ := by
+        ext p
+        rfl }
+  -- Over the vertex `0` of `Δ[1]` every vertex is unchanged, and over `1` it is sent to the last.
+  h₀ := by
+    ext ⟨⟨m⟩⟩ p
+    rfl
+  h₁ := by
+    ext ⟨⟨m⟩⟩ p
+    rfl
+  rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+
+/-- The contraction of `Δ[n]` onto its last vertex fixes that vertex. -/
+@[reassoc]
+lemma lift_const_last_contractionLast_h {Z : SSet.{u}} (n : ℕ) (f : Z ⟶ Δ[1]) :
+    lift (SSet.const (obj₀Equiv.symm (Fin.last n))) f ≫ (contractionLast n).h =
+      SSet.const (obj₀Equiv.symm (Fin.last n)) := by
+  ext ⟨⟨m⟩⟩ z i
+  -- The value at a vertex is computed by the defining formula of the contraction.
+  change ((if f.app _ z i = 0 then Fin.last n else Fin.last n : Fin (n + 1)) : ℕ) = n
+  split_ifs <;> rfl
+
+/-- The `m`-simplex of `Δ[1]` taking `0` times the value `0` is constant at `1`. -/
+lemma objEquiv_objMk₁_zero (m : ℕ) :
+    objEquiv (objMk₁.{u} (0 : Fin (m + 2))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 1 := by
+  ext i : 3
+  exact (objMk₁_apply_eq_one_iff.{u} (0 : Fin (m + 2)) i).2 (Fin.zero_le _)
+
+/-- The `m`-simplex of `Δ[1]` taking `m + 1` times the value `0` is constant at `0`. -/
+lemma objEquiv_objMk₁_last (m : ℕ) :
+    objEquiv (objMk₁.{u} (Fin.last (m + 1))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 0 := by
+  ext i : 3
+  exact (objMk₁_apply_eq_zero_iff.{u} (Fin.last (m + 1)) i).2 (Fin.castSucc_lt_last i)
 
 end SSet.stdSimplex
 
