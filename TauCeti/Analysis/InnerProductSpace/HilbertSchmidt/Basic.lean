@@ -61,6 +61,9 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
   `ContinuousLinearMap.hilbertSchmidtNorm_rankOne`: the rank-one operator
   `InnerProductSpace.rankOne 𝕜 x y = ⟪y, ·⟫ • x` has energy `‖x‖ₑ² ‖y‖ₑ²` and Hilbert–Schmidt
   norm `‖x‖ ‖y‖`.
+* `ContinuousLinearMap.hilbertSchmidtEnergy_id` and `ContinuousLinearMap.hilbertSchmidtNorm_id`:
+  the identity has energy `#ι` in a Hilbert basis indexed by `ι`, and in finite dimension
+  Hilbert–Schmidt norm `√(finrank 𝕜 E)`.
 * `ContinuousLinearMap.hilbertSchmidtNorm_adjoint`: `‖T†‖_HS = ‖T‖_HS`, for every operator.
 * `ContinuousLinearMap.hilbertSchmidtNorm_add_le`: `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS` when `S` has
   finite energy.
@@ -139,6 +142,13 @@ theorem hilbertSchmidtEnergy_rankOne (x : F) (y : E) (b : HilbertBasis ι 𝕜 E
   refine tsum_congr fun i ↦ ?_
   rw [InnerProductSpace.rankOne_apply, eNorm_smul, mul_pow, mul_comm, ← ofReal_norm ⟪y, b i⟫_𝕜,
     norm_inner_symm, ofReal_norm]
+
+/-- The Hilbert–Schmidt energy of the identity is the cardinality of the Hilbert basis. -/
+@[simp]
+theorem hilbertSchmidtEnergy_id (b : HilbertBasis ι 𝕜 E) :
+    (ContinuousLinearMap.id 𝕜 E).hilbertSchmidtEnergy b = ENat.card ι := by
+  have h1 (i : ι) : ‖b i‖ₑ = 1 := by rw [← ofReal_norm, b.orthonormal.1 i, ENNReal.ofReal_one]
+  simp [hilbertSchmidtEnergy_def, h1]
 
 /-- Composition on the left with a bounded operator scales the energy by at most `‖A‖ₑ²`. -/
 theorem hilbertSchmidtEnergy_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F)
@@ -335,6 +345,15 @@ theorem hilbertSchmidtNorm_rankOne (x : F) (y : E) :
   rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtEnergy_rankOne, ← mul_pow,
     ENNReal.toReal_pow, ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm,
     Real.sqrt_sq (by positivity)]
+
+/-- In finite dimension the identity has Hilbert–Schmidt norm `√(finrank 𝕜 E)`. (Completeness is
+automatic in finite dimension, `FiniteDimensional.complete`, but is not an instance.) -/
+@[simp]
+theorem hilbertSchmidtNorm_id [FiniteDimensional 𝕜 E] :
+    (ContinuousLinearMap.id 𝕜 E).hilbertSchmidtNorm = √(Module.finrank 𝕜 E) := by
+  rw [hilbertSchmidtNorm_eq_sqrt _ (stdOrthonormalBasis 𝕜 E).toHilbertBasis,
+    hilbertSchmidtEnergy_id]
+  simp
 
 /-- **Triangle inequality for the Hilbert–Schmidt norm.** If `S` has finite energy, then
 `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS`. If `T` has infinite energy, so does `S + T`, whose

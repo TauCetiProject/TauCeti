@@ -19,14 +19,13 @@ non-membership is stated for the ideal rather than read off from the norm.
 
 ## Main declarations
 
-* `ContinuousLinearMap.hilbertSchmidtEnergy_id`: `E_b(id) = #ι`.
 * `TauCeti.OperatorIdealFamily.id_mem_finiteSubmodule_hilbertSchmidt_iff`: the identity lies in
   the Hilbert–Schmidt ideal iff some (equivalently every) Hilbert basis is finite.
 * `TauCeti.OperatorIdealFamily.id_notMem_finiteSubmodule_hilbertSchmidt`: no Hilbert–Schmidt
   identity in the presence of an infinite Hilbert basis.
-* `TauCeti.OperatorIdealFamily.id_mem_finiteSubmodule_hilbertSchmidt`,
-  `ContinuousLinearMap.hilbertSchmidtNorm_id`: in finite dimension the identity is
-  Hilbert–Schmidt with norm `√(finrank 𝕜 E)`.
+* `TauCeti.OperatorIdealFamily.id_mem_finiteSubmodule_hilbertSchmidt`: in finite dimension the
+  identity is Hilbert–Schmidt; its norm `√(finrank 𝕜 E)` is
+  `ContinuousLinearMap.hilbertSchmidtNorm_id`.
 
 ## References
 
@@ -35,31 +34,7 @@ non-membership is stated for the ideal rather than read off from the norm.
 
 public section
 
-open scoped ENNReal
-
 universe v
-
-namespace ContinuousLinearMap
-
-variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- The Hilbert–Schmidt energy of the identity is the cardinality of the Hilbert basis. -/
-@[simp]
-theorem hilbertSchmidtEnergy_id (b : HilbertBasis ι 𝕜 E) :
-    (ContinuousLinearMap.id 𝕜 E).hilbertSchmidtEnergy b = ENat.card ι := by
-  have h1 (i : ι) : ‖b i‖ₑ = 1 := by rw [← ofReal_norm, b.orthonormal.1 i, ENNReal.ofReal_one]
-  simp [hilbertSchmidtEnergy_def, h1]
-
-/-- In finite dimension the identity has Hilbert–Schmidt norm `√(finrank 𝕜 E)`. (Completeness is
-automatic in finite dimension, `FiniteDimensional.complete`, but is not an instance.) -/
-@[simp]
-theorem hilbertSchmidtNorm_id [FiniteDimensional 𝕜 E] [CompleteSpace E] :
-    (ContinuousLinearMap.id 𝕜 E).hilbertSchmidtNorm = √(Module.finrank 𝕜 E) := by
-  rw [hilbertSchmidtNorm_eq_sqrt _ (stdOrthonormalBasis 𝕜 E).toHilbertBasis,
-    hilbertSchmidtEnergy_id]
-  simp
-
-end ContinuousLinearMap
 
 namespace TauCeti.OperatorIdealFamily
 
