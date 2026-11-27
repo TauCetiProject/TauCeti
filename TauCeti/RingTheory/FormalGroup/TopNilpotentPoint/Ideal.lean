@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Hom
-import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.PowerSeries.Evaluation
 
 /-!
@@ -16,8 +15,8 @@ For a formal group law `F` over `R` and a complete Hausdorff linearly topologize
 `R`-algebra `A`, the points whose coordinates lie in an ideal `I` form the subgroup
 `FormalGroup.idealPointSubgroup`. Homomorphisms of formal groups preserve these subgroups
 and every power of `I`; an isomorphism preserves membership in each power in both directions.
-For the additive law on an adic ideal, the coordinate identifies this subgroup with the
-ordinary additive group of `I`.
+For the additive law on an ideal of topologically nilpotent elements, the coordinate
+identifies this subgroup with the ordinary additive group of `I`.
 
 These restrictions allow integral formal coordinates, such as an integral logarithm, to
 identify groups on a specified ideal rather than just on all topologically nilpotent elements.
@@ -42,19 +41,14 @@ noncomputable def idealPointSubgroup (F : FormalGroup R) (I : Ideal A) :
   zero_mem' := by simp
   add_mem' {x y} hx hy := by
     let _ : UniformSpace R := ⊥
-    have hxy := MvPowerSeries.hasEval_finTwo x.hasEval y.hasEval
-    have hle : Ideal.span (Set.range MvPowerSeries.X) ≤
-        I.comap (MvPowerSeries.eval₂Hom (φ := algebraMap R A)
-          continuous_of_discreteTopology hxy) := by
-      apply Ideal.span_le.mpr
-      rintro _ ⟨i, rfl⟩
-      rw [SetLike.mem_coe, Ideal.mem_comap, MvPowerSeries.coe_eval₂Hom, MvPowerSeries.eval₂_X]
+    rw [Set.mem_ofPred_eq, TopNilpotentPoint.val_add_eq_eval₂]
+    refine MvPowerSeries.eval₂_mem_of_finite continuous_of_discreteTopology
+      (MvPowerSeries.hasEval_finTwo x.hasEval y.hasEval) ?_ _ ?_
+    · intro i
       fin_cases i
       · exact hx
       · exact hy
-    rw [Set.mem_ofPred_eq, TopNilpotentPoint.val_add_eq_eval₂]
-    simpa only [Ideal.mem_comap, MvPowerSeries.coe_eval₂Hom] using
-      hle (MvPowerSeries.mem_span_range_X_iff.mpr F.zero_constantCoeff)
+    · simp [F.zero_constantCoeff]
   neg_mem' {x} hx := by
     let _ : UniformSpace R := ⊥
     let _ : ContinuousSMul R A := DiscreteTopology.instContinuousSMul R A
@@ -65,17 +59,22 @@ noncomputable def idealPointSubgroup (F : FormalGroup R) (I : Ideal A) :
 theorem mem_idealPointSubgroup (F : FormalGroup R) (I : Ideal A)
     (x : F.TopNilpotentPoint A) : x ∈ F.idealPointSubgroup I ↔ x.val ∈ I := Iff.rfl
 
+/-- Two points in the ideal subgroup are equal exactly when their coordinates agree. -/
+theorem idealPointSubgroup_eq_iff {F : FormalGroup R} {I : Ideal A}
+    {x y : F.idealPointSubgroup I} : x = y ↔ x.val.val = y.val.val :=
+  ⟨fun h ↦ congrArg (fun z : F.idealPointSubgroup I ↦ z.val.val) h,
+    fun h ↦ Subtype.ext (TopNilpotentPoint.ext h)⟩
+
 /-- The coordinates of the ideal subgroup are exactly the topologically nilpotent elements
 of the ideal. -/
 theorem range_val_idealPointSubgroup (F : FormalGroup R) (I : Ideal A) :
     Set.range (fun x : F.idealPointSubgroup I ↦ x.val.val) =
       (I : Set A) ∩ {s | IsTopologicallyNilpotent s} := by
-  ext s
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨(F.mem_idealPointSubgroup I _).1 x.property, x.val.hasEval⟩
-  · rintro ⟨hs, hnil⟩
-    exact ⟨⟨⟨s, hnil⟩, (F.mem_idealPointSubgroup I _).2 hs⟩, rfl⟩
+  change Set.range ((TopNilpotentPoint.val ⁻¹' (I : Set A)).domRestrict
+    (TopNilpotentPoint.val : F.TopNilpotentPoint A → A)) = _
+  rw [Set.range_domRestrict, Set.image_preimage_eq_inter_range]
+  congr 1
+  exact Set.ext fun s ↦ ⟨fun ⟨x, hx⟩ ↦ hx ▸ x.hasEval, fun hs ↦ ⟨⟨s, hs⟩, rfl⟩⟩
 
 end FormalGroup
 
@@ -87,13 +86,13 @@ variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A] [T2Space A]
   [IsTopologicalRing A] [IsLinearTopology A A]
 
-/-- For the additive formal group, points in an adic ideal are the ideal with its ordinary
-addition. The inverse regards an element of `I` as a topologically nilpotent point. -/
-noncomputable def additiveFormalGroupPointEquiv (I : Ideal A) [Fact (IsAdic I)] :
+/-- For the additive formal group, the points in an ideal of topologically nilpotent
+elements form the ordinary additive group of that ideal. -/
+noncomputable def additiveFormalGroupPointEquiv (I : Ideal A)
+    (hI : ∀ x ∈ I, IsTopologicallyNilpotent x) :
     (𝔾ₐ (R := R)).idealPointSubgroup I ≃+ I where
   toFun x := ⟨x.val.val, x.property⟩
-  invFun x := ⟨⟨x.val, (Fact.out : IsAdic I).isTopologicallyNilpotent_of_mem x.property⟩,
-    x.property⟩
+  invFun x := ⟨⟨x.val, hI x.val x.property⟩, x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' x y := by
@@ -106,13 +105,14 @@ noncomputable def additiveFormalGroupPointEquiv (I : Ideal A) [Fact (IsAdic I)] 
     simp [MvPowerSeries.coe_eval₂Hom]
 
 @[simp]
-theorem coe_additiveFormalGroupPointEquiv (I : Ideal A) [Fact (IsAdic I)]
+theorem coe_additiveFormalGroupPointEquiv (I : Ideal A) (hI : ∀ x ∈ I, IsTopologicallyNilpotent x)
     (x : (𝔾ₐ (R := R)).idealPointSubgroup I) :
-    (additiveFormalGroupPointEquiv (R := R) I x : A) = x.val.val := (rfl)
+    (additiveFormalGroupPointEquiv (R := R) I hI x : A) = x.val.val := (rfl)
 
 @[simp]
-theorem val_additiveFormalGroupPointEquiv_symm (I : Ideal A) [Fact (IsAdic I)] (x : I) :
-    ((additiveFormalGroupPointEquiv (R := R) I).symm x).val.val = x := (rfl)
+theorem val_additiveFormalGroupPointEquiv_symm (I : Ideal A)
+    (hI : ∀ x ∈ I, IsTopologicallyNilpotent x) (x : I) :
+    ((additiveFormalGroupPointEquiv (R := R) I hI).symm x).val.val = x := (rfl)
 
 end Ideal
 

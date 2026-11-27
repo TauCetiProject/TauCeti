@@ -52,7 +52,9 @@ theorem val_rescaleLogHom_toTopNilpotentPointHom (x : (F.rescale s).TopNilpotent
 /-- Evaluation of the integral logarithm identifies the rescaled formal group on `I` with
 ordinary addition on `I`. Its inverse evaluates the inverse integral logarithm. -/
 noncomputable def rescaleLogPointEquiv : (F.rescale s).idealPointSubgroup I ≃+ I :=
-  ((F.rescaleLogIso hs).toIdealPointEquiv I).trans (Ideal.additiveFormalGroupPointEquiv I)
+  ((F.rescaleLogIso hs).toIdealPointEquiv I).trans
+    (Ideal.additiveFormalGroupPointEquiv I
+      (fun _ hx ↦ (Fact.out : IsAdic I).isTopologicallyNilpotent_of_mem hx))
 
 /-- The logarithm equivalence evaluates the integral logarithm at the coordinate of the point. -/
 theorem coe_rescaleLogPointEquiv (x : (F.rescale s).idealPointSubgroup I) :
@@ -69,7 +71,8 @@ theorem val_rescaleLogPointEquiv_symm (x : I) :
   rw [rescaleLogPointEquiv, AddEquiv.symm_trans_apply,
     TauCeti.FormalGroupIso.coe_toIdealPointEquiv_symm]
   have h := (F.rescaleLogIso hs).invHom.hasSum_val_toTopNilpotentPointHom
-    ((Ideal.additiveFormalGroupPointEquiv (R := R) I).symm x).val
+    ((Ideal.additiveFormalGroupPointEquiv (R := R) I
+      (fun _ hx ↦ (Fact.out : IsAdic I).isTopologicallyNilpotent_of_mem hx)).symm x).val
   exact h.unique (by
     simpa only [smul_eq_mul, Ideal.val_additiveFormalGroupPointEquiv_symm] using
       (PowerSeries.hasSum_aeval (R := R)
