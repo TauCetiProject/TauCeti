@@ -338,6 +338,10 @@ theorem weightChar_add (μ ν : κ → ℤ) :
     weightChar R (μ + ν) = weightChar R μ * weightChar R ν :=
   MonoidHom.ext fun s ↦ torusCharacter_add s μ ν
 
+/-- Negating a weight inverts its character. -/
+theorem weightChar_neg (μ : κ → ℤ) : weightChar R (-μ) = (weightChar R μ)⁻¹ :=
+  MonoidHom.ext fun s ↦ torusCharacter_neg s μ
+
 /-- The character of `Pi.single c 1` is the `c`-th coordinate: this is the weight carried by the
 `c`-th basis vector of a weight basis. -/
 @[simp]
@@ -512,7 +516,7 @@ theorem basisDiagonalHom_injective (b : Basis ι R M) :
 /-- A diagonal automorphism scales each coordinate by its corresponding unit. -/
 theorem repr_basisDiagonal (b : Basis ι R M) (w : ι → Rˣ) (m : M) (i : ι) :
     b.repr (basisDiagonal b w m) i = (w i : R) * b.repr m i :=
-  b.repr_apply_of_apply_basis (basisDiagonal_basis b w) m i
+  b.repr_apply_eq_mul_of_apply_eq_smul b (basisDiagonal_basis b w) m i
 
 /-- Inverting a diagonal automorphism inverts each of its diagonal entries. -/
 theorem basisDiagonal_inv (b : Basis ι R M) (w : ι → Rˣ) :

@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.Sl2.Decomposition
 import Mathlib.Algebra.Lie.BaseChange
 import Mathlib.Data.Fin.Rev
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.Algebra.Module.LinearMap.Index
 import TauCeti.Algebra.Lie.Sl2.Spectrum
 import TauCeti.Algebra.Lie.Submodule.Decomposition
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
@@ -55,13 +55,6 @@ namespace TauCeti
 
 open LieModule Module
 open scoped TensorProduct
-
-private theorem finrank_ker_baseChange {K A V : Type*} [Field K] [Field A] [Algebra K A]
-    [AddCommGroup V] [Module K V] (g : V →ₗ[K] V) :
-    finrank A (LinearMap.ker (g.baseChange A)) = finrank K (LinearMap.ker g) := by
-  calc finrank A (LinearMap.ker (g.baseChange A))
-      = finrank A (A ⊗[K] LinearMap.ker g) := (LinearMap.tensorKerEquiv A A g).finrank_eq.symm
-    _ = finrank K (LinearMap.ker g) := Module.finrank_baseChange
 
 section Generated
 
@@ -189,8 +182,8 @@ theorem finrank_eigenspace_toEnd_neg (t : IsSl2Triple h e f) (μ : K) :
     simpa only [map_neg] using hbaseChange (-μ)
   rw [← hbaseChange μ, ← hbaseChange_neg] at hA
   rw [Module.End.eigenspace_def, Module.End.eigenspace_def]
-  rw [← finrank_ker_baseChange (A := A) (toEnd K L M h - μ • 1),
-    ← finrank_ker_baseChange (A := A) (toEnd K L M h - -μ • 1)]
+  rw [← LinearMap.finrank_ker_baseChange A (toEnd K L M h - μ • 1),
+    ← LinearMap.finrank_ker_baseChange A (toEnd K L M h - -μ • 1)]
   exact hA
 
 end Descent

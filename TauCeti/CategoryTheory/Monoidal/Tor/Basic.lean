@@ -147,11 +147,6 @@ end ShortComplex.ShortExact
 /-- **`Tor` against an object of projective dimension at most one** vanishes in degrees `≥ 2`. -/
 lemma isZero_Tor_add_two_of_hasProjectiveDimensionLE_one (X Y : C) [EnoughProjectives C]
     [HasProjectiveDimensionLE Y 1] (n : ℕ) : IsZero (((Tor C (n + 2)).obj X).obj Y) :=
-  -- the kernel of the projective cover `P ⟶ Y` has projective dimension `< 1`, as `P` is projective
-  -- and `Y` has projective dimension `< 2`
-  have : HasProjectiveDimensionLT (Projective.kernelShortComplex Y).X₁ 1 :=
-    (Projective.kernelShortComplex_shortExact Y).hasProjectiveDimensionLT_X₁ 1
-      inferInstance ‹_›
   (Projective.kernelShortComplex_shortExact Y).isZero_Tor_add_two X n
 
 /-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills every

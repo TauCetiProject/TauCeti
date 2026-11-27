@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Span.Basic
 public import Mathlib.RingTheory.Ideal.Span
+public import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Linear maps out of a principal ideal
@@ -29,18 +30,17 @@ variable {R : Type*} [CommRing R] {M : Type*} [AddCommMonoid M] [Module R M] {π
 /-- For a nonzerodivisor `π`, evaluation at `π` identifies `Hom_R((π), M)` with `M`. -/
 noncomputable def spanSingletonHomEquiv (hπ : π ∈ nonZeroDivisors R) :
     (span {π} →ₗ[R] M) ≃ₗ[R] M :=
-  let e : R ≃ₗ[R] span {π} :=
-    (LinearEquiv.ofInjective (LinearMap.toSpanSingleton R R π)
-      (LinearMap.ker_eq_bot.1 (LinearMap.ker_toSpanSingleton_eq_bot_iff.2
-        (nonZeroDivisorsRight_eq_nonZeroDivisors (M₀ := R) ▸ hπ)))).trans
-      (LinearEquiv.ofEq _ _ (LinearMap.span_singleton_eq_range R R π).symm)
+  let e : R ≃ₗ[R] span {π} := LinearEquiv.toSpanSingletonOfInjective π
+    (LinearMap.ker_eq_bot.1 (LinearMap.ker_toSpanSingleton_eq_bot_iff.2
+      (nonZeroDivisorsRight_eq_nonZeroDivisors (M₀ := R) ▸ hπ)))
   (e.arrowCongr (LinearEquiv.refl R M)).symm.trans (LinearMap.ringLmapEquivSelf R R M)
 
 @[simp]
 theorem spanSingletonHomEquiv_apply (hπ : π ∈ nonZeroDivisors R) (f : span {π} →ₗ[R] M) :
     spanSingletonHomEquiv hπ f = f ⟨π, mem_span_singleton_self π⟩ := by
   simp only [spanSingletonHomEquiv]
-  exact congrArg f (Subtype.ext (by simp))
+  exact congrArg f (Subtype.ext
+    ((LinearEquiv.coe_toSpanSingletonOfInjective_apply π _ 1).trans (one_smul R π)))
 
 /-- The inverse of `Ideal.spanSingletonHomEquiv` sends `x` to the map `c • π ↦ c • x`. -/
 theorem spanSingletonHomEquiv_symm_apply_smul (hπ : π ∈ nonZeroDivisors R) (x : M) (c : R) :

@@ -107,6 +107,16 @@ lemma characteristicCellPairMap_fst_diskCenter (k : cell C 0) :
   Subtype.ext ((coe_characteristicCellPairMap_fst_apply C k _).trans
     (congrArg (map 0 k) (Subsingleton.elim _ _)))
 
+/-- The characteristic map of an `n`-cell `j` sends the centre of the disk to the centre `χⱼ(0)` of
+the cell. -/
+lemma coe_characteristicCellPairMap_fst_diskCenter {n : ℕ} (j : cell C n) :
+    (ConcreteCategory.hom (X := TopCat.disk.{w} n)
+      (Y := TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞)))
+      (TopPair.Hom.fst (characteristicCellPairMap C j)) (diskCenter n)).val = map n j 0 := by
+  rw [coe_characteristicCellPairMap_fst_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply]
+  -- The centre of `TopCat.disk n` is `0` only after unfolding its `ULift`, so `erw` is used.
+  erw [coe_diskCenter_down, map_zero, gaugeRescale_zero]
+
 /-- The subspace component of the single-cell pair map is the attaching map
 `TauCeti.cellAttachingMap` of the cell. -/
 lemma characteristicCellPairMap_snd {n : ℕ} (j : cell C n) :

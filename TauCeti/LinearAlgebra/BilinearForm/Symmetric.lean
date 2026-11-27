@@ -15,7 +15,9 @@ import Mathlib.Tactic.Ring
 # The submodule of symmetric bilinear forms and its rank
 
 On any module `M` over a commutative semiring `R`, symmetric bilinear forms form an `R`-submodule
-`LinearMap.BilinForm.symmSubmodule R M`. When `R` is a commutative ring with `Invertible (2 : R)`,
+`LinearMap.BilinForm.symmSubmodule R M`, and alternating ones an `R`-submodule
+`LinearMap.BilinForm.altSubmodule R M`; over a commutative ring, so do skew-symmetric ones,
+`LinearMap.BilinForm.skewSubmodule R M`. When `R` is a commutative ring with `Invertible (2 : R)`,
 splitting a bilinear form into symmetric and alternating parts identifies
 `symmSubmodule R M × Module.Dual R (⋀[R]^2 M)` with `BilinForm R M` without choosing a basis. On a
 finite free module `M` over a commutative semiring `R`, `Module.finrank R (symmSubmodule R M) =
@@ -24,6 +26,8 @@ Module.finrank R M * (Module.finrank R M + 1) / 2` in arbitrary characteristic.
 ## Main definitions
 
 * `LinearMap.BilinForm.symmSubmodule`: the submodule of symmetric bilinear forms.
+* `LinearMap.BilinForm.altSubmodule`: the submodule of alternating bilinear forms.
+* `LinearMap.BilinForm.skewSubmodule`: the submodule of skew-symmetric bilinear forms.
 * `LinearMap.BilinForm.symmProdExteriorDualEquiv`: the canonical linear equivalence
   `(symmSubmodule R M × Module.Dual R (⋀[R]^2 M)) ≃ₗ[R] BilinForm R M` when `2` is invertible.
 
@@ -31,6 +35,8 @@ Module.finrank R M * (Module.finrank R M + 1) / 2` in arbitrary characteristic.
 
 * `LinearMap.BilinForm.isSymm_add_flip` and `LinearMap.BilinForm.isAlt_sub_flip`: adding or
   subtracting the flip of a bilinear form yields a symmetric or alternating bilinear form.
+* `LinearMap.BilinForm.disjoint_symmSubmodule_altSubmodule`: when `2` is invertible, only the zero
+  form is both symmetric and alternating.
 * `LinearMap.BilinForm.finrank_symmSubmodule`: `Module.finrank R (symmSubmodule R M) =
   Module.finrank R M * (Module.finrank R M + 1) / 2` on a finite free module.
 -/
@@ -52,10 +58,20 @@ def symmSubmodule : Submodule R (BilinForm R M) where
   add_mem' h₁ h₂ := h₁.add h₂
   smul_mem' c _ h := h.smul c
 
+/-- The submodule of alternating bilinear forms on `M`. -/
+def altSubmodule : Submodule R (BilinForm R M) where
+  carrier := {B | B.IsAlt}
+  zero_mem' := isAlt_zero
+  add_mem' h₁ h₂ := h₁.add h₂
+  smul_mem' c _ h := h.smul c
+
 variable {R M}
 
 /-- Membership in `symmSubmodule R M` is `LinearMap.BilinForm.IsSymm`. -/
 @[simp] theorem mem_symmSubmodule {B : BilinForm R M} : B ∈ symmSubmodule R M ↔ B.IsSymm := Iff.rfl
+
+/-- Membership in `altSubmodule R M` is `LinearMap.BilinForm.IsAlt`. -/
+@[simp] theorem mem_altSubmodule {B : BilinForm R M} : B ∈ altSubmodule R M ↔ B.IsAlt := Iff.rfl
 
 /-- Adding a bilinear form to its flip produces a symmetric bilinear form. -/
 theorem isSymm_add_flip (B : BilinForm R M) : (B + B.flip).IsSymm :=
@@ -65,7 +81,23 @@ end CommSemiring
 
 section CommRing
 
-variable {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+variable (R M : Type*) [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- The submodule of skew-symmetric bilinear forms on `M`, `B y x = -B x y`. These are the fixed
+points of the involution `B ↦ -B.flip`. -/
+def skewSubmodule : Submodule R (BilinForm R M) where
+  carrier := {B | ∀ x y, B y x = -B x y}
+  add_mem' {B₁ B₂} h₁ h₂ x y := by simp [h₁ x y, h₂ x y, add_comm]
+  zero_mem' := by simp
+  smul_mem' c B h x y := by simp [h x y]
+
+variable {R M}
+
+/-- Membership in `skewSubmodule R M` is `B y x = -B x y` for all `x` and `y`. -/
+@[simp]
+theorem mem_skewSubmodule {B : BilinForm R M} :
+    B ∈ skewSubmodule R M ↔ ∀ x y, B y x = -B x y :=
+  Iff.rfl
 
 /-- Subtracting the flip of a bilinear form produces an alternating bilinear form. -/
 theorem isAlt_sub_flip (B : BilinForm R M) : (B - B.flip).IsAlt := fun _ ↦ by
@@ -144,6 +176,17 @@ variable {R M}
   rw [LinearMap.IsAlt.toAlternatingMap_apply ((isAlt_sub_flip B).smul (⅟(2 : R))) ![x, y]]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.smul_apply, LinearMap.sub_apply,
     flip_apply, smul_eq_mul]
+
+/-- When `2` is invertible, a bilinear form that is both symmetric and alternating is zero. -/
+theorem disjoint_symmSubmodule_altSubmodule :
+    Disjoint (symmSubmodule R M) (altSubmodule R M) := by
+  refine Submodule.disjoint_def.2 fun B hs ha ↦ LinearMap.ext₂ fun x y ↦ ?_
+  have h₁ := (mem_symmSubmodule.1 hs).eq x y
+  have h₂ := (mem_altSubmodule.1 ha).neg_eq x y
+  have h : (2 : R) * B x y = 0 := by
+    rw [two_mul, ← sub_neg_eq_add, h₂, ← h₁, sub_self]
+  rw [LinearMap.zero_apply, LinearMap.zero_apply]
+  simpa using congrArg (⅟(2 : R) * ·) h
 
 end InvertibleTwo
 

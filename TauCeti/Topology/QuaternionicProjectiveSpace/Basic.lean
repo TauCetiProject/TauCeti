@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Quaternion.Basic
 public import TauCeti.Topology.Algebra.ProperAction.Basic
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Quaternionic projective space as a quotient of a sphere

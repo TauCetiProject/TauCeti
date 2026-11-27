@@ -45,6 +45,10 @@ vector and `w` is the geometric vector `(1, t, …, t ^ n)`.
   row is that of the identity is its corner minor.
 * `Matrix.det_updateCol_last_single`: replacing the last column by the last standard basis vector
   turns the determinant into the corner minor.
+* `Matrix.det_eq_sub_sum_mul_det_submatrix_castSucc_of_col` and
+  `Matrix.det_eq_sub_sum_mul_det_submatrix_castSucc_of_row`: bordered determinant formulas along
+  the last column or last row when its off-corner entries are a linear combination of the corner
+  block's columns or rows.
 * `Matrix.submatrix_mul_of_mulVec_single`: deleting the last row and column commutes with a
   product when the left factor fixes the last standard basis vector.
 * `Matrix.det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero`: a determinant formula
@@ -249,6 +253,46 @@ theorem det_updateCol_last_single (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
   ext a b
   rw [submatrix_apply, submatrix_apply,
     updateCol_ne (Fin.castSucc_lt_last b).ne]
+
+/-- **Bordered determinant along the last column.** If the off-corner entries of the last column of
+`M` are a linear combination `∑ j, M i.castSucc j.castSucc * w j` of the preceding columns, then
+`M.det` is `(M (Fin.last n) (Fin.last n) - ∑ j, M (Fin.last n) j.castSucc * w j)` times the corner
+minor, without assuming the corner minor is invertible. -/
+theorem det_eq_sub_sum_mul_det_submatrix_castSucc_of_col
+    (M : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {w : Fin n → R}
+    (hw : ∀ i : Fin n, M i.castSucc (Fin.last n) = ∑ j : Fin n, M i.castSucc j.castSucc * w j) :
+    M.det = (M (Fin.last n) (Fin.last n) - ∑ j : Fin n, M (Fin.last n) j.castSucc * w j) *
+      (M.submatrix Fin.castSucc Fin.castSucc).det := by
+  set s := M (Fin.last n) (Fin.last n) - ∑ j : Fin n, M (Fin.last n) j.castSucc * w j
+  let c : Fin (n + 1) → R := Fin.snoc w 0
+  -- `c` is a `let` binding, so record its last coordinate explicitly for `rw`.
+  have hc_last : c (Fin.last n) = 0 := Fin.snoc_last _ _
+  have hcol : (fun u ↦ M u (Fin.last n)) =
+      (fun u ↦ ∑ i : Fin (n + 1), c i • M u i) +
+        s • (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) := by
+    funext u
+    rw [Pi.add_apply, Fin.sum_univ_castSucc, hc_last, zero_smul, add_zero]
+    rcases eq_or_ne u (Fin.last n) with rfl | hu
+    · simp [s, c, mul_comm]
+    · obtain ⟨i, rfl⟩ := Fin.eq_castSucc_of_ne_last hu
+      simp [hw i, c, mul_comm]
+  conv_lhs => rw [← updateCol_eq_self M (Fin.last n), hcol]
+  rw [det_updateCol_add, det_updateCol_sum, hc_last, zero_smul, zero_add, det_updateCol_smul,
+    det_updateCol_last_single]
+
+/-- **Bordered determinant along the last row.** If the off-corner entries of the last row of `M`
+are a linear combination `∑ i, w i * M i.castSucc j.castSucc` of the preceding rows, then `M.det`
+is `(M (Fin.last n) (Fin.last n) - ∑ i, w i * M i.castSucc (Fin.last n))` times the corner
+minor. -/
+theorem det_eq_sub_sum_mul_det_submatrix_castSucc_of_row
+    (M : Matrix (Fin (n + 1)) (Fin (n + 1)) R) {w : Fin n → R}
+    (hw : ∀ j : Fin n, M (Fin.last n) j.castSucc = ∑ i : Fin n, w i * M i.castSucc j.castSucc) :
+    M.det = (M (Fin.last n) (Fin.last n) - ∑ i : Fin n, w i * M i.castSucc (Fin.last n)) *
+      (M.submatrix Fin.castSucc Fin.castSucc).det := by
+  rw [← det_transpose M, det_eq_sub_sum_mul_det_submatrix_castSucc_of_col Mᵀ
+    (w := w) (fun j ↦ by simpa [mul_comm] using hw j), transpose_apply, ← transpose_submatrix,
+    det_transpose]
+  simp only [transpose_apply, mul_comm]
 
 /-- The determinant of a matrix `M - 1` whose last column has been replaced by
 `c • M.col (last) - e (last)`, in terms of the corner minor of `M - 1`. -/

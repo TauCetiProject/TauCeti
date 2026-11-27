@@ -25,6 +25,8 @@ A restricted product of nonempty clopen reference sets is weakly locally compact
 finitely many reference sets are compact
 (`eventually_isCompact_of_weaklyLocallyCompactSpace_restrictedProduct`), the converse of Mathlib's
 `RestrictedProduct.weaklyLocallyCompactSpace_of_cofinite`.
+The instance `TauCeti.fact_isOpen_coe_subtype_val` passes openness of the reference sets to the
+restriction of the family to a subtype of the index type.
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -254,5 +256,13 @@ theorem not_isInducing_coe_bot [∀ i, DiscreteTopology (G i)]
   exact hg hmem
 
 end Discrete
+
+/-- Openness of a family of reference sets passes to its restriction to a subtype of the index
+type. -/
+instance fact_isOpen_coe_subtype_val {ι : Type*} {G : ι → Type*} {K : ι → Type*}
+    [∀ i, TopologicalSpace (G i)] [∀ i, SetLike (K i) (G i)] {B : ∀ i, K i}
+    [hB : Fact (∀ i, IsOpen (B i : Set (G i)))] (p : ι → Prop) :
+    Fact (∀ i : Subtype p, IsOpen (B i.val : Set (G i.val))) :=
+  ⟨fun i ↦ hB.out i.val⟩
 
 end TauCeti

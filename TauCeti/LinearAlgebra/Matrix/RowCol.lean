@@ -8,11 +8,12 @@ module
 public import Mathlib.LinearAlgebra.Matrix.RowCol
 
 /-!
-# Products of matrices with replaced columns
+# Columns of matrices
 
 `Matrix.updateCol_mul_updateCol_apply_self` computes the replaced column of a product of matrices
 with the same column replaced, when the new column of the right factor is `1` at that index and
-supported on a set of rows together with it.
+supported on a set of rows together with it. `Matrix.eq_transpose_of_fin_one` writes a matrix with
+one column as the transpose of the row matrix of that column.
 -/
 
 public section
@@ -37,5 +38,12 @@ theorem updateCol_mul_updateCol_apply_self {l p T : Type*} [NonAssocSemiring T] 
   rw [Finset.sum_congr rfl fun k _ ↦ hterm k, Finset.sum_add_distrib, Finset.sum_ite_eq',
     ← Finset.sum_filter, Finset.filter_mem_eq_inter, Finset.univ_inter]
   simp
+
+/-- A matrix with one column is the transpose of the row matrix of its column `0`. -/
+theorem eq_transpose_of_fin_one {m R : Type*} (A : Matrix m (Fin 1) R) :
+    A = (of ![fun r => A r 0])ᵀ := by
+  ext r c
+  fin_cases c
+  rfl
 
 end Matrix

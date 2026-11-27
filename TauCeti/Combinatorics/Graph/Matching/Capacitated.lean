@@ -330,6 +330,14 @@ theorem supportFinset_isMatching {x : E(G) → ℕ}
   rw [hset]
   exact hx.support_isMatching hG
 
+/-- In a loopless multigraph, every unit-capacitated matching has the same size as some finite
+ordinary matching. -/
+theorem exists_isMatching_card_eq_sum {x : E(G) → ℕ}
+    (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x) (hG : G.Loopless) :
+    ∃ M : Finset E(G), G.IsMatching (M : Set E(G)) ∧ M.card = ∑ e, x e :=
+  ⟨Finset.univ.filter fun e ↦ x e ≠ 0, hx.supportFinset_isMatching hG,
+    hx.sum_eq_card_support.symm⟩
+
 end IsCapacitatedMatching
 
 /-! ### Kőnig's theorem -/

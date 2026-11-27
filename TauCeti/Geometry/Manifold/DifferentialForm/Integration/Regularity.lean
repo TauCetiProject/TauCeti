@@ -23,7 +23,8 @@ The resulting chart formula characterizes the oriented integral of such forms; o
 finite-dimensional normed space with a constant orientation it is the Haar integral of the
 coefficient in a positively oriented basis. On `ℝ` with its standard orientation
 `TauCeti.Manifold.Orientation.real` it is the Lebesgue integral of the value on `1`
-(`TauCeti.integralTopForm_real_eq_integral`).
+(`TauCeti.integralTopForm_real_eq_integral`). On a compact manifold the integral is additive, and
+integration of smooth top forms is a linear functional (`TauCeti.SmoothForm.integralTopFormₗ`).
 -/
 
 public section
@@ -148,5 +149,36 @@ theorem integralTopForm_add_of_compactSpace [CompactSpace M] (o : Manifold.Orien
     {ψ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) :
     integralTopForm o (φ + ψ) = integralTopForm o φ + integralTopForm o ψ :=
   integralTopForm_add o hφ hψ (isClosed_tsupport _).isCompact (isClosed_tsupport _).isCompact
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- On a compact manifold, integration of smooth top forms over an orientation, as a linear
+functional. -/
+def SmoothForm.integralTopFormₗ [CompactSpace M] (o : Manifold.Orientation I M (Fin k)) :
+    SmoothForm I M ℝ k →ₗ[ℝ] ℝ where
+  toFun φ := integralTopForm o φ.val
+  map_add' φ ψ := integralTopForm_add_of_compactSpace o (φ.isSmoothForm.of_le (by simp))
+    (ψ.isSmoothForm.of_le (by simp))
+  map_smul' c φ := by
+    rw [Submodule.coe_smul, integralTopForm_smul, smul_eq_mul, RingHom.id_apply]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+@[simp]
+theorem SmoothForm.integralTopFormₗ_apply [CompactSpace M] (o : Manifold.Orientation I M (Fin k))
+    (φ : SmoothForm I M ℝ k) : SmoothForm.integralTopFormₗ o φ = integralTopForm o φ.val :=
+  (rfl)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- On a compact manifold, the oriented integral against a fixed `C^n` top form `φ` is additive in
+continuous functions: `∫_M (f + g)·φ = ∫_M f·φ + ∫_M g·φ`. -/
+theorem integralTopForm_add_smul_of_compactSpace [CompactSpace M]
+    (o : Manifold.Orientation I M (Fin k)) (hφ : IsSmoothForm I n φ) {f g : M → ℝ}
+    (hf : Continuous f) (hg : Continuous g) :
+    integralTopForm o (fun x ↦ (f x + g x) • φ x) =
+      integralTopForm o (fun x ↦ f x • φ x) + integralTopForm o (fun x ↦ g x • φ x) := by
+  rw [← integralTopForm_add_of_compactSpace o (hφ.fun_smul_of_continuous hf)
+    (hφ.fun_smul_of_continuous hg)]
+  congr 1
+  funext x
+  rw [Pi.add_apply, add_smul]
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Localization.LocalizerMorphism
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Equivalence
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.QuasiIso
@@ -36,9 +37,17 @@ corresponding facts for a single component.
   coefficients therefore gives a quasi-isomorphism of twisted complexes
   (`TauCeti.DGLocalSystemFamily.quasiIso_twistedComplexMap`).
 * Families of continuation cocycles induce morphisms of twisted complexes, compatibly with
-  identities and composition (`TauCeti.DGLocalSystemFamily.twistedComplexContinuation`), and
-  families of homologous cocycles induce quasi-isomorphisms
+  identities and composition (`TauCeti.DGLocalSystemFamily.twistedComplexContinuation`) and
+  naturally in the coefficient family
+  (`TauCeti.DGLocalSystemFamily.twistedComplexContinuationNatTrans`), and families of homologous
+  cocycles induce quasi-isomorphisms
   (`TauCeti.DGLocalSystemFamily.quasiIso_twistedComplexContinuation`).
+* For semi-free cocycles the twisted complex is a morphism of localizers from the componentwise
+  quasi-isomorphisms of coefficient families (`TauCeti.DGLocalSystemFamily.quasiIsos`) to the
+  quasi-isomorphisms of cochain complexes
+  (`TauCeti.DGLocalSystemFamily.twistedComplexLocalizerMorphism`), and families of homologous
+  semi-free cocycles induce isomorphic functors on the localizations
+  (`TauCeti.DGLocalSystemFamily.twistedComplexLocalizedFunctorIso`).
 * On a path-connected space the twisted complex is that of the single component
   (`TauCeti.DGLocalSystemFamily.isIso_twistedComplexι`).
 
@@ -57,7 +66,13 @@ indexed by the path components are instance arguments; for modules they are supp
 * `TauCeti.DGLocalSystemFamily.twistedComplexHomologyIso m 𝓕 n`: the homology is the direct sum
   of the homologies of the summands.
 * `TauCeti.DGLocalSystemFamily.twistedComplexContinuation ν 𝓕`: the morphism induced by a family
-  of continuation cocycles.
+  of continuation cocycles, and `TauCeti.DGLocalSystemFamily.twistedComplexContinuationNatTrans ν`
+  the same as a natural transformation.
+* `TauCeti.DGLocalSystemFamily.quasiIsos β R`: the componentwise quasi-isomorphisms of families.
+* `TauCeti.DGLocalSystemFamily.twistedComplexLocalizerMorphism m hwf`: the twisted complex of a
+  family of semi-free cocycles, as a morphism of localizers.
+* `TauCeti.DGLocalSystemFamily.twistedComplexLocalizedFunctorIso`: the isomorphism of localized
+  functors induced by families of homologous semi-free cocycles.
 
 ## References
 
@@ -293,6 +308,34 @@ theorem twistedComplexContinuation_comp (ν : ∀ c, RowFiniteContinuationCocycl
   refine twistedComplex_hom_ext m fun c ↦ ?_
   simp [RowFiniteContinuationCocycle.continuationHom_comp]
 
+variable {m} in
+/-- **The continuation map of a family is natural in the coefficient family**: it commutes with
+the morphisms of twisted complexes induced by a morphism of coefficient families. -/
+@[reassoc]
+theorem twistedComplexMap_twistedComplexContinuation
+    (ν : ∀ c, RowFiniteContinuationCocycle (m c) (m' c)) {𝓕 𝓖 : DGLocalSystemFamily.{uM} β R}
+    (φ : 𝓕 ⟶ 𝓖) :
+    twistedComplexMap m φ ≫ twistedComplexContinuation ν 𝓖 =
+      twistedComplexContinuation ν 𝓕 ≫ twistedComplexMap m' φ := by
+  refine twistedComplex_hom_ext m fun c ↦ ?_
+  simp [RowFiniteContinuationCocycle.coefficientCochainComplexMap_comp_continuationHom_assoc]
+
+variable {m} in
+/-- The continuation maps of a family of continuation cocycles `ν_c : m_c → m'_c`, as a natural
+transformation between the twisted complexes of the two families, as functors of the coefficient
+family. -/
+def twistedComplexContinuationNatTrans (ν : ∀ c, RowFiniteContinuationCocycle (m c) (m' c)) :
+    twistedComplexFunctor m ⟶ twistedComplexFunctor m' where
+  app := twistedComplexContinuation ν
+  naturality _ _ φ := twistedComplexMap_twistedComplexContinuation ν φ
+
+variable {m} in
+@[simp]
+theorem twistedComplexContinuationNatTrans_app
+    (ν : ∀ c, RowFiniteContinuationCocycle (m c) (m' c)) (𝓕 : DGLocalSystemFamily.{uM} β R) :
+    (twistedComplexContinuationNatTrans ν).app 𝓕 = twistedComplexContinuation ν 𝓕 :=
+  (rfl)
+
 variable [HasExactColimitsOfShape (Discrete (ZerothHomotopy B)) (ModuleCat.{uM} R)]
 
 variable {m} in
@@ -309,6 +352,106 @@ theorem quasiIso_twistedComplexContinuation
   infer_instance
 
 end Continuation
+
+/-! ### Localization at the componentwise quasi-isomorphisms -/
+
+section Localization
+
+omit [HasColimitsOfShape (Discrete (ZerothHomotopy B)) (ModuleCat.{uM} R)] in
+variable (β R) in
+/-- The **componentwise quasi-isomorphisms** of DG local systems on a space with chosen
+basepoints: the morphisms of families which are quasi-isomorphisms of DG modules on every path
+component, the product of the quasi-isomorphisms `TauCeti.DGRightModuleCat.quasiIsos` of the
+components. -/
+def quasiIsos : MorphismProperty (DGLocalSystemFamily.{uM} β R) :=
+  @MorphismProperty.pi _ (fun c ↦ DGLocalSystem.{uM} B (β.point c) R) (fun _ ↦ inferInstance)
+    fun c ↦ DGRightModuleCat.quasiIsos (loopChain_isDGAlgebra B (β.point c) R)
+
+omit [HasColimitsOfShape (Discrete (ZerothHomotopy B)) (ModuleCat.{uM} R)] in
+/-- A morphism of families is a componentwise quasi-isomorphism exactly when it is a
+quasi-isomorphism on every path component. -/
+theorem quasiIsos_iff {𝓕 𝓖 : DGLocalSystemFamily.{uM} β R} (φ : 𝓕 ⟶ 𝓖) :
+    quasiIsos β R φ ↔ ∀ c, (φ c).IsQuasiIso :=
+  forall_congr' fun c ↦ (DGRightModuleCat.quasiIsos_iff (φ c) :)
+
+variable [HasExactColimitsOfShape (Discrete (ZerothHomotopy B)) (ModuleCat.{uM} R)]
+  (hwf : ∀ c, WellFounded fun y x ↦ y ∈ ((m c).m x).support)
+
+/-- For semi-free cocycles, the twisted complex of a family, as a morphism of localizers from the
+componentwise quasi-isomorphisms of coefficient families to the quasi-isomorphisms of cochain
+complexes (`TauCeti.DGLocalSystemFamily.quasiIso_twistedComplexMap`). Its
+`LocalizerMorphism.localizedFunctor` is the induced functor on the localizations. -/
+-- Exposed so that its functor reduces to `twistedComplexFunctor`.
+@[expose]
+def twistedComplexLocalizerMorphism :
+    LocalizerMorphism (quasiIsos β R : MorphismProperty (DGLocalSystemFamily.{uM} β R))
+      (HomologicalComplex.quasiIso (ModuleCat.{uM} R) (ComplexShape.up ℤ)) where
+  functor := twistedComplexFunctor m
+  map _ _ _ hφ := (HomologicalComplex.mem_quasiIso_iff _).2
+    (quasiIso_twistedComplexMap m hwf ((quasiIsos_iff _).1 hφ))
+
+@[simp]
+theorem twistedComplexLocalizerMorphism_functor :
+    (twistedComplexLocalizerMorphism m hwf).functor = twistedComplexFunctor m :=
+  (rfl)
+
+variable {m} {Q : ZerothHomotopy B → Type uM} {indQ : ∀ c, Q c → ℤ}
+  {m' : ∀ c, RowFiniteTwistingCocycle (R := R) (A := loopChainAlgebra B (β.point c) R)
+    (cubicalChainGrading (MooreLoopSpace B (β.point c)) R)
+    (cubicalChainDifferential (MooreLoopSpace B (β.point c)) R) (Q c) (indQ c)}
+  (H : ∀ c, RowFiniteHomologous (loopChain_isDGAlgebra B (β.point c) R) (m c) (m' c))
+  {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
+  (L₁ : DGLocalSystemFamily.{uM} β R ⥤ D₁) [L₁.IsLocalization (quasiIsos β R)]
+  (L₂ : CochainComplex (ModuleCat.{uM} R) ℤ ⥤ D₂)
+  [L₂.IsLocalization (HomologicalComplex.quasiIso (ModuleCat.{uM} R) (ComplexShape.up ℤ))]
+
+/-- Families of homologous cocycles give isomorphic twisted complexes after localizing the cochain
+complexes at the quasi-isomorphisms, through the continuation maps
+(`TauCeti.DGLocalSystemFamily.quasiIso_twistedComplexContinuation`). -/
+def twistedComplexFunctorCompIso :
+    twistedComplexFunctor m ⋙ L₂ ≅ twistedComplexFunctor m' ⋙ L₂ :=
+  haveI : ∀ 𝓕, IsIso ((Functor.whiskerRight
+      (twistedComplexContinuationNatTrans fun c ↦ (H c).ν) L₂).app 𝓕) := fun 𝓕 ↦
+    Localization.inverts L₂ (HomologicalComplex.quasiIso _ _) _
+      ((HomologicalComplex.mem_quasiIso_iff _).2 (quasiIso_twistedComplexContinuation H 𝓕))
+  haveI := NatIso.isIso_of_isIso_app
+    (Functor.whiskerRight (twistedComplexContinuationNatTrans fun c ↦ (H c).ν) L₂)
+  asIso (Functor.whiskerRight (twistedComplexContinuationNatTrans fun c ↦ (H c).ν) L₂)
+
+@[simp]
+theorem twistedComplexFunctorCompIso_hom_app (𝓕 : DGLocalSystemFamily.{uM} β R) :
+    (twistedComplexFunctorCompIso H L₂).hom.app 𝓕 =
+      L₂.map (twistedComplexContinuation (fun c ↦ (H c).ν) 𝓕) :=
+  (rfl)
+
+variable (hwf' : ∀ c, WellFounded fun y x ↦ y ∈ ((m' c).m x).support)
+
+/-- **Homologous semi-free families induce isomorphic derived functors**: the functors induced by
+the twisted complexes of two families of homologous semi-free cocycles on the localizations at the
+componentwise quasi-isomorphisms and at the quasi-isomorphisms are isomorphic, through the
+continuation maps. -/
+def twistedComplexLocalizedFunctorIso :
+    (twistedComplexLocalizerMorphism m hwf).localizedFunctor L₁ L₂ ≅
+      (twistedComplexLocalizerMorphism m' hwf').localizedFunctor L₁ L₂ :=
+  Localization.liftNatIso L₁ (quasiIsos β R)
+    ((twistedComplexLocalizerMorphism m hwf).functor ⋙ L₂)
+    ((twistedComplexLocalizerMorphism m' hwf').functor ⋙ L₂) _ _
+    (twistedComplexFunctorCompIso H L₂)
+
+/-- On the image of a family, `twistedComplexLocalizedFunctorIso` is the image of the continuation
+map, read through the identifications of the localized functors on such images. -/
+theorem twistedComplexLocalizedFunctorIso_hom_app (𝓕 : DGLocalSystemFamily.{uM} β R) :
+    (twistedComplexLocalizedFunctorIso hwf H L₁ L₂ hwf').hom.app (L₁.obj 𝓕) =
+      (Localization.Lifting.iso L₁ (quasiIsos β R)
+          ((twistedComplexLocalizerMorphism m hwf).functor ⋙ L₂)
+          ((twistedComplexLocalizerMorphism m hwf).localizedFunctor L₁ L₂)).hom.app 𝓕 ≫
+        L₂.map (twistedComplexContinuation (fun c ↦ (H c).ν) 𝓕) ≫
+        (Localization.Lifting.iso L₁ (quasiIsos β R)
+          ((twistedComplexLocalizerMorphism m' hwf').functor ⋙ L₂)
+          ((twistedComplexLocalizerMorphism m' hwf').localizedFunctor L₁ L₂)).inv.app 𝓕 :=
+  Localization.liftNatTrans_app _ _ _ _ _ _ _ 𝓕
+
+end Localization
 
 /-! ### Path-connected spaces -/
 
