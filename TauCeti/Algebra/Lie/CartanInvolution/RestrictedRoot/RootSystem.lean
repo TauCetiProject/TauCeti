@@ -357,7 +357,7 @@ theorem isIndivisible_restrictedRootPairing_iff (μ : 𝔞.restrictedRoots) :
 
 /-- Canonical equivalence between the indivisible indices of `hθ.restrictedRootPairing h𝔞` and
 the subtype `𝔞.indivisibleRestrictedRoots`. -/
-def indivisibleRestrictedRootsEquiv :
+private def indivisibleRestrictedRootsEquiv :
     {μ : 𝔞.restrictedRoots // (hθ.restrictedRootPairing h𝔞).IsIndivisible μ} ≃
       𝔞.indivisibleRestrictedRoots where
   toFun μ := ⟨μ.val.val, (hθ.isIndivisible_restrictedRootPairing_iff h𝔞 μ.val).mp μ.property⟩
@@ -548,6 +548,24 @@ theorem restrictedWeylGroupEquiv_smul (w : (hθ.restrictedRootPairing h𝔞).wey
     (ν : Dual ℝ 𝔞) :
     hθ.restrictedWeylGroupEquiv h𝔞 w • ν = w • ν :=
   RootPairing.weylGroupEquivOfRangeReflectionEq_smul _ _ _ w ν
+
+/-- `restrictedWeylGroupEquiv` acts on `𝔞*` through `weightMap` as `w • ν`. -/
+@[simp]
+theorem restrictedWeylGroupEquiv_weightMap_apply
+    (w : (hθ.restrictedRootPairing h𝔞).weylGroup) (ν : Dual ℝ 𝔞) :
+    (hθ.restrictedWeylGroupEquiv h𝔞 w :
+        (hθ.indivisibleRestrictedRootPairing h𝔞).Aut).toHom.weightMap ν = w • ν :=
+  hθ.restrictedWeylGroupEquiv_smul h𝔞 w ν
+
+/-- `restrictedWeylGroupEquiv` acts on `𝔞*` through `weightEquiv` as `w • ν`.
+
+Not a `simp` lemma: `simp` rewrites the left-hand side via
+`RootPairing.Equiv.weightEquiv_apply`. -/
+theorem restrictedWeylGroupEquiv_weightEquiv_apply
+    (w : (hθ.restrictedRootPairing h𝔞).weylGroup) (ν : Dual ℝ 𝔞) :
+    (hθ.restrictedWeylGroupEquiv h𝔞 w :
+        (hθ.indivisibleRestrictedRootPairing h𝔞).Aut).weightEquiv ν = w • ν :=
+  hθ.restrictedWeylGroupEquiv_smul h𝔞 w ν
 
 /-- `restrictedWeylGroupEquiv` preserves the coweight action on `𝔞`.
 

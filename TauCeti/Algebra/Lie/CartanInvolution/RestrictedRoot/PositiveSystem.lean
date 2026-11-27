@@ -267,19 +267,21 @@ theorem IsPositiveRestrictedRootSystem.union_neg (h𝔞 : 𝔞 ≤ θ.cartanP)
   exact positiveRestrictedRoots_union_neg h𝔞 hreg
 
 /-- Half the restricted roots are positive: `2 * |Σ⁺| = |Σ|`. -/
-theorem IsPositiveRestrictedRootSystem.two_mul_ncard [IsDomain R] [IsTorsionFree R L]
-    [IsNoetherian R L] (h𝔞 : 𝔞 ≤ θ.cartanP) {S : Set (Dual R 𝔞)}
-    (hS : 𝔞.IsPositiveRestrictedRootSystem S) :
+theorem IsPositiveRestrictedRootSystem.two_mul_ncard (h𝔞 : 𝔞 ≤ θ.cartanP)
+    {S : Set (Dual R 𝔞)} (hS : 𝔞.IsPositiveRestrictedRootSystem S) :
     2 * S.ncard = 𝔞.restrictedRoots.ncard := by
-  have hfin : S.Finite := hS.finite
-  have hneg_fin : (Neg.neg '' S).Finite := hfin.image _
-  have hcard : (Neg.neg '' S).ncard = S.ncard :=
-    Set.ncard_image_of_injective S neg_injective
-  calc
-    2 * S.ncard = S.ncard + S.ncard := two_mul _
-    _ = S.ncard + (Neg.neg '' S).ncard := by rw [hcard]
-    _ = (S ∪ Neg.neg '' S).ncard := (Set.ncard_union_eq hS.disjoint_neg hfin hneg_fin).symm
-    _ = 𝔞.restrictedRoots.ncard := by rw [hS.union_neg h𝔞]
+  by_cases hfin : S.Finite
+  · have hneg_fin : (Neg.neg '' S).Finite := hfin.image _
+    have hcard : (Neg.neg '' S).ncard = S.ncard :=
+      Set.ncard_image_of_injective S neg_injective
+    calc
+      2 * S.ncard = S.ncard + S.ncard := two_mul _
+      _ = S.ncard + (Neg.neg '' S).ncard := by rw [hcard]
+      _ = (S ∪ Neg.neg '' S).ncard := (Set.ncard_union_eq hS.disjoint_neg hfin hneg_fin).symm
+      _ = 𝔞.restrictedRoots.ncard := by rw [hS.union_neg h𝔞]
+  · have hinf : S.Infinite := hfin
+    have hinf' : 𝔞.restrictedRoots.Infinite := hinf.mono hS.subset
+    rw [hinf.ncard, hinf'.ncard, mul_zero]
 
 end LinearOrdered
 
@@ -599,17 +601,13 @@ theorem smul_positiveRestrictedRootsOfBase (w : (hθ.restrictedRootPairing h𝔞
         (b.map (hθ.restrictedWeylGroupEquiv h𝔞 w :
           (hθ.indivisibleRestrictedRootPairing h𝔞).Aut)) := by
   ext μ
-  rw [Set.mem_smul_set_iff_inv_smul_mem, mem_positiveRestrictedRootsOfBase,
-    mem_positiveRestrictedRootsOfBase, hθ.smul_mem_restrictedRoots_iff h𝔞 w⁻¹,
-    TauCeti.posRootCone_map, AddSubmonoid.mem_map]
-  refine and_congr Iff.rfl ⟨fun hmem ↦ ⟨w⁻¹ • μ, hmem, ?_⟩, ?_⟩
-  · rw [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
-      ← RootPairing.Equiv.smul_eq_weightEquiv, ← Subgroup.smul_def,
-      hθ.restrictedWeylGroupEquiv_smul, smul_inv_smul]
-  · rintro ⟨ν, hν, hEq⟩
-    rw [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
-      ← RootPairing.Equiv.smul_eq_weightEquiv, ← Subgroup.smul_def] at hEq
-    rwa [← hEq, hθ.restrictedWeylGroupEquiv_smul, inv_smul_smul]
+  simp only [Set.mem_smul_set_iff_inv_smul_mem, mem_positiveRestrictedRootsOfBase,
+    hθ.smul_mem_restrictedRoots_iff h𝔞 w⁻¹, TauCeti.posRootCone_map, AddSubmonoid.mem_map,
+    LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe, RootPairing.Equiv.weightEquiv_apply,
+    restrictedWeylGroupEquiv_weightMap_apply]
+  exact and_congr Iff.rfl
+    ⟨fun hmem ↦ ⟨w⁻¹ • μ, hmem, smul_inv_smul _ _⟩,
+      fun ⟨ν, hν, hEq⟩ ↦ by rwa [← hEq, inv_smul_smul]⟩
 
 /-- **Simple transitivity of `W(Σ)` on positive restricted root systems.** For any two positive
 restricted root systems `S₁` and `S₂`, there exists a unique `w ∈ W(Σ)` such that

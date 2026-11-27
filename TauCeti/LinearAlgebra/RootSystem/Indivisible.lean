@@ -283,6 +283,15 @@ section Finite
 
 variable [Finite ι] [IsDomain R]
 
+private theorem pairingIn_pairingIn_mem_of_coxeterWeightIn_eq_four {i j : ι}
+    (hcw : P.coxeterWeightIn ℤ i j = 4) :
+    (P.pairingIn ℤ i j, P.pairingIn ℤ j i) ∈
+      ({(4, 1), (1, 4), (-4, -1), (-1, -4), (2, 2), (-2, -2)} : Set (ℤ × ℤ)) := by
+  have hset := P.pairingIn_pairingIn_mem_set_of_isCrystallographic i j
+  rw [coxeterWeightIn] at hcw
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hset ⊢
+  aesop
+
 /-- The indivisible subsystem of a finite crystallographic root pairing over a
 characteristic-zero domain is reduced. -/
 instance isReduced_indivisible : P.indivisible.IsReduced := by
@@ -293,16 +302,7 @@ instance isReduced_indivisible : P.indivisible.IsReduced := by
     simpa [indivisible_root] using hdep
   have hcw : P.coxeterWeightIn ℤ i.val j.val = 4 :=
     (P.coxeterWeightIn_eq_four_iff_not_linearIndependent ℤ).mpr hdep'
-  have hmem : (P.pairingIn ℤ i.val j.val, P.pairingIn ℤ j.val i.val) ∈
-      ({(4, 1), (1, 4), (-4, -1), (-1, -4), (2, 2), (-2, -2)} : Set (ℤ × ℤ)) := by
-    have hset := P.pairingIn_pairingIn_mem_set_of_isCrystallographic i.val j.val
-    rw [coxeterWeightIn] at hcw
-    set a := P.pairingIn ℤ i.val j.val
-    set b := P.pairingIn ℤ j.val i.val
-    change a * b = 4 at hcw
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hset ⊢
-    rcases hset with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
-      simp_all
+  have hmem := P.pairingIn_pairingIn_mem_of_coxeterWeightIn_eq_four hcw
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hmem
   rcases hmem with hij | hij | hij | hij | hij | hij
   · exact absurd ((P.pairingIn_one_four_iff ℤ j.val i.val).mp hij.symm).symm (i.property j.val)
