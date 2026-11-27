@@ -22,14 +22,14 @@ Over `ℚ`, the point `diag(2, 1/2)` of `SL₂` (Mathlib's `Matrix.SpecialLinear
 satisfies that `diag(2, 1/2) - 1` is invertible
 (`TauCeti.Examples.UnipotentSpecialLinear.isUnit_diag_two_half_sub_one`), so it fixes no nonzero
 vector of the standard representation `ℚ²`
-(`TauCeti.Examples.UnipotentSpecialLinear.eq_zero_of_diag_two_half_mulVec_eq`); this gives a second
-proof that `SL₂` is not unipotent over `ℚ`
-(`TauCeti.Examples.UnipotentSpecialLinear.not_unipotent_specialLinear_two_rat`).
+(`TauCeti.Examples.UnipotentSpecialLinear.eq_zero_of_diag_two_half_mulVec_eq`); an `example`
+below uses this for a second proof that `SL₂` is not unipotent over `ℚ`.
 
 The character test for unipotence is one-way: a connected unipotent group has no nontrivial
 character, but `SL₂` has none either (`TauCeti.SpecialLinear.groupLike_eq_one`, from the
 derived subgroup), and it is not unipotent
-(`TauCeti.Examples.UnipotentSpecialLinear.groupLike_eq_one_and_not_unipotent`).
+(`TauCeti.Examples.UnipotentSpecialLinear.not_unipotent_specialLinear`); an `example` below
+records the two facts together.
 -/
 
 public section
@@ -86,7 +86,7 @@ theorem eq_zero_of_diag_two_half_mulVec_eq {v : Fin 2 → ℚ}
 
 /-- **`SL₂` is not unipotent over `ℚ`, through the point `diag(2, 1/2)`**: a unipotent group would
 fix a nonzero vector of the standard representation `ℚ²`, but `diag(2, 1/2)` fixes none. -/
-theorem not_unipotent_specialLinear_two_rat :
+example :
     ¬ unipotentCommHopfAlgProperty ℚ (SpecialLinear.coordinateHopfAlgebra ℚ 2) := by
   intro hH
   obtain ⟨v, hv0, hv⟩ := hasNonzeroFixedVector_iff.mp
@@ -101,7 +101,7 @@ theorem not_unipotent_specialLinear_two_rat :
 
 /-- **The character test for unipotence is one-way.** Over every field, `SL₂` has no nontrivial
 character (every group-like element of its coordinate ring is `1`), yet it is not unipotent. -/
-theorem groupLike_eq_one_and_not_unipotent :
+example :
     (∀ x : GroupLike k (SpecialLinear.coordinateHopfAlgebra k 2), x = 1) ∧
       ¬ unipotentCommHopfAlgProperty k (SpecialLinear.coordinateHopfAlgebra k 2) :=
   ⟨SpecialLinear.groupLike_eq_one k 2, not_unipotent_specialLinear k le_rfl⟩
