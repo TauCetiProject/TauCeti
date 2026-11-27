@@ -25,7 +25,7 @@ in `CategoryTheory.Functor.ihomComparison_isIso_of_iso`.  It is Mathlib's isomor
 
 ## Main declarations
 
-* `MonoidalClosed.pre_isIso`;
+* `MonoidalClosed.pre_isIso`, and its componentwise instance `MonoidalClosed.isIso_pre_app`;
 * `MonoidalClosed.mono_pre_app`;
 * `MonoidalClosed.pre_eqToHom_app`: precomposition with the transport along an equality of
   objects is the transport along the induced equality of internal Homs.
@@ -59,6 +59,13 @@ theorem MonoidalClosed.pre_isIso {A B : C} (e : A ≅ B) [Closed A] [Closed B] :
   unfold MonoidalClosed.pre
   exact @conjugateEquiv_iso _ _ _ _ _ _ _ _ (ihom.adjunction _) (ihom.adjunction _)
     ((tensoringLeft C).map e.hom) hα
+
+/-- Precomposition with an isomorphism `f : A ⟶ B` is an isomorphism `(B ⟶[C] Z) ⟶ (A ⟶[C] Z)`
+of internal Homs into each object `Z`. -/
+instance MonoidalClosed.isIso_pre_app {A B : C} (f : A ⟶ B) [IsIso f] [Closed A] [Closed B]
+    (Z : C) : IsIso ((MonoidalClosed.pre f).app Z) :=
+  have : IsIso (MonoidalClosed.pre f) := MonoidalClosed.pre_isIso (asIso f)
+  NatIso.isIso_app_of_isIso _ _
 
 /-- In a braided closed monoidal category, precomposition of internal Homs with an epimorphism
 `f : B ⟶ A` is a monomorphism `(A ⟶[C] X) ⟶ (B ⟶[C] X)`. -/

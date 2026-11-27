@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.SpanProjection
 public import TauCeti.Analysis.InnerProductSpace.Projection.PrincipalAngle
 public import TauCeti.Analysis.InnerProductSpace.Projection.FrobeniusSine
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 
 /-!
 # The overlap operator of two finite families and their principal cosines

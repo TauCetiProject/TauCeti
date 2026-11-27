@@ -9,9 +9,10 @@ public import TauCeti.Analysis.Complex.Conformal.LocalIndex
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Degree
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Topology.DiscreteSubset
 
 /-!
-# The local index of a section at a holomorphic zero is its order
+# The local index of a section at a holomorphic zero, and the zero count
 
 Let `s` be a continuous section of an oriented real plane bundle `E → M` with fibre `ℂ`, over an
 oriented surface `M` charted on `ℂ`, and `z` a zero of `s`. Read the section in a linear
@@ -39,8 +40,20 @@ vanishes exactly where `σ ∘ φ` does
 the factorizations which the similarity principle provides for solutions of Cauchy–Riemann
 inequalities, treated in `TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiemann`.
 
-Over a compact surface, if a section has finitely many zeros and is complex analytic in such
-coordinates at each of them, the Euler number `⟨e(E), [M]⟩` is the sum of the orders of the zeros,
+Over a compact surface, the zeros of a section that is holomorphic up to a unit in such
+coordinates count positively. On a connected compact surface, such a section which does not vanish
+identically has finitely many zeros (`TauCeti.finite_setOf_section_eq_zero_of_eventually_eq_mul`);
+their number is at most the Euler number `⟨e(E), [M]⟩`, which is therefore nonnegative
+(`TauCeti.VectorBundleOrientation.ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul`,
+`TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul`);
+and a section with more zeros than the Euler number vanishes identically (in the same namespace,
+`eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul`). These
+bound the number of zeros of any section which the similarity principle factors in this way, such
+as solutions of Cauchy–Riemann inequalities
+(`TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiemann`).
+
+If a section has finitely many zeros and is complex analytic in such coordinates at each of them,
+the Euler number `⟨e(E), [M]⟩` is the sum of the orders of the zeros,
 hence nonnegative
 (`TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt`,
 `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_nonneg_of_analyticAt`).
@@ -59,6 +72,13 @@ On the trivial line bundle over `ℂ`, the section `z ↦ z ^ m` has local index
 holomorphic, has local index `-1` (`TauCeti.VectorBundleOrientation.sectionIndex_trivial_conj`).
 
 ## Main results
+
+* `TauCeti.VectorBundleOrientation.ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul`:
+  the zero count for a section that is holomorphic up to a unit at its zeros, with
+  `TauCeti.finite_setOf_section_eq_zero_of_eventually_eq_mul` (finitely many zeros),
+  `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul`
+  and, in the same namespace,
+  `eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul`.
 
 * `TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt`: at a zero where the section
   is complex analytic in oriented coordinates, the local index is the order of vanishing.
@@ -144,6 +164,31 @@ theorem eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul (hze : z �
 end Bundle.Trivialization
 
 namespace TauCeti
+
+section Finite
+
+variable {M : Type} [TopologicalSpace M] [CompactSpace M] [ConnectedSpace M] {E : M → Type}
+  [TopologicalSpace (TotalSpace ℂ E)] [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)]
+  {s : ∀ x, E x}
+
+/-- **Unique continuation for sections that are locally holomorphic up to a unit.** Let `M` be a
+connected compact space and `s` a section of a real plane bundle `E → M` with fibre `ℂ`. Suppose
+that around every point `z` there are a chart `φ z` and a linear trivialization `e z` in which `s`,
+read as `f y = (e z (s ((φ z)⁻¹ y))).2`, is near `φ z z` the product `v * σ` of a function `v`
+continuous and nonzero at `φ z z` and a function `σ` analytic at `φ z z`. If `s` does not vanish
+identically, it has finitely many zeros. -/
+theorem finite_setOf_section_eq_zero_of_eventually_eq_mul (φ : M → OpenPartialHomeomorph M ℂ)
+    (e : M → Trivialization ℂ (π ℂ E)) [∀ z, (e z).IsLinear ℝ] (hzφ : ∀ z, z ∈ (φ z).source)
+    (hze : ∀ z, z ∈ (e z).baseSet)
+    (hfac : ∀ z, ∃ v σ : ℂ → ℂ, ContinuousAt v (φ z z) ∧ v (φ z z) ≠ 0 ∧ AnalyticAt ℂ σ (φ z z) ∧
+      ∀ᶠ y in 𝓝 (φ z z), (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2 = v y * σ y)
+    (hne : ∃ x, s x ≠ 0) : {x | s x = 0}.Finite :=
+  finite_setOf_eq_zero_of_forall_eventually (fun x ↦ by
+    obtain ⟨v, σ, hv, hv₀, hσ, hf⟩ := hfac x
+    exact (e x).eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul (φ x) (hze x)
+      (hzφ x) hv hv₀ hσ hf) hne
+
+end Finite
 
 namespace VectorBundleOrientation
 
@@ -364,6 +409,79 @@ theorem evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt (hZ : {x | s x
     (ho z hz0) (hφ z hz0) (hA z hz0)
 
 include hs in
+/-- **The zero count for sections that are locally holomorphic up to a unit.** Let `M` be a
+compact surface with orientation `oM`, and let `s` be a continuous section with finitely many zeros
+of an oriented real plane bundle `E → M` with fibre `ℂ`. Suppose that at each zero `z` there are a
+chart `φ z` and a linear trivialization `e z`, oriented compatibly with `E` and `M` near `z` as in
+`TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt`, in which `s`, read as
+`f y = (e z (s ((φ z)⁻¹ y))).2`, is near `φ z z` the product `v * σ` of a function `v` continuous
+and nonzero at `φ z z` and a function `σ` analytic at `φ z z`. Then the number of zeros of `s` is
+at most the Euler class of `E` evaluated on the fundamental class of `M`: the Euler number is the
+sum of the local indices of the zeros, each a positive integer. -/
+theorem ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul
+    (hZ : {x | s x = 0}.Finite) (hze : ∀ z, s z = 0 → z ∈ (e z).baseSet)
+    (ho : ∀ z, s z = 0 → ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
+      (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
+    (hφ : ∀ z (hz : s z = 0), localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : (φ z).source ↦ φ z x - φ z z,
+          (φ z).continuousOn.domRestrict.sub continuous_const⟩ : C((φ z).source, ℂ))
+        (S := {⟨z, hzφ z hz⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext ((φ z).injOn x.property (hzφ z hz) (sub_eq_zero.1 hx))) (1 + 1)
+        (((φ z).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ z hz⟩
+          (1 + 1)).symm (oM z)).val =
+      ((ω z).localOrientation hF).val)
+    (hfac : ∀ z, s z = 0 → ∃ v σ : ℂ → ℂ, ContinuousAt v (φ z z) ∧ v (φ z z) ≠ 0 ∧
+      AnalyticAt ℂ σ (φ z z) ∧
+      ∀ᶠ y in 𝓝 (φ z z), (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2 = v y * σ y) :
+    ({x | s x = 0}.ncard : ℤ) ≤ (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (ContinuousMap.id M) (o.eulerClass hF)).down := by
+  rw [o.evalFundamentalClass_eulerClass_eq_sum_sectionIndex hF oM hs hF hZ,
+    ncard_eq_toFinset_card _ hZ, Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
+  refine Finset.sum_le_sum fun z hz ↦ ?_
+  have hz0 : s z = 0 := hZ.mem_toFinset.1 hz
+  -- A zero of a section with finitely many zeros is isolated.
+  have hiso : ∀ᶠ x in 𝓝[≠] z, s x ≠ 0 := by
+    have hcl : IsClosed ({x | s x = 0} \ {z}) := (hZ.subset sdiff_subset).isClosed
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds
+      (hcl.isOpen_compl.mem_nhds fun h ↦ h.2 rfl), self_mem_nhdsWithin] with x hx hxz h0
+    exact hx ⟨h0, hxz⟩
+  obtain ⟨v, σ, hv, hv₀, hσ, hf⟩ := hfac z hz0
+  have := o.sectionIndex_pos_of_eventually_eq_mul hF oM hs (e z) (φ z) (hze z hz0) (hzφ z hz0)
+    (ho z hz0) (hφ z hz0) hv hv₀ hσ hf hz0 hiso
+  omega
+
+include hs in
+/-- **The Euler number of a plane bundle with a section that is locally holomorphic up to a unit is
+nonnegative.** Under the hypotheses of
+`ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul`, which include that the section
+has finitely many zeros, the Euler class of `E` evaluated on the fundamental class of `M` is
+nonnegative. -/
+theorem evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul
+    (hZ : {x | s x = 0}.Finite) (hze : ∀ z, s z = 0 → z ∈ (e z).baseSet)
+    (ho : ∀ z, s z = 0 → ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
+      (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
+    (hφ : ∀ z (hz : s z = 0), localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : (φ z).source ↦ φ z x - φ z z,
+          (φ z).continuousOn.domRestrict.sub continuous_const⟩ : C((φ z).source, ℂ))
+        (S := {⟨z, hzφ z hz⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext ((φ z).injOn x.property (hzφ z hz) (sub_eq_zero.1 hx))) (1 + 1)
+        (((φ z).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ z hz⟩
+          (1 + 1)).symm (oM z)).val =
+      ((ω z).localOrientation hF).val)
+    (hfac : ∀ z, s z = 0 → ∃ v σ : ℂ → ℂ, ContinuousAt v (φ z z) ∧ v (φ z z) ≠ 0 ∧
+      AnalyticAt ℂ σ (φ z z) ∧
+      ∀ᶠ y in 𝓝 (φ z z), (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2 = v y * σ y) :
+    0 ≤ (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
+      (o.eulerClass hF)).down :=
+  (Nat.cast_nonneg _).trans
+    (o.ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul hF oM hs φ e ω hzφ hZ hze ho
+      hφ hfac)
+
+include hs in
 /-- **The Euler number of a plane bundle with a section that is holomorphic in oriented coordinates
 at its finitely many zeros is nonnegative.** Under the hypotheses of
 `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt`, which
@@ -386,12 +504,55 @@ theorem evalFundamentalClass_eulerClass_nonneg_of_analyticAt (hZ : {x | s x = 0}
     (hA : ∀ z, s z = 0 → AnalyticAt ℂ
       (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) (φ z z)) :
     0 ≤ (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
-      (o.eulerClass hF)).down := by
-  rw [o.evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt hF oM hs φ e ω hzφ hZ hze ho hφ
-    hA]
-  exact Finset.sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
+      (o.eulerClass hF)).down :=
+  o.evalFundamentalClass_eulerClass_nonneg_of_eventually_eq_mul hF oM hs φ e ω hzφ hZ hze ho hφ
+    fun z hz ↦ ⟨1, _, continuousAt_const, one_ne_zero, hA z hz, .of_forall fun _ ↦ (one_mul _).symm⟩
 
 end CompactSpace
+
+section ConnectedSpace
+
+variable [CompactSpace M] [ConnectedSpace M] (φ : M → OpenPartialHomeomorph M ℂ)
+  (e : M → Trivialization ℂ (π ℂ E)) [∀ z, (e z).IsLinear ℝ] (ω : M → Orientation ℝ ℂ (Fin (1 + 1)))
+  (hzφ : ∀ z, z ∈ (φ z).source)
+
+include hs in
+/-- **A section that is locally holomorphic up to a unit and vanishes at more points than the
+Euler number vanishes identically.** Let `M` be a connected compact surface with orientation `oM`,
+and let `s` be a continuous section of an oriented real plane bundle `E → M` with fibre `ℂ`.
+Suppose that around every point `z` there are a chart `φ z` and a linear trivialization `e z`,
+oriented compatibly with `E` and `M` near `z`, in which `s`, read as
+`f y = (e z (s ((φ z)⁻¹ y))).2`, is near `φ z z` the product `v * σ` of a function `v` continuous
+and nonzero at `φ z z` and a function `σ` analytic at `φ z z`. If `s` vanishes on a finite set `S`
+with more elements than the Euler class of `E` evaluated on the fundamental class of `M`, then `s`
+vanishes identically. -/
+theorem eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard_of_eventually_eq_mul
+    (hze : ∀ z, z ∈ (e z).baseSet)
+    (ho : ∀ z, ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ (e z).baseSet,
+      (e z).mapOrientation (Fin (1 + 1)) hx (o x) = ω z)
+    (hφ : ∀ z, localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : (φ z).source ↦ φ z x - φ z z,
+          (φ z).continuousOn.domRestrict.sub continuous_const⟩ : C((φ z).source, ℂ))
+        (S := {⟨z, hzφ z⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext ((φ z).injOn x.property (hzφ z) (sub_eq_zero.1 hx))) (1 + 1)
+        (((φ z).open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ z⟩
+          (1 + 1)).symm (oM z)).val =
+      ((ω z).localOrientation hF).val)
+    (hfac : ∀ z, ∃ v σ : ℂ → ℂ, ContinuousAt v (φ z z) ∧ v (φ z z) ≠ 0 ∧ AnalyticAt ℂ σ (φ z z) ∧
+      ∀ᶠ y in 𝓝 (φ z z), (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2 = v y * σ y)
+    {S : Set M} (hS : ∀ x ∈ S, s x = 0)
+    (hlt : (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
+      (o.eulerClass hF)).down < S.ncard) (x : M) : s x = 0 := by
+  by_contra hx
+  have hZ := finite_setOf_section_eq_zero_of_eventually_eq_mul φ e hzφ hze hfac ⟨x, hx⟩
+  have hle := o.ncard_le_evalFundamentalClass_eulerClass_of_eventually_eq_mul hF oM hs φ e ω
+    (fun z _ ↦ hzφ z) hZ (fun z _ ↦ hze z) (fun z _ ↦ ho z) (fun z _ ↦ hφ z) (fun z _ ↦ hfac z)
+  have hSZ : S.ncard ≤ {x | s x = 0}.ncard := ncard_le_ncard hS hZ
+  omega
+
+end ConnectedSpace
 
 end Holomorphic
 

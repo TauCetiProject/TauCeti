@@ -6,6 +6,9 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.Projection
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
+import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.Probability.Distributions.Gaussian.HeatKernel
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Independence.Map
 
@@ -16,7 +19,9 @@ A vector with scalar covariance matrix is obtained by scaling and translating a 
 Gaussian. A nonzero scale allows standardization, and the squared length of a centered
 projection divided by the variance has chi-squared law with degrees of freedom equal to the
 dimension of the subspace. Projections onto two orthogonal subspaces are independent even
-at zero scale.
+at zero scale. In dimension at least `3` the real-valued reciprocal `(‖x‖ ^ 2)⁻¹`, which takes
+the value `0` at the origin, is integrable under `N(θ, v I)`
+(`TauCeti.Probability.integrable_inv_norm_sq_multivariateGaussian`).
 -/
 
 public section
@@ -136,3 +141,47 @@ theorem HasLaw.indepFun_orthogonalProjectionOnto_multivariateGaussian_smul_one
 end Isotropic
 
 end ProbabilityTheory
+
+open Real
+
+namespace TauCeti.Probability
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- In dimension at least `3`, the real-valued reciprocal `(‖x‖ ^ 2)⁻¹`, which takes the value `0`
+at the origin, is integrable under `multivariateGaussian θ (v I)` for every real `v`. For `v > 0`
+this is the usual integrability of `‖x‖⁻²` under `N(θ, v I)`; for `v ≤ 0` the law is the point
+mass at `θ` (the fallback value of `multivariateGaussian` when `v < 0`), and when `θ = 0` the
+statement relies on the convention `0⁻¹ = 0`. -/
+theorem integrable_inv_norm_sq_multivariateGaussian (hι : 3 ≤ Fintype.card ι) (v : ℝ)
+    (θ : EuclideanSpace ℝ ι) :
+    Integrable (fun x : EuclideanSpace ℝ ι ↦ (‖x‖ ^ 2)⁻¹)
+      (multivariateGaussian θ (v • (1 : Matrix ι ι ℝ))) := by
+  rcases le_or_gt v 0 with hv | hv
+  · rw [← neg_neg v, neg_smul,
+      multivariateGaussian_neg_right θ (Matrix.PosSemidef.one.smul (neg_nonneg.mpr hv))]
+    exact integrable_dirac (by simp)
+  have hv2 : 0 < v / 2 := half_pos hv
+  set c : ℝ := (4 * π * (v / 2)) ^ (-(Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ) / 2)
+  set φ : EuclideanSpace ℝ ι → ℝ := fun x ↦ heatKernel (v / 2) (x - θ)
+  have hφm : AEMeasurable φ volume :=
+    ((contDiff_heatKernel (v / 2) (k := 0)).continuous.comp
+      (continuous_id.sub continuous_const)).aemeasurable
+  have hφnn (x : EuclideanSpace ℝ ι) : 0 ≤ φ x := (heatKernel_pos hv2 _).le
+  have hφle (x : EuclideanSpace ℝ ι) : φ x ≤ c := heatKernel_le hv2 _
+  have hφi : Integrable φ volume := (integrable_heatKernel hv2).comp_sub_right θ
+  have hball : IntegrableOn (fun x : EuclideanSpace ℝ ι ↦ ‖x‖ ^ (-2 : ℝ)) (Metric.ball 0 1) :=
+    TauCeti.integrableOn_norm_rpow_ball (by simp; omega)
+  rw [multivariateGaussian_smul_one_eq_withDensity_heatKernel hv θ,
+    TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hφm (ae_of_all _ hφnn)]
+  refine Integrable.mono' (((hball.integrable_indicator measurableSet_ball).const_mul c).add
+    hφi) (by fun_prop) (ae_of_all _ fun x ↦ ?_)
+  rw [smul_eq_mul, Real.norm_of_nonneg (mul_nonneg (hφnn x) (by positivity)), Pi.add_apply]
+  by_cases hx : x ∈ Metric.ball (0 : EuclideanSpace ℝ ι) 1
+  · rw [Set.indicator_of_mem hx, rpow_neg (norm_nonneg _), rpow_two]
+    nlinarith [mul_le_mul_of_nonneg_right (hφle x) (inv_nonneg.2 (sq_nonneg ‖x‖)), hφnn x]
+  · rw [Set.indicator_of_notMem hx, mul_zero, zero_add]
+    have h1 : 1 ≤ ‖x‖ ^ 2 := one_le_pow₀ (by simpa using hx)
+    exact mul_le_of_le_one_right (hφnn x) (inv_le_one_of_one_le₀ h1)
+
+end TauCeti.Probability

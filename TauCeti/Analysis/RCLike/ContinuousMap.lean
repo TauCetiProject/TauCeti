@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.RCLike.ContinuousMap
+import Mathlib.Topology.ContinuousMap.Units
 
 /-!
 # Self-adjoint continuous maps into `ℝ` or `ℂ`
@@ -27,6 +28,8 @@ When `X` is compact, `ContinuousMap.isometry_realToRCLike` upgrades this identif
 * `ContinuousMap.selfAdjointEquiv`: the `ℝ`-linear equivalence `selfAdjoint C(X, 𝕜) ≃ₗ[ℝ] C(X, ℝ)`.
 * `ContinuousMap.selfAdjointLinearIsometryEquiv`: the `ℝ`-linear isometric equivalence
   `selfAdjoint C(X, 𝕜) ≃ₗᵢ[ℝ] C(X, ℝ)` for compact `X`.
+* `ContinuousMap.spectrum_realToRCLike_restrict_id`: for `K : Set ℝ`, the coordinate `x ↦ x` in
+  `C(K, 𝕜)` has spectrum `K`.
 -/
 
 public section
@@ -196,5 +199,11 @@ theorem selfAdjointLinearIsometryEquiv_symm_mul (f g : C(X, ℝ)) :
   selfAdjointEquiv_symm_mul f g
 
 end CompactSpace
+
+/-- The spectrum of the coordinate function `x ↦ x` in `C(K, 𝕜)` is `K`. -/
+theorem spectrum_realToRCLike_restrict_id (𝕜 : Type*) [RCLike 𝕜] (K : Set ℝ) :
+    spectrum ℝ ((ContinuousMap.restrict K (ContinuousMap.id ℝ)).realToRCLike 𝕜) = K := by
+  ext x
+  simp [ContinuousMap.spectrum_eq_preimage_range]
 
 end ContinuousMap

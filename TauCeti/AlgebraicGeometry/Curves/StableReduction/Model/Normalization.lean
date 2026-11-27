@@ -12,6 +12,16 @@ public import TauCeti.AlgebraicGeometry.Normalization.Normal
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
+public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
+
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
+import TauCeti.AlgebraicGeometry.Normalization.Finite
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
+import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
+import TauCeti.RingTheory.Smooth.MinimalPrime
 
 /-!
 # Normalizing a model in its generic fibre
@@ -40,7 +50,15 @@ fibre.
 
 Finiteness of `ν` is a hypothesis of the construction: it is what makes `X^ν` of finite
 presentation over `R`. It holds when `C` is reduced and the rings of sections of `X` are Nagata,
-and over an arbitrary discrete valuation ring when `C` is smooth over `K`.
+and over an arbitrary, possibly non-excellent, discrete valuation ring when `C` is smooth of
+relative dimension one over `K` (`TauCeti.Model.isFinite_fromNormalization_genericι`). Over an
+affine open `Spec A` of `X`, the special fibre `A ⧸ πA` then has dimension at most one, since the
+special fibre of a model is no larger than its generic fibre
+(`TauCeti.Model.relativeDimensionLE_toBase`), and at every minimal prime of `A[1/π]` the
+residue field is a function field of one variable over `K` with one-dimensional Kähler
+differentials (`TauCeti.transcendental_and_finrank_kaehlerDifferential_residueField_eq_one`); these
+are the hypotheses of the ring-level finiteness theorem
+`TauCeti.finite_integralClosure_of_forall_transcendental_and_finrank_kaehlerDifferential_eq_one`.
 
 ## Main definitions
 
@@ -59,10 +77,13 @@ and over an arbitrary discrete valuation ring when `C` is smooth over `K`.
   property of the normalization, in the category of models.
 * `TauCeti.Model.isNormalScheme_normalization_of_smooth`: normalizing a model with smooth
   generic fibre gives a normal total space, including for disconnected generic fibres.
+* `TauCeti.Model.isFinite_fromNormalization_genericι`: the normalization of a model whose
+  generic fibre is smooth of relative dimension one is finite, over any discrete valuation ring.
 
 ## References
 
 * The Stacks Project, Tag 035H (relative normalization) and Lemma 29.53.5 (03GV).
+* The Stacks Project, Lemma 55.8.2 (0C2T), for the finiteness of the normalization.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Oxford University Press, 2002, Section 4.1.2
   (normalization) and Chapter 10 (models of curves); Section 8.3 for desingularization by
   normalized blowups.
@@ -108,6 +129,69 @@ theorem isNormalScheme_normalization_of_smooth [Smooth toK] :
     AlgebraicGeometry.IsNormalScheme M.genericι.normalization := by
   have := AlgebraicGeometry.IsRegular.of_smooth toK
   exact M.genericι.isNormalScheme_normalization
+
+section Finite
+
+open _root_.IsLocalRing
+
+variable {M} {U : M.total.Opens}
+
+/-- The two maps from `R` to the sections of the generic fibre over `U ∩ C`, through the sections
+of the total space over `U` and through the fraction field, agree. -/
+private lemma appLE_comp_app_genericι (U : M.total.Opens) :
+    (Scheme.ΓSpecIso (.of R)).inv ≫ M.toBase.appLE ⊤ U (le_top.trans M.toBase.preimage_top.ge) ≫
+        M.genericι.app U =
+      CommRingCat.ofHom (algebraMap R K) ≫ (Scheme.ΓSpecIso (.of K)).inv ≫
+        toK.appLE ⊤ (M.genericι ⁻¹ᵁ U) (le_top.trans toK.preimage_top.ge) := by
+  rw [Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
+  simp only [M.genericι_toBase, Scheme.Hom.comp_appLE]
+  rw [Scheme.ΓSpecIso_inv_naturality_assoc]
+  -- The two sides differ only in writing `⊤` as `Spec.map _ ⁻¹ᵁ ⊤`.
+  rfl
+
+/-- **The normalization of a model of a smooth curve is finite.** If the generic fibre `C` is
+smooth of relative dimension one over `K`, then the normalization of the total space in `C` is
+finite, over an arbitrary, possibly non-excellent, discrete valuation ring. -/
+instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK] :
+    IsFinite M.genericι.fromNormalization := by
+  have := M.isOpenImmersion_genericι
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  rw [Scheme.Hom.isFinite_fromNormalization_iff]
+  intro U hU
+  -- Over the affine open `U`, set `A = Γ(U)` and `B = Γ(U ∩ C)` with their algebra structures
+  -- over `R` and `K`; then `B = A[1/π]`, and the ring-level theorem applies.
+  let := (M.genericι.app U).hom.toAlgebra
+  let := M.toBase.sectionsAlgebra U
+  let : Algebra R Γ(C, M.genericι ⁻¹ᵁ U) :=
+    ((algebraMap Γ(M.total, U) _).comp (algebraMap R Γ(M.total, U))).toAlgebra
+  have : IsScalarTower R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  let := toK.sectionsAlgebra (M.genericι ⁻¹ᵁ U)
+  have : IsScalarTower R K Γ(C, M.genericι ⁻¹ᵁ U) :=
+    .of_algebraMap_eq' <| by
+      rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra, M.toBase.algebraMap_sections,
+        toK.algebraMap_sections]
+      exact congr(($(appLE_comp_app_genericι U)).hom)
+  have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
+    M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
+  have := M.krullDimLE_sections_quotient (d := 1) hU hπ
+  have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
+    refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
+    -- The generic fibre is the basic open of the pullback of `π`.
+    have hrange : M.genericι.opensRange =
+        M.toBase ⁻¹ᵁ (Spec (.of R)).basicOpen ((Scheme.ΓSpecIso (.of R)).inv π) := by
+      ext1
+      rw [Scheme.Hom.coe_opensRange, Scheme.preimage_basicOpen_top,
+        M.range_genericι_eq_basicOpen ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero]
+    rw [hrange, M.toBase.algebraMap_sections]
+    exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
+  have hB := toK.locally_isStandardSmoothOfRelativeDimension_sections 1 (hU.preimage M.genericι)
+  have := SmoothOfRelativeDimension.smooth 1 toK
+  have := AlgebraicGeometry.IsRegular.of_smooth toK
+  exact finite_integralClosure_of_forall_transcendental_and_finrank_kaehlerDifferential_eq_one
+    (K := K) (π := π) fun p _ hp ↦
+      transcendental_and_finrank_kaehlerDifferential_residueField_eq_one hB p hp
+
+end Finite
 
 variable [IsFinite M.genericι.fromNormalization]
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocalUnits
 
 /-!
 # Fractional ideals of ideles
@@ -63,43 +64,22 @@ theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup R K} :
 
 end TauCeti.GlobalNumberFields
 
-namespace IsDedekindDomain.HeightOneSpectrum
+namespace NumberField.IdeleGroup
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
-/-- The fractional ideal of an idele concentrated at one finite place is the corresponding
-prime power, with exponent the local order of its nonzero coordinate. -/
+/-- The finite component of the idele concentrated at a finite place `v` is the finite idele
+concentrated at `v`. Through this, the divisor of an idele concentrated at one finite place is
+`IsDedekindDomain.FiniteAdeleRing.toFractionalIdeal_unitsOfAdicCompletion`. -/
 @[simp]
-theorem toFractionalIdeal_toFiniteIdele_ofAdicCompletion (v : HeightOneSpectrum R)
-    (u : (v.adicCompletion K)ˣ) :
-    toFractionalIdeal (IdeleGroup.toFiniteIdele R K (IdeleGroup.ofAdicCompletion R K v u)) =
-      v.unitOfPrime K ^ (-WithZero.log (Valued.v (u : v.adicCompletion K))) := by
-  classical
-  have hself : adicOrd (IdeleGroup.toFiniteIdele R K
-      (IdeleGroup.ofAdicCompletion R K v u)) v =
-        -WithZero.log (Valued.v (u : v.adicCompletion K)) := by
-    rw [adicOrd_def, IdeleGroup.coe_toFiniteIdele, ← HeightOneSpectrum.coe_ideleFiniteCoord,
-      HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self]
-  have hother (w : HeightOneSpectrum R) (hw : w ≠ v) :
-      adicOrd (IdeleGroup.toFiniteIdele R K (IdeleGroup.ofAdicCompletion R K v u)) w = 0 := by
-    rw [adicOrd_def, IdeleGroup.coe_toFiniteIdele, ← HeightOneSpectrum.coe_ideleFiniteCoord,
-      HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w hw,
-      Units.val_one, map_one, WithZero.log_one, neg_zero]
-  rw [toFractionalIdeal_apply, finprod_eq_single _ v, hself]
-  intro w hw
-  simp only [hother w hw, zpow_zero]
+theorem toFiniteIdele_ofAdicCompletion (v : HeightOneSpectrum R) (u : (v.adicCompletion K)ˣ) :
+    IdeleGroup.toFiniteIdele R K (IdeleGroup.ofAdicCompletion R K v u) =
+      unitsOfAdicCompletion K v u :=
+  Units.ext (by
+    simp only [coe_toFiniteIdele, val_ofAdicCompletion_apply, coe_unitsOfAdicCompletion_apply])
 
-/-- The fractional ideal of an idele concentrated at one finite place, with a coordinate of
-valuation `exp (-1)` there (a uniformizer), is the prime of that place. -/
-theorem toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one
-    (v : HeightOneSpectrum R) {u : (v.adicCompletion K)ˣ}
-    (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
-    toFractionalIdeal (IdeleGroup.toFiniteIdele R K (IdeleGroup.ofAdicCompletion R K v u)) =
-      v.unitOfPrime K := by
-  rw [toFractionalIdeal_toFiniteIdele_ofAdicCompletion, hu, WithZero.log_exp, neg_neg, zpow_one]
-
-end IsDedekindDomain.HeightOneSpectrum
+end NumberField.IdeleGroup
 
 namespace ClassGroup
 

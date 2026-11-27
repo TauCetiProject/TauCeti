@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Matrix.UnitaryGroup.Quaternion
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
+public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
-import TauCeti.Analysis.Matrix.UnitaryGroup.Quaternion
 import TauCeti.Analysis.Normed.Module.QuadraticMap
 
 /-!
@@ -29,7 +31,9 @@ complex coordinates `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, 
 multiplication by `i`. Then `OrthonormalBasis.spinCUnitary b : U(2) →* Spinᶜ(Q)` satisfies:
 
 * the rotation of `spinCUnitary g` acts on `V` as the matrix `g` in these coordinates
-  (`OrthonormalBasis.complexCoords_toSpecialOrthogonal_spinCUnitary_apply`);
+  (`OrthonormalBasis.complexCoords_toSpecialOrthogonal_spinCUnitary_apply`, and as an equality in
+  `SO(V)` with `OrthonormalBasis.unitaryGroupFrameEquiv` in
+  `OrthonormalBasis.toSpecialOrthogonal_spinCUnitary_eq_unitaryGroupFrameEquiv`);
 * its determinant character is `det g` (`OrthonormalBasis.det_spinCUnitary`);
 * it is the only homomorphism with these two properties (`OrthonormalBasis.eq_spinCUnitary`);
 * on the circle of matrices `diag (1, z)`, which turn the plane `⟨b₂, b₃⟩` by `z`, it is the lift
@@ -53,6 +57,19 @@ structure of an oriented plane field on a three-manifold `Y`, stabilized to `S¹
 canonical `Spinᶜ` structure of an almost complex structure on `S¹ × Y` that sends `∂ₛ` into `Y`
 and preserves the plane field.
 
+For a unitary frame `e`, `J₀ e₀ = e₁` and `J₀ e₂ = e₃`, of an orthogonal complex structure `J₀`,
+reading the orthogonal transformations commuting with `J₀` as unitary matrices
+(`OrthonormalBasis.centralizerToUnitaryGroup`) and composing with `spinCUnitary` gives a lift
+`U(V, J₀) → Spinᶜ(Q)` of the inclusion into the rotations, whose determinant character is the
+complex determinant (`OrthonormalBasis.centralizerSpinCLift`). On `ℝ⁴` the standard basis carries
+it to the coordinate group `Spinᶜ(4)` of the positive-definite form `realCliffordForm 4 0`
+(`TauCeti.unitarySpinCLift`), the structure-group homomorphism of the `Spinᶜ` structure that
+`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure` builds from an almost complex rank-four
+bundle and the chosen frame `e`. Read on a four-space `V` through an orthonormal basis `b`, it is
+the lift `spinCUnitary` of the transported frame `e.map b.repr.symm`
+(`TauCeti.realSpinCGroupHom_unitarySpinCLift`), by uniqueness. Continuity of these lifts is in
+`TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitaryLift`.
+
 ## Construction
 
 Existence uses quaternions. The group `U(2)` is the quotient of `Sp(1) × U(1)` by `±(1, 1)`, with
@@ -62,8 +79,8 @@ quaternion in the complex line `ℝ ⊕ ℝ i`. The compact group `Spin(4)` is `
 `(a, c)` acting by `q ↦ a q (star c)` (`TauCeti.realSpinFourEquivQuaternionUnitaryProd_action`).
 So `(a, w)` lifts to the class `[(a, w⁻¹), w]` in `Spinᶜ(4)`, which is unchanged when `(a, w)` is
 replaced by `(-a, -w)`; its determinant character is `w² = det (w • a)`. The resulting lift on the
-compact coordinate model is transported to `V` along a reordering of the frame
-(`OrthonormalBasis.realSpinCGroupHom`).
+compact coordinate model, `TauCeti.realSpinCUnitary`, is transported to `V` along a reordering
+of the frame (`OrthonormalBasis.realSpinCGroupHom`, `OrthonormalBasis.spinCUnitary_eq_comp`).
 
 ## References
 
@@ -112,8 +129,11 @@ private theorem ker_le_ker_spinCOfPair :
       (MulEquiv.symm_apply_eq _).mpr (realSpinFourEquivQuaternionUnitaryProd_negOne _).symm
     simp [spinCOfPair_apply, hc, hs]
 
-/-- The lift `U(2) → Spinᶜ(4)` of the compact coordinate model, descended from `spinCOfPair`. -/
-private def realSpinCUnitary :
+/-- The lift `U(2) → Spinᶜ(4)` of the compact coordinate model: the class `[(a, w⁻¹), w]` of
+`w • a`, for a unit quaternion `a` and `w` in the circle
+(`TauCeti.realSpinCUnitary_unitaryProdCircleToUnitaryGroup`). Its transport along a frame is
+`OrthonormalBasis.spinCUnitary` (`OrthonormalBasis.spinCUnitary_eq_comp`). -/
+def TauCeti.realSpinCUnitary :
     unitaryGroup (Fin 2) ℂ →*
       spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
   Quaternion.unitaryProdCircleToUnitaryGroup.liftOfRightInverse _
@@ -123,6 +143,16 @@ private def realSpinCUnitary :
 private theorem realSpinCUnitary_apply (p : unitary ℍ[ℝ] × Circle) :
     realSpinCUnitary (Quaternion.unitaryProdCircleToUnitaryGroup p) = spinCOfPair p :=
   MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ p
+
+/-- On `w • a`, for a unit quaternion `a` and `w` in the circle, the lift of the compact coordinate
+model is the class `[(a, w⁻¹), w]`, where `Spin(4) = Sp(1) × Sp(1)`. -/
+@[simp]
+theorem TauCeti.realSpinCUnitary_unitaryProdCircleToUnitaryGroup (p : unitary ℍ[ℝ] × Circle) :
+    realSpinCUnitary (Quaternion.unitaryProdCircleToUnitaryGroup p) =
+      spinCGroup.mk _ _
+        (realSpinFourEquivQuaternionUnitaryProd.symm (p.1, Quaternion.circleToUnitary p.2⁻¹),
+          p.2) :=
+  realSpinCUnitary_apply p
 
 /-- The vector of the compact coordinate model whose quaternion coordinate is
 `Quaternion.ofFirstColumn z`. -/
@@ -162,9 +192,10 @@ namespace OrthonormalBasis
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   (b : OrthonormalBasis (Fin 4) ℝ V)
 
-/-- The reordered frame `(b₂, b₁, -b₀, b₃)`, along which the quaternion coordinates `coordVec` of
-the compact model become the complex coordinates `b.complexCoords 2`. -/
-private def quaternionFrame : OrthonormalBasis (Fin 4) ℝ V :=
+/-- The reordered frame `(b₂, b₁, -b₀, b₃)`, along which the quaternion coordinates of the compact
+coordinate model of `TauCeti.realSpinCUnitary` become the complex coordinates
+`b.complexCoords 2`. -/
+def quaternionFrame : OrthonormalBasis (Fin 4) ℝ V :=
   OrthonormalBasis.mk (v := ![b 2, b 1, -b 0, b 3])
     (by
       rw [orthonormal_iff_ite]
@@ -183,13 +214,17 @@ private def quaternionFrame : OrthonormalBasis (Fin 4) ℝ V :=
       · simpa using hmem 0
       · simpa using hmem 3)
 
+@[simp]
+theorem coe_quaternionFrame : ⇑b.quaternionFrame = ![b 2, b 1, -b 0, b 3] :=
+  OrthonormalBasis.coe_mk _ _
+
 variable {Q : QuadraticForm ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 
 private theorem quaternionFrame_negRealCliffordFormIsometryEquiv_coordVec (z : Fin 2 → ℂ) :
     b.quaternionFrame.negRealCliffordFormIsometryEquiv hQ (coordVec z) =
       (b.complexCoords 2).symm z := by
-  rw [negRealCliffordFormIsometryEquiv_apply, quaternionFrame, OrthonormalBasis.coe_mk,
-    Fin.sum_univ_four, complexCoords_two_symm_apply]
+  rw [negRealCliffordFormIsometryEquiv_apply, coe_quaternionFrame, Fin.sum_univ_four,
+    complexCoords_two_symm_apply]
   simp [coordVec]
   abel
 
@@ -204,6 +239,14 @@ def spinCUnitary : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀ :=
   (b.quaternionFrame.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀).comp
     realSpinCUnitary
 
+/-- The lift `spinCUnitary` is the lift `TauCeti.realSpinCUnitary` of the compact coordinate model,
+transported along the reordered frame `b.quaternionFrame`. -/
+theorem spinCUnitary_eq_comp :
+    b.spinCUnitary hQ hQ₀ =
+      (b.quaternionFrame.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero
+        hQ₀).comp realSpinCUnitary :=
+  (rfl)
+
 /-- **The rotation of `spinCUnitary g` is `g`** in the complex coordinates of the frame. -/
 theorem complexCoords_toSpecialOrthogonal_spinCUnitary_apply (g : unitaryGroup (Fin 2) ℂ)
     (v : V) :
@@ -217,6 +260,18 @@ theorem complexCoords_toSpecialOrthogonal_spinCUnitary_apply (g : unitaryGroup (
     toSpecialOrthogonal_spinCOfPair_coordVec]
   simp only [quaternionFrame_negRealCliffordFormIsometryEquiv_coordVec,
     LinearEquiv.apply_symm_apply]
+
+/-- **The rotation of `spinCUnitary g` is `unitaryGroupFrameEquiv g`** for a unitary frame `b`
+(`J (b 0) = b 1`, `J (b 2) = b 3`) of an almost complex structure `J`. -/
+theorem toSpecialOrthogonal_spinCUnitary_eq_unitaryGroupFrameEquiv
+    {J : AlmostComplexStructure V} (h₀ : J (b 0) = b 1) (h₂ : J (b 2) = b 3)
+    (g : unitaryGroup (Fin 2) ℂ) :
+    spinCGroup.toSpecialOrthogonal Q hQ₀ (b.spinCUnitary hQ hQ₀ g) =
+      AlmostComplexStructure.unitaryGroupFrameEquiv hQ h₀ h₂ g := by
+  ext v
+  exact (b.complexCoords 2).injective
+    ((b.complexCoords_toSpecialOrthogonal_spinCUnitary_apply hQ hQ₀ g v).trans
+      (AlmostComplexStructure.complexCoords_unitaryGroupFrameEquiv_apply hQ h₀ h₂ g v).symm)
 
 /-- **The determinant character of `spinCUnitary g` is `det g`.** -/
 @[simp]
@@ -283,3 +338,187 @@ theorem spinCUnitary_unitaryTorusHom_mulSingle_one (z : Circle) :
   exact DFunLike.congr_fun hφ z
 
 end OrthonormalBasis
+
+/-! ### The lift of the centralizer of a complex structure -/
+
+namespace OrthonormalBasis
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  (e : OrthonormalBasis (Fin 4) ℝ V) {J₀ : unitary (V →L[ℝ] V)}
+  (hJ₀ : ∀ v, (J₀ : V →L[ℝ] V) ((J₀ : V →L[ℝ] V) v) = -v)
+  (h₀ : (J₀ : V →L[ℝ] V) (e 0) = e 1) (h₂ : (J₀ : V →L[ℝ] V) (e 2) = e 3)
+  {Q : QuadraticForm ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hQ₀ : Q ≠ 0)
+
+/-- **The `Spinᶜ` lift of the unitary group of a complex structure.** For a unitary frame `e` of
+an orthogonal complex structure `J₀`, the homomorphism `U(V, J₀) → Spinᶜ(Q)`, lifting the
+inclusion of the orthogonal transformations commuting with `J₀` along the rotation homomorphism
+(`OrthonormalBasis.toSpecialOrthogonal_centralizerSpinCLift_apply`), with determinant character
+the determinant of the unitary matrix (`OrthonormalBasis.det_centralizerSpinCLift`): the lift
+`spinCUnitary` of `U(2)` read through `centralizerToUnitaryGroup`. -/
+def centralizerSpinCLift : Subgroup.centralizer {J₀} →* spinCGroup Q hQ₀ :=
+  (e.spinCUnitary hQ hQ₀).comp (e.centralizerToUnitaryGroup hJ₀ h₀ h₂)
+
+/-- The lift `centralizerSpinCLift` is the lift `spinCUnitary` of `U(2)` read through
+`centralizerToUnitaryGroup`. -/
+theorem centralizerSpinCLift_eq_comp :
+    e.centralizerSpinCLift hJ₀ h₀ h₂ hQ hQ₀ =
+      (e.spinCUnitary hQ hQ₀).comp (e.centralizerToUnitaryGroup hJ₀ h₀ h₂) :=
+  (rfl)
+
+/-- **The rotation of `centralizerSpinCLift g` is `g`.** -/
+theorem toSpecialOrthogonal_centralizerSpinCLift_apply (g : Subgroup.centralizer {J₀}) (v : V) :
+    (spinCGroup.toSpecialOrthogonal Q hQ₀ (e.centralizerSpinCLift hJ₀ h₀ h₂ hQ hQ₀ g) :
+        V ≃ₗ[ℝ] V) v = ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V) v := by
+  refine (e.complexCoords 2).injective ?_
+  rw [centralizerSpinCLift, MonoidHom.comp_apply,
+    complexCoords_toSpecialOrthogonal_spinCUnitary_apply,
+    e.complexCoords_centralizerToUnitaryGroup_apply hJ₀ h₀ h₂]
+
+/-- **The determinant character of `centralizerSpinCLift g` is the determinant of its unitary
+matrix**, the complex determinant of `g`. -/
+@[simp]
+theorem det_centralizerSpinCLift (g : Subgroup.centralizer {J₀}) :
+    spinCGroup.det Q hQ₀ (e.centralizerSpinCLift hJ₀ h₀ h₂ hQ hQ₀ g) =
+      UnitaryGroup.detCircle (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g) :=
+  e.det_spinCUnitary hQ hQ₀ _
+
+end OrthonormalBasis
+
+/-! ### The lift of the unitary group of `ℝ⁴` to the coordinate group `Spinᶜ(4)` -/
+
+namespace TauCeti
+
+section Lift
+
+/-- The form `Q v = -‖v‖²` on `ℝ⁴` with the Euclidean norm, the geometric Clifford convention
+through which the lifts of this section are compared with the coordinate group `Spinᶜ(4)`. -/
+def negNormSqForm : QuadraticForm ℝ (EuclideanSpace ℝ (Fin 4)) :=
+  -LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 4)))
+
+/-- The form `TauCeti.negNormSqForm` is `v ↦ -‖v‖²`. -/
+@[simp]
+theorem negNormSqForm_apply (v : EuclideanSpace ℝ (Fin 4)) :
+    negNormSqForm v = -‖v‖ ^ 2 := by
+  simp [negNormSqForm]
+
+/-- The form `TauCeti.negNormSqForm` is nonzero. -/
+theorem negNormSqForm_ne_zero : negNormSqForm ≠ 0 :=
+  (QuadraticForm.nondegenerate_of_eq_neg_norm_sq negNormSqForm_apply).ne_zero
+
+variable {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))}
+  (hJ₀ : ∀ v, (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
+    ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) v) = -v)
+  (e : OrthonormalBasis (Fin 4) ℝ (EuclideanSpace ℝ (Fin 4)))
+  (h₀ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 0) = e 1)
+  (h₂ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 2) = e 3)
+
+/-- **The `Spinᶜ` lift of the unitary group of `ℝ⁴`.** For an orthogonal complex structure `J₀` on
+`ℝ⁴` and a unitary frame `e`, `J₀ e₀ = e₁` and `J₀ e₂ = e₃`, the homomorphism
+`U(ℝ⁴, J₀) → Spinᶜ(4)` from the orthogonal transformations commuting with `J₀`, lifting their
+inclusion into `SO(4)` along the rotation homomorphism
+(`TauCeti.toSpecialOrthogonal_unitarySpinCLift_apply`), with determinant character the
+determinant of the unitary matrix (`TauCeti.det_unitarySpinCLift`). -/
+def unitarySpinCLift :
+    Subgroup.centralizer {J₀} →*
+      spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
+  ((EuclideanSpace.basisFun (Fin 4) ℝ).realSpinCGroupEquiv negNormSqForm_apply
+      (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero).symm.toMonoidHom.comp
+    (e.centralizerSpinCLift hJ₀ h₀ h₂ negNormSqForm_apply negNormSqForm_ne_zero)
+
+/-- The lift `unitarySpinCLift` is the lift `centralizerSpinCLift` for any form `Q v = -‖v‖²` on
+`ℝ⁴`, transported to the coordinate group `Spinᶜ(4)` along the standard basis. -/
+theorem unitarySpinCLift_eq_comp {Q : QuadraticForm ℝ (EuclideanSpace ℝ (Fin 4))}
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hQ₀ : Q ≠ 0) :
+    unitarySpinCLift hJ₀ e h₀ h₂ =
+      ((EuclideanSpace.basisFun (Fin 4) ℝ).realSpinCGroupEquiv hQ
+        (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀).symm.toMonoidHom.comp
+          (e.centralizerSpinCLift hJ₀ h₀ h₂ hQ hQ₀) := by
+  obtain rfl : Q = negNormSqForm :=
+    QuadraticMap.ext fun v ↦ (hQ v).trans (negNormSqForm_apply v).symm
+  rfl
+
+/-- **The rotation of `unitarySpinCLift g` is `g`**, read on coordinate vectors. -/
+theorem toSpecialOrthogonal_unitarySpinCLift_apply (g : Subgroup.centralizer {J₀})
+    (v : Fin (4 + 0) → ℝ) :
+    (spinCGroup.toSpecialOrthogonal _ _ (unitarySpinCLift hJ₀ e h₀ h₂ g) :
+        (Fin (4 + 0) → ℝ) ≃ₗ[ℝ] (Fin (4 + 0) → ℝ)) v =
+      WithLp.ofLp (((g : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))) :
+        EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (WithLp.toLp 2 v)) := by
+  have h := (EuclideanSpace.basisFun (Fin 4) ℝ).toSpecialOrthogonal_realSpinCGroupHom_apply
+    negNormSqForm_apply (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero
+    (unitarySpinCLift hJ₀ e h₀ h₂ g) v
+  rw [← OrthonormalBasis.coe_realSpinCGroupEquiv, unitarySpinCLift, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply,
+    e.toSpecialOrthogonal_centralizerSpinCLift_apply,
+    OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply_eq_repr_symm,
+    OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply_eq_repr_symm] at h
+  rw [EuclideanSpace.basisFun_repr_symm_apply] at h
+  rw [unitarySpinCLift, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+  exact congrArg WithLp.ofLp h.symm
+
+/-- **The determinant character of `unitarySpinCLift g` is the complex determinant of `g`**, the
+determinant of its unitary matrix in the frame `e`. -/
+@[simp]
+theorem det_unitarySpinCLift (g : Subgroup.centralizer {J₀}) :
+    spinCGroup.det _ _ (unitarySpinCLift hJ₀ e h₀ h₂ g) =
+      Matrix.UnitaryGroup.detCircle (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g) := by
+  rw [← e.det_centralizerSpinCLift hJ₀ h₀ h₂ negNormSqForm_apply negNormSqForm_ne_zero,
+    unitarySpinCLift, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    ← (EuclideanSpace.basisFun (Fin 4) ℝ).det_realSpinCGroupHom negNormSqForm_apply
+      (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero,
+    ← OrthonormalBasis.coe_realSpinCGroupEquiv, MulEquiv.apply_symm_apply]
+
+/-- `unitarySpinCLift` lifts the inclusion of `U(ℝ⁴, J₀)` into the linear automorphisms of `ℝ⁴`
+along the rotation homomorphism of `Spinᶜ(4)`. -/
+theorem toSpecialOrthogonal_comp_unitarySpinCLift :
+    ((QuadraticMap.specialOrthogonalGroup (realCliffordForm 4 0)).subtype.comp
+        (spinCGroup.toSpecialOrthogonal (realCliffordForm 4 0) _)).comp
+          (unitarySpinCLift hJ₀ e h₀ h₂) =
+      (euclideanLinearEquivHom ℝ (Fin 4)).comp (Subgroup.centralizer {J₀}).subtype :=
+  MonoidHom.ext fun g ↦ LinearEquiv.ext fun v ↦ by
+    simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, euclideanLinearEquivHom_apply]
+    exact toSpecialOrthogonal_unitarySpinCLift_apply hJ₀ e h₀ h₂ g v
+
+/-- **The lift of the unitary group of `ℝ⁴`, read on `V` through the frame `b`, is the
+quaternionic lift of the transported frame.** The coordinate lift `TauCeti.unitarySpinCLift` of
+`U(ℝ⁴, J₀)` for the unitary frame `e`, carried to `Spinᶜ(Q)` along `b`, is the lift
+`OrthonormalBasis.spinCUnitary` of the frame `e.map b.repr.symm` of `V`, applied to the unitary
+matrix of `g` in the frame `e`. -/
+theorem realSpinCGroupHom_unitarySpinCLift {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hQ₀ : Q ≠ 0)
+    (b : OrthonormalBasis (Fin 4) ℝ V) (g : Subgroup.centralizer {J₀}) :
+    b.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀
+        (unitarySpinCLift hJ₀ e h₀ h₂ g) =
+      (e.map b.repr.symm).spinCUnitary hQ hQ₀ (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g) := by
+  set c := (EuclideanSpace.basisFun (Fin 4) ℝ).realSpinCGroupEquiv negNormSqForm_apply
+    (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero
+  rw [unitarySpinCLift, MonoidHom.comp_apply, e.centralizerSpinCLift_eq_comp, MonoidHom.comp_apply]
+  refine DFunLike.congr_fun ((e.map b.repr.symm).eq_spinCUnitary hQ hQ₀
+    (φ := (b.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀).comp
+      (c.symm.toMonoidHom.comp (e.spinCUnitary negNormSqForm_apply negNormSqForm_ne_zero)))
+    (fun h v ↦ ?_) (fun h ↦ ?_)) _
+  · set y := e.spinCUnitary negNormSqForm_apply negNormSqForm_ne_zero h
+    obtain ⟨w, rfl⟩ := b.repr.symm.surjective v
+    -- The rotation of `c.symm y` on coordinates is the rotation of `y` on `ℝ⁴`, and on `V` it is
+    -- read through `b`.
+    have hy := (EuclideanSpace.basisFun (Fin 4) ℝ).toSpecialOrthogonal_realSpinCGroupHom_apply
+      negNormSqForm_apply (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero
+      (c.symm y) w.ofLp
+    have hv := b.toSpecialOrthogonal_realSpinCGroupHom_apply hQ
+      (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀ (c.symm y) w.ofLp
+    rw [← OrthonormalBasis.coe_realSpinCGroupEquiv, MulEquiv.apply_symm_apply] at hy
+    simp only [OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply_eq_repr_symm,
+      WithLp.toLp_ofLp, EuclideanSpace.basisFun_repr_symm_apply] at hy hv
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hv,
+      OrthonormalBasis.complexCoords_map_apply, OrthonormalBasis.complexCoords_map_apply, ← hy,
+      e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply]
+  · rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      OrthonormalBasis.det_realSpinCGroupHom, ← OrthonormalBasis.det_realSpinCGroupHom
+        (EuclideanSpace.basisFun (Fin 4) ℝ) negNormSqForm_apply
+        (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero,
+      ← OrthonormalBasis.coe_realSpinCGroupEquiv, MulEquiv.apply_symm_apply,
+      OrthonormalBasis.det_spinCUnitary]
+
+end Lift
+
+end TauCeti
