@@ -57,6 +57,10 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
   `E_b(S + T)^(1/2) ≤ E_b(S)^(1/2) + E_b(T)^(1/2)`.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_smul` and `ContinuousLinearMap.hilbertSchmidtNorm_smul`:
   homogeneity, `E_b(c • T) = ‖c‖ₑ² E_b(T)` and `‖c • T‖_HS = ‖c‖ ‖T‖_HS`.
+* `ContinuousLinearMap.hilbertSchmidtEnergy_rankOne` and
+  `ContinuousLinearMap.hilbertSchmidtNorm_rankOne`: the rank-one operator
+  `InnerProductSpace.rankOne 𝕜 x y = ⟪y, ·⟫ • x` has energy `‖x‖ₑ² ‖y‖ₑ²` and Hilbert–Schmidt
+  norm `‖x‖ ‖y‖`.
 * `ContinuousLinearMap.hilbertSchmidtNorm_adjoint`: `‖T†‖_HS = ‖T‖_HS`, for every operator.
 * `ContinuousLinearMap.hilbertSchmidtNorm_add_le`: `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS` when `S` has
   finite energy.
@@ -125,6 +129,16 @@ theorem hilbertSchmidtEnergy_zero (b : HilbertBasis ι 𝕜 E) :
 theorem hilbertSchmidtEnergy_smul (c : 𝕜) (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     (c • T).hilbertSchmidtEnergy b = ‖c‖ₑ ^ 2 * T.hilbertSchmidtEnergy b := by
   simp [hilbertSchmidtEnergy_def, eNorm_smul, mul_pow, ENNReal.tsum_mul_left]
+
+/-- **Rank-one operators.** The Hilbert–Schmidt energy of `rankOne 𝕜 x y = ⟪y, ·⟫ • x` is
+`‖x‖ₑ² ‖y‖ₑ²` in every Hilbert basis of the source. -/
+@[simp]
+theorem hilbertSchmidtEnergy_rankOne (x : F) (y : E) (b : HilbertBasis ι 𝕜 E) :
+    (InnerProductSpace.rankOne 𝕜 x y).hilbertSchmidtEnergy b = ‖x‖ₑ ^ 2 * ‖y‖ₑ ^ 2 := by
+  rw [hilbertSchmidtEnergy_def, ← b.tsum_eNorm_inner_sq y, ← ENNReal.tsum_mul_left]
+  refine tsum_congr fun i ↦ ?_
+  rw [InnerProductSpace.rankOne_apply, eNorm_smul, mul_pow, mul_comm, ← ofReal_norm ⟪y, b i⟫_𝕜,
+    norm_inner_symm, ofReal_norm]
 
 /-- Composition on the left with a bounded operator scales the energy by at most `‖A‖ₑ²`. -/
 theorem hilbertSchmidtEnergy_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F)
@@ -311,6 +325,16 @@ theorem hilbertSchmidtNorm_zero : (0 : E →L[𝕜] F).hilbertSchmidtNorm = 0 :=
 theorem hilbertSchmidtNorm_smul (c : 𝕜) (T : E →L[𝕜] F) :
     (c • T).hilbertSchmidtNorm = ‖c‖ * T.hilbertSchmidtNorm := by
   simp [hilbertSchmidtNorm, ENNReal.toReal_mul, ENNReal.toReal_pow]
+
+/-- **Rank-one operators.** The Hilbert–Schmidt norm of `rankOne 𝕜 x y = ⟪y, ·⟫ • x` is
+`‖x‖ ‖y‖`. -/
+@[simp]
+theorem hilbertSchmidtNorm_rankOne (x : F) (y : E) :
+    (InnerProductSpace.rankOne 𝕜 x y).hilbertSchmidtNorm = ‖x‖ * ‖y‖ := by
+  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
+  rw [hilbertSchmidtNorm_eq_sqrt _ b, hilbertSchmidtEnergy_rankOne, ← mul_pow,
+    ENNReal.toReal_pow, ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm,
+    Real.sqrt_sq (by positivity)]
 
 /-- **Triangle inequality for the Hilbert–Schmidt norm.** If `S` has finite energy, then
 `‖S + T‖_HS ≤ ‖S‖_HS + ‖T‖_HS`. If `T` has infinite energy, so does `S + T`, whose
