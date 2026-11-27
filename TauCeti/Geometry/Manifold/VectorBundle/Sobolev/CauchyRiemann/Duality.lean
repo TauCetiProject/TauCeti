@@ -299,12 +299,9 @@ private theorem exists_eq_zeroOneHilbertSchmidtL (hp : 1 < p) (hp_top : p ≠ �
   have h1 (x : M) : ∑ i, χ i x = 1 := by
     simpa [finsum_eq_sum_of_fintype] using χ.sum_eq_one (mem_univ x)
   have hint (i : Fin A.n) : Integrable (fun x ↦ (ζ i x).hilbertSchmidtInner (s x))
-      (riemannianVolume 𝓘(ℝ, ℂ) M) := by
-    simpa only [ContinuousLinearMap.hilbertSchmidtInnerL_apply] using
-      SobolevSection.integrable_apply (A := A.tangentHom) isPositiveDensityMeasure_riemannianVolume
-        (L := fun x ↦ (ζ i x).hilbertSchmidtInnerL)
-        (fun x₀ ↦ Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL _
-          (trivializationAt _ _ x₀).open_baseSet subset_rfl (hζs i).continuous.continuousOn) hs
+      (riemannianVolume 𝓘(ℝ, ℂ) M) :=
+    integrable_hilbertSchmidtInner_of_ae_eq_coord isPositiveDensityMeasure_riemannianVolume
+      (hζs i).continuous hs'
   rw [zeroOneHilbertSchmidtL_apply _ _ hs',
     ← sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self (fun i ↦ (χ i).contMDiff) h1 w, map_sum,
     Finset.sum_congr rfl fun i _ ↦ hζΛ i w s hs', ← integral_finsetSum _ fun i _ ↦ hint i]
@@ -481,8 +478,12 @@ private def kerFormalAdjointToDual :
     hD.kerFormalAdjoint cov →ₗ[ℝ] StrongDual ℝ (zeroOneSobolevSections A volume p 0) where
   toFun η := zeroOneHilbertSchmidtL A volume p 0 isPositiveDensityMeasure_riemannianVolume η
     ((hD.mem_kerFormalAdjoint cov).1 η.property).1.continuous
-  map_add' _ _ := zeroOneHilbertSchmidtL_add _ _ _ _
-  map_smul' c _ := zeroOneHilbertSchmidtL_smul _ c _ _
+  map_add' _ _ := by
+    simp only [Submodule.coe_add]
+    exact zeroOneHilbertSchmidtL_add _ _ _ _
+  map_smul' c _ := by
+    simp only [Submodule.coe_smul, RingHom.id_apply]
+    exact zeroOneHilbertSchmidtL_smul _ c _ _
 
 omit [T2Space M] [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞] in
 private theorem kerFormalAdjointToDual_apply (η : hD.kerFormalAdjoint cov) :
