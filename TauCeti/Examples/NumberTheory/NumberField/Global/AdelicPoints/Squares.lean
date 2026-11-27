@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocalUnits
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 
 /-!
 # The squaring map on the ideles of `ℚ`
@@ -18,12 +20,12 @@ The squaring map `x ↦ x²` of `𝔾ₘ` induces on adelic points the squaring 
 Its image `(𝔸_ℚ^×)²` is not open, and has infinite index. At every odd prime `p` there is a unit
 `u_p ∈ ℤ_p^×` that is not a square in `ℚ_p` (a lift of a quadratic nonresidue modulo `p`,
 `IsDedekindDomain.HeightOneSpectrum.exists_unit_not_isSquare`). Every open subgroup of the ideles
-contains, at almost every prime, the units of `ℚ_p` embedded at that single place
-(`eventually_unitsOfAdicCompletion_mem_of_isOpen`), so it contains a nonsquare idele; and the ideles
-concentrated at distinct odd primes with value `u_p` lie in distinct cosets of the squares. So the
-adelic squaring map is neither surjective nor open. The ideles are the adelic points of `𝔾ₘ`
-(`TauCeti.MultiplicativeGroup.pointsContinuousMulEquiv`), and squaring on them is the map induced by
-`x ↦ x²`.
+contains, at almost every prime, the units `ℤ_p^×` (the units of valuation one) of `ℚ_p` embedded
+at that single place (`eventually_unitsOfAdicCompletion_mem_of_isOpen`), so it contains a nonsquare
+idele; and the ideles concentrated at distinct odd primes with value `u_p` lie in distinct cosets
+of the squares. So the adelic squaring map is neither surjective nor open. The ideles are the adelic
+points of `𝔾ₘ` (`TauCeti.MultiplicativeGroup.pointsContinuousMulEquiv`), and squaring on them is the
+map induced by `x ↦ x²`.
 
 ## Main results
 
@@ -54,9 +56,8 @@ theorem exists_valued_eq_one_not_isSquare (v : HeightOneSpectrum (𝓞 ℚ))
   -- `2 ∈ v` would make the prime of `v` divide `2`
   have h2 : (2 : 𝓞 ℚ) ∉ v.asIdeal := fun hmem ↦ hv <|
     (Nat.prime_dvd_prime_iff_eq (primesEquiv v).property Nat.prime_two).1 <| by
-      change natGenerator v ∣ 2
-      rw [natGenerator_dvd_iff, Nat.cast_ofNat, ← map_ofNat (Rat.IsIntegralClosure.intEquiv (𝓞 ℚ))]
-      exact Ideal.mem_map_of_mem _ hmem
+      rw [coe_primesEquiv, ← absNorm_asIdeal]
+      exact (natCast_mem_iff_absNorm_asIdeal_dvd v).1 (by exact_mod_cast hmem)
   obtain ⟨c, hc⟩ := v.exists_unit_not_isSquare (K := ℚ) h2
   exact ⟨Units.map (algebraMap _ _).toMonoidHom c,
     (HeightOneSpectrum.adicCompletionIntegers.integers ℚ v).valuation_unit c, hc⟩
