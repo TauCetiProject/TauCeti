@@ -350,7 +350,7 @@ theorem IsClassicalElliptic.isSelfAdjoint_chartSobolevRealization (hPe : IsClass
     (hPP : ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       ∫ x, inner ℂ (P u x) (v x) ∂μ = ∫ x, inner ℂ (u x) (P v x) ∂μ) :
     IsSelfAdjoint (chartSobolevRealization hμ hc ψ hψ P hm) :=
-  hPe.adjoint_chartSobolevRealization hμ hc ψ hψ hm hPP
+  LinearPMap.isSelfAdjoint_def.mpr (hPe.adjoint_chartSobolevRealization hμ hc ψ hψ hm hPP)
 
 end SelfAdjoint
 
