@@ -82,13 +82,13 @@ theorem inv_natCard_mul_sum_eq_sum_quotient {G X K : Type*} [Group G] [Finite G]
   have hconst (y : orbit G ω.out) : f ((selfEquivSigmaOrbits G X).symm ⟨ω, y⟩) = f ω.out := by
     obtain ⟨_, g, rfl⟩ := y
     exact hf g _
-  rw [Finset.sum_congr rfl fun y _ ↦ hconst y, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-    ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq, ← index_stabilizer, ← mul_assoc]
-  congr 1
-  have hG : (Nat.card G : K) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hS : (Nat.card (stabilizer G ω.out) : K) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  rw [inv_mul_eq_iff_eq_mul₀ hG, ← (stabilizer G ω.out).card_mul_index, Nat.cast_mul,
-    (Nat.cast_commute _ _).eq, mul_inv_cancel_right₀ hS]
+  simp only [hconst, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card,
+    Nat.card_coe_set_eq]
+  -- By orbit–stabilizer, the orbit has `[G : G_x] = |G| / |G_x|` points.
+  rw [← index_stabilizer, ← (stabilizer G ω.out).index_mul_card, Nat.cast_mul]
+  have hI : ((stabilizer G ω.out).index : K) ≠ 0 :=
+    Nat.cast_ne_zero.mpr Subgroup.index_ne_zero_of_finite
+  simp [mul_assoc, hI]
 
 end MulAction
 

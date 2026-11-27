@@ -31,6 +31,11 @@ A locally finite partition of unity has only finitely many terms meeting a compa
 The weights give a finite decomposition; containment in charts requires subordination separately.
 Extension by zero in a chart preserves compact support when the form is supported inside that
 chart; on its target the extension has the same germ within the model range.
+
+The restriction of a rough form to a set `s`, extended by zero (`TauCeti.RoughForm.indicator`), has
+support in both the support of the form and the closure of `s`, and pulls back along any map to
+the restriction of the pulled back form to the preimage of `s`
+(`TauCeti.RoughForm.mpullback_indicator`).
 -/
 
 public section
@@ -159,6 +164,82 @@ theorem tsupport_mpullback_eq_preimage (φ : RoughForm I' Y F k) {f : X → Y} (
   -- Both sides evaluate the zero form of the dependent fibre, which is `0` by definition; the
   -- fibre types obstruct rewriting with `ContinuousAlternatingMap.coe_zero`.
   exact h.trans rfl
+
+section Indicator
+
+/-- The restriction of a rough form to a set `s`, extended by zero: it agrees with `ω` at the
+points of `s` and vanishes at the others. -/
+def indicator (s : Set X) (ω : RoughForm I X F k) : RoughForm I X F k :=
+  (s.indicator (ω : X → E [⋀^Fin k]→L[ℝ] F) : X → E [⋀^Fin k]→L[ℝ] F)
+
+/-- The restriction of `ω` to `s` takes the value `ω x` at the points `x` of `s` and `0` at the
+others. -/
+theorem indicator_apply (s : Set X) (ω : RoughForm I X F k) (x : X) [Decidable (x ∈ s)] :
+    ω.indicator s x = if x ∈ s then ω x else 0 :=
+  Set.indicator_apply (M := E [⋀^Fin k]→L[ℝ] F) s ω x
+
+@[simp]
+theorem indicator_apply_of_mem {s : Set X} (ω : RoughForm I X F k) {x : X} (hx : x ∈ s) :
+    ω.indicator s x = ω x :=
+  Set.indicator_of_mem (M := E [⋀^Fin k]→L[ℝ] F) hx ω
+
+@[simp]
+theorem indicator_apply_of_notMem {s : Set X} (ω : RoughForm I X F k) {x : X} (hx : x ∉ s) :
+    ω.indicator s x = 0 :=
+  Set.indicator_of_notMem (M := E [⋀^Fin k]→L[ℝ] F) hx ω
+
+@[simp]
+theorem indicator_univ (ω : RoughForm I X F k) : ω.indicator univ = ω :=
+  Set.indicator_univ (M := E [⋀^Fin k]→L[ℝ] F) ω
+
+@[simp]
+theorem indicator_empty (ω : RoughForm I X F k) : ω.indicator ∅ = 0 :=
+  Set.indicator_empty (M := E [⋀^Fin k]→L[ℝ] F) ω
+
+@[simp]
+theorem indicator_zero (s : Set X) : (0 : RoughForm I X F k).indicator s = 0 :=
+  Set.indicator_zero (E [⋀^Fin k]→L[ℝ] F) s
+
+@[simp]
+theorem indicator_add [IsTopologicalAddGroup F] (s : Set X) (ω η : RoughForm I X F k) :
+    (ω + η).indicator s = ω.indicator s + η.indicator s :=
+  Set.indicator_add (M := E [⋀^Fin k]→L[ℝ] F) s ω η
+
+@[simp]
+theorem indicator_smul [ContinuousConstSMul ℝ F] (s : Set X) (c : ℝ) (ω : RoughForm I X F k) :
+    (c • ω).indicator s = c • ω.indicator s := by
+  funext x
+  by_cases hx : x ∈ s
+  · rw [Pi.smul_apply, indicator_apply_of_mem _ hx, indicator_apply_of_mem _ hx]
+    rfl
+  · rw [Pi.smul_apply, indicator_apply_of_notMem _ hx, indicator_apply_of_notMem _ hx]
+    ext v
+    simp
+
+/-- The support of a restriction is contained in the support of the form. -/
+theorem tsupport_indicator_subset (s : Set X) (ω : RoughForm I X F k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.indicator s) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω :=
+  closure_mono ((Set.support_indicator (M := E [⋀^Fin k]→L[ℝ] F)).trans_subset
+    inter_subset_right)
+
+/-- The support of a restriction to `s` is contained in the closure of `s`. -/
+theorem tsupport_indicator_subset_closure (s : Set X) (ω : RoughForm I X F k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.indicator s) ⊆ closure s :=
+  closure_mono (Set.support_indicator_subset (M := E [⋀^Fin k]→L[ℝ] F))
+
+/-- Pulling back the restriction of a form to `s` gives the restriction of the pulled back form to
+the preimage of `s`. -/
+theorem mpullback_indicator (f : X → Y) (s : Set Y) (ω : RoughForm I' Y F k) :
+    mpullback I I' f (ω.indicator s) = (mpullback I I' f ω).indicator (f ⁻¹' s) := by
+  funext x
+  by_cases hx : f x ∈ s
+  · rw [indicator_apply_of_mem _ (mem_preimage.mpr hx)]
+    exact mpullback_apply_congr (indicator_apply_of_mem ω hx)
+  · rw [indicator_apply_of_notMem _ fun h ↦ hx (mem_preimage.mp h)]
+    exact mpullback_apply_eq_zero (indicator_apply_of_notMem ω hx)
+
+end Indicator
 
 end RoughForm
 
