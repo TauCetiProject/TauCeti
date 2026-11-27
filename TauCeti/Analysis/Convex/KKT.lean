@@ -12,21 +12,26 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 # Sufficiency of the Karush–Kuhn–Tucker conditions
 
 Let `E` and `F` be real Hilbert spaces, `f : E → ℝ` an objective, `g : ι → E → ℝ` finitely many
-inequality constraints and `A x = b` a continuous linear equality constraint. A point `xs` with
-`A xs = b` satisfies the *Karush–Kuhn–Tucker conditions* when there are multipliers `l i ≥ 0` and
-`y : F` with complementary slackness `l i * g i xs = 0` and subgradients `u ∈ ∂f(xs)`,
-`v i ∈ ∂gᵢ(xs)` (the subdifferential `TauCeti.subdifferential` for the inner product pairing)
-such that `u + ∑ i, l i • v i + Aᵀ y = 0`, where `Aᵀ` is the Hilbert adjoint.
+inequality constraints and `A x = b` a continuous linear equality constraint, with feasible set
+`{x | (∀ i, g i x ≤ 0) ∧ A x = b}`. The *Karush–Kuhn–Tucker conditions* at a point `xs` are primal
+feasibility (`xs` lies in the feasible set), multipliers `l i ≥ 0` and `y : F` with complementary
+slackness `l i * g i xs = 0`, and subgradients `u ∈ ∂f(xs)`, `v i ∈ ∂gᵢ(xs)` (the subdifferential
+`TauCeti.subdifferential` for the inner product pairing) such that
+`u + ∑ i, l i • v i + Aᵀ y = 0`, where `Aᵀ` is the Hilbert adjoint.
 
-These conditions are sufficient for `xs` to minimize `f` on the feasible set
-`{x | (∀ i, g i x ≤ 0) ∧ A x = b}`, with no constraint qualification and no convexity hypothesis:
-the subgradient inequalities themselves carry the argument. Feasibility of `xs` for the
-inequality constraints is not needed either, since complementary slackness controls the terms
-with `l i ≠ 0`.
+The theorem assumes these conditions with primal feasibility weakened to the equality constraint
+`A xs = b`, and concludes `IsMinOn f {x | (∀ i, g i x ≤ 0) ∧ A x = b} xs`, that is,
+`f xs ≤ f x` for every feasible `x`. `IsMinOn` does not include membership of `xs` in the set:
+without `g i xs ≤ 0` the point `xs` may be infeasible, and the conclusion is only this comparison
+of objective values. When also `g i xs ≤ 0` for all `i`, so that all the KKT conditions hold,
+`xs` is a minimizer of `f` on the feasible set. No constraint qualification and no convexity
+hypothesis is needed: the subgradient inequalities themselves carry the argument, and
+complementary slackness controls the terms with `l i ≠ 0`.
 
 ## Main statements
 
-* `TauCeti.isMinOn_of_kkt` — **sufficiency of the Karush–Kuhn–Tucker conditions**.
+* `TauCeti.isMinOn_of_kkt` — **sufficiency of the Karush–Kuhn–Tucker conditions**: `f xs ≤ f x`
+  for every feasible `x`.
 
 ## References
 
@@ -51,9 +56,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Complet
 /-- **Sufficiency of the Karush–Kuhn–Tucker conditions.** Let `xs` satisfy the equality
 constraint `A xs = b`, and let `l i ≥ 0` and `y` be multipliers with complementary slackness
 `l i * g i xs = 0` and subgradients `u ∈ ∂f(xs)`, `v i ∈ ∂gᵢ(xs)` for the inner product pairing
-with `u + ∑ i, l i • v i + Aᵀ y = 0`. Then `xs` minimizes `f` on the feasible set
-`{x | (∀ i, g i x ≤ 0) ∧ A x = b}`. No convexity of `f` or `g i` and no constraint qualification
-is assumed. -/
+with `u + ∑ i, l i • v i + Aᵀ y = 0`. Then `f xs ≤ f x` for every `x` in the feasible set
+`{x | (∀ i, g i x ≤ 0) ∧ A x = b}`. The point `xs` itself need not satisfy `g i xs ≤ 0`; when it
+does, all the KKT conditions hold and `xs` is a minimizer of `f` on the feasible set. No convexity
+of `f` or `g i` and no constraint qualification is assumed. -/
 theorem isMinOn_of_kkt {ι : Type*} [Fintype ι] {f : E → ℝ} {g : ι → E → ℝ}
     (A : E →L[ℝ] F) (b : F) {xs : E} (hxs : A xs = b) (l : ι → ℝ) (y : F)
     (hl : ∀ i, 0 ≤ l i) (hcs : ∀ i, l i * g i xs = 0) (u : E)
