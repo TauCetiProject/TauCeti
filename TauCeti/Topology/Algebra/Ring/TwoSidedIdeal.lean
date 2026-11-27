@@ -239,13 +239,8 @@ theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : 
     {l : Filter A} (hl : l.IsApproximateUnit) (c : R) {a : A} (ha : a ∈ I) :
     c • a ∈ I := by
   have := hl.neBot
-  let J : AddSubgroup A :=
-    { carrier := I
-      add_mem' := I.add_mem
-      zero_mem' := I.zero_mem
-      neg_mem' := I.neg_mem }
-  exact J.smul_mem_of_isClosed_left_of_tendsto hI (fun hx b => I.mul_mem_left b _ hx)
-    c (hl.tendsto_mul_right a) ha
+  exact (AddSubgroup.ofClass I).smul_mem_of_isClosed_left_of_tendsto hI
+    (fun hx b => I.mul_mem_left b _ hx) c (hl.tendsto_mul_right a) ha
 
 end ApproximateUnit
 

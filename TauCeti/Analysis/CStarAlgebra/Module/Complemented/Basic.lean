@@ -284,7 +284,7 @@ noncomputable def IsOrthogonallyComplemented.starProjection {F : CStarSubmodule 
 theorem IsOrthogonallyComplemented.coe_orthogonalProjectionOnto_apply {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) (x : E) :
     (hF.orthogonalProjectionOnto x : E) = hF.starProjection x :=
-  (rfl)
+  Submodule.coe_projectionOntoL_apply hF.isTopCompl x
 
 theorem IsOrthogonallyComplemented.subtypeL_comp_orthogonalProjectionOnto {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) :
@@ -328,8 +328,9 @@ theorem IsOrthogonallyComplemented.starProjection_apply_mem {F : CStarSubmodule 
   Submodule.projectionL_apply_mem hF.isTopCompl x
 
 theorem IsOrthogonallyComplemented.sub_starProjection_mem_orthogonal {F : CStarSubmodule A E}
-    (hF : F.IsOrthogonallyComplemented) (x : E) : x - hF.starProjection x ∈ F.orthogonal :=
-  hF.sub_projection_mem_orthogonal x
+    (hF : F.IsOrthogonallyComplemented) (x : E) : x - hF.starProjection x ∈ F.orthogonal := by
+  rw [starProjection, Submodule.coe_projectionL]
+  exact hF.sub_projection_mem_orthogonal x
 
 theorem IsOrthogonallyComplemented.starProjection_apply_of_mem {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) {x : E} (hx : x ∈ F) : hF.starProjection x = x :=
@@ -387,15 +388,16 @@ theorem IsOrthogonallyComplemented.isAdjointPair_subtypeL_orthogonalProjectionOn
     {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) :
     LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := F)).flip
       (CStarModule.innerₛₗ (A := A) (E := E)).flip F.subtypeL hF.orthogonalProjectionOnto := by
-  rw [coe_subtypeL]
+  rw [coe_subtypeL, orthogonalProjectionOnto, Submodule.coe_projectionOntoL]
   exact hF.isAdjointPair_subtype_projectionOnto
 
 /-- `hF.starProjection` is self-adjoint for the `A`-valued inner product. -/
 theorem IsOrthogonallyComplemented.isAdjointPair_starProjection {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) :
     LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := E)).flip
-      (CStarModule.innerₛₗ (A := A) (E := E)).flip hF.starProjection hF.starProjection :=
-  hF.isAdjointPair_projection
+      (CStarModule.innerₛₗ (A := A) (E := E)).flip hF.starProjection hF.starProjection := by
+  rw [starProjection, Submodule.coe_projectionL]
+  exact hF.isAdjointPair_projection
 
 theorem IsOrthogonallyComplemented.orthogonalProjectionOnto_smul_coeff {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) (a : A) (x : E) :
@@ -408,12 +410,14 @@ theorem IsOrthogonallyComplemented.starProjection_smul_coeff {F : CStarSubmodule
   hF.isAdjointPair_starProjection.map_smul_coeff_cstarModule a x
 
 theorem IsOrthogonallyComplemented.norm_starProjection_apply_le {F : CStarSubmodule A E}
-    (hF : F.IsOrthogonallyComplemented) (x : E) : ‖hF.starProjection x‖ ≤ ‖x‖ :=
-  hF.norm_projection_apply_le x
+    (hF : F.IsOrthogonallyComplemented) (x : E) : ‖hF.starProjection x‖ ≤ ‖x‖ := by
+  rw [starProjection, Submodule.coe_projectionL]
+  exact hF.norm_projection_apply_le x
 
 theorem IsOrthogonallyComplemented.norm_orthogonalProjectionOnto_apply_le {F : CStarSubmodule A E}
-    (hF : F.IsOrthogonallyComplemented) (x : E) : ‖hF.orthogonalProjectionOnto x‖ ≤ ‖x‖ :=
-  hF.norm_starProjection_apply_le x
+    (hF : F.IsOrthogonallyComplemented) (x : E) : ‖hF.orthogonalProjectionOnto x‖ ≤ ‖x‖ := by
+  rw [AddSubgroupClass.coe_norm, coe_orthogonalProjectionOnto_apply]
+  exact hF.norm_starProjection_apply_le x
 
 theorem IsOrthogonallyComplemented.norm_starProjection_le {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) : ‖hF.starProjection‖ ≤ 1 :=

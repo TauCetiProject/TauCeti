@@ -41,7 +41,7 @@ Riesz theorem.
   `CStarModule.inner_map_map_iff_forall_inner_map_map_self`: complex-linear endomorphisms are
   determined by diagonal inner products `⟪x, T x⟫_A`, and a complex-linear map preserves all inner
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
-* `CStarModule.inner_add_self_of_inner_eq_zero`, `CStarModule.isRefl_innerₛₗ`,
+* `CStarModule.inner_eq_zero_symm`, `CStarModule.inner_add_self_of_inner_eq_zero`,
   `CStarModule.norm_add_sq_le_of_inner_eq_zero`,
   `CStarModule.norm_le_norm_add_right_of_inner_eq_zero`,
   `CStarModule.norm_le_norm_add_left_of_inner_eq_zero`: algebraic and norm Pythagorean identities
@@ -202,27 +202,29 @@ theorem norm_eq_of_inner_self_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SM
     ‖x‖ = ‖y‖ := by
   rw [norm_eq_sqrt_norm_inner_self (A := A), norm_eq_sqrt_norm_inner_self (A := A) (x := y), h]
 
-/-- Orthogonality for the C⋆-module inner product is symmetric: `⟪x, y⟫_A = 0 → ⟪y, x⟫_A = 0`. -/
-theorem isRefl_innerₛₗ : (CStarModule.innerₛₗ (A := A) (E := E)).IsRefl := fun x y h ↦ by
-  rw [innerₛₗ_apply] at h ⊢
-  rw [← star_inner, h, star_zero]
-
 section Semiring
 
 variable {A E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Orthogonality for the C⋆-module inner product is symmetric: `⟪x, y⟫_A = 0 ↔ ⟪y, x⟫_A = 0`. -/
+protected theorem inner_eq_zero_symm {x y : E} : inner A x y = 0 ↔ inner A y x = 0 :=
+  ⟨fun h ↦ by rw [← star_inner, h, star_zero], fun h ↦ by rw [← star_inner, h, star_zero]⟩
+
+end Semiring
+
+section Ring
+
+variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
 
 /-- Orthogonal vectors satisfy the algebraic Pythagorean identity
 `⟪x + y, x + y⟫_A = ⟪x, x⟫_A + ⟪y, y⟫_A`. -/
 theorem inner_add_self_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
     inner A (x + y) (x + y) = inner A x x + inner A y y := by
-  have hleft (u v w : E) : inner A (u + v) w = inner A u w + inner A v w := by
-    rw [← star_star (r := inner A (u + v) w), star_inner, inner_add_right, star_add, star_inner,
-      star_inner]
-  have hyx : inner A y x = 0 := by rw [← star_inner, h, star_zero]
-  simp [hleft, inner_add_right, h, hyx]
+  simp [CStarModule.inner_add_left, inner_add_right, h, CStarModule.inner_eq_zero_symm.mp h]
 
-end Semiring
+end Ring
 
 end Algebraic
 
@@ -272,7 +274,7 @@ theorem norm_le_norm_add_right_of_inner_eq_zero {x y : E} (h : inner A x y = 0) 
 theorem norm_le_norm_add_left_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
     ‖y‖ ≤ ‖x + y‖ := by
   rw [add_comm]
-  exact norm_le_norm_add_right_of_inner_eq_zero (A := A) (by rw [← star_inner, h, star_zero])
+  exact norm_le_norm_add_right_of_inner_eq_zero (A := A) (CStarModule.inner_eq_zero_symm.mp h)
 
 /-- Norm recovery: `‖x‖` is the largest value of `‖⟪y, x⟫_A‖` for `y` in the closed unit ball,
 attained at `y = ‖x‖⁻¹ x`. -/

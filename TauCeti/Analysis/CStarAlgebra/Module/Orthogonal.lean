@@ -121,9 +121,7 @@ theorem mem_orthogonal {F : CStarSubmodule A E} {y : E} :
 theorem mem_orthogonal' {F : CStarSubmodule A E} {y : E} :
     y ∈ F.orthogonal ↔ ∀ x ∈ F, inner A y x = 0 := by
   rw [mem_orthogonal]
-  refine forall₂_congr fun x _ ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← CStarModule.star_inner, h, star_zero]
-  · rw [← CStarModule.star_inner, h, star_zero]
+  exact forall₂_congr fun _ _ ↦ CStarModule.inner_eq_zero_symm
 
 theorem inner_right_of_mem_orthogonal {F : CStarSubmodule A E} {x y : E} (hx : x ∈ F)
     (hy : y ∈ F.orthogonal) : inner A x y = 0 :=
