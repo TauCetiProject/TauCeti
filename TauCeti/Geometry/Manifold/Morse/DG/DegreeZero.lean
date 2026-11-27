@@ -43,7 +43,7 @@ the circle, the two trajectories from the maximum to the minimum have loops of c
 `t g`, with `t` the image of a generator of `π₁(S¹)`, so the entry is `(1 + t) g` when both carry
 the coefficient `1` (`TauCeti.fundamentalGroupHom_circleCosHalfLoop_neg_one` and
 `TauCeti.IsAdaptedPseudoGradient.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_mul`,
-in `TauCeti.Geometry.Manifold.Morse.DG.Circle`). With `θ` collapsing the upper arc (through
+in `TauCeti.Geometry.Manifold.Morse.DG.Circle.Basic`). With `θ` collapsing the upper arc (through
 `π / 2`) between the critical points (an illustration, not formalized here), `g = 1` and the entry
 is `1 + t` in `(ZMod 2)[π₁(S¹)]`; collapsing the lower arc instead gives `t g = 1` and the entry
 `1 + t⁻¹`. For integral fundamental chains of the trajectory spaces the coefficients
