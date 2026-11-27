@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Perfect
+public import TauCeti.Algebra.Group.Pow
 public import TauCeti.Algebra.GroupWithZero.Basic
 public import TauCeti.RingTheory.Perfection
 
@@ -45,6 +46,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 * `Ideal.IsRadical.perfectRing_quotient`, `Ideal.Quotient.perfectRing_iff_isRadical`: the quotient
   of a perfect ring by a radical ideal is perfect, and in prime characteristic this characterizes
   radical ideals.
+
+Every quotient of a perfect ring is semiperfect, by `Function.Surjective.surjective_pow`.
 -/
 
 public section
@@ -206,9 +209,8 @@ theorem perfectRing_quotient {A : Type*} [CommRing A] (p : ℕ) [ExpChar A p] [P
       dsimp only at h
       rw [← map_pow, ← map_pow, Ideal.Quotient.eq] at h
       exact Ideal.Quotient.eq.mpr (hI ⟨p, by rwa [sub_pow_expChar]⟩)
-    · obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-      obtain ⟨b, rfl⟩ := (PerfectRing.bijective_frobenius (p := p)).2 a
-      exact ⟨Ideal.Quotient.mk I b, (map_pow _ b p).symm⟩
+    · exact Ideal.Quotient.mk_surjective.surjective_pow
+        (PerfectRing.bijective_frobenius (p := p)).2 x
 
 end Ideal.IsRadical
 
