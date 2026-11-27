@@ -409,7 +409,7 @@ theorem realAddVal_coeff_ramificationPolynomial_add_natDegree {φ : 𝒪[K][X]}
       | top => exact ht₂ (by simp [ha₂])
       | coe m₂ =>
         rw [ha₁, ha₂] at heq
-        simp only [ENat.recTopCoe_natCast, WithTop.map_coe, ← WithTop.coe_natCast,
+        simp only [ENat.map_natCast, WithTop.map_coe, ← WithTop.coe_natCast,
           ← WithTop.coe_add, WithTop.coe_eq_coe] at heq
         have hnat : n * m₁ + h₁ = n * m₂ + h₂ := by exact_mod_cast heq
         obtain ⟨_, h₁n⟩ := Finset.mem_Icc.mp hh₁; obtain ⟨_, h₂n⟩ := Finset.mem_Icc.mp hh₂
@@ -487,7 +487,7 @@ theorem realAddVal_coeff_one_ramificationPolynomial {φ : 𝒪[K][X]}
   have hval := congrArg (valuation L).realAddVal hmul
   rw [(valuation L).realAddVal.map_mul, (valuation L).realAddVal.map_pow, hvα, nsmul_one,
     (valuation L).realAddVal.map_mul, realAddVal_valuation_coe_integer, ← hdiff,
-    ENat.recTopCoe_natCast, hvα] at hval
+    ENat.map_natCast, hvα] at hval
   refine (WithTop.add_right_inj (WithTop.natCast_ne_top φ.natDegree)).mp ?_
   rw [hval, ← WithTop.coe_natCast, ← WithTop.coe_one, ← WithTop.coe_add, ← WithTop.coe_add]
   congr 1; ring

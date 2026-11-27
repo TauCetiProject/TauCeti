@@ -97,8 +97,7 @@ theorem card_newtonSlopes_ramificationPolynomial {φ : K[X]} {α : L} (hα : α 
     (hsep : (ramificationPolynomial φ α).Separable) :
     ((ramificationPolynomial φ α).newtonSlopes (valuation L).realAddVal).card =
       φ.natDegree - 1 := by
-  rw [card_newtonSlopes _ _ fun _ hx ↦ (valuation L).zero_iff.mp
-      ((valuation L).realAddVal_eq_top_iff.mp hx),
+  rw [card_newtonSlopes _ _ fun _ hx ↦ (valuation L).realAddVal_eq_top_iff_eq_zero.mp hx,
     natDegree_ramificationPolynomial φ hα,
     natTrailingDegree_ramificationPolynomial hroot hsep]
 
@@ -401,8 +400,8 @@ theorem unitSlope_newtonPolygon_ramificationPolynomial_eq_on_Ico_pow {φ : 𝒪[
   set N := ρ.newtonPolygon (valuation L).realAddVal
   have hp : p.Prime := CharP.char_is_prime 𝓀[K] p
   have hedge : i ∈ finiteEdges N := by
-    rw [ρ.finiteEdges_newtonPolygon (valuation L).realAddVal (fun _ hx ↦
-          (valuation L).zero_iff.mp ((valuation L).realAddVal_eq_top_iff.mp hx)),
+    rw [ρ.finiteEdges_newtonPolygon (valuation L).realAddVal
+          (fun _ hx ↦ (valuation L).realAddVal_eq_top_iff_eq_zero.mp hx),
       natTrailingDegree_ramificationPolynomial hroot
         (separable_ramificationPolynomial_of_eisenstein hφ hroot
           (Algebra.IsSeparable.isSeparable K α)),
@@ -413,7 +412,7 @@ theorem unitSlope_newtonPolygon_ramificationPolynomial_eq_on_Ico_pow {φ : 𝒪[
       (Polynomial.map_injective (algebraMap 𝒪[K] K) hinj (by simp [h0]))
   obtain ⟨l, u, hface⟩ := exists_isFiniteFace_newtonPolygon
     (ρ.newtonPolygon_ne_top_of_ne_zero (v := (valuation L).realAddVal)
-      (fun _ hx ↦ (valuation L).zero_iff.mp ((valuation L).realAddVal_eq_top_iff.mp hx)) hρne)
+      (fun _ hx ↦ (valuation L).realAddVal_eq_top_iff_eq_zero.mp hx) hρne)
     (unitSlope N i)
   have hiu : i ∈ Set.Ico l u :=
     (hface.setOf_unitSlope_eq (ρ.isConvexSeq_newtonPolygon _)).subset ⟨hedge, rfl⟩
@@ -555,7 +554,7 @@ theorem newtonSlopes_ramificationPolynomial_eq_map_conjugateBreaks
   rw [← newtonSlopes_map_eq_map_mul (ramificationPolynomial (φ.map (algebraMap 𝒪[K] K)) α)
       (valuation L).realAddVal (algebraMap L M) hepos realAddVal_valuation_algebraMap,
     newtonSlopes_eq_map_roots
-      (fun _ hx ↦ (valuation M).zero_iff.mp ((valuation M).realAddVal_eq_top_iff.mp hx))
+      (fun _ hx ↦ (valuation M).realAddVal_eq_top_iff_eq_zero.mp hx)
       (splits_map_ramificationPolynomial α hsplit),
     roots_map_ramificationPolynomial _ hα0, ← map_univ_algHom_eq_roots hφ hroot hgen,
     Multiset.map_map, Multiset.filter_map, Multiset.map_map, conjugateBreaks_def,
@@ -710,8 +709,8 @@ theorem newtonPolygon_ramificationPolynomial_eq {φ φ' : 𝒪[K][X]}
       (ramificationPolynomial_eq_zero_iff hβ0).not.mpr fun h0 ↦
         leadingCoeff_ne_zero.mp hgeis.isUnit_leadingCoeff.ne_zero
           (Polynomial.map_injective (algebraMap 𝒪[K] K) hinj (by simp [h0]))
-    rw [newtonPolygon_ne_top_iff (valuation L).realAddVal (fun _ hx ↦
-          (valuation L).zero_iff.mp ((valuation L).realAddVal_eq_top_iff.mp hx)) hρne,
+    rw [newtonPolygon_ne_top_iff (valuation L).realAddVal
+          (fun _ hx ↦ (valuation L).realAddVal_eq_top_iff_eq_zero.mp hx) hρne,
       natTrailingDegree_ramificationPolynomial hβr
         (separable_ramificationPolynomial_of_eisenstein hgeis hβr
           (Algebra.IsSeparable.isSeparable K β)),

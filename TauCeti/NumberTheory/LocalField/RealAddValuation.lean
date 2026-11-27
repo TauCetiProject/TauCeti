@@ -104,9 +104,9 @@ theorem eq_realAddVal_valuation {v : AddValuation K (WithTop ℝ)}
 /-- A uniformizer of `𝒪[K]` has `(valuation K).realAddVal` equal to `1`. -/
 @[simp]
 theorem realAddVal_valuation_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
-    (valuation K).realAddVal (π : K) = 1 := by
-  simpa [normalizedValuation_irreducible hπ] using
-    realAddVal_valuation_coe (Units.mk0 (π : K) fun h ↦ hπ.ne_zero (Subtype.ext h))
+    (valuation K).realAddVal (π : K) = 1 :=
+  ((Valuation.integer.integers (valuation K)).isUniformizer_algebraMap_of_irreducible
+    hπ).realAddVal_eq_one
 
 /-- An element of `𝒪[K]` is a unit if and only if its `(valuation K).realAddVal` is `0`. -/
 theorem isUnit_iff_realAddVal_valuation_eq_zero {a : 𝒪[K]} :
@@ -130,13 +130,11 @@ theorem mem_integer_iff_realAddVal_valuation_nonneg {x : K} :
 `ℝ`. -/
 theorem realAddVal_valuation_coe_integer (a : 𝒪[K]) :
     (valuation K).realAddVal (a : K) =
-      (IsDiscreteValuationRing.addVal 𝒪[K] a).recTopCoe ⊤ fun n : ℕ ↦ ((n : ℝ) : WithTop ℝ) := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp
-  · obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-    obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hπ
-    simp [IsDiscreteValuationRing.addVal_def' u hπ n, (valuation K).realAddVal.map_mul,
-      (valuation K).realAddVal.map_pow, realAddVal_valuation_irreducible hπ]
+      (IsDiscreteValuationRing.addVal 𝒪[K] a).map ((↑) : ℕ → ℝ) := by
+  rw [Valuation.realAddVal_eq_map]
+  change ((valuation K).intAddVal (algebraMap 𝒪[K] K a)).map ((↑) : ℤ → ℝ) = _
+  rw [(Valuation.integer.integers (valuation K)).intAddVal_algebraMap_eq_map_addVal a]
+  cases IsDiscreteValuationRing.addVal 𝒪[K] a <;> simp
 
 /-- An element of `𝒪[K]` lies in `𝓂[K]` if and only if its `(valuation K).realAddVal` is at
 least `1`. -/
@@ -147,9 +145,7 @@ theorem mem_maximalIdeal_iff_one_le_realAddVal_valuation {a : 𝒪[K]} :
   rw [hmem, realAddVal_valuation_coe_integer]
   cases IsDiscreteValuationRing.addVal 𝒪[K] a using ENat.recTopCoe with
   | top => simp
-  | coe n =>
-    simp only [ENat.recTopCoe_natCast, ← ENat.natCast_one, ENat.natCast_le_natCast,
-      ← WithTop.coe_one, WithTop.coe_le_coe, Nat.one_le_cast]
+  | coe n => simp
 
 /-- An element of `𝒪[K]` lies in `𝓂[K]` if and only if its `(valuation K).realAddVal` is positive.
 -/

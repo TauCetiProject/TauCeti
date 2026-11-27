@@ -462,6 +462,10 @@ variable {K L ΓL : Type*} [CommRing K] [DivisionRing L] [Algebra K L]
   [LinearOrderedCommGroupWithZero ΓL]
   (w : Valuation L ΓL) [w.IsRankOneDiscrete]
 
+/-- On a division ring `L`, `w.extRealAddVal K` takes the value `⊤` only at `0`. -/
+theorem extRealAddVal_eq_top_iff_eq_zero {y : L} : w.extRealAddVal K y = ⊤ ↔ y = 0 :=
+  w.extRealAddVal_eq_top_iff.trans w.zero_iff
+
 /-- On a division ring `L`, `w.extRealAddVal K y` equals
 `(ord w.intValuation y : ℝ) / w.ramificationIdx K` for every nonzero `y`. -/
 theorem extRealAddVal_of_ne_zero {y : L} (hy : y ≠ 0) :

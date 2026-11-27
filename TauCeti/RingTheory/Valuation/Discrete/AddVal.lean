@@ -367,6 +367,14 @@ theorem intAddVal_surjective : Function.Surjective v.intAddVal := by
   · exact ⟨0, v.intAddVal.map_zero⟩
   · exact (v.intValuation_surjective _).imp fun _ hx ↦ v.intValuation.addVal_eq_coe.mpr hx
 
+/-- On a division ring, `v.intAddVal` takes the value `⊤` only at `0`. -/
+theorem intAddVal_eq_top_iff_eq_zero {x : F} : v.intAddVal x = ⊤ ↔ x = 0 :=
+  v.intAddVal_eq_top_iff.trans v.zero_iff
+
+/-- On a division ring, `v.realAddVal` takes the value `⊤` only at `0`. -/
+theorem realAddVal_eq_top_iff_eq_zero {x : F} : v.realAddVal x = ⊤ ↔ x = 0 :=
+  v.realAddVal_eq_top_iff.trans v.zero_iff
+
 /-- On a division ring, `v.intAddVal x` equals `ord v.intValuation x` for every nonzero `x`. -/
 theorem intAddVal_of_ne_zero {x : F} (hx : x ≠ 0) :
     v.intAddVal x = (ord v.intValuation x : WithTop ℤ) :=
@@ -376,11 +384,6 @@ theorem intAddVal_of_ne_zero {x : F} (hx : x ≠ 0) :
 theorem realAddVal_of_ne_zero {x : F} (hx : x ≠ 0) :
     v.realAddVal x = ((ord v.intValuation x : ℝ) : WithTop ℝ) :=
   v.realAddVal_of_map_ne_zero (v.ne_zero_iff.mpr hx)
-
-/-- On a division ring, `v.realAddVal` takes integer values on all nonzero elements. -/
-theorem exists_int_realAddVal_of_ne_zero {x : F} (hx : x ≠ 0) :
-    ∃ m : ℤ, v.realAddVal x = ((m : ℝ) : WithTop ℝ) :=
-  v.exists_int_realAddVal (v.ne_zero_iff.mpr hx)
 
 end DivisionRing
 
