@@ -41,33 +41,27 @@ variable {X : Scheme.{u}} (U : X.Opens)
 /-- The projection formula for extension by zero, natural in the module sheaf on `U`. -/
 def extensionByZeroProjectionIso (M : X.Modules) :
     tensorLeft ((restrictFunctor U.ι).obj M) ⋙ extensionByZero U ≅
-      extensionByZero U ⋙ tensorLeft M := by
-  have : IsIso ((restrictFunctor U.ι).ihomComparison M) :=
-    (NatTrans.isIso_iff_isIso_app _).mpr fun N ↦ inferInstance
-  exact (extensionByZeroAdjunction U).projectionIso M
+      extensionByZero U ⋙ tensorLeft M :=
+  (extensionByZeroAdjunction U).projectionIso M
 
 /-- Transposing the projection formula across extension--restriction gives the unit on
 `N` followed by restriction's tensor comparison. -/
 @[simp]
-lemma extensionByZeroProjectionIso_homEquiv (M : X.Modules) (N : U.toScheme.Modules) :
+lemma homEquiv_extensionByZeroProjectionIso_hom_app (M : X.Modules) (N : U.toScheme.Modules) :
     (extensionByZeroAdjunction U).homEquiv
         ((restrictFunctor U.ι).obj M ⊗ N) (M ⊗ (extensionByZero U).obj N)
         ((extensionByZeroProjectionIso U M).hom.app N) =
       ((restrictFunctor U.ι).obj M ◁ (extensionByZeroAdjunction U).unit.app N) ≫
-        Functor.LaxMonoidal.μ (restrictFunctor U.ι) M ((extensionByZero U).obj N) := by
-  have (M : X.Modules) : IsIso ((restrictFunctor U.ι).ihomComparison M) :=
-    (NatTrans.isIso_iff_isIso_app _).mpr fun N ↦ inferInstance
-  exact (extensionByZeroAdjunction U).projectionIso_homEquiv M N
+        Functor.LaxMonoidal.μ (restrictFunctor U.ι) M ((extensionByZero U).obj N) :=
+  (extensionByZeroAdjunction U).homEquiv_projectionIso_hom_app M N
 
 /-- The canonical adjunction formula for the projection isomorphism. -/
 lemma extensionByZeroProjectionIso_hom_app (M : X.Modules) (N : U.toScheme.Modules) :
     (extensionByZeroProjectionIso U M).hom.app N =
       ((extensionByZeroAdjunction U).homEquiv _ _).symm
         (((restrictFunctor U.ι).obj M ◁ (extensionByZeroAdjunction U).unit.app N) ≫
-          Functor.LaxMonoidal.μ (restrictFunctor U.ι) M ((extensionByZero U).obj N)) := by
-  have (M : X.Modules) : IsIso ((restrictFunctor U.ι).ihomComparison M) :=
-    (NatTrans.isIso_iff_isIso_app _).mpr fun N ↦ inferInstance
-  exact (extensionByZeroAdjunction U).projectionIso_hom_app M N
+          Functor.LaxMonoidal.μ (restrictFunctor U.ι) M ((extensionByZero U).obj N)) :=
+  (extensionByZeroAdjunction U).projectionIso_hom_app M N
 
 /-- The projection formula is natural in the module sheaf on the ambient scheme. -/
 @[reassoc]
@@ -75,10 +69,8 @@ lemma extensionByZeroProjectionIso_hom_naturality_left {M M' : X.Modules} (f : M
     (N : U.toScheme.Modules) :
     (extensionByZero U).map ((restrictFunctor U.ι).map f ▷ N) ≫
         (extensionByZeroProjectionIso U M').hom.app N =
-      (extensionByZeroProjectionIso U M).hom.app N ≫ f ▷ (extensionByZero U).obj N := by
-  have (M : X.Modules) : IsIso ((restrictFunctor U.ι).ihomComparison M) :=
-    (NatTrans.isIso_iff_isIso_app _).mpr fun N ↦ inferInstance
-  exact (extensionByZeroAdjunction U).projectionIso_hom_naturality_left f N
+      (extensionByZeroProjectionIso U M).hom.app N ≫ f ▷ (extensionByZero U).obj N :=
+  (extensionByZeroAdjunction U).projectionIso_hom_naturality_left f N
 
 end AlgebraicGeometry.Scheme.Modules
 

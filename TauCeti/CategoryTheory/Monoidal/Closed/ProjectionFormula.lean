@@ -318,7 +318,7 @@ def projectionIso (M : D) [Closed M] [Closed (F.obj M)]
 
 /-- The projection isomorphism is the adjoint transpose of the right adjoint's internal-Hom
 comparison. -/
-private lemma projectionIso_hom (M : D) [Closed M] [Closed (F.obj M)]
+lemma projectionIso_hom_eq_conjugateEquiv (M : D) [Closed M] [Closed (F.obj M)]
     [IsIso (F.ihomComparison M)] :
     (projectionIso adj M).hom =
       (conjugateEquiv (adj.comp (ihom.adjunction M))
@@ -329,7 +329,7 @@ private lemma projectionIso_hom (M : D) [Closed M] [Closed (F.obj M)]
 /-- Transposing the projection formula across the given adjunction gives the unit on
 `N` followed by the right adjoint's tensor comparison. -/
 @[simp]
-lemma projectionIso_homEquiv (M : D) [Closed M] [Closed (F.obj M)]
+lemma homEquiv_projectionIso_hom_app (M : D) [Closed M] [Closed (F.obj M)]
     [IsIso (F.ihomComparison M)] (N : C) :
     adj.homEquiv
         (F.obj M ⊗ N) (M ⊗ L.obj N)
@@ -341,7 +341,7 @@ lemma projectionIso_homEquiv (M : D) [Closed M] [Closed (F.obj M)]
   have h := unit_conjugateEquiv_symm
     (adj.comp (ihom.adjunction M))
     ((ihom.adjunction (F.obj M)).comp adj) (F.ihomComparison M) N
-  rw [← projectionIso_hom] at h
+  rw [← projectionIso_hom_eq_conjugateEquiv] at h
   apply curry_injective
   rw [curry_eq, Adjunction.homEquiv_unit, Functor.map_comp, ← Category.assoc]
   dsimp only [curriedTensor_obj_obj]
@@ -360,7 +360,7 @@ lemma projectionIso_hom_app (M : D) [Closed M] [Closed (F.obj M)]
         ((F.obj M ◁ adj.unit.app N) ≫
           Functor.LaxMonoidal.μ F M (L.obj N)) := by
   apply (Equiv.eq_symm_apply _).mpr
-  exact projectionIso_homEquiv adj M N
+  exact homEquiv_projectionIso_hom_app adj M N
 
 /-- The projection formula is natural in the tensor factor in the target category. -/
 @[reassoc]
@@ -374,7 +374,7 @@ lemma projectionIso_hom_naturality_left {M M' : D}
   apply (adj.homEquiv _ _).injective
   rw [Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_naturality_right]
   dsimp only [Functor.comp_obj, curriedTensor_obj_obj]
-  rw [projectionIso_homEquiv, projectionIso_homEquiv]
+  rw [homEquiv_projectionIso_hom_app, homEquiv_projectionIso_hom_app]
   rw [← whisker_exchange_assoc]
   dsimp only [Functor.comp_obj]
   rw [Functor.LaxMonoidal.μ_natural_left, Category.assoc]
