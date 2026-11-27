@@ -628,7 +628,8 @@ theorem laurentCover_surjective :
   have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
   have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
   intro y
-  obtain ⟨x₁, x₂, h⟩ := exists_sub_eq_of_surjective (laurentHom₁₂_surjective P f S₁₂ hden₁₂)
+  obtain ⟨x₁, x₂, h⟩ := exists_sub_eq_of_surjective_of_map_laurentRelation_eq_zero
+    (laurentHom₁₂_surjective P f S₁₂ hden₁₂)
     (restrictionRingHom_laurentHom₁ P f S₁ S₁₂ hden₁ hden₁₂)
     (restrictionRingHom_laurentHom₂ P f S₂ S₁₂ hden₂ hden₁₂)
     (by simp [laurentHom₁₂_weightedX_zero, laurentHom₁₂_weightedC_mul_weightedX_eq_one]) y

@@ -120,8 +120,8 @@ theorem IsRationalCompletion.surjective_sub_laurent
       weightedX _ isWeightFamily_one_weight 1) = 0 := by
     rw [map_sub, map_one, map_mul, hX₀, hmul₁₂, sub_self]
   intro y
-  obtain ⟨x₁, x₂, h⟩ :=
-    exists_sub_eq_of_surjective (modelEvalHom_surjective_overlap P f hT₁₂ h₁₂.ratLocEquiv)
+  obtain ⟨x₁, x₂, h⟩ := exists_sub_eq_of_surjective_of_map_laurentRelation_eq_zero
+    (modelEvalHom_surjective_overlap P f hT₁₂ h₁₂.ratLocEquiv)
       hρ₁ hρ₂ hrel y
   exact ⟨(x₁, x₂), h⟩
 

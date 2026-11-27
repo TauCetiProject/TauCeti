@@ -57,8 +57,9 @@ through the first.
 * `TauCeti.Huber.laurentIdeal_ne_top`: `A⟨ζ, ζ⁻¹⟩` is not the zero ring when `A` is not. In
   particular `1 - XY`, which is a unit in `A[[X, Y]]`, is not one in `A⟨X, Y⟩`.
 * `TauCeti.Huber.apply_eq_apply_weightedRename` and
-  `TauCeti.Huber.exists_sub_eq_of_surjective`: continuous-square compatibility and diagram-chase
-  surjectivity helpers for transferring `laurentDiff_surjective` to target models.
+  `TauCeti.Huber.exists_sub_eq_of_surjective_of_map_laurentRelation_eq_zero`: continuous-square
+  compatibility and diagram-chase surjectivity helpers for transferring `laurentDiff_surjective` to
+  target models.
 
 ## References
 
@@ -243,7 +244,8 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [Nonarc
 /-- Surjectivity of `(x₁, x₂) ↦ ρ₁ x₁ - ρ₂ x₂` transferred from `laurentDiff_surjective`: if
 `π₁₂` is surjective, kills `1 - X₀ X₁`, and intertwines `π₁`, `π₂` with `ρ₁`, `ρ₂` via
 `weightedRename`, then `(x₁, x₂) ↦ ρ₁ x₁ - ρ₂ x₂` is surjective. -/
-theorem exists_sub_eq_of_surjective {B₁ B₂ B₁₂ : Type*} [CommRing B₁] [CommRing B₂] [CommRing B₁₂]
+theorem exists_sub_eq_of_surjective_of_map_laurentRelation_eq_zero
+    {B₁ B₂ B₁₂ : Type*} [CommRing B₁] [CommRing B₂] [CommRing B₁₂]
     {π₁ : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight →+*
       B₁}
     {π₂ : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight →+*

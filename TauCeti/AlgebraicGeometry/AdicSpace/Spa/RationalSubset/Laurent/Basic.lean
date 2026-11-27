@@ -72,7 +72,7 @@ coordinate rings, is treated in
   `TauCeti.ValuationSpectrum.not_vle_zero_of_mem_laurentPiece_inv_mul` and
   `TauCeti.ValuationSpectrum.mem_rationalSubset_iff_of_mem_laurentPiece_inv_mul` : part (ii).
 * `TauCeti.ValuationSpectrum.exists_rationalSubset_superset_laurentPiece_mul_inverse` : part (iii).
-* `TauCeti.ValuationSpectrum.spaBasicOpen_laurentOverlap_eq_inf` : overlap identity for the
+* `TauCeti.ValuationSpectrum.spaBasicOpen_mul_self_one_eq_inf` : overlap identity for the
   two-piece simple Laurent cover.
 * `TauCeti.ValuationSpectrum.spa_subset_iUnion_laurentCover` : the two-piece simple Laurent cover
   covers `Spa (A, A⁺)`.
@@ -350,12 +350,12 @@ theorem exists_rationalSubset_superset_laurentPiece_mul_inverse (Aplus : Subring
 
 open scoped Pointwise in
 /-- The basic open `R({f², 1}/f)` equals the intersection `R({f, 1}/1) ⊓ R({1}/f)` of the two
-pieces of the simple Laurent cover of `Spa(A, A⁺)`: intersecting `{f, 1}/1` and `{1}/f` gives
-`{f², f, 1}/(1 · f)`, and the denominator `f` may be dropped from `{f², f, 1}` by
-`rationalSubset_insert_self`. -/
-theorem spaBasicOpen_laurentOverlap_eq_inf [DecidableEq A] (Aplus : Subring A) (f : A) :
+pieces of the simple Laurent cover of `Spa(A, A⁺)`. -/
+theorem spaBasicOpen_mul_self_one_eq_inf [DecidableEq A] (Aplus : Subring A) (f : A) :
     spaBasicOpen Aplus {f * f, 1} f =
       spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f := by
+  -- Intersecting `{f, 1}/1` and `{1}/f` gives `{f², f, 1}/(1 · f)`, and the denominator `f` may
+  -- be dropped from `{f², f, 1}` by `rationalSubset_insert_self`.
   have hrat : rationalSubset Aplus {f * f, 1} f =
       rationalSubset Aplus {f, 1} 1 ∩ rationalSubset Aplus {1} f := by
     rw [rationalSubset_inter, one_mul, ← rationalSubset_insert_self Aplus {f * f, 1} f]

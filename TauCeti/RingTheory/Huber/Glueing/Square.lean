@@ -13,18 +13,19 @@ import Mathlib.Topology.Baire.CompleteMetrizable
 import TauCeti.RingTheory.Huber.OpenMapping
 
 /-!
-# Glueing squares over complete Tate rings
+# Glueing squares of topological rings
 
 Kedlaya and Liu abstract Kiehl's descent of finite projective modules across two-piece rational
-covers into a *glueing square* of complete Hausdorff Tate rings (`R → R₁, R₂ → R₁₂`) together with
-algebraic *glueing data* (`TauCeti.GlueingDatum`).
+covers into a *glueing square* of topological rings (`R → R₁, R₂ → R₁₂`,
+`TauCeti.Huber.GlueingSquare`) together with algebraic *glueing data* (`TauCeti.GlueingDatum`).
 
 Following Kedlaya–Liu Proposition 2.7.5, `TauCeti.Huber.GlueingSquare` phrases condition (c) of
 Definition 2.7.3 directly through its algebraic prime-contraction consequence (every maximal ideal
-of `R` contracts from a prime ideal of `R₁ × R₂`), which applies equally to arbitrary adic spaces.
-Over complete Hausdorff Tate rings, topological strictness of `0 → R → R₁ × R₂ → R₁₂ → 0` follows
-automatically from algebraic exactness and continuity via Henkel's open mapping theorem
-(`TauCeti.Huber.GlueingSquare.of_exact`).
+of `R` contracts from a prime ideal of `R₁ × R₂`). When `R` is a complete Tate ring and `R₁`,
+`R₂`, `R₁₂` are complete Hausdorff Huber rings, the topological conditions (`isInducing` and
+`isStrictMap_sub`) follow from continuity of all four maps, algebraic exactness, surjectivity of
+`(r₁, r₂) ↦ r₁ - r₂`, dense range of `R₂ → R₁₂`, and maximal-ideal lifting via Henkel's open
+mapping theorem (`TauCeti.Huber.GlueingSquare.of_exact`).
 
 ## Main definitions
 
@@ -234,20 +235,25 @@ theorem GlueingSquare.congr {L₁ L₂ L₁₂ : Type*}
       (AddMonoidHom.ext fun r ↦ Prod.ext (e₁.commutes r).symm (e₂.commutes r).symm)
       (AddMonoidHom.ext fun ⟨x₁, x₂⟩ ↦ by
         simp [AddMonoidHom.sub_apply, AddEquiv.prodCongr, hcomp₁, hcomp₂])).mpr h.exact_sub
-  exact ⟨hmap₁ ▸ he₁₂.comp (h.continuous_algebraMap₁₁₂.comp he₁_symm),
-    hmap₂ ▸ he₁₂.comp (h.continuous_algebraMap₂₁₂.comp he₂_symm),
-    hι ▸ (H₁.prodCongr H₂).injective.comp h.injective, hexact,
-    hδ ▸ H₁₂.surjective.comp (h.surjective_sub.comp (H₁.prodCongr H₂).symm.surjective),
-    hι ▸ (H₁.prodCongr H₂).isInducing.comp h.isInducing,
-    by rw [hδ, Homeomorph.comp_isStrictMap_iff, Homeomorph.isStrictMap_comp_iff]
-       exact h.isStrictMap_sub,
-    hmap₂ ▸ H₁₂.surjective.denseRange.comp
-      (h.denseRange_algebraMap₂₁₂.comp H₂.symm.surjective.denseRange h.continuous_algebraMap₂₁₂)
-      he₁₂,
-    fun m hm ↦ by
-      obtain ⟨p, hp, hpm⟩ := h.exists_prime_comap_eq m hm
-      refine ⟨p.comap (RingHom.prodMap e₁.symm.toRingHom e₂.symm.toRingHom), hp.comap _, ?_⟩
-      rw [Ideal.comap_comap]; convert hpm using 2; ext r <;> simp⟩
+  exact
+    { continuous_algebraMap₁₁₂ := hmap₁ ▸ he₁₂.comp (h.continuous_algebraMap₁₁₂.comp he₁_symm)
+      continuous_algebraMap₂₁₂ := hmap₂ ▸ he₁₂.comp (h.continuous_algebraMap₂₁₂.comp he₂_symm)
+      injective := hι ▸ (H₁.prodCongr H₂).injective.comp h.injective
+      exact_sub := hexact
+      surjective_sub :=
+        hδ ▸ H₁₂.surjective.comp (h.surjective_sub.comp (H₁.prodCongr H₂).symm.surjective)
+      isInducing := hι ▸ (H₁.prodCongr H₂).isInducing.comp h.isInducing
+      isStrictMap_sub := by
+        rw [hδ, Homeomorph.comp_isStrictMap_iff, Homeomorph.isStrictMap_comp_iff]
+        exact h.isStrictMap_sub
+      denseRange_algebraMap₂₁₂ :=
+        hmap₂ ▸ H₁₂.surjective.denseRange.comp
+          (h.denseRange_algebraMap₂₁₂.comp H₂.symm.surjective.denseRange h.continuous_algebraMap₂₁₂)
+          he₁₂
+      exists_prime_comap_eq := fun m hm ↦ by
+        obtain ⟨p, hp, hpm⟩ := h.exists_prime_comap_eq m hm
+        refine ⟨p.comap (RingHom.prodMap e₁.symm.toRingHom e₂.symm.toRingHom), hp.comap _, ?_⟩
+        rw [Ideal.comap_comap]; convert hpm using 2; ext r <;> simp }
 
 end Basic
 
@@ -301,10 +307,18 @@ theorem GlueingSquare.of_exact
     exact isClosed_eq (hc₁₁₂.comp continuous_fst) (hc₂₁₂.comp continuous_snd)
   have hι_emb : Topology.IsEmbedding ι := Topology.isEmbedding_iff_isStrictMap_injective.mpr
     ⟨ι.isStrictMap_of_isClosed_range_of_isTateRing (hc₁.prodMk hc₂).continuousAt hclosed, hinj⟩
-  exact ⟨hc₁₁₂, hc₂₁₂, hinj, hexact, hsurj, hι_emb.isInducing,
-    (δ.isQuotientMap_of_isTateRing hsurj
-      ((hc₁₁₂.comp continuous_fst).sub (hc₂₁₂.comp continuous_snd)).continuousAt).isStrictMap,
-    hdense, hprime⟩
+  exact
+    { continuous_algebraMap₁₁₂ := hc₁₁₂
+      continuous_algebraMap₂₁₂ := hc₂₁₂
+      injective := hinj
+      exact_sub := hexact
+      surjective_sub := hsurj
+      isInducing := hι_emb.isInducing
+      isStrictMap_sub :=
+        (δ.isQuotientMap_of_isTateRing hsurj
+          ((hc₁₁₂.comp continuous_fst).sub (hc₂₁₂.comp continuous_snd)).continuousAt).isStrictMap
+      denseRange_algebraMap₂₁₂ := hdense
+      exists_prime_comap_eq := hprime }
 
 /-- The identity glueing square `R → R, R → R` on any topological ring `R` with continuous
 subtraction. -/

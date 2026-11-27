@@ -67,6 +67,37 @@ variable {R R₁ R₂ R₁₂ : Type*} [CommRing R] [CommRing R₁] [CommRing R�
   {hT₂ : IsOpen (Ideal.span (({1} : Finset R) : Set R) : Set R)}
   {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset R) : Set R) : Set R)}
 
+-- Transport `algebraMap B B'` along `ratLocEquiv` to obtain an `R`-algebra map between the
+-- canonical `ratLoc` carriers together with its scalar tower and continuity.
+omit [IsUniformAddGroup R] [CompleteSpace R] [T0Space R] [DecidableEq R] in
+private theorem isScalarTower_and_continuous_toAlgebra_ratLocEquiv
+    {T T' : Finset R} {s s' : R}
+    {hT : IsOpen (Ideal.span (T : Set R) : Set R)}
+    {hT' : IsOpen (Ideal.span (T' : Set R) : Set R)}
+    {B B' : Type*} [CommRing B] [TopologicalSpace B] [Algebra R B]
+    [CommRing B'] [TopologicalSpace B'] [Algebra R B'] [Algebra B B'] [IsScalarTower R B B']
+    (hB : IsRationalCompletion P T s hT B) (hB' : IsRationalCompletion P T' s' hT' B')
+    (hc : Continuous (algebraMap B B')) :
+    letI : Algebra (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT))
+        (ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT')) :=
+      (hB'.ratLocEquiv.symm.toRingHom.comp
+        ((algebraMap B B').comp hB.ratLocEquiv.toRingHom)).toAlgebra
+    IsScalarTower R (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT))
+        (ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT')) ∧
+      Continuous (algebraMap
+        (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT))
+        (ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT'))) := by
+  let _ : Algebra (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT))
+      (ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT')) :=
+    (hB'.ratLocEquiv.symm.toRingHom.comp
+      ((algebraMap B B').comp hB.ratLocEquiv.toRingHom)).toAlgebra
+  refine ⟨IsScalarTower.of_algebraMap_eq fun r ↦ ?_, ?_⟩
+  · rw [RingHom.algebraMap_toAlgebra]
+    simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply R B B']
+  · rw [RingHom.algebraMap_toAlgebra]
+    exact hB'.continuous_ratLocEquiv_symm.comp (hc.comp hB.continuous_ratLocEquiv)
+
 /-- A simple Laurent cover `{|f| ≤ 1}`, `{|f| ≥ 1}` of a complete Hausdorff Tate ring `R` equipped
 with a subring `Aplus` satisfying `IsSheafyForEveryPresentation Aplus` forms a `GlueingSquare`
 (Kedlaya–Liu, §2.4, Lemma 2.4.22 and proof of Theorem 2.4.23). -/
@@ -78,29 +109,15 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] {Aplus : Subring R}
   let L₁ := ratLoc P {f, 1} 1 (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₁)
   let L₂ := ratLoc P {1} f (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₂)
   let L₁₂ := ratLoc P {f * f, 1} f (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₁₂)
-  let φ₁ : L₁ →+* L₁₂ :=
-    h₁₂.ratLocEquiv.symm.toRingHom.comp ((algebraMap R₁ R₁₂).comp h₁.ratLocEquiv.toRingHom)
-  let φ₂ : L₂ →+* L₁₂ :=
-    h₁₂.ratLocEquiv.symm.toRingHom.comp ((algebraMap R₂ R₁₂).comp h₂.ratLocEquiv.toRingHom)
-  let _ : Algebra L₁ L₁₂ := φ₁.toAlgebra
-  let _ : Algebra L₂ L₁₂ := φ₂.toAlgebra
-  have _ : IsScalarTower R L₁ L₁₂ := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    rw [RingHom.algebraMap_toAlgebra]
-    simp only [L₁₂, φ₁, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-      AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply R R₁ R₁₂]
-  have _ : IsScalarTower R L₂ L₁₂ := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    rw [RingHom.algebraMap_toAlgebra]
-    simp only [L₁₂, φ₂, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-      AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply R R₂ R₁₂]
+  let _ : Algebra L₁ L₁₂ := (h₁₂.ratLocEquiv.symm.toRingHom.comp
+    ((algebraMap R₁ R₁₂).comp h₁.ratLocEquiv.toRingHom)).toAlgebra
+  let _ : Algebra L₂ L₁₂ := (h₁₂.ratLocEquiv.symm.toRingHom.comp
+    ((algebraMap R₂ R₁₂).comp h₂.ratLocEquiv.toRingHom)).toAlgebra
+  obtain ⟨_, hcL₁⟩ := isScalarTower_and_continuous_toAlgebra_ratLocEquiv h₁ h₁₂ hc₁
+  obtain ⟨_, hcL₂⟩ := isScalarTower_and_continuous_toAlgebra_ratLocEquiv h₂ h₁₂ hc₂
   have hL₁ := isRationalCompletion_ratLoc P {f, 1} 1 hT₁
   have hL₂ := isRationalCompletion_ratLoc P {1} f hT₂
   have hL₁₂ := isRationalCompletion_ratLoc P {f * f, 1} f hT₁₂
-  have hcL₁ : Continuous (algebraMap L₁ L₁₂) := by
-    rw [RingHom.algebraMap_toAlgebra]
-    exact h₁₂.continuous_ratLocEquiv_symm.comp (hc₁.comp h₁.continuous_ratLocEquiv)
-  have hcL₂ : Continuous (algebraMap L₂ L₁₂) := by
-    rw [RingHom.algebraMap_toAlgebra]
-    exact h₁₂.continuous_ratLocEquiv_symm.comp (hc₂.comp h₂.continuous_ratLocEquiv)
   obtain ⟨hinj, hexact⟩ :=
     laurent_injective_and_exact_of_isSheafyForEveryPresentation hs hL₁ hL₂ hL₁₂ hcL₁ hcL₂
   obtain ⟨P₀, hP₀, -⟩ := hs.exists_compatible_isSheaf

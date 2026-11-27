@@ -60,18 +60,6 @@ namespace TauCeti.ValuationSpectrum
 -- `{f * f, f, 1}`, so it is supplied classically rather than assumed of `A`.
 attribute [local instance] Classical.decEq
 
-/-! ### Elements under equality transports -/
-
--- An equality transport of topological rings is undone by the reverse transport. This is
--- `(eqToIso e).hom_inv_id_apply x` restated with `.1`, so that `rw` matches the `.1` terms here.
-private theorem eqToHom_symm_apply_eqToHom_apply {X Y : TopCommRingCat.{v}} (e : X = Y) (x : X) :
-    (eqToHom e.symm).val ((eqToHom e).val x) = x := (eqToIso e).hom_inv_id_apply x
-
--- The underlying map of an equality transport of topological rings is injective.
-private theorem injective_eqToHom {X Y : TopCommRingCat.{v}} (e : X = Y) :
-    Function.Injective (eqToHom e).val :=
-  Function.LeftInverse.injective (eqToHom_symm_apply_eqToHom_apply e)
-
 /-! ### Presentations for simple Laurent covers -/
 
 section Rational
@@ -142,7 +130,11 @@ theorem injective_presentationLimitMap_laurentCoverOpen_of_injective_toCompletio
     ((presentationLimitMap_apply_toPresentationLimit_apply_eq_iff Aplus hAplus (p b) (hp b)).1
       (congrFun hcd b)).trans
       (presentationLimitRationalIso_map_top_apply Aplus hAplus (p b) (hp b) d)
-  exact injective_eqToHom _ <| hinj (p false).hasDenominatorPower <| Prod.ext (key true) (key false)
+  rw [← TopCommRingCat.eqToHom_apply_eqToHom_symm_apply
+      (CompleteSeparatedTopCommRingCat.of_obj A).symm c,
+    ← TopCommRingCat.eqToHom_apply_eqToHom_symm_apply
+      (CompleteSeparatedTopCommRingCat.of_obj A).symm d,
+    hinj (p false).hasDenominatorPower <| Prod.ext (key true) (key false)]
 
 /-- **The topology of Laurent restriction transported to the presentation-limit presheaf.**
 Let `A` be a complete Hausdorff Huber ring, `A⁺` a subring of power-bounded elements and
@@ -287,7 +279,7 @@ private theorem exists_toCompletionLoc_eq_of_laurentCoverOpen
       hT₂] at h
   obtain ⟨c, hc⟩ := (hexact (p false).hasDenominatorPower (_, _)).1 (sub_eq_zero.2 h)
   refine ⟨(eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val c, fun b ↦ ?_⟩
-  rw [eqToHom_symm_apply_eqToHom_apply]
+  rw [TopCommRingCat.eqToHom_apply_eqToHom_symm_apply]
   exact b.rec (congrArg Prod.snd hc) (congrArg Prod.fst hc)
 
 /-- **Laurent gluing transported to the presentation-limit presheaf.** Let `A` be a complete

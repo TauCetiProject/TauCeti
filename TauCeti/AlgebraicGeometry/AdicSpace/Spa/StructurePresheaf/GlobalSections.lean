@@ -62,7 +62,8 @@ itself an isomorphism.
 * `TauCeti.ValuationSpectrum.continuous_topSectionRingEquiv` and
   `TauCeti.ValuationSpectrum.continuous_topSectionRingEquiv_symm` : continuity of
   `topSectionRingEquiv` and its inverse.
-* `TauCeti.ValuationSpectrum.rationalSectionRingEquiv_map_top` and
+* `TauCeti.ValuationSpectrum.rationalSectionRingEquiv_map_top`,
+  `TauCeti.ValuationSpectrum.rationalSectionRingEquiv_map_top_symm`, and
   `TauCeti.ValuationSpectrum.rationalSectionRingEquiv_toPresentationLimit` : compatibility of
   `topSectionRingEquiv`, `toPresentationLimit`, and `rationalSectionRingEquiv` with restriction
   maps.
@@ -272,8 +273,8 @@ theorem presentationLimitRationalIso_map_top_apply
       (presentationLimitRationalIso Aplus hAplus p hp).hom = p.toCompletionLocObjHom := by simp
   refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).val (g.hom.val c)) key).trans ?_
   rw [Presentation.toCompletionLocObjHom_hom]
-  exact (eqToIso
-    (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).hom_inv_id_apply _
+  exact TopCommRingCat.eqToHom_apply_eqToHom_symm_apply
+    (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower) _
 
 /-- Under `presentationLimitRationalIso`, the section of `c : A` over the whole spectrum restricts
 to `z` over `R(p)` exactly when the structure map `A → A⟨p⟩` sends `c` to the image of `z`. -/
@@ -355,6 +356,19 @@ theorem rationalSectionRingEquiv_map_top (P : PairOfDefinition A) {Aplus : Subri
   rw [RingEquiv.apply_symm_apply, topSectionRingEquiv_symm_eq,
     presentationLimitMap_apply_toPresentationLimit_apply,
     rationalSectionRingEquiv_toPresentationLimit]
+
+/-- Under `topSectionRingEquiv.symm` and `rationalSectionRingEquiv`, restricting the global section
+corresponding to `r : A` to `R(T/s)` is `algebraMap A B r`. -/
+theorem rationalSectionRingEquiv_map_top_symm (P : PairOfDefinition A) {Aplus : Subring A}
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
+    (hB : IsRationalCompletion P T s hT B) (r : A) :
+    rationalSectionRingEquiv P hAplus T s hT hB
+        ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val
+          ((topSectionRingEquiv P hAplus).symm r)) =
+      algebraMap A B r := by
+  rw [rationalSectionRingEquiv_map_top, RingEquiv.apply_symm_apply]
 
 end TauCeti.ValuationSpectrum
 

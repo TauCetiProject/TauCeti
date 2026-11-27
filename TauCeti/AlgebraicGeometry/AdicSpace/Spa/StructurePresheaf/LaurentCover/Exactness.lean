@@ -71,12 +71,14 @@ private theorem existsUnique_presentationLimit_laurent {R : Type*} [CommRing R] 
   have hfor := (Presieve.isSheafFor_iff_generate _).mpr (hsheafG.isSheafFor _ hcov)
   obtain ⟨a, ha, hu⟩ := (isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P
     (fun (b : Bool) ↦ (le_top : U b ≤ ⊤))).mp hfor (fun b ↦ b.rec x₂ x₁) fun i j ↦ by
-    cases i <;> cases j <;> try rfl
+    rcases i with _ | _ <;> rcases j with _ | _
+    · rfl
     · have h := congrArg (presentationLimitMap (P := P)
           (le_inf inf_le_right inf_le_left : U false ⊓ U true ≤ U true ⊓ U false)).hom.val hx.symm
       rwa [presentationLimitMap_apply_presentationLimitMap_apply,
         presentationLimitMap_apply_presentationLimitMap_apply] at h
     · exact hx
+    · rfl
   exact ⟨a, ⟨ha true, ha false⟩, fun a' ⟨ha'₁, ha'₂⟩ ↦ hu a' fun b ↦ by cases b <;> assumption⟩
 
 section Main
@@ -104,7 +106,7 @@ private theorem presentationLimitMap_laurentInf_eq {Aplus : Subring R}
     (presentationLimitMap (P := P)
         (inf_le_right : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.val
       ((rationalSectionRingEquiv P hAplus {1} f hT₂ h₂).symm y₂) := by
-  have hEq := spaBasicOpen_laurentOverlap_eq_inf Aplus f
+  have hEq := spaBasicOpen_mul_self_one_eq_inf Aplus f
   set e₁ := rationalSectionRingEquiv P hAplus {f, 1} 1 hT₁ h₁
   set e₂ := rationalSectionRingEquiv P hAplus {1} f hT₂ h₂
   set e₁₂ := rationalSectionRingEquiv P hAplus {f * f, 1} f hT₁₂ h₁₂
@@ -140,15 +142,15 @@ theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing
       (e₁.symm (algebraMap R R₁ r₁)) (e₂.symm (algebraMap R R₂ r₁))
       (presentationLimitMap_laurentInf_eq hSplus h₁ h₂ h₁₂ hc₁ hc₂ (by
         rw [← IsScalarTower.algebraMap_apply R R₁ R₁₂, ← IsScalarTower.algebraMap_apply R R₂ R₁₂]))
-    have htop₁ (r : R) : e₁ ((presentationLimitMap (P := P) le_top).hom.val (e₀.symm r)) =
-        algebraMap R R₁ r := by rw [rationalSectionRingEquiv_map_top, e₀.apply_symm_apply]
-    have htop₂ (r : R) : e₂ ((presentationLimitMap (P := P) le_top).hom.val (e₀.symm r)) =
-        algebraMap R R₂ r := by rw [rationalSectionRingEquiv_map_top, e₀.apply_symm_apply]
     exact e₀.symm.injective (hglue.unique
-      ⟨e₁.injective (by rw [e₁.apply_symm_apply, htop₁]),
-       e₂.injective (by rw [e₂.apply_symm_apply, htop₂])⟩
-      ⟨e₁.injective (by rw [e₁.apply_symm_apply, htop₁]; exact (congrArg Prod.fst hr).symm),
-       e₂.injective (by rw [e₂.apply_symm_apply, htop₂]; exact (congrArg Prod.snd hr).symm)⟩)
+      ⟨e₁.injective (by rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top_symm]),
+       e₂.injective (by rw [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top_symm])⟩
+      ⟨e₁.injective (by
+         rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top_symm]
+         exact (congrArg Prod.fst hr).symm),
+       e₂.injective (by
+         rw [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top_symm]
+         exact (congrArg Prod.snd hr).symm)⟩)
   · obtain ⟨a, ⟨ha₁, ha₂⟩, -⟩ := existsUnique_presentationLimit_laurent P hs f
       (e₁.symm x₁) (e₂.symm x₂)
       (presentationLimitMap_laurentInf_eq hSplus h₁ h₂ h₁₂ hc₁ hc₂ (sub_eq_zero.mp hsub))

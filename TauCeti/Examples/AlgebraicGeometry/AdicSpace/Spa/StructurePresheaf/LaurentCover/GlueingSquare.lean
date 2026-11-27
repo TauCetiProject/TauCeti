@@ -15,9 +15,10 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 /-!
 # End-to-end checks for simple Laurent glueing squares
 
-* Non-vacuous field check: `ℚ_[p]` at `f = p`, using the canonical `ratLoc` constructor
-  `GlueingSquare.of_simpleLaurent_ratLoc`.
-* Non-vacuous geometric check: the `1`-variable Tate algebra `ℚ_p⟨X⟩` at its coordinate variable
+* Degenerate field check: `ℚ_[p]` at `f = p`, using the canonical `ratLoc` constructor
+  `GlueingSquare.of_simpleLaurent_ratLoc` (since `|p| < 1` on `Spa(ℚ_[p], ℤ_[p])`, `R({1}/p)` is
+  empty, so `R₂` and `R₁₂` are zero rings).
+* Non-degenerate geometric check: the `1`-variable Tate algebra `ℚ_p⟨X⟩` at its coordinate variable
   `X`, glueing the closed unit disc `Spa(ℚ_p⟨X⟩)` across `{|X| ≤ 1}` and `{|X| ≥ 1}` over the unit
   circle `{|X| = 1}` on canonical `ratLoc` carriers, together with flat module recovery for
   `ℚ_p⟨X⟩ × ℚ_p⟨X⟩`.
@@ -32,7 +33,8 @@ variable (p : ℕ) [Fact p.Prime]
 open Classical in
 open scoped TauCeti.Huber.Laurent in
 /-- **Field check**: `ℚ_[p]` admits a simple Laurent `GlueingSquare` at `f = p` on the canonical
-`ratLoc` carriers with all hypotheses discharged unconditionally. -/
+`ratLoc` carriers with all hypotheses discharged unconditionally (here `|p| < 1`, so `R₂` and
+`R₁₂` are zero rings). -/
 example :
     let P := (IsHuberRing.nonempty_pairOfDefinition (A := ℚ_[p])).some
     let hden (T : Finset ℚ_[p]) (s : ℚ_[p]) (h : (1 : ℚ_[p]) ∈ T) :=

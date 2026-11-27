@@ -13,10 +13,11 @@ import TauCeti.Topology.Algebra.Ring.Ideal
 
 This file constructs the unique continuous `A`-algebra transition homomorphisms from models of the
 two pieces `A⟨{f, 1}/1⟩` and `A⟨{1}/f⟩` of a simple Laurent cover to a model of their overlap
-`A⟨{f², 1}/f⟩` (`IsRationalCompletion.existsUnique_laurentLeftAlgHom` and
-`IsRationalCompletion.existsUnique_laurentRightAlgHom`), together with the canonical `ratLoc`
-maps `laurentLeftAlgHom` and `laurentRightAlgHom`, their computation rules on dense images of the
-uncompleted localisations, and the induced overlap algebra structures and scalar towers.
+`A⟨{f², 1}/f⟩` (`IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft` and
+`IsRationalCompletion.existsUnique_continuous_algHom_laurentRight`), together with the canonical
+`ratLoc` maps `laurentLeftAlgHom` and `laurentRightAlgHom`, their computation rules on dense
+images of the uncompleted localisations, and the induced overlap algebra structures and scalar
+towers.
 
 ## Main definitions
 
@@ -29,9 +30,10 @@ uncompleted localisations, and the induced overlap algebra structures and scalar
 
 ## Main results
 
-* `TauCeti.Huber.IsRationalCompletion.existsUnique_laurentLeftAlgHom` and
-  `TauCeti.Huber.IsRationalCompletion.existsUnique_laurentRightAlgHom`: unique continuous
-  transition maps from models of `A⟨{f, 1}/1⟩` and `A⟨{1}/f⟩` to a model of `A⟨{f², 1}/f⟩`.
+* `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft` and
+  `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_laurentRight`: unique
+  continuous transition maps from models of `A⟨{f, 1}/1⟩` and `A⟨{1}/f⟩` to a model of
+  `A⟨{f², 1}/f⟩`.
 * `TauCeti.Huber.continuous_laurentLeftAlgHom` and `TauCeti.Huber.continuous_laurentRightAlgHom`:
   continuity of the canonical transition maps.
 * `TauCeti.Huber.laurentLeftAlgHom_coe` and `TauCeti.Huber.laurentRightAlgHom_coe`: computation
@@ -55,7 +57,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [De
 /-- There is a unique continuous `A`-algebra transition map `B₁ →ₐ[A] B₁₂` from any model `B₁` of
 `A⟨{f, 1}/1⟩` to any model `B₁₂` of `A⟨{f², 1}/f⟩`: in `B₁₂`, `f = f² / f` is a distinguished
 fraction and `1 / 1 = 1`. -/
-theorem IsRationalCompletion.existsUnique_laurentLeftAlgHom {B₁ : Type*} [CommRing B₁]
+theorem IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft {B₁ : Type*} [CommRing B₁]
     [TopologicalSpace B₁] [Algebra A B₁]
     {hT₁ : IsOpen (Ideal.span (({f, 1} : Finset A) : Set A) : Set A)}
     (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
@@ -67,7 +69,7 @@ theorem IsRationalCompletion.existsUnique_laurentLeftAlgHom {B₁ : Type*} [Comm
 
 /-- There is a unique continuous `A`-algebra transition map `B₂ →ₐ[A] B₁₂` from any model `B₂` of
 `A⟨{1}/f⟩` to any model `B₁₂` of `A⟨{f², 1}/f⟩`. -/
-theorem IsRationalCompletion.existsUnique_laurentRightAlgHom {B₂ : Type*} [CommRing B₂]
+theorem IsRationalCompletion.existsUnique_continuous_algHom_laurentRight {B₂ : Type*} [CommRing B₂]
     [TopologicalSpace B₂] [Algebra A B₂]
     {hT₂ : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A)}
     (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
@@ -83,7 +85,7 @@ noncomputable def laurentLeftAlgHom (P : PairOfDefinition A) (f : A)
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     ratLoc P {f, 1} 1 hden₁ →ₐ[A] ratLoc P {f * f, 1} f hden₁₂ :=
   ((isRationalCompletion_ratLoc P {f, 1} 1
-      (isOpen_span_of_one_mem (by simp))).existsUnique_laurentLeftAlgHom
+      (isOpen_span_of_one_mem (by simp))).existsUnique_continuous_algHom_laurentLeft
     (isRationalCompletion_ratLoc P {f * f, 1} f
       (isOpen_span_of_one_mem (by simp)))).choose
 
@@ -93,7 +95,7 @@ theorem continuous_laurentLeftAlgHom (P : PairOfDefinition A) (f : A)
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     Continuous (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)) :=
   ((isRationalCompletion_ratLoc P {f, 1} 1
-      (isOpen_span_of_one_mem (by simp))).existsUnique_laurentLeftAlgHom
+      (isOpen_span_of_one_mem (by simp))).existsUnique_continuous_algHom_laurentLeft
     (isRationalCompletion_ratLoc P {f * f, 1} f
       (isOpen_span_of_one_mem (by simp)))).choose_spec.1
 
@@ -136,7 +138,7 @@ noncomputable def laurentRightAlgHom (P : PairOfDefinition A) (f : A)
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     ratLoc P {1} f hden₂ →ₐ[A] ratLoc P {f * f, 1} f hden₁₂ :=
   ((isRationalCompletion_ratLoc P {1} f
-      (isOpen_span_of_one_mem (by simp))).existsUnique_laurentRightAlgHom
+      (isOpen_span_of_one_mem (by simp))).existsUnique_continuous_algHom_laurentRight
     (isRationalCompletion_ratLoc P {f * f, 1} f
       (isOpen_span_of_one_mem (by simp)))).choose
 
@@ -146,7 +148,7 @@ theorem continuous_laurentRightAlgHom (P : PairOfDefinition A) (f : A)
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     Continuous (laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)) :=
   ((isRationalCompletion_ratLoc P {1} f
-      (isOpen_span_of_one_mem (by simp))).existsUnique_laurentRightAlgHom
+      (isOpen_span_of_one_mem (by simp))).existsUnique_continuous_algHom_laurentRight
     (isRationalCompletion_ratLoc P {f * f, 1} f
       (isOpen_span_of_one_mem (by simp)))).choose_spec.1
 
