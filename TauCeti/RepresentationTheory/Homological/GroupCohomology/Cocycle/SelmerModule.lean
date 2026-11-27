@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-public import Mathlib.LinearAlgebra.Matrix.Module
 public import Mathlib.RingTheory.Length
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.LinearAlgebra.Matrix.Module
 public import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
 
 /-!
@@ -74,6 +74,8 @@ length*.
   composition with `f` maps `Sel(ρ, X, L; V)` onto the `a`-torsion of `Sel(ρ, X, L; W)`.
 * `TauCeti.length_cocycleSelmerModule_eq_length_torsionBy` and
   `TauCeti.length_cocycleSelmerModule_le_of_injective`: the corresponding statements on lengths.
+* `TauCeti.range_restrictScalars_mapMatrixModule`: if `f : M → N` has image the `a`-torsion of
+  `N`, then `f` applied in each coordinate has image the `a`-torsion of `Nⁿ`.
 * `TauCeti.range_cocycleSelmerModuleMap_mapMatrixModule`: for `ρ : G → Mₙ(O)` and `f : M → N`
   injective onto the `a`-torsion of `N`, such as `O/a → B`, composition with `f` in each
   coordinate maps `Sel(ρ, X, L; Mⁿ)` onto the `a`-torsion of `Sel(ρ, X, L; Nⁿ)`.
@@ -265,7 +267,7 @@ theorem cocycleSelmerModuleMap_comp (g : W →ₗ[A] U) :
 /-- Composition with an injective map of coefficients is injective. -/
 theorem cocycleSelmerModuleMap_injective (hf : Injective f) :
     Injective (cocycleSelmerModuleMap O ρ X L f) :=
-  fun _ _ h ↦ Subtype.ext (hf.comp_left (congrArg Subtype.val h))
+  fun _ _ h ↦ Subtype.ext <| hf.comp_left <| by simpa using congrArg Subtype.val h
 
 /-- **Torsion coefficients.** If `f : V → W` is injective with image the `a`-torsion of `W`,
 composition with `f` maps the Selmer module with coefficients `V` onto the `a`-torsion of the
@@ -277,15 +279,15 @@ theorem range_cocycleSelmerModuleMap (hf : Injective f) {a : O}
   have hmem (w : W) : w ∈ torsionBy O W a ↔ ∃ v, f v = w := by
     rw [← hrange, LinearMap.mem_range, LinearMap.coe_restrictScalars]
   ext ⟨c, hc⟩
-  rw [LinearMap.mem_range, mem_torsionBy_iff, Subtype.ext_iff, Submodule.coe_smul,
-    ZeroMemClass.coe_zero, funext_iff]
-  simp only [Pi.smul_apply, Pi.zero_apply, Subtype.ext_iff, coe_cocycleSelmerModuleMap_apply]
+  simp only [LinearMap.mem_range, Subtype.ext_iff, coe_cocycleSelmerModuleMap_apply,
+    mem_torsionBy_iff, Submodule.coe_smul, ZeroMemClass.coe_zero, funext_iff, Pi.smul_apply,
+    Pi.zero_apply, Function.comp_apply]
   refine ⟨fun ⟨c', hc'⟩ g ↦ ?_, fun h ↦ ?_⟩
   · rw [← hc', ← mem_torsionBy_iff, hmem]
     exact ⟨_, rfl⟩
   · choose c' hc' using fun g ↦ (hmem (c g)).mp ((mem_torsionBy_iff _ _).mpr (h g))
     have hfc : f ∘ c' = c := funext hc'
-    exact ⟨⟨c', (comp_mem_cocycleSelmerModule_iff hf).mp (hfc ▸ hc)⟩, hfc⟩
+    exact ⟨⟨c', (comp_mem_cocycleSelmerModule_iff hf).mp (hfc ▸ hc)⟩, hc'⟩
 
 end Map
 
@@ -321,6 +323,15 @@ variable {G : Type*} [Mul G] [TopologicalSpace G] {O : Type*} [CommRing O] {n : 
   [Fintype n] [DecidableEq n] (ρ : G → Matrix n n O) (X : Set G) (L : Set (G →₀ Matrix n n O))
   {M N : Type*} [AddCommGroup M] [Module O M] [AddCommGroup N] [Module O N] {a : O}
 
+/-- If `f : M → N` has image the `a`-torsion of `N`, then `f` applied in each coordinate has
+image the `a`-torsion of `Nⁿ`. -/
+theorem range_restrictScalars_mapMatrixModule {f : M →ₗ[O] N}
+    (hrange : LinearMap.range f = torsionBy O N a) :
+    LinearMap.range ((f.mapMatrixModule n).restrictScalars O) = torsionBy O (n → N) a := by
+  ext w
+  simp [LinearMap.restrictScalars_mapMatrixModule, LinearMap.range_compLeft, hrange,
+    Submodule.mem_pi, funext_iff]
+
 /-- **Torsion coefficients, for matrix representations.** If `f : M → N` is injective with image
 the `a`-torsion of `N`, for instance `f : O/a → B`, then composition with `f` applied in each
 coordinate maps the Selmer module with coefficients `Mⁿ` onto the `a`-torsion of the Selmer
@@ -328,13 +339,9 @@ module with coefficients `Nⁿ`. -/
 theorem range_cocycleSelmerModuleMap_mapMatrixModule {f : M →ₗ[O] N} (hf : Injective f)
     (hrange : LinearMap.range f = torsionBy O N a) :
     LinearMap.range (cocycleSelmerModuleMap O ρ X L (f.mapMatrixModule n)) =
-      torsionBy O (cocycleSelmerModule O (n → N) ρ X L) a := by
-  refine range_cocycleSelmerModuleMap O hf.comp_left ?_
-  -- As an `O`-linear map, `f.mapMatrixModule n` is `f.compLeft n`, whose image is the product of
-  -- the images of `f`, that is the `a`-torsion of `Nⁿ`.
-  have h : (f.mapMatrixModule n).restrictScalars O = f.compLeft n := LinearMap.ext fun _ ↦ rfl
-  ext w
-  simp [h, LinearMap.range_compLeft, hrange, Submodule.mem_pi, funext_iff]
+      torsionBy O (cocycleSelmerModule O (n → N) ρ X L) a :=
+  range_cocycleSelmerModuleMap O (LinearMap.mapMatrixModule_injective hf)
+    (range_restrictScalars_mapMatrixModule hrange)
 
 variable (K : Type*) [Field K] [Algebra O K] [IsFractionRing O K]
 
@@ -345,10 +352,9 @@ theorem length_cocycleSelmerModule_quotient_eq_length_torsionBy (ha : a ≠ 0) :
     Module.length O (cocycleSelmerModule O (n → O ⧸ Ideal.span {a}) ρ X L) =
       Module.length O (torsionBy O
         (cocycleSelmerModule O (n → K ⧸ LinearMap.range (Algebra.linearMap O K)) ρ X L) a) :=
-  ((LinearEquiv.ofInjective _
-    (cocycleSelmerModuleMap_injective O (divQuotient_injective (K := K) ha).comp_left)).trans
-    (LinearEquiv.ofEq _ _ (range_cocycleSelmerModuleMap_mapMatrixModule ρ X L
-      (divQuotient_injective ha) (range_divQuotient ha)))).length_eq
+  length_cocycleSelmerModule_eq_length_torsionBy
+    (LinearMap.mapMatrixModule_injective (divQuotient_injective ha))
+    (range_restrictScalars_mapMatrixModule (range_divQuotient ha))
 
 /-- **The divisible Selmer length bounds the torsion ones.** For `ρ : G → Mₙ(O)` over a domain `O`
 with fraction field `K` and `a ≠ 0`, the length of the Selmer module with coefficients `(O/a)ⁿ` is
@@ -358,7 +364,7 @@ theorem length_cocycleSelmerModule_quotient_le (ha : a ≠ 0) :
       Module.length O
         (cocycleSelmerModule O (n → K ⧸ LinearMap.range (Algebra.linearMap O K)) ρ X L) :=
   length_cocycleSelmerModule_le_of_injective
-    (f := (divQuotient (K := K) a).mapMatrixModule n) (divQuotient_injective ha).comp_left
+    (LinearMap.mapMatrixModule_injective (divQuotient_injective (K := K) ha))
 
 end Matrix
 
