@@ -11,7 +11,8 @@ import Mathlib.Analysis.Fourier.FourierTransformDeriv
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.Topology.Order.IntermediateValue
 
 /-!
 # The sharp first derivative test
@@ -20,6 +21,16 @@ The first derivative test bounds an oscillatory interval integral by the largest
 value of `|h / φ'|`, divided by `π`, provided this absolute value is monotone. The proof uses
 Mathlib's vector-valued second mean value theorem. Continuity ensures that the real ratio
 has constant weak sign, so that the theorem applies to its absolute value.
+
+## Main results
+
+* `TauCeti.norm_intervalIntegral_deriv_smul_fourierChar_le`: the Fourier primitive bound, with
+  constant `1 / π`, for either orientation and without continuity or integrability of
+  the derivative.
+* `TauCeti.norm_intervalIntegral_smul_fourierChar_le`: the sharp first derivative test for a
+  monotone absolute amplitude-to-derivative ratio.
+* `TauCeti.norm_intervalIntegral_smul_fourierChar_le_of_antitoneOn_abs_div`: the initial-endpoint
+  bound for an antitone absolute ratio.
 
 ## References
 
@@ -35,77 +46,39 @@ open Set MeasureTheory
 
 namespace TauCeti
 
-private theorem norm_intervalIntegral_phase_deriv_eq_abs_weight {a b : ℝ}
-    {g φ φ' : ℝ → ℝ} (hab : a ≤ b) (hg : ContinuousOn g (Icc a b))
-    (hm : MonotoneOn (fun x ↦ |g x|) (Icc a b) ∨
-      AntitoneOn (fun x ↦ |g x|) (Icc a b)) :
-    ‖∫ x in a..b, g x • (φ' x • (Real.fourierChar (φ x) : ℂ))‖ =
-      ‖∫ x in a..b, |g x| • (φ' x • (Real.fourierChar (φ x) : ℂ))‖ := by
-  have hs : (∀ x ∈ Icc a b, 0 ≤ g x) ∨ (∀ x ∈ Icc a b, g x ≤ 0) := by
-    by_cases hn : ∃ x ∈ Icc a b, g x < 0
-    · right
-      obtain ⟨x, hx, hnx⟩ := hn
-      intro y hy
-      by_contra! hpy
-      have hs : uIcc x y ⊆ Icc a b := uIcc_subset_Icc hx hy
-      obtain ⟨z, hz, hgz⟩ := intermediate_value_uIcc (hg.mono hs)
-        (show 0 ∈ uIcc (g x) (g y) by
-          rw [uIcc_of_le (hnx.le.trans hpy.le)]
-          exact ⟨hnx.le, hpy.le⟩)
-      have ha : |g z| ∈ uIcc |g x| |g y| := by
-        rcases hm with hm | hm
-        · exact (hm.mono hs).mapsTo_uIcc hz
-        · exact (hm.mono hs).mapsTo_uIcc hz
-      have hp : 0 < min |g x| |g y| := lt_min (abs_pos.mpr hnx.ne) (abs_pos.mpr hpy.ne')
-      have hal : min |g x| |g y| ≤ |g z| := ha.1
-      rw [hgz, abs_zero] at hal
-      exact (not_lt_of_ge hal) hp
-    · left
-      push Not at hn
-      exact hn
-  rcases hs with hp | hn
-  · congr 1
-    apply intervalIntegral.integral_congr
-    intro x hx
-    rw [uIcc_of_le hab] at hx
-    simp only [abs_of_nonneg (hp x hx)]
-  · have heq : (∫ x in a..b, g x • (φ' x • (Real.fourierChar (φ x) : ℂ))) =
-        -(∫ x in a..b, |g x| • (φ' x • (Real.fourierChar (φ x) : ℂ))) := by
-      rw [← intervalIntegral.integral_neg]
-      apply intervalIntegral.integral_congr
-      intro x hx
-      rw [uIcc_of_le hab] at hx
-      simp [abs_of_nonpos (hn x hx)]
-    rw [heq, norm_neg]
-
-private theorem norm_intervalIntegral_phase_deriv_le {a b : ℝ} {φ φ' : ℝ → ℝ}
-    (hab : a ≤ b)
-    (hφ : ∀ x ∈ Icc a b, HasDerivWithinAt φ (φ' x) (Icc a b) x)
-    (hφ' : ContinuousOn φ' (Icc a b)) :
+/-- The Fourier primitive bound: the integral of a phase derivative times its Fourier
+character has norm at most `1 / π`. Continuity of the phase on the closed interval and
+its derivative on the open interval suffice; the derivative need not be continuous or integrable. -/
+theorem norm_intervalIntegral_deriv_smul_fourierChar_le {a b : ℝ} {φ φ' : ℝ → ℝ}
+    (hφ : ContinuousOn φ (uIcc a b))
+    (hφ' : ∀ x ∈ uIoo a b, HasDerivAt φ (φ' x) x) :
     ‖∫ x in a..b, φ' x • (Real.fourierChar (φ x) : ℂ)‖ ≤ 1 / Real.pi := by
-  have hc : ContinuousOn φ (Icc a b) := fun x hx ↦ (hφ x hx).continuousWithinAt
-  have he : ContinuousOn (fun x ↦ (Real.fourierChar (φ x) : ℂ)) (Icc a b) :=
-    Real.differentiable_fourierChar.continuous.comp_continuousOn hc
-  have hd : ∀ x ∈ Ioo a b, HasDerivAt
-      (fun x ↦ (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ x))
-      (φ' x • (Real.fourierChar (φ x) : ℂ)) x := by
-    intro x hx
-    have hx' := (hφ x (Ioo_subset_Icc_self hx)).hasDerivAt (Icc_mem_nhds hx.1 hx.2)
-    convert! ((Real.hasDerivAt_fourierChar (φ x)).scomp x hx').const_mul
-      (2 * (Real.pi : ℂ) * Complex.I)⁻¹ using 1
-    simp only [Complex.real_smul]
-    field_simp
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hab
-    (continuousOn_const.mul he) hd ((hφ'.smul he).intervalIntegrable_of_Icc hab)]
-  calc
-    ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ b) -
-        (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ a)‖ ≤
-        ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ b)‖ +
-        ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ a)‖ := norm_sub_le _ _
-    _ = 1 / Real.pi := by
-      simp [norm_inv, Real.norm_eq_abs, abs_of_pos Real.pi_pos]
+  by_cases hi : IntervalIntegrable
+      (fun x ↦ φ' x • (Real.fourierChar (φ x) : ℂ)) volume a b
+  · have he : ContinuousOn (fun x ↦ (Real.fourierChar (φ x) : ℂ)) (uIcc a b) :=
+      Real.differentiable_fourierChar.continuous.comp_continuousOn hφ
+    have hd : ∀ x ∈ uIoo a b, HasDerivAt
+        (fun x ↦ (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ x))
+        (φ' x • (Real.fourierChar (φ x) : ℂ)) x := by
+      intro x hx
+      convert! ((Real.hasDerivAt_fourierChar (φ x)).scomp x (hφ' x hx)).const_mul
+        (2 * (Real.pi : ℂ) * Complex.I)⁻¹ using 1
+      simp only [Complex.real_smul]
       field_simp
-      ring
+    rw [_root_.intervalIntegral.integral_eq_sub_of_hasDeriv_right
+      (continuousOn_const.mul he) (fun x hx ↦ (hd x hx).hasDerivWithinAt) hi]
+    calc
+      ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ b) -
+          (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ a)‖ ≤
+          ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ b)‖ +
+          ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹ * Real.fourierChar (φ a)‖ := norm_sub_le _ _
+      _ = 1 / Real.pi := by
+        simp only [norm_mul, norm_inv, Complex.norm_ofNat, Complex.norm_real,
+          Real.norm_eq_abs, abs_of_pos Real.pi_pos, Complex.norm_I, Circle.norm_coe, mul_one]
+        field_simp
+        ring
+  · rw [_root_.intervalIntegral.integral_undef hi, norm_zero]
+    exact one_div_nonneg.mpr Real.pi_pos.le
 
 /-- The sharp first derivative test: a continuous amplitude-to-phase-derivative ratio whose
 absolute value is monotone gives an endpoint bound with constant `1 / π`. -/
@@ -118,47 +91,55 @@ theorem norm_intervalIntegral_smul_fourierChar_le
       AntitoneOn (fun x ↦ |h x / φ' x|) (Icc a b)) :
     ‖∫ x in a..b, h x • (Real.fourierChar (φ x) : ℂ)‖ ≤
       max |h a / φ' a| |h b / φ' b| / Real.pi := by
-  have hc : ContinuousOn φ (Icc a b) := fun x hx ↦ (hφ x hx).continuousWithinAt
+  have hφc : ContinuousOn φ (Icc a b) := fun x hx ↦ (hφ x hx).continuousWithinAt
   have hf : ContinuousOn (fun x ↦ φ' x • (Real.fourierChar (φ x) : ℂ)) (Icc a b) :=
-    hφ'.smul (Real.differentiable_fourierChar.continuous.comp_continuousOn hc)
-  have hi : IntervalIntegrable
-      (fun x ↦ φ' x • (Real.fourierChar (φ x) : ℂ)) volume a b :=
-    hf.intervalIntegrable_of_Icc hab
+    hφ'.smul (Real.differentiable_fourierChar.continuous.comp_continuousOn hφc)
+  have hi := hf.intervalIntegrable_of_Icc (μ := volume) hab
   have hbnd : ∀ c ∈ Icc a b, ∀ d ∈ Icc a b, c ≤ d →
       ‖∫ x in c..d, φ' x • (Real.fourierChar (φ x) : ℂ)‖ ≤ 1 / Real.pi := by
     intro c hc d hd hcd
     have hs : Icc c d ⊆ Icc a b := Icc_subset_Icc hc.1 hd.2
-    exact norm_intervalIntegral_phase_deriv_le hcd
-      (fun x hx ↦ (hφ x (hs hx)).mono hs) (hφ'.mono hs)
+    refine norm_intervalIntegral_deriv_smul_fourierChar_le ((uIcc_of_le hcd).symm ▸ hφc.mono hs) ?_
+    intro x hx
+    rw [uIoo_of_le hcd] at hx
+    exact ((hφ x (hs (Ioo_subset_Icc_self hx))).mono hs).hasDerivAt
+      (Icc_mem_nhds hx.1 hx.2)
   have heq : (∫ x in a..b, h x • (Real.fourierChar (φ x) : ℂ)) =
       ∫ x in a..b, (h x / φ' x) • (φ' x • (Real.fourierChar (φ x) : ℂ)) := by
-    apply intervalIntegral.integral_congr
+    apply _root_.intervalIntegral.integral_congr
     intro x hx
     rw [uIcc_of_le hab] at hx
     dsimp only
     rw [smul_smul, div_mul_cancel₀ _ (hne x hx)]
-  rw [heq, norm_intervalIntegral_phase_deriv_eq_abs_weight hab hg hm]
+  have hsign := hm.elim
+    (hg.nonneg_or_nonpos_of_monotoneOn_abs isPreconnected_Icc)
+    (hg.nonneg_or_nonpos_of_antitoneOn_abs isPreconnected_Icc)
+  have hmem : ∀ᵐ x ∂volume.restrict (uIoc a b), x ∈ Icc a b :=
+    ae_restrict_of_forall_mem measurableSet_uIoc
+      (uIoc_subset_uIcc.trans (uIcc_of_le hab).subset)
+  rw [heq, intervalIntegral.norm_integral_smul_eq_norm_integral_abs_smul _
+    (hsign.imp hmem.mono hmem.mono)]
   rcases hm with hm | hm
   · obtain ⟨ξ, hξ, hle⟩ :=
       exists_le_const_mul_norm_intervalIntegral_of_nonneg_of_monotoneOn
         (f := fun x ↦ |h x / φ' x|) hab (abs_nonneg _) hm hi
     calc
       _ ≤ |h b / φ' b| * ‖∫ x in ξ..b, φ' x • (Real.fourierChar (φ x) : ℂ)‖ := hle
-      _ ≤ |h b / φ' b| * (1 / Real.pi) := mul_le_mul_of_nonneg_left
-        (hbnd ξ hξ b (right_mem_Icc.mpr hab) hξ.2) (abs_nonneg _)
       _ ≤ max |h a / φ' a| |h b / φ' b| / Real.pi := by
-        simpa [div_eq_mul_inv] using mul_le_mul_of_nonneg_right
-          (le_max_right |h a / φ' a| |h b / φ' b|) (inv_nonneg.mpr Real.pi_pos.le)
+        rw [← mul_one_div (max |h a / φ' a| |h b / φ' b|) Real.pi]
+        gcongr
+        · exact le_max_right _ _
+        · exact hbnd ξ hξ b (right_mem_Icc.mpr hab) hξ.2
   · obtain ⟨ξ, hξ, hle⟩ :=
       exists_le_const_mul_norm_intervalIntegral_of_nonneg_of_antitoneOn
         (f := fun x ↦ |h x / φ' x|) hab (abs_nonneg _) hm hi
     calc
       _ ≤ |h a / φ' a| * ‖∫ x in a..ξ, φ' x • (Real.fourierChar (φ x) : ℂ)‖ := hle
-      _ ≤ |h a / φ' a| * (1 / Real.pi) := mul_le_mul_of_nonneg_left
-        (hbnd a (left_mem_Icc.mpr hab) ξ hξ hξ.1) (abs_nonneg _)
       _ ≤ max |h a / φ' a| |h b / φ' b| / Real.pi := by
-        simpa [div_eq_mul_inv] using mul_le_mul_of_nonneg_right
-          (le_max_left |h a / φ' a| |h b / φ' b|) (inv_nonneg.mpr Real.pi_pos.le)
+        rw [← mul_one_div (max |h a / φ' a| |h b / φ' b|) Real.pi]
+        gcongr
+        · exact le_max_left _ _
+        · exact hbnd a (left_mem_Icc.mpr hab) ξ hξ hξ.1
 
 /-- The first derivative test with non-increasing absolute amplitude-to-derivative ratio:
 only the initial endpoint is needed. -/
