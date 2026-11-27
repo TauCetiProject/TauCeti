@@ -78,8 +78,9 @@ In the integrable model, `V = ℂ × N` with the structure `i`, the disc `a ↦ 
 * `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_holomorphicNormalExtension`: in the chart, the
   structure is standard along the disc.
 * `TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`: the normal Lipschitz control.
-* `TauCeti.norm_snd_add_I_smul_snd_le`, `TauCeti.norm_fderiv_snd_add_I_smul_le`: the resulting
-  Cauchy–Riemann inequality for the normal component.
+* `TauCeti.norm_snd_add_I_smul_snd_le`, `TauCeti.norm_fderiv_snd_add_I_smul_le`,
+  `TauCeti.norm_fderiv_snd_add_I_smul_le_of_contDiffOn`: the resulting Cauchy–Riemann inequality
+  for the normal component.
 
 ## References
 
@@ -368,6 +369,28 @@ theorem norm_fderiv_snd_add_I_smul_le {v : ℂ → ℂ × N} {w : ℂ} {A : ℂ 
   calc ‖(fderiv ℝ v w 1).2 + I • (fderiv ℝ v w I).2‖
       ≤ C * ‖(v w).2‖ * ‖fderiv ℝ v w I‖ := norm_snd_add_I_smul_snd_le hA hCR
     _ = C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by ring
+
+/-- **The normal Cauchy–Riemann inequality on an open set.** In coordinates `ℂ × N`, let `v` be a
+`C¹` solution of `∂ₛv + A ∂ₜv = 0` on an open set `Ω`, for endomorphisms `A w` within
+`C ‖(v w).2‖` of multiplication by `i`. Then the coefficient `M = C ‖∂ₜv‖` is bounded above near
+every point of `Ω`, and the normal component `b = (v ·).2` satisfies `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖` on
+`Ω` (`TauCeti.norm_fderiv_snd_add_I_smul_le`): the hypotheses of the similarity principle
+`TauCeti.exists_similarity_of_norm_le`. -/
+theorem norm_fderiv_snd_add_I_smul_le_of_contDiffOn {Ω : Set ℂ} (hΩ : IsOpen Ω) {v : ℂ → ℂ × N}
+    {A : ℂ → ℂ × N →L[ℝ] ℂ × N} {C : ℝ} (hv : ContDiffOn ℝ 1 v Ω)
+    (hCR : ∀ w ∈ Ω, fderiv ℝ v w 1 + A w (fderiv ℝ v w I) = 0)
+    (hA : ∀ w ∈ Ω, ‖A w - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ ≤ C * ‖(v w).2‖) :
+    (∀ z ∈ Ω, ∃ K, ∀ᶠ w in 𝓝 z, C * ‖fderiv ℝ v w I‖ ≤ K) ∧
+      ∀ w ∈ Ω, ‖fderiv ℝ (fun w ↦ (v w).2) w 1 + I • fderiv ℝ (fun w ↦ (v w).2) w I‖ ≤
+        C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by
+  refine ⟨fun z hz ↦ ?_, fun w hw ↦ norm_fderiv_snd_add_I_smul_le
+    ((hv.differentiableOn one_ne_zero w hw).differentiableAt (hΩ.mem_nhds hw)) (hCR w hw)
+    (hA w hw)⟩
+  -- `C ‖∂ₜv‖` is continuous, hence bounded above near `z`
+  have hcont : ContinuousAt (fun w ↦ C * ‖fderiv ℝ v w I‖) z :=
+    continuousAt_const.mul ((((hv.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
+      continuousOn_const).continuousAt (hΩ.mem_nhds hz)).norm)
+  exact ⟨_, hcont.eventually_mem (Iic_mem_nhds (lt_add_one _))⟩
 
 /-! ### Check: the integrable model -/
 

@@ -39,9 +39,8 @@ topological multiplicities, is positive as soon as the disc meets `u₀`.
   (`TauCeti.zeroCharge_pos_of_cauchyRiemann`, from
   `ContinuousMap.zeroCharge_pos_of_norm_le`).
 
-The disc `u` may be tangent to `u₀` or singular at an intersection: the local multiplicity is
-then the order of vanishing of the holomorphic factor, at least two, and still positive. The
-second disc is only required to be of class `C¹`.
+The disc `u` may be tangent to `u₀` or singular at an intersection: such intersections are not
+excluded. The second disc is only required to be of class `C¹`.
 
 ## Main results
 
@@ -75,7 +74,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {J : V → V →
 dimension four, let `u₀` be a `J`-holomorphic disc of class `C^ℓ`, `2 ≤ ℓ`, on an open `U ∋ a₀`,
 immersed at `a₀`, and let `J` be an almost complex structure of class `C^ℓ` on an open
 `Ω ⊇ u₀ (U)`. Then there are coordinates `e : ℂ × ℂ → V` adapted to `u₀`, the adapted extension
-`(a, w) ↦ u₀ a + Θ_a w` of a frame `W : ℂ →L[ℝ] V` of a complex normal line, defined near
+`(a, w) ↦ u₀ a + Θ_a w` of some real-linear map `W : ℂ →L[ℝ] V`, defined near
 `(a₀, 0)`, of class `C^ℓ` with `C^ℓ` inverse, in which the structure read in the chart differs from
 multiplication by `i` by at most a constant times the normal coordinate on the whole source. -/
 theorem exists_holomorphicAdaptedChart_complex_norm_pullbackEnd_sub_le [FiniteDimensional ℝ V]
@@ -116,12 +115,9 @@ theorem exists_holomorphicAdaptedChart_complex_norm_pullbackEnd_sub_le [FiniteDi
   -- Shrink the chart to an open set on which the normal control holds.
   obtain ⟨t, htC, ht, h₀t⟩ := _root_.eventually_nhds_iff.1 hC
   have hst : (e.restrOpen t ht).source = e.source ∩ t := e.restrOpen_source t ht
-  have htt : (e.restrOpen t ht).target ⊆ e.target := fun x hx ↦ by
-    have hx' := (e.restrOpen t ht).map_target hx
-    have hr := (e.restrOpen t ht).right_inv hx
-    rw [hst, e.coe_restrOpen_symm ht] at hx'
-    rw [e.coe_restrOpen ht, e.coe_restrOpen_symm ht] at hr
-    exact hr ▸ e.map_source hx'.1
+  have htt : (e.restrOpen t ht).target ⊆ e.target := by
+    rw [e.restrOpen_toPartialEquiv, PartialEquiv.restr_target]
+    exact inter_subset_left
   refine ⟨W', e.restrOpen t ht, by rw [e.coe_restrOpen ht, he], hst ▸ ⟨h₀, h₀t⟩,
     hst ▸ inter_subset_left.trans hsU, htt.trans htΩ, ?_, ?_, C, fun p hp ↦ ?_⟩
   · rw [e.coe_restrOpen ht, hst]
@@ -143,7 +139,7 @@ a `J`-holomorphic map of class `C¹` on the unit disc with values in the target 
 be a continuous disc in a space `Y` and `f : Y → ℂ` continuous with `f ∘ σ` the normal coordinate
 `(e.symm ∘ u).2` of `u`. If `σ⁻¹(f⁻¹(0))` is compact and nonempty, the zero charge of `σ` is
 positive. When `e` is adapted to a disc `u₀`, the zeros of `f ∘ σ` are the intersections of `u`
-with `u₀`, and their local multiplicities, the local indices of `f ∘ σ`, are all positive. -/
+with `u₀`, and the charge counts them with multiplicity. -/
 theorem zeroCharge_pos_of_cauchyRiemann {e : OpenPartialHomeomorph (ℂ × ℂ) V} {C : ℝ}
     (he : ContDiffOn ℝ 1 e e.source) (hes : ContDiffOn ℝ 1 e.symm e.target)
     (hC : ∀ p ∈ e.source,
@@ -165,14 +161,9 @@ theorem zeroCharge_pos_of_cauchyRiemann {e : OpenPartialHomeomorph (ℂ × ℂ) 
       ((hes.differentiableOn one_ne_zero).differentiableAt (e.open_target.mem_nhds (hut hw)))
       (hCR w hw)
   -- Its normal component satisfies a Cauchy–Riemann inequality, with a continuous coefficient.
-  refine ContinuousMap.zeroCharge_pos_of_norm_le h (b := fun w ↦ (v w).2)
-    (M := fun w ↦ C * ‖fderiv ℝ v w I‖) (fun z ↦ (hf z).symm) hvC.snd (fun w hw ↦ ?_)
-    (fun w hw ↦ norm_fderiv_snd_add_I_smul_le
-      ((hvC.differentiableOn one_ne_zero w hw).differentiableAt (isOpen_ball.mem_nhds hw))
-      (hCRv w hw) (hC _ (e.map_target (hut hw)))) hZ
-  have hcont : ContinuousAt (fun w ↦ C * ‖fderiv ℝ v w I‖) w :=
-    continuousAt_const.mul ((((hvC.continuousOn_fderiv_of_isOpen isOpen_ball le_rfl).clm_apply
-      continuousOn_const).continuousAt (isOpen_ball.mem_nhds hw)).norm)
-  exact ⟨_, hcont.eventually_mem (Iic_mem_nhds (lt_add_one _))⟩
+  obtain ⟨hM, hle⟩ := norm_fderiv_snd_add_I_smul_le_of_contDiffOn isOpen_ball
+    (A := fun w ↦ e.pullbackEnd J (v w)) hvC hCRv fun w hw ↦ hC _ (e.map_target (hut hw))
+  exact ContinuousMap.zeroCharge_pos_of_norm_le h (b := fun w ↦ (v w).2)
+    (fun z ↦ (hf z).symm) hvC.snd hM hle hZ
 
 end TauCeti

@@ -65,11 +65,11 @@ multiplicities of the disc with `Z`, and it is positive as soon as `σ` meets `Z
 The same positivity holds when `f ∘ σ` only extends to a `C¹` function `b` satisfying a
 Cauchy–Riemann inequality `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖` with `M` locally bounded
 (`ContinuousMap.zeroCharge_pos_of_norm_le`). By the similarity principle
-(`TauCeti.exists_similarity_of_norm_le`) such a `b` is, near each of its zeros, a continuous
-nonvanishing function times a holomorphic one, so its zeros are isolated unless it vanishes
-identically, and each has positive local index. This is the case of the normal coordinate of a
-pseudoholomorphic disc in coordinates adapted to another, immersed, pseudoholomorphic disc, for an
-almost complex structure that need not be integrable
+(`TauCeti.exists_eventually_eq_mul_of_norm_le`) such a `b` is, near each of its zeros, a
+continuous nonvanishing function times a holomorphic one, so its zeros are isolated unless it
+vanishes identically, and each has positive local index. This is the case of the normal
+coordinate of a pseudoholomorphic disc in coordinates adapted to another, immersed,
+pseudoholomorphic disc, for an almost complex structure that need not be integrable
 (`TauCeti.zeroCharge_pos_of_cauchyRiemann`).
 
 Now let `Y` carry an almost complex structure `J` and let `f` be `J`-holomorphic. If `σ` is the
@@ -442,15 +442,14 @@ theorem zeroCharge_pos_of_norm_le (h : IsCompact (σ ⁻¹' (f ⁻¹' {0})))
     (hle : ∀ z ∈ ball (0 : ℂ) 1, ‖fderiv ℝ b z 1 + Complex.I • fderiv ℝ b z Complex.I‖ ≤
       M z * ‖b z‖)
     (hZ : ∃ z, f (σ z) = 0) : 0 < f.zeroCharge σ := by
-  -- The zeros of `b` do not accumulate in the disc: otherwise `b` would vanish on it, and the
-  -- whole noncompact disc would be the preimage of the zero set of `f`.
+  -- The zeros of `b` do not accumulate in the disc: otherwise `b` would vanish on it, while by
+  -- compactness it does not vanish at some `w₀`.
+  obtain ⟨w₀, hw₀, hbw₀⟩ := TauCeti.exists_mem_ball_ne_zero h hb
   have hiso (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : ∀ᶠ w in 𝓝[≠] z, b w ≠ 0 := by
     by_contra hfreq
     have h0 := eqOn_zero_of_frequently_eq_zero_of_norm_add_I_smul_le isOpen_ball
       (convex_ball _ _).isPreconnected hbC hM hle hz (by simpa using hfreq)
-    have huniv : σ ⁻¹' (f ⁻¹' {0}) = univ := eq_univ_of_forall fun w ↦ by
-      simpa [← hb w] using h0 (mem_ball_zero_iff.2 w.norm_lt_one)
-    exact noncompact_univ 𝔻 (huniv ▸ h)
+    exact hbw₀ (h0 hw₀)
   -- Hence the image of the preimage in `ℂ` is compact and discrete, so finite.
   have himg : IsDiscrete (((↑) : 𝔻 → ℂ) '' (σ ⁻¹' (f ⁻¹' {0}))) := by
     refine isDiscrete_iff_nhdsNE.2 fun _ ⟨z, _, hzx⟩ ↦ inf_principal_eq_bot.2 ?_
@@ -461,19 +460,16 @@ theorem zeroCharge_pos_of_norm_le (h : IsCompact (σ ⁻¹' (f ⁻¹' {0})))
   have hfin : (σ ⁻¹' (f ⁻¹' {0})).Finite :=
     ((h.image Complex.UnitDisc.continuous_coe).finite himg).of_finite_image
       Complex.UnitDisc.coe_injective.injOn
-  have hfib : (f.comp σ) ⁻¹' {0} = σ ⁻¹' (f ⁻¹' {0}) := rfl
+  have hfib : (f.comp σ) ⁻¹' {0} = σ ⁻¹' (f ⁻¹' {0}) := by
+    rw [ContinuousMap.coe_comp, Set.preimage_comp]
   rw [ContinuousMap.zeroCharge, HomologicalOrientation.localDegree_eq_sum_localIndex _ _ _
     Complex.finrank_real_complex _ (hfib ▸ hfin)]
   obtain ⟨z₀, hz₀⟩ := hZ
   refine Finset.sum_pos (fun z hz ↦ ?_) ⟨z₀, by simpa using hz₀⟩
   have hz' : f (σ z) = 0 := by simpa using hz
   -- Near `z`, `b` is a nonvanishing continuous function times a holomorphic one.
-  obtain ⟨r, hr, -, Φ, s, hΦ, hΦu, hs, hbs⟩ := exists_similarity_of_norm_le isOpen_ball hbC hM hle
+  obtain ⟨v, s', hv, hv₀, hs', hbvs⟩ := exists_eventually_eq_mul_of_norm_le isOpen_ball hbC hM hle
     (mem_ball_zero_iff.2 z.norm_lt_one)
-  have hball : ball (z : ℂ) r ∈ 𝓝 (z : ℂ) := ball_mem_nhds _ hr
-  obtain ⟨v, s', hv, hv₀, hs', hbvs⟩ := exists_eventually_eq_mul_of_eventually_eq_clm_apply
-    (hΦ.continuousAt hball) (hΦu z (mem_ball_self hr)) (hs.analyticAt hball)
-    (eventually_of_mem hball hbs)
   exact localIndex_pos_of_eventually_eq_mul hb hz' (hiso z (mem_ball_zero_iff.2 z.norm_lt_one))
     hv hv₀ hs' hbvs
 
