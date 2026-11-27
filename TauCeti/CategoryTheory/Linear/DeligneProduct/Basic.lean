@@ -256,6 +256,28 @@ theorem hom_induction_on {X X' : C} {Y Y' : D}
     (add : ∀ t t', motive t → motive t' → motive (t + t')) : motive t :=
   TensorProduct.inductionOn (motive := motive) t tmul add
 
+/-- Linear maps on the homs of a linear tensor product preserve composition if they
+preserve composition of pure tensors. -/
+theorem map_comp_of_tmul {E : Type u₃} [Category.{v₃} E] [Preadditive E] [Linear k E]
+    (obj : LinearTensor k C D → E) (hom : ∀ P Q, (P ⟶ Q) →ₗ[k] (obj P ⟶ obj Q))
+    (comp : ∀ {X Y Z : C} {X' Y' Z' : D}
+      (f : X ⟶ Y) (g : X' ⟶ Y') (f' : Y ⟶ Z) (g' : Y' ⟶ Z'),
+      hom ⟨X, X'⟩ ⟨Z, Z'⟩ (tmul (f ≫ f') (g ≫ g')) =
+        hom ⟨X, X'⟩ ⟨Y, Y'⟩ (tmul f g) ≫ hom ⟨Y, Y'⟩ ⟨Z, Z'⟩ (tmul f' g'))
+    {P Q S : LinearTensor k C D} (a : P ⟶ Q) (b : Q ⟶ S) :
+    hom P S (a ≫ b) = hom P Q a ≫ hom Q S b := by
+  obtain ⟨X, X'⟩ := P
+  obtain ⟨Y, Y'⟩ := Q
+  obtain ⟨Z, Z'⟩ := S
+  induction a using hom_induction_on with
+  | add a₁ a₂ h₁ h₂ =>
+    simp only [Preadditive.add_comp, map_add, h₁, h₂]
+  | tmul f g =>
+    induction b using hom_induction_on with
+    | add b₁ b₂ h₁ h₂ =>
+      simp only [Preadditive.comp_add, map_add, h₁, h₂]
+    | tmul f' g' => simpa only [tmul_comp_tmul] using comp f g f' g'
+
 /-- The isomorphism of pairs `(X, Y) ≅ (X', Y')` built from isomorphisms of the components. -/
 @[simps]
 def isoMk {X X' : C} {Y Y' : D} (e : X ≅ X') (e' : Y ≅ Y') :
@@ -336,14 +358,6 @@ instance (X : C) : ((bifunctor k C D).obj X).Additive where
 instance (X : C) : ((bifunctor k C D).obj X).Linear k where
   map_smul g r := tmul_smul r (𝟙 X) g
 
-/-- Inserting a fixed object in the second factor is additive. -/
-instance (Y : D) : ((bifunctor k C D).flip.obj Y).Additive where
-  map_add {_ _ f g} := add_tmul (k := k) f g (𝟙 Y)
-
-/-- Inserting a fixed object in the second factor is linear. -/
-instance (Y : D) : ((bifunctor k C D).flip.obj Y).Linear k where
-  map_smul f r := smul_tmul (k := k) r f (𝟙 Y)
-
 instance : (bifunctor k C D).Additive where
   map_add {_ _ f f'} := by
     ext Y
@@ -356,6 +370,14 @@ instance : (bifunctor k C D).Linear k where
     rw [NatTrans.app_smul, bifunctor_map_app, bifunctor_map_app]
     exact smul_tmul r f (𝟙 Y)
 
+/-- Inserting a fixed object in the second factor is additive. -/
+instance (Y : D) : ((bifunctor k C D).flip.obj Y).Additive :=
+  inferInstanceAs ((bifunctor k C D ⋙ (evaluation D _).obj Y).Additive)
+
+/-- Inserting a fixed object in the second factor is linear. -/
+instance (Y : D) : ((bifunctor k C D).flip.obj Y).Linear k where
+  map_smul f r := congrArg (fun α ↦ α.app Y) ((bifunctor k C D).map_smul r f)
+
 variable {E : Type u₃} [Category.{v₃} E] [Preadditive E]
 
 section Lift
@@ -367,28 +389,25 @@ variable (k) in
 /-- The extension of a bifunctor `F : C ⥤ D ⥤ E`, additive and `k`-linear in each variable, to a
 `k`-linear functor `LinearTensor k C D ⥤ E`: it sends `(X, Y)` to `F X Y` and a pure tensor
 `f ⊗ g` to `F f ≫ F g`. -/
-def lift : LinearTensor k C D ⥤ E where
-  obj P := (F.obj P.fst).obj P.snd
-  map {P Q} := TensorProduct.lift (LinearMap.mk₂ k
-    (fun (f : P.fst ⟶ Q.fst) (g : P.snd ⟶ Q.snd) ↦ (F.map f).app P.snd ≫ (F.obj Q.fst).map g)
-    (fun f f' g ↦ by simp) (fun r f g ↦ by simp) (fun f g g' ↦ by simp) (fun r f g ↦ by simp))
-  map_id P := by
-    obtain ⟨X, Y⟩ := P
-    rw [← tmul_id_id, tmul, TensorProduct.lift.tmul, LinearMap.mk₂_apply]
-    simp
-  map_comp {P Q R} t t' := by
-    obtain ⟨X₁, Y₁⟩ := P
-    obtain ⟨X₂, Y₂⟩ := Q
-    obtain ⟨X₃, Y₃⟩ := R
-    induction t using hom_induction_on with
-    | add t₁ t₂ h₁ h₂ => simp only [Preadditive.add_comp, map_add, h₁, h₂]
-    | tmul f g =>
-      induction t' using hom_induction_on with
-      | add t₁ t₂ h₁ h₂ => simp only [Preadditive.comp_add, map_add, h₁, h₂]
-      | tmul f' g' =>
-        rw [tmul_comp_tmul]
-        simp only [tmul, TensorProduct.lift.tmul, LinearMap.mk₂_apply]
-        simp
+def lift : LinearTensor k C D ⥤ E :=
+  let obj (P : LinearTensor k C D) := (F.obj P.fst).obj P.snd
+  let hom (P Q : LinearTensor k C D) : (P ⟶ Q) →ₗ[k] (obj P ⟶ obj Q) :=
+    TensorProduct.lift (LinearMap.mk₂ k
+      (fun (f : P.fst ⟶ Q.fst) (g : P.snd ⟶ Q.snd) ↦ (F.map f).app P.snd ≫ (F.obj Q.fst).map g)
+      (fun f f' g ↦ by simp) (fun r f g ↦ by simp) (fun f g g' ↦ by simp) (fun r f g ↦ by simp))
+  have hom_tmul {X X' : C} {Y Y' : D} (f : X ⟶ X') (g : Y ⟶ Y') :
+      hom ⟨X, Y⟩ ⟨X', Y'⟩ (tmul f g) = (F.map f).app Y ≫ (F.obj X').map g := rfl
+  { obj
+    map {P Q} := hom P Q
+    map_id P := by
+      obtain ⟨X, Y⟩ := P
+      rw [← tmul_id_id, hom_tmul]
+      simp [obj]
+    map_comp := by
+      apply map_comp_of_tmul obj hom
+      intro X Y Z X' Y' Z' f g f' g'
+      simp only [hom_tmul]
+      simp }
 
 @[simp]
 theorem lift_obj (P : LinearTensor k C D) : (lift k F).obj P = (F.obj P.fst).obj P.snd :=

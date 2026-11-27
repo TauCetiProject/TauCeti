@@ -9,14 +9,13 @@ public import Mathlib.CategoryTheory.EssentiallySmall
 public import TauCeti.CategoryTheory.Linear.DeligneProduct.Basic
 
 /-!
-# Symmetry and opposites of linear tensor products
+# Symmetry and opposites of `LinearTensor`
 
 The tensor product of two linear categories admits linear equivalences that exchange its factors
 or pass to the opposite of both factors. On morphisms the equivalences are induced by the
 commutor of module tensor products and by applying `Quiver.Hom.unop` in both factors.
 The product also preserves essential smallness in a common universe, so these comparisons
-apply to the categories used as domains of additive bimodule functors. Fixing an object in
-either factor gives a linear slice functor via `LinearTensor.bifunctor`.
+apply to the categories used as domains of additive bimodule functors.
 
 For preadditive categories we use the same product over `ℤ`, via Mathlib's canonical
 `CategoryTheory.Linear.preadditiveIntLinear` instances. The tensor category construction in
@@ -30,7 +29,7 @@ noncomputable section
 
 open CategoryTheory Opposite
 
-universe w v₁ v₂ v₃ u₁ u₂ u₃ s
+universe w v₁ v₂ u₁ u₂ s
 
 namespace TauCeti
 
@@ -42,33 +41,6 @@ namespace LinearTensor
 variable {R : Type w} [CommSemiring R]
   {C : Type u₁} [Category.{v₁} C] [Preadditive C] [Linear R C]
   {D : Type u₂} [Category.{v₂} D] [Preadditive D] [Linear R D]
-
-section Transport
-
-variable {E : Type u₃} [Category.{v₃} E] [Preadditive E] [Linear R E]
-  (obj : LinearTensor R C D → E)
-  (hom : ∀ P Q, (P ⟶ Q) ≃ₗ[R] (obj P ⟶ obj Q))
-
-private theorem map_comp_of_tmul
-    (comp : ∀ {X Y Z : C} {X' Y' Z' : D}
-      (f : X ⟶ Y) (g : X' ⟶ Y') (f' : Y ⟶ Z) (g' : Y' ⟶ Z'),
-      hom ⟨X, X'⟩ ⟨Z, Z'⟩ (tmul (f ≫ f') (g ≫ g')) =
-        hom ⟨X, X'⟩ ⟨Y, Y'⟩ (tmul f g) ≫ hom ⟨Y, Y'⟩ ⟨Z, Z'⟩ (tmul f' g'))
-    {P Q S : LinearTensor R C D} (a : P ⟶ Q) (b : Q ⟶ S) :
-    hom P S (a ≫ b) = hom P Q a ≫ hom Q S b := by
-  obtain ⟨X, X'⟩ := P
-  obtain ⟨Y, Y'⟩ := Q
-  obtain ⟨Z, Z'⟩ := S
-  induction a using hom_induction_on with
-  | add a₁ a₂ h₁ h₂ =>
-    simp only [Preadditive.add_comp, map_add, h₁, h₂]
-  | tmul f g =>
-    induction b using hom_induction_on with
-    | add b₁ b₂ h₁ h₂ =>
-      simp only [Preadditive.comp_add, map_add, h₁, h₂]
-    | tmul f' g' => simpa only [tmul_comp_tmul] using comp f g f' g'
-
-end Transport
 
 section Symmetry
 
@@ -91,8 +63,10 @@ def swapFunctor : LinearTensor R C D ⥤ LinearTensor R D C where
   map {P Q} := swapHomEquiv P Q
   map_id := fun ⟨X, Y⟩ ↦ by rw [← tmul_id_id X Y, swapHomEquiv_tmul, tmul_id_id]
   map_comp := by
-    apply map_comp_of_tmul
+    apply map_comp_of_tmul (fun P : LinearTensor R C D ↦ (⟨P.snd, P.fst⟩ : LinearTensor R D C))
+      (fun P Q ↦ (swapHomEquiv P Q).toLinearMap)
     intro X Y Z X' Y' Z' f g f' g'
+    simp only [LinearEquiv.coe_coe]
     rw [swapHomEquiv_tmul (R := R) (f ≫ f') (g ≫ g'), swapHomEquiv_tmul (R := R) f g,
       swapHomEquiv_tmul (R := R) f' g', tmul_comp_tmul]
 
@@ -117,8 +91,9 @@ instance : (swapFunctor (R := R) (C := C) (D := D)).Linear R :=
 /-- Swapping the factors twice fixes each morphism. -/
 @[simp]
 theorem swapFunctor_map_swapFunctor_map {P Q : LinearTensor R C D} (t : P ⟶ Q) :
-    swapFunctor.map (swapFunctor.map t) = t :=
-  TensorProduct.comm_comm R _ _ t
+    swapFunctor.map (swapFunctor.map t) = t := by
+  simp only [swapFunctor, swapHomEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply, TensorProduct.comm_comm, LinearEquiv.symm_apply_apply]
 
 /-- Exchanging the two factors of a linear tensor product gives an equivalence, with the same
 exchange in the reverse direction. -/
@@ -206,7 +181,10 @@ def opFunctor : LinearTensor R Cᵒᵖ Dᵒᵖ ⥤ (LinearTensor R C D)ᵒᵖ wh
   map_id := fun ⟨X, Y⟩ ↦ by rw [← tmul_id_id X Y, opHomEquiv_tmul]; simp
   map_comp := by
     apply map_comp_of_tmul
+      (fun P : LinearTensor R Cᵒᵖ Dᵒᵖ ↦ op (⟨P.fst.unop, P.snd.unop⟩ : LinearTensor R C D))
+      (fun P Q ↦ (opHomEquiv P Q).toLinearMap)
     intro X Y Z X' Y' Z' f g f' g'
+    simp only [LinearEquiv.coe_coe]
     rw [opHomEquiv_tmul (R := R) (f ≫ f') (g ≫ g'), opHomEquiv_tmul (R := R) f g,
       opHomEquiv_tmul (R := R) f' g']
     simp only [unop_comp, ← op_comp, tmul_comp_tmul]
@@ -235,20 +213,14 @@ instance : (opFunctor (R := R) (C := C) (D := D)).Linear R :=
 def unopFunctor : (LinearTensor R C D)ᵒᵖ ⥤ LinearTensor R Cᵒᵖ Dᵒᵖ :=
   let obj (P : (LinearTensor R C D)ᵒᵖ) : LinearTensor R Cᵒᵖ Dᵒᵖ :=
     ⟨op P.unop.fst, op P.unop.snd⟩
+  let fullyFaithful : (opFunctor (R := R) (C := C) (D := D)).FullyFaithful :=
+    { preimage := fun {P Q} ↦ (opHomEquiv P Q).symm
+      map_preimage := fun {P Q} ↦ (opHomEquiv P Q).apply_symm_apply
+      preimage_map := fun {P Q} ↦ (opHomEquiv P Q).symm_apply_apply }
   { obj
-    map := fun {P Q} f ↦ (opHomEquiv (obj P) (obj Q)).symm f
-    map_id := fun P ↦ by
-      apply (opHomEquiv (obj P) (obj P)).injective
-      rw [LinearEquiv.apply_symm_apply]
-      exact (opFunctor.map_id (obj P)).symm
-    map_comp := fun {P Q S} f g ↦ by
-      apply (opHomEquiv (obj P) (obj S)).injective
-      rw [LinearEquiv.apply_symm_apply]
-      let e := opHomEquiv (obj P) (obj Q)
-      let e' := opHomEquiv (obj Q) (obj S)
-      have h := (opFunctor (R := R)).map_comp (e.symm f) (e'.symm g)
-      exact (h.trans (congrArg₂ CategoryStruct.comp
-        (e.apply_symm_apply f) (e'.apply_symm_apply g))).symm }
+    map := fun {P Q} ↦ fullyFaithful.preimage (X := obj P) (Y := obj Q)
+    map_id := fun P ↦ fullyFaithful.preimage_id (X := obj P)
+    map_comp := fun {P Q S} ↦ fullyFaithful.preimage_comp (X := obj P) (Y := obj Q) (Z := obj S) }
 
 /-- The inverse comparison takes the opposite of each component of the pair. -/
 @[simp]
@@ -260,7 +232,8 @@ theorem unopFunctor_obj (P : (LinearTensor R C D)ᵒᵖ) :
 @[simp]
 theorem unopFunctor_map_op_tmul {X Y : C} {X' Y' : D} (f : X ⟶ Y) (g : X' ⟶ Y') :
     (unopFunctor (R := R)).map (tmul f g).op = tmul (k := R) f.op g.op :=
-  (rfl)
+  (opHomEquiv (R := R) ⟨op Y, op Y'⟩ ⟨op X, op X'⟩).symm_apply_eq.2
+    (opHomEquiv_tmul (R := R) f.op g.op).symm
 
 /-- The forward opposite comparison undoes the inverse comparison on morphisms. -/
 @[simp]
