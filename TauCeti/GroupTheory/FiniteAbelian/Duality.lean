@@ -128,4 +128,20 @@ theorem exists_comp_eq_iff_ker_le_ker [CommGroup A] [Finite A]
     refine ⟨ψ, MonoidHom.ext fun b ↦ ?_⟩
     simpa using DFunLike.congr_fun hψ (f.rangeRestrict b)
 
+/-- The characters trivial on the kernel of a character of a finite abelian group are exactly
+its powers. -/
+theorem dual_ker_eq_zpowers [CommGroup A] [Finite A]
+    [HasEnoughRootsOfUnity R (Monoid.exponent A)] (ψ : A →* Rˣ) :
+    (CommGroup.subgroupOrderIsoSubgroupMonoidHom A R ψ.ker).ofDual = Subgroup.zpowers ψ := by
+  have h : (CommGroup.subgroupOrderIsoSubgroupMonoidHom A R).symm
+      (OrderDual.toDual (Subgroup.zpowers ψ)) = ψ.ker := by
+    ext g
+    rw [CommGroup.mem_subgroupOrderIsoSubgroupMonoidHom_symm_iff, mem_ker]
+    constructor
+    · exact fun h ↦ h ψ (Subgroup.mem_zpowers ψ)
+    · intro hg φ hφ
+      obtain ⟨n, rfl⟩ := hφ
+      simp [hg]
+  exact congrArg OrderDual.ofDual ((OrderIso.symm_apply_eq _).mp h).symm
+
 end MonoidHom
