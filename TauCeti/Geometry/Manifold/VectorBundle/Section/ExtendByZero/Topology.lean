@@ -19,7 +19,8 @@ field and at every regularity, and for the native final locally convex topology 
 On native smooth bundle tests it gives the continuous linear extension `extendByZeroCLM`, its
 compact-convergence transpose `restrictDualCLM`, extension between nested opens
 `extendByZeroToOpenCLM` with its transpose `restrictDualToOpenCLM`, the localization
-`localizeCLM` of operators with controlled supports, and the universal-open equivalence `univCLE`.
+`localizeCLM` of operators with controlled supports, the localization `cutoffRestrictCLM` of tests
+by a cutoff supported in an open subset, and the universal-open equivalence `univCLE`.
 -/
 
 public noncomputable section
@@ -318,6 +319,17 @@ theorem tsupport_extendByZeroCLM :
   simpa only [tsupport_def] using
     (tsupport_extendByZero ((ofCompactlySupported I F (c *ᵖ V)).symm s))
 
+/-- Extension by zero of native tests is injective. -/
+theorem extendByZeroCLM_injective :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    Function.Injective (extendByZeroCLM (I := I) (F := F) (V := V) (U := U) :
+      TauCeti.BundleTest I F (c *ᵖ V) → TauCeti.BundleTest I F V) := by
+  intro c s t h
+  obtain ⟨s, rfl⟩ := (ofCompactlySupported I F (c *ᵖ V)).surjective s
+  obtain ⟨t, rfl⟩ := (ofCompactlySupported I F (c *ᵖ V)).surjective t
+  rw [extendByZeroCLM_ofCompactlySupported, extendByZeroCLM_ofCompactlySupported] at h
+  exact congrArg _ (extendByZeroLinearMap_injective ((ofCompactlySupported I F V).injective h))
+
 /-- Extension commutes with multiplication by an ambient smooth scalar function. -/
 theorem extendByZeroCLM_smulLeftCLM :
     let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
@@ -443,9 +455,17 @@ variable {N G : Type*} [TopologicalSpace N] [ChartedSpace H N] [T2Space N]
   {Z : N → Type*} [∀ x, AddCommGroup (Z x)] [∀ x, Module ℝ (Z x)]
   [∀ x, TopologicalSpace (Z x)] [TopologicalSpace (TotalSpace G Z)]
   [FiberBundle G Z] [VectorBundle ℝ G Z] [ContMDiffVectorBundle ∞ G Z I]
-  (T : TauCeti.BundleTest I G Z →L[ℝ] TauCeti.BundleTest I F V) (q : C(N, U))
+  (T : TauCeti.BundleTest I G Z →L[ℝ] TauCeti.BundleTest I F V)
+  (κ : Compacts N → Compacts U)
+  (hκ : ∀ (K : Compacts N) (s : TauCeti.BundleTest I G Z), closure {x | s x ≠ 0} ⊆ K →
+    closure {x : M | T s x ≠ 0} ⊆ Subtype.val '' (κ K : Set U))
+  (q : C(N, U))
   (hT : ∀ s, closure {x : M | T s x ≠ 0} ⊆
     Subtype.val '' q '' closure {x : N | s x ≠ 0})
+
+/-! The private core below localizes any operator `T` whose values on the tests supported in a
+compact set `K` are supported in a compact set `κ K` of `U`. Both `localizeCLM` and
+`cutoffRestrictCLM` are instances of it. -/
 
 private def relocalizeLinearMap : TauCeti.BundleTest I G Z →ₗ[ℝ]
     compactlySupported I F ∞ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) := by
@@ -461,21 +481,20 @@ private def relocalizeLinearMap : TauCeti.BundleTest I G Z →ₗ[ℝ]
   apply restrict_mem_compactlySupported ((TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s))
   rw [tsupport_def]
   rintro x hx
-  rcases hT s hx with ⟨u, ⟨y, _, rfl⟩, rfl⟩
-  exact (q y).property
+  obtain ⟨u, -, rfl⟩ := hκ ⟨_, s.isCompact_tsupport⟩ s subset_rfl hx
+  exact u.property
 
 omit [LocallyCompactSpace E] [T2Space M] [T2Space N] in
 private theorem relocalizeLinearMap_val (s : TauCeti.BundleTest I G Z) :
-    (relocalizeLinearMap T q hT s).val =
+    (relocalizeLinearMap T κ hκ s).val =
       ((TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s)).val.restrict U := by
   simp only [relocalizeLinearMap, LinearMap.codRestrict_apply, LinearMap.comp_apply,
     Submodule.subtype_apply, LinearEquiv.coe_toLinearMap, ContinuousLinearMap.coe_coe]
   rw [restrictLinearMap_apply]
 
 private def relocalizeStageLinearMap (K : Compacts N) : supportedIn I G ∞ Z K →ₗ[ℝ]
-    supportedIn I F ∞ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)
-      (K.map q q.continuous) := by
-  let L := (relocalizeLinearMap T q hT).comp
+    supportedIn I F ∞ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) (κ K) := by
+  let L := (relocalizeLinearMap T κ hκ).comp
     ((TauCeti.BundleTest.ofCompactlySupported I G Z).toLinearMap.comp (ofSupportedIn K))
   let A := (compactlySupported I F ∞
     ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)).subtype.comp L
@@ -483,20 +502,20 @@ private def relocalizeStageLinearMap (K : Compacts N) : supportedIn I G ∞ Z K 
   intro s
   rw [mem_supportedIn]
   -- Evaluate the supported-stage carrier through its named value law before forgetting support.
-  change (relocalizeLinearMap T q hT
+  change (relocalizeLinearMap T κ hκ
     (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s))).val.tsupport ⊆ _
   rw [relocalizeLinearMap_val, tsupport_restrict, tsupport_def]
   intro u hu
-  rcases hT (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s)) hu with
-    ⟨u', ⟨y, hy, rfl⟩, heq⟩
-  refine ⟨y, (mem_supportedIn.mp s.property) ?_, Subtype.ext heq⟩
+  refine Subtype.val_injective.mem_set_image.1
+    (hκ K (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s)) (fun y hy ↦ ?_) hu)
+  refine (mem_supportedIn.mp s.property) ?_
   simpa only [LinearEquiv.symm_apply_apply, ofSupportedIn_apply, tsupport_def] using hy
 
 omit [LocallyCompactSpace E] [T2Space M] [T2Space N] in
 private theorem relocalizeStageLinearMap_val (K : Compacts N)
     (s : supportedIn I G ∞ Z K) :
-    (relocalizeStageLinearMap T q hT K s).val =
-      (relocalizeLinearMap T q hT
+    (relocalizeStageLinearMap T κ hκ K s).val =
+      (relocalizeLinearMap T κ hκ
         (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s))).val := by
   simp only [relocalizeStageLinearMap, LinearMap.codRestrict_apply, LinearMap.comp_apply,
     Submodule.subtype_apply, LinearEquiv.coe_toLinearMap]
@@ -513,7 +532,7 @@ private theorem continuous_relocalizeStageLinearMap (K : Compacts N) :
     let hAN : ∀ x, (AN x : Set N) ⊆ (eN x).baseSet := fun _ ↦ subset_rfl
     letI := frameTopology (I := I) (n := ∞) eN AN hAN
     letI := frameTopology (I := I) (n := ∞) eU AU hAU
-    Continuous (relocalizeStageLinearMap T q hT K) := by
+    Continuous (relocalizeStageLinearMap T κ hκ K) := by
   intro c eU AU hAU eN AN hAN
   let := frameTopology (I := I) (n := ∞) eN AN hAN
   let := frameTopology (I := I) (n := ∞) eU AU hAU
@@ -528,23 +547,22 @@ private theorem continuous_relocalizeStageLinearMap (K : Compacts N) :
     (hf.comp (T.continuous.comp
       (TauCeti.BundleTest.continuous_ofSupportedIn (I := I) (F := G) (V := Z) K)))
   have hv : Continuous (fun s : supportedIn I G ∞ Z K ↦
-      (relocalizeStageLinearMap T q hT K s).val) := by
+      (relocalizeStageLinearMap T κ hκ K s).val) := by
     apply hh.congr
     intro s
-    exact ((relocalizeStageLinearMap_val T q hT K s).trans
-      (relocalizeLinearMap_val T q hT _)).symm
+    exact ((relocalizeStageLinearMap_val T κ hκ K s).trans
+      (relocalizeLinearMap_val T κ hκ _)).symm
   exact hv.subtype_mk _
 
 omit [T2Space M] [T2Space N] in
-/-- Given `q : C(N, U)` such that the closed support of `T s` lies in the image under `q` of the
-closed support of `s` (hypothesis `hT`), the continuous linear map sending a native test `s` to
-`T s` restricted to `U`. -/
-def localizeCLM :
+/-- The continuous linear map sending a native test `s` to `T s` restricted to `U`, for an
+operator `T` sending tests supported in `K` to tests supported in `κ K`. -/
+private def relocalizeCLM :
     let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     TauCeti.BundleTest I G Z →L[ℝ] TauCeti.BundleTest I F (c *ᵖ V) := by
   intro c
   let L := (TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V)).toLinearMap.comp
-    (relocalizeLinearMap T q hT)
+    (relocalizeLinearMap T κ hκ)
   refine ⟨L, ?_⟩
   let eN := fun x : N ↦ trivializationAt G Z x
   let AN := fun x : N ↦ (⟨(eN x).baseSet, (eN x).open_baseSet⟩ : Opens N)
@@ -559,30 +577,64 @@ def localizeCLM :
   apply (TauCeti.BundleTest.continuous_iff_continuous_comp (I := I) (F := G) (V := Z) L).2
   intro K
   have hi : Continuous (TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V) ∘
-      ofSupportedIn (I := I) (F := F) (n := ∞) (V := c *ᵖ V) (K.map q q.continuous)) := by
+      ofSupportedIn (I := I) (F := F) (n := ∞) (V := c *ᵖ V) (κ K)) := by
     exact continuous_of_continuous_compactlySupportedTopology_pullback_cod
       (ContMDiffSection.continuous_ofSupportedIn (I := I) (n := ∞) eU AU hAU _)
-  convert hi.comp (continuous_relocalizeStageLinearMap T q hT K) using 1
+  convert hi.comp (continuous_relocalizeStageLinearMap T κ hκ K) using 1
   funext s
   apply TauCeti.BundleTest.ext
   intro u
   -- Evaluate the supported-stage carrier through its named value law before forgetting support.
-  change (relocalizeLinearMap T q hT
+  change (relocalizeLinearMap T κ hκ
     (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s))).val u = _
   -- `ofSupportedIn_apply` and the stage value law see the stage carrier through its subtype
   -- coercion into compactly supported sections, which `rw` does not unfold.
   erw [ofSupportedIn_apply, relocalizeStageLinearMap_val]
 
 omit [T2Space M] [T2Space N] in
+private theorem relocalizeCLM_apply :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ∀ (s : TauCeti.BundleTest I G Z) (u : U), relocalizeCLM T κ hκ s u = T s (u : M)) := by
+  intro s u
+  -- The final topology adds continuity to this same algebraic localization carrier.
+  change (relocalizeLinearMap T κ hκ s).val u = _
+  rw [relocalizeLinearMap_val, ContMDiffSection.restrict_apply]
+
+omit [T2Space N] in
+private theorem extendByZeroCLM_relocalizeCLM :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ∀ s : TauCeti.BundleTest I G Z,
+      extendByZeroCLM (I := I) (F := F) (V := V) (U := U) (relocalizeCLM T κ hκ s) = T s) := by
+  intro s
+  apply TauCeti.BundleTest.ext
+  intro x
+  by_cases hx : x ∈ U
+  · rw [extendByZeroCLM_apply_of_mem _ ⟨x, hx⟩, relocalizeCLM_apply]
+    -- Both evaluations lie in the original ambient fibre; only the subtype index differs.
+    rfl
+  · rw [extendByZeroCLM_apply_of_notMem _ hx]
+    symm
+    by_contra hne
+    obtain ⟨u, -, rfl⟩ := hκ ⟨_, s.isCompact_tsupport⟩ s subset_rfl (subset_closure hne)
+    exact hx u.property
+
+omit [T2Space M] [T2Space N] in
+/-- Given `q : C(N, U)` such that the closed support of `T s` lies in the image under `q` of the
+closed support of `s` (hypothesis `hT`), the continuous linear map sending a native test `s` to
+`T s` restricted to `U`. -/
+def localizeCLM :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    TauCeti.BundleTest I G Z →L[ℝ] TauCeti.BundleTest I F (c *ᵖ V) :=
+  relocalizeCLM T (fun K ↦ K.map q q.continuous) fun _ s hs ↦
+    (hT s).trans (image_mono (image_mono hs))
+
+omit [T2Space M] [T2Space N] in
 /-- Localization agrees with the original operator at every point of the open subset. -/
 @[simp]
 theorem localizeCLM_apply :
     dsimp% only [ContinuousMap.coe_mk] (
-    ∀ (s : TauCeti.BundleTest I G Z) (u : U), localizeCLM T q hT s u = T s (u : M)) := by
-  intro s u
-  -- The final topology adds continuity to this same algebraic localization carrier.
-  change (relocalizeLinearMap T q hT s).val u = _
-  rw [relocalizeLinearMap_val, ContMDiffSection.restrict_apply]
+    ∀ (s : TauCeti.BundleTest I G Z) (u : U), localizeCLM T q hT s u = T s (u : M)) :=
+  relocalizeCLM_apply T _ _
 
 omit [T2Space N] in
 /-- Re-extending a controlled localization recovers the original native test operator. -/
@@ -590,21 +642,80 @@ omit [T2Space N] in
 theorem extendByZeroCLM_localizeCLM :
     dsimp% only [ContinuousMap.coe_mk] (
     ∀ s : TauCeti.BundleTest I G Z,
-      extendByZeroCLM (I := I) (F := F) (V := V) (U := U) (localizeCLM T q hT s) = T s) := by
-  intro s
-  apply TauCeti.BundleTest.ext
-  intro x
-  by_cases hx : x ∈ U
-  · rw [extendByZeroCLM_apply_of_mem _ ⟨x, hx⟩, localizeCLM_apply]
-    -- Both evaluations lie in the original ambient fibre; only the subtype index differs.
-    rfl
-  · rw [extendByZeroCLM_apply_of_notMem _ hx]
-    symm
-    by_contra hne
-    rcases hT s (subset_closure hne) with ⟨u, _, rfl⟩
-    exact hx u.property
+      extendByZeroCLM (I := I) (F := F) (V := V) (U := U) (localizeCLM T q hT s) = T s) :=
+  extendByZeroCLM_relocalizeCLM T _ _
 
 end Localization
+
+section Cutoff
+
+variable {χ : C^∞⟮I, M; ℝ⟯}
+
+/-- The compact set of `U` in which `χ s` lies for every test `s` supported in `K`. -/
+private def cutoffCompacts (hχ : tsupport χ ⊆ U) (K : Compacts M) : Compacts U :=
+  ⟨Subtype.val ⁻¹' ((K : Set M) ∩ tsupport χ), by
+    rw [Subtype.isCompact_iff, image_preimage_eq_of_subset fun x hx ↦ ⟨⟨x, hχ hx.2⟩, rfl⟩]
+    exact K.isCompact.inter_right (isClosed_tsupport χ)⟩
+
+omit [LocallyCompactSpace E] [T2Space M] in
+/-- For a test `s` supported in `K`, the product `χ s` is supported in `cutoffCompacts hχ K`. -/
+private theorem tsupport_smulLeftCLM_subset_cutoffCompacts (hχ : tsupport χ ⊆ U)
+    (K : Compacts M) (s : BundleTest I F V) (hs : closure {x | s x ≠ 0} ⊆ K) :
+    closure {x | smulLeftCLM χ s x ≠ 0} ⊆ Subtype.val '' (cutoffCompacts hχ K : Set U) :=
+  fun x hx ↦
+    have h := tsupport_smulLeftCLM_subset χ s hx
+    ⟨⟨x, hχ h.1⟩, ⟨hs h.2, h.1⟩, rfl⟩
+
+omit [T2Space M] in
+/-- The localization `s ↦ (χ s)|_U` of bundle tests to an open set `U` containing the support of
+a smooth function `χ`, as a continuous linear map. Its extension by zero is `χ s`
+(`TauCeti.BundleTest.extendByZeroCLM_cutoffRestrictCLM`). -/
+def cutoffRestrictCLM (hχ : tsupport χ ⊆ U) :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    BundleTest I F V →L[ℝ] BundleTest I F (c *ᵖ V) :=
+  relocalizeCLM (smulLeftCLM χ) (cutoffCompacts hχ)
+    (tsupport_smulLeftCLM_subset_cutoffCompacts hχ)
+
+omit [T2Space M] in
+/-- The localization of `s` by `χ` is `χ s` on `U`. -/
+@[simp]
+theorem cutoffRestrictCLM_apply (hχ : tsupport χ ⊆ U) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ∀ (s : BundleTest I F V) (x : U), cutoffRestrictCLM hχ s x = χ x • s (x : M)) :=
+  fun s x ↦ (relocalizeCLM_apply _ _ _ s x).trans (smulLeftCLM_apply χ s x)
+
+/-- Extending the localization of `s` by `χ` by zero gives `χ s`. -/
+@[simp]
+theorem extendByZeroCLM_cutoffRestrictCLM (hχ : tsupport χ ⊆ U) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ∀ s : BundleTest I F V,
+      extendByZeroCLM (I := I) (F := F) (V := V) (U := U) (cutoffRestrictCLM hχ s) =
+        smulLeftCLM χ s) :=
+  extendByZeroCLM_relocalizeCLM _ _ _
+
+/-- The image of extension by zero consists exactly of the bundle tests whose closed support
+lies in `U`. -/
+theorem mem_range_extendByZeroCLM_iff (s : TauCeti.BundleTest I F V) :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    s ∈ LinearMap.range ((extendByZeroCLM (I := I) (F := F) (V := V) (U := U) :
+        TauCeti.BundleTest I F (c *ᵖ V) →L[ℝ] TauCeti.BundleTest I F V) :
+        TauCeti.BundleTest I F (c *ᵖ V) →ₗ[ℝ] TauCeti.BundleTest I F V) ↔
+      closure {x | s x ≠ 0} ⊆ U := by
+  intro _
+  constructor
+  · rintro ⟨t, rfl⟩
+    rw [ContinuousLinearMap.coe_coe, tsupport_extendByZeroCLM]
+    rintro _ ⟨x, _, rfl⟩
+    exact x.property
+  · intro hs
+    obtain ⟨s, rfl⟩ := (ofCompactlySupported I F V).surjective s
+    have hs' : s.val.tsupport ⊆ U := by
+      simpa only [coe_ofCompactlySupported, ← ContMDiffSection.tsupport_def] using hs
+    obtain ⟨t, ht⟩ := (mem_range_extendByZeroLinearMap_iff s).2 hs'
+    exact ⟨ofCompactlySupported I F _ t, by
+      rw [ContinuousLinearMap.coe_coe, extendByZeroCLM_ofCompactlySupported, ht]⟩
+
+end Cutoff
 
 /-- Continuous linear extension of native tests to a larger open subset. -/
 def extendByZeroToOpenCLM (h : U ≤ D) :
@@ -883,7 +994,9 @@ theorem restrictUnivCLM_apply (s : TauCeti.BundleTest I F V) (x : (⊤ : Opens M
     restrictUnivCLM (I := I) (F := F) (V := V) s x = s (x : M)) := by
   -- The identity operator is localized; its public evaluation law retains the ambient value.
   exact localizeCLM_apply (I := I) (F := F) (V := V) (U := (⊤ : Opens M))
-    (ContinuousLinearMap.id ℝ (TauCeti.BundleTest I F V)) _ _ s x
+    (ContinuousLinearMap.id ℝ (TauCeti.BundleTest I F V))
+    ⟨fun x ↦ ⟨x, Set.mem_univ x⟩, continuous_id.subtype_mk _⟩
+    (fun _ x hx ↦ ⟨_, ⟨x, hx, rfl⟩, rfl⟩) s x
 
 omit [T2Space M] in
 /-- Universal-open restriction commutes with the compact-support representation. -/

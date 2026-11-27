@@ -116,6 +116,17 @@ theorem smulLeftCLM_add (f g : C^∞⟮I, M; ℝ⟯) :
   ext s x
   simp [add_smul]
 
+/-- Smooth functions summing to one on the support of a bundle test split the test. -/
+theorem sum_smulLeftCLM_eq_self {κ : Type*} {t : Finset κ} (ρ : κ → C^∞⟮I, M; ℝ⟯)
+    (s : BundleTest I F V) (hρ : ∀ x ∈ closure {x | s x ≠ 0}, ∑ k ∈ t, ρ k x = 1) :
+    ∑ k ∈ t, smulLeftCLM (ρ k) s = s := by
+  ext x
+  rw [sum_apply]
+  simp_rw [smulLeftCLM_apply, ← Finset.sum_smul]
+  by_cases hx : x ∈ closure {x | s x ≠ 0}
+  · rw [hρ x hx, one_smul]
+  · rw [Bundle.apply_eq_zero_of_notMem_closure hx, smul_zero]
+
 /-! ### Multiplication of functionals -/
 
 section Dual
