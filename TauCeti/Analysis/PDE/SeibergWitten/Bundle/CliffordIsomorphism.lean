@@ -160,13 +160,17 @@ theorem map_vectorFrame_hodgeStar (s : SpinCStructure F E 4) {x : X} (p : s.P x)
       o.hodgeStar hkl (exteriorPower.map 2 (s.vectorFrame b p).toLinearMap α) := by
   set κ := s.vectorFrame b p
   have h := o.hodgeStar_map κ.symm hkl (hklE x) (exteriorPower.map 2 κ.toLinearMap α)
-  rw [← fiberOrientation_map_repr s p] at h
-  have hκ (y : ⋀[ℝ]^2 (E x)) :
-      exteriorPower.map 2 κ.symm.toLinearMap (exteriorPower.map 2 κ.toLinearMap y) = y := by
-    simp
-  rw [hκ] at h
+  rw [← fiberOrientation_map_repr s p, LinearIsometryEquiv.toLinearEquiv_symm,
+    exteriorPower.map_symm_map] at h
   rw [h]
   simp
+
+/-- `⋀² κ_p` preserves the inner product of two-forms, as `κ_p` is a linear isometry. -/
+theorem inner_map_vectorFrame_map_vectorFrame (s : SpinCStructure F E 4) {x : X} (p : s.P x)
+    (y z : ⋀[ℝ]^2 (E x)) :
+    ⟪exteriorPower.map 2 (s.vectorFrame b p).toLinearMap y,
+      exteriorPower.map 2 (s.vectorFrame b p).toLinearMap z⟫_ℝ = ⟪y, z⟫_ℝ :=
+  exteriorPower.inner_map_map (s.vectorFrame b p).toLinearIsometry y z
 
 /-- `⋀² κ_p` maps the self-dual forms of `E x` to those of `V`. -/
 theorem map_vectorFrame_mem_eigenspace_hodgeStar (s : SpinCStructure F E 4) {x : X}
@@ -180,11 +184,10 @@ theorem map_vectorFrame_symm_mem_eigenspace_hodgeStar (s : SpinCStructure F E 4)
     (p : s.P x) {α : ⋀[ℝ]^2 V} (hα : α ∈ Λ⁺V) :
     exteriorPower.map 2 (s.vectorFrame b p).symm.toLinearMap α ∈ Λ⁺[s, x] := by
   set κ := s.vectorFrame b p
-  have hκ : exteriorPower.map 2 κ.toLinearMap (exteriorPower.map 2 κ.symm.toLinearMap α) = α := by
-    simp
   rw [mem_eigenspace_iff, one_smul, LinearEquiv.coe_coe] at hα ⊢
   apply exteriorPower.map_injective_field κ.injective
-  rw [map_vectorFrame_hodgeStar, hκ, hα]
+  rw [map_vectorFrame_hodgeStar, LinearIsometryEquiv.toLinearEquiv_symm, exteriorPower.map_map_symm,
+    hα]
 
 /-! ### The Clifford map on the self-dual forms of a fibre -/
 
@@ -217,15 +220,10 @@ theorem trace_cliffordRestriction_mul (s : SpinCStructure F E 4) {x : X}
         (s.cliffordRestriction o hQ b ρ hρ x α * s.cliffordRestriction o hQ b ρ hρ x β) =
       ((⟪α, β⟫_ℝ + ⟪⋆[s, x] α, β⟫_ℝ : ℝ) : ℂ) * finrank ℂ (positiveHalfSpinors o ρ) := by
   let p : s.P x := Classical.arbitrary _
-  have hinner (y z : ⋀[ℝ]^2 (E x)) :
-      ⟪exteriorPower.map 2 (s.vectorFrame b p).toLinearMap y,
-        exteriorPower.map 2 (s.vectorFrame b p).toLinearMap z⟫_ℝ = ⟪y, z⟫_ℝ :=
-    exteriorPower.inner_map_map (s.vectorFrame b p).toLinearIsometry y z
   rw [cliffordRestriction_eq_conj s p, cliffordRestriction_eq_conj s p,
-    ← ContinuousLinearMap.toLinearMap_mul, ← map_mul,
-    ContinuousLinearEquiv.trace_conjContinuousAlgEquiv,
-    ContinuousLinearMap.toLinearMap_mul, SeibergWitten.trace_cliffordRestriction_mul o ρ hQ hkl,
-    ← map_vectorFrame_hodgeStar, hinner, hinner]
+    ContinuousLinearEquiv.trace_conjContinuousAlgEquiv_mul,
+    SeibergWitten.trace_cliffordRestriction_mul o ρ hQ hkl, ← map_vectorFrame_hodgeStar,
+    inner_map_vectorFrame_map_vectorFrame, inner_map_vectorFrame_map_vectorFrame]
 
 /-- **The Hilbert–Schmidt normalization of the Clifford map on a fibre**: in complex rank two,
 `tr (C_x(α)* C_x(β)) = 4 ⟪α, β⟫` for self-dual `α`. -/
@@ -280,23 +278,14 @@ private theorem inner_map_vectorFrame_symm_cliffordRestrictionAdjoint (s : SpinC
             (frm p).toContinuousLinearEquiv).symm T)), (β : ⋀[ℝ]^2 (E x))⟫_ℝ =
       (LinearMap.trace ℂ (s.halfSpinorBundle o hQ b ρ hρ 1 x)
         (T * s.cliffordRestriction o hQ b ρ hρ x β)).re := by
-  set κ := s.vectorFrame b p
   set e := ContinuousLinearEquiv.conjContinuousAlgEquiv (frm p).toContinuousLinearEquiv
   set τT := SeibergWitten.cliffordRestrictionAdjoint o ρ hkl (e.symm T)
   have hβ := map_vectorFrame_mem_eigenspace_hodgeStar s p β.property
   set β' : Λ⁺V := ⟨_, hβ⟩
-  -- Move `⋀² κ_p⁻¹` across the inner product, then use the model adjunction.
-  have hinner (y z : ⋀[ℝ]^2 (E x)) :
-      ⟪exteriorPower.map 2 κ.toLinearMap y, exteriorPower.map 2 κ.toLinearMap z⟫_ℝ = ⟪y, z⟫_ℝ :=
-    exteriorPower.inner_map_map κ.toLinearIsometry y z
-  have hκ : exteriorPower.map 2 κ.toLinearMap
-      (exteriorPower.map 2 κ.symm.toLinearMap (τT : ⋀[ℝ]^2 V)) = τT :=
-    exteriorPower.map_map_symm κ.toLinearEquiv _
-  have hmul : T * s.cliffordRestriction o hQ b ρ hρ x β =
-      e (e.symm T * SeibergWitten.cliffordRestriction o ρ β') := by
-    rw [map_mul, e.apply_symm_apply, cliffordRestriction_eq_conj s p]
-  rw [← hinner, hκ, ← ContinuousLinearMap.toLinearMap_mul,
-    hmul, ContinuousLinearEquiv.trace_conjContinuousAlgEquiv, ContinuousLinearMap.toLinearMap_mul,
+  -- Move `⋀² κ_p⁻¹` across the inner product, write `T = e (e⁻¹ T)`, then use the model adjunction.
+  rw [← inner_map_vectorFrame_map_vectorFrame (b := b) s p, LinearIsometryEquiv.toLinearEquiv_symm,
+    exteriorPower.map_map_symm, ← e.apply_symm_apply T, cliffordRestriction_eq_conj s p,
+    ContinuousLinearEquiv.trace_conjContinuousAlgEquiv_mul,
     ← SeibergWitten.inner_cliffordRestrictionAdjoint_left o ρ hkl (e.symm T) β',
     Submodule.coe_inner]
 
@@ -375,10 +364,8 @@ theorem re_trace_adjoint_mul_cliffordRestriction (s : SpinCStructure F E 4) {x :
   obtain ⟨T₀, rfl⟩ := e.surjective T
   rw [inner_cliffordRestrictionAdjoint_left, cliffordRestriction_eq_conj s p,
     LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv,
-    ← ContinuousLinearMap.toLinearMap_mul, ← map_mul, ← ContinuousLinearMap.toLinearMap_mul,
-    ← map_mul, ContinuousLinearEquiv.trace_conjContinuousAlgEquiv,
-    ContinuousLinearEquiv.trace_conjContinuousAlgEquiv, ContinuousLinearMap.toLinearMap_mul,
-    ContinuousLinearMap.toLinearMap_mul]
+    ContinuousLinearEquiv.trace_conjContinuousAlgEquiv_mul,
+    ContinuousLinearEquiv.trace_conjContinuousAlgEquiv_mul]
   have hβ := map_vectorFrame_mem_eigenspace_hodgeStar s p β.property
   exact (SeibergWitten.re_trace_adjoint_mul_cliffordRestriction o hρ hkl T₀ ⟨_, hβ⟩).trans
     (SeibergWitten.inner_cliffordRestrictionAdjoint_left o ρ hkl T₀ ⟨_, hβ⟩)

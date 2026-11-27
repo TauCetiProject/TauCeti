@@ -315,6 +315,7 @@ theorem _root_.IsSelfAdjoint.traceFreePart [CompleteSpace E]
 
 /-- Conjugation `T ↦ e ∘ T ∘ e⁻¹` by a continuous linear equivalence commutes with taking trace-free
 parts, as it is unital and preserves traces and dimensions. -/
+@[simp]
 theorem _root_.ContinuousLinearEquiv.traceFreePart_conjContinuousAlgEquiv {F : Type*}
     [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] (e : E ≃L[𝕜] F) (T : E →L[𝕜] E) :
     traceFreePart 𝕜 F (e.conjContinuousAlgEquiv T) =

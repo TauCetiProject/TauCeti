@@ -30,7 +30,8 @@ the trace through a Bochner integral of operators, and to define the divergence 
 as the trace of its derivative.
 
 Conjugation by a continuous linear equivalence `e`, `T ↦ e ∘ T ∘ e⁻¹`, preserves the unbundled
-trace (`ContinuousLinearEquiv.trace_conjContinuousAlgEquiv`).
+trace (`ContinuousLinearEquiv.trace_conjContinuousAlgEquiv`), and hence the trace of a product
+(`ContinuousLinearEquiv.trace_conjContinuousAlgEquiv_mul`).
 -/
 
 public section
@@ -109,5 +110,14 @@ theorem trace_conjContinuousAlgEquiv (e : G ≃L[𝕜] H) (T : G →L[𝕜] G) :
     LinearMap.trace 𝕜 H (e.conjContinuousAlgEquiv T) = LinearMap.trace 𝕜 G T :=
   -- On underlying linear maps, `conjContinuousAlgEquiv` is `LinearEquiv.conj`.
   LinearMap.trace_conj' (T : G →ₗ[𝕜] G) e.toLinearEquiv
+
+/-- The trace of a product is invariant under the conjugation `T ↦ e ∘ T ∘ e⁻¹` by a continuous
+linear equivalence: `tr (e A e⁻¹ ∘ e B e⁻¹) = tr (A B)`. -/
+@[simp]
+theorem trace_conjContinuousAlgEquiv_mul (e : G ≃L[𝕜] H) (A B : G →L[𝕜] G) :
+    LinearMap.trace 𝕜 H (e.conjContinuousAlgEquiv A * e.conjContinuousAlgEquiv B) =
+      LinearMap.trace 𝕜 G (A * B) := by
+  rw [← ContinuousLinearMap.toLinearMap_mul, ← map_mul, trace_conjContinuousAlgEquiv,
+    ContinuousLinearMap.toLinearMap_mul]
 
 end ContinuousLinearEquiv
