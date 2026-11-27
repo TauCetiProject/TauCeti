@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 
 import TauCeti.AlgebraicTopology.Disk.CubeBoundary
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
+import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
@@ -72,12 +73,6 @@ section Chart
 
 variable {m : ℕ}
 
-/-- Relabelling the coordinates of `v` along `ULift` keeps the sum of their squares, `‖v‖²`. -/
-private lemma sum_sq_apply_up {n : ℕ} (v : EuclideanSpace ℝ (ULift.{u} (Fin n))) :
-    ∑ i : Fin n, v (ULift.up i) ^ 2 = ‖v‖ ^ 2 := by
-  rw [EuclideanSpace.real_norm_sq_eq, ← Equiv.ulift.symm.sum_comp]
-  rfl
-
 /-- The point `(√(1 - ‖v‖²), v)` of `ℝᵐ⁺²`. -/
 private def chartVec (v : EuclideanSpace ℝ (ULift.{u} (Fin (m + 1)))) :
     EuclideanSpace ℝ (Fin (m + 2)) :=
@@ -85,10 +80,13 @@ private def chartVec (v : EuclideanSpace ℝ (ULift.{u} (Fin (m + 1)))) :
 
 private lemma norm_chartVec {v : EuclideanSpace ℝ (ULift.{u} (Fin (m + 1)))} (hv : ‖v‖ ≤ 1) :
     ‖chartVec v‖ = 1 := by
+  -- Relabelling the coordinates of `v` along `ULift` keeps the sum of their squares.
+  have hsum : ∑ i : Fin (m + 1), v (ULift.up i) ^ 2 = ‖v‖ ^ 2 :=
+    EuclideanSpace.sum_sq_apply_equiv Equiv.ulift.symm v
   have h : ‖chartVec v‖ ^ 2 = 1 := by
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_succ]
     simp only [chartVec, PiLp.toLp_apply, Fin.cons_zero, Fin.cons_succ]
-    rw [sum_sq_apply_up, Real.sq_sqrt (by nlinarith [norm_nonneg v]), sub_add_cancel]
+    rw [hsum, Real.sq_sqrt (by nlinarith [norm_nonneg v]), sub_add_cancel]
   exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 h
 
 variable (m) in
@@ -143,7 +141,7 @@ private lemma mem_range_sphereChart {x : TopCat.sphere.{u} (m + 1)}
   have hsq : ‖chartProj x‖ ^ 2 = 1 - y 0 ^ 2 := by
     have h := EuclideanSpace.real_norm_sq_eq y
     rw [hy, Fin.sum_univ_succ] at h
-    rw [EuclideanSpace.real_norm_sq_eq, ← Equiv.ulift.symm.sum_comp]
+    rw [← EuclideanSpace.sum_sq_apply_equiv Equiv.ulift.symm]
     simp only [chartProj, Equiv.ulift_symm_apply]
     linarith
   have hlt : ‖chartProj x‖ < 1 := by
@@ -250,10 +248,6 @@ private def cubeToEuclidean :
     rw [TopPair.range_ofSubset_map]
     exact cubeVec_ne_zero ht
 
-private lemma cubeToEuclidean_fst_apply (x : (cubeBoundaryPair.{u} (m + 1)).fst) :
-    TopPair.Hom.fst (cubeToEuclidean.{u} (m := m)) x = cubeVec x.down :=
-  cubeBoundaryPairHom_fst_apply _ _ x
-
 section Coefficients
 
 variable {C : Type*} [Category C] [Limits.HasCoproducts.{u} C] [Abelian C] (R : C)
@@ -285,17 +279,16 @@ private lemma isIso_singularHomologyMap_cubeToEuclidean (k : ℕ) :
         C((cubeBoundaryPair.{u} (m + 1)).snd, sphere (0 : E) 1)) := by
     refine TopCat.ext fun x ↦ Subtype.ext ?_
     obtain ⟨c, hc, hx⟩ := exists_pos_cubeVec_eq_smul x
-    have hy := mem_sphere_zero_iff_norm.1 (CubeBoundary.radialHomeomorph (m + 1) x).property
-    -- The boundary point goes to `cubeVec x`, a positive multiple of the unit vector `y`.
+    -- The boundary point goes to `cubeVec x`, a positive multiple of a unit vector.
     have hval : (TopPair.Hom.snd (cubeToEuclidean.{u} (m := m)) x).val = cubeVec x.val.down :=
       -- After `he₁`, both sides are `cubeVec x.val.down` by definition of `e₁`.
       (TopPair.Hom.w_apply (cubeToEuclidean.{u} (m := m)) x).trans (by rw [he₁]; rfl)
     have h := coe_complSingletonHomotopyEquivSphere_apply (0 : E)
       (TopPair.Hom.snd (cubeToEuclidean.{u} (m := m)) x)
-    rw [sub_zero, hval, hx, norm_smul, hy, Real.norm_of_nonneg hc.le, mul_one, smul_smul,
-      inv_mul_cancel₀ hc.ne', one_smul] at h
+    rw [sub_zero, hval, hx] at h
     -- `g` is `TopCat.ofHom ρ.toFun`, which evaluates to `ρ` by definition.
-    exact h
+    change (ρ.toFun (TopPair.Hom.snd (cubeToEuclidean.{u} (m := m)) x) : E) = _
+    simpa [norm_smul, abs_of_pos hc, smul_smul, hc.ne'] using h
   have hsnd (n : ℕ) : IsIso (SSet.homologyMap
       (TopCat.toSSet.map (TopPair.Hom.snd (cubeToEuclidean.{u} (m := m)))) R n) := by
     have hg : IsIso (SSet.homologyMap (TopCat.toSSet.map g) R n) := ρ.isIso_homologyMap R n
@@ -332,12 +325,24 @@ variable (m) in
 /-- **The positively scaled chart cube** of `Sᵐ⁺¹` at the first pole: the cube `Iᵐ⁺¹` carried
 into the open unit ball of `ℝᵐ⁺¹` by `t ↦ (tᵢ - 1 / 2) / (m + 1)`, a positive multiple of the
 coordinate map `t ↦ 2t - 1` onto the sup-norm ball, and then into the sphere by the positive chart
-`TauCeti.sphereChart` (`TauCeti.sphereChartCube_apply_succ`). -/
+`TauCeti.sphereChart` (`TauCeti.sphereChartCube_apply_zero`, `TauCeti.sphereChartCube_apply_succ`).
+-/
 def sphereChartCube : C(I^(Fin (m + 1)), TopCat.sphere.{u} (m + 1)) :=
   (sphereChart m).comp cubeToBallMap
 
-/-- The coordinate `i + 1` of the chart cube at `t` is `(tᵢ - 1 / 2) / (m + 1)`; its first
-coordinate is then the positive square root determined by the sphere. -/
+/-- The first coordinate of the chart cube at `t` is `√(1 - ∑ᵢ ((tᵢ - 1 / 2) / (m + 1))²)`, the
+positive square root determined by the other coordinates (`sphereChartCube_apply_succ`). -/
+@[simp]
+lemma sphereChartCube_apply_zero (t : I^(Fin (m + 1))) :
+    ((sphereChartCube.{u} m t).down : EuclideanSpace ℝ (Fin (m + 2))) 0 =
+      √(1 - ∑ i : Fin (m + 1), (((t i : ℝ) - 1 / 2) / (m + 1)) ^ 2) := by
+  -- By definition the first coordinate is `√(1 - ‖cubeVec t‖²)`.
+  change √(1 - ‖cubeVec.{u} t‖ ^ 2) = _
+  rw [← EuclideanSpace.sum_sq_apply_equiv Equiv.ulift.symm]
+  rfl
+
+/-- The coordinate `i + 1` of the chart cube at `t` is `(tᵢ - 1 / 2) / (m + 1)`. -/
+@[simp]
 lemma sphereChartCube_apply_succ (t : I^(Fin (m + 1))) (i : Fin (m + 1)) :
     ((sphereChartCube.{u} m t).down : EuclideanSpace ℝ (Fin (m + 2))) i.succ =
       ((t i : ℝ) - 1 / 2) / (m + 1) :=
@@ -369,6 +374,24 @@ section Coefficients
 
 variable {C : Type*} [Category C] [Limits.HasCoproducts.{u} C] [Abelian C] (R : C)
 
+/-- A cube pair map `c` into `(X, X ∖ {x})` that is the scaled cube in the ball followed by a map
+`f` of the ball factors in homology through the local homology map of `f`. -/
+private lemma singularHomologyMap_cubeBoundaryPairHom_eq_comp {X : Type u} [TopologicalSpace X]
+    (f : C(ball (0 : EuclideanSpace ℝ (ULift.{u} (Fin (m + 1)))) 1, X)) {x : X}
+    (hf : f ⁻¹' {x} ⊆ {⟨0, mem_ball_self one_pos⟩}) (c : C(I^(Fin (m + 1)), X))
+    (hc : MapsTo c (Cube.boundary (Fin (m + 1)))
+      (range (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of X))).map))
+    (hfc : ∀ t, f (cubeToBallMap t) = c t) (k : ℕ) :
+    TopPair.singularHomologyMap (cubeBoundaryPairHom c hc) R k =
+      TopPair.singularHomologyMap (cubeToBall.{u} (m := m)) R k ≫ localHomologyMap R f hf k := by
+  rw [localHomologyMap_def, ← TopPair.singularHomologyMap_comp]
+  refine congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _
+    (TopCat.ext fun t ↦ ?_))
+  rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst_apply,
+    cubeToBall_fst_apply]
+  exact (cubeBoundaryPairHom_fst_apply (P := TopPair.ofSubset ({x}ᶜ : Set (TopCat.of X))) c hc
+    t).trans (hfc t.down).symm
+
 variable (m) in
 /-- **The chart cube computes the local homology of the sphere at the first pole**: it induces
 isomorphisms `Hₖ(Iᵐ⁺¹, ∂Iᵐ⁺¹) ≅ Hₖ(Sᵐ⁺¹, Sᵐ⁺¹ ∖ {e₀})` in every degree, for every coefficient
@@ -392,27 +415,18 @@ theorem isIso_singularHomologyMap_sphereChartCubePairHom (k : ℕ) :
     isClosed_singleton (singleton_subset_iff.2 ⟨b₀, rfl⟩) k
   have hφiso := isIso_localHomologyMap R (sphereChart.{u} m) (isOpenEmbedding_sphereChart m) hφ
     isClosed_singleton (singleton_subset_iff.2 ⟨b₀, sphereChart_zero m⟩) k
-  -- The cube maps factor through the cube in the ball.
+  -- The cube maps factor through the cube in the ball: the scaled cube in the ball is `cubeVec`
+  -- with its norm bound, and the chart cube is by definition the chart after it, so both
+  -- factorizations hold pointwise by `rfl`.
   have hE : TopPair.singularHomologyMap (cubeToEuclidean.{u} (m := m)) R k =
       TopPair.singularHomologyMap (cubeToBall.{u} (m := m)) R k ≫
-        localHomologyMap R ι hι.subset k := by
-    rw [localHomologyMap_def, ← TopPair.singularHomologyMap_comp]
-    refine congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _
-      (TopCat.ext fun x ↦ ?_))
-    rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst_apply,
-      cubeToEuclidean_fst_apply, cubeToBall_fst_apply]
-    -- The scaled cube in the ball is `cubeVec` with its norm bound, so its value is `cubeVec`.
-    rfl
+        localHomologyMap R ι hι.subset k :=
+    singularHomologyMap_cubeBoundaryPairHom_eq_comp R ι hι.subset _ _ (fun _ ↦ rfl) k
   have hS : TopPair.singularHomologyMap (sphereChartCubePairHom.{u} m) R k =
       TopPair.singularHomologyMap (cubeToBall.{u} (m := m)) R k ≫
-        localHomologyMap R (sphereChart.{u} m) hφ.subset k := by
-    rw [localHomologyMap_def, ← TopPair.singularHomologyMap_comp]
-    refine congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _
-      (TopCat.ext fun x ↦ ?_))
-    rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst_apply,
-      sphereChartCubePairHom_fst_apply, cubeToBall_fst_apply]
-    -- The chart cube is by definition the chart after the scaled cube in the ball.
-    rfl
+        localHomologyMap R (sphereChart.{u} m) hφ.subset k :=
+    singularHomologyMap_cubeBoundaryPairHom_eq_comp R (sphereChart.{u} m) hφ.subset _ _
+      (fun _ ↦ rfl) k
   have hB : IsIso (TopPair.singularHomologyMap (cubeToBall.{u} (m := m)) R k) := by
     have := isIso_singularHomologyMap_cubeToEuclidean.{u} (m := m) R k
     rw [hE] at this
