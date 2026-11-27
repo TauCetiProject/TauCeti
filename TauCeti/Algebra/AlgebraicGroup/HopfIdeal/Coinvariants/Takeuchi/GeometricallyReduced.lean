@@ -90,17 +90,11 @@ theorem NormalHopfIdeal.kernelHopfIdeal_coinvariants (I : NormalHopfIdeal H) :
 /-- **The Takeuchi correspondence, geometrically reduced case.** For a geometrically reduced
 commutative Hopf algebra `H` of finite type over a field, `B ↦ H·B⁺` is an order isomorphism from
 Hopf subalgebras onto normal Hopf ideals, with inverse `I ↦ H^{co H/I}`. -/
-noncomputable def HopfSubalgebra.orderIsoNormalHopfIdeal : HopfSubalgebra H ≃o NormalHopfIdeal H
-    where
-  toFun := kernelHopfIdeal
-  invFun := NormalHopfIdeal.coinvariants
-  left_inv := HopfSubalgebra.coinvariants_kernelHopfIdeal
-  right_inv := NormalHopfIdeal.kernelHopfIdeal_coinvariants
-  map_rel_iff' {B B'} := by
-    rw [Equiv.coe_fn_mk, gc_kernelHopfIdeal_coinvariants,
-      ← Subtype.coe_le_coe, ← Subtype.coe_le_coe, NormalHopfIdeal.coe_coinvariants,
-      HopfSubalgebra.coe_kernelHopfIdeal,
-      coinvariants_kernelHopfIdeal_hopfSubalgebraι_of_isGeometricallyReduced]
+noncomputable def HopfSubalgebra.orderIsoNormalHopfIdeal :
+    HopfSubalgebra H ≃o NormalHopfIdeal H :=
+  Equiv.toOrderIso ⟨kernelHopfIdeal, NormalHopfIdeal.coinvariants,
+      HopfSubalgebra.coinvariants_kernelHopfIdeal, NormalHopfIdeal.kernelHopfIdeal_coinvariants⟩
+    gc_kernelHopfIdeal_coinvariants.monotone_l gc_kernelHopfIdeal_coinvariants.monotone_u
 
 @[simp]
 theorem HopfSubalgebra.orderIsoNormalHopfIdeal_apply (B : HopfSubalgebra H) :

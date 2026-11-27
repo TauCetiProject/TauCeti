@@ -402,9 +402,8 @@ theorem hopfSubalgebraι_apply (hA : A.IsHopfSubalgebra) (x : A) :
 /-- The range of the inclusion morphism of a Hopf subalgebra is the Hopf subalgebra. -/
 @[simp]
 theorem range_hopfSubalgebraι (hA : A.IsHopfSubalgebra) :
-    (hopfSubalgebraι hA).hom.toAlgHom.range = A := by
-  ext x
-  exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+    (hopfSubalgebraι hA).hom.toAlgHom.range = A :=
+  A.range_val
 
 /-- The inclusion morphism of a Hopf subalgebra is injective. -/
 theorem hopfSubalgebraι_injective (hA : A.IsHopfSubalgebra) :
