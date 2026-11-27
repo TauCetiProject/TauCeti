@@ -359,17 +359,17 @@ noncomputable def fromCompletionEquiv (f : E →ₛₗᵢ[σ₁₂] F) (hf : Den
     Completion E ≃ₛₗᵢ[σ₁₂] F :=
   LinearIsometryEquiv.ofSurjective f.fromCompletion (f.fromCompletion_surjective_of_denseRange hf)
 
-/-- As a linear isometry, `f.fromCompletionEquiv hf` is `f.fromCompletion`. -/
-@[simp]
-theorem toLinearIsometry_fromCompletionEquiv (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
-    (f.fromCompletionEquiv hf).toLinearIsometry = f.fromCompletion := by
-  ext
-  rfl
-
 /-- Evaluation of `f.fromCompletionEquiv hf` agrees with `f.fromCompletion`. -/
 theorem coe_fromCompletionEquiv (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
     ⇑(f.fromCompletionEquiv hf) = f.fromCompletion :=
   LinearIsometryEquiv.coe_ofSurjective _ _
+
+/-- As a linear isometry, `f.fromCompletionEquiv hf` is `f.fromCompletion`. -/
+@[simp]
+theorem toLinearIsometry_fromCompletionEquiv (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
+    (f.fromCompletionEquiv hf).toLinearIsometry = f.fromCompletion := by
+  ext x
+  exact congrFun (f.coe_fromCompletionEquiv hf) x
 
 /-- On elements of `E`, `f.fromCompletionEquiv hf` agrees with `f`. -/
 @[simp]

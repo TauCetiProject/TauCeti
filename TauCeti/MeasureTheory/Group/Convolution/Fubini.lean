@@ -49,6 +49,22 @@ section Bilinear
 variable {G E F V 𝕜 : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+omit [NormedSpace ℝ V] in
+private theorem continuous_uncurry_bilinear_inv_mul [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 V]
+    (B : E →L[𝕜] F →L[𝕜] V) {u : G → E} {v : G → F} (hu : Continuous u) (hv : Continuous v) :
+    Continuous (uncurry fun s r => B (u r) (v (r⁻¹ * s))) := by
+  rw [uncurry_def]
+  exact B.continuous₂.comp
+    ((hu.comp continuous_snd).prodMk (hv.comp (continuous_snd.inv.mul continuous_fst)))
+
+omit [IsTopologicalGroup G] [NormedSpace ℝ V] in
+private theorem mem_tsupport_bilinear_inv_mul [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 V]
+    (B : E →L[𝕜] F →L[𝕜] V) {u : G → E} {v : G → F} {s r : G}
+    (hsr : B (u r) (v (r⁻¹ * s)) ≠ 0) : r ∈ tsupport u ∧ r⁻¹ * s ∈ tsupport v :=
+  mem_tsupport_and_inv_mul_mem_tsupport hsr (by intro hu0; simp [hu0]) (by intro hv0; simp [hv0])
+
 /-- For continuous `u : G → E` with compact support, continuous `v : G → F`, and a continuous
 bilinear map `B : E →L[𝕜] F →L[𝕜] V`, the parametric convolution
 `s ↦ ∫ r, B (u r) (v (r⁻¹ * s)) ∂μ` is continuous against any measure finite on compact sets. -/
@@ -58,12 +74,9 @@ theorem continuous_integral_bilinear_inv_mul [NontriviallyNormedField 𝕜]
     (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
     (B : E →L[𝕜] F →L[𝕜] V) {u : G → E} {v : G → F}
     (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v) :
-    Continuous fun s => ∫ r, B (u r) (v (r⁻¹ * s)) ∂μ := by
-  refine continuous_integral_of_compact_support μ huc ?_ fun _ _ hsr =>
-    subset_tsupport _ (mem_support.2 fun hr => hsr (by simp [hr]))
-  rw [uncurry_def]
-  exact B.continuous₂.comp
-    ((hu.comp continuous_snd).prodMk (hv.comp (continuous_snd.inv.mul continuous_fst)))
+    Continuous fun s => ∫ r, B (u r) (v (r⁻¹ * s)) ∂μ :=
+  continuous_integral_of_compact_support μ huc (continuous_uncurry_bilinear_inv_mul B hu hv)
+    fun _ _ hsr => subset_tsupport _ (mem_support.2 fun hr => hsr (by simp [hr]))
 
 /-- For compactly supported continuous `u : G → E` and `v : G → F` and a continuous bilinear map
 `B : E →L[𝕜] F →L[𝕜] V`, the parametric convolution `s ↦ ∫ r, B (u r) (v (r⁻¹ * s)) ∂μ` is
@@ -78,9 +91,7 @@ theorem integrable_integral_bilinear_inv_mul [NontriviallyNormedField 𝕜]
     (hv : Continuous v) (hvc : HasCompactSupport v) :
     Integrable (fun s => ∫ r, B (u r) (v (r⁻¹ * s)) ∂μ) ν :=
   (continuous_integral_bilinear_inv_mul μ B hu huc hv).integrable_of_hasCompactSupport
-    (hasCompactSupport_integral_of_inv_mul_mem μ huc hvc fun _ _ hsr =>
-      mem_tsupport_and_inv_mul_mem_tsupport hsr
-        (by intro hu0; simp [hu0]) (by intro hv0; simp [hv0]))
+    (hasCompactSupport_integral_of_inv_mul_mem μ huc hvc fun _ _ => mem_tsupport_bilinear_inv_mul B)
 
 /-- Against measures `μ` and `ν` finite on compact sets with `ν` left-invariant (with no
 σ-finiteness assumption), two compactly supported continuous functions `u : G → E` and `v : G → F`
@@ -95,18 +106,13 @@ theorem integral_integral_bilinear_inv_mul [RCLike 𝕜]
     (hu : Continuous u) (huc : HasCompactSupport u)
     (hv : Continuous v) (hvc : HasCompactSupport v) :
     (∫ s, ∫ r, B (u r) (v (r⁻¹ * s)) ∂μ ∂ν) = B (∫ r, u r ∂μ) (∫ s, v s ∂ν) := by
-  have hcont : Continuous (uncurry fun s r => B (u r) (v (r⁻¹ * s))) := by
-    rw [uncurry_def]
-    exact B.continuous₂.comp
-      ((hu.comp continuous_snd).prodMk (hv.comp (continuous_snd.inv.mul continuous_fst)))
   have hsupp : HasCompactSupport (uncurry fun s r => B (u r) (v (r⁻¹ * s))) :=
     hasCompactSupport_uncurry_of_inv_mul_mem (F := fun s r => B (u r) (v (r⁻¹ * s)))
-      huc hvc fun _ _ hsr =>
-        mem_tsupport_and_inv_mul_mem_tsupport hsr
-          (by intro hu0; simp [hu0]) (by intro hv0; simp [hv0])
+      huc hvc fun _ _ => mem_tsupport_bilinear_inv_mul B
   calc (∫ s, ∫ r, B (u r) (v (r⁻¹ * s)) ∂μ ∂ν)
       = ∫ r, ∫ s, B (u r) (v (r⁻¹ * s)) ∂ν ∂μ :=
-        integral_integral_swap_of_hasCompactSupport hcont hsupp
+        integral_integral_swap_of_hasCompactSupport (continuous_uncurry_bilinear_inv_mul B hu hv)
+          hsupp
     _ = ∫ r, B (u r) (∫ s, v s ∂ν) ∂μ := by
         congr 1 with r
         have hv_int : Integrable (fun s => v (r⁻¹ * s)) ν :=

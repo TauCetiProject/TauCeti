@@ -248,6 +248,14 @@ variable [MeasurableSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [Bor
   (α : CStarAction G A) {μ : Measure G}
   [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
 
+omit [Group G] [MeasurableSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G]
+  [μ.InnerRegularCompactLTTop] in
+private theorem eNorm_partial_sum_le_tsum {u φ : ℕ → C_c(G, A)}
+    (hsum : ∀ n, ∑ i ∈ Finset.range (n + 1), u i = φ n) (n : ℕ) (x : G) :
+    ‖φ n x‖ₑ ≤ ∑' i, ‖u i x‖ₑ := by
+  rw [← hsum n, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply]
+  exact (eNorm_sum_le _ _).trans (sum_le_tsum (Finset.range (n + 1)))
+
 omit [LocallyCompactSpace G] [μ.InnerRegularCompactLTTop] in
 /-- Construct the convolved `L¹` majorant `W` for telescopic `C_c(G, A)` series `u` and `v` with
 partial sums `φ` and `ψ`, bounding `‖α.convolution μ (φ n) (ψ n) s‖ₑ ≤ W s` everywhere. -/
@@ -258,8 +266,6 @@ private theorem exists_bochnerConvolution_majorant {φ u ψ v : ℕ → C_c(G, A
     (hv_fin : (∑' k, ∫⁻ s, ‖v k s‖ₑ ∂μ) ≠ ∞) :
     ∃ W : G → ℝ≥0∞, Measurable W ∧ ∫⁻ s, W s ∂μ ≠ ∞ ∧
       (∀ s, W s = ∫⁻ r, (∑' i, ‖u i r‖ₑ) * (∑' j, ‖v j (r⁻¹ * s)‖ₑ) ∂μ) ∧
-      (∀ n r, ‖φ n r‖ₑ ≤ ∑' i, ‖u i r‖ₑ) ∧
-      (∀ n t, ‖ψ n t‖ₑ ≤ ∑' j, ‖v j t‖ₑ) ∧
       (∀ n s, ‖α.convolution μ (φ n) (ψ n) s‖ₑ ≤ W s) := by
   let W : G → ℝ≥0∞ := fun s => ∑' p : ℕ × ℕ, ∫⁻ r, ‖u p.1 r‖ₑ * ‖v p.2 (r⁻¹ * s)‖ₑ ∂μ
   have hW_meas_term (p : ℕ × ℕ) :
@@ -285,16 +291,12 @@ private theorem exists_bochnerConvolution_majorant {φ u ψ v : ℕ → C_c(G, A
     congr 1 with r
     rw [tsum_prod' (f := fun p : ℕ × ℕ => ‖u p.1 r‖ₑ * ‖v p.2 (r⁻¹ * s)‖ₑ)]
     simp_rw [ENNReal.tsum_mul_left, ENNReal.tsum_mul_right]
-  have hφ_le (n : ℕ) (r : G) : ‖φ n r‖ₑ ≤ ∑' i, ‖u i r‖ₑ := by
-    rw [← hsum_u n, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply]
-    exact (eNorm_sum_le _ _).trans (sum_le_tsum (Finset.range (n + 1)))
-  have hψ_le (n : ℕ) (t : G) : ‖ψ n t‖ₑ ≤ ∑' j, ‖v j t‖ₑ := by
-    rw [← hsum_v n, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply]
-    exact (eNorm_sum_le _ _).trans (sum_le_tsum (Finset.range (n + 1)))
-  refine ⟨W, Measurable.tsum hW_meas_term, hW_fin, hW_eq, hφ_le, hψ_le, fun n s => ?_⟩
+  refine ⟨W, Measurable.tsum hW_meas_term, hW_fin, hW_eq, fun n s => ?_⟩
   rw [convolution_apply, hW_eq s]
   refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun r => ?_)
-  exact (α.eNorm_mul_apply_le _ _ _).trans (mul_le_mul' (hφ_le n r) (hψ_le n (r⁻¹ * s)))
+  exact (α.eNorm_mul_apply_le _ _ _).trans
+    (mul_le_mul' (eNorm_partial_sum_le_tsum hsum_u n r)
+      (eNorm_partial_sum_le_tsum hsum_v n (r⁻¹ * s)))
 
 omit [LocallyCompactSpace G] [μ.InnerRegularCompactLTTop] in
 /-- For `μ`-almost every `s`, finiteness of the convolved majorant `W s` yields integrability of
@@ -302,10 +304,10 @@ the limit integrand `r ↦ f r * α r (g (r⁻¹ * s))` and pointwise convergenc
 `α.convolution μ (φ n) (ψ n) s` to `α.bochnerConvolution μ f g s`. -/
 private theorem ae_integrable_and_tendsto_convolution (hinv : μ.inv ≪ μ)
     {f g : G → A} {φ u ψ v : ℕ → C_c(G, A)} {W : G → ℝ≥0∞}
+    (hsum_u : ∀ n, ∑ i ∈ Finset.range (n + 1), u i = φ n)
+    (hsum_v : ∀ n, ∑ j ∈ Finset.range (n + 1), v j = ψ n)
     (hW_meas : Measurable W) (hW_fin : ∫⁻ s, W s ∂μ ≠ ∞)
     (hW_eq : ∀ s, W s = ∫⁻ r, (∑' i, ‖u i r‖ₑ) * (∑' j, ‖v j (r⁻¹ * s)‖ₑ) ∂μ)
-    (hφ_le : ∀ n r, ‖φ n r‖ₑ ≤ ∑' i, ‖u i r‖ₑ)
-    (hψ_le : ∀ n t, ‖ψ n t‖ₑ ≤ ∑' j, ‖v j t‖ₑ)
     (hφ_ae : ∀ᵐ r ∂μ, Tendsto (fun n => φ n r) atTop (𝓝 (f r)))
     (hψ_ae : ∀ᵐ t ∂μ, Tendsto (fun n => ψ n t) atTop (𝓝 (g t))) :
     ∀ᵐ s ∂μ,
@@ -330,7 +332,9 @@ private theorem ae_integrable_and_tendsto_convolution (hinv : μ.inv ≪ μ)
   have hr_bound (n : ℕ) : ∀ᵐ r ∂μ, ‖φ n r * α r (ψ n (r⁻¹ * s))‖ ≤ (D r).toReal := by
     filter_upwards [ae_lt_top hDs_meas hDs_fin] with r hr
     rw [← ENNReal.ofReal_le_iff_le_toReal hr.ne, ofReal_norm]
-    exact (α.eNorm_mul_apply_le _ _ _).trans (mul_le_mul' (hφ_le n r) (hψ_le n (r⁻¹ * s)))
+    exact (α.eNorm_mul_apply_le _ _ _).trans
+      (mul_le_mul' (eNorm_partial_sum_le_tsum hsum_u n r)
+        (eNorm_partial_sum_le_tsum hsum_v n (r⁻¹ * s)))
   have hr_meas : AEStronglyMeasurable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
     aestronglyMeasurable_of_tendsto_ae atTop
       (fun n => (α.integrable_integrand (φ n) (ψ n) μ s).aestronglyMeasurable) hr_lim
@@ -361,11 +365,11 @@ private theorem bochnerConvolution_core (hinv : μ.inv ≪ μ) {f g : G → A}
   -- convolved `L¹` majorant `W`.
   obtain ⟨φ, u, hsum_u, hφ_L1, hφ_ae, hu_fin⟩ := hf.exists_sum_compactlySupported_tendsto
   obtain ⟨ψ, v, hsum_v, hψ_L1, hψ_ae, hv_fin⟩ := hg.exists_sum_compactlySupported_tendsto
-  obtain ⟨W, hW_meas, hW_fin, hW_eq, hφ_le, hψ_le, hconv_le⟩ :=
+  obtain ⟨W, hW_meas, hW_fin, hW_eq, hconv_le⟩ :=
     α.exists_bochnerConvolution_majorant hsum_u hsum_v hu_fin hv_fin
   -- 2. Apply dominated convergence in `r` for a.e. `s`, then dominated `L¹` convergence in `s`.
   have hconv_ae :=
-    α.ae_integrable_and_tendsto_convolution hinv hW_meas hW_fin hW_eq hφ_le hψ_le hφ_ae hψ_ae
+    α.ae_integrable_and_tendsto_convolution hinv hsum_u hsum_v hW_meas hW_fin hW_eq hφ_ae hψ_ae
   have hW_memLp : MemLp W 1 μ :=
     (eLpNorm_one_eq_lintegral_eNorm hW_meas.aestronglyMeasurable).trans_lt hW_fin.lt_top
   have hh_memLp : MemLp (α.bochnerConvolution μ f g) 1 μ :=
@@ -474,11 +478,9 @@ private theorem exists_bochnerInvolution_majorant {φ u : ℕ → C_c(G, A)}
     simpa only [w, α.lintegral_eNorm_twistedInvolution] using hu_fin
   have hW_memLp : MemLp W 1 μ :=
     (eLpNorm_one_eq_lintegral_eNorm hW_meas.aestronglyMeasurable).trans_lt hW_fin.lt_top
-  refine ⟨W, hW_memLp, fun n s => ?_⟩
-  have hsum_s : α.twistedInvolution (φ n) s = ∑ i ∈ Finset.range (n + 1), w i s := by
-    rw [← hsum_u n, map_sum, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply]
-  rw [hsum_s]
-  exact (eNorm_sum_le _ _).trans (sum_le_tsum (Finset.range (n + 1)))
+  have hsum_w (n : ℕ) : ∑ i ∈ Finset.range (n + 1), w i = α.twistedInvolution (φ n) := by
+    rw [← hsum_u n, map_sum]
+  exact ⟨W, hW_memLp, fun n s => eNorm_partial_sum_le_tsum hsum_w n s⟩
 
 private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
     ∃ hh : Integrable (α.bochnerInvolution f) μ,
