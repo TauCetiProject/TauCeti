@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Set.Prod
 public import TauCeti.Topology.Constructions.Basic
 
 /-!
@@ -24,17 +25,13 @@ pullback over all of them, as for the disk of a single cell among the disks of a
 * `ContinuousMap.mapPullbackFst`: the map of fibre products induced by a map of first factors.
 * `ContinuousMap.range_mapPullbackFst`, `ContinuousMap.isOpenEmbedding_mapPullbackFst`: its image,
   and the open embedding induced by an open embedding.
-* `Function.Pullback.ext`: points of a fibre product are equal when their projections are.
+* `Function.Pullback.fst_mk`, `Function.Pullback.snd_mk`: the projections of a point given by its
+  coordinates.
 -/
 
 public section
 
 open Set Topology
-
-/-- Points of a fibre product are equal when both of their projections are. -/
-theorem Function.Pullback.ext {X Y Z : Type*} {f : X → Y} {g : Z → Y} {x y : f.Pullback g}
-    (h₁ : x.fst = y.fst) (h₂ : x.snd = y.snd) : x = y :=
-  Subtype.ext (Prod.ext h₁ h₂)
 
 @[simp]
 theorem Function.Pullback.fst_mk {X Y Z : Type*} {f : X → Y} {g : Z → Y} (z : X × Z)

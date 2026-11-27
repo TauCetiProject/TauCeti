@@ -282,10 +282,13 @@ noncomputable def isColimitCofanCellCubePairMap {n : ℕ} {Y : Type} [Topologica
       exact Sigma.ext rfl <| heq_of_eq <| (hι j₁).injective h
     · obtain ⟨x, hx⟩ := hrange _ y rfl
       exact ⟨⟨_, x⟩, hx⟩
+  -- The ambient spaces of the pairs are `Z j` and `Y` only after unfolding `TopPair.ofSubset`, so
+  -- `simp` cannot match `cellCubePairMap_fst_apply` here. The `show` states the sigma map over
+  -- `Σ j, Z j`, where rewriting with that lemma pointwise turns it into the map of `hσ`.
   TopPair.isColimitCofanOfIsHomeomorph _ (show IsHomeomorph fun x : Σ j, Z j ↦
-      TopPair.Hom.fst (cellCubePairMap ρ (ρ' x.1) x.1 (ι x.1) (hρ x.1)) x.2 from
-    (funext fun x : Σ j, Z j ↦
-      cellCubePairMap_fst_apply ρ (ρ' x.1) x.1 (ι x.1) (hρ x.1) x.2) ▸ hσ) fun y ↦ by
+      TopPair.Hom.fst (cellCubePairMap ρ (ρ' x.1) x.1 (ι x.1) (hρ x.1)) x.2 by
+    rw [funext fun x : Σ j, Z j ↦ cellCubePairMap_fst_apply ρ (ρ' x.1) x.1 (ι x.1) (hρ x.1) x.2]
+    exact hσ) fun y ↦ by
     -- A point over a boundary sphere comes from a point over the boundary of its cube.
     obtain ⟨⟨j, x⟩, hx⟩ := hσ.bijective.2 y.val
     have hy : ‖((ρ y.val).2 : Fin n → ℝ)‖ = 1 := y.property

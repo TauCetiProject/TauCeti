@@ -145,6 +145,7 @@ noncomputable def cubicalHomologyDirectSumEquiv :
 
 /-- On the summand of `i`, `TopPair.cubicalHomologyDirectSumEquiv` is the identification of `Mᵢ`
 with `Hₙ(Pᵢ; k)` followed by the map induced by `f i`. -/
+@[simp]
 theorem cubicalHomologyDirectSumEquiv_lof (i : ι) (x : M i) :
     cubicalHomologyDirectSumEquiv k hc n e (DirectSum.lof k ι (fun i ↦ M i) i x) =
       HomologicalComplex.homologyMap (cubicalChainComplexMap k (f i)) n (e i x) :=

@@ -20,6 +20,10 @@ family, the pullback along `f` of a path fibration is fibre homotopy trivial, wi
 ## Main definitions
 
 * `TauCeti.MoorePath.cornerPaths f`: the family of Moore paths `d ↦ (t ↦ f (t • d))`.
+
+## Main results
+
+* `TauCeti.MoorePath.cornerPaths_apply_toNNReal`: the path `cornerPaths f d` is `t ↦ f (t • d)`.
 -/
 
 public noncomputable section
@@ -39,6 +43,12 @@ def cornerPaths (f : C(ι → I, X)) : C(ι → I, MoorePath X) :=
     ((continuous_subtypeVal.comp continuous_snd).mul
       (continuous_subtypeVal.comp ((continuous_apply i).comp continuous_fst))).subtype_mk _⟩
   ⟨fun d ↦ ofUnitPath (H.curry d), continuous_ofUnitPath.comp H.curry.continuous⟩
+
+/-- At a time `t` of the unit interval, the Moore path `cornerPaths f d` is at `f (t • d)`. -/
+@[simp]
+theorem cornerPaths_apply_toNNReal (f : C(ι → I, X)) (d : ι → I) (t : I) :
+    cornerPaths f d (toNNReal t) = f fun i ↦ t * d i := by
+  simp [cornerPaths]
 
 @[simp]
 theorem source_cornerPaths (f : C(ι → I, X)) (d : ι → I) : (cornerPaths f d).source = f 0 := by

@@ -213,9 +213,8 @@ theorem snd_trivializationRightHomotopy (s : I) (y : MooreReplacementPullback p 
     (trivializationRightHomotopy τ h₀ h₁ (s, y)).snd =
       MooreReplacement.mk y.snd.point (y.snd.path.trans
         ((MoorePathBetween.symm ⟨τ y.fst, h₀ _, h₁ _⟩).retrace
-          (toNNReal s * (τ y.fst).length)).toMoorePath (by simp [h₁])) (by simp) := by
-  unfold Function.Pullback.snd Function.Pullback.fst
-  rfl
+          (toNNReal s * (τ y.fst).length)).toMoorePath (by simp [h₁])) (by simp) :=
+  Function.Pullback.snd_mk _ _
 
 /-- **The pullback of the Moore-path replacement along `f` is fibre homotopy trivial**, given a
 continuous family `τ` of Moore paths from `b` to the points `f d`: appending `τ d` is a fibre
