@@ -262,6 +262,13 @@ def periodicAlexanderValues (w z : Basepoint) : AddSubgroup ℤ :=
 
 variable {w z : Basepoint} {x y : H.Generator} {k : ℤ}
 
+/-- The value of a periodic value of the one-component multigrading with basepoints `w` and `z` is
+a periodic Alexander value. -/
+theorem apply_mem_periodicAlexanderValues {v : Unit → ℤ}
+    (hv : v ∈ H.periodicComponentAlexanderValues (fun _ : Unit => {w}) (fun _ => {z})) :
+    v () ∈ H.periodicAlexanderValues w z :=
+  AddSubgroup.mem_map_of_mem (Pi.evalAddMonoidHom (fun _ : Unit => ℤ) ()) hv
+
 /-- An integer lies in `periodicAlexanderValues w z` when it is `n_z(E) - n_w(E)` for a domain
 `E` whose `α`- and `β`-parts are cycles. -/
 @[simp]
@@ -493,22 +500,18 @@ theorem IsDomainBetween.sub_sub_sub_mem_periodicAlexanderValues (hD : H.IsDomain
     (hD' : H.IsDomainBetween x y D') :
     D (H.basepoint z) - D (H.basepoint w) - (D' (H.basepoint z) - D' (H.basepoint w)) ∈
       H.periodicAlexanderValues w z := by
-  simpa only [periodicAlexanderValues, Pi.evalAddMonoidHom_apply, Pi.sub_apply,
-    componentAlexanderMultiplicity_apply, Finset.sum_singleton] using
-    AddSubgroup.mem_map_of_mem (Pi.evalAddMonoidHom (fun _ : Unit => ℤ) ())
-    (hD.sub_mem_periodicComponentAlexanderValues hD' (ws := fun _ => {w}) (zs := fun _ => {z}))
+  simpa only [Pi.sub_apply, componentAlexanderMultiplicity_apply, Finset.sum_singleton] using
+    apply_mem_periodicAlexanderValues (hD.sub_mem_periodicComponentAlexanderValues hD')
 
 /-- Modulo the periodic Alexander values, the relative Alexander grading is `n_z(D) - n_w(D)` for
 every domain `D` from `x` to `y`. -/
 theorem IsDomainBetween.coe_relativeAlexanderGrading_eq (hD : H.IsDomainBetween x y D) :
     (H.relativeAlexanderGrading w z x y : ℤ ⧸ H.periodicAlexanderValues w z) =
       ((D (H.basepoint z) - D (H.basepoint w) : ℤ) : ℤ ⧸ H.periodicAlexanderValues w z) := by
-  rw [QuotientAddGroup.eq_iff_sub_mem]
-  simpa only [relativeAlexanderGrading, periodicAlexanderValues, Pi.evalAddMonoidHom_apply,
-    Pi.sub_apply, componentAlexanderMultiplicity_apply, Finset.sum_singleton] using
-    AddSubgroup.mem_map_of_mem (Pi.evalAddMonoidHom (fun _ : Unit => ℤ) ())
-    (QuotientAddGroup.eq_iff_sub_mem.mp
-      (hD.coe_relativeComponentAlexanderGrading_eq (ws := fun _ => {w}) (zs := fun _ => {z})))
+  rw [QuotientAddGroup.eq_iff_sub_mem, relativeAlexanderGrading]
+  simpa only [Pi.sub_apply, componentAlexanderMultiplicity_apply, Finset.sum_singleton] using
+    apply_mem_periodicAlexanderValues
+      (QuotientAddGroup.eq_iff_sub_mem.mp hD.coe_relativeComponentAlexanderGrading_eq)
 
 /-- When the periodic Alexander values vanish, the relative Alexander grading is
 `n_z(D) - n_w(D)` for every domain `D` from `x` to `y`. -/
