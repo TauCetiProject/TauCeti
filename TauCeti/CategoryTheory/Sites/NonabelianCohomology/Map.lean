@@ -9,13 +9,14 @@ public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Connecting
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.ContractedProduct
 
 /-!
-# Functoriality of torsor classes in the sheaf of groups
+# Functoriality of torsors and their classes in the sheaf of groups
 
 Let `φ : G ⟶ G'` be a morphism of sheaves of groups on a site `(C, J)`. Extending the structure
 group of a `G`-torsor `P` along `φ` gives the `G'`-torsor `Torsor.map φ P`, the contracted
 product `P ×^G G'` (see `NonabelianCohomology.ContractedProduct`). This file shows that it
 induces a map `H¹(G) → H¹(G')` of pointed sets, functorial in `φ` and compatible with connecting
-maps.
+maps. On torsors themselves this is the functor `Torsor.mapFunctor`; extension along the
+identity has the natural isomorphism `Torsor.mapIdIso` with the identity functor.
 
 ## Main declarations
 
@@ -46,6 +47,76 @@ namespace CategoryTheory.Sheaf
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   {G G' G'' : Sheaf J GrpCat.{w}}
 
+namespace Torsor
+
+variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
+
+/-- Extension of the structure group along `φ`, as a functor on torsors. It carries the class
+`[p, a]` to `[f p, a]` under an equivariant morphism `f`. -/
+abbrev mapFunctor (φ : G ⟶ G') : Torsor G ⥤ Torsor G' where
+  obj P := P.map φ
+  map {P Q} f := P.mapLift (f.hom ≫ Q.toMap φ)
+    fun U g p ↦ by simp [f.map_smul]
+  map_id P := by
+    apply map_hom_ext
+    simp
+  map_comp f g := by
+    apply map_hom_ext
+    simp [Category.assoc]
+
+@[simp]
+lemma mapFunctor_obj (φ : G ⟶ G') (P : Torsor G) :
+    (mapFunctor φ).obj P = P.map φ := (rfl)
+
+/-- On local contracted-product representatives the induced morphism keeps the coefficient. -/
+@[simp]
+lemma mapFunctor_map_hom_app_smul_toMap (φ : G ⟶ G') {P Q : Torsor G} (f : P ⟶ Q)
+    (U : Cᵒᵖ) (p : P.sheaf.obj.obj U) (a : G'.obj.obj U) :
+    ((mapFunctor φ).map f).hom.hom.app U (a • (P.toMap φ).hom.app U p) =
+      a • (Q.toMap φ).hom.app U (f.hom.hom.app U p) := by
+  exact (((mapFunctor φ).map f).map_smul U a _).trans
+    (congrArg (a • ·) (congrArg (fun k ↦ k.hom.app U p)
+      (toMap_mapLift (f.hom ≫ Q.toMap φ) _)))
+
+/-- Extending torsors along the identity homomorphism is naturally isomorphic to the identity.
+The comparison sends `[p, a]` to `a • p`. An explicit equality `hφ` also permits homomorphisms
+obtained by applying functors to an identity, without transporting the torsor objects. -/
+def mapIdIso {φ : G ⟶ G} (hφ : φ = 𝟙 G) : mapFunctor φ ≅ 𝟭 (Torsor G) := by
+  subst φ
+  exact NatIso.ofComponents
+    (fun P ↦ by
+      dsimp only [mapFunctor, Functor.id_obj]
+      exact asIso (P.mapLift (φ := 𝟙 G) (𝟙 P.sheaf) fun _ _ _ ↦ rfl))
+    (fun {P Q} f ↦ by
+      apply map_hom_ext
+      dsimp only [mapFunctor]
+      simp [Category.assoc])
+
+/-- The identity-band comparison carries the image of an original section back to itself. -/
+@[reassoc (attr := simp)]
+lemma toMap_mapIdIso_hom {φ : G ⟶ G} (hφ : φ = 𝟙 G) (P : Torsor G) :
+    P.toMap φ ≫ ((mapIdIso hφ).hom.app P).hom = 𝟙 P.sheaf := by
+  subst φ
+  exact toMap_mapLift _ _
+
+/-- The inverse identity-band comparison is the canonical map into the extension. -/
+@[simp]
+lemma mapIdIso_inv_app_hom {φ : G ⟶ G} (hφ : φ = 𝟙 G) (P : Torsor G) :
+    ((mapIdIso hφ).inv.app P).hom = P.toMap φ := by
+  apply (cancel_mono (((mapIdIso hφ).hom.app P).hom)).1
+  exact (congrArg Hom.hom ((mapIdIso hφ).inv_hom_id_app P)).trans
+    (toMap_mapIdIso_hom hφ P).symm
+
+/-- The identity-band comparison sends `[p, a]` to `a • p`. -/
+lemma mapIdIso_hom_app_smul_toMap {φ : G ⟶ G} (hφ : φ = 𝟙 G) (P : Torsor G) (U : Cᵒᵖ)
+    (p : P.sheaf.obj.obj U) (a : G.obj.obj U) :
+    ((mapIdIso hφ).hom.app P).hom.hom.app U
+        (a • (P.toMap φ).hom.app U p) = a • p := by
+  exact (((mapIdIso hφ).hom.app P).map_smul U a _).trans
+    (congrArg (a • ·) (congrArg (fun k ↦ k.hom.app U p) (toMap_mapIdIso_hom hφ P)))
+
+end Torsor
+
 namespace NonabelianH1
 
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
@@ -53,8 +124,7 @@ variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
 /-- The map `H¹(G) → H¹(G')` induced by a morphism `φ : G ⟶ G'` of sheaves of groups, sending
 the class of a `G`-torsor `P` to the class of the contracted product `P ×^G G'`. -/
 def map (φ : G ⟶ G') : NonabelianH1 G → NonabelianH1 G' :=
-  lift (fun P ↦ mk (P.map φ)) fun P Q f ↦ mk_eq_mk_of_hom <| P.mapLift (f.hom ≫ Q.toMap φ)
-    fun U g p ↦ by simp [f.map_smul, Torsor.toMap_smul]
+  lift (fun P ↦ mk (P.map φ)) fun _ _ f ↦ mk_eq_mk_of_hom ((Torsor.mapFunctor φ).map f)
 
 /-- `map φ` sends the class of `P` to the class of the contracted product `P ×^G G'`. -/
 @[simp]

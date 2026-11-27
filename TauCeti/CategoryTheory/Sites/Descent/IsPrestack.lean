@@ -40,6 +40,8 @@ and so is postcomposition with a morphism `φ : N ⟶ N'`
 (`CategoryTheory.Pseudofunctor.presheafHomPostcomp`), which makes `presheafHom M N` and, for a
 prestack, `sheafHom J M N` functors of `N` (`CategoryTheory.Pseudofunctor.presheafHomFunctor`,
 `CategoryTheory.Pseudofunctor.sheafHomFunctor`).
+The functors `presheafHomBifunctor` and `sheafHomBifunctor` also vary the source
+contravariantly.
 
 It also shows that pulling back morphisms between pullbacks commutes with restricting `F` along a
 functor `p : D ⥤ C`: for the pseudofunctor `p.op.toPseudofunctor.comp F`, pulling back along `g`
@@ -370,6 +372,56 @@ lemma sheafHomFunctor_map_hom (J : GrothendieckTopology C) [F.IsPrestack J]
     (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S))} (φ : N ⟶ N') :
     ((F.sheafHomFunctor J M).map φ).hom = F.presheafHomPostcomp M φ :=
   (rfl)
+
+variable (F S) in
+/-- The presheaves of local morphisms, contravariant in the source and covariant in the target.
+The map on local sections is precomposition and postcomposition by the restricted arrows. -/
+-- Exposed, like `presheafHomFunctor`, so that its values have the existing local morphisms
+-- as their sections, without equality transports.
+@[expose] def presheafHomBifunctor :
+    (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S)) ⥤ (Over S)ᵒᵖ ⥤ Type v' where
+  obj p := F.presheafHom p.1.unop p.2
+  map {p q} f :=
+    { app T := ↾fun h ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
+        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2
+      naturality T T' g := by
+        ext h
+        dsimp
+        rw [pullHom_comp _ _ g.unop.left T'.unop.hom T'.unop.hom T'.unop.hom
+          (Over.w g.unop) (Over.w g.unop) (Over.w g.unop),
+          pullHom_comp _ _ g.unop.left T'.unop.hom T'.unop.hom T'.unop.hom
+            (Over.w g.unop) (Over.w g.unop) (Over.w g.unop), pullHom_map, pullHom_map] }
+  map_id p := by
+    ext T h
+    simp
+  map_comp f g := by
+    ext T h
+    simp [Category.assoc]
+
+@[simp]
+lemma presheafHomBifunctor_obj (p : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))) :
+    (F.presheafHomBifunctor S).obj p = F.presheafHom p.1.unop p.2 := (rfl)
+
+variable (F) in
+/-- The sheaves of local morphisms of a prestack, as a functor of both endpoints. -/
+-- Exposed for the same sectionwise identification as `sheafHomFunctor`.
+@[expose] def sheafHomBifunctor (J : GrothendieckTopology C) [F.IsPrestack J] (S : C) :
+    (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S)) ⥤ Sheaf (J.over S) (Type v') :=
+  ObjectProperty.lift _ (F.presheafHomBifunctor S) fun p ↦ IsPrestack.isSheaf J p.1.unop p.2
+
+@[simp]
+lemma sheafHomBifunctor_obj (J : GrothendieckTopology C) [F.IsPrestack J]
+    (p : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))) :
+    (F.sheafHomBifunctor J S).obj p = F.sheafHom J p.1.unop p.2 := (rfl)
+
+/-- The map of local Hom sheaves sends `h` to `e|_T ≫ h ≫ f|_T`. -/
+@[simp]
+lemma sheafHomBifunctor_map_hom_app (J : GrothendieckTopology C) [F.IsPrestack J]
+    {p q : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))} (f : p ⟶ q)
+    (T : (Over S)ᵒᵖ) (h : (F.presheafHom p.1.unop p.2).obj T) :
+    ((F.sheafHomBifunctor J S).map f).hom.app T h =
+      (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
+        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2 := (rfl)
 
 namespace LocallyDiscreteOpToCat
 
