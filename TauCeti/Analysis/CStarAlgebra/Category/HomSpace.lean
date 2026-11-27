@@ -222,10 +222,12 @@ def linearIsometryEquiv (X : C) : End X ≃ₗᵢ[ℂ] (X ⟶ X) :=
 
 /-- Forward evaluation of `End.linearIsometryEquiv`. -/
 @[simp] theorem linearIsometryEquiv_apply {X : C} (a : End X) :
-    linearIsometryEquiv X a = a.asHom := (rfl)
+    linearIsometryEquiv X a = a.asHom :=
+  linearIsometryEquivOf_apply _ a
 
 /-- Inverse evaluation of `End.linearIsometryEquiv`. -/
 @[simp] theorem linearIsometryEquiv_symm_apply {X : C} (f : X ⟶ X) :
-    (linearIsometryEquiv X).symm f = End.of f := (rfl)
+    (linearIsometryEquiv X).symm f = End.of f :=
+  linearIsometryEquivOf_symm_apply _ f
 
 end CategoryTheory.End

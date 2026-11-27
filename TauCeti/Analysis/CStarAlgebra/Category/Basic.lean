@@ -380,7 +380,6 @@ def normedAlgebraOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
   ⟨fun c a => ((normedSpaceCoreOf hcore).norm_smul c a).le⟩
 
 /-- Transport `End X ≃ₗᵢ[𝕜] (X ⟶ X)` from a `NormedSpace.Core` on `X ⟶ X`. -/
-@[expose]
 def linearIsometryEquivOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
     (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) :
     letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
@@ -390,6 +389,20 @@ def linearIsometryEquivOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
   letI := NormedAddCommGroup.ofCore hcore
   { toLinearEquiv := End.linearEquiv
     norm_map' _ := rfl }
+
+/-- Forward evaluation of `End.linearIsometryEquivOf`. -/
+@[simp] theorem linearIsometryEquivOf_apply {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) (a : End X) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    letI := NormedAddCommGroup.ofCore hcore
+    linearIsometryEquivOf hcore a = a.asHom := (rfl)
+
+/-- Inverse evaluation of `End.linearIsometryEquivOf`. -/
+@[simp] theorem linearIsometryEquivOf_symm_apply {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) (f : X ⟶ X) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    letI := NormedAddCommGroup.ofCore hcore
+    (linearIsometryEquivOf hcore).symm f = End.of f := (rfl)
 
 /-- Transport completeness from `X ⟶ X` to `End X` along `End.linearIsometryEquivOf`. -/
 theorem completeSpaceOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
