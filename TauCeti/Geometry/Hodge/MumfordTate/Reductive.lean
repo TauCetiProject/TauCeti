@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.MumfordTate.Connected
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.StandardComodule
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Subgroup
 public import TauCeti.Geometry.Hodge.MumfordTate.Stabilizer
 public import TauCeti.Geometry.Hodge.Orthogonal
 

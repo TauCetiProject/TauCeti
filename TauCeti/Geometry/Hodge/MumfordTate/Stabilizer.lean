@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.MumfordTate.Stabilizer
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Subgroup
 public import TauCeti.Geometry.Hodge.MumfordTate.HodgeComponent
 
 /-!
