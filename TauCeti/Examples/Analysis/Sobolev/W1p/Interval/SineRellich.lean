@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Orthogonality
 import TauCeti.MeasureTheory.Function.Lp.Integral.L2NormSq
 
 /-!
@@ -43,50 +43,6 @@ namespace TauCeti.Examples.SineRellich
 
 open W1p
 
-/-! ### Trigonometric integrals over `[0, π]` -/
-
-/-- `∫_0^π sin (j x)² = π / 2` for every positive integer `j`. -/
-private theorem integral_sin_nat_mul_sq {j : ℕ} (hj : j ≠ 0) :
-    ∫ x in (0 : ℝ)..π, sin (j * x) ^ 2 = π / 2 := by
-  have hj' : (j : ℝ) ≠ 0 := by exact_mod_cast hj
-  rw [intervalIntegral.integral_comp_mul_left (fun x => sin x ^ 2) hj', integral_sin_sq]
-  simp [Real.sin_nat_mul_pi]
-  field_simp
-
-/-- `∫_0^π cos (j x)² = π / 2` for every positive integer `j`. -/
-private theorem integral_cos_nat_mul_sq {j : ℕ} (hj : j ≠ 0) :
-    ∫ x in (0 : ℝ)..π, cos (j * x) ^ 2 = π / 2 := by
-  have hj' : (j : ℝ) ≠ 0 := by exact_mod_cast hj
-  rw [intervalIntegral.integral_comp_mul_left (fun x => cos x ^ 2) hj', integral_cos_sq]
-  simp [Real.sin_nat_mul_pi]
-  field_simp
-
-/-- `∫_0^π cos (m x) = 0` for every nonzero integer `m`. -/
-private theorem integral_cos_int_mul {m : ℤ} (hm : m ≠ 0) :
-    ∫ x in (0 : ℝ)..π, cos (m * x) = 0 := by
-  have hm' : (m : ℝ) ≠ 0 := by exact_mod_cast hm
-  rw [intervalIntegral.integral_comp_mul_left (fun x => cos x) hm', integral_cos]
-  simp [Real.sin_int_mul_pi]
-
-/-- **Orthogonality of the sine modes.** `∫_0^π sin (j x) sin (k x) = 0` for distinct natural
-numbers `j` and `k`. -/
-private theorem integral_sin_nat_mul_mul_sin_nat_mul {j k : ℕ} (hjk : j ≠ k) :
-    ∫ x in (0 : ℝ)..π, sin (j * x) * sin (k * x) = 0 := by
-  -- `sin a sin b = (cos (a - b) - cos (a + b)) / 2`, and both frequencies are nonzero integers.
-  have h : ∀ x : ℝ, sin (j * x) * sin (k * x) =
-      (cos (((j - k : ℤ) : ℝ) * x) - cos (((j + k : ℤ) : ℝ) * x)) / 2 := fun x => by
-    push_cast
-    rw [sub_mul, add_mul, cos_sub, cos_add]
-    ring
-  have h₁ : (j - k : ℤ) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hjk)
-  have h₂ : (j + k : ℤ) ≠ 0 := by omega
-  simp_rw [h]
-  rw [intervalIntegral.integral_div, intervalIntegral.integral_sub
-    (Continuous.intervalIntegrable (by fun_prop) _ _)
-    (Continuous.intervalIntegrable (by fun_prop) _ _), integral_cos_int_mul h₁,
-    integral_cos_int_mul h₂]
-  simp
-
 /-! ### The sequence `sin (j x) / j` -/
 
 /-- For `j ≥ 1`, `sin (j x) / j` is the value of a class of `H¹(0, π)` whose weak gradient is
@@ -118,10 +74,13 @@ theorem norm_value_sq_eq_and_norm_gradient_sq_eq {j : ℕ} (hj : j ≠ 0)
     ‖value u‖ ^ 2 = π / (2 * j ^ 2) ∧ ‖gradient u‖ ^ 2 = π / 2 := by
   refine ⟨?_,
     (norm_gradient_sq_eq_intervalIntegral_of_ae_eq pi_pos (gradient_ae_eq_cos hj hv)).trans
-    (integral_cos_nat_mul_sq hj)⟩
+    (by simpa only [Int.cast_natCast] using integral_cos_int_mul_sq (k := j) (by omega))⟩
+  have h := integral_sin_int_mul_mul_sin_int_mul j j
+  rw [ite_eq_left rfl, ite_eq_right (by omega : (j : ℤ) ≠ -j), sub_zero] at h
+  simp only [Int.cast_natCast] at h
   rw [norm_value_sq_eq_intervalIntegral_of_ae_eq pi_pos hv]
-  simp_rw [div_pow]
-  rw [intervalIntegral.integral_div, integral_sin_nat_mul_sq hj]
+  simp_rw [div_pow, sq]
+  rw [intervalIntegral.integral_div, h]
   field_simp
 
 /-- **The sequence `sin (j x) / j` converges in `L²`.** There are classes `u_j` of `H¹(0, π)`,
@@ -148,8 +107,7 @@ theorem exists_tendsto_value_nhds_zero :
 /-! ### The sine modes -/
 
 /-- **The sine modes are at distance `√π`.** In `L²(0, π)`, classes with values `sin (j x)` and
-`sin (k x)`, for distinct positive integers `j` and `k`, satisfy `‖v_j - v_k‖² = π`, while
-`‖v_j‖² = π / 2`. -/
+`sin (k x)`, for distinct positive integers `j` and `k`, satisfy `‖v_j - v_k‖² = π`. -/
 theorem norm_sub_sq_eq {j k : ℕ} (hj : j ≠ 0) (hk : k ≠ 0) (hjk : j ≠ k)
     {f g : Lp ℝ 2 (volume.restrict (Ioo (0 : ℝ) π))}
     (hf : f =ᵐ[volume.restrict (Ioo 0 π)] fun x => sin (j * x))
@@ -157,21 +115,26 @@ theorem norm_sub_sq_eq {j k : ℕ} (hj : j ≠ 0) (hk : k ≠ 0) (hjk : j ≠ k)
     ‖f - g‖ ^ 2 = π := by
   rw [L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq pi_pos.le ((Lp.coeFn_sub f g).trans (hf.sub hg))]
   have h : ∀ x : ℝ, ((fun x => sin (j * x)) - fun x => sin (k * x)) x ^ 2 =
-      sin (j * x) ^ 2 + sin (k * x) ^ 2 - 2 * (sin (j * x) * sin (k * x)) := fun x => by
-    simp only [Pi.sub_apply]
-    ring
+      sin (j * x) * sin (j * x) + sin (k * x) * sin (k * x) - 2 * (sin (j * x) * sin (k * x)) :=
+    fun x => by
+      simp only [Pi.sub_apply]
+      ring
+  -- The sine orthogonality relation, read at natural frequencies.
+  have hs (m n : ℕ) := integral_sin_int_mul_mul_sin_int_mul m n
+  simp only [Int.cast_natCast] at hs
   simp_rw [h]
   rw [intervalIntegral.integral_sub (Continuous.intervalIntegrable (by fun_prop) _ _)
       (Continuous.intervalIntegrable (by fun_prop) _ _),
     intervalIntegral.integral_add (Continuous.intervalIntegrable (by fun_prop) _ _)
       (Continuous.intervalIntegrable (by fun_prop) _ _),
-    intervalIntegral.integral_const_mul, integral_sin_nat_mul_sq hj, integral_sin_nat_mul_sq hk,
-    integral_sin_nat_mul_mul_sin_nat_mul hjk]
+    intervalIntegral.integral_const_mul, hs, hs, hs, ite_eq_left rfl, ite_eq_left rfl,
+    ite_eq_right (by omega : (j : ℤ) ≠ -j), ite_eq_right (by omega : (k : ℤ) ≠ -k),
+    ite_eq_right (by omega : (j : ℤ) ≠ k), ite_eq_right (by omega : (j : ℤ) ≠ -k)]
   ring
 
 /-- **No subsequence of the sine modes is Cauchy in `L²`.** If `v_j` has value `sin (j x)` in
 `L²(0, π)` for every `j`, then `j ↦ v_{φ j}` is not a Cauchy sequence for any strictly increasing
-`φ`, although `‖v_j‖² = π / 2` for `j ≥ 1`. -/
+`φ`. -/
 theorem not_cauchySeq_comp {v : ℕ → Lp ℝ 2 (volume.restrict (Ioo (0 : ℝ) π))}
     (hv : ∀ j, v j =ᵐ[volume.restrict (Ioo 0 π)] fun x => sin (j * x)) {φ : ℕ → ℕ}
     (hφ : StrictMono φ) : ¬ CauchySeq (v ∘ φ) := by
@@ -204,9 +167,11 @@ theorem exists_value_ae_eq_sin_and_not_cauchySeq :
   choose w hw using h
   refine ⟨w, fun j => (hw j).1, fun j hj => ?_, fun φ hφ =>
     not_cauchySeq_comp (v := fun j => value (w j)) (fun j => (hw j).1) hφ⟩
+  have hc : ∫ x in (0 : ℝ)..π, cos (j * x) ^ 2 = π / 2 := by
+    simpa only [Int.cast_natCast] using integral_cos_int_mul_sq (k := j) (by omega)
   rw [norm_gradient_sq_eq_intervalIntegral_of_ae_eq pi_pos (hw j).2]
   simp_rw [mul_pow]
-  rw [intervalIntegral.integral_const_mul, integral_cos_nat_mul_sq hj]
+  rw [intervalIntegral.integral_const_mul, hc]
   ring
 
 end TauCeti.Examples.SineRellich

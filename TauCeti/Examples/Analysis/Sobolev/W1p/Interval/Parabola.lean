@@ -24,9 +24,9 @@ one-dimensional theory.
   (`TauCeti.Examples.UnitIntervalParabola.pi_mul_norm_value_lt`), the optimal constant of the
   Poincaré inequality `‖v‖ ≤ C ‖v'‖` on `H¹₀(0, 1)`
   (`TauCeti.W1p.norm_value_le_div_pi_mul_norm_gradient_of_mem_w1p0Submodule`), whose extremal is
-  `sin (π x)`. The width `1` of the interval, the constant of the zero-boundary Poincaré inequality
-  `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero`, is finite but not
-  sharp.
+  `sin (π x)`. The width `1` of the interval, the constant of the one-endpoint Poincaré inequality
+  `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero` (left endpoint value
+  zero), is finite but not sharp.
 * **`W^{1,1}_0` in `L^∞`.** A class of `W^{1,1}_0(0, 1)` satisfies `|u(t)| ≤ ‖u'‖_{L¹} / 2`
   (`TauCeti.W1p.abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero`). For the parabola
   `‖u'‖_{L¹} = ∫_0^1 |1 - 2x| = 1/2` and `u(1/2) = 1/4`, so the bound is an equality at the
