@@ -20,6 +20,9 @@ A formula is equality-free (`FirstOrder.Language.BoundedFormula.IsEqualityFree`)
 atomic subformulas is an equation. On quantifier-free formulas this is the class whose truth is a
 purely propositional matter, since an equation `t = t` holds in every structure.
 
+An equation of terms, `FirstOrder.Language.Term.equal`, is an atomic formula
+(`FirstOrder.Language.Formula.isAtomic_equal`).
+
 In an algebraic language, every atomic formula holds in a subsingleton structure: atomic
 formulas can only assert equality of terms. Every homomorphism preserves atomic formulas
 (`FirstOrder.Language.BoundedFormula.IsAtomic.realize_comp_hom`); Mathlib's
@@ -217,6 +220,12 @@ theorem IsAtomic.realize_comp_hom {L : Language} {α M N F : Type*} [L.Structure
     exact HomClass.map_rel f R _ h
 
 variable {L L' : Language} {α : Type*} {n : ℕ} {φ : L.BoundedFormula α n}
+
+/-- An equation `t₁ = t₂` of terms is an atomic formula. -/
+@[simp]
+theorem _root_.FirstOrder.Language.Formula.isAtomic_equal (t₁ t₂ : L.Term α) :
+    (t₁.equal t₂).IsAtomic :=
+  IsAtomic.equal _ _
 
 /-- Translating an atomic formula along a language homomorphism gives an atomic formula. -/
 theorem IsAtomic.onBoundedFormula (h : φ.IsAtomic) (ϕ : L →ᴸ L') :
