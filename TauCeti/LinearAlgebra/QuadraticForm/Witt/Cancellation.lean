@@ -220,27 +220,18 @@ theorem isRepresentedBy_of_isRepresentedBy_prod [FiniteDimensional K V₀] {Q₀
     (hQ₀ : Q₀.Nondegenerate) {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
     (h : (Q₀.prod Q₁).IsRepresentedBy (Q₀.prod Q₂)) : Q₁.IsRepresentedBy Q₂ := by
   obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp h
-  -- The image `U` of `Q₀` is a regular subspace isometric to `Q₀`, so the form `T = Q₀ ⊥ Q₂` is
-  -- isometric to `Q₀ ⊥ T|_O` for the orthogonal complement `O` of `U`.
-  let g : V₀ →ₗ[K] V₀ × V₂ := f ∘ₗ LinearMap.inl K V₀ V₁
-  have hg : Function.Injective g := hf.comp LinearMap.inl_injective
-  let U := LinearMap.range g
-  let e₀ : Q₀.IsometryEquiv ((Q₀.prod Q₂).restrict U) :=
-    { toLinearEquiv := LinearEquiv.ofInjective g hg
-      -- The restricted form at `LinearEquiv.ofInjective g hg x` is `T (f (x, 0))` by definition.
-      map_app' x := (hfQ (x, 0)).trans (by simp) }
-  have hcomp := (e₀.nondegenerate_iff.mp hQ₀).isCompl_orthogonal
+  -- The restriction of `f` to `Q₀` splits `T = Q₀ ⊥ Q₂` as `Q₀ ⊥ T|_O`, where `O` is the
+  -- orthogonal complement of its image `U`, and Witt cancellation identifies `Q₂` with `T|_O`.
+  let g : Q₀ →qᵢ Q₀.prod Q₂ := Isometry.comp ⟨f, hfQ⟩ (Isometry.inl Q₀ Q₁)
+  let U := LinearMap.range g.toLinearMap
   let O := LinearMap.BilinForm.orthogonal (Q₀.prod Q₂).polarBilin U
-  -- Witt cancellation identifies `Q₂` with the restriction of `T` to `O`.
   have hQ₂ : Q₂.Equivalent ((Q₀.prod Q₂).restrict O) := equivalent_of_equivalent_prod hQ₀
-    ⟨(IsometryEquiv.prodRestrictOrthogonal (Q₀.prod Q₂) U hcomp).symm.trans
-      (e₀.symm.prod (QuadraticMap.IsometryEquiv.refl _))⟩
+    (g.equivalent_prod_restrict_orthogonal (hf.comp LinearMap.inl_injective) hQ₀)
   -- The image of `Q₁` is orthogonal to the image of `Q₀`, so `Q₁` embeds in `T|_O`.
   have hmem (x : V₁) : (f ∘ₗ LinearMap.inr K V₀ V₁) x ∈ O := by
     rintro _ ⟨a, rfl⟩
-    simp only [g, LinearMap.comp_apply, LinearMap.inl_apply, polarBilin_apply_apply,
-      QuadraticMap.polar, ← map_add, hfQ]
-    simp
+    change polar (Q₀.prod Q₂) (f (a, 0)) (f (0, x)) = 0
+    simp [QuadraticMap.polar, ← map_add, hfQ]
   refine ((isRepresentedBy_iff _ _).mpr ⟨LinearMap.codRestrict O
     (f ∘ₗ LinearMap.inr K V₀ V₁) hmem, fun x y hxy ↦ ?_, fun x ↦ ?_⟩).trans
     hQ₂.symm.isRepresentedBy

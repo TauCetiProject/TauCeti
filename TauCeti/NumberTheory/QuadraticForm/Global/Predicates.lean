@@ -226,11 +226,11 @@ theorem LocallyRepresents.of_prod_zero {Q : _root_.QuadraticForm K V}
   · have h0 : (0 : _root_.QuadraticForm K X).atFinitePlace v = 0 := by ext; simp
     have hv := (h.1 v).trans (QuadraticMap.Equivalent.isRepresentedBy ⟨atFinitePlaceProd R 0 v⟩)
     rw [h0] at hv
-    exact hv.of_prod_zero (Nondegenerate.atFinitePlace hQ v)
+    exact hv.of_prod_zero (Nondegenerate.atFinitePlace hQ v).radical_eq_bot
   · have h0 : (0 : _root_.QuadraticForm K X).atRealPlace w = 0 := by ext; simp
     have hw := (h.2 w).trans (QuadraticMap.Equivalent.isRepresentedBy ⟨atRealPlaceProd R 0 w⟩)
     rw [h0] at hw
-    exact hw.of_prod_zero (Nondegenerate.atRealPlace hQ w)
+    exact hw.of_prod_zero (Nondegenerate.atRealPlace hQ w).radical_eq_bot
 
 /-- Globally equivalent quadratic forms are locally equivalent. -/
 theorem LocallyEquivalent.of_equivalent {Q : _root_.QuadraticForm K V}
