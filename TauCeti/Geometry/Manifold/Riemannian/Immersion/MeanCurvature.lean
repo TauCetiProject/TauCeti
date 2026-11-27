@@ -346,9 +346,8 @@ theorem contMDiffAt_immersionMeanCurvatureVector (hf : ContMDiffAt I J (k + 1 + 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hXi := ((hX.contMDiffAt hs hy i).mdifferentiableAt (by simp))
   simp only [b, OrthonormalBasis.coe_mk]
-  rw [immersionSecondFundamentalFormAt_apply (cov := cov) hyf2 hXi hXi,
-    immersionSecondFundamentalForm_def, immersionSecondFundamentalForm_def, Pi.smul_apply,
-    map_smul, map_smul]
+  rw [immersionSecondFundamentalFormAt_apply (cov := cov) hyf2 hXi hXi]
+  exact (immersionSecondFundamentalForm_smul_left (fun _ ↦ c) (X i) (X i) y).symm
 
 /-- **The mean curvature vector of a `C^{k+2}` immersion is a `C^k` field along it**, for a `C^k`
 covariant derivative, a `C^{k+1}` metric on `M` and a `C^k` metric on `N`. -/
