@@ -23,7 +23,10 @@ coordinates, the Euclidean inner product, and linear maps between finite-dimensi
 spaces are continuous
 (`LinearMap.BilinForm.exists_continuousLinearEquiv_euclideanSpace_apply_self`). So any family
 of positive definite symmetric bilinear forms is a Riemannian metric
-(`Bundle.RiemannianMetric.ofFiniteDimensional`).
+(`Bundle.RiemannianMetric.ofFiniteDimensional`), and conditions on the inner products of
+Riemannian metrics reduce to conditions on positive definite symmetric forms, fibre by fibre
+(`Bundle.RiemannianMetric.exists_forall_toBilinForm_inner_iff`) or at a single fibre
+(`Bundle.RiemannianMetric.exists_toBilinForm_inner_iff`).
 
 This applies for instance to fibres that carry a topology but no norm, such as the normal spaces
 of an embedding and their subspaces, where it gives fibre norms compatible with the existing
@@ -78,5 +81,46 @@ theorem ofFiniteDimensional_inner (φ : ∀ b, LinearMap.BilinForm ℝ (E b))
     (hsymm : ∀ b, LinearMap.BilinForm.IsSymm (φ b)) (hpos : ∀ b (v : E b), v ≠ 0 → 0 < φ b v v)
     (b : B) (v w : E b) : (ofFiniteDimensional φ hsymm hpos).inner b v w = φ b v w :=
   (rfl)
+
+/-- The bilinear forms of `Bundle.RiemannianMetric.ofFiniteDimensional φ` are the forms `φ b`. -/
+@[simp]
+theorem toBilinForm_inner_ofFiniteDimensional (φ : ∀ b, LinearMap.BilinForm ℝ (E b))
+    (hsymm : ∀ b, LinearMap.BilinForm.IsSymm (φ b)) (hpos : ∀ b (v : E b), v ≠ 0 → 0 < φ b v v)
+    (b : B) : ((ofFiniteDimensional φ hsymm hpos).inner b).toBilinForm = φ b :=
+  LinearMap.ext₂ fun _ _ ↦ rfl
+
+/-- **Riemannian metrics on finite-dimensional fibres are families of positive definite forms.**
+A family of conditions `P b` on bilinear forms of the fibres is met by the inner products of some
+Riemannian metric exactly when each `P b` is met by some positive definite symmetric form. -/
+theorem exists_forall_toBilinForm_inner_iff (P : ∀ b, LinearMap.BilinForm ℝ (E b) → Prop) :
+    (∃ g : RiemannianMetric E, ∀ b, P b (g.inner b).toBilinForm) ↔
+      ∀ b, ∃ φ : LinearMap.BilinForm ℝ (E b), φ.IsSymm ∧ (∀ v, v ≠ 0 → 0 < φ v v) ∧ P b φ := by
+  constructor
+  · rintro ⟨g, hg⟩ b
+    exact ⟨_, LinearMap.BilinForm.isSymm_def.mpr (g.symm b), g.pos b, hg b⟩
+  · intro h
+    choose φ hsymm hpos hP using h
+    exact ⟨ofFiniteDimensional φ hsymm hpos, fun b ↦ by simpa using hP b⟩
+
+/-- **The inner products of Riemannian metrics on one finite-dimensional fibre** are exactly the
+positive definite symmetric forms on it, as soon as some Riemannian metric exists: a condition `P`
+on bilinear forms of `E b` is met by the inner product at `b` of some Riemannian metric exactly
+when it is met by some positive definite symmetric form. -/
+theorem exists_toBilinForm_inner_iff [Nonempty (RiemannianMetric E)] (b : B)
+    (P : LinearMap.BilinForm ℝ (E b) → Prop) :
+    (∃ g : RiemannianMetric E, P (g.inner b).toBilinForm) ↔
+      ∃ φ : LinearMap.BilinForm ℝ (E b), φ.IsSymm ∧ (∀ v, v ≠ 0 → 0 < φ v v) ∧ P φ := by
+  refine ⟨fun ⟨g, hg⟩ ↦ ⟨_, LinearMap.BilinForm.isSymm_def.mpr (g.symm b), g.pos b, hg⟩, ?_⟩
+  rintro ⟨φ, hsymm, hpos, hP⟩
+  classical
+  obtain ⟨g⟩ := ‹Nonempty (RiemannianMetric E)›
+  -- Replace the inner product of `g` at `b` by `φ`.
+  obtain ⟨g', hg'⟩ := (exists_forall_toBilinForm_inner_iff fun c ψ ↦
+    ψ = Function.update (fun c ↦ (g.inner c).toBilinForm) b φ c).mpr fun c ↦ by
+    rcases eq_or_ne c b with rfl | hc
+    · exact ⟨φ, hsymm, hpos, by simp⟩
+    · exact ⟨(g.inner c).toBilinForm, LinearMap.BilinForm.isSymm_def.mpr (g.symm c), g.pos c,
+        by simp [hc]⟩
+  exact ⟨g', by simpa [hg' b] using hP⟩
 
 end Bundle.RiemannianMetric
