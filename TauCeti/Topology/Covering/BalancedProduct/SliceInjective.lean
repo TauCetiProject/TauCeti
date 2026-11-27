@@ -75,12 +75,9 @@ theorem exists_mem_nhds_injOn_liftRightTranslation {z₀ : Z} (hz₀ : ∀ k : K
   -- `O K` is a neighbourhood of the stabilizer, so properness gives a neighbourhood `W` of `ι z₀`
   -- moved to meet itself only by elements of `O K`.
   have hOK : O * (K : Set G) ∈ 𝓝ˢ (MulAction.stabilizer G (ι z₀) : Set G) := by
-    rw [← hK, mem_nhdsSet_iff_forall]
-    intro s hs
-    have hc : ContinuousAt (fun g : G ↦ g * s⁻¹) s :=
-      (continuous_id.mul continuous_const).continuousAt
-    filter_upwards [hc.preimage_mem_nhds (by simpa using hO)] with g hg
-    exact ⟨g * s⁻¹, hg, s, hs, inv_mul_cancel_right g s⟩
+    rw [← hK]
+    exact subset_interior_iff_mem_nhdsSet.mp fun k hk ↦
+      subset_interior_mul_left ⟨1, mem_interior_iff_mem_nhds.mpr hO, k, hk, one_mul k⟩
   obtain ⟨W, hW, hWsub⟩ := ProperSMul.mem_nhdsSet_stabilizer_iff.mp hOK
   refine ⟨{z | ∀ k ∈ (univ : Set K), k • z ∈ V₀} ∩ ι ⁻¹' W,
     inter_mem hV₁ (hι.preimage_mem_nhds hW), ?_⟩
@@ -88,9 +85,9 @@ theorem exists_mem_nhds_injOn_liftRightTranslation {z₀ : Z} (hz₀ : ∀ k : K
   rw [liftRightTranslation_mk, liftRightTranslation_mk] at heq
   have hh : (g'⁻¹ * g) • ι z = ι z' := by rw [mul_smul, heq, inv_smul_smul]
   obtain ⟨o, ho, k, hk, hok⟩ := hWsub ⟨ι z', by rw [← hh]; exact smul_mem_smul_set hzW, hzW'⟩
-  have hok' : o * k = g'⁻¹ * g := hok
+  beta_reduce at hok
   have h₁ : mk K (K.toRightTranslation (g'⁻¹ * g)) z ∈ U := by
-    rw [← hok', ← show ((⟨k, hk⟩ : K) : G) = k from rfl, mk_toRightTranslation_mul]
+    rw [← hok, ← Subgroup.coe_mk K k hk, mk_toRightTranslation_mul]
     exact hOV (show (o, (⟨k, hk⟩ : K) • z) ∈ O ×ˢ V₀ from ⟨ho, hz ⟨k, hk⟩ (mem_univ _)⟩)
   have h₂ : mk K (K.toRightTranslation 1) z' ∈ U :=
     hOV (show ((1 : G), z') ∈ O ×ˢ V₀ from ⟨mem_of_mem_nhds hO, by simpa using hz' 1 (mem_univ _)⟩)

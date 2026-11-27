@@ -71,9 +71,8 @@ theorem exists_mem_nhds_injOn_liftRightTranslation_of_isCompl [CompleteSpace EM]
   let _ := rightTranslationChartedSpace K Z I IZ F
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   have := ContMDiffSMul.continuousSMul (I := 𝓘(ℝ, F)) (I' := IZ) (G := K) (M := Z) ∞
-  have hf := isLocalDiffeomorphAt_liftRightTranslation_one hι hinj hcompl hF
-  refine exists_mem_nhds_injOn_liftRightTranslation hz₀ hK hι.continuous.continuousAt
-    (hf.localInverse.open_target.mem_nhds hf.localInverse_mem_target) fun a ha b hb hab ↦ ?_
-  rw [← hf.localInverse_left_inv ha, hab, hf.localInverse_left_inv hb]
+  obtain ⟨U, hU, hUinj⟩ :=
+    (isLocalDiffeomorphAt_liftRightTranslation_one hι hinj hcompl hF).exists_mem_nhds_injOn
+  exact exists_mem_nhds_injOn_liftRightTranslation hz₀ hK hι.continuous.continuousAt hU hUinj
 
 end TauCeti.BalancedProduct
