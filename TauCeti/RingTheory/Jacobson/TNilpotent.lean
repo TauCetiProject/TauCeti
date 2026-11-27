@@ -183,12 +183,8 @@ private theorem bassShift_apply_zero (a : ℕ → A) (f : ℕ →₀ A) : bassSh
 
 private theorem bassShift_apply_succ (a : ℕ → A) (f : ℕ →₀ A) (n : ℕ) :
     bassShift a f (n + 1) = f n * a n := by
-  simp only [bassShift, Finsupp.linearCombination_apply, Finsupp.sum_apply, Finsupp.smul_apply,
-    Finsupp.single_apply, add_left_inj, smul_eq_mul, mul_ite, mul_zero]
-  rw [Finsupp.sum_ite_eq']
-  split_ifs with h
-  · rfl
-  · rw [Finsupp.notMem_support_iff.mp h, zero_mul]
+  simp +contextual [bassShift, Finsupp.linearCombination_apply, Finsupp.sum_apply,
+    Finsupp.single_apply]
 
 /-- The range of the shift lies in `J • ⊤` when the sequence lies in `J`. -/
 private theorem bassShift_mem_smul_top {J : Ideal A} {a : ℕ → A} (ha : ∀ i, a i ∈ J)
