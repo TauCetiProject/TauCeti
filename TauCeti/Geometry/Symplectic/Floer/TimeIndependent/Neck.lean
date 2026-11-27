@@ -88,13 +88,15 @@ open scoped ENNReal
 
 namespace TauCeti.CylinderSobolev
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
-
 /-! ### The operator `∂s + i ∂t - c(s)` -/
+
+section NormedSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
 
 variable (F) in
 /-- **The Cauchy–Riemann operator `∂s + i ∂t - c(s)` on the cylinder.** For a real coefficient
-`c : ℝ → ℝ` and a finite-dimensional complex inner product space `F`, the operator
+`c : ℝ → ℝ` and a finite-dimensional complex normed space `F`, the operator
 `ξ ↦ ∂s ξ + i ∂t ξ - c(s) ξ` from `W^{1,2}(ℝ × S¹, F)` to `L²(ℝ × S¹, F)`, the first-order
 operator (`TauCeti.jetOperator`) of the coefficient field `(v, v_s, v_t) ↦ v_s + i v_t - c(s) v` on
 jets. It is `0` by convention when `c` is not essentially bounded. -/
@@ -149,13 +151,9 @@ theorem coeFn_scalarCauchyRiemannOperator {c : ℝ → ℝ} (hc : Continuous c) 
     hz, firstOrderJetCoeff_apply]
   simp [AlmostComplexStructure.ofComplexModule_apply, sub_eq_add_neg]
 
-omit [FiniteDimensional ℂ F] in
-/-- The metric `Im ⟪·, i ·⟫` of the symplectic form `Im ⟪·, ·⟫` and the complex structure `i` is the
-real inner product `Re ⟪·, ·⟫`. -/
-private theorem imInnerSymplecticForm_apply_ofComplexModule (v w : F) :
-    imInnerSymplecticForm F v (AlmostComplexStructure.ofComplexModule F w) =
-      @inner ℝ F InnerProductSpace.complexToReal.toInner v w :=
-  (imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply v w
+end NormedSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
 
 /-- The linearized Hamiltonian vector field of the quadratic Hamiltonian `y ↦ (c / 2) ‖y‖²` for
 `Im ⟪·, ·⟫`, composed with `-i`, is `-c`. -/
@@ -165,7 +163,7 @@ private theorem neg_comp_fderiv_hamiltonianVectorField_div_two_mul_norm_sq (c : 
       -c • ContinuousLinearMap.id ℝ F := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   rw [SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq
-    imInnerSymplecticForm_apply_ofComplexModule c, ContinuousLinearMap.fderiv]
+    imInnerSymplecticForm_apply_ofComplexModule_eq_inner c, ContinuousLinearMap.fderiv]
   ext v
   simp [AlmostComplexStructure.ofComplexModule_apply, smul_smul]
 
@@ -216,7 +214,7 @@ private theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs
       a := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   exact (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le
-    imInnerSymplecticForm_apply_ofComplexModule _ _).trans (hca s)
+    imInnerSymplecticForm_apply_ofComplexModule_eq_inner _ _).trans (hca s)
 
 variable {c : ℝ → ℝ} {a : ℝ}
   {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
@@ -236,7 +234,7 @@ theorem ker_scalarCauchyRiemannOperator_eq_map_zeroModeL (hc : ContDiff ℝ 2 c)
   rw [← floerSobolevOperator_div_two_mul_norm_sq c fun _ ↦ 0]
   exact SymplecticForm.ker_floerSobolevOperator_eq_map_zeroModeL
     (H := fun s y ↦ c s / 2 * ‖y‖ ^ 2) (γ := fun _ ↦ 0)
-    imInnerSymplecticForm_apply_ofComplexModule
+    imInnerSymplecticForm_apply_ofComplexModule_eq_inner
     (contDiff_uncurry_div_two_mul_norm_sq hc) continuous_const ha
     (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le hca · _)
     (ae_eq_neg_comp_fderiv_hamiltonianVectorField hAL)
@@ -324,7 +322,7 @@ theorem mul_sq_norm_le_mul_sq_norm_scalarCauchyRiemannOperator_of_sliceAverageL_
   rw [← floerSobolevOperator_div_two_mul_norm_sq c fun _ ↦ 0]
   exact SymplecticForm.mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero
     (H := fun s y ↦ c s / 2 * ‖y‖ ^ 2) (γ := fun _ ↦ 0)
-    imInnerSymplecticForm_apply_ofComplexModule
+    imInnerSymplecticForm_apply_ofComplexModule_eq_inner
     (contDiff_uncurry_div_two_mul_norm_sq hc) continuous_const ha
     (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le hca · _) hx
 
