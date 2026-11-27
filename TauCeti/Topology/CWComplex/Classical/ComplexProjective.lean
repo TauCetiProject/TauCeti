@@ -47,6 +47,9 @@ of the real coordinates `TauCeti.complexEuclideanRealCoords`.
   `cellMap` (`TauCeti.ComplexProjectiveSpace.map_cwComplex`); it is finite
   (`TauCeti.ComplexProjectiveSpace.finite_cwComplex`) with one cell in each even dimension
   `m ≤ 2n` and none otherwise (`TauCeti.ComplexProjectiveSpace.nat_card_cell_cwComplex`).
+* `TauCeti.ComplexProjectiveSpace.exists_openCell_cwComplex_eq`,
+  `TauCeti.ComplexProjectiveSpace.exists_openCell_cwComplex_eq_openCell`: the cells of
+  `cwComplex n` are exactly the open cells `openCell n i`, in dimension `2i`.
 * `TauCeti.ComplexProjectiveSpace.finiteCWType`: `CPⁿ` has finite CW type.
 * `TauCeti.finiteCWType_projectivization_complex`: the projectivization `ℙ ℂ V` of a
   finite-dimensional complex space has finite CW type.
@@ -469,6 +472,34 @@ theorem nat_card_cell_cwComplex (m : ℕ) :
   · have : IsEmpty (Cell n m) := ⟨fun c => h ⟨⟨c.val, by have := c.property; omega⟩, by
       have := c.val.is_lt; have := c.property; omega⟩⟩
     exact Nat.card_of_isEmpty
+
+/-- **Every cell of `CPⁿ` is an open cell `openCell n i`**, in dimension `2i`. -/
+theorem exists_openCell_cwComplex_eq {m : ℕ}
+    (j : letI := cwComplex n; cell (univ : Set (ComplexProjectiveSpace n)) m) :
+    ∃ i : Fin (n + 1), 2 * (i : ℕ) = m ∧
+      (letI := cwComplex n; RelCWComplex.openCell (C := univ) m j) = openCell n i := by
+  let := cwComplex n
+  have hm : Nat.card (cell (univ : Set (ComplexProjectiveSpace n)) m) ≠ 0 :=
+    Nat.card_ne_zero.2 ⟨⟨j⟩, finite_cwComplex.finite_cell m⟩
+  rw [nat_card_cell_cwComplex, ne_eq, ite_eq_right_iff, not_forall] at hm
+  obtain ⟨⟨hev, hle⟩, -⟩ := hm
+  obtain ⟨i, rfl⟩ := hev.two_dvd
+  refine ⟨⟨i, by omega⟩, rfl, ?_⟩
+  rw [RelCWComplex.openCell, map_cwComplex ⟨i, by omega⟩ j, image_cellMap_ball]
+
+/-- **Every open cell `openCell n i` is a cell of `CPⁿ`**, in dimension `2i`. -/
+theorem exists_openCell_cwComplex_eq_openCell (i : Fin (n + 1)) :
+    letI := cwComplex n
+    ∃ j : cell (univ : Set (ComplexProjectiveSpace n)) (2 * i),
+      RelCWComplex.openCell (C := univ) (2 * i) j = openCell n i := by
+  let := cwComplex n
+  have hm : Nat.card (cell (univ : Set (ComplexProjectiveSpace n)) (2 * i)) ≠ 0 := by
+    rw [nat_card_cell_cwComplex]
+    split_ifs with h
+    · exact one_ne_zero
+    · exact absurd ⟨even_two_mul _, by omega⟩ h
+  obtain ⟨j⟩ := (Nat.card_ne_zero.1 hm).1
+  exact ⟨j, by rw [RelCWComplex.openCell, map_cwComplex i j, image_cellMap_ball]⟩
 
 /-- Complex projective space has finite CW type. -/
 instance finiteCWType : FiniteCWType (ComplexProjectiveSpace n) :=

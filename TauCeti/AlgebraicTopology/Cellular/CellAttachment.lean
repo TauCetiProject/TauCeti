@@ -88,17 +88,17 @@ private lemma skeletonLT_eq_univ :
 /-- The old space is homeomorphic to the `n`-skeleton of the cell attachment, through the
 inclusion. -/
 private def toSkeletonIso : X ≅ skeletonObj (univ : Set (cellAttachment φ)) (n + 1) :=
-  TopCat.isoOfHomeo ((isClosedEmbedding_cellAttachmentIncl φ).isEmbedding.toHomeomorph.trans
-    (Homeomorph.setCongr (skeletonLT_eq_range φ).symm))
+  skeletonObjIsoOfRangeEq (f := (cellAttachmentIncl φ).hom)
+    (isClosedEmbedding_cellAttachmentIncl φ).isEmbedding (skeletonLT_eq_range φ).symm
 
 private lemma coe_toSkeletonIso_hom_apply (x : X) :
     ((toSkeletonIso φ).hom x : cellAttachment φ) = cellAttachmentIncl φ x :=
-  (rfl)
+  coe_skeletonObjIsoOfRangeEq_hom_apply _ _ x
 
 /-- The `(n + 1)`-skeleton of the cell attachment is homeomorphic to the whole space, through the
 inclusion. -/
 private def skeletonIso : skeletonObj (univ : Set (cellAttachment φ)) (n + 2) ≅ cellAttachment φ :=
-  TopCat.isoOfHomeo ((Homeomorph.setCongr (skeletonLT_eq_univ φ)).trans (Homeomorph.Set.univ _))
+  skeletonObjIsoOfEqUniv (skeletonLT_eq_univ φ)
 
 /-- Through the two identifications, the inclusion of the `n`-skeleton into the `(n + 1)`-skeleton
 is the inclusion of the old space. -/
@@ -106,7 +106,7 @@ is the inclusion of the old space. -/
 private lemma toSkeletonIso_hom_comp_map_comp_skeletonIso_hom :
     (toSkeletonIso φ).hom ≫ (skeletonPair (univ : Set (cellAttachment φ)) (n + 1)).map ≫
       (skeletonIso φ).hom = cellAttachmentIncl φ :=
-  (rfl)
+  skeletonObjIsoOfRangeEq_hom_comp_map_comp _ _ _
 
 /-- The `(n + 1)`-cells of the classical structure are the attached cells. -/
 private def cellEquiv : cell (univ : Set (cellAttachment φ)) (n + 1) ≃ ι :=
