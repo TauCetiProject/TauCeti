@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.Analysis.Normed.Ring.MulUnit
 import TauCeti.Analysis.Normed.MulAction
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Rescaling multivariate power series
@@ -36,6 +37,22 @@ namespace MvPowerSeries
 open Filter TauCeti
 
 variable {σ R : Type*} {r s : σ → ℝ}
+
+/-- Rescaling the variables by elements in the closed unit ball does not increase any
+coefficient norm. -/
+theorem nnNorm_coeff_rescale_le [SeminormedCommRing R] (f : MvPowerSeries σ R) (a : σ → R)
+    (ha : ∀ i, ‖a i‖₊ ≤ 1) (α : σ →₀ ℕ) : ‖coeff α (rescale a f)‖₊ ≤ ‖coeff α f‖₊ := by
+  obtain rfl | hα := eq_or_ne α 0
+  · simp [coeff_rescale]
+  rw [coeff_rescale]
+  refine (nnNorm_mul_le _ _).trans ?_
+  suffices h : ‖α.prod (fun i k ↦ a i ^ k)‖₊ ≤ 1 by
+    simpa only [one_mul] using mul_le_mul' h (le_refl ‖coeff α f‖₊)
+  apply NNReal.coe_le_coe.mp
+  rw [Finsupp.prod, NNReal.coe_one]
+  refine norm_prod_le_one_of_nonempty (Finsupp.support_nonempty_iff.mpr hα) fun i hi ↦ ?_
+  exact (norm_pow_le' _ (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
+    (pow_le_one₀ (norm_nonneg _) (ha i))
 
 /-- Rescaling by elements `u i` by which left multiplication scales every norm by `‖u i‖` (for
 instance multiplicative units, `TauCeti.IsNormMulUnit`) preserves weighted coefficient norms when
