@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Wave.WeakSolution
 import TauCeti.Analysis.Calculus.Taylor.OrderOne
-import TauCeti.Analysis.Fourier.LaplacianResolvent
+import TauCeti.Analysis.Fourier.Laplacian.Resolvent
 import TauCeti.Analysis.PDE.HeatKernel.Core
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Uniqueness of weak solutions of the wave equation

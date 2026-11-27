@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Taylor's formula of order one with integral remainder
@@ -23,7 +24,8 @@ Conversely, the remainder term `σ ↦ ∫_{t₀}^σ (σ - r) A r dr` of a funct
 compact interval `[a, b]` containing `t₀` has derivative `∫_{t₀}^τ A r dr` within `[a, b]` at
 every `τ ∈ [a, b]` (`TauCeti.intervalIntegral.hasDerivWithinAt_integral_sub_smul`), and that
 primitive in turn has derivative `A τ` within `[a, b]`
-(`TauCeti.intervalIntegral.hasDerivWithinAt_integral`). So the remainder term is twice
+(`TauCeti.intervalIntegral.hasDerivWithinAt_integral`, in
+`TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus`). So the remainder term is twice
 differentiable within `[a, b]` with second derivative `A`.
 
 ## Main declarations
@@ -32,8 +34,6 @@ differentiable within `[a, b]` with second derivative `A`.
   with integral remainder.
 * `TauCeti.intervalIntegral.intervalIntegrable_sub_smul`: the integrand of the remainder term is
   interval integrable.
-* `TauCeti.intervalIntegral.hasDerivWithinAt_integral`: the fundamental theorem of calculus within
-  a compact interval containing the base point.
 * `TauCeti.intervalIntegral.hasDerivWithinAt_integral_sub_smul`: the derivative of the remainder
   term `σ ↦ ∫_{t₀}^σ (σ - r) A r dr`.
 -/
@@ -76,17 +76,6 @@ theorem eq_add_sub_smul_add_integral_sub_smul {a b c : ℝ → X} {t₀ t : ℝ}
   rw [hparts, sub_self, zero_smul, zero_sub]
   simp only [neg_smul, one_smul, _root_.intervalIntegral.integral_neg, hftc]
   abel
-
-/-- **The fundamental theorem of calculus within a compact interval** `[a, b]` containing the
-base point `t₀`: for `A` continuous on `[a, b]`, the primitive `σ ↦ ∫_{t₀}^σ A r dr` has
-derivative `A τ` within `[a, b]` at every `τ ∈ [a, b]`. -/
-theorem hasDerivWithinAt_integral {A : ℝ → X} {a b t₀ τ : ℝ} (hA : ContinuousOn A (Icc a b))
-    (ht₀ : t₀ ∈ Icc a b) (hτ : τ ∈ Icc a b) :
-    HasDerivWithinAt (fun σ ↦ ∫ r in t₀..σ, A r) (A τ) (Icc a b) τ := by
-  have : Fact (τ ∈ Icc a b) := ⟨hτ⟩
-  exact _root_.intervalIntegral.integral_hasDerivWithinAt_right
-    (hA.mono (uIcc_subset_Icc ht₀ hτ)).intervalIntegrable
-    (hA.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Icc τ) (hA τ hτ)
 
 /-- Within a compact interval `[a, b]` containing the base point `t₀`, the remainder term
 `σ ↦ ∫_{t₀}^σ (σ - r) A r dr` of a continuous `A` has derivative `∫_{t₀}^τ A r dr` at `τ`. -/
