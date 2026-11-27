@@ -27,7 +27,8 @@ variable {R B S : Type*} [CommRing R] [Ring B] [Algebra R B] [CommRing S] [Algeb
 
 namespace AlgHom
 
-/-- A character of an integral algebra takes values in any integrally closed base ring. -/
+/-- The `R`-valued character whose composite with `algebraMap R S` is `f`, when `B` is
+integral over `R` and `R` is integrally closed in `S`. -/
 noncomputable def restrictOfIsIntegrallyClosedIn (f : B →ₐ[R] S) : B →ₐ[R] R where
   toFun b := IsIntegralClosure.mk' R (f b) ((Algebra.IsIntegral.isIntegral (R := R) b).map f)
   map_zero' := by simp only [map_zero, IsIntegralClosure.mk'_zero]
@@ -41,8 +42,8 @@ noncomputable def restrictOfIsIntegrallyClosedIn (f : B →ₐ[R] S) : B →ₐ[
   commutes' r := by simp only [AlgHom.commutes, IsIntegralClosure.mk'_algebraMap,
     Algebra.algebraMap_self_apply]
 
-/-- Scalar extension of a restricted character recovers its value. -/
-@[simp]
+/-- Composing the restricted character with `algebraMap R S` recovers the original value. -/
+@[simp, grind =]
 theorem algebraMap_restrictOfIsIntegrallyClosedIn (f : B →ₐ[R] S) (b : B) :
     algebraMap R S (f.restrictOfIsIntegrallyClosedIn b) = f b :=
   IsIntegralClosure.algebraMap_mk' (R := R) R (f b)
@@ -52,8 +53,8 @@ end AlgHom
 
 namespace TauCeti
 
-/-- Extending scalars gives a bijection on characters of an integral algebra when the base
-is integrally closed in the coefficient algebra. -/
+/-- Composing with `algebraMap R S` gives a bijection from `R`-valued to `S`-valued characters
+of an integral algebra when `R` is integrally closed in `S`. -/
 noncomputable def algHomEquivOfIsIntegrallyClosedIn (R B S : Type*)
     [CommRing R] [Ring B] [Algebra R B] [CommRing S] [Algebra R S]
     [Algebra.IsIntegral R B] [IsIntegrallyClosedIn R S] :
@@ -69,14 +70,13 @@ noncomputable def algHomEquivOfIsIntegrallyClosedIn (R B S : Type*)
 
 variable (R B S)
 
-/-- The character descent equivalence applies by extending its values to the coefficient
-algebra. -/
-@[simp]
+/-- The character descent equivalence composes character values with `algebraMap R S`. -/
+@[simp, grind =]
 theorem algHomEquivOfIsIntegrallyClosedIn_apply (f : B →ₐ[R] R) (b : B) :
     algHomEquivOfIsIntegrallyClosedIn R B S f b = algebraMap R S (f b) := (rfl)
 
 /-- The inverse character descent equivalence is restriction to the base ring. -/
-@[simp]
+@[simp, grind =]
 theorem algHomEquivOfIsIntegrallyClosedIn_symm_apply (f : B →ₐ[R] S) :
     (algHomEquivOfIsIntegrallyClosedIn R B S).symm f = f.restrictOfIsIntegrallyClosedIn := (rfl)
 
