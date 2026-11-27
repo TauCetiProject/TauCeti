@@ -26,6 +26,12 @@ on `ℝ` has the test function itself as continuous representative on `[a,b]`
 (`W1p.intervalRepresentativeL_restrictL_ofTestFunctionₗ`), so its endpoint data are its values at
 `a` and `b` (`W1p.intervalTraceL_restrictL_ofTestFunctionₗ`).
 
+A class with zero endpoint values is bounded by half the `L¹` norm of its weak gradient,
+`|u(t)| ≤ (1/2) ∫_a^b |u'|` (`W1p.abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero`),
+which is the one-dimensional embedding of `W^{1,1}_0(a,b)` into the bounded functions. In norm
+form, `|u(t)| ≤ ‖u'‖_{L¹(a,b)} / 2` for `u ∈ W^{1,1}_0(a,b)`
+(`W1p.abs_intervalRepresentativeL_le_norm_gradient_div_two_of_mem_w1p0Submodule`).
+
 ## References
 
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
@@ -229,5 +235,52 @@ theorem intervalTraceL_eq_iff_sub_intervalLiftL_mem (hp : p ≠ ⊤) (hab : a < 
     intervalTraceL hab u = z ↔
       u - intervalLiftL a b z ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p := by
   rw [← intervalTraceL_eq_iff_sub_mem_w1p0Submodule hp hab, intervalTraceL_intervalLiftL]
+
+/-! ### The supremum bound for zero endpoint values -/
+
+/-- **The pointwise bound for zero endpoint values.** If the continuous representative of
+`u ∈ W^{1,p}(a, b)` vanishes at both endpoints, then `|u(t)| ≤ (1/2) ∫_a^b |u'|` for every
+`t ∈ [a, b]`, since `u(t)` is both `∫_a^t u'` and `-∫_t^b u'`. For `p = 1` this is the
+one-dimensional embedding `‖u‖_∞ ≤ ‖u'‖_{L¹(a,b)} / 2` of `W^{1,1}_0(a, b)`, whose constant
+`1/2` is attained by `x (1 - x)` on `(0, 1)` at `t = 1/2`. -/
+theorem abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero (hab : a < b)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p} (hu : intervalTraceL hab u = 0) (t : Icc a b) :
+    |intervalRepresentativeL hab u t| ≤ (∫ s in Ioo a b, |gradient u s|) / 2 := by
+  rw [intervalTraceL_apply, Prod.mk_eq_zero] at hu
+  have ha := left_mem_Icc.2 hab.le
+  have hb := right_mem_Icc.2 hab.le
+  -- `u(t)` is the integral of `u'` from `a` to `t`, and minus the integral from `t` to `b`.
+  have h₁ : |intervalRepresentativeL hab u t| ≤ ∫ s in a..t, |gradient u s| := by
+    have h := integral_gradient_eq_intervalRepresentativeL_sub hab u ⟨a, ha⟩ t
+    rw [hu.1, sub_zero] at h
+    rw [← h]
+    exact intervalIntegral.abs_integral_le_integral_abs t.property.1
+  have h₂ : |intervalRepresentativeL hab u t| ≤ ∫ s in t..b, |gradient u s| := by
+    have h := integral_gradient_eq_intervalRepresentativeL_sub hab u t ⟨b, hb⟩
+    rw [hu.2, zero_sub] at h
+    rw [← abs_neg, ← h]
+    exact intervalIntegral.abs_integral_le_integral_abs t.property.2
+  have hsum : (∫ s in a..t, |gradient u s|) + (∫ s in t..b, |gradient u s|) =
+      ∫ s in Ioo a b, |gradient u s| := by
+    rw [intervalIntegral.integral_add_adjacent_intervals
+      (intervalIntegrable_gradient u ha t.property).abs
+      (intervalIntegrable_gradient u t.property hb).abs,
+      intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo]
+  linarith
+
+/-- In `W^{1,1}(a, b)` the norm of the weak gradient is the integral of its absolute value. -/
+theorem norm_gradient_eq_setIntegral_abs (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 1) :
+    ‖gradient u‖ = ∫ s in Ioo a b, |gradient u s| := by
+  simp only [L1.norm_eq_integral_norm, Real.norm_eq_abs, TopologicalSpace.Opens.coe_mk]
+
+/-- **The embedding of `W^{1,1}_0(a, b)` into the bounded functions.** For
+`u ∈ W^{1,1}_0(a, b)` the continuous representative satisfies `|u(t)| ≤ ‖u'‖_{L¹(a,b)} / 2` for
+every `t ∈ [a, b]`. -/
+theorem abs_intervalRepresentativeL_le_norm_gradient_div_two_of_mem_w1p0Submodule (hab : a < b)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 1} (hu : u ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ 1)
+    (t : Icc a b) : |intervalRepresentativeL hab u t| ≤ ‖gradient u‖ / 2 := by
+  rw [norm_gradient_eq_setIntegral_abs]
+  exact abs_intervalRepresentativeL_le_of_intervalTraceL_eq_zero hab
+    (intervalTraceL_eq_zero_of_mem_w1p0Submodule hab hu) t
 
 end TauCeti.W1p
