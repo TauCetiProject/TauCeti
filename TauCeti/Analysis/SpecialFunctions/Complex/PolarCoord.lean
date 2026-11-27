@@ -61,14 +61,25 @@ theorem hasFDerivAt_add_polarCoord_symm (p : ℝ × ℝ) (z₀ : ℂ) :
       (fderivComplexPolarCoordSymm p) p :=
   (Complex.equivRealProdCLM.symm.hasFDerivAt.comp p (hasFDerivAt_polarCoord_symm p)).const_add z₀
 
+/-- The polar differential applied to a radial and angular tangent vector. -/
+@[simp] theorem fderivComplexPolarCoordSymm_apply (x v : ℝ × ℝ) :
+    fderivComplexPolarCoordSymm x v =
+      ⟨Real.cos x.2 * v.1 - x.1 * Real.sin x.2 * v.2,
+        Real.sin x.2 * v.1 + x.1 * Real.cos x.2 * v.2⟩ := by
+  apply Complex.ext <;>
+    simp [-Complex.ofReal_cos, -Complex.ofReal_sin, fderivComplexPolarCoordSymm,
+      fderivPolarCoordSymm, Matrix.toLin_finTwoProd_toContinuousLinearMap,
+      Complex.equivRealProdCLM_symm_apply,
+      sub_eq_add_neg]
+
 /-- The radial derivative of the inverse polar-coordinate map, expressed as a complex number,
 is the unit vector at the given angle. -/
 theorem fderivComplexPolarCoordSymm_apply_one_zero (p : ℝ × ℝ) :
     fderivComplexPolarCoordSymm p (1, 0) =
       Complex.exp (p.2 * I) := by
-  simp [fderivComplexPolarCoordSymm, fderivPolarCoordSymm,
-    Matrix.toLin_finTwoProd_toContinuousLinearMap, Complex.equivRealProdCLM_symm_apply,
-    Complex.exp_mul_I]
+  apply Complex.ext <;>
+    simp [fderivComplexPolarCoordSymm_apply, Complex.exp_ofReal_mul_I_re,
+      Complex.exp_ofReal_mul_I_im]
 
 /-- The angular derivative of the inverse polar-coordinate map, expressed as a complex number,
 is the tangent vector to the circle with the given radius and angle. -/
@@ -76,9 +87,8 @@ theorem fderivComplexPolarCoordSymm_apply_zero_one (p : ℝ × ℝ) :
     fderivComplexPolarCoordSymm p (0, 1) =
       circleMap 0 p.1 p.2 * I := by
   apply Complex.ext <;>
-  simp [fderivComplexPolarCoordSymm, fderivPolarCoordSymm,
-    Matrix.toLin_finTwoProd_toContinuousLinearMap, Complex.equivRealProdCLM_symm_apply,
-    Complex.exp_mul_I, circleMap]
+    simp [fderivComplexPolarCoordSymm_apply, Complex.exp_ofReal_mul_I_re,
+      Complex.exp_ofReal_mul_I_im, circleMap]
 
 /-- The Cartesian polar parametrization has derivative `fderivComplexPolarCoordSymm`
 at every point. -/
@@ -91,17 +101,6 @@ is `fderivComplexPolarCoordSymm`. -/
 @[simp] theorem fderiv_complexPolarCoord_symm (x : ℝ × ℝ) :
     fderiv ℝ Complex.polarCoord.symm x = fderivComplexPolarCoordSymm x :=
   (hasFDerivAt_complexPolarCoord_symm x).fderiv
-
-/-- The polar differential applied to a radial and angular tangent vector. -/
-@[simp] theorem fderivComplexPolarCoordSymm_apply (x v : ℝ × ℝ) :
-    fderivComplexPolarCoordSymm x v =
-      ⟨Real.cos x.2 * v.1 - x.1 * Real.sin x.2 * v.2,
-        Real.sin x.2 * v.1 + x.1 * Real.cos x.2 * v.2⟩ := by
-  apply Complex.ext <;>
-    simp [-Complex.ofReal_cos, -Complex.ofReal_sin, fderivComplexPolarCoordSymm,
-      fderivPolarCoordSymm, Matrix.toLin_finTwoProd_toContinuousLinearMap,
-      Complex.equivRealProdCLM_symm_apply,
-      sub_eq_add_neg]
 
 /-- Pullback of the Euclidean metric in radius and angle coordinates, at any real radius. -/
 theorem inner_fderivComplexPolarCoordSymm (x v w : ℝ × ℝ) :

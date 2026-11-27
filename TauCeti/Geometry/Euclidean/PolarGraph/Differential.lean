@@ -9,10 +9,11 @@ public import TauCeti.Analysis.SpecialFunctions.Complex.PolarCoord
 public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
 
 /-!
-# The differential and metric of the polar projection
+# The polar parametrization and deck invariance
 
-In the global coordinates of the polar cover, the pullback of the real Euclidean inner product
-on the complex plane is `dr² + r² dθ²`. Each integral deck translation preserves this metric.
+The Cartesian polar parametrization agrees with the covering projection on positive radii.
+Integral deck translations preserve the pullback Euclidean inner product. The formula
+`dr² + r² dθ²` for that inner product is `TauCeti.inner_fderivComplexPolarCoordSymm`.
 -/
 
 public noncomputable section
