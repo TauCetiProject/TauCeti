@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.BaseChange
 public import TauCeti.AlgebraicGeometry.GroupScheme.Image
-import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.FlatBaseChange
 import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.GeometricallyIntegral
 import TauCeti.CategoryTheory.Comma.Over
 
@@ -21,8 +21,8 @@ to the image along field extensions and descending integrality from the source.
 
 The construction gives the surjective homomorphism onto the image, its closed immersion into
 the target and the universal factorization through any abelian subvariety containing the image.
-Extending the ground field preserves this factorization by flat base change of schematic
-dominance, as in the scheme-theoretic image comparison of Stacks Project, Tag 081I.
+Extending the ground field preserves this factorization by flat base change of scheme-theoretic
+images, as in Stacks Project, Tag 081I.
 -/
 
 public noncomputable section
@@ -41,12 +41,9 @@ variable {K : Type u} [Field K] {A B C : AbelianVariety K} (f : A ⟶ B)
 structure over the original field. -/
 def image : AbelianVariety K where
   toOver := GroupScheme.imageOver (toOverHom f)
-  grpObj := by
-    have := isProper_toSchemeHom f
-    exact GroupScheme.imageGrpObj (toOverHom f)
+  grpObj := GroupScheme.imageGrpObj (toOverHom f)
   isProper := inferInstanceAs (IsProper ((toSchemeHom f).imageι ≫ B.toOver.hom))
   geometricallyIntegral := by
-    have := isProper_toSchemeHom f
     have : GeometricallyIntegral (toSchemeHom f ≫ B.toOver.hom) := by
       rw [toSchemeHom_comp_hom]
       infer_instance
@@ -61,7 +58,6 @@ lemma image_toScheme : (image f).toScheme = (toSchemeHom f).image := (rfl)
 
 /-- The closed embedding of the image into the target abelian variety. -/
 def imageι : image f ⟶ B := by
-  have := isProper_toSchemeHom f
   have : IsMonHom (M := (image f).toOver) (GroupScheme.imageι (toOverHom f)) :=
     GroupScheme.isMonHom_imageι (toOverHom f)
   exact mk' (GroupScheme.imageι (toOverHom f)) (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
@@ -88,13 +84,10 @@ lemma ker_toSchemeHom_imageι : (toSchemeHom (imageι f)).ker = (toSchemeHom f).
 
 instance : IsClosedImmersion (toSchemeHom (imageι f)) := by
   rw [toSchemeHom_imageι]
-  have : IsClosedImmersion (toSchemeHom f).imageι :=
-    inferInstanceAs (IsClosedImmersion ((toSchemeHom f).ker.subschemeι))
   infer_instance
 
 /-- The induced homomorphism onto the scheme-theoretic image. -/
 def toImage : A ⟶ image f := by
-  have := isProper_toSchemeHom f
   have : IsMonHom (N := (image f).toOver) (GroupScheme.toImage (toOverHom f)) :=
     GroupScheme.isMonHom_toImage (toOverHom f)
   exact mk' (GroupScheme.toImage (toOverHom f)) (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
@@ -122,7 +115,6 @@ lemma toImage_imageι : toImage f ≫ imageι f = f := by
 
 /-- The induced homomorphism onto the scheme-theoretic image is surjective. -/
 instance : Surjective (toSchemeHom (toImage f)) := by
-  have := isProper_toSchemeHom f
   rw [toSchemeHom_toImage]
   have : Surjective (toSchemeHom f).toImage := ⟨(toSchemeHom f).toImage_surjective_of_isClosed_range
     (toSchemeHom f).isClosedMap.isClosed_range⟩
@@ -168,7 +160,7 @@ theorem existsUnique_comp_eq_iff_ker_le (i : C ⟶ B) [IsClosedImmersion (toSche
 
 /-- If a homomorphism factors through a closed immersion, its scheme-theoretic image factors
 uniquely through the same immersion. -/
-theorem existsUnique_imageι_factor {i : C ⟶ B} [IsClosedImmersion (toSchemeHom i)]
+theorem existsUnique_comp_eq_imageι {i : C ⟶ B} [IsClosedImmersion (toSchemeHom i)]
     {g : A ⟶ C} (h : g ≫ i = f) : ∃! j : image f ⟶ C, j ≫ i = imageι f := by
   apply (existsUnique_comp_eq_iff_ker_le _ _).mpr
   rw [ker_toSchemeHom_imageι, ← h, toSchemeHom_comp]
@@ -178,50 +170,27 @@ section BaseChange
 
 variable (L : Type u) [Field L] [Algebra K L]
 
-private lemma isClosedImmersion_baseChange_imageι :
-    IsClosedImmersion (toSchemeHom (Hom.baseChange (imageι f) L)) := by
-  let b := Spec.map (CommRingCat.ofHom (algebraMap K L))
-  have : IsClosedImmersion ((Over.pullback b).map (toOverHom (imageι f))).left :=
-    MorphismProperty.overPullbackMap (P := @IsClosedImmersion) b _ inferInstance
-  rw [toSchemeHom_baseChange, Over.comp_left, Over.comp_left]
-  infer_instance
-
 private lemma ker_baseChange_imageι :
     (toSchemeHom (Hom.baseChange (imageι f) L)).ker =
       (toSchemeHom (imageι (Hom.baseChange f L))).ker := by
   let b := Spec.map (CommRingCat.ofHom (algebraMap K L))
-  let p := toOverHom (toImage f)
-  have := isProper_toSchemeHom f
-  have : QuasiCompact p.left := by
-    have hp : QuasiCompact (toSchemeHom (toImage f)) := by
-      rw [toSchemeHom_toImage]
-      infer_instance
-    exact hp
-  have : IsSchemeTheoreticallyDominant p.left := by
-    have hp : IsSchemeTheoreticallyDominant (toSchemeHom (toImage f)) := by
-      rw [toSchemeHom_toImage]
-      infer_instance
-    exact hp
-  have : IsSchemeTheoreticallyDominant ((Over.pullback b).map p).left :=
-    .of_isPullback (Over.isPullback_pullback_map_left b p).flip
-  have : IsSchemeTheoreticallyDominant (toSchemeHom (Hom.baseChange (toImage f) L)) := by
-    rw [toSchemeHom_baseChange, Over.comp_left, Over.comp_left]
-    infer_instance
-  have hf : Hom.baseChange (toImage f) L ≫ Hom.baseChange (imageι f) L = Hom.baseChange f L := by
-    rw [← Hom.baseChange_comp, toImage_imageι]
-  rw [ker_toSchemeHom_imageι, ← hf, toSchemeHom_comp,
-    Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant]
+  have : Flat b := Flat.SpecMap_iff.mpr (RingHom.flat_algebraMap_iff.mpr inferInstance)
+  -- The source transports preserve kernels; the common target transport maps both kernels.
+  rw [ker_toSchemeHom_imageι, toSchemeHom_baseChange (imageι f), toSchemeHom_baseChange f]
+  simp only [Over.comp_left, Scheme.Hom.ker_comp_of_isIso]
+  rw [Scheme.Hom.ker_comp, Scheme.Hom.ker_comp,
+    Scheme.IdealSheafData.ker_eq_comap_of_isPullback (toSchemeHom (imageι f))
+      (Over.isPullback_pullback_map_left b (toOverHom (imageι f))),
+    (toSchemeHom f).ker_eq_comap_of_isPullback_of_flat
+      (Over.isPullback_pullback_map_left b (toOverHom f)).flip,
+    ker_toSchemeHom_imageι]
 
 /-- The canonical isomorphism from the image after extending the ground field to the extension
 of the original image. -/
 def imageBaseChangeIso : image (Hom.baseChange f L) ≅ (image f).baseChange L := by
-  have := isClosedImmersion_baseChange_imageι f L
   have h := ker_baseChange_imageι f L
   let i := imageι (Hom.baseChange f L)
   let j := Hom.baseChange (imageι f) L
-  have : IsClosedImmersion (toSchemeHom j) := ‹_›
-  have : IsClosedImmersion (toSchemeHom i) := inferInstanceAs (IsClosedImmersion
-    (toSchemeHom (imageι (Hom.baseChange f L))))
   refine ⟨liftOfKerLE i j h.le, liftOfKerLE j i h.ge, ?_, ?_⟩
   · exact ((existsUnique_comp_eq_iff_ker_le i i).mpr le_rfl).unique
       (by simp) (Category.id_comp _)
@@ -230,9 +199,8 @@ def imageBaseChangeIso : image (Hom.baseChange f L) ≅ (image f).baseChange L :
 
 /-- The comparison respects the inclusion of the image in the base-changed target. -/
 @[reassoc (attr := simp)]
-lemma imageBaseChangeIso_hom_comp :
+lemma imageBaseChangeIso_hom_comp_baseChange_imageι :
     (imageBaseChangeIso f L).hom ≫ Hom.baseChange (imageι f) L = imageι (Hom.baseChange f L) := by
-  have := isClosedImmersion_baseChange_imageι f L
   unfold imageBaseChangeIso
   apply liftOfKerLE_comp
 
@@ -240,11 +208,11 @@ lemma imageBaseChangeIso_hom_comp :
 @[reassoc (attr := simp)]
 lemma toImage_comp_imageBaseChangeIso_hom :
     toImage (Hom.baseChange f L) ≫ (imageBaseChangeIso f L).hom = Hom.baseChange (toImage f) L := by
-  have := isClosedImmersion_baseChange_imageι f L
   apply Hom.ext
   rw [← cancel_mono (toSchemeHom (Hom.baseChange (imageι f) L)),
     ← toSchemeHom_comp, ← toSchemeHom_comp]
-  simp only [Category.assoc, imageBaseChangeIso_hom_comp, toImage_imageι, ← Hom.baseChange_comp]
+  simp only [Category.assoc, imageBaseChangeIso_hom_comp_baseChange_imageι, toImage_imageι,
+    ← Hom.baseChange_comp]
 
 end BaseChange
 

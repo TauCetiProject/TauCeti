@@ -97,6 +97,22 @@ lemma Hom.toSchemeHom_baseChange {A B : AbelianVariety K} (f : A ⟶ B)
         eqToHom (baseChange_toOver B L).symm).left :=
   congrArg Over.Hom.left (Hom.toOverHom_baseChange f L)
 
+/-- Extending the ground field of a homomorphism of abelian varieties preserves any
+scheme-morphism property stable under base change. -/
+lemma Hom.baseChange_property {A B : AbelianVariety K} {f : A ⟶ B}
+    (P : MorphismProperty Scheme) [P.IsStableUnderBaseChange]
+    (hf : P (Hom.toSchemeHom f)) (L : Type u) [Field L] [Algebra K L] :
+    P (Hom.toSchemeHom (Hom.baseChange f L)) := by
+  rw [Hom.toSchemeHom_baseChange, Over.comp_left, Over.comp_left,
+    P.cancel_left_of_respectsIso, P.cancel_right_of_respectsIso]
+  exact P.overPullbackMap _ _ hf
+
+/-- Extending the ground field preserves closed immersions of abelian varieties. -/
+instance Hom.isClosedImmersion_baseChange {A B : AbelianVariety K} {f : A ⟶ B}
+    [IsClosedImmersion (Hom.toSchemeHom f)] (L : Type u) [Field L] [Algebra K L] :
+    IsClosedImmersion (Hom.toSchemeHom (Hom.baseChange f L)) :=
+  Hom.baseChange_property @IsClosedImmersion ‹_› L
+
 /-- Base change preserves identity homomorphisms. -/
 @[simp]
 lemma Hom.baseChange_id (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :

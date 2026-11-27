@@ -169,7 +169,7 @@ lemma Hom.toSchemeHom_comp_hom {A B : AbelianVariety K} (f : A ⟶ B) :
   (Hom.toOverHom f).w
 
 /-- The underlying scheme morphism of a homomorphism of abelian varieties is proper. -/
-lemma isProper_toSchemeHom {A B : AbelianVariety K} (f : A ⟶ B) :
+instance Hom.isProper_toSchemeHom {A B : AbelianVariety K} {f : A ⟶ B} :
     IsProper (Hom.toSchemeHom f) := by
   have : IsProper (Hom.toSchemeHom f ≫ B.toOver.hom) := by
     rw [Hom.toSchemeHom_comp_hom]

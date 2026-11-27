@@ -119,25 +119,11 @@ lemma surjective (hf : IsIsogeny f) : Surjective (Hom.toSchemeHom f) :=
 lemma comp (hf : IsIsogeny f) (hg : IsIsogeny g) : IsIsogeny (f ≫ g) :=
   (isogenies K).comp_mem f g hf hg
 
-/-- A scheme-morphism property stable under base change holds for the underlying morphism of a
-base-changed abelian-variety homomorphism. -/
-private lemma baseChange_property (P : MorphismProperty Scheme)
-    [P.IsStableUnderBaseChange] [P.IsMultiplicative] (hf : P (Hom.toSchemeHom f))
-    (L : Type u) [Field L] [Algebra K L] :
-    P (Hom.toSchemeHom (Hom.baseChange f L)) := by
-  rw [Hom.toSchemeHom_baseChange]
-  simp only [Over.comp_left, Over.eqToHom_left]
-  apply P.comp_mem
-  · exact P.of_isIso _
-  · apply P.comp_mem
-    · exact P.overPullbackMap _ _ hf
-    · exact P.of_isIso _
-
 /-- Extending the ground field preserves isogenies. -/
 lemma baseChange (hf : IsIsogeny f) (L : Type u) [Field L] [Algebra K L] :
     IsIsogeny (Hom.baseChange f L) := by
   rw [isIsogeny_iff] at hf ⊢
-  exact ⟨baseChange_property @IsFinite hf.1 L, baseChange_property @Surjective hf.2 L⟩
+  exact ⟨Hom.baseChange_property @IsFinite hf.1 L, Hom.baseChange_property @Surjective hf.2 L⟩
 
 end IsIsogeny
 
