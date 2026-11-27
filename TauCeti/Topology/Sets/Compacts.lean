@@ -126,7 +126,8 @@ lemma map_sup (f : α → β) (hf : Continuous f) (K L : Compacts α) :
   Compacts.ext (image_union f K L)
 
 /-- The image of compact sets under an injective continuous map preserves intersections. -/
-lemma map_inf [T2Space α] [T2Space β] {f : α → β} (hf : Continuous f) (hinj : f.Injective)
+@[simp]
+lemma map_inf [T2Space α] [T2Space β] (f : α → β) (hf : Continuous f) (hinj : f.Injective)
     (K L : Compacts α) :
     Compacts.map f hf (K ⊓ L) = Compacts.map f hf K ⊓ Compacts.map f hf L :=
   Compacts.ext (image_inter hinj)

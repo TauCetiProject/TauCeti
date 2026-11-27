@@ -147,14 +147,17 @@ theorem nonempty_isColimit_coconeOfCompacts_pullback {P : KPresheaf A Y}
     -- the left side is the leg of `t s` at `L`
     refine (hP (fK K'.unop)).some.hom_ext fun L ↦ ?_
     let L' : (fK K).compactNhds := ⟨L.unop.val, hmem K'.unop.property L.unop.property⟩
-    exact (P.map_comp_assoc _ _ _).symm.trans ((hc.fac (t s) (op L')).trans
-      (map_comp_ι_eq f P s (K₁ := ⟨g L', hg L'⟩) (hle L')
-        (Compacts.subset_of_mem_compactNhds L.unop.property)))
+    -- the composite of the two restrictions is, by definition, the leg of `P.coconeOfCompacts`
+    -- at `L'`; `rw` cannot match it through `coconeOfCompacts`, so the steps are chained
+    refine (P.map_comp_assoc _ _ _).symm.trans ((hc.fac (t s) (op L')).trans ?_)
+    exact map_comp_ι_eq f P s (K₁ := ⟨g L', hg L'⟩) (hle L')
+      (Compacts.subset_of_mem_compactNhds L.unop.property)
   · -- `m` restricted from `L` factors through `f(g L)`, where it is the leg of `s`
-    exact ((P.map_comp_assoc (opHomOfLE (hle L.unop)) (opHomOfLE (Compacts.map_mono f
-      f.hom.continuous (Compacts.subset_of_mem_compactNhds (hg L.unop)))) m).trans
-      (congrArg (P.map (opHomOfLE (hle L.unop)) ≫ ·) (hm (op ⟨g L.unop, hg L.unop⟩)))).trans
-      (hc.fac (t s) L).symm
+    rw [hc.fac]
+    -- the leg of `P.coconeOfCompacts` at `L` is, by definition, the restriction through `f(g L)`
+    refine (P.map_comp_assoc (opHomOfLE (hle L.unop)) (opHomOfLE (Compacts.map_mono f
+      f.hom.continuous (Compacts.subset_of_mem_compactNhds (hg L.unop)))) m).trans ?_
+    exact congrArg (P.map _ ≫ ·) (hm (op ⟨g L.unop, hg L.unop⟩))
 
 variable [T2Space Y]
 
@@ -170,7 +173,8 @@ theorem IsKSheaf.pullback (hf : Function.Injective f) {P : KPresheaf A Y} (hP : 
     hP.isPullback (K₁ := Compacts.map f f.hom.continuous K₁)
       (K₂ := Compacts.map f f.hom.continuous K₂) (K₃ := Compacts.map f f.hom.continuous K₃)
       (K₄ := Compacts.map f f.hom.continuous K₄)
-      ⟨by rw [← Compacts.map_sup, h.sup_eq], by rw [← Compacts.map_inf _ hf, h.inf_eq]⟩
+      ⟨by rw [← Compacts.map_sup, h.sup_eq],
+        by rw [← Compacts.map_inf _ f.hom.continuous hf, h.inf_eq]⟩
   nonempty_isColimit_coconeOfCompacts :=
     nonempty_isColimit_coconeOfCompacts_pullback f hP.nonempty_isColimit_coconeOfCompacts
 
@@ -192,7 +196,8 @@ theorem IsHomotopyKSheaf.pullback (hf : Function.Injective f)
     have := hF.quasiIso_mayerVietorisDesc (K₁ := Compacts.map f f.hom.continuous K₁)
       (K₂ := Compacts.map f f.hom.continuous K₂) (K₃ := Compacts.map f f.hom.continuous K₃)
       (K₄ := Compacts.map f f.hom.continuous K₄)
-      ⟨by rw [← Compacts.map_sup, h.sup_eq], by rw [← Compacts.map_inf _ hf, h.inf_eq]⟩
+      ⟨by rw [← Compacts.map_sup, h.sup_eq],
+        by rw [← Compacts.map_inf _ f.hom.continuous hf, h.inf_eq]⟩
     -- The Mayer–Vietoris map of the pullback is, by definition of `pullback`, that of `F` at the
     -- images.
     rw [F.mayerVietorisDesc_eq_desc] at this
