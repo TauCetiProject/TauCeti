@@ -79,8 +79,6 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 * `ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl`: a `C^i` map, `1 ≤ i`, which is affine
   outside a compact set has a bounded `i`-th derivative.
-* `ContDiff.exists_forall_bound_iteratedFDeriv_of_eqOn_compl`: one constant bounds all derivatives
-  of orders one through `n` of a `C^n` map affine outside a compact set.
 * `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_eq_zero_of_lt_norm`: the
   order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of the
   Japanese bracket.
@@ -113,6 +111,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   is a `C^n` map with bounded derivatives through order `n`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
+* `TauCeti.norm_iteratedFDeriv_smul_le_of_forall_le`: the Leibniz bound for `z ↦ c z • f z` at a
+  point from bounds on the derivatives of both factors there.
 * `ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul`: a function
   `h^n • Q (p, h)` with `Q` of class `C^k` has derivatives in `p` through order `k` bounded by
   `C |h|^n`, uniformly for `p` in a compact set and `h` in a bounded interval.
@@ -389,22 +389,6 @@ theorem ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl [ProperSpace E] {f : 
   rcases j with _ | j
   · simp
   · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
-
-/-- A `C^n` map which is affine outside a compact set has a common bound for its derivatives
-of orders one through `n`. -/
-theorem ContDiff.exists_forall_bound_iteratedFDeriv_of_eqOn_compl [ProperSpace E]
-    {f : E → F} {n : ℕ} (hf : ContDiff 𝕜 n f) {K : Set E} (hK : IsCompact K)
-    {b : F} {L : E →L[𝕜] F} (hfK : EqOn f (fun x ↦ b + L x) Kᶜ) :
-    ∃ C, ∀ i, 1 ≤ i → i ≤ n → ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C := by
-  induction n with
-  | zero => exact ⟨0, by omega⟩
-  | succ n ih =>
-    obtain ⟨C, hC⟩ := ih (hf.of_le (by exact_mod_cast n.le_succ))
-    obtain ⟨D, hD⟩ := hf.exists_bound_iteratedFDeriv_of_eqOn_compl (by omega) hK hfK
-    refine ⟨max C D, fun i hi hin x ↦ ?_⟩
-    rcases Nat.lt_or_eq_of_le hin with hin | rfl
-    · exact (hC i hi (by omega) x).trans (le_max_left _ _)
-    · exact (hD x).trans (le_max_right _ _)
 
 /-- The order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of
 the Japanese bracket: `‖D^n f(x)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r / 2)`. -/
@@ -706,6 +690,25 @@ theorem norm_iteratedFDeriv_smul_le_of_isOpen {𝕜' : Type*} [NormedField 𝕜'
   rw [iteratedFDerivWithin_of_isOpen k hU hx] at h
   refine h.trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
   rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen _ hU hx]
+
+/-- **Leibniz bound from bounds at a point.** If the derivatives of order `i ≤ n` of `c` at `x`
+are bounded by `M i` and those of `f` by a single constant `C`, then the order-`n` derivative of
+`z ↦ c z • f z` at `x` is at most `(∑_{i ≤ n} C(n, i) M i) C`. -/
+theorem norm_iteratedFDeriv_smul_le_of_forall_le {𝕜' : Type*} [NormedField 𝕜']
+    [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {c : E → 𝕜'} {f : E → F}
+    {N : ℕ∞ω} (hc : ContDiff 𝕜 N c) (hf : ContDiff 𝕜 N f) (x : E) {n : ℕ} (hn : n ≤ N)
+    {M : ℕ → ℝ} {C : ℝ} (hcM : ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i c x‖ ≤ M i)
+    (hfC : ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C) :
+    ‖iteratedFDeriv 𝕜 n (fun z ↦ c z • f z) x‖ ≤
+      (∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * M i) * C := by
+  refine (norm_iteratedFDeriv_smul_le hc hf x hn).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  have hi : i ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  have hM := hcM i hi
+  have hM0 : 0 ≤ M i := (norm_nonneg _).trans hM
+  gcongr
+  exact hfC _ (Nat.sub_le n i)
 
 /-- A bound `hⁱ ‖Dⁱ f‖ ≤ B` on the derivatives of order `i ≤ k` of a map `f` forces `0 ≤ B`, by
 its order-zero case. -/

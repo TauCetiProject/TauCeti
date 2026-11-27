@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Sobolev.W1p.IntegrationByParts
 public import TauCeti.Analysis.PDE.Ellipticity.Extension
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
@@ -96,6 +96,9 @@ to `3 r / 2` has `N ≲ 1 / r` and `L ≲ 1 / r²`
   interior `H²` regularity for locally Lipschitz principal coefficients.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`: its case of a constant
   principal coefficient.
+* `TauCeti.PDE.exists_value_ae_eq_localizedForcing`: for smooth coefficients, a smooth compactly
+  supported cutoff, `f ∈ W^{k,2}(Ω)` and `u ∈ W^{k+1,2}(Ω)`, the localized forcing lies in
+  `W^{k,2}(Ω)`.
 * `TauCeti.PDE.norm_divMatrixGradient_le`, `TauCeti.PDE.norm_localizedForcing_le` and
   `TauCeti.PDE.eLpNorm_localizedForcing_le`: quantitative bounds for `div(a ∇ψ)` and the
   localized forcing.
@@ -555,6 +558,64 @@ theorem memLp_localizedForcing
         rw [norm_mul, mul_comm]
         exact mul_le_mul_of_nonneg_right (hC x) (norm_nonneg _))
   exact ((h1.sub h2).sub h3).sub h4
+
+/-- **The localized forcing gains the regularity of the data for smooth coefficients.** Let the
+entries of `a` be smooth, let `ψ` be smooth with compact support, let `F ∈ W^{k,2}(Ω)` and let
+`u ∈ W^{k+1,2}(Ω)`. Then the forcing `ψ F - ⟨∇u, a ∇ψ⟩ - ⟨∇ψ, a ∇u⟩ - u div(a ∇ψ)` of the
+equation satisfied by `ψ u`, when `u` solves `-div(a ∇u) = F`, lies in `W^{k,2}(Ω)`: it combines
+`F`, the first derivatives of `u` and `u` itself with smooth compactly supported multipliers. -/
+theorem exists_value_ae_eq_localizedForcing (k : ℕ)
+    (hsmooth : ∀ i j, ContDiff ℝ ∞ fun x => a x i j) {ψ : EuclideanSpace ℝ ι → ℝ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (F : Wkp mu Omega 2 k)
+    (U : Wkp mu Omega 2 (k + 1)) :
+    ∃ h : Wkp mu Omega 2 k, Wkp.value k h =ᵐ[mu.restrict Omega]
+      localizedForcing a ψ (Wkp.value k F) (Wkp.firstOrder k U) := by
+  set b := EuclideanSpace.basisFun ι ℝ
+  set u : W1p mu Omega 2 := Wkp.firstOrder k U
+  have hgψ : ContDiff ℝ ∞ (∇ ψ) := hψ.gradient_right (m := ∞) (by simp)
+  -- The multipliers of the first derivatives of `u` and of `u` itself.
+  set c : ι → EuclideanSpace ℝ ι → ℝ := fun i x =>
+    -(matrixBilinearForm (a x) (b i) (∇ ψ x) + matrixBilinearForm (a x) (∇ ψ x) (b i))
+  have hc : ∀ i, ContDiff ℝ ∞ (c i) := fun i =>
+    ((contDiff_matrixBilinearForm_apply hsmooth contDiff_const hgψ).add
+      (contDiff_matrixBilinearForm_apply hsmooth hgψ contDiff_const)).neg
+  have hcc : ∀ i, HasCompactSupport (c i) := fun i => hψc.mono' fun x hx => by
+    by_contra hxψ
+    exact hx (by simp [c, gradient_of_notMem_tsupport hxψ])
+  have hc₀c : HasCompactSupport fun x => -divMatrixGradient a ψ x := hψc.mono' fun x hx => by
+    by_contra hxψ
+    exact hx (by simp [divMatrixGradient_eq_zero_of_notMem_tsupport hxψ])
+  -- The first derivatives of `u` lie in `W^{k,2}(Ω)`, since `u ∈ W^{k+1,2}(Ω)`.
+  have hdv : ∀ i, Wkp.value k (Wkp.lineDerivL (b i) k U) =ᵐ[mu.restrict Omega]
+      fun x => ⟪W1p.gradient u x, b i⟫_ℝ := fun i => Wkp.value_lineDerivL_ae (b i) k U
+  have hu : Wkp.value k (Wkp.lowerOrder k U) = W1p.value u := by
+    rw [← Wkp.value_succ, Wkp.value_firstOrder]
+  -- Multiplying by a smooth compactly supported function preserves `W^{k,2}(Ω)`.
+  obtain ⟨T, hT⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport k hψ hψc F
+  choose S hS using fun i =>
+    Wkp.exists_value_ae_eq_mul_of_hasCompactSupport k (hc i) (hcc i) (Wkp.lineDerivL (b i) k U)
+  obtain ⟨Z, hZ⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport k
+    (contDiff_divMatrixGradient (k := ∞) (fun i j => (hsmooth i j).of_le (by simp))
+      (hψ.of_le (by simp))).neg hc₀c (Wkp.lowerOrder k U)
+  rw [hu] at hZ
+  refine ⟨T + ∑ i, S i + Z, ?_⟩
+  filter_upwards [Wkp.value_add_ae k (T + ∑ i, S i) Z, Wkp.value_add_ae k T (∑ i, S i),
+    Wkp.value_finsetSum_ae k Finset.univ S, hT, hZ, ae_all_iff.2 hS, ae_all_iff.2 hdv]
+    with x h1 h2 h3 h4 h5 h6 h7
+  -- Expand both bilinear terms along the basis in the slot of `∇u`.
+  have hB₁ : ∑ i, ⟪W1p.gradient u x, b i⟫_ℝ * matrixBilinearForm (a x) (b i) (∇ ψ x) =
+      matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x) :=
+    sum_inner_mul_matrixBilinearForm _ _
+  have hB₂ : ∑ i, ⟪W1p.gradient u x, b i⟫_ℝ * matrixBilinearForm (a x) (∇ ψ x) (b i) =
+      matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x) :=
+    by simpa only [matrixBilinearForm_transpose_apply] using
+      sum_inner_mul_matrixBilinearForm (A := (a x).transpose) (W1p.gradient u x) (∇ ψ x)
+  simp only [Pi.add_apply] at h1 h2
+  rw [h1, h2, h3, h4, h5, localizedForcing_def]
+  simp only [h6, h7, c, ← hB₁, ← hB₂]
+  simp only [neg_add, neg_mul, add_mul, Finset.sum_add_distrib, Finset.sum_neg_distrib]
+  simp only [mul_comm _ ⟪W1p.gradient u x, _⟫_ℝ]
+  ring
 
 /-- **A pointwise bound for the localized forcing term.** If `|ψ| ≤ P`, `‖∇ψ‖ ≤ N`,
 `|div(a ∇ψ)| ≤ D` and `‖a(x)‖ ≤ M` everywhere, then at every point
