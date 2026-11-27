@@ -40,14 +40,6 @@ open QuadraticForm (baseChangeForm baseChangeForm_algebraMap_comp)
 variable {R n : Type*} [CommRing R] [Fintype n] [LinearOrder n] (q : QuadraticForm R (n → R))
   (A : Type*) [CommRing A] [Algebra R A]
 
-omit [Fintype n] [LinearOrder n] in
-/-- The inclusion `R^n → A^n` used to define `baseChangeHom` applies `algebraMap R A` to each
-coordinate. -/
-private theorem compLeft_linearMap_apply (x : n → R) :
-    (Algebra.linearMap R A).compLeft n x = algebraMap R A ∘ x := by
-  ext i
-  rw [LinearMap.compLeft_apply, Algebra.coe_linearMap]
-
 /-- The morphism of `R`-algebras `C(q) → C(q_A)` induced by the inclusion `R^n → A^n`. This is the
 analogue of Mathlib's `CliffordAlgebra.ofBaseChangeAux` for `QuadraticForm.baseChangeForm`, which
 needs no hypothesis on `2`. -/
@@ -55,9 +47,9 @@ noncomputable def baseChangeHom : CliffordAlgebra q →ₐ[R] CliffordAlgebra (b
   lift q ⟨(CliffordAlgebra.ι (baseChangeForm q A)).restrictScalars R ∘ₗ
       (Algebra.linearMap R A).compLeft n,
     fun x ↦ by
-      rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, compLeft_linearMap_apply,
-        ι_sq_scalar, baseChangeForm_algebraMap_comp,
-        ← IsScalarTower.algebraMap_apply]⟩
+      rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+        funext (LinearMap.compLeft_apply _ n x), Algebra.coe_linearMap, ι_sq_scalar,
+        baseChangeForm_algebraMap_comp, ← IsScalarTower.algebraMap_apply]⟩
 
 variable {q A}
 
@@ -67,7 +59,7 @@ theorem baseChangeHom_ι (x : n → R) :
     baseChangeHom q A (CliffordAlgebra.ι q x) =
       CliffordAlgebra.ι (baseChangeForm q A) (algebraMap R A ∘ x) := by
   rw [baseChangeHom, lift_ι_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-    compLeft_linearMap_apply]
+    funext (LinearMap.compLeft_apply _ n x), Algebra.coe_linearMap]
 
 /-- Every vector of `ι(A^n)` is an `A`-linear combination of images of vectors of `ι(R^n)`: of the
 coordinate vectors. -/

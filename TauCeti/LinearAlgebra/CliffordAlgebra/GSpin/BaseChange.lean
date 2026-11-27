@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChangeForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Form
 public import TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.CliffordGroup
 
 /-!
