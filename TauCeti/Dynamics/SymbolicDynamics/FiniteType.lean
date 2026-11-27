@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
 public import TauCeti.Dynamics.SymbolicDynamics.Language
 public import TauCeti.LinearAlgebra.Matrix.PathWeight
+import Mathlib.Data.Fintype.Pigeonhole
 
 /-!
 # One-sided one-step subshifts of finite type
@@ -33,6 +34,9 @@ and if every symbol has a successor, every admissible word extends to a point of
   admissible word extends to a point of `sftOneSided A`.
 * `TauCeti.mem_wordsOf_sftOneSided`: if every symbol has a successor, the words read off
   `sftOneSided A` are exactly the admissible words.
+* `TauCeti.mem_wordsOf_sftOneSided_of_admissible`: for a finite alphabet and any relation, the
+  first `n + 1` symbols of an admissible word of length at least `n + 1 + card α` are a word of
+  `sftOneSided A`.
 -/
 
 public section
@@ -126,14 +130,73 @@ theorem exists_mem_sftOneSided_of_admissible {A : α → α → Bool} (hrow : �
       Function.iterate_succ_apply']
     exact hf _
 
+/-- Every word read off `sftOneSided A` is admissible. -/
+theorem admissible_of_mem_wordsOf_sftOneSided {A : α → α → Bool} {n : ℕ} {w : Fin (n + 1) → α}
+    (hw : w ∈ wordsOf (sftOneSided A) (n + 1)) : ∀ k : Fin n, A (w k.castSucc) (w k.succ) := by
+  intro k
+  obtain ⟨x, hx, hxw⟩ := mem_wordsOf.1 hw
+  rw [← hxw, ← hxw]
+  simpa using mem_sftOneSided.1 hx k
+
 /-- If every symbol has a successor, the words of length `n + 1` read off `sftOneSided A` are
 exactly the admissible words. -/
 theorem mem_wordsOf_sftOneSided {A : α → α → Bool} (hrow : ∀ i, ∃ j, A i j) {n : ℕ}
     {w : Fin (n + 1) → α} :
-    w ∈ wordsOf (sftOneSided A) (n + 1) ↔ ∀ k : Fin n, A (w k.castSucc) (w k.succ) := by
-  refine ⟨fun hw k ↦ ?_, fun hw ↦ mem_wordsOf.2 (exists_mem_sftOneSided_of_admissible hrow hw)⟩
-  obtain ⟨x, hx, hxw⟩ := mem_wordsOf.1 hw
-  rw [← hxw, ← hxw]
-  simpa using mem_sftOneSided.1 hx k
+    w ∈ wordsOf (sftOneSided A) (n + 1) ↔ ∀ k : Fin n, A (w k.castSucc) (w k.succ) :=
+  ⟨admissible_of_mem_wordsOf_sftOneSided,
+    fun hw ↦ mem_wordsOf.2 (exists_mem_sftOneSided_of_admissible hrow hw)⟩
+
+/-- **Closing a cycle.** An admissible path `v 0, …, v q` that revisits a symbol, `v p = v q` with
+`p < q`, extends to a point of `sftOneSided A` by repeating the cycle `v p, …, v (q - 1)`. -/
+theorem exists_mem_sftOneSided_of_cycle {A : α → α → Bool} {v : ℕ → α} {p q : ℕ} (hpq : p < q)
+    (hv : ∀ k < q, A (v k) (v (k + 1))) (hcyc : v p = v q) :
+    ∃ x ∈ sftOneSided A, ∀ k ≤ q, x k = v k := by
+  have hd : 0 < q - p := by omega
+  let x : ℕ → α := fun k ↦ if k ≤ q then v k else v (p + (k - p) % (q - p))
+  have hx_le (k : ℕ) (hk : k ≤ q) : x k = v k := by simp [x, hk]
+  have hx_ge (k : ℕ) (hk : q ≤ k) : x k = v (p + (k - p) % (q - p)) := by
+    rcases hk.eq_or_lt with h | hk
+    · subst h
+      rw [hx_le _ le_rfl, Nat.mod_self, add_zero, hcyc]
+    · simp [x, hk.not_ge]
+  refine ⟨x, mem_sftOneSided.2 fun k ↦ ?_, hx_le⟩
+  rcases lt_or_ge k q with hk | hk
+  · rw [hx_le k hk.le, hx_le (k + 1) hk]
+    exact hv k hk
+  rw [hx_ge k hk, hx_ge (k + 1) (by omega), show k + 1 - p = k - p + 1 by omega,
+    Nat.add_mod (k - p) 1, ← Nat.mod_mod (k - p) (q - p), ← Nat.add_mod, Nat.mod_mod]
+  set r := (k - p) % (q - p)
+  have hr : r < q - p := Nat.mod_lt _ hd
+  rcases (Nat.succ_le_of_lt hr).lt_or_eq with hr' | hr'
+  · rw [Nat.mod_eq_of_lt hr']
+    simpa [add_assoc] using hv (p + r) (by omega)
+  · have h := hv (p + r) (by omega)
+    rw [show p + r + 1 = q by omega, ← hcyc] at h
+    rw [Nat.succ_eq_add_one] at hr'
+    rw [hr', Nat.mod_self, add_zero]
+    exact h
+
+/-- **Pruning.** For a finite alphabet, the first `n + 1` symbols of an admissible word of length
+`m + 1 ≥ n + 1 + card α` form a word of `sftOneSided A`: two of the symbols in positions
+`n, …, n + card α` coincide, closing a cycle. No symbol needs a successor. -/
+theorem mem_wordsOf_sftOneSided_of_admissible [Fintype α] {A : α → α → Bool} {n m : ℕ}
+    (hnm : n + Fintype.card α ≤ m) {w : Fin (m + 1) → α}
+    (hw : ∀ k : Fin m, A (w k.castSucc) (w k.succ)) :
+    (fun i : Fin (n + 1) ↦ w (Fin.castLE (by omega) i)) ∈ wordsOf (sftOneSided A) (n + 1) := by
+  let v : ℕ → α := fun k ↦ if h : k < m + 1 then w ⟨k, h⟩ else w 0
+  have hvw (k : ℕ) (hk : k < m + 1) : v k = w ⟨k, hk⟩ := by
+    simp [v, Nat.le_of_lt_succ hk]
+  obtain ⟨i, j, hij, heq⟩ := Fintype.exists_ne_map_eq_of_card_lt
+    (fun i : Fin (Fintype.card α + 1) ↦ v (n + i)) (by simp)
+  wlog hlt : i < j generalizing i j
+  · exact this j i hij.symm heq.symm (lt_of_le_of_ne (not_lt.1 hlt) hij.symm)
+  have := j.isLt
+  obtain ⟨x, hx, hxv⟩ := exists_mem_sftOneSided_of_cycle (A := A) (v := v) (p := n + i)
+    (q := n + j) (by simpa using hlt) (fun k hk ↦ by
+      rw [hvw k (by omega), hvw (k + 1) (by omega)]
+      exact hw ⟨k, by omega⟩) heq
+  refine mem_wordsOf.2 ⟨x, hx, fun l ↦ ?_⟩
+  rw [hxv l (by omega), hvw l (by omega)]
+  rfl
 
 end TauCeti
