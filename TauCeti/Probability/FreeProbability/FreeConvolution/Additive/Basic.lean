@@ -196,25 +196,15 @@ theorem freeConv_map_affine {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsP
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) (a c b : ℝ) :
     (μ.map fun x => a + b * x).freeConv (ν.map fun x => c + b * x) =
       (μ.freeConv ν).map fun x => a + c + b * x := by
-  let τ : Fin 2 → Measure ℝ := ![μ, ν]
-  have : ∀ i, IsProbabilityMeasure (τ i) := Fin.forall_fin_two.2 ⟨‹_›, ‹_›⟩
-  have : ∀ i, CompactSpace (τ i).support :=
-    Fin.forall_fin_two.2 ⟨isCompact_iff_compactSpace.mp hμ, isCompact_iff_compactSpace.mp hν⟩
-  let φ := TauCeti.FreeLawRealization.state τ
-  let g := TauCeti.FreeLawRealization.generator τ
-  have hg0 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 0
-  have hg1 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 1
-  have halg : (b • g 0 + algebraMap ℝ _ a) + (b • g 1 + algebraMap ℝ _ c) =
-      b • (g 0 + g 1) + algebraMap ℝ _ (a + c) := by
+  obtain ⟨A, _, _, _, φ, g, hφ, hg, hgt, hgf, _, _, hlt, hlf, hladd⟩ :=
+    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
+  have halg : (b • g true + algebraMap ℝ _ a) + (b • g false + algebraMap ℝ _ c) =
+      b • (g true + g false) + algebraMap ℝ _ (a + c) := by
     simp only [smul_add, map_add]; abel
-  have hL := (TauCeti.FreeLawRealization.isFreelyIndependentElements_generator
-    τ).law_smul_add_algebraMap_add (TauCeti.FreeLawRealization.state_one τ)
-    (by decide : (0 : Fin 2) ≠ 1) hg0 hg1 b a b c
-  have hR := φ.law_smul_add_algebraMap (hg0.add hg1) b (a + c)
-  rw [halg, hR, TauCeti.FreeLawRealization.law_add_generator τ (by decide : (0 : Fin 2) ≠ 1),
-    TauCeti.FreeLawRealization.law_generator τ 0,
-    TauCeti.FreeLawRealization.law_generator τ 1] at hL
-  simpa [τ, add_comm (b * _)] using hL.symm
+  have hL := hg.law_smul_add_algebraMap_add hφ Bool.false_ne_true.symm hgt hgf b a b c
+  have hR := φ.law_smul_add_algebraMap (hgt.add hgf) b (a + c)
+  rw [halg, hR, hladd, hlt, hlf] at hL
+  simpa [add_comm (b * _)] using hL.symm
 
 /-- Translating `μ` by `a` and `ν` by `b` translates `μ.freeConv ν` by `a + b`, unconditionally. -/
 theorem freeConv_map_add (μ ν : Measure ℝ) (a b : ℝ) :
@@ -249,25 +239,16 @@ theorem rSeries_integral_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ
     TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConv ν)) id =
       TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id +
         TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ν) id := by
-  let τ : Fin 2 → Measure ℝ := ![μ, ν]
-  have : ∀ i, IsProbabilityMeasure (τ i) := Fin.forall_fin_two.2 ⟨‹_›, ‹_›⟩
-  have : ∀ i, CompactSpace (τ i).support :=
-    Fin.forall_fin_two.2 ⟨isCompact_iff_compactSpace.mp hμ, isCompact_iff_compactSpace.mp hν⟩
-  let φ := TauCeti.FreeLawRealization.state τ
-  have hg0 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 0
-  have hg1 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 1
-  have h1 := φ.map_ofReal_rSeries_integral_law hg0
-  have h2 := φ.map_ofReal_rSeries_integral_law hg1
-  rw [TauCeti.FreeLawRealization.law_generator τ 0] at h1
-  rw [TauCeti.FreeLawRealization.law_generator τ 1] at h2
-  have hadd : φ.law (TauCeti.FreeLawRealization.generator τ 0 +
-      TauCeti.FreeLawRealization.generator τ 1) = μ.freeConv ν :=
-    TauCeti.FreeLawRealization.law_add_generator τ (by decide : (0 : Fin 2) ≠ 1)
+  obtain ⟨A, _, _, _, φ, g, hφ, hg, hgt, hgf, _, _, hlt, hlf, hladd⟩ :=
+    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
+  have h1 := φ.map_ofReal_rSeries_integral_law hgt
+  have h2 := φ.map_ofReal_rSeries_integral_law hgf
+  rw [hlt] at h1
+  rw [hlf] at h2
   apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [map_add, ← hadd, φ.map_ofReal_rSeries_integral_law (hg0.add hg1)]
-  exact ((TauCeti.FreeLawRealization.isFreelyIndependentElements_generator τ).rSeries_add
-    (TauCeti.FreeLawRealization.state_one τ) (by decide : (0 : Fin 2) ≠ 1)).trans
-    (by simpa [τ] using congrArg₂ (· + ·) h1.symm h2.symm)
+  rw [map_add, ← hladd, φ.map_ofReal_rSeries_integral_law (hgt.add hgf)]
+  exact (hg.rSeries_add hφ Bool.false_ne_true.symm).trans
+    (by simpa using congrArg₂ (· + ·) h1.symm h2.symm)
 
 /-- **Additivity of free cumulants under free additive convolution.** -/
 theorem freeCumulant_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]

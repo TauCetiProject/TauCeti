@@ -229,13 +229,10 @@ theorem rSeries_integral_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
     simpa [Complex.coe_smul, IsScalarTower.algebraMap_apply ℝ ℂ C(μ.support, ℂ)] using
       ((IsSelfAdjoint.all b).smul hx).add (IsSelfAdjoint.algebraMap _ (.all a))
   apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [← haff, φ.map_ofReal_rSeries_integral_law hsa]
-  change TauCeti.rSeries φ.toLinearMap _ = _
-  rw [TauCeti.rSeries_add_algebraMap hφ _ (a : ℂ),
-    TauCeti.rSeries_smul φ.toLinearMap (b : ℂ) x]
-  change (b : ℂ) • PowerSeries.rescale (b : ℂ) (TauCeti.rSeries φ x) + PowerSeries.C (a : ℂ) = _
-  rw [← φ.map_ofReal_rSeries_integral_law hx, hlaw, map_add, PowerSeries.map_C,
-    Complex.ofRealHom_eq_coe]
+  rw [← haff, φ.map_ofReal_rSeries_integral_law hsa, ← PositiveLinearMap.coe_toLinearMap,
+    TauCeti.rSeries_add_algebraMap hφ _ (a : ℂ), TauCeti.rSeries_smul φ.toLinearMap (b : ℂ) x,
+    PositiveLinearMap.coe_toLinearMap, ← φ.map_ofReal_rSeries_integral_law hx, hlaw, map_add,
+    PowerSeries.map_C, Complex.ofRealHom_eq_coe]
   congr 1
   ext n
   simp only [PowerSeries.coeff_smul, PowerSeries.coeff_rescale, PowerSeries.coeff_map,
