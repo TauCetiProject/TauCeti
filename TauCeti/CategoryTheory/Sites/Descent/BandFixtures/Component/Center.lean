@@ -64,10 +64,10 @@ section CommMonoid
 
 variable [CommMonoid G]
 
+-- Exposed so that central sections of one-object diagrams can be compared with it by unfolding
+-- `MonCat.toCat`.
 /-- A coefficient `g` of a commutative monoid `G` as a natural endomorphism of the identity functor
-of `SingleObj G`. It is natural because `G` is commutative. It is exposed because the central
-sections of `RestrictionBandFixtures.groupDiagram` compare it with the fibre of a diagram by
-unfolding `MonCat.toCat`. -/
+of `SingleObj G`. It is natural because `G` is commutative. -/
 @[expose] def singleCenter (g : G) : CatCenter (SingleObj G) :=
   .of
     { app _ := (g : SingleObj.star G ⟶ SingleObj.star G)
@@ -130,9 +130,9 @@ section CommGroup
 
 variable [CommGroup G]
 
+-- Exposed for the same reason as `singleCenter`.
 /-- A coefficient `g` of a commutative group `G` as a unit of the categorical centre of
-`SingleObj G`, with inverse coefficient `g⁻¹`. It is exposed for the same reason as
-`singleCenter`. -/
+`SingleObj G`, with inverse coefficient `g⁻¹`. -/
 @[expose] def singleCenterUnit (g : G) : (CatCenter (SingleObj G))ˣ :=
   MonoidHom.toHomUnits
     { toFun := singleCenter, map_one' := singleCenter_one, map_mul' := singleCenter_mul } g
