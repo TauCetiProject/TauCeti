@@ -34,6 +34,8 @@ acting faithfully, the transcendence degree of an uncountable domain equals its 
   domains compares the index types of their transcendence bases.
 * `IsTranscendenceBasis.lift_cardinalMk_eq_of_aleph0_lt`: a transcendence basis of an uncountable
   integral domain over a countable commutative ring has the domain's cardinality.
+* `TauCeti.trdeg_le_cardinalMk`: the transcendence degree of a commutative algebra is at most its
+  cardinality.
 * `TauCeti.trdeg_eq_cardinalMk`: the transcendence degree of an uncountable integral domain over a
   countable commutative ring acting faithfully is its cardinality.
 -/
@@ -87,6 +89,12 @@ theorem isAlgebraic_of_trdeg_eq_one (h : Algebra.trdeg R A = 1) (h' : Algebra.tr
   exact isAlgebraic_of_trdeg_le (h.trans h'.symm).le (h' ▸ Cardinal.one_lt_aleph0)
 
 end TauCeti
+
+/-- A commutative ring over which some element of `A` is transcendental acts faithfully on `A`. -/
+theorem Transcendental.faithfulSMul {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {x : A}
+    (hx : Transcendental R x) : FaithfulSMul R A :=
+  have : Algebra.Transcendental R A := ⟨⟨x, hx⟩⟩
+  (faithfulSMul_iff_algebraMap_injective R A).2 Algebra.injective_of_transcendental
 
 /-- An element transcendental over `R` lies in some transcendence basis over `R`. -/
 theorem Transcendental.exists_isTranscendenceBasis_mem {R A : Type*} [CommRing R] [CommRing A]
@@ -165,6 +173,14 @@ theorem lift_cardinalMk_eq_of_aleph0_lt {R : Type u} {E : Type v} {ι : Type w} 
   exact Cardinal.lift_injective.{u, max v w} (by simpa using h.symm)
 
 end IsTranscendenceBasis
+
+/-- The transcendence degree of a commutative `R`-algebra `A` is at most the cardinality of `A`.
+No domain or faithfulness assumption is needed. -/
+theorem TauCeti.trdeg_le_cardinalMk (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] :
+    Algebra.trdeg R A ≤ Cardinal.mk A := by
+  -- `Algebra.trdeg` is the supremum of the cardinalities of algebraically independent subsets.
+  rw [Algebra.trdeg]
+  exact ciSup_le' fun s ↦ Cardinal.mk_set_le s.val
 
 /-- The transcendence degree of an uncountable integral domain `E` over a countable commutative
 ring `k` acting faithfully on `E` is the cardinality of `E`. -/

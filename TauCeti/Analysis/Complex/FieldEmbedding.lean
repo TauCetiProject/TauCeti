@@ -68,12 +68,6 @@ private theorem lift_trdeg_eq {k : Type*} {E : Type u} [CommRing k] [Countable k
     Cardinal.lift.{0} (trdeg k E) = Cardinal.lift.{u} (trdeg k ℂ) := by
   simp [trdeg_eq_continuum, trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE]
 
-/-- A commutative ring over which some element of `A` is transcendental acts faithfully on `A`. -/
-private theorem _root_.Transcendental.faithfulSMul {R A : Type*} [CommRing R] [Ring A]
-    [Algebra R A] {x : A} (hx : Transcendental R x) : FaithfulSMul R A :=
-  have : Algebra.Transcendental R A := ⟨⟨x, hx⟩⟩
-  (faithfulSMul_iff_algebraMap_injective R A).2 Algebra.injective_of_transcendental
-
 section CommRing
 
 variable {k : Type*} {E : Type u} [CommRing k] [Countable k] [Algebra k ℂ] [FaithfulSMul k ℂ]
@@ -83,11 +77,7 @@ variable {k : Type*} {E : Type u} [CommRing k] [Countable k] [Algebra k ℂ] [Fa
 private theorem lift_trdeg_le [CommRing E] [Algebra k E] (hE : #E ≤ 𝔠) :
     Cardinal.lift.{0} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k ℂ) := by
   rw [trdeg_eq_continuum, lift_continuum, lift_le_continuum]
-  -- `Algebra.trdeg` is the supremum of the cardinalities of algebraically independent subsets.
-  have hle : trdeg k E ≤ #E := by
-    rw [Algebra.trdeg]
-    exact ciSup_le' fun s ↦ mk_set_le s.val
-  exact hle.trans hE
+  exact (trdeg_le_cardinalMk k E).trans hE
 
 /-- Every complex embedding of a countable commutative ring `k`, given as a faithful `k`-algebra
 structure on `ℂ`, extends to every domain `E` containing `k` with `#E ≤ 𝔠`. -/
