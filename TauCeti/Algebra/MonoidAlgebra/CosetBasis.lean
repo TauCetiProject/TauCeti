@@ -33,7 +33,7 @@ left-coset representatives of `p.range`, which represent its right cosets.
   generated projective `R[G]`-module to the group algebra of a finite-index subgroup along the
   canonical `RingHom.toModule` and `Module.compHom` actions keeps it finitely generated and
   projective, with the corresponding scalar towers.
-* `TauCeti.MonoidAlgebra.subsingleton_of_infinite_quotient` and
+* `Subgroup.subsingleton_of_infinite_quotient` and
   `TauCeti.MonoidAlgebra.subsingleton_of_infinite_group`: a finite projective `R[G]`-module that
   is finitely generated over an infinite-index subgroup algebra `R[H]` (or over `R` when `G` is
   infinite) is trivial.
@@ -181,9 +181,12 @@ private theorem quotient_inv_mem_biUnion_support_of_mem_span {G : Type*} [Group 
         QuotientGroup.eq.2 (by simp)
       exact hq ▸ hx (Finsupp.mem_support_iff.2 (right_ne_zero_of_mul hg))
 
+section
+variable {R}
+
 /-- If `G ⧸ H` is infinite, any finite projective `R[G]`-module that is finitely generated over
 `R[H]` is trivial. -/
-theorem subsingleton_of_infinite_quotient {G : Type*} [Group G] (H : Subgroup G)
+theorem _root_.Subgroup.subsingleton_of_infinite_quotient {G : Type*} [Group G] (H : Subgroup G)
     [Infinite (G ⧸ H)] (P : Type*) [AddCommMonoid P] [Module R[G] P] [Module R[H] P]
     [Module.Finite R[G] P] [Module.Projective R[G] P] [Module.Finite R[H] P]
     (hP : ∀ (r : R[H]) (p : P), r • p = mapDomainRingHom R H.subtype r • p) :
@@ -211,6 +214,8 @@ theorem subsingleton_of_infinite_quotient {G : Type*} [Group G] (H : Subgroup G)
       quotient_inv_mem_biUnion_support_of_mem_span R H hP ik s hx ht)
   simpa [hip] using (LinearMap.congr_fun hπi p).symm
 
+end
+
 /-- If `G` is infinite, any finite projective `R[G]`-module that is finitely generated over `R` is
 trivial. -/
 theorem subsingleton_of_infinite_group (G : Type*) [Group G] [Infinite G]
@@ -224,7 +229,7 @@ theorem subsingleton_of_infinite_group (G : Type*) [Group G] [Infinite G]
   have : IsScalarTower R R[H] P := ⟨fun c r p ↦
     (congrArg (· • p) (mapDomain_smul H.subtype c r)).trans (smul_assoc c _ p)⟩
   have : Module.Finite R[H] P := Module.Finite.of_restrictScalars_finite R R[H] P
-  exact subsingleton_of_infinite_quotient R H P fun _ _ ↦ rfl
+  exact H.subsingleton_of_infinite_quotient (R := R) P fun _ _ ↦ rfl
 
 variable {R}
 

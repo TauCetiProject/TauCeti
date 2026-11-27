@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.GroupTheory.Index
+public import TauCeti.Algebra.MonoidAlgebra.CyclicQuotient
 public import TauCeti.LinearAlgebra.Trace.HattoriStallings
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.Basis
@@ -15,16 +16,15 @@ import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 /-!
 # Group-ring Hattori–Stallings traces
 
-For a group `G` and an arbitrary ring `Λ`, the identity-coefficient functional `x ↦ x.coeff 1` on
-`Λ[G]` kills commutators modulo `[Λ, Λ]` and descends to
-`TauCeti.MonoidAlgebra.cyclicCoeffOne Λ G : Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Stacks Project,
-Section 64.15, Lemma 64.15.1). Composing with the Hattori–Stallings trace of a finite projective
-left `Λ[G]`-module `P` defines `LinearMap.hattoriStallingsGroupTrace Λ G P` and, over a commutative
-ring `A`, `LinearMap.projectiveGroupTrace A G P : End_{A[G]}(P) →ₗ[A] A` without dividing by `|G|`.
+For a group `G` and an arbitrary ring `Λ`, composing the Hattori–Stallings trace of a finite
+projective left `Λ[G]`-module `P` with the identity-coefficient functional
+`TauCeti.MonoidAlgebra.cyclicCoeffOne Λ G : Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (from
+`TauCeti.Algebra.MonoidAlgebra.CyclicQuotient`; Stacks Project, Section 64.15, Lemma 64.15.1)
+defines `LinearMap.hattoriStallingsGroupTrace Λ G P` and, over a commutative ring `A`,
+`LinearMap.projectiveGroupTrace A G P : End_{A[G]}(P) →ₗ[A] A` without dividing by `|G|`.
 
 ## Main definitions and results
 
-* `TauCeti.MonoidAlgebra.cyclicCoeffOne`: `Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Lemma 64.15.1).
 * `LinearMap.hattoriStallingsGroupTrace` and `LinearMap.projectiveGroupTrace`: group-ring traces
   over arbitrary `Λ` and commutative `A`.
 * `LinearMap.hattoriStallingsGroupTrace_balancedExtension_mapDomainRingHom_of_injective`:
@@ -44,89 +44,6 @@ ring `A`, `LinearMap.projectiveGroupTrace A G P : End_{A[G]}(P) →ₗ[A] A` wit
 public section
 
 noncomputable section
-
-namespace MonoidAlgebra
-
-section CyclicCoeffOne
-
-variable {Λ G : Type*} [Ring Λ] [Group G]
-
-/-- Modulo `[Λ, Λ]`, the identity coefficient of a product in `Λ[G]` is symmetric. -/
-theorem commutatorSubmodule_mkQ_coeff_one_mul_comm (x y : Λ[G]) :
-    (TauCeti.commutatorSubmodule ℤ Λ).mkQ ((x * y).coeff 1) =
-      (TauCeti.commutatorSubmodule ℤ Λ).mkQ ((y * x).coeff 1) := by
-  induction x using induction_linear with
-  | zero => simp
-  | add _ _ hx₁ hx₂ => simp only [add_mul, mul_add, coeff_add, Finsupp.add_apply, map_add, hx₁, hx₂]
-  | single g a =>
-    induction y using induction_linear with
-    | zero => simp
-    | add _ _ hy₁ hy₂ =>
-      simp only [mul_add, add_mul, coeff_add, Finsupp.add_apply, map_add, hy₁, hy₂]
-    | single h b =>
-      simp only [single_mul_single, coeff_single]
-      by_cases hgh : g * h = 1
-      · simp only [hgh, mul_eq_one_comm.1 hgh, Finsupp.single_eq_same, Submodule.mkQ_apply,
-          Submodule.Quotient.eq]
-        exact TauCeti.mul_sub_mul_mem_commutatorSubmodule ℤ Λ a b
-      · simp [Finsupp.single_eq_of_ne (Ne.symm hgh),
-          Finsupp.single_eq_of_ne (Ne.symm (mt mul_eq_one_comm.1 hgh))]
-
-/-- The identity coefficient of any element in `[Λ[G], Λ[G]]` belongs to `[Λ, Λ]`. -/
-theorem coeff_one_mem_commutatorSubmodule {x : Λ[G]}
-    (hx : x ∈ TauCeti.commutatorSubmodule ℤ Λ[G]) :
-    x.coeff 1 ∈ TauCeti.commutatorSubmodule ℤ Λ := by
-  have hle : TauCeti.commutatorSubmodule ℤ Λ[G] ≤
-      LinearMap.ker ((TauCeti.commutatorSubmodule ℤ Λ).mkQ.comp
-        ((Finsupp.lapply (1 : G)).comp (coeffLinearEquiv ℤ).toLinearMap)) :=
-    (TauCeti.commutatorSubmodule_le_ker_iff _).2 fun _ _ ↦
-      commutatorSubmodule_mkQ_coeff_one_mul_comm _ _
-  simpa [Submodule.Quotient.mk_eq_zero] using LinearMap.mem_ker.1 (hle hx)
-
-end CyclicCoeffOne
-
-end MonoidAlgebra
-
-namespace TauCeti.MonoidAlgebra
-
-open _root_.MonoidAlgebra
-
-section CyclicCoeffOne
-
-variable (Λ G : Type*) [Ring Λ] [Group G]
-
-/-- **The identity-coefficient map on cyclic quotients**
-`ε : Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Stacks Project, Section 64.15, Lemma 64.15.1). -/
-def cyclicCoeffOne : TauCeti.cyclicQuotient ℤ Λ[G] →ₗ[ℤ] TauCeti.cyclicQuotient ℤ Λ :=
-  Submodule.mapQ (TauCeti.commutatorSubmodule ℤ Λ[G]) (TauCeti.commutatorSubmodule ℤ Λ)
-    ((Finsupp.lapply (1 : G)).comp (coeffLinearEquiv ℤ).toLinearMap)
-    fun _ hx ↦ coeff_one_mem_commutatorSubmodule hx
-
-@[simp] theorem cyclicCoeffOne_mk (x : Λ[G]) :
-    cyclicCoeffOne Λ G (Submodule.Quotient.mk x) = Submodule.Quotient.mk (x.coeff 1) := by rfl
-
-variable {Λ G}
-
-/-- Naturality of `cyclicCoeffOne` in ring homomorphisms `φ : Λ →+* Λ'`. -/
-@[simp] theorem cyclicCoeffOne_mapRingHom {Λ' : Type*} [Ring Λ'] (φ : Λ →+* Λ')
-    (c : TauCeti.cyclicQuotient ℤ Λ[G]) :
-    cyclicCoeffOne Λ' G (TauCeti.cyclicQuotientRingHomMap (mapRingHom G φ) c) =
-      TauCeti.cyclicQuotientRingHomMap φ (cyclicCoeffOne Λ G c) := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c; simp
-
-/-- Pushing forward along an injective group homomorphism `p : H →* G` preserves `cyclicCoeffOne`
-(Stacks Project, Section 64.15, Lemma 64.15.3). -/
-@[simp] theorem cyclicCoeffOne_mapDomainRingHom_of_injective {H : Type*} [Group H] {p : H →* G}
-    (hp : Function.Injective p) (c : TauCeti.cyclicQuotient ℤ Λ[H]) :
-    cyclicCoeffOne Λ G (TauCeti.cyclicQuotientRingHomMap (mapDomainRingHom Λ p) c) =
-      cyclicCoeffOne Λ H c := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-  rw [TauCeti.cyclicQuotientRingHomMap_mk, cyclicCoeffOne_mk, cyclicCoeffOne_mk,
-    mapDomainRingHom_apply, coeff_mapDomain, ← p.map_one, Finsupp.mapDomain_apply_of_injective hp]
-
-end CyclicCoeffOne
-
-end TauCeti.MonoidAlgebra
 
 open MonoidAlgebra
 open TauCeti.MonoidAlgebra (cyclicCoeffOne cyclicCoeffOne_mk cyclicCoeffOne_mapRingHom
@@ -312,7 +229,7 @@ theorem hattoriStallingsGroupTrace_eq_index_nsmul (H : Subgroup G)
             π (Pi.single k 1))) k).coeff q.out⁻¹ = (i (u (π (Pi.single k 1))) k).coeff 1 := by
       simp [hu, smul_eq_mul]
     simp [hq]
-  · have := TauCeti.MonoidAlgebra.subsingleton_of_infinite_quotient Λ H P hP; simp
+  · have := H.subsingleton_of_infinite_quotient P hP; simp
 
 /-- **Trace of an automorphism-twisted endomorphism of a finite projective `Λ[G]`-module.** If
 `σ : G ≃* G`, `Z = σ.toMonoidHom.eqLocus (.id G)`, and `φ : P →ₗ[Λ] P` satisfies

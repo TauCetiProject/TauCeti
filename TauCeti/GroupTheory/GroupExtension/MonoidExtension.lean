@@ -14,6 +14,7 @@ import Mathlib.Tactic.Group
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.Coset.Fiber
+import TauCeti.GroupTheory.GroupAction.Quotient
 
 /-!
 # Nonnegative monoid extensions of groups over `ℤ`
@@ -314,17 +315,12 @@ def orbitStabilizerEquiv (ι : G →* Γtilde) (deg : Γtilde →* Multiplicativ
   let _ := DegreeFiber.conjAction ι deg d
   -- `ConjClasses` is `Quotient (conjSetoid ...)`, definitionally `MulAction.orbitRel.Quotient`.
   let c' : MulAction.orbitRel.Quotient G (DegreeFiber deg d) := c
-  let e := (MulAction.selfEquivSigmaOrbitsQuotientStabilizer G (DegreeFiber deg d)).trans <|
-    Equiv.sigmaCongrRight fun x ↦
-      Subgroup.quotientEquivOfEq (stabilizer_conjAction_eq ι deg d x.out)
   have hqeq : (Subgroup.quotientEquivOfEq (stabilizer_conjAction_eq ι deg d c'.out)).symm
       (QuotientGroup.mk g) = QuotientGroup.mk g :=
     (Subgroup.quotientEquivOfEq _).symm_apply_eq.2 (Subgroup.quotientEquivOfEq_mk _ g).symm
-  have h : e.symm ⟨c', QuotientGroup.mk g⟩ = DegreeFiber.conj ι g c'.out := by
-    simp [e, hqeq, MulAction.selfEquivSigmaOrbitsQuotientStabilizer,
-      MulAction.selfEquivSigmaOrbitsQuotientStabilizer', MulAction.selfEquivSigmaOrbits',
-      Equiv.sigmaCongrRight_symm, DegreeFiber.conj]
-  exact h
+  dsimp only [orbitStabilizerEquiv]
+  erw [Equiv.symm_trans_apply, Equiv.sigmaCongrRight_symm, Equiv.sigmaCongrRight_apply, hqeq]
+  exact MulAction.selfEquivSigmaOrbitsQuotientStabilizer_symm_mk c' g
 
 @[simp] theorem fst_orbitStabilizerEquiv (ι : G →* Γtilde) (deg : Γtilde →* Multiplicative ℤ)
     {d : ℕ} (γ : DegreeFiber deg d) :
