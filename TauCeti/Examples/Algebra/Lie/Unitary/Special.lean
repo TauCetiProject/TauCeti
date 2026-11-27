@@ -88,8 +88,9 @@ theorem lie_suTwoE₂_suTwoE₃ : ⁅suTwoE₂, suTwoE₃⁆ = suTwoE₁ := by
   fin_cases i <;> fin_cases j <;>
     simp [suTwoE₂, suTwoE₃] <;> ring
 
-/-- The Lie algebra block inclusion `𝔰𝔲(2) → 𝔰𝔲(3)`, standing in for the differential of the
-block inclusion `SU(2) → SU(3)` (that identification is not formalized here). -/
+/-- The Lie algebra block inclusion `𝔰𝔲(2) → 𝔰𝔲(3)`, the differential of the block inclusion
+`SU(2) → SU(3)` in matrix coordinates
+(`TauCeti.GLSpecialUnitary.unitsLieAlgebraEquiv_lieMapSubtypeVal_lieMap_fromBlocksInlSmoothHom`). -/
 private abbrev df :
     specialUnitaryLieAlgebra (Fin 2) →ₗ⁅ℝ⁆ specialUnitaryLieAlgebra (Fin 2 ⊕ Fin 1) :=
   specialUnitaryBlockInclusion (Fin 2) (Fin 1)
