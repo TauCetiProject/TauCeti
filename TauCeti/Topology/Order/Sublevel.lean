@@ -13,6 +13,7 @@ public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Topology.Category.TopPair
+public import TauCeti.Topology.Category.TopTriple
 import Mathlib.Tactic.Linarith
 import TauCeti.Dynamics.Flow.Basic
 import Mathlib.Tactic.Positivity
@@ -73,7 +74,8 @@ topology across the band. The band itself, relative to its lower level, is the p
 cobordism relative to its incoming boundary, and a collar `f⁻¹[a, a']` traversed at unit speed by
 a flow strongly deformation retracts onto `f⁻¹(a)` (`TauCeti.exists_collarDeformation`), while the
 band relative to the collar includes into `({f ≤ b}, {f ≤ a'})` via
-`TauCeti.bandCollarPairInclusion` with open-cover excision data
+`TauCeti.bandCollarPairInclusion` (commuting with `TauCeti.bandPairInclusion` via
+`TauCeti.bandPairInclusion_comp_totalToOuter`) with open-cover excision data
 `TauCeti.exists_open_cover_bandCollarPairInclusion`. Relative to its upper level, the band is the
 pair
 `TauCeti.upperBandPair f : (f⁻¹[a, b], f⁻¹(b))`, the cobordism relative to its outgoing boundary;
@@ -421,6 +423,17 @@ theorem bandPairInclusion_fst {X : Type*} [TopologicalSpace X] {β : Type*} [Pre
   ext x
   exact TopPair.ofInclusionMap_fst_apply _ _ x
 
+theorem bandPairInclusion_fst_apply {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) (x : f ⁻¹' Icc a b) :
+    (TopPair.Hom.fst (bandPairInclusion f hab) x).val = x.val :=
+  congrArg Subtype.val
+    (TopPair.ofInclusionMap_fst_apply (X := TopCat.of X) (Y := TopCat.of X) _ _ x)
+
+theorem bandPairInclusion_snd_apply {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) (x : f ⁻¹' {a}) :
+    (TopPair.Hom.snd (bandPairInclusion f hab) x).val = x.val :=
+  TopPair.ofInclusionMap_snd_apply (X := TopCat.of X) (Y := TopCat.of X) _ _ x
+
 /-- The pair `(f⁻¹[a, b], f⁻¹[a, a'])` of a band relative to a lower collar, for `a' ≤ b`. -/
 abbrev bandCollarPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
     (a : β) {a' b : β} (ha'b : a' ≤ b) : TopPair :=
@@ -436,13 +449,63 @@ def bandCollarPairInclusion {X : Type*} [TopologicalSpace X] {β : Type*} [Preor
 
 /-- On ambient spaces, `TauCeti.bandCollarPairInclusion` is the inclusion of the band `f⁻¹[a, b]`
 into the sublevel `{f ≤ b}`. -/
-@[simp]
 theorem bandCollarPairInclusion_fst {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β]
     (f : X → β) (a : β) {a' b : β} (ha'b : a' ≤ b) :
     TopPair.Hom.fst (bandCollarPairInclusion f a ha'b) =
       TopCat.ofHom (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2) := by
   ext x
   exact TopPair.ofInclusionMap_fst_apply _ _ x
+
+@[simp]
+theorem bandCollarPairInclusion_fst_apply {X : Type*} [TopologicalSpace X] {β : Type*}
+    [Preorder β] (f : X → β) (a : β) {a' b : β} (ha'b : a' ≤ b) (x : f ⁻¹' Icc a b) :
+    (TopPair.Hom.fst (bandCollarPairInclusion f a ha'b) x).val = x.val :=
+  congrArg Subtype.val
+    (TopPair.ofInclusionMap_fst_apply (X := TopCat.of X) (Y := TopCat.of X) _ _ x)
+
+@[simp]
+theorem bandCollarPairInclusion_snd_apply {X : Type*} [TopologicalSpace X] {β : Type*}
+    [Preorder β] (f : X → β) (a : β) {a' b : β} (ha'b : a' ≤ b) (x : f ⁻¹' Icc a a') :
+    (TopPair.Hom.snd (bandCollarPairInclusion f a ha'b) x).val = x.val :=
+  TopPair.ofInclusionMap_snd_apply (X := TopCat.of X) (Y := TopCat.of X) _ _ x
+
+open CategoryTheory in
+/-- Enlarging `{f ≤ a}` to `{f ≤ a'}` after `TauCeti.bandPairInclusion` agrees with enlarging
+`f⁻¹(a)` to the collar `f⁻¹[a, a']` before `TauCeti.bandCollarPairInclusion`. -/
+@[reassoc]
+theorem bandPairInclusion_comp_totalToOuter {X : Type*} [TopologicalSpace X] {β : Type*}
+    [Preorder β] (f : X → β) {a a' b : β} (haa' : a ≤ a') (ha'b : a' ≤ b) :
+    bandPairInclusion f (haa'.trans ha'b) ≫
+        TopTriple.totalToOuter.app (TopTriple.ofInclusions (X := TopCat.of X)
+          (sublevel_mono f haa') (sublevel_mono f ha'b)) =
+      TopTriple.totalToOuter.app (TopTriple.ofInclusions (X := TopCat.of X)
+          (preimage_mono (singleton_subset_iff.2 ⟨le_rfl, haa'⟩) :
+            f ⁻¹' {a} ⊆ f ⁻¹' Icc a a')
+          (preimage_mono (Icc_subset_Icc_right ha'b) :
+            f ⁻¹' Icc a a' ⊆ f ⁻¹' Icc a b)) ≫
+        bandCollarPairInclusion f a ha'b := by
+  refine TopPair.hom_ext_of_fst _ ?_
+  have hL : TopPair.Hom.fst (bandPairInclusion f (haa'.trans ha'b) ≫
+      TopTriple.totalToOuter.app (TopTriple.ofInclusions (X := TopCat.of X)
+        (sublevel_mono f haa') (sublevel_mono f ha'b))) =
+      TopPair.Hom.fst (bandPairInclusion f (haa'.trans ha'b)) := by
+    refine (TopPair.Hom.fst_comp (bandPairInclusion f (haa'.trans ha'b)) _).trans ?_
+    rw [TopTriple.totalToOuter_app_fst]
+    exact Category.comp_id _
+  have hR : TopPair.Hom.fst (TopTriple.totalToOuter.app (TopTriple.ofInclusions (X := TopCat.of X)
+        (preimage_mono (singleton_subset_iff.2 ⟨le_rfl, haa'⟩) :
+          f ⁻¹' {a} ⊆ f ⁻¹' Icc a a')
+        (preimage_mono (Icc_subset_Icc_right ha'b) :
+          f ⁻¹' Icc a a' ⊆ f ⁻¹' Icc a b)) ≫
+      bandCollarPairInclusion f a ha'b) =
+      TopPair.Hom.fst (bandCollarPairInclusion f a ha'b) := by
+    refine (TopPair.Hom.fst_comp _ (bandCollarPairInclusion f a ha'b)).trans ?_
+    rw [TopTriple.totalToOuter_app_fst]
+    exact Category.id_comp _
+  rw [hL, hR]
+  refine TopCat.ext fun x ↦ Subtype.ext ?_
+  exact (bandPairInclusion_fst_apply f (haa'.trans ha'b) x).trans
+    (bandCollarPairInclusion_fst_apply f a ha'b x).symm
 
 /-- For a continuous function `f : X → ℝ` and `a' ≤ b` with `a < a'` or `a' = b`, the open sets
 `{f < a'}` (or all of `{f ≤ b}` when `b ≤ a'`) and `{a < f}` form an open cover of `{f ≤ b}`
