@@ -125,9 +125,10 @@ theorem orderComplexRealizationMap_toTopObjMk_single {n : ℕ} (x : (nerve P) _�
       vertex (orderComplex P) (x.obj i) := by
   apply Subtype.ext
   rw [orderComplexRealizationMap_toTopObjMk, StdSimplex.map_single, vertex_val]
-  rfl
+  exact StdSimplex.weights_single _
 
 /-- The comparison is natural under monotone maps, including maps identifying vertices. -/
+@[reassoc]
 theorem orderComplexRealizationMap_naturality [DecidableEq Q] (f : P →o Q) :
     SSet.toTop.map (nerveMap f.toFunctor) ≫ orderComplexRealizationMap Q =
       orderComplexRealizationMap P ≫
@@ -145,6 +146,7 @@ theorem orderComplexRealizationMap_naturality [DecidableEq Q] (f : P →o Q) :
     PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
     orderComplexRealizationMap_toTopObjMk, orderComplexRealizationMap_toTopObjMk]
   simp only [coe_orderComplexMap, StdSimplex.weights_map, ← Finsupp.mapDomain_comp]
+  -- Both vertex functions reduce to f ∘ x.obj through nerveMap and Monotone.functor.
   rfl
 
 section PartialOrder
@@ -204,6 +206,7 @@ private lemma faceLift_eq_toTopObjMk {n : ℕ} (σ : Face (orderComplex A))
   have hw : ((Finset.standardSimplexHomeomorph σ.val y).map (faceOrderIso σ).symm) =
       w.map θ := by
     rw [hy', StdSimplex.map_map]
+    -- SimplexCategory.mkHom gives θ the underlying function (faceOrderIso σ).symm ∘ v.
     rfl
   exact (congrArg (SSet.toTopObjMk (faceChain σ)) hw).trans
     ((SSet.toTopObjMk_map θ (faceChain σ) w).symm.trans
@@ -253,6 +256,7 @@ private lemma inverseComparison_chainSimplex {n : ℕ} (x : (nerve A) _⦋n⦌)
   let v : Fin (n + 1) →o (chainFace x).val :=
     ⟨fun i => ⟨x.obj i, Finset.mem_image_of_mem _ (Finset.mem_univ i)⟩, x.monotone⟩
   have hx : ((OrderEmbedding.subtype _).monotone.comp v.monotone).functor = x := by
+    -- Monotone.functor and the subtype projection reduce the object function to x.obj.
     exact nerve.ext_of_isThin (C := A) (n := op ⦋n⦌) rfl
   exact (faceLift_eq_toTopObjMk (chainFace x) v w _ rfl).trans
     (congrArg (fun z => SSet.toTopObjMk z w) hx)
