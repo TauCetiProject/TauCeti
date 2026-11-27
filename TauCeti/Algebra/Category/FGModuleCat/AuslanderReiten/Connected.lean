@@ -36,11 +36,12 @@ algebra is weakly connected.
 
 public section
 
-namespace FGModuleCat
+namespace TauCeti.FGModuleCat
 
-open CategoryTheory TauCeti
-open Quiver (WeaklyConnectedComponent)
-open Quiver.WeaklyConnectedComponent (mk)
+open CategoryTheory
+open _root_.FGModuleCat (indecomposable_obj_iff isoToLinearEquiv)
+open _root_.Quiver (WeaklyConnectedComponent)
+open _root_.Quiver.WeaklyConnectedComponent (mk)
 open scoped ModuleCat.Algebra
 
 universe u v w
@@ -83,16 +84,16 @@ variable {R} [IsArtinianRing R] [Module.Finite R A]
 
 /-- An arrow between the classes of two indecomposable modules exists exactly when there is an
 irreducible morphism between the modules. -/
-theorem nonempty_hom_of_iff {X Y : FGModuleCat.{w} A}
+theorem nonempty_hom_iff_exists_isIrreducibleMorphism {X Y : FGModuleCat.{w} A}
     (hX : Indecomposable X) (hY : Indecomposable Y) :
     Nonempty (of R hX ⟶ of R hY) ↔ ∃ f : X ⟶ Y, IsIrreducibleMorphism f := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   rw [ValuedQuiver.nonempty_hom_iff]
   let eX := representativeIso R hX
   let eY := representativeIso R hY
-  have := isLocalRing_end_of_indecomposable ((indecomposable_obj_iff _).mpr
+  have := FGModuleCat.isLocalRing_end_of_indecomposable ((indecomposable_obj_iff _).mpr
     (hX.of_iso eX.symm))
-  have := isLocalRing_end_of_indecomposable ((indecomposable_obj_iff _).mpr
+  have := FGModuleCat.isLocalRing_end_of_indecomposable ((indecomposable_obj_iff _).mpr
     (hY.of_iso eY.symm))
   rw [IrreducibleMorphismQuiver.isSome_valuationMatrix_iff]
   exact ⟨fun ⟨f, hf⟩ ↦ ⟨_, (hf.iso_comp eX.inv).comp_iso eY.hom⟩,
@@ -125,7 +126,8 @@ theorem forall_weaklyConnectedComponent_eq_and_isRepresentationFinite_of_length_
       (hX : Indecomposable X.obj) (hY : Indecomposable Y.obj) : S X ↔ S Y := by
     have hX' := (indecomposable_obj_iff X).mp hX
     have hY' := (indecomposable_obj_iff Y).mp hY
-    obtain ⟨e⟩ := (ValuedARQuiver.nonempty_hom_of_iff (R := R) hX' hY').mpr ⟨f, hf⟩
+    obtain ⟨e⟩ :=
+      (ValuedARQuiver.nonempty_hom_iff_exists_isIrreducibleMorphism (R := R) hX' hY').mpr ⟨f, hf⟩
     have he := TauCeti.Quiver.weaklyConnectedComponent_mk_eq_of_hom e
     exact ⟨fun ⟨_, h⟩ ↦ ⟨hY', he.symm.trans h⟩, fun ⟨_, h⟩ ↦ ⟨hX', he.trans h⟩⟩
   have hlength (X : FGModuleCat.{w} A) (h : S X) : Module.length A X.obj ≤ b := by
@@ -154,4 +156,4 @@ theorem subsingleton_weaklyConnectedComponent_valuedARQuiver
       (fun x _ ↦ hb _ inferInstance ((indecomposable_obj_iff _).mpr
         x.vertex.representative_property.2))).1 v).symm
 
-end FGModuleCat
+end TauCeti.FGModuleCat
