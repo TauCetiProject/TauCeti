@@ -100,6 +100,22 @@ theorem IsPrimitive.exists_isCoprime_eval {f : BinaryQuadraticForm ℤ} (hf : f.
     · exact ha h
     · exact hpx (hp.dvd_of_dvd_pow h)
 
+/-- An integral form represents a value coprime to a nonzero modulus exactly when
+its content is coprime to the modulus. -/
+theorem exists_isCoprime_eval_iff (f : BinaryQuadraticForm ℤ) {M : ℤ} (hM : M ≠ 0) :
+    (∃ x y : ℤ, IsCoprime (f.eval x y) M) ↔ IsCoprime (f.content : ℤ) M := by
+  have heval (x y : ℤ) : f.eval x y = (f.content : ℤ) * f.primPart.eval x y := by
+    simpa only [f.content_smul_primPart, nsmul_eq_mul] using f.primPart.eval_nsmul f.content x y
+  constructor
+  · rintro ⟨x, y, hxy⟩
+    rw [heval, IsCoprime.mul_left_iff] at hxy
+    exact hxy.1
+  · intro h
+    by_cases hf : f = 0
+    · exact ⟨0, 0, by simpa [hf] using h⟩
+    obtain ⟨x, y, -, hxy⟩ := (f.isPrimitive_primPart hf).exists_isCoprime_eval hM
+    exact ⟨x, y, heval x y ▸ h.mul_left hxy⟩
+
 end CoprimeValue
 
 /-! ### United representatives -/
