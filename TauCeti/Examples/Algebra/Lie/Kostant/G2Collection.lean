@@ -71,14 +71,13 @@ theorem g2_triple_degree_three_two :
     simp only [mem_chainG2Index, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
     omega
   rw [dividedPower_root_mul_of_g2_triple c h₂ h₃ h₄ h₅, hi]
-  simp only [Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq, zero_ne_one,
-    and_false, and_true, and_self, OfNat.zero_ne_ofNat, or_self, not_false_eq_true,
-    Finset.sum_insert, Finset.sum_singleton, pow_zero, pow_one, tsub_zero, tsub_self,
-    mul_zero, dividedPower_zero, dividedPower_one, one_mul, mul_one, one_ne_zero,
-    Nat.add_one_sub_one, Nat.reduceSub, OfNat.one_ne_ofNat, add_assoc, mul_assoc, pow_two]
+  simp (disch := decide) only [Finset.sum_insert, Finset.sum_singleton]
+  norm_num only [pow_zero, pow_one, tsub_zero, tsub_self, mul_zero,
+    dividedPower_zero, dividedPower_one, one_mul, mul_one, add_assoc, mul_assoc, pow_two]
   module
 
-/-- The short-pair highest-root coefficient is the product of the two actual bracket signs. -/
+/-- The short-pair highest-root coefficient is three times the product of the two actual
+bracket signs. -/
 theorem g2_short_pair_degree_one_two :
     dividedPower 1 (e 0) * dividedPower 2 (e 2) =
       dividedPower 2 (e 2) * e 0 + (2 * b) • (e 2 * e 3) + (3 * (b * f)) • e 5 := by
@@ -88,11 +87,9 @@ theorem g2_short_pair_degree_one_two :
     simp only [mem_g2ShortPairIndex, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
     omega
   rw [dividedPower_root_mul_of_g2_short_pair c h₃ h₄ h₅, hi]
-  simp only [Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq, zero_ne_one,
-    and_false, and_true, and_self, or_self, not_false_eq_true,
-    Finset.sum_insert, Finset.sum_singleton, pow_zero, pow_one, add_zero, zero_add,
-    tsub_zero, tsub_self, mul_zero, dividedPower_zero, dividedPower_one, one_mul, mul_one,
-    one_ne_zero, Nat.add_one_sub_one, mul_assoc, add_assoc]
+  simp (disch := decide) only [Finset.sum_insert, Finset.sum_singleton]
+  norm_num only [pow_zero, pow_one, add_zero, zero_add, tsub_zero, tsub_self,
+    mul_zero, dividedPower_zero, dividedPower_one, one_mul, mul_one, mul_assoc, add_assoc]
   abel
 
 namespace Embedded
