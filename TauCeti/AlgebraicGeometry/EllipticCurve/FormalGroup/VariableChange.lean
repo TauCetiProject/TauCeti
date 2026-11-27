@@ -62,9 +62,11 @@ characteristics two and three and rings with nilpotents.
   `C • W` is the transport of that of `W` along `ψ⁻¹`.
 * `WeierstrassCurve.VariableChange.subst_formalCoordinate_log_formalGroup`: over a `ℚ`-algebra,
   `log_W ∘ ψ = u⁻¹ log_{C • W}`.
-* `WeierstrassCurve.VariableChange.heightIdeal_formalGroup_variableChange` and
-  `WeierstrassCurve.VariableChange.height_formalGroup_variableChange`: the height ideals, and over
-  a field the height, are unchanged by a change of variables.
+* `WeierstrassCurve.VariableChange.heightIdeal_formalGroup_variableChange`,
+  `WeierstrassCurve.VariableChange.height_formalGroup_variableChange`, and
+  `WeierstrassCurve.VariableChange.order_nsmulSeries_formalGroup_variableChange`: the height
+  ideals, over a field the height, and the orders of `[m]_Ê` are unchanged by a change of
+  variables.
 
 ## Implementation notes
 
@@ -576,5 +578,13 @@ theorem height_formalGroup_variableChange {K : Type*} [Field K] (C : VariableCha
     (W : WeierstrassCurve K) (p : ℕ) :
     (formalGroup (C • W)).height p = (formalGroup W).height p := by
   rw [formalGroup_smul, FormalGroup.height_smul]
+
+/-- The order of `[m]_Ê` for the formal group of a Weierstrass curve does not depend on the
+chosen Weierstrass equation. -/
+@[simp]
+theorem order_nsmulSeries_formalGroup_variableChange (C : VariableChange R)
+    (W : WeierstrassCurve R) (m : ℕ) :
+    ((formalGroup (C • W)).nsmulSeries m).order = ((formalGroup W).nsmulSeries m).order := by
+  rw [formalGroup_smul, FormalGroup.order_nsmulSeries_smul]
 
 end WeierstrassCurve.VariableChange
