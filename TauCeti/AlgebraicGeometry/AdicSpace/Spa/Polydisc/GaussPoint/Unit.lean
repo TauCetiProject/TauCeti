@@ -152,6 +152,7 @@ theorem isUnitGaussPoint_unitGaussPoint (n : ℕ) (K : Type*) [NormedField K] [I
 
 /-- **Uniqueness of the unit Gauss point.** A point of `closedPolydisc n K` satisfies
 `IsUnitGaussPoint` if and only if it equals `unitGaussPoint n K`. -/
+@[simp]
 theorem isUnitGaussPoint_iff_eq_unitGaussPoint {n : ℕ} {η : closedPolydisc n K} :
     IsUnitGaussPoint K n η ↔ η = unitGaussPoint n K := by
   refine ⟨fun h ↦ Subtype.ext (ext' fun f g ↦ ?_), fun h ↦ h ▸ isUnitGaussPoint_unitGaussPoint n K⟩
