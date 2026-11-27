@@ -84,6 +84,19 @@ theorem rightHom_comp_toSemidirectHom (c : CrossedCocycle (β.comp η)) :
     rightHom.comp c.toSemidirectHom = η :=
   MonoidHom.ext fun _ ↦ by simp
 
+/-- Restricting a lift of `η` along `f` gives a lift of `η.comp f`. -/
+@[simp]
+theorem toSemidirectHom_comap (c : CrossedCocycle (β.comp η)) {Δ : Type*} [Monoid Δ]
+    (f : Δ →* Γ) :
+    toSemidirectHom (η := η.comp f) (c.comap f) = c.toSemidirectHom.comp f :=
+  MonoidHom.ext fun δ ↦ by ext <;> simp
+
+/-- The unit crossed cocycle lifts the projection by the canonical right inclusion. -/
+@[simp]
+theorem toSemidirectHom_one :
+    (1 : CrossedCocycle (β.comp η)).toSemidirectHom = inr.comp η :=
+  MonoidHom.ext fun γ ↦ by ext <;> simp
+
 /-- The crossed cocycle for `β ∘ η` given by the first coordinate of a homomorphism
 `s : Γ →* H ⋊[β] Q` lifting `η`. -/
 def ofSemidirectHom (s : Γ →* H ⋊[β] Q) (hs : rightHom.comp s = η) :
