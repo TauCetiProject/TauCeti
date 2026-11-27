@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
 
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
 import TauCeti.NumberTheory.Bernoulli.Basic
@@ -56,6 +57,8 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
   of `Δ` is an integer.
 * `TauCeti.ModularForm.qExpansion_natCast_discriminant`: at period `N`, the expansion of `Δ` is
   its expansion at period `1` in the variable `qᴺ`, so it is `qᴺ + ⋯` with integer coefficients.
+* `TauCeti.ModularForm.mapRingHom_laurentQExpansion_discriminant_zpow`: every complex ring
+  endomorphism fixes the Laurent expansion of every integer power of `Δ` at period `N`.
 * `TauCeti.ModularForm.mem_range_map_of_qExpansion_discriminant_mul_mem`: if `Δ Q` is the image
   of a power series over a ring `R` under `R →+* ℂ`, then so is the power series `Q`.
 * `TauCeti.ModularForm.qExpansion_discriminantEquiv_mem_range`: dividing a level-one cusp form by
@@ -345,6 +348,43 @@ theorem qExpansion_natCast_discriminant_coeff_mem {R : Subring ℂ} (i : ℕ) :
     rw [hm]
     exact intCast_mem R m
   · exact R.zero_mem
+
+/-- The Laurent expansion of `Δ ^ m` at `∞` is fixed by every ring endomorphism of `ℂ`: the
+`q`-expansion of `Δ` has integer coefficients. -/
+theorem mapRingHom_laurentQExpansion_discriminant_zpow (φ : ℂ →+* ℂ) (m : ℤ) :
+    HahnSeries.mapRingHom φ (UpperHalfPlane.laurentQExpansion N
+        fun τ ↦ ModularForm.discriminant τ ^ m) =
+      UpperHalfPlane.laurentQExpansion N fun τ ↦ ModularForm.discriminant τ ^ m := by
+  have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
+  have hperiodSL : (N : ℝ) ∈ (𝒮ℒ).strictPeriods := by
+    rw [Subgroup.strictPeriods_SL2Z]
+    exact ⟨N, by simp⟩
+  have hΔ : AnalyticAt ℂ (cuspFunction N ModularForm.discriminant) 0 := by
+    simpa only [CuspForm.coe_discriminant] using
+      ModularFormClass.analyticAt_cuspFunction_zero CuspForm.discriminant hN hperiodSL
+  have hfix : HahnSeries.mapRingHom φ
+      (UpperHalfPlane.laurentQExpansion N ModularForm.discriminant) =
+      UpperHalfPlane.laurentQExpansion N ModularForm.discriminant := by
+    rw [UpperHalfPlane.laurentQExpansion_of_analyticAt hΔ]
+    ext n
+    rw [HahnSeries.coeff_mapRingHom, PowerSeries.coeff_coe]
+    split_ifs
+    · exact map_zero φ
+    · exact ModularForm.qExpansion_natCast_discriminant_coeff_mem (N := N)
+        (R := φ.eqLocus (RingHom.id ℂ)) _
+  have hpow (m : ℤ) : UpperHalfPlane.laurentQExpansion N
+      (fun τ ↦ ModularForm.discriminant τ ^ m) =
+      UpperHalfPlane.laurentQExpansion N ModularForm.discriminant ^ m := by
+    cases m with
+    | ofNat n =>
+      have h := UpperHalfPlane.laurentQExpansion_pow hΔ.meromorphicAt n
+      simpa [Pi.pow_def] using h
+    | negSucc n =>
+      have h := UpperHalfPlane.laurentQExpansion_inv
+        (UpperHalfPlane.meromorphicAt_cuspFunction_pow hΔ.meromorphicAt (n + 1))
+      rw [UpperHalfPlane.laurentQExpansion_pow hΔ.meromorphicAt] at h
+      simpa [Pi.pow_def, Pi.inv_def, zpow_negSucc] using h
+  rw [hpow, map_zpow₀, hfix]
 
 end Period
 

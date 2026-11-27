@@ -133,46 +133,17 @@ private theorem exists_isWeakForm_zero_laurentQExpansion_slash_eq {F : ℍ → �
     rw [ModularForm.SL_slash_zero]
     funext τ
     rw [finitePart_unop_modularFunctionAction]
-  rw [hF', hG, ← laurentQExpansion_cuspDatumInftyGamma, ← laurentQExpansion_cuspDatumInftyGamma,
-    ← modularFunctionCoeffAction_unop_modularFunctionAction hσ hγ,
-    laurentQExpansion_modularFunctionCoeffAction]
-
-/-- The Laurent expansion of `Δ ^ m` at `∞` is fixed by every automorphism of `ℂ`: the
-`q`-expansion of `Δ` has integer coefficients. -/
-private theorem mapRingHom_laurentQExpansion_discriminant_zpow (σ : ℂ →+* ℂ) (m : ℤ) :
-    HahnSeries.mapRingHom σ (UpperHalfPlane.laurentQExpansion N
-        fun τ ↦ ModularForm.discriminant τ ^ m) =
-      UpperHalfPlane.laurentQExpansion N fun τ ↦ ModularForm.discriminant τ ^ m := by
-  have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
-  have hperiodSL : (N : ℝ) ∈ (𝒮ℒ).strictPeriods := by
-    rw [Subgroup.strictPeriods_SL2Z]
-    exact ⟨N, by simp⟩
-  have hΔ : AnalyticAt ℂ (cuspFunction N ModularForm.discriminant) 0 := by
-    simpa only [CuspForm.coe_discriminant] using
-      ModularFormClass.analyticAt_cuspFunction_zero CuspForm.discriminant hN hperiodSL
-  have hfix : HahnSeries.mapRingHom σ
-      (UpperHalfPlane.laurentQExpansion N ModularForm.discriminant) =
-      UpperHalfPlane.laurentQExpansion N ModularForm.discriminant := by
-    rw [UpperHalfPlane.laurentQExpansion_of_analyticAt hΔ]
-    ext n
-    rw [HahnSeries.coeff_mapRingHom, PowerSeries.coeff_coe]
-    split_ifs
-    · exact map_zero σ
-    · exact ModularForm.qExpansion_natCast_discriminant_coeff_mem (N := N)
-        (R := σ.eqLocus (RingHom.id ℂ)) _
-  have hpow (m : ℤ) : UpperHalfPlane.laurentQExpansion N
-      (fun τ ↦ ModularForm.discriminant τ ^ m) =
-      UpperHalfPlane.laurentQExpansion N ModularForm.discriminant ^ m := by
-    cases m with
-    | ofNat n =>
-      have h := UpperHalfPlane.laurentQExpansion_pow hΔ.meromorphicAt n
-      simpa [Pi.pow_def] using h
-    | negSucc n =>
-      have h := UpperHalfPlane.laurentQExpansion_inv
-        (UpperHalfPlane.meromorphicAt_cuspFunction_pow hΔ.meromorphicAt (n + 1))
-      rw [UpperHalfPlane.laurentQExpansion_pow hΔ.meromorphicAt] at h
-      simpa [Pi.pow_def, Pi.inv_def, zpow_negSucc] using h
-  rw [hpow, map_zpow₀, hfix]
+  calc
+    _ = laurentQExpansion (cuspDatumInftyGamma N)
+        (unop (modularFunctionAction N γ) (modularFunctionCoeffAction N σ Φ)) := by
+      rw [hG, laurentQExpansion_cuspDatumInftyGamma]
+    _ = laurentQExpansion (cuspDatumInftyGamma N)
+        (modularFunctionCoeffAction N σ (unop (modularFunctionAction N γ') Φ)) := by
+      rw [modularFunctionCoeffAction_unop_modularFunctionAction hσ hγ]
+    _ = HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
+        (laurentQExpansion (cuspDatumInftyGamma N) (unop (modularFunctionAction N γ') Φ)) :=
+      laurentQExpansion_modularFunctionCoeffAction σ _
+    _ = _ := by rw [hF', laurentQExpansion_cuspDatumInftyGamma]
 
 /-- **Galois conjugates of weak forms of weight divisible by `12`.** Let `σ` be an automorphism
 of `ℂ` with `σ ζ_N = ζ_N ^ d`. For a weak form `f` of weight `12 m` on `Γ(N)` there is a weak
@@ -218,11 +189,24 @@ theorem IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom {m : ℤ} {f : �
     simpa only [strictLevel_Gamma] using hu.meromorphicAt_cuspFunction_slash γ
   have hmero (n : ℤ) : _root_.MeromorphicAt (cuspFunction N (D n)) 0 := by
     simpa using hmeroSlash (hD n) 1
-  rw [hslash, UpperHalfPlane.laurentQExpansion_mul (hmeroSlash hG γ)
-    (hmero m), hGσ γ γ' hγ, hslash', UpperHalfPlane.laurentQExpansion_mul
-    (hmeroSlash hf γ') (hmero (-m)), map_mul, mul_assoc,
-    mapRingHom_laurentQExpansion_discriminant_zpow, ← UpperHalfPlane.laurentQExpansion_mul
-    (hmero (-m)) (hmero m), hDD, UpperHalfPlane.laurentQExpansion_one, mul_one]
+  calc
+    _ = UpperHalfPlane.laurentQExpansion N (G ∣[(0 : ℤ)] γ) *
+        UpperHalfPlane.laurentQExpansion N (D m) := by
+      rw [hslash, UpperHalfPlane.laurentQExpansion_mul (hmeroSlash hG γ) (hmero m)]
+    _ = HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
+        (UpperHalfPlane.laurentQExpansion N (f ∣[12 * m] γ') *
+          UpperHalfPlane.laurentQExpansion N (D (-m))) *
+        UpperHalfPlane.laurentQExpansion N (D m) := by
+      rw [hGσ γ γ' hγ, hslash',
+        UpperHalfPlane.laurentQExpansion_mul (hmeroSlash hf γ') (hmero (-m))]
+    _ = HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
+        (UpperHalfPlane.laurentQExpansion N (f ∣[12 * m] γ')) *
+        (UpperHalfPlane.laurentQExpansion N (D (-m)) *
+          UpperHalfPlane.laurentQExpansion N (D m)) := by
+      rw [map_mul, ModularForm.mapRingHom_laurentQExpansion_discriminant_zpow, mul_assoc]
+    _ = _ := by
+      rw [← UpperHalfPlane.laurentQExpansion_mul (hmero (-m)) (hmero m), hDD]
+      simp only [UpperHalfPlane.laurentQExpansion_one, mul_one]
 
 /-- The weak-form conjugate of a modular form on `Γ(N)` of weight `12 m`: its expansion at `∞`
 is the conjugate of that of `f`, and at every cusp it tends to the conjugate of the value of `f`
