@@ -146,10 +146,7 @@ theorem _root_.ContinuousLinearMap.IsFredholm.of_surjective_coprod {S : Type*}
     (B : S →L[𝕜] F) (h : Function.Surjective (T.coprod B))
     (hker : FiniteDimensional 𝕜 (T.coprod B).ker) : ContinuousLinearMap.IsFredholm T := by
   refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker T ?_ ?_
-  · have := isNoetherian_of_isNoetherianRing_of_finite 𝕜 (T.coprod B).ker
-    exact Module.Finite.of_injective
-      (ContinuousLinearMap.kerCoprodHom T B : T.ker →ₗ[𝕜] (T.coprod B).ker)
-      (ContinuousLinearMap.kerCoprodHom_injective T B)
+  · exact ContinuousLinearMap.finiteDimensional_ker_of_finiteDimensional_ker_coprod T B
   · exact Module.Finite.of_surjective _
       ((ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective T B).2 h)
 

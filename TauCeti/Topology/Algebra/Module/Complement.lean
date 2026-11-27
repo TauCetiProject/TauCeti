@@ -23,7 +23,8 @@ A continuous linear map is unchanged by the projection along its kernel onto a t
 complement of that kernel.
 A continuous linear quotient map admits a continuous linear section exactly when its kernel is
 continuously complemented; the section is obtained by descending the complementary projection
-through the quotient.
+through the quotient. An affine combination of continuous linear right inverses is again a
+right inverse (`ContinuousLinearMap.rightInverse_smul_add_smul`).
 A continuous linear functional taking a nonzero value on a vector `u` splits the space as the
 product of the scalars and the kernel (`TauCeti.exists_homeomorph_prod_ker`).
 For a `u`-invariant submodule `p` with topological complement `q`, the restriction of `u` to `p`
@@ -156,6 +157,16 @@ theorem exists_rightInverse_iff_closedComplemented_ker (f : E →L[R] F) (hf : I
   refine ⟨⟨s, hf.continuous_iff.mpr (g.continuous.congr fun x ↦ (hs x).symm)⟩, fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := hf.surjective y
   exact (congrArg f (hs x)).trans (f.apply_projectionL_ker hq.symm x)
+
+/-- An affine combination `a • s + b • s'`, `a + b = 1`, of continuous linear right inverses of
+`f` is again a right inverse of `f`. -/
+theorem rightInverse_smul_add_smul {R E F : Type*} [CommSemiring R] [AddCommMonoid E]
+    [Module R E] [TopologicalSpace E] [ContinuousAdd E] [ContinuousConstSMul R E]
+    [AddCommMonoid F] [Module R F] [TopologicalSpace F] {f : E →L[R] F} {s s' : F →L[R] E}
+    (hs : Function.RightInverse s f) (hs' : Function.RightInverse s' f) {a b : R}
+    (hab : a + b = 1) : Function.RightInverse (a • s + b • s') f := fun y ↦ by
+  rw [add_apply, smul_apply, smul_apply, map_add, map_smul, map_smul, hs y, hs' y, ← add_smul,
+    hab, one_smul]
 
 end ContinuousLinearMap
 

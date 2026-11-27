@@ -197,7 +197,7 @@ theorem exists_pos_detLineGluingEquiv_eq_smul_of_forall_bijective (D : E →L[�
   refine ⟨_, ?_, detLineGluingEquiv_apply_eq_det_smul D j h h₁ h₂ g g'⟩
   -- `(1 - t) • id + t • g'⁻¹ ∘ g` is `g'⁻¹` composed with the bijective map at `t`, so it is
   -- never singular, and the determinant of `g'⁻¹ ∘ g` is positive.
-  refine LinearMap.det_pos_of_forall_det_one_sub_smul_add_smul_ne_zero _ fun t ht ↦ ?_
+  refine LinearMap.det_pos_of_forall_det_one_sub_smul_id_add_smul_ne_zero _ fun t ht ↦ ?_
   have hc : (1 - t) • LinearMap.id +
       t • (g.trans g'.symm : ((D₁.coprod ι₁).ker × (D₂.coprod ι₂).ker) →ₗ[ℝ] _) =
         ((LinearEquiv.ofBijective _ (hgg' t ht)).trans g'.symm :

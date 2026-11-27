@@ -64,7 +64,7 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 * `ContinuousLinearEquiv.det_symm_comp_comp_comp`: composing with endomorphisms on either side
   multiplies the relative determinant by their determinants.
 * `ContinuousLinearEquiv.sum_cofactor_comp_apply_single`: the cofactor contraction identity.
-* `LinearMap.det_pos_of_forall_det_one_sub_smul_add_smul_ne_zero`: an endomorphism of a
+* `LinearMap.det_pos_of_forall_det_one_sub_smul_id_add_smul_ne_zero`: an endomorphism of a
   finite-dimensional real vector space joined to the identity by a segment of nonsingular
   endomorphisms has positive determinant.
 -/
@@ -335,7 +335,7 @@ endomorphism of a finite-dimensional real vector space. If no endomorphism
 then `det f > 0`: the determinant along the segment is continuous in `t`, equal to `1` at `t = 0`,
 and never `0`. So two isomorphisms `g, g' : V ≃ W` joined by a segment of isomorphisms
 `(1 - t) • g + t • g'` induce the same orientation, as `g⁻¹ ∘ g'` satisfies the hypothesis. -/
-theorem det_pos_of_forall_det_one_sub_smul_add_smul_ne_zero {V : Type*} [AddCommGroup V]
+theorem det_pos_of_forall_det_one_sub_smul_id_add_smul_ne_zero {V : Type*} [AddCommGroup V]
     [Module ℝ V] [FiniteDimensional ℝ V] (f : V →ₗ[ℝ] V)
     (h : ∀ t ∈ Set.Icc (0 : ℝ) 1, LinearMap.det ((1 - t) • LinearMap.id + t • f) ≠ 0) :
     0 < LinearMap.det f := by
