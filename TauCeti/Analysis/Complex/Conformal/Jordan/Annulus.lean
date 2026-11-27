@@ -22,7 +22,7 @@ import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 import TauCeti.Topology.Frontier
 import TauCeti.Topology.Homeomorph.SetCongr
 import TauCeti.Topology.MetricSpace.ProperSpace
-import TauCeti.Topology.Path.Arc
+import TauCeti.Topology.Path.Basic
 
 /-!
 # The planar annulus theorem

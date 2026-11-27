@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Path
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Data.Set.Function
+public import TauCeti.Topology.Path.Basic
 
 /-!
 # Arcs: ranges of paths in Hausdorff spaces
@@ -20,16 +19,9 @@ sphere is the pair of endpoints.
 ## Main declarations
 
 * `Path.closure_image_Ioo`: the closure of the set traced by a path on `(0, 1)` is its range.
-* `Path.image_Ioo_eq_range_sdiff_endpoints`: an injective path carries `(0, 1)` onto its range
-  minus its endpoints.
 * `Path.exists_homeomorph_range_closedBall`: the range of an injective path is homeomorphic to the
   closed unit ball of a one-dimensional real normed space, by a homeomorphism carrying the
   endpoints onto the unit sphere.
-* `Path.injective_symm_iff`: reversing a path preserves injectivity.
-* `Path.injective_trans`: concatenating two injective paths that meet only at their shared endpoint
-  yields an injective path.
-* `Path.injective_trans_trans`: concatenating three injective paths whose adjacent pairs meet only
-  at their shared endpoints and whose outer ranges are disjoint yields an injective path.
 -/
 
 public section
@@ -49,16 +41,6 @@ theorem closure_image_Ioo (γ : Path x y) : closure (γ '' Ioo 0 1) = range γ :
     rw [closure_Ioo zero_ne_one, unitInterval.univ_eq_Icc]
   rw [← image_univ, ← h]
   exact image_closure_subset_closure_image γ.continuous
-
-omit [T2Space X] in
-/-- The image of the open unit interval `(0, 1)` under an injective path is its range minus its
-endpoints. -/
-theorem image_Ioo_eq_range_sdiff_endpoints {γ : Path x y} (hγ : Injective γ) :
-    γ '' Ioo 0 1 = range γ \ {x, y} := by
-  have h : (Ioo 0 1 : Set unitInterval) = univ \ {0, 1} := by
-    rw [unitInterval.univ_eq_Icc, Set.Icc_sdiff_both]
-  rw [h, Set.image_sdiff hγ]
-  simp
 
 /-- **An arc is a closed one-dimensional disc.** The range of an injective path in a Hausdorff
 space is homeomorphic to the closed unit ball of a one-dimensional real normed space, by a
@@ -93,46 +75,6 @@ theorem exists_homeomorph_range_closedBall {E : Type*} [NormedAddCommGroup E] [N
   have h0 : γ t = x ↔ t = 0 := (show γ t = x ↔ γ t = γ 0 by rw [Path.source]).trans hγ.eq_iff
   have h1 : γ t = y ↔ t = 1 := (show γ t = y ↔ γ t = γ 1 by rw [Path.target]).trans hγ.eq_iff
   rw [mem_insert_iff, mem_singleton_iff, h0, h1]
-
-omit [T2Space X] in
-/-- Reversing a path preserves injectivity. -/
-@[simp]
-theorem injective_symm_iff {γ : Path x y} : Injective γ.symm ↔ Injective γ := by
-  have h : (γ.symm : unitInterval → X) = γ ∘ unitInterval.symmHomeomorph.toEquiv :=
-    funext γ.symm_apply
-  rw [h]
-  exact unitInterval.symmHomeomorph.toEquiv.injective_comp γ
-
-omit [T2Space X] in
-/-- Concatenating two injective paths whose ranges meet only at their shared endpoint gives an
-injective path. -/
-theorem injective_trans {z : X} {α : Path x y} {β : Path y z} (hα : Injective α)
-    (hβ : Injective β) (hmeet : range α ∩ range β = {y}) : Injective (α.trans β) := by
-  have hmeet' : range β ∩ range α ⊆ {y} := inter_comm _ _ ▸ hmeet.subset
-  intro s t hst
-  rw [Path.trans_apply, Path.trans_apply] at hst
-  split_ifs at hst with hs ht ht
-  · have h : (2 : ℝ) * s = 2 * t := congrArg Subtype.val (hα hst)
-    exact Subtype.ext (by linarith)
-  · have h2t : 2 * (t : ℝ) - 1 = 0 := congrArg Subtype.val
-      (hβ.eq_of_apply_eq_of_range_inter_subset_singleton hmeet' β.source hst.symm)
-    exact absurd (by linarith : (t : ℝ) ≤ 1 / 2) ht
-  · have h2s : 2 * (s : ℝ) - 1 = 0 := congrArg Subtype.val
-      (hβ.eq_of_apply_eq_of_range_inter_subset_singleton hmeet' β.source hst)
-    exact absurd (by linarith : (s : ℝ) ≤ 1 / 2) hs
-  · have h : 2 * (s : ℝ) - 1 = 2 * (t : ℝ) - 1 := congrArg Subtype.val (hβ hst)
-    exact Subtype.ext (by linarith)
-
-omit [T2Space X] in
-/-- Concatenating three injective paths whose adjacent pairs meet only at their shared endpoints
-and whose outer ranges are disjoint yields an injective path. -/
-theorem injective_trans_trans {a b c d : X} {α : Path a b} {β : Path b c} {γ : Path c d}
-    (hα : Injective α) (hβ : Injective β) (hγ : Injective γ)
-    (hαβ : range α ∩ range β = {b}) (hβγ : range β ∩ range γ = {c})
-    (hαγ : Disjoint (range α) (range γ)) :
-    Injective ((α.trans β).trans γ) := by
-  refine injective_trans (injective_trans hα hβ hαβ) hγ ?_
-  rwa [Path.trans_range, union_inter_distrib_right, hαγ.inter_eq, empty_union]
 
 end Path
 
