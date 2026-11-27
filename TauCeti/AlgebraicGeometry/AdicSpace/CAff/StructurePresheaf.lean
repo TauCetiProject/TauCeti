@@ -78,6 +78,27 @@ private noncomputable def presentationLimitRationalEquiv (Y : CAff.{u})
     Y.pair.isRingOfIntegralElements.isPowerBounded_of_mem q hq)).trans
     (Y.rationalLocalizationRingEquiv q.num q.den hq).symm.toEquiv
 
+private theorem rationalLocalizationRingEquiv_presentationLimitRationalEquiv (Y : CAff.{u})
+    (q : Presentation Y.pairOfDefinition)
+    (hq : IsOpen (Ideal.span (q.num : Set Y.ring) : Set Y.ring))
+    (z : presentationLimit (P := Y.pairOfDefinition) Y.pair.plus
+      (spaBasicOpen Y.pair.plus q.num q.den)) :
+    let P := Y.pairOfDefinition
+    let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    let _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    let _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    Y.rationalLocalizationRingEquiv q.num q.den hq (presentationLimitRationalEquiv Y q hq z) =
+      (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).val
+        ((presentationLimitRationalIso Y.pair.plus
+          Y.pair.isRingOfIntegralElements.isPowerBounded_of_mem q hq).hom.hom.val z) := by
+  let P := Y.pairOfDefinition
+  let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  let _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  let _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  dsimp only [presentationLimitRationalEquiv]
+  rw [Equiv.trans_apply, RingEquiv.toEquiv_eq_coe, RingEquiv.coe_toEquiv,
+    RingEquiv.apply_symm_apply, Equiv.ofBijective_apply]
+
 private theorem presentationLimitRationalEquiv_top (Y : CAff.{u})
     (T₀ : Finset Y.ring) (s₀ : Y.ring)
     (hT₀ : IsOpen (Ideal.span (T₀ : Set Y.ring) : Set Y.ring)) (b : Y.ring) :
@@ -97,10 +118,8 @@ private theorem presentationLimitRationalEquiv_top (Y : CAff.{u})
   let _ := isUniformAddGroup_locUniformSpace P T₀ s₀ _ q.hasDenominatorPower
   let _ := isTopologicalRing_locUniformSpace P T₀ s₀ _ q.hasDenominatorPower
   refine (Y.rationalLocalizationRingEquiv T₀ s₀ hT₀).injective ?_
-  rw [rationalLocalizationHom_toRingHom_apply]
-  dsimp only [presentationLimitRationalEquiv]
-  rw [Equiv.trans_apply, RingEquiv.toEquiv_eq_coe, RingEquiv.coe_toEquiv,
-    RingEquiv.apply_symm_apply, Equiv.ofBijective_apply]
+  rw [rationalLocalizationHom_toRingHom_apply,
+    rationalLocalizationRingEquiv_presentationLimitRationalEquiv Y q hT₀]
   have htop :
       (presentationLimitTopEquiv Y b :
         presentationLimit (P := P) Y.pair.plus ⊤) =
@@ -133,33 +152,11 @@ private theorem presentationLimitRationalEquiv_restrict (Y : CAff.{u})
   let _ := isUniformAddGroup_locUniformSpace P q₂.num q₂.den _ q₂.hasDenominatorPower
   let _ := isTopologicalRing_locUniformSpace P q₂.num q₂.den _ q₂.hasDenominatorPower
   refine (Y.rationalLocalizationRingEquiv q₂.num q₂.den hq₂).injective ?_
-  rw [rationalLocalizationRestrict_toRingHom_apply]
-  dsimp only [presentationLimitRationalEquiv]
-  rw [Equiv.trans_apply, Equiv.trans_apply, RingEquiv.toEquiv_eq_coe, RingEquiv.toEquiv_eq_coe,
-    RingEquiv.coe_toEquiv, RingEquiv.coe_toEquiv, RingEquiv.apply_symm_apply,
-    RingEquiv.apply_symm_apply]
-  let e₁ := presentationLimitPresheafInCommRingCat_obj P Y.pair.plus
-    (Opposite.op (spaBasicOpen Y.pair.plus q₁.num q₁.den))
-  have hInv := congrArg (fun f ↦
-      eqToHom e₁.symm ≫ (presentationLimitRationalIsoInCommRingCat hAplus q₁ hq₁).hom ≫ f ≫
-        q₂.completionLocObjCommRingCatIso.hom)
-    (presentationLimitRationalIsoInCommRingCat_inv_comp_map_comp_hom hAplus q₁ q₂ hq₁ hq₂ hsub)
-  simp only [Category.assoc] at hInv
-  rw [Iso.hom_inv_id_assoc, presentationLimitRationalIsoInCommRingCat_hom (p := q₂),
-    presentationLimitRationalIsoInCommRingCat_hom (p := q₁)] at hInv
-  simp only [Category.assoc] at hInv
-  rw [eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
-    ← Category.assoc ((presentationLimitPresheafInCommRingCat P Y.pair.plus).map _),
-    presentationLimitPresheafInCommRingCat_map, Category.assoc, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp,
-    map_homOfRationalSubsetSubset_comp_completionLocObjCommRingCatIso_hom hAplus
-      (spaBasicOpen_le_spaBasicOpen_iff.mp hsub)] at hInv
-  have hInvRing := congrArg CommRingCat.Hom.hom hInv.symm
-  rw [CommRingCat.hom_comp, CommRingCat.hom_comp, CommRingCat.hom_comp, CommRingCat.hom_comp,
-    CommRingCat.hom_ofHom, Presentation.completionLocObjCommRingCatIso_hom,
-    Presentation.completionLocObjCommRingCatIso_hom] at hInvRing
-  rw [Equiv.ofBijective_apply, Equiv.ofBijective_apply]
-  exact congrArg (fun f : _ →+* _ ↦ f z) hInvRing
+  rw [rationalLocalizationRestrict_toRingHom_apply,
+    rationalLocalizationRingEquiv_presentationLimitRationalEquiv,
+    rationalLocalizationRingEquiv_presentationLimitRationalEquiv]
+  exact (presentationLimitRationalIso_hom_presentationLimitMap_apply Y.pair.plus hAplus q₁ q₂
+    hq₁ hq₂ hsub z).symm
 
 private theorem rationalLocalization_compatible_iff (Y : CAff.{u})
     (T₁ T₂ T₁₂ : Finset Y.ring) (s₁ s₂ s₁₂ : Y.ring)

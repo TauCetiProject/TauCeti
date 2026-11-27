@@ -65,6 +65,9 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
   are in bijection with `A⟨p⟩`, read through the isomorphism and the equality transport.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso_inv_comp_map_comp_hom` : between rational
   opens, the restriction maps of `presentationLimitPresheaf` are the comparison morphisms.
+* `TauCeti.ValuationSpectrum.presentationLimitRationalIso_hom_presentationLimitMap_apply` :
+  elementwise restriction naturality of `presentationLimitRationalIso` against
+  `ringHomOfRationalSubsetSubset`.
 * `TauCeti.ValuationSpectrum.exists_presentationLimit_iso_completionLoc` : existence of an
   admissible presentation `p` and isomorphism `presentationLimit Aplus U ≅ A⟨p⟩` in
   `TopCommRingCat` for `U ∈ spaRationalOpens Aplus`.
@@ -350,6 +353,46 @@ theorem presentationLimitRationalIso_inv_comp_map_comp_hom
     reassoc_of% presentationLimitRationalIso_inv_comp_π]
   exact homOfRationalSubsetSubset_comp_eqToHom hAplus (presentationIndexRestrict_obj_pres h _) _ _ _
 
+variable (Aplus) in
+/-- Elementwise restriction naturality of `presentationLimitRationalIso`: read through the
+transports to `A⟨p⟩` and `A⟨q⟩`, restriction between rational opens acts as the comparison ring
+homomorphism `ringHomOfRationalSubsetSubset`. -/
+theorem presentationLimitRationalIso_hom_presentationLimitMap_apply
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p q : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
+    (hq : IsOpen (Ideal.span (q.num : Set A) : Set A))
+    (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den)
+    (z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den)) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).val
+        ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.val
+          ((presentationLimitMap (P := P) h).hom.val z)) =
+      ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower
+        q.num q.den _ q.hasDenominatorPower (spaBasicOpen_le_spaBasicOpen_iff.mp h)
+        ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z)) := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  have H := presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q hp hq h
+  rw [Iso.inv_comp_eq] at H
+  have hRing := congrArg (fun f ↦
+      f.hom ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z))
+    (map_homOfRationalSubsetSubset_comp_completionLocObjCommRingCatIso_hom hAplus
+      (spaBasicOpen_le_spaBasicOpen_iff.mp h))
+  simp only [Presentation.completionLocObjCommRingCatIso_hom] at hRing
+  exact (congrArg (fun f ↦
+    (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).val (f.hom.val z))
+    H).trans hRing
+
 /-- Existence of an admissible presentation `p : Presentation P` and an isomorphism
 `presentationLimit Aplus U ≅ A⟨p⟩` in `TopCommRingCat` for `U ∈ spaRationalOpens Aplus`. -/
 theorem exists_presentationLimit_iso_completionLoc (P : PairOfDefinition A)
@@ -499,15 +542,11 @@ theorem presentationLimitRationalIsoInCommRingCat_inv_comp_map_comp_hom
       (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
         (homOfRationalSubsetSubset Aplus hAplus
           (spaBasicOpen_le_spaBasicOpen_iff.mp h)) := by
-  simpa only [presentationLimitRationalIsoInCommRingCat,
-    presentationLimitPresheafInCommRingCat, Iso.trans_hom, Iso.trans_inv,
-    Functor.mapIso_hom, Functor.mapIso_inv, Functor.comp_map,
-    presentationLimitPresheaf_map, ← Functor.map_comp, Category.assoc, eqToIso.hom,
-    eqToIso.inv, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl, Functor.map_id,
-    Category.id_comp, Category.comp_id] using congrArg
-      (fun f ↦ (TopCommRingCat.isCompleteSeparated.ι ⋙
-        forget₂ TopCommRingCat CommRingCat).map f)
-      (presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q hp hq h)
+  simp only [presentationLimitRationalIsoInCommRingCat_inv,
+    presentationLimitRationalIsoInCommRingCat_hom, Category.assoc,
+    reassoc_of% presentationLimitPresheafInCommRingCat_map P Aplus (homOfLE h).op,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.comp_map, ← Functor.map_comp,
+    presentationLimitRationalIso_inv_comp_map_comp_hom]
 
 end TauCeti.ValuationSpectrum
 
