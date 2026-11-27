@@ -10,9 +10,9 @@ public import TauCeti.MeasureTheory.Function.Lp.Translation
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # Convolution with an integrable kernel as an operator on `Lᵖ`
@@ -40,7 +40,9 @@ It also proves that the dilations `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` of any i
 `ε → 0⁺`, with no sign, normalization or support condition on `k`. This is proved for real or
 complex kernels acting on Banach-valued functions through the `Lᵖ`-valued integral of
 translates: after the substitution `y = ε • z` the integrand is `k(z) • f(· - ε • z)`, which tends
-to `k(z) • f` and is dominated by `‖k(z)‖ ‖f‖_p`.
+to `k(z) • f` and is dominated by `‖k(z)‖ ‖f‖_p`. The underlying convergence of dilated-kernel
+averages of a bounded function continuous at `0`, `TauCeti.tendsto_integral_comp_inv_smul_smul`,
+is in `TauCeti.MeasureTheory.Integral.Dilation`.
 
 ## Main declarations
 
@@ -64,13 +66,8 @@ to `k(z) • f` and is dominated by `‖k(z)‖ ‖f‖_p`.
   integrable, which justifies local Fubini arguments.
 * `TauCeti.compLpL_convolutionLp`: convolution commutes with postcomposition by a continuous
   linear map between Banach spaces.
-* `TauCeti.integral_comp_inv_smul_smul`: the average of a function against the dilation
-  `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` of a kernel is the average of its rescaling `g (ε • ·)` against `k`.
-* `TauCeti.tendsto_integral_comp_inv_smul_smul`: for an integrable real or complex kernel `k` and
-  a bounded function `g` continuous at `0`, the averages of `g` against `k_ε` converge to
-  `(∫ k) • g 0` as `ε → 0⁺`.
-* `TauCeti.tendsto_integral_comp_inv_smul_smul_translateLp`: for such a kernel the averages
-  `∫ y, k_ε(y) • f(· - y) dμ(y)` converge to `(∫ k) • f` in `Lᵖ`.
+* `TauCeti.tendsto_integral_comp_inv_smul_smul_translateLp`: for an integrable real or complex
+  kernel `k`, the averages `∫ y, k_ε(y) • f(· - y) dμ(y)` converge to `(∫ k) • f` in `Lᵖ`.
 * `TauCeti.tendsto_convolutionLp_comp_inv_smul`: for a real kernel, `k_ε ⋆ f → (∫ k) • f` in
   `Lᵖ` as `ε → 0⁺`, and `TauCeti.norm_convolutionLp_comp_inv_smul_le` bounds the operator norms
   of these convolutions by `∫ ‖k‖`, uniformly in `ε`.
@@ -367,10 +364,9 @@ open scoped Topology
 /-! ### Dilations of an integrable kernel
 
 For `ε > 0` the dilation `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` of a kernel `k`, where `d` is the dimension of
-`E`, has the same integral as `k`. Substituting `y = ε • z` turns the average of a function `g`
-against `k_ε` into the average of `z ↦ g (ε • z)` against `k`. When `g` is bounded and continuous at
-`0`, these averages converge to `(∫ k) • g 0` as `ε → 0` by dominated convergence. No sign,
-normalization or support condition on `k` is needed, and the kernel may be real or complex.
+`E`, has the same integral as `k`. The averages of a bounded function `g` continuous at `0` against
+`k_ε` converge to `(∫ k) • g 0` as `ε → 0⁺` (`TauCeti.tendsto_integral_comp_inv_smul_smul`). No
+sign, normalization or support condition on `k` is needed, and the kernel may be real or complex.
 Applied to the translates `y ↦ f(· - y)` of an `Lᵖ` function, this is the `Lᵖ` convergence of the
 dilated convolutions `k_ε ⋆ f` to `(∫ k) • f`. -/
 
@@ -378,46 +374,6 @@ section Dilation
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedSpace 𝕜 V]
   [IsScalarTower ℝ 𝕜 V]
-
-/-- **Rescaling an average against a dilated kernel.** For `ε > 0`, the average of `g` against
-the dilation `ε⁻ᵈ k(ε⁻¹ • y)` of a kernel `k` is the average of `z ↦ g (ε • z)` against `k`. -/
-theorem integral_comp_inv_smul_smul {ε : ℝ} (hε : 0 < ε) (k : E → 𝕜) (g : E → V) :
-    ∫ y, ((ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) • g y ∂μ = ∫ z, k z • g (ε • z) ∂μ := by
-  set G : E → V := fun z ↦ k z • g (ε • z)
-  have h (y : E) :
-      ((ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) • g y = (ε ^ finrank ℝ E)⁻¹ • G (ε⁻¹ • y) := by
-    simp only [G, smul_assoc, smul_inv_smul₀ hε.ne']
-  simp_rw [h]
-  rw [integral_smul, Measure.integral_comp_inv_smul_of_nonneg μ G hε.le,
-    inv_smul_smul₀ (pow_ne_zero _ hε.ne')]
-
-/-- **Dilations of an integrable kernel concentrate at the origin.** Let `k` be an integrable
-real or complex kernel and let `g` be an almost everywhere strongly measurable, essentially
-bounded function with values in a Banach space, continuous at `0`. Then the averages of `g`
-against the dilations `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` converge to `(∫ k) • g 0` as `ε → 0⁺`. -/
-theorem tendsto_integral_comp_inv_smul_smul [CompleteSpace V] {k : E → 𝕜} (hk : Integrable k μ)
-    {g : E → V} (hg : AEStronglyMeasurable g μ) {C : ℝ} (hgC : ∀ᵐ y ∂μ, ‖g y‖ ≤ C)
-    (hg₀ : ContinuousAt g 0) :
-    Tendsto (fun ε : ℝ ↦ ∫ y, ((ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) • g y ∂μ)
-      (𝓝[>] 0) (𝓝 ((∫ y, k y ∂μ) • g 0)) := by
-  rw [← integral_smul_const]
-  refine Tendsto.congr' (eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) ↦
-    (integral_comp_inv_smul_smul hε k g).symm) ?_
-  -- Dominated convergence: `z ↦ g (ε • z)` is bounded by `C` and tends to `g 0` as `ε → 0`.
-  have hqmp {ε : ℝ} (hε : 0 < ε) := Measure.quasiMeasurePreserving_smul μ hε.ne'
-  refine tendsto_integral_filter_of_dominated_convergence (fun z ↦ ‖k z‖ * C)
-    (eventually_nhdsWithin_of_forall fun ε hε ↦
-      hk.aestronglyMeasurable.smul (hg.comp_quasiMeasurePreserving (hqmp hε)))
-    (eventually_nhdsWithin_of_forall fun ε hε ↦ by
-      filter_upwards [(hqmp hε).ae hgC] with z hz
-      rw [norm_smul]
-      exact mul_le_mul_of_nonneg_left hz (norm_nonneg _))
-    (hk.norm.mul_const _) (ae_of_all _ fun z ↦ ?_)
-  have hz : Tendsto (fun ε : ℝ ↦ ε • z) (𝓝[>] 0) (𝓝 0) := by
-    have h : Tendsto (fun ε : ℝ ↦ ε • z) (𝓝 0) (𝓝 ((0 : ℝ) • z)) := tendsto_id.smul_const z
-    rw [zero_smul] at h
-    exact h.mono_left nhdsWithin_le_nhds
-  exact (hg₀.tendsto.comp hz).const_smul (k z)
 
 /-- **Dilations of an integrable kernel act as an approximate identity on `Lᵖ`.** For an
 integrable real or complex kernel `k`, `1 ≤ p < ∞` and `f ∈ Lᵖ(μ; V)` with `V` a Banach space,
