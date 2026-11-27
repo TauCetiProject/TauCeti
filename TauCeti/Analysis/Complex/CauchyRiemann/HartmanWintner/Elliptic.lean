@@ -29,9 +29,11 @@ on `Ω`, where the coefficients `a, b, c : ℂ → ℝ` are of class `C^{1,α}` 
 Hartman and Wintner proved that either `u` vanishes near `z₀`, or `u` has a nonzero homogeneous
 leading polynomial of some degree `k ≥ 1` at `z₀`, together with the corresponding asymptotic of
 its derivative (`TauCeti.eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul_of_elliptic`).
-The leading polynomial is `h ↦ Re ((T h) ^ k • c)`, with `T` a real-linear automorphism of the
-plane and `c ≠ 0` in the complexification of `X`: a homogeneous harmonic polynomial read in the
-linear coordinates `T`, in which the principal part frozen at `z₀` is a multiple of the Laplacian.
+The leading polynomial is `h ↦ Re ((T h) ^ k • c)`, with `c ≠ 0` in the complexification of `X`
+and `T` a real-linear automorphism of the plane that carries the complex structure
+`TauCeti.ellipticStructure` of the principal part frozen at `z₀` to multiplication by `i`: a
+homogeneous harmonic polynomial read in the linear coordinates `T`, in which the principal part
+frozen at `z₀` is a multiple of the Laplacian.
 This is the analytic input to the Micallef–White normal form of a pseudoholomorphic curve, where
 the operator comes from an almost complex structure that is not constant.
 
@@ -62,6 +64,11 @@ polynomial `Re (w ^ k • c)` pulls back along `e z = De(z₀) (z - z₀) + o(�
 
 ## Main results
 
+* `TauCeti.ellipticStructure`: the complex structure of an elliptic principal part.
+* `TauCeti.exists_isothermal_chart_of_elliptic`: a centred `C²` isothermal chart for it, when the
+  coefficients are `C^{1,α}`.
+* `TauCeti.elliptic_comp_eq_smul_laplacian_add`: in such a chart the principal part is a multiple
+  of the Laplacian plus a first-order term.
 * `TauCeti.eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul_of_elliptic`: the
   Hartman–Wintner alternative at a zero of `u` for a `C^{1,α}` elliptic principal part.
 
@@ -87,22 +94,32 @@ namespace TauCeti
 section Structure
 
 /-- The complex structure `(a c - b²)^(-1/2) A ∘ i` of the principal part
-`a ∂ₛ² + 2 b ∂ₛ∂ₜ + c ∂ₜ²`, where `A` is the symmetric matrix `[[a, b], [b, c]]`. -/
-private noncomputable def ellipticStructure (a b c : ℝ) : ℂ →L[ℝ] ℂ :=
+`a ∂ₛ² + 2 b ∂ₛ∂ₜ + c ∂ₜ²`, where `A` is the symmetric matrix `[[a, b], [b, c]]`. It squares to `-1`
+where `a c - b² > 0` (`TauCeti.ellipticStructure_ellipticStructure`). -/
+noncomputable def ellipticStructure (a b c : ℝ) : ℂ →L[ℝ] ℂ :=
   (√(a * c - b ^ 2))⁻¹ •
     (reCLM.smulRight ((b : ℂ) + c * I) + imCLM.smulRight (-(a : ℂ) - b * I))
 
-private theorem ellipticStructure_apply (a b c : ℝ) (v : ℂ) :
+@[simp]
+theorem ellipticStructure_apply (a b c : ℝ) (v : ℂ) :
     ellipticStructure a b c v =
       (√(a * c - b ^ 2))⁻¹ • (v.re • ((b : ℂ) + c * I) + v.im • (-(a : ℂ) - b * I)) := by
   simp [ellipticStructure]
 
-private theorem ellipticStructure_ellipticStructure {a b c : ℝ} (h : 0 < a * c - b ^ 2) (v : ℂ) :
+/-- Where the principal part is elliptic, `ellipticStructure a b c` is a complex structure: it
+squares to `-1`. -/
+theorem ellipticStructure_ellipticStructure {a b c : ℝ} (h : 0 < a * c - b ^ 2) (v : ℂ) :
     ellipticStructure a b c (ellipticStructure a b c v) = -v := by
   have hs : √(a * c - b ^ 2) ^ 2 = a * c - b ^ 2 := Real.sq_sqrt h.le
   have hs0 : √(a * c - b ^ 2) ≠ 0 := (Real.sqrt_pos.mpr h).ne'
   simp only [ellipticStructure_apply]
-  apply Complex.ext <;> simp <;> field_simp <;> rw [hs] <;> ring
+  apply Complex.ext
+  · simp
+    field_simp
+    linear_combination v.re * hs
+  · simp
+    field_simp
+    linear_combination v.im * hs
 
 /-- The complex structure depends smoothly on the coefficients where the principal part is
 elliptic. -/
@@ -131,17 +148,13 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 /-- The trace of a symmetric bilinear form against the matrix `[[a, b], [b, c]]`, in a frame
 `p, q` which the conformal relations of the chart make orthogonal of equal length, is a multiple of
 its trace against the identity. -/
-private theorem elliptic_trace_eq (B : ℂ →L[ℝ] ℂ →L[ℝ] X) (hB : B 1 I = B I 1) {a b c s : ℝ}
-    {p q : ℂ} (h₁ : b • p + c • q = s • (I * p)) (h₂ : a • p + b • q = -(s • (I * q))) :
+private theorem elliptic_trace_eq (B : ℂ →L[ℝ] ℂ →L[ℝ] X) (hB : ∀ v w, B v w = B w v)
+    {a b c s : ℝ} {p q : ℂ} (h₁ : b • p + c • q = s • (I * p))
+    (h₂ : a • p + b • q = -(s • (I * q))) :
     a • B p p + (2 * b) • B p q + c • B q q =
       (s * (p.re * q.im - p.im * q.re)) • (B 1 1 + B I I) := by
-  have hsymm (v w : ℂ) : B v w = B w v := by
-    obtain ⟨x, y, rfl⟩ : ∃ x y : ℝ, v = x • (1 : ℂ) + y • I := ⟨v.re, v.im, by simp⟩
-    obtain ⟨x', y', rfl⟩ : ∃ x y : ℝ, w = x • (1 : ℂ) + y • I := ⟨w.re, w.im, by simp⟩
-    simp only [map_add, map_smul, add_apply, smul_apply, hB]
-    module
   calc a • B p p + (2 * b) • B p q + c • B q q = B p (a • p + b • q) + B q (b • p + c • q) := by
-        simp only [map_add, map_smul, hsymm q p]
+        simp only [map_add, map_smul, hB q p]
         module
     _ = s • (B q (I * p) - B p (I * q)) := by
         rw [h₁, h₂, map_neg, map_smul, map_smul, smul_sub]
@@ -152,26 +165,33 @@ private theorem elliptic_trace_eq (B : ℂ →L[ℝ] ℂ →L[ℝ] X) (hB : B 1 
         have hI (x y : ℝ) : I * (x • (1 : ℂ) + y • I) = (-y) • (1 : ℂ) + x • I := by
           apply Complex.ext <;> simp
         simp only [hI, map_add, map_smul, add_apply,
-          smul_apply, hsymm I 1]
+          smul_apply, hB I 1]
         simp only [Complex.add_re, Complex.add_im, Complex.real_smul, Complex.mul_re,
           Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.one_re, Complex.one_im,
           Complex.I_re, Complex.I_im]
         module
+
+/-- The determinant of a real-linear endomorphism `f` of the plane, in the basis `1, i`. -/
+private theorem det_eq_re_mul_im_sub_im_mul_re (f : ℂ →L[ℝ] ℂ) :
+    LinearMap.det (f : ℂ →ₗ[ℝ] ℂ) = (f 1).re * (f I).im - (f 1).im * (f I).re := by
+  rw [← LinearMap.det_toMatrix basisOneI, Matrix.det_fin_two]
+  simp [LinearMap.toMatrix_apply]
+  ring
 
 /-- **The principal part in isothermal coordinates.** If `e` is `C²` at `z` and its derivative
 intertwines the complex structure of the principal part `a ∂ₛ² + 2 b ∂ₛ∂ₜ + c ∂ₜ²` with
 multiplication by `i`, then for every `v` that is `C²` at `e z` the principal part of `v ∘ e` at
 `z` is `(a c - b²)^(1/2) det De(z)` times the Laplacian of `v` at `e z`, plus the first-order term
 `Dv(e z) (a e_ss + 2 b e_st + c e_tt)`. -/
-private theorem elliptic_comp_eq {v : ℂ → X} {e : ℂ → ℂ} {z : ℂ} (hv : ContDiffAt ℝ 2 v (e z))
-    (he : ContDiffAt ℝ 2 e z) {a b c : ℝ} (hD : 0 < a * c - b ^ 2)
+theorem elliptic_comp_eq_smul_laplacian_add {v : ℂ → X} {e : ℂ → ℂ} {z : ℂ}
+    (hv : ContDiffAt ℝ 2 v (e z)) (he : ContDiffAt ℝ 2 e z) {a b c : ℝ} (hD : 0 < a * c - b ^ 2)
     (hJ : ∀ w, fderiv ℝ e z (ellipticStructure a b c w) = I * fderiv ℝ e z w) :
     a • fderiv ℝ (fderiv ℝ (v ∘ e)) z 1 1 + (2 * b) • fderiv ℝ (fderiv ℝ (v ∘ e)) z 1 I +
         c • fderiv ℝ (fderiv ℝ (v ∘ e)) z I I =
-      (√(a * c - b ^ 2) * ((fderiv ℝ e z 1).re * (fderiv ℝ e z I).im -
-          (fderiv ℝ e z 1).im * (fderiv ℝ e z I).re)) • Δ v (e z) +
+      (√(a * c - b ^ 2) * LinearMap.det (fderiv ℝ e z : ℂ →ₗ[ℝ] ℂ)) • Δ v (e z) +
         fderiv ℝ v (e z) (a • fderiv ℝ (fderiv ℝ e) z 1 1 +
           (2 * b) • fderiv ℝ (fderiv ℝ e) z 1 I + c • fderiv ℝ (fderiv ℝ e) z I I) := by
+  rw [det_eq_re_mul_im_sub_im_mul_re]
   set P := fderiv ℝ e z
   set B := fderiv ℝ (fderiv ℝ v) (e z)
   have hs : √(a * c - b ^ 2) ≠ 0 := (Real.sqrt_pos.mpr hD).ne'
@@ -194,7 +214,7 @@ private theorem elliptic_comp_eq {v : ℂ → X} {e : ℂ → ℂ} {z : ℂ} (hv
       Matrix.cons_val_fin_one, B]
   rw [fderiv_fderiv_comp_apply hv he, fderiv_fderiv_comp_apply hv he,
     fderiv_fderiv_comp_apply hv he, hΔ,
-    ← elliptic_trace_eq B ((hv.isSymmSndFDerivAt (by simp)) 1 I) h₁ h₂]
+    ← elliptic_trace_eq B (hv.isSymmSndFDerivAt (by simp)) h₁ h₂]
   simp only [map_add, map_smul, smul_add]
   abel
 
@@ -202,7 +222,7 @@ private theorem elliptic_comp_eq {v : ℂ → X} {e : ℂ → ℂ} {z : ℂ} (hv
 `C^{1,α}` on an open set `Ω`, `0 < α < 1`, and `a c - b² > 0` at `z₀ ∈ Ω`, then `z₀` has a
 centred `C²` chart with `C²` inverse, with source in `Ω` on which `a c - b² > 0`, whose derivative
 intertwines the complex structure of the principal part with multiplication by `i`. -/
-private theorem exists_isothermal_chart_elliptic {Ω : Set ℂ} (hΩ : IsOpen Ω) {a b c : ℂ → ℝ}
+theorem exists_isothermal_chart_of_elliptic {Ω : Set ℂ} (hΩ : IsOpen Ω) {a b c : ℂ → ℝ}
     {α Ha Hb Hc : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) (ha : ContDiffOn ℝ 1 a Ω)
     (haH : HolderOnWith Ha α (fderiv ℝ a) Ω) (hb : ContDiffOn ℝ 1 b Ω)
     (hbH : HolderOnWith Hb α (fderiv ℝ b) Ω) (hc : ContDiffOn ℝ 1 c Ω)
@@ -215,19 +235,15 @@ private theorem exists_isothermal_chart_elliptic {Ω : Set ℂ} (hΩ : IsOpen Ω
   -- The coefficient map `p = (a, b, c)` is `C^{1,α}` on `Ω`.
   set p : ℂ → ℝ × ℝ × ℝ := fun z ↦ (a z, b z, c z)
   have hp : ContDiffOn ℝ 1 p Ω := ha.prodMk (hb.prodMk hc)
-  have hpH : ∃ H, HolderOnWith H α (fderiv ℝ p) Ω := by
+  have hpH : HolderOnWith (max Ha (max Hb Hc)) α (fderiv ℝ p) Ω := by
     open ContinuousLinearMap in
-    let L₁ := compL ℝ ℂ ℝ (ℝ × ℝ × ℝ) (inl ℝ ℝ (ℝ × ℝ))
-    let L₂ := compL ℝ ℂ ℝ (ℝ × ℝ × ℝ) ((inr ℝ ℝ (ℝ × ℝ)).comp (inl ℝ ℝ ℝ))
-    let L₃ := compL ℝ ℂ ℝ (ℝ × ℝ × ℝ) ((inr ℝ ℝ (ℝ × ℝ)).comp (inr ℝ ℝ ℝ))
-    refine ⟨_, (((L₁.lipschitzWith.comp_holderOnWith haH).add
-      (L₂.lipschitzWith.comp_holderOnWith hbH)).add (L₃.lipschitzWith.comp_holderOnWith hcH)).congr
-        fun z hz ↦ ?_⟩
+    refine ((prodₗᵢ ℝ).isometry.comp_holderOnWith
+      (haH.prodMk ((prodₗᵢ ℝ).isometry.comp_holderOnWith (hbH.prodMk hcH)))).congr
+        fun z hz ↦ ?_
     have hd (f : ℂ → ℝ) (hf : ContDiffOn ℝ 1 f Ω) : DifferentiableAt ℝ f z :=
       (hf.contDiffAt (hΩ.mem_nhds hz)).differentiableAt one_ne_zero
     rw [(hd a ha).fderiv_prodMk ((hd b hb).prodMk (hd c hc)), (hd b hb).fderiv_prodMk (hd c hc)]
-    ext w <;> simp [L₁, L₂, L₃]
-  obtain ⟨Hp, hpH⟩ := hpH
+    rfl
   -- So is the complex structure `J = Φ ∘ p` near `z₀`, and it squares to `-1` where `D > 0`.
   obtain ⟨r, hr, hrΩ, hJ, H, hJH⟩ := exists_ball_contDiffOn_holderOnWith_fderiv_comp hα1.le
     (hΩ.mem_nhds hz₀) hp hpH (contDiffAt_ellipticStructure (q := p z₀) hell)
@@ -254,17 +270,24 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 open Complexification
 
+/-- The derivative of `w ↦ Re (w ^ k • c)` at `y` sends `h` to `Re ((k h y ^ (k - 1)) • c)`. -/
+private theorem fderiv_re_pow_smul_apply (k : ℕ) (c : Complexification X) (y h : ℂ) :
+    fderiv ℝ (fun w ↦ (w ^ k • c).re) y h = (h • ((k : ℂ) * y ^ (k - 1)) • c).re := by
+  simpa using fderiv_re_sub_pow_smul_apply k c 0 y h
+
+/-- The norm of `Re ((k h w) • c)` is at most `k ‖c‖ ‖w‖ ‖h‖`. -/
+private theorem norm_re_smul_natCast_mul_smul_le (k : ℕ) (c : Complexification X) (h w : ℂ) :
+    ‖(h • ((k : ℂ) * w) • c).re‖ ≤ k * ‖c‖ * ‖w‖ * ‖h‖ := by
+  refine (norm_re_le _).trans (le_of_eq ?_)
+  rw [norm_smul, norm_smul, norm_mul, Complex.norm_natCast]
+  ring
+
 /-- The derivative of `w ↦ Re (w ^ k • c)` at `y` is bounded by `k ‖c‖ ‖y ^ (k - 1)‖`. -/
 private theorem norm_fderiv_re_pow_smul_le (k : ℕ) (c : Complexification X) (y : ℂ) :
     ‖fderiv ℝ (fun w ↦ (w ^ k • c).re) y‖ ≤ k * ‖c‖ * ‖y ^ (k - 1)‖ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
-  have hD (y : ℂ) :
-      fderiv ℝ (fun w ↦ (w ^ k • c).re) y h = (h • ((k : ℂ) * y ^ (k - 1)) • c).re := by
-    simpa using fderiv_re_sub_pow_smul_apply k c 0 y h
-  rw [hD]
-  refine (norm_re_le _).trans (le_of_eq ?_)
-  rw [norm_smul, norm_smul, norm_mul, Complex.norm_natCast]
-  ring
+  rw [fderiv_re_pow_smul_apply]
+  exact norm_re_smul_natCast_mul_smul_le k c h _
 
 /-- The derivative of `w ↦ Re (w ^ k • c)` changes by at most
 `k ‖c‖ ‖y ^ (k - 1) - y' ^ (k - 1)‖` from `y` to `y'`. -/
@@ -272,13 +295,18 @@ private theorem norm_fderiv_re_pow_smul_sub_le (k : ℕ) (c : Complexification X
     ‖fderiv ℝ (fun w ↦ (w ^ k • c).re) y - fderiv ℝ (fun w ↦ (w ^ k • c).re) y'‖ ≤
       k * ‖c‖ * ‖y ^ (k - 1) - y' ^ (k - 1)‖ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
-  have hD (y : ℂ) :
-      fderiv ℝ (fun w ↦ (w ^ k • c).re) y h = (h • ((k : ℂ) * y ^ (k - 1)) • c).re := by
-    simpa using fderiv_re_sub_pow_smul_apply k c 0 y h
-  rw [sub_apply, hD, hD, ← Complexification.sub_re, ← smul_sub, ← sub_smul, ← mul_sub]
-  refine (norm_re_le _).trans (le_of_eq ?_)
-  rw [norm_smul, norm_smul, norm_mul, Complex.norm_natCast]
-  ring
+  rw [sub_apply, fderiv_re_pow_smul_apply, fderiv_re_pow_smul_apply, ← Complexification.sub_re,
+    ← smul_sub, ← sub_smul, ← mul_sub]
+  exact norm_re_smul_natCast_mul_smul_le k c h _
+
+/-- If `e z₀ = 0` and `e` has derivative `T` at `z₀`, then `e z = T (z - z₀) + o(‖z - z₀‖)` and
+`e z = O(‖z - z₀‖)`. -/
+private theorem isLittleO_sub_apply_sub_and_isBigO {e : ℂ → ℂ} {z₀ : ℂ} {T : ℂ →L[ℝ] ℂ}
+    (hTd : HasFDerivAt e T z₀) (he₀ : e z₀ = 0) :
+    (fun z ↦ e z - T (z - z₀)) =o[𝓝 z₀] (fun z ↦ ‖z - z₀‖) ∧
+      e =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ :=
+  ⟨by simpa [he₀] using hTd.isLittleO.norm_right,
+    by simpa [he₀] using hTd.isBigO_sub.norm_right⟩
 
 /-- **The leading polynomial pulls back along a differentiable map.** If `e z₀ = 0`, `e` has
 derivative `T` at `z₀`, `v w = Re (w ^ k • c) + o(‖w‖ ^ k)` at `0` and `u = v ∘ e` near `z₀`, then
@@ -288,9 +316,7 @@ private theorem isLittleO_sub_re_pow_smul_of_eventuallyEq_comp {u v : ℂ → X}
     (huv : u =ᶠ[𝓝 z₀] v ∘ e) {k : ℕ} {c : Complexification X}
     (h₀ : (fun w ↦ v w - (w ^ k • c).re) =o[𝓝 0] fun w ↦ ‖w‖ ^ k) :
     (fun z ↦ u z - ((T (z - z₀)) ^ k • c).re) =o[𝓝 z₀] (fun z ↦ ‖z - z₀‖ ^ k) := by
-  have hlin : (fun z ↦ e z - T (z - z₀)) =o[𝓝 z₀] fun z ↦ ‖z - z₀‖ := by
-    simpa [he₀] using hTd.isLittleO.norm_right
-  have heO : e =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ := by simpa [he₀] using hTd.isBigO_sub.norm_right
+  obtain ⟨hlin, heO⟩ := isLittleO_sub_apply_sub_and_isBigO hTd he₀
   -- `u z = v (e z)`, and `Re (w ^ k • c)` moves by `o(‖z - z₀‖ ^ k)` from `e z` to `T (z - z₀)`.
   have hA := (h₀.comp_tendsto (he₀ ▸ hTd.continuousAt.tendsto)).trans_isBigO
     (heO.norm_left.pow k)
@@ -317,10 +343,8 @@ private theorem isLittleO_fderiv_sub_fderiv_re_pow_smul_of_eventuallyEq_comp {u 
     (fun z ↦ fderiv ℝ u z - fderiv ℝ (fun w ↦ ((T (w - z₀)) ^ k • c).re) z) =o[𝓝 z₀]
       fun z ↦ ‖z - z₀‖ ^ (k - 1) := by
   have hTd : HasFDerivAt e T z₀ := hT ▸ he.self_of_nhds.hasFDerivAt
-  have hlin : (fun z ↦ e z - T (z - z₀)) =o[𝓝 z₀] fun z ↦ ‖z - z₀‖ := by
-    simpa [he₀] using hTd.isLittleO.norm_right
+  obtain ⟨hlin, heO⟩ := isLittleO_sub_apply_sub_and_isBigO hTd he₀
   have hTO : (fun z ↦ T (z - z₀)) =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ := (T.isBigO_sub _ _).norm_right
-  have heO : e =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ := by simpa [he₀] using hTd.isBigO_sub.norm_right
   have htend : Tendsto e (𝓝 z₀) (𝓝 0) := he₀ ▸ hTd.continuousAt.tendsto
   set G := fderiv ℝ (fun w : ℂ ↦ (w ^ k • c).re)
   -- The chain rule on both sides.
@@ -377,6 +401,12 @@ section Expansion
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
+/-- A map agrees near each point `z` of the source of `e` with its reading `u ∘ e⁻¹` in the chart,
+composed with `e`. -/
+private theorem eventuallyEq_comp_symm_comp {Y : Type*} {u : ℂ → Y}
+    (e : OpenPartialHomeomorph ℂ ℂ) {z : ℂ} (hz : z ∈ e.source) : u =ᶠ[𝓝 z] (u ∘ e.symm) ∘ e :=
+  (e.eventually_left_inverse hz).mono fun y hy ↦ by simp [hy]
+
 /-- In an isothermal chart `e` of the principal part, `u` and `v = u ∘ e⁻¹` are related at each
 point `z` of the source by `a u_ss + 2 b u_st + c u_tt = λ Δv(e z) + Dv(e z) (a e_ss + 2 b e_st +
 c e_tt)` and `Du(z) = Dv(e z) ∘ De(z)`. -/
@@ -389,8 +419,8 @@ private theorem elliptic_eq_and_fderiv_eq_of_mem_source {Ω : Set ℂ} (hΩ : Is
     {z : ℂ} (hz : z ∈ e.source) :
     a z • fderiv ℝ (fderiv ℝ u) z 1 1 + (2 * b z) • fderiv ℝ (fderiv ℝ u) z 1 I +
         c z • fderiv ℝ (fderiv ℝ u) z I I =
-      (√(a z * c z - b z ^ 2) * ((fderiv ℝ e z 1).re * (fderiv ℝ e z I).im -
-          (fderiv ℝ e z 1).im * (fderiv ℝ e z I).re)) • Δ (u ∘ e.symm) (e z) +
+      (√(a z * c z - b z ^ 2) * LinearMap.det (fderiv ℝ e z : ℂ →ₗ[ℝ] ℂ)) •
+          Δ (u ∘ e.symm) (e z) +
         fderiv ℝ (u ∘ e.symm) (e z) (a z • fderiv ℝ (fderiv ℝ e) z 1 1 +
           (2 * b z) • fderiv ℝ (fderiv ℝ e) z 1 I + c z • fderiv ℝ (fderiv ℝ e) z I I) ∧
       fderiv ℝ u z = (fderiv ℝ (u ∘ e.symm) (e z)).comp (fderiv ℝ e z) := by
@@ -399,11 +429,10 @@ private theorem elliptic_eq_and_fderiv_eq_of_mem_source {Ω : Set ℂ} (hΩ : Is
     refine ContDiffAt.comp (e z) ?_ (hes2.contDiffAt (e.open_target.mem_nhds (e.map_source hz)))
     rw [e.left_inv hz]
     exact hu.contDiffAt (hΩ.mem_nhds (heΩ hz))
-  have hev : u =ᶠ[𝓝 z] (u ∘ e.symm) ∘ e :=
-    eventually_of_mem (e.open_source.mem_nhds hz) fun y hy ↦ by simp [e.left_inv hy]
+  have hev := eventuallyEq_comp_symm_comp (u := u) e hz
   refine ⟨?_, ?_⟩
   · rw [hev.fderiv.fderiv_eq]
-    exact elliptic_comp_eq hv hez (heJ z hz).1 (heJ z hz).2
+    exact elliptic_comp_eq_smul_laplacian_add hv hez (heJ z hz).1 (heJ z hz).2
   · rw [hev.fderiv_eq]
     exact fderiv_comp z (hv.differentiableAt two_ne_zero) (hez.differentiableAt two_ne_zero)
 
@@ -420,8 +449,7 @@ private theorem norm_laplacian_comp_symm_le {Ω : Set ℂ} (hΩ : IsOpen Ω) {a 
     (heJ : ∀ z ∈ e.source, 0 < a z * c z - b z ^ 2 ∧
       ∀ w, fderiv ℝ e z (ellipticStructure (a z) (b z) (c z) w) = I * fderiv ℝ e z w)
     {z : ℂ} (hz : z ∈ e.source) {m M₁ M₂ : ℝ} (hm : 0 < m)
-    (hΛ : m ≤ |√(a z * c z - b z ^ 2) * ((fderiv ℝ e z 1).re * (fderiv ℝ e z I).im -
-      (fderiv ℝ e z 1).im * (fderiv ℝ e z I).re)|)
+    (hΛ : m ≤ |√(a z * c z - b z ^ 2) * LinearMap.det (fderiv ℝ e z : ℂ →ₗ[ℝ] ℂ)|)
     (hL : ‖a z • fderiv ℝ (fderiv ℝ e) z 1 1 + (2 * b z) • fderiv ℝ (fderiv ℝ e) z 1 I +
       c z • fderiv ℝ (fderiv ℝ e) z I I‖ ≤ M₁) (hD : ‖fderiv ℝ e z‖ ≤ M₂) :
     ‖Δ (u ∘ e.symm) (e z)‖ ≤ (|K| * (1 + M₂) + M₁) / m *
@@ -461,8 +489,7 @@ private theorem exists_laplacian_bound_comp_symm {Ω : Set ℂ} (hΩ : IsOpen Ω
       ∀ w, fderiv ℝ e z (ellipticStructure (a z) (b z) (c z) w) = I * fderiv ℝ e z w) :
     ∃ Ω' : Set ℂ, IsOpen Ω' ∧ e z₀ ∈ Ω' ∧ Ω' ⊆ e.target ∧ ∃ K' : ℝ, ∀ w ∈ Ω',
       ‖Δ (u ∘ e.symm) w‖ ≤ K' * (‖(u ∘ e.symm) w‖ + ‖fderiv ℝ (u ∘ e.symm) w‖) := by
-  set Λ : ℂ → ℝ := fun z ↦ √(a z * c z - b z ^ 2) * ((fderiv ℝ e z 1).re * (fderiv ℝ e z I).im -
-    (fderiv ℝ e z 1).im * (fderiv ℝ e z I).re)
+  set Λ : ℂ → ℝ := fun z ↦ √(a z * c z - b z ^ 2) * LinearMap.det (fderiv ℝ e z : ℂ →ₗ[ℝ] ℂ)
   set L : ℂ → ℂ := fun z ↦ a z • fderiv ℝ (fderiv ℝ e) z 1 1 +
     (2 * b z) • fderiv ℝ (fderiv ℝ e) z 1 I + c z • fderiv ℝ (fderiv ℝ e) z I I
   have hsrc : e.source ∈ 𝓝 z₀ := e.open_source.mem_nhds hce
@@ -470,20 +497,18 @@ private theorem exists_laplacian_bound_comp_symm {Ω : Set ℂ} (hΩ : IsOpen Ω
   -- `Λ` does not vanish at `z₀`, and `Λ`, `L` and `De` are continuous there.
   have hΛ0 : Λ z₀ ≠ 0 := by
     obtain ⟨T, hT⟩ := e.isInvertible_fderiv_of_contDiffOn he2 hes2 two_ne_zero hce
-    -- The second factor is the determinant of `De(z₀)` in the basis `1, i`.
-    have h := (LinearEquiv.isUnit_det' T.toLinearEquiv).ne_zero
-    rw [← LinearMap.det_toMatrix Complex.basisOneI, Matrix.det_fin_two] at h
     refine mul_ne_zero (Real.sqrt_pos.mpr (heJ z₀ hce).1).ne' ?_
     rw [← hT]
-    simpa [LinearMap.toMatrix_apply, mul_comm] using h
-  have hDe : ContinuousAt (fderiv ℝ e) z₀ :=
-    (he2.continuousOn_fderiv_of_isOpen e.open_source (by norm_num)).continuousAt hsrc
+    exact (LinearEquiv.isUnit_det' T.toLinearEquiv).ne_zero
+  have hDe : ContinuousAt (fderiv ℝ e) z₀ := (he2.contDiffAt hsrc).continuousAt_fderiv two_ne_zero
   have hD2 : ContinuousAt (fderiv ℝ (fderiv ℝ e)) z₀ :=
     (he2.contDiffAt hsrc).continuousAt_fderiv_fderiv le_rfl
   have ha' := ha.continuousAt hΩz
   have hb' := hb.continuousAt hΩz
   have hc' := hc.continuousAt hΩz
-  have hΛc : ContinuousAt Λ z₀ := by fun_prop
+  have hΛc : ContinuousAt Λ z₀ :=
+    (by fun_prop : ContinuousAt (fun z ↦ √(a z * c z - b z ^ 2)) z₀).mul
+      (ContinuousLinearMap.continuous_det.continuousAt.comp hDe)
   have hLc : ContinuousAt L z₀ := by fun_prop
   have hm : 0 < |Λ z₀| / 2 := half_pos (abs_pos.mpr hΛ0)
   obtain ⟨ρ, hρ, hρs⟩ := Metric.eventually_nhds_iff_ball.mp <| (eventually_mem_set.2 hsrc).and <|
@@ -508,7 +533,9 @@ variable [FiniteDimensional ℝ X]
 on `Ω`, where `u_ss`, `u_st` and `u_tt` are the second derivatives in the directions `1` and `i`.
 At a zero `z₀ ∈ Ω` of `u` at which the principal part is elliptic, `a c - b² > 0`, either `u`
 vanishes near `z₀`, or there are `k ≥ 1`, a nonzero `c'` in the complexification of `X` and a
-real-linear automorphism `T` of the plane such that `u` is the nonzero homogeneous polynomial
+real-linear automorphism `T` of the plane, carrying the complex structure
+`ellipticStructure (a z₀) (b z₀) (c z₀)` of the frozen principal part to multiplication by `i`,
+such that `u` is the nonzero homogeneous polynomial
 `Re ((T (z - z₀)) ^ k • c')` of degree `k` up to `o(‖z - z₀‖ ^ k)`, and its derivative is the
 derivative of that polynomial up to `o(‖z - z₀‖ ^ (k - 1))`. -/
 theorem eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul_of_elliptic {Ω : Set ℂ}
@@ -521,19 +548,18 @@ theorem eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul_of_elliptic {Ω :
       c z • fderiv ℝ (fderiv ℝ u) z I I‖ ≤ K * (‖u z‖ + ‖fderiv ℝ u z‖))
     {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (hell : 0 < a z₀ * c z₀ - b z₀ ^ 2) (hu₀ : u z₀ = 0) :
     (∀ᶠ z in 𝓝 z₀, u z = 0) ∨ ∃ (k : ℕ) (c' : Complexification X) (T : ℂ ≃L[ℝ] ℂ),
-      0 < k ∧ c' ≠ 0 ∧
+      0 < k ∧ c' ≠ 0 ∧ (∀ w, T (ellipticStructure (a z₀) (b z₀) (c z₀) w) = I * T w) ∧
       (fun z ↦ u z - ((T (z - z₀)) ^ k • c').re) =o[𝓝 z₀] (fun z ↦ ‖z - z₀‖ ^ k) ∧
       (fun z ↦ fderiv ℝ u z - fderiv ℝ (fun w ↦ ((T (w - z₀)) ^ k • c').re) z) =o[𝓝 z₀]
         fun z ↦ ‖z - z₀‖ ^ (k - 1) := by
   -- Read `u` in an isothermal chart `e` of the principal part, centred at `z₀`.
   obtain ⟨e, hce, he0, heΩ, he2, hes2, heJ⟩ :=
-    exists_isothermal_chart_elliptic hΩ hα0 hα1 ha haH hb hbH hc hcH hz₀ hell
+    exists_isothermal_chart_of_elliptic hΩ hα0 hα1 ha haH hb hbH hc hcH hz₀ hell
   obtain ⟨Ω', hΩ', h0Ω', hΩ't, K', hK'⟩ := exists_laplacian_bound_comp_symm hΩ ha.continuousOn
     hb.continuousOn hc.continuousOn hu hK hce heΩ he2 hes2 heJ
   have hv2 : ContDiffOn ℝ 2 (u ∘ e.symm) Ω' :=
     hu.comp (hes2.mono hΩ't) fun w hw ↦ heΩ (e.map_target (hΩ't hw))
-  have huv : u =ᶠ[𝓝 z₀] (u ∘ e.symm) ∘ e :=
-    eventually_of_mem (e.open_source.mem_nhds hce) fun y hy ↦ by simp [e.left_inv hy]
+  have huv := eventuallyEq_comp_symm_comp (u := u) e hce
   -- Apply the expansion for the Laplacian to `v = u ∘ e⁻¹` at `e z₀ = 0`.
   rcases eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul hΩ' hv2 hK' h0Ω'
       (by simp [e.left_inv hce, hu₀]) with h0 | ⟨k, c', hk, hc', h₀, h₁⟩
@@ -542,12 +568,14 @@ theorem eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul_of_elliptic {Ω :
   rw [he0] at h₀ h₁
   simp only [sub_zero] at h₀ h₁
   have hDe : ContinuousAt (fderiv ℝ e) z₀ :=
-    (he2.continuousOn_fderiv_of_isOpen e.open_source (by norm_num)).continuousAt
-      (e.open_source.mem_nhds hce)
+    (he2.contDiffAt (e.open_source.mem_nhds hce)).continuousAt_fderiv two_ne_zero
   have he : ∀ᶠ z in 𝓝 z₀, DifferentiableAt ℝ e z :=
     eventually_of_mem (e.open_source.mem_nhds hce) fun z hz ↦
       (he2.contDiffAt (e.open_source.mem_nhds hz)).differentiableAt two_ne_zero
-  refine .inr ⟨k, c', T, hk, hc',
+  refine .inr ⟨k, c', T, hk, hc', fun w ↦ by
+    have h := (heJ z₀ hce).2 w
+    rw [← hT] at h
+    exact h,
     isLittleO_sub_re_pow_smul_of_eventuallyEq_comp (hT ▸ he.self_of_nhds.hasFDerivAt) he0 huv h₀,
     isLittleO_fderiv_sub_fderiv_re_pow_smul_of_eventuallyEq_comp he he0 hT.symm hDe
       (eventually_of_mem (hΩ'.mem_nhds (he0 ▸ h0Ω')) fun w hw ↦

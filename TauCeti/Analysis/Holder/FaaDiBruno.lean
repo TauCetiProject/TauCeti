@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Holder.IsBigO
-import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.Normed.Operator.Holder
 
 /-!
