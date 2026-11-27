@@ -135,10 +135,6 @@ section
 
 variable [NeZero N]
 
-private theorem zmodLift_apply {G : Type*} [Group G] (g : G) (hg : g ^ N = 1)
-    (a : ZMod N) : (zmodLift g hg a).toMul = g ^ a.val :=
-  zmodMonoidHomEquiv_symm_apply ⟨g, hg⟩ a
-
 variable (N) in
 /-- **Homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of `G` killed by `N`**, through the
 images of `(1, 0)` and `(0, 1)`. -/
@@ -146,17 +142,19 @@ noncomputable def zmodProdMonoidHomEquiv (G : Type*) [CommGroup G] :
     (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} where
   toFun φ := (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative),
     zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative))
-  invFun g := ((zmodLift g.1.val g.1.property).coprod
-      (zmodLift g.2.val g.2.property)).toMultiplicativeLeft
+  invFun g :=
+    ((AddMonoidHom.toMultiplicativeLeft.symm ((zmodMonoidHomEquiv N G).symm g.1)).coprod
+      (AddMonoidHom.toMultiplicativeLeft.symm
+        ((zmodMonoidHomEquiv N G).symm g.2))).toMultiplicativeLeft
   left_inv φ := by
     refine MonoidHom.ext fun z ↦ ?_
     obtain ⟨a, b, rfl⟩ : ∃ a b : ℕ, z = .ofAdd ((a : ZMod N), (b : ZMod N)) :=
       ⟨z.toAdd.1.val, z.toAdd.2.val, by simp⟩
     have hab : ((a : ZMod N), (b : ZMod N)) = a • (1, 0) + b • (0, 1) := by ext <;> simp
     rw [hab, ofAdd_add, ofAdd_nsmul, ofAdd_nsmul, map_mul, map_pow, map_pow]
-    simp [zmodMonoidHomEquiv, zmodLift_one]
+    simp [Prod.mk_zero_zero]
   right_inv g := by
-    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;> simp [zmodMonoidHomEquiv, zmodLift_one]
+    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;> simp
 
 /-- The first element of `G` of a homomorphism `φ : (ℤ/Nℤ)² →* G` is `φ (1, 0)`. -/
 @[simp]
@@ -178,7 +176,7 @@ to `g ^ a.val * h ^ b.val`. -/
 theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G]
     (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ZMod N) :
     (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.val ^ a.val * g.2.val ^ b.val := by
-  simp [zmodProdMonoidHomEquiv, zmodLift_apply]
+  simp [zmodProdMonoidHomEquiv]
 
 end
 

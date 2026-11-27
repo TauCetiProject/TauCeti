@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.Modular.Generators
 import TauCeti.Algebra.Group.Submonoid.Torsion
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.GroupTheory.Index.Torsion
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.GroupTheory.TriangleGroup.FreeProduct
@@ -168,22 +169,16 @@ theorem finTwoEquivCoprod_psl2zEquivCoprodI (g : PSL(2, ℤ)) :
 /-- `psl2zEquivCoprodI` maps `S` to the generator of the factor at `0 : Fin 2`. -/
 @[simp]
 theorem psl2zEquivCoprodI_coe_S :
-    psl2zEquivCoprodI (S : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) :=
-  (congrArg (Monoid.CoprodI.finTwoEquivCoprod
-      fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
-    psl2zEquivCoprod_coe_S).trans
-    (Monoid.CoprodI.finTwoEquivCoprod_symm_inl
-      (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1))
+    psl2zEquivCoprodI (S : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) := by
+  apply (Monoid.CoprodI.finTwoEquivCoprod _).injective
+  simp; rfl
 
 /-- `psl2zEquivCoprodI` maps `R` to the generator of the factor at `1 : Fin 2`. -/
 @[simp]
 theorem psl2zEquivCoprodI_coe_R :
-    psl2zEquivCoprodI (R : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) :=
-  (congrArg (Monoid.CoprodI.finTwoEquivCoprod
-      fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
-    psl2zEquivCoprod_coe_R).trans
-    (Monoid.CoprodI.finTwoEquivCoprod_symm_inr
-      (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1))
+    psl2zEquivCoprodI (R : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) := by
+  apply (Monoid.CoprodI.finTwoEquivCoprod _).injective
+  simp; rfl
 
 /-- `psl2zEquivCoprodI` maps the cusp translation `T` to
 `of 0 (ofAdd 1) * of 1 (ofAdd 1)`. -/
@@ -342,11 +337,6 @@ theorem natCard_abelianization_psl2z :
 @[simp]
 theorem index_commutator_psl2z :
     (commutator PSL(2, ℤ)).index = 6 := by
-  rw [Subgroup.index_eq_card,
-    Nat.card_congr
-      ((QuotientGroup.quotientMulEquivOfEq (Group.Abelianization.ker_of PSL(2, ℤ)).symm).trans
-        (QuotientGroup.quotientKerEquivOfSurjective _
-          (Group.Abelianization.surjective_of PSL(2, ℤ)))).toEquiv,
-    natCard_abelianization_psl2z]
+  rw [Subgroup.index_commutator_eq_natCard_abelianization, natCard_abelianization_psl2z]
 
 end TauCeti.ModularGroup

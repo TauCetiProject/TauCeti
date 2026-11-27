@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.Algebra.Group.Conj
+import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.GroupTheory.CoprodI.Word
 import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Torsion
 import TauCeti.GroupTheory.GraphOfGroups.FreeProduct
@@ -105,7 +107,7 @@ theorem exists_isConj_of_isOfFinOrder_of_ne_one {g : CoprodI G}
     ∃ (i : ι) (x : G i), x ≠ 1 ∧ IsConj g (of x) ∧ IsOfFinOrder x := by
   let e := TauCeti.GraphOfGroups.coprodIEquivπ₁ G
   obtain ⟨b, p, y, hy, hp⟩ :=
-    TauCeti.GraphOfGroups.π₁.exists_vertexHom_eq_of_isOfFinOrder (e.toMonoidHom.isOfFinOrder hg)
+    TauCeti.GraphOfGroups.π₁.exists_vertexHom_eq_of_isOfFinOrder (e.isOfFinOrder_iff.mpr hg)
   rcases TauCeti.SerreGraph.starRose.eq_center_or_eq_tip b with rfl | ⟨i, rfl⟩
   · have hy1 : y = 1 := Subsingleton.elim _ _
     rw [hy1, map_one] at hp
@@ -117,15 +119,12 @@ theorem exists_isConj_of_isOfFinOrder_of_ne_one {g : CoprodI G}
         (TauCeti.SerreGraph.starRose.center ι PEmpty)
         (TauCeti.SerreGraph.starRose.tip _ i))
     have hconj_π₁ : IsConj (e g) (e (of y')) := by
-      change TauCeti.GraphOfGroups.π₁.vertexHom p y = e g at hp
       rw [← hp]
-      dsimp only [e]
       rw [TauCeti.GraphOfGroups.coprodIEquivπ₁_of G y',
         TauCeti.GraphOfGroups.π₁.vertexHom_eq_conj_comp_apply q p y]
       exact (isConj_iff.mpr
         ⟨TauCeti.GraphOfGroups.π₁.mk (p.comp q.reverse), by simp [q, y', mul_assoc]⟩).symm
-    have hconj : IsConj g (of y') := by
-      simpa using e.symm.toMonoidHom.map_isConj hconj_π₁
+    have hconj : IsConj g (of y') := e.isConj_apply_iff.mp hconj_π₁
     refine ⟨i, y', fun hy1 => hg1 ?_, hconj, hy⟩
     simpa [hy1] using hconj
 

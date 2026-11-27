@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
 public import TauCeti.GroupTheory.TriangleGroup.Basic
 import TauCeti.Algebra.Group.Conj
 import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.Data.ZMod.MonoidHomEquiv
-import TauCeti.GroupTheory.Abelianization.Coprod
 import TauCeti.GroupTheory.Coprod.Torsion
 
 /-!
@@ -28,9 +26,7 @@ As consequences of this decomposition:
 * `x a b 0` and `y a b 0` have exact orders `a` and `b`, while `z a b 0` has infinite order
   (`orderOf (z a b 0) = 0`) whenever `a ≠ 1` and `b ≠ 1`;
 * every element of finite order in `Δ(a, b, 0)` is conjugate to an integer power of `x a b 0` or
-  `y a b 0`;
-* the abelianization of `Δ(a, b, 0)`, written additively, is `ZMod a × ZMod b` (and `ZMod (a * b)`
-  when `a` and `b` are coprime).
+  `y a b 0`.
 
 ## Main definitions and results
 
@@ -44,9 +40,6 @@ As consequences of this decomposition:
   `TauCeti.TriangleGroup.orderOf_z_zero`: exact orders of the three generators.
 * `TauCeti.TriangleGroup.exists_isConj_x_zpow_or_y_zpow_of_isOfFinOrder`: torsion classification
   in `Δ(a, b, 0)`.
-* `TauCeti.TriangleGroup.abelianizationZeroAddEquivProd`,
-  `TauCeti.TriangleGroup.abelianizationZeroAddEquivProd_of`,
-  `TauCeti.TriangleGroup.abelianizationZeroAddEquivZMod`: additive abelianization of `Δ(a, b, 0)`.
 -/
 
 public section
@@ -180,58 +173,5 @@ theorem exists_isConj_x_zpow_or_y_zpow_of_isOfFinOrder {a b : ℕ} {g : Triangle
     have h : IsConj g (y a b 0 ^ k) :=
       (equivCoprod a b).isConj_apply_iff.mp (by simpa using hconj)
     exact Or.inr ⟨k, h, h.isOfFinOrder hg⟩
-
-/-- **Abelianization of `Δ(a, b, 0)`.** Written additively, the abelianization of
-`TriangleGroup a b 0` is canonically isomorphic to `ZMod a × ZMod b`, sending the classes of `x`,
-`y`, `z` to `(1, 0)`, `(0, 1)`, `(-1, -1)`. -/
-def abelianizationZeroAddEquivProd (a b : ℕ) :
-    Additive (Group.Abelianization (TriangleGroup a b 0)) ≃+ ZMod a × ZMod b :=
-  ((((equivCoprod a b).abelianizationCongr.trans Group.Abelianization.coprodMulEquiv).trans
-    (Group.Abelianization.equivOfComm.symm.prodCongr
-      Group.Abelianization.equivOfComm.symm)).trans
-    (MulEquiv.prodMultiplicative (ZMod a) (ZMod b)).symm).toAdditive.trans
-    (AddEquiv.additiveMultiplicative (ZMod a × ZMod b))
-
-/-- `abelianizationZeroAddEquivProd` maps the class of an arbitrary element `g` of `Δ(a, b, 0)` to
-the pair of projections of `equivCoprod a b g`. -/
-theorem abelianizationZeroAddEquivProd_of (a b : ℕ) (g : TriangleGroup a b 0) :
-    abelianizationZeroAddEquivProd a b (.ofMul (.of g)) =
-      ((Monoid.Coprod.fst (equivCoprod a b g)).toAdd,
-        (Monoid.Coprod.snd (equivCoprod a b g)).toAdd) := by
-  simp [abelianizationZeroAddEquivProd, MulEquiv.prodCongr]
-
-/-- `abelianizationZeroAddEquivProd` maps the class of `x a b 0` to `(1, 0)`. -/
-@[simp]
-theorem abelianizationZeroAddEquivProd_x (a b : ℕ) :
-    abelianizationZeroAddEquivProd a b (.ofMul (.of (x a b 0))) = (1, 0) := by
-  simp [abelianizationZeroAddEquivProd_of]
-
-/-- `abelianizationZeroAddEquivProd` maps the class of `y a b 0` to `(0, 1)`. -/
-@[simp]
-theorem abelianizationZeroAddEquivProd_y (a b : ℕ) :
-    abelianizationZeroAddEquivProd a b (.ofMul (.of (y a b 0))) = (0, 1) := by
-  simp [abelianizationZeroAddEquivProd_of]
-
-/-- `abelianizationZeroAddEquivProd` maps the class of `z a b 0` to `(-1, -1)`. -/
-@[simp]
-theorem abelianizationZeroAddEquivProd_z (a b : ℕ) :
-    abelianizationZeroAddEquivProd a b (.ofMul (.of (z a b 0))) = (-1, -1) := by
-  rw [z_eq]
-  simp
-
-/-- When `a` and `b` are coprime, the additive abelianization of `Δ(a, b, 0)` is isomorphic to
-`ZMod (a * b)` via the Chinese remainder theorem. -/
-def abelianizationZeroAddEquivZMod {a b : ℕ} (h : a.Coprime b) :
-    Additive (Group.Abelianization (TriangleGroup a b 0)) ≃+ ZMod (a * b) :=
-  (abelianizationZeroAddEquivProd a b).trans (ZMod.chineseRemainder h).symm.toAddEquiv
-
-/-- `ZMod.chineseRemainder h` carries `abelianizationZeroAddEquivZMod h` back to
-`abelianizationZeroAddEquivProd a b`. -/
-@[simp]
-theorem chineseRemainder_abelianizationZeroAddEquivZMod {a b : ℕ} (h : a.Coprime b)
-    (u : Additive (Group.Abelianization (TriangleGroup a b 0))) :
-    ZMod.chineseRemainder h (abelianizationZeroAddEquivZMod h u) =
-      abelianizationZeroAddEquivProd a b u := by
-  simp [abelianizationZeroAddEquivZMod]
 
 end TauCeti.TriangleGroup
