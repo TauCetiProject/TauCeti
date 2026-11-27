@@ -32,11 +32,12 @@ domain: flattening the boundary in a chart turns the equation into one of the sa
 half-space, with Lipschitz coefficients, near the flat part of its boundary.
 
 Each derivative of the data buys one more derivative of the solution when the coefficients allow
-it. If the entries of `a` are smooth on `U`, up to the flat boundary portion, and `u` solves
-`-∂ᵢ(aⁱʲ ∂ⱼu) = F` with `F ∈ W^{m,2}(Ω)`, then the restriction of `u` to `Ω ∩ V` lies in
+it. If the entries of `a` are of class `C^{m+1}` on `U`, up to the flat boundary portion, and `u`
+solves `-∂ᵢ(aⁱʲ ∂ⱼu) = F` with `F ∈ W^{m,2}(Ω)`, then the restriction of `u` to `Ω ∩ V` lies in
 `W^{m+2,2}(Ω ∩ V)`, for every `m ≥ 0`. This is the flat model of higher regularity up to the
-boundary (Evans, §6.3.2, Theorem 5): for a domain with smooth boundary and smooth coefficients,
-flattening a boundary portion in a chart leads to it.
+boundary (Evans, §6.3.2, Theorem 5): for a domain of class `C^{m+2}` and coefficients of class
+`C^{m+1}`, flattening a boundary portion in a chart leads to it, since the flattened coefficient
+involves the first derivatives of the chart and so is again of class `C^{m+1}`.
 
 ## The argument
 
@@ -61,15 +62,16 @@ The `H^{m+2}` statement localizes the global `H^{m+2}` theorem on the half-space
 (`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_mapsTo_of_contDiffOn`) in the same way,
 by induction on `m`, with two changes.
 
-* The field `a` is replaced, near `closure V`, by a field `a'` with smooth entries that is
-  uniformly elliptic on `H` and equal to `λ I` far away
-  (`TauCeti.PDE.UniformlyEllipticOn.exists_contDiff_eqOn_inter`), so that its derivatives of every
-  order are bounded, as the half-space theorem requires.
+* The field `a` is replaced, near `closure V`, by a field `a'` with entries of class `C^{m+1}` that
+  is uniformly elliptic on `H` and equal to `λ I` far away
+  (`TauCeti.PDE.UniformlyEllipticOn.exists_contDiff_eqOn_inter`), so that its derivatives of order
+  at most `m + 1` are bounded, as the half-space theorem requires.
 * The forcing of the equation for `ψ u`,
   `ψ F - ⟨∇u, a' ∇ψ⟩ - ⟨∇ψ, a' ∇u⟩ - u div(a' ∇ψ)`, must now lie in `W^{m+1,2}(H)` when
-  `F ∈ W^{m+1,2}(Ω)`. It is a combination of `F`, the first derivatives of `u` and `u` with smooth
-  compactly supported multipliers, so it lies in `W^{m+1,2}(Ω ∩ W)` because `u` is already
-  `W^{m+2,2}` there by the induction hypothesis, applied on `W`
+  `F ∈ W^{m+1,2}(Ω)`. It is a combination of `F`, the first derivatives of `u` and `u` with
+  compactly supported multipliers of class `C^{m+1}` (that of `u` is `div(a' ∇ψ)`, which costs one
+  derivative of `a'`), so it lies in `W^{m+1,2}(Ω ∩ W)` because `u` is already `W^{m+2,2}` there
+  by the induction hypothesis, applied on `W`
   (`TauCeti.PDE.exists_value_ae_eq_localizedForcing`). It vanishes off `tsupport ψ`, and
   `tsupport ψ ∩ H ⊆ Ω ∩ W`, so its extension by zero lies in `W^{m+1,2}(H)`
   (`TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`).
@@ -86,8 +88,8 @@ by induction on `m`, with two changes.
   half-space.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo` and
   `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace`:
-  local `H^{m+2}` regularity near such a boundary portion for coefficients smooth up to it and
-  forcing in `W^{m,2}`.
+  local `H^{m+2}` regularity near such a boundary portion for coefficients of class `C^{m+1}` up
+  to it and forcing in `W^{m,2}`.
 
 ## References
 
@@ -282,13 +284,14 @@ section HigherOrder
 
 omit [DecidableEq ι] in
 /-- **The localized equation on the whole flat domain.** Let `Ω ⊆ H` and let `u ∈ W^{m+1,2}(Ω)`
-solve `-div(a ∇u) = F` in `Ω` with `F ∈ W^{m,2}(Ω)`, for a bounded Lipschitz field `a` with smooth
-entries. Let `ψ` be a smooth cutoff with `tsupport ψ ∩ H ⊆ Ω` and `ψ u ∈ H¹₀(Ω)`. Then `ψ u`,
-extended by zero, lies in `H¹₀(H)` and solves `-div(a ∇w) = G` in `H` with `G ∈ W^{m,2}(H)`. -/
+solve `-div(a ∇u) = F` in `Ω` with `F ∈ W^{m,2}(Ω)`, for a bounded Lipschitz field `a` with
+entries of class `C^{m+1}`. Let `ψ` be a smooth cutoff with `tsupport ψ ∩ H ⊆ Ω` and
+`ψ u ∈ H¹₀(Ω)`. Then `ψ u`, extended by zero, lies in `H¹₀(H)` and solves `-div(a ∇w) = G` in
+`H` with `G ∈ W^{m,2}(H)`. -/
 private theorem exists_isWeakSolutionDirichlet_value_ae_eq_indicator {a' : EuclideanSpace ℝ ι →
     Matrix ι ι ℝ} {M : ℝ} (hM : ∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M)
     (hK : LipschitzWith K fun x => matrixBilinearForm (a' x))
-    (hsm : ∀ i j, ContDiff ℝ ∞ fun x => a' x i j) (hΩH : Omega ≤ H) (m : ℕ)
+    (hΩH : Omega ≤ H) (m : ℕ) (hsm : ∀ i j, ContDiff ℝ (m + 1) fun x => a' x i j)
     {F : Wkp mu Omega 2 m} {U : Wkp mu Omega 2 (m + 1)}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a' 0 0 (Wkp.firstOrder m U) (v : W1p mu Omega 2) =
       ∫ x in Omega, Wkp.value m F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
@@ -327,16 +330,16 @@ private theorem exists_isWeakSolutionDirichlet_value_ae_eq_indicator {a' : Eucli
 
 /-- **The localized solution is `W^{m+2,2}` on the whole flat domain.** Under the hypotheses of
 `exists_isWeakSolutionDirichlet_value_ae_eq_indicator`, for a field uniformly elliptic on `H`
-whose entries have derivatives of every order bounded, the function `ψ u`, extended by zero, is
-the value of an element of `W^{m+2,2}(H)`, by the half-space theorem
+whose entries have derivatives of order at most `m + 1` bounded, the function `ψ u`, extended by
+zero, is the value of an element of `W^{m+2,2}(H)`, by the half-space theorem
 `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_mapsTo_of_contDiffOn`. -/
 private theorem exists_wkp_value_ae_eq_indicator_of_bddDerivOn (hν : ν ≠ 0)
     (hHc : Convex ℝ (H : Set (EuclideanSpace ℝ ι)))
     (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
     (ha : UniformlyEllipticOn (H : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
-    (hbd : ∀ i j (k : ℕ), BddDerivOn ℝ k (fun x => a x i j) univ) {M : ℝ}
+    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) {M : ℝ}
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M) (hΩH : Omega ≤ H) (m : ℕ)
+    (hbd : ∀ i j, BddDerivOn ℝ (m + 1) (fun x => a x i j) univ)
     {F : Wkp mu Omega 2 m} {U : Wkp mu Omega 2 (m + 1)}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (Wkp.firstOrder m U) (v : W1p mu Omega 2) =
       ∫ x in Omega, Wkp.value m F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
@@ -348,15 +351,13 @@ private theorem exists_wkp_value_ae_eq_indicator_of_bddDerivOn (hν : ν ≠ 0)
     ∃ W : Wkp mu H 2 (m + 2), ∀ᵐ x ∂mu.restrict H, Wkp.value (m + 2) W x =
       (Omega : Set (EuclideanSpace ℝ ι)).indicator
         (fun y => ψ y * W1p.value (Wkp.firstOrder m U) y) x := by
-  have hsm : ∀ i j, ContDiff ℝ ∞ fun x => a x i j := fun i j =>
-    contDiff_infty.2 fun n => contDiffOn_univ.1 (hbd i j n).contDiffOn
-  obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator hM hK hsm hΩH m
-    hu hψ hψc hts hN hψN hgradN hmem
+  obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator hM hK hΩH m
+    (fun i j => contDiffOn_univ.1 (hbd i j).contDiffOn) hu hψ hψc hts hN hψN hgradN hmem
   -- The derivatives of order at most `m + 1` of the entries of `a` have a common bound.
-  choose C hC using fun i j => (hbd i j (m + 1)).exists_bound
+  choose C hC using fun i j => (hbd i j).exists_bound
   obtain ⟨C', hC'⟩ := (finite_range fun p : ι × ι => C p.1 p.2).bddAbove
   obtain ⟨W, hW⟩ := ha.exists_value_eq_value_of_mapsTo_of_contDiffOn hν hHc hH
-    hK.lipschitzOnWith m (fun i j => (hbd i j (m + 1)).contDiffOn.mono (subset_univ _))
+    hK.lipschitzOnWith m (fun i j => (hbd i j).contDiffOn.mono (subset_univ _))
     (C := C') (fun i j k _ hk x _ => (hC i j k hk x (mem_univ x)).trans
       (hC' ⟨(i, j), rfl⟩)) hw
   exact ⟨W, by filter_upwards [hwv] with x hx; rw [hW, hx]⟩
@@ -382,11 +383,11 @@ private theorem exists_value_eq_value_restrictL_of_eqOn_one {Ω₁ : Opens (Eucl
     ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 hx
   rw [h1, h2, indicator_of_mem (hVΩ₁ hx), hψV x hx.2, one_mul, h3, h4]
 
-/-- **Local `H^{m+2}` regularity near a flat part of the boundary, for a smooth field on the whole
-space.** The case of
+/-- **Local `H^{m+2}` regularity near a flat part of the boundary, for a `C^{m+1}` field on the
+whole space.** The case of
 `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo` in which
 the coefficient field is defined on the whole space, uniformly elliptic on `H`, with entries whose
-derivatives of every order are bounded, and bounded Lipschitz bilinear forms.
+derivatives of order at most `m + 1` are bounded, and bounded Lipschitz bilinear forms.
 
 The proof is by induction on `m`. The case `m = 0` is local `H²` regularity
 (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo`). For the step, the
@@ -398,13 +399,12 @@ private theorem exists_value_eq_value_restrictL_of_bddDerivOn (hν : ν ≠ 0)
     (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
     (hΩU : (Omega : Set (EuclideanSpace ℝ ι)) ∩ U = (H : Set (EuclideanSpace ℝ ι)) ∩ U)
     (ha : UniformlyEllipticOn (H : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
-    (hbd : ∀ i j (k : ℕ), BddDerivOn ℝ k (fun x => a x i j) univ) {M : ℝ}
+    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) {M : ℝ}
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M) {u : W1p mu Omega 2}
     (hu0 : ∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
       tsupport ψ ⊆ U → ∃ v : W1p0 mu Omega 2,
         W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x)
-    (m : ℕ) {F : Wkp mu Omega 2 m}
+    (m : ℕ) (hbd : ∀ i j, BddDerivOn ℝ (m + 1) (fun x => a x i j) univ) {F : Wkp mu Omega 2 m}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, Wkp.value m F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     {V : Opens (EuclideanSpace ℝ ι)} (hV : IsCompact (closure (V : Set (EuclideanSpace ℝ ι))))
@@ -429,7 +429,7 @@ private theorem exists_value_eq_value_restrictL_of_bddDerivOn (hν : ν ≠ 0)
     -- equation.
     set Ω₁ : Opens (EuclideanSpace ℝ ι) := Omega ⊓ W
     have hΩ₁ : Ω₁ ≤ Omega := inf_le_left
-    obtain ⟨U2, hU2v⟩ := ih (F := Wkp.lowerOrder m F)
+    obtain ⟨U2, hU2v⟩ := ih (fun i j => (hbd i j).of_le (Nat.le_succ _)) (F := Wkp.lowerOrder m F)
       (fun v => by rw [← Wkp.value_succ]; exact hu v) (V := W) hWc hWU
     have hU2 : Wkp.firstOrder (m + 1) U2 = W1p.restrictL hΩ₁ u :=
       W1p.ext_value (by rw [Wkp.value_firstOrder, hU2v])
@@ -454,8 +454,8 @@ private theorem exists_value_eq_value_restrictL_of_bddDerivOn (hν : ν ≠ 0)
     -- `ψ u` extends to a Dirichlet solution on `H` with `W^{m+1,2}` forcing, so it is
     -- `W^{m+3,2}` there; on `Ω ∩ V`, where `ψ = 1`, it is `u`.
     have hΩ₁H : Ω₁ ≤ H := fun x hx => (hΩH x (hWU' hx.2)).1 hx.1
-    obtain ⟨W3, hW3⟩ := exists_wkp_value_ae_eq_indicator_of_bddDerivOn hν hHc hH ha hK hbd hM
-      hΩ₁H (m + 1) hu₁ hψ hψc (fun x hx => ⟨(hΩH x (hWU' (hψs hx.1))).2 hx.2, hψs hx.1⟩) hN _ _
+    obtain ⟨W3, hW3⟩ := exists_wkp_value_ae_eq_indicator_of_bddDerivOn hν hHc hH ha hK hM
+      hΩ₁H (m + 1) hbd hu₁ hψ hψc (fun x hx => ⟨(hΩH x (hWU' (hψs hx.1))).2 hx.2, hψs hx.1⟩) hN _ _
       (hψu ▸ v.property)
     exact exists_value_eq_value_restrictL_of_eqOn_one hΩ₁ hΩ₁H
       (fun x hx => ⟨hx.1, subset_closure.trans hVW hx.2⟩)
@@ -463,9 +463,9 @@ private theorem exists_value_eq_value_restrictL_of_bddDerivOn (hν : ν ≠ 0)
 
 /-- **Local `H^{m+2}` regularity near a flat part of the boundary.** Let `ν ≠ 0`, and let `H` be a
 convex open set mapped into itself by every translation orthogonal to `ν`, as a half-space
-`{x | c₀ < ⟪x, ν⟫}` is. Let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`. Let `a` be uniformly
-elliptic on `Ω ∩ U`, with entries smooth on `U`, up to the flat boundary portion `∂Ω ∩ U`. Let
-`m ≥ 0`, let `F ∈ W^{m,2}(Ω)` and let `u ∈ H¹(Ω)` be a weak solution of
+`{x | c₀ < ⟪x, ν⟫}` is. Let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`. Let `m ≥ 0`, and let `a`
+be uniformly elliptic on `Ω ∩ U`, with entries of class `C^{m+1}` on `U`, up to the flat boundary
+portion `∂Ω ∩ U`. Let `F ∈ W^{m,2}(Ω)` and let `u ∈ H¹(Ω)` be a weak solution of
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω`
 
@@ -476,8 +476,8 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo (hν : ν 
     (hHc : Convex ℝ (H : Set (EuclideanSpace ℝ ι)))
     (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
     (hΩU : (Omega : Set (EuclideanSpace ℝ ι)) ∩ U = (H : Set (EuclideanSpace ℝ ι)) ∩ U)
-    (ha : UniformlyEllipticOn ((Omega : Set (EuclideanSpace ℝ ι)) ∩ U) a lam Lam)
-    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) U) (m : ℕ) {F : Wkp mu Omega 2 m}
+    (ha : UniformlyEllipticOn ((Omega : Set (EuclideanSpace ℝ ι)) ∩ U) a lam Lam) (m : ℕ)
+    (hsmooth : ∀ i j, ContDiffOn ℝ (m + 1) (fun x => a x i j) U) {F : Wkp mu Omega 2 m}
     {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, Wkp.value m F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
@@ -488,14 +488,15 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo (hν : ν 
     (hVU : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ U) :
     ∃ W : Wkp mu (Omega ⊓ V) 2 (m + 2),
       Wkp.value (m + 2) W = W1p.value (W1p.restrictL (inf_le_left : Omega ⊓ V ≤ Omega) u) := by
-  -- On a neighbourhood `U₂` of `closure V` with compact closure in `U`, `a` agrees with a smooth
-  -- field `a'` on the whole space that is uniformly elliptic on `H`.
+  -- On a neighbourhood `U₂` of `closure V` with compact closure in `U`, `a` agrees with a
+  -- `C^{m+1}` field `a'` on the whole space that is uniformly elliptic on `H`.
   obtain ⟨U₂', hU₂o, hVU₂, hU₂U, hU₂c⟩ :=
     exists_open_between_and_isCompact_closure hV U.isOpen hVU
   set U₂ : Opens (EuclideanSpace ℝ ι) := ⟨U₂', hU₂o⟩
   have hU₂U' : (U₂ : Set (EuclideanSpace ℝ ι)) ⊆ U := subset_closure.trans hU₂U
   obtain ⟨a', K, M, W₀, hU₂W₀, -, ha', -, hK, hbd, hM, haa'⟩ :=
-    ha.exists_contDiff_eqOn_inter (T := H) hsmooth (hΩU ▸ subset_rfl) hU₂c hU₂U
+    ha.exists_contDiff_eqOn_inter (T := H) (k := m + 1) m.succ_ne_zero hsmooth (hΩU ▸ subset_rfl)
+      hU₂c hU₂U
   -- On `Ω₂ = Ω ∩ U₂`, the restriction of `u` solves the equation with `a'`.
   set Ω₂ : Opens (EuclideanSpace ℝ ι) := Omega ⊓ U₂
   have hΩ₂ : Ω₂ ≤ Omega := inf_le_left
@@ -505,9 +506,9 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo (hν : ν 
     exact ⟨fun hx => ⟨(h.1 ⟨hx.1.1, hU₂U' hx.2⟩).1, hx.2⟩,
       fun hx => ⟨⟨(h.2 ⟨hx.1, hU₂U' hx.2⟩).1, hx.2⟩, hx.2⟩⟩
   obtain ⟨W, hW⟩ := exists_value_eq_value_restrictL_of_bddDerivOn (Omega := Ω₂) (U := U₂) hν hHc
-    hH hΩ₂U ha' hK hbd hM
+    hH hΩ₂U ha' hK hM
     (fun _ hψ hψc hψs => W1p.exists_w1p0_value_ae_eq_mul_restrictL hU₂U' hu0 hψ hψc hψs) m
-    (F := Wkp.restrictL hΩ₂ m F)
+    hbd (F := Wkp.restrictL hΩ₂ m F)
     (fun v => by
       rw [energyFormH1_restrictL_eq_setIntegral_of_eqOn hΩ₂
         (fun x hx => haa' (hU₂W₀ (subset_closure hx.2))) hu v]
@@ -526,17 +527,17 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo (hν : ν 
 
 /-- **Local `H^{m+2}` regularity near the boundary of a half-space.** Let `H = {x | c₀ < ⟪x, ν⟫}`
 with `ν ≠ 0`, and let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`, so that `∂Ω ∩ U` is a piece of
-the hyperplane `∂H`. Let `a` be uniformly elliptic on `Ω ∩ U`, with entries smooth on `U`, let
-`m ≥ 0`, let `F ∈ W^{m,2}(Ω)` and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = F` in
-`Ω` such that `ψ u ∈ H¹₀(Ω)` for every smooth `ψ` compactly supported in `U`. Then on every open
-`V` whose closure is compact and contained in `U`, the restriction of `u` to `Ω ∩ V` is the value
-of an element of `W^{m+2,2}(Ω ∩ V)`. This is the half-space case of
+the hyperplane `∂H`. Let `m ≥ 0`, let `a` be uniformly elliptic on `Ω ∩ U`, with entries of class
+`C^{m+1}` on `U`, let `F ∈ W^{m,2}(Ω)` and let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω` such that `ψ u ∈ H¹₀(Ω)` for every smooth `ψ` compactly supported in
+`U`. Then on every open `V` whose closure is compact and contained in `U`, the restriction of `u`
+to `Ω ∩ V` is the value of an element of `W^{m+2,2}(Ω ∩ V)`. This is the half-space case of
 `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo`. -/
 theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace
     (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
     (hΩU : (Omega : Set (EuclideanSpace ℝ ι)) ∩ U = (H : Set (EuclideanSpace ℝ ι)) ∩ U)
-    (ha : UniformlyEllipticOn ((Omega : Set (EuclideanSpace ℝ ι)) ∩ U) a lam Lam)
-    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) U) (m : ℕ) {F : Wkp mu Omega 2 m}
+    (ha : UniformlyEllipticOn ((Omega : Set (EuclideanSpace ℝ ι)) ∩ U) a lam Lam) (m : ℕ)
+    (hsmooth : ∀ i j, ContDiffOn ℝ (m + 1) (fun x => a x i j) U) {F : Wkp mu Omega 2 m}
     {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, Wkp.value m F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
@@ -548,7 +549,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace
     ∃ W : Wkp mu (Omega ⊓ V) 2 (m + 2),
       Wkp.value (m + 2) W = W1p.value (W1p.restrictL (inf_le_left : Omega ⊓ V ≤ Omega) u) :=
   ha.exists_value_eq_value_restrictL_of_mapsTo hν (TauCeti.convex_of_halfSpace hH)
-    (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hH hτ) hΩU hsmooth m hu hu0 hV hVU
+    (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hH hτ) hΩU m hsmooth hu hu0 hV hVU
 
 end HigherOrder
 
