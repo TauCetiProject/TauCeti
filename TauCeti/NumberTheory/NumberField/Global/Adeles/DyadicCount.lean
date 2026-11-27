@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.AdeleRing
+import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.BoundedConjugates
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
@@ -157,26 +158,6 @@ theorem exists_encard_le_floor_mul_add_one_pow {s : Set 𝔸ᶠ[K]} (hs : IsComp
       rw [Nat.card_unique, one_mul, ← mul_assoc] at this
       exact_mod_cast this
 
-/-- Rounding `a * 2 ^ k` down and adding one costs at most the factor `2 ^ max k 0` over
-`⌊a⌋₊ + 1`. -/
-private theorem floor_mul_two_zpow_add_one_le (a : ℝ) (k : ℤ) :
-    ⌊a * 2 ^ k⌋₊ + 1 ≤ (⌊a⌋₊ + 1) * 2 ^ k.toNat := by
-  rcases lt_or_ge a 0 with ha | ha
-  · -- for negative `a` the left side is `1`
-    rw [Nat.floor_of_nonpos (mul_nonpos_of_nonpos_of_nonneg ha.le (by positivity)), zero_add]
-    exact Nat.one_le_iff_ne_zero.mpr (by positivity)
-  have h₁ : a * 2 ^ k ≤ a * 2 ^ k.toNat := by
-    gcongr
-    rw [← zpow_natCast]
-    exact zpow_le_zpow_right₀ one_le_two (Int.self_le_toNat k)
-  have h₂ : a * 2 ^ k.toNat < (⌊a⌋₊ + 1) * 2 ^ k.toNat :=
-    mul_lt_mul_of_pos_right (Nat.lt_floor_add_one a) (by positivity)
-  have h₃ : ⌊a * 2 ^ k⌋₊ < (⌊a⌋₊ + 1) * 2 ^ k.toNat := by
-    rw [Nat.floor_lt (by positivity)]
-    push_cast
-    linarith
-  omega
-
 /-- A compact set of vectors of adeles has bounded absolute values at the infinite places. -/
 private theorem exists_forall_norm_fst_apply_le {ι : Type*} [Finite ι] {B : Set (ι → 𝔸[K])}
     (hB : IsCompact B) :
@@ -230,7 +211,7 @@ theorem exists_encard_setOf_twoInf_zpow_mul_mem_le {ι : Type*} [Fintype ι]
     _ ≤ ∏ i, ((((⌊c i * R⌋₊ + 1) * 2 ^ (x i).toNat) ^ finrank ℚ K : ℕ) : ℕ∞) := by
       refine Finset.prod_le_prod fun i _ ↦ (hc i _).trans ?_
       rw [← mul_assoc]
-      exact_mod_cast Nat.pow_le_pow_left (floor_mul_two_zpow_add_one_le _ (x i)) _
+      exact_mod_cast Nat.pow_le_pow_left (floor_mul_two_zpow_add_one_le (c i * R) (x i)) _
     _ = ((∏ i, (⌊c i * R⌋₊ + 1) ^ finrank ℚ K) * 2 ^ (finrank ℚ K * ∑ i, (x i).toNat) : ℕ) := by
       rw [← Nat.cast_prod]
       congr 1
