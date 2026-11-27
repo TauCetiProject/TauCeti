@@ -373,21 +373,30 @@ private theorem codChart_extendTrans_symm_equiv_fst [J.Boundaryless]
   rw [← h.projection_apply, ← h.codChart_extend_apply hz]
   simp [J.left_inv, h.codChart.left_inv (h.source_subset_preimage_source hz)]
 
+private theorem mem_retargetDomChart_source_iff' [I.Boundaryless] [J.Boundaryless]
+    (h : IsSubmersionAtOfComplement F I J n f x) (ψ : OpenPartialHomeomorph N G) (z : M) :
+    z ∈ (retargetDomChart h ψ).source ↔
+      z ∈ h.domChart.source ∧
+        (h.equiv (h.domChart.extend I z)).1 ∈
+          ((h.codChart.extendTrans J (Homeomorph.refl E'')).symm ≫ₕ
+            ψ.extendTrans J (Homeomorph.refl E'')).source := by
+  simp only [retargetDomChart, OpenPartialHomeomorph.transHomeomorph_source,
+    OpenPartialHomeomorph.trans_source, Set.mem_inter_iff, Set.mem_preimage,
+    mem_liftCodTransition_source_iff, OpenPartialHomeomorph.transHomeomorph_apply,
+    ModelWithCorners.toHomeomorph_apply, OpenPartialHomeomorph.extend_coe, Function.comp_apply]
+
 private theorem mem_retargetDomChart_source_iff [I.Boundaryless] [J.Boundaryless]
     (h : IsSubmersionAtOfComplement F I J n f x) (ψ : OpenPartialHomeomorph N G) (z : M) :
     z ∈ (retargetDomChart h ψ).source ↔ z ∈ h.domChart.source ∧ f z ∈ ψ.source := by
-  suffices hiff : z ∈ h.domChart.source →
-      ((h.equiv (h.domChart.extend I z)).1 ∈
-          (h.codChart.extendTrans J (Homeomorph.refl E'')).target ∧
-        (h.codChart.extendTrans J (Homeomorph.refl E'')).symm
-            (h.equiv (h.domChart.extend I z)).1 ∈
-          (ψ.extendTrans J (Homeomorph.refl E'')).source ↔ f z ∈ ψ.source) by
-    simpa [retargetDomChart, mem_liftCodTransition_source_iff,
-      -OpenPartialHomeomorph.extendTrans_symm_apply, -OpenPartialHomeomorph.extendTrans_target,
-      -OpenPartialHomeomorph.extendTrans_source] using hiff
-  intro hz
-  rw [codChart_extendTrans_symm_equiv_fst h hz, ← h.projection_apply, ← h.codChart_extend_apply hz]
-  simp [J.left_inv, h.codChart.map_source (h.source_subset_preimage_source hz)]
+  rw [mem_retargetDomChart_source_iff']
+  refine and_congr_right fun hz ↦ ?_
+  rw [OpenPartialHomeomorph.trans_source, Set.mem_inter_iff, Set.mem_preimage,
+    OpenPartialHomeomorph.symm_source, codChart_extendTrans_symm_equiv_fst h hz,
+    OpenPartialHomeomorph.extendTrans_target, OpenPartialHomeomorph.extendTrans_source,
+    Set.mem_preimage, Set.mem_preimage, Homeomorph.refl_symm, Homeomorph.refl_apply,
+    ← h.projection_apply, ← h.codChart_extend_apply hz, OpenPartialHomeomorph.extend_coe,
+    Function.comp_apply, id_eq, J.left_inv]
+  exact and_iff_right (h.codChart.map_source (h.source_subset_preimage_source hz))
 
 private theorem retargetDomChart_extend_apply [I.Boundaryless] [J.Boundaryless]
     (h : IsSubmersionAtOfComplement F I J n f x) (ψ : OpenPartialHomeomorph N G) (z : M) :
