@@ -52,9 +52,9 @@ the topological Riemann–Hurwitz formula over the sphere gives `χ(X) = 2` and 
 
 ## Checks
 
-* `TauCeti.RiemannSurface.genus_onePoint_complex`: the Riemann sphere has genus `0`.
-
-The level-one modular curve has genus `0`: see
+The Riemann sphere and the level-one modular curve have genus `0`: see
+`TauCeti.RiemannSurface.genus_onePoint_complex` (in
+`TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus`) and
 `TauCeti.ModularGroup.genus_compactifiedQuotient`.
 
 ## References

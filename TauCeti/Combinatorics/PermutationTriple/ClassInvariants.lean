@@ -14,7 +14,17 @@ public import TauCeti.Combinatorics.PermutationTriple.Regular
 /-!
 # Invariants of isomorphism classes of permutation triples
 
-Descends invariants to `TauCeti.PermutationTriple.IsoClass` and `TauCeti.ConnectedIsoClass`.
+Descends `cycleData`, `unorderedCycleData`, `cycleCounts`, `eulerChar`, `genus`, and `IsRegular`
+to `TauCeti.PermutationTriple.IsoClass n` and `TauCeti.ConnectedIsoClass n`, proves
+`ConnectedIsoClass.eulerChar_le_two`, `two_sub_two_mul_genus`, and
+`isRegular_iff_automorphismOrder`, and feeds the branched-cover, Belyi-pair, and dessin comparisons.
+
+## References
+
+* S. K. Lando and A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, EMS 141, Springer,
+  2004, Chapter 1.
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, LMSST 79, Cambridge University Press, 2012, §4.2.
 -/
 
 public section

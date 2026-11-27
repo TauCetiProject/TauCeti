@@ -38,7 +38,8 @@ degree `n` to isomorphism classes of connected degree-`n` covers of `ℂ ∖ {0,
 its unbranched part (`TauCeti.TopBranchedCover.IsoClass.restrict_injective`), every topological
 branched cover is isomorphic to the filled cover of its unbranched part
 (`TauCeti.TopBranchedCover.isoFilledCover`), giving `equivConnectedCoverClass`. Over `0`, `1` and
-`∞`, ramification partitions match `σ0`, `σ1`, `σinf`.
+`∞`, the ramification partitions match the cycle types of `σ0`, `σ1`, and `σinf`
+(`TauCeti.TopBranchedCover.ramificationPartitions_eq_cycleData_monodromyTriple`).
 
 ## Main results
 
@@ -60,8 +61,12 @@ branched cover is isomorphic to the filled cover of its unbranched part
   `ℂ ∖ {0, 1}` is the restriction of a topological branched cover of degree `n`.
 * `TauCeti.TopBranchedCover.isoFilledCover`: every topological branched cover is isomorphic to
   the filled cover of its unbranched part.
-* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`, `equivConnectedCoverClass`:
-  classification by connected covers and ramification matching `σ0`, `σ1`, `σinf`.
+* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`,
+  `TauCeti.TopBranchedCover.IsoClass.equivConnectedCoverClass`: classification of topological
+  branched covers by connected covers of `ℂ ∖ {0, 1}`.
+* `TauCeti.TopBranchedCover.parts_ramificationPartition_zero`, `one`, `inf`, and
+  `ramificationPartitions_eq_cycleData_monodromyTriple`: over `0`, `1` and `∞`, the ramification
+  partitions match the cycle types of `σ0`, `σ1` and `σinf`.
 
 ## References
 

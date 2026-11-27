@@ -43,9 +43,9 @@ extends uniquely to the total spaces (`TauCeti.TopBranchedCover.extend`), so eve
 unbranched parts extends to a unique isomorphism of branched covers, and restriction is injective
 on isomorphism classes. This is the uniqueness of the compactification of a finite cover of the
 thrice-punctured sphere. The extension exists because at a point of a marked fibre the values
-of the map cluster in a connected subset of a finite fibre, hence at a single point. In
-particular the deck group of `π` is the deck group of the unbranched cover
-(`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`).
+of the map cluster in a connected subset of a finite fibre, hence at a single point.
+(In `TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Deck`, this identifies
+the deck group of `π` with the deck group of the unbranched cover.)
 
 The data carries no atlas and no surjectivity or countability axiom. The local models at marked
 points and the covering map elsewhere already provide a chart around every point
@@ -77,8 +77,6 @@ open, so `π` is surjective onto the connected sphere
 * `TauCeti.TopBranchedCover.Iso.ofConnectedCoverIso`: the extension of an isomorphism of the
   unbranched connected covers to an isomorphism of branched covers, inverse to
   `TauCeti.TopBranchedCover.Iso.connectedCoverIso`.
-* `TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`: restriction identifies the deck group of a
-  branched cover with the deck group of its unbranched part.
 * `TauCeti.TopBranchedCover.sphere`: the sphere over itself, of degree `1`.
 
 ## Main results

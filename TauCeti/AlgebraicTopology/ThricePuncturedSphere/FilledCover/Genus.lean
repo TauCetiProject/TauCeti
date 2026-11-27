@@ -13,7 +13,16 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Sphere
 /-!
 # Genus and Riemann–Hurwitz for three-point covers
 
-Reconciles `eulerChar` and `genus` of three-point covers with monodromy and proves Riemann–Hurwitz.
+Reconciles `eulerChar` and `genus` of analytic Belyi pairs, filled covers, and topological branched
+covers with their monodromy triples (`AnalyticBelyiPair.eulerChar_X_eq_eulerChar_monodromyTriple`,
+`two_mul_genus_X_sub_two_eq`, `ConnectedCover.natCast_ramificationDegree_toAnalyticBelyiPair`,
+`TopBranchedCover.eulerChar_Z_eq_eulerChar_monodromyTriple`), feeding the four-way equivalence.
+
+## References
+
+* O. Forster, *Lectures on Riemann Surfaces*, GTM 81, Springer, 1981, §17.
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, LMSST 79, Cambridge University Press, 2012, §§2.7 and 4.2.
 -/
 
 public noncomputable section

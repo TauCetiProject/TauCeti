@@ -11,7 +11,15 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBra
 /-!
 # Classification of topological branched covers by permutation triples
 
-Composes `equivConnectedCoverClass` with `ConnectedCoverClass.isoClassEquiv`.
+Constructs `TauCeti.TopBranchedCover.IsoClass.equivConnectedIsoClass`, classifying degree-`n`
+topological branched covers of the sphere with branch values in `{0, 1, ∞}` by connected
+degree-`n` permutation triples, evaluates it on `.mk X` (`equivConnectedIsoClass_mk`), and deduces
+`Unique (IsoClass.{0} 1)`, feeding the four-way equivalence and invariant comparisons.
+
+## References
+
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, LMSST 79, Cambridge University Press, 2012, §§1.2.7 and 4.2.
 -/
 
 public noncomputable section

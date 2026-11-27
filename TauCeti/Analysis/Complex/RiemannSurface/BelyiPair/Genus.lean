@@ -17,8 +17,6 @@ Invariance, degree-one evaluations, and `isoSetoid` descent for `eulerChar` and 
 
 public noncomputable section
 
-open scoped OnePoint
-
 namespace TauCeti.AnalyticBelyiPair
 
 open RiemannSurface

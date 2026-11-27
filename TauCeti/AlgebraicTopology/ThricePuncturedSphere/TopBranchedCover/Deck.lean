@@ -11,8 +11,10 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.B
 /-!
 # Deck groups of topological branched covers of the sphere
 
-Identifies `deck X.π` with the automorphism group of the monodromy triple of `X.restrict` and
-matches regularity.
+Identifies `deck X.π` with `deck X.restrict` (`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`)
+and with the automorphism group of the monodromy triple of `X.restrict`
+(`TauCeti.TopBranchedCover.deckMulEquivAutomorphismGroup`), defines `IsoClass.natCardDeck` and
+`IsoClass.IsRegular`, and proves `TauCeti.TopBranchedCover.isRegular_iff_monodromyTriple`.
 -/
 
 public noncomputable section

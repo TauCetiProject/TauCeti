@@ -11,8 +11,18 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBra
 /-!
 # Dessin classification and invariant comparisons for analytic Belyi pairs
 
-Classifies `AnalyticBelyiPair.{0}` by connected bipartite ribbon graphs, proves realization, and
-matches cycle data, automorphism-group order, and regularity.
+Constructs the bijection `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedRibbonGraph` between
+isomorphism classes of degree-`n` analytic Belyi pairs and connected dessins d'enfants on `n`
+edges, proves realization (`exists_iso_of_connectedRibbonGraph`,
+`nonempty_iso_iff_nonempty_ribbonGraph_iso`), and matches cycle data, automorphism order, and
+regularity, feeding `FilledCover.Dessin.Genus`.
+
+## References
+
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, LMSST 79, Cambridge University Press, 2012, §4.2.
+* S. K. Lando and A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, EMS 141, Springer,
+  2004, Chapters 1–2.
 -/
 
 public noncomputable section

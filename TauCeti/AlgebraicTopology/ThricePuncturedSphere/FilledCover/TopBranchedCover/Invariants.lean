@@ -12,7 +12,15 @@ public import TauCeti.Combinatorics.PermutationTriple.ClassInvariants
 /-!
 # Invariant comparisons for topological branched covers
 
-Matches `ramificationPartitions`, `natCardDeck`, and `IsRegular` along `equivConnectedIsoClass`.
+Shows that `TopBranchedCover.IsoClass.equivConnectedIsoClass` matches `ramificationPartitions`
+with `cycleData` (`cycleData_equivConnectedIsoClass`), `natCardDeck` with `automorphismOrder`
+(`automorphismOrder_equivConnectedIsoClass`), and `IsRegular` (`isRegular_equivConnectedIsoClass`),
+feeding the analytic Belyi pair and dessin comparisons.
+
+## References
+
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, LMSST 79, Cambridge University Press, 2012, §§1.2.7 and 4.2.
 -/
 
 public noncomputable section
