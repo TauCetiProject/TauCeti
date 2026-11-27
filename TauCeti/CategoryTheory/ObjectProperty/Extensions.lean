@@ -8,9 +8,13 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 
 /-!
 # Weak Serre subcategories, five-term exact sequences and closed classes
+
+An extension-closed property containing zero and closed under isomorphisms is closed under
+finite products in a preadditive category with finite products.
 
 Let `P` be a property of objects of an abelian category which is closed under kernels, cokernels
 and extensions; such a `P` is called a weak Serre subcategory. If `A ⟶ B ⟶ M ⟶ D ⟶ E` is exact at
@@ -42,6 +46,18 @@ public section
 namespace CategoryTheory.ObjectProperty
 
 open Limits
+
+/-- An extension-closed property containing zero and closed under isomorphisms is closed under
+finite products: binary biproducts are split extensions and the empty product is a zero object. -/
+instance isClosedUnderFiniteProducts_of_isClosedUnderExtensions {C : Type*} [Category* C]
+    [Preadditive C] [HasFiniteProducts C] (P : ObjectProperty C)
+    [P.ContainsZero] [P.IsClosedUnderIsomorphisms] [P.IsClosedUnderExtensions] :
+    P.IsClosedUnderFiniteProducts := by
+  have : HasFiniteBiproducts C := HasFiniteBiproducts.of_hasFiniteProducts
+  have : HasBinaryBiproducts C := hasBinaryBiproducts_of_finite_biproducts C
+  have : P.IsClosedUnderBinaryProducts :=
+    P.isClosedUnderBinaryProducts_of_prop_biprod fun _ _ hX hY ↦ P.prop_biprod hX hY
+  exact .mk'
 
 variable {C : Type*} [Category* C] [Abelian C] (P : ObjectProperty C)
   [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels] [P.IsClosedUnderExtensions]

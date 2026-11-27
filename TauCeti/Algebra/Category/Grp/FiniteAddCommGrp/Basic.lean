@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.Grp.IsFinite
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.Data.ZMod.Basic
-public import TauCeti.CategoryTheory.Abelian.SerreClass.FiniteProducts
+public import TauCeti.CategoryTheory.ObjectProperty.Extensions
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 /-!
@@ -61,6 +61,14 @@ def zmodMul : ZMod n →+ (zmod n ⟶ zmod n) :=
 @[simp]
 theorem zmodMul_apply (a b : ZMod n) : (zmodMul n a).hom b = a * b :=
   (rfl)
+
+/-- Multiplication endomorphisms of the finite cyclic group distinguish the multipliers. -/
+theorem zmodMul_injective : Function.Injective (zmodMul n) := by
+  intro a b h
+  have h₁ : (zmodMul n a).hom (1 : ZMod n) = (zmodMul n b).hom (1 : ZMod n) :=
+    congrArg (fun f : zmod n ⟶ zmod n ↦ f.hom (1 : ZMod n)) h
+  simpa only [mul_one] using
+    (zmodMul_apply n a 1).symm.trans (h₁.trans (zmodMul_apply n b 1))
 
 /-- Multiplication by `1` is the identity endomorphism. -/
 @[simp]
