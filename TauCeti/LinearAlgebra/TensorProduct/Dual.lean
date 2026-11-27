@@ -13,6 +13,8 @@ public import Mathlib.LinearAlgebra.Contraction
 The canonical map `E* ⊗ F* → (E ⊗ F)*` commutes with precomposition in both variables.
 In particular it transports the tensor product of transposed endomorphisms to the transpose
 of their tensor product. This applies to grading operators as well as algebra actions.
+Dually to a map `Δ : M → N₁ ⊗ N₂`, tensor duality gives the bilinear cup product
+`a ∪ b = (a ⊗ b) ∘ Δ` of linear forms on `N₁` and on `N₂` (`LinearMap.cupProduct`).
 For finite projective modules the map is Mathlib's equivalence `TensorProduct.dualDistribEquiv`,
 and for linear isomorphisms `α` and `β` naturality reads: pairing with dual factors transported
 by `α⁻¹` and `β⁻¹` is pairing after `(α ⊗ β)⁻¹`
@@ -40,6 +42,25 @@ theorem dualDistrib_comp_map_dualMap (f : E →ₗ[R] E') (g : F →ₗ[R] F') :
       (map f g).dualMap ∘ₗ dualDistrib R E' F' := by
   ext φ ψ e w
   simp
+
+/-- **The cup product along `Δ`.** For a linear map `Δ : M → N₁ ⊗ N₂`, the `R`-bilinear product
+of linear forms `a ∪ b = (a ⊗ b) ∘ Δ` on `N₁` and on `N₂`, a linear form on `M`, through the
+evaluation `TensorProduct.dualDistrib` of `a ⊗ b` on tensors. Dual to a diagonal of chain
+complexes, it is a cup product of cochains. -/
+noncomputable def cupProduct {M N₁ N₂ : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N₁]
+    [Module R N₁] [AddCommMonoid N₂] [Module R N₂] (Δ : M →ₗ[R] N₁ ⊗[R] N₂) :
+    (N₁ →ₗ[R] R) →ₗ[R] (N₂ →ₗ[R] R) →ₗ[R] M →ₗ[R] R :=
+  (TensorProduct.mk R _ _).compr₂ (Δ.dualMap ∘ₗ TensorProduct.dualDistrib R _ _)
+
+/-- The cup product `a ∪ b` along `Δ` is `μ ∘ (a ⊗ b) ∘ Δ`, for the multiplication `μ` of `R`. -/
+theorem cupProduct_apply {M N₁ N₂ : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N₁]
+    [Module R N₁] [AddCommMonoid N₂] [Module R N₂] (Δ : M →ₗ[R] N₁ ⊗[R] N₂) (a : N₁ →ₗ[R] R)
+    (b : N₂ →ₗ[R] R) :
+    Δ.cupProduct a b = mul' R R ∘ₗ TensorProduct.map a b ∘ₗ Δ := by
+  have h : TensorProduct.dualDistrib R _ _ (a ⊗ₜ b) = mul' R R ∘ₗ TensorProduct.map a b :=
+    TensorProduct.ext' fun _ _ ↦ by simp
+  rw [cupProduct, compr₂_apply, TensorProduct.mk_apply, comp_apply, h, dualMap_apply',
+    comp_assoc]
 
 end LinearMap
 

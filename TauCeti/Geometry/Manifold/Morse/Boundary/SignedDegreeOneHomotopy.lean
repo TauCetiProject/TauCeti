@@ -447,8 +447,7 @@ theorem signedDegreeOneMap_signedMorseBoundary_single_apply (p : criticalPoints 
   · refine finsum_mem_congr (by ext; simp) fun x hx ↦ ?_
     obtain ⟨hpp', -⟩ := (mem_morseSourceBrokenDegreeOneSet hX₀).1 hx
     rw [sourceBrokenDegreeOneSign_of_morseIndex_eq_add_one hpp', dite_eq_left hpp']
-  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpp', signedTrajectoryCount_def]
-    exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hpp']
+  · exact signedMorseBoundaryCoeff_eq_finsum_mem hpp'
 
 include h₁ in
 /-- **`∂₁ ∘ K` counts trajectories broken at the target with signs.** When the slices out of `p` to
@@ -484,8 +483,7 @@ theorem signedMorseBoundary_signedDegreeOneMap_single_apply (p : criticalPoints 
   · refine finsum_mem_congr (by ext; simp) fun x hx ↦ ?_
     obtain ⟨-, hq'q, -⟩ := (mem_morseTargetBrokenDegreeOneSet hX₁).1 hx
     rw [targetBrokenDegreeOneSign_of_morseIndex_eq_add_one hq'q, dite_eq_left hq'q]
-  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hq'q, signedTrajectoryCount_def]
-    exact finsum_mem_congr rfl fun _ _ ↦ by rw [dite_eq_left hq'q]
+  · exact signedMorseBoundaryCoeff_eq_finsum_mem hq'q
 
 include h₀ h₁ in
 /-- **The degree-one identity holds exactly when the broken trajectories account for it.** When

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import TauCeti.LinearAlgebra.Finsupp.SignReversal
+public import TauCeti.LinearAlgebra.TensorProduct.Dual
 
 /-!
 # Tensor products with spaces of finitely supported functions
@@ -28,12 +29,18 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
   of `(φ ⊗ 1) t` and `(1 ⊗ ψ) t` are those of `t` multiplied by the matrix of `φ` or `ψ`.
 * `finsuppTensorFinsupp'_map_signReversal_apply`: the coefficients of the tensor product of two
   sign reversals.
+* `finsuppTensorFinsupp'_map_signEquiv_apply`: the coefficients of `(ε ⊗ ψ) t` for a sign change
+  `ε` are those of `(1 ⊗ ψ) t` multiplied by the signs.
 * `LinearMap.mul'_map_lapply_lapply`, `LinearMap.mul'_map_apply_eq_sum`: the product of two linear
   forms evaluated on `(α →₀ R) ⊗ (β →₀ R)` reads the coefficients, weighted by the values of the
   forms on the basis.
-* `LinearMap.mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp`: the products of
-  linear forms along a map `Δ` into `(α →₀ R) ⊗ (β →₀ R)` satisfy the Leibniz rule for `d₀`, `d₁`
-  and `d₂` exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + 1 ⊗ d₂) ∘ Δ`.
+* `LinearMap.cupProduct_apply_eq_sum`: the value in coordinates of the cup product
+  `a ∪ b = (a ⊗ b) ∘ Δ` of linear forms along a map `Δ` into `(α →₀ R) ⊗ (β →₀ R)`.
+* `LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp`: the cup products along a map
+  `Δ` into `(α →₀ R) ⊗ (β →₀ R)` satisfy the Leibniz rule for `d₀`, `d₁` and `d₂`, twisted by `ε`
+  on the first factor, exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + ε ⊗ d₂) ∘ Δ`;
+  `LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp` is the untwisted case
+  `ε = 1`.
 * `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_map` and
   `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor`: an endomorphism of
   `ι →₀ R`, for `ι ≃ α × β`, whose matrix coefficients split as those of `dA ⊗ 1 + εA ⊗ dB`
@@ -151,35 +158,58 @@ theorem mul'_map_apply_eq_sum [Fintype α] [Fintype β] (f : (α →₀ R) →�
     ring
   | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
 
-/-- **The Leibniz rule of products of linear forms along `Δ`.** Let
-`Δ : M → (α →₀ R) ⊗ (β →₀ R)` and let `d₀`, `d₁` and `d₂` be endomorphisms of `M`, `α →₀ R` and
-`β →₀ R`. The products `a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` of linear forms satisfy
-`(a ∪ b) ∘ d₀ = (a ∘ d₁) ∪ b + a ∪ (b ∘ d₂)` for all `a` and `b` exactly when
-`Δ ∘ d₀ = (d₁ ⊗ 1 + 1 ⊗ d₂) ∘ Δ`. -/
-theorem mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp {M : Type*}
+/-- **The cup product along `Δ` in coordinates.** For finite `α` and `β` and
+`Δ : M → (α →₀ R) ⊗ (β →₀ R)`, the value of `a ∪ b` at `m` is the sum over `(p, q)` of the
+coefficient of `(p, q)` in `Δ m` times `a p * b q`. -/
+theorem cupProduct_apply_eq_sum [Fintype α] [Fintype β] {M : Type*} [AddCommMonoid M]
+    [Module R M] (Δ : M →ₗ[R] (α →₀ R) ⊗[R] (β →₀ R)) (a : (α →₀ R) →ₗ[R] R)
+    (b : (β →₀ R) →ₗ[R] R) (m : M) :
+    Δ.cupProduct a b m =
+      ∑ x : α × β, finsuppTensorFinsupp' R α β (Δ m) x *
+        (a (Finsupp.single x.1 1) * b (Finsupp.single x.2 1)) := by
+  rw [cupProduct_apply, comp_apply, comp_apply, mul'_map_apply_eq_sum]
+
+/-- **The twisted Leibniz rule of the cup product along `Δ`.** Let
+`Δ : M → (α →₀ R) ⊗ (β →₀ R)`, let `d₀`, `d₁` and `d₂` be endomorphisms of `M`, `α →₀ R` and
+`β →₀ R`, and let `ε` be an endomorphism of `α →₀ R`. The cup products `a ∪ b = μ ∘ (a ⊗ b) ∘ Δ`
+of linear forms satisfy `(a ∪ b) ∘ d₀ = (a ∘ d₁) ∪ b + (a ∘ ε) ∪ (b ∘ d₂)` for all `a` and `b`
+exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + ε ⊗ d₂) ∘ Δ`. With `ε` the Koszul sign `(-1) ^ |a|` on a graded
+basis, this is the graded Leibniz rule of a cup product dual to a diagonal. -/
+theorem cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp {M : Type*}
     [AddCommMonoid M] [Module R M] (Δ : M →ₗ[R] (α →₀ R) ⊗[R] (β →₀ R)) (d₀ : M →ₗ[R] M)
-    (d₁ : (α →₀ R) →ₗ[R] α →₀ R) (d₂ : (β →₀ R) →ₗ[R] β →₀ R) :
+    (d₁ ε : (α →₀ R) →ₗ[R] α →₀ R) (d₂ : (β →₀ R) →ₗ[R] β →₀ R) :
     (∀ (a : (α →₀ R) →ₗ[R] R) (b : (β →₀ R) →ₗ[R] R),
-        mul' R R ∘ₗ TensorProduct.map a b ∘ₗ Δ ∘ₗ d₀ =
-          mul' R R ∘ₗ TensorProduct.map (a ∘ₗ d₁) b ∘ₗ Δ +
-            mul' R R ∘ₗ TensorProduct.map a (b ∘ₗ d₂) ∘ₗ Δ) ↔
-      Δ ∘ₗ d₀ = (d₁.rTensor _ + d₂.lTensor _) ∘ₗ Δ := by
-  -- The right side of the Leibniz rule is `μ ∘ (a ⊗ b) ∘ (d₁ ⊗ 1 + 1 ⊗ d₂) ∘ Δ`.
+        Δ.cupProduct a b ∘ₗ d₀ = Δ.cupProduct (a ∘ₗ d₁) b + Δ.cupProduct (a ∘ₗ ε) (b ∘ₗ d₂)) ↔
+      Δ ∘ₗ d₀ = (d₁.rTensor _ + TensorProduct.map ε d₂) ∘ₗ Δ := by
+  -- The right side of the Leibniz rule is `μ ∘ (a ⊗ b) ∘ (d₁ ⊗ 1 + ε ⊗ d₂) ∘ Δ`.
   have hR : ∀ (a : (α →₀ R) →ₗ[R] R) (b : (β →₀ R) →ₗ[R] R),
-      mul' R R ∘ₗ TensorProduct.map (a ∘ₗ d₁) b ∘ₗ Δ +
-          mul' R R ∘ₗ TensorProduct.map a (b ∘ₗ d₂) ∘ₗ Δ =
-        mul' R R ∘ₗ TensorProduct.map a b ∘ₗ (d₁.rTensor _ + d₂.lTensor _) ∘ₗ Δ := by
+      Δ.cupProduct (a ∘ₗ d₁) b + Δ.cupProduct (a ∘ₗ ε) (b ∘ₗ d₂) =
+        mul' R R ∘ₗ TensorProduct.map a b ∘ₗ (d₁.rTensor _ + TensorProduct.map ε d₂) ∘ₗ Δ := by
     intro a b
     refine LinearMap.ext fun c ↦ ?_
-    simp only [LinearMap.add_apply, LinearMap.comp_apply, _root_.map_add, LinearMap.map_rTensor,
-      LinearMap.map_lTensor]
-  simp_rw [hR]
+    simp only [cupProduct_apply, LinearMap.add_apply, LinearMap.comp_apply, _root_.map_add,
+      LinearMap.map_rTensor, TensorProduct.map_map]
+  simp_rw [hR, cupProduct_apply, comp_assoc]
   refine ⟨fun h ↦ ?_, fun h a b ↦ by rw [h]⟩
   -- Test the Leibniz rule against the coordinate forms: they read the coefficients of the two
   -- sides of the identity.
   refine LinearMap.ext fun m ↦ (finsuppTensorFinsupp' R α β).injective (Finsupp.ext fun x ↦ ?_)
   have := congr($(h (Finsupp.lapply x.1) (Finsupp.lapply x.2)) m)
   simpa only [comp_apply, mul'_map_lapply_lapply, Prod.mk.eta] using this
+
+/-- **The Leibniz rule of the cup product along `Δ`.** Let `Δ : M → (α →₀ R) ⊗ (β →₀ R)` and let
+`d₀`, `d₁` and `d₂` be endomorphisms of `M`, `α →₀ R` and `β →₀ R`. The cup products
+`a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` of linear forms satisfy `(a ∪ b) ∘ d₀ = (a ∘ d₁) ∪ b + a ∪ (b ∘ d₂)` for
+all `a` and `b` exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + 1 ⊗ d₂) ∘ Δ`. This is the untwisted case `ε = 1`
+of `LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp`. -/
+theorem cupProduct_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp {M : Type*}
+    [AddCommMonoid M] [Module R M] (Δ : M →ₗ[R] (α →₀ R) ⊗[R] (β →₀ R)) (d₀ : M →ₗ[R] M)
+    (d₁ : (α →₀ R) →ₗ[R] α →₀ R) (d₂ : (β →₀ R) →ₗ[R] β →₀ R) :
+    (∀ (a : (α →₀ R) →ₗ[R] R) (b : (β →₀ R) →ₗ[R] R),
+        Δ.cupProduct a b ∘ₗ d₀ = Δ.cupProduct (a ∘ₗ d₁) b + Δ.cupProduct a (b ∘ₗ d₂)) ↔
+      Δ ∘ₗ d₀ = (d₁.rTensor _ + d₂.lTensor _) ∘ₗ Δ := by
+  simpa only [comp_id, lTensor_def] using
+    cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp Δ d₀ d₁ id d₂
 
 end LinearMap
 
@@ -253,6 +283,21 @@ theorem finsuppTensorFinsupp'_map_signReversal_apply (S₁ : Set α) [DecidableP
       finsuppTensorFinsupp'_apply_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
       Finsupp.signReversal_apply, Finsupp.signReversal_apply]
     by_cases hq : q ∈ S₁ <;> by_cases hr : r ∈ S₂ <;> simp [hq, hr]
+  | add t t' ht ht' => simp only [map_add, Finsupp.add_apply, ht, ht', mul_add]
+
+/-- **The coefficients of `(ε ⊗ ψ) t` for a sign change `ε`.** The coefficient of `(q, r)` in the
+image of `t` under the tensor product of the sign change `Finsupp.signEquiv` by `ε` and of `ψ` is
+that of `(1 ⊗ ψ) t`, multiplied by the sign `ε q`. -/
+theorem finsuppTensorFinsupp'_map_signEquiv_apply {β' : Type*} (ε : α → ℤˣ)
+    (ψ : (β →₀ R) →ₗ[R] β' →₀ R) (t : (α →₀ R) ⊗[R] (β →₀ R)) (q : α) (r : β') :
+    finsuppTensorFinsupp' R α β'
+        (TensorProduct.map (Finsupp.signEquiv (A := R) R ε).toLinearMap ψ t) (q, r) =
+      ((ε q : ℤ) : R) * finsuppTensorFinsupp' R α β' (ψ.lTensor _ t) (q, r) := by
+  induction t with
+  | tmul x y =>
+    rw [TensorProduct.map_tmul, LinearMap.lTensor_tmul, finsuppTensorFinsupp'_apply_apply,
+      finsuppTensorFinsupp'_apply_apply, LinearEquiv.coe_coe, Finsupp.signEquiv_apply,
+      zsmul_eq_mul, mul_assoc]
   | add t t' ht ht' => simp only [map_add, Finsupp.add_apply, ht, ht', mul_add]
 
 end SignReversal
