@@ -58,9 +58,9 @@ abbrev graphSub (w : ℝ → ℝ) : ℝ² → ℝ :=
 variable {w : ℝ → ℝ}
 
 /-- The derivative of `f(x, y) = w(x) - y` is `v ↦ w'(x) v₀ - v₁`. -/
-theorem hasFDerivAt_graphSub (hw : Differentiable ℝ w) (p : ℝ²) :
+theorem hasFDerivAt_graphSub (p : ℝ²) (hw : DifferentiableAt ℝ w (p 0)) :
     HasFDerivAt (graphSub w) (deriv w (p 0) • π₀ - π₁) p :=
-  ((hw (p 0)).hasDerivAt.comp_hasFDerivAt p (π₀).hasFDerivAt).sub (π₁).hasFDerivAt
+  (hw.hasDerivAt.comp_hasFDerivAt p (π₀).hasFDerivAt).sub (π₁).hasFDerivAt
 
 /-- The smoothness of `f(x, y) = w(x) - y` on the plane, for `w` of class `C^k`. -/
 theorem contMDiff_graphSub {k : ℕ∞ω} (hw : ContDiff ℝ k w) :
@@ -68,21 +68,21 @@ theorem contMDiff_graphSub {k : ℕ∞ω} (hw : ContDiff ℝ k w) :
   ((hw.comp (π₀).contDiff).sub (π₁).contDiff).contMDiff
 
 /-- On the flat plane, the gradient of `f(x, y) = w(x) - y` is `(w'(x), -1)`. -/
-theorem mgradient_graphSub (hw : Differentiable ℝ w) (p : ℝ²) :
+theorem mgradient_graphSub (p : ℝ²) (hw : DifferentiableAt ℝ w (p 0)) :
     Manifold.mgradient 𝓘(ℝ, ℝ²) (graphSub w) p = !₂[deriv w (p 0), -1] := by
   have h : HasGradientAt (graphSub w) !₂[deriv w (p 0), -1] p := by
     rw [hasGradientAt_iff_hasFDerivAt]
-    convert hasFDerivAt_graphSub hw p using 1
+    convert hasFDerivAt_graphSub p hw using 1
     ext v
     simp [EuclideanSpace.inner_eq_star_dotProduct, Fin.sum_univ_two, dotProduct]
     ring
   exact (Manifold.mgradient_eq_gradient_of_eq rfl _ _).trans h.gradient
 
 /-- On the flat plane, the gradient of `f(x, y) = w(x) - y` has length `√(1 + w'(x)²)`. -/
-theorem norm_mgradient_graphSub (hw : Differentiable ℝ w) (p : ℝ²) :
+theorem norm_mgradient_graphSub (p : ℝ²) (hw : DifferentiableAt ℝ w (p 0)) :
     ‖Manifold.mgradient 𝓘(ℝ, ℝ²) (graphSub w) p‖ = √(1 + deriv w (p 0) ^ 2) := by
   rw [Manifold.norm_mgradient_eq_norm_gradient_of_eq rfl,
-    ← Manifold.mgradient_eq_gradient_of_eq rfl, mgradient_graphSub hw,
+    ← Manifold.mgradient_eq_gradient_of_eq rfl, mgradient_graphSub p hw,
     EuclideanSpace.norm_eq]
   simp [Fin.sum_univ_two, add_comm]
 
@@ -95,7 +95,7 @@ theorem isRegularValue_graphSub (hw : Differentiable ℝ w) (a : ℝ) :
   rw [isRegularPoint_iff_surjective_fderiv]
   intro t
   refine ⟨EuclideanSpace.single 1 (-t), ?_⟩
-  rw [(hasFDerivAt_graphSub hw p).fderiv]
+  rw [(hasFDerivAt_graphSub p (hw _)).fderiv]
   simp
 
 /-- On the flat plane, the Hessian of `f(x, y) = w(x) - y` is `w''(x) v₀ v'₀`. -/
@@ -110,7 +110,7 @@ private theorem hessian_graphSub (hw : ContDiff ℝ 2 w) (p : ℝ²)
   simp only [Matrix.cons_val, NormedSpace.fromTangentSpace_apply]
   have hd : Differentiable ℝ w := hw.differentiable (by norm_num)
   have hD : fderiv ℝ (graphSub w) = fun q ↦ deriv w (q 0) • π₀ - π₁ :=
-    funext fun q ↦ (hasFDerivAt_graphSub hd q).fderiv
+    funext fun q ↦ (hasFDerivAt_graphSub q (hd _)).fderiv
   have hd' : DifferentiableAt ℝ (deriv w) (p 0) :=
     ((contDiff_succ_iff_deriv (n := 1)).1 hw).2.2.differentiable one_ne_zero (p 0)
   have h2 : HasFDerivAt (fun q : ℝ² ↦ deriv w (q 0) • π₀ - π₁)
@@ -123,7 +123,7 @@ private theorem hessian_graphSub (hw : ContDiff ℝ 2 w) (p : ℝ²)
     simp only [ContinuousLinearMap.smulRight_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
   exact key v v'
 
-/-- The closed region `{y ≥ w(x)} = {w(x) - y ≤ 0}` above the graph of `w` in the plane. -/
+/-- The region `{y ≥ w(x)} = {w(x) - y ≤ 0}` above the graph of `w` in the plane. -/
 abbrev graphEpigraph (w : ℝ → ℝ) : Set ℝ² :=
   {p : ℝ² | graphSub w p ≤ 0}
 
@@ -238,7 +238,7 @@ theorem proj_one_mfderiv_graphEpigraph (hw : ContDiff ℝ ∞ w)
   have h0 := (mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero_iff
     (contMDiff_graphSub (hw.of_le (by simp))) (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2))
     (isRegularValue_graphSub hd 0) _).2 (mfderiv_subtypeVal_mem_boundaryTangentSpace q u)
-  rw [mvfderiv_eq_fderiv_apply, (hasFDerivAt_graphSub hd _).fderiv] at h0
+  rw [mvfderiv_eq_fderiv_apply, (hasFDerivAt_graphSub _ (hd _)).fderiv] at h0
   have key : ∀ a : ℝ², (deriv w ((q : ℝ²) 0) • π₀ - π₁) a =
       deriv w ((q : ℝ²) 0) * π₀ a - π₁ a := fun a ↦ by simp
   have h3 := h0.symm.trans (key _)
