@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.HaagerupZsido.Basic
-public import TauCeti.Analysis.SpecialFunctions.Integrals.AbsSinExp
+public import TauCeti.Analysis.SpecialFunctions.Integrals.AbsSin.Exp
 
 /-!
 # The exact `L¹` mass of the Haagerup–Zsidó kernel
