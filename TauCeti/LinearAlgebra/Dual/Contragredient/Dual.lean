@@ -182,16 +182,15 @@ instance : Module S (ContragredientDual σ M) :=
   letI : Module S (Module.Dual R M) := Module.compHom (Module.Dual R M) (σ : S →+* R)
   toDual_injective.module S ⟨⟨toDual, toDual_zero⟩, toDual_add⟩ fun _ _ ↦ rfl
 
+theorem smul_apply_eq_mul (s : S) (φ : ContragredientDual σ M) (x : M) :
+    (s • φ) x = σ s * φ x := by
+  rw [← toDual_apply, toDual_smul, LinearMap.smul_apply, smul_eq_mul, toDual_apply]
+
 /-- **The contragredient scalar action**: `(s • φ) x = φ (σ s • x)`. -/
 @[simp]
 theorem smul_apply (s : S) (φ : ContragredientDual σ M) (x : M) :
     (s • φ) x = φ (σ s • x) := by
-  rw [← toDual_apply, toDual_smul, LinearMap.smul_apply, smul_eq_mul, ← smul_eq_mul,
-    ← φ.toDual.map_smul, toDual_apply]
-
-theorem smul_apply_eq_mul (s : S) (φ : ContragredientDual σ M) (x : M) :
-    (s • φ) x = σ s * φ x := by
-  rw [smul_apply, map_smul_eq_mul]
+  rw [smul_apply_eq_mul, map_smul_eq_mul]
 
 /-- `toDual` and `ofDual` form a `σ`-semilinear equivalence between `ContragredientDual σ M` and
 `Module.Dual R M`. -/
@@ -436,21 +435,9 @@ theorem contragredientDual_apply (b : Module.Basis ι R M) (σ : S ≃+* R) (i :
 theorem contragredientDual_repr_apply (b : Module.Basis ι R M) (σ : S ≃+* R)
     (φ : ContragredientDual σ M) (i : ι) :
     (b.contragredientDual σ).repr φ i = σ.symm (φ (b i)) := by
-  classical
-  have := Fintype.ofFinite ι
   have := RingHomInvPair.of_ringEquiv σ
   have := RingHomInvPair.of_ringEquiv_symm σ
-  have hsum : φ = ∑ j : ι, σ.symm (φ (b j)) • b.contragredientDual σ j := by
-    apply (ContragredientDual.toDualLinearEquiv σ M).injective
-    calc ContragredientDual.toDualLinearEquiv σ M φ
-        = φ.toDual := ContragredientDual.toDualLinearEquiv_apply φ
-      _ = ∑ j : ι, b.dualBasis.repr φ.toDual j • b.dualBasis j :=
-            (b.dualBasis.sum_repr φ.toDual).symm
-      _ = ContragredientDual.toDualLinearEquiv σ M
-            (∑ j : ι, σ.symm (φ (b j)) • b.contragredientDual σ j) := by
-          simp [map_sum, map_smulₛₗ]
-  conv_lhs => rw [hsum]
-  rw [(b.contragredientDual σ).repr_sum_self]
+  simp [contragredientDual, Module.Basis.mapₛₗ_repr, Module.Basis.dualBasis_repr]
 
 theorem contragredientDual_equivFun_apply (b : Module.Basis ι R M) (σ : S ≃+* R)
     (φ : ContragredientDual σ M) (i : ι) :
@@ -479,9 +466,7 @@ theorem toMatrix_map {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] 
     LinearMap.toMatrix (b₀.contragredientDual σ) (b₁.contragredientDual σ) (map σ f) =
       (LinearMap.toMatrix b₁ b₀ f)ᵀ.map σ.symm := by
   ext i j
-  rw [LinearMap.toMatrix_apply, Module.Basis.contragredientDual_repr_apply, map_apply,
-    Module.Basis.contragredientDual_apply, ofDual_apply, Module.Basis.coord_apply,
-    Matrix.map_apply, Matrix.transpose_apply, LinearMap.toMatrix_apply]
+  simp [LinearMap.toMatrix_apply, Module.Basis.coord_apply]
 
 /-- For a matrix `A`, the matrix of `ContragredientDual.map σ (Matrix.toLin' A)` in the
 contragredient duals of the standard bases is `Aᵀ.map σ.symm`. -/
