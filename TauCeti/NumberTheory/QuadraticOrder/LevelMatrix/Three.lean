@@ -12,6 +12,7 @@ public import TauCeti.Algebra.QuadraticAlgebra.UnitMatrix
 
 import Mathlib.Data.ZMod.Basic
 import Mathlib.GroupTheory.QuotientGroup.Basic
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Quadratic multiplication matrices at level three
@@ -41,21 +42,21 @@ private theorem unipotentPeriodMatrixHom_mk_injective :
   rw [← MonoidHom.ker_eq_bot_iff, Subgroup.eq_bot_iff_forall]
   intro s hs
   simp only [MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
-    QuotientGroup.eq_one_iff, Subgroup.mem_zpowers_iff] at hs
-  obtain ⟨k, hk⟩ := hs
-  rw [show (-1 : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3)) = periodUnitMatrixEquiv (-1) by simp,
-    ← map_zpow] at hk
-  have him := congrArg (fun M : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3) ↦
-      ((M : GL (Fin 2) (ZMod 3)) : Matrix (Fin 2) (Fin 2) (ZMod 3)) 1 0) hk
-  have hneg : ((((-1 : (QuadraticAlgebra (ZMod 3) 0 0)ˣ) ^ k :
-      (QuadraticAlgebra (ZMod 3) 0 0)ˣ) : QuadraticAlgebra (ZMod 3) 0 0)).im = 0 := by
-    rcases Int.even_or_odd k with ⟨n, rfl⟩ | ⟨n, rfl⟩
-    · simp [← two_mul, zpow_mul]
-    · simp [zpow_add, zpow_mul]
-  simp only [coe_periodUnitMatrixEquiv, coe_periodUnitMatrix, periodMulMatrix_eq,
-    coe_unipotentPeriodMatrixHom, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_one,
-    Matrix.cons_val_zero, hneg] at him
-  exact Multiplicative.toAdd.injective him.symm
+    QuotientGroup.eq_one_iff, Subgroup.mem_zpowers_neg_one_iff] at hs
+  rcases hs with h | h
+  · have him := congrArg (fun M : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3) ↦
+      ((M : GL (Fin 2) (ZMod 3)) : Matrix (Fin 2) (Fin 2) (ZMod 3)) 1 0) h
+    simp only [coe_unipotentPeriodMatrixHom, OneMemClass.coe_one, Units.val_one,
+      Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_one, Matrix.cons_val_zero,
+      Matrix.one_apply_ne (by decide : (1 : Fin 2) ≠ 0)] at him
+    exact Multiplicative.toAdd.injective him
+  · have him := congrArg (fun M : periodMatrixGroup (0 : ZMod 3) (0 : ZMod 3) ↦
+      ((M : GL (Fin 2) (ZMod 3)) : Matrix (Fin 2) (Fin 2) (ZMod 3)) 1 0) h
+    simp only [coe_unipotentPeriodMatrixHom, coe_neg_periodMatrixGroup, Units.val_neg,
+      OneMemClass.coe_one, Units.val_one, Matrix.neg_apply, Matrix.of_apply, Matrix.cons_val',
+      Matrix.cons_val_one, Matrix.cons_val_zero,
+      Matrix.one_apply_ne (by decide : (1 : Fin 2) ≠ 0), neg_zero] at him
+    exact Multiplicative.toAdd.injective him
 
 /-- Surjectivity of the composite `Multiplicative (ZMod 3) →* periodMatrixGroup 0 0 ⧸ {±I}`. -/
 private theorem unipotentPeriodMatrixHom_mk_surjective :

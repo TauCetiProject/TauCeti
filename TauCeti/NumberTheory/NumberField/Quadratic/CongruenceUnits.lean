@@ -6,18 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
-import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
+import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
+import TauCeti.NumberTheory.NumberField.Quadratic.PeriodAlgebra
 import TauCeti.NumberTheory.QuadraticOrder.Reduction
 
 /-!
 # Unit congruences in imaginary quadratic fields
 
-Let `K` be an imaginary quadratic field (`[IsTotallyComplex K]`, `finrank ℚ K = 2`), presented over
-`ℚ` by `θ : 𝓞 K` with `θ² = d` (`d < 0` squarefree). Transporting
-`QuadraticAlgebra.ker_unitsMap_quotient_span_natCast` along the ordinary integral basis
-`𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ ((d - 1) / 4) 1` (for `d ≡ 1 (mod 4)`) or
-`𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ d 0` (for `d ≢ 1 (mod 4)`) shows that the kernel of
-`(𝓞 K)ˣ →* (𝓞 K ⧸ (N))ˣ` is `⊤` at `N = 1`, `Subgroup.zpowers (-1)` at `N = 2`, and `⊥` for
+Let `K` be an imaginary quadratic field (`[IsTotallyComplex K]`, `finrank ℚ K = 2`) of
+discriminant `D = discr K < 0`. Transporting `QuadraticAlgebra.ker_unitsMap_quotient_span_natCast`
+along the period-algebra presentation `exists_ringOfIntegers_periodAlgEquiv` shows that the kernel
+of `(𝓞 K)ˣ →* (𝓞 K ⧸ (N))ˣ` is `⊤` at `N = 1`, `Subgroup.zpowers (-1)` at `N = 2`, and `⊥` for
 `3 ≤ N` (`ker_unitsMap_ringOfIntegers_quotient_span_natCast`), uniformly for all imaginary
 quadratic fields including `D = -4` and `D = -3`.
 
@@ -76,14 +75,9 @@ theorem ker_unitsMap_ringOfIntegers_quotient_span_natCast [NumberField K] [IsTot
     (Units.map (Ideal.Quotient.mk (Ideal.span {(N : 𝓞 K)}) :
         𝓞 K →* 𝓞 K ⧸ Ideal.span {(N : 𝓞 K)})).ker =
       if N = 1 then ⊤ else if N = 2 then Subgroup.zpowers (-1) else ⊥ := by
-  obtain ⟨θ, d, hmin, hgen, hsf, hd_neg⟩ :=
-    exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_of_isTotallyComplex hK
-  by_cases hd4 : d % 4 = 1
-  · exact ker_unitsMap_ringOfIntegers_quotient_span_natCast_of_algEquiv
-      (ringOfIntegersAlgEquivHalfGen hmin hgen hsf hd4)
-      (by rw [QuadraticAlgebra.discr_def]; omega) hN
-  · exact ker_unitsMap_ringOfIntegers_quotient_span_natCast_of_algEquiv
-      (ringOfIntegersAlgEquivGen hmin hgen hsf hd4)
-      (by rw [QuadraticAlgebra.discr_def]; omega) hN
+  obtain ⟨e⟩ := exists_ringOfIntegers_periodAlgEquiv hK
+  exact ker_unitsMap_ringOfIntegers_quotient_span_natCast_of_algEquiv e
+    ((discr_neg_periodCoeff (discr K) (discr_emod_four_eq_zero_or_one K)).symm ▸
+      IsTotallyComplex.discr_lt_zero hK) hN
 
 end TauCeti.NumberField

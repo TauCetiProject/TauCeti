@@ -29,7 +29,7 @@ For a quadratic field `E` this determines the conductor completely: its finite p
 by `|d_E|` (`finitePart_abelianConductor_of_isQuadraticExtension`), and its infinite part contains
 the real place exactly when `d_E < 0` (`mem_infinitePart_abelianConductor_iff_discr_neg`). So the
 conductor of `E/ℚ` is `(|d_E|)` for a real quadratic field
-(`abelianConductor_eq_ratFiniteModulus_of_discr_pos`) and `(|d_E|)·∞` for an imaginary one
+(`abelianConductor_eq_spanNat_of_discr_pos`) and `(|d_E|)·∞` for an imaginary one
 (`abelianConductor_eq_ratModulus_of_discr_neg`).
 
 For instance, the three quadratic subfields `ℚ(i)`, `ℚ(√2)` and `ℚ(√-2)` of `ℚ(ζ₈)` have
@@ -51,7 +51,7 @@ cyclotomic field containing them.
   of the conductor of a quadratic field is `(|d_E|)`.
 * `TauCeti.ClassFieldTheory.mem_infinitePart_abelianConductor_iff_discr_neg`: the conductor of a
   quadratic field contains the real place exactly when its discriminant is negative.
-* `TauCeti.ClassFieldTheory.abelianConductor_eq_ratFiniteModulus_of_discr_pos` and
+* `TauCeti.ClassFieldTheory.abelianConductor_eq_spanNat_of_discr_pos` and
   `TauCeti.ClassFieldTheory.abelianConductor_eq_ratModulus_of_discr_neg`: the conductor of a real
   quadratic field is `(d_E)`, and that of an imaginary quadratic field is `(|d_E|)·∞`.
 * `TauCeti.ClassFieldTheory.abelianConductor_sqrt_two`,

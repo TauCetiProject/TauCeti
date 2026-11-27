@@ -42,7 +42,7 @@ and a class with positive sign is determined by its residue.
   part of `ratModulus n hn` is `ZMod n`.
 * `TauCeti.GlobalNumberFields.ratModulusEquivZMod`: the ray class group of `ratModulus n hn` is
   `(ZMod n)ˣ`.
-* `TauCeti.GlobalNumberFields.spanNatEquivZMod`: the ray class group of `Modulus.spanNat ℚ n` is
+* `TauCeti.GlobalNumberFields.ratSpanNatEquivZMod`: the ray class group of `Modulus.spanNat ℚ n` is
   `(ZMod n)ˣ ⧸ {±1}`.
 
 ## Main results
@@ -64,11 +64,11 @@ and a class with positive sign is determined by its residue.
   the absolute norm of its finite part divides `n`.
 * `TauCeti.GlobalNumberFields.dvd_ratModulus_absNorm`: every modulus of `ℚ` divides `(N)·∞`,
   where `N` is the absolute norm of its finite part.
-* `TauCeti.GlobalNumberFields.spanNatEquivZMod_classMap`: the transition map from
+* `TauCeti.GlobalNumberFields.ratSpanNatEquivZMod_classMap`: the transition map from
   `(n)·∞` to `(d)` is reduction modulo `d` followed by the quotient by `±1`.
-* `TauCeti.GlobalNumberFields.spanNatEquivZMod_idealClass`: the ray class modulo `(n)` of
+* `TauCeti.GlobalNumberFields.ratSpanNatEquivZMod_idealClass`: the ray class modulo `(n)` of
   a nonzero integral ideal prime to `n` is its absolute norm modulo `n`, up to sign.
-* `TauCeti.GlobalNumberFields.two_mul_card_rayClassGroup_spanNat`: for `n > 2`, the ray
+* `TauCeti.GlobalNumberFields.two_mul_card_rayClassGroup_spanNat_rat`: for `n > 2`, the ray
   class group modulo `(n)` has order `φ(n) / 2`.
 
 ## References
@@ -357,39 +357,39 @@ variable (n)
 /-- **The ray class group of `ℚ` modulo `(n)` is `(ZMod n)ˣ ⧸ {±1}`.**  Without the real place, a
 fractional ideal of `ℚ` prime to `n` has the two generators `±a` on an equal footing, so its ray
 class is the residue of a generator modulo `n`, up to sign. -/
-noncomputable def spanNatEquivZMod [NeZero n] :
+noncomputable def ratSpanNatEquivZMod [NeZero n] :
     RayClassGroup (Modulus.spanNat ℚ n) ≃* (ZMod n)ˣ ⧸ Subgroup.zpowers (-1) :=
   ((QuotientGroup.quotientMulEquivOfEq ker_zmodUnitsToFiniteRayClass).symm.trans
     (QuotientGroup.quotientKerEquivOfSurjective _ zmodUnitsToFiniteRayClass_surjective)).symm
 
 variable {n}
 
-private theorem spanNatEquivZMod_zmodUnitsToFiniteRayClass [NeZero n] (u : (ZMod n)ˣ) :
-    spanNatEquivZMod n (zmodUnitsToFiniteRayClass u) = u := by
-  rw [spanNatEquivZMod, MulEquiv.symm_apply_eq, MulEquiv.trans_apply,
+private theorem ratSpanNatEquivZMod_zmodUnitsToFiniteRayClass [NeZero n] (u : (ZMod n)ˣ) :
+    ratSpanNatEquivZMod n (zmodUnitsToFiniteRayClass u) = u := by
+  rw [ratSpanNatEquivZMod, MulEquiv.symm_apply_eq, MulEquiv.trans_apply,
     (MulEquiv.symm_apply_eq _).mpr (QuotientGroup.quotientMulEquivOfEq_mk _ u).symm,
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- **Forgetting the real place is reduction modulo `±1`.**  For `d ∣ n`, the transition map from
 `(n)·∞` to `(d)` sends the class of `u ∈ (ZMod n)ˣ` to the class of its reduction modulo `d`, up to
 sign. -/
-theorem spanNatEquivZMod_classMap {d : ℕ} [NeZero d]
+theorem ratSpanNatEquivZMod_classMap {d : ℕ} [NeZero d]
     (h : Modulus.spanNat ℚ d ∣ ratModulus n hn) (c : RayClassGroup (ratModulus n hn)) :
-    spanNatEquivZMod d (classMap h c) =
+    ratSpanNatEquivZMod d (classMap h c) =
       ZMod.unitsMap (spanNat_dvd_ratModulus_iff.mp h) (ratModulusEquivZMod n hn c) := by
   have hdn := spanNat_dvd_ratModulus_iff.mp h
   have h₂ : ratModulus d (NeZero.ne d) ∣ ratModulus n hn := ratModulus_dvd_ratModulus_iff.mpr hdn
   rw [← classMap_classMap spanNat_dvd_ratModulus h₂, ← ratModulusEquivZMod_classMap h₂,
-    ← spanNatEquivZMod_zmodUnitsToFiniteRayClass]
-  refine congrArg (spanNatEquivZMod d) ?_
+    ← ratSpanNatEquivZMod_zmodUnitsToFiniteRayClass]
+  refine congrArg (ratSpanNatEquivZMod d) ?_
   rw [zmodUnitsToFiniteRayClass, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.symm_apply_apply]
 
 /-- **The ray class modulo `(n)` of a nonzero integral ideal prime to `n` is its absolute norm
 modulo `n`, up to sign.** -/
-theorem spanNatEquivZMod_idealClass [NeZero n] (I : integralIdealsPrimeTo (Modulus.spanNat ℚ n))
+theorem ratSpanNatEquivZMod_idealClass [NeZero n] (I : integralIdealsPrimeTo (Modulus.spanNat ℚ n))
     {u : (ZMod n)ˣ} (hu : (u : ZMod n) = Ideal.absNorm (I : Ideal (𝓞 ℚ))) :
-    spanNatEquivZMod n (idealClass (Modulus.spanNat ℚ n) I) = u := by
+    ratSpanNatEquivZMod n (idealClass (Modulus.spanNat ℚ n) I) = u := by
   -- The two moduli have the same finite part, hence the same integral ideals prime to them.
   have hI : (I : Ideal (𝓞 ℚ)) ∈ integralIdealsPrimeTo (ratModulus n (NeZero.ne n)) := by
     have := Modulus.mem_integralIdealsPrimeTo.mp I.property
@@ -398,7 +398,7 @@ theorem spanNatEquivZMod_idealClass [NeZero n] (I : integralIdealsPrimeTo (Modul
       ratModulus_finitePart]
   have hincl : integralIdealsPrimeToInclusion spanNat_dvd_ratModulus ⟨_, hI⟩ = I :=
     Subtype.ext (coe_integralIdealsPrimeToInclusion _ _)
-  rw [← hincl, ← classMap_idealClass, spanNatEquivZMod_classMap, ZMod.unitsMap_self]
+  rw [← hincl, ← classMap_idealClass, ratSpanNatEquivZMod_classMap, ZMod.unitsMap_self]
   congr 1
   exact Units.ext ((coe_ratModulusEquivZMod_idealClass n (NeZero.ne n) _).trans hu.symm)
 
@@ -406,11 +406,11 @@ theorem spanNatEquivZMod_idealClass [NeZero n] (I : integralIdealsPrimeTo (Modul
 `n > 2`, so that `-1 ≠ 1` modulo `n`: its order is `φ(n) / 2`, while
 `RayClassGroup (ratModulus n hn)` has order `φ(n)`.  The real place therefore genuinely enlarges
 the ray class group. -/
-theorem two_mul_card_rayClassGroup_spanNat [NeZero n] (h2 : 2 < n) :
+theorem two_mul_card_rayClassGroup_spanNat_rat [NeZero n] (h2 : 2 < n) :
     2 * Nat.card (RayClassGroup (Modulus.spanNat ℚ n)) = n.totient := by
   have : Fact (2 < n) := ⟨h2⟩
   have hne : (-1 : (ZMod n)ˣ) ≠ 1 := fun h ↦ ZMod.neg_one_ne_one (congrArg Units.val h)
-  rw [Nat.card_congr (spanNatEquivZMod n).toEquiv, ← Subgroup.index,
+  rw [Nat.card_congr (ratSpanNatEquivZMod n).toEquiv, ← Subgroup.index,
     ← orderOf_eq_prime neg_one_sq hne, ← Nat.card_zpowers, Subgroup.card_mul_index,
     Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 

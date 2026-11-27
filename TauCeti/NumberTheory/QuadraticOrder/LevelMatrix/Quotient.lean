@@ -99,6 +99,42 @@ def unitsQuotientSpanNatCastPeriodEquiv (a b : ℤ) (N : ℕ) :
       periodMatrixGroup (a : ZMod N) (b : ZMod N) :=
   (Units.mapEquiv (quotientSpanNatCastEquiv a b N).toMulEquiv).trans periodUnitMatrixEquiv
 
+/-- Evaluation of `unitsQuotientSpanNatCastPeriodEquiv` on an arbitrary residue unit via
+`quotientSpanNatCastEquiv` and `periodUnitMatrixEquiv`. -/
+theorem unitsQuotientSpanNatCastPeriodEquiv_apply (a b : ℤ) (N : ℕ)
+    (u : (QuadraticAlgebra ℤ a b ⧸ Ideal.span {(N : QuadraticAlgebra ℤ a b)})ˣ) :
+    unitsQuotientSpanNatCastPeriodEquiv a b N u =
+      periodUnitMatrixEquiv (Units.map (quotientSpanNatCastEquiv a b N).toRingHom.toMonoidHom u) :=
+  Subtype.ext <| Units.ext <| by simp [unitsQuotientSpanNatCastPeriodEquiv]
+
+/-- Underlying matrix in `GL (Fin 2) (ZMod N)` of `unitsQuotientSpanNatCastPeriodEquiv a b N u`. -/
+@[simp]
+theorem coe_unitsQuotientSpanNatCastPeriodEquiv (a b : ℤ) (N : ℕ)
+    (u : (QuadraticAlgebra ℤ a b ⧸ Ideal.span {(N : QuadraticAlgebra ℤ a b)})ˣ) :
+    (unitsQuotientSpanNatCastPeriodEquiv a b N u : GL (Fin 2) (ZMod N)) =
+      periodUnitMatrix (Units.map (quotientSpanNatCastEquiv a b N).toRingHom.toMonoidHom u) := by
+  rw [unitsQuotientSpanNatCastPeriodEquiv_apply, coe_periodUnitMatrixEquiv]
+
+/-- The inverse of `unitsQuotientSpanNatCastPeriodEquiv` pulls back `periodUnitMatrixEquiv.symm`
+along `quotientSpanNatCastEquiv`. -/
+@[simp]
+theorem unitsQuotientSpanNatCastPeriodEquiv_symm_apply (a b : ℤ) (N : ℕ)
+    (M : periodMatrixGroup (a : ZMod N) (b : ZMod N)) :
+    (unitsQuotientSpanNatCastPeriodEquiv a b N).symm M =
+      Units.map (quotientSpanNatCastEquiv a b N).symm.toRingHom.toMonoidHom
+        (periodUnitMatrixEquiv.symm M) :=
+  Units.ext <| by simp [unitsQuotientSpanNatCastPeriodEquiv]
+
+/-- The residue element underlying `(unitsQuotientSpanNatCastPeriodEquiv a b N).symm M` is
+obtained from the bottom row of `M` via `(quotientSpanNatCastEquiv a b N).symm`. -/
+theorem coe_unitsQuotientSpanNatCastPeriodEquiv_symm (a b : ℤ) (N : ℕ)
+    (M : periodMatrixGroup (a : ZMod N) (b : ZMod N)) :
+    ((unitsQuotientSpanNatCastPeriodEquiv a b N).symm M :
+        QuadraticAlgebra ℤ a b ⧸ Ideal.span {(N : QuadraticAlgebra ℤ a b)}) =
+      (quotientSpanNatCastEquiv a b N).symm
+        ⟨(M : GL (Fin 2) (ZMod N)) 1 1, (M : GL (Fin 2) (ZMod N)) 1 0⟩ := by
+  simp
+
 /-- `unitsQuotientSpanNatCastPeriodEquiv` sends the residue of an integral unit `u` to
 `unitPeriodMatrixHom a b N u`. -/
 @[simp]
@@ -118,6 +154,57 @@ def unitsQuotientSpanNatCastPeriodEquivOfRingEquiv {R : Type*} [CommRing R] {a b
     (Ideal.span {(N : QuadraticAlgebra ℤ a b)}) e
     (by rw [Ideal.map_span, Set.image_singleton, map_natCast])).toMulEquiv).trans
     (unitsQuotientSpanNatCastPeriodEquiv a b N)
+
+/-- Evaluation of `unitsQuotientSpanNatCastPeriodEquivOfRingEquiv` on an arbitrary residue unit
+via `Ideal.quotientEquiv` and `unitsQuotientSpanNatCastPeriodEquiv`. -/
+theorem unitsQuotientSpanNatCastPeriodEquivOfRingEquiv_apply {R : Type*} [CommRing R] {a b : ℤ}
+    (e : R ≃+* QuadraticAlgebra ℤ a b) (N : ℕ) (u : (R ⧸ Ideal.span {(N : R)})ˣ) :
+    unitsQuotientSpanNatCastPeriodEquivOfRingEquiv e N u =
+      unitsQuotientSpanNatCastPeriodEquiv a b N
+        (Units.map (Ideal.quotientEquiv (Ideal.span {(N : R)})
+          (Ideal.span {(N : QuadraticAlgebra ℤ a b)}) e
+          (by rw [Ideal.map_span, Set.image_singleton, map_natCast])).toMonoidHom u) :=
+  Subtype.ext <| Units.ext <| by
+    simp [unitsQuotientSpanNatCastPeriodEquivOfRingEquiv, unitsQuotientSpanNatCastPeriodEquiv]
+
+/-- Underlying matrix in `GL (Fin 2) (ZMod N)` of
+`unitsQuotientSpanNatCastPeriodEquivOfRingEquiv e N u`. -/
+@[simp]
+theorem coe_unitsQuotientSpanNatCastPeriodEquivOfRingEquiv {R : Type*} [CommRing R] {a b : ℤ}
+    (e : R ≃+* QuadraticAlgebra ℤ a b) (N : ℕ) (u : (R ⧸ Ideal.span {(N : R)})ˣ) :
+    (unitsQuotientSpanNatCastPeriodEquivOfRingEquiv e N u : GL (Fin 2) (ZMod N)) =
+      periodUnitMatrix
+        (Units.map (quotientSpanNatCastEquiv a b N).toRingHom.toMonoidHom
+          (Units.map (Ideal.quotientEquiv (Ideal.span {(N : R)})
+            (Ideal.span {(N : QuadraticAlgebra ℤ a b)}) e
+            (by rw [Ideal.map_span, Set.image_singleton, map_natCast])).toMonoidHom u)) := by
+  rw [unitsQuotientSpanNatCastPeriodEquivOfRingEquiv_apply, coe_unitsQuotientSpanNatCastPeriodEquiv]
+
+/-- The inverse of `unitsQuotientSpanNatCastPeriodEquivOfRingEquiv` pulls back
+`(unitsQuotientSpanNatCastPeriodEquiv a b N).symm` along `e`. -/
+@[simp]
+theorem unitsQuotientSpanNatCastPeriodEquivOfRingEquiv_symm_apply {R : Type*} [CommRing R]
+    {a b : ℤ} (e : R ≃+* QuadraticAlgebra ℤ a b) (N : ℕ)
+    (M : periodMatrixGroup (a : ZMod N) (b : ZMod N)) :
+    (unitsQuotientSpanNatCastPeriodEquivOfRingEquiv e N).symm M =
+      Units.map (Ideal.quotientEquiv (Ideal.span {(N : R)})
+        (Ideal.span {(N : QuadraticAlgebra ℤ a b)}) e
+        (by rw [Ideal.map_span, Set.image_singleton, map_natCast])).symm.toMonoidHom
+        ((unitsQuotientSpanNatCastPeriodEquiv a b N).symm M) :=
+  Units.ext <| by simp [unitsQuotientSpanNatCastPeriodEquivOfRingEquiv]
+
+/-- The residue element underlying `(unitsQuotientSpanNatCastPeriodEquivOfRingEquiv e N).symm M`
+is obtained from the bottom row of `M` via `(quotientSpanNatCastEquiv a b N).symm` and `e.symm`. -/
+theorem coe_unitsQuotientSpanNatCastPeriodEquivOfRingEquiv_symm {R : Type*} [CommRing R]
+    {a b : ℤ} (e : R ≃+* QuadraticAlgebra ℤ a b) (N : ℕ)
+    (M : periodMatrixGroup (a : ZMod N) (b : ZMod N)) :
+    ((unitsQuotientSpanNatCastPeriodEquivOfRingEquiv e N).symm M : R ⧸ Ideal.span {(N : R)}) =
+      (Ideal.quotientEquiv (Ideal.span {(N : R)})
+        (Ideal.span {(N : QuadraticAlgebra ℤ a b)}) e
+        (by rw [Ideal.map_span, Set.image_singleton, map_natCast])).symm
+        ((quotientSpanNatCastEquiv a b N).symm
+          ⟨(M : GL (Fin 2) (ZMod N)) 1 1, (M : GL (Fin 2) (ZMod N)) 1 0⟩) := by
+  simp
 
 /-- `unitsQuotientSpanNatCastPeriodEquivOfRingEquiv` intertwines reduction of `Rˣ` modulo `(N)`
 with `unitPeriodMatrixHom` along `e`. -/
