@@ -104,10 +104,13 @@ of an invertible real operator and of the adjoint of its inverse multiply to `1`
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
-Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
-(`LinearMap.toContinuousLinearMap_star`) and its normality
+Passing a finite-dimensional operator to continuous linear maps and back preserves its adjoint
+(`LinearMap.toContinuousLinearMap_star`, `ContinuousLinearMap.toLinearMap_star`) and the first
+passage preserves its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
-Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`).
+Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`), and
+conjugation by an isometric isomorphism of Hilbert spaces commutes with adjoints
+(`LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv`).
 
 -/
 
@@ -693,6 +696,21 @@ instance instIsIsometricSMul [CompleteSpace E] : IsIsometricSMul (unitary (E →
 
 end Unitary
 
+namespace LinearIsometryEquiv
+
+/-- Conjugation `T ↦ e ∘ T ∘ e⁻¹` by an isometric isomorphism of Hilbert spaces commutes with
+adjoints. -/
+@[simp]
+theorem adjoint_conjContinuousAlgEquiv [CompleteSpace E] [CompleteSpace F] (e : E ≃ₗᵢ[𝕜] F)
+    (T : E →L[𝕜] E) :
+    ContinuousLinearMap.adjoint (e.toContinuousLinearEquiv.conjContinuousAlgEquiv T) =
+      e.toContinuousLinearEquiv.conjContinuousAlgEquiv (ContinuousLinearMap.adjoint T) :=
+  -- Mathlib's star algebra equivalence `e.conjStarAlgEquiv` is defined as this conjugation
+  -- together with its compatibility with `star = adjoint`, so `map_star` is the statement.
+  (map_star e.conjStarAlgEquiv T).symm
+
+end LinearIsometryEquiv
+
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
 namespace LinearIsometry
@@ -825,6 +843,14 @@ theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
   rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
     LinearMap.adjoint_toContinuousLinearMap]
+
+/-- Forgetting the continuity of an operator on a finite-dimensional space preserves its adjoint. -/
+@[simp, norm_cast]
+theorem _root_.ContinuousLinearMap.toLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →L[𝕜] E) : ((star T : E →L[𝕜] E) : E →ₗ[𝕜] E) = star (T : E →ₗ[𝕜] E) := by
+  rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_toLinearMap,
+    ContinuousLinearMap.star_eq_adjoint]
 
 /-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
 instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]

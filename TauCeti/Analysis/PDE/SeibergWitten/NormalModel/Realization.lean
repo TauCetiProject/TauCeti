@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Frequency
-public import TauCeti.Analysis.PDE.Vortex.Sobolev.Adjoint
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Adjoint.Basic
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 public import TauCeti.Analysis.Fredholm.Prod
 public import TauCeti.Analysis.Fredholm.SemiFredholm
