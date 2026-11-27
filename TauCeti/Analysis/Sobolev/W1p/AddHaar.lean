@@ -39,6 +39,8 @@ additive Haar measure, such as the one an energy form or a boundary-value proble
 * `TauCeti.W1p.addHaarEquivL_restrictL` and `TauCeti.W1p.addHaarEquivL_ofTestFunctionₗ`: it
   commutes with restriction and with the embedding of test functions.
 * `TauCeti.W1p.addHaarEquivL_mem_w1p0Submodule_iff`: it preserves zero boundary values.
+* `TauCeti.W1p.exists_eLpNorm_value_le_of_isAddHaarMeasure`: bounds `‖u‖_{Lˢ} ≤ C ‖u‖_{W^{1,p}}`
+  transfer from one Haar measure to another.
 * `TauCeti.W1p.isCompactOperator_valueL_of_addHaar`: compactness of the value map
   `W^{1,p}(Ω) → Lᵖ(Ω)` passes from one Haar measure to another.
 -/
@@ -205,6 +207,38 @@ theorem W1p.addHaarEquivL_mem_w1p0Submodule_iff {u : W1p mu Omega p} :
   refine ⟨fun hu => ?_, addHaarEquivL_mem_w1p0Submodule mu nu⟩
   have h := addHaarEquivL_mem_w1p0Submodule nu mu hu
   rwa [← W1p.addHaarEquivL_symm, ContinuousLinearEquiv.symm_apply_apply] at h
+
+/-- **`Lˢ` bounds on the values do not depend on the Haar measure.** If
+`‖u‖_{Lˢ(Ω, μ)} ≤ C ‖u‖_{W^{1,p}_μ(Ω)}` for every `u ∈ W^{1,p}_μ(Ω)`, then
+`‖u‖_{Lˢ(Ω, ν)} ≤ C' ‖u‖_{W^{1,p}_ν(Ω)}` for every `u ∈ W^{1,p}_ν(Ω)`, for some constant `C'`. -/
+theorem W1p.exists_eLpNorm_value_le_of_isAddHaarMeasure {s : ℝ≥0∞}
+    (h : ∃ C : ℝ≥0, ∀ u : W1p mu Omega p,
+      eLpNorm (W1p.value u) s (mu.restrict Omega) ≤ C * ‖u‖ₑ) :
+    ∃ C : ℝ≥0, ∀ u : W1p nu Omega p,
+      eLpNorm (W1p.value u) s (nu.restrict Omega) ≤ C * ‖u‖ₑ := by
+  obtain ⟨C, hC⟩ := h
+  set c := nu.addHaarScalarFactor mu
+  let A : W1p nu Omega p →L[ℝ] W1p mu Omega p :=
+    (W1p.addHaarEquivL nu mu : W1p nu Omega p ≃L[ℝ] W1p mu Omega p)
+  have hK : (c : ℝ≥0∞) ^ (1 / s).toReal * C * ‖A‖ₑ ≠ ∞ := by
+    have : (c : ℝ≥0∞) ^ (1 / s).toReal ≠ ∞ :=
+      ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.coe_ne_top
+    finiteness
+  refine ⟨((c : ℝ≥0∞) ^ (1 / s).toReal * C * ‖A‖ₑ).toNNReal, fun u => ?_⟩
+  rw [ENNReal.coe_toNNReal hK]
+  -- `ν` is at most a finite multiple of `μ`, and the value of `u` is kept by the change of measure.
+  calc eLpNorm (W1p.value u) s (nu.restrict Omega)
+      ≤ (c : ℝ≥0∞) ^ (1 / s).toReal * eLpNorm (W1p.value u) s (mu.restrict Omega) :=
+        eLpNorm_le_of_measure_le_smul (restrict_le_smul_restrict mu nu Omega)
+    _ = (c : ℝ≥0∞) ^ (1 / s).toReal * eLpNorm (W1p.value (W1p.addHaarEquivL nu mu u)) s
+          (mu.restrict Omega) := by
+        rw [eLpNorm_congr_ae (W1p.value_addHaarEquivL_ae nu mu u)]
+    _ ≤ (c : ℝ≥0∞) ^ (1 / s).toReal * (C * (‖A‖ₑ * ‖u‖ₑ)) := by
+        gcongr
+        refine (hC _).trans ?_
+        gcongr
+        simpa only [A, ContinuousLinearEquiv.coe_coe] using A.le_opENorm u
+    _ = (c : ℝ≥0∞) ^ (1 / s).toReal * C * ‖A‖ₑ * ‖u‖ₑ := by ring
 
 /-! ### Compactness of the value map -/
 
