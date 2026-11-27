@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.LinearAlgebra.Complex.Orientation
 public import TauCeti.LinearAlgebra.Matrix.Realify
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 
 /-!
 # The symplectic basis `(i e, e)` of `Im ⟪·, ·⟫_ℂ`
@@ -33,6 +34,8 @@ realification of `U` itself as its real matrix.
 ## Main declarations
 
 * `OrthonormalBasis.imInnerSymplecticBasis`: the real basis `(i e, e)`.
+* `OrthonormalBasis.orthonormal_imInnerSymplecticBasis`: the basis `(i e, e)` is orthonormal for
+  the real inner product `Re ⟪·, ·⟫_ℂ`.
 * `OrthonormalBasis.toMatrix_imInnerSymplecticForm`: `Im ⟪·, ·⟫_ℂ` has the matrix `Matrix.J` in
   it.
 * `OrthonormalBasis.toMatrix_imInnerSymplecticBasis_restrictScalars`: a complex-linear map has
@@ -89,6 +92,21 @@ complex coordinate along `e_j`. -/
 theorem imInnerSymplecticBasis_repr_inr (e : OrthonormalBasis ι ℂ G) (v : G) (j : ι) :
     e.imInnerSymplecticBasis.repr v (Sum.inr j) = (e.repr v j).re := by
   simp [imInnerSymplecticBasis]
+
+section ComplexToReal
+
+attribute [local instance] InnerProductSpace.complexToReal
+
+/-- The real basis `(i e, e)` attached to an orthonormal basis `e` is orthonormal for the real
+inner product `Re ⟪·, ·⟫_ℂ` (`InnerProductSpace.complexToReal`). -/
+theorem orthonormal_imInnerSymplecticBasis (e : OrthonormalBasis ι ℂ G) :
+    Orthonormal ℝ e.imInnerSymplecticBasis := by
+  -- It is the orthonormal family `(e_j, i e_j)` relabelled by `ι ⊕ ι`.
+  convert e.orthonormal.complexToReal.comp _
+    (SymplecticForm.darbouxIndexEquiv ι).symm.injective using 1
+  ext (j | j) <;> simp
+
+end ComplexToReal
 
 variable [DecidableEq ι]
 

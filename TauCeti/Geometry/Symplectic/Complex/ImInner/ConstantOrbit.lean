@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ConleyZehnder
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.ODE.DysonSeries
 import TauCeti.Geometry.Symplectic.Complex.ImInner.Basis
@@ -80,11 +79,6 @@ theorem orbitConleyZehnderIndex_const_eq_morseIndex_sub_finrank
   -- The real basis `(i e, e)` is orthonormal, and `ω` has the matrix `J` in it.
   set e := stdOrthonormalBasis ℂ F
   set b := e.imInnerSymplecticBasis
-  have hon : Orthonormal ℝ b := by
-    rw [orthonormal_iff_ite]
-    rintro (i | i) (j | j) <;>
-      simp [b, real_inner_eq_re_inner, inner_smul_left, inner_smul_right,
-        orthonormal_iff_ite.1 e.orthonormal, apply_ite Complex.re]
   have hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J _ ℝ := by
     rw [← e.toMatrix_imInnerSymplecticForm]
     congr 1
@@ -98,7 +92,8 @@ theorem orbitConleyZehnderIndex_const_eq_morseIndex_sub_finrank
     exact ω.apply_fderiv_hamiltonianVectorField
       ((hH₂.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero) w u
   have hL : ‖LinearMap.toMatrix b b L‖ < 2 * Real.pi := by
-    rwa [← b.toBasis_toOrthonormalBasis hon, ContinuousLinearMap.l2_opNorm_toMatrix]
+    rwa [← b.toBasis_toOrthonormalBasis e.orthonormal_imInnerSymplecticBasis,
+      ContinuousLinearMap.l2_opNorm_toMatrix]
   -- Along the constant path the linearized flow is `t ↦ exp (t L)`.
   rw [orbitConleyZehnderIndex_def, ω.conleyZehnderIndex_eq_sigNeg_sub hLQ
       (LinearMap.BilinForm.isSymm_def.2 (QuadraticMap.associated_isSymm ℝ _))
