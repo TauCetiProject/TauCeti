@@ -5,216 +5,528 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Equiv.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Transport
 
 /-!
-# Transport of isometry classes along isomorphisms of fields
+# Transport of regular-form isometry classes along field isomorphisms
 
-A ring isomorphism `τ : K ≃+* L` of fields carries a diagonal presentation `⟨a₁, …, aₙ⟩` over `K`
-to the presentation `⟨τ a₁, …, τ aₙ⟩` over `L`. The presented form over `L` is the transport
-(`QuadraticMap.transport`) of the presented form over `K` along the coordinatewise semilinear
-equivalence `(Fin n → K) ≃ₛₗ[τ] (Fin n → L)`, so isometric presentations go to isometric
-presentations and the operation descends to the isometry classes of regular forms as
-`TauCeti.RegularFormClass.map τ`. It is a bijection, with inverse `RegularFormClass.map τ.symm`,
-and it is additive.
+A ring isomorphism `e : K ≃+* L` of fields, in any two universes, maps a diagonal presentation
+over `K` to the presentation over `L` of the same rank whose weights are the images of the
+original weights under `e`, with inverse given by `e.symm`. When `2` is invertible in both fields,
+scalar extension along `e` and along `e.symm` are mutually inverse semiring homomorphisms on
+isometry classes, packaged as `TauCeti.RegularFormClass.mapRingEquiv e`.
 
-The class of the transport of a regular form along any `τ`-semilinear equivalence is the image of
-its class (`QuadraticForm.formClass_transport`). The rank is unchanged and the discriminant is
-pushed forward along the map of square-class groups induced by `τ`
-(`TauCeti.RegularFormClass.discr_map`). This is what lets the invariants of a regular form over one
-field be read over an isomorphic copy of it, for instance over a completion of an isomorphic number
-field, or over a copy of the field in another universe.
+Unlike `TauCeti.RegularFormClass.baseChange`, this equivalence takes the isomorphism explicitly and
+needs no ambient `Algebra K L` instance, which makes it usable directly along completion
+isomorphisms such as `adicCompletionCongr`.
 
 ## Main definitions
 
-* `TauCeti.RegularFormPresentation.map`: the presentation whose weights are the images of the
-  original weights under a ring isomorphism.
-* `TauCeti.RegularFormClass.map`: the induced map of isometry classes.
+* `TauCeti.RegularFormPresentation.equivOfRingEquiv`: the equivalence of diagonal presentations
+  induced by a ring isomorphism of fields.
+* `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv`: the coordinate semilinear equivalence
+  induced by a ring isomorphism of fields on a diagonal presentation.
+* `TauCeti.RegularFormClass.mapRingEquiv`: the semiring isomorphism of regular-form isometry
+  classes induced by a ring isomorphism of fields in which `2` is invertible.
 
 ## Main results
 
-* `TauCeti.presentedForm_map`: the presented form of the mapped presentation is the transport of the
-  presented form along the coordinatewise semilinear equivalence.
-* `TauCeti.RegularFormClass.map_map`, `TauCeti.RegularFormClass.map_refl`,
-  `TauCeti.RegularFormClass.map_symm_map`, `TauCeti.RegularFormClass.map_map_symm`: functoriality,
-  so that `RegularFormClass.map τ` is a bijection.
-* `TauCeti.RegularFormClass.rank_map`, `TauCeti.RegularFormClass.map_add`,
-  `TauCeti.RegularFormClass.map_zero`: the map preserves the rank and the orthogonal sum.
-* `TauCeti.RegularFormClass.discr_map`: the discriminant of the image is the image of the
-  discriminant.
-* `QuadraticForm.formClass_transport`: the class of a transported regular form is the image of its
-  class.
+* `TauCeti.RegularFormPresentation.equivOfRingEquiv_mk`: transport of an explicit diagonal
+  presentation `⟨n, a⟩`.
+* `TauCeti.presentedForm_equivOfRingEquiv`: evaluation of a transported presented form along
+  `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv`.
+* `TauCeti.presentedForm_equivOfRingEquiv_eq_transport`: the form presented by a transported
+  presentation is `QuadraticMap.transport` along `coordEquivOfRingEquiv`.
+* `TauCeti.equivalent_presentedForm_equivOfRingEquiv_iff`: presentation transport preserves and
+  reflects isometry of the presented forms, without assuming `2` is invertible.
+* `TauCeti.RegularFormPresentation.equivOfRingEquiv_refl`,
+  `TauCeti.RegularFormPresentation.equivOfRingEquiv_symm`,
+  `TauCeti.RegularFormPresentation.equivOfRingEquiv_trans`: identity, inverse, and composition
+  laws on presentations.
+* `TauCeti.RegularFormPresentation.equivOfRingEquiv_baseChange`: naturality with respect to
+  scalar extension in a commutative square of field homomorphisms.
+* `TauCeti.RegularFormClass.mapRingEquiv_refl`, `TauCeti.RegularFormClass.mapRingEquiv_symm`,
+  `TauCeti.RegularFormClass.mapRingEquiv_trans`: identity, inverse, and composition laws on
+  classes.
+* `TauCeti.RegularFormClass.rank_mapRingEquiv`,
+  `TauCeti.RegularFormClass.mapRingEquiv_hyperbolicClass`,
+  `TauCeti.RegularFormClass.discr_mapRingEquiv`,
+  `TauCeti.RegularFormClass.signedDiscr_mapRingEquiv`: behaviour of rank, the hyperbolic plane,
+  and the plain and signed discriminants under transport.
+* `TauCeti.RegularFormClass.mapRingEquiv_baseChange`: naturality of class transport with respect to
+  scalar extension in a commutative square of field homomorphisms.
+* `TauCeti.formClass_eq_mapRingEquiv_of_semilinearEquiv`, `TauCeti.formClass_transport`,
+  `TauCeti.discr_formClass_eq_squareClassMap_of_semilinearEquiv`,
+  `TauCeti.signedDiscr_formClass_eq_squareClassMap_of_semilinearEquiv`: the isometry class and
+  discriminants of a regular form transported along a semilinear equivalence over a field
+  isomorphism.
 -/
 
 public section
 noncomputable section
 
-open QuadraticMap
-
-attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
-
 namespace TauCeti
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [Field L]
+/-! ### Transport of diagonal presentations -/
 
-/-! ### Presentations -/
+section Presentation
 
--- The body is exposed so that the rank of the mapped presentation is definitionally that of `p`:
--- `presentedForm_map` compares forms on `Fin (p.map τ).1 → L` and on `Fin p.1 → L`.
-/-- The presentation whose weights are the images of the weights of `p` under a ring isomorphism
-`τ : K ≃+* L`. The rank is unchanged. -/
-@[expose] def RegularFormPresentation.map (τ : K ≃+* L) (p : RegularFormPresentation K) :
-    RegularFormPresentation L :=
-  ⟨p.1, fun i ↦ Units.map (τ : K →* L) (p.2 i)⟩
+variable {K : Type u} {L : Type v} {M : Type w} [Field K] [Field L] [Field M]
 
-/-- Mapping a presentation keeps its rank. -/
-@[simp]
-theorem RegularFormPresentation.fst_map (τ : K ≃+* L) (p : RegularFormPresentation K) :
-    (p.map τ).1 = p.1 :=
-  (rfl)
+/-- The equivalence of diagonal presentations induced by a ring isomorphism `e : K ≃+* L`, mapping
+every weight by `Units.map e` and preserving the rank. -/
+def RegularFormPresentation.equivOfRingEquiv (e : K ≃+* L) :
+    RegularFormPresentation K ≃ RegularFormPresentation L :=
+  Equiv.sigmaCongrRight fun _ ↦ Equiv.piCongrRight fun _ ↦ (Units.mapEquiv e.toMulEquiv).toEquiv
 
-/-- The weights of a mapped presentation are the images of the original weights. -/
-@[simp]
-theorem RegularFormPresentation.map_apply (τ : K ≃+* L) (p : RegularFormPresentation K)
-    (i : Fin (p.map τ).1) :
-    (p.map τ).2 i = Units.map (τ : K →* L) (p.2 i) :=
-  (rfl)
-
-/-- The weight product of a mapped presentation is the image of the original weight product. -/
-theorem RegularFormPresentation.prod_map (τ : K ≃+* L) (p : RegularFormPresentation K) :
-    ∏ i, (p.map τ).2 i = Units.map (τ : K →* L) (∏ i, p.2 i) :=
-  (map_prod (Units.map (τ : K →* L)) _ _).symm
-
-/-- **Presented forms transport along `τ`**: the form presented by `⟨τ a₁, …, τ aₙ⟩` is the
-transport of the form presented by `⟨a₁, …, aₙ⟩` along the coordinatewise semilinear equivalence
-`(Fin n → K) ≃ₛₗ[τ] (Fin n → L)`. -/
-theorem presentedForm_map (τ : K ≃+* L) (p : RegularFormPresentation K) :
-    presentedForm (p.map τ) =
-      (presentedForm p).transport (LinearEquiv.piCongrRightₛₗ fun _ ↦ τ.toSemilinearEquiv) := by
-  obtain ⟨n, w⟩ := p
-  refine (presentedForm_eq_weightedSumSquares_coe fun i ↦ Units.map (τ : K →* L) (w i)).trans ?_
-  rw [presentedForm_eq_weightedSumSquares_coe, QuadraticMap.transport_weightedSumSquares]
+/-- Transporting a presentation along `e` keeps its rank and maps its weights by `Units.map e`. -/
+theorem RegularFormPresentation.equivOfRingEquiv_def (e : K ≃+* L)
+    (p : RegularFormPresentation K) :
+    RegularFormPresentation.equivOfRingEquiv e p =
+      ⟨p.1, fun i ↦ Units.map (e : K →* L) (p.2 i)⟩ := by
+  rcases p with ⟨n, w⟩
+  rw [RegularFormPresentation.equivOfRingEquiv, Equiv.sigmaCongrRight_apply]
+  refine Sigma.ext rfl (heq_of_eq ?_)
+  funext i
+  apply Units.ext
   simp
 
-/-! ### Isometry classes -/
-
-/-- **Transport of isometry classes along a ring isomorphism** `τ : K ≃+* L`: the class over `L`
-presented by the images under `τ` of the weights of any presentation over `K`. -/
-def RegularFormClass.map (τ : K ≃+* L) : RegularFormClass K → RegularFormClass L :=
-  Quotient.map (RegularFormPresentation.map τ) fun p q h ↦ regularFormSetoid_iff.mpr <| by
-    rw [presentedForm_map, presentedForm_map]
-    exact (regularFormSetoid_iff.mp h).transport _ _
-
-/-- The transported class is computed on presentations by mapping the weights. -/
+/-- Transporting an explicit diagonal presentation `⟨n, a⟩` along `e` keeps its rank and maps its
+weights by `Units.map e`. -/
 @[simp]
-theorem RegularFormClass.map_mk (τ : K ≃+* L) (p : RegularFormPresentation K) :
-    RegularFormClass.map τ (Quotient.mk (regularFormSetoid K) p) =
-      Quotient.mk (regularFormSetoid L) (p.map τ) :=
-  (rfl)
+theorem RegularFormPresentation.equivOfRingEquiv_mk (e : K ≃+* L) (n : ℕ) (a : Fin n → Kˣ) :
+    RegularFormPresentation.equivOfRingEquiv e ⟨n, a⟩ =
+      ⟨n, fun i ↦ Units.map (e : K →* L) (a i)⟩ :=
+  RegularFormPresentation.equivOfRingEquiv_def e ⟨n, a⟩
 
-/-- Transport along the identity is the identity. -/
+/-- Transporting a presentation along `e` leaves its rank unchanged. -/
 @[simp]
-theorem RegularFormClass.map_refl (x : RegularFormClass K) :
-    RegularFormClass.map (RingEquiv.refl K) x = x := by
+theorem RegularFormPresentation.fst_equivOfRingEquiv (e : K ≃+* L)
+    (p : RegularFormPresentation K) :
+    (RegularFormPresentation.equivOfRingEquiv e p).1 = p.1 := by
+  simp [RegularFormPresentation.equivOfRingEquiv]
+
+/-- Each weight of the transported presentation is the image under `e` of the weight of `p` at the
+same index, read through `TauCeti.RegularFormPresentation.fst_equivOfRingEquiv`. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_apply (e : K ≃+* L)
+    (p : RegularFormPresentation K)
+    (i : Fin (RegularFormPresentation.equivOfRingEquiv e p).1) :
+    (RegularFormPresentation.equivOfRingEquiv e p).2 i =
+      Units.map (e : K →* L)
+        (p.2 (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i)) := by
+  have h : ∀ (q : RegularFormPresentation L)
+      (hq : q = ⟨p.1, fun j ↦ Units.map (e : K →* L) (p.2 j)⟩) (j : Fin q.1),
+      q.2 j = Units.map (e : K →* L)
+        (p.2 (Fin.cast (congrArg (fun r : RegularFormPresentation L ↦ r.1) hq) j)) := by
+    rintro _ rfl j
+    simp
+  exact h _ (RegularFormPresentation.equivOfRingEquiv_def e p) i
+
+/-- The coordinate semilinear equivalence induced by a ring isomorphism `e : K ≃+* L` on a
+diagonal presentation `p`. -/
+def RegularFormPresentation.coordEquivOfRingEquiv (p : RegularFormPresentation K)
+    (e : K ≃+* L) :
+    haveI := RingHomInvPair.of_ringEquiv e
+    haveI := RingHomInvPair.of_ringEquiv_symm e
+    (Fin p.1 → K) ≃ₛₗ[(e : K →+* L)]
+      (Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) :=
+  haveI := RingHomInvPair.of_ringEquiv e
+  haveI := RingHomInvPair.of_ringEquiv_symm e
+  { toFun := fun x i ↦
+      e (x (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i))
+    invFun := fun y i ↦
+      e.symm (y (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p).symm i))
+    left_inv := fun x ↦ by ext i; simp
+    right_inv := fun y ↦ by ext i; simp
+    map_add' := fun x y ↦ by ext i; simp
+    map_smul' := fun c x ↦ by ext i; simp }
+
+/-- Evaluating `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv` applies `e`
+coordinatewise through `TauCeti.RegularFormPresentation.fst_equivOfRingEquiv`. -/
+@[simp]
+theorem RegularFormPresentation.coordEquivOfRingEquiv_apply (p : RegularFormPresentation K)
+    (e : K ≃+* L) (x : Fin p.1 → K)
+    (i : Fin (RegularFormPresentation.equivOfRingEquiv e p).1) :
+    p.coordEquivOfRingEquiv e x i =
+      e (x (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i)) := (rfl)
+
+/-- The inverse of `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv` applies `e.symm`
+coordinatewise through `TauCeti.RegularFormPresentation.fst_equivOfRingEquiv`. -/
+@[simp]
+theorem RegularFormPresentation.coordEquivOfRingEquiv_symm_apply
+    (p : RegularFormPresentation K) (e : K ≃+* L)
+    (y : Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) (i : Fin p.1) :
+    (p.coordEquivOfRingEquiv e).symm y i =
+      e.symm (y (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p).symm i)) := (rfl)
+
+/-- Evaluating the form presented by `RegularFormPresentation.equivOfRingEquiv e p` on
+`TauCeti.RegularFormPresentation.coordEquivOfRingEquiv` gives `e (presentedForm p x)`. -/
+@[simp↓ 1100]
+theorem presentedForm_equivOfRingEquiv (p : RegularFormPresentation K) (e : K ≃+* L)
+    (x : Fin p.1 → K) :
+    presentedForm (RegularFormPresentation.equivOfRingEquiv e p)
+        (p.coordEquivOfRingEquiv e x) =
+      e (presentedForm p x) := by
+  rw [presentedForm_apply, presentedForm_apply, map_sum]
+  refine Fintype.sum_equiv (finCongr (RegularFormPresentation.fst_equivOfRingEquiv e p)) _ _
+    fun i ↦ ?_
+  simp [RegularFormPresentation.equivOfRingEquiv_apply]
+
+/-- The form presented by a transported presentation is the `QuadraticMap.transport` of the
+original presented form along `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv`. -/
+theorem presentedForm_equivOfRingEquiv_eq_transport (p : RegularFormPresentation K)
+    (e : K ≃+* L) :
+    haveI := RingHomInvPair.of_ringEquiv e
+    haveI := RingHomInvPair.of_ringEquiv_symm e
+    presentedForm (RegularFormPresentation.equivOfRingEquiv e p) =
+      (presentedForm p).transport (p.coordEquivOfRingEquiv e) := by
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv_symm e
+  ext y
+  obtain ⟨x, rfl⟩ := (p.coordEquivOfRingEquiv e).surjective y
+  rw [QuadraticMap.transport_apply_apply]
+  exact presentedForm_equivOfRingEquiv p e x
+
+/-- Presentation transport along a ring isomorphism preserves and reflects isometry of the
+presented forms, without assuming `2` is invertible. -/
+@[simp↓]
+theorem equivalent_presentedForm_equivOfRingEquiv_iff (p q : RegularFormPresentation K)
+    (e : K ≃+* L) :
+    (presentedForm (RegularFormPresentation.equivOfRingEquiv e p)).Equivalent
+        (presentedForm (RegularFormPresentation.equivOfRingEquiv e q)) ↔
+      (presentedForm p).Equivalent (presentedForm q) := by
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv_symm e
+  rw [presentedForm_equivOfRingEquiv_eq_transport p e,
+    presentedForm_equivOfRingEquiv_eq_transport q e]
+  exact QuadraticMap.equivalent_transport_iff (p.coordEquivOfRingEquiv e)
+    (q.coordEquivOfRingEquiv e)
+
+/-- When an `Algebra K L` structure agrees with `e`, presentation transport agrees with
+`RegularFormPresentation.baseChange`. -/
+theorem RegularFormPresentation.equivOfRingEquiv_eq_baseChange [Algebra K L] (e : K ≃+* L)
+    (he : ∀ x, algebraMap K L x = e x) (p : RegularFormPresentation K) :
+    RegularFormPresentation.equivOfRingEquiv e p = RegularFormPresentation.baseChange L p := by
+  refine RegularFormPresentation.ext (by simp) fun i ↦ Units.ext ?_
+  rw [RegularFormPresentation.baseChange_apply, RegularFormPresentation.equivOfRingEquiv_apply]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, he]
+  exact congrArg (fun j : Fin p.1 ↦ e (p.2 j : K)) (Fin.ext (by simp))
+
+/-- The weight product of a transported presentation is the image of the original weight product. -/
+@[simp↓]
+theorem RegularFormPresentation.prod_equivOfRingEquiv (e : K ≃+* L)
+    (p : RegularFormPresentation K) :
+    (∏ i, (RegularFormPresentation.equivOfRingEquiv e p).2 i) =
+      Units.map ((e : K →+* L) : K →* L) (∏ i, p.2 i) := by
+  rw [RegularFormPresentation.equivOfRingEquiv_def, map_prod]
+  exact Units.ext (by simp)
+
+/-- Transporting presentations along the identity ring isomorphism is the identity equivalence. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_refl :
+    RegularFormPresentation.equivOfRingEquiv (RingEquiv.refl K) = Equiv.refl _ := by
+  ext1 p
+  rw [RegularFormPresentation.equivOfRingEquiv_def]
+  refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
+  simp
+
+/-- Inverting presentation transport corresponds to inverting the field isomorphism. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_symm (e : K ≃+* L) :
+    (RegularFormPresentation.equivOfRingEquiv e).symm =
+      RegularFormPresentation.equivOfRingEquiv e.symm := by
+  ext1 q
+  rw [Equiv.symm_apply_eq, RegularFormPresentation.equivOfRingEquiv_def,
+    RegularFormPresentation.equivOfRingEquiv_def]
+  refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
+  simp
+
+/-- Transporting presentations along two field isomorphisms in succession agrees with transport
+along their composite. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_trans (e : K ≃+* L) (f : L ≃+* M) :
+    (RegularFormPresentation.equivOfRingEquiv e).trans
+        (RegularFormPresentation.equivOfRingEquiv f) =
+      RegularFormPresentation.equivOfRingEquiv (e.trans f) := by
+  ext1 p
+  rw [Equiv.trans_apply, RegularFormPresentation.equivOfRingEquiv_def,
+    RegularFormPresentation.equivOfRingEquiv_def,
+    RegularFormPresentation.equivOfRingEquiv_def]
+  refine RegularFormPresentation.ext rfl fun i ↦ Units.ext ?_
+  simp
+
+/-- Applying successive presentation transports computes transport along the composite
+isomorphism. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_trans_apply (e : K ≃+* L) (f : L ≃+* M)
+    (p : RegularFormPresentation K) :
+    RegularFormPresentation.equivOfRingEquiv f (RegularFormPresentation.equivOfRingEquiv e p) =
+      RegularFormPresentation.equivOfRingEquiv (e.trans f) p := by
+  rw [← Equiv.trans_apply, RegularFormPresentation.equivOfRingEquiv_trans]
+
+/-- Presentation transport fixes the rank-one presentation with weight one. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_one (e : K ≃+* L) :
+    RegularFormPresentation.equivOfRingEquiv e (RegularFormPresentation.one (K := K)) =
+      RegularFormPresentation.one := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  rw [RegularFormPresentation.equivOfRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
+  exact RegularFormPresentation.baseChange_one L
+
+/-- Presentation transport commutes with concatenation of presentations. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_append (e : K ≃+* L)
+    (p q : RegularFormPresentation K) :
+    RegularFormPresentation.equivOfRingEquiv e (p.append q) =
+      (RegularFormPresentation.equivOfRingEquiv e p).append
+        (RegularFormPresentation.equivOfRingEquiv e q) := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  simp_rw [RegularFormPresentation.equivOfRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
+  exact RegularFormPresentation.baseChange_append L p q
+
+/-- Presentation transport commutes with the tensor product of presentations. -/
+@[simp]
+theorem RegularFormPresentation.equivOfRingEquiv_tmul (e : K ≃+* L)
+    (p q : RegularFormPresentation K) :
+    RegularFormPresentation.equivOfRingEquiv e (p.tmul q) =
+      (RegularFormPresentation.equivOfRingEquiv e p).tmul
+        (RegularFormPresentation.equivOfRingEquiv e q) := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  simp_rw [RegularFormPresentation.equivOfRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
+  exact RegularFormPresentation.baseChange_tmul L p q
+
+/-- In a commutative square of field homomorphisms with horizontal isomorphisms `e` and `e'`,
+presentation transport commutes with scalar extension. -/
+theorem RegularFormPresentation.equivOfRingEquiv_baseChange
+    {K' L' : Type*} [Field K'] [Field L'] [Algebra K K'] [Algebra L L']
+    (e : K ≃+* L) (e' : K' ≃+* L')
+    (hcomm : ∀ a : K, e' (algebraMap K K' a) = algebraMap L L' (e a))
+    (p : RegularFormPresentation K) :
+    RegularFormPresentation.equivOfRingEquiv e' (RegularFormPresentation.baseChange K' p) =
+      RegularFormPresentation.baseChange L' (RegularFormPresentation.equivOfRingEquiv e p) := by
+  refine RegularFormPresentation.ext (by simp) fun i ↦ Units.ext ?_
+  rw [RegularFormPresentation.baseChange_apply, RegularFormPresentation.equivOfRingEquiv_apply,
+    RegularFormPresentation.equivOfRingEquiv_apply, RegularFormPresentation.baseChange_apply]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, hcomm]
+  exact congrArg (fun j : Fin p.1 ↦ algebraMap L L' (e (p.2 j : K))) (Fin.ext (by simp))
+
+end Presentation
+
+/-! ### Transport of isometry classes -/
+
+section Class
+
+variable {K : Type u} {L : Type v} {M : Type w} [Field K] [Field L] [Field M]
+
+variable [Invertible (2 : K)] [Invertible (2 : L)]
+
+/-- **Transport of regular-form isometry classes along a ring isomorphism of fields**, as an
+isomorphism of commutative semirings. -/
+def RegularFormClass.mapRingEquiv (e : K ≃+* L) :
+    RegularFormClass K ≃+* RegularFormClass L :=
+  letI : Algebra K L := e.toRingHom.toAlgebra
+  letI : Algebra L K := e.symm.toRingHom.toAlgebra
+  haveI : IsScalarTower K L K :=
+    IsScalarTower.of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
+  haveI : IsScalarTower L K L :=
+    IsScalarTower.of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
+  RingEquiv.ofRingHom (RegularFormClass.baseChangeHom (K := K) (L := L))
+    (RegularFormClass.baseChangeHom (K := L) (L := K))
+    (by rw [RegularFormClass.baseChangeHom_comp, RegularFormClass.baseChangeHom_self])
+    (by rw [RegularFormClass.baseChangeHom_comp, RegularFormClass.baseChangeHom_self])
+
+/-- Class transport is computed on diagonal presentations by
+`TauCeti.RegularFormPresentation.equivOfRingEquiv`. -/
+@[simp]
+theorem RegularFormClass.mapRingEquiv_mk (e : K ≃+* L) (p : RegularFormPresentation K) :
+    RegularFormClass.mapRingEquiv e (Quotient.mk (regularFormSetoid K) p) =
+      Quotient.mk (regularFormSetoid L) (RegularFormPresentation.equivOfRingEquiv e p) := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  rw [RegularFormClass.mapRingEquiv, RingEquiv.ofRingHom_apply,
+    RegularFormClass.baseChangeHom_apply, RegularFormClass.baseChange_mk,
+    ← RegularFormPresentation.equivOfRingEquiv_eq_baseChange e
+      (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
+
+/-- When an `Algebra K L` structure agrees with `e`, `RegularFormClass.mapRingEquiv e` agrees with
+`RegularFormClass.baseChange L`. -/
+theorem RegularFormClass.mapRingEquiv_eq_baseChange [Algebra K L] (e : K ≃+* L)
+    (he : ∀ x, algebraMap K L x = e x) (x : RegularFormClass K) :
+    RegularFormClass.mapRingEquiv e x = RegularFormClass.baseChange L x := by
   refine Quotient.inductionOn x fun p ↦ ?_
-  rw [RegularFormClass.map_mk]
-  congr 1
+  rw [RegularFormClass.mapRingEquiv_mk, RegularFormClass.baseChange_mk,
+    RegularFormPresentation.equivOfRingEquiv_eq_baseChange e he]
 
-/-- Transporting along `τ` and then along `τ'` is transporting along `τ.trans τ'`. -/
+/-- Transporting regular-form classes along the identity field isomorphism is the identity
+semiring isomorphism. -/
 @[simp]
-theorem RegularFormClass.map_map {M : Type w} [Field M] (τ : K ≃+* L) (τ' : L ≃+* M)
+theorem RegularFormClass.mapRingEquiv_refl :
+    RegularFormClass.mapRingEquiv (RingEquiv.refl K) = RingEquiv.refl (RegularFormClass K) := by
+  ext x
+  exact (RegularFormClass.mapRingEquiv_eq_baseChange (RingEquiv.refl K) (fun _ ↦ by simp) x).trans
+    (RegularFormClass.baseChange_self x)
+
+/-- Inverting class transport corresponds to inverting the field isomorphism. -/
+@[simp]
+theorem RegularFormClass.mapRingEquiv_symm (e : K ≃+* L) :
+    (RegularFormClass.mapRingEquiv e).symm = RegularFormClass.mapRingEquiv e.symm := by
+  ext y
+  rw [RegularFormClass.mapRingEquiv, RegularFormClass.mapRingEquiv, RingEquiv.ofRingHom_symm,
+    RingEquiv.ofRingHom_apply, RingEquiv.ofRingHom_apply]
+
+/-- Transporting regular-form classes along two field isomorphisms in succession agrees with
+transport along their composite. -/
+@[simp]
+theorem RegularFormClass.mapRingEquiv_trans [Invertible (2 : M)] (e : K ≃+* L) (f : L ≃+* M) :
+    (RegularFormClass.mapRingEquiv e).trans (RegularFormClass.mapRingEquiv f) =
+      RegularFormClass.mapRingEquiv (e.trans f) := by
+  ext x
+  refine Quotient.inductionOn x fun p ↦ ?_
+  simp
+
+/-- Applying successive class transports computes transport along the composite isomorphism. -/
+@[simp]
+theorem RegularFormClass.mapRingEquiv_trans_apply [Invertible (2 : M)] (e : K ≃+* L) (f : L ≃+* M)
     (x : RegularFormClass K) :
-    RegularFormClass.map τ' (RegularFormClass.map τ x) = RegularFormClass.map (τ.trans τ') x := by
-  refine Quotient.inductionOn x fun p ↦ ?_
-  rw [RegularFormClass.map_mk, RegularFormClass.map_mk, RegularFormClass.map_mk]
-  congr 1
+    RegularFormClass.mapRingEquiv f (RegularFormClass.mapRingEquiv e x) =
+      RegularFormClass.mapRingEquiv (e.trans f) x := by
+  rw [← RingEquiv.trans_apply, RegularFormClass.mapRingEquiv_trans]
 
-/-- Transporting along `τ` and then back along `τ.symm` is the identity. -/
--- Not `@[simp]`: `RegularFormClass.map_map`, `RingEquiv.self_trans_symm` and
--- `RegularFormClass.map_refl` already prove it.
-theorem RegularFormClass.map_symm_map (τ : K ≃+* L) (x : RegularFormClass K) :
-    RegularFormClass.map τ.symm (RegularFormClass.map τ x) = x := by
-  rw [RegularFormClass.map_map, RingEquiv.self_trans_symm, map_refl]
-
-/-- Transporting along `τ.symm` and then along `τ` is the identity. -/
--- Not `@[simp]`: `RegularFormClass.map_map`, `RingEquiv.symm_trans_self` and
--- `RegularFormClass.map_refl` already prove it.
-theorem RegularFormClass.map_map_symm (τ : K ≃+* L) (x : RegularFormClass L) :
-    RegularFormClass.map τ (RegularFormClass.map τ.symm x) = x := by
-  rw [RegularFormClass.map_map, RingEquiv.symm_trans_self, map_refl]
-
-/-- Transport of isometry classes along a ring isomorphism is injective. -/
-theorem RegularFormClass.map_injective (τ : K ≃+* L) :
-    Function.Injective (RegularFormClass.map τ) :=
-  Function.LeftInverse.injective (RegularFormClass.map_symm_map τ)
-
-/-- Transport of isometry classes along a ring isomorphism is surjective. -/
-theorem RegularFormClass.map_surjective (τ : K ≃+* L) :
-    Function.Surjective (RegularFormClass.map τ) :=
-  Function.RightInverse.surjective (RegularFormClass.map_map_symm τ)
-
-/-- Transport preserves the rank of a class. -/
+/-- Transport along a field isomorphism preserves the rank of a class. -/
 @[simp]
-theorem RegularFormClass.rank_map (τ : K ≃+* L) (x : RegularFormClass K) :
-    (RegularFormClass.map τ x).rank = x.rank := by
-  refine Quotient.inductionOn x fun p ↦ ?_
-  rw [RegularFormClass.map_mk, RegularFormClass.rank_mk, RegularFormClass.rank_mk,
-    RegularFormPresentation.fst_map]
+theorem RegularFormClass.rank_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass K) :
+    (RegularFormClass.mapRingEquiv e x).rank = x.rank := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  rw [RegularFormClass.mapRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
+  exact RegularFormClass.rank_baseChange L x
 
-/-- Transport commutes with the orthogonal sum of classes. -/
+/-- Transport along a field isomorphism preserves the hyperbolic class. -/
 @[simp]
-protected theorem RegularFormClass.map_add (τ : K ≃+* L) (x y : RegularFormClass K) :
-    RegularFormClass.map τ (x + y) = RegularFormClass.map τ x + RegularFormClass.map τ y := by
-  refine Quotient.inductionOn₂ x y fun p q ↦ ?_
-  rw [RegularFormClass.mk_add_mk, RegularFormClass.map_mk, RegularFormClass.map_mk,
-    RegularFormClass.map_mk, RegularFormClass.mk_add_mk, RegularFormPresentation.append_def,
-    RegularFormPresentation.append_def]
-  refine congrArg _ (RegularFormPresentation.ext rfl fun i ↦ ?_)
-  refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) i <;> simp [RegularFormPresentation.map]
+theorem RegularFormClass.mapRingEquiv_hyperbolicClass (e : K ≃+* L) :
+    RegularFormClass.mapRingEquiv e (hyperbolicClass K) = hyperbolicClass L := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  rw [RegularFormClass.mapRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra])]
+  exact RegularFormClass.baseChange_hyperbolicClass
 
-/-- Transport takes the rank-zero class to the rank-zero class. -/
-@[simp]
-protected theorem RegularFormClass.map_zero (τ : K ≃+* L) :
-    RegularFormClass.map τ (0 : RegularFormClass K) = 0 := by
-  rw [RegularFormClass.zero_def, RegularFormClass.map_mk, RegularFormClass.zero_def]
-  exact congrArg _ (RegularFormPresentation.ext rfl fun i ↦ i.elim0)
+/-- **The discriminant commutes with transport along a field isomorphism**: transporting a class
+along `e` pushes its discriminant forward along `(e : K →+* L).squareClassMap`. -/
+@[simp↓]
+theorem RegularFormClass.discr_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass K) :
+    RegularFormClass.discr (RegularFormClass.mapRingEquiv e x) =
+      (e : K →+* L).squareClassMap (RegularFormClass.discr x) := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  rw [RegularFormClass.mapRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]),
+    RegularFormClass.discr_baseChange, RingHom.algebraMap_toAlgebra, RingEquiv.toRingHom_eq_coe]
 
-/-- **The discriminant commutes with transport**: the discriminant of the transported class is the
-image of the discriminant under the map of square-class groups induced by `τ`. -/
-@[simp]
-theorem RegularFormClass.discr_map [Invertible (2 : K)] [Invertible (2 : L)] (τ : K ≃+* L)
+/-- **The signed discriminant commutes with transport along a field isomorphism**: transporting a
+class along `e` pushes its signed discriminant forward along `(e : K →+* L).squareClassMap`. -/
+@[simp↓]
+theorem RegularFormClass.signedDiscr_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass K) :
+    RegularFormClass.signedDiscr (RegularFormClass.mapRingEquiv e x) =
+      (e : K →+* L).squareClassMap (RegularFormClass.signedDiscr x) := by
+  let _ : Algebra K L := e.toRingHom.toAlgebra
+  rw [RegularFormClass.mapRingEquiv_eq_baseChange e
+    (fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]),
+    RegularFormClass.signedDiscr_baseChange, RingHom.algebraMap_toAlgebra,
+    RingEquiv.toRingHom_eq_coe]
+
+/-- In a commutative square of field homomorphisms with horizontal isomorphisms `e : K ≃+* L` and
+`e' : K' ≃+* L'`, class transport commutes with scalar extension. -/
+theorem RegularFormClass.mapRingEquiv_baseChange
+    {K' L' : Type*} [Field K'] [Field L'] [Algebra K K'] [Algebra L L']
+    [Invertible (2 : K')] [Invertible (2 : L')]
+    (e : K ≃+* L) (e' : K' ≃+* L')
+    (hcomm : ∀ a : K, e' (algebraMap K K' a) = algebraMap L L' (e a))
     (x : RegularFormClass K) :
-    RegularFormClass.discr (RegularFormClass.map τ x) =
-      (τ : K →+* L).squareClassMap (RegularFormClass.discr x) := by
+    RegularFormClass.mapRingEquiv e' (RegularFormClass.baseChange K' x) =
+      RegularFormClass.baseChange L' (RegularFormClass.mapRingEquiv e x) := by
   refine Quotient.inductionOn x fun p ↦ ?_
-  rw [RegularFormClass.map_mk, RegularFormClass.discr_mk, RegularFormClass.discr_mk,
-    RingHom.squareClassMap_apply, RegularFormPresentation.prod_map]
-  -- the two sides differ only in how `τ` is coerced to a monoid homomorphism
-  rfl
+  rw [RegularFormClass.baseChange_mk, RegularFormClass.mapRingEquiv_mk,
+    RegularFormClass.mapRingEquiv_mk, RegularFormClass.baseChange_mk,
+    RegularFormPresentation.equivOfRingEquiv_baseChange e e' hcomm]
+
+end Class
+
+/-! ### Semilinearly transported regular forms -/
+
+section FormClass
+
+variable {K : Type u} {L : Type v} [Field K] [Field L]
+variable {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+variable [Invertible (2 : K)] [Invertible (2 : L)]
+variable {V : Type*} {W : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [AddCommGroup W] [Module L W] [FiniteDimensional L W]
+
+/-- If `f : V ≃ₛₗ[σ] W` intertwines two regular quadratic forms `Q` and `Q'` via
+`Q' (f v) = σ (Q v)`, then the isometry class of `Q'` is the transport along
+`RingHomInvPair.toRingEquiv σ σ'` of the isometry class of `Q`. -/
+theorem formClass_eq_mapRingEquiv_of_semilinearEquiv
+    {Q : QuadraticForm K V} {Q' : QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ v, Q' (f v) = σ (Q v)) :
+    formClass Q' hQ' =
+      RegularFormClass.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ') (formClass Q hQ) := by
+  let e : K ≃+* L := RingHomInvPair.toRingEquiv σ σ'
+  obtain ⟨p, ⟨g⟩⟩ := exists_presentedForm_equivalent Q hQ
+  have : RingHomCompTriple σ' (e : K →+* L) (RingHom.id L) := ⟨by ext x; simp [e]⟩
+  have : RingHomCompTriple (e.symm : L →+* K) σ (RingHom.id L) := ⟨by ext x; simp [e]⟩
+  let hL : W ≃ₗ[L] (Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) :=
+    (f.symm.trans g.toLinearEquiv).trans (p.coordEquivOfRingEquiv e)
+  have hEquiv : Q'.Equivalent
+      (presentedForm (RegularFormPresentation.equivOfRingEquiv e p)) := by
+    refine ⟨{ toLinearEquiv := hL, map_app' := fun w ↦ ?_ }⟩
+    obtain ⟨v, rfl⟩ := f.surjective w
+    have hcoord : hL (f v) = p.coordEquivOfRingEquiv e (g v) := by
+      simp [hL]
+    rw [LinearEquiv.toFun_eq_coe, hcoord, presentedForm_equivOfRingEquiv p e (g v),
+      g.map_app v, RingHomInvPair.toRingEquiv_apply, hf v]
+  rw [formClass_mk Q hQ p ⟨g⟩, RegularFormClass.mapRingEquiv_mk,
+    formClass_mk Q' hQ' _ hEquiv]
+
+/-- The isometry class of `Q.transport f` is the transport along
+`RingHomInvPair.toRingEquiv σ σ'` of the isometry class of `Q`. -/
+@[simp]
+theorem formClass_transport {Q : QuadraticForm K V} {f : V ≃ₛₗ[σ] W}
+    (h : (Q.transport f).Nondegenerate) :
+    formClass (Q.transport f) h =
+      RegularFormClass.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')
+        (formClass Q ((QuadraticMap.nondegenerate_transport_iff f Q).mp h)) :=
+  formClass_eq_mapRingEquiv_of_semilinearEquiv _ h f (QuadraticMap.transport_apply_apply f Q)
+
+/-- If `f : V ≃ₛₗ[σ] W` intertwines two regular quadratic forms `Q` and `Q'` via
+`Q' (f v) = σ (Q v)`, then the discriminant of `Q'` is the image under `σ` of the discriminant of
+`Q`. -/
+theorem discr_formClass_eq_squareClassMap_of_semilinearEquiv
+    {Q : QuadraticForm K V} {Q' : QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ v, Q' (f v) = σ (Q v)) :
+    RegularFormClass.discr (formClass Q' hQ') =
+      σ.squareClassMap (RegularFormClass.discr (formClass Q hQ)) := by
+  rw [formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf, RegularFormClass.discr_mapRingEquiv,
+    RingHomInvPair.toRingEquiv, RingEquiv.toRingHom_ofRingHom]
+
+/-- If `f : V ≃ₛₗ[σ] W` intertwines two regular quadratic forms `Q` and `Q'` via
+`Q' (f v) = σ (Q v)`, then the signed discriminant of `Q'` is the image under `σ` of the signed
+discriminant of `Q`. -/
+theorem signedDiscr_formClass_eq_squareClassMap_of_semilinearEquiv
+    {Q : QuadraticForm K V} {Q' : QuadraticForm L W}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+    (f : V ≃ₛₗ[σ] W) (hf : ∀ v, Q' (f v) = σ (Q v)) :
+    RegularFormClass.signedDiscr (formClass Q' hQ') =
+      σ.squareClassMap (RegularFormClass.signedDiscr (formClass Q hQ)) := by
+  rw [formClass_eq_mapRingEquiv_of_semilinearEquiv hQ hQ' f hf,
+    RegularFormClass.signedDiscr_mapRingEquiv, RingHomInvPair.toRingEquiv,
+    RingEquiv.toRingHom_ofRingHom]
+
+end FormClass
 
 end TauCeti
-
-namespace QuadraticForm
-
-open TauCeti
-
-variable {K : Type*} {L : Type*} [Field K] [Field L] [Invertible (2 : K)] [Invertible (2 : L)]
-variable {V : Type*} {V' : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [AddCommGroup V'] [Module L V'] [FiniteDimensional L V']
-
-/-- **The class of a transported form is the transported class**: for a regular form `Q` over `K`
-and a semilinear equivalence `f : V ≃ₛₗ[τ] V'` over a ring isomorphism `τ : K ≃+* L`, the class of
-`Q.transport f` is the image under `RegularFormClass.map τ` of the class of `Q`. -/
-theorem formClass_transport (τ : K ≃+* L) (f : V ≃ₛₗ[(τ : K →+* L)] V')
-    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    formClass (Q.transport f) ((nondegenerate_transport_iff f Q).mpr hQ) =
-      RegularFormClass.map τ (formClass Q hQ) := by
-  obtain ⟨p, hp⟩ := exists_presentedForm_equivalent Q hQ
-  rw [formClass_mk Q hQ p hp, RegularFormClass.map_mk,
-    formClass_mk _ _ (p.map τ) (by rw [presentedForm_map]; exact hp.transport _ _)]
-
-end QuadraticForm

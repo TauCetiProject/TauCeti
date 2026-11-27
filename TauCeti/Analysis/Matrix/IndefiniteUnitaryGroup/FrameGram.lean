@@ -176,6 +176,6 @@ theorem mul_mul_norm_det_submatrix_castSucc_sq_le_of_frame (hq : Fintype.card q 
         ‖((Fᴴ * indefiniteDiagonal p q 𝕜 * (x.val * F')).submatrix castSucc castSucc).det‖ ^ 2 ≤
       ‖(Fᴴ * indefiniteDiagonal p q 𝕜 * (x.val * F')).det‖ ^ 2 :=
   _root_.Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le_of_frame hq hT hF (by
-    rw [conjTranspose_mul_mul_mul_of_star_mul_mul_eq (mem_unitaryGroupOf_iff.1 hx), hF'])
+    rw [conjTranspose_mul_mul_mul_of_star_mul_mul_eq (R := 𝕜) (mem_unitaryGroupOf_iff.1 hx), hF'])
 
 end TauCeti.Matrix.indefiniteUnitaryGroup

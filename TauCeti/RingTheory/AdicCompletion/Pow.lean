@@ -28,6 +28,9 @@ to a root congruent to it modulo `I ^ n`, and not merely modulo `I`.
   every `J` with `J ^ k ≤ I`, in particular for every `J ≤ I`.
 * `IsPrecomplete.of_pow_le_of_pow_le`, `IsAdicComplete.of_pow_le_of_pow_le`: adic precompleteness
   and completeness for `I` imply the same for every `J` with `J ^ k ≤ I` and `I ^ l ≤ J`.
+* `IsAdicComplete.sup_of_pow_le`, `IsAdicComplete.sup_span_singleton_of_pow_mem`: adic
+  completeness for `I` implies the same for `I ⊔ J` whenever `J ^ k ≤ I`, and for `I ⊔ (x)` whenever
+  `x ^ k ∈ I`.
 * `IsHausdorff.pow`, `IsAdicComplete.pow`: adic Hausdorffness and completeness for `I` imply the
   same for `I ^ n` when `n ≠ 0`.
 * `IsPrecomplete.pow`: adic precompleteness for `I` implies precompleteness for every `I ^ n`.
@@ -71,6 +74,21 @@ theorem IsAdicComplete.of_pow_le_of_pow_le [IsAdicComplete I M] {k l : ℕ} (hJI
     (hIJ : I ^ l ≤ J) : IsAdicComplete J M where
   toIsHausdorff := .of_pow_le hJI
   toIsPrecomplete := .of_pow_le_of_pow_le hJI hIJ
+
+/-- An `I`-adically complete module is `I ⊔ J`-adically complete for every `J` with `J ^ k ≤ I` for
+some `k`, since `(I ⊔ J) ^ (1 + k) ≤ I ⊔ J ^ k ≤ I`. -/
+theorem IsAdicComplete.sup_of_pow_le [IsAdicComplete I M] {k : ℕ} (hJI : J ^ k ≤ I) :
+    IsAdicComplete (I ⊔ J) M :=
+  .of_pow_le_of_pow_le (I := I) (k := 1 + k) (l := 1)
+    (Ideal.sup_pow_add_le_pow_sup_pow.trans (sup_le (pow_one I).le hJI))
+    ((pow_one I).le.trans le_sup_left)
+
+/-- An `I`-adically complete module is `I ⊔ (x)`-adically complete for every `x` with `x ^ k ∈ I`
+for some `k`. For instance, a ring complete along `I` is complete along `I ⊔ (p)` as soon as
+`p ^ k ∈ I`, which adds `p` to the defining ideal without changing the adic topology. -/
+theorem IsAdicComplete.sup_span_singleton_of_pow_mem [IsAdicComplete I M] {x : R} {k : ℕ}
+    (hx : x ^ k ∈ I) : IsAdicComplete (I ⊔ Ideal.span {x}) M :=
+  .sup_of_pow_le (k := k) <| by rwa [Ideal.span_singleton_pow, Ideal.span_singleton_le_iff_mem]
 
 /-- An `I`-adically Hausdorff module is `I ^ n`-adically Hausdorff for `n ≠ 0`. -/
 theorem IsHausdorff.pow [IsHausdorff I M] {n : ℕ} (hn : n ≠ 0) : IsHausdorff (I ^ n) M :=

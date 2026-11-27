@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.Algebra.Algebra.Pi
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The cyclic quotient of an algebra
@@ -27,6 +30,12 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
 
 * `TauCeti.commutatorSubmodule`: the span of additive commutators in `A`.
 * `TauCeti.cyclicQuotient`: the quotient `A / [A, A]`.
+* `TauCeti.cyclicQuotientMap`: functoriality of `cyclicQuotient k` in multiplicative `k`-linear
+  maps.
+* `TauCeti.cyclicQuotientRingHomMap`: functoriality of `cyclicQuotient ℤ` in (possibly non-unital)
+  ring homomorphisms.
+* `TauCeti.cyclicQuotientEquivOfComm`: for a (possibly non-unital, non-associative) commutative
+  ring `B`, `B / [B, B] ≃ₗ[k] B`.
 
 ## Main results
 
@@ -47,6 +56,12 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
 * `TauCeti.map_mem_commutatorSubmodule_of_ringHom`: when `k` acts on `A` associatively and
   centrally, a non-unital ring homomorphism carries the commutator submodule over `k` into the
   commutator submodule of its target over any semiring of scalars acting on the target.
+* `TauCeti.algEquiv_apply_mem_commutatorSubmodule_iff`: algebra isomorphisms preserve the
+  commutator submodule.
+* `TauCeti.commutatorSubmodule_quotient_le_map`: the commutators of a quotient algebra are images
+  of commutators.
+* `TauCeti.commutatorSubmodule_pi`: the commutator submodule of a finite product of rings is the
+  product of the commutator submodules.
 
 The trace criterion for nonmembership in the commutator submodule (hence, over a ring of scalars,
 for nonvanishing cyclic classes), which needs matrices, is
@@ -62,6 +77,8 @@ for nonvanishing cyclic classes), which needs matrices, is
 public section
 
 namespace TauCeti
+
+section General
 
 variable (k : Type*) (A : Type*) [NonUnitalNonAssocRing A]
 
@@ -192,11 +209,185 @@ theorem map_mem_commutatorSubmodule_of_ringHom {l B F : Type*} [Semiring l]
   | add y z _ _ hy hz => intro r; rw [smul_add, map_add]; exact add_mem (hy r) (hz r)
   | smul s y _ hy => intro r; rw [smul_smul]; exact hy (r * s)
 
+/-- The commutators of a finite product of rings are the families of commutators. -/
+theorem commutatorSubmodule_pi {ι : Type*} [Finite ι] (B : ι → Type*)
+    [∀ i, NonUnitalNonAssocRing (B i)] [∀ i, Module k (B i)] :
+    commutatorSubmodule k (Π i, B i) =
+      Submodule.pi Set.univ fun i ↦ commutatorSubmodule k (B i) := by
+  classical
+  have := Fintype.ofFinite ι
+  refine le_antisymm (commutatorSubmodule_le_iff.2 fun x y i _ ↦ ?_) fun v hv ↦ ?_
+  · exact mul_sub_mul_mem_commutatorSubmodule k (B i) (x i) (y i)
+  · rw [← Finset.univ_sum_single v]
+    refine sum_mem fun i _ ↦ ?_
+    have hle : commutatorSubmodule k (B i) ≤
+        (commutatorSubmodule k (Π i, B i)).comap (LinearMap.single k B i) :=
+      commutatorSubmodule_le_iff.2 fun x y ↦ by
+        simp [Pi.single_sub, Pi.single_mul]
+    exact hle (hv i (Set.mem_univ i))
+
 end Semiring
 
 /-- The **cyclic quotient** `A / [A, A]`.  Its elements are cyclic classes; for a path algebra,
 cyclic derivatives, and hence the three-dimensional Ginzburg differential, depend only on such a
 class. -/
 abbrev cyclicQuotient [Ring k] [Module k A] := A ⧸ commutatorSubmodule k A
+
+end General
+
+section Map
+
+variable (k : Type*) {A B F : Type*} [Ring k] [NonUnitalNonAssocRing A] [NonUnitalNonAssocRing B]
+  [Module k A] [Module k B] [FunLike F A B] [MulHomClass F A B] [LinearMapClass F k A B]
+
+/-- The `k`-linear map `A / [A, A] →ₗ[k] B / [B, B]` induced on cyclic quotients by a
+multiplicative `k`-linear map `f : A → B`. -/
+def cyclicQuotientMap (f : F) : cyclicQuotient k A →ₗ[k] cyclicQuotient k B :=
+  Submodule.mapQ (commutatorSubmodule k A) (commutatorSubmodule k B) (f : A →ₗ[k] B)
+    fun _ hx ↦ map_mem_commutatorSubmodule f hx
+
+@[simp]
+theorem cyclicQuotientMap_mk (f : F) (x : A) :
+    cyclicQuotientMap k f (Submodule.Quotient.mk x) = Submodule.Quotient.mk (f x) := by rfl
+
+end Map
+
+@[simp]
+theorem cyclicQuotientMap_id (k : Type*) {A : Type*} [Ring k] [NonUnitalNonAssocRing A]
+    [Module k A] :
+    cyclicQuotientMap k (NonUnitalAlgHom.id k A) = LinearMap.id := by ext x; rfl
+
+@[simp]
+theorem cyclicQuotientMap_algHom_id (k : Type*) {A : Type*} [CommRing k] [Ring A] [Algebra k A] :
+    cyclicQuotientMap k (AlgHom.id k A) = LinearMap.id := by ext x; rfl
+
+theorem cyclicQuotientMap_comp (k : Type*) {A B C : Type*} [Ring k] [NonUnitalNonAssocRing A]
+    [NonUnitalNonAssocRing B] [NonUnitalNonAssocRing C] [Module k A] [Module k B] [Module k C]
+    (g : B →ₙₐ[k] C) (f : A →ₙₐ[k] B) :
+    cyclicQuotientMap k (g.comp f) =
+      (cyclicQuotientMap k g).comp (cyclicQuotientMap k f) := by ext x; rfl
+
+theorem cyclicQuotientMap_algHom_comp (k : Type*) {A B C : Type*} [CommRing k] [Ring A] [Ring B]
+    [Ring C] [Algebra k A] [Algebra k B] [Algebra k C] (g : B →ₐ[k] C) (f : A →ₐ[k] B) :
+    cyclicQuotientMap k (g.comp f) =
+      (cyclicQuotientMap k g).comp (cyclicQuotientMap k f) := by ext x; rfl
+
+section RingHom
+
+variable {R S F : Type*} [NonUnitalNonAssocRing R] [NonUnitalNonAssocRing S]
+  [FunLike F R S] [NonUnitalRingHomClass F R S]
+
+/-- The additive map `R / [R, R] →ₗ[ℤ] S / [S, S]` induced on integer cyclic quotients by a
+(possibly non-unital) ring homomorphism `φ : R → S`. -/
+def cyclicQuotientRingHomMap (φ : F) : cyclicQuotient ℤ R →ₗ[ℤ] cyclicQuotient ℤ S :=
+  cyclicQuotientMap ℤ
+    ({ (φ : R →+ S).toIntLinearMap with map_zero' := map_zero φ, map_mul' := map_mul φ } :
+      R →ₙₐ[ℤ] S)
+
+@[simp]
+theorem cyclicQuotientRingHomMap_mk (φ : F) (x : R) :
+    cyclicQuotientRingHomMap φ (Submodule.Quotient.mk x) = Submodule.Quotient.mk (φ x) := by rfl
+
+@[simp]
+theorem cyclicQuotientRingHomMap_id {R : Type*} [NonUnitalNonAssocRing R] :
+    cyclicQuotientRingHomMap (NonUnitalRingHom.id R) = LinearMap.id := by ext x; rfl
+
+@[simp]
+theorem cyclicQuotientRingHomMap_ringHom_id {R : Type*} [NonAssocRing R] :
+    cyclicQuotientRingHomMap (RingHom.id R) = LinearMap.id := by ext x; rfl
+
+theorem cyclicQuotientRingHomMap_comp {R S T : Type*} [NonUnitalNonAssocRing R]
+    [NonUnitalNonAssocRing S] [NonUnitalNonAssocRing T] (ψ : S →ₙ+* T) (φ : R →ₙ+* S) :
+    cyclicQuotientRingHomMap (ψ.comp φ) =
+      (cyclicQuotientRingHomMap ψ).comp (cyclicQuotientRingHomMap φ) := by ext x; rfl
+
+theorem cyclicQuotientRingHomMap_ringHom_comp {R S T : Type*} [NonAssocRing R] [NonAssocRing S]
+    [NonAssocRing T] (ψ : S →+* T) (φ : R →+* S) :
+    cyclicQuotientRingHomMap (ψ.comp φ) =
+      (cyclicQuotientRingHomMap ψ).comp (cyclicQuotientRingHomMap φ) := by ext x; rfl
+
+end RingHom
+
+section Comm
+
+/-- In a (possibly non-unital, non-associative) commutative ring every additive commutator
+vanishes, so the commutator submodule is trivial. -/
+@[simp]
+theorem commutatorSubmodule_eq_bot (k B : Type*) [Semiring k] [NonUnitalNonAssocCommRing B]
+    [Module k B] : commutatorSubmodule k B = ⊥ := by
+  rw [commutatorSubmodule, Submodule.span_eq_bot]
+  rintro _ ⟨⟨x, y⟩, rfl⟩; exact sub_eq_zero.2 (mul_comm x y)
+
+section Equiv
+
+variable (k B : Type*) [Ring k] [NonUnitalNonAssocCommRing B] [Module k B]
+
+/-- For a (possibly non-unital, non-associative) commutative ring `B`, the cyclic quotient
+`B / [B, B]` is canonically isomorphic to `B`. -/
+def cyclicQuotientEquivOfComm : cyclicQuotient k B ≃ₗ[k] B :=
+  Submodule.quotEquivOfEqBot (commutatorSubmodule k B) (commutatorSubmodule_eq_bot k B)
+
+@[simp]
+theorem cyclicQuotientEquivOfComm_mk (x : B) :
+    cyclicQuotientEquivOfComm k B (Submodule.Quotient.mk x) = x := by rfl
+
+@[simp]
+theorem cyclicQuotientEquivOfComm_symm_apply (x : B) :
+    (cyclicQuotientEquivOfComm k B).symm x = Submodule.Quotient.mk x := by rfl
+
+end Equiv
+
+/-- Naturality of `cyclicQuotientEquivOfComm` with respect to multiplicative `k`-linear maps. -/
+@[simp]
+theorem cyclicQuotientEquivOfComm_cyclicQuotientMap (k : Type*) {A B F : Type*} [Ring k]
+    [NonUnitalNonAssocCommRing A] [NonUnitalNonAssocCommRing B] [Module k A] [Module k B]
+    [FunLike F A B] [MulHomClass F A B] [LinearMapClass F k A B] (f : F)
+    (c : cyclicQuotient k A) :
+    cyclicQuotientEquivOfComm k B (cyclicQuotientMap k f c) =
+      f (cyclicQuotientEquivOfComm k A c) := by
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c; rfl
+
+/-- Naturality of `cyclicQuotientEquivOfComm` with respect to (possibly non-unital) ring
+homomorphisms. -/
+@[simp]
+theorem cyclicQuotientEquivOfComm_cyclicQuotientRingHomMap {A B F : Type*}
+    [NonUnitalNonAssocCommRing A] [NonUnitalNonAssocCommRing B]
+    [FunLike F A B] [NonUnitalRingHomClass F A B] (φ : F) (c : cyclicQuotient ℤ A) :
+    cyclicQuotientEquivOfComm ℤ B (cyclicQuotientRingHomMap φ c) =
+      φ (cyclicQuotientEquivOfComm ℤ A c) := by
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c; rfl
+
+end Comm
+
+end TauCeti
+
+namespace TauCeti
+
+/-! ### Algebras -/
+
+variable {k : Type*} [CommSemiring k]
+
+section
+
+variable {A : Type*} [Ring A] [Algebra k A]
+
+/-- An algebra isomorphism preserves the commutator submodule. -/
+@[simp]
+theorem algEquiv_apply_mem_commutatorSubmodule_iff {B : Type*} [Ring B] [Algebra k B]
+    (e : A ≃ₐ[k] B) {a : A} :
+    e a ∈ commutatorSubmodule k B ↔ a ∈ commutatorSubmodule k A :=
+  ⟨fun h ↦ by simpa using map_mem_commutatorSubmodule e.symm h, map_mem_commutatorSubmodule e⟩
+
+variable (k) in
+/-- Every commutator sum of a quotient algebra is the image of a commutator sum of `A`. -/
+theorem commutatorSubmodule_quotient_le_map (I : Ideal A) [I.IsTwoSided] :
+    commutatorSubmodule k (A ⧸ I) ≤
+      (commutatorSubmodule k A).map (Ideal.Quotient.mkₐ k I).toLinearMap := by
+  refine commutatorSubmodule_le_iff.2 fun x y ↦ ?_
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective k I x
+  obtain ⟨y, rfl⟩ := Ideal.Quotient.mkₐ_surjective k I y
+  exact ⟨x * y - y * x, mul_sub_mul_mem_commutatorSubmodule k A x y, by simp⟩
+
+end
 
 end TauCeti

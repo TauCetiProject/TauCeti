@@ -29,7 +29,7 @@ corresponding to `v`, along any ring isomorphism `K_v ≃+* L_w` extending `e`, 
 `IsDedekindDomain.HeightOneSpectrum.adicCompletionCongr`, and the real forms are reindexed
 (`GlobalFormInvariants.IsLocalRealization.map`). The discriminants match because the isomorphism
 of completions agrees with `e` on `K`, and the local Hasse invariants because a ring isomorphism
-preserves every Hilbert symbol (`TauCeti.RegularFormClass.localHasse_map`).
+preserves every Hilbert symbol (`TauCeti.localHasse_formClass_eq_of_semilinearEquiv`).
 
 These statements carry the classification data of quadratic forms between isomorphic number
 fields, for instance between a number field and a copy of it in another universe.
@@ -253,19 +253,18 @@ theorem map (hL : I.IsLocalRealization U R)
       (fun w ↦ R ((realEquivOfRingEquiv e).symm w)) where
   nondegenerate_finite w := (nondegenerate_transport_iff _ _).mpr (hL.nondegenerate_finite _)
   discr_finite w :=
-    (congrArg RegularFormClass.discr (QuadraticForm.formClass_transport (τ w) _ (U _)
-      (hL.nondegenerate_finite _))).trans <| by
-        rw [RegularFormClass.discr_map, hL.discr_finite,
-          discrAtFinitePlace_map e I (τ w).toRingHom (hτ w),
+    (discr_formClass_eq_squareClassMap_of_semilinearEquiv (hL.nondegenerate_finite _) _ _
+      (transport_apply_apply _ _)).trans <| by
+        rw [hL.discr_finite, discrAtFinitePlace_map e I (τ w).toRingHom (hτ w),
           RingEquiv.toRingHom_eq_coe]
   localHasse_finite w := by
     let _ : Finite (𝓞 K ⧸
         ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm w).asIdeal) :=
       Ring.HasFiniteQuotients.finiteQuotient (HeightOneSpectrum.ne_bot _)
     let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
-    refine (congrArg RegularFormClass.localHasse (QuadraticForm.formClass_transport (τ w) _ (U _)
-      (hL.nondegenerate_finite _))).trans ?_
-    rw [RegularFormClass.localHasse_map, hL.localHasse_finite, finiteHasse_map]
+    refine (localHasse_formClass_eq_of_semilinearEquiv (hL.nondegenerate_finite _) _ _
+      (transport_apply_apply _ _)).trans ?_
+    rw [hL.localHasse_finite, finiteHasse_map]
   nondegenerate_real w := hL.nondegenerate_real _
   sigPos_real w := hL.sigPos_real _
 
@@ -318,7 +317,7 @@ theorem globalInvariants_transport (e : K ≃+* L) (f : V ≃ₛₗ[(e : K →+*
       e.bijective fun r m ↦ f.map_smulₛₗ r m)
     simpa [Module.finrank] using h.symm
   · rw [globalInvariants_discr, GlobalFormInvariants.discr_map, globalInvariants_discr,
-      formClass_transport e f Q hQ, RegularFormClass.discr_map]
+      discr_formClass_eq_squareClassMap_of_semilinearEquiv hQ _ f (transport_apply_apply f Q)]
   · obtain ⟨v, rfl⟩ :=
       (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).surjective w
     rw [GlobalFormInvariants.finiteHasse_map_equivOfRingEquiv, globalInvariants_finiteHasse,

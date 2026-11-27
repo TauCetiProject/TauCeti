@@ -22,6 +22,7 @@ underlying set of Mathlib's additive subgroup `Valuation.leAddSubgroup`.
 * `Valuation.map_natCast_le_one`: `v n ≤ 1` for every natural number `n`.
 * `Valuation.map_sub_of_distinct_val`: when `v x ≠ v y`, `v (x - y) = max (v x) (v y)`.
 * `Valuation.coe_leAddSubgroup`: the subgroup `v.leAddSubgroup γ` is the set `{x | v x ≤ γ}`.
+* `Valuation.map_mul_mul_inv_le`: if `v a ≤ v b`, then `v (a * c * b⁻¹) ≤ v c`.
 -/
 
 public section
@@ -47,6 +48,17 @@ theorem map_sub_of_distinct_val {x y : R} (h : v x ≠ v y) : v (x - y) = max (v
 theorem coe_leAddSubgroup {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation R Γ₀)
     (γ : Γ₀) : (v.leAddSubgroup γ : Set R) = {x | v x ≤ γ} :=
   Set.ext fun _ ↦ mem_leAddSubgroup_iff
+
+/-- If `v a ≤ v b` in a division ring, then `v (a * c * b⁻¹) ≤ v c`. -/
+theorem map_mul_mul_inv_le {K Γ₀ : Type*} [DivisionRing K] [LinearOrderedCommGroupWithZero Γ₀]
+    (v : Valuation K Γ₀) {a b c : K} (hab : v a ≤ v b) :
+    v (a * c * b⁻¹) ≤ v c := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
+  · rw [map_mul, map_mul, map_inv₀, mul_right_comm]
+    have hpos : 0 < v b := pos_iff_ne_zero.mpr (by simp [hb])
+    have hratio : v a * (v b)⁻¹ ≤ 1 := (mul_inv_le_iff₀ hpos).mpr (by simpa using hab)
+    simpa using mul_le_mul_of_nonneg_right hratio zero_le
 
 end Valuation
 

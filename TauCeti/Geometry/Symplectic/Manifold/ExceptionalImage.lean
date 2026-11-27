@@ -37,7 +37,8 @@ this file specializes.
   `[S] · [S] + κ · [S] = -2`, then gives `κ · [S] = -1`
   (`TauCeti.apply_canonical_eq_neg_one_of_mem_exceptionalImages`).
 * `TauCeti.IsGoodClass J B A`, the predicate `good_J(A)`: `A · [S] ≥ -1` for every
-  `S ∈ exceptionalImages J B`.
+  `S ∈ exceptionalImages J B`. By the adjunction formula the canonical class is good
+  (`TauCeti.isGoodClass_canonical`).
 
 Three consequences follow from the intersection algebra of the configuration counts and of
 canonical cycles.
@@ -152,6 +153,16 @@ theorem not_isGoodClass_iff :
 /-- The class of the empty configuration is good. -/
 @[simp]
 theorem isGoodClass_zero : IsGoodClass J B 0 := fun _ _ ↦ by simp
+
+/-- **The canonical class is good.** If every exceptional image satisfies the adjunction formula
+for a sphere, `[S] · [S] + κ · [S] = -2`, then `κ · [S] = -1` for each of them, so `κ` is good.
+Under this hypothesis `κ` is negative on every exceptional image, so it would not be good for the
+stronger condition `0 ≤ κ · [S]` whenever one exists. -/
+theorem isGoodClass_canonical
+    (hadj : ∀ S ∈ exceptionalImages J B,
+      B (embeddedCurveClass J S) (embeddedCurveClass J S) + B κ (embeddedCurveClass J S) = -2) :
+    IsGoodClass J B κ := fun S hS ↦
+  (apply_canonical_eq_neg_one_of_mem_exceptionalImages hS (hadj S hS)).ge
 
 /-! ### Exceptional images of curves -/
 

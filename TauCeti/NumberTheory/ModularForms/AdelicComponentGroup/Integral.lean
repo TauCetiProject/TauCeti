@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.AdelicComponentGroup
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CongruenceLevel
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralGL
 import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -53,12 +53,12 @@ theorem relIndex_range_mapGL_componentGroup_ne_zero
     (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ).range.relIndex (componentGroup U g) ≠ 0 := by
   set φ := GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))
   set V := MulAut.conj g • U
-  set O := (integralGL ℚ 2 (R := ℤ)).range
+  set O := (integralGL ℚ (Fin 2) (R := ℤ)).range
   -- `GL₂(Ô)` has finite index in the compact group `gUg⁻¹`, since it is open.
   have hV : IsCompact (V : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))) :=
     Subgroup.isCompact_conj_smul g hU
   have hO : IsOpen (O : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))) :=
-    (isOpenEmbedding_integralGL ℚ 2).isOpen_range
+    (isOpenEmbedding_integralGL ℚ (Fin 2)).isOpen_range
   have h1 : O.relIndex V ≠ 0 := by
     have : CompactSpace V := isCompact_iff_compactSpace.mp hV
     have := Subgroup.quotient_finite_of_isOpen (O.subgroupOf V) (Subgroup.subgroupOf_isOpen V O hO)
@@ -74,7 +74,8 @@ theorem relIndex_range_mapGL_componentGroup_ne_zero
   -- An element of `Γ_{g,U}` with integral diagonal image comes from `SL₂(ℤ)`.
   refine mt (Subgroup.relIndex_eq_zero_of_le_left ?_) h3
   rintro γ ⟨hint, hγ⟩
-  exact mem_range_mapGL_of_det_eq_one (det_eq_one_of_mem_componentGroup hU hγ) hint
+  refine mem_range_mapGL_of_det_eq_one (det_eq_one_of_mem_componentGroup hU hγ) fun i j ↦ ?_
+  simpa [φ] using (mem_range_integralGL_iff.mp (Subgroup.mem_comap.mp hint)).1 i j
 
 end AdelicExamples.GL2
 
