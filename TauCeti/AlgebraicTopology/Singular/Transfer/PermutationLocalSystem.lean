@@ -53,7 +53,8 @@ twisted chains of `A` into each other. Hence the relative singular chain complex
 local system (`IsCoveringMap.singularPairChainComplexPermutationIso`), compatibly with the quotient
 maps from absolute chains, and the same holds for relative homology
 (`IsCoveringMap.singularPairHomologyPermutationIso`,
-`IsCoveringMap.singularHomologyπ_comp_singularPairHomologyPermutationIso_hom`).
+`IsCoveringMap.singularHomologyπ_comp_singularPairHomologyPermutationIso_hom`,
+`IsCoveringMap.twistedHomologyπ_comp_singularPairHomologyPermutationIso_inv`).
 
 ## References
 
@@ -659,6 +660,24 @@ theorem singularHomologyπ_comp_singularPairHomologyPermutationIso_hom (k : ℕ)
   exact (HomologicalComplex.homologyMap_comp _ _ k).symm.trans
     ((congrArg (HomologicalComplex.homologyMap · k)
       (hp.singularChainComplexπ_comp_singularPairChainComplexPermutationIso_hom R A)).trans
+        (HomologicalComplex.homologyMap_comp _ _ k))
+
+/-- The inverse relative comparison on homology commutes with the maps from absolute to relative
+homology: under the inverse absolute and relative comparisons, the map `H(B; L) ⟶ H(B, A; L)` from
+absolute to relative twisted homology corresponds to the map `H(E; R) ⟶ H(E, p⁻¹ A; R)` from
+absolute to relative homology, where `L` is the permutation local system
+`hp.permutationLocalSystem R`. -/
+@[reassoc (attr := simp)]
+theorem twistedHomologyπ_comp_singularPairHomologyPermutationIso_inv (k : ℕ) :
+    (TopPair.ofSubset A).twistedHomologyπ (hp.permutationLocalSystem R) k ≫
+        (hp.singularPairHomologyPermutationIso R A k).inv =
+      (hp.singularHomologyPermutationIso R k).inv ≫
+        (TopPair.ofSubset (p ⁻¹' A)).singularHomologyπ (ModuleCat.of R R) k := by
+  rw [singularPairHomologyPermutationIso_inv, singularHomologyPermutationIso_inv]
+  -- Both sides are maps induced on homology by composites of chain maps.
+  exact (HomologicalComplex.homologyMap_comp _ _ k).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · k)
+      (hp.twistedChainComplexπ_comp_singularPairChainComplexPermutationIso_inv R A)).trans
         (HomologicalComplex.homologyMap_comp _ _ k))
 
 end Pair
