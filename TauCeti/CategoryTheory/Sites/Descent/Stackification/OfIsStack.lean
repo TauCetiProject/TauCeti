@@ -228,6 +228,9 @@ instance isEquivalence_toStackification_app (a : LocallyDiscrete Cᵒᵖ) :
 /-- **Stackification fixes a stack**: for a stack `F`, the unit `toStackification J F` is an
 equivalence of pseudofunctors between `F` and `stackification J F` (part of Stacks,
 Lemma 02ZN). Its components are the equivalences `Stackification.Obj.toObjEquivalence`. -/
+-- Expose the projections so the restriction isomorphism of `stackificationLift` can use the
+-- unit with its dependent source and state its component formula in `Universal.lean`.
+@[expose]
 def stackificationOfIsStack :
     Bicategory.Equivalence F (stackification.{w} J F) :=
   (toStackification.{w, v', u'} J F).equivalenceOfIsEquivalence
@@ -236,12 +239,6 @@ def stackificationOfIsStack :
 @[simp]
 lemma stackificationOfIsStack_hom :
     (stackificationOfIsStack.{w, v', u'} J F).hom = toStackification.{w, v', u'} J F :=
-  (rfl)
-
-/-- `stackificationOfIsStack` is the componentwise equivalence associated to the unit. -/
-lemma stackificationOfIsStack_def :
-    stackificationOfIsStack.{w, v', u'} J F =
-      (toStackification.{w, v', u'} J F).equivalenceOfIsEquivalence :=
   (rfl)
 
 end

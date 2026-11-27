@@ -111,7 +111,7 @@ into a stack: the stackification of `ψ`, followed by the inverse of the unit of
 @[expose]
 def stackificationLift (ψ : F ⟶ G) : stackification.{w} J F ⟶ G :=
   stackificationMap.{w} J ψ ≫
-    (toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.inv
+    (stackificationOfIsStack.{w, v', u'} J G).inv
 
 /-- The components of `stackificationLift ψ` map descent data along `ψ` and then back to `G`
 through the inverse of the equivalence `Stackification.Obj.toObjFunctor`. -/
@@ -119,8 +119,8 @@ through the inverse of the equivalence `Stackification.Obj.toObjFunctor`. -/
 lemma stackificationLift_app_toFunctor (ψ : F ⟶ G) (a : LocallyDiscrete Cᵒᵖ) :
     ((stackificationLift.{w, v', u'} J ψ).app a).toFunctor =
       mapFunctor.{w} J ψ a.as.unop ⋙ (toObjFunctor.{w} J G a.as.unop).inv := by
-  simp only [stackificationLift, StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
-    equivalenceOfIsEquivalence_inv_app,
+  simp only [stackificationLift, stackificationOfIsStack, StrongTrans.comp_app,
+    Cat.Hom.comp_toFunctor, equivalenceOfIsEquivalence_inv_app,
     stackificationMap_app_toFunctor, Functor.toCatHom_toFunctor, toStackification_app_toFunctor]
   -- The inverse functors agree definitionally after identifying the unit components.
   rfl
@@ -132,7 +132,7 @@ def toStackificationCompStackificationLiftIso (ψ : F ⟶ G) :
   (α_ _ _ _).symm ≪≫
     whiskerRightIso (toStackificationCompStackificationMapIso.{w, v', u'} J ψ) _ ≪≫
     α_ _ _ _ ≪≫
-    whiskerLeftIso ψ (toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.unit.symm ≪≫ ρ_ ψ
+    whiskerLeftIso ψ (stackificationOfIsStack.{w, v', u'} J G).unit.symm ≪≫ ρ_ ψ
 
 /-- On objects, the restriction isomorphism maps the naturality isomorphism of the unit
 through the inverse equivalence, then applies the inverse component unit. -/
@@ -140,16 +140,16 @@ through the inverse equivalence, then applies the inverse component unit. -/
 lemma toStackificationCompStackificationLiftIso_hom_as_app_toNatTrans_app (ψ : F ⟶ G)
     (a : LocallyDiscrete Cᵒᵖ) (M : F.obj a) :
     ((toStackificationCompStackificationLiftIso.{w, v', u'} J ψ).hom.as.app a).toNatTrans.app M =
-      ((toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.inv.app a).toFunctor.map
+      ((stackificationOfIsStack.{w, v', u'} J G).inv.app a).toFunctor.map
           (((toStackificationCompStackificationMapIso.{w, v', u'} J ψ).hom.as.app a).toNatTrans.app
             M) ≫
-        ((toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.unit.inv.as.app
+        ((stackificationOfIsStack.{w, v', u'} J G).unit.inv.as.app
           a).toNatTrans.app ((ψ.app a).toFunctor.obj M) := by
   -- The unit's source uses `equivalenceOfIsEquivalence.hom`, which agrees with
   -- `toStackification` only definitionally. This prevents `simp` from descending through
   -- the composite modification. State its components explicitly, keeping the Cat
   -- associators and right unitor visible so their named component lemmas apply.
-  let e := (toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence
+  let e := stackificationOfIsStack.{w, v', u'} J G
   change (α_ ((toStackification.{w, v', u'} J F).app a) ((stackificationMap.{w} J ψ).app a)
         (e.inv.app a)).inv.toNatTrans.app M ≫
       (e.inv.app a).toFunctor.map
