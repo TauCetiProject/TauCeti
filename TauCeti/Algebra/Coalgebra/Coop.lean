@@ -5,24 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.Basic
+public import Mathlib.RingTheory.Coalgebra.Basic
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Module.Equiv.Opposite
 
 /-!
-# Co-opposite coalgebras and bialgebras
+# Co-opposite coalgebras
 
 For an `R`-coalgebra `A`, the co-opposite `TauCeti.Coop A` carries the same `R`-module (and, when
 present, `R`-algebra) structure as `A`, with the same counit and the reversed comultiplication
-`Δᶜᵒᵖ = τ ∘ Δ`. When `A` is a bialgebra, `TauCeti.Coop A` is again a bialgebra.
+`Δᶜᵒᵖ = τ ∘ Δ`.
 
 ## Main declarations
 
 * `TauCeti.Coop`: the co-opposite type wrapper.
 * `TauCeti.Coop.linearEquiv`, `TauCeti.Coop.unopLinearEquiv`, `TauCeti.Coop.algEquiv`: canonical
   equivalences `Coop A ≃ A` and `(Coop A)ᵐᵒᵖ ≃ A`.
-* `TauCeti.Coop.instCoalgebra`, `TauCeti.Coop.instBialgebra`: coalgebra and bialgebra instances on
-  `Coop A`.
+* `TauCeti.Coop.instCoalgebra`, `TauCeti.Coop.instIsCocomm`: coalgebra instances on `Coop A`.
 * `TauCeti.Coop.comul_mk`, `TauCeti.Coop.counit_mk`: simp lemmas for the co-opposite coalgebra
   operations.
 * `Coalgebra.Repr.coop`: reverses the legs of a finite coproduct representation.
@@ -381,32 +380,6 @@ instance instIsCocomm [Coalgebra R A] [Coalgebra.IsCocomm R A] :
     simp [comul_def, ← TensorProduct.map_comm, Coalgebra.comm_comul]
 
 end Coalgebra
-
-section Bialgebra
-
-variable [CommSemiring R] [Semiring A] [Bialgebra R A]
-
-noncomputable instance instBialgebra : Bialgebra R (Coop A) :=
-  Bialgebra.mk' R (Coop A)
-    (Bialgebra.counit_one (R := R) (A := A))
-    (fun {a b} ↦ Bialgebra.counit_mul (R := R) a.val b.val)
-    (by
-      rw [← mk_one, comul_mk, Bialgebra.comul_one, Algebra.TensorProduct.one_def]
-      simp [Algebra.TensorProduct.one_def])
-    (fun {a b} ↦ by
-      induction a with | mk a =>
-      induction b with | mk b =>
-      let f : A ⊗[R] A →ₐ[R] Coop A ⊗[R] Coop A :=
-        (Algebra.TensorProduct.map (algEquiv R A).symm.toAlgHom
-          (algEquiv R A).symm.toAlgHom).comp (Algebra.TensorProduct.comm R A A).toAlgHom
-      have hf (z : A ⊗[R] A) :
-          TensorProduct.map (linearEquiv R A).symm.toLinearMap
-              (linearEquiv R A).symm.toLinearMap (TensorProduct.comm R A A z) = f z :=
-        rfl
-      simp only [← mk_mul, comul_mk, Bialgebra.comul_mul, hf]
-      exact map_mul f (Coalgebra.comul (R := R) a) (Coalgebra.comul (R := R) b))
-
-end Bialgebra
 
 end Coop
 

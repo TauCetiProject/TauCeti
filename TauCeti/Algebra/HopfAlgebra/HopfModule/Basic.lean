@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.Regular
+public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
+public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.HopfAlgebra.Antipode
 import TauCeti.Algebra.Coalgebra.Comodule.Inverse
 
@@ -41,7 +42,6 @@ sending `n ⊗ h` to `n ◃ h`, and intertwining both the right `H`-actions and 
 
 * `TauCeti.RightHopfModule.opSMulTensor`: the right `H`-action bundled as `M ⊗[R] H →ₗ[R] M`.
 * `TauCeti.IsRightHopfModule`: Prop-valued compatibility class making `M` a right `H`-Hopf module.
-* `TauCeti.RightHopfModule.instSelf`: the regular right `H`-Hopf module structure on `H`.
 * `TauCeti.Comodule.cofreeRightModule`, `TauCeti.Comodule.isRightHopfModule_cofree`: the model
   right `H`-Hopf module structure on `N ⊗[R] H`.
 * `TauCeti.RightHopfModule.coinvariantProj` and `TauCeti.RightHopfModule.toFixedSubcomodule`: the
@@ -110,14 +110,6 @@ private theorem opSMulTensor_comp_lTensor_linearMap :
     simp [Algebra.algebraMap_eq_smul_one]
 
 end Action
-
-/-- On the regular right `H`-module, `opSMulTensor` coincides with multiplication
-`LinearMap.mul' R H`. -/
-@[simp]
-theorem opSMulTensor_self {R : Type u} {H : Type v}
-    [CommSemiring R] [Semiring H] [Algebra R H] :
-    opSMulTensor R H H = LinearMap.mul' R H :=
-  TensorProduct.ext' fun a b => by simp
 
 end RightHopfModule
 
@@ -195,34 +187,6 @@ theorem opSMulHom_apply (z : M ⊗[R] H) :
     opSMulHom R H M z = opSMulTensor R H M z := (rfl)
 
 end Bialgebra
-
-section Self
-
-variable {R : Type u} {H : Type v}
-variable [CommSemiring R] [Semiring H] [Bialgebra R H]
-
-/-- The regular right `H`-Hopf module of a bialgebra over itself, with right multiplication as the
-action and comultiplication as the coaction. -/
-instance instSelf : IsRightHopfModule R H H where
-  coact_op_smul h m := by
-    let := Comodule.tensor R H H H
-    have hmap := LinearMap.congr_fun
-      (Comodule.Hom.regularMul (R := R) (H := H)).map_coact (m ⊗ₜ[R] h)
-    simp only [LinearMap.comp_apply, Comodule.Hom.regularMul_toLinearMap, LinearMap.mul'_apply,
-      Comodule.tensor_coact, Comodule.tensorCoact_tmul, Comodule.instSelf_coact] at hmap
-    rw [Comodule.instSelf_coact, opSMulTensor_self]
-    exact hmap.symm
-
-/-- On the regular right `H`-Hopf module, `opSMulHom` coincides with `Comodule.Hom.regularMul`. -/
-@[simp]
-theorem opSMulHom_self :
-    letI := Comodule.tensor R H H H
-    opSMulHom R H H = Comodule.Hom.regularMul (R := R) (H := H) := by
-  let := Comodule.tensor R H H H
-  refine Comodule.Hom.toLinearMap_injective (TensorProduct.ext' fun x y => ?_)
-  simp
-
-end Self
 
 end RightHopfModule
 
@@ -457,14 +421,6 @@ theorem coinvariantProj_op_smul (h : H) (m : M) :
 theorem coinvariantProj_idem (m : M) :
     coinvariantProj R H M (coinvariantProj R H M m) = coinvariantProj R H M m :=
   coinvariantProj_eq_self (coinvariantProj_mem_fixedSubcomodule m)
-
-/-- On the regular right `H`-Hopf module, `coinvariantProj` sends `x` to the scalar multiple of
-`1` given by the counit. -/
-@[simp]
-theorem coinvariantProj_self (x : H) :
-    coinvariantProj R H H x = algebraMap R H (Coalgebra.counit (R := R) x) := by
-  rw [coinvariantProj_apply, Comodule.instSelf_coact, opSMulTensor_self,
-    _root_.HopfAlgebra.mul_antipode_lTensor_comul_apply]
 
 variable (R H M) in
 /-- The coinvariant projection with codomain restricted to `Comodule.fixedSubcomodule R H M`. -/

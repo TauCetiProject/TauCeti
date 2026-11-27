@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import Mathlib.RingTheory.Bialgebra.Equiv
 public import Mathlib.Algebra.Module.Submodule.Equiv
-public import TauCeti.Algebra.Coalgebra.Coop
+public import TauCeti.Algebra.Bialgebra.Coop
 public import TauCeti.Algebra.Bialgebra.MulOpposite
 
 /-!
@@ -181,60 +181,39 @@ theorem antipode_integralAntipodeEquiv_symm_apply
   simpa only [integralAntipodeEquiv_apply] using
     congrArg Subtype.val ((integralAntipodeEquiv hS).apply_symm_apply t)
 
-private theorem mulLeft_add {R H : Type*} [CommSemiring R] [Semiring H] [Module R H]
-    [SMulCommClass R H H] (a b : H) :
-    LinearMap.mulLeft R (a + b) = LinearMap.mulLeft R a + LinearMap.mulLeft R b :=
-  LinearMap.ext fun y ↦ add_mul a b y
-
-private theorem mulLeft_smul {R H : Type*} [CommSemiring R] [Semiring H] [Module R H]
-    [SMulCommClass R H H] [IsScalarTower R H H] (r : R) (a : H) :
-    LinearMap.mulLeft R (r • a) = r • LinearMap.mulLeft R a :=
-  LinearMap.ext fun y ↦ smul_mul_assoc r a y
-
-private theorem mulRight_add {R H : Type*} [CommSemiring R] [Semiring H] [Module R H]
-    [IsScalarTower R H H] (a b : H) :
-    LinearMap.mulRight R (a + b) = LinearMap.mulRight R a + LinearMap.mulRight R b :=
-  LinearMap.ext fun y ↦ mul_add y a b
-
-private theorem mulRight_smul {R H : Type*} [CommSemiring R] [Semiring H] [Module R H]
-    [SMulCommClass R H H] [IsScalarTower R H H] (r : R) (a : H) :
-    LinearMap.mulRight R (r • a) = r • LinearMap.mulRight R a :=
-  LinearMap.ext fun y ↦ mul_smul_comm r y a
-
 private noncomputable def leftIntegralPhi (R H : Type*) [CommSemiring R] [Semiring H]
     [HopfAlgebra R H] (t : H) : (H ⊗[R] H) ⊗[R] H →ₗ[R] H ⊗[R] H :=
   TensorProduct.lift <| LinearMap.mk₂ R
-    (fun ab c ↦ ((LinearMap.mulRight R c ∘ₗ antipode R).lTensor H)
+    (fun ab c ↦ (((LinearMap.mul R H).flip c ∘ₗ antipode R).lTensor H)
       (ab * comul (R := R) t))
     (fun _ _ _ ↦ by simp [add_mul])
     (fun _ _ _ ↦ by simp)
-    (fun ab c₁ c₂ ↦ by simp [mulRight_add, LinearMap.add_comp, LinearMap.lTensor_add])
-    (fun r ab c ↦ by simp [mulRight_smul, LinearMap.smul_comp, LinearMap.lTensor_smul])
+    (fun ab c₁ c₂ ↦ by simp [LinearMap.add_comp, LinearMap.lTensor_add])
+    (fun r ab c ↦ by simp [LinearMap.smul_comp, LinearMap.lTensor_smul])
 
 private theorem leftIntegralPhi_rTensor_comul {t : H} (ht : t ∈ leftIntegral R H)
     (w : H ⊗[R] H) :
     leftIntegralPhi R H t ((comul (R := R)).rTensor H w) =
-      ((LinearMap.mulRight R (TensorProduct.lid R H ((counit (R := R)).rTensor H w)) ∘ₗ
+      (((LinearMap.mul R H).flip (TensorProduct.lid R H ((counit (R := R)).rTensor H w)) ∘ₗ
         antipode R).lTensor H) (comul t) := by
   induction w using TensorProduct.inductionOn with
   | add u v hu hv =>
-    simp only [map_add, hu, hv, mulRight_add, LinearMap.add_comp, LinearMap.lTensor_add,
-      LinearMap.add_apply]
+    simp only [map_add, hu, hv, LinearMap.add_comp, LinearMap.lTensor_add, LinearMap.add_apply]
   | tmul d c =>
     have hdt : comul (R := R) d * comul (R := R) t =
         counit (R := R) d • comul (R := R) t := by
       rw [← Bialgebra.comul_mul, (mem_leftIntegral_iff.mp ht) d, map_smul]
-    simp [leftIntegralPhi, hdt, mulRight_smul, LinearMap.smul_comp, LinearMap.lTensor_smul]
+    simp [leftIntegralPhi, hdt, LinearMap.smul_comp, LinearMap.lTensor_smul]
 
 private theorem leftIntegralPhi_assoc_symm_tmul (t a : H) (z : H ⊗[R] H) :
     leftIntegralPhi R H t ((TensorProduct.assoc R H H H).symm (a ⊗ₜ[R] z)) =
-      (LinearMap.mulLeft R a).rTensor H
-        (((LinearMap.mulRight R (LinearMap.mul' R H ((antipode R).rTensor H z)) ∘ₗ
+      (LinearMap.mul R H a).rTensor H
+        ((((LinearMap.mul R H).flip (LinearMap.mul' R H ((antipode R).rTensor H z)) ∘ₗ
           antipode R).lTensor H) (comul (R := R) t)) := by
   induction z using TensorProduct.inductionOn with
   | add u v hu hv =>
-    simp only [TensorProduct.tmul_add, map_add, hu, hv, mulRight_add, LinearMap.add_comp,
-      LinearMap.lTensor_add, LinearMap.add_apply]
+    simp only [TensorProduct.tmul_add, map_add, hu, hv, LinearMap.add_comp, LinearMap.lTensor_add,
+      LinearMap.add_apply]
   | tmul b c =>
     simp only [TensorProduct.assoc_symm_tmul, leftIntegralPhi, TensorProduct.lift.tmul,
       LinearMap.mk₂_apply, LinearMap.rTensor_tmul, LinearMap.mul'_apply]
@@ -245,18 +224,17 @@ private theorem leftIntegralPhi_assoc_symm_tmul (t a : H) (z : H ⊗[R] H) :
 private theorem leftIntegralPhi_assoc_symm_lTensor_comul (t : H) (w : H ⊗[R] H) :
     leftIntegralPhi R H t ((TensorProduct.assoc R H H H).symm
       ((comul (R := R)).lTensor H w)) =
-      (LinearMap.mulLeft R (TensorProduct.rid R H
+      (LinearMap.mul R H (TensorProduct.rid R H
         ((counit (R := R)).lTensor H w))).rTensor H
           ((antipode R).lTensor H (comul (R := R) t)) := by
   induction w using TensorProduct.inductionOn with
   | add u v hu hv =>
-    simp only [map_add, hu, hv, mulLeft_add, LinearMap.rTensor_add, LinearMap.add_apply]
+    simp only [map_add, hu, hv, LinearMap.rTensor_add, LinearMap.add_apply]
   | tmul a d =>
     have hmulR (r : R) :
-        LinearMap.mulRight R (algebraMap R H r) ∘ₗ antipode R = r • antipode R :=
+        (LinearMap.mul R H).flip (algebraMap R H r) ∘ₗ antipode R = r • antipode R :=
       LinearMap.ext fun y ↦ by simp [Algebra.algebraMap_eq_smul_one]
-    simp [leftIntegralPhi_assoc_symm_tmul, hmulR, mulLeft_smul, LinearMap.lTensor_smul,
-      LinearMap.rTensor_smul]
+    simp [leftIntegralPhi_assoc_symm_tmul, hmulR, LinearMap.lTensor_smul, LinearMap.rTensor_smul]
 
 /-- For a left integral `t`, multiplying the first coproduct leg on the left by `x` after
 applying `S` to the second leg equals multiplying `S(t₂)` on the right by `x`:
@@ -265,6 +243,8 @@ theorem rTensor_mulLeft_lTensor_antipode_comul_of_mem_leftIntegral
     {t : H} (ht : t ∈ leftIntegral R H) (x : H) :
     (LinearMap.mulLeft R x).rTensor H ((antipode R).lTensor H (comul t)) =
       ((LinearMap.mulRight R x ∘ₗ antipode R).lTensor H) (comul t) := by
+  have hL : LinearMap.mulLeft R x = LinearMap.mul R H x := LinearMap.ext fun _ ↦ rfl
+  have hR : LinearMap.mulRight R x = (LinearMap.mul R H).flip x := LinearMap.ext fun _ ↦ rfl
   have hco : (comul (R := R)).rTensor H (comul x) =
       (TensorProduct.assoc R H H H).symm ((comul (R := R)).lTensor H (comul x)) := by
     apply (TensorProduct.assoc R H H H).injective
@@ -272,7 +252,7 @@ theorem rTensor_mulLeft_lTensor_antipode_comul_of_mem_leftIntegral
   have heq := congrArg (leftIntegralPhi R H t) hco
   rw [leftIntegralPhi_rTensor_comul ht, leftIntegralPhi_assoc_symm_lTensor_comul,
     rTensor_counit_comul, lTensor_counit_comul] at heq
-  simpa using heq.symm
+  simpa [hL, hR] using heq.symm
 
 end Antipode
 

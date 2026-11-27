@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Bialgebra.MulOpposite
-public import TauCeti.Algebra.Coalgebra.Coop
+public import TauCeti.Algebra.Bialgebra.Coop
 public import TauCeti.Algebra.HopfAlgebra.InverseAntipode
 
 /-!
@@ -93,7 +93,14 @@ private theorem opCoop_antipode_axioms :
     (fun a ↦ by
       simp only [Coop.unopLinearEquiv_symm_apply, LinearEquiv.coe_coe]
       rw [comul_op, Coop.comul_mk, ← LinearMap.comp_apply, ← TensorProduct.map_comp]
-      rfl)
+      have hmap :
+          TensorProduct.map
+              ((opLinearEquiv R).toLinearMap ∘ₗ (Coop.linearEquiv R H).symm.toLinearMap)
+              ((opLinearEquiv R).toLinearMap ∘ₗ (Coop.linearEquiv R H).symm.toLinearMap) =
+            TensorProduct.map (Coop.unopLinearEquiv R H).symm.toLinearMap
+              (Coop.unopLinearEquiv R H).symm.toLinearMap :=
+        TensorProduct.ext' fun x y ↦ by simp
+      exact LinearMap.congr_fun hmap _)
     (fun a ↦ by simp [HopfAlgebra.mul_antipode_lTensor_comul_apply])
     (fun a ↦ by simp [HopfAlgebra.mul_antipode_rTensor_comul_apply])
 
