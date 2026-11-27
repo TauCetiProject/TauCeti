@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
 /-!
@@ -30,6 +31,12 @@ negative spectral subspace is negative definite for `q` and the nonnegative one 
 semidefinite, and by Sylvester's law of inertia the dimension of the negative spectral subspace is
 the negative index of inertia of `q`, whatever positive definite `g` is used. When `q` is
 nondegenerate the negative and positive spectral subspaces are complementary.
+
+Conversely, every subspace `W` on which `q` is negative definite and whose dimension is the
+negative index of inertia is the negative spectral subspace for some `g`: take `g = -q` on `W` and
+any inner product on the `q`-orthogonal complement of `W`, the two being `g`-orthogonal. So the
+negative spectral subspace depends on `g` unless it is `0` or the whole space, that is unless the
+negative index of inertia is `0` or the dimension of `V`.
 
 Applied to the symmetrization `s = g + g.flip` and the form `(v, w) ↦ s (f v) w`, this gives the
 spectral theorem for an endomorphism `f` self-adjoint for a positive definite, not necessarily
@@ -58,6 +65,14 @@ space structure.
   and positive indices of inertia of `q`.
 * `LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi`: for nondegenerate `q`, the
   negative and positive spectral subspaces are complementary.
+* `LinearMap.BilinForm.exists_relativeSpectralSubspace_Iio_eq_iff`: the negative spectral
+  subspaces of `q`, as `g` varies, are exactly the subspaces of dimension the negative index of
+  inertia on which `q` is negative definite.
+* `LinearMap.BilinForm.exists_relativeSpectralSubspace_Ioi_eq_iff`: likewise, the positive
+  spectral subspaces are the subspaces of dimension the positive index of inertia on which `q` is
+  positive definite.
+* `LinearMap.BilinForm.exists_relativeSpectralSubspace_Iio_ne_iff`: the negative spectral subspace
+  depends on `g` exactly when the negative index of inertia is neither `0` nor `dim V`.
 * `LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top`: an endomorphism self-adjoint for a positive
   definite form is diagonalizable.
 * `ContinuousLinearEquiv.map_relativeSpectralSubspace_bilinearComp`: pulling continuous forms back
@@ -286,6 +301,202 @@ theorem isCompl_relativeSpectralSubspace_Iio_Ioi (hker : LinearMap.ker q = ⊥) 
       relativeEigenspace_zero, hker, sup_bot_eq, relativeSpectralSubspace_union] at h
 
 end Real
+
+/-! ### Which subspaces are negative spectral subspaces -/
+
+section Realization
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {g q : LinearMap.BilinForm ℝ V}
+
+/-- If `q` is negative definite on `W`, then for every positive definite symmetric `g` the form
+`(x, y) ↦ -q (π x) (π y) + g (x - π x) (y - π y)`, where `π` projects onto `W` along its
+`q`-orthogonal complement, is positive definite and symmetric, and `q` acts on `W` as `-1` times
+it. -/
+private theorem exists_le_relativeEigenspace_neg_one (hg : g.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hq : q.IsSymm) {W : Submodule ℝ V}
+    (hW : ∀ v ∈ W, v ≠ 0 → q v v < 0) :
+    ∃ g' : LinearMap.BilinForm ℝ V, g'.IsSymm ∧ (∀ v, v ≠ 0 → 0 < g' v v) ∧
+      W ≤ g'.relativeEigenspace q (-1) := by
+  -- `q` is nondegenerate on `W`, so `W` is complementary to its `q`-orthogonal complement.
+  have hc : IsCompl W (q.orthogonal W) := by
+    have key (x : W) (hx : q.restrict W x x = 0) : x = 0 := by
+      by_contra hx0
+      exact (hW x x.property (by simpa using hx0)).ne hx
+    exact isCompl_orthogonal_of_restrict_nondegenerate hq.isRefl
+      ⟨fun x hx ↦ key x (hx x), fun x hx ↦ key x (hx x)⟩
+  set π := W.projection (q.orthogonal W) hc
+  set π' := (q.orthogonal W).projection W hc.symm
+  have hπ (x : V) : π x + π' x = x := Submodule.projection_add_projection_eq_self hc x
+  refine ⟨-(q.compl₁₂ π π) + g.compl₁₂ π' π', isSymm_def.mpr fun x y ↦ ?_, fun v hv ↦ ?_,
+    fun w hw ↦ mem_relativeEigenspace_iff.mpr fun y ↦ ?_⟩
+  · simp only [LinearMap.add_apply, LinearMap.neg_apply, compl₁₂_apply]
+    rw [hq.eq (π x), hg.eq (π' x)]
+  · have h₁ : 0 ≤ -q (π v) (π v) := by
+      rcases eq_or_ne (π v) 0 with h | h
+      · simp [h]
+      · exact (neg_pos.mpr (hW _ (Submodule.projection_apply_mem hc v) h)).le
+    have h₂ : 0 ≤ g (π' v) (π' v) := by
+      rcases eq_or_ne (π' v) 0 with h | h
+      · simp [h]
+      · exact (hpos _ h).le
+    simp only [LinearMap.add_apply, LinearMap.neg_apply, compl₁₂_apply]
+    -- One of the two components of the nonzero vector `v` is nonzero.
+    rcases eq_or_ne (π v) 0 with h | h
+    · have h' : π' v ≠ 0 := fun h' ↦ hv (by rw [← hπ v, h, h', add_zero])
+      linarith [hpos _ h']
+    · linarith [hW _ (Submodule.projection_apply_mem hc v) h]
+  · have hπw : π w = w := Submodule.projection_apply_of_mem_left hc hw
+    have hπ'w : π' w = 0 := Submodule.projection_apply_of_mem_right hc.symm hw
+    have hy : q w (π' y) = 0 :=
+      (mem_orthogonal_iff.mp (Submodule.projection_apply_mem hc.symm y)) w hw
+    conv_lhs => rw [← hπ y]
+    simp [hπw, hπ'w, hy]
+
+/-- **The negative spectral subspaces of a symmetric form.** For a symmetric bilinear form `q` on a
+finite-dimensional real space, a subspace `W` is the negative spectral subspace of `q` relative to
+some positive definite symmetric `g` exactly when `q` is negative definite on `W` and the
+dimension of `W` is the negative index of inertia of `q`. -/
+theorem exists_relativeSpectralSubspace_Iio_eq_iff (hq : q.IsSymm) {W : Submodule ℝ V} :
+    (∃ g : LinearMap.BilinForm ℝ V, g.IsSymm ∧ (∀ v, v ≠ 0 → 0 < g v v) ∧
+        g.relativeSpectralSubspace q (Iio 0) = W) ↔
+      (∀ v ∈ W, v ≠ 0 → q v v < 0) ∧ finrank ℝ W = sigNeg q.toQuadraticMap := by
+  constructor
+  · rintro ⟨g, hg, hpos, rfl⟩
+    exact ⟨fun v hv hv0 ↦ apply_self_neg_of_mem_relativeSpectralSubspace_Iio hg hpos hq hv hv0,
+      finrank_relativeSpectralSubspace_Iio hg hpos hq⟩
+  · rintro ⟨hW, hWr⟩
+    -- Any inner product on `V` serves as a positive definite symmetric form to start from.
+    let E := EuclideanSpace ℝ (Fin (finrank ℝ V))
+    let e : V ≃ₗ[ℝ] E := LinearEquiv.ofFinrankEq _ _ (by simp [E])
+    let g₀ : LinearMap.BilinForm ℝ V := (innerₗ E).compl₁₂ (e : V →ₗ[ℝ] E) (e : V →ₗ[ℝ] E)
+    have hg₀ (x y : V) : g₀ x y = ⟪e x, e y⟫_ℝ := rfl
+    obtain ⟨g, hg, hpos, hle⟩ := exists_le_relativeEigenspace_neg_one (g := g₀)
+      (isSymm_def.mpr fun x y ↦ by rw [hg₀, hg₀, real_inner_comm])
+      (fun v hv ↦ by rw [hg₀]; exact real_inner_self_pos.mpr (by simpa using hv)) hq hW
+    refine ⟨g, hg, hpos, (Submodule.eq_of_le_of_finrank_eq (hle.trans
+      (relativeEigenspace_le_relativeSpectralSubspace (by norm_num))) ?_).symm⟩
+    rw [hWr, finrank_relativeSpectralSubspace_Iio hg hpos hq]
+
+/-- **The positive spectral subspaces of a symmetric form.** For a symmetric bilinear form `q` on a
+finite-dimensional real space, a subspace `W` is the positive spectral subspace of `q` relative to
+some positive definite symmetric `g` exactly when `q` is positive definite on `W` and the
+dimension of `W` is the positive index of inertia of `q`. -/
+theorem exists_relativeSpectralSubspace_Ioi_eq_iff (hq : q.IsSymm) {W : Submodule ℝ V} :
+    (∃ g : LinearMap.BilinForm ℝ V, g.IsSymm ∧ (∀ v, v ≠ 0 → 0 < g v v) ∧
+        g.relativeSpectralSubspace q (Ioi 0) = W) ↔
+      (∀ v ∈ W, v ≠ 0 → 0 < q v v) ∧ finrank ℝ W = sigPos q.toQuadraticMap := by
+  have h := exists_relativeSpectralSubspace_Iio_eq_iff hq.neg (W := W)
+  simp only [relativeSpectralSubspace_neg, neg_Iio, neg_zero, neg_apply, neg_lt_zero] at h
+  simpa using h
+
+omit [FiniteDimensional ℝ V] in
+/-- **Shearing a negative definite subspace.** Let `q` be symmetric and negative definite on `N`,
+let `n ∈ N` be nonzero, and let `p ∉ N` be `q`-orthogonal to `N` with `0 ≤ q p p`. For small
+`t > 0`, the image of `N` under `x ↦ x + t q (n, x) p` is a subspace of the same dimension, other
+than `N`, on which `q` is negative definite. -/
+private theorem exists_ne_of_negDef (hq : q.IsSymm) {N : Submodule ℝ V}
+    (hN : ∀ v ∈ N, v ≠ 0 → q v v < 0) {n p : V} (hn : n ∈ N) (hn0 : n ≠ 0) (hp : p ∉ N)
+    (hxp : ∀ x ∈ N, q x p = 0) (hpp : 0 ≤ q p p) :
+    ∃ W : Submodule ℝ V, W ≠ N ∧ (∀ v ∈ W, v ≠ 0 → q v v < 0) ∧ finrank ℝ W = finrank ℝ N := by
+  have hnn : q n n < 0 := hN n hn hn0
+  -- Cauchy–Schwarz for the positive semidefinite form `-q` on `N`.
+  have hcs {x : V} (hx : x ∈ N) : q n x ^ 2 ≤ q n n * q x x := by
+    have hs (y : N) : 0 ≤ (-q).restrict N y y := by
+      rcases eq_or_ne y 0 with rfl | hy
+      · simp
+      · simpa using (hN y y.property (by simpa using hy)).le
+    simpa using apply_sq_le_of_symm _ hs (isSymm_iff.mp (hq.neg.restrict N)) ⟨n, hn⟩ ⟨x, hx⟩
+  set t := (1 + q p p * -q n n)⁻¹
+  have ht : 0 < t := inv_pos.mpr (by nlinarith)
+  have ht' : t * (1 + q p p * -q n n) = 1 := inv_mul_cancel₀ (by nlinarith)
+  let T : V →ₗ[ℝ] V := LinearMap.id + t • (q n).smulRight p
+  have hT (x : V) : T x = x + (t * q n x) • p := by simp [T, mul_smul]
+  have hTinj : Function.Injective T := by
+    refine (injective_iff_map_eq_zero T).mpr fun x hx ↦ ?_
+    have hx' : x = -((t * q n x) • p) := eq_neg_of_add_eq_zero_left (by rw [← hT, hx])
+    have : q n x = 0 := by
+      rw [hx', map_neg, map_smul, hxp n hn]
+      simp
+    simpa [this] using hx'
+  refine ⟨N.map T, fun h ↦ hp ?_, ?_, (Submodule.equivMapOfInjective T hTinj N).finrank_eq.symm⟩
+  · -- `T n - n` is a nonzero multiple of `p`, so `T n` is not in `N`.
+    have hTn : T n ∈ N := h ▸ Submodule.mem_map_of_mem hn
+    have hmem : (t * q n n) • p ∈ N := by simpa [hT] using N.sub_mem hTn hn
+    exact (N.smul_mem_iff (mul_ne_zero ht.ne' hnn.ne)).mp hmem
+  · rintro _ ⟨x, hx, rfl⟩ hTx
+    have hx0 : x ≠ 0 := by
+      rintro rfl
+      simp at hTx
+    have hxx : q x x < 0 := hN x hx hx0
+    have hpx : q p x = 0 := by rw [hq.eq p x]; exact hxp x hx
+    have hexp : q (T x) (T x) = q x x + (t * q n x) ^ 2 * q p p := by
+      simp only [hT, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+        hxp x hx, hpx]
+      ring
+    rw [hexp]
+    -- `(t q (n, x))² q (p, p) ≤ t² q (p, p) (-q (n, n)) (-q (x, x)) < -q (x, x)`.
+    have h₁ : (t * q n x) ^ 2 * q p p ≤ t ^ 2 * (q p p * -q n n) * -q x x := by
+      have := mul_le_mul_of_nonneg_left (hcs hx) (mul_nonneg (sq_nonneg t) hpp)
+      nlinarith
+    have h₂ : t ^ 2 * (q p p * -q n n) < 1 := by
+      have : 0 ≤ q p p * -q n n := mul_nonneg hpp (by linarith)
+      nlinarith
+    nlinarith
+
+/-- If the negative spectral subspace `N` of `q` relative to `g` is neither `0` nor everything,
+shearing it towards a nonzero vector of the complementary nonnegative spectral subspace gives
+another subspace of dimension the negative index of inertia on which `q` is negative definite. -/
+private theorem exists_ne_relativeSpectralSubspace_Iio (hg : g.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hq : q.IsSymm) (hN : g.relativeSpectralSubspace q (Iio 0) ≠ ⊥)
+    (hN' : g.relativeSpectralSubspace q (Iio 0) ≠ ⊤) :
+    ∃ W : Submodule ℝ V, W ≠ g.relativeSpectralSubspace q (Iio 0) ∧
+      (∀ v ∈ W, v ≠ 0 → q v v < 0) ∧ finrank ℝ W = sigNeg q.toQuadraticMap := by
+  set N := g.relativeSpectralSubspace q (Iio 0)
+  set P := g.relativeSpectralSubspace q (Ici 0)
+  have hNP : IsCompl N P := by
+    simpa [N, P, compl_Iio] using isCompl_relativeSpectralSubspace_compl hg hpos hq (Ω := Iio 0)
+  obtain ⟨n, hn, hn0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hN
+  obtain ⟨p, hp, hp0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (show P ≠ ⊥ from fun hP ↦
+    hN' (by rw [← hNP.sup_eq_top, hP, sup_bot_eq]))
+  -- `q` vanishes between `N` and `P`, and is nonnegative on `P`.
+  have hpp : 0 ≤ q p p := by
+    have h := apply_self_le_mul_apply_self_of_mem_relativeSpectralSubspace hg hpos hq.neg 0
+      (Ω := -Ici 0) (by simp) (by simpa [relativeSpectralSubspace_neg] using hp)
+    simpa using h
+  obtain ⟨W, hW, hWneg, hWr⟩ := exists_ne_of_negDef hq
+    (fun v hv hv0 ↦ apply_self_neg_of_mem_relativeSpectralSubspace_Iio hg hpos hq hv hv0) hn hn0
+    (fun hpN ↦ hp0 (Submodule.disjoint_def.mp hNP.disjoint p hpN hp))
+    (fun x hx ↦ (apply_eq_zero_of_mem_relativeSpectralSubspace hg hq (Iio_disjoint_Ici le_rfl) hx
+      hp).2) hpp
+  exact ⟨W, hW, hWneg, hWr.trans (finrank_relativeSpectralSubspace_Iio hg hpos hq)⟩
+
+/-- **The negative spectral subspace depends on the positive definite form.** For a symmetric
+bilinear form `q` on a finite-dimensional real space and a positive definite symmetric `g`, some
+other positive definite symmetric `g'` has a different negative spectral subspace of `q` exactly
+when the negative index of inertia of `q` is neither `0` nor the dimension of the space. In the
+two excluded cases the negative spectral subspace is `0`, respectively the whole space, for every
+`g`. -/
+theorem exists_relativeSpectralSubspace_Iio_ne_iff (hg : g.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hq : q.IsSymm) :
+    (∃ g' : LinearMap.BilinForm ℝ V, g'.IsSymm ∧ (∀ v, v ≠ 0 → 0 < g' v v) ∧
+        g'.relativeSpectralSubspace q (Iio 0) ≠ g.relativeSpectralSubspace q (Iio 0)) ↔
+      sigNeg q.toQuadraticMap ≠ 0 ∧ sigNeg q.toQuadraticMap ≠ finrank ℝ V := by
+  have hN := finrank_relativeSpectralSubspace_Iio hg hpos hq
+  constructor
+  · rintro ⟨g', hg', hpos', hne⟩
+    have hN' := finrank_relativeSpectralSubspace_Iio hg' hpos' hq
+    refine ⟨fun h ↦ hne ?_, fun h ↦ hne ?_⟩
+    · rw [Submodule.finrank_eq_zero.mp (hN'.trans h), Submodule.finrank_eq_zero.mp (hN.trans h)]
+    · rw [Submodule.eq_top_of_finrank_eq (hN'.trans h), Submodule.eq_top_of_finrank_eq (hN.trans h)]
+  · rintro ⟨h₀, h₁⟩
+    obtain ⟨W, hW, hWneg, hWr⟩ := exists_ne_relativeSpectralSubspace_Iio hg hpos hq
+      (fun h ↦ h₀ (by rw [← hN, h, finrank_bot]))
+      (fun h ↦ h₁ (by rw [← hN, h, finrank_top]))
+    obtain ⟨g', hg', hpos', rfl⟩ := (exists_relativeSpectralSubspace_Iio_eq_iff hq).mpr ⟨hWneg, hWr⟩
+    exact ⟨g', hg', hpos', hW⟩
+
+end Realization
 
 end LinearMap.BilinForm
 
