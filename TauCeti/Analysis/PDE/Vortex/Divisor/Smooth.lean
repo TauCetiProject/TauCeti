@@ -78,7 +78,8 @@ almost everywhere.
   the complementary inverses `R_P` of the adjoint blocks `L_P* : H¹ → L²` are `C^n` in the
   parameter, and so are the projections `L_P* R_P` onto their ranges
   (`contDiff_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp`) and the
-  projections `1 - L_P* R_P` onto their cokernels, the values of the kernels of `L_P`.
+  projections `1 - L_P* R_P` onto their cokernels, the values of the kernels of `L_P`
+  (`contDiff_id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp`).
 
 ## References
 
@@ -576,18 +577,32 @@ theorem contDiff_orthogonalLeftInverse_sobolevGaugeFixedAdjoint_polynomialVortex
     fun x ↦ hasLeftInverse_sobolevGaugeFixedAdjoint_polynomialVortexLp (hmonic x)
       ((hdeg x).symm ▸ hm)
 
-/-- **Smoothness of the range and cokernel projections along the vortex family.** For a family of
-monic polynomials of a fixed degree `m ≥ 1` whose coefficients are `C^n` functions of a parameter,
-let `R_P` be the orthogonal left inverse of `L_P* : H¹ → L²`. The `L²`-orthogonal projections
+/-- **Smoothness of the range projections along the vortex family.** For a family of monic
+polynomials of a fixed degree `m ≥ 1` whose coefficients are `C^n` functions of a parameter, let
+`R_P` be the orthogonal left inverse of `L_P* : H¹ → L²`. The `L²`-orthogonal projections
 `L_P* R_P` onto the ranges of the adjoint blocks are a `C^n` function of the parameter, in operator
-norm. Hence so are the complementary projections `1 - L_P* R_P` onto their cokernels, the values
-of the kernels of `L_P`
-(`TauCeti.Vortex.id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse`). -/
+norm. The complementary cokernel projections are
+`contDiff_id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp`. -/
 theorem contDiff_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp :
     ContDiff ℝ n fun x ↦ sobolevGaugeFixedAdjoint (polynomialVortexLp (P x)) ∘L
       (sobolevGaugeFixedAdjoint (polynomialVortexLp (P x))).orthogonalLeftInverse :=
   (contDiff_sobolevGaugeFixedAdjoint.comp (contDiff_polynomialVortexLp hmonic hdeg hcoeff)).clm_comp
     (contDiff_orthogonalLeftInverse_sobolevGaugeFixedAdjoint_polynomialVortexLp hm hmonic hdeg
       hcoeff)
+
+/-- **Smoothness of the cokernel projections along the vortex family.** For a family of monic
+polynomials of a fixed degree `m ≥ 1` whose coefficients are `C^n` functions of a parameter, let
+`R_P` be the orthogonal left inverse of `L_P* : H¹ → L²`. The projections `Π₋ = 1 - L_P* R_P`,
+which are the `L²`-orthogonal projections onto the values of the kernels of `L_P`
+(`TauCeti.Vortex.id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse`), are a `C^n`
+function of the parameter, in operator norm. For `P = P_c` they are smooth in the symmetric
+coordinates `c ∈ ℂᵐ` of the divisor, collisions of zeros included. -/
+theorem contDiff_id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp :
+    ContDiff ℝ n fun x ↦ ContinuousLinearMap.id ℝ _ -
+      sobolevGaugeFixedAdjoint (polynomialVortexLp (P x)) ∘L
+        (sobolevGaugeFixedAdjoint (polynomialVortexLp (P x))).orthogonalLeftInverse :=
+  contDiff_const.sub
+    (contDiff_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp hm hmonic
+      hdeg hcoeff)
 
 end TauCeti.Vortex
