@@ -91,6 +91,11 @@ singular chains.
   (`TauCeti.filteredSpaceSpectralSequenceMap_comp_filteredSpaceSpectralSequenceCoefficientMap`),
   so the spectral sequence is functorial in the pair of the filtered space and the coefficients.
 
+Independently of the spectral sequence, vanishing passes along the filtration: if the steps
+`(X (q + 1), X q)`, `a ≤ q < b`, have vanishing relative homology in degree `n`, so does
+`(X b, X a)` (`Monotone.isZero_singularHomology_ofInclusion_of_forall_mem_Ico`), by the long exact
+sequences of the triples `(X (q + 1), X q, X a)`.
+
 For the skeletal filtration of a CW complex the first page consists of the groups
 `Hₙ(Xⁿ, Xⁿ⁻¹)`, and its differential is the connecting map of three consecutive skeleta, which is
 the differential of `TauCeti.cellularChainComplex` by
@@ -1050,3 +1055,26 @@ end Bifunctoriality
 end CoefficientNaturality
 
 end TauCeti
+
+namespace Monotone
+
+open TauCeti
+
+variable {Y : TopCat.{w}} {X : ℤ → Set Y} (hX : Monotone X)
+
+/-- **Vanishing along a filtration.** If the steps `(X (q + 1), X q)`, `a ≤ q < b`, have vanishing
+relative homology in degree `n`, so does `(X b, X a)`, with coefficients in any abelian category
+with coproducts. -/
+theorem isZero_singularHomology_ofInclusion_of_forall_mem_Ico {A : Type*} [Category A] [Abelian A]
+    [HasCoproducts.{w} A] (R : A) {a b : ℤ} (hab : a ≤ b) (n : ℕ)
+    (h : ∀ q ∈ Finset.Ico a b,
+      IsZero ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology R n)) :
+    IsZero ((TopPair.ofInclusion (hX hab)).singularHomology R n) := by
+  induction b, hab using Int.leInduction with
+  | base => exact TopPair.isZero_singularHomology_ofInclusion_self R (X a) n
+  | succ b hab ih =>
+    exact (TopTriple.ofInclusions (hX hab) (hX (lt_add_one b).le)).isZero_singularHomology_totalPair
+      R n (ih fun q hq ↦ h q (Finset.Ico_subset_Ico_right (lt_add_one b).le hq))
+      (h b (Finset.mem_Ico.2 ⟨hab, lt_add_one b⟩))
+
+end Monotone
