@@ -111,19 +111,19 @@ private theorem dickman_eq_dickmanAux {n : ℕ} {u : ℝ} (hu : u ≤ n + 1) :
     dickmanAux_of_le (le_max_right ⌊u⌋₊ n) hu]
 
 /-- The Dickman function vanishes on the negative reals. -/
+@[simp]
 theorem dickman_of_neg {u : ℝ} (hu : u < 0) : dickman u = 0 := by
   rw [dickman_eq_dickmanAux (n := 0) (by linarith), dickmanAux, dickmanInit_of_neg hu]
 
 /-- The Dickman function is `1` on `[0, 1]`. -/
+@[simp]
 theorem dickman_of_le_one {u : ℝ} (h₀ : 0 ≤ u) (h₁ : u ≤ 1) : dickman u = 1 := by
   rw [dickman_eq_dickmanAux (n := 0) (by simpa using h₁), dickmanAux, dickmanInit_of_nonneg h₀]
 
 /-- `ρ(0) = 1`. -/
-@[simp]
 theorem dickman_zero : dickman 0 = 1 := dickman_of_le_one le_rfl zero_le_one
 
 /-- `ρ(1) = 1`. -/
-@[simp]
 theorem dickman_one : dickman 1 = 1 := dickman_of_le_one zero_le_one le_rfl
 
 /-- For `0 ≤ u`, `ρ(u) = 1 - ∫_1^{max u 1} ρ(t - 1) / t dt`. -/
@@ -289,6 +289,8 @@ private theorem eq_one_sub_log_of_delay {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc 
       (fun w hw ↦ (hg w hw).differentiableAt.differentiableWithinAt)
       (fun w hw ↦ (hg w hw).deriv) hv (by norm_num)
   set C := f (3 / 2) + Real.log (3 / 2)
+  have h21 : (2 : ℝ) - 1 = 1 := by norm_num
+  have h23 : (2 : ℝ) < 3 := by norm_num
   have hderiv : ∀ v ∈ Ioo (2 : ℝ) 3, deriv f v = -(C - Real.log (v - 1)) / v := fun v hv ↦ by
     rw [(hd v (by linarith [hv.1])).deriv,
       ← hconst (v - 1) ⟨by linarith [hv.1], by linarith [hv.2]⟩, add_sub_cancel_right]
@@ -297,9 +299,9 @@ private theorem eq_one_sub_log_of_delay {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc 
       ((continuousAt_const.sub ((Real.continuousAt_log (by norm_num)).comp
         (f := fun v : ℝ ↦ v - 1) (by fun_prop))).neg).div continuousAt_id two_ne_zero
     have h := hcts.tendsto.mono_left (nhdsWithin_le_nhds (s := Ioi 2))
-    simp only [show (2 : ℝ) - 1 = 1 by norm_num, Real.log_one, sub_zero] at h
+    rw [h21, Real.log_one, sub_zero] at h
     refine h.congr' ?_
-    filter_upwards [Ioo_mem_nhdsGT (show (2 : ℝ) < 3 by norm_num)] with v hv
+    filter_upwards [Ioo_mem_nhdsGT h23] with v hv
       using (hderiv v hv).symm
   have hr : HasDerivWithinAt f (-C / 2) (Ici 2) 2 :=
     hasDerivWithinAt_Ici_of_tendsto_deriv (s := Ioi 1)
@@ -307,7 +309,7 @@ private theorem eq_one_sub_log_of_delay {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc 
       (hd 2 one_lt_two).continuousAt.continuousWithinAt
       (mem_nhdsWithin_of_mem_nhds (Ioi_mem_nhds one_lt_two)) htend
   have h2 := (uniqueDiffWithinAt_Ici (2 : ℝ)).eq_deriv _ hr (hd 2 one_lt_two).hasDerivWithinAt
-  rw [show (2 : ℝ) - 1 = 1 by norm_num, h₁ 1 ⟨zero_le_one, le_rfl⟩] at h2
+  rw [h21, h₁ 1 ⟨zero_le_one, le_rfl⟩] at h2
   have hC : C = 1 := by linarith
   have := hconst u hu
   rw [hC] at this
@@ -318,6 +320,7 @@ is continuous on `[0, ∞)`. Only continuity from the right at `1` needs an argu
 private theorem continuousOn_of_delay {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc (0 : ℝ) 1, f u = 1)
     (hd : ∀ u, 1 < u → HasDerivAt f (-f (u - 1) / u) u) : ContinuousOn f (Ici 0) := by
   have hone : f 1 = 1 := h₁ 1 ⟨zero_le_one, le_rfl⟩
+  have h32 : (1 : ℝ) < 3 / 2 := by norm_num
   intro v hv
   rcases lt_trichotomy v 1 with hv1 | rfl | hv1
   · refine (continuousWithinAt_const : ContinuousWithinAt (fun _ : ℝ ↦ (1 : ℝ)) (Ici 0) v)
@@ -331,7 +334,7 @@ private theorem continuousOn_of_delay {f : ℝ → ℝ} (h₁ : ∀ u ∈ Icc (0
       have hlog : ContinuousWithinAt (fun w : ℝ ↦ 1 - Real.log w) (Ici 1) 1 :=
         (continuousAt_const.sub (Real.continuousAt_log one_ne_zero)).continuousWithinAt
       refine hlog.congr_of_eventuallyEq ?_ (by rw [hone, Real.log_one, sub_zero])
-      filter_upwards [Icc_mem_nhdsGE (show (1 : ℝ) < 3 / 2 by norm_num)] with w hw
+      filter_upwards [Icc_mem_nhdsGE h32] with w hw
       rcases hw.1.eq_or_lt with rfl | h
       · rw [hone, Real.log_one, sub_zero]
       · exact eq_one_sub_log_of_delay h₁ hd ⟨h, by linarith [hw.2]⟩
@@ -415,10 +418,9 @@ private theorem mul_dickman_eq_integral_of_one_le {u : ℝ} (hu : 1 ≤ u) :
     intro t ht
     have ht0 : t ≠ 0 := (zero_lt_one.trans ht.1).ne'
     have h := (hasDerivAt_id' t).mul (hasDerivAt_dickman ht0 ht.1.ne')
-    rw [show dickman t - dickman (t - 1) = 1 * dickman t + t * (-dickman (t - 1) / t) by
-      field_simp
-      ring]
-    exact h
+    convert h using 1
+    field_simp
+    ring
   have hi₁ : IntervalIntegrable dickman volume 1 u := intervalIntegrable_dickman 1 u
   have hi₂ : IntervalIntegrable (fun t ↦ dickman (t - 1)) volume 1 u :=
     (continuousOn_dickman.comp (f := fun t : ℝ ↦ t - 1) (s := Icc 1 u) (by fun_prop)
@@ -470,7 +472,8 @@ theorem dickman_pos {u : ℝ} (hu : 0 ≤ u) : 0 < dickman u := by
     intervalIntegral_pos_of_pos_on (intervalIntegrable_dickman _ _)
       (fun v hv ↦ hpos v (by linarith [hv.1]) hv.2) (by linarith)
   rw [← mul_dickman_eq_integral] at hint
-  nlinarith [mul_nonneg (show (0 : ℝ) ≤ u₀ by linarith) (neg_nonneg.2 hle')]
+  have hu₀ : 0 ≤ u₀ := zero_le_one.trans h1.le
+  nlinarith [mul_nonneg hu₀ (neg_nonneg.2 hle')]
 
 /-- The Dickman function is nonnegative. -/
 theorem dickman_nonneg (u : ℝ) : 0 ≤ dickman u := by
