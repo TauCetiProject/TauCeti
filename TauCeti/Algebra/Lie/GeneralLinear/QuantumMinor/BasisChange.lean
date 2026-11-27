@@ -39,9 +39,9 @@ private theorem minorPair_apply (E : Matrix (Fin n) (Fin n) A) (u : K)
   simp [minorPair, LinearMap.sum_apply, mul_smul]
 
 private def minorRows (E : Matrix (Fin n) (Fin n) A) (u : K) (w : Fin n → Fin n → K) :
-    (Fin n → Fin n → K) →ₘₗ[K] A :=
-  ∑ e : Perm (Fin n), sign e • ((MultilinearMap.mkPiAlgebraFin K n A).compLinearMap
-    (fun k ↦ (minorPair E u k).flip (w k))).domDomCongr e
+    (Fin n → K) [⋀^Fin n]→ₗ[K] A :=
+  MultilinearMap.alternatization ((MultilinearMap.mkPiAlgebraFin K n A).compLinearMap
+    fun k ↦ (minorPair E u k).flip (w k))
 
 private def minorCols (E : Matrix (Fin n) (Fin n) A) (u : K) (v : Fin n → Fin n → K) :
     (Fin n → Fin n → K) →ₘₗ[K] A :=
@@ -51,7 +51,7 @@ private def minorCols (E : Matrix (Fin n) (Fin n) A) (u : K) (v : Fin n → Fin 
 private theorem minorRows_apply (E : Matrix (Fin n) (Fin n) A) (u : K)
     (v w : Fin n → Fin n → K) :
     minorRows E u w v = (of fun i k ↦ minorPair E u k (v i) (w k)).columnDet := by
-  simp [minorRows, columnDet_apply, Units.smul_def]
+  simp [minorRows, MultilinearMap.alternatization_apply, columnDet_apply, Units.smul_def]
 
 private theorem minorCols_apply (E : Matrix (Fin n) (Fin n) A) (u : K)
     (v w : Fin n → Fin n → K) :
@@ -71,19 +71,14 @@ private theorem minorCols_apply_basis (E : Matrix (Fin n) (Fin n) A) (u : K)
 private theorem minorRows_eq_det_smul (E : Matrix (Fin n) (Fin n) A) (u : K)
     (v w : Fin n → Fin n → K) :
     minorRows E u w v = (of v).det • minorRows E u w (Pi.basisFun K _) := by
-  let f : (Fin n → K) [⋀^Fin n]→ₗ[K] A :=
-    ⟨minorRows E u w, fun v i j hv hij ↦ by
-      rw [MultilinearMap.toFun_eq_coe, minorRows_apply]
-      exact columnDet_eq_zero_of_row_eq _ hij (funext fun k ↦ by simp [hv])⟩
-  simpa only [f, AlternatingMap.coe_mk, AlternatingMap.smulRight_apply, Pi.basisFun_det_apply] using
-    DFunLike.congr_fun (f.eq_basis_det_smulRight (Pi.basisFun K _)) v
+  simpa only [AlternatingMap.smulRight_apply, Pi.basisFun_det_apply] using
+    DFunLike.congr_fun ((minorRows E u w).eq_basis_det_smulRight (Pi.basisFun K _)) v
 
 private theorem minorCols_apply_standard (E : Matrix (Fin n) (Fin n) A)
     (hE : E.HasMatrixUnitLieRelations) (u : K) (w : Fin n → Fin n → K) :
     minorCols E u (Pi.basisFun K _) w = (of w).det • E.quantumMinor u id id := by
   have h : minorCols E u (Pi.basisFun K _) =
-      ((detRowAlternating : (Fin n → K) [⋀^Fin n]→ₗ[K] K).smulRight
-        (E.quantumMinor u id id)).toMultilinearMap := by
+      ((Pi.basisFun K (Fin n)).det.smulRight (E.quantumMinor u id id)).toMultilinearMap := by
     apply Module.Basis.ext_multilinear (fun _ ↦ Pi.basisFun K _)
     intro b
     simp only [AlternatingMap.coe_multilinearMap, AlternatingMap.smulRight_apply]
@@ -103,13 +98,12 @@ private theorem minorCols_apply_standard (E : Matrix (Fin n) (Fin n) A)
       rw [AlternatingMap.map_eq_zero_of_eq _ (fun k ↦ Pi.basisFun K _ (b k))
         (i := i) (j := j) (congrArg (fun t ↦ Pi.basisFun K (Fin n) t) hij) hne, zero_smul]
       exact E.quantumMinor_eq_zero_of_not_injective_right hE u id b hb
-  rw [h]
-  rfl
+  rw [h, AlternatingMap.coe_multilinearMap, AlternatingMap.smulRight_apply, Pi.basisFun_det_apply]
 
 /-- The Capelli determinant is invariant when the matrix-unit generators are replaced by
 `E'ᵢⱼ = ∑ c, ∑ d, (P c i * Q j d) • E c d`, where `Q * P = 1`. The ordinary determinants of
 `P` and `Q` are the factors from the two changes of basis and cancel each other. -/
-theorem quantumMinor_changeOfBasis (E : Matrix (Fin n) (Fin n) A)
+theorem quantumMinor_conj_of_mul_eq_one (E : Matrix (Fin n) (Fin n) A)
     (hE : E.HasMatrixUnitLieRelations) (u : K) (P Q : Matrix (Fin n) (Fin n) K)
     (hQP : Q * P = 1) :
     (of fun i j ↦ ∑ c, ∑ d, (P c i * Q j d) • E c d).quantumMinor u id id =
@@ -132,11 +126,14 @@ theorem quantumMinor_changeOfBasis (E : Matrix (Fin n) (Fin n) A)
       ext i j
       exact (hpair i j).symm
     _ = P.det • minorCols E u (Pi.basisFun K _) (fun j d ↦ Q j d) := by
-      rw [minorRows_eq_det_smul, minorRows_apply, minorCols_apply]
-      rw [← det_transpose P]
-      rfl
+      have hP : (of fun i c ↦ P c i) = Pᵀ := by
+        ext i c
+        rw [of_apply, transpose_apply]
+      rw [minorRows_eq_det_smul, hP, det_transpose, minorRows_apply, minorCols_apply]
     _ = E.quantumMinor u id id := by
-      have hdet : (of fun j d ↦ Q j d).det = Q.det := rfl
+      have hdet : (of fun j d ↦ Q j d) = Q := by
+        ext j d
+        rw [of_apply]
       rw [minorCols_apply_standard E hE, hdet, smul_smul, mul_comm P.det Q.det, ← det_mul,
         hQP, det_one, one_smul]
 
