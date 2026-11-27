@@ -113,7 +113,6 @@ theorem measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant
   have hdim : finrank ℝ Eᵐᵒᵖ = finrank ℝ E := (opLinearEquiv ℝ (M := E)).finrank_eq.symm
   let e : S ≃ᵐ Sᵐᵒᵖ := ⟨opEquiv, measurable_mul_op, measurable_mul_unop⟩
   let νOp : Measure Sᵐᵒᵖ := Measure.map op ν
-  have : νOp.IsMulLeftInvariant := Measure.IsMulRightInvariant.isMulLeftInvariant_map_op ν
   have hmap (A : Set Sᵐᵒᵖ) : νOp A = ν (op ⁻¹' A) :=
     e.measurableEmbedding.map_apply ν A
   let unitsOp : Eˣᵐᵒᵖ ≃* (Eᵐᵒᵖ)ˣ := Units.opEquiv.symm

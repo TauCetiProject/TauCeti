@@ -32,8 +32,9 @@ For the unitary group `unitaryGroupOf J` of a unitary Gram matrix `J`, with the 
 `Matrix.one_le_norm_val_of_mem_unitaryGroupOf`). Hence the sets `{s | ‖y * j s‖ ≤ R}` have
 measure at most `(3 R²) ^ d ν B` for `R ≥ 1` and `ε = 1`, where `d = dim_ℝ M_n(𝕜)`, which is
 `2 n²` over `ℂ` and `n²` over `ℝ`. By the layer-cake bound of
-`TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow`, the function `s ↦ ‖y * j s‖ ^ (-A)` is
-integrable for every `A > 2 d` as soon as `B` has finite measure, with a bound uniform in `y`. In
+`TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow`, for continuous `j` the function
+`s ↦ ‖y * j s‖ ^ (-A)` is integrable for every `A > 2 d` when `B` has finite measure. The same
+holds for `s ↦ ‖j s * y‖ ^ (-A)` with a right-invariant measure, with a bound uniform in `y`. In
 particular, for a Haar measure on `unitaryGroupOf J` itself, such as `U(p, q)` with
 `J = diag(1, …, 1, -1, …, -1)`, every inverse power `‖g‖ ^ (-A)` with `A > 2 d` of the operator
 norm is integrable. The threshold `2 d` comes from the crude covering argument and is not sharp.
@@ -50,8 +51,9 @@ norm is integrable. The threshold `2 d` comes from the crude covering argument a
 * `Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le_of_isMulRightInvariant` and
   `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant`: the
   corresponding right-invariant bounds for `j s * y`.
-* `Matrix.unitaryGroupOf.integrable_norm_mul_rpow_neg`: the corresponding integrability when the
-  ball `{s | ‖j s - 1‖ ≤ 1}` has finite measure.
+* `Matrix.unitaryGroupOf.integrable_norm_mul_rpow_neg` and
+  `Matrix.unitaryGroupOf.integrable_norm_mul_rpow_neg_of_isMulRightInvariant`: integrability of
+  inverse norm powers for continuous `j` when the ball `{s | ‖j s - 1‖ ≤ 1}` has finite measure.
 * `Matrix.unitaryGroupOf.integrable_norm_rpow_neg`: for a left-invariant measure on
   `unitaryGroupOf J` that is finite on compact sets, `g ↦ ‖g‖ ^ (-A)` is integrable for `A > 2 d`.
 
@@ -197,6 +199,13 @@ private theorem continuous_norm_val_mul {j : S →* unitaryGroupOf J} (hj : Cont
     Continuous fun s ↦ ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ :=
   (Units.continuous_val.comp (continuous_subtypeVal.comp (continuous_const.mul hj))).norm
 
+omit [MeasurableSpace S] [MeasurableMul S] in
+/-- For continuous `j`, the norm `s ↦ ‖j s * y‖` is continuous. -/
+private theorem continuous_norm_val_mul_right {j : S →* unitaryGroupOf J} (hj : Continuous j)
+    (y : unitaryGroupOf J) :
+    Continuous fun s ↦ ‖(((j s * y : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ :=
+  (Units.continuous_val.comp (continuous_subtypeVal.comp (hj.mul continuous_const))).norm
+
 variable [OpensMeasurableSpace S]
 
 /-- **Integrability of inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary
@@ -213,6 +222,20 @@ theorem integrable_norm_mul_rpow_neg (ν : Measure S) [ν.IsMulLeftInvariant]
   rw [hasFiniteIntegral_iff_ofReal (.of_forall fun s ↦ Real.rpow_nonneg (norm_nonneg _) _)]
   exact (lintegral_norm_mul_rpow_neg_le ν hJ j y
     (continuous_norm_val_mul hj y).aemeasurable hA).trans_lt (by finiteness)
+
+/-- For a continuous homomorphism `j` and a right-invariant measure, the function
+`s ↦ ‖j s * y‖ ^ (-A)` is integrable for `A > 2 d` when the radius-one ball around the identity
+has finite measure. Here `d` is the real dimension of the matrices. -/
+theorem integrable_norm_mul_rpow_neg_of_isMulRightInvariant
+    (ν : Measure S) [ν.IsMulRightInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) {j : S →* unitaryGroupOf J} (hj : Continuous j)
+    (hν : ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} ≠ ⊤)
+    (y : unitaryGroupOf J) {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    Integrable (fun s ↦ ‖(((j s * y : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ν := by
+  refine ⟨((continuous_norm_val_mul_right hj y).aemeasurable.pow_const _).aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (.of_forall fun s ↦ Real.rpow_nonneg (norm_nonneg _) _)]
+  exact (lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant ν hJ j y
+    (continuous_norm_val_mul_right hj y).aemeasurable hA).trans_lt (by finiteness)
 
 end Covering
 
