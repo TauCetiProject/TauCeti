@@ -35,7 +35,10 @@ Families converging locally uniformly converge jointly, as families of tuples
 
 A map on a product `s ×ˢ t` whose slices are continuous on `t` and converge uniformly on `t` as
 the first variable converges within `s` is jointly continuous
-(`TauCeti.continuousOn_prod_of_tendstoUniformlyOn`).
+(`TauCeti.continuousOn_prod_of_tendstoUniformlyOn`). In particular, a map on
+`(S ×ˢ B) ×ˢ D` into a normed group is continuous when its slices on `D` are continuous and move,
+uniformly on `D`, by at most `M (‖ξ - ξ₀‖ + e)` for parameters `(p, ξ)` with `p` near enough
+`p₀` and any `e > 0` (`TauCeti.continuousOn_prod_of_eventually_norm_sub_le`).
 
 Uniform and locally uniform convergence along a filter `l` pass to any family of indices tending
 to `l`, for instance to a subsequence (`TendstoUniformlyOn.comp_tendsto`,
@@ -345,6 +348,31 @@ theorem continuousOn_prod_of_tendstoUniformlyOn {X Y Z : Type*} [TopologicalSpac
   have h2 : Tendsto Prod.snd (𝓝[s ×ˢ t] (a, y)) (𝓝[t] y) :=
     continuous_snd.continuousWithinAt.tendsto_nhdsWithin fun x hx ↦ hx.2
   exact ((hunif a ha).comp_tendsto h1).tendsto_comp (hslice a ha y hy) h2
+
+/-- **Joint continuity from a uniform modulus of continuity in the parameters.** A map `g` on
+`(S ×ˢ B) ×ˢ D`, with values in a normed group, is continuous if each slice `g ((p, ξ), ·)` is
+continuous on `D` and, for every `e > 0` and `p` near `p₀` within `S`, `g ((p, ξ), z)` is within
+`M (‖ξ - ξ₀‖ + e)` of `g ((p₀, ξ₀), z)` for all `ξ ∈ B`, uniformly in `z ∈ D`. -/
+theorem continuousOn_prod_of_eventually_norm_sub_le {P Y Z E : Type*} [TopologicalSpace P]
+    [NormedAddCommGroup Y] [TopologicalSpace Z] [NormedAddCommGroup E] {S : Set P} {B : Set Y}
+    {D : Set Z} {g : (P × Y) × Z → E} {M : ℝ} (hM : 0 ≤ M)
+    (hslice : ∀ a ∈ S ×ˢ B, ContinuousOn (fun z ↦ g (a, z)) D)
+    (hlip : ∀ p₀ ∈ S, ∀ ξ₀ ∈ B, ∀ e > 0, ∀ᶠ p in 𝓝[S] p₀, ∀ ξ ∈ B, ∀ z ∈ D,
+      ‖g ((p, ξ), z) - g ((p₀, ξ₀), z)‖ ≤ M * (‖ξ - ξ₀‖ + e)) :
+    ContinuousOn g ((S ×ˢ B) ×ˢ D) := by
+  refine continuousOn_prod_of_tendstoUniformlyOn hslice ?_
+  rintro ⟨p₀, ξ₀⟩ ⟨hp₀, hξ₀⟩
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro e he
+  set e' := e / (2 * (M + 1))
+  have he' : 0 < e' := by positivity
+  have h2 : e' * (2 * (M + 1)) = e := div_mul_cancel₀ e (by positivity)
+  rw [nhdsWithin_prod_eq]
+  filter_upwards [(hlip p₀ hp₀ ξ₀ hξ₀ e' he').prod_mk (eventually_mem_nhdsWithin.and
+    (nhdsWithin_le_nhds (Metric.ball_mem_nhds ξ₀ he')))] with ⟨p, ξ⟩ ⟨hp, hξ, hξd⟩ z hz
+  rw [dist_comm, dist_eq_norm]
+  refine (hp ξ hξ z hz).trans_lt ?_
+  nlinarith [mul_le_mul_of_nonneg_left (mem_ball_iff_norm.1 hξd).le hM]
 
 end TauCeti
 
