@@ -84,6 +84,11 @@ theorem normalizedEsymm_of_card_lt {k : ℕ} (h : Fintype.card ι < k) (μ : ι 
     normalizedEsymm k μ = 0 := by
   rw [normalizedEsymm, Nat.choose_eq_zero_of_lt h, Nat.cast_zero, div_zero]
 
+/-- `S_n = ∏ λ_i` for `n` the cardinality of `ι`. -/
+@[simp]
+theorem normalizedEsymm_card (μ : ι → ℝ) : normalizedEsymm (Fintype.card ι) μ = ∏ i, μ i := by
+  simp [normalizedEsymm, esymm_card]
+
 private theorem eval_esymm_eq_esymm_map (μ : ι → ℝ) (k : ℕ) :
     eval μ (esymm ι ℝ k) = (univ.val.map μ).esymm k :=
   aeval_esymm_eq_multiset_esymm ι ℝ k μ

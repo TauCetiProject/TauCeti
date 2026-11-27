@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Esymm
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.TopPower
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.HermitianForm
 import TauCeti.Analysis.MvPolynomial.NewtonMaclaurin
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # The Maclaurin inequality for wedge powers of a positive (1,1)-form
@@ -124,16 +123,10 @@ theorem wedgePow_div_rpow_le_wedge_wedgePow_div_rpow {n k l : ℕ} (hn : finrank
   by_cases hv : (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v = 0
   · rw [hv, div_zero, div_zero, Real.zero_rpow (one_div_ne_zero (by norm_cast; omega)),
       Real.zero_rpow (one_div_ne_zero (by norm_cast; omega))]
-  set μ := (isSymm_hermitianSesqForm hα).relEigenvalues hn
-  have htop : normalizedEsymm n μ = ∏ j, μ j := by
-    have h := (Finset.univ.val.map μ).esymm_card_eq_prod
-    rw [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin] at h
-    rw [normalizedEsymm_def, Fintype.card_fin, Nat.choose_self, Nat.cast_one, div_one,
-      Finset.prod_eq_multiset_prod, ← h, ← MvPolynomial.coe_aeval_eq_eval]
-    exact MvPolynomial.aeval_esymm_eq_multiset_esymm (Fin n) ℝ n μ
   rw [wedgePow_ofComplexModule hα hn, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
     mul_div_assoc, div_self hv, mul_one,
-    wedge_wedgePow_wedgePow_div_eq_normalizedEsymm hα hn hkl v hv, ← htop]
+    wedge_wedgePow_wedgePow_div_eq_normalizedEsymm hα hn hkl v hv, ← normalizedEsymm_card,
+    Fintype.card_fin]
   exact normalizedEsymm_rpow_le_of_nonneg (relEigenvalues_hermitianSesqForm_nonneg hα hn hpos)
     hk (by omega)
 
