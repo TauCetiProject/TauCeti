@@ -69,10 +69,10 @@ Derivatives are taken for the Frobenius norm on matrices, as in
 
 ## Provenance
 
-This is §1.3 (b) of the ShortGRH background roadmap HolomorphicDiscreteSeriesOfUnitaryGroups,
-adapted from `New.IsGramSection.lintegral_eq`, `New.IsGramSection.lintegral_eq_cayleyChart_mul`,
-`New.IsGramSection.exists_hasFDerivAt_cayleyChart_mul`, `New.IsGramSection.ae_isUnit_add` and
-`New.IsGramSection.preimage_gramCoords_ae_eq_image` in
+Adapted from `New.IsGramSection.lintegral_eq`, `New.IsGramSection.lintegral_eq_cayleyChart_mul`,
+`New.IsGramSection.exists_hasFDerivAt_cayleyChart_mul`,
+`New.IsGramSection.abs_det_skewAddHerm_symm_comp`, `New.IsGramSection.ae_isUnit_add`,
+`New.IsGramSection.injOn_cayleyChart_mul` and `New.IsGramSection.preimage_gramCoords_ae_eq_image` in
 `src/Lib/DiscreteSeries/Haar/GramPolar.lean` of grh-lean (https://github.com/lsernau/grh-lean,
 Apache 2.0, Copyright 2026 Anthropic, PBC). There `A` is a Hermitian involution, matrices are
 read in real coordinates of their own, and the Haar measure is normalised; here `A` is any
@@ -120,11 +120,16 @@ private def skewCoord : Matrix n n ℂ →ₗ[ℝ] skewAdjoint.submodule ℝ (Ma
 private theorem polarCoordEquiv_symm_apply
     (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     polarCoordEquiv.symm x = (x.2 : Matrix n n ℂ) + (2⁻¹ : ℝ) • (x.1 : Matrix n n ℂ) := by
+  -- Mathlib has no `_apply` lemmas for `StarModule.decomposeProdAdjoint`: its inverse adds the two
+  -- parts, and the inverse of `LinearEquiv.smulOfNeZero` scales by `2⁻¹`, so the left side unfolds
+  -- to this sum.
   change (2⁻¹ : ℝ) • (x.1 : Matrix n n ℂ) + (x.2 : Matrix n n ℂ) = _
   exact add_comm _ _
 
 private theorem coe_hermCoord (Z : Matrix n n ℂ) :
     (hermCoord Z : Matrix n n ℂ) = Z + star Z := by
+  -- Unfold `StarModule.decomposeProdAdjoint`, which has no `_apply` lemmas in Mathlib, to the
+  -- self-adjoint part `⅟2 • (Z + star Z)` (`selfAdjointPart`), doubled by `polarCoordEquiv`.
   change (2 : ℝ) • ((⅟2 : ℝ) • (Z + star Z)) = Z + star Z
   rw [smul_smul, mul_invOf_self, one_smul]
 
@@ -153,6 +158,10 @@ private theorem coe_skewCoord_of_star_eq_neg {Z : Matrix n n ℂ} (hZ : star Z =
 end Coordinates
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- An invertible complex matrix has determinant of positive squared absolute value. -/
+private theorem normSq_det_pos {M : Matrix n n ℂ} (hM : IsUnit M) : 0 < normSq M.det :=
+  normSq_pos.2 ((isUnit_iff_isUnit_det _).1 hM).ne_zero
 
 namespace IsGramSection
 
@@ -194,16 +203,87 @@ private theorem exists_hasFDerivAt_polarMap (hσ : IsGramSection A V σ) {Z : Ma
     (LinearMap.toContinuousLinearMap hermCoord).hasFDerivAt
   exact ⟨_, h1.mul' h2, fun _ ↦ rfl⟩
 
-/-- The real determinant of left multiplication by `P` on square complex matrices of size `n` is
-`|det P| ^ (2 n)`. -/
-private theorem det_mulLeft_real (P : Matrix n n ℂ) :
-    LinearMap.det (LinearMap.mulLeft ℝ P : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ) =
-      normSq P.det ^ Fintype.card n := by
-  have h : (LinearMap.mulLeft ℝ P : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ) =
-      (LinearMap.mulLeft ℂ P ∘ₗ LinearMap.mulRight ℂ 1).restrictScalars ℝ :=
-    LinearMap.ext fun Z ↦ by simp
-  rw [h, LinearMap.det_restrictScalars, det_mulLeft_comp_mulRight, det_one, one_pow, mul_one,
-    Algebra.norm_complex_apply, map_pow]
+/-- After multiplication by `Yᴴ A`, with `Y = φ(S) σ(T)` the value of the polar map at
+`Z = S + T / 2`, its derivative at `S' + T' / 2` is `σ(T)ᴴ A dσ(T') + σ(T)ᴴ ω(S') σ(T)`, where
+`ω(S') = φ(S)ᴴ A dφ(S')` is the logarithmic derivative of the chart. -/
+private theorem mul_fderiv_polarMap (hA : A.IsHermitian) {Z : Matrix n n ℂ}
+    (hZ : Z ∈ polarDomain A V) {D : Matrix n n ℂ →L[ℝ] Matrix n n ℂ}
+    (hD : ∀ W, D W = cayleyChart A (skewCoord Z) * fderiv ℝ σ (hermCoord Z) (hermCoord W) +
+        fderiv ℝ (cayleyChart A) (skewCoord Z) (skewCoord W) * σ (hermCoord Z))
+    (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+    star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A * D (polarCoordEquiv.symm x) =
+      star (σ (hermCoord Z)) * A * fderiv ℝ σ (hermCoord Z) x.1 +
+        star (σ (hermCoord Z)) * (star (cayleyChart A (skewCoord Z)) * A *
+          fderiv ℝ (cayleyChart A) (skewCoord Z) x.2) * σ (hermCoord Z) := by
+  have hc (X : Matrix n n ℂ) :
+      star (cayleyChart A (skewCoord Z)) * (A * (cayleyChart A (skewCoord Z) * X)) = A * X := by
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc,
+      star_cayleyChart_mul_mul_cayleyChart hA (mem_cayleyChartSource.1 hZ.1)]
+  rw [hD, polarCoordEquiv_symm_apply, hermCoord_add_smul, skewCoord_add_smul]
+  simp only [star_mul, Matrix.mul_add, Matrix.mul_assoc, hc]
+
+/-- **The polar derivative is block triangular.** Read in Hermitian and skew-Hermitian
+coordinates, the derivative `D` of the polar map followed by multiplication by `Yᴴ A` keeps the
+Hermitian coordinate, by `Matrix.IsGramSection.conjTranspose_mul_mul_fderiv_add`, and on
+skew-Hermitian matrices its skew-Hermitian coordinate is `X ↦ σᴴ ω(X) σ`, with `ω` the logarithmic
+derivative of the chart. So both have the same determinant. -/
+private theorem det_mulLeft_comp_fderiv_polarMap (hA : A.IsHermitian) (hA' : IsUnit A)
+    (hσ : IsGramSection A V σ) {Z : Matrix n n ℂ} (hZ : Z ∈ polarDomain A V)
+    {D : Matrix n n ℂ →L[ℝ] Matrix n n ℂ}
+    (hD : ∀ W, D W = cayleyChart A (skewCoord Z) * fderiv ℝ σ (hermCoord Z) (hermCoord W) +
+        fderiv ℝ (cayleyChart A) (skewCoord Z) (skewCoord W) * σ (hermCoord Z)) :
+    LinearMap.det (LinearMap.mulLeft ℝ (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A)
+        ∘ₗ (D : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ)) =
+      LinearMap.det (skewAdjointConjugate ℝ (star (σ (hermCoord Z))) ∘ₗ
+        LinearMap.codRestrict (skewAdjoint.submodule ℝ (Matrix n n ℂ))
+          (LinearMap.mulLeft ℝ (star (cayleyChart A (skewCoord Z)) * A) ∘ₗ
+            (fderiv ℝ (cayleyChart A) (skewCoord Z) :
+              skewAdjoint.submodule ℝ (Matrix n n ℂ) →ₗ[ℝ] Matrix n n ℂ))
+          (star_cayleyChart_mul_mul_fderiv_cayleyChart_mem hA hA'
+            (mem_cayleyChartSource.1 hZ.1))) := by
+  set ω := LinearMap.codRestrict (skewAdjoint.submodule ℝ (Matrix n n ℂ))
+    (LinearMap.mulLeft ℝ (star (cayleyChart A (skewCoord Z)) * A) ∘ₗ
+      (fderiv ℝ (cayleyChart A) (skewCoord Z) :
+        skewAdjoint.submodule ℝ (Matrix n n ℂ) →ₗ[ℝ] Matrix n n ℂ))
+    (star_cayleyChart_mul_mul_fderiv_cayleyChart_mem hA hA' (mem_cayleyChartSource.1 hZ.1))
+  have hω (X : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+      (ω X : Matrix n n ℂ) =
+        star (cayleyChart A (skewCoord Z)) * A * fderiv ℝ (cayleyChart A) (skewCoord Z) X := by
+    simp [ω, Matrix.mul_assoc]
+  have hωskew (X : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+      star (star (σ (hermCoord Z)) * (ω X : Matrix n n ℂ) * σ (hermCoord Z)) =
+        -(star (σ (hermCoord Z)) * (ω X : Matrix n n ℂ) * σ (hermCoord Z)) := by
+    have h : star (ω X : Matrix n n ℂ) = -ω X := skewAdjoint.mem_iff.1 (ω X).property
+    simp only [star_mul, h, star_star, Matrix.mul_neg, Matrix.neg_mul, Matrix.mul_assoc]
+  -- The map in Hermitian and skew-Hermitian coordinates.
+  let g := polarCoordEquiv.toLinearMap ∘ₗ
+    (LinearMap.mulLeft ℝ (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A) ∘ₗ
+      (D : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ)) ∘ₗ polarCoordEquiv.symm.toLinearMap
+  -- Its Hermitian coordinate is the identity.
+  have hg1 (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+      (g x).1 = x.1 := by
+    apply Subtype.ext
+    -- `g x` unfolds through `LinearMap.comp` to `polarCoordEquiv` of the product, whose first
+    -- component is `hermCoord` by definition.
+    change hermCoord (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A *
+      D (polarCoordEquiv.symm x)) = (x.1 : Matrix n n ℂ)
+    rw [coe_hermCoord, mul_fderiv_polarMap hA hZ hD, ← hω, star_add, hωskew]
+    have h := hσ.conjTranspose_mul_mul_fderiv_add hZ.2 x.1
+    rw [← star_eq_conjTranspose, ← star_eq_conjTranspose] at h
+    rw [← h, star_mul, star_mul, star_eq_conjTranspose A, hA.eq, star_star, ← Matrix.mul_assoc]
+    abel
+  -- On skew-Hermitian matrices, its skew-Hermitian coordinate is `X ↦ σᴴ ω(X) σ`.
+  have hg2 : LinearMap.snd ℝ _ _ ∘ₗ g ∘ₗ LinearMap.inr ℝ _ _ =
+      skewAdjointConjugate ℝ (star (σ (hermCoord Z))) ∘ₗ ω := by
+    refine LinearMap.ext fun X ↦ Subtype.ext ?_
+    -- As for `hg1`, the left side unfolds to the skew-Hermitian coordinate of the product.
+    change (skewCoord (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A *
+      D (polarCoordEquiv.symm (0, X))) : Matrix n n ℂ) =
+        skewAdjointConjugate ℝ (star (σ (hermCoord Z))) (ω X)
+    rw [mul_fderiv_polarMap hA hZ hD, ← hω, coe_skewAdjointConjugate_apply, map_zero,
+      Matrix.mul_zero, zero_add, coe_skewCoord_of_star_eq_neg (hωskew X),
+      star_eq_conjTranspose (σ (hermCoord Z)), conjTranspose_conjTranspose]
+  rw [← hg2, ← LinearMap.det_eq_det_snd_comp_comp_inr hg1, LinearMap.det_conj]
 
 /-- **The Jacobian of the polar map.** At a point `Z = S + T / 2` of its domain, the derivative of
 the polar map has determinant of absolute value `|det A| ^ (-2 n)` times the Cayley density
@@ -217,81 +297,33 @@ private theorem abs_det_polarMap (hA : A.IsHermitian) (hA' : IsUnit A)
       (normSq A.det ^ Fintype.card n)⁻¹ *
         (normSq (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (skewCoord Z : Matrix n n ℂ))).det ^
           Fintype.card n)⁻¹ := by
-  have hS := mem_cayleyChartSource.1 hZ.1
+  -- Determinants of the factors: `|det φ(S)| = 1`, so multiplication by `Yᴴ A`, with
+  -- `Y = φ(S) σ(T)`, has real determinant `(|det σ(T)| |det A|) ^ (2 n)`.
   have hcd : normSq (cayleyChart A (skewCoord Z)).det = 1 := by
     rw [← coe_cayleyChartUnitary hA hZ.1, normSq_eq_norm_sq, CStarRing.norm_of_mem_unitary
       (det_mem_unitary_of_mem_unitaryGroupOf hA' (cayleyChartUnitary A (skewCoord Z)).property),
       one_pow]
-  set c := cayleyChart A (skewCoord Z)
-  set s := σ (hermCoord Z)
-  have hc : star c * A * c = A := star_cayleyChart_mul_mul_cayleyChart hA hS
-  have hs : s.det ≠ 0 := ((isUnit_iff_isUnit_det _).1 (hσ.isUnit hZ.2)).ne_zero
-  have hAd : A.det ≠ 0 := ((isUnit_iff_isUnit_det _).1 hA').ne_zero
-  set P := star (c * s) * A
-  let ω := LinearMap.codRestrict (skewAdjoint.submodule ℝ (Matrix n n ℂ))
-    (LinearMap.mulLeft ℝ (star c * A) ∘ₗ (fderiv ℝ (cayleyChart A) (skewCoord Z) :
-      skewAdjoint.submodule ℝ (Matrix n n ℂ) →ₗ[ℝ] Matrix n n ℂ))
-    (star_cayleyChart_mul_mul_fderiv_cayleyChart_mem hA hA' hS)
-  have hω (X : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-      (ω X : Matrix n n ℂ) = star c * A * fderiv ℝ (cayleyChart A) (skewCoord Z) X := (rfl)
-  -- `Yᴴ A dΨ (S' + T' / 2) = sᴴ A dσ(T') + sᴴ ω(S') s`.
-  have hPD (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-      P * D (polarCoordEquiv.symm x) = star s * A * fderiv ℝ σ (hermCoord Z) x.1 +
-        star s * (ω x.2 : Matrix n n ℂ) * s := by
-    have h1 : hermCoord (polarCoordEquiv.symm x) = x.1 := by
-      rw [polarCoordEquiv_symm_apply, hermCoord_add_smul]
-    have h2 : skewCoord (polarCoordEquiv.symm x) = x.2 := by
-      rw [polarCoordEquiv_symm_apply, skewCoord_add_smul]
-    have hc' (X : Matrix n n ℂ) : star c * (A * (c * X)) = A * X := by
-      rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hc]
-    rw [hD, h1, h2, hω]
-    simp only [P, star_mul, Matrix.mul_add, Matrix.mul_assoc, hc']
-  let g := polarCoordEquiv.toLinearMap ∘ₗ
-    (LinearMap.mulLeft ℝ P ∘ₗ (D : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ)) ∘ₗ
-      polarCoordEquiv.symm.toLinearMap
-  have hωskew (X : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-      star (star s * (ω X : Matrix n n ℂ) * s) = -(star s * (ω X : Matrix n n ℂ) * s) := by
-    have h : star (ω X : Matrix n n ℂ) = -ω X := skewAdjoint.mem_iff.1 (ω X).property
-    simp only [star_mul, h, star_star, Matrix.mul_neg, Matrix.neg_mul, Matrix.mul_assoc]
-  have hg1 (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-      (g x).1 = x.1 := by
-    apply Subtype.ext
-    change hermCoord (P * D (polarCoordEquiv.symm x)) = (x.1 : Matrix n n ℂ)
-    rw [coe_hermCoord, hPD, star_add, hωskew]
-    have h := hσ.conjTranspose_mul_mul_fderiv_add hZ.2 x.1
-    rw [← star_eq_conjTranspose, ← star_eq_conjTranspose] at h
-    have hA'' : star A = A := hA.eq
-    rw [← h, star_mul, star_mul, hA'', star_star, ← Matrix.mul_assoc]
-    abel
-  have hg2 : LinearMap.snd ℝ _ _ ∘ₗ g ∘ₗ LinearMap.inr ℝ _ _ =
-      skewAdjointConjugate ℝ (star s) ∘ₗ ω := by
-    refine LinearMap.ext fun X ↦ Subtype.ext ?_
-    change (skewCoord (P * D (polarCoordEquiv.symm (0, X))) : Matrix n n ℂ) =
-      skewAdjointConjugate ℝ (star s) (ω X)
-    rw [hPD, coe_skewAdjointConjugate_apply, map_zero, Matrix.mul_zero, zero_add,
-      coe_skewCoord_of_star_eq_neg (hωskew X), star_eq_conjTranspose s,
-      conjTranspose_conjTranspose]
-  have hdetω : LinearMap.det ω =
-      (normSq (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (skewCoord Z : Matrix n n ℂ))).det ^ Fintype.card n)⁻¹ :=
-    det_codRestrict_mulLeft_comp_fderiv_cayleyChart hA hA' hS
-  have hdetC : LinearMap.det (skewAdjointConjugate ℝ (star s)) = normSq s.det ^ Fintype.card n := by
+  have hdetP : normSq (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A).det =
+      normSq (σ (hermCoord Z)).det * normSq A.det := by
+    rw [det_mul, star_eq_conjTranspose, det_conjTranspose, det_mul, map_mul, Complex.star_def,
+      normSq_conj, map_mul, hcd, one_mul]
+  have hdetC : LinearMap.det (skewAdjointConjugate ℝ (star (σ (hermCoord Z)))) =
+      normSq (σ (hermCoord Z)).det ^ Fintype.card n := by
     rw [det_skewAdjointConjugate Complex.mem_range_algebraMap_of_isSelfAdjoint
       Complex.val_mk0_I_mem_skewAdjoint, Algebra.norm_complex_apply, star_eq_conjTranspose,
       det_conjTranspose, Complex.star_def, normSq_conj]
-  have hdetP : normSq P.det = normSq s.det * normSq A.det := by
-    rw [det_mul, star_eq_conjTranspose, det_conjTranspose, det_mul, map_mul,
-      Complex.star_def, normSq_conj, map_mul,
-      hcd, one_mul]
-  have key : (normSq s.det * normSq A.det) ^ Fintype.card n *
+  -- The block triangular form gives `det D` up to these factors.
+  have key : (normSq (σ (hermCoord Z)).det * normSq A.det) ^ Fintype.card n *
       LinearMap.det (D : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ) =
-      normSq s.det ^ Fintype.card n *
+      normSq (σ (hermCoord Z)).det ^ Fintype.card n *
         (normSq (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (skewCoord Z : Matrix n n ℂ))).det ^
           Fintype.card n)⁻¹ := by
-    rw [← hdetP, ← det_mulLeft_real, ← LinearMap.det_comp, ← hdetC, ← hdetω,
-      ← LinearMap.det_comp, ← hg2, ← LinearMap.det_eq_det_snd_comp_comp_inr hg1,
-      LinearMap.det_conj]
-  have hs' : 0 < normSq s.det := normSq_pos.2 hs
-  have ha' : 0 < normSq A.det := normSq_pos.2 hAd
+    rw [← hdetP, ← det_mulLeft_complex, ← LinearMap.det_comp,
+      det_mulLeft_comp_fderiv_polarMap hA hA' hσ hZ hD, LinearMap.det_comp, hdetC,
+      det_codRestrict_mulLeft_comp_fderiv_cayleyChart hA hA' (mem_cayleyChartSource.1 hZ.1)]
+  -- Solve for `det D`, which is positive.
+  have hs' := normSq_det_pos (hσ.isUnit hZ.2)
+  have ha' := normSq_det_pos hA'
   rw [mul_pow] at key
   have hD' : LinearMap.det (D : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ) =
       (normSq A.det ^ Fintype.card n)⁻¹ *
@@ -406,68 +438,7 @@ open unitaryGroupOf TauCeti
 
 variable {m : Type*} [Fintype m] [DecidableEq m]
 
-omit [DecidableEq m] in
-/-- Lebesgue measure on complex matrices is an additive Haar measure. -/
-private theorem isAddHaarMeasure_volume :
-    (volume : Measure (Matrix m m ℂ)).IsAddHaarMeasure := by
-  let e : (m → m → ℂ) ≃L[ℝ] Matrix m m ℂ := (Matrix.ofLinearEquiv ℝ).toContinuousLinearEquiv
-  have h : (volume : Measure (Matrix m m ℂ)) = (volume : Measure (m → m → ℂ)).map e := rfl
-  rw [h]
-  exact e.isAddHaarMeasure_map _
-
-open scoped Matrix.Norms.Frobenius in
-omit [DecidableEq m] in
-/-- The change of variables formula on complex matrices, for Lebesgue measure and derivatives for
-the Frobenius norm. -/
-private theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul_matrix
-    {s : Set (Matrix m m ℂ)} {f : Matrix m m ℂ → Matrix m m ℂ}
-    {f' : Matrix m m ℂ → Matrix m m ℂ →L[ℝ] Matrix m m ℂ} (hs : MeasurableSet s)
-    (hf' : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x) (hf : InjOn f s)
-    (g : Matrix m m ℂ → ℝ≥0∞) :
-    ∫⁻ x in f '' s, g x = ∫⁻ x in s, ENNReal.ofReal |(f' x).det| * g (f x) := by
-  have : @BorelSpace (Matrix m m ℂ)
-      NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace _ := by
-    exact (inferInstance : BorelSpace (Matrix m m ℂ))
-  have : @Measure.IsAddHaarMeasure (Matrix m m ℂ) _
-      NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace _ volume := by
-    exact isAddHaarMeasure_volume
-  exact lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs hf' hf g
-
 variable {A : Matrix m m ℂ} [MeasurableSpace (unitaryGroupOf A)] [BorelSpace (unitaryGroupOf A)]
-
-omit [MeasurableSpace (unitaryGroupOf A)] [BorelSpace (unitaryGroupOf A)] in
-/-- Left multiplication by an element of the unitary group of an invertible `A` preserves Lebesgue
-measure on square matrices. -/
-private theorem measurePreserving_mul_left (hA' : IsUnit A) (g : unitaryGroupOf A) :
-    MeasurePreserving (fun Y : Matrix m m ℂ ↦ ((g : GL m ℂ) : Matrix m m ℂ) * Y) := by
-  have hmeas : Measurable fun Y : Matrix m m ℂ ↦ ((g : GL m ℂ) : Matrix m m ℂ) * Y :=
-    (continuous_const.mul continuous_id).measurable
-  have hg : ‖((g : GL m ℂ) : Matrix m m ℂ).det‖ₑ = 1 := by
-    rw [← ofReal_norm, CStarRing.norm_of_mem_unitary
-      (det_mem_unitary_of_mem_unitaryGroupOf hA' g.property), ENNReal.ofReal_one]
-  refine ⟨hmeas, Measure.ext_of_lintegral _ fun K hK ↦ ?_⟩
-  rw [lintegral_map hK hmeas]
-  have h := lintegral_eq_enorm_det_pow_mul_enorm_det_pow_mul_lintegral_comp_matrix_mul_mul
-    ((isUnit_iff_isUnit_det _).1 (g : GL m ℂ).isUnit).ne_zero (det_one (n := m) (R := ℂ) ▸
-      one_ne_zero) K
-  simpa [hg] using h.symm
-
-/-- Almost every element `h` of the unitary group, for the Cayley measure, has `1 + h`
-invertible: the Cayley measure lives on the image of the chart. -/
-private theorem ae_isUnit_one_add (hA : A.IsHermitian)
-    (μ : Measure (skewAdjoint.submodule ℝ (Matrix m m ℂ))) :
-    ∀ᵐ h : unitaryGroupOf A ∂cayleyMeasure A μ, IsUnit (1 + ((h : GL m ℂ) : Matrix m m ℂ)) := by
-  have hopen : IsOpen {h : unitaryGroupOf A | IsUnit (1 + ((h : GL m ℂ) : Matrix m m ℂ))} :=
-    IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.preimage
-      (continuous_const.add (Units.continuous_val.comp continuous_subtypeVal))
-  rw [cayleyMeasure_def, ae_map_iff (measurable_cayleyChartUnitary hA).aemeasurable
-    hopen.measurableSet]
-  refine ae_of_all _ fun S ↦ ?_
-  by_cases hS : S ∈ cayleyChartSource A
-  · rw [coe_cayleyChartUnitary hA hS]
-    exact isUnit_one_add_cayleyChart A S
-  · rw [cayleyChartUnitary_of_notMem hS, OneMemClass.coe_one, Units.val_one]
-    simpa using isUnit_one_add_cayleyChart A 0
 
 namespace IsGramSection
 
@@ -491,8 +462,6 @@ private theorem ae_isUnit_add (hA : A.IsHermitian) (hA' : IsUnit A) (hσ : IsGra
   have hB : MeasurableSet B := (hgram hσ.isOpen.measurableSet).imp
     ((measurable_id.add (hσ.measurable.comp hgram))
       IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.measurableSet)
-  have hcoe : Continuous fun g : unitaryGroupOf A ↦ ((g : GL m ℂ) : Matrix m m ℂ) :=
-    Units.continuous_val.comp continuous_subtypeVal
   have horbit (Y : Matrix m m ℂ) :
       ∀ᵐ g : unitaryGroupOf A ∂cayleyMeasure A μ, ((g : GL m ℂ) : Matrix m m ℂ) * Y ∈ B := by
     by_cases hY : gramHerm A Y ∈ V
@@ -500,7 +469,7 @@ private theorem ae_isUnit_add (hA : A.IsHermitian) (hA' : IsUnit A) (hσ : IsGra
       have htr : ∀ᵐ g : unitaryGroupOf A ∂cayleyMeasure A μ,
           IsUnit (1 + (((g * γ : unitaryGroupOf A) : GL m ℂ) : Matrix m m ℂ)) :=
         (measurePreserving_mul_right (cayleyMeasure A μ) γ).quasiMeasurePreserving.ae
-          (ae_isUnit_one_add hA μ)
+          (ae_isUnit_one_add_cayleyMeasure μ hA)
       filter_upwards [htr] with g hg _
       rw [gramHerm_mul hA (mem_unitaryGroupOf_iff.1 g.property)]
       have h : ((g : GL m ℂ) : Matrix m m ℂ) * Y + σ (gramHerm A Y) =
@@ -516,9 +485,10 @@ private theorem ae_isUnit_add (hA : A.IsHermitian) (hA' : IsUnit A) (hσ : IsGra
       ((g : GL m ℂ) : Matrix m m ℂ) * Y ∈ B :=
     (Measure.ae_ae_comm (p := fun (g : unitaryGroupOf A) (Y : Matrix m m ℂ) ↦
       ((g : GL m ℂ) : Matrix m m ℂ) * Y ∈ B)
-      (((hcoe.comp continuous_fst).mul continuous_snd).measurable hB)).2 (ae_of_all _ horbit)
+      (((continuous_val.comp continuous_fst).mul continuous_snd).measurable hB)).2
+        (ae_of_all _ horbit)
   obtain ⟨g, hg⟩ := hcomm.exists
-  have hmp := measurePreserving_mul_left hA' g
+  have hmp := measurePreserving_mul_left_volume (κ := m) hA' g
   rw [← hmp.map_eq]
   exact (ae_map_iff hmp.measurable.aemeasurable hB).2 hg
 
@@ -568,10 +538,6 @@ private def polarIntegrand (A : Matrix (Fin r) (Fin r) ℂ)
     K (((cayleyChartUnitary A (skewCoord Z) : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
       σ (hermCoord Z))
 
-private theorem measurable_coe_unitaryGroupOf :
-    Measurable fun g : unitaryGroupOf A ↦ ((g : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) :=
-  (Units.continuous_val.comp continuous_subtypeVal).measurable
-
 private theorem measurable_polarIntegrand (hA : A.IsHermitian) (hσ : IsGramSection A V σ)
     {K : Matrix (Fin r) (Fin r) ℂ → ℝ≥0∞} (hK : Measurable K) :
     Measurable (polarIntegrand A σ K) := by
@@ -580,7 +546,7 @@ private theorem measurable_polarIntegrand (hA : A.IsHermitian) (hσ : IsGramSect
   have hherm : Measurable (hermCoord (n := Fin r)) :=
     (LinearMap.continuous_of_finiteDimensional _).measurable
   exact (measurable_cayleyDensity.comp hskew).mul (hK.comp
-    ((measurable_coe_unitaryGroupOf.comp ((measurable_cayleyChartUnitary hA).comp hskew)).mul
+    ((continuous_val.measurable.comp ((measurable_cayleyChartUnitary hA).comp hskew)).mul
       (hσ.measurable.comp hherm)))
 
 omit [MeasurableSpace (unitaryGroupOf A)] [BorelSpace (unitaryGroupOf A)] in
@@ -622,8 +588,7 @@ private theorem indicator_polarIntegrand_add (K : Matrix (Fin r) (Fin r) ℂ →
 omit [MeasurableSpace (unitaryGroupOf A)] [BorelSpace (unitaryGroupOf A)] in
 private theorem ofReal_inv_mul_inv_two_pow (hA' : IsUnit A) :
     ENNReal.ofReal (normSq A.det ^ r)⁻¹ * (2 ^ r)⁻¹ = (2 ^ r * ‖A.det‖ₑ ^ (2 * r))⁻¹ := by
-  have hAd : A.det ≠ 0 := ((isUnit_iff_isUnit_det _).1 hA').ne_zero
-  rw [ENNReal.ofReal_inv_of_pos (pow_pos (normSq_pos.2 hAd) _), normSq_eq_norm_sq, ← pow_mul,
+  rw [ENNReal.ofReal_inv_of_pos (pow_pos (normSq_det_pos hA') _), normSq_eq_norm_sq, ← pow_mul,
     ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm,
     ENNReal.mul_inv (Or.inl (by simp)) (Or.inl (by simp)), mul_comm]
 
@@ -660,7 +625,7 @@ theorem lintegral_eq (hA : A.IsHermitian) (hA' : IsUnit A) (hσ : IsGramSection 
   · simp only [Set.indicator_of_mem hT]
     exact (lintegral_cayleyMeasure _ hA (F := fun γ ↦
       K (((γ : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) * σ T))
-      (hK.comp (measurable_coe_unitaryGroupOf.mul measurable_const))).symm
+      (hK.comp (continuous_val.measurable.mul measurable_const))).symm
   · simp only [Set.indicator_of_notMem hT, lintegral_zero]
 
 /-- **The polar formula for a Hermitian involution** `J` (`J * J = 1`):

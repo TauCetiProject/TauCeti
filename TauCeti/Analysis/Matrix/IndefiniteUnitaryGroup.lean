@@ -52,6 +52,8 @@ that use the topology or the order of `ℝ` and `ℂ`.
   norm.
 * `Matrix.one_le_norm_val_of_mem_unitaryGroupOf`: for unitary `A`, `1 ≤ ‖g‖` in the operator norm.
 * `Matrix.isClosed_unitaryGroupOf`: `unitaryGroupOf A` is closed in `GL n R`.
+* `Matrix.unitaryGroupOf.continuous_val`: the coercion of `unitaryGroupOf A` to matrices is
+  continuous.
 * `Matrix.unitaryGroupOf.isClosedEmbedding_val`: for invertible `A`, the coercion of
   `unitaryGroupOf A` to the matrices is a closed embedding.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.continuous_fromBlocksHom`: the block-diagonal embedding
@@ -92,6 +94,11 @@ theorem isClosed_unitaryGroupOf {R : Type*} [CommRing R] [StarRing R] [Topologic
   exact isClosed_eq (((Units.continuous_val.star).matrix_mul continuous_const).matrix_mul
     Units.continuous_val) continuous_const
 
+/-- The coercion of `unitaryGroupOf A` to matrices is continuous. -/
+theorem unitaryGroupOf.continuous_val {R : Type*} [CommRing R] [StarRing R] [TopologicalSpace R]
+    {A : Matrix n n R} : Continuous fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) :=
+  Units.continuous_val.comp continuous_subtypeVal
+
 /-- **`unitaryGroupOf A` is a closed subset of the matrices**, for invertible `A`: the coercion to
 matrices is a closed embedding. The topology of `GL n R` is that of the pair `(g, g⁻¹)`, and on
 `unitaryGroupOf A` the inverse `A⁻¹ * star g * A` is a continuous function of `g`; the image is
@@ -100,8 +107,7 @@ theorem unitaryGroupOf.isClosedEmbedding_val {R : Type*} [CommRing R] [StarRing 
     [TopologicalSpace R] [IsTopologicalRing R] [ContinuousStar R] [T2Space R] {A : Matrix n n R}
     (hA : IsUnit A) :
     Topology.IsClosedEmbedding fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) := by
-  have hc : Continuous fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) :=
-    Units.continuous_val.comp continuous_subtypeVal
+  have hc : Continuous fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R) := continuous_val
   have hrange : Set.range (fun g : unitaryGroupOf A => ((g : GL n R) : Matrix n n R)) =
       {M | star M * A * M = A} :=
     Set.ext fun M => ⟨fun ⟨g, hg⟩ => hg ▸ mem_unitaryGroupOf_iff.mp g.property,

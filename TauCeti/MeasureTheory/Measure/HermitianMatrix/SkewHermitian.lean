@@ -8,6 +8,8 @@ module
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Jacobian
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
+import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Lebesgue measure on skew-Hermitian matrices
@@ -38,41 +40,26 @@ namespace TauCeti
 
 variable (p : ℕ)
 
-/-- Multiplication by `i`, as a real linear equivalence from the Hermitian onto the
-skew-Hermitian matrices of size `p`. -/
-def iSMulHermitian :
-    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) ≃L[ℝ]
-      skewAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) :=
-  LinearEquiv.toContinuousLinearEquiv
-    { toFun H := ⟨I • (H : Matrix (Fin p) (Fin p) ℂ),
-        I_smul_mem_skewAdjoint_iff_isSelfAdjoint.mpr H.property⟩
-      invFun S := ⟨-I • (S : Matrix (Fin p) (Fin p) ℂ),
-        (skewAdjoint.negISMul (⟨S, S.property⟩ : skewAdjoint (Matrix (Fin p) (Fin p) ℂ))).property⟩
-      map_add' H H' := Subtype.ext (smul_add _ _ _)
-      map_smul' c H := Subtype.ext (smul_comm _ _ _)
-      left_inv H := Subtype.ext (by simp [smul_smul])
-      right_inv S := Subtype.ext (by simp [smul_smul]) }
-
-@[simp]
-theorem coe_iSMulHermitian_apply (H : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :
-    (iSMulHermitian p H : Matrix (Fin p) (Fin p) ℂ) = I • (H : Matrix (Fin p) (Fin p) ℂ) :=
-  (rfl)
-
 /-- **Lebesgue measure on the skew-Hermitian matrices** of size `p`: the image of
 `TauCeti.hermitianLebesgue p` under `H ↦ i H`, that is, the Lebesgue measure of the coordinates
-`Im S_aa` and `Re S_ab`, `Im S_ab` (`a < b`). -/
+`Im S_aa` and `Re S_ab`, `Im S_ab` (`a < b`). The map `H ↦ i H` is the inverse of
+`TauCeti.skewAdjointEquivSelfAdjoint` for the skew-adjoint unit `-i`. -/
 def skewHermitianLebesgue : Measure (skewAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :=
-  (hermitianLebesgue p).map (iSMulHermitian p)
+  (hermitianLebesgue p).map (skewAdjointEquivSelfAdjoint (-Units.mk0 I I_ne_zero)
+    (neg_mem Complex.val_mk0_I_mem_skewAdjoint)).symm
 
 instance isAddHaarMeasure_skewHermitianLebesgue : (skewHermitianLebesgue p).IsAddHaarMeasure :=
-  (iSMulHermitian p).isAddHaarMeasure_map _
+  (skewAdjointEquivSelfAdjoint _ _).symm.toContinuousLinearEquiv.isAddHaarMeasure_map _
 
 /-- Integrals for `TauCeti.skewHermitianLebesgue` are integrals of `H ↦ g (i H)` for
 `TauCeti.hermitianLebesgue`. -/
-theorem lintegral_skewHermitianLebesgue
-    (g : skewAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ) → ℝ≥0∞) :
-    ∫⁻ S, g S ∂skewHermitianLebesgue p = ∫⁻ H, g (iSMulHermitian p H) ∂hermitianLebesgue p :=
-  (iSMulHermitian p).toHomeomorph.measurableEmbedding.lintegral_map g
+theorem lintegral_skewHermitianLebesgue (g : Matrix (Fin p) (Fin p) ℂ → ℝ≥0∞) :
+    ∫⁻ S, g S ∂skewHermitianLebesgue p =
+      ∫⁻ H, g (I • (H : Matrix (Fin p) (Fin p) ℂ)) ∂hermitianLebesgue p := by
+  refine ((skewAdjointEquivSelfAdjoint (-Units.mk0 I I_ne_zero)
+    (neg_mem Complex.val_mk0_I_mem_skewAdjoint)).symm.toContinuousLinearEquiv.toHomeomorph
+      |>.measurableEmbedding.lintegral_map (μ := hermitianLebesgue p) fun S ↦ g S).trans ?_
+  simp
 
 variable {p} in
 /-- **Lebesgue measure on square matrices in skew-Hermitian and Hermitian coordinates.** Writing a
@@ -83,7 +70,9 @@ theorem lintegral_eq_inv_two_pow_mul_lintegral_lintegral_add
     ∫⁻ Z, g Z = (2 ^ p)⁻¹ * ∫⁻ T, ∫⁻ S, g ((S : Matrix (Fin p) (Fin p) ℂ) +
       (2⁻¹ : ℝ) • (T : Matrix (Fin p) (Fin p) ℂ))
         ∂skewHermitianLebesgue p ∂hermitianLebesgue p := by
-  simp only [lintegral_skewHermitianLebesgue, coe_iSMulHermitian_apply]
-  exact lintegral_eq_inv_two_pow_mul_lintegral_lintegral_I_smul_add hg
+  rw [lintegral_eq_inv_two_pow_mul_lintegral_lintegral_I_smul_add hg]
+  congr 1
+  exact lintegral_congr fun T ↦ (lintegral_skewHermitianLebesgue p
+    fun M ↦ g (M + (2⁻¹ : ℝ) • (T : Matrix (Fin p) (Fin p) ℂ))).symm
 
 end TauCeti
