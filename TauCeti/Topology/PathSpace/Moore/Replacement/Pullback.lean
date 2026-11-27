@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Constructions.Pullback
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Append
@@ -14,8 +15,11 @@ public import TauCeti.Topology.PathSpace.Moore.Replacement.Append
 
 Let `p : E → B` be a continuous map, `E' = {(e, γ) | γ starts at p e}` the total space of its
 Moore-path replacement, with end point map `E' → B`, and `F'_b` its fibre over `b`. The pullback
-of the end point map along `f : D → B` (`TauCeti.MooreReplacementPullback p f`) consists of the
-pairs of a parameter `d ∈ D` and a point `(e, γ)` of `E'` with `γ` ending at `f d`.
+of the end point map along `f : D → B` (`TauCeti.MooreReplacementPullback p f`, the fibre product
+`Function.Pullback f (endpoint p)`) consists of the pairs of a parameter `d ∈ D` and a point
+`(e, γ)` of `E'` with `γ` ending at `f d`. Its projections are `ContinuousMap.pullbackFst` and
+`ContinuousMap.pullbackSnd`, and a map of parameter spaces induces the map of pullbacks
+`ContinuousMap.mapPullbackFst`.
 
 A continuous family `τ` of Moore paths, `τ d` from `b` to `f d`, trivializes this pullback up to
 fibre homotopy over `D` (`TauCeti.MooreReplacementPullback.fiberHomotopyEquiv`):
@@ -38,8 +42,6 @@ homology of `B` with coefficients in the chains of `F'_b` and the homology of `E
 
 * `TauCeti.MooreReplacementPullback p f`: the pullback of the end point map of the Moore-path
   replacement of `p` along `f`.
-* `TauCeti.MooreReplacementPullback.paramMap`: the map of pullbacks induced by a map of
-  parameter spaces, an open embedding when that map is one.
 * `TauCeti.MooreReplacementPullback.trivializationMap`: `(d, x) ↦ (d, x ⋆ τ d)`.
 * `TauCeti.MooreReplacementPullback.trivializationInverse`: `(d, y) ↦ (d, y ⋆ (τ d)⁻¹)`.
 * `TauCeti.MooreReplacementPullback.fiberHomotopyEquiv`: the fibre homotopy equivalence over `D`
@@ -65,7 +67,7 @@ namespace TauCeti
 a parameter `d` and a point `(e, γ)` of the replacement whose path ends at `f d`. -/
 abbrev MooreReplacementPullback {E : Type u} {B : Type v} {D : Type w} [TopologicalSpace E]
     [TopologicalSpace B] [TopologicalSpace D] (p : C(E, B)) (f : C(D, B)) :=
-  {z : D × MooreReplacement p // MooreReplacement.endpoint p z.2 = f z.1}
+  Function.Pullback ⇑f ⇑(MooreReplacement.endpoint p)
 
 namespace MooreReplacementPullback
 
@@ -74,99 +76,10 @@ open MooreReplacement
 variable {E : Type u} {B : Type v} {D : Type w} [TopologicalSpace E] [TopologicalSpace B]
   [TopologicalSpace D] {p : C(E, B)} {f : C(D, B)} {b : B}
 
-/-- The parameter in `D` of a point of the pullback. -/
-def point (y : MooreReplacementPullback p f) : D := y.val.1
-
-/-- The point of the Moore-path replacement underlying a point of the pullback. -/
-def replacement (y : MooreReplacementPullback p f) : MooreReplacement p := y.val.2
-
-@[simp]
-theorem point_mk (d : D) (x : MooreReplacement p) (h : endpoint p x = f d) :
-    point (p := p) (f := f) ⟨(d, x), h⟩ = d := (rfl)
-
-@[simp]
-theorem replacement_mk (d : D) (x : MooreReplacement p) (h : endpoint p x = f d) :
-    replacement (p := p) (f := f) ⟨(d, x), h⟩ = x := (rfl)
-
 /-- The path of a point of the pullback ends at the image of its parameter. -/
 @[simp]
-theorem target_path_replacement (y : MooreReplacementPullback p f) :
-    y.replacement.path.target = f y.point :=
-  (endpoint_apply y.replacement).symm.trans y.property
-
-@[ext]
-theorem ext {y y' : MooreReplacementPullback p f} (h : y.point = y'.point)
-    (h' : y.replacement = y'.replacement) : y = y' :=
-  Subtype.ext (Prod.ext h h')
-
-@[fun_prop]
-theorem continuous_point : Continuous (point : MooreReplacementPullback p f → D) :=
-  continuous_fst.comp continuous_subtypeVal
-
-@[fun_prop]
-theorem continuous_replacement :
-    Continuous (replacement : MooreReplacementPullback p f → MooreReplacement p) :=
-  continuous_snd.comp continuous_subtypeVal
-
-variable (p f) in
-/-- The projection of the pullback to its parameter. -/
-def proj : C(MooreReplacementPullback p f, D) :=
-  ⟨point, continuous_point⟩
-
-@[simp]
-theorem proj_apply (y : MooreReplacementPullback p f) : proj p f y = y.point := (rfl)
-
-variable (p f) in
-/-- The projection of the pullback to the total space of the Moore-path replacement. -/
-def toMooreReplacement : C(MooreReplacementPullback p f, MooreReplacement p) :=
-  ⟨replacement, continuous_replacement⟩
-
-@[simp]
-theorem toMooreReplacement_apply (y : MooreReplacementPullback p f) :
-    toMooreReplacement p f y = y.replacement := (rfl)
-
-/-- The projection to the replacement lies over `f`: the end point of `y` is `f` of its
-parameter. -/
-@[simp]
-theorem endpoint_comp_toMooreReplacement :
-    (endpoint p).comp (toMooreReplacement p f) = f.comp (proj p f) :=
-  ContinuousMap.ext fun y ↦ y.property
-
-section ParamMap
-
-variable {D' : Type*} [TopologicalSpace D'] (g : C(D', D))
-
-/-- The map of pullbacks induced by a map `g : D' → D` of parameter spaces: a point of the
-replacement over `f (g d')` lies over `d'` in the pullback along `f ∘ g`, and over `g d'` in the
-pullback along `f`. -/
-def paramMap : C(MooreReplacementPullback p (f.comp g), MooreReplacementPullback p f) :=
-  ⟨fun y ↦ ⟨(g y.point, y.replacement), y.property⟩,
-    ((g.continuous.comp continuous_point).prodMk continuous_replacement).subtype_mk _⟩
-
-@[simp]
-theorem point_paramMap (y : MooreReplacementPullback p (f.comp g)) :
-    (paramMap g y).point = g y.point := (rfl)
-
-@[simp]
-theorem replacement_paramMap (y : MooreReplacementPullback p (f.comp g)) :
-    (paramMap g y).replacement = y.replacement := (rfl)
-
-/-- The points over the image of `g` are exactly the image of the map induced by `g`. -/
-theorem range_paramMap : Set.range (paramMap (p := p) (f := f) g) = point ⁻¹' Set.range g := by
-  refine Set.Subset.antisymm ?_ fun y ⟨d', hd'⟩ ↦
-    ⟨⟨(d', y.replacement), y.property.trans (congrArg f hd'.symm)⟩, ext hd' rfl⟩
-  rintro _ ⟨y, rfl⟩
-  exact ⟨y.point, rfl⟩
-
-/-- The map induced by an open embedding of parameter spaces is an open embedding. -/
-theorem isOpenEmbedding_paramMap (hg : Topology.IsOpenEmbedding g) :
-    Topology.IsOpenEmbedding (paramMap (p := p) (f := f) g) := by
-  refine ⟨Topology.IsEmbedding.subtypeVal.of_comp_iff.1 ?_, ?_⟩
-  · exact (hg.isEmbedding.prodMap Topology.IsEmbedding.id).comp Topology.IsEmbedding.subtypeVal
-  · rw [range_paramMap]
-    exact hg.isOpen_range.preimage continuous_point
-
-end ParamMap
+theorem target_path_snd (y : MooreReplacementPullback p f) : y.snd.path.target = f y.fst :=
+  (endpoint_apply y.snd).symm.trans y.property.symm
 
 /-- The chosen path `τ d`, as a Moore path from `b`. -/
 private def pathFrom (τ : C(D, MoorePath B)) (h₀ : ∀ d, (τ d).source = b) (d : D) :
@@ -191,47 +104,48 @@ private theorem endpoint_appendFrom_pathFrom (τ : C(D, MoorePath B))
 point `(e, γ ⋆ τ d)` of the pullback over `d`. -/
 def trivializationMap (τ : C(D, MoorePath B)) (h₀ : ∀ d, (τ d).source = b)
     (h₁ : ∀ d, (τ d).target = f d) : C(D × Fiber p b, MooreReplacementPullback p f) where
-  toFun z := ⟨(z.1, z.2.appendFrom (pathFrom τ h₀ z.1)), endpoint_appendFrom_pathFrom τ h₀ h₁ _ _⟩
+  toFun z :=
+    ⟨(z.1, z.2.appendFrom (pathFrom τ h₀ z.1)), (endpoint_appendFrom_pathFrom τ h₀ h₁ _ _).symm⟩
   continuous_toFun :=
     (continuous_fst.prodMk (Fiber.continuous_appendFrom.comp
       (continuous_snd.prodMk ((continuous_pathFrom τ h₀).comp continuous_fst)))).subtype_mk
-        fun z ↦ endpoint_appendFrom_pathFrom τ h₀ h₁ z.2 z.1
+        fun z ↦ (endpoint_appendFrom_pathFrom τ h₀ h₁ z.2 z.1).symm
 
 variable (τ : C(D, MoorePath B)) (h₀ : ∀ d, (τ d).source = b) (h₁ : ∀ d, (τ d).target = f d)
 
 @[simp]
-theorem point_trivializationMap (z : D × Fiber p b) :
-    (trivializationMap τ h₀ h₁ z).point = z.1 := (rfl)
+theorem fst_trivializationMap (z : D × Fiber p b) :
+    (trivializationMap τ h₀ h₁ z).fst = z.1 := (rfl)
 
 @[simp]
-theorem replacement_trivializationMap (z : D × Fiber p b) :
-    (trivializationMap τ h₀ h₁ z).replacement = z.2.appendFrom ⟨τ z.1, h₀ z.1⟩ := (rfl)
+theorem snd_trivializationMap (z : D × Fiber p b) :
+    (trivializationMap τ h₀ h₁ z).snd = z.2.appendFrom ⟨τ z.1, h₀ z.1⟩ := (rfl)
 
 /-- **Append the reversed chosen path**: a point `(e, γ)` of the pullback over `d` gives the point
 `(e, γ ⋆ (τ d)⁻¹)` of the fibre over `b`, together with `d`. -/
 def trivializationInverse (τ : C(D, MoorePath B)) (h₀ : ∀ d, (τ d).source = b)
     (h₁ : ∀ d, (τ d).target = f d) : C(MooreReplacementPullback p f, D × Fiber p b) where
-  toFun y := (y.point, Fiber.mk' (MooreReplacement.mk y.replacement.point
-    (y.replacement.path.trans (τ y.point).symm (by simp [h₁])) (by simp)) (by simp [h₀]))
-  continuous_toFun := continuous_point.prodMk (Fiber.continuous_mk' (continuous_mk
-    (MooreReplacement.continuous_point.comp continuous_replacement)
-    ((continuous_path.comp continuous_replacement).moorePath_trans
-      (τ.continuous.comp continuous_point).moorePath_symm fun y ↦ by simp [h₁])
+  toFun y := (y.fst, Fiber.mk' (MooreReplacement.mk y.snd.point
+    (y.snd.path.trans (τ y.fst).symm (by simp [h₁])) (by simp)) (by simp [h₀]))
+  continuous_toFun := Function.Pullback.continuous_fst.prodMk (Fiber.continuous_mk' (continuous_mk
+    (MooreReplacement.continuous_point.comp Function.Pullback.continuous_snd)
+    ((continuous_path.comp Function.Pullback.continuous_snd).moorePath_trans
+      (τ.continuous.comp Function.Pullback.continuous_fst).moorePath_symm fun y ↦ by simp [h₁])
     fun y ↦ by simp) fun y ↦ by simp [h₀])
 
 @[simp]
 theorem trivializationInverse_fst (y : MooreReplacementPullback p f) :
-    (trivializationInverse τ h₀ h₁ y).1 = y.point := (rfl)
+    (trivializationInverse τ h₀ h₁ y).1 = y.fst := (rfl)
 
 @[simp]
 theorem point_val_trivializationInverse_snd (y : MooreReplacementPullback p f) :
-    (trivializationInverse τ h₀ h₁ y).2.val.point = y.replacement.point := by
+    (trivializationInverse τ h₀ h₁ y).2.val.point = y.snd.point := by
   simp [trivializationInverse]
 
 @[simp]
 theorem path_val_trivializationInverse_snd (y : MooreReplacementPullback p f) :
     (trivializationInverse τ h₀ h₁ y).2.val.path =
-      y.replacement.path.trans (τ y.point).symm (by simp [h₁]) := by
+      y.snd.path.trans (τ y.fst).symm (by simp [h₁]) := by
   simp [trivializationInverse]
 
 /-- The homotopy on `D × F'_b` from the identity to the inverse after the forward map: the point
@@ -267,49 +181,53 @@ growing retracing loop `(τ d)⁻¹ ⋆ τ d` at `f d` is appended to the path o
 def trivializationRightHomotopy :
     HomotopyWith (.id (MooreReplacementPullback p f))
       ((trivializationMap τ h₀ h₁).comp (trivializationInverse τ h₀ h₁))
-      (fun g ↦ (proj p f).comp g = proj p f) where
-  toFun z := ⟨(z.2.point, MooreReplacement.mk z.2.replacement.point
-    (z.2.replacement.path.trans ((pathBetween τ h₀ h₁ z.2.point).symm.retrace
-      (toNNReal z.1 * (τ z.2.point).length)).toMoorePath (by simp [pathBetween, h₁]))
+      (fun g ↦ (pullbackFst ⇑f ⇑(endpoint p)).comp g = pullbackFst ⇑f ⇑(endpoint p)) where
+  toFun z := ⟨(z.2.fst, MooreReplacement.mk z.2.snd.point
+    (z.2.snd.path.trans ((pathBetween τ h₀ h₁ z.2.fst).symm.retrace
+      (toNNReal z.1 * (τ z.2.fst).length)).toMoorePath (by simp [pathBetween, h₁]))
     (by simp)), by simp⟩
   continuous_toFun := by
-    refine ((continuous_point.comp continuous_snd).prodMk (continuous_mk
-      (MooreReplacement.continuous_point.comp (continuous_replacement.comp continuous_snd))
-      ((continuous_path.comp (continuous_replacement.comp continuous_snd)).moorePath_trans ?_ _)
-      _)).subtype_mk _
+    have hsnd := Function.Pullback.continuous_snd.comp
+      (continuous_snd : Continuous (Prod.snd : I × MooreReplacementPullback p f → _))
+    refine ((Function.Pullback.continuous_fst.comp continuous_snd).prodMk (continuous_mk
+      (MooreReplacement.continuous_point.comp hsnd)
+      ((continuous_path.comp hsnd).moorePath_trans ?_ _) _)).subtype_mk _
     simp only [MoorePathBetween.toMoorePath_retrace, MoorePathBetween.toMoorePath_symm,
       pathBetween, MoorePathBetween.toMoorePath_mk]
-    exact (τ.continuous.comp (continuous_point.comp continuous_snd)).moorePath_symm
+    exact (τ.continuous.comp (Function.Pullback.continuous_fst.comp continuous_snd)).moorePath_symm
       |>.moorePath_retrace ((toNNReal_continuous.comp continuous_fst).mul
         (MoorePath.continuous_length.comp
-          (τ.continuous.comp (continuous_point.comp continuous_snd))))
-  map_zero_left y := ext rfl (MooreReplacement.ext (by simp) (by simp))
+          (τ.continuous.comp (Function.Pullback.continuous_fst.comp continuous_snd))))
+  map_zero_left y := Function.Pullback.ext rfl (MooreReplacement.ext (by simp) (by simp))
   map_one_left y := by
-    refine ext rfl (MooreReplacement.ext (by simp) ?_)
+    refine Function.Pullback.ext rfl (MooreReplacement.ext (by simp) ?_)
     simp [pathBetween, MoorePath.trans_assoc, MoorePath.truncate_of_length_le]
-  prop' _ := ContinuousMap.ext fun _ ↦ rfl
+  prop' _ := ContinuousMap.ext fun _ ↦ by simp
 
 @[simp]
-theorem point_trivializationRightHomotopy (s : I) (y : MooreReplacementPullback p f) :
-    (trivializationRightHomotopy τ h₀ h₁ (s, y)).point = y.point := (rfl)
+theorem fst_trivializationRightHomotopy (s : I) (y : MooreReplacementPullback p f) :
+    (trivializationRightHomotopy τ h₀ h₁ (s, y)).fst = y.fst := (rfl)
 
 @[simp]
-theorem replacement_trivializationRightHomotopy (s : I) (y : MooreReplacementPullback p f) :
-    (trivializationRightHomotopy τ h₀ h₁ (s, y)).replacement =
-      MooreReplacement.mk y.replacement.point (y.replacement.path.trans
-        ((MoorePathBetween.symm ⟨τ y.point, h₀ _, h₁ _⟩).retrace
-          (toNNReal s * (τ y.point).length)).toMoorePath (by simp [h₁])) (by simp) := (rfl)
+theorem snd_trivializationRightHomotopy (s : I) (y : MooreReplacementPullback p f) :
+    (trivializationRightHomotopy τ h₀ h₁ (s, y)).snd =
+      MooreReplacement.mk y.snd.point (y.snd.path.trans
+        ((MoorePathBetween.symm ⟨τ y.fst, h₀ _, h₁ _⟩).retrace
+          (toNNReal s * (τ y.fst).length)).toMoorePath (by simp [h₁])) (by simp) := by
+  unfold Function.Pullback.snd Function.Pullback.fst
+  rfl
 
 /-- **The pullback of the Moore-path replacement along `f` is fibre homotopy trivial**, given a
 continuous family `τ` of Moore paths from `b` to the points `f d`: appending `τ d` is a fibre
 homotopy equivalence over `D` from `D × F'_b` to the pullback, with inverse appending the reversal
 of `τ d`. -/
 def fiberHomotopyEquiv :
-    FiberHomotopyEquiv (ContinuousMap.fst : C(D × Fiber p b, D)) (proj p f) where
+    FiberHomotopyEquiv (ContinuousMap.fst : C(D × Fiber p b, D))
+      (pullbackFst ⇑f ⇑(endpoint p)) where
   toFun := trivializationMap τ h₀ h₁
   invFun := trivializationInverse τ h₀ h₁
-  comp_toFun := ContinuousMap.ext fun _ ↦ rfl
-  comp_invFun := ContinuousMap.ext fun _ ↦ rfl
+  comp_toFun := ContinuousMap.ext fun _ ↦ by simp
+  comp_invFun := ContinuousMap.ext fun _ ↦ by simp
   left_inv := ⟨(trivializationLeftHomotopy τ h₀ h₁).symm⟩
   right_inv := ⟨(trivializationRightHomotopy τ h₀ h₁).symm⟩
 
