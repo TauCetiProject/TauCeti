@@ -1246,8 +1246,8 @@ theorem isLoopCylinder_comp_pairOfPantsOutputCylinder {u : ℝ × ℝ → M}
 /-- The **disc of the output end loop glued from discs of the input end loops** along a map `u`
 of the pair of pants: the maps `D₀` and `D₁`, discs bounding the loops of `u` along the input ends
 `0` and `1` at height `0`, placed side by side, followed by the core of `u` and by its output
-cylinder. When `D₀` and `D₁` are discs sharing their seam, it is a disc bounding the loop of `u`
-along the output end at height `0`
+cylinder. When `D₀` and `D₁` are discs with a common centre that share their seam, it is a disc
+with that centre bounding the loop of `u` along the output end at height `0`
 (`TauCeti.Floer.isLoopCylinder_pairOfPantsGluedDisc`). -/
 def pairOfPantsGluedDisc (D₀ D₁ u : ℝ × ℝ → M) : ℝ × ℝ → M :=
   rectangleTrans (rectangleTrans (loopwiseTrans D₀ D₁) (u ∘ pairOfPantsCoreChart))
