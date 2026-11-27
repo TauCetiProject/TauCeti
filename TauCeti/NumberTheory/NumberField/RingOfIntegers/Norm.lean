@@ -9,7 +9,7 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.NumberTheory.NumberField.Norm
 public import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Norm.Divisibility
 
 /-!
@@ -48,6 +48,9 @@ nonzero algebraic integer with bounded conjugates bounds such a sum of prime log
   whenever `(m : 𝓞 K) ^ e ∣ a`.
 * `NumberField.abs_norm_le_prod`, `NumberField.abs_norm_le_pow` and their `RingOfIntegers`
   versions: bounds on the norm from bounds on the conjugates.
+* `NumberField.RingOfIntegers.absNorm_le_pow_of_mem`: an integral ideal containing a nonzero
+  element all of whose conjugates have absolute value at most `C` has norm at most
+  `C ^ [K:ℚ]`.
 * `NumberField.RingOfIntegers.sum_mul_log_le_finrank_mul_log`: for nonzero `δ ∈ 𝓞 K` with
   conjugates bounded by `C` and `∏ p ∈ P, p ^ e p ∣ norm δ`, `∑ p ∈ P, e p * log p ≤ n * log C`.
 
@@ -193,6 +196,20 @@ of `a` has absolute value at most `C ^ finrank ℚ K`. -/
 theorem abs_norm_le_pow (a : 𝓞 K) {C : ℝ} (hC : ∀ σ : K →+* ℂ, ‖σ a‖ ≤ C) :
     |(Algebra.norm ℤ a : ℝ)| ≤ C ^ finrank ℚ K := by
   simpa [Embeddings.card] using abs_norm_le_prod a hC
+
+/-- If an integral ideal `I` of a number field `K` contains a nonzero element `t` all of whose
+complex conjugates have absolute value at most `C`, then `N(I) ≤ C ^ [K:ℚ]`, since `N(I)`
+divides `|N_{K/ℚ}(t)|`. -/
+theorem absNorm_le_pow_of_mem {I : Ideal (𝓞 K)} {t : 𝓞 K} (ht : t ∈ I)
+    (h0 : t ≠ 0) {C : ℝ} (hC : ∀ φ : K →+* ℂ, ‖φ t‖ ≤ C) :
+    (Ideal.absNorm I : ℝ) ≤ C ^ finrank ℚ K := by
+  have hdvd := Int.natCast_dvd.mp (Ideal.absNorm_dvd_norm_of_mem ht)
+  have hpos : 0 < (Algebra.norm ℤ t).natAbs :=
+    Int.natAbs_pos.mpr (Algebra.norm_ne_zero_iff.mpr h0)
+  calc (Ideal.absNorm I : ℝ) ≤ ((Algebra.norm ℤ t).natAbs : ℝ) := by
+        exact_mod_cast Nat.le_of_dvd hpos hdvd
+    _ = |(Algebra.norm ℤ t : ℝ)| := by rw [Nat.cast_natAbs, Int.cast_abs]
+    _ ≤ C ^ finrank ℚ K := abs_norm_le_pow t hC
 
 /-- If a nonzero `δ ∈ 𝓞 K` has every complex conjugate of absolute value at most `C` and
 `∏ p ∈ P, p ^ e p` divides its integral norm, then `∑ p ∈ P, e p * log p ≤ finrank ℚ K * log C`. -/
