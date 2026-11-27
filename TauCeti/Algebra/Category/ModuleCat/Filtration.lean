@@ -83,7 +83,11 @@ morphism `f : i ⟶ j` is the inclusion of `F i` in `F j`. -/
 theorem hom_stepMap_ofSubmodules {i j : I} (f : i ⟶ j) :
     ((ofSubmodules F hF).stepMap f).hom = Submodule.inclusion (hF f) := by
   rw [← filtrationDiagram_map]
-  rfl
+  -- `filtrationDiagram_map` turns the step map into the image of `f` under the underlying
+  -- diagram of `ofSubmodules F hF`, which is `ModuleCat.ofHom (Submodule.inclusion (hF f))` by
+  -- the definition of `ofSubmodules`; its objects agree with `ModuleCat.of R (F i)` only up to
+  -- unfolding, so `ModuleCat.hom_ofHom` is applied by `exact` rather than by `rw`.
+  exact ModuleCat.hom_ofHom _
 
 /-- The step `F_i` of `ofSubmodules F hF` is the subobject of `F i`. -/
 theorem step_ofSubmodules (i : I) :

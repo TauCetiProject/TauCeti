@@ -99,15 +99,18 @@ private theorem card_klein_gr (p : ℤ) :
       if p = 0 ∨ p = 1 then 2 else 1 :=
   card_gr_threeStep (by simp) card_inl p
 
-/-- The filtration `F^0 = ℤ/4`, `F^1 = 2ℤ/4`, `F^2 = 0` of `ℤ/4` is finite. -/
-theorem isFinite_zmodFourFiltration : zmodFourFiltration.IsFinite :=
+/-- The filtration with steps `threeStep N` is finite: `F^0 = M` and `F^2 = 0`. -/
+theorem isFinite_threeStep (N : Submodule ℤ M) : (ofAntitone _ (antitone_threeStep N)).IsFinite :=
   IsFinite.mk (a := 0) (b := 2) (by simp [threeStep, step_ofSubmodules])
     (by simp [threeStep, step_ofSubmodules])
 
+/-- The filtration `F^0 = ℤ/4`, `F^1 = 2ℤ/4`, `F^2 = 0` of `ℤ/4` is finite. -/
+theorem isFinite_zmodFourFiltration : zmodFourFiltration.IsFinite :=
+  isFinite_threeStep _
+
 /-- The filtration of `ℤ/2 ⊕ ℤ/2` by its first summand is finite. -/
 theorem isFinite_kleinFiltration : kleinFiltration.IsFinite :=
-  IsFinite.mk (a := 0) (b := 2) (by simp [threeStep, step_ofSubmodules])
-    (by simp [threeStep, step_ofSubmodules])
+  isFinite_threeStep _
 
 /-- `gr^0 ≅ ℤ/2` for the filtration of `ℤ/4`. -/
 theorem nonempty_gr_zero_zmodFour_iso :
