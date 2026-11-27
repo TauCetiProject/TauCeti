@@ -46,6 +46,8 @@ Dedekind zeta function of `K`.
   unramified, as `Algebra.IsUnramifiedIn`, iff `χ_D(p) ≠ 0`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_one_iff`: `χ_D(p) = 1` iff `p`
   splits.
+* `TauCeti.Multiquadratic.exists_isPrime_and_absNorm_eq_of_modEq_one_discr`: a prime congruent
+  to `1` modulo `|D|` is the norm of a prime ideal above it.
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_neg_one_iff`: `χ_D(p) = -1` iff
   `p` is inert.
 * `TauCeti.Multiquadratic.exists_span_natCast_eq_mul_of_fundamentalDiscriminantChar_discr_eq_one`:
@@ -134,6 +136,27 @@ theorem fundamentalDiscriminantChar_discr_eq_one_iff (hK : finrank ℚ K = 2) (p
     decide
   · rcases fundamentalDiscriminantChar_discr_of_notMem_ramifiedPrimes hK p hram with
       ⟨h, hn⟩ | ⟨h, hn⟩ <;> rw [h, hn] <;> decide
+
+/-- A rational prime congruent to `1` modulo the absolute discriminant splits completely in
+a quadratic number field. -/
+theorem ncard_primesOver_eq_finrank_of_modEq_one_discr (hK : finrank ℚ K = 2)
+    {p : ℕ} (hp : p.Prime) (h : p ≡ 1 [MOD (NumberField.discr K).natAbs]) :
+    ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = finrank ℚ K := by
+  have : Fact p.Prime := ⟨hp⟩
+  have hpD := (ZMod.natCast_eq_natCast_iff _ _ _).mpr h
+  have hval :
+      fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = 1 := by
+    rw [hpD, Nat.cast_one, map_one]
+  rw [hK]
+  exact (fundamentalDiscriminantChar_discr_eq_one_iff hK p).mp hval
+
+/-- In a quadratic number field, a prime congruent to `1` modulo the absolute discriminant
+is the absolute norm of a prime ideal above it. -/
+theorem exists_isPrime_and_absNorm_eq_of_modEq_one_discr (hK : finrank ℚ K = 2)
+    {p : ℕ} (hp : p.Prime) (h : p ≡ 1 [MOD (NumberField.discr K).natAbs]) :
+    ∃ I : Ideal (𝓞 K), I.IsPrime ∧ I.LiesOver (span {(p : ℤ)}) ∧ absNorm I = p :=
+  exists_isPrime_and_absNorm_eq_of_ncard_primesOver_eq_finrank
+    (ncard_primesOver_eq_finrank_of_modEq_one_discr hK hp h)
 
 /-- **`χ_D(p) = -1` exactly when `p` is inert.** For a quadratic field `K` with discriminant `D`,
 the character `χ_D` takes the value `-1` at a prime `p` iff `p` is unramified in `K` and there is a

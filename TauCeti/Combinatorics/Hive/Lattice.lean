@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Fin.Rev
 public import Mathlib.Data.Fin.Tuple.NatAntidiagonal
+import Mathlib.Data.Finsupp.Multiset
+import Mathlib.Data.Sym.Card
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -17,15 +19,17 @@ import Mathlib.Tactic.Ring
 /-!
 # The triangular lattice and its unit rhombi
 
-The vertices of the size-`n` triangle are nonnegative barycentric triples of sum `n`.
-`Vertex.rotate` and `Vertex.reflect` give its dihedral symmetries, `Vertex.edgePoint`
-parameterizes the three sides along the clockwise perimeter `A → B → C → A`, `Vertex.ofYZ` gives
-the two-variable chart `(y, z) ↦ (n - y - z, y, z)`, and `Vertex.ofChart` gives the product chart
-`(i, j) ↦ (n - j, j - i, i)` (`0 ≤ i ≤ j ≤ n`). `Vertex.yz` gives the integer `(y, z)` chart
-coordinates, in which `yzStep` lists the six unit lattice steps and `Vertex.sqDist_eq_two_iff`
-identifies unit lattice edges. The planar embedding sends `(x,y,z)` to `(z + y/2, √3*y/2)`, so the
-corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
+The `(n + 1) * (n + 2) / 2` vertices (`Vertex.card`) of the size-`n` triangle are nonnegative
+barycentric triples of sum `n`. `Vertex.rotate` and `Vertex.reflect` give its dihedral symmetries,
+`Vertex.edgePoint` parameterizes the three sides along the clockwise perimeter `A → B → C → A`,
+`Vertex.ofYZ` gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`, and `Vertex.ofChart`
+gives the product chart `(i, j) ↦ (n - j, j - i, i)` (`0 ≤ i ≤ j ≤ n`). `Vertex.yz` gives the
+integer `(y, z)` chart coordinates, in which `yzStep` lists the six unit lattice steps and
+`Vertex.sqDist_eq_two_iff` identifies unit lattice edges. `Vertex.barycentric` embeds vertices
+into `Fin 3 → ℝ`, and the planar embedding `Vertex.plane` sends `(x,y,z)` to
+`(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
 
+`IsUnitEdge` records unit lattice edges (`sqDist = 2`, planar length `1`), and
 `IsRhombus a b c d` records a unit rhombus in perimeter order, with **obtuse** corners
 `a,c`. Its short diagonal has barycentric squared length 2, its long diagonal has squared length 6
 (`Vertex.sqDist_eq_six_iff`), its diagonals are orthogonal (`IsRhombus.diagonal_inner_eq_zero`),
@@ -71,6 +75,9 @@ def coord (p : Vertex n) : Fin 3 → ℕ := ![p.x, p.y, p.z]
 @[simp] theorem coord_zero (p : Vertex n) : p.coord 0 = p.x := (rfl)
 @[simp] theorem coord_one (p : Vertex n) : p.coord 1 = p.y := (rfl)
 @[simp] theorem coord_two (p : Vertex n) : p.coord 2 = p.z := (rfl)
+
+theorem ext_coord {p q : Vertex n} (h : ∀ i : Fin 3, p.coord i = q.coord i) : p = q :=
+  Vertex.ext (by simpa using h 0) (by simpa using h 1) (by simpa using h 2)
 
 /-- Identify vertices with the computably enumerated triples of sum `n`. -/
 def equivAntidiagonalTuple : Vertex n ≃ ↥(Finset.Nat.antidiagonalTuple 3 n) where
@@ -145,6 +152,18 @@ def add {m : ℕ} (p : Vertex n) (q : Vertex m) : Vertex (n + m) :=
 @[simp] theorem add_y {m : ℕ} (p : Vertex n) (q : Vertex m) : (p.add q).y = p.y + q.y := (rfl)
 @[simp] theorem add_z {m : ℕ} (p : Vertex n) (q : Vertex m) : (p.add q).z = p.z + q.z := (rfl)
 
+@[simp] theorem coord_add {m : ℕ} (p : Vertex n) (q : Vertex m) (i : Fin 3) :
+    (p.add q).coord i = p.coord i + q.coord i := by fin_cases i <;> simp
+theorem coord_rotate (p : Vertex n) (i : Fin 3) : p.rotate.coord (i + 1) = p.coord i := by
+  fin_cases i <;> simp
+theorem coord_reflect (p : Vertex n) (i : Fin 3) : p.reflect.coord (-i) = p.coord i := by
+  fin_cases i <;> rfl
+@[simp] theorem rotate_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
+    (p.add q).rotate = p.rotate.add q.rotate := by ext <;> simp
+@[simp] theorem reflect_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
+    (p.add q).reflect = p.reflect.add q.reflect := by ext <;> simp
+@[simp] theorem add_cornerA_zero (p : Vertex n) : p.add (cornerA 0) = p := by ext <;> simp
+
 /-- Squared length in the ambient barycentric integer coordinates. -/
 def sqDist (p q : Vertex n) : ℤ :=
   ((p.x : ℤ) - q.x) ^ 2 + ((p.y : ℤ) - q.y) ^ 2 + ((p.z : ℤ) - q.z) ^ 2
@@ -185,6 +204,24 @@ theorem sqDist_comm (p q : Vertex n) : sqDist p q = sqDist q p := by
   simp only [sqDist, add_x, add_y, add_z, Nat.cast_add]
   ring
 
+/-- Embed a lattice vertex `p : Vertex n` into real barycentric coordinates `Fin 3 → ℝ`. -/
+def barycentric (p : Vertex n) : Fin 3 → ℝ := fun i => (p.coord i : ℝ)
+
+@[simp] theorem barycentric_apply (p : Vertex n) (i : Fin 3) : p.barycentric i = p.coord i := (rfl)
+theorem barycentric_nonneg (p : Vertex n) (i : Fin 3) : 0 ≤ p.barycentric i := Nat.cast_nonneg _
+theorem sum_barycentric (p : Vertex n) : ∑ i, p.barycentric i = (n : ℝ) := by
+  simpa [Fin.sum_univ_three] using congrArg (Nat.cast (R := ℝ)) p.sum_eq
+theorem barycentric_injective : Function.Injective (barycentric (n := n)) := fun _ _ h =>
+  ext_coord fun i => Nat.cast_injective (congrFun h i)
+@[simp] theorem barycentric_inj {p q : Vertex n} : p.barycentric = q.barycentric ↔ p = q :=
+  barycentric_injective.eq_iff
+theorem barycentric_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
+    (p.add q).barycentric = p.barycentric + q.barycentric := by ext i; fin_cases i <;> simp
+theorem barycentric_cornerA_zero : (cornerA 0).barycentric = 0 := by ext i; fin_cases i <;> simp
+theorem sqDist_eq_sum_sub_sq (p q : Vertex n) :
+    (p.sqDist q : ℝ) = ∑ i, (p.barycentric i - q.barycentric i) ^ 2 := by
+  simp [sqDist_def, Fin.sum_univ_three, add_assoc]
+
 /-- Two vertices in `Δₙ` have barycentric squared distance `6` (the long-diagonal squared length of
 a unit rhombus) if and only if their coordinate difference `d - b` is one of the six permutations
 of `(-2, 1, 1)` and `(2, -1, -1)`. -/
@@ -213,9 +250,27 @@ theorem sqDist_eq_six_iff (b d : Vertex n) :
   · rcases h with ⟨hx, hy, hz⟩ | ⟨hx, hy, hz⟩ | ⟨hx, hy, hz⟩ | ⟨hx, hy, hz⟩ |
         ⟨hx, hy, hz⟩ | ⟨hx, hy, hz⟩ <;> (rw [hx, hy, hz]; norm_num)
 
+end Vertex
+
+/-- Continuous linear map extending `Vertex.plane` to all of `Fin 3 → ℝ`:
+`(x₀, x₁, x₂) ↦ (x₂ + x₁ / 2, √3 * x₁ / 2)`. -/
+noncomputable def planeLinear : (Fin 3 → ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 2) :=
+  (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.pi
+      ![ContinuousLinearMap.proj 2 + (1 / 2 : ℝ) • ContinuousLinearMap.proj 1,
+        (Real.sqrt 3 / 2 : ℝ) • ContinuousLinearMap.proj 1])
+
+@[simp] theorem planeLinear_zero_coord (x : Fin 3 → ℝ) :
+    planeLinear x 0 = x 2 + x 1 / 2 := by simp [planeLinear]; ring
+
+@[simp] theorem planeLinear_one_coord (x : Fin 3 → ℝ) :
+    planeLinear x 1 = Real.sqrt 3 * x 1 / 2 := by simp [planeLinear]; ring
+
+namespace Vertex
+
 /-- The equilateral planar realization of the triangular lattice. -/
 noncomputable def plane (p : Vertex n) : EuclideanSpace ℝ (Fin 2) :=
-  !₂[(p.z : ℝ) + p.y / 2, Real.sqrt 3 * p.y / 2]
+  planeLinear p.barycentric
 
 @[simp] theorem plane_zero (p : Vertex n) :
     p.plane 0 = (p.z : ℝ) + p.y / 2 := by simp [plane]
@@ -246,6 +301,9 @@ theorem plane_injective : Function.Injective (plane (n := n)) := by
   exact (sqDist_eq_zero_iff p q).mp (by exact_mod_cast hz)
 
 end Vertex
+
+@[simp] theorem planeLinear_barycentric (p : Vertex n) : planeLinear p.barycentric = p.plane :=
+  (rfl)
 
 namespace Vertex
 
@@ -288,6 +346,14 @@ def edgePoint (n : ℕ) (s : Fin 3) (k : Fin (n + 1)) : Vertex n :=
     (edgePoint n s k).reflect = edgePoint n s.rev k.rev := by
   fin_cases s <;> ext <;> simp [edgePoint, Fin.val_rev] <;> omega
 
+@[simp] theorem coord_edgePoint_one_zero (i j : Fin 3) :
+    (edgePoint 1 i 0).coord j = if i = j then 1 else 0 := by
+  fin_cases i <;> fin_cases j <;> rfl
+
+@[simp] theorem coord_edgePoint_two_add_one_one (i j : Fin 3) :
+    (edgePoint 2 (i + 1) 1).coord j = if i = j then 0 else 1 := by
+  fin_cases i <;> fin_cases j <;> rfl
+
 /-- Points along any single side of the perimeter are indexed injectively by `Fin (n + 1)`. -/
 theorem edgePoint_injective (n : ℕ) (s : Fin 3) : Function.Injective (edgePoint n s) := by
   intro j k h; fin_cases s
@@ -315,6 +381,22 @@ theorem eq_edgePoint_two_of_y_eq_zero {n : ℕ} {p : Vertex n} (hy : p.y = 0) :
   have := p.sum_eq
   ext <;> simp [hy]
   omega
+
+/-- At size `0`, the unique lattice vertex is `cornerA 0 = (0, 0, 0)`. -/
+instance uniqueZero : Unique (Vertex 0) where
+  default := cornerA 0
+  uniq p := by have := p.sum_eq; ext <;> simp <;> omega
+
+/-- The triangular lattice `Vertex n` has `(n + 1) * (n + 2) / 2` vertices. -/
+@[simp] theorem card (n : ℕ) : Fintype.card (Vertex n) = (n + 1) * (n + 2) / 2 := by
+  have hcard : Fintype.card (Vertex n) = (n + 2).choose 2 := by
+    rw [Fintype.card_congr (equivAntidiagonalTuple.trans
+      ((Equiv.subtypeEquivRight fun _ => Finset.Nat.mem_antidiagonalTuple).trans
+        (Sym.equivNatSumOfFintype (Fin 3) n).symm)),
+      Sym.card_sym_eq_choose, Fintype.card_fin, show 3 + n - 1 = n + 2 by omega,
+      Nat.choose_symm_add]
+  rw [hcard, Nat.choose_two_right]
+  simp [mul_comm]
 
 /-- Construct a lattice vertex `(n - y - z, y, z)` from nonnegative `(y, z)` with `y + z ≤ n`. -/
 def ofYZ (n : ℕ) (y z : ℕ) (h : y + z ≤ n) : Vertex n := ⟨n - y - z, y, z, by omega⟩
@@ -501,6 +583,52 @@ theorem sqDist_eq_two_iff {p q : Vertex n} :
 
 end Vertex
 
+/-- Two vertices `p, q : Vertex n` form a **unit lattice edge** if `p.sqDist q = 2`
+(equivalently, Euclidean planar distance `1`). -/
+def IsUnitEdge {n : ℕ} (p q : Vertex n) : Prop := p.sqDist q = 2
+
+theorem isUnitEdge_def {n : ℕ} (p q : Vertex n) : IsUnitEdge p q ↔ p.sqDist q = 2 := Iff.rfl
+instance {n : ℕ} (p q : Vertex n) : Decidable (IsUnitEdge p q) :=
+  decidable_of_iff (p.sqDist q = 2) (isUnitEdge_def p q).symm
+
+namespace IsUnitEdge
+
+variable {n : ℕ} {p q : Vertex n}
+
+theorem symm (h : IsUnitEdge p q) : IsUnitEdge q p := by rwa [isUnitEdge_def, Vertex.sqDist_comm]
+theorem ne (h : IsUnitEdge p q) : p ≠ q := by
+  rintro rfl; rw [isUnitEdge_def, Vertex.sqDist_self] at h; omega
+theorem one_le (h : IsUnitEdge p q) : 1 ≤ n := by
+  by_contra hn; obtain rfl : n = 0 := by omega
+  exact h.ne (Subsingleton.elim p q)
+theorem dist_plane_sq (h : IsUnitEdge p q) : dist p.plane q.plane ^ 2 = 1 := by
+  rw [Vertex.dist_plane_sq, (isUnitEdge_def p q).mp h]; norm_num
+theorem dist_plane (h : IsUnitEdge p q) : dist p.plane q.plane = 1 := by
+  nlinarith [h.dist_plane_sq, dist_nonneg (x := p.plane) (y := q.plane)]
+theorem rotate (h : IsUnitEdge p q) : IsUnitEdge p.rotate q.rotate := by simpa [IsUnitEdge] using h
+theorem reflect (h : IsUnitEdge p q) : IsUnitEdge p.reflect q.reflect := by
+  simpa [IsUnitEdge] using h
+theorem add {m : ℕ} (h : IsUnitEdge p q) (r : Vertex m) : IsUnitEdge (r.add p) (r.add q) := by
+  simpa [IsUnitEdge] using h
+
+end IsUnitEdge
+
+theorem isUnitEdge_comm {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p q ↔ IsUnitEdge q p := ⟨IsUnitEdge.symm, IsUnitEdge.symm⟩
+@[simp] theorem isUnitEdge_rotate_iff {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p.rotate q.rotate ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+@[simp] theorem isUnitEdge_reflect_iff {n : ℕ} {p q : Vertex n} :
+    IsUnitEdge p.reflect q.reflect ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+@[simp] theorem isUnitEdge_add_left_iff {m n : ℕ} (r : Vertex m) {p q : Vertex n} :
+    IsUnitEdge (r.add p) (r.add q) ↔ IsUnitEdge p q := by simp [IsUnitEdge]
+
+/-- Consecutive perimeter vertices along any side `s` form a unit edge. -/
+theorem isUnitEdge_edgePoint_succ (n : ℕ) (s : Fin 3) (k : Fin n) :
+    IsUnitEdge (Vertex.edgePoint n s k.castSucc) (Vertex.edgePoint n s k.succ) := by
+  have hk1 : ((n - (k.val + 1) : ℕ) : ℤ) = (n : ℤ) - k.val - 1 := by have := k.isLt; omega
+  have hk0 : ((n - k.val : ℕ) : ℤ) = (n : ℤ) - k.val := by have := k.isLt; omega
+  fin_cases s <;> rw [isUnitEdge_def, Vertex.sqDist_def] <;> simp [hk1, hk0]
+
 /-- A unit rhombus in perimeter order, with `a,c` the obtuse (short-diagonal) corners.
 All squared distances here use barycentric coordinates. -/
 structure IsRhombus {n : ℕ} (a b c d : Vertex n) : Prop where
@@ -606,6 +734,13 @@ theorem two_le (h : IsRhombus a b c d) : 2 ≤ n := by
 theorem diagonal_dist_sq (h : IsRhombus a b c d) :
     dist a.plane c.plane ^ 2 = 1 ∧ dist b.plane d.plane ^ 2 = 3 := by
   norm_num [Vertex.dist_plane_sq, h.short, h.long]
+
+/-- Opposite corners of a unit rhombus have the same sum in real barycentric coordinates. -/
+theorem midpoint_barycentric (h : IsRhombus a b c d) :
+    a.barycentric + c.barycentric = b.barycentric + d.barycentric := by
+  ext k; fin_cases k <;> simp only [Pi.add_apply, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+    Vertex.barycentric_apply, Vertex.coord_zero, Vertex.coord_one, Vertex.coord_two] <;>
+    [exact_mod_cast h.midpoint_x; exact_mod_cast h.midpoint_y; exact_mod_cast h.midpoint_z]
 
 /-- Translating a rhombus into a larger triangle preserves it. -/
 theorem add {m : ℕ} (h : IsRhombus a b c d) (p : Vertex m) :
