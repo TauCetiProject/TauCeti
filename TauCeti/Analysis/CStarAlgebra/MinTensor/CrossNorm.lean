@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.TensorProduct
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
@@ -17,9 +18,10 @@ Let `A` and `B` be unital C*-algebras. A C*-norm on the algebraic tensor product
 presented as `x ↦ ‖Ψ x‖` for an injective star homomorphism `Ψ : A ⊗[ℂ] B → D` into a
 C*-algebra `D`. Such a `Ψ` restricts to commuting star homomorphisms `a ↦ Ψ (a ⊗ 1)` and
 `b ↦ Ψ (1 ⊗ b)` whose products are the values of `Ψ` on elementary tensors, so
-`‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖` for every star homomorphism `Ψ` (`TauCeti.norm_apply_tmul_le`). This
-file proves the reverse inequality for injective `Ψ`: every C*-norm on `A ⊗[ℂ] B` is a cross
-norm, `‖Ψ (a ⊗ b)‖ = ‖a‖ ‖b‖` (`TauCeti.norm_apply_tmul_of_injective`).
+`‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖` for every star homomorphism `Ψ`
+(`NonUnitalStarAlgHom.norm_apply_tmul_le`). This file proves the reverse inequality for
+injective `Ψ`: every C*-norm on `A ⊗[ℂ] B` is a cross norm, `‖Ψ (a ⊗ b)‖ = ‖a‖ ‖b‖`
+(`TauCeti.norm_apply_tmul_of_injective`).
 
 The proof reduces to positive `a`, `b` of norm one through the C*-identity. If
 `c = ‖Ψ (a ⊗ b)‖ < 1`, choose `c < t ^ 2`, `t < s < 1`, a continuous `g` with `g = 0` on
@@ -30,7 +32,8 @@ of `a` and `b`, `f(a)` and `f(b)` are nonzero, so `f(a) ⊗ f(b) ≠ 0`, contrad
 
 ## Main declarations
 
-* `TauCeti.norm_apply_tmul_le`: `‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖`, and `TauCeti.norm_apply_tmul_one_le`.
+* `NonUnitalStarAlgHom.norm_apply_tmul_le`: `‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖`, and
+  `NonUnitalStarAlgHom.norm_apply_tmul_one_le`.
 * `TauCeti.norm_apply_tmul_of_injective`: **every C*-norm is a cross norm**.
 
 ## References
@@ -56,9 +59,7 @@ variable {A : Type u} {B : Type v} {D : Type w} [CStarAlgebra A] [CStarAlgebra B
 factor. -/
 private def tensorLeftHom (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) : A →⋆ₙₐ[ℂ] D where
   toFun a := Ψ (a ⊗ₜ 1)
-  map_smul' c a := by
-    change Ψ _ = c • Ψ _
-    rw [← map_smul, smul_tmul']
+  map_smul' c a := by simp [← map_smul, smul_tmul']
   map_zero' := by simp
   map_add' a a' := by simp [add_tmul]
   map_mul' a a' := by
@@ -70,9 +71,7 @@ private def tensorLeftHom (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) : A →⋆ₙ�
 factor. -/
 private def tensorRightHom (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) : B →⋆ₙₐ[ℂ] D where
   toFun b := Ψ (1 ⊗ₜ b)
-  map_smul' c b := by
-    change Ψ _ = c • Ψ _
-    rw [← map_smul, tmul_smul]
+  map_smul' c b := by simp [← map_smul, tmul_smul]
   map_zero' := by simp
   map_add' b b' := by simp [tmul_add]
   map_mul' b b' := by
@@ -97,7 +96,8 @@ private theorem tensorLeftHom_mul_tensorRightHom (Ψ : A ⊗[ℂ] B →⋆ₙₐ
 
 /-- Every star homomorphism out of `A ⊗[ℂ] B` into a C*-algebra is bounded by `‖a‖ ‖b‖` on
 `a ⊗ b`. -/
-theorem norm_apply_tmul_le (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A) (b : B) :
+theorem _root_.NonUnitalStarAlgHom.norm_apply_tmul_le (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A)
+    (b : B) :
     ‖Ψ (a ⊗ₜ b)‖ ≤ ‖a‖ * ‖b‖ := by
   rw [← tensorLeftHom_mul_tensorRightHom]
   exact (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le _ _)
@@ -105,7 +105,8 @@ theorem norm_apply_tmul_le (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A) (b : 
 
 /-- Every star homomorphism out of `A ⊗[ℂ] B` into a C*-algebra is bounded by `‖a‖` on
 `a ⊗ 1`. -/
-theorem norm_apply_tmul_one_le (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A) : ‖Ψ (a ⊗ₜ 1)‖ ≤ ‖a‖ := by
+theorem _root_.NonUnitalStarAlgHom.norm_apply_tmul_one_le (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A) :
+    ‖Ψ (a ⊗ₜ 1)‖ ≤ ‖a‖ := by
   rw [← tensorLeftHom_apply]
   exact NonUnitalStarAlgHom.norm_apply_le _ _
 
@@ -215,15 +216,11 @@ private theorem exists_cutoff_params {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) :
   rw [← mul_inv, ← pow_two, Real.sq_sqrt hq0.le, inv_mul_lt_iff₀ hq0, mul_one, hq]
   linarith
 
-/-- In a normed ring, `w₁ = w₁ w₂` with `‖w₂‖ < 1` forces `w₁ = 0`. -/
-private theorem eq_zero_of_eq_mul_of_norm_lt_one {R : Type*} [NonUnitalNormedRing R]
-    {w₁ w₂ : R} (h : w₁ = w₁ * w₂) (h2 : ‖w₂‖ < 1) : w₁ = 0 := by
-  have h1 : ‖w₁‖ ≤ ‖w₁‖ * ‖w₂‖ :=
-    calc ‖w₁‖ = ‖w₁ * w₂‖ := by rw [← h]
-      _ ≤ ‖w₁‖ * ‖w₂‖ := norm_mul_le _ _
-  have : ‖w₁‖ * (1 - ‖w₂‖) ≤ 0 := by nlinarith
-  exact norm_eq_zero.1 (le_antisymm (nonpos_of_mul_nonpos_left this (by linarith))
-    (norm_nonneg _))
+/-- Normalizing `star x * x` by `‖x‖ ^ 2` gives an element of norm one. -/
+private theorem norm_inv_norm_sq_smul_star_mul_self {C : Type*} [CStarAlgebra C] {x : C}
+    (hx : x ≠ 0) : ‖(‖x‖ ^ 2)⁻¹ • (star x * x)‖ = 1 := by
+  rw [norm_smul, CStarRing.norm_star_mul_self, norm_inv, norm_pow, Real.norm_of_nonneg
+    (norm_nonneg x), pow_two, inv_mul_cancel₀ (by positivity)]
 
 /-- The core of `TauCeti.norm_apply_tmul_of_injective`: for an injective `Ψ` and positive `a`, `b`
 of norm one, `‖Ψ (a ⊗ b)‖ ≥ 1`. -/
@@ -245,7 +242,7 @@ theorem one_le_norm_apply_tmul_of_injective [PartialOrder A] [StarOrderedRing A]
     rw [cfc_cutoff_eq ht0 hts a hsa, cfc_cutoff_eq ht0 hts b hsb,
       ← Algebra.TensorProduct.tmul_mul_tmul, map_mul]
     refine lt_of_le_of_lt ((norm_mul_le _ _).trans ?_) hc
-    refine mul_le_mul_of_nonneg_right ((norm_apply_tmul_le Ψ _ _).trans ?_) (norm_nonneg _)
+    refine mul_le_mul_of_nonneg_right ((Ψ.norm_apply_tmul_le _ _).trans ?_) (norm_nonneg _)
     exact mul_le_mul (norm_cfc_cutoffDiv_le ht0 a) (norm_cfc_cutoffDiv_le ht0 b)
       (norm_nonneg _) (inv_nonneg.2 ht0.le)
   -- `w₁ = Ψ (f(a) ⊗ f(b))` satisfies `w₁ = w₁ w₂`, so `w₁ = 0`.
@@ -260,7 +257,7 @@ an injective star homomorphism `Ψ : A ⊗[ℂ] B → D` into a C*-algebra has
 `‖Ψ (a ⊗ b)‖ = ‖a‖ ‖b‖`. -/
 theorem norm_apply_tmul_of_injective {Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D} (hΨ : Function.Injective Ψ)
     (a : A) (b : B) : ‖Ψ (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
-  refine le_antisymm (norm_apply_tmul_le Ψ a b) ?_
+  refine le_antisymm (Ψ.norm_apply_tmul_le a b) ?_
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   rcases eq_or_ne b 0 with rfl | hb
@@ -273,13 +270,8 @@ theorem norm_apply_tmul_of_injective {Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D} (h�
   set b' : B := (‖b‖ ^ 2)⁻¹ • (star b * b)
   have ha' : 0 ≤ a' := smul_nonneg (by positivity) (star_mul_self_nonneg a)
   have hb' : 0 ≤ b' := smul_nonneg (by positivity) (star_mul_self_nonneg b)
-  have hna' : ‖a'‖ = 1 := by
-    rw [norm_smul, CStarRing.norm_star_mul_self, norm_inv, norm_pow, Real.norm_of_nonneg
-      (norm_nonneg a), pow_two, inv_mul_cancel₀ (by positivity)]
-  have hnb' : ‖b'‖ = 1 := by
-    rw [norm_smul, CStarRing.norm_star_mul_self, norm_inv, norm_pow, Real.norm_of_nonneg
-      (norm_nonneg b), pow_two, inv_mul_cancel₀ (by positivity)]
-  have key := one_le_norm_apply_tmul_of_injective hΨ ha' hb' hna' hnb'
+  have key := one_le_norm_apply_tmul_of_injective hΨ ha' hb'
+    (norm_inv_norm_sq_smul_star_mul_self ha) (norm_inv_norm_sq_smul_star_mul_self hb)
   have heq : Ψ (a' ⊗ₜ b') =
       (((‖a‖ ^ 2)⁻¹ * (‖b‖ ^ 2)⁻¹ : ℝ) : ℂ) • (star (Ψ (a ⊗ₜ b)) * Ψ (a ⊗ₜ b)) := by
     rw [← map_star, ← map_mul, TensorProduct.star_tmul, Algebra.TensorProduct.tmul_mul_tmul,
