@@ -58,9 +58,13 @@ noncomputable section
 variable {n m : ℕ}
 
 /-- The closed variable-coordinate box of a joint raw endpoint pair. -/
-@[expose]
 def variableBox (q : Raw n m) : Set (Fin n → ℝ) :=
   Icc (fun j => q.1 (.inl j)) (fun j => q.2 (.inl j))
+
+/-- The variable box is the closed interval between the variable-coordinate endpoints. -/
+theorem variableBox_def (q : Raw n m) :
+    variableBox q = Icc (fun j => q.1 (.inl j)) (fun j => q.2 (.inl j)) :=
+  (rfl)
 
 /-- Membership in the variable box is coordinatewise closed interval membership. -/
 @[simp]

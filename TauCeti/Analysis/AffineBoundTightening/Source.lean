@@ -95,6 +95,7 @@ theorem mem_sourceSet {A : Matrix (Fin m) (Fin n) ℝ} {r : Fin m → ℝ}
 @[simp]
 theorem variableBox_sourceInitial (A : Matrix (Fin m) (Fin n) ℝ) (r : Fin m → ℝ)
     (l u : Fin n → ℝ) : variableBox (sourceInitial A r l u) = Icc l u := by
+  rw [variableBox_def]
   rfl
 
 /-- The initialized graph condition is exactly initial-box membership and the original
@@ -133,7 +134,7 @@ theorem variableBox_endpointLimit_subset {A : Matrix (Fin m) (Fin n) ℝ} {r : F
     (h : ∀ k, (publicRun A (sourceInitial A r l u) k : Set (Coord n m → ℝ)).Nonempty) :
     variableBox (endpointLimit A (sourceInitial A r l u)) ⊆ Icc l u := by
   have hw := (actual_limit A (sourceInitial A r l u) h).2.1
-  unfold variableBox
+  rw [variableBox_def]
   exact Icc_subset_Icc (fun j => hw.fst_le (.inl j)) (fun j => hw.le_snd (.inl j))
 
 /-- The actual endpoint limit preserves the bounded original feasible set. -/
