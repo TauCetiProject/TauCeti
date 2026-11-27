@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.NumberTheory.Padics.Distribution.LocallyAnalytic.Derivative
 
 import TauCeti.Analysis.Normed.Field.NatCast
-import TauCeti.NumberTheory.Padics.QuotientTower
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Primitives of locally analytic functions on ℤₚ
@@ -52,24 +51,6 @@ local instance [Field K] [CharZero K] : NeZero (p : K) := ⟨Nat.cast_ne_zero.mp
 namespace AnalyticStage
 
 variable {h : ℕ} [IsUltrametricDist E]
-
-/-- A stage vector has zero derivative precisely when all its positive-degree coefficients
-vanish. -/
-theorem derivative_eq_zero_iff [Field K] [CharZero K] [Module K E] [ContinuousConstSMul K E]
-    (c : AnalyticStage p h E) :
-    derivative K c = 0 ↔ c ∈ polynomialSubmodule K 0 := by
-  have hp' : ((p : K) ^ h)⁻¹ ≠ 0 := inv_ne_zero (pow_ne_zero _ (NeZero.ne _))
-  rw [mem_polynomialSubmodule]
-  constructor
-  · intro hc a n hn
-    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-    have hz := DFunLike.congr_fun hc (a, m)
-    rw [derivative_apply, zero_apply, ← Nat.cast_smul_eq_nsmul K, smul_smul] at hz
-    have hm : ((m + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero m)
-    exact (smul_eq_zero.mp hz).resolve_left (mul_ne_zero hp' hm)
-  · intro hc
-    ext ⟨a, n⟩
-    simp [hc a (n + 1) (Nat.succ_pos n)]
 
 section Primitive
 
@@ -178,7 +159,7 @@ theorem eq_primitive_iff [CharZero 𝕜] (c : AnalyticStage p h E)
   · rintro ⟨hg, hzero⟩
     have hderiv : derivative 𝕜 (g - primitive (𝕜 := 𝕜) c) = 0 := by simp [hg]
     have hcoeff := (mem_polynomialSubmodule 𝕜 (g - primitive (𝕜 := 𝕜) c)).mp
-      ((derivative_eq_zero_iff _).mp hderiv)
+      ((derivative_eq_zero_iff 𝕜 _).mp hderiv)
     apply sub_eq_zero.mp
     ext ⟨a, n⟩
     cases n with
@@ -206,14 +187,6 @@ theorem derivative_surjective {𝕜 : Type*} [NormedField 𝕜] [CharZero 𝕜] 
 
 variable [Field K] [Module K E] [ContinuousConstSMul K E] [SMulCommClass ℤ_[p] K E]
 
-private theorem eval_polynomial_zero {h : ℕ}
-    (c : polynomialSubmodule (p := p) (h := h) (E := E) K 0) (x : ℤ_[p]) :
-    AnalyticStage.eval K c.val x = c.val (PadicInt.toZModPow h x, 0) := by
-  obtain ⟨⟨a, w⟩, rfl⟩ := (PadicInt.discHomeomorph p h).surjective x
-  rw [PadicInt.discHomeomorph_apply, PadicInt.toZModPow_natCast_val_add_mul,
-    eval_polynomial_natCast_val_add_mul]
-  simp
-
 /-- A locally analytic function has zero derivative exactly when it is locally constant. -/
 theorem derivative_eq_zero_iff_isLocallyConstant [CharZero K] (f : LocallyAnalytic p K E) :
     derivative K f = 0 ↔ IsLocallyConstant (eval K f) := by
@@ -227,23 +200,12 @@ theorem derivative_eq_zero_iff_isLocallyConstant [CharZero K] (f : LocallyAnalyt
     intro hc
     have heval : (AnalyticStage.eval K c : ℤ_[p] → E) =
         (fun a ↦ c (a, 0)) ∘ PadicInt.toZModPow h :=
-      funext (eval_polynomial_zero ⟨c, hc⟩)
+      funext (eval_polynomial_zero K ⟨c, hc⟩)
     rw [heval]
     exact (IsLocallyConstant.of_discrete _).comp_continuous (PadicInt.continuous_toZModPow h)
   · intro hf
-    obtain ⟨h, g, hg⟩ := (FiniteQuotientTower.padicTower p).exists_comp_q_eq
-      (hf.comp_continuous (continuous_toAdd : Continuous (Multiplicative.toAdd :
-        Multiplicative ℤ_[p] → ℤ_[p])))
-    let c := (polynomialEquiv (p := p) (h := h) (E := E) K 0).symm
-      fun i ↦ g (Multiplicative.ofAdd i.1)
-    have hc : ofStage K h c.val = f := by
-      apply eval_injective K hpE
-      ext x
-      rw [eval_ofStage, eval_polynomial_zero c, polynomialEquiv_symm_apply]
-      simpa only [le_refl, dite_true, Function.comp_apply,
-        FiniteQuotientTower.padicTower_q_ofAdd, toAdd_ofAdd] using
-        congrFun hg (Multiplicative.ofAdd x)
-    rw [← hc, derivative_ofStage, (AnalyticStage.derivative_eq_zero_iff c.val).mpr c.property,
+    obtain ⟨h, c, rfl⟩ := exists_ofStage_polynomial_zero_of_isLocallyConstant K hpE hf
+    rw [derivative_ofStage, (AnalyticStage.derivative_eq_zero_iff K c.val).mpr c.property,
       map_zero]
 
 end LocallyAnalytic

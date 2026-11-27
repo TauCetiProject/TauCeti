@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Module
+public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.NumberTheory.Padics.Distribution.Polynomial
+
+import TauCeti.NumberTheory.Padics.QuotientTower
 
 /-!
 # The algebraic direct limit of analytic stages
@@ -31,6 +34,9 @@ a linear identification with that union. The equivalence is the native
 `LinearEquiv.ofInjective (eval S) (eval_injective S hpE)`, whose target is the range submodule
 described by `range_eval_eq_iSup`. Its stage formulas are `ofInjective_eval_ofStage` and
 `ofInjective_eval_symm_apply`. No topology is put on the algebraic direct limit here.
+
+For p-regular coefficients, a locally constant evaluated function has a degree-zero stage
+representative (`exists_ofStage_polynomial_zero_of_isLocallyConstant`).
 
 The evaluated functions are dense in `C(ℤ_p, E)` (`denseRange_eval`): by uniform continuity, a
 continuous function is uniformly close to the function equal to its value at `a` on each disc
@@ -133,6 +139,29 @@ theorem eval_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
     (fun h ↦ (AnalyticStage.eval (p := p) (h := h) (E := E) S).toLinearMap)
     (fun _ _ hhk c ↦ AnalyticStage.eval_transitionLE S hhk c)
     (fun h ↦ AnalyticStage.eval_injective (h := h) S hpE)
+
+/-- With p-regular coefficients, a locally analytic function whose evaluation is locally
+constant has a degree-zero stage representative. -/
+theorem exists_ofStage_polynomial_zero_of_isLocallyConstant (hpE : IsSMulRegular E (p : ℤ_[p]))
+    {f : LocallyAnalytic p S E} (hf : IsLocallyConstant (eval S f)) :
+    ∃ h, ∃ c : AnalyticStage.polynomialSubmodule (p := p) (h := h) (E := E) S 0,
+      ofStage S h c.val = f := by
+  obtain ⟨h, g, hg⟩ := (FiniteQuotientTower.padicTower p).exists_comp_q_eq
+    (hf.comp_continuous continuous_toAdd)
+  let e := AnalyticStage.polynomialEquiv (p := p) (h := h) (E := E) S 0
+  let v : ZMod (p ^ h) × Fin 1 → E := fun i ↦ g (Multiplicative.ofAdd i.1)
+  let c := e.symm v
+  refine ⟨h, c, eval_injective S hpE ?_⟩
+  ext x
+  rw [eval_ofStage, AnalyticStage.eval_polynomial_zero]
+  calc
+    _ = e c (PadicInt.toZModPow h x, 0) :=
+      (AnalyticStage.polynomialEquiv_apply (p := p) (h := h) S c
+        (PadicInt.toZModPow h x, 0)).symm
+    _ = g (Multiplicative.ofAdd (PadicInt.toZModPow h x)) := congrFun (e.apply_symm_apply v) _
+    _ = _ := by
+      simpa only [Function.comp_apply, FiniteQuotientTower.padicTower_q_ofAdd, toAdd_ofAdd]
+        using congrFun hg (Multiplicative.ofAdd x)
 
 /-- The native evaluation equivalence sends a stage class to its evaluated function. -/
 @[simp]

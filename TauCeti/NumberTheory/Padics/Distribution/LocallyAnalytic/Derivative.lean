@@ -55,6 +55,8 @@ the coordinate are in `TauCeti.NumberTheory.Padics.Distribution.MulCoord`.
   `TauCeti.LocallyAnalytic.exists_norm_eval_sub_sub_smul_eval_derivative_le`: the derivatives
   differentiate the evaluated functions, with a quadratic remainder.
 * `TauCeti.AnalyticStage.transition_derivative`: the derivative commutes with re-expansion.
+* `TauCeti.AnalyticStage.derivative_eq_zero_iff`: in characteristic zero, the stage derivative
+  vanishes exactly on degree-zero vectors.
 * `TauCeti.LocallyAnalytic.derivative_ofStage_eq_zero`: the derivative vanishes on stage vectors
   whose coefficients of positive degree vanish.
 
@@ -168,6 +170,23 @@ theorem derivative_def (c : AnalyticStage p h E) :
 theorem derivative_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (n : ℕ) :
     derivative 𝕜 c (a, n) = ((p : 𝕜) ^ h)⁻¹ • ((n + 1) • c (a, n + 1)) := by
   rw [derivative_def, smul_apply, discDerivative_apply]
+
+/-- In characteristic zero, when `p` is nonzero in the scalar field, a stage vector has zero
+derivative precisely when all its positive-degree coefficients vanish. -/
+theorem derivative_eq_zero_iff [CharZero 𝕜] [NeZero (p : 𝕜)] (c : AnalyticStage p h E) :
+    derivative 𝕜 c = 0 ↔ c ∈ polynomialSubmodule 𝕜 0 := by
+  have hp' : ((p : 𝕜) ^ h)⁻¹ ≠ 0 := inv_ne_zero (pow_ne_zero _ (NeZero.ne _))
+  rw [mem_polynomialSubmodule]
+  constructor
+  · intro hc a n hn
+    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+    have hz := DFunLike.congr_fun hc (a, m)
+    rw [derivative_apply, zero_apply, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul] at hz
+    have hm : ((m + 1 : ℕ) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero m)
+    exact (smul_eq_zero.mp hz).resolve_left (mul_ne_zero hp' hm)
+  · intro hc
+    ext ⟨a, n⟩
+    simp [hc a (n + 1) (Nat.succ_pos n)]
 
 end Derivative
 
