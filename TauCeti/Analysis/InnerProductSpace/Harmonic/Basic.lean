@@ -11,13 +11,16 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 # Finite sums and differences of harmonic functions
 
 Mathlib's `InnerProductSpace.HarmonicAt.add` and `InnerProductSpace.HarmonicOnNhd.add` show that
-harmonic functions are closed under addition. This file extends this to finite sums, and shows
-that two `C²` functions with the same Laplacian near a point differ by a harmonic function there.
+harmonic functions are closed under addition. This file extends this to finite sums, shows that
+continuous linear maps are harmonic, and shows that two `C²` functions with the same Laplacian
+near a point differ by a harmonic function there.
 
 ## Main declarations
 
 * `InnerProductSpace.HarmonicAt.sum`, `InnerProductSpace.HarmonicOnNhd.sum`: a finite sum of
   harmonic functions is harmonic.
+* `ContinuousLinearMap.harmonicAt`, `ContinuousLinearMap.harmonicOnNhd`: continuous linear maps
+  are harmonic.
 * `ContDiffAt.harmonicAt_sub_of_laplacian_eventuallyEq`: two `C²` functions whose Laplacians agree
   near `x` differ by a function harmonic at `x`.
 -/
@@ -42,6 +45,18 @@ theorem HarmonicAt.sum (h : ∀ i ∈ u, HarmonicAt (f i) x) :
 theorem HarmonicOnNhd.sum (h : ∀ i ∈ u, HarmonicOnNhd (f i) s) :
     HarmonicOnNhd (fun y => ∑ i ∈ u, f i y) s :=
   fun x hx => HarmonicAt.sum fun i hi => h i hi x hx
+
+/-- A continuous linear map is harmonic at every point: its second derivative vanishes. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.harmonicAt (l : E →L[ℝ] F) : HarmonicAt l x :=
+  ⟨l.contDiff.contDiffAt, Eventually.of_forall fun y => by
+    have hl : fderiv ℝ l = fun _ => l := funext fun _ => l.fderiv
+    simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply, hl]⟩
+
+/-- A continuous linear map is harmonic on every set. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.harmonicOnNhd (l : E →L[ℝ] F) : HarmonicOnNhd l s :=
+  fun _ _ => l.harmonicAt
 
 /-- Two functions of class `C²` at `x` whose Laplacians agree near `x` differ by a function
 harmonic at `x`. -/
