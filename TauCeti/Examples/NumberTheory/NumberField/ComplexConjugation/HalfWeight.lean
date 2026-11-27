@@ -21,7 +21,7 @@ conjugation `c`, whose value at `τ` depends only on the place above `p` induced
 therefore constant, and `2 m(τ) = w` on both embeddings: the half-weight conclusion of
 Lawrence–Venkatesh (§2.4, proof of Lemma 2.8) at an inert prime.
 
-At a prime `p ≡ 1 mod 4` the conclusion fails, so the hypothesis on the place cannot be dropped:
+At a prime `p ≡ 1 mod 4` the conclusion fails, so the hypothesis `p ≡ 3 mod 4` cannot be dropped:
 `p` splits into two places of `K`, and with `Ω = K`, the embedding `id` sent to one place and the
 complex conjugation to the other, the exponents `m(id) = 1`, `m(conj) = 0` (those of the CM
 elliptic curve with multiplication by `ℤ[i]`) satisfy `m(c ∘ τ) + m(τ) = 1` and are constant on
