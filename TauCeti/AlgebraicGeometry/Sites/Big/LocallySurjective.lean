@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Sites.LocallySurjective
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
+public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf.Basic
 
 /-!
 # Epimorphisms of modules give locally surjective maps of big-site modules
