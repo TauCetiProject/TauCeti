@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+public import TauCeti.Algebra.GroupAction.Equiv
 public import TauCeti.RepresentationTheory.Rep.OfMulDistribMulAction
 
 /-!
@@ -69,9 +70,9 @@ theorem relabelCohomologyIso_inv (eM : M' ≃* M) (eG : G ≃* G')
     (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) (n : ℕ) :
     (relabelCohomologyIso eM eG hsmul n).inv =
       groupCohomology.map eG.toMonoidHom
-        (Rep.ofMulDistribMulActionResHom eM.symm eG.symm fun g' m ↦ by
-          simpa using (eM.symm_apply_eq.2
-            ((hsmul (eG.symm g') (eM.symm m)).trans (by simp))).symm) n := by
+        (Rep.ofMulDistribMulActionResHom eM.symm eG.symm
+          (eM.symm_map_smul_of_map_smul_of_rightInverse
+            eG eG.symm eG.apply_symm_apply hsmul)) n := by
   rw [relabelCohomologyIso, groupCohomology.mapIso_inv]
   refine congrArg (fun φ ↦ groupCohomology.map eG.toMonoidHom φ n)
     (Rep.hom_ext <| Representation.IntertwiningMap.ext ?_)

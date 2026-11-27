@@ -29,7 +29,8 @@ by the powers of a generator.
 * `Int.mem_range_zpowGroupHom_iff`: `x` is an `n`-th power in `Multiplicative ℤ` iff `n ∣ x.toAdd`.
 * `MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one`: an element sent to `1` by an equivalence with
   `Multiplicative ℤ` generates its group.
-* `TauCeti.sum_range_orderOf_eq_sum`: summing over powers of a generator enumerates a finite group.
+* `TauCeti.prod_range_orderOf_eq_prod`, `TauCeti.sum_range_orderOf_eq_sum`: multiplying or summing
+  over powers of a generator enumerates a finite group.
 
 ## References
 
@@ -40,15 +41,18 @@ public section
 
 namespace TauCeti
 
-/-- Summing a function over the powers `1, g, …, gⁿ⁻¹` of a generator of a finite cyclic group
-is the sum over the whole group, where `n = orderOf g`. -/
-theorem sum_range_orderOf_eq_sum {G M : Type*} [Group G] [Fintype G] [AddCommMonoid M]
+/-- Multiplying a function over the powers `1, g, …, gⁿ⁻¹` of a generator of a finite cyclic
+group is the product over the whole group, where `n = orderOf g`. -/
+@[to_additive (dont_translate := G) sum_range_orderOf_eq_sum
+  /-- Summing a function over the powers `1, g, …, gⁿ⁻¹` of a generator of a finite cyclic group
+  is the sum over the whole group, where `n = orderOf g`. -/]
+theorem prod_range_orderOf_eq_prod {G M : Type*} [Group G] [Fintype G] [CommMonoid M]
     (g : G) (hg : ∀ x : G, x ∈ Subgroup.zpowers g) (f : G → M) :
-    ∑ i ∈ Finset.range (orderOf g), f (g ^ i) = ∑ x : G, f x := by
-  rw [← Fin.sum_univ_eq_sum_range]
+    ∏ i ∈ Finset.range (orderOf g), f (g ^ i) = ∏ x : G, f x := by
+  rw [← Fin.prod_univ_eq_prod_range]
   simpa only [Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply, finEquivZPowers_apply] using
     (((finEquivZPowers (isOfFinOrder_of_finite g)).trans
-      (Equiv.subtypeUnivEquiv hg)).sum_comp f)
+      (Equiv.subtypeUnivEquiv hg)).prod_comp f)
 
 /-- For `n ≠ 0`, the standard computable enumeration of the finite cyclic group
 `Multiplicative (ZMod n)`. For `n = 0`, this list is empty. -/

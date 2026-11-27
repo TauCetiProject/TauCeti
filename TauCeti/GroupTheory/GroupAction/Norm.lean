@@ -81,12 +81,7 @@ theorem prod_smul_eq_one_of_smul_eq_inv {G M : Type*} [Group G] [Fintype G] [Com
     [MulDistribMulAction G M] {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g)
     (hord : Even (orderOf g)) (hinv : ∀ m : M, g • m = m⁻¹) (m : M) :
     ∏ x : G, x • m = 1 := by
-  have hprod : ∏ i ∈ Finset.range (orderOf g), (g ^ i) • m = ∏ x : G, x • m := by
-    rw [← Fin.prod_univ_eq_prod_range]
-    simpa only [Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply, finEquivZPowers_apply] using
-      (((finEquivZPowers (isOfFinOrder_of_finite g)).trans
-        (Equiv.subtypeUnivEquiv hg)).prod_comp (fun x ↦ x • m))
-  rw [← hprod]
+  rw [← prod_range_orderOf_eq_prod g hg (fun x ↦ x • m)]
   obtain ⟨q, hq⟩ := hord
   rw [hq, ← two_mul]
   clear hq

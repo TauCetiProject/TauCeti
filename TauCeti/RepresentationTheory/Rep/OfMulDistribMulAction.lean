@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Rep.Res
+import TauCeti.Algebra.GroupAction.Equiv
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -158,11 +159,9 @@ theorem ofMulDistribMulActionLinearEquiv_isIntertwining {G M G' M' : Type*}
       (Rep.ofMulDistribMulAction G' M').ρ (eG g) ∘ₗ
         (ofMulDistribMulActionLinearEquiv G G' eM : _ →ₗ[ℤ] _) :=
   LinearMap.ext fun a ↦ (Rep.toAdditive (M := G') (G := M')).injective <| by
-    have hsymm (m : M) : eM.symm (g • m) = eG g • eM.symm m :=
-      eM.symm_apply_eq.2 ((hsmul g (eM.symm m)).trans (by simp)).symm
     simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe,
       toAdditive_ofMulDistribMulActionLinearEquiv, toAdditive_ofMulDistribMulAction_ρ_apply,
-      toMul_ofMul] using congrArg Additive.ofMul (hsymm _)
+      toMul_ofMul] using congrArg Additive.ofMul (eM.symm_smul_of_intertwining eG hsmul g _)
 
 /-- The intertwining morphism `Rep.res eG.symm (Rep.ofMulDistribMulAction G M) ⟶
 Rep.ofMulDistribMulAction G' M'` induced by action-intertwining equivalences `eM` and `eG`. -/

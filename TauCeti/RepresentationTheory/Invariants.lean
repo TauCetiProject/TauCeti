@@ -651,9 +651,7 @@ open scoped MonoidAlgebra
 theorem applyAsHom_sub_id_apply {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
     (x : A) :
     (applyAsHom A g - 𝟙 A).hom.toLinearMap x = A.ρ g x - x := by
-  rw [Rep.sub_hom, Representation.IntertwiningMap.coe_toLinearMap,
-    Representation.IntertwiningMap.coe_sub, Pi.sub_apply, Rep.applyAsHom_apply, Rep.hom_id,
-    Representation.IntertwiningMap.id_apply]
+  simp [Rep.sub_hom]
 
 /-- A vector in the kernel of `ρ(g) - 1` is fixed by `g`. -/
 @[simp]
