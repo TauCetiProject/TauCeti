@@ -17,8 +17,8 @@ gives the scalar identity for the action through relative Frobenius in Bhatt,
 *p-adic derived de Rham cohomology*, Notation 3.1.
 
 The underlying scalar law is `TauCeti.DeRham.d_smul_of_D_eq_zero` for scalars with vanishing
-Kähler differential. In characteristic `p`, `Derivation.map_pow_eq_zero_of_charP` gives
-vanishing on `p`-th powers.
+Kähler differential. The vanishing on powers follows from
+`Derivation.map_pow_eq_zero_of_natCast_eq_zero`.
 -/
 
 public section
@@ -32,15 +32,14 @@ variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] {n : ℕ}
 /-- If `m` vanishes in `B`, the de Rham differential commutes with multiplication by
 `b ^ m`. In prime characteristic this is linearity for the action through Frobenius. -/
 theorem d_pow_smul_of_natCast_eq_zero {m : ℕ} (b : B) (ω : Forms A B n) (hm : (m : B) = 0) :
-    d A B n (b ^ m • ω) = b ^ m • d A B n ω := by
-  refine d_smul_of_D_eq_zero ?_ ω
-  rw [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul B, hm, zero_smul]
+    d A B n (b ^ m • ω) = b ^ m • d A B n ω :=
+  d_smul_of_D_eq_zero ((D A B).map_pow_eq_zero_of_natCast_eq_zero b hm) ω
 
 /-- In characteristic `p`, the de Rham differential commutes with multiplication by
 `p`-th powers. This gives the scalar identity for the action through Frobenius in prime
 characteristic. -/
 theorem d_frobenius_smul (p : ℕ) [CharP B p] (b : B) (ω : Forms A B n) :
     d A B n (b ^ p • ω) = b ^ p • d A B n ω :=
-  d_smul_of_D_eq_zero ((D A B).map_pow_eq_zero_of_charP b) ω
+  d_pow_smul_of_natCast_eq_zero b ω (CharP.cast_eq_zero B p)
 
 end TauCeti.DeRham
