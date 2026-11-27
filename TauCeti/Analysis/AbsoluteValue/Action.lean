@@ -25,6 +25,9 @@ action is defined on all of `AbsoluteValue F S`, rather than on a type of places
 If `F` is an `R`-algebra and the action of `G` commutes with that of `R`
 (`SMulCommClass G R F`), then `g` fixes `R`, so it does not change the restriction of an absolute
 value to `R` (`AbsoluteValue.under_smul`) and it preserves the relation `AbsoluteValue.LiesOver`.
+If instead `G` maps `R` to itself (`SMulDistribClass G R F`), restricting to `R` commutes with the
+action (`AbsoluteValue.smul_under`). The action also preserves nonarchimedean absolute values
+(`AbsoluteValue.isNonarchimedean_smul_iff`).
 
 The action of `F ≃ₐ[R] F`, under the name `instMulActionAlgEquiv`, is also defined in Ralf
 Stephan's `rwst/Subspace-Theorems` at `09835cb23557ae5ae0cf55a9c4ab9055f5d60338`, file
@@ -56,6 +59,13 @@ instance instMulAction : MulAction G (AbsoluteValue F S) where
 theorem smul_apply (g : G) (w : AbsoluteValue F S) (x : F) : (g • w) x = w (g⁻¹ • x) :=
   rfl
 
+/-- A ring automorphism preserves the nonarchimedean absolute values. -/
+@[simp]
+theorem isNonarchimedean_smul_iff {S : Type*} [Semiring S] [LinearOrder S] {g : G}
+    {w : AbsoluteValue F S} : IsNonarchimedean (g • w) ↔ IsNonarchimedean w := by
+  refine ⟨fun h x y ↦ ?_, fun h x y ↦ by simpa [smul_add] using h (g⁻¹ • x) (g⁻¹ • y)⟩
+  simpa [smul_add] using h (g • x) (g • y)
+
 end MulAction
 
 section LiesOver
@@ -79,5 +89,19 @@ instance (g : G) (w : AbsoluteValue F S) (v : AbsoluteValue R S) [w.LiesOver v] 
   liesOver_smul_iff.mpr ‹_›
 
 end LiesOver
+
+section Under
+
+variable {G R F S : Type*} [Group G] [CommSemiring R] [Semiring F] [Algebra R F]
+  [FaithfulSMul R F] [MulSemiringAction G R] [MulSemiringAction G F] [SMulDistribClass G R F]
+  [Semiring S] [PartialOrder S]
+
+/-- Restricting an absolute value to a subring `R` that `G` maps to itself commutes with the action
+of `G`. -/
+@[simp]
+theorem smul_under (g : G) (w : AbsoluteValue F S) : g • w.under R = (g • w).under R :=
+  ext fun x ↦ by rw [smul_apply, under_apply, under_apply, smul_apply, algebraMap.smul']
+
+end Under
 
 end AbsoluteValue

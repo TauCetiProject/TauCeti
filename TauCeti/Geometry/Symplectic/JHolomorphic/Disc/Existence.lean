@@ -108,9 +108,9 @@ for `h ↦ K(u)` is the second-difference estimate
   the same for the Beltrami equation `\bar∂u = Q(u) ∂u` when `Q(0) = 0` and `DQ` and its
   Lipschitz constant are small on the closed ball of radius `4`, for a family `u_{Q, ξ}` chosen
   uniformly in `Q`; if `Q` is also conjugate-linear on the closed ball of radius `2`, the family
-  satisfies `u_{Q, c ξ}(w) = u_{Q, ξ}(c w)` for `|c| = 1`; and on the unit disc `u_{Q, ξ}` and its
-  derivative depend Lipschitz continuously on `ξ` and on `Q` in the `C¹` norm on the ball of
-  radius `4`.
+  satisfies `u_{Q, c ξ}(w) = u_{Q, ξ}(c w)` for `|c| = 1`; for `Q = 0` the discs are the complex
+  lines `w ↦ w ξ`; and on the unit disc `u_{Q, ξ}` and its derivative depend Lipschitz
+  continuously on `ξ` and on `Q` in the `C¹` norm on the ball of radius `4`.
 
 ## References
 
@@ -898,6 +898,27 @@ private theorem discSource_apply_zero (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ �
     (mem_closedBall_self zero_le_one)]
   simp [discMap_zero, hK.map_zero]
 
+/-- For the zero coefficient the fixed source is `0`, so the disc is the complex line
+`w ↦ w ξ`. -/
+private theorem discMap_discSource_zero (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (w : ℂ) :
+    discMap ξ ⇑(discSource ℓ (0 : F → F →L[ℝ] F) ξ).val w = w • ξ := by
+  have hs := (smallness_pos (F := F)).le
+  have hK : SmallCoeff F (0 : F → F →L[ℝ] F) :=
+    ⟨rfl, fun _ _ ↦ differentiableAt_const _,
+      fun _ _ ↦ by simpa [ContinuousLinearMap.opNorm_zero] using hs,
+      fun _ _ _ _ ↦ by simpa [ContinuousLinearMap.opNorm_zero] using mul_nonneg hs (norm_nonneg _)⟩
+  have h0 : discSource ℓ (0 : F → F →L[ℝ] F) ξ = 0 := by
+    refine discSource_eq hℓ hξ hK (mem_closedBall_self radius_pos.le)
+      (Subtype.ext (HolderSpace.ext fun z ↦ ?_))
+    by_cases hz : z ∈ closedBall (0 : ℂ) 1
+    · rw [fixedPointMap_apply_of_small hξ hK (by simp) hz]
+      simp
+    · rw [mem_supportedHolderSubmodule_iff.mp (fixedPointMap _ _ _ _).property z hz]
+      simp
+  have hc : ⇑(discSource ℓ (0 : F → F →L[ℝ] F) ξ).val = (0 : ℂ → F) :=
+    funext fun z ↦ by simp [h0]
+  simp [hc, discMap, cauchyTransform_zero]
+
 end Contraction
 
 /-! ### Dependence on the first jet and the coefficient -/
@@ -1210,9 +1231,11 @@ derivative, and all `ξ` with `‖ξ‖ ≤ 1`.
 * If `Q` takes conjugate-linear values on the closed ball of radius `2`, `Q(x)(i v) = -i Q(x) v`,
   as the Beltrami coefficient of a complex structure near `i` does, then the family is equivariant
   under rotations: `u_{Q, c ξ}(w) = u_{Q, ξ}(c w)` for `|c| = 1`.
+* For the zero coefficient the discs are the complex lines `u_{0, ξ}(w) = w ξ`.
 * For a second such coefficient `Q'`, if `Q - Q'` and `DQ - DQ'` are bounded by `ε` on the closed
   ball of radius `4`, then on the unit disc the discs `u_{Q, ξ}` and `u_{Q', ξ'}` and their
-  derivatives differ by at most `C (‖ξ - ξ'‖ + ε)`. -/
+  derivatives differ by at most `C (‖ξ - ξ'‖ + ε)`. With `Q' = 0` this says that the disc of a
+  coefficient bounded by `ε` is within `C ε` of the complex line `w ↦ w ξ` in the `C¹` norm. -/
 theorem exists_pos_exists_conjWirtingerDeriv_eq_and_apply_smul_eq_and_norm_sub_le :
     ∃ η > 0, ∃ C ≥ 0, ∃ u : (F → F →L[ℝ] F) → F → ℂ → F,
       (∀ Q : F → F →L[ℝ] F, Q 0 = 0 →
@@ -1227,6 +1250,7 @@ theorem exists_pos_exists_conjWirtingerDeriv_eq_and_apply_smul_eq_and_norm_sub_l
             conjWirtingerDeriv (u Q ξ) z 1 = Q (u Q ξ z) (wirtingerDeriv (u Q ξ) z 1)) ∧
           ((∀ x ∈ closedBall (0 : F) 2, ∀ v, Q x (I • v) = -(I • Q x v)) →
             ∀ ξ : F, ‖ξ‖ ≤ 1 → ∀ c : ℂ, ‖c‖ = 1 → ∀ w, u Q (c • ξ) w = u Q ξ (c * w))) ∧
+      (∀ ξ : F, ‖ξ‖ ≤ 1 → ∀ w, u 0 ξ w = w • ξ) ∧
       ∀ Q Q' : F → F →L[ℝ] F, Q 0 = 0 → Q' 0 = 0 →
         (∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ Q x) →
         (∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ Q' x) →
@@ -1248,6 +1272,7 @@ theorem exists_pos_exists_conjWirtingerDeriv_eq_and_apply_smul_eq_and_norm_sub_l
   have hη := (smallness_pos (F := F)).le
   refine ⟨smallness F, smallness_pos, 1 + 40 * D * X * (2 * smallness F + 1), by positivity,
     fun Q ξ ↦ discMap ξ ⇑(discSource (wirtingerAtOne F) Q ξ).val, fun Q hQ0 hd h1 h2 ↦ ?_,
+    fun ξ hξ w ↦ discMap_discSource_zero norm_wirtingerAtOne_le hξ w,
     fun Q Q' hQ0 hQ0' hd hd' h1 h1' h2 h2' ξ ξ' ε hξ hξ' hε0 hε1 z hz ↦ ?_⟩
   · have hQ : SmallCoeff F Q := ⟨hQ0, hd, h1, h2⟩
     refine ⟨fun ξ hξ ↦ ?_, fun hQI ξ hξ c hc w ↦ ?_⟩
