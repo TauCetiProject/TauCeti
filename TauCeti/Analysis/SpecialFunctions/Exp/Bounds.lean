@@ -52,6 +52,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
+* `TauCeti.two_mul_exp_add_one_le`: `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for `s ≥ -1`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
 * `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
 * `TauCeti.pow_mul_exp_neg_mul_div_factorial_le_profile`: a sharper bound for the factorial-
@@ -274,6 +275,16 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
 /-- `2 exp (2π)` is at least `14`. -/
 theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * exp (2 * π) := by
   nlinarith [quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), two_le_pi]
+
+/-- `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for `s ≥ -1`. -/
+theorem two_mul_exp_add_one_le (s : ℝ) (hs : -1 ≤ s) :
+    2 * exp (2 * π * s) + 1 ≤ 2 * exp (2 * π * (s + 1)) := by
+  have h₁ := fourteen_le_two_mul_exp_two_pi
+  have h₂ : exp (-(2 * π)) ≤ exp (2 * π * s) := exp_le_exp.2 (by nlinarith [pi_pos])
+  have h₃ : 1 ≤ exp (2 * π) * exp (-(2 * π)) := by rw [← exp_add, add_neg_cancel, exp_zero]
+  rw [mul_add, mul_one, exp_add]
+  nlinarith [exp_pos (2 * π * s), exp_pos (2 * π), exp_pos (-(2 * π)),
+    mul_le_mul_of_nonneg_left h₂ (exp_pos (2 * π)).le]
 
 /-- On `(-∞, M]`, the real exponential is `exp M`-Lipschitz: for `a ≤ M` and `b ≤ M`,
 `|exp a - exp b| ≤ exp M * |a - b|`. -/

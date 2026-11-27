@@ -267,16 +267,6 @@ private theorem abs_norm_positiveEndChart_inf_add_add_sub_le (hc₀ : 0 ≤ c) (
   rw [sub_sub_cancel, Complex.norm_real, Real.norm_of_nonneg hc₀]
   exact hc₁
 
-/-- `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for `s ≥ -1`. -/
-private theorem two_mul_exp_add_one_le (s : ℝ) (hs : -1 ≤ s) :
-    2 * exp (2 * π * s) + 1 ≤ 2 * exp (2 * π * (s + 1)) := by
-  have h₁ := fourteen_le_two_mul_exp_two_pi
-  have h₂ : exp (-(2 * π)) ≤ exp (2 * π * s) := exp_le_exp.2 (by nlinarith [pi_pos])
-  have h₃ : 1 ≤ exp (2 * π) * exp (-(2 * π)) := by rw [← exp_add, add_neg_cancel, exp_zero]
-  rw [mul_add, mul_one, exp_add]
-  nlinarith [exp_pos (2 * π * s), exp_pos (2 * π), exp_pos (-(2 * π)),
-    mul_le_mul_of_nonneg_left h₂ (exp_pos (2 * π)).le]
-
 /-- Beyond `ζ.1 = 0`, the shifted recentred chart of the output end lands in `S`. -/
 private theorem positiveEndChart_inf_add_add_mem_thricePuncturedSphereReal (hc₀ : 0 ≤ c)
     (hc₁ : c ≤ 1) {ζ : ℝ × ℝ} (hζ : 0 ≤ ζ.1) :
