@@ -29,12 +29,13 @@ exactly when `v` is unramified over `K`, that is, when `v` is real or its restri
 complex, and otherwise it has order two. None of this needs `L / K` to be finite, so it applies to
 `L = F^alg` and `K = F` for a number field `F`.
 
-The same statements hold for an arbitrary infinite place `w : AbsoluteValue.Place L`, not only one
-given as `v.toPlace`: `w` is the place of the infinite place `infinitePlaceEquiv L ⟨w, hw⟩`, and
-`w x = ‖φ x‖` for an embedding `φ : L →+* ℂ`, unique up to complex conjugation
-(`AbsoluteValue.Place.exists_forall_apply_eq_norm`). For `L / K` Galois the restriction of `w` to
-`K` decides the inertia group: it is trivial when `w.under K` is complex, and `{1, c}` with
-`φ ∘ c = conj ∘ φ` when `w.under K` is real (with `c = 1` exactly when `w` is real).
+The comparison with Mathlib's stabilisers, the membership criterion, the description `{1, σ}`
+and the triviality criterion also hold for an arbitrary infinite place
+`w : AbsoluteValue.Place L`, not only one given as `v.toPlace`: `w` is the place of the infinite
+place `infinitePlaceEquiv L ⟨w, hw⟩`, and `w x = ‖φ x‖` for an embedding `φ : L →+* ℂ`
+(`AbsoluteValue.Place.exists_forall_apply_eq_norm`). The inertia group of `w` is trivial when
+`w.under K` is complex, and for `L / K` Galois it is `{1, c}` with `φ ∘ c = conj ∘ φ` when
+`w.under K` is real.
 
 ## Main results
 
@@ -48,10 +49,10 @@ given as `v.toPlace`: `w` is the place of the infinite place `infinitePlaceEquiv
 * `AbsoluteValue.Place.stabilizer_eq_stabilizer_infinitePlaceEquiv`,
   `AbsoluteValue.Place.inertia_eq_stabilizer_infinitePlaceEquiv`: the same comparison for an
   arbitrary infinite place `w`.
-* `AbsoluteValue.Place.exists_forall_apply_eq_norm`,
-  `AbsoluteValue.Place.mem_inertia_iff_of_forall_apply_eq_norm`,
-  `AbsoluteValue.Place.coe_inertia_of_isConj`: `w = |φ ·|` and complex conjugations at `w`.
-* `AbsoluteValue.Place.inertia_eq_bot_iff`, `AbsoluteValue.Place.inertia_eq_bot_of_isComplex`,
+* `AbsoluteValue.Place.mem_inertia_iff_of_forall_apply_eq_norm`,
+  `AbsoluteValue.Place.coe_inertia_of_isConj`: complex conjugations at `w = |φ ·|`.
+* `AbsoluteValue.Place.inertia_eq_bot_iff_isReal_or_isComplex_under`,
+  `AbsoluteValue.Place.inertia_eq_bot_of_isComplex_under`,
   `AbsoluteValue.Place.exists_isConj_coe_inertia_eq`: the inertia group of `w` in terms of its
   restriction to `K`.
 
@@ -119,39 +120,6 @@ open NumberField
 
 variable {K L : Type*} [Field K] [Field L] [CharZero L] [Algebra K L]
 
-/-- An infinite place is the place underlying the Mathlib infinite place it corresponds to. -/
-@[simp]
-theorem toPlace_infinitePlaceEquiv (w : {w : Place L // ¬ IsNonarchimedean w.val}) :
-    (infinitePlaceEquiv L w).toPlace = w.val := by
-  rw [← infinitePlaceEquiv_symm_apply, Equiv.symm_apply_apply]
-
-/-- The infinite place corresponding to an infinite place `w` has the values of `w`. -/
-@[simp]
-theorem infinitePlaceEquiv_apply (w : {w : Place L // ¬ IsNonarchimedean w.val}) (x : L) :
-    infinitePlaceEquiv L w x = w.val x := by
-  rw [InfinitePlace.coe_apply, val_infinitePlaceEquiv_apply, coe_apply]
-
-/-- An infinite place `w` with `w x = ‖φ x‖` for all `x` is the place underlying
-`NumberField.InfinitePlace.mk φ`. -/
-theorem eq_toPlace_mk {w : Place L} {φ : L →+* ℂ} (hφ : ∀ x, w x = ‖φ x‖) :
-    w = (InfinitePlace.mk φ).toPlace :=
-  Place.ext fun x ↦ by
-    rw [hφ, coe_apply, InfinitePlace.val_toPlace, ← InfinitePlace.coe_apply, InfinitePlace.apply]
-
-/-- An infinite place `w` with `w x = ‖φ x‖` for all `x` corresponds to
-`NumberField.InfinitePlace.mk φ`. -/
-theorem infinitePlaceEquiv_eq_mk {w : Place L} (hw : ¬ IsNonarchimedean w.val) {φ : L →+* ℂ}
-    (hφ : ∀ x, w x = ‖φ x‖) : infinitePlaceEquiv L ⟨w, hw⟩ = InfinitePlace.mk φ :=
-  InfinitePlace.ext _ _ fun x ↦ by rw [infinitePlaceEquiv_apply, InfinitePlace.apply, hφ]
-
-/-- **Infinite places are given by complex embeddings.** Every infinite place `w` of `L` is
-`x ↦ ‖φ x‖` for an embedding `φ : L →+* ℂ`, unique up to complex conjugation
-(`NumberField.InfinitePlace.mk_eq_iff`). -/
-theorem exists_forall_apply_eq_norm (w : Place L) (hw : ¬ IsNonarchimedean w.val) :
-    ∃ φ : L →+* ℂ, ∀ x, w x = ‖φ x‖ :=
-  ⟨(infinitePlaceEquiv L ⟨w, hw⟩).embedding, fun x ↦ by
-    rw [InfinitePlace.norm_embedding_eq, infinitePlaceEquiv_apply]⟩
-
 /-- **Decomposition groups at infinite places.** The decomposition group of an infinite place `w`
 of `L` in `L ≃ₐ[K] L` is Mathlib's stabiliser of the corresponding infinite place. -/
 theorem stabilizer_eq_stabilizer_infinitePlaceEquiv (w : Place L)
@@ -186,44 +154,32 @@ section under
 
 variable [CharZero K]
 
-/-- The restriction of an infinite place to a subfield is an infinite place. -/
-theorem not_isNonarchimedean_under {w : Place L} (hw : ¬ IsNonarchimedean w.val) :
-    ¬ IsNonarchimedean (w.under K).val := by
-  rw [not_isNonarchimedean_iff] at hw ⊢
-  rwa [← val_under, under_under, val_under]
-
-/-- The infinite place of `K` below the infinite place of `L` corresponding to `w` corresponds to
-the restriction of `w` to `K`. -/
-theorem comap_infinitePlaceEquiv (w : Place L) (hw : ¬ IsNonarchimedean w.val) :
-    (infinitePlaceEquiv L ⟨w, hw⟩).comap (algebraMap K L) =
-      infinitePlaceEquiv K ⟨w.under K, not_isNonarchimedean_under hw⟩ :=
-  InfinitePlace.ext _ _ fun x ↦ by
-    rw [InfinitePlace.comap_apply, infinitePlaceEquiv_apply, infinitePlaceEquiv_apply, under_apply]
+/-- **Infinite places above a complex place.** The inertia group of an infinite place of `L` whose
+restriction to `K` is complex is trivial. -/
+theorem inertia_eq_bot_of_isComplex_under (w : Place L) (hw : ¬ IsNonarchimedean w.val)
+    (h : (infinitePlaceEquiv K ⟨w.under K, not_isNonarchimedean_under K hw⟩).IsComplex) :
+    w.val.inertia (L ≃ₐ[K] L) = ⊥ := by
+  rw [inertia_eq_stabilizer_infinitePlaceEquiv w hw]
+  exact InfinitePlace.IsUnramified.stabilizer_eq_bot
+    (InfinitePlace.isUnramified_iff.mpr (.inr (by rwa [comap_infinitePlaceEquiv])))
 
 variable [IsGalois K L]
 
 /-- **Unramified infinite places.** For `L / K` Galois, the inertia group of an infinite place `w`
 of `L` is trivial exactly when `w` is real or its restriction to `K` is complex. -/
-theorem inertia_eq_bot_iff (w : Place L) (hw : ¬ IsNonarchimedean w.val) :
+theorem inertia_eq_bot_iff_isReal_or_isComplex_under (w : Place L)
+    (hw : ¬ IsNonarchimedean w.val) :
     w.val.inertia (L ≃ₐ[K] L) = ⊥ ↔ (infinitePlaceEquiv L ⟨w, hw⟩).IsReal ∨
-      (infinitePlaceEquiv K ⟨w.under K, not_isNonarchimedean_under hw⟩).IsComplex := by
+      (infinitePlaceEquiv K ⟨w.under K, not_isNonarchimedean_under K hw⟩).IsComplex := by
   rw [inertia_eq_stabilizer_infinitePlaceEquiv, ← InfinitePlace.isUnramified_iff_stabilizer_eq_bot,
     InfinitePlace.isUnramified_iff, comap_infinitePlaceEquiv]
 
-/-- **Infinite places above a complex place.** For `L / K` Galois, the inertia group of an
-infinite place of `L` whose restriction to `K` is complex is trivial. -/
-theorem inertia_eq_bot_of_isComplex (w : Place L) (hw : ¬ IsNonarchimedean w.val)
-    (h : (infinitePlaceEquiv K ⟨w.under K, not_isNonarchimedean_under hw⟩).IsComplex) :
-    w.val.inertia (L ≃ₐ[K] L) = ⊥ :=
-  (inertia_eq_bot_iff w hw).mpr (.inr h)
-
 /-- **Infinite places above a real place.** For `L / K` Galois, let `w` be an infinite place of
 `L` with `w x = ‖φ x‖` for all `x`, whose restriction to `K` is real. Then the inertia
-(equivalently, decomposition) group of `w` is `{1, c}` for some `c` with `φ ∘ c = conj ∘ φ`; here
-`c = 1` when `w` is real. -/
+(equivalently, decomposition) group of `w` is `{1, c}` for some `c` with `φ ∘ c = conj ∘ φ`. -/
 theorem exists_isConj_coe_inertia_eq {w : Place L} (hw : ¬ IsNonarchimedean w.val) {φ : L →+* ℂ}
     (hφ : ∀ x, w x = ‖φ x‖)
-    (h : (infinitePlaceEquiv K ⟨w.under K, not_isNonarchimedean_under hw⟩).IsReal) :
+    (h : (infinitePlaceEquiv K ⟨w.under K, not_isNonarchimedean_under K hw⟩).IsReal) :
     ∃ c : L ≃ₐ[K] L, ComplexEmbedding.IsConj φ c ∧
       (w.val.inertia (L ≃ₐ[K] L) : Set (L ≃ₐ[K] L)) = {1, c} := by
   suffices ∃ c : L ≃ₐ[K] L, ComplexEmbedding.IsConj φ c from
