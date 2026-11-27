@@ -33,7 +33,7 @@ its range is closed and contains the dense set of pairs of elements of `A ⊗[�
 
 * `TauCeti.minTensorNorm_prod`: `‖x‖_min = max ‖x₁‖_min ‖x₂‖_min`.
 * `TauCeti.MinTensorProduct.prodLeft`: `(A × A') ⊗min B ≃⋆ₐ[ℂ] (A ⊗min B) × (A' ⊗min B)`, with
-  inverse `TauCeti.MinTensorProduct.prodLeft_symm_of`.
+  inverse `TauCeti.MinTensorProduct.prodLeft_symm_apply`.
 
 ## References
 
@@ -87,18 +87,24 @@ def prodLeftHom :
   (map (NonUnitalStarAlgHom.fst ℂ A A') (NonUnitalStarAlgHom.id ℂ B)).prod
     (map (NonUnitalStarAlgHom.snd ℂ A A') (NonUnitalStarAlgHom.id ℂ B))
 
+/-- The components of `TauCeti.MinTensorProduct.prodLeftHom` are `fst ⊗ id` and `snd ⊗ id`. -/
 @[simp]
+theorem prodLeftHom_apply (u : MinTensorProduct (A × A') B) :
+    prodLeftHom A A' B u =
+      (map (NonUnitalStarAlgHom.fst ℂ A A') (NonUnitalStarAlgHom.id ℂ B) u,
+        map (NonUnitalStarAlgHom.snd ℂ A A') (NonUnitalStarAlgHom.id ℂ B) u) :=
+  (rfl)
+
 theorem prodLeftHom_of_tmul (a : A × A') (b : B) :
     prodLeftHom A A' B (of (minCStarTensorNorm (A × A') B) (a ⊗ₜ b)) =
       (of (minCStarTensorNorm A B) (a.1 ⊗ₜ b), of (minCStarTensorNorm A' B) (a.2 ⊗ₜ b)) := by
-  simp [prodLeftHom]
+  simp
 
 /-- `TauCeti.MinTensorProduct.prodLeftHom` is isometric. -/
 theorem norm_prodLeftHom (u : MinTensorProduct (A × A') B) : ‖prodLeftHom A A' B u‖ = ‖u‖ := by
   refine induction_on u (isClosed_eq (continuous_norm.comp (map_continuous _)) continuous_norm)
     fun x ↦ ?_
-  simp only [prodLeftHom, NonUnitalStarAlgHom.prod_apply, Prod.norm_mk, map_of, norm_of,
-    minCStarTensorNorm_apply]
+  simp only [prodLeftHom_apply, Prod.norm_mk, map_of, norm_of, minCStarTensorNorm_apply]
   exact (minTensorNorm_prod x).symm
 
 /-- `TauCeti.MinTensorProduct.prodLeftHom` is bijective: isometric, with closed dense range. -/
@@ -111,7 +117,7 @@ theorem prodLeftHom_bijective : Function.Bijective (prodLeftHom A A' B) := by
   refine ⟨of _ (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl ℂ A A')
     (NonUnitalStarAlgHom.id ℂ B) y + mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr ℂ A A')
     (NonUnitalStarAlgHom.id ℂ B) z), ?_⟩
-  simp [prodLeftHom, map_of]
+  simp
 
 variable (A A' B) in
 /-- **Distributivity of the minimal tensor product over direct sums**: the star isomorphism
@@ -130,22 +136,34 @@ theorem prodLeft_of_tmul (a : A × A') (b : B) :
       (of (minCStarTensorNorm A B) (a.1 ⊗ₜ b), of (minCStarTensorNorm A' B) (a.2 ⊗ₜ b)) :=
   prodLeftHom_of_tmul a b
 
-/-- The inverse isomorphism sends `(y, z)` to `(inl ⊗ id) y + (inr ⊗ id) z`. -/
+/-- On the algebraic tensor products, the inverse isomorphism sends `(y, z)` to
+`(inl ⊗ id) y + (inr ⊗ id) z`. -/
 theorem prodLeft_symm_of (y : A ⊗[ℂ] B) (z : A' ⊗[ℂ] B) :
     (prodLeft A A' B).symm (of (minCStarTensorNorm A B) y, of (minCStarTensorNorm A' B) z) =
       of (minCStarTensorNorm (A × A') B)
         (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl ℂ A A') (NonUnitalStarAlgHom.id ℂ B) y +
           mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr ℂ A A') (NonUnitalStarAlgHom.id ℂ B)
             z) :=
-  (prodLeft A A' B).symm_apply_eq.2 (by simp [prodLeftHom, map_of])
+  (prodLeft A A' B).symm_apply_eq.2 (by simp)
+
+/-- The inverse isomorphism sends `(y, z)` to `(inl ⊗ id) y + (inr ⊗ id) z`. -/
+@[simp]
+theorem prodLeft_symm_apply (y : MinTensorProduct A B) (z : MinTensorProduct A' B) :
+    (prodLeft A A' B).symm (y, z) =
+      map (NonUnitalStarAlgHom.inl ℂ A A') (NonUnitalStarAlgHom.id ℂ B) y +
+        map (NonUnitalStarAlgHom.inr ℂ A A') (NonUnitalStarAlgHom.id ℂ B) z := by
+  refine induction_on y (isClosed_eq ((map_continuous _).comp (.prodMk_left z))
+    ((map_continuous _).add continuous_const)) fun y ↦ ?_
+  refine induction_on z (isClosed_eq ((map_continuous _).comp (.prodMk_right _))
+    (continuous_const.add (map_continuous _))) fun z ↦ ?_
+  rw [prodLeft_symm_of, map_add, map_of, map_of]
 
 /-- The inverse isomorphism sends `(a ⊗ b, a' ⊗ b')` to `(a, 0) ⊗ b + (0, a') ⊗ b'`. -/
-@[simp]
 theorem prodLeft_symm_of_tmul (a : A) (b : B) (a' : A') (b' : B) :
     (prodLeft A A' B).symm
         (of (minCStarTensorNorm A B) (a ⊗ₜ b), of (minCStarTensorNorm A' B) (a' ⊗ₜ b')) =
       of (minCStarTensorNorm (A × A') B) ((a, 0) ⊗ₜ b + (0, a') ⊗ₜ b') := by
-  simp [prodLeft_symm_of]
+  simp
 
 end MinTensorProduct
 
