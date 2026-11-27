@@ -49,6 +49,10 @@ is a congruent embedding (`CongruentEmbedding.ofPerm`).
 
 ## Main results
 
+* `TauCeti.fisherRao_add_left`, `TauCeti.fisherRao_smul_left`, `TauCeti.amariChentsov_add_left`,
+  `TauCeti.amariChentsov_smul_left`, their `_right` versions and the `_middle` versions for
+  `amariChentsov`: the two forms are additive and homogeneous in each vector argument; the
+  `_zero_left`, `_zero_middle` and `_zero_right` lemmas are `@[simp]`.
 * `TauCeti.fisherRao_self_pos`: the Fisher–Rao form is positive definite at every point with
   positive coordinates, in particular on `simplexTangent m` at every `p ∈ openSimplex m`.
 * `TauCeti.finrank_simplexTangent`: the tangent space has dimension `m - 1`.
@@ -160,6 +164,88 @@ def amariChentsov (p u v w : ι → ℝ) : ℝ := ∑ i, u i * v i * w i / p i ^
 /-- The defining formula of `amariChentsov`. -/
 theorem amariChentsov_def (p u v w : ι → ℝ) :
     amariChentsov p u v w = ∑ i, u i * v i * w i / p i ^ 2 := (rfl)
+
+/-! #### Multilinearity in the vector arguments -/
+
+/-- The Fisher–Rao form vanishes when its first vector is `0`. -/
+@[simp]
+theorem fisherRao_zero_left (p v : ι → ℝ) : fisherRao p 0 v = 0 := by
+  simp [fisherRao_def]
+
+/-- The Fisher–Rao form vanishes when its second vector is `0`. -/
+@[simp]
+theorem fisherRao_zero_right (p u : ι → ℝ) : fisherRao p u 0 = 0 := by
+  simp [fisherRao_def]
+
+/-- The Fisher–Rao form is additive in its first vector. -/
+theorem fisherRao_add_left (p u₁ u₂ v : ι → ℝ) :
+    fisherRao p (u₁ + u₂) v = fisherRao p u₁ v + fisherRao p u₂ v := by
+  simp only [fisherRao_def, Pi.add_apply, add_mul, add_div, sum_add_distrib]
+
+/-- The Fisher–Rao form is additive in its second vector. -/
+theorem fisherRao_add_right (p u v₁ v₂ : ι → ℝ) :
+    fisherRao p u (v₁ + v₂) = fisherRao p u v₁ + fisherRao p u v₂ := by
+  simp only [fisherRao_def, Pi.add_apply, mul_add, add_div, sum_add_distrib]
+
+/-- The Fisher–Rao form is homogeneous in its first vector. -/
+theorem fisherRao_smul_left (p : ι → ℝ) (c : ℝ) (u v : ι → ℝ) :
+    fisherRao p (c • u) v = c * fisherRao p u v := by
+  simp only [fisherRao_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_assoc, mul_div_assoc]
+
+/-- The Fisher–Rao form is homogeneous in its second vector. -/
+theorem fisherRao_smul_right (p : ι → ℝ) (c : ℝ) (u v : ι → ℝ) :
+    fisherRao p u (c • v) = c * fisherRao p u v := by
+  simp only [fisherRao_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_div_assoc]
+  exact sum_congr rfl fun i _ ↦ by ring
+
+/-- The Amari–Chentsov tensor vanishes when its first vector is `0`. -/
+@[simp]
+theorem amariChentsov_zero_left (p v w : ι → ℝ) : amariChentsov p 0 v w = 0 := by
+  simp [amariChentsov_def]
+
+/-- The Amari–Chentsov tensor vanishes when its second vector is `0`. -/
+@[simp]
+theorem amariChentsov_zero_middle (p u w : ι → ℝ) : amariChentsov p u 0 w = 0 := by
+  simp [amariChentsov_def]
+
+/-- The Amari–Chentsov tensor vanishes when its third vector is `0`. -/
+@[simp]
+theorem amariChentsov_zero_right (p u v : ι → ℝ) : amariChentsov p u v 0 = 0 := by
+  simp [amariChentsov_def]
+
+/-- The Amari–Chentsov tensor is additive in its first vector. -/
+theorem amariChentsov_add_left (p u₁ u₂ v w : ι → ℝ) :
+    amariChentsov p (u₁ + u₂) v w = amariChentsov p u₁ v w + amariChentsov p u₂ v w := by
+  simp only [amariChentsov_def, Pi.add_apply, add_mul, add_div, sum_add_distrib]
+
+/-- The Amari–Chentsov tensor is additive in its second vector. -/
+theorem amariChentsov_add_middle (p u v₁ v₂ w : ι → ℝ) :
+    amariChentsov p u (v₁ + v₂) w = amariChentsov p u v₁ w + amariChentsov p u v₂ w := by
+  simp only [amariChentsov_def, Pi.add_apply, mul_add, add_mul, add_div, sum_add_distrib]
+
+/-- The Amari–Chentsov tensor is additive in its third vector. -/
+theorem amariChentsov_add_right (p u v w₁ w₂ : ι → ℝ) :
+    amariChentsov p u v (w₁ + w₂) = amariChentsov p u v w₁ + amariChentsov p u v w₂ := by
+  simp only [amariChentsov_def, Pi.add_apply, mul_add, add_div, sum_add_distrib]
+
+/-- The Amari–Chentsov tensor is homogeneous in its first vector. -/
+theorem amariChentsov_smul_left (p : ι → ℝ) (c : ℝ) (u v w : ι → ℝ) :
+    amariChentsov p (c • u) v w = c * amariChentsov p u v w := by
+  simp only [amariChentsov_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_assoc, mul_div_assoc]
+
+/-- The Amari–Chentsov tensor is homogeneous in its second vector. -/
+theorem amariChentsov_smul_middle (p : ι → ℝ) (c : ℝ) (u v w : ι → ℝ) :
+    amariChentsov p u (c • v) w = c * amariChentsov p u v w := by
+  simp only [amariChentsov_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_div_assoc]
+  exact sum_congr rfl fun i _ ↦ by ring
+
+/-- The Amari–Chentsov tensor is homogeneous in its third vector. -/
+theorem amariChentsov_smul_right (p : ι → ℝ) (c : ℝ) (u v w : ι → ℝ) :
+    amariChentsov p u v (c • w) = c * amariChentsov p u v w := by
+  simp only [amariChentsov_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_div_assoc]
+  exact sum_congr rfl fun i _ ↦ by ring
+
+/-! #### Symmetry and positivity -/
 
 /-- The Fisher–Rao form is symmetric. -/
 theorem fisherRao_comm (p u v : ι → ℝ) : fisherRao p u v = fisherRao p v u := by
