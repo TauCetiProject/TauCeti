@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.L2.Product
 public import TauCeti.Analysis.OperatorIdeal.Family.HilbertSchmidt
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Iterated
+import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
 # Integral operators with square-integrable kernels
@@ -95,14 +96,6 @@ theorem inner_star_left_comm (f g : Lp 𝕜 2 ν) : ⟪star f, g⟫_𝕜 = ⟪st
   filter_upwards [coeFn_star f, coeFn_star g] with y hf hg
   simp [hf, hg, RCLike.inner_apply, mul_comm]
 
-@[simp]
-theorem star_eq_zero_iff {f : Lp 𝕜 2 ν} : star f = 0 ↔ f = 0 := by
-  constructor <;> intro h
-  · rw [← norm_eq_zero, ← sq_eq_zero_iff, ← inner_self_eq_norm_sq (𝕜 := 𝕜), ← inner_star_star,
-      h, inner_zero_left, map_zero]
-  · rw [h, ← norm_eq_zero, ← sq_eq_zero_iff, ← inner_self_eq_norm_sq (𝕜 := 𝕜), inner_star_star,
-      inner_zero_left, map_zero]
-
 end MeasureTheory.Lp
 
 namespace HilbertBasis
@@ -121,7 +114,7 @@ protected def star (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) : HilbertBasis ι �
     (by
       refine (Submodule.eq_bot_iff _).2 fun h hh ↦ ?_
       rw [Submodule.mem_orthogonal] at hh
-      rw [← star_star h, star_eq_zero_iff]
+      rw [← star_star h, star_eq_zero]
       refine b.eq_zero_of_forall_inner_eq_zero fun i ↦ ?_
       rw [inner_star_left_comm]
       exact hh _ (Submodule.subset_span ⟨i, rfl⟩))
@@ -361,11 +354,7 @@ theorem integralOperatorL2_prodMul_star (w : Lp 𝕜 2 μ) (u : Lp 𝕜 2 ν) :
 theorem hilbertSchmidtNorm_smulRight_innerSL (u : Lp 𝕜 2 ν) (w : Lp 𝕜 2 μ) :
     ((innerSL 𝕜 u).smulRight w).hilbertSchmidtNorm = ‖u‖ * ‖w‖ := by
   rw [← integralOperatorL2_prodMul_star, hilbertSchmidtNorm_integralOperatorL2, norm_prodMul,
-    mul_comm]
-  congr 1
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← RCLike.ofReal_inj (K := 𝕜),
-    RCLike.ofReal_pow, RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K,
-    ← inner_self_eq_norm_sq_to_K, inner_star_star]
+    mul_comm, norm_star]
 
 end HilbertSchmidt
 
