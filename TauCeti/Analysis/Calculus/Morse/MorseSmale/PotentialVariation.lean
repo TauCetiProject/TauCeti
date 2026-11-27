@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Fredholm
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import TauCeti.Analysis.Calculus.BumpFunction.Path
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.Morse.GradientFlow
@@ -196,39 +195,12 @@ theorem inner_gradient_comp_eq_zero_of_memLp (hf : ContDiff ℝ 2 f)
 
 /-! ### A potential variation pairing positively with a normal path -/
 
-/-- **The level-hitting time near a regular point.** Let `f` be `Cⁿ`, `n ≠ 0`, and `γ` a negative
-gradient trajectory with `∇f(γ s₀) ≠ 0`, so that `γ` is `Cⁿ` as well. Then `f ∘ γ` has a local
-inverse `σ` near `s₀`, of class `Cⁿ` on an open set `T` containing `f (γ s₀)`:
-`σ (f (γ s)) = s` for `s` near `s₀`. So `σ (f x)` is the time at which the trajectory reaches the
-level of `f` at `x`. -/
-private theorem exists_contDiffAt_comp_eq {n : ℕ∞} (hf : ContDiff ℝ n f)
-    (hn0 : (n : WithTop ℕ∞) ≠ 0) (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {s₀ : ℝ}
-    (hcrit : ∇ f (γ s₀) ≠ 0) :
-    ∃ σ : ℝ → ℝ, ∃ T : Set ℝ, IsOpen T ∧ f (γ s₀) ∈ T ∧ (∀ a ∈ T, ContDiffAt ℝ n σ a) ∧
-      ∀ᶠ s in 𝓝 s₀, σ (f (γ s)) = s := by
-  have hγn := hγ.contDiff_neg_gradient hf (Order.one_le_iff_ne_zero.2 (by exact_mod_cast hn0))
-  have hφ (t : ℝ) := hγ.hasDerivAt_comp_neg_gradient (t := t) (hf.differentiable hn0 _)
-  have hφ0 : -‖∇ f (γ s₀)‖ ^ 2 ≠ 0 := by simpa using hcrit
-  have hφn : ContDiff ℝ n (f ∘ γ) := hf.comp hγn
-  -- The inverse function theorem for `f ∘ γ`, whose derivative `-‖∇f(γ t)‖²` is nonzero at `s₀`.
-  set Φ := hφn.contDiffAt.toOpenPartialHomeomorph (f ∘ γ) ((hφ s₀).hasFDerivAt_equiv hφ0) hn0
-  have hs₀ : s₀ ∈ Φ.source :=
-    hφn.contDiffAt.mem_toOpenPartialHomeomorph_source ((hφ s₀).hasFDerivAt_equiv hφ0) hn0
-  have hinv : Φ.symm (f (γ s₀)) = s₀ := Φ.left_inv hs₀
-  have hgc : Continuous fun t ↦ ∇ f (γ t) :=
-    (hf.continuous_gradient hn0).comp hγ.continuous
-  refine ⟨Φ.symm, Φ.target ∩ Φ.symm ⁻¹' {t | ∇ f (γ t) ≠ 0},
-    Φ.isOpen_inter_preimage_symm (isOpen_ne_fun hgc continuous_const),
-    ⟨Φ.map_source hs₀, by simpa [hinv] using hcrit⟩,
-    fun a ha ↦ Φ.contDiffAt_symm_deriv (by simpa using ha.2) ha.1 (hφ _) hφn.contDiffAt, ?_⟩
-  filter_upwards [Φ.open_source.mem_nhds hs₀] with s hs using Φ.left_inv hs
-
 /-- **A function vanishing on the trajectory with prescribed normal derivative.** Let `f` be `Cⁿ`,
 `n ≠ 0`, and `γ` a negative gradient trajectory with `∇f(γ s₀) ≠ 0`, so that `γ` is `Cⁿ` as well.
 For every vector `w` there is a function `g`, of class `Cⁿ` at the points of an open set
 `O ∋ γ s₀`, which vanishes on the trajectory at times near `s₀`, and whose derivative at every
 point `γ s ∈ O` is `⟪w, ·⟫` on the vectors orthogonal to `∇f(γ s)`: `g x = ⟪w, x - γ (σ (f x))⟫`
-for the level-hitting time `σ ∘ f` of `TauCeti.exists_contDiffAt_comp_eq`. -/
+for the level-hitting time `σ ∘ f` of `IsIntegralCurve.exists_contDiffAt_levelHittingTime`. -/
 private theorem exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner {n : ℕ∞}
     (hf : ContDiff ℝ n f) (hn0 : (n : WithTop ℕ∞) ≠ 0)
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) (w : E) :
@@ -236,7 +208,7 @@ private theorem exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner {n : ℕ∞
       (∀ᶠ s in 𝓝 s₀, g (γ s) = 0) ∧
       ∀ s, γ s ∈ O → ∀ v, ⟪v, ∇ f (γ s)⟫ = 0 → fderiv ℝ g (γ s) v = ⟪w, v⟫ := by
   have hγn := hγ.contDiff_neg_gradient hf (Order.one_le_iff_ne_zero.2 (by exact_mod_cast hn0))
-  obtain ⟨σ, T, hT, hsT, hσ, hσγ⟩ := exists_contDiffAt_comp_eq hf hn0 hγ hcrit
+  obtain ⟨σ, T, hT, hsT, hσ, hσγ⟩ := hγ.exists_contDiffAt_levelHittingTime hf hn0 hcrit
   have hk {x : E} (hx : f x ∈ T) : ContDiffAt ℝ n (fun y ↦ γ (σ (f y))) x :=
     hγn.contDiffAt.comp x ((hσ _ hx).comp x hf.contDiffAt)
   refine ⟨f ⁻¹' T, hT.preimage hf.continuous, hsT, fun x ↦ ⟪w, x - γ (σ (f x))⟫,
