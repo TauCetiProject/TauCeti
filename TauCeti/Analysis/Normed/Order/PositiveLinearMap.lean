@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
-public import TauCeti.Analysis.Normed.Order.OrderUnit
+public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
 import TauCeti.Algebra.Order.Ring.Abs
 
 /-!

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Order.OrderUnit.Completion
-public import TauCeti.Analysis.Normed.Order.StateSpace
+public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
 import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Order.StateSpace
+public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 
 /-!
@@ -18,6 +18,8 @@ every state on the domain of a unit-preserving linear isometry extends to a stat
 
 * `TauCeti.IsOrderUnitNorm.surjOn_pullbackFunctional_stateSpace`: extension of states along a
   unit-preserving linear isometry via Hahn–Banach.
+* `TauCeti.IsOrderUnitNorm.exists_extension_mem_stateSpace`: extension of states from subspaces
+  containing `e`.
 
 ## References
 
@@ -54,6 +56,18 @@ theorem IsOrderUnitNorm.surjOn_pullbackFunctional_stateSpace {E F : Type*}
   refine ⟨StrongDual.toWeakDual g,
     hf.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.mpr ⟨hgnorm.trans hφnorm, hgf⟩, ?_⟩
   exact DFunLike.ext _ _ fun x => by simpa using DFunLike.congr_fun hg x
+
+/-- **Extension of states.** Every state of a subspace `p` containing `e` extends to a state of
+`E`, by the Hahn–Banach theorem. The extension need not be unique. -/
+theorem IsOrderUnitNorm.exists_extension_mem_stateSpace {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E] {e : E}
+    [IsOrderedAddMonoid E] (h : IsOrderUnitNorm e) (p : Submodule ℝ E) (hp : e ∈ p)
+    {ψ : WeakDual ℝ p} (hψ : ψ ∈ stateSpace (⟨e, hp⟩ : p)) :
+    ∃ φ ∈ stateSpace e, ∀ x : p, φ x = ψ x := by
+  obtain ⟨φ, hφ, hφψ⟩ :=
+    (h.submodule p hp).surjOn_pullbackFunctional_stateSpace h p.subtypeₗᵢ rfl hψ
+  refine ⟨φ, hφ, fun x => ?_⟩
+  simpa [ContinuousLinearMap.pullbackFunctional_apply] using DFunLike.congr_fun hφψ x
 
 end Extension
 

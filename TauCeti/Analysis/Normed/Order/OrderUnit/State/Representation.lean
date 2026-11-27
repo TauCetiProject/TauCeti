@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Order.StateSpace
+public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
 
 /-!
 # Norm attainment and evaluation representation by states
@@ -58,15 +58,7 @@ theorem IsOrderUnitNorm.exists_mem_stateSpace_abs_apply_eq_norm (a : E) :
   obtain ⟨φ₀, hφ₀, hmax⟩ := he.isCompact_stateSpace.exists_isMaxOn he.stateSpace_nonempty
     hcont.continuousOn
   refine ⟨φ₀, hφ₀, le_antisymm (he.abs_apply_le_of_mem_stateSpace hφ₀ a) ?_⟩
-  refine (he.norm_le_iff (abs_nonneg _)).mpr ⟨?_, ?_⟩
-  · refine he.le_iff_forall_mem_stateSpace.mpr fun φ hφ => ?_
-    have hle : |φ a| ≤ |φ₀ a| := hmax hφ
-    rw [map_neg, map_smul, smul_eq_mul, apply_eq_one_of_mem_stateSpace hφ, mul_one]
-    exact (abs_le.mp hle).1
-  · refine he.le_iff_forall_mem_stateSpace.mpr fun φ hφ => ?_
-    have hle : |φ a| ≤ |φ₀ a| := hmax hφ
-    rw [map_smul, smul_eq_mul, apply_eq_one_of_mem_stateSpace hφ, mul_one]
-    exact (abs_le.mp hle).2
+  exact (he.norm_le_iff_forall_mem_stateSpace (abs_nonneg _)).2 fun φ hφ => hmax hφ
 
 end Attainment
 

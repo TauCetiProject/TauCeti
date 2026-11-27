@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import TauCeti.Analysis.LocallyConvex.WeakDual.SelfAdjoint
-public import TauCeti.Analysis.Normed.Order.StateSpace
+public import TauCeti.Analysis.Normed.Order.OrderUnit.State.Basic
 
 /-!
 # Correspondence between C⋆-algebra states and order-unit states
@@ -83,12 +83,9 @@ theorem mapsTo_extendFromSelfAdjoint_stateSpace :
 /-- On any C⋆-algebra state `φ`, extending the restriction to `selfAdjoint A` recovers `φ`. -/
 theorem extendFromSelfAdjoint_restrictToSelfAdjoint_of_mem_stateSpace {φ : WeakDual ℂ A}
     (hφ : φ ∈ TauCeti.stateSpace A) :
-    extendFromSelfAdjoint (restrictToSelfAdjoint φ) = φ := by
-  refine extendFromSelfAdjoint_restrictToSelfAdjoint fun a => ?_
-  let ω : A →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => TauCeti.map_nonneg_of_mem_stateSpace hφ
-  have hstar : star (ω (a : A)) = ω (a : A) := by
-    rw [← map_star, a.property.star_eq]
-  exact Complex.conj_eq_iff_im.mp hstar
+    extendFromSelfAdjoint (restrictToSelfAdjoint φ) = φ :=
+  extendFromSelfAdjoint_restrictToSelfAdjoint fun a =>
+    RCLike.conj_eq_iff_im.1 (TauCeti.isSelfAdjoint_apply_of_mem_stateSpace hφ a.property).star_eq
 
 /-- **C⋆-algebra state correspondence.** Restriction to `selfAdjoint A` and complex-linear
 extension define a weak-star homeomorphism between `TauCeti.stateSpace A` and
