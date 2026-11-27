@@ -540,6 +540,11 @@ theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).di
   simp only [discrim_def, discrim, smul_a', smul_b', smul_c', smul_eq_mul]
   ring
 
+/-- Negating a form preserves its discriminant. -/
+@[simp] theorem discrim_neg (f : BinaryQuadraticForm R) : (-f).discrim = f.discrim := by
+  simp only [discrim_def, discrim, neg_a, neg_b, neg_c]
+  ring
+
 /-- A form `g • f` has discriminant `-D` exactly when `f` has discriminant `-D / g²`. -/
 theorem discrim_natCast_smul_eq_neg_iff {D g : ℕ} (hg : g ^ 2 ∣ D) (hg0 : g ≠ 0)
     (f : BinaryQuadraticForm ℤ) :

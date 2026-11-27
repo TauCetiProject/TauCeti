@@ -109,8 +109,7 @@ theorem secondRoot_def (f : BinaryQuadraticForm ℤ) :
 /-- Negating a form exchanges its first and second roots. -/
 @[simp] theorem firstRoot_neg (f : BinaryQuadraticForm ℤ) :
     (-f).firstRoot = f.secondRoot := by
-  have hd : (-f).discrim = f.discrim := by simp [discrim_def, _root_.discrim]
-  rw [firstRoot_def, secondRoot_def, hd, neg_a, neg_b]
+  rw [firstRoot_def, secondRoot_def, discrim_neg, neg_a, neg_b]
   push_cast
   ring
 

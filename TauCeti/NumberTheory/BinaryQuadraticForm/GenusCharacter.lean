@@ -91,6 +91,18 @@ theorem genusChar_eq_zero {χ : MulChar (ZMod n) R} {f : BinaryQuadraticForm ℤ
   rw [genusChar_def]
   exact χ.map_nonunit (hf _ _)
 
+/-- **Negating a form twists its genus character by `χ(-1)`**: `-f` and `f` take values prime to
+`n` at the same points, and every value of `-f` is the negative of the value of `f`. So negation
+preserves the genus characters with `χ(-1) = 1` and changes the sign of the others, on every form
+taking a value prime to the modulus. -/
+theorem genusChar_neg (χ : MulChar (ZMod n) R) (f : BinaryQuadraticForm ℤ) :
+    genusChar χ (-f) = χ (-1) * genusChar χ f := by
+  have hp : (fun v : ℤ × ℤ ↦ IsUnit (((-f).eval v.1 v.2 : ℤ) : ZMod n)) =
+      fun v ↦ IsUnit ((f.eval v.1 v.2 : ℤ) : ZMod n) := by
+    funext v
+    rw [eval_neg, Int.cast_neg, IsUnit.neg_iff]
+  rw [genusChar_def, genusChar_def, hp, eval_neg, Int.cast_neg, neg_eq_neg_one_mul, map_mul]
+
 /-- A primitive form takes a value prime to any nonzero `n` (Cox, Lemma 2.25). -/
 theorem IsPrimitive.exists_isUnit_eval {f : BinaryQuadraticForm ℤ} (hf : f.IsPrimitive)
     (hn : n ≠ 0) : ∃ x y : ℤ, IsUnit ((f.eval x y : ℤ) : ZMod n) := by

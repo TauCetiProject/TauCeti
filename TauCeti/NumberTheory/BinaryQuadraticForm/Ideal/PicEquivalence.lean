@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Class
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Normalization
+public import TauCeti.NumberTheory.BinaryQuadraticForm.NegativeDefinite
 
 /-!
 # Positive definite proper classes and the Picard group
@@ -15,6 +16,10 @@ Normalization expresses an invertible ideal as a positive rational multiple of t
 ideal of a primitive form with positive leading coefficient. At negative discriminant
 this gives a positive definite form. The principal factor vanishes in the Picard group,
 so `posDefProperClassToPic` is surjective. Its injectivity then gives the equivalence.
+
+Negative definite forms enter the dictionary only through negation: a negative definite class is
+sent to the Picard class of the ideal of its negative (`negDefProperClassEquivPic`). The ideal
+formula is never applied to the negative definite form itself.
 
 ## References
 
@@ -65,5 +70,23 @@ def posDefProperClassEquivPic (n : ℕ) [NeZero n]
 @[simp] theorem posDefProperClassEquivPic_apply (n : ℕ) [NeZero n]
     (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) (q : PosDefProperClass n) :
     posDefProperClassEquivPic n hn q = posDefProperClassToPic n hn q := (rfl)
+
+/-- **The Picard dictionary for negative definite forms.** Proper classes of primitive negative
+definite forms of discriminant `-n` are in bijection with the Picard group of the quadratic order
+of discriminant `-n`: a class is first negated (`posDefProperClassEquivNegDefProperClass`) and
+then sent through `posDefProperClassEquivPic`. -/
+def negDefProperClassEquivPic (n : ℕ) [NeZero n]
+    (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
+    NegDefProperClass n ≃ @Pic (QuadraticAlgebra ℚ (-((n : ℤ) : ℚ)) 0)
+      (inferInstanceAs (Field (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)))
+      (inferInstanceAs (NumberField (QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0)))
+      (QuadraticOrder.numberFieldOrder (-n : ℤ) hn) :=
+  (posDefProperClassEquivNegDefProperClass n).symm.trans (posDefProperClassEquivPic n hn)
+
+/-- The Picard class of a negative definite proper class is that of its negative. -/
+@[simp] theorem negDefProperClassEquivPic_apply (n : ℕ) [NeZero n]
+    (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) (q : NegDefProperClass n) :
+    negDefProperClassEquivPic n hn q =
+      posDefProperClassToPic n hn ((posDefProperClassEquivNegDefProperClass n).symm q) := (rfl)
 
 end TauCeti.BinaryQuadraticForm

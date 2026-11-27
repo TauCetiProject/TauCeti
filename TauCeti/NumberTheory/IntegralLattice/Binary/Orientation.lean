@@ -5,6 +5,7 @@ Authors: Wentao Li
 -/
 module
 
+public import TauCeti.GroupTheory.GroupAction.DistribMulAction
 public import TauCeti.NumberTheory.IntegralLattice.Binary.NormForm
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Reflection
 public import Mathlib.LinearAlgebra.Orientation
@@ -114,6 +115,16 @@ theorem binaryProperClass_eq_mk (hV : Module.finrank ℚ V = 2)
     (L.finrank_carrier.trans hV)).adjustToOrientation o
   exact L.binaryProperClass_eq_of_orientation_eq b b₀
     (hb.trans (Basis.orientation_adjustToOrientation _ o).symm)
+
+/-- **Negating the lattice form negates its proper class.** For every orientation, the proper
+class of `-L`, the lattice `L(-1)`, is the negative of the proper class of `L`: a carrier basis
+has the negated norm form for `-L`, and taking primitive parts commutes with negation. -/
+theorem binaryProperClass_neg (hV : Module.finrank ℚ V = 2) (o : Orientation ℤ L (Fin 2)) :
+    (-L).binaryProperClass hV o = -L.binaryProperClass hV o := by
+  let b := (Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)).adjustToOrientation o
+  have hb : b.orientation = o := Basis.orientation_adjustToOrientation _ o
+  rw [(-L).binaryProperClass_eq_mk b hV o hb, L.binaryProperClass_eq_mk b hV o hb,
+    binaryNormForm_neg, BinaryQuadraticForm.primPart_neg, MulAction.orbitRel.Quotient.neg_mk]
 
 /-- **Bases representing a proper class.** If the oriented proper class of `L` is the class of
 `f`, then some carrier basis of that orientation has norm form `c f`, where `c` is the content. -/
