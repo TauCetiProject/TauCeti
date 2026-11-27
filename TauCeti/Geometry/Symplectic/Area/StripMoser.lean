@@ -53,7 +53,9 @@ condition holds (`TauCeti.stripMoserVectorField_snd_mk_zero`,
 `TauCeti.stripMoserVectorField_snd_mk_one`), so it is tangent to both boundary lines, and it
 is invariant under the deck translation `(x, y) ↦ (x + 1, y)`
 (`TauCeti.stripMoserVectorField_add_one`). It is jointly `C^n` in `(t, p)` where `1 + t g ≠ 0`
-(`TauCeti.contDiffOn_stripMoserVectorField`). By Moser's identity
+(`TauCeti.contDiffOn_stripMoserVectorField`), and for a jointly `C^n` family of functions `g` it
+is moreover jointly `C^n` in the parameter (`TauCeti.contDiffOn_parametric_stripMoserVectorField`).
+By Moser's identity
 (`TauCeti.compContinuousLinearMap_fderiv_eq_of_curryLeft_eq_neg`), a family of maps `ψ_t` moving
 along `X_t` satisfies `ψ₁^* (ρ dx ∧ dy) = ψ₀^* (dx ∧ dy)`
 (`TauCeti.compContinuousLinearMap_fderiv_eq_of_stripMoserVectorField`). Since every two-form on
@@ -159,28 +161,56 @@ theorem stripMoserDxCoeff_one_eq_zero_iff :
 theorem stripMoserDyCoeff_mk_zero (y : ℝ) : stripMoserDyCoeff g (0, y) = 0 := by
   simp [stripMoserDyCoeff]
 
+/-! ### Smoothness, jointly in a parameter -/
+
+section Parametric
+
+variable {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H] {G : H → ℝ × ℝ → ℝ}
+
+/-- The row means of a jointly `C^n` family of functions are jointly `C^n` in the parameter and
+the height. -/
+theorem contDiff_parametric_stripRowMean (hG : ContDiff ℝ n (Function.uncurry G)) :
+    ContDiff ℝ n fun q : H × ℝ ↦ stripRowMean (G q.1) q.2 :=
+  ContDiff.parametric_intervalIntegral (f := fun q : (H × ℝ) × ℝ ↦ G q.1.1 (q.2, q.1.2))
+    (hG.comp (contDiff_fst.fst.prodMk (contDiff_snd.prodMk contDiff_fst.snd)))
+
+/-- The `dx`-coefficients of the Moser primitives of a jointly `C^n` family of functions are
+jointly `C^n` in the parameter and the height. -/
+theorem contDiff_parametric_stripMoserDxCoeff (hG : ContDiff ℝ n (Function.uncurry G)) :
+    ContDiff ℝ n fun q : H × ℝ ↦ stripMoserDxCoeff (G q.1) q.2 :=
+  (contDiff_parametric_primitive_of_contDiff (f := fun h r ↦ stripRowMean (G h) r)
+    (contDiff_parametric_stripRowMean hG) 0).neg
+
+/-- The `dy`-coefficients of the Moser primitives of a jointly `C^n` family of functions are
+jointly `C^n` in the parameter and the point. -/
+theorem contDiff_parametric_stripMoserDyCoeff (hG : ContDiff ℝ n (Function.uncurry G)) :
+    ContDiff ℝ n fun q : H × (ℝ × ℝ) ↦ stripMoserDyCoeff (G q.1) q.2 :=
+  (contDiff_parametric_primitive_of_contDiff
+    (f := fun (q : H × (ℝ × ℝ)) s ↦ G q.1 (s, q.2.2) - stripRowMean (G q.1) q.2.2)
+    ((hG.comp (contDiff_fst.fst.prodMk (contDiff_snd.prodMk contDiff_fst.snd.snd))).sub
+      ((contDiff_parametric_stripRowMean hG).comp (contDiff_fst.fst.prodMk contDiff_fst.snd.snd)))
+    0).comp (contDiff_id.prodMk contDiff_snd.fst)
+
+end Parametric
+
 /-- The row means of a `C^n` function are `C^n`. -/
 theorem contDiff_stripRowMean (hg : ContDiff ℝ n g) : ContDiff ℝ n (stripRowMean g) :=
-  ContDiff.parametric_intervalIntegral (f := fun q : ℝ × ℝ ↦ g (q.2, q.1))
-    (hg.comp (contDiff_snd.prodMk contDiff_fst))
+  (contDiff_parametric_stripRowMean (G := fun _ : ℝ ↦ g) (hg.comp contDiff_snd)).comp
+    ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id)
 
 /-- The row means of a continuous function are continuous. -/
 theorem continuous_stripRowMean (hg : Continuous g) : Continuous (stripRowMean g) :=
   (contDiff_stripRowMean (n := 0) (contDiff_zero.2 hg)).continuous
 
 /-- The `dx`-coefficient of the Moser primitive of a `C^n` function is `C^n`. -/
-theorem contDiff_stripMoserDxCoeff (hg : ContDiff ℝ n g) : ContDiff ℝ n (stripMoserDxCoeff g) := by
-  have h := contDiff_parametric_primitive_of_contDiff (f := fun (_ : ℝ) r ↦ stripRowMean g r)
-    ((contDiff_stripRowMean hg).comp contDiff_snd) 0
-  exact (h.comp (contDiff_id.prodMk contDiff_id)).neg
+theorem contDiff_stripMoserDxCoeff (hg : ContDiff ℝ n g) : ContDiff ℝ n (stripMoserDxCoeff g) :=
+  (contDiff_parametric_stripMoserDxCoeff (G := fun _ : ℝ ↦ g) (hg.comp contDiff_snd)).comp
+    ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id)
 
 /-- The `dy`-coefficient of the Moser primitive of a `C^n` function is `C^n`. -/
 theorem contDiff_stripMoserDyCoeff (hg : ContDiff ℝ n g) : ContDiff ℝ n (stripMoserDyCoeff g) :=
-  (contDiff_parametric_primitive_of_contDiff
-    (f := fun (p : ℝ × ℝ) s ↦ g (s, p.2) - stripRowMean g p.2)
-    ((hg.comp (contDiff_snd.prodMk contDiff_fst.snd)).sub
-      ((contDiff_stripRowMean hg).comp contDiff_fst.snd)) 0).comp
-    (contDiff_id.prodMk contDiff_fst)
+  (contDiff_parametric_stripMoserDyCoeff (G := fun _ : ℝ ↦ g) (hg.comp contDiff_snd)).comp
+    ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id)
 
 /-- The Moser primitive of a `C^n` function is `C^n`. -/
 theorem contDiff_stripMoserPrimitive (hg : ContDiff ℝ n g) :
@@ -293,6 +323,11 @@ theorem stripMoserVectorField_snd (t : ℝ) (p : ℝ × ℝ) :
     (stripMoserVectorField g t p).2 = (1 + t * g p)⁻¹ * stripMoserDxCoeff g p.2 := by
   simp [stripMoserVectorField]
 
+/-- The Moser vector field of the zero function vanishes. -/
+@[simp]
+theorem stripMoserVectorField_zero (t : ℝ) (p : ℝ × ℝ) : stripMoserVectorField 0 t p = 0 := by
+  simp [stripMoserVectorField, stripMoserDyCoeff, stripMoserDxCoeff, stripRowMean]
+
 /-- The Moser vector field is tangent to the bottom boundary line `y = 0`. -/
 theorem stripMoserVectorField_snd_mk_zero (t x : ℝ) :
     (stripMoserVectorField g t (x, 0)).2 = 0 := by
@@ -327,18 +362,30 @@ theorem curryLeft_stripMoserVectorField {t : ℝ} {p : ℝ × ℝ} (h : 1 + t * 
   field_simp
   ring
 
+/-- The Moser vector fields of a jointly `C^n` family of functions `G h` are jointly `C^n` in the
+parameter `h`, the time `t` and the position `p`, where `1 + t G h p ≠ 0`. -/
+theorem contDiffOn_parametric_stripMoserVectorField {H : Type*} [NormedAddCommGroup H]
+    [NormedSpace ℝ H] {G : H → ℝ × ℝ → ℝ} (hG : ContDiff ℝ n (Function.uncurry G)) :
+    ContDiffOn ℝ n (fun q : H × ℝ × (ℝ × ℝ) ↦ stripMoserVectorField (G q.1) q.2.1 q.2.2)
+      {q | 1 + q.2.1 * G q.1 q.2.2 ≠ 0} := by
+  have hinv : ContDiffOn ℝ n (fun q : H × ℝ × (ℝ × ℝ) ↦ (1 + q.2.1 * G q.1 q.2.2)⁻¹)
+      {q | 1 + q.2.1 * G q.1 q.2.2 ≠ 0} :=
+    (contDiff_const.add (contDiff_snd.fst.mul
+      (hG.comp (contDiff_fst.prodMk contDiff_snd.snd)))).contDiffOn.inv fun _ hq ↦ hq
+  have hv : ContDiff ℝ n fun q : H × ℝ × (ℝ × ℝ) ↦
+      (-stripMoserDyCoeff (G q.1) q.2.2, stripMoserDxCoeff (G q.1) q.2.2.2) :=
+    ((contDiff_parametric_stripMoserDyCoeff hG).comp
+      (contDiff_fst.prodMk contDiff_snd.snd)).neg.prodMk
+      ((contDiff_parametric_stripMoserDxCoeff hG).comp (contDiff_fst.prodMk contDiff_snd.snd.snd))
+  exact hinv.smul hv.contDiffOn
+
 /-- The Moser vector field is jointly `C^n` in time and position where `1 + t g ≠ 0`. -/
 theorem contDiffOn_stripMoserVectorField (hg : ContDiff ℝ n g) :
     ContDiffOn ℝ n (fun q : ℝ × (ℝ × ℝ) ↦ stripMoserVectorField g q.1 q.2)
-      {q | 1 + q.1 * g q.2 ≠ 0} := by
-  have hinv : ContDiffOn ℝ n (fun q : ℝ × (ℝ × ℝ) ↦ (1 + q.1 * g q.2)⁻¹)
       {q | 1 + q.1 * g q.2 ≠ 0} :=
-    (contDiff_const.add (contDiff_fst.mul (hg.comp contDiff_snd))).contDiffOn.inv fun _ hq ↦ hq
-  have hv : ContDiff ℝ n fun q : ℝ × (ℝ × ℝ) ↦
-      (-stripMoserDyCoeff g q.2, stripMoserDxCoeff g q.2.2) :=
-    ((contDiff_stripMoserDyCoeff hg).comp contDiff_snd).neg.prodMk
-      ((contDiff_stripMoserDxCoeff hg).comp contDiff_snd.snd)
-  exact hinv.smul hv.contDiffOn
+  (contDiffOn_parametric_stripMoserVectorField (G := fun _ : ℝ ↦ g)
+    (hg.comp contDiff_snd)).comp ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id).contDiffOn
+    fun _ hq ↦ hq
 
 /-- **Moser's argument on the strip.** Let `g` be `C¹`, and let `ψ_t`, `t ∈ [0, 1]`, be a family
 of maps moving along the Moser vector field `X_t`, with `1 + t g ≠ 0` along the trajectory of

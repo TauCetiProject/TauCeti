@@ -62,8 +62,10 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence, with the
   same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`), bounded below by `‖A⁻¹‖⁻¹`
   (`ContinuousLinearEquiv.norm_le_norm_symm_mul_norm_adjointEquiv`).
-* `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
-  Hilbert spaces as a real-linear continuous map.
+* `ContinuousLinearMap.adjointRealLinearIsometryEquiv`: the adjoint `T ↦ T†` of operators between
+  real or complex Hilbert spaces as a real-linear isometric equivalence, inverse to the one in the
+  reverse direction (`ContinuousLinearMap.adjointRealLinearIsometryEquiv_symm`), and
+  `ContinuousLinearMap.adjointRealCLM`, its underlying real-linear continuous map.
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
   continuous family it is continuous (`Continuous.clm_adjoint`). Its derivative is the adjoint of
   the derivative (`HasFDerivAt.clm_adjoint`, `fderiv_clm_adjoint`).
@@ -108,7 +110,9 @@ Passing a finite-dimensional operator to continuous linear maps preserves its ad
 The Hermitian part `H` of a finite-dimensional operator `T`, given by `2 • H = T + T†`, has the
 real quadratic form of `T` (`LinearMap.re_inner_apply_self_eq_of_two_smul_eq`) and is symmetric
 (`LinearMap.isSymmetric_of_two_smul_eq`).
-Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`).
+Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`), and
+conjugation by an isometric isomorphism of Hilbert spaces commutes with adjoints
+(`LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv`).
 
 -/
 
@@ -246,17 +250,38 @@ variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSp
   [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] [CompleteSpace V] [NormedAddCommGroup W]
   [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
 
-/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear map: the conjugate-linear isometry
-`ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam theorem. -/
+/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear isometric equivalence: the
+conjugate-linear isometry `ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam
+theorem. -/
+noncomputable def adjointRealLinearIsometryEquiv : (V →L[𝕜] W) ≃ₗᵢ[ℝ] (W →L[𝕜] V) :=
+  IsometryEquiv.toRealLinearIsometryEquivOfMapZero
+    (adjoint (𝕜 := 𝕜) (E := V) (F := W)).toIsometryEquiv (by simp)
+
+@[simp]
+theorem adjointRealLinearIsometryEquiv_apply (T : V →L[𝕜] W) :
+    adjointRealLinearIsometryEquiv T = adjoint T := by
+  rw [adjointRealLinearIsometryEquiv, IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero,
+    LinearIsometryEquiv.coe_toIsometryEquiv]
+
+/-- The adjoint is an involution, so its real-linear isometric equivalence is inverse to the one
+in the reverse direction. -/
+@[simp]
+theorem adjointRealLinearIsometryEquiv_symm :
+    (adjointRealLinearIsometryEquiv (𝕜 := 𝕜) (V := V) (W := W)).symm =
+      adjointRealLinearIsometryEquiv := by
+  ext T : 1
+  rw [LinearIsometryEquiv.symm_apply_eq, adjointRealLinearIsometryEquiv_apply,
+    adjointRealLinearIsometryEquiv_apply, adjoint_adjoint]
+
+/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear continuous map: the underlying map of
+`ContinuousLinearMap.adjointRealLinearIsometryEquiv`. -/
 noncomputable def adjointRealCLM : (V →L[𝕜] W) →L[ℝ] (W →L[𝕜] V) :=
-  (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
-    (adjoint (𝕜 := 𝕜) (E := V) (F := W)).toIsometryEquiv (by simp)).toContinuousLinearEquiv
+  (adjointRealLinearIsometryEquiv (𝕜 := 𝕜) (V := V) (W := W)).toContinuousLinearEquiv
 
 @[simp]
 theorem adjointRealCLM_apply (T : V →L[𝕜] W) : adjointRealCLM T = adjoint T := by
   rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, adjointRealLinearIsometryEquiv_apply]
 
 /-- The pointwise adjoint `x ↦ (f x)†` of a `C^n` family of operators between Hilbert spaces is
 `C^n`. -/
@@ -672,6 +697,21 @@ instance instIsIsometricSMul [CompleteSpace E] : IsIsometricSMul (unitary (E →
   isometry_smul u := (Unitary.linearIsometryEquiv u).isometry
 
 end Unitary
+
+namespace LinearIsometryEquiv
+
+/-- Conjugation `T ↦ e ∘ T ∘ e⁻¹` by an isometric isomorphism of Hilbert spaces commutes with
+adjoints. -/
+@[simp]
+theorem adjoint_conjContinuousAlgEquiv [CompleteSpace E] [CompleteSpace F] (e : E ≃ₗᵢ[𝕜] F)
+    (T : E →L[𝕜] E) :
+    ContinuousLinearMap.adjoint (e.toContinuousLinearEquiv.conjContinuousAlgEquiv T) =
+      e.toContinuousLinearEquiv.conjContinuousAlgEquiv (ContinuousLinearMap.adjoint T) :=
+  -- Mathlib's star algebra equivalence `e.conjStarAlgEquiv` is defined as this conjugation
+  -- together with its compatibility with `star = adjoint`, so `map_star` is the statement.
+  (map_star e.conjStarAlgEquiv T).symm
+
+end LinearIsometryEquiv
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 

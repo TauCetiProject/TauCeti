@@ -35,13 +35,16 @@ the isomorphisms `η (M i) ≅ D.obj i` and the naturality isomorphisms of `η`
 (`Pseudofunctor.StrongTrans.targetOverlapIso`,
 `Pseudofunctor.StrongTrans.mapIso_liftDescentData_iso`), which satisfy the identity and cocycle
 laws (`Pseudofunctor.StrongTrans.targetOverlapIso_self`,
-`Pseudofunctor.StrongTrans.targetOverlapIso_trans`). When the components of `η` are equivalences of
-categories, `η.mapDescentData f` is an equivalence. Comparing the descent functors of `F` and `G`
-through it shows that the descent of morphisms and effective descent along a presieve transfer
-along `η`, so that `F` is a prestack, respectively a stack, if and only if `G` is
-(`Pseudofunctor.isPrestack_iff_of_isEquivalence`, `Pseudofunctor.isStack_iff_of_isEquivalence`).
-The descent of morphisms already transfers from `G` to `F` when the components of `η` are only
-fully faithful (`Pseudofunctor.isPrestack_source_of_fullyFaithful`).
+`Pseudofunctor.StrongTrans.targetOverlapIso_trans`). Hence if `F` has effective descent and `G`
+descent of morphisms along a family, an object of `G` whose pullbacks along the family are in the
+essential image of `η` is itself in it (`Pseudofunctor.StrongTrans.mem_essImage_of_toDescentData`).
+When the components of `η` are equivalences of categories, `η.mapDescentData f` is an equivalence.
+Comparing the descent functors of `F` and `G` through it shows that the descent of morphisms and
+effective descent along a presieve transfer along `η`, so that `F` is a prestack, respectively a
+stack, if and only if `G` is (`Pseudofunctor.isPrestack_iff_of_isEquivalence`,
+`Pseudofunctor.isStack_iff_of_isEquivalence`). The descent of morphisms already transfers from
+`G` to `F` when the components of `η` are only fully faithful
+(`Pseudofunctor.isPrestack_source_of_fullyFaithful`).
 
 The descent data, prestacks and stacks are Mathlib's `Pseudofunctor.DescentData`,
 `Pseudofunctor.IsPrestack` and `Pseudofunctor.IsStack`, by Joël Riou and Christian Merten.
@@ -52,6 +55,8 @@ The descent data, prestacks and stacks are Mathlib's `Pseudofunctor.DescentData`
   by a strong transformation.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isEquivalence_mapDescentData`: it is an equivalence
   when the components are.
+* `CategoryTheory.Pseudofunctor.StrongTrans.mem_essImage_of_toDescentData`: descent of the
+  essential image along a transformation with fully faithful components.
 * `CategoryTheory.Pseudofunctor.isPrestack_iff_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.isStack_iff_of_isEquivalence`: being a prestack, respectively a
   stack, is invariant under strong transformations whose components are equivalences.
@@ -624,6 +629,25 @@ lemma isEquivalence_mapDescentData
   have := (η.fullyFaithfulMapDescentData f hff).full
   have := (η.fullyFaithfulMapDescentData f hff).faithful
   { }
+
+/-- **Descent of the essential image.** Let the components of `η : F ⟶ G` be fully faithful, and
+let `F` have effective descent and `G` descent of morphisms along a family `f i : X i ⟶ S`. If the
+pullback of `z` along every `f i` is in the essential image of `η`, then so is `z`: the lift of the
+descent datum of `z` descends to an object of `F` over `S`, whose image has the descent datum of
+`z`. -/
+lemma mem_essImage_of_toDescentData
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)
+    [(F.toDescentData f).EssSurj] (hG : (G.toDescentData f).FullyFaithful)
+    (z : G.obj (.mk (op S)))
+    (hz : ∀ i, (η.app (.mk (op (X i)))).toFunctor.essImage
+      ((G.map (f i).op.toLoc).toFunctor.obj z)) :
+    (η.app (.mk (op S))).toFunctor.essImage z := by
+  choose M e using hz
+  let D := η.liftDescentData f hη ((G.toDescentData f).obj z) (fun i ↦ (e i).some)
+  exact ⟨(F.toDescentData f).objPreimage D, ⟨hG.preimageIso
+    ((η.toDescentDataCompMapDescentDataIso f).symm.app _ ≪≫
+      (η.mapDescentData f).mapIso ((F.toDescentData f).objObjPreimageIso D) ≪≫
+      η.mapDescentDataLiftDescentDataIso f hη _ _)⟩⟩
 
 end CategoryTheory.Pseudofunctor.StrongTrans
 

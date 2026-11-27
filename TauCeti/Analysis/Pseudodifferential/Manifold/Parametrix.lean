@@ -101,6 +101,7 @@ elliptic exactly when it has a two-sided parametrix modulo operators of order `-
   `TauCeti.isClassicalElliptic_left_of_comp_sub_id_mem`,
   `TauCeti.isClassicalElliptic_right_of_comp_sub_id_mem`: if `P ∘ Q - 1` has order `-1`, then `P`
   and `Q` are elliptic with inverse principal symbols.
+* `TauCeti.IsClassicalElliptic.comp`: compositions of elliptic operators are elliptic.
 * `TauCeti.isClassicalElliptic_iff_exists_comp_sub_id_mem_smoothingPseudodifferentialOperators`:
   on a σ-compact manifold, ellipticity is invertibility modulo operators of order `-∞`.
 
@@ -302,6 +303,18 @@ theorem isClassicalElliptic_right_of_comp_sub_id_mem : IsClassicalElliptic (-m) 
       (classicalPrincipalSymbol_mul_classicalPrincipalSymbol_of_comp_sub_id_mem hP hQ hPQ hξ)
 
 end PrincipalSymbol
+
+/-- **Compositions of elliptic operators are elliptic.** If `P` is an elliptic classical
+pseudodifferential operator of order `m'` and `Q` one of order `m`, then `P ∘ Q` is elliptic of
+order `m' + m`: its principal symbol is the product of theirs
+(`TauCeti.classicalPrincipalSymbol_comp`). -/
+theorem IsClassicalElliptic.comp {m' : ℝ} (hP : P ∈ classicalPseudodifferentialOperators m')
+    (hQ : Q ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m' P)
+    (hQe : IsClassicalElliptic m Q) : IsClassicalElliptic (m' + m) (P ∘ₗ Q) :=
+  isClassicalElliptic_iff.2 fun x ↦ isClassicalEllipticAt_iff.2 fun ξ hξ ↦ by
+    rw [classicalPrincipalSymbol_comp hP hQ]
+    exact mul_ne_zero (isClassicalEllipticAt_iff.1 (isClassicalElliptic_iff.1 hPe x) ξ hξ)
+      (isClassicalEllipticAt_iff.1 (isClassicalElliptic_iff.1 hQe x) ξ hξ)
 
 /-! ### Parametrices modulo operators of order `-∞` -/
 
