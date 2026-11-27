@@ -49,6 +49,8 @@ what holds for every canonical continuation, the normal form and analyticity on 
   `TauCeti.LFunctions.completedPartialZeta_eventuallyEq_partialZeta`: the completed partial zeta
   function `Z(I, ·)` is the archimedean factor times the partial zeta function of the ideal class
   of `I⁻¹`, on `Re s > 1` and as punctured germs at every point.
+* `TauCeti.LFunctions.partialZeta_eq_mul_completedPartialZeta`: conversely, away from `s = 0` the
+  partial zeta function is the reciprocal of the archimedean factor times `Z(I, s)`.
 * `TauCeti.LFunctions.analyticAt_partialZeta_iff_of_modulus_one`: at the trivial modulus,
   `partialZeta` is analytic exactly away from `s = 1`.
 * `TauCeti.LFunctions.tendsto_sub_one_mul_partialZeta_of_modulus_one` and
@@ -277,16 +279,26 @@ theorem partialZeta_apply_one_of_modulus_one (c : RayClassGroup (Modulus.one K))
     |>.meromorphicOrderAt_eq_zero_iff.not.mp
     (by simp [meromorphicOrderAt_partialZeta_one_of_modulus_one])
 
+/-- **The partial zeta function is the reciprocal completion factor times `Z(I, ·)`**: away from
+`s = 0`, `ζ(s, c) = |d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂ Z(I, s)` for `c` the ideal class of
+`I⁻¹`, where `Γ_ℝ⁻¹` and `Γ_ℂ⁻¹` are entire. At the pole `s = 1` both sides take the normal-form
+value `0`; at `s = 0` the right side vanishes while `ζ(0, c)` need not. -/
+theorem partialZeta_eq_mul_completedPartialZeta (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ}
+    (h0 : s ≠ 0) :
+    partialZeta (Modulus.one K) (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹) s =
+      ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
+        (Gammaℂ s)⁻¹ ^ nrComplexPlaces K * completedPartialZeta I s := by
+  rcases eq_or_ne s 1 with rfl | h1
+  · simp
+  · rw [partialZeta_eq_invDedekindZetaCompletionFactor_mul I h0 h1,
+      invDedekindZetaCompletionFactor_def]
+
 /-- **The partial zeta functions of the ideal classes sum to the Dedekind zeta function** on the
 whole plane, as functions in meromorphic normal form: on `Re s > 1` this is the decomposition of
 `ζ_K(s)` over the ideal classes (`sum_LSeries_rayClassCoeff_one`), away from `s = 1` both sides
 are analytic, and at `s = 1` both take the normal-form value `0`. -/
 theorem sum_partialZeta_of_modulus_one [Fintype (RayClassGroup (Modulus.one K))] :
     ∑ c : RayClassGroup (Modulus.one K), partialZeta (Modulus.one K) c = dedekindZetaC K := by
-  have h1 : dedekindZetaC K 1 = 0 :=
-    not_not.mp <| (meromorphicNFOn_dedekindZetaC K (mem_univ 1))
-      |>.meromorphicOrderAt_eq_zero_iff.not.mp
-      (by simp [meromorphicOrderAt_dedekindZetaC_one])
   have hoff : EqOn (∑ c : RayClassGroup (Modulus.one K), partialZeta (Modulus.one K) c)
       (dedekindZetaC K) {1}ᶜ := by
     refine eqOn_dedekindZetaC_of_eqOn_dedekindZeta K (fun z hz ↦ ?_) fun z hz ↦ ?_
@@ -297,7 +309,7 @@ theorem sum_partialZeta_of_modulus_one [Fintype (RayClassGroup (Modulus.one K))]
   funext z
   by_cases hz : z = 1
   · subst hz
-    simp [h1]
+    simp
   · exact hoff hz
 
 /-- **The decomposition of `ζ_K` over the ideal classes**, for the continued functions on

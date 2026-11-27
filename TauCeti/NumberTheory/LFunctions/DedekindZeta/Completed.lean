@@ -78,7 +78,8 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
   an analytic continuation agreeing with the Dedekind zeta series on `Re s > 1`.
 * `TauCeti.LFunctions.analyticAt_dedekindZetaC_iff`,
   `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_one`: `ζ_K` is analytic exactly away
-  from `1`, where it has a simple pole.
+  from `1`, where it has a simple pole; `TauCeti.LFunctions.dedekindZetaC_one`: there it takes the
+  normal-form value `0`.
 * `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_ne_top`: `ζ_K` has finite order
   everywhere.
 * `TauCeti.LFunctions.tendsto_sub_one_mul_dedekindZetaC`: its residue at `s = 1` is
@@ -628,6 +629,12 @@ theorem meromorphicOrderAt_dedekindZetaC_one :
     meromorphicOrderAt (dedekindZetaC K) 1 = (-1 : ℤ) :=
   (meromorphic_dedekindZetaC K 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
     (ofReal_ne_zero.mpr (dedekindZeta_residue_pos K).ne') (tendsto_sub_one_mul_dedekindZetaC K)
+
+/-- As a meromorphic normal form, `ζ_K` takes the canonical value `0` at its pole `s = 1`. -/
+@[simp]
+theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
+  not_not.mp <| (meromorphicNFOn_dedekindZetaC K (mem_univ 1))
+    |>.meromorphicOrderAt_eq_zero_iff.not.mp (by simp [meromorphicOrderAt_dedekindZetaC_one])
 
 /-- `ζ_K` has finite order at every point, since it has a simple pole at `1` and therefore is
 not the zero meromorphic function. -/
