@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Continu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.ContinuousMultilinearMap.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
