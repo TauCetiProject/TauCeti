@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Uniqueness
 import TauCeti.NumberTheory.LSeries.HurwitzZeta.Basic

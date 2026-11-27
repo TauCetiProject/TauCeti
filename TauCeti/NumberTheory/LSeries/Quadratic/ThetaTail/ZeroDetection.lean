@@ -7,12 +7,9 @@ module
 
 public import TauCeti.NumberTheory.LSeries.Quadratic.ThetaTail.Basic
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
-import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.Folding
-import TauCeti.Analysis.MellinTransform.StripBounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.GaussianTheta
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Mollifier
-import TauCeti.NumberTheory.LSeries.GaussianTheta.Mellin
 import TauCeti.NumberTheory.LSeries.ThetaInversion
 
 /-!
@@ -30,7 +27,7 @@ This uses the argument of `New.three_lines_bound_of_LFunction_eq_zero` and
 
 public section
 
-open Complex Complex.HadamardThreeLines Filter MeasureTheory Set TauCeti
+open Complex Filter MeasureTheory Set TauCeti
 open scoped ArithmeticFunction.Moebius Real
 
 namespace DirichletCharacter
@@ -71,38 +68,6 @@ private theorem norm_completedLFunction_div_two_le_tail {N : ℕ} [NeZero N]
     setIntegral_indicator measurableSet_Ioi, inter_eq_right.mpr hsub] at h
   exact h
 
-private theorem norm_gaussianMollifier_le_tail {N : ℕ} {χ : DirichletCharacter ℂ N}
-    (j : Fin 2) {T : ℝ} (hT : 0 < T) {s : ℂ} (hs : s.re = 1 / 2) :
-    ‖χ.gaussianMollifier j.val T⁻¹ s‖ ≤
-      ∫ u in Ioi T⁻¹, ‖gaussianThetaSeries j (fun n ↦ χ n * μ n) u‖ / u := by
-  rw [gaussianMollifier_def]
-  refine (norm_integral_le_integral_norm _).trans_eq
-    (setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ ?_)
-  have hu₀ : 0 < u := (inv_pos.mpr hT).trans hu
-  rw [← gaussianTheta_eq_gaussianDirichletTheta, norm_mul, norm_cpow_eq_rpow_re_of_pos hu₀,
-    sub_re, one_re, hs, gaussianThetaSeries_def, norm_mul, Complex.norm_real,
-    Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
-  conv_rhs => rw [div_eq_inv_mul, ← mul_assoc, Real.sqrt_eq_rpow, ← Real.rpow_neg_one,
-    ← Real.rpow_add hu₀]
-  ring_nf
-
-private theorem gaussianMollifier_mellin_bounds {N : ℕ} (χ : DirichletCharacter ℂ N)
-    (j : Fin 2) {r : ℝ} (hr : 0 < r) :
-    DiffContOnCl ℂ (χ.gaussianMollifier j.val r) (verticalStrip (1 / 2) 2) ∧
-      BddAbove ((norm ∘ χ.gaussianMollifier j.val r) '' verticalClosedStrip (1 / 2) 2) := by
-  let c (n : ℕ) := χ n * (μ n : ℂ)
-  have heq : χ.gaussianMollifier j.val r = mellin ((Ioi r).indicator (gaussianTheta j c)) := by
-    funext s
-    rw [gaussianMollifier_def, mellin_indicator_Ioi _ hr.le]
-    simp only [smul_eq_mul, c, gaussianTheta_eq_gaussianDirichletTheta]
-  rw [heq]
-  have hc (n : ℕ+) : ‖c n‖ ≤ 1 := χ.norm_mul_moebius_le_one n
-  refine ⟨(differentiable_mellin_indicator_Ioi_gaussianTheta j hc hr).diffContOnCl, ?_⟩
-  obtain ⟨B, hB⟩ := (mellinConvergent_indicator_Ioi_gaussianTheta j hc hr
-    ((1 / 2 : ℝ) : ℂ)).exists_norm_mellin_le_on_strip
-      (mellinConvergent_indicator_Ioi_gaussianTheta j hc hr ((2 : ℝ) : ℂ))
-  exact ⟨B, by rintro _ ⟨z, hz, rfl⟩; exact hB z hz⟩
-
 private theorem thetaTail_mollifier_hypotheses {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (hn : χ ≠ 1) {j : Fin 2}
     (hpar : χ (-1) = (-1) ^ j.val) {T : ℝ} (hT : 0 < T) (hN : (N : ℝ) ≤ T ^ 2) :
@@ -118,29 +83,14 @@ private theorem thetaTail_mollifier_hypotheses {N : ℕ} [NeZero N]
     (c := fun n ↦ χ n * μ n) (fun n ↦ χ.norm_mul_moebius_le_one n) (inv_pos.mpr hT)
   refine ⟨fun z hz ↦ (norm_completedLFunction_div_two_le_tail hχ hn hpar hT hN hz).trans
     (mul_le_mul_of_nonneg_left ?_ zero_le_two),
-    fun z hz ↦ (norm_gaussianMollifier_le_tail j hT hz).trans ?_⟩
+    fun z hz ↦ (χ.norm_gaussianMollifier_le_moebius_theta_tail j
+      (inv_nonneg.mpr hT.le) hz).trans ?_⟩
   all_goals
     dsimp only [J]
     rw [quadraticTwistGaussianThetaTailIntegral_def]
     refine setIntegral_mono_on (by assumption) hi measurableSet_Ioi (fun u hu ↦ ?_)
     have hu₀ : 0 < u := (inv_pos.mpr hT).trans hu
     gcongr; simp
-
-private theorem exists_gaussianMollifier_right_bound (j : Fin 2) :
-    ∃ D : ℝ, ∀ {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N},
-      χ (-1) = (-1) ^ j.val → ∀ {T : ℝ}, 0 < T → ∀ z : ℂ, z.re = 2 →
-      ‖χ.completedLFunction z / 2 * χ.gaussianMollifier j.val T⁻¹ z -
-        (χ.gammaFactor z / 2) ^ 2‖ ≤ D / T := by
-  obtain ⟨D, _, hD⟩ := norm_LFunction_mul_gaussianMollifier_sub j.val
-  refine ⟨D, fun {N} _ {χ} hj {T} hT z hz ↦ ?_⟩
-  have hΓ : χ.gammaFactor z = Gammaℝ (z + j.val) := by
-    fin_cases j
-    · have he : χ.Even := by simpa [Even] using hj
-      simp [he.gammaFactor_def]
-    · have ho : χ.Odd := by simpa [Odd] using hj
-      simp [ho.gammaFactor_def]
-  rw [χ.completedLFunction_eq_gammaFactor_mul_LFunction (by linarith), hΓ]
-  simpa only [div_eq_mul_inv, mul_right_comm] using hD χ (inv_nonneg.mpr hT.le) hz
 
 /-- For primitive nonprincipal characters of conductor at most `T²`, if the joint theta tail is
 at most `T^(2δ)`, the square of the half gamma factor at a zero with `Re s ≥ 1/2 + 9δ` is bounded
@@ -151,17 +101,17 @@ theorem norm_gammaFactor_div_two_sq_le_of_thetaTail_le (j : Fin 2) :
       quadraticTwistGaussianThetaTailIntegral j (fun n ↦ χ n) T ≤ T ^ (2 * δ) →
       ∀ {s : ℂ}, 1 / 2 + 9 * δ ≤ s.re → χ.LFunction s = 0 →
       ‖χ.gammaFactor s / 2‖ ^ 2 ≤ C * T ^ (-2 * δ) := by
-  obtain ⟨D, hD⟩ := exists_gaussianMollifier_right_bound j
+  obtain ⟨D, _, hD⟩ := norm_completedLFunction_div_two_mul_gaussianMollifier_sub j
   obtain ⟨C, hC₀, hC⟩ :=
     TauCeti.DirichletCharacter.norm_gammaFactor_div_two_sq_le_of_LFunction_eq_zero D
   refine ⟨C, hC₀, fun {N} _ {χ} hp hn hj {T δ} hT hN hδ hJ {s} hs hz ↦ ?_⟩
   have hN₁ : (1 : ℝ) ≤ N := by exact_mod_cast NeZero.pos N
   have hT₁ : 1 ≤ T := by nlinarith [hN₁.trans hN]
-  obtain ⟨hd, hb⟩ := gaussianMollifier_mellin_bounds χ j (inv_pos.mpr hT)
+  obtain ⟨hd, hb⟩ := χ.gaussianMollifier_mellin_bounds j (inv_pos.mpr hT) (1 / 2) 2
   obtain ⟨hl, hm⟩ := thetaTail_mollifier_hypotheses hp hn hj hT hN
-  refine hC hn hT₁ hδ hd hb (fun z hz ↦ (hl z hz).trans
+  exact hC hn hT₁ hδ hd hb (fun z hz ↦ (hl z hz).trans
     (mul_le_mul_of_nonneg_left hJ zero_le_two)) (fun z hz ↦ (hm z hz).trans hJ)
-    (hD hj hT) hs hz
+    (fun _ hz ↦ by simpa only [div_eq_mul_inv] using hD hj (inv_nonneg.mpr hT.le) hz) hs hz
 
 /-- Uniformly for primitive nonprincipal characters of conductor at most `T²` and matching
 parity, a zero with `Re s ≥ 1/2 + 9δ` and `|Im s| ≤ H` forces the joint theta tail above
@@ -172,14 +122,15 @@ theorem eventually_rpow_lt_quadraticTwistGaussianThetaTailIntegral (j : Fin 2)
       χ.IsPrimitive → χ ≠ 1 → χ (-1) = (-1) ^ j.val → (N : ℝ) ≤ T ^ 2 →
       ∀ {s : ℂ}, 1 / 2 + 9 * δ ≤ s.re → |s.im| ≤ H → χ.LFunction s = 0 →
       T ^ (2 * δ) < quadraticTwistGaussianThetaTailIntegral j (fun n ↦ χ n) T := by
-  obtain ⟨D, hD⟩ := exists_gaussianMollifier_right_bound j
+  obtain ⟨D, _, hD⟩ := norm_completedLFunction_div_two_mul_gaussianMollifier_sub j
   filter_upwards [eventually_gt_atTop (0 : ℝ),
     TauCeti.DirichletCharacter.eventually_LFunction_ne_zero_of_mollifier_bounds D H hδ]
     with T hT hfree N _ χ hp hn hj hN s hs hH hz
   refine lt_of_not_ge fun hJ ↦ ?_
-  obtain ⟨hd, hb⟩ := gaussianMollifier_mellin_bounds χ j (inv_pos.mpr hT)
+  obtain ⟨hd, hb⟩ := χ.gaussianMollifier_mellin_bounds j (inv_pos.mpr hT) (1 / 2) 2
   obtain ⟨hl, hm⟩ := thetaTail_mollifier_hypotheses hp hn hj hT hN
   exact hfree hn hd hb (fun z hz ↦ (hl z hz).trans (mul_le_mul_of_nonneg_left hJ zero_le_two))
-    (fun z hz ↦ (hm z hz).trans hJ) (hD hj hT) hs hH hz
+    (fun z hz ↦ (hm z hz).trans hJ)
+    (fun _ hz ↦ by simpa only [div_eq_mul_inv] using hD hj (inv_nonneg.mpr hT.le) hz) hs hH hz
 
 end DirichletCharacter
