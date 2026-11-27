@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.ULift
-public import TauCeti.GroupTheory.CoprodI.Basic
+public import TauCeti.GroupTheory.CoprodI
 import TauCeti.Algebra.Group.ULift
 
 /-!

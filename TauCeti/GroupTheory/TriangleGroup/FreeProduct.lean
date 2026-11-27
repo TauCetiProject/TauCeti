@@ -8,10 +8,10 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Coprod.Basic
 public import TauCeti.GroupTheory.TriangleGroup.Basic
-import TauCeti.Algebra.Group.Conj
 import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.Data.ZMod.MonoidHomEquiv
-import TauCeti.GroupTheory.Coprod.Torsion
+import TauCeti.GroupTheory.Coprod.Factors
+import TauCeti.GroupTheory.CoprodI.Word
 
 /-!
 # Free-product triangle groups `Δ(a, b, 0)`
@@ -22,11 +22,8 @@ no relation between `x` and `y` beyond `x ^ a = 1` and `y ^ b = 1`. Thus `Δ(a, 
 isomorphic to the free product `Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)` for all natural
 numbers `a` and `b` (including `a = 0` or `b = 0`, where `ZMod 0 = ℤ`).
 
-As consequences of this decomposition:
-* `x a b 0` and `y a b 0` have exact orders `a` and `b`, while `z a b 0` has infinite order
-  (`orderOf (z a b 0) = 0`) whenever `a ≠ 1` and `b ≠ 1`;
-* every element of finite order in `Δ(a, b, 0)` is conjugate to an integer power of `x a b 0` or
-  `y a b 0`.
+As a consequence of this decomposition, `x a b 0` and `y a b 0` have exact orders `a` and `b`,
+while `z a b 0` has infinite order (`orderOf (z a b 0) = 0`) whenever `a ≠ 1` and `b ≠ 1`.
 
 ## Main definitions and results
 
@@ -38,8 +35,6 @@ As consequences of this decomposition:
   `TauCeti.TriangleGroup.orderOf_z_zero_one_left`,
   `TauCeti.TriangleGroup.orderOf_z_zero_one_right`,
   `TauCeti.TriangleGroup.orderOf_z_zero`: exact orders of the three generators.
-* `TauCeti.TriangleGroup.exists_isConj_x_zpow_or_y_zpow_of_isOfFinOrder`: torsion classification
-  in `Δ(a, b, 0)`.
 -/
 
 public section
@@ -114,22 +109,64 @@ theorem equivCoprod_symm_inr_ofAdd_intCast (a b : ℕ) (k : ℤ) :
 /-- The first generator `x a b 0` of `Δ(a, b, 0)` has order `a` (for `a = 0`, infinite order). -/
 @[simp]
 theorem orderOf_x_zero (a b : ℕ) : orderOf (x a b 0) = a := by
-  rw [← (equivCoprod a b).orderOf_eq]
-  simp [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_x,
+    orderOf_injective (Monoid.Coprod.inl :
+      Multiplicative (ZMod a) →* Monoid.Coprod (Multiplicative (ZMod a)) (Multiplicative (ZMod b)))
+      Monoid.Coprod.inl_injective (.ofAdd 1),
+    orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
 
 /-- The second generator `y a b 0` of `Δ(a, b, 0)` has order `b` (for `b = 0`, infinite order). -/
 @[simp]
 theorem orderOf_y_zero (a b : ℕ) : orderOf (y a b 0) = b := by
-  rw [← (equivCoprod a b).orderOf_eq]
-  simp [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_y,
+    orderOf_injective (Monoid.Coprod.inr :
+      Multiplicative (ZMod b) →* Monoid.Coprod (Multiplicative (ZMod a)) (Multiplicative (ZMod b)))
+      Monoid.Coprod.inr_injective (.ofAdd 1),
+    orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+
+-- Alternating reduced word `(of x * of y) ^ (n + 1)` in `CoprodI` over `Bool`.
+private noncomputable def alternatingWord {M : Bool → Type*} [∀ b, Monoid (M b)]
+    (x : M false) (y : M true) (hx : x ≠ 1) (hy : y ≠ 1) :
+    (n : ℕ) → {w : Monoid.CoprodI.Word M //
+      w.prod = (Monoid.CoprodI.of x * Monoid.CoprodI.of y) ^ (n + 1) ∧
+        w.fstIdx = some false}
+  | 0 =>
+    let wy := Monoid.CoprodI.Word.cons y Monoid.CoprodI.Word.empty
+      (by simp [Monoid.CoprodI.Word.fstIdx]) hy
+    let wxy := Monoid.CoprodI.Word.cons x wy (by simp [wy]) hx
+    ⟨wxy, by simp [wxy, wy], by simp [wxy]⟩
+  | n + 1 =>
+    let ⟨w, hprod, hfst⟩ := alternatingWord x y hx hy n
+    let wy := Monoid.CoprodI.Word.cons y w (by simp [hfst]) hy
+    let wxy := Monoid.CoprodI.Word.cons x wy (by simp [wy]) hx
+    ⟨wxy, by
+      rw [show n + 1 + 1 = (n + 1) + 1 from rfl, pow_succ', ← hprod]
+      simp [wxy, wy, mul_assoc],
+      by simp [wxy]⟩
 
 /-- When `a ≠ 1` and `b ≠ 1`, the third generator `z a b 0 = (y a b 0 * x a b 0)⁻¹` of
 `Δ(a, b, 0)` has infinite order. -/
 theorem not_isOfFinOrder_z_zero {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) :
     ¬IsOfFinOrder (z a b 0) := by
-  rw [← (equivCoprod a b).isOfFinOrder_iff, equivCoprod_z]
-  exact Monoid.Coprod.not_isOfFinOrder_inl_mul_inr
-    (ofAdd_neg_one_ne_one_of_ne_one ha) (ofAdd_neg_one_ne_one_of_ne_one hb)
+  rw [← (equivCoprod a b).isOfFinOrder_iff, equivCoprod_z,
+    ← (Monoid.Coprod.equivCoprodI (M := Multiplicative (ZMod a))
+      (N := Multiplicative (ZMod b))).isOfFinOrder_iff,
+    map_mul, Monoid.Coprod.equivCoprodI_inl, Monoid.Coprod.equivCoprodI_inr,
+    isOfFinOrder_iff_pow_eq_one]
+  rintro ⟨n, hn, hpow⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  let x₀ : Monoid.Coprod.Factors (Multiplicative (ZMod a)) (Multiplicative (ZMod b)) false :=
+    ULift.up (.ofAdd (-1))
+  let y₀ : Monoid.Coprod.Factors (Multiplicative (ZMod a)) (Multiplicative (ZMod b)) true :=
+    ULift.up (.ofAdd (-1))
+  have hx : x₀ ≠ 1 := fun h => ofAdd_neg_one_ne_one_of_ne_one ha (congrArg ULift.down h)
+  have hy : y₀ ≠ 1 := fun h => ofAdd_neg_one_ne_one_of_ne_one hb (congrArg ULift.down h)
+  obtain ⟨w, hprod, hfst⟩ := alternatingWord x₀ y₀ hx hy k
+  have hempty : w = Monoid.CoprodI.Word.empty :=
+    Monoid.CoprodI.Word.prod_injective (by
+      simpa [x₀, y₀, Monoid.CoprodI.Word.prod_empty] using hprod.trans hpow)
+  rw [hempty] at hfst
+  simp [Monoid.CoprodI.Word.fstIdx] at hfst
 
 /-- When `a ≠ 1` and `b ≠ 1`, `orderOf (z a b 0) = 0`. -/
 theorem orderOf_z_zero_of_ne_one {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) :
@@ -155,23 +192,5 @@ theorem orderOf_z_zero (a b : ℕ) :
   · subst ha; exact orderOf_z_zero_one_left b
   · subst hb; exact orderOf_z_zero_one_right a
   · exact orderOf_z_zero_of_ne_one ha hb
-
-/-- Every element of finite order in `Δ(a, b, 0)` is conjugate to an integer power of `x a b 0` or
-of `y a b 0`. -/
-theorem exists_isConj_x_zpow_or_y_zpow_of_isOfFinOrder {a b : ℕ} {g : TriangleGroup a b 0}
-    (hg : IsOfFinOrder g) :
-    (∃ k : ℤ, IsConj g (x a b 0 ^ k) ∧ IsOfFinOrder (x a b 0 ^ k)) ∨
-      (∃ k : ℤ, IsConj g (y a b 0 ^ k) ∧ IsOfFinOrder (y a b 0 ^ k)) := by
-  have hg' : IsOfFinOrder (equivCoprod a b g) := (equivCoprod a b).isOfFinOrder_iff.mpr hg
-  rcases Monoid.Coprod.exists_isConj_inl_or_inr_of_isOfFinOrder hg' with
-    ⟨u, hconj, -⟩ | ⟨v, hconj, -⟩
-  · obtain ⟨k, rfl⟩ := Multiplicative.mem_zpowers_ofAdd_one u
-    have h : IsConj g (x a b 0 ^ k) :=
-      (equivCoprod a b).isConj_apply_iff.mp (by simpa using hconj)
-    exact Or.inl ⟨k, h, h.isOfFinOrder hg⟩
-  · obtain ⟨k, rfl⟩ := Multiplicative.mem_zpowers_ofAdd_one v
-    have h : IsConj g (y a b 0 ^ k) :=
-      (equivCoprod a b).isConj_apply_iff.mp (by simpa using hconj)
-    exact Or.inr ⟨k, h, h.isOfFinOrder hg⟩
 
 end TauCeti.TriangleGroup

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PushoutI
-public import TauCeti.GroupTheory.CoprodI.Basic
+public import TauCeti.GroupTheory.CoprodI
 
 /-!
 # Amalgamated products over a trivial monoid are free products

@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.CoprodI
 
 /-!
-# Reduced words in a free product: functorial images and word length
+# Images of reduced words of a free product
 
 Let `f i : M i →* N i` be a family of monoid homomorphisms and `w` a reduced word of the free
 product `CoprodI M` none of whose letters is sent to `1`. Replacing every letter `m : M i` of `w`
@@ -18,17 +18,9 @@ under the homomorphism `CoprodI M →* CoprodI N` induced by the `f i`. In parti
 word. Likewise, injective homomorphisms of the factors induce an injective homomorphism of free
 products.
 
-We also record basic length and power properties of reduced words (`Word` and `NeWord`):
-left-multiplying a reduced word whose leading letter lies in `M i` by an element of `M i` does not
-increase its word length, inverting a nonempty reduced word in a free product of groups preserves
-its word length, and concatenating a nonempty reduced word whose endpoints lie in distinct factors
-with itself gives all of its positive powers as reduced words.
-
 ## Main definitions
 
 * `Monoid.CoprodI.Word.map`: the image of a reduced word under the `f i`.
-* `Monoid.CoprodI.NeWord.powSucc`: iterated concatenation `u^(n + 1)` of a nonempty reduced word
-  `u` with distinct endpoint indices.
 
 ## Main results
 
@@ -37,11 +29,6 @@ with itself gives all of its positive powers as reduced words.
 * `Monoid.CoprodI.Word.prod_map`: the product of the image is the image of the product.
 * `Monoid.CoprodI.Word.eq_empty_of_lift_prod_eq_one`: a reduced word whose product the
   homomorphism induced by the `f i` sends to `1` is empty.
-* `Monoid.CoprodI.Word.length_toList_of_smul_le_of_fstIdx_eq`: left-multiplying by `of m` does not
-  increase word length when the first letter lies in the same factor.
-* `Monoid.CoprodI.NeWord.length_toList_inv`: inverting a nonempty reduced word preserves its length.
-* `Monoid.CoprodI.NeWord.powSucc_zero`, `Monoid.CoprodI.NeWord.powSucc_succ`,
-  `Monoid.CoprodI.NeWord.powSucc_prod`: defining equations and product of `u.powSucc`.
 * `Monoid.CoprodI.lift_of_comp_injective`: injective homomorphisms of the factors induce an
   injective homomorphism of free products.
 -/
@@ -49,8 +36,6 @@ with itself gives all of its positive powers as reduced words.
 public section
 
 namespace Monoid.CoprodI.Word
-
-section Map
 
 variable {ι : Type*} {M N : ι → Type*} [∀ i, Monoid (M i)] [∀ i, Monoid (N i)]
 
@@ -121,88 +106,7 @@ theorem eq_empty_of_lift_prod_eq_one (hf : ∀ l ∈ w.toList, f l.1 l.2 ≠ 1)
   rw [← map_eq_empty_iff f hf]
   exact prod_injective (by rw [prod_map, h, prod_empty])
 
-end Map
-
-/-- Left-multiplying a reduced word whose first letter lies in `M i` by an element of `M i` does
-not increase its word length: the leading `M i` letter merges with the new factor. -/
-theorem length_toList_of_smul_le_of_fstIdx_eq {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
-    [DecidableEq ι] [∀ i, DecidableEq (M i)] {i : ι} (m : M i) {w : Word M}
-    (hw : w.fstIdx = some i) :
-    (of m • w).toList.length ≤ w.toList.length := by
-  let p := equivPair i w
-  have hp : rcons p = w := (equivPair i).symm_apply_apply w
-  have hp1 : p.head ≠ 1 := fun h1 =>
-    p.fstIdx_ne (by simpa [rcons, h1, hw] using congrArg fstIdx hp)
-  have hw_len : w.toList.length = p.tail.toList.length + 1 := by
-    rw [← hp, rcons, dite_eq_right hp1, cons_toList, List.length_cons]
-  rw [of_smul_def, rcons]
-  split_ifs <;> simp [p, hw_len]
-
-/-- Prepending a letter to a nonempty reduced word does not change the index of its last
-letter. -/
-theorem getLast?_map_fst_cons_of_ne_empty {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
-    {i : ι} (a : M i) {v : Word M} (hfv : v.fstIdx ≠ some i) (ha1 : a ≠ 1) (hv : v ≠ empty) :
-    (cons a v hfv ha1).toList.getLast?.map Sigma.fst = v.toList.getLast?.map Sigma.fst := by
-  rw [cons_toList, List.getLast?_cons_of_ne_nil (fun h => hv (Word.ext_iff.mpr h))]
-
 end Monoid.CoprodI.Word
-
-namespace Monoid.CoprodI.NeWord
-
-section Monoid
-
-variable {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
-
-/-- The first factor index of `u.toWord` for `u : NeWord M i j` is `some i`. -/
-@[simp]
-theorem fstIdx_toWord {i j : ι} (u : NeWord M i j) :
-    u.toWord.fstIdx = some i := by
-  simp [Word.fstIdx, toWord]
-
-/-- The last factor index of `u.toWord` for `u : NeWord M i j` is `some j`. -/
-@[simp]
-theorem toWord_getLast?_map_fst {i j : ι} (u : NeWord M i j) :
-    u.toWord.toList.getLast?.map Sigma.fst = some j := by
-  simp [toWord]
-
-/-- Iterated concatenation `u^(n + 1)` of a nonempty reduced word `u : NeWord M i j` whose first
-and last letters lie in distinct factors (`j ≠ i`), so no cancellation occurs between copies. -/
-def powSucc {i j : ι} (u : NeWord M i j) (hji : j ≠ i) : ℕ → NeWord M i j
-  | 0 => u
-  | n + 1 => u.append hji (u.powSucc hji n)
-
-/-- The base case of `u.powSucc hji`: at `0` it is `u`. -/
-@[simp]
-theorem powSucc_zero {i j : ι} (u : NeWord M i j) (hji : j ≠ i) :
-    u.powSucc hji 0 = u :=
-  (rfl)
-
-/-- The successor case of `u.powSucc hji`: at `n + 1` it concatenates `u` with `u.powSucc hji n`. -/
-@[simp]
-theorem powSucc_succ {i j : ι} (u : NeWord M i j) (hji : j ≠ i) (n : ℕ) :
-    u.powSucc hji (n + 1) = u.append hji (u.powSucc hji n) :=
-  (rfl)
-
-/-- The product of the iterated concatenation `u.powSucc hji n` is `u.prod ^ (n + 1)`. -/
-@[simp]
-theorem powSucc_prod {i j : ι} (u : NeWord M i j) (hji : j ≠ i) (n : ℕ) :
-    (u.powSucc hji n).prod = u.prod ^ (n + 1) := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [powSucc_succ, append_prod, ih, ← pow_succ']
-
-end Monoid
-
-/-- Inverting a nonempty reduced word preserves its length. -/
-@[simp]
-theorem length_toList_inv {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)] {i j : ι}
-    (w : NeWord G i j) : w.inv.toList.length = w.toList.length := by
-  induction w with
-  | singleton => rfl
-  | append _ _ _ ih₁ ih₂ =>
-    simp only [inv, toList, List.length_append, ih₁, ih₂, Nat.add_comm]
-
-end Monoid.CoprodI.NeWord
 
 namespace Monoid.CoprodI
 

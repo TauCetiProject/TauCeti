@@ -9,7 +9,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.Index
-public import TauCeti.GroupTheory.CoprodI.Basic
+public import TauCeti.GroupTheory.CoprodI
 public import TauCeti.NumberTheory.Modular.Generators
 import TauCeti.Algebra.Group.Submonoid.Torsion
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
