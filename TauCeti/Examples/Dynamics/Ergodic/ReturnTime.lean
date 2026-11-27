@@ -32,7 +32,7 @@ theorem positiveReturnTime_id {X : Type*} {A : Set X} {x : X} (hx : x ∈ A) :
 /-- Under the flip of `Bool`, `false` returns to `{false}` at time `2`. -/
 theorem positiveReturnTime_not_false :
     positiveReturnTime (fun b : Bool ↦ !b) {false} false = 2 := by
-  rw [show (2 : ℕ∞) = ((2 : ℕ) : ℕ∞) from rfl, positiveReturnTime_eq_coe_iff two_pos]
+  rw [← Nat.cast_ofNat, positiveReturnTime_eq_coe_iff two_pos]
   refine ⟨rfl, fun i hi hi2 ↦ ?_⟩
   obtain rfl : i = 1 := by omega
   simp
