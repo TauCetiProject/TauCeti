@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
+public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
@@ -60,7 +61,12 @@ The structure the estimates need survives the change of variables: `A'` is ellip
 (`TauCeti.PDE.nondivPullbackPrincipal_elliptic`) and continuous
 (`TauCeti.PDE.continuousWithinAt_nondivPullbackPrincipal`) wherever `A` is, `b'` is bounded
 where `A` and `b` are (`TauCeti.PDE.norm_nondivPullbackDrift_le`), and both are measurable
-(`TauCeti.PDE.aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift`).
+(`TauCeti.PDE.aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift`). For a change
+of variables `Φ` of the whole space that is Lipschitz with `Φ_* μ ≤ K μ`, such as the shear
+flattening a graph, and `DΨ ∘ Φ` bounded and uniformly continuous, `A'` has vanishing mean
+oscillation when `A` is bounded and has vanishing mean oscillation
+(`TauCeti.PDE.memVMO_nondivPullbackPrincipal`), as the `W^{2,p}` estimates for coefficients of
+vanishing mean oscillation require.
 
 ## The argument
 
@@ -90,7 +96,7 @@ first-order term `⟪∑ᵢ D²Φ(x) eᵢ (A'† eᵢ), ∇u(Φ x)⟫`, and `⟪
 public section
 
 open MeasureTheory Set TopologicalSpace
-open scoped InnerProductSpace
+open scoped InnerProductSpace NNReal
 
 namespace TauCeti.PDE
 
@@ -350,6 +356,40 @@ theorem aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift
     fun_prop
   exact hev.comp_aestronglyMeasurable₂
     (g := fun T A => T ![stdOrthonormalBasis ℝ E i, A.adjoint (stdOrthonormalBasis ℝ E i)]) hD2 hA
+
+/-- **The pulled-back principal coefficient has vanishing mean oscillation.** Let `Φ : E → E` be
+Lipschitz with `Φ_* μ ≤ K μ`, as for the shear flattening the graph of a Lipschitz function, which
+preserves `μ`, and let `M(x) = DΨ(Φ x)` be bounded and uniformly continuous on `E`. If the
+coefficient field `A` is essentially bounded and has vanishing mean oscillation, then so does the
+pulled-back coefficient `A'(x) = M(x) ∘ A(Φ x) ∘ M(x)†`. -/
+theorem memVMO_nondivPullbackPrincipal {A : E → E →L[ℝ] E} (hA : MemVMO A mu) {Λ N L K : ℝ≥0}
+    (hAΛ : ∀ᵐ y ∂mu, ‖A y‖ ≤ Λ) (hΦ : LipschitzWith L Φ) (hmap : mu.map Φ ≤ K • mu)
+    (hM : UniformContinuous fun x => fderiv ℝ Ψ (Φ x)) (hMN : ∀ x, ‖fderiv ℝ Ψ (Φ x)‖ ≤ N) :
+    MemVMO (nondivPullbackPrincipal Φ Ψ A) mu := by
+  have hAΦΛ : ∀ᵐ x ∂mu, ‖A (Φ x)‖ ≤ Λ :=
+    ae_of_ae_map hΦ.continuous.measurable.aemeasurable
+      ((Measure.absolutelyContinuous_of_le_smul hmap).ae_le hAΛ)
+  have hadj : UniformContinuous fun x => (fderiv ℝ Ψ (Φ x)).adjoint :=
+    (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := E) (F := E)).isometry.uniformContinuous.comp hM
+  -- First the product `x ↦ A(Φ x) ∘ M(x)†`, then its product with `M`.
+  have h₁ : MemVMO (fun x => ContinuousLinearMap.compL ℝ E E E (A (Φ x))
+      (fderiv ℝ Ψ (Φ x)).adjoint) mu :=
+    (hA.comp_of_map_le_of_addHaar hΦ hmap).bilinear (ContinuousLinearMap.compL ℝ E E E) hAΦΛ
+      hadj.continuous.aestronglyMeasurable hadj fun x => by
+        rw [LinearIsometryEquiv.norm_map]
+        exact hMN x
+  have h₁N : ∀ᵐ x ∂mu, ‖ContinuousLinearMap.compL ℝ E E E (A (Φ x))
+      (fderiv ℝ Ψ (Φ x)).adjoint‖ ≤ ((Λ * N : ℝ≥0) : ℝ) := hAΦΛ.mono fun x hx => by
+    rw [ContinuousLinearMap.compL_apply, NNReal.coe_mul]
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    rw [LinearIsometryEquiv.norm_map]
+    gcongr
+    exact hMN x
+  have h₂ := h₁.bilinear (ContinuousLinearMap.compL ℝ E E E).flip h₁N
+    hM.continuous.aestronglyMeasurable hM hMN
+  convert h₂ using 1
+  funext x
+  simp [nondivPullbackPrincipal_apply]
 
 /-- **A non-divergence-form equation under a change of variables of order two.** Let `Φ` be a
 change of variables of order two from `U` into `V` with inverse `Ψ`, a change of variables of order
