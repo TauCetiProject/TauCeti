@@ -30,11 +30,12 @@ or at `-∞` is a zero of `F` (`TauCeti.apply_eq_zero_of_tendsto_atTop_of_hasDer
 
 More generally, the comparison form of the `∞ / ∞` rule holds for any real denominator: if
 `g → +∞` with `g' ≥ 0` eventually, and `f' = o(g')`, then `f = o(g)`
-(`TauCeti.isLittleO_atTop_of_hasDerivAt`). It compares a function with an explicit primitive of
-a dominant integrand, as in the asymptotics of `∫ˣ e^{2ξ} ξ' (1 + o(1))`, where only the
-derivatives are known in closed form. The proof is the mean value inequality with variable bound
-(`image_norm_le_of_norm_deriv_right_le_deriv_boundary'`). The linear-growth statement above is
-derived from it with `g x = x`, applied to `f x - x • c`.
+(`TauCeti.isLittleO_atTop_of_hasDerivAt`), and likewise as `x` tends to the right end of any
+interval (`TauCeti.isLittleO_map_val_atTop_of_hasDerivAt`). It compares a function with an
+explicit primitive of a dominant integrand, as in the asymptotics of `∫ˣ e^{2ξ} ξ' (1 + o(1))`,
+where only the derivatives are known in closed form. The proof is the mean value inequality with
+variable bound (`image_norm_le_of_norm_deriv_right_le_deriv_boundary'`). The linear-growth
+statement above is derived from it with `g x = x`, applied to `f x - x • c`.
 -/
 
 public section
@@ -45,18 +46,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f f' : ℝ → 
 
 namespace TauCeti
 
-/-- **L'Hôpital's rule for little-o at `+∞`.** Let `f` take values in a real normed space and let
-`g` be real, with derivatives `f'` and `g'` eventually. If `g → +∞`, `g' ≥ 0` eventually and
-`f' = o(g')`, then `f = o(g)`. -/
-theorem isLittleO_atTop_of_hasDerivAt {g g' : ℝ → ℝ} (hf : ∀ᶠ x in atTop, HasDerivAt f (f' x) x)
-    (hg : ∀ᶠ x in atTop, HasDerivAt g (g' x) x) (hg₀ : ∀ᶠ x in atTop, 0 ≤ g' x)
-    (hgt : Tendsto g atTop atTop) (hfg : f' =o[atTop] g') : f =o[atTop] g := by
+/-- **L'Hôpital's rule for little-o at the right end of an interval.** Let `s` be an
+order-connected set of reals and let `l` be the filter `x → sup s` within `s`, the image of
+`atTop` on the subtype `s`. Let `f` take values in a real normed space and let `g` be real, with
+derivatives `f'` and `g'` eventually along `l`. If `g → +∞`, `g' ≥ 0` eventually and
+`f' = o(g')` along `l`, then `f = o(g)` along `l`. For `s = (a, b)` the filter `l` is `𝓝[<] b`
+(`Filter.map_coe_Ioo_atTop`), and for `s = (a, ∞)` it is `atTop` (`Filter.map_val_Ioi_atTop`). -/
+theorem isLittleO_map_val_atTop_of_hasDerivAt {s : Set ℝ} (hs : s.OrdConnected) {g g' : ℝ → ℝ}
+    (hf : ∀ᶠ x in map ((↑) : s → ℝ) atTop, HasDerivAt f (f' x) x)
+    (hg : ∀ᶠ x in map ((↑) : s → ℝ) atTop, HasDerivAt g (g' x) x)
+    (hg₀ : ∀ᶠ x in map ((↑) : s → ℝ) atTop, 0 ≤ g' x)
+    (hgt : Tendsto g (map ((↑) : s → ℝ) atTop) atTop)
+    (hfg : f' =o[map ((↑) : s → ℝ) atTop] g') : f =o[map ((↑) : s → ℝ) atTop] g := by
   refine IsLittleO.of_bound fun c hc ↦ ?_
-  obtain ⟨x₀, hx₀⟩ := eventually_atTop.1 <|
+  rcases isEmpty_or_nonempty s with hs0 | hs0
+  · exact eventually_map.2 (Eventually.of_forall fun y ↦ isEmptyElim y)
+  obtain ⟨x₀, hx₀⟩ := eventually_atTop.1 <| eventually_map.1 <|
     (hf.and hg).and (hg₀.and (hfg.bound (half_pos hc)))
-  -- the mean value inequality on `[x₀, x]`: `‖f x - f x₀‖ ≤ c / 2 (g x - g x₀)`
-  have hmv (x : ℝ) (hx : x₀ ≤ x) : ‖f x - f x₀‖ ≤ c / 2 * (g x - g x₀) := by
-    have hd (y : ℝ) (hy : y ∈ Icc x₀ x) := hx₀ y hy.1
+  -- the mean value inequality on `[x₀, x] ⊆ s`: `‖f x - f x₀‖ ≤ c / 2 (g x - g x₀)`
+  have hmv (x : ℝ) (hxs : x ∈ s) (hx : (x₀ : ℝ) ≤ x) :
+      ‖f x - f x₀‖ ≤ c / 2 * (g x - g x₀) := by
+    have hd (y : ℝ) (hy : y ∈ Icc (x₀ : ℝ) x) :=
+      hx₀ ⟨y, hs.out x₀.property hxs hy⟩ (Subtype.mk_le_mk.2 hy.1)
     refine image_norm_le_of_norm_deriv_right_le_deriv_boundary' (f := fun y ↦ f y - f x₀)
       (f' := f') (B := fun y ↦ c / 2 * (g y - g x₀)) (B' := fun y ↦ c / 2 * g' y)
       (fun y hy ↦ ((hd y hy).1.1.continuousAt.sub continuousAt_const).continuousWithinAt)
@@ -67,16 +78,31 @@ theorem isLittleO_atTop_of_hasDerivAt {g g' : ℝ → ℝ} (hf : ∀ᶠ x in atT
         (c / 2)).hasDerivWithinAt) (fun y hy ↦ ?_) ⟨hx, le_rfl⟩
     obtain ⟨h0, h⟩ := (hd y (Ico_subset_Icc_self hy)).2
     rwa [Real.norm_of_nonneg h0] at h
-  filter_upwards [eventually_ge_atTop x₀,
+  have hx₀' : ∀ᶠ x in map ((↑) : s → ℝ) atTop, x ∈ s ∧ (x₀ : ℝ) ≤ x :=
+    eventually_map.2 ((eventually_ge_atTop x₀).mono fun y hy ↦ ⟨y.property, hy⟩)
+  filter_upwards [hx₀',
     hgt.eventually_ge_atTop (2 / c * ‖f x₀‖ + |g x₀|), hgt.eventually_ge_atTop 0] with x hx hgx hg0
   rw [Real.norm_of_nonneg hg0]
   have h1 := norm_sub_norm_le (f x) (f x₀)
-  have h2 := hmv x hx
+  have h2 := hmv x hx.1 hx.2
   have h3 := neg_le_abs (g x₀)
   have h4 : c / 2 * (2 / c * ‖f x₀‖ + |g x₀|) ≤ c / 2 * g x :=
     mul_le_mul_of_nonneg_left hgx (by positivity)
   have h5 : c / 2 * (2 / c * ‖f x₀‖) = ‖f x₀‖ := by field_simp
   nlinarith [h1, h2, h3, h4, h5, abs_nonneg (g x₀)]
+
+/-- **L'Hôpital's rule for little-o at `+∞`.** Let `f` take values in a real normed space and let
+`g` be real, with derivatives `f'` and `g'` eventually. If `g → +∞`, `g' ≥ 0` eventually and
+`f' = o(g')`, then `f = o(g)`. -/
+theorem isLittleO_atTop_of_hasDerivAt {g g' : ℝ → ℝ} (hf : ∀ᶠ x in atTop, HasDerivAt f (f' x) x)
+    (hg : ∀ᶠ x in atTop, HasDerivAt g (g' x) x) (hg₀ : ∀ᶠ x in atTop, 0 ≤ g' x)
+    (hgt : Tendsto g atTop atTop) (hfg : f' =o[atTop] g') : f =o[atTop] g := by
+  have h : map ((↑) : ↥(univ : Set ℝ) → ℝ) atTop = atTop :=
+    map_val_atTop_of_Ici_subset (a := 0) (subset_univ _)
+  have := isLittleO_map_val_atTop_of_hasDerivAt (f := f) (f' := f') (g := g) (g' := g')
+    ordConnected_univ (by rwa [h]) (by rwa [h])
+    (by rwa [h]) (by rwa [h]) (by rwa [h])
+  rwa [h] at this
 
 /-- **Linear growth from a convergent derivative.** If the derivative of `f` tends to `c` at
 `+∞`, then `x⁻¹ • f x` tends to `c`. -/
