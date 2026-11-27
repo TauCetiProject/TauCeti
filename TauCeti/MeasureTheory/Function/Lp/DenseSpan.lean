@@ -34,9 +34,11 @@ classes already have dense span, in the form needed to identify continuous linea
 * The elementary tensors `s ↦ φ(s) x`, for scalar `φ ∈ Lᵖ(μ)` and `x ∈ E`, span a dense subspace
   (`MeasureTheory.Lp.topologicalClosure_span_compLp_toSpanSingleton_eq_top`).
 
-Restricting the constants to a set of dense span lets the results be iterated: for instance the
-classes `𝟙_A (𝟙_B x)` of rectangle tensors span a dense subspace of `Lᵖ(μ; L^q(ν; E))`, taking for
-`D` the indicator classes `𝟙_B x` in `L^q(ν; E)`.
+Restricting the constants to a set of dense span lets the results be iterated: for instance, when
+also `1 ≤ q < ∞`, the classes `𝟙_A (𝟙_B x)` of rectangle tensors, with `A` and `B` measurable sets
+of finite measure and `x ∈ E`, span a dense subspace of `Lᵖ(μ; L^q(ν; E))`, taking for `D` the
+indicator classes `𝟙_B x` in `L^q(ν; E)`. The restriction `q < ∞` is needed: for `q = ∞` these
+indicator classes need not have dense span in `L^∞(ν; E)`.
 
 ## Implementation notes
 
