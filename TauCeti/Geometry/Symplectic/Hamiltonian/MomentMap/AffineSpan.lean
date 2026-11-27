@@ -242,12 +242,9 @@ theorem finrank_vectorSpan_range_add_finrank_lieSubalgebraOfSubgroup_ker
       (LinearMap.ker (InfinitesimalAction.fundamental I G I' M).toLinearMap).comap
         (e : LeftInvariantDerivation I G ≃ₗ[ℝ] GroupLieAlgebra I G).toLinearMap := by
     ext X
-    simp only [LieSubalgebra.mem_toSubmodule, Lie.mem_lieSubalgebraOfSubgroup hK,
-      Submodule.mem_comap, InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff,
-      MonoidHom.mem_ker, Equiv.Perm.ext_iff, MulAction.toPermHom_apply, MulAction.toPerm_apply,
-      Equiv.Perm.coe_one, id_eq, lieExp_eq_mulInvariantExp, map_smul,
-      LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv, e,
-      leftInvariantDerivationLieEquivGroupLieAlgebra_apply]
+    rw [LieSubalgebra.mem_toSubmodule, Lie.mem_lieSubalgebraOfSubgroup hK, Submodule.mem_comap,
+      InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff]
+    simp [Equiv.Perm.ext_iff, lieExp_eq_mulInvariantExp, e]
   have hfin : Module.finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I)
       (MulAction.toPermHom G M).ker) =
       Module.finrank ℝ (LinearMap.ker (InfinitesimalAction.fundamental I G I' M).toLinearMap) :=

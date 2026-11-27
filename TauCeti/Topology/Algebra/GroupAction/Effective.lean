@@ -43,10 +43,7 @@ instance instContinuousConstSMulQuotientKerToPermHom [ContinuousConstSMul G X] :
 are closed: it is the intersection of the stabilizers of all points. -/
 theorem isClosed_ker_toPermHom [TopologicalSpace G] [T1Space X]
     (h : ∀ x : X, Continuous fun g : G ↦ g • x) : IsClosed ((toPermHom G X).ker : Set G) := by
-  have hker : ((toPermHom G X).ker : Set G) = ⋂ x : X, (stabilizer G x : Set G) := by
-    ext g
-    simp [MonoidHom.mem_ker, Equiv.Perm.ext_iff]
-  rw [hker]
+  rw [ker_toPermHom_eq_iInf_stabilizer, Subgroup.coe_iInf]
   exact isClosed_iInter fun x ↦ isClosed_stabilizer (h x)
 
 /-- Effective reduction of a connected finite smooth action chart preserves its coarse topology.

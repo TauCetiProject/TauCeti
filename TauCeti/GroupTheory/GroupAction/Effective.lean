@@ -52,6 +52,11 @@ instance instFaithfulSMulQuotientKerToPermHom :
 theorem _root_.MulAction.ker_toPermHom_eq_bot [FaithfulSMul G X] : (toPermHom G X).ker = ⊥ :=
   (MonoidHom.ker_eq_bot_iff _).mpr toPerm_injective
 
+/-- The action kernel is the intersection of all point stabilizers. -/
+theorem ker_toPermHom_eq_iInf_stabilizer : (toPermHom G X).ker = ⨅ x : X, stabilizer G x := by
+  ext
+  simp [Equiv.ext_iff]
+
 /-- Dividing out the action kernel does not change the orbit relation. -/
 theorem orbitRel_quotientKerToPermHom_iff (x y : X) :
     orbitRel (G ⧸ (toPermHom G X).ker) X x y ↔ orbitRel G X x y := by
