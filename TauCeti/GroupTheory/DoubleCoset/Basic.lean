@@ -29,6 +29,8 @@ This file also records how membership in a double coset `HaK` interacts with mul
 * `DoubleCoset.mul_mem_doubleCoset_of_mem_right`: membership in `HaK` is closed under right
   multiplication by `K`, for an arbitrary set `H` and subsemigroup `K`.
 * `DoubleCoset.mem_doubleCoset_of_quotient_eq`: recognising `HxK` from an equation in `G ⧸ K`.
+* `Subgroup.mem_conjAct_smul_subgroupOf_iff`: `c ∈ H` lies in the stabiliser
+  `(aKa⁻¹).subgroupOf H` exactly when `a⁻¹ c a ∈ K`.
 * `DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset`: the double coset `H (r w) K` of a product
   lies in the product `(H r L) (L w K)` of double cosets, for arbitrary sets `H`, `K` and any set
   `L` containing `1`, in any monoid.
@@ -43,6 +45,15 @@ public section
 open scoped Pointwise
 
 variable {G : Type*} [Group G]
+
+namespace Subgroup
+
+/-- `H ∩ aKa⁻¹`, as a subgroup of `H`, consists of the `c ∈ H` with `a⁻¹ c a ∈ K`. -/
+theorem mem_conjAct_smul_subgroupOf_iff {H K : Subgroup G} {a : G} {c : H} :
+    c ∈ (ConjAct.toConjAct a • K).subgroupOf H ↔ a⁻¹ * c * a ∈ K := by
+  simp [mem_subgroupOf, mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def]
+
+end Subgroup
 
 namespace DoubleCoset
 

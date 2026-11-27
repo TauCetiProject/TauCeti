@@ -124,6 +124,9 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   equivalence, `Representation.quotientToInvariantsInvariantsEquiv`.
 * `Representation.invariants_comp_subtype_subgroupOf`: for `U' ≤ U`, the invariants of `ρ|_U`
   under `U'.subgroupOf U` are the `U'`-invariants of `ρ`.
+* `Representation.apply_apply_eq_of_inv_mul_mul_mem`,
+  `Representation.apply_mem_invariants_of_forall_mem`: `c` fixes `ρ(t) v` for `v ∈ V^C` when
+  `t⁻¹ c t ∈ C`, so `ρ(t)` preserves `V^C` when `t⁻¹ C t ⊆ C`.
 * `Representation.invariants_prod`, `Representation.invariants_directSum`: the invariants of a
   direct sum are the product of the invariants.
 * `Representation.prod_comp`, `Representation.directSum_comp`: restricting a direct sum along a
@@ -407,6 +410,22 @@ theorem invariants_comp_subtype_subgroupOf {U U' : Subgroup G} (h : U' ≤ U) :
     invariants ((ρ.comp U.subtype).comp (U'.subgroupOf U).subtype) =
       invariants (ρ.comp U'.subtype) := by
   rw [invariants_comp_comp_subtype, Subgroup.subgroupOf_map_subtype, inf_of_le_left h]
+
+/-- If `t⁻¹ c t ∈ C` and `v ∈ V^C`, then `c` fixes `ρ(t) v`. -/
+theorem apply_apply_eq_of_inv_mul_mul_mem {C : Subgroup G} {t c : G} (hc : t⁻¹ * c * t ∈ C)
+    {v : V} (hv : v ∈ invariants (ρ.comp C.subtype)) : ρ c (ρ t v) = ρ t v := by
+  -- `ρ(c) (ρ(t) v) = ρ(t) (ρ(t⁻¹ c t) v)`, and `t⁻¹ c t ∈ C` fixes `v`.
+  have h : ρ c (ρ t v) = ρ t (ρ (t⁻¹ * c * t) v) := by
+    simp [← mul_apply_eq_comp, ← map_mul, mul_assoc]
+  have hv' : ρ (t⁻¹ * c * t) v = v := by
+    simpa using (mem_invariants _ v).1 hv ⟨_, hc⟩
+  rw [h, hv']
+
+/-- If `t⁻¹ C t ⊆ C`, then `ρ(t)` maps `V^C` into `V^C`. -/
+theorem apply_mem_invariants_of_forall_mem {C : Subgroup G} {t : G}
+    (ht : ∀ c ∈ C, t⁻¹ * c * t ∈ C) {v : V} (hv : v ∈ invariants (ρ.comp C.subtype)) :
+    ρ t v ∈ invariants (ρ.comp C.subtype) :=
+  fun c ↦ ρ.apply_apply_eq_of_inv_mul_mul_mem (ht c c.property) hv
 
 end Quotient
 
