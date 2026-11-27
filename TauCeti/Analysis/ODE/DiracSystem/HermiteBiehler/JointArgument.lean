@@ -28,7 +28,7 @@ Let `q` be a potential, locally integrable on `[0, ∞)`, with Dirac fundamental
 ## Implementation notes
 
 `E(t, z)` is jointly continuous in `(t, z)` (`TauCeti.continuousOn_diracHermiteBiehler_prod`)
-and does not vanish for real `z = x` (`TauCeti.diracFundamentalMatrix_sub_I_mul_ne_zero`), so
+and does not vanish for real `z = x` (`TauCeti.diracHermiteBiehler_ne_zero`), so
 the continuous function `(t, x) ↦ E(max t 0, x)` on the simply connected plane has a continuous
 logarithm `L` (`Complex.exists_continuousOn_eqOn_exp_comp`). As `E(0, x) = 1`, the imaginary part
 of `L(t, x) - L(0, x)` is the argument.
@@ -76,9 +76,7 @@ theorem exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp_prod
   set g : ℝ × ℝ → ℂ := fun p ↦ diracHermiteBiehler q (max p.1 0) p.2
   have hg0 : 0 ∉ g '' univ := by
     rintro ⟨p, -, hp⟩
-    simp only [g, diracHermiteBiehler_def] at hp
-    exact diracFundamentalMatrix_sub_I_mul_ne_zero hq (le_max_right p.1 0)
-      (z := (p.2 : ℂ)) (by simp) 0 hp
+    exact diracHermiteBiehler_ne_zero hq (le_max_right p.1 0) (z := p.2) (by simp) hp
   obtain ⟨L, hLc, hLg⟩ := exists_continuousOn_eqOn_exp_comp
     (convex_univ.isSimplyConnected univ_nonempty)
     isOpen_univ (continuous_diracHermiteBiehler_max hq).continuousOn hg0
@@ -124,9 +122,7 @@ theorem eqOn_of_diracHermiteBiehler_eq_norm_mul_exp_prod (hq : LocallyIntegrable
       (continuous_ofReal.comp_continuousOn hφ))
   have h1 : ∀ v ∈ w '' S, exp v = 1 := by
     rintro _ ⟨⟨t, x⟩, hp, rfl⟩
-    have hE : diracHermiteBiehler q t x ≠ 0 := by
-      rw [diracHermiteBiehler_def]
-      exact diracFundamentalMatrix_sub_I_mul_ne_zero hq hp.1 (z := (x : ℂ)) (by simp) 0
+    have hE : diracHermiteBiehler q t x ≠ 0 := diracHermiteBiehler_ne_zero hq hp.1 (by simp)
     have hnorm : (‖diracHermiteBiehler q t x‖ : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 hE
     have h := (hφE t hp.1 x).symm.trans (hψE t hp.1 x)
     rw [mul_right_inj' hnorm] at h
