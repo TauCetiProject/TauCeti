@@ -66,7 +66,7 @@ private theorem isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA (r 
         by simpa [σ, pow_succ', iterateFrobenius_def] using hc1⟩)
     · exact .inr (.inl (d.exists_notMem_span_and_comp_dotProduct_mulVec_eq_zero_of_three_le hr3))
   have hσ := d.involutive_iterateFrobenius_galoisField
-  have hQ := d.transpose_map_typeAGraphConjugator_galoisField (r := d.rank)
+  have hQ := transpose_map_typeAGraphConjugator σ d.rank
   have hdet := (isUnits_det_units (typeAGraphConjugator d.rank K)).ne_zero
   have htr s := d.exists_add_neg_one_pow_mul_iterateFrobenius_eq (r := d.rank) (s := s)
   have hadm := d.exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero (r := d.rank)

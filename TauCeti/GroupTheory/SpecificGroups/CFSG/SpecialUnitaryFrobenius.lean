@@ -195,18 +195,6 @@ theorem involutive_iterateFrobenius_galoisField :
   FiniteField.iterateFrobenius_involutive
     (GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
 
-/-- The `σ`-sesquilinear form of Gram matrix `Q` is `(-1) ^ r`-Hermitian: `σ(Q)ᵀ = (-1) ^ r • Q`,
-with `σ` the `q`-power Frobenius and `Q` the signed reversal matrix. -/
-theorem transpose_map_typeAGraphConjugator_galoisField :
-    ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) _).map
-        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-          d.fieldExponent))ᵀ =
-      (-1 : GaloisField d.characteristic (d.fieldExponent * 2)) ^ r •
-        (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-          Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
-  rw [map_coe_typeAGraphConjugator, transpose_typeAGraphConjugator]
-
 variable (d r) in
 /-- **The form of the special unitary group** `SU_{r+1}(q)`: the sesquilinear form
 `B(x, y) = σ(x)ᵀ Q y` on `𝔽_{q²} ^ (r + 1)`, with `σ : x ↦ x ^ q` and `Q` the signed reversal
@@ -240,7 +228,7 @@ theorem unitaryForm_apply
 theorem unitaryForm_swap (x y : Fin (r + 1) → GaloisField d.characteristic (d.fieldExponent * 2)) :
     unitaryForm d r y x = (-1) ^ r * unitaryForm d r x y ^ d.fieldOrder := by
   have hσ := apply_comp_dotProduct_mulVec involutive_iterateFrobenius_galoisField
-    transpose_map_typeAGraphConjugator_galoisField x y
+    (transpose_map_typeAGraphConjugator _ r) x y
   rw [← unitaryForm_apply, ← unitaryForm_apply, coe_iterateFrobenius_galoisField] at hσ
   beta_reduce at hσ
   rw [hσ, ← mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
@@ -352,7 +340,7 @@ instance isPreprimitive_isotropicPoints_galoisField :
           (GaloisField d.characteristic (d.fieldExponent * 2))).isotropicPoints
         (iterateFrobenius _ d.characteristic d.fieldExponent)) :=
   isPreprimitive_isotropicPoints involutive_iterateFrobenius_galoisField
-    transpose_map_typeAGraphConjugator_galoisField (isUnits_det_units _).ne_zero
+    (transpose_map_typeAGraphConjugator _ r) (isUnits_det_units _).ne_zero
     (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
     exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero
 
@@ -369,7 +357,7 @@ instance isPretransitive_elementaryUnitaryGroup_galoisField :
           (GaloisField d.characteristic (d.fieldExponent * 2))).isotropicPoints
         (iterateFrobenius _ d.characteristic d.fieldExponent)) :=
   isPretransitive_elementaryUnitaryGroup involutive_iterateFrobenius_galoisField
-    transpose_map_typeAGraphConjugator_galoisField (isUnits_det_units _).ne_zero
+    (transpose_map_typeAGraphConjugator _ r) (isUnits_det_units _).ne_zero
     (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
     exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero
 
@@ -409,7 +397,7 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField
     exact one_mem _
   have : NeZero r := ⟨hr.ne'⟩
   exact mem_center_specialIsometryGroup_of_forall_smul_eq involutive_iterateFrobenius_galoisField
-    transpose_map_typeAGraphConjugator_galoisField (isUnits_det_units _).ne_zero
+    (transpose_map_typeAGraphConjugator _ r) (isUnits_det_units _).ne_zero
     (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
     exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero hg
 

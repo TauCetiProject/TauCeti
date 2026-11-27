@@ -19,9 +19,9 @@ graph, indexed by `Fin 2`, are told apart.
 
 On `Fin (n + 1)` the reversal is `j ↦ n - j`, so a condition on the indices `j` and `n - j` can be
 restated over the natural numbers `m ≤ n` with `m = n - j`: `Fin.forall_imp_sub_iff_forall_le`.
-In nondegenerate ranks, the index `1 : Fin (r + 1)` and its reverse `(1 : Fin (r + 1)).rev` are
-distinct from `0`, `Fin.last r`, and each other (`Fin.one_ne_rev`, `Fin.rev_one_ne_zero`,
-`Fin.rev_one_ne_last`).
+For `1 : Fin (n + 1)`, we have `(1 : Fin (n + 1)).rev ≠ 0` when `2 ≤ n` (`Fin.rev_one_ne_zero`),
+`(1 : Fin (n + 1)).rev ≠ Fin.last n` when `n ≠ 0` (`Fin.rev_one_ne_last`), and
+`1 ≠ (1 : Fin (n + 1)).rev` when `n ≠ 0` and `n ≠ 2` (`Fin.one_ne_rev`).
 
 Cast into an additive commutative group with one, the reversal of `i : Fin n` is `n - 1 - i`:
 `Fin.natCast_val_rev`.

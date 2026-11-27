@@ -131,7 +131,7 @@ private theorem mem_fixedSubgroup_of_coe_eq_unitaryTransvection (hv : unitaryFor
     g ∈ fixedSubgroup (d.galoisFieldTwistedFrobenius r) := by
   rw [mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff, hg, ← coe_iterateFrobenius_galoisField]
   exact transpose_map_unitaryTransvection_mul_mul_self involutive_iterateFrobenius_galoisField
-    transpose_map_typeAGraphConjugator_galoisField ((unitaryForm_apply v v).symm.trans hv)
+    (transpose_map_typeAGraphConjugator _ r) ((unitaryForm_apply v v).symm.trans hv)
     (mem_unitaryTransvectionScalars_iff_iterateFrobenius.mp ha)
 
 /-- The unitary transvection `τ_{v,a}` along an isotropic vector `v`, with an admissible scalar

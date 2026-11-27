@@ -10,6 +10,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
 import TauCeti.Algebra.GroupWithZero.Units.Finite
+import TauCeti.Algebra.Ring.Hom
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
@@ -147,14 +148,31 @@ that the twisted trace `b ↦ b + ε b ^ q` is onto the elements `c` with `c ^ q
 the condition forces `c = ε`, and `b = 0` works. -/
 theorem exists_add_neg_one_pow_mul_pow_eq {q : ℕ} (hK : Nat.card K = q ^ 2) (k : ℕ)
     {c : K} (hc : c ^ q = (-1) ^ k * c) : ∃ b : K, b + (-1) ^ k * b ^ q = c := by
-  rcases neg_one_pow_eq_or K k with h | h <;> rw [h] at hc ⊢
-  · obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (one_mul c ▸ hc)
-    exact ⟨b, by rw [one_mul, add_comm, hb]⟩
-  · -- Scale a preimage `b₁` of `1` under `b ↦ b ^ q + b` by `c`.
-    obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (one_pow q)
-    refine ⟨c * b, ?_⟩
-    rw [mul_pow, hc]
-    linear_combination c * hb
+  rcases eq_or_ne q 0 with rfl | hq0
+  · refine ⟨0, ?_⟩
+    have hsq : (-1 : K) ^ k * (-1 : K) ^ k = 1 := by
+      rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
+    have hc' : (-1 : K) ^ k * c = 1 := by simpa using hc.symm
+    have hck : (-1 : K) ^ k = c := by
+      calc
+        (-1 : K) ^ k = (-1 : K) ^ k * ((-1 : K) ^ k * c) := by rw [hc', mul_one]
+        _ = ((-1 : K) ^ k * (-1 : K) ^ k) * c := by rw [mul_assoc]
+        _ = c := by rw [hsq, one_mul]
+    simpa using hck
+  have := finite_of_natCard_eq_pow hq0 hK
+  have := Fintype.ofFinite K
+  obtain ⟨p, hchar, m, hprime, hcard⟩ := _root_.FiniteField.card' K
+  let : CharP K p := hchar
+  let : Fact p.Prime := ⟨hprime⟩
+  have hdvd : q ∣ p ^ (m : ℕ) := by
+    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
+    exact dvd_pow_self q two_ne_zero
+  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
+  obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (one_pow (p ^ n))
+  simpa only [iterateFrobenius_def] using
+    TauCeti.exists_add_neg_one_pow_mul_apply_eq (σ := iterateFrobenius K p n)
+      ⟨b, by simpa only [iterateFrobenius_def, add_comm] using hb⟩ k
+      (by simpa only [iterateFrobenius_def] using hc)
 
 /-- **A nonzero solution of the homogeneous twisted equation.** In a field `K` with
 `Nat.card K = q ^ 2`, and for `ε = (-1) ^ k`, some nonzero `b` satisfies `b + ε b ^ q = 0`. For
@@ -162,18 +180,26 @@ theorem exists_add_neg_one_pow_mul_pow_eq {q : ℕ} (hK : Nat.card K = q ^ 2) (k
 the equation is `b + ε = 0`, solved by `b = -ε`. -/
 theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero {q : ℕ}
     (hK : Nat.card K = q ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ q = 0 := by
-  rcases neg_one_pow_eq_or K k with h | h <;> rw [h]
-  · rcases eq_or_ne q 0 with rfl | hq0
-    · exact ⟨-1, neg_ne_zero.mpr one_ne_zero, by simp⟩
-    -- The `q` roots of `b ^ q + b = 0` are not all zero.
-    have hq := one_lt_of_natCard_eq_pow hq0 hK
-    have hcard : 1 < {b : K | b ^ q + b = 0}.ncard := by
-      rwa [← Nat.card_coe_set_eq, Set.coe_ofPred, natCard_pow_add_self_eq hq0 hK (zero_pow hq0)]
-    obtain ⟨b, hb, hne⟩ := Set.exists_ne_of_one_lt_ncard hcard 0
-    refine ⟨b, hne, ?_⟩
-    rw [one_mul, add_comm]
-    exact hb
-  · exact ⟨1, one_ne_zero, by simp⟩
+  rcases eq_or_ne q 0 with rfl | hq0
+  · exact ⟨-(-1 : K) ^ k, neg_ne_zero.mpr (by simp), by simp⟩
+  have := finite_of_natCard_eq_pow hq0 hK
+  have := Fintype.ofFinite K
+  obtain ⟨p, hchar, m, hprime, hcard⟩ := _root_.FiniteField.card' K
+  let : CharP K p := hchar
+  let : Fact p.Prime := ⟨hprime⟩
+  have hdvd : q ∣ p ^ (m : ℕ) := by
+    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
+    exact dvd_pow_self q two_ne_zero
+  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
+  simpa only [iterateFrobenius_def] using
+    TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero (σ := iterateFrobenius K p n)
+      (k := k) fun _ ↦ by
+        have hq := one_lt_of_natCard_eq_pow hq0 hK
+        have hcard : 1 < {b : K | b ^ p ^ n + b = 0}.ncard := by
+          rwa [← Nat.card_coe_set_eq, Set.coe_ofPred,
+            natCard_pow_add_self_eq hq0 hK (zero_pow hq0)]
+        obtain ⟨b, hb, hne⟩ := Set.exists_ne_of_one_lt_ncard hcard 0
+        exact ⟨b, hne, by simpa [iterateFrobenius_def, add_comm] using hb⟩
 
 /-- The quadratic finite-field involution admits an element of trace one, in every
 characteristic. -/

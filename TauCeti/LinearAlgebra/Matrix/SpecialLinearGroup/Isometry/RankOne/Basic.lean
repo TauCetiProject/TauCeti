@@ -155,7 +155,7 @@ def weyl : UnitaryRankOne.Group R σ :=
   ⟨⟨(typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R), by
     simp [Matrix.det_fin_three, typeAGraphConjugator_apply]⟩, by
     apply mem_specialIsometryGroup_iff.mpr
-    rw [map_coe_typeAGraphConjugator, transpose_typeAGraphConjugator]
+    rw [transpose_map_typeAGraphConjugator]
     simpa only [neg_one_sq, one_smul, Units.val_mul, Units.val_one, one_mul] using
       congrArg (fun g : GL (Fin 3) R =>
         (g : Matrix (Fin 3) (Fin 3) R) * (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R))
