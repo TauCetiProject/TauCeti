@@ -8,6 +8,8 @@ module
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Commutant
+import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.OffDiagonal
 
 /-!
 # Calderón–Zygmund operators
@@ -36,6 +38,16 @@ basic theorems about this class.
   Calderón–Zygmund theorems under Hörmander's condition on `V`
   (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`, `TauCeti.exists_eLpNorm_le_of_hormander`),
   whose hypotheses on the adjoint the adjoint theorem supplies.
+* **The kernel and the operator.** The kernel is determined by the operator off the diagonal
+  (`TauCeti.HasStandardKernel.unique`), but the operator is not determined by the kernel: adding a
+  multiplication operator by an `L∞` function does not change the kernel
+  (`TauCeti.HasStandardKernel.add_multiplicationOperator`), and on scalar functions two
+  Calderón–Zygmund operators with the same kernel differ by such a multiplication operator
+  (`TauCeti.HasStandardKernel.exists_sub_eq_multiplicationOperator`), since their difference does
+  not enlarge compact supports (`MeasureTheory.Lp.exists_eq_multiplicationOperator_of_isCompact`).
+  So the operator, not the kernel, is the primitive datum, and the operators with the kernel of
+  one Calderón–Zygmund operator `T` are the `T + M_a`
+  (`TauCeti.HasStandardKernel.hasStandardKernel_iff_exists_eq_add`).
 * **Examples.** The identity has the kernel `0` (`TauCeti.hasStandardKernel_id`), and the Riesz
   transforms are Calderón–Zygmund operators (`TauCeti.hasStandardKernel_rieszTransform`). A
   difference kernel `(x, y) ↦ k (x - y)` satisfies the smoothness estimate in both variables once
@@ -432,5 +444,81 @@ theorem hasStandardKernel_id (C : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
   ae_apply_eq_integral f s _ hf := by
     filter_upwards [hf] with x hx hxs
     simp [hx hxs]
+
+/-! ### The kernel determines the operator up to a multiplication operator -/
+
+namespace HasStandardKernel
+
+variable {T : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V)} {K K' : V → V → ℂ}
+  {C C' : ℝ≥0} {δ δ' : ℝ}
+
+/-- **The kernel is determined by the operator off the diagonal.** If `T` has the standard kernels
+`K` and `K'`, then `K x y = K' x y` for `x ≠ y`. On the diagonal the definition asks nothing of a
+standard kernel, so nothing can be said there. -/
+theorem unique [CompleteSpace F] [Nontrivial F] (h : HasStandardKernel T K C δ)
+    (h' : HasStandardKernel T K' C' δ') {x₀ y₀ : V} (hxy : x₀ ≠ y₀) : K x₀ y₀ = K' x₀ y₀ := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  -- the operator kernels are continuous, so locally integrable, in `y` off the diagonal
+  have hloc {K : V → V → ℂ} {C : ℝ≥0} {δ : ℝ} (h : HasStandardKernel T K C δ) :
+      ∀ᵐ x, LocallyIntegrableOn (opKernel F ℂ K x) {x}ᶜ :=
+    .of_forall fun x ↦ ContinuousOn.locallyIntegrableOn
+      (((ContinuousLinearMap.lsmul ℂ ℂ).continuous.comp_continuousOn
+        (h.continuousOn_uncurry.comp (Continuous.prodMk_right x).continuousOn
+          fun _ hy ↦ Ne.symm hy)).congr fun _ hy ↦ by simp [opKernel, offDiag_of_ne (Ne.symm hy)])
+      (measurableSet_singleton x).compl
+  have hae := uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integral (fun f ↦ ⇑(T f))
+    h.stronglyMeasurable_opKernel h'.stronglyMeasurable_opKernel (hloc h) (hloc h')
+    h.ae_apply_eq_integral_opKernel h'.ae_apply_eq_integral_opKernel
+  -- off the diagonal the operator kernels are multiplication by `K` and by `K'`
+  have hK : Function.uncurry K =ᵐ[(volume.prod volume).restrict (diagonal V)ᶜ]
+      Function.uncurry K' := by
+    filter_upwards [hae, ae_restrict_mem measurableSet_diagonal.compl] with ⟨x, y⟩ hq hd
+    refine smul_left_injective ℂ hv ?_
+    simpa [opKernel, offDiag_of_ne (show x ≠ y from hd)] using congr($hq v)
+  exact Measure.eqOn_open_of_ae_eq hK isClosed_diagonal.isOpen_compl h.continuousOn_uncurry
+    h'.continuousOn_uncurry (x := (x₀, y₀)) hxy
+
+/-- **Adding a multiplication operator does not change the kernel.** If `T` has the standard kernel
+`K`, then so has `T + M_a` for every `a ∈ L∞`, with the same constants: multiplication by `a` does
+not move supports. The identity, with the kernel `0`, is the case `T = 0`, `a = 1`. -/
+theorem add_multiplicationOperator (h : HasStandardKernel T K C δ)
+    (a : Lp ℂ ∞ (volume : Measure V)) :
+    HasStandardKernel (T + Lp.multiplicationOperator a) K C δ where
+  exponent_pos := h.exponent_pos
+  norm_le := h.norm_le
+  norm_sub_add_norm_sub_le := h.norm_sub_add_norm_sub_le
+  ae_apply_eq_integral f s hs hf := by
+    filter_upwards [h.ae_apply_eq_integral f s hs hf, hf,
+      Lp.coeFn_add (T f) (Lp.multiplicationOperator a f), Lp.multiplicationOperator_ae a f]
+      with x hT hfx hadd hmul hxs
+    rw [add_apply, hadd, Pi.add_apply, hmul, hfx hxs, smul_zero, add_zero,
+      hT hxs]
+
+/-- **Two Calderón–Zygmund operators with the same kernel differ by a multiplication operator** by
+some `a ∈ L∞`, whose norm is then `‖T₁ - T₂‖` (`MeasureTheory.Lp.norm_multiplicationOperator`).
+The kernel does not determine the operator, so the operator, not the kernel, is the primitive
+datum. -/
+theorem exists_sub_eq_multiplicationOperator
+    {T₁ T₂ : Lp ℂ 2 (volume : Measure V) →L[ℂ] Lp ℂ 2 (volume : Measure V)}
+    (h₁ : HasStandardKernel T₁ K C δ) (h₂ : HasStandardKernel T₂ K C' δ') :
+    ∃ a : Lp ℂ ∞ (volume : Measure V), T₁ - T₂ = Lp.multiplicationOperator a :=
+  Lp.exists_eq_multiplicationOperator_of_isCompact ENNReal.ofNat_ne_top fun f s hs hf ↦ by
+    filter_upwards [h₁.ae_apply_eq_integral f s hs hf, h₂.ae_apply_eq_integral f s hs hf,
+      Lp.coeFn_sub (T₁ f) (T₂ f)] with x h₁x h₂x hsub hxs
+    rw [sub_apply, hsub, Pi.sub_apply, h₁x hxs, h₂x hxs, sub_self]
+
+/-- **The Calderón–Zygmund operators with a given kernel.** If `T₁` is a Calderón–Zygmund operator
+with the standard kernel `K`, then the bounded operators with the standard kernel `K`, for the same
+constants, are exactly the operators `T₁ + M_a` with `a ∈ L∞`. -/
+theorem hasStandardKernel_iff_exists_eq_add
+    {T₁ T₂ : Lp ℂ 2 (volume : Measure V) →L[ℂ] Lp ℂ 2 (volume : Measure V)}
+    (h₁ : HasStandardKernel T₁ K C δ) :
+    HasStandardKernel T₂ K C δ ↔
+      ∃ a : Lp ℂ ∞ (volume : Measure V), T₂ = T₁ + Lp.multiplicationOperator a := by
+  refine ⟨fun h₂ ↦ ?_, fun ⟨a, ha⟩ ↦ ha ▸ h₁.add_multiplicationOperator a⟩
+  obtain ⟨a, ha⟩ := h₂.exists_sub_eq_multiplicationOperator h₁
+  exact ⟨a, by rw [← ha, add_sub_cancel]⟩
+
+end HasStandardKernel
 
 end TauCeti
