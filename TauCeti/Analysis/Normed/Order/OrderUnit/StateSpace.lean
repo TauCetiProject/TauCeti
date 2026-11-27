@@ -288,17 +288,28 @@ theorem stateSpace_nonempty (h : IsOrderUnitNorm e) : (OrderUnit.stateSpace e).N
   exact ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2
     ⟨hg, by simpa [h.norm_eq_one] using hge⟩⟩
 
+omit [IsOrderedAddMonoid E] in
+/-- **State extension along a unital linear isometry:** every state on `E` extends along any unital
+linear isometry `i : E →ₗᵢ[ℝ] F` into an order-unit space `(F, f)`. -/
+theorem exists_state_extension_linearIsometry {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) {ψ : WeakDual ℝ E}
+    (hψ : ψ ∈ OrderUnit.stateSpace e) :
+    ∃ φ ∈ OrderUnit.stateSpace f, ∀ a : E, φ (i a) = ψ a := by
+  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun _ => he.eq_zero_of_norm_eq_zero
+  obtain ⟨g, hg_comp, hg_norm⟩ := LinearIsometry.exists_extension_norm_eq i (toStrongDual ψ)
+  have hg_apply : ∀ a : E, g (i a) = ψ a := fun a => DFunLike.congr_fun hg_comp a
+  have hg_one : g f = 1 := by rw [← hunit, hg_apply, hψ.2]
+  have hg_norm_one : ‖g‖ = 1 := hg_norm.trans (he.norm_toStrongDual_of_mem_stateSpace hψ)
+  refine ⟨StrongDual.toWeakDual g, ?_, hg_apply⟩
+  exact (hf.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one).mpr ⟨hg_norm_one, hg_one⟩
+
 /-- **Extension of states.** Every state of a subspace `p` containing `e` extends to a state of
 `E`, by the Hahn–Banach theorem. The extension need not be unique. -/
 theorem exists_extension_mem_stateSpace (h : IsOrderUnitNorm e) (p : Submodule ℝ E)
     (hp : e ∈ p) {ψ : WeakDual ℝ p} (hψ : ψ ∈ OrderUnit.stateSpace (⟨e, hp⟩ : p)) :
-    ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : p, φ x = ψ x := by
-  obtain ⟨g, hgx, hg⟩ := exists_extension_norm_eq p (toStrongDual ψ)
-  refine ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2 ⟨?_, ?_⟩,
-    fun x => by simpa [StrongDual.toWeakDual_apply, toStrongDual_apply] using hgx x⟩
-  · rw [StrongDual.toStrongDual_toWeakDual, hg]
-    exact (h.submodule p hp).norm_toStrongDual_of_mem_stateSpace hψ
-  · simpa using (hgx ⟨e, hp⟩).trans hψ.2
+    ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : p, φ x = ψ x :=
+  (h.submodule p hp).exists_state_extension_linearIsometry h p.subtypeₗᵢ rfl hψ
 
 /-- **States detect the order.** A vector of an order-unit space is nonnegative exactly when every
 state is nonnegative on it. -/
@@ -352,22 +363,6 @@ theorem norm_eq_iSup_states (h : IsOrderUnitNorm e) (a : E) :
   refine le_antisymm ?_ (ciSup_le fun φ => h.abs_apply_le_of_mem_stateSpace φ.property a)
   exact (h.norm_le_iff_forall_mem_stateSpace ((abs_nonneg _).trans (le_ciSup hb ⟨φ₀, hφ₀⟩))).2
     fun φ hφ => le_ciSup (f := g) hb ⟨φ, hφ⟩
-
-omit [IsOrderedAddMonoid E] in
-/-- **State extension along a unital linear isometry:** every state on `E` extends along any unital
-linear isometry `i : E →ₗᵢ[ℝ] F` into an order-unit space `(F, f)`. -/
-theorem exists_state_extension_linearIsometry {F : Type*} [SeminormedAddCommGroup F]
-    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
-    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) {ψ : WeakDual ℝ E}
-    (hψ : ψ ∈ OrderUnit.stateSpace e) :
-    ∃ φ ∈ OrderUnit.stateSpace f, ∀ a : E, φ (i a) = ψ a := by
-  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun _ => he.eq_zero_of_norm_eq_zero
-  obtain ⟨g, hg_comp, hg_norm⟩ := LinearIsometry.exists_extension_norm_eq i (toStrongDual ψ)
-  have hg_apply : ∀ a : E, g (i a) = ψ a := fun a => DFunLike.congr_fun hg_comp a
-  have hg_one : g f = 1 := by rw [← hunit, hg_apply, hψ.2]
-  have hg_norm_one : ‖g‖ = 1 := hg_norm.trans (he.norm_toStrongDual_of_mem_stateSpace hψ)
-  refine ⟨StrongDual.toWeakDual g, ?_, hg_apply⟩
-  exact (hf.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one).mpr ⟨hg_norm_one, hg_one⟩
 
 /-- Restriction of states from `E` to a unital subspace `p` is surjective. -/
 theorem surjective_statePullback_subtype (he : IsOrderUnitNorm e) (p : Submodule ℝ E)

@@ -139,7 +139,6 @@ def cstarStateSpaceHomeomorph :
     have hdecomp : ψ.val a = ψ.val (ℜ a) + Complex.I * ψ.val (ℑ a) := by
       simpa only [map_add, map_smul, smul_eq_mul] using
         congrArg ψ.val (realPart_add_I_smul_imaginaryPart a).symm
-    change (cstarStateExtend A (cstarStateRestrict A ψ)).val a = ψ.val a
     simp only [cstarStateExtend_apply, cstarStateRestrict_apply,
       ofReal_re_apply_of_mem_stateSpace A ψ.property (ℜ a).property,
       ofReal_re_apply_of_mem_stateSpace A ψ.property (ℑ a).property, hdecomp]
