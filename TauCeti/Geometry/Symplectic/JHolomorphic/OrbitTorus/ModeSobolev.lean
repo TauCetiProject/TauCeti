@@ -635,6 +635,7 @@ in `s`. -/
 def antiperiodicModeFrequency (ℓ : ℝ) (k : ℕ) : ℝ :=
   (2 * k + 1) * π / ℓ
 
+@[simp]
 theorem antiperiodicModeFrequency_apply (ℓ : ℝ) (k : ℕ) :
     antiperiodicModeFrequency ℓ k = (2 * k + 1) * π / ℓ :=
   (rfl)
@@ -651,6 +652,7 @@ with no `s`-independent part. -/
 def periodicModeFrequency (ℓ : ℝ) (k : ℕ) : ℝ :=
   2 * (k + 1) * π / ℓ
 
+@[simp]
 theorem periodicModeFrequency_apply (ℓ : ℝ) (k : ℕ) :
     periodicModeFrequency ℓ k = 2 * (k + 1) * π / ℓ :=
   (rfl)
