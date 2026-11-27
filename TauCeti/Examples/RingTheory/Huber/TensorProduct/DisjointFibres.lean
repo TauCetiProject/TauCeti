@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Huber.TensorProduct.Pushout
 public import TauCeti.RingTheory.Huber.Padic.Field
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Instances.ZMod
+import TauCeti.NumberTheory.Padics.Basic
 
 /-!
 # Checks: disjoint fibres and zero factors of completed tensor products
@@ -39,25 +40,24 @@ variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [A
   [IsHuberRing B] [IsHuberRing C]
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
 
+/-- A zero topological ring has empty adic spectrum. -/
+private theorem spa_eq_empty_of_subsingleton {R : Type*} [CommRing R] [TopologicalSpace R]
+    [SeparatelyContinuousAdd R] [Subsingleton R] (Rplus : Subring R) : spa Rplus = ∅ :=
+  spa_eq_empty_of_one_mem_closure_zero Rplus (subset_closure (Subsingleton.elim _ _))
+
 /-- *completedTensor_point_zero_factor*: a zero right factor has empty adic spectrum, and so has
 the completed tensor product. -/
 example [Subsingleton C] (S : Pair B) (T : Pair C) :
-    spa T.plus = ∅ ∧ spa (S.completedTensor A T).plus = ∅ := by
+    spa T.plus = ∅ ∧ spa (S.completedTensor A T).plus = ∅ :=
   have : Subsingleton (CompletedTensor A B C) := (CompletedTensor.inr A B C).codomain_trivial
-  exact ⟨(spa_eq_empty_iff_one_mem_closure_zero _ T.isRingOfIntegralElements).mpr
-      (subset_closure (Subsingleton.elim _ _)),
-    (spa_eq_empty_iff_subsingleton _ (S.completedTensor A T).isRingOfIntegralElements).mpr
-      inferInstance⟩
+  ⟨spa_eq_empty_of_subsingleton _, spa_eq_empty_of_subsingleton _⟩
 
 /-- *completedTensor_point_zero_factor*, left factor: a zero left factor has empty adic spectrum,
 and so has the completed tensor product. -/
 example [Subsingleton B] (S : Pair B) (T : Pair C) :
-    spa S.plus = ∅ ∧ spa (S.completedTensor A T).plus = ∅ := by
+    spa S.plus = ∅ ∧ spa (S.completedTensor A T).plus = ∅ :=
   have : Subsingleton (CompletedTensor A B C) := (CompletedTensor.inl A B C).codomain_trivial
-  exact ⟨(spa_eq_empty_iff_one_mem_closure_zero _ S.isRingOfIntegralElements).mpr
-      (subset_closure (Subsingleton.elim _ _)),
-    (spa_eq_empty_iff_subsingleton _ (S.completedTensor A T).isRingOfIntegralElements).mpr
-      inferInstance⟩
+  ⟨spa_eq_empty_of_subsingleton _, spa_eq_empty_of_subsingleton _⟩
 
 end ZeroFactor
 
@@ -95,9 +95,9 @@ private theorem subsingleton_completedTensor :
 /-- The generic fibre `(ℤ_[p], ℤ_[p]) → (ℚ_[p], ℤ_[p])`. -/
 noncomputable def generic : Pair.Hom (Pair.powerBounded ℤ_[p]) (Pair.powerBounded ℚ_[p]) where
   toRingHom := algebraMap ℤ_[p] ℚ_[p]
-  continuous_toRingHom := Padic.continuous_algebraMap
+  continuous_toRingHom := PadicInt.isEmbedding_algebraMap.continuous
   map_mem_plus a _ := by
-    rw [Pair.powerBounded_plus]
+    rw [Pair.powerBounded_plus, PadicInt.algebraMap_apply]
     exact mem_powerBoundedSubring.mpr (IsPowerBounded.of_norm_le_one a.property)
 
 /-- The special fibre `(ℤ_[p], ℤ_[p]) → (𝔽_p, 𝔽_p)`. -/
