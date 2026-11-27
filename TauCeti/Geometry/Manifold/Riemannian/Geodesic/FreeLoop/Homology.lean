@@ -44,8 +44,7 @@ the approximation with the free loop space.
   on `K` the samples of the broken geodesics are homotopic to the map of the sequence, since
   sampling a broken geodesic slides its vertices back to the subdivided tuple
   (`TauCeti.Manifold.exists_basepoint_coherent_cyclicDistanceCutSample`). Both homotopies, the arc
-  straightening and the vertex slide, keep the base point, which twisted homology with
-  coefficients pulled back along the evaluation at the base point needs.
+  straightening and the vertex slide, keep the base point.
 
 No topology is put on the colimit of the spaces `𝓛ⁿM`: the statement is about their homology.
 
@@ -60,8 +59,9 @@ restrictions of `geoⁿ` (`CategoryTheory.Limits.Cocone.restrictPreimage`), and
 The two halves of the comparison hold over `S` because homotopies do not leave path components:
 a compact family of loops of `S` is homotopic within `S` to the broken geodesics through its
 samples (`TauCeti.Manifold.exists_restrictPreimage_cyclicDistanceCutBrokenGeodesic_comp_homotopic`),
-and the vertex slide stays in `(geoⁿ⁺ᵏ)⁻¹(S)`
-(`TauCeti.Manifold.exists_basepoint_coherent_restrictPreimage_cyclicDistanceCutSample`).
+and the sampling, the straightening and the vertex slide restrict to `S` and to `(geoⁿ⁺ᵏ)⁻¹(S)`
+(`TauCeti.Manifold.exists_restrictPreimage_cyclicDistanceCutCocone_homotopy`,
+`TauCeti.Manifold.exists_basepoint_coherent_restrictPreimage_cyclicDistanceCutSample`).
 
 ## Main definitions
 
@@ -83,6 +83,9 @@ and the vertex slide stays in `(geoⁿ⁺ᵏ)⁻¹(S)`
   loops through loops keeping the base point.
 * `TauCeti.Manifold.exists_comp_cyclicDistanceCutCocone_ι_app_homotopic_map`: the same, stated for
   the legs and maps of the cocone of broken geodesics.
+* `TauCeti.Manifold.exists_restrictPreimage_cyclicDistanceCutCocone_homotopy`: a sampling of a
+  family of loops of a union `S` of path components into a distance cut, with its straightening and
+  vertex slide, restricts to the parts over `S`.
 * `TauCeti.Manifold.exists_restrictPreimage_cyclicDistanceCutCocone_ι_app_comp_homotopic`,
   `TauCeti.Manifold.exists_basepoint_coherent_restrictPreimage_cyclicDistanceCutSample`,
   `TauCeti.Manifold.exists_comp_restrictPreimage_cyclicDistanceCutCocone_ι_app_homotopic_map`: the
@@ -258,6 +261,61 @@ section Component
 
 variable {S : Set (MooreFreeLoopSpace M)}
 
+/-- **Restricting a sampling and its two homotopies to a union of components.** Let `S` be a union
+of path components of the free loop space, `K` a family of tuples of the part `(geoʲ)⁻¹(S)` of the
+distance cut `𝓛ʲM` and `L` a family of loops of `S` containing the broken geodesics through them.
+A map `e₀` from the loops of `L` to a later distance cut `𝓛ⁱM`, a homotopy `G₀` from `geoⁱ ∘ e₀` to
+the inclusion of `L`, and a homotopy `H₀` on `K` from `e₀ ∘ geoʲ` to the map along `f : j ⟶ i` of
+the sequence of distance cuts, all over the free loop space, restrict to the parts over `S`: the
+homotopy `G₀` starts in `S`, so it stays in `S`, and so `e₀` lands in `(geoⁱ)⁻¹(S)`, where `H₀`
+then stays. The restrictions agree with `e₀`, `G₀` and `H₀` on points. -/
+theorem exists_restrictPreimage_cyclicDistanceCutCocone_homotopy
+    (hS : ∀ γ ∈ S, pathComponent γ ⊆ S) (hpos : 0 < δ 0 0) (hlt : ∀ n i, δ n i < r)
+    (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {j i : ℕ} (f : j ⟶ i)
+    {K : Set (((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).obj j)} {L : Set S}
+    (hKL : MapsTo (((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).ι.app j) K L)
+    (hKL₀ : MapsTo ((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app j) (Subtype.val '' K)
+      (Subtype.val '' L))
+    (e₀ : C(Subtype.val '' L, cyclicDistanceCut (X := M) (δ i)))
+    (G₀ : (((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i).hom.comp e₀).Homotopy
+      (ContinuousMap.subtypeVal (Subtype.val '' L)))
+    (H₀ : (e₀.comp ⟨hKL₀.restrict,
+      ((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app j).hom.continuous.restrict hKL₀⟩).Homotopy
+        (((cyclicDistanceCutFunctor M hpos.le hδ).map f).hom.comp
+          (ContinuousMap.subtypeVal (Subtype.val '' K)))) :
+    ∃ (e : C(L, ((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).obj i))
+      (G : ((((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).ι.app i).hom.comp
+        e).Homotopy (ContinuousMap.subtypeVal L))
+      (H : (e.comp ⟨hKL.restrict,
+        (((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).ι.app
+          j).hom.continuous.restrict hKL⟩).Homotopy
+          ((((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).map f).hom.comp
+            (ContinuousMap.subtypeVal K))),
+      (∀ γ, (e γ).val = e₀ ⟨γ.val, mem_image_of_mem _ γ.property⟩) ∧
+      (∀ p : unitInterval × L,
+        (G.toContinuousMap p).val =
+          G₀.toContinuousMap (p.1, ⟨p.2.val.val, mem_image_of_mem _ p.2.property⟩)) ∧
+      -- `toContinuousMap`: the targets of `G₀`, `G` and `H` are the free loop space, `S` and the
+      -- part of the distance cut over `S` only up to unfolding the apexes and
+      -- `CategoryTheory.Limits.Cocone.preimageFunctor`.
+      ∀ p : unitInterval × K,
+        (H.toContinuousMap p).val = H₀ (p.1, ⟨p.2.val.val, mem_image_of_mem _ p.2.property⟩) := by
+  let φ : C(L, Subtype.val '' L) := ⟨(mapsTo_image _ L).restrict, continuous_subtypeVal.restrict _⟩
+  let ψ : C(K, Subtype.val '' K) := ⟨(mapsTo_image _ K).restrict, continuous_subtypeVal.restrict _⟩
+  -- The broken geodesics through `e₀` of the loops of `L` lie in `S`.
+  have hmem (γ : L) : (cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i (e₀ (φ γ)) ∈ S :=
+    (ContinuousMap.Homotopic.symm ⟨G₀⟩).apply_mem hS γ.val.property
+  exact ⟨⟨fun γ ↦ ⟨e₀ (φ γ), hmem γ⟩, ((map_continuous e₀).comp (map_continuous φ)).subtype_mk _⟩,
+    ContinuousMap.Homotopy.codRestrict hS ((G₀.compContinuousMap φ).cast
+      (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)),
+    ContinuousMap.Homotopy.codRestrict
+      (fun _ hq ↦ (map_continuous _).pathComponent_subset_preimage hS hq)
+      ((H₀.compContinuousMap ψ).cast (ContinuousMap.ext fun _ ↦ rfl)
+        (ContinuousMap.ext fun q ↦ (Cocone.coe_preimageFunctor_map_apply
+          (cyclicDistanceCutCocone hr hlt hpos.le hδ) S f q.val).symm)),
+    fun _ ↦ rfl, fun p ↦ ContinuousMap.Homotopy.coe_codRestrict_apply _ _ p,
+    fun p ↦ ContinuousMap.Homotopy.coe_codRestrict_apply _ _ p⟩
+
 include hr in
 /-- **Sampling, straightening and sliding at a common stage over a union of components, keeping the
 base point.** Let `S` be a union of path components of the free loop space and let the cut-offs
@@ -288,33 +346,18 @@ theorem exists_basepoint_coherent_restrictPreimage_cyclicDistanceCutSample
       -- to unfolding `CategoryTheory.Limits.Cocone.preimageFunctor`.
       ∀ p, (H.toContinuousMap p).val.val 0 = p.2.val.val.val 0 := by
   -- Run the construction for all free loops on the images of `K` and `L`, and restrict it.
-  have hKL₀ : MapsTo (cyclicDistanceCutBrokenGeodesic hr (hlt n)) (Subtype.val '' K)
+  have hKL₀ : MapsTo ((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app n) (Subtype.val '' K)
       (Subtype.val '' L) := by
     rintro _ ⟨q, hq, rfl⟩
     exact ⟨_, hKL hq, rfl⟩
-  obtain ⟨k, e₀, G₀, H₀, he, hG, hH⟩ := exists_basepoint_coherent_cyclicDistanceCutSample hr hpos
-    hlt hδ (hL.image continuous_subtypeVal) hKL₀
-  let φ : C(L, Subtype.val '' L) := ⟨(mapsTo_image _ L).restrict, continuous_subtypeVal.restrict _⟩
-  let ψ : C(K, Subtype.val '' K) := ⟨(mapsTo_image _ K).restrict, continuous_subtypeVal.restrict _⟩
-  -- The broken geodesics through the samples of the loops of `L` lie in `S`.
-  have hmem (γ : L) : cyclicDistanceCutBrokenGeodesic hr (hlt (n + k)) (e₀ (φ γ)) ∈ S :=
-    (ContinuousMap.Homotopic.symm ⟨G₀⟩).apply_mem hS γ.val.property
-  refine ⟨k,
-    ⟨fun γ ↦ ⟨e₀ (φ γ), hmem γ⟩, ((map_continuous e₀).comp (map_continuous φ)).subtype_mk _⟩,
-    ContinuousMap.Homotopy.codRestrict hS ((G₀.compContinuousMap φ).cast
-      (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)),
-    ContinuousMap.Homotopy.codRestrict
-      (fun _ hq ↦ (map_continuous _).pathComponent_subset_preimage hS hq)
-      ((H₀.compContinuousMap ψ).cast (ContinuousMap.ext fun _ ↦ rfl)
-        (ContinuousMap.ext fun q ↦ (Cocone.coe_preimageFunctor_map_apply
-          (cyclicDistanceCutCocone hr hlt hpos.le hδ) S _ q.val).symm)), fun γ ↦ he (φ γ),
-    fun p ↦ ?_, fun p ↦ ?_⟩
-  · rw [ContinuousMap.Homotopy.coe_codRestrict_apply, ContinuousMap.Homotopy.cast_apply,
-      ContinuousMap.Homotopy.compContinuousMap_apply, hG]
-    -- `φ` sends a loop of `L` to itself.
-    rfl
-  · exact (congrArg (fun q : cyclicDistanceCut (X := M) (δ (n + k)) ↦ q.val 0)
-      (ContinuousMap.Homotopy.coe_codRestrict_apply _ _ p)).trans (hH (p.1, ψ p.2))
+  obtain ⟨k, e₀, G₀, H₀, he₀, hG₀, hH₀⟩ := exists_basepoint_coherent_cyclicDistanceCutSample hr
+    hpos hlt hδ (hL.image continuous_subtypeVal) hKL₀
+  obtain ⟨e, G, H, he, hG, hH⟩ := exists_restrictPreimage_cyclicDistanceCutCocone_homotopy hr hS
+    hpos hlt hδ (homOfLE (Nat.le_add_right n k)) hKL hKL₀ e₀ G₀ H₀
+  exact ⟨k, e, G, H, fun γ ↦ (congrArg Subtype.val (he γ)).trans (he₀ _),
+    fun p ↦ (congrArg MooreFreeLoopSpace.basepoint (hG p)).trans (hG₀ _),
+    fun p ↦ (congrArg (fun q : cyclicDistanceCut (X := M) (δ (n + k)) ↦ q.val 0) (hH p)).trans
+      (hH₀ _)⟩
 
 /-- **Compact families of free loops in a union of components are broken geodesics up to
 homotopy within it.** Let `S` be a union of path components of the free loop space and let the

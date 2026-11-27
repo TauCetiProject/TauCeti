@@ -59,7 +59,8 @@ The proof reparametrizes `γ` by time maps (`TauCeti.MooreFreeLoopSpace.reparam`
   path of `G` at `γ` as the other pair.
 
 Over a union `S` of path components the sampling, the straightening and the vertex slide restrict
-to `S` and to the parts `(geoⁿ)⁻¹(S)`, since homotopies do not leave path components. Two paths of
+to `S` and to the parts `(geoⁿ)⁻¹(S)`, since homotopies do not leave path components
+(`TauCeti.Manifold.exists_restrictPreimage_cyclicDistanceCutCocone_homotopy`). Two paths of
 `S` that are homotopic in the free loop space are homotopic in `S`
 (`TauCeti.homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset`), so the coherence over
 `S` is the coherence over the free loop space. This is the form used for the contractible loops
@@ -947,28 +948,16 @@ private theorem restrictPreimage_cyclicDistanceCutCocone_coherent
     exact ⟨_, hKK' hq, rfl⟩
   obtain ⟨i, f, e₀, G₀, H₀, h⟩ := cyclicDistanceCutCocone_coherent hr hpos hlt hδ j _ _
     (hK'.image continuous_subtypeVal) hKK₀
-  let φ : C(K', Subtype.val '' K') :=
-    ⟨(mapsTo_image _ K').restrict, continuous_subtypeVal.restrict _⟩
-  let ψ : C(K, Subtype.val '' K) := ⟨(mapsTo_image _ K).restrict, continuous_subtypeVal.restrict _⟩
-  -- The broken geodesics through the samples of the loops of `K'` lie in `S`.
-  have hmem (γ : K') : (cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i (e₀ (φ γ)) ∈ S :=
-    (ContinuousMap.Homotopic.symm ⟨G₀⟩).apply_mem hS γ.val.property
-  refine ⟨i, f,
-    ⟨fun γ ↦ ⟨e₀ (φ γ), hmem γ⟩, ((map_continuous e₀).comp (map_continuous φ)).subtype_mk _⟩,
-    ContinuousMap.Homotopy.codRestrict hS ((G₀.compContinuousMap φ).cast
-      (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)),
-    ContinuousMap.Homotopy.codRestrict
-      (fun _ hq ↦ (map_continuous _).pathComponent_subset_preimage hS hq)
-      ((H₀.compContinuousMap ψ).cast (ContinuousMap.ext fun _ ↦ rfl)
-        (ContinuousMap.ext fun q ↦ (Cocone.coe_preimageFunctor_map_apply
-          (cyclicDistanceCutCocone hr hlt hpos.le hδ) S f q.val).symm)), fun x ↦ ?_⟩
+  obtain ⟨e, G, H, -, hG, hH⟩ :=
+    exists_restrictPreimage_cyclicDistanceCutCocone_homotopy hr hS hpos hlt hδ f hKK' hKK₀ e₀ G₀ H₀
+  refine ⟨i, f, e, G, H, fun x ↦ ?_⟩
   -- The two paths lie in `S`, and their images in the free loop space are the coherent paths of
   -- the unrestricted construction at the image of `x`.
   refine homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset (hS _ (Subtype.property _))
-    (Path.Homotopic.of_coe_eq (funext fun t ↦ ?_) (funext fun t ↦ ?_) (h (ψ x)))
-  · exact congrArg ((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i)
-      (ContinuousMap.Homotopy.coe_codRestrict_apply _ _ (t, x))
-  · exact ContinuousMap.Homotopy.coe_codRestrict_apply _ _ (t, _)
+    (Path.Homotopic.of_coe_eq (funext fun t ↦ ?_) (funext fun t ↦ ?_)
+      (h ⟨x.val.val, mem_image_of_mem _ x.property⟩))
+  · exact congrArg ((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i) (hH (t, x))
+  · exact hG (t, _)
 
 /-- **The homology of a union of components of the free loop space with local coefficients is the
 colimit of the homology of its parts of the distance cuts.** Let `S` be a union of path components
