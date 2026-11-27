@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.PValuation
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentral.PowerMap
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Uniform
 
 /-!
 # The canonical valuation of a uniform pro-`p` group

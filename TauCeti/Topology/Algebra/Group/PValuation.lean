@@ -64,11 +64,23 @@ instance : FunLike (PValuation p G) G ℝ≥0∞ where
     cases h
     rfl
 
+/-- Coercing a constructed valuation to a function gives its weight function. -/
+@[simp]
+theorem coe_mk (f : G → ℝ≥0∞) (h_top h_inv h_mul_inv h_comm h_pow h_basis h_complete) :
+    ⇑(⟨f, h_top, h_inv, h_mul_inv, h_comm, h_pow, h_basis, h_complete⟩ : PValuation p G) =
+      f :=
+  (rfl)
+
 @[ext]
 theorem ext {v w : PValuation p G} (h : ∀ x, v x = w x) : v = w :=
   DFunLike.ext _ _ h
 
 variable (v : PValuation p G)
+
+/-- The weight function agrees with the function coercion. -/
+@[simp]
+theorem toFun_eq_coe : v.toFun = ⇑v :=
+  (rfl)
 
 /-- Infinite weight characterizes the identity. -/
 @[simp]
@@ -120,6 +132,13 @@ def filtration (r : ℝ≥0∞) : Subgroup G where
 @[simp]
 theorem mem_filtration (r : ℝ≥0∞) (x : G) : x ∈ v.filtration r ↔ r ≤ v x :=
   (Iff.rfl)
+
+/-- A right quotient lies in the filtration term at the smaller of the two thresholds. -/
+theorem mul_inv_mem_filtration_min {r s : ℝ≥0∞} {x y : G}
+    (hx : x ∈ v.filtration r) (hy : y ∈ v.filtration s) :
+    x * y⁻¹ ∈ v.filtration (min r s) := by
+  simp only [mem_filtration] at hx hy ⊢
+  exact (min_le_min hx hy).trans (v.min_le_mul_inv x y)
 
 theorem filtration_antitone : Antitone v.filtration := fun _ _ h _ hx ↦ h.trans hx
 
