@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.TwoRank
-import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 import TauCeti.NumberTheory.NumberField.ClassGroupElementaryTwoQuotient
-import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 
 /-!
