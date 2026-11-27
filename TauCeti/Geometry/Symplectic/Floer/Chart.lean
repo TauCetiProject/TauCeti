@@ -59,7 +59,12 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   (`TauCeti.SmoothTwoForm.continuousOn_hamiltonianVectorFieldInChartAt_of_uncurry`), and a single
   datum, as a constant family, is as regular as the datum
   (`TauCeti.Floer.contDiffOn_almostComplexInChartAt_uncurry_const`,
-  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`). The
+  `TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const`). A smooth
+  structure, as a constant family, is `Cⁿ` in every chart
+  (`TauCeti.Floer.contDiffOn_almostComplexInChartAt_const`), and the Hamiltonian vector field of
+  the zero Hamiltonian vanishes in every chart
+  (`TauCeti.SmoothTwoForm.contDiffOn_hamiltonianVectorFieldInChartAt_zero`) and under every
+  pushforward (`TauCeti.SmoothTwoForm.norm_mvfderiv_hamiltonianVectorField_zero_le_zero`). The
   Hamiltonian vector field in the chart of the rescaled family `ε K(c + ε w)` is `ε` times that of
   `K` at `c + ε w` (`TauCeti.SmoothTwoForm.hamiltonianVectorFieldInChartAt_rescale`).
 * `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
@@ -253,6 +258,17 @@ theorem almostComplexInChartAt_almostComplexStructureAt (J : P → SmoothAlmostC
   rw [almostComplexInChartAt, SmoothAlmostComplexStructure.inChart_def,
     SmoothAlmostComplexStructure.toContinuousLinearMap_almostComplexStructureAt]
 
+/-- A smooth almost complex structure `J₀`, as a family constant over a normed space `Q` of
+parameters, such as the domain `ℝ × ℝ`, is `Cⁿ` in the chart at every point. -/
+theorem contDiffOn_almostComplexInChartAt_const (J₀ : SmoothAlmostComplexStructure I M) (α : M)
+    {Q : Type*} [NormedAddCommGroup Q] [NormedSpace ℝ Q] {n : ℕ∞} :
+    ContDiffOn ℝ n (almostComplexInChartAt I α fun (_ : Q) ↦ J₀.almostComplexStructureAt)
+      (univ ×ˢ (extChartAt I α).target) := by
+  refine (((J₀.contDiffOn_inChart α).of_le (by exact_mod_cast le_top)).comp
+    (contDiff_snd.contDiffOn (s := univ ×ˢ (extChartAt I α).target))
+    fun p hp ↦ hp.2).congr fun p _ ↦ ?_
+  simp
+
 /-- **A jointly regular family of structures is regular in a chart.** Let `J_q(x)` be structures
 on the tangent spaces of `M`, depending on a point `q` of a normed space `Q`, such as the domain
 `ℝ × ℝ` of the Floer equation or a space of parameters times it, and let the section
@@ -421,6 +437,22 @@ theorem hamiltonianVectorFieldInChartAt_zero (ω : SmoothTwoForm I M) (α : M) {
   funext ⟨z, y⟩
   rw [hamiltonianVectorFieldInChartAt_apply, hamiltonianVectorField_const]
   exact map_zero _
+
+omit [FiniteDimensional ℝ E] in
+/-- The Hamiltonian vector field of the zero Hamiltonian, read in a chart, is `Cⁿ` on every set. -/
+theorem contDiffOn_hamiltonianVectorFieldInChartAt_zero (ω : SmoothTwoForm I M) (α : M)
+    {Q : Type*} [NormedAddCommGroup Q] [NormedSpace ℝ Q] {n : WithTop ℕ∞} {s : Set (Q × E)} :
+    ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α (fun (_ : Q) _ ↦ 0)) s := by
+  rw [hamiltonianVectorFieldInChartAt_zero]
+  exact contDiffOn_const
+
+omit [FiniteDimensional ℝ E] in
+/-- The pushforward by any map `e` of the Hamiltonian vector field of the zero Hamiltonian
+vanishes, so it satisfies every bound `‖d e (X_K)‖ ≤ B` with `B = 0`. -/
+theorem norm_mvfderiv_hamiltonianVectorField_zero_le_zero {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (ω : SmoothTwoForm I M) (e : M → F) (x : M) :
+    ‖mvfderiv I e x (ω.hamiltonianVectorField (fun _ ↦ (0 : ℝ)) x)‖ ≤ 0 := by
+  rw [hamiltonianVectorField_const, Pi.zero_apply, map_zero, norm_zero]
 
 omit [FiniteDimensional ℝ E] in
 /-- The Hamiltonian vector field of the rescaled Hamiltonian `ε K(c + ε w)`, read in a chart, is

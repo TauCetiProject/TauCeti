@@ -252,9 +252,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_comp_
     (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) fun _ _ _ ↦ contMDiffAt_const)
     (hω.contDiffOn_hamiltonianVectorFieldInChartAt fun _ _ _ ↦ hH'.contMDiffAt)
     (fun _ _ x ↦ hJt _ x) hc (fun _ _ x v ↦ hJc _ x v)
-    (fun _ _ x ↦ by
-      simp only [hamiltonianVectorField_const, Pi.zero_apply, map_zero]
-      exact norm_zero.trans_le ((norm_nonneg _).trans (hL 0 x)))
+    (fun _ _ x ↦ (norm_mvfderiv_hamiltonianVectorField_zero_le_zero ω e x).trans
+      ((norm_nonneg _).trans (hL 0 x)))
     fun w _ x ↦ hL w.2 x
   refine ⟨δ, hδ, fun K J Ω u R E hKH hJ hΩ hΩD hR hu hfl hE0 hE ↦ ?_⟩
   -- The translated ends solve the Floer equation of the end, with energy at most `E`.
