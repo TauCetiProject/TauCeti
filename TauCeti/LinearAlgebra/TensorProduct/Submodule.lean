@@ -13,6 +13,11 @@ public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 /-!
 # Scalar extension of images and powers of submodules
 
+For submodules of modules over a commutative algebra, `Submodule.tensorProductMap` compares
+their tensor product over the base ring with the ambient tensor product over the algebra.
+Its range is the bilinear image, using Mathlib's `TensorProduct.mapOfCompatibleSMul`,
+`TensorProduct.mapIncl`, and `TensorProduct.map₂_eq_range_lift_comp_mapIncl`.
+
 Extension of scalars commutes with taking images of submodules under linear maps, and preserves
 powers of submodules of an algebra. The latter applies, in particular, to the homogeneous pieces of
 tensor and exterior algebras, defined as powers of their generators.
@@ -38,6 +43,39 @@ public section
 open scoped TensorProduct Pointwise
 
 namespace Submodule
+
+section TensorProductMap
+
+variable {R K V W : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
+  [AddCommMonoid V] [Module K V] [Module R V] [IsScalarTower R K V]
+  [AddCommMonoid W] [Module K W] [Module R W] [IsScalarTower R K W]
+
+/-- The canonical `R`-linear map from the tensor product of two submodules to the tensor
+product of their ambient modules over a commutative `R`-algebra `K`, with scalars restricted
+to `R` in the codomain. -/
+def tensorProductMap (L : Submodule R V) (M : Submodule R W) :
+    L ⊗[R] M →ₗ[R] V ⊗[K] W :=
+  (TensorProduct.mapOfCompatibleSMul K R R V W).comp (TensorProduct.mapIncl L M)
+
+/-- The tensor map sends a pure submodule tensor to the corresponding ambient tensor. -/
+@[simp]
+theorem tensorProductMap_tmul (L : Submodule R V) (M : Submodule R W) (x : L) (y : M) :
+    L.tensorProductMap M (x ⊗ₜ[R] y) = (x : V) ⊗ₜ[K] (y : W) := by
+  simp [tensorProductMap, TensorProduct.mapIncl]
+
+/-- The tensor map has as image the bilinear image of the two submodules. -/
+@[simp]
+theorem range_tensorProductMap (L : Submodule R V) (M : Submodule R W) :
+    LinearMap.range (L.tensorProductMap (K := K) M) =
+      map₂ ((TensorProduct.mk K V W).restrictScalars₁₂ R R) L M := by
+  have h : TensorProduct.mapOfCompatibleSMul K R R V W =
+      TensorProduct.lift ((TensorProduct.mk K V W).restrictScalars₁₂ R R) := by
+    ext x y
+    simp
+  rw [tensorProductMap, h]
+  exact (TensorProduct.map₂_eq_range_lift_comp_mapIncl _ L M).symm
+
+end TensorProductMap
 
 section Congruence
 
