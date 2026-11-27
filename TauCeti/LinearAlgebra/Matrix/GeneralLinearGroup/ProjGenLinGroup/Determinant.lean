@@ -13,7 +13,8 @@ import Mathlib.Tactic.NormNum.IsSquare
 # The determinant obstruction to lifting a projective matrix to SL
 
 The determinant of a projective matrix is well defined modulo nth powers of units, where n
-is the matrix size. Its kernel is precisely the image of SL. For nonempty matrices the resulting
+is the matrix size. Its kernel is precisely the image of SL, which is also the image of PSL
+(`Matrix.ProjectiveSpecialLinearGroup.range_toPGL`). For nonempty matrices the resulting
 map is surjective, and identifies the quotient of PGL by that image with units modulo nth powers.
 All these statements hold over a commutative ring, for the pointwise quotient defining PGL.
 
@@ -125,3 +126,17 @@ theorem mk_diagGL_two_notMem_range_toPGL :
   norm_num at hs
 
 end Matrix.ProjGenLinGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+
+/-- The image of `PSL` in `PGL` is the image of `SL`: the quotient map `SL → PSL` is onto. -/
+theorem range_toPGL :
+    (toPGL (n := n) (R := R)).range = (SpecialLinearGroup.toPGL (n := n) (R := R)).range := by
+  ext x
+  refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨s, hs⟩ ↦ ⟨s, (toPGL_mk s).trans hs⟩⟩
+  obtain ⟨s, rfl⟩ := QuotientGroup.mk_surjective y
+  exact ⟨s, (toPGL_mk s).symm.trans hy⟩
+
+end Matrix.ProjectiveSpecialLinearGroup
