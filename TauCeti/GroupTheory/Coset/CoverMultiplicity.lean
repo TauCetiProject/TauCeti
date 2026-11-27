@@ -139,27 +139,18 @@ theorem coverMultiplicity_smul {s : G} (hs : s ∈ S) (t : X) :
 
 /-- **The cover multiplicity as the index of a stabiliser.** If `T` meets the `S`-orbit of `t`,
 and only in points of the `(S ∩ A)`-orbit of `t`, then the cover multiplicity of `t` is the index
-of `A ∩ H` in the stabiliser `H = S ∩ Stab(t)` of `t` in `S`. -/
+of `A ∩ H` in the stabiliser `H = S ∩ Stab(t)` of `t` in `S`. This is
+`Subgroup.orbitWeight_eq_relIndex` for the action of `S` relative to `S ∩ A`, transported along
+`MulAction.orbitRel_subgroupOf` and `Subgroup.relIndex_subgroupOf`. -/
 theorem coverMultiplicity_eq_relIndex {t : X} (hT : (T ∩ orbit S t).Nonempty)
     (hTA : T ∩ orbit S t ⊆ orbit (S ⊓ A : Subgroup G) t) :
     S.coverMultiplicity A T t = A.relIndex (S ⊓ stabilizer G t) := by
-  -- The only `(S ∩ A)`-orbit of a point of `T` in the `S`-orbit of `t` is the orbit of `t`.
-  have hclasses : (A.subgroupOf S).orbitCountClasses T t =
-      {Quotient.mk (orbitRel (A.subgroupOf S) X) t} := by
-    have hmk : ∀ x ∈ T ∩ orbit S t,
-        Quotient.mk (orbitRel (A.subgroupOf S) X) x = Quotient.mk _ t := by
-      intro x hx
-      obtain ⟨⟨a, ha⟩, rfl⟩ := hTA hx
-      exact Quotient.sound (orbitRel_apply.2
-        ⟨⟨⟨a, ha.1⟩, mem_subgroupOf.2 ha.2⟩, by simp only [Subgroup.mk_smul]⟩)
-    refine Set.eq_singleton_iff_unique_mem.2 ⟨?_, ?_⟩
-    · obtain ⟨x, hx⟩ := hT
-      exact mem_orbitCountClasses.2 ⟨x, hx.2, hx.1, hmk x hx⟩
-    · intro o ho
-      obtain ⟨x, hxS, hxT, rfl⟩ := mem_orbitCountClasses.1 ho
-      exact hmk x ⟨hxT, hxS⟩
-  rw [coverMultiplicity_def, orbitWeight_def, orbitWeightCosets_eq_preimage, hclasses,
-    ncard_fiber_orbitOfRightCoset_eq_relIndex (mem_orbit_self t), ← stabilizer_subgroupOf,
+  -- The orbit of `S ∩ A` is the orbit of `A` viewed as a subgroup of `S`.
+  have horb : orbit (S ⊓ A : Subgroup G) t = orbit (A.subgroupOf S) t := by
+    ext x
+    rw [← orbitRel_apply, ← orbitRel_apply, inf_comm, ← orbitRel_subgroupOf]
+  rw [horb] at hTA
+  rw [coverMultiplicity_def, orbitWeight_eq_relIndex hT hTA, ← stabilizer_subgroupOf,
     ← inf_subgroupOf_left (stabilizer G t) S, relIndex_subgroupOf inf_le_left]
 
 /-- **The cover multiplicity divides a power of `q`.** If the points of `T` in the `S`-orbit of
