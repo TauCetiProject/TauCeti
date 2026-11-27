@@ -114,6 +114,26 @@ theorem ncard_setOf_monic_natDegree_eq [Nontrivial R] (d : ℕ) :
     Nat.card_congr ((monicEquivDegreeLT d).trans (degreeLTEquiv R d).toEquiv), Nat.card_fun,
     Nat.card_fin]
 
+/-- A predicate implying monicity partitions the monic polynomials of degree `d` into those
+satisfying it and those not satisfying it. -/
+theorem ncard_monic_pred_add_ncard_monic_not_pred [Finite R] [Nontrivial R] (d : ℕ)
+    (P : R[X] → Prop) (hP : ∀ f, P f → f.Monic) :
+    {f : R[X] | f.natDegree = d ∧ P f}.ncard +
+      {f : R[X] | f.Monic ∧ f.natDegree = d ∧ ¬P f}.ncard = Nat.card R ^ d := by
+  have hdisj : Disjoint {f : R[X] | f.natDegree = d ∧ P f}
+      {f : R[X] | f.Monic ∧ f.natDegree = d ∧ ¬P f} :=
+    Set.disjoint_left.mpr fun _ hf hf' ↦ hf'.2.2 hf.2
+  have hA : {f : R[X] | f.natDegree = d ∧ P f}.Finite :=
+    (finite_setOf_monic_natDegree_eq R d).subset fun f hf ↦ ⟨hP f hf.2, hf.1⟩
+  have hB : {f : R[X] | f.Monic ∧ f.natDegree = d ∧ ¬P f}.Finite :=
+    (finite_setOf_monic_natDegree_eq R d).subset fun _ hf ↦ ⟨hf.1, hf.2.1⟩
+  rw [← ncard_setOf_monic_natDegree_eq R d, ← Set.ncard_union_eq hdisj hA hB]
+  congr 1
+  ext f
+  by_cases h : P f
+  · simp [h, hP f h]
+  · simp [h]
+
 end Semiring
 
 section Ring
