@@ -376,22 +376,19 @@ theorem exists_surjective_floerConformalSobolevOperator_coprod_exchangePerturbat
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
         u).coprod (Fintype.linearCombination ℝ y).toContinuousLinearMap) := by
-  -- Beyond the height `max R₁ 2`, `K_c` is the pair-of-pants datum on the input ends and its
-  -- translate by `c` on the output end.
-  have hR₁ : R₁ ≤ max R₁ 2 := le_max_left _ _
-  have h1 {r : ℝ} (hr : max R₁ 2 ≤ r) : 1 < r := by linarith [le_max_right R₁ 2]
-  exact ω.exists_surjective_floerConformalSobolevOperator_coprod_of_recentered hω hH hHs hc₀ hc₁
-    hX hx hxp hnd hJe hJex hJx (fun q hq ζ hζ ↦ hJeq q hq ζ (hR₁.trans hζ))
-    (fun ζ hζ ↦ hJeq_inf ζ (hR₁.trans hζ))
-    (fun _ hq _ _ hz ↦
-      exchangePerturbation_components_eq_of_pos_fst_positiveEndCoord hc₀ hc₁ hq
-        (zero_lt_one.trans (h1 hz)))
-    (fun _ hz ↦ exchangePerturbation_add_components_eq_of_one_lt_fst_positiveEndCoord hc₀ hc₁
-      (h1 hz)) hJ
-    (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) 1)
-    (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) Complex.I) hu hc
-    (fun q hq z hz hzR ↦ hF q hq z hz (hR₁.trans hzR)) (fun z hz ↦ hF_inf z (hR₁.trans hz)) hux
-    hux_inf hδ hδ_inf hO hOne hOS hW
+  -- `L²(S, F)` is a real Hilbert space for the real part of the inner product of `F`.
+  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  -- `D_u` is Fredholm, so its range is closed and of finite codimension.
+  have hD := ω.isFredholm_floerConformalSobolevOperator_exchangePerturbation hω hH hHs hc₀ hc₁ hX
+    hx hxp hnd hJe hJex hJx hJeq hJeq_inf (fun z hz ↦ (hJ z hz).of_le one_le_two)
+    (fun z hz ↦ (hu z hz).of_le one_le_two) hc hF hF_inf hux hux_inf hδ hδ_inf
+  -- The range of `D_u` and the Hamiltonian variations span a dense subspace, so finitely many
+  -- variations already span a complement of the range.
+  refine hD.exists_surjective_coprod_fintypeLinearCombination_of_dense ?_
+  rw [Submodule.dense_iff_topologicalClosure_eq_top]
+  exact ω.topologicalClosure_range_sup_span_hamiltonianVariationsOn_exchangePerturbation_eq_top hH
+    hHs hc₀ hc₁ (fun q ↦ (continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt).continuousOn)
+    hJe hJeq hJeq_inf hJ hu hF hF_inf hux hux_inf hδ hδ_inf hO hOne hOS hW
 
 end Surjective
 
