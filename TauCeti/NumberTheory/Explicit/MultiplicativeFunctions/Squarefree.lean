@@ -113,11 +113,8 @@ theorem squarefreeCount_eq_sum_moebius_mul_natFloor (x : ℝ) :
   push_cast at h
   rw [squarefreeCount_def, h]
   refine sum_congr rfl fun d _ ↦ congrArg _ ?_
-  have hζ : ∀ k ∈ Icc 1 ⌊x / d ^ 2⌋₊, (((ζ : ArithmeticFunction ℤ) k : ℤ) : ℝ) = 1 :=
-    fun k hk ↦ by
-      rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply_ne
-        (Nat.one_le_iff_ne_zero.1 (mem_Icc.1 hk).1), Nat.cast_one, Int.cast_one]
-  rw [sum_congr rfl hζ, sum_const, Nat.card_Icc, add_tsub_cancel_right, nsmul_one]
+  simp only [ArithmeticFunction.natCoe_apply, Int.cast_natCast]
+  rw [← Nat.cast_sum, ← zero_add 1, Icc_add_one_left_eq_Ioc, ArithmeticFunction.sum_Ioc_zeta]
 
 /-- `Q(x) = ∑_{k ≤ x} M(√(x / k))`, the sum running over the naturals `1 ≤ k ≤ x`: the pairs
 `(k, d)` with `k d² ≤ x` grouped by `k`. -/
