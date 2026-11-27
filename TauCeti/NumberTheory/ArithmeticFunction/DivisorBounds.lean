@@ -14,6 +14,7 @@ public import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.Divisors
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Bounds for divisor sums
@@ -34,6 +35,8 @@ The divisor count also satisfies `d(n) ≤ Cε n^ε` for every `ε > 0`
 (`exists_pos_card_divisors_le_rpow`). This controls weight-one Eisenstein coefficients.
 The estimate follows from the prime-factor product for `d(n)`: sufficiently large primes
 need no constant, while the finitely many small primes contribute a bounded factor.
+For large `n` the power absorbs the constant: for every `δ > 0`, all sufficiently large `n`
+satisfy `d(n) ≤ n^δ` (`eventually_card_divisors_le_rpow`).
 Comparing every fixed Dirichlet-convolution power of zeta with a power of the divisor count
 gives the same subpolynomial bound for every fixed order, including order zero.
 
@@ -181,6 +184,18 @@ theorem exists_pos_card_divisors_le_rpow {ε : ℝ} (hε : 0 < ε) :
     _ = (∏ p ∈ n.primeFactors, (if p < P then A else 1)) * (n : ℝ) ^ ε := by
       rw [Finset.prod_mul_distrib, hfactor]
     _ ≤ A ^ P * (n : ℝ) ^ ε := mul_le_mul_of_nonneg_right hprod (by positivity)
+
+/-- For every positive real `δ`, all sufficiently large natural numbers `n` have at most `n^δ`
+divisors: the constant of `exists_pos_card_divisors_le_rpow` at `ε = δ / 2` is eventually at
+most `n^(δ / 2)`. -/
+theorem eventually_card_divisors_le_rpow {δ : ℝ} (hδ : 0 < δ) :
+    ∀ᶠ n : ℕ in Filter.atTop, (n.divisors.card : ℝ) ≤ (n : ℝ) ^ δ := by
+  obtain ⟨C, -, hC⟩ := exists_pos_card_divisors_le_rpow (half_pos hδ)
+  have htend : Filter.Tendsto (fun n : ℕ ↦ (n : ℝ) ^ (δ / 2)) Filter.atTop Filter.atTop :=
+    (tendsto_rpow_atTop (half_pos hδ)).comp tendsto_natCast_atTop_atTop
+  filter_upwards [htend.eventually_ge_atTop C] with n hn
+  refine Real.le_rpow_of_le_mul_rpow_of_le_rpow_sub n.cast_nonneg (hC n) ?_
+  rwa [sub_half]
 
 end TauCeti
 
