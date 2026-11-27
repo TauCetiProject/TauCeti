@@ -224,17 +224,22 @@ theorem commutator_mem_linearLieAlgebra (hG : IsClosed (G : Set Rˣ))
   rw [← mem_linearLieSubalgebra_iff hG] at hx hy ⊢
   exact G.linearLieSubalgebra.lie_mem hx hy
 
+/-- Conjugation by an element of the normalizer of `K` preserves `K.linearLieSubalgebra`. -/
+theorem conj_mem_linearLieSubalgebra_of_mem_normalizer {K : Subgroup Rˣ} {g : Rˣ}
+    (hg : g ∈ Subgroup.normalizer (K : Set Rˣ)) {x : R} (hx : x ∈ K.linearLieSubalgebra) :
+    (g : R) * x * ((g⁻¹ : Rˣ) : R) ∈ K.linearLieSubalgebra := by
+  rw [mem_linearLieSubalgebra] at hx ⊢
+  convert TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) hg hx using 1
+  rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    LieEquiv.apply_symm_apply]
+
 /-- The Lie algebra of a subgroup `G` of `Rˣ` is invariant under conjugation by `G`: this is
 `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`, read through `TauCeti.Lie.unitsLieAlgebraLieEquiv`,
 under which the adjoint action is conjugation in `R` (`TauCeti.Lie.unitsLieAlgebraEquiv_Ad`). -/
 theorem conj_mem_linearLieSubalgebra {y : Rˣ} (hy : y ∈ G) (hx : x ∈ G.linearLieSubalgebra) :
-    (y : R) * x * ↑y⁻¹ ∈ G.linearLieSubalgebra := by
-  rw [mem_linearLieSubalgebra] at hx ⊢
-  convert TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) (Subgroup.le_normalizer hy)
-    hx using 1
-  rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-    TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-    LieEquiv.apply_symm_apply]
+    (y : R) * x * ↑y⁻¹ ∈ G.linearLieSubalgebra :=
+  conj_mem_linearLieSubalgebra_of_mem_normalizer (Subgroup.le_normalizer hy) hx
 
 /-- The Lie algebra of a closed subgroup stable under a continuous star is stable under the
 star. -/
@@ -267,16 +272,6 @@ theorem linearLieSubalgebra_inf {K K' : Subgroup Rˣ}
   ext x
   simp only [mem_linearLieSubalgebra, LieSubalgebra.mem_inf,
     TauCeti.Lie.lieSubalgebraOfSubgroup_inf hK hK']
-
-/-- Conjugation by an element of the normalizer of `K` preserves `K.linearLieSubalgebra`. -/
-theorem conj_mem_linearLieSubalgebra_of_mem_normalizer {K : Subgroup Rˣ} {g : Rˣ}
-    (hg : g ∈ Subgroup.normalizer (K : Set Rˣ)) {x : R} (hx : x ∈ K.linearLieSubalgebra) :
-    (g : R) * x * ((g⁻¹ : Rˣ) : R) ∈ K.linearLieSubalgebra := by
-  rw [mem_linearLieSubalgebra] at hx ⊢
-  convert TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) hg hx using 1
-  rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-    TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-    LieEquiv.apply_symm_apply]
 
 /-- For `g` in the normalizer of `K`, the left and right translates of `K.linearLieSubalgebra`
 by `g` coincide: `g · 𝔤 = 𝔤 · g`. -/

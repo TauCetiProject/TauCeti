@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.YangMills.StructureGroup
+public import TauCeti.Analysis.PDE.YangMills.StructureGroup.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Examples
 import TauCeti.RepresentationTheory.SU2.StandardBasis
 
