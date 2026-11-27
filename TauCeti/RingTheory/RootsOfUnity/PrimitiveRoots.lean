@@ -25,7 +25,9 @@ raises that root to the `j`-th power, it raises every `n`-th root of unity to th
 
 The same principle characterises when the cyclotomic character `IsPrimitiveRoot.autToPow` is
 trivial: it kills an automorphism exactly when that automorphism fixes the chosen primitive root,
-because the character records nothing but the power the root is sent to.
+because the character records nothing but the power the root is sent to. Likewise the character
+is `-1` exactly when the automorphism inverts the root, so it is `±1` exactly when the
+automorphism fixes `ζ + ζ⁻¹`, the two roots of `X² - (ζ + ζ⁻¹)X + 1` being `ζ` and `ζ⁻¹`.
 
 Over a normal extension of a field where `Φ_n` is irreducible, every coprime power of a
 primitive `n`-th root is attained by an automorphism. Indeed the two primitive roots have the
@@ -65,6 +67,10 @@ divisible by `p ^ r` as a product of differences with exponents prime to `p`.
   maps to `ζ ^ ℓ`, then `η` is a primitive `m`-th root of unity.
 * `IsPrimitiveRoot.autToPow_eq_one_iff`: the cyclotomic character kills an automorphism exactly
   when it fixes the chosen primitive root.
+* `IsPrimitiveRoot.autToPow_eq_neg_one_iff`: the cyclotomic character is `-1` exactly when the
+  automorphism inverts the chosen primitive root.
+* `IsPrimitiveRoot.autToPow_eq_one_or_neg_one_iff`: the cyclotomic character is `±1` exactly when
+  the automorphism fixes `ζ + ζ⁻¹`.
 * `IsPrimitiveRoot.coe_autToPow_eq_natCast_iff`: an automorphism has cyclotomic character `k`
   exactly when it raises the primitive root to the `k`-th power.
 * `IsPrimitiveRoot.cast_autToPow_eq_natCast_iff`: modulo a divisor `d` of the level, the
