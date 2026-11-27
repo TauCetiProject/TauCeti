@@ -76,6 +76,8 @@ a common location and scale has exactly the parent law.
 * `TauCeti.Probability.cauchyMeasure_map_add_const` — translation changes the location parameter;
 * `TauCeti.Probability.charFun_cauchyMeasure` — the characteristic function of `cauchyMeasure x₀ γ`;
 * `TauCeti.Probability.cauchyMeasure_conv_cauchyMeasure` — convolution adds locations and scales;
+* the results in `ProbabilityTheory.HasLaw` transfer the sharp moment and exponential-integrability
+  statements, together with the zero-scale moments and transforms, to Cauchy random variables;
 * `ProbabilityTheory.IndepFun.hasLaw_add_cauchyMeasure` — the same for sums of independent
   Cauchy variables;
 * `ProbabilityTheory.iIndepFun.hasLaw_average_cauchyMeasure` — stability of the family under
@@ -468,6 +470,59 @@ theorem cauchyMeasure_conv_cauchyMeasure (x₁ x₂ : ℝ) (γ₁ γ₂ : ℝ≥
 end CharFun
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+  {x₀ : ℝ} {γ : ℝ≥0}
+
+/-- A random variable with a nondegenerate Cauchy law is not integrable. -/
+theorem not_integrable_cauchyMeasure (hX : HasLaw X (cauchyMeasure x₀ γ) P)
+    (hγ : γ ≠ 0) : ¬ Integrable X P := by
+  intro hint
+  apply TauCeti.Probability.not_integrable_id_cauchyMeasure x₀ hγ
+  rw [← hX.map_eq, integrable_map_measure (by fun_prop) hX.aemeasurable]
+  simpa only [Function.id_comp] using hint
+
+/-- The exponential integrand of a Cauchy random variable is integrable exactly when its scale or
+the exponential rate is zero. -/
+theorem integrable_exp_mul_cauchyMeasure_iff (hX : HasLaw X (cauchyMeasure x₀ γ) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P ↔ γ = 0 ∨ t = 0 := by
+  rw [← TauCeti.Probability.integrable_exp_mul_id_cauchyMeasure_iff x₀ γ t, ← hX.map_eq,
+    integrable_map_measure (by fun_prop) hX.aemeasurable]
+  rfl
+
+/-- The exact exponential-integrability domain of a Cauchy random variable. -/
+theorem integrableExpSet_cauchyMeasure (hX : HasLaw X (cauchyMeasure x₀ γ) P) :
+    integrableExpSet X P = if γ = 0 then Set.univ else {0} := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, hX.integrable_exp_mul_cauchyMeasure_iff]
+  by_cases hγ : γ = 0 <;> simp [hγ]
+
+/-- The expectation of a zero-scale Cauchy random variable is its location. -/
+theorem integral_cauchyMeasure_zero_scale (hX : HasLaw X (cauchyMeasure x₀ 0) P) :
+    ∫ ω, X ω ∂P = x₀ := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_cauchyMeasure_zero_scale]
+
+/-- The variance of a zero-scale Cauchy random variable is zero. -/
+theorem variance_cauchyMeasure_zero_scale (hX : HasLaw X (cauchyMeasure x₀ 0) P) :
+    variance X P = 0 := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_cauchyMeasure_zero_scale]
+
+/-- The moment-generating function of a zero-scale Cauchy random variable. -/
+theorem mgf_cauchyMeasure_zero_scale (hX : HasLaw X (cauchyMeasure x₀ 0) P) (t : ℝ) :
+    mgf X P t = Real.exp (t * x₀) := by
+  rw [← TauCeti.Probability.mgf_id_cauchyMeasure_zero_scale x₀ t, ← hX.map_eq,
+    mgf_map hX.aemeasurable (by fun_prop), Function.id_comp]
+
+/-- The cumulant-generating function of a zero-scale Cauchy random variable. -/
+theorem cgf_cauchyMeasure_zero_scale (hX : HasLaw X (cauchyMeasure x₀ 0) P) (t : ℝ) :
+    cgf X P t = t * x₀ := by
+  rw [cgf, hX.mgf_cauchyMeasure_zero_scale, Real.log_exp]
+
+end ProbabilityTheory.HasLaw
 
 namespace ProbabilityTheory
 

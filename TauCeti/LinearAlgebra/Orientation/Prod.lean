@@ -32,8 +32,10 @@ factor past each of the `n` basis vectors of the second.
 Reassociating `(E × F) × G` as `E × (F × G)` carries the product orientation `(o × o') × o''` to
 `o × (o' × o'')` (`Orientation.map_prodAssoc_prod`, inverse form
 `Orientation.map_prodAssoc_symm_prod`): both list the bases of the three factors in the same
-order. Deleting a trivial factor with its positive orientation recovers the orientation of the
-remaining factor (`Orientation.map_uniqueProd_prod_positiveOrientation`,
+order. Moving the first factor of `E × (F × G)` past the second, to `F × (E × G)`, multiplies the
+product orientation by `(-1) ^ (m * n)` (`Orientation.map_prodAssoc_symm_trans_prodComm_prod`).
+Deleting a trivial factor with its positive orientation recovers the orientation of the remaining
+factor (`Orientation.map_uniqueProd_prod_positiveOrientation`,
 `Orientation.map_prodUnique_prod_positiveOrientation`).
 -/
 
@@ -415,6 +417,24 @@ theorem map_prodAssoc_symm_prod (o : Orientation R E (Fin m)) (o' : Orientation 
   rw [← (Orientation.map _ (LinearEquiv.prodAssoc R E F G)).injective.eq_iff, ← map_symm,
     Equiv.apply_symm_apply, map_reindex, map_prodAssoc_prod, reindex_finCongr_reindex_finCongr,
     finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+/-- Moving the first factor of `E × (F × G)` past the second, through `(E × F) × G`, multiplies the
+product orientation `o × (o' × o'')` by `(-1) ^ (m * n)`, where `m` and `n` are the dimensions of
+`E` and `F`. The index types are identified through `n + (m + p) = m + (n + p)`. -/
+theorem map_prodAssoc_symm_trans_prodComm_prod (o : Orientation R E (Fin m))
+    (o' : Orientation R F (Fin n)) (o'' : Orientation R G (Fin p)) (hm : Module.finrank R E = m)
+    (hn : Module.finrank R F = n) (hp : Module.finrank R G = p) :
+    Orientation.map (Fin (m + (n + p)))
+        (((LinearEquiv.prodAssoc R E F G).symm.trans
+          ((LinearEquiv.prodComm R E F).prodCongr (LinearEquiv.refl R G))).trans
+          (LinearEquiv.prodAssoc R F E G))
+        (prod o (prod o' o'' hn hp) hm (by rw [Module.finrank_prod, hn, hp])) =
+      (-1 : Rˣ) ^ (m * n) • Orientation.reindex R (F × E × G) (finCongr (by omega))
+        (prod o' (prod o o'' hm hp) hn (by rw [Module.finrank_prod, hm, hp])) := by
+  rw [map_trans, map_trans, map_prodAssoc_symm_prod, map_reindex, map_prod, map_prodComm_prod,
+    map_refl, Equiv.refl_apply, prod_units_smul_left, prod_reindex_finCongr_left, map_reindex,
+    map_units_smul, map_reindex, map_prodAssoc_prod]
+  simp only [reindex_units_smul, reindex_finCongr_reindex_finCongr]
 
 section Field
 
