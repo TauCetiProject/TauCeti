@@ -215,6 +215,22 @@ private theorem completedCovectorDifferential_apply_singleton
     fun C hC => absurd (covectorDifferentialOnGenerator_apply_singleton C K) hC,
     Finset.sum_empty]
 
+/-- The zigzag combination `U ^ max(0, -m) x + U ^ max(0, m + 1) y` at an index `m = k ≥ 0` is
+`x + U ^ (k + 1) y`. -/
+private theorem X_pow_toNat_neg_natCast_mul_add {R : Type*} [Semiring R] (k : ℕ) (x y : R⟦X⟧) :
+    X ^ (-(k : ℤ)).toNat * x + X ^ ((k : ℤ) + 1).toNat * y = x + X ^ (k + 1) * y := by
+  rw [show (-(k : ℤ)).toNat = 0 by omega, show ((k : ℤ) + 1).toNat = k + 1 by omega, pow_zero,
+    one_mul]
+
+/-- The zigzag combination `U ^ max(0, -m) x + U ^ max(0, m + 1) y` at an index
+`m = -(k + 2) < -1` is `U ^ (k + 2) x + y`. -/
+private theorem X_pow_toNat_neg_neg_natCast_add_two_mul_add {R : Type*} [Semiring R] (k : ℕ)
+    (x y : R⟦X⟧) :
+    X ^ (-(-((k : ℤ) + 2))).toNat * x + X ^ (-((k : ℤ) + 2) + 1).toNat * y =
+      X ^ (k + 2) * x + y := by
+  rw [show (-(-((k : ℤ) + 2))).toNat = k + 2 by omega,
+    show (-((k : ℤ) + 2) + 1).toNat = 0 by omega, pow_zero, one_mul]
+
 /-! ### Completed cycles of dimension one -/
 
 /-- **A completed chain whose differential vanishes away from `[-1, ∅]` has no one-dimensional
@@ -235,8 +251,7 @@ private theorem apply_singleton_eq_zero_of_forall_ne
       (fun k => ?_) k
     have h := hc k (by omega)
     rw [completedCovectorDifferential_apply_oddCovector_empty,
-      show (-(k : ℤ)).toNat = 0 by omega, show ((k : ℤ) + 1).toNat = k + 1 by omega, pow_zero,
-      one_mul] at h
+      X_pow_toNat_neg_natCast_mul_add] at h
     simpa using CharTwo.add_eq_zero.1 h
   · -- The components `b_{-(k + 1)}` for `k ≥ 0`.
     obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = -((k : ℤ) + 1) := ⟨(-m - 1).toNat, by omega⟩
@@ -245,8 +260,7 @@ private theorem apply_singleton_eq_zero_of_forall_ne
       (fun k => ?_) k
     have h := hc (-((k : ℤ) + 2)) (by omega)
     rw [completedCovectorDifferential_apply_oddCovector_empty,
-      show (-(-((k : ℤ) + 2))).toNat = k + 2 by omega,
-      show (-((k : ℤ) + 2) + 1).toNat = 0 by omega, pow_zero, one_mul,
+      X_pow_toNat_neg_neg_natCast_add_two_mul_add,
       show -((k : ℤ) + 2) + 1 = -((k : ℤ) + 1) by ring] at h
     rw [show -(((k + 1 : ℕ) : ℤ) + 1) = -((k : ℤ) + 2) by push_cast; ring]
     exact (CharTwo.add_eq_zero.1 h).symm
@@ -260,7 +274,7 @@ theorem oneVertexPlumbing_neg_one_apply_eq_zero_of_completedCovectorDifferential
     {C : (oneVertexPlumbing (-1)).CovectorCube} (hC : C.directions.Nonempty) : c C = 0 := by
   obtain ⟨m, rfl | rfl⟩ := exists_covectorCube_eq C
   · simp at hC
-  · exact apply_singleton_eq_zero_of_forall_ne c (fun m _ => by rw [hc]; rfl) m
+  · exact apply_singleton_eq_zero_of_forall_ne c (fun m _ => by rw [hc, Pi.zero_apply]) m
 
 /-! ### The completed lattice homology -/
 
@@ -293,14 +307,15 @@ private theorem exists_forall_ne_eq_X_pow_mul_add_X_pow_mul (a : ℤ → PowerSe
   refine ⟨b, fun m hm => ?_⟩
   rcases lt_or_gt_of_ne hm with hm | hm
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = -((k : ℤ) + 2) := ⟨(-m - 2).toNat, by omega⟩
-    rw [show (-(-((k : ℤ) + 2))).toNat = k + 2 by omega,
-      show (-((k : ℤ) + 2) + 1).toNat = 0 by omega, pow_zero, one_mul,
+    rw [X_pow_toNat_neg_neg_natCast_add_two_mul_add,
       show -((k : ℤ) + 2) + 1 = -((k : ℤ) + 1) by ring, hb_neg,
-      show b (-((k : ℤ) + 2)) = γ (k + 1) by rw [← hb_neg (k + 1)]; push_cast; ring_nf, hγ k]
+      show b (-((k : ℤ) + 2)) = γ (k + 1) by rw [← hb_neg (k + 1),
+        show -(((k + 1 : ℕ) : ℤ) + 1) = -((k : ℤ) + 2) by omega],
+      hγ k]
     linear_combination -CharTwo.add_self_eq_zero (X ^ (k + 2) * γ (k + 1))
   · obtain ⟨k, rfl⟩ := Int.eq_ofNat_of_zero_le (show 0 ≤ m by omega)
-    rw [show (-(k : ℤ)).toNat = 0 by omega, show ((k : ℤ) + 1).toNat = k + 1 by omega, pow_zero,
-      one_mul, show (k : ℤ) + 1 = ((k + 1 : ℕ) : ℤ) by omega, hb_nonneg, hb_nonneg, hβ k]
+    rw [X_pow_toNat_neg_natCast_mul_add, show (k : ℤ) + 1 = ((k + 1 : ℕ) : ℤ) by omega,
+      hb_nonneg, hb_nonneg, hβ k]
     linear_combination -CharTwo.add_self_eq_zero (X ^ (k + 1) * β (k + 1))
 
 /-- Modulo completed boundaries, every completed cycle is a multiple of `[K₀, ∅]`. It has no
@@ -328,9 +343,9 @@ private theorem exists_sub_smul_single_canonicalCube_mem_range
     by_cases hm : m = -1
     · -- The equation at `m = -1` is the choice of the multiple of `[K₀, ∅]`.
       subst hm
-      rw [Pi.single_eq_same, mul_one, show (-(-1 : ℤ)).toNat = 1 by rfl,
-        show ((-1 : ℤ) + 1).toNat = 0 by rfl, pow_one, pow_zero, one_mul,
-        show (-1 : ℤ) + 1 = 0 by rfl]
+      rw [Pi.single_eq_same, mul_one, show (-(-1 : ℤ)).toNat = 1 by omega,
+        show ((-1 : ℤ) + 1).toNat = 0 by omega, pow_one, pow_zero, one_mul,
+        show (-1 : ℤ) + 1 = 0 by omega]
       ring
     · rw [Pi.single_eq_of_ne (by simpa [oddCovector_injective.eq_iff] using hm), mul_zero,
         sub_zero, ← hb m hm]

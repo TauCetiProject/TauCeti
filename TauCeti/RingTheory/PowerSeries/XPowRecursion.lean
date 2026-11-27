@@ -45,9 +45,9 @@ open scoped PowerSeries.WithPiTopology
 
 namespace PowerSeries
 
-section CommSemiring
+section Semiring
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*} [Semiring R]
 
 /-- **The homogeneous recursion has only the zero solution.** If `b k = X ^ d k * b (k + 1)` with
 every `d k` positive, then by induction every `b k` is divisible by every power of `X`, so it
@@ -60,16 +60,18 @@ theorem eq_zero_of_forall_eq_X_pow_mul {b : ℕ → R⟦X⟧} {d : ℕ → ℕ} 
     | zero => exact fun _ => one_dvd _
     | succ n ih =>
       intro k
-      rw [hb k, pow_succ']
-      exact mul_dvd_mul (dvd_pow_self X (hd k)) (ih (k + 1))
+      rw [hb k]
+      exact (pow_dvd_pow X (by have := hd k; omega : n + 1 ≤ d k + n)).trans <| by
+        rw [pow_add]
+        exact mul_dvd_mul_left _ (ih (k + 1))
   ext n
   simpa using X_pow_dvd_iff.1 (hdvd (n + 1) k) n n.lt_succ_self
 
-end CommSemiring
+end Semiring
 
-section CommRing
+section Ring
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*} [Ring R]
 
 /-- **The recursion `b k = f k + X ^ d k * b (k + 1)` has a unique solution** when every exponent
 `d k` is positive. The solution is the `X`-adically convergent series
@@ -109,9 +111,9 @@ theorem existsUnique_forall_eq_add_X_pow_mul (f : ℕ → R⟦X⟧) {d : ℕ →
   -- The difference of two solutions solves the homogeneous recursion.
   refine ⟨b₀, hb₀, fun b hb => funext fun k => sub_eq_zero.1 <|
     eq_zero_of_forall_eq_X_pow_mul (b := fun k => b k - b₀ k) hd (fun k => ?_) k⟩
-  rw [hb k, hb₀ k]
-  ring
+  rw [hb k, hb₀ k, mul_sub]
+  abel
 
-end CommRing
+end Ring
 
 end PowerSeries
