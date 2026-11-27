@@ -18,8 +18,9 @@ This file develops the elementary functorial API for Mathlib's
 `x : X`, this is the degree `[κ(x) : κ(f(x))]`, with value zero when the field extension is
 infinite.
 
-The main result is the tower law `residueDegree_comp`. It identifies the residue degree of a
-composite with the product of the two successive residue degrees. We also characterize when a
+The main result is the tower law `residueDegree_comp`, built on the scalar tower
+`isScalarTower_residueField` of residue fields along a composite. It identifies the residue degree
+of a composite with the product of the two successive residue degrees. We also characterize when a
 residue degree is positive and when it is one, and show that a morphism surjective on stalks, such
 as a closed immersion, has residue degree one everywhere, and that a morphism has residue degree
 one over any open of its target over which it is an isomorphism. The comparison
@@ -42,6 +43,24 @@ universe u
 
 variable {X Y Z : Scheme.{u}}
 
+/-- The residue-field maps of a composite form a scalar tower `κ(g(f(x))) → κ(f(x)) → κ(x)`, for
+the algebra structures given by the residue-field maps of `g`, `f` and `f ≫ g`. -/
+theorem isScalarTower_residueField (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) :
+    letI := (g.residueFieldMap (f x)).hom.toAlgebra
+    letI := (f.residueFieldMap x).hom.toAlgebra
+    letI : Algebra (Z.residueField (g (f x))) (X.residueField x) :=
+      ((f ≫ g).residueFieldMap x).hom.toAlgebra
+    IsScalarTower (Z.residueField (g (f x))) (Y.residueField (f x)) (X.residueField x) := by
+  let : Algebra (Z.residueField (g (f x))) (Y.residueField (f x)) :=
+    (g.residueFieldMap (f x)).hom.toAlgebra
+  let : Algebra (Y.residueField (f x)) (X.residueField x) :=
+    (f.residueFieldMap x).hom.toAlgebra
+  let : Algebra (Z.residueField (g (f x))) (X.residueField x) :=
+    ((f ≫ g).residueFieldMap x).hom.toAlgebra
+  exact .of_algebraMap_eq' <|
+    (congrArg CommRingCat.Hom.hom (Scheme.residueFieldMap_comp f g x)).trans
+      (CommRingCat.hom_comp _ _)
+
 /-- The residue degree of a composite is the product of the successive residue degrees:
 `[κ(x) : κ(g(f(x)))] = [κ(f(x)) : κ(g(f(x)))] [κ(x) : κ(f(x))]`. -/
 @[simp]
@@ -53,11 +72,7 @@ theorem residueDegree_comp (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) :
     (f.residueFieldMap x).hom.toAlgebra
   let : Algebra (Z.residueField (g (f x))) (X.residueField x) :=
     ((f ≫ g).residueFieldMap x).hom.toAlgebra
-  let : IsScalarTower (Z.residueField (g (f x))) (Y.residueField (f x))
-      (X.residueField x) :=
-    IsScalarTower.of_algebraMap_eq' <| by
-      rw [RingHom.algebraMap_toAlgebra]
-      exact congrArg CommRingCat.Hom.hom (Scheme.residueFieldMap_comp f g x)
+  have := isScalarTower_residueField f g x
   rw [residueDegree]
   exact (Module.finrank_mul_finrank (Z.residueField (g (f x)))
     (Y.residueField (f x)) (X.residueField x)).symm

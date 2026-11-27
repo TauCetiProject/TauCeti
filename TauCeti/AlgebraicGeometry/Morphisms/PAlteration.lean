@@ -52,7 +52,7 @@ modification of an irreducible scheme is an `∅`-alteration.
   noetherian alterations whose generic degrees are not divisible by `ℓ`.
 * `AlgebraicGeometry.Scheme.Hom.isPAlteration_empty_iff`: the `∅`-alterations are the noetherian
   alterations of generic degree one.
-* `AlgebraicGeometry.Scheme.Hom.IsPAlteration.isSeparableAlteration`: an `∅`-alteration is
+* `AlgebraicGeometry.Scheme.Hom.isSeparableAlteration_of_isPAlteration_empty`: an `∅`-alteration is
   separable.
 * `AlgebraicGeometry.Scheme.Hom.isPAlteration_empty_of_isModification`: a modification of an
   irreducible scheme is an `∅`-alteration.
@@ -204,10 +204,7 @@ theorem IsSeparableAlteration.comp {f : X ⟶ Y} {g : Y ⟶ Z} (hg : g.IsSeparab
     (f.residueFieldMap x).hom.toAlgebra
   let : Algebra (Z.residueField (g (f x))) (X.residueField x) :=
     ((f ≫ g).residueFieldMap x).hom.toAlgebra
-  have : IsScalarTower (Z.residueField (g (f x))) (Y.residueField (f x)) (X.residueField x) :=
-    IsScalarTower.of_algebraMap_eq' <| by
-      rw [RingHom.algebraMap_toAlgebra]
-      exact congrArg CommRingCat.Hom.hom (Scheme.residueFieldMap_comp f g x)
+  have := isScalarTower_residueField f g x
   have := hg.isSeparable_residueField _
     (f.isMaximallyDominating_iff.mp hf.isMaximallyDominating x hx)
   have := hf.isSeparable_residueField x hx
@@ -216,7 +213,7 @@ theorem IsSeparableAlteration.comp {f : X ⟶ Y} {g : Y ⟶ Z} (hg : g.IsSeparab
 
 /-- An `∅`-alteration is separable: its residue field extensions at the component-generic points
 of the source have degree one, so they are isomorphisms. -/
-theorem IsPAlteration.isSeparableAlteration {f : X ⟶ Y} (hf : f.IsPAlteration ∅) :
+theorem isSeparableAlteration_of_isPAlteration_empty {f : X ⟶ Y} (hf : f.IsPAlteration ∅) :
     f.IsSeparableAlteration := by
   refine ⟨hf.toIsNoetherianAlteration, fun x hx ↦ ?_⟩
   let := (f.residueFieldMap x).hom.toAlgebra
@@ -227,7 +224,7 @@ theorem IsPAlteration.isSeparableAlteration {f : X ⟶ Y} (hf : f.IsPAlteration 
 
 /-- An isomorphism is a separable alteration. -/
 theorem isSeparableAlteration_of_isIso (f : X ⟶ Y) [IsIso f] : f.IsSeparableAlteration :=
-  (isPAlteration_of_isIso f ∅).isSeparableAlteration
+  isSeparableAlteration_of_isPAlteration_empty (isPAlteration_of_isIso f ∅)
 
 /-- The identity of a scheme is a separable alteration. -/
 theorem _root_.AlgebraicGeometry.Scheme.isSeparableAlteration_id (X : Scheme.{u}) :
