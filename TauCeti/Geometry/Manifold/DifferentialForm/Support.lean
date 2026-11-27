@@ -207,7 +207,7 @@ theorem indicator_zero (s : Set X) : (0 : RoughForm I X F k).indicator s = 0 :=
   Set.indicator_zero (E [⋀^Fin k]→L[ℝ] F) s
 
 @[simp]
-theorem indicator_add [IsTopologicalAddGroup F] (s : Set X) (ω η : RoughForm I X F k) :
+theorem indicator_add [ContinuousAdd F] (s : Set X) (ω η : RoughForm I X F k) :
     (ω + η).indicator s = ω.indicator s + η.indicator s :=
   Set.indicator_add (M := E [⋀^Fin k]→L[ℝ] F) s ω η
 
