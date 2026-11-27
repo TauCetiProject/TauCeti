@@ -24,8 +24,8 @@ first map is injective, since the minimal tensor product preserves injectivity
 (`TauCeti.MinTensorProduct.map_mkStarAlgHom_surjective`). The composite is zero, so the image of
 `A ⊗min J`, which is the closure of the image of `A ⊗[ℂ] J`
 (`TauCeti.MinTensorProduct.range_map`), always lies in the kernel of `A ⊗min B → A ⊗min (B/J)`
-(`TauCeti.MinTensorProduct.map_mkStarAlgHom_map_starAlgHom`). Exactness is therefore the remaining
-inclusion, of the kernel in the image (`TauCeti.CStarAlgebra.isExact_iff`).
+(`TauCeti.MinTensorProduct.map_mkStarAlgHom_map_starAlgHom_eq_zero`). Exactness is therefore the
+remaining inclusion, of the kernel in the image (`TauCeti.CStarAlgebra.isExact_iff`).
 
 The algebras `B` are quantified over a fixed universe `w`, a universe parameter of
 `TauCeti.CStarAlgebra.IsExact`.
@@ -36,9 +36,6 @@ The algebras `B` are quantified over a fixed universe `w`, a universe parameter 
 
 ## Main statements
 
-* `TauCeti.MinTensorProduct.map_surjective`: `map φ ψ` is surjective for surjective `φ`, `ψ`.
-* `TauCeti.MinTensorProduct.range_map`: the range of `map φ ψ` is the closure of the image of
-  the algebraic tensor product.
 * `TauCeti.CStarAlgebra.isExact_iff`: the kernel formulation, exactness as the inclusion of the
   kernel in the image.
 * `TauCeti.CStarAlgebra.IsExact.of_starAlgEquiv`: exactness is invariant under star isomorphism.
@@ -62,50 +59,8 @@ namespace TauCeti
 
 namespace MinTensorProduct
 
-open CStarTensorProduct
-open Algebra.TensorProduct (mapNonUnitalStarAlgHom coe_mapNonUnitalStarAlgHom)
-
-variable {A B A' B' A'' B'' : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  [NonUnitalCStarAlgebra A'] [NonUnitalCStarAlgebra B'] [NonUnitalCStarAlgebra A'']
-  [NonUnitalCStarAlgebra B'']
-
-/-- Composition of the maps of minimal tensor products, elementwise. -/
-theorem map_map (φ' : A' →⋆ₙₐ[ℂ] A'') (ψ' : B' →⋆ₙₐ[ℂ] B'') (φ : A →⋆ₙₐ[ℂ] A')
-    (ψ : B →⋆ₙₐ[ℂ] B') (u : MinTensorProduct A B) :
-    map φ' ψ' (map φ ψ u) = map (φ'.comp φ) (ψ'.comp ψ) u := by
-  rw [map_comp, NonUnitalStarAlgHom.comp_apply]
-
-/-- `map φ 0 = 0`. -/
-@[simp]
-theorem map_zero_right (φ : A →⋆ₙₐ[ℂ] A') :
-    map φ (0 : B →⋆ₙₐ[ℂ] B') = 0 :=
-  starAlgHom_ext fun a b ↦ by simp
-
-/-- The range of `map φ ψ` is the closure of the image of `A ⊗[ℂ] B`, that is, of
-`φ(A) ⊗ ψ(B)`. -/
-theorem range_map (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B') :
-    Set.range (map φ ψ) =
-      closure (Set.range fun x ↦ of (minCStarTensorNorm A' B') (mapNonUnitalStarAlgHom φ ψ x)) := by
-  refine subset_antisymm ?_ <| closure_minimal ?_ (map φ ψ).isClosed_setRange
-  · have hc : Continuous (map φ ψ) := map_continuous _
-    rw [← Set.image_univ, ← denseRange_of.closure_range]
-    refine (image_closure_subset_closure_image hc).trans <|
-      closure_mono ?_
-    rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-    exact ⟨x, (map_of φ ψ x).symm⟩
-  · rintro _ ⟨x, rfl⟩
-    exact ⟨of _ x, map_of φ ψ x⟩
-
-/-- For surjective `φ` and `ψ`, `map φ ψ` is surjective. -/
-theorem map_surjective {φ : A →⋆ₙₐ[ℂ] A'} {ψ : B →⋆ₙₐ[ℂ] B'} (hφ : Function.Surjective φ)
-    (hψ : Function.Surjective ψ) : Function.Surjective (map φ ψ) := by
-  have h : Function.Surjective (mapNonUnitalStarAlgHom φ ψ) := by
-    rw [coe_mapNonUnitalStarAlgHom]
-    exact TensorProduct.map_surjective hφ hψ
-  have hr : (Set.range fun x ↦ of (minCStarTensorNorm A' B') (mapNonUnitalStarAlgHom φ ψ x)) =
-      Set.range (of (minCStarTensorNorm A' B')) :=
-    h.range_comp (of _)
-  rw [← Set.range_eq_univ, range_map, hr, denseRange_of.closure_range]
+variable {A B A' : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra A']
 
 section Ideal
 
@@ -127,7 +82,7 @@ theorem map_mkStarAlgHom_surjective (φ : A →⋆ₙₐ[ℂ] A') (hφ : Functio
 /-- The composite `A ⊗min J → A ⊗min B → A ⊗min (B/J)` is zero: the image of `A ⊗min J` lies
 in the kernel of the quotient map. -/
 @[simp]
-theorem map_mkStarAlgHom_map_starAlgHom (u : MinTensorProduct A J) :
+theorem map_mkStarAlgHom_map_starAlgHom_eq_zero (u : MinTensorProduct A J) :
     map (NonUnitalStarAlgHom.id ℂ A) (mkStarAlgHom J)
       (map (NonUnitalStarAlgHom.id ℂ A) J.starAlgHom u) = 0 := by
   have h : (mkStarAlgHom J).comp J.starAlgHom = 0 :=
@@ -164,10 +119,9 @@ theorem isExact_iff : IsExact.{w} A ↔
     ∀ (B : Type w) [NonUnitalCStarAlgebra B] (J : TwoSidedIdeal B) [IsClosed (J : Set B)]
       (u : MinTensorProduct A B), map (NonUnitalStarAlgHom.id ℂ A) (mkStarAlgHom J) u = 0 →
         u ∈ Set.range (map (NonUnitalStarAlgHom.id ℂ A) J.starAlgHom) := by
-  refine ⟨fun h B _ J _ u hu ↦ (h.exact_map B J u).1 hu, fun h ↦ ⟨fun B _ J _ u ↦
-    ⟨h B J u, ?_⟩⟩⟩
-  rintro ⟨v, rfl⟩
-  exact map_mkStarAlgHom_map_starAlgHom J v
+  refine ⟨fun h B _ J _ u hu ↦ (h.exact_map B J u).1 hu, fun h ↦ ⟨fun B _ J _ ↦
+    Function.Exact.of_comp_of_mem_range (funext (map_mkStarAlgHom_map_starAlgHom_eq_zero J))
+      (h B J)⟩⟩
 
 /-- In an exact `A`, every element of the kernel of `A ⊗min B → A ⊗min (B/J)` comes from
 `A ⊗min J`. -/
@@ -181,29 +135,16 @@ theorem IsExact.mem_range [IsExact.{w} A] {B : Type w} [NonUnitalCStarAlgebra B]
 theorem IsExact.of_starAlgEquiv {A' : Type*} [NonUnitalCStarAlgebra A'] (e : A ≃⋆ₐ[ℂ] A')
     [IsExact.{w} A] : IsExact.{w} A' := by
   refine isExact_iff.2 fun B _ J _ u hu ↦ ?_
-  let f : A →⋆ₙₐ[ℂ] A' := e.toNonUnitalStarAlgHom
-  let g : A' →⋆ₙₐ[ℂ] A := e.symm.toNonUnitalStarAlgHom
-  have hfg : f.comp g = NonUnitalStarAlgHom.id ℂ A' := NonUnitalStarAlgHom.ext fun x ↦ by
-    simp [f, g]
   have hu' : map (NonUnitalStarAlgHom.id ℂ A) (mkStarAlgHom J)
-      (map g (NonUnitalStarAlgHom.id ℂ B) u) = 0 := by
-    calc _ = map g (mkStarAlgHom J) u := by
-          rw [MinTensorProduct.map_map, NonUnitalStarAlgHom.id_comp,
-            NonUnitalStarAlgHom.comp_id]
-      _ = map g (NonUnitalStarAlgHom.id ℂ (B ⧸ J))
-            (map (NonUnitalStarAlgHom.id ℂ A') (mkStarAlgHom J) u) := by
-          rw [MinTensorProduct.map_map, NonUnitalStarAlgHom.id_comp,
-            NonUnitalStarAlgHom.comp_id]
-      _ = 0 := by rw [hu, map_zero]
+      (map e.symm.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ B) u) = 0 := by
+    simpa [MinTensorProduct.map_map] using
+      congrArg (map e.symm.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ (B ⧸ J))) hu
   obtain ⟨v, hv⟩ := IsExact.mem_range J hu'
-  refine ⟨map f (NonUnitalStarAlgHom.id ℂ J) v, ?_⟩
-  calc _ = map f (NonUnitalStarAlgHom.id ℂ B)
+  refine ⟨map e.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ J) v, ?_⟩
+  calc _ = map e.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ B)
           (map (NonUnitalStarAlgHom.id ℂ A) J.starAlgHom v) := by
-        rw [MinTensorProduct.map_map, MinTensorProduct.map_map, NonUnitalStarAlgHom.id_comp,
-          NonUnitalStarAlgHom.id_comp, NonUnitalStarAlgHom.comp_id, NonUnitalStarAlgHom.comp_id]
-    _ = u := by
-        rw [hv, MinTensorProduct.map_map, hfg, NonUnitalStarAlgHom.id_comp, MinTensorProduct.map_id,
-          NonUnitalStarAlgHom.coe_id, id_eq]
+        simp [MinTensorProduct.map_map]
+    _ = u := by rw [hv]; exact map_map_symm e (StarAlgEquiv.refl ℂ B) u
 
 end CStarAlgebra
 
