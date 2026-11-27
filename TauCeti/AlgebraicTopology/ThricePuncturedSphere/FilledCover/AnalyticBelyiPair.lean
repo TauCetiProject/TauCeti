@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover
-public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Invariants
+public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Basic
+
+import TauCeti.Analysis.Complex.RiemannSurface.Branch.CycleType
 
 /-!
 # The filled cover as an analytic Belyi pair
@@ -71,8 +72,9 @@ multiplicities. In particular `β` is unramified over `0`, `1` or `∞` exactly 
   cover, extended to the filled cover.
 * `TauCeti.ConnectedCoverClass.toAnalyticBelyiPair`: the filled analytic Belyi pair of an
   isomorphism class of connected covers.
-* `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_bijective`: analytic Belyi pairs and
-  topological branched covers of degree `n` have the same isomorphism classes.
+* `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_bijective`,
+  `isoClassEquivTopBranchedCoverIsoClass`, `TopBranchedCover.exists_iso_toTopBranchedCover`:
+  analytic Belyi pairs and topological branched covers of degree `n` have equivalent classes.
 * `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`: isomorphism classes of analytic
   Belyi pairs of degree `n` are isomorphism classes of connected degree-`n` covers of
   `ℂ ∖ {0, 1}`.
@@ -310,6 +312,23 @@ theorem isoClassEquivConnectedCoverClass_symm_apply {n : ℕ}
     (isoClassEquivConnectedCoverClass n).symm c = c.toAnalyticBelyiPair :=
   (rfl)
 
+/-- **Analytic Belyi pairs and topological branched covers have equivalent isomorphism classes.** -/
+def isoClassEquivTopBranchedCoverIsoClass (n : ℕ) :
+    Quotient (isoSetoid.{0} n) ≃ TopBranchedCover.IsoClass.{0} n :=
+  ⟨toTopBranchedCoverIsoClass n, (·.restrict.toAnalyticBelyiPair),
+    (isoClassEquivConnectedCoverClass n).left_inv,
+    fun _ ↦ TopBranchedCover.IsoClass.restrict_injective <| by simp⟩
+
+/-- Applying `isoClassEquivTopBranchedCoverIsoClass` forgets the complex structure. -/
+@[simp] theorem isoClassEquivTopBranchedCoverIsoClass_apply {n : ℕ}
+    (P : Quotient (isoSetoid.{0} n)) :
+    isoClassEquivTopBranchedCoverIsoClass n P = toTopBranchedCoverIsoClass n P := (rfl)
+
+/-- The inverse of `isoClassEquivTopBranchedCoverIsoClass` takes the filled analytic Belyi pair. -/
+@[simp] theorem isoClassEquivTopBranchedCoverIsoClass_symm_apply {n : ℕ}
+    (c : TopBranchedCover.IsoClass.{0} n) :
+    (isoClassEquivTopBranchedCoverIsoClass n).symm c = c.restrict.toAnalyticBelyiPair := (rfl)
+
 open RiemannSurface
 
 /-! ### Classification by permutation triples -/
@@ -356,13 +375,11 @@ theorem isoClassEquivConnectedIsoClass_mk {n : ℕ}
 `TauCeti.AnalyticBelyiPair.toIsoClass` of a class of pairs. -/
 @[simp]
 theorem forget_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
-    (isoClassEquivConnectedIsoClass n P).forget = toIsoClass n P := by
-  induction P using Quotient.inductionOn with
-  | h P =>
+    (isoClassEquivConnectedIsoClass n P).forget = toIsoClass n P :=
+  Quotient.inductionOn P fun P ↦ by
     obtain ⟨ν⟩ := P.val.nonempty_restrict_preimage_singleton_equiv basePt
     rw [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.property)),
-        ConnectedIsoClass.forget_mk,
-      toIsoClass_mk P (ν.trans (finCongr P.property))]
+      ConnectedIsoClass.forget_mk, toIsoClass_mk P (ν.trans (finCongr P.property))]
 
 /-- **An analytic Belyi pair is determined up to isomorphism by its permutation triple.** -/
 theorem toIsoClass_injective (n : ℕ) : Injective (toIsoClass.{0} n) := fun P Q h ↦
@@ -381,6 +398,37 @@ theorem nonempty_iso_iff_isoClass_monodromyTriple_eq {P Q : AnalyticBelyiPair.{0
   have hQ := Q.degree_β_eq_of_restrict_preimage_singleton_equiv ν'
   refine isoSetoid_r.1 (Quotient.exact (s := isoSetoid n) (a := ⟨P, hP⟩) (b := ⟨Q, hQ⟩) ?_)
   exact toIsoClass_injective n (by rw [toIsoClass_mk _ ν, toIsoClass_mk _ ν', h])
+
+/-- Forgetting the complex structure commutes with classification by connected triples. -/
+theorem isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedIsoClass (n : ℕ) :
+    (isoClassEquivTopBranchedCoverIsoClass n).trans
+        (TopBranchedCover.IsoClass.equivConnectedIsoClass n) =
+      isoClassEquivConnectedIsoClass n := by
+  ext P; simp [isoClassEquivConnectedIsoClass_apply,
+    TopBranchedCover.IsoClass.equivConnectedIsoClass_apply]
+
+/-- Pointwise form of `isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedIsoClass`. -/
+@[simp] theorem equivConnectedIsoClass_toTopBranchedCoverIsoClass {n : ℕ}
+    (P : Quotient (isoSetoid.{0} n)) :
+    TopBranchedCover.IsoClass.equivConnectedIsoClass n (toTopBranchedCoverIsoClass n P) =
+      isoClassEquivConnectedIsoClass n P :=
+  Equiv.congr_fun (isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedIsoClass n) P
+
+/-- `isoClassEquivConnectedIsoClass` matches `isoClassRamificationPartitions` with `cycleData`. -/
+@[simp] theorem cycleData_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
+    (isoClassEquivConnectedIsoClass n P).cycleData = isoClassRamificationPartitions n P := by
+  simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
+
+/-- `isoClassEquivConnectedIsoClass` preserves the order of the automorphism group. -/
+@[simp] theorem automorphismOrder_isoClassEquivConnectedIsoClass {n : ℕ}
+    (P : Quotient (isoSetoid.{0} n)) :
+    (isoClassEquivConnectedIsoClass n P).automorphismOrder = isoClassNatCardAut n P := by
+  simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
+
+/-- `isoClassEquivConnectedIsoClass` preserves regularity. -/
+@[simp] theorem isRegular_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
+    (isoClassEquivConnectedIsoClass n P).IsRegular ↔ IsoClassIsRegular n P := by
+  simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
 
 /-! ### Ramification over `0`, `1` and `∞` -/
 
@@ -434,6 +482,14 @@ theorem map_localMultiplicity_fiber_inf (P : AnalyticBelyiPair.{0}) {n : ℕ}
     TopBranchedCover.parts_ramificationPartition_inf _ ν', fullCycleType_def, fullCycleType_def,
     ← PermutationTriple.cycleData_σinf, ← PermutationTriple.cycleData_σinf, h]
 
+/-- On `AnalyticBelyiPair.{0}`, `ramificationPartitions` equals `cycleData` of the monodromy. -/
+theorem ramificationPartitions_eq_cycleData_monodromyTriple (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    P.ramificationPartitions = (P.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
+  simp [ramificationPartitions_def, P.map_localMultiplicity_fiber_zero ν,
+    P.map_localMultiplicity_fiber_one ν, P.map_localMultiplicity_fiber_inf ν,
+    PermutationTriple.cycleData, fullCycleType_def]
+
 /-- **A Belyi map is unramified over `0` exactly when `σ0` is the identity**, in the monodromy
 triple of the pair for any numbering of its fibre over `1/2`. -/
 theorem monodromyTriple_σ0_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
@@ -441,8 +497,7 @@ theorem monodromyTriple_σ0_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
     (P.isCoveringMap_restrict.monodromyTriple ν).σ0 = 1 ↔
       ((0 : ℂ) : OnePoint ℂ) ∉ P.β.branchValues := by
   rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_zero ν,
-    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
-  simp
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]; simp
 
 /-- **A Belyi map is unramified over `1` exactly when `σ1` is the identity**, in the monodromy
 triple of the pair for any numbering of its fibre over `1/2`. -/
@@ -451,8 +506,7 @@ theorem monodromyTriple_σ1_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
     (P.isCoveringMap_restrict.monodromyTriple ν).σ1 = 1 ↔
       ((1 : ℂ) : OnePoint ℂ) ∉ P.β.branchValues := by
   rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_one ν,
-    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
-  simp
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]; simp
 
 /-- **A Belyi map is unramified over `∞` exactly when `σinf` is the identity**, in the monodromy
 triple of the pair for any numbering of its fibre over `1/2`. -/
@@ -461,10 +515,37 @@ theorem monodromyTriple_σinf_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
     (P.isCoveringMap_restrict.monodromyTriple ν).σinf = 1 ↔
       (∞ : OnePoint ℂ) ∉ P.β.branchValues := by
   rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_inf ν,
-    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
-  simp
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]; simp
+
+/-- `(P.β ⁻¹' marked).ncard` equals `orbitCount σ0 + orbitCount σ1 + orbitCount σinf`. -/
+theorem ncard_preimage_marked_eq_orbitCount (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) : (P.β ⁻¹' marked).ncard =
+    orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ0 +
+      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σ1 +
+      orbitCount (P.isCoveringMap_restrict.monodromyTriple ν).σinf := by
+  rw [P.ncard_preimage_marked,
+    P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_zero ν),
+    P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_one ν),
+    P.β.ncard_preimage_singleton_eq_orbitCount (P.map_localMultiplicity_fiber_inf ν)]
+
+/-- **Total ramification from monodromy**: `ramificationDegree P.β = 2 * degree P.β - χ(t)`. -/
+theorem natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar (P : AnalyticBelyiPair.{0})
+    {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) : (ramificationDegree P.β : ℤ) =
+    2 * (degree P.β : ℤ) - (P.isCoveringMap_restrict.monodromyTriple ν).eulerChar := by
+  have h := P.ncard_preimage_marked_add_ramificationDegree_β
+  have hd := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
+  rw [P.ncard_preimage_marked_eq_orbitCount ν] at h
+  rw [PermutationTriple.eulerChar_def]; omega
 
 end AnalyticBelyiPair
+
+/-- **Every topological branched cover is isomorphic to `P.toTopBranchedCover h` for some `P`.** -/
+theorem TopBranchedCover.exists_iso_toTopBranchedCover {n : ℕ} (X : TopBranchedCover.{0} n) :
+    ∃ (P : AnalyticBelyiPair.{0}) (h : RiemannSurface.degree P.β = n),
+      Nonempty (X.Iso (P.toTopBranchedCover h)) := by
+  obtain ⟨q, hq⟩ := AnalyticBelyiPair.toTopBranchedCoverIsoClass_surjective n (.mk X)
+  obtain ⟨⟨P, h⟩, rfl⟩ := Quotient.exists_rep q
+  exact ⟨P, h, (IsoClass.mk_eq_mk_iff.1 (by simpa using hq)).map Iso.symm⟩
 
 /-! ### The filled pair of a cover -/
 

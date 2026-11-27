@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.RibbonGraph.Classification
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
+public import TauCeti.Combinatorics.RibbonGraph.Classification
 
 /-!
 # Connected ribbon graphs and connected permutation triples
@@ -20,7 +20,7 @@ given by `TauCeti.BipartiteRibbonGraph.autEquivAutomorphismGroup`.
 The equations `connectedIsoClassEquiv_mk` and `connectedIsoClassEquiv_symm_mk` describe the
 classification on representatives. Edge numberings are arbitrary, and the inverse uses universe
 lifting so that graphs in any universe are classified. In degree zero both carriers are empty,
-since connectedness requires a nonempty edge set.
+since connectedness requires a nonempty edge set, and in degree one both have a unique class.
 
 The restriction uses Mathlib's `Equiv.subtypeQuotientEquivQuotientSubtype` to commute invariant
 subtypes with quotients.
@@ -33,6 +33,8 @@ subtypes with quotients.
   London Mathematical Society Student Texts 79, Cambridge University Press 2012, §4.2.
 -/
 
+open Equiv
+
 public section
 
 namespace TauCeti.BipartiteRibbonGraph
@@ -40,6 +42,8 @@ namespace TauCeti.BipartiteRibbonGraph
 universe u
 
 variable {n : ℕ}
+
+/-! ### Classification of connected ribbon graphs -/
 
 /-- Isomorphism of connected bipartite ribbon graphs with `n` edges. The inner subtype records
 the edge count; the outer subtype records connectedness. -/
@@ -115,5 +119,12 @@ theorem connectedIsoClassEquiv_symm_mk (t : ConnectedTriple n) :
   simpa only [PermutationTriple.toPermutationTriple_ribbonGraph] using
     equivalent_toPermutationTriple_of_iso t.val.ribbonGraph.uliftIso
       (t.val.ribbonGraph.uliftIso.edge.trans (Equiv.refl (Fin n))) (Equiv.refl (Fin n))
+
+/-- There are no connected bipartite ribbon graphs with zero edges. -/
+instance : IsEmpty (Quotient (connectedIsoSetoid.{u} 0)) := (connectedIsoClassEquiv.{u} 0).isEmpty
+
+/-- Up to isomorphism there is a unique connected bipartite ribbon graph with one edge. -/
+noncomputable instance : Unique (Quotient (connectedIsoSetoid.{u} 1)) :=
+  (connectedIsoClassEquiv.{u} 1).unique
 
 end TauCeti.BipartiteRibbonGraph

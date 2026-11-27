@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.RiemannSurface.Branch.Sphere
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Duality
 import TauCeti.Geometry.Manifold.ChartedSpace
@@ -75,9 +74,9 @@ the topological Riemann–Hurwitz formula over the sphere gives `χ(X) = 2` and 
 
 ## Checks
 
-* `TauCeti.RiemannSurface.genus_onePoint_complex`: the Riemann sphere has genus `0`.
-
-The level-one modular curve has genus `0`: see
+The Riemann sphere and the level-one modular curve have genus `0`: see
+`TauCeti.RiemannSurface.genus_onePoint_complex` (in
+`TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus`) and
 `TauCeti.ModularGroup.genus_compactifiedQuotient`.
 
 ## References
@@ -204,11 +203,6 @@ theorem genus_eq_genus_iff (hX : eulerChar X = 2 - 2 * genus X)
 end FiniteCWType
 
 end FiniteHolomorphicMap
-
-/-- **The Riemann sphere has genus `0`**: its Euler characteristic is `2`. -/
-@[simp]
-theorem genus_onePoint_complex : genus (OnePoint ℂ) = 0 :=
-  genus_eq_of_eulerChar_eq (by rw [eulerChar_onePoint, Complex.finrank_real_complex]; norm_num)
 
 section AnalyticGenus
 

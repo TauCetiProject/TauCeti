@@ -27,8 +27,9 @@ permutation triples, automorphisms included.
   `TauCeti.PermutationTriple.nonempty_iso_ribbonGraph_iff` is the same statement read on triples.
 * `TauCeti.BipartiteRibbonGraph.isoClassEquiv`: the resulting bijection between isomorphism
   classes of ribbon graphs with `n` edges and `TauCeti.PermutationTriple.IsoClass n`.
-* `TauCeti.BipartiteRibbonGraph.autEquivAutomorphismGroup`: the automorphism group of a numbered
-  graph is the automorphism group of its triple.
+* `TauCeti.BipartiteRibbonGraph.autEquivAutomorphismGroup` and
+  `TauCeti.PermutationTriple.automorphismGroupMulEquivRibbonGraphAut`: the automorphism group of a
+  numbered graph is the automorphism group of its triple.
 
 Connectedness matches on the two sides
 (`TauCeti.BipartiteRibbonGraph.isConnected_toPermutationTriple` and
@@ -228,6 +229,37 @@ theorem autEquivAutomorphismGroup_symm_apply_edge (ν : Γ.E ≃ Fin n)
     (τ : (Γ.toPermutationTriple ν).automorphismGroup) :
     ((Γ.autEquivAutomorphismGroup ν).symm τ).edge = ν.symm.permCongr τ :=
   Iso.ofEdge_edge _ _ _
+
+/-- Numbering the edges of a ribbon graph preserves the cardinality of its automorphism group. -/
+@[simp] theorem natCard_automorphismGroup_toPermutationTriple (ν : Γ.E ≃ Fin n) :
+    Nat.card (Γ.toPermutationTriple ν).automorphismGroup = Nat.card Γ.Aut :=
+  (Nat.card_congr (Γ.autEquivAutomorphismGroup ν).toEquiv).symm
+
+/-- Canonical isomorphism between `t.automorphismGroup` and `t.ribbonGraph.Aut`. -/
+noncomputable def _root_.TauCeti.PermutationTriple.automorphismGroupMulEquivRibbonGraphAut
+    (t : PermutationTriple n) : t.automorphismGroup ≃* t.ribbonGraph.Aut :=
+  (MulEquiv.subgroupCongr (congrArg PermutationTriple.automorphismGroup
+    t.toPermutationTriple_ribbonGraph.symm)).trans
+    (t.ribbonGraph.autEquivAutomorphismGroup (Equiv.refl (Fin n))).symm
+
+/-- On edges (`Fin n`), `automorphismGroupMulEquivRibbonGraphAut` is the underlying permutation. -/
+@[simp] theorem _root_.TauCeti.PermutationTriple.automorphismGroupMulEquivRibbonGraphAut_edge
+    (t : PermutationTriple n) (τ : t.automorphismGroup) :
+    (t.automorphismGroupMulEquivRibbonGraphAut τ).edge = (τ : Perm (Fin n)) :=
+  (t.ribbonGraph.autEquivAutomorphismGroup_symm_apply_edge (Equiv.refl (Fin n)) _).trans
+    (Equiv.ext fun _ ↦ rfl)
+
+/-- The inverse of `automorphismGroupMulEquivRibbonGraphAut` sends `f` to `f.edge`. -/
+@[simp]
+theorem _root_.TauCeti.PermutationTriple.coe_automorphismGroupMulEquivRibbonGraphAut_symm_apply
+    (t : PermutationTriple n) (f : t.ribbonGraph.Aut) :
+    (t.automorphismGroupMulEquivRibbonGraphAut.symm f : Perm (Fin n)) = f.edge :=
+  Equiv.ext fun _ ↦ rfl
+
+/-- Passing from a triple to its ribbon graph preserves the automorphism-group order. -/
+@[simp] theorem _root_.TauCeti.PermutationTriple.natCard_aut_ribbonGraph (t : PermutationTriple n) :
+    Nat.card t.ribbonGraph.Aut = Nat.card t.automorphismGroup :=
+  (Nat.card_congr t.automorphismGroupMulEquivRibbonGraphAut.toEquiv).symm
 
 end BipartiteRibbonGraph
 

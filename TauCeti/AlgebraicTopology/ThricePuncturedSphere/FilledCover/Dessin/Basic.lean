@@ -1,0 +1,140 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.AnalyticBelyiPair
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Dessin.Basic
+
+/-!
+# Dessin classification and invariant comparisons for analytic Belyi pairs
+
+Constructs the bijection `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedRibbonGraph` between
+isomorphism classes of degree-`n` analytic Belyi pairs and connected dessins d'enfants on `n`
+edges, proves realization (`exists_iso_of_connectedRibbonGraph`,
+`nonempty_iso_iff_nonempty_ribbonGraph_iso`), and matches cycle data, automorphism order, and
+regularity, feeding `FilledCover.Dessin.Genus`.
+
+## References
+
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, LMSST 79, Cambridge University Press, 2012, §4.2.
+* S. K. Lando and A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, EMS 141, Springer,
+  2004, Chapters 1–2.
+-/
+
+public noncomputable section
+
+namespace TauCeti.AnalyticBelyiPair
+
+open ThricePuncturedSphere RiemannSurface BipartiteRibbonGraph
+
+universe u
+
+/-- **Analytic Belyi pairs are classified by dessins d'enfants (connected ribbon graphs).** -/
+def isoClassEquivConnectedRibbonGraph (n : ℕ) :
+    Quotient (isoSetoid.{0} n) ≃ Quotient (connectedIsoSetoid.{u} n) :=
+  (isoClassEquivConnectedIsoClass n).trans (connectedIsoClassEquiv.{u} n).symm
+
+/-- Forgetting the complex structure commutes with classification by connected ribbon graphs. -/
+theorem isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph (n : ℕ) :
+    (isoClassEquivTopBranchedCoverIsoClass n).trans
+        (TopBranchedCover.IsoClass.equivConnectedRibbonGraph.{u} n) =
+      isoClassEquivConnectedRibbonGraph.{u} n := by
+  ext _
+  exact (connectedIsoClassEquiv.{u} n).injective (by simp [isoClassEquivConnectedRibbonGraph])
+
+/-- Pointwise form of `isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph`. -/
+@[simp] theorem equivConnectedRibbonGraph_toTopBranchedCoverIsoClass {n : ℕ}
+    (P : Quotient (isoSetoid.{0} n)) :
+    TopBranchedCover.IsoClass.equivConnectedRibbonGraph.{u} n (toTopBranchedCoverIsoClass n P) =
+      isoClassEquivConnectedRibbonGraph.{u} n P := by
+  simpa using Equiv.congr_fun
+    (isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph.{u} n) P
+
+/-- `connectedIsoClassEquiv` cancels `isoClassEquivConnectedRibbonGraph`. -/
+theorem isoClassEquivConnectedRibbonGraph_trans_connectedIsoClassEquiv (n : ℕ) :
+    (isoClassEquivConnectedRibbonGraph.{u} n).trans (connectedIsoClassEquiv.{u} n) =
+      isoClassEquivConnectedIsoClass n := by ext _; simp [isoClassEquivConnectedRibbonGraph]
+
+/-- Pointwise form of `isoClassEquivConnectedRibbonGraph_trans_connectedIsoClassEquiv`. -/
+@[simp] theorem connectedIsoClassEquiv_isoClassEquivConnectedRibbonGraph {n : ℕ}
+    (P : Quotient (isoSetoid.{0} n)) :
+    connectedIsoClassEquiv.{u} n (isoClassEquivConnectedRibbonGraph.{u} n P) =
+      isoClassEquivConnectedIsoClass n P :=
+  Equiv.congr_fun (isoClassEquivConnectedRibbonGraph_trans_connectedIsoClassEquiv.{u} n) P
+
+/-- On `⟦P⟧`, `isoClassEquivConnectedRibbonGraph` gives the lifted ribbon graph of its monodromy. -/
+theorem isoClassEquivConnectedRibbonGraph_mk {n : ℕ}
+    (P : {P : AnalyticBelyiPair.{0} // degree P.β = n}) (ν : P.val.restrict ⁻¹' {basePt} ≃ Fin n) :
+    isoClassEquivConnectedRibbonGraph.{u} n ⟦P⟧ =
+      Quotient.mk (connectedIsoSetoid.{u} n)
+        ⟨⟨(P.val.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.ulift,
+            (P.val.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.card_E_ulift.trans
+              (P.val.isCoveringMap_restrict.monodromyTriple ν).card_E_ribbonGraph⟩,
+          (P.val.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.uliftIso.isConnected_iff.2
+            ((P.val.isCoveringMap_restrict.monodromyTriple ν).isConnected_ribbonGraph.2
+              (P.val.isCoveringMap_restrict.isConnected_monodromyTriple ν))⟩ := by
+  rw [isoClassEquivConnectedRibbonGraph, Equiv.trans_apply, isoClassEquivConnectedIsoClass_mk P ν,
+    connectedIsoClassEquiv_symm_mk]
+
+/-- **Analytic realisation of every connected dessin**, unique up to isomorphism. -/
+theorem exists_iso_of_connectedRibbonGraph {n : ℕ} (Γ : BipartiteRibbonGraph.{u})
+    (hcard : Fintype.card Γ.E = n) (hconn : Γ.IsConnected) :
+    ∃ P : AnalyticBelyiPair.{0}, degree P.β = n ∧
+      (∀ ν : P.restrict ⁻¹' {basePt} ≃ Fin n,
+        Nonempty ((P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Iso Γ)) ∧
+      ∀ (Q : AnalyticBelyiPair.{0}) (νQ : Q.restrict ⁻¹' {basePt} ≃ Fin n),
+        Nonempty ((Q.isCoveringMap_restrict.monodromyTriple νQ).ribbonGraph.Iso Γ) →
+          Nonempty (Q.Iso P) := by
+  obtain ⟨⟨P, hdeg⟩, hP⟩ := Quotient.exists_rep
+    ((isoClassEquivConnectedRibbonGraph.{u} n).symm ⟦⟨⟨Γ, hcard⟩, hconn⟩⟧)
+  have hg : isoClassEquivConnectedRibbonGraph.{u} n ⟦⟨P, hdeg⟩⟧ = ⟦⟨⟨Γ, hcard⟩, hconn⟩⟧ :=
+    (congrArg _ hP).trans (Equiv.apply_symm_apply _ _)
+  refine ⟨P, hdeg, fun ν ↦ ?_, fun Q νQ ⟨φ⟩ ↦ ?_⟩
+  · rw [isoClassEquivConnectedRibbonGraph_mk ⟨P, hdeg⟩ ν, connectedIsoSetoid_mk_eq_mk_iff] at hg
+    exact hg.map fun ψ ↦
+      (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.uliftIso.symm.trans ψ
+  · have hQ := Q.degree_β_eq_of_restrict_preimage_singleton_equiv νQ
+    refine isoSetoid_r.1 <| Quotient.exact (a := ⟨Q, hQ⟩) (b := ⟨P, hdeg⟩) <|
+      (isoClassEquivConnectedRibbonGraph.{u} n).injective <| hg ▸ by
+        rw [isoClassEquivConnectedRibbonGraph_mk ⟨Q, hQ⟩ νQ, connectedIsoSetoid_mk_eq_mk_iff]
+        exact ⟨(Q.isCoveringMap_restrict.monodromyTriple νQ).ribbonGraph.uliftIso.trans φ⟩
+
+/-- **Two analytic Belyi pairs are isomorphic if and only if their dessins are isomorphic.** -/
+theorem nonempty_iso_iff_nonempty_ribbonGraph_iso {P Q : AnalyticBelyiPair.{0}} {n m : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) (ν' : Q.restrict ⁻¹' {basePt} ≃ Fin m) :
+    Nonempty (P.Iso Q) ↔
+      Nonempty ((P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Iso
+        (Q.isCoveringMap_restrict.monodromyTriple ν').ribbonGraph) :=
+  ⟨fun ⟨e⟩ ↦ by
+    obtain rfl : n = m := (P.degree_β_eq_of_restrict_preimage_singleton_equiv ν).symm.trans
+      (e.degree_eq.trans (Q.degree_β_eq_of_restrict_preimage_singleton_equiv ν'))
+    exact PermutationTriple.nonempty_iso_ribbonGraph_iff.2
+      (PermutationTriple.IsoClass.mk_eq_mk_iff.1
+        ((nonempty_iso_iff_isoClass_monodromyTriple_eq ν ν').1 ⟨e⟩)), fun ⟨φ⟩ ↦ by
+    obtain rfl : n = m := by simpa using Fintype.card_congr φ.edge
+    exact (nonempty_iso_iff_isoClass_monodromyTriple_eq ν ν').2
+      (PermutationTriple.IsoClass.mk_eq_mk_iff.2
+        (PermutationTriple.nonempty_iso_ribbonGraph_iff.1 ⟨φ⟩))⟩
+
+variable {n : ℕ} (P : Quotient (isoSetoid.{0} n))
+
+/-- `isoClassEquivConnectedRibbonGraph` matches ramification with `connectedCycleData`. -/
+@[simp] theorem connectedCycleData_isoClassEquivConnectedRibbonGraph :
+    connectedCycleData n (isoClassEquivConnectedRibbonGraph.{u} n P) =
+      isoClassRamificationPartitions n P := by simp [← cycleData_connectedIsoClassEquiv]
+
+/-- `isoClassEquivConnectedRibbonGraph` matches `isoClassNatCardAut` with `connectedNatCardAut`. -/
+@[simp] theorem connectedNatCardAut_isoClassEquivConnectedRibbonGraph :
+    connectedNatCardAut n (isoClassEquivConnectedRibbonGraph.{u} n P) = isoClassNatCardAut n P := by
+  simp [← automorphismOrder_connectedIsoClassEquiv]
+
+/-- `isoClassEquivConnectedRibbonGraph` matches `IsoClassIsRegular` with `ConnectedIsRegular`. -/
+@[simp] theorem connectedIsRegular_isoClassEquivConnectedRibbonGraph :
+    ConnectedIsRegular n (isoClassEquivConnectedRibbonGraph.{u} n P) ↔ IsoClassIsRegular n P := by
+  simp [← isRegular_connectedIsoClassEquiv]
+
+end TauCeti.AnalyticBelyiPair

@@ -5,16 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.MonodromyTriple
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Deck
 public import TauCeti.Analysis.Complex.RiemannSurface.ChebyshevMap
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 public import TauCeti.Analysis.Complex.RiemannSurface.PowerMap
-public import TauCeti.Combinatorics.PermutationTriple.IsoClass
-public import TauCeti.Combinatorics.PermutationTriple.Regular
 
-import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Deck
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.RestrictOver
+import TauCeti.Analysis.Complex.RiemannSurface.Branch.FiberCount
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.GroupTheory.GroupAction.Free
 
@@ -210,8 +207,7 @@ structure AnalyticBelyiPair : Type (u + 1) where
   /-- The Belyi map of the pair. -/
   β : FiniteHolomorphicMap X (OnePoint ℂ)
   /-- The Belyi map is unramified over every point other than `0`, `1` and `∞`. -/
-  branchValues_subset :
-    β.branchValues ⊆ {((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), (∞ : OnePoint ℂ)}
+  branchValues_subset : β.branchValues ⊆ marked
 
 attribute [instance] AnalyticBelyiPair.instTopologicalSpace AnalyticBelyiPair.instChartedSpace
   AnalyticBelyiPair.instIsManifold AnalyticBelyiPair.instT2Space
@@ -227,7 +223,8 @@ variable (P : AnalyticBelyiPair.{u})
 `{0, 1, ∞}`. -/
 theorem isCoveringMapOn :
     IsCoveringMapOn P.β ({((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), ∞}ᶜ) :=
-  (P.β.isCoveringMapOn_iff _).2 (compl_subset_compl.2 P.branchValues_subset)
+  (P.β.isCoveringMapOn_iff _).2 <| compl_subset_compl.2 fun _ hy ↦ by
+    simpa [mem_marked] using P.branchValues_subset hy
 
 open scoped ContDiff in
 /-- An analytic Belyi pair from a nonconstant holomorphic map `f` from a compact connected Riemann
@@ -242,9 +239,11 @@ def ofIsCoveringMapOn (X : Type u) [TopologicalSpace X] [ChartedSpace ℂ X]
     AnalyticBelyiPair.{u} where
   X := X
   β := .ofMDifferentiable hf hne
-  branchValues_subset := compl_subset_compl.1 <|
-    ((FiniteHolomorphicMap.ofMDifferentiable hf hne).isCoveringMapOn_iff _).1 <| by
-      rwa [FiniteHolomorphicMap.coe_ofMDifferentiable]
+  branchValues_subset := fun _ hy ↦ by
+    simpa [mem_marked] using compl_subset_compl.1
+      (((FiniteHolomorphicMap.ofMDifferentiable hf hne).isCoveringMapOn_iff
+        ({((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), (∞ : OnePoint ℂ)}ᶜ)).1 <| by
+        rwa [FiniteHolomorphicMap.coe_ofMDifferentiable]) hy
 
 open scoped ContDiff in
 @[simp]
@@ -261,7 +260,8 @@ theorem ncard_preimage_singleton {y : OnePoint ℂ}
     (hy : y ∉ ({((0 : ℂ) : OnePoint ℂ), ((1 : ℂ) : OnePoint ℂ), ∞} : Set (OnePoint ℂ))) :
     (P.β ⁻¹' {y}).ncard = degree P.β := by
   rw [ncard_eq_toFinset_card _ (P.β.finite_fiber y)]
-  exact (P.β.card_fiber_eq_degree_iff y).2 fun h ↦ hy (P.branchValues_subset h)
+  exact (P.β.card_fiber_eq_degree_iff y).2 fun h ↦
+    hy (by simpa [mem_marked] using P.branchValues_subset h)
 
 /-! ### The underlying topological branched cover -/
 
@@ -321,6 +321,45 @@ theorem parts_ramificationPartition_toTopBranchedCover (P : AnalyticBelyiPair.{u
   -- (`TauCeti.AnalyticBelyiPair.toTopBranchedCover_π_apply` is `rfl`).
   exact Multiset.map_congr rfl fun z _ ↦ P.localDegree_toTopBranchedCover hdegree z
 
+/-- The ordered triple of analytic ramification partitions of `P.β` over `0`, `1` and `∞`. -/
+def ramificationPartitions (P : AnalyticBelyiPair.{u}) : Multiset ℕ × Multiset ℕ × Multiset ℕ :=
+  ((P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
+    (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
+    (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β))
+
+/-- Unfold `AnalyticBelyiPair.ramificationPartitions` into its `0`, `1` and `∞` components. -/
+theorem ramificationPartitions_def (P : AnalyticBelyiPair.{u}) : P.ramificationPartitions =
+    ((P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
+      (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β),
+      (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β)) := (rfl)
+
+/-- `P.toTopBranchedCover h` has the same ramification partitions as `P`. -/
+@[simp] theorem ramificationPartitions_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (h : degree P.β = n) :
+    (P.toTopBranchedCover h).ramificationPartitions = P.ramificationPartitions := by
+  simp only [TopBranchedCover.ramificationPartitions_def, ramificationPartitions_def,
+    P.parts_ramificationPartition_toTopBranchedCover h]
+
+/-- Over `marked`, `(P.β ⁻¹' marked).ncard + ramificationDegree P.β = 3 * degree P.β`. -/
+theorem ncard_preimage_marked_add_ramificationDegree_β (P : AnalyticBelyiPair.{u}) :
+    (P.β ⁻¹' marked).ncard + ramificationDegree P.β = 3 * degree P.β := by
+  rw [P.β.ncard_preimage_add_ramificationDegree finite_marked P.branchValues_subset,
+    ncard_marked, mul_comm]
+
+/-- The preimage of `marked` splits into the three disjoint fibres over `0`, `1` and `∞`. -/
+theorem ncard_preimage_marked (P : AnalyticBelyiPair.{u}) :
+    (P.β ⁻¹' marked).ncard = (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)}).ncard +
+      (P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)}).ncard + (P.β ⁻¹' {(∞ : OnePoint ℂ)}).ncard := by
+  have hd {a b : OnePoint ℂ} (h : a ≠ b) := Disjoint.preimage P.β (disjoint_singleton.2 h)
+  have hf := P.β.finite_fiber
+  have hmarked : marked =
+      ({((0 : ℂ) : OnePoint ℂ)} ∪ {((1 : ℂ) : OnePoint ℂ)}) ∪ {(∞ : OnePoint ℂ)} := by
+    ext; simp only [mem_marked, mem_union, mem_singleton_iff, or_assoc]
+  rw [hmarked, preimage_union, preimage_union,
+    ncard_union_eq (disjoint_union_left.2 ⟨hd (by simp), hd (by simp)⟩)
+      ((hf _).union (hf _)) (hf _),
+    ncard_union_eq (hd (by simp)) (hf _) (hf _)]
+
 /-! ### Maps over the sphere are holomorphic -/
 
 /-- **A continuous map over the sphere between analytic Belyi pairs is holomorphic.** Away from
@@ -336,8 +375,7 @@ theorem mdifferentiable_of_β {P : AnalyticBelyiPair.{u}} {Q : AnalyticBelyiPair
   -- Off the marked fibres, `Q.β` has multiplicity one at `f x`, so it is injective near `f x`.
   have hunb : ∀ x, P.β x ∉ marked → MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x := fun x hx ↦ by
     have hfx : Q.β (f x) ∉ Q.β.branchValues := fun h ↦ hx <| by
-      simpa only [mem_marked, mem_insert_iff, mem_singleton_iff, hβ] using
-        Q.branchValues_subset h
+      simpa only [hβ] using Q.branchValues_subset h
     refine mdifferentiableAt_of_comp_of_injOn hf.continuousAt (.of_forall hQ)
       ((localMultiplicity_eq_one_iff (.of_forall hQ)).1
         ((Q.β.notMem_branchValues_iff _).1 hfx _ rfl)) (.of_forall fun y ↦ ?_)
@@ -502,7 +540,7 @@ def pow {n : ℕ} (hn : n ≠ 0) : AnalyticBelyiPair.{0} where
   X := OnePoint ℂ
   β := .spherePow hn
   branchValues_subset := (FiniteHolomorphicMap.branchValues_spherePow_subset hn).trans <| by
-    simp [insert_subset_iff]
+    simp [insert_subset_iff, mem_marked]
 
 @[simp]
 theorem coe_β_pow {n : ℕ} (hn : n ≠ 0) : ⇑(pow hn).β = OnePoint.map fun z : ℂ ↦ z ^ n :=
@@ -532,7 +570,7 @@ def AnalyticBelyiPair.chebyshev : AnalyticBelyiPair.{0} where
   β := .spherePolynomial RiemannSurface.natDegree_four_mul_X_mul_one_sub_X_pos
   branchValues_subset := by
     rw [RiemannSurface.branchValues_spherePolynomial_four_mul_X_mul_one_sub_X]
-    simp
+    simp [insert_subset_iff, mem_marked]
 
 namespace AnalyticBelyiPair
 
@@ -727,6 +765,13 @@ theorem toTopBranchedCover_toHomeomorph (e : P.Iso Q) {n : ℕ} (hP : degree P.�
     (hQ : degree Q.β = n) :
     (e.toTopBranchedCover hP hQ).toHomeomorph = e.toHomeomorph := (rfl)
 
+/-- Isomorphic analytic Belyi pairs have the same ramification partitions over `0`, `1` and `∞`. -/
+theorem ramificationPartitions_eq (e : P.Iso Q) :
+    P.ramificationPartitions = Q.ramificationPartitions := by
+  rw [← P.ramificationPartitions_toTopBranchedCover rfl,
+    ← Q.ramificationPartitions_toTopBranchedCover e.degree_eq.symm]
+  exact (e.toTopBranchedCover rfl e.degree_eq.symm).ramificationPartitions_eq
+
 /-- **Isomorphic analytic Belyi pairs have isomorphic monodromy triples**, whatever the
 numberings of the fibres over `1/2`. -/
 theorem isoClass_monodromyTriple_eq {n : ℕ} (e : P.Iso Q) (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)
@@ -885,6 +930,30 @@ theorem coe_isoMulEquivDeck_symm_apply (φ : deck P.β) :
     ⇑(P.isoMulEquivDeck.symm φ) = (φ : P.X ≃ₜ P.X) :=
   Iso.coe_ofHomeomorph _ _
 
+/-- Conjugation by `e : P.Iso Q` identifies the automorphism groups `P.Iso P` and `Q.Iso Q`. -/
+def Iso.autMulEquiv {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) : P.Iso P ≃* Q.Iso Q :=
+  P.isoMulEquivDeck.trans <|
+    (Deck.conjMulEquiv e.toHomeomorph (congrFun e.β_comp)).trans Q.isoMulEquivDeck.symm
+
+/-- Conjugating an automorphism by `e : P ≅ Q` evaluates as `e ∘ f ∘ e.symm`. -/
+@[simp] theorem Iso.autMulEquiv_apply {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) (f : P.Iso P)
+    (y : Q.X) : e.autMulEquiv f y = e (f (e.symm y)) :=
+  (congrFun (Q.coe_isoMulEquivDeck_symm_apply _) y).trans <|
+    (Deck.conjMulEquiv_apply_coe _ _ _ y).trans <|
+      congrArg e (congrFun (P.coe_isoMulEquivDeck_apply f) _)
+
+/-- The inverse of `autMulEquiv` evaluates as `e.symm ∘ g ∘ e`. -/
+@[simp] theorem Iso.autMulEquiv_symm_apply {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q)
+    (g : Q.Iso Q) (x : P.X) : e.autMulEquiv.symm g x = e.symm (g (e x)) :=
+  (congrFun (P.coe_isoMulEquivDeck_symm_apply _) x).trans <|
+    (Deck.conjMulEquiv_symm_apply_coe _ _ _ x).trans <|
+      congrArg e.symm (congrFun (Q.coe_isoMulEquivDeck_apply g) _)
+
+/-- Isomorphic analytic Belyi pairs have automorphism groups of the same cardinality. -/
+theorem Iso.natCard_iso_eq {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) :
+    Nat.card (P.Iso P) = Nat.card (Q.Iso Q) :=
+  Nat.card_congr e.autMulEquiv.toEquiv
+
 /-- **The automorphisms of an analytic Belyi pair are the deck transformations of its cover of
 `ℂ ∖ {0, 1}`.** An automorphism goes to its restriction to the points over `ℂ ∖ {0, 1}`
 (`TauCeti.AnalyticBelyiPair.coe_isoMulEquivDeckRestrict_apply`). It is the composite of
@@ -892,7 +961,6 @@ theorem coe_isoMulEquivDeck_symm_apply (φ : deck P.β) :
 underlying topological branched cover (`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`). -/
 def isoMulEquivDeckRestrict : P.Iso P ≃* deck P.restrict :=
   P.isoMulEquivDeck.trans <|
-    (Deck.conjMulEquiv (Homeomorph.refl P.X) (P.toTopBranchedCover_π_apply rfl)).trans <|
     (P.toTopBranchedCover rfl).deckMulEquivDeckRestrict.trans <|
       MulEquiv.subgroupCongr (congrArg deck (P.restrict_toTopBranchedCover rfl))
 
@@ -902,9 +970,8 @@ the automorphism. -/
 theorem coe_isoMulEquivDeckRestrict_apply (e : P.Iso P) (x : P.β ⁻¹' range toOnePoint) :
     ((P.isoMulEquivDeckRestrict e : P.β ⁻¹' range toOnePoint ≃ₜ P.β ⁻¹' range toOnePoint) x :
       P.X) = e x :=
-  -- Evaluate the composite one identification at a time.
   (TopBranchedCover.coe_deckMulEquivDeckRestrict_apply _ _ _).trans <|
-    (Deck.conjMulEquiv_apply_coe _ _ _ _).trans (congrFun (P.coe_isoMulEquivDeck_apply e) _)
+    congrFun (P.coe_isoMulEquivDeck_apply e) _
 
 /-- The automorphism of a pair attached to a deck transformation of its cover of `ℂ ∖ {0, 1}` is
 the deck transformation over `ℂ ∖ {0, 1}`. -/
@@ -913,11 +980,9 @@ theorem coe_isoMulEquivDeckRestrict_symm_apply (ψ : deck P.restrict)
     (x : P.β ⁻¹' range toOnePoint) :
     P.isoMulEquivDeckRestrict.symm ψ x =
       ((ψ : P.β ⁻¹' range toOnePoint ≃ₜ P.β ⁻¹' range toOnePoint) x : P.X) :=
-  -- Evaluate the composite one identification at a time.
   (congrFun (P.coe_isoMulEquivDeck_symm_apply _) _).trans <|
-    (Deck.conjMulEquiv_symm_apply_coe _ _ _ _).trans <|
-      (TopBranchedCover.coe_deckMulEquivDeckRestrict_symm_apply _ _ _).trans <|
-        congrArg (fun f => (DFunLike.coe f x : P.X)) (MulEquiv.subgroupCongr_symm_apply _ ψ)
+    (TopBranchedCover.coe_deckMulEquivDeckRestrict_symm_apply _ _ _).trans <|
+      congrArg (fun f => (DFunLike.coe f x : P.X)) (MulEquiv.subgroupCongr_symm_apply _ ψ)
 
 end Deck
 
@@ -967,6 +1032,31 @@ theorem isRegular_monodromyTriple_iff_natCard_iso :
 
 end AutomorphismGroup
 
+/-- An analytic Belyi pair is *regular* (or *Galois*) when `Nat.card (P.Iso P) = degree P.β`. -/
+def IsRegular (P : AnalyticBelyiPair.{u}) : Prop := Nat.card (P.Iso P) = degree P.β
+
+/-- Unfold `AnalyticBelyiPair.IsRegular` to `Nat.card (P.Iso P) = degree P.β`. -/
+theorem isRegular_iff {P : AnalyticBelyiPair.{u}} : P.IsRegular ↔ Nat.card (P.Iso P) = degree P.β :=
+  Iff.rfl
+
+/-- `P` is regular if and only if its monodromy triple is regular. -/
+theorem isRegular_iff_monodromyTriple {P : AnalyticBelyiPair.{u}} {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    P.IsRegular ↔ (P.isCoveringMap_restrict.monodromyTriple ν).IsRegular := by
+  rw [isRegular_iff, P.degree_β_eq_of_restrict_preimage_singleton_equiv ν,
+    isRegular_monodromyTriple_iff_natCard_iso]
+
+/-- Passing to the underlying topological branched cover preserves regularity. -/
+@[simp] theorem isRegular_toTopBranchedCover {P : AnalyticBelyiPair.{u}} {n : ℕ}
+    (h : degree P.β = n) : (P.toTopBranchedCover h).IsRegular ↔ P.IsRegular := by
+  have e : P.Iso P ≃* deck (P.toTopBranchedCover h).π := P.isoMulEquivDeck
+  rw [TopBranchedCover.isRegular_iff, isRegular_iff, h, Nat.card_congr e.toEquiv]
+
+/-- Regularity of analytic Belyi pairs is invariant under isomorphism. -/
+theorem Iso.isRegular_iff {P Q : AnalyticBelyiPair.{u}} (e : P.Iso Q) :
+    P.IsRegular ↔ Q.IsRegular := by
+  simp only [AnalyticBelyiPair.isRegular_iff, e.natCard_iso_eq, e.degree_eq]
+
 end AnalyticBelyiPair
 
 /-! ### Isomorphism classes of analytic Belyi pairs -/
@@ -996,17 +1086,13 @@ def toIsoClass (n : ℕ) : Quotient (isoSetoid.{u} n) → PermutationTriple.IsoC
 /-- **The topological branched cover of an isomorphism class of analytic Belyi pairs.** This is
 the analytic-to-topological map in the classification of Belyi pairs: it forgets the complex
 structure and retains the same map to the sphere. -/
-def toTopBranchedCoverIsoClass (n : ℕ) :
-    Quotient (isoSetoid.{u} n) → TopBranchedCover.IsoClass n :=
-  Quotient.lift
-    (fun P ↦ TopBranchedCover.IsoClass.mk (P.val.toTopBranchedCover P.property))
-    fun _ _ ⟨e⟩ ↦ TopBranchedCover.IsoClass.mk_eq_mk_iff.2
-      ⟨e.toTopBranchedCover _ _⟩
+def toTopBranchedCoverIsoClass (n : ℕ) : Quotient (isoSetoid.{u} n) → TopBranchedCover.IsoClass n :=
+  Quotient.lift (fun P ↦ TopBranchedCover.IsoClass.mk (P.val.toTopBranchedCover P.property))
+    fun _ _ ⟨e⟩ ↦ TopBranchedCover.IsoClass.mk_eq_mk_iff.2 ⟨e.toTopBranchedCover _ _⟩
 
 /-- The topological branched-cover class of a pair is represented by its underlying topological
 branched cover. -/
-@[simp]
-theorem toTopBranchedCoverIsoClass_mk {n : ℕ}
+@[simp] theorem toTopBranchedCoverIsoClass_mk {n : ℕ}
     (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
     toTopBranchedCoverIsoClass n ⟦P⟧ =
       TopBranchedCover.IsoClass.mk (P.val.toTopBranchedCover P.property) := (rfl)
@@ -1028,6 +1114,51 @@ theorem toIsoClass_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β =
     toIsoClass n ⟦P⟧ = .mk (P.val.isCoveringMap_restrict.monodromyTriple ν) := by
   rw [toIsoClass, Quotient.lift_mk]
   exact P.val.isCoveringMap_restrict.isoClass_monodromyTriple_eq _ _
+
+/-- The ordered triple of ramification partitions over `0`, `1` and `∞` on `isoSetoid`. -/
+def isoClassRamificationPartitions (n : ℕ) :
+    Quotient (isoSetoid.{u} n) → Multiset ℕ × Multiset ℕ × Multiset ℕ :=
+  Quotient.lift (fun P ↦ P.val.ramificationPartitions) fun _ _ ⟨e⟩ ↦ e.ramificationPartitions_eq
+
+/-- Evaluating `isoClassRamificationPartitions` on `⟦P⟧` gives `P.val.ramificationPartitions`. -/
+@[simp] theorem isoClassRamificationPartitions_mk {n : ℕ}
+    (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
+    isoClassRamificationPartitions n ⟦P⟧ = P.val.ramificationPartitions := (rfl)
+
+/-- Forgetting the complex structure preserves the ramification partitions over `0`, `1` and `∞`. -/
+@[simp] theorem ramificationPartitions_toTopBranchedCoverIsoClass {n : ℕ}
+    (P : Quotient (isoSetoid.{u} n)) :
+    (toTopBranchedCoverIsoClass n P).ramificationPartitions = isoClassRamificationPartitions n P :=
+  Quotient.inductionOn P fun _ ↦ by simp
+
+/-- The order of the automorphism group of an isomorphism class of analytic Belyi pairs. -/
+def isoClassNatCardAut (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=
+  Quotient.lift (fun P ↦ Nat.card (P.val.Iso P.val)) fun _ _ ⟨e⟩ ↦ e.natCard_iso_eq
+
+/-- Evaluating `isoClassNatCardAut` on `⟦P⟧` gives `Nat.card (P.val.Iso P.val)`. -/
+@[simp] theorem isoClassNatCardAut_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
+    isoClassNatCardAut n ⟦P⟧ = Nat.card (P.val.Iso P.val) := (rfl)
+
+/-- Regularity on isomorphism classes of degree-`n` analytic Belyi pairs. -/
+def IsoClassIsRegular (n : ℕ) : Quotient (isoSetoid.{u} n) → Prop :=
+  Quotient.lift (fun P ↦ P.val.IsRegular) fun _ _ ⟨e⟩ ↦ propext e.isRegular_iff
+
+/-- Evaluating `IsoClassIsRegular` on `⟦P⟧` recovers `P.val.IsRegular`. -/
+@[simp] theorem isoClassIsRegular_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
+    IsoClassIsRegular n ⟦P⟧ ↔ P.val.IsRegular := Iff.rfl
+
+/-- Forgetting the complex structure matches `isoClassNatCardAut` with `natCardDeck`. -/
+@[simp] theorem natCardDeck_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
+    (toTopBranchedCoverIsoClass n P).natCardDeck = isoClassNatCardAut n P :=
+  Quotient.inductionOn P fun P ↦ by
+    have e : P.val.Iso P.val ≃* deck (P.val.toTopBranchedCover P.property).π :=
+      P.val.isoMulEquivDeck
+    simpa using (Nat.card_congr e.toEquiv).symm
+
+/-- Forgetting the complex structure preserves regularity. -/
+@[simp] theorem isRegular_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
+    (toTopBranchedCoverIsoClass n P).IsRegular ↔ IsoClassIsRegular n P :=
+  Quotient.inductionOn P fun _ ↦ by simp
 
 end AnalyticBelyiPair
 
@@ -1303,6 +1434,10 @@ theorem degree_β_eq_one_iff_nonempty_iso {P : AnalyticBelyiPair.{0}} :
     degree P.β = 1 ↔ Nonempty (P.Iso (pow one_ne_zero)) :=
   ⟨fun h ↦ ⟨isoOfDegreeEqOne h (degree_β_pow one_ne_zero)⟩,
     fun ⟨e⟩ ↦ e.degree_eq.trans (degree_β_pow one_ne_zero)⟩
+
+/-- No analytic Belyi pair has degree zero. -/
+instance : IsEmpty {P : AnalyticBelyiPair.{u} // degree P.β = 0} :=
+  ⟨fun P ↦ (RiemannSurface.degree_pos (f := P.val.β)).ne' P.property⟩
 
 /-- There is at most one isomorphism class of analytic Belyi pairs of degree one. -/
 instance : Subsingleton (Quotient (isoSetoid.{u} 1)) :=

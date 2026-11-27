@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.ChartedSpace
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Ramification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Transport
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Basic
 public import TauCeti.Topology.Covering.Clopen
 
 /-!
@@ -37,15 +37,9 @@ degree `n` to isomorphism classes of connected degree-`n` covers of `ℂ ∖ {0,
 (`TauCeti.TopBranchedCover.IsoClass.restrict_surjective`). Since a branched cover is determined by
 its unbranched part (`TauCeti.TopBranchedCover.IsoClass.restrict_injective`), every topological
 branched cover is isomorphic to the filled cover of its unbranched part
-(`TauCeti.TopBranchedCover.isoFilledCover`), and restriction is a bijection on isomorphism classes
-(`TauCeti.TopBranchedCover.IsoClass.restrict_bijective`).
-
-Through this isomorphism the ramification of a topological branched cover is read off its
-monodromy: over `0`, `1` and `∞` the ramification partition, formed by the local degrees at the
-points of the fibre, is the full cycle type of `σ0`, `σ1` and `σinf` in the monodromy triple of the
-unbranched part (`TauCeti.TopBranchedCover.parts_ramificationPartition_zero`), since the points over
-a puncture of a filled cover are the added points over it, whose local degrees are the cycle
-lengths (`TauCeti.FilledCover.map_degree_overZero`).
+(`TauCeti.TopBranchedCover.isoFilledCover`), giving `equivConnectedCoverClass`. Over `0`, `1` and
+`∞`, the ramification partitions match the cycle types of `σ0`, `σ1`, and `σinf`
+(`TauCeti.TopBranchedCover.ramificationPartitions_eq_cycleData_monodromyTriple`).
 
 ## Main results
 
@@ -67,12 +61,12 @@ lengths (`TauCeti.FilledCover.map_degree_overZero`).
   `ℂ ∖ {0, 1}` is the restriction of a topological branched cover of degree `n`.
 * `TauCeti.TopBranchedCover.isoFilledCover`: every topological branched cover is isomorphic to
   the filled cover of its unbranched part.
-* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`: topological branched covers of degree
-  `n` and connected degree-`n` covers of `ℂ ∖ {0, 1}` have the same isomorphism classes.
-* `TauCeti.TopBranchedCover.parts_ramificationPartition_zero`,
-  `TauCeti.TopBranchedCover.parts_ramificationPartition_one`,
-  `TauCeti.TopBranchedCover.parts_ramificationPartition_inf`: the ramification partitions over
-  `0`, `1` and `∞` are the full cycle types of `σ0`, `σ1` and `σinf`.
+* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`,
+  `TauCeti.TopBranchedCover.IsoClass.equivConnectedCoverClass`: classification of topological
+  branched covers by connected covers of `ℂ ∖ {0, 1}`.
+* `TauCeti.TopBranchedCover.parts_ramificationPartition_zero`, `one`, `inf`, and
+  `ramificationPartitions_eq_cycleData_monodromyTriple`: over `0`, `1` and `∞`, the ramification
+  partitions match the cycle types of `σ0`, `σ1` and `σinf`.
 
 ## References
 
@@ -314,6 +308,27 @@ theorem TopBranchedCover.IsoClass.restrict_bijective {n : ℕ} :
     Bijective (IsoClass.restrict : IsoClass.{0} n → _) :=
   ⟨restrict_injective, restrict_surjective⟩
 
+namespace TopBranchedCover.IsoClass
+
+/-- **Topological branched covers are classified by connected covers of `ℂ ∖ {0, 1}`.** -/
+def equivConnectedCoverClass (n : ℕ) :
+    IsoClass.{0} n ≃ ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n where
+  toFun := restrict
+  invFun := ConnectedCoverClass.toTopBranchedCover
+  left_inv _ := restrict_injective (by simp)
+  right_inv := ConnectedCoverClass.restrict_toTopBranchedCover
+
+/-- Applying `equivConnectedCoverClass` restricts a class of branched covers over `ℂ ∖ {0, 1}`. -/
+@[simp] theorem equivConnectedCoverClass_apply {n : ℕ} (c : IsoClass.{0} n) :
+    equivConnectedCoverClass n c = c.restrict := (rfl)
+
+/-- The inverse of `equivConnectedCoverClass` fills a class of connected covers. -/
+@[simp] theorem equivConnectedCoverClass_symm_apply {n : ℕ}
+    (c : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
+    (equivConnectedCoverClass n).symm c = c.toTopBranchedCover := (rfl)
+
+end TopBranchedCover.IsoClass
+
 /-! ### Ramification partitions over the punctures -/
 
 namespace TopBranchedCover
@@ -411,6 +426,14 @@ theorem parts_ramificationPartition_inf (ν : X.restrict ⁻¹' {basePt} ≃ Fin
   refine (map_degree_overInf hp ν').trans ?_
   rw [fullCycleType_def, fullCycleType_def, ← PermutationTriple.cycleData_σinf,
     ← PermutationTriple.cycleData_σinf, cycleData_monodromyTriple_connectedCover X ν ν']
+
+/-- On `TopBranchedCover.{0} n`, `ramificationPartitions` equals `cycleData` of the monodromy. -/
+theorem ramificationPartitions_eq_cycleData_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
+    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
+    X.ramificationPartitions = (X.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
+  simp [TopBranchedCover.ramificationPartitions_def, parts_ramificationPartition_zero X ν,
+    parts_ramificationPartition_one X ν, parts_ramificationPartition_inf X ν,
+    PermutationTriple.cycleData, fullCycleType_def]
 
 end TopBranchedCover
 

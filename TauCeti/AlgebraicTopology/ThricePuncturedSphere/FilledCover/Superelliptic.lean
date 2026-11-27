@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.AnalyticBelyiPair
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Genus
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Superelliptic
 
 /-!
@@ -25,7 +25,8 @@ cover, that is from the equation:
   `σ0`, `σ1` and `σinf` of the cover, whose cycle data are `[4], [4], [2, 2]`, and these cycle
   lengths are the local multiplicities of `β`. All three of `0`, `1` and `∞` are branch values.
 * **Genus.** The monodromy triple of the pair has one cycle over each of `0` and `1` and two over
-  `∞`, so its Euler characteristic is `1 + 1 + 2 - 4 = 0` and its genus is `1`: this is the
+  `∞`, so its Euler characteristic is `1 + 1 + 2 - 4 = 0` and the compact Riemann surface
+  `superelliptic.X` has Euler characteristic `0` and topological genus `1`: this is the
   Riemann–Hurwitz count `2 g - 2 = 4 · (-2) + (3 + 3 + 1 + 1) = 0`.
 * **Automorphisms.** The automorphisms `y ↦ ζ y` of the cover, for `ζ` a fourth root of unity,
   extend to the compact curve, and they are all the automorphisms of the pair: the automorphism
@@ -47,7 +48,11 @@ whose monodromy triple is the Euclidean torus triple `TauCeti.PermutationTriple.
   `map_localMultiplicity_fiber_one_superelliptic`, `map_localMultiplicity_fiber_inf_superelliptic`:
   the ramification partitions `[4]`, `[4]` and `[2, 2]`.
 * `TauCeti.AnalyticBelyiPair.branchValues_β_superelliptic`: the branch values are `0`, `1`, `∞`.
-* `TauCeti.AnalyticBelyiPair.genus_monodromyTriple_superelliptic`: genus one.
+* `TauCeti.AnalyticBelyiPair.ramificationDegree_β_superelliptic`,
+  `TauCeti.AnalyticBelyiPair.eulerChar_X_superelliptic`,
+  `TauCeti.AnalyticBelyiPair.genus_X_superelliptic`,
+  `TauCeti.AnalyticBelyiPair.genus_monodromyTriple_superelliptic`: ramification degree `8`, Euler
+  characteristic `0` and topological genus `1`.
 * `TauCeti.AnalyticBelyiPair.superellipticIsoMulEquiv`: the automorphism group of the pair is the
   group of fourth roots of unity, acting by `y ↦ ζ y`.
 * `TauCeti.AnalyticBelyiPair.isRegular_monodromyTriple_superelliptic`: the pair is regular.
@@ -184,7 +189,8 @@ theorem branchValues_β_superelliptic :
         (localMultiplicity superelliptic.β)) : y ∈ superelliptic.β.branchValues := by
     obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.1 h
     exact (superelliptic.β.mem_branchValues_iff y).2 ⟨x, by simpa using hx, he⟩
-  refine subset_antisymm superelliptic.branchValues_subset ?_
+  refine subset_antisymm (fun _ hy ↦ by
+    simpa [ThricePuncturedSphere.mem_marked] using superelliptic.branchValues_subset hy) ?_
   rintro y (rfl | rfl | rfl)
   · exact key (e := 4) (by norm_num) (by simp [map_localMultiplicity_fiber_zero_superelliptic])
   · exact key (e := 4) (by norm_num) (by simp [map_localMultiplicity_fiber_one_superelliptic])
@@ -198,9 +204,26 @@ theorem genus_monodromyTriple_superelliptic {n : ℕ}
     (ν : superelliptic.restrict ⁻¹' {basePt} ≃ Fin n) :
     (superelliptic.isCoveringMap_restrict.monodromyTriple ν).genus = 1 := by
   obtain rfl := eq_four_of_restrict_preimage_singleton_equiv ν
-  rw [genus_def, eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData,
+  rw [PermutationTriple.genus_def, eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData,
     cycleData_monodromyTriple_superelliptic]
   norm_num
+
+/-- **The ramification degree of `superelliptic.β` is `8`**: `3 + 3 + (1 + 1)`. -/
+@[simp] theorem ramificationDegree_β_superelliptic : ramificationDegree superelliptic.β = 8 := by
+  obtain ⟨ν⟩ := superelliptic.nonempty_restrict_preimage_singleton_equiv basePt
+  have h := superelliptic.natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar
+    (ν.trans (finCongr degree_β_superelliptic))
+  rw [eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData,
+    cycleData_monodromyTriple_superelliptic, degree_β_superelliptic] at h; norm_num at h; omega
+
+/-- **The compact superelliptic curve `y ^ 4 = t (t - 1)` has Euler characteristic `0`**. -/
+@[simp] theorem eulerChar_X_superelliptic : TauCeti.eulerChar superelliptic.X = 0 := by
+  simp [superelliptic.β.eulerChar_eq_two_mul_degree_sub_ramificationDegree]
+
+/-- **The compact superelliptic curve `y ^ 4 = t (t - 1)` has topological genus `1`**, matching
+its monodromy triple and Riemann–Hurwitz (`2 g - 2 = 4 · (-2) + 8 = 0`). -/
+@[simp] theorem genus_X_superelliptic : RiemannSurface.genus superelliptic.X = 1 :=
+  RiemannSurface.genus_eq_of_eulerChar_eq (by simp)
 
 /-- **The automorphisms of the superelliptic curve are `y ↦ ζ y`** for the fourth roots of unity
 `ζ`: these automorphisms of the cover over `ℂ ∖ {0, 1}` extend to the compact curve

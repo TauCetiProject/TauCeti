@@ -43,9 +43,9 @@ extends uniquely to the total spaces (`TauCeti.TopBranchedCover.extend`), so eve
 unbranched parts extends to a unique isomorphism of branched covers, and restriction is injective
 on isomorphism classes. This is the uniqueness of the compactification of a finite cover of the
 thrice-punctured sphere. The extension exists because at a point of a marked fibre the values
-of the map cluster in a connected subset of a finite fibre, hence at a single point. In
-particular the deck group of `π` is the deck group of the unbranched cover
-(`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`).
+of the map cluster in a connected subset of a finite fibre, hence at a single point.
+(In `TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Deck`, this identifies
+the deck group of `π` with the deck group of the unbranched cover.)
 
 The data carries no atlas and no surjectivity or countability axiom. The local models at marked
 points and the covering map elsewhere already provide a chart around every point
@@ -77,8 +77,6 @@ open, so `π` is surjective onto the connected sphere
 * `TauCeti.TopBranchedCover.Iso.ofConnectedCoverIso`: the extension of an isomorphism of the
   unbranched connected covers to an isomorphism of branched covers, inverse to
   `TauCeti.TopBranchedCover.Iso.connectedCoverIso`.
-* `TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`: restriction identifies the deck group of a
-  branched cover with the deck group of its unbranched part.
 * `TauCeti.TopBranchedCover.sphere`: the sphere over itself, of degree `1`.
 
 ## Main results
@@ -126,6 +124,7 @@ public section
 noncomputable section
 
 open Filter Set Topology
+open scoped OnePoint
 
 namespace TauCeti
 
@@ -436,6 +435,18 @@ theorem parts_ramificationPartition_of_notMem_marked {y : OnePoint ℂ} (hy : y 
   · obtain ⟨z, rfl, rfl⟩ := X.mem_parts_ramificationPartition.1 he
     exact X.localDegree_eq_one hy
 
+/-- The ordered triple of ramification partitions of `X` over `0`, `1` and `∞`. -/
+def ramificationPartitions : Multiset ℕ × Multiset ℕ × Multiset ℕ :=
+  ((X.ramificationPartition ((0 : ℂ) : OnePoint ℂ)).parts,
+    (X.ramificationPartition ((1 : ℂ) : OnePoint ℂ)).parts,
+    (X.ramificationPartition (∞ : OnePoint ℂ)).parts)
+
+/-- Unfold `TopBranchedCover.ramificationPartitions` into its `0`, `1` and `∞` components. -/
+theorem ramificationPartitions_def : X.ramificationPartitions =
+    ((X.ramificationPartition ((0 : ℂ) : OnePoint ℂ)).parts,
+      (X.ramificationPartition ((1 : ℂ) : OnePoint ℂ)).parts,
+      (X.ramificationPartition (∞ : OnePoint ℂ)).parts) := (rfl)
+
 /-! ### Isomorphisms -/
 
 /-- An **isomorphism** of topological branched covers: a homeomorphism of the total spaces
@@ -571,6 +582,11 @@ theorem ramificationPartition_eq (ι : Iso X Y) (y : OnePoint ℂ) :
     Multiset.map_map]
   exact Multiset.map_congr rfl fun z _ ↦ ι.localDegree_apply z
 
+/-- Isomorphic branched covers have the same ramification partitions over `0`, `1` and `∞`. -/
+theorem ramificationPartitions_eq (ι : Iso X Y) :
+    X.ramificationPartitions = Y.ramificationPartitions := by
+  simp only [ramificationPartitions, ι.ramificationPartition_eq]
+
 end Iso
 
 /-- Branched covers related by isomorphism. -/
@@ -609,6 +625,30 @@ theorem IsoClass.restrict_mk (X : TopBranchedCover n) :
 /-- Every isomorphism class is the class of a branched cover. -/
 theorem IsoClass.mk_surjective : Function.Surjective (IsoClass.mk (n := n)) :=
   Quotient.mk_surjective
+
+/-- Descend an isomorphism-invariant function on `TopBranchedCover n` to `IsoClass n`. -/
+def IsoClass.lift {α : Sort*} (f : TopBranchedCover.{u} n → α)
+    (hf : ∀ X Y, Nonempty (Iso X Y) → f X = f Y) : IsoClass.{u} n → α :=
+  Quotient.lift f hf
+
+/-- Evaluating `IsoClass.lift` on `IsoClass.mk X` gives `f X`. -/
+@[simp] theorem IsoClass.lift_mk {α : Sort*} (f : TopBranchedCover.{u} n → α)
+    (hf : ∀ X Y, Nonempty (Iso X Y) → f X = f Y) (X : TopBranchedCover.{u} n) :
+    IsoClass.lift f hf (IsoClass.mk X) = f X := (rfl)
+
+/-- No topological branched cover has degree zero. -/
+instance : IsEmpty (TopBranchedCover.{u} 0) := ⟨fun X ↦ X.ne_zero rfl⟩
+
+/-- There are no isomorphism classes of topological branched covers of degree zero. -/
+instance : IsEmpty (IsoClass.{u} 0) := ⟨Quotient.ind isEmptyElim⟩
+
+/-- The ordered triple of ramification partitions over `0`, `1` and `∞` on `IsoClass`. -/
+def IsoClass.ramificationPartitions : IsoClass.{u} n → Multiset ℕ × Multiset ℕ × Multiset ℕ :=
+  IsoClass.lift TopBranchedCover.ramificationPartitions fun _ _ ⟨ι⟩ ↦ ι.ramificationPartitions_eq
+
+/-- Evaluating `IsoClass.ramificationPartitions` on `.mk X` recovers `X.ramificationPartitions`. -/
+@[simp] theorem IsoClass.ramificationPartitions_mk (X : TopBranchedCover.{u} n) :
+    (IsoClass.mk X).ramificationPartitions = X.ramificationPartitions := (rfl)
 
 /-! ### Uniqueness of the compactification
 
@@ -832,43 +872,6 @@ theorem IsoClass.restrict_injective : Function.Injective (IsoClass.restrict (n :
   rw [IsoClass.restrict_mk, IsoClass.restrict_mk, ConnectedCoverClass.mk_eq_mk_iff] at h
   obtain ⟨e⟩ := h
   exact IsoClass.mk_eq_mk_iff.2 ⟨Iso.ofConnectedCoverIso e⟩
-
-/-! ### Deck transformations -/
-
-/-- **The deck group of a branched cover is the deck group of its unbranched part.** A deck
-transformation of `π` restricts to one of the unbranched cover `TauCeti.TopBranchedCover.restrict`,
-and every deck transformation of the unbranched cover extends uniquely across the marked fibres
-(`TauCeti.TopBranchedCover.Iso.ofRestrict`). -/
-def deckMulEquivDeckRestrict : deck X.π ≃* deck X.restrict where
-  toFun φ := ⟨(⟨φ.val, congrFun φ.property⟩ : Iso X X).restrict,
-    deck.mem_iff.2 (funext (Iso.restrict_restrict _))⟩
-  invFun ψ := ⟨(Iso.ofRestrict ψ.val fun z ↦ by
-      simpa using congrArg (fun w : ThricePuncturedSphere ↦ ((w : ℂ) : OnePoint ℂ))
-        (deck.proj_smul ψ z)).toHomeomorph,
-    deck.mem_iff.2 (funext (Iso.π_apply _))⟩
-  left_inv φ := Subtype.ext <| congrArg Iso.toHomeomorph
-    (Iso.restrict_injective (Iso.restrict_ofRestrict _ _) :
-      Iso.ofRestrict _ _ = (⟨φ.val, congrFun φ.property⟩ : Iso X X))
-  right_inv ψ := Subtype.ext (Iso.restrict_ofRestrict _ _)
-  map_mul' _ _ := rfl
-
-/-- On the unbranched part, the restriction of a deck transformation is the deck
-transformation. -/
-@[simp]
-theorem coe_deckMulEquivDeckRestrict_apply (φ : deck X.π) (z : X.π ⁻¹' range toOnePoint) :
-    ((X.deckMulEquivDeckRestrict φ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z :
-      X.Z) = (φ : X.Z ≃ₜ X.Z) z :=
-  (rfl)
-
-/-- On the unbranched part, the extension of a deck transformation of the unbranched cover is that
-deck transformation. -/
-@[simp]
-theorem coe_deckMulEquivDeckRestrict_symm_apply (ψ : deck X.restrict)
-    (z : X.π ⁻¹' range toOnePoint) :
-    (X.deckMulEquivDeckRestrict.symm ψ : X.Z ≃ₜ X.Z) z =
-      ((ψ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z : X.Z) :=
-  Iso.ofRestrict_toHomeomorph_apply_val _ _ z
-
 
 /-! ### The sphere over itself -/
 
