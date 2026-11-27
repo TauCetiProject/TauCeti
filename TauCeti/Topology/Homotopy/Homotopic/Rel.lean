@@ -101,28 +101,6 @@ theorem homotopic_comp_homeomorph_iff (e : W ≃ₜ X) :
     Homotopic (f₀.comp (e : C(W, X))) (f₁.comp (e : C(W, X))) ↔ Homotopic f₀ f₁ := by
   simpa using homotopicRel_comp_homeomorph_iff (f₀ := f₀) (f₁ := f₁) (S := ∅) e
 
-variable (W) in
-/-- Post-composition with a homeomorphism `e : Y ≃ₜ Y'` is a bijection of free homotopy classes
-`[W, Y] ≃ [W, Y']`. -/
-def _root_.Homeomorph.homotopicQuotientCongr {Y' : Type*}
-    [TopologicalSpace Y'] (e : Y ≃ₜ Y') :
-    Quotient (⟨Homotopic, Homotopic.equivalence⟩ : Setoid C(W, Y)) ≃
-      Quotient (⟨Homotopic, Homotopic.equivalence⟩ : Setoid C(W, Y')) where
-  toFun := Quotient.map (fun f ↦ (e : C(Y, Y')).comp f) fun _ _ h ↦ (Homotopic.refl _).comp h
-  invFun := Quotient.map (fun f ↦ (e.symm : C(Y', Y)).comp f) fun _ _ h ↦ (Homotopic.refl _).comp h
-  left_inv := Quotient.ind fun f ↦ congrArg (Quotient.mk _) <| by
-    dsimp only
-    rw [← comp_assoc, Homeomorph.symm_comp_toContinuousMap, id_comp]
-  right_inv := Quotient.ind fun f ↦ congrArg (Quotient.mk _) <| by
-    dsimp only
-    rw [← comp_assoc, Homeomorph.toContinuousMap_comp_symm, id_comp]
-
-@[simp]
-theorem _root_.Homeomorph.homotopicQuotientCongr_mk {Y' : Type*}
-    [TopologicalSpace Y'] (e : Y ≃ₜ Y') (f : C(W, Y)) :
-    e.homotopicQuotientCongr W (Quotient.mk _ f) = Quotient.mk _ ((e : C(Y, Y')).comp f) :=
-  (rfl)
-
 /-- A self-map homotopic to the identity relative to `S` fixes `S` pointwise, so it maps `S` into
 itself. -/
 theorem HomotopicRel.mapsTo_self {f : C(X, X)} (h : HomotopicRel f (ContinuousMap.id X) S) :
@@ -159,6 +137,37 @@ homotopic. -/
 lemma homotopicSetoid_iff {f g : C(X, Y)} :
     homotopicSetoid X Y f g ↔ f.Homotopic g :=
   Iff.rfl
+
+variable (X) in
+/-- Post-composition with a homeomorphism `e : Y ≃ₜ Y'` is a bijection of free homotopy classes
+`[X, Y] ≃ [X, Y']`. -/
+def _root_.Homeomorph.homotopicQuotientCongr {Y' : Type*} [TopologicalSpace Y'] (e : Y ≃ₜ Y') :
+    Quotient (homotopicSetoid X Y) ≃ Quotient (homotopicSetoid X Y') where
+  toFun := Quotient.map (fun f ↦ (e : C(Y, Y')).comp f) fun _ _ h ↦
+    homotopicSetoid_iff.2 ((ContinuousMap.Homotopic.refl _).comp (homotopicSetoid_iff.1 h))
+  invFun := Quotient.map (fun f ↦ (e.symm : C(Y', Y)).comp f) fun _ _ h ↦
+    homotopicSetoid_iff.2 ((ContinuousMap.Homotopic.refl _).comp (homotopicSetoid_iff.1 h))
+  left_inv := Quotient.ind fun f ↦ congrArg (Quotient.mk _) <| by
+    dsimp only
+    rw [← ContinuousMap.comp_assoc, Homeomorph.symm_comp_toContinuousMap,
+      ContinuousMap.id_comp]
+  right_inv := Quotient.ind fun f ↦ congrArg (Quotient.mk _) <| by
+    dsimp only
+    rw [← ContinuousMap.comp_assoc, Homeomorph.toContinuousMap_comp_symm,
+      ContinuousMap.id_comp]
+
+@[simp]
+theorem _root_.Homeomorph.homotopicQuotientCongr_mk {Y' : Type*} [TopologicalSpace Y']
+    (e : Y ≃ₜ Y') (f : C(X, Y)) :
+    e.homotopicQuotientCongr X (Quotient.mk _ f) = Quotient.mk _ ((e : C(Y, Y')).comp f) :=
+  (rfl)
+
+@[simp]
+theorem _root_.Homeomorph.homotopicQuotientCongr_symm_mk {Y' : Type*} [TopologicalSpace Y']
+    (e : Y ≃ₜ Y') (f : C(X, Y')) :
+    (e.homotopicQuotientCongr X).symm (Quotient.mk _ f) =
+      Quotient.mk _ ((e.symm : C(Y', Y)).comp f) :=
+  (rfl)
 
 /-- Pointed homotopy, homotopy relative to the base point, as an equivalence relation on the
 pointed maps `(Y, y₀) → (X, x)`.  Its classes are the pointed homotopy classes of maps. -/

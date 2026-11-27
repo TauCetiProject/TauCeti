@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Quotient
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Homotopy.Basic
+public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # The homotopy category of paracompact Hausdorff spaces
@@ -112,10 +113,10 @@ theorem homMk_comp {X Y Z : ParacompactHomotopyCat.{u}} (f : C(X.as.obj, Y.as.ob
 
 /-- The morphisms `X ⟶ Y` of `HoPara` are the free homotopy classes of continuous maps. -/
 noncomputable def homotopicQuotientEquivHom (X Y : ParacompactHomotopyCat.{u}) :
-    Quotient (⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ :
-      Setoid C(X.as.obj, Y.as.obj)) ≃ (X ⟶ Y) :=
-  Equiv.ofBijective (Quotient.lift homMk fun _ _ h ↦ homMk_eq_homMk_iff.2 h)
-    ⟨Quotient.ind₂ fun _ _ h ↦ Quotient.sound (homMk_eq_homMk_iff.1 h),
+    Quotient (homotopicSetoid X.as.obj Y.as.obj) ≃ (X ⟶ Y) :=
+  Equiv.ofBijective
+    (Quotient.lift homMk fun _ _ h ↦ homMk_eq_homMk_iff.2 (homotopicSetoid_iff.1 h))
+    ⟨Quotient.ind₂ fun _ _ h ↦ Quotient.sound (homotopicSetoid_iff.2 (homMk_eq_homMk_iff.1 h)),
       fun g ↦ let ⟨f, hf⟩ := homMk_surjective g; ⟨Quotient.mk _ f, hf⟩⟩
 
 @[simp]

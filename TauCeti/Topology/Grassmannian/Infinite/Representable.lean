@@ -88,8 +88,10 @@ lift (`Homeomorph.homotopicQuotientCongr`) and `TauCeti.infiniteGrassmannian.cla
 private def rankClassHomEquiv (X : ParacompactHomotopyCat.{u}) :
     (X ⟶ infiniteGrassmannianObj.{u} 𝕜 k) ≃ RankClass 𝕜 X.as.obj k :=
   (ParacompactHomotopyCat.homotopicQuotientEquivHom _ _).symm.trans <|
-    (Homeomorph.ulift.homotopicQuotientCongr X.as.obj).trans
-      (infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k)
+    (Homeomorph.ulift.homotopicQuotientCongr X.as.obj).trans <|
+      -- `classificationEquiv` writes the homotopy setoid out; it is `homotopicSetoid`.
+      (Quotient.congrRight fun _ _ ↦ homotopicSetoid_iff).trans
+        (infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k)
 
 private theorem rankClassHomEquiv_homMk {X : ParacompactHomotopyCat.{u}}
     (f : C(X.as.obj, ULift.{u} (infiniteGrassmannian 𝕜 k))) :
@@ -97,10 +99,12 @@ private theorem rankClassHomEquiv_homMk {X : ParacompactHomotopyCat.{u}}
         (ParacompactHomotopyCat.homMk (Y := infiniteGrassmannianObj.{u} 𝕜 k) f) =
       infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k
         (Quotient.mk _ ((infiniteGrassmannianULiftProj.{u} 𝕜 k).comp f)) := by
-  rw [rankClassHomEquiv, Equiv.trans_apply, Equiv.trans_apply,
+  rw [rankClassHomEquiv, Equiv.trans_apply, Equiv.trans_apply, Equiv.trans_apply,
     ParacompactHomotopyCat.homotopicQuotientEquivHom_symm_homMk
       (Y := infiniteGrassmannianObj.{u} 𝕜 k) f,
     Homeomorph.homotopicQuotientCongr_mk]
+  -- `Quotient.congrRight` sends `⟦g⟧` to `⟦g⟧`; Mathlib has no `_mk` lemma for it.
+  rfl
 
 /-- **The infinite Grassmannian represents rank-`k` vector bundles** on the homotopy category of
 paracompact Hausdorff spaces: the homotopy class of `f : X → Gr_k(𝕜^∞)` corresponds to the class
