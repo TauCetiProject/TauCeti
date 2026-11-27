@@ -335,7 +335,9 @@ theorem contMDiff_negativeNormalProjection
     (fun s ↦ h.negativeNormalProjection hn g.toRiemannianMetric s) fun s₀ ↦ ?_
   obtain ⟨p, hp, hps⟩ :=
     exists_contMDiffOn_negativeNormalProjection_trivializationAt hn h hk hf hdim g s₀
-  exact ⟨p, hp.mono inter_subset_left, fun s hs ↦ (hps s hs.1).2.2.2.2.2⟩
+  refine ⟨p, hp.mono inter_subset_left, fun s hs ↦ ?_⟩
+  obtain ⟨-, -, -, -, -, hpe⟩ := hps s hs.1
+  exact hpe
 
 /-- Projecting the normal bundle onto the positive normal bundle relative to a `C^k` fibre metric,
 along the negative normal bundle, is a `C^k` map of total spaces: it is `v ↦ v - P v` for the

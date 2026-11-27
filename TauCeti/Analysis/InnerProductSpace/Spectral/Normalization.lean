@@ -638,7 +638,8 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
       apply_normalizingTransport_normalizingTransport_of_mem_relativeSpectralSubspace_Ioi
         hhp hqs hqi (u := T u) (hmem.mpr (by rwa [hTsT]))
   · have hS := T.toLinearEquiv.eq_comp_normalizingTransport_comp (q := q.toBilinForm)
-      (h := h.toBilinForm) (S := S) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hqs hqi hhp hpos hqS hneg hposS
+      (h := h.toBilinForm) (S := S) (fun _ _ ↦ by simp [Ts, toBilinForm_apply])
+      (fun _ _ ↦ by simp [Ts, toBilinForm_apply]) hqs hqi hhp hpos hqS hneg hposS
     ext u
     exact LinearMap.congr_fun hS u
 
