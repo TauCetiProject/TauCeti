@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 import Mathlib.Algebra.BigOperators.Pi
+import TauCeti.Algebra.Ring.Pi
 
 /-!
 # Sets generating the unit two-sided ideal
@@ -55,16 +56,14 @@ theorem span_eq_top_iff_forall_span_image_eval_eq_top {ι : Type*} [Finite ι] {
   -- Extension by zero is a nonunital ring homomorphism. Its preimage of `span s` contains
   -- the coordinate image of `s`, since multiplying by `Pi.single i 1` isolates that coordinate.
   have hsingle (i : ι) : Pi.single i 1 ∈ span s := by
-    let f : A i →ₙ+* ∀ j, A j :=
-      { AddMonoidHom.single A i, MulHom.single i with toFun := Pi.single i }
-    have hf (a : A i) : f a = Pi.single i a := (rfl)
-    have hle : span (Function.eval i '' s) ≤ (span s).comap f := by
+    have hle : span (Function.eval i '' s) ≤ (span s).comap (NonUnitalRingHom.single A i) := by
       refine span_le.mpr ?_
       rintro _ ⟨x, hx, rfl⟩
-      apply (mem_comap f).mpr
-      simpa only [hf, Function.eval, ← Pi.single_mul_left, one_mul] using
+      apply (mem_comap _).mpr
+      simpa only [NonUnitalRingHom.coe_single, Function.eval, ← Pi.single_mul_left, one_mul] using
         (span s).mul_mem_left (Pi.single i 1) x (subset_span hx)
-    simpa only [hf] using (mem_comap f).mp (hle ((h i).symm ▸ mem_top (A i)))
+    simpa only [NonUnitalRingHom.coe_single] using
+      (mem_comap _).mp (hle ((h i).symm ▸ mem_top (A i)))
   apply eq_top
   rw [← Finset.univ_sum_single (1 : ∀ i, A i)]
   exact sum_mem fun i _ ↦ hsingle i

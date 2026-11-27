@@ -131,6 +131,18 @@ section AffineSpan
 variable {𝕜 V P : Type*} [Ring 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace P]
   [AddTorsor V P] {s t : Set P}
 
+/-- The intrinsic interior of a set lies in its affine span. -/
+theorem intrinsicInterior_subset_affineSpan :
+    intrinsicInterior 𝕜 s ⊆ (affineSpan 𝕜 s : Set P) :=
+  intrinsicInterior_subset.trans (subset_affineSpan 𝕜 s)
+
+/-- The intrinsic interior of a set is open inside its affine span. -/
+theorem isOpen_preimage_val_intrinsicInterior :
+    IsOpen (((↑) : affineSpan 𝕜 s → P) ⁻¹' intrinsicInterior 𝕜 s) := by
+  convert isOpen_interior (s := ((↑) : affineSpan 𝕜 s → P) ⁻¹' s) using 1
+  ext y
+  simp only [mem_preimage, mem_intrinsicInterior, Subtype.coe_inj, exists_eq_right]
+
 /-- The intrinsic interior of the whole space is the whole space. -/
 @[simp]
 theorem intrinsicInterior_univ : intrinsicInterior 𝕜 (univ : Set P) = univ := by

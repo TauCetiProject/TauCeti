@@ -45,6 +45,8 @@ common compact support, are statements about this map.
 
 * `BesselPotentialSpace.continuous_toLp`: the `Lᵖ` function `J^s u` depends continuously on `u`.
 * `BesselPotentialSpace.continuous_toDistr`: `H^{s,p}(E, G)` embeds continuously in `𝓢'(E, G)`.
+* `BesselPotentialSpace.toDistr_real_smul`: the real action on `H^{s,p}(E, G)` obtained from its
+  complex structure acts on the underlying tempered distribution.
 * `BesselPotentialSpace.continuous_of_continuous_toDistr`: the closed graph criterion for linear
   maps into `H^{s,p}`.
 * `BesselPotentialSpace.mapCLM`: the restriction `H^{s,p}(E, G) →L[ℂ] H^{r,p}(E, G')` of an
@@ -83,7 +85,8 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.norm_inclusion_le`, `BesselPotentialSpace.norm_inclusionLp_le`: for `p = 2`
   the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
-  of `u ∈ H^s` has norm at most `‖u‖`.
+  of `u ∈ H^s` has norm at most `‖u‖`; `BesselPotentialSpace.norm_inclusion_le_and_ae_eq`: a
+  finite family of elements of `H^s` with given `L²` functions serves at every lower order.
 * `BesselPotentialSpace.norm_le_of_toDistr_eq_fourierMultiplierCLM`: for `p = 2`, the norm bound
   `‖v‖ ≤ C ‖u‖` when `v ∈ H^r` is the image of `u ∈ H^s` under a Fourier multiplier with symbol
   bounded by `C ⟨ξ⟩ ^ (s - r)`.
@@ -115,6 +118,17 @@ theorem continuous_toDistr : Continuous fun u : H^{s, p}(E, G) ↦ u.toDistr := 
   have h := ((besselPotential E G (-s)).comp ((Lp.toTemperedDistributionCLM G volume p).comp
     (toLpₗᵢ E G s p).toContinuousLinearEquiv.toContinuousLinearMap)).continuous
   exact h.congr fun u ↦ by simp
+
+/-- The real action on `H^{s,p}(E, G)` obtained from its complex structure, which is the one
+carried by real-linear structures such as products and their submodules, acts on the underlying
+tempered distribution. The expression `a • u` instead elaborates to Mathlib's direct real action,
+for which `BesselPotentialSpace.toDistr_smul` holds; the two actions agree, but only after
+unfolding more than `simp` and `rw` do, so this lemma names the action explicitly. -/
+@[simp]
+theorem toDistr_real_smul (a : ℝ) (u : H^{s, p}(E, G)) :
+    (@HSMul.hSMul ℝ _ _ (@instHSMul _ _ (Module.complexToReal H^{s, p}(E, G)).toSMul) a u).toDistr =
+      a • u.toDistr :=
+  (rfl)
 
 /-- **Closed graph criterion.** A real-linear map `L` from a Banach space into `H^{s,p}(E, G)` is
 continuous as soon as `x ↦ (L x).toDistr` is continuous into the tempered distributions. -/
@@ -427,6 +441,18 @@ theorem norm_inclusionLp_le (hs : 0 ≤ s) :
     ‖(inclusionLp hs : H^{s}(E, F) →L[ℂ] Lp F 2 (volume : Measure E))‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
     simpa only [one_mul] using norm_inclusionLp_apply_le hs u
+
+/-- A finite family `u` of elements of `H^s(E, F)` with `L²` functions `g` (for `0 ≤ r ≤ s`) also
+serves, through the inclusion, at the lower order `r`: the included family has the same `L²`
+functions and no larger norm. -/
+theorem norm_inclusion_le_and_ae_eq {ι : Type*} [Fintype ι] (h : r ≤ s) (hr : 0 ≤ r)
+    {u : ι → H^{s}(E, F)} {g : ι → E → F}
+    (hu : ∀ a, ⇑(inclusionLp (hr.trans h) (u a)) =ᵐ[volume] g a) :
+    ‖fun a ↦ inclusion h (u a)‖ ≤ ‖u‖ ∧
+      ∀ a, ⇑(inclusionLp hr (inclusion h (u a))) =ᵐ[volume] g a :=
+  ⟨(pi_norm_le_iff_of_nonneg (norm_nonneg u)).2 fun a ↦
+      (norm_inclusion_apply_le h _).trans (norm_le_pi_norm u a),
+    fun a ↦ by rw [inclusionLp_inclusion]; exact hu a⟩
 
 /-- An element of `H^r` with the tempered distribution of `u ∈ H^s`, `r ≤ s`, is the image of `u`
 under the inclusion, so its norm is at most `‖u‖`. -/

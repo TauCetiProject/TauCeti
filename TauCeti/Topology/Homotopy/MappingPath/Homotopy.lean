@@ -247,7 +247,7 @@ theorem mappingPathFiberSqMap_val_snd_apply (H : (p.comp α).Homotopy (h.comp p'
     (H.mappingPathFiberSqMap b' q).val.2 t =
       ((H.evalAt q.val.1).trans
         ((⟨q.val.2, q.property.1, q.property.2⟩ : Path (p' q.val.1) b').map h.continuous)) t := by
-  simp [mappingPathFiberSqMap, ContinuousMap.comp_apply, Path.trans_apply, Path.symm_apply]
+  simp [mappingPathFiberSqMap, ContinuousMap.comp_apply, Path.trans_apply]
 
 @[simp]
 theorem proj_comp_mappingPathFiberSqMap (H : (p.comp α).Homotopy (h.comp p')) (b' : B') :

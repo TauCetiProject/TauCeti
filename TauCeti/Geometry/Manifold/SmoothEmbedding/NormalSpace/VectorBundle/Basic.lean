@@ -76,7 +76,7 @@ private theorem NormalChartData.continuous_coordinate_apply
 
 private def NormalChartData.trivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
-    Trivialization P (π P (fun x => f.NormalSpace x hn)) :=
+    Trivialization P (π P (fun x => f.isImmersion.NormalSpace x hn)) :=
   f.normalSpaceTrivializationOfComplement hn x₀ d.baseSet d.isOpen_baseSet
     d.subset_charts d.complement d.invertible
     (d.continuous_coordinate_apply f hn)
@@ -155,8 +155,9 @@ original normal vector. -/
 private theorem NormalChartData.normalClass_symm_complement_trivialization
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     {x₀ : M} (d : NormalChartData (P := P) f hn x₀)
-    {q : TotalSpace P (fun x => f.NormalSpace x hn)} (hq : q.proj ∈ d.baseSet) :
-    f.normalClass q.proj hn ((trivializationAt V (TangentSpace J) (f x₀)).symm (f q.proj)
+    {q : TotalSpace P (fun x => f.isImmersion.NormalSpace x hn)} (hq : q.proj ∈ d.baseSet) :
+    f.isImmersion.normalClass q.proj hn
+        ((trivializationAt V (TangentSpace J) (f x₀)).symm (f q.proj)
       (d.complement ((d.trivialization f hn) q).2)) = q.snd := by
   have heq := normalSpaceTrivializationOfComplement_apply f hn x₀
     d.baseSet d.isOpen_baseSet d.subset_charts d.complement d.invertible
@@ -228,7 +229,7 @@ private def normalChartData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
 manifold, using a fixed model of the codimension. The total space has its quotient topology. -/
 def normalSpaceTrivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
-    Trivialization P (π P (fun x => f.NormalSpace x hn)) :=
+    Trivialization P (π P (fun x => f.isImmersion.NormalSpace x hn)) :=
   (normalChartData f hn hdim x₀).trivialization f hn
 
 private theorem normalSpaceTrivialization_eq (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
@@ -257,7 +258,8 @@ theorem exists_normalSpaceTrivialization_symm_apply
         (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source ∧
       ∀ x ∈ (f.normalSpaceTrivialization hn hdim x₀).baseSet, ∀ w : P,
         (f.normalSpaceTrivialization hn hdim x₀).symm x w =
-          f.normalClass x hn ((trivializationAt V (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
+          f.isImmersion.normalClass x hn
+              ((trivializationAt V (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
   let d := normalChartData f hn hdim x₀
   have hbase : (f.normalSpaceTrivialization hn hdim x₀).baseSet = d.baseSet :=
     d.baseSet_trivialization f hn
@@ -302,14 +304,14 @@ theorem continuousOn_normalSpaceTrivialization_coordChangeL
 
 private theorem inducing_normalBundle_mk (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x : M) :
-    IsInducing (@TotalSpace.mk M P (fun x => f.NormalSpace x hn) x) := by
+    IsInducing (@TotalSpace.mk M P (fun x => f.isImmersion.NormalSpace x hn) x) := by
   let d := normalChartData f hn hdim x
   let e := d.trivialization f hn
   let c := f.normalSpaceEquivOfComplement hn
     (d.subset_charts d.mem_baseSet).1 (d.subset_charts d.mem_baseSet).2
       d.complement (d.invertible x d.mem_baseSet)
   have hformula : e.toOpenPartialHomeomorph ∘
-      @TotalSpace.mk M P (fun x => f.NormalSpace x hn) x =
+      @TotalSpace.mk M P (fun x => f.isImmersion.NormalSpace x hn) x =
       fun v => (x, c v) := by
     funext v
     exact normalSpaceTrivializationOfComplement_apply _ _ _ _ _ _ _ _ _ _ d.mem_baseSet
@@ -322,7 +324,7 @@ private theorem inducing_normalBundle_mk (f : SmoothEmbedding I J n M N) (hn : n
     Filter.comap_inf, Filter.comap_principal, Filter.comap_comap, hformula]
   have hv : e.toOpenPartialHomeomorph ⟨x, v⟩ = (x, c v) := congrFun hformula v
   rw [hv, ← hind.nhds_eq_comap]
-  have hpre : @TotalSpace.mk M P (fun x => f.NormalSpace x hn) x ⁻¹' e.source = univ :=
+  have hpre : @TotalSpace.mk M P (fun x => f.isImmersion.NormalSpace x hn) x ⁻¹' e.source = univ :=
     eq_univ_of_forall fun w => e.mem_source.mpr
       ((d.baseSet_trivialization f hn).symm ▸ d.mem_baseSet)
   rw [hpre, Filter.principal_univ, inf_top_eq]
@@ -333,7 +335,7 @@ existing quotient topology on intrinsic normal classes. -/
 @[instance_reducible]
 def normalSpaceFiberBundle (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) :
-    FiberBundle P (fun x => f.NormalSpace x hn) where
+    FiberBundle P (fun x => f.isImmersion.NormalSpace x hn) where
   totalSpaceMk_isInducing' := inducing_normalBundle_mk f hn hdim
   trivializationAtlas' := range (f.normalSpaceTrivialization hn hdim)
   trivializationAt' := f.normalSpaceTrivialization hn hdim
@@ -345,23 +347,23 @@ def normalSpaceFiberBundle (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x : M) :
     letI := f.normalSpaceFiberBundle hn hdim
-    trivializationAt P (fun x => f.NormalSpace x hn) x =
+    trivializationAt P (fun x => f.isImmersion.NormalSpace x hn) x =
       f.normalSpaceTrivialization hn hdim x := (rfl)
 
 /-- The intrinsic normal atlas consists exactly of the chosen complementary charts. -/
 @[simp] theorem mem_normalSpaceFiberBundle_trivializationAtlas_iff
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
-    (e : Trivialization P (π P (fun x => f.NormalSpace x hn))) :
+    (e : Trivialization P (π P (fun x => f.isImmersion.NormalSpace x hn))) :
     letI := f.normalSpaceFiberBundle hn hdim
-    e ∈ trivializationAtlas P (fun x => f.NormalSpace x hn) ↔
+    e ∈ trivializationAtlas P (fun x => f.isImmersion.NormalSpace x hn) ↔
       ∃ x, f.normalSpaceTrivialization hn hdim x = e := Iff.rfl
 
 /-- The intrinsic normal fibres form a vector bundle with their quotient topology. -/
 theorem normalSpaceVectorBundle (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) :
     letI := f.normalSpaceFiberBundle hn hdim
-    VectorBundle 𝕜 P (fun x => f.NormalSpace x hn) := by
+    VectorBundle 𝕜 P (fun x => f.isImmersion.NormalSpace x hn) := by
   let := f.normalSpaceFiberBundle hn hdim
   refine { trivialization_linear' := ?_, continuousOn_coordChange' := ?_ }
   · rintro e ⟨x, rfl⟩
@@ -406,7 +408,7 @@ theorem normalSpaceContMDiffVectorBundle {m : ℕ∞ω}
     haveI : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
-    ContMDiffVectorBundle m P (fun x => f.NormalSpace x hn) I := by
+    ContMDiffVectorBundle m P (fun x => f.isImmersion.NormalSpace x hn) I := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   have : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim

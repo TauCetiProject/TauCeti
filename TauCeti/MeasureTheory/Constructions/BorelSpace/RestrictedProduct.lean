@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
 public import TauCeti.Topology.Algebra.RestrictedProduct.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
+public import TauCeti.Topology.Algebra.RestrictedProduct.Away.Split
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.PiSystem
 import Mathlib.Logic.Equiv.List
@@ -65,6 +66,9 @@ Over a countable index type `ι` (or a countable constrained set `S`):
 * `TauCeti.measurableSet_integralSubgroupOf_of_isOpen_of_eventually_le`,
   `TauCeti.measurableSet_integralSubgroupOf`, `TauCeti.measurableSet_integralSubgroup`:
   measurability of integral and level subgroups.
+* `TauCeti.measurable_restrictedProductSplit`, `TauCeti.measurable_restrictedProductSplit_symm`,
+  `TauCeti.restrictedProductSplitMeasurableEquiv`: the splitting of a restricted product at a
+  finite set of indices is a measurable equivalence.
 
 ## References
 
@@ -560,5 +564,65 @@ theorem measurableSet_integralSubgroup [Countable ι] [∀ i, TopologicalSpace (
   exact measurableSet_integralSubgroupOf U U hU
 
 end IntegralSubgroups
+
+section Split
+
+open RestrictedProduct
+
+variable {ι : Type*} [Countable ι] {G : ι → Type*} {K : ι → Type*}
+  [∀ i, Group (G i)] [∀ i, SetLike (K i) (G i)] [∀ i, SubgroupClass (K i) (G i)]
+  [∀ i, TopologicalSpace (G i)] [∀ i, SecondCountableTopology (G i)]
+  [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)] (B : ∀ i, K i) (T : Finset ι)
+
+/-- `restrictedProductSplit B T` is measurable. -/
+@[to_additive (attr := fun_prop) measurable_addRestrictedProductSplit
+/-- `addRestrictedProductSplit B T` is measurable. -/]
+theorem measurable_restrictedProductSplit : Measurable (restrictedProductSplit B T) := by
+  refine Measurable.prod (measurable_pi_iff.mpr fun i ↦ ?_) (measurable_rng_iff.mpr fun i ↦ ?_)
+  · simp_rw [restrictedProductSplit_apply_fst]
+    exact measurable_eval i.val
+  · simp_rw [restrictedProductSplit_apply_snd]
+    exact measurable_eval (R := G) i.val
+
+/-- The inverse of `restrictedProductSplit B T` is measurable. -/
+@[to_additive (attr := fun_prop) measurable_addRestrictedProductSplit_symm
+/-- The inverse of `addRestrictedProductSplit B T` is measurable. -/]
+theorem measurable_restrictedProductSplit_symm :
+    Measurable (restrictedProductSplit B T).symm := by
+  refine measurable_rng_iff.mpr fun i ↦ ?_
+  by_cases hi : i ∈ T
+  · simp_rw [restrictedProductSplit_symm_apply_of_mem B T _ hi]
+    exact (measurable_pi_apply _).comp measurable_fst
+  · simp_rw [restrictedProductSplit_symm_apply_of_notMem B T _ hi]
+    exact (measurable_eval (R := fun i : {i // i ∉ T} ↦ G i.val) ⟨i, hi⟩).comp measurable_snd
+
+/-- `restrictedProductSplit B T` as a measurable equivalence. -/
+@[to_additive addRestrictedProductSplitMeasurableEquiv
+/-- `addRestrictedProductSplit B T` as a measurable equivalence. -/]
+noncomputable def restrictedProductSplitMeasurableEquiv :
+    (Πʳ i, [G i, B i]) ≃ᵐ (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val] where
+  toEquiv := (restrictedProductSplit B T).toEquiv
+  measurable_toFun := measurable_restrictedProductSplit B T
+  measurable_invFun := measurable_restrictedProductSplit_symm B T
+
+/-- The underlying function of `restrictedProductSplitMeasurableEquiv B T` is
+`restrictedProductSplit B T`. -/
+@[to_additive (attr := simp) coe_addRestrictedProductSplitMeasurableEquiv
+/-- The underlying function of `addRestrictedProductSplitMeasurableEquiv B T` is
+`addRestrictedProductSplit B T`. -/]
+theorem coe_restrictedProductSplitMeasurableEquiv :
+    ⇑(restrictedProductSplitMeasurableEquiv B T) = restrictedProductSplit B T := by
+  rfl
+
+/-- The inverse of `restrictedProductSplitMeasurableEquiv B T` is the inverse of
+`restrictedProductSplit B T`. -/
+@[to_additive (attr := simp) coe_addRestrictedProductSplitMeasurableEquiv_symm
+/-- The inverse of `addRestrictedProductSplitMeasurableEquiv B T` is the inverse of
+`addRestrictedProductSplit B T`. -/]
+theorem coe_restrictedProductSplitMeasurableEquiv_symm :
+    ⇑(restrictedProductSplitMeasurableEquiv B T).symm = (restrictedProductSplit B T).symm := by
+  rfl
+
+end Split
 
 end TauCeti

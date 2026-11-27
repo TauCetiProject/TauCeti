@@ -14,7 +14,7 @@ import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 import TauCeti.Topology.UniformSpace.UniformConvergence.Complete
 
 /-!

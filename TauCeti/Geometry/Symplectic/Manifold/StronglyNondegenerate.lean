@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Normed.Operator.Banach
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Strongly nondegenerate two-forms and their contraction inverse
@@ -22,7 +22,7 @@ continuous dual, and is stated here as the unbundled hypothesis
 (`TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`); in infinite dimensions strong
 nondegeneracy is what makes covectors correspond to vectors. For instance, the canonical form on
 `V × (V →L[ℝ] ℝ)` is always weakly nondegenerate, and strongly nondegenerate exactly when `V` is
-reflexive.
+reflexive (`TauCeti.surjective_flat_strongDualCotangentSmoothForm_iff`).
 
 This file develops the strongly nondegenerate case on any model.
 

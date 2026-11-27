@@ -243,19 +243,21 @@ theorem mem_pairSupport₁₂ (P : Polyad3 S) (p : {p : V × V // p.1 ≠ p.2}) 
 
 end Polyad3
 
+/-- The number of polyads is the number of choices of three vertex cells and three pair colors:
+every such choice is a polyad. -/
+theorem card_polyad3 (S : PairSkeleton3 κ V) [Fintype κ] :
+    Fintype.card (Polyad3 S) = #S.vertexPart.parts ^ 3 * Fintype.card κ ^ 3 := by
+  rw [Fintype.card_of_bijective ⟨Polyad3.partData_injective (S := S),
+    fun ⟨⟨A, B, C⟩, k₀₁, k₀₂, k₁₂⟩ ↦
+      ⟨Polyad3.ofData A B C A.property B.property C.property k₀₁ k₀₂ k₁₂, (rfl)⟩⟩]
+  simp only [Fintype.card_prod, Fintype.card_coe]
+  ring
+
 /-- The number of polyads is bounded by the number of choices of three vertex cells and three
 pair colors. -/
 theorem card_polyad3_le (S : PairSkeleton3 κ V) [Fintype κ] :
-    Fintype.card (Polyad3 S) ≤ #S.vertexPart.parts ^ 3 * Fintype.card κ ^ 3 := by
-  have h := Fintype.card_le_of_injective _ (Polyad3.partData_injective (S := S))
-  simp only [Fintype.card_prod, Fintype.card_coe] at h
-  calc
-    Fintype.card (Polyad3 S) ≤
-        #S.vertexPart.parts * (#S.vertexPart.parts * #S.vertexPart.parts) *
-          (Fintype.card κ * (Fintype.card κ * Fintype.card κ)) := h
-    _ = #S.vertexPart.parts ^ 3 * Fintype.card κ ^ 3 := by
-      simp only [pow_succ, pow_zero]
-      ac_rfl
+    Fintype.card (Polyad3 S) ≤ #S.vertexPart.parts ^ 3 * Fintype.card κ ^ 3 :=
+  (card_polyad3 S).le
 
 /-- Translate role-pair colors to the face-key convention indexed by the omitted coordinate. -/
 def faceKey (k₀₁ k₀₂ k₁₂ : κ) : Fin 3 → κ := ![k₁₂, k₀₂, k₀₁]

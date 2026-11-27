@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicE
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 
 import TauCeti.Algebra.BigOperators.Finset.Filter
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Outer boundary rays at logarithmic Schwarz--Christoffel prevertices

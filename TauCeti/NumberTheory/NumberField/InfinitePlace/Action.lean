@@ -12,9 +12,10 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 # The Galois action on infinite places as an action on absolute values
 
 Mathlib's action of `Gal(K/k)` on the infinite places of `K` is the restriction of the action of
-`K ≃ₐ[k] K` on all absolute values of `K` by `σ • w = w ∘ σ⁻¹`
-(`AbsoluteValue.instMulActionAlgEquiv`): the absolute value underlying `σ • w` is `σ` acting on
-the absolute value underlying `w` (`NumberField.InfinitePlace.coe_smul`).
+`K ≃ₐ[k] K` on all absolute values of `K` by `σ • w = w ∘ σ⁻¹` (`AbsoluteValue.instMulAction`,
+for the action `AlgEquiv.applyMulSemiringAction` of `K ≃ₐ[k] K` on `K`): the absolute value
+underlying `σ • w` is `σ` acting on the absolute value underlying `w`
+(`NumberField.InfinitePlace.coe_smul`).
 -/
 
 public section
