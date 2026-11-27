@@ -320,9 +320,7 @@ variable [Group G] (p : ℕ) (τ : rootsOfUnity m k ≃* rootsOfUnity m L) (ρ :
 @[simp]
 theorem brauerCharacter_conj (g h : G) :
     ρ.brauerCharacter p τ (g * h * g⁻¹) = ρ.brauerCharacter p τ h := by
-  have ho : orderOf (g * h * g⁻¹) = orderOf h := by
-    simpa [MulAut.conj_apply] using
-      orderOf_injective (MulAut.conj g).toMonoidHom (MulAut.conj g).injective h
+  have ho : orderOf (g * h * g⁻¹) = orderOf h := ((SemiconjBy.conj_mk g h).orderOf_eq g).symm
   simp only [brauerCharacter, ho, charpoly_apply_conj]
 
 /-- **Duals.** The Brauer character of the contragredient representation is `g ↦ φ(g⁻¹)`. -/
