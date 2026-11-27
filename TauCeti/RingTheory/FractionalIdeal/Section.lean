@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.FractionalIdeal.Operations
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.RingTheory.Finiteness.Basic
-import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.Algebra.Module.Torsion.Localization
 
 /-!
 # Fractional ideal of a generic section
@@ -25,7 +25,9 @@ public noncomputable section
 
 open scoped TensorProduct nonZeroDivisors
 
-namespace FractionalIdeal
+namespace TauCeti.FractionalIdeal
+
+open _root_.FractionalIdeal
 
 variable {R K M : Type*} [CommRing R] [Field K] [Algebra R K]
   [AddCommGroup M] [Module R M]
@@ -90,12 +92,10 @@ theorem ofSection_smul (hM : Module.finrank K (K ⊗[R] M) = 1) {t : K ⊗[R] M}
 isomorphism onto its fractional ideal. -/
 def linearEquivOfSection [Module.IsTorsionFree R M] (hM : Module.finrank K (K ⊗[R] M) = 1)
     {t : K ⊗[R] M} (ht : t ≠ 0) : M ≃ₗ[R] ofSection hM ht :=
-  LinearEquiv.ofInjective (sectionCoordinates hM ht) fun x y h ↦ by
-    have hinj : Function.Injective (TensorProduct.mk R K M 1) :=
-      (IsLocalizedModule.injective_iff_isRegular R⁰ _).2 fun c ↦
-        (isRegular_iff_mem_nonZeroDivisors.mpr c.property).isSMulRegular
-    exact hinj ((sectionCoordinates_smul hM ht x).symm.trans
-      ((congrArg (· • t) h).trans (sectionCoordinates_smul hM ht y)))
+  LinearEquiv.ofInjective (sectionCoordinates hM ht) fun x y h ↦
+    Module.IsTorsionFree.mk_one_injective_of_isFractionRing K
+      ((sectionCoordinates_smul hM ht x).symm.trans
+        ((congrArg (· • t) h).trans (sectionCoordinates_smul hM ht y)))
 
 /-- The coordinate of an integral vector times the chosen generic section recovers the
 vector in the generic fibre. -/
@@ -112,4 +112,4 @@ theorem coe_linearEquivOfSection_one_tmul [Module.IsTorsionFree R M]
     (linearEquivOfSection hM ht x : K) = 1 :=
   smul_left_injective K ht ((linearEquivOfSection_apply_smul hM ht x).trans (one_smul K _).symm)
 
-end FractionalIdeal
+end TauCeti.FractionalIdeal
