@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.IntermediateField
 public import Mathlib.RingTheory.LaurentSeries
+import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
 # Transcendence of Laurent expansions of rational functions
@@ -29,17 +30,24 @@ namespace RatFunc
 
 variable {K : Type*} [Field K]
 
+/-- The expansion of rational functions into Laurent series respects the coefficient field. -/
+instance isScalarTower_laurentSeries_algebra :
+    @IsScalarTower K (RatFunc K) K⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
+  .of_algebraMap_eq (R := K) (S := RatFunc K) (A := K⸨X⸩) fun c ↦ by
+    simp [← RatFunc.algebraMap_C, ← IsScalarTower.algebraMap_apply,
+      HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply']
+
+/-- The same tower for the coefficientwise action of `K` on Laurent series. -/
+instance isScalarTower_laurentSeries : IsScalarTower K (RatFunc K) K⸨X⸩ :=
+  .of_algebraMap_smul fun c f ↦ by
+    rw [Algebra.smul_def, ← IsScalarTower.algebraMap_apply,
+      TauCeti.laurentSeries_algebraMap_mul_eq_smul]
+
 /-- The Laurent expansion at `0` of a nonconstant rational function is transcendental over the
 field of constants. -/
 theorem transcendental_coe {p : RatFunc K} (hp : ¬∃ c, p = C c) :
-    Transcendental K (p : K⸨X⸩) := by
-  -- The embedding `K(X) → K⸨X⸩` is a `K`-algebra map, so it preserves algebraicity.
-  let φ : RatFunc K →ₐ[K] K⸨X⸩ :=
-    { algebraMap (RatFunc K) K⸨X⸩ with
-      commutes' := fun c ↦ by
-        simp [← RatFunc.algebraMap_C, ← IsScalarTower.algebraMap_apply,
-          HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply'] }
-  exact fun h ↦ p.transcendental_of_ne_C hp
-    ((isAlgebraic_algHom_iff φ φ.toRingHom.injective).mp h)
+    Transcendental K (p : K⸨X⸩) :=
+  (transcendental_algebraMap_iff (algebraMap (RatFunc K) K⸨X⸩).injective).mpr
+    (p.transcendental_of_ne_C hp)
 
 end RatFunc
