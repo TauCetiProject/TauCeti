@@ -13,7 +13,6 @@ public import TauCeti.Topology.VectorBundle.Attachment
 public import TauCeti.Topology.VectorBundle.Subbundle
 public import TauCeti.Topology.Order.Sublevel
 import TauCeti.Geometry.Manifold.Morse.Deformation.Cohomology
-import TauCeti.Topology.VectorBundle.Thom.Pair
 import TauCeti.Topology.VectorBundle.Riemannian.FiniteDimensional
 import TauCeti.Topology.VectorBundle.Thom.Attachment.Basic
 
