@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.TwoBlockLabel
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 
+import Mathlib.Data.Nat.Prime.Int
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.Data.ZMod.Periodic
 
@@ -63,6 +64,8 @@ of the letter matrices with the Levi and parahoric subgroups of `GL_k(W)` is in
 * The formal proof whose route this follows: the folder `grh` of
   https://github.com/lsernau/grh-lean at commit 72fead102f663d5c7a407964a13dc0cf9d977207, file
   `New/UpperBound/ElementaryDivisors/TwistingData.lean` (`New.FrobeniusCycle`,
+  `New.FrobeniusCycle.letterRep` for the twisted action through the letter matrices `g_s`,
+  which are `letterMatrix` here,
   `New.FrobeniusCycle.depth`, `New.FrobeniusCycle.defectWeight`,
   `New.FrobeniusCycle.defectWeight_sub_mem_Icc`,
   `New.FrobeniusCycle.abs_weight_defectWeight_le`).
@@ -79,7 +82,6 @@ namespace TauCeti
 a parity of each letter (`isEven s`) alternating along the cycle, and `w : R` with `w ^ 2 = p`,
 such that the residue field of `W` has `(p ^ e) ^ N` elements and `ι (s + 1) y` is congruent to
 `ι s y ^ p ^ e` modulo `p` for all `s` and `y`. -/
-@[ext]
 structure FrobeniusCycle (W : Type*) [CommRing W] [IsLocalRing W] (R : Type*) [CommRing R]
     (N : ℕ) where
   /-- The prime of the cycle. -/
@@ -159,29 +161,10 @@ variable {S : Type*} [CommRing S] (f : R →+* S)
 @[simp] theorem map_w : (T.map f).w = f T.w := (rfl)
 
 /-- `map` keeps `P`. -/
-@[simp] theorem map_P : (T.map f).P = T.P := by rw [P_def, P_def, map_p, map_e]
+@[simp] theorem map_P : (T.map f).P = T.P := by simp only [P_def, map_p, map_e]
 
 /-- `map` keeps `q`. -/
-@[simp] theorem map_q : (T.map f).q = T.q := by rw [q_def, q_def, map_P]
-
-/-- Changing the target along the identity does nothing. -/
-@[simp] theorem map_id : T.map (RingHom.id R) = T := by
-  ext1
-  · exact T.map_p _
-  · exact T.map_e _
-  · exact funext fun s ↦ by rw [map_ι, RingHom.id_comp]
-  · exact T.map_isEven _
-  · rw [map_w, RingHom.id_apply]
-
-/-- Two successive changes of target are one change along the composite. -/
-@[simp] theorem map_map {S' : Type*} [CommRing S'] (g : S →+* S') :
-    (T.map f).map g = T.map (g.comp f) := by
-  ext1
-  · rw [map_p, map_p, map_p]
-  · rw [map_e, map_e, map_e]
-  · exact funext fun s ↦ by rw [map_ι, map_ι, map_ι, RingHom.comp_assoc]
-  · rw [map_isEven, map_isEven, map_isEven]
-  · rw [map_w, map_w, map_w, RingHom.comp_apply]
+@[simp] theorem map_q : (T.map f).q = T.q := by simp only [q_def, map_P]
 
 end Map
 
@@ -252,6 +235,43 @@ theorem even : Even N := by
   · simpa using hN
   · cases T.isEven 0 <;> simp_all
 
+/-- The parity of every letter is determined by the parity of the letter `0`. -/
+theorem isEven_eq_of_isEven_zero_eq {T T' : FrobeniusCycle W R N}
+    (h : T.isEven 0 = T'.isEven 0) : T.isEven = T'.isEven := funext fun s ↦ by
+  have := T.neZero
+  have hT := T.isEven_add_natCast 0 s.val
+  have hT' := T'.isEven_add_natCast 0 s.val
+  rw [zero_add, ZMod.natCast_zmod_val] at hT hT'
+  rw [hT, hT', h]
+
+/-- The prime and the exponent of a Frobenius cycle are determined by `W` and `N`: the residue
+field of `W` has `p ^ (e * N)` elements. -/
+theorem p_eq_and_e_eq (T T' : FrobeniusCycle W R N) : T.p = T'.p ∧ T.e = T'.e := by
+  have := T.neZero
+  have he (U : FrobeniusCycle W R N) : U.e ≠ 0 := fun h ↦ by
+    have h5 := U.five_le_pow
+    rw [h, pow_zero] at h5
+    omega
+  have hpow : T.p ^ (T.e * N) = T'.p ^ (T'.e * N) := by
+    rw [pow_mul, pow_mul, ← T.card_residueField, T'.card_residueField]
+  obtain ⟨hp, he'⟩ := Nat.Prime.pow_inj' T.prime T'.prime (mul_ne_zero (he T) (NeZero.ne N))
+    (mul_ne_zero (he T') (NeZero.ne N)) hpow
+  exact ⟨hp, Nat.eq_of_mul_eq_mul_right (NeZero.pos N) he'⟩
+
+/-- Two Frobenius cycles with the same letter maps, the same parity of the letter `0` and the same
+square root of `p` are equal: the prime and the exponent are determined by the size of the residue
+field (`p_eq_and_e_eq`), and the parities by that of `0` (`isEven_eq_of_isEven_zero_eq`). -/
+@[ext]
+theorem ext {T T' : FrobeniusCycle W R N} (hι : T.ι = T'.ι) (hisEven : T.isEven 0 = T'.isEven 0)
+    (hw : T.w = T'.w) : T = T' := by
+  obtain ⟨hp, he⟩ := p_eq_and_e_eq T T'
+  have hpar := isEven_eq_of_isEven_zero_eq hisEven
+  cases T
+  cases T'
+  dsimp only at hp he hι hpar hw
+  subst hp he hι hpar hw
+  rfl
+
 /-- Iterating the Frobenius congruences: `ι (s + j) y ≡ ι s y ^ P ^ j` modulo `p`. -/
 theorem dvd_ι_add_natCast_sub_pow (s : ZMod N) (y : W) (j : ℕ) :
     (T.p : R) ∣ T.ι (s + j) y - T.ι s y ^ T.P ^ j := by
@@ -310,9 +330,13 @@ theorem letterMatrix_of_not_isEven {s : ZMod N} (hs : T.isEven s = false) (g : G
 theorem letterMatrix_unop_transposeMulEquiv (s : ZMod N) (g : GL (Fin k) W) :
     T.letterMatrix s (GeneralLinearGroup.transposeMulEquiv _ g).unop =
       (T.letterMatrix s g)ᵀ := by
-  ext i j
-  cases hs : T.isEven s <;>
-    simp [hs, Matrix.coe_units_inv, ← Matrix.transpose_nonsing_inv]
+  cases hs : T.isEven s
+  · -- at an odd letter, the transpose of `g` has inverse the inverse transpose of `g`
+    rw [T.letterMatrix_of_not_isEven hs, T.letterMatrix_of_not_isEven hs,
+      GeneralLinearGroup.unop_transposeMulEquiv_eq_inverseTranspose_inv, ← map_inv, inv_inv,
+      GeneralLinearGroup.coe_inverseTranspose, Matrix.transpose_map]
+  · rw [T.letterMatrix_of_isEven hs, T.letterMatrix_of_isEven hs,
+      GeneralLinearGroup.coe_unop_transposeMulEquiv, Matrix.transpose_map]
 
 /-! ### Depth and defect -/
 
@@ -391,8 +415,9 @@ theorem negIndex_of_not_isEven {s : ZMod N} (hs : T.isEven s = false) (a a' : Fi
   simp [negIndex, hs]
 
 /-- At every letter, the indices of the two weighted variables coincide exactly when
-`a = a'`. -/
-@[simp]
+`a = a'`. It is a pre-`simp` rule, so that it applies before the two indices are evaluated by
+parity. -/
+@[simp↓]
 theorem negIndex_eq_posIndex_iff {a a' : Fin k} {s : ZMod N} :
     T.negIndex a a' s = T.posIndex a a' s ↔ a = a' := by
   unfold negIndex posIndex
@@ -427,6 +452,13 @@ has weight `P ^ (1 + (s - 1 - i).val) / (q - 1)`; if `a ≠ a'`, the variable
 noncomputable def defectWeight (a a' : Fin k) (i : ZMod N) (x : Fin k × ZMod N) : ℝ :=
   if x.1 = T.posIndex a a' x.2 then T.posWeight i x.2
   else if x.1 = T.negIndex a a' x.2 then -T.negWeight i x.2 else 0
+
+/-- Unfolding `defectWeight` at any variable `x = (b, s)`. -/
+theorem defectWeight_def (a a' : Fin k) (i : ZMod N) (x : Fin k × ZMod N) :
+    T.defectWeight a a' i x =
+      if x.1 = T.posIndex a a' x.2 then (T.P : ℝ) ^ (1 + (x.2 - 1 - i).val) / (T.q - 1)
+      else if x.1 = T.negIndex a a' x.2 then -((T.P : ℝ) ^ (x.2 - i).val / (T.q - 1)) else 0 :=
+  (rfl)
 
 /-- The defect weight of the variable of positive weight. It is a pre-`simp` rule, so that it
 applies before `posIndex` is evaluated by parity. -/
@@ -505,9 +537,30 @@ theorem defect_single (a a' : Fin k) (i : ZMod N) (x : Fin k × ZMod N) (m : ℕ
 
 /-! ### Changing the target ring -/
 
+/-- Changing the target along the identity does nothing. -/
+@[simp] theorem map_id : T.map (RingHom.id R) = T := by
+  ext1
+  · exact funext fun s ↦ by simp only [map_ι, RingHom.id_comp]
+  · simp only [map_isEven]
+  · simp only [map_w, RingHom.id_apply]
+
 section Map
 
 variable {S : Type*} [CommRing S] (f : R →+* S)
+
+/-- Two successive changes of target are one change along the composite. -/
+@[simp] theorem map_map {S' : Type*} [CommRing S'] (g : S →+* S') :
+    (T.map f).map g = T.map (g.comp f) := by
+  ext1
+  · exact funext fun s ↦ by simp only [map_ι, RingHom.comp_assoc]
+  · simp only [map_isEven]
+  · simp only [map_w, RingHom.comp_apply]
+
+/-- `map` does not change which variables are deep. It is a pre-`simp` rule, so that it applies
+before `isDeep_iff` unfolds `IsDeep` by parity. -/
+@[simp↓]
+theorem map_isDeep (r : ℕ) (x : Fin k × ZMod N) : (T.map f).IsDeep r x ↔ T.IsDeep r x := by
+  simp only [IsDeep, map_isEven]
 
 /-- The letter matrices of `map f` are those of the cycle with `f` applied entrywise. -/
 @[simp]

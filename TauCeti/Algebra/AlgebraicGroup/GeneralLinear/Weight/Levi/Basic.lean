@@ -167,8 +167,10 @@ theorem leviSubgroup_def (τ : Fin k → ℕ) :
 @[simp]
 theorem mem_leviSubgroup_iff (τ : Fin k → ℕ) (g : GL (Fin k) W) :
     g ∈ leviSubgroup W τ ↔ ∀ i j, τ i ≠ τ j → (g : Matrix (Fin k) (Fin k) W) i j = 0 := by
-  rw [leviSubgroup_def, mem_hopfIdealPointsSubgroup_iff_symm_mem,
-    mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero, MulEquiv.apply_symm_apply]
+  have h := mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero ℤ (fun i ↦ (τ i : ℤ))
+    ((pointsMulEquiv k).symm g)
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, MulEquiv.apply_symm_apply] at h
+  rw [leviSubgroup, mem_hopfIdealPointsSubgroup_iff, h]
   simp only [ne_eq, Nat.cast_inj]
 
 /-- For a constant labelling, the Levi subgroup is all of `GL_k(W)`. -/

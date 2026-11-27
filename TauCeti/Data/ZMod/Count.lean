@@ -35,11 +35,13 @@ product of the individual counts. This is the Chinese remainder theorem `ZMod.pr
 counting form. In particular the number of roots modulo `n` of an integer polynomial is the product
 of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.equivPi`.
 
-Sums over the residues modulo `n` of a function of the least nonnegative representative are sums
-over `range n` (`ZMod.sum_val_eq_sum_range`, in `TauCeti.Data.ZMod.FinEquiv`). Summed over the
-representatives that are multiples of `n / m`, for `m ∣ n`, they become sums over the residues
-modulo `m`. As a special case of the first identity, the reciprocals of the representatives sum to
-the harmonic number `H_{n-1}`.
+For `n > 0`, sums over the residues modulo `n` of a function of the least nonnegative
+representative are sums over `range n` (`ZMod.sum_val_eq_sum_range`, in
+`TauCeti.Data.ZMod.FinEquiv`). For `n, m > 0` with `m ∣ n`, a function evaluated at the
+representative divided by `n / m`, summed over the representatives that are multiples of `n / m`,
+is the sum of that function over the representatives modulo `m` (`ZMod.sum_ite_dvd_val`). As a
+special case of the first identity, the reciprocals of the representatives sum to the harmonic
+number `H_{n-1}`.
 
 ## Main results
 

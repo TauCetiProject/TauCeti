@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.Int.Sign
-import TauCeti.Data.ZMod.Count
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import TauCeti.RingTheory.RootsOfUnity.Sawtooth

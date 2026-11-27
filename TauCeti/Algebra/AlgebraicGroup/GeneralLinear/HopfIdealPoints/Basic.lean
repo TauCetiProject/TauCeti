@@ -23,8 +23,6 @@ vanishing on the Hopf ideal and is functorial in the value algebra.
   in the general-linear coordinate ring.
 * `TauCeti.GeneralLinear.mem_hopfIdealPointsSubgroup_iff`: membership is characterized by
   vanishing on the Hopf ideal, with
-  `TauCeti.GeneralLinear.mem_hopfIdealPointsSubgroup_iff_symm_mem` reading it as membership of
-  the corresponding point in the quotient point subgroup,
   `TauCeti.GeneralLinear.mem_hopfIdealPointsSubgroup_iff_generalLinearToPoint` stating it through
   matrix evaluation and
   `TauCeti.GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker`
@@ -67,17 +65,6 @@ noncomputable def hopfIdealPointsSubgroup
       (coordinateHopfAlgebra R n) I (CommAlgCat.of R A)).map
     (pointsMulEquiv n).toMonoidHom
 
-/-- Membership in the general-linear point subgroup cut out by a Hopf ideal is membership of the
-corresponding point in the subgroup of points cut out by that ideal. -/
-theorem mem_hopfIdealPointsSubgroup_iff_symm_mem
-    (I : HopfIdeal R (coordinateHopfAlgebra R n)) (A : Type w)
-    [CommRing A] [Algebra R A] (g : Matrix.GeneralLinearGroup (Fin n) A) :
-    g ∈ hopfIdealPointsSubgroup n I A ↔
-      (pointsMulEquiv (R := R) n).symm g ∈ CommHopfAlgCat.quotientPointsSubgroup
-        (coordinateHopfAlgebra R n) I (CommAlgCat.of R A) := by
-  unfold hopfIdealPointsSubgroup
-  exact Subgroup.mem_map_equiv
-
 /-- Membership in the general-linear point subgroup cut out by a Hopf ideal is vanishing on
 that ideal. -/
 @[simp]
@@ -86,7 +73,8 @@ theorem mem_hopfIdealPointsSubgroup_iff
     [CommRing A] [Algebra R A] (g : Matrix.GeneralLinearGroup (Fin n) A) :
     g ∈ hopfIdealPointsSubgroup n I A ↔
       ∀ x ∈ I, ((pointsMulEquiv (R := R) n).symm g).ofConv x = 0 := by
-  rw [mem_hopfIdealPointsSubgroup_iff_symm_mem, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  unfold hopfIdealPointsSubgroup
+  rw [Subgroup.mem_map_equiv, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
 
 /-- Membership in the general-linear point subgroup cut out by a Hopf ideal is vanishing on that
 ideal of the point `generalLinearToPoint n g` given by matrix evaluation. -/
@@ -107,7 +95,7 @@ theorem pointsMulEquiv_mem_hopfIdealPointsSubgroup
     (hq : q ∈ CommHopfAlgCat.quotientPointsSubgroup
       (coordinateHopfAlgebra R n) I (CommAlgCat.of R A)) :
     pointsMulEquiv n q ∈ hopfIdealPointsSubgroup n I A := by
-  rwa [mem_hopfIdealPointsSubgroup_iff_symm_mem, MulEquiv.symm_apply_apply]
+  exact ⟨q, hq, rfl⟩
 
 /-- A point pulled back along a coordinate morphism that kills a Hopf ideal lies in the
 general-linear subgroup cut out by that ideal. -/

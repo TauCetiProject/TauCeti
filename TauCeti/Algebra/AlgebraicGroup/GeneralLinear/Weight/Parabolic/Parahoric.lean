@@ -75,16 +75,17 @@ theorem mem_parahoricSubgroup_iff (τ : Fin k → ℕ) (g : GL (Fin k) W) :
       ∀ i j, τ i < τ j → (g : Matrix (Fin k) (Fin k) W) i j ∈ maximalIdeal W := by
   simp [parahoricSubgroup_def, Matrix.GeneralLinearGroup.map_apply, residue_eq_zero_iff]
 
-/-- For a constant labelling, the parahoric subgroup is all of `GL_k(W)`. -/
-@[simp]
-theorem parahoricSubgroup_const (c : ℕ) : parahoricSubgroup W (k := k) (fun _ ↦ c) = ⊤ :=
-  eq_top_iff.mpr fun g _ ↦ (mem_parahoricSubgroup_iff _ g).mpr fun _ _ h ↦ (lt_irrefl _ h).elim
-
 /-- The Levi subgroup of a labelling lies in its parahoric subgroup. -/
 theorem leviSubgroup_le_parahoricSubgroup (τ : Fin k → ℕ) :
     leviSubgroup W τ ≤ parahoricSubgroup W τ := fun g hg ↦
   (mem_parahoricSubgroup_iff τ g).mpr fun i j h ↦ by
     rw [(mem_leviSubgroup_iff τ g).mp hg i j h.ne]
     exact zero_mem _
+
+/-- For a constant labelling, the parahoric subgroup is all of `GL_k(W)`: it contains the Levi
+subgroup, which is all of `GL_k(W)` (`leviSubgroup_const`). -/
+@[simp]
+theorem parahoricSubgroup_const (c : ℕ) : parahoricSubgroup W (k := k) (fun _ ↦ c) = ⊤ :=
+  eq_top_iff.mpr ((leviSubgroup_const c).symm.le.trans (leviSubgroup_le_parahoricSubgroup _))
 
 end TauCeti.GeneralLinear

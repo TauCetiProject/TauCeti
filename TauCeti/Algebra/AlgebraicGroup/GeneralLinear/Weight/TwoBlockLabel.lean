@@ -55,6 +55,7 @@ theorem twoBlockLabel_eq_zero_iff (r : ℕ) (b : Fin k) : twoBlockLabel r b = 0 
   simp [twoBlockLabel]
 
 /-- Two indices have the same label exactly when both or neither lie below `r`. -/
+@[simp]
 theorem twoBlockLabel_eq_iff (r : ℕ) (b b' : Fin k) :
     twoBlockLabel r b = twoBlockLabel r b' ↔ ((b : ℕ) < r ↔ (b' : ℕ) < r) := by
   by_cases hb : (b : ℕ) < r <;> by_cases hb' : (b' : ℕ) < r <;> simp [twoBlockLabel, hb, hb']
