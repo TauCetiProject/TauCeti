@@ -315,8 +315,8 @@ theorem bijective_signHomologyToCover_of_isZero (k : ℕ)
       (hp.injective_twistedHomologyCoefficientMap_signLocalSystemToPermutation R hσ hσσ hfin hfix
         hfib hsurj k hk'), fun c ↦ ?_⟩
   -- Every class of the cover is killed by `p_*`, since `Hₖ(B; R) = 0`.
-  have : Subsingleton ((TopCat.toSSet.obj B).homology (ModuleCat.of R R) k : ModuleCat.{u} R) :=
-    ModuleCat.isZero_iff_subsingleton.1 hk
+  rw [TauCeti.singularHomologyFunctor_obj_obj_eq_toSSet_homology] at hk
+  have := ModuleCat.isZero_iff_subsingleton.1 hk
   obtain ⟨g, hg⟩ := hp.exists_twistedHomologyCoefficientMap_signLocalSystemToPermutation_eq R hσ hσσ
     hfin hfix hfib hsurj k c (Subsingleton.elim _ _)
   exact ⟨g, by simp [hg]⟩

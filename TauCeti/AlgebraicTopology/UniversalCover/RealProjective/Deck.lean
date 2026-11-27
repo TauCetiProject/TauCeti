@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient.Covering
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Basic
-public import Mathlib.Topology.Category.TopCat.Basic
 
 /-!
 # The deck group of the antipodal cover of real projective space
@@ -48,8 +47,8 @@ input to the computation of `π₁(RPⁿ)`.
   the antipodal cover is the identity or the antipodal map.
 * `TauCeti.RealProjectiveSpace.card_deck`: for `1 ≤ n`, the deck group has two elements.
 * `TauCeti.RealProjectiveSpace.isRegular_mk`: the antipodal cover is regular.
-* `TauCeti.RealProjectiveSpace.coverHom`: the antipodal cover as a morphism of `TopCat`, with
-  `TauCeti.RealProjectiveSpace.coverHom_comp_antipode` restating that the antipode lies over it.
+* `TauCeti.RealProjectiveSpace.coverHom_comp_antipode`: the antipode lies over the `TopCat` form
+  `TauCeti.RealProjectiveSpace.coverHom` of the antipodal cover.
 -/
 
 public section
@@ -58,7 +57,7 @@ namespace TauCeti
 
 namespace RealProjectiveSpace
 
-open CategoryTheory Metric Deck
+open Metric Deck
 
 noncomputable section
 
@@ -147,32 +146,14 @@ fibre. Unlike the identification of the deck group, this needs no connectedness.
 theorem isRegular_mk : IsRegular (mk n) :=
   IsQuotientCoveringMap.isRegular (isQuotientCoveringMap_mk n)
 
-/-- The antipodal double cover `Sⁿ → RPⁿ`, the quotient map of the unit sphere, as a morphism of
-topological spaces. -/
-def coverHom :
-    TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) ⟶
-      TopCat.of (RealProjectiveSpace n) :=
-  TopCat.ofHom ⟨mk n, continuous_mk n⟩
-
-@[simp]
-theorem coverHom_apply (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    coverHom n x = mk n x :=
-  (rfl)
-
-/-- The quotient map `Sⁿ → RPⁿ` is a covering map. -/
-theorem isCoveringMap_coverHom : IsCoveringMap (coverHom n) :=
-  isCoveringMap_mk n
-
 /-- The antipodal deck transformation is a map over `RPⁿ`, as a continuous map and against
 `coverHom`. -/
 theorem coverHom_comp_antipode :
     ⇑(coverHom n) ∘ ⇑((antipode n).val : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, _)) =
-      ⇑(coverHom n) :=
-  deck.comp_eq (antipode n)
-
-/-- The fibres of the antipodal cover `Sⁿ → RPⁿ`, the antipodal pairs, are finite. -/
-theorem finite_preimage_coverHom (b : RealProjectiveSpace n) : Finite (coverHom n ⁻¹' {b}) :=
-  (isQuotientCoveringMap_mk n).finite_fiber b
+      ⇑(coverHom n) := by
+  funext x
+  rw [Function.comp_apply, coverHom_apply, coverHom_apply]
+  exact congrFun (deck.comp_eq (antipode n)) x
 
 end
 
