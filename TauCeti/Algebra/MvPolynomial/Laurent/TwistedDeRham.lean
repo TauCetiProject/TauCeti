@@ -25,8 +25,8 @@ span of the monomials `x^m` with `m` in the cone over the Newton polytope `Δ(φ
 `h(m) ≤ a`. It induces the decreasing **Newton filtration of the twisted de Rham complex**,
 indexed by a real number `c` (`TauCeti.LaurentRing.newtonFormFiltration`): `F^c` consists of the
 forms `∑_J ω_J dlog x_J` with `ω_J ∈ F_{#J - c}` for every `J`. In degree `q` it vanishes for
-`q < c` and is otherwise spanned by the forms `x^m dlog x_J` with `#J = q`, `m` in the cone and
-`h(m) ≤ q - c`.
+`q < c`, and a monomial form `x^m dlog x_J` with `#J = q` lies in it exactly when `q ≥ c`, `m` is
+in the cone and `h(m) ≤ q - c`.
 
 The Euler derivations act diagonally on monomials, so they preserve each `F_a`, and every exponent
 of `φ` has height at most `1`, so `θ_i(φ) ∈ F_1`. Hence each twisted Euler operator maps `F_a` into
@@ -52,6 +52,8 @@ many variables the filtration exhausts the forms with coefficients in the cone a
 * `TauCeti.LaurentRing.twistedEuler_mem_newtonFiltration`: `(θ_i + θ_i(φ)) F_a ⊆ F_{a+1}`.
 * `TauCeti.LaurentRing.pi_single_single_mem_newtonFormFiltration_iff`: `x^m dlog x_J` lies in
   `F^c` exactly when `c ≤ #J`, `m` lies in the cone and `h(m) ≤ #J - c`.
+* `TauCeti.LaurentRing.koszulCochainDifferential_mem_newtonFormFiltration`: a Koszul differential
+  whose operators map `F_a` into `F_{a+s}` maps `F^c` into `F^{c+1-s}`.
 * `TauCeti.LaurentRing.koszulCochainDifferential_twistedEuler_mem_newtonFormFiltration`:
   `d + dφ ∧` preserves `F^c`.
 * `TauCeti.LaurentRing.koszulCochainDifferential_twistedEuler_sub_mem_newtonFormFiltration`:
@@ -68,40 +70,20 @@ many variables the filtration exhausts the forms with coefficients in the cone a
   (2014), §4(a), (24)–(25), for the Newton filtration of the twisted de Rham complex.
 -/
 
+
 public section
 
 open AddMonoidAlgebra Finset
 
 namespace TauCeti.LaurentRing
 
-variable {R K : Type*} [CommRing R] {φ f : LaurentRing R K} {a c : ℝ}
-
-/-! ### The Euler operators and the Newton filtration of the Laurent ring -/
-
-/-- The Euler derivation `θ_i` preserves each step `F_a` of the Newton filtration, since it
-multiplies every monomial by a scalar. -/
-theorem eulerDerivation_mem_newtonFiltration (i : K) (hf : f ∈ newtonFiltration φ a) :
-    eulerDerivation i f ∈ newtonFiltration φ a := by
-  rw [mem_newtonFiltration_iff] at hf ⊢
-  refine fun m hm ↦ hf m (Finsupp.mem_support_iff.2 fun h ↦ Finsupp.mem_support_iff.1 hm ?_)
-  rw [coeff_eulerDerivation, h, mul_zero]
-
-/-- The logarithmic derivative `θ_i(φ)` of `φ` lies in `F_1`. -/
-theorem eulerDerivation_self_mem_newtonFiltration_one (φ : LaurentRing R K) (i : K) :
-    eulerDerivation i φ ∈ newtonFiltration φ 1 :=
-  eulerDerivation_mem_newtonFiltration i (self_mem_newtonFiltration_one φ)
-
-/-- The twisted Euler operator `θ_i + θ_i(φ)` raises the Newton filtration by one:
-it maps `F_a` into `F_{a+1}`. -/
-theorem twistedEuler_mem_newtonFiltration (i : K) (hf : f ∈ newtonFiltration φ a) :
-    twistedEuler φ i f ∈ newtonFiltration φ (a + 1) := by
-  rw [twistedEuler_apply]
-  refine add_mem (newtonFiltration_mono φ (by linarith)
-    (eulerDerivation_mem_newtonFiltration i hf)) ?_
-  rw [add_comm a]
-  exact mul_mem_newtonFiltration (eulerDerivation_self_mem_newtonFiltration_one φ i) hf
+variable {R K : Type*} {a c : ℝ}
 
 /-! ### The Newton filtration of the twisted de Rham complex -/
+
+section Semiring
+
+variable [Semiring R] {φ : LaurentRing R K}
 
 /-- The **Newton filtration of the twisted de Rham complex** of the torus: for real `c`, the
 forms `∑_J ω_J dlog x_J`, written as families `ω : Finset K → LaurentRing R K`, whose coefficient
@@ -174,19 +156,70 @@ theorem iSup_newtonFormFiltration [Finite K] (φ : LaurentRing R K) :
   have := single_le_sum (f := fun J ↦ |b J|) (fun _ _ ↦ abs_nonneg _) (mem_univ J)
   linarith [le_abs_self (b J), (#J).cast_nonneg (α := ℝ)]
 
+end Semiring
+
+/-! ### Koszul differentials and the Newton filtration -/
+
+section Ring
+
+variable [Ring R] [LinearOrder K] {φ : LaurentRing R K} {ω : Finset K → LaurentRing R K}
+
+/-- If every `D j` raises the Newton filtration of the Laurent ring by `s`, mapping `F_a` into
+`F_{a+s}`, then the Koszul differential of the `D j`, which raises the form degree by one, maps
+`F^c` into `F^{c+1-s}`. -/
+theorem koszulCochainDifferential_mem_newtonFormFiltration
+    (D : K → Module.End R (LaurentRing R K)) {s : ℝ}
+    (hD : ∀ j a f, f ∈ newtonFiltration φ a → D j f ∈ newtonFiltration φ (a + s))
+    (hω : ω ∈ newtonFormFiltration φ c) :
+    koszulCochainDifferential D ω ∈ newtonFormFiltration φ (c + 1 - s) := by
+  refine koszulCochainDifferential_mem_pi D (fun J j hj f hf ↦ ?_) hω
+  convert hD j _ f hf using 2
+  rw [cast_card_erase_of_mem hj]
+  ring
+
+end Ring
+
+section CommRing
+
+variable [CommRing R] {φ f : LaurentRing R K}
+
+/-! ### The Euler operators and the Newton filtration of the Laurent ring -/
+
+/-- The Euler derivation `θ_i` preserves each step `F_a` of the Newton filtration, since it
+multiplies every monomial by a scalar. -/
+theorem eulerDerivation_mem_newtonFiltration (i : K) (hf : f ∈ newtonFiltration φ a) :
+    eulerDerivation i f ∈ newtonFiltration φ a := by
+  rw [mem_newtonFiltration_iff] at hf ⊢
+  refine fun m hm ↦ hf m (Finsupp.mem_support_iff.2 fun h ↦ Finsupp.mem_support_iff.1 hm ?_)
+  rw [coeff_eulerDerivation, h, mul_zero]
+
+/-- The logarithmic derivative `θ_i(φ)` of `φ` lies in `F_1`. -/
+theorem eulerDerivation_self_mem_newtonFiltration_one (φ : LaurentRing R K) (i : K) :
+    eulerDerivation i φ ∈ newtonFiltration φ 1 :=
+  eulerDerivation_mem_newtonFiltration i (self_mem_newtonFiltration_one φ)
+
+/-- The twisted Euler operator `θ_i + θ_i(φ)` raises the Newton filtration by one:
+it maps `F_a` into `F_{a+1}`. -/
+theorem twistedEuler_mem_newtonFiltration (i : K) (hf : f ∈ newtonFiltration φ a) :
+    twistedEuler φ i f ∈ newtonFiltration φ (a + 1) := by
+  rw [twistedEuler_apply]
+  refine add_mem (newtonFiltration_mono φ (by linarith)
+    (eulerDerivation_mem_newtonFiltration i hf)) ?_
+  rw [add_comm a]
+  exact mul_mem_newtonFiltration (eulerDerivation_self_mem_newtonFiltration_one φ i) hf
+
+
 /-! ### The twisted de Rham differential preserves the Newton filtration -/
 
-variable [LinearOrder K]
+variable [LinearOrder K] {ω : Finset K → LaurentRing R K}
 
 /-- **The twisted de Rham differential `d + dφ ∧` preserves the Newton filtration**: each `F^c`
 is a subcomplex of the twisted de Rham complex of the torus. -/
 theorem koszulCochainDifferential_twistedEuler_mem_newtonFormFiltration
     (hω : ω ∈ newtonFormFiltration φ c) :
     koszulCochainDifferential (twistedEuler φ) ω ∈ newtonFormFiltration φ c := by
-  refine koszulCochainDifferential_mem_pi _ (fun J j hj f hf ↦ ?_) hω
-  convert twistedEuler_mem_newtonFiltration j hf using 2
-  rw [cast_card_erase_of_mem hj]
-  ring
+  simpa only [add_sub_cancel_right] using koszulCochainDifferential_mem_newtonFormFiltration _
+    (fun j _ _ ↦ twistedEuler_mem_newtonFiltration j) hω
 
 /-- The untwisted de Rham differential `d`, the Koszul differential of the Euler derivations,
 maps `F^c` into `F^{c+1}`. -/
@@ -195,10 +228,8 @@ theorem koszulCochainDifferential_eulerDerivation_mem_newtonFormFiltration
     koszulCochainDifferential
         (fun i ↦ (eulerDerivation (R := R) i : Module.End R (LaurentRing R K))) ω ∈
       newtonFormFiltration φ (c + 1) := by
-  refine koszulCochainDifferential_mem_pi _ (fun J j hj f hf ↦ ?_) hω
-  convert eulerDerivation_mem_newtonFiltration j hf using 2
-  rw [cast_card_erase_of_mem hj]
-  ring
+  simpa only [sub_zero] using koszulCochainDifferential_mem_newtonFormFiltration _ (s := 0)
+    (fun j a _ hf ↦ by rw [add_zero]; exact eulerDerivation_mem_newtonFiltration j hf) hω
 
 /-- The Koszul differential `dφ ∧` of the multiplications by the logarithmic derivatives
 `θ_i(φ)` preserves the Newton filtration. -/
@@ -206,11 +237,10 @@ theorem koszulCochainDifferential_mulLeft_mem_newtonFormFiltration
     (hω : ω ∈ newtonFormFiltration φ c) :
     koszulCochainDifferential (fun i ↦ LinearMap.mulLeft R (eulerDerivation i φ)) ω ∈
       newtonFormFiltration φ c := by
-  refine koszulCochainDifferential_mem_pi _ (fun J j hj f hf ↦ ?_) hω
-  rw [LinearMap.mulLeft_apply]
-  convert mul_mem_newtonFiltration (eulerDerivation_self_mem_newtonFiltration_one φ j) hf using 2
-  rw [cast_card_erase_of_mem hj]
-  ring
+  refine add_sub_cancel_right c 1 ▸ koszulCochainDifferential_mem_newtonFormFiltration _
+    (fun j a _ hf ↦ ?_) hω
+  rw [LinearMap.mulLeft_apply, add_comm a]
+  exact mul_mem_newtonFiltration (eulerDerivation_self_mem_newtonFiltration_one φ j) hf
 
 /-- **The graded twisted de Rham differential.** On `F^c`, the twisted de Rham differential
 `d + dφ ∧` agrees modulo `F^{c+1}` with the Koszul differential `dφ ∧` of the multiplications by
@@ -227,5 +257,7 @@ theorem koszulCochainDifferential_twistedEuler_sub_mem_newtonFormFiltration
     funext fun i ↦ LinearMap.ext fun g ↦ by simp
   rw [h, koszulCochainDifferential_add, LinearMap.add_apply, add_sub_cancel_right]
   exact koszulCochainDifferential_eulerDerivation_mem_newtonFormFiltration hω
+
+end CommRing
 
 end TauCeti.LaurentRing
