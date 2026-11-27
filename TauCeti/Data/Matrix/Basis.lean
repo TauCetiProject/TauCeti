@@ -25,6 +25,10 @@ expands a linear map on matrices along the matrix units, and
 algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
 associativity.
 
+`Matrix.single_mul_apply` and `Matrix.mul_single_apply` give the entries of a product with a
+matrix unit on either side as one formula, combining Mathlib's matching-index and unequal-index
+cases.
+
 Two off-diagonal matrix units witness that transposition does not preserve all products.
 
 `Matrix.single_eq_smul_single_one` writes a matrix with one nonzero entry `c` as `c` times the
@@ -172,6 +176,24 @@ theorem sum_single_mul_single {l m n o p q A : Type*} [NonUnitalNonAssocSemiring
     (Y : Matrix m n A) (i : l) (j : n) (r : o) (s : p) (t : q) :
     ∑ u : m, single r s (X i u) * single s t (Y u j) = single r t ((X * Y) i j) := by
   simp_rw [single_mul_single_same]; ext u v; simp [Matrix.sum_apply, Matrix.mul_apply, single]
+
+section SingleMulApply
+variable {l m n α : Type*} [Fintype m] [NonUnitalNonAssocSemiring α] (c : α)
+
+/-- Left multiplication by `single i j c` moves row `j` to row `i`, scaled by `c`. -/
+theorem single_mul_apply [DecidableEq l] [DecidableEq m] (i : l) (j : m) (M : Matrix m n α)
+    (a : l) (b : n) : (single i j c * M) a b = if a = i then c * M j b else 0 := by
+  split_ifs with h
+  · rw [h, single_mul_apply_same]
+  · exact single_mul_apply_of_ne c i j a b h M
+
+/-- Right multiplication by `single i j c` moves column `i` to column `j`, scaled by `c`. -/
+theorem mul_single_apply [DecidableEq m] [DecidableEq n] (i : m) (j : n) (M : Matrix l m α)
+    (a : l) (b : n) : (M * single i j c) a b = if b = j then M a i * c else 0 := by
+  split_ifs with h
+  · rw [h, mul_single_apply_same]
+  · exact mul_single_apply_of_ne c i j a b h M
+end SingleMulApply
 
 /-- A matrix with one nonzero entry `c` is `c` times the corresponding matrix unit. -/
 theorem single_eq_smul_single_one {m n R : Type*} [DecidableEq m] [DecidableEq n]
