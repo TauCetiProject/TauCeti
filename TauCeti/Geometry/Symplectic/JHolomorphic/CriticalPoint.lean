@@ -393,11 +393,6 @@ theorem finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_
 
 /-! ### Critical points up to a totally real boundary -/
 
-/-- The closed upper part `Ω ∩ {0 ≤ im}` of an open set is a set of unique differentiability. -/
-private theorem uniqueDiffOn_inter_setOf_im_nonneg (hΩ : IsOpen Ω) :
-    UniqueDiffOn ℝ (Ω ∩ {z | 0 ≤ z.im}) := by
-  simpa only [inter_comm] using (uniqueDiffOn_setOfPred_le_im 0).inter hΩ
-
 omit [FiniteDimensional ℝ E] in
 /-- A map of class `C¹` up to the real axis on `Ω ∩ {0 ≤ im}`, solving `∂ₜu = A ∂ₛu` off the axis,
 whose derivative `∂ₛu` within the closed upper half-plane vanishes on a preconnected
@@ -407,7 +402,7 @@ private theorem eqOn_const_of_cauchyRiemann_of_eqOn_zero_inter_im_nonneg (hΩ : 
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
     (h₀ : EqOn (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1) 0 (Ω ∩ {z | 0 ≤ z.im}))
     (hz₀ : z₀ ∈ Ω ∩ {z | 0 ≤ z.im}) : EqOn u (fun _ ↦ u z₀) (Ω ∩ {z | 0 ≤ z.im}) := by
-  have hS := uniqueDiffOn_inter_setOf_im_nonneg hΩ
+  have hS := hΩ.uniqueDiffOn_inter_setOf_im_nonneg
   -- off the axis the derivative within `Ω ∩ {0 ≤ im}` is the classical one, and vanishes
   have hint : EqOn (fderivWithin ℝ u (Ω ∩ {z | 0 ≤ z.im})) 0 (Ω ∩ {z | 0 < z.im}) := by
     intro z hz
@@ -480,7 +475,7 @@ private theorem linearized_inter_im_nonneg {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω)
       ∀ x : ℝ, (x : ℂ) ∈ Ω →
         R (fderivWithin ℝ u {z | 0 ≤ z.im} x 1) = fderivWithin ℝ u {z | 0 ≤ z.im} x 1 := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have hS := uniqueDiffOn_inter_setOf_im_nonneg hΩ
+  have hS := hΩ.uniqueDiffOn_inter_setOf_im_nonneg
   -- derivatives within `Ω ∩ {0 ≤ im}` are derivatives within the half-plane
   have hDSu {z : ℂ} (hz : z ∈ Ω) :
       fderivWithin ℝ u (Ω ∩ {z | 0 ≤ z.im}) z = fderivWithin ℝ u {z | 0 ≤ z.im} z := by

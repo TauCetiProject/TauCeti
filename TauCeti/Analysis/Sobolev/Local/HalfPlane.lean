@@ -133,7 +133,6 @@ differentiability. -/
 theorem _root_.ContDiffOn.memWkpLoc_inter_setOf_im_nonneg [CompleteSpace F] {f : ℂ → F}
     {Ω : Set ℂ} (hf : ContDiffOn ℝ k f (Ω ∩ {z | 0 ≤ z.im})) (hΩ : IsOpen Ω) :
     MemWkpLoc p (Ω ∩ {z | 0 ≤ z.im}) k f :=
-  hf.memWkpLoc_of_uniqueDiffOn (by simpa only [inter_comm] using
-    (uniqueDiffOn_setOfPred_le_im 0).inter hΩ)
+  hf.memWkpLoc_of_uniqueDiffOn hΩ.uniqueDiffOn_inter_setOf_im_nonneg
 
 end TauCeti
