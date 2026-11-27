@@ -278,9 +278,16 @@ noncomputable def yOneι (N : ℕ) [NeZero N] :
     yOne.{u} N ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
   EllipticCurveGeom.naiveExactOrderPreimageι N pointHom
 
+/-- `UniversalTate.yOneι N` is the inclusion of the locus where `(0, 0)` on the universal Tate
+normal form has naive exact order `N`. -/
+theorem yOneι_def (N : ℕ) [NeZero N] :
+    yOneι.{u} N = EllipticCurveGeom.naiveExactOrderPreimageι N pointHom :=
+  (rfl)
+
 /-- `Y₁(N)` is a locally closed subscheme of `Spec ℤ[A, B][Δ⁻¹]`. -/
-instance isImmersion_yOneι (N : ℕ) [NeZero N] : IsImmersion (yOneι.{u} N) :=
-  MorphismProperty.of_isPullback
+instance isImmersion_yOneι (N : ℕ) [NeZero N] : IsImmersion (yOneι.{u} N) := by
+  rw [yOneι_def]
+  exact MorphismProperty.of_isPullback
     (EllipticCurveGeom.isPullback_naiveExactOrderPreimage N pointHom).flip inferInstance
 
 /-- **The universal property of `Y₁(N)`.** A morphism `t : S ⟶ Spec ℤ[A, B][Δ⁻¹]` factors

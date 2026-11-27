@@ -63,24 +63,12 @@ theorem exactOrderOpens_four : exactOrderOpens.{u} 4 = ⊤ := by
   intro t _
   rw [mem_exactOrderOpens_iff]
   intro k hk0 hk4 heq
-  rw [pointHom_pow_left] at heq
-  have hzero : curveGeom.{u}.zero =
-      WeierstrassCurve.UniversalTate.curveULift.projModelZero ≫
-        (toEllipticCurveGeomIso WeierstrassCurve.UniversalTate.curveULift).inv := by
-    simp [← zero_toEllipticCurveGeomIso_hom]
-  rw [hzero, ← Category.assoc, Scheme.Hom.comp_apply, Scheme.Hom.comp_apply] at heq
-  have heq' : (WeierstrassCurve.UniversalTate.point ≫
-        WeierstrassCurve.UniversalTate.curveULift.projModelMulBy k) t =
-      WeierstrassCurve.UniversalTate.curveULift.projModelZero t := by
-    have h :=
-      congrArg (toEllipticCurveGeomIso WeierstrassCurve.UniversalTate.curveULift.{u}).hom heq
-    rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, Iso.inv_hom_id] at h
-    simpa using h
-  interval_cases k <;> simp only [Nat.cast_one, Nat.cast_ofNat] at heq'
-  · rw [projModelMulBy_one, Category.comp_id] at heq'
-    exact WeierstrassCurve.UniversalTate.point_ne_projModelZero t heq'
-  · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero t heq'
-  · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero t heq'
+  rw [pointHom_pow_left_apply_eq_zero_iff] at heq
+  interval_cases k <;> simp only [Nat.cast_one, Nat.cast_ofNat] at heq
+  · rw [projModelMulBy_one, Category.comp_id] at heq
+    exact WeierstrassCurve.UniversalTate.point_ne_projModelZero t heq
+  · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero t heq
+  · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero t heq
 
 /-- Over `ℤ`, the immersion from naive `Y₁(4)` into `Spec ℤ[A, B][Δ⁻¹]` is a closed
 immersion: since `(0, 0)`, `2 • (0, 0)`, and `3 • (0, 0)` miss the zero section everywhere,
@@ -199,8 +187,6 @@ theorem yOneFourIso_inv_yOneι :
 /-- Naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/
 instance smoothOfRelativeDimension_one_terminal_from_yOne_four :
     SmoothOfRelativeDimension 1 (terminal.from (yOne.{u} 4)) := by
-  have : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} 1) :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
   rw [terminal.hom_ext (terminal.from (yOne.{u} 4))
     (yOneFourIso.{u}.hom ≫ terminal.from _)]
   exact (MorphismProperty.cancel_left_of_respectsIso (@SmoothOfRelativeDimension 1)
@@ -214,8 +200,6 @@ namespace EllObj
 with Drinfeld `Y₁(4)` where `4` is invertible). -/
 instance smoothOfRelativeDimension_one_yOne_four_structureMap (B : Scheme.{u}) :
     SmoothOfRelativeDimension 1 (yOne B 4).structureMap := by
-  have : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} 1) :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
   have hfst : SmoothOfRelativeDimension 1 (prod.fst : B ⨯ UniversalTate.yOne.{u} 4 ⟶ B) :=
     MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
   rw [← yOneBaseIsoProd_hom_fst]

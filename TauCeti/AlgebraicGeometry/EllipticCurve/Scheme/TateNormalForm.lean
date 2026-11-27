@@ -217,10 +217,18 @@ theorem tateNormalForm_projModelMulBy_two_zero :
     lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ (hm := hm),
     projModelPoint_eq_projModelPoint_iff, hdbl, Projective.dblXYZ_some h₀]
   refine ⟨rfl, (hb.pow 3).unit, ?_⟩
+  simp only [Nat.succ_eq_add_one, Nat.reduceAdd, evalEval_ψ₂_tateNormalForm_zero, Affine.negY,
+    neg_zero, tateNormalForm_a₁, mul_zero, sub_self, tateNormalForm_a₃, zero_sub,
+    Matrix.smul_cons, smul_eq_mul, mul_neg, mul_one, Matrix.smul_empty, eval_Ψ₃_tateNormalForm_zero,
+    Affine.evalEval_polynomialX, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+    tateNormalForm_a₂, add_zero, tateNormalForm_a₄, neg_smul, Matrix.neg_cons, neg_neg,
+    Matrix.neg_empty, Units.smul_def, IsUnit.unit_spec, W]
   ext i
-  fin_cases i <;>
-    simp [W, Affine.negY, Affine.evalEval_polynomialX, Units.smul_def]
-  ring
+  fin_cases i
+  · simp only [Fin.zero_eta, Fin.isValue, Pi.add_apply, Matrix.cons_val_zero, zero_add]
+  · simp only [Fin.mk_one, Fin.isValue, Pi.add_apply, Matrix.cons_val_one, Matrix.cons_val_zero]
+    ring
+  · simp only [Fin.reduceFinMk, Pi.add_apply, Fin.isValue, Matrix.cons_val, add_zero]
 
 /-- **The `4`-torsion locus of `(0, 0)` on an elliptic Tate normal form.** Over any commutative
 ring `R`, the point `[0 : 0 : 1]` of an elliptic Tate normal form `Y² + aXY + bY = X³ + bX²` is

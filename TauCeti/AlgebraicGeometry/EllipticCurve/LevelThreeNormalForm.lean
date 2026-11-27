@@ -809,7 +809,8 @@ instance isStandardSmoothOfRelativeDimension :
     simpa only [ζ₀, g, map_add, map_pow, map_one] using
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self g)
   have hδ : δ = 2 * ζ₀ + 1 := by
-    simp [δ, ζ₀, g, sq]
+    simp only [δ, ζ₀, g, sq, Fin.isValue, map_add, Derivation.leibniz, MvPolynomial.pderiv_X,
+      Pi.single_eq_same, smul_eq_mul, mul_one, Derivation.map_one_eq_zero, add_zero, map_one]
     ring
   have hδy : δ * y = polyCurve.Δ := by
     dsimp only [y]

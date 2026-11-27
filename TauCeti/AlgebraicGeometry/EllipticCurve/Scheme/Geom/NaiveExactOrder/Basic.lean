@@ -624,6 +624,18 @@ theorem naiveExactOrderPreimageMap_comp {S'' : Scheme.{u}} {E'' : EllipticCurveG
   refine (cancel_mono (naiveExactOrderPreimageι N P)).mp ?_
   simp [Category.assoc]
 
+-- Lift a morphism `t : T ⟶ S'` whose composition with `f` factors through `P`'s exact-order locus
+-- to `P'`'s exact-order locus.
+private noncomputable def naiveExactOrderPreimageLift {T : Scheme.{u}} (t : T ⟶ S')
+    (h : ∃ l : T ⟶ naiveExactOrderPreimage N P, l ≫ naiveExactOrderPreimageι N P = t ≫ f) :
+    T ⟶ naiveExactOrderPreimage N P' :=
+  ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP t).mpr h).choose
+
+private theorem naiveExactOrderPreimageLift_ι {T : Scheme.{u}} (t : T ⟶ S')
+    (h : ∃ l : T ⟶ naiveExactOrderPreimage N P, l ≫ naiveExactOrderPreimageι N P = t ≫ f) :
+    naiveExactOrderPreimageLift N hg h0 hP t h ≫ naiveExactOrderPreimageι N P' = t :=
+  ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP t).mpr h).choose_spec
+
 /-- **The locus where a point has naive exact order `N` commutes with pointed base change.** For a
 pullback square of elliptic curves over `f : S' ⟶ S` carrying an `S'`-point `P'` to an `S`-point
 `P`, the locus of `S'` where `P'` has naive exact order `N` is the pullback along `f` of the locus
@@ -633,18 +645,13 @@ theorem isPullback_naiveExactOrderPreimageMap :
       (naiveExactOrderPreimageι N P') (naiveExactOrderPreimageι N P) f := by
   refine IsPullback.of_isLimit' ⟨naiveExactOrderPreimageMap_naiveExactOrderPreimageι N hg h0 hP⟩ ?_
   refine PullbackCone.IsLimit.mk _
-    (fun s ↦ ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP s.snd).mpr
-      ⟨s.fst, s.condition⟩).choose)
+    (fun s ↦ naiveExactOrderPreimageLift N hg h0 hP s.snd ⟨s.fst, s.condition⟩)
     (fun s ↦ (cancel_mono (naiveExactOrderPreimageι N P)).mp ?_)
-    (fun s ↦ ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP s.snd).mpr
-      ⟨s.fst, s.condition⟩).choose_spec)
+    (fun s ↦ naiveExactOrderPreimageLift_ι N hg h0 hP s.snd ⟨s.fst, s.condition⟩)
     (fun s m _ hm₂ ↦ (cancel_mono (naiveExactOrderPreimageι N P')).mp ?_)
-  · have h := ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP s.snd).mpr
-      ⟨s.fst, s.condition⟩).choose_spec
-    rw [Category.assoc, naiveExactOrderPreimageMap_naiveExactOrderPreimageι, reassoc_of% h,
-      ← s.condition]
-  · exact hm₂.trans ((exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h0 hP s.snd).mpr
-      ⟨s.fst, s.condition⟩).choose_spec.symm
+  · rw [Category.assoc, naiveExactOrderPreimageMap_naiveExactOrderPreimageι,
+      reassoc_of% naiveExactOrderPreimageLift_ι, ← s.condition]
+  · exact hm₂.trans (naiveExactOrderPreimageLift_ι N hg h0 hP s.snd ⟨s.fst, s.condition⟩).symm
 
 end PreimageBaseChange
 

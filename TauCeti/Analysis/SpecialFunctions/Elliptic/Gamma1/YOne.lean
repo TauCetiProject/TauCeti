@@ -25,7 +25,7 @@ open UpperHalfPlane CongruenceSubgroup
 
 namespace TauCeti
 
-variable (N : ℕ)
+variable (N : ℕ) [NeZero N]
 
 open _root_.CategoryTheory _root_.AlgebraicGeometry TauCeti.AlgebraicGeometry.UniversalTate in
 /-- **`Γ₁(N) \ ℍ` and the complex points of `Y₁(N)`.** For `N ≥ 4`, sending `z` to the point of
@@ -33,9 +33,7 @@ the fine moduli scheme `Y₁(N)` with coordinates the Tate normal form coefficie
 of `E_z = ℂ / (ℤ z + ℤ)` with the point `1 / N` induces a bijection from `Γ₁(N) \ ℍ` onto the
 morphisms `Spec ℂ ⟶ Y₁(N)`. -/
 noncomputable def gamma1QuotientEquivYOnePoints (hN : 4 ≤ N) :
-    letI : NeZero N := ⟨by omega⟩
     MulAction.orbitRel.Quotient (Gamma1 N) ℍ ≃ (Spec (.of ℂ) ⟶ yOne.{0} N) :=
-  letI : NeZero N := ⟨by omega⟩
   (gamma1QuotientEquivTateNormalForm N hN).trans (yOnePointsEquiv ℂ N).symm
 
 open TauCeti.AlgebraicGeometry.UniversalTate in
@@ -44,22 +42,18 @@ normal form classification on every orbit. -/
 @[simp]
 theorem yOnePointsEquiv_gamma1QuotientEquivYOnePoints (hN : 4 ≤ N)
     (q : MulAction.orbitRel.Quotient (Gamma1 N) ℍ) :
-    letI : NeZero N := ⟨by omega⟩
     yOnePointsEquiv ℂ N (gamma1QuotientEquivYOnePoints N hN q) =
-      gamma1QuotientEquivTateNormalForm N hN q := by
-  have : NeZero N := ⟨by omega⟩
-  exact (yOnePointsEquiv ℂ N).apply_symm_apply _
+      gamma1QuotientEquivTateNormalForm N hN q :=
+  (yOnePointsEquiv ℂ N).apply_symm_apply _
 
 open TauCeti.AlgebraicGeometry.UniversalTate in
 /-- The point of `Y₁(N)` attached to `z ∈ ℍ` has coordinates the Tate normal form coefficients
 `(a(z), b(z))` of `(E_z, 1 / N)`: by `coe_yOnePointsEquiv_apply`, its ring homomorphism
 `ℤ[A, B][Δ⁻¹] →+* ℂ` sends `A` to `a(z)` and `B` to `b(z)`. -/
 theorem yOnePointsEquiv_gamma1QuotientEquivYOnePoints_mk (hN : 4 ≤ N) (z : ℍ) :
-    letI : NeZero N := ⟨by omega⟩
     yOnePointsEquiv ℂ N (gamma1QuotientEquivYOnePoints N hN ⟦z⟧) =
       ⟨(z.pointedWeierstrassCurve N).tateNormalFormCoeffs,
         tateNormalFormCoeffs_pointedWeierstrassCurve_mem_tateNormalFormExactOrder hN z⟩ := by
-  have : NeZero N := ⟨by omega⟩
   rw [yOnePointsEquiv_gamma1QuotientEquivYOnePoints]
   exact Subtype.ext (coe_gamma1QuotientEquivTateNormalForm_mk hN z)
 

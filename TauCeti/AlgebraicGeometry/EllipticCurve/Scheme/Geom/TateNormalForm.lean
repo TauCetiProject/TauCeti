@@ -236,6 +236,43 @@ theorem pointHom_pow_left (k : ℕ) :
   rw [hk, pointHom_left, Category.assoc, projModelMulBy_eq]
   simp
 
+/-- The zero section of `curveGeom` is the zero section of `curveULift`'s projective model,
+transferred along `toEllipticCurveGeomIso`. -/
+@[simp]
+theorem curveGeom_zero_eq :
+    curveGeom.{u}.zero =
+      UniversalTate.curveULift.projModelZero ≫
+        (toEllipticCurveGeomIso UniversalTate.curveULift).inv := by
+  simp [← zero_toEllipticCurveGeomIso_hom]
+
+/-- On the universal Tate normal form, the `k`-th multiple of `(0, 0)` in `curveGeom` meets the
+zero section at `t` if and only if the projective-model multiple meets `projModelZero` at `t`. -/
+theorem pointHom_pow_left_apply_eq_zero_iff (k : ℕ)
+    (t : Spec (.of (ULift.{u} UniversalTate.Ring))) :
+    (pointHom.{u} ^ k).left t = curveGeom.{u}.zero t ↔
+      (UniversalTate.point ≫ UniversalTate.curveULift.projModelMulBy k) t =
+        UniversalTate.curveULift.projModelZero t := by
+  simp only [pointHom_pow_left, curveGeom_zero_eq, ← Category.assoc, Scheme.Hom.comp_apply]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  have h' := congrArg (toEllipticCurveGeomIso UniversalTate.curveULift.{u}).hom h
+  rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, Iso.inv_hom_id] at h'
+  simpa using h'
+
+-- Cancel `projModelBaseChange φ` for two sections over `Spec S` via its pullback square.
+private theorem comp_projModelBaseChange_eq_iff {R S : Type u} [CommRing R] [CommRing S]
+    (W : WeierstrassCurve R) (φ : R →+* S) {x y : Spec (.of S) ⟶ (W.map φ).projModel}
+    (hx : x ≫ (W.map φ).projModelOver = 𝟙 _) (hy : y ≫ (W.map φ).projModelOver = 𝟙 _) :
+    x ≫ W.projModelBaseChange φ = y ≫ W.projModelBaseChange φ ↔ x = y :=
+  ⟨fun h ↦ (W.isPullback_projModelBaseChange φ).hom_ext h (hx.trans hy.symm), fun h ↦ by rw [h]⟩
+
+-- Apply the 4-torsion criterion after rewriting a base-changed curve to `tateNormalForm`.
+private theorem tateNormalForm_projModelAffinePoint_mulBy_four_eq_zero_iff {R : Type u}
+    [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic] {a b : R} (hW : W = tateNormalForm a b)
+    (h₀ : W.toAffine.Equation 0 0) :
+    W.projModelAffinePoint h₀ ≫ W.projModelMulBy 4 = W.projModelZero ↔ a = 1 := by
+  subst hW
+  exact tateNormalForm_projModelMulBy_four_eq_projModelZero_iff
+
 /-- Along `Spec.map φ`, the fourth multiple of the universal point `(0, 0)` vanishes if and only
 if `φ` maps `A` to `1`. -/
 theorem specMap_comp_pointHom_pow_four_eq_zero_iff {R : Type u} [CommRing R]
@@ -243,45 +280,24 @@ theorem specMap_comp_pointHom_pow_four_eq_zero_iff {R : Type u} [CommRing R]
     Spec.map (CommRingCat.ofHom φ) ≫ (pointHom.{u} ^ 4).left =
         Spec.map (CommRingCat.ofHom φ) ≫ curveGeom.zero ↔
       φ UniversalTate.curveULift.a₁ = 1 := by
-  have hzero : curveGeom.{u}.zero =
-      UniversalTate.curveULift.projModelZero ≫
-        (toEllipticCurveGeomIso UniversalTate.curveULift).inv := by
-    simp [← zero_toEllipticCurveGeomIso_hom]
-  rw [pointHom_pow_left, Nat.cast_ofNat, hzero]
+  -- Cancel `(toEllipticCurveGeomIso curveULift).inv`, rewrite to `(curveULift.map φ).projModel`,
+  -- and cancel `projModelBaseChange φ` via its pullback square.
+  rw [pointHom_pow_left, Nat.cast_ofNat, curveGeom_zero_eq]
   simp only [← Category.assoc, cancel_mono (toEllipticCurveGeomIso UniversalTate.curveULift).inv]
-  have hbc := UniversalTate.curveULift.isPullback_projModelBaseChange φ
   rw [UniversalTate.point_def,
     ← UniversalTate.curveULift.projModelAffinePoint_projModelBaseChange φ,
     Category.assoc, ← UniversalTate.curveULift.projModelMulBy_projModelBaseChange φ 4,
-    ← Category.assoc, ← UniversalTate.curveULift.projModelZero_projModelBaseChange φ]
-  have hext : ((UniversalTate.curveULift.map φ).projModelAffinePoint
-          (UniversalTate.equation_curveULift_zero.map φ) ≫
-        (UniversalTate.curveULift.map φ).projModelMulBy 4) ≫
-          UniversalTate.curveULift.projModelBaseChange φ =
-      (UniversalTate.curveULift.map φ).projModelZero ≫
-          UniversalTate.curveULift.projModelBaseChange φ ↔
+    ← Category.assoc, ← UniversalTate.curveULift.projModelZero_projModelBaseChange φ,
+    comp_projModelBaseChange_eq_iff _ _ (by simp) (by simp)]
+  -- Identify `(φ 0, φ 0)` with `(0, 0)` and `curveULift.map φ` with `tateNormalForm (φ a₁) (φ a₃)`.
+  have hpt : (UniversalTate.curveULift.map φ).projModelAffinePoint
+        (UniversalTate.equation_curveULift_zero.map φ) =
       (UniversalTate.curveULift.map φ).projModelAffinePoint
-          (UniversalTate.equation_curveULift_zero.map φ) ≫
-        (UniversalTate.curveULift.map φ).projModelMulBy 4 =
-      (UniversalTate.curveULift.map φ).projModelZero :=
-    ⟨fun h ↦ hbc.hom_ext h (by simp), fun h ↦ by rw [h]⟩
-  rw [hext]
-  -- Rewrite `curveULift.map φ` to `tateNormalForm (φ a₁) (φ a₃)` so the 4-torsion criterion applies
-  have key {W : WeierstrassCurve R} [W.IsElliptic]
-      (hW : W = tateNormalForm (φ UniversalTate.curveULift.a₁) (φ UniversalTate.curveULift.a₃))
-      (h₀ : W.toAffine.Equation (φ 0) (φ 0)) :
-      W.projModelAffinePoint h₀ ≫ W.projModelMulBy 4 = W.projModelZero ↔
-        φ UniversalTate.curveULift.a₁ = 1 := by
-    subst hW
-    have hpt : (tateNormalForm (φ UniversalTate.curveULift.a₁)
-          (φ UniversalTate.curveULift.a₃)).projModelAffinePoint h₀ =
-        (tateNormalForm (φ UniversalTate.curveULift.a₁)
-          (φ UniversalTate.curveULift.a₃)).projModelAffinePoint
-            (equation_tateNormalForm_zero _ _) :=
-      (projModelAffinePoint_inj h₀).mpr ⟨map_zero φ, map_zero φ⟩
-    rw [hpt]
-    exact tateNormalForm_projModelMulBy_four_eq_projModelZero_iff
-  exact key (UniversalTate.map_curveULift φ) (UniversalTate.equation_curveULift_zero.map φ)
+        (by simp : (UniversalTate.curveULift.map φ).toAffine.Equation 0 0) :=
+    (projModelAffinePoint_inj _).mpr ⟨map_zero φ, map_zero φ⟩
+  rw [hpt]
+  exact tateNormalForm_projModelAffinePoint_mulBy_four_eq_zero_iff
+    (UniversalTate.map_curveULift φ) _
 
 end TauCeti.AlgebraicGeometry.UniversalTate
 

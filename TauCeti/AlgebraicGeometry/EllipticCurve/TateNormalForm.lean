@@ -632,6 +632,36 @@ theorem Ring.ringHom_ext {S : Type*} [Semiring S] {f g : Ring →+* S}
 noncomputable def curve : WeierstrassCurve Ring :=
   tateNormalForm 1 param
 
+/-- `UniversalGammaOneFour.curve` is the Tate normal form `Y² + XY + BY = X³ + BX²` with
+coefficients `a = 1` and `b = param`. -/
+theorem curve_eq : curve = tateNormalForm 1 param :=
+  (rfl)
+
+/-- The coefficient `a₁` of `UniversalGammaOneFour.curve` is `1`. -/
+@[simp]
+theorem curve_a₁ : curve.a₁ = 1 :=
+  (rfl)
+
+/-- The coefficient `a₂` of `UniversalGammaOneFour.curve` is `param`. -/
+@[simp]
+theorem curve_a₂ : curve.a₂ = param :=
+  (rfl)
+
+/-- The coefficient `a₃` of `UniversalGammaOneFour.curve` is `param`. -/
+@[simp]
+theorem curve_a₃ : curve.a₃ = param :=
+  (rfl)
+
+/-- The coefficient `a₄` of `UniversalGammaOneFour.curve` is `0`. -/
+@[simp]
+theorem curve_a₄ : curve.a₄ = 0 :=
+  (rfl)
+
+/-- The coefficient `a₆` of `UniversalGammaOneFour.curve` is `0`. -/
+@[simp]
+theorem curve_a₆ : curve.a₆ = 0 :=
+  (rfl)
+
 /-- The curve `Y² + XY + BY = X³ + BX²` over `ℤ[B, (B(1 - 16B))⁻¹]` is elliptic. -/
 instance isElliptic_curve : curve.IsElliptic where
   isUnit := isUnit_tateNormalForm_one_Δ_iff.mpr <| by

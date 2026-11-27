@@ -119,6 +119,10 @@ instance {n : ℕ} : IsZariskiLocalAtSource (@SmoothOfRelativeDimension.{u} n) :
   HasRingHomProperty.instIsZariskiLocalAtSource (P := @SmoothOfRelativeDimension n)
     (Q := RingHom.Locally (@IsStandardSmoothOfRelativeDimension n))
 
+/-- Smoothness of fixed relative dimension respects isomorphisms. -/
+instance {n : ℕ} : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} n) :=
+  MorphismProperty.IsStableUnderBaseChange.respectsIso
+
 /-- Smoothness of fixed relative dimension is local on the target. -/
 instance {n : ℕ} : IsZariskiLocalAtTarget (@SmoothOfRelativeDimension.{u} n) :=
   HasRingHomProperty.instIsZariskiLocalAtTarget (@SmoothOfRelativeDimension n)
@@ -188,8 +192,6 @@ theorem terminal_from_Spec (R : CommRingCat.{u}) (n : ℕ) [Algebra ℤ R]
   have : SmoothOfRelativeDimension n (Spec.map g) :=
     (HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension n)).mpr
       (locally_of isStandardSmoothOfRelativeDimension_respectsIso _ hg)
-  have : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} n) :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
   have := isIso_of_isTerminal specULiftZIsTerminal.{u} terminalIsTerminal (terminal.from _)
   rw [← terminal.comp_from (Spec.map g)]
   exact (MorphismProperty.cancel_right_of_respectsIso
