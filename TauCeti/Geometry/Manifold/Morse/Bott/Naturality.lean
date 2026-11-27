@@ -69,6 +69,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 * `contMDiff_negativeNormalSpaceEquivOfComp` and
   `exists_bundleDiffeomorph_negativeNormalSpace_of_comp`: the fibrewise isomorphisms form a `C^k`
   diffeomorphism of total spaces.
+* `continuous_negativeNormalSpaceEquivOfComp_symm`: their inverses are continuous for the subbundle
+  topologies, whatever local frames are chosen.
 * `nonempty_vectorBundleOrientation_negativeNormalSpace_iff_of_comp`: the two negative normal
   bundles are orientable together.
 
@@ -142,17 +144,12 @@ def negativeNormalSpaceEquivOfComp :
         (i.normalMap i' (u := fun s ↦ s) hn hn' (.of_eq hσi)).toLinearMap ∘ₗ
           (h.negativeNormalSpace hn g s).subtype).codRestrict _
       fun v ↦ h'.negativeNormalProjection_apply_mem hn' g' _)
-    (by
-      rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-      rintro ⟨v, hv⟩ hv0
-      by_contra hne
-      have hpos : i.normalMap i' (u := fun s ↦ s) hn hn' (.of_eq hσi) v ∈
-          h'.positiveNormalSpace hn' g' s :=
-        (h'.negativeNormalProjection_apply_eq_zero_iff hn' g').1 (congrArg Subtype.val hv0)
-      have hneg := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv
-        fun hv ↦ hne (Subtype.ext hv)
-      rw [← h.normalHessian_normalMap hn hn' hσi h'.toIsCriticalSubmanifold hσ] at hneg
-      exact hneg.not_ge (h'.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn' g' hpos))
+    (.of_comp (f := Subtype.val) <| h'.injective_negativeNormalProjection_comp hn' g' _
+      fun v hv0 ↦ by
+        rw [LinearMap.comp_apply, Submodule.subtype_apply, ContinuousLinearMap.coe_coe,
+          h.normalHessian_normalMap hn hn' hσi h'.toIsCriticalSubmanifold hσ]
+        exact h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g v.property
+          fun hv ↦ hv0 (Subtype.ext hv))
     (by
       have hσis : σ (i s) = i' s := congrFun hσi s
       rw [h.finrank_negativeNormalSpace hn g, h'.finrank_negativeNormalSpace hn' g',
@@ -437,6 +434,64 @@ theorem contMDiff_negativeNormalSpaceEquivOfComp_symm
       (hσs s)).toContinuousLinearEquiv)
     ((h.contMDiff_negativeNormalSpaceEquivOfComp hn hn' hσi h' hk hk' hσ hσs hf hdim hdim' g g'
       hr).congr fun v ↦ by simp)
+
+/-- The inverses of the identifications `negativeNormalSpaceEquivOfComp` of the negative normal
+spaces along a map are continuous on the total spaces of the negative normal bundles, whatever
+local frames define their bundle structures: their topologies are the subbundle topologies, which
+depend only on the subbundles (`contMDiff_negativeNormalSpaceEquivOfComp_symm`). -/
+theorem continuous_negativeNormalSpaceEquivOfComp_symm
+    (h : i.IsNondegenerateCriticalSubmanifold (f ∘ σ))
+    (h' : i'.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n) (hk' : k + 1 ≤ n')
+    (hσ : ContMDiff I I' (k + 2) σ) (hσs : ∀ s, IsRegularPoint I I' σ (i s))
+    (hf : ∀ s, ContMDiffAt I' 𝓘(ℝ) (k + 2) f (i' s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ F)
+    (hdim' : finrank ℝ P' = finrank ℝ E' - finrank ℝ F)
+    (g : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn)
+    (g' : haveI : IsManifold I' 1 M' := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i'.normalSpaceFiberBundle hn' hdim'
+      letI := i'.normalSpaceVectorBundle hn' hdim'
+      ContMDiffRiemannianMetric J k P' fun s ↦ i'.isImmersion.NormalSpace s hn') {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I' f (i' s) = r) :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold I' 1 M' := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := i'.normalSpaceFiberBundle hn' hdim'
+    letI := i'.normalSpaceVectorBundle hn' hdim'
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := subbundleTopology P' (F' := Fin r → ℝ)
+      (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
+    Continuous fun v : TotalSpace (Fin r → ℝ)
+        (fun s ↦ h'.negativeNormalSpace hn' g'.toRiemannianMetric s) ↦
+      TotalSpace.mk' (Fin r → ℝ) (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
+        v.proj ((h.negativeNormalSpaceEquivOfComp hn hn' hσi h' g.toRiemannianMetric
+          g'.toRiemannianMetric ((hσ (i v.proj)).of_le le_add_self)
+            (hσs v.proj)).toContinuousLinearEquiv.symm v.snd) := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold I' 1 M' := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := i'.normalSpaceFiberBundle hn' hdim'
+  let := i'.normalSpaceVectorBundle hn' hdim'
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_comp hn hσi
+    h'.toIsCriticalSubmanifold hk (fun s ↦ hσ (i s)) hσs hf hdim g hr).fiberBundle
+  let := subbundleTopology P' (F' := Fin r → ℝ) (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
+  let := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
+    hr).fiberBundle
+  exact (h.contMDiff_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim hdim'
+    g g' hr).continuous
 
 /-- **The negative normal bundles along a map are orientable together.** In the setting of
 `contMDiff_negativeNormalSpaceEquivOfComp`, the negative normal bundle of `i` relative to `g` is

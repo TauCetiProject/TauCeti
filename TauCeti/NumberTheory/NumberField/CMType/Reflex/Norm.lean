@@ -99,9 +99,10 @@ theorem reflexNorm_eq_smulDet (Φ : CMType E) (hk : Φ.reflexField ≤ k)
   let := Module.compHom (Fin n → k) ρ
   have := SMul.comp.smulCommClass (α := Fin n → k) (β := k) ρ
   -- With these instances, `reflexNorm Φ hk` unfolds by definition to `smulDet E k (Fin n → k)`,
-  -- which `smulDet_eq_smulDet_of_trace_eq` compares with `smulDet E k V`. Since `c ∈ E` acts as
-  -- `ρ c` by definition (`DistribSMul.toLinearMap_compHom`), `hρ` is its trace hypothesis.
-  exact smulDet_eq_smulDet_of_trace_eq Φ hρ hV
+  -- which `smulDet_eq_smulDet_of_trace_eq` compares with `smulDet E k V`.
+  refine smulDet_eq_smulDet_of_trace_eq Φ (fun c ↦ ?_) hV
+  rw [DistribSMul.toLinearMap_compHom]
+  exact hρ c
 
 end FormallyUnramified
 
