@@ -40,6 +40,8 @@ open-cover entropy with the entropy of that uniformity.
 
 ## Main results
 
+* `TauCeti.openCoverMincard_finite_iff`, `TauCeti.openCoverMincard_eq_zero_iff`, and
+  `TauCeti.le_openCoverEntropy`: the basic API of these definitions.
 * `TauCeti.openCoverEntropy_le_coverEntropy`, `TauCeti.coverEntropy_le_openCoverEntropy`, and
   `TauCeti.openCoverEntropy_eq_coverEntropy`: on a compact uniform space the open-cover entropy
   is `coverEntropy T univ`.
@@ -86,6 +88,31 @@ theorem openCoverEntropy_def [TopologicalSpace X] :
 theorem openCoverMincard_le_card {s : Finset (Fin n → Set X)} (hs : ∀ w ∈ s, ∀ k, w k ∈ 𝒰)
     (hcov : ∀ x, ∃ w ∈ s, ∀ k : Fin n, T^[k] x ∈ w k) : openCoverMincard T 𝒰 n ≤ s.card :=
   (iInf₂_le s hs).trans (iInf_le (fun _ ↦ (s.card : ℕ∞)) hcov)
+
+/-- `openCoverMincard` is finite exactly when it is attained by a finite covering family of words
+of the join. -/
+theorem openCoverMincard_finite_iff :
+    openCoverMincard T 𝒰 n < ⊤ ↔ ∃ s : Finset (Fin n → Set X), (∀ w ∈ s, ∀ k, w k ∈ 𝒰) ∧
+      (∀ x, ∃ w ∈ s, ∀ k : Fin n, T^[k] x ∈ w k) ∧ s.card = openCoverMincard T 𝒰 n := by
+  refine ⟨fun h ↦ ?_, fun ⟨s, _, _, hs⟩ ↦ hs ▸ WithTop.coe_lt_top s.card⟩
+  obtain ⟨k, hk⟩ := ENat.ne_top_iff_exists.1 h.ne
+  have hlt : openCoverMincard T 𝒰 n < k + 1 :=
+    hk ▸ (ENat.lt_add_one_iff (ENat.natCast_ne_top k)).2 le_rfl
+  simp only [openCoverMincard_def, iInf_lt_iff] at hlt
+  obtain ⟨s, hs, hcov, hsk⟩ := hlt
+  refine ⟨s, hs, hcov, le_antisymm ?_ (openCoverMincard_le_card hs hcov)⟩
+  rw [← hk]
+  exact Order.le_of_lt_add_one hsk
+
+/-- `openCoverMincard` vanishes exactly on an empty space. -/
+theorem openCoverMincard_eq_zero_iff : openCoverMincard T 𝒰 n = 0 ↔ IsEmpty X := by
+  simp [openCoverMincard_def, ENat.iInf_eq_zero, isEmpty_iff]
+
+/-- The open-cover entropy is at least the growth rate of `openCoverMincard` for any open cover. -/
+theorem le_openCoverEntropy [TopologicalSpace X] (hopen : ∀ U ∈ 𝒰, IsOpen U)
+    (hcov : ⋃₀ 𝒰 = univ) :
+    expGrowthSup (fun n ↦ (openCoverMincard T 𝒰 n : ℝ≥0∞)) ≤ openCoverEntropy T :=
+  le_iSup₂_of_le 𝒰 hopen (le_iSup_of_le hcov le_rfl)
 
 /-- **Lebesgue numbers.** If the balls of `V` each lie in a member of `𝒰`, a `(V, n)`-dynamical
 cover gives as many cylinders of the `n`-fold join of `𝒰` covering `X`. -/
@@ -152,14 +179,14 @@ theorem coverEntropy_le_openCoverEntropy (T : X → X) :
   obtain ⟨V, hV, hVo, hVs, hVU⟩ := comp_open_symm_mem_uniformity_sets hU
   have hopen : ∀ W ∈ range (SetRel.ball V), IsOpen W := by
     rintro _ ⟨x, rfl⟩
-    exact hVo.preimage (continuous_id.prodMk continuous_const)
+    exact UniformSpace.isOpen_ball x hVo
   have hcov : ⋃₀ range (SetRel.ball V) = univ :=
     eq_univ_of_forall fun x ↦ mem_sUnion.2 ⟨SetRel.ball V x, mem_range_self x,
       refl_mem_uniformity hV⟩
   have hsmall : ∀ W ∈ range (SetRel.ball V), ∀ a ∈ W, ∀ b ∈ W, (a, b) ∈ U := by
     rintro _ ⟨x, rfl⟩ a ha b hb
     exact hVU ⟨x, ha, SetRel.symm V hb⟩
-  refine le_trans ?_ (le_iSup₂_of_le (range (SetRel.ball V)) hopen (le_iSup_of_le hcov le_rfl))
+  refine le_trans ?_ (le_openCoverEntropy hopen hcov)
   exact expGrowthSup_monotone fun n ↦
     ENat.toENNReal_le.2 (coverMincard_le_openCoverMincard hsmall n)
 
