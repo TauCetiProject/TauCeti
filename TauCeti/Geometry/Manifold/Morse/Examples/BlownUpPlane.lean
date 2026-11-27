@@ -87,12 +87,12 @@ namespace TauCeti
 /-- The plane blown up at `[0 : 1 : 0]`, in homogeneous coordinates: the pairs `(z, w)` of nonzero
 vectors of `ℂ³` and `ℂ²` with `z₀ w₁ = z₂ w₀`, that is `([z₀ : z₁ : z₂], [w₀ : w₁])` lies on the
 incidence surface in `ℂP² × ℂP¹`. -/
-@[expose] def blownUpPlane : Set ((Fin 3 → ℂ) × (Fin 2 → ℂ)) :=
+def blownUpPlane : Set ((Fin 3 → ℂ) × (Fin 2 → ℂ)) :=
   {p | p.1 ≠ 0 ∧ p.2 ≠ 0 ∧ p.1 0 * p.2 1 = p.1 2 * p.2 0}
 
 theorem mem_blownUpPlane_iff {p : (Fin 3 → ℂ) × (Fin 2 → ℂ)} :
     p ∈ blownUpPlane ↔ p.1 ≠ 0 ∧ p.2 ≠ 0 ∧ p.1 0 * p.2 1 = p.1 2 * p.2 0 :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- The blown-up plane is invariant under rescaling of either homogeneous coordinate vector. -/
 @[simp]
@@ -107,7 +107,7 @@ theorem smul_mem_blownUpPlane_iff {c d : ℂ} (hc : c ≠ 0) (hd : d ≠ 0) {z :
 
 /-- The circle-invariant height on the blown-up plane in homogeneous coordinates,
 `-(|z₀|² - |z₂|²) / (|z₀|² + |z₁|² + |z₂|²) - ε (|w₀|² - |w₁|²) / (|w₀|² + |w₁|²)`. -/
-@[expose] noncomputable def blownUpPlaneHeight (ε : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) : ℝ :=
+noncomputable def blownUpPlaneHeight (ε : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) : ℝ :=
   -(‖p.1 0‖ ^ 2 - ‖p.1 2‖ ^ 2) / (‖p.1 0‖ ^ 2 + ‖p.1 1‖ ^ 2 + ‖p.1 2‖ ^ 2) -
     ε * (‖p.2 0‖ ^ 2 - ‖p.2 1‖ ^ 2) / (‖p.2 0‖ ^ 2 + ‖p.2 1‖ ^ 2)
 
@@ -117,27 +117,21 @@ theorem blownUpPlaneHeight_def (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
     blownUpPlaneHeight ε p =
       -(‖p.1 0‖ ^ 2 - ‖p.1 2‖ ^ 2) / (‖p.1 0‖ ^ 2 + ‖p.1 1‖ ^ 2 + ‖p.1 2‖ ^ 2) -
         ε * (‖p.2 0‖ ^ 2 - ‖p.2 1‖ ^ 2) / (‖p.2 0‖ ^ 2 + ‖p.2 1‖ ^ 2) :=
-  rfl
+  (rfl)
 
 /-- The height does not depend on the choice of homogeneous coordinates. -/
 @[simp]
 theorem blownUpPlaneHeight_smul {c d : ℂ} (hc : c ≠ 0) (hd : d ≠ 0) (z : Fin 3 → ℂ)
     (w : Fin 2 → ℂ) : blownUpPlaneHeight ε (c • z, d • w) = blownUpPlaneHeight ε (z, w) := by
-  have key : ∀ (r : ℝ), r ≠ 0 → ∀ x y : ℝ, (r * x) / (r * y) = x / y :=
-    fun r hr x y ↦ mul_div_mul_left x y hr
   simp only [blownUpPlaneHeight_def, Pi.smul_apply, smul_eq_mul, norm_mul, mul_pow]
-  rw [show -(‖c‖ ^ 2 * ‖z 0‖ ^ 2 - ‖c‖ ^ 2 * ‖z 2‖ ^ 2) = ‖c‖ ^ 2 * -(‖z 0‖ ^ 2 - ‖z 2‖ ^ 2)
-      by ring,
-    show ‖c‖ ^ 2 * ‖z 0‖ ^ 2 + ‖c‖ ^ 2 * ‖z 1‖ ^ 2 + ‖c‖ ^ 2 * ‖z 2‖ ^ 2 =
-      ‖c‖ ^ 2 * (‖z 0‖ ^ 2 + ‖z 1‖ ^ 2 + ‖z 2‖ ^ 2) by ring,
-    show ε * (‖d‖ ^ 2 * ‖w 0‖ ^ 2 - ‖d‖ ^ 2 * ‖w 1‖ ^ 2) = ‖d‖ ^ 2 * (ε * (‖w 0‖ ^ 2 - ‖w 1‖ ^ 2))
-      by ring,
-    show ‖d‖ ^ 2 * ‖w 0‖ ^ 2 + ‖d‖ ^ 2 * ‖w 1‖ ^ 2 = ‖d‖ ^ 2 * (‖w 0‖ ^ 2 + ‖w 1‖ ^ 2) by ring,
-    key _ (by positivity), key _ (by positivity)]
+  -- each quotient has numerator and denominator scaled by `‖c‖ ^ 2`, respectively `‖d‖ ^ 2`
+  congr 1
+  · convert mul_div_mul_left _ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 hc)) using 2 <;> ring
+  · convert mul_div_mul_left _ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 hd)) using 2 <;> ring
 
 /-- The circle action `([z₀ : z₁ : z₂], [w₀ : w₁]) ↦ ([e^{it} z₀ : z₁ : e^{-it} z₂],
 [e^{it} w₀ : e^{-it} w₁])` on homogeneous coordinates of the blown-up plane. -/
-@[expose] noncomputable def blownUpPlaneCircleAction (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
+noncomputable def blownUpPlaneCircleAction (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
     (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![exp (t * I) * p.1 0, p.1 1, exp (-(t * I)) * p.1 2],
     ![exp (t * I) * p.2 0, exp (-(t * I)) * p.2 1])
@@ -145,12 +139,12 @@ theorem blownUpPlaneHeight_smul {c d : ℂ} (hc : c ≠ 0) (hd : d ≠ 0) (z : F
 @[simp]
 theorem blownUpPlaneCircleAction_fst (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
     (blownUpPlaneCircleAction t p).1 = ![exp (t * I) * p.1 0, p.1 1, exp (-(t * I)) * p.1 2] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneCircleAction_snd (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
     (blownUpPlaneCircleAction t p).2 = ![exp (t * I) * p.2 0, exp (-(t * I)) * p.2 1] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneCircleAction_zero (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
@@ -189,63 +183,65 @@ theorem blownUpPlaneHeight_circleAction (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2
 
 /-- The chart `(u, v) ↦ ([u : 1 : u v], [1 : v])` of the blown-up plane around the lower pole
 `([0 : 1 : 0], [1 : 0])` of the exceptional sphere, which is `u = 0` in this chart. -/
-@[expose] def blownUpPlaneLowerPoleChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
+def blownUpPlaneLowerPoleChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![q.1, 1, q.1 * q.2], ![1, q.2])
 
 /-- The chart `(s, w) ↦ ([s w : 1 : w], [s : 1])` of the blown-up plane around the upper pole
 `([0 : 1 : 0], [0 : 1])` of the exceptional sphere, which is `w = 0` in this chart. -/
-@[expose] def blownUpPlaneUpperPoleChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
+def blownUpPlaneUpperPoleChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![q.1 * q.2, 1, q.2], ![q.1, 1])
 
-/-- The chart `(x, y) ↦ ([1 : x : y], [1 : y])` of the blown-up plane around the minimum
-`([1 : 0 : 0], [1 : 0])` of the height. -/
-@[expose] def blownUpPlaneMinChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
+/-- The chart `(x, y) ↦ ([1 : x : y], [1 : y])` of the blown-up plane around the fixed point
+`([1 : 0 : 0], [1 : 0])`. The name refers to the case `-1 < ε`, where the height has Morse
+index `0` there (`TauCeti.morseIndex_blownUpPlaneHeight_comp_minChart`). -/
+def blownUpPlaneMinChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![1, q.1, q.2], ![1, q.2])
 
-/-- The chart `(x, y) ↦ ([x : y : 1], [x : 1])` of the blown-up plane around the maximum
-`([0 : 0 : 1], [0 : 1])` of the height. -/
-@[expose] def blownUpPlaneMaxChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
+/-- The chart `(x, y) ↦ ([x : y : 1], [x : 1])` of the blown-up plane around the fixed point
+`([0 : 0 : 1], [0 : 1])`. The name refers to the case `-1 < ε`, where the height has Morse
+index `4` there (`TauCeti.morseIndex_blownUpPlaneHeight_comp_maxChart`). -/
+def blownUpPlaneMaxChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![q.1, q.2, 1], ![q.1, 1])
 
 @[simp]
 theorem blownUpPlaneLowerPoleChart_fst (q : ℂ × ℂ) :
     (blownUpPlaneLowerPoleChart q).1 = ![q.1, 1, q.1 * q.2] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneLowerPoleChart_snd (q : ℂ × ℂ) :
     (blownUpPlaneLowerPoleChart q).2 = ![1, q.2] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneUpperPoleChart_fst (q : ℂ × ℂ) :
     (blownUpPlaneUpperPoleChart q).1 = ![q.1 * q.2, 1, q.2] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneUpperPoleChart_snd (q : ℂ × ℂ) :
     (blownUpPlaneUpperPoleChart q).2 = ![q.1, 1] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneMinChart_fst (q : ℂ × ℂ) :
     (blownUpPlaneMinChart q).1 = ![1, q.1, q.2] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneMinChart_snd (q : ℂ × ℂ) :
     (blownUpPlaneMinChart q).2 = ![1, q.2] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneMaxChart_fst (q : ℂ × ℂ) :
     (blownUpPlaneMaxChart q).1 = ![q.1, q.2, 1] :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem blownUpPlaneMaxChart_snd (q : ℂ × ℂ) :
     (blownUpPlaneMaxChart q).2 = ![q.1, 1] :=
-  rfl
+  (rfl)
 
 theorem blownUpPlaneLowerPoleChart_mem_blownUpPlane (q : ℂ × ℂ) :
     blownUpPlaneLowerPoleChart q ∈ blownUpPlane :=
@@ -306,7 +302,7 @@ theorem exists_eq_smul_blownUpPlaneUpperPoleChart {p : (Fin 3 → ℂ) × (Fin 2
   · simp
 
 /-- Every point of the blown-up plane with `z₀ ≠ 0` and `w₀ ≠ 0` is a rescaling of a point of the
-chart around the minimum. -/
+chart around `([1 : 0 : 0], [1 : 0])`. -/
 theorem exists_eq_smul_blownUpPlaneMinChart {p : (Fin 3 → ℂ) × (Fin 2 → ℂ)}
     (hp : p ∈ blownUpPlane) (h₁ : p.1 0 ≠ 0) (h₂ : p.2 0 ≠ 0) :
     ∃ q : ℂ × ℂ, ∃ c d : ℂ, c ≠ 0 ∧ d ≠ 0 ∧
@@ -325,7 +321,7 @@ theorem exists_eq_smul_blownUpPlaneMinChart {p : (Fin 3 → ℂ) × (Fin 2 → �
     linear_combination hp.2.2
 
 /-- Every point of the blown-up plane with `z₂ ≠ 0` and `w₁ ≠ 0` is a rescaling of a point of the
-chart around the maximum. -/
+chart around `([0 : 0 : 1], [0 : 1])`. -/
 theorem exists_eq_smul_blownUpPlaneMaxChart {p : (Fin 3 → ℂ) × (Fin 2 → ℂ)}
     (hp : p ∈ blownUpPlane) (h₁ : p.1 2 ≠ 0) (h₂ : p.2 1 ≠ 0) :
     ∃ q : ℂ × ℂ, ∃ c d : ℂ, c ≠ 0 ∧ d ≠ 0 ∧
@@ -418,7 +414,8 @@ theorem blownUpPlaneHeight_minChart (q : ℂ × ℂ) :
       -(1 - ‖q.2‖ ^ 2) / (1 + ‖q.1‖ ^ 2 + ‖q.2‖ ^ 2) - ε * (1 - ‖q.2‖ ^ 2) / (1 + ‖q.2‖ ^ 2) := by
   simp [blownUpPlaneHeight_def]
 
-/-- The height in the chart around the minimum, as a function of the two chart coordinates. -/
+/-- The height in the chart around `([1 : 0 : 0], [1 : 0])`, as a function of the two chart
+coordinates. -/
 theorem blownUpPlaneHeight_comp_minChart :
     blownUpPlaneHeight ε ∘ blownUpPlaneMinChart = fun q ↦
       -(1 - ‖q.2‖ ^ 2) / (1 + ‖q.1‖ ^ 2 + ‖q.2‖ ^ 2) - ε * (1 - ‖q.2‖ ^ 2) / (1 + ‖q.2‖ ^ 2) :=
@@ -429,7 +426,8 @@ theorem blownUpPlaneHeight_maxChart (q : ℂ × ℂ) :
       -(‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + ‖q.2‖ ^ 2 + 1) - ε * (‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + 1) := by
   simp [blownUpPlaneHeight_def]
 
-/-- The height in the chart around the maximum, as a function of the two chart coordinates. -/
+/-- The height in the chart around `([0 : 0 : 1], [0 : 1])`, as a function of the two chart
+coordinates. -/
 theorem blownUpPlaneHeight_comp_maxChart :
     blownUpPlaneHeight ε ∘ blownUpPlaneMaxChart = fun q ↦
       -(‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + ‖q.2‖ ^ 2 + 1) - ε * (‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + 1) :=
@@ -468,18 +466,16 @@ private theorem contDiffAt_lowerProfile :
 
 private theorem hasDerivAt_lowerProfile_fst :
     HasDerivAt (fun x : ℝ ↦ -(x - x * 0) / (x + 1 + x * 0) - ε * (1 - 0) / (1 + 0)) (-1) 0 := by
+  simp only [mul_zero, sub_zero, add_zero, div_one, mul_one]
   have hx := hasDerivAt_id' (0 : ℝ)
-  convert (((hx.sub (hx.mul_const 0)).neg.div ((hx.add_const 1).add (hx.mul_const 0))
-    (by norm_num)).sub_const (ε * (1 - 0) / (1 + 0))) using 1
+  convert (hx.neg.div (hx.add_const 1) (by norm_num)).sub_const ε using 1
   norm_num
 
 private theorem hasDerivAt_lowerProfile_snd :
     HasDerivAt (fun y : ℝ ↦ -(0 - 0 * y) / (0 + 1 + 0 * y) - ε * (1 - y) / (1 + y)) (2 * ε) 0 := by
+  simp only [zero_mul, sub_zero, neg_zero, zero_add, add_zero, zero_div, zero_sub]
   have hy := hasDerivAt_id' (0 : ℝ)
-  have h0 := hasDerivAt_const (0 : ℝ) (0 : ℝ)
-  have h1 := hasDerivAt_const (0 : ℝ) (1 : ℝ)
-  convert (((h0.sub (hy.const_mul 0)).neg.div ((h0.add_const 1).add (hy.const_mul 0))
-    (by norm_num)).sub (((h1.sub hy).const_mul ε).div (h1.add hy) (by norm_num))) using 1
+  convert (((hy.const_sub 1).const_mul ε).div (hy.const_add 1) (by norm_num)).neg using 1
   norm_num
   ring
 
@@ -490,18 +486,17 @@ private theorem contDiffAt_upperProfile :
 
 private theorem hasDerivAt_upperProfile_fst :
     HasDerivAt (fun x : ℝ ↦ -(x * 0 - 0) / (x * 0 + 1 + 0) - ε * (x - 1) / (x + 1)) (-2 * ε) 0 := by
+  simp only [mul_zero, sub_zero, neg_zero, zero_add, add_zero, zero_div, zero_sub]
   have hx := hasDerivAt_id' (0 : ℝ)
-  convert ((((hx.mul_const 0).sub_const 0).neg.div (((hx.mul_const 0).add_const 1).add_const 0)
-    (by norm_num)).sub (((hx.sub_const 1).const_mul ε).div (hx.add_const 1) (by norm_num)))
-    using 1
+  convert (((hx.sub_const 1).const_mul ε).div (hx.add_const 1) (by norm_num)).neg using 1
   norm_num
   ring
 
 private theorem hasDerivAt_upperProfile_snd :
     HasDerivAt (fun y : ℝ ↦ -(0 * y - y) / (0 * y + 1 + y) - ε * (0 - 1) / (0 + 1)) 1 0 := by
+  simp only [zero_mul, zero_sub, neg_neg, zero_add, div_one, mul_neg, mul_one, sub_neg_eq_add]
   have hy := hasDerivAt_id' (0 : ℝ)
-  convert ((((hy.const_mul 0).sub hy).neg.div (((hy.const_mul 0).add_const 1).add hy)
-    (by norm_num)).sub_const (ε * (0 - 1) / (0 + 1))) using 1
+  convert (hy.div (hy.const_add 1) (by norm_num)).add_const ε using 1
   norm_num
 
 private theorem contDiffAt_minProfile :
@@ -511,18 +506,17 @@ private theorem contDiffAt_minProfile :
 
 private theorem hasDerivAt_minProfile_fst :
     HasDerivAt (fun x : ℝ ↦ -(1 - 0) / (1 + x + 0) - ε * (1 - 0) / (1 + 0)) 1 0 := by
+  simp only [sub_zero, add_zero, div_one, mul_one]
   have hx := hasDerivAt_id' (0 : ℝ)
-  have h1 := hasDerivAt_const (0 : ℝ) (1 : ℝ)
-  convert (((h1.sub_const 0).neg.div ((h1.add hx).add_const 0) (by norm_num)).sub_const
-    (ε * (1 - 0) / (1 + 0))) using 1
+  convert ((hasDerivAt_const 0 (-1 : ℝ)).div (hx.const_add 1) (by norm_num)).sub_const ε using 1
   norm_num
 
 private theorem hasDerivAt_minProfile_snd :
     HasDerivAt (fun y : ℝ ↦ -(1 - y) / (1 + 0 + y) - ε * (1 - y) / (1 + y)) (2 + 2 * ε) 0 := by
-  have hy := hasDerivAt_id' (0 : ℝ)
-  have h1 := hasDerivAt_const (0 : ℝ) (1 : ℝ)
-  convert (((h1.sub hy).neg.div ((h1.add_const 0).add hy) (by norm_num)).sub
-    (((h1.sub hy).const_mul ε).div (h1.add hy) (by norm_num))) using 1
+  simp only [add_zero]
+  have hy := (hasDerivAt_id' (0 : ℝ)).const_sub 1
+  have hd := (hasDerivAt_id' (0 : ℝ)).const_add 1
+  convert (hy.neg.div hd (by norm_num)).sub ((hy.const_mul ε).div hd (by norm_num)) using 1
   norm_num
   ring
 
@@ -533,18 +527,18 @@ private theorem contDiffAt_maxProfile :
 
 private theorem hasDerivAt_maxProfile_fst :
     HasDerivAt (fun x : ℝ ↦ -(x - 1) / (x + 0 + 1) - ε * (x - 1) / (x + 1)) (-2 - 2 * ε) 0 := by
-  have hx := hasDerivAt_id' (0 : ℝ)
-  convert (((hx.sub_const 1).neg.div ((hx.add_const 0).add_const 1) (by norm_num)).sub
-    (((hx.sub_const 1).const_mul ε).div (hx.add_const 1) (by norm_num))) using 1
+  simp only [add_zero]
+  have hx := (hasDerivAt_id' (0 : ℝ)).sub_const 1
+  have hd := (hasDerivAt_id' (0 : ℝ)).add_const 1
+  convert (hx.neg.div hd (by norm_num)).sub ((hx.const_mul ε).div hd (by norm_num)) using 1
   norm_num
   ring
 
 private theorem hasDerivAt_maxProfile_snd :
     HasDerivAt (fun y : ℝ ↦ -(0 - 1) / (0 + y + 1) - ε * (0 - 1) / (0 + 1)) (-1) 0 := by
+  simp only [zero_sub, neg_neg, zero_add, div_one, mul_neg, mul_one, sub_neg_eq_add]
   have hy := hasDerivAt_id' (0 : ℝ)
-  have h0 := hasDerivAt_const (0 : ℝ) (0 : ℝ)
-  convert (((h0.sub_const 1).neg.div ((h0.add hy).add_const 1) (by norm_num)).sub_const
-    (ε * (0 - 1) / (0 + 1))) using 1
+  convert ((hasDerivAt_const 0 (1 : ℝ)).div (hy.add_const 1) (by norm_num)).add_const ε using 1
   norm_num
 
 /-! ### Hessians, nondegeneracy and Morse indices at the fixed points -/
