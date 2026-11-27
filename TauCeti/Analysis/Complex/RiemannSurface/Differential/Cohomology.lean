@@ -56,6 +56,8 @@ A finite holomorphic map to the Riemann sphere supplies a canonical divisor, by 
   is finite-dimensional on a compact connected surface.
 * `nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_of_isCanonicalDivisor`:
   `Hⁿ(X, Ω_D) ≅ Hⁿ(X, 𝒪_(D + K))` for every canonical divisor `K` of a compact surface.
+* `IsCanonicalDivisor.finrank_differentialSections_eq`: `h⁰(Ω_D) = h⁰(𝒪_(D + K))` for every
+  canonical divisor `K`.
 * `nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_neg_two_infty`:
   `Hⁿ(ℙ¹, Ω_D) ≅ Hⁿ(ℙ¹, 𝒪_(D - 2[∞]))` on the Riemann sphere.
 
@@ -141,6 +143,17 @@ theorem nonempty_iso_cechCohomology_differentialSheaf_divisorSheaf_add_of_isCano
         (divisorSheaf (D + K)).obj) := by
   obtain ⟨ω, hω, hω₀, rfl⟩ := hK.exists_divisor_eq
   exact ⟨differentialSheafCechCohomologyIso ω hω hω₀ D n⟩
+
+/-- On a compact Riemann surface, the global sections of `Ω_D` have the dimension of the global
+sections of `𝒪_(D + K)` for every canonical divisor `K`. -/
+theorem IsCanonicalDivisor.finrank_differentialSections_eq {K : WeilDivisor X}
+    (hK : IsCanonicalDivisor K) (D : WeilDivisor X) :
+    Module.finrank ℂ (differentialSections D ⊤) =
+      Module.finrank ℂ ((divisorSheaf (D + K)).obj.obj (Opposite.op ⊤)) := by
+  obtain ⟨ω, hω, hω₀, rfl⟩ := hK.exists_divisor_eq
+  exact (differentialSheafSectionsEquiv D ⊤).finrank_eq.symm.trans
+    (((sheafToPresheaf _ _).mapIso (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D)).app
+      (Opposite.op ⊤)).toLinearEquiv.finrank_eq
 
 end Canonical
 

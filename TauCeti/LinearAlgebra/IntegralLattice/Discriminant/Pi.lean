@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Pi
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
+public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Pi
 
@@ -41,6 +42,8 @@ and permutations of the components.
 * `TauCeti.IntegralLattice.dualCarrier_pi`: the dual carrier of an orthogonal sum is the product
   of the dual carriers.
 * `TauCeti.IntegralLattice.discriminantGroupPiEquiv`: `A_(⊥ i, L i) ≃ Π i, A_(L i)`.
+* `TauCeti.IntegralLattice.discriminant_pi`: the discriminant of an orthogonal sum is the product
+  of the discriminants of the summands.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPi`: for even nondegenerate summands, this
   equivalence is an isometry of finite quadratic modules.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPiOfIsometry`: the isometry
@@ -81,10 +84,10 @@ theorem mem_dualCarrier_pi_iff (x : ∀ i, V i) :
   simp only [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
   constructor
   · intro hx i y hy
-    rw [← piForm_single_right L x i y, ← pi_form]
+    rw [← LinearMap.BilinForm.pi_apply_single_right (fun i ↦ (L i).form) x i y, ← pi_form]
     exact hx _ (single_mem_pi_carrier L i hy)
   · intro hx y hy
-    rw [pi_form, piForm_apply]
+    rw [pi_form, LinearMap.BilinForm.pi_apply]
     exact Submodule.sum_mem _ fun i _ ↦ hx i (y i) ((mem_pi_carrier_iff L y).mp hy i)
 
 /-- The dual carrier of an orthogonal sum is the product of the dual carriers. -/
@@ -154,6 +157,14 @@ theorem discriminantGroupPiEquiv_symm_mk (x : ∀ i, (L i).dualCarrier) :
       Submodule.Quotient.mk ((piDualCarrierEquiv L).symm x) := by
   rw [LinearEquiv.symm_apply_eq, discriminantGroupPiEquiv_mk, LinearEquiv.apply_symm_apply]
 
+/-- **The discriminant of an orthogonal sum is the product of the discriminants** of its summands.
+When some summand is degenerate, both sides are `0`. -/
+@[simp]
+theorem discriminant_pi : (pi L).discriminant = ∏ i, (L i).discriminant := by
+  rw [← natCard_discriminantGroup, Nat.card_congr (discriminantGroupPiEquiv L).toEquiv,
+    Nat.card_pi]
+  simp only [natCard_discriminantGroup]
+
 /-! ## The discriminant quadratic module -/
 
 /-- For even nondegenerate summands, the orthogonal-sum equivalence of discriminant groups is an
@@ -175,7 +186,7 @@ noncomputable def discriminantQuadraticIsometryPi [∀ i, (L i).IsNondegenerate]
         (pi L).discriminantQuadraticMap _ (Submodule.Quotient.mk x)
       refine (FiniteQuadraticModule.pi_quadratic _ _).trans ?_
       simp only [discriminantGroupPiEquiv_mk, discriminantQuadraticModule_quadratic,
-        discriminantQuadraticMap_mk, pi_form, piForm_apply, Finset.sum_div,
+        discriminantQuadraticMap_mk, pi_form, LinearMap.BilinForm.pi_apply, Finset.sum_div,
         coe_piDualCarrierEquiv_apply]
       exact (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ))) _ _).symm
 

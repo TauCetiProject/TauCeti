@@ -69,6 +69,9 @@ normed field) lives in `TauCeti.Analysis.Analytic.SingularDirection`.
 * `AnalyticOnNhd.subset_closure_setOf_ne_zero`: on a preconnected set, an analytic function not
   vanishing at some point does not vanish on a dense subset.
 * `AnalyticOnNhd.dense_setOf_ne_zero`: the same for a function analytic on the whole space.
+* `TauCeti.mem_interior_or_exists_eventually_frequently_ne_zero`: over an `RCLike` field, a point
+  of an open set `U` either lies in the interior of the common zero set of a family of functions
+  analytic on `U`, or one member of the family vanishes identically near none of the nearby points.
 
 ## References
 
@@ -155,6 +158,30 @@ theorem AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul 
     ((e.analyticAt _).comp hf).eventuallyEq_zero_of_forall_eventuallyEq_zero_comp_add_smul
       fun v ↦ (h v).mono fun t ht ↦ by simp [ht]
   exact he.mono fun y hy ↦ UniformSpace.Completion.coe_injective F (by simpa [e] using hy)
+
+/-- **The identity theorem for a family of analytic functions.** A point `x` of an open set `U`
+either lies in the interior of the common zero set of a family of functions analytic on `U`, or
+some member of the family vanishes identically near none of the points close to `x`. -/
+theorem TauCeti.mem_interior_or_exists_eventually_frequently_ne_zero {ι : Type*}
+    {g : ι → E → F} {U : Set E} (hU : IsOpen U) (hg : ∀ i, AnalyticOnNhd 𝕜 (g i) U) {x : E}
+    (hx : x ∈ U) :
+    x ∈ interior {z | ∀ i, g i z = 0} ∨ ∃ i, ∀ᶠ y in 𝓝 x, ∃ᶠ z in 𝓝 y, g i z ≠ 0 := by
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  obtain ⟨δ, hδ, hδU⟩ := isOpen_iff.1 hU x hx
+  -- On the ball `ball x δ`, each `g i` vanishes as soon as it vanishes near one of its points.
+  have hδ0 (i : ι) (y : E) (hy : y ∈ ball x δ) (hy0 : ∀ᶠ z in 𝓝 y, g i z = 0) :
+      ∀ z ∈ ball x δ, g i z = 0 :=
+    AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero
+      (fun w hw ↦ hg i w (hδU hw)) (convex_ball x δ).isPreconnected hy hy0
+  by_cases hex : ∃ i, ∃ᶠ z in 𝓝 x, g i z ≠ 0
+  · obtain ⟨i, hi⟩ := hex
+    refine Or.inr ⟨i, ?_⟩
+    filter_upwards [ball_mem_nhds x hδ] with y hy
+    refine not_eventually.1 fun hy0 ↦ not_eventually.2 hi ?_
+    filter_upwards [ball_mem_nhds x hδ] with z hz using hδ0 i y hy hy0 z hz
+  · refine Or.inl (mem_interior_iff_mem_nhds.2 (mem_of_superset (ball_mem_nhds x hδ)
+      fun z hz i ↦ hδ0 i x (mem_ball_self hδ) ?_ z hz))
+    exact by_contra fun h ↦ hex ⟨i, not_eventually.1 h⟩
 
 end RCLike
 

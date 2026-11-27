@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Face
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Equiv
+import TauCeti.Geometry.Toric.Algebraic.Cone.Finiteness
 
 /-!
 # Rays of a finite toric fan
@@ -32,6 +33,9 @@ boundary components under toric isomorphisms and restriction to invariant open s
   is its canonical primitive generator as a ray of every cone of the fan containing it.
 * `TauCeti.Toric.Fan.mem_dualSemigroup_iff_forall_ray_le`: dual-semigroup membership is
   nonnegativity on the primitive generators of the fan rays in the cone.
+* `TauCeti.Toric.Fan.IsComplete.eq_zero_of_forall_ray_nonneg`: on a complete fan, a character
+  with values in a linearly ordered monoid which is nonnegative on every primitive ray generator
+  vanishes.
 * `TauCeti.Toric.Fan.isEmpty_ray_ofCone_bot`: the fan of the zero cone has no rays.
 * `TauCeti.Toric.Fan.exists_ray_le_of_ne_bot`: every nonzero cone of a fan contains a ray.
 * `TauCeti.Toric.Fan.le_iff_forall_ray_le`: containment of cones is detected by their rays.
@@ -174,6 +178,43 @@ theorem mem_dualSemigroup_iff_forall_ray_le (sigma : Phi.cones) (u : N →+ ℤ)
   refine ⟨fun h rho hrho ↦ ?_, fun h rho ↦ ?_⟩
   · simpa using h (rho.toToricRay Phi sigma hrho)
   · simpa using h (Ray.ofToricRay Phi sigma rho) (Ray.toCone_ofToricRay_le Phi sigma rho)
+
+variable {Phi} in
+/-- On a complete fan, an additive map from the lattice into a linearly ordered monoid which is
+nonnegative on the primitive generator of every ray vanishes. -/
+theorem IsComplete.eq_zero_of_forall_ray_nonneg (hPhi : Phi.IsComplete) {R : Type*}
+    [AddCommMonoid R] [LinearOrder R] [IsOrderedAddMonoid R] {u : N →+ R}
+    (hu : ∀ rho : Phi.Ray, 0 ≤ u rho.primitiveGenerator) : u = 0 := by
+  have hnonneg (n : N) : 0 ≤ u n := by
+    obtain ⟨sigma, hsigma, hn⟩ := Phi.isComplete_iff.1 hPhi (i n)
+    rw [← (Phi.isToricCone hsigma).hull_primitiveGenerator Phi.lattice] at hn
+    refine Phi.lattice.apply_nonneg_of_mem_hull_image ?_ hn
+    rintro _ ⟨rho, rfl⟩
+    simpa using hu (Ray.ofToricRay Phi ⟨sigma, hsigma⟩ rho)
+  ext n
+  refine le_antisymm ?_ (hnonneg n)
+  calc u n ≤ u n + u (-n) := le_add_of_nonneg_right (hnonneg (-n))
+    _ = 0 := by rw [← map_add, add_neg_cancel, map_zero]
+
+/-- A character exposing a face is strictly positive on the primitive generator of every ray
+of the larger cone outside the face. -/
+theorem apply_primitiveGenerator_pos_of_inf_ker_eq_face {sigma tau : Phi.cones} {m : N →+ ℤ}
+    (hm : m ∈ dualSemigroup Phi.lattice sigma.val)
+    (htau : sigma.val ⊓
+      PointedCone.ofSubmodule (LinearMap.ker (Phi.lattice.realCharacter m)) = tau.val)
+    {rho : Phi.Ray} (hσ : rho.toCone ≤ sigma) (hτ : ¬rho.toCone ≤ tau) :
+    0 < m rho.primitiveGenerator := by
+  have hnonneg := (Phi.mem_dualSemigroup_iff_forall_ray_le sigma m).1 hm rho hσ
+  refine lt_of_le_of_ne hnonneg fun hz ↦ hτ ?_
+  have hgen : i rho.primitiveGenerator ∈ tau.val := by
+    rw [← htau]
+    exact ⟨hσ rho.primitiveGenerator_mem, by simp [Phi.lattice.realCharacter_apply, ← hz]⟩
+  let r := rho.toToricRay Phi rho.toCone le_rfl
+  exact r.toPointedCone_le_of_mem
+    ((Phi.isToricCone rho.toCone.property).salient.anti r.val.isFaceOf.le)
+    (rho.isPrimitiveGenerator_primitiveGenerator rho.toCone le_rfl).mem
+    (by simpa only [map_zero] using
+      Phi.lattice.injective.ne rho.primitiveGenerator_isPrimitive.ne_zero) hgen
 
 /-- The fan rays contained in a cone are exactly the toric rays of that cone. -/
 def rayEquiv (sigma : Phi.cones) :

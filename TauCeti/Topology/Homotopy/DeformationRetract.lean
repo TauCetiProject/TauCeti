@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.LocalAtTarget
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import TauCeti.Topology.ContinuousMap.CodRestrict
 public import TauCeti.Topology.Homeomorph.Extend
 import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
@@ -24,6 +25,11 @@ A strong deformation retraction also determines every retraction onto the same s
 homotopy relative to that subspace (`ContinuousMap.HomotopicRel.of_leftInverse`).
 Strong deformation retractions of subsets also transport along homeomorphisms
 (`Homeomorph.exists_deformation_of_image_eq`).
+
+A homotopy from the identity, relative to `K`, that maps a set `S` into itself at all times
+restricts to a homotopy from the identity of `S` relative to the points of `S` in `K`
+(`ContinuousMap.HomotopyRel.restrictInvariant`), ending at the restricted end map
+(`ContinuousMap.HomotopyRel.restrictInvariantEnd`).
 
 A homotopy from the identity that fixes a subset `S` at all times and ends in `S` gives a strong
 deformation retraction onto `S` (`TauCeti.exists_strong_deformation_retraction_of_homotopy`).
@@ -140,6 +146,44 @@ theorem exists_inter_deformation_trans (hBA : B ⊆ A) (hSB : A ∩ S ⊆ B)
     ⟨H.symm⟩⟩
 
 end ContinuousMap.HomotopicRel
+
+namespace ContinuousMap.HomotopyRel
+
+variable {X : Type*} [TopologicalSpace X] {g : C(X, X)} {K S : Set X}
+
+/-- The end map of a homotopy from the identity that maps a set `S` into itself at all times, as a
+self-map of `S`. -/
+def restrictInvariantEnd (H : (ContinuousMap.id X).HomotopyRel g K)
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) : C(S, S) :=
+  (g.restrict S).codRestrict S fun x ↦ H.apply_one x ▸ hS 1 x x.property
+
+@[simp]
+theorem coe_restrictInvariantEnd_apply (H : (ContinuousMap.id X).HomotopyRel g K)
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) (x : S) : (H.restrictInvariantEnd hS x : X) = g x :=
+  coe_codRestrict_apply _ _ _ x
+
+/-- **The restriction of a deformation to an invariant set.** A homotopy from the identity to `g`,
+relative to `K`, that maps a set `S` into itself at all times restricts to a homotopy from the
+identity of `S` to `g` read on `S`, relative to the points of `S` in `K`. If `g` takes its values in
+`K`, then `S ∩ K` is a strong deformation retract of `S`. -/
+def restrictInvariant (H : (ContinuousMap.id X).HomotopyRel g K)
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) :
+    (ContinuousMap.id S).HomotopyRel (H.restrictInvariantEnd hS) {x | (x : X) ∈ K} where
+  toContinuousMap := (H.toContinuousMap.comp
+    ((ContinuousMap.id _).prodMap (ContinuousMap.subtypeVal S))).codRestrict S
+    fun p ↦ hS p.1 p.2 p.2.property
+  map_zero_left x := Subtype.ext <| (coe_codRestrict_apply _ _ _ _).trans (H.apply_zero x)
+  map_one_left x := Subtype.ext <| (coe_codRestrict_apply _ _ _ _).trans
+    ((H.apply_one x).trans (coe_restrictInvariantEnd_apply H hS x).symm)
+  prop' t _ hx := Subtype.ext <| (coe_codRestrict_apply _ _ _ _).trans (H.eq_fst t hx)
+
+@[simp]
+theorem coe_restrictInvariant_apply (H : (ContinuousMap.id X).HomotopyRel g K)
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) (p : unitInterval × S) :
+    (H.restrictInvariant hS p : X) = H (p.1, p.2) :=
+  coe_codRestrict_apply _ _ _ p
+
+end ContinuousMap.HomotopyRel
 
 namespace Homeomorph
 

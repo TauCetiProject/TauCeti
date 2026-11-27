@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
