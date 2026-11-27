@@ -10,12 +10,12 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.Convex.Integral
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
+import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 
 /-!
 # Hardy spaces of the upper half-plane
@@ -28,18 +28,18 @@ upper half-plane `ℂ₊` with
 
 ## Main results
 
-* `TauCeti.lintegral_enorm_rpow_le_upperHalfPlaneHardyNorm`: on every horizontal line
+* `TauCeti.lintegral_rpow_eNorm_le_upperHalfPlaneHardyNorm_rpow`: on every horizontal line
   `Im z = y > 0`, `∫ |F(x + iy)|^p dx ≤ ‖F‖_p^p`.
 * `TauCeti.MemUpperHalfPlaneHardy.rpow_norm_le`: the **point bound**
   `|F(z)|^p ≤ 2 ‖F‖_p^p / (π Im z)` for `F ∈ H^p(ℂ₊)`, `1 ≤ p < ∞` and `z ∈ ℂ₊`.
 * `TauCeti.not_memUpperHalfPlaneHardy_const`: a nonzero constant is in no `H^p(ℂ₊)`, `p < ∞`.
 
 The point bound: for `0 < r < Im z`, the mean-value property of the harmonic function `F` on the
-disc `D(z, r)` (`InnerProductSpace.HarmonicOnNhd.setAverage_ball_eq`) and Jensen's inequality for
-the convex function `t ↦ t^p` bound `|F(z)|^p` by the mean of `|F|^p` over the disc. The disc lies
-in the strip `|Im w - Im z| < r`, on which Tonelli's theorem bounds the integral of `|F|^p` by
-`2r ‖F‖_p^p` (`TauCeti.setLIntegral_im_mem_Ioo_le`). So `|F(z)|^p ≤ 2 ‖F‖_p^p / (π r)`; let
-`r → Im z`.
+disc `D(z, r)` (`InnerProductSpace.HarmonicOnNhd.setAverage_ball_eq`) and Hölder's bound on an
+average (`TauCeti.enorm_setAverage_rpow_le`) bound `|F(z)|^p` by the mean of `|F|^p` over the
+disc. The disc lies in the strip `|Im w - Im z| < r`, on which Tonelli's theorem bounds the
+integral of `|F|^p` by `2r ‖F‖_p^p` (`TauCeti.setLIntegral_reProdIm_le`). So
+`|F(z)|^p ≤ 2 ‖F‖_p^p / (π r)`; let `r → Im z`.
 
 ## References
 
@@ -80,57 +80,48 @@ theorem memUpperHalfPlaneHardy_iff (p : ℝ≥0∞) (F : ℂ → ℂ) :
       DifferentiableOn ℂ F upperHalfPlaneSet ∧ upperHalfPlaneHardyNorm p F < ∞ :=
   Iff.rfl
 
-variable {F : ℂ → ℂ}
+variable {p : ℝ≥0∞} {F : ℂ → ℂ}
+
+/-- A function in `H^p(ℂ₊)` is holomorphic on the upper half-plane. -/
+theorem MemUpperHalfPlaneHardy.differentiableOn (hF : MemUpperHalfPlaneHardy p F) :
+    DifferentiableOn ℂ F upperHalfPlaneSet :=
+  hF.1
+
+/-- A function in `H^p(ℂ₊)` has finite Hardy norm. -/
+theorem MemUpperHalfPlaneHardy.upperHalfPlaneHardyNorm_lt_top (hF : MemUpperHalfPlaneHardy p F) :
+    upperHalfPlaneHardyNorm p F < ∞ :=
+  hF.2
 
 /-- The `L^p` norm of `F` on each horizontal line in `ℂ₊` is at most the Hardy norm. -/
 theorem eLpNorm_le_upperHalfPlaneHardyNorm (p : ℝ≥0∞) {y : ℝ} (hy : 0 < y) :
     eLpNorm (fun x : ℝ ↦ F (x + y * I)) p ≤ upperHalfPlaneHardyNorm p F :=
   le_iSup₂ (f := fun (y : ℝ) (_ : 0 < y) ↦ eLpNorm (fun x : ℝ ↦ F (x + y * I)) p) y hy
 
-/-- A holomorphic function on `ℂ₊` is continuous on each horizontal line in `ℂ₊`. -/
-theorem continuous_comp_add_mul_I (hF : DifferentiableOn ℂ F upperHalfPlaneSet) {y : ℝ}
-    (hy : 0 < y) : Continuous fun x : ℝ ↦ F (x + y * I) :=
-  hF.continuousOn.comp_continuous (by fun_prop) fun x ↦ show 0 < (x + y * I : ℂ).im by simpa
+/-- The Hardy norm is at most `C` iff the `L^p` norm of `F` on every horizontal line in `ℂ₊` is. -/
+theorem upperHalfPlaneHardyNorm_le_iff {C : ℝ≥0∞} :
+    upperHalfPlaneHardyNorm p F ≤ C ↔ ∀ y : ℝ, 0 < y → eLpNorm (fun x : ℝ ↦ F (x + y * I)) p ≤ C :=
+  iSup₂_le_iff
+
+/-- A function holomorphic on `ℂ₊` whose `L^p` norms on the horizontal lines in `ℂ₊` are bounded
+by a finite `C` is in `H^p(ℂ₊)`. -/
+theorem MemUpperHalfPlaneHardy.of_eLpNorm_le (hF : DifferentiableOn ℂ F upperHalfPlaneSet)
+    {C : ℝ≥0∞} (hC : C < ∞) (h : ∀ y : ℝ, 0 < y → eLpNorm (fun x : ℝ ↦ F (x + y * I)) p ≤ C) :
+    MemUpperHalfPlaneHardy p F :=
+  ⟨hF, (upperHalfPlaneHardyNorm_le_iff.2 h).trans_lt hC⟩
 
 /-- On every horizontal line `Im z = y > 0`, `∫ |F(x + iy)|^p dx ≤ ‖F‖_p^p`. -/
-theorem lintegral_enorm_rpow_le_upperHalfPlaneHardyNorm
-    (hF : DifferentiableOn ℂ F upperHalfPlaneSet) {p : ℝ} (hp : 0 < p) {y : ℝ} (hy : 0 < y) :
+theorem lintegral_rpow_eNorm_le_upperHalfPlaneHardyNorm_rpow {p : ℝ} (hp : 0 < p) {y : ℝ}
+    (hy : 0 < y) :
     ∫⁻ x : ℝ, ‖F (x + y * I)‖ₑ ^ p ≤ upperHalfPlaneHardyNorm (ENNReal.ofReal p) F ^ p := by
   have h := eLpNorm_le_upperHalfPlaneHardyNorm (F := F) (ENNReal.ofReal p) hy
-  rw [eLpNorm_eq_eLpNorm' (by simpa using hp) ENNReal.ofReal_ne_top
-    (continuous_comp_add_mul_I hF hy).aestronglyMeasurable, ENNReal.toReal_ofReal hp.le] at h
-  rw [lintegral_rpow_eNorm_eq_rpow_eLpNorm' hp]
-  exact ENNReal.rpow_le_rpow h hp.le
-
-/-! ### Integrals over horizontal strips -/
-
-/-- **Tonelli on a horizontal strip.** If `g` is measurable and `∫ g(x + iy) dx ≤ C` for every
-`y ∈ (a, b)`, then the integral of `g` over the strip `a < Im w < b` is at most `(b - a) C`. -/
-theorem setLIntegral_im_mem_Ioo_le {g : ℂ → ℝ≥0∞} (hg : Measurable g) {a b : ℝ} {C : ℝ≥0∞}
-    (hC : ∀ y ∈ Ioo a b, ∫⁻ x : ℝ, g (x + y * I) ≤ C) :
-    ∫⁻ w in {w : ℂ | w.im ∈ Ioo a b}, g w ≤ ENNReal.ofReal (b - a) * C := by
-  have hS : MeasurableSet {w : ℂ | w.im ∈ Ioo a b} := measurableSet_Ioo.preimage measurable_im
-  set G := {w : ℂ | w.im ∈ Ioo a b}.indicator g
-  have hG : Measurable G := hg.indicator hS
-  have he := volume_preserving_equiv_real_prod.symm
-  have hGm : Measurable fun q : ℝ × ℝ ↦ G (measurableEquivRealProd.symm q) :=
-    hG.comp measurableEquivRealProd.symm.measurable
-  rw [← lintegral_indicator hS, ← he.lintegral_comp_emb
-    measurableEquivRealProd.symm.measurableEmbedding, Measure.volume_eq_prod,
-    lintegral_prod _ hGm.aemeasurable, lintegral_lintegral_swap hGm.aemeasurable]
-  have hpt (y x : ℝ) : G (measurableEquivRealProd.symm (x, y)) =
-      (Ioo a b).indicator (fun y ↦ g (x + y * I)) y := by
-    simp only [G, measurableEquivRealProd_symm_apply, indicator, mem_ofPred_eq]
-    simp only [mk_eq_add_mul_I]
-  simp_rw [hpt]
-  calc ∫⁻ y, ∫⁻ x : ℝ, (Ioo a b).indicator (fun y ↦ g (x + y * I)) y
-      = ∫⁻ y, (Ioo a b).indicator (fun y ↦ ∫⁻ x : ℝ, g (x + y * I)) y := by
-        congr 1
-        ext y
-        by_cases hy : y ∈ Ioo a b <;> simp [indicator, hy]
-    _ = ∫⁻ y in Ioo a b, ∫⁻ x : ℝ, g (x + y * I) := lintegral_indicator measurableSet_Ioo _
-    _ ≤ ∫⁻ _ in Ioo a b, C := setLIntegral_mono_ae (by simp) (.of_forall hC)
-    _ = ENNReal.ofReal (b - a) * C := by rw [setLIntegral_const, Real.volume_Ioo, mul_comm]
+  by_cases hm : AEStronglyMeasurable fun x : ℝ ↦ F (x + y * I)
+  · rw [eLpNorm_eq_eLpNorm' (by simpa using hp) ENNReal.ofReal_ne_top hm,
+      ENNReal.toReal_ofReal hp.le] at h
+    rw [lintegral_rpow_eNorm_eq_rpow_eLpNorm' hp]
+    exact ENNReal.rpow_le_rpow h hp.le
+  · -- off the measurable functions, the `L^p` norm and hence the Hardy norm are infinite
+    rw [eLpNorm_of_not_aestronglyMeasurable hm, top_le_iff] at h
+    simp [h, ENNReal.top_rpow_of_pos hp]
 
 /-! ### The point bound -/
 
@@ -142,79 +133,44 @@ private theorem rpow_norm_le_of_lt {p : ℝ} (hp : 1 ≤ p)
       2 * (upperHalfPlaneHardyNorm (ENNReal.ofReal p) F).toReal ^ p / (π * r) := by
   have hp0 : 0 < p := by linarith
   set H := upperHalfPlaneHardyNorm (ENNReal.ofReal p) F
-  have hH : H ≠ ∞ := hF.2.ne
-  -- the closed disc lies in the half-plane
+  -- the closed disc lies in the half-plane, and the open disc in the strip `|Im w - Im z| < r`
   have hball : closedBall z r ⊆ upperHalfPlaneSet := fun w hw ↦ by
     have : |w.im - z.im| ≤ r := (abs_im_le_norm (w - z)).trans (by simpa [dist_eq_norm] using hw)
     change 0 < w.im
     linarith [abs_le.1 this]
-  have hcont : ContinuousOn F (closedBall z r) := hF.1.continuousOn.mono hball
+  have hballS : ball z r ⊆ univ ×ℂ Ioo (z.im - r) (z.im + r) := fun w hw ↦ by
+    have : |w.im - z.im| < r := (abs_im_le_norm (w - z)).trans_lt (by simpa [dist_eq_norm] using hw)
+    exact ⟨trivial, by linarith [abs_lt.1 this], by linarith [abs_lt.1 this]⟩
   -- the mean-value property
   have hharm : InnerProductSpace.HarmonicOnNhd F (closedBall z r) := fun w hw ↦
-    (hF.1.analyticAt (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds (hball hw))).harmonicAt
-  have hmean : ⨍ w in ball z r, F w = F z :=
-    InnerProductSpace.HarmonicOnNhd.setAverage_ball_eq hharm hr
-  have hvol : volume.real (ball z r) = π * r ^ 2 := by
-    rw [measureReal_def, Complex.volume_ball, ENNReal.toReal_mul, ENNReal.toReal_pow,
-      ENNReal.toReal_ofReal hr.le, ENNReal.coe_toReal, NNReal.coe_real_pi, mul_comm]
-  have hvol0 : volume (ball z r) ≠ 0 := (measure_ball_pos volume z hr).ne'
-  have hvoltop : volume (ball z r) ≠ ∞ := measure_ball_lt_top.ne
-  have hint : IntegrableOn F (ball z r) :=
-    (hcont.integrableOn_compact (isCompact_closedBall z r)).mono_set ball_subset_closedBall
-  have hintp : IntegrableOn (fun w ↦ ‖F w‖ ^ p) (ball z r) :=
-    ((hcont.norm.rpow_const fun _ _ ↦ Or.inr hp0.le).integrableOn_compact
-      (isCompact_closedBall z r)).mono_set ball_subset_closedBall
-  -- `|F(z)| ≤ ⨍ |F|`
-  have h1 : ‖F z‖ ≤ ⨍ w in ball z r, ‖F w‖ := by
-    rw [← hmean, setAverage_eq, setAverage_eq, norm_smul, Real.norm_of_nonneg (by positivity),
-      smul_eq_mul]
-    exact mul_le_mul_of_nonneg_left (norm_integral_le_integral_norm _) (by positivity)
-  -- Jensen: `(⨍ |F|)^p ≤ ⨍ |F|^p`
-  have h2 : (⨍ w in ball z r, ‖F w‖) ^ p ≤ ⨍ w in ball z r, ‖F w‖ ^ p :=
-    (convexOn_rpow hp).map_set_average_le (continuousOn_id.rpow_const fun _ _ ↦ Or.inr hp0.le)
-      isClosed_Ici hvol0 hvoltop (.of_forall fun _ ↦ norm_nonneg _) hint.norm hintp
-  -- the integral over the disc, bounded by the integral over the strip
-  set S := {w : ℂ | w.im ∈ Ioo (z.im - r) (z.im + r)}
-  have hSopen : IsOpen S := isOpen_Ioo.preimage continuous_im
-  have hSsub : S ⊆ upperHalfPlaneSet := fun w hw ↦ show 0 < w.im by linarith [hw.1]
-  classical
-  set F' : ℂ → ℂ := S.piecewise F 0
-  have hF'm : Measurable F' :=
-    (hF.1.continuousOn.mono hSsub).measurable_piecewise continuousOn_const hSopen.measurableSet
-  have hballS : ball z r ⊆ S := fun w hw ↦ by
-    have : |w.im - z.im| < r := (abs_im_le_norm (w - z)).trans_lt (by simpa [dist_eq_norm] using hw)
-    exact ⟨by linarith [abs_lt.1 this], by linarith [abs_lt.1 this]⟩
-  have hstrip := setLIntegral_im_mem_Ioo_le (a := z.im - r) (b := z.im + r)
-    (g := fun w ↦ ‖F' w‖ₑ ^ p)
-    (hF'm.eNorm.pow_const p) (C := H ^ p) fun y hy ↦ by
-      have hy0 : 0 < y := by linarith [hy.1]
-      have hmem (x : ℝ) : (x + y * I : ℂ) ∈ S := by simpa [S] using hy
-      simp only [F', Set.piecewise_eq_of_mem _ _ _ (hmem _)]
-      exact lintegral_enorm_rpow_le_upperHalfPlaneHardyNorm hF.1 hp0 hy0
-  have h3 : ∫ w in ball z r, ‖F w‖ ^ p ≤ 2 * r * H.toReal ^ p := by
-    have hle : ENNReal.ofReal (∫ w in ball z r, ‖F w‖ ^ p) ≤ ENNReal.ofReal (2 * r) * H ^ p := by
-      rw [ofReal_integral_eq_lintegral_ofReal hintp (.of_forall fun _ ↦ by positivity)]
-      calc ∫⁻ w in ball z r, ENNReal.ofReal (‖F w‖ ^ p)
-          = ∫⁻ w in ball z r, ‖F' w‖ₑ ^ p := by
-            refine setLIntegral_congr_fun measurableSet_ball fun w hw ↦ ?_
-            rw [show F' w = F w from Set.piecewise_eq_of_mem _ _ _ (hballS hw),
-              ← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp0.le]
-        _ ≤ ∫⁻ w in S, ‖F' w‖ₑ ^ p := lintegral_mono_set hballS
-        _ ≤ ENNReal.ofReal (2 * r) * H ^ p := by
-            convert hstrip using 3
-            ring
-    have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg hp0.le hH)) hle
-    rwa [ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity),
-      ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), ← ENNReal.toReal_rpow] at this
-  calc ‖F z‖ ^ p ≤ (⨍ w in ball z r, ‖F w‖) ^ p :=
-        Real.rpow_le_rpow (norm_nonneg _) h1 hp0.le
-    _ ≤ ⨍ w in ball z r, ‖F w‖ ^ p := h2
-    _ = (π * r ^ 2)⁻¹ * ∫ w in ball z r, ‖F w‖ ^ p := by rw [setAverage_eq, hvol, smul_eq_mul]
-    _ ≤ (π * r ^ 2)⁻¹ * (2 * r * H.toReal ^ p) :=
-        mul_le_mul_of_nonneg_left h3 (by positivity)
-    _ = 2 * H.toReal ^ p / (π * r) := by
-        field_simp
+    (hF.differentiableOn.analyticAt
+      (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds (hball hw))).harmonicAt
+  -- Hölder on the disc, then Tonelli on the strip
+  have h : ‖F z‖ₑ ^ p ≤ (volume (ball z r))⁻¹ * (ENNReal.ofReal (2 * r) * H ^ p) := calc
+    ‖F z‖ₑ ^ p = ‖⨍ w in ball z r, F w‖ₑ ^ p := by
+      rw [InnerProductSpace.HarmonicOnNhd.setAverage_ball_eq hharm hr]
+    _ ≤ (volume (ball z r))⁻¹ * ∫⁻ w in ball z r, ‖F w‖ₑ ^ p := enorm_setAverage_rpow_le hp
+    _ ≤ (volume (ball z r))⁻¹ * ∫⁻ w in univ ×ℂ Ioo (z.im - r) (z.im + r), ‖F w‖ₑ ^ p := by
+      gcongr
+    _ ≤ (volume (ball z r))⁻¹ * (ENNReal.ofReal (2 * r) * H ^ p) := by
+      gcongr
+      refine (setLIntegral_reProdIm_le (C := H ^ p) fun y hy ↦ ?_).trans_eq ?_
+      · rw [Measure.restrict_univ]
+        exact lintegral_rpow_eNorm_le_upperHalfPlaneHardyNorm_rpow hp0 (by linarith [hy.1])
+      · rw [Real.volume_Ioo]
+        ring_nf
+  have hfin : (volume (ball z r))⁻¹ * (ENNReal.ofReal (2 * r) * H ^ p) ≠ ∞ :=
+    ENNReal.mul_ne_top (ENNReal.inv_ne_top.2 (measure_ball_pos volume z hr).ne')
+      (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+        (ENNReal.rpow_ne_top_of_nonneg hp0.le hF.upperHalfPlaneHardyNorm_lt_top.ne))
+  have := ENNReal.toReal_mono hfin h
+  rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp0.le,
+    ENNReal.toReal_ofReal (by positivity)] at this
+  refine this.trans_eq ?_
+  simp only [Complex.volume_ball, ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_pow,
+    ENNReal.toReal_ofReal hr.le, ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2 * r),
+    ENNReal.coe_toReal, NNReal.coe_real_pi, ENNReal.toReal_rpow]
+  field_simp
 
 /-- **The point bound in `H^p(ℂ₊)`.** For `1 ≤ p < ∞`, `F ∈ H^p(ℂ₊)` and `z ∈ ℂ₊`,
 `|F(z)|^p ≤ 2 ‖F‖_p^p / (π Im z)`. -/
