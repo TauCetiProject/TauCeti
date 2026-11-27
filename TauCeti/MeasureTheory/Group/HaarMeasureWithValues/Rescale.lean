@@ -13,8 +13,9 @@ public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.Convolution
 For `c ∈ A` and an `A`-valued Haar measure `μ`, convolution against `c • μ` is `c` times
 convolution against `μ` (`TauCeti.HaarMeasureWithValues.convolution_smul_measure`). For a unit `c`,
 multiplication by `c` is therefore a ring isomorphism `H(G, cμ) ≃ H(G, μ)` of Hecke algebras
-(`TauCeti.HeckeAlgebra.rescaleRingEquiv`): the Hecke algebra does not depend, up to isomorphism, on
-the normalisation of the Haar measure.
+(`TauCeti.HeckeAlgebra.rescaleRingEquiv`): the Hecke algebra is unchanged, up to isomorphism, when
+the Haar measure is rescaled by a unit. Only unit rescalings are covered; for instance rescaling by
+`0` gives the zero measure, whose convolution is the zero multiplication.
 
 ## References
 
