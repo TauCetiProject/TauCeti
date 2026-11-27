@@ -9,8 +9,9 @@ public import TauCeti.Analysis.Pseudodifferential.CharacteristicSet
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Elliptic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
-import TauCeti.Algebra.GroupWithZero.Action.Basic
+import TauCeti.Algebra.Module.LinearMap.UnitSMul
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Topology.VectorBundle.FiniteDimensional
 
 /-!
 # The characteristic set of a pseudodifferential operator between vector bundles
@@ -139,7 +140,7 @@ theorem mk_smul_mem_sectionClassicalCharacteristicSet_iff {x : M}
   have hc : ((t ^ m : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos ht m).ne'
   simp only [mem_sectionClassicalCharacteristicSet_iff,
     sectionClassicalPrincipalSymbol_smul_covector x ξ ht, ne_eq, smul_eq_zero, ht.ne', false_or,
-    LinearMap.coe_smul, bijective_smul_iff₀ hc]
+    LinearMap.bijective_smul_iff hc.isUnit]
 
 /-- **Ellipticity and the characteristic set.** `P` is elliptic at `x` exactly when no covector at
 `x` is characteristic. -/
@@ -171,7 +172,7 @@ theorem sectionClassicalCharacteristicSet_smul {c : ℂ} (hc : c ≠ 0) :
     sectionClassicalCharacteristicSet m (c • P) = sectionClassicalCharacteristicSet m P := by
   ext p
   simp only [mem_sectionClassicalCharacteristicSet_iff,
-    sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.coe_smul, bijective_smul_iff₀ hc]
+    sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.bijective_smul_iff hc.isUnit]
 
 /-- The identity of `Γ(E)` has no characteristic covectors in order `0`. -/
 @[simp]
@@ -198,7 +199,7 @@ theorem sectionClassicalCharacteristicSet_of_mem_sub_one (hVW : Nontrivial V ∨
   ext p
   refine and_iff_left_of_imp fun _ hbij ↦ ?_
   rw [sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one hP] at hbij
-  obtain ⟨hV, hW⟩ := subsingleton_of_bijective_zero_fiber (V := V) (W := W) p.proj hbij
+  obtain ⟨hV, hW⟩ := subsingleton_of_bijective_zero_fiber (F := V) (F' := W) p.proj hbij
   exact hVW.elim (fun _ ↦ not_subsingleton V hV) fun _ ↦ not_subsingleton W hW
 
 /-! ### Compositions -/

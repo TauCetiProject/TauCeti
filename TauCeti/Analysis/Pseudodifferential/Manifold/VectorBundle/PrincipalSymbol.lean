@@ -8,10 +8,11 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Elliptic
-import TauCeti.Algebra.GroupWithZero.Action.Basic
+import TauCeti.Algebra.Module.LinearMap.UnitSMul
 import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Topology.FiberBundle.Trivialization
+import TauCeti.Topology.VectorBundle.FiniteDimensional
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -117,9 +118,6 @@ pseudodifferential operators between bundles applies to elliptic differential op
   `f`, evaluated at `x`.
 * `TauCeti.isSectionClassicalEllipticAt_add_iff`: ellipticity only depends on the principal symbol.
 * `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
-* `TauCeti.finrank_eq_of_bijective_fiber`, `TauCeti.subsingleton_of_bijective_zero_fiber`: a
-  bijective linear map between the fibres forces equal ranks, and a bijective zero map forces
-  trivial model fibres.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
   point forces `rank E = rank F`.
 * `TauCeti.IsSectionClassicalEllipticAt.mem_or_subsingleton`: in positive dimension, ellipticity at
@@ -738,39 +736,13 @@ theorem isSectionClassicalElliptic_add_iff
 theorem isSectionClassicalEllipticAt_smul_iff {c : ℂ} (hc : c ≠ 0) {x : M} :
     IsSectionClassicalEllipticAt m (c • P) x ↔ IsSectionClassicalEllipticAt m P x := by
   refine forall₂_congr fun ξ _ ↦ ?_
-  rw [sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.coe_smul,
-    bijective_smul_iff₀ hc]
+  rw [sectionClassicalPrincipalSymbol_smul_of_ne_zero hc, LinearMap.bijective_smul_iff hc.isUnit]
 
 /-- Multiplying by a nonzero complex number does not change ellipticity. -/
 @[simp]
 theorem isSectionClassicalElliptic_smul_iff {c : ℂ} (hc : c ≠ 0) :
     IsSectionClassicalElliptic m (c • P) ↔ IsSectionClassicalElliptic m P :=
   forall_congr' fun _ ↦ isSectionClassicalEllipticAt_smul_iff hc
-
-omit [T2Space M] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [∀ x, Module ℝ (E x)]
-  [VectorBundle ℝ V E] [∀ x, Module ℝ (F x)] [VectorBundle ℝ W F] in
-/-- A bijective linear map between the fibres `E_x → F_x` forces the model fibres to have the same
-rank. -/
-theorem finrank_eq_of_bijective_fiber {x : M} {f : E x →ₗ[ℂ] F x} (hf : Function.Bijective f) :
-    finrank ℂ V = finrank ℂ W := by
-  rw [← VectorBundle.finrank_eq ℂ V E x, ← VectorBundle.finrank_eq ℂ W F x]
-  exact (LinearEquiv.ofBijective f hf).finrank_eq
-
-omit [T2Space M] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [∀ x, Module ℝ (E x)]
-  [VectorBundle ℝ V E] [∀ x, Module ℝ (F x)] [VectorBundle ℝ W F] in
-/-- If the zero map between the fibres `E_x → F_x` is bijective, both fibres are zero, and so are
-the model fibres. -/
-theorem subsingleton_of_bijective_zero_fiber (x : M)
-    (h : Function.Bijective (0 : E x →ₗ[ℂ] F x)) : Subsingleton V ∧ Subsingleton W := by
-  have hE : Subsingleton (E x) := ⟨fun u v ↦ h.1 (by simp)⟩
-  have hF : Subsingleton (F x) := ⟨fun u v ↦ by
-    obtain ⟨u', rfl⟩ := h.2 u
-    obtain ⟨v', rfl⟩ := h.2 v
-    simp⟩
-  exact ⟨((trivializationAt V E x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt V E x)).symm.toEquiv.subsingleton,
-    ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt W F x)).symm.toEquiv.subsingleton⟩
 
 /-- **Ellipticity forces equal ranks.** Over a manifold of positive dimension, if `P : Γ(E) → Γ(F)`
 is elliptic at some point, then `E` and `F` have the same rank: the principal symbol at a nonzero
