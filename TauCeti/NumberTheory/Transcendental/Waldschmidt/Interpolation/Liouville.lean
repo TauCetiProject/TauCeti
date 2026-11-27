@@ -88,15 +88,12 @@ theorem intCast_mul_waldschmidtLinearForm_eq_neg_sum (l b : Fin (n + 1) → ℂ)
     {s : Fin (n + 1) → ℤ} (hlast : s (Fin.last n) ≠ 0) (hb₀ : b 0 = 0)
     (hb : ∀ k : Fin n, b k.succ = -(s k.castSucc : ℂ) / s (Fin.last n)) :
     (s (Fin.last n) : ℂ) * waldschmidtLinearForm l b = -∑ j, (s j : ℂ) * l j := by
-  have hs : (s (Fin.last n) : ℂ) ≠ 0 := Int.cast_ne_zero.2 hlast
-  simp only [waldschmidtLinearForm_def, hb₀, hb, Fin.sum_univ_castSucc, mul_sub, mul_sum,
-    zero_add]
-  have hsum : ∑ k : Fin n, (s (Fin.last n) : ℂ) * (-(s k.castSucc : ℂ) / s (Fin.last n) *
-      l k.castSucc) = -∑ k : Fin n, (s k.castSucc : ℂ) * l k.castSucc := by
-    rw [← sum_neg_distrib]
-    exact sum_congr rfl fun k _ ↦ by field_simp
-  rw [hsum]
-  ring
+  have hb' : b = waldschmidtNormalize 0 fun j ↦ (s j : ℂ) :=
+    funext (Fin.cases (by simp [hb₀]) (by simp [hb]))
+  have h := add_sum_mul_eq_neg_mul_waldschmidtLinearForm (RingHom.id ℂ) l 0 (fun j ↦ (s j : ℂ))
+    (Int.cast_ne_zero.2 hlast)
+  simp only [RingHom.id_apply, zero_add] at h
+  rw [hb', h, neg_mul, neg_neg]
 
 /-- The exponential form of `TauCeti.intCast_mul_waldschmidtLinearForm_eq_neg_sum`: for a short
 rational coefficient relation with `β₀ = 0`, `exp(-sₘ Λ) = α₁ ^ s₁ ⋯ αₘ ^ sₘ` with
@@ -139,9 +136,9 @@ theorem two_mul_pi_le_norm_intCast_mul_waldschmidtLinearForm (l b : Fin (n + 1) 
   have hk0 : k ≠ 0 := by
     rintro rfl
     exact mul_ne_zero (Int.cast_ne_zero.2 hlast) hΛ (by simpa using hk)
-  rw [← norm_neg, hk, norm_mul, Complex.norm_intCast, norm_mul, norm_mul, Complex.norm_ofNat,
-    Complex.norm_real, Complex.norm_I, Real.norm_of_nonneg Real.pi_pos.le, mul_one]
-  exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast Int.one_le_abs hk0)
+  rw [← norm_neg, hk]
+  simpa [abs_of_pos Real.pi_pos] using le_mul_of_one_le_left (by positivity : 0 ≤ 2 * Real.pi)
+    (by exact_mod_cast Int.one_le_abs hk0 : (1 : ℝ) ≤ |(k : ℝ)|)
 
 /-- The Liouville reduction of a short rational coefficient relation with `β₀ = 0`, both cases
 together: if `Λ ≠ 0` and `δ ≤ |α^s - 1|` whenever `α^s ≠ 1` (for instance by Liouville's
