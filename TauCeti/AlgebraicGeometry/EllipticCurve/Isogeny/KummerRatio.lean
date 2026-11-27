@@ -141,24 +141,21 @@ theorem kummerRatio_baseChange_congr {L M : Type*} [Field L] [Field M] [Algebra 
   set e₁ := WeierstrassCurve.Affine.Point.mapEquiv E₁ e
   set e₂ := WeierstrassCurve.Affine.Point.mapEquiv E₂ e
   -- transport of points along `e` intertwines the two point maps
-  have hcomm : ∀ P, g (e₁ P) = e₂ (f P) := fun P ↦ by
+  have hcomm : g.comp (e₁ : _ →+ _) = (e₂ : _ →+ _).comp f := AddMonoidHom.ext fun P ↦ by
     have h := Hom.pointMap_map_algebraMap_map (Hom.ofIsogeny φ) e.toAlgHom P
     rw [Hom.ofIsogeny_map, Hom.ofIsogeny_map] at h
-    simp only [e₁, e₂, WeierstrassCurve.Affine.Point.mapEquiv_apply]
+    simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass, e₁, e₂,
+      WeierstrassCurve.Affine.Point.mapEquiv_apply]
     exact (Hom.pointMapHom_apply _ _).trans (h.trans (congrArg _ (Hom.pointMapHom_apply _ _).symm))
+  -- so `e₂` carries the image of `f` onto that of `g`, and `e₁⁻¹` carries `ker g` onto `ker f`
   have hrange : g.range = f.range.map (e₂ : _ →+ _) := by
-    ext Q
-    refine ⟨fun ⟨P, hP⟩ ↦ ⟨f (e₁.symm P), ⟨_, rfl⟩, ?_⟩, fun ⟨_, ⟨P, hP⟩, hQ⟩ ↦ ⟨e₁ P, ?_⟩⟩
-    · simpa [← hcomm] using hP
-    · simpa [hcomm, hP] using hQ
-  have hker : g.ker = f.ker.map (e₁ : _ →+ _) := by
-    ext P
-    refine ⟨fun hP ↦ ⟨e₁.symm P, AddMonoidHom.mem_ker.2 ?_, by simp⟩, fun ⟨P', hP', hP⟩ ↦ ?_⟩
-    · rw [← e₂.map_eq_zero_iff, ← hcomm, AddEquiv.apply_symm_apply]
-      exact hP
-    · rw [← hP, AddMonoidHom.mem_ker]
-      simpa [hcomm] using hP'
-  rw [hrange, hker, AddSubgroup.index_map_equiv,
-    Nat.card_congr (f.ker.equivMapOfInjective _ e₁.injective).toEquiv.symm]
+    have he₁ : (e₁ : _ →+ _).range = ⊤ := AddMonoidHom.range_eq_top.mpr fun Q ↦ ⟨e₁.symm Q, by simp⟩
+    rw [← AddMonoidHom.range_comp, ← hcomm, AddMonoidHom.range_comp, he₁,
+      ← AddMonoidHom.range_eq_map]
+  have hker : g.ker.map (e₁.symm : _ →+ _) = f.ker := by
+    rw [← AddMonoidHom.ker_comp_addEquiv, hcomm,
+      AddMonoidHom.ker_comp_of_injective _ _ e₂.injective]
+  rw [hrange, ← hker, AddSubgroup.index_map_equiv,
+    Nat.card_congr (g.ker.equivMapOfInjective _ e₁.symm.injective).toEquiv.symm]
 
 end TauCeti.Isogeny

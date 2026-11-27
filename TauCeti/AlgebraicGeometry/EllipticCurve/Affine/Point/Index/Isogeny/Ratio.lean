@@ -278,11 +278,15 @@ theorem kummerRatioProduct_eq_finprod_place (φ : Isogeny W₁.toAffine W₂.toA
     φ.kummerRatioProduct =
       ∏ᶠ v : GlobalNumberFields.Place ℚ, (φ.baseChange v.Completion).kummerRatio := by
   set g := fun v : GlobalNumberFields.Place ℚ ↦ (φ.baseChange v.Completion).kummerRatio
-  -- the completion algebras over `ℚ` agree with the usual ones, since ring maps out of `ℚ` are
-  -- unique; so at a finite place the factor is `finiteKummerRatio` for the primes of `𝓞 ℚ`
+  -- at a finite place `v`, `Place.Completion` and its `ℚ`-algebra reduce by their defining matches
+  -- to `v.adicCompletion ℚ` and its own algebra (named below, since `ℚ` has a second algebra
+  -- instance); `kummerRatio_baseChange` turns the factor into a map of `φ` along a ring map out of
+  -- `ℚ`, and such maps are unique, so it is `finiteKummerRatio` for the primes of `𝓞 ℚ`
   have hfin (v : HeightOneSpectrum (𝓞 ℚ)) : g (.inl v) = φ.finiteKummerRatio v := by
     rw [finiteKummerRatio]
-    exact congrArg (fun σ ↦ (φ.map σ).kummerRatio) (RingHom.ext_rat _ _)
+    exact (@kummerRatio_baseChange _ _ _ _
+      (GlobalNumberFields.Place.instAlgebraCompletion (K := ℚ) (.inl v)) _ _ _ _ φ).trans
+      (congrArg (fun σ ↦ (φ.map σ).kummerRatio) (RingHom.ext_rat _ _))
   -- and at the infinite place it is `realKummerRatio`
   have hinf (w : InfinitePlace ℚ) : g (.inr w) = φ.realKummerRatio :=
     (realKummerRatio_eq_kummerRatio_baseChange_completion φ w).symm
