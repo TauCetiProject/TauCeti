@@ -59,8 +59,8 @@ the fibers.
   `Fiber.isIso_of_isIso_hom`.
 * `TauCeti.Stack.limit`: the pseudo-limit of a diagram of pseudofunctors.
 * `TauCeti.Stack.limit.π`, `TauCeti.Stack.limit.πCompMap`: the projections and their `2`-cells.
-* `TauCeti.Stack.limit.Cone`, `TauCeti.Stack.limit.cone`: pseudo-cones, and the pseudo-cone of
-  the pseudo-limit.
+* `TauCeti.Stack.limit.Cone`, `TauCeti.Stack.limit.cone`: pseudo-cones, with their
+  precomposition `Cone.extend` by strong transformations, and the pseudo-cone of the pseudo-limit.
 * `TauCeti.Stack.limit.lift`, `TauCeti.Stack.limit.liftCompπ`, `TauCeti.Stack.limit.isoLift`,
   `TauCeti.Stack.limit.homMk`, `TauCeti.Stack.limit.isoMk`, `TauCeti.Stack.limit.hom_ext`: the
   2-universal property.
@@ -243,6 +243,22 @@ lemma isIso_of_isIso_hom {x y : Fiber D T} (φ : x ⟶ y) [∀ i, IsIso (φ.hom 
 instance [∀ i, IsGroupoid ((D.obj (.mk i)).obj (.mk T))] : IsGroupoid (Fiber D T) where
   all_isIso φ := isIso_of_isIso_hom φ
 
+/-- Two objects of the fiber over `T` are equal when their components are equal, compatibly with
+the transition isomorphisms. -/
+@[ext (iff := false)]
+lemma ext {x y : Fiber D T} (h : ∀ i, x.obj i = y.obj i)
+    (h' : ∀ ⦃i j : I⦄ (f : i ⟶ j),
+      (x.iso f).hom ≫ eqToHom (h j) = (transition D f T).map (eqToHom (h i)) ≫ (y.iso f).hom) :
+    x = y := by
+  obtain ⟨xo, xi, _, _⟩ := x
+  obtain ⟨yo, yi, _, _⟩ := y
+  obtain rfl : xo = yo := funext h
+  simp only [eqToHom_refl, Category.comp_id, Functor.map_id, Category.id_comp] at h'
+  obtain rfl : @xi = @yi := by
+    funext i j f
+    exact Iso.ext (h' f)
+  rfl
+
 end Fiber
 
 variable (D) in
@@ -416,6 +432,14 @@ lemma map_obj_iso_hom {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (x : (limit 
     (Fiber.iso (((limit D).map f).toFunctor.obj x) g).hom =
       ((D.map g.toLoc).naturality f).hom.toNatTrans.app (Fiber.obj x i) ≫
         ((D.obj (.mk j)).map f).toFunctor.map (Fiber.iso x g).hom :=
+  rfl
+
+@[simp]
+lemma map_obj_iso_inv {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (x : (limit D).obj X) {i j : I}
+    (g : i ⟶ j) :
+    (Fiber.iso (((limit D).map f).toFunctor.obj x) g).inv =
+      ((D.obj (.mk j)).map f).toFunctor.map (Fiber.iso x g).inv ≫
+        ((D.map g.toLoc).naturality f).inv.toNatTrans.app (Fiber.obj x i) :=
   rfl
 
 @[simp]
@@ -643,6 +667,55 @@ def cone : Cone D (limit D) where
   iso := πCompMap D
   iso_id := πCompMap_id
   iso_comp := πCompMap_comp
+
+namespace Cone
+
+variable {K K' : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w v' z}}
+
+/-- Two pseudo-cones with the same apex are equal when their legs are equal, compatibly with the
+`2`-cells. -/
+@[ext (iff := false)]
+lemma ext {c c' : Cone D K} (h : ∀ i, c.π i = c'.π i)
+    (h' : ∀ ⦃i j : I⦄ (f : i ⟶ j),
+      (c.iso f).hom ≫ eqToHom (h j) = eqToHom (h i) ▷ D.map f.toLoc ≫ (c'.iso f).hom) :
+    c = c' := by
+  obtain ⟨cπ, ci, _, _⟩ := c
+  obtain ⟨cπ', ci', _, _⟩ := c'
+  obtain rfl : cπ = cπ' := funext h
+  simp only [eqToHom_refl, Category.comp_id, id_whiskerRight, Category.id_comp] at h'
+  obtain rfl : @ci = @ci' := by
+    funext i j f
+    exact Iso.ext (h' f)
+  rfl
+
+/-- The pseudo-cone with apex `K'` obtained from a pseudo-cone `c` with apex `K` by precomposing
+its legs and its `2`-cells with a strong transformation `η : K' ⟶ K`. -/
+-- Exposed so that the legs of `c.extend η` are seen as the composites `η ≫ c.π i` in the
+-- statements of the lemmas on its `2`-cells.
+@[expose, simps π]
+def extend (c : Cone D K) (η : K' ⟶ K) : Cone D K' where
+  π i := η ≫ c.π i
+  iso f := α_ _ _ _ ≪≫ whiskerLeftIso η (c.iso f)
+  iso_id i := by
+    rw [Iso.trans_hom, whiskerLeftIso_hom, c.iso_id]
+    simp
+  iso_comp f g := by
+    rw [Iso.trans_hom, whiskerLeftIso_hom, c.iso_comp]
+    simp
+
+variable (c : Cone D K) (η : K' ⟶ K)
+
+@[simp]
+lemma extend_iso_hom {i j : I} (f : i ⟶ j) :
+    ((c.extend η).iso f).hom = (α_ _ _ _).hom ≫ η ◁ (c.iso f).hom :=
+  rfl
+
+@[simp]
+lemma extend_iso_inv {i j : I} (f : i ⟶ j) :
+    ((c.extend η).iso f).inv = η ◁ (c.iso f).inv ≫ (α_ _ _ _).inv :=
+  rfl
+
+end Cone
 
 section lift
 
