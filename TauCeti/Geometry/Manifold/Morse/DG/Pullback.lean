@@ -136,9 +136,9 @@ theorem map_loopChainMap_barraudCorneaCocycle {ind : criticalPoints 𝓘(ℝ, E)
       hX.barraudCorneaCocycle hf hdense (θ := g.comp θ)
         (comp_apply_criticalPoints_eq hθ g hg) hc S :=
   TwistingCocycle.ext fun x y ↦ by
-    rw [TwistingCocycle.map_m, barraudCorneaCocycle_m, barraudCorneaCocycle_m, loopChainMap_apply,
-      ← LinearMap.comp_apply, ← cubicalChainSumMap_comp,
-      hX.morseLoopEvaluation_comp hf hdense hθ g hg, ContinuousMap.comp_assoc]
+    rw [TwistingCocycle.map_m, barraudCorneaCocycle_m, barraudCorneaCocycle_m,
+      loopChainMap_cubicalChainSumMap, hX.morseLoopEvaluation_comp hf hdense hθ g hg,
+      ContinuousMap.comp_assoc]
 
 /-- **The continuation cocycle of a homotopy of chain systems is natural in the target**: its
 entries for `g ∘ θ` are the images of its entries for `θ` under `C_*(Ωg)`. This is
@@ -152,8 +152,7 @@ theorem loopChainMap_barraudCorneaContinuationCocycle_ν
       (hX.barraudCorneaContinuationCocycle hf hdense (θ := g.comp θ)
         (comp_apply_criticalPoints_eq hθ g hg) hc T).ν x y := by
   rw [barraudCorneaContinuationCocycle_ν, barraudCorneaContinuationCocycle_ν, map_add,
-    loopChainMap_apply R g hg (cubicalChainSumMap R _ _), ← LinearMap.comp_apply,
-    ← cubicalChainSumMap_comp, hX.morseLoopEvaluation_comp hf hdense hθ g hg,
+    loopChainMap_cubicalChainSumMap, hX.morseLoopEvaluation_comp hf hdense hθ g hg,
     ContinuousMap.comp_assoc, Matrix.one_apply, Matrix.one_apply]
   split_ifs <;> simp
 

@@ -152,8 +152,8 @@ theorem map_loopChainMap_mooreTwistingCocycle (S : TwistingChainSystem ind ι R)
     (S.mooreTwistingCocycle he₀ he₁ hθ he).map (loopChainMap R g hg) =
       S.mooreTwistingCocycle he₀ he₁ hgθ he :=
   TwistingCocycle.ext fun x y ↦ by
-    rw [TwistingCocycle.map_m, mooreTwistingCocycle_m, mooreTwistingCocycle_m, loopChainMap_apply,
-      ← LinearMap.comp_apply, ← cubicalChainSumMap_comp, mooreLoopEvaluation_comp he₀ he₁ hθ g hg]
+    rw [TwistingCocycle.map_m, mooreTwistingCocycle_m, mooreTwistingCocycle_m,
+      loopChainMap_cubicalChainSumMap, mooreLoopEvaluation_comp he₀ he₁ hθ g hg]
 
 /-- **The continuation cocycle of a homotopy is natural in the target**: its entries for the
 evaluation through `g ∘ θ` are the images under `C_*(Ωg)` of its entries for the evaluation
@@ -165,8 +165,7 @@ theorem Homotopy.loopChainMap_continuationCocycle_mooreLoopEvaluation_ν [Decida
       (T.continuationCocycle (mooreLoopEvaluation he₀ he₁ hgθ)
         (mooreLoopEvaluation_mul he₀ he₁ hgθ he)).ν x y := by
   rw [Homotopy.continuationCocycle_ν, Homotopy.continuationCocycle_ν, map_add,
-    loopChainMap_apply R g hg (cubicalChainSumMap R _ _), ← LinearMap.comp_apply,
-    ← cubicalChainSumMap_comp, mooreLoopEvaluation_comp he₀ he₁ hθ g hg, Matrix.one_apply,
+    loopChainMap_cubicalChainSumMap, mooreLoopEvaluation_comp he₀ he₁ hθ g hg, Matrix.one_apply,
     Matrix.one_apply]
   split_ifs <;> simp
 
