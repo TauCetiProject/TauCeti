@@ -44,7 +44,8 @@ The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
 * `TauCeti.CStarTensorProduct N`: its completion, a C*-algebra.
 * `TauCeti.CStarTensorProduct.of`, `TauCeti.CStarTensorProduct.norm_of`,
   `TauCeti.CStarTensorProduct.of_injective`, `TauCeti.CStarTensorProduct.denseRange_of`,
-  `TauCeti.CStarTensorProduct.starAlgHom_ext`.
+  `TauCeti.CStarTensorProduct.starAlgHom_ext`,
+  `TauCeti.CStarTensorProduct.continuousLinearMap_ext`.
 * `TauCeti.CStarTensorProduct.extend`: extension of star homomorphisms bounded by `N`, with
   `TauCeti.CStarTensorProduct.extend_injective` and `TauCeti.CStarTensorProduct.extend_surjective`.
 * `TauCeti.CStarTensorProduct.extendLinear`: extension of linear maps
@@ -286,6 +287,14 @@ theorem starAlgHom_ext {C : Type*} [NonUnitalCStarAlgebra C]
   induction x using TensorProduct.inductionOn with
   | tmul a b => exact h a b
   | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
+
+/-- Continuous linear maps out of `CStarTensorProduct N` into a Hausdorff space are determined by
+their values on `A ⊗[ℂ] B`. -/
+theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
+    [Module ℂ E] {f g : CStarTensorProduct N →L[ℂ] E} (h : ∀ x, f (of N x) = g (of N x)) :
+    f = g :=
+  ContinuousLinearMap.ext fun u ↦
+    induction_on u (isClosed_eq (map_continuous f) (map_continuous g)) h
 
 /-- A star homomorphism `A ⊗[ℂ] B → C` into a C*-algebra that is bounded by `N` extends to
 `CStarTensorProduct N`. -/

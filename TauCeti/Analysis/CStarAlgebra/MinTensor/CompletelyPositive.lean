@@ -31,7 +31,8 @@ minimal norm dominates every spatial norm.
   `TauCeti.minTensorNorm_map_le`: the norm bounds on `A ⊗[ℂ] B`.
 * `TauCeti.MinTensorProduct.rTensorCP`, `TauCeti.MinTensorProduct.lTensorCP`,
   `TauCeti.MinTensorProduct.mapCP`: the extensions to the minimal tensor products, with their
-  values on `A ⊗[ℂ] B` and their norm bounds.
+  values on `A ⊗[ℂ] B`, their norm bounds and their functoriality (`rTensorCP_id`,
+  `rTensorCP_comp`, `lTensorCP_id`, `lTensorCP_comp`, `mapCP_id`, `mapCP_comp`).
 
 ## References
 
@@ -71,10 +72,8 @@ theorem spatialTensorLinearMap_map_eq_adjoint_comp {φ : A →ₗ[ℂ] (H →L[�
     rw [map_add, map_add, hx, hy, map_add, ContinuousLinearMap.add_comp,
       ContinuousLinearMap.comp_add]
   | tmul a b =>
-    rw [map_tmul, spatialTensorLinearMap_tmul, NonUnitalStarAlgHom.spatialTensorHom_tmul,
-      adjoint_mapLCompletion, ContinuousLinearMap.adjoint_id, ← mapLCompletion_comp,
-      ← mapLCompletion_comp, hφ]
-    simp
+    simp [spatialTensorLinearMap_tmul, adjoint_mapLCompletion, ← mapLCompletion_comp, hφ,
+      ContinuousLinearMap.adjoint_id]
 
 /-- For a completely positive map `φ : A → B(H)` and a representation `ρ : B → B(F)`, the spatial
 operator of `(φ ⊗ ρ) x` has norm at most `‖φ‖ ‖x‖_min`. -/
@@ -128,9 +127,7 @@ theorem minTensorNorm_rTensor_le (φ : A →CP A') (x : A ⊗[ℂ] B) :
         (by simpa using φ.toContinuousLinearMap.le_opNorm a)
   have hmap : TensorProduct.map (ι : A' →ₗ[ℂ] H →L[ℂ] H) (ρ : B →ₗ[ℂ] F →L[ℂ] F)
       (φ.toLinearMap.rTensor B x) = TensorProduct.map ψ.toLinearMap (ρ : B →ₗ[ℂ] F →L[ℂ] F) x := by
-    rw [LinearMap.rTensor, ← LinearMap.comp_apply, ← TensorProduct.map_comp, LinearMap.comp_id,
-      CompletelyPositiveMap.toLinearMap_comp,
-      CompletelyPositiveMapClass.toLinearMap_toCompletelyPositiveLinearMap]
+    simp [ψ, LinearMap.rTensor, ← LinearMap.comp_apply, ← TensorProduct.map_comp]
   rw [minTensorNorm_eq_norm_spatialTensorHom hι hρ, NonUnitalStarAlgHom.spatialTensorHom_apply,
     hmap]
   exact (norm_spatialTensorLinearMap_map_le_mul_minTensorNorm ψ ρ x).trans
@@ -162,12 +159,14 @@ namespace MinTensorProduct
 
 open CStarTensorProduct
 
-variable {A A' B B' : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra A']
-  [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra B']
+variable {A A' A'' B B' B'' : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra A']
+  [NonUnitalCStarAlgebra A''] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra B']
+  [NonUnitalCStarAlgebra B'']
 
 section RTensor
 
 variable [PartialOrder A] [StarOrderedRing A] [PartialOrder A'] [StarOrderedRing A']
+  [PartialOrder A''] [StarOrderedRing A'']
 
 variable (B) in
 /-- **`φ ⊗ id` on the minimal tensor product**: a completely positive `φ : A → A'` gives the
@@ -193,11 +192,20 @@ theorem norm_rTensorCP_le (φ : A →CP A') :
   norm_extendLinear_le (norm_nonneg _) <| by
     simpa only [minCStarTensorNorm_apply] using minTensorNorm_rTensor_le φ
 
+@[simp]
+theorem rTensorCP_id : rTensorCP B (CompletelyPositiveMap.id A) = .id ℂ _ :=
+  continuousLinearMap_ext fun x ↦ by simp
+
+theorem rTensorCP_comp (θ : A' →CP A'') (φ : A →CP A') :
+    rTensorCP B (θ.comp φ) = rTensorCP B θ ∘L rTensorCP B φ :=
+  continuousLinearMap_ext fun x ↦ by simp [LinearMap.rTensor_comp]
+
 end RTensor
 
 section LTensor
 
 variable [PartialOrder B] [StarOrderedRing B] [PartialOrder B'] [StarOrderedRing B']
+  [PartialOrder B''] [StarOrderedRing B'']
 
 variable (A) in
 /-- **`id ⊗ ψ` on the minimal tensor product**: a completely positive `ψ : B → B'` gives the
@@ -223,12 +231,21 @@ theorem norm_lTensorCP_le (ψ : B →CP B') :
   norm_extendLinear_le (norm_nonneg _) <| by
     simpa only [minCStarTensorNorm_apply] using minTensorNorm_lTensor_le ψ
 
+@[simp]
+theorem lTensorCP_id : lTensorCP A (CompletelyPositiveMap.id B) = .id ℂ _ :=
+  continuousLinearMap_ext fun x ↦ by simp
+
+theorem lTensorCP_comp (θ : B' →CP B'') (ψ : B →CP B') :
+    lTensorCP A (θ.comp ψ) = lTensorCP A θ ∘L lTensorCP A ψ :=
+  continuousLinearMap_ext fun x ↦ by simp [LinearMap.lTensor_comp]
+
 end LTensor
 
 section Map
 
 variable [PartialOrder A] [StarOrderedRing A] [PartialOrder A'] [StarOrderedRing A']
   [PartialOrder B] [StarOrderedRing B] [PartialOrder B'] [StarOrderedRing B']
+  [PartialOrder A''] [StarOrderedRing A''] [PartialOrder B''] [StarOrderedRing B'']
 
 /-- **`φ ⊗ ψ` on the minimal tensor product**: completely positive `φ : A → A'` and
 `ψ : B → B'` give the bounded linear map `MinTensorProduct A B → MinTensorProduct A' B'`
@@ -256,10 +273,17 @@ theorem norm_mapCP_le (φ : A →CP A') (ψ : B →CP B') :
 /-- `φ ⊗ ψ = (φ ⊗ id) ∘ (id ⊗ ψ)` on the minimal tensor product. -/
 theorem mapCP_eq_rTensorCP_comp_lTensorCP (φ : A →CP A') (ψ : B →CP B') :
     mapCP φ ψ = rTensorCP B' φ ∘L lTensorCP A ψ := by
-  refine ContinuousLinearMap.ext fun u ↦ induction_on u
-    (isClosed_eq (map_continuous _) (map_continuous _)) fun x ↦ ?_
+  refine continuousLinearMap_ext fun x ↦ ?_
   rw [ContinuousLinearMap.comp_apply, lTensorCP_of, rTensorCP_of, mapCP_of,
     ← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor]
+
+@[simp]
+theorem mapCP_id : mapCP (CompletelyPositiveMap.id A) (CompletelyPositiveMap.id B) = .id ℂ _ :=
+  continuousLinearMap_ext fun x ↦ by simp
+
+theorem mapCP_comp (φ' : A' →CP A'') (ψ' : B' →CP B'') (φ : A →CP A') (ψ : B →CP B') :
+    mapCP (φ'.comp φ) (ψ'.comp ψ) = mapCP φ' ψ' ∘L mapCP φ ψ :=
+  continuousLinearMap_ext fun x ↦ by simp [TensorProduct.map_comp]
 
 /-- For a star homomorphism, `φ ⊗ ψ` is `TauCeti.MinTensorProduct.map`. -/
 @[simp]
