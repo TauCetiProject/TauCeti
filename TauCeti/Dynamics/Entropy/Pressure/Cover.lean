@@ -273,7 +273,6 @@ theorem coverPressure_le_topologicalPressure [CompactSpace X] (hT : UniformConti
   refine iSup₂_le fun W hW ↦ ?_
   obtain ⟨U, hU, hsymm, hUW⟩ := comp_symm_mem_uniformity_sets hW
   have := isRefl_of_mem_uniformity hU
-  have := hsymm
   refine (coverPressureEntourage_antitone T φ hUW).trans ?_
   refine le_trans ?_ (netPressureEntourage_le_topologicalPressure hU)
   rw [coverPressureEntourage_def, netPressureEntourage_def]
@@ -305,12 +304,7 @@ theorem topologicalPressure_le_coverPressure (hφ : UniformContinuous φ) (T : X
           coverPressureEntourage_add_const T φ δ _
       _ ≤ coverPressure T φ + δ :=
           add_le_add (coverPressureEntourage_le_coverPressure (inter_mem hU hV)) le_rfl
-  refine EReal.le_of_forall_lt_iff_le.1 fun z hz ↦ ?_
-  obtain ⟨w, hw, hwz⟩ := EReal.lt_iff_exists_real_btwn.1 hz
-  refine (key (z - w) (sub_pos.2 (EReal.coe_lt_coe_iff.1 hwz))).trans ?_
-  calc coverPressure T φ + ((z - w : ℝ) : EReal) ≤ (w : EReal) + ((z - w : ℝ) : EReal) :=
-        add_le_add hw.le le_rfl
-    _ = z := by rw [← EReal.coe_add, add_sub_cancel]
+  exact EReal.le_of_forall_pos_le_add key
 
 /-- **Separated and spanning forms agree.** For a uniformly continuous map `T` of a compact
 uniform space and a uniformly continuous potential `φ`, the spanning-set form of the pressure is
