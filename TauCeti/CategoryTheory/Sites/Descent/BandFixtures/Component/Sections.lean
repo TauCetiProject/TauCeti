@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.ComponentCenter
+public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Component.Center
 public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Constant
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
 
@@ -32,12 +32,14 @@ hypothesis.
 
 In the namespace `CategoryTheory.Pseudofunctor.BandFixtures`:
 
-* `componentObj V i`: the object `(i, ⋆)` of the fibre over `V`.
+* `componentObj V i`: the object `(i, ⋆)` of the fibre over `V`; its automorphisms are determined
+  by their group component (`componentObj_aut_ext`).
 * `componentSectionsEquiv C I G U`: the profiles `I → G` as the central sections over `U`.
 
 ## Main results
 
-* `evaluation_componentSectionsEquiv`, `evaluation_componentSectionsEquiv_snd`,
+* `val_componentSectionsEquiv`, `evaluation_componentSectionsEquiv`,
+  `evaluation_componentSectionsEquiv_snd`,
   `restrict_componentSectionsEquiv`, `componentSectionsEquiv_symm_apply`.
 * `component_eval_bijective`, `component_eval_not_injective`.
 * `fibre_no_cross_iso`, `constant_two_components_not_gerbe`.
@@ -63,6 +65,11 @@ variable {C : Type u} [Category.{v} C] {I : Type u'} {G : Type v'}
 def componentObj [Monoid G] (V : C) (i : I) :
     (constant C (Discrete I × SingleObj G)).obj (.mk (op V)) :=
   (⟨i⟩, SingleObj.star G)
+
+/-- An automorphism of `componentObj V i` is determined by its group component. -/
+theorem componentObj_aut_ext [Monoid G] {V : C} {i : I} {a b : Aut (componentObj (G := G) V i)}
+    (h : a.asIso.hom.2 = b.asIso.hom.2) : a = b :=
+  Aut.ext (Iso.ext (Prod.hom_ext (Subsingleton.elim _ _) h))
 
 /-- **No isomorphism between components**: the canonical objects of the `false` and `true`
 components of `Discrete Bool × SingleObj G` are not isomorphic. -/
@@ -98,6 +105,12 @@ theorem componentSectionsEquiv_apply (U : C) (a : I → G) :
   rw [componentSectionsEquiv, MulEquiv.trans_apply, componentCenterEquiv_apply,
     constantSectionsEquiv_apply]
 
+/-- The value of the section of a profile `a` at every arrow is the centre unit of `a`. -/
+@[simp]
+theorem val_componentSectionsEquiv (U : C) (a : I → G) (V : C) (f : V ⟶ U) :
+    (componentSectionsEquiv C I G U a).val V f = componentCenterUnit a := by
+  rw [componentSectionsEquiv_apply, val_constantSection]
+
 /-- The inverse of `componentSectionsEquiv` reads the group component at `(i, ⋆)` of the value at
 the identity of `U`. -/
 @[simp]
@@ -114,8 +127,8 @@ theorem evaluation_componentSectionsEquiv {U V : C} (f : V ⟶ U) (a : I → G)
     (x : (constant C (Discrete I × SingleObj G)).obj (.mk (op V))) :
     (IntrinsicBandSections.evaluation f x (componentSectionsEquiv C I G U a)).asIso.hom =
       (componentCenter a).app x := by
-  rw [IntrinsicBandSections.evaluation_asIso_hom, componentSectionsEquiv_apply,
-    val_constantSection, val_componentCenterUnit]
+  rw [IntrinsicBandSections.evaluation_asIso_hom, val_componentSectionsEquiv,
+    val_componentCenterUnit]
 
 /-- **Band evaluation of a profile**: the group component of the evaluation of the section of `a`
 at any arrow and at `(i, ⋆)` is `a i`. -/
@@ -152,9 +165,7 @@ theorem component_eval_bijective [Subsingleton I] (U : C) (i : I) :
   · obtain rfl := Subsingleton.elim i j
     rw [componentSectionsEquiv_symm_apply_eq_evaluation,
       componentSectionsEquiv_symm_apply_eq_evaluation, h]
-  · refine Aut.ext (Iso.ext (Prod.hom_ext (Subsingleton.elim _ _) ?_))
-    rw [evaluation_componentSectionsEquiv]
-    exact componentCenter_app_snd _ (componentObj U i)
+  · exact componentObj_aut_ext (evaluation_componentSectionsEquiv_snd (𝟙 U) _ i)
 
 /-- **Two components: evaluation on one component is not injective.** For `g ≠ 1`, the profiles
 `(1, g)` and `(1, 1)` give distinct central sections with the same evaluation at the identity of
@@ -165,12 +176,9 @@ theorem component_eval_not_injective (U : C) {g : G} (hg : g ≠ 1) :
   intro hinj
   let a : Bool → G := fun b ↦ if b then g else 1
   have h : componentSectionsEquiv C Bool G U a = componentSectionsEquiv C Bool G U 1 :=
-    hinj (Aut.ext (Iso.ext (Prod.hom_ext (Subsingleton.elim _ _) (by
-      rw [evaluation_componentSectionsEquiv, evaluation_componentSectionsEquiv]
-      have h₁ := componentCenter_app_snd a (componentObj U false)
-      have h₂ := componentCenter_app_snd (1 : Bool → G) (componentObj U false)
-      have h₃ : a false = (1 : Bool → G) false := by simp [a]
-      exact h₁.trans (h₃.trans h₂.symm)))))
+    hinj (componentObj_aut_ext (by
+      rw [evaluation_componentSectionsEquiv_snd, evaluation_componentSectionsEquiv_snd]
+      simp [a]))
   exact hg (congrFun ((componentSectionsEquiv C Bool G U).injective h) true)
 
 end CategoryTheory.Pseudofunctor.BandFixtures

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
-public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.ComponentSections
+public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Component.Sections
 
 /-!
 # Checks for the central sections of constant diagrams of copies of `B(C₃)`
@@ -74,12 +74,15 @@ example :
 example : ∃ s : IntrinsicBandSections (constant pt (Discrete Bool × SingleObj C₃)) star, s ≠ 1 ∧
     IntrinsicBandSections.evaluation (𝟙 star) (componentObj star false) s = 1 := by
   refine ⟨componentSectionsEquiv pt Bool C₃ star fun b ↦ if b then Multiplicative.ofAdd 1 else 1,
-    fun h ↦ ?_, Aut.ext (Iso.ext (Prod.hom_ext (Subsingleton.elim _ _) ?_))⟩
+    fun h ↦ ?_, ?_⟩
   · have := congrFun ((componentSectionsEquiv pt Bool C₃ star).injective
       (h.trans (map_one _).symm)) true
     exact absurd this (by decide)
-  · rw [evaluation_componentSectionsEquiv_snd]
-    rfl
+  · rw [← map_one (IntrinsicBandSections.evaluation (𝟙 star) (componentObj star false)),
+      ← map_one (componentSectionsEquiv pt Bool C₃ star)]
+    refine componentObj_aut_ext ?_
+    rw [evaluation_componentSectionsEquiv_snd, evaluation_componentSectionsEquiv_snd]
+    simp
 
 /-- **Two components: evaluation on `false` is not injective.** -/
 example : ¬ Function.Injective (IntrinsicBandSections.evaluation
