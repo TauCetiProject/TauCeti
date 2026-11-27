@@ -56,8 +56,10 @@ The proof assembles three steps.
   `b = b' - Im (h⁻¹ dh)` for the pulled-back connection `b'` of the vortex
   (`TauCeti.SeibergWitten.norm_eq_one_and_eq_normalConnection_sub_phaseForm`).
 
-The extraction of such a limit from actual large-parameter solutions, with its curvature and
-vacuum bounds, is not treated here.
+Limits of blown-up large-parameter solutions, in radial gauge, are extracted in
+`TauCeti.Analysis.PDE.SeibergWitten.Rescaling.Compactness` from uniform bounds on the blown-up
+fields; those bounds for actual solutions, and the vacuum bounds used here, are not treated
+here.
 
 ## Main results
 

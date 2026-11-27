@@ -19,6 +19,7 @@ import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.Eigenspace.Involution
 import TauCeti.LinearAlgebra.End.Adjugate
 
 /-!
@@ -81,6 +82,8 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
   `v ⌟ β` is `TauCeti.twoVectorContraction β v`.
 * `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
   dimension.
+* `CliffordAlgebra.exists_ne_zero_eigenspace_chirality`: every nontrivial complex Clifford module
+  has a nonzero vector in the `ε`-eigenspace of `Γ` for `ε ^ 2 = 1`.
 * `CliffordAlgebra.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
   `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` in a two-dimensional `ε`-eigenspace and `χ` in
   the opposite eigenspace, then `χ = 0`.
@@ -298,6 +301,14 @@ theorem map_ι_apply_mem_eigenspace_chirality_neg {ε : ℂ} {ψ : W}
   rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_ι o, map_neg, map_mul,
     LinearMap.neg_apply, mul_apply_eq_comp, hψ, map_smul, neg_smul]
 
+omit hQ in
+/-- Two Clifford multiplications preserve each eigenspace of chirality. -/
+theorem map_ι_apply_map_ι_apply_mem_eigenspace_chirality {ε : ℂ} {ψ : W}
+    (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) (v w : V) :
+    ρ (ι Q v) (ρ (ι Q w) ψ) ∈ eigenspace (ρ (chirality Q o)) ε := by
+  simpa only [neg_neg] using
+    map_ι_apply_mem_eigenspace_chirality_neg o (map_ι_apply_mem_eigenspace_chirality_neg o hψ w) v
+
 variable (ρ) in
 omit hQ in
 /-- **Clifford multiplication between the eigenspaces of `Γ`**: `c(v)` restricted to the
@@ -415,6 +426,26 @@ theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
     · rw [hbot ε hε, hbot (-ε) (neg_ne_zero.2 hε)]
   · obtain ⟨v, hv⟩ := not_forall.1 hQ₀
     exact (halfSpinCliffordMulEquiv o ρ ε hv).finrank_eq.symm
+
+variable (ρ) in
+/-- **Every nontrivial complex Clifford module has a nonzero half-spinor** in the `ε`-eigenspace
+of `Γ` for `ε = ±1` (`hε : ε ^ 2 = 1`), when `Q v = -‖v‖²`. -/
+theorem exists_ne_zero_eigenspace_chirality [Nontrivial W] {ε : ℂ} (hε : ε ^ 2 = 1) :
+    ∃ ψ : eigenspace (ρ (chirality Q o)) ε, (ψ : W) ≠ 0 := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have hQv : Q v ≠ 0 := by simpa [hQ] using hv
+  have hΓ : Function.Involutive (ρ (chirality Q o)) := by
+    intro z
+    rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_self o hQ, map_one, one_apply_eq_self]
+  rcases hasEigenvalue_or_neg_of_involutive hΓ (by simpa [sq] using hε) with h | h
+  · obtain ⟨w, hw, hw₀⟩ := h.exists_hasEigenvector
+    exact ⟨⟨w, hw⟩, hw₀⟩
+  · obtain ⟨w, hw, hw₀⟩ := h.exists_hasEigenvector
+    let e := halfSpinCliffordMulEquiv o ρ (-ε) hQv
+    refine ⟨⟨(e ⟨w, hw⟩ : W), by simpa only [neg_neg] using (e ⟨w, hw⟩).property⟩, ?_⟩
+    intro h0
+    exact hw₀ (congrArg Subtype.val ((map_eq_zero_iff e e.injective).1 (Subtype.ext h0)))
 
 variable [FiniteDimensional ℂ W]
 

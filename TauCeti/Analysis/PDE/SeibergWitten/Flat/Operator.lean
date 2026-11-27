@@ -303,32 +303,13 @@ theorem hodgeStar_flatDeformationCurvature (hkl : 2 + 2 = finrank ℝ V)
     o.hodgeStar_hodgeStar_of_even even_two hkl, o.hodgeStar_coe_of_mem_eigenspace_one hkl]
   abel
 
-/-- `flatDeformationCurvature` is additive in the perturbation `(b', ζ)` at a point of
-differentiability of the connection perturbations. -/
-theorem flatDeformationCurvature_add (hkl : 2 + 2 = finrank ℝ V)
-    {b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ} (ψ ζ₁ ζ₂ : V → positiveHalfSpinors o ρ) {y : V}
-    (h₁ : DifferentiableAt ℝ b₁ y) (h₂ : DifferentiableAt ℝ b₂ y) :
-    flatDeformationCurvature o ρ hkl (b₁ + b₂) ψ (ζ₁ + ζ₂) y =
-      flatDeformationCurvature o ρ hkl b₁ ψ ζ₁ y +
-        flatDeformationCurvature o ρ hkl b₂ ψ ζ₂ y := by
-  simp only [flatDeformationCurvature, Pi.add_apply, extDeriv_add h₁ h₂, neg_add, map_add,
-    Submodule.coe_add, smul_add]
-  abel
-
-/-- `flatDeformationCurvature` commutes with real scalar multiplication of `(b', ζ)`. -/
-theorem flatDeformationCurvature_smul (hkl : 2 + 2 = finrank ℝ V) (r : ℝ)
-    (b' : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ ζ : V → positiveHalfSpinors o ρ) (y : V) :
-    flatDeformationCurvature o ρ hkl (r • b') ψ (r • ζ) y =
-      r • flatDeformationCurvature o ρ hkl b' ψ ζ y := by
-  simp only [flatDeformationCurvature, Pi.smul_apply, extDeriv_smul, ← smul_neg, map_smul,
-    Submodule.coe_smul, smul_add]
-  rw [smul_comm (2⁻¹ : ℝ) r]
-
 /-- `flatDeformationCurvature` sends the zero perturbation to zero. -/
 @[simp] theorem flatDeformationCurvature_zero (hkl : 2 + 2 = finrank ℝ V)
     (ψ : V → positiveHalfSpinors o ρ) (y : V) :
     flatDeformationCurvature o ρ hkl 0 ψ 0 y = 0 := by
-  simpa using flatDeformationCurvature_smul hkl 0 0 ψ 0 y
+  have h0 : extDeriv (0 : V → V [⋀^Fin 1]→L[ℝ] ℝ) y = 0 := by
+    simpa using extDeriv_smul (0 : ℝ) (0 : V → V [⋀^Fin 1]→L[ℝ] ℝ) (x := y)
+  simp [flatDeformationCurvature, h0]
 
 /-- `(√2 / 2) • flatDeformationCurvature` is the directional derivative of `flatCurvatureDefect`
 along `(b + t • δb, χ + t • ζ)` at `t = 0`. -/
@@ -451,35 +432,6 @@ theorem flatDeformationDirac_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 
   simpa [Submodule.coe_sum] using congrArg (fun ν : Module.End.eigenspace (ρ (chirality Q o)) (-1) ↦
     (flatChiralDirac o ρ b ζ y : W) + (ν : W)) hsum
 
-/-- `flatDeformationDirac` is additive in the perturbation `(b', ζ)` at a point of
-differentiability of the spinor perturbations. -/
-theorem flatDeformationDirac_add (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-    (b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → positiveHalfSpinors o ρ)
-    {ζ₁ ζ₂ : V → positiveHalfSpinors o ρ} {y : V}
-    (h₁ : DifferentiableAt ℝ ζ₁ y) (h₂ : DifferentiableAt ℝ ζ₂ y) :
-    flatDeformationDirac e b (b₁ + b₂) ψ (ζ₁ + ζ₂) y =
-      flatDeformationDirac e b b₁ ψ ζ₁ y + flatDeformationDirac e b b₂ ψ ζ₂ y := by
-  rw [flatDeformationDirac_eq_coe_flatChiralDirac_add,
-    flatDeformationDirac_eq_coe_flatChiralDirac_add,
-    flatDeformationDirac_eq_coe_flatChiralDirac_add,
-    flatChiralDirac_add b h₁ h₂, Submodule.coe_add]
-  simp only [Pi.add_apply, ContinuousAlternatingMap.add_apply, add_smul, map_add,
-    Submodule.coe_add, Finset.sum_add_distrib]
-  abel
-
-/-- `flatDeformationDirac` commutes with real scalar multiplication of `(b', ζ)`. -/
-theorem flatDeformationDirac_smul (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (r : ℝ)
-    (b' : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ ζ : V → positiveHalfSpinors o ρ) (y : V) :
-    flatDeformationDirac e b (r • b') ψ (r • ζ) y = r • flatDeformationDirac e b b' ψ ζ y := by
-  have hζ : r • ζ = (r : ℂ) • ζ := funext fun q ↦ (Complex.coe_smul (r : ℝ) (ζ q)).symm
-  rw [flatDeformationDirac_eq_coe_flatChiralDirac_add,
-    flatDeformationDirac_eq_coe_flatChiralDirac_add, hζ, flatChiralDirac_smul,
-    Complex.coe_smul, Submodule.coe_smul_of_tower, smul_add, Finset.smul_sum]
-  congr 1
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  simp only [Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-    ← mul_smul, ← Complex.coe_smul, map_smul, Submodule.coe_smul_of_tower, ofReal_mul, mul_assoc]
-
 /-- `flatDeformationDirac` sends the zero perturbation to zero. -/
 @[simp] theorem flatDeformationDirac_zero (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     (ψ : V → positiveHalfSpinors o ρ) (y : V) :
@@ -599,9 +551,15 @@ theorem gaugeFixedFlatOperator_add (hkl : 2 + 2 = finrank ℝ V) (b : V → V [�
         gaugeFixedFlatOperator o ρ e hkl b χ δb₂ ζ₂ p := by
   rw [gaugeFixedFlatOperator_apply, gaugeFixedFlatOperator_apply, gaugeFixedFlatOperator_apply]
   refine Prod.ext (flatDeformationGauge_add χ ζ₁ ζ₂ hb₁ hb₂) <|
-    Prod.ext (Subtype.ext ?_) (Subtype.ext <| flatDeformationDirac_add b δb₁ δb₂ χ hζ₁ hζ₂)
-  simp only [Prod.snd_add, Prod.fst_add, Submodule.coe_add,
-    flatDeformationCurvature_add hkl χ ζ₁ ζ₂ hb₁ hb₂, smul_add]
+    Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
+  · simp only [Prod.snd_add, Prod.fst_add, Submodule.coe_add, flatDeformationCurvature,
+      Pi.add_apply, extDeriv_add hb₁ hb₂, neg_add, map_add, smul_add]
+    abel
+  · simp only [Prod.snd_add, Submodule.coe_add, flatDeformationDirac_eq_coe_flatChiralDirac_add,
+      flatChiralDirac_add b hζ₁ hζ₂]
+    simp only [Pi.add_apply, ContinuousAlternatingMap.add_apply, add_smul, map_add,
+      Submodule.coe_add, Finset.sum_add_distrib]
+    abel
 
 /-- `gaugeFixedFlatOperator` commutes with real scalar multiplication of `(δb, ζ)`. -/
 theorem gaugeFixedFlatOperator_smul (hkl : 2 + 2 = finrank ℝ V) (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
@@ -611,9 +569,19 @@ theorem gaugeFixedFlatOperator_smul (hkl : 2 + 2 = finrank ℝ V) (b : V → V [
       r • gaugeFixedFlatOperator o ρ e hkl b χ δb ζ p := by
   rw [gaugeFixedFlatOperator_apply, gaugeFixedFlatOperator_apply]
   refine Prod.ext (flatDeformationGauge_smul r δb χ ζ p) <|
-    Prod.ext (Subtype.ext ?_) (Subtype.ext <| flatDeformationDirac_smul b r δb χ ζ p)
-  simp only [Prod.smul_snd, Prod.smul_fst, Submodule.coe_smul]
-  rw [flatDeformationCurvature_smul, smul_comm]
+    Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
+  · simp only [Prod.smul_snd, Prod.smul_fst, Submodule.coe_smul, flatDeformationCurvature,
+      Pi.smul_apply, extDeriv_smul, ← smul_neg, map_smul, smul_add]
+    module
+  · have hζ : r • ζ = (r : ℂ) • ζ := funext fun q ↦ (Complex.coe_smul (r : ℝ) (ζ q)).symm
+    simp only [Prod.smul_snd, Submodule.coe_smul_of_tower]
+    rw [flatDeformationDirac_eq_coe_flatChiralDirac_add,
+      flatDeformationDirac_eq_coe_flatChiralDirac_add, hζ, flatChiralDirac_smul,
+      Complex.coe_smul, Submodule.coe_smul_of_tower, smul_add, Finset.smul_sum]
+    congr 1
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    simp only [Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+      ← mul_smul, ← Complex.coe_smul, map_smul, Submodule.coe_smul_of_tower, ofReal_mul, mul_assoc]
 
 /-- `gaugeFixedFlatOperator` sends the zero perturbation to zero. -/
 @[simp] theorem gaugeFixedFlatOperator_zero (hkl : 2 + 2 = finrank ℝ V)

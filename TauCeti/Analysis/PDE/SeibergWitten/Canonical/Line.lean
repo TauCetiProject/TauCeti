@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Kahler
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Module.Pairing
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -165,7 +166,11 @@ exactly when Clifford multiplication turns `J` into `i` on it, `c(J v) ψ = i c(
 theorem cliffordProjection_kahlerForm_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ J.kahlerForm ψ = ψ ↔
       ∀ v, ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
-  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
+  obtain ⟨e₀, he₀⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) 2
+    ((Fact.out : finrank ℝ V = 4).trans (by norm_num))
+  let e : OrthonormalBasis (Fin 4) ℝ V := e₀.reindex (finCongr (by norm_num))
+  have h₀ : J (e 0) = e 1 := by simpa [e] using (he₀ 0).symm
+  have h₂ : J (e 2) = e 3 := by simpa [e] using (he₀ 1).symm
   refine ⟨fun hψ ↦ AlmostComplexStructure.ι_apply_apply_of_bivectorExterior_apply hQ h₀ h₂
     (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hψ), fun h ↦
     cliffordProjection_apply_eq_self_of_bivectorExterior_apply o ρ
@@ -186,7 +191,11 @@ every `v`. -/
 theorem cliffordProjection_kahlerForm_apply_eq_zero_iff {β : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ J.kahlerForm β = 0 ↔
       ∀ v, ρ (ι Q (J v)) β = -Complex.I • ρ (ι Q v) β := by
-  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
+  obtain ⟨e₀, he₀⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) 2
+    ((Fact.out : finrank ℝ V = 4).trans (by norm_num))
+  let e : OrthonormalBasis (Fin 4) ℝ V := e₀.reindex (finCongr (by norm_num))
+  have h₀ : J (e 0) = e 1 := by simpa [e] using (he₀ 0).symm
+  have h₂ : J (e 2) = e 3 := by simpa [e] using (he₀ 1).symm
   refine ⟨fun hβ v ↦ ?_, fun h ↦ ?_⟩
   · have h := AlmostComplexStructure.two_smul_ι_apply_apply_of_bivectorExterior_apply_eq_smul
       hQ h₀ h₂ (by simp) (bivectorExterior_apply_of_cliffordProjection_apply_eq_zero o ρ hβ) v
@@ -283,16 +292,19 @@ theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
     {e : OrthonormalBasis κ ℝ V} {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (L : V →ₗ[ℝ] ℂ) :
     ∑ k, L (e k) • ρ (ι Q (e k)) ψ = 0 ↔ (ψ : W) = 0 ∨ ∀ v, L (J v) = Complex.I * L v := by
-  obtain ⟨b, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
-  -- The contraction `∑ₖ L(eₖ) c(eₖ) ψ` is the metric trace of `(u, v) ↦ L u • c(v) ψ`,
+  obtain ⟨b₀, hb₀⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) 2
+    ((Fact.out : finrank ℝ V = 4).trans (by norm_num))
+  let b : OrthonormalBasis (Fin 4) ℝ V := b₀.reindex (finCongr (by norm_num))
+  have h₀ : J (b 0) = b 1 := by simpa [b] using (hb₀ 0).symm
+  have h₂ : J (b 2) = b 3 := by simpa [b] using (hb₀ 1).symm
+  -- The contraction `∑ₖ L(eₖ) c(eₖ) ψ` is the metric trace of `ρ.cliffordPairing (v ↦ L v • ψ)`,
   -- hence independent of the orthonormal basis `e`.
-  let B : LinearMap.BilinMap ℝ V W := LinearMap.mk₂ ℝ (fun u v ↦ L u • ρ (ι Q v) ψ)
-    (fun _ _ _ ↦ by rw [map_add, add_smul])
-    (fun _ _ _ ↦ by rw [map_smul, smul_assoc])
-    (fun _ _ _ ↦ by rw [map_add, map_add, LinearMap.add_apply, smul_add])
-    (fun _ _ _ ↦ by rw [map_smul, map_smul, LinearMap.smul_apply, smul_comm])
-  have hsum : ∑ k, L (e k) • ρ (ι Q (e k)) ψ = ∑ j, L (b j) • ρ (ι Q (b j)) ψ :=
-    (B.metricTrace_eq_sum e).symm.trans (B.metricTrace_eq_sum b)
+  have hsum : ∑ k, L (e k) • ρ (ι Q (e k)) ψ = ∑ j, L (b j) • ρ (ι Q (b j)) ψ := by
+    let B : LinearMap.BilinMap ℝ V W :=
+      ρ.cliffordPairing (((LinearMap.toSpanSingleton ℂ W (ψ : W)).restrictScalars ℝ).comp L)
+    simpa only [B, AlgHom.cliffordPairing_apply, LinearMap.comp_apply,
+      LinearMap.coe_restrictScalars, LinearMap.toSpanSingleton_apply, map_smul] using
+      (B.metricTrace_eq_sum e).symm.trans (B.metricTrace_eq_sum b)
   have h₁ : J (b 1) = -b 0 := by rw [← h₀, J.apply_apply]
   have h₃ : J (b 3) = -b 2 := by rw [← h₂, J.apply_apply]
   rw [hsum, sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hψ
@@ -309,13 +321,9 @@ theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
         linear_combination (-Complex.I) * h23 + L (b 3) * Complex.I_sq
       · simp only [Fin.reduceFinMk, h₃, map_neg]
         linear_combination -h23
-    have hv := b.sum_repr' v
-    calc L (J v) = ∑ i, ⟪b i, v⟫ • L (J (b i)) := by
-          conv_lhs => rw [← hv]
-          simp only [map_sum, map_smul]
-      _ = Complex.I * L v := by
-          conv_rhs => rw [← hv]
-          simp only [map_sum, map_smul, key, Finset.mul_sum, Complex.real_smul, mul_left_comm]
+    exact LinearMap.congr_fun
+      (b.toBasis.ext (f₁ := L.comp J.toLinearMap) (f₂ := (LinearMap.mulLeft ℝ Complex.I).comp L)
+        fun i ↦ by simpa using key i) v
   · have h0 := h (b 0)
     rw [h₀] at h0
     linear_combination Complex.I * h0 + L (b 0) * Complex.I_sq

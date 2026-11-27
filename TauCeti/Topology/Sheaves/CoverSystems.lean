@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Filtered.Connected
 public import Mathlib.CategoryTheory.Limits.FormalCoproducts.Basic
 public import Mathlib.Data.Fintype.EquivFin
+public import Mathlib.Topology.Category.TopCat.Opens
 public import Mathlib.Topology.Sets.OpenCover
 public import Mathlib.Topology.ShrinkingLemma
 
@@ -33,6 +34,12 @@ categories for colimits of cover-dependent invariants whose transition maps are 
 refinement functions.
 Finite covers retain repeated members and include the empty cover of the empty space.
 
+Homeomorphisms transport point-neighborhood covers and actual refinements
+(`PointOpenCover.mapHomeomorph`, `PointOpenCover.mapHomeomorphHom`) and identify the refinement
+preorders (`Homeomorph.pointOpenCoverOrderIso`) and categories
+(`Homeomorph.pointOpenCoverEquivalence`). For a homeomorphism `h` in `TopCat`, the original cover
+refines the preimage along `h` of its transported cover (`Homeomorph.cechPullbackRefinement`).
+
 The cover-refinement description follows the Stacks Project, Cohomology of Sheaves, §20.15
 (tag 09UY). Finite cofinality is the compactness argument of J. Pardon, arXiv:1309.2370v6,
 Appendix A, Lemma A.4.4, here without separation or local compactness assumptions.
@@ -42,7 +49,7 @@ public section
 
 open CategoryTheory Limits TopologicalSpace Topology
 
-universe u
+universe u v
 
 namespace TauCeti.Topology
 
@@ -139,7 +146,140 @@ theorem exists_refinement_mem_of_mem_of_mem [NormalSpace X] {ι : Type*} [Finite
   by_contra h
   exact (hW x y hx).2.2 _ h (subset_closure (hW z y hz).1)
 
+variable {Y : Type v} [TopologicalSpace Y]
+
+/-- A refinement can be specified point by point, without choosing its function in advance. -/
+theorem le_iff_forall_exists (U V : PointOpenCover X) :
+    U ≤ V ↔ ∀ x, ∃ y, V.opens x ≤ U.opens y := by
+  constructor
+  · rintro ⟨f⟩ x
+    exact ⟨f.f x, leOfHom (f.φ x)⟩
+  · intro h
+    choose f hf using h
+    exact ⟨⟨f, fun x ↦ homOfLE (hf x)⟩⟩
+
+/-- Move the neighborhoods of a point cover through a homeomorphism. -/
+def mapHomeomorph (U : PointOpenCover X) (h : X ≃ₜ Y) : PointOpenCover Y where
+  opens y := h.opensCongr (U.opens (h.symm y))
+  mem_opens y := U.mem_opens (h.symm y)
+
+/-- The neighborhood assigned to an arbitrary point of the transported cover. -/
+@[simp]
+theorem mapHomeomorph_opens (U : PointOpenCover X) (h : X ≃ₜ Y) (y : Y) :
+    (U.mapHomeomorph h).opens y = h.opensCongr (U.opens (h.symm y)) := by rfl
+
+/-- The identity homeomorphism leaves every actual point-neighborhood cover unchanged. -/
+@[simp]
+theorem mapHomeomorph_refl (U : PointOpenCover X) :
+    U.mapHomeomorph (Homeomorph.refl X) = U := by
+  ext x z
+  rfl
+
+/-- Successive homeomorphisms transport the same actual neighborhoods as their composite. -/
+@[simp]
+theorem mapHomeomorph_trans {Z : Type*} [TopologicalSpace Z]
+    (U : PointOpenCover X) (h : X ≃ₜ Y) (k : Y ≃ₜ Z) :
+    (U.mapHomeomorph h).mapHomeomorph k = U.mapHomeomorph (h.trans k) := by
+  ext x z
+  rfl
+
+/-- Transporting through a homeomorphism and back recovers the same native cover. -/
+theorem mapHomeomorph_symm_mapHomeomorph (U : PointOpenCover X) (h : X ≃ₜ Y) :
+    (U.mapHomeomorph h).mapHomeomorph h.symm = U := by
+  ext x z
+  simp [mapHomeomorph, Homeomorph.opensCongr]
+
+/-- Transport both the neighborhoods and the actual refinement relation. -/
+@[simp]
+theorem mapHomeomorph_le_mapHomeomorph_iff (U V : PointOpenCover X) (h : X ≃ₜ Y) :
+    U.mapHomeomorph h ≤ V.mapHomeomorph h ↔ U ≤ V := by
+  rw [le_iff_forall_exists, le_iff_forall_exists]
+  constructor
+  · intro hUV x
+    obtain ⟨y, hxy⟩ := hUV (h x)
+    refine ⟨h.symm y, h.opensCongr.le_iff_le.mp ?_⟩
+    simpa [mapHomeomorph] using hxy
+  · intro hUV y
+    obtain ⟨x, hyx⟩ := hUV (h.symm y)
+    refine ⟨h x, ?_⟩
+    simpa [mapHomeomorph] using h.opensCongr.monotone hyx
+
+/-- A homeomorphism identifies the native refinement preorders, with no universe restriction. -/
+def _root_.Homeomorph.pointOpenCoverOrderIso (h : X ≃ₜ Y) :
+    PointOpenCover X ≃o PointOpenCover Y where
+  toFun := fun U ↦ U.mapHomeomorph h
+  invFun := fun U ↦ U.mapHomeomorph h.symm
+  left_inv := fun U ↦ U.mapHomeomorph_symm_mapHomeomorph h
+  right_inv := fun U ↦ U.mapHomeomorph_symm_mapHomeomorph h.symm
+  map_rel_iff' := mapHomeomorph_le_mapHomeomorph_iff _ _ h
+
+/-- The cover order equivalence applies by the actual neighborhood transport. -/
+@[simp]
+theorem _root_.Homeomorph.pointOpenCoverOrderIso_apply (h : X ≃ₜ Y) (U : PointOpenCover X) :
+    h.pointOpenCoverOrderIso U = U.mapHomeomorph h := by rfl
+
+/-- The inverse cover order equivalence transports neighborhoods by the inverse homeomorphism. -/
+@[simp]
+theorem _root_.Homeomorph.pointOpenCoverOrderIso_symm_apply (h : X ≃ₜ Y) (U : PointOpenCover Y) :
+    (h.pointOpenCoverOrderIso).symm U = U.mapHomeomorph h.symm := by rfl
+
+/-- Transport an actual refinement function and all its open inclusions. -/
+def mapHomeomorphHom (U : PointOpenCover X) (h : X ≃ₜ Y) {V : PointOpenCover X}
+    (φ : U.toFormalCoproduct ⟶ V.toFormalCoproduct) :
+    (U.mapHomeomorph h).toFormalCoproduct ⟶ (V.mapHomeomorph h).toFormalCoproduct where
+  f y := h (φ.f (h.symm y))
+  φ y := homOfLE (by
+    simpa only [mapHomeomorph_opens, Homeomorph.symm_apply_apply] using
+      h.opensCongr.monotone (leOfHom (φ.φ (h.symm y))))
+
+/-- The actual transported refinement uses the conjugated function on points. -/
+@[simp]
+theorem mapHomeomorphHom_f (U : PointOpenCover X) (h : X ≃ₜ Y) {V : PointOpenCover X}
+    (φ : U.toFormalCoproduct ⟶ V.toFormalCoproduct) (y : Y) :
+    (U.mapHomeomorphHom h φ).f y = h (φ.f (h.symm y)) := by rfl
+
+-- Mathlib's changeFunctor retains the order equivalence and gives its functor the literal
+-- cover-transport object function, so diagrams reindexed along it need no dependent casts.
+/-- A homeomorphism identifies the refinement categories of point-neighborhood covers, with no
+universe restriction. Its functor transports each cover by `PointOpenCover.mapHomeomorph`. -/
+@[expose]
+def _root_.Homeomorph.pointOpenCoverEquivalence (h : X ≃ₜ Y) :
+    PointOpenCover X ≌ PointOpenCover Y :=
+  let G : PointOpenCover X ⥤ PointOpenCover Y :=
+    { obj := fun U ↦ U.mapHomeomorph h
+      map := fun f ↦ homOfLE ((mapHomeomorph_le_mapHomeomorph_iff _ _ h).mpr (leOfHom f)) }
+  (h.pointOpenCoverOrderIso).equivalence.changeFunctor
+    (NatIso.ofComponents (fun U ↦ eqToIso (by
+      simp only [OrderIso.equivalence_functor, Monotone.functor_obj,
+        Homeomorph.pointOpenCoverOrderIso_apply, G])) (fun _ ↦ Subsingleton.elim _ _)
+      : (h.pointOpenCoverOrderIso).equivalence.functor ≅ G)
+
+/-- The cover equivalence transports each cover by the actual neighborhood transport. -/
+@[simp]
+theorem _root_.Homeomorph.pointOpenCoverEquivalence_functor_obj (h : X ≃ₜ Y)
+    (U : PointOpenCover X) : h.pointOpenCoverEquivalence.functor.obj U = U.mapHomeomorph h := by
+  rfl
+
 end PointOpenCover
+
+/-- The original cover refines the inverse image of its transported cover. -/
+@[expose]
+def _root_.Homeomorph.cechPullbackRefinement {X Y : TopCat.{u}} (h : X ≃ₜ Y)
+    (U : PointOpenCover X) :
+    FormalCoproduct.mk Y (fun y ↦ (Opens.map (TopCat.isoOfHomeo h).hom).obj
+      ((U.mapHomeomorph h).opens y)) ⟶ U.toFormalCoproduct :=
+  ⟨h.symm, fun y ↦ homOfLE (by
+    -- FormalCoproduct.mk/toFormalCoproduct reduce the component goal to an Opens inclusion.
+    change (Opens.map (TopCat.isoOfHomeo h).hom).obj ((U.mapHomeomorph h).opens y) ≤
+      U.opens (h.symm y)
+    rw [PointOpenCover.mapHomeomorph_opens]
+    exact le_of_eq (h.opensCongr.symm_apply_apply _))⟩
+
+/-- The actual refinement reads a transported point at its inverse image. -/
+@[simp]
+theorem _root_.Homeomorph.cechPullbackRefinement_f {X Y : TopCat.{u}} (h : X ≃ₜ Y)
+    (U : PointOpenCover X) (y : Y) : (h.cechPullbackRefinement U).f y = h.symm y := by
+  rfl
 
 /-- A finite indexed open cover. The lifted index type lives in the universe of `X`, so the
 collection of all these covers is small in that same universe. Repetitions are allowed. -/
