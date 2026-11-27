@@ -13,6 +13,9 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Symm
 /-!
 # `Sym A₁ ⟶ A` is surjective in positive degrees when `A` is generated in degree one
 
+For an epimorphism `q : F ⟶ G` of quasi-coherent modules, `Sym(q)` is an epimorphism in degree
+one by naturality of `gradedSymmetricAlgebraDegreeOneIso`.
+
 Let `A` be a graded quasicoherent algebra on a scheme `X`, and let `Sym A₁ ⟶ A` be the morphism of
 graded quasicoherent algebras extending the identity of the degree-one component `A₁`
 (`TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraLift`). It is an epimorphism in degree one, being
@@ -34,6 +37,9 @@ morphism `⨁ₙ Symⁿ (f^* A₁) ⟶ ⨁ₙ f^* Aₙ` is the pullback of `⨁�
 back preserves epimorphisms.
 
 ## Main results
+
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.epi_gradedSymmetricAlgebra_map_one`:
+  the symmetric algebra map of an epimorphism is an epimorphism in degree one.
 
 In the namespace `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra`:
 

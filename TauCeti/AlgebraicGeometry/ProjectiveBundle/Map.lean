@@ -14,11 +14,14 @@ public import TauCeti.AlgebraicGeometry.RelativeProj.TwistingSheaf.Pullback
 An epimorphism of quasi-coherent modules `F ⟶ G` on a scheme induces the closed immersion
 `projectiveBundle.mapOfEpi : P(G) ⟶ P(F)` over the base. It is contravariantly functorial and
 pulls back every integer twist by the canonical isomorphism
-`projectiveBundle.mapOfEpiTwistingSheafIso`.
+`projectiveBundle.mapOfEpiTwistingSheafIso`. The defining equation
+`projectiveBundle.mapOfEpiTwistingSheafHom_def` and chart formula
+`projectiveBundle.mapOfEpiTwistingSheafHom_comp_π` identify the comparison with the relative
+Proj map and its affine chart components.
 
 These constructions use `gradedSymmetricAlgebraDegreeOneIso` and the relative Proj results
 `CommMon.isClosedImmersion_relativeProjMap_of_epi_one` and
-`CommMon.isIso_relativeProjTwistingSheafMap_of_epi_one`.
+`isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebra`.
 
 ## References
 
@@ -130,20 +133,39 @@ def mapOfEpiTwistingSheafHom (m : ℤ) :
   CommMon.relativeProjTwistingSheafMap ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom
     (irrelevant_le_map_of_epi q) m
 
-/-- The defining equation for the twist comparison exposes its construction on relative Proj.
-The source and target are expressed using the relative Proj twists on the right-hand side. -/
+/-- The twist comparison followed by identification with the relative Proj twist is the relative
+Proj comparison, after identifying the two pullback sources. -/
 theorem mapOfEpiTwistingSheafHom_def (m : ℤ) :
-    HEq (mapOfEpiTwistingSheafHom q m)
-      (CommMon.relativeProjTwistingSheafMap
-        ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom
-        (irrelevant_le_map_of_epi q) m) :=
-  (HEq.rfl)
+    mapOfEpiTwistingSheafHom q m ≫ eqToHom (twistingSheaf_obj S G.obj m) =
+      (Scheme.Modules.pullbackCongr (mapOfEpi_def q)).hom.app _ ≫
+        (Scheme.Modules.pullback _).map (eqToHom (twistingSheaf_obj S F.obj m)) ≫
+          CommMon.relativeProjTwistingSheafMap
+            ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom
+            (irrelevant_le_map_of_epi q) m := by
+  -- Inside this module the comparison and its defining transports reduce to the relative Proj
+  -- map and identities.
+  exact (Category.comp_id _).trans
+    ((Category.id_comp _).trans ((Scheme.Modules.pullback _).map_id _ ▸ Category.id_comp _)).symm
+
+/-- On an affine chart, the twist comparison is the relative Proj chart component. -/
+theorem mapOfEpiTwistingSheafHom_comp_π (m : ℤ) (U : S.AffineZariskiSite) :
+    mapOfEpiTwistingSheafHom q m ≫ eqToHom (twistingSheaf_obj S G.obj m) ≫
+      (((gradedSymmetricAlgebra S).obj G).obj.relativeProjTwistingSheafGlueData m).π U =
+    (Scheme.Modules.pullbackCongr (mapOfEpi_def q)).hom.app _ ≫
+      (Scheme.Modules.pullback _).map (eqToHom (twistingSheaf_obj S F.obj m)) ≫
+        CommMon.relativeProjTwistingSheafMapComponent
+          ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom (irrelevant_le_map_of_epi q)
+          m U := by
+  exact (Category.assoc _ _ _).symm.trans
+    ((congrArg (· ≫ _) (mapOfEpiTwistingSheafHom_def q m)).trans
+      ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+        ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+          (CommMon.relativeProjTwistingSheafMap_comp_π _ _ _ U))))))
 
 /-- Pullback along the map induced by an epimorphism identifies the integer twists. -/
-instance isIso_mapOfEpiTwistingSheafHom (m : ℤ) : IsIso (mapOfEpiTwistingSheafHom q m) := by
-  have := F.epi_gradedSymmetricAlgebra_map_one q
-  exact CommMon.isIso_relativeProjTwistingSheafMap_of_epi_one _ _ _
-    (isGeneratedInDegreeOne_gradedSymmetricAlgebra G)
+instance isIso_mapOfEpiTwistingSheafHom (m : ℤ) : IsIso (mapOfEpiTwistingSheafHom q m) :=
+  isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebra F
+    ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom (irrelevant_le_map_of_epi q) m
 
 /-- The canonical pullback isomorphism for the integer twists along the map induced by an
 epimorphism. -/
