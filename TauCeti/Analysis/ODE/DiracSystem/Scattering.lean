@@ -87,6 +87,26 @@ theorem diracScatteringCoeff_def (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
       !![0, exp (-2 * I * (t * z)) * conj (q t); exp (2 * I * (t * z)) * q t, 0] :=
   (rfl)
 
+/-- The top-left entry of the scattering coefficient vanishes. -/
+@[simp] theorem diracScatteringCoeff_apply_zero_zero (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
+    diracScatteringCoeff q z t 0 0 = 0 :=
+  (rfl)
+
+/-- The top-right entry `e^{-2itz} conj q(t)` of the scattering coefficient. -/
+@[simp] theorem diracScatteringCoeff_apply_zero_one (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
+    diracScatteringCoeff q z t 0 1 = exp (-2 * I * (t * z)) * conj (q t) :=
+  (rfl)
+
+/-- The bottom-left entry `e^{2itz} q(t)` of the scattering coefficient. -/
+@[simp] theorem diracScatteringCoeff_apply_one_zero (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
+    diracScatteringCoeff q z t 1 0 = exp (2 * I * (t * z)) * q t :=
+  (rfl)
+
+/-- The bottom-right entry of the scattering coefficient vanishes. -/
+@[simp] theorem diracScatteringCoeff_apply_one_one (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
+    diracScatteringCoeff q z t 1 1 = 0 :=
+  (rfl)
+
 /-- The scattering matrix `G_q(t, z)` of the potential `q`: the matrix in the standard basis of the
 propagator `N(t, 0)` of the coefficient `[[0, e^{-2isz} conj q(s)], [e^{2isz} q(s), 0]]` acting on
 `EuclideanSpace ℂ (Fin 2)`. -/
@@ -213,7 +233,7 @@ private theorem toEuclideanCLM_diracScatteringCoeff (q : ℝ → ℂ) (z : ℂ) 
   simp only [← map_smul, ← map_add]
   congr 1
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [diracScatteringCoeff_def]
+  fin_cases i <;> fin_cases j <;> simp
 
 /-- The scattering coefficient, as an operator on `EuclideanSpace ℂ (Fin 2)`, is integrable on
 every compact interval on which the potential is integrable. -/
