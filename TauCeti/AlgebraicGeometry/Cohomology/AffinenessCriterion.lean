@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Modules.LinearCombination
 import Mathlib.Algebra.Category.Grp.Zero
 import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.AlgebraicGeometry.VectorBundle.Free.Basic
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -108,10 +109,8 @@ theorem exists_isAffineOpen_basicOpen_mem_of_isClosed (X : Scheme.{u})
 
 /-- If the first cohomology of every quasi-coherent ideal sheaf on `X` vanishes, so does that of
 every quasi-coherent `𝒪_X`-module `M` with finitely many jointly injective morphisms
-`φ i : M ⟶ 𝒪_X`, that is, of every quasi-coherent submodule of a finite free module. By induction
-on the number of morphisms: `M` maps onto the image ideal sheaf `I` of one of them, and the kernel
-`K` of `M ⟶ I` carries the others, jointly injective on `K`; the long exact sequence of
-`0 ⟶ K ⟶ M ⟶ I ⟶ 0` concludes. Stacks, proof of Lemma 30.3.1 (01XF). -/
+`φ i : M ⟶ 𝒪_X`, that is, of every quasi-coherent submodule of a finite free module. Stacks,
+proof of Lemma 30.3.1 (01XF). -/
 theorem subsingleton_cohomology_one_of_comp_eq_zero_imp
     (h : ∀ I : X.IdealSheafData, Subsingleton (Cohomology I.sheaf 1)) {ι : Type u} [Finite ι]
     (M : X.Modules) [M.IsQuasicoherent] (φ : ι → (M ⟶ Scheme.Modules.unit X))
@@ -135,14 +134,11 @@ theorem subsingleton_cohomology_one_of_comp_eq_zero_imp
       (TauCeti.kernelSequence_shortExact (C := X.Modules) (φ none).toImageIdealSheaf) 1
       (ih (kernel (φ none).toImageIdealSheaf)
         (fun i ↦ kernel.ι (φ none).toImageIdealSheaf ≫ φ (some i)) fun Z g hg ↦ ?_) (h _)
-    -- `φ none` factors through `M ⟶ I` followed by the inclusion of `I`; compare on sections.
+    -- `φ none` factors through `M ⟶ I` followed by the inclusion of `I`.
     have hnone : kernel.ι (φ none).toImageIdealSheaf ≫ φ none = 0 := by
-      refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
-      ext s
-      have h0 := congrArg (fun ψ ↦ ψ.app U s) (kernel.condition (φ none).toImageIdealSheaf)
-      change (φ none).app U ((kernel.ι (φ none).toImageIdealSheaf).app U s) = 0
-      rw [← Hom.toImageIdealSheaf_app_sheafι]
-      exact (congrArg _ h0).trans (map_zero _)
+      have h0 := kernel.condition_assoc (φ none).toImageIdealSheaf (φ none).imageIdealSheaf.sheafι
+      rw [Hom.toImageIdealSheaf_ι] at h0
+      exact h0.trans zero_comp
     have hg' : g ≫ kernel.ι (φ none).toImageIdealSheaf = 0 := hφ _ fun
       | none => by rw [Category.assoc, hnone, Limits.comp_zero]
       | some i => by rw [Category.assoc]; exact hg i
@@ -172,14 +168,16 @@ theorem isAffine_of_subsingleton_cohomology_one_idealSheaf (X : Scheme.{u}) [Com
   have : (kernel (C := X.Modules) (linearCombination F)).IsQuasicoherent :=
     isQuasicoherent_kernel (M := SheafOfModules.free (R := X.ringCatSheaf) t)
       (N := SheafOfModules.unit X.ringCatSheaf) _
-  classical
+  -- The coordinate projections of the biproduct `𝒪_X^t` are jointly injective.
   have hK := subsingleton_cohomology_one_of_comp_eq_zero_imp h
     (kernel (C := X.Modules) (linearCombination F))
-    (fun i ↦ kernel.ι (C := X.Modules) _ ≫ linearCombination (Pi.single i 1)) fun Z g hg ↦ by
-      have hg' := eq_zero_of_comp_linearCombination_single_eq_zero _ fun i ↦
-        (Category.assoc _ _ _).trans (hg i)
+    (fun i ↦ kernel.ι (C := X.Modules) _ ≫ (FiniteLocallyFreeSheaf.freeBicone X t).π i)
+    fun Z g hg ↦ by
       have : Mono (kernel.ι (C := X.Modules) (linearCombination F)) := equalizer.ι_mono
-      exact zero_of_comp_mono _ hg'
+      refine (cancel_mono (kernel.ι (C := X.Modules) (linearCombination F))).mp ?_
+      refine (FiniteLocallyFreeSheaf.isBilimitFreeBicone X t).isLimit.hom_ext fun ⟨j⟩ ↦ ?_
+      exact ((Category.assoc _ _ _).trans (hg j)).trans
+        (zero_comp.symm.trans (Category.assoc _ _ _).symm)
   obtain ⟨c, hc⟩ := sections_surjective (TauCeti.kernelSequence_shortExact
     (C := X.Modules) (linearCombination F)) hK (1 : Γ(X, ⊤))
   obtain ⟨a, ha⟩ := exists_coefficients_linearCombination_app_eq_sum F ⊤ c
