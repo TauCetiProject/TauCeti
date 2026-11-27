@@ -357,9 +357,8 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_log (A : Matrix ι ι ℝ) {f : Euclide
   have hlog : ContDiffAt ℝ 2 Real.log (f x) := Real.contDiffAt_log.mpr hfx
   have hcomp : (fun y ↦ Real.log (f y)) = Real.log ∘ f := rfl
   have hD1 : fderiv ℝ (Real.log ∘ f) x v = fderiv ℝ f x v / f x := by
-    rw [((hlog.differentiableAt two_ne_zero).hasDerivAt.comp_hasFDerivAt x
-      (hf.differentiableAt two_ne_zero).hasFDerivAt).fderiv]
-    simp [Real.deriv_log', div_eq_inv_mul]
+    rw [← hcomp, fderiv.log (hf.differentiableAt two_ne_zero) hfx]
+    simp [div_eq_inv_mul]
   have hd2 : iteratedDeriv 2 Real.log (f x) = -(f x ^ 2)⁻¹ := by
     simp [iteratedDeriv_succ, Real.deriv_log', deriv_inv]
   simp only [hcomp, hD1, fderiv_fderiv_scalar_comp_apply hlog hf, hd2, smul_eq_mul,

@@ -458,8 +458,9 @@ theorem one_sub_sq_le_div_add_exp_mul_mul_exp {A : EuclideanSpace ℝ ι → Mat
     rw [hc]
     ring
   have hrate : c ^ 2 * R / (4 * c * √Λ + 2 * B) = θ * r * R / (8 * (√(θ * r) * √Λ + B)) := by
-    rw [hden, hc2, div_mul_eq_mul_div, div_div,
-      show (4 : ℝ) * (2 * (√(θ * r) * √Λ + B)) = 8 * (√(θ * r) * √Λ + B) by ring]
+    rw [hden, hc2]
+    generalize √(θ * r) * √Λ + B = S
+    ring
   rw [hK, hrate] at hdecay
   exact hlog.trans hdecay
 
