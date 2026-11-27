@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.Matrix.Hadamard
 
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -111,11 +110,6 @@ theorem adjMat_nonneg (rel : X → X → Fin (d + 1)) (i : Fin (d + 1)) (x y : X
 theorem adjMat_mem_bmAlgebra (rel : X → X → Fin (d + 1)) (i : Fin (d + 1)) :
     adjMat rel i ∈ bmAlgebra rel :=
   Submodule.subset_span ⟨i, rfl⟩
-
-/-- An element lies in `bmAlgebra rel` iff it lies in the span of the adjacency matrices. -/
-theorem mem_bmAlgebra_iff (rel : X → X → Fin (d + 1)) {M : Matrix X X ℝ} :
-    M ∈ bmAlgebra rel ↔ M ∈ Submodule.span ℝ (Set.range (adjMat rel)) :=
-  (Iff.rfl)
 
 /-- The Bose–Mesner algebra equals the real span of the adjacency matrices. -/
 theorem bmAlgebra_eq_span (rel : X → X → Fin (d + 1)) :
@@ -224,6 +218,16 @@ theorem nonempty (h : IsAssocScheme rel) : Nonempty X :=
 theorem card_pos (h : IsAssocScheme rel) : 0 < Fintype.card X :=
   Fintype.card_pos_iff.mpr h.nonempty
 
+/-- The ground set of a symmetric association scheme has nonzero cardinality in `ℝ`. -/
+theorem card_ne_zero (h : IsAssocScheme rel) : (Fintype.card X : ℝ) ≠ 0 :=
+  Nat.cast_ne_zero.mpr h.card_pos.ne'
+
+/-- Every class of a symmetric association scheme has a positive number of ordered pairs. -/
+theorem card_pairs_pos (h : IsAssocScheme rel) (i : Fin (d + 1)) :
+    0 < #{p : X × X | rel p.1 p.2 = i} :=
+  let ⟨x, y, hxy⟩ := h.exists_rel_eq i
+  Finset.card_pos.mpr ⟨(x, y), Finset.mem_filter.mpr ⟨Finset.mem_univ _, hxy⟩⟩
+
 theorem rel_self (h : IsAssocScheme rel) (x : X) : rel x x = 0 :=
   (h.rel_eq_zero_iff x x).mpr rfl
 
@@ -312,8 +316,7 @@ theorem card_filter_rel_eq_valency (h : IsAssocScheme rel) (i : Fin (d + 1)) (x 
     (#{y | rel x y = i} : ℝ) = valency rel i := by
   unfold valency
   rw [h.card_pairs_rel_eq i x, Nat.cast_mul]
-  have hpos : (Fintype.card X : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr h.card_pos.ne'
-  field_simp [hpos]
+  field_simp [h.card_ne_zero]
 
 /-- Every row of `adjMat rel i` sums to `valency rel i`. -/
 theorem sum_adjMat_row (h : IsAssocScheme rel) (i : Fin (d + 1)) (x : X) :
@@ -382,9 +385,8 @@ theorem card_filter_rel_and_eq_intersectionNumber (h : IsAssocScheme rel) (i j :
     (#{z | rel x z = i ∧ rel z y = j} : ℝ) = intersectionNumber rel i j (rel x y) := by
   unfold intersectionNumber
   rw [h.card_triples_rel_eq i j x y, Nat.cast_mul]
-  have hpos : 0 < #{p : X × X | rel p.1 p.2 = rel x y} :=
-    Finset.card_pos.mpr ⟨(x, y), Finset.mem_filter.mpr ⟨Finset.mem_univ _, rfl⟩⟩
-  have hne : (#{p : X × X | rel p.1 p.2 = rel x y} : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hpos.ne'
+  have hne : (#{p : X × X | rel p.1 p.2 = rel x y} : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (h.card_pairs_pos (rel x y)).ne'
   field_simp [hne]
 
 /-- **Product of adjacency matrices.** In a symmetric association scheme,
@@ -414,16 +416,6 @@ theorem mul_mem_bmAlgebra (h : IsAssocScheme rel) {M N : Matrix X X ℝ}
   | add _ _ _ _ h1 h2 => simpa [Matrix.add_mul] using Submodule.add_mem _ h1 h2
   | smul c _ _ h1 => simpa [Matrix.smul_mul] using Submodule.smul_mem _ c h1
 
-/-- Any two adjacency matrices commute. -/
-theorem adjMat_comm (h : IsAssocScheme rel) (i j : Fin (d + 1)) :
-    adjMat rel i * adjMat rel j = adjMat rel j * adjMat rel i := by
-  have hsym := h.transpose_eq_of_mem_bmAlgebra
-    (h.mul_mem_bmAlgebra (adjMat_mem_bmAlgebra rel i) (adjMat_mem_bmAlgebra rel j))
-  calc adjMat rel i * adjMat rel j
-      = (adjMat rel i * adjMat rel j)ᵀ := hsym.symm
-    _ = (adjMat rel j)ᵀ * (adjMat rel i)ᵀ := Matrix.transpose_mul _ _
-    _ = adjMat rel j * adjMat rel i := by rw [h.adjMat_transpose i, h.adjMat_transpose j]
-
 /-- The Bose–Mesner algebra is commutative under matrix multiplication. -/
 theorem mul_comm_of_mem_bmAlgebra (h : IsAssocScheme rel) {M N : Matrix X X ℝ}
     (hM : M ∈ bmAlgebra rel) (hN : N ∈ bmAlgebra rel) : M * N = N * M := by
@@ -431,6 +423,11 @@ theorem mul_comm_of_mem_bmAlgebra (h : IsAssocScheme rel) {M N : Matrix X X ℝ}
   calc M * N = (M * N)ᵀ := hsym.symm
     _ = Nᵀ * Mᵀ := Matrix.transpose_mul M N
     _ = N * M := by rw [h.transpose_eq_of_mem_bmAlgebra hM, h.transpose_eq_of_mem_bmAlgebra hN]
+
+/-- Any two adjacency matrices commute. -/
+theorem adjMat_comm (h : IsAssocScheme rel) (i j : Fin (d + 1)) :
+    adjMat rel i * adjMat rel j = adjMat rel j * adjMat rel i :=
+  h.mul_comm_of_mem_bmAlgebra (adjMat_mem_bmAlgebra rel i) (adjMat_mem_bmAlgebra rel j)
 
 /-- The Bose–Mesner algebra as a real subalgebra of matrices. -/
 def bmSubalgebra [DecidableEq X] (h : IsAssocScheme rel) : Subalgebra ℝ (Matrix X X ℝ) where
@@ -491,7 +488,7 @@ theorem intersectionNumber_zero_right (h : IsAssocScheme rel) (i k : Fin (d + 1)
 
 /-- `p^0_ij = δ_ij v_j`. -/
 @[simp]
-theorem intersectionNumber_eq_zero_right (h : IsAssocScheme rel) (i j : Fin (d + 1)) :
+theorem intersectionNumber_apply_zero (h : IsAssocScheme rel) (i j : Fin (d + 1)) :
     intersectionNumber rel i j 0 = if i = j then valency rel j else 0 := by
   obtain ⟨x⟩ := h.nonempty
   have hxx : rel x x = 0 := h.rel_self x
@@ -515,15 +512,10 @@ theorem intersectionNumber_eq_zero_right (h : IsAssocScheme rel) (i j : Fin (d +
 theorem intersectionNumber_mul_valency (h : IsAssocScheme rel) (i j k : Fin (d + 1)) :
     intersectionNumber rel i j k * valency rel k =
       intersectionNumber rel i k j * valency rel j := by
-  have hkpos : (#{p : X × X | rel p.1 p.2 = k} : ℝ) ≠ 0 := by
-    obtain ⟨x, y, hxy⟩ := h.exists_rel_eq k
-    exact_mod_cast (Finset.card_pos.mpr ⟨(x, y), Finset.mem_filter.mpr
-      ⟨Finset.mem_univ _, hxy⟩⟩).ne'
-  have hjpos : (#{p : X × X | rel p.1 p.2 = j} : ℝ) ≠ 0 := by
-    obtain ⟨x, y, hxy⟩ := h.exists_rel_eq j
-    exact_mod_cast (Finset.card_pos.mpr ⟨(x, y), Finset.mem_filter.mpr
-      ⟨Finset.mem_univ _, hxy⟩⟩).ne'
-  have hXpos : (Fintype.card X : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr h.card_pos.ne'
+  have hkpos : (#{p : X × X | rel p.1 p.2 = k} : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (h.card_pairs_pos k).ne'
+  have hjpos : (#{p : X × X | rel p.1 p.2 = j} : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (h.card_pairs_pos j).ne'
   unfold intersectionNumber valency
   have htriples :
       #{t : X × X × X | rel t.1 t.2.1 = k ∧ rel t.1 t.2.2 = i ∧ rel t.2.2 t.2.1 = j} =
@@ -543,7 +535,7 @@ theorem intersectionNumber_mul_valency (h : IsAssocScheme rel) (i j k : Fin (d +
       rw [h.rel_comm]
       exact ht.2.1
   rw [htriples]
-  field_simp [hkpos, hjpos, hXpos]
+  field_simp [hkpos, hjpos, h.card_ne_zero]
 
 /-- Summing `p^k_ij` over `j` gives `v_i`. -/
 theorem sum_intersectionNumber (h : IsAssocScheme rel) (i k : Fin (d + 1)) :

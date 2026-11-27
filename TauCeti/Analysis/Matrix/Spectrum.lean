@@ -109,6 +109,11 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   of the characteristic polynomial, so `μ - A` is singular;
 * `Matrix.IsHermitian.prod_comp_eigenvalues` and `Matrix.IsHermitian.sum_comp_eigenvalues` — a
   product or sum of a function over the matrix-indexed eigenvalues is the same over the sorted
+  eigenvalues;
+* `Matrix.IsHermitian.eq_zero_of_mulVec_eigenvectorBasis` — a matrix annihilating every vector of
+  `hA.eigenvectorBasis` is zero;
+* `Matrix.IsHermitian.exists_eigenvectorBasis_ne_zero_of_mul_eq` — if `p * A = A` and `A` is not a
+  real scalar multiple of `p`, then `p` preserves two eigenvectors of `A` with distinct
   eigenvalues.
 
 ## References
@@ -598,6 +603,58 @@ theorem det_scalar_eigenvalues₀_sub_eq_zero (hA : A.IsHermitian)
     rw [hA.roots_charpoly_eq_eigenvalues₀]
     exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
   rw [← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1 hroot).eq_zero]
+
+/-- A matrix that annihilates every eigenvector in `hA.eigenvectorBasis` is zero. -/
+theorem eq_zero_of_mulVec_eigenvectorBasis (hA : A.IsHermitian) {C : Matrix ι ι 𝕜}
+    (hC : ∀ j, C *ᵥ ⇑(hA.eigenvectorBasis j) = 0) : C = 0 := by
+  apply Matrix.toEuclideanLin.injective
+  apply hA.eigenvectorBasis.toBasis.ext
+  intro j
+  exact PiLp.ext fun x => by simpa [Matrix.toLpLin_apply] using congrFun (hC j) x
+
+/-- If `A` is Hermitian, `p * A = A`, and `A` is not a real scalar multiple of `p`, then there
+are two eigenvectors in `hA.eigenvectorBasis` with distinct eigenvalues that are not annihilated
+by `p`. -/
+theorem exists_eigenvectorBasis_ne_zero_of_mul_eq (hA : A.IsHermitian) {p : Matrix ι ι 𝕜}
+    (hpA : p * A = A) (hnot : ∀ c : ℝ, A ≠ c • p) :
+    ∃ x₀ y₀ : ι, p *ᵥ ⇑(hA.eigenvectorBasis x₀) ≠ 0 ∧
+      p *ᵥ ⇑(hA.eigenvectorBasis y₀) ≠ 0 ∧
+      hA.eigenvalues y₀ ≠ hA.eigenvalues x₀ := by
+  have hp_ne : p ≠ 0 := fun hp0 =>
+    hnot 0 (by rw [← hpA, hp0, Matrix.zero_mul, zero_smul])
+  obtain ⟨x₀, hx₀⟩ : ∃ x₀ : ι, p *ᵥ ⇑(hA.eigenvectorBasis x₀) ≠ 0 := by
+    by_contra! hall
+    exact hp_ne (hA.eq_zero_of_mulVec_eigenvectorBasis hall)
+  obtain ⟨y₀, hy₀_p, hy₀_ev⟩ : ∃ y₀ : ι,
+      p *ᵥ ⇑(hA.eigenvectorBasis y₀) ≠ 0 ∧
+      hA.eigenvalues y₀ ≠ hA.eigenvalues x₀ := by
+    by_contra! hall
+    refine hnot (hA.eigenvalues x₀)
+      (sub_eq_zero.mp (hA.eq_zero_of_mulVec_eigenvectorBasis fun j => ?_))
+    rw [Matrix.sub_mulVec, Matrix.smul_mulVec]
+    by_cases hpj : p *ᵥ ⇑(hA.eigenvectorBasis j) = 0
+    · have hAj : A *ᵥ ⇑(hA.eigenvectorBasis j) = 0 :=
+        (congrArg (· *ᵥ _) hpA.symm).trans
+          (by rw [← Matrix.mulVec_mulVec, hA.mulVec_eigenvectorBasis j, Matrix.mulVec_smul, hpj,
+            smul_zero])
+      rw [hAj, hpj, smul_zero, sub_zero]
+    · have hevj : hA.eigenvalues j = hA.eigenvalues x₀ := hall j hpj
+      rcases eq_or_ne (hA.eigenvalues x₀) 0 with hμ0 | hμ0
+      · rw [hA.mulVec_eigenvectorBasis j, hevj, hμ0, zero_smul, zero_smul, sub_zero]
+      · have hpb : p *ᵥ ⇑(hA.eigenvectorBasis j) = ⇑(hA.eigenvectorBasis j) := by
+          calc p *ᵥ ⇑(hA.eigenvectorBasis j)
+              = p *ᵥ ((hA.eigenvalues x₀)⁻¹ •
+                  (A *ᵥ ⇑(hA.eigenvectorBasis j))) := by
+                rw [hA.mulVec_eigenvectorBasis j, hevj, smul_smul, inv_mul_cancel₀ hμ0,
+                  one_smul]
+            _ = (hA.eigenvalues x₀)⁻¹ •
+                  ((p * A) *ᵥ ⇑(hA.eigenvectorBasis j)) := by
+                rw [Matrix.mulVec_smul, Matrix.mulVec_mulVec]
+            _ = ⇑(hA.eigenvectorBasis j) := by
+                rw [hpA, hA.mulVec_eigenvectorBasis j, hevj, smul_smul,
+                  inv_mul_cancel₀ hμ0, one_smul]
+        rw [hA.mulVec_eigenvectorBasis j, hevj, hpb, sub_self]
+  exact ⟨x₀, y₀, hx₀, hy₀_p, hy₀_ev⟩
 
 end Matrix.IsHermitian
 
