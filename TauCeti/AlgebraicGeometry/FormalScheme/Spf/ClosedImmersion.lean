@@ -127,17 +127,22 @@ theorem map_quotientMk_stalkMap_surjective (q : Spf (A ⧸ J)) :
   obtain ⟨U, hq, t, rfl⟩ := (Spf (A ⧸ J)).presheaf.exists_germ_eq x
   obtain ⟨b, hb, hbU⟩ := exists_basicOpen_le hq
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective (I := J) b
-  let p := (qmap).base q
-  have hp : p ∈ basicOpen f := (map_quotientMk_preimage_basicOpen J f).ge hb
+  let W : Opens (Spf A) := basicOpen f
+  let V : Opens (Spf (A ⧸ J)) := basicOpen (Ideal.Quotient.mk J f)
+  have hpre : V ≤ (Opens.map (qmap).base).obj W := (map_quotientMk_preimage_basicOpen J f).ge
+  have hp : (qmap).base q ∈ W := hpre hb
   obtain ⟨s, hs⟩ := map_quotientMk_appLE_basicOpen_surjective J f
     ((Spf (A ⧸ J)).presheaf.map (homOfLE hbU).op t)
-  refine ⟨(Spf A).presheaf.germ (basicOpen f) p hp s, ?_⟩
-  have hpre := (map_quotientMk_preimage_basicOpen J f).ge
-  erw [LocallyRingedSpace.stalkMap_germ_apply (qmap) (basicOpen f) q hp s,
-    ← (Spf (A ⧸ J)).presheaf.germ_res_apply (homOfLE hpre) q hb,
-    ← CommRingCat.comp_apply ((qmap).c.app (op (basicOpen f)))
-      ((Spf (A ⧸ J)).presheaf.map (homOfLE hpre).op) s,
-    ← PresheafedSpace.Hom.appLE_def (qmap).toHom (basicOpen f) (basicOpen _) hpre, hs]
-  exact (Spf (A ⧸ J)).presheaf.germ_res_apply (homOfLE hbU) q hb t
+  refine ⟨(Spf A).presheaf.germ W ((qmap).base q) hp s, ?_⟩
+  have hgerm : (Spf A).presheaf.germ W ((qmap).base q) hp ≫ (qmap).stalkMap q =
+      (qmap).toHom.appLE W V hpre ≫ (Spf (A ⧸ J)).presheaf.germ V q hb := by
+    refine (LocallyRingedSpace.stalkMap_germ (qmap) W q hp).trans ?_
+    rw [PresheafedSpace.Hom.appLE_def, Category.assoc, TopCat.Presheaf.germ_res]
+  calc
+    _ = (Spf (A ⧸ J)).presheaf.germ V q hb ((qmap).toHom.appLE W V hpre s) :=
+      ConcreteCategory.congr_hom hgerm s
+    _ = _ := by
+      rw [hs]
+      exact (Spf (A ⧸ J)).presheaf.germ_res_apply (homOfLE hbU) q hb t
 
 end TauCeti.FormalScheme.Spf

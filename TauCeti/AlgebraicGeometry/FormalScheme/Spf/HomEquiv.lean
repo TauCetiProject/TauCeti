@@ -194,8 +194,9 @@ private theorem topSectionsIso_inv_comp_map_appLE_comp_quotientProjection (φ : 
         (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
           (homOfLE (le_top : W ≤ ⊤)).op := by
   intro hIB
-  erw [topSectionsIso_inv_comp_map_appLE_top_assoc φ hφ W,
-    topSectionsIso_inv_comp_res_comp_quotientProjection W n, CommRingCat.ofHom_comp]
+  refine (topSectionsIso_inv_comp_map_appLE_top_assoc φ hφ W
+    ((quotientProjection hIB n).hom.app (op W))).trans ?_
+  rw [topSectionsIso_inv_comp_res_comp_quotientProjection W n, CommRingCat.ofHom_comp]
   exact (Category.assoc _ _ _).symm
 
 private theorem exists_pow_map_quotient_eq_bot_of_map (φ : A →+* B) (hφ : Continuous φ)
@@ -407,15 +408,17 @@ theorem map_appLE_basicOpen (φ : A →+* B) (hφ : Continuous φ) (a : A)
   let _ := quotientSectionsTopology hB ((Opens.map k.base).obj (basicOpen a))
   have hcm : @Continuous _ _ (quotientSectionsTopology hA (basicOpen a))
       (quotientSectionsTopology hB (basicOpen (φ a))) m := by
-    dsimp only [m]
-    erw [PresheafedSpace.Hom.appLE_def k.toHom (basicOpen a) (basicOpen (φ a)) hpre]
-    exact (quotientSectionsTopology_restrict hB hpre).comp (continuous_c_app k (basicOpen a))
+    refine ((quotientSectionsTopology_restrict hB hpre).comp
+      (continuous_c_app k (basicOpen a))).congr fun s ↦ ?_
+    exact (ConcreteCategory.congr_hom (PresheafedSpace.Hom.appLE_def k.toHom _ _ hpre) s).symm
   have hcoeff : CommRingCat.ofHom (algebraMap A _) ≫ eA.inv ≫ m ≫ eB.hom =
       CommRingCat.ofHom φ ≫ CommRingCat.ofHom (algebraMap B _) := by
     refine (algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE_assoc
       k a (basicOpen (φ a)) hpre eB.hom).trans ?_
-    erw [topSectionsIso_inv_comp_map_appLE_top_assoc φ hφ (basicOpen (φ a)),
-      ← algebraMap_comp_basicOpenSectionsIso_inv_assoc (φ a), Iso.inv_hom_id eB, Category.comp_id]
+    refine (topSectionsIso_inv_comp_map_appLE_top_assoc φ hφ (basicOpen (φ a)) eB.hom).trans ?_
+    refine congrArg (CommRingCat.ofHom φ ≫ ·) ?_
+    refine (algebraMap_comp_basicOpenSectionsIso_inv_assoc (φ a) eB.hom).symm.trans ?_
+    rw [Iso.inv_hom_id eB, Category.comp_id]
   apply CommRingCat.hom_ext
   refine AdicRing.CompletedAway.ringHom_ext A a (hcB.comp (hcm.comp hcA)) hg ?_
   simpa only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, hgφ] using
