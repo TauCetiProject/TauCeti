@@ -22,6 +22,11 @@ degree-`n` Taylor partial sum `∑ k ∈ range (n + 1), z ^ k / k!` equals the s
 
 * `Complex.exp_sub_sum_range_succ_eq_integral`: exact integral remainder for `Complex.exp`.
 * `Real.exp_sub_sum_range_succ_eq_integral`: exact integral remainder for `Real.exp`.
+* `Real.sum_le_exp_of_even`: since the remainder after a partial sum with an even number of terms
+  carries an even power of `x`, such partial sums lie below `exp x` for every real `x`.
+* `Real.one_add_add_sq_div_two_mul_le_exp_of_neg_le`: if `-c ≤ x`, then
+  `1 + x + x ^ 2 / 2 * (1 - c / 3) ≤ exp x`, the lower companion of Bernstein's bound
+  `Real.exp_le_one_add_add_sq_div_of_le`.
 -/
 
 public section
@@ -90,6 +95,34 @@ theorem exp_sub_sum_range_succ_eq_integral (n : ℕ) (x : ℝ) :
   refine intervalIntegral.integral_congr fun s _ => ?_
   push_cast [Complex.ofReal_exp]
   rfl
+
+/-- A partial sum of the exponential series with an even number of terms lies below `exp x` for
+every real `x`; for `0 ≤ x` every partial sum does (`Real.sum_le_exp_of_nonneg`). -/
+theorem sum_le_exp_of_even {n : ℕ} (hn : Even n) (x : ℝ) :
+    ∑ i ∈ Finset.range n, x ^ i / i ! ≤ exp x := by
+  obtain ⟨m, rfl⟩ := hn
+  rcases m with _ | m
+  · simpa using (exp_pos x).le
+  -- The remainder `x ^ (2 m + 2) / (2 m + 1)! * ∫₀¹ (1 - s) ^ (2 m + 1) e^{x s} ds` is `≥ 0`.
+  have h := exp_sub_sum_range_succ_eq_integral (2 * m + 1) x
+  rw [show m + 1 + (m + 1) = 2 * m + 1 + 1 by ring]
+  have hint : 0 ≤ ∫ s in (0 : ℝ)..1, (1 - s) ^ (2 * m + 1) * exp (x * s) :=
+    intervalIntegral.integral_nonneg zero_le_one fun s hs ↦
+      mul_nonneg (pow_nonneg (by linarith [hs.2]) _) (exp_pos _).le
+  have hpow : 0 ≤ x ^ (2 * m + 1 + 1) := by
+    rw [show 2 * m + 1 + 1 = 2 * (m + 1) by ring, pow_mul]
+    positivity
+  have := mul_nonneg (div_nonneg hpow (Nat.cast_nonneg (2 * m + 1)!)) hint
+  linarith
+
+/-- If `-c ≤ x`, then `1 + x + x ^ 2 / 2 * (1 - c / 3) ≤ exp x`. Only a lower bound on `x` is
+needed. This is the lower companion of `Real.exp_le_one_add_add_sq_div_of_le`, and gives lower
+bounds for moment-generating functions of variables bounded below. -/
+theorem one_add_add_sq_div_two_mul_le_exp_of_neg_le {x c : ℝ} (hxc : -c ≤ x) :
+    1 + x + x ^ 2 / 2 * (1 - c / 3) ≤ exp x := by
+  have h := sum_le_exp_of_even (n := 4) (by decide) x
+  norm_num [Finset.sum_range_succ, Nat.factorial] at h
+  nlinarith [mul_nonneg (sq_nonneg x) (neg_le_iff_add_nonneg.1 hxc)]
 
 end Real
 
