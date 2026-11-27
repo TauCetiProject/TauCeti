@@ -30,8 +30,6 @@ locally profinite set.
 ## Main definitions
 
 * `LocallyConstant.compactlySupportedIdeal X R`: the ideal `C_c(X, R)` of `C(X, R)`.
-* `LocallyConstant.compactlySupported.mulLeft φ`: multiplication by a locally constant function `φ`,
-  as an `R`-linear endomorphism of `C_c^∞(X, R)`.
 
 ## Main results
 
@@ -121,19 +119,5 @@ instance instPureCompactlySupportedIdeal [CommRing R] : (compactlySupportedIdeal
     ⟨charFn R f.isClopen_support,
       charFn_mem_compactlySupportedIdeal _ (hasCompactSupport_iff_isCompact_support.1 hf),
       by rw [mul_comm, charFn_support_mul]⟩
-
-/-- Multiplication by a locally constant function `φ`, as an `R`-linear endomorphism of the module
-`C_c^∞(X, R)` of test functions: the product of `φ` with a test function is again one, since
-`C_c(X, R)` is an ideal. -/
-def compactlySupported.mulLeft [CommSemiring R] (φ : LocallyConstant X R) :
-    compactlySupported R X R →ₗ[R] compactlySupported R X R :=
-  (LinearMap.mulLeft R φ).restrict fun _ hf ↦
-    mem_compactlySupported.2 (mem_compactlySupported.1 hf).mul_left
-
-@[simp]
-theorem compactlySupported.coe_mulLeft_apply [CommSemiring R] (φ : LocallyConstant X R)
-    (f : compactlySupported R X R) :
-    (compactlySupported.mulLeft φ f : LocallyConstant X R) = φ * f :=
-  (rfl)
 
 end LocallyConstant

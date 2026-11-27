@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.Convolution
 public import TauCeti.RepresentationTheory.LinearCharacter.Eigenspace
-public import TauCeti.Topology.LocallyConstant.CompactSupport.Ideal
 import TauCeti.RepresentationTheory.Dual
 
 /-!
@@ -141,18 +140,6 @@ theorem dual_invariants_compactlySupportedRep :
   · rw [Submodule.span_singleton_le_iff_mem, Representation.mem_invariants_dual_iff]
     exact fun g f ↦ HaarMeasureWithValues.integral_compactlySupportedRep _ g f
 
-/-- The normalised Haar integral is nonzero: it gives the indicator of `U₀` the value `1`. -/
-private theorem integral_normalized_ne_zero [Nontrivial A] :
-    ((HaarMeasureWithValues.normalized A U₀ hU₀ h).integral : Dual A (compactlySupported A G A)) ≠
-      0 := fun h0 ↦ by
-  have := LinearMap.congr_fun h0
-    ⟨compactOpenIndicator (U₀.toCompactOpens hU₀) 1,
-      compactOpenIndicator_mem_compactlySupported _ 1⟩
-  rw [HaarMeasureWithValues.integral_compactOpenIndicator,
-    HaarMeasureWithValues.normalized_apply_self, LinearMap.zero_apply, smul_eq_mul,
-    mul_one] at this
-  exact one_ne_zero this
-
 include hU₀ in
 /-- Over a field `k` in which a compact open subgroup has invertible pro-order, the functionals on
 `C_c^∞(G, k)` invariant under left translation form a line. -/
@@ -160,7 +147,7 @@ theorem finrank_dual_invariants_compactlySupportedRep {k : Type*} [Field k]
     (h : HasUnitProOrder k U₀) :
     finrank k (compactlySupportedRep k G G k).dual.invariants = 1 := by
   rw [dual_invariants_compactlySupportedRep hU₀ h]
-  exact finrank_span_singleton (integral_normalized_ne_zero hU₀ h)
+  exact finrank_span_singleton (HaarMeasureWithValues.integral_normalized_ne_zero hU₀ h)
 
 /-! ### Eigenfunctionals of a character -/
 
@@ -188,26 +175,30 @@ theorem dual_charEigenspace_compactlySupportedRep (χ : G →* Aˣ) (hχ : IsLoc
       A ∙ ((HaarMeasureWithValues.normalized A U₀ hU₀ h).integral ∘ₗ
         compactlySupported.mulLeft
           ((⟨χ, hχ⟩ : LocallyConstant G Aˣ).map fun u ↦ ((u⁻¹ : Aˣ) : A))) := by
-  set ρ := compactlySupportedRep A G G A
-  set I : Dual A (compactlySupported A G A) :=
-    (HaarMeasureWithValues.normalized A U₀ hU₀ h).integral
-  set φ := (⟨χ, hχ⟩ : LocallyConstant G Aˣ).map ((↑) : Aˣ → A)
+  set ρ := compactlySupportedRep A G G A with hρ
+  set φ := (⟨χ, hχ⟩ : LocallyConstant G Aˣ).map ((↑) : Aˣ → A) with hφ
   set ψ := (⟨χ, hχ⟩ : LocallyConstant G Aˣ).map fun u ↦ ((u⁻¹ : Aˣ) : A)
   -- `ψ` is the function of the character `χ⁻¹`, and `φ ψ = 1`.
-  have hχ' : IsLocallyConstant ⇑χ⁻¹ := hχ.comp fun u : Aˣ ↦ u⁻¹
-  have hψ : ψ = (⟨⇑χ⁻¹, hχ'⟩ : LocallyConstant G Aˣ).map ((↑) : Aˣ → A) := rfl
+  have hχ' : IsLocallyConstant ⇑χ⁻¹ := hχ.inv
+  have hψ : ψ = (⟨⇑χ⁻¹, hχ'⟩ : LocallyConstant G Aˣ).map ((↑) : Aˣ → A) := by
+    ext x
+    simp [ψ]
   have hφψ (f : compactlySupported A G A) :
       compactlySupported.mulLeft φ (compactlySupported.mulLeft ψ f) = f := by
-    ext x
-    simp [φ, ψ, ← mul_assoc]
+    have h1 : φ * ψ = 1 := by
+      ext x
+      simp [φ, ψ]
+    rw [← LinearMap.comp_apply, ← compactlySupported.mulLeft_mul, h1,
+      compactlySupported.mulLeft_one, LinearMap.id_apply]
   refine le_antisymm (fun ℓ hℓ ↦ Submodule.mem_span_singleton.2 ?_) ?_
-  · -- `f ↦ ℓ (χ f)` is invariant, hence a multiple of `I`.
+  · -- `f ↦ ℓ (χ f)` is invariant, hence a multiple of the Haar integral.
     have hinv : ℓ ∘ₗ compactlySupported.mulLeft φ ∈ ρ.dual.invariants := by
       refine Representation.mem_invariants_dual_iff.2 fun g f ↦ ?_
       have hg := inv_smul_eq_iff.1 (compactlySupportedRep_mulLeft χ hχ g f).symm
+      rw [← hρ, ← hφ] at hg
       rw [LinearMap.comp_apply, LinearMap.comp_apply, hg, Units.smul_def, map_smul,
-        (Representation.mem_charEigenspace_dual_iff _ χ).1 hℓ, smul_eq_mul, ← mul_assoc,
-        ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mul]
+        Representation.apply_of_mem_charEigenspace_dual hℓ]
+      simp
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1
       ((dual_invariants_compactlySupportedRep hU₀ h).le hinv)
     refine ⟨c, LinearMap.ext fun f ↦ ?_⟩
@@ -215,11 +206,11 @@ theorem dual_charEigenspace_compactlySupportedRep (χ : G →* Aˣ) (hχ : IsLoc
       LinearMap.comp_apply, hφψ]
   · rw [Submodule.span_singleton_le_iff_mem, Representation.mem_charEigenspace_dual_iff]
     intro g f
-    have hg := compactlySupportedRep_mulLeft χ⁻¹ hχ' g f
-    rw [← hψ] at hg
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, inv_smul_eq_iff.1 hg.symm, Units.smul_def,
-      map_smul, HaarMeasureWithValues.integral_compactlySupportedRep, MonoidHom.inv_apply,
-      smul_eq_mul]
+    have hg := inv_smul_eq_iff.1 (compactlySupportedRep_mulLeft χ⁻¹ hχ' g f).symm
+    rw [← hρ, ← hψ] at hg
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, hg, Units.smul_def, map_smul,
+      HaarMeasureWithValues.integral_compactlySupportedRep]
+    simp
 
 include hU₀ in
 /-- Over a field `k` in which a compact open subgroup has invertible pro-order, the
@@ -228,14 +219,16 @@ theorem finrank_dual_charEigenspace_compactlySupportedRep {k : Type*} [Field k]
     (h : HasUnitProOrder k U₀) (χ : G →* kˣ) (hχ : IsLocallyConstant χ) :
     finrank k ((compactlySupportedRep k G G k).dual.charEigenspace χ) = 1 := by
   rw [dual_charEigenspace_compactlySupportedRep hU₀ h χ hχ]
-  refine finrank_span_singleton fun h0 ↦ integral_normalized_ne_zero hU₀ h ?_
-  refine LinearMap.ext fun f ↦ ?_
-  have hf := LinearMap.congr_fun h0
-    (compactlySupported.mulLeft ((⟨χ, hχ⟩ : LocallyConstant G kˣ).map (↑)) f)
-  rw [LinearMap.comp_apply] at hf
-  convert hf using 2
-  ext x
-  simp [← mul_assoc]
+  refine finrank_span_singleton fun h0 ↦
+    HaarMeasureWithValues.integral_normalized_ne_zero hU₀ h ?_
+  -- Multiplying by `χ` undoes the twist by `χ⁻¹`.
+  have hψφ : ((⟨χ, hχ⟩ : LocallyConstant G kˣ).map fun u ↦ ((u⁻¹ : kˣ) : k)) *
+      (⟨χ, hχ⟩ : LocallyConstant G kˣ).map ((↑) : kˣ → k) = 1 := by
+    ext x
+    simp
+  rw [← LinearMap.comp_id (HaarMeasureWithValues.normalized k U₀ hU₀ h).integral,
+    ← compactlySupported.mulLeft_one, ← hψφ, compactlySupported.mulLeft_mul,
+    ← LinearMap.comp_assoc, h0, LinearMap.zero_comp]
 
 end Character
 

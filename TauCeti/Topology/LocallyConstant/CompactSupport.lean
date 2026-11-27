@@ -41,6 +41,8 @@ are treated in `TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport`.
 ## Main definitions
 
 * `LocallyConstant.compactlySupported R X M`: the `R`-module `C_c^∞(X, M)`.
+* `LocallyConstant.compactlySupported.mulLeft φ`: multiplication by a locally constant function `φ`,
+  as an `R`-linear endomorphism of `C_c^∞(X, R)`.
 * `LocallyConstant.compactOpenIndicator K m`: in a Hausdorff space, the indicator `1_K • m` of a
   compact open set `K`, a locally constant function with compact support.
 
@@ -340,6 +342,37 @@ theorem compactlySupported_eq_bot [PreconnectedSpace X] [NoncompactSpace X] :
   exact noncompact_univ X (hsupp ▸ hasCompactSupport_iff_isCompact_support.1 hf)
 
 end Module
+
+section MulLeft
+
+variable [CommSemiring R]
+
+/-- Multiplication by a locally constant function `φ`, as an `R`-linear endomorphism of the module
+`C_c^∞(X, R)` of test functions: the product of `φ` with a compactly supported function is
+compactly supported. -/
+def compactlySupported.mulLeft (φ : LocallyConstant X R) :
+    compactlySupported R X R →ₗ[R] compactlySupported R X R where
+  toFun f := ⟨φ * f, mem_compactlySupported.2 (mem_compactlySupported.1 f.property).mul_left⟩
+  map_add' f g := Subtype.ext (mul_add φ f g)
+  map_smul' c f := Subtype.ext (mul_smul_comm c φ f)
+
+@[simp]
+theorem compactlySupported.coe_mulLeft_apply (φ : LocallyConstant X R)
+    (f : compactlySupported R X R) :
+    (compactlySupported.mulLeft φ f : LocallyConstant X R) = φ * f :=
+  (rfl)
+
+@[simp]
+theorem compactlySupported.mulLeft_one :
+    compactlySupported.mulLeft (1 : LocallyConstant X R) = LinearMap.id :=
+  LinearMap.ext fun f ↦ Subtype.ext (one_mul (f : LocallyConstant X R))
+
+theorem compactlySupported.mulLeft_mul (φ ψ : LocallyConstant X R) :
+    compactlySupported.mulLeft (φ * ψ) =
+      compactlySupported.mulLeft φ ∘ₗ compactlySupported.mulLeft ψ :=
+  LinearMap.ext fun f ↦ Subtype.ext (mul_assoc φ ψ f)
+
+end MulLeft
 
 end Space
 

@@ -37,6 +37,8 @@ holds for every expansion by indicators, with overlaps allowed
 * `TauCeti.HaarMeasureWithValues.integral_eq_sum`: the integral computed from any finite family of
   pairwise disjoint compact open sets adapted to `f`.
 * `TauCeti.HaarMeasureWithValues.integral_compactOpenIndicator`: `∫ 1_K • m dμ = μ(K) • m`.
+* `TauCeti.HaarMeasureWithValues.integral_normalized_ne_zero`: the integral against a normalised
+  Haar measure is nonzero.
 * `TauCeti.HaarMeasureWithValues.integral_eq_sum_smul_of_eq_sum_compactOpenIndicator`: the
   integral of a finite sum of indicators `∑ 1_{K_i} • m_i`, with overlaps allowed, is
   `∑ μ(K_i) • m_i`.
@@ -261,6 +263,19 @@ theorem integral_compactOpenIndicator [T2Space G] (K : CompactOpens G) (m : M) :
     (fun _ _ x hx ↦ compactOpenIndicator_of_mem hx m) fun x hx ↦ ⟨(), by simp, by_contra fun h ↦
       hx (compactOpenIndicator_of_notMem h m)⟩]
   simp
+
+omit [ContinuousConstSMul G G] in
+/-- The integral against the Haar measure normalised on a compact open subgroup `U₀` is nonzero:
+it gives the indicator of `U₀` the value `1`. -/
+theorem integral_normalized_ne_zero [IsTopologicalGroup G] [T2Space G] [Nontrivial A]
+    {U₀ : OpenSubgroup G} (hU₀ : IsCompact (U₀ : Set G)) (h : HasUnitProOrder A U₀) :
+    (normalized A U₀ hU₀ h).integral (M := A) ≠ 0 := fun h0 ↦ by
+  have := LinearMap.congr_fun h0
+    ⟨compactOpenIndicator (U₀.toCompactOpens hU₀) 1,
+      compactOpenIndicator_mem_compactlySupported _ 1⟩
+  rw [integral_compactOpenIndicator, normalized_apply_self, LinearMap.zero_apply, smul_eq_mul,
+    mul_one] at this
+  exact one_ne_zero this
 
 /-- An `A`-linear map on `C_c^∞(G, M)` sending each indicator `1_K • m` of a compact open set to
 `μ(K) • m` sends any expansion `f = ∑ 1_{K_i} • m_i`, possibly overlapping, to

@@ -58,9 +58,13 @@ variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchi
 private def unitsIntegerOpenSubgroup : OpenSubgroup Kˣ :=
   ⟨unitFiltration K 0, isOpen_unitFiltration 0⟩
 
+private theorem coe_unitsIntegerOpenSubgroup :
+    (unitsIntegerOpenSubgroup K : Set Kˣ) = unitFiltration K 0 :=
+  (rfl)
+
 private theorem isCompact_unitsIntegerOpenSubgroup :
     IsCompact (unitsIntegerOpenSubgroup K : Set Kˣ) :=
-  isCompact_unitFiltration 0
+  coe_unitsIntegerOpenSubgroup K ▸ isCompact_unitFiltration 0
 
 private theorem hasUnitProOrder_unitsIntegerOpenSubgroup :
     HasUnitProOrder ℂ (unitsIntegerOpenSubgroup K) :=
@@ -74,15 +78,9 @@ private theorem map_ofMeasure_unitsHaar [MeasurableSpace K] [BorelSpace K] :
         (isCompact_unitsIntegerOpenSubgroup K) (hasUnitProOrder_unitsIntegerOpenSubgroup K) := by
   refine (HaarMeasureWithValues.eq_normalized_iff _ _).2 ?_
   rw [HaarMeasureWithValues.map_apply, HaarMeasureWithValues.ofMeasure_apply,
-    OpenSubgroup.coe_toCompactOpens, MeasureTheory.measureReal_def]
-  change Complex.ofRealHom.toAddMonoidHom (unitsHaar K (unitFiltration K 0)).toReal = 1
-  rw [unitsHaar_unitFiltration_zero, ENNReal.toReal_one]
-  exact Complex.ofReal_one
-
-/-- The inverse of a quasi-character of `Kˣ` is locally constant. -/
-private theorem isLocallyConstant_inv_character (ω : Kˣ →ₜ* ℂˣ) :
-    IsLocallyConstant ⇑ω.toMonoidHom⁻¹ :=
-  (ClassFieldTheory.isLocallyConstant_character K ω).comp fun u ↦ u⁻¹
+    OpenSubgroup.coe_toCompactOpens, coe_unitsIntegerOpenSubgroup, MeasureTheory.measureReal_def,
+    unitsHaar_unitFiltration_zero]
+  simp
 
 /-- **The `ω`-eigendistributions on `C_c^∞(F^×)` are the multiples of `ω(x) d^×x`.** For a
 quasi-character `ω` of the multiplicative group of a nonarchimedean local field `K`, the
@@ -97,10 +95,14 @@ theorem dual_charEigenspace_inv_compactlySupportedRep_units [MeasurableSpace K] 
         compactlySupported.mulLeft
           ((⟨ω, ClassFieldTheory.isLocallyConstant_character K ω⟩ :
             LocallyConstant Kˣ ℂˣ).map (↑))) := by
+  have hω := ClassFieldTheory.isLocallyConstant_character K ω
+  -- The twist by the inverse of `ω⁻¹` is multiplication by `ω`.
+  have hinv : ((⟨⇑ω.toMonoidHom⁻¹, hω.inv⟩ : LocallyConstant Kˣ ℂˣ).map fun u ↦ ((u⁻¹ : ℂˣ) : ℂ)) =
+      (⟨ω, hω⟩ : LocallyConstant Kˣ ℂˣ).map (↑) := by
+    ext x
+    simp
   rw [dual_charEigenspace_compactlySupportedRep (isCompact_unitsIntegerOpenSubgroup K)
-    (hasUnitProOrder_unitsIntegerOpenSubgroup K) _ (isLocallyConstant_inv_character K ω),
-    map_ofMeasure_unitsHaar]
-  congr 3
+    (hasUnitProOrder_unitsIntegerOpenSubgroup K) _ hω.inv, map_ofMeasure_unitsHaar, hinv]
 
 /-- **`C_c^∞(F^×)′(ω)` is one-dimensional.** For a quasi-character `ω` of the multiplicative group
 of a nonarchimedean local field `K`, the functionals `λ` on `C_c^∞(Kˣ)` with
@@ -108,6 +110,7 @@ of a nonarchimedean local field `K`, the functionals `λ` on `C_c^∞(Kˣ)` with
 theorem finrank_dual_charEigenspace_inv_compactlySupportedRep_units (ω : Kˣ →ₜ* ℂˣ) :
     finrank ℂ ((compactlySupportedRep ℂ Kˣ Kˣ ℂ).dual.charEigenspace ω.toMonoidHom⁻¹) = 1 :=
   finrank_dual_charEigenspace_compactlySupportedRep (isCompact_unitsIntegerOpenSubgroup K)
-    (hasUnitProOrder_unitsIntegerOpenSubgroup K) _ (isLocallyConstant_inv_character K ω)
+    (hasUnitProOrder_unitsIntegerOpenSubgroup K) _
+    (ClassFieldTheory.isLocallyConstant_character K ω).inv
 
 end TauCeti
