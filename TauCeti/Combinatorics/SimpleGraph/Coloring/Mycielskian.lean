@@ -117,18 +117,24 @@ theorem not_mycielskian_adj_inr_inl_inr_inl {v w : V} :
 @[simp]
 theorem comap_inl_mycielskian : G.mycielskian.comap Sum.inl = G := by
   ext
-  exact mycielskian_adj_inl_inl
+  simp only [comap_adj, mycielskian_adj_inl_inl]
 
 /-- The embedding of `G` into its Mycielskian, onto the vertices `inl v`. -/
-def Embedding.mycielskianInl : G ↪g G.mycielskian where
-  toFun := .inl
-  inj' _ _ := Sum.inl.inj
-  map_rel_iff' := mycielskian_adj_inl_inl
+def Embedding.mycielskianInl : G ↪g G.mycielskian :=
+  Embedding.comap Function.Embedding.inl G.mycielskian
 
 @[simp]
 theorem Embedding.mycielskianInl_apply (v : V) :
     (Embedding.mycielskianInl : G ↪g G.mycielskian) v = .inl v :=
   (rfl)
+
+/-- The Mycielskian has no edges exactly when `V` is empty: otherwise any shadow is joined to the
+apex. -/
+@[simp]
+theorem mycielskian_eq_bot_iff : G.mycielskian = ⊥ ↔ IsEmpty V := by
+  refine ⟨fun h ↦ ⟨fun v ↦ ?_⟩, fun _ ↦ ?_⟩
+  · simpa [h] using (mycielskian_adj_inr_inl_inr_inr (G := G) (v := v) (u := ()))
+  · ext (x | x | x) (y | y | y) <;> first | exact isEmptyElim x | exact isEmptyElim y | simp
 
 /-! ### Colourings -/
 
