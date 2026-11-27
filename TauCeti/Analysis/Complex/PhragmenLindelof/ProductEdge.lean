@@ -266,8 +266,9 @@ private theorem diffContOnCl_conj_comp_reflect {g : ℂ → ℂ}
     (hg : DiffContOnCl ℂ g (re ⁻¹' Ioo a b)) :
     DiffContOnCl ℂ (fun z ↦ conj (g (reflect a b z))) (re ⁻¹' Ioo a b) := by
   refine ⟨fun z hz ↦ ?_, ?_⟩
-  · have h₁ : DifferentiableAt ℂ g (((a + b : ℝ) : ℂ) - conj z) :=
+  · have h₁ : DifferentiableAt ℂ g (reflect a b z) :=
       hg.differentiableAt (isOpen_Ioo.preimage continuous_re) (reflect_mem_Ioo hz)
+    simp only [reflect] at h₁ ⊢
     have hd : DifferentiableAt ℂ (fun w ↦ g (((a + b : ℝ) : ℂ) - w)) (conj z) :=
       h₁.comp (conj z) ((differentiableAt_const _).sub differentiableAt_id)
     have hd' := hd.conj_conj
@@ -322,7 +323,8 @@ private theorem norm_exp_neg_weight {s : Finset ι} {γ : ι → ℝ} {G L : ι 
   refine Finset.prod_congr rfl fun i hi ↦ ?_
   rw [← hLG i hi z hz, ← hLG i hi _ (reflect_mem_Icc hz)]
   simp only [norm_exp, ← Real.exp_mul, ← Real.exp_add]
-  simp
+  simp only [neg_re, mul_re, ofReal_re, add_re, conj_re, ofReal_im, add_im, conj_im, zero_mul,
+    sub_zero, mul_neg, Real.exp_eq_exp]
   ring
 
 private theorem diffContOnCl_weight {s : Finset ι} {γ : ι → ℝ} {L : ι → ℂ → ℂ}
@@ -420,9 +422,7 @@ private theorem norm_le_prod_rpow_midpoint {s : Finset ι} {f : ℂ → ℂ}
   -- by the square of the interpolating product.
   have hz₀ := hmem ((a + b) / 2) ⟨by linarith, by linarith⟩ t
   have hRz₀ : reflect a b (((a + b) / 2 : ℝ) + t * I) = ((a + b) / 2 : ℝ) + t * I := by
-    rw [reflect_ofReal_add_mul_I]
-    congr 3
-    ring
+    rw [reflect_ofReal_add_mul_I, show a + b - (a + b) / 2 = (a + b) / 2 by ring]
   have hQz₀ : ‖Q (((a + b) / 2 : ℝ) + t * I)‖ ≤ 1 := PhragmenLindelof.vertical_strip hQd
     hQB.isBigO (fun z hz ↦ hedge z (Or.inl hz)) (fun z hz ↦ hedge z (Or.inr hz)) hz₀.1 hz₀.2
   rw [hnorm _ hz₀, hRz₀] at hQz₀
@@ -431,7 +431,8 @@ private theorem norm_le_prod_rpow_midpoint {s : Finset ι} {f : ℂ → ℂ}
 
 /-! ### The interpolation bound -/
 
-/-- The interpolated exponent `(α (b - σ) + β (σ - a)) / (b - a)`. -/
+/-- The interpolated exponent `(α (b - σ) + β (σ - a)) / (b - a)` at `σ = (u + v) / 2` is the
+average of its values at `σ = u` and `σ = v`. -/
 private theorem interp_mid (α β u v : ℝ) :
     (α * (b - (u + v) / 2) + β * ((u + v) / 2 - a)) / (b - a) =
       ((α * (b - u) + β * (u - a)) / (b - a) + (α * (b - v) + β * (v - a)) / (b - a)) / 2 := by
