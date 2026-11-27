@@ -377,7 +377,7 @@ theorem localIndex_eq_one_of_apply_eq_sub_graph_tangencySplitting {F : C(ℂ × 
   have hP0 : P (-(j * ε)) = 0 := prod_eq_zero (mem_range.2 hj) (by ring)
   rw [o.localIndex_congr o hn hFG,
     o.localIndex_eq_analyticOrderNatAt_sub_of_apply_eq_graph_sub_graph hn (f := fun _ ↦ 0) (g := P)
-      (fun _ ↦ rfl) analyticAt_const (by fun_prop) hP0.symm]
+      (fun _ ↦ by simp [G]) analyticAt_const (by fun_prop) hP0.symm]
   simp only [sub_zero, analyticOrderNatAt]
   rw [analyticOrderAt_prod_add_mul hε₀ hj]
   simp
