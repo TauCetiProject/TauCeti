@@ -57,6 +57,11 @@ theorem ofKaehlerEquiv_apply (x : Ω[A⁄R]) :
     ofKaehlerEquiv R A x = ofKaehler R A x :=
   (rfl)
 
+/-- As a linear map, `ofKaehlerEquiv R A` is the canonical map `ofKaehler R A`. -/
+@[simp]
+theorem ofKaehlerEquiv_toLinearMap : (ofKaehlerEquiv R A).toLinearMap = ofKaehler R A :=
+  LinearMap.ext (ofKaehlerEquiv_apply R A)
+
 /-- The inverse comparison takes the universally finite differential of `a` to its algebraic
 Kähler differential. -/
 @[simp]

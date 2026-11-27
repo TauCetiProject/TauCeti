@@ -134,25 +134,21 @@ private theorem pderiv_repr_eq_zero_of_lt [LinearOrder σ] (q : ℕ) {i₀ k₀ 
       ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω s ≠ 0 → ∀ i ∈ s.val, i₀ ≤ i)
     (hk₀ : k₀ < i₀) (s : Set.powersetCard σ (q + 1)) (hkn_s : k₀ ∉ s.val) :
     pderiv σ K k₀ (((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω s) = 0 := by
-  let w : Set.powersetCard σ (q + 2) := Set.powersetCard.ofCard (s := insert k₀ s.val)
-    (by rw [Finset.card_insert_of_notMem hkn_s, Set.powersetCard.card_eq s])
+  let w : Set.powersetCard σ (q + 2) := Set.powersetCard.insert s k₀ hkn_s
   have hdw : ((washnitzerBasis σ K).exteriorPower (q + 2)).repr
       (extDerivPow K (washnitzerAlgebra σ K) (q + 1) ω) w = 0 := by
     rw [hdω, LinearEquiv.map_zero, Finsupp.coe_zero, Pi.zero_apply]
   rw [washnitzerBasis_exteriorPower_repr_extDerivPow] at hdw
-  have hkw : k₀ ∈ w.val := Finset.mem_insert_self k₀ s.val
+  have hkw : k₀ ∈ w := (Set.powersetCard.mem_insert s hkn_s).mpr (Or.inl rfl)
   rw [Finset.sum_eq_single ⟨k₀, hkw⟩] at hdw
-  · have hwk : Set.powersetCard.ofCard (s := w.val.erase k₀)
-        (by rw [Finset.card_erase_of_mem hkw, Set.powersetCard.card_eq w]; rfl) = s :=
-      Subtype.ext (Finset.erase_insert hkn_s)
-    rw [hwk] at hdw
+  · rw [Set.powersetCard.erase_insert] at hdw
     have hinv := congrArg ((basisEraseSign k₀ w.val)⁻¹ • ·) hdw
     rwa [inv_smul_smul, Units.smul_def, zsmul_zero] at hinv
   · intro l _ hlk
-    have hzero (hc : (w.val.erase l.val).card = q + 1) :
-        ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω (Set.powersetCard.ofCard hc) = 0 :=
-      by_contra fun hne ↦ not_le_of_gt hk₀ <| hsupp _ hne k₀ <| Set.powersetCard.val_ofCard _ ▸
-        Finset.mem_erase.mpr ⟨fun h ↦ hlk (Subtype.ext h.symm), hkw⟩
+    have hzero : ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω
+        (Set.powersetCard.erase w l.val l.property) = 0 :=
+      by_contra fun hne ↦ not_le_of_gt hk₀ <| hsupp _ hne k₀ <|
+        (Set.powersetCard.mem_erase w l.property).mpr ⟨fun h ↦ hlk (Subtype.ext h.symm), hkw⟩
     rw [hzero, map_zero, Units.smul_def, zsmul_zero]
   · exact fun h ↦ absurd (Finset.mem_attach w.val ⟨k₀, hkw⟩) h
 
@@ -169,16 +165,14 @@ private noncomputable def poincarePrimitive (q : ℕ) (i₀ : σ)
   ((washnitzerBasis σ K).exteriorPower q).repr.symm <| Finsupp.equivFunOnFinite.symm fun t ↦
     if hgt : ∀ j ∈ t.val, i₀ < j then
       primitive σ K i₀ (((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω
-        (Set.powersetCard.ofCard (s := insert i₀ t.val)
-          (by rw [Finset.card_insert_of_notMem fun h ↦ lt_irrefl i₀ (hgt i₀ h),
-            Set.powersetCard.card_eq t])))
+        (Set.powersetCard.insert t i₀ fun h ↦ lt_irrefl i₀ (hgt i₀ h)))
     else 0
 
 private theorem poincarePrimitive_repr_of_forall_lt {t : Set.powersetCard σ q}
-    (hgt : ∀ j ∈ t.val, i₀ < j) (hc : (insert i₀ t.val).card = q + 1) :
+    (hgt : ∀ j ∈ t.val, i₀ < j) (hnot : i₀ ∉ t) :
     ((washnitzerBasis σ K).exteriorPower q).repr (poincarePrimitive q i₀ ω) t =
       primitive σ K i₀ (((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω
-        (Set.powersetCard.ofCard hc)) := by
+        (Set.powersetCard.insert t i₀ hnot)) := by
   simp only [poincarePrimitive, LinearEquiv.apply_symm_apply, Finsupp.coe_equivFunOnFinite_symm,
     dite_eq_left hgt]
 
@@ -205,15 +199,11 @@ private theorem extDerivPow_poincarePrimitive_repr_of_exists_lt
     have hkj₀ : k.val = j₀ := by_contra fun hne ↦
       asymm hj₀m (hgt j₀ (Finset.mem_erase.mpr ⟨Ne.symm hne, hj₀u⟩))
     have hji₀ : i₀ ≠ k.val := ne_of_gt (hkj₀ ▸ hj₀m)
-    let t : Set.powersetCard σ q := Set.powersetCard.ofCard (s := u.val.erase k.val)
-      (by rw [Finset.card_erase_of_mem k.property, Set.powersetCard.card_eq u]; rfl)
-    have hgt' : ∀ j ∈ t.val, i₀ < j := by simpa only [t, Set.powersetCard.val_ofCard] using hgt
-    rw [poincarePrimitive_repr_of_forall_lt (t := t) hgt'
-        (by rw [Finset.card_insert_of_notMem fun h ↦ lt_irrefl i₀ (hgt' i₀ h),
-          Set.powersetCard.card_eq]),
+    let t := Set.powersetCard.erase u k.val k.property
+    have hgt' : ∀ j ∈ t.val, i₀ < j := by simpa only [t, Set.powersetCard.val_erase] using hgt
+    rw [poincarePrimitive_repr_of_forall_lt (t := t) hgt' (fun h ↦ lt_irrefl i₀ (hgt' i₀ h)),
       pderiv_primitive_of_ne hji₀,
-      pderiv_repr_eq_zero_of_lt q hdω hsupp (hkj₀ ▸ hj₀m) _
-        (by simp [t, Set.powersetCard.val_ofCard, Ne.symm hji₀]),
+      pderiv_repr_eq_zero_of_lt q hdω hsupp (hkj₀ ▸ hj₀m) _ (by simp [t, hji₀.symm]),
       map_zero, Units.smul_def, zsmul_zero]
   · rw [poincarePrimitive_repr_of_not_forall_lt (by simpa using hgt),
       map_zero, Units.smul_def, zsmul_zero]
@@ -227,24 +217,20 @@ private theorem extDerivPow_poincarePrimitive_repr_of_mem_of_forall_le
       ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω u := by
   rw [washnitzerBasis_exteriorPower_repr_extDerivPow, Finset.sum_eq_single ⟨i₀, hi₀u⟩]
   · -- Only the `k = i₀` term survives; since `i₀ = min u`, `basisEraseSign i₀ u.val = 1`.
-    let t : Set.powersetCard σ q := Set.powersetCard.ofCard (s := u.val.erase i₀)
-      (by rw [Finset.card_erase_of_mem hi₀u, Set.powersetCard.card_eq u]; rfl)
+    let t := Set.powersetCard.erase u i₀ hi₀u
     have hgt : ∀ j ∈ t.val, i₀ < j := fun j hj ↦ by
-      rw [Set.powersetCard.val_ofCard] at hj
+      rw [Set.powersetCard.val_erase] at hj
       exact lt_of_le_of_ne (hle j (Finset.mem_of_mem_erase hj)) (Finset.ne_of_mem_erase hj).symm
-    have hc : (insert i₀ t.val).card = q + 1 := by
-      simp [t, Set.powersetCard.val_ofCard, Finset.insert_erase hi₀u, Set.powersetCard.card_eq u]
-    have htu : Set.powersetCard.ofCard hc = u :=
-      Subtype.ext (by simp [t, Set.powersetCard.val_ofCard, Finset.insert_erase hi₀u])
+    have hnot : i₀ ∉ t := fun h ↦ ((Set.powersetCard.mem_erase u hi₀u).mp h).1 rfl
     have hsign : basisEraseSign i₀ u.val = 1 := by
       rw [basisEraseSign_eq_neg_one_pow_card_filter_lt,
         Finset.filter_eq_empty_iff.mpr fun j hj ↦ not_lt_of_ge (hle j hj),
         Finset.card_empty, pow_zero]
-    rw [poincarePrimitive_repr_of_forall_lt (t := t) hgt hc, pderiv_primitive, htu, hsign,
-      Units.smul_def, Units.val_one, one_zsmul]
+    rw [poincarePrimitive_repr_of_forall_lt (t := t) hgt hnot, pderiv_primitive,
+      Set.powersetCard.insert_erase, hsign, Units.smul_def, Units.val_one, one_zsmul]
   · intro k _ hki₀
     rw [poincarePrimitive_repr_of_not_forall_lt (fun hgt ↦ lt_irrefl i₀ <| hgt i₀ <|
-      Set.powersetCard.val_ofCard _ ▸
+      Set.powersetCard.val_erase u k.val k.property ▸
         Finset.mem_erase.mpr ⟨fun h ↦ hki₀ (Subtype.ext h.symm), hi₀u⟩),
       map_zero, Units.smul_def, zsmul_zero]
   · exact fun h ↦ absurd (Finset.mem_attach u.val ⟨i₀, hi₀u⟩) h

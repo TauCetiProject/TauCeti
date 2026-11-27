@@ -336,6 +336,16 @@ theorem exteriorPower_one_repr_oneEquiv_symm (b : Basis I R M) (m : M) (k : I) :
     smul_eq_mul, mul_boole, Finset.sum_ite_eq']
   split_ifs with hk <;> [rfl; exact (Finsupp.notMem_support_iff.mp hk).symm]
 
+/-- For `i < j`, the exterior-power basis vector indexed by `{i, j}` is `b i ∧ b j`. -/
+theorem exteriorPower_pair (b : Basis I R M) {i j : I} (hij : i < j) :
+    b.exteriorPower 2 (Set.powersetCard.ofCard (Finset.card_pair hij.ne)) =
+      exteriorPower.ιMulti R 2 ![b i, b j] := by
+  rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family,
+    Set.powersetCard.coe_ofFinEmbEquiv_symm_pair hij rfl]
+  congr 1
+  funext k
+  fin_cases k <;> simp
+
 end Repr
 
 variable {R M N I J : Type*} [CommRing R] [AddCommGroup M] [Module R M]

@@ -86,8 +86,7 @@ theorem washnitzerBasis_exteriorPower_repr_extDerivPow [Finite σ] [LinearOrder 
         (extDerivPow K (washnitzerAlgebra σ K) r ω) u =
       ∑ k ∈ u.val.attach, basisEraseSign k.val u.val •
         pderiv σ K k.val (((washnitzerBasis σ K).exteriorPower r).repr ω
-          (Set.powersetCard.ofCard (s := u.val.erase k.val)
-            (by rw [Finset.card_erase_of_mem k.property, Set.powersetCard.card_eq u]; rfl))) := by
+          (Set.powersetCard.erase u k.val k.property)) := by
   let : Fintype σ := Fintype.ofFinite σ; let : Fintype (Set.powersetCard σ r) := Fintype.ofFinite _
   rw [← Module.Basis.coord_apply]
   conv_lhs => rw [← ((washnitzerBasis σ K).exteriorPower r).sum_repr ω]
@@ -96,13 +95,14 @@ theorem washnitzerBasis_exteriorPower_repr_extDerivPow [Finite σ] [LinearOrder 
     Finset.sum_comm, ← Finset.sum_subset (Finset.subset_univ u.val)]
   · rw [← Finset.sum_attach u.val]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    let tk : Set.powersetCard σ r := Set.powersetCard.ofCard (s := u.val.erase k.val)
-      (by rw [Finset.card_erase_of_mem k.property, Set.powersetCard.card_eq u]; rfl)
-    rw [Finset.sum_eq_single tk
+    rw [Finset.sum_eq_single (Set.powersetCard.erase u k.val k.property)
       (fun t _ hne ↦ ite_eq_right fun ⟨hkt, hins⟩ ↦ hne <| Subtype.ext <|
-        (Finset.erase_insert hkt).symm.trans (congrArg (·.erase k.val) hins))
-      (fun h ↦ absurd (Finset.mem_univ tk) h),
-      ite_eq_left ⟨Finset.notMem_erase k.val u.val, Finset.insert_erase k.property⟩]
+        ((Finset.erase_insert hkt).symm.trans (congrArg (·.erase k.val) hins)).trans
+          (Set.powersetCard.val_erase _ _ _).symm)
+      (fun h ↦ absurd (Finset.mem_univ (Set.powersetCard.erase u k.val k.property)) h),
+      ite_eq_left (by
+        rw [Set.powersetCard.val_erase]
+        exact ⟨Finset.notMem_erase k.val u.val, Finset.insert_erase k.property⟩)]
   · exact fun k _ hku ↦ Finset.sum_eq_zero fun t _ ↦ by
       rw [ite_eq_right]; rintro ⟨_, hins⟩; exact hku (hins ▸ Finset.mem_insert_self k t.val)
 
@@ -121,12 +121,15 @@ private theorem washnitzerBasis_exteriorPower_two_repr_extDerivPow_one [Finite �
     ext ⟨x, hx⟩; simp only [Finset.mem_attach, Finset.mem_insert, Finset.mem_singleton,
       Subtype.ext_iff, true_iff]; simpa [u, Set.powersetCard.ofCard] using hx
   rw [hatt, Finset.sum_pair (fun h ↦ hij.ne (congrArg Subtype.val h))]
-  have hei (hc : (u.val.erase i).card = 1) :
-      Set.powersetCard.ofCard hc = Set.powersetCard.ofCard (Finset.card_singleton j) :=
-    Subtype.ext (by simp [u, Set.powersetCard.ofCard, hij.ne])
-  have hej (hc : (u.val.erase j).card = 1) :
-      Set.powersetCard.ofCard hc = Set.powersetCard.ofCard (Finset.card_singleton i) :=
-    Subtype.ext (by simp only [u, Set.powersetCard.ofCard]; rw [Finset.pair_comm]; simp [hij.ne'])
+  have hei (hi : i ∈ u) :
+      Set.powersetCard.erase u i hi = Set.powersetCard.ofCard (Finset.card_singleton j) :=
+    Subtype.ext (by simp [u, hij.ne])
+  have hej (hj : j ∈ u) :
+      Set.powersetCard.erase u j hj = Set.powersetCard.ofCard (Finset.card_singleton i) :=
+    Subtype.ext <| by
+      simp only [u, Set.powersetCard.val_erase, Set.powersetCard.val_ofCard]
+      rw [Finset.pair_comm]
+      simp [hij.ne']
   -- Since `i < j`, `i` has sign `+1` (`{x ∈ u | x < i} = ∅`) and `j` has sign `-1` (`{i}`).
   have hfi : u.val.filter (· < i) = ∅ := by
     simp [u, Set.powersetCard.val_ofCard, Finset.filter_insert, hij.le]

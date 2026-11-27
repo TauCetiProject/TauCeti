@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.IntegerGrading
-public import TauCeti.LinearAlgebra.ExteriorAlgebra.MapSemilinear
 public import TauCeti.RingTheory.Kaehler.Basic
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 import TauCeti.Algebra.Algebra.Subalgebra.Centralizer
@@ -711,21 +710,6 @@ theorem map_id : map (AlgHom.id R A) = TauCeti.DGAlgHom.id (isDGAlgebra R A) :=
 theorem map_comp (g : B →ₐ[R] C) (f : A →ₐ[R] B) :
     map (g.comp f) = (map g).comp (map f) :=
   dgAlgHom_ext fun a ↦ by simp
-
-/-- On underlying rings, `TauCeti.KaehlerDeRham.map f` agrees with
-`ExteriorAlgebra.mapSemilinear (KaehlerDifferential.mapSemilinear f)`. -/
-theorem map_toRingHom_eq_mapSemilinear (f : A →ₐ[R] B) :
-    ((map f : TauCeti.DGAlgHom (isDGAlgebra R A) (isDGAlgebra R B)).toAlgHom :
-        ExteriorAlgebra A Ω[A⁄R] →+* ExteriorAlgebra B Ω[B⁄R]) =
-      ExteriorAlgebra.mapSemilinear (KaehlerDifferential.mapSemilinear f) :=
-  ExteriorAlgebra.ringHom_ext
-    (fun a ↦ by
-      rw [RingHom.coe_coe, GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom,
-        map_algebraMap, ExteriorAlgebra.mapSemilinear_algebraMap, AlgHom.toRingHom_eq_coe,
-        AlgHom.coe_toRingHom])
-    (fun ω ↦ by
-      rw [RingHom.coe_coe, GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom,
-        map_ι, ExteriorAlgebra.mapSemilinear_ι])
 
 end Functoriality
 

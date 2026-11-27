@@ -10,10 +10,12 @@ public import TauCeti.RingTheory.Dagger.Omega.DeRham.Basic
 /-!
 # Positive-characteristic counterexamples for the overconvergent de Rham complex
 
-Over a complete ultrametric normed field `K` of prime characteristic `p > 0`, both the degree-zero
-and degree-one Poincaré lemmas fail on `K⟨X₀⟩†`: `d (X₀ ^ p) = 0` with `X₀ ^ p` non-constant,
-`X₀ ^ (p - 1) dX₀` has no potential in `K⟨X₀⟩†`, the overconvergent de Rham complex fails to be
-exact in degree `1`, and `H¹_dR(K⟨X₀⟩† / K)` is nontrivial.
+Over a base ring `R` of characteristic `p`, `d R A (f ^ p) = 0` for every `f : A` in any
+`R`-algebra `A` (`d_pow_charP`). Over a complete ultrametric normed field `K` of prime
+characteristic `p > 0`, the degree-zero Poincaré lemma fails on every nonempty dagger polydisc
+`K⟨X_σ⟩†`, and on `K⟨X₀⟩†` the `1`-form `X₀ ^ (p - 1) dX₀` has no potential in `K⟨X₀⟩†`, the
+overconvergent de Rham complex fails to be exact in degree `1`, and `H¹_dR(K⟨X₀⟩† / K)` is
+nontrivial.
 -/
 
 public section
@@ -24,21 +26,30 @@ open TauCeti.Dagger.washnitzerAlgebra
 
 section CharP
 
+/-- In characteristic `p`, `d (f ^ p) = 0` in `Omega R A` for every `R`-algebra `A` when
+`CharP R p`. -/
+theorem d_pow_charP {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    (p : ℕ) [CharP R p] (f : A) :
+    d R A (f ^ p) = 0 := by
+  rw [(d R A).leibniz_pow, ← Nat.cast_smul_eq_nsmul R, CharP.cast_eq_zero, zero_smul]
+
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 omit [CompleteSpace K] in
-/-- In characteristic `p`, `d (X₀ ^ p) = 0` in `Ω¹_{K⟨X₀⟩† / K}`. -/
-theorem d_X_pow_charP (p : ℕ) [CharP K p] :
-    d K (washnitzerAlgebra (Fin 1) K) (X (Fin 1) K 0 ^ p) = 0 := by
-  rw [(d K _).leibniz_pow, ← Nat.cast_smul_eq_nsmul K, CharP.cast_eq_zero, zero_smul]
+/-- In characteristic `p`, `d (Xᵢ ^ p) = 0` in `Ω¹_{K⟨X_σ⟩† / K}`. -/
+theorem d_X_pow_charP {σ : Type*} (i : σ) (p : ℕ) [CharP K p] :
+    d K (washnitzerAlgebra σ K) (X σ K i ^ p) = 0 :=
+  d_pow_charP p _
 
 omit [CompleteSpace K] in
-/-- **Failure of the degree-zero Poincaré lemma in characteristic `p > 0`.** -/
-theorem exists_d_eq_zero_and_notMem_range_algebraMap_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
-    ∃ f : washnitzerAlgebra (Fin 1) K,
-      d K (washnitzerAlgebra (Fin 1) K) f = 0 ∧
-        f ∉ Set.range (algebraMap K (washnitzerAlgebra (Fin 1) K)) :=
-  ⟨X (Fin 1) K 0 ^ p, d_X_pow_charP p, X_pow_notMem_range_algebraMap 0 (Fact.out : p.Prime).pos⟩
+/-- **Failure of the degree-zero Poincaré lemma in characteristic `p > 0`** on every dagger
+polydisc with at least one variable `i : σ`. -/
+theorem exists_d_eq_zero_and_notMem_range_algebraMap_charP {σ : Type*} (i : σ)
+    (p : ℕ) [CharP K p] [Fact p.Prime] :
+    ∃ f : washnitzerAlgebra σ K,
+      d K (washnitzerAlgebra σ K) f = 0 ∧
+        f ∉ Set.range (algebraMap K (washnitzerAlgebra σ K)) :=
+  ⟨X σ K i ^ p, d_X_pow_charP i p, X_pow_notMem_range_algebraMap i (Fact.out : p.Prime).pos⟩
 
 /-- **Failure of the degree-one Poincaré lemma in characteristic `p > 0`**: `X₀ ^ (p - 1) • d X₀`
 has no potential `g ∈ K⟨X₀⟩†`. -/

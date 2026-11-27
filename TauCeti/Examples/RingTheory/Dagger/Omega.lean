@@ -150,15 +150,12 @@ example :
     exteriorPower.ιMulti W₂ 2
         ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] ≠ 0 := by
   intro W₂
-  let s : Set.powersetCard (Fin 2) 2 := ⟨Finset.univ, by simp⟩
-  let e : Fin 2 ↪o Fin 2 := Set.powersetCard.ofFinEmbEquiv.symm s
-  have hlt : (e 0 : ℕ) < (e 1 : ℕ) := e.strictMono (by decide)
-  have heq : (Omega.washnitzerBasis (Fin 2) K).exteriorPower 2 s =
+  let u := Set.powersetCard.ofCard (Finset.card_pair (by decide : (0 : Fin 2) < 1).ne)
+  have heq : (Omega.washnitzerBasis (Fin 2) K).exteriorPower 2 u =
       exteriorPower.ιMulti W₂ 2 ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] := by
-    rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family]; congr 1; funext i; fin_cases i <;>
-      [have : e 0 = 0 := Fin.ext (by omega); have : e 1 = 1 := Fin.ext (by omega)] <;>
-      simp [e, this] <;> rfl
-  exact heq ▸ Omega.washnitzerBasis_exteriorPower_ne_zero 2 s
+    rw [Module.Basis.exteriorPower_pair _ (by decide : (0 : Fin 2) < 1),
+      Omega.washnitzerBasis_apply, Omega.washnitzerBasis_apply]
+  exact heq ▸ Omega.washnitzerBasis_exteriorPower_ne_zero 2 u
 
 end TwoVariableDeRham
 

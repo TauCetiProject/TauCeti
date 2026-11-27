@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Dagger.Omega.DeRham
 public import TauCeti.RingTheory.Dagger.Omega.Forms
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # Degreewise properties and functoriality of the overconvergent exterior derivative
@@ -38,13 +39,9 @@ variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] [IsNoetherianRing
 theorem extDeriv_involute (x : ExteriorAlgebra A (Omega R A)) :
     extDeriv R A (CliffordAlgebra.involute (Q := (0 : QuadraticForm A (Omega R A))) x) =
       -CliffordAlgebra.involute (Q := (0 : QuadraticForm A (Omega R A))) (extDeriv R A x) := by
-  induction x using exteriorAlgebra_inductionOn with
-  | algebraMap a => simp
-  | ι_d a => simp
-  | mul x y ihx ihy =>
-    rw [map_mul, extDeriv_mul, ihx, ihy, extDeriv_mul, map_add, map_mul, map_mul,
-      neg_mul, mul_neg, neg_add]
-  | add x y ihx ihy => rw [map_add, map_add, ihx, ihy, map_add, map_add, neg_add]
+  obtain ⟨x, rfl⟩ := ExteriorAlgebra.map_surjective_iff.mpr (ofKaehler_surjective R A) x
+  rw [← ExteriorAlgebra.map_involute, ← map_ofKaehler_extDeriv, KaehlerDeRham.extDeriv_involute,
+    map_neg, ExteriorAlgebra.map_involute, map_ofKaehler_extDeriv]
 
 /-- **Degree-zero identification (`simp` direction)**: under `zeroEquiv` and `oneEquiv`,
 `Omega.extDerivPow R A 0` identifies with `Omega.d R A`, rewriting

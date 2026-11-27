@@ -23,10 +23,12 @@ these induced maps respect identities and composition of embeddings.
 `Set.powersetCard.map_ofSingleton` relate the singleton equivalence to finite sets and embeddings,
 `Set.powersetCard.map_compl_equiv` commutes `map` along an equivalence with `compl`,
 `Set.powersetCard.disjoint_map` and `Set.powersetCard.map_disjUnion` relate `map` along an
-embedding to disjointness and `disjUnion`, `Set.powersetCard.le_card` and
-`Set.powersetCard.sub_add_eq_card` record the cardinality bound witnessed by an `r`-element subset
-of a finite type, and `Set.powersetCard.subsingleton_of_card_eq` together with the
-`Unique`/`Subsingleton` instances witness uniqueness at cardinalities `0` and `Fintype.card α`.
+embedding to disjointness and `disjUnion`, `Set.powersetCard.erase` and `Set.powersetCard.insert`
+adjust cardinality by one when erasing a member or inserting a non-member,
+`Set.powersetCard.le_card` and `Set.powersetCard.sub_add_eq_card` record the cardinality bound
+witnessed by an `r`-element subset of a finite type, and `Set.powersetCard.subsingleton_of_card_eq`
+together with the `Unique`/`Subsingleton` instances witness uniqueness at cardinalities `0` and
+`Fintype.card α`.
 For `p + 1 = Fintype.card α`, `Set.powersetCard.omitOne` is the equivalence sending `a : α` to the
 `p`-element subset `Finset.univ.erase a` omitting `a`.
 
@@ -306,5 +308,59 @@ theorem ofFinEmb_eq_iff_exists_perm (f g : Fin r ↪ β) :
   · rintro ⟨σ, hfg⟩
     have htr : f = σ.toEmbedding.trans g := Function.Embedding.ext (congrFun hfg)
     rw [htr, ofFinEmb_trans_perm]
+
+section EraseInsert
+
+variable {α : Type*} [DecidableEq α] {r : ℕ}
+
+/-- Erasing an element `k ∈ u` from an `(r + 1)`-element subset `u` gives an `r`-element
+subset. -/
+def erase (u : powersetCard α (r + 1)) (k : α) (hk : k ∈ u) : powersetCard α r :=
+  ofCard (s := u.val.erase k) (by rw [Finset.card_erase_of_mem hk, card_eq u]; rfl)
+
+/-- The finite set underlying `Set.powersetCard.erase u k hk` is `u.val.erase k`. -/
+@[simp]
+theorem val_erase (u : powersetCard α (r + 1)) (k : α) (hk : k ∈ u) :
+    (erase u k hk).val = u.val.erase k := by
+  rw [erase, val_ofCard]
+
+/-- An element belongs to `erase u k hk` precisely when it differs from `k` and belongs to `u`. -/
+@[simp]
+theorem mem_erase (u : powersetCard α (r + 1)) {k a : α} (hk : k ∈ u) :
+    a ∈ erase u k hk ↔ a ≠ k ∧ a ∈ u := by
+  rw [← mem_coe_iff]
+  exact Finset.mem_erase
+
+/-- Inserting an element `k ∉ s` into an `r`-element subset `s` gives an `(r + 1)`-element
+subset. -/
+def insert (s : powersetCard α r) (k : α) (hk : k ∉ s) : powersetCard α (r + 1) :=
+  ofCard (s := Insert.insert k s.val) (by rw [Finset.card_insert_of_notMem hk, card_eq s])
+
+/-- The finite set underlying `Set.powersetCard.insert s k hk` is `insert k s.val`. -/
+@[simp]
+theorem val_insert (s : powersetCard α r) (k : α) (hk : k ∉ s) :
+    (insert s k hk).val = Insert.insert k s.val := by
+  rw [insert, val_ofCard]
+
+/-- An element belongs to `insert s k hk` precisely when it equals `k` or belongs to `s`. -/
+@[simp]
+theorem mem_insert (s : powersetCard α r) {k a : α} (hk : k ∉ s) :
+    a ∈ insert s k hk ↔ a = k ∨ a ∈ s := by
+  rw [← mem_coe_iff]
+  exact Finset.mem_insert
+
+/-- Erasing `k` after inserting `k ∉ s` recovers `s`. -/
+@[simp]
+theorem erase_insert (s : powersetCard α r) (k : α) (hk : k ∉ s) :
+    erase (insert s k hk) k ((mem_insert s hk).mpr (Or.inl rfl)) = s :=
+  Subtype.ext (Finset.erase_insert hk)
+
+/-- Inserting `k` after erasing `k ∈ u` recovers `u`. -/
+@[simp]
+theorem insert_erase (u : powersetCard α (r + 1)) (k : α) (hk : k ∈ u) :
+    insert (erase u k hk) k (fun h ↦ ((mem_erase u hk).mp h).1 rfl) = u :=
+  Subtype.ext (Finset.insert_erase hk)
+
+end EraseInsert
 
 end Set.powersetCard
