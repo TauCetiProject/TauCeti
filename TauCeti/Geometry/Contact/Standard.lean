@@ -66,7 +66,7 @@ For `V = ℝ` this is the form `dz - x dy` above in the coordinates `(q, p, z) =
 `(q, p, z) ↦ (q, -p, -z)` preserves the contact structure and reverses its coorientation,
 pulling `α` back to `-α`
 (`TauCeti.mpullback_innerProductContactForm_neg`), and reassociating `((q, p), z) ↦ (q, p, z)`
-pulls `α` back to the contactization of `TauCeti.innerProductMomentumForm`
+pulls `α` back to the contactization of `TauCeti.innerProductLiouvilleForm`
 (`TauCeti.mpullback_prodAssocSymmSelf_symm_innerProductContactForm`).
 
 ## References
@@ -471,11 +471,11 @@ theorem mpullback_innerProductContactForm_neg :
   simpa [← Prod.neg_mk] using mpullback_innerProductContactForm_smul V (-1)
 
 /-- Reassociating `((q, p), t) ↦ (q, p, t)` pulls `innerProductContactForm V` back to the
-contactization form `dz - ⟪p, dq⟫` of `innerProductMomentumForm V`. -/
+contactization form `dz - ⟪p, dq⟫` of `innerProductLiouvilleForm V`. -/
 theorem mpullback_prodAssocSymmSelf_symm_innerProductContactForm :
     SmoothForm.mpullback (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm
         (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm.contMDiff (innerProductContactForm V) =
-      (innerProductMomentumForm V).contactization := by
+      (innerProductLiouvilleForm V).contactization := by
   apply Subtype.ext; funext p; refine ContinuousAlternatingMap.ext_fin_one fun u ↦ ?_
   let g₁ : (V × V) →L[ℝ] V × V × ℝ :=
     (ContinuousLinearMap.fst ℝ V V).prod ((ContinuousLinearMap.snd ℝ V V).prod 0)
