@@ -41,7 +41,7 @@ with the one a competing convention would give.
   (`exists_smul_smul_vacuumField_eq_and_apply_zero_eq_one_iff`); the based quotient would carry
   a free action of that circle. For `m = 1` the moduli space is homeomorphic to `ℂ`, and the
   vortex with zero divisor `{z₀}` is the translate by `z₀` of the vortex centred at `0`
-  (`framedVortexModuliHomeomorphOne`, `
+  (`framedVortexModuliHomeomorphOne`,
   `exists_framedGaugeGroup_smul_translateFramedVortex_eq_iff_framedVortexDivisor_eq_oneEquiv`).
 * **Zero divisors record oriented order.** The section `w ↦ conj w` has no zero divisor at
   all (`not_isZeroMultiplicity_conj`), although `|conj w| = |w|`: a definition of the order of
@@ -130,7 +130,7 @@ theorem gaugeFixedOperator_vacuumField_const (v : EuclideanSpace ℝ (Fin 4)) (z
       linearizedEquation_apply_zero, linearizedEquation_apply_one, linearizedEquation_apply_two,
       vacuumField_apply] <;> ring
 
-/-- **The vacuum gap is `1/2`.** On constant fields the vacuum operator is one half of an
+/-- **On constant fields the vacuum operator has norm `1/2`.** There it is one half of an
 orthogonal map: `|L₀ v| = |v| / 2`. -/
 theorem norm_gaugeFixedOperator_vacuumField_const (v : EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖gaugeFixedOperator vacuumField (fun _ ↦ v) z‖ = ‖v‖ / 2 := by
@@ -217,12 +217,12 @@ theorem exists_framedGaugeGroup_smul_translateFramedVortex_eq_iff_framedVortexDi
 
 /-! ### Zero divisors record the oriented order of vanishing -/
 
-/-- **The section `w ↦ conj w` has no zero divisor.** Since `conj 0 = 0`, its order at the
-origin would be some `n ≥ 1`. For `n = 1`, the factorization `conj w = w v(w)` with `v` continuous
-at `0` would make `v` equal to `1` on the real axis and `-1` on the imaginary axis. For `n ≥ 2`,
-`|w| = |conj w| ≤ C |w|²` near `0` fails for small `w ≠ 0`. -/
+/-- **The section `w ↦ conj w` has no zero divisor.** Although `|conj w| = |w|`, for no
+multiplicity function `n` does it factor as `(w - z) ^ n z * v w` near each `z` with `v` continuous
+and nonvanishing at `z`: its vanishing at `0` has the wrong orientation. -/
 theorem not_isZeroMultiplicity_conj (n : ℂ → ℕ) : ¬IsZeroMultiplicity (starRingEnd ℂ) n := by
   intro h
+  -- Since `conj 0 = 0`, the order at the origin is some `n 0 ≥ 1`.
   have hpos : 0 < n 0 := h.pos_iff.2 (map_zero _)
   rcases Nat.lt_or_ge (n 0) 2 with hn | hn
   · -- `n = 1`: `v = 1` on the real axis and `v = -1` on the imaginary axis.
