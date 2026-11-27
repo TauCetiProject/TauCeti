@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import Mathlib.Analysis.Convex.Mul
 import TauCeti.Analysis.Convex.StrictConvexSpace
 
 /-!
@@ -17,6 +18,10 @@ bounds the sum of their function values by the sum at the endpoints. For ordered
 crossed displacements `x₁ - y₂` and `x₂ - y₁` and have the same sum. Thus convex displacement
 costs satisfy the Monge four-point inequality. In particular this holds for `|x - y| ^ p` when
 `1 ≤ p`, the inequality used in uncrossing finite transport plans.
+
+`Real.norm_one_div_add_pow_add_one_div_add_sub_pow_le` uses Mathlib's `convexOn_zpow`
+and `TauCeti.add_le_add_of_convexOn_of_add_eq` to bound paired reciprocal powers by their
+sum at the endpoints.
 
 ## References
 
@@ -77,3 +82,23 @@ theorem abs_sub_rpow_add_abs_sub_rpow_le {p x₁ x₂ y₁ y₂ : ℝ} (hp : 1 �
   exact add_sub_le_add_sub_of_convexOn hf hx hy (Set.mem_univ _) (Set.mem_univ _)
 
 end TauCeti
+
+namespace Real
+
+open Set
+
+/-- Moving two positive bases towards one another with their sum fixed bounds the
+norm of the sum of their reciprocal powers by the original reciprocal-power sum. -/
+theorem norm_one_div_add_pow_add_one_div_add_sub_pow_le {a s t : ℝ}
+    (ha : 0 < a) (ht : t ∈ Icc 0 s) (k : ℕ) :
+    ‖1 / (a + t) ^ k + 1 / (a + s - t) ^ k‖ ≤ 1 / a ^ k + 1 / (a + s) ^ k := by
+  have hf : ConvexOn ℝ (Ioi 0) (fun x : ℝ ↦ 1 / x ^ k) := by
+    simpa only [zpow_neg, zpow_natCast, one_div] using (convexOn_zpow (𝕜 := ℝ) (-(k : ℤ)))
+  have ht₀ : 0 ≤ t := ht.1
+  have hb : 0 < a + s := by linarith [ht.2]
+  have hb' : 0 < a + s - t := by linarith [ht.2]
+  rw [norm_of_nonneg (by positivity)]
+  exact TauCeti.add_le_add_of_convexOn_of_add_eq hf ha hb (by linarith)
+    (by linarith [ht.2]) (by ring)
+
+end Real
