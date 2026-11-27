@@ -38,6 +38,7 @@ singular simplices), and the homology comparison from its homology version
 * `TopCat.restrictScalarsHomologyMap_eq`: the homology comparison is the map induced by the chain
   comparison.
 * `TopCat.homologyπ_restrictScalarsHomologyMap`: the homology comparison on the class of a cycle.
+* `TopCat.restrictScalarsHomologyMap_naturality`: the homology comparison is natural in the space.
 
 ## References
 
@@ -136,5 +137,20 @@ lemma homologyπ_restrictScalarsHomologyMap (n : ℕ) :
 instance [IsIso c] (n : ℕ) : IsIso (X.restrictScalarsHomologyMap f c n) := by
   rw [restrictScalarsHomologyMap]
   infer_instance
+
+variable {X} in
+/-- **The homology comparison is natural in the space**: for a continuous map `g : X ⟶ Y`, the
+comparison `Hₙ(-; T) ⟶ G Hₙ(-; k)` commutes with the maps `g_*` on both sides. -/
+@[reassoc]
+lemma restrictScalarsHomologyMap_naturality {Y : TopCat.{w}} (g : X ⟶ Y) (n : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{w} R) n).obj T).map g ≫
+        Y.restrictScalarsHomologyMap f c n =
+      X.restrictScalarsHomologyMap f c n ≫ (ModuleCat.restrictScalars f).map
+        (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).map g) := by
+  rw [restrictScalarsHomologyMap, restrictScalarsHomologyMap, NatTrans.naturality_assoc,
+    Category.assoc]
+  exact congrArg (_ ≫ ·)
+    (((ModuleCat.restrictScalars f).singularHomologyFunctorObjCompIso
+      (𝟙_ (ModuleCat.{w} k)) n).inv.naturality g)
 
 end TopCat
