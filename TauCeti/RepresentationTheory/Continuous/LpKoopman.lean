@@ -101,6 +101,12 @@ theorem mem_invariants_lpKoopman_iff {f : Lp E p μ} :
 theorem norm_lpKoopman_apply (g : G) (f : Lp E p μ) : ‖lpKoopman 𝕜 E p μ hμ g f‖ = ‖f‖ :=
   Lp.norm_compMeasurePreserving f (hμ g⁻¹)
 
+/-- `π(g⁻¹)` moves `f` as far as `π(g)` does: `‖π(g⁻¹) f - f‖ = ‖π(g) f - f‖`. -/
+theorem norm_lpKoopman_inv_apply_sub (g : G) (f : Lp E p μ) :
+    ‖lpKoopman 𝕜 E p μ hμ g⁻¹ f - f‖ = ‖lpKoopman 𝕜 E p μ hμ g f - f‖ := by
+  rw [← norm_lpKoopman_apply (𝕜 := 𝕜) (hμ := hμ) g, map_sub, ← mul_apply_eq_comp, ← map_mul,
+    mul_inv_cancel, map_one, one_apply_eq_self, norm_sub_rev]
+
 /-- **Trivial actions.** If every `g` fixes every point, then every `π(g)` is the identity. -/
 theorem lpKoopman_eq_one_of_forall_smul_eq (h : ∀ (g : G) (x : X), g • x = x) (g : G) :
     lpKoopman 𝕜 E p μ hμ g = 1 := by
