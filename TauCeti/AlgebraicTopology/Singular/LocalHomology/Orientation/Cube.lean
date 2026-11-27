@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linea
 public import Mathlib.Topology.Homotopy.Affine
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Generator
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # The oriented generators of cubes and their cross products
@@ -99,6 +100,15 @@ def diskBoundaryPairToComplZero (n : ℕ) :
       ext ⟨⟨p, hp⟩⟩
       exact coe_diskBoundaryHomeomorph_apply _)
 
+/-- The coordinates of `TauCeti.diskBoundaryPairToComplZero`: those of the point of the disk. -/
+lemma diskBoundaryPairToComplZero_fst_apply_ofLp (n : ℕ) (x : (diskBoundaryPair.{w} n).fst)
+    (i : ULift.{w} (Fin n)) :
+    (TopPair.Hom.fst (diskBoundaryPairToComplZero n) x :
+        EuclideanSpace ℝ (ULift.{w} (Fin n))).ofLp i =
+      ((x : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) i.down :=
+  (rfl)
+
 /-- On the boundary sphere, `TauCeti.diskBoundaryPairToComplZero` is
 `TauCeti.diskBoundaryHomeomorph`. -/
 lemma coe_diskBoundaryPairToComplZero_snd_apply (n : ℕ) (s : TopCat.diskBoundary.{w} n) :
@@ -113,6 +123,23 @@ abbrev stdULiftOrientation (n : ℕ) :
     Orientation ℝ (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) (Fin (n + 1)) :=
   ((EuclideanSpace.basisFun (ULift.{w} (Fin (n + 1))) ℝ).reindex Equiv.ulift).toBasis.orientation
 
+/-- The identification `Hₙ₊₁(ℝⁿ⁺¹, ℝⁿ⁺¹ ∖ {0}; R) ≅ R` selected by the standard orientation of
+`EuclideanSpace ℝ (ULift (Fin (n + 1)))` in the identity chart. -/
+abbrev stdULiftLocalHomologyIso (n : ℕ) :
+    (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1))))))
+      ).singularHomology R (n + 1) ≅ R :=
+  singularHomologyComplSingletonIsoOfOrientation R
+    (OpenPartialHomeomorph.refl (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))))
+    (OpenPartialHomeomorph.mem_refl_source 0) (stdULiftOrientation.{w} n)
+    (finrank_euclideanSpace_ulift_fin (n + 1))
+
+/-- The generator of `Hₙ₊₁(ℝⁿ⁺¹, ℝⁿ⁺¹ ∖ {0}; k)` selected by the standard orientation of
+`EuclideanSpace ℝ (ULift (Fin (n + 1)))`. -/
+abbrev stdULiftGenerator (k : Type w) [Ring k] (n : ℕ) :
+    ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1))))))
+      |>.singularHomology (ModuleCat.of k k) (n + 1) : ModuleCat.{w} k)) :=
+  (stdULiftLocalHomologyIso.{w} (ModuleCat.of k k) n).inv (1 : k)
+
 /-- **The disk generator is the standard local generator.** The inclusion of the unit disk
 `(Dⁿ⁺¹, Sⁿ) ⟶ (ℝⁿ⁺¹, ℝⁿ⁺¹ ∖ {0})` carries the generator of `Hₙ₊₁(Dⁿ⁺¹, Sⁿ; R)` to the generator of
 `Hₙ₊₁(ℝⁿ⁺¹, ℝⁿ⁺¹ ∖ {0}; R)` selected by the standard orientation. -/
@@ -120,14 +147,8 @@ theorem singularHomologyDiskBoundaryPairIso_inv_comp_singularHomologyMap_diskBou
     (n : ℕ) :
     (singularHomologyDiskBoundaryPairIso R (n + 1)).inv ≫
         TopPair.singularHomologyMap (diskBoundaryPairToComplZero.{w} (n + 1)) R (n + 1) =
-      (singularHomologyComplSingletonIsoOfOrientation R
-        (OpenPartialHomeomorph.refl (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))))
-        (OpenPartialHomeomorph.mem_refl_source 0) (stdULiftOrientation.{w} n)
-        (finrank_euclideanSpace_ulift_fin (n + 1))).inv := by
-  rw [← cancel_mono (singularHomologyComplSingletonIsoOfOrientation R
-      (OpenPartialHomeomorph.refl (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))))
-      (OpenPartialHomeomorph.mem_refl_source 0) (stdULiftOrientation.{w} n)
-      (finrank_euclideanSpace_ulift_fin (n + 1))).hom,
+      (stdULiftLocalHomologyIso.{w} R n).inv := by
+  rw [← cancel_mono (stdULiftLocalHomologyIso.{w} R n).hom,
     Iso.inv_hom_id, singularHomologyComplSingletonIsoOfOrientation_refl_hom, Category.assoc,
     ← TopPair.reducedSingularHomologyδ_naturality_assoc,
     reducedSingularHomologySphereIsoOfOrientation_eq R (stdULiftOrientation.{w} n)
@@ -184,7 +205,7 @@ lemma cubeBoundaryPairToComplZero_fst_apply_ofLp (n : ℕ) (y : (cubeBoundaryPai
   rw [cubeBoundaryPairToComplZero]
   -- `TopPair.ofSubsetMap` is not exposed; its ambient map is read through its evaluation lemma.
   erw [TopPair.ofSubsetMap_fst_apply]
-  rfl
+  simp [cubeAffineMap]
 
 /-- The disk pair carried into the cube and then onto `[-1, 1]ⁿ` is a nonnegative multiple of the
 inclusion of the disk: the radial rescaling of the Euclidean ball onto the sup-norm ball. The values
@@ -211,13 +232,13 @@ private lemma fst_diskBoundaryPairToCube_comp_cubeBoundaryPairToComplZero_apply 
   have hc := diskBoundaryPairToCube_fst_apply_down.{w} x
   simp only [TopCat.hom_ofHom, ContinuousMap.coe_mk]
   rw [hc]
+  -- The scalar multiple is taken in the ambient space of the pair `(ℝⁿ, ℝⁿ ∖ {0})`, which is the
+  -- Euclidean space only after unfolding `TopPair.ofSubset`.
+  erw [PiLp.smul_apply, diskBoundaryPairToComplZero_fst_apply_ofLp]
   simp only [diskHomeomorphCube_apply, coe_cubeHomeomorphClosedBall_symm_apply,
     coe_diskHomeomorphClosedBall_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply,
     gaugeRescale_def, zero_le_one, gauge_closedBall, div_one, Pi.smul_apply,
-    PiLp.continuousLinearEquiv_apply, smul_eq_mul, PiLp.continuousLinearEquiv_symm_apply,
-    diskBoundaryPair_fst, diskBoundaryPairToComplZero, v]
-  erw [PiLp.smul_apply, LinearIsometryEquiv.piLpCongrLeft_apply]
-  simp only [smul_eq_mul, Equiv.piCongrLeft'_apply, Equiv.symm_symm, Equiv.ulift_apply]
+    PiLp.continuousLinearEquiv_apply, smul_eq_mul, PiLp.continuousLinearEquiv_symm_apply, v]
   ring
 
 /-- The affine map of the cube onto `[-1, 1]ⁿ` and the inclusion of the disk, read on the cube
@@ -249,6 +270,7 @@ theorem singularHomologyMap_cubeBoundaryPairToComplZero (n m : ℕ) :
   have h₂ := hf₂ hy
   set a : EuclideanSpace ℝ (ULift.{w} (Fin n)) :=
     TopPair.Hom.fst (diskBoundaryPairToComplZero n) x
+  -- `f₂` is the ambient map of the composite `φ`, which sends `y` to `a` through `x`.
   have hf₂y : f₂ y = a := rfl
   have hcy : cubeAffineMap n y = s • a := by
     have h3 : cubeAffineMap n y = @id (EuclideanSpace ℝ (ULift.{w} (Fin n)))
@@ -256,9 +278,9 @@ theorem singularHomologyMap_cubeBoundaryPairToComplZero (n m : ℕ) :
       rw [← hx]
       -- As above, the composite lives on the ambient space of the cube pair.
       erw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst_apply]
+      -- What remains is `cubeAffineMap` against its `TopCat.ofHom` wrapper, read through `id`.
       rfl
-    rw [h3, hsx]
-    rfl
+    rw [h3, hsx, id_eq]
   have ha : a ≠ 0 := h₂
   have hc0 : cubeAffineMap n y ≠ 0 := cubeAffineMap_mapsTo n hy
   have h0' : AffineMap.lineMap (cubeAffineMap n y) (f₂ y) (τ : ℝ) =
@@ -278,10 +300,7 @@ theorem singularHomologyCubeBoundaryPairIso_inv_comp_singularHomologyMap_cubeBou
     (n : ℕ) :
     (singularHomologyCubeBoundaryPairIso R (n + 1)).inv ≫
         TopPair.singularHomologyMap (cubeBoundaryPairToComplZero.{w} (n + 1)) R (n + 1) =
-      (singularHomologyComplSingletonIsoOfOrientation R
-        (OpenPartialHomeomorph.refl (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))))
-        (OpenPartialHomeomorph.mem_refl_source 0) (stdULiftOrientation.{w} n)
-        (finrank_euclideanSpace_ulift_fin (n + 1))).inv := by
+      (stdULiftLocalHomologyIso.{w} R n).inv := by
   have h : TopPair.singularHomologyMap (diskBoundaryPairIsoCube.{w} (n + 1)).hom R (n + 1) ≫
       TopPair.singularHomologyMap
         ((diskBoundaryPairIsoCube.{w} (n + 1)).inv ≫ diskBoundaryPairToComplZero (n + 1)) R
@@ -304,14 +323,10 @@ theorem singularHomologyMap_cubeBoundaryPairToComplZero_cubeBoundaryPairCycle (k
         ((TopPair.singularCubicalHomologyIso k (cubeBoundaryPair.{w} (n + 1)) (n + 1)).inv
           (((cubeBoundaryPair.{w} (n + 1)).cubicalChainComplex k).homologyπ (n + 1)
             (cubeBoundaryPairCycle k n))) =
-      (-1 : k) ^ (n * (n + 1) / 2) •
-        (singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of k k)
-          (OpenPartialHomeomorph.refl (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))))
-          (OpenPartialHomeomorph.mem_refl_source 0) (stdULiftOrientation.{w} n)
-          (finrank_euclideanSpace_ulift_fin (n + 1))).inv (1 : k) := by
-  rw [singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle, map_smul,
-    ← singularHomologyCubeBoundaryPairIso_inv_comp_singularHomologyMap_cubeBoundaryPairToComplZero]
-  rfl
+      (-1 : k) ^ (n * (n + 1) / 2) • stdULiftGenerator k n := by
+  rw [singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle, map_smul, stdULiftGenerator,
+    ← singularHomologyCubeBoundaryPairIso_inv_comp_singularHomologyMap_cubeBoundaryPairToComplZero,
+    ConcreteCategory.comp_apply]
 
 
 /-! ### Products -/
@@ -320,23 +335,23 @@ section Product
 
 variable (k : Type w) [CommRing k]
 
+/-- The concatenation of coordinates as a linear homeomorphism: Mathlib's
+`EuclideanSpace.sumEquivProd`, reindexed along
+`ULift (Fin p) ⊕ ULift (Fin q) ≃ ULift (Fin (p + q))`. -/
+private def euclideanULiftAppendEquiv (p q : ℕ) :
+    (EuclideanSpace ℝ (ULift.{w} (Fin p)) × EuclideanSpace ℝ (ULift.{w} (Fin q))) ≃L[ℝ]
+      EuclideanSpace ℝ (ULift.{w} (Fin (p + q))) :=
+  EuclideanSpace.sumEquivProd.symm.trans
+    (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
+      ((Equiv.sumCongr Equiv.ulift.{w} Equiv.ulift.{w}).trans
+        (finSumFinEquiv.trans Equiv.ulift.{w}.symm))).toContinuousLinearEquiv
+
 /-- The concatenation of coordinates `ℝᵖ × ℝ^q → ℝᵖ⁺q` of the Euclidean spaces
 `EuclideanSpace ℝ (ULift (Fin p))`, the coordinates of the first factor first. -/
 def euclideanULiftAppend (p q : ℕ) :
     C(EuclideanSpace ℝ (ULift.{w} (Fin p)) × EuclideanSpace ℝ (ULift.{w} (Fin q)),
       EuclideanSpace ℝ (ULift.{w} (Fin (p + q)))) :=
-  ⟨fun x ↦ (EuclideanSpace.equiv (ULift.{w} (Fin (p + q))) ℝ).symm fun i ↦
-      Fin.append (fun j ↦ x.1 (ULift.up j)) (fun j ↦ x.2 (ULift.up j)) i.down, by
-    refine (EuclideanSpace.equiv (ULift.{w} (Fin (p + q))) ℝ).symm.continuous.comp
-      (continuous_pi fun i ↦ ?_)
-    obtain ⟨i⟩ := i
-    induction i using Fin.addCases with
-    | left j =>
-      simp only [Fin.append_left]
-      exact (PiLp.continuous_apply 2 _ (ULift.up j)).comp continuous_fst
-    | right j =>
-      simp only [Fin.append_right]
-      exact (PiLp.continuous_apply 2 _ (ULift.up j)).comp continuous_snd⟩
+  ⟨euclideanULiftAppendEquiv p q, (euclideanULiftAppendEquiv p q).continuous⟩
 
 /-- The coordinates of `TauCeti.euclideanULiftAppend`: those of the first factor, then those of the
 second. -/
@@ -345,8 +360,9 @@ lemma euclideanULiftAppend_apply_ofLp (p q : ℕ)
     (x : EuclideanSpace ℝ (ULift.{w} (Fin p)) × EuclideanSpace ℝ (ULift.{w} (Fin q)))
     (i : ULift.{w} (Fin (p + q))) :
     (euclideanULiftAppend p q x).ofLp i =
-      Fin.append (fun j ↦ x.1 (ULift.up j)) (fun j ↦ x.2 (ULift.up j)) i.down :=
-  (rfl)
+      Fin.append (fun j ↦ x.1 (ULift.up j)) (fun j ↦ x.2 (ULift.up j)) i.down := by
+  obtain ⟨i⟩ := i
+  induction i using Fin.addCases <;> simp [euclideanULiftAppend, euclideanULiftAppendEquiv]
 
 /-- The concatenation of coordinates vanishes only at the origin, so it is a map of pairs
 `(ℝᵖ × ℝ^q, (ℝᵖ ∖ {0}) × ℝ^q ∪ ℝᵖ × (ℝ^q ∖ {0})) ⟶ (ℝᵖ⁺q, ℝᵖ⁺q ∖ {0})`. -/
@@ -360,22 +376,24 @@ lemma euclideanULiftAppend_mapsTo (p q : ℕ) :
           (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin q)))) ⁻¹' {0}ᶜ)
       ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (p + q)))))) := by
   rintro ⟨x, y⟩ h h0
-  have hc (i : Fin (p + q)) :
-      Fin.append (fun j ↦ x (ULift.up j)) (fun j ↦ y (ULift.up j)) i = 0 := by
-    have := congrFun (congrArg (EuclideanSpace.equiv (ULift.{w} (Fin (p + q))) ℝ)
-      (Set.mem_singleton_iff.1 h0)) (ULift.up i)
-    exact this
+  have h0' : ((x, y) : EuclideanSpace ℝ (ULift.{w} (Fin p)) ×
+      EuclideanSpace ℝ (ULift.{w} (Fin q))) = 0 :=
+    (map_eq_zero_iff _ (euclideanULiftAppendEquiv.{w} p q).injective).1 h0
   rcases h with h | h
-  · refine h (Set.mem_singleton_iff.2 ?_)
-    ext ⟨j⟩
-    have := hc (Fin.castAdd q j)
-    rw [Fin.append_left] at this
-    exact this
-  · refine h (Set.mem_singleton_iff.2 ?_)
-    ext ⟨j⟩
-    have := hc (Fin.natAdd p j)
-    rw [Fin.append_right] at this
-    exact this
+  · exact h (congrArg Prod.fst h0')
+  · exact h (congrArg Prod.snd h0')
+
+/-- The concatenation of coordinates as a map out of the product of the pairs
+`(ℝᵖ, ℝᵖ ∖ {0})` and `(ℝ^q, ℝ^q ∖ {0})`, into `(ℝᵖ⁺q, ℝᵖ⁺q ∖ {0})`. -/
+private abbrev euclideanULiftAppendPairHom (p q : ℕ) :=
+  TopPair.ofSubsetMap
+    (TopCat.ofHom (X := ↑((TopPair.ofSubset
+        ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin p)))))).fst ⊗
+      (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin q)))))).fst))
+      (euclideanULiftAppend.{w} p q))
+    ((euclideanULiftAppend_mapsTo p q).mono_left
+      (Set.union_subset_union (Set.preimage_mono TopPair.range_ofSubset_map.subset)
+        (Set.preimage_mono TopPair.range_ofSubset_map.subset)))
 
 /-- The class of the affine cube `y ↦ 2y - 1` in `(ℝⁿ⁺¹, ℝⁿ⁺¹ ∖ {0})`, read in singular homology,
 is `(-1) ^ (n (n + 1) / 2)` times the generator selected by the standard orientation. -/
@@ -387,11 +405,7 @@ private lemma singularCubicalHomologyIso_inv_cubeClass (m : ℕ) :
         (TopPair.cubicalChainComplexMap k (cubeBoundaryPairToComplZero.{w} (m + 1))) (m + 1)
         (((cubeBoundaryPair.{w} (m + 1)).cubicalChainComplex k).homologyπ (m + 1)
           (cubeBoundaryPairCycle k m))) =
-      (-1 : k) ^ (m * (m + 1) / 2) •
-        (singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of k k)
-          (OpenPartialHomeomorph.refl (EuclideanSpace ℝ (ULift.{w} (Fin (m + 1)))))
-          (OpenPartialHomeomorph.mem_refl_source 0) (stdULiftOrientation.{w} m)
-          (finrank_euclideanSpace_ulift_fin (m + 1))).inv (1 : k) := by
+      (-1 : k) ^ (m * (m + 1) / 2) • stdULiftGenerator k m := by
   rw [← ModuleCat.comp_apply, TopPair.singularCubicalHomologyIso_inv_naturality,
     ModuleCat.comp_apply]
   exact singularHomologyMap_cubeBoundaryPairToComplZero_cubeBoundaryPairCycle k m
@@ -407,8 +421,8 @@ private lemma euclideanULiftAppend_comp_crossProduct (p q : ℕ) :
   refine PiLp.ext fun i ↦ ?_
   obtain ⟨i⟩ := i
   induction i using Fin.addCases with
-  | left j => simp [euclideanULiftAppend, cubeAffineMap]
-  | right j => simp [euclideanULiftAppend, cubeAffineMap]
+  | left j => simp [cubeAffineMap]
+  | right j => simp [cubeAffineMap]
 
 /-- **The cross product of the affine cubes.** In relative cubical homology, the cross product of
 the classes of the affine cubes of `ℝᵃ⁺¹` and `ℝᵇ⁺¹`, carried to `ℝᵃ⁺¹⁺ᵇ⁺¹` by the concatenation
@@ -416,15 +430,7 @@ of coordinates, is the class of the affine cube of `ℝᵃ⁺¹⁺ᵇ⁺¹`: on 
 cubes is the cube of the concatenated coordinates. -/
 private lemma homologyMap_cubicalChainComplexMap_cubeClass_cross (a b : ℕ) :
     HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
-        (TopPair.ofSubsetMap
-          (TopCat.ofHom (X := ↑((TopPair.ofSubset
-              ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (a + 1))))))).fst ⊗
-            (TopPair.ofSubset
-              ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (b + 1))))))).fst))
-            (euclideanULiftAppend.{w} (a + 1) (b + 1)))
-          ((euclideanULiftAppend_mapsTo (a + 1) (b + 1)).mono_left
-            (Set.union_subset_union (Set.preimage_mono TopPair.range_ofSubset_map.subset)
-              (Set.preimage_mono TopPair.range_ofSubset_map.subset))))) (a + 1 + (b + 1))
+        (euclideanULiftAppendPairHom.{w} (a + 1) (b + 1))) (a + 1 + (b + 1))
       (HomologicalComplex.homologyMap
         ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (a + 1)))))))
           |>.cubicalChainComplexProdComparison k
@@ -450,59 +456,26 @@ private lemma homologyMap_cubicalChainComplexMap_cubeClass_cross (a b : ℕ) :
   have hB := (isCubicalRepresentative_ofCube_upCube k b).map
     (cubeBoundaryPairToComplZero.{w} (b + 1))
   have hL := (TopPair.IsCubicalRepresentative.crossProduct rfl hA hB).map
-    (TopPair.ofSubsetMap
-          (TopCat.ofHom (X := ↑((TopPair.ofSubset
-              ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (a + 1))))))).fst ⊗
-            (TopPair.ofSubset
-              ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (b + 1))))))).fst))
-            (euclideanULiftAppend.{w} (a + 1) (b + 1)))
-          ((euclideanULiftAppend_mapsTo (a + 1) (b + 1)).mono_left
-            (Set.union_subset_union (Set.preimage_mono TopPair.range_ofSubset_map.subset)
-              (Set.preimage_mono TopPair.range_ofSubset_map.subset))))
+    (euclideanULiftAppendPairHom.{w} (a + 1) (b + 1))
   have hC := (isCubicalRepresentative_ofCube_upCube k (a + 1 + b)).map
     (cubeBoundaryPairToComplZero.{w} (a + 1 + (b + 1)))
   refine hL.unique ?_
   convert hC using 1
+  -- The cubes live on the ambient spaces `P.fst` of the pairs, which are the spaces the chain maps
+  -- act on (`TopCat.of`, or a tensor product of them) only after unfolding `TopPair.ofSubset`.
   erw [NormalizedCubicalChain.map_ofCube, NormalizedCubicalChain.map_ofCube,
     NormalizedCubicalChain.crossProduct_ofCube, NormalizedCubicalChain.cast_ofCube,
     NormalizedCubicalChain.map_ofCube, NormalizedCubicalChain.map_ofCube]
   refine congrArg (NormalizedCubicalChain.ofCube _ k) ?_
   simp only [cubeBoundaryPairToComplZero]
+  -- The append map is typed out of `(ofSubset A).fst ⊗ (ofSubset B).fst`, which is the tensor
+  -- product of the `TopCat.of` spaces only after unfolding `TopPair.ofSubset`.
   erw [TopPair.ofSubsetMap_fst, TopPair.ofSubsetMap_fst, TopPair.ofSubsetMap_fst,
     TopPair.ofSubsetMap_fst]
+  -- As above: the cast cube lives on `(ofSubset A).fst ⊗ (ofSubset B).fst`, and rewriting it is
+  -- type-correct for the append map only after unfolding `TopPair.ofSubset`.
   erw [SingularCube.cast_rfl]
   exact euclideanULiftAppend_comp_crossProduct (a + 1) (b + 1)
-
-/-- The generator of `Hₘ₊₁(ℝᵐ⁺¹, ℝᵐ⁺¹ ∖ {0}; k)` selected by the standard orientation of
-`EuclideanSpace ℝ (ULift (Fin (m + 1)))`. -/
-abbrev stdULiftGenerator (m : ℕ) :
-    ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of (EuclideanSpace ℝ (ULift.{w} (Fin (m + 1))))))
-      |>.singularHomology (ModuleCat.of k k) (m + 1) : ModuleCat.{w} k)) :=
-  (singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of k k)
-    (OpenPartialHomeomorph.refl (EuclideanSpace ℝ (ULift.{w} (Fin (m + 1)))))
-    (OpenPartialHomeomorph.mem_refl_source 0) (stdULiftOrientation.{w} m)
-    (finrank_euclideanSpace_ulift_fin (m + 1))).inv (1 : k)
-
-/-- The parity of the triangular numbers: `T(a) + T(b) + T(a + 1 + b) ≡ (a + 1)(b + 1)` modulo
-two, for `T(n) = n (n + 1) / 2`. -/
-private lemma neg_one_pow_triangle (a b : ℕ) :
-    (-1 : k) ^ (a * (a + 1) / 2) * (-1 : k) ^ (b * (b + 1) / 2) *
-        (-1 : k) ^ ((a + 1 + b) * (a + 1 + b + 1) / 2) = (-1 : k) ^ ((a + 1) * (b + 1)) := by
-  have h : (a + 1 + b) * (a + 1 + b + 1) / 2 =
-      a * (a + 1) / 2 + b * (b + 1) / 2 + (a + 1) * (b + 1) := by
-    have ha := Nat.even_mul_succ_self a
-    have hb := Nat.even_mul_succ_self b
-    obtain ⟨x, hx⟩ := ha
-    obtain ⟨y, hy⟩ := hb
-    have : (a + 1 + b) * (a + 1 + b + 1) = 2 * (x + y + (a + 1) * (b + 1)) := by
-      nlinarith [hx, hy]
-    rw [this, hx, hy]
-    omega
-  have hsq (n : ℕ) : ((-1 : k) ^ n) ^ 2 = 1 := by
-    rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
-  rw [h, pow_add, pow_add]
-  linear_combination ((-1 : k) ^ (b * (b + 1) / 2)) ^ 2 * (-1 : k) ^ ((a + 1) * (b + 1)) *
-      hsq (a * (a + 1) / 2) + (-1 : k) ^ ((a + 1) * (b + 1)) * hsq (b * (b + 1) / 2)
 
 /-- **The cross product of standard local generators.** Over a commutative ring `k`, the Künneth
 cross product of the generators of `Hₐ₊₁(ℝᵃ⁺¹, ℝᵃ⁺¹ ∖ {0}; k)` and `H_{b+1}(ℝᵇ⁺¹, ℝᵇ⁺¹ ∖ {0}; k)`
@@ -549,7 +522,7 @@ theorem singularHomologyMap_euclideanULiftAppend_singularHomologyKunnethPair_std
   rw [hg a, hg b, hg (a + 1 + b), TensorProduct.smul_tmul_smul, map_smul, map_smul,
     ι_singularHomologyKunnethPair]
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_tensorHom]
-  erw [TensorProduct.map_tmul, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply]
+  rw [TensorProduct.map_tmul, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply]
   have hK' := ConcreteCategory.congr_hom hK
     ((HomologicalComplex.homologyMap
       (cubicalCrossProductPair k (TopPair.ofSubset
@@ -570,12 +543,11 @@ theorem singularHomologyMap_euclideanULiftAppend_singularHomologyKunnethPair_std
             (((cubeBoundaryPair.{w} (b + 1)).cubicalChainComplex k).homologyπ (b + 1)
               (cubeBoundaryPairCycle k b)))))
   simp only [ConcreteCategory.comp_apply] at hK'
+  -- `hK'` and `hB` type the append map on presentations of its source equal up to defeq.
   erw [← hK', hB, ← TopPair.singularCubicalHomologyIso_inv]
-  rw [smul_smul, ← neg_one_pow_triangle k a b]
-  congr 1
-  have hsq : ((-1 : k) ^ ((a + 1 + b) * (a + 1 + b + 1) / 2)) ^ 2 = 1 := by
-    rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
-  linear_combination (-((-1 : k) ^ (a * (a + 1) / 2) * (-1 : k) ^ (b * (b + 1) / 2))) * hsq
+  rw [neg_one_pow_mul_succ_div_two_mul_neg_one_pow_mul_succ_div_two, smul_smul]
+  -- The sides differ only in the degrees `a + 1 + (b + 1)` and `a + 1 + b + 1`, equal by `rfl`.
+  rfl
 
 end Product
 
