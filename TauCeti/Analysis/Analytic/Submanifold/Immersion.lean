@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Analytic.Inverse
+import TauCeti.LinearAlgebra.FiniteDimensional.Extension
 
 /-!
 # Analytic immersions parametrize analytic submanifolds
@@ -25,7 +26,7 @@ The second hypothesis says that `p` is relatively open at `u₀` as a map into `
 dropped: near its crossing point, a figure-eight is not the image of a small interval.
 
 The chart is built by extending the injective derivative to a linear automorphism `L` of `𝕜ⁿ`
-(`Submodule.exists_linearEquiv_restrict_eq`) and inverting
+(`TauCeti.exists_linearEquiv_comp_eq_of_injective`) and inverting
 `y ↦ p (y₁, …, y_d) + L y - L (y₁, …, y_d, 0)`, whose derivative at `(u₀, 0)` is `L`, by the
 analytic inverse function theorem.
 
@@ -97,14 +98,10 @@ theorem exists_isAnalyticChart_of_injective_fderiv {T : Set (Fin n → 𝕜)}
   have hπι (u : Fin d → 𝕜) : π (ι u) = u := firstCoords_firstCoords_of_le hd u
   -- Extend the injective derivative `P` from the coordinate subspace to an automorphism `L`.
   have hιinj : Function.Injective ι := fun u v huv ↦ by simpa [hπι] using congrArg π huv
-  let ιP := (LinearEquiv.ofInjective ι.toLinearMap hιinj).symm.trans
-    (LinearEquiv.ofInjective P.toLinearMap hinj)
-  obtain ⟨L₀, hL₀⟩ := Submodule.exists_linearEquiv_restrict_eq ιP
+  obtain ⟨L₀, hL₀⟩ := exists_linearEquiv_comp_eq_of_injective
+    (f₁ := ι.toLinearMap) (f₂ := P.toLinearMap) hιinj hinj
   let L := L₀.toContinuousLinearEquiv
-  have hLι (u : Fin d → 𝕜) : L (ι u) = P u := by
-    have hu : (LinearEquiv.ofInjective ι.toLinearMap hιinj).symm ⟨ι u, mem_range_self u⟩ = u :=
-      (LinearEquiv.ofInjective ι.toLinearMap hιinj).symm_apply_eq.2 rfl
-    simpa [ιP, hu, L] using (hL₀ ⟨ι u, mem_range_self u⟩).symm
+  have hLι (u : Fin d → 𝕜) : L (ι u) = P u := LinearMap.congr_fun hL₀ u
   let G : (Fin n → 𝕜) → Fin n → 𝕜 := fun y ↦ p (π y) + (L y - P (π y))
   have hGι (u : Fin d → 𝕜) : G (ι u) = p u := by simp [G, hπι, hLι]
   have hp' : AnalyticAt 𝕜 (fun y ↦ p (π y)) (ι u₀) :=

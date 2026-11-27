@@ -495,22 +495,13 @@ theorem exists_isCompactOperator_familyDomainTrajectoryOperator_comp_sub_one
     (fun T ↦ (hc T).imp fun c h ↦ by
       filter_upwards [hAL, ae_restrict_of_ae h] with s hs h'
       rwa [hs])
-  -- `‖S‖ ≤ 1 / 2`, so `1 + S` is invertible, and `Q (1 + S)⁻¹` is the parametrix.
-  have hSn : ‖-S‖ < 1 := by
-    rw [ContinuousLinearMap.opNorm_neg]
+  -- `‖S‖ ≤ 1 / 2`, so `Q (1 + S)⁻¹` is the parametrix.
+  have hSn : ‖S‖ < 1 := by
     refine (S.opNorm_le_bound (by positivity) hS).trans_lt ?_
     rw [inv_mul_lt_one₀ (by positivity)]
     linarith [norm_nonneg Rbot, norm_nonneg Rtop]
-  set U := Units.oneSub (-S) hSn
-  set V : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀ := ↑U⁻¹
-  refine ⟨Q.comp V, ?_⟩
-  have hU : (U : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀).comp V = 1 := U.mul_inv
-  have : (familyDomainTrajectoryOperator ι AL).comp (Q.comp V) - 1 = K.comp V := by
-    rw [← ContinuousLinearMap.comp_assoc, hQ, show (1 : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀) + S =
-      U by rw [Units.val_oneSub, sub_neg_eq_add], ContinuousLinearMap.add_comp, hU]
-    abel
-  rw [this]
-  exact hK.comp_clm _
+  exact ContinuousLinearMap.exists_isCompactOperator_comp_sub_one_of_comp_eq_one_add_add _
+    (hQ.trans (add_right_comm _ _ _)) hK hSn
 
 /-- **The trajectory operator over a compactly embedded domain is Fredholm.** Let `ι` be a compact
 operator, and let `A(s)` converge to invertible `ι`-symmetric operators `Bbot` and `Btop` at `-∞`

@@ -34,7 +34,8 @@ locally determined over a finite clopen partition of `Spec R`.
   computed by `CommRing.Pic.prodEquiv_symm_mk`.
 * `CommRing.Pic.prodEquivOfIsIdempotentElem`: for an idempotent `e` of `R`, the isomorphism
   `Pic R ≃* Pic (R ⧸ span {1 - e}) × Pic (R ⧸ span {e})`, with inverse computed by
-  `CommRing.Pic.prodEquivOfIsIdempotentElem_symm_mk`.
+  `CommRing.Pic.prodEquivOfIsIdempotentElem_symm_mk`; `CommRing.Pic.ext_of_isIdempotentElem` says
+  that a Picard class is determined by its base changes to the two factors.
 
 ## References
 
@@ -253,6 +254,17 @@ theorem prodEquivOfIsIdempotentElem_symm_mk (he : IsIdempotentElem e) {P Q : Typ
     (prodEquivOfIsIdempotentElem he).symm
       (Pic.mk (R ⧸ Ideal.span {1 - e}) P, Pic.mk (R ⧸ Ideal.span {e}) Q) = Pic.mk R (P × Q) :=
   prodEquivOfBijective_symm_mk _
+
+/-- For an idempotent `e`, a Picard class over `R` is determined by its base changes to
+`R ⧸ span {1 - e}` and `R ⧸ span {e}`, that is, to the clopen set `D(e)` of `Spec R` and to its
+complement. -/
+theorem ext_of_isIdempotentElem (he : IsIdempotentElem e) {L M : Pic R}
+    (h₁ : mapRingHom (Ideal.Quotient.mk (Ideal.span {1 - e})) L =
+      mapRingHom (Ideal.Quotient.mk (Ideal.span {1 - e})) M)
+    (h₂ : mapRingHom (Ideal.Quotient.mk (Ideal.span {e})) L =
+      mapRingHom (Ideal.Quotient.mk (Ideal.span {e})) M) : L = M := by
+  refine (prodEquivOfIsIdempotentElem he).injective (Prod.ext ?_ ?_) <;>
+    simpa [← mapRingHom_algebraMap, Ideal.Quotient.algebraMap_eq]
 
 end Idempotent
 

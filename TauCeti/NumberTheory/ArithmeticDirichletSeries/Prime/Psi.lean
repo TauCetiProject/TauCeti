@@ -61,6 +61,8 @@ system does not get that hypothesis for free; what it has to supply is the domin
 * `TauCeti.primeVonMangoldtCoeff_rat_natGenerator_pow` evaluates the coefficient system of any set
   of primes of `𝓞 ℚ` at a prime power, and `TauCeti.primeVonMangoldtCoeff_rat_le` bounds it by
   Mathlib's von Mangoldt function `Λ`.
+* `TauCeti.primeVonMangoldtCoeff_rat_univ`: for the set of all primes of `𝓞 ℚ` the coefficient
+  system is Mathlib's von Mangoldt function `Λ`.
 
 ## Use
 
@@ -576,5 +578,20 @@ theorem primeVonMangoldtCoeff_rat_le (S : Set (HeightOneSpectrum (𝓞 ℚ))) (n
     exacts [le_rfl, Real.log_nonneg (mod_cast hp.one_le)]
   · rw [primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow S hn]
     exact vonMangoldt_nonneg
+
+open ArithmeticFunction in
+/-- The norm coefficients of the ideal von Mangoldt function over `ℚ` are the classical
+von Mangoldt coefficients. -/
+@[simp] theorem primeVonMangoldtCoeff_rat_univ (n : ℕ) :
+    primeVonMangoldtCoeff ℚ Set.univ n = Λ n := by
+  by_cases hn : IsPrimePow n
+  · obtain ⟨p, k, hp, hk, rfl⟩ := (isPrimePow_nat_iff n).mp hn
+    obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
+    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv
+    rw [← hv, primeVonMangoldtCoeff_rat_natGenerator_pow Set.univ v hk, hv,
+      vonMangoldt_apply_pow hk.ne', vonMangoldt_apply_prime hp]
+    simp
+  · rw [primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow Set.univ hn,
+      vonMangoldt_eq_zero_iff.mpr hn]
 
 end TauCeti

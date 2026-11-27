@@ -11,7 +11,9 @@ public import Mathlib.Analysis.Real.Sqrt
 # Weighted Cauchy--Schwarz for finite sums
 
 This file records the form of the Cauchy--Schwarz inequality that bounds a weighted first absolute
-moment by the square root of the corresponding weighted second moment.
+moment by the square root of the corresponding weighted second moment. It also records the
+elementary bound of a quadratic form with a nonnegative symmetric kernel by its row sums, the step
+that usually comes after Cauchy--Schwarz in bilinear-sum arguments.
 
 ## Main results
 
@@ -19,6 +21,8 @@ moment by the square root of the corresponding weighted second moment.
   most one.
 * `Finset.sum_sum_abs_le_sqrt` and `Finset.sum_abs_le_sqrt`: uniform product and single-set
   Cauchy--Schwarz bounds from a mean-square bound.
+* `Finset.sum_sum_mul_mul_le_of_symm`: a quadratic form with a nonnegative symmetric kernel is
+  at most the sum of the squares weighted by the row sums of the kernel.
 -/
 
 public section
@@ -74,5 +78,24 @@ theorem sum_abs_le_sqrt {ι : Type*} (s : Finset ι) (f : ι → ℝ)
     {ε : ℝ} (hε : (∑ i ∈ s, f i ^ 2) / #s ≤ ε) :
     ∑ i ∈ s, |f i| ≤ √ε * #s := by
   simpa using s.sum_sum_abs_le_sqrt {()} (fun i _ ↦ f i) (by simpa using hε)
+
+/-- **Quadratic forms with a symmetric kernel.** For a kernel `K` that is nonnegative and symmetric
+on `s`, `∑_{i, j} x i x j K i j ≤ ∑_i x i ^ 2 ∑_j K i j`, from
+`x i x j ≤ (x i ^ 2 + x j ^ 2) / 2`. -/
+theorem sum_sum_mul_mul_le_of_symm {ι : Type*} (s : Finset ι) (x : ι → ℝ) (K : ι → ι → ℝ)
+    (hK : ∀ i ∈ s, ∀ j ∈ s, 0 ≤ K i j) (hsymm : ∀ i ∈ s, ∀ j ∈ s, K i j = K j i) :
+    ∑ i ∈ s, ∑ j ∈ s, x i * x j * K i j ≤ ∑ i ∈ s, x i ^ 2 * ∑ j ∈ s, K i j := by
+  have h : 2 * ∑ i ∈ s, ∑ j ∈ s, x i * x j * K i j ≤
+      ∑ i ∈ s, ∑ j ∈ s, (x i ^ 2 * K i j + x j ^ 2 * K j i) := by
+    rw [mul_sum]
+    refine sum_le_sum fun i hi ↦ ?_
+    rw [mul_sum]
+    refine sum_le_sum fun j hj ↦ ?_
+    rw [← hsymm i hi j hj]
+    nlinarith [mul_nonneg (sq_nonneg (x i - x j)) (hK i hi j hj)]
+  simp only [sum_add_distrib] at h
+  rw [sum_comm (f := fun i j ↦ x j ^ 2 * K j i)] at h
+  simp only [mul_sum]
+  linarith
 
 end Finset
