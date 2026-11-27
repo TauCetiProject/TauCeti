@@ -90,15 +90,27 @@ private theorem endOfChosenAdditiveGenerator_rel_iff
   let N := chooseAdditiveGenerator R B
   exact isMoritaEquivalent_end_iff R M.val N.val M.property N.property
 
-/-- The Auslander correspondence sends the Morita class of a representation-finite Artin algebra
-to the Morita class of the endomorphism algebra of an additive generator of its finitely generated
-modules. -/
-noncomputable def auslanderCorrespondence :
-    RepresentationFiniteMoritaClass.{u} R ≃ AuslanderMoritaClass.{u} R := by
-  let f : RepresentationFiniteMoritaClass.{u} R → AuslanderMoritaClass.{u} R :=
-    Quotient.map (endOfChosenAdditiveGenerator R) fun {A B} h ↦
-      (endOfChosenAdditiveGenerator_rel_iff R A B).2 h
-  refine Equiv.ofBijective f ⟨?_, ?_⟩
+/-- The forward map on Morita classes, induced by the endomorphism algebra of a chosen generator. -/
+private noncomputable def auslanderCorrespondenceFun :
+    RepresentationFiniteMoritaClass.{u} R → AuslanderMoritaClass.{u} R :=
+  Quotient.map (endOfChosenAdditiveGenerator R) fun {A B} h ↦
+    (endOfChosenAdditiveGenerator_rel_iff R A B).2 h
+
+private theorem auslanderCorrespondenceFun_mk_eq_iff
+    (A : {A : AlgCat.{u} R // Module.Finite R A ∧ IsRepresentationFinite.{u} A})
+    (Γ : {Γ : AlgCat.{u} R // Module.Finite R Γ ∧ IsAuslanderAlgebra Γ})
+    (M : FGModuleCat.{u} A.val) (hM : IsAdditiveGenerator M) :
+    auslanderCorrespondenceFun R (Quotient.mk _ A) = Quotient.mk _ Γ ↔
+      IsMoritaEquivalent R (Module.End A.val M.obj) Γ.val := by
+  let N := chooseAdditiveGenerator R A
+  have h : IsMoritaEquivalent R (Module.End A.val N.val.obj) (Module.End A.val M.obj) :=
+    N.property.isMoritaEquivalent_moduleEnd R hM
+  rw [auslanderCorrespondenceFun, Quotient.map_mk, Quotient.eq, moritaSetoid_rel_iff]
+  exact ⟨fun he ↦ (h.symm R).trans R he, fun he ↦ h.trans R he⟩
+
+private theorem auslanderCorrespondenceFun_bijective :
+    Function.Bijective (auslanderCorrespondenceFun.{u} R) := by
+  constructor
   · intro a b
     refine Quotient.inductionOn₂ a b fun A B h ↦ ?_
     exact Quotient.sound ((endOfChosenAdditiveGenerator_rel_iff R A B).1 (Quotient.exact h))
@@ -111,12 +123,15 @@ noncomputable def auslanderCorrespondence :
     let a : {A : AlgCat.{u} R // Module.Finite R A ∧ IsRepresentationFinite.{u} A} :=
       ⟨AlgCat.of R A, inferInstance, isRepresentationFinite_iff_exists_isAdditiveGenerator.mpr
         ⟨M, hM⟩⟩
-    let N := chooseAdditiveGenerator R a
-    have h : IsMoritaEquivalent R (Module.End A N.val.obj) (Module.End A M.obj) :=
-      N.property.isMoritaEquivalent_moduleEnd R hM
-    refine ⟨Quotient.mk _ a, ?_⟩
-    simp only [f, Quotient.map_mk, Quotient.eq, moritaSetoid_rel_iff]
-    exact h.trans R (.of_algEquiv R e.symm)
+    exact ⟨Quotient.mk _ a,
+      (auslanderCorrespondenceFun_mk_eq_iff R a Γ M hM).2 (.of_algEquiv R e.symm)⟩
+
+/-- The Auslander correspondence sends the Morita class of a representation-finite Artin algebra
+to the Morita class of the endomorphism algebra of an additive generator of its finitely generated
+modules. -/
+noncomputable def auslanderCorrespondence :
+    RepresentationFiniteMoritaClass.{u} R ≃ AuslanderMoritaClass.{u} R :=
+  Equiv.ofBijective (auslanderCorrespondenceFun R) (auslanderCorrespondenceFun_bijective R)
 
 /-- The image of a representative is the class of `Γ` exactly when `Γ` is Morita equivalent
 to the endomorphism algebra of any given additive generator of the representative's module
@@ -127,14 +142,7 @@ theorem auslanderCorrespondence_apply_mk_eq_iff
     (M : FGModuleCat.{u} A.val) (hM : IsAdditiveGenerator M) :
     auslanderCorrespondence R (Quotient.mk _ A) = Quotient.mk _ Γ ↔
       IsMoritaEquivalent R (Module.End A.val M.obj) Γ.val := by
-  let N := chooseAdditiveGenerator R A
-  have h : IsMoritaEquivalent R (Module.End A.val N.val.obj) (Module.End A.val M.obj) :=
-    N.property.isMoritaEquivalent_moduleEnd R hM
-  -- On representatives, the forward function is the quotient map of the chosen endomorphism
-  -- algebra.
-  have hq : auslanderCorrespondence R (Quotient.mk _ A) =
-      Quotient.mk _ (endOfChosenAdditiveGenerator R A) := rfl
-  rw [hq, Quotient.eq, moritaSetoid_rel_iff]
-  exact ⟨fun he ↦ (h.symm R).trans R he, fun he ↦ h.trans R he⟩
+  rw [auslanderCorrespondence, Equiv.ofBijective_apply,
+    auslanderCorrespondenceFun_mk_eq_iff R A Γ M hM]
 
 end TauCeti
