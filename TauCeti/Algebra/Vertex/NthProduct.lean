@@ -44,6 +44,8 @@ products (`lie_ncoeff_nthProduct`).
 ## Main results
 
 * `VertexOperator.ncoeff_nthProduct_apply_eq_sum`: unified mode formula for all `n, m : ℤ`.
+* `VertexOperator.comp_ncoeff_nthProduct`: `n`-th products are natural for linear maps
+  intertwining the modes of their factors.
 * `VertexOperator.nthProduct_derivative_left`: `(∂A)₍ₙ₎ B = -n • A₍ₙ₋₁₎ B`.
 * `VertexOperator.derivative_nthProduct`: `∂(A₍ₙ₎ B) = (∂A)₍ₙ₎ B + A₍ₙ₎ (∂B)`.
 * `VertexOperator.lie_ncoeff_nthProduct_eq_add`, `VertexOperator.lie_ncoeff_nthProduct`:
@@ -211,6 +213,26 @@ theorem ncoeff_nthProduct_apply_eq_sum (n : ℤ) (A B : VertexOperator R V) (m :
         LinearMap.smul_apply, LinearMap.smul_apply, map_zsmul, map_zsmul, hsign,
         Units.neg_smul, Units.smul_def, Int.coe_negOnePow_natCast]
       module
+
+/-- **Naturality of `nthProduct`.** A linear map `f` which intertwines the modes of `A` with
+those of `A'` and the modes of `B` with those of `B'` intertwines the modes of their `n`-th
+products: `f ∘ (A₍ₙ₎ B)₍ₘ₎ = (A'₍ₙ₎ B')₍ₘ₎ ∘ f`. -/
+theorem comp_ncoeff_nthProduct {W : Type*} [AddCommGroup W] [Module R W] (f : V →ₗ[R] W)
+    {A B : VertexOperator R V} {A' B' : VertexOperator R W}
+    (hA : ∀ k : ℤ, f ∘ₗ A[[k]] = A'[[k]] ∘ₗ f) (hB : ∀ k : ℤ, f ∘ₗ B[[k]] = B'[[k]] ∘ₗ f)
+    (n m : ℤ) : f ∘ₗ (nthProduct n A B)[[m]] = (nthProduct n A' B')[[m]] ∘ₗ f := by
+  have hA' (k : ℤ) (v : V) : f ((A[[k]]) v) = (A'[[k]]) (f v) := LinearMap.congr_fun (hA k) v
+  have hB' (k : ℤ) (v : V) : f ((B[[k]]) v) = (B'[[k]]) (f v) := LinearMap.congr_fun (hB k) v
+  ext v
+  obtain ⟨K₁, hK₁⟩ := A.exists_forall_ncoeff_apply_eq_zero v
+  obtain ⟨K₂, hK₂⟩ := B.exists_forall_ncoeff_apply_eq_zero v
+  -- A common cutoff for `A` and `B` on `v`, hence for `A'` and `B'` on `f v`.
+  have hA₀ (i : ℕ) (hi : K₁ + K₂ + m.natAbs ≤ i) : (A[[(i : ℤ)]]) v = 0 := hK₁ i (by omega)
+  have hB₀ (i : ℕ) (hi : K₁ + K₂ + m.natAbs ≤ i) : (B[[m + i]]) v = 0 := hK₂ _ (by omega)
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, ncoeff_nthProduct_apply_eq_sum n A B m v hA₀ hB₀,
+    ncoeff_nthProduct_apply_eq_sum n A' B' m (f v)
+      (fun i hi ↦ by rw [← hA', hA₀ i hi, map_zero]) (fun i hi ↦ by rw [← hB', hB₀ i hi, map_zero])]
+  simp [map_sum, hA', hB', Units.smul_def]
 
 /-! ### Derivatives and translation covariance -/
 

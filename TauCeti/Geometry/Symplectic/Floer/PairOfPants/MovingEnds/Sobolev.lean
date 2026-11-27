@@ -804,7 +804,10 @@ private theorem exists_norm_le_floerConformalSobolevOperator_of_movingEnds
           ‖restrictWeightedValue V {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} K y‖) :=
   exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds
       ω hH hHs hHout hHouts ha hsep hout hX hx hnd hJe hJex hXout hxout hndout hJout hJoutx hJeq
-      hJoutq hJ hu hc hF hFout hux hδ huxout hδout |>.elim fun C ⟨_, T, hT, hest⟩ ↦ by
+      hJoutq (fun _ _ _ ↦ ⟨rfl, rfl⟩) (fun _ _ ↦ ⟨rfl, rfl⟩) hJ
+      (fun z hz ↦ contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz _ 1)
+      (fun z hz ↦ contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz _
+        Complex.I) hu hc hF hFout hux hδ huxout hδout |>.elim fun C ⟨_, T, hT, hest⟩ ↦ by
     have hM := ω.memLp_floerConformalJetCoeff_of_movingEnds hH hHs hHout hHouts ha
       hsep hout (fun i ↦ (continuous_iff_continuousAt.2 fun t ↦ (hx i t).continuousAt).continuousOn)
       hJe (continuous_iff_continuousAt.2 fun t ↦ (hxout t).continuousAt).continuousOn hJout hJeq
