@@ -179,9 +179,9 @@ theorem Module.Dual.apply_prod_eq_dotProduct_add_mul {ι R : Type*} [Fintype ι]
 
 /-- **Orthogonality extends to the span, on the right**: if `w ⬝ᵥ J *ᵥ v = 0` for every `v ∈ s`,
 then `w ⬝ᵥ J *ᵥ u = 0` for every `u` in the span of `s`. -/
-theorem Matrix.dotProduct_mulVec_eq_zero_of_mem_span {n R : Type*} [Fintype n] [CommSemiring R]
-    {J : Matrix n n R} {s : Set (n → R)} {w u : n → R} (h : ∀ v ∈ s, w ⬝ᵥ J *ᵥ v = 0)
-    (hu : u ∈ Submodule.span R s) : w ⬝ᵥ J *ᵥ u = 0 := by
+theorem Matrix.dotProduct_mulVec_eq_zero_of_mem_span {m n R : Type*} [Fintype m]
+    [Fintype n] [CommSemiring R] {J : Matrix m n R} {s : Set (n → R)} {w : m → R} {u : n → R}
+    (h : ∀ v ∈ s, w ⬝ᵥ J *ᵥ v = 0) (hu : u ∈ Submodule.span R s) : w ⬝ᵥ J *ᵥ u = 0 := by
   induction hu using Submodule.span_induction with
   | mem x hx => exact h x hx
   | zero => simp
@@ -190,8 +190,9 @@ theorem Matrix.dotProduct_mulVec_eq_zero_of_mem_span {n R : Type*} [Fintype n] [
 
 /-- **Orthogonality extends to the span, on the left**: if `star v ⬝ᵥ J *ᵥ w = 0` for every
 `v ∈ s`, then `star u ⬝ᵥ J *ᵥ w = 0` for every `u` in the span of `s`. -/
-theorem Matrix.star_dotProduct_mulVec_eq_zero_of_mem_span {n R : Type*} [Fintype n]
-    [CommSemiring R] [StarRing R] {J : Matrix n n R} {s : Set (n → R)} {w u : n → R}
+theorem Matrix.star_dotProduct_mulVec_eq_zero_of_mem_span {m n R : Type*} [Fintype m]
+    [Fintype n] [CommSemiring R] [StarRing R] {J : Matrix m n R} {s : Set (m → R)} {w : n → R}
+    {u : m → R}
     (h : ∀ v ∈ s, star v ⬝ᵥ J *ᵥ w = 0) (hu : u ∈ Submodule.span R s) :
     star u ⬝ᵥ J *ᵥ w = 0 := by
   induction hu using Submodule.span_induction with
@@ -202,8 +203,8 @@ theorem Matrix.star_dotProduct_mulVec_eq_zero_of_mem_span {n R : Type*} [Fintype
 
 /-- If `w` is orthogonal to every element of `s`, then the form `star u ⬝ᵥ J *ᵥ w` takes the same
 value at any two vectors `u` and `u'` that differ by an element of the span of `s`. -/
-theorem Matrix.star_dotProduct_mulVec_eq_of_sub_mem_span {n R : Type*} [Fintype n] [CommRing R]
-    [StarRing R] {J : Matrix n n R} {s : Set (n → R)} {w u u' : n → R}
+theorem Matrix.star_dotProduct_mulVec_eq_of_sub_mem_span {m n R : Type*} [Fintype m] [Fintype n]
+    [CommRing R] [StarRing R] {J : Matrix m n R} {s : Set (m → R)} {w : n → R} {u u' : m → R}
     (h : ∀ v ∈ s, star v ⬝ᵥ J *ᵥ w = 0) (hu : u - u' ∈ Submodule.span R s) :
     star u ⬝ᵥ J *ᵥ w = star u' ⬝ᵥ J *ᵥ w := by
   have h0 := star_dotProduct_mulVec_eq_zero_of_mem_span h hu
@@ -212,8 +213,9 @@ theorem Matrix.star_dotProduct_mulVec_eq_of_sub_mem_span {n R : Type*} [Fintype 
 /-- **The difference of two values of the form at nearby vectors**: for a self-adjoint unit `ρ`,
 with `D₁ = (u - u') / ρ` and `D₂ = (v - v') / ρ`, `⟨u, v⟩ - ⟨u', v'⟩ = ρ (⟨D₁, v⟩ + ⟨u', D₂⟩)`,
 where `⟨u, v⟩ = star u ⬝ᵥ J *ᵥ v`. -/
-theorem Matrix.star_dotProduct_mulVec_sub_eq {n R : Type*} [Fintype n] [CommRing R] [StarRing R]
-    {J : Matrix n n R} {ρ : Rˣ} (hρ : IsSelfAdjoint (ρ : R)) (u u' v v' : n → R) :
+theorem Matrix.star_dotProduct_mulVec_sub_eq {m n R : Type*} [Fintype m] [Fintype n] [CommRing R]
+    [StarRing R] {J : Matrix m n R} {ρ : Rˣ} (hρ : IsSelfAdjoint (ρ : R)) (u u' : m → R)
+    (v v' : n → R) :
     star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v' =
       ρ * (star (((ρ⁻¹ : Rˣ) : R) • (u - u')) ⬝ᵥ J *ᵥ v +
         star u' ⬝ᵥ J *ᵥ (((ρ⁻¹ : Rˣ) : R) • (v - v'))) := by

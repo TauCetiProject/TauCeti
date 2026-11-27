@@ -218,17 +218,15 @@ theorem smul_mem_vecsOfSize {v : κ → A} (hx : x ∈ S.ofSize i) (hv : v ∈ S
     x • v ∈ S.vecsOfSize (i + j) :=
   fun k => S.mul_mem hx (hv k)
 
-/-- A sum of two vectors of size `i` in `ι → A` has size `i + 1`. -/
-theorem add_mem_vecsOfSize {v w : ι → A} (hv : v ∈ S.vecsOfSize i) (hw : w ∈ S.vecsOfSize i) :
-    v + w ∈ S.vecsOfSize (i + 1) := fun k =>
-  have : Nonempty ι := ⟨k⟩
-  S.add_mem (hv k) (hw k)
+/-- A sum of two vectors of size `i` has size `i + 1`, provided `ι` is nonempty. -/
+theorem add_mem_vecsOfSize [Nonempty ι] {v w : κ → A} (hv : v ∈ S.vecsOfSize i)
+    (hw : w ∈ S.vecsOfSize i) : v + w ∈ S.vecsOfSize (i + 1) :=
+  fun k => S.add_mem (hv k) (hw k)
 
-/-- A difference of two vectors of size `i` in `ι → A` has size `i + 1`. -/
-theorem sub_mem_vecsOfSize {v w : ι → A} (hv : v ∈ S.vecsOfSize i) (hw : w ∈ S.vecsOfSize i) :
-    v - w ∈ S.vecsOfSize (i + 1) := fun k =>
-  have : Nonempty ι := ⟨k⟩
-  S.sub_mem (hv k) (hw k)
+/-- A difference of two vectors of size `i` has size `i + 1`, provided `ι` is nonempty. -/
+theorem sub_mem_vecsOfSize [Nonempty ι] {v w : κ → A} (hv : v ∈ S.vecsOfSize i)
+    (hw : w ∈ S.vecsOfSize i) : v - w ∈ S.vecsOfSize (i + 1) :=
+  fun k => S.sub_mem (hv k) (hw k)
 
 @[simp]
 theorem neg_mem_matsOfSize_iff {M : Matrix m n A} :
