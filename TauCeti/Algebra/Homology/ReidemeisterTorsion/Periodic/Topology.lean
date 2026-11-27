@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.SquareMinor
-public import Mathlib.Topology.Instances.Matrix
-public import Mathlib.Topology.Algebra.Field
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Topology
 
 /-!
 # Continuity of the torsion of a based two-periodic complex
@@ -66,29 +65,17 @@ variable {F α : Type*} [Field F] [TopologicalSpace F] {n q p : ZMod 2 → ℕ}
   {c : ∀ a i, Basis (Fin (n i)) F ((C a).X i)} {c₀ : ∀ i, Basis (Fin (n i)) F (C₀.X i)}
   {hn : ∀ i, n i = q i + p i} {hpq : ∀ i, p (i + 1) = q i} {l : Filter α}
 
-/-- Entrywise convergence of the differentials implies convergence of each square minor.
-No topology on the chain modules or on their varying bases is required. -/
-theorem tendsto_parityTorsionMinor
-    (hd : ∀ i r k, Tendsto
-      (fun a ↦ LinearMap.toMatrix (c a (i + 1)) (c a i) ((C a).d (i + 1) i).hom r k)
-      l (𝓝 (LinearMap.toMatrix (c₀ (i + 1)) (c₀ i) (C₀.d (i + 1) i).hom r k)))
-    (i : ZMod 2) : Tendsto (fun a ↦ parityTorsionMinor (c a) hn hpq i) l
-      (𝓝 (parityTorsionMinor c₀ hn hpq i)) := by
-  refine tendsto_pi_nhds.2 fun r ↦ tendsto_pi_nhds.2 fun k ↦ ?_
-  simp only [parityTorsionMinor_apply, LinearMap.toMatrix_apply] at hd ⊢
-  exact hd i _ _
-
 variable [IsTopologicalRing F]
 
 /-- The determinant of each square minor converges with the differential matrices. -/
-theorem tendsto_det_parityTorsionMinor
+private theorem tendsto_det_parityTorsionMinor
     (hd : ∀ i r k, Tendsto
       (fun a ↦ LinearMap.toMatrix (c a (i + 1)) (c a i) ((C a).d (i + 1) i).hom r k)
       l (𝓝 (LinearMap.toMatrix (c₀ (i + 1)) (c₀ i) (C₀.d (i + 1) i).hom r k)))
     (i : ZMod 2) : Tendsto (fun a ↦ (parityTorsionMinor (c a) hn hpq i).det) l
-      (𝓝 (parityTorsionMinor c₀ hn hpq i).det) :=
-  (continuous_id.matrix_det.tendsto _).comp
-    (tendsto_parityTorsionMinor (hn := hn) (hpq := hpq) hd i)
+      (𝓝 (parityTorsionMinor c₀ hn hpq i).det) := by
+  simpa only [parityTorsionMinor_eq_squareMinor _ hn hpq rfl (hpq i)] using
+    tendsto_det_squareMinor (hd i) (hpq i)
 
 variable [T1Space F]
 
