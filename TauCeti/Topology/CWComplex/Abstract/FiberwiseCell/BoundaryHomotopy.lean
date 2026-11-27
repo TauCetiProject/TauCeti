@@ -251,11 +251,6 @@ private theorem collapseCell_cell (x : PUnit.{1} × TopCat.disk.{0} 1) :
 private def basepoint : PUnit.{1} × sphere (0 : ℂ) 1 :=
   (PUnit.unit, ⟨1, by simp⟩)
 
-private theorem norm_diskSegment (t : I) :
-    ‖(diskSegment.{0} t : TopCat.disk.{0} 1).down.val‖ = |2 * (t : ℝ) - 1| := by
-  rw [EuclideanSpace.norm_fin_one]
-  exact congrArg abs (diskSegment_coord t)
-
 /-- The new cell, run along its diameter `TauCeti.diskSegment` from `-1` to `+1`. -/
 private def cellDiameter : C(I, fiberwiseCellAttachment basepointAttachingMap) :=
   (fiberwiseCellAttachmentCell basepointAttachingMap PUnit.unit).hom.comp
@@ -371,18 +366,6 @@ private theorem degree_reattachmentLoop_constHomotopy :
   · exact Circle.ext ((coe_reattachmentLoop_of_le_norm _ _ ht).trans
       (constHomotopy_apply _ _))
 
-/-- The coordinate of the direction of a point `x` of the `1`-disk with `1/2 ≤ |x|` is the sign
-of `x`. -/
-private theorem diskOneCoord_annulusDir {w : TopCat.disk.{0} 1} (hw : 1 / 2 ≤ ‖w.down.val‖) :
-    diskOneCoord (TopCat.diskBoundaryInclusion 1
-      (TopCat.annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨w, hw⟩)) =
-        |diskOneCoord w|⁻¹ * diskOneCoord w := by
-  have h := congrArg (fun v : EuclideanSpace ℝ (Fin 1) ↦ v 0)
-    (TopCat.coe_annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨w, hw⟩)
-  simp only [PiLp.smul_apply, smul_eq_mul, EuclideanSpace.norm_fin_one] at h
-  rw [diskOneCoord, TopCat.coe_diskBoundaryInclusion_apply_down]
-  exact h
-
 /-- The winding homotopy gives a loop of degree `1`: it is `e^{2πi · 4t}` for `t ≤ 1/4` and `1`
 afterwards. -/
 private theorem degree_reattachmentLoop_windingHomotopy :
@@ -398,7 +381,9 @@ private theorem degree_reattachmentLoop_windingHomotopy :
     refine Circle.ext ((coe_reattachmentLoop_of_le_norm _ _ hn).trans ?_).symm
     have hneg : diskOneCoord (diskSegment.{0} t) < 0 := by rw [hc]; linarith
     rw [windingHomotopy_of_diskOneCoord_eq_neg_one (hw := by
-      rw [diskOneCoord_annulusDir hn, abs_of_neg hneg, inv_neg, neg_mul, inv_mul_cancel₀ hneg.ne]),
+      rw [diskOneCoord, TopCat.coe_diskBoundaryInclusion_apply_down,
+        TopCat.annulusDir_down_apply_zero, diskSegment_coord, ← hc, abs_of_neg hneg, inv_neg,
+        neg_mul, inv_mul_cancel₀ hneg.ne]),
       min_eq_left (by linarith)]
     congr 3
     rw [TopCat.coe_reattachmentTime_of_le_norm hn, norm_diskSegment, abs_of_neg (by linarith)]
@@ -413,7 +398,9 @@ private theorem degree_reattachmentLoop_windingHomotopy :
         rcases abs_cases (2 * (t : ℝ) - 1) with ⟨h, -⟩ | ⟨h, -⟩ <;> linarith
       refine Circle.ext ((coe_reattachmentLoop_of_le_norm _ _ hn.le).trans ?_).symm
       rw [windingHomotopy_of_diskOneCoord_eq_one (hw := by
-        rw [diskOneCoord_annulusDir hn.le, abs_of_pos hpos, inv_mul_cancel₀ hpos.ne']),
+        rw [diskOneCoord, TopCat.coe_diskBoundaryInclusion_apply_down,
+          TopCat.annulusDir_down_apply_zero, diskSegment_coord, ← hc, abs_of_pos hpos,
+          inv_mul_cancel₀ hpos.ne']),
         Circle.coe_one]
 
 /-- **The reattachment class depends on the boundary homotopy.** Attach one `1`-cell at both ends
