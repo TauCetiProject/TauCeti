@@ -49,9 +49,8 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
   C⋆-algebras are closed under `star`.
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
   two-sided ideal of a C⋆-algebra as a `Submodule ℂ A` and as a `NonUnitalStarSubalgebra ℂ A`.
-* `TwoSidedIdeal.nonUnitalCStarAlgebra` and `TwoSidedIdeal.instStarOrderedRing`: a closed two-sided
-  ideal `I : TwoSidedIdeal A` is a `NonUnitalCStarAlgebra` (and `StarOrderedRing` when `A` is) on
-  its subtype carrier, with canonical isometric `⋆`-monomorphism
+* `TwoSidedIdeal.nonUnitalCStarAlgebra`: a closed two-sided ideal `I : TwoSidedIdeal A` is a
+  `NonUnitalCStarAlgebra` on its subtype carrier, with canonical isometric `⋆`-monomorphism
   `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A`, `⋆`-isomorphism
   `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`, and
   functional-calculus closure `TwoSidedIdeal.cfcₙ_mem_of_isClosed` and
@@ -275,21 +274,6 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
     (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
-
-/-- Every closed two-sided ideal of a star-ordered C⋆-algebra inherits the `StarOrderedRing`
-structure from the ambient algebra. -/
-instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
-  StarOrderedRing.of_nonneg_iff'
-    (fun h z => Subtype.coe_le_coe.mp (add_le_add_right (Subtype.coe_le_coe.mpr h) (z : A)))
-    fun x => by
-      let e := I.toNonUnitalStarSubalgebraEquiv
-      have _ : StarOrderedRing I.toNonUnitalStarSubalgebra :=
-        Subtype.starOrderedRing (𝕜 := ℂ) I.toNonUnitalStarSubalgebra
-      have hx : 0 ≤ x ↔ 0 ≤ e x := by
-        simp only [← Subtype.coe_le_coe, ZeroMemClass.coe_zero, e,
-          coe_toNonUnitalStarSubalgebraEquiv_apply]
-      rw [hx, _root_.CStarAlgebra.nonneg_iff_eq_star_mul_self, (EquivLike.surjective e).exists]
-      exact exists_congr fun s => by rw [← map_star, ← map_mul, (EquivLike.injective e).eq_iff]
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/
