@@ -6,7 +6,7 @@ Authors: Yangyang Li, The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Surface.Paraboloid.Basic
-public import TauCeti.Analysis.InnerProductSpace.Normalize
+import TauCeti.Analysis.InnerProductSpace.Normalize
 
 /-!
 # The upward normal fields of the paraboloid
@@ -146,6 +146,28 @@ theorem paraboloidUnitNormal_mem_orthogonal_range_fderiv_paraboloidGraph (x : V�
     paraboloidUnitNormal x ∈ (fderiv ℝ paraboloidGraph x).rangeᗮ := by
   unfold paraboloidUnitNormal NormedSpace.normalize
   exact Submodule.smul_mem _ _ (paraboloidNormal_mem_orthogonal_range_fderiv_paraboloidGraph x)
+
+/-- Unit length, normal-space membership, and positive height characterize the upward
+unit normal. -/
+theorem eq_paraboloidUnitNormal_iff (x : V₂) (v : E₃) :
+    v = paraboloidUnitNormal x ↔
+      ‖v‖ = 1 ∧ v ∈ (fderiv ℝ paraboloidGraph x).rangeᗮ ∧ 0 < v 2 := by
+  constructor
+  · rintro rfl
+    refine ⟨norm_paraboloidUnitNormal x,
+      paraboloidUnitNormal_mem_orthogonal_range_fderiv_paraboloidGraph x, ?_⟩
+    rw [paraboloidUnitNormal_apply_two]
+    positivity
+  · rintro ⟨hnorm, hmem, hpos⟩
+    rw [orthogonal_range_fderiv_paraboloidGraph_eq_span_paraboloidNormal,
+      Submodule.mem_span_singleton] at hmem
+    obtain ⟨c, rfl⟩ := hmem
+    have hc : 0 < c := by simpa using hpos
+    calc
+      c • paraboloidNormal x = NormedSpace.normalize (c • paraboloidNormal x) :=
+        (NormedSpace.normalize_eq_self_of_norm_eq_one hnorm).symm
+      _ = paraboloidUnitNormal x := by
+        rw [paraboloidUnitNormal, NormedSpace.normalize_smul_of_pos hc]
 
 /-- The upward unit normal is smooth at every order, including analytic order. -/
 @[fun_prop]
