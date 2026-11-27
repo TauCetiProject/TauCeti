@@ -11,6 +11,7 @@ public import TauCeti.CategoryTheory.Abelian.Images
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
+import TauCeti.Algebra.Homology.ShortComplex.Abelian
 
 /-!
 # The Euler characteristic of a bounded complex in abelian and exact `K₀`
@@ -415,37 +416,6 @@ end CochainComplex
 
 end AbelianK0
 
-section BoundariesCycles
-
-variable (K : CochainComplex A ℤ)
-
-/-- The inclusion of the boundaries `im dⁱ` into the cocycles `ker dʲ`. -/
-private noncomputable def boundariesToCycles (i j k : ℤ) :
-    Abelian.image (K.d i j) ⟶ kernel (K.d j k) :=
-  kernel.lift _ (Abelian.image.ι (K.d i j)) (by
-    rw [← cancel_epi (Abelian.factorThruImage (K.d i j)), ← Category.assoc, Abelian.image.fac,
-      K.d_comp_d, comp_zero])
-
-private instance (i j k : ℤ) : Mono (boundariesToCycles K i j k) :=
-  mono_of_mono_fac (kernel.lift_ι _ _ _)
-
-private lemma kernelLift_d_eq (i j k : ℤ) :
-    kernel.lift (K.d j k) (K.d i j) (K.d_comp_d i j k)
-      = Abelian.factorThruImage (K.d i j) ≫ boundariesToCycles K i j k := by
-  ext
-  simp [boundariesToCycles]
-
-/-- The cokernel of the inclusion of the boundaries into the cocycles is the cohomology. -/
-private noncomputable def cokernelBoundariesToCyclesIso (i j k : ℤ) (hij : i + 1 = j)
-    (hjk : j + 1 = k) : cokernel (boundariesToCycles K i j k) ≅ K.homology j :=
-  (cokernelEpiComp (boundariesToCycles K i j k) (Abelian.factorThruImage (K.d i j))).symm ≪≫
-    cokernelIsoOfEq (kernelLift_d_eq K i j k).symm ≪≫
-    (K.sc' i j k).homologyIsoCokernelLift.symm ≪≫
-    (K.homologyIsoSc' i j k ((ComplexShape.up ℤ).prev_eq' hij)
-      ((ComplexShape.up ℤ).next_eq' hjk)).symm
-
-end BoundariesCycles
-
 namespace ExactStructure.IsExtensionClosed
 
 variable {P : ObjectProperty A} [P.ContainsZero]
@@ -457,8 +427,10 @@ as the boundaries and the cohomology do. -/
 private lemma prop_kernel_d_of_rel {i j k : ℤ} (hij : i + 1 = j) (hjk : j + 1 = k)
     (hB : P (Abelian.image (K.d i j))) (hH : P (K.homology j)) : P (kernel (K.d j k)) :=
   have := hP.isClosedUnderIsomorphisms
-  hP.prop_X₂ (ExactStructure.abelian_conflation_of_mono (boundariesToCycles K i j k)) hB
-    (P.prop_of_iso (cokernelBoundariesToCyclesIso K i j k hij hjk).symm hH)
+  hP.prop_X₂ (ExactStructure.abelian_conflation_of_mono (K.sc' i j k).abelianImageToKernel) hB
+    (P.prop_of_iso ((K.sc' i j k).cokernelAbelianImageToKernelIsoHomology ≪≫
+      (K.homologyIsoSc' i j k ((ComplexShape.up ℤ).prev_eq' hij)
+        ((ComplexShape.up ℤ).next_eq' hjk)).symm).symm hH)
 
 include hP in
 /-- If the boundaries `im dⁿ` and the cohomology objects of a cochain complex lie in an
@@ -539,20 +511,28 @@ private lemma extend_kernel_d_add_extend_kernel_d (hB : ∀ n, P (Abelian.image 
       = extend v (K.homology j) + extend v (K.X i) := by
   subst hij hjk
   have := hP.isClosedUnderIsomorphisms
+  let e : cokernel (K.sc' i (i + 1) (i + 1 + 1)).abelianImageToKernel ≅ K.homology (i + 1) :=
+    (K.sc' i (i + 1) (i + 1 + 1)).cokernelAbelianImageToKernelIsoHomology ≪≫
+      (K.homologyIsoSc' i (i + 1) (i + 1 + 1)
+        ((ComplexShape.up ℤ).prev_eq' rfl) ((ComplexShape.up ℤ).next_eq' rfl)).symm
   have hZ := hP.prop_kernel_d hB hH i
-  have hC := P.prop_of_iso (cokernelBoundariesToCyclesIso K _ _ _ rfl rfl).symm (hH (i + 1))
+  have hC := P.prop_of_iso e.symm (hH (i + 1))
   -- `ker dʲ` is an extension of the cohomology by the boundaries
-  have h₁ := extend_X₂ v
-    ((ExactStructure.abelian_conflation _).mp
-      (ExactStructure.abelian_conflation_of_mono (boundariesToCycles K i (i + 1) (i + 1 + 1))))
-    (hB i) hC
+  have h₁ : extend v (kernel (K.d (i + 1) (i + 1 + 1))) =
+      extend v (Abelian.image (K.d i (i + 1))) +
+        extend v (cokernel (K.sc' i (i + 1) (i + 1 + 1)).abelianImageToKernel) :=
+    extend_X₂ v
+      ((ExactStructure.abelian_conflation _).mp
+        (ExactStructure.abelian_conflation_of_mono
+          (K.sc' i (i + 1) (i + 1 + 1)).abelianImageToKernel))
+      (hB i) hC
   -- `Kⁱ` is an extension of the boundaries by `ker dⁱ`
   have h₂ := extend_X₂ v
     ((ExactStructure.abelian_conflation _).mp
       (ExactStructure.abelian_conflation_of_epi (Abelian.factorThruImage (K.d i (i + 1)))))
     (P.prop_of_iso ((Abelian.kernelFactorThruImage (K.d i (i + 1))).symm) hZ) (hB i)
-  dsimp only at h₁ h₂
-  rw [h₁, h₂, extend_congr v (cokernelBoundariesToCyclesIso K _ _ _ rfl rfl) hC,
+  dsimp only at h₂
+  rw [h₁, h₂, extend_congr v e hC,
     ← extend_congr v ((Abelian.kernelFactorThruImage (K.d i (i + 1))).symm) hZ]
   abel
 
