@@ -86,6 +86,8 @@ Its descent to raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer
 * `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq`,
   `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`: the index of a
   smooth cap in any such frame, and its recapping law.
+* `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_const`: along the constant cap of a loop that
+  stays at its base point `x`, the index is the index of `Φ` on the single tangent space `T_x M`.
 * `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq`: the index along a
   nondegenerate orbit is an integer.
 * `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`: its parity
@@ -446,6 +448,35 @@ theorem IsSmoothBasedCap.conleyZehnderIndex_eq (h : σ.IsNondegenerate)
   have hχ' := (hu.exists_isSymplecticFrame_eq_on_edges
     (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h).choose_spec
   hu.frameConleyZehnderIndex_loop_eq hχ hχ'.1 hχ₀ hχ'.2 hΦ hΦσ
+
+/-- **The index of a constant cap.** Let `u` be the constant cap of a loop `γ` that stays at its
+base point `x`, such as the loop of a constant periodic orbit. Along it the tangent bundle is framed
+by the identity of `T_x M`, so the Conley–Zehnder index of `Φ` along `(γ, u)` is the
+Conley–Zehnder index of the path `t ↦ Φ(t)` of linear symplectic maps of the single symplectic
+vector space `(T_x M, σ_x)`, read on the model space `E` of `T_x M` as any path `Ψ` with
+`Ψ(t) = Φ(t)`. -/
+theorem IsSmoothBasedCap.conleyZehnderIndex_const (h : σ.IsNondegenerate)
+    (hu : IsSmoothBasedCap I γ fun _ ↦ x)
+    {Φ : ∀ t, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) {A B : E →L[ℝ] E}
+    (Ψ : Path A B)
+    (hΨ : ∀ t v w, h.symplecticFormAt x (Ψ t v) (Ψ t w) = h.symplecticFormAt x v w)
+    (hΨΦ : ∀ t v, Ψ t v = Φ t v) :
+    hu.conleyZehnderIndex h hΦ hΦσ =
+      SymplecticForm.conleyZehnderIndex (V := E) (h.symplecticFormAt x) Ψ hΨ := by
+  -- The identity of `T_x M` is a symplectic frame along the constant cap, constant on its edges.
+  have hχ : IsSymplecticFrame σ (W := E) (h.symplecticFormAt x) (fun _ : ℝ × ℝ ↦ x)
+      fun _ ↦ ContinuousLinearEquiv.refl ℝ E :=
+    ⟨(FiberBundle.continuous_totalSpaceMk E (TangentSpace I) x).comp continuous_snd,
+      fun _ v w ↦ (h.symplecticFormAt_apply x v w).symm⟩
+  -- Read in the identity frame, the path is `Φ` itself. The model `E` and `T_x M` are the same
+  -- type only up to unfolding `TangentSpace`, so the steps are composed as terms.
+  exact (hu.conleyZehnderIndex_eq h hχ (fun _ _ _ _ _ _ ↦ rfl) hΦ hΦσ).trans
+    ((frameConleyZehnderIndex_def _ _ _).trans
+      (SymplecticForm.conleyZehnderIndex_congr _ _ _ _ fun t ↦
+        ContinuousLinearMap.ext fun v ↦ (framePath_apply _ _ t v).trans (hΨΦ t v).symm))
 
 /-- **The recapping law for smooth caps.** For two smooth based caps `u` and `u'` of a loop `γ`,
 the Conley–Zehnder index of `Φ` along `(γ, u')` is its index along `(γ, u)` minus twice the first

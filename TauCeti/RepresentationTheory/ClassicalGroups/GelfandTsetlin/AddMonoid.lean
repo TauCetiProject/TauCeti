@@ -158,13 +158,6 @@ theorem const_apply_of_lt_of_le (m : ℤ) {i j : ℕ} (hij : i < j) (hj : j ≤ 
     const n m i j = m := by
   rw [const_apply, ite_eq_left_iff.2 fun h => absurd ⟨hij, hj⟩ h]
 
-/-- For `r < n`, adjacent rows `r + 1` and `r` of a constant pattern differ by `m` when `k = r`
-and by `0` when `k ≠ r`. -/
-theorem const_succ_sub (m : ℤ) {r : ℕ} (hr : r < n) (k : ℕ) :
-    const n m k (r + 1) - const n m k r = if k = r then m else 0 := by
-  simp only [const_apply]
-  split_ifs <;> omega
-
 @[simp]
 theorem topRow_const (m : ℤ) : (const n m).topRow = fun _ => m := by
   funext i

@@ -7,22 +7,15 @@ module
 
 public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Complete
 
 /-!
 # The hive model of the Littlewood–Richardson rule for Schur polynomials
 
-Taking cardinalities across the bijections of `TauCeti.Combinatorics.Hive.LittlewoodRichardson`
-identifies integer hive counts `hiveCount (productBoundary λ μ γ)` with Littlewood–Richardson
-coefficients `c^γ_{λ μ} = Nat.card (LRTableau λ γ μ)` for polynomial weights
-(`TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau_shape`), for Young diagrams of at
-most `n` rows (`TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau`, giving rank
-independence in `TauCeti.Hive.hiveCount_weightOfShape_eq_of_colLen_le`), and for arbitrary signed
-dominant weights via determinant shifts (`TauCeti.Hive.hiveCount_productBoundary_eq_ite_detShift`).
-
-Combining this cardinality bridge with Stembridge's Schur-polynomial Littlewood–Richardson rule
+Combining the cardinality bridge
+`TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau_shape` with Stembridge's
+Schur-polynomial Littlewood–Richardson rule
 (`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`) yields the **hive model
-of the Littlewood–Richardson rule**
+of the Littlewood–Richardson rule** in `N ≤ n` variables
 (`TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`): for polynomial dominant
 weights `λ, μ : DominantWeight n`, any `N ≤ n`, and any commutative semiring `R`,
 
@@ -30,26 +23,18 @@ weights `λ, μ : DominantWeight n`, any `N ≤ n`, and any commutative semiring
 
 in `N` variables (`MvPolynomial (Fin N) R`). Non-polynomial weights `γ` and weights of total size
 distinct from `|λ| + |μ|` have zero hive count, while Young diagrams of more than `n` rows vanish in
-`N ≤ n` variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). This `N ≤ n` restriction is
-sharp (`TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_ne_finsum_hiveCount_one_two`): an
-example over `ℤ` shows that increasing the number of variables at fixed hive rank can fail (in two
-variables for `n = 1` and `λ = μ = (1)`, `s_{(1)}^2 = s_{(2)} + s_{(1, 1)}`, whereas the rank-`1`
-hive sum sees only `s_{(2)}`).
-
-Combining `TauCeti.Hive.hiveCount_productBoundary_eq_ite_detShift` with the symmetry
-`YoungDiagram.natCard_lrTableau_comm` yields the non-obvious input-swap symmetry
-`hiveCount (productBoundary λ μ γ) = hiveCount (productBoundary μ λ γ)` for all signed dominant
-weights `λ, μ, γ : DominantWeight n` (`TauCeti.Hive.hiveCount_productBoundary_comm`).
+`N ≤ n` variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). This generalizes the `N = n`
+statement `TauCeti.Hive.schur_mul_eq_finsum_hiveCount` in
+`TauCeti.Combinatorics.Hive.Multiplicity` without requiring representation theory; sharpness of the
+`N ≤ n` bound is recorded there as `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`, and
+input-swap symmetry of `hiveCount` is `TauCeti.Hive.hiveCount_comm` (with the purely
+polynomial/combinatorial proof on Young diagrams in `YoungDiagram.natCard_lrTableau_comm`).
 
 ## Main results
 
-* `TauCeti.Hive.hiveCount_productBoundary_comm`: symmetry `hiveCount (productBoundary λ μ γ) =
-  hiveCount (productBoundary μ λ γ)` for all signed dominant weights.
 * `TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: **the hive model of the
   Littlewood–Richardson rule** for Schur polynomials in `N ≤ n` variables over any commutative
   semiring.
-* `TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_ne_finsum_hiveCount_one_two`: sharpness over
-  `ℤ` showing that increasing the number of variables past the hive rank can fail.
 
 ## References
 
@@ -66,17 +51,6 @@ open scoped BigOperators
 namespace TauCeti.Hive
 
 open YoungDiagram (ofPartition)
-
-/-! ### Input-swap symmetry of `hiveCount` -/
-
-/-- **Input-swap symmetry of `hiveCount`** for all signed dominant weights `λ, μ, γ`:
-`hiveCount (productBoundary λ μ γ) = hiveCount (productBoundary μ λ γ)`. Unlike cyclic rotation and
-reflection (`hiveCount_rotate`, `hiveCount_reflect`), swapping `(λ, μ)` without dualizing `γ` is not
-a geometric symmetry of a single hive. -/
-theorem hiveCount_productBoundary_comm {n : ℕ} (lam μ γ : DominantWeight n) :
-    hiveCount (productBoundary lam μ γ) = hiveCount (productBoundary μ lam γ) := by
-  rw [hiveCount_productBoundary_eq_ite_detShift, hiveCount_productBoundary_eq_ite_detShift,
-    add_comm μ.detShift, YoungDiagram.natCard_lrTableau_comm]
 
 /-! ### The Schur-polynomial expansion over hive counts -/
 
@@ -130,47 +104,5 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n N : ℕ} (h
   congr 1
   rw [hiveCount_productBoundary_eq_natCard_lrTableau_shape hlam hμ
     (isPolynomial_weightOfShape n (ofPartition ν.val)), shape_weightOfShape ν.property]
-
-private theorem finsum_hiveCount_one_eq_smul :
-    let lam : DominantWeight 1 := ⟨![1], by decide⟩
-    let γ₁ : DominantWeight 1 := ⟨![2], by decide⟩
-    (∑ᶠ γ : DominantWeight 1,
-      hiveCount (productBoundary lam lam γ) • diagramSchurPoly 2 ℤ γ.shape) =
-      hiveCount (productBoundary lam lam γ₁) • diagramSchurPoly 2 ℤ γ₁.shape := by
-  intro lam γ₁
-  refine finsum_eq_single _ γ₁ fun γ hne => ?_
-  have hsum : lam.val 0 + lam.val 0 ≠ γ.val 0 := fun h =>
-    hne (by ext i; fin_cases i; simpa [lam, γ₁] using h.symm)
-  simp [hiveCount_one_productBoundary, hsum]
-
-/-- **Sharpness of the `N ≤ n` restriction in
-`diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`**: an example over `ℤ` showing that
-increasing the number of variables past the hive rank can fail: in `2` variables for `n = 1` and
-`λ = μ = (1)`, `s_{(1)}^2 = s_{(2)} + s_{(1, 1)}`, whereas summing over `γ : DominantWeight 1`
-produces only `s_{(2)}` because `γ.shape` has at most one row. -/
-theorem diagramSchurPoly_mul_diagramSchurPoly_ne_finsum_hiveCount_one_two :
-    let lam : DominantWeight 1 := ⟨![1], by decide⟩
-    diagramSchurPoly 2 ℤ lam.shape * diagramSchurPoly 2 ℤ lam.shape ≠
-      ∑ᶠ γ : DominantWeight 1,
-        hiveCount (productBoundary lam lam γ) • diagramSchurPoly 2 ℤ γ.shape := by
-  intro lam heq
-  let γ₁ : DominantWeight 1 := ⟨![2], by decide⟩
-  have hlam : lam.IsPolynomial := by
-    rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
-  have hγ₁ : γ₁.IsPolynomial := by
-    rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
-  have hcard_lam : lam.shape.card = 1 :=
-    Int.ofNat_inj.mp ((DominantWeight.natCast_card_shape hlam).trans (by decide))
-  have hcard_γ₁ : γ₁.shape.card = 2 :=
-    Int.ofNat_inj.mp ((DominantWeight.natCast_card_shape hγ₁).trans (by decide))
-  have hcnt : hiveCount (productBoundary lam lam γ₁) = 1 := by
-    simp [hiveCount_one_productBoundary, lam, γ₁]
-  rw [finsum_hiveCount_one_eq_smul, hcnt, one_smul,
-    diagramSchurPoly_eq_hsymm_of_colLen_le_one (DominantWeight.colLen_zero_shape_le lam),
-    diagramSchurPoly_eq_hsymm_of_colLen_le_one (DominantWeight.colLen_zero_shape_le γ₁),
-    hcard_lam, hcard_γ₁] at heq
-  have heval := congrArg (MvPolynomial.eval (fun _ : Fin 2 => (1 : ℤ))) heq
-  rw [map_mul, eval_hsymm_fin_two, eval_hsymm_fin_two] at heval
-  simp at heval
 
 end TauCeti.Hive

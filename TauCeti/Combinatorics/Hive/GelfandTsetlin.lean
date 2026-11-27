@@ -663,6 +663,28 @@ theorem hiveCount_productBoundary_shift (lam μ γ : DominantWeight n) (a b : �
   simp only [← natCard_fixedIntegerHive]
   exact (Nat.card_congr (fixedIntegerHiveShiftEquiv lam μ γ a b)).symm
 
+/-- Signed rank-`2` check: `λ = (1, 0), μ = (0, -1), γ = (0, 0)` has `hiveCount = 1`
+(the trivial invariant in `V ⊗ V*`), whereas truncating negative entries to `0` would give
+`((1, 0), (0, 0), (0, 0))` with `hiveCount = 0`. -/
+theorem hiveCount_two_std_dual_triv :
+    hiveCount (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1
+      ∧ hiveCount
+        (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, 0], by decide⟩ ⟨![0, 0], by decide⟩) = 0 := by
+  let lam : DominantWeight 2 := ⟨![1, 0], by decide⟩
+  let μ : DominantWeight 2 := ⟨![0, -1], by decide⟩
+  let γ : DominantWeight 2 := ⟨![0, 0], by decide⟩
+  constructor
+  · have hsh : productBoundary (lam.shift 0) (μ.shift 1) (γ.shift (0 + 1)) =
+        productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩ := by
+      ext s i
+      fin_cases s <;> fin_cases i <;>
+        simp [productBoundary_zero, productBoundary_one, productBoundary_two, lam, μ, γ]
+    rw [← hiveCount_productBoundary_shift lam μ γ 0 1, hsh]
+    exact hiveCount_two_std_std_det
+  · refine hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => ?_⟩
+    have hsum := sum_eq_of_productBoundary hb
+    simp [Fin.sum_univ_two] at hsum
+
 /-- **Gelfand–Tsetlin reconstruction criterion**: a pattern `P` with top row `μ` and weight
 `γ - λ` is the difference pattern of a hive with boundary `productBoundary lam μ γ` (realized via
 `gtCompletion lam P`) if and only if the remaining rhombus family holds on `gtCompletion lam P`. -/
@@ -1011,6 +1033,23 @@ theorem hiveCount_two_productBoundary (lam μ γ : DominantWeight 2) :
   rw [heq, GTPattern.card_topRow_rowWeight_two μ.val (γ.val - lam.val)]
   simp only [Pi.sub_apply, max_le_iff]; split_ifs <;> omega
 
+/-- Rank-`2` hive classification for `λ = μ = (1, 0)`: `hiveCount (productBoundary λ μ γ)` is `1`
+for `γ = (2, 0)` and `γ = (1, 1)`, and `0` for every other dominant weight `γ`. -/
+theorem hiveCount_two_std_std_eq (γ : DominantWeight 2) :
+    hiveCount (productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ γ) =
+      if γ = ⟨![2, 0], by decide⟩ ∨ γ = ⟨![1, 1], by decide⟩ then 1 else 0 := by
+  rw [hiveCount_two_productBoundary]
+  refine if_congr ?_ rfl rfl
+  have hanti : γ.val 1 ≤ γ.val 0 := γ.antitone (by decide)
+  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one]
+  constructor
+  · rintro ⟨_, _, _⟩
+    rcases (by omega : (γ.val 0 = 2 ∧ γ.val 1 = 0) ∨ (γ.val 0 = 1 ∧ γ.val 1 = 1)) with
+      ⟨h0, h1⟩ | ⟨h0, h1⟩
+    · exact Or.inl (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
+    · exact Or.inr (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
+  · rintro (rfl | rfl) <;> simp
+
 /-- Rank-`2` exclusion outside the stable range: although the weight-`(1, 1)` Gelfand–Tsetlin fibre
 over `μ = (2, 0)` has cardinality `1` (`GTPattern.card_topRow_rowWeight_two_two_zero_one_one`), the
 remaining rhombus inequality `λ₁ + μ₀ ≤ γ₀` (`2 ≤ 1`) fails at `λ = (0, 0)` and `γ = (1, 1)`. -/
@@ -1042,16 +1081,6 @@ theorem hiveCount_two_sym_sym_two_two :
     hiveCount
       (productBoundary ⟨![2, 0], by decide⟩ ⟨![2, 0], by decide⟩ ⟨![2, 2], by decide⟩) = 1 := by
   rw [hiveCount_two_productBoundary]; decide
-
-/-- **Signed rank-`2` check**: `λ = (1, 0)`, `μ = (0, -1)`, `γ = (0, 0)` has `hiveCount = 1`
-(`V ⊗ V*` contains the trivial representation once), whereas truncating the negative entry of `μ`
-to `0` gives `((1, 0), (0, 0), (0, 0))` with `hiveCount = 0`. -/
-theorem hiveCount_two_signed_std_dual_triv :
-    hiveCount
-      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, -1], by decide⟩ ⟨![0, 0], by decide⟩) = 1 ∧
-    hiveCount
-      (productBoundary ⟨![1, 0], by decide⟩ ⟨![0, 0], by decide⟩ ⟨![0, 0], by decide⟩) = 0 := by
-  refine ⟨?_, ?_⟩ <;> rw [hiveCount_two_productBoundary] <;> decide
 
 /-- Rank-`3` exclusion: although the weight-`0` Gelfand–Tsetlin fibre over `μ = (1, 0, -1)` has two
 patterns (`GTPattern.card_three_adjoint_rowWeight_zero`), neither satisfies
@@ -1103,28 +1132,6 @@ theorem hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds (lam μ 
     ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
   · simp [Finset.sum_range_succ]
     omega
-
-/-- **Rank-`3` check**: `hiveCount = 1` for `((1, 0, 0), (1, 0, 0), (2, 0, 0))`. -/
-theorem hiveCount_three_one_one_two :
-    hiveCount
-      (productBoundary ⟨![1, 0, 0], by decide⟩ ⟨![1, 0, 0], by decide⟩
-        ⟨![2, 0, 0], by decide⟩) = 1 := by
-  rw [hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds _ _ _
-      (by decide) (by decide) (by decide),
-    GTPattern.card_topRow_rowWeight_three]
-  decide
-
-/-- **Rank-`3` check**: `hiveCount = 2` for `((2, 1, 0), (2, 1, 0), (3, 2, 1))`. (Explanatory
-context: the two hives arise from the middle-row fillings `P 0 2 = 1, P 1 2 = 1` and
-`P 0 2 = 2, P 1 2 = 0`, though only the cardinality is proved here.) -/
-theorem hiveCount_three_two_one_two_one_three_two_one :
-    hiveCount
-      (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
-        ⟨![3, 2, 1], by decide⟩) = 2 := by
-  rw [hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds _ _ _
-      (by decide) (by decide) (by decide),
-    GTPattern.card_topRow_rowWeight_three]
-  decide
 
 end LowRankAndChecks
 

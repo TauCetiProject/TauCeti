@@ -697,19 +697,29 @@ theorem finite_support_hiveCount_productBoundary {n : ℕ} (lam μ : DominantWei
     exact fun j => ⟨(last_le_of_productBoundary hb).trans (γ.property (Fin.le_last j)),
       (γ.property (Fin.zero_le j)).trans (first_le_of_productBoundary hb)⟩
 
-/-- When `γ.detShift < lam.detShift + μ.detShift`, no integer hive has boundary
-`productBoundary lam μ γ`. -/
-theorem isEmpty_fixedIntegerHive_of_detShift_lt {n : ℕ} {lam μ γ : DominantWeight n}
-    (hdet : γ.detShift < lam.detShift + μ.detShift) :
-    IsEmpty (FixedIntegerHive (productBoundary lam μ γ)) :=
-  ⟨fun ⟨_, hb⟩ => (not_le_of_gt hdet) (detShift_le_of_productBoundary hb)⟩
+/-- Any rank-`3` vertex with all three coordinates nonzero is the unique interior vertex
+`(1, 1, 1)`. -/
+private theorem vertex_three_eq_center_of_ne_zero {p : Vertex 3}
+    (hx : p.x ≠ 0) (hy : p.y ≠ 0) (hz : p.z ≠ 0) : p = ⟨1, 1, 1, rfl⟩ := by
+  have := p.sum_eq
+  ext <;> simp <;> omega
 
-/-- When `γ.detShift < lam.detShift + μ.detShift`, the hive count of `productBoundary lam μ γ`
-vanishes. -/
-theorem hiveCount_productBoundary_eq_zero_of_detShift_lt {n : ℕ} {lam μ γ : DominantWeight n}
-    (hdet : γ.detShift < lam.detShift + μ.detShift) :
-    hiveCount (productBoundary lam μ γ) = 0 :=
-  hiveCount_eq_zero_iff.mpr (isEmpty_fixedIntegerHive_of_detShift_lt hdet)
+/-- A rank-`3` hive with fixed boundary `B` is uniquely determined by its value at the single
+interior vertex `(1, 1, 1)`. -/
+theorem fixedIntegerHive_three_ext {B : Fin 3 → Fin 3 → ℤ}
+    (k₁ k₂ : FixedIntegerHive B)
+    (hmid : k₁.val ⟨1, 1, 1, rfl⟩ = k₂.val ⟨1, 1, 1, rfl⟩) : k₁ = k₂ := by
+  refine Subtype.ext <| ext fun p => ?_
+  by_cases hz : p.z = 0
+  · rw [Vertex.eq_edgePoint_zero_of_z_eq_zero hz, k₁.val.apply_edgePoint_zero,
+      k₂.val.apply_edgePoint_zero, k₁.property, k₂.property]
+  · by_cases hx : p.x = 0
+    · rw [Vertex.eq_edgePoint_one_of_x_eq_zero hx, k₁.val.apply_edgePoint_one,
+        k₂.val.apply_edgePoint_one, k₁.property, k₂.property]
+    · by_cases hy : p.y = 0
+      · rw [Vertex.eq_edgePoint_two_of_y_eq_zero hy, k₁.val.apply_edgePoint_two,
+          k₂.val.apply_edgePoint_two, k₁.property, k₂.property]
+      · rw [vertex_three_eq_center_of_ne_zero hx hy hz, hmid]
 
 end IntegerFibre
 
@@ -759,5 +769,135 @@ theorem hiveCount_two_std_std_three_neg_one :
   simp at hlast
 
 end RankTwoChecks
+
+/-! ### Concrete rank-`3` checks -/
+
+section RankThreeChecks
+
+/-- Product-chart hive data on `Δ₃` for boundary `(λ, μ, γ)`. -/
+private structure ChartThree (lam μ γ : DominantWeight 3) (c : ℕ → ℕ → ℤ) : Prop where
+  hc0 : c 0 0 = 0
+  hH : c 0 0 + c 1 2 ≤ c 0 1 + c 1 1 ∧ c 0 1 + c 1 3 ≤ c 0 2 + c 1 2 ∧
+    c 1 1 + c 2 3 ≤ c 1 2 + c 2 2
+  hC : c 1 1 + c 0 2 ≤ c 0 1 + c 1 2 ∧ c 1 2 + c 0 3 ≤ c 0 2 + c 1 3 ∧
+    c 2 2 + c 1 3 ≤ c 1 2 + c 2 3
+  hV : c 0 1 + c 2 2 ≤ c 1 1 + c 1 2 ∧ c 0 2 + c 2 3 ≤ c 1 2 + c 1 3 ∧
+    c 1 2 + c 3 3 ≤ c 2 2 + c 2 3
+  hb0 : ∀ k : Fin 3, c 0 (k.val + 1) - c 0 k.val = lam.val k
+  hb1 : ∀ k : Fin 3, c (k.val + 1) 3 - c k.val 3 = μ.val k
+  hb2 : ∀ k : Fin 3, c (k.val + 1) (k.val + 1) - c k.val k.val = γ.val k
+
+private theorem isRhombusConcave_of_chartThree {lam μ γ : DominantWeight 3} {c : ℕ → ℕ → ℤ}
+    (hc : ChartThree lam μ γ c) :
+    IsRhombusConcave (fun p : Vertex 3 => c p.z (3 - p.x)) := by
+  rw [isRhombusConcave_iff_ofChart]
+  have hv (i j : ℕ) (hij : i ≤ j) (hjn : j ≤ 3) :
+      (let p := Vertex.ofChart 3 i j hij hjn; c p.z (3 - p.x)) = c i j := by
+    simp only [Vertex.ofChart_z, Vertex.ofChart_x, Nat.sub_sub_self hjn]
+  refine ⟨fun i j hij hjn => ?_, fun i j hij hjn => ?_, fun i j hij hjn => ?_⟩
+  · simp only [hv]
+    rcases (by omega : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2)) with
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp only [hc.hC]
+  · simp only [hv]
+    rcases (by omega : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2)) with
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp only [hc.hV]
+  · simp only [hv]
+    rcases (by omega : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1)) with
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp only [hc.hH]
+
+/-- Rhombus bounds on the interior value `k.val (1, 1, 1)` of any rank-`3` product-boundary hive. -/
+private theorem apply_center_bounds_three {lam μ γ : DominantWeight 3}
+    (k : FixedIntegerHive (productBoundary lam μ γ)) :
+    lam.val 0 + lam.val 2 + μ.val 0 ≤ k.val ⟨1, 1, 1, rfl⟩ ∧
+      k.val ⟨1, 1, 1, rfl⟩ ≤ lam.val 0 + lam.val 1 + μ.val 0 := by
+  have hch12 : Vertex.ofChart 3 1 2 (by decide) (by decide) = ⟨1, 1, 1, rfl⟩ := by ext <;> simp
+  have hrH := k.val.le_of_isRhombus
+    (isRhombus_ofChart_diag_x (n := 3) (i := 0) (j := 1) (by decide) (by decide))
+  have hrC := k.val.le_of_isRhombus
+    (isRhombus_ofChart_diag_y (n := 3) (i := 0) (j := 2) (by decide) (by decide))
+  simp only [apply_ofChart_zero_left_of_productBoundary k.property,
+    apply_ofChart_right_of_productBoundary k.property, hch12] at hrH hrC
+  simp [TauCeti.prefixSum_def, Finset.sum_filter, Fin.sum_univ_three] at hrH hrC
+  omega
+
+/-- Concrete-weight specialization of `apply_center_bounds_three` with `Matrix.cons` simplified. -/
+private theorem apply_center_bounds_three_of_vec {a₀ a₁ a₂ b₀ b₁ b₂ c₀ c₁ c₂ : ℤ}
+    {ha : Antitone ![a₀, a₁, a₂]} {hb : Antitone ![b₀, b₁, b₂]} {hc : Antitone ![c₀, c₁, c₂]}
+    (k : FixedIntegerHive (productBoundary
+      (⟨![a₀, a₁, a₂], ha⟩ : DominantWeight 3)
+      ⟨![b₀, b₁, b₂], hb⟩ ⟨![c₀, c₁, c₂], hc⟩)) :
+    a₀ + a₂ + b₀ ≤ k.val ⟨1, 1, 1, rfl⟩ ∧ k.val ⟨1, 1, 1, rfl⟩ ≤ a₀ + a₁ + b₀ := by
+  simpa using apply_center_bounds_three k
+
+private def ofChartThree {lam μ γ : DominantWeight 3} (c : ℕ → ℕ → ℤ)
+    (hc : ChartThree lam μ γ c) :
+    FixedIntegerHive (productBoundary lam μ γ) :=
+  ⟨⟨fun p => c p.z (3 - p.x), by simpa using hc.hc0,
+    fun hr => (isRhombusConcave_def _).mp (isRhombusConcave_of_chartThree hc) hr⟩,
+    by
+      have hrev (k : Fin 3) : c k.val k.val - c (k.val + 1) (k.val + 1) = -γ.val k := by
+        rw [← neg_sub, hc.hb2 k]
+      ext s k
+      fin_cases s <;> fin_cases k
+      · simpa [boundary_apply, productBoundary_zero, hc.hc0] using hc.hb0 0
+      · simpa [boundary_apply, productBoundary_zero] using hc.hb0 1
+      · simpa [boundary_apply, productBoundary_zero] using hc.hb0 2
+      · simpa [boundary_apply, productBoundary_one] using hc.hb1 0
+      · simpa [boundary_apply, productBoundary_one] using hc.hb1 1
+      · simpa [boundary_apply, productBoundary_one] using hc.hb1 2
+      · simpa [boundary_apply, productBoundary_two] using hrev 2
+      · simpa [boundary_apply, productBoundary_two] using hrev 1
+      · simpa [boundary_apply, productBoundary_two] using hrev 0⟩
+
+private theorem ofChartThree_val_apply {lam μ γ : DominantWeight 3} (c : ℕ → ℕ → ℤ)
+    (hc : ChartThree lam μ γ c) (p : Vertex 3) :
+    (ofChartThree c hc).val p = c p.z (3 - p.x) := (rfl)
+
+/-- Rank-`3` check `c^{(2, 0, 0)}_{(1, 0, 0), (1, 0, 0)} = 1` and the classic multiplicity-two
+example `c^{(3, 2, 1)}_{(2, 1, 0), (2, 1, 0)} = 2`, whose unique interior vertex `(1, 1, 1)` takes
+the two values `4` and `5`. -/
+theorem hiveCount_three_checks :
+    hiveCount
+      (productBoundary ⟨![1, 0, 0], by decide⟩ ⟨![1, 0, 0], by decide⟩ ⟨![2, 0, 0], by decide⟩) = 1
+    ∧ hiveCount
+      (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩ ⟨![3, 2, 1], by decide⟩) = 2
+    := by
+  let B₁ := productBoundary (⟨![1, 0, 0], by decide⟩ : DominantWeight 3)
+    ⟨![1, 0, 0], by decide⟩ ⟨![2, 0, 0], by decide⟩
+  let B₂ := productBoundary (⟨![2, 1, 0], by decide⟩ : DominantWeight 3)
+    ⟨![2, 1, 0], by decide⟩ ⟨![3, 2, 1], by decide⟩
+  let c₁ (i j : ℕ) : ℤ := if j = 0 then 0 else if i = 0 then 1 else 2
+  let c₂ (m : ℤ) (i j : ℕ) : ℤ :=
+    if i = 0 then (if j = 0 then 0 else if j = 1 then 2 else 3)
+    else if i = 1 then (if j = 1 then 3 else if j = 2 then m else 5)
+    else if j = 2 then 5 else 6
+  let h₁ : FixedIntegerHive B₁ :=
+    ofChartThree c₁ ⟨rfl, by decide, by decide, by decide, by decide, by decide, by decide⟩
+  let mk₂ (m : ℤ) (hm : m = 4 ∨ m = 5) : FixedIntegerHive B₂ :=
+    ofChartThree (c₂ m) <| by
+      rcases hm with rfl | rfl <;>
+        exact ⟨rfl, by decide, by decide, by decide, by decide, by decide, by decide⟩
+  let h₂₄ := mk₂ 4 (Or.inl rfl)
+  let h₂₅ := mk₂ 5 (Or.inr rfl)
+  constructor
+  · rw [← card_fixedIntegerHive]
+    refine Fintype.card_eq_one_iff.mpr ⟨h₁, fun k => fixedIntegerHive_three_ext k h₁ ?_⟩
+    have hb := apply_center_bounds_three_of_vec k
+    have hc₁ : h₁.val ⟨1, 1, 1, rfl⟩ = 2 := by
+      simp [h₁, ofChartThree_val_apply, c₁]
+    omega
+  · have huniv : (Finset.univ : Finset (FixedIntegerHive B₂)) = {h₂₄, h₂₅} := by
+      ext k
+      simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
+      have hb := apply_center_bounds_three_of_vec k
+      rcases (by omega : k.val ⟨1, 1, 1, rfl⟩ = 4 ∨ k.val ⟨1, 1, 1, rfl⟩ = 5) with h4 | h5
+      · exact Or.inl (fixedIntegerHive_three_ext k h₂₄ h4)
+      · exact Or.inr (fixedIntegerHive_three_ext k h₂₅ h5)
+    have hne : h₂₄ ≠ h₂₅ := fun h => by
+      have hm := congrArg (fun k : FixedIntegerHive B₂ => k.val ⟨1, 1, 1, rfl⟩) h
+      simp [h₂₄, h₂₅, mk₂, ofChartThree_val_apply, c₂] at hm
+    rw [← card_fixedIntegerHive, ← Finset.card_univ, huniv, Finset.card_pair hne]
+
+end RankThreeChecks
 
 end TauCeti.Hive

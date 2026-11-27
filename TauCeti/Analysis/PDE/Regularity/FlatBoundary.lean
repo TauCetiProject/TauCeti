@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.HalfSpace
+public import TauCeti.Analysis.PDE.Regularity.HalfSpace.HigherOrder
 public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Localization
@@ -51,7 +51,8 @@ The classical proof (Evans, §6.3.2, Theorem 4) localizes the global theorem on 
   `u` give `ψ u ∈ H¹₀(Ω ∩ W)` (`TauCeti.W1p.exists_w1p0_value_ae_eq_mul_restrictL`). Extended by
   zero, `ψ u ∈ H¹₀(H)` solves an equation `-div(a' ∇w) = g` on all of `H` with `g ∈ L²(H)`
   (`TauCeti.PDE.exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem`), because
-  `tsupport ψ ∩ H ⊆ Ω ∩ W`.
+  `tsupport ψ ∩ H ⊆ Ω ∩ W`. Near `closure V`, where `ψ = 1`, the function `ψ u` is `u` and `g` is
+  the forcing on `Ω ∩ W` (`TauCeti.PDE.exists_isWeakSolutionDirichlet_ae_eq_on_of_inter_eq`).
 * The global theorem on `H` gives `L²` second derivatives of `ψ u`, which agrees with `u` on
   `Ω ∩ V`.
 
@@ -73,6 +74,9 @@ changes.
 
 ## Main declarations
 
+* `TauCeti.PDE.exists_isWeakSolutionDirichlet_ae_eq_on_of_inter_eq`: near a compact set, a
+  solution vanishing on a flat part of the boundary agrees with a solution of a Dirichlet problem
+  on the whole flat domain.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo`: local `H²`
   regularity near a part of the boundary along which `Ω` agrees with a domain invariant under
   the translations parallel to a hyperplane.
@@ -106,6 +110,80 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c₀ : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
+omit [DecidableEq ι] in
+/-- **Localizing a solution near a flat part of the boundary.** Let `Ω` and `U` be open with
+`Ω ∩ U = H ∩ U`, let `W ⊆ U` be open and let `S ⊆ W` be compact. Let `a` be a coefficient field on
+the whole space with `‖a(x)‖ ≤ M` and `x ↦ a(x)` Lipschitz, both measured in the operator norm of
+its bilinear forms. Let `u ∈ H¹(Ω)` vanish on `∂Ω ∩ U`, in the sense that `ψ u ∈ H¹₀(Ω)` for every
+smooth `ψ` compactly supported in `U`, and let its restriction to `Ω ∩ W` be a weak solution of
+`-div(a ∇u) = f` in `Ω ∩ W` with `f ∈ L²(Ω ∩ W)`. Then near `S`, `u` agrees, in value and in
+gradient, with a weak solution `w ∈ H¹₀(H)` of an equation `-div(a ∇w) = g` on `H`, with
+`g ∈ L²(H)` and `g = f` almost everywhere on `S ∩ H`.
+
+One may take for `w` the product of `u` with a smooth cutoff equal to one near `S` and supported
+in `W`, extended by zero
+(`TauCeti.PDE.exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem`). This is the
+boundary counterpart of `TauCeti.PDE.exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact`. -/
+theorem exists_isWeakSolutionDirichlet_ae_eq_on_of_inter_eq {M : ℝ}
+    (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
+    (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
+    (hΩU : (Omega : Set (EuclideanSpace ℝ ι)) ∩ U = (H : Set (EuclideanSpace ℝ ι)) ∩ U)
+    {W : Opens (EuclideanSpace ℝ ι)} (hWU : (W : Set (EuclideanSpace ℝ ι)) ⊆ U)
+    {S : Set (EuclideanSpace ℝ ι)} (hS : IsCompact S) (hSW : S ⊆ W)
+    {u : W1p mu Omega 2} {f : Lp ℝ 2 (mu.restrict (Omega ⊓ W))}
+    (hu : ∀ v : W1p0 mu (Omega ⊓ W) 2,
+      energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ W) 2) =
+        ∫ x in Omega ⊓ W, f x * W1p.value (v : W1p mu (Omega ⊓ W) 2) x ∂mu)
+    (hu0 : ∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
+      tsupport ψ ⊆ U → ∃ v : W1p0 mu Omega 2,
+        W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x) :
+    ∃ w : W1p0 mu H 2, ∃ g : Lp ℝ 2 (mu.restrict H), IsWeakSolutionDirichlet a 0 0 g w ∧
+      (∀ᵐ x ∂mu.restrict H, x ∈ S → W1p.value (w : W1p mu H 2) x = W1p.value u x) ∧
+      (∀ᵐ x ∂mu.restrict H, x ∈ S → W1p.gradient (w : W1p mu H 2) x = W1p.gradient u x) ∧
+      ∀ᵐ x ∂mu.restrict H, x ∈ S → g x = f x := by
+  set Ω₁ : Opens (EuclideanSpace ℝ ι) := Omega ⊓ W
+  have hΩ₁ : Ω₁ ≤ Omega := inf_le_left
+  -- Inside `U` the domain is the half-space, so `Ω ∩ W ⊆ H` and `H ∩ W ⊆ Ω ∩ W`.
+  have hΩ₁H : Ω₁ ≤ H := fun x hx => by
+    have hxU : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) ∩ U := ⟨hx.1, hWU hx.2⟩
+    rw [hΩU] at hxU
+    exact hxU.1
+  have hHW : (H : Set (EuclideanSpace ℝ ι)) ∩ W ⊆ Ω₁ := fun x hx => by
+    have hxU : x ∈ (H : Set (EuclideanSpace ℝ ι)) ∩ U := ⟨hx.1, hWU hx.2⟩
+    rw [← hΩU] at hxU
+    exact ⟨hxU.1, hx.2⟩
+  -- A cutoff `ψ` equal to one near `S` and supported in `W`; then `ψ u ∈ H¹₀(Ω ∩ W)`.
+  obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
+    hS.exists_contDiff_cutoff_with_bounds W.isOpen hSW
+  have hψS : ∀ x ∈ S, ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := fun x hx =>
+    mem_interior_iff_mem_nhds.1 (hψ1 hx)
+  obtain ⟨v, hv⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL hWU hu0 hψ hψc hψs
+  have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x)
+      (W1p.restrictL hΩ₁ u) = (v : W1p mu Ω₁ 2) := by
+    refine W1p.ext_value (Lp.ext ?_)
+    filter_upwards [W1p.value_contDiffSMul_ae hψ hN (fun x _ => hψN x) (fun x _ => hgradN x)
+      (W1p.restrictL hΩ₁ u), hv] with x h1 h2
+    rw [h1, h2, smul_eq_mul]
+  -- Extended by zero, `ψ u` solves an equation on all of `H`.
+  obtain ⟨w, g, hw, hg, hwv, hwg⟩ :=
+    exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem hM hK hΩ₁H hu hψ hψc
+      (fun x hx => hHW ⟨hx.2, hψs hx.1⟩) hN _ _ (hψu ▸ v.property)
+  -- On `S ∩ H ⊆ Ω ∩ W`, where `ψ` is one nearby, `ψ u` and its forcing are `u` and `f`.
+  refine ⟨w, g, hw, ?_, ?_, ?_⟩
+  · filter_upwards [hwv, ae_restrict_of_ae (ae_imp_of_ae_restrict (W1p.value_restrictL_ae hΩ₁ u)),
+      ae_restrict_mem H.isOpen.measurableSet] with x h1 h2 hxH hxS
+    have hx := hHW ⟨hxH, hSW hxS⟩
+    rw [h1, indicator_of_mem hx, (hψS x hxS).eq_of_nhds, one_mul, h2 hx]
+  · filter_upwards [hwg,
+      ae_restrict_of_ae (ae_imp_of_ae_restrict (W1p.gradient_restrictL_ae hΩ₁ u)),
+      ae_restrict_mem H.isOpen.measurableSet] with x h1 h2 hxH hxS
+    have hx := hHW ⟨hxH, hSW hxS⟩
+    rw [h1, indicator_of_mem hx, (hψS x hxS).eq_of_nhds,
+      (hψS x hxS).gradient_eq.trans (gradient_fun_const x 1), one_smul, smul_zero, add_zero, h2 hx]
+  · filter_upwards [hg, ae_restrict_mem H.isOpen.measurableSet] with x h1 hxH hxS
+    rw [h1, indicator_of_mem (hHW ⟨hxH, hSW hxS⟩),
+      localizedForcing_eq_of_eventuallyEq_one (hψS x hxS)]
+
 /-- **Local `H²` regularity near a flat part of the boundary.** Let `ν ≠ 0`, and let `H` be an
 open set mapped into itself by every translation orthogonal to `ν`, as a half-space
 `{x | c₀ < ⟪x, ν⟫}` is. Let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`. Let `a` be uniformly
@@ -137,54 +215,28 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
   -- Near `closure V`, the field agrees with a Lipschitz field `a'` uniformly elliptic on `H`.
   obtain ⟨a', K', M, W, hVW, hWU, ha', hK', hM', haa'⟩ :=
     ha.exists_lipschitzWith_eqOn_inter (T := H) hK (hΩU ▸ subset_rfl) hV hVU
-  set Ω₁ : Opens (EuclideanSpace ℝ ι) := Omega ⊓ W
-  have hΩ₁ : Ω₁ ≤ Omega := inf_le_left
+  have hΩ₁ : Omega ⊓ W ≤ Omega := inf_le_left
   have hWU' : (W : Set (EuclideanSpace ℝ ι)) ⊆ U := SetLike.coe_subset_coe.mpr hWU
-  -- Near `U` the domain is the half-space, so `Ω ∩ W ⊆ H`.
-  have hΩ₁H : Ω₁ ≤ H := fun x hx => by
-    have hxU : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) ∩ U := ⟨hx.1, hWU' hx.2⟩
-    rw [hΩU] at hxU
-    exact hxU.1
   -- On `Ω ∩ W`, the restriction of `u` solves the equation with the principal coefficient `a'`,
   -- and the lower-order terms move to the right-hand side.
-  set u₁ := W1p.restrictL hΩ₁ u
   obtain ⟨g, hg, -⟩ := exists_forcing_restrictL_of_eqOn hΩ₁
     (fun x hx => haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩)
     (memLp_energyIntegrand_of_continuous hM' hK'.continuous _) hb hc hu
-  -- A cutoff equal to one near `closure V` and supported in `W`.
-  obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
-    hV.exists_contDiff_cutoff_with_bounds W.isOpen hVW
-  have hψ_V : ∀ x ∈ closure (V : Set (EuclideanSpace ℝ ι)), ψ x = 1 ∧ ∇ ψ x = 0 := fun x hx => by
-    have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := mem_interior_iff_mem_nhds.1 (hψ1 hx)
-    exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const x 1)⟩
-  -- The zero boundary values of `u` give `ψ u ∈ H¹₀(Ω ∩ W)`.
-  obtain ⟨v, hv⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL hWU' hu0 hψ hψc hψs
-  have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁ =
-      (v : W1p mu Ω₁ 2) := by
-    refine W1p.ext_value (Lp.ext ?_)
-    filter_upwards [W1p.value_contDiffSMul_ae hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁,
-      hv] with x h1 h2
-    rw [h1, h2, smul_eq_mul]
-  -- Extended by zero, `ψ u` solves an equation on all of `H`.
-  have hts : tsupport ψ ∩ H ⊆ (Ω₁ : Set (EuclideanSpace ℝ ι)) := fun x hx => by
-    have hxU : x ∈ (H : Set (EuclideanSpace ℝ ι)) ∩ U := ⟨hx.2, hWU' (hψs hx.1)⟩
-    rw [← hΩU] at hxU
-    exact ⟨hxU.1, hψs hx.1⟩
-  obtain ⟨w, g', hw, -, -, hwg⟩ := exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem
-    hM' hK' hΩ₁H hg hψ hψc hts hN _ _ (hψu ▸ v.property)
-  -- On `Ω ∩ V`, the gradient of `ψ u` is that of `u`.
-  have hVW' : (V : Set (EuclideanSpace ℝ ι)) ⊆ W := subset_closure.trans hVW
-  have hΩVΩ₁ : ((Omega ⊓ V : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) ⊆ Ω₁ :=
-    fun x hx => ⟨hx.1, hVW' hx.2⟩
-  have hΩV : Omega ⊓ V ≤ H := fun x hx => hΩ₁H (hΩVΩ₁ hx)
+  -- Near `closure V`, `u` agrees with a solution `w ∈ H¹₀(H)` of an equation on all of `H`.
+  obtain ⟨w, _, hw, -, hwg, -⟩ :=
+    exists_isWeakSolutionDirichlet_ae_eq_on_of_inter_eq hM' hK' hΩU hWU' hV hVW hg hu0
+  -- On `Ω ∩ V`, the gradient of `w` is that of `u`.
+  have hΩV : Omega ⊓ V ≤ H := fun x hx => by
+    have hxU : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) ∩ U :=
+      ⟨hx.1, hWU' (subset_closure.trans hVW hx.2)⟩
+    rw [hΩU] at hxU
+    exact hxU.1
   have hgradV : ∀ᵐ x ∂mu.restrict (Omega ⊓ V), W1p.gradient (w : W1p mu H 2) x =
       W1p.gradient (W1p.restrictL (inf_le_left : Omega ⊓ V ≤ Omega) u) x := by
     filter_upwards [W1p.gradient_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
-      ae_restrict_of_ae_restrict_of_subset hΩVΩ₁ (W1p.gradient_restrictL_ae hΩ₁ u),
       ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.mpr hΩV) hwg,
-      ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 hx
-    have hxV := hψ_V x (subset_closure hx.2)
-    rw [h1, h3, indicator_of_mem (hΩVΩ₁ hx), hxV.1, hxV.2, one_smul, smul_zero, add_zero, h2]
+      ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 hx
+    rw [h1, h2 (subset_closure hx.2)]
   -- The global theorem on `H` gives the second derivatives.
   exact W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn
     (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j => by
@@ -332,7 +384,7 @@ private theorem exists_value_eq_value_restrictL_of_contDiff (hν : ν ≠ 0)
   obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator hM hK hsm
     hΩ₁H hu₁ hψ hψc hts hN _ _ (hψu ▸ v.property)
   obtain ⟨W3, hW3⟩ := ha.exists_value_eq_value_of_mapsTo hν hHc hH hK.lipschitzOnWith
-    (fun i j => (hsm i j).contDiffOn) (fun i j => (hK' i j).lipschitzOnWith) hw
+    (fun i j => ((hsm i j).of_le (by simp)).contDiffOn) (fun i j => (hK' i j).lipschitzOnWith) hw
   -- On `Ω ∩ V`, where `ψ = 1`, the function `ψ u` is `u`.
   have hVΩ₁ : ((Omega ⊓ V : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) ⊆ Ω₁ :=
     fun x hx => ⟨hx.1, subset_closure.trans hVW hx.2⟩

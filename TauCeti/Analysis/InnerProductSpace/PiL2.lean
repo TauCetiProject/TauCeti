@@ -324,6 +324,14 @@ theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (�
   classical
   exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
 
+/-- The coordinates of the standard basis of Euclidean space are the identity: the inverse of its
+coordinate map fixes every vector. -/
+@[simp]
+theorem basisFun_repr_symm_apply (x : EuclideanSpace 𝕜 ι) : (basisFun ι 𝕜).repr.symm x = x := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  exact (basisFun_repr ι 𝕜 x i).symm
+
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
 equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean

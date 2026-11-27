@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
-public import TauCeti.Analysis.Holder.Zygmund
+public import TauCeti.Analysis.Holder.Zygmund.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Torus.Transference
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus.Continuous
@@ -30,7 +30,7 @@ conversely (`exists_mFourierCoeff_eq_and_contDiff_and_norm_iteratedFDeriv_le_and
 `exists_coeff_eq_and_norm_le_of_contDiff_of_holderWith`, in the namespace
 `TauCeti.UnitAddTorus`). This is the periodic
 form of the identification `𝒞^{k+α}(ℝᵈ) = C_b^{k,α}(ℝᵈ)` of
-`TauCeti.Analysis.Holder.Zygmund`.
+`TauCeti.Analysis.Holder.Zygmund.Basic`.
 
 ## The argument
 

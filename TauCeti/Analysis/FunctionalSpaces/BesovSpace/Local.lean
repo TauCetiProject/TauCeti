@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Conjugation
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
@@ -35,9 +36,13 @@ smooth multipliers preserve the Besov spaces (`TemperedDistribution.MemBesov.smu
 `T` is `B^s_{p,q}` near every point of the support of a test function `ψ`, then `ψ T ∈ B^s_{p,q}`
 (`Distribution.memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt`). The notion is local: it
 is unchanged by restricting `T` to a smaller open set containing `x`
-(`Distribution.isLocallyMemBesovAt_restrictCLM_iff`), and a tempered distribution in `B^s_{p,q}`
-is `B^s_{p,q}` near every point
-(`TemperedDistribution.MemBesov.isLocallyMemBesovAt_toDistribution`).
+(`Distribution.isLocallyMemBesovAt_restrictCLM_iff`), every distribution is `B^s_{p,q}` near the
+points outside its support (`Distribution.isLocallyMemBesovAt_of_notMem_dsupport`), and a tempered
+distribution in `B^s_{p,q}` is `B^s_{p,q}` near every point
+(`TemperedDistribution.MemBesov.isLocallyMemBesovAt_toDistribution`). Since the Littlewood–Paley
+blocks commute with complex conjugation, so does local Besov regularity
+(`Distribution.isLocallyMemBesovAt_conj_iff`), and the real part of a distribution `B^s_{p,q}` near
+`x` is `B^s_{p,q}` near `x` (`Distribution.IsLocallyMemBesovAt.re`).
 
 Every distribution has finite order on this scale: for `1 < p ≤ ∞` and `q ≠ 0`, every cut-off
 distribution `ψ T` lies in some `B^s_{p,q}` (`Distribution.exists_memBesov_cutoffTempered`). This is
@@ -144,6 +149,28 @@ theorem IsLocallyMemBesovAt.sub {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemBesovAt
     (hT : T.IsLocallyMemBesovAt φ s p q x) : (S - T).IsLocallyMemBesovAt φ s p q x := by
   rw [sub_eq_add_neg]
   exact hS.add (isLocallyMemBesovAt_neg_iff.2 hT)
+
+/-- The complex conjugate of `T` is `B^s_{p,q}` near `x` exactly when `T` is. -/
+@[simp]
+theorem isLocallyMemBesovAt_conj_iff :
+    (mapCLM Complex.conjCLE.toContinuousLinearMap T).IsLocallyMemBesovAt φ s p q x ↔
+      T.IsLocallyMemBesovAt φ s p q x := by
+  have hconj {S : 𝓓'(Ω, ℂ)} (h : S.IsLocallyMemBesovAt φ s p q x) :
+      (mapCLM Complex.conjCLE.toContinuousLinearMap S).IsLocallyMemBesovAt φ s p q x :=
+    exists_mem_nhds_forall_cutoffTempered_mapCLM_conjCLE (P := (·.MemBesov φ s p q))
+      (fun _ hu ↦ hu.conjPostcompCLM _) h
+  exact ⟨fun h ↦ mapCLM_conj_mapCLM_conj T ▸ hconj h, hconj⟩
+
+/-- The real part of a distribution `B^s_{p,q}` near `x` is `B^s_{p,q}` near `x`. -/
+theorem IsLocallyMemBesovAt.re (h : T.IsLocallyMemBesovAt φ s p q x) :
+    (mapCLM (Complex.ofRealCLM ∘L Complex.reCLM) T).IsLocallyMemBesovAt φ s p q x := by
+  rw [mapCLM_ofRealCLM_comp_reCLM]
+  exact (h.add (isLocallyMemBesovAt_conj_iff.2 h)).smul _
+
+/-- A distribution is `B^s_{p,q}` near every point of `Ω` outside its support. -/
+theorem isLocallyMemBesovAt_of_notMem_dsupport (hx : x ∈ Ω) (hxT : x ∉ dsupport T) :
+    T.IsLocallyMemBesovAt φ s p q x :=
+  exists_mem_nhds_forall_cutoffTempered_of_notMem_dsupport MemBesov.zero hx hxT
 
 /-- At a point of an open subset `Ω' ≤ Ω`, the restriction `T|_{Ω'}` is `B^s_{p,q}` near `x`
 exactly when `T` is. -/

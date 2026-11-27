@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Lp
 
 /-!
@@ -225,25 +225,31 @@ theorem inner_targetComplexStructure_left (v w : EuclideanSpace ℝ (Fin 4)) :
   simp
   ring
 
+/-- `J v` is orthogonal to `v`, as `J` is skew-adjoint. -/
+theorem inner_variationComplexStructure_self (v : EuclideanSpace ℝ (Fin 4)) :
+    ⟪v, variationComplexStructure v⟫ = 0 := by
+  have h := inner_variationComplexStructure_left v v
+  rw [real_inner_comm] at h
+  linarith
+
+/-- `J' v` is orthogonal to `v`, as `J'` is skew-adjoint. -/
+theorem inner_targetComplexStructure_self (v : EuclideanSpace ℝ (Fin 4)) :
+    ⟪v, targetComplexStructure v⟫ = 0 := by
+  have h := inner_targetComplexStructure_left v v
+  rw [real_inner_comm] at h
+  linarith
+
 /-- The pairing `⟪v, J w⟫` is alternating, as `J` is skew-adjoint. -/
 theorem isAlt_compl₂_variationComplexStructure :
     ((innerₗ (EuclideanSpace ℝ (Fin 4))).compl₂
-      variationComplexStructure.toLinearEquiv.toLinearMap).IsAlt := fun v ↦ by
-  have h := inner_variationComplexStructure_left v v
-  rw [real_inner_comm] at h
-  simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toLinearEquiv]
-  linarith
+      variationComplexStructure.toLinearEquiv.toLinearMap).IsAlt :=
+  inner_variationComplexStructure_self
 
 /-- The pairing `⟪v, J' w⟫` is alternating, as `J'` is skew-adjoint. -/
 theorem isAlt_compl₂_targetComplexStructure :
     ((innerₗ (EuclideanSpace ℝ (Fin 4))).compl₂
-      targetComplexStructure.toLinearEquiv.toLinearMap).IsAlt := fun v ↦ by
-  have h := inner_targetComplexStructure_left v v
-  rw [real_inner_comm] at h
-  simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toLinearEquiv]
-  linarith
+      targetComplexStructure.toLinearEquiv.toLinearMap).IsAlt :=
+  inner_targetComplexStructure_self
 
 /-- **`J` multiplies the section variation by `i`**: `δα (J y) = i δα (y)`. -/
 @[simp]
