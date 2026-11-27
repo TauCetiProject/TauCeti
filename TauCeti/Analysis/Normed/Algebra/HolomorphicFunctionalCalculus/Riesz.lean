@@ -321,35 +321,6 @@ theorem isUnit_sub_mul_one_sub_rieszIdempotent_add (a : A) {K : Clopens (spectru
     (SetLike.mem_coe.mp hx : x ∈ Kᶜ) (hK x hxμ)
   rwa [rieszIdempotent_compl, sub_sub_cancel] at h
 
-/-- Let `f` and `g` be commuting idempotents commuting with `c`. If `c` is invertible on the range
-of `f` and quasinilpotent on the range of `g`, then `f g = 0`. -/
-private theorem mul_eq_zero_of_isUnit_of_spectralRadius_eq_zero {c f g : A}
-    (hf : IsIdempotentElem f) (hg : IsIdempotentElem g) (hfg : Commute f g) (hcf : Commute c f)
-    (hcg : Commute c g) (hunit : IsUnit (c * f + (1 - f)))
-    (hrad : spectralRadius ℂ (c * g) = 0) : f * g = 0 := by
-  obtain ⟨W, hW⟩ := hunit
-  have hfW : f * W = c * f := by
-    rw [hW, mul_add, mul_sub, mul_one, hf.eq, sub_self, add_zero, ← mul_assoc, ← hcf.eq,
-      mul_assoc, hf.eq]
-  have hcgW : Commute (c * g) (W : A) := by
-    have hc : Commute (c * g) c := (Commute.refl c).mul_left hcg.symm
-    have hf' : Commute (c * g) f := hcf.mul_left hfg.symm
-    rw [hW]
-    exact (hc.mul_right hf').add_right ((Commute.one_right _).sub_right hf')
-  have hfg_eq : f * g = c * g * (f * ↑W⁻¹) := by
-    calc f * g = g * (f * W * ↑W⁻¹) := by rw [mul_assoc, W.mul_inv, mul_one, hfg.eq]
-      _ = c * g * (f * ↑W⁻¹) := by
-        rw [hfW, mul_assoc, ← mul_assoc g, ← hcg.eq, mul_assoc]
-  have hzero : gelfandRadius (c * g) = 0 := by
-    have h := spectrum.spectralRadius_eq_gelfandRadius (c * g)
-    rw [hrad, eq_comm, ENNReal.ofReal_eq_zero] at h
-    exact h.antisymm (gelfandRadius_nonneg _)
-  by_contra h0
-  have hle := ((hcf.mul_left hfg.symm).mul_right hcgW.units_inv_right).gelfandRadius_mul_le
-  rw [← hfg_eq, (IsIdempotentElem.mul_of_commute hfg hf hg).gelfandRadius_eq_one h0, hzero,
-    zero_mul] at hle
-  exact one_ne_zero (hle.antisymm zero_le_one)
-
 /-- **The Riesz idempotent of an isolated point.** Let `K` be the part `{μ}` of the spectrum of
 `a`, empty when `μ` is not a spectral value. Then `q` is the Riesz idempotent of `K` exactly when
 `q` is an idempotent commuting with `a` such that `a - μ` is quasinilpotent on the range of `q`
@@ -376,13 +347,13 @@ theorem rieszIdempotent_eq_iff (a : A) {K : Clopens (spectrum ℂ a)} {μ : ℂ}
     exact isUnit_sub_mul_one_sub_rieszIdempotent_add a fun x hx ↦ (hK x).mpr hx
   have hprad := spectralRadius_sub_mul_rieszIdempotent_eq_zero a fun x hx ↦ (hK x).mp hx
   have h1 : (1 - p) * q = 0 :=
-    mul_eq_zero_of_isUnit_of_spectralRadius_eq_zero hp.one_sub hq
+    hp.one_sub.mul_eq_zero_of_isUnit_of_gelfandRadius_eq_zero hq
       ((Commute.one_left q).sub_left hqp.symm) ((Commute.one_right _).sub_right hcp) hcq
-      hpunit hrad
+      hpunit (spectralRadius_eq_zero_iff_gelfandRadius_eq_zero.mp hrad)
   have h2 : (1 - q) * p = 0 :=
-    mul_eq_zero_of_isUnit_of_spectralRadius_eq_zero hq.one_sub hp
+    hq.one_sub.mul_eq_zero_of_isUnit_of_gelfandRadius_eq_zero hp
       ((Commute.one_left p).sub_left hqp) ((Commute.one_right _).sub_right hcq) hcp
-      (by rwa [sub_sub_cancel]) hprad
+      (by rwa [sub_sub_cancel]) (spectralRadius_eq_zero_iff_gelfandRadius_eq_zero.mp hprad)
   rw [sub_mul, one_mul, sub_eq_zero] at h1 h2
   rw [h2, hqp.eq, ← h1]
 

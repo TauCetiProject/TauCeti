@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Riesz
 public import TauCeti.Analysis.Normed.Operator.Compact.Decomposition
-import TauCeti.Analysis.Normed.Operator.Compact.Spectrum
+import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 
 /-!
 # Riesz idempotents of compact operators
@@ -36,20 +36,6 @@ open Filter Topology TopologicalSpace TauCeti
 
 namespace IsCompactOperator
 
-/-- For a compact operator on a Banach space and a nonzero scalar `μ`, the points of the spectrum
-equal to `μ` form a clopen part of the spectrum, empty when `μ` is not a spectral value. -/
-theorem isClopen_setOf_coe_eq {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] [CompleteSpace E] {T : E →L[𝕜] E} (hT : IsCompactOperator T) {μ : 𝕜}
-    (hμ : μ ≠ 0) : IsClopen {x : spectrum 𝕜 T | (x : 𝕜) = μ} := by
-  refine ⟨isClosed_eq continuous_subtypeVal continuous_const,
-    isOpen_iff_mem_nhds.mpr fun x (hx : (x : 𝕜) = μ) ↦ ?_⟩
-  have h : ∀ᶠ y in 𝓝 μ, ¬(y ≠ μ ∧ y ∈ spectrum 𝕜 T) :=
-    not_frequently.mp fun h ↦ hμ (hT.eq_zero_of_accPt_spectrum (accPt_iff_frequently.mpr h))
-  rw [← hx] at h
-  filter_upwards [(continuous_subtypeVal.tendsto x).eventually h] with y hy
-  by_contra hne
-  exact hy ⟨fun h ↦ hne (h.trans hx), y.property⟩
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
   {T : E →L[ℂ] E}
 
@@ -68,10 +54,7 @@ private theorem isUnit_neg_mul_one_sub_add {g P : E →L[ℂ] E} {p : ℕ} (hP :
   rw [ContinuousLinearMap.isUnit_iff_bijective]
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦ ?_⟩
   · rw [happly] at hx
-    have hPx : P x = 0 := by
-      have h := congr(P $hx)
-      rwa [map_add, map_neg, hPg, map_sub, hPP, sub_self, map_zero, neg_zero, zero_add,
-        map_zero] at h
+    have hPx : P x = 0 := by simpa [hPg, hPP] using congr(P $hx)
     rw [hPx, sub_zero, add_zero, neg_eq_zero] at hx
     have hmem : x ∈ LinearMap.ker ((g : E →ₗ[ℂ] E) ^ (p + 1)) := by
       rw [LinearMap.mem_ker, pow_succ, mul_apply_eq_comp]
@@ -87,11 +70,10 @@ private theorem isUnit_neg_mul_one_sub_add {g P : E →L[ℂ] E} {p : ℕ} (hP :
       have h : u ∈ LinearMap.ker (P : E →ₗ[ℂ] E) := hk ▸ LinearMap.mem_range_self _ z
       simpa using h
     have hgu : g u = y - P y := by
-      rw [← hz, pow_succ', mul_apply_eq_comp]
-      rfl
+      rw [← hz, pow_succ', mul_apply_eq_comp, ContinuousLinearMap.coe_coe]
     have hPu : P (P y - u) = P y := by rw [map_sub, hPP, hu, sub_zero]
     refine ⟨P y - u, ?_⟩
-    rw [happly, hPu, sub_sub_cancel_left, map_neg, neg_neg, hgu, sub_add_cancel]
+    simp [hPu, hgu]
 
 /-- **The Riesz idempotent of a nonzero point of the spectrum of a compact operator.** For a
 compact operator `T` on a complex Banach space and `μ ≠ 0`, the Riesz idempotent of the part
@@ -121,10 +103,7 @@ theorem exists_forall_range_rieszIdempotent_eq_ker_pow (hT : IsCompactOperator T
     have hx : P x ∈ LinearMap.ker ((g : E →ₗ[ℂ] E) ^ (p + 1)) :=
       hr ▸ LinearMap.mem_range_self (P : E →ₗ[ℂ] E) x
     simpa [← ContinuousLinearMap.toLinearMap_pow] using hx
-  have hrad : gelfandRadius (-(g * P)) = 0 := by
-    have h := gelfandRadius_pow_of_ne_zero (-(g * P)) p.succ_ne_zero
-    rwa [neg_pow, hnil, mul_zero, gelfandRadius_zero, eq_comm,
-      pow_eq_zero_iff p.succ_ne_zero] at h
-  rw [hc, neg_mul, spectrum.spectralRadius_eq_gelfandRadius, hrad, ENNReal.ofReal_zero]
+  rw [hc, neg_mul, spectralRadius_eq_zero_iff_gelfandRadius_eq_zero, gelfandRadius_neg]
+  exact IsNilpotent.gelfandRadius_eq_zero ⟨p + 1, hnil⟩
 
 end IsCompactOperator
