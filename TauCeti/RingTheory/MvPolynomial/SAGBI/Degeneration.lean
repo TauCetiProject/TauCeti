@@ -191,9 +191,10 @@ theorem ker_weightReesAeval_eq_span_rescale :
   rw [ker_weightReesAeval_eq_map
       (fun i ↦ m.ne_zero_of_weightedHomogeneousComponent_monicNormalize_eq (ha i)),
     ker_weightReesAeval_eq_span_of_toricIdeal_eq_span hc ha hJ hQ hQc]
-  exact Ideal.map_span_range_eq _ fun j ↦ by
-    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Polynomial.coe_mapAlgHom,
-      MvPolynomial.map_rescale_weightHomogenization]
+  rw [Ideal.map_span, ← Set.range_comp]
+  congr 2
+  funext j
+  rw [Function.comp_apply, Polynomial.coe_mapAlgHom, MvPolynomial.map_rescale_weightHomogenization]
 
 /-- **Weight-initial presentation ideal for nonmonic generators.** Under monic toric weight
 certificates, the `d`-weight-initial ideal of `RingHom.ker (aeval b)` is the presentation kernel of

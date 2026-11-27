@@ -168,7 +168,9 @@ theorem weightInitialForm_add_of_eq {p q : MvPolynomial σ R}
     exact hne (hc.symm.trans (weightedHomogeneousComponent_eq_zero _ _ hlt))
   rw [weightInitialForm_def, hdeg, hc]
 
-private theorem weightInitialForm_mul_of_mul_ne_zero {p q : MvPolynomial σ R}
+/-- If the product of two initial forms is nonzero, it equals the initial form of their
+product. -/
+theorem weightInitialForm_mul_of_mul_ne_zero {p q : MvPolynomial σ R}
     (h0 : weightInitialForm w p * weightInitialForm w q ≠ 0) :
     weightInitialForm w (p * q) = weightInitialForm w p * weightInitialForm w q := by
   have hcomp : weightedHomogeneousComponent w

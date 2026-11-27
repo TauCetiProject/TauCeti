@@ -236,7 +236,7 @@ theorem weightReesMap_X {A B : Subalgebra R (MvPolynomial σ R)} (h : A ≤ B) (
   simp [weightReesMap]
 
 @[simp]
-theorem weightReesMap_refl (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) :
+theorem weightReesMap_self (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) :
     weightReesMap (le_refl A) w = AlgHom.id R[X] (A.weightReesAlgebra w) := by
   simp [weightReesMap]
 
@@ -376,19 +376,11 @@ theorem weightReesMap_weightReesAevalLift {B : Subalgebra R (MvPolynomial σ R)}
 
 /-- The kernel of `weightReesAevalLift hcA hc` equals the kernel of `weightReesAeval c d`. -/
 theorem ker_weightReesAevalLift :
-    RingHom.ker (weightReesAevalLift hcA hc) = RingHom.ker (weightReesAeval c d) := by
-  let j := (TauCeti.MvPolynomial.weightReesAlgebra R w).val.comp
-    ((A.weightReesInclusion w).restrictScalars R)
-  have hinj : Function.Injective j.toRingHom :=
-    Subtype.val_injective.comp (A.weightReesInclusion_injective w)
-  have hcomp : j.toRingHom.comp (weightReesAevalLift hcA hc).toRingHom =
-      (weightReesAeval c d).toRingHom :=
-    congrArg AlgHom.toRingHom (val_comp_weightReesInclusion_comp_weightReesAevalLift hcA hc)
-  rw [← RingHom.ker_coe_toRingHom (weightReesAevalLift hcA hc),
-    ← RingHom.ker_coe_toRingHom (weightReesAeval c d),
-    ← AlgHom.toRingHom_eq_coe, ← AlgHom.toRingHom_eq_coe, ← hcomp, ← RingHom.comap_ker,
-    RingHom.ker_eq_comap_bot (f := j.toRingHom), Ideal.comap_bot_of_injective _ hinj,
-    ← RingHom.ker_eq_comap_bot]
+    RingHom.ker (weightReesAevalLift hcA hc) = RingHom.ker (weightReesAeval c d) :=
+  Ideal.ext fun f ↦ by
+    rw [RingHom.mem_ker, RingHom.mem_ker, ← coe_weightReesInclusion_weightReesAevalLift,
+      ZeroMemClass.coe_eq_zero, ← map_zero (A.weightReesInclusion w),
+      (A.weightReesInclusion_injective w).eq_iff]
 
 end ReesLift
 

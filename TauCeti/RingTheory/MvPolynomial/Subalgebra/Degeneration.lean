@@ -93,11 +93,6 @@ theorem quotientSpanXWeightReesAlgebraEquiv_symm_weightReesSymbolToInitial
       Ideal.Quotient.mk _ g := by
   rw [AlgEquiv.symm_apply_eq, quotientSpanXWeightReesAlgebraEquiv_mk]
 
-theorem coe_quotientSpanXWeightReesAlgebraEquiv_mk (g : A.weightReesAlgebra w) :
-    (A.quotientSpanXWeightReesAlgebraEquiv w (Ideal.Quotient.mk _ g) : MvPolynomial σ R) =
-      A.weightReesSymbol w g := by
-  simp
-
 theorem quotientSpanXWeightReesAlgebraEquiv_symm_weightInitialForm
     {f : MvPolynomial σ R} (hf : f ∈ A) :
     (A.quotientSpanXWeightReesAlgebraEquiv w).symm
@@ -147,13 +142,6 @@ theorem baseChangeZeroWeightReesAlgebraEquiv_symm_weightReesSymbolToInitial
       1 ⊗ₜ[R[X]] g := by
   let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
   rw [AlgEquiv.symm_apply_eq, baseChangeZeroWeightReesAlgebraEquiv_tmul, one_smul]
-
-theorem coe_baseChangeZeroWeightReesAlgebraEquiv_tmul (r : R) (g : A.weightReesAlgebra w) :
-    letI := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
-    (A.baseChangeZeroWeightReesAlgebraEquiv w (r ⊗ₜ[R[X]] g) : MvPolynomial σ R) =
-      r • A.weightReesSymbol w g := by
-  let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
-  simp
 
 theorem baseChangeZeroWeightReesAlgebraEquiv_symm_weightInitialForm
     {f : MvPolynomial σ R} (hf : f ∈ A) :

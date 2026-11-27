@@ -92,9 +92,10 @@ theorem toSubmodule_weightInitialAlgebra (A : Subalgebra R (MvPolynomial σ R)) 
       (fun _ _ _ _ ha hb ↦ by simpa [mul_add] using S.add_mem ha hb)
       (fun r _ _ ha ↦ by simpa [mul_smul_comm] using S.smul_mem r ha) hy
     subst hqy
-    rcases weightInitialForm_mul_eq_zero_or_eq w p q with h0 | hpmul
+    by_cases h0 : weightInitialForm w p * weightInitialForm w q = 0
     · rw [h0]; exact S.zero_mem
-    · rw [hpmul]; exact Submodule.subset_span ⟨p * q, A.mul_mem hp hq, rfl⟩
+    · rw [← weightInitialForm_mul_of_mul_ne_zero w h0]
+      exact Submodule.subset_span ⟨p * q, A.mul_mem hp hq, rfl⟩
   let B : Subalgebra R (MvPolynomial σ R) :=
     S.toSubalgebra hone (fun x y hx hy ↦ hmul x hx y hy)
   exact (A.weightInitialAlgebra_le_iff (B := B) w).mpr fun f hf ↦

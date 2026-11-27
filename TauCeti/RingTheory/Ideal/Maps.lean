@@ -27,10 +27,8 @@ annihilator of that ideal. The principal-ideal result applies to ideals extended
 commutative semiring, without assuming the algebras commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
-homomorphism `f` for which `f r` is a unit. Extending an ideal spanned by an indexed family along
-a ring homomorphism gives the ideal spanned by its pointwise image (`Ideal.map_span_range_eq`).
-An ideal extended along a ring homomorphism into a finite product is the product of its component
-extensions.
+homomorphism `f` for which `f r` is a unit. An ideal extended along a ring homomorphism into a
+finite product is the product of its component extensions.
 
 If the images of any two elements of `I` are comparable for divisibility, as when the source or
 target is a valuation ring, the extension of `I` consists of the multiples of images of elements
@@ -158,14 +156,6 @@ theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semir
     ((span_singleton_le_iff_mem _).mpr (mem_map_of_mem f ht))
   have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
   rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
-
-/-- Extending an ideal spanned by an indexed family along a ring homomorphism gives the ideal
-spanned by its pointwise image. -/
-theorem map_span_range_eq {R S ι : Type*} [Semiring R] [Semiring S] (f : R →+* S)
-    {g : ι → R} {g' : ι → S} (h : ∀ i, f (g i) = g' i) :
-    (span (Set.range g)).map f = span (Set.range g') := by
-  have hcomp : ⇑f ∘ g = g' := funext h
-  rw [map_span, ← Set.range_comp, hcomp]
 
 /-- An ideal extended along a ring homomorphism into a finite product equals the product of its
 component extensions. -/
