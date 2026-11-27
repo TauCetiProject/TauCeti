@@ -32,11 +32,11 @@ whose backward orbit meets `A`; ergodicity makes this set conull.
 
 The proof computes the extended integral. Layer by layer,
 `∫⁻ x in A, positiveReturnTime T A x ∂μ = ∑ k, μ (A ∩ {k < positiveReturnTime T A})`, and `T^[k]`
-carries `A ∩ {k < positiveReturnTime T A}` onto the set `C k` of points whose last visit to `A`
-in backward time happened exactly `k` steps ago. These sets are disjoint, and their union, the set
-of points whose backward orbit meets `A`, is invariant up to inclusion and contains `A`, so it is
-conull by ergodicity. Finiteness of the integral then gives finiteness of the return time almost
-everywhere on `A`.
+carries `A ∩ {k < positiveReturnTime T A}` onto the set `disjointed (fun j ↦ T.symm^[j] ⁻¹' A) k`
+of points whose last visit to `A` in backward time happened exactly `k` steps ago. These sets are
+disjoint, and their union `⋃ j, T.symm^[j] ⁻¹' A`, the set of points whose backward orbit meets
+`A`, is invariant up to inclusion and contains `A`, so it is conull by ergodicity. Finiteness of the
+integral then gives finiteness of the return time almost everywhere on `A`.
 
 ## Main results
 
@@ -48,7 +48,7 @@ everywhere on `A`.
   with return time under `f` greater than `k` is the preimage under `f^[k]` of the set of last
   backward visits under `g`.
 * `TauCeti.lintegral_positiveReturnTime_eq_measure`: for a measure-preserving equivalence,
-  `∫⁻ x in A, positiveReturnTime T A x ∂μ = μ {y | ∃ j, T.symm^[j] y ∈ A}`.
+  `∫⁻ x in A, positiveReturnTime T A x ∂μ = μ (⋃ j, T.symm^[j] ⁻¹' A)`.
 * `TauCeti.lintegral_positiveReturnTime`: `∫⁻ x in A, positiveReturnTime T A x ∂μ = 1`.
 * `TauCeti.kac_return_time_integral`: Kac's lemma.
 
@@ -199,35 +199,21 @@ of the return time over a measurable set `A` is the measure of the set of points
 orbit meets `A`. -/
 theorem lintegral_positiveReturnTime_eq_measure {T : X ≃ᵐ X} (hT : MeasurePreserving T μ μ)
     {A : Set X} (hA : MeasurableSet A) :
-    ∫⁻ x in A, (positiveReturnTime T A x : ℝ≥0∞) ∂μ = μ {y | ∃ j, T.symm^[j] y ∈ A} := by
-  -- Points whose last visit to `A` in backward time was exactly `k` steps ago.
-  set C : ℕ → Set X := fun k ↦ {y | T.symm^[k] y ∈ A ∧ ∀ j < k, T.symm^[j] y ∉ A}
-  have hC (k : ℕ) : MeasurableSet (C k) := by
-    have : C k = T.symm^[k] ⁻¹' A ∩ ⋂ j ∈ Finset.range k, T.symm^[j] ⁻¹' Aᶜ := by
+    ∫⁻ x in A, (positiveReturnTime T A x : ℝ≥0∞) ∂μ = μ (⋃ j, T.symm^[j] ⁻¹' A) := by
+  -- `disjointed s k` is the set of points whose last visit to `A` in backward time was exactly
+  -- `k` steps ago.
+  set s : ℕ → Set X := fun j ↦ T.symm^[j] ⁻¹' A
+  have hC (k : ℕ) : MeasurableSet (disjointed s k) :=
+    MeasurableSet.disjointed (fun j ↦ T.symm.measurable.iterate j hA) k
+  have hmeas (k : ℕ) :
+      μ ({x | (k : ℕ∞) < positiveReturnTime T A x} ∩ A) = μ (disjointed s k) := by
+    have hs : {y | T.symm^[k] y ∈ A ∧ ∀ j < k, T.symm^[j] y ∉ A} = disjointed s k := by
       ext y
-      simp [C]
-    rw [this]
-    exact (T.symm.measurable.iterate k hA).inter
-      (Finset.measurableSet_biInter _ fun j _ ↦ T.symm.measurable.iterate j hA.compl)
-  have hmeas (k : ℕ) : μ ({x | (k : ℕ∞) < positiveReturnTime T A x} ∩ A) = μ (C k) := by
-    rw [lt_positiveReturnTime_inter_eq_preimage T.symm_apply_apply]
+      simp [s, disjointed_eq_inter_compl]
+    rw [lt_positiveReturnTime_inter_eq_preimage T.symm_apply_apply, hs]
     exact (hT.iterate k).measure_preimage (hC k).nullMeasurableSet
-  have hdisj : Pairwise (Function.onFun Disjoint C) := by
-    intro k k' hkk'
-    rcases lt_or_gt_of_ne hkk' with h | h
-    · exact Set.disjoint_left.2 fun y hy hy' ↦ hy'.2 k h hy.1
-    · exact Set.disjoint_left.2 fun y hy hy' ↦ hy.2 k' h hy'.1
-  -- The union of the `C k` is the set of points whose backward orbit meets `A`.
-  have hunion : (⋃ k, C k) = {y | ∃ j, T.symm^[j] y ∈ A} := by
-    classical
-    ext y
-    refine ⟨fun hy ↦ ?_, fun ⟨j, hj⟩ ↦ ?_⟩
-    · obtain ⟨k, hk⟩ := mem_iUnion.1 hy
-      exact ⟨k, hk.1⟩
-    · have h : ∃ j, T.symm^[j] y ∈ A := ⟨j, hj⟩
-      exact mem_iUnion.2 ⟨Nat.find h, Nat.find_spec h, fun j hj ↦ Nat.find_min h hj⟩
   rw [lintegral_positiveReturnTime_eq_tsum T.measurable hA, tsum_congr hmeas,
-    ← measure_iUnion hdisj hC, hunion]
+    ← measure_iUnion (disjoint_disjointed s) hC, iUnion_disjointed]
 
 /-- The extended integral of the return time over `A` for an ergodic measurable equivalence of a
 probability space, `A` measurable of positive measure, is `1`. -/
@@ -236,16 +222,16 @@ theorem lintegral_positiveReturnTime [IsProbabilityMeasure μ] {T : X ≃ᵐ X} 
     ∫⁻ x in A, (positiveReturnTime T A x : ℝ≥0∞) ∂μ = 1 := by
   rw [lintegral_positiveReturnTime_eq_measure hT.toMeasurePreserving hA]
   -- The set `B` of points whose backward orbit meets `A` contains `A` and its image under `T⁻¹`.
-  set B : Set X := {y | ∃ j, T.symm^[j] y ∈ A}
-  have hB : MeasurableSet B := by
-    rw [show B = ⋃ j, T.symm^[j] ⁻¹' A by ext; simp [B]]
-    exact MeasurableSet.iUnion fun j ↦ T.symm.measurable.iterate j hA
-  have hBsub : B ⊆ T ⁻¹' B := fun y ⟨j, hj⟩ ↦
-    ⟨j + 1, by rwa [Function.iterate_succ_apply, T.symm_apply_apply]⟩
+  set B : Set X := ⋃ j, T.symm^[j] ⁻¹' A
+  have hB : MeasurableSet B := MeasurableSet.iUnion fun j ↦ T.symm.measurable.iterate j hA
+  have hBsub : B ⊆ T ⁻¹' B := fun y hy ↦ by
+    obtain ⟨j, hj⟩ := mem_iUnion.1 hy
+    exact mem_iUnion.2 ⟨j + 1, by
+      rwa [mem_preimage, Function.iterate_succ_apply, T.symm_apply_apply]⟩
   rcases hT.ae_empty_or_univ_of_ae_le_preimage hB.nullMeasurableSet
     (LE.le.eventuallySubset hBsub) with h | h
   · have h0 : μ B = 0 := by rw [measure_congr h, measure_empty]
-    exact absurd (measure_mono_null (fun x hx ↦ (⟨0, hx⟩ : x ∈ B)) h0) hμA
+    exact absurd (measure_mono_null (fun x hx ↦ mem_iUnion.2 ⟨0, hx⟩) h0) hμA
   · rw [measure_congr h, measure_univ]
 
 /-- **Kac's lemma.** Let `T` be an ergodic measurable equivalence of a probability space and `A` a
