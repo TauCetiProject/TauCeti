@@ -105,8 +105,7 @@ example : (P.boundedFormula₁ &0).inst ![Term.var 0] = P.formula₁ (Term.var 0
   simp only [Relations.boundedFormula₁, Relations.formula₁, inst_boundedFormula]
   congr 1
   funext i
-  rw [Subsingleton.elim i 0]
-  rfl
+  simp [Matrix.cons_val_fin_one, Term.subst]
 
 open Classical in
 -- `P(x₀) ⇒ ∀y P(y), P(x₀)` is an initial sequent.
