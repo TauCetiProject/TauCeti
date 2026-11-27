@@ -16,7 +16,7 @@ The family of Hilbert space adjoints `x ↦ (f x)†` of a `C^n` family of opera
 inner product spaces over `ℝ` or `ℂ` is `C^n` over `ℝ` (`ContDiff.adjoint`), since the adjoint is a
 real-linear isometry (`ContinuousLinearMap.adjointRealCLM`). For the same reason its iterated
 derivatives are the adjoints of the iterated derivatives of `f`, with no differentiability
-assumption (`iteratedFDeriv_adjoint_apply`, `iteratedDeriv_adjoint`).
+assumption (`TauCeti.iteratedFDeriv_adjoint_apply`, `TauCeti.iteratedDeriv_adjoint`).
 -/
 
 public section
@@ -49,6 +49,8 @@ theorem ContDiffOn.adjoint (hf : ContDiffOn ℝ n f s) : ContDiffOn ℝ n (fun y
 theorem ContDiff.adjoint (hf : ContDiff ℝ n f) : ContDiff ℝ n fun y ↦ adjoint (f y) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ hf.contDiffAt.adjoint
 
+namespace TauCeti
+
 /-- The iterated derivatives of the adjoints of a family of operators are the adjoints of its
 iterated derivatives. -/
 theorem iteratedFDeriv_adjoint_apply (i : ℕ) (x : X) (v : Fin i → X) :
@@ -64,3 +66,5 @@ iterated derivatives. -/
 theorem iteratedDeriv_adjoint {f : ℝ → V →L[𝕜] W} (i : ℕ) (t : ℝ) :
     iteratedDeriv i (fun s ↦ adjoint (f s)) t = adjoint (iteratedDeriv i f t) := by
   simp only [iteratedDeriv_eq_iteratedFDeriv, iteratedFDeriv_adjoint_apply]
+
+end TauCeti

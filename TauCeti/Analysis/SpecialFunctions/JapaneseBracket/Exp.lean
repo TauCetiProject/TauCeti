@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Function.Lp.Adjoint
+import TauCeti.MeasureTheory.Function.LpSeminorm.Restrict
 
 /-!
 # Smooth radial exponential weights
@@ -34,7 +35,9 @@ if `‖u‖₂² ≤ ∑ᵢ |⟪eᵢ, Aᵢ⟫|` with `‖exp(-c ρ) eᵢ‖₂ �
 `‖exp(c ρ) u‖₂ ≤ a ∑ᵢ qᵢ ‖exp(c ρ) Aᵢ‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner`). By the
 same duality, an operator on `L²` that preserves decay at the rate `-c` has an adjoint that
 preserves decay at the rate `c`, with the same constant
-(`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`).
+(`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`), also for operators on `L²` of the
+restriction of the measure to the whole space
+(`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_restrict_coe_opens_top`).
 -/
 
 public section
@@ -323,5 +326,19 @@ theorem eLpNorm_exp_mul_smul_adjoint_apply_le {c : ℝ} {C : ℝ≥0∞} (T : Lp
   · simpa using h
   · -- `T†† = T`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.
     simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using hT f
+
+/-- `ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le` for an operator `T` on `L²` of the
+restriction of `μ` to the whole space, written as the top open set, with both weighted estimates
+stated for `μ` itself. -/
+theorem eLpNorm_exp_mul_smul_adjoint_apply_le_restrict_coe_opens_top {c : ℝ} {C : ℝ≥0∞}
+    (T : Lp F 2 (μ.restrict ((⊤ : TopologicalSpace.Opens X) : Set X)) →L[ℝ]
+      Lp F 2 (μ.restrict ((⊤ : TopologicalSpace.Opens X) : Set X)))
+    (hT : ∀ f, eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • T f z) 2 μ ≤
+      C * eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • f z) 2 μ)
+    (g : Lp F 2 (μ.restrict ((⊤ : TopologicalSpace.Opens X) : Set X))) :
+    eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint T g z) 2 μ ≤
+      C * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) 2 μ := by
+  simp only [← TauCeti.eLpNorm_restrict_coe_opens_top _ 2 μ] at hT ⊢
+  exact T.eLpNorm_exp_mul_smul_adjoint_apply_le hT g
 
 end ContinuousLinearMap

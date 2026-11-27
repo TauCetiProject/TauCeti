@@ -1331,12 +1331,9 @@ theorem exists_forall_eLpNorm_exp_mul_smul_adjoint_orthogonalRightInverse_le_of_
     exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le
       m R₀ (c := -c) (by rwa [abs_neg])
   refine ⟨K, fun x D hx hsol hframe hD hD₀ a hax g ↦ ?_⟩
-  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
-  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_restrict_coe_opens_top _
+    (fun f ↦ ?_) g
   have h := hK x D hx hsol hframe hD hD₀ a hax f
-  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [ContinuousLinearMap.comp_apply] using h
 
 /-- The derivative along `u` of the adjoints `(ι ∘ Q p)†` of the orthogonal right inverses, read as
@@ -1398,12 +1395,9 @@ theorem
   refine ⟨K, fun x D hx hbound hsol hframe hD hD₀ X _ _ a p₀ hax ha v g ↦ ?_⟩
   -- The derivative of `p ↦ (ι ∘ Q p)†` is `(ι ∘ Q')†`, and `ι ∘ Q'` is estimated at the rate `-c`.
   rw [fderiv_adjoint_orthogonalRightInverse_apply hx hsol hframe hax ha]
-  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
-  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_restrict_coe_opens_top _
+    (fun f ↦ ?_) g
   have h := hK x D hx hbound hsol hframe hD hD₀ hax ha v f
-  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [ContinuousLinearMap.comp_apply] using h
 
 /-- Along a family of coefficients `C²` at `p₀`, whose value at `p₀` is the class of a smooth plane

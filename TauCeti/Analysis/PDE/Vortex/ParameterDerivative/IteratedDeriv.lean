@@ -56,7 +56,7 @@ the first- and second-order estimates, closes the induction.
 
 **The adjoints.** Read through the values of the fields, `Q t` is an operator on `L²(ℂ; ℝ⁴)` with
 Hilbert space adjoint `Q† t`. The `n`-th derivative of `Q†` is the adjoint of `Qₙ`
-(`iteratedDeriv_adjoint`), so the estimate for `Qₙ` at the rate `-c` gives, by duality,
+(`TauCeti.iteratedDeriv_adjoint`), so the estimate for `Qₙ` at the rate `-c` gives, by duality,
 
 `‖exp(c ρ) (Q†)ₙ g‖₂ ≤ K Mⁿ ‖exp(c ρ) g‖₂`
 
@@ -69,8 +69,8 @@ weighted `L²` estimate for the derivatives of every order of the adjoint right 
   the weighted estimate for the derivatives of every order of the orthogonal right inverses.
 * `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalKerProjection_le`:
   the same for the orthogonal kernel projections.
-* `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_adjoint_`
-  `orthogonalRightInverse_le`: the same for the adjoints of the orthogonal right inverses.
+* `exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_adjoint_orthogonalRightInverse_le`:
+  the same for the adjoints of the orthogonal right inverses.
 
 ## References
 
@@ -561,12 +561,10 @@ theorem exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_adjoint_orthogonalRight
         (sobolevGaugeFixedOperator (a t))) t₀ := by
     simpa only [Function.comp_def, compL_apply] using
       (compL ℝ _ _ _ sobolevFieldValues).iteratedDeriv_comp_left hQ le_rfl
-  rw [iteratedDeriv_adjoint, hιQ, ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
-  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  rw [iteratedDeriv_adjoint, hιQ]
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_restrict_coe_opens_top _
+    (fun f ↦ ?_) g
   have h := hK x D hx hbound hsol hframe hD hD₀ a t₀ hax ha M hb f
-  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [ContinuousLinearMap.comp_apply] using h
 
 end TauCeti.Vortex
