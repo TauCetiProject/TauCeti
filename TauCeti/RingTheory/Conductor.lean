@@ -66,6 +66,9 @@ affine form of Ferrand's pinching along the conductor.
   `A_t → B_t` is bijective.
 * `TauCeti.Algebra.comap_conductor_range`: the conductor of `B` over `A` is the contraction of
   the ambient conductor of the image of `A`.
+* `TauCeti.Algebra.map_conductor`: conversely, the extension of the conductor of `B` over `A` to
+  `B` is the ambient conductor of the image of `A`; even its image is already that ideal
+  (`TauCeti.Algebra.image_conductor`).
 * `Subring.comap_subtype_conductor`: for a subring `A`, the conductor of `B` over `A` is the
   contraction of `c(A, B)`.
 * `TauCeti.Algebra.conductor_eq_annihilator`: the conductor is the annihilator of `B / A`.
@@ -290,6 +293,22 @@ theorem comap_conductor_range :
     (algebraMap A B).range.conductor.comap (algebraMap A B) = conductor A B := by
   ext a
   simp
+
+/-- The image in `B` of the conductor of `B` over `A` is the ambient conductor of the image of
+`A`, as a set: it is already an ideal of `B`. -/
+theorem image_conductor :
+    algebraMap A B '' conductor A B = (algebraMap A B).range.conductor := by
+  rw [← comap_conductor_range, Ideal.coe_comap]
+  exact Set.image_preimage_eq_of_subset fun b hb ↦ Subring.conductor_subset hb
+
+/-- **The extended conductor.** Extending the conductor of `B` over `A` to `B` gives the ambient
+conductor of the image of `A`, the largest ideal of `B` contained in that image. -/
+theorem map_conductor :
+    (conductor A B).map (algebraMap A B) = (algebraMap A B).range.conductor := by
+  refine le_antisymm (comap_conductor_range (A := A) (B := B) ▸ Ideal.map_comap_le)
+    fun b hb ↦ ?_
+  obtain ⟨a, ha, rfl⟩ := image_conductor.symm.subset hb
+  exact Ideal.mem_map_of_mem _ ha
 
 end Subring
 
