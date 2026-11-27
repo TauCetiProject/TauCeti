@@ -37,12 +37,12 @@ identity operator is module-compact.
 ## Main declarations
 
 * `CStarModule.IsParsevalFrame A x`: the reconstruction formula `∑ i, ⟪x i, z⟫_A • x i = z`,
-  with edge cases (`CStarModule.isParsevalFrame_of_subsingleton`,
-  `CStarModule.isParsevalFrame_empty_iff`), invariance (`Equiv.isParsevalFrame_comp_iff`,
+  with edge cases (`TauCeti.CStarModule.isParsevalFrame_of_subsingleton`,
+  `TauCeti.CStarModule.isParsevalFrame_empty_iff`), invariance (`Equiv.isParsevalFrame_comp_iff`,
   `TauCeti.CStarModuleUnitary.isParsevalFrame_comp_iff`,
   `LinearIsometryEquiv.isParsevalFrame_comp_iff`), and algebraic Parseval identity
-  (`CStarModule.isParsevalFrame_iff_sum_inner_mul_star_inner`,
-  `CStarModule.isParsevalFrame_iff_sum_star_unop_inner_mul_unop_inner`).
+  (`TauCeti.CStarModule.isParsevalFrame_iff_sum_inner_mul_star_inner`,
+  `TauCeti.CStarModule.isParsevalFrame_iff_sum_star_unop_inner_mul_unop_inner`).
 * `TauCeti.AdjointableMap.synthesis A x` and `TauCeti.AdjointableMap.analysis A x`: the synthesis
   and analysis operators, with `adjoint_synthesis`, `adjoint_analysis`, and
   `synthesis_comp_analysis` (`= ∑ i, θ_{x i, x i}`).
@@ -64,9 +64,9 @@ identity operator is module-compact.
   synthesis operator is surjective.
 * `TauCeti.CStarModule.frameAdjoint` and `CStarModule.IsParsevalFrame.isAdjointPair_frameAdjoint`:
   explicit adjoint of any `A`-linear map out of a module with a finite Parseval frame.
-* `CStarModule.isParsevalFrame_single` and `CStarModule.isParsevalFrame_single_one`: over a unital
-  `A`, the standard bases of `A^ι` and `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` are Parseval frames.
-* `CStarModule.analysisLinearMap`, `Module.Finite.of_isParsevalFrame`, and
+* `CStarModule.isParsevalFrame_single` and `TauCeti.CStarModule.isParsevalFrame_single_one`: over a
+  unital `A`, the standard bases of `A^ι` and `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` are Parseval frames.
+* `TauCeti.CStarModule.analysisLinearMap`, `Module.Finite.of_isParsevalFrame`, and
   `Module.Projective.of_isParsevalFrame`: over a unital `A`, a module with a finite Parseval frame
   is finitely generated and projective.
 
@@ -106,17 +106,6 @@ theorem IsParsevalFrame.sum_inner_smul {x : ι → E} (hx : IsParsevalFrame A x)
     ∑ i, inner A (x i) z • x i = z :=
   isParsevalFrame_iff.mp hx z
 
-/-- Every finite family in a subsingleton module is a Parseval frame. -/
-theorem isParsevalFrame_of_subsingleton [Subsingleton E] (x : ι → E) : IsParsevalFrame A x :=
-  isParsevalFrame_iff.mpr fun _ ↦ Subsingleton.elim _ _
-
-/-- An empty family is a Parseval frame if and only if the module is subsingleton. -/
-@[simp]
-theorem isParsevalFrame_empty_iff [IsEmpty ι] (x : ι → E) :
-    IsParsevalFrame A x ↔ Subsingleton E :=
-  ⟨fun hx ↦ ⟨fun y z ↦ by rw [← hx.sum_inner_smul y, ← hx.sum_inner_smul z]; simp⟩,
-    fun _ ↦ isParsevalFrame_of_subsingleton x⟩
-
 /-- Reindexing a Parseval frame along an equivalence of finite index types preserves the Parseval
 property. -/
 theorem IsParsevalFrame.comp_equiv [Fintype κ] {x : ι → E} (hx : IsParsevalFrame A x)
@@ -145,6 +134,27 @@ private theorem isParsevalFrame_comp_iff_of_bijective {A ι E F G : Type*} [Fint
 
 end Basic
 
+end CStarModule
+
+namespace TauCeti.CStarModule
+
+section Basic
+
+variable {A ι E : Type*} [Fintype ι] [Inner A E] [AddCommMonoid E] [SMul A E]
+
+/-- Every finite family in a subsingleton module is a Parseval frame. -/
+theorem isParsevalFrame_of_subsingleton [Subsingleton E] (x : ι → E) : IsParsevalFrame A x :=
+  isParsevalFrame_iff.mpr fun _ ↦ Subsingleton.elim _ _
+
+/-- An empty family is a Parseval frame if and only if the module is subsingleton. -/
+@[simp]
+theorem isParsevalFrame_empty_iff [IsEmpty ι] (x : ι → E) :
+    IsParsevalFrame A x ↔ Subsingleton E :=
+  ⟨fun hx ↦ ⟨fun y z ↦ by rw [← hx.sum_inner_smul y, ← hx.sum_inner_smul z]; simp⟩,
+    fun _ ↦ isParsevalFrame_of_subsingleton x⟩
+
+end Basic
+
 /-- **Parseval's identity** (general algebraic form): `x : ι → E` is a Parseval frame iff
 `∑ i, ⟪x i, z⟫_A * (⟪x i, z⟫_A)⋆ = ⟪z, z⟫_A` for all `z : E`. -/
 theorem isParsevalFrame_iff_sum_inner_mul_star_inner {A ι E : Type*} [Fintype ι] [NonUnitalRing A]
@@ -153,24 +163,24 @@ theorem isParsevalFrame_iff_sum_inner_mul_star_inner {A ι E : Type*} [Fintype �
     IsParsevalFrame A x ↔ ∀ z : E, ∑ i, inner A (x i) z * star (inner A (x i) z) = inner A z z := by
   refine ⟨fun hx z ↦ ?_, fun h ↦ isParsevalFrame_iff.mpr fun z ↦ ?_⟩
   · conv_rhs => arg 3; rw [← hx.sum_inner_smul z]
-    rw [TauCeti.CStarModule.inner_sum_right']; simp
+    rw [inner_sum_right']; simp
   · let Q : E → E := fun w ↦ (∑ i, inner A (x i) w • x i) - w
     have hQ_add (u v : E) : Q (u + v) = Q u + Q v := by
-      simp only [Q, CStarModule.inner_add_right, CStarModule.add_smul, Finset.sum_add_distrib]
+      simp only [Q, _root_.CStarModule.inner_add_right, _root_.CStarModule.add_smul,
+        Finset.sum_add_distrib]
       abel
     have hQ_sa (u v : E) : inner A u (Q v) = inner A (Q u) v := by
       have h_l : inner A (∑ i, inner A (x i) u • x i) v =
           ∑ i, inner A (x i) v * inner A u (x i) := star_injective <| by
-        simp [TauCeti.CStarModule.inner_sum_right', CStarModule.inner_op_smul_right, star_sum]
-      simp [Q, sub_eq_add_neg, CStarModule.inner_neg_right', CStarModule.inner_neg_left',
-        TauCeti.CStarModule.inner_sum_right', h_l]
+        simp [inner_sum_right', _root_.CStarModule.inner_op_smul_right, star_sum]
+      simp [Q, sub_eq_add_neg, _root_.CStarModule.inner_neg_right',
+        _root_.CStarModule.inner_neg_left', inner_sum_right', h_l]
     have hQ_diag (w : E) : inner A w (Q w) = 0 := by
       have hw := h w; simp only [star_inner] at hw
-      simp [Q, sub_eq_add_neg, CStarModule.inner_neg_right',
-        TauCeti.CStarModule.inner_sum_right', hw]
+      simp [Q, sub_eq_add_neg, _root_.CStarModule.inner_neg_right', inner_sum_right', hw]
     have h2 : (2 : ℂ) • inner A (Q z) (Q z) = 0 := by
       simpa [hQ_add, hQ_diag z, hQ_diag (Q z), hQ_sa z (Q z), ← two_smul ℂ] using hQ_diag (z + Q z)
-    exact sub_eq_zero.mp <| (CStarModule.inner_self (A := A)).mp <| by
+    exact sub_eq_zero.mp <| (_root_.CStarModule.inner_self (A := A)).mp <| by
       simpa using congrArg ((2 : ℂ)⁻¹ • ·) h2
 
 /-- **Parseval's identity** (right-module algebraic form): `x : ι → E` is a Parseval frame iff
@@ -184,7 +194,7 @@ theorem isParsevalFrame_iff_sum_star_unop_inner_mul_unop_inner {A ι E : Type*} 
   exact ⟨fun h z ↦ by simpa only [Finset.unop_sum, unop_mul, unop_star] using congrArg unop (h z),
     fun h z ↦ unop_injective (by simpa only [Finset.unop_sum, unop_mul, unop_star] using h z)⟩
 
-end CStarModule
+end TauCeti.CStarModule
 
 namespace TauCeti.CStarModuleUnitary
 
@@ -419,8 +429,7 @@ theorem _root_.CStarModule.IsParsevalFrame.completeSpace {A ι E : Type*} [Finty
     [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
     [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
     {x : ι → E} (hx : IsParsevalFrame A x) : CompleteSpace E := by
-  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun x ↦
-    (CStarModule.norm_zero_iff A x).mp
+  let : NormedAddCommGroup E := normedAddCommGroupOfCStarModule A E
   let f : E →ₗᵢ[ℂ] C⋆ᵐᵒᵈ(A, ι → A) :=
     (AdjointableMap.analysis A x).toContinuousLinearMap.toLinearMap.isometryOfInnerCStarModule
       fun z ↦ hx.inner_analysis_analysis z z
@@ -457,10 +466,11 @@ theorem isParsevalFrame_iff_isStarProjection_gram_and_synthesis_surjective {A ι
         simpa [CStarMatrix.mul_apply] using congrFun (congrFun hp.isIdempotentElem.eq i) k
       simp_rw [← Finset.sum_mul, hidem, sub_self]
     simpa [w] using hmul
-  have hΦw : AdjointableMap.synthesis Aᵐᵒᵖ x w = 0 := (inner_self (A := Aᵐᵒᵖ)).mp <| by
-    rw [← (AdjointableMap.synthesis Aᵐᵒᵖ x).adjoint_inner_right,
-      AdjointableMap.adjoint_synthesis, haw]
-    simp
+  have hΦw : AdjointableMap.synthesis Aᵐᵒᵖ x w = 0 :=
+    (_root_.CStarModule.inner_self (A := Aᵐᵒᵖ)).mp <| by
+      rw [← (AdjointableMap.synthesis Aᵐᵒᵖ x).adjoint_inner_right,
+        AdjointableMap.adjoint_synthesis, haw]
+      simp
   rw [map_sub, sub_eq_zero] at hΦw
   simpa only [AdjointableMap.synthesis_apply, AdjointableMap.analysis_apply] using hΦw
 
@@ -472,7 +482,7 @@ def frameAdjoint (A : Type*) {ι E F : Type*} [Fintype ι] [Semiring A] [StarRin
     [PartialOrder A] [Norm A] [AddCommMonoid E] [Module A E] [AddCommGroup F] [Module ℂ F]
     [Module A F] [Norm F] [CStarModule A F] (x : ι → E) (T : E → F) : F →ₗ[A] E where
   toFun y := ∑ i, inner A (T (x i)) y • x i
-  map_add' _ _ := by simp [CStarModule.inner_add_right, add_smul, Finset.sum_add_distrib]
+  map_add' _ _ := by simp [_root_.CStarModule.inner_add_right, add_smul, Finset.sum_add_distrib]
   map_smul' _ _ := by simp [inner_op_smul_right, mul_smul, Finset.smul_sum]
 
 @[simp] theorem frameAdjoint_apply {A ι E F : Type*} [Fintype ι] [Semiring A] [StarRing A]
@@ -513,6 +523,12 @@ theorem isParsevalFrame_single [DecidableEq ι] :
   simpa [WithCStarModule.inner_def, Pi.single_apply] using
     Finset.sum_ite_eq_of_mem _ j (fun i ↦ z i) (Finset.mem_univ j)
 
+end CStarModule
+
+namespace TauCeti.CStarModule
+
+variable {A E ι : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] [Fintype ι]
+
 /-- Over a unital C⋆-algebra `A`, the standard basis `i ↦ Pi.single i 1` of the right module
 `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` is a Parseval frame. -/
 theorem isParsevalFrame_single_one [DecidableEq ι] : IsParsevalFrame Aᵐᵒᵖ
@@ -521,46 +537,45 @@ theorem isParsevalFrame_single_one [DecidableEq ι] : IsParsevalFrame Aᵐᵒᵖ
     simpa [WithCStarModule.inner_single_left, inner_mulOpposite] using
       WithCStarModule.sum_op_smul_single_one v
 
-end CStarModule
+end TauCeti.CStarModule
 
 section Projective
 
-namespace CStarModule
+namespace TauCeti.CStarModule
 
 variable {A E ι : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [Module A E] [Norm E] [CStarModule A E]
-  {x : ι → E}
 
 /-- The analysis map `z ↦ (⟪x i, z⟫_A)_i` of a finite family, as an `A`-linear map to the free
 module `ι → A`. -/
 noncomputable def analysisLinearMap (x : ι → E) : E →ₗ[A] ι → A where
   toFun z i := inner A (x i) z
-  map_add' z w := by ext i; simp [CStarModule.inner_add_right]
+  map_add' z w := by ext i; simp [_root_.CStarModule.inner_add_right]
   map_smul' a z := by ext i; simp [inner_op_smul_right]
 
 @[simp]
 theorem analysisLinearMap_apply (x : ι → E) (z : E) (i : ι) :
     analysisLinearMap x z i = inner A (x i) z := (rfl)
 
-/-- For a Parseval frame, `Fintype.linearCombination A x` after `analysisLinearMap x` is the
-identity. -/
-theorem IsParsevalFrame.linearCombination_comp_analysisLinearMap [Fintype ι]
-    (hx : IsParsevalFrame A x) :
-    (Fintype.linearCombination A x).comp (analysisLinearMap x) = LinearMap.id :=
-  LinearMap.ext fun z ↦ by
-    simpa [Fintype.linearCombination_apply] using hx z
-
-end CStarModule
+end TauCeti.CStarModule
 
 variable {A E ι : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [Module A E] [Norm E] [CStarModule A E] [Fintype ι]
   {x : ι → E}
 
+/-- For a Parseval frame, `Fintype.linearCombination A x` after `analysisLinearMap x` is the
+identity. -/
+theorem CStarModule.IsParsevalFrame.linearCombination_comp_analysisLinearMap
+    (hx : IsParsevalFrame A x) :
+    (Fintype.linearCombination A x).comp (TauCeti.CStarModule.analysisLinearMap x) = LinearMap.id :=
+  LinearMap.ext fun z ↦ by
+    simpa [Fintype.linearCombination_apply] using hx z
+
 /-- Over a unital coefficient ring `A`, such as a unital C⋆-algebra, a C⋆-module with a finite
 Parseval frame is finitely generated as an algebraic `A`-module. -/
 theorem Module.Finite.of_isParsevalFrame (hx : IsParsevalFrame A x) : Module.Finite A E :=
   Module.Finite.of_surjective (Fintype.linearCombination A x) fun z ↦
-    ⟨CStarModule.analysisLinearMap x z,
+    ⟨TauCeti.CStarModule.analysisLinearMap x z,
       LinearMap.congr_fun hx.linearCombination_comp_analysisLinearMap z⟩
 
 /-- Over a unital coefficient ring `A`, such as a unital C⋆-algebra, a C⋆-module with a finite
@@ -568,7 +583,7 @@ Parseval frame is projective as an algebraic `A`-module: the analysis map splits
 from the free module `ι → A`. -/
 theorem Module.Projective.of_isParsevalFrame (hx : IsParsevalFrame A x) :
     Module.Projective A E :=
-  Module.Projective.of_split (CStarModule.analysisLinearMap x) (Fintype.linearCombination A x)
-    hx.linearCombination_comp_analysisLinearMap
+  Module.Projective.of_split (TauCeti.CStarModule.analysisLinearMap x)
+    (Fintype.linearCombination A x) hx.linearCombination_comp_analysisLinearMap
 
 end Projective

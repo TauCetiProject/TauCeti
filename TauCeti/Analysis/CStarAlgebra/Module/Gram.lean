@@ -35,8 +35,8 @@ for the comparison between finite frames and projections.
 * `TauCeti.CStarMatrix.sum_inner_smul_of_gram_eq_one`: a family with identity Gram matrix
   reconstructs every vector in its right `A`-linear span.
 * `CStarMatrix.gram_nonneg`: Gram matrices are positive.
-* `CStarMatrix.exists_gram_eq_one_of_isStrictlyPositive`: a finite family with strictly positive
-  Gram matrix can be renormalized to one with Gram matrix `1` spanning the same vectors.
+* `TauCeti.CStarMatrix.exists_gram_eq_one_of_isStrictlyPositive`: a finite family with strictly
+  positive Gram matrix can be renormalized to one with Gram matrix `1` spanning the same vectors.
 
 ## References
 
@@ -89,38 +89,6 @@ theorem gram_nonneg [Fintype n] (x : n → E) : 0 ≤ gram A x :=
     rw [sum_star_mul_gram_mul, unop_nonneg]
     exact CStarModule.inner_self_nonneg
 
-/-- Over a unital C⋆-algebra `A`, a finite family `y : n → E` with strictly positive Gram matrix
-`IsStrictlyPositive (gram A y)` can be renormalized by `B = CFC.sqrt (Ring.inverse (gram A y))`
-to a family `j ↦ ∑ k, op (B k j) • y k` with Gram matrix `1` spanning the same vectors. -/
-theorem exists_gram_eq_one_of_isStrictlyPositive [Fintype n] [DecidableEq n] {A E : Type*}
-    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-    [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E] {y : n → E}
-    (hM : IsStrictlyPositive (gram A y)) :
-    ∃ B S : CStarMatrix n n A, gram A (fun j ↦ ∑ k, op (B k j) • y k) = 1 ∧
-      ∀ k, ∑ j, op (S j k) • ∑ l, op (B l j) • y l = y k := by
-  have : ContinuousFunctionalCalculus ℝ (CStarMatrix n n A) IsSelfAdjoint :=
-    IsSelfAdjoint.instContinuousFunctionalCalculus
-  set M := gram A y
-  let S := CFC.sqrt M
-  let B := CFC.sqrt (Ring.inverse M)
-  have hBS : B * S = 1 := by
-    dsimp only [B, S]
-    rw [CFC.sqrt_ringInverse]
-    exact Ring.inverse_mul_cancel (CFC.sqrt M) (hM.sqrt M).isUnit
-  refine ⟨B, S, ?_, fun k ↦ ?_⟩
-  · ext i j
-    rw [gram_apply, ← sum_star_mul_gram_mul]
-    have hmul : (star B * M * B) i j = ∑ k, ∑ l, star (B k i) * M k l * B l j := by
-      simp only [mul_apply, star_apply, Finset.sum_mul, mul_assoc]
-      exact Finset.sum_comm
-    rw [← hmul, (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq, ← CFC.conjSqrt_apply,
-      CFC.conjSqrt_ringInverse_self M hM]
-  · simp only [Finset.smul_sum, smul_smul, ← op_mul]
-    rw [Finset.sum_comm]
-    simp_rw [← Finset.sum_smul, ← Finset.op_sum, ← mul_apply, hBS, one_apply, apply_ite op,
-      ite_smul]
-    simp
-
 end CStarMatrix
 
 namespace TauCeti.CStarMatrix
@@ -163,5 +131,39 @@ theorem sum_inner_smul_of_gram_eq_one {x : n → E} (hx : _root_.CStarMatrix.gra
   simp_rw [inner_sum_op_smul_of_gram_eq_one hx c]
 
 end UnitalAlgebraic
+
+/-- Over a unital C⋆-algebra `A`, a finite family `y : n → E` with strictly positive Gram matrix
+`IsStrictlyPositive (gram A y)` can be renormalized by `B = CFC.sqrt (Ring.inverse (gram A y))`
+to a family `j ↦ ∑ k, op (B k j) • y k` with Gram matrix `1` spanning the same vectors. -/
+theorem exists_gram_eq_one_of_isStrictlyPositive [Fintype n] [DecidableEq n] {A E : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [AddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E] {y : n → E}
+    (hM : IsStrictlyPositive (_root_.CStarMatrix.gram A y)) :
+    ∃ B S : _root_.CStarMatrix n n A,
+      _root_.CStarMatrix.gram A (fun j ↦ ∑ k, op (B k j) • y k) = 1 ∧
+      ∀ k, ∑ j, op (S j k) • ∑ l, op (B l j) • y l = y k := by
+  have : ContinuousFunctionalCalculus ℝ (_root_.CStarMatrix n n A) IsSelfAdjoint :=
+    IsSelfAdjoint.instContinuousFunctionalCalculus
+  set M := _root_.CStarMatrix.gram A y
+  let S := CFC.sqrt M
+  let B := CFC.sqrt (Ring.inverse M)
+  have hBS : B * S = 1 := by
+    dsimp only [B, S]
+    rw [CFC.sqrt_ringInverse]
+    exact Ring.inverse_mul_cancel (CFC.sqrt M) (hM.sqrt M).isUnit
+  refine ⟨B, S, ?_, fun k ↦ ?_⟩
+  · ext i j
+    rw [_root_.CStarMatrix.gram_apply, ← _root_.CStarMatrix.sum_star_mul_gram_mul]
+    have hmul : (star B * M * B) i j = ∑ k, ∑ l, star (B k i) * M k l * B l j := by
+      simp only [_root_.CStarMatrix.mul_apply, _root_.CStarMatrix.star_apply, Finset.sum_mul,
+        mul_assoc]
+      exact Finset.sum_comm
+    rw [← hmul, (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq, ← CFC.conjSqrt_apply,
+      CFC.conjSqrt_ringInverse_self M hM]
+  · simp only [Finset.smul_sum, smul_smul, ← op_mul]
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.sum_smul, ← Finset.op_sum, ← _root_.CStarMatrix.mul_apply, hBS,
+      _root_.CStarMatrix.one_apply, apply_ite op, ite_smul]
+    simp
 
 end TauCeti.CStarMatrix

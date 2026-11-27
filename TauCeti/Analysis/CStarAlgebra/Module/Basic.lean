@@ -47,8 +47,8 @@ Riesz theorem.
   `CStarModule.inner_map_map_iff_forall_inner_map_map_self`: complex-linear endomorphisms are
   determined by diagonal inner products `⟪x, T x⟫_A`, and a complex-linear map preserves all inner
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
-* `TauCeti.CStarModule.induced`, `Submodule.instCStarModule`: pullback `CStarModule`
-  structures along norm-preserving module injections and on `A`-submodules.
+* `TauCeti.CStarModule.induced`: pullback `CStarModule` structure along a norm-preserving
+  module injection.
 * `LinearMap.isometryOfInnerCStarModule`, `LinearEquiv.isometryOfInnerCStarModule`: construct
   linear isometries and isometric equivalences from diagonal inner-product preservation, without
   `[StarModule ℂ A]`.
@@ -68,9 +68,9 @@ Riesz theorem.
   `∀ a : A, ‖a • y‖ ≤ C * ‖a • x‖`, Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for
   any action-preserving function with pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded
   operator specialization `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`.
-* `CStarModule.tendsto_smul`, `CStarModule.tendsto_unitization_smul`: the action is essential,
-  `e x → x` along an approximate unit, and `(v.fst • e + v.snd * e) z → v.fst • z + v.snd • z`
-  for `v : Unitization ℂ A`.
+* `CStarModule.tendsto_smul`, `TauCeti.CStarModule.tendsto_unitization_smul`: the action is
+  essential, `e x → x` along an approximate unit, and
+  `(v.fst • e + v.snd * e) z → v.fst • z + v.snd • z` for `v : Unitization ℂ A`.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A` for right modules.
 * `CStarModule.isGreatest_norm_unop_inner`, `CStarModule.norm_op_smul_le`,
@@ -334,26 +334,16 @@ def induced (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
     (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) (x y : M) :
     @inner A M (induced g hg hA hnorm).toInner x y = inner A (g x) (g y) := (rfl)
 
+/-- The separated `NormedAddCommGroup` structure on a `CStarModule A E` over a (possibly
+non-unital) C⋆-algebra `A`, obtained from `CStarModule.norm_zero_iff`. -/
+noncomputable abbrev normedAddCommGroupOfCStarModule (A E : Type*) [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E] :
+    NormedAddCommGroup E :=
+  NormedAddCommGroup.ofSeparation fun x ↦ (_root_.CStarModule.norm_zero_iff A x).mp
+
 end TauCeti.CStarModule
 
 namespace CStarModule
-
-section Submodule
-
-variable {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E] [CStarModule A E]
-
-/-- Any `A`-submodule of a `CStarModule` over a unital coefficient ring inherits a `CStarModule`
-structure by restricting the inner product. -/
-instance _root_.Submodule.instCStarModule (S : Submodule A E) : CStarModule A S :=
-  TauCeti.CStarModule.induced (S.subtype.restrictScalars ℂ) Subtype.val_injective
-    (fun _ _ ↦ rfl) fun _ ↦ rfl
-
-/-- The `A`-valued inner product on a submodule agrees with that of the ambient `CStarModule`. -/
-@[simp] theorem _root_.Submodule.coe_inner_cstarModule (S : Submodule A E) (x y : S) :
-    inner A x y = inner A (x : E) (y : E) := (rfl)
-
-end Submodule
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
@@ -523,30 +513,38 @@ theorem tendsto_op_smul [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] {l : Filt
   rw [tendsto_map'_iff]
   simpa [Function.comp_def] using (continuous_op.tendsto (unop b)).comp (hl (unop b))
 
-/-- The action of `Unitization ℂ A` on a Hilbert C⋆-module is approximated along the approximate
-unit of `A` by `(v.fst • e + v.snd * e) • z → v.fst • z + v.snd • z`. -/
-theorem tendsto_unitization_smul [SMul A E] [CStarModule A E] (v : Unitization ℂ A) (z : E) :
-    Tendsto (fun e : A ↦ (v.fst • e + v.snd * e) • z)
-      (CStarAlgebra.approximateUnit A) (𝓝 (v.fst • z + v.snd • z)) := by
-  let : NormedSpace ℂ E := .ofCore (CStarModule.normedSpaceCore A)
-  have hsmul : Tendsto (· • z) (CStarAlgebra.approximateUnit A) (𝓝 z) :=
-    CStarModule.tendsto_smul (CStarAlgebra.increasingApproximateUnit A).tendsto_mul_right z
-  have hsnd : Tendsto (fun e : A ↦ v.snd • (e • z)) (CStarAlgebra.approximateUnit A)
-      (𝓝 (v.snd • z)) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun e ↦ ?_)
-      (by simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hsmul).const_mul ‖v.snd‖)
-    simpa [CStarModule.ext_inner_left (A := A) (x := v.snd • (e • z) - v.snd • z)
-      (y := v.snd • (e • z - z)) fun w ↦ by simp [mul_sub]] using
-      CStarModule.norm_smul_le v.snd (e • z - z)
-  refine ((hsmul.const_smul v.fst).add hsnd).congr fun e ↦ CStarModule.ext_inner_left (A := A)
-    fun w ↦ by simp [add_mul, mul_assoc, smul_mul_assoc]
-
 end Essential
 
 end CStarModule
 
 namespace TauCeti.CStarModule
+
+section Essential
+
+variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [Module ℂ E]
+
+/-- The action of `Unitization ℂ A` on a Hilbert C⋆-module is approximated along the approximate
+unit of `A` by `(v.fst • e + v.snd * e) • z → v.fst • z + v.snd • z`. -/
+theorem tendsto_unitization_smul [SMul A E] [CStarModule A E] (v : Unitization ℂ A) (z : E) :
+    Tendsto (fun e : A ↦ (v.fst • e + v.snd * e) • z)
+      (CStarAlgebra.approximateUnit A) (𝓝 (v.fst • z + v.snd • z)) := by
+  let : NormedSpace ℂ E := .ofCore (_root_.CStarModule.normedSpaceCore A)
+  have hsmul : Tendsto (· • z) (CStarAlgebra.approximateUnit A) (𝓝 z) :=
+    _root_.CStarModule.tendsto_smul
+      (CStarAlgebra.increasingApproximateUnit A).tendsto_mul_right z
+  have hsnd : Tendsto (fun e : A ↦ v.snd • (e • z)) (CStarAlgebra.approximateUnit A)
+      (𝓝 (v.snd • z)) := by
+    rw [tendsto_iff_norm_sub_tendsto_zero]
+    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun e ↦ ?_)
+      (by simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hsmul).const_mul ‖v.snd‖)
+    simpa [_root_.CStarModule.ext_inner_left (A := A) (x := v.snd • (e • z) - v.snd • z)
+      (y := v.snd • (e • z - z)) fun w ↦ by simp [mul_sub]] using
+      _root_.CStarModule.norm_smul_le v.snd (e • z - z)
+  refine ((hsmul.const_smul v.fst).add hsnd).congr fun e ↦
+    _root_.CStarModule.ext_inner_left (A := A) fun w ↦ by simp [add_mul, mul_assoc, smul_mul_assoc]
+
+end Essential
 
 /-- Right finite-sum inner product `⟪x, ∑ i ∈ s, y i⟫_A = ∑ i ∈ s, ⟪x, y i⟫_A`, without requiring
 `[StarModule ℂ A]` (compare Mathlib's `CStarModule.inner_sum_right`). -/
@@ -665,9 +663,9 @@ theorem inner_self_le_of_norm_smul_le {E F : Type*} [AddCommGroup E] [Module ℂ
         (isStrictlyPositive_algebraMap hε))
       (le_add_of_nonneg_right (isStrictlyPositive_algebraMap hε).nonneg)
       (le_of_tendsto_of_tendsto'
-        (_root_.CStarModule.tendsto_unitization_smul
+        (tendsto_unitization_smul
           (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) y).norm
-        ((_root_.CStarModule.tendsto_unitization_smul
+        ((tendsto_unitization_smul
           (CFC.sqrt (q + algebraMap ℝ (Unitization ℂ A) ε)⁻¹ʳ) x).norm.const_mul C)
         fun e ↦ h _))
 

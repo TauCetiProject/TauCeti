@@ -70,8 +70,7 @@ theorem continuous_rightInverse_of_comp_eq_id_of_finite_pi_cstarModule {ι : Typ
   let : Fintype ι := Fintype.ofFinite ι
   have : IsScalarTower ℂ Aᵐᵒᵖ E := CStarModule.isScalarTower Aᵐᵒᵖ E
   have : IsScalarTower ℂ Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) := CStarModule.isScalarTower _ _
-  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun x ↦
-    (CStarModule.norm_zero_iff Aᵐᵒᵖ x).mp
+  let : NormedAddCommGroup E := TauCeti.CStarModule.normedAddCommGroupOfCStarModule Aᵐᵒᵖ E
   refine (g.restrictScalars ℂ).continuous_of_isClosed_graph ?_
   rw [coe_graph_eq_of_comp_eq_id (f.restrictScalars ℂ) (g.restrictScalars ℂ)
     (LinearMap.ext fun z ↦ LinearMap.congr_fun hfg z)]

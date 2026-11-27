@@ -11,6 +11,7 @@ public import TauCeti.Analysis.CStarAlgebra.Module.Gram
 public import TauCeti.Analysis.CStarAlgebra.Module.Self
 
 import Mathlib.Topology.Instances.Matrix
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Column-vector action of `CStarMatrix` on finite right Hilbert C⋆-modules
@@ -113,10 +114,6 @@ theorem mulVecCLM_op_smul (M : CStarMatrix m n A) (a : A) (v : C⋆ᵐᵒᵈ(A�
     mulVecCLM M (mulVecCLM N v) = mulVecCLM (M * N) v :=
   congrFun (congrArg DFunLike.coe (mulVecCLM_comp_mulVecCLM M N)) v
 
-theorem _root_.IsIdempotentElem.mulVecCLM {p : CStarMatrix n n A}
-    (hp : IsIdempotentElem p) : IsIdempotentElem (mulVecCLM p) := by
-  rw [IsIdempotentElem, ContinuousLinearMap.mul_def, mulVecCLM_comp_mulVecCLM, hp.eq]
-
 end Normed
 
 section CStar
@@ -190,17 +187,12 @@ theorem mulVecLinearMap_apply [Ring A] (M : CStarMatrix m n A) (v : C⋆ᵐᵒ�
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     (mulVecLinearMap M).comp (mulVecLinearMap N) = mulVecLinearMap (M * N) := by
   ext1 v
-  simp only [LinearMap.comp_apply, mulVecLinearMap_apply, Equiv.apply_symm_apply,
-    Matrix.mulVec_mulVec, ofMatrix_symm_mul]
+  simp [mulVecLinearMap, ofMatrix_symm_mul, Matrix.mulVecBilin_mul]
 
 @[simp] theorem mulVecLinearMap_mulVecLinearMap [Fintype m] [Ring A]
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, n → A)) :
     mulVecLinearMap M (mulVecLinearMap N v) = mulVecLinearMap (M * N) v :=
   LinearMap.congr_fun (mulVecLinearMap_comp_mulVecLinearMap M N) v
-
-theorem _root_.IsIdempotentElem.mulVecLinearMap [Ring A] {p : CStarMatrix n n A}
-    (hp : IsIdempotentElem p) : IsIdempotentElem (mulVecLinearMap p) := by
-  rw [IsIdempotentElem, Module.End.mul_eq_comp, mulVecLinearMap_comp_mulVecLinearMap, hp.eq]
 
 /-- Over a unital C⋆-algebra, the Gram matrix of the columns `j ↦ mulVecCLM M (e j)` of a matrix
 `M : CStarMatrix m n A` is `M.conjTranspose * M`. -/
