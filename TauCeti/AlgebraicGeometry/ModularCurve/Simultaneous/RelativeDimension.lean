@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
 import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 
 /-!
@@ -67,8 +68,6 @@ theorem smoothOfRelativeDimension_of_representableBy {P Q : ModuliProblem B} {U 
     rw [EllObj.baseChangeFunctorHom_base]
     exact DQ.hasProperty_iff.mp hsQ U
   have ha₂ : RQ.homEquiv a₂ = (S.homEquiv (𝟙 _)).1 := RQ.homEquiv.apply_symm_apply _
-  have : MorphismProperty.RespectsIso @Etale.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
   have : Etale a₂.base := DP.mem_base_of_forget_snd RQ S a₂ ha₂ (DP.hasProperty_iff.mp heP V)
   have hW : SmoothOfRelativeDimension (0 + n) (a₂.base ≫ V.structureMap) := inferInstance
   have : SmoothOfRelativeDimension n (a₁.base ≫ U.structureMap) := by

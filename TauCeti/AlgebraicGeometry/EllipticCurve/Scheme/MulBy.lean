@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.OfWeierstrass
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
@@ -386,6 +387,34 @@ section Multiples
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic] {x y : R}
   (h : W.toAffine.Equation x y)
+
+/-- **Doubling an affine point on the projective model.** Let `(x, y)` and `(x', y')` be solutions
+of the affine Weierstrass equation over a commutative ring `R`, with `ψ₂(x, y)` a unit. Then
+`2[x : y : 1] = [x' : y' : 1]` in the projective model over `Spec R` if and only if
+`dblXYZ [x : y : 1] = ψ₂(x, y)³ • [x' : y' : 1]`. -/
+theorem projModelAffinePoint_projModelMulBy_two_eq_iff {x' y' : R}
+    (hψ₂ : IsUnit (W.ψ₂.evalEval x y)) (h' : W.toAffine.Equation x' y') :
+    W.projModelAffinePoint h ≫ W.projModelMulBy 2 = W.projModelAffinePoint h' ↔
+      W.toProjective.dblXYZ ![x, y, 1] = W.ψ₂.evalEval x y ^ 3 • ![x', y', 1] := by
+  -- `W.map (RingHom.id R)` is `W` only up to unfolding `Projective.map`, so it is rewritten away
+  have hW : W.toProjective.map (RingHom.id R) = W.toProjective := W.map_id
+  have hE : W.toProjective.Equation ![x, y, 1] := (Projective.equation_some _ _).mpr h
+  have hdbl : (W.toProjective.map (RingHom.id R)).dblAddXYZ ![x, y, 1] ![x, y, 1] =
+      W.toProjective.dblXYZ ![x, y, 1] := by
+    rw [Projective.dblAddXYZ_self (hW ▸ hE), hW]
+  have hm : IsUnit ((W.toProjective.map (RingHom.id R)).dblAddXYZ ![x, y, 1] ![x, y, 1] 2) := by
+    rw [hdbl, Projective.dblXYZ_some h]
+    simpa using hψ₂.pow 3
+  rw [comp_projModelMulBy_two, projModelAffinePoint_def, projModelAffinePoint_def,
+    lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ (hm := hm),
+    projModelPoint_eq_projModelPoint_iff, hdbl]
+  refine ⟨fun ⟨_, u, hu⟩ ↦ ?_, fun heq ↦ ⟨rfl, (hψ₂.pow 3).unit, by simpa using heq⟩⟩
+  have hdz : W.toProjective.dblXYZ ![x, y, 1] 2 = W.ψ₂.evalEval x y ^ 3 := by
+    rw [Projective.dblXYZ_some h]
+    simp
+  have hu2 : (u : R) = W.ψ₂.evalEval x y ^ 3 := by
+    simpa [hdz, Units.smul_def] using (congrFun hu 2).symm
+  exact hu.trans (by ext i; simp [Units.smul_def, hu2])
 
 /-- **Points killed by `2`.** Let `W` be an elliptic Weierstrass curve over a commutative ring `R`
 and `(x, y)` a solution of its affine equation over `R`. The point `[x : y : 1]` of the projective

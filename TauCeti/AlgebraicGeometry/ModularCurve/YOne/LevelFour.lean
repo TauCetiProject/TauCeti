@@ -70,21 +70,27 @@ theorem exactOrderOpens_four : exactOrderOpens.{u} 4 = ⊤ := by
   · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero t heq
   · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero t heq
 
+-- An isomorphism `X ≅ Y` over `Z` from mutual factorizations through two monomorphisms
+-- `i : X ⟶ Z` and `j : Y ⟶ Z`.
+private def isoOverOfMutualFactor {X Y Z : Scheme.{u}} {i : X ⟶ Z} {j : Y ⟶ Z}
+    [Mono i] [Mono j] (f : X ⟶ Y) (hf : f ≫ j = i) (g : Y ⟶ X) (hg : g ≫ i = j) :
+    X ≅ Y where
+  hom := f
+  inv := g
+  hom_inv_id := by rw [← cancel_mono i, Category.assoc, hg, hf, Category.id_comp]
+  inv_hom_id := by rw [← cancel_mono j, Category.assoc, hf, hg, Category.id_comp]
+
 /-- Over `ℤ`, the immersion from naive `Y₁(4)` into `Spec ℤ[A, B][Δ⁻¹]` is a closed
 immersion: since `(0, 0)`, `2 • (0, 0)`, and `3 • (0, 0)` miss the zero section everywhere,
 `yOne 4` is isomorphic over `Spec ℤ[A, B][Δ⁻¹]` to `torsionLocus 4`. -/
 instance isClosedImmersion_yOneι_four : IsClosedImmersion (yOneι.{u} 4) := by
-  have h₁ : ∃ f : yOne.{u} 4 ⟶ torsionLocus.{u} 4, f ≫ torsionLocusι 4 = yOneι 4 :=
-    (exists_comp_torsionLocusι_eq_iff _ 4).mpr
-      ((exists_comp_yOneι_eq_iff (yOneι.{u} 4) 4).mp ⟨𝟙 _, Category.id_comp _⟩).1
-  have h₂ : ∃ g : torsionLocus.{u} 4 ⟶ yOne.{u} 4, g ≫ yOneι 4 = torsionLocusι 4 :=
-    (exists_comp_yOneι_eq_iff (torsionLocusι.{u} 4) 4).mpr
-      ⟨(exists_comp_torsionLocusι_eq_iff _ 4).mp ⟨𝟙 _, Category.id_comp _⟩, fun _ ↦ by simp⟩
-  have heq : Subobject.mk (yOneι.{u} 4) = Subobject.mk (torsionLocusι.{u} 4) :=
-    le_antisymm (Subobject.mk_le_mk_of_comm h₁.choose h₁.choose_spec)
-      (Subobject.mk_le_mk_of_comm h₂.choose h₂.choose_spec)
-  have : IsIso (Subobject.isoOfMkEqMk (yOneι.{u} 4) (torsionLocusι.{u} 4) heq).hom := inferInstance
-  rw [← Subobject.ofMkLEMk_comp heq.le, ← Subobject.isoOfMkEqMk_hom (yOneι.{u} 4) _ heq]
+  obtain ⟨f, hf⟩ := (exists_comp_torsionLocusι_eq_iff _ 4).mpr
+    ((exists_comp_yOneι_eq_iff (yOneι.{u} 4) 4).mp ⟨𝟙 _, Category.id_comp _⟩).1
+  obtain ⟨g, hg⟩ := (exists_comp_yOneι_eq_iff (torsionLocusι.{u} 4) 4).mpr
+    ⟨(exists_comp_torsionLocusι_eq_iff _ 4).mp ⟨𝟙 _, Category.id_comp _⟩, fun _ ↦ by simp⟩
+  let e := isoOverOfMutualFactor f hf g hg
+  have : IsIso f := (inferInstance : IsIso e.hom)
+  rw [← hf]
   infer_instance
 
 /-- Naive `Y₁(4)` over `ℤ` is affine. -/
@@ -101,20 +107,12 @@ private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
   obtain ⟨φ, hφ⟩ := Spec.map_surjective (X.isoSpec.inv ≫ f)
   have hN : Spec.map φ ≫ (pointHom.{u} ^ 4).left = Spec.map φ ≫ curveGeom.zero := by
     rw [hφ, Category.assoc, hf, Category.assoc]
-  have ha₁ : φ.hom WeierstrassCurve.UniversalTate.curveULift.a₁ = 1 :=
-    (specMap_comp_pointHom_pow_four_eq_zero_iff φ.hom).mp hN
-  obtain ⟨hΔ', hφeq⟩ := WeierstrassCurve.UniversalTate.eq_liftULift φ.hom
-  have hΔ : IsUnit (tateNormalForm 1 (φ.hom WeierstrassCurve.UniversalTate.curveULift.a₃)).Δ :=
-    ha₁ ▸ hΔ'
-  let ψ : CommRingCat.of (ULift.{u} UniversalGammaOneFour.Ring) ⟶ Γ(X, ⊤) :=
-    CommRingCat.ofHom (UniversalGammaOneFour.liftULift hΔ)
-  have hcomp : CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift ≫ ψ = φ := by
-    refine CommRingCat.hom_ext ?_
-    simp only [ψ, CommRingCat.hom_comp, CommRingCat.hom_ofHom,
-      UniversalGammaOneFour.liftULift_comp_toUniversalTate_ulift,
-      ← WeierstrassCurve.UniversalTate.liftULift_congr hΔ' hΔ ha₁ rfl, ← hφeq]
-  refine ⟨X.isoSpec.hom ≫ Spec.map ψ, ?_⟩
-  rw [Category.assoc, ← Spec.map_comp, hcomp, hφ, Iso.hom_inv_id_assoc]
+  obtain ⟨ψ, ⟨hcomp, -⟩, -⟩ :=
+    (UniversalGammaOneFour.existsUnique_comp_toUniversalTate_ulift_iff φ.hom).mpr
+      ((specMap_comp_pointHom_pow_four_eq_zero_iff φ.hom).mp hN)
+  refine ⟨X.isoSpec.hom ≫ Spec.map (CommRingCat.ofHom ψ), ?_⟩
+  rw [Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp, hcomp, CommRingCat.ofHom_hom,
+    hφ, Iso.hom_inv_id_assoc]
 
 private theorem exists_yOneFourToSpec :
     ∃ hom : yOne.{u} 4 ⟶ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)),
@@ -139,26 +137,17 @@ private instance epi_toUniversalTate_ulift :
     UniversalGammaOneFour.toUniversalTate_ulift_a₃] using h'
 
 private instance mono_specMap_toUniversalTate_ulift :
-    Mono (Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift.{u, u})) := by
-  have : Mono (Opposite.op (ConcreteCategory.ofHom
-      UniversalGammaOneFour.toUniversalTate.ulift.{u, u})) :=
-    ⟨fun _ _ h ↦ Quiver.Hom.unop_inj
-      ((cancel_epi (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift.{u, u})).mp
-        (by simpa using congrArg Quiver.Hom.unop h))⟩
-  exact Scheme.Spec.map_mono _
-
-private theorem mk_yOneι_four_eq :
-    Subobject.mk (yOneι.{u} 4) =
-      Subobject.mk (Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift)) :=
-  le_antisymm
-    (Subobject.mk_le_mk_of_comm exists_yOneFourToSpec.choose exists_yOneFourToSpec.choose_spec)
-    (Subobject.mk_le_mk_of_comm exists_specToYOneFour.choose exists_specToYOneFour.choose_spec)
+    Mono (Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift.{u, u})) :=
+  have : Mono (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift.{u, u}).op :=
+    CategoryTheory.op_mono_of_epi _
+  Scheme.Spec.map_mono (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift.{u, u}).op
 
 /-- **Naive `Y₁(4)` over `ℤ` is `Spec ℤ[B, (B(1 - 16B))⁻¹]`** (agreeing with Drinfeld `Y₁(4)`
 where `4` is invertible). -/
 noncomputable def yOneFourIso :
     yOne.{u} 4 ≅ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)) :=
-  Subobject.isoOfMkEqMk _ _ mk_yOneι_four_eq
+  isoOverOfMutualFactor exists_yOneFourToSpec.choose exists_yOneFourToSpec.choose_spec
+    exists_specToYOneFour.choose exists_specToYOneFour.choose_spec
 
 /-- Under `yOneFourIso.hom`, the specialization map `A = 1` recovers the closed immersion
 `yOneι 4 : yOne 4 ⟶ Spec ℤ[A, B][Δ⁻¹]` of naive `Y₁(4)`. -/
@@ -166,16 +155,16 @@ noncomputable def yOneFourIso :
 theorem yOneFourIso_hom_SpecMap :
     yOneFourIso.{u}.hom ≫
         Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) =
-      yOneι.{u} 4 := by
-  simp [yOneFourIso]
+      yOneι.{u} 4 :=
+  exists_yOneFourToSpec.choose_spec
 
 /-- Under `yOneFourIso.inv`, the closed immersion `yOneι 4` is the spectrum of the specialization
 map `A = 1`. -/
 @[reassoc (attr := simp)]
 theorem yOneFourIso_inv_yOneι :
     yOneFourIso.{u}.inv ≫ yOneι.{u} 4 =
-      Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) := by
-  simp [yOneFourIso]
+      Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) :=
+  exists_specToYOneFour.choose_spec
 
 /-- Naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/
 instance smoothOfRelativeDimension_one_terminal_from_yOne_four :

@@ -205,18 +205,9 @@ theorem tateNormalForm_projModelMulBy_two_zero :
   set W := tateNormalForm a b
   have hb : IsUnit b := isUnit_of_isUnit_tateNormalForm_Δ W.isUnit_Δ
   have h₀ : W.toAffine.Equation 0 0 := equation_tateNormalForm_zero a b
-  have hW : W.toProjective.map (RingHom.id R) = W.toProjective := W.map_id
-  have hE : W.toProjective.Equation ![0, 0, 1] := (Projective.equation_some _ _).mpr h₀
-  have hdbl : (W.toProjective.map (RingHom.id R)).dblAddXYZ ![0, 0, 1] ![0, 0, 1] =
-      W.toProjective.dblXYZ ![0, 0, 1] := by
-    rw [Projective.dblAddXYZ_self (hW ▸ hE), hW]
-  have hm : IsUnit ((W.toProjective.map (RingHom.id R)).dblAddXYZ ![0, 0, 1] ![0, 0, 1] 2) := by
-    rw [hdbl, Projective.dblXYZ_some h₀]
-    simpa [W] using hb.pow 3
-  rw [comp_projModelMulBy_two, projModelAffinePoint_def, projModelAffinePoint_def,
-    lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ (hm := hm),
-    projModelPoint_eq_projModelPoint_iff, hdbl, Projective.dblXYZ_some h₀]
-  refine ⟨rfl, (hb.pow 3).unit, ?_⟩
+  have hψ₂ : IsUnit (W.ψ₂.evalEval 0 0) := by simpa [W] using hb
+  rw [projModelAffinePoint_projModelMulBy_two_eq_iff h₀ hψ₂
+    (equation_tateNormalForm_neg_mul_sub_one a b), Projective.dblXYZ_some h₀]
   ext i
   fin_cases i
   · simp [W]

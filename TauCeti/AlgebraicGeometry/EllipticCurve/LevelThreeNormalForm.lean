@@ -778,9 +778,13 @@ namespace UniversalLevelThree
 
 open MvPolynomial (X)
 
+/-- The defining polynomial `ζ² + ζ + 1` of the universal level-three coefficient ring. -/
+noncomputable abbrev definingPoly : MvPolynomial (Fin 2) ℤ :=
+  X 1 ^ 2 + X 1 + 1
+
 /-- The ring `ℤ[μ, ζ] / (ζ² + ζ + 1)`, with `μ = X 0` and `ζ = X 1`. -/
 abbrev PolyRing : Type :=
-  MvPolynomial (Fin 2) ℤ ⧸ Ideal.span {(X 1 ^ 2 + X 1 + 1 : MvPolynomial (Fin 2) ℤ)}
+  MvPolynomial (Fin 2) ℤ ⧸ Ideal.span {definingPoly}
 
 /-- The level-three normal form over `ℤ[μ, ζ] / (ζ² + ζ + 1)`, with parameter the class of `μ`. -/
 noncomputable abbrev polyCurve : WeierstrassCurve PolyRing :=
@@ -794,29 +798,31 @@ abbrev Ring : Type := Localization.Away polyCurve.Δ
 standard smooth of relative dimension `1` over `ℤ`. -/
 instance isStandardSmoothOfRelativeDimension :
     Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ Ring := by
-  -- In `ℤ[μ, ζ] / (ζ² + ζ + 1)`, the partial derivative `2ζ + 1` divides `Δ = 27(μ³ - 1)³` via
-  -- `(2ζ + 1)² = -3`, so `Ring` is a principal localization of the standard-smooth hypersurface
-  -- localization away from `2ζ + 1`.
-  let g : MvPolynomial (Fin 2) ℤ := MvPolynomial.X 1 ^ 2 + MvPolynomial.X 1 + 1
-  let δ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.pderiv 1 g)
+  -- In `ℤ[μ, ζ] / (ζ² + ζ + 1)`, the partial derivative `δ = 2ζ + 1` satisfies `δ² = -3`, so
+  -- `δ` divides `Δ = 27(μ³ - 1)³`, and `Ring` is a principal localization of the standard-smooth
+  -- hypersurface localization away from `δ`.
+  let δ : PolyRing := Ideal.Quotient.mk (Ideal.span {definingPoly})
+    (MvPolynomial.pderiv 1 definingPoly)
   let S := Localization.Away δ
   have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ S := by
-    simpa using MvPolynomial.isStandardSmoothOfRelativeDimension_localizationAway_pderiv g 1
-  let μ₀ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.X 0)
-  let ζ₀ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.X 1)
+    simpa using MvPolynomial.isStandardSmoothOfRelativeDimension_localizationAway_pderiv
+      definingPoly 1
+  let μ₀ : PolyRing := Ideal.Quotient.mk (Ideal.span {definingPoly}) (MvPolynomial.X 0)
+  let ζ₀ : PolyRing := Ideal.Quotient.mk (Ideal.span {definingPoly}) (MvPolynomial.X 1)
   let y : PolyRing := -δ ^ 5 * (μ₀ ^ 3 - 1) ^ 3
   have hζ₀ : ζ₀ ^ 2 + ζ₀ + 1 = 0 := by
-    simpa only [ζ₀, g, map_add, map_pow, map_one] using
-      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self g)
+    simpa only [ζ₀, definingPoly, map_add, map_pow, map_one] using
+      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self definingPoly)
   have hδ : δ = 2 * ζ₀ + 1 := by
-    simp only [δ, ζ₀, g, sq, Fin.isValue, map_add, Derivation.leibniz, MvPolynomial.pderiv_X,
-      Pi.single_eq_same, smul_eq_mul, mul_one, Derivation.map_one_eq_zero, add_zero, map_one]
-    ring
+    simp [δ, ζ₀, definingPoly, MvPolynomial.pderiv_X, map_ofNat]
+  have hδsq : δ ^ 2 = -3 := by
+    rw [hδ]
+    linear_combination 4 * hζ₀
   have hδy : δ * y = polyCurve.Δ := by
-    dsimp only [y]
-    rw [levelThreeNormalForm_Δ, hδ]
-    linear_combination -4 * ((2 * ζ₀ + 1) ^ 4 - 3 * (2 * ζ₀ + 1) ^ 2 + 9) *
-      (μ₀ ^ 3 - 1) ^ 3 * hζ₀
+    calc
+      δ * y = -(δ ^ 2) ^ 3 * (μ₀ ^ 3 - 1) ^ 3 := by dsimp only [y]; ring
+      _ = 27 * (μ₀ ^ 3 - 1) ^ 3 := by rw [hδsq]; ring
+      _ = polyCurve.Δ := by rw [levelThreeNormalForm_Δ]
   let T := Localization.Away (algebraMap PolyRing S y)
   have : Algebra.IsStandardSmoothOfRelativeDimension 0 S T :=
     Algebra.IsStandardSmoothOfRelativeDimension.localization_away (S := T) (algebraMap PolyRing S y)
