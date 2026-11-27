@@ -27,8 +27,15 @@ coefficient-dominance criteria of `TauCeti.LinearAlgebra.RootSystem.CoefficientR
 The arguments follow the type `C` file
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Positive`.
 
+## Main definitions
+
+* `TauCeti.DynkinType.typeASimpleSupportEquiv`: the labelling of the simple roots of the pinned base
+  by the Bourbaki nodes.
+
 ## Main results
 
+* `TauCeti.DynkinType.cartanMatrix_typeASimpleSupportEquiv`: this labelling realizes the Cartan
+  matrix `Aₙ`.
 * `TauCeti.DynkinType.rootCoefficients_typeASimplyConnectedBase`: the coefficients of a root are
   the coordinates of its coroot.
 * `TauCeti.DynkinType.isPos_typeAIndexEquiv_iff`: `e_a - e_b` is positive exactly when `a < b`.
@@ -56,11 +63,28 @@ variable {n : ℕ}
 local notation "P" => typeASimplyConnectedRootDatum n
 local notation "b" => typeASimplyConnectedBase n
 
-private def simpleEquiv (n : ℕ) : Fin n ≃ (typeASimplyConnectedBase n).support where
+/-- The simple roots of the pinned base of type `Aₙ`, labelled by the Bourbaki nodes: the node `i`
+carries the simple root `e_i - e_{i+1}` at the root index `typeASimpleIndex n i`. -/
+def typeASimpleSupportEquiv (n : ℕ) : Fin n ≃ (typeASimplyConnectedBase n).support where
   toFun i := ⟨typeASimpleIndex n i, by simp⟩
   invFun j := ⟨j, mem_typeASimplyConnectedBase_support.mp j.property⟩
   left_inv _ := Fin.ext (by simp)
   right_inv _ := Subtype.ext (Fin.ext (by simp))
+
+/-- The node `i` labels the simple root at the root index `typeASimpleIndex n i`. -/
+@[simp]
+theorem coe_typeASimpleSupportEquiv (i : Fin n) :
+    (typeASimpleSupportEquiv n i : Fin (n * (n + 1))) = typeASimpleIndex n i :=
+  (rfl)
+
+/-- **The labelling of the pinned base by the Bourbaki nodes realizes the Cartan matrix `Aₙ`.** -/
+theorem cartanMatrix_typeASimpleSupportEquiv (i j : Fin n) :
+    (b).cartanMatrix (typeASimpleSupportEquiv n i) (typeASimpleSupportEquiv n j) =
+      CartanMatrix.A n i j := by
+  have h := (b).algebraMap_cartanMatrixIn_apply ℤ (typeASimpleSupportEquiv n i)
+    (typeASimpleSupportEquiv n j)
+  rwa [coe_typeASimpleSupportEquiv, coe_typeASimpleSupportEquiv, pairing_typeASimpleIndex,
+    Algebra.algebraMap_self, RingHom.id_apply] at h
 
 /-- The coroot potential `[a ≤ k]` of `e_a` maps under the Cartan matrix to `e_a - e_n`, by
 telescoping along the simple coroots `Pi.single i 1`, whose Cartan images are the simple roots. -/
@@ -112,8 +136,8 @@ theorem rootCoefficients_typeASimplyConnectedBase (j : Fin (n * (n + 1))) (k : F
 theorem rootCoefficients_typeA_le_one (j : Fin (n * (n + 1))) (k : (b).support) :
     (b).rootCoefficients j k ≤ 1 := by
   obtain ⟨p, rfl⟩ := (typeAIndexEquiv n).surjective j
-  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-  simp only [simpleEquiv, Equiv.coe_fn_mk, rootCoefficients_typeASimplyConnectedBase,
+  obtain ⟨i, rfl⟩ := (typeASimpleSupportEquiv n).surjective k
+  simp only [typeASimpleSupportEquiv, Equiv.coe_fn_mk, rootCoefficients_typeASimplyConnectedBase,
     coroot_typeAIndexEquiv]
   split_ifs <;> norm_num
 
@@ -135,8 +159,8 @@ theorem isPos_typeAIndexEquiv_iff (p : TypeAIndex n) :
     simp only [Fin.le_def, Fin.val_castSucc] at h₀
     split_ifs at h₀ <;> omega
   · intro hlt k
-    obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-    simp only [simpleEquiv, Equiv.coe_fn_mk, Pi.zero_apply,
+    obtain ⟨i, rfl⟩ := (typeASimpleSupportEquiv n).surjective k
+    simp only [typeASimpleSupportEquiv, Equiv.coe_fn_mk, Pi.zero_apply,
       rootCoefficients_typeASimplyConnectedBase, coroot_typeAIndexEquiv]
     simp only [Fin.lt_def] at hlt
     split_ifs <;> simp_all only [Fin.le_def] <;> omega
@@ -147,8 +171,8 @@ theorem highestRoot_typeASimplyConnectedBase [NeZero n] :
     (b).highestRoot = typeAIndexEquiv n ⟨(0, Fin.last n), Fin.last_pos'.ne⟩ := by
   refine ((b).eq_highestRoot_of_forall_rootCoefficients_le fun j k ↦ ?_).symm
   refine (rootCoefficients_typeA_le_one j k).trans_eq (Eq.symm ?_)
-  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-  simp [simpleEquiv, Fin.le_def]
+  obtain ⟨i, rfl⟩ := (typeASimpleSupportEquiv n).surjective k
+  simp [typeASimpleSupportEquiv, Fin.le_def]
 
 /-- The coroot of the highest root of type `Aₙ` has all simple-coroot coordinates equal to `1`. -/
 @[simp]
@@ -163,8 +187,8 @@ theorem coroot_highestRoot_typeASimplyConnectedBase [NeZero n] :
 theorem rootCoefficients_highestRoot_typeA [NeZero n] :
     (b).rootCoefficients (b).highestRoot = 1 := by
   ext k
-  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-  simp [simpleEquiv]
+  obtain ⟨i, rfl⟩ := (typeASimpleSupportEquiv n).surjective k
+  simp [typeASimpleSupportEquiv]
 
 /-- The highest root of the integral type `Aₙ` datum lies above every root in the positive root
 cone. No integral spanning or irreducibility assumption is needed. -/
@@ -177,7 +201,7 @@ theorem root_highestRoot_sub_mem_posRootCone_typeA [NeZero n] (j : Fin (n * (n +
 @[simp]
 theorem height_highestRoot_typeASimplyConnectedBase [NeZero n] :
     (b).height (b).highestRoot = n := by
-  rw [← (b).sum_rootCoefficients_eq_height, ← (simpleEquiv n).sum_comp]
+  rw [← (b).sum_rootCoefficients_eq_height, ← (typeASimpleSupportEquiv n).sum_comp]
   simp
 
 end TauCeti.DynkinType
