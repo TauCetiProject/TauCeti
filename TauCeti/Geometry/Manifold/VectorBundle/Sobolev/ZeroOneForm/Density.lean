@@ -27,10 +27,10 @@ and `1 ≤ p < ∞`.
   (`TauCeti.dense_ofContMDiffSection_zeroOneSobolevSections`): the `(0,1)`-projection of the
   Sobolev form of a smooth one-form `σ` is the Sobolev form of its pointwise `(0,1)`-part
   `x ↦ (σ x)^{0,1}` (`TauCeti.zeroOnePartSobolevL_ofContMDiffSection`,
-  `TauCeti.zeroOnePartContMDiffSection`), and smooth one-forms are dense. So continuous maps out
-  of the Sobolev `(0,1)`-forms are determined by their values on smooth `(0,1)`-forms
-  (`TauCeti.eq_of_forall_ofContMDiffSection_zeroOneSobolevSections`), as used for extending
-  identities such as Green's formula from smooth forms.
+  `TauCeti.SmoothAlmostComplexStructure.zeroOnePartContMDiffSection`), and smooth one-forms are
+  dense. With `Continuous.ext_on`, continuous maps out of the Sobolev `(0,1)`-forms are determined
+  by their values on smooth `(0,1)`-forms, as used for extending identities such as Green's
+  formula from smooth forms.
 -/
 
 
@@ -74,29 +74,6 @@ open SmoothAlmostComplexStructure
 
 variable [∀ x, ContinuousSMul ℂ (V x)]
 
-/-- The `(0,1)`-part `x ↦ (σ x)^{0,1}` of a `C^n` `V`-valued one-form, as a `C^n` one-form. -/
-@[expose]
-def zeroOnePartContMDiffSection {n : ℕ∞ω} (hn : n ≤ (∞ : ℕ∞ω))
-    (σ : Cₛ^n⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯) :
-    Cₛ^n⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯ :=
-  ⟨fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (σ x),
-    ((ofComplexManifold ℂ M).contMDiff_totalSpace_zeroOnePart (F := F) (V := V) hn).comp
-      σ.contMDiff⟩
-
-omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-@[simp]
-theorem zeroOnePartContMDiffSection_apply {n : ℕ∞ω} (hn : n ≤ (∞ : ℕ∞ω))
-    (σ : Cₛ^n⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯) (x : M) :
-    zeroOnePartContMDiffSection hn σ x = (ofComplexManifold ℂ M).zeroOnePart (σ x) :=
-  rfl
-
-omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- The pointwise `(0,1)`-part of a one-form consists of `(0,1)`-forms. -/
-theorem isZeroOneForm_zeroOnePartContMDiffSection {n : ℕ∞ω} (hn : n ≤ (∞ : ℕ∞ω))
-    (σ : Cₛ^n⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯) (x : M) :
-    (ofComplexManifold ℂ M).IsZeroOneForm (zeroOnePartContMDiffSection hn σ x) :=
-  (ofComplexManifold ℂ M).isZeroOneForm_zeroOnePart (σ x)
-
 omit [T2Space M] in
 /-- **The `(0,1)`-projection of a `Cᵏ` one-form** is the Sobolev form of its pointwise
 `(0,1)`-part. -/
@@ -105,18 +82,19 @@ theorem zeroOnePartSobolevL_ofContMDiffSection
     (zeroOnePartSobolevL A μ p k (SobolevSection.ofContMDiffSection A.tangentHom μ p k σ) :
         SobolevSection A.tangentHom μ p k) =
       SobolevSection.ofContMDiffSection A.tangentHom μ p k
-        (zeroOnePartContMDiffSection (mod_cast le_top) σ) := by
+        ((ofComplexManifold ℂ M).zeroOnePartContMDiffSection (mod_cast le_top) σ) := by
   refine SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ ?_
-  have h1 := chartValueL_zeroOnePartSobolevL_ae (A := A) (μ := μ) (p := p) (k := k)
-    (SobolevSection.ofContMDiffSection A.tangentHom μ p k σ) i
-  have h2 := (SobolevSection.chartValueL_ofContMDiffSection_ae A.tangentHom μ p k σ i).filter_mono
-    (ae_mono (Measure.restrict_mono (A.tangentHom.sectionChartData_image i).le le_rfl))
-  have h3 := (SobolevSection.chartValueL_ofContMDiffSection_ae A.tangentHom μ p k
-    (zeroOnePartContMDiffSection (mod_cast le_top) σ) i).filter_mono
+  -- The chart data of a smooth form are almost everywhere on `A.image i`, which is the image of
+  -- chart `i` of the one-form atlas.
+  have hσ (τ : Cₛ^k⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯) :=
+    (SobolevSection.chartValueL_ofContMDiffSection_ae A.tangentHom μ p k τ i).filter_mono
       (ae_mono (Measure.restrict_mono (A.tangentHom.sectionChartData_image i).le le_rfl))
-  filter_upwards [h1, h2, h3] with y hy1 hy2 hy3
-  rw [hy1, hy2, hy3]
-  exact (A.coord_tangentHom_zeroOnePart i σ y).symm
+  have h := hσ ((ofComplexManifold ℂ M).zeroOnePartContMDiffSection (mod_cast le_top) σ)
+  -- The section is pointwise the `(0,1)`-part of `σ`.
+  rw [show ⇑((ofComplexManifold ℂ M).zeroOnePartContMDiffSection (mod_cast le_top) σ) =
+      fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (σ x) from
+    funext (zeroOnePartContMDiffSection_apply _ _ σ)] at h
+  exact (chartValueL_zeroOnePartSobolevL_ae_coord (hσ σ)).trans h.symm
 
 /-- **Smooth `(0,1)`-forms are dense in the Sobolev `(0,1)`-forms.** For `1 ≤ p < ∞` and every
 order `k`, the Sobolev forms of `C^∞` `(0,1)`-forms are dense in `W^{k,p}(Σ, Λ^{0,1} ⊗ V)`. -/
@@ -132,25 +110,9 @@ theorem dense_ofContMDiffSection_zeroOneSobolevSections (hp : p ≠ ⊤) :
     (zeroOnePartSobolevL A μ p k).continuous
   refine h.mono ?_
   rintro _ ⟨σ, rfl⟩
-  refine ⟨zeroOnePartContMDiffSection le_rfl σ,
-    isZeroOneForm_zeroOnePartContMDiffSection le_rfl σ, ?_⟩
+  refine ⟨(ofComplexManifold ℂ M).zeroOnePartContMDiffSection le_rfl σ,
+    (ofComplexManifold ℂ M).isZeroOneForm_zeroOnePartContMDiffSection le_rfl σ, ?_⟩
   rw [Function.comp_apply, LinearMap.comp_apply, zeroOnePartSobolevL_ofContMDiffSection]
   exact congrArg _ (ContMDiffSection.ext fun x ↦ by simp)
-
-/-- **Continuous maps are determined on smooth `(0,1)`-forms.** For `1 ≤ p < ∞`, two continuous
-maps out of `W^{k,p}(Σ, Λ^{0,1} ⊗ V)` into a Hausdorff space that agree on the Sobolev forms of
-`C^∞` `(0,1)`-forms are equal. -/
-theorem eq_of_forall_ofContMDiffSection_zeroOneSobolevSections (hp : p ≠ ⊤) {G : Type*}
-    [TopologicalSpace G] [T2Space G] {f g : zeroOneSobolevSections A μ p k → G}
-    (hf : Continuous f) (hg : Continuous g)
-    (h : ∀ (w : zeroOneSobolevSections A μ p k)
-      (σ : Cₛ^∞⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯),
-      (∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (σ x)) →
-        (w : SobolevSection A.tangentHom μ p k) =
-          SobolevSection.ofContMDiffSection A.tangentHom μ p k
-            (ContMDiffSection.ofLE ENat.LEInfty.out σ) → f w = g w) :
-    f = g :=
-  hf.ext_on (dense_ofContMDiffSection_zeroOneSobolevSections A μ k hp) hg
-    fun _ ⟨σ, hσ, hw⟩ ↦ h _ σ hσ hw
 
 end TauCeti
