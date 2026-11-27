@@ -13,6 +13,7 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.LinearAlgebra.Span.Basic
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.PowChar
 import TauCeti.Data.Finsupp.MapDomain
 
@@ -83,8 +84,8 @@ theorem pMonomial_single (b : ι → M) (i : ι) (n : Fin p) :
 
 /-- A unit exponent in coordinate `i` recovers `b i`. -/
 theorem pMonomial_single_one (hp : 1 < p) (b : ι → M) (i : ι) :
-    pMonomial p b (Finsupp.single i ⟨1, hp⟩) = b i := by
-  simp [pMonomial_single]
+    pMonomial p b (Finsupp.single i 1) = b i := by
+  simp [pMonomial_single, Nat.mod_eq_of_lt hp]
 
 /-- On a finite index type, `pMonomial` is the ordinary finite product over all indices. -/
 theorem pMonomial_eq_fintype_prod [Fintype ι] (b : ι → M) (e : ι →₀ Fin p) :
@@ -145,10 +146,9 @@ theorem exists_mul_pMonomial_eq_pow_mul_pMonomial_add (b : ι → M) (e f : ι �
 
 /-- Multiplying the decremented `p`-monomial at a nonzero coordinate `j` by `b j` recovers the
 original `p`-monomial. -/
-theorem mul_pMonomial_sub_single (hp : 1 < p) (b : ι → M) (e : ι →₀ Fin p) {j : ι}
-    (hj : e j ≠ 0) :
-    b j * pMonomial p b (e - Finsupp.single j ⟨1, hp⟩) = pMonomial p b e := by
-  let e' : ι →₀ Fin p := e - Finsupp.single j ⟨1, hp⟩
+theorem mul_pMonomial_sub_single (b : ι → M) (e : ι →₀ Fin p) {j : ι} (hj : e j ≠ 0) :
+    b j * pMonomial p b (e - Finsupp.single j 1) = pMonomial p b e := by
+  let e' : ι →₀ Fin p := e - Finsupp.single j 1
   have h1 : pMonomial p b e' =
       b j ^ (e' j : ℕ) * (e'.erase j).prod fun i n ↦ b i ^ (n : ℕ) :=
     (Finsupp.mul_prod_erase' e' j (fun i (n : Fin p) ↦ b i ^ (n : ℕ)) fun _ ↦ pow_zero _).symm
@@ -161,9 +161,8 @@ theorem mul_pMonomial_sub_single (hp : 1 < p) (b : ι → M) (e : ι →₀ Fin 
     · simp [hij]
     · simp [e', hij]
   have hj1 : 1 ≤ (e j : ℕ) := Nat.succ_le_of_lt (Nat.pos_of_ne_zero (Fin.val_ne_zero_iff.mpr hj))
-  have hle : (⟨1, hp⟩ : Fin p) ≤ e j := Fin.le_def.mpr hj1
   have hval : (e' j : ℕ) = (e j : ℕ) - 1 := by
-    simpa [e'] using Fin.coe_sub_iff_le.mpr hle
+    simpa [e'] using Fin.val_sub_one_of_ne_zero hj
   rw [h1, h2, herase, ← mul_assoc, ← pow_succ', hval, Nat.sub_add_cancel hj1]
 
 end PMonomial
@@ -250,19 +249,19 @@ theorem isPIndependent_iff_finset (b : ι → k) :
 /-- Every element of a `p`-independent family is nonzero. -/
 theorem IsPIndependent.ne_zero [Fact p.Prime] {b : ι → k} (hb : IsPIndependent p b) (i : ι) :
     b i ≠ 0 := by
-  have h := hb.linearIndependent.ne_zero
-    (Finsupp.single i (⟨1, (Fact.out : p.Prime).one_lt⟩ : Fin p))
+  have h := hb.linearIndependent.ne_zero (Finsupp.single i (1 : Fin p))
   rwa [pMonomial_single_one p (Fact.out : p.Prime).one_lt] at h
 
 /-- A `p`-independent family is injective. -/
 theorem IsPIndependent.injective [Fact p.Prime] {b : ι → k} (hb : IsPIndependent p b) :
     Function.Injective b := by
   intro i j hij
-  have h1 : pMonomial p b (Finsupp.single i ⟨1, (Fact.out : p.Prime).one_lt⟩) =
-      pMonomial p b (Finsupp.single j ⟨1, (Fact.out : p.Prime).one_lt⟩) := by
-    simp [hij]
-  have hne : (⟨1, (Fact.out : p.Prime).one_lt⟩ : Fin p) ≠ 0 :=
-    mt (congrArg Fin.val) one_ne_zero
+  have h1 : pMonomial p b (Finsupp.single i (1 : Fin p)) =
+      pMonomial p b (Finsupp.single j (1 : Fin p)) := by
+    rw [pMonomial_single_one p (Fact.out : p.Prime).one_lt,
+      pMonomial_single_one p (Fact.out : p.Prime).one_lt, hij]
+  have hne : (1 : Fin p) ≠ 0 := by
+    simp [Fin.ext_iff, Nat.mod_eq_of_lt (Fact.out : p.Prime).one_lt]
   exact Finsupp.single_left_injective hne (hb.linearIndependent.injective h1)
 
 end ExpCharField
@@ -353,8 +352,7 @@ theorem notMem_span_pair_of_pow_eq [hp : Fact p.Prime] [CharP k p]
       sum_eq_single 0 (fun j _ hj ↦ by simp [hj, zero_pow hp0]) (absurd h0)]
     simp only [and_true, one_ne_zero, zero_ne_one, and_false, ite_true, ite_false, pow_zero,
       pow_one, mul_one, neg_one_pow_char]
-    rw [← hpa]
-    ring
+    linear_combination hpa
 
 end Pair
 

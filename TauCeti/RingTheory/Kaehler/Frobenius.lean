@@ -19,7 +19,7 @@ Every derivation out of a field `k` of prime characteristic `p` vanishes on the 
 
 ## Main definitions
 
-* `TauCeti.kaehlerEquivFrobeniusRange`: the canonical `k`-linear equivalence
+* `TauCeti.kaehlerEquivFieldRangeFrobenius`: the canonical `k`-linear equivalence
   `Ω[k⁄R] ≃ₗ[k] Ω[k⁄(frobenius k p).fieldRange]`.
 -/
 
@@ -35,7 +35,7 @@ variable (p : ℕ) [Fact p.Prime] (R k : Type*) [CommRing R] [Field k] [ExpChar 
 
 /-- The canonical `k`-linear equivalence `Ω[k⁄R] ≃ₗ[k] Ω[k⁄k ^ p]` when the image of `R` in `k`
 lies in the Frobenius subfield `k ^ p`. -/
-def kaehlerEquivFrobeniusRange
+def kaehlerEquivFieldRangeFrobenius
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) :
     Ω[k⁄R] ≃ₗ[k] Ω[k⁄(frobenius k p).fieldRange] :=
   letI := (frobenius k p).fieldRange.restrictAlgebra hR
@@ -53,25 +53,26 @@ def kaehlerEquivFrobeniusRange
       ext x
       simp [fwd, bwd]))
 
-/-- `kaehlerEquivFrobeniusRange` sends `D R k x` to `D (frobenius k p).fieldRange k x`. -/
+/-- `kaehlerEquivFieldRangeFrobenius` sends `D R k x` to `D (frobenius k p).fieldRange k x`. -/
 @[simp]
-theorem kaehlerEquivFrobeniusRange_D
+theorem kaehlerEquivFieldRangeFrobenius_D
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (x : k) :
-    kaehlerEquivFrobeniusRange p R k hR (D R k x) = D (frobenius k p).fieldRange k x := by
+    kaehlerEquivFieldRangeFrobenius p R k hR (D R k x) = D (frobenius k p).fieldRange k x := by
   let := (frobenius k p).fieldRange.restrictAlgebra hR
   have := (frobenius k p).fieldRange.isScalarTower_restrictAlgebra hR
-  rw [kaehlerEquivFrobeniusRange, LinearEquiv.coe_ofLinearMap, KaehlerDifferential.map_D,
+  rw [kaehlerEquivFieldRangeFrobenius, LinearEquiv.coe_ofLinearMap, KaehlerDifferential.map_D,
     Algebra.algebraMap_self, RingHom.id_apply]
 
-/-- The inverse of `kaehlerEquivFrobeniusRange` sends `D (frobenius k p).fieldRange k x` to
+/-- The inverse of `kaehlerEquivFieldRangeFrobenius` sends `D (frobenius k p).fieldRange k x` to
 `D R k x`. -/
 @[simp]
-theorem kaehlerEquivFrobeniusRange_symm_D
+theorem kaehlerEquivFieldRangeFrobenius_symm_D
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (x : k) :
-    (kaehlerEquivFrobeniusRange p R k hR).symm (D (frobenius k p).fieldRange k x) = D R k x := by
+    (kaehlerEquivFieldRangeFrobenius p R k hR).symm (D (frobenius k p).fieldRange k x) =
+      D R k x := by
   let := (frobenius k p).fieldRange.restrictAlgebra hR
   have := (frobenius k p).fieldRange.isScalarTower_restrictAlgebra hR
-  rw [kaehlerEquivFrobeniusRange, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+  rw [kaehlerEquivFieldRangeFrobenius, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
     Derivation.liftKaehlerDifferential_comp_D, Derivation.coe_ofMapAlgebraMap]
 
 end TauCeti

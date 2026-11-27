@@ -148,10 +148,8 @@ theorem span_range_pMonomial_eq_adjoin (b : ι → k) :
       algebraMap_mem' := fun c ↦ by simpa [Algebra.smul_def] using S.smul_mem c hone }
   have : Algebra.IsAlgebraic (frobenius k p).fieldRange k :=
     isAlgebraic_fieldRange_frobenius p k
-  let : Algebra.IsAlgebraic (frobenius k p).fieldRange A :=
-    Algebra.IsAlgebraic.of_injective A.val Subtype.val_injective
-  let L : IntermediateField (frobenius k p).fieldRange k :=
-    Algebra.IsAlgebraic.toIntermediateField A
+  let L : IntermediateField (frobenius k p).fieldRange k := subalgebraEquivIntermediateField A
+  have hLA : L.toSubalgebra = A := subalgebraEquivIntermediateField.symm_apply_apply A
   refine le_antisymm ?_ ?_
   · rw [Submodule.span_le]
     rintro _ ⟨e, rfl⟩
@@ -162,11 +160,13 @@ theorem span_range_pMonomial_eq_adjoin (b : ι → k) :
   · have hle : IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b) ≤ L := by
       rw [IntermediateField.adjoin_le_iff]
       rintro _ ⟨i, rfl⟩
-      -- `L.toSubalgebra` is `A`, whose underlying submodule is `S`.
-      rw [SetLike.mem_coe, ← IntermediateField.mem_toSubalgebra, ← Subalgebra.mem_toSubmodule]
-      exact Submodule.subset_span ⟨Finsupp.single i ⟨1, (Fact.out : p.Prime).one_lt⟩,
+      rw [SetLike.mem_coe, ← IntermediateField.mem_toSubalgebra, hLA, ← Subalgebra.mem_toSubmodule]
+      exact Submodule.subset_span ⟨Finsupp.single i 1,
         pMonomial_single_one p (Fact.out : p.Prime).one_lt b i⟩
-    -- `L.toSubalgebra.toSubmodule` reduces definitionally to `A.toSubmodule = S`.
+    have hsub : L.toSubalgebra.toSubmodule = S := by
+      rw [hLA]
+      rfl
+    rw [← hsub]
     exact hle
 
 /-- The `p`-monomials of `b` span `k` over `k ^ p` iff `b` generates `k` as a field over `k ^ p`. -/
@@ -206,7 +206,7 @@ private theorem notMem_adjoin_of_isPIndependent_option {b : ι → k} {x : k}
   rw [← IntermediateField.mem_toSubalgebra, ← Subalgebra.mem_toSubmodule,
     ← span_range_pMonomial_eq_adjoin] at hx
   have hmem :
-      pMonomial p (Option.elim' x b) (Finsupp.single none ⟨1, (Fact.out : p.Prime).one_lt⟩) ∈
+      pMonomial p (Option.elim' x b) (Finsupp.single none (1 : Fin p)) ∈
         Submodule.span (frobenius k p).fieldRange
           (pMonomial p (Option.elim' x b) '' {e | e none = 0}) := by
     rw [pMonomial_single_one p (Fact.out : p.Prime).one_lt]
@@ -215,10 +215,10 @@ private theorem notMem_adjoin_of_isPIndependent_option {b : ι → k} {x : k}
     refine ⟨e.mapDomain Option.some, Finsupp.mapDomain_of_notMem_range _ none (by simp), ?_⟩
     exact (pMonomial_comp_of_injective p (Option.elim' x b) (Option.some_injective ι) e).symm
   have hnotmem :
-      Finsupp.single (none : Option ι) (⟨1, (Fact.out : p.Prime).one_lt⟩ : Fin p) ∉
+      Finsupp.single (none : Option ι) (1 : Fin p) ∉
         {e : Option ι →₀ Fin p | e none = 0} := by
-    simp only [Set.mem_ofPred_eq, Finsupp.single_eq_same, Fin.ext_iff, Fin.val_zero, one_ne_zero,
-      not_false_eq_true]
+    simp only [Set.mem_ofPred_eq, Finsupp.single_eq_same, Fin.ext_iff, Fin.val_one', Fin.val_zero,
+      Nat.mod_eq_of_lt (Fact.out : p.Prime).one_lt, one_ne_zero, not_false_eq_true]
   exact hopt.linearIndependent.notMem_span_image hnotmem hmem
 
 private theorem isPIndependent_option_of_notMem_adjoin {b : ι → k} (hb : IsPIndependent p b)
@@ -389,11 +389,9 @@ theorem IsPBasis.finite_iff_finiteDimensional {b : ι → k} (hb : IsPBasis p b)
     exact Module.Finite.of_basis hb.fintypeBasis
   · intro hfd
     have : Fintype (ι →₀ Fin p) := FiniteDimensional.fintypeBasisIndex hb.basis
-    have hne : (⟨1, (Fact.out : p.Prime).one_lt⟩ : Fin p) ≠ 0 :=
-      mt (congrArg Fin.val) one_ne_zero
-    exact Finite.of_injective
-      (fun i : ι ↦ Finsupp.single i (⟨1, (Fact.out : p.Prime).one_lt⟩ : Fin p))
-      (Finsupp.single_left_injective hne)
+    have : p.AtLeastTwo := ⟨(Fact.out : p.Prime).two_le⟩
+    exact not_infinite_iff_finite.mp fun _ ↦
+      (Finsupp.infinite_of_left (ι := ι) (α := Fin p)).not_finite inferInstance
 
 /-- If `b : ι → k` is a finite `p`-basis, then `[k : k ^ p] = p ^ Nat.card ι`. -/
 theorem IsPBasis.finrank_fieldRange_frobenius [Finite ι] {b : ι → k} (hb : IsPBasis p b) :

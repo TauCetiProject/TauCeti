@@ -83,7 +83,7 @@ def IsPBasis.kaehlerBasis {b : ι → k} (hb : IsPBasis p b)
     Module.Basis ι k Ω[k⁄R] :=
   let φ : ι → Module.Dual k Ω[k⁄R] := fun j ↦
     (hb.coordDerivation j).liftKaehlerDifferential.comp
-      (kaehlerEquivFrobeniusRange p R k hR).toLinearMap
+      (kaehlerEquivFieldRangeFrobenius p R k hR).toLinearMap
   have hlin : LinearIndependent k (fun i ↦ D R k (b i)) :=
     LinearIndependent.of_pairwise_dual_eq_zero_one (fun i ↦ D R k (b i)) φ
       (fun i j hij ↦ by simp [φ, hij.symm])

@@ -44,12 +44,12 @@ variable {p : ℕ} [Fact p.Prime] {k : Type*} [Field k] [ExpChar k p] {ι : Type
 private def coordDerivationLinear {b : ι → k} (hb : IsPBasis p b) (j : ι) :
     k →ₗ[(frobenius k p).fieldRange] k :=
   hb.basis.constr (frobenius k p).fieldRange fun e ↦
-    ((e j : ℕ) : k) * pMonomial p b (e - Finsupp.single j ⟨1, (Fact.out : p.Prime).one_lt⟩)
+    ((e j : ℕ) : k) * pMonomial p b (e - Finsupp.single j 1)
 
 private theorem coordDerivationLinear_apply_pMonomial {b : ι → k} (hb : IsPBasis p b) (j : ι)
     (e : ι →₀ Fin p) :
     coordDerivationLinear hb j (pMonomial p b e) =
-      ((e j : ℕ) : k) * pMonomial p b (e - Finsupp.single j ⟨1, (Fact.out : p.Prime).one_lt⟩) := by
+      ((e j : ℕ) : k) * pMonomial p b (e - Finsupp.single j 1) := by
   rw [← hb.basis_apply, coordDerivationLinear, hb.basis.constr_basis]
 
 private theorem mul_coordDerivationLinear_pMonomial {b : ι → k} (hb : IsPBasis p b) (j : ι)
@@ -58,7 +58,7 @@ private theorem mul_coordDerivationLinear_pMonomial {b : ι → k} (hb : IsPBasi
   rw [coordDerivationLinear_apply_pMonomial]
   by_cases hj : e j = 0
   · simp [hj]
-  · rw [mul_left_comm, mul_pMonomial_sub_single p (Fact.out : p.Prime).one_lt b e hj]
+  · rw [mul_left_comm, mul_pMonomial_sub_single p b e hj]
 
 private theorem coordDerivationLinear_leibniz_pMonomial {b : ι → k} (hb : IsPBasis p b) (j : ι)
     (e e' : ι →₀ Fin p) :
@@ -113,23 +113,23 @@ otherwise decrements the `j`-th exponent and multiplies by its original value. -
 theorem IsPBasis.coordDerivation_apply_pMonomial {b : ι → k} (hb : IsPBasis p b) (j : ι)
     (e : ι →₀ Fin p) :
     hb.coordDerivation j (pMonomial p b e) =
-      ((e j : ℕ) : k) * pMonomial p b (e - Finsupp.single j ⟨1, (Fact.out : p.Prime).one_lt⟩) :=
+      ((e j : ℕ) : k) * pMonomial p b (e - Finsupp.single j 1) :=
   coordDerivationLinear_apply_pMonomial hb j e
 
 /-- The `j`-th coordinate derivation maps `b j` to `1`. -/
 @[simp]
 theorem IsPBasis.coordDerivation_apply_self {b : ι → k} (hb : IsPBasis p b) (j : ι) :
     hb.coordDerivation j (b j) = 1 := by
-  have h := hb.coordDerivation_apply_pMonomial j
-    (Finsupp.single j ⟨1, (Fact.out : p.Prime).one_lt⟩)
-  simpa using h
+  have h := hb.coordDerivation_apply_pMonomial j (Finsupp.single j 1)
+  rw [pMonomial_single_one p (Fact.out : p.Prime).one_lt] at h
+  simpa [Fin.val_one', Nat.mod_eq_of_lt (Fact.out : p.Prime).one_lt] using h
 
 /-- The `j`-th coordinate derivation vanishes on `b i` for `i ≠ j`. -/
 @[simp]
 theorem IsPBasis.coordDerivation_apply_ne {b : ι → k} (hb : IsPBasis p b) {i j : ι}
     (hij : i ≠ j) : hb.coordDerivation j (b i) = 0 := by
-  have h := hb.coordDerivation_apply_pMonomial j
-    (Finsupp.single i ⟨1, (Fact.out : p.Prime).one_lt⟩)
+  have h := hb.coordDerivation_apply_pMonomial j (Finsupp.single i 1)
+  rw [pMonomial_single_one p (Fact.out : p.Prime).one_lt] at h
   simpa [Finsupp.single_apply, hij] using h
 
 end CoordDerivation
