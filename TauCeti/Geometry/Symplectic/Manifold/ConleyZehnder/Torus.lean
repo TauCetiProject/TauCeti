@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Complex.ImInner.Maslov
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
 public import TauCeti.Geometry.Symplectic.Manifold.ConleyZehnder.Cylinder
 public import TauCeti.Topology.VectorBundle.Complex.TorusClutching

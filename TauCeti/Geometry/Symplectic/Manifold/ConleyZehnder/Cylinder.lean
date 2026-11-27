@@ -234,18 +234,6 @@ private theorem continuous_cylinderFrameCorrection {d b : unitInterval → W ≃
       ContinuousLinearEquiv.trans_apply, Function.comp_apply]
   · simp only [ContinuousLinearEquiv.trans_apply, hdω, hd₁, hbω]
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-/-- If frames `φ` and `ψ` at equal points intertwine a map `j` of the model with the same map `K`
-of the tangent space, then so does their change of frame `ψ⁻¹ ∘ φ`. -/
-private theorem trans_symm_apply_map_of_intertwine {a b : M} (hab : a = b)
-    {φ : W ≃L[ℝ] TangentSpace I a} {ψ : W ≃L[ℝ] TangentSpace I b} {j : W → W}
-    {K : ∀ x : M, TangentSpace I x → TangentSpace I x} (hφ : ∀ v, φ (j v) = K a (φ v))
-    (hψ : ∀ v, ψ (j v) = K b (ψ v)) (x : W) : φ.trans ψ.symm (j x) = j (φ.trans ψ.symm x) := by
-  subst hab
-  apply ψ.injective
-  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply, hφ, hψ,
-    ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply]
-
 /-- The correction of a symplectic frame `Ψ` along a smooth cylinder into a frame of the cylinder
 extending `φ₀`: a continuous family `A` of linear symplectic automorphisms of the model over the
 unit square such that `Ψ ∘ A` is periodic on the loops and equal to `φ₀` along `γ₀`, commuting with
