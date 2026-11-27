@@ -59,7 +59,9 @@ Cycles are elements of the kernel of the outgoing differential
 (`HomologicalComplex.homologyMap_moduleCatKerHomologyClass`), and the image of the incoming
 differential, the kernel and the homology form an exact sequence
 (`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`). So the homology vanishes where
-the outgoing differential is injective (`HomologicalComplex.isZero_homology_of_injective_d`).
+the outgoing differential is injective (`HomologicalComplex.isZero_homology_of_injective_d`), and
+a surjection from that kernel onto a module `N` vanishing exactly on the boundaries identifies the
+homology with `N` (`HomologicalComplex.moduleCatHomologyLinearEquivOfSurjective`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
 with its surjectivity and its kernel described by the coboundaries.  When the differential is a
@@ -538,6 +540,34 @@ theorem exact_inclusion_moduleCatKerHomologyClass {p : ι} (hp : c.prev n = p) :
     exact ⟨⟨_, y, rfl⟩, Subtype.ext hy⟩
   · rintro ⟨⟨_, y, rfl⟩, rfl⟩
     exact ⟨y, rfl⟩
+
+variable {p : ι} (hp : c.prev n = p) {N : Type*} [AddCommGroup N] [Module R N]
+  (ψ : LinearMap.ker (K.d n m).hom →ₗ[R] N) (hψ : Function.Surjective ψ)
+  (hker : ∀ z, ψ z = 0 ↔ ∃ y, (K.d p n).hom y = z)
+
+/-- **Computing the homology in degree `n` from the cycles.** If a surjective linear map `ψ` from
+the kernel of the outgoing differential `K.d n m` onto a module `N` vanishes exactly on the image
+of the incoming differential `K.d p n`, then the homology in degree `n` is isomorphic to `N`: the
+homology class of `z` corresponds to `ψ z`
+(`HomologicalComplex.moduleCatHomologyLinearEquivOfSurjective_moduleCatKerHomologyClass`). -/
+noncomputable def moduleCatHomologyLinearEquivOfSurjective : K.homology n ≃ₗ[R] N :=
+  ((K.exact_inclusion_moduleCatKerHomologyClass hm hp).linearEquivOfSurjective
+      (K.moduleCatKerHomologyClass_surjective hm)).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (by
+      ext z
+      rw [LinearMap.mem_ker, hker]
+      exact ⟨fun ⟨⟨_, y, hy⟩, h⟩ ↦ ⟨y, hy.trans (congrArg Subtype.val h)⟩,
+        fun ⟨y, hy⟩ ↦ ⟨⟨_, y, rfl⟩, Subtype.ext hy⟩⟩) ≪≫ₗ
+    ψ.quotKerEquivOfSurjective hψ
+
+/-- The homology equivalence `HomologicalComplex.moduleCatHomologyLinearEquivOfSurjective` sends
+the homology class of an element `z` of the kernel of `K.d n m` to `ψ z`. -/
+@[simp]
+lemma moduleCatHomologyLinearEquivOfSurjective_moduleCatKerHomologyClass
+    (z : LinearMap.ker (K.d n m).hom) :
+    K.moduleCatHomologyLinearEquivOfSurjective hm hp ψ hψ hker
+      (K.moduleCatKerHomologyClass hm z) = ψ z := by
+  simp [moduleCatHomologyLinearEquivOfSurjective]
 
 end KerHomologyClass
 
