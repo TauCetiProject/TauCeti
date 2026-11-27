@@ -50,6 +50,8 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.nondegenerate_restrict_of_anisotropic`: an anisotropic form restricts to a
+  nondegenerate form on every submodule.
 * `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
   has no nonzero zeros meets every subspace of isotropic vectors trivially.
 * `IsSMulRegular.isSymm_smul_iff`: rescaling by a scalar acting injectively on `R`
@@ -144,6 +146,13 @@ theorem anisotropic_toQuadraticMap_compl₁₂ {R M N : Type*} [CommSemiring R]
     (LinearMap.BilinMap.toQuadraticMap (B.compl₁₂ f f)).Anisotropic := by
   rw [LinearMap.BilinMap.toQuadraticMap_comp_same]
   exact hB.comp f hf
+
+/-- An anisotropic form, a positive definite one for instance, restricts to a nondegenerate form
+on every submodule. -/
+theorem nondegenerate_restrict_of_anisotropic {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M)
+    (hB : B.toQuadraticMap.Anisotropic) (W : Submodule R M) : (B.restrict W).Nondegenerate :=
+  nondegenerate_of_anisotropic _ (B.anisotropic_toQuadraticMap_compl₁₂ hB _ W.injective_subtype)
 
 /-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
 @[simp]
