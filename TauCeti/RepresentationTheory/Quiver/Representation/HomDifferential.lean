@@ -21,7 +21,12 @@ morphisms. For finite-dimensional representations of a finite quiver, the differ
 between the dimensions of its kernel and cokernel is the Euler form.
 
 The cokernel measures the obstruction to making vertexwise splittings of extensions
-compatible with the arrows. The constructions here require no acyclicity assumption.
+compatible with the arrows; it is `Ext¹(M, N)`
+(`TauCeti.QuiverRep.nonempty_homDifferential_coker_linearEquiv_ext`). Isomorphisms of the two
+representations identify the spaces of vertex maps and of arrow maps compatibly with the Hom
+differential (`TauCeti.QuiverRep.homDifferential_homVertexCongr`), so the cokernel depends on the
+representations only up to isomorphism (`TauCeti.QuiverRep.homDifferentialCokerCongr`). The
+constructions here require no acyclicity assumption.
 
 ## References
 
@@ -133,6 +138,65 @@ theorem finiteDimensional_hom [Finite Q] (hM : IsFinDim k Q M) (hN : IsFinDim k 
   let : ∀ i : Q, FiniteDimensional k (vertexSpace k Q M i) := fun i ↦ isFinDim_iff.mp hM i
   let : ∀ i : Q, FiniteDimensional k (vertexSpace k Q N i) := fun i ↦ isFinDim_iff.mp hN i
   exact (homEquivKerDifferential M N).symm.finiteDimensional
+
+section Congr
+
+variable {M N} {M' N' : QuiverRep.{u, v, w, t} k Q}
+
+/-- The vertex components of an isomorphism of representations, as linear equivalences between the
+vertex spaces. -/
+private noncomputable def vertexEquiv (e : M ≅ M') (i : Q) :
+    vertexSpace k Q M i ≃ₗ[k] vertexSpace k Q M' i :=
+  LinearEquiv.ofLinearMap (homVertex M M' e.hom i) (homVertex M' M e.inv i)
+    (LinearMap.ext fun x ↦ congrArg (fun g ↦ ModuleCat.Hom.hom g x) (e.inv_hom_id_app i))
+    (LinearMap.ext fun x ↦ congrArg (fun g ↦ ModuleCat.Hom.hom g x) (e.hom_inv_id_app i))
+
+/-- Isomorphisms `M ≅ M'` and `N ≅ N'` identify the vertex-map families, by conjugating each
+vertex map with the vertex components of the isomorphisms. -/
+noncomputable def homVertexCongr (e : M ≅ M') (f : N ≅ N') : HomVertex M N ≃ₗ[k] HomVertex M' N' :=
+  LinearEquiv.piCongrRight fun i ↦ LinearEquiv.arrowCongr (vertexEquiv e i) (vertexEquiv f i)
+
+@[simp]
+theorem homVertexCongr_apply (e : M ≅ M') (f : N ≅ N') (φ : HomVertex M N) (i : Q) :
+    homVertexCongr e f φ i = homVertex N N' f.hom i ∘ₗ φ i ∘ₗ homVertex M' M e.inv i := (rfl)
+
+/-- Isomorphisms `M ≅ M'` and `N ≅ N'` identify the arrow-map families, by conjugating the map at
+an arrow with the vertex components of the isomorphisms at its source and target. -/
+noncomputable def homArrowCongr (e : M ≅ M') (f : N ≅ N') : HomArrow M N ≃ₗ[k] HomArrow M' N' :=
+  LinearEquiv.piCongrRight fun i ↦ LinearEquiv.piCongrRight fun j ↦ LinearEquiv.piCongrRight
+    fun _ ↦ LinearEquiv.arrowCongr (vertexEquiv e i) (vertexEquiv f j)
+
+@[simp]
+theorem homArrowCongr_apply (e : M ≅ M') (f : N ≅ N') (φ : HomArrow M N) {i j : Q} (a : i ⟶ j) :
+    homArrowCongr e f φ i j a = homVertex N N' f.hom j ∘ₗ φ i j a ∘ₗ homVertex M' M e.inv i :=
+  (rfl)
+
+/-- **The Hom differential is natural in isomorphisms of both representations.** -/
+theorem homDifferential_homVertexCongr (e : M ≅ M') (f : N ≅ N') (φ : HomVertex M N) :
+    homDifferential M' N' (homVertexCongr e f φ) = homArrowCongr e f (homDifferential M N φ) := by
+  funext i j a
+  refine LinearMap.ext fun x ↦ ?_
+  simp only [homDifferential_apply, homVertexCongr_apply, homArrowCongr_apply, LinearMap.sub_apply,
+    LinearMap.comp_apply, map_sub]
+  rw [homVertex_naturality M' M e.inv, homVertex_naturality N N' f.hom]
+
+/-- **The cokernel of the Hom differential is invariant under isomorphisms** of both
+representations. -/
+noncomputable def homDifferentialCokerCongr (e : M ≅ M') (f : N ≅ N') :
+    (HomArrow M N ⧸ (homDifferential M N).range) ≃ₗ[k]
+      (HomArrow M' N' ⧸ (homDifferential M' N').range) :=
+  Submodule.Quotient.equiv _ _ (homArrowCongr e f) <| by
+    have h : (homArrowCongr e f).toLinearMap ∘ₗ homDifferential M N =
+        homDifferential M' N' ∘ₗ (homVertexCongr e f).toLinearMap :=
+      LinearMap.ext fun φ ↦ (homDifferential_homVertexCongr e f φ).symm
+    rw [← LinearMap.range_comp, h, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
+
+@[simp]
+theorem homDifferentialCokerCongr_mk (e : M ≅ M') (f : N ≅ N') (φ : HomArrow M N) :
+    homDifferentialCokerCongr e f (Submodule.Quotient.mk φ) =
+      Submodule.Quotient.mk (homArrowCongr e f φ) := (rfl)
+
+end Congr
 
 section Dimension
 
