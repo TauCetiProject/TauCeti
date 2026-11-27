@@ -13,6 +13,7 @@ import Mathlib.Algebra.Order.Star.Projection
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import TauCeti.Algebra.Star.Projection.Family
 import TauCeti.Analysis.Normed.Algebra.Star
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
@@ -138,13 +139,6 @@ private lemma orthoCorner_compress {s : NonUnitalStarSubalgebra ℝ A} {m : ℕ}
   refine ⟨NonUnitalStarSubalgebra.sub_sub_add_mem_orthoCorner hP_proj hP_mem hx_mem, ?_⟩
   linarith [norm_sub_sub_add_sub_le_of_norm_le_one (hP_proj.norm_le _) x]
 
-private lemma pairwise_isStarOrtho_snoc {m : ℕ} {p₀ : Fin m → A} {q : A}
-    (hp₀ : Pairwise (IsStarOrtho on p₀)) (hq : ∀ j, IsStarOrtho (p₀ j) q) :
-    Pairwise (IsStarOrtho on Fin.snoc p₀ q) := fun i k ↦ by
-  refine Fin.lastCases ?_ (fun i' ↦ ?_) i <;> refine Fin.lastCases ?_ (fun k' ↦ ?_) k <;>
-    intro hik <;> simp only [onFun, Fin.snoc_last, Fin.snoc_castSucc]
-  exacts [(hik rfl).elim, (hq k').symm, hq i', hp₀ fun h ↦ hik (congrArg Fin.castSucc h)]
-
 private lemma orthoCorner_round_extension {s : NonUnitalStarSubalgebra ℝ A} [IsClosed (s : Set A)]
     {m : ℕ} {p₀ d₀ : Fin m → A} (hp₀_mem : ∀ j, p₀ j ∈ s)
     (hp₀_proj : ∀ j, IsStarProjection (p₀ j)) (hp₀_ortho : Pairwise (IsStarOrtho on p₀))
@@ -217,7 +211,7 @@ private lemma exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_fin
       (fun {_} _ {_} he hsa hid ↦ hδ₁ (𝕜' := ℝ) he hsa hid)
     exact ⟨Fin.snoc p₀ q, Fin.lastCases (by simpa) (fun j ↦ by simpa using hp₀_mem j),
       Fin.lastCases (by simpa) (fun j ↦ by simpa using hp₀_proj j),
-      pairwise_isStarOrtho_snoc hp₀_ortho hq_ortho,
+      Fin.pairwise_snoc_iff_of_isSymm.mpr ⟨hp₀_ortho, hq_ortho⟩,
       Fin.lastCases (by simpa using hq_dist)
         (fun j ↦ by simpa using (hp₀_dist j).trans_le (min_le_left _ _))⟩
 /-- **Uniform norm stability of finite pairwise-orthogonal projection families in closed

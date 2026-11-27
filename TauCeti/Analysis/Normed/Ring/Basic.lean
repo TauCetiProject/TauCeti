@@ -27,8 +27,9 @@ The affine estimate `TauCeti.sub_mul_mem_closedBall_of_norm_le` bounds the dista
 `w₀ - w₁ * u` from `w₀` using a bound on the norm of `u`.
 
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
-(`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
-(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
+(`TauCeti.norm_mul_sub_le_left`), `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
+(`TauCeti.norm_mul_sub_le_right`), and the two-sided compression estimate
+`TauCeti.norm_mul_mul_sub_le`, which compare products through intermediate elements,
 the nonvanishing `1 - x ≠ 0` for `‖x‖ < 1` (`TauCeti.one_sub_ne_zero_of_norm_lt_one`),
 the lower bound `1 - ‖q‖ ≤ ‖1 - qⁿ‖` for `‖q‖ ≤ 1` and `n ≠ 0`
 (`TauCeti.one_sub_norm_le_norm_one_sub_pow`),
@@ -87,6 +88,19 @@ theorem norm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b c d : R
   refine (norm_mul_sub_le_right b a c (c * d)).trans (add_le_add le_rfl ?_)
   rw [← mul_sub]
   exact norm_mul_le _ _
+
+/-- Two-sided compression estimate:
+`‖p₁ * x * p₂ - x‖ ≤ (‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖) * ‖p₂‖ + ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖`. -/
+theorem norm_mul_mul_sub_le {R : Type*} [NonUnitalSeminormedRing R] (p₁ a₁ x a₂ p₂ : R) :
+    ‖p₁ * x * p₂ - x‖ ≤
+      (‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖) * ‖p₂‖ + ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ := by
+  have h1 : ‖p₁ * x * p₂ - x‖ ≤ ‖p₁ * x - x‖ * ‖p₂‖ + ‖x * p₂ - x‖ :=
+    norm_mul_sub_le_right p₂ (p₁ * x) x x
+  have h2 : ‖p₁ * x - x‖ ≤ ‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖ :=
+    norm_mul_sub_le_right x p₁ a₁ x
+  have h3 : ‖x * p₂ - x‖ ≤ ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ :=
+    norm_mul_sub_le_left x p₂ a₂ x
+  nlinarith [norm_nonneg p₂]
 
 /-- Displacement bound for orthogonal compression by a contraction `‖p‖ ≤ 1`:
 `‖(x - p * x - x * p + p * x * p) - x‖ ≤ 2 * ‖p * x‖ + ‖x * p‖`. -/

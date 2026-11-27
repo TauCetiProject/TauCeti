@@ -8,10 +8,8 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Classes
 public import TauCeti.Analysis.CStarAlgebra.Basic
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 import TauCeti.Analysis.Normed.Algebra.Star
-import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
@@ -32,35 +30,9 @@ isometry `v` (`star v * v = p`, `v * star v = q`, `‖v - z‖ < 10 * η`) in ev
 -/
 
 public section
-open scoped NonUnitalContinuousFunctionalCalculus
 open NonUnitalStarSubalgebra (mem_corner mem_ofClass)
 namespace TauCeti
 variable {A : Type*} [NonUnitalCStarAlgebra A]
-private lemma corner_spectral_round {s' : NonUnitalStarSubalgebra ℝ A} [IsClosed (s' : Set A)]
-    {η : ℝ} (hη : η ≤ 1 / 32) {p z : A} (hp : IsStarProjection p) (hzs : z ∈ s')
-    (hzp : z * p = z) (hinit : ‖star z * z - p‖ < η) :
-    ∃ w ∈ s', IsSelfAdjoint w ∧ w * p = w ∧ w * (star z * z) * w = p ∧
-      ‖w - p‖ ≤ 4 * (‖star z * z - p‖ ^ 2 + ‖star z * z - p‖) := by
-  let corner := s'.corner hp.isSelfAdjoint
-  set h : A := star z * z; have hh_sa : IsSelfAdjoint h := IsSelfAdjoint.star_mul_self z
-  have hph : p * h = h := by rw [← hp.isSelfAdjoint.star_eq, ← mul_assoc, ← star_mul, hzp]
-  have hhp : h * p = h := by rw [mul_assoc, hzp]
-  have hh_corner : h ∈ corner := mem_corner.mpr ⟨mul_mem (star_mem hzs) hzs, hph, hhp⟩
-  have hh_defect : ‖h * h - h‖ ≤ ‖h - p‖ ^ 2 + ‖h - p‖ :=
-    hp.isIdempotentElem.norm_mul_self_sub_le_of_mul_eq hph hhp
-  have hh_lt_quarter : ‖h * h - h‖ < 1 / 4 := by nlinarith [norm_nonneg (h - p)]
-  obtain ⟨-, -, hsp_mul_p⟩ := mem_corner.mp (spectralProjectionIoiHalf_mem (𝕜' := ℝ) hh_corner)
-  have hsp_eq_p : spectralProjectionIoiHalf h = p :=
-    (isStarProjection_spectralProjectionIoiHalf h).eq_of_mul_eq_left_of_norm_sub_lt_one hp hsp_mul_p
-      (by linarith [hh_sa.norm_spectralProjectionIoiHalf_sub_le hh_lt_quarter,
-        norm_sub_le_norm_sub_add_norm_sub (spectralProjectionIoiHalf h) h p])
-  set g : ℝ → ℝ := (Set.Ioi (1 / 2 : ℝ)).indicator fun t ↦ (√t)⁻¹; set w : A := cfcₙ g h
-  obtain ⟨hw_mem_s', -, hwp⟩ := mem_corner.mp (cfcₙ_mem (𝕜 := ℝ) (𝕜' := ℝ) g hh_corner)
-  refine ⟨w, hw_mem_s', cfcₙ_predicate g h, hwp, ?_, ?_⟩
-  · simpa [w, g, hsp_eq_p] using hh_sa.cfcₙ_indicator_Ioi_half_inv_sqrt_mul_self_mul hh_lt_quarter
-  · have hw_sub_p : ‖w - p‖ ≤ 4 * ‖h * h - h‖ := by simpa [w, g, hsp_eq_p] using
-      hh_sa.norm_cfcₙ_indicator_Ioi_half_inv_sqrt_sub_spectralProjectionIoiHalf_le hh_lt_quarter
-    linarith
 /-- **Quantitative polar perturbation of an approximate partial isometry** in a closed non-unital
 `𝕜'`-`⋆`-subalgebra `s` (scalar monoid `𝕜'` over `ℝ`): for star projections `p, q` and `z ∈ s`
 with `q * z = z`, `z * p = z`, `‖star z * z - p‖ < η`, `‖z * star z - q‖ < η` (`η ≤ 1 / 32`), some
@@ -73,9 +45,15 @@ theorem exists_isPartialIsometry_mem_of_approx {𝕜' S : Type*} [Monoid 𝕜'] 
     (hfin : ‖z * star z - q‖ < η) :
     ∃ v ∈ s, IsPartialIsometry v ∧ star v * v = p ∧ v * star v = q ∧ ‖v - z‖ < 10 * η := by
   have : SMulMemClass S ℝ A := SMulMemClass.ofIsScalarTower S ℝ 𝕜' A
-  obtain ⟨w, hw_mem_s', hw_sa, hwp, hwhw, hw_sub_p⟩ :=
-    corner_spectral_round (s' := NonUnitalStarSubalgebra.ofClass s) hη hp (mem_ofClass.mpr hzs)
-      hzp hinit
+  have hph : p * (star z * z) = star z * z := by
+    rw [← hp.isSelfAdjoint.star_eq, ← mul_assoc, ← star_mul, hzp]
+  have hhp : star z * z * p = star z * z := by rw [mul_assoc, hzp]
+  obtain ⟨w, hw_corner, hw_sa, hwhw, hw_sub_p⟩ :=
+    (IsSelfAdjoint.star_mul_self z).exists_mem_corner_of_norm_sub_le
+      (s := NonUnitalStarSubalgebra.ofClass s) hp
+      (mem_corner.mpr ⟨mul_mem (star_mem (mem_ofClass.mpr hzs)) (mem_ofClass.mpr hzs), hph, hhp⟩)
+      (by linarith)
+  obtain ⟨hw_mem_s', -, hwp⟩ := mem_corner.mp hw_corner
   set v : A := z * w
   have hv_init : star v * v = p := by
     simpa only [v, star_mul, hw_sa.star_eq, mul_assoc] using hwhw

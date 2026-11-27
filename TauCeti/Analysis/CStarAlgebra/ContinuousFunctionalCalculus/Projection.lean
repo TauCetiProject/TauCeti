@@ -10,8 +10,12 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 public import TauCeti.Analysis.Normed.Algebra.Spectrum
+public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
+import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Topology.Order.DenselyOrdered
+import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Topology.Algebra.Indicator
 
 /-!
@@ -52,6 +56,8 @@ wherever the spectrum of `a` avoids the frontier of `Ω`. For self-adjoint `a` i
 * `TauCeti.spectralProjectionIoiHalf`, `TauCeti.continuousOn_spectralProjectionIoiHalf`,
   `IsSelfAdjoint.norm_spectralProjectionIoiHalf_sub_le`,
   `IsSelfAdjoint.cfcₙ_indicator_Ioi_half_inv_sqrt_mul_self_mul`,
+  `IsSelfAdjoint.spectralProjectionIoiHalf_eq_of_mul_eq`,
+  `IsSelfAdjoint.exists_mem_corner_of_norm_sub_le`,
   `IsStarProjection.spectralProjectionIoiHalf_eq` — non-unital `(1 / 2, ∞)` spectral calculus.
 -/
 
@@ -327,6 +333,51 @@ theorem norm_cfcₙ_indicator_Ioi_half_inv_sqrt_sub_spectralProjectionIoiHalf_le
     have hquarter : (1 / 4 : ℝ) ≤ t * √t * (1 + √t) := by nlinarith
     nlinarith [ha.abs_mul_self_sub_le_norm ht, abs_nonneg ((√t)⁻¹ - 1)]
   · simp only [Set.indicator_of_notMem (Set.mem_Ioi.not.mpr hgt), sub_self, abs_zero]; positivity
+/-- If `a` is self-adjoint, satisfies `p * a = a` for a star projection `p`, and
+`‖a - p‖ ≤ 1 / 5`, then `TauCeti.spectralProjectionIoiHalf a = p`. -/
+theorem spectralProjectionIoiHalf_eq_of_mul_eq {p : A} (ha : IsSelfAdjoint a)
+    (hp : IsStarProjection p) (hpa : p * a = a) (hdist : ‖a - p‖ ≤ 1 / 5) :
+    spectralProjectionIoiHalf a = p := by
+  have hap : a * p = a := by
+    simpa [hp.isSelfAdjoint.star_eq, ha.star_eq] using congrArg star hpa
+  have ha_lt : ‖a * a - a‖ < 1 / 4 := by
+    have := _root_.IsIdempotentElem.norm_mul_self_sub_le_of_mul_eq hp.isIdempotentElem hpa hap
+    nlinarith [norm_nonneg (a - p)]
+  have hsp_mul_p : spectralProjectionIoiHalf a * p = spectralProjectionIoiHalf a := by
+    have ha_corner : a ∈ (⊤ : NonUnitalStarSubalgebra ℝ A).corner hp.isSelfAdjoint :=
+      NonUnitalStarSubalgebra.mem_corner.mpr ⟨NonUnitalStarAlgebra.mem_top, hpa, hap⟩
+    exact (NonUnitalStarSubalgebra.mem_corner.mp
+      (spectralProjectionIoiHalf_mem (𝕜' := ℝ) ha_corner)).2.2
+  refine (isStarProjection_spectralProjectionIoiHalf a).eq_of_mul_eq_left_of_norm_sub_lt_one
+    hp hsp_mul_p ?_
+  have := ha.norm_spectralProjectionIoiHalf_sub_le ha_lt
+  linarith [norm_sub_le_norm_sub_add_norm_sub (spectralProjectionIoiHalf a) a p]
+/-- For a star projection `p` and a self-adjoint element `a ∈ s.corner hp.isSelfAdjoint` of a
+closed nonunital `⋆`-subalgebra with `‖a - p‖ ≤ 1 / 5`, there exists a self-adjoint normalizing
+element `w ∈ s.corner hp.isSelfAdjoint` satisfying `w * a * w = p` and
+`‖w - p‖ ≤ 4 * (‖a - p‖ ^ 2 + ‖a - p‖)`. -/
+theorem exists_mem_corner_of_norm_sub_le {𝕜' : Type*} [CommRing 𝕜'] [Module 𝕜' A]
+    [IsScalarTower 𝕜' A A] [SMulCommClass 𝕜' A A] [SMul ℝ 𝕜'] [IsScalarTower ℝ 𝕜' A]
+    {s : NonUnitalStarSubalgebra 𝕜' A} [IsClosed (s : Set A)] {p : A}
+    (ha : IsSelfAdjoint a) (hp : IsStarProjection p)
+    (ha_corner : a ∈ s.corner hp.isSelfAdjoint) (hdist : ‖a - p‖ ≤ 1 / 5) :
+    ∃ w ∈ s.corner hp.isSelfAdjoint, IsSelfAdjoint w ∧ w * a * w = p ∧
+      ‖w - p‖ ≤ 4 * (‖a - p‖ ^ 2 + ‖a - p‖) := by
+  have : SMulMemClass (NonUnitalStarSubalgebra 𝕜' A) ℝ A :=
+    SMulMemClass.ofIsScalarTower _ ℝ 𝕜' A
+  obtain ⟨-, hpa, hap⟩ := NonUnitalStarSubalgebra.mem_corner.mp ha_corner
+  have ha_defect : ‖a * a - a‖ ≤ ‖a - p‖ ^ 2 + ‖a - p‖ :=
+    _root_.IsIdempotentElem.norm_mul_self_sub_le_of_mul_eq hp.isIdempotentElem hpa hap
+  have ha_lt_quarter : ‖a * a - a‖ < 1 / 4 := by nlinarith [norm_nonneg (a - p)]
+  have hsp_eq_p : spectralProjectionIoiHalf a = p :=
+    ha.spectralProjectionIoiHalf_eq_of_mul_eq hp hpa hdist
+  set g : ℝ → ℝ := (Set.Ioi (1 / 2 : ℝ)).indicator fun t ↦ (√t)⁻¹
+  refine ⟨cfcₙ g a, cfcₙ_mem (𝕜 := ℝ) (𝕜' := ℝ) g ha_corner, cfcₙ_predicate g a, ?_, ?_⟩
+  · simpa [g, hsp_eq_p] using ha.cfcₙ_indicator_Ioi_half_inv_sqrt_mul_self_mul ha_lt_quarter
+  · have hw_sub_p : ‖cfcₙ g a - p‖ ≤ 4 * ‖a * a - a‖ := by
+      simpa [g, hsp_eq_p] using
+        ha.norm_cfcₙ_indicator_Ioi_half_inv_sqrt_sub_spectralProjectionIoiHalf_le ha_lt_quarter
+    linarith
 end IsSelfAdjoint
 /-- Every star projection `p` is fixed by `TauCeti.spectralProjectionIoiHalf`. -/
 @[simp] theorem IsStarProjection.spectralProjectionIoiHalf_eq {A : Type*} [NonUnitalCStarAlgebra A]

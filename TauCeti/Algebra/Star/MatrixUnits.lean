@@ -76,10 +76,10 @@ theorem mul_eq_ite (he : IsMatrixUnitSystem e) (r : κ) [DecidableEq (n r)] (i j
 theorem isStarProjection_diag (he : IsMatrixUnitSystem e) (r : κ) (i : n r) :
     IsStarProjection (e r i i) := ⟨he.mul_same r i i i, he.star_eq r i i⟩
 /-- The final projection `e r i j * star (e r i j)` of `e r i j` is `e r i i`. -/
-theorem mul_star_self (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
+@[simp] theorem mul_star_self (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
     e r i j * star (e r i j) = e r i i := by rw [he.star_eq, he.mul_same]
 /-- The initial projection `star (e r i j) * e r i j` of `e r i j` is `e r j j`. -/
-theorem star_mul_self (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
+@[simp] theorem star_mul_self (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
     star (e r i j) * e r i j = e r j j := by rw [he.star_eq, he.mul_same]
 /-- Every entry `e r i j` of a system of matrix units is a partial isometry. -/
 theorem isPartialIsometry (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :

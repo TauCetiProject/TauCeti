@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Logic.Pairwise
 public import Mathlib.Order.Interval.Set.Defs
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
@@ -47,6 +48,7 @@ set of the earlier ones.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
   equality pattern exactly when the old patterns agree and the new entries repeat the same
   positions.
+* `Fin.pairwise_snoc_iff` and `Fin.pairwise_snoc_iff_of_isSymm`: `Pairwise` on `r on Fin.snoc f x`.
 * `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
   updates the corresponding entry of `u` or of `v`.
 * `Fin.append_comp_swap_castAdd`, `Fin.append_comp_swap_natAdd`: exchanging two entries of
@@ -187,6 +189,31 @@ theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b 
     iff_self, and_true]
   exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
     fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
+
+section
+open scoped Function
+
+/-- Extending a tuple by `Fin.snoc` satisfies `Pairwise` on `r` iff `r` holds pairwise on the
+initial tuple and between every initial entry and the appended entry in both orders. -/
+theorem pairwise_snoc_iff {α : Sort*} {r : α → α → Prop} {f : Fin m → α} {x : α} :
+    Pairwise (r on snoc f x) ↔ Pairwise (r on f) ∧ (∀ j, r (f j) x) ∧ (∀ j, r x (f j)) := by
+  refine ⟨fun h ↦ ⟨fun i j hij ↦ ?_, fun j ↦ ?_, fun j ↦ ?_⟩, fun ⟨hf, hfx, hxf⟩ i k ↦ ?_⟩
+  · simpa only [Function.onFun, snoc_castSucc] using h ((castSucc_injective m).ne hij)
+  · simpa only [Function.onFun, snoc_castSucc, snoc_last] using h (castSucc_lt_last j).ne
+  · simpa only [Function.onFun, snoc_castSucc, snoc_last] using h (castSucc_lt_last j).ne'
+  · refine lastCases ?_ (fun i' ↦ ?_) i <;> refine lastCases ?_ (fun k' ↦ ?_) k <;>
+      intro hik <;> simp only [Function.onFun, snoc_last, snoc_castSucc]
+    exacts [(hik rfl).elim, hxf k', hfx i', hf fun h ↦ hik (congrArg castSucc h)]
+
+/-- Extending a tuple by `Fin.snoc` satisfies `Pairwise` on a symmetric relation `r` iff `r` holds
+pairwise on the initial tuple and between every initial entry and the appended entry. -/
+theorem pairwise_snoc_iff_of_isSymm {α : Sort*} {r : α → α → Prop} [Std.Symm r]
+    {f : Fin m → α} {x : α} :
+    Pairwise (r on snoc f x) ↔ Pairwise (r on f) ∧ ∀ j, r (f j) x := by
+  rw [pairwise_snoc_iff]
+  exact ⟨fun ⟨h₁, h₂, _⟩ ↦ ⟨h₁, h₂⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂, fun j ↦ symm (h₂ j)⟩⟩
+
+end
 
 /-- Updating `Fin.append u v` at a position of `u` is appending the updated `u` to `v`. -/
 @[simp]

@@ -87,16 +87,6 @@ theorem norm_lt_three [NonUnitalCStarAlgebra A] {δ : ℝ} {x : ∀ r : κ, n r 
     nlinarith [(hx.norm_star_sub_lt r i j).le.trans hδ,
       (hx.norm_mul_same_sub_lt r j i j).trans_le hδ, norm_nonneg (x r i j)]
   nlinarith
-private lemma norm_mul_mul_sub_le {R : Type*} [NonUnitalSeminormedRing R] (p₁ a₁ x a₂ p₂ : R) :
-    ‖p₁ * x * p₂ - x‖ ≤
-      (‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖) * ‖p₂‖ + ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ := by
-  have h1 : ‖p₁ * x * p₂ - x‖ ≤ ‖p₁ * x - x‖ * ‖p₂‖ + ‖x * p₂ - x‖ :=
-    norm_mul_sub_le_right p₂ (p₁ * x) x x
-  have h2 : ‖p₁ * x - x‖ ≤ ‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖ :=
-    norm_mul_sub_le_right x p₁ a₁ x
-  have h3 : ‖x * p₂ - x‖ ≤ ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ :=
-    norm_mul_sub_le_left x p₂ a₂ x
-  nlinarith [norm_nonneg p₂]
 private lemma norm_proj_mul_sub_lt [NonUnitalCStarAlgebra A] {δ η : ℝ}
     (hδ_η : δ ≤ η / 200) {x : ∀ r : κ, n r → n r → A} (hx : IsApproxMatrixUnitSystem δ x)
     {p : ∀ r : κ, n r → A} (hp_proj : ∀ r i, IsStarProjection (p r i))
