@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Int
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.Geometry.Manifold.Morse.Examples.RealProjectiveSpace
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
+import TauCeti.AlgebraicTopology.Singular.Sublevel
 
 /-!
 # The critical-band spectral sequence of the real projective plane
@@ -64,7 +65,7 @@ sequences of those triples. The inputs are the first page, the homology of `ℝ�
 contractibility of the sublevel `{f ≤ a 1}`
 (`TauCeti.contractibleSpace_sublevel_projectiveMomentFunction_of_mem_Ioo`), which identifies the
 homology of `(ℝℙ², {f ≤ a 1})` with that of `ℝℙ²` in positive degrees
-(`TopPair.singularHomologyIsoOfContractibleSpace`).
+(`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`).
 
 ## References
 
@@ -101,15 +102,11 @@ private def singularHomologyPairOneThreeIso (ha : Monotone a)
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) (k + 1)).obj
         (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin 3 → ℝ))) :=
   -- The subspace `{f ≤ a 1}` is contractible and the space `{f ≤ a 3}` is all of `ℝℙ²`.
-  have : ContractibleSpace (pairOneThree w ha).snd :=
-    contractibleSpace_sublevel_projectiveMomentFunction_of_mem_Ioo ha hcut
-  ((pairOneThree w ha).singularHomologyIsoOfContractibleSpace (ModuleCat.of R R) k).symm ≪≫
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) (k + 1)).obj
-      (ModuleCat.of R R)).mapIso
-        (TopCat.isoOfHomeo
-          (X := TopCat.of {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ w x ≤ a 3})
-          (sublevelHomeomorphUniv fun x ↦ projectiveMomentFunction_le
-            (fun i ↦ ((hcut i).2.trans_le (ha (by have := i.isLt; omega))).le) x))
+  have := contractibleSpace_sublevel_projectiveMomentFunction_of_mem_Ioo ha hcut
+  (singularHomologyIsoSublevelPairOfContractibleSpace (ha (by norm_num : (1 : ℤ) ≤ 3))
+    (fun x ↦ projectiveMomentFunction_le
+      (fun i ↦ ((hcut i).2.trans_le (ha (by have := i.isLt; omega))).le) x) (ModuleCat.of R R)
+    k).symm
 
 /-- `H₂({f ≤ a 3}, {f ≤ a 1}; R) = 0` when right multiplication by `2` is injective on `R`. -/
 private theorem isZero_singularHomology_pairOneThree_two (ha : Monotone a)

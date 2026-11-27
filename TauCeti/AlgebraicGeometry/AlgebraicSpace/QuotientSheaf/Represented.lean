@@ -71,6 +71,16 @@ noncomputable def quotientSheaf.kernelPairIso (q : U ⟶ M) [Flat q]
     (TauCeti.CategoryTheory.quotientSheaf.uliftYoneda_map_condition
       (pullback.condition (f := q) (g := q))))
 
+/-- The forward map of `quotientSheaf.kernelPairIso q` is the factorisation of `h_U ⟶ h_M`
+through the quotient sheaf of the kernel pair of `q`. -/
+theorem quotientSheaf.kernelPairIso_hom (q : U ⟶ M) [Flat q]
+    [LocallyOfFinitePresentation q] [Surjective q] :
+    (quotientSheaf.kernelPairIso q).hom = TauCeti.CategoryTheory.quotientSheaf.desc
+      (Scheme.fppfTopology.uliftYoneda.{u + 1}.map q)
+      (TauCeti.CategoryTheory.quotientSheaf.uliftYoneda_map_condition
+        (pullback.condition (f := q) (g := q))) :=
+  (rfl)
+
 /-- The projection onto the quotient sheaf of the kernel pair of `q`, followed by
 `quotientSheaf.kernelPairIso q`, is the map `h_U ⟶ h_M` induced by `q`. -/
 @[reassoc (attr := simp)]

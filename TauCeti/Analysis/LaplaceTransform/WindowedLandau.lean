@@ -11,8 +11,8 @@ public import TauCeti.Analysis.LaplaceTransform.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.Taylor.WindowPoleComparison
-import TauCeti.Analysis.LaplaceTransform.WindowCoefficients
-import TauCeti.Analysis.LaplaceTransform.WindowMoments
+import TauCeti.Analysis.LaplaceTransform.Window.Coefficients
+import TauCeti.Analysis.LaplaceTransform.Window.Moments
 import TauCeti.Analysis.Meromorphic.ExpansionDisc
 
 /-!
@@ -127,21 +127,19 @@ theorem meromorphicOrderAt_nonneg_of_hasLaplace_window_of_simple_poles
   by_contra! hρ
   rcases hN.exists_analytic_discs_or_rightmost_real_pole hleft ⟨ρ, hρθ, (hord hρθ).trans_lt hρ⟩ with
     ⟨γ, p, r, hd, hdr, hr, hpN, hz, hw⟩ | ⟨β, r, hβ, hdist, hdr, hr, hβN, _, hz⟩
-  · have hc : ((σ : ℂ) + γ * I).re = σ := by simp
-    have hpθ : θ < p.re := ball_subset_setOfPred_lt_re (R := r)
-      (by rw [hc]; linarith only [hr]) (by rw [mem_ball, dist_comm]; exact hdr)
-    rw [dist_eq_norm] at hd hdr
-    have hb := hz.differentiableOn.le_norm_sub_of_window_taylor_bound_of_simple_pole
-      hw.differentiableOn (lt_min hdr hdr) (sub_ne_zero.mp (norm_pos_iff.mp hd))
-      (by rw [hord hpθ]; exact hsimple p hpθ ((hord hpθ).symm.trans_lt hpN)) (hupperγ γ)
+  · rw [dist_eq_norm] at hd hdr
+    have hb := hz.differentiableOn.le_norm_sub_of_window_taylor_bound_of_pole
+      hw.differentiableOn (lt_min hdr hdr) (sub_ne_zero.mp (norm_pos_iff.mp hd)) hpN (hupperγ γ)
     exact (hdr.trans_le hr).not_ge hb
   · have hβθ : θ < (β : ℂ).re := by simpa using hβ
     have hsimpleβ := hsimple β hβθ ((hord hβθ).symm.trans_lt hβN)
-    have hnonpos := hz.differentiableOn.residue_re_nonpos_of_window_taylor_bound
-      (sub_pos.mp hdist) (lt_min hdr (hdr.trans_le hr)) ((hord hβθ).trans hsimpleβ).ge
+    have hnonpos := hz.differentiableOn.meromorphicTrailingCoeffAt_re_nonpos_of_window_taylor_bound
+      (sub_pos.mp hdist) (lt_min hdr (hdr.trans_le hr)) hβN
       (fun η hη ↦ (hupperγ 0 η hη).imp fun _ hC U₀ ↦ (hC U₀).imp fun _ ⟨hU, k, hk, hu⟩ ↦
         ⟨hU, k, hk, (le_add_of_nonneg_left (norm_nonneg _)).trans hu⟩)
-    rw [Contour.residue_congr_nhdsNE (hF.toMeromorphicNFOn_eq_self_on_nhdsNE hβθ)] at hnonpos
+    rw [← Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one
+      ((hord hβθ).trans hsimpleβ),
+      Contour.residue_congr_nhdsNE (hF.toMeromorphicNFOn_eq_self_on_nhdsNE hβθ)] at hnonpos
     exact (hres β hβ hsimpleβ).not_ge hnonpos
 
 end TauCeti

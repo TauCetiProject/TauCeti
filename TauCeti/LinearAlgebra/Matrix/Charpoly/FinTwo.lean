@@ -47,6 +47,9 @@ over the residue field, then the trace of `M` comes from `A` and has residue `u 
 * `Matrix.det_one_sub_fin_two`, `Matrix.det_one_add_fin_two`: the values
   `det (1 ∓ M) = 1 ∓ trace M + det M` of the pencil at `r = s = ∓1`, which govern the eigenvalues
   `± 1` of `M`.
+* `Matrix.trace_sq_eq_one_add_det_sq_iff_fin_two`: `trace M ^ 2 = (1 + det M) ^ 2` exactly when
+  `1` or `-1` is a root of the characteristic polynomial of `M`, through the factorization
+  `Matrix.det_one_sub_mul_det_one_add_fin_two`.
 * `Matrix.charpoly_eq_charpoly_iff_fin_two`: two `2 × 2` matrices have the same characteristic
   polynomial exactly when they have the same trace and determinant, over any commutative ring.
 * `Matrix.charpolyRev_fin_two`: the reversed characteristic polynomial
@@ -130,6 +133,22 @@ theorem det_one_add_fin_two {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2)
   simp only [one_smul, neg_smul, sub_neg_eq_add, add_comm M] at h
   rw [h]
   ring
+
+/-- The product of the values `det (1 ∓ M)` of the pencil of a `2 × 2` matrix `M` is
+`(1 + det M) ^ 2 - trace M ^ 2`. -/
+theorem det_one_sub_mul_det_one_add_fin_two {R : Type*} [CommRing R]
+    (M : Matrix (Fin 2) (Fin 2) R) :
+    (1 - M).det * (1 + M).det = (1 + M.det) ^ 2 - M.trace ^ 2 := by
+  rw [det_one_sub_fin_two, det_one_add_fin_two]
+  ring
+
+/-- A `2 × 2` matrix `M` over a ring without zero divisors satisfies
+`trace M ^ 2 = (1 + det M) ^ 2` exactly when `1` or `-1` is a root of its characteristic
+polynomial, that is, when `det (1 - M) = 0` or `det (1 + M) = 0`. -/
+theorem trace_sq_eq_one_add_det_sq_iff_fin_two {R : Type*} [CommRing R] [NoZeroDivisors R]
+    (M : Matrix (Fin 2) (Fin 2) R) :
+    M.trace ^ 2 = (1 + M.det) ^ 2 ↔ (1 - M).det = 0 ∨ (1 + M).det = 0 := by
+  rw [← mul_eq_zero, det_one_sub_mul_det_one_add_fin_two, sub_eq_zero, eq_comm]
 
 /-- Two `2 × 2` matrices have the same characteristic polynomial exactly when they have the same
 trace and the same determinant. -/

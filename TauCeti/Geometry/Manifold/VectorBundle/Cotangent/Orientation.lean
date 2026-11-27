@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Orientation.Comap
+public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 
 /-!
 # The orientation of the cotangent bundle of an oriented Riemannian manifold
@@ -31,10 +32,19 @@ the cotangent bundle (`TauCeti.CotangentBundle.orientation`, through
 carries its orientation to that of `TₓM` (`TauCeti.CotangentBundle.map_orientation_apply`). An
 oriented cotangent bundle has a Thom class, and so a Thom isomorphism with integral coefficients.
 
+Whether or not `M` is orientable, the Riesz isomorphisms identify the orientation local system
+`o(TM)` of the tangent bundle with the orientation local system `o(T*M)` of the cotangent bundle
+(`TauCeti.CotangentBundle.signLocalSystemIso`, through
+`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`). So homology twisted by
+`o(T*M)`, the coefficients of the Thom isomorphism of a nonorientable cotangent bundle, is homology
+twisted by `o(TM)`.
+
 ## Main definitions
 
 * `TauCeti.CotangentBundle.orientation`: the orientation of `T*M` transported from an orientation
   of `M` along the Riesz isomorphisms.
+* `TauCeti.CotangentBundle.signLocalSystemIso`: the isomorphism `o(TM) ≅ o(T*M)` of orientation
+  local systems induced by the Riesz isomorphisms.
 
 ## Main results
 
@@ -126,6 +136,45 @@ theorem map_orientation_apply (hι : Fintype.card ι = finrank ℝ E)
   VectorBundleOrientation.map_comap_apply (g := ContinuousMap.id M)
     (φ := fun x ↦ (Riemannian.Tensor.rieszDual (I := I) x).toContinuousLinearEquiv) _ o
     continuous_rieszDual x
+
+variable (I) in
+/-- **The orientation local systems of `TM` and `T*M` agree.** The Riesz isomorphisms `p ↦ p♯`
+carry the orientations of `T*ₓM` to those of `TₓM`, continuously in `x`, so they identify the
+orientation local system `o(TM)` of the tangent bundle with the orientation local system `o(T*M)`
+of the cotangent bundle: a sign function on the orientations of `TₓM` is read on an orientation of
+`T*ₓM` at its image under `p ↦ p♯`
+(`TauCeti.CotangentBundle.signLocalSystemFiberEquiv_signLocalSystemIso_hom_app_apply`). -/
+def signLocalSystemIso (R : Type*) [Ring R] (hι : Fintype.card ι = finrank ℝ E) :
+    VectorBundleOrientationCover.signLocalSystem E (TangentSpace I : M → Type _) R hι ≅
+      VectorBundleOrientationCover.signLocalSystem (E →L[ℝ] ℝ)
+        (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) R
+        (hι.trans ContinuousLinearMap.dual_finrank_eq.symm) :=
+  VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise (F' := E →L[ℝ] ℝ)
+    (E' := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)
+    (φ := fun x ↦ (Riemannian.Tensor.rieszDual (I := I) x).toContinuousLinearEquiv) R hι
+    (hι.trans ContinuousLinearMap.dual_finrank_eq.symm) continuous_rieszDual
+
+open VectorBundleOrientationCover in
+/-- The isomorphism `o(TM) ≅ o(T*M)` reads a sign function on the orientations of `TₓM` at an
+orientation `o` of `T*ₓM` as its value at the image of `o` under the Riesz isomorphism
+`p ↦ p♯`. -/
+@[simp]
+theorem signLocalSystemFiberEquiv_signLocalSystemIso_hom_app_apply (R : Type*) [Ring R]
+    (hι : Fintype.card ι = finrank ℝ E) {x : M}
+    (o : Orientation ℝ (TangentSpace I x →L[ℝ] ℝ) ι)
+    (f : (signLocalSystem E (TangentSpace I : M → Type _) R hι).obj (FundamentalGroupoid.mk x)) :
+    signLocalSystemFiberEquiv (hι.trans ContinuousLinearMap.dual_finrank_eq.symm) o
+        ((signLocalSystemIso I R hι).hom.app (FundamentalGroupoid.mk x) f) =
+      signLocalSystemFiberEquiv hι
+        (Orientation.map ι (Riemannian.Tensor.rieszDual (I := I) x).toLinearEquiv o) f := by
+  rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, signLocalSystemIso,
+    signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_hom_app_apply]
+  -- The Riesz isomorphism as a continuous linear equivalence has the same underlying linear
+  -- equivalence.
+  have h : (Riemannian.Tensor.rieszDual (I := I) x).toContinuousLinearEquiv.toLinearEquiv =
+      (Riemannian.Tensor.rieszDual (I := I) x).toLinearEquiv :=
+    LinearEquiv.ext fun _ ↦ by simp
+  rw [h]
 
 end CotangentBundle
 

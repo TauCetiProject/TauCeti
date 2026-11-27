@@ -5,20 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
+public import TauCeti.Algebra.Module.ZMod.SMulCommClass
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree.Module
+public import TauCeti.Topology.Algebra.ConstMulAction.ZMod
 public import TauCeti.Topology.Algebra.ContinuousZModDual
 
 /-!
 # The `ZMod n`-module structure on `H¹` and its continuous-dual interpretation
 
 For a topological group `G` acting continuously on a `ZMod n`-module `A`, the quotient
-`H¹(G, A) = Z¹/B¹` carries a `ZMod n`-module structure: scalar `n` annihilates every
-`A`-valued element of the ambient group, hence every continuous `1`-cocycle, hence the
-`1`-coboundaries and their cosets, so `TauCeti.instModuleH1` transports the module structure to
-the quotient. This is the same
-observation that gives the continuous character group its own `ZMod n`-module structure in
-`TauCeti.Topology.Algebra.ContinuousZModDual`, and it needs no profiniteness and no pro-`p`
-hypothesis: it holds for every `n` and every continuous action.
+`H¹(G, A) = Z¹/B¹` carries a `ZMod n`-module structure: a scalar acts on the class of a cocycle
+as on the cocycle. This is the `ZMod n` case of the `R`-module structure
+`TauCeti.ContCohomology.H1.instModule`, available because the scalars of `ZMod n` act through
+integer multiples, so they commute with every action (`TauCeti.ZMod.smulCommClass'`) and act
+continuously (`TauCeti.ZMod.continuousConstSMul`). It needs no
+profiniteness and no pro-`p` hypothesis: it holds for every `n` and every continuous action.
 
 When the action is trivial, a continuous `1`-cocycle is a continuous character, so
 `TauCeti.ContCohomology.H1EquivOfSmulEqSelf` identifies `H¹(G, ZMod n)` additively with the
@@ -38,7 +39,6 @@ theorem, is in `TauCeti.Topology.Algebra.Group.Profinite.ProP.H1Dual`.
 
 ## Main definitions
 
-* `TauCeti.instModuleH1`: `H¹(G, A)` is a `ZMod n`-module when `A` is, for any continuous action.
 * `TauCeti.h1EquivContinuousZModHom`: for a trivial action, `H¹(G, A)` is the module of
   continuous homomorphisms from `G` to the additive group of `A`.
 * `TauCeti.h1EquivContinuousZModDual`: for a trivial action, `H¹(G, ZMod n)` is the continuous
@@ -70,26 +70,6 @@ universe u v
 -- `DistribMulAction G (ZMod p)` hypothesis below would not match what `H1` expects. Preferring the
 -- ring path locally keeps a single additive structure on `ZMod p` in every statement here.
 attribute [local instance 2000] Ring.toAddCommGroup
-
-section ModuleStructure
-
-variable {n : ℕ} {G : Type u} [Monoid G] [TopologicalSpace G]
-  {A : Type v} [AddCommGroup A] [Module (ZMod n) A] [TopologicalSpace A]
-  [IsTopologicalAddGroup A] [DistribMulAction G A] [ContinuousSMul G A]
-
-/-- **`H¹(G, A)` inherits the `ZMod n`-module structure of `A`.** Scalar `n` annihilates every
-continuous `A`-valued `1`-cocycle, so it annihilates the subgroup of `1`-coboundaries, and the
-quotient `Z¹/B¹` inherits a `ZMod n`-module structure. The coefficient action is arbitrary. -/
-noncomputable instance instModuleH1 : Module (ZMod n) (H1 G A) :=
-  QuotientAddGroup.zmodModule fun x ↦ by
-    have hx : (n • x : Z1 G A) = 0 := by
-      apply Subtype.ext
-      funext g
-      exact ZModModule.char_nsmul_eq_zero n _
-    rw [hx]
-    exact AddSubgroup.zero_mem _
-
-end ModuleStructure
 
 section ContinuousHom
 

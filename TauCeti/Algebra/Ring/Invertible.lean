@@ -25,6 +25,8 @@ and distributive negation, and the image of `⅟2` under ring homomorphisms:
 * `TauCeti.two_mul_map_invOf_two`: a ring homomorphism sends `⅟2` to a half of `1`.
 * `Commute.ringInverse_right`: an element commuting with `b` commutes with `Ring.inverse b`.
 * `Commute.ringInverse_left`: an element commuting with `a` makes `Ring.inverse a` commute with it.
+* `Ring.inverse_one_sub_eq`: the resolvent identity
+  `Ring.inverse (1 - x) = 1 + x * Ring.inverse (1 - x)` when `1 - x` is a unit.
 -/
 
 public section
@@ -80,3 +82,11 @@ theorem Commute.ringInverse_right {M₀ : Type*} [MonoidWithZero M₀] {a b : M�
 theorem Commute.ringInverse_left {M₀ : Type*} [MonoidWithZero M₀] {a b : M₀}
     (h : Commute a b) : Commute (Ring.inverse a) b :=
   h.symm.ringInverse_right.symm
+
+/-- If `1 - x` is a unit, its inverse satisfies the resolvent identity
+`Ring.inverse (1 - x) = 1 + x * Ring.inverse (1 - x)`. -/
+theorem Ring.inverse_one_sub_eq {α : Type*} [Ring α] {x : α} (hu : IsUnit (1 - x)) :
+    Ring.inverse (1 - x) = 1 + x * Ring.inverse (1 - x) := by
+  have h := Ring.mul_inverse_cancel _ hu
+  rw [sub_mul, one_mul] at h
+  exact sub_eq_iff_eq_add.1 h

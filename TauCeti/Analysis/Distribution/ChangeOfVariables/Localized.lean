@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.Diffeomorph.Germ
@@ -23,7 +24,10 @@ order, multiplied by Schwartz functions `φᵢ` (`TauCeti.exists_sum_smul_comp_e
 
 Pullbacks along such bijections and multiplication by Schwartz functions are bounded on the usual
 function spaces of `E` (Lebesgue, Schwartz, Sobolev and Besov spaces), so this reduces the
-boundedness of localized changes of variables on those spaces to the global mapping theorems.
+boundedness of localized changes of variables on those spaces to the global mapping theorems:
+for every additive map `L` out of `𝓢(E, F)` into a seminormed group, if `‖L (u ∘ Φ)‖` and
+`‖L (φ · u)‖` are bounded by multiples of `‖L u‖` for all such `Φ` and all Schwartz functions `φ`,
+then so is `‖L (θ · (u ∘ e))‖` (`TauCeti.exists_norm_le_of_eq_smul_comp`).
 
 ## The argument
 
@@ -31,6 +35,13 @@ Near each point of its source, `e` agrees with such a bijection
 (`TauCeti.exists_equiv_eventuallyEq_of_det_fderiv_ne_zero`). A finite partition of unity `χᵢ` on
 the support of `θ`, subordinate to the open sets where `e` agrees with bijections `Φᵢ`, gives
 `θ · (u ∘ e) = ∑ᵢ (θ χᵢ) · (u ∘ Φᵢ)`.
+
+## Main results
+
+* `TauCeti.exists_sum_smul_comp_eq_smul_comp`: a localized change of variables as a finite sum of
+  global ones multiplied by Schwartz functions.
+* `TauCeti.exists_norm_le_of_eq_smul_comp`: localized changes of variables are bounded in every
+  norm in which global changes of variables and multiplication by Schwartz functions are.
 
 ## References
 
@@ -49,9 +60,9 @@ namespace TauCeti
 open Filter Set
 open scoped SchwartzMap ContDiff
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [AddCommGroup F] [Module ℂ F]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
+variable {F : Type*} [AddCommGroup F] [Module ℂ F] in
 /-- **Localized changes of variables as finite sums.** Let `e` be a smooth open partial
 homeomorphism of `E` with smooth inverse and `θ` a smooth function with compact support in the
 source of `e`. There are finitely many Schwartz functions `φ x` and bijections `Φ x` of `E` that
@@ -94,5 +105,54 @@ theorem exists_sum_smul_comp_eq_smul_comp {e : OpenPartialHomeomorph E E}
   by_cases hy : y ∈ tsupport θ
   · rw [hsum y hy, mul_one, Complex.coe_smul]
   · simp [image_eq_zero_of_notMem_tsupport hy]
+
+section Norm
+
+variable {F X G : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [SeminormedAddCommGroup X]
+  [FunLike G 𝓢(E, F) X] [AddMonoidHomClass G 𝓢(E, F) X]
+
+/-- **Localized changes of variables are bounded.** Let `L` be an additive map out of `𝓢(E, F)`
+into a seminormed group such that the pullback along every bijection `Φ` of `E` that is smooth
+with smooth inverse with bounded derivatives of every positive order, and multiplication by every
+complex Schwartz function, are bounded in `‖L ·‖`. Let `e` be a smooth open partial homeomorphism
+of `E` with smooth inverse and `θ` a smooth function with compact support in the source of `e`.
+Then `u ↦ θ · (u ∘ e)`, extended by `0` off the source, is bounded in `‖L ·‖`: there is a constant
+`C` with `‖L v‖ ≤ C ‖L u‖` whenever `v = θ · (u ∘ e)`. -/
+theorem exists_norm_le_of_eq_smul_comp (L : G)
+    (hcomp : ∀ (Φ : E ≃ E) (hΦ : (Φ : E → E).HasTemperateGrowth)
+      (hΨ : (Φ.symm : E → E).HasTemperateGrowth),
+      (∀ k, 1 ≤ k → ∃ C, ∀ y, ‖iteratedFDeriv ℝ k Φ y‖ ≤ C) →
+      (∀ k, 1 ≤ k → ∃ C, ∀ y, ‖iteratedFDeriv ℝ k Φ.symm y‖ ≤ C) → ∃ C, ∀ u,
+        ‖L (SchwartzMap.compCLM ℂ hΦ (hΨ.exists_norm_le_of_leftInverse Φ.left_inv) u)‖ ≤
+          C * ‖L u‖)
+    (hmul : ∀ φ : 𝓢(E, ℂ), ∃ C, ∀ u, ‖L (SchwartzMap.smulLeftCLM F (φ : E → ℂ) u)‖ ≤ C * ‖L u‖)
+    {e : OpenPartialHomeomorph E E} (he : ContDiffOn ℝ ∞ e e.source)
+    (he' : ContDiffOn ℝ ∞ e.symm e.target) {θ : E → ℝ} (hθ : ContDiff ℝ ∞ θ)
+    (hθc : HasCompactSupport θ) (hθe : tsupport θ ⊆ e.source) :
+    ∃ C, ∀ u v : 𝓢(E, F), (∀ x, v x = θ x • u (e x)) → ‖L v‖ ≤ C * ‖L u‖ := by
+  obtain ⟨t, Φ, φ, hΦ, hsum⟩ := exists_sum_smul_comp_eq_smul_comp (F := F) he he' hθ hθc hθe
+  choose hΦs hΨs hΦb hΨb using hΦ
+  have hΦt (x : e.source) :=
+    Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos (hΦs x) (hΦb x)
+  have hΨt (x : e.source) :=
+    Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos (hΨs x) (hΨb x)
+  choose A hA using fun x ↦ hmul (φ x)
+  choose B hB using fun x ↦ hcomp (Φ x) (hΦt x) (hΨt x) (hΦb x) (hΨb x)
+  refine ⟨∑ x ∈ t, |A x| * B x, fun u v hv ↦ ?_⟩
+  -- `v` is the sum of the pullbacks `u ∘ Φ x` multiplied by `φ x`.
+  have hv' : v = ∑ x ∈ t, SchwartzMap.smulLeftCLM F (φ x : E → ℂ)
+      (SchwartzMap.compCLM ℂ (hΦt x) ((hΨt x).exists_norm_le_of_leftInverse (Φ x).left_inv)
+        u) := by
+    ext y
+    simp only [sum_apply, SchwartzMap.smulLeftCLM_apply_apply
+      (SchwartzMap.hasTemperateGrowth _), SchwartzMap.compCLM_apply, Function.comp_apply, hv,
+      hsum]
+  rw [hv', map_sum, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun x _ ↦ ?_)
+  rw [mul_assoc]
+  exact ((hA x _).trans (mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _))).trans
+    (mul_le_mul_of_nonneg_left (hB x u) (abs_nonneg _))
+
+end Norm
 
 end TauCeti

@@ -36,6 +36,8 @@ for instance to bound the covector field representing it in that chart.
 
 ## Main results
 
+* `TauCeti.sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self`: a `(0,1)`-form is the sum of the
+  `(0,1)`-projections of its products with a partition of unity.
 * `TauCeti.zeroOnePartSobolevL_mem_aeZeroOff`: the `(0,1)`-projection preserves vanishing off a
   set.
 * `TauCeti.zeroOneExtendByZeroL_mem_aeZeroOff`: the extension vanishes off `L`.
@@ -83,6 +85,14 @@ theorem zeroOnePartSobolevL_mem_aeZeroOff {L : Set M} {w : SobolevSection A.tang
       aeZeroOff A.tangentHom μ p k L := mem_aeZeroOff.2 fun i ↦ by
   filter_upwards [mem_aeZeroOff.1 hw i, chartValueL_zeroOnePartSobolevL_ae w i] with y hy hz hL
   rw [hz, hy hL, map_zero]
+
+/-- **Localizing `(0,1)`-forms.** If the smooth functions `χᵢ` sum to `1`, every `(0,1)`-form `w` is
+the sum of the `(0,1)`-projections of the one-forms `χᵢ w`. -/
+theorem sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self {ι : Type*} [Fintype ι] {χ : ι → M → ℝ}
+    (hχ : ∀ i, ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ (χ i)) (h1 : ∀ x, ∑ i, χ i x = 1)
+    (w : zeroOneSobolevSections A μ p k) :
+    ∑ i, zeroOnePartSobolevL A μ p k (contMDiffSMulL A.tangentHom μ p k (hχ i) w) = w := by
+  rw [← map_sum, sum_contMDiffSMulL_eq_self_of_sum_eq_one _ h1, zeroOnePartSobolevL_coe]
 
 variable (h : HasExtensionByZero A.tangentHom μ p k) {i : Fin A.n} {L : Set M}
   (hL : IsClosed L) (hLi : L ⊆ A.dom i)
