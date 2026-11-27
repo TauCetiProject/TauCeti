@@ -466,8 +466,11 @@ def latitudeHomeomorphParallel {t : ℝ} (ht : t ∈ Ioo (-1 : ℝ) 1) :
   invFun z :=
     ((latitudeHomeomorphComplPair p).symm ⟨z, notMem_pair_of_inner_eq p ht z.property⟩).1
   left_inv u := by
-    have h := (latitudeHomeomorphComplPair p).symm_apply_apply (u, ⟨t, ht⟩)
-    exact congrArg Prod.fst h
+    -- The point `latitude p u t` is `latitudeHomeomorphComplPair p (u, t)`, so its preimage is
+    -- `(u, t)`.
+    refine congrArg Prod.fst (((latitudeHomeomorphComplPair p).symm_apply_eq
+      (x := (u, ⟨t, ht⟩))).2 ?_)
+    exact Subtype.ext (coe_latitudeHomeomorphComplPair_apply p (u, ⟨t, ht⟩)).symm
   right_inv z := by
     -- The inverse of `latitudeHomeomorphComplPair p` recovers the height `t` of `z`.
     have hz : ⟪((z : sphere (0 : E) 1) : E), (p : E)⟫ = t := z.property
