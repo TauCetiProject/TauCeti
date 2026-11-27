@@ -81,19 +81,19 @@ theorem exists_centerMapRingHom_blockTwoS₃_mul_classSumCenter (f : ZMod 2 →+
 
 /-- The augmentation is the central character of `1 + ρ + ρ²` over every `K`: it takes the value
 `f 1 = 1` at its image. -/
-theorem centerAugmentation_blockOneS₃_map (f : ZMod 2 →+* K) :
+theorem centerAugmentation_centerMapRingHom_blockOneS₃ (f : ZMod 2 →+* K) :
     centerAugmentation K S₃ (centerMapRingHom S₃ f blockOneS₃) = 1 := by
   rw [centerAugmentation_centerMapRingHom, centerAugmentation_apply, augmentation_blockOneS₃,
     map_one]
 
 /-- Over every field `K` of characteristic `2`, the image of `1 + ρ + ρ²` is a block of `K[S₃]`. -/
-theorem isBlockIdempotent_blockOneS₃_map (f : ZMod 2 →+* K) :
+theorem isBlockIdempotent_centerMapRingHom_blockOneS₃ (f : ZMod 2 →+* K) :
     IsBlockIdempotent (centerMapRingHom S₃ f blockOneS₃) :=
   isBlockIdempotent_blockOneS₃.centerMapRingHom f
     (by rw [centerAugmentation_apply, augmentation_blockOneS₃])
 
 /-- Over every field `K` of characteristic `2`, the image of `ρ + ρ²` is a block of `K[S₃]`. -/
-theorem isBlockIdempotent_blockTwoS₃_map (f : ZMod 2 →+* K) :
+theorem isBlockIdempotent_centerMapRingHom_blockTwoS₃ (f : ZMod 2 →+* K) :
     IsBlockIdempotent (centerMapRingHom S₃ f blockTwoS₃) :=
   isBlockIdempotent_blockTwoS₃.centerMapRingHom_of_forall_exists_mul_classSumCenter f
     exists_blockTwoS₃_mul_classSumCenter
@@ -115,7 +115,7 @@ theorem exists_algHom_centerMapRingHom_blockTwoS₃_eq_one_and_classSumCenter (f
     ∃ φ : Subalgebra.center K (MonoidAlgebra K S₃) →ₐ[K] K,
       φ (centerMapRingHom S₃ f blockTwoS₃) = 1 ∧ ∀ g : S₃,
         φ (classSumCenter (ConjClasses.mk g)) = if g ≠ 1 ∧ g * g = 1 then 0 else 1 := by
-  have hb := isBlockIdempotent_blockTwoS₃_map f
+  have hb := isBlockIdempotent_centerMapRingHom_blockTwoS₃ f
   obtain ⟨φ, hφ1, hφ⟩ := hb.exists_algHom_of_forall_exists_mul_classSumCenter
     (exists_centerMapRingHom_blockTwoS₃_mul_classSumCenter f)
   refine ⟨φ, hφ1, fun g ↦ (apply_eq_of_mul_eq_smul hb.ne_zero hφ
@@ -128,8 +128,10 @@ instance `𝔽₄ ⊆ 𝔽₂^alg`, the blocks `1 + ρ + ρ²` and `ρ + ρ²` o
 theorem isBlockIdempotent_centerMapRingHom_blockS₃ (f : ZMod 2 →+* K) (f' : K →+* K') :
     IsBlockIdempotent (centerMapRingHom S₃ f' (centerMapRingHom S₃ f blockOneS₃)) ∧
       IsBlockIdempotent (centerMapRingHom S₃ f' (centerMapRingHom S₃ f blockTwoS₃)) :=
-  ⟨(isBlockIdempotent_blockOneS₃_map f).centerMapRingHom f' (centerAugmentation_blockOneS₃_map f),
-    (isBlockIdempotent_blockTwoS₃_map f).centerMapRingHom_of_forall_exists_mul_classSumCenter f'
+  ⟨(isBlockIdempotent_centerMapRingHom_blockOneS₃ f).centerMapRingHom f'
+      (centerAugmentation_centerMapRingHom_blockOneS₃ f),
+    IsBlockIdempotent.centerMapRingHom_of_forall_exists_mul_classSumCenter f'
+      (isBlockIdempotent_centerMapRingHom_blockTwoS₃ f)
       (exists_centerMapRingHom_blockTwoS₃_mul_classSumCenter f)⟩
 
 /-! ### `C₃` -/
