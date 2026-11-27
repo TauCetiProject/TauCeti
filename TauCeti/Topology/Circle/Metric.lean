@@ -43,8 +43,8 @@ circle.
   angular width at most `π` in a set of angles that is order connected.
 * `TauCeti.abs_mul_abs_sub_le_pi_div_two_mul_dist_circleMap` — conversely, Jordan's inequality
   bounds the arc `|ρ| |θ - θ'|` within half a turn by `π / 2` times the chord, so
-  `TauCeti.antilipschitzWith_domRestrict_circleMap` — `circleMap ζ ρ` is inverse-Lipschitz on any
-  set of angles of width at most `π`, and
+  `TauCeti.antilipschitzWith_domRestrict_circleMap` — `circleMap ζ ρ` with `ρ ≠ 0` is
+  inverse-Lipschitz on any set of angles of width at most `π`, and
   `TauCeti.exists_abs_sub_lt_and_circleMap_eq_of_mem_sphere_of_dist_lt` — a point of the circle
   closer than the radius to the point at angle `θ` lies at an angle within `π / 2` of `θ`.
 * `TauCeti.preimage_circleMap_ball_inter_Icc` — for `0 < r ≤ 2ρ`, the angles within half a turn
@@ -265,7 +265,7 @@ theorem abs_mul_abs_sub_le_pi_div_two_mul_dist_circleMap (ζ : ℂ) (ρ : ℝ) {
     _ ≤ 2 * |ρ| * (π / 2 * Real.sin (|θ - θ'| / 2)) := by gcongr
     _ = π / 2 * (2 * |ρ| * Real.sin (|θ - θ'| / 2)) := by ring
 
-/-- **The circle chart is inverse-Lipschitz on less than a turn.** On a set of angles any two of
+/-- **The circle chart is inverse-Lipschitz within half a turn.** On a set of angles any two of
 which are at most half a turn apart, `circleMap ζ ρ` with `ρ ≠ 0` is inverse-Lipschitz with
 constant `π / (2 |ρ|)` (`TauCeti.abs_mul_abs_sub_le_pi_div_two_mul_dist_circleMap`). -/
 theorem antilipschitzWith_domRestrict_circleMap (ζ : ℂ) {ρ : ℝ} (hρ : ρ ≠ 0) {s : Set ℝ}

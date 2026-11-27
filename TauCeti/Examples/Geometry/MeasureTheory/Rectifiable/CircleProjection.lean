@@ -9,7 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentialFDeriv
 public import TauCeti.MeasureTheory.Function.AreaFormula.Circle
 import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.MeasureTheory.Integral.CircleIntegral
-import TauCeti.Analysis.SpecialFunctions.Integrals.AbsSin
+import TauCeti.Analysis.SpecialFunctions.Integrals.AbsSin.Basic
 import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Topology.Circle.Metric
 
