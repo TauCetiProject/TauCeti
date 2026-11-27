@@ -22,7 +22,7 @@ Pulling back rational functions, `f ↦ f^*`, is a functor to the opposite of th
 commutative `k`-algebras (`TauCeti.AlgebraicGeometry.DominantRationalMapCat.functionFieldFunctor`),
 by functoriality of `Scheme.RationalMap.functionFieldAlgHom`. By determination
 (`Scheme.RationalMap.equivFunctionFieldAlgHom`) it is fully faithful
-(`TauCeti.AlgebraicGeometry.DominantRationalMapCat.functionFieldFunctorFullyFaithful`): every
+(`TauCeti.AlgebraicGeometry.DominantRationalMapCat.fullyFaithfulFunctionFieldFunctor`): every
 `k`-algebra map `k(Y) → k(X)` is the pullback along exactly one dominant `k`-rational map
 `X ⤏ Y`.
 
@@ -32,7 +32,7 @@ by functoriality of `Scheme.RationalMap.functionFieldAlgHom`. By determination
   type over `k`, with dominant `k`-rational maps.
 * `TauCeti.AlgebraicGeometry.DominantRationalMapCat.functionFieldFunctor k`: the function-field
   functor `X ↦ k(X)` to `(CommAlgCat k)ᵒᵖ`.
-* `TauCeti.AlgebraicGeometry.DominantRationalMapCat.functionFieldFunctorFullyFaithful k`: it is
+* `TauCeti.AlgebraicGeometry.DominantRationalMapCat.fullyFaithfulFunctionFieldFunctor k`: it is
   fully faithful.
 
 ## References
@@ -130,7 +130,7 @@ variable (k) in
 /-- **Determination, categorically**: the function-field functor is fully faithful. Every
 `k`-algebra map `k(Y) → k(X)` is the pullback of rational functions along exactly one dominant
 `k`-rational map `X ⤏ Y` (`Scheme.RationalMap.equivFunctionFieldAlgHom`). -/
-noncomputable def functionFieldFunctorFullyFaithful : (functionFieldFunctor k).FullyFaithful where
+noncomputable def fullyFaithfulFunctionFieldFunctor : (functionFieldFunctor k).FullyFaithful where
   preimage {X Y} φ :=
     let f := (Scheme.RationalMap.equivFunctionFieldAlgHom k).symm
       (φ.unop.hom : Y.toScheme.functionField →ₐ[k] X.toScheme.functionField)
@@ -146,9 +146,19 @@ noncomputable def functionFieldFunctorFullyFaithful : (functionFieldFunctor k).F
     rw [functionFieldFunctor_map_unop_hom, ← Scheme.RationalMap.equivFunctionFieldAlgHom_apply,
       Equiv.symm_apply_apply]
 
-instance : (functionFieldFunctor k).Full := (functionFieldFunctorFullyFaithful k).full
+/-- The dominant rational map recovered from a `k`-algebra map of function fields is
+`Scheme.RationalMap.ofFunctionFieldAlgHom`. -/
+@[simp]
+lemma fullyFaithfulFunctionFieldFunctor_preimage_toRationalMap {X Y : DominantRationalMapCat k}
+    (φ : (functionFieldFunctor k).obj X ⟶ (functionFieldFunctor k).obj Y) :
+    Hom.toRationalMap ((fullyFaithfulFunctionFieldFunctor k).preimage φ) =
+      Scheme.RationalMap.ofFunctionFieldAlgHom k
+        (φ.unop.hom : Y.toScheme.functionField →ₐ[k] X.toScheme.functionField) :=
+  Scheme.RationalMap.equivFunctionFieldAlgHom_symm_apply_coe k _
 
-instance : (functionFieldFunctor k).Faithful := (functionFieldFunctorFullyFaithful k).faithful
+instance : (functionFieldFunctor k).Full := (fullyFaithfulFunctionFieldFunctor k).full
+
+instance : (functionFieldFunctor k).Faithful := (fullyFaithfulFunctionFieldFunctor k).faithful
 
 end DominantRationalMapCat
 
