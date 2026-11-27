@@ -11,6 +11,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.FieldDivision
+import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.IntegralDomain
@@ -66,27 +67,12 @@ namespace Polynomial
 
 variable {F : Type*} [Field F]
 
-/-- The `n`-th coefficient of `∑_{k<n} b_k X^k` is `b_n`. -/
-private theorem coeff_sum_fin_monomial {R : Type*} [Semiring R] {n : ℕ} (b : Fin n → R)
-    (j : Fin n) : (∑ k : Fin n, monomial (k : ℕ) (b k)).coeff j = b j := by
-  rw [finsetSum_coeff, Finset.sum_eq_single j (fun k _ hk => coeff_monomial_of_ne _
-    (Fin.val_injective.ne hk).symm) (by simp), coeff_monomial_same]
-
-private theorem natDegree_sum_fin_monomial_le {R : Type*} [Semiring R] {n : ℕ} (b : Fin n → R) :
-    (∑ k : Fin n, monomial (k : ℕ) (b k)).natDegree ≤ n - 1 :=
-  natDegree_sum_le_of_forall_le _ _ fun k _ => (natDegree_monomial_le _).trans (by omega)
-
-/-- Division by a fixed polynomial, as an `F`-linear map. -/
-private noncomputable def divLinearMap (g : F[X]) : F[X] →ₗ[F] F[X] :=
-  LinearMap.mulLeft F (C g.leadingCoeff⁻¹) ∘ₗ divByMonicHom (g * C g.leadingCoeff⁻¹)
-
-private theorem divLinearMap_apply (g p : F[X]) : divLinearMap g p = p / g := by
-  simp [divLinearMap, div_def]
-
-/-- The polynomial `f^ℓ D^ℓ(f^N B) / f^N`, as an `F`-linear map of `B`. -/
+/-- The polynomial `f^ℓ D^ℓ(f^N B) / f^N`, as an `F`-linear map of `B`. Mathlib's
+`Polynomial.div_def` writes the division by `f^N` through `divByMonicHom`. -/
 private noncomputable def stepanovMap (f : F[X]) (N ℓ : ℕ) : F[X] →ₗ[F] F[X] :=
-  divLinearMap (f ^ N) ∘ₗ LinearMap.mulLeft F (f ^ ℓ) ∘ₗ hasseDeriv ℓ ∘ₗ
-    LinearMap.mulLeft F (f ^ N)
+  LinearMap.mulLeft F (C (f ^ N).leadingCoeff⁻¹) ∘ₗ
+    divByMonicHom (f ^ N * C (f ^ N).leadingCoeff⁻¹) ∘ₗ LinearMap.mulLeft F (f ^ ℓ) ∘ₗ
+      hasseDeriv ℓ ∘ₗ LinearMap.mulLeft F (f ^ N)
 
 private theorem pow_mul_stepanovMap {f : F[X]} (hf : f ≠ 0) (N ℓ : ℕ) (B : F[X]) :
     f ^ N * stepanovMap f N ℓ B = f ^ ℓ * hasseDeriv ℓ (f ^ N * B) := by
@@ -94,7 +80,9 @@ private theorem pow_mul_stepanovMap {f : F[X]} (hf : f ≠ 0) (N ℓ : ℕ) (B :
     refine (pow_dvd_pow f (by omega : N ≤ ℓ + (N - ℓ))).trans ?_
     rw [pow_add]
     exact mul_dvd_mul_left _ (pow_sub_dvd_hasseDeriv_of_pow_dvd ℓ (dvd_mul_right _ _))
-  simp only [stepanovMap, LinearMap.comp_apply, LinearMap.mulLeft_apply, divLinearMap_apply]
+  have hdiv : stepanovMap f N ℓ B = f ^ ℓ * hasseDeriv ℓ (f ^ N * B) / f ^ N := by
+    simp [stepanovMap, div_def]
+  rw [hdiv]
   exact EuclideanDomain.mul_div_cancel' (pow_ne_zero N hf) hdvd
 
 private theorem natDegree_stepanovMap_le {f : F[X]} (hf : f ≠ 0) (N ℓ : ℕ) (B : F[X]) :
@@ -108,21 +96,6 @@ private theorem natDegree_stepanovMap_le {f : F[X]} (hf : f ≠ 0) (N ℓ : ℕ)
   have h₃ := natDegree_mul_le (p := f ^ N) (q := B)
   rw [natDegree_pow] at h₁ h₃
   omega
-
-/-- Hasse derivatives of order less than `q = #F` commute with multiplication by a `q`-th
-power. -/
-private theorem hasseDeriv_mul_pow_natCard {ℓ : ℕ} (hℓ : ℓ < Nat.card F) (P g : F[X]) :
-    hasseDeriv ℓ (P * g ^ Nat.card F) = hasseDeriv ℓ P * g ^ Nat.card F := by
-  classical
-  rw [hasseDeriv_mul, Finset.sum_eq_single (ℓ, 0)]
-  · simp
-  · intro ij hij hne
-    have hij' := Finset.mem_antidiagonal.mp hij
-    have hj : 0 < ij.2 := by
-      by_contra! h
-      exact hne (Prod.ext (by omega) (by omega))
-    rw [hasseDeriv_pow_natCard_eq_zero (Nat.not_dvd_of_pos_of_lt hj (by omega)), mul_zero]
-  · simp
 
 private theorem hasseDeriv_sum_mul_eval_X_pow {e J ℓ : ℕ} (hℓ : ℓ < Nat.card F)
     (g : Fin e → F[X]) (B : Fin e → Fin J → F[X]) :
@@ -180,29 +153,27 @@ private theorem exists_eval_hasseDeriv_sum_pow_mul_eval_X_pow_eq_zero_of_pos {c 
           0 := by
   classical
   have hJ : 0 < J := Nat.pos_of_ne_zero fun h => by simp [h] at hcount
-  let B (a : Fin e × Fin J × Fin (D + 1) → F) (i : Fin e) (j : Fin J) : F[X] :=
-    ∑ r : Fin (D + 1), monomial (r : ℕ) (a (i, j, r))
+  let B (i : Fin e) (j : Fin J) : (Fin e × Fin J × Fin (D + 1) → F) →ₗ[F] F[X] :=
+    ofFn (D + 1) ∘ₗ LinearMap.pi fun r => LinearMap.proj (i, j, r)
   let T (ℓ : ℕ) : (Fin e × Fin J × Fin (D + 1) → F) →ₗ[F] F[X] :=
-    ∑ i : Fin e, ∑ j : Fin J, LinearMap.mulRight F (X ^ (j : ℕ)) ∘ₗ stepanovMap f ((i : ℕ) * c) ℓ ∘ₗ
-      ∑ r : Fin (D + 1), monomial (r : ℕ) ∘ₗ LinearMap.proj (i, j, r)
+    ∑ i : Fin e, ∑ j : Fin J,
+      LinearMap.mulRight F (X ^ (j : ℕ)) ∘ₗ stepanovMap f ((i : ℕ) * c) ℓ ∘ₗ B i j
   have hT (ℓ : ℕ) (a) : T ℓ a =
-      ∑ i : Fin e, ∑ j : Fin J, stepanovMap f ((i : ℕ) * c) ℓ (B a i j) * X ^ (j : ℕ) := by
-    simp [T, B, map_sum, Finset.sum_mul]
+      ∑ i : Fin e, ∑ j : Fin J, stepanovMap f ((i : ℕ) * c) ℓ (B i j a) * X ^ (j : ℕ) := by
+    simp [T]
   obtain ⟨a, ha, hTa⟩ := exists_ne_zero_forall_coeff_eq_zero T (fun ℓ => ℓ * f.natDegree + D + J)
     (by simpa [Module.finrank_fintype_fun_eq_card, mul_assoc] using hcount)
-  have hB (i j) : (B a i j).natDegree ≤ D := (natDegree_sum_fin_monomial_le _).trans (by omega)
-  refine ⟨fun i => ∑ j : Fin J, monomial (j : ℕ) (B a i j), ?_, fun i n => ?_,
-    fun i => (natDegree_sum_fin_monomial_le _).trans_lt (by omega), fun x hx ℓ hℓ => ?_⟩
+  have hB (i j) : (B i j a).natDegree ≤ D := Nat.lt_succ_iff.mp (ofFn_natDegree_lt (by omega) _)
+  refine ⟨fun i => ofFn J fun j => B i j a, ?_, fun i n => ?_, fun i => ofFn_natDegree_lt hJ _,
+    fun x hx ℓ hℓ => ?_⟩
   · obtain ⟨⟨i, j, r⟩, hr⟩ := Function.ne_iff.mp ha
     refine ⟨i, fun h => hr ?_⟩
     have h' := congrArg (fun p => (p.coeff j).coeff r) h
-    simpa only [B, coeff_sum_fin_monomial, coeff_zero, Pi.zero_apply] using h'
-  · rw [finsetSum_coeff]
-    refine natDegree_sum_le_of_forall_le _ _ fun j _ => ?_
-    by_cases hj : n = j
-    · rw [hj, coeff_monomial_same]
-      exact hB i j
-    · rw [coeff_monomial_of_ne _ hj, natDegree_zero]
+    simpa [B, ofFn_coeff_eq_val_of_lt _ r.isLt] using h'
+  · by_cases hn : n < J
+    · rw [ofFn_coeff_eq_val_of_lt _ hn]
+      exact hB i _
+    · rw [ofFn_coeff_eq_zero_of_ge _ (not_lt.mp hn), natDegree_zero]
       exact Nat.zero_le D
   have hfx : f.eval x ≠ 0 := fun h => by simp [h, hc.ne'] at hx
   have hf : f ≠ 0 := fun h => hfx (by simp [h])
@@ -210,7 +181,7 @@ private theorem exists_eval_hasseDeriv_sum_pow_mul_eval_X_pow_eq_zero_of_pos {c 
     rw [hT]
     refine natDegree_sum_le_of_forall_le _ _ fun i _ =>
       natDegree_sum_le_of_forall_le _ _ fun j _ => natDegree_mul_le.trans ?_
-    have := natDegree_stepanovMap_le hf ((i : ℕ) * c) ℓ (B a i j)
+    have := natDegree_stepanovMap_le hf ((i : ℕ) * c) ℓ (B i j a)
     have := hB i j
     have := natDegree_X_pow_le (R := F) (j : ℕ)
     have := j.isLt
@@ -221,8 +192,9 @@ private theorem exists_eval_hasseDeriv_sum_pow_mul_eval_X_pow_eq_zero_of_pos {c 
     · exact hTa ℓ hℓ r hr
     · rw [coeff_zero]
       exact coeff_eq_zero_of_natDegree_lt (by omega)
-  have h := pow_mul_eval_hasseDeriv_eq (hℓ.trans_le hM) hf hx (B a)
+  have h := pow_mul_eval_hasseDeriv_eq (hℓ.trans_le hM) hf hx fun i j => B i j a
   rw [← hT, hzero, eval_zero] at h
+  simp only [ofFn_eq_sum_monomial]
   exact (mul_eq_zero.mp h).resolve_left (pow_ne_zero _ hfx)
 
 /-- The interpolation step over a field. -/

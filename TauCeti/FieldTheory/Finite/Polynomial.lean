@@ -18,7 +18,9 @@ and `Polynomial.hasseDeriv_pow_card_eq_zero` with `q = Fintype.card K`). The `Na
 also holds over an infinite field, where `Nat.card K = 0`. In particular they vanish
 at every order `k` with `0 < k < q`, since `Nat.not_dvd_of_pos_of_lt` shows that `q` does not
 divide such a `k`. Mathlib's `FiniteField.card'` writes `q` as a power of the characteristic, which
-reduces the claim to `Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`.
+reduces the claim to `Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`. Consequently a Hasse
+derivative of order `k < q` commutes with multiplication by a `q`-th power
+(`Polynomial.hasseDeriv_mul_pow_natCard`).
 
 The polynomial `X ^ q ^ n - X` is separable for `n ≠ 0` over any commutative ring with `q`
 elements (`Polynomial.separable_X_pow_card_pow_sub_X`).
@@ -55,6 +57,21 @@ theorem hasseDeriv_pow_natCard_eq_zero {k : ℕ} (hk : ¬Nat.card K ∣ k) (f : 
   | inr _ =>
     rw [Nat.card_eq_zero_of_infinite, zero_dvd_iff] at hk
     rw [Nat.card_eq_zero_of_infinite, pow_zero, hasseDeriv_apply_one k (Nat.pos_of_ne_zero hk)]
+
+/-- Over a finite field with `q = Nat.card K` elements, a Hasse derivative of order `k < q`
+commutes with multiplication by a `q`-th power. -/
+theorem hasseDeriv_mul_pow_natCard {k : ℕ} (hk : k < Nat.card K) (f g : K[X]) :
+    hasseDeriv k (f * g ^ Nat.card K) = hasseDeriv k f * g ^ Nat.card K := by
+  classical
+  rw [hasseDeriv_mul, Finset.sum_eq_single (k, 0)]
+  · simp
+  · intro ij hij hne
+    have hij' := Finset.mem_antidiagonal.mp hij
+    have hj : 0 < ij.2 := by
+      by_contra! h
+      exact hne (Prod.ext (by omega) (by omega))
+    rw [hasseDeriv_pow_natCard_eq_zero (Nat.not_dvd_of_pos_of_lt hj (by omega)), mul_zero]
+  · simp
 
 /-- Over a finite field with `q = Fintype.card K` elements, the Hasse derivatives of `f ^ q` vanish
 at every order `k` not divisible by `q`, for instance at every `k` with `0 < k < q`. -/
