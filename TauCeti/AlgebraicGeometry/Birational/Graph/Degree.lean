@@ -139,8 +139,7 @@ instance isDominant_graphSnd : IsDominant (graphSnd f) := by
   have h : (graphSnd f).toRationalMap.IsDominant := by
     rw [toRationalMap_graphSnd]
     infer_instance
-  rw [Hom.toRationalMap, PartialMap.isDominant_toRationalMap_iff, Hom.toPartialMap_hom] at h
-  exact IsDominant.of_comp (H := h) _ _
+  exact (Hom.isDominant_toRationalMap_iff _).1 h
 
 /-- **The topological degree of the second projection.** For a dominant rational map `f : X ⤏ Y` of
 integral schemes, with `Γ_f` integral, `Y` separated and the inclusion of the domain of

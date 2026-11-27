@@ -26,6 +26,8 @@ isomorphisms from mutually inverse partial maps.
   `(f.comp g).compHom h = f.comp (g.compHom h)`.
 * `AlgebraicGeometry.Scheme.RationalMap.toRationalMap_representative_comp_representative`: the
   composite of the representatives of `f` and `g` represents `f.comp g`.
+* `AlgebraicGeometry.Scheme.Hom.isDominant_toRationalMap_iff`: the rational map of a morphism is
+  dominant exactly when the morphism is.
 * `AlgebraicGeometry.Scheme.Hom.toRationalMap_comp`: the rational map of a composite of morphisms,
   the first dominant, is the composite of their rational maps.
 * `AlgebraicGeometry.Scheme.PartialMap.compDomainRestrict`: the restriction of `f` to the domain of
@@ -65,6 +67,13 @@ theorem RationalMap.comp_compHom (f : X ⤏ Y) [f.IsDominant] (g : Y ⤏ Z) (h :
 theorem RationalMap.toRationalMap_representative_comp_representative (f : X ⤏ Y) [f.IsDominant]
     (g : Y ⤏ Z) : (f.representative.comp g.representative).toRationalMap = f.comp g := by
   rw [← RationalMap.comp_def, g.toRationalMap_representative]
+
+omit [PreirreducibleSpace X] [Nonempty Y] in
+/-- The rational map of a morphism is dominant exactly when the morphism is dominant. -/
+theorem Hom.isDominant_toRationalMap_iff (a : X ⟶ Y) :
+    a.toRationalMap.IsDominant ↔ IsDominant a := by
+  rw [Hom.toRationalMap, PartialMap.isDominant_toRationalMap_iff, Hom.toPartialMap_hom]
+  exact MorphismProperty.cancel_left_of_respectsIso @IsDominant X.topIso.hom a
 
 /-- The rational map of a composite `a ≫ b` of morphisms, with `a` dominant, is the composite of
 their rational maps. -/
