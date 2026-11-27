@@ -53,8 +53,8 @@ stabilizer `Z_G(X) = {g | Ad_g X = X}` of `X ∈ t` from the roots that vanish a
   Conjugate stabilizers can have different patterns: in `SU(3)`, an element where only `α₁`
   vanishes and one where only `α₂` vanishes have conjugate stabilizers. So stabilizer types, the
   conjugacy classes of stabilizers, correspond to vanishing patterns only up to the Weyl group. On
-  a closed Weyl chamber these patterns are its faces; that comparison needs the Weyl group action
-  on the roots and is not made here.
+  a closed Weyl chamber these patterns are its faces; that comparison needs the Weyl group and is
+  made in `TauCeti.Geometry.Lie.Subgroup.Weyl.StabilizerType`.
 * **Regular elements.** If the roots are nonzero, `Lie Z_G(X) = t` exactly when no root vanishes
   at `X` (`toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_eq_iff`),
   and for a torus `T`, such as a maximal torus, of a compact connected group with `t = Lie(T)`,
