@@ -27,7 +27,9 @@ the identity of `N` and linear on each fibre. Its fibre maps are the isomorphism
 (`TauCeti.conformalSymplecticNormalDiffeomorph_apply`), which are conformally symplectic for the
 line-valued forms induced by the Levi forms, up to the isomorphism of contact lines induced by
 `dΦ` (`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalEquiv`), and compatible with
-composition (`TauCeti.conformalSymplecticNormalEquiv_trans`). These are the normal data that the
+composition (`TauCeti.conformalSymplecticNormalEquiv_trans`). The bundle isomorphisms themselves
+are functorial (`TauCeti.conformalSymplecticNormalDiffeomorph_refl`,
+`TauCeti.conformalSymplecticNormalDiffeomorph_trans`). These are the normal data that the
 isotropic neighbourhood theorem compares.
 
 **Smoothness.** The conformal symplectic normal bundle of `f` is the quotient of the bundle of
@@ -54,6 +56,11 @@ are not the kernel of any global one-form.
 * `TauCeti.conformalSymplecticNormalDiffeomorph_apply`,
   `TauCeti.conformalSymplecticNormalDiffeomorph_symm_apply`: its fibre maps and their inverses are
   the isomorphisms `TauCeti.conformalSymplecticNormalEquiv` and their inverses.
+* `TauCeti.proj_conformalSymplecticNormalDiffeomorph`,
+  `TauCeti.proj_conformalSymplecticNormalDiffeomorph_symm`: it and its inverse cover the identity
+  of `N`.
+* `TauCeti.conformalSymplecticNormalDiffeomorph_refl`,
+  `TauCeti.conformalSymplecticNormalDiffeomorph_trans`: functoriality in `Φ`.
 
 ## References
 
@@ -104,16 +111,6 @@ local instance instIsManifoldConformalSymplecticNormalDiffeomorphBase :
 
 /-! ### The map of Levi orthogonal bundles -/
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [FiniteDimensional ℝ E₁]
-  [IsManifold I₁ ∞ M₁] [T2Space M₁] in
-/-- Near every point, the inverse differentials of a diffeomorphism carrying `D` onto `D₁` carry
-`D₁` back into `D`, as `TauCeti.conformalSymplecticNormalEquiv` requires. -/
-private theorem eventually_inverse_mfderiv_mem (Φ : M ≃ₘ^∞⟮I, I₁⟯ M₁)
-    (hΦD : ∀ x v, v ∈ D x ↔ mfderiv I I₁ Φ x v ∈ D₁ (Φ x)) (x : M) :
-    ∀ᶠ z in 𝓝 x, ∀ v ∈ D₁ (Φ z), (mfderiv I I₁ Φ z).inverse v ∈ D z :=
-  Eventually.of_forall fun z _ hv ↦ (hΦD z _).2 <| by
-    rwa [(Φ.isInvertible_mfderiv (by simp)).self_apply_inverse]
-
 variable (J) in
 /-- The restriction of the differential of `Φ` to the Levi orthogonals of the tangent images of
 `f` and of `Φ ∘ f`, read in the pullbacks of the contact structures. -/
@@ -129,7 +126,8 @@ private def leviOrthogonalPullbackMap (hD : IsContactDistribution I ∞ D)
         (hD.isContMDiffDistribution.of_le (m := 1) (by simp))
         (hD₁.isContMDiffDistribution.of_le (m := 1) (by simp)) Φ.contMDiff.contMDiffAt (by simp)
         (Φ.isInvertible_mfderiv (by simp)) (fun v hv ↦ (hΦD _ v).1 hv)
-        (eventually_inverse_mfderiv_mem Φ hΦD _) (hf.mdifferentiableAt (by simp)) <|
+        (.of_forall fun _ _ ↦ Φ.inverse_mfderiv_apply_mem (by simp) hΦD)
+        (hf.mdifferentiableAt (by simp)) <|
           mem_leviOrthogonalPullback_iff.1 u.property
 
 omit [FiniteDimensional ℝ E'] [IsManifold J ∞ N] [T2Space M] [T2Space M₁] in
@@ -242,7 +240,8 @@ private def csnEquiv (hD : IsContactDistribution I ∞ D) (hD₁ : IsContactDist
     (hD.isContMDiffDistribution.of_le (m := 1) (by simp))
     (hD₁.isContMDiffDistribution.of_le (m := 1) (by simp)) Φ.contMDiff.contMDiffAt (by simp)
     (Φ.isInvertible_mfderiv (by simp)) (fun v hv ↦ (hΦD _ v).1 hv)
-    (eventually_inverse_mfderiv_mem Φ hΦD _) (hf.mdifferentiableAt (by simp))
+    (.of_forall fun _ _ ↦ Φ.inverse_mfderiv_apply_mem (by simp) hΦD)
+    (hf.mdifferentiableAt (by simp))
 
 omit [FiniteDimensional ℝ E'] [IsManifold J ∞ N] [T2Space M] [T2Space M₁] in
 /-- The fibre maps send the class of `u` to the class of its image under `dΦ`. -/
@@ -252,7 +251,29 @@ private theorem csnEquiv_mk (hD : IsContactDistribution I ∞ D)
     (y : N) (u : leviOrthogonalPullback J D f y) :
     csnEquiv J hD hD₁ Φ hΦD f hf y (Submodule.Quotient.mk u) =
       Submodule.Quotient.mk (leviOrthogonalPullbackMap J hD hD₁ Φ hΦD hf y u) :=
-  conformalSymplecticNormalEquiv_mk _ _ _ _ _ _ _ _ _ _ (rfl)
+  conformalSymplecticNormalEquiv_mk _ _ _ _ _ _ _ _ _ _
+    (coe_leviOrthogonalPullbackMap_apply hD hD₁ Φ hΦD hf y u)
+
+omit [FiniteDimensional ℝ E'] [IsManifold J ∞ N] [T2Space M] [T2Space M₁] in
+/-- The fibre maps are the isomorphisms `TauCeti.conformalSymplecticNormalEquiv`, for any choice of
+the hypotheses of the latter. -/
+private theorem csnEquiv_eq (hD : IsContactDistribution I ∞ D)
+    (hD₁ : IsContactDistribution I₁ ∞ D₁) (Φ : M ≃ₘ^∞⟮I, I₁⟯ M₁)
+    (hΦD : ∀ x v, v ∈ D x ↔ mfderiv I I₁ Φ x v ∈ D₁ (Φ x)) (f : K) (hf : ContMDiff J I ∞ f)
+    (y : N) {k k₁ : ℕ} (hDk : IsContMDiffDistribution I 1 k D)
+    (hD₁k : IsContMDiffDistribution I₁ 1 k₁ D₁) {n : ℕ∞ω} (hΦ : ContMDiffAt I I₁ n Φ (f y))
+    (hn : 2 ≤ n) (hΦx : (mfderiv I I₁ Φ (f y)).IsInvertible)
+    (hΦD₁ : ∀ u ∈ D (f y), mfderiv I I₁ Φ (f y) u ∈ D₁ (Φ (f y)))
+    (hΦD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (Φ z), (mfderiv I I₁ Φ z).inverse v ∈ D z)
+    (hfy : MDifferentiableAt J I f y) :
+    csnEquiv J hD hD₁ Φ hΦD f hf y =
+      conformalSymplecticNormalEquiv J D f y hDk hD₁k hΦ hn hΦx hΦD₁ hΦD' hfy := by
+  ext a
+  induction a using Submodule.Quotient.induction_on with
+  | H u =>
+    exact (csnEquiv_mk hD hD₁ Φ hΦD f hf y u).trans
+      (conformalSymplecticNormalEquiv_mk _ _ _ _ _ _ _ _ _ _
+        (coe_leviOrthogonalPullbackMap_apply hD hD₁ Φ hΦD hf y u)).symm
 
 private theorem contMDiff_totalSpace_csnEquiv [Nonempty N] (hD : IsContactDistribution I ∞ D)
     (hD₁ : IsContactDistribution I₁ ∞ D₁) (Φ : M ≃ₘ^∞⟮I, I₁⟯ M₁)
@@ -428,6 +449,37 @@ theorem proj_conformalSymplecticNormalDiffeomorph
     (conformalSymplecticNormalDiffeomorph J hD hD₁ Φ hΦD hf hfD hinj p).proj = p.proj :=
   congrArg TotalSpace.proj (conformalSymplecticNormalDiffeomorph_eq hD hD₁ Φ hΦD hf hfD hinj p)
 
+/-- The inverse of the bundle isomorphism of conformal symplectic normal bundles induced by `Φ`
+covers the identity of `N`. -/
+@[simp]
+theorem proj_conformalSymplecticNormalDiffeomorph_symm
+    (q : TotalSpace (Fin (finrank ℝ E₁ - 2 * finrank ℝ E' - 1) → ℝ)
+      (fun y ↦ ConformalSymplecticNormal J D₁
+        (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁)) y)) :
+    letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).totalSpaceTopology
+    letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toFiberBundle
+    letI := (conformalSymplecticNormalPrebundle hD₁
+      (f := (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁))) (Φ.contMDiff.comp hf)
+      ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD)
+      fun y ↦ (Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)).totalSpaceTopology
+    letI := (conformalSymplecticNormalPrebundle hD₁
+      (f := (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁))) (Φ.contMDiff.comp hf)
+      ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD)
+      fun y ↦ (Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)).toFiberBundle
+    ((conformalSymplecticNormalDiffeomorph J hD hD₁ Φ hΦD hf hfD hinj).symm q).proj = q.proj := by
+  let P := conformalSymplecticNormalPrebundle hD hf hfD hinj
+  let P₁ := conformalSymplecticNormalPrebundle hD₁
+    (f := (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁))) (Φ.contMDiff.comp hf)
+    ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD)
+    fun y ↦ (Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)
+  let := P.totalSpaceTopology
+  let := P.toFiberBundle
+  let := P.toVectorBundle
+  let := P₁.totalSpaceTopology
+  let := P₁.toFiberBundle
+  let := P₁.toVectorBundle
+  exact congrArg TotalSpace.proj (bundleDiffeomorph_symm_apply _ _ q)
+
 /-- The bundle isomorphism of conformal symplectic normal bundles induced by `Φ` sends the class
 of `u` over `y` to the class of `dΦ u`. -/
 theorem conformalSymplecticNormalDiffeomorph_mk (y : N)
@@ -479,11 +531,10 @@ theorem conformalSymplecticNormalDiffeomorph_apply (y : N) (a : ConformalSymplec
       TotalSpace.mk' (Fin (finrank ℝ E₁ - 2 * finrank ℝ E' - 1) → ℝ)
         (E := fun y ↦ ConformalSymplecticNormal J D₁
           (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁)) y)
-        y (conformalSymplecticNormalEquiv J D f y hDk hD₁k hΦ hn hΦx hΦD₁ hΦD' hfy a) := by
-  refine (conformalSymplecticNormalDiffeomorph_eq hD hD₁ Φ hΦD hf hfD hinj _).trans ?_
-  induction a using Submodule.Quotient.induction_on with
-  | H u => exact congrArg (TotalSpace.mk y) ((csnEquiv_mk hD hD₁ Φ hΦD f hf y u).trans
-      (conformalSymplecticNormalEquiv_mk _ _ _ _ _ _ _ _ _ _ (rfl)).symm)
+        y (conformalSymplecticNormalEquiv J D f y hDk hD₁k hΦ hn hΦx hΦD₁ hΦD' hfy a) :=
+  (conformalSymplecticNormalDiffeomorph_eq hD hD₁ Φ hΦD hf hfD hinj _).trans <|
+    congrArg (TotalSpace.mk y) <| LinearEquiv.congr_fun
+      (csnEquiv_eq hD hD₁ Φ hΦD f hf y hDk hD₁k hΦ hn hΦx hΦD₁ hΦD' hfy) a
 
 /-- The inverse of the bundle isomorphism induced by `Φ` acts on the fibres by the inverses of the
 isomorphisms `TauCeti.conformalSymplecticNormalEquiv`. -/
@@ -517,17 +568,135 @@ theorem conformalSymplecticNormalDiffeomorph_symm_apply (y : N)
     fun y ↦ (Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)
   let := P.totalSpaceTopology
   let := P.toFiberBundle
+  let := P.toVectorBundle
   let := P₁.totalSpaceTopology
   let := P₁.toFiberBundle
-  -- The bundle isomorphism sends the right-hand side to `⟨y, b⟩`, as it is computed fibrewise.
-  have h := conformalSymplecticNormalDiffeomorph_apply hD hD₁ Φ hΦD hf hfD hinj y
-    ((conformalSymplecticNormalEquiv J D f y hDk hD₁k hΦ hn hΦx hΦD₁ hΦD' hfy).symm b) hDk hD₁k hΦ
-    hn hΦx hΦD₁ hΦD' hfy
-  rw [LinearEquiv.apply_symm_apply] at h
-  exact (congrArg (conformalSymplecticNormalDiffeomorph J hD hD₁ Φ hΦD hf hfD hinj).symm
-    h).symm.trans (Diffeomorph.symm_apply_apply _ _)
+  let := P₁.toVectorBundle
+  exact Eq.trans (bundleDiffeomorph_symm_apply _ _ _) <|
+    congrArg (fun e ↦ TotalSpace.mk' (Fin (finrank ℝ E - 2 * finrank ℝ E' - 1) → ℝ)
+        (E := fun y ↦ ConformalSymplecticNormal J D f y) y (LinearEquiv.symm e b))
+      (csnEquiv_eq hD hD₁ Φ hΦD f hf y hDk hD₁k hΦ hn hΦx hΦD₁ hΦD' hfy)
 
 end conformalSymplecticNormalDiffeomorph
 
+/-- The identity of `M` induces the identity of the conformal symplectic normal bundle of `f`. -/
+@[simp]
+theorem conformalSymplecticNormalDiffeomorph_refl [Nonempty N] (hD : IsContactDistribution I ∞ D)
+    (h : ∀ x v, v ∈ D x ↔
+      mfderiv I I (Diffeomorph.refl I M ∞) x v ∈ D (Diffeomorph.refl I M ∞ x))
+    {f : C(N, M)} (hf : ContMDiff J I ∞ f) (hfD : IsHorizontalMap J D f)
+    (hinj : ∀ y, Injective (mfderiv J I f y)) :
+    letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).totalSpaceTopology
+    letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toFiberBundle
+    conformalSymplecticNormalDiffeomorph J hD hD (Diffeomorph.refl I M ∞) h hf hfD hinj =
+      Diffeomorph.refl _ _ _ := by
+  let := (conformalSymplecticNormalPrebundle hD hf hfD hinj).totalSpaceTopology
+  let := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toFiberBundle
+  -- The same bundle, as the conformal symplectic normal bundle of `id ∘ f`.
+  let P := conformalSymplecticNormalPrebundle hD
+    (f := (⟨Diffeomorph.refl I M ∞ ∘ f, (Diffeomorph.refl I M ∞).continuous.comp
+      (map_continuous f)⟩ : C(N, M))) ((Diffeomorph.refl I M ∞).contMDiff.comp hf)
+    ((isHorizontalMap_diffeomorph_comp_iff _ (by simp) h).2 hfD)
+    fun y ↦ ((Diffeomorph.refl I M ∞).mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)
+  let := P.totalSpaceTopology
+  let := P.toFiberBundle
+  refine Diffeomorph.ext fun ⟨y, a⟩ ↦ ?_
+  induction a using Submodule.Quotient.induction_on with
+  | H u =>
+    exact conformalSymplecticNormalDiffeomorph_mk hD hD _ h hf hfD hinj y u u
+      (DFunLike.congr_fun (mfderiv_id (I := I) (x := f y)) _).symm
+
+section trans
+
+variable [Nonempty N] {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+  [FiniteDimensional ℝ E₂] [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂}
+  [TopologicalSpace M₂] [ChartedSpace H₂ M₂] [IsManifold I₂ ∞ M₂] [T2Space M₂]
+  {D₂ : Π x : M₂, Submodule ℝ (TangentSpace I₂ x)}
+
+/-- **Functoriality.** The bundle isomorphism of conformal symplectic normal bundles induced by a
+composite of contactomorphisms is the composite of the induced bundle isomorphisms. -/
+theorem conformalSymplecticNormalDiffeomorph_trans (hD : IsContactDistribution I ∞ D)
+    (hD₁ : IsContactDistribution I₁ ∞ D₁) (hD₂ : IsContactDistribution I₂ ∞ D₂)
+    (Φ : M ≃ₘ^∞⟮I, I₁⟯ M₁) (Ψ : M₁ ≃ₘ^∞⟮I₁, I₂⟯ M₂)
+    (hΦD : ∀ x v, v ∈ D x ↔ mfderiv I I₁ Φ x v ∈ D₁ (Φ x))
+    (hΨD : ∀ x v, v ∈ D₁ x ↔ mfderiv I₁ I₂ Ψ x v ∈ D₂ (Ψ x)) {f : K} (hf : ContMDiff J I ∞ f)
+    (hfD : IsHorizontalMap J D f) (hinj : ∀ y, Injective (mfderiv J I f y)) :
+    letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).totalSpaceTopology
+    letI := (conformalSymplecticNormalPrebundle hD hf hfD hinj).toFiberBundle
+    letI := (conformalSymplecticNormalPrebundle hD₁
+      (f := (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁))) (Φ.contMDiff.comp hf)
+      ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD)
+      fun y ↦ (Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)).totalSpaceTopology
+    letI := (conformalSymplecticNormalPrebundle hD₁
+      (f := (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁))) (Φ.contMDiff.comp hf)
+      ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD)
+      fun y ↦ (Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)).toFiberBundle
+    letI := (conformalSymplecticNormalPrebundle hD₂
+      (f := (⟨Ψ ∘ (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁)),
+        Ψ.continuous.comp (map_continuous _)⟩ : C(N, M₂)))
+      (Ψ.contMDiff.comp (Φ.contMDiff.comp hf))
+      ((isHorizontalMap_diffeomorph_comp_iff Ψ (by simp) hΨD).2
+        ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD))
+      fun y ↦ (Ψ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2
+        ((Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y))).totalSpaceTopology
+    letI := (conformalSymplecticNormalPrebundle hD₂
+      (f := (⟨Ψ ∘ (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁)),
+        Ψ.continuous.comp (map_continuous _)⟩ : C(N, M₂)))
+      (Ψ.contMDiff.comp (Φ.contMDiff.comp hf))
+      ((isHorizontalMap_diffeomorph_comp_iff Ψ (by simp) hΨD).2
+        ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD))
+      fun y ↦ (Ψ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2
+        ((Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y))).toFiberBundle
+    conformalSymplecticNormalDiffeomorph J hD hD₂ (Φ.trans Ψ)
+        (Φ.mem_iff_mfderiv_trans_apply_mem Ψ (by simp) hΦD hΨD) hf hfD hinj =
+      (conformalSymplecticNormalDiffeomorph J hD hD₁ Φ hΦD hf hfD hinj).trans
+        (conformalSymplecticNormalDiffeomorph J hD₁ hD₂ Ψ hΨD
+          (f := (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁))) (Φ.contMDiff.comp hf)
+          ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD)
+          fun y ↦ (Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)) := by
+  let P := conformalSymplecticNormalPrebundle hD hf hfD hinj
+  let P₁ := conformalSymplecticNormalPrebundle hD₁
+    (f := (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁))) (Φ.contMDiff.comp hf)
+    ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD)
+    fun y ↦ (Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)
+  let P₂ := conformalSymplecticNormalPrebundle hD₂
+    (f := (⟨Ψ ∘ (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁)),
+      Ψ.continuous.comp (map_continuous _)⟩ : C(N, M₂)))
+    (Ψ.contMDiff.comp (Φ.contMDiff.comp hf))
+    ((isHorizontalMap_diffeomorph_comp_iff Ψ (by simp) hΨD).2
+      ((isHorizontalMap_diffeomorph_comp_iff Φ (by simp) hΦD).2 hfD))
+    fun y ↦ (Ψ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2
+      ((Φ.mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y))
+  let := P.totalSpaceTopology
+  let := P.toFiberBundle
+  let := P₁.totalSpaceTopology
+  let := P₁.toFiberBundle
+  let := P₂.totalSpaceTopology
+  let := P₂.toFiberBundle
+  -- The same bundle, as the conformal symplectic normal bundle of `(Φ.trans Ψ) ∘ f`.
+  let P₂' := conformalSymplecticNormalPrebundle hD₂
+    (f := (⟨Φ.trans Ψ ∘ f, (Φ.trans Ψ).continuous.comp (map_continuous f)⟩ : C(N, M₂)))
+    ((Φ.trans Ψ).contMDiff.comp hf) ((isHorizontalMap_diffeomorph_comp_iff (Φ.trans Ψ) (by simp)
+      (Φ.mem_iff_mfderiv_trans_apply_mem Ψ (by simp) hΦD hΨD)).2 hfD)
+    fun y ↦ ((Φ.trans Ψ).mfderiv_diffeomorph_comp_injective_iff (by simp)).2 (hinj y)
+  let := P₂'.totalSpaceTopology
+  let := P₂'.toFiberBundle
+  refine Diffeomorph.ext fun ⟨y, a⟩ ↦ ?_
+  induction a using Submodule.Quotient.induction_on with
+  | H u =>
+    have h₁ := coe_leviOrthogonalPullbackMap_apply hD hD₁ Φ hΦD hf y u
+    have h₂ := coe_leviOrthogonalPullbackMap_apply hD₁ hD₂ Ψ hΨD
+      (f := (⟨Φ ∘ f, Φ.continuous.comp (map_continuous f)⟩ : C(N, M₁))) (Φ.contMDiff.comp hf) y
+      (leviOrthogonalPullbackMap J hD hD₁ Φ hΦD hf y u)
+    -- `d(Ψ ∘ Φ) u = dΨ (dΦ u)`, read in the Levi orthogonals.
+    have hu := h₂.trans ((congrArg (mfderiv I₁ I₂ Ψ (Φ (f y))) h₁).trans
+      (mfderiv_comp_apply (f y) (Ψ.mdifferentiable (by simp) (Φ (f y)))
+        (Φ.mdifferentiable (by simp) (f y)) _).symm)
+    exact (conformalSymplecticNormalDiffeomorph_mk hD hD₂ (Φ.trans Ψ) _ hf hfD hinj y u _ hu).trans
+      ((conformalSymplecticNormalDiffeomorph_mk hD₁ hD₂ Ψ hΨD _ _ _ y _ _ h₂).symm.trans
+        (congrArg _ (conformalSymplecticNormalDiffeomorph_mk hD hD₁ Φ hΦD hf hfD hinj y u _
+          h₁).symm))
+
+end trans
 
 end TauCeti
