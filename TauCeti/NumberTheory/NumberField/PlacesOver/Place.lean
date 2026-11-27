@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.AbsoluteValue.Place
-public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean

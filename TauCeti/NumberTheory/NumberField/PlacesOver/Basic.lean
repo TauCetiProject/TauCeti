@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.FinitePlace.InfinitePlace
 public import TauCeti.NumberTheory.NumberField.PlacesOver.FinitePlace
-public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace.Basic
 
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
@@ -16,7 +16,7 @@ import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 For an extension `F / K` of number fields and an absolute value `v` on `K` that is either an
 infinite place or a finite place (`IsInfinitePlace v ∨ IsFinitePlace v`), this file combines the
-archimedean (`PlacesOver.InfinitePlace`) and nonarchimedean (`PlacesOver.FinitePlace`)
+archimedean (`PlacesOver.InfinitePlace.Basic`) and nonarchimedean (`PlacesOver.FinitePlace`)
 classifications into uniform statements on the fibre `{w : AbsoluteValue F ℝ | w.LiesOver v}`:
 
 * the fibre is finite (`NumberField.finite_setOf_liesOver`) and nonempty
