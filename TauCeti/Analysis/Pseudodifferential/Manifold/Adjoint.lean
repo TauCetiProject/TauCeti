@@ -144,29 +144,6 @@ variable {ρ : CoordinateSpace n → ℝ}
 
 include hint
 
-/-- **Changing variables in a chart.** Let `ρ` be the density in the chart `e` of a measure `μ`
-on `M`. Pairing a continuous function `F` on `M` with the pullback `(θ f) ∘ e` of a function `f`
-on `ℝⁿ` by a cutoff `θ` in the chart target is pairing `F ∘ e⁻¹` with `f` against `ρ θ dy`. -/
-private theorem integral_inner_complexCutoffPullback (θ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) {F : M → ℂ}
-    (hF : Continuous F) :
-    ∫ x, inner ℂ (F x) (e.complexCutoffPullback he θ f x) ∂μ =
-      ∫ y, ((ρ y * θ y : ℝ) : ℂ) * inner ℂ (F (e.symm y)) (f y) := by
-  have hsupp : tsupport (fun x ↦ inner ℂ (F x) (e.complexCutoffPullback he θ f x)) ⊆
-      tsupport (e.complexCutoffPullback he θ f) :=
-    closure_mono <| Function.support_subset_iff'.2 fun x hx ↦ by
-      simp [Function.notMem_support.1 hx]
-  obtain ⟨hc, hs⟩ := hasCompactSupport_and_tsupport_subset_source_of_subset he θ hsupp
-  rw [hint _ (hF.inner (e.complexCutoffPullback he θ f).contMDiff.continuous) hc hs,
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero (μ := volume) (s := e.target)
-      (f := fun y ↦ ((ρ y * θ y : ℝ) : ℂ) * inner ℂ (F (e.symm y)) (f y)) fun y hy ↦ by
-        simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (θ.tsupport_subset h)]]
-  refine setIntegral_congr_fun e.open_target.measurableSet fun y hy ↦ ?_
-  simp only [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he _ _ (e.map_target hy),
-    e.right_inv hy, RCLike.inner_apply', Complex.real_smul]
-  push_cast
-  ring
-
 /-- The pullback on the left: pairing `(θ f) ∘ e` with a continuous function `F` on `M` is pairing
 `f` with `F ∘ e⁻¹` against `ρ θ dy`. -/
 private theorem integral_inner_complexCutoffPullback_left
@@ -175,7 +152,7 @@ private theorem integral_inner_complexCutoffPullback_left
     (hF : Continuous F) :
     ∫ x, inner ℂ (e.complexCutoffPullback he θ f x) (F x) ∂μ =
       ∫ y, ((ρ y * θ y : ℝ) : ℂ) * inner ℂ (f y) (F (e.symm y)) := by
-  have h := congrArg conj (integral_inner_complexCutoffPullback he hint θ f hF)
+  have h := congrArg conj (e.integral_inner_complexCutoffPullback he hint θ f hF)
   rw [← integral_conj, ← integral_conj] at h
   simpa only [inner_conj_symm, map_mul, Complex.conj_ofReal] using h
 
@@ -233,7 +210,7 @@ private theorem quantizeSchwartzValue_weightedAdjoint_eq_complexChartCompression
           push_cast
           ring
       _ = ∫ x, inner ℂ (H x) (Q G x) ∂μ := by
-        rw [← hPQ H G hH hG, integral_inner_complexCutoffPullback he hint ψ _
+        rw [← hPQ H G hH hG, e.integral_inner_complexCutoffPullback he hint ψ _
           (P H).contMDiff.continuous]
         simp
       _ = ∫ z, inner ℂ (v z)

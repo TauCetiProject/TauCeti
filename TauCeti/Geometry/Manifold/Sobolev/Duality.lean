@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 public import TauCeti.Geometry.Manifold.Sobolev.Completion
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.InnerProductSpace.Basic
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
@@ -26,10 +27,10 @@ pairing of smooth functions
 
 `⟨u, v⟩ = ∫ ⟪u, v⟫ dμ`
 
-identifies `H^{-s}(M)` with the antidual of `H^s(M)`, for every real `s`, when the cutoffs read on
-`M` add up to `1` and `μ` is finite. This is the duality through which the cokernel of an elliptic
-operator `P : H^s(M) → H^{s - m}(M)` is described by the kernel of its formal adjoint on
-`H^{m - s}(M)`.
+identifies `H^{-s}(M)` with the continuous dual of `H^s(M)` (conjugate-linearly), for every real
+`s`, when the cutoffs read on `M` add up to `1` and `μ` is finite. This is the duality through
+which the cokernel of an elliptic operator `P : H^s(M) → H^{s - m}(M)` is described by the kernel
+of its formal adjoint on `H^{m - s}(M)`.
 
 * **Boundedness** (`TauCeti.exists_norm_integral_inner_le_mul_norm_chartReading`): for a finite
   measure `μ`, `|∫ ⟪u, v⟫ dμ| ≤ C ‖u‖_{H^{-s}} ‖v‖_{H^s}`. Split `⟪u, v⟫` with the partition
@@ -110,25 +111,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
 section Chart
 
 variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-
-omit [ChartedSpace (CoordinateSpace n) M] [BorelSpace M] in
-/-- Integrating in a chart: if `μ` reads in the chart `e` as `ρ(y) dy`, a continuous function `F`
-on `M` vanishing outside `e⁻¹(supp φ)`, for a cutoff `φ` in the chart, integrates as a function
-`G` on `ℝⁿ` that equals `ρ(y) F(e⁻¹ y)` on the chart target and vanishes off it. -/
-private theorem integral_eq_integral_of_eq_mul {ρ : CoordinateSpace n → ℝ}
-    (hρ : ∀ f : M → ℂ, Continuous f → HasCompactSupport f → tsupport f ⊆ e.source →
-      ∫ x, f x ∂μ = ∫ y in e.target, (ρ y : ℂ) * f (e.symm y))
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {F : M → ℂ} (hF : Continuous F)
-    (hFφ : ∀ x ∈ e.source, φ (e x) = 0 → F x = 0) (hF0 : ∀ x ∉ e.source, F x = 0)
-    {G : CoordinateSpace n → ℂ} (hG : ∀ y ∈ e.target, G y = ρ y * F (e.symm y))
-    (hG0 : ∀ y ∉ e.target, G y = 0) : ∫ x, F x ∂μ = ∫ y, G y := by
-  have hts : tsupport F ⊆ e.symm '' tsupport φ := e.tsupport_subset_symm_image_tsupport φ hFφ hF0
-  rw [hρ F hF ((e.isCompact_symm_image_tsupport φ).of_isClosed_subset (isClosed_tsupport F) hts)
-    (hts.trans (image_subset_iff.2 fun y hy ↦ e.map_target (φ.tsupport_subset hy))),
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero hG0]
-  exact setIntegral_congr_fun e.open_target.measurableSet fun y hy ↦ (hG y hy).symm
-
-variable (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
 include he
 
 omit [BorelSpace M] in
@@ -146,25 +129,23 @@ private theorem exists_integral_mul_inner_eq
     (Ω := ⟨e.target, e.open_target⟩) (n := ⊤) ψ.hasCompactSupport.isCompact ψ.tsupport_subset
   obtain ⟨τ, hτ⟩ := TestFunction.exists_coe_eq_smul_of_contDiffOn (Ω := ⟨e.target, e.open_target⟩)
     hρ θ
-  refine ⟨τ, fun u v ↦ integral_eq_integral_of_eq_mul hint ψ
-    (F := fun x ↦ (e.cutoffPullback he ψ 1 x : ℂ) * ⟪u x, v x⟫_ℂ)
-    ((Complex.continuous_ofReal.comp (e.cutoffPullback he ψ 1).contMDiff.continuous).mul
-      (u.contMDiff.continuous.inner v.contMDiff.continuous)) (fun x hx hψ ↦ ?_) (fun x hx ↦ ?_)
-    (fun y hy ↦ ?_) fun y hy ↦ ?_⟩
-  · simp [cutoffPullback_one_apply_of_mem he _ hx, hψ]
-  · simp [cutoffPullback_apply_of_notMem he _ _ hx]
-  · -- On the target, `τ = ρ θ` and `θ = 1` wherever `ψ ≠ 0`.
-    rw [cutoffPushforwardSchwartz_apply, cutoffPushforwardSchwartz_apply, hτ,
-      cutoffPullback_one_apply_of_mem he _ (e.map_target hy), e.right_inv hy]
+  -- `Ψ ⟪u, v⟫` pairs `⟪v, u⟫` with the pullback of the constant `1` by `ψ`.
+  refine ⟨τ, fun u v ↦ (integral_congr_ae (.of_forall fun x ↦ ?_)).trans
+    ((e.integral_inner_complexCutoffPullback he hint ψ 1 (F := fun x ↦ ⟪v x, u x⟫_ℂ)
+      (v.contMDiff.continuous.inner u.contMDiff.continuous)).trans
+    (integral_congr_ae (.of_forall fun y ↦ ?_)))⟩
+  · simp only [complexCutoffPullback_one_apply, RCLike.inner_apply, map_mul, RCLike.conj_conj]
+    ring
+  · -- `τ = ρ θ`, and `θ = 1` wherever `ψ ≠ 0`.
+    dsimp only
+    rw [cutoffPushforwardSchwartz_apply, cutoffPushforwardSchwartz_apply, hτ]
     dsimp only
     by_cases hψy : ψ y = 0
     · simp [hψy]
     rw [hθ.self_of_nhdsSet y (subset_tsupport _ hψy)]
-    simp only [smul_eq_mul, mul_one, Complex.real_smul, RCLike.inner_apply, map_mul,
-      Complex.conj_ofReal]
+    simp only [ContMDiffMap.coe_one, Pi.one_apply, smul_eq_mul, mul_one, Complex.real_smul,
+      RCLike.inner_apply, map_mul, Complex.conj_ofReal, RCLike.conj_conj, Complex.ofReal_mul]
     ring
-  · rw [cutoffPushforwardSchwartz_apply,
-      image_eq_zero_of_notMem_tsupport fun h ↦ hy (ψ.tsupport_subset h), zero_smul, inner_zero_left]
 
 omit [BorelSpace M] in
 /-- **A reading paired with a Schwartz function, on `M`.** For a cutoff `ψ` in a chart `e`, there is
@@ -181,20 +162,19 @@ private theorem exists_integral_inner_complexCutoffPullback_eq
   obtain ⟨ρ, hρ, hρ0, hint⟩ := hasSmoothPositiveDensity_iff.1 hμ e he
   obtain ⟨σ, hσ⟩ := TestFunction.exists_coe_eq_smul_of_contDiffOn (Ω := ⟨e.target, e.open_target⟩)
     (hρ.inv fun y hy ↦ (hρ0 y hy).ne') ψ
-  refine ⟨σ, fun u f ↦ integral_eq_integral_of_eq_mul hint σ
-    (F := fun x ↦ ⟪u x, e.complexCutoffPullback he σ f x⟫_ℂ)
-    (u.contMDiff.continuous.inner (e.complexCutoffPullback he σ f).contMDiff.continuous)
-    (fun x hx hσx ↦ ?_) (fun x hx ↦ ?_) (fun y hy ↦ ?_) fun y hy ↦ ?_⟩
-  · simp [complexCutoffPullback_apply_of_mem he _ _ hx, hσx]
-  · simp [complexCutoffPullback_apply_of_notMem he _ _ hx]
+  refine ⟨σ, fun u f ↦ (e.integral_inner_complexCutoffPullback he hint σ f
+    u.contMDiff.continuous).trans (integral_congr_ae (.of_forall fun y ↦ ?_))⟩
+  dsimp only
+  rw [cutoffPushforwardSchwartz_apply]
+  by_cases hy : y ∈ e.target
   · -- On the target, `ρ σ = ψ`.
-    rw [cutoffPushforwardSchwartz_apply,
-      complexCutoffPullback_apply_of_mem he _ _ (e.map_target hy), e.right_inv hy, hσ]
+    rw [hσ]
     simp only [Pi.inv_apply, smul_eq_mul, Complex.real_smul, RCLike.inner_apply, map_mul,
       Complex.conj_ofReal, Complex.ofReal_mul, Complex.ofReal_inv]
     field_simp [Complex.ofReal_ne_zero.2 (hρ0 y hy).ne']
-  · rw [cutoffPushforwardSchwartz_apply,
-      image_eq_zero_of_notMem_tsupport fun h ↦ hy (ψ.tsupport_subset h), zero_smul, inner_zero_left]
+  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy (σ.tsupport_subset h),
+      image_eq_zero_of_notMem_tsupport fun h ↦ hy (ψ.tsupport_subset h)]
+    simp
 
 end Chart
 
@@ -203,15 +183,6 @@ end Chart
 variable {ι : Type*} [Fintype ι] {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
   (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
   (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
-
-/-- Coordinatewise bounds `‖x i‖ ≤ C i * g` with `0 ≤ g` bound the `Lᵖ` norm of `x` by
-`(∑ i, |C i|) * g`. -/
-private theorem norm_le_sum_abs_mul_of_forall_norm_apply_le {p : ENNReal} [Fact (1 ≤ p)]
-    {E : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)] {x : PiLp p E} {C : ι → ℝ} {g : ℝ}
-    (hg : 0 ≤ g) (h : ∀ i, ‖x i‖ ≤ C i * g) : ‖x‖ ≤ (∑ i, |C i|) * g := by
-  refine (PiLp.norm_le_sum_norm x).trans ?_
-  rw [Finset.sum_mul]
-  exact Finset.sum_le_sum fun i _ ↦ (h i).trans (mul_le_mul_of_nonneg_right (le_abs_self _) hg)
 
 omit [MeasurableSpace M] [BorelSpace M] in
 /-- **The readings of a pulled-back Schwartz function.** For a cutoff `σ` in a chart `e'`, the
@@ -250,12 +221,12 @@ private theorem exists_norm_chartReading_complexCutoffPullback_le
         cutoffPullback_apply_of_notMem he' _ _ hy, zero_smul]
   choose C hC using hC
   exact ⟨∑ i, |C i|, fun b ↦
-    norm_le_sum_abs_mul_of_forall_norm_apply_le (norm_nonneg _) fun i ↦ hC i b⟩
+    PiLp.norm_le_sum_abs_mul_of_forall_norm_apply_le (norm_nonneg _) fun i ↦ hC i b⟩
 
 omit [BorelSpace M] in
-/-- **The `H^{-s}` norm is the dual norm for the `L²(μ)` pairing.** For a measure `μ` with a smooth
-positive density and finitely many cutoffs `ψᵢ` in charts `eᵢ`, there is a constant `C` such that
-every smooth `u` with `|∫ ⟪u, v⟫ dμ| ≤ K ‖v‖_{H^s}` for all smooth `v` satisfies
+/-- **The `H^{-s}` norm is controlled by the dual norm for the `L²(μ)` pairing.** For a measure `μ`
+with a smooth positive density and finitely many cutoffs `ψᵢ` in charts `eᵢ`, there is a constant
+`C` such that every smooth `u` with `|∫ ⟪u, v⟫ dμ| ≤ K ‖v‖_{H^s}` for all smooth `v` satisfies
 `‖u‖_{H^{-s}} ≤ C K`, the norms being those of the chart readings. -/
 theorem exists_norm_chartReading_neg_le (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
     (s : ℝ) :
@@ -265,7 +236,7 @@ theorem exists_norm_chartReading_neg_le (hμ : HasSmoothPositiveDensity (Coordin
   choose σ hσ using fun i ↦ exists_integral_inner_complexCutoffPullback_eq (he i) hμ (ψ i)
   choose C hC using fun i ↦ exists_norm_chartReading_complexCutoffPullback_le he ψ (he i) (σ i) s
   refine ⟨∑ i, |(|C i|)|, fun u K hK hu ↦
-    norm_le_sum_abs_mul_of_forall_norm_apply_le hK fun i ↦ ?_⟩
+    PiLp.norm_le_sum_abs_mul_of_forall_norm_apply_le hK fun i ↦ ?_⟩
   -- Pair the `i`-th reading with a Schwartz function `b` through `(σᵢ b) ∘ eᵢ` on `M`.
   rw [chartReading_apply]
   refine SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall s _
@@ -491,17 +462,8 @@ private theorem exists_norm_le_mul_norm_adjoint_chartSobolevRiesz :
     ← ContinuousLinearMap.adjoint_inner_right, ← norm_toChartSobolevSpace he ψ (-s) u, mul_comm]
   exact norm_inner_le_norm _ _
 
-/-- A vector `z` of a complex inner product space with `‖⟪z, z⟫‖ ≤ K ‖z‖` has norm at most `K`. -/
-private theorem norm_le_of_norm_inner_self_le {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] {z : F} {K : ℝ} (hK : 0 ≤ K) (h : ‖⟪z, z⟫_ℂ‖ ≤ K * ‖z‖) : ‖z‖ ≤ K := by
-  rcases (norm_nonneg z).eq_or_lt with hz | hz
-  · rw [← hz]
-    exact hK
-  refine le_of_mul_le_mul_right ?_ hz
-  rwa [inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal, abs_norm, sq] at h
-
-/-- **The `H^{-s}` norm is the dual norm for the pairing**: if `|⟨x, y⟩| ≤ K ‖y‖_{H^s}` for every
-`y ∈ H^s(M)`, then `‖x‖_{H^{-s}} ≤ C K`. -/
+/-- **The `H^{-s}` norm is controlled by the dual norm for the pairing**: if
+`|⟨x, y⟩| ≤ K ‖y‖_{H^s}` for every `y ∈ H^s(M)`, then `‖x‖_{H^{-s}} ≤ C K`. -/
 theorem exists_norm_le_of_forall_norm_chartSobolevPairing_le_left :
     ∃ C, ∀ (x : chartSobolevSpace he ψ (-s)) {K : ℝ}, 0 ≤ K →
       (∀ y, ‖chartSobolevPairing he hμ hψ s x y‖ ≤ K * ‖y‖) → ‖x‖ ≤ C * K := by
@@ -512,8 +474,8 @@ theorem exists_norm_le_of_forall_norm_chartSobolevPairing_le_left :
   rw [chartSobolevPairing_apply_apply] at this
   exact norm_le_of_norm_inner_self_le hK this
 
-/-- **The `H^s` norm is the dual norm for the pairing**: if `|⟨x, y⟩| ≤ K ‖x‖_{H^{-s}}` for every
-`x ∈ H^{-s}(M)`, then `‖y‖_{H^s} ≤ C K`. -/
+/-- **The `H^s` norm is controlled by the dual norm for the pairing**: if
+`|⟨x, y⟩| ≤ K ‖x‖_{H^{-s}}` for every `x ∈ H^{-s}(M)`, then `‖y‖_{H^s} ≤ C K`. -/
 theorem exists_norm_le_of_forall_norm_chartSobolevPairing_le_right :
     ∃ C, ∀ (y : chartSobolevSpace he ψ s) {K : ℝ}, 0 ≤ K →
       (∀ x, ‖chartSobolevPairing he hμ hψ s x y‖ ≤ K * ‖x‖) → ‖y‖ ≤ C * K := by

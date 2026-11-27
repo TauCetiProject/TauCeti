@@ -29,7 +29,8 @@ distance is at most the square root of the number of coordinates times the sup d
 These estimates give inclusions between balls in the two metrics. The corresponding
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm;
 conversely, for `p ≥ 1` the `Lᵖ` norm is at most the sum of coordinate norms
-(`PiLp.norm_le_sum_norm`).
+(`PiLp.norm_le_sum_norm`), so coordinatewise bounds `‖x i‖ ≤ C i * g` give
+`‖x‖ ≤ (∑ i, |C i|) * g` (`PiLp.norm_le_sum_abs_mul_of_forall_norm_apply_le`).
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
 also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
@@ -191,6 +192,14 @@ theorem norm_le_sum_norm [Fact (1 ≤ p)] (x : PiLp p E) : ‖x‖ ≤ ∑ i, �
   calc ‖x‖ = ‖∑ i, single p i (x i)‖ := by rw [univ_sum_single]
     _ ≤ ∑ i, ‖single p i (x i)‖ := norm_sum_le _ _
     _ = ∑ i, ‖x i‖ := by simp only [norm_single]
+
+/-- For `p ≥ 1`, coordinatewise bounds `‖x i‖ ≤ C i * g` with `0 ≤ g` bound the `Lᵖ` norm of `x`
+by `(∑ i, |C i|) * g`. -/
+theorem norm_le_sum_abs_mul_of_forall_norm_apply_le [Fact (1 ≤ p)] {x : PiLp p E} {C : ι → ℝ}
+    {g : ℝ} (hg : 0 ≤ g) (h : ∀ i, ‖x i‖ ≤ C i * g) : ‖x‖ ≤ (∑ i, |C i|) * g := by
+  refine (norm_le_sum_norm x).trans ?_
+  rw [Finset.sum_mul]
+  exact Finset.sum_le_sum fun i _ ↦ (h i).trans (mul_le_mul_of_nonneg_right (le_abs_self _) hg)
 
 /-- The sum of coordinate norms of a vector is at most `√(card ι)` times its `L²` norm. -/
 theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
