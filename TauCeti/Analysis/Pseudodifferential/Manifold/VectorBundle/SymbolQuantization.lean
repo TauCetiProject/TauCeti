@@ -283,10 +283,11 @@ private theorem exists_contDiffOn_frameMatrix
         ((innerSL ℝ q.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm q.1)))
         (t'.symm (e.symm q.1) (b k))))
   refine ⟨fun q ↦ ∑ j, ∑ k, G j k q • (b.coord k).toContinuousLinearMap.smulRight (c j),
-    ContDiffOn.sum fun j _ ↦ ContDiffOn.sum fun k _ ↦ ContDiffOn.smul
-      ((mem_homogeneousCotangentSymbols_iff.1 (mem_sectionHomogeneousCotangentSymbols_iff.1 hs
+    ContDiffOn.sum fun j _ ↦ ContDiffOn.sum fun k _ ↦ ContDiffOn.smul (f := G j k)
+      (((mem_homogeneousCotangentSymbols_iff.1 (mem_sectionHomogeneousCotangentSymbols_iff.1 hs
           t' φ (hφU.trans inter_subset_left) (b k) t φ (hφU.trans inter_subset_right)
-          (c.coord j).toContinuousLinearMap)).2.2 e he) contDiffOn_const,
+          (c.coord j).toContinuousLinearMap)).2.2 e he).congr
+        fun q _ ↦ by rw [chartCotangentSymbol_apply]) contDiffOn_const,
     fun q hq hφq ↦ ?_⟩
   have hqU : e.symm q.1 ∈ t'.baseSet ∩ t.baseSet :=
     hφU (subset_tsupport _ (by simp [hφq]))
@@ -371,8 +372,9 @@ private theorem inverseSymbol_mem_sectionHomogeneousCotangentSymbols
   have hgt : tsupport (fun y ↦ χ y * ψ y) ⊆ t'.baseSet ∩ t.baseSet := fun y hy ↦
     ⟨hχ (tsupport_mul_subset_left hy), hψ (tsupport_mul_subset_right hy)⟩
   by_cases hpg : e.symm p.1 ∈ tsupport (fun y ↦ χ y * ψ y)
-  · exact contDiffWithinAt_inverseSymbol_reading hs hb he (χ.contMDiff.mul ψ.contMDiff)
-      hgt w ℓ hp hpg
+  · exact (contDiffWithinAt_inverseSymbol_reading hs hb he (χ.contMDiff.mul ψ.contMDiff)
+      hgt w ℓ hp hpg).congr (fun q _ ↦ chartCotangentSymbol_apply _ e q)
+        (chartCotangentSymbol_apply _ e p)
   · -- Off the support of `χ ψ`, the reading vanishes near `p`.
     have hc : ∀ᶠ q in 𝓝 p, χ (e.symm (q : CoordinateSpace n × CoordinateSpace n).1) *
         ψ (e.symm q.1) = 0 := by
@@ -380,8 +382,9 @@ private theorem inverseSymbol_mem_sectionHomogeneousCotangentSymbols
         ((isClosed_tsupport _).isOpen_compl.mem_nhds hpg)] with q hq
       exact image_eq_zero_of_notMem_tsupport (f := fun y ↦ χ y * ψ y) hq
     exact (contDiffWithinAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
-      (eventually_nhdsWithin_of_eventually_nhds (hc.mono fun q hq ↦ by simp [hq]))
-      (by simp [image_eq_zero_of_notMem_tsupport hpg])
+      (eventually_nhdsWithin_of_eventually_nhds
+        (hc.mono fun q hq ↦ by rw [chartCotangentSymbol_apply]; simp [hq]))
+      (by rw [chartCotangentSymbol_apply]; simp [image_eq_zero_of_notMem_tsupport hpg])
 
 /-- **The inverse of a bijective symbol.** If a smooth positively homogeneous `Hom(E, F)`-valued
 symbol `s` of degree `m` is bijective at every nonzero covector, its fibrewise inverses
