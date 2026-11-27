@@ -70,13 +70,20 @@ lemma ι_mapCochainTensorXIso_hom (K L : CochainComplex C ℤ) (p q n : ℤ)
         ((F.mapHomologicalComplex (.up ℤ)).obj L) p q n h ≫
         (F.mapCochainTensorXIso K L n).hom =
       (Monoidal.μIso F (K.X p) (L.X q)).hom ≫ F.map (ιTensorObj K L p q n h) := by
-  exact (Sigma.ι_mapIso_hom_assoc
-    (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
-      Monoidal.μIso F (K.X pq.val.1) (L.X pq.val.2)) ⟨(p, q), h⟩ _).trans
-    (congrArg ((Monoidal.μIso F (K.X p) (L.X q)).hom ≫ ·)
-      (ι_comp_sigmaComparison F
-        (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦ K.X pq.val.1 ⊗ L.X pq.val.2)
-        ⟨(p, q), h⟩))
+  -- Express both tensor inclusions over the explicit antidiagonal: rewriting across
+  -- the complex-shape index and its definitionally equal subtype otherwise fails.
+  change Sigma.ι
+      (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+        F.obj (K.X pq.val.1) ⊗ F.obj (L.X pq.val.2)) ⟨(p, q), h⟩ ≫
+      ((Sigma.mapIso (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+        Monoidal.μIso F (K.X pq.val.1) (L.X pq.val.2))).hom ≫
+        (PreservesCoproduct.iso F
+          (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+            K.X pq.val.1 ⊗ L.X pq.val.2)).inv) =
+      (Monoidal.μIso F (K.X p) (L.X q)).hom ≫ F.map (Sigma.ι
+        (fun pq : {pq : ℤ × ℤ // pq.1 + pq.2 = n} ↦
+          K.X pq.val.1 ⊗ L.X pq.val.2) ⟨(p, q), h⟩)
+  rw [PreservesCoproduct.iso_inv, Sigma.ι_mapIso_hom_assoc, ι_comp_sigmaComparison]
 
 /-- On the image of a homogeneous summand the inverse comparison uses the inverse
 monoidal tensor comparison. -/
@@ -115,13 +122,15 @@ def mapCochainTensorIso (K L : CochainComplex C ℤ) :
     obtain rfl : j = i + 1 := ((ComplexShape.up_Rel _ _ _).mp hij).symm
     exact F.mapCochainTensorXIso_hom_comm K L i)
 
-/-- The component of the forward cochain comparison is the coproduct comparison. -/
+/-- The degree-`n` component of the forward cochain comparison is the degreewise tensor
+comparison `mapCochainTensorXIso`. -/
 @[simp]
 lemma mapCochainTensorIso_hom_f (K L : CochainComplex C ℤ) (n : ℤ) :
     (F.mapCochainTensorIso K L).hom.f n = (F.mapCochainTensorXIso K L n).hom :=
   (rfl)
 
-/-- The component of the inverse cochain comparison is the inverse coproduct comparison. -/
+/-- The degree-`n` component of the inverse cochain comparison is the inverse degreewise
+tensor comparison `mapCochainTensorXIso`. -/
 @[simp]
 lemma mapCochainTensorIso_inv_f (K L : CochainComplex C ℤ) (n : ℤ) :
     (F.mapCochainTensorIso K L).inv.f n = (F.mapCochainTensorXIso K L n).inv :=
