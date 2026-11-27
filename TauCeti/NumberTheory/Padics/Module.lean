@@ -61,8 +61,8 @@ additive isomorphism between two such modules preserves `Module.finrank`, and `�
   is torsion-free.
 * `LinearMap.padicIntCodRestrict`: a `ℚ_[p]`-valued `ℤ_[p]`-linear map with values in
   `ℤ_[p]`, as a `ℤ_[p]`-valued functional.
-* `TauCeti.instContinuousConstSMulPadicInt`: `ℤ_[p]` acts continuously on a topological
-  `ℚ_[p]`-module through `ℚ_[p]`.
+* `TauCeti.instContinuousConstSMulPadicInt`, `TauCeti.instContinuousSMulPadicInt`: `ℤ_[p]` acts
+  continuously on a topological `ℚ_[p]`-module through `ℚ_[p]`.
 * `Module.Basis.mem_span_padicInt_iff_norm_repr_le_one`: the `ℤ_p`-span of a `ℚ_p`-basis is the
   set of vectors whose coordinates have norm at most `1`.
 * `Module.Basis.isOpen_span_padicInt`: the `ℤ_p`-span of a `ℚ_p`-basis of a finite-dimensional
@@ -317,6 +317,16 @@ variable {p : ℕ} [Fact p.Prime] {V : Type*} [AddCommGroup V] [Module ℚ_[p] V
 instance instContinuousConstSMulPadicInt [ContinuousConstSMul ℚ_[p] V] :
     ContinuousConstSMul ℤ_[p] V :=
   IsScalarTower.continuousConstSMul ℤ_[p] ℚ_[p] V
+
+/-- `ℤ_[p]` acts continuously on `ℚ_[p]`, by multiplication through the inclusion. -/
+instance instContinuousSMulPadicIntPadic : ContinuousSMul ℤ_[p] ℚ_[p] :=
+  ⟨((continuous_subtypeVal.comp continuous_fst).mul continuous_snd).congr fun x ↦ by
+    rw [Algebra.smul_def, PadicInt.algebraMap_apply]
+    rfl⟩
+
+/-- `ℤ_[p]` acts jointly continuously on a topological `ℚ_[p]`-module through `ℚ_[p]`. -/
+instance instContinuousSMulPadicInt [ContinuousSMul ℚ_[p] V] : ContinuousSMul ℤ_[p] V :=
+  IsScalarTower.continuousSMul ℚ_[p]
 
 end TauCeti
 
