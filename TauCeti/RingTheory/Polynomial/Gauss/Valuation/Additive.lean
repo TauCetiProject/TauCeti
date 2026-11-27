@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.GaussValuation
+public import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Splits
 public import Mathlib.Algebra.Order.Monoid.WithTop
 import TauCeti.RingTheory.Valuation.AddValuation
 import Mathlib.Order.MinMax
@@ -116,7 +116,8 @@ theorem addGaussValuation_le_iff {g : R[X]} {b : Γ} :
     intro hz
     rw [addGaussValuation_def, hz, ofDual_toAdd_zero] at hb
     exact WithTop.not_top_le_coe _ hb
-  obtain ⟨i, _, hi⟩ := exists_eq_gaussValuation _ _ hne
+  obtain ⟨i, _, hi⟩ := exists_eq_gaussValuation (v := v.toValuation)
+    (r := .ofAdd (.toDual (ρ : WithTop Γ))) (show g ≠ 0 by rintro rfl; simp at hne)
   have hi' := congrArg (fun t : Multiplicative (WithTop Γ)ᵒᵈ ↦ t.toAdd.ofDual) hi
   simp only [AddValuation.toValuation_apply, toAdd_mul, toAdd_pow, toAdd_ofAdd,
     ofDual_add, OrderDual.ofDual_toDual, ← addGaussValuation_def] at hi'

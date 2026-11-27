@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.GaussValuation.RootCounting
+public import TauCeti.RingTheory.Polynomial.Gauss.Valuation.RootCounting
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 import TauCeti.RingTheory.Valuation.AddValuation
 import TauCeti.Algebra.Order.WithTop.Nsmul

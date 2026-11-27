@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.GaussValuation.RootCounting
+public import TauCeti.RingTheory.Polynomial.Gauss.Valuation.RootCounting
 public import Mathlib.Data.NNRat.BigOperators
 public import Mathlib.Analysis.PSeries
 public import TauCeti.Data.Nat.Totient
