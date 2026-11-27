@@ -35,12 +35,17 @@ open Set MeasureTheory
 open scoped ENNReal
 
 /-- Restriction to a countable union of finite-measure sets is sigma-finite. -/
-theorem MeasureTheory.Measure.sigmaFinite_restrict_iUnion {α : Type*} [MeasurableSpace α]
-    (μ : Measure α) (s : ℕ → Set α) (hfin : ∀ n, μ (s n) < ∞) :
-    SigmaFinite (μ.restrict (⋃ n, s n)) := by
-  -- Cover the supporting sets by measurable envelopes of the same finite measure.
-  let T := fun n ↦ toMeasurable μ (s n)
-  have hsT : ⋃ n, s n ⊆ ⋃ n, T n := iUnion_mono fun n ↦ subset_toMeasurable μ (s n)
+theorem MeasureTheory.Measure.sigmaFinite_restrict_iUnion {α ι : Type*} [MeasurableSpace α]
+    [Countable ι] (μ : Measure α) (s : ι → Set α) (hfin : ∀ i, μ (s i) < ∞) :
+    SigmaFinite (μ.restrict (⋃ i, s i)) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · rw [iUnion_of_empty, Measure.restrict_empty]
+    infer_instance
+  -- Enumerate the sets, then cover them by measurable envelopes of the same finite measure.
+  obtain ⟨e, he⟩ := exists_surjective_nat ι
+  rw [← he.iUnion_comp]
+  let T := fun n ↦ toMeasurable μ (s (e n))
+  have hsT : ⋃ n, s (e n) ⊆ ⋃ n, T n := iUnion_mono fun n ↦ subset_toMeasurable μ (s (e n))
   refine ⟨⟨⟨fun n ↦ T n ∪ (⋃ n, T n)ᶜ, fun _ ↦ trivial, fun n ↦ ?_, ?_⟩⟩⟩
   · have hmeas : MeasurableSet (T n ∪ (⋃ n, T n)ᶜ) :=
       (measurableSet_toMeasurable μ _).union (MeasurableSet.iUnion fun n ↦
@@ -48,7 +53,7 @@ theorem MeasureTheory.Measure.sigmaFinite_restrict_iUnion {α : Type*} [Measurab
     rw [Measure.restrict_apply hmeas, union_inter_distrib_right,
       (disjoint_compl_left.mono_right hsT).inter_eq, union_empty]
     exact (measure_mono inter_subset_left).trans_lt
-      ((measure_toMeasurable (s n)).trans_lt (hfin n))
+      ((measure_toMeasurable (s (e n))).trans_lt (hfin (e n)))
   · rw [← iUnion_union, union_compl_self]
 
 variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α] {μ : Measure α}

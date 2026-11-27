@@ -38,7 +38,9 @@ This file provides `Lᵖ` completeness in that setting for every measure `μ`; t
    merely vanishing Cauchy modulus `B N → 0`, with the rate `B N` past index `N`, by extracting a
    subsequence with geometrically small jumps and passing the `Lᵖ` Cauchy bound to the
    almost-everywhere limit.
-4. `TauCeti.ae_eq_zero_of_tendsto_of_eLpNorm_le` identifies an almost-everywhere limit of
+4. `TauCeti.ae_tendsto_of_tsum_eLpNorm_sub_ne_top` turns summable `Lᵖ` distances to a function
+   into almost-everywhere convergence to it, for every `1 ≤ p`.
+5. `TauCeti.ae_eq_zero_of_tendsto_of_eLpNorm_le` identifies an almost-everywhere limit of
    functions whose `Lᵖ` seminorms tend to zero with `0`.
 
 ## Main results
@@ -50,6 +52,8 @@ This file provides `Lᵖ` completeness in that setting for every measure `μ`; t
   modulus.
 * `TauCeti.exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound` — the seminormed-group specialization
   for `eLpNorm (f n - g) p μ`.
+* `TauCeti.ae_tendsto_of_tsum_eLpNorm_sub_ne_top` — summable `Lᵖ` distances to `g` give
+  almost-everywhere convergence to `g`.
 * `TauCeti.ae_eq_zero_of_tendsto_of_eLpNorm_le` — Fatou's lemma for `Lᵖ` approximation: an
   almost-everywhere limit of `Lᵖ`-null sequences vanishes almost everywhere.
 -/
@@ -255,6 +259,19 @@ theorem exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound [SeminormedAddGroup E]
     simpa only [Pi.sub_apply, Pi.neg_apply, ← hedist, neg_neg] using hbound N n hn
   exact ⟨-h, hh.neg, hbound', tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hB
     (fun _ ↦ zero_le) fun n ↦ hbound' n n le_rfl⟩
+
+/-- **Almost-everywhere convergence from summable `Lᵖ` distances.** For `1 ≤ p` (including
+`p = ∞`), if the `Lᵖ` distances from `f n` to `g` are summable, then `f n → g` almost everywhere.
+This is the step of the Riesz–Fischer theorem that turns `Lᵖ` convergence at a summable rate into
+pointwise convergence without passing to a subsequence. -/
+theorem ae_tendsto_of_tsum_eLpNorm_sub_ne_top [SeminormedAddCommGroup E] (hp : 1 ≤ p)
+    {f : ℕ → α → E} {g : α → E} (hf : ∀ n, AEStronglyMeasurable (f n) μ)
+    (hg : AEStronglyMeasurable g μ) (h : ∑' n, eLpNorm (f n - g) p μ ≠ ∞) :
+    ∀ᵐ x ∂μ, Tendsto (fun n ↦ f n x) atTop (𝓝 (g x)) := by
+  filter_upwards [ae_tsum_lt_top_of_eLpNorm_le hp (d := fun n x ↦ ‖f n x - g x‖ₑ) h
+    fun n ↦ (eLpNorm_eNorm _ ((hf n).sub hg)).le] with x hx
+  rw [tendsto_iff_edist_tendsto_0]
+  simpa only [eDist_eq_eNorm_sub] using ENNReal.tendsto_atTop_zero_of_tsum_ne_top hx.ne
 
 /-- **Fatou's lemma for `Lᵖ` approximation.** For `p ≠ 0`, if `g n → g₀` almost everywhere and the
 `Lᵖ` seminorms of `g n` are bounded by a sequence tending to `0`, then `g₀ = 0` almost everywhere.
