@@ -33,7 +33,7 @@ for `β` of degree `q` (`TauCeti.cycleCellCocycle_coefficientDifferential_single
 `TauCeti.cycleCellCocycle_coefficientDifferential_single_inr`). So the vectors `α e₀` form a
 subcomplex, a copy of `𝓕` (`TauCeti.cycleCellCocycleCoefficientInl`), and the coefficient of `e₁`
 is a morphism of complexes onto a copy of `𝓕` shifted by the index `n + 1` of `e₁`
-(`TauCeti.cycleCellCocycleCoefficientInr`). Together they form a short exact sequence of complexes
+(`TauCeti.cycleCellCocycleCoefficientSnd`). Together they form a short exact sequence of complexes
 (`TauCeti.cycleCellCocycleCoefficientShortComplex_shortExact`)
 
 `0 ⟶ 𝓕 ⟶ 𝓕 ⊗ K ⟶ 𝓕[n + 1] ⟶ 0`.
@@ -60,7 +60,7 @@ bijection from `Hᵗ⁺ⁿ(𝓕)` onto `Hᵗ(𝓕)` for every `t`
 ## Main definitions
 
 * `TauCeti.cycleCellCocycleCoefficientInl`: the inclusion `𝓕 ⟶ 𝓕 ⊗ K` of the vectors `α e₀`.
-* `TauCeti.cycleCellCocycleCoefficientInr`: the coefficient of `e₁`, `𝓕 ⊗ K ⟶ 𝓕[n + 1]`.
+* `TauCeti.cycleCellCocycleCoefficientSnd`: the coefficient of `e₁`, `𝓕 ⊗ K ⟶ 𝓕[n + 1]`.
 * `TauCeti.cycleCellCocycleCoefficientShortComplex`: the short complex they form.
 
 ## Main results
@@ -170,7 +170,7 @@ private def inlX (t : ℤ) :
     (shiftedModuleComplex.{u, _, w, 0} 𝓕.isDGRightModule 0).X t →ₗ[R] (𝒦).X t :=
   (𝒦e t).symm.toLinearMap ∘ₗ
     ((Finsupp.lsingle (R := R) (M := 𝓕) (Sum.inl ()) ∘ₗ (𝓕.grading (t + 0)).subtype).codRestrict
-      _ fun α ↦ single_inl_mem 𝓕 α.property) ∘ₗ
+      _ fun α ↦ by rw [LinearMap.comp_apply]; exact single_inl_mem 𝓕 α.property) ∘ₗ
     (shiftedModuleComplexXEquiv 𝓕.isDGRightModule 0 t).toLinearMap
 
 private theorem coefficientCochainComplexXEquiv_inlX (t : ℤ)
@@ -178,26 +178,24 @@ private theorem coefficientCochainComplexXEquiv_inlX (t : ℤ)
     (𝒦e t (inlX 𝓕 hx hdx t α) : Unit ⊕ Unit →₀ 𝓕) =
       Finsupp.single (Sum.inl ()) (shiftedModuleComplexXEquiv 𝓕.isDGRightModule 0 t α : 𝓕) := by
   simp only [inlX, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    LinearEquiv.apply_symm_apply]
-  -- The remaining equation holds by unfolding the corestriction of the codomain.
-  rfl
+    LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply, Finsupp.lsingle_apply,
+    Submodule.coe_subtype]
 
 /-- The coefficient of `e₁` in degree `t`. -/
-private def inrX (t : ℤ) :
+private def sndX (t : ℤ) :
     (𝒦).X t →ₗ[R] (shiftedModuleComplex.{u, _, w, 0} 𝓕.isDGRightModule ((n : ℤ) + 1)).X t :=
   (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) t).symm.toLinearMap ∘ₗ
     ((Finsupp.lapply (R := R) (M := 𝓕) (Sum.inr ()) ∘ₗ
       (rowFiniteTotalGrading 𝓕.grading ι t).subtype).codRestrict
-        _ fun f ↦ apply_inr_mem 𝓕 f.property) ∘ₗ
+        _ fun f ↦ by rw [LinearMap.comp_apply]; exact apply_inr_mem 𝓕 f.property) ∘ₗ
     (𝒦e t).toLinearMap
 
-private theorem shiftedModuleComplexXEquiv_inrX (t : ℤ) (f : (𝒦).X t) :
-    (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) t (inrX 𝓕 hx hdx t f) : 𝓕) =
+private theorem shiftedModuleComplexXEquiv_sndX (t : ℤ) (f : (𝒦).X t) :
+    (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) t (sndX 𝓕 hx hdx t f) : 𝓕) =
       (𝒦e t f : Unit ⊕ Unit →₀ 𝓕) (Sum.inr ()) := by
-  simp only [inrX, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    LinearEquiv.apply_symm_apply]
-  -- The remaining equation holds by unfolding the corestriction of the codomain.
-  rfl
+  simp only [sndX, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply, Finsupp.lapply_apply,
+    Submodule.coe_subtype]
 
 /-- **The inclusion of the `0`-cell**: the morphism of complexes from `𝓕` to the twisted complex
 of `TauCeti.cycleCellCocycle R n x` with coefficients in `𝓕` sending `α` to `α e₀`. -/
@@ -223,35 +221,35 @@ theorem coefficientCochainComplexXEquiv_cycleCellCocycleCoefficientInl_f (t : �
 /-- **The coefficient of the top cell**: the morphism of complexes from the twisted complex of
 `TauCeti.cycleCellCocycle R n x` with coefficients in `𝓕` to `𝓕` shifted by `n + 1`, sending
 `α e₀ + β e₁` to `β`. -/
-def cycleCellCocycleCoefficientInr :
+def cycleCellCocycleCoefficientSnd :
     𝒦 ⟶ shiftedModuleComplex.{u, _, w, 0} 𝓕.isDGRightModule ((n : ℤ) + 1) where
-  f t := ModuleCat.ofHom (inrX 𝓕 hx hdx t)
+  f t := ModuleCat.ofHom (sndX 𝓕 hx hdx t)
   comm' i j hij := by
     obtain rfl : i + 1 = j := hij
     refine ModuleCat.hom_ext (LinearMap.ext fun f ↦
       (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) (i + 1)).injective
         (Subtype.ext ?_))
     simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
-    rw [shiftedModuleComplexXEquiv_inrX, shiftedModuleComplexXEquiv_d,
-      shiftedModuleComplexXEquiv_inrX,
+    rw [shiftedModuleComplexXEquiv_sndX, shiftedModuleComplexXEquiv_d,
+      shiftedModuleComplexXEquiv_sndX,
       RowFiniteTwistingCocycle.coefficientCochainComplexXEquiv_d]
     -- No generator has `e₁` in its row, so the coefficient of `e₁` of `D f` is `d` of that of `f`.
     exact ((cycleCellCocycle R n x hx hdx).coefficientDifferential_apply_of_forall_m_eq_zero
       𝓕.isDGRightModule (f := (𝒦e i f : Unit ⊕ Unit →₀ 𝓕)) (x := Sum.inr ())
       fun y _ ↦ by rcases y with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp).symm
 
-/-- `TauCeti.cycleCellCocycleCoefficientInr` reads off the coefficient of `e₁`. -/
+/-- `TauCeti.cycleCellCocycleCoefficientSnd` reads off the coefficient of `e₁`. -/
 @[simp]
-theorem shiftedModuleComplexXEquiv_cycleCellCocycleCoefficientInr_f (t : ℤ) (f : (𝒦).X t) :
+theorem shiftedModuleComplexXEquiv_cycleCellCocycleCoefficientSnd_f (t : ℤ) (f : (𝒦).X t) :
     (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) t
-        (((cycleCellCocycleCoefficientInr 𝓕 hx hdx).f t).hom f) : 𝓕) =
+        (((cycleCellCocycleCoefficientSnd 𝓕 hx hdx).f t).hom f) : 𝓕) =
       (𝒦e t f : Unit ⊕ Unit →₀ 𝓕) (Sum.inr ()) :=
-  shiftedModuleComplexXEquiv_inrX 𝓕 hx hdx t f
+  shiftedModuleComplexXEquiv_sndX 𝓕 hx hdx t f
 
 /-- The coefficient of `e₁` of a vector `α e₀` vanishes. -/
 @[reassoc (attr := simp)]
-theorem cycleCellCocycleCoefficientInl_comp_cycleCellCocycleCoefficientInr :
-    cycleCellCocycleCoefficientInl 𝓕 hx hdx ≫ cycleCellCocycleCoefficientInr 𝓕 hx hdx = 0 := by
+theorem cycleCellCocycleCoefficientInl_comp_cycleCellCocycleCoefficientSnd :
+    cycleCellCocycleCoefficientInl 𝓕 hx hdx ≫ cycleCellCocycleCoefficientSnd 𝓕 hx hdx = 0 := by
   refine HomologicalComplex.hom_ext _ _ fun t ↦ ModuleCat.hom_ext (LinearMap.ext fun α ↦
     (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) t).injective (Subtype.ext ?_))
   simp
@@ -261,8 +259,8 @@ theorem cycleCellCocycleCoefficientInl_comp_cycleCellCocycleCoefficientInr :
 abbrev cycleCellCocycleCoefficientShortComplex :
     ShortComplex (CochainComplex (ModuleCat.{w} R) ℤ) :=
   ShortComplex.mk (cycleCellCocycleCoefficientInl 𝓕 hx hdx)
-    (cycleCellCocycleCoefficientInr 𝓕 hx hdx)
-    (cycleCellCocycleCoefficientInl_comp_cycleCellCocycleCoefficientInr 𝓕 hx hdx)
+    (cycleCellCocycleCoefficientSnd 𝓕 hx hdx)
+    (cycleCellCocycleCoefficientInl_comp_cycleCellCocycleCoefficientSnd 𝓕 hx hdx)
 
 /-- The inclusion of the vectors `α e₀` is injective in every degree. -/
 theorem injective_cycleCellCocycleCoefficientInl_f (t : ℤ) :
@@ -273,8 +271,8 @@ theorem injective_cycleCellCocycleCoefficientInl_f (t : ℤ) :
   exact (shiftedModuleComplexXEquiv 𝓕.isDGRightModule 0 t).injective (Subtype.ext h')
 
 /-- The coefficient of `e₁` is surjective in every degree: `β` is the coefficient of `β e₁`. -/
-theorem surjective_cycleCellCocycleCoefficientInr_f (t : ℤ) :
-    Function.Surjective ((cycleCellCocycleCoefficientInr 𝓕 hx hdx).f t).hom := fun β ↦
+theorem surjective_cycleCellCocycleCoefficientSnd_f (t : ℤ) :
+    Function.Surjective ((cycleCellCocycleCoefficientSnd 𝓕 hx hdx).f t).hom := fun β ↦
   ⟨(𝒦e t).symm ⟨_, single_inr_mem 𝓕
       (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) t β).property⟩,
     (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) t).injective
@@ -282,7 +280,7 @@ theorem surjective_cycleCellCocycleCoefficientInr_f (t : ℤ) :
 
 /-- A vector with no coefficient on `e₁` is the vector `α e₀` of its coefficient `α` on `e₀`. -/
 theorem exists_cycleCellCocycleCoefficientInl_f_eq {t : ℤ} (f : (𝒦).X t)
-    (hf : ((cycleCellCocycleCoefficientInr 𝓕 hx hdx).f t).hom f = 0) :
+    (hf : ((cycleCellCocycleCoefficientSnd 𝓕 hx hdx).f t).hom f = 0) :
     ∃ α, ((cycleCellCocycleCoefficientInl 𝓕 hx hdx).f t).hom α = f := by
   have hf' : (𝒦e t f : Unit ⊕ Unit →₀ 𝓕) (Sum.inr ()) = 0 := by
     simpa using congrArg (fun g ↦
@@ -301,7 +299,7 @@ theorem cycleCellCocycleCoefficientShortComplex_shortExact :
       ((ShortComplex.moduleCat_exact_iff_ker_sub_range _).2 fun f hf ↦
         exists_cycleCellCocycleCoefficientInl_f_eq 𝓕 hx hdx f hf)
       ((ModuleCat.mono_iff_injective _).2 (injective_cycleCellCocycleCoefficientInl_f 𝓕 hx hdx t))
-      ((ModuleCat.epi_iff_surjective _).2 (surjective_cycleCellCocycleCoefficientInr_f 𝓕 hx hdx t))
+      ((ModuleCat.epi_iff_surjective _).2 (surjective_cycleCellCocycleCoefficientSnd_f 𝓕 hx hdx t))
 
 /-! ### The connecting morphism -/
 
@@ -356,7 +354,7 @@ theorem cycleCellCocycleCoefficientShortComplex_δ_apply (t : ℤ) (β : 𝓕.is
       ⟨_, negOnePow_smul_op_smul_mem 𝓕 hx (t + ((n : ℤ) + 1)) hβ⟩) (t + 1 + 1) (by simp) (by
       rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, LinearEquiv.apply_symm_apply]
       exact differential_negOnePow_smul_op_smul 𝓕 hdx _ hdβ)
-  have hx₂ : ((cycleCellCocycleCoefficientInr 𝓕 hx hdx).f t).hom x₂ =
+  have hx₂ : ((cycleCellCocycleCoefficientSnd 𝓕 hx hdx).f t).hom x₂ =
       ((shiftedModuleComplex.{u, _, w, 0} 𝓕.isDGRightModule ((n : ℤ) + 1)).iCycles t).hom z₃ :=
     (shiftedModuleComplexXEquiv 𝓕.isDGRightModule ((n : ℤ) + 1) t).injective
       (Subtype.ext (by simp [x₂, z₃]))
@@ -405,31 +403,23 @@ private theorem bijective_δ_iff (i : ℤ) :
       ε • c ∈ 𝓕.isDGRightModule.cohomologyGrading p := by
     rw [Units.smul_def]
     exact zsmul_mem hc _
-  rw [← Equiv.comp_bijective _ e₁.toEquiv, ← Equiv.bijective_comp e₃.symm.toEquiv]
-  constructor
-  · rintro ⟨hinj, hsurj⟩
-    refine ⟨fun c hc ↦ ?_, fun c hc c' hc' h ↦ ?_, fun d hd ↦ ?_⟩
-    · -- `c x = ε • (ε • c x)`, and `ε • c x` is the image of `c`.
-      dsimp only
-      rw [← hεε (op xc • c), ← hF ⟨c, hc⟩]
-      exact hεmem (Subtype.property _)
-    · dsimp only at h
-      have := @hinj ⟨c, hc⟩ ⟨c', hc'⟩ (Subtype.ext (by
-        simp only [Function.comp_apply, LinearEquiv.coe_toEquiv, hF, h]))
-      exact congrArg Subtype.val this
-    · obtain ⟨c, hc⟩ := hsurj ⟨ε • d, hεmem hd⟩
-      refine ⟨c, c.property, ?_⟩
-      have h := congrArg Subtype.val hc
-      simp only [Function.comp_apply, LinearEquiv.coe_toEquiv, hF] at h
-      exact (smul_left_cancel_iff ε).mp h
-  · rintro ⟨-, hinj, hsurj⟩
-    refine ⟨fun c c' h ↦ Subtype.ext (hinj c.property c'.property ?_), fun d ↦ ?_⟩
-    · have h' := congrArg Subtype.val h
-      simp only [Function.comp_apply, LinearEquiv.coe_toEquiv, hF] at h'
-      exact (smul_left_cancel_iff ε).mp h'
-    · obtain ⟨c, hc, hcd⟩ := hsurj (hεmem d.property)
-      refine ⟨⟨c, hc⟩, Subtype.ext ?_⟩
-      simp only [Function.comp_apply, LinearEquiv.coe_toEquiv, hF, hcd, hεε]
+  have hmaps : Set.MapsTo (fun c : 𝓕.isDGRightModule.Cohomology ↦ op xc • c)
+      (𝓕.isDGRightModule.cohomologyGrading (i + ((n : ℤ) + 1)))
+      (𝓕.isDGRightModule.cohomologyGrading (i + 1 + 0)) := fun c hc ↦ by
+    -- `c x = ε • (ε • c x)`, and `ε • c x` is the image of `c`.
+    dsimp only
+    rw [← hεε (op xc • c), ← hF ⟨c, hc⟩]
+    exact hεmem (Subtype.property _)
+  -- `ε • ·` is an involution of the target graded piece.
+  let σ : Equiv.Perm (𝓕.isDGRightModule.cohomologyGrading (i + 1 + 0)) :=
+    Function.Involutive.toPerm (fun d ↦ ⟨ε • (d : _), hεmem d.property⟩)
+      fun d ↦ Subtype.ext (hεε d)
+  have hcomp : (⇑e₁.toEquiv ∘ δ.hom) ∘ ⇑e₃.symm.toEquiv = σ ∘ hmaps.restrict _ _ _ :=
+    funext fun c ↦ Subtype.ext (hF c)
+  rw [← Equiv.comp_bijective _ e₁.toEquiv, ← Equiv.bijective_comp e₃.symm.toEquiv, hcomp,
+    Equiv.comp_bijective]
+  exact ⟨fun h ↦ ⟨hmaps, hmaps.restrict_inj.1 h.1, hmaps.restrict_surjective_iff.1 h.2⟩,
+    fun h ↦ h.bijective⟩
 
 /-- **The twisted complex of a cell is acyclic exactly when right multiplication by the attaching
 class is bijective**: the twisted complex of `TauCeti.cycleCellCocycle R n x` with coefficients in
