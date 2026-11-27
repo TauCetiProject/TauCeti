@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Congr
-public import Mathlib.Probability.Independence.Basic
 
 /-!
 # Entropy of product systems: the lower bound
@@ -24,8 +23,9 @@ generator theory, and is not proved here.
 
 ## Main results
 
-* `TauCeti.countablePartitionEntropy_prod`: `H_{μ × ν}((a, b)) = H_μ(a) + H_ν(b)`.
-* `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_prodMap`: the same for itineraries.
+* `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_prodMap`: the length-`n` itinerary of
+  `(a, b)` under `T × S` has entropy `H(join_n a) + H(join_n b)`, from
+  `TauCeti.countablePartitionEntropy_prod`.
 * `TauCeti.partitionEntropyRate_prodMap`: `h_{μ × ν}(T × S, (a, b)) = h_μ(T, a) + h_ν(S, b)`.
 * `TauCeti.measureEntropy_add_le_measureEntropy_prodMap`:
   `h_μ(T) + h_ν(S) ≤ h_{μ × ν}(T × S)`.
@@ -50,7 +50,7 @@ the two coordinates, regrouped. -/
 theorem iteratedPartitionLabel_prodMap (T : X → X) (S : Y → Y) (a : X → ι) (b : Y → κ)
     (n : ℕ) :
     iteratedPartitionLabel (Prod.map T S) (fun p ↦ (a p.1, b p.2)) n =
-      (fun w k ↦ (w.1 k, w.2 k)) ∘
+      (Equiv.arrowProdEquivProdArrow (Fin n) (fun _ ↦ ι) (fun _ ↦ κ)).symm ∘
         fun p ↦ (iteratedPartitionLabel T a n p.1, iteratedPartitionLabel S b n p.2) := by
   funext p k
   simp [Prod.map_iterate]
@@ -59,22 +59,10 @@ variable [MeasurableSpace ι] [MeasurableSingletonClass ι] [Countable ι]
   [MeasurableSpace κ] [MeasurableSingletonClass κ] [Countable κ]
   [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
 
-/-- **Product labels.** Under a product of probability measures, the entropy of the product of a
-measurable countable label on each factor is the sum of their entropies. -/
-theorem countablePartitionEntropy_prod {a : X → ι} {b : Y → κ} (ha : Measurable a)
-    (hb : Measurable b) :
-    countablePartitionEntropy (μ.prod ν) (fun p ↦ (a p.1, b p.2)) =
-      countablePartitionEntropy μ a + countablePartitionEntropy ν b := by
-  refine (countablePartitionEntropy_pair_of_indepFun (a := fun p : X × Y ↦ a p.1)
-    (b := fun p : X × Y ↦ b p.2) (ha.comp measurable_fst) (hb.comp measurable_snd)
-    (indepFun_prod ha hb)).trans ?_
-  exact congrArg₂ (· + ·)
-    (countablePartitionEntropy_comp_of_measurePreserving (measurePreserving_fst) ha)
-    (countablePartitionEntropy_comp_of_measurePreserving (measurePreserving_snd) hb)
-
 /-- **Product itineraries.** Under a product of probability measures, the length-`n` itinerary of
-a product label under a product map has the sum of the entropies of the coordinate itineraries,
-for any maps `T` and `S`. -/
+a product label under a product map has entropy equal to the sum of the entropies of the
+coordinate itineraries, for any measurable maps `T` and `S` (not necessarily measure-preserving).
+-/
 theorem countablePartitionEntropy_iteratedPartitionLabel_prodMap {T : X → X} {S : Y → Y}
     (hT : Measurable T) (hS : Measurable S) {a : X → ι} {b : Y → κ} (ha : Measurable a)
     (hb : Measurable b) (n : ℕ) :
@@ -82,11 +70,8 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_prodMap {T : X → X} {
         (iteratedPartitionLabel (Prod.map T S) (fun p ↦ (a p.1, b p.2)) n) =
       countablePartitionEntropy μ (iteratedPartitionLabel T a n) +
         countablePartitionEntropy ν (iteratedPartitionLabel S b n) := by
-  have hinj : Function.Injective fun (w : (Fin n → ι) × (Fin n → κ)) (k : Fin n) ↦
-      (w.1 k, w.2 k) := fun w w' h ↦ Prod.ext
-    (funext fun k ↦ congrArg Prod.fst (congrFun h k))
-    (funext fun k ↦ congrArg Prod.snd (congrFun h k))
-  rw [iteratedPartitionLabel_prodMap, countablePartitionEntropy_comp_of_injective _ hinj]
+  rw [iteratedPartitionLabel_prodMap,
+    countablePartitionEntropy_comp_of_injective _ (Equiv.injective _)]
   exact countablePartitionEntropy_prod (measurable_iteratedPartitionLabel hT ha n)
     (measurable_iteratedPartitionLabel hS hb n)
 
