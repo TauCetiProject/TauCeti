@@ -255,65 +255,74 @@ theorem continuous_eval
   exact hd.comp
     (continuous_fst.prodMk (QuotientGroup.continuous_mk.comp continuous_snd))
 
+/-- Pull back the smooth slices along a smooth self-map and shift their finite indices. -/
+private def translateSlices (a : C^∞⟮I, M; I, M⟯) (y : F) :
+    (F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) →ₐ[ℂ] (F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :=
+  AlgHom.pi fun x ↦
+    (ContMDiffMap.compRightComplexAlgHom a).comp (Pi.evalAlgHom ℂ _ (x * y))
+
+omit [TopologicalSpace F] [SeparatelyContinuousMul F] in
+private theorem translateSlices_apply (a : C^∞⟮I, M; I, M⟯) (y : F)
+    (f : F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : F) :
+    translateSlices a y f x = (f (x * y)).comp a := by
+  simp [translateSlices, ContMDiffMap.compRightComplexAlgHom_apply]
+
+omit [TopologicalSpace F] [SeparatelyContinuousMul F] in
+private theorem translateSlices_eval (a : C^∞⟮I, M; I, M⟯) (y : F)
+    (f : F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M × F) :
+    translateSlices a y f x.2 x.1 = f (x.2 * y) (a x.1) := by
+  rw [translateSlices_apply, ContMDiffMap.comp_apply]
+
+omit [Nonempty (CompactOpenSubgroup F)] in
+private theorem translateSlices_mem_level (a : C^∞⟮I, M; I, M⟯) (y : F) {J : CompactOpenSubgroup F}
+    {f : F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} (hf : f ∈ level I M J.toSubgroup) :
+    translateSlices a y f ∈ level I M (ContinuousAut.conj y • J).toSubgroup := by
+  refine mem_level_iff.mpr fun x j ↦ ?_
+  have hj : y⁻¹ * (j : F) * y ∈ J :=
+    ContinuousAut.mem_conj_smul_compactOpenSubgroup_iff.mp
+      ((ContinuousAut.conj y • J).mem_toSubgroup.mp j.property)
+  have h := mem_level_iff.mp hf (x * y) ⟨_, J.mem_toSubgroup.mpr hj⟩
+  have he : x * (j : F) * y = (x * y) * (y⁻¹ * j * y) := by group
+  rw [translateSlices_apply, translateSlices_apply, he, h]
+
+/-- Pullback and finite index shift preserve the union of the compact open levels. -/
+private def translateFiniteLevel (a : C^∞⟮I, M; I, M⟯) (y : F) :
+    AdelicSmoothFunction I M F →ₐ[ℂ] AdelicSmoothFunction I M F :=
+  ((translateSlices a y).comp (finiteLevel I M F).val).codRestrict _ fun f ↦ by
+    obtain ⟨J, hJ⟩ := mem_finiteLevel_iff.mp f.property
+    exact mem_finiteLevel_iff.mpr ⟨ContinuousAut.conj y • J, translateSlices_mem_level a y hJ⟩
+
+private theorem translateFiniteLevel_eval (a : C^∞⟮I, M; I, M⟯) (y : F)
+    (f : AdelicSmoothFunction I M F) (x : M × F) :
+    (translateFiniteLevel a y f).eval x = f.eval (a x.1, x.2 * y) :=
+  translateSlices_eval a y f.val x
+
 section Translation
 
 variable [Group M] [ContMDiffMul I ∞ M]
 
-/-- The ambient pullback used for right translation on both the levels and their union. -/
-private def translateSlices (y : M × F) :
-    (F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) →ₐ[ℂ] (F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :=
-  AlgHom.pi fun x ↦
-    (ContMDiffMap.compRightComplexAlgHom (smoothRightMul I y.1)).comp
-      (Pi.evalAlgHom ℂ _ (x * y.2))
-
-omit [TopologicalSpace F] [SeparatelyContinuousMul F] in
-private theorem translateSlices_apply (y : M × F) (f : F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : F) :
-    translateSlices y f x = (f (x * y.2)).comp (smoothRightMul I y.1) := by
-  simp [translateSlices, ContMDiffMap.compRightComplexAlgHom_apply]
-
-omit [TopologicalSpace F] [SeparatelyContinuousMul F] in
-private theorem translateSlices_eval (y : M × F) (f : F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (x : M × F) :
-    translateSlices y f x.2 x.1 = f (x.2 * y.2) (x.1 * y.1) := by
-  rw [translateSlices_apply, ContMDiffMap.comp_apply]
-  rfl
-
-omit [Nonempty (CompactOpenSubgroup F)] in
-private theorem translateSlices_mem_level (y : M × F) {J : CompactOpenSubgroup F}
-    {f : F → C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} (hf : f ∈ level I M J.toSubgroup) :
-    translateSlices y f ∈ level I M (ContinuousAut.conj y.2 • J).toSubgroup := by
-  refine mem_level_iff.mpr fun x j ↦ ?_
-  have hj : y.2⁻¹ * (j : F) * y.2 ∈ J :=
-    ContinuousAut.mem_conj_smul_compactOpenSubgroup_iff.mp
-      ((ContinuousAut.conj y.2 • J).mem_toSubgroup.mp j.property)
-  have h := mem_level_iff.mp hf (x * y.2) ⟨_, J.mem_toSubgroup.mpr hj⟩
-  have he : x * (j : F) * y.2 = (x * y.2) * (y.2⁻¹ * j * y.2) := by group
-  rw [translateSlices_apply, translateSlices_apply, he, h]
-
 /-- Right translation of a family at level `J` has level `y_f J y_f⁻¹`. -/
 def rightTranslateLevel (y : M × F) (J : CompactOpenSubgroup F) :
     level I M J.toSubgroup →ₐ[ℂ] level I M (ContinuousAut.conj y.2 • J).toSubgroup :=
-  ((translateSlices y).comp (level I M J.toSubgroup).val).codRestrict _
-    fun f ↦ translateSlices_mem_level y f.property
+  ((translateSlices (smoothRightMul I y.1) y.2).comp (level I M J.toSubgroup).val).codRestrict _
+    fun f ↦ translateSlices_mem_level (smoothRightMul I y.1) y.2 f.property
 
 omit [Nonempty (CompactOpenSubgroup F)] in
 @[simp]
 theorem rightTranslateLevel_apply (y : M × F) (J : CompactOpenSubgroup F)
     (f : level I M J.toSubgroup) (x : M × F) :
     (rightTranslateLevel y J f).val x.2 x.1 = f.val (x.2 * y.2) (x.1 * y.1) :=
-  translateSlices_eval y f.val x
+  translateSlices_eval (smoothRightMul I y.1) y.2 f.val x
 
 /-- Right translation `R(y)f(x) = f(xy)` as a complex algebra endomorphism. -/
 def rightTranslate (y : M × F) :
     AdelicSmoothFunction I M F →ₐ[ℂ] AdelicSmoothFunction I M F :=
-  ((translateSlices y).comp (finiteLevel I M F).val).codRestrict _ fun f ↦ by
-    obtain ⟨J, hJ⟩ := mem_finiteLevel_iff.mp f.property
-    exact mem_finiteLevel_iff.mpr ⟨ContinuousAut.conj y.2 • J, translateSlices_mem_level y hJ⟩
+  translateFiniteLevel (smoothRightMul I y.1) y.2
 
 @[simp]
 theorem rightTranslate_eval (y : M × F) (f : AdelicSmoothFunction I M F) (x : M × F) :
-    (rightTranslate y f).eval x = f.eval (x * y) := by
-  exact translateSlices_eval y f.val x
+    (rightTranslate y f).eval x = f.eval (x * y) :=
+  translateFiniteLevel_eval (smoothRightMul I y.1) y.2 f x
 
 /-- Translating after a level inclusion agrees with translating at the conjugate level. -/
 theorem rightTranslate_ofLevel (y : M × F) (J : CompactOpenSubgroup F)
@@ -353,16 +362,24 @@ theorem rightTranslation_apply (y : M × F) (f : AdelicSmoothFunction I M F) (x 
     (rightTranslation y f).eval x = f.eval (x * y) :=
   rightTranslate_eval y f x
 
-/-- The right action of the finite factor, used to apply the smooth representation and
-Hecke algebra APIs. -/
+end Translation
+
+/-- The right action of the finite factor shifts the finite index of each smooth slice.
+It is used to apply the smooth representation and Hecke algebra APIs. -/
 def finiteRightTranslation : Representation ℂ F (AdelicSmoothFunction I M F) :=
-  rightTranslation.comp (MonoidHom.inr M F)
+  AlgHom.toEnd.comp
+    { toFun := translateFiniteLevel (ContMDiffMap.id (I := I))
+      map_one' := AlgHom.ext fun f ↦ ext fun x ↦ by
+        rw [AlgHom.one_apply, translateFiniteLevel_eval]
+        simp [ContMDiffMap.id]
+      map_mul' y z := AlgHom.ext fun f ↦ ext fun x ↦ by
+        simp only [AlgHom.mul_apply, translateFiniteLevel_eval]
+        simp [ContMDiffMap.id, mul_assoc] }
 
 @[simp]
 theorem finiteRightTranslation_apply (y : F) (f : AdelicSmoothFunction I M F) (x : M × F) :
-    (finiteRightTranslation y f).eval x = f.eval (x.1, x.2 * y) := by
-  have h : x * (1, y) = (x.1, x.2 * y) := Prod.ext (mul_one _) rfl
-  exact (rightTranslation_apply (1, y) f x).trans (congrArg f.eval h)
+    (finiteRightTranslation y f).eval x = f.eval (x.1, x.2 * y) :=
+  translateFiniteLevel_eval ContMDiffMap.id y f x
 
 /-- The fixed vectors of the finite action at a compact open subgroup are exactly the
 image of that level. -/
@@ -394,7 +411,17 @@ instance : (finiteRightTranslation (I := I) (M := M) (F := F)).IsSmooth where
     have hf := (mem_finiteRightTranslation_invariants_iff J f).mpr hJ
     exact Representation.mem_stabilizer.mpr ((Representation.mem_invariants _ _).mp hf ⟨x, hx⟩)
 
-end Translation
+/-- On a smooth group, finite right translation is the restriction of product right translation. -/
+theorem finiteRightTranslation_eq_comp_inr [Group M] [ContMDiffMul I ∞ M] :
+    finiteRightTranslation (I := I) (M := M) (F := F) =
+      rightTranslation.comp (MonoidHom.inr M F) := by
+  apply MonoidHom.ext
+  intro y
+  apply LinearMap.ext
+  intro f
+  apply ext
+  intro x
+  simp [Prod.mul_def]
 
 section LeftInvariant
 
