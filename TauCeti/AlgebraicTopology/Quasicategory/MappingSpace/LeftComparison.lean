@@ -67,32 +67,6 @@ variable {X : SSet.{u}}
 
 namespace leftMappingSpace
 
-variable (X) in
-/-- The simplices of `vertexJoin.op ⋙ X` with initial vertex `x`. -/
-private def coneSpace (x : X _⦋0⦌) : Subcomplex (vertexJoin.op ⋙ X) where
-  obj m := {σ | X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj m.unop) 0).op σ = x}
-  map {m m'} f σ hσ := by
-    obtain ⟨⟨a⟩⟩ := m
-    obtain ⟨⟨b⟩⟩ := m'
-    have h := congrArg (fun g ↦ X.map g.op σ) (const_zero_comp_vertexJoin_map (x := ⦋0⦌) f.unop)
-    exact (Functor.map_comp_apply X _ _ σ).symm.trans (h.trans hσ)
-
-/-- The inclusion of `m` into `⦋0⦌ ⋆ m` as the face opposite to the initial vertex. -/
-private def tail (m : SimplexCategory) : m ⟶ vertexJoin.obj m :=
-  SimplexCategory.δ (n := m.len) 0
-
-variable (X) in
-/-- The restriction of a simplex of `vertexJoin.op ⋙ X` to the face opposite to the initial
-vertex. -/
-private def base : (vertexJoin.op ⋙ X) ⟶ X where
-  app m := X.map (tail m.unop).op
-  naturality m m' f := by
-    obtain ⟨⟨a⟩⟩ := m
-    obtain ⟨⟨b⟩⟩ := m'
-    ext σ
-    have h := congrArg (fun g ↦ X.map g.op σ) (δ_zero_comp_vertexJoin_map f.unop)
-    exact (Functor.map_comp_apply X _ _ σ).symm.trans (h.trans (Functor.map_comp_apply X _ _ σ))
-
 /-- The monotone self-map of `Fin (n + 2)` attached to a simplex `e : ⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]`: it
 fixes `0` and the `i + 1` with `e i = 1`, and sends the other elements to `0`. -/
 private def collapseOrderHom {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) : Fin (n + 2) →o Fin (n + 2) where
@@ -129,16 +103,19 @@ private lemma collapse_comp_vertexJoin_map {n n' : ℕ} (f : ⦋n'⦌ ⟶ ⦋n�
     collapse (f ≫ e) ≫ vertexJoin.map f = vertexJoin.map f ≫ collapse e := by
   refine hom_ext_zero_succ (m := ⦋n'⦌) ?_ (fun i ↦ ?_)
   · have h₁ : (vertexJoin.map f).toOrderHom 0 = 0 := vertexJoin_map_zero f
-    -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
+    -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
     change (vertexJoin.map f).toOrderHom (collapseOrderHom (f ≫ e) 0) =
       collapseOrderHom e ((vertexJoin.map f).toOrderHom 0)
     rw [collapseOrderHom_zero]
     exact h₁.trans ((congrArg (collapseOrderHom e) h₁).trans (collapseOrderHom_zero e)).symm
-  · -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
     change (vertexJoin.map f).toOrderHom (collapseOrderHom (f ≫ e) i.succ) =
       collapseOrderHom e ((vertexJoin.map f).toOrderHom i.succ)
     rw [collapseOrderHom_succ, vertexJoin_map_succ, collapseOrderHom_succ]
-    -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
+    -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
     change (vertexJoin.map f).toOrderHom (if e.toOrderHom (f.toOrderHom i) = 1 then _ else _) = _
     by_cases h : e.toOrderHom (f.toOrderHom i) = 1
     · simp only [h, ↓reduceIte]
@@ -153,13 +130,19 @@ private lemma const_zero_comp_collapse {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) :
 
 private lemma collapse_const_one (n : ℕ) : collapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 1) = 𝟙 _ := by
   refine hom_ext_zero_succ (m := ⦋n⦌) (collapseOrderHom_zero _) (fun i ↦ ?_)
-  exact (collapseOrderHom_succ _ i).trans (by simp; rfl)
+  exact (collapseOrderHom_succ _ i).trans (by
+    simp only [SimplexCategory.const_apply]
+    -- Identity and constant simplex maps evaluate to their defining vertex functions.
+    rfl)
 
 private lemma collapse_const_zero (n : ℕ) :
     collapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 0) =
       SimplexCategory.const _ ⦋0⦌ 0 ≫ SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0 := by
   refine hom_ext_zero_succ (m := ⦋n⦌) (collapseOrderHom_zero _) (fun i ↦ ?_)
-  exact (collapseOrderHom_succ _ i).trans (by simp; rfl)
+  exact (collapseOrderHom_succ _ i).trans (by
+    simp only [SimplexCategory.const_apply]
+    -- Identity and constant simplex maps evaluate to their defining vertex functions.
+    rfl)
 
 variable (X) in
 /-- The contraction of `vertexJoin.op ⋙ X` towards the initial vertices: the simplex `(σ, e)` of
@@ -180,13 +163,21 @@ private noncomputable def contraction : (vertexJoin.op ⋙ X) ⊗ Δ[1] ⟶ vert
     simp only [op_comp, Functor.map_comp_apply] at h
     exact h
 
+@[simp]
+private lemma contraction_app_apply {n : ℕ}
+    (z : ((vertexJoin.op ⋙ X) ⊗ Δ[1]).obj (op ⦋n⦌)) :
+    dsimp% (contraction X).app _ z = X.map (collapse (stdSimplex.objEquiv z.2)).op z.1 :=
+  (rfl)
+
 @[reassoc]
 private lemma ι₁_contraction : ι₁ ≫ contraction X = 𝟙 _ := by
   ext ⟨⟨n⟩⟩ σ
-  -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
-  change X.map (collapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 1)).op σ = σ
-  rw [collapse_const_one, op_id, CategoryTheory.Functor.map_id]
-  rfl
+  have he : stdSimplex.objEquiv (ι₁.app _ σ).2 = SimplexCategory.const ⦋n⦌ ⦋1⦌ 1 := by
+    ext i : 3
+    exact SSet.ι₁_app_snd_apply σ i
+  have h := contraction_app_apply (X := X) (n := n) (ι₁.app _ σ)
+  rw [he, collapse_const_one, op_id, CategoryTheory.Functor.map_id] at h
+  exact h.trans (SSet.ι₁_app_fst σ)
 
 variable (x : X _⦋0⦌)
 
@@ -196,12 +187,28 @@ private noncomputable def coneContraction :
     (coneSpace X x : SSet.{u}) ⊗ Δ[1] ⟶ (coneSpace X x : SSet.{u}) :=
   Subcomplex.lift ((coneSpace X x).ι ▷ Δ[1] ≫ contraction X) (by
     rintro ⟨⟨n⟩⟩ _ ⟨⟨⟨σ, hσ⟩, e⟩, rfl⟩
-    -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
+    rw [mem_coneSpace_obj_iff]
+    -- Whiskering the inclusion applies it to the first coordinate; expose that pair so the
+    -- contraction evaluation lemma applies without unfolding the contraction.
     change X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
-      (X.map (collapse (stdSimplex.objEquiv e)).op σ) = x
-    have h₁ := congrArg (fun g ↦ X.map (Quiver.Hom.op g) σ)
-      (const_zero_comp_collapse (stdSimplex.objEquiv e))
-    exact (Functor.map_comp_apply X _ _ σ).symm.trans (h₁.trans hσ))
+      ((contraction X).app _ (σ, e)) = x
+    calc
+      _ = X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
+          (X.map (collapse (stdSimplex.objEquiv e)).op σ) :=
+        congrArg _ (contraction_app_apply (X := X) (n := n) (σ, e))
+      _ = x := by
+        have h₁ := congrArg (fun g ↦ X.map (Quiver.Hom.op g) σ)
+          (const_zero_comp_collapse (stdSimplex.objEquiv e))
+        exact (Functor.map_comp_apply X _ _ σ).symm.trans
+          (h₁.trans ((mem_coneSpace_obj_iff x σ).1 hσ)))
+
+
+@[simp]
+private lemma coneContraction_app_val {n : ℕ}
+    (z : ((coneSpace X x : SSet.{u}) ⊗ Δ[1]).obj (op ⦋n⦌)) :
+    dsimp% ((coneContraction x).app _ z).val =
+      X.map (collapse (stdSimplex.objEquiv z.2)).op z.1.val :=
+  (rfl)
 
 @[reassoc]
 private lemma coneContraction_ι :
@@ -217,12 +224,13 @@ private lemma ι₁_coneContraction : ι₁ ≫ coneContraction x = 𝟙 _ := by
 `x`. -/
 private noncomputable def coneVertex : (coneSpace X x : SSet.{u}) _⦋0⦌ :=
   ⟨X.map (SimplexCategory.const (vertexJoin.obj ⦋0⦌) ⦋0⦌ 0).op x, by
-    -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
-    change X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋0⦌) 0).op
-      (X.map (SimplexCategory.const (vertexJoin.obj ⦋0⦌) ⦋0⦌ 0).op x) = x
-    rw [map_map_const_zero, Subsingleton.elim (SimplexCategory.const ⦋0⦌ ⦋0⦌ 0) (𝟙 _), op_id,
-      CategoryTheory.Functor.map_id]
-    rfl⟩
+    rw [mem_coneSpace_obj_iff, map_map_const_zero, SimplexCategory.const_eq_id,
+      op_id, CategoryTheory.Functor.map_id, types_id_apply]⟩
+
+@[simp]
+private lemma coneVertex_val :
+    (coneVertex x).val = X.map (SimplexCategory.const (vertexJoin.obj ⦋0⦌) ⦋0⦌ 0).op x :=
+  (rfl)
 
 @[reassoc]
 private lemma ι₀_coneContraction : ι₀ ≫ coneContraction x = SSet.const (coneVertex x) := by
@@ -235,59 +243,8 @@ private lemma ι₀_coneContraction : ι₀ ≫ coneContraction x = SSet.const (
   rw [collapse_const_zero, op_comp, Functor.map_comp_apply, map_map_const_zero]
   -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
   change X.map _ (X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op σ) = _
-  rw [show X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op σ = x from hσ]
-
-variable (X) in
-/-- The projection `(coneSpace X x) ⟶ X`: the restriction to the face opposite to the initial
-vertex. -/
-private noncomputable def coneπ : (coneSpace X x : SSet.{u}) ⟶ X := (coneSpace X x).ι ≫ base X
-
-/-- The `n`-simplices of the coslice `X_{x/}` are those of `coneSpace X x`, through
-`Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
-private noncomputable def cosliceEquiv (n : ℕ) :
-    (coslice (yonedaEquiv.symm x)) _⦋n⦌ ≃ (coneSpace X x : SSet.{u}) _⦋n⦌ where
-  toFun s := ⟨(yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv s).val) : X _⦋n + 1⦌), by
-    -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
-    change X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0).op _ = x
-    rw [yonedaEquiv_naturality, join.const_zero_comp_coneIso_inv_assoc,
-      (coslice.objEquiv s).property, Equiv.apply_symm_apply]⟩
-  invFun t := coslice.objEquiv.symm
-      ⟨(join.coneIso n).hom ≫ yonedaEquiv.symm (t.val : X _⦋n + 1⦌),
-        (join.inl_comp_coneIso_hom_assoc _).trans
-          ((yonedaEquiv_symm_naturality_left (X := X) (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0)
-            (t.val : X _⦋n + 1⦌)).trans (congrArg yonedaEquiv.symm t.property))⟩
-  left_inv s := coslice.objEquiv.injective (Subtype.ext (by
-    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc]))
-  right_inv t := Subtype.ext (by
-    simp only [Equiv.apply_symm_apply, Iso.inv_hom_id_assoc]
-    exact yonedaEquiv.apply_symm_apply _)
-
-/-- The coslice `X_{x/}` is isomorphic to `coneSpace X x`. -/
-private noncomputable def cosliceIso : coslice (yonedaEquiv.symm x) ≅ (coneSpace X x : SSet.{u}) :=
-  NatIso.ofComponents (fun m ↦ (cosliceEquiv x m.unop.len).toIso) (fun {m m'} f ↦ by
-    obtain ⟨⟨a⟩⟩ := m
-    obtain ⟨⟨b⟩⟩ := m'
-    ext s : 3
-    refine Subtype.ext ?_
-    have key : (yonedaEquiv ((join.coneIso b).inv ≫
-        (coslice.objEquiv ((coslice (yonedaEquiv.symm x)).map f s)).val) : X _⦋b + 1⦌) =
-        X.map (vertexJoin.map f.unop).op
-          (yonedaEquiv ((join.coneIso a).inv ≫ (coslice.objEquiv s).val)) := by
-      rw [coslice.objEquiv_map_coe, yonedaEquiv_naturality]
-      exact congrArg yonedaEquiv (join.vertexJoin_map_comp_coneIso_inv_assoc f.unop _).symm
-    exact key.trans rfl)
-
-@[reassoc]
-private lemma cosliceIso_hom_coneπ : (cosliceIso x).hom ≫ coneπ X x = coslice.π _ := by
-  ext ⟨⟨n⟩⟩ s
-  -- State the evaluated composite in applied form.
-  change (coneπ X x).app _ ((cosliceIso x).hom.app _ s) = (coslice.π _).app _ s
-  rw [coslice.π_app]
-  -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
-  change X.map (tail ⦋n⦌).op
-      (yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv s).val)) = _
-  rw [yonedaEquiv_naturality]
-  exact congrArg yonedaEquiv (join.δ_zero_comp_coneIso_inv_assoc _)
+  rw [show X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op σ = x from
+    (mem_coneSpace_obj_iff x σ).1 hσ]
 
 private instance [X.Quasicategory] : LeftFibration (coneπ X x) := by
   rw [← Iso.inv_hom_id_assoc (cosliceIso x) (coneπ X x), cosliceIso_hom_coneπ]
@@ -299,17 +256,14 @@ variable {x y : X _⦋0⦌}
 @[reassoc]
 private lemma const_coneVertex_coneπ {Z : SSet.{u}} : SSet.const (coneVertex x) ≫ coneπ X x =
     (SSet.const x : Z ⟶ X) := by
-  ext ⟨⟨n⟩⟩ z
-  -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
-  change X.map (tail ⦋n⦌).op (X.map (vertexJoin.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0)).op
-    (X.map (SimplexCategory.const (vertexJoin.obj ⦋0⦌) ⦋0⦌ 0).op x)) =
-    X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x
-  rw [map_map_const_zero, map_map_const_zero]
+  rw [const_comp, coneπ_app, coneVertex_val]
+  congr 1
+  exact (map_map_const_zero X (SimplexCategory.δ (n := 0) 0) x).trans (by simp)
 
 variable (x y) in
 private lemma leftMappingSpace_le_coneSpace : X.leftMappingSpace x y ≤ coneSpace X x := by
   rintro ⟨⟨n⟩⟩ σ hσ
-  exact ((mem_leftMappingSpace_iff σ).1 hσ).1
+  exact (mem_coneSpace_obj_iff x σ).2 ((mem_leftMappingSpace_iff σ).1 hσ).1
 
 variable (x y) in
 /-- The inclusion of `Hom^L_X(x, y)` into `coneSpace X x`. -/
@@ -323,6 +277,8 @@ private instance : Mono (toConeSpace x y) :=
 @[reassoc]
 private lemma toConeSpace_coneπ : toConeSpace x y ≫ coneπ X x = SSet.const y := by
   ext ⟨⟨n⟩⟩ s
+  dsimp only [TypeCat.Fun.toFun_apply]
+  rw [NatTrans.comp_app_apply, coneπ_app]
   exact ((mem_leftMappingSpace_iff (s.val : X _⦋n + 1⦌)).1 s.property).2
 
 /-- A family of simplices of `coneSpace X x` lying over `y` is a family of simplices of
@@ -332,7 +288,9 @@ private lemma range_le_leftMappingSpace {Z : SSet.{u}} (g : Z ⟶ (coneSpace X x
     Subcomplex.range (g ≫ (coneSpace X x).ι) ≤ X.leftMappingSpace x y := by
   rintro ⟨⟨n⟩⟩ _ ⟨z, rfl⟩
   exact (mem_leftMappingSpace_iff _).2
-    ⟨(g.app _ z).property, congrArg (fun φ ↦ φ.app _ z) hg⟩
+    ⟨(mem_coneSpace_obj_iff x _).1 (g.app _ z).property, by
+      have h := congrArg (fun φ ↦ φ.app _ z) hg
+      exact (coneπ_app x (g.app _ z)).symm.trans h⟩
 
 open prodStdSimplex in
 /-- **The comparison map through the contraction**: the comparison
@@ -349,22 +307,29 @@ private lemma toMappingSpace_comp_ι :
   refine (ihomObjEquiv_toMappingSpace_app_coe s).trans ?_
   rw [ihomObjEquiv_apply, ← yonedaEquiv_symm_comp, ← curry_natural_left, uncurry_curry]
   ext ⟨⟨m⟩⟩ ⟨e, f⟩
+  -- Expose only the product/composition wrappers; keep both cone maps behind their API.
+  change _ = (coneπ X x).app _ ((coneContraction x).app _
+    ((toConeSpace x y).app _ ((yonedaEquiv.symm s).app _ f), e))
+  rw [coneπ_app]
+  refine Eq.trans ?_ (congrArg (fun σ ↦ X.map (SimplexCategory.δ (n := m) 0).op σ)
+    (coneContraction_app_val x (n := m)
+      ((toConeSpace x y).app _ ((yonedaEquiv.symm s).app _ f), e))).symm
+  -- Give the base face the join codomain explicitly, so composition rewrites match it.
+  let face : ⦋m⦌ ⟶ vertexJoin.obj ⦋m⦌ := SimplexCategory.δ 0
   -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
   change X.map (stdSimplex.objEquiv ((toVertexJoin n).app _ (e, f))).op s.val =
-    X.map (tail ⦋m⦌).op (X.map (collapse (stdSimplex.objEquiv e)).op
+    X.map face.op (X.map (collapse (stdSimplex.objEquiv e)).op
       (X.map (vertexJoin.map (stdSimplex.objEquiv f)).op s.val))
   rw [← Functor.map_comp_apply, ← Functor.map_comp_apply, ← op_comp, ← op_comp]
   refine congrArg (fun g : ⦋m⦌ ⟶ ⦋n + 1⦌ ↦ X.map g.op s.val) ?_
   ext i : 3
-  have hi : (tail ⦋m⦌).toOrderHom i = i.succ := congrFun Fin.succAbove_zero i
+  have hi : (SimplexCategory.δ (n := m) 0).toOrderHom i = i.succ := congrFun Fin.succAbove_zero i
   refine (toVertexJoin_app_apply n (e, f) i).trans ?_
   -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
   change _ = (vertexJoin.map (stdSimplex.objEquiv f)).toOrderHom
-    (collapseOrderHom (stdSimplex.objEquiv e) ((tail ⦋m⦌).toOrderHom i))
+    (collapseOrderHom (stdSimplex.objEquiv e) ((SimplexCategory.δ (n := m) 0).toOrderHom i))
   rw [hi, collapseOrderHom_succ, toVertexJoinOrderHom_apply]
-  -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
-  change (if e i = 0 then _ else _) = (vertexJoin.map (stdSimplex.objEquiv f)).toOrderHom
-    (if e i = 1 then _ else _)
+  rw [stdSimplex.objEquiv_toOrderHom_apply e i]
   by_cases h : e i = 0
   · simp only [h, ↓reduceIte]
     exact (vertexJoin_map_zero _).symm
@@ -372,40 +337,27 @@ private lemma toMappingSpace_comp_ι :
     simp only [h', ↓reduceIte]
     exact (vertexJoin_map_succ _ i).symm
 
-/-- The retraction `i ↦ max i j` of `⦋n⦌` onto its last vertices, from `j` on. -/
-private def truncate {n : ℕ} (j : Fin (n + 1)) : ⦋n⦌ ⟶ ⦋n⦌ :=
-  SimplexCategory.Hom.mk ⟨fun i ↦ max i j, fun _ _ h ↦ max_le_max_right j h⟩
-
-private lemma truncate_comp_objMk₁ {n : ℕ} (j : Fin (n + 1)) :
-    truncate j ≫ stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc) =
-      SimplexCategory.const ⦋n⦌ ⦋1⦌ 1 := by
-  ext i : 3
-  -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
-  change stdSimplex.objMk₁.{u} j.castSucc (max i j) = 1
-  rw [stdSimplex.objMk₁_apply_eq_one_iff, Fin.castSucc_le_castSucc_iff]
-  exact le_max_right i j
-
-private lemma collapse_comp_vertexJoin_map_truncate {n : ℕ} (j : Fin (n + 1)) :
+private lemma collapse_comp_vertexJoin_map_maxRetraction {n : ℕ} (j : Fin (n + 1)) :
     collapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc)) ≫
-        vertexJoin.map (truncate j) =
+        vertexJoin.map (maxRetraction j) =
       collapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc)) := by
   refine hom_ext_zero_succ (m := ⦋n⦌) ?_ (fun i ↦ ?_)
-  · -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
-    change (vertexJoin.map (truncate j)).toOrderHom (collapseOrderHom _ 0) =
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (vertexJoin.map (maxRetraction j)).toOrderHom (collapseOrderHom _ 0) =
       collapseOrderHom _ 0
     rw [collapseOrderHom_zero]
     exact vertexJoin_map_zero _
-  · -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
-    change (vertexJoin.map (truncate j)).toOrderHom (collapseOrderHom _ i.succ) =
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (vertexJoin.map (maxRetraction j)).toOrderHom (collapseOrderHom _ i.succ) =
       collapseOrderHom _ i.succ
     rw [collapseOrderHom_succ]
-    -- The vertex map of a composite in `SimplexCategory` is the composite of vertex maps.
-    change (vertexJoin.map (truncate j)).toOrderHom
-      (if stdSimplex.objMk₁.{u} j.castSucc i = 1 then _ else _) =
-      if stdSimplex.objMk₁.{u} j.castSucc i = 1 then _ else _
+    simp only [stdSimplex.objEquiv_toOrderHom_apply (stdSimplex.objMk₁.{u} j.castSucc) i]
     by_cases h : stdSimplex.objMk₁.{u} j.castSucc i = 1
     · simp only [h, ↓reduceIte]
-      refine (vertexJoin_map_succ _ i).trans (congrArg Fin.succ (max_eq_left ?_))
+      refine (vertexJoin_map_succ _ i).trans
+        (congrArg Fin.succ ((maxRetraction_apply j i).trans (max_eq_left ?_)))
       rwa [stdSimplex.objMk₁_apply_eq_one_iff, Fin.castSucc_le_castSucc_iff] at h
     · simp only [h, ↓reduceIte]
       exact vertexJoin_map_zero _
@@ -417,11 +369,13 @@ value `G (z, 1)` at the end of the path, gives the same result. -/
 private lemma lift_snd_coneContraction {Z : SSet.{u}} (G : Z ⊗ Δ[1] ⟶ (coneSpace X x : SSet.{u})) :
     lift G (snd _ _) ≫ coneContraction x =
       lift (fst _ _ ≫ ι₁ ≫ G) (snd _ _) ≫ coneContraction x := by
-  rw [← cancel_mono (coneSpace X x).ι, Category.assoc, Category.assoc, coneContraction_ι]
-  ext ⟨⟨n⟩⟩ ⟨z, e⟩
-  -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
-  change X.map (collapse (stdSimplex.objEquiv e)).op (G.app _ (z, e)).val =
-    X.map (collapse (stdSimplex.objEquiv e)).op (G.app _ (ι₁.app _ z)).val
+  ext ⟨⟨n⟩⟩ ⟨z, e⟩ : 4
+  apply Subtype.ext
+  -- Evaluate the products and compositions; the contraction itself is rewritten by its API.
+  change ((coneContraction x).app _ (G.app _ (z, e), e)).val =
+    ((coneContraction x).app _ (G.app _ (ι₁.app _ z), e)).val
+  refine (coneContraction_app_val x (n := n) (G.app _ (z, e), e)).trans
+    (Eq.trans ?_ (coneContraction_app_val x (n := n) (G.app _ (ι₁.app _ z), e)).symm)
   obtain ⟨k, rfl⟩ := stdSimplex.objMk₁_surjective e
   induction k using Fin.lastCases with
   | last =>
@@ -433,33 +387,40 @@ private lemma lift_snd_coneContraction {Z : SSet.{u}} (G : Z ⊗ Δ[1] ⟶ (cone
       X.map _ (X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
         (G.app _ (ι₁.app _ z)).val)
     rw [show X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
-        (G.app _ (z, _)).val = x from (G.app _ _).property,
+        (G.app _ (z, _)).val = x from (mem_coneSpace_obj_iff x _).1 (G.app _ _).property,
       show X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
-        (G.app _ (ι₁.app _ z)).val = x from (G.app _ _).property]
+        (G.app _ (ι₁.app _ z)).val = x from (mem_coneSpace_obj_iff x _).1 (G.app _ _).property]
   | cast j =>
-    rw [← collapse_comp_vertexJoin_map_truncate j, op_comp, Functor.map_comp_apply,
+    rw [← collapse_comp_vertexJoin_map_maxRetraction j, op_comp, Functor.map_comp_apply,
       Functor.map_comp_apply]
     congr 1
-    have h₁ := congrArg Subtype.val (NatTrans.naturality_apply G (truncate j).op
+    have h₁ := congrArg Subtype.val (NatTrans.naturality_apply G (maxRetraction j).op
       (show (Z ⊗ Δ[1] : SSet.{u}) _⦋n⦌ from (z, stdSimplex.objMk₁ j.castSucc)))
-    have h₂ := congrArg Subtype.val (NatTrans.naturality_apply G (truncate j).op (ι₁.app _ z))
+    have h₂ := congrArg Subtype.val (NatTrans.naturality_apply G (maxRetraction j).op (ι₁.app _ z))
     refine h₁.symm.trans (Eq.trans ?_ h₂)
     congr 2
-    refine Prod.ext rfl (stdSimplex.objEquiv.injective ((truncate_comp_objMk₁.{u} j).trans ?_))
+    refine Prod.ext rfl (stdSimplex.objEquiv.injective
+      ((stdSimplex.maxRetraction_comp_objMk₁.{u} j).trans ?_))
     ext i : 3
-    rfl
+    simp only [stdSimplex.objEquiv_toOrderHom_apply, SimplexCategory.const_apply]
+    -- Restriction of a constant interval simplex is still constant.
+    exact ((congrArg (fun e : Δ[1] _⦋n⦌ ↦ e i)
+      (SSet.prod_map_snd Z Δ[1] (maxRetraction j).op (ι₁.app _ z))).trans
+        (SSet.ι₁_app_snd_apply z _)).symm
 
 /-- Contracting the constant family at the identity of `x` gives the constant family. -/
 @[reassoc]
 private lemma lift_const_coneVertex_coneContraction {Z : SSet.{u}} (f : Z ⟶ Δ[1]) :
     lift (SSet.const (coneVertex x)) f ≫ coneContraction x = SSet.const (coneVertex x) := by
-  rw [← cancel_mono (coneSpace X x).ι, Category.assoc, coneContraction_ι]
-  ext ⟨⟨n⟩⟩ z
-  -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
-  change X.map (collapse _).op (X.map (vertexJoin.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0)).op
-      (X.map (SimplexCategory.const (vertexJoin.obj ⦋0⦌) ⦋0⦌ 0).op x)) =
-    X.map (vertexJoin.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0)).op
-      (X.map (SimplexCategory.const (vertexJoin.obj ⦋0⦌) ⦋0⦌ 0).op x)
+  ext ⟨⟨n⟩⟩ z : 4
+  apply Subtype.ext
+  -- Evaluate the pairing before applying the component formula for the contraction.
+  change ((coneContraction x).app _ ((SSet.const (coneVertex x)).app _ z, f.app _ z)).val =
+    ((SSet.const (coneVertex x)).app _ z).val
+  refine (coneContraction_app_val x (n := n)
+    ((SSet.const (coneVertex x)).app _ z, f.app _ z)).trans ?_
+  simp only [const_app, Subfunctor.toFunctor_map, Functor.comp_map, Functor.op_map,
+    TypeCat.hom_ofHom, TypeCat.Fun.coe_mk, coneVertex_val]
   rw [map_map_const_zero, map_map_const_zero]
 
 section comparison

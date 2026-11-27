@@ -104,15 +104,12 @@ lemma fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero (X : SSet.{w}) :
     (fstStdSimplexZeroIso X).inv ≫ X ◁ stdSimplex.δ (0 : Fin 2) = ι₁ := by
   rw [whiskerLeft_stdSimplex_δ_zero, ← fstStdSimplexZeroIso_hom, Iso.inv_hom_id_assoc]
 
-/-- The inclusion `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` is the end `X ⊗ {0}` of the cylinder, after the
-projection `X ⊗ Λ[1, 0] ⟶ X`. -/
-lemma whiskerLeft_horn_one_zero_ι (X : SSet.{w}) : X ◁ Λ[1, 0].ι = fst X _ ≫ ι₀ :=
-  CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [horn_one_ι_eq_const, comp_const])
-
-/-- The inclusion `X ⊗ Λ[1, 1] ⟶ X ⊗ Δ[1]` is the end `X ⊗ {1}` of the cylinder, after the
-projection `X ⊗ Λ[1, 1] ⟶ X`. -/
-lemma whiskerLeft_horn_one_one_ι (X : SSet.{w}) : X ◁ Λ[1, 1].ι = fst X _ ≫ ι₁ :=
-  CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [horn_one_ι_eq_const, comp_const])
+/-- The product with the inclusion of the horn `Λ[1, k]` factors through the constant
+interval coordinate at `k`. -/
+lemma whiskerLeft_horn_one_ι (X : SSet.{w}) (k : Fin 2) :
+    X ◁ Λ[1, k].ι = fst X _ ≫ lift (𝟙 X) (const (stdSimplex.obj₀Equiv.symm k)) :=
+  CartesianMonoidalCategory.hom_ext _ _ (by simp)
+    (by simp [horn_one_ι_eq_const, comp_const])
 
 /-- A map into the cylinder `X ⊗ Δ[1]` whose second component is constant at the vertex `0`
 factors through the end `X ⊗ {0}`. -/
@@ -125,6 +122,16 @@ factors through the end `X ⊗ {1}`. -/
 lemma lift_const_one_eq_comp_ι₁ {Z X : SSet.{w}} (f : Z ⟶ X) :
     lift f (const (stdSimplex.obj₀Equiv.symm 1)) = f ≫ ι₁ :=
   CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [comp_const])
+
+/-- The inclusion `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` is the end `X ⊗ {0}` of the cylinder, after the
+projection `X ⊗ Λ[1, 0] ⟶ X`. -/
+lemma whiskerLeft_horn_one_zero_ι (X : SSet.{w}) : X ◁ Λ[1, 0].ι = fst X _ ≫ ι₀ := by
+  simpa only [lift_const_zero_eq_comp_ι₀, Category.id_comp] using whiskerLeft_horn_one_ι X 0
+
+/-- The inclusion `X ⊗ Λ[1, 1] ⟶ X ⊗ Δ[1]` is the end `X ⊗ {1}` of the cylinder, after the
+projection `X ⊗ Λ[1, 1] ⟶ X`. -/
+lemma whiskerLeft_horn_one_one_ι (X : SSet.{w}) : X ◁ Λ[1, 1].ι = fst X _ ≫ ι₁ := by
+  simpa only [lift_const_one_eq_comp_ι₁, Category.id_comp] using whiskerLeft_horn_one_ι X 1
 
 /-- For a section `g` of the projection `X ⊗ Δ[1] ⟶ X` of the cylinder, applying `g` to the second
 factor of `A ⊗ X` and then forgetting the interval coordinate is the braiding `A ⊗ X ⟶ X ⊗ A`. -/

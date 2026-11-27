@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.Data.Finset.Sort
+public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 
 /-!
 # Complements on standard simplices
@@ -75,6 +76,28 @@ open CategoryTheory Finset Opposite Simplicial MonoidalCategory CartesianMonoida
 universe u
 
 namespace SSet.stdSimplex
+
+/-- Restricting the cut simplex at `j + 1` to the initial segment through `j` is constant zero. -/
+@[simp]
+lemma minRetraction_comp_objMk₁ {n : ℕ} (j : Fin (n + 1)) :
+    SimplexCategory.minRetraction j ≫ objEquiv (objMk₁.{u} j.succ) =
+      SimplexCategory.const ⦋n⦌ ⦋1⦌ 0 := by
+  ext i : 3
+  simp only [SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply,
+    SimplexCategory.minRetraction_apply, objEquiv_toOrderHom_apply, SimplexCategory.const_apply]
+  rw [objMk₁_apply_eq_zero_iff, Fin.castSucc_lt_succ_iff]
+  exact min_le_right i j
+
+/-- Restricting the cut simplex at `j` to the final segment starting at `j` is constant one. -/
+@[simp]
+lemma maxRetraction_comp_objMk₁ {n : ℕ} (j : Fin (n + 1)) :
+    SimplexCategory.maxRetraction j ≫ objEquiv (objMk₁.{u} j.castSucc) =
+      SimplexCategory.const ⦋n⦌ ⦋1⦌ 1 := by
+  ext i : 3
+  simp only [SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply,
+    SimplexCategory.maxRetraction_apply, objEquiv_toOrderHom_apply, SimplexCategory.const_apply]
+  rw [objMk₁_apply_eq_one_iff, Fin.castSucc_le_castSucc_iff]
+  exact le_max_right i j
 
 /-- A map of standard simplices `q : Δ[m] ⟶ Δ[n]` sends a simplex `x` of `Δ[m]` to the simplex
 whose `j`-th vertex is the image of the `j`-th vertex of `x` under the vertex map of `q`. -/

@@ -407,36 +407,132 @@ end π₀
 
 section cosliceFiber
 
-variable (x y)
+variable (x)
+
+variable (X) in
+/-- The simplices of `vertexJoin.op ⋙ X` with initial vertex `x`. -/
+def coneSpace (x : X _⦋0⦌) : Subcomplex (vertexJoin.op ⋙ X) where
+  obj m := {σ | X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj m.unop) 0).op σ = x}
+  map {m m'} f σ hσ := by
+    obtain ⟨⟨a⟩⟩ := m
+    obtain ⟨⟨b⟩⟩ := m'
+    have h := congrArg (fun g ↦ X.map g.op σ) (const_zero_comp_vertexJoin_map (x := ⦋0⦌) f.unop)
+    exact (Functor.map_comp_apply X _ _ σ).symm.trans (h.trans hσ)
+
+/-- Membership in the cone model says that its distinguished vertex is `x`. -/
+@[simp]
+lemma mem_coneSpace_obj_iff {m : SimplexCategoryᵒᵖ} (σ : (vertexJoin.op ⋙ X).obj m) :
+    σ ∈ (coneSpace X x).obj m ↔
+      X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj m.unop) 0).op σ = x :=
+  Iff.rfl
+
+variable (X) in
+/-- The restriction of a simplex of `vertexJoin.op ⋙ X` to the face opposite to the initial
+vertex. -/
+private def base : (vertexJoin.op ⋙ X) ⟶ X where
+  app m := X.map (SimplexCategory.δ (n := m.unop.len) 0).op
+  naturality m m' f := by
+    obtain ⟨⟨a⟩⟩ := m
+    obtain ⟨⟨b⟩⟩ := m'
+    ext σ
+    have h := congrArg (fun g ↦ X.map g.op σ) (δ_zero_comp_vertexJoin_map f.unop)
+    exact (Functor.map_comp_apply X _ _ σ).symm.trans (h.trans (Functor.map_comp_apply X _ _ σ))
+
+variable (X) in
+/-- The projection `(coneSpace X x) ⟶ X`: the restriction to the face opposite to the initial
+vertex. -/
+noncomputable def coneπ : (coneSpace X x : SSet.{u}) ⟶ X := (coneSpace X x).ι ≫ base X
+
+/-- The projection from the cone model restricts the underlying simplex to its base face. -/
+@[simp]
+lemma coneπ_app {m : SimplexCategoryᵒᵖ} (s : (coneSpace X x : SSet.{u}).obj m) :
+    dsimp% (coneπ X x).app m s = X.map (SimplexCategory.δ (n := m.unop.len) 0).op s.val :=
+  (rfl)
+
+/-- The `n`-simplices of the coslice `X_{x/}` are those of `coneSpace X x`, through
+`Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
+private noncomputable def cosliceEquiv (n : ℕ) :
+    (coslice (yonedaEquiv.symm x)) _⦋n⦌ ≃ (coneSpace X x : SSet.{u}) _⦋n⦌ where
+  toFun s := ⟨(yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv s).val) : X _⦋n + 1⦌), by
+    -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
+    change X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0).op _ = x
+    rw [yonedaEquiv_naturality, join.const_zero_comp_coneIso_inv_assoc,
+      (coslice.objEquiv s).property, Equiv.apply_symm_apply]⟩
+  invFun t := coslice.objEquiv.symm
+      ⟨(join.coneIso n).hom ≫ yonedaEquiv.symm (t.val : X _⦋n + 1⦌),
+        (join.inl_comp_coneIso_hom_assoc _).trans
+          ((yonedaEquiv_symm_naturality_left (X := X) (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0)
+            (t.val : X _⦋n + 1⦌)).trans (congrArg yonedaEquiv.symm t.property))⟩
+  left_inv s := coslice.objEquiv.injective (Subtype.ext (by
+    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc]))
+  right_inv t := Subtype.ext (by
+    simp only [Equiv.apply_symm_apply, Iso.inv_hom_id_assoc]
+    exact yonedaEquiv.apply_symm_apply _)
+
+/-- The coslice `X_{x/}` is isomorphic to `coneSpace X x`. -/
+noncomputable def cosliceIso : coslice (yonedaEquiv.symm x) ≅ (coneSpace X x : SSet.{u}) :=
+  NatIso.ofComponents (fun m ↦ (cosliceEquiv x m.unop.len).toIso) (fun {m m'} f ↦ by
+    obtain ⟨⟨a⟩⟩ := m
+    obtain ⟨⟨b⟩⟩ := m'
+    ext s : 3
+    refine Subtype.ext ?_
+    have key : (yonedaEquiv ((join.coneIso b).inv ≫
+        (coslice.objEquiv ((coslice (yonedaEquiv.symm x)).map f s)).val) : X _⦋b + 1⦌) =
+        X.map (vertexJoin.map f.unop).op
+          (yonedaEquiv ((join.coneIso a).inv ≫ (coslice.objEquiv s).val)) := by
+      rw [coslice.objEquiv_map_coe, yonedaEquiv_naturality]
+      exact congrArg yonedaEquiv (join.vertexJoin_map_comp_coneIso_inv_assoc f.unop _).symm
+    -- The subcomplex map acts by the ambient restriction map.
+    exact key)
+
+/-- The coslice isomorphism transports a simplex along `Δ[n + 1] ≅ Δ[0] ⋆ Δ[n]`. -/
+@[simp]
+lemma cosliceIso_hom_app_val {n : ℕ} (s : (coslice (yonedaEquiv.symm x)) _⦋n⦌) :
+    dsimp% ((cosliceIso x).hom.app _ s).val =
+      (yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv s).val) : X _⦋n + 1⦌) :=
+  (rfl)
+
+/-- The inverse coslice isomorphism transports a cone simplex along `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
+@[simp]
+lemma cosliceIso_inv_app_val {n : ℕ} (s : (coneSpace X x : SSet.{u}) _⦋n⦌) :
+    dsimp% (coslice.objEquiv ((cosliceIso x).inv.app _ s)).val =
+      (join.coneIso n).hom ≫ yonedaEquiv.symm (s.val : X _⦋n + 1⦌) :=
+  congrArg Subtype.val (coslice.objEquiv.apply_symm_apply _)
+
+/-- The coslice isomorphism commutes with the projections to `X`. -/
+@[reassoc]
+lemma cosliceIso_hom_coneπ : (cosliceIso x).hom ≫ coneπ X x = coslice.π _ := by
+  ext ⟨⟨n⟩⟩ s
+  -- State the evaluated composite in applied form.
+  change (coneπ X x).app _ ((cosliceIso x).hom.app _ s) = (coslice.π _).app _ s
+  rw [coneπ_app, cosliceIso_hom_app_val, coslice.π_app, yonedaEquiv_naturality]
+  exact congrArg yonedaEquiv (join.δ_zero_comp_coneIso_inv_assoc _)
+
+private lemma cosliceEquiv_coneπ {n : ℕ}
+    (s : (coslice (yonedaEquiv.symm x)).obj (op ⦋n⦌)) :
+    X.map (SimplexCategory.δ (n := n) 0).op (cosliceEquiv x n s).val = (coslice.π _).app _ s :=
+  congrArg (fun f ↦ f.app _ s) (cosliceIso_hom_coneπ x)
+
+variable (y)
 
 /-- The `n`-simplices of the fibre over `y` of `X_{x/} ⟶ X` are those of `Hom^L_X(x, y)`, through
 `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
 private noncomputable def cosliceFiberEquiv (n : ℕ) :
     (fiber (coslice.π (yonedaEquiv.symm x)) y : SSet.{u}) _⦋n⦌ ≃
       (X.leftMappingSpace x y : SSet.{u}) _⦋n⦌ where
-  toFun s := ⟨(yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv s.val).val) : X _⦋n + 1⦌),
-    (mem_leftMappingSpace_iff _).2 ⟨by
-      rw [yonedaEquiv_naturality, join.const_zero_comp_coneIso_inv_assoc,
-        (coslice.objEquiv s.val).property, Equiv.apply_symm_apply], by
-      rw [← stdSimplex.yonedaEquiv_δ_comp, join.δ_zero_comp_coneIso_inv_assoc, ← coslice.π_app,
-        ← mem_fiber_iff]
-      exact s.property⟩⟩
-  invFun t := ⟨coslice.objEquiv.symm
-      ⟨(join.coneIso n).hom ≫ yonedaEquiv.symm (t.val : X _⦋n + 1⦌),
-        (join.inl_comp_coneIso_hom_assoc _).trans
-          ((yonedaEquiv_symm_naturality_left (X := X) (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0)
-            (t.val : X _⦋n + 1⦌)).trans
-            (congrArg yonedaEquiv.symm ((mem_leftMappingSpace_iff _).1 t.property).1))⟩, by
-    rw [mem_fiber_iff, coslice.π_app, Equiv.apply_symm_apply, join.inr_comp_coneIso_hom_assoc]
-    -- The simplex `t.val` lies in `X _⦋n + 1⦌` only up to unfolding `vertexJoin`, so the last
-    -- steps are composed with `Eq.trans` rather than rewritten.
-    exact (congrArg yonedaEquiv (stdSimplex.δ_comp_yonedaEquiv_symm (t.val : X _⦋n + 1⦌) 0)).trans
-      ((Equiv.apply_symm_apply _ _).trans ((mem_leftMappingSpace_iff _).1 t.property).2)⟩
-  left_inv s := Subtype.ext (coslice.objEquiv.injective (Subtype.ext (by
-    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc])))
-  right_inv t := Subtype.ext (by
-    simp only [Equiv.apply_symm_apply, Iso.inv_hom_id_assoc]
-    exact yonedaEquiv.apply_symm_apply _)
+  toFun s := ⟨(cosliceEquiv x n s.val).val, (mem_leftMappingSpace_iff _).2
+    ⟨(cosliceEquiv x n s.val).property,
+      (cosliceEquiv_coneπ x s.val).trans ((mem_fiber_iff _ _ _).1 s.property)⟩⟩
+  invFun t := ⟨(cosliceEquiv x n).symm
+      ⟨t.val, ((mem_leftMappingSpace_iff _).1 t.property).1⟩, by
+    rw [mem_fiber_iff, ← cosliceEquiv_coneπ, Equiv.apply_symm_apply]
+    exact ((mem_leftMappingSpace_iff _).1 t.property).2⟩
+  left_inv s := Subtype.ext ((cosliceEquiv x n).symm_apply_apply s.val)
+  right_inv t := by
+    apply Subtype.ext
+    exact congrArg (fun s : (coneSpace X x : SSet.{u}).obj (op ⦋n⦌) ↦ s.val)
+      ((cosliceEquiv x n).apply_symm_apply
+        ⟨t.val, ((mem_leftMappingSpace_iff _).1 t.property).1⟩)
 
 /-- **The left mapping space `Hom^L_X(x, y)` is the fibre over `y` of the projection
 `X_{x/} ⟶ X`** of the coslice under `x`. Through `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, an `n`-simplex
@@ -445,21 +541,10 @@ over `y` exactly when its face opposite to the initial vertex is constant at `y`
 noncomputable def cosliceFiberIso :
     (fiber (coslice.π (yonedaEquiv.symm x)) y : SSet.{u}) ≅ (X.leftMappingSpace x y : SSet.{u}) :=
   NatIso.ofComponents (fun m ↦ (cosliceFiberEquiv x y m.unop.len).toIso) (fun {m m'} f ↦ by
-    obtain ⟨⟨a⟩⟩ := m
-    obtain ⟨⟨b⟩⟩ := m'
     ext s : 3
-    refine Subtype.ext ?_
-    -- Both sides are, by definition, the `(n + 1)`-simplices below; they agree by the naturality
-    -- of `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`.
-    have key : (yonedaEquiv ((join.coneIso b).inv ≫
-        (coslice.objEquiv ((coslice (yonedaEquiv.symm x)).map f s.val)).val) : X _⦋b + 1⦌) =
-        X.map (vertexJoin.map f.unop).op
-          (yonedaEquiv ((join.coneIso a).inv ≫ (coslice.objEquiv s.val).val)) := by
-      rw [coslice.objEquiv_map_coe, yonedaEquiv_naturality]
-      exact congrArg yonedaEquiv (join.vertexJoin_map_comp_coneIso_inv_assoc f.unop _).symm
-    -- `key` is the goal, with the maps of the fibre and of `Hom^L_X(x, y)` applied; the trailing
-    -- `rfl` unfolds the action of `f` on `Hom^L_X(x, y)` once the fibre side is matched.
-    exact key.trans rfl)
+    apply Subtype.ext
+    exact congrArg (fun t : (coneSpace X x : SSet.{u}).obj m' ↦ t.val)
+      ((cosliceIso x).hom.naturality_apply f s.val))
 
 /-- The simplex of `Hom^L_X(x, y)` attached to a simplex `Δ[0] ⋆ Δ[n] ⟶ X` of the fibre of
 `X_{x/} ⟶ X` is its composite with `Δ[n + 1] ≅ Δ[0] ⋆ Δ[n]`. -/

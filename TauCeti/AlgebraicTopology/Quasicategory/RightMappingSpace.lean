@@ -759,31 +759,128 @@ end prod
 
 section sliceFiber
 
-variable (x y)
+variable (y)
+
+variable (X) in
+/-- The simplices of `joinVertex.op ⋙ X` with last vertex `y`. -/
+def coneSpace (y : X _⦋0⦌) : Subcomplex (joinVertex.op ⋙ X) where
+  obj m := {σ | X.map (joinVertexInr m.unop).op σ = y}
+  map {m m'} f σ hσ := by
+    have h := congrArg (fun g ↦ X.map g.op σ) (joinVertexInr_comp_joinVertex_map f.unop)
+    simp only [op_comp, Functor.map_comp_apply] at h
+    exact h.trans hσ
+
+/-- Membership in the cone model says that its distinguished vertex is `y`. -/
+@[simp]
+lemma mem_coneSpace_obj_iff {m : SimplexCategoryᵒᵖ} (σ : (joinVertex.op ⋙ X).obj m) :
+    σ ∈ (coneSpace X y).obj m ↔ X.map (joinVertexInr m.unop).op σ = y :=
+  Iff.rfl
+
+variable (X) in
+/-- The restriction of a simplex of `joinVertex.op ⋙ X` to the face opposite to the last
+vertex. -/
+private def base : (joinVertex.op ⋙ X) ⟶ X where
+  app m := X.map (joinVertexInl m.unop).op
+  naturality m m' f := by
+    -- Simplices of `joinVertex.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
+    change X.map (joinVertex.map f.unop).op ≫ X.map (joinVertexInl m'.unop).op =
+      X.map (joinVertexInl m.unop).op ≫ X.map f
+    rw [← Functor.map_comp, ← Functor.map_comp, ← op_comp, ← f.op_unop, ← op_comp,
+      joinVertexInl_comp_joinVertex_map]
+    rfl
+
+variable (X) in
+/-- The projection `(coneSpace X y) ⟶ X`: the restriction to the face opposite to the last
+vertex. -/
+noncomputable def coneπ : (coneSpace X y : SSet.{u}) ⟶ X := (coneSpace X y).ι ≫ base X
+
+/-- The projection from the cone model restricts the underlying simplex to its base face. -/
+@[simp]
+lemma coneπ_app {m : SimplexCategoryᵒᵖ} (s : (coneSpace X y : SSet.{u}).obj m) :
+    dsimp% (coneπ X y).app m s = X.map (joinVertexInl m.unop).op s.val :=
+  (rfl)
+
+/-- The `m`-simplices of the slice `X_{/y}` are those of `coneSpace X y`, through
+`Δ[m] ⋆ Δ[0] ≅ Δ[m + 1]`. -/
+private noncomputable def sliceEquiv (m : SimplexCategory) :
+    (slice (yonedaEquiv.symm y)).obj (op m) ≃ (coneSpace X y : SSet.{u}).obj (op m) where
+  toFun s := ⟨(yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s).val) :
+      X.obj (op (joinVertex.obj m))), by
+    -- Simplices of `joinVertex.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
+    change X.map (joinVertexInr m).op _ = y
+    rw [yonedaEquiv_naturality, join.joinVertexInr_comp_joinVertexIso_inv_assoc,
+      (slice.objEquiv s).property, Equiv.apply_symm_apply]⟩
+  invFun t := slice.objEquiv.symm ⟨(join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.val, by
+    rw [join.inr_comp_joinVertexIso_hom_assoc, yonedaEquiv_symm_naturality_left]
+    exact congrArg _ t.property⟩
+  left_inv s := slice.objEquiv.injective (Subtype.ext (by
+    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc]))
+  right_inv t := Subtype.ext (by
+    simp only [Equiv.apply_symm_apply, Iso.inv_hom_id_assoc])
+
+/-- The slice `X_{/y}` is isomorphic to `coneSpace X y`. -/
+noncomputable def sliceIso : slice (yonedaEquiv.symm y) ≅ (coneSpace X y : SSet.{u}) :=
+  NatIso.ofComponents (fun m ↦ (sliceEquiv y m.unop).toIso) (fun {m m'} f ↦ by
+    ext s : 3
+    refine Subtype.ext ?_
+    have key : (yonedaEquiv ((join.joinVertexIso m'.unop).inv ≫
+        (slice.objEquiv ((slice (yonedaEquiv.symm y)).map f s)).val) :
+          X.obj (op (joinVertex.obj m'.unop))) =
+        X.map (joinVertex.map f.unop).op
+          (yonedaEquiv ((join.joinVertexIso m.unop).inv ≫ (slice.objEquiv s).val)) := by
+      rw [slice.objEquiv_map_coe, yonedaEquiv_naturality,
+        join.joinVertex_map_comp_joinVertexIso_inv_assoc]
+    exact key)
+
+/-- The slice isomorphism transports a simplex along `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/
+@[simp]
+lemma sliceIso_hom_app_val {m : SimplexCategory} (s : (slice (yonedaEquiv.symm y)).obj (op m)) :
+    dsimp% ((sliceIso y).hom.app (op m) s).val =
+      (yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s).val) :
+        X.obj (op (joinVertex.obj m))) :=
+  (rfl)
+
+/-- The inverse slice isomorphism transports a cone simplex along `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
+@[simp]
+lemma sliceIso_inv_app_val {m : SimplexCategory} (s : (coneSpace X y : SSet.{u}).obj (op m)) :
+    dsimp% (slice.objEquiv ((sliceIso y).inv.app (op m) s)).val =
+      (join.joinVertexIso m).hom ≫ yonedaEquiv.symm s.val :=
+  congrArg Subtype.val (slice.objEquiv.apply_symm_apply _)
+
+/-- The slice isomorphism commutes with the projections to `X`. -/
+@[reassoc]
+lemma sliceIso_hom_coneπ : (sliceIso y).hom ≫ coneπ X y = slice.π _ := by
+  ext ⟨⟨n⟩⟩ s
+  -- State the evaluated composite in applied form.
+  change (coneπ X y).app _ ((sliceIso y).hom.app _ s) = (slice.π _).app _ s
+  rw [coneπ_app, sliceIso_hom_app_val, slice.π_app, yonedaEquiv_naturality,
+    join.joinVertexInl_comp_joinVertexIso_inv_assoc]
+
+private lemma sliceEquiv_coneπ {m : SimplexCategory}
+    (s : (slice (yonedaEquiv.symm y)).obj (op m)) :
+    X.map (joinVertexInl m).op (sliceEquiv y m s).val = (slice.π _).app _ s :=
+  congrArg (fun f ↦ f.app _ s) (sliceIso_hom_coneπ y)
+
+variable (x)
 
 /-- The `n`-simplices of the fibre over `x` of `X_{/y} ⟶ X` are those of `Hom^R_X(x, y)`, through
 `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
 private noncomputable def sliceFiberEquiv (m : SimplexCategory) :
     (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}).obj (op m) ≃
       (X.rightMappingSpace x y : SSet.{u}).obj (op m) where
-  toFun s := ⟨(yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s.val).val) :
-      X.obj (op (joinVertex.obj m))), by
-    refine (mem_rightMappingSpace_obj_iff _).2 ⟨?_, ?_⟩
-    · rw [yonedaEquiv_naturality, join.joinVertexInl_comp_joinVertexIso_inv_assoc, ← slice.π_app,
-        ← mem_fiber_iff]
-      exact s.property
-    · rw [yonedaEquiv_naturality, join.joinVertexInr_comp_joinVertexIso_inv_assoc,
-        (slice.objEquiv s.val).property, Equiv.apply_symm_apply]⟩
-  invFun t := ⟨slice.objEquiv.symm ⟨(join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.val, by
-      rw [join.inr_comp_joinVertexIso_hom_assoc, yonedaEquiv_symm_naturality_left,
-        ((mem_rightMappingSpace_obj_iff _).1 t.property).2]⟩, by
-    rw [mem_fiber_iff, slice.π_app, Equiv.apply_symm_apply, join.inl_comp_joinVertexIso_hom_assoc,
-      yonedaEquiv_symm_naturality_left, Equiv.apply_symm_apply]
+  toFun s := ⟨(sliceEquiv y m s.val).val, (mem_rightMappingSpace_obj_iff _).2
+    ⟨(sliceEquiv_coneπ y s.val).trans ((mem_fiber_iff _ _ _).1 s.property),
+      (sliceEquiv y m s.val).property⟩⟩
+  invFun t := ⟨(sliceEquiv y m).symm
+      ⟨t.val, ((mem_rightMappingSpace_obj_iff _).1 t.property).2⟩, by
+    rw [mem_fiber_iff, ← sliceEquiv_coneπ, Equiv.apply_symm_apply]
     exact ((mem_rightMappingSpace_obj_iff _).1 t.property).1⟩
-  left_inv s := Subtype.ext (slice.objEquiv.injective (Subtype.ext (by
-    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc])))
-  right_inv t := Subtype.ext (by
-    simp only [Equiv.apply_symm_apply, Iso.inv_hom_id_assoc])
+  left_inv s := Subtype.ext ((sliceEquiv y m).symm_apply_apply s.val)
+  right_inv t := by
+    apply Subtype.ext
+    exact congrArg (fun s : (coneSpace X y : SSet.{u}).obj (op m) ↦ s.val)
+      ((sliceEquiv y m).apply_symm_apply
+        ⟨t.val, ((mem_rightMappingSpace_obj_iff _).1 t.property).2⟩)
 
 /-- **The right mapping space `Hom^R_X(x, y)` is the fibre over `x` of the projection
 `X_{/y} ⟶ X`** of the slice over `y`. Through `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, an `n`-simplex
@@ -793,18 +890,9 @@ noncomputable def sliceFiberIso :
     (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}) ≅ (X.rightMappingSpace x y : SSet.{u}) :=
   NatIso.ofComponents (fun m ↦ (sliceFiberEquiv x y m.unop).toIso) (fun {m m'} f ↦ by
     ext s : 3
-    refine Subtype.ext ?_
-    -- Both sides are, by definition, the `(n + 1)`-simplices below; they agree by the naturality
-    -- of `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`.
-    have key : (yonedaEquiv ((join.joinVertexIso m'.unop).inv ≫
-        (slice.objEquiv ((slice (yonedaEquiv.symm y)).map f s.val)).val) :
-          X.obj (op (joinVertex.obj m'.unop))) =
-        X.map (joinVertex.map f.unop).op
-          (yonedaEquiv ((join.joinVertexIso m.unop).inv ≫ (slice.objEquiv s.val).val)) := by
-      rw [slice.objEquiv_map_coe, yonedaEquiv_naturality,
-        join.joinVertex_map_comp_joinVertexIso_inv_assoc]
-    -- `key` is the goal, with the maps of the fibre and of `Hom^R_X(x, y)` applied.
-    exact key)
+    apply Subtype.ext
+    exact congrArg (fun t : (coneSpace X y : SSet.{u}).obj m' ↦ t.val)
+      ((sliceIso y).hom.naturality_apply f s.val))
 
 /-- The simplex of `Hom^R_X(x, y)` attached to a simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of
 `X_{/y} ⟶ X` is its composite with `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/

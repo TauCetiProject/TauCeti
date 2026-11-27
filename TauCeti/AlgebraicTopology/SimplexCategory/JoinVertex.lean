@@ -245,6 +245,26 @@ theorem vertexJoin_map_σ {n : ℕ} (i : Fin (n + 1)) :
   | zero => exact (vertexJoin_map_zero (σ i)).trans (Fin.predAbove_right_zero (i := i.succ)).symm
   | succ j => exact (vertexJoin_map_succ (σ i) j).trans (Fin.succ_predAbove_succ i j).symm
 
+/-- The retraction `i ↦ min i j` of a finite ordinal onto its initial segment through `j`. -/
+def minRetraction {m : SimplexCategory} (j : Fin (m.len + 1)) : m ⟶ m :=
+  Hom.mk ⟨fun i ↦ min i j, fun _ _ h ↦ min_le_min_right j h⟩
+
+/-- The vertex map of the initial-segment retraction is minimum with its endpoint. -/
+@[simp]
+lemma minRetraction_apply {m : SimplexCategory} (j i : Fin (m.len + 1)) :
+    (minRetraction j).toOrderHom i = min i j :=
+  (rfl)
+
+/-- The retraction `i ↦ max i j` of a finite ordinal onto its final segment starting at `j`. -/
+def maxRetraction {m : SimplexCategory} (j : Fin (m.len + 1)) : m ⟶ m :=
+  Hom.mk ⟨fun i ↦ max i j, fun _ _ h ↦ max_le_max_right j h⟩
+
+/-- The vertex map of the final-segment retraction is maximum with its endpoint. -/
+@[simp]
+lemma maxRetraction_apply {m : SimplexCategory} (j i : Fin (m.len + 1)) :
+    (maxRetraction j).toOrderHom i = max i j :=
+  (rfl)
+
 end SimplexCategory
 
 namespace CategoryTheory.SimplicialObject
