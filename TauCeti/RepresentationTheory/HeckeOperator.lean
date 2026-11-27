@@ -8,10 +8,11 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.NumberTheory.HeckeRing.CosetSystem.Basic
 public import TauCeti.RepresentationTheory.WeightSpace
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.GroupTheory.Coset.Card
 import TauCeti.GroupTheory.DoubleCoset.Basic
-import TauCeti.NumberTheory.HeckeRing.CosetSystem.Basic
 import TauCeti.Topology.Algebra.Group.DoubleCoset
 
 /-!
@@ -36,7 +37,14 @@ For `K` compact and open, the indicator of a double coset `K g K` lives on finit
 operator `[K g K]`, preserves `W^K`
 (`Representation.doubleCosetOperator_apply_mem_weightSpace`). On `W^K`, `[K g K]` is the sum of
 the translates `ρ(q g)` over representatives `q` of `K ⧸ (K ∩ g K g⁻¹)`
-(`Representation.doubleCosetOperator_apply_eq_finsum`).
+(`Representation.doubleCosetOperator_apply_eq_finsum`), and it is `0` if there are infinitely many
+of them (`Representation.doubleCosetOperator_eq_zero_of_relIndex_eq_zero`). On `W^K` the operator
+of the indicator of a subgroup `K' ⊇ K` of finite index is the sum `∑_{h ∈ K' / K} ρ(h)`
+(`Representation.heckeOperator_indicator_apply`). Composing two double coset operators is the
+operator of the convolution of their indicators, read off a coset system of the first double coset
+(`Representation.doubleCosetOperator_doubleCosetOperator_apply`). For a `ρ`-invariant sesquilinear
+form `B`, `[K g K]` and `[K g⁻¹ K]` are adjoint on `W^K` when `K g K` and `K g⁻¹ K` consist of the
+same number of left cosets of `K` (`Representation.sesqForm_doubleCosetOperator_left_eq_right_inv`).
 
 ## Main definitions
 
@@ -57,6 +65,32 @@ The definitions and results are adapted from grh-lean (https://github.com/lserna
 public section
 
 open Function Set
+
+namespace QuotientGroup
+
+open scoped Pointwise
+
+variable {A G : Type*} [Zero A] [One A] [Group G] {K : Subgroup G}
+
+/-- If `K ∩ g K g⁻¹` has finite index in `K`, the indicator of the double coset `K g K` is
+supported on finitely many left cosets of `K`. This is the algebraic counterpart of
+`QuotientGroup.finite_support_indicator_doubleCoset`. -/
+theorem finite_support_indicator_doubleCoset_of_isFiniteRelIndex (g : G)
+    [(ConjAct.toConjAct g • K).IsFiniteRelIndex K] :
+    (support fun q : G ⧸ K ↦ (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) q.out).Finite :=
+  ((Subgroup.isCosetSystem_out_mul K K g).finite_iff.mp inferInstance).subset
+    fun q hq ↦ ⟨q.out, Set.mem_of_indicator_ne_zero hq, q.out_eq'⟩
+
+/-- The indicator of a subgroup `K'` containing `K` with finite index is supported on finitely
+many left cosets of `K`. -/
+theorem finite_support_indicator_of_le {K' : Subgroup G} (hKK' : K ≤ K')
+    [K.IsFiniteRelIndex K'] :
+    (support fun q : G ⧸ K ↦ (K' : Set G).indicator (1 : G → A) q.out).Finite :=
+  (Set.finite_of_ncard_ne_zero (s := ((↑) : G → G ⧸ K) '' K')
+    (by rw [Subgroup.ncard_image_mk_eq_relIndex hKK']; exact Subgroup.relIndex_ne_zero)).subset
+    fun q hq ↦ ⟨q.out, Set.mem_of_indicator_ne_zero hq, q.out_eq'⟩
+
+end QuotientGroup
 
 namespace Representation
 
@@ -253,5 +287,169 @@ theorem doubleCosetOperator_apply_mem_weightSpace [TopologicalSpace G] [IsTopolo
     simp only [Set.indicator_apply, Pi.one_apply, DoubleCoset.mul_mem_doubleCoset_iff k.property]
   exact heckeOperator_apply_mem_weightSpace h_right
     (QuotientGroup.finite_support_indicator_doubleCoset hK_open hK g) h_left hv
+
+/-! ### Hecke operators of subgroups -/
+
+/-- On `K`-invariant vectors, the Hecke operator of the indicator of `K` is the identity. -/
+theorem heckeOperator_indicator_self_apply (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) :
+    ρ.heckeOperator K ((K : Set G).indicator 1) v = v := by
+  classical
+  rw [heckeOperator_apply_eq_sum (s := {()}) (r := fun _ ↦ 1) (fun g k hk ↦ ?_) hv
+    (fun a _ b _ _ ↦ Subsingleton.elim a b) fun g hg ↦ ⟨(), Finset.mem_singleton_self _, ?_⟩]
+  · simp
+  · simp only [Set.indicator_apply, SetLike.mem_coe, mul_mem_cancel_right hk, Pi.one_apply]
+  · exact QuotientGroup.eq.mpr (by simpa using Set.mem_of_indicator_ne_zero hg)
+
+/-- On `K`-invariant vectors, the Hecke operator of the indicator of a subgroup `K'` containing
+`K` with finite index is the sum `∑_{q ∈ K' ⧸ K} ρ(q) v` over the cosets of `K` in `K'`. -/
+theorem heckeOperator_indicator_apply {K' : Subgroup G} (hKK' : K ≤ K') [K.IsFiniteRelIndex K']
+    (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) :
+    ρ.heckeOperator K ((K' : Set G).indicator 1) v = ∑ᶠ q : K' ⧸ K.subgroupOf K', ρ q.out v := by
+  classical
+  have := Fintype.ofFinite (K' ⧸ K.subgroupOf K')
+  rw [finsum_eq_sum_of_fintype, heckeOperator_apply_eq_sum (s := Finset.univ)
+    (r := fun q : K' ⧸ K.subgroupOf K' ↦ (q.out : G)) (fun g k hk ↦ ?_) hv
+    (fun q _ q' _ h ↦ ?_) fun g hg ↦ ?_]
+  · simp
+  · simp only [Set.indicator_apply, SetLike.mem_coe, mul_mem_cancel_right (hKK' hk), Pi.one_apply]
+  · rw [← QuotientGroup.out_eq' q, ← QuotientGroup.out_eq' q', QuotientGroup.eq,
+      Subgroup.mem_subgroupOf]
+    simpa using QuotientGroup.eq.mp h
+  · -- the representative of the coset of `g` in `K'` differs from `g` by an element of `K`
+    obtain ⟨h, hh⟩ := QuotientGroup.mk_out_eq_mul (K.subgroupOf K')
+      ⟨g, Set.mem_of_indicator_ne_zero hg⟩
+    refine ⟨QuotientGroup.mk ⟨g, Set.mem_of_indicator_ne_zero hg⟩, Finset.mem_univ _,
+      QuotientGroup.eq.mpr ?_⟩
+    simpa [hh] using K.inv_mem (Subgroup.mem_subgroupOf.mp h.property)
+
+/-! ### Products of double coset operators -/
+
+open scoped Pointwise in
+/-- **Composing double coset operators.** Let `r` name the left cosets of `K` in `K g K` (a finite
+coset system) and let `K ∩ g' K g'⁻¹` have finite index in `K`. On `K`-invariant vectors,
+`[K g K] [K g' K]` is the Hecke operator of `x ↦ ∑_c 1_{K g' K}((r c)⁻¹ x)`, the convolution of the
+indicators of `K g K` and `K g' K`. -/
+theorem doubleCosetOperator_doubleCosetOperator_apply {g g' : G}
+    [(ConjAct.toConjAct g' • K).IsFiniteRelIndex K] {κ : Type*} [Fintype κ] {r : κ → G}
+    (hr : Subgroup.IsCosetSystem K K g r) (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) :
+    ρ.doubleCosetOperator K g (ρ.doubleCosetOperator K g' v) =
+      ρ.heckeOperator K (fun x ↦ ∑ c, (DoubleCoset.doubleCoset g' K K).indicator 1
+        ((r c)⁻¹ * x)) v := by
+  classical
+  set f : G → A := (DoubleCoset.doubleCoset g' (K : Set G) K).indicator 1
+  have hf (x k : G) (hk : k ∈ K) : f (x * k) = f x := indicator_doubleCoset_mul_right g' x hk
+  have hf_left (k : K) (x : G) : (1 : K →* A) k * f (k * x) = f x := by
+    simp only [f, MonoidHom.one_apply, one_mul, Set.indicator_apply, Pi.one_apply,
+      DoubleCoset.mul_mem_doubleCoset_iff k.property]
+  have hf_fin := QuotientGroup.finite_support_indicator_doubleCoset_of_isFiniteRelIndex
+    (A := A) (K := K) g'
+  have hTv : ρ.doubleCosetOperator K g' v ∈ weightSpace (ρ.comp K.subtype) 1 := by
+    rw [doubleCosetOperator_def]
+    exact heckeOperator_apply_mem_weightSpace hf hf_fin hf_left hv
+  -- expand `[K g K]` over `r`, then each translate of `[K g' K] v` as the operator of a translate
+  have h := heckeOperator_sum (ρ := ρ) (K := K) Finset.univ (fun _ ↦ 1)
+    (fun c x ↦ f ((r c)⁻¹ * x)) fun c _ ↦ QuotientGroup.finite_support_comp_inv_mul hf hf_fin _
+  simp only [one_mul, one_smul] at h
+  rw [doubleCosetOperator_def ρ K g, heckeOperator_apply_eq_sum (s := Finset.univ) (r := r)
+    (fun x k hk ↦ ?_) hTv hr.injective.injOn fun x hx ↦ ?_, h, LinearMap.sum_apply]
+  · refine Finset.sum_congr rfl fun c _ ↦ ?_
+    rw [Set.indicator_of_mem (hr.mem_doubleCoset c), Pi.one_apply, one_smul,
+      doubleCosetOperator_def, heckeOperator_apply_comp_inv_mul hf hf_fin hv]
+  · exact indicator_doubleCoset_mul_right g x hk
+  · obtain ⟨c, hc⟩ := Set.mem_iUnion.mp
+      (hr.doubleCoset_subset_iUnion (Set.mem_of_indicator_ne_zero hx))
+    exact ⟨c, Finset.mem_univ c, QuotientGroup.eq.mpr ((mem_leftCoset_iff _).mp hc)⟩
+
+/-! ### Double coset operators of infinite degree, and invariant sesquilinear forms -/
+
+section InvariantForm
+
+open scoped Pointwise
+
+variable {g : G}
+
+/-- **A double coset of infinite degree.** If `K g K` contains infinitely many left cosets of `K`,
+that is `[K : K ∩ g K g⁻¹]` is infinite, the double coset operator `[K g K]` is `0`, the value of
+the sum `∑_{q K ⊆ K g K} ρ(q)` with infinitely many nonzero terms. -/
+theorem doubleCosetOperator_eq_zero_of_relIndex_eq_zero
+    (h : (ConjAct.toConjAct g • K).relIndex K = 0) : ρ.doubleCosetOperator K g = 0 := by
+  classical
+  rcases subsingleton_or_nontrivial W with hW | hW
+  · exact Subsingleton.elim _ _
+  have : Nontrivial A := Module.nontrivial A W
+  set D := DoubleCoset.doubleCoset g (K : Set G) K
+  -- `K g K` meets infinitely many left cosets of `K`
+  have hinf : (QuotientGroup.mk '' D : Set (G ⧸ K)).Infinite := fun hfin ↦ by
+    have := (Subgroup.isCosetSystem_out_mul K K g).finite_iff.mpr hfin
+    exact Nat.card_pos.ne' h
+  -- each of them contributes the nonzero term `ρ(q)`
+  refine finsum_of_infinite_support (hinf.mono fun q hq ↦ ?_)
+  have hD : ∀ x ∈ D, ∀ k ∈ K, x * k ∈ D := fun _ hx _ hk ↦
+    DoubleCoset.mul_mem_doubleCoset_of_mem_right hx hk
+  have hq' : (q.out : G) ∈ D := by
+    rw [← QuotientGroup.out_eq' q] at hq
+    exact (Subgroup.mk_mem_image_iff_of_forall_mul_mem hD).mp hq
+  rw [mem_support, Set.indicator_of_mem hq', Pi.one_apply, one_smul]
+  intro h0
+  obtain ⟨w, hw⟩ := exists_ne (0 : W)
+  exact hw (by simpa [h0] using (ρ.inv_self_apply q.out w).symm)
+
+variable [StarRing A] {B : W →ₗ⋆[A] W →ₗ[A] A}
+
+/-- For a `ρ`-invariant sesquilinear form `B` and `K`-invariant vectors `x`, `y`, pairing the
+double coset operator `[K g K]` in the first variable:
+`B ([K g K] x) y = [K : K ∩ g K g⁻¹] • B (g x) y`. -/
+theorem sesqForm_doubleCosetOperator_left (hB : ∀ h x y, B (ρ h x) (ρ h y) = B x y) {x y : W}
+    (hx : x ∈ weightSpace (ρ.comp K.subtype) 1) (hy : y ∈ weightSpace (ρ.comp K.subtype) 1) :
+    B (ρ.doubleCosetOperator K g x) y = (ConjAct.toConjAct g • K).relIndex K • B (ρ g x) y := by
+  by_cases hfin : (ConjAct.toConjAct g • K).relIndex K = 0
+  · simp [ρ.doubleCosetOperator_eq_zero_of_relIndex_eq_zero hfin, hfin]
+  have hcard := (Subgroup.isCosetSystem_out_mul K K g).natCard_eq_relIndex
+  have : Finite (DoubleCoset.DecompQuotient K K g) := Nat.finite_of_card_ne_zero (hcard ▸ hfin)
+  have := Fintype.ofFinite (DoubleCoset.DecompQuotient K K g)
+  have hyK (k : G) (hk : k ∈ K) : ρ k y = y := by simpa using mem_weightSpace.1 hy ⟨k, hk⟩
+  rw [doubleCosetOperator_apply_eq_finsum g hx, finsum_eq_sum_of_fintype, map_sum,
+    LinearMap.sum_apply, ← hcard, Nat.card_eq_fintype_card, ← Finset.card_univ,
+    ← Finset.sum_const]
+  -- move the representative `q ∈ K` across `B`
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  calc B (ρ (q.out * g) x) y = B (ρ q.out (ρ g x)) (ρ q.out (ρ (q.out : G)⁻¹ y)) := by
+        rw [map_mul, mul_apply_eq_comp, self_inv_apply]
+    _ = B (ρ g x) y := by rw [hB, hyK _ (K.inv_mem q.out.property)]
+
+/-- For a `ρ`-invariant sesquilinear form `B` and `K`-invariant vectors `x`, `y`, pairing the
+double coset operator `[K g K]` in the second variable:
+`B x ([K g K] y) = [K : K ∩ g K g⁻¹] • B x (g y)`. -/
+theorem sesqForm_doubleCosetOperator_right (hB : ∀ h x y, B (ρ h x) (ρ h y) = B x y) {x y : W}
+    (hx : x ∈ weightSpace (ρ.comp K.subtype) 1) (hy : y ∈ weightSpace (ρ.comp K.subtype) 1) :
+    B x (ρ.doubleCosetOperator K g y) = (ConjAct.toConjAct g • K).relIndex K • B x (ρ g y) := by
+  by_cases hfin : (ConjAct.toConjAct g • K).relIndex K = 0
+  · simp [ρ.doubleCosetOperator_eq_zero_of_relIndex_eq_zero hfin, hfin]
+  have hcard := (Subgroup.isCosetSystem_out_mul K K g).natCard_eq_relIndex
+  have : Finite (DoubleCoset.DecompQuotient K K g) := Nat.finite_of_card_ne_zero (hcard ▸ hfin)
+  have := Fintype.ofFinite (DoubleCoset.DecompQuotient K K g)
+  have hxK (k : G) (hk : k ∈ K) : ρ k x = x := by simpa using mem_weightSpace.1 hx ⟨k, hk⟩
+  rw [doubleCosetOperator_apply_eq_finsum g hy, finsum_eq_sum_of_fintype, map_sum, ← hcard,
+    Nat.card_eq_fintype_card, ← Finset.card_univ, ← Finset.sum_const]
+  -- move the representative `q ∈ K` across `B`
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  calc B x (ρ (q.out * g) y) = B (ρ q.out (ρ (q.out : G)⁻¹ x)) (ρ q.out (ρ g y)) := by
+        rw [map_mul, mul_apply_eq_comp, self_inv_apply]
+    _ = B x (ρ g y) := by rw [hB, hxK _ (K.inv_mem q.out.property)]
+
+/-- **Adjointness of `[K g K]` and `[K g⁻¹ K]`.** If `K ∩ g K g⁻¹` and `K ∩ g⁻¹ K g` have the same
+index in `K`, that is `K g K` and `K g⁻¹ K` consist of the same number of left cosets of `K`, then
+for every `ρ`-invariant sesquilinear form `B` the double coset operators `[K g K]` and `[K g⁻¹ K]`
+are adjoint on the `K`-invariant vectors: `B ([K g K] x) y = B x ([K g⁻¹ K] y)`. For a unitary
+representation `B` is the inner product. -/
+theorem sesqForm_doubleCosetOperator_left_eq_right_inv (hB : ∀ h x y, B (ρ h x) (ρ h y) = B x y)
+    (hdeg : (ConjAct.toConjAct g⁻¹ • K).relIndex K = (ConjAct.toConjAct g • K).relIndex K)
+    {x y : W} (hx : x ∈ weightSpace (ρ.comp K.subtype) 1)
+    (hy : y ∈ weightSpace (ρ.comp K.subtype) 1) :
+    B (ρ.doubleCosetOperator K g x) y = B x (ρ.doubleCosetOperator K g⁻¹ y) := by
+  rw [sesqForm_doubleCosetOperator_left hB hx hy, sesqForm_doubleCosetOperator_right hB hx hy,
+    hdeg, ← hB g x, self_inv_apply]
+
+end InvariantForm
 
 end Representation

@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.LinearAlgebra.Matrix.Eigenvectors
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroVectors
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SubspaceOrbit
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Span.Basic
@@ -58,6 +59,8 @@ For `n = 2` both subgroups are line stabilizers and they are conjugate.
   stabilizer scales column `i` by its diagonal entry.
 * `TauCeti.map_inverseTranspose_lineStabilizer`: inverse transpose carries the line stabilizer
   onto the hyperplane stabilizer.
+* `TauCeti.index_lineStabilizer_mul`: over a field with `q` elements the line stabilizer has index
+  the number `(qⁿ - 1) / (q - 1)` of lines.
 * `TauCeti.exists_conj_notMem_lineStabilizer`: a representation with no proper stable subspace
   has no conjugate in a line stabilizer.
 * `TauCeti.exists_mem_hyperplaneStabilizer_smul_ne`: if `n` has at least three elements, the
@@ -179,6 +182,33 @@ theorem map_inverseTranspose_lineStabilizer (i : n) :
   rw [Subgroup.mem_map_equiv, GeneralLinearGroup.inverseTranspose_symm, mem_lineStabilizer_iff,
     ← Subgroup.inv_mem_iff, mem_hyperplaneStabilizer_iff]
   simp [GeneralLinearGroup.coe_inverseTranspose]
+
+/-- **The index of the line stabilizer.** Over a field with `q` elements the stabilizer of the
+line `K ∙ eᵢ` has index the number `(qⁿ - 1) / (q - 1)` of lines in `Kⁿ`, stated without division:
+`[GL n K : lineStabilizer K i] (q - 1) = qⁿ - 1`. For an infinite field both sides are `0`. -/
+theorem index_lineStabilizer_mul (i : n) :
+    (lineStabilizer K i).index * (Nat.card K - 1) = Nat.card K ^ Fintype.card n - 1 := by
+  cases finite_or_infinite K
+  swap
+  · rw [Nat.card_eq_zero_of_infinite, zero_tsub, mul_zero]
+    rcases Nat.eq_zero_or_pos (Fintype.card n) with h | h
+    · rw [h, pow_zero, tsub_self]
+    · rw [zero_pow h.ne', zero_tsub]
+  have := Fintype.ofFinite K
+  rw [lineStabilizer_def, GeneralLinearGroup.index_stabilizer_submodule_eq_gaussianBinomial,
+    finrank_span_singleton (by simp), Nat.card_eq_fintype_card]
+  -- the product formula for `[n, 1]_q`, read in `ℤ`
+  have h := gaussianBinomial_mul_prod_pow_sub_pow (Fintype.card K : ℤ) (Fintype.card n) 1
+  have hc : ((gaussianBinomial (Fintype.card K) (Fintype.card n) 1 : ℕ) : ℤ) =
+      gaussianBinomial (Fintype.card K : ℤ) (Fintype.card n) 1 :=
+    map_gaussianBinomial (Nat.castRingHom ℤ) _ _ _
+  rw [← hc] at h
+  have hq : 1 ≤ Fintype.card K := Fintype.card_pos
+  have hqn : 1 ≤ Fintype.card K ^ Fintype.card n := Nat.one_le_pow _ _ hq
+  simp only [Finset.range_one, Finset.prod_singleton, pow_one, pow_zero] at h
+  exact_mod_cast (by push_cast [hq, hqn]; exact h :
+    ((gaussianBinomial (Fintype.card K) (Fintype.card n) 1 * (Fintype.card K - 1) : ℕ) : ℤ) =
+      ((Fintype.card K ^ Fintype.card n - 1 : ℕ) : ℤ))
 
 /-! ### Representations without stable lines -/
 
