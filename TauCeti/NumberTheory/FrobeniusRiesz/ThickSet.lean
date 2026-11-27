@@ -31,6 +31,14 @@ open Filter Real
 
 namespace TauCeti
 
+/-- A fixed multiple of `(log x)²` is eventually at most any positive power of `x`. -/
+private theorem eventually_mul_log_sq_le_rpow (c : ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    ∀ᶠ x : ℝ in atTop, c * log x ^ 2 ≤ x ^ δ := by
+  filter_upwards [eventually_ge_atTop (0 : ℝ),
+    ((isLittleO_log_rpow_rpow_atTop 2 hδ).const_mul_left c).bound zero_lt_one] with x hx₀ hx
+  rw [one_mul, norm_of_nonneg (rpow_nonneg hx₀ δ), rpow_two] at hx
+  exact (le_norm_self _).trans hx
+
 /-- The loss in the relation-free set bound is subpolynomial, uniformly for moduli bounded by
 a power of `x` and lengths bounded by `(log x)²`. Include a fixed extra factor `o` so the same
 estimate controls density in an ambient group of index at most `o` over the modulus group. -/
@@ -44,10 +52,7 @@ private theorem eventually_behrend_loss_le (C b : ℝ) (o : ℕ) {ε : ℝ} (hε
   have hb : 0 < max b 1 := zero_lt_one.trans_le (le_max_right ..)
   have hδ : 0 < δ := lt_min (by positivity) (div_pos (sq_pos_of_pos hr) hb)
   have hd : ∀ᶠ x : ℝ in atTop, log x ^ 2 ≤ x ^ δ := by
-    filter_upwards [eventually_ge_atTop (0 : ℝ),
-      (isLittleO_log_rpow_rpow_atTop 2 hδ).bound zero_lt_one] with x hx₀ hx
-    simpa only [Real.norm_eq_abs, abs_of_nonneg hx₀, rpow_two, rpow_nonneg hx₀,
-      abs_of_nonneg (sq_nonneg (log x)), abs_of_nonneg (rpow_nonneg hx₀ δ), one_mul] using hx
+    simpa only [one_mul] using eventually_mul_log_sq_le_rpow 1 hδ
   have ho := (tendsto_rpow_atTop (show 0 < ε / 3 by positivity)).eventually_ge_atTop (o : ℝ)
   filter_upwards [eventually_ge_atTop (1 : ℝ), hd, ho] with x hx hlog ho
   intro M L hL hMb hLb
@@ -85,28 +90,32 @@ private theorem eventually_behrend_loss_le (C b : ℝ) (o : ℕ) {ε : ℝ} (hε
       exact hLδ.trans (rpow_le_rpow_of_exponent_le hx (min_le_left ..))
     _ = _ := by rw [← rpow_add hx₀, ← rpow_add hx₀]; ring_nf
 
-open Classical in
-/-- In a cyclic subgroup of bounded index in a finite group of polynomial size, one can choose
-a thick set of density at least `x ^ (-ε)`, for any relation length `2 ≤ L ≤ (log x)²`.
-The threshold depends only on the size exponents, index bound, and `ε`, not on the group.
-The integer exponents are nonnegative and less than `|H| / (4L)`, and the power image has at
-most `|H| / (4L)` points. -/
+/-- Integer exponents in `[0, orderOf g)` give distinct powers of `g`. -/
+private theorem injOn_zpow_of_lt_orderOf {G : Type*} [Group G] {g : G} {T : Set ℤ}
+    (hT : ∀ s ∈ T, 0 ≤ s ∧ s < orderOf g) : Set.InjOn (g ^ ·) T := by
+  intro s hs t ht heq
+  have := hT s hs
+  have := hT t ht
+  exact (sub_eq_zero.mp (Int.eq_zero_of_abs_lt_dvd (zpow_eq_zpow_iff_modEq.mp heq).dvd
+    (by rw [abs_lt]; omega))).symm
+
+/-- In a cyclic subgroup `H` of bounded index in a finite group `G` of polynomial size, one can
+choose a thick set `(g ^ ·) '' T ⊆ G` of density at least `x ^ (-ε)`, for any relation length
+`2 ≤ L ≤ (log x)²`. Here `g ∈ G` generates `H`, so `orderOf g = |H|`. The threshold depends only
+on the size exponents, index bound, and `ε`, not on the group. The integer exponents are
+nonnegative and less than `orderOf g / (4L)`, so `s ↦ g ^ s` is injective on `T` and the thick
+set has `|T| ≤ orderOf g / (4L)` points. -/
 theorem eventually_exists_thickSet_density {a b ε : ℝ} (ha : 0 < a) (hε : 0 < ε) (o : ℕ) :
     ∀ᶠ x : ℝ in atTop, ∀ {G : Type*} [Group G] (H : Subgroup G) [IsCyclic H],
       H.index ≤ o → x ^ a ≤ (Nat.card G : ℝ) → (Nat.card G : ℝ) ≤ x ^ b →
       ∀ L : ℕ, 2 ≤ L → (L : ℝ) ≤ log x ^ 2 →
-      ∃ (g : H) (T : Finset ℤ), orderOf g = Nat.card H ∧ T.Nonempty ∧
-        (∀ s ∈ T, 0 ≤ s ∧ (s : ℝ) < Nat.card H / (4 * L)) ∧ NoRelation L T ∧
-        (Nat.card G : ℝ) * x ^ (-ε) ≤ (T.image (g ^ ·)).card ∧
-        ((T.image (g ^ ·)).card : ℝ) ≤ Nat.card H / (4 * L) := by
+      ∃ (g : G) (T : Finset ℤ), Subgroup.zpowers g = H ∧ orderOf g = Nat.card H ∧
+        T.Nonempty ∧ (∀ s ∈ T, 0 ≤ s ∧ (s : ℝ) < orderOf g / (4 * L)) ∧ NoRelation L T ∧
+        (Nat.card G : ℝ) * x ^ (-ε) ≤ ((g ^ ·) '' (T : Set ℤ)).ncard ∧
+        (((g ^ ·) '' (T : Set ℤ)).ncard : ℝ) ≤ orderOf g / (4 * L) := by
   obtain ⟨C, hC⟩ := exists_noRelation
-  have hsmall : ∀ᶠ x : ℝ in atTop, (4 * (o : ℝ)) * log x ^ 2 ≤ x ^ a := by
-    have h := (isLittleO_log_rpow_rpow_atTop 2 ha).const_mul_left (4 * (o : ℝ))
-    filter_upwards [eventually_ge_atTop (0 : ℝ), h.bound zero_lt_one] with x hx₀ hx
-    simpa only [Real.norm_eq_abs, one_mul, rpow_two, abs_of_nonneg hx₀,
-      abs_of_nonneg (show 0 ≤ 4 * (o : ℝ) * log x ^ 2 by positivity),
-      abs_of_nonneg (rpow_nonneg hx₀ a)] using hx
-  filter_upwards [eventually_ge_atTop (1 : ℝ), hsmall, eventually_behrend_loss_le C b o hε]
+  filter_upwards [eventually_ge_atTop (1 : ℝ), eventually_mul_log_sq_le_rpow (4 * o) ha,
+    eventually_behrend_loss_le C b o hε]
     with x hx hxsmall hloss
   intro G _ H _ hindex hlo hhi L hL hLx
   have hx₀ : 0 < x := zero_lt_one.trans_le hx
@@ -122,32 +131,35 @@ theorem eventually_exists_thickSet_density {a b ε : ℝ} (ha : 0 < a) (hε : 0 
       _ ≤ (Nat.card H : ℝ) * o := by rw [hN]; gcongr
     exact_mod_cast le_of_mul_le_mul_right hprod (Nat.cast_pos.mpr (H.index_pos.trans_le hindex))
   obtain ⟨T, hT, hinterval, hrel, hcard, hupper⟩ := hC (Nat.card H) L Nat.card_pos hL
-  obtain ⟨g, hg⟩ := exists_zpow_surjective H
-  have hord : orderOf g = Nat.card H := orderOf_eq_card_of_forall_mem_zpowers
-    fun y ↦ Subgroup.mem_zpowers_iff.mpr (hg y)
-  have himage : (T.image (g ^ ·)).card = T.card := by
-    refine Finset.card_image_iff.mpr fun s hs t ht heq ↦ ?_
-    obtain ⟨hs₀, hs₁⟩ := hinterval s hs
-    obtain ⟨ht₀, ht₁⟩ := hinterval t ht
-    have hb := div_le_self (Nat.cast_nonneg (α := ℝ) (Nat.card H))
-      (by exact_mod_cast (show 1 ≤ 4 * L by omega) : (1 : ℝ) ≤ 4 * L)
-    have hst : |(t : ℝ) - s| < (orderOf g : ℝ) := by
-      rw [hord, abs_lt]
-      have hs' : (0 : ℝ) ≤ (s : ℝ) := by exact_mod_cast hs₀
-      have ht' : (0 : ℝ) ≤ (t : ℝ) := by exact_mod_cast ht₀
-      constructor <;> linarith
-    exact (sub_eq_zero.mp (Int.eq_zero_of_abs_lt_dvd (zpow_eq_zpow_iff_modEq.mp heq).dvd
-      (by exact_mod_cast hst))).symm
-  refine ⟨g, T, hord, hT, hinterval, hrel, ?_, by rw [himage]; exact hupper h4L⟩
+  obtain ⟨g, hzp⟩ := H.isCyclic_iff_exists_zpowers_eq.mp ‹_›
+  have hord : orderOf g = Nat.card H := by rw [← hzp, Nat.card_zpowers]
+  have hinterval' : ∀ s ∈ T, 0 ≤ s ∧ (s : ℝ) < orderOf g / (4 * L) := hord ▸ hinterval
+  have hb := div_le_self (Nat.cast_nonneg (α := ℝ) (orderOf g))
+    (by exact_mod_cast (show 1 ≤ 4 * L by omega) : (1 : ℝ) ≤ 4 * L)
+  have himage : ((g ^ ·) '' (T : Set ℤ)).ncard = T.card := by
+    refine (Set.InjOn.ncard_image (injOn_zpow_of_lt_orderOf fun s hs ↦ ?_)).trans
+      (Set.ncard_coe_finset T)
+    exact ⟨(hinterval' s hs).1, by exact_mod_cast (hinterval' s hs).2.trans_le hb⟩
+  refine ⟨g, T, hzp, hord, hT, hinterval', hrel, ?_, by rw [himage, hord]; exact hupper h4L⟩
   rw [himage]
   refine le_trans ?_ hcard
   have hMhi := (Nat.cast_le.mpr (Nat.card_le_card_of_injective ((↑) : H → G)
     Subtype.val_injective) : (Nat.card H : ℝ) ≤ Nat.card G).trans hhi
-  rw [neg_mul, exp_neg, rpow_neg hx₀.le, ← div_eq_mul_inv, hN, ← div_eq_mul_inv, div_div,
-    div_le_div_iff₀ (rpow_pos_of_pos hx₀ _) (by positivity)]
+  set E := exp (C * sqrt (log (Nat.card H) * log L))
+  have hEE : exp (-C * sqrt (log (Nat.card H) * log L)) * E = 1 := by
+    rw [← exp_add]; simp
+  have hxx : x ^ ε * x ^ (-ε) = 1 := by rw [← rpow_add hx₀, add_neg_cancel, rpow_zero]
+  have hL0 : (L : ℝ) ≠ 0 := by positivity
   calc
-    _ = (Nat.card H : ℝ) * (H.index * L * exp (C * sqrt (log (Nat.card H) * log L))) := by ring
-    _ ≤ (Nat.card H : ℝ) * ((o : ℝ) * L * exp (C * sqrt (log (Nat.card H) * log L))) := by gcongr
-    _ ≤ _ := mul_le_mul_of_nonneg_left (hloss _ _ (by omega) hMhi hLx) (Nat.cast_nonneg _)
+    (Nat.card G : ℝ) * x ^ (-ε)
+      = (Nat.card H : ℝ) * exp (-C * sqrt (log (Nat.card H) * log L)) / L *
+          ((H.index * L * E) * x ^ (-ε)) := by
+      rw [hN, div_mul_eq_mul_div, eq_div_iff hL0]
+      linear_combination (-(Nat.card H * H.index * x ^ (-ε) * L) : ℝ) * hEE
+    _ ≤ (Nat.card H : ℝ) * exp (-C * sqrt (log (Nat.card H) * log L)) / L *
+          (x ^ ε * x ^ (-ε)) := by
+      gcongr
+      exact le_trans (by gcongr) (hloss _ _ (by omega) hMhi hLx)
+    _ = _ := by rw [hxx, mul_one]
 
 end TauCeti
