@@ -693,7 +693,8 @@ private theorem exists_forall_exists_sum_topSymbolMatrix_mul_eq_ite {ι τ : Typ
         Aa * (1 + ‖η‖) ^ (M * (r - 1)) :=
     fun l hl ↦ (TauCeti.norm_iteratedFDeriv_adjugate_apply_le (hA η) (by exact_mod_cast le_top)
       (hent y hy η) j k l hl).trans_eq (by rw [hpow]; ring)
-  obtain ⟨Ψ, hΨK, hΨ, hΨB⟩ := φ.exists_sum_mul_eq_ite_of_forall_det_ne_zero hW hKW hφK (hA η)
+  obtain ⟨Ψ, hΨK, hΨ, hΨB⟩ := φ.exists_sum_mul_eq_ite_of_forall_det_ne_zero hW hKW hφK
+    (fun i j ↦ (hA η i j).contDiffOn)
     (fun y hy ↦ norm_pos_iff.1 ((mul_pos hc' (by positivity)).trans_le (hp y hy η hη hηR)))
     (Q := Q / (1 + ‖η‖) ^ (M * r)) (G := Aa * (1 + ‖η‖) ^ (M * (r - 1))) (by positivity)
     (by positivity)

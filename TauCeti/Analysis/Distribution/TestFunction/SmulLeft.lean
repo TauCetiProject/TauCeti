@@ -185,15 +185,15 @@ theorem exists_mul_eq_of_forall_ne_zero (φ : 𝓓(Ω, ℂ)) {K W : Set E} (hW :
     exact one_le_two
 
 /-- **Dividing a test function by a matrix of smooth functions.** Let `φ` be a test function
-supported in `K`, and let `A` be a matrix of smooth functions whose determinant does not vanish on
-an open set `W ⊇ K`. For each `k` there are test functions `Ψ j` supported in `K` with
-`∑ j, A y i j Ψ j y = δ_ik φ y`, namely `Ψ j = (A⁻¹) j k φ`. If the derivatives of order at most
-`n` of the reciprocal of the determinant are bounded by `Q ≥ 0` on `K`, those of the entries of
+supported in `K`, and let `A` be a matrix of functions smooth on an open set `W ⊇ K` whose
+determinant does not vanish on `W`. For each `k` there are test functions `Ψ j` supported in `K`
+with `∑ j, A y i j Ψ j y = δ_ik φ y`, namely `Ψ j = (A⁻¹) j k φ`. If the derivatives of order at
+most `n` of the reciprocal of the determinant are bounded by `Q ≥ 0` on `K`, those of the entries of
 the adjugate by `G ≥ 0` on `K`, and those of `φ` by `B`, then those of every `Ψ j` are bounded by
 `2 ^ n Q (2 ^ n G B)`. -/
 theorem exists_sum_mul_eq_ite_of_forall_det_ne_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
     (φ : 𝓓(Ω, ℂ)) {K W : Set E} (hW : IsOpen W) (hKW : K ⊆ W) (hφK : tsupport φ ⊆ K)
-    {A : E → Matrix ι ι ℂ} (hA : ∀ i j, ContDiff ℝ ∞ fun z ↦ A z i j)
+    {A : E → Matrix ι ι ℂ} (hA : ∀ i j, ContDiffOn ℝ ∞ (fun z ↦ A z i j) W)
     (hAW : ∀ y ∈ W, (A y).det ≠ 0) {n : ℕ} {Q G B : ℝ} (hQ0 : 0 ≤ Q) (hG0 : 0 ≤ G)
     (hQ : ∀ l ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ l (fun z ↦ ((A z).det)⁻¹) y‖ ≤ Q)
     (hG : ∀ j k, ∀ l ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ l (fun z ↦ (A z).adjugate j k) y‖ ≤ G)
@@ -201,18 +201,21 @@ theorem exists_sum_mul_eq_ite_of_forall_det_ne_zero {ι : Type*} [Fintype ι] [D
     ∃ Ψ : ι → 𝓓(Ω, ℂ), (∀ j, tsupport (Ψ j) ⊆ K) ∧
       (∀ i y, ∑ j, A y i j * Ψ j y = if i = k then φ y else 0) ∧
       ∀ j, ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (Ψ j) y‖ ≤ 2 ^ n * Q * (2 ^ n * G * B) := by
-  have hadj (j : ι) := ContDiff.matrix_adjugate hA j k
+  have hadj (j : ι) := ContDiffOn.matrix_adjugate hA j k
   -- The test functions `adj(A) j k φ`.
   choose φ' hφ' using fun j ↦ exists_coe_eq_of_tsupport_subset
-    ((hadj j).mul φ.contDiff) (tsupport_mul_subset_right (f := fun z ↦ (A z).adjugate j k))
+    (f := fun z ↦ (A z).adjugate j k * φ z)
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right (hadj j)
+      φ.contDiff.contDiffOn hW (hφK.trans hKW))
+    (tsupport_mul_subset_right (f := fun z ↦ (A z).adjugate j k))
   have hφ'K (j : ι) : tsupport (φ' j) ⊆ K := by
     rw [hφ' j]
     exact tsupport_mul_subset_right.trans hφK
   have hφ'B (j : ι) : ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (φ' j) y‖ ≤ 2 ^ n * G * B := by
     intro l hl y
     rw [hφ' j]
-    refine (TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset isOpen_univ (subset_univ K)
-      (hadj j).contDiffOn φ.contDiff hφK (by exact_mod_cast le_top) hG0
+    refine (TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset hW hKW
+      (hadj j) φ.contDiff hφK (by exact_mod_cast le_top) hG0
       (fun l' hl' z hz ↦ hG j k l' (hl'.trans hl) z hz) (fun l' hl' z ↦ hB l' (hl'.trans hl) z)
       y).trans ?_
     have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) y)
@@ -220,7 +223,7 @@ theorem exists_sum_mul_eq_ite_of_forall_det_ne_zero {ι : Type*} [Fintype ι] [D
     exact one_le_two
   -- Divide them by the determinant.
   choose Ψ hΨK hΨ hΨB using fun j ↦ (φ' j).exists_mul_eq_of_forall_ne_zero hW hKW (hφ'K j)
-    (ContDiff.matrix_det hA).contDiffOn hAW hQ0 hQ (hφ'B j)
+    (ContDiffOn.matrix_det hA) hAW hQ0 hQ (hφ'B j)
   refine ⟨Ψ, hΨK, fun i y ↦ ?_, hΨB⟩
   by_cases hy : y ∈ W
   · refine mul_left_cancel₀ (hAW y hy) ?_
