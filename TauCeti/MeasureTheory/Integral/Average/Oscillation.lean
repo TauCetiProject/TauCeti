@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Average
-import Mathlib.Analysis.Convex.Integral
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 
 /-!
 # The mean oscillation about the average
@@ -56,55 +54,31 @@ theorem setIntegral_norm_sub_setAverage_le_two_mul (hs : μ s ≠ ⊤) (hf : Int
 
 /-- **The `L^γ` mean oscillation about the average.** On a set `s` of finite measure and for
 `γ ≥ 1`, `⨍_s ‖f - f_s‖^γ ≤ 2^γ ⨍_s ‖f - c‖^γ` for every constant `c` for which `‖f - c‖^γ` is
-integrable on `s`, where `f_s` is the average of `f` over `s`. -/
+integrable on `s`, where `f_s` is the average of `f` over `s`. This is
+`TauCeti.eLpNorm_sub_setAverage_le` at `p = γ`, raised to the power `γ`. -/
 theorem setAverage_norm_sub_setAverage_rpow_le (hs : μ s ≠ ⊤) (hf : IntegrableOn f s μ)
     {γ : ℝ} (hγ : 1 ≤ γ) (c : F) (hfc : IntegrableOn (fun x ↦ ‖f x - c‖ ^ γ) s μ) :
     ⨍ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ∂μ ≤ 2 ^ γ * ⨍ x in s, ‖f x - c‖ ^ γ ∂μ := by
-  rcases eq_or_ne (μ s) 0 with h0 | h0
-  · simp [Measure.restrict_eq_zero.2 h0]
-  have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
-  set K := ⨍ x in s, ‖f x - c‖ ^ γ ∂μ
-  have hic : IntegrableOn (fun x ↦ f x - c) s μ := hf.sub (integrableOn_const hs)
-  -- By Jensen's inequality, the deviation `‖f_s - c‖` of the average satisfies
-  -- `‖f_s - c‖^γ ≤ (⨍_s ‖f - c‖)^γ ≤ K`.
-  have hJ : (⨍ x in s, ‖f x - c‖ ∂μ) ^ γ ≤ K :=
-    (convexOn_rpow hγ).map_set_average_le
-      (continuous_id.rpow_const fun _ ↦ Or.inr hγ0).continuousOn isClosed_Ici h0 hs
-      (ae_of_all _ fun x ↦ norm_nonneg (f x - c)) hic.norm hfc
-  have heq : (⨍ y in s, f y ∂μ) - c = ⨍ y in s, (f y - c) ∂μ := by
-    rw [setAverage_fun_sub hf (integrableOn_const hs), setAverage_const h0 hs]
-  set m := ⨍ y in s, f y ∂μ
-  have hB : ‖m - c‖ ^ γ ≤ K := by
-    refine (Real.rpow_le_rpow (norm_nonneg _) ?_ hγ0).trans hJ
-    rw [heq, setAverage_eq, setAverage_eq, norm_smul, Real.norm_of_nonneg (by positivity),
-      smul_eq_mul]
-    exact mul_le_mul_of_nonneg_left (norm_integral_le_integral_norm _) (by positivity)
-  -- Pointwise, `‖f - f_s‖^γ ≤ (‖f - c‖ + ‖f_s - c‖)^γ ≤ 2^(γ - 1) (‖f - c‖^γ + ‖f_s - c‖^γ)`
-  -- by the convexity of `t ↦ t^γ`.
-  have hpt : ∀ x, ‖f x - m‖ ^ γ ≤ 2 ^ γ / 2 * (‖f x - c‖ ^ γ + ‖m - c‖ ^ γ) := fun x ↦ by
-    have hAB : ‖f x - m‖ ≤ ‖f x - c‖ + ‖m - c‖ := by
-      simpa using norm_sub_le (f x - c) (m - c)
-    have hconv := (convexOn_rpow hγ).2 (Set.mem_Ici.2 (norm_nonneg (f x - c)))
-      (Set.mem_Ici.2 (norm_nonneg (m - c))) (by norm_num : (0 : ℝ) ≤ 1 / 2)
-      (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
-    simp only [smul_eq_mul] at hconv
-    calc ‖f x - m‖ ^ γ ≤ (‖f x - c‖ + ‖m - c‖) ^ γ :=
-          Real.rpow_le_rpow (norm_nonneg _) hAB hγ0
-      _ = 2 ^ γ * (1 / 2 * ‖f x - c‖ + 1 / 2 * ‖m - c‖) ^ γ := by
-          rw [← Real.mul_rpow (by norm_num) (by positivity)]
-          ring_nf
-      _ ≤ 2 ^ γ * (1 / 2 * ‖f x - c‖ ^ γ + 1 / 2 * ‖m - c‖ ^ γ) := by gcongr
-      _ = _ := by ring
-  calc ⨍ x in s, ‖f x - m‖ ^ γ ∂μ
-      ≤ ⨍ x in s, 2 ^ γ / 2 * (‖f x - c‖ ^ γ + ‖m - c‖ ^ γ) ∂μ := by
-        rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul]
-        refine mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
-          (ae_of_all _ fun _ ↦ by positivity)
-          ((hfc.add (integrableOn_const hs)).const_mul _) (ae_of_all _ hpt)) (by positivity)
-    _ = 2 ^ γ / 2 * (K + ‖m - c‖ ^ γ) := by
-        rw [average_const_mul, setAverage_fun_add hfc (integrableOn_const hs),
-          setAverage_const h0 hs]
-    _ ≤ 2 ^ γ / 2 * (K + K) := by gcongr
-    _ = 2 ^ γ * K := by ring
+  have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
+  have hp0 : ENNReal.ofReal γ ≠ 0 := by simpa using hγ0
+  -- Raise the `Lᵖ` comparison `TauCeti.eLpNorm_sub_setAverage_le`, `p = γ`, to the power `γ`.
+  have h := eLpNorm_sub_setAverage_le (μ := μ) (f := f) hs (p := ENNReal.ofReal γ)
+    (by simpa using hγ) c
+  have hic : MemLp (fun x ↦ f x - c) (ENNReal.ofReal γ) (μ.restrict s) :=
+    (integrable_norm_rpow_iff (hf.sub (integrableOn_const hs)).aestronglyMeasurable hp0
+      ENNReal.ofReal_ne_top).1 (by rwa [ENNReal.toReal_ofReal hγ0.le])
+  have hia : MemLp (fun x ↦ f x - ⨍ y in s, f y ∂μ) (ENNReal.ofReal γ) (μ.restrict s) :=
+    h.trans_lt (ENNReal.mul_lt_top (by simp) hic)
+  rw [hia.eLpNorm_eq_integral_rpow_norm hp0 ENNReal.ofReal_ne_top,
+    hic.eLpNorm_eq_integral_rpow_norm hp0 ENNReal.ofReal_ne_top, ENNReal.toReal_ofReal hγ0.le,
+    ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two,
+    ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
+  have h' := Real.rpow_le_rpow (by positivity) h hγ0.le
+  rw [Real.mul_rpow zero_le_two (by positivity), ← Real.rpow_mul (by positivity),
+    ← Real.rpow_mul (by positivity), inv_mul_cancel₀ hγ0.ne', Real.rpow_one,
+    Real.rpow_one] at h'
+  generalize ⨍ y in s, f y ∂μ = m at h'
+  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, mul_left_comm]
+  exact mul_le_mul_of_nonneg_left h' (by positivity)
 
 end TauCeti

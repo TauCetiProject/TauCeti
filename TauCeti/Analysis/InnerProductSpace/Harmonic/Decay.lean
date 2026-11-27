@@ -15,6 +15,7 @@ import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Average.Oscillation
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import TauCeti.MeasureTheory.Measure.Haar.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -1054,7 +1055,7 @@ theorem norm_sub_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E) (hae : ∀ x, ‖
   have hR : 0 < R := by nlinarith [mul_pos (mul_pos ha hb) hρ]
   set ν := μ.map e.symm
   have hsub := ball_div_subset_preimage_ball hbe hb x₀ R
-  set I := ∫ x in ball x₀ R, ‖u x - c‖ ∂μ
+  set I := ∫ x in ball x₀ R, ‖u x - c‖ ∂μ with hI
   -- The mean-value bound on `ball (e⁻¹ x₀) (R / (2 b))` bounds `‖u ∘ e - c‖` there by `M`, for
   -- the Haar measure `ν`, which `e` carries to `μ`.
   set M := (ν.real (ball (0 : E') (R / b / 2)))⁻¹ *
@@ -1089,7 +1090,7 @@ theorem norm_sub_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E) (hae : ∀ x, ‖
     _ ≤ 2 ^ (n + 3) * n * ((μ.real (ball (0 : E) (R / b / 2 / a)))⁻¹ * I) * (a * ρ) / (R / b) := by
         gcongr
     _ = _ := by
-        rw [setAverage_eq, smul_eq_mul, show ∫ x in ball x₀ R, ‖u x - c‖ ∂μ = I from rfl,
+        rw [setAverage_eq, smul_eq_mul, ← hI,
           μ.addHaar_real_ball_of_pos 0 (by positivity), μ.addHaar_real_ball_of_pos x₀ hR, ← hn]
         simp only [div_pow]
         field_simp
@@ -1133,24 +1134,6 @@ private lemma two_rpow_mul_le_rpow {n : ℕ} {ρ R γ : ℝ} (hab1 : 1 ≤ a * b
     _ = (2 * (8 * t) ^ n) ^ γ := (Real.mul_rpow (by norm_num) (by positivity)).symm
     _ ≤ _ := by gcongr
 
-omit [CompleteSpace F] in
-/-- The average over `ball x₀ ρ` of a nonnegative function integrable on `ball x₀ R`, `ρ ≤ R`, is
-at most `(R / ρ)ⁿ` times its average over `ball x₀ R`. -/
-private lemma setAverage_ball_le_div_pow_mul {x₀ : E} {ρ R : ℝ} {g : E → ℝ} (hρ : 0 < ρ)
-    (hρR : ρ ≤ R) (hg : IntegrableOn g (ball x₀ R) μ) (hg0 : ∀ x, 0 ≤ g x) :
-    ⨍ x in ball x₀ ρ, g x ∂μ ≤ (R / ρ) ^ finrank ℝ E * ⨍ x in ball x₀ R, g x ∂μ := by
-  have hR : 0 < R := hρ.trans_le hρR
-  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ 0 one_pos
-  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul,
-    μ.addHaar_real_ball_of_pos x₀ hρ, μ.addHaar_real_ball_of_pos x₀ hR]
-  calc (ρ ^ finrank ℝ E * μ.real (ball 0 1))⁻¹ * ∫ x in ball x₀ ρ, g x ∂μ
-      ≤ (ρ ^ finrank ℝ E * μ.real (ball 0 1))⁻¹ * ∫ x in ball x₀ R, g x ∂μ :=
-        mul_le_mul_of_nonneg_left (setIntegral_mono_set hg (ae_of_all _ fun x ↦ hg0 x)
-          (ball_subset_ball hρR).eventuallySubset) (by positivity)
-    _ = _ := by
-        rw [div_pow]
-        field_simp
-
 /-- The `L^γ` decay for small balls, `8 a b ρ ≤ R`, from the pointwise oscillation bound and
 Jensen's inequality. -/
 private lemma setAverage_ball_norm_sub_setAverage_rpow_le_of_eight_mul_le (e : E' ≃L[ℝ] E)
@@ -1175,18 +1158,21 @@ private lemma setAverage_ball_norm_sub_setAverage_rpow_le_of_eight_mul_le (e : E
         exact norm_sub_le_of_harmonicOnNhd_comp e hae hbe hu hi c hρ h8 hz hy)
       (hi.mono_set (ball_subset_ball hρR))
     rwa [mem_closedBall, dist_eq_norm, norm_sub_rev] at h
+  have hbd : ∀ᵐ x ∂μ.restrict (ball x₀ ρ), ‖u x - m‖ ^ γ ≤ L ^ γ :=
+    (ae_restrict_mem measurableSet_ball).mono fun x hx ↦
+      Real.rpow_le_rpow (norm_nonneg _) (hdev x hx) hγ0
+  have hL : IntegrableOn (fun _ ↦ L ^ γ) (ball x₀ ρ) μ := integrableOn_const measure_ball_lt_top.ne
   have hic' : IntegrableOn (fun x ↦ u x - c) (ball x₀ R) μ :=
     hi.sub (integrableOn_const measure_ball_lt_top.ne)
-  have hA : 0 ≤ ⨍ x in ball x₀ R, ‖u x - c‖ ∂μ := by
-    rw [setAverage_eq, smul_eq_mul]
-    exact mul_nonneg (by positivity) (setIntegral_nonneg measurableSet_ball fun _ _ ↦ norm_nonneg _)
+  have hA : 0 ≤ ⨍ x in ball x₀ R, ‖u x - c‖ ∂μ := average_nonneg fun _ ↦ norm_nonneg _
   calc ⨍ x in ball x₀ ρ, ‖u x - m‖ ^ γ ∂μ
-      ≤ ⨍ _ in ball x₀ ρ, L ^ γ ∂μ := by
-        rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul]
-        refine mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
-          (ae_of_all _ fun _ ↦ by positivity) (integrableOn_const measure_ball_lt_top.ne)
-          ((ae_restrict_mem measurableSet_ball).mono fun x hx ↦ ?_)) (by positivity)
-        exact Real.rpow_le_rpow (norm_nonneg _) (hdev x hx) hγ0
+      ≤ ⨍ _ in ball x₀ ρ, L ^ γ ∂μ :=
+        average_mono_ae (hL.mono'
+          ((((hi.mono_set (ball_subset_ball hρR)).aestronglyMeasurable.sub
+            aestronglyMeasurable_const).norm.aemeasurable.pow_const γ).aestronglyMeasurable)
+          (hbd.mono fun x hx ↦
+            (Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)).trans_le hx))
+          hL hbd
     _ = (2 ^ (2 * finrank ℝ E + 3) * finrank ℝ E * (a * b) ^ (finrank ℝ E + 1) * (ρ / R)) ^ γ *
           (⨍ x in ball x₀ R, ‖u x - c‖ ∂μ) ^ γ := by
         rw [setAverage_const (measure_ball_pos μ x₀ hρ).ne' measure_ball_lt_top.ne]
@@ -1222,14 +1208,11 @@ theorem setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp (e : E
     ⨍ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ^ γ ∂μ ≤
       (2 ^ (3 * finrank ℝ E + 5) * (finrank ℝ E + 1) * (a * b) ^ (finrank ℝ E + 1) *
         (ρ / R)) ^ γ * ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ := by
-  set n := finrank ℝ E
+  set n := finrank ℝ E with hn
   have hR : 0 < R := hρ.trans_le hρR
   have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
+  have hK : 0 ≤ ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ := average_nonneg fun _ ↦ by positivity
   set K := ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ
-  have hK : 0 ≤ K := by
-    change 0 ≤ ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ
-    rw [setAverage_eq, smul_eq_mul]
-    exact mul_nonneg (by positivity) (setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity)
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In a zero-dimensional space `u` is constant, so the left side vanishes.
     rw [setAverage_eq, setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ by
@@ -1241,9 +1224,9 @@ theorem setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp (e : E
   rcases le_or_gt (8 * (a * b * ρ)) R with h8 | h8
   · refine (setAverage_ball_norm_sub_setAverage_rpow_le_of_eight_mul_le e hae hbe hab hu hi c hic
       hγ hρ hρR h8).trans (mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (by positivity) ?_ hγ0) hK)
-    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
-      (mul_le_mul (pow_le_pow_right₀ (by norm_num) (by omega)) (by linarith)
-        (Nat.cast_nonneg _) (by positivity)) (by positivity)) (by positivity)
+    have := pow_nonneg hab (n + 1)
+    rw [← hn]
+    gcongr <;> norm_num
   -- For `8 a b ρ > R`, compare with the constant `c` on `ball x₀ ρ` and enlarge the ball.
   calc ⨍ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ^ γ ∂μ
       ≤ 2 ^ γ * ⨍ x in ball x₀ ρ, ‖u x - c‖ ^ γ ∂μ :=
@@ -1251,7 +1234,7 @@ theorem setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp (e : E
           (hi.mono_set (ball_subset_ball hρR)) hγ c (hic.mono_set (ball_subset_ball hρR))
     _ ≤ 2 ^ γ * ((R / ρ) ^ n * K) := by
         gcongr
-        exact setAverage_ball_le_div_pow_mul hρ hρR hic fun _ ↦ by positivity
+        exact setAverage_ball_le hρ (ball_subset_ball hρR) hic (ae_of_all _ fun _ ↦ by positivity)
     _ ≤ _ := by
         rw [← mul_assoc]
         exact mul_le_mul_of_nonneg_right (two_rpow_mul_le_rpow hab1 hρ hR h8 hγ) hK
