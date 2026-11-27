@@ -33,6 +33,9 @@ glued along the torus `‖x.fst‖ = ‖x.snd‖`, the genus-one Heegaard splitt
 
 ## Main results
 
+* `TauCeti.sq_norm_fst_add_sq_norm_snd_eq_one`: a unit vector `x` of `WithLp 2 (F × G)` has
+  `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`; in particular `‖x.snd‖ ^ 2` lies in the unit interval
+  (`TauCeti.sq_norm_snd_mem_unitInterval`).
 * `TauCeti.frontier_setOf_norm_fst_le_norm_snd` and `TauCeti.frontier_setOf_norm_snd_le_norm_fst`:
   the frontier of each piece in the unit sphere is the set where `‖x.fst‖ = ‖x.snd‖`.
 * `TauCeti.norm_sphereProdFstLeHomeomorph_fst_eq_one_iff` and
@@ -55,16 +58,22 @@ namespace TauCeti
 
 variable {F G : Type*} [SeminormedAddCommGroup F] [SeminormedAddCommGroup G]
 
-/-- A point of the unit sphere of `WithLp 2 (F × G)` has `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`. -/
-private theorem norm_fst_sq_add_norm_snd_sq_of_mem_sphere {x : WithLp 2 (F × G)}
-    (hx : x ∈ sphere 0 1) :
-    ‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1 := by
-  rw [← WithLp.prod_norm_sq_eq_of_L2, mem_sphere_zero_iff_norm.1 hx, one_pow]
+/-- The squared norms of the two components of a unit vector of the `L²` product add up to `1`. -/
+theorem sq_norm_fst_add_sq_norm_snd_eq_one (p : sphere (0 : WithLp 2 (F × G)) 1) :
+    ‖(p : WithLp 2 (F × G)).fst‖ ^ 2 + ‖(p : WithLp 2 (F × G)).snd‖ ^ 2 = 1 := by
+  rw [← WithLp.prod_norm_sq_eq_of_L2, norm_eq_of_mem_sphere, one_pow]
+
+/-- The squared norm of the second component of a unit vector of the `L²` product lies in the unit
+interval. -/
+theorem sq_norm_snd_mem_unitInterval (p : sphere (0 : WithLp 2 (F × G)) 1) :
+    ‖(p : WithLp 2 (F × G)).snd‖ ^ 2 ∈ unitInterval := by
+  have hn := sq_norm_fst_add_sq_norm_snd_eq_one p
+  exact ⟨by positivity, by nlinarith [sq_nonneg ‖(p : WithLp 2 (F × G)).fst‖]⟩
 
 /-- On the piece `‖x.fst‖ ≤ ‖x.snd‖` of the unit sphere, the second component is nonzero. -/
 private theorem norm_snd_pos {x : WithLp 2 (F × G)} (hx : x ∈ sphere 0 1)
     (hle : ‖x.fst‖ ≤ ‖x.snd‖) : 0 < ‖x.snd‖ := by
-  have h := norm_fst_sq_add_norm_snd_sq_of_mem_sphere hx
+  have h := sq_norm_fst_add_sq_norm_snd_eq_one ⟨_, hx⟩
   refine (norm_nonneg _).lt_of_ne' fun h0 ↦ ?_
   -- If `‖x.snd‖ = 0`, then also `‖x.fst‖ = 0`, contradicting `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`.
   simp [h0, (norm_nonneg _).antisymm' (h0 ▸ hle)] at h
@@ -145,7 +154,7 @@ def sphereProdFstLeHomeomorph :
   left_inv x := by
     obtain ⟨⟨x, hx⟩, hle⟩ := x
     have h := norm_snd_pos hx hle
-    have hsum := norm_fst_sq_add_norm_snd_sq_of_mem_sphere hx
+    have hsum := sq_norm_fst_add_sq_norm_snd_eq_one ⟨_, hx⟩
     -- The normalizer of `x.fst / ‖x.snd‖` is `‖x.snd‖`, since `‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 = 1`.
     have hn : normalizer ‖‖x.snd‖⁻¹ • x.fst‖ = ‖x.snd‖ := by
       have hsq : 1 + ‖‖x.snd‖⁻¹ • x.fst‖ ^ 2 = (‖x.snd‖⁻¹) ^ 2 := by
