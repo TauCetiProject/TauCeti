@@ -129,8 +129,7 @@ theorem mem_closure_root_baseChange_iff {s : Set ι} {x : M} :
       x ∈ AddSubmonoid.closure (P.root '' s) := by
   have himage : (TensorProduct.mk R S M 1).toAddMonoidHom '' (P.root '' s) =
       (P.baseChange S).root '' s := by
-    simp only [image_image, baseChange_root]
-    rfl
+    simp only [image_image, baseChange_root, LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply]
   rw [← himage, ← AddMonoidHom.map_mclosure]
   exact AddSubmonoid.mem_map_iff_mem (P.tensorProduct_mk_injective S)
 
@@ -140,8 +139,7 @@ theorem mem_closure_coroot_baseChange_iff {s : Set ι} {y : N} :
       y ∈ AddSubmonoid.closure (P.coroot '' s) := by
   have himage : (TensorProduct.mk R S N 1).toAddMonoidHom '' (P.coroot '' s) =
       (P.baseChange S).coroot '' s := by
-    simp only [image_image, baseChange_coroot]
-    rfl
+    simp only [image_image, baseChange_coroot, LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply]
   rw [← himage, ← AddMonoidHom.map_mclosure]
   exact AddSubmonoid.mem_map_iff_mem (P.flip.tensorProduct_mk_injective S)
 
@@ -201,6 +199,9 @@ Cartan integers. -/
 @[simp]
 theorem baseChange_pairingIn [P.IsValuedIn T] (i j : ι) :
     (P.baseChange S).pairingIn T i j = P.pairingIn T i j := by
+  -- Without injectivity of the maps from T, the chosen preimage need not be unique.
+  -- Unfold pairingIn to compare the predicates from which it chooses; injectivity of
+  -- R → S identifies those predicates, so their chosen values agree.
   simp only [pairingIn]
   congr! 1
   ext t
