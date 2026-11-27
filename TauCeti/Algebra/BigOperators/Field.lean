@@ -44,6 +44,9 @@ one as `w` tends to infinity (`Finset.tendsto_prod_one_sub_mul_inv_pow`).
   field.
 * `Finset.sum_sum_erase_sub_inv_sq`: summing `(x i - x j)⁻¹ ^ 2` over ordered pairs of distinct
   indices counts every unordered pair twice.
+* `Finset.sum_sq_div_sub_sq_sum_div`: the deficit in Bergström's inequality
+  `(∑ a i) ^ 2 / ∑ b i ≤ ∑ a i ^ 2 / b i` is the sum of squares `∑ (a i - c * b i) ^ 2 / b i`
+  with `c = (∑ a i) / ∑ b i`.
 -/
 
 public section
@@ -147,5 +150,25 @@ theorem sum_sum_erase_sub_inv_sq {ι K : Type*} [LinearOrder ι] [Fintype ι]
         have hsym (i j : ι) : (x j - x i)⁻¹ ^ 2 = (x i - x j)⁻¹ ^ 2 := by
           rw [← neg_sub (x i) (x j), inv_neg, neg_sq]
         simp_rw [hsym, ← two_mul, ← mul_sum]
+
+/-- The deficit in Bergström's inequality is a sum of squares: if `b i ≠ 0` for `i ∈ s`, then
+`∑ a i ^ 2 / b i - (∑ a i) ^ 2 / ∑ b i = ∑ (a i - c * b i) ^ 2 / b i`, where
+`c = (∑ a i) / ∑ b i`. If `∑ b i = 0` then both sides equal `∑ a i ^ 2 / b i`. -/
+theorem sum_sq_div_sub_sq_sum_div {ι K : Type*} [Field K] (s : Finset ι) {a b : ι → K}
+    (hb : ∀ i ∈ s, b i ≠ 0) :
+    ∑ i ∈ s, a i ^ 2 / b i - (∑ i ∈ s, a i) ^ 2 / ∑ i ∈ s, b i =
+      ∑ i ∈ s, (a i - (∑ j ∈ s, a j) / (∑ j ∈ s, b j) * b i) ^ 2 / b i := by
+  set A := ∑ j ∈ s, a j
+  set B := ∑ j ∈ s, b j
+  -- Expand each square: `(a - c b) ^ 2 / b = a ^ 2 / b - 2 c a + c ^ 2 b`.
+  have hterm : ∀ i ∈ s, (a i - A / B * b i) ^ 2 / b i =
+      a i ^ 2 / b i - 2 * (A / B) * a i + (A / B) ^ 2 * b i := fun i hi ↦ by
+    field_simp [hb i hi]
+    ring
+  rw [sum_congr rfl hterm, sum_add_distrib, sum_sub_distrib, ← mul_sum, ← mul_sum]
+  obtain hB | hB := eq_or_ne B 0
+  · simp [hB]
+  · field_simp
+    ring
 
 end Finset

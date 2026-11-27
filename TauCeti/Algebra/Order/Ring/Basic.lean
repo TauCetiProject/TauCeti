@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Algebra.Order.GroupWithZero.Basic
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-!
 # Inequalities in ordered rings
@@ -21,11 +22,16 @@ In an ordered semiring, for `s, t ≥ 0` and `i + j ≤ M`, the product `(1 + s)
 at most `(1 + s + t) ^ M`. This combines polynomial weights in two variables into one, as in
 decay estimates in `1 + ‖ξ‖ + ‖m‖`.
 
+In a linearly ordered commutative semiring in which `a ≤ b` gives `b = a + d`, equality holds in
+the AM-GM inequality `2 * a * b ≤ a ^ 2 + b ^ 2` (Mathlib's `two_mul_le_add_sq`) only for
+`a = b`.
+
 ## Main results
 
 * `TauCeti.neg_lt_of_neg_lt_mul`: `-c < a` from `-c < a * p` for `0 ≤ c` and `1 ≤ p`.
 * `TauCeti.one_add_pow_mul_one_add_pow_le`: `(1 + s) ^ i (1 + t) ^ j ≤ (1 + s + t) ^ M` for
   `s, t ≥ 0` and `i + j ≤ M`.
+* `TauCeti.two_mul_eq_add_sq_iff`: `2 * a * b = a ^ 2 + b ^ 2` exactly when `a = b`.
 -/
 
 public section
@@ -52,5 +58,23 @@ theorem one_add_pow_mul_one_add_pow_le {α : Type*} [Semiring α] [PartialOrder 
     _ = (1 + s + t) ^ (i + j) := (pow_add _ _ _).symm
     _ ≤ (1 + s + t) ^ M :=
         pow_le_pow_right₀ ((le_add_of_nonneg_right ht).trans' (le_add_of_nonneg_right hs)) h
+
+/-- The equality case of the AM-GM inequality `2 * a * b ≤ a ^ 2 + b ^ 2`: in a linearly ordered
+commutative semiring with `ExistsAddOfLE`, equality holds exactly when `a = b`. -/
+theorem two_mul_eq_add_sq_iff {R : Type*} [CommSemiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [ExistsAddOfLE R] {a b : R} :
+    2 * a * b = a ^ 2 + b ^ 2 ↔ a = b := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ring⟩
+  -- Writing the larger of `a` and `b` as the smaller plus `d`, the hypothesis says `d ^ 2 = 0`.
+  have key {x y : R} (hxy : x ≤ y) (h : 2 * x * y = x ^ 2 + y ^ 2) : x = y := by
+    obtain ⟨d, rfl⟩ := exists_add_of_le hxy
+    have hd : 2 * x * (x + d) + d ^ 2 = 2 * x * (x + d) :=
+      calc _ = x ^ 2 + (x + d) ^ 2 := by ring
+        _ = _ := h.symm
+    rw [add_eq_left, pow_eq_zero_iff two_ne_zero] at hd
+    rw [hd, add_zero]
+  rcases le_total a b with hab | hba
+  · exact key hab h
+  · exact (key hba (by rw [mul_right_comm, h, add_comm])).symm
 
 end TauCeti
