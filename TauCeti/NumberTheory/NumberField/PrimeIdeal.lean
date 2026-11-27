@@ -165,7 +165,8 @@ noncomputable def heightOneSpectrumPrimesOverFinset : Finset (HeightOneSpectrum 
     by
       intro q₁ q₂ h
       exact Subtype.ext
-        (by simpa [heightOneSpectrumOfLiesOver] using congrArg HeightOneSpectrum.asIdeal h)⟩
+        (by simpa only [heightOneSpectrumOfLiesOver_asIdeal] using
+          congrArg HeightOneSpectrum.asIdeal h)⟩
 
 /-- Mapping `heightOneSpectrumPrimesOverFinset K p` by `HeightOneSpectrum.asIdeal` recovers
 `primesOverFinset (span {(p : ℤ)}) (𝓞 K)`. -/
@@ -175,9 +176,15 @@ theorem map_asIdeal_heightOneSpectrumPrimesOverFinset :
         ⟨HeightOneSpectrum.asIdeal, HeightOneSpectrum.asIdeal_injective⟩ =
       primesOverFinset (span {(p : ℤ)}) (𝓞 K) := by
   rw [heightOneSpectrumPrimesOverFinset, Finset.map_map]
-  convert (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).attach_map_val
-  ext q
-  rfl
+  conv_rhs => rw [← (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).attach_map_val]
+  refine congrArg (fun e ↦ Finset.map e _) (Function.Embedding.ext fun q ↦ ?_)
+  have hq := (mem_primesOverFinset_iff
+    (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)).mp q.property
+  have := hq.1
+  have := hq.2
+  dsimp only [Function.Embedding.trans_apply, Function.Embedding.coeFn_mk,
+    Function.Embedding.subtype_apply]
+  exact heightOneSpectrumOfLiesOver_asIdeal p q.val
 
 /-- A height-one prime `P` belongs to `heightOneSpectrumPrimesOverFinset K p` iff
 `(p : 𝓞 K) ∈ P.asIdeal`. -/
