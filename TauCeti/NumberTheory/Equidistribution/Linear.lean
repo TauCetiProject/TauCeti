@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Equidistribution.Weyl
 public import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Equidistribution of linear orbits on `UnitAddTorus d`
@@ -43,10 +44,9 @@ private theorem asympEquidistributed_linear_of_torusIrrational {α : UnitAddToru
     (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).mul_const (2 / ‖ζ - 1‖))
   have hterm (i : ℕ) : UnitAddTorus.mFourier k (i • α + β) = UnitAddTorus.mFourier k β * ζ ^ i :=
     by rw [UnitAddTorus.mFourier_apply_add, UnitAddTorus.mFourier_apply_nsmul, mul_comm]
-  simp_rw [hterm, ← mul_sum, geom_sum_eq hζne, norm_mul, norm_inv, Complex.norm_natCast,
-    UnitAddTorus.norm_mFourier_apply, one_mul, norm_div]
-  push_cast; gcongr; refine (norm_sub_le (ζ ^ (n + 1)) 1).trans_eq ?_
-  rw [norm_pow, UnitAddTorus.norm_mFourier_apply, one_pow, norm_one]; norm_num
+  simp_rw [hterm, ← mul_sum, norm_mul, norm_inv, Complex.norm_natCast,
+    UnitAddTorus.norm_mFourier_apply, one_mul]
+  push_cast; gcongr; exact norm_geom_sum_le (by simp [ζ]) hζne (n + 1)
 
 /-- **Equidistribution of linear orbits on `UnitAddTorus d`**: equivalence of equidistribution,
 total equidistribution, and `TorusIrrational α` for `n ↦ n • α + β` (`n : ℕ`). -/
