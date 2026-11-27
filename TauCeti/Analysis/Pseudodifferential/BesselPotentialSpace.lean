@@ -129,6 +129,9 @@ All in the namespace `TauCeti.Symbol`:
 * `toDistr_quantizeUniformBesselPotentialSpace_ofSpatial_smul_id`: the symbol `φ(x)` quantizes to
   multiplication by `φ`.
 * `toDistr_quantizeUniformBesselPotentialSpace_sharp`: `Op(a # b) = Op(a) ∘ Op(b)`.
+* `toDistr_apply_apply_eq_add_of_comp_eq_id_add`: the parametrix identity
+  `Op(b) Op(a) = 1 + Op(r)` passes from Schwartz space to bounded extensions of these operators on
+  Bessel-potential spaces, as an identity of tempered distributions.
 
 ## References
 
@@ -1287,6 +1290,45 @@ theorem HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_smu
         ha.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s hp hp_top, hq,
         SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
       exact TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq _) u
+
+
+omit [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] in
+/-- **The parametrix identity on `H^{s,p}`.** Let `p < ∞`. If `Op(b) Op(a) = 1 + Op(r)` on
+Schwartz space, then `B (T u) = u + R u` as tempered distributions, for all bounded operators
+`T : H^{σ,p} → H^{τ,p}`, `B : H^{τ,p} → H^{ρ,p}` and `R : H^{σ,p} → H^{ρ',p}` extending `Op(a)`,
+`Op(b)` and `Op(r)` from Schwartz functions, whatever their orders. -/
+theorem toDistr_apply_apply_eq_add_of_comp_eq_id_add (hp_top : p ≠ (∞ : ℝ≥0∞)) {k : ℝ}
+    {ha : a.IsUniform} {b : Symbol n W V m'} {hb : b.IsUniform} {r : Symbol n V V k}
+    {hr : r.IsUniform}
+    (hbar : quantizeUniformCLM b hb ∘L quantizeUniformCLM a ha =
+      ContinuousLinearMap.id ℂ _ + quantizeUniformCLM r hr)
+    {σ τ ρ ρ' : ℝ} {T : H^{σ, p}(CoordinateSpace n, V) →L[ℂ] H^{τ, p}(CoordinateSpace n, W)}
+    (hT : T ∘L SchwartzMap.toBesselPotentialSpaceCLM σ p =
+      SchwartzMap.toBesselPotentialSpaceCLM τ p ∘L quantizeUniformCLM a ha)
+    {B : H^{τ, p}(CoordinateSpace n, W) →L[ℂ] H^{ρ, p}(CoordinateSpace n, V)}
+    (hB : B ∘L SchwartzMap.toBesselPotentialSpaceCLM τ p =
+      SchwartzMap.toBesselPotentialSpaceCLM ρ p ∘L quantizeUniformCLM b hb)
+    {R : H^{σ, p}(CoordinateSpace n, V) →L[ℂ] H^{ρ', p}(CoordinateSpace n, V)}
+    (hR : R ∘L SchwartzMap.toBesselPotentialSpaceCLM σ p =
+      SchwartzMap.toBesselPotentialSpaceCLM ρ' p ∘L quantizeUniformCLM r hr)
+    (u : H^{σ, p}(CoordinateSpace n, V)) :
+    (B (T u)).toDistr = u.toDistr + (R u).toDistr := by
+  have key : BesselPotentialSpace.inclusion (min_le_left ρ (min σ ρ')) ∘L B ∘L T =
+      BesselPotentialSpace.inclusion ((min_le_right ρ _).trans (min_le_left σ ρ')) +
+        BesselPotentialSpace.inclusion ((min_le_right ρ _).trans (min_le_right σ ρ')) ∘L R := by
+    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun w ↦
+      BesselPotentialSpace.ext ?_
+    have hw := congrArg (fun A ↦ (A w : 𝓢'(CoordinateSpace n, V))) hbar
+    have hTw := congrArg (fun A ↦ A w) hT
+    have hBw := congrArg (fun A ↦ A (quantizeUniformCLM a ha w)) hB
+    have hRw := congrArg (fun A ↦ (A w).toDistr) hR
+    simp only [ContinuousLinearMap.comp_apply, add_apply,
+      ContinuousLinearMap.id_apply, map_add, SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+      at hw hTw hBw hRw
+    simp only [ContinuousLinearMap.comp_apply, add_apply,
+      BesselPotentialSpace.toDistr_add, BesselPotentialSpace.toDistr_inclusion, hTw, hBw, hRw,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM, hw]
+  simpa using congrArg (fun A ↦ (A u).toDistr) key
 
 end Operator
 
