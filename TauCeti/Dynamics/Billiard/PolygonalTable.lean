@@ -13,6 +13,7 @@ import Mathlib.Analysis.Convex.Between
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.Normed.Module.FilledHull
+import TauCeti.Analysis.Convex.Topology
 
 /-!
 # Polygonal billiard tables
@@ -223,6 +224,11 @@ theorem frontier_eq_iUnion_side : frontier T.carrier = ⋃ s, T.side s := by
 theorem side_subset_frontier (s : T.Side) : T.side s ⊆ frontier T.carrier :=
   T.frontier_eq_iUnion_side ▸ subset_iUnion T.side s
 
+/-- A side is closed. -/
+theorem isClosed_side (s : T.Side) : IsClosed (T.side s) := by
+  rw [side_eq_segment]
+  exact (isCompact_segment ℝ _ _).isClosed
+
 /-- Every side lies in the table. -/
 theorem side_subset_carrier (s : T.Side) : T.side s ⊆ T.carrier :=
   (T.side_subset_frontier s).trans T.isClosed_carrier.frontier_subset
@@ -318,6 +324,16 @@ theorem sideInterior_eq_side_sdiff_vertexSet (s : T.Side) :
   rw [side_eq_segment] at hx
   exact mem_openSegment_of_ne_left_right (fun h => hxv (h ▸ s.start_mem_vertexSet))
     (fun h => hxv (h ▸ s.finish_mem_vertexSet)) hx
+
+/-- A point of the relative interior of a side lies on no other side. -/
+theorem notMem_side_of_mem_sideInterior {s t : T.Side} {p : ℂ} (hp : p ∈ T.sideInterior s)
+    (hst : t ≠ s) : p ∉ T.side t := by
+  intro ht
+  have hpv := Set.disjoint_left.1 (T.disjoint_sideInterior_vertexSet s) hp
+  have hpt : p ∈ T.sideInterior t := by
+    rw [sideInterior_eq_side_sdiff_vertexSet]
+    exact ⟨ht, hpv⟩
+  exact hst (T.eq_of_mem_sideInterior hpt hp)
 
 /-- The relative interiors of the sides cover the frontier of the table off its vertices. -/
 theorem iUnion_sideInterior : ⋃ s, T.sideInterior s = frontier T.carrier \ T.vertexSet := by
