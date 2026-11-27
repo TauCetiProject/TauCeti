@@ -246,6 +246,74 @@ theorem measureReal_preimage_le {Ω α β : Type*}
       exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb).2 hx
     _ = ENNReal.ofReal b := by simp
 
+/-- For two independent variables, a uniform bound on the sections outside an exceptional
+event bounds the joint probability up to the outer probability of that event. -/
+theorem measureReal_preimage_le_add {Ω α β : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    {P : Measure Ω} [IsProbabilityMeasure P] {X : Ω → α} {Y : Ω → β}
+    (hXY : IndepFun X Y P) (hX : AEMeasurable X P) (hY : AEMeasurable Y P)
+    {s : Set (α × β)} (hs : MeasurableSet s) {b : ℝ} (hb : 0 ≤ b) {bad : Set Ω}
+    (h : ∀ ω ∉ bad, P.real (Y ⁻¹' (Prod.mk (X ω) ⁻¹' s)) ≤ b) :
+    P.real ((fun ω ↦ (X ω, Y ω)) ⁻¹' s) ≤ b + P.real bad := by
+  let := (Measure.isProbabilityMeasure_map_iff hX).2 ‹IsProbabilityMeasure P›
+  let := (Measure.isProbabilityMeasure_map_iff hY).2 ‹IsProbabilityMeasure P›
+  let f (x : α) := P.map Y (Prod.mk x ⁻¹' s)
+  let t : Set α := {x | ENNReal.ofReal b < f x}
+  have ht : MeasurableSet t := measurableSet_lt measurable_const (measurable_measure_prodMk_left hs)
+  have htbad : X ⁻¹' t ⊆ bad := by
+    intro ω hω
+    by_contra hgood
+    have hle := (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb).2 (h ω hgood)
+    have hmap : f (X ω) = P (Y ⁻¹' (Prod.mk (X ω) ⁻¹' s)) :=
+      Measure.map_apply_of_aemeasurable hY (hs.preimage measurable_prodMk_left)
+    exact (show ENNReal.ofReal b < f (X ω) from hω).not_ge (hmap.trans_le hle)
+  have hmajor (x : α) : f x ≤ ENNReal.ofReal b + t.indicator (fun _ ↦ 1) x := by
+    by_cases hx : x ∈ t
+    · rw [Set.indicator_of_mem hx]
+      exact (prob_le_one : P.map Y _ ≤ 1).trans (le_add_left le_rfl)
+    · rw [Set.indicator_of_notMem hx, add_zero]
+      exact le_of_not_gt hx
+  rw [← map_measureReal_apply_of_aemeasurable (hX.prodMk hY) hs,
+    hXY.map_prod_eq_prod_map_map hX hY]
+  have hbound : (P.map X).prod (P.map Y) s ≤ ENNReal.ofReal b + P bad := by
+    rw [Measure.prod_apply hs]
+    refine (lintegral_mono hmajor).trans ?_
+    rw [lintegral_add_left measurable_const, lintegral_const, lintegral_indicator_const ht,
+      measure_univ, mul_one, one_mul, Measure.map_apply_of_aemeasurable hX ht]
+    exact add_le_add le_rfl (measure_mono htbad)
+  simpa [measureReal_def, ENNReal.toReal_add ENNReal.ofReal_ne_top (measure_ne_top _ _), hb] using
+    ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top, measure_ne_top _ _⟩) hbound
+
+/-- A lower bound on the sections over a measurable set of first coordinates gives
+a joint-event lower bound weighted by the probability of that set. -/
+theorem mul_measureReal_preimage_le {Ω α β : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    {P : Measure Ω} [IsFiniteMeasure P] {X : Ω → α} {Y : Ω → β}
+    (hXY : IndepFun X Y P) (hX : AEMeasurable X P) (hY : AEMeasurable Y P)
+    {s : Set (α × β)} (hs : MeasurableSet s) {u : Set α} (hu : MeasurableSet u) {b : ℝ}
+    (h : ∀ x ∈ u, b ≤ P.real (Y ⁻¹' (Prod.mk x ⁻¹' s))) :
+    b * P.real (X ⁻¹' u) ≤ P.real ((fun ω ↦ (X ω, Y ω)) ⁻¹' s) := by
+  by_cases hb : 0 ≤ b
+  swap
+  · exact (mul_nonpos_of_nonpos_of_nonneg (le_of_not_ge hb) measureReal_nonneg).trans
+      measureReal_nonneg
+  rw [← map_measureReal_apply_of_aemeasurable (hX.prodMk hY) hs,
+    hXY.map_prod_eq_prod_map_map hX hY]
+  have hsub (x : α) : u.indicator (fun _ ↦ ENNReal.ofReal b) x ≤ P.map Y (Prod.mk x ⁻¹' s) := by
+    by_cases hx : x ∈ u
+    · rw [Set.indicator_of_mem hx, Measure.map_apply_of_aemeasurable hY
+        (hs.preimage measurable_prodMk_left)]
+      rw [← ENNReal.ofReal_toReal (measure_ne_top P (Y ⁻¹' (Prod.mk x ⁻¹' s)))]
+      exact ENNReal.ofReal_le_ofReal (h x hx)
+    · rw [Set.indicator_of_notMem hx]
+      exact bot_le
+  have hbound : ENNReal.ofReal b * P (X ⁻¹' u) ≤ (P.map X).prod (P.map Y) s := by
+    rw [Measure.prod_apply hs, ← Measure.map_apply_of_aemeasurable hX hu,
+      ← lintegral_indicator_const hu]
+    exact lintegral_mono hsub
+  simpa [measureReal_def, ENNReal.toReal_mul, hb] using
+    ENNReal.toReal_mono (measure_ne_top _ _) hbound
+
 /-- For independent random variables, a uniform bound on the probabilities of the sections
 of a measurable set in the product space bounds the measure of that set by the bound times
 the mass of the underlying measure. -/
