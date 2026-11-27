@@ -67,13 +67,8 @@ theorem exists_mem_linearOrderClass_not_isoSetoid_bfEquivSetoid {β : Ordinal.{0
       (isPrincipal_mul_omega 1 hω (hδω.trans omega0_lt_omega_one))
   obtain ⟨e₁⟩ := hcode 1 zero_lt_one one_lt_omega0
   obtain ⟨e₂⟩ := hcode 2 zero_lt_two (natCast_lt_omega0 2)
-  refine ⟨e₁.encodeVia, ?_, e₂.encodeVia, ?_, ?_, ?_⟩
-  · rw [mem_linearOrderClass, ← mem_modelsOfTheory_linearOrderTheory,
-      e₁.encodeVia_mem_modelsOfTheory_iff]
-    infer_instance
-  · rw [mem_linearOrderClass, ← mem_modelsOfTheory_linearOrderTheory,
-      e₂.encodeVia_mem_modelsOfTheory_iff]
-    infer_instance
+  refine ⟨e₁.encodeVia, e₁.encodeVia_mem_linearOrderClass, e₂.encodeVia,
+    e₂.encodeVia_mem_linearOrderClass, ?_, ?_⟩
   · rw [Equiv.isoSetoid_encodeVia_iff]
     rintro ⟨f⟩
     have := StrongHomClass.toOrderIsoClass Language.order _ _
