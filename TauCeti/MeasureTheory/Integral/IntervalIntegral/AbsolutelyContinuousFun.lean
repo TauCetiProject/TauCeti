@@ -50,7 +50,11 @@ fundamental-theorem results to curves.
 * `ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable`: a continuous curve
   with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
-  with base point in the integrability interval are absolutely continuous in any real normed space.
+  with base point in the integrability interval are absolutely continuous in any real normed space;
+  `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_left` and
+  `IntervalIntegrable.ae_hasDerivAt_intervalIntegral_left` treat a variable lower limit, and
+  `IntervalIntegrable.comp_intervalIntegral_left_eq_add_integral` is the resulting chain rule for
+  `φ (∫ r in s..c, k r)`.
 * `IntervalIntegrable.integral_mul_pow_integral`: for a real `g` with primitive `G` based at `c`,
   `∫ s in c..d, g s * G s ^ k = G d ^ (k + 1) / (k + 1)`;
   `IntervalIntegrable.abs_integral_mul_abs_pow_integral` is its form with `|G|` for nonnegative `g`.
@@ -289,6 +293,45 @@ theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'
   rw [dist_eq_norm, intervalIntegral.integral_interval_sub_left hx hy,
     Real.dist_eq, intervalIntegral.integral_interval_sub_left hx.norm hy.norm]
   exact intervalIntegral.norm_integral_le_abs_integral_norm
+
+/-- An interval integral with variable lower limit is absolutely continuous on the integrability
+interval, provided its fixed upper limit belongs to that interval. -/
+theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_left
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : ℝ → F} {a b c : ℝ} (hf : IntervalIntegrable f volume a b) (hc : c ∈ uIcc a b) :
+    AbsolutelyContinuousOnInterval (fun t ↦ ∫ v in t..c, f v) a b := by
+  simpa only [intervalIntegral.integral_symm c, Pi.neg_def] using
+    (hf.absolutelyContinuousOnInterval_intervalIntegral' hc).neg
+
+/-- An interval integral with variable lower limit has derivative `-f t` at almost every `t` of
+the integrability interval, provided its fixed upper limit belongs to that interval. -/
+theorem IntervalIntegrable.ae_hasDerivAt_intervalIntegral_left
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {f : ℝ → F} {a b c : ℝ} (hf : IntervalIntegrable f volume a b) (hc : c ∈ uIcc a b) :
+    ∀ᵐ t, t ∈ uIcc a b → HasDerivAt (fun t ↦ ∫ v in t..c, f v) (-f t) t := by
+  filter_upwards [hf.ae_hasDerivAt_integral] with t ht hmem
+  simpa only [intervalIntegral.integral_symm c, Pi.neg_def] using (ht hmem c hc).neg
+
+/-- **The chain rule for an interval integral with variable lower limit.** If `k` is interval
+integrable on `a..b`, `c, s ∈ uIcc a b`, and `φ` is `C¹` with derivative `φ'`, then
+`φ (∫ r in s..c, k r) = φ 0 + ∫ r in s..c, k r * φ' (∫ u in r..c, k u)`. -/
+theorem IntervalIntegrable.comp_intervalIntegral_left_eq_add_integral {k : ℝ → ℝ} {a b c : ℝ}
+    (hk : IntervalIntegrable k volume a b) (hc : c ∈ uIcc a b) {φ φ' : ℝ → ℝ}
+    (hφ : ContDiff ℝ 1 φ) (hφ' : ∀ x, HasDerivAt φ (φ' x) x) {s : ℝ} (hs : s ∈ uIcc a b) :
+    φ (∫ r in s..c, k r) = φ 0 + ∫ r in s..c, k r * φ' (∫ u in r..c, k u) := by
+  have hsub : uIcc s c ⊆ uIcc a b := uIcc_subset_uIcc hs hc
+  have hac : AbsolutelyContinuousOnInterval (φ ∘ fun s ↦ ∫ r in s..c, k r) s c :=
+    ((hk.absolutelyContinuousOnInterval_intervalIntegral_left hc).mono hsub).comp_of_contDiffAt
+      fun x _ ↦ hφ.contDiffAt
+  have hint := hac.integral_eq_sub_of_ae_hasDerivAt
+    (V := fun r ↦ φ' (∫ u in r..c, k u) * -k r) ?_
+  · simp only [Function.comp_apply, intervalIntegral.integral_same] at hint
+    rw [← sub_eq_iff_eq_add', ← neg_sub, ← hint, ← intervalIntegral.integral_neg]
+    congr 1
+    ext r
+    ring
+  · filter_upwards [hk.ae_hasDerivAt_intervalIntegral_left hc] with r hr hmem
+    exact (hφ' _).comp r (hr (hsub (uIoc_subset_uIcc hmem)))
 
 /-- For `g` interval integrable on `c..d`, with primitive `G s = ∫ u in c..s, g u`, the integral
 of `g * G ^ k` over `c..d` is `G d ^ (k + 1) / (k + 1)`, whatever the order of `c` and `d`. This

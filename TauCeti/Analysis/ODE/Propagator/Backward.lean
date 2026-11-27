@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.Propagator
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
@@ -16,8 +17,8 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 For a coefficient `P` integrable on `[a, b]` and `t ∈ [a, b]`, the propagator `s ↦ N_P(t, s)` is
 absolutely continuous on `[a, b]` (`TauCeti.absolutelyContinuousOnInterval_propagator_right`):
-it is `N_P(t, a) N_P(s, a)⁻¹`, and the inverse is smooth on the units. In a finite-dimensional
-space its almost-everywhere derivative `-N_P(t, s) P(s)` integrates to the backward integral
+it is `N_P(t, a) N_P(s, a)⁻¹`, and the inverse is smooth on the units. Its almost-everywhere
+derivative `-N_P(t, s) P(s)` integrates to the backward integral
 equation `N_P(t, s) = 1 + ∫ r in s..t, N_P(t, r) ∘L P r`
 (`TauCeti.propagator_eq_one_add_integral_right`).
 -/
@@ -51,22 +52,31 @@ theorem absolutelyContinuousOnInterval_propagator_right (hP : IntegrableOn P (Ic
     hinv).congr fun r hr ↦ ?_
   exact propagator_comp_propagator hP ha (hmem hr) ht
 
-/-- **The backward integral equation.** If `P` is integrable on `[a, b]` with values in a
-finite-dimensional space of operators and `s, t ∈ [a, b]`, then
+/-- **The backward integral equation.** If `P` is integrable on `[a, b]` and `s, t ∈ [a, b]`, then
 `N_P(t, s) = 1 + ∫ r in s..t, N_P(t, r) ∘L P r`. -/
-theorem propagator_eq_one_add_integral_right [FiniteDimensional ℝ (E →L[𝕜] E)]
-    (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+theorem propagator_eq_one_add_integral_right (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) :
     propagator P t s = 1 + ∫ r in s..t, propagator P t r ∘L P r := by
   have hac := (absolutelyContinuousOnInterval_propagator_right hP ht).mono
     (uIcc_subset_uIcc (mem_uIcc_of_le hs.1 hs.2) (mem_uIcc_of_le ht.1 ht.2))
-  have hint := hac.integral_eq_sub_of_ae_hasDerivAt
-    (V := fun r ↦ -(propagator P t r ∘L P r)) ?_
-  · rw [propagator_self, intervalIntegral.integral_neg] at hint
-    rw [← neg_neg (∫ r in s..t, propagator P t r ∘L P r), hint]
-    abel
-  · filter_upwards [ae_hasDerivAt_propagator_right hP ht, Measure.ae_ne volume a,
+  have hI : IntervalIntegrable (fun r ↦ propagator P t r ∘L P r) volume s t :=
+    ((IntegrableOn.continuousOn_mul (continuousOn_propagator_right hP ht) hP
+      isCompact_Icc).mono_set (uIcc_subset_Icc hs ht)).intervalIntegrable
+  have hV : ∀ᵐ r, r ∈ uIoc s t →
+      HasDerivAt (fun r ↦ propagator P t r) (-(propagator P t r ∘L P r)) r := by
+    filter_upwards [ae_hasDerivAt_propagator_right hP ht, Measure.ae_ne volume a,
       Measure.ae_ne volume b] with r hr hra hrb hmem
     have hr' := uIcc_subset_Icc hs ht (uIoc_subset_uIcc hmem)
     exact hr ⟨lt_of_le_of_ne hr'.1 (Ne.symm hra), lt_of_le_of_ne hr'.2 hrb⟩
+  -- The fundamental theorem of calculus, tested against every continuous linear functional.
+  have hint :
+      ∫ r in s..t, -(propagator P t r ∘L P r) = propagator P t t - propagator P t s := by
+    refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun g ↦ ?_
+    rw [← g.intervalIntegral_comp_comm (f := fun r ↦ -(propagator P t r ∘L P r)) hI.neg,
+      map_sub]
+    simpa [g.fderiv] using hac.integral_fderiv_apply_eq_sub hV g.contDiff
+  rw [propagator_self, intervalIntegral.integral_neg] at hint
+  rw [← neg_neg (∫ r in s..t, propagator P t r ∘L P r), hint]
+  abel
 
 end TauCeti

@@ -482,11 +482,8 @@ theorem diracScatteringMatrix_apply_eq_add_integral (hq : IntegrableOn q (uIcc 0
     fun s ↦ T (diracScatteringCoeff q z s)
   have hP : IntegrableOn P (uIcc 0 t) := integrableOn_toEuclideanCLM_diracScatteringCoeff hq z
   -- The entry functional `X ↦ (X e_j)_i` on operators.
-  let L : (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2)) →L[ℂ] ℂ :=
-    (EuclideanSpace.proj i).comp
-      (ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin 2)) (EuclideanSpace.single j 1))
-  have hL (A : Matrix (Fin 2) (Fin 2) ℂ) : L (T A) = A i j := by
-    simp [L, T]
+  set L := euclideanEntryCLM ℂ i j
+  have hL (A : Matrix (Fin 2) (Fin 2) ℂ) : L (T A) = A i j := euclideanEntryCLM_toEuclideanCLM i j A
   have hI : IntervalIntegrable (fun u ↦ P u ∘L propagator P u 0) volume 0 t :=
     hP.intervalIntegrable_clm_comp (continuousOn_propagator_left hP left_mem_uIcc)
       left_mem_uIcc right_mem_uIcc
