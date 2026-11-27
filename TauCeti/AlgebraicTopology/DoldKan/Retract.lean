@@ -30,6 +30,7 @@ projection `CategoryTheory.Idempotents.DoldKan.PInftyToN`, the bundled retract
   factorization of `N.map f` and `PInfty ≫ K.map f`.
 * `CategoryTheory.Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`: chain homotopy
   equivalence `N.obj X ≃ K[X]`.
+* `CategoryTheory.Idempotents.DoldKan.N.fullyFaithful`: full faithfulness of `N`.
 -/
 
 public noncomputable section
@@ -189,5 +190,17 @@ lemma homotopyEquivNAlternatingFaceMapComplex_hom (X : SimplicialObject C) :
 @[simp]
 lemma homotopyEquivNAlternatingFaceMapComplex_inv (X : SimplicialObject C) :
     (homotopyEquivNAlternatingFaceMapComplex X).inv = PInftyToN.app X := (rfl)
+
+/-- The pseudoabelian Dold–Kan normalized chain functor `N` is fully faithful. -/
+def N.fullyFaithful : (N (C := C)).FullyFaithful :=
+  (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
+
+/-- The pseudoabelian Dold–Kan normalized chain functor `N` is full. -/
+instance N.full : (N (C := C)).Full :=
+  N.fullyFaithful.full
+
+/-- The pseudoabelian Dold–Kan normalized chain functor `N` is faithful. -/
+instance N.faithful : (N (C := C)).Faithful :=
+  N.fullyFaithful.faithful
 
 end CategoryTheory.Idempotents.DoldKan

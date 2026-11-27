@@ -82,10 +82,8 @@ def N.constIso : SimplicialObject.const C ⋙ N ≅ ChainComplex.single₀ C :=
     simp only [Functor.comp_map, HomologicalComplex.comp_f, ChainComplex.single₀_map_f_zero,
       N.constIsoApp, HomologicalComplex.Hom.isoOfComponents_hom_f, Iso.trans_hom,
       ChainComplex.single₀ObjXSelf]
-    have hnat := congrArg (fun φ : N.obj ((SimplicialObject.const C).obj X) ⟶
-        (AlgebraicTopology.alternatingFaceMapComplex C).obj ((SimplicialObject.const C).obj Y) ↦
-          φ.f 0)
-      (inclusionN.naturality ((SimplicialObject.const C).map f))
+    have hnat :=
+      HomologicalComplex.congr_hom (inclusionN.naturality ((SimplicialObject.const C).map f)) 0
     simp only [HomologicalComplex.comp_f,
       AlgebraicTopology.alternatingFaceMapComplex_map_f] at hnat
     simpa using hnat

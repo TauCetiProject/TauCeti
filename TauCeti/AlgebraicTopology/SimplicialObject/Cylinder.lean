@@ -230,25 +230,25 @@ def ofCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y}
     have hα : SimplexCategory.δ (Fin.last (n + 1)) ≫
           SimplexCategory.toMk₁ (Fin.last n).succ.castSucc =
         SimplexCategory.const ⦋n⦌ ⦋1⦌ 0 := by
-      rw [SimplexCategory.δ_comp_toMk₁_of_le _ _ (by simp), ← SimplexCategory.toMk₁_last n]
-      congr 1
+      rw [SimplexCategory.δ_comp_toMk₁_of_le _ _ (by simp), Fin.castPred_castSucc,
+        Fin.succ_last, SimplexCategory.toMk₁_last n]
     rw [hα, ← cylinderι₀_app_app, ← NatTrans.comp_app, h₀]
   h_succ_comp_δ_castSucc_of_lt i j hij := by
     rw [Category.assoc, Category.assoc, ← SimplicialObject.δ_naturality Φ, cylinderι_δ_assoc,
       X.δ_comp_σ_of_le_assoc hij,
-      SimplexCategory.δ_comp_toMk₁_of_lt _ _ (by simp [Fin.lt_def, Fin.le_def] at hij ⊢; lia)]
-    congr 4
+      SimplexCategory.δ_comp_toMk₁_of_lt _ _ (by simp [Fin.lt_def, Fin.le_def] at hij ⊢; lia),
+      Fin.pred_castSucc_succ]
   h_succ_comp_δ_castSucc_succ j := by
     simp only [Category.assoc, ← SimplicialObject.δ_naturality Φ, cylinderι_δ_assoc]
     rw [X.δ_comp_σ_self'_assoc (by simp), X.δ_comp_σ_succ_assoc,
       SimplexCategory.δ_comp_toMk₁_of_lt _ _ (by simp),
-      SimplexCategory.δ_comp_toMk₁_of_le _ _ (by simp)]
-    congr 3
+      SimplexCategory.δ_comp_toMk₁_of_le _ _ (by simp),
+      Fin.pred_castSucc_succ, Fin.castPred_castSucc, Fin.castSucc_succ]
   h_castSucc_comp_δ_succ_of_lt i j hji := by
     rw [Category.assoc, Category.assoc, ← SimplicialObject.δ_naturality Φ, cylinderι_δ_assoc,
       X.δ_comp_σ_of_gt_assoc hji,
-      SimplexCategory.δ_comp_toMk₁_of_le _ _ (by simp [Fin.lt_def, Fin.le_def] at hji ⊢; lia)]
-    congr 4
+      SimplexCategory.δ_comp_toMk₁_of_le _ _ (by simp [Fin.lt_def, Fin.le_def] at hji ⊢; lia),
+      Fin.castPred_castSucc, Fin.castSucc_succ]
   h_comp_σ_castSucc_of_le i j hij := by
     rw [Category.assoc, Category.assoc, ← SimplicialObject.σ_naturality Φ, cylinderι_σ_assoc,
       X.σ_comp_σ_assoc hij,

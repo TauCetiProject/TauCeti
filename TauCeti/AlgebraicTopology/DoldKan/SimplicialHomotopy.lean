@@ -134,9 +134,6 @@ open Idempotents.DoldKan
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
   [IsIdempotentComplete C]
 
-private def fullyFaithfulN : (N (C := C)).FullyFaithful :=
-  (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
-
 namespace Homotopy
 
 /-- In an idempotent-complete preadditive category with finite coproducts, any chain homotopy
@@ -148,10 +145,10 @@ def ofAlternatingFaceMapComplexHomotopy {X Y : SimplicialObject C} {f g : X ⟶ 
     Homotopy f g := by
   let Ψ : N.obj ((cylinder C).obj X) ⟶ N.obj Y :=
     inclusionN.app ((cylinder C).obj X) ≫ cylinderChainMap H ≫ PInftyToN.app Y
-  let Φ : (cylinder C).obj X ⟶ Y := fullyFaithfulN.preimage Ψ
-  have hΦ : N.map Φ = Ψ := fullyFaithfulN.map_preimage Ψ
+  let Φ : (cylinder C).obj X ⟶ Y := N.fullyFaithful.preimage Ψ
+  have hΦ : N.map Φ = Ψ := N.fullyFaithful.map_preimage Ψ
   refine ofCylinderHom Φ ?_ ?_ <;>
-    · apply fullyFaithfulN.map_injective
+    · apply N.fullyFaithful.map_injective
       rw [Functor.map_comp, hΦ]
       dsimp [Ψ]
       rw [inclusionN.naturality_assoc]
@@ -240,8 +237,8 @@ def ofAlternatingFaceMapComplexHomotopyEquiv {X Y : SimplicialObject C} (f : X �
     (he : e.hom = (alternatingFaceMapComplex C).map f) :
     HomotopyEquiv X Y := by
   let gN : N.obj Y ⟶ N.obj X := inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X
-  let g : Y ⟶ X := fullyFaithfulN.preimage gN
-  have hg : N.map g = gN := fullyFaithfulN.map_preimage gN
+  let g : Y ⟶ X := N.fullyFaithful.preimage gN
+  have hg : N.map g = gN := N.fullyFaithful.map_preimage gN
   refine
     { hom := f
       inv := g
@@ -262,6 +259,27 @@ lemma ofAlternatingFaceMapComplexHomotopyEquiv_hom {X Y : SimplicialObject C} (f
       ((alternatingFaceMapComplex C).obj Y))
     (he : e.hom = (alternatingFaceMapComplex C).map f) :
     (ofAlternatingFaceMapComplexHomotopyEquiv f e he).hom = f := (rfl)
+
+/-- The inverse morphism of `ofAlternatingFaceMapComplexHomotopyEquiv f e he` is the preimage
+under `N.fullyFaithful` of `inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X`. -/
+@[simp]
+lemma ofAlternatingFaceMapComplexHomotopyEquiv_inv {X Y : SimplicialObject C} (f : X ⟶ Y)
+    (e : _root_.HomotopyEquiv ((alternatingFaceMapComplex C).obj X)
+      ((alternatingFaceMapComplex C).obj Y))
+    (he : e.hom = (alternatingFaceMapComplex C).map f) :
+    (ofAlternatingFaceMapComplexHomotopyEquiv f e he).inv =
+      N.fullyFaithful.preimage (inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X) :=
+  (rfl)
+
+/-- The inverse morphism of `ofAlternatingFaceMapComplexHomotopyEquiv f e he` maps under `N` to
+`inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X`. -/
+lemma N_map_ofAlternatingFaceMapComplexHomotopyEquiv_inv {X Y : SimplicialObject C} (f : X ⟶ Y)
+    (e : _root_.HomotopyEquiv ((alternatingFaceMapComplex C).obj X)
+      ((alternatingFaceMapComplex C).obj Y))
+    (he : e.hom = (alternatingFaceMapComplex C).map f) :
+    N.map (ofAlternatingFaceMapComplexHomotopyEquiv f e he).inv =
+      inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X :=
+  N.fullyFaithful.map_preimage _
 
 end HomotopyEquiv
 
