@@ -503,16 +503,6 @@ open scoped Distributions Gradient
 
 variable {γ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {ν : EuclideanSpace ℝ (Fin (n + 1))} {K : ℝ≥0}
 
-/-- The shear `Φ = shearAlong γ ν` by a function with `‖Dγ‖ ≤ K` maps the open ball of radius `r`
-about `y₀` into the open ball of radius `(1 + K) r` about `Φ y₀`. -/
-private theorem dist_shearAlong_lt (hν : ‖ν‖ = 1) (hγ : Differentiable ℝ γ)
-    (hK : ∀ x, ‖fderiv ℝ γ x‖ ≤ K) {y y₀ : E} {r : ℝ} (hy : dist y y₀ < r) :
-    dist (shearAlong γ ν y) (shearAlong γ ν y₀) < (1 + K) * r := by
-  have hγL : LipschitzWith K γ := lipschitzWith_of_nnNorm_fderiv_le hγ fun x => by
-    rw [← NNReal.coe_le_coe, coe_nnNorm]
-    exact hK x
-  exact (dist_shearAlong_le hν.le hγL le_rfl).trans_lt (by gcongr)
-
 /-- **The flattened local solution.** Let `U ⊆ Ω` be open, `U' = Φ⁻¹(U)` for the shear
 `Φ = shearAlong γ ν`, and let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in `Ω`, tested
 against test functions, with `a` bounded on `U` and `G ∈ L²(U)`. Then some `v ∈ H¹(U')` has value
@@ -606,7 +596,8 @@ private theorem exists_w1p0_value_ae_eq_mul_of_shearAlong (hν : ‖ν‖ = 1)
     with y h1 h2 h3 h4 h5
   rw [h1, h2, h3, h4, h5]
   by_cases hy : y ∈ tsupport χ
-  · have h := dist_shearAlong_lt hν hγ hK (hχs hy)
+  · have h := dist_shearAlong_lt hν.le
+      (lipschitzWith_of_nnNorm_fderiv_le hγ fun x => by exact_mod_cast hK x) (hχs hy)
     rw [shearAlong_shearAlong_neg hγν] at h
     rw [hψ1 (ball_subset_closedBall (h.trans_le hr)), Pi.one_apply, one_mul]
   · rw [image_eq_zero_of_notMem_tsupport hy, zero_mul, zero_mul]
@@ -622,7 +613,8 @@ private theorem preimage_inter_ball_inter_ball_eq (hν : ‖ν‖ = 1) (hγ : Di
       {y | 0 < ⟪y, ν⟫_ℝ} ∩ ball (shearAlong (-γ) ν x₀) r := by
   refine Set.ext fun y => and_congr_left fun hy => ?_
   have hb : shearAlong γ ν y ∈ ball x₀ ρ := by
-    have h := dist_shearAlong_lt hν hγ hK hy
+    have h := dist_shearAlong_lt hν.le
+      (lipschitzWith_of_nnNorm_fderiv_le hγ fun x => by exact_mod_cast hK x) hy
     rw [shearAlong_shearAlong_neg hγν] at h
     exact h.trans_le hr
   rw [mem_preimage, mem_inter_iff, and_iff_left hb, SetLike.mem_coe, hΩ _ hb, mem_ofPred_eq,
@@ -638,7 +630,8 @@ private theorem preimage_inter_ball_subset (hν : ‖ν‖ = 1) (hγ : Different
       shearAlong γ ν ⁻¹' ((Ω : Set E) ∩ ball x₀ ρ) ∩ ball (shearAlong (-γ) ν x₀) s :=
   fun y ⟨hyΩ, hyb⟩ => by
     refine ⟨⟨hyΩ, ball_subset_ball hr hyb⟩, ?_⟩
-    have h := dist_shearAlong_lt hν hγ.neg (fun x => by rw [fderiv_neg, norm_neg]; exact hK x) hyb
+    have h := dist_shearAlong_lt hν.le (lipschitzWith_of_nnNorm_fderiv_le hγ.neg fun x => by
+      rw [fderiv_neg, nnNorm_neg]; exact_mod_cast hK x) hyb
     rw [shearAlong_neg_shearAlong hγν] at h
     exact h.trans_le hrs
 
