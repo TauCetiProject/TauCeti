@@ -39,10 +39,7 @@ theorem one_tmul (ha : IsSkewPrimitiveElem R g h a) :
     IsSkewPrimitiveElem A ((1 : A) ⊗ₜ[R] g) ((1 : A) ⊗ₜ[R] h) ((1 : A) ⊗ₜ[R] a) where
   counit_eq_zero := by simp [ha.counit_eq_zero]
   comul_eq_tmul_add_tmul := by
-    rw [TauCeti.Coalgebra.baseChange_comul_tmul, ha.comul_eq_tmul_add_tmul,
-      TensorProduct.tmul_add, map_add,
-      TensorProduct.AlgebraTensorModule.distribBaseChange_tmul,
-      TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
+    simp [ha.comul_eq_tmul_add_tmul, TensorProduct.tmul_add]
 
 end Coalgebra.IsSkewPrimitiveElem
 

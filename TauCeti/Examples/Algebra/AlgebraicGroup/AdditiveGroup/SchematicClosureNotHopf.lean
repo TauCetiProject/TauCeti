@@ -150,14 +150,12 @@ theorem not_exists_hopfIdeal_closureIdeal_lineHopfIdeal {s : K} (hs : s * s = 2)
       J.toIdeal = SchematicClosure.closureIdeal K (lineHopfIdeal s).toIdeal := by
   rintro ⟨J, hJ⟩
   by_cases h8 : (8 : K) = 0
-  · -- If `8 = 0` in `K`, then `8 ∈ I^♮`, but the counit of `8` is `8 ≠ 0`.
-    have h8' : ((8 : ℕ) : K ⊗[ℤ] PlaneCoordinateRing) = 0 := by
-      simpa only [map_ofNat, map_zero, Nat.cast_ofNat] using
-        congrArg (algebraMap K (K ⊗[ℤ] PlaneCoordinateRing)) h8
+  · -- If `8 = 0` in `K`, then `1 ⊗ 8 = 8 ⊗ 1 = 0` in `K ⊗_ℤ ℤ[x, y]`, so `8 ∈ I^♮`, but the
+    -- counit of `8` is `8 ≠ 0`.
     have h : ((8 : ℕ) : PlaneCoordinateRing) ∈ J := by
       rw [← HopfIdeal.mem_toIdeal, hJ, SchematicClosure.mem_closureIdeal,
-        ← Algebra.TensorProduct.includeRight_apply, map_natCast, h8']
-      exact zero_mem _
+        ← Algebra.TensorProduct.natCast_def', Algebra.TensorProduct.natCast_def]
+      simp [h8]
     have := J.counit_eq_zero h
     rw [Bialgebra.counit_natCast] at this
     norm_num at this

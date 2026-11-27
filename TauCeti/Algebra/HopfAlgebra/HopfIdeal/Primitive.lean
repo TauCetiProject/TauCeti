@@ -22,6 +22,10 @@ The three closure conditions hold on the generator: `Δ p = 1 ⊗ p + p ⊗ 1`, 
 
 * `TauCeti.HopfIdeal.ofPrimitive`: the Hopf ideal `(p)`.
 * `TauCeti.HopfIdeal.ofPrimitive_toIdeal`: its underlying ideal is `Ideal.span {p}`.
+* `TauCeti.HopfIdeal.self_mem_ofPrimitive` and `TauCeti.HopfIdeal.ofPrimitive_le_iff`: it
+  contains `p` and is the smallest Hopf ideal doing so.
+* `TauCeti.HopfIdeal.ofPrimitive_le_ker_iff`: a ring homomorphism kills it exactly when it
+  kills `p`; on points, this is the kernel of the homomorphism to the additive group.
 -/
 
 public section
@@ -58,6 +62,28 @@ def ofPrimitive (hp : Bialgebra.IsPrimitiveElem R p) : HopfIdeal R H :=
 theorem ofPrimitive_toIdeal (hp : Bialgebra.IsPrimitiveElem R p) :
     (ofPrimitive hp).toIdeal = Ideal.span {p} :=
   ofSpan_toIdeal _ _ _ _
+
+/-- An element lies in `ofPrimitive` exactly when it is a multiple of `p`. -/
+@[simp]
+theorem mem_ofPrimitive (hp : Bialgebra.IsPrimitiveElem R p) {x : H} :
+    x ∈ ofPrimitive hp ↔ x ∈ Ideal.span {p} := by
+  rw [← mem_toIdeal, ofPrimitive_toIdeal]
+
+/-- The generator `p` lies in `ofPrimitive`. -/
+theorem self_mem_ofPrimitive (hp : Bialgebra.IsPrimitiveElem R p) : p ∈ ofPrimitive hp :=
+  (mem_ofPrimitive hp).2 (Ideal.mem_span_singleton_self _)
+
+/-- `ofPrimitive` is the smallest Hopf ideal containing `p`: its universal property. -/
+theorem ofPrimitive_le_iff (hp : Bialgebra.IsPrimitiveElem R p) {J : HopfIdeal R H} :
+    ofPrimitive hp ≤ J ↔ p ∈ J := by
+  rw [← toIdeal_le_toIdeal, ofPrimitive_toIdeal, Ideal.span_singleton_le_iff_mem, mem_toIdeal]
+
+/-- **Points of the kernel of a primitive element.** A ring homomorphism kills the Hopf ideal
+`(p)` exactly when it kills `p`. -/
+theorem ofPrimitive_le_ker_iff (hp : Bialgebra.IsPrimitiveElem R p)
+    {A F : Type*} [Ring A] [FunLike F H A] [RingHomClass F H A] (g : F) :
+    (ofPrimitive hp).toIdeal ≤ RingHom.ker g ↔ g p = 0 := by
+  rw [ofPrimitive_toIdeal, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
 
 end HopfIdeal
 
