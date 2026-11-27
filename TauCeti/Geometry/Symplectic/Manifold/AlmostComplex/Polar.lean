@@ -86,8 +86,7 @@ inversion, each of which depends smoothly on its argument.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply`: a finite group
   acting smoothly by symplectomorphisms preserves some compatible smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply_of_compactSpace`:
-  so does a compact group, such as a compact Lie group, acting smoothly by symplectomorphisms on a
-  boundaryless manifold.
+  so does a compact group, such as a compact Lie group, acting smoothly by symplectomorphisms.
 
 ## References
 

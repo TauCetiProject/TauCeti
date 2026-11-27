@@ -45,9 +45,10 @@ exact form `d (avg β)`. A form vanishing at every point of an orbit has average
 vanishing there (`TauCeti.SmoothForm.measureAverage_eq_zero_of_forall_smul`), so averaging
 preserves vanishing on an invariant subset. Since the derivative of the coordinate expression of the
 average is likewise the integral of the derivatives of the coordinate expressions of the pullbacks,
-a form whose first jet vanishes along an orbit has average whose coordinate expression has zero
-derivative there (`TauCeti.SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul`);
-together with value vanishing, the first jet of the average vanishes there. These are the
+for boundaryless `M` a form whose first jet vanishes along an orbit has average whose coordinate
+expression has zero derivative there
+(`TauCeti.SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul`); together with value
+vanishing, the first jet of the average vanishes there. These are the
 properties used to make the forms and primitives of an equivariant Moser argument invariant under a
 compact group.
 
@@ -68,13 +69,16 @@ same way.
   invariant.
 * `TauCeti.SmoothForm.measureAverage_eq_self_iff`: for a right-invariant probability measure,
   averaging fixes exactly the invariant forms.
-* `TauCeti.SmoothForm.mextDerivₗ_measureAverage`: averaging commutes with the exterior derivative.
-* `TauCeti.SmoothForm.IsClosed.measureAverage`: the average of a closed form is closed.
+* `TauCeti.SmoothForm.mextDerivₗ_measureAverage`: for boundaryless `M`, averaging commutes with the
+  exterior derivative.
+* `TauCeti.SmoothForm.IsClosed.measureAverage`: for boundaryless `M`, the average of a closed form
+  is closed.
 * `TauCeti.SmoothForm.measureAverage_eq_zero_of_forall_smul`: a form vanishing along an orbit has
   average vanishing there.
-* `TauCeti.SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul`: a form whose first jet
-  vanishes along an orbit has average whose coordinate expression has zero derivative there (with
-  `TauCeti.SmoothForm.measureAverage_eq_zero_of_forall_smul`, its first jet vanishes).
+* `TauCeti.SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul`: for boundaryless `M`, a
+  form whose first jet vanishes along an orbit has average whose coordinate expression has zero
+  derivative there (with `TauCeti.SmoothForm.measureAverage_eq_zero_of_forall_smul`, its first jet
+  vanishes).
 
 ## References
 
@@ -364,8 +368,9 @@ variable [CompleteSpace F]
 
 namespace SmoothForm
 
-/-- **Averaging commutes with the exterior derivative.** The exterior derivative of the average of a
-smooth form is the average of its exterior derivative, `d (avg α) = avg (d α)`. -/
+/-- **Averaging commutes with the exterior derivative.** On a boundaryless manifold, the exterior
+derivative of the average of a smooth form is the average of its exterior derivative,
+`d (avg α) = avg (d α)`. -/
 theorem mextDerivₗ_measureAverage (α : SmoothForm I M F k) :
     mextDerivₗ I k (measureAverage J μ α) = measureAverage J μ (mextDerivₗ I k α) := by
   refine Subtype.ext <| funext fun x ↦ ?_
@@ -391,7 +396,7 @@ theorem mextDerivₗ_measureAverage (α : SmoothForm I M F k) :
   rw [val_measureAverage]
   exact key
 
-/-- The average of a closed form is closed. -/
+/-- On a boundaryless manifold, the average of a closed form is closed. -/
 theorem IsClosed.measureAverage {α : SmoothForm I M F k} (hα : α.IsClosed) :
     (measureAverage J μ α).IsClosed := by
   have h0 : mextDerivₗ I k α = 0 :=
@@ -401,11 +406,11 @@ theorem IsClosed.measureAverage {α : SmoothForm I M F k} (hα : α.IsClosed) :
   exact (isClosed_def _).mpr h
 
 omit [CompleteSpace F] in
-/-- **Averaging preserves zero first jets along orbits.** If a smooth form vanishes, with zero first
-derivative in charts, at every point of the orbit of `x`, then the coordinate expression of its
-average in the chart at `x` has zero derivative at `x`. The average also vanishes at `x` by
-`measureAverage_eq_zero_of_forall_smul`, so together the two give that averaging preserves
-vanishing of first jets on an invariant subset. -/
+/-- **Averaging preserves zero first jets along orbits.** On a boundaryless manifold, if a smooth
+form vanishes, with zero first derivative in charts, at every point of the orbit of `x`, then the
+coordinate expression of its average in the chart at `x` has zero derivative at `x`. The average
+also vanishes at `x` by `measureAverage_eq_zero_of_forall_smul`, so together the two give that
+averaging preserves vanishing of first jets on an invariant subset. -/
 theorem hasFDerivAt_inChartAt_measureAverage_of_forall_smul (α : SmoothForm I M F k) {x : M}
     (h₀ : ∀ a : G, α.val (a • x) = 0)
     (h₁ : ∀ a : G, HasFDerivAt (RoughForm.inChartAt (F := F) α.val (a • x))
