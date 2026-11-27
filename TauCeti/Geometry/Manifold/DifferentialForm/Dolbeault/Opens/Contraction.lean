@@ -13,10 +13,11 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 /-!
 # Holomorphic contraction on model spaces and open domains
 
-Constant-vector holomorphic contraction of smooth forms on a complex normed space or an open
-subset is built from the same smooth-section construction. Its anticommutation with `∂bar` work in arbitrary dimension; the anticommutation of the
-ambient contraction `SmoothForm.holInterior` is the case of the whole space. The final comparison
-identifies coordinate differentiation on open subsets of finite-dimensional coordinate spaces.
+Constant-vector holomorphic contraction and its anticommutation with `∂bar` apply to smooth
+forms on complex normed spaces and their open subsets, in arbitrary dimension. The
+anticommutation of the ambient contraction `SmoothForm.holInterior` is the case of the whole
+space. The final comparison identifies coordinate differentiation on open subsets of
+finite-dimensional coordinate spaces.
 -/
 
 public section
