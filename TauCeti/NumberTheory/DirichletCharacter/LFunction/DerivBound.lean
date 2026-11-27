@@ -79,9 +79,8 @@ namespace DirichletCharacter
 /-- A nonprincipal Dirichlet character at a nonzero level `N` has `1 < log N`, since `N ≥ 3 > e`
 (`DirichletCharacter.three_le_level_of_ne_one`). -/
 theorem one_lt_log_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 1 < Real.log N := by
-  rw [Real.lt_log_iff_exp_lt (by exact_mod_cast (NeZero.pos N))]
-  exact Real.exp_one_lt_three.trans_le (mod_cast χ.three_le_level_of_ne_one hχ)
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 1 < Real.log N :=
+  Real.one_lt_log_of_three_le (mod_cast χ.three_le_level_of_ne_one hχ)
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
@@ -274,7 +273,7 @@ theorem norm_deriv_LFunction_le_mul_log_sq (hχ : χ ≠ 1) {σ : ℝ}
     ‖deriv χ.LFunction σ‖ ≤ 64 * Real.log N ^ 2 := by
   have hN3 : 3 ≤ N := χ.three_le_level_of_ne_one hχ
   have hN3' : (3 : ℝ) ≤ N := mod_cast hN3
-  have hlog_pos : 0 < Real.log N := zero_lt_one.trans (Real.one_lt_log_of_three_le hN3')
+  have hlog_pos : 0 < Real.log N := zero_lt_one.trans (χ.one_lt_log_level_of_ne_one hχ)
   have hlog : (23 : ℝ) / 21 < Real.log N := by
     linarith [Real.log_three_gt_d9, Real.log_le_log (by norm_num) hN3']
   have hinv : 1 / Real.log N < 21 / 23 := by

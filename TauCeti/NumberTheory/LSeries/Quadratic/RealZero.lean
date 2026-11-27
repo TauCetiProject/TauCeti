@@ -96,11 +96,6 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re
   rw [hχ_eq, Nat.cast_natAbs, Int.cast_abs]
   exact TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re hD hD1
 
-private theorem three_le_conductor_and_conductor_le_of_ne_one (hχ : χ ≠ 1) :
-    3 ≤ (χ.conductor : ℝ) ∧ (χ.conductor : ℝ) ≤ N :=
-  ⟨Nat.ofNat_le_cast.mpr (χ.three_le_conductor_of_ne_one hχ),
-    Nat.cast_le.mpr (Nat.le_of_dvd (NeZero.pos N) χ.conductor_dvd_level)⟩
-
 /-- **Conductor-level logarithmic-square real-zero gap for quadratic characters**
 (Koukoulopoulos, (12.12)). Every real zero `β` of a nonprincipal quadratic character `χ` (primitive
 or imprimitive) of nonzero level `N` satisfies
@@ -108,7 +103,7 @@ or imprimitive) of nonzero level `N` satisfies
 theorem div_sqrt_conductor_mul_log_sq_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio / (32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2) ≤ 1 - β := by
-  obtain ⟨hc3, _⟩ := χ.three_le_conductor_and_conductor_le_of_ne_one hχ
+  have hc3 : (3 : ℝ) ≤ χ.conductor := Nat.ofNat_le_cast.mpr (χ.three_le_conductor_of_ne_one hχ)
   have hlog_gt1 : 1 < Real.log χ.conductor := Real.one_lt_log_of_three_le hc3
   rcases le_or_gt β 0 with hβ0 | hβ0
   · have hsqrt_ge1 : 1 ≤ √(χ.conductor : ℝ) := Real.one_le_sqrt.mpr (by linarith)
@@ -140,7 +135,8 @@ of a nonprincipal quadratic character `χ` of nonzero level `N` satisfies
 theorem div_sqrt_mul_log_sq_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio / (32 * √(N : ℝ) * Real.log N ^ 2) ≤ 1 - β := by
-  obtain ⟨hc3, hcN⟩ := χ.three_le_conductor_and_conductor_le_of_ne_one hχ
+  have hc3 : (3 : ℝ) ≤ χ.conductor := Nat.ofNat_le_cast.mpr (χ.three_le_conductor_of_ne_one hχ)
+  have hcN : (χ.conductor : ℝ) ≤ N := Nat.cast_le.mpr χ.conductor_le_level
   have hlog_pos : 0 < Real.log χ.conductor :=
     zero_lt_one.trans (Real.one_lt_log_of_three_le hc3)
   have hlog_le : Real.log χ.conductor ≤ Real.log N := Real.log_le_log (by linarith) hcN
@@ -155,7 +151,7 @@ theorem mul_rpow_conductor_neg_half_sub_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {ε : ℝ} (hε : 0 < ε) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio * ε ^ 2 / 128 * (χ.conductor : ℝ) ^ (-(1 / 2 : ℝ) - ε) ≤ 1 - β := by
-  obtain ⟨hc3, _⟩ := χ.three_le_conductor_and_conductor_le_of_ne_one hχ
+  have hc3 : (3 : ℝ) ≤ χ.conductor := Nat.ofNat_le_cast.mpr (χ.three_le_conductor_of_ne_one hχ)
   have hc0 : (0 : ℝ) < χ.conductor := by linarith
   have hlog_pos : 0 < Real.log χ.conductor :=
     zero_lt_one.trans (Real.one_lt_log_of_three_le hc3)
@@ -185,7 +181,8 @@ theorem mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {ε : ℝ} (hε : 0 < ε) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio * ε ^ 2 / 128 * (N : ℝ) ^ (-(1 / 2 : ℝ) - ε) ≤ 1 - β := by
-  obtain ⟨hc3, hcN⟩ := χ.three_le_conductor_and_conductor_le_of_ne_one hχ
+  have hc3 : (3 : ℝ) ≤ χ.conductor := Nat.ofNat_le_cast.mpr (χ.three_le_conductor_of_ne_one hχ)
+  have hcN : (χ.conductor : ℝ) ≤ N := Nat.cast_le.mpr χ.conductor_le_level
   have hphi : 0 ≤ Real.log Real.goldenRatio * ε ^ 2 / 128 := by
     have := Real.log_pos Real.one_lt_goldenRatio
     positivity
