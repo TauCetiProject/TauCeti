@@ -10,7 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.AF.Connected
 public import TauCeti.Analysis.CStarAlgebra.AF.ContinuousMap
 public import TauCeti.Analysis.CStarAlgebra.AF.InductiveLimit
 public import TauCeti.Analysis.CStarAlgebra.CARAlgebra
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # Examples of AF algebras

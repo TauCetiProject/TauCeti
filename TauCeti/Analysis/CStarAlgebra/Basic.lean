@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.MetricSpace.ProperSpace
+public import TauCeti.Algebra.Star.PartialIsometry
 
 /-!
-# Normed star subgroups, unit and unitary norms, and compact unitary groups
+# Normed star subgroups, C⋆-ring unit, unitary and projection norms, and compact unitary groups
 
 In a C⋆-ring, left and right multiplication by a unitary element preserve the norm
 (`CStarRing.norm_coe_unitary_mul`, `CStarRing.norm_mul_coe_unitary`), so unitary conjugation
@@ -30,6 +31,8 @@ Any additive subgroup closed under the involution of a `NormedStarGroup` inherit
 
 * `StarMemClass.instNormedStarGroup`: `NormedStarGroup` instance on star-closed additive subgroups.
 * `IsStarProjection.norm_eq_one`: a nonzero star projection of a C⋆-ring has norm `1`.
+* `TauCeti.IsPartialIsometry.norm_le_one`, `TauCeti.IsPartialIsometry.norm_eq_one`: C⋆-ring norm
+  identities for partial isometries.
 * `CStarRing.norm_one_le`: `‖1‖ ≤ 1` in any unital C⋆-ring, including the trivial one, where
   Mathlib's `CStarRing.norm_one` (which needs `Nontrivial`) does not apply.
 * `CStarRing.norm_le_one_of_mem_unitary`: a unitary element has norm at most `1`, also in the
@@ -99,3 +102,17 @@ instance instCompactSpaceUnitary : CompactSpace (unitary E) :=
   isCompact_iff_compactSpace.1 isCompact_unitary
 
 end CStarRing
+
+section PartialIsometry
+variable {E : Type*} [NonUnitalNormedRing E] [StarRing E] [CStarRing E]
+/-- Every partial isometry in a C⋆-ring is a contraction (`‖u‖ ≤ 1`). -/
+theorem TauCeti.IsPartialIsometry.norm_le_one {u : E} (hu : TauCeti.IsPartialIsometry u) :
+    ‖u‖ ≤ 1 := (sq_le_sq₀ (norm_nonneg u) zero_le_one).mp <| by
+  simpa [sq, ← CStarRing.norm_star_mul_self] using
+    IsStarProjection.norm_le _ hu.isStarProjection_star_mul_self
+/-- Every nonzero partial isometry in a C⋆-ring has norm `1`. -/
+theorem TauCeti.IsPartialIsometry.norm_eq_one {u : E} (hu : TauCeti.IsPartialIsometry u)
+    (hu0 : u ≠ 0) : ‖u‖ = 1 := (sq_eq_sq₀ (norm_nonneg u) zero_le_one).mp <| by
+  simpa [sq, ← CStarRing.norm_star_mul_self] using
+    hu.isStarProjection_star_mul_self.norm_eq_one (mt star_mul_self_eq_zero.mp hu0)
+end PartialIsometry

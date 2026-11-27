@@ -9,7 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 public import TauCeti.Analysis.CStarAlgebra.State.Pure
 public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!

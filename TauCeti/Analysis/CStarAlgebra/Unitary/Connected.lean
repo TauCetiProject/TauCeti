@@ -14,18 +14,20 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Analysis.CStarAlgebra.Exponential
 
 /-!
-# Unitary paths from spectral cuts
+# Unitary paths from spectral cuts and exponentials
 
-A unitary with nonnegative real part, and any self-adjoint unitary, is joined to the identity
-(`Unitary.joined_one_of_nonneg_realPart`, `Unitary.joined_one_of_isSelfAdjoint`). These
-continuous-functional-calculus paths supply the two factors of the reflection argument for
-Hilbert-space unitaries. They do not assert connectedness of the unitary group of a general
-C⋆-algebra. Their proofs are adapted from
-[AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer, and supply the
-source formalization's supplementary reflection argument for the invertible path connectedness
-used in *Spin Geometry*, III §7, Lemma 7.7, p. 203.
+A unitary with nonnegative real part is joined to the identity via a spectral cut excluding `-1`
+(`Unitary.joined_one_of_nonneg_realPart`). That continuous-functional-calculus proof is adapted
+from [AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer, where it
+supplies the reflection factor of the invertible path-connectedness argument in *Spin Geometry*,
+III §7, Lemma 7.7, p. 203.
+
+Any self-adjoint unitary in a complete normed complex `⋆`-algebra is joined to the identity by an
+explicit exponential path (`Unitary.joined_one_of_isSelfAdjoint`). Neither result asserts
+connectedness of the unitary group of a general C⋆-algebra.
 
 Separately, multiplying a unitary by a unimodular scalar other than `-1` stays in its path
 component (`Unitary.joined_smul`). Hence a unitary whose spectrum misses a point `z` of the unit
@@ -68,27 +70,18 @@ theorem Unitary.joined_one_of_nonneg_realPart
     norm_num at hnonneg
   exact Unitary.joined 1 u ((Unitary.norm_sub_one_lt_two_iff u.property).mpr hgap)
 
-/-- A self-adjoint unitary lies in the path component of the identity over the complex field. -/
+/-- A self-adjoint unitary in a complete normed complex star-algebra lies in the path component
+of the identity. -/
 theorem Unitary.joined_one_of_isSelfAdjoint
-    {A : Type*} [CStarAlgebra A]
-    (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u := by
-  let : PartialOrder A := CStarAlgebra.spectralOrder _
-  let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing _
-  -- Multiplication by i moves the spectrum {1,-1} away from the logarithm's cut.
-  let w : unitary A := ⟨Complex.I • (1 : A), by
-    constructor <;> simp [star_smul, smul_smul]⟩
-  have hw : Joined (1 : unitary A) w := by
-    apply Unitary.joined_one_of_nonneg_realPart
-    dsimp only [w, Subtype.coe_mk]
-    rw [realPart_apply_coe]
-    simp [star_smul]
-  have hwu : Joined (1 : unitary A) (w * u) := by
-    apply Unitary.joined_one_of_nonneg_realPart
-    simp only [Submonoid.coe_mul]
-    dsimp only [w, Subtype.coe_mk]
-    rw [realPart_apply_coe]
-    simp [star_smul, hu.star_eq]
-  simpa using hw.inv.mul hwu
+    {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [StarRing A] [ContinuousStar A]
+    [CompleteSpace A] [StarModule ℂ A]
+    (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u :=
+  -- Mathlib's `selfAdjoint.joined_one_expUnitary` requires `[CStarAlgebra A]`, so build the path.
+  ⟨{ toFun := fun t => selfAdjoint.expUnitary (((t : ℝ) * Real.pi) • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
+      (Unitary.isStarProjection_half_one_sub u hu).isSelfAdjoint⟩)
+     continuous_toFun := by fun_prop
+     source' := by simp
+     target' := by simpa using Unitary.expUnitary_pi_smul_half_one_sub u hu }⟩
 
 
 section Spectrum

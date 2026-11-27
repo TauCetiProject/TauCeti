@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Semicontinuity.Basic
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 public import TauCeti.Analysis.CStarAlgebra.Trace.Domain
 import TauCeti.Topology.Instances.Matrix
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # The transpose on `M₂(ℂ)` is positive but not `2`-positive
@@ -51,6 +51,6 @@ theorem not_isNPositive_two_transpose :
   have hle := sub_nonneg.mpr (h.star_map_mul_map_le_of_map_one h1 a)
   have := CStarMatrix.diag_nonneg_of_nonneg hle 0
   norm_num [a, hT, CStarMatrix.mul_apply, CStarMatrix.star_apply, CStarMatrix.ofMatrix_apply,
-    Fin.sum_univ_two] at this
+    Matrix.mul_apply, Matrix.conjTranspose_apply, Fin.sum_univ_two] at this
 
 end TauCeti.CompletelyPositiveMapExample

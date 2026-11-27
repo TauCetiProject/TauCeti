@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Basic
 import Mathlib.Analysis.Matrix.Normed
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # Matrix amplification of approximate unitary equivalence

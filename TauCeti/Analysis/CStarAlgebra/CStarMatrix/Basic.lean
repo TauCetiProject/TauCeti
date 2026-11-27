@@ -28,7 +28,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
-# Rectangular matrix operations and positivity by quadratic forms
+# Positivity and rectangular algebra for `CStarMatrix`
 
 We record associativity and conjugate-transpose identities for rectangular C⋆-matrices, together
 with their conversion to ordinary matrices.
@@ -47,8 +47,9 @@ Hilbert C⋆-module.
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
 the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
-diagonal embedding `b ↦ diag(b, …, b)`, the matrix units `eᵢⱼ` of `M_n(ℂ)` and the corner
-embeddings into block-diagonal matrices.
+diagonal embedding `b ↦ diag(b, …, b)`, the matrix units `eᵢⱼ` of `M_n(ℂ)`, the corner
+embeddings into block-diagonal matrices, rectangular multiplication and `conjTranspose` laws, and
+the proper-star instance `IsProperStar (CStarMatrix n n A)`.
 
 ## Main declarations
 
@@ -158,6 +159,7 @@ embeddings into block-diagonal matrices.
 ## References
 
 * E. C. Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Lemma 4.1.
+* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., §4.6 and §5.1.
 * V. Paulsen, *Completely Bounded Maps and Operator Algebras*, Lemma 3.1.
 -/
 
@@ -273,13 +275,13 @@ section Algebraic
 variable {n R A : Type*}
 
 /-- Scalars commute past matrix multiplication on the left, as for `Matrix`. -/
-instance instIsScalarTowerSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring A]
+instance instIsScalarTowerSelf [Fintype n] [Monoid R] [AddCommMonoid A] [Mul A]
     [DistribMulAction R A] [IsScalarTower R A A] :
     IsScalarTower R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => smul_mul r M N⟩
 
 /-- Scalars commute past matrix multiplication on the right, as for `Matrix`. -/
-instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring A]
+instance instSMulCommClassSelf [Fintype n] [Monoid R] [AddCommMonoid A] [Mul A]
     [DistribMulAction R A] [SMulCommClass R A A] :
     SMulCommClass R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => (mul_smul M r N).symm⟩
@@ -306,6 +308,14 @@ lemma ofMatrix_symm_conjTranspose {m : Type*} [Star A] (M : CStarMatrix m n A) :
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
+/-- `ofMatrix.symm p` is a star projection iff `p` is a star projection. -/
+@[simp]
+theorem isStarProjection_ofMatrix_symm_iff {m : Type*} [Fintype m] [AddCommMonoid A] [Mul A]
+    [Star A] {p : CStarMatrix m m A} : IsStarProjection (ofMatrix.symm p) ↔ IsStarProjection p := by
+  rw [isStarProjection_iff, isStarProjection_iff, IsIdempotentElem, IsIdempotentElem,
+    IsSelfAdjoint, IsSelfAdjoint, ← ofMatrix_symm_mul, Matrix.star_eq_conjTranspose,
+    ← ofMatrix_symm_star, ofMatrix.symm.injective.eq_iff, ofMatrix.symm.injective.eq_iff]
+
 /-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
 @[simp]
 lemma ofMatrix_symm_zero {m : Type*} [Zero A] : ofMatrix.symm (0 : CStarMatrix m n A) = 0 := (rfl)
@@ -317,22 +327,22 @@ lemma ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects addition. -/
 @[simp]
-lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_add {m : Type*} [Add A] (M N : CStarMatrix m n A) :
     ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
 @[simp]
-lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_neg {m : Type*} [Neg A] (M : CStarMatrix m n A) :
     ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
 @[simp]
-lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_sub {m : Type*} [Sub A] (M N : CStarMatrix m n A) :
     ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
 @[simp]
-lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
 /-- Reading the entrywise nonunital star-algebra homomorphism as an ordinary matrix applies
@@ -383,16 +393,6 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
     M.conjTranspose.conjTranspose = M := by
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
-
-/-- A C⋆-matrix is a star projection exactly when the underlying matrix is. -/
-@[simp]
-lemma isStarProjection_ofMatrix_symm_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
-    {M : CStarMatrix n n A} : IsStarProjection (ofMatrix.symm M) ↔ IsStarProjection M := by
-  have h₁ : ofMatrix.symm M * ofMatrix.symm M = ofMatrix.symm M ↔ M * M = M := by
-    rw [← ofMatrix_symm_mul, ofMatrix.symm.injective.eq_iff]
-  have h₂ : star (ofMatrix.symm M) = ofMatrix.symm M ↔ star M = M := by
-    rw [Matrix.star_eq_conjTranspose, ← ofMatrix_symm_star, ofMatrix.symm.injective.eq_iff]
-  simp only [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint, h₁, h₂]
 
 /-- A matrix is a star projection exactly when it is one as a C⋆-matrix. -/
 @[simp]

@@ -6,16 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Prod
+public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Basic.Real.Star
+import Mathlib.Tactic.NormNum
 
 /-!
 # Unitary elements
 
 The unitary elements of a product of star monoids are the pairs of unitary elements. This file
 packages that identification as a multiplicative equivalence. It also records that a unit is
-unitary exactly when its adjoint is its inverse. A star-preserving multiplicative map that
-sends `1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps unitaries to
-unitaries, and the ring inverse of a unitary element is its adjoint.
+unitary exactly when its adjoint is its inverse, that a self-adjoint unitary `u` determines a
+star projection `(2⁻¹ : ℝ) • (1 - u)`, that a star-preserving multiplicative map that sends
+`1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps unitaries to unitaries,
+and that the ring inverse of a unitary element is its adjoint.
 
 ## Main definitions and results
 
@@ -26,6 +30,8 @@ unitaries, and the ring inverse of a unitary element is its adjoint.
   `unitary A × unitary B`.
 * `Unitary.map_mem_of_map_one`: a star-preserving multiplicative map with `f 1 = 1` maps
   unitaries to unitaries.
+* `Unitary.isStarProjection_half_one_sub`: for a self-adjoint unitary `u` in a real
+  `⋆`-algebra, `(2⁻¹ : ℝ) • (1 - u)` is a star projection.
 * `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
@@ -65,6 +71,16 @@ theorem map_mem_of_map_one {R S F : Type*} [Monoid R] [StarMul R] [Monoid S] [St
   Unitary.mem_iff.mpr
     ⟨by rw [← map_star, ← map_mul, Unitary.star_mul_self_of_mem hr, hf],
       by rw [← map_star, ← map_mul, Unitary.mul_star_self_of_mem hr, hf]⟩
+
+/-- For a self-adjoint unitary `u` in a real star-algebra, `(2⁻¹ : ℝ) • (1 - u)` is a projection. -/
+theorem isStarProjection_half_one_sub {A : Type*} [Ring A] [StarRing A] [Module ℝ A]
+    [IsScalarTower ℝ A A] [SMulCommClass ℝ A A] [StarModule ℝ A] (u : unitary A)
+    (hu : IsSelfAdjoint (u : A)) : IsStarProjection ((2⁻¹ : ℝ) • (1 - (u : A))) := by
+  have hu2 : (u : A) * (u : A) = 1 := by simpa [hu.star_eq] using Unitary.coe_star_mul_self u
+  refine ⟨?_, (IsSelfAdjoint.all (2⁻¹ : ℝ)).smul ((IsSelfAdjoint.one A).sub hu)⟩
+  have hsub : (1 - (u : A)) * (1 - (u : A)) = (2 : ℝ) • (1 - (u : A)) := by
+    simp only [mul_sub, sub_mul, mul_one, one_mul, hu2, two_smul]; abel
+  rw [IsIdempotentElem, smul_mul_smul_comm, hsub, smul_smul]; norm_num
 
 /-- The ring inverse of a unitary element is its adjoint. -/
 @[simp]

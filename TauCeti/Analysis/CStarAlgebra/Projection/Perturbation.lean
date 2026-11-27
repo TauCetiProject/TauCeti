@@ -14,7 +14,7 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 import Mathlib.Topology.Connected.Clopen
 import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Projection.Pair
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
 import TauCeti.Analysis.CStarAlgebra.Unitary.Connected
 
@@ -339,4 +339,4 @@ theorem Matrix.IsMurrayVonNeumannEquivalent.exists_path_fromBlocks {A : Type*} [
   · have hP' : IsStarProjection (CStarMatrix.ofMatrix P) :=
       CStarMatrix.isStarProjection_ofMatrix_iff.2 hP
     exact CStarMatrix.isStarProjection_ofMatrix_symm_iff.2
-      (CStarMatrix.murrayVonNeumannEquiv_unitary_conj hP' (γ t)).isStarProjection_right
+      (hP'.murrayVonNeumannEquiv_conj_unitary (γ t)).isStarProjection_right

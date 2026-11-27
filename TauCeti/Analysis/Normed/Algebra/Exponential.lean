@@ -50,6 +50,9 @@ Baker--Campbell--Hausdorff expansion.
 * `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
   bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
+* `IsIdempotentElem.exp_smul`: for an idempotent `e` in a normed algebra over a complete
+  nontrivially normed characteristic-zero field `𝕜` with continuous `ℚ`-scalar multiplication (such
+  as `ℝ` or `ℂ`; see the signature for exact hypotheses), `exp (z • e) = 1 + (exp z - 1) • e`.
 -/
 
 public section
@@ -249,3 +252,17 @@ theorem norm_exp_smul_one_le [NormedAlgebra ℝ 𝔸] (h_one : ‖(1 : 𝔸)‖ 
   exact mul_le_of_le_one_right (Real.exp_nonneg c) h_one
 
 end TauCeti
+
+namespace IsIdempotentElem
+/-- For an idempotent `e` in a normed algebra over a complete nontrivially normed
+characteristic-zero field `𝕜` with continuous `ℚ`-scalar multiplication (such as `ℝ` or `ℂ`;
+see the signature for the general hypotheses), `exp (z • e) = 1 + (exp z - 1) • e`. -/
+theorem exp_smul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+    [CompleteSpace 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A] {e : A} (he : IsIdempotentElem e) (z : 𝕜) :
+    NormedSpace.exp (z • e) = 1 + (NormedSpace.exp z - 1) • e := by
+  have he1 : HasSum (fun n : ℕ => (((n + 1)! : 𝕜))⁻¹ • (z • e) ^ (n + 1))
+      ((NormedSpace.exp z - 1) • e) := ((NormedSpace.hasSum_exp_sub_one 𝕜 z).smul_const e).congr_fun
+    fun n => by rw [smul_pow, he.pow_succ_eq n, smul_assoc]
+  rw [NormedSpace.exp_eq_tsum 𝕜]
+  exact ((hasSum_nat_add_iff' 1).mp (by simpa [add_comm] using he1)).tsum_eq
+end IsIdempotentElem

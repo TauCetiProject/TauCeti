@@ -14,7 +14,7 @@ public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Analysis.Normed.Operator.Completeness
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # Stinespring's dilation theorem
