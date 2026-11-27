@@ -51,6 +51,7 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   `(M ⧸ (x) • ⊤) ≃ₗ[R ⧸ (x)] QuotSMulTop x M`.
 * `QuotSMulTop.equivQuotSpanSingleton`: the `R`-linear equivalence `QuotSMulTop x R ≃ R ⧸ (x)`.
 * `Module.IsTorsionBy.quotSMulTopEquiv`: `M ⧸ x M ≃ M` when `x` kills `M`.
+* `Module.IsTorsionBy.tensorQuotEquiv`: `M ⊗[R] R ⧸ (x) ≃ M` when `x` kills `M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
 * `QuotSMulTop.mulPow`: multiplication by `xᵏ`, as a map `M ⧸ x M → M ⧸ xᵏ⁺¹ M`.
@@ -346,6 +347,23 @@ theorem quotSMulTopEquiv_mk {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
 theorem quotSMulTopEquiv_symm_apply {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
     hx.quotSMulTopEquiv.symm m = Submodule.Quotient.mk m :=
   (LinearEquiv.symm_apply_eq _).2 (quotSMulTopEquiv_mk hx m).symm
+
+open scoped TensorProduct in
+/-- Tensoring with `R ⧸ (x)` leaves a module killed by `x` unchanged:
+`M ⊗[R] R ⧸ (x) ≃ M` when `x • M = 0`. -/
+noncomputable def tensorQuotEquiv {x : R} (hx : Module.IsTorsionBy R M x) :
+    M ⊗[R] (R ⧸ Ideal.span {x}) ≃ₗ[R] M :=
+  (QuotSMulTop.equivTensorQuot x M).symm ≪≫ₗ hx.quotSMulTopEquiv
+
+open scoped TensorProduct in
+/-- The identification `M ⊗[R] R ⧸ (x) ≃ M` sends `m ⊗ 1` to `m`. -/
+@[simp]
+theorem tensorQuotEquiv_tmul_one {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    hx.tensorQuotEquiv (m ⊗ₜ 1) = m := by
+  have h : QuotSMulTop.equivTensorQuot x M (Submodule.Quotient.mk m) = m ⊗ₜ 1 := by
+    simp [QuotSMulTop.equivTensorQuot]
+  rw [tensorQuotEquiv, LinearEquiv.trans_apply, ← h, LinearEquiv.symm_apply_apply,
+    quotSMulTopEquiv_mk]
 
 end Module.IsTorsionBy
 

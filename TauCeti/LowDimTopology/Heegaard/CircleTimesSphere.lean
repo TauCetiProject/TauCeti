@@ -483,6 +483,11 @@ theorem circleTimesSphereGenerator_bijective (r : Fin 3) :
   ⟨fun a b h => by simpa using congrFun (congrArg (circleTimesSphere r).point h) 0,
     fun x => ⟨_, circleTimesSphereGenerator_snd_zero r x⟩⟩
 
+/-- The generators `p₀` and `p₁` of `circleTimesSphere r` are different. -/
+theorem circleTimesSphereGenerator_zero_ne_one (r : Fin 3) :
+    circleTimesSphereGenerator r 0 ≠ circleTimesSphereGenerator r 1 :=
+  (circleTimesSphereGenerator_bijective r).1.ne (by decide)
+
 /-- With the basepoint in the annulus, the domains counted by the hat differential from `p₀` to
 `p₁` are the two bigons. -/
 theorem hatDomains_circleTimesSphere_zero_zero_one :
