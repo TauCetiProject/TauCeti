@@ -151,10 +151,11 @@ theorem isUltrametricDist_withAbs {R : Type*} [Ring R] {v : AbsoluteValue R ℝ}
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
     simpa only [WithAbs.norm_eq_apply_ofAbs, WithAbs.ofAbs_add] using hv x.ofAbs y.ofAbs
 
-variable {R F : Type*} [CommRing R] [Ring F] [Algebra R F] {v : AbsoluteValue F ℝ}
+variable {R F S : Type*} [CommRing R] [Ring F] [Algebra R F] [Semifield S] [LinearOrder S]
+  [IsStrictOrderedRing S] {v : AbsoluteValue F S}
 
-/-- A nonarchimedean absolute value on an `R`-algebra which is bounded by `1` on the image of `R`
-is bounded by `1` on every element integral over `R`.
+/-- A nonarchimedean absolute value on an `R`-algebra, with values in a linearly ordered semifield,
+which is bounded by `1` on the image of `R` is bounded by `1` on every element integral over `R`.
 
 This is the absolute-value analogue of the forward implication of Mathlib's
 `Valuation.Integers.isIntegral_iff_v_le_one`, and the case of absolute values of
@@ -169,8 +170,12 @@ theorem apply_le_one_of_isIntegral_int (hv : IsNonarchimedean v) {x : F} (hx : I
     v x ≤ 1 := by
   rcases subsingleton_or_nontrivial F with hF | hF
   · simp [Subsingleton.elim x 0]
+  -- `S` need not be a ring, so `v (-1) = 1` comes from `v (-1) ^ 2 = v 1` and `0 ≤ v (-1)`.
+  have hneg : v (-1) = 1 := (pow_eq_one_iff_of_nonneg (v.nonneg _) two_ne_zero).mp <| by
+    rw [sq, ← map_mul, neg_one_mul, neg_neg, v.map_one]
   refine hv.apply_le_one_of_isIntegral (fun r ↦ ?_) hx
-  simpa using hv.apply_intCast_le_one (by simp) v.map_one v.map_neg (n := r)
+  simpa using hv.apply_intCast_le_one (by simp) v.map_one
+    (fun a ↦ by rw [neg_eq_neg_one_mul, map_mul, hneg, one_mul]) (n := r)
 
 end IsNonarchimedean
 
