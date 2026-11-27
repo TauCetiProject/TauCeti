@@ -66,10 +66,9 @@ theorem mlieBracket_realField_apply {n : ℕ∞ω}
       _ = fderiv ℝ (realFieldCoord v) x (realFieldCoord u x) -
             fderiv ℝ (realFieldCoord u) x (realFieldCoord v x) := by
           rw [← hcoe u, ← hcoe v]
+  have hlin (f : ℝ → ℝ) (c : ℝ) : fderiv ℝ f x c = c * fderiv ℝ f x 1 := by
+    simpa only [smul_eq_mul, mul_one] using (fderiv ℝ f x).map_smul c 1
   apply (NormedSpace.fromTangentSpace x).injective
-  rw [hmlie]
-  simp only [map_smul, constVectorFieldSection_apply, ContinuousLinearEquiv.apply_symm_apply,
-    smul_eq_mul, mul_one]
-  rw [← mul_one (realFieldCoord u x), ← mul_one (realFieldCoord v x), ← smul_eq_mul _ 1,
-    ← smul_eq_mul _ 1, map_smul, map_smul]; simp only [smul_eq_mul, mul_one]
+  rw [hmlie, hlin, hlin]
+  simp
 end TauCeti

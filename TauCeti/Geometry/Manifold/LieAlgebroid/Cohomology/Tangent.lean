@@ -46,33 +46,51 @@ def tangentCochainEquiv (k : ℕ) : SmoothForm I M ℝ k ≃ₗ[ℝ] (tangent I 
 @[simp] theorem tangentCochainEquiv_symm_apply {k : ℕ} (η : (tangent I M).Cochain k) :
     (tangentCochainEquiv k).symm η = SmoothForm.ofContMDiffSection η := (rfl)
 
+private theorem tangent_extDeriv_zero [T2Space M] (φ : SmoothForm I M ℝ 0) :
+    (tangent I M).extDeriv 0 φ.toContMDiffSection = (mextDerivₗ I 0 φ).toContMDiffSection := by
+  ext x v
+  have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
+  have hfn : ⇑((tangent I M).cochainZeroEquiv φ.toContMDiffSection) =
+      fun y ↦ (φ : RoughForm I M ℝ 0) y 0 :=
+    funext fun y ↦ by simp
+  rw [hv, (tangent I M).extDeriv_zero_apply, tangent_anchor_apply,
+    SmoothForm.toContMDiffSection_apply, mextDerivₗ_zero_apply, hfn]
+
+private theorem coe_scalarAlternatingEquiv_removeNth [T2Space M] {k : ℕ}
+    (φ : SmoothForm I M ℝ (k + 1))
+    (V : Fin (k + 2) → ContMDiffSection I E ∞ (TangentSpace I)) (i : Fin (k + 2)) :
+    ⇑(ContMDiffSection.scalarAlternatingEquiv φ.toContMDiffSection (i.removeNth V)) =
+      fun y ↦ φ.val y (i.removeNth (V · y)) := by
+  ext y; simp; rfl
+
+omit [FiniteDimensional ℝ E] in
+private theorem tangent_bracket_summand {k : ℕ} (φ : SmoothForm I M ℝ (k + 1))
+    (V : Fin (k + 2) → ContMDiffSection I E ∞ (TangentSpace I)) (x : M) (i j : Fin (k + 1)) :
+    (-1 : ℝ) ^ ((i : ℕ) + (j : ℕ) + 1) * φ.val x (Matrix.vecCons
+        (VectorField.mlieBracket I (V i.castSucc) (V j.succ) x)
+        (j.removeNth (i.castSucc.removeNth (V · x)))) =
+      -((-1 : ℝ) ^ ((i : ℕ) + (j : ℕ)) * φ.val x (Matrix.vecCons
+        (VectorField.mlieBracket I (V i.castSucc) (V j.succ) x)
+        (j.removeNth (i.castSucc.removeNth (V · x))))) := by
+  rw [pow_succ, mul_neg, mul_one, neg_mul]
+
 /-- On `LieAlgebroid.tangent I M`, `extDeriv` agrees with the de Rham exterior derivative
 `TauCeti.mextDerivₗ`. -/
 theorem tangent_extDeriv_toContMDiffSection [T2Space M] {k : ℕ} (φ : SmoothForm I M ℝ k) :
     (tangent I M).extDeriv k φ.toContMDiffSection = (mextDerivₗ I k φ).toContMDiffSection := by
-  ext x v
-  choose V hV using fun i ↦ ContMDiffSection.evalLinearMap_surjective (I := I) (F := E) ∞
-    (V := (TangentSpace I : M → Type _)) x (v i)
-  have hv : (fun i ↦ V i x) = v := funext fun i ↦ by simpa using hV i
-  rw [← hv]; cases k with
-  | zero =>
-    rw [show (fun i : Fin 1 ↦ V i x) = ![V 0 x] from funext fun i ↦ by fin_cases i; rfl,
-      (tangent I M).extDeriv_zero_apply_section, anchorDeriv_apply, tangent_anchor_apply,
-      SmoothForm.toContMDiffSection_apply, mextDerivₗ_zero_apply]
-    congr 2; ext y; simp
+  cases k with
+  | zero => exact tangent_extDeriv_zero φ
   | succ k =>
-    rw [(tangent I M).extDeriv_succ_apply_sections,
+    ext x v
+    choose V hV using fun i ↦ ContMDiffSection.evalLinearMap_surjective (I := I) (F := E) ∞
+      (V := (TangentSpace I : M → Type _)) x (v i)
+    have hv : (fun i ↦ V i x) = v := funext fun i ↦ by simpa using hV i
+    rw [← hv, (tangent I M).extDeriv_succ_apply_sections,
       (mextDerivₗ I (k + 1) φ).toContMDiffSection_apply, mextDerivₗ_apply,
       TauCeti.mextDeriv_apply_vectorField (φ.mdifferentiableAt x)
-        (fun i ↦ (V i).contMDiff.mdifferentiableAt (by simp)), sub_eq_add_neg,
-      ← Finset.sum_neg_distrib]
-    refine congr_arg₂ (· + ·) (Finset.sum_congr rfl fun i _ ↦ ?_)
-      (Finset.sum_congr rfl fun i _ ↦ ?_)
-    · rw [anchorDeriv_apply, tangent_anchor_apply]; congr 3; ext y
-      simp only [ContMDiffSection.scalarAlternatingEquiv_apply, SmoothForm.toContMDiffSection_apply]
-      exact congrArg _ (funext fun r ↦ by simp [Fin.removeNth])
-    · rw [← Finset.sum_neg_distrib]; refine Finset.sum_congr rfl fun j _ ↦ ?_
-      rw [φ.toContMDiffSection_apply x, tangent_bracket_apply, pow_succ, mul_neg, mul_one, neg_smul]
+        (fun i ↦ (V i).contMDiff.mdifferentiableAt (by simp))]
+    simp [coe_scalarAlternatingEquiv_removeNth, tangent_bracket_summand, sub_eq_add_neg,
+      Finset.sum_neg_distrib]
 
 /-- `tangentCochainEquiv` intertwines the de Rham exterior derivative `TauCeti.mextDerivₗ` with
 `extDeriv` on `LieAlgebroid.tangent I M`. -/

@@ -236,7 +236,8 @@ variable {R A L} in
 theorem cochainComplex_d_apply (n : ℕ) (ω : (cochainComplex R A L).X n) :
     (cochainComplex R A L).d n (n + 1) ω =
       (cochainComplexXIso R A L (n + 1)).inv (d R A L n ((cochainComplexXIso R A L n).hom ω)) := by
-  rw [(Iso.eq_comp_inv _).mpr (cochainComplex_d R A L n)]; rfl
+  rw [(Iso.eq_comp_inv _).mpr (cochainComplex_d R A L n)]
+  simp
 /-- The degree-`n` Rinehart cohomology `R`-module of `(R, A, L)`. -/
 noncomputable abbrev cohomology (n : ℕ) : ModuleCat R := (cochainComplex R A L).homology n
 end Differential

@@ -58,7 +58,7 @@ def cochainZeroEquiv (A : LieAlgebroid I F V) : A.Cochain 0 ≃ₗ[C^∞⟮I, M;
 
 /-- Express the scalar-section evaluation of a degree-`0` cochain in terms of
 `A.cochainZeroEquiv`. -/
-theorem trivialEquiv_alternatingIsEmptyEquiv (A : LieAlgebroid I F V) (η : A.Cochain 0) :
+@[simp] theorem trivialEquiv_alternatingIsEmptyEquiv (A : LieAlgebroid I F V) (η : A.Cochain 0) :
     ContMDiffSection.trivialEquiv (ContMDiffSection.alternatingIsEmptyEquiv η) =
       A.cochainZeroEquiv η :=
   by rw [cochainZeroEquiv, LinearEquiv.trans_apply]
@@ -226,7 +226,8 @@ def cochainComplexXIso (k : ℕ) : A.cochainComplex.X k ≅ ModuleCat.of ℝ (A.
 theorem cochainComplex_d_apply (k : ℕ) (η : A.cochainComplex.X k) :
     A.cochainComplex.d k (k + 1) η =
       (A.cochainComplexXIso (k + 1)).inv (A.extDeriv k ((A.cochainComplexXIso k).hom η)) := by
-  rw [(Iso.eq_comp_inv _).mpr (A.cochainComplex_d k)]; rfl
+  rw [(Iso.eq_comp_inv _).mpr (A.cochainComplex_d k)]
+  simp
 
 /-- The degree-`k` Lie algebroid cohomology `H^k(A)` as an `ℝ`-module. -/
 abbrev cohomology (k : ℕ) : ModuleCat ℝ := A.cochainComplex.homology k

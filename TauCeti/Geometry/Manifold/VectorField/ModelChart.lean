@@ -111,7 +111,7 @@ theorem mfderiv_chartConstField_apply [IsManifold 𝓘(ℝ, E) 1 M] {p y : M} (v
     (hy : y ∈ (chartAt E p).source) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E p) y (chartConstField E p v y) = v :=
   (mfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas p) (constVectorField v) hy).trans
-    (by rw [constVectorField_apply]; rfl)
+    (congrFun (constVectorField_eq v) _)
 
 omit [FiniteDimensional ℝ E] in
 /-- A constant field in a chart is smooth on the source of the chart. -/
@@ -129,7 +129,7 @@ theorem mvfderiv_chartConstField_apply [IsManifold 𝓘(ℝ, E) 1 M] {y₀ y : M
     mvfderiv 𝓘(ℝ, E) f y (chartConstField E y₀ v y) =
       fderiv ℝ (f ∘ (chartAt E y₀).symm) (chartAt E y₀ y) v :=
   (mvfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas y₀) (eqOn_comp_chartAt_symm y₀) _
-    hy).trans (by rw [constVectorField_apply]; rfl)
+    hy).trans (by rw [constVectorField_eq])
 
 omit [FiniteDimensional ℝ E] in
 /-- Near a regular point of `f`, some constant field in the preferred chart is a direction of

@@ -168,6 +168,15 @@ theorem wedge_comm {k l : ℕ}
       (Nat.add_comm l k) (wedge ψ φ) := by
   ext x v; rw [wedge_comm_apply, coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
     alternating_cast_apply]
+/-- Associativity of the scalar wedge product as an identity of sections. -/
+theorem wedge_assoc {k l m : ℕ}
+    (φ : Cₛ^n⟮I; FW [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin k]→L[ℝ] ℝ⟯)
+    (ψ : Cₛ^n⟮I; FW [⋀^Fin l]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin l]→L[ℝ] ℝ⟯)
+    (χ : Cₛ^n⟮I; FW [⋀^Fin m]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin m]→L[ℝ] ℝ⟯) :
+    wedge (wedge φ ψ) χ = LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯)
+      (M := fun q ↦ Cₛ^n⟮I; FW [⋀^Fin q]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin q]→L[ℝ] ℝ⟯)
+      (Nat.add_assoc k l m).symm (wedge φ (wedge ψ χ)) := by
+  ext x v; rw [wedge_assoc_apply, alternating_cast_apply]
 /-- Bundled graded antiderivation rule for `interior` across `wedge`. -/
 theorem interior_wedge {k l : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 1)]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin (k + 1)]→L[ℝ] ℝ⟯)
