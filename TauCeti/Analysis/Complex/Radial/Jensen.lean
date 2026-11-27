@@ -23,13 +23,17 @@ Let `f` be holomorphic and bounded on the disc `ball c R` and let `G` give its r
 (`TauCeti.circleIntegrable_log_norm_of_tendsto_circleMap`,
 `TauCeti.le_circleAverage_log_norm_of_tendsto_circleMap`); at a nonvanishing centre this is
 `log ‖f c‖ ≤ ⨍ log ‖G‖` (`TauCeti.log_norm_le_circleAverage_log_norm_of_tendsto_circleMap`).
-If `f ≢ 0` then `τ ≠ 0`, so `G ≠ 0` almost everywhere.
 
-The proof is the route of the roadmap `DiracScatteringAndNonlinearFourierTransform`, §2.5: on the
-circles of radii `ρₙ → R`, Jensen's inequality (`AnalyticOnNhd.le_circleAverage_log_norm`) bounds
-the averages of `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖`; the averages of `log⁺ ‖f‖` converge by dominated
-convergence, since `f` is bounded, and Fatou's lemma (`MeasureTheory.lintegral_liminf_le'`) bounds
-the integral of `log⁺ ‖G‖⁻¹`.
+The proof: on the circles of radii `ρₙ → R`, Jensen's inequality
+(`AnalyticOnNhd.le_circleAverage_log_norm`) bounds the averages of
+`log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖`; the averages of `log⁺ ‖f‖` converge by dominated convergence,
+since `f` is bounded, and Fatou's lemma (`MeasureTheory.lintegral_liminf_le'`) bounds the integral
+of `log⁺ ‖G‖⁻¹`.
+
+## References
+
+* J. B. Garnett, *Bounded Analytic Functions*, revised first edition, Graduate Texts in
+  Mathematics 236, Springer, 2007, Chapter II.
 -/
 
 public section
@@ -41,24 +45,6 @@ open scoped ENNReal
 variable {f G : ℂ → ℂ} {c : ℂ} {R S : ℝ}
 
 namespace TauCeti
-
-/-- The radii `R - R / (n + 2)` lie in `(0, R)`. -/
-private theorem radii_mem_Ioo (hR : 0 < R) (n : ℕ) : R - R / ((n : ℝ) + 2) ∈ Ioo 0 R := by
-  have h0 : (0 : ℝ) < (n : ℝ) + 2 := by positivity
-  refine ⟨?_, ?_⟩
-  · rw [sub_pos, div_lt_iff₀ h0]
-    nlinarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
-  · rw [sub_lt_self_iff]
-    positivity
-
-/-- The radii `R - R / (n + 2)` increase to `R`. -/
-private theorem tendsto_radii (hR : 0 < R) :
-    Tendsto (fun n : ℕ ↦ R - R / ((n : ℝ) + 2)) atTop (𝓝[<] R) := by
-  refine tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall fun n ↦ (radii_mem_Ioo hR n).2⟩
-  have h := (tendsto_const_div_atTop_nhds_zero_nat R).comp (tendsto_add_atTop_nat 2)
-  have h' : Tendsto (fun n : ℕ ↦ R / ((n : ℝ) + 2)) atTop (𝓝 0) := by
-    simpa [Function.comp_def] using h
-  simpa using (tendsto_const_nhds (x := R)).sub h'
 
 /-- On a circle of radius `r ∈ (0, R)`, Jensen's inequality bounds the integral of
 `log⁺ ‖f‖⁻¹` over a period by `∫ log⁺ ‖f‖ - 2π (k log r + log ‖τ‖)`, which is nonnegative. -/
@@ -93,22 +79,23 @@ private theorem lintegral_posLog_inv_le (hf : DifferentiableOn ℂ f (ball c R))
   · rw [abs_of_pos hr.1] at hz
     exact closedBall_subset_ball hr.2 hz
 
-/-- Along the radii `R - R / (n + 2)`, `f` on the circles tends almost everywhere to the boundary
-function, which is almost everywhere strongly measurable and bounded by `S`, and the integrals of
-`log⁺ ‖f‖` over a period converge to that of `log⁺ ‖G‖`. -/
-private theorem tendsto_circleMap_radii (hR : 0 < R) (hf : DifferentiableOn ℂ f (ball c R))
+/-- Along radii `ρ n ∈ (0, R)` increasing to `R`, `f` on the circles tends almost everywhere to
+the boundary function, which is almost everywhere strongly measurable and bounded by `S`, and the
+integrals of `log⁺ ‖f‖` over a period converge to that of `log⁺ ‖G‖`. -/
+private theorem tendsto_circleMap_radii (hf : DifferentiableOn ℂ f (ball c R))
     (hS : ∀ z ∈ ball c R, ‖f z‖ ≤ S)
-    (hlim : ∀ᵐ θ, Tendsto (fun r ↦ f (circleMap c r θ)) (𝓝[<] R) (𝓝 (G (circleMap c R θ)))) :
-    (∀ n : ℕ, Continuous fun θ ↦ f (circleMap c (R - R / ((n : ℝ) + 2)) θ)) ∧
+    (hlim : ∀ᵐ θ, Tendsto (fun r ↦ f (circleMap c r θ)) (𝓝[<] R) (𝓝 (G (circleMap c R θ))))
+    {ρ : ℕ → ℝ} (hρ : ∀ n, ρ n ∈ Ioo 0 R) (hρlim : Tendsto ρ atTop (𝓝[<] R)) :
+    (∀ n : ℕ, Continuous fun θ ↦ f (circleMap c (ρ n) θ)) ∧
       AEStronglyMeasurable (fun θ ↦ G (circleMap c R θ)) volume ∧
       (∀ᵐ θ, ‖G (circleMap c R θ)‖ ≤ S) ∧
-      Tendsto (fun n : ℕ ↦ ∫ θ in 0..2 * π, log⁺ ‖f (circleMap c (R - R / ((n : ℝ) + 2)) θ)‖)
+      Tendsto (fun n : ℕ ↦ ∫ θ in 0..2 * π, log⁺ ‖f (circleMap c (ρ n) θ)‖)
         atTop (𝓝 (∫ θ in 0..2 * π, log⁺ ‖G (circleMap c R θ)‖)) := by
-  have hmem (n : ℕ) (θ : ℝ) : circleMap c (R - R / ((n : ℝ) + 2)) θ ∈ ball c R :=
-    sphere_abs_subset_ball (radii_mem_Ioo hR n) (circleMap_mem_sphere' c _ θ)
-  have hcont (n : ℕ) : Continuous fun θ ↦ f (circleMap c (R - R / ((n : ℝ) + 2)) θ) :=
+  have hmem (n : ℕ) (θ : ℝ) : circleMap c (ρ n) θ ∈ ball c R :=
+    sphere_abs_subset_ball (hρ n) (circleMap_mem_sphere' c _ θ)
+  have hcont (n : ℕ) : Continuous fun θ ↦ f (circleMap c (ρ n) θ) :=
     hf.continuousOn.comp_continuous (continuous_circleMap c _) (hmem n)
-  have hu := hlim.mono fun θ h ↦ h.comp (tendsto_radii hR)
+  have hu := hlim.mono fun θ h ↦ h.comp hρlim
   refine ⟨hcont, aestronglyMeasurable_of_tendsto_ae atTop
     (fun n ↦ (hcont n).aestronglyMeasurable) hu,
     hu.mono fun θ h ↦ le_of_tendsto' h.norm fun n ↦ hS _ (hmem n θ), ?_⟩
@@ -117,7 +104,7 @@ private theorem tendsto_circleMap_radii (hR : 0 < R) (hf : DifferentiableOn ℂ 
     (hu.mono fun θ h _ ↦ (continuous_posLog.tendsto _).comp h.norm)
   · exact (continuous_posLog.comp (hcont n).norm).aestronglyMeasurable
   · rw [Real.norm_of_nonneg posLog_nonneg]
-    exact posLog_le_posLog (by linarith [norm_nonneg (f (circleMap c (R - R / ((n : ℝ) + 2)) θ))])
+    exact posLog_le_posLog (by linarith [norm_nonneg (f (circleMap c (ρ n) θ))])
       (hS _ (hmem n θ))
 
 /-- The boundary data of the main theorem: the integral of `log⁺ ‖G‖⁻¹` over a period is at most
@@ -135,10 +122,12 @@ private theorem boundary_data (hR : 0 < R) (hf : DifferentiableOn ℂ f (ball c 
       0 ≤ (∫ θ in 0..2 * π, log⁺ ‖G (circleMap c R θ)‖) -
           2 * π * (analyticOrderNatAt f c * Real.log R +
             Real.log ‖meromorphicTrailingCoeffAt f c‖) := by
-  set ρ : ℕ → ℝ := fun n ↦ R - R / ((n : ℝ) + 2)
+  obtain ⟨ρ, -, hρ, hρlim⟩ := exists_seq_strictMono_tendsto' hR
+  have hρlim' : Tendsto ρ atTop (𝓝[<] R) :=
+    tendsto_nhdsWithin_iff.2 ⟨hρlim, .of_forall fun n ↦ (hρ n).2⟩
   set u : ℕ → ℝ → ℂ := fun n θ ↦ f (circleMap c (ρ n) θ)
-  obtain ⟨hcont, hgm, hgS, hA⟩ := tendsto_circleMap_radii hR hf hS hlim
-  have hu := hlim.mono fun θ h ↦ h.comp (tendsto_radii hR)
+  obtain ⟨hcont, hgm, hgS, hA⟩ := tendsto_circleMap_radii hf hS hlim hρ hρlim'
+  have hu := hlim.mono fun θ h ↦ h.comp hρlim'
   have hb : Tendsto (fun n ↦ (∫ θ in 0..2 * π, log⁺ ‖u n θ‖) -
       2 * π * (analyticOrderNatAt f c * Real.log (ρ n) +
         Real.log ‖meromorphicTrailingCoeffAt f c‖)) atTop
@@ -146,10 +135,9 @@ private theorem boundary_data (hR : 0 < R) (hf : DifferentiableOn ℂ f (ball c 
         2 * π * (analyticOrderNatAt f c * Real.log R +
           Real.log ‖meromorphicTrailingCoeffAt f c‖))) := by
     have hlog : Tendsto (fun n ↦ Real.log (ρ n)) atTop (𝓝 (Real.log R)) :=
-      ((continuousAt_log hR.ne').tendsto).comp
-        ((tendsto_radii hR).mono_right nhdsWithin_le_nhds)
+      ((continuousAt_log hR.ne').tendsto).comp hρlim
     exact hA.sub (tendsto_const_nhds.mul ((tendsto_const_nhds.mul hlog).add tendsto_const_nhds))
-  have hL (n : ℕ) := lintegral_posLog_inv_le hf (radii_mem_Ioo hR n)
+  have hL (n : ℕ) := lintegral_posLog_inv_le hf (hρ n)
   -- Fatou's lemma
   have hmeas (n : ℕ) : AEMeasurable (fun θ ↦ ENNReal.ofReal (log⁺ ‖u n θ‖⁻¹))
       (volume.restrict (Ioc 0 (2 * π))) :=
