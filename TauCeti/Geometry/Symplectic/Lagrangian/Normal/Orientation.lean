@@ -34,9 +34,12 @@ by the orientations of the plane and of the space
 (`TauCeti.SymplecticForm.IsLagrangian.cokerOfExact_orientation_of_finrank_eq_two`). Applied
 fibrewise along an embedded Lagrangian surface `S` of a symplectic four-manifold, the normal bundle
 of `S` is its tangent bundle with the opposite orientation, so its Euler number is `-χ(S)`; for a
-Lagrangian sphere this is the self-intersection `-2`. That global statement, which needs the Euler
-class of the normal bundle, is not formalized here. For `n = 1`, a totally real line in a plane,
-the sign is `+1`.
+Lagrangian sphere this is `-2`. These global statements are
+`SmoothEmbedding.evalFundamentalClass_eulerClass_lagrangianNormalOrientation_of_finrank_eq_two`
+and `SmoothEmbedding.evalFundamentalClass_eulerClass_lagrangianNormalOrientation_sphere` in
+`TauCeti.Geometry.Symplectic.Lagrangian.Normal.EulerClass`; the identification of this normal Euler
+number with the homological self-intersection number is not formalized. For `n = 1`, a totally real
+line in a plane, the sign is `+1`.
 
 ## Main results
 

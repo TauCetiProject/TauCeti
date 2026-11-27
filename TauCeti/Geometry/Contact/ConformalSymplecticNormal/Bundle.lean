@@ -57,6 +57,8 @@ the proof that local frames exist.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_leviOrthogonal`,
   `TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalBilin`: the Levi orthogonals of a smooth
   isotropic immersion have smooth local frames.
+* `TauCeti.mem_leviOrthogonalPullback_iff`: the Levi orthogonals read in `f^* D` are those of
+  `TauCeti.leviOrthogonal`.
 * `TauCeti.contMDiffVectorBundle_leviOrthogonalPullback`: the Levi orthogonals form a smooth
   vector bundle.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_comap_range`: the tangent images have smooth local
@@ -337,6 +339,18 @@ abbrev leviOrthogonalPullback (f : N → M) (y : N) :
     Submodule ℝ ((f *ᵖ fun x ↦ D x) y) :=
   ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
     (distributionLeviForm D (f y))
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold I ∞ M] [IsManifold J ∞ N]
+  [T2Space M] in
+/-- A vector of the pullback `f^* D` lies in the Levi orthogonal of the tangent image of `f`, read
+in the pullback, exactly when it lies in the Levi orthogonal `TauCeti.leviOrthogonal` of the
+tangent image, a subspace of `T_(f y) M`. -/
+theorem mem_leviOrthogonalPullback_iff {w : (f *ᵖ fun x ↦ D x) y} :
+    w ∈ leviOrthogonalPullback J D f y ↔ (D (f y)).subtype w ∈ leviOrthogonal J D f y := by
+  rw [← map_subtype_orthogonalBilin_eq_leviOrthogonal]
+  refine ⟨fun h ↦ Submodule.mem_map.2 ⟨w, h, rfl⟩, fun h ↦ ?_⟩
+  obtain ⟨w', hw', he⟩ := Submodule.mem_map.1 h
+  rwa [← Subtype.ext he]
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold I ∞ M] [IsManifold J ∞ N]
   [T2Space M] in
