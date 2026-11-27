@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Quasiconvex
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.Convex.SchurInequality
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Schur's inequality
@@ -18,9 +18,10 @@ For `x, y, z > 0` and every real exponent `t`,
 
 with equality exactly when `x = y = z` (Mitrinović, *Analytic Inequalities*, §2.17, Thm 1,
 p. 119). On `(0, ∞)` the weight `u ↦ u ^ t` is positive, monotone for `t ≥ 0` and antitone for
-`t ≤ 0`, hence quasiconvex, so both statements are cases of `QuasiconvexOn.schur_inequality`
-and `QuasiconvexOn.schur_inequality_eq_zero_iff`. The forms for natural exponents and nonnegative
-points, including the cubic case `t = 1`, are `TauCeti.schur_inequality_pow` and
+`t ≤ 0`, hence quasiconvex (`Real.quasiconvexOn_rpow_Ioi`), so both statements are cases of
+`QuasiconvexOn.schur_inequality` and `QuasiconvexOn.schur_inequality_eq_zero_iff`. The forms
+for natural exponents and nonnegative points in a linearly ordered commutative ring, including the
+cubic case `t = 1`, are `TauCeti.schur_inequality_pow` and
 `TauCeti.schur_inequality_pow_eq_zero_iff`.
 
 ## Main results
@@ -30,20 +31,6 @@ points, including the cubic case `t = 1`, are `TauCeti.schur_inequality_pow` and
 -/
 
 public section
-
-open Set
-
-namespace Real
-
-/-- On `(0, ∞)`, every real power `u ↦ u ^ t` is quasiconvex: monotone for `t ≥ 0` and antitone
-for `t ≤ 0`. -/
-theorem quasiconvexOn_rpow_Ioi (t : ℝ) : QuasiconvexOn ℝ (Ioi 0) fun u : ℝ ↦ u ^ t := by
-  rcases le_total 0 t with ht | ht
-  · exact ((monotoneOn_rpow_Ici_of_exponent_nonneg ht).mono Ioi_subset_Ici_self).quasiconvexOn
-      (convex_Ioi 0)
-  · exact (antitoneOn_rpow_Ioi_of_exponent_nonpos ht).quasiconvexOn (convex_Ioi 0)
-
-end Real
 
 namespace TauCeti
 
