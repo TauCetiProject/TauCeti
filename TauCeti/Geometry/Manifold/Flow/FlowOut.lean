@@ -26,12 +26,6 @@ makes this injective, and since source and target have the same dimension, it is
 the inverse function theorem the flow-out is a `C^n` local diffeomorphism
 (`TauCeti.isLocalDiffeomorph_globalFlow_comp`).
 
-Completeness is only needed to have the flow-out defined on all of `ℝ × S`. For any `C^n` field,
-the time-`t` map of the maximal flow is a local diffeomorphism at every point whose trajectory is
-defined at time `t`, undone near that point by the time-`(-t)` map
-(`TauCeti.isLocalDiffeomorphAt_flowOf`), so local diffeomorphism properties of a flow-out
-propagate along the flow.
-
 This is the flow-out theorem in the form needed to identify the end of a Liouville completion with
 the half-symplectization of its boundary: there `ι` is the inclusion of the boundary of a
 Liouville domain, `v` is the Liouville field, and transversality is the outward-pointing condition.
@@ -42,8 +36,6 @@ Liouville domain, `v` is the Liouville field, and transversality is the outward-
 * `TauCeti.mfderiv_globalFlow_comp_apply`: the differential of the flow-out.
 * `TauCeti.isLocalDiffeomorph_globalFlow_comp`: the flow-out of a transverse immersed hypersurface
   is a local diffeomorphism.
-* `TauCeti.isLocalDiffeomorphAt_flowOf`: the time-`t` map of the maximal flow of a vector field,
-  complete or not, is a local diffeomorphism wherever it is defined.
 
 ## References
 
@@ -151,35 +143,5 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
   have hsurj : Surjective L :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin (f := L.toLinearMap)).1 hinj
   exact ⟨(LinearEquiv.ofBijective L.toLinearMap ⟨hinj, hsurj⟩).toContinuousLinearEquiv, rfl⟩
-
-/-- **The time-`t` maps of a flow are local diffeomorphisms.** For a `C^n` vector field `v`,
-`1 ≤ n`, on a finite-dimensional boundaryless `C^n` manifold, the time-`t` map of the maximal flow
-is a `C^n` local diffeomorphism at every point `x` whose trajectory is defined at time `t`. Near
-`x` it is undone by the time-`(-t)` map. No completeness of `v` is needed. -/
-theorem isLocalDiffeomorphAt_flowOf {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I 1 M] [IsManifold I n M]
-    (hv : ContMDiff I I.tangent n (T% v)) {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomain v) :
-    IsLocalDiffeomorphAt I I n (flowOf v t) x := by
-  have hn' : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
-  have hn0 : (n : WithTop ℕ∞) ≠ 0 := (one_pos.trans_le hn').ne'
-  have hv1 := hv.of_le hn'
-  set U := {y | (t, y) ∈ flowDomain v}
-  have hU : IsOpen U := isOpen_setOf_mem_flowDomain hv1 continuous_const continuous_id
-  have hφ : ContMDiffOn I I n (flowOf v t) U := fun y hy ↦
-    (contMDiffAt_flowOf_comp hn hv contMDiffAt_const contMDiffAt_id hy).contMDiffWithinAt
-  have hψ : ContMDiffAt I I n (flowOf v (-t)) (flowOf v t x) :=
-    contMDiffAt_flowOf_comp hn hv contMDiffAt_const contMDiffAt_id
-      (neg_mem_flowDomain_flowOf hv1 hx)
-  -- Near `x`, the time-`(-t)` map undoes the time-`t` map, so the differential of the time-`t`
-  -- map has a left inverse.
-  have hid : flowOf v (-t) ∘ flowOf v t =ᶠ[nhds x] id :=
-    Filter.eventuallyEq_of_mem (hU.mem_nhds hx) fun y hy ↦ flowOf_neg_flowOf hv1 hy
-  have hcomp := mfderiv_comp x (hψ.mdifferentiableAt hn0)
-    ((hφ.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt hn0)
-  rw [hid.mfderiv_eq, mfderiv_id] at hcomp
-  have hinj : Injective (mfderiv I I (flowOf v t) x) :=
-    Function.LeftInverse.injective (g := mfderiv I I (flowOf v (-t)) (flowOf v t x))
-      fun w ↦ (DFunLike.congr_fun hcomp w).symm
-  exact isLocalDiffeomorphAt_of_injective_mfderiv hφ hU hx BoundarylessManifold.isInteriorPoint hn'
-    hinj rfl
 
 end TauCeti

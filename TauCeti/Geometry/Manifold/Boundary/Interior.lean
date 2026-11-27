@@ -297,7 +297,9 @@ theorem hasMFDerivWithinAt_subtypeVal_comp_iff {f : N → I.interior M} {s : Set
     HasMFDerivWithinAt J I (Subtype.val ∘ f) s x f' ↔ HasMFDerivWithinAt J 𝓘(𝕜, E) f s x f' := by
   simp only [HasMFDerivWithinAt, writtenInExtChartAt_subtypeVal_comp,
     ← IsInducing.subtypeVal.continuousWithinAt_iff]
-  rfl
+  -- The two sides differ only in the casts `tangentSpaceCastModel I` and
+  -- `tangentSpaceCastModel 𝓘(𝕜, E)` of the tangent space at `f x` to `E`, both the identity.
+  exact Iff.rfl
 
 /-- A map `f` into the interior of `M` has derivative `f'` at `x` if and only if its composite
 with the inclusion into `M` does. -/

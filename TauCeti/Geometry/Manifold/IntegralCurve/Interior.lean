@@ -45,6 +45,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {V : (x : M) → TangentSpace I x}
 
+variable (I)
+
 variable (V) in
 /-- The restriction of a vector field `V` on `M` to the interior of `M`: the tangent spaces of the
 interior, like those of `M`, are `E`. -/
@@ -52,7 +54,7 @@ def restrictInterior (x : I.interior M) : TangentSpace 𝓘(ℝ, E) x :=
   V x
 
 @[simp]
-theorem restrictInterior_apply (x : I.interior M) : restrictInterior V x = V x :=
+theorem restrictInterior_apply (x : I.interior M) : I.restrictInterior V x = V x :=
   (rfl)
 
 /-- **Integral curves in the interior.** A curve `γ` in the interior of `M` is an integral curve
@@ -60,26 +62,26 @@ of the restriction of the vector field `V` to the interior if and only if it is 
 of `V` when read in `M`. -/
 theorem isMIntegralCurveOn_subtypeVal_comp_iff {γ : ℝ → I.interior M} {s : Set ℝ} :
     IsMIntegralCurveOn (Subtype.val ∘ γ) V s ↔
-      IsMIntegralCurveOn γ (restrictInterior V) s :=
+      IsMIntegralCurveOn γ (I.restrictInterior V) s :=
   forall₂_congr fun _ _ ↦ I.hasMFDerivWithinAt_subtypeVal_comp_iff
 
 /-- The restriction of `V` to the interior is the pullback of `V` by the inclusion of the interior,
 whose differential is the identity of `E`. -/
 theorem mpullback_subtypeVal_interior :
-    VectorField.mpullback 𝓘(ℝ, E) I (Subtype.val : I.interior M → M) V = restrictInterior V := by
+    VectorField.mpullback 𝓘(ℝ, E) I (Subtype.val : I.interior M → M) V = I.restrictInterior V := by
   funext x
-  rw [VectorField.mpullback_apply, mfderiv_subtypeVal_interior]
+  rw [VectorField.mpullback_apply, I.mfderiv_subtypeVal_interior]
   exact DFunLike.congr_fun (ContinuousLinearMap.inverse_id (R := ℝ) (M := E)) (V x)
 
 /-- **The restriction of a smooth vector field to the interior is smooth.** If the vector field
 `V` on a manifold with corners is `C^n`, so is its restriction to the interior. -/
 theorem contMDiff_restrictInterior {n : WithTop ℕ∞} [IsManifold I 1 M]
     (hV : ContMDiff I I.tangent n (T% V)) :
-    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n (T% (restrictInterior V)) := by
+    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n (T% (I.restrictInterior V)) := by
   intro x
   have h := ContMDiffWithinAt.mpullback_vectorField_preimage ((hV x).contMDiffWithinAt (s := univ))
     (contMDiff_subtypeVal_interior (n := ω) I x)
-    (by rw [mfderiv_subtypeVal_interior]; exact ⟨ContinuousLinearEquiv.refl ℝ E, rfl⟩) le_top
-  rwa [mpullback_subtypeVal_interior, preimage_univ, contMDiffWithinAt_univ] at h
+    (by rw [I.mfderiv_subtypeVal_interior]; exact ⟨ContinuousLinearEquiv.refl ℝ E, rfl⟩) le_top
+  rwa [I.mpullback_subtypeVal_interior, preimage_univ, contMDiffWithinAt_univ] at h
 
 end ModelWithCorners

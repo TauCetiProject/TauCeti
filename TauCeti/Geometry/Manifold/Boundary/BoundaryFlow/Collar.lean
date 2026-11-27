@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.BoundaryFlow.Global
-public import TauCeti.Geometry.Manifold.Flow.FlowOut
+public import TauCeti.Geometry.Manifold.Flow.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.Interior
 import TauCeti.Geometry.Manifold.Boundary.BoundaryFlow.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.Boundary.Collar.Local
+import TauCeti.Geometry.Manifold.Flow.TimeDependent
 import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
@@ -82,43 +84,20 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalf
 
 /-! ### Negative times as depths in the half-line -/
 
-/-- The point of the half-line `EuclideanHalfSpace 1` at depth `max (-t) 0`. -/
-private noncomputable def depthPoint (t : ℝ) : EuclideanHalfSpace 1 :=
-  ⟨EuclideanSpace.single 0 (max (-t) 0), by simp⟩
-
-private theorem depthPoint_val_zero (t : ℝ) : (depthPoint t).val 0 = max (-t) 0 := by
-  simp [depthPoint]
-
-private theorem depthPoint_zero : depthPoint 0 = 0 := by
-  ext i
-  fin_cases i
-  simp [depthPoint]
-  rfl
-
-private theorem continuous_depthPoint : Continuous depthPoint := by
-  have h : (fun t : ℝ ↦ EuclideanSpace.single (0 : Fin 1) (max (-t) 0)) =
-      fun t ↦ max (-t) 0 • EuclideanSpace.single (0 : Fin 1) (1 : ℝ) := by
-    funext t
-    ext i
-    fin_cases i
-    simp
-  exact Continuous.subtype_mk (by rw [h]; fun_prop) _
-
-/-- At a negative time `t`, the depth map from `ℝ` to the half-line is a local diffeomorphism:
-near `t` it is the linear map `u ↦ -u` read in the half-line. -/
-private theorem isLocalDiffeomorphAt_depthPoint {t : ℝ} (ht : t < 0) :
-    IsLocalDiffeomorphAt 𝓘(ℝ) (𝓡∂ 1) ∞ depthPoint t := by
+/-- At a negative time `t`, the depth map `u ↦ normalRay (-u)` from `ℝ` to the half-line is a
+local diffeomorphism: near `t` it is the linear map `u ↦ -u` read in the half-line. -/
+private theorem isLocalDiffeomorphAt_normalRay_neg {t : ℝ} (ht : t < 0) :
+    IsLocalDiffeomorphAt 𝓘(ℝ) (𝓡∂ 1) ∞ (fun u ↦ EuclideanHalfSpace.normalRay (-u)) t := by
   let L : ℝ ≃L[ℝ] EuclideanSpace ℝ (Fin 1) :=
-    ((ContinuousLinearEquiv.neg ℝ).trans (ContinuousLinearEquiv.funUnique (Fin 1) ℝ ℝ).symm).trans
-      (EuclideanSpace.equiv (Fin 1) ℝ).symm
-  have hL {u : ℝ} (hu : u < 0) : (depthPoint u).val = L u := by
+    (ContinuousLinearEquiv.neg ℝ).trans (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
+  have hL {u : ℝ} (hu : u < 0) : (EuclideanHalfSpace.normalRay (-u)).val = L u := by
     ext i
-    fin_cases i
-    simp [L, depthPoint, max_eq_left (neg_nonneg.2 hu.le)]
+    rw [Subsingleton.elim i 0]
+    simp [L, max_eq_left (neg_nonneg.2 hu.le)]
   refine isLocalDiffeomorphAt_of_writtenInExtChartAt BoundarylessManifold.isInteriorPoint ?_
-    continuous_depthPoint.continuousAt ?_
+    (EuclideanHalfSpace.continuous_normalRay.comp continuous_neg).continuousAt ?_
   · rw [ModelWithCorners.IsInteriorPoint, interior_range_modelWithCornersEuclideanHalfSpace]
-    simpa [depthPoint] using ht
+    simpa using ht
   · refine (L.toDiffeomorph.isLocalDiffeomorph _).congr_of_eventuallyEq ?_
     filter_upwards [Iio_mem_nhds ht] with u hu
     simpa [writtenInExtChartAt] using hL hu
@@ -146,21 +125,21 @@ private theorem coe_backwardFlowInterior (x : M) {t : ℝ} (ht : t < 0) :
 /-- At negative times, the backward flow of `V` is an integral curve of the restriction of `V` to
 the interior. -/
 private theorem isMIntegralCurveOn_backwardFlowInterior (x : M) :
-    IsMIntegralCurveOn (hV.backwardFlowInterior x) (ModelWithCorners.restrictInterior V)
+    IsMIntegralCurveOn (hV.backwardFlowInterior x) ((𝓡∂ (n + 1)).restrictInterior V)
       (Iio 0) :=
-  ModelWithCorners.isMIntegralCurveOn_subtypeVal_comp_iff.1
+  (𝓡∂ (n + 1)).isMIntegralCurveOn_subtypeVal_comp_iff.1
     (((hV.isMIntegralCurveOn_Iic_forwardIntegralCurve_neg x).mono Iio_subset_Iic_self).congr
       fun _ ht ↦ hV.coe_backwardFlowInterior x ht)
 
 /-- Inside the interior, the flow of `V` carries the backward flow at time `r` to the backward
 flow at time `r + T`, as long as `r + T < 0`. -/
 private theorem flowOf_backwardFlowInterior (x : M) {r T : ℝ} (hr : r < 0) (hrT : r + T < 0) :
-    (T, hV.backwardFlowInterior x r) ∈ flowDomain (ModelWithCorners.restrictInterior V) ∧
-      flowOf (ModelWithCorners.restrictInterior V) T (hV.backwardFlowInterior x r) =
+    (T, hV.backwardFlowInterior x r) ∈ flowDomain ((𝓡∂ (n + 1)).restrictInterior V) ∧
+      flowOf ((𝓡∂ (n + 1)).restrictInterior V) T (hV.backwardFlowInterior x r) =
         hV.backwardFlowInterior x (r + T) := by
   -- The translated backward flow is an integral curve on an open interval containing `0` and `T`.
   have hγ : IsMIntegralCurveOn (hV.backwardFlowInterior x ∘ (· + r))
-      (ModelWithCorners.restrictInterior V) (Ioo (min T 0 - 1) (-r)) :=
+      ((𝓡∂ (n + 1)).restrictInterior V) (Ioo (min T 0 - 1) (-r)) :=
     ((hV.isMIntegralCurveOn_backwardFlowInterior x).comp_add r).mono fun u hu ↦ by
       simp only [mem_ofPred_eq, mem_Iio]
       linarith [hu.2]
@@ -170,8 +149,8 @@ private theorem flowOf_backwardFlowInterior (x : M) {r T : ℝ} (hr : r < 0) (hr
   have hγ0 : (hV.backwardFlowInterior x ∘ (· + r)) 0 = hV.backwardFlowInterior x r := by
     simp
   have hW : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
-      𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))).tangent 1 (T% (ModelWithCorners.restrictInterior V)) :=
-    (ModelWithCorners.contMDiff_restrictInterior hV.contMDiff).of_le (by simp)
+      𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))).tangent 1 (T% ((𝓡∂ (n + 1)).restrictInterior V)) :=
+    ((𝓡∂ (n + 1)).contMDiff_restrictInterior hV.contMDiff).of_le (by simp)
   refine ⟨mem_flowDomain.2 (hγ.subset_maximalIntegralCurveInterval h0 hγ0 hT), ?_⟩
   rw [flowOf_apply, hγ.eqOn_maximalIntegralCurve hW h0 hγ0 hT, comp_apply]
   exact congrArg _ (add_comm T r)
@@ -182,8 +161,8 @@ the interior carries the point `forwardIntegralCurve (-V) x (-r)` of the backwar
 negative time `r` to the point at time `r + T`, as long as `r + T < 0`. -/
 theorem flowOf_restrictInterior (x : M) {r T : ℝ} (hr : r < 0) (hrT : r + T < 0) :
     (T, (⟨forwardIntegralCurve (-V) x (-r), hV.forwardIntegralCurve_neg_mem_interior x hr⟩ :
-        (𝓡∂ (n + 1)).interior M)) ∈ flowDomain (ModelWithCorners.restrictInterior V) ∧
-      flowOf (ModelWithCorners.restrictInterior V) T
+        (𝓡∂ (n + 1)).interior M)) ∈ flowDomain ((𝓡∂ (n + 1)).restrictInterior V) ∧
+      flowOf ((𝓡∂ (n + 1)).restrictInterior V) T
           ⟨forwardIntegralCurve (-V) x (-r), hV.forwardIntegralCurve_neg_mem_interior x hr⟩ =
         ⟨forwardIntegralCurve (-V) x (-(r + T)),
           hV.forwardIntegralCurve_neg_mem_interior x hrT⟩ := by
@@ -216,11 +195,11 @@ private theorem isLocalDiffeomorphAt_flowOut_zero (a : (𝓡∂ (n + 1)).boundar
 omit [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space M] [CompactSpace M] hV in
 /-- At a negative time, the map `(t, s) ↦ (s, depth -t)` from `ℝ × ∂M` to `∂M × [0, ∞)` is a local
 diffeomorphism. -/
-private theorem isLocalDiffeomorphAt_swap_depthPoint {p : ℝ × (𝓡∂ (n + 1)).boundary M}
+private theorem isLocalDiffeomorphAt_swap_normalRay_neg {p : ℝ × (𝓡∂ (n + 1)).boundary M}
     (hp : p.1 < 0) :
     IsLocalDiffeomorphAt (𝓘(ℝ).prod (𝓡 n)) ((𝓡 n).prod (𝓡∂ 1)) ∞
-      (fun q : ℝ × (𝓡∂ (n + 1)).boundary M ↦ (q.2, depthPoint q.1)) p :=
-  (IsLocalDiffeomorphAt.comp (hf := (isLocalDiffeomorphAt_depthPoint hp).prodMap
+      (fun q : ℝ × (𝓡∂ (n + 1)).boundary M ↦ (q.2, EuclideanHalfSpace.normalRay (-q.1))) p :=
+  (IsLocalDiffeomorphAt.comp (hf := (isLocalDiffeomorphAt_normalRay_neg hp).prodMap
     ((Diffeomorph.refl (𝓡 n) ((𝓡∂ (n + 1)).boundary M) ∞).isLocalDiffeomorph p.2))
     (hg := (Diffeomorph.prodComm (𝓡∂ 1) (𝓡 n) (EuclideanHalfSpace 1) ((𝓡∂ (n + 1)).boundary M)
       ∞).isLocalDiffeomorph _)).congr_of_eventuallyEq (Eventually.of_forall fun _ ↦ rfl)
@@ -231,17 +210,17 @@ private theorem isLocalDiffeomorphAt_collarMap_of_flowOut {p : ℝ × (𝓡∂ (
     (hp : p.1 < 0)
     (hF : IsLocalDiffeomorphAt ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) ∞
       (fun q : (𝓡∂ (n + 1)).boundary M × EuclideanHalfSpace 1 ↦
-        forwardIntegralCurve (-V) q.1 (q.2.val 0)) (p.2, depthPoint p.1)) :
+        forwardIntegralCurve (-V) q.1 (q.2.val 0)) (p.2, EuclideanHalfSpace.normalRay (-p.1))) :
     IsLocalDiffeomorphAt (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) ∞
       hV.collarMap p := by
   -- Read in `M`, the collar map is the forward flow-out composed with `(t, s) ↦ (s, depth -t)`.
   have h : IsLocalDiffeomorphAt (𝓘(ℝ).prod (𝓡 n)) (𝓡∂ (n + 1)) ∞
       (Subtype.val ∘ hV.collarMap) p := by
-    refine (IsLocalDiffeomorphAt.comp (hf := isLocalDiffeomorphAt_swap_depthPoint hp)
+    refine (IsLocalDiffeomorphAt.comp (hf := isLocalDiffeomorphAt_swap_normalRay_neg hp)
       (hg := hF)).congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_Iio.preimage continuous_fst).mem_nhds (hp : p ∈ Prod.fst ⁻¹' Iio 0)]
       with q hq
-    simp only [comp_apply, collarMap, depthPoint_val_zero,
+    simp only [comp_apply, collarMap, EuclideanHalfSpace.normalRay_coe_apply,
       max_eq_left (neg_nonneg.2 (le_of_lt (hq : q.1 < 0))),
       hV.coe_backwardFlowInterior q.2 hq]
   exact h.of_comp_left
@@ -257,11 +236,11 @@ private theorem isLocalDiffeomorphAt_collarMap {p : ℝ × (𝓡∂ (n + 1)).bou
   -- Choose a time `u ∈ (t, 0)` at which the forward flow-out is a local diffeomorphism.
   have hev : ∀ᶠ u in 𝓝 (0 : ℝ), IsLocalDiffeomorphAt ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) ∞
       (fun q : (𝓡∂ (n + 1)).boundary M × EuclideanHalfSpace 1 ↦
-        forwardIntegralCurve (-V) q.1 (q.2.val 0)) (p.2, depthPoint u) := by
-    have hcont : Continuous fun u : ℝ ↦ (p.2, depthPoint u) :=
-      continuous_const.prodMk continuous_depthPoint
+        forwardIntegralCurve (-V) q.1 (q.2.val 0)) (p.2, EuclideanHalfSpace.normalRay (-u)) := by
+    have hcont : Continuous fun u : ℝ ↦ (p.2, EuclideanHalfSpace.normalRay (-u)) :=
+      continuous_const.prodMk (EuclideanHalfSpace.continuous_normalRay.comp continuous_neg)
     have h := hcont.tendsto 0
-    rw [depthPoint_zero] at h
+    rw [neg_zero, EuclideanHalfSpace.normalRay_zero] at h
     exact h.eventually (hV.isLocalDiffeomorphAt_flowOut_zero p.2).eventually
   obtain ⟨u, hFu, hu⟩ := ((hev.filter_mono nhdsWithin_le_nhds).and (Ioo_mem_nhdsLT hp)).exists
   have hcu := hV.isLocalDiffeomorphAt_collarMap_of_flowOut (p := (u, p.2)) hu.2 hFu
@@ -281,11 +260,11 @@ private theorem isLocalDiffeomorphAt_collarMap {p : ℝ × (𝓡∂ (n + 1)).bou
   rw [← hτp] at hcu
   -- After the translation, flow for time `T` in the interior.
   have hdom : (T, hV.collarMap (Prod.map τ id p)) ∈
-      flowDomain (ModelWithCorners.restrictInterior V) := by
+      flowDomain ((𝓡∂ (n + 1)).restrictInterior V) := by
     rw [hτp]
     exact (hV.flowOf_backwardFlowInterior p.2 hu.2 (by linarith)).1
   have hflow := isLocalDiffeomorphAt_flowOf (n := ⊤) le_top
-    (ModelWithCorners.contMDiff_restrictInterior hV.contMDiff) hdom
+    ((𝓡∂ (n + 1)).contMDiff_restrictInterior hV.contMDiff) hdom
   have hpT : p.1 - T < 0 := by simp [hTdef, hu.2]
   refine (IsLocalDiffeomorphAt.comp (hf := htr)
     (hg := IsLocalDiffeomorphAt.comp (hf := hcu) (hg := hflow))).congr_of_eventuallyEq ?_
@@ -318,17 +297,16 @@ neighbourhood. -/
 private theorem boundary_union_image_collarMap_mem_nhds {c : ℝ} (hc : c < 0) {y : M}
     (hy : y ∈ (𝓡∂ (n + 1)).boundary M) :
     (𝓡∂ (n + 1)).boundary M ∪ Subtype.val '' (hV.collarMap '' (Prod.fst ⁻¹' Ioo c 0)) ∈ 𝓝 y := by
-  have h0 : (0 : EuclideanHalfSpace 1).val = 0 := rfl
   obtain ⟨Ψ, haΨ, hΨs, hΨ⟩ :=
     (hV.isLocalDiffeomorphAt_flowOut_zero ⟨y, hy⟩).exists_partialDiffeomorph_eqOn
     (s := {q | q.2.val 0 < -c})
     (isOpen_lt ((EuclideanSpace.proj (0 : Fin 1)).continuous.comp
       (continuous_subtypeVal.comp continuous_snd)) continuous_const)
-    (by simpa [h0] using hc)
+    (by simpa using hc)
   have hy' : y ∈ Ψ.target := by
     have h := Ψ.toPartialEquiv.map_source haΨ
     rw [← hΨ haΨ] at h
-    simpa [h0] using h
+    simpa using h
   refine mem_of_superset (Ψ.open_target.mem_nhds hy') fun w hw ↦ ?_
   -- A point `w` of the image is reached at the depth `u ∈ [0, -c)` of its preimage.
   set q := Ψ.toPartialEquiv.symm w
