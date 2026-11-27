@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
-public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.RingTheory.Kaehler.Basic
 import Mathlib.Algebra.DirectSum.Module
-import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
-import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # The differential-symbol presentation of differential forms
@@ -118,11 +115,6 @@ theorem elementary_coeff_add (c e : B) (v : Fin n → B) :
     elementary A (c + e) v = elementary A c v + elementary A e v := by
   simp only [elementary_def, add_smul]
 
-/-- `B`-scalar multiplication on an elementary form multiplies its coefficient. -/
-theorem smul_elementary (b c : B) (v : Fin n → B) :
-    b • elementary A c v = elementary A (b * c) v := by
-  simp only [elementary_def, smul_smul]
-
 /-- `A`-scalar multiplication on an elementary form acts on its coefficient. -/
 theorem base_smul_elementary (a : A) (c : B) (v : Fin n → B) :
     a • elementary A c v = elementary A (a • c) v := by
@@ -140,16 +132,6 @@ theorem elementary_zero_eq_zeroEquiv_symm (c : B) (v : Fin 0 → B) :
     elementary A c v = (exteriorPower.zeroEquiv B Ω[B⁄A]).symm c := by
   apply (exteriorPower.zeroEquiv B Ω[B⁄A]).injective
   simp [elementary_def]
-
-/-- The wedge product of two elementary differential forms multiplies their coefficients and
-concatenates their differential slots. -/
-theorem wedge_elementary {m n : ℕ} (c c' : B) (u : Fin m → B) (v : Fin n → B) :
-    exteriorPower.wedge B Ω[B⁄A] m n (elementary A c u) (elementary A c' v) =
-      elementary A (c * c') (Fin.append u v) := by
-  simp only [elementary_def, map_smul, LinearMap.smul_apply, exteriorPower.wedge_ιMulti,
-    smul_smul, mul_comm c' c]
-  congr 2
-  exact (Fin.comp_append (D A B) u v).symm
 
 end Elementary
 
