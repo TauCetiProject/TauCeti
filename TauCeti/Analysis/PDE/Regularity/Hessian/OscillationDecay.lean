@@ -20,9 +20,9 @@ import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Integral.Average.Ball
 import TauCeti.MeasureTheory.Integral.Average.Jensen
 import TauCeti.MeasureTheory.Integral.Average.Oscillation
+import TauCeti.MeasureTheory.Measure.Haar.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -468,8 +468,8 @@ private theorem setAverage_norm_iteratedGradient_rpow_le_of_norm_le
   refine ⟨?_, (Lp.average_norm_rpow_le_of_norm_le hC hwG).trans_eq ?_⟩
   · have : IsFiniteMeasure (volume.restrict (ball x₀ r)) :=
       isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-    simpa only [finrank_euclideanSpace_fin] using setAverage_ball_le_div_pow_mul_setAverage_ball
-      volume hρ hρr (ae_of_all _ fun x => by positivity)
+    simpa only [finrank_euclideanSpace_fin] using setAverage_ball_le hρ (ball_subset_ball hρr)
+      (ae_of_all _ fun x => by positivity)
       (Lp.memLp (Wkp.iteratedGradient 1 w)).integrable_norm_rpow'
   · exact congr_arg _ (average_congr (hGF.mono fun x hx => by simp only [hx]))
 

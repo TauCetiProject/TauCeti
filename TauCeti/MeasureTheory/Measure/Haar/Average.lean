@@ -22,6 +22,8 @@ volumes is explicit. This comparison is the basic step of stopping-time argument
 
 * `TauCeti.setLAverage_ball_le`: the average over `B(x, ρ) ⊆ B(x₀, R)` is at most
   `(R / ρ) ^ dim E` times the average over `B(x₀, R)`.
+* `TauCeti.setAverage_ball_le`: the same bound for the Bochner average of a nonnegative
+  integrable real function.
 * `TauCeti.mul_ofReal_div_pow_le_setLAverage_ball`: if `g ≥ δ` on `B(z, ρ) ⊆ B(c, r)`, the
   average of `g` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`.
 -/
@@ -51,6 +53,22 @@ theorem setLAverage_ball_le (g : E → ℝ≥0∞) {x x₀ : E} {ρ R : ℝ} (h�
     conv_lhs => rw [← div_mul_cancel₀ R hρ.ne']
     rw [Measure.addHaar_ball_mul_of_pos μ x₀ (div_pos hR hρ), Measure.addHaar_ball_center μ x]
   rw [hball, ENNReal.mul_div_cancel_right (measure_ball_pos μ x hρ).ne' measure_ball_lt_top.ne]
+
+/-- The real-valued form of `TauCeti.setLAverage_ball_le`: for `g ≥ 0` integrable on `B(x₀, R)`,
+the average of `g` over a ball `B(x, ρ) ⊆ B(x₀, R)` is at most `(R / ρ) ^ dim E` times its average
+over `B(x₀, R)`. -/
+theorem setAverage_ball_le {g : E → ℝ} {x x₀ : E} {ρ R : ℝ} (hρ : 0 < ρ)
+    (hsub : ball x ρ ⊆ ball x₀ R) (hg0 : 0 ≤ᵐ[μ.restrict (ball x₀ R)] g)
+    (hg : IntegrableOn g (ball x₀ R) μ) :
+    ⨍ y in ball x ρ, g y ∂μ ≤ (R / ρ) ^ finrank ℝ E * ⨍ y in ball x₀ R, g y ∂μ := by
+  have hR : 0 < R := pos_of_mem_ball (hsub (mem_ball_self hρ))
+  have havg : 0 ≤ ⨍ y in ball x₀ R, g y ∂μ := by
+    rw [setAverage_eq]
+    exact smul_nonneg (by positivity) (integral_nonneg_of_ae hg0)
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_mul (by positivity),
+    ofReal_setAverage (hg.mono_set hsub) (ae_restrict_of_ae_restrict_of_subset hsub hg0),
+    ofReal_setAverage hg hg0, ← setLAverage_eq, ← setLAverage_eq]
+  exact setLAverage_ball_le _ hρ hsub
 
 /-- **A lower bound from a sub-ball.** If `g ≥ δ` on a ball `B(z, ρ) ⊆ B(c, r)`, then the average
 of `g` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`. With `g = ‖f - a‖ₑ` and `a` the average of

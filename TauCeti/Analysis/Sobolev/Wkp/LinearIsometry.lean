@@ -50,8 +50,10 @@ norm, and the transport along `e⁻¹` inverts it.
 * `TauCeti.Wkp.norm_iteratedGradient_compLinearIsometryEquiv`: the `Lᵖ` norm of the highest
   derivative is preserved.
 * `TauCeti.Wkp.compLinearIsometryEquiv_mem_wkp0Submodule_iff`: zero boundary values are preserved
-  and reflected; at order two, `TauCeti.Wkp.firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule`
-  states this for the first-order part, as in the Dirichlet problem in `W^{2,p} ∩ W^{1,p}_0`.
+  and reflected.
+* `TauCeti.Wkp.firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule`: at order two, the
+  first-order part keeps zero boundary values under the transport, as in the Dirichlet problem in
+  `W^{2,p} ∩ W^{1,p}_0`; this states preservation only.
 -/
 
 public section
