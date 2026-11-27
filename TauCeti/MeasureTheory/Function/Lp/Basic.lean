@@ -45,6 +45,7 @@ operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM` between `Lp ℝ 
 * `ContinuousLinearMap.compLpL_toSpanSingleton`: a scalar functional after rank-one
   reconstruction is scalar multiplication.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
+* `ContinuousLinearMap.zero_compLp`: composing an `Lp` class with the zero map gives zero.
 * `ContinuousLinearMap.compLp_compLp`, `ContinuousLinearMap.compLpL_comp_compLpL`,
   `ContinuousLinearMap.compLpL_compLpL`: composition laws for `compLp` and `compLpL`.
 * `ContinuousLinearMap.compLpL_comp_compLpL_eq`: two composites of `compLpL` operators agree when
@@ -122,6 +123,13 @@ variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} 
 theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
     L.compLpL p μ f = L.compLp f :=
   rfl
+
+/-- Composing an `Lp` class with the zero map gives the zero class. -/
+@[simp]
+theorem zero_compLp (f : Lp E p μ) : (0 : E →SL[σ] F).compLp f = 0 := by
+  ext1
+  filter_upwards [(0 : E →SL[σ] F).coeFn_compLp f, Lp.coeFn_zero F p μ] with x hx h0
+  rw [hx, h0, zero_apply, Pi.zero_apply]
 
 end Apply
 

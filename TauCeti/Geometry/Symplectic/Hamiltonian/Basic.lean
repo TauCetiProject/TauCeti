@@ -53,7 +53,7 @@ form `ω(·, -J ·)`, the gradient of `H` is `-J X_H`, with no invariance needed
 (`TauCeti.SymplecticForm.associatedBilinForm_neg_apply_neg_hamiltonianVectorField`). The
 Hamiltonian vector field of `(c / 2) ‖y‖²` is the linear field `-c J`
 (`TauCeti.SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq`), whose derivative has norm
-at most `c ≥ 0`
+at most `|c|`
 (`TauCeti.SymplecticForm.norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le`). Adding it to
 a Hamiltonian `H` therefore subtracts `c J` from the derivative of `X_H`
 (`TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq`), so it shifts
@@ -672,13 +672,14 @@ theorem norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner {ω : Symplect
     exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
 
 /-- If the inner product of `E` is the metric `ω(·, J ·)`, the derivative `-c J` of the Hamiltonian
-vector field of `Q(y) = (c / 2) ‖y‖²` has norm at most `c ≥ 0`, since `J` is an isometry. -/
+vector field of `Q(y) = (c / 2) ‖y‖²` has norm at most `|c|`, since `J` is an isometry. -/
 theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le {ω : SymplecticForm E}
-    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {c : ℝ} (hc : 0 ≤ c) (y : E) :
-    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ c / 2 * ‖y‖ ^ 2) y‖ ≤ c := by
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (c : ℝ) (y : E) :
+    ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ c / 2 * ‖y‖ ^ 2) y‖ ≤ |c| := by
   rw [hamiltonianVectorField_div_two_mul_norm_sq hg c, ContinuousLinearMap.fderiv, norm_smul,
-    norm_neg, Real.norm_eq_abs, abs_of_nonneg hc]
-  exact mul_le_of_le_one_right hc (norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner hg)
+    norm_neg, Real.norm_eq_abs]
+  exact mul_le_of_le_one_right (abs_nonneg c)
+    (norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner hg)
 
 /-- If the inner product of `E` is the metric `ω(·, J ·)`, adding `(δ / 2) ‖y‖²` to a Hamiltonian
 whose vector field is differentiable at `y` subtracts `δ J` from the derivative of the Hamiltonian

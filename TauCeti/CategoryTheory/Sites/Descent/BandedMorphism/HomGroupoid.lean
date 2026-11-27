@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Sites.Descent.Banding
+public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.BandEquivalence
 
 /-!
 # The groupoid of band-preserving transformations
@@ -15,7 +16,8 @@ Let `F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` be pseudofunctors such that the f
 groupoids, for instance when `G` is a gerbe. Every modification `m : η ⟶ θ` of strong
 transformations `F ⟶ G` is then invertible (`Pseudofunctor.isGroupoid_hom`);
 `BandedMorphism.modificationIso` records this as an explicit isomorphism with forward
-modification `m`.
+modification `m`. Hence, for `A`-bandings, band preservation is invariant under every
+modification, invertible or not (`BandedMorphism.modification_iff`).
 
 For `A`-bandings `bF`, `bG`, the band-preserving transformations `F ⟶ G` with all modifications
 between them form the full subcategory `BandedMorphism.HomCategory bF bG` of Mathlib's category of
@@ -31,6 +33,7 @@ In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 * `modificationIso`: a modification into a pseudofunctor with groupoid fibres as an isomorphism,
   with `modificationIso_hom`, `modificationIso_inv_app`, `hom_modificationIso_inv`,
   `modificationIso_inv_hom`, `modificationIso_id`, `modificationIso_comp`.
+* `modification_iff`: a modification `η ⟶ θ` relates band preservation of `η` and of `θ`.
 * `HomCategory`: the full subcategory of band-preserving transformations, with `HomCategory.mk`,
   `HomCategory.homMk` and `hom_ext`.
 * `homIso`, `homIso_hom`, `homIso_inv_app`, `hom_homIso_inv`, `homIso_inv_hom`, `homIso_id`,
@@ -113,6 +116,13 @@ abbrev HomCategory : Type _ :=
   (bandPreservingProperty bF bG).FullSubcategory
 
 variable {bF bG}
+
+/-- **Band preservation is invariant under modifications** into a pseudofunctor with groupoid
+fibres: for any modification `m : η ⟶ θ`, `η` is band-preserving exactly when `θ` is. No
+invertibility of `m` is assumed: `m` is invertible as `modificationIso m`. -/
+theorem modification_iff {η θ : F ⟶ G} (m : η ⟶ θ) :
+    BandPreserving bF bG η ↔ BandPreserving bF bG θ :=
+  GerbeBandEquivalence.modificationIso_iff (modificationIso m)
 
 /-- A band-preserving transformation as an object of `HomCategory bF bG`. -/
 abbrev HomCategory.mk (η : F ⟶ G) [h : BandPreserving bF bG η] : HomCategory bF bG :=
