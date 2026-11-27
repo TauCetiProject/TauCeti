@@ -43,7 +43,8 @@ curvatures `1` and `H = 1`.
   (`TauCeti.boundaryWeingarten_boundaryPrincipalDirection`,
   `TauCeti.boundaryInducedForm_boundaryPrincipalDirection`), in which `II_q` is diagonal
   (`TauCeti.boundarySecondFundamentalForm_boundaryPrincipalDirection`), so that
-  `II_q(u, u) = ∑ᵢ κᵢ uᵢ²` (`TauCeti.boundarySecondFundamentalForm_self_eq_sum`).
+  `II_q(u, u) = ∑ᵢ κᵢ uᵢ²` and `h_q(u, u) = ∑ᵢ uᵢ²`
+  (`TauCeti.boundarySecondFundamentalForm_self_eq_sum`, `TauCeti.boundaryInducedForm_self_eq_sum`).
 * `TauCeti.boundaryPrincipalCurvatures_eq_of_eigenbasis`: a decreasing family of eigenvalues of
   `S_q` on any basis of `T_q∂M`, orthonormal or not, is the family of principal curvatures.
 * `TauCeti.boundaryMeanCurvature`: the mean curvature `H(q) = tr S_q / n`, with
@@ -279,18 +280,38 @@ theorem boundarySecondFundamentalForm_boundaryPrincipalDirection (q : (𝓡∂ (
     map_smul, LinearMap.smul_apply, boundaryInducedForm_boundaryPrincipalDirection]
   split_ifs <;> simp
 
+/-- A bilinear form on `T_q∂M` that is diagonal in the principal directions, with diagonal entries
+`dᵢ`, takes the value `∑ᵢ dᵢ uᵢ²` on `(u, u)`, where `uᵢ` are the coordinates of `u` in the basis
+of principal directions. -/
+private theorem apply_self_eq_sum_of_boundaryPrincipalDirection {q : (𝓡∂ (n + 1)).boundary M}
+    {B : LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)} {d : Fin n → ℝ}
+    (hB : ∀ i j, B (boundaryPrincipalDirection q i) (boundaryPrincipalDirection q j) =
+      if i = j then d i else 0)
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    B u u = ∑ i, d i * (boundaryPrincipalBasis q).repr u i ^ 2 := by
+  conv_lhs => rw [← (boundaryPrincipalBasis q).sum_repr u]
+  simp only [coe_boundaryPrincipalBasis, map_sum, map_smul, LinearMap.coe_sum,
+    LinearMap.coe_smul, Finset.sum_apply, Pi.smul_apply, hB, smul_eq_mul, mul_ite, mul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
+
 /-- **The second fundamental form in principal coordinates**: `II_q(u, u) = ∑ᵢ κᵢ uᵢ²`, where
 `uᵢ` are the coordinates of `u` in the basis of principal directions. -/
 theorem boundarySecondFundamentalForm_self_eq_sum (q : (𝓡∂ (n + 1)).boundary M)
     (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
     boundarySecondFundamentalForm q u u =
-      ∑ i, boundaryPrincipalCurvatures q i * (boundaryPrincipalBasis q).repr u i ^ 2 := by
-  conv_lhs => rw [← (boundaryPrincipalBasis q).sum_repr u]
-  simp only [coe_boundaryPrincipalBasis, map_sum, map_smul, LinearMap.coe_sum,
-    LinearMap.coe_smul, Finset.sum_apply, Pi.smul_apply,
-    boundarySecondFundamentalForm_boundaryPrincipalDirection, smul_eq_mul, mul_ite, mul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-  exact Finset.sum_congr rfl fun i _ ↦ by ring
+      ∑ i, boundaryPrincipalCurvatures q i * (boundaryPrincipalBasis q).repr u i ^ 2 :=
+  apply_self_eq_sum_of_boundaryPrincipalDirection
+    (boundarySecondFundamentalForm_boundaryPrincipalDirection q) u
+
+/-- **The induced metric in principal coordinates**: `h_q(u, u) = ∑ᵢ uᵢ²`, where `uᵢ` are the
+coordinates of `u` in the basis of principal directions, which is orthonormal for `h_q`. -/
+theorem boundaryInducedForm_self_eq_sum (q : (𝓡∂ (n + 1)).boundary M)
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    boundaryInducedForm q u u = ∑ i, (boundaryPrincipalBasis q).repr u i ^ 2 :=
+  (apply_self_eq_sum_of_boundaryPrincipalDirection (d := 1)
+    (boundaryInducedForm_boundaryPrincipalDirection q) u).trans
+    (by simp only [Pi.one_apply, one_mul])
 
 /-- The principal directions are nonzero. -/
 theorem boundaryPrincipalDirection_ne_zero (q : (𝓡∂ (n + 1)).boundary M) (i : Fin n) :
