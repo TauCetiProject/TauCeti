@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace
-import Mathlib.Order.Interval.Set.Fin
+public import Mathlib.Analysis.InnerProductSpace.l2Space
+public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace.Basic
 import Mathlib.Order.Interval.Set.Nat
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Variational.Shift
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Successive Rayleigh minima of a compact form pair
@@ -46,10 +48,10 @@ section FiniteSpan
 
 variable {s : Set V}
 
-private theorem shiftedForm_apply_eq_zero_of_mem_span {u : V} {lam : ℝ}
+private theorem form_apply_eq_mul_inner_of_mem_span {u : V} {lam : ℝ}
     (hu : P.inclusion u ∈ (span 𝕜 (P.inclusion '' s))ᗮ)
     (heig : ∀ w ∈ s, ∃ μ, w ∈ P.formEigenspace μ) {v : V} (hv : v ∈ span 𝕜 s) :
-    shiftedForm P.inclusion P.form (-lam) u v = 0 := by
+    P.form u v = (lam : 𝕜) * inner 𝕜 (P.inclusion u) (P.inclusion v) := by
   have hker : span 𝕜 s ≤ (shiftedForm P.inclusion P.form (-lam) u).toLinearMap.ker := by
     refine Submodule.span_le.2 fun w hw ↦ ?_
     obtain ⟨μ, he⟩ := heig w hw
@@ -58,9 +60,10 @@ private theorem shiftedForm_apply_eq_zero_of_mem_span {u : V} {lam : ℝ}
     have huw := inner_left_of_mem_orthogonal
       (subset_span (mem_image_of_mem P.inclusion hw)) hu
     apply LinearMap.mem_ker.2
-    rw [coe_coe, shiftedForm_apply, huw, mul_zero, add_zero,
-      P.hermitian, mem_formEigenspace.1 he u, hwu, mul_zero, star_zero]
-  exact LinearMap.mem_ker.1 (hker hv)
+    simp only [coe_coe, shiftedForm_apply, P.hermitian u w, mem_formEigenspace.1 he u,
+      huw, hwu, mul_zero, star_zero, add_zero]
+  simpa only [coe_coe, shiftedForm_apply, ofReal_neg, neg_mul, ← sub_eq_add_neg, sub_eq_zero]
+    using LinearMap.mem_ker.1 (hker hv)
 
 /-- A Rayleigh minimizer perpendicular to a finite family of variational eigenvectors
 satisfies the full weak eigen-equation at its energy. -/
@@ -69,19 +72,19 @@ theorem mem_formEigenspace_energy_of_isMinOn_orthogonal_span (hs : s.Finite)
     (hu : u ∈ P.unitConstraint (span 𝕜 (P.inclusion '' s))ᗮ)
     (hmin : IsMinOn P.energy (P.unitConstraint (span 𝕜 (P.inclusion '' s))ᗮ) u) :
     u ∈ P.formEigenspace (P.energy u) := by
-  let W := span 𝕜 (P.inclusion '' s)
-  let : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (hs.image P.inclusion)
+  let S := span 𝕜 s
+  let : FiniteDimensional 𝕜 S := FiniteDimensional.span_of_finite 𝕜 hs
+  let : FiniteDimensional 𝕜 (S.map P.inclusion.toLinearMap) := Module.Finite.map _ _
+  have hcompl := S.isCompl_comap_orthogonal_map P.inclusion.toLinearMap P.injective
+  rw [Submodule.map_span, coe_coe] at hcompl
   refine mem_formEigenspace.2 fun v ↦ ?_
-  obtain ⟨y, hy, z, hz, hv⟩ := W.exists_add_mem_mem_orthogonal (P.inclusion v)
-  have hy' : y ∈ (span 𝕜 s).map P.inclusion.toLinearMap := by
-    simpa only [Submodule.map_span, coe_coe] using hy
-  obtain ⟨w, hw, hjw⟩ : ∃ w ∈ span 𝕜 s, P.inclusion w = y := Submodule.mem_map.1 hy'
-  have hjsub : P.inclusion (v - w) = z := by rw [map_sub, hjw, hv, add_sub_cancel_left]
-  have hsub := form_apply_eq_mul_inner_of_isMinOn hu hmin (hjsub.symm ▸ hz)
-  have hspan := P.shiftedForm_apply_eq_zero_of_mem_span (lam := P.energy u)
+  have hv : v ∈ S ⊔ (span 𝕜 (P.inclusion '' s))ᗮ.comap P.inclusion.toLinearMap := by
+    simp [hcompl.sup_eq_top]
+  obtain ⟨w, hw, z, hz, rfl⟩ := Submodule.mem_sup.1 hv
+  have hsub := form_apply_eq_mul_inner_of_isMinOn hu hmin (Submodule.mem_comap.1 hz)
+  have hspan := P.form_apply_eq_mul_inner_of_mem_span (lam := P.energy u)
     (mem_unitConstraint.1 hu).1 heig hw
-  rw [shiftedForm_apply, ofReal_neg, neg_mul, ← sub_eq_add_neg, sub_eq_zero] at hspan
-  simpa only [map_sub, inner_sub_right, mul_sub, hspan, sub_left_inj] using hsub
+  simp only [map_add, inner_add_right, mul_add, hspan, hsub]
 
 end FiniteSpan
 
@@ -112,14 +115,15 @@ private theorem successiveMinimizer_spec (n : ℕ) (hn : (n : Cardinal) < Module
     let W := span 𝕜 (P.inclusion '' s)
     have hs : s.Finite := (finite_Iio n).image _
     have hW : W ≠ ⊤ := by
-      let : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (hs.image P.inclusion)
-      have hdim : Module.finrank 𝕜 W ≤ n := calc
-        _ ≤ (P.inclusion '' s).ncard := finrank_span_le_ncard _ (hs.image _)
-        _ ≤ s.ncard := ncard_image_le hs
-        _ ≤ n := by simpa [s] using (ncard_image_le (f := u) (finite_Iio n))
-      have hrank : Module.rank 𝕜 W ≤ (n : Cardinal) := by
-        rw [← Module.finrank_eq_rank]
-        exact Nat.cast_le.2 hdim
+      classical
+      let t := (Finset.Iio n).image (P.inclusion ∘ u)
+      have ht : (t : Set H) = P.inclusion '' s := by
+        simp only [t, s, Finset.coe_image, Finset.coe_Iio, Set.image_comp]
+      have hrank : Module.rank 𝕜 W ≤ (n : Cardinal) := calc
+        _ = Module.rank 𝕜 (span 𝕜 (t : Set H)) :=
+          congrArg (fun r : Set H ↦ Module.rank 𝕜 (span 𝕜 r)) ht.symm
+        _ ≤ (t.card : Cardinal) := rank_span_finset_le (R := 𝕜) t
+        _ ≤ (n : Cardinal) := Nat.cast_le.2 (Finset.card_image_le.trans_eq (Nat.card_Iio n))
       intro h
       rw [h, rank_top] at hrank
       exact hn.not_ge hrank
@@ -232,30 +236,31 @@ theorem dense_span_of_successive_minima {u : ℕ → V} (hon : Orthonormal 𝕜 
       have he : inner 𝕜 (a.toEnergySpace (u n)) (a.toEnergySpace v) = 0 := by
         rw [hxv]
         exact inner_right_of_mem_orthogonal (subset_span (mem_range_self n)) hx
-      rw [a.inner_toEnergySpace, CoerciveHermitianForm.ofSemibounded_form, shiftedForm_apply,
-        mem_formEigenspace.1 (heig n), ← add_mul, ← ofReal_add] at he
-      exact (mul_eq_zero.1 he).resolve_left (ofReal_ne_zero.2 (by linarith))
+      have heq : inner 𝕜 (a.toEnergySpace (u n)) (a.toEnergySpace v) =
+          ((P.energy (u n) + ω : ℝ) : 𝕜) * inner 𝕜 (P.inclusion (u n)) (P.inclusion v) := by
+        rw [a.inner_toEnergySpace, CoerciveHermitianForm.ofSemibounded_form, shiftedForm_apply]
+        simp only [mem_formEigenspace.1 (heig n) v, ofReal_add, add_mul]
+      exact (mul_eq_zero.1 (heq.symm.trans he)).resolve_left (ofReal_ne_zero.2 (by linarith))
     by_contra hx0
     have hv0 : v ≠ 0 := fun hz ↦ hx0 (by simpa [hz] using hxv.symm)
     have hj : 0 < ‖P.inclusion v‖ ^ 2 :=
       pow_pos (norm_pos_iff.2 (fun h ↦ hv0 (P.injective (h.trans (map_zero _).symm)))) 2
     have hbound (n : ℕ) : P.energy (u n) ≤ P.energy v / ‖P.inclusion v‖ ^ 2 := by
       refine (le_div_iff₀ hj).2 (mul_norm_sq_le_energy_of_isMinOn (hmin n) ?_)
-      have hker : span 𝕜 ((P.inclusion ∘ u) '' Iio n) ≤ (innerSL 𝕜 (P.inclusion v)).ker := by
-        refine span_le.2 ?_
-        rintro _ ⟨k, _, rfl⟩
-        exact (innerSL_apply_apply 𝕜 _ _).trans (inner_eq_zero_symm.1 (horth k))
-      exact (mem_orthogonal' _ _).2 hker
+      refine (mem_orthogonalBilin_span (B := innerₛₗ 𝕜)).2 ?_
+      rintro _ ⟨k, _, rfl⟩
+      exact horth k
     obtain ⟨n, hn⟩ := (tendsto_atTop.1 hdiv (P.energy v / ‖P.inclusion v‖ ^ 2 + 1)).exists
     exact (not_le_of_gt (lt_add_one _)) (hn.trans (hbound n))
   have hS : Dense (S : Set a.EnergySpace) := by
     rw [Submodule.dense_iff_topologicalClosure_eq_top, ← orthogonal_orthogonal_eq_closure,
       hperp, bot_orthogonal_eq_top]
-  have hmap := a.toEnergySpace.symm.surjective.denseRange.topologicalClosure_map_submodule
-    (f := a.toEnergySpace.symm.toContinuousLinearMap)
-    (Submodule.dense_iff_topologicalClosure_eq_top.1 hS)
-  rw [Submodule.dense_iff_topologicalClosure_eq_top]
-  simpa [S, Submodule.map_span, ← Set.range_comp, Function.comp_def] using hmap
+  let e := a.toEnergySpace
+  have hcomp : e.symm ∘ (e ∘ u) = u := funext fun n ↦ e.symm_apply_apply (u n)
+  have hmap : Dense (span 𝕜 (range (e.symm ∘ (e ∘ u))) : Set V) :=
+    e.symm.surjective.denseRange.dense_span_range_comp
+      (f := e.symm.toLinearEquiv.toLinearMap) e.symm.continuous hS
+  simpa only [hcomp] using hmap
 
 /-- In infinite dimension, successive Rayleigh minimizers have a nondecreasing sequence of
 eigenvalues tending to infinity, and their images form a Hilbert basis of the ambient space. -/
@@ -267,10 +272,10 @@ theorem exists_ordered_eigenbasis [CompleteSpace H] (hH : ¬ FiniteDimensional �
         IsMinOn P.energy (P.unitConstraint (span 𝕜 ((P.inclusion ∘ u) '' Iio n))ᗮ) (u n) := by
   obtain ⟨u, hon, hmono, heig, hmin⟩ := P.exists_successive_minimizers hH
   have hd := P.dense_span_of_successive_minima hon heig (fun n ↦ (hmin n).2)
-  have hJ := P.denseRange.topologicalClosure_map_submodule (f := P.inclusion)
-    (Submodule.dense_iff_topologicalClosure_eq_top.1 hd)
+  have hJ := P.denseRange.dense_span_range_comp (f := P.inclusion.toLinearMap)
+    P.inclusion.continuous hd
   have htop : ⊤ ≤ (span 𝕜 (range (P.inclusion ∘ u))).topologicalClosure := by
-    simpa only [Submodule.map_span, coe_coe, ← range_comp] using hJ.ge
+    exact (Submodule.dense_iff_topologicalClosure_eq_top.1 hJ).ge
   have hdiv : Tendsto (P.energy ∘ u) atTop atTop :=
     Nat.cofinite_eq_atTop ▸ P.tendsto_cofinite_energy_of_orthonormal hon
   exact ⟨u, HilbertBasis.mk hon htop, HilbertBasis.coe_mk hon htop, hmono, hdiv, heig, hmin⟩

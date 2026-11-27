@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
-public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace
+public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 import TauCeti.Analysis.InnerProductSpace.Variational.MinMax
 

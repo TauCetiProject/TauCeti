@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
-import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 
 /-!
 # Variational eigenspaces of a compact form pair
@@ -43,7 +41,7 @@ the properties of these spaces that need no successive minimization:
 
 public section
 
-open RCLike Set Submodule
+open RCLike
 
 namespace TauCeti
 
@@ -144,49 +142,16 @@ theorem exists_mem_formEigenspace_norm_inclusion_eq_one (hne : P.formEigenspace 
 /-- **Finitely many variational eigenvalues lie below any bound.** -/
 theorem finite_setOf_formEigenspace_ne_bot_le (M : ℝ) :
     {lam | P.formEigenspace lam ≠ ⊥ ∧ lam ≤ M}.Finite := by
-  obtain ⟨C, -, hC⟩ := P.exists_norm_le_mul_norm_inclusion_of_mem_formEigenspace M
   set s := {lam | P.formEigenspace lam ≠ ⊥ ∧ lam ≤ M}
   choose u hu hu1 using fun l : s ↦ exists_mem_formEigenspace_norm_inclusion_eq_one l.property.1
-  -- The normalized eigenvectors are bounded in `V`.
-  have hbound (l : s) : ‖u l‖ ≤ C := by
-    simpa [hu1 l] using hC l l.property.2 (u l) (hu l)
-  -- Their images are orthonormal in `H`.
-  have hon : Orthonormal 𝕜 fun l : s ↦ P.inclusion (u l) :=
+  have hon : Orthonormal 𝕜 (P.inclusion ∘ u) :=
     ⟨hu1, fun l l' hll' ↦ inner_inclusion_eq_zero_of_mem_formEigenspace
       (fun h ↦ hll' (Subtype.ext h)) (hu l) (hu l')⟩
-  have hfin := IsCompactOperator.finite_setOf_le_norm_of_apply_eq_smul
-    (T := (P.inclusion : V →ₗ[𝕜] H)) P.isCompactOperator hbound hon (μ := fun _ ↦ 1)
-    (fun l ↦ by simp) one_pos
-  simp only [norm_one, le_refl, Set.ofPred_true] at hfin
-  exact Set.finite_coe_iff.1 (Set.finite_univ_iff.1 hfin)
-
-variable (P) in
-/-- Each variational eigenspace is spanned by the form-domain representatives of the Hilbert
-basis vectors at that eigenvalue. This also applies to finite Hilbert bases. -/
-theorem formEigenspace_eq_span_of_hilbertBasis {ι : Type*}
-    (b : HilbertBasis ι 𝕜 H) {u : ι → V} (hb : ⇑b = P.inclusion ∘ u)
-    (heig : ∀ i, u i ∈ P.formEigenspace (P.energy (u i))) (lam : ℝ) :
-    P.formEigenspace lam = span 𝕜 (u '' {i | P.energy (u i) = lam}) := by
-  classical
-  let t := {i | P.energy (u i) = lam}
-  have hfinite : t.Finite :=
-    (P.finite_setOf_energy_le_of_orthonormal (hb ▸ b.orthonormal) lam).subset fun _ hi ↦ hi.le
-  refine le_antisymm (fun v hv ↦ ?_) (span_le.2 ?_)
-  · have hz (i : ι) (hi : i ∉ t) : b.repr (P.inclusion v) i = 0 := by
-      rw [b.repr_apply_apply, congrFun hb i]
-      exact inner_inclusion_eq_zero_of_mem_formEigenspace hi (heig i) hv
-    have hsum := (b.hasSum_repr (P.inclusion v)).tsum_eq
-    rw [tsum_eq_sum (s := hfinite.toFinset) (fun i hi ↦
-      by rw [hz i (fun ht ↦ hi (hfinite.mem_toFinset.2 ht)), zero_smul])] at hsum
-    have hv' : (∑ i ∈ hfinite.toFinset, b.repr (P.inclusion v) i • u i) = v := by
-      apply P.injective
-      simpa only [map_sum, map_smul, ← Function.comp_apply (f := ⇑P.inclusion) (g := u), ← hb]
-        using hsum
-    rw [← hv']
-    exact sum_mem fun i hi ↦
-      smul_mem _ _ (subset_span (mem_image_of_mem u (hfinite.mem_toFinset.1 hi)))
-  · rintro _ ⟨i, hi, rfl⟩
-    exact hi ▸ heig i
+  have henergy (l : s) : P.energy (u l) ≤ M := by
+    simpa only [energy_eq_of_mem_formEigenspace (hu l), hu1 l, one_pow, mul_one] using l.property.2
+  have hcutoff : {l | P.energy (u l) ≤ M} = Set.univ := Set.eq_univ_of_forall henergy
+  exact Set.finite_coe_iff.1 (Set.finite_univ_iff.1
+    (hcutoff ▸ P.finite_setOf_energy_le_of_orthonormal hon M))
 
 end CompactFormPair
 

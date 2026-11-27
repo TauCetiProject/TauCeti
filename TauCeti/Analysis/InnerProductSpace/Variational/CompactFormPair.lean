@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Analysis.InnerProductSpace.Orthonormal
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Variational.BoundedSublevels
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import TauCeti.Topology.Semicontinuity.Sequences
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
@@ -216,15 +216,16 @@ theorem unitConstraint_orthogonal_span_nonempty (P : CompactFormPair 𝕜 V H) {
   have hr : ¬ range P.inclusion ⊆ W := fun h ↦ hne <| top_unique fun x _ ↦
     closure_minimal h W.isClosed_of_finiteDimensional (P.denseRange x)
   obtain ⟨v, hv⟩ : ∃ v, P.inclusion v ∉ W := by simpa [range_subset_iff] using hr
-  have hp := W.starProjection_apply_mem (P.inclusion v)
-  have hW : W ≤ P.inclusion.toLinearMap.range := Submodule.span_le.2 (image_subset_range _ _)
-  obtain ⟨w, hw⟩ : ∃ w, P.inclusion w = W.starProjection (P.inclusion v) :=
-    LinearMap.mem_range.1 (hW hp)
-  refine unitConstraint_nonempty_iff.2 ⟨v - w, ?_, ?_⟩
-  · rw [map_sub, hw]
-    exact W.sub_starProjection_mem_orthogonal _
-  · rw [map_sub, hw, sub_ne_zero]
-    exact fun h ↦ hv (h.symm ▸ hp)
+  let S := Submodule.span 𝕜 s
+  have hmap : S.map P.inclusion.toLinearMap = W := Submodule.map_span _ _
+  let : FiniteDimensional 𝕜 (S.map P.inclusion.toLinearMap) := hmap.symm ▸ ‹FiniteDimensional 𝕜 W›
+  have hcompl := S.isCompl_comap_orthogonal_map P.inclusion.toLinearMap P.injective
+  rw [hmap] at hcompl
+  have hv' : v ∈ S ⊔ Wᗮ.comap P.inclusion.toLinearMap := by simp [hcompl.sup_eq_top]
+  obtain ⟨w, hw, z, hz, rfl⟩ := Submodule.mem_sup.1 hv'
+  refine unitConstraint_nonempty_iff.2 ⟨z, Submodule.mem_comap.1 hz, fun h ↦ hv ?_⟩
+  rw [map_add, h, add_zero, ← hmap]
+  exact Submodule.mem_map_of_mem hw
 
 /-! ### Bounds on constrained spheres -/
 
