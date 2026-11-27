@@ -50,13 +50,11 @@ noncomputable section
 
 universe u
 
-open CategoryTheory Limits IsLocalRing
+open CategoryTheory Limits IsLocalRing Ideal
 
 namespace TauCeti
 
 section UpstreamCharacterizations
-
-open Ideal
 
 section FiniteGlobalDimension
 
