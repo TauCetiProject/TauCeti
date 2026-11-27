@@ -48,8 +48,6 @@ part.
 * `TauCeti.exists_modEq_one_jacobiSym_eq_neg_one_of_prime`: for an odd prime `p` coprime to `n`,
   some `u ≡ 1 (mod n)` has `J(u | p) = -1` (the Chinese remainder step of
   `TauCeti.exists_prime_jacobiSym_eq_neg_one`).
-* `TauCeti.exists_jacobiSym_eq_neg_one_of_odd_of_not_isSquare`: for an odd nonsquare denominator
-  `b`, some numerator `a` has `J(a | b) = -1`.
 
 ## References
 
@@ -199,28 +197,6 @@ theorem exists_modEq_one_jacobiSym_eq_neg_one_of_prime {p n : ℕ} (hp : p.Prime
   have hu : ((u : ℤ) : ZMod p) = a := by
     rw [Int.cast_natCast, (ZMod.natCast_eq_natCast_iff _ _ _).2 hua, ZMod.natCast_zmod_val]
   rw [← jacobiSym.legendreSym.to_jacobiSym, legendreSym, hu, ha]
-
-/-- A Jacobi symbol of odd nonsquare denominator takes the value `-1`. -/
-theorem exists_jacobiSym_eq_neg_one_of_odd_of_not_isSquare {b : ℕ} (hb : Odd b)
-    (hs : ¬ IsSquare b) : ∃ a : ℕ, jacobiSym a b = -1 := by
-  rw [Nat.isSquare_iff_even_factorization] at hs
-  push Not at hs
-  obtain ⟨p, hp, he⟩ := hs
-  let m := b / p ^ b.factorization p
-  have hm : ¬ p ∣ m := Nat.not_dvd_ordCompl hp hb.pos.ne'
-  have hb' : p ^ b.factorization p * m = b := Nat.ordProj_mul_ordCompl_eq_self b p
-  have hp₂ : p ≠ 2 := by
-    intro h
-    exact hb.not_two_dvd_nat (h ▸ Nat.dvd_of_factorization_pos he.pos.ne')
-  obtain ⟨a, ha, hJ⟩ := exists_modEq_one_jacobiSym_eq_neg_one_of_prime hp hp₂
-    (hp.coprime_iff_not_dvd.mpr hm)
-  let : NeZero m := ⟨fun hz ↦ hm (hz ▸ dvd_zero p)⟩
-  have h₁ : jacobiSym a m = 1 := by
-    rw [jacobiSym.mod_left' (a₂ := 1) (by exact_mod_cast ha), jacobiSym.one_left]
-  let : NeZero (p ^ b.factorization p) := ⟨pow_ne_zero _ hp.ne_zero⟩
-  refine ⟨a, ?_⟩
-  calc jacobiSym a b = jacobiSym a (p ^ b.factorization p * m) := congrArg (jacobiSym a) hb'.symm
-    _ = -1 := by rw [jacobiSym.mul_right, jacobiSym.pow_right, hJ, h₁, mul_one, he.neg_one_pow]
 
 /-- For a nonsquare integer `a` some odd natural number `n` has `J(a | n) = -1`. -/
 private theorem exists_odd_jacobiSym_eq_neg_one {a : ℤ} (ha : ¬ IsSquare a) :

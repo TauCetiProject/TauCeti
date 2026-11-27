@@ -8,14 +8,12 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
-public import Mathlib.Data.Nat.Factorization.Basic
-public import Mathlib.Data.PNat.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
-import TauCeti.NumberTheory.DirichletCharacter.PolyaVinogradov
-import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Char
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.PolyaVinogradov
 
 /-!
 # Mean squares of Jacobi-symbol series averaged over numerators
@@ -36,7 +34,7 @@ notably `New.dirichletCharacter_jacobiSym_ne_one`, `New.norm_sum_jacobiSym_le`, 
 
 public section
 
-open Finset Nat
+open Finset
 
 namespace TauCeti
 
@@ -53,43 +51,7 @@ theorem norm_sum_jacobiSym_neg_Icc_le {b : ℕ} (hb : Odd b) (X : ℕ) :
     exact χ.norm_le_one _
   split_ifs with hsq
   · exact hcard
-  refine le_min hcard ?_
-  have hχ : χ ≠ 1 := by
-    obtain ⟨v, hv⟩ := exists_jacobiSym_eq_neg_one_of_odd_of_not_isSquare hb hsq
-    have hunit : IsUnit (v : ZMod b) := by
-      rw [ZMod.isUnit_iff_coprime, Nat.Coprime, ← Int.gcd_natCast_natCast]
-      by_contra h
-      have hz := jacobiSym.eq_zero_iff_not_coprime.mpr h
-      rw [hv] at hz
-      norm_num at hz
-    intro h
-    have heq : (-1 : ℂ) = 1 := by
-      simpa [χ, hv, MulChar.one_apply hunit] using DFunLike.congr_fun h (v : ZMod b)
-    exact (by norm_num : (-1 : ℂ) ≠ 1) heq
-  have hval (v : ℕ) : (jacobiSym (-(v : ℤ)) b : ℂ) = χ (-1) * χ v := by
-    simp only [χ, ← jacobiChar_intCast (R := ℂ), Int.cast_neg, Int.cast_natCast]
-    rw [← map_mul, neg_one_mul]
-  simp_rw [hval, ← mul_sum, norm_mul]
-  exact (mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one _)).trans
-    (χ.norm_sum_Icc_le_of_ne_one hχ X)
-
-/-- Pair correlation of Jacobi symbols with denominators the odd parts of `m` and `n`. The
-square case is bounded by the length of the interval; the nonsquare case has a bound independent
-of that length. -/
-theorem norm_sum_mul_jacobiSym_ordCompl_le (X : ℕ) (m n : ℕ+) :
-    ‖∑ v ∈ Icc 1 X, (jacobiSym (-(v : ℤ)) (ordCompl[2] (m : ℕ)) : ℂ) *
-      (jacobiSym (-(v : ℤ)) (ordCompl[2] (n : ℕ)) : ℂ)‖ ≤
-      if IsSquare (ordCompl[2] ((m : ℕ) * n)) then (X : ℝ)
-      else min (X : ℝ) (2 * Real.sqrt (ordCompl[2] ((m : ℕ) * n) : ℕ) *
-        (1 + Real.log (ordCompl[2] ((m : ℕ) * n) : ℕ))) := by
-  have hmul (v : ℕ) : (jacobiSym (-(v : ℤ)) (ordCompl[2] (m : ℕ)) : ℂ) *
-      (jacobiSym (-(v : ℤ)) (ordCompl[2] (n : ℕ)) : ℂ) =
-      jacobiSym (-(v : ℤ)) (ordCompl[2] ((m : ℕ) * n)) := by
-    rw [Nat.ordCompl_mul, jacobiSym.mul_right' _ (Nat.ordCompl_pos 2 m.ne_zero).ne'
-      (Nat.ordCompl_pos 2 n.ne_zero).ne', Int.cast_mul]
-  simp_rw [hmul]
-  exact norm_sum_jacobiSym_neg_Icc_le (Nat.coprime_two_left.mp (Nat.coprime_ordCompl
-    Nat.prime_two (mul_ne_zero m.ne_zero n.ne_zero))) X
+  · exact le_min hcard (norm_sum_Icc_jacobiSym_neg_le hb hsq X)
 
 /-- In the numerator second moment, each pair of weights costs at most `K` when the
 product of its odd denominators is square, and at most the smaller of `K` and the
