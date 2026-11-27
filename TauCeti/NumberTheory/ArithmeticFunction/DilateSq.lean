@@ -28,6 +28,7 @@ summatory functions of the Liouville and Möbius functions.
 * `ArithmeticFunction.mul_dilateSq_apply`: `(f * g_□)(n) = ∑_{d² ∣ n} f(n / d²) g(d)`.
 * `ArithmeticFunction.sum_Ioc_dilateSq_mul`:
   `∑_{0 < n ≤ N} (g_□ * f)(n) = ∑_{0 < d ≤ √N} g(d) ∑_{0 < k ≤ N / d²} f(k)`.
+* `ArithmeticFunction.sum_Ioc_dilateSq`: `∑_{0 < m ≤ N} g_□(m) = ∑_{0 < d ≤ √N} g(d)`.
 -/
 
 public section
@@ -167,6 +168,17 @@ theorem sum_Ioc_dilateSq_mul (f g : ArithmeticFunction R) (N : ℕ) :
     · rwa [dilateSq_apply_sq] at hne
   · intro d _ _
     rw [dilateSq_apply_sq]
+
+/-- The summatory function of a dilated function is a sum over `d ≤ √N`:
+`∑_{0 < m ≤ N} g_□(m) = ∑_{0 < d ≤ √N} g(d)`. -/
+theorem sum_Ioc_dilateSq (g : ArithmeticFunction R) (N : ℕ) :
+    ∑ m ∈ Ioc 0 N, g.dilateSq m = ∑ d ∈ Ioc 0 N.sqrt, g d := by
+  rw [← mul_one g.dilateSq, sum_Ioc_dilateSq_mul]
+  refine sum_congr rfl fun d hd ↦ ?_
+  rw [mem_Ioc] at hd
+  have h1 : 1 ∈ Ioc 0 (N / d ^ 2) :=
+    mem_Ioc.2 ⟨one_pos, (Nat.one_le_div_iff (pow_pos hd.1 2)).2 (Nat.le_sqrt'.1 hd.2)⟩
+  rw [sum_eq_single_of_mem 1 h1 fun k _ hk ↦ one_apply_ne hk, one_one, mul_one]
 
 end Semiring
 

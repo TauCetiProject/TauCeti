@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.ArithmeticFunction.Liouville
+public import TauCeti.NumberTheory.ArithmeticFunction.DilateSq
 public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.Basic
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.PSeries
@@ -46,6 +47,8 @@ adapted from `PrimeNumberTheoremAnd/Consequences.lean` (`sum_lambda_eq_sum_mu_di
   `TauCeti.liouvilleSum_natCast_add_one`: agreement with the sum over `Finset.Icc 1 N`, constancy
   on `[N, N + 1)` and the jump `λ(N + 1)`.
 * `TauCeti.abs_liouvilleSum_le`: the trivial bound `|L_λ(x)| ≤ x` for `x ≥ 0`.
+* `TauCeti.sum_Icc_natFloor_mul_dilateSq`: the summatory function of `f * g_□` grouped by the
+  square divisor, `∑_{n ≤ x} (f * g_□)(n) = ∑_{w ≤ √x} g(w) ∑_{k ≤ x / w²} f(k)`.
 * `TauCeti.liouvilleSum_eq_sum_moebiusSum`: `L_λ(x) = ∑_{w ≤ √x} M(x / w²)`.
 * `TauCeti.moebiusSum_eq_sum_liouvilleSum`: `M(x) = ∑_{w ≤ √x} μ(w) L_λ(x / w²)`.
 * `TauCeti.abs_liouvilleSum_le_sum`, `TauCeti.abs_moebiusSum_le_sum`: the bounds
@@ -114,7 +117,7 @@ theorem abs_liouvilleSum_le (hx : 0 ≤ x) : |liouvilleSum x| ≤ x := by
 
 /-- Summing `f * g_□` over `n ≤ x` and grouping by the square divisor `w²`:
 `∑_{n ≤ x} (f * g_□)(n) = ∑_{w ≤ √x} g(w) ∑_{k ≤ x / w²} f(k)`. -/
-private theorem sum_Icc_natFloor_mul_dilateSq (f g : ArithmeticFunction ℤ) (x : ℝ) :
+theorem sum_Icc_natFloor_mul_dilateSq (f g : ArithmeticFunction ℤ) (x : ℝ) :
     ∑ n ∈ Icc 1 ⌊x⌋₊, ((f * g.dilateSq) n : ℝ) =
       ∑ w ∈ Icc 1 (Nat.sqrt ⌊x⌋₊), (g w : ℝ) * ∑ k ∈ Icc 1 ⌊x / w ^ 2⌋₊, (f k : ℝ) := by
   have h := congrArg (Int.cast : ℤ → ℝ) (ArithmeticFunction.sum_Ioc_dilateSq_mul f g ⌊x⌋₊)
