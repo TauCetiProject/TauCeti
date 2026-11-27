@@ -169,8 +169,13 @@ theorem uOperator_mul_mul_apply_of_mem {c c' : G} (hc : c ∈ C) (hc' : c' ∈ C
 /-- If `t⁻¹ C t ⊆ C` (for instance if `t` normalises `C`), then `U_t` is `ρ(t)` on `V^C`: the
 average can be dropped. -/
 theorem uOperator_apply_of_forall_mem {t : G} (ht : ∀ c ∈ C, t⁻¹ * c * t ∈ C) {v : V}
-    (hv : v ∈ invariants (ρ.comp C.subtype)) : ρ.uOperator C hC t v = ρ t v :=
-  smoothAverage_apply_of_mem_invariants _ hC (ρ.apply_mem_invariants_of_forall_mem ht hv)
+    (hv : v ∈ invariants (ρ.comp C.subtype)) : ρ.uOperator C hC t v = ρ t v := by
+  have hle : C ≤ C.map (MulAut.conj t) := fun c hc ↦
+    Subgroup.mem_map.2 ⟨t⁻¹ * c * t, ht c hc, by simp [mul_assoc]⟩
+  have hmem : ρ t v ∈ invariants (ρ.comp (C.map (MulAut.conj t)).subtype) := by
+    rw [← ρ.map_invariants_comp_subtype t C]
+    exact Submodule.mem_map_of_mem hv
+  exact smoothAverage_apply_of_mem_invariants _ hC (invariants_comp_subtype_antitone hle hmem)
 
 /-- On `V^C`, `U_c` is the identity for every `c ∈ C`. -/
 theorem uOperator_apply_of_mem {c : G} (hc : c ∈ C) {v : V}
@@ -196,7 +201,10 @@ theorem uOperator_uOperator_apply {t t' : G}
     mul_apply_eq_comp]
   -- `b` fixes `ρ(t') v`, since `t'⁻¹ b t' ∈ C` and `v ∈ V^C`
   obtain ⟨a, b, hcab, ha, hb⟩ := h c hc
-  exact ⟨a, b, hcab, ha, ρ.apply_apply_eq_of_inv_mul_mul_mem hb hv⟩
+  refine ⟨a, b, hcab, ha, mem_stabilizer.1 ?_⟩
+  rw [stabilizer_conj]
+  exact Subgroup.mem_map.2 ⟨t'⁻¹ * b * t', mem_invariants_comp_subtype_iff.1 hv hb,
+    by simp [mul_assoc]⟩
 
 /-! ### The operators `U_t` on the invariants -/
 
@@ -251,8 +259,11 @@ theorem uOperator_apply_eq_inverse_relIndex_smul_finsum (hC_open : IsOpen (C : S
   have hstab : (ConjAct.toConjAct t • C).subgroupOf C ≤ stabilizer (ρ.comp C.subtype) (ρ t v) :=
     fun c hc ↦ by
       rw [mem_stabilizer, MonoidHom.comp_apply, Subgroup.coe_subtype]
-      exact ρ.apply_apply_eq_of_inv_mul_mul_mem
-        (Subgroup.mem_conjAct_smul_iff.1 (Subgroup.mem_subgroupOf.1 hc)) hv
+      apply mem_stabilizer.1
+      rw [stabilizer_conj]
+      exact Subgroup.mem_map.2 ⟨t⁻¹ * c * t, mem_invariants_comp_subtype_iff.1 hv
+        (Subgroup.mem_conjAct_smul_iff.1 (Subgroup.mem_subgroupOf.1 hc)),
+        by simp [mul_assoc]⟩
   rw [uOperator_apply, smoothAverage_apply_of_le _ hC (C.isOpen_conjAct_smul_subgroupOf hC_open t)
     hstab, Subgroup.relIndex]
   simp [← mul_apply_eq_comp, ← map_mul]
