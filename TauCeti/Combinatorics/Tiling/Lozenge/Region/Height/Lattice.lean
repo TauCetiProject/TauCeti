@@ -109,6 +109,35 @@ private theorem update_of_mem_endpoints (hH : IsHeightFunctionOn R H) {c : ℤ}
     simp only [mem_tilingOfHeightOn, h, Set.mem_union, Set.mem_sdiff, hA', hB',
       not_false_eq_true, and_true, or_false]
 
+/-- The edges at `v` after changing `H(v)` to `c`, when `H` takes the value `a + 1` at the three
+points `v + e_k` and `a` at the three points `v − e_k`, and `c` is `a` or `a + 1`: along each edge
+at `v` the new function rises by `0` or `1`, and the edge lies in its free tiling exactly when it
+lies in `regionEdges R` and in `highFlipEdges v` (if `c = a + 1`), respectively `lowFlipEdges v`
+(if `c = a`). -/
+private theorem update_mem_endpoints {a c : ℤ}
+    (hp : H (v + (1, 0)) = a + 1 ∧ H (v + (0, 1)) = a + 1 ∧ H (v + (1, 1)) = a + 1)
+    (hm : H (v - (1, 0)) = a ∧ H (v - (0, 1)) = a ∧ H (v - (1, 1)) = a) (hc : c = a ∨ c = a + 1)
+    (e : TriEdge) (he : v ∈ e.endpoints) :
+    (Function.update H v c e.target - Function.update H v c e.v = 0 ∨
+        Function.update H v c e.target - Function.update H v c e.v = 1) ∧
+      (c = a + 1 → (e ∈ tilingOfHeightOn R (Function.update H v c) ↔
+        e ∈ regionEdges R ∧ e ∈ highFlipEdges v)) ∧
+      (c = a → (e ∈ tilingOfHeightOn R (Function.update H v c) ↔
+        e ∈ regionEdges R ∧ e ∈ lowFlipEdges v)) := by
+  obtain ⟨x, y⟩ := v
+  obtain ⟨h₁, h₂, h₃⟩ := hp
+  obtain ⟨h₄, h₅, h₆⟩ := hm
+  simp only [Prod.mk_add_mk, Prod.mk_sub_mk, add_zero, sub_zero] at h₁ h₂ h₃ h₄ h₅ h₆
+  rcases e with ⟨ev, k⟩
+  rcases TriEdge.mem_endpoints.1 he with rfl | ht
+  · fin_cases k <;>
+      simp [latticeDir_zero, latticeDir_one, latticeDir_two, Prod.ext_iff, neutralIncrement_def,
+        h₁, h₂, h₃] <;> omega
+  · obtain rfl : ev = (x, y) - latticeDir k := eq_sub_of_add_eq (TriEdge.target_mk ev k ▸ ht.symm)
+    fin_cases k <;>
+      simp [latticeDir_zero, latticeDir_one, latticeDir_two, Prod.ext_iff, neutralIncrement_def,
+        h₄, h₅, h₆] <;> omega
+
 variable (hH : IsHeightFunctionOn R H) (hR : (vertexFaces v : Set TriFace) ⊆ R)
 include hH hR
 
@@ -143,8 +172,8 @@ theorem highFlipEdges_subset_tilingOfHeightOn_iff :
     have i₆ := hH.incr hR ⟨(x, y) - (1, 1), 2⟩ ⟨(x, y) - (1, 1), true⟩
       (by simp [vertexFaces_def]) (by simp)
     simp only [TriEdge.target_mk, latticeDir_zero, latticeDir_one, latticeDir_two,
-      neutralIncrement_def, Prod.mk_add_mk, Prod.mk_sub_mk] at *
-    norm_num at *
+      neutralIncrement_mk_zero, neutralIncrement_mk_one, neutralIncrement_mk_two, Prod.mk_add_mk,
+      Prod.mk_sub_mk, add_zero, sub_zero, sub_add_cancel] at m₁ m₂ m₃ i₁ i₂ i₃ i₄ i₅ i₆ ⊢
     omega
   · obtain ⟨x, y⟩ := v
     rcases mem_highFlipEdges.1 he with rfl | rfl | rfl <;>
@@ -176,8 +205,8 @@ theorem lowFlipEdges_subset_tilingOfHeightOn_iff :
     have i₆ := hH.incr hR ⟨(x, y) - (1, 1) + (1, 0), 1⟩ ⟨(x, y) - (1, 1), true⟩
       (by simp [vertexFaces_def]) (by simp)
     simp only [TriEdge.target_mk, latticeDir_zero, latticeDir_one, latticeDir_two,
-      neutralIncrement_def, Prod.mk_add_mk, Prod.mk_sub_mk] at *
-    norm_num at *
+      neutralIncrement_mk_zero, neutralIncrement_mk_one, neutralIncrement_mk_two, Prod.mk_add_mk,
+      Prod.mk_sub_mk, add_zero, sub_zero, sub_add_cancel] at m₁ m₂ m₃ i₁ i₂ i₃ i₄ i₅ i₆ ⊢
     omega
   · obtain ⟨x, y⟩ := v
     rcases mem_lowFlipEdges.1 he with rfl | rfl | rfl <;>
@@ -192,24 +221,18 @@ theorem update_sub_one (hM : highFlipEdges v ⊆ tilingOfHeightOn R H) :
       tilingOfHeightOn R (Function.update H v (H v - 1)) =
         tilingOfHeightOn R H \ highFlipEdges v ∪ lowFlipEdges v := by
   obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ := (hH.highFlipEdges_subset_tilingOfHeightOn_iff hR).1 hM
+  have hp : H (v + (1, 0)) = H v - 1 + 1 ∧ H (v + (0, 1)) = H v - 1 + 1 ∧
+      H (v + (1, 1)) = H v - 1 + 1 := by rw [sub_add_cancel]; exact ⟨h₁, h₂, h₃⟩
   refine hH.update_of_mem_endpoints (fun _ => mem_endpoints_of_mem_highFlipEdges)
     (fun _ => mem_endpoints_of_mem_lowFlipEdges) fun e he => ?_
-  have hR' := mem_regionEdges_of_vertexFaces_subset hR he
-  obtain ⟨x, y⟩ := v
-  rcases e with ⟨ev, k⟩
-  rcases TriEdge.mem_endpoints.1 he with rfl | ht
-  · clear he
-    simp only [Prod.mk_add_mk, Prod.mk_sub_mk, add_zero, sub_zero] at h₁ h₂ h₃ h₄ h₅ h₆
-    fin_cases k <;>
-      simp_all [latticeDir_zero, latticeDir_one, latticeDir_two, Prod.ext_iff,
-        neutralIncrement_def]
-    omega
-  · obtain rfl : ev = (x, y) - latticeDir k := eq_sub_of_add_eq (TriEdge.target_mk ev k ▸ ht.symm)
-    clear he ht
-    simp only [Prod.mk_add_mk, Prod.mk_sub_mk, add_zero, sub_zero] at h₁ h₂ h₃ h₄ h₅ h₆
-    fin_cases k <;>
-      simp_all [latticeDir_zero, latticeDir_one, latticeDir_two, Prod.ext_iff,
-        neutralIncrement_def]
+  obtain ⟨hinc, -, hlow⟩ := update_mem_endpoints (R := R) hp ⟨h₄, h₅, h₆⟩ (Or.inl rfl) e he
+  have hhigh := (update_mem_endpoints (R := R) hp ⟨h₄, h₅, h₆⟩
+    (Or.inr (sub_add_cancel _ _).symm) e he).2.1
+  rw [Function.update_eq_self] at hhigh
+  refine ⟨fun _ => hinc, ?_⟩
+  rw [hlow rfl, Set.mem_union, Set.mem_sdiff, hhigh (sub_add_cancel _ _).symm]
+  have := mem_regionEdges_of_vertexFaces_subset hR he
+  tauto
 
 /-- **A flip raises the height by one.** If the six faces round `v` lie in `R` and the free tiling
 of a height function `H` on `R` contains `lowFlipEdges v`, then raising `H(v)` by one gives a
@@ -222,22 +245,15 @@ theorem update_add_one (hM : lowFlipEdges v ⊆ tilingOfHeightOn R H) :
   obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ := (hH.lowFlipEdges_subset_tilingOfHeightOn_iff hR).1 hM
   refine hH.update_of_mem_endpoints (fun _ => mem_endpoints_of_mem_lowFlipEdges)
     (fun _ => mem_endpoints_of_mem_highFlipEdges) fun e he => ?_
-  have hR' := mem_regionEdges_of_vertexFaces_subset hR he
-  obtain ⟨x, y⟩ := v
-  rcases e with ⟨ev, k⟩
-  rcases TriEdge.mem_endpoints.1 he with rfl | ht
-  · clear he
-    simp only [Prod.mk_add_mk, Prod.mk_sub_mk, add_zero, sub_zero] at h₁ h₂ h₃ h₄ h₅ h₆
-    fin_cases k <;>
-      simp_all [latticeDir_zero, latticeDir_one, latticeDir_two, Prod.ext_iff,
-        neutralIncrement_def]
-    all_goals omega
-  · obtain rfl : ev = (x, y) - latticeDir k := eq_sub_of_add_eq (TriEdge.target_mk ev k ▸ ht.symm)
-    clear he ht
-    simp only [Prod.mk_add_mk, Prod.mk_sub_mk, add_zero, sub_zero] at h₁ h₂ h₃ h₄ h₅ h₆
-    fin_cases k <;>
-      simp_all [latticeDir_zero, latticeDir_one, latticeDir_two, Prod.ext_iff,
-        neutralIncrement_def]
+  obtain ⟨hinc, hhigh, -⟩ :=
+    update_mem_endpoints (R := R) ⟨h₁, h₂, h₃⟩ ⟨h₄, h₅, h₆⟩ (Or.inr rfl) e he
+  have hlow :=
+    (update_mem_endpoints (R := R) ⟨h₁, h₂, h₃⟩ ⟨h₄, h₅, h₆⟩ (Or.inl rfl) e he).2.2
+  rw [Function.update_eq_self] at hlow
+  refine ⟨fun _ => hinc, ?_⟩
+  rw [hhigh rfl, Set.mem_union, Set.mem_sdiff, hlow rfl]
+  have := mem_regionEdges_of_vertexFaces_subset hR he
+  tauto
 
 end IsHeightFunctionOn
 
