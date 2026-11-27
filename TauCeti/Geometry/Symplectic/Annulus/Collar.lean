@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Annulus.PoincareBirkhoffLift
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.ContDiff.Periodization
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
@@ -106,13 +107,6 @@ private theorem mem_thickening_Icc_prod_Icc {a b δ : ℝ} (hδ : 0 < δ) {q : �
   simp only [Prod.dist_eq, dist_self, Real.dist_eq]
   refine max_lt hδ (abs_sub_lt_iff.2 ⟨?_, ?_⟩) <;> simp only [max_def, min_def] <;> split_ifs <;>
     linarith [hq₂.1, hq₂.2]
-
-/-- Translating `p` by `-⌊p.1⌋` in `x` moves its first coordinate into `[0, 1]`. -/
-private theorem fst_add_neg_floor_mem (p : ℝ × ℝ) :
-    (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1 ∈ Icc (0 : ℝ) 1 := by
-  refine ⟨?_, ?_⟩
-  · simp [← sub_eq_add_neg]
-  · simpa [← sub_eq_add_neg] using (Int.fract_lt_one p.1).le
 
 /-- Translating `p` by `-⌊p.1⌋` in `x` moves it into `[0, 1] × [-1, 2]` when `p.2 ∈ [-1, 2]`. -/
 private theorem add_neg_floor_mem {p : ℝ × ℝ} (hp : p.2 ∈ Icc (-1 : ℝ) 2) :

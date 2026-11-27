@@ -17,8 +17,9 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Straightening a map of the strip near a boundary line
@@ -42,8 +43,9 @@ itself when `h` does.
 
 The main result (`TauCeti.exists_pos_forall_injOn_stripCollarStraightening`) is that for every
 small width `ε` all the maps `H_t`, `t ∈ [0, 1]`, are injective on the strip, with invertible
-differential wherever `h` has one. So the deformation runs through injective local
-diffeomorphisms of the strip and ends at a map equal to the identity near the line `y = 0`.
+differential wherever `h` has one. So when `h` is a local diffeomorphism, the deformation runs
+through injective local diffeomorphisms of the strip, and when moreover `χ = 1` near `0` it ends at
+a map equal to the identity near the line `y = 0`.
 
 The point is that a thin collar is harmless here because `h` is tangent to the identity along the
 line. The derivative of `H_t - id = (1 - t χ(y / ε)) (h - id)` is
@@ -183,13 +185,11 @@ private theorem exists_pos_forall_norm_fderiv_sub_id_lt (hh : ContDiff ℝ 1 h)
       simpa [U, hedge] using hκ
   refine ⟨η, hη, fun p hp ↦ ?_⟩
   -- Translate `p` by an integer so that its first coordinate lies in `[0, 1]`.
-  have hfract : (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1 ∈ Icc (0 : ℝ) 1 :=
-    ⟨by simp [← sub_eq_add_neg], by simpa [← sub_eq_add_neg] using (Int.fract_lt_one p.1).le⟩
   have hdist : dist (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)) ((p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1, 0) < η := by
     simpa [Prod.dist_eq, hη] using hp
   have hv : ‖fderiv ℝ h (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)) - ContinuousLinearMap.id ℝ (ℝ × ℝ)‖ < κ :=
     hsub <| Metric.mem_thickening_iff.2
-      ⟨((p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1, 0), ⟨hfract, mem_singleton 0⟩, hdist⟩
+      ⟨((p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1, 0), ⟨fst_add_neg_floor_mem p, mem_singleton 0⟩, hdist⟩
   rwa [periodic_fderiv_of_apply_add_eq_add (fun q ↦ hper q (-⌊p.1⌋)) p] at hv
 
 /-- A map fixing the line `y = 0` pointwise, whose derivative is within `κ` of the identity on a
@@ -318,12 +318,11 @@ private theorem isInvertible_fderiv_stripCollarStraightening_band (hh : ContDiff
   have hH : HasFDerivAt (stripCollarStraightening h χ ε t)
       (D + ContinuousLinearMap.id ℝ (ℝ × ℝ)) p :=
     (hDp.add (hasFDerivAt_id p)).congr_of_eventuallyEq (Eventually.of_forall fun q ↦ by simp)
-  rw [hH.fderiv, ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq rfl]
-  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
-  have h₁ : ‖D v‖ ≤ 1 / 2 * ‖v‖ := (D.le_opNorm v).trans (by gcongr; exact hDle.trans hκB)
-  have h₂ : D v = -v := eq_neg_of_add_eq_zero_left (by simpa using hv)
-  rw [h₂, norm_neg] at h₁
-  exact norm_eq_zero.1 (le_antisymm (by linarith [norm_nonneg v]) (norm_nonneg v))
+  rw [hH.fderiv]
+  refine ContinuousLinearMap.isInvertible_of_norm_sub_lt (ContinuousLinearEquiv.refl ℝ (ℝ × ℝ)) ?_
+  rw [← NNReal.coe_lt_coe]
+  simpa [ContinuousLinearMap.norm_id] using
+    (hDle.trans hκB).trans_lt (by norm_num : (1 / 2 : ℝ) < 1)
 
 /-- Under the hypotheses of `injOn_stripCollarStraightening_band`, `H_t` at most doubles the
 distance of a point of the band `|y| < η` to the line `y = 0`. -/
@@ -387,8 +386,7 @@ private theorem exists_pos_le_abs_snd (hh : Continuous h)
     exact (hη.trans_le hq₀.2.1).ne' this
   · -- Translate `q` by an integer into `K`.
     have hqK : q + (((-⌊q.1⌋ : ℤ) : ℝ), 0) ∈ K :=
-      ⟨⟨by simp [← sub_eq_add_neg], by simpa [← sub_eq_add_neg] using (Int.fract_lt_one q.1).le⟩,
-        by simpa using hqη, by simpa using hq.2.2⟩
+      ⟨fst_add_neg_floor_mem q, by simpa using hqη, by simpa using hq.2.2⟩
     have := isMinOn_iff.1 hmin _ hqK
     rwa [comp_apply, comp_apply, hper, Prod.snd_add, add_zero] at this
 

@@ -37,6 +37,8 @@ only finitely many rounded families have entries in `[-R, R]`.
   a remainder in `[0, 1)`.
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
+* `TauCeti.fst_add_neg_floor_mem`: translating `p` by `-⌊p.1⌋` in the first coordinate moves
+  that coordinate into `[0, 1]`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
@@ -73,6 +75,15 @@ theorem exists_eq_natCast_add_of_mem_Ico {R : Type*} [Ring R] [LinearOrder R]
 theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrder R]
     [FloorRing R] {f : R → β} (hf : Function.Periodic f 1) (t : R) : f (Int.fract t) = f t := by
   simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
+
+/-- Translating a pair `p` by `-⌊p.1⌋` in the first coordinate moves that coordinate into
+`[0, 1]`, since it becomes the fractional part of `p.1`. This brings a point of `R × M` into the
+fundamental domain `[0, 1] × M` of the translations `(x, y) ↦ (x + k, y)`, `k ∈ ℤ`. -/
+theorem fst_add_neg_floor_mem {R M : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorRing R] [AddZeroClass M] (p : R × M) :
+    (p + (((-⌊p.1⌋ : ℤ) : R), 0)).1 ∈ Set.Icc (0 : R) 1 := by
+  simp only [Prod.fst_add, Int.cast_neg, ← sub_eq_add_neg, Int.self_sub_floor]
+  exact ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
 
 /-- In an ordered ring with a natural ceiling, a natural number lies strictly below `a` exactly
 when it is at most `⌈a⌉₊ - 1`. This turns a strict cutoff into an inclusive one. -/
