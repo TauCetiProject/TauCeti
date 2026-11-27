@@ -5,29 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Charpoly.Disc
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.FieldTheory.Separable
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import Mathlib.LinearAlgebra.Matrix.Basis
-import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Matrices with separable characteristic polynomial
 
 A square matrix over a field whose characteristic polynomial splits with distinct roots is
 diagonalizable: its eigenvectors for the distinct roots form a basis
-(`Matrix.exists_mul_eq_mul_diagonal_of_separable`). The discriminant of a matrix, the
-discriminant of its characteristic polynomial, commutes with ring maps (`Matrix.discr_map`), so
-a matrix over a domain whose discriminant is nonzero specializes, at every point where the
-discriminant does not vanish, to a matrix with separable characteristic polynomial.
+(`Matrix.exists_mul_eq_mul_diagonal_of_separable`). When the matrix is invertible, the diagonal
+entries of any such diagonalization are units (`Matrix.isUnit_of_mul_eq_mul_diagonal`).
 
 ## Main results
 
 * `Matrix.exists_mul_eq_mul_diagonal_of_separable`: a matrix with split separable characteristic
   polynomial is conjugate to a diagonal matrix.
-* `Matrix.discr_map`: the discriminant of a matrix commutes with ring maps.
+* `Matrix.isUnit_of_mul_eq_mul_diagonal`: an invertible matrix conjugate to a diagonal matrix has
+  unit diagonal entries.
 -/
 
 public section
@@ -38,15 +35,8 @@ namespace Matrix
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- **The discriminant commutes with ring maps.** The characteristic polynomial is monic, so
-mapping it preserves its degree. -/
-theorem discr_map {R S : Type*} [CommRing R] [CommRing S] (M : Matrix ι ι R) (φ : R →+* S) :
-    (M.map φ).discr = φ M.discr := by
-  rw [discr, discr, charpoly_map, M.charpoly_monic.discr_map]
-
-/-- **A matrix with split separable characteristic polynomial is diagonalizable.** Eigenvectors
-for the distinct roots of the characteristic polynomial form a basis, and the matrix `P` whose
-columns are these eigenvectors satisfies `M * P = P * diagonal d`. -/
+/-- **A matrix with split separable characteristic polynomial is diagonalizable**: there are an
+invertible `P` and a diagonal matrix `diagonal d` with `M * P = P * diagonal d`. -/
 theorem exists_mul_eq_mul_diagonal_of_separable {F : Type*} [Field F] (M : Matrix ι ι F)
     (hs : M.charpoly.Splits) (hM : M.charpoly.Separable) :
     ∃ (P : GL ι F) (d : ι → F), M * P = P * diagonal d := by
@@ -74,5 +64,15 @@ theorem exists_mul_eq_mul_diagonal_of_separable {F : Type*} [Field F] (M : Matri
   have h := congrFun (hv (e c)).apply_eq_smul r
   simp only [f, Matrix.toLin'_apply, mulVec, dotProduct] at h
   simp [Matrix.mul_apply, Module.Basis.toMatrix_apply, b, h, diagonal_apply, mul_comm]
+
+/-- If an invertible matrix `M` satisfies `M * P = P * diagonal d` for an invertible `P`, then every
+diagonal entry `d i` is a unit. -/
+theorem isUnit_of_mul_eq_mul_diagonal {R : Type*} [CommRing R] {M : Matrix ι ι R} (hM : IsUnit M)
+    {P : GL ι R} {d : ι → R} (h : M * P = P * diagonal d) (i : ι) : IsUnit (d i) := by
+  have hdet := congrArg det h
+  rw [det_mul, det_mul, det_diagonal, mul_comm] at hdet
+  have hprod : IsUnit (∏ j, d j) := isUnit_of_mul_isUnit_right (hdet ▸
+    ((isUnit_iff_isUnit_det _).1 (Units.isUnit P)).mul ((isUnit_iff_isUnit_det _).1 hM))
+  exact isUnit_of_dvd_unit (Finset.dvd_prod_of_mem d (Finset.mem_univ i)) hprod
 
 end Matrix

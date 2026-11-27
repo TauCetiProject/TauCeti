@@ -44,6 +44,8 @@ by the same equation required of a pinned Chevalley--Demazure group scheme.
 * `TauCeti.GeneralLinear.diagonalTorus`: the corresponding group-scheme morphism.
 * `TauCeti.GeneralLinear.diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv`: the root-character
   conjugation equation.
+* `TauCeti.GeneralLinear.diagonalPoint`: the point of `GL_N` given by a diagonal matrix of units,
+  without the universe lift of the torus coordinates.
 * `TauCeti.GeneralLinear.schemePointsMulEquiv_diagonalTorus`: on scheme-valued points, composing
   with the diagonal torus morphism is the diagonal matrix of the coordinates.
 
@@ -138,6 +140,47 @@ theorem mapValue_diagonalTorusPoints (phi : A →ₐ[R] B)
     pointsMulEquiv_diagonalTorusPoints, pointsMulEquiv_diagonalTorusPoints, map_diagGL]
   exact congrArg diagGL
     (funext fun i ↦ (SplitTorus.pointsMulEquiv_mapValue phi f (ULift.up i)).symm)
+
+/-- The point of `GL_N` with values in `A` given by the invertible diagonal matrix with entries
+`t`. -/
+noncomputable def diagonalPoint (t : Fin N → Aˣ) :
+    WithConv (coordinateHopfAlgebra R N →ₐ[R] A) :=
+  (pointsMulEquiv N).symm (diagGL t)
+
+/-- `diagonalPoint t` is the point of the invertible diagonal matrix `diagGL t`. -/
+theorem diagonalPoint_def (t : Fin N → Aˣ) :
+    diagonalPoint (R := R) t = (pointsMulEquiv N).symm (diagGL t) :=
+  (rfl)
+
+/-- Read as an invertible matrix through `pointsMulEquiv`, `diagonalPoint t` is `diagGL t`. -/
+-- Not `@[simp]`: `pointsMulEquiv_apply` already simplifies the left-hand side, and
+-- `pointToGeneralLinear_diagonalPoint` is the `simp` form.
+theorem pointsMulEquiv_diagonalPoint (t : Fin N → Aˣ) :
+    pointsMulEquiv N (diagonalPoint (R := R) t) = diagGL t :=
+  MulEquiv.apply_symm_apply _ _
+
+/-- Read as an invertible matrix, `diagonalPoint t` is `diagGL t`. -/
+@[simp]
+theorem pointToGeneralLinear_diagonalPoint (t : Fin N → Aˣ) :
+    pointToGeneralLinear N (diagonalPoint (R := R) t) = diagGL t := by
+  rw [← pointsMulEquiv_apply, pointsMulEquiv_diagonalPoint]
+
+/-- The generic matrix evaluated at `diagonalPoint t` is the diagonal matrix with entries `t`. -/
+@[simp]
+theorem map_genericMatrix_diagonalPoint (t : Fin N → Aˣ) :
+    (genericMatrix R N).map (diagonalPoint (R := R) t).ofConv =
+      Matrix.diagonal fun i ↦ (t i : A) := by
+  rw [map_genericMatrix_eq_coe_pointToGeneralLinear, toConv_ofConv,
+    pointToGeneralLinear_diagonalPoint, diagGL_coe]
+
+/-- Diagonal points are natural in the value algebra. -/
+-- Not `@[simp]`: `AlgHom.mapValue_apply` already simplifies the left-hand side, so `simpNF`
+-- rejects this higher-level equation as not being in normal form.
+theorem mapValue_diagonalPoint (phi : A →ₐ[R] B) (t : Fin N → Aˣ) :
+    AlgHom.mapValue (H := coordinateHopfAlgebra R N) phi (diagonalPoint t) =
+      diagonalPoint fun i ↦ Units.map (phi : A →* B) (t i) := by
+  rw [diagonalPoint, diagonalPoint, mapValue_pointsMulEquiv_symm_apply, map_diagGL]
+  rfl
 
 /-- Conjugation by a diagonal-torus point acts on the root subgroup for `εᵢ - εⱼ` by
 the corresponding character `t ↦ tᵢ tⱼ⁻¹`. -/
