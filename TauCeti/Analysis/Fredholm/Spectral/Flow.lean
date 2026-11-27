@@ -11,7 +11,7 @@ import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Algebra.Indicator
 import TauCeti.Topology.LocallyConstant.Preconnected
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The spectral flow of a path of self-adjoint Fredholm operators
@@ -55,9 +55,9 @@ change of the parameter `φ` with `φ a ≤ φ b`, `SF(A ∘ φ, a, b) = SF(A, �
 (`TauCeti.spectralFlow_comp_neg`). Here `φ` need not be monotone, and only has to map `[a, b]` into
 an interval on which `A` is a continuous path of self-adjoint Fredholm operators: a potential of
 `A` composed with `φ` is a potential of `A ∘ φ`, since by the intermediate value theorem `φ` maps
-each subinterval onto a set containing the interval between its values. More generally, a path
-with the same potentials as a continuous path of self-adjoint Fredholm operators has the same
-spectral flow (`TauCeti.spectralFlow_eq_of_isSpectralFlowPotential_iff`); this compares paths on
+each subinterval onto a set containing the interval between its values. More generally, two paths
+with the same potentials have the same spectral flow
+(`TauCeti.spectralFlow_eq_of_isSpectralFlowPotential_iff`); this compares paths on
 different Hilbert spaces, as in `TauCeti.Analysis.Fredholm.Spectral.Conjugation`. The scalar paths
 `t ↦ f t • 1` on a finite-dimensional space are computed in
 `TauCeti.Analysis.Fredholm.Spectral.FiniteDimensional`
@@ -659,19 +659,17 @@ section Comparison
 variable {K : Type*} [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K]
   [NormedAlgebra ℝ (K →L[𝕜] K)] [IsometricContinuousFunctionalCalculus ℝ (K →L[𝕜] K) IsSelfAdjoint]
 
-/-- **Comparison of spectral flows.** A path `B`, on a possibly different Hilbert space, with the
-same spectral flow potentials on `[a, b]` as a continuous path `A` of self-adjoint Fredholm
-operators has the same spectral flow. No regularity of `B` is assumed. -/
+omit [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
+/-- **Comparison of spectral flows.** Two paths `A` and `B`, on possibly different Hilbert spaces,
+with the same spectral flow potentials on `[a, b]` have the same spectral flow. No regularity of
+either path is assumed. -/
 theorem spectralFlow_eq_of_isSpectralFlowPotential_iff {B : ℝ → K →L[𝕜] K} {a b : ℝ}
-    (hab : a ≤ b) (hA : ContinuousOn A (Icc a b)) (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
-    (hF : ∀ t ∈ Icc a b, (A t).IsFredholm)
     (h : ∀ F, IsSpectralFlowPotential B a b F ↔ IsSpectralFlowPotential A a b F) :
     spectralFlow B a b = spectralFlow A a b := by
-  obtain ⟨F, hFp⟩ := exists_isSpectralFlowPotential hA hsa hF
-  have hB : ∃ G, IsSpectralFlowPotential B a b G := ⟨F, (h F).2 hFp⟩
-  rw [spectralFlow_eq_sub hab hA hsa hF hFp]
-  simp only [spectralFlow, hB, ↓reduceDIte]
-  exact ((h _).1 hB.choose_spec).sub_eq_sub hFp hab hA hsa hF
+  have hpot : IsSpectralFlowPotential B a b = IsSpectralFlowPotential A a b :=
+    funext fun F ↦ propext (h F)
+  unfold spectralFlow
+  rw [hpot]
 
 /-- **Local comparison of spectral flows.** Two continuous paths `A` and `B` of self-adjoint
 Fredholm operators, on possibly different Hilbert spaces, have the same spectral flow over

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Fin.Tuple
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
-public import TauCeti.AlgebraicTopology.Singular.Contractible
+public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.Bott.Index.One
 public import TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology
@@ -59,7 +59,7 @@ relative homology of the critical band `({f ≤ d}, {f ≤ c}) = (ℝℙᴺ, {f 
 homology of `ℝℙᴺ`: it vanishes in degree `0`
 (`TauCeti.isZero_singularHomology_zero_sublevelPair_projectiveHyperplaneMomentFunction`) and agrees
 with `Hₖ(ℝℙᴺ)` in every positive degree `k`
-(`TauCeti.singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction`). With integer
+(`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`). With integer
 coefficients it is `ℤ/2` in the odd degrees `k < N`, and it vanishes in the even positive degrees
 for every coefficient ring in which `2` is right-regular.
 
@@ -110,9 +110,9 @@ comparison by constant ones gives the wrong group.
   `{v_{N+1} = 0}` and the minimum `[e_{N+1}]` exhibit the moment function as a Morse–Bott function.
 * `TauCeti.contractibleSpace_sublevel_projectiveHyperplaneMomentFunction`: the sublevels
   `{f ≤ c}` with `0 ≤ c < 1` are contractible.
-* `TauCeti.singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction` and
-  `TauCeti.isZero_singularHomology_zero_sublevelPair_projectiveHyperplaneMomentFunction`: the
-  relative homology of a band crossing the top level is the reduced homology of `ℝℙᴺ`.
+* `TauCeti.isZero_singularHomology_zero_sublevelPair_projectiveHyperplaneMomentFunction`: the
+  relative homology of a band crossing the top level vanishes in degree `0`; in positive degrees
+  it is the homology of `ℝℙᴺ` by `TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`.
 * `TauCeti.singularHomologySublevelPairProjectiveHyperplaneMomentFunctionIntLinearEquivOfOdd` and
   `TauCeti.isZero_singularHomology_sublevelPair_projectiveHyperplaneMomentFunction_of_even`:
   it is `ℤ/2` in odd degrees below `N` with integer coefficients, and zero in even degrees
@@ -478,44 +478,6 @@ section Homology
 
 variable {A : Type*} [Category A] [HasCoproducts.{0} A] [Abelian A] (R : A) {c d : ℝ}
 
-/-- **A band crossing the top level in positive degrees.** For `0 ≤ c < 1 ≤ d`, the lower sublevel
-`{f ≤ c}` is contractible, so in every positive degree the relative homology of the band
-`({f ≤ d}, {f ≤ c})` is the homology of `ℝℙᴺ`. The isomorphism is the map induced by the
-identification `ℝℙᴺ = {f ≤ d}`, followed by the quotient map to relative homology. -/
-def singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction (hc₀ : 0 ≤ c)
-    (hc₁ : c < 1) (hd : 1 ≤ d) (k : ℕ) :
-    ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).obj
-        (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) ≅
-      (sublevelPair (projectiveHyperplaneMomentFunction N) (hc₁.le.trans hd)).singularHomology R
-        (k + 1) :=
-  have : ContractibleSpace
-      (sublevelPair (projectiveHyperplaneMomentFunction N) (hc₁.le.trans hd)).snd :=
-    contractibleSpace_sublevel_projectiveHyperplaneMomentFunction hc₀ hc₁
-  ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).mapIso
-      (TopCat.isoOfHomeo (sublevelHomeomorphUniv fun x ↦
-        (projectiveHyperplaneMomentFunction_le_one x).trans hd).symm) ≪≫
-    (sublevelPair _ _).singularHomologyIsoOfContractibleSpace R k
-
-/-- The forward map of `singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction` is
-induced by the inclusion `ℝℙᴺ → {f ≤ d}`, followed by the quotient map to relative homology. -/
-@[reassoc]
-theorem singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction_hom (hc₀ : 0 ≤ c)
-    (hc₁ : c < 1) (hd : 1 ≤ d) (k : ℕ) :
-    (singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction R hc₀ hc₁ hd k).hom =
-      ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).map
-          (TopCat.ofHom ⟨fun x ↦ ⟨x, (projectiveHyperplaneMomentFunction_le_one x).trans hd⟩,
-            by fun_prop⟩) ≫
-        (sublevelPair (projectiveHyperplaneMomentFunction N) (hc₁.le.trans hd)).singularHomologyπ
-          R (k + 1) := by
-  -- Instance search does not see through the subspace of `sublevelPair`, so the contractibility
-  -- of `{f ≤ c}` is supplied explicitly.
-  rw [singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction, Iso.trans_hom,
-    Functor.mapIso_hom, @TopPair.singularHomologyIsoOfContractibleSpace_hom _ _ _ _ _ R
-      (contractibleSpace_sublevel_projectiveHyperplaneMomentFunction hc₀ hc₁) k]
-  congr 2
-  ext x
-  exact sublevelHomeomorphUniv_symm_apply _ x
-
 /-- **A band in degree zero.** For `0 ≤ c ≤ d`, the zeroth relative homology of the band
 `({f ≤ d}, {f ≤ c})` vanishes, since `{f ≤ d}` is path-connected (contractible for `d < 1`, and
 all of `ℝℙᴺ` for `1 ≤ d`) and `{f ≤ c}` contains the minimum `[e_N]`. -/
@@ -545,8 +507,9 @@ def singularHomologySublevelPairProjectiveHyperplaneMomentFunctionIntLinearEquiv
         (ModuleCat.of ℤ ℤ) k : ModuleCat.{0} ℤ) ≃ₗ[ℤ] ZMod 2)
   | 0, hk, _ => (Nat.not_odd_zero hk).elim
   | k + 1, hk, hkN =>
-    (singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction _ hc₀ hc₁ hd
-      k).symm.toLinearEquiv ≪≫ₗ
+    have := contractibleSpace_sublevel_projectiveHyperplaneMomentFunction (N := N) hc₀ hc₁
+    (singularHomologyIsoSublevelPairOfContractibleSpace (hc₁.le.trans hd)
+      (fun x ↦ (projectiveHyperplaneMomentFunction_le_one x).trans hd) _ k).symm.toLinearEquiv ≪≫ₗ
       RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd hk hkN
 
 /-- **Homology of a band crossing the top level in even degrees.** If `2` is right-regular in `S`,
@@ -558,9 +521,11 @@ theorem isZero_singularHomology_sublevelPair_projectiveHyperplaneMomentFunction_
       (ModuleCat.of S S) k) := by
   rcases k with _ | k
   · exact isZero_singularHomology_zero_sublevelPair_projectiveHyperplaneMomentFunction _ hc₀ _
-  · exact (RealProjectiveSpace.isZero_singularHomology_projectivization_of_even (N := N) S h2 hk
+  · have := contractibleSpace_sublevel_projectiveHyperplaneMomentFunction (N := N) hc₀ hc₁
+    exact (RealProjectiveSpace.isZero_singularHomology_projectivization_of_even (N := N) S h2 hk
       k.succ_ne_zero).of_iso
-        (singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction _ hc₀ hc₁ hd k).symm
+        (singularHomologyIsoSublevelPairOfContractibleSpace (hc₁.le.trans hd)
+          (fun x ↦ (projectiveHyperplaneMomentFunction_le_one x).trans hd) _ k).symm
 
 /-- **The band crossing the critical circle of `ℝℙ²`.** On `ℝℙ²` the critical hyperplane is the
 circle `ℝℙ¹`, and for `0 ≤ c < 1 ≤ d` the band crossing it has `H₁({f ≤ d}, {f ≤ c}; ℤ) ≅ ℤ/2`.
@@ -658,7 +623,7 @@ theorem nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplan
     ((isClosed_Icc.preimage (contMDiff_projectiveHyperplaneMomentFunction (r := 0)).continuous
       ).isCompact)
     (criticalPoints_inter_preimage_Icc_subset_range_projectiveHyperplaneEmbedding (by norm_num))
-    hdim g hV]
+    hdim g hV ℤ two_ne_zero]
   constructor
   · -- For `N ≥ 1` the band has `H₁ ≅ ℤ/2`.
     rintro he
@@ -667,8 +632,10 @@ theorem nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplan
       (Nat.succ_lt_succ (Nat.pos_of_ne_zero hN)) hc₀ hc₁ hd he
   · -- For `N = 0` the band has the homology `H₁(ℝℙ¹; ℤ) ≅ ℤ` of the circle.
     rintro rfl
-    exact ⟨(singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction
-        (ModuleCat.of ℤ ℤ) hc₀ hc₁ hd 0).symm.toLinearEquiv ≪≫ₗ
+    have := contractibleSpace_sublevel_projectiveHyperplaneMomentFunction (N := 1) hc₀ hc₁
+    exact ⟨(singularHomologyIsoSublevelPairOfContractibleSpace (hc₁.le.trans hd)
+        (fun x ↦ (projectiveHyperplaneMomentFunction_le_one x).trans hd) (ModuleCat.of ℤ ℤ)
+          0).symm.toLinearEquiv ≪≫ₗ
       (RealProjectiveSpace.singularHomologyProjectivizationIso (N := 1) ℤ 1).symm.toLinearEquiv ≪≫ₗ
       RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd ℤ odd_one⟩
 
@@ -741,8 +708,9 @@ theorem nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomol
       ).isCompact)
     (criticalPoints_inter_preimage_Icc_subset_range_projectiveHyperplaneEmbedding (by norm_num))
     hdim g hV R k
-  exact ⟨e.symm ≪≫ (singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction
-    (ModuleCat.of R R) hc₀ hc₁ hd k).symm⟩
+  have := contractibleSpace_sublevel_projectiveHyperplaneMomentFunction (N := N + 1) hc₀ hc₁
+  exact ⟨e.symm ≪≫ (singularHomologyIsoSublevelPairOfContractibleSpace (hc₁.le.trans hd)
+    (fun x ↦ (projectiveHyperplaneMomentFunction_le_one x).trans hd) (ModuleCat.of R R) k).symm⟩
 
 /-- **The twisted homology of the critical hyperplane in even degrees.** With the negative normal
 bundle `ν⁻` as in

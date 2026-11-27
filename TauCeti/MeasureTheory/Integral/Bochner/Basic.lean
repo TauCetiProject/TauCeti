@@ -38,6 +38,9 @@ for set and probability integrals.
 * `TauCeti.integral_norm_pow_add_two_le`: under a probability measure, a function bounded by `K`
   in norm with `∫ ‖Y‖ ^ 2 ≤ v` has `∫ ‖Y‖ ^ (m + 2) ≤ K ^ m * min v (K ^ 2)`: the factor
   `‖Y‖ ^ m` acts as a multiplier bounded by `K ^ m`. No measurability of `Y` is assumed.
+* `TauCeti.integral_norm_smul_sq_le`: a scalar factor of norm at most one almost everywhere does
+  not increase the squared `L²` norm, `∫ ‖f • ξ‖² ≤ ∫ ‖ξ‖²`. Applied to a restricted measure, this
+  bounds the squared `L²` norm of a cut-off function `χ ξ` on a set by that of `ξ`.
 
 ## Differences of integrals
 
@@ -391,6 +394,16 @@ theorem integral_norm_pow_add_two_le {Ω E : Type*} [MeasurableSpace Ω] {μ : M
             (sq_nonneg _))
     _ = K ^ m * ∫ ω, ‖Y ω‖ ^ 2 ∂μ := integral_const_mul _ _
     _ ≤ _ := mul_le_mul_of_nonneg_left (le_min hv hK2) (pow_nonneg hK₀ m)
+
+/-- A scalar factor of norm at most one almost everywhere does not increase the squared `L²`
+norm: `∫ ‖f • ξ‖² ≤ ∫ ‖ξ‖²` whenever `‖ξ‖²` is integrable. -/
+theorem integral_norm_smul_sq_le {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : α → 𝕜} {ξ : α → E}
+    (hf : ∀ᵐ x ∂μ, ‖f x‖ ≤ 1) (hξ : Integrable (fun x ↦ ‖ξ x‖ ^ 2) μ) :
+    ∫ x, ‖f x • ξ x‖ ^ 2 ∂μ ≤ ∫ x, ‖ξ x‖ ^ 2 ∂μ :=
+  integral_mono_of_nonneg (.of_forall fun _ ↦ sq_nonneg _) hξ (hf.mono fun x hx ↦ by
+    simp only [norm_smul, mul_pow]
+    exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ (norm_nonneg _) hx))
 
 namespace MeasureTheory
 

@@ -101,6 +101,14 @@ theorem isCompl_center_derivedSeries_one_of_anisotropic (B : LinearMap.BilinForm
   rw [orthogonal_derivedSeries_one_eq_center B hnd.2 hinv] at hcompl
   exact hcompl.symm
 
+/-- A central element of the derived algebra vanishes when a finite-dimensional Lie algebra has a
+reflexive invariant form with anisotropic diagonal. -/
+theorem eq_zero_of_mem_center_of_mem_derivedSeries_one (B : LinearMap.BilinForm F L)
+    (hrefl : B.IsRefl) (hani : B.toQuadraticMap.Anisotropic) (hinv : B.lieInvariant L) {x : L}
+    (hc : x ∈ center F L) (hd : x ∈ derivedSeries F L 1) : x = 0 :=
+  Submodule.disjoint_def.mp (LieSubmodule.disjoint_toSubmodule.mpr
+    (B.isCompl_center_derivedSeries_one_of_anisotropic hrefl hani hinv).disjoint) x hc hd
+
 /-- The derived algebra of a finite-dimensional Lie algebra with a reflexive invariant form
 with anisotropic diagonal is semisimple. -/
 theorem isSemisimple_derivedSeries_one_of_anisotropic (B : LinearMap.BilinForm F L)

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Bilinear
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
-import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
 

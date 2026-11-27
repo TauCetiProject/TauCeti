@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 
+import TauCeti.Algebra.Algebra.Unitization
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -192,8 +193,7 @@ theorem unitizationInrL_unitizationSndL_of_fst_eq_zero {u : WithLp 1 (Unitizatio
     unitizationInrL 𝕜 A (unitizationSndL 𝕜 A u) = u := by
   apply WithLp.ofLp_injective 1
   rw [unitizationInrL_apply, ofLp_toLp, unitizationSndL_apply]
-  simpa only [hu, Unitization.inl_zero, zero_add] using
-    Unitization.inl_fst_add_inr_snd_eq (ofLp u)
+  exact Unitization.inr_snd_of_fst_eq_zero hu
 
 variable [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 

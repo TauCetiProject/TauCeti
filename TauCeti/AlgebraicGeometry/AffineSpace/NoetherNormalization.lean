@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AffineSpace.Linear
 public import TauCeti.RingTheory.NoetherNormalization
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
 # Geometric linear Noether normalization
@@ -25,6 +27,12 @@ normalization:
 * When `x` generates `A` as a `k`-algebra, `homOfAlgebra k x` is moreover a closed immersion
   `Spec (.of A) ⟶ 𝔸(n; Spec (.of k))`
   (`AlgebraicGeometry.AffineSpace.exists_linear_normalization`).
+* For any nonempty scheme `Z` equipped with a finite morphism `ι : Z ⟶ 𝔸(n; Spec (.of k))` over an
+  infinite field `k` with `n` finite, there exist `d ≤ Fintype.card n` and
+  `C : Matrix (ULift (Fin d)) n k` whose induced linear projection composes with `ι` to a finite
+  surjective morphism onto `𝔸(ULift (Fin d); Spec (.of k))` with finite fibers and
+  `topologicalKrullDim Z = d`
+  (`AlgebraicGeometry.AffineSpace.exists_linear_normalization_of_isFinite`).
 
 ## Main results
 
@@ -33,6 +41,9 @@ normalization:
   module-finite.
 * `AlgebraicGeometry.AffineSpace.exists_linear_normalization`: geometric linear Noether
   normalization for `Spec (.of A)` given algebra generators `x : n → A` over an infinite field `k`.
+* `AlgebraicGeometry.AffineSpace.exists_linear_normalization_of_isFinite`: geometric linear Noether
+  normalization for an arbitrary nonempty scheme `Z` finite over `𝔸(n; Spec (.of k))` (in
+  particular, any nonempty closed subscheme).
 
 ## References
 
@@ -61,28 +72,19 @@ theorem exists_linear_normalization_of_finite {k A : Type u} [Field k] [Infinite
       let π := homOfAlgebra k x ≫
         linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv)
       IsFinite π ∧ Surjective π ∧ (∀ q, (π ⁻¹' {q}).Finite) ∧ ringKrullDim A = d := by
-  let e : Fin (Fintype.card n) ≃ n := (Fintype.equivFin n).symm
-  have hx' : (MvPolynomial.aeval (R := k) (x ∘ e)).Finite := by
-    rw [← MvPolynomial.aeval_comp_rename]
-    exact AlgHom.Finite.comp hx
-      (AlgHom.Finite.of_surjective _ (MvPolynomial.rename_surjective _ e.surjective))
   obtain ⟨d, hd, C₀, hy_ind, hy_fin, hdim⟩ :=
-    TauCeti.exists_linear_normalization_of_finite (x ∘ e) hx'
-  let C : Matrix (ULift.{u} (Fin d)) n k := C₀.submatrix ULift.down e.symm
-  let y : Fin d → A := fun i ↦ ∑ j, C₀ i j • x (e j)
+    TauCeti.exists_linear_normalization_of_finite x hx
+  let C : Matrix (ULift.{u} (Fin d)) n k := C₀.submatrix ULift.down id
+  let y : Fin d → A := fun i ↦ ∑ j, C₀ i j • x j
   have hπ : homOfAlgebra k x ≫
       linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv) =
-      homOfAlgebra k (y ∘ ULift.down) := by
-    rw [homOfAlgebra_linearMap]
-    congr 1
-    funext ⟨i⟩
-    simpa [C, y, Function.comp_apply] using (e.symm.sum_comp fun j ↦ C₀ i j • x (e j))
+      homOfAlgebra k (y ∘ ULift.down) :=
+    (homOfAlgebra_linearMap x C).trans <|
+      congrArg (homOfAlgebra k) <| funext fun i ↦ by simp [C, y]
   have hy_ind' : AlgebraicIndependent k (y ∘ ULift.down : ULift.{u} (Fin d) → A) :=
     (algebraicIndependent_equiv Equiv.ulift).mpr hy_ind
-  have hy_fin' : (MvPolynomial.aeval (R := k) (y ∘ ULift.down : ULift.{u} (Fin d) → A)).Finite := by
-    rw [← MvPolynomial.aeval_comp_rename]
-    exact AlgHom.Finite.comp hy_fin
-      (AlgHom.Finite.of_surjective _ (MvPolynomial.rename_surjective _ Equiv.ulift.surjective))
+  have hy_fin' : (MvPolynomial.aeval (R := k) (y ∘ ULift.down : ULift.{u} (Fin d) → A)).Finite :=
+    hy_fin.aeval_comp_of_surjective Equiv.ulift.surjective
   have hfin : IsFinite (homOfAlgebra k (y ∘ ULift.down)) :=
     isFinite_homOfAlgebra_iff.mpr hy_fin'
   refine ⟨d, hd, C, ?_⟩
@@ -109,5 +111,40 @@ theorem exists_linear_normalization {k A : Type u} [Field k] [Infinite k] [CommR
     rw [← AlgHom.range_eq_top, ← Algebra.adjoin_range_eq_range_aeval, hx]
   exact ⟨isClosedImmersion_homOfAlgebra_iff.mpr hx,
     exists_linear_normalization_of_finite x (AlgHom.Finite.of_surjective _ hsurj)⟩
+
+/-- **Geometric linear Noether normalization for a scheme finite over affine space.** Let `Z` be a
+nonempty scheme equipped with a finite morphism `ι : Z ⟶ 𝔸(n; Spec (.of k))` over an infinite field
+`k` (for instance, a closed immersion), with `n` finite. Then there exist `d ≤ Fintype.card n` and a
+matrix `C : Matrix (ULift.{u} (Fin d)) n k` such that `ι` composed with the linear projection
+`linearMap` defined by `C` is finite, surjective, and has finite fibers onto
+`𝔸(ULift.{u} (Fin d); Spec (.of k))`, and `topologicalKrullDim Z = d`. -/
+theorem exists_linear_normalization_of_isFinite {k : Type u} [Field k] [Infinite k]
+    {n : Type u} [Fintype n] {Z : Scheme.{u}} [Nonempty Z] (ι : Z ⟶ 𝔸(n; Spec (.of k)))
+    [IsFinite ι] :
+    ∃ (d : ℕ) (_ : d ≤ Fintype.card n) (C : Matrix (ULift.{u} (Fin d)) n k),
+      let π := ι ≫ linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv)
+      IsFinite π ∧ Surjective π ∧ (∀ q, (π ⁻¹' {q}).Finite) ∧
+        topologicalKrullDim Z = (d : WithBot ℕ∞) := by
+  have : IsAffine Z := isAffine_of_isAffineHom ι
+  have : Nontrivial Γ(Z, ⊤) := Z.component_nontrivial ⊤
+  obtain ⟨_, x, hι⟩ := exists_eq_isoSpec_hom_comp_homOfAlgebra ι
+  have hx_fin : (MvPolynomial.aeval (R := k) x).Finite := by
+    have hhom : homOfAlgebra k x = Z.isoSpec.inv ≫ ι := by simp [hι]
+    rw [← isFinite_homOfAlgebra_iff, hhom]
+    infer_instance
+  obtain ⟨d, hd, C, hfin, hsurj, -, hdim⟩ := exists_linear_normalization_of_finite x hx_fin
+  refine ⟨d, hd, C, ?_⟩
+  dsimp only
+  have hπ : ι ≫ linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv) =
+      Z.isoSpec.hom ≫ (homOfAlgebra k x ≫
+        linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv)) := by
+    rw [hι, Category.assoc]
+  rw [hπ]
+  refine ⟨inferInstance, inferInstance,
+    (Z.isoSpec.hom ≫ (homOfAlgebra k x ≫
+      linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv))).finite_preimage_singleton,
+    ?_⟩
+  exact Z.isoSpec.hom.homeomorph.isHomeomorph.topologicalKrullDim_eq.trans
+    ((TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec Γ(Z, ⊤)).trans hdim)
 
 end AlgebraicGeometry.AffineSpace

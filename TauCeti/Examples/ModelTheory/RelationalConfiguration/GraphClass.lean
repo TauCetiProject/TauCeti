@@ -15,7 +15,8 @@ public import TauCeti.ModelTheory.RelationalConfiguration.GraphClass
 The code of the empty graph on `ℕ` lies in `graphClass`; a code with `adj(0, 0)`, or with
 `adj(0, 1)` but not `adj(1, 0)`, does not. The codes of the one-edge graphs on `{0, 1}` and on
 `{5, 7}` are isomorphic, and the code of the one-edge graph is not isomorphic to that of the path
-`0 - 1 - 2`.
+`0 - 1 - 2`. The class is the range of the coding of simple graphs, membership depends only on
+the adjacency atoms, and it is an intersection of clopen sets, so closed and standard Borel.
 
 Borel completeness passes to unions but not to intersections: `graphClass` meets the class of the
 single code of the empty graph, which is isomorphism invariant and Borel, in that one code, and a
@@ -61,6 +62,48 @@ example : ¬isoSetoid Language.graph ℕ (SimpleGraph.edge 0 1).toRelationalConf
   have hne : f.symm 0 ≠ f.symm 2 := fun h => by simpa using f.symm.injective h
   simp only [SimpleGraph.edge_adj] at h0 h2
   omega
+
+/-! ### The class as a set of codes -/
+
+-- `graphClass` is the range of the coding of simple graphs.
+example : Set.range (SimpleGraph.toRelationalConfiguration :
+    SimpleGraph ℕ → RelationalConfiguration Language.graph ℕ) = graphClass :=
+  range_toRelationalConfiguration_eq_graphClass
+
+-- Membership of a code depends only on its values at the adjacency atoms.
+example {c d : RelationalConfiguration Language.graph ℕ}
+    (h : ∀ u v, c.eval (adjAtom u v) = d.eval (adjAtom u v)) :
+    c ∈ graphClass ↔ d ∈ graphClass := by
+  simp only [mem_graphClass, isSimpleGraph_iff, h]
+
+-- `graphClass` is the intersection of the clopen sets `{adj(u, v) = adj(v, u)}` and
+-- `{adj(v, v) = false}`.
+example : graphClass = (⋂ u, ⋂ v, {c : RelationalConfiguration Language.graph ℕ |
+      c.eval (adjAtom u v) = c.eval (adjAtom v u)}) ∩
+    ⋂ v, {c : RelationalConfiguration Language.graph ℕ | c.eval (adjAtom v v) = false} := by
+  ext c
+  simp [isSimpleGraph_iff]
+
+example (u v : ℕ) : IsClopen {c : RelationalConfiguration Language.graph ℕ |
+    c.eval (adjAtom u v) = c.eval (adjAtom v u)} := by
+  have : {c : RelationalConfiguration Language.graph ℕ |
+      c.eval (adjAtom u v) = c.eval (adjAtom v u)} =
+      ({c | c.eval (adjAtom u v) = true} ∩ {c | c.eval (adjAtom v u) = true}) ∪
+        ({c | c.eval (adjAtom u v) = false} ∩ {c | c.eval (adjAtom v u) = false}) := by
+    ext c
+    rcases h₁ : c.eval (adjAtom u v) <;> rcases h₂ : c.eval (adjAtom v u) <;> simp [h₁, h₂]
+  rw [this]
+  exact ((isClopen_setOf_eval _ _).inter (isClopen_setOf_eval _ _)).union
+    ((isClopen_setOf_eval _ _).inter (isClopen_setOf_eval _ _))
+
+example (v : ℕ) : IsClopen {c : RelationalConfiguration Language.graph ℕ |
+    c.eval (adjAtom v v) = false} :=
+  isClopen_setOf_eval _ _
+
+-- Hence it is closed, and a standard Borel space.
+example : IsClosed graphClass := isClosed_graphClass
+
+example : StandardBorelSpace graphClass := inferInstance
 
 /-! ### Unions and intersections -/
 

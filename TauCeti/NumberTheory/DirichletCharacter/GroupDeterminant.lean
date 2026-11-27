@@ -11,13 +11,11 @@ public import Mathlib.NumberTheory.Primorial
 public import Mathlib.RingTheory.Adjoin.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Bernoulli.Polynomials
 import TauCeti.LinearAlgebra.Matrix.GroupMatrix
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.TrivialZeros
 import TauCeti.NumberTheory.MulChar.Basic
-import TauCeti.NumberTheory.MulChar.Orthogonality
 
 /-!
 # Group determinants and a nonzero integer divisible by Bernoulli numbers
@@ -26,8 +24,10 @@ For a finite commutative group `G` and a function `g : G → R`, every homomorph
 is an eigenvector of the group matrix `(g(t / s))_{s,t}`, with eigenvalue `∑ᵤ χ(u) g(u)`, and
 each such eigenvalue divides the group determinant (`TauCeti.Matrix.of_div_mulVec_monoidHom`,
 `TauCeti.Matrix.sum_mul_dvd_det_of_div`). For `G = (ZMod N)ˣ` and a domain of characteristic zero
-with enough roots of unity, the Dirichlet characters are orthogonal, so the group determinant is
-nonzero exactly when no eigenvalue `∑ᵤ χ(u) g(u)` vanishes.
+with enough roots of unity, the Dirichlet characters are orthogonal, so their value matrix is
+invertible and the group determinant is the product of the eigenvalues `∑ᵤ χ(u) g(u)` over all
+Dirichlet characters `χ` modulo `N` (Dedekind's factorization); in particular it is nonzero exactly
+when no eigenvalue vanishes.
 
 Applied to `g(u) = 2 Pₖ₊₁ Mᵏ Bₖ(⟨u⟩ / M)`, corrected at `u = ±1` so that the eigenvalues of the
 characters of the wrong parity are `±2` instead of `0`, this gives the Bernoulli group determinant
@@ -36,7 +36,8 @@ characters of the wrong parity are `±2` instead of `0`, this gives the Bernoull
 values in any `ℚ`-algebra. Here `Pₖ₊₁ = primorial (k + 1)`, and `Bₖ,ψ` is Tau Ceti's
 `DirichletCharacter.generalizedBernoulli` at the modulus `M`. That the determinant is nonzero is
 proved through the complex characters, whose Bernoulli numbers `Bₖ,ψ` of the right parity are
-nonzero by `DirichletCharacter.generalizedBernoulli_ne_zero`.
+nonzero by `DirichletCharacter.generalizedBernoulli_ne_zero`. Its size is bounded in
+`TauCeti.NumberTheory.DirichletCharacter.BernoulliBounds`.
 
 ## Main definitions
 
@@ -46,6 +47,8 @@ nonzero by `DirichletCharacter.generalizedBernoulli_ne_zero`.
 
 ## Main results
 
+* `TauCeti.det_of_div_eq_prod`: the group determinant of `(ZMod N)ˣ` is the product of the
+  eigenvalues.
 * `TauCeti.det_of_div_ne_zero_iff`: the group determinant of `(ZMod N)ˣ` is nonzero
   exactly when every eigenvalue is.
 * `TauCeti.sum_mul_bernoulliGroupEntry`, `TauCeti.sum_units_mul_primorialBernoulli`: the
@@ -53,6 +56,8 @@ nonzero by `DirichletCharacter.generalizedBernoulli_ne_zero`.
 * `TauCeti.bernoulliGroupDet_ne_zero`: the Bernoulli group determinant is nonzero for `k ≥ 2`.
 * `TauCeti.exists_mem_adjoin_bernoulliGroupDet_eq`: it is divisible by `Pₖ₊₁ M Bₖ,ψ` in `ℤ[ψ]`
   for every character `ψ` of parity `(-1)ᵏ`.
+* `TauCeti.bernoulliGroupDet_eq_prod`: it is the product of the eigenvalues `2 Pₖ₊₁ M Bₖ,χ` (for
+  `χ(-1) = (-1)ᵏ`) and `-2 (-1)ᵏ` (for the other characters).
 
 ## References
 
@@ -65,9 +70,9 @@ Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyrigh
 PBC), file `src/Lib/Cyclotomic/Voronoi.lean`, declarations
 `New.OddPart.det_ne_zero_of_forall_sum_mul_ne_zero` and the determinant step of
 `New.OddPart.exists_isStickelbergerBound` (including the correction at `±1`). Here the
-nonvanishing criterion is an equivalence, the Bernoulli values are normalised by the primorial
-and stated through `DirichletCharacter.generalizedBernoulli`, and the size bound on the
-determinant is not included.
+nonvanishing criterion is an equivalence, refined to the eigenvalue factorization, and the
+Bernoulli values are normalised by the primorial and stated through
+`DirichletCharacter.generalizedBernoulli`.
 -/
 
 public section
@@ -80,6 +85,45 @@ open DirichletCharacter
 
 variable {N : ℕ}
 
+/-- **Dedekind's factorization of the group determinant of `(ZMod N)ˣ`.** Over a domain of
+characteristic zero with enough roots of unity, the determinant of the group matrix
+`(g(t / s))_{s,t}` of `(ZMod N)ˣ` is the product, over the Dirichlet characters `χ` modulo `N`, of
+the eigenvalues `∑ᵤ χ(u) g(u)`. -/
+theorem det_of_div_eq_prod [NeZero N] {R : Type*} [CommRing R] [IsDomain R] [CharZero R]
+    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod N)ˣ)] (g : (ZMod N)ˣ → R) :
+    (of fun s t : (ZMod N)ˣ ↦ g (t / s)).det =
+      ∏ χ : DirichletCharacter R N, ∑ u : (ZMod N)ˣ, χ u * g u := by
+  classical
+  -- index the characters by the units, and let `C` be the matrix of their values
+  let e : (ZMod N)ˣ ≃ DirichletCharacter R N := (mulEquiv_units R N).some.toEquiv.symm
+  let C : Matrix (ZMod N)ˣ (ZMod N)ˣ R := of fun t i ↦ e i t
+  -- by orthogonality, `C` times the matrix of inverse values is `φ(N)`
+  have hCD : C * (of fun i t : (ZMod N)ˣ ↦ e i (t : ZMod N)⁻¹) = (N.totient : R) • 1 := by
+    refine Matrix.ext fun s t ↦ ?_
+    rw [Matrix.mul_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
+    simp only [C, of_apply]
+    rw [e.sum_comp fun χ ↦ χ s * χ (t : ZMod N)⁻¹]
+    rw [sum_congr rfl fun χ _ ↦ mul_comm (χ s) _, sum_char_inv_mul_char_eq R t.isUnit]
+    simp [eq_comm, Units.val_inj]
+  have hC : C.det ≠ 0 := by
+    have h := congrArg det hCD
+    rw [det_mul, det_smul, det_one, mul_one] at h
+    exact left_ne_zero_of_mul (h ▸ pow_ne_zero _ (Nat.cast_ne_zero.2 (Nat.totient_pos.2
+      (Nat.pos_of_ne_zero (NeZero.ne N))).ne'))
+  -- the columns of `C` are eigenvectors of the group matrix
+  have hAC : (of fun s t : (ZMod N)ˣ ↦ g (t / s)) * C =
+      C * diagonal fun i ↦ ∑ u : (ZMod N)ˣ, e i u * g u := by
+    refine Matrix.ext fun s i ↦ ?_
+    have h := congrFun (Matrix.of_div_mulVec_monoidHom g
+      ((e i : ZMod N →* R).comp (Units.coeHom (ZMod N)))) s
+    simp only [MulChar.coe_comp_coeHom_apply, mulVec, dotProduct, Pi.smul_apply,
+      smul_eq_mul, of_apply] at h
+    rw [Matrix.mul_apply, mul_diagonal]
+    simpa [C, mul_comm (e i (s : ZMod N))] using h
+  have h := congrArg det hAC
+  rw [det_mul, det_mul, det_diagonal, mul_comm] at h
+  rw [mul_left_cancel₀ hC h, e.prod_comp fun χ ↦ ∑ u : (ZMod N)ˣ, χ u * g u]
+
 /-- **Group determinants of `(ZMod N)ˣ`.** Over a domain of characteristic zero with enough roots
 of unity, the determinant of the group matrix `(g(t / s))_{s,t}` of `(ZMod N)ˣ` is nonzero
 exactly when no eigenvalue `∑ᵤ χ(u) g(u)`, for `χ` a Dirichlet character modulo `N`, vanishes. -/
@@ -87,24 +131,7 @@ theorem det_of_div_ne_zero_iff [NeZero N] {R : Type*} [CommRing R] [IsDomain R] 
     [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod N)ˣ)] (g : (ZMod N)ˣ → R) :
     (of fun s t : (ZMod N)ˣ ↦ g (t / s)).det ≠ 0 ↔
       ∀ χ : DirichletCharacter R N, ∑ u : (ZMod N)ˣ, χ u * g u ≠ 0 := by
-  refine ⟨fun hA χ hχ ↦ hA ?_, fun hg hA ↦ ?_⟩
-  · have := Matrix.sum_mul_dvd_det_of_div g ((χ : ZMod N →* R).comp (Units.coeHom _))
-    simp only [MulChar.coe_comp_coeHom_apply] at this
-    rwa [hχ, zero_dvd_iff] at this
-  -- a vector in the left kernel is orthogonal to every character, hence zero
-  obtain ⟨w, hw0, hw⟩ := exists_vecMul_eq_zero_iff.2 hA
-  have horth (χ : DirichletCharacter R N) : w ⬝ᵥ (fun t ↦ χ t) = 0 := by
-    have h := congrArg (dotProduct w)
-      (Matrix.of_div_mulVec_monoidHom g ((χ : ZMod N →* R).comp (Units.coeHom _)))
-    rw [dotProduct_mulVec, hw, zero_dotProduct, dotProduct_smul, smul_eq_mul] at h
-    simp only [MulChar.coe_comp_coeHom_apply] at h
-    exact (mul_eq_zero.1 h.symm).resolve_left (hg χ)
-  -- by Fourier inversion on `(ZMod N)ˣ`, `#(ZMod N)ˣ · w a` is a sum of these inner products
-  simp only [dotProduct] at horth
-  refine hw0 (funext fun a ↦ ?_)
-  have h := card_units_mul_apply_eq_sum_mulChar_units w a
-  rw [Finset.sum_eq_zero fun χ _ ↦ by rw [horth χ⁻¹, mul_zero]] at h
-  exact (mul_eq_zero.1 h).resolve_left (Nat.cast_ne_zero.2 Nat.card_pos.ne')
+  simp [det_of_div_eq_prod, prod_ne_zero_iff]
 
 /-- The integer `Pₖ₊₁ Mᵏ Bₖ(⟨t⟩ / M)`, where `Pₖ₊₁ = primorial (k + 1)` and `⟨t⟩ ∈ [0, M)` is the
 representative of `t` (`TauCeti.intCast_primorialBernoulli`). -/
@@ -223,5 +250,21 @@ theorem exists_mem_adjoin_bernoulliGroupDet_eq {M : ℕ} [NeZero M] {k : ℕ} (h
   rw [sum_units_mul_primorialBernoulli hk ψ, hψ] at h
   rw [h]
   ring
+
+/-- **The eigenvalue factorization of the Bernoulli group determinant.** For `k ≥ 2` and a domain
+`R` that is a `ℚ`-algebra with enough roots of unity, `TauCeti.bernoulliGroupDet M k` is the
+product, over the Dirichlet characters `χ` modulo `M` with values in `R`, of
+`2 Pₖ₊₁ M Bₖ,χ - (-1)ᵏ + χ(-1)`: this is `2 Pₖ₊₁ M Bₖ,χ` when `χ(-1) = (-1)ᵏ` and `-2 (-1)ᵏ`
+otherwise. -/
+theorem bernoulliGroupDet_eq_prod {M : ℕ} [NeZero M] {k : ℕ} (hk : 2 ≤ k) (R : Type*)
+    [CommRing R] [IsDomain R] [Algebra ℚ R] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod M)ˣ)] :
+    (bernoulliGroupDet M k : R) = ∏ χ : DirichletCharacter R M,
+      (2 * (primorial (k + 1) * M * χ.generalizedBernoulli k) - (-1) ^ k + χ (-1)) := by
+  have : CharZero R := algebraRat.charZero R
+  rw [intCast_bernoulliGroupDet, det_of_div_eq_prod fun u ↦ (bernoulliGroupEntry M k u : R)]
+  refine prod_congr rfl fun χ _ ↦ ?_
+  have h := sum_mul_bernoulliGroupEntry ((χ : ZMod M →* R).comp (Units.coeHom (ZMod M))) k
+  simp only [MulChar.coe_comp_coeHom_apply, Units.val_neg, Units.val_one] at h
+  rw [h, sum_units_mul_primorialBernoulli hk χ]
 
 end TauCeti

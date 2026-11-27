@@ -54,6 +54,8 @@ supported continuous function on `W × G(E, k)`). In the degenerate dimensions, 
 ## Main results
 
 * `Euclidean.abs_tangentialDivergence_le`: `|div_P X (x)| ≤ k ‖DX(x)‖` for `P ∈ G(E, k)`.
+* `Euclidean.tangentialDivergence_spanLine`: along the line `span {w}` of a unit vector `w`,
+  `div_P X (x) = ⟪w, DX(x) w⟫`.
 * `Euclidean.tangentialDivergence_comp_sub`, `Euclidean.tangentialDivergence_comp_smul`: the
   tangential divergence of a translated or rescaled vector field.
 * `Euclidean.firstVariation_apply`: `δV(X) = ∫ div_P X (x) dV(x, P)`.
@@ -78,7 +80,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace Filter Module
-open scoped Distributions Topology NNReal CompactlySupported
+open scoped Distributions Topology NNReal CompactlySupported InnerProductSpace
 
 namespace Euclidean
 
@@ -181,6 +183,15 @@ theorem tangentialDivergence_of_mem_grassmannian_finrank {P : E →L[ℝ] E}
     tangentialDivergence X x P = LinearMap.trace ℝ E (fderiv ℝ X x : E →ₗ[ℝ] E) := by
   have hP1 : P = 1 := by rwa [grassmannian_finrank, mem_singleton_iff] at hP
   simp [tangentialDivergence_def, hP1, Module.End.one_eq_id]
+
+/-- Along the line `span {w}` of a unit vector `w`, the tangential divergence is
+`⟪w, DX(x) w⟫`. -/
+theorem tangentialDivergence_spanLine (X : E → E) (x : E) {w : E} (hw : w ≠ 0) (h : ‖w‖ = 1) :
+    tangentialDivergence X x (grassmannian.spanLine ℝ w hw) = ⟪w, fderiv ℝ X x w⟫_ℝ := by
+  rw [tangentialDivergence_def, grassmannian.coe_spanLine_of_norm_eq_one hw h,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.trace_comp_comm',
+    ← ContinuousLinearMap.toLinearMap_comp, InnerProductSpace.comp_rankOne,
+    InnerProductSpace.trace_rankOne]
 
 /-! ### The first variation -/
 

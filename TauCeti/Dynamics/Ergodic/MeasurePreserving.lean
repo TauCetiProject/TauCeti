@@ -25,6 +25,8 @@ import Mathlib.Order.SuccPred.IntervalSucc
   a measure-preserving map finite.
 * `MeasureTheory.MeasurePreserving.trim_comap` — a measure-preserving map preserves the measures
   trimmed to a target sub-σ-algebra and its pullback on the source.
+* `MeasureTheory.MeasurePreserving.preimage_ae_eq_preimage_iff` — a measure-preserving map
+  identifies almost-everywhere equality of null-measurable sets with that of their preimages.
 * `MeasureTheory.MeasurePreserving.isFixedPt_of_strictMono` — a strictly increasing map of a
   densely ordered space preserving a locally finite measure of full support fixes every point
   between two of its fixed points.
@@ -67,6 +69,14 @@ theorem trim_comap (hg : MeasurePreserving g μ ν) (hm : m ≤ mβ) :
   have hs' : MeasurableSet[m.comap g] (g ⁻¹' s) := ⟨s, hs, rfl⟩
   rw [Measure.map_apply hmeas hs, trim_measurableSet_eq hmg hs', trim_measurableSet_eq hm hs]
   exact hg.measure_preimage (hm s hs).nullMeasurableSet
+
+/-- A measure-preserving map identifies almost-everywhere equality of null-measurable sets with that
+of their preimages. -/
+theorem preimage_ae_eq_preimage_iff (hf : MeasurePreserving f μ ν) {s t : Set β}
+    (hs : NullMeasurableSet s ν) (ht : NullMeasurableSet t ν) :
+    f ⁻¹' s =ᵐ[μ] f ⁻¹' t ↔ s =ᵐ[ν] t := by
+  rw [ae_eq_set, ae_eq_set, ← Set.preimage_sdiff, ← Set.preimage_sdiff,
+    hf.measure_preimage (hs.diff ht), hf.measure_preimage (ht.diff hs)]
 
 section StrictMono
 

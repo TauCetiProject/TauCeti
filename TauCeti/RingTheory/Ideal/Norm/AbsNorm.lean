@@ -27,7 +27,8 @@ image of `N` in `p`, as additive subgroups of the ambient module.
 A submodule with finite quotient has nonzero index, and the index of the image of a submodule
 under an injective linear map is its index times the index of the range; in particular a linear
 equivalence preserves the index. Preimages under a surjective linear map keep the index, so a
-linear equivalence matches the submodules of a given index.
+linear equivalence matches the submodules of a given index. A left ideal contains its index, and
+a ring isomorphism preserves the index of an ideal.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
@@ -52,6 +53,8 @@ nonzero `s`, so the index `Submodule.cardQuot` is multiplicative along this chai
 * `Submodule.subtypeCardQuotEquiv`: a linear equivalence matches the submodules of a given index,
   by images (`Submodule.coe_subtypeCardQuotEquiv_apply`) and preimages
   (`Submodule.coe_subtypeCardQuotEquiv_symm_apply`).
+* `Submodule.natCast_cardQuot_mem`: a left ideal of finite index contains its index.
+* `Ideal.cardQuot_map_of_ringEquiv`: a ring isomorphism preserves the index of an ideal.
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
@@ -156,7 +159,23 @@ theorem coe_subtypeCardQuotEquiv_symm_apply {R M N : Type*} [Ring R] [AddCommGro
   by
   simp [subtypeCardQuotEquiv]
 
+/-- A left ideal contains its index (which is `0` if the index is infinite). -/
+theorem natCast_cardQuot_mem {R : Type*} [Ring R] (I : Submodule R R) : (I.cardQuot : R) ∈ I := by
+  have h := I.toAddSubgroup.nsmul_index_mem 1
+  rwa [nsmul_eq_mul, mul_one, ← cardQuot] at h
+
 end Submodule
+
+namespace Ideal
+
+/-- A ring isomorphism preserves the index of an ideal. -/
+@[simp]
+theorem cardQuot_map_of_ringEquiv {R S : Type*} [CommRing R] [CommRing S] (e : R ≃+* S)
+    (I : Ideal R) : (I.map e).cardQuot = I.cardQuot := by
+  rw [Submodule.cardQuot_apply, Submodule.cardQuot_apply]
+  exact (Nat.card_congr (Ideal.quotientEquiv I _ e rfl).toEquiv).symm
+
+end Ideal
 
 namespace Ideal
 
