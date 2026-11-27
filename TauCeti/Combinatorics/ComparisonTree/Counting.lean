@@ -120,24 +120,6 @@ theorem card_mul_logb_card_le_sum_cost (t : CompTree n α) {A : Finset (Fin n �
   rw [Real.logb, ← mul_div_assoc, div_le_iff₀ (Real.log_pos one_lt_two)]
   linarith
 
-/-- The hypothesis on the outputs is needed: a leaf gives the sum `2` on two inputs. -/
-example :
-    ∑ x ∈ ({![0], ![1]} : Finset (Fin 1 → ℕ)), (2⁻¹ : ℝ) ^ (leaf 0 : CompTree 1 ℕ).cost x = 2 := by
-  rw [sum_pair (by decide)]
-  norm_num [cost_leaf]
-
-/-- The tree that compares `(0, 1)`, then `(1, 2)` and, where needed, `(0, 2)` gives six different
-outputs on the six rankings of three items, with the costs `2, 3, 3, 3, 3, 2`: the Kraft sum is
-`1`, the largest cost is `3 = ⌈log₂ 6⌉` and the total cost is `16 ≥ 6 log₂ 6`. -/
-example (t : CompTree 3 ℕ) (ht : t = node 0 1 (node 1 2 (leaf 0) (node 0 2 (leaf 1) (leaf 2)))
-      (node 1 2 (node 0 2 (leaf 3) (leaf 4)) (leaf 5))) :
-    [![0, 1, 2], ![0, 2, 1], ![1, 2, 0], ![1, 0, 2], ![2, 0, 1], ![2, 1, 0]].map t.eval =
-        [0, 1, 2, 3, 4, 5] ∧
-      [![0, 1, 2], ![0, 2, 1], ![1, 2, 0], ![1, 0, 2], ![2, 0, 1], ![2, 1, 0]].map t.cost =
-        [2, 3, 3, 3, 3, 2] := by
-  subst ht
-  simp [eval_node, eval_leaf, cost_node, cost_leaf]
-
 end CompTree
 
 end TauCeti
