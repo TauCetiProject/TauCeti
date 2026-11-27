@@ -40,9 +40,10 @@ The basic tool is that a central character only sees the centralizer of a defect
 * `TauCeti.IsInducedBlock.trans`, `TauCeti.IsInducedBlock.of_comp`: block induction is
   transitive.
 * `TauCeti.IsBlockIdempotent.centerBrauerCorrespondent_eq_sum`: for a `p`-subgroup `P` with
-  `P C_G(P) ≤ H ≤ N_G(P)` and `k` algebraically closed, `Br_P(e_B) = ∑_{b^G = B} e_b` (Martínez,
-  Theorem 4.5 and Corollary 4.6, p. 26); `TauCeti.IsBlockIdempotent.brauerCorrespondent_eq_sum`
-  is the case `H = N_G(P)`.
+  `P C_G(P) ≤ H ≤ N_G(P)`, if every block of `k[H]` has a character (for instance, `k`
+  algebraically closed), then `Br_P(e_B) = ∑_{b^G = B} e_b` (Martínez, Theorem 4.5 and
+  Corollary 4.6, p. 26); `TauCeti.IsBlockIdempotent.brauerCorrespondent_eq_sum` is the case
+  `H = N_G(P)`.
 * `TauCeti.IsInducedBlock.isDefectGroup_subgroupOf`: if `P` is a defect group of `B` and
   `P ≤ H ≤ N_G(P)`, every block `b` of `k[H]` with `b^G = B` has defect group `P`.
 
@@ -451,36 +452,40 @@ theorem IsInducedBlock.centerBrauerCorrespondent_mul_eq_right (hP : IsPGroup p P
     MulHomClass.map_eq_zero_of_map_eq_one_of_mul_eq_zero φ hφ h0
 
 /-- **`Br_P(e_B)` kills the blocks not inducing `B`** (Martínez, Theorem 4.5, p. 26). Let `P` be
-a `p`-subgroup of `G`, `P C_G(P) ≤ H ≤ N_G(P)`, and `k` algebraically closed of characteristic
-`p`. If `e_b` is a block idempotent of `k[H]` with `b^G ≠ B`, then `Br_P(e_B) e_b = 0`. -/
-theorem IsBlockIdempotent.centerBrauerCorrespondent_mul_eq_zero [IsAlgClosed k] (hP : IsPGroup p P)
+a `p`-subgroup of `G`, `P C_G(P) ≤ H ≤ N_G(P)`, and `k` a field of characteristic `p`. If `e_b` is
+a block idempotent of `k[H]` with a character `φ : Z(k[H]) → k`, `φ(e_b) = 1`, and `b^G ≠ B`, then
+`Br_P(e_B) e_b = 0`. -/
+theorem IsBlockIdempotent.centerBrauerCorrespondent_mul_eq_zero (hP : IsPGroup p P)
     (hPH : P ≤ H) (hCH : Subgroup.centralizer (P : Set G) ≤ H)
     (hHN : H ≤ Subgroup.normalizer (P : Set G)) {B : Subalgebra.center k (MonoidAlgebra k G)}
     (hB : IsBlockIdempotent B) {b : Subalgebra.center k (MonoidAlgebra k H)}
-    (hb : IsBlockIdempotent b) (h : ¬IsInducedBlock k H.subtype H.subtype_injective b B) :
+    (hb : IsBlockIdempotent b) {φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k}
+    (hφ : φ b = 1) (h : ¬IsInducedBlock k H.subtype H.subtype_injective b B) :
     centerBrauerCorrespondent hCH hHN B * b = 0 := by
   obtain ⟨B', hB', hchar⟩ :=
-    hb.exists_isInducedBlock_apply_centerBrauerCorrespondent hP hPH hCH hHN hb.centralCharacter_self
-  have hB'b := hB'.isBlockIdempotent_right
+    hb.exists_isInducedBlock_apply_centerBrauerCorrespondent hP hPH hCH hHN hφ
+  obtain ⟨-, ψ, -, hψ, -⟩ := hB'.exists_algHom
   have hne : B' ≠ B := fun hBB => h (hBB ▸ hB')
-  have h0 := hchar _ hB'b.centralCharacter_self B
-  rw [hB'b.apply_eq_zero_of_ne hB hB'b.centralCharacter_self hne] at h0
+  have h0 := hchar ψ hψ B
+  rw [hB'.isBlockIdempotent_right.apply_eq_zero_of_ne hB hψ hne] at h0
   rw [mul_comm]
   refine ((hb.mul_eq_zero_or_eq_of_commute
     (isIdempotentElem_centerBrauerCorrespondent hCH hHN hP hB.isIdempotentElem)
     (Commute.all _ _)).resolve_right fun h1 => ?_)
-  simpa [h0] using congrArg hb.centralCharacter h1
+  simpa [h0, hφ] using congrArg φ h1
 
 /-- **Brauer's formula for `Br_P(e_B)`** (Martínez, Theorem 4.5 and Corollary 4.6, p. 26). Let `P`
-be a `p`-subgroup of `G`, `P C_G(P) ≤ H ≤ N_G(P)`, `k` algebraically closed of characteristic
-`p`, and `e_B` a block idempotent of `k[G]`. For a complete family `(e_i)` of block idempotents
-of `k[H]`, `Br_P(e_B) = ∑_{b_i^G = B} e_i`. -/
-theorem IsBlockIdempotent.centerBrauerCorrespondent_eq_sum [IsAlgClosed k] (hP : IsPGroup p P)
+be a `p`-subgroup of `G`, `P C_G(P) ≤ H ≤ N_G(P)`, `k` a field of characteristic `p`, and `e_B` a
+block idempotent of `k[G]`. For a complete family `(e_i)` of block idempotents of `k[H]`, each with
+a character `φ_i : Z(k[H]) → k`, `φ_i(e_i) = 1` (automatic over an algebraically closed field, by
+`TauCeti.IsBlockIdempotent.centralCharacter_self`), `Br_P(e_B) = ∑_{b_i^G = B} e_i`. -/
+theorem IsBlockIdempotent.centerBrauerCorrespondent_eq_sum (hP : IsPGroup p P)
     (hPH : P ≤ H) (hCH : Subgroup.centralizer (P : Set G) ≤ H)
     (hHN : H ≤ Subgroup.normalizer (P : Set G)) {B : Subalgebra.center k (MonoidAlgebra k G)}
     (hB : IsBlockIdempotent B) {ι : Type*} [Fintype ι]
     {e : ι → Subalgebra.center k (MonoidAlgebra k H)} (he : CompleteOrthogonalIdempotents e)
     (hbl : ∀ i, IsBlockIdempotent (e i))
+    (hχ : ∀ i, ∃ φ : Subalgebra.center k (MonoidAlgebra k H) →ₐ[k] k, φ (e i) = 1)
     [DecidablePred fun i => IsInducedBlock k H.subtype H.subtype_injective (e i) B] :
     centerBrauerCorrespondent hCH hHN B =
       ∑ i with IsInducedBlock k H.subtype H.subtype_injective (e i) B, e i := by
@@ -489,16 +494,20 @@ theorem IsBlockIdempotent.centerBrauerCorrespondent_eq_sum [IsAlgClosed k] (hP :
   refine Finset.sum_congr rfl fun i _ => ?_
   split_ifs with hi
   · exact hi.centerBrauerCorrespondent_mul_eq_right hP hPH hCH hHN
-  · exact hB.centerBrauerCorrespondent_mul_eq_zero hP hPH hCH hHN (hbl i) hi
+  · obtain ⟨φ, hφ⟩ := hχ i
+    exact hB.centerBrauerCorrespondent_mul_eq_zero hP hPH hCH hHN (hbl i) hφ hi
 
 /-- **Brauer's formula at the normalizer** (Martínez, Theorem 4.5 and Corollary 4.6, p. 26): for
-a `p`-subgroup `P` of `G` and `k` algebraically closed of characteristic `p`, the Brauer
-correspondent `Br_P(e_B) ∈ k[N_G(P)]` of a block idempotent `e_B` of `k[G]` is the sum of the
-block idempotents `e_b` of `k[N_G(P)]` with `b^G = B`. -/
-theorem IsBlockIdempotent.brauerCorrespondent_eq_sum [IsAlgClosed k] (hP : IsPGroup p P)
+a `p`-subgroup `P` of `G` and `k` a field of characteristic `p`, the Brauer correspondent
+`Br_P(e_B) ∈ k[N_G(P)]` of a block idempotent `e_B` of `k[G]` is the sum of the block idempotents
+`e_b` of `k[N_G(P)]` with `b^G = B`, provided each block of `k[N_G(P)]` has a character
+`φ : Z(k[N_G(P)]) → k` with `φ(e_b) = 1` (automatic over an algebraically closed field). -/
+theorem IsBlockIdempotent.brauerCorrespondent_eq_sum (hP : IsPGroup p P)
     {B : Subalgebra.center k (MonoidAlgebra k G)} (hB : IsBlockIdempotent B) {ι : Type*}
     [Fintype ι] {e : ι → Subalgebra.center k (MonoidAlgebra k (Subgroup.normalizer (P : Set G)))}
     (he : CompleteOrthogonalIdempotents e) (hbl : ∀ i, IsBlockIdempotent (e i))
+    (hχ : ∀ i, ∃ φ : Subalgebra.center k
+      (MonoidAlgebra k (Subgroup.normalizer (P : Set G))) →ₐ[k] k, φ (e i) = 1)
     [DecidablePred fun i => IsInducedBlock k (Subgroup.normalizer (P : Set G)).subtype
       (Subgroup.normalizer (P : Set G)).subtype_injective (e i) B] :
     brauerCorrespondent (Subgroup.centralizer_le_normalizer (P : Set G)) (B : MonoidAlgebra k G) =
@@ -506,7 +515,7 @@ theorem IsBlockIdempotent.brauerCorrespondent_eq_sum [IsAlgClosed k] (hP : IsPGr
         (Subgroup.normalizer (P : Set G)).subtype_injective (e i) B,
         (e i : MonoidAlgebra k (Subgroup.normalizer (P : Set G))) := by
   rw [← coe_centerBrauerCorrespondent _ le_rfl, hB.centerBrauerCorrespondent_eq_sum hP
-    Subgroup.le_normalizer _ le_rfl he hbl, AddSubmonoidClass.coe_finsetSum]
+    Subgroup.le_normalizer _ le_rfl he hbl hχ, AddSubmonoidClass.coe_finsetSum]
 
 /-- **Defect groups of the blocks inducing `B`.** Let `P` be a defect group of a block `B` of
 `k[G]`, `k` a field of characteristic `p`, and `P ≤ H ≤ N_G(P)`. Every block `b` of `k[H]` with
