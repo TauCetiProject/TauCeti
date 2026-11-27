@@ -50,14 +50,10 @@ theorem exists_bump_of_isOpen {X 𝕜 : Type*} [TopologicalSpace X] [CompletelyR
     ∃ g : C(X, 𝕜), (∀ x', ‖g x'‖ ≤ 1) ∧ g x = 1 ∧ ∀ x', g x' ≠ 0 → x' ∈ U := by
   obtain ⟨f, hf, hfx, hfU⟩ := CompletelyRegularSpace.completely_regular_isOpen x U hU hx
   -- The bump is `1 - f`, which is `1` at `x` and `0` off `U`.
-  refine ⟨ContinuousMap.realToRCLike 𝕜 ⟨fun x' ↦ 1 - (f x' : ℝ), by fun_prop⟩, fun x' ↦ ?_, ?_,
-    fun x' hx' ↦ by_contra fun hU' ↦ hx' ?_⟩
-  · rw [ContinuousMap.realToRCLike_apply, ContinuousMap.coe_mk, RCLike.norm_ofReal,
-      abs_of_nonneg (sub_nonneg.2 (unitInterval.le_one (f x')))]
-    exact sub_le_self _ (unitInterval.nonneg (f x'))
-  · rw [ContinuousMap.realToRCLike_apply, ContinuousMap.coe_mk, hfx, Set.Icc.coe_zero, sub_zero,
-      RCLike.ofReal_one]
-  · rw [ContinuousMap.realToRCLike_apply, ContinuousMap.coe_mk, hfU hU', Pi.one_apply,
-      Set.Icc.coe_one, sub_self, RCLike.ofReal_zero]
+  refine ⟨ContinuousMap.realToRCLike 𝕜 ⟨fun x' ↦ 1 - (f x' : ℝ), by fun_prop⟩, fun x' ↦ ?_,
+    by simp [hfx], fun x' hx' ↦ by_contra fun hU' ↦ hx' (by simp [hfU hU'])⟩
+  rw [ContinuousMap.realToRCLike_apply, RCLike.norm_ofReal]
+  exact abs_sub_le_of_nonneg_of_le zero_le_one le_rfl (unitInterval.nonneg _)
+    (unitInterval.le_one _)
 
 end TauCeti

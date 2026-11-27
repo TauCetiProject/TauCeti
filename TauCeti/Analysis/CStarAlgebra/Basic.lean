@@ -91,8 +91,7 @@ theorem norm_unitary_conj_sub (u : unitary E) (x y : E) :
 /-- Normalizing `x⋆ x` by `‖x‖ ^ 2` gives an element of norm `1`. -/
 theorem norm_inv_norm_sq_smul_star_mul_self [NormedSpace ℝ E] {x : E} (hx : x ≠ 0) :
     ‖(‖x‖ ^ 2)⁻¹ • (star x * x)‖ = 1 := by
-  rw [norm_smul, norm_star_mul_self, norm_inv, norm_pow, Real.norm_of_nonneg (norm_nonneg x),
-    pow_two, inv_mul_cancel₀ (by positivity)]
+  simp [norm_smul, norm_star_mul_self, ← sq, hx]
 
 variable [ProperSpace E]
 

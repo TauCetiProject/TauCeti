@@ -238,9 +238,8 @@ private theorem apply_pow_eq_sum {E : Type*} [CStarAlgebra E] (Ψ : C(X, ℂ) �
     rw [Algebra.TensorProduct.tmul_pow, one_pow]
     congr 1
     ext x'
-    rw [ContinuousMap.pow_apply, rootFun_apply, ContinuousMap.realToRCLike_apply,
-      RCLike.ofReal_eq_complex_ofReal, ← Complex.ofReal_pow,
-      Real.rpow_inv_natCast_pow (ρ.nonneg i x') hN]
+    simpa [rootFun_apply, ← Complex.ofReal_pow] using
+      (Real.rpow_inv_natCast_pow (ρ.nonneg i x') hN).symm
   have hc : Commute (rootFun (ρ i) (n + 1) ⊗ₜ[ℂ] (1 : B)) z :=
     (Subalgebra.mem_center_iff.1 (Algebra.TensorProduct.includeLeft_map_center_le ℂ C(X, ℂ) B
       ⟨rootFun (ρ i) (n + 1), by simp [Subalgebra.center_eq_top], rfl⟩) z).symm
