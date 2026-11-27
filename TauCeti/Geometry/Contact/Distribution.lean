@@ -51,6 +51,9 @@ contact structure along a local diffeomorphism is a contact structure
 pullback along a surjective local diffeomorphism is a contact structure is one itself
 (`TauCeti.IsContactDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`). The second statement
 builds contact structures on quotients, such as those which are the kernel of no global one-form.
+Applied to the inclusion of an open subset, the first statement shows that the restriction of a
+contact structure to an open subset is a contact structure
+(`TauCeti.IsContactDistribution.comp_subtypeVal`).
 
 The Levi form of a contact structure is a nondegenerate alternating form with values in a line, so
 the contact hyperplanes have even dimension and `M` has odd dimension `2 m + 1`
@@ -78,7 +81,9 @@ has no integral hypersurfaces.
 * `TauCeti.IsContactDistribution.comap_mfderiv_of_isLocalDiffeomorph`,
   `TauCeti.IsContactDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`,
   `TauCeti.isContactDistribution_comap_mfderiv_iff_of_surjective`: contact structures pull back
-  along local diffeomorphisms and descend along surjective ones.
+  along local diffeomorphisms and descend along surjective ones;
+  `TauCeti.IsContactDistribution.comp_subtypeVal`: the restriction of a contact structure to an
+  open subset is a contact structure.
 * `TauCeti.SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution`: a smooth one-form
   is a contact form exactly when its kernel is a contact structure.
 * `TauCeti.IsContactDistribution.even_finrank` and `TauCeti.IsContactDistribution.odd_finrank`:
@@ -322,6 +327,14 @@ theorem isContactDistribution_comap_mfderiv_iff_of_surjective (hn : 1 ≤ n)
       IsContactDistribution J n D' :=
   ⟨fun h ↦ h.of_comap_mfderiv_of_isLocalDiffeomorph hn hf hnm hsurj,
     fun h ↦ h.comap_mfderiv_of_isLocalDiffeomorph hn hf hnm⟩
+
+/-- **Restriction of a contact structure to an open subset.** The restriction `x ↦ D x` of a `C^n`
+contact structure, with `1 ≤ n`, to an open subset `U` is a `C^n` contact structure on `U`. -/
+theorem IsContactDistribution.comp_subtypeVal (hD : IsContactDistribution I n D) (hn : 1 ≤ n)
+    (U : TopologicalSpace.Opens M) : IsContactDistribution I n (fun x : U ↦ D x) := by
+  rw [show (fun x : U ↦ D x) = fun x : U ↦ (D x).comap (mfderiv I I Subtype.val x).toLinearMap from
+    funext fun x ↦ (Submodule.comap_mfderiv_subtype_val (D x)).symm]
+  exact hD.comap_mfderiv_of_isLocalDiffeomorph hn isLocalDiffeomorph_subtype_val le_rfl
 
 end LocalDiffeomorph
 
