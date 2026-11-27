@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Basic
 public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Topology.LocallyFinite
+import TauCeti.Topology.Connected.Basic
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Topology.MetricSpace.ProperSpace.Real
 
@@ -28,9 +29,10 @@ The triangles are compact and form a locally finite family (`TauCeti.TriFace.isC
 infinite, is closed (`TauCeti.isClosed_regionUnion`).
 
 **Connectedness.** If the union of the faces of `R` is preconnected, then `R` is connected through
-its edges (`TauCeti.IsConnectedRegion.of_isPreconnected_regionUnion`): the faces whose vertices
-are reachable from a fixed vertex, and the other faces, have closed unions, which are disjoint
-because two faces whose triangles meet share a vertex
+its edges (`TauCeti.IsConnectedRegion.of_isPreconnected_regionUnion`): as the triangles are
+closed and locally finite, any two faces of `R` are joined by a chain of faces of `R` in which
+consecutive triangles meet (`IsPreconnected.transGen_of_iUnion_of_isClosed`), and consecutive
+faces of such a chain share a vertex
 (`TauCeti.TriFace.exists_mem_vertices_of_triangle_inter_nonempty`). This is the first step of
 the passage from topological to combinatorial simple connectivity.
 -/
@@ -163,35 +165,29 @@ theorem IsConnectedRegion.of_isPreconnected_regionUnion {R : Set TriFace}
     (hR : IsPreconnected (regionUnion R)) : IsConnectedRegion R := by
   rw [isConnectedRegion_def]
   intro u₀ hu₀ u hu
-  -- the faces of `R` with a vertex reachable from `u₀`, and the others
-  set A := {f ∈ R | ∃ w ∈ f.vertices, (regionGraph R).Reachable u₀ w}
-  set B := {f ∈ R | ∀ w ∈ f.vertices, ¬ (regionGraph R).Reachable u₀ w}
-  have hclosed (S : Set TriFace) : IsClosed (⋃ f ∈ S, f.triangle) := by
-    rw [← regionUnion_def]
-    exact isClosed_regionUnion S
-  have hsub : regionUnion R ⊆ (⋃ f ∈ A, f.triangle) ∪ ⋃ f ∈ B, f.triangle := by
-    rw [regionUnion_def]
-    refine iUnion₂_subset fun f hf => ?_
-    by_cases h : ∃ w ∈ f.vertices, (regionGraph R).Reachable u₀ w
-    · exact (subset_biUnion_of_mem (u := fun f => f.triangle) (show f ∈ A from ⟨hf, h⟩)).trans
-        subset_union_left
-    · simp only [not_exists, not_and] at h
-      exact (subset_biUnion_of_mem (u := fun f => f.triangle) (show f ∈ B from ⟨hf, h⟩)).trans
-        subset_union_right
   obtain ⟨f₀, hf₀, hu₀f⟩ := mem_regionVertices.1 hu₀
   obtain ⟨f, hf, huf⟩ := mem_regionVertices.1 hu
-  by_contra hne
-  have hfB : f ∈ B := ⟨hf, fun w hw hw' =>
-    hne (hw'.trans (reachable_of_mem_vertices hf hw huf))⟩
-  obtain ⟨p, -, hpA, hpB⟩ := isPreconnected_closed_iff.1 hR _ _ (hclosed A) (hclosed B) hsub
-    ⟨latticeToReal u₀, latticeToReal_mem_regionUnion hu₀,
-      mem_biUnion (x := f₀) ⟨hf₀, u₀, hu₀f, .refl _⟩ (TriFace.latticeToReal_mem_triangle hu₀f)⟩
-    ⟨latticeToReal u, latticeToReal_mem_regionUnion hu,
-      mem_biUnion hfB (TriFace.latticeToReal_mem_triangle huf)⟩
-  obtain ⟨g, ⟨hgR, w, hw, hwr⟩, hpg⟩ := mem_iUnion₂.1 hpA
-  obtain ⟨g', ⟨-, hg'B⟩, hpg'⟩ := mem_iUnion₂.1 hpB
-  obtain ⟨w', hw'g, hw'g'⟩ :=
-    TriFace.exists_mem_vertices_of_triangle_inter_nonempty ⟨p, hpg, hpg'⟩
-  exact hg'B w' hw'g' (hwr.trans (reachable_of_mem_vertices hgR hw hw'g))
+  rw [regionUnion_def, biUnion_eq_iUnion] at hR
+  -- a chain of faces of `R` from `f₀` to `f` in which consecutive triangles meet
+  have hchain := hR.transGen_of_iUnion_of_isClosed
+    (TriFace.locallyFinite_triangle.comp_injective Subtype.val_injective)
+    (fun g => (TriFace.isCompact_triangle g.val).isClosed) ⟨f₀, hf₀⟩ ⟨f, hf⟩
+    ⟨_, TriFace.latticeToReal_mem_triangle hu₀f⟩ ⟨_, TriFace.latticeToReal_mem_triangle huf⟩
+  -- along the chain, every vertex of every face is reachable from `u₀`, as consecutive faces
+  -- share a vertex
+  have step {g g' : R} (hg : ∀ w ∈ g.val.vertices, (regionGraph R).Reachable u₀ w)
+      (h : (g.val.triangle ∩ g'.val.triangle).Nonempty) :
+      ∀ w ∈ g'.val.vertices, (regionGraph R).Reachable u₀ w := fun w hw => by
+    obtain ⟨w', hw'g, hw'g'⟩ := TriFace.exists_mem_vertices_of_triangle_inter_nonempty h
+    exact (hg w' hw'g).trans (reachable_of_mem_vertices g'.property hw'g' hw)
+  have hf₀' : ∀ w ∈ f₀.vertices, (regionGraph R).Reachable u₀ w :=
+    fun w hw => reachable_of_mem_vertices hf₀ hu₀f hw
+  generalize hg : (⟨f, hf⟩ : R) = g at hchain
+  have key : ∀ w ∈ g.val.vertices, (regionGraph R).Reachable u₀ w := by
+    clear hg
+    induction hchain with
+    | single h => exact step hf₀' h
+    | tail _ h ih => exact step ih h
+  exact key u (hg ▸ huf)
 
 end TauCeti
