@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
+public import TauCeti.AlgebraicTopology.Singular.Triple
 
 /-!
 # The relative cross product and the relative Künneth theorem for singular homology
@@ -66,7 +67,8 @@ second factor, to the simplicial shuffle map, with the pair in the first factor.
 ## Main definitions
 
 * `TopCat.shuffleRel`: the relative shuffle map `C(X, B; R) ⊗ C(Y; S) ⟶ C(X × Y, fst⁻¹(B))`.
-* `TopCat.singularHomologyCrossRel`: the relative cross product in singular homology.
+* `TopCat.singularHomologyCrossRel`: the relative cross product in singular homology, and
+  `TopCat.singularHomologyCrossRelOfInclusion`: its version for nested subspaces.
 * `TopCat.singularHomologyKunnethRel`: the relative Künneth map, and
   `TopCat.singularHomologyKunnethRelIso`: the relative Künneth isomorphism when the cycles and the
   homology split off.
@@ -86,6 +88,12 @@ second factor, to the simplicial shuffle map, with the pair in the first factor.
   cycles split off.
 * `TopCat.isIso_singularHomologyCrossRel_of_isZero`: the relative cross product is an isomorphism
   when the cycles and the homology split off and the pair has relative homology in one degree only.
+* `TopCat.whiskerRight_singularHomologyπ_comp_singularHomologyCrossRelOfInclusion`,
+  `TopCat.singularHomologyCrossRelOfInclusion_comp_singularHomologyδ`,
+  `TopCat.whiskerRight_singularHomologyδ_comp_singularHomologyCrossRelOfInclusion`: the relative
+  cross product `TopCat.singularHomologyCrossRelOfInclusion` for nested subspaces `s ⊆ t` of `Y`
+  and the subspaces of `Y × F` with the points of `s × F` and `t × F`, on absolute classes, and
+  under the connecting maps of pairs and of triples.
 
 ## References
 
@@ -531,5 +539,181 @@ theorem isIso_singularHomologyCrossRel_of_isZero
   infer_instance
 
 end Split
+
+/-! ### The relative cross product for nested subspaces
+
+For nested subsets `s ⊆ t` of a space `Y` and subsets `s' ⊆ t'` of `Y × F` with the same points
+as `s × F` and `t × F`, the relative cross product of the pair `(t, s)` with `F` lands in the
+relative homology of `(t', s')`. -/
+
+section OfInclusion
+
+variable {k : Type w} [CommRing k] {Y F : TopCat.{w}} {s t r : Set Y} {s' t' r' : Set ↑(Y ⊗ F)}
+  (R S : ModuleCat.{w} k)
+
+variable (F) in
+/-- The map `t × F ⟶ t'`, `(x, y) ↦ (x, y)`, onto a subspace `t'` of `Y × F` with the same points
+as `t × F`. -/
+def prodSubspaceMap (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) : TopCat.of t ⊗ F ⟶ TopCat.of t' :=
+  ofHom ⟨fun x ↦ ⟨(x.1.val, x.2), (ht _).2 x.1.property⟩, by fun_prop⟩
+
+/-- `TopCat.prodSubspaceMap` sends `(x, y)` to `(x, y)`. -/
+theorem prodSubspaceMap_apply (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : ↑(TopCat.of t ⊗ F)) :
+    (prodSubspaceMap F ht x).val = (x.1.val, x.2) :=
+  (rfl)
+
+/-- The pair `(t × F, fst⁻¹(s))`, the product of the pair `(t, s)` with `F` as in
+`TopCat.singularHomologyCrossRel`, is the pair `(t', s')` of subspaces of `Y × F` with the same
+points as `t × F` and `s × F`. -/
+def prodSubspacePairIso (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    TopPair.ofSubset (fst (TopCat.of t) F ⁻¹' (Subtype.val ⁻¹' s)) ≅
+      TopPair.ofInclusion hst' where
+  hom := TopPair.ofHom (prodSubspaceMap F ht)
+    (ofHom ⟨fun x ↦ ⟨((fst _ F x.val).val, snd _ F x.val), (hs _).2 x.property⟩, by fun_prop⟩)
+    rfl
+  inv := TopPair.ofHom
+    (ofHom ⟨fun x ↦ (⟨fst Y F x.val, (ht _).1 x.property⟩, snd Y F x.val), by fun_prop⟩)
+    (ofHom ⟨fun x ↦ ⟨(⟨fst Y F x.val, (ht _).1 (hst' x.property)⟩, snd Y F x.val),
+      (hs _).1 x.property⟩, by fun_prop⟩)
+    rfl
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+/-- **The relative cross product for nested subspaces** `Hₐ(t, s; R) ⊗ H_b(F; S) ⟶
+Hₙ(t', s'; R ⊗ S)`: the relative cross product `TopCat.singularHomologyCrossRel` of the pair
+`(t, s)` with `F`, transported along the identifications of `(t, s)` with the pair of `t` and the
+preimage of `s` (`TopPair.ofSubsetPreimageValIso`), and of the product pair with `(t', s')`
+(`TopCat.prodSubspacePairIso`). -/
+def singularHomologyCrossRelOfInclusion (hst : s ⊆ t) (hst' : s' ⊆ t')
+    (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s) (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (a b n : ℕ)
+    (h : a + b = n) :
+    (TopPair.ofInclusion hst).singularHomology R a ⊗ ((singularHomologyFunctor _ b).obj S).obj F ⟶
+      (TopPair.ofInclusion hst').singularHomology (R ⊗ S) n :=
+  (TopPair.singularHomologyMap (TopPair.ofSubsetPreimageValIso hst).inv _ a ▷ _) ≫
+    singularHomologyCrossRel (TopCat.of t) F (Subtype.val ⁻¹' s) R S a b n h ≫
+    TopPair.singularHomologyMap (prodSubspacePairIso hst' hs ht).hom _ n
+
+/-- The relative cross product for nested subspaces is the relative cross product
+`TopCat.singularHomologyCrossRel` of `(t, s)` with `F`, transported along the identifications of
+the pairs. -/
+theorem singularHomologyCrossRelOfInclusion_def (hst : s ⊆ t) (hst' : s' ⊆ t')
+    (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s) (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (a b n : ℕ)
+    (h : a + b = n) :
+    singularHomologyCrossRelOfInclusion R S hst hst' hs ht a b n h =
+      (TopPair.singularHomologyMap (TopPair.ofSubsetPreimageValIso hst).inv _ a ▷ _) ≫
+        singularHomologyCrossRel (TopCat.of t) F (Subtype.val ⁻¹' s) R S a b n h ≫
+        TopPair.singularHomologyMap (prodSubspacePairIso hst' hs ht).hom _ n :=
+  (rfl)
+
+/-- **The relative cross product for nested subspaces of an absolute class.** The relative cross
+product of the image in `Hₐ(t, s; R)` of a class of `Hₐ(t; R)` is the image in relative homology
+of the absolute cross product, carried to `t'` by `TopCat.prodSubspaceMap`. -/
+@[reassoc]
+theorem whiskerRight_singularHomologyπ_comp_singularHomologyCrossRelOfInclusion (hst : s ⊆ t)
+    (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s) (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t)
+    (a b n : ℕ) (h : a + b = n) :
+    ((TopPair.ofInclusion hst).singularHomologyπ R a ▷
+        ((singularHomologyFunctor _ b).obj S).obj F) ≫
+      singularHomologyCrossRelOfInclusion R S hst hst' hs ht a b n h =
+    singularHomologyCross (TopCat.of t) F R S a b n h ≫
+      ((singularHomologyFunctor _ n).obj _).map (prodSubspaceMap F ht) ≫
+        (TopPair.ofInclusion hst').singularHomologyπ _ n := by
+  have h₁ : (TopPair.ofInclusion hst).singularHomologyπ R a ≫
+      TopPair.singularHomologyMap (TopPair.ofSubsetPreimageValIso hst).inv _ a =
+        (TopPair.ofSubset (X := TopCat.of t) (Subtype.val ⁻¹' s)).singularHomologyπ _ a := by
+    exact (HomologicalComplex.homologyMap_comp _ _ a).symm.trans
+      (congrArg (HomologicalComplex.homologyMap · a)
+        (TopPair.singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id _
+          (TopPair.ofSubsetPreimageValIso hst).inv TopPair.ofSubsetPreimageValIso_inv_fst))
+  have h₂ := singularHomologyCross_comp_singularHomologyπ (TopCat.of t) F (Subtype.val ⁻¹' s) R S
+    a b n h
+  have h₃ := TopPair.singularHomologyπ_naturality (prodSubspacePairIso hst' hs ht).hom (R ⊗ S) n
+  unfold singularHomologyCrossRelOfInclusion
+  rw [← comp_whiskerRight_assoc, h₁]
+  exact ((reassoc_of% h₂) _).symm.trans (congrArg (_ ≫ ·) h₃.symm)
+
+/-- **The connecting map of a pair on a relative cross product for nested subspaces.** The
+connecting map of the pair `(r', t')` sends the relative cross product `a × b` to the absolute
+cross product `∂a × b`, carried to `t'` by `TopCat.prodSubspaceMap`. -/
+@[reassoc]
+theorem singularHomologyCrossRelOfInclusion_comp_singularHomologyδ (htr : t ⊆ r)
+    (htr' : t' ⊆ r') (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (hr : ∀ x, x ∈ r' ↔ fst Y F x ∈ r)
+    (a b n : ℕ) (h : a + b = n) :
+    singularHomologyCrossRelOfInclusion R S htr htr' ht hr (a + 1) b (n + 1) (by omega) ≫
+        (TopPair.ofInclusion htr').singularHomologyδ (R ⊗ S) (n + 1) n =
+      ((TopPair.ofInclusion htr).singularHomologyδ R (a + 1) a ▷
+          ((singularHomologyFunctor _ b).obj S).obj F) ≫
+        singularHomologyCross (TopCat.of t) F R S a b n h ≫
+        ((singularHomologyFunctor _ n).obj _).map (prodSubspaceMap F ht) := by
+  have h₁ := TopPair.singularHomologyδ_naturality (R ⊗ S) (prodSubspacePairIso htr' ht hr).hom
+    (n + 1) n
+  have h₂ := singularHomologyCrossRel_comp_singularHomologyδ (TopCat.of r) F
+    (Subtype.val ⁻¹' t) R S (a + 1) b (n + 1) (by omega) (p' := a) rfl h
+  have h₃ := TopPair.singularHomologyδ_naturality R (TopPair.ofSubsetPreimageValIso htr).inv
+    (a + 1) a
+  have h₄ := singularHomologyCross_naturality
+    (TopPair.Hom.snd (TopPair.ofSubsetPreimageValIso htr).inv) (𝟙 F) R S a b n h
+  rw [CategoryTheory.Functor.map_id, tensorHom_id] at h₄
+  -- The composite of `t × F ⟶ t₀ × F ⟶ fst⁻¹(t₀) ⟶ t'`, where `t₀` is the preimage of `t` in
+  -- `r`, is the map `(x, y) ↦ (x, y)`.
+  have h₅ : (TopPair.Hom.snd (TopPair.ofSubsetPreimageValIso htr).inv ▷ F) ≫
+      (prodPreimageFstIso (TopCat.of r) F (Subtype.val ⁻¹' t)).hom ≫
+        TopPair.Hom.snd (prodSubspacePairIso htr' ht hr).hom = prodSubspaceMap F ht := by
+    ext x
+    have hP : ((prodPreimageFstIso (TopCat.of r) F (Subtype.val ⁻¹' t)).hom
+        ((TopPair.Hom.snd (TopPair.ofSubsetPreimageValIso htr).inv ▷ F) x)).val =
+          ((TopPair.Hom.snd (TopPair.ofSubsetPreimageValIso htr).inv x.1).val, x.2) :=
+      ConcreteCategory.congr_hom (prodPreimageFstIso_hom_comp_map (TopCat.of r) F
+        (Subtype.val ⁻¹' t)) _
+    have hi := TopPair.ofSubsetPreimageValIso_inv_snd_apply (hst := htr) x.1
+    exact Subtype.ext (Prod.ext ((congrArg (fun z ↦ (fst (TopCat.of r) F z).val) hP).trans
+      (congrArg Subtype.val hi)) (congrArg (snd (TopCat.of r) F) hP))
+  -- The connecting maps are moved from the pair `(r', t')` to the product pair (`h₁`), across the
+  -- relative cross product (`h₂`), and to the pair `(r, t)` (`h₃`); the cross product is then
+  -- natural in the subspace (`h₄`). The composites mix the two descriptions of absolute homology,
+  -- as the homology of a subobject of a pair and as singular homology, which agree only up to
+  -- unfolding, so they are assembled as terms.
+  unfold singularHomologyCrossRelOfInclusion
+  simp only [Category.assoc]
+  refine (congrArg (_ ≫ _ ≫ ·) h₁.symm).trans ?_
+  refine (congrArg (_ ≫ ·) (((reassoc_of% h₂) _).trans (Category.assoc _ _ _))).trans ?_
+  refine (comp_whiskerRight_assoc (C := ModuleCat.{w} k) _ _ _ _).symm.trans ?_
+  refine (congrArg (fun f ↦ MonoidalCategory.whiskerRight (C := ModuleCat.{w} k) f _ ≫ _)
+    h₃.symm).trans ?_
+  refine (comp_whiskerRight_assoc (C := ModuleCat.{w} k) _ _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
+    ((reassoc_of% h₄) _))).trans ?_
+  refine congrArg (_ ≫ _ ≫ ·) ?_
+  exact (congrArg (_ ≫ ·) (((singularHomologyFunctor _ n).obj (R ⊗ S)).map_comp _ _).symm).trans
+    ((((singularHomologyFunctor _ n).obj _).map_comp _ _).symm.trans (congrArg _ h₅))
+
+/-- **The relative cross product for nested subspaces commutes with the connecting maps of
+triples.** For nested subsets `s ⊆ t ⊆ r` and the corresponding subsets `s' ⊆ t' ⊆ r'` of `Y × F`,
+the connecting map `H_{n+1}(r', t') ⟶ Hₙ(t', s')` of the triple sends `a × b` to `∂a × b`, where
+`∂` is the connecting map of the triple `(r, t, s)`. -/
+theorem whiskerRight_singularHomologyδ_comp_singularHomologyCrossRelOfInclusion (hst : s ⊆ t)
+    (htr : t ⊆ r) (hst' : s' ⊆ t') (htr' : t' ⊆ r') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (hr : ∀ x, x ∈ r' ↔ fst Y F x ∈ r) (a b n : ℕ)
+    (h : a + b = n) :
+    ((TauCeti.TopTriple.ofInclusions hst htr).singularHomologyδ R (a + 1) a ▷
+        ((singularHomologyFunctor _ b).obj S).obj F) ≫
+      singularHomologyCrossRelOfInclusion R S hst hst' hs ht a b n h =
+    singularHomologyCrossRelOfInclusion R S htr htr' ht hr (a + 1) b (n + 1) (by omega) ≫
+      (TauCeti.TopTriple.ofInclusions hst' htr').singularHomologyδ _ (n + 1) n := by
+  rw [TauCeti.TopTriple.singularHomologyδ_eq_comp_singularHomologyπ _ _ (a + 1) a,
+    TauCeti.TopTriple.singularHomologyδ_eq_comp_singularHomologyπ _ _ (n + 1) n]
+  -- The homology of `t` is the source of `π` as the subspace of the inner pair and the target of
+  -- `δ` as the subspace of the outer pair; these agree only up to unfolding, so
+  -- `rw [comp_whiskerRight_assoc]` gives an ill-typed motive and the steps are composed as terms.
+  refine (comp_whiskerRight_assoc (C := ModuleCat.{w} k) _ _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·)
+    (whiskerRight_singularHomologyπ_comp_singularHomologyCrossRelOfInclusion R S hst hst' hs ht
+      a b n h)).trans ?_
+  refine Eq.symm (((reassoc_of% (singularHomologyCrossRelOfInclusion_comp_singularHomologyδ R S
+    htr htr' ht hr a b n h)) _).trans ((Category.assoc _ _ _).trans
+      (congrArg (_ ≫ ·) (Category.assoc _ _ _))))
+
+end OfInclusion
 
 end TopCat
