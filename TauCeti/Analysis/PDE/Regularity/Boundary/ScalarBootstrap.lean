@@ -40,7 +40,7 @@ uses `exists_isWeakSolutionDirichlet_value_ae_eq_indicator` from
 
 ## Main results
 
-* `UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo_of_contDiffOn`:
+* `UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo_of_inf`:
   finite-order regularity with Sobolev forcing on a chart patch.
 * `forall_exists_value_eq_value_restrictL_of_halfSpace`:
   every finite Sobolev order on a fixed patch with smooth local data.
@@ -84,7 +84,7 @@ private theorem energyFormH1_restrictL_eq_setIntegral_value {D : Opens E}
 The model domain is convex and invariant under translations orthogonal to a nonzero normal;
 in particular it may be a half-space or a slab. The equation and coefficient assumptions
 are local to `Ω ∩ U`, and the forcing need only belong to `H^k(Ω ∩ U)`. -/
-theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo_of_contDiffOn
+theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo_of_inf
     (hν : ν ≠ 0) (hHc : Convex ℝ (H : Set E))
     (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
     (hΩU : (Omega : Set E) ∩ U = (H : Set E) ∩ U)
@@ -141,7 +141,7 @@ private theorem forall_exists_value_eq_value_restrictL_of_ne_zero
     (mu := mu) (Omega := Omega ⊓ W) (p := 2) k U.isOpen (hf.of_le (by simp)) hW
     (fun x hx ↦ subset_closure hx.2) hWU
   have huD := energyFormH1_restrictL_eq_setIntegral_value le_rfl (fun _ _ ↦ rfl) hF hu
-  obtain ⟨Q, hQ⟩ := ha.exists_value_eq_value_restrictL_of_mapsTo_of_contDiffOn
+  obtain ⟨Q, hQ⟩ := ha.exists_value_eq_value_restrictL_of_mapsTo_of_inf
     hν (TauCeti.convex_of_halfSpace hH)
     (fun _ hτ ↦ TauCeti.mapsTo_add_smul_of_halfSpace hH hτ) hΩW
     hsmooth k F huD hu0 hV hVW

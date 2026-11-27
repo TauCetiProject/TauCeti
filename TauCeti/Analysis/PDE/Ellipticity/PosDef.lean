@@ -16,8 +16,8 @@ A continuous matrix field `a : X → Matrix ι ι ℝ` on a compact set `K` whos
 pointwise strictly positive on nonzero vectors is uniformly elliptic on `K`: there is a constant
 `λ > 0` with `λ ‖ξ‖² ≤ ξᵀ a(x) ξ` for all `x ∈ K`, and the operator norms of
 `matrixBilinearForm (a x)` are bounded on `K`. When `K` is nonempty these come from the positive
-minimum of the quadratic form on the compact product `K × Sⁿ⁻¹` and the maximum of an entrywise
-bound on `K`. No symmetry of `a` is required
+minimum of the quadratic form on the compact product `K × Sⁿ⁻¹` and boundedness of the
+continuous bilinear-form field on `K`. No symmetry of `a` is required
 (`TauCeti.PDE.exists_uniformlyEllipticOn_of_isCompact`); the lower bound is the matrix case of
 `IsCompact.exists_pos_forall_mul_norm_sq_le`. In particular, every continuous field of
 positive-definite matrices on a compact set is uniformly elliptic
@@ -60,21 +60,13 @@ theorem exists_uniformlyEllipticOn_of_isCompact {K : Set X} (hK : IsCompact K)
     (b := fun x ↦ matrixBilinearForm (a x)) (continuous_matrixBilinearForm.comp_continuousOn ha)
     fun x hx ξ hξ ↦ by simpa only [matrixBilinearForm_self] using hpos x hx ξ hξ
   simp only [matrixBilinearForm_self] at hlow
-  rcases K.eq_empty_or_nonempty with rfl | hKne
-  · exact ⟨lam, lam, uniformlyEllipticOn_iff.2 ⟨hlam, le_rfl, fun _ hx ↦ hx.elim⟩⟩
-  -- The sum of absolute values of entries is continuous on `K`, bounding the operator norm.
-  let s : X → ℝ := fun x ↦ ∑ i, ∑ j, |a x i j|
-  have hs_cont : ContinuousOn s K :=
-    (by fun_prop : Continuous fun A : Matrix ι ι ℝ ↦ ∑ i, ∑ j, |A i j|).comp_continuousOn ha
-  obtain ⟨x₁, -, hmax⟩ := hK.exists_isMaxOn hKne hs_cont
-  refine ⟨lam, max lam (s x₁), uniformlyEllipticOn_iff.2 ⟨hlam, le_max_left _ _,
-    fun x hx ↦ ⟨hlow x hx, fun η ξ ↦ ?_⟩⟩⟩
-  have hM : ‖matrixBilinearForm (a x)‖ ≤ max lam (s x₁) :=
-    (norm_matrixBilinearForm_le_sum_abs (a x)).trans ((hmax hx).trans (le_max_right _ _))
-  have h := (matrixBilinearForm (a x)).le_opNorm₂ η ξ
-  rw [matrixBilinearForm_apply, Real.norm_eq_abs] at h
-  exact h.trans (mul_le_mul_of_nonneg_right
-    (mul_le_mul_of_nonneg_right hM (norm_nonneg η)) (norm_nonneg ξ))
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn
+    (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) ha.matrixBilinearForm
+  refine ⟨lam, max lam M, UniformlyEllipticOn.of_bounds hlam (le_max_left _ _) hlow ?_⟩
+  intro x hx η ξ
+  simpa only [matrixBilinearForm_apply, Real.norm_eq_abs] using
+    (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
+      ((hM x hx).trans (le_max_right lam M)) (le_refl ‖η‖) (le_refl ‖ξ‖)
 
 /-- **Continuous positive-definite matrix fields on compact sets are uniformly elliptic.** -/
 theorem exists_uniformlyEllipticOn_of_isCompact_of_posDef {K : Set X} (hK : IsCompact K)
@@ -93,20 +85,14 @@ theorem exists_uniformlyEllipticOn_inter_of_isCompact {S K : Set X} (hK : IsComp
       lam * ‖v‖ ^ 2 ≤ matrixBilinearForm (a x) v v)
     (hcont : ContinuousOn a K) :
     ∃ Lam, UniformlyEllipticOn (S ∩ K) a lam Lam := by
-  classical
-  choose C hC using fun i j ↦ hK.exists_bound_of_continuousOn
-    (continuousOn_pi.1 (continuousOn_pi.1 hcont i) j)
-  let M := ∑ i, ∑ j, C i j
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn
+    (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hcont.matrixBilinearForm
   refine ⟨max lam M, UniformlyEllipticOn.of_bounds hlam (le_max_left _ _) ?_ ?_⟩
   · intro x hx v
     simpa only [matrixBilinearForm_self] using ha x hx v
   · intro x hx v w
-    have hB : ‖matrixBilinearForm (a x)‖ ≤ M :=
-      (norm_matrixBilinearForm_le_sum_abs _).trans (Finset.sum_le_sum fun i _ ↦
-        Finset.sum_le_sum fun j _ ↦ by
-          simpa only [Real.norm_eq_abs] using hC i j x hx.2)
     simpa only [matrixBilinearForm_apply, Real.norm_eq_abs] using
       (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
-        (hB.trans (le_max_right lam M)) (le_refl ‖v‖) (le_refl ‖w‖)
+        ((hM x hx.2).trans (le_max_right lam M)) (le_refl ‖v‖) (le_refl ‖w‖)
 
 end TauCeti.PDE
