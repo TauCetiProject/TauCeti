@@ -58,6 +58,27 @@ theorem coe_transvection (hij : i < j) (c : R) :
     ((transvection hij c : upperUnitriangularGroup m R) : GL m R) = transvectionUnit hij.ne c :=
   (rfl)
 
+/-- The entry of `e_ij(c)` at `(i, j)` is `c`. -/
+theorem coe_transvection_apply_same (hij : i < j) (c : R) :
+    (((transvection hij c : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) i j = c := by
+  rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
+    one_apply_ne hij.ne, single_apply_same, zero_add]
+
+/-- Away from `(i, j)` the entries of `e_ij(c)` are those of the identity. -/
+theorem coe_transvection_apply_of_ne (hij : i < j) (c : R) {a b : m} (h : ¬(i = a ∧ j = b)) :
+    (((transvection hij c : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) a b =
+      (1 : Matrix m m R) a b := by
+  rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
+    single_apply_of_ne _ _ _ _ _ h, add_zero]
+
+/-- The value of `u (e_ij(c) - 1) v` is `u i * c * v j`. -/
+theorem dotProduct_transvection_sub_one_mulVec (hij : i < j) (c : R) (u v : m → R) :
+    u ⬝ᵥ (((((transvection hij c : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) - 1) *ᵥ
+      v) = u i * c * v j := by
+  rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, add_sub_cancel_left,
+    single_mulVec]
+  simp [dotProduct, Function.update_apply, mul_assoc]
+
 /-- Distinct parameters give distinct transvections. -/
 theorem transvection_injective (hij : i < j) :
     Function.Injective (transvection (R := R) hij) := fun _ _ h ↦

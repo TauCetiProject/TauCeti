@@ -68,15 +68,21 @@ theorem archGaussian_re_pos (y : realSpace K) (x : mixedSpace K) :
 theorem archGaussian_im (y : realSpace K) (x : mixedSpace K) :
     (archGaussian y x).im = 0 := (rfl)
 
+/-- Multiplying the argument by `a` scales each Gaussian parameter by the squared local
+absolute value of `a`. -/
+theorem archGaussian_mul (y : realSpace K) (a x : mixedSpace K) :
+    archGaussian y (a * x) = archGaussian (fun w ↦ normAtPlace w a ^ 2 * y w) x := by
+  simp only [archGaussian_apply, map_mul, mul_pow]
+  congr 3
+  exact Finset.sum_congr rfl fun w _ ↦ by ring
+
 /-- Moving a unit from the lattice variable to the parameters squares its absolute values. -/
 theorem archGaussian_unit_smul (u : (𝓞 K)ˣ) (y : realSpace K) (x : mixedSpace K) :
     archGaussian y (u • x) = archGaussian (unitScale u y) x := by
-  rw [archGaussian_apply, archGaussian_apply]
-  congr 3
-  apply Finset.sum_congr rfl
-  intro w _
-  rw [← congrFun (unitScale_sq_normAtPlace u x) w, unitScale_apply, unitScale_apply]
-  ring
+  rw [unitSMul_smul, archGaussian_mul]
+  congr 1
+  ext w
+  simp [unitScale_apply, normAtPlace_apply]
 
 open scoped Classical in
 /-- Coordinatewise dilation by `√(y w)` on the mixed space. Positivity makes it invertible;

@@ -485,12 +485,9 @@ theorem setIntegral_det_mul_comp_realChart_cylindricalEndLift_le_integral (p : P
         refine setIntegral_congr_set ?_
         rw [Measure.volume_eq_prod]
         exact (Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc).symm
-    _ = ∫ z in realChart p.cylindricalEndLift '' (Ioo a b ×ˢ Ioo (0 : ℝ) 1), g z := by
-        refine (integral_image_eq_integral_of_eq_abs_det_smul hs hinj
-          (fun ζ _ ↦ (contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable
-            one_ne_zero ζ) fun ζ _ ↦ ?_).symm
-        rw [abs_of_pos (p.det_fderiv_realChart_cylindricalEndLift_pos ζ), smul_eq_mul]
-    _ ≤ _ := setIntegral_le_integral hgi (ae_of_all _ hg)
+    _ ≤ _ := setIntegral_det_mul_comp_le_integral hs hinj
+        (fun ζ _ ↦ (contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable
+          one_ne_zero ζ) (fun ζ _ ↦ (p.det_fderiv_realChart_cylindricalEndLift_pos ζ).le) hg hgi
 
 end Floer.PSSPlane
 

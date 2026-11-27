@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.IsAdjoinRoot
 public import TauCeti.RingTheory.Flat.Monogenic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 
 /-!
 # Coefficient charts for finite flat quotients of the polynomial ring
