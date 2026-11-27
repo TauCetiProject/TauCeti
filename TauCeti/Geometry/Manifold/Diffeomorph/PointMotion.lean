@@ -9,7 +9,8 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import TauCeti.Geometry.Manifold.Diffeomorph.Extend
 import TauCeti.Geometry.Manifold.Diffeomorph.Perturbation
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
+
 /-!
 # Smooth families of point motions
 

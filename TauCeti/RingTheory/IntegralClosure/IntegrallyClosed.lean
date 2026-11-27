@@ -9,6 +9,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import TauCeti.RingTheory.Localization.Away.Basic
+-- The statements only need the public imports above.
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Integrally closed algebras and subrings
@@ -32,6 +34,9 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
 `f` to an element integral over `S`, which therefore lies in `S`. Conversely, a surjective ring
 homomorphism carries an integrally closed subring containing its kernel to an integrally closed
 subring: lift a monic integral equation, whose evaluation then lies in the kernel.
+
+An element of an integrally closed domain is a square in its fraction field exactly when it is a
+square in the ring: a square root in the fraction field is integral, so it lies in the ring.
 
 In an integrally closed domain, if `b ^ e = u ϖ ^ e` with `ϖ ≠ 0` and `e ≠ 0`, then `ϖ` divides
 `b` (Mathlib's `IsIntegrallyClosed.pow_dvd_pow_iff`) and the quotient `b / ϖ` is an `e`-th root
@@ -61,8 +66,12 @@ of `u`.
   integrally closed subring containing its kernel to an integrally closed subring.
 * `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
   every element some positive power of which it contains.
+* `IsIntegrallyClosed.dvd_of_eval_scaleRoots_eq_zero`: in an integrally closed domain, if `a / b`
+  is a root of a monic polynomial `p`, in the form `(p.scaleRoots b)(a) = 0`, then `b ∣ a`.
 * `TauCeti.exists_eq_mul_of_pow_eq_mul_pow`: in an integrally closed domain, an `e`-th root `b`
   of `u ϖ ^ e` gives an `e`-th root `b / ϖ` of `u`.
+* `IsIntegrallyClosed.isSquare_algebraMap_iff`: an element of an integrally closed domain is a
+  square in its fraction field if and only if it is a square in the ring.
 * `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
   perfect.
 * `Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le` and
@@ -302,9 +311,28 @@ theorem Function.LeftInverse.isIntegrallyClosed {R A : Type*} [CommRing R] [Comm
   h.isIntegrallyClosed_of_nonZeroDivisors_le
     (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective i h.injective)
 
-namespace TauCeti
-
 variable {R : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+
+open Polynomial in
+/-- **Rational root test in an integrally closed domain.** If `a / b` is a root of a monic
+polynomial `p`, in the denominator-free form `(p.scaleRoots b)(a) = 0`, then `b` divides `a`.
+For `b = 0` the equation reads `a ^ n = 0`, so `a = 0`. -/
+theorem IsIntegrallyClosed.dvd_of_eval_scaleRoots_eq_zero {p : R[X]} (hp : p.Monic) {a b : R}
+    (h : (p.scaleRoots b).eval a = 0) : b ∣ a := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp only [scaleRoots_zero, hp.leadingCoeff, one_smul, eval_pow, eval_X] at h
+    simp [eq_zero_of_pow_eq_zero h]
+  -- Otherwise `a / b` is integral over `R` in the fraction field, hence lies in `R`.
+  let f := algebraMap R (FractionRing R)
+  have hfb : f b ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R _)).mpr hb
+  have hint : IsIntegral R (f a / f b) := by
+    refine ⟨p, hp, ?_⟩
+    have h' := scaleRoots_eval₂_mul (p := p) f (f a / f b) b
+    rw [mul_div_cancel₀ _ hfb, eval₂_at_apply, h, map_zero, eq_comm, mul_eq_zero] at h'
+    exact h'.resolve_left (pow_ne_zero _ hfb)
+  exact TauCeti.dvd_of_isIntegral_div (L := FractionRing R) hb hint
+
+namespace TauCeti
 
 /-- In an integrally closed domain, an `e`-th root `b` of `u ϖ ^ e` with `ϖ ≠ 0` and `e ≠ 0`
 gives an `e`-th root `b / ϖ` of `u`: the element `b` is divisible by `ϖ`, since `ϖ ^ e` divides
@@ -317,3 +345,15 @@ theorem exists_eq_mul_of_pow_eq_mul_pow {ϖ u b : R} (hϖ : ϖ ≠ 0) {e : ℕ} 
   rw [← mul_pow, ← hs, hb, mul_comm]
 
 end TauCeti
+
+/-- An element of an integrally closed domain is a square in its fraction field if and only if it
+is a square in the ring: a square root in the fraction field is integral, hence lies in the ring. -/
+@[simp]
+theorem IsIntegrallyClosed.isSquare_algebraMap_iff {R : Type*} [CommRing R] [IsIntegrallyClosed R]
+    (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] {x : R} :
+    IsSquare (algebraMap R K x) ↔ IsSquare x := by
+  refine ⟨fun ⟨r, hr⟩ ↦ ?_, fun h ↦ h.map (algebraMap R K)⟩
+  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.exists_algebraMap_eq_of_isIntegral_pow (R := R) (x := r)
+    two_pos (by rw [sq, ← hr]; exact isIntegral_algebraMap)
+  rw [← map_mul, (IsFractionRing.injective R K).eq_iff] at hr
+  exact ⟨y, hr⟩

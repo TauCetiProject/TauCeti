@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 public import TauCeti.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Vector-space charts for a manifold with no boundary

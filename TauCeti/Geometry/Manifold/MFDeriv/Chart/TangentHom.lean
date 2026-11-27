@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.Boundary.Basic
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
@@ -95,11 +95,6 @@ theorem chartTangentHom_apply : chartTangentHom J I φ ψ u du z =
   simp only [chartTangentHom, ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul]
 
 end Linear
-
-private theorem apply_eq_of_tangentSpaceCast {β : Type*} (P : ∀ y : M, TangentSpace I y → β)
-    {y₁ y₂ : M} (hy : y₁ = y₂) {v₁ : TangentSpace I y₁} {v₂ : TangentSpace I y₂}
-    (hv : tangentSpaceCast I y₁ y₂ v₁ = v₂) : P y₁ v₁ = P y₂ v₂ := by
-  subst hy; exact congrArg (P y₁) ((eq_of_heq (heq_tangentSpaceCast rfl v₁)).symm.trans hv)
 
 variable {φ φ' : OpenPartialHomeomorph X H'} {ψ : OpenPartialHomeomorph M H} {u : X → M}
 

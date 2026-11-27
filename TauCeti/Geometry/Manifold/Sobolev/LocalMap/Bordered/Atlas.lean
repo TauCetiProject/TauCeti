@@ -12,7 +12,7 @@ import all TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Geometry.Manifold.Complex.Analytic
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.Sobolev.ChartTransition
 
 /-!

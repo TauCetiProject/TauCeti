@@ -8,7 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Measure.WithDensity
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
 import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -17,44 +18,48 @@ import TauCeti.Geometry.Manifold.ModelWithCorners.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
-# Positive continuous density measures on manifolds
+# Maximal-atlas chart weights, Jacobian transformation, and one-atlas sufficiency
 
-A Borel measure `μ` on a finite-dimensional real `C¹` manifold `M` (possibly with boundary or
-corners) is a *positive continuous density measure* (`TauCeti.IsPositiveContinuousDensity I μ`)
-when, in every chart `e` of the `C¹` maximal atlas and relative to every additive Haar measure `ν`
-on the model space `E`, the pushforward `(μ.restrict e.source).map (e.extend I)` has a strictly
-positive continuous real density `w` with respect to `ν.restrict (e.extend I).target`.
+This file extends `TauCeti.IsPositiveDensityMeasure` (defined in
+`TauCeti.Geometry.Manifold.Measure.PositiveDensity` in terms of the preferred charts `chartAt`) to
+arbitrary charts of the `C¹` maximal atlas:
 
-The chart weight `w` is extended by zero outside `(e.extend I).target` and is uniquely determined
-by `μ`, `e`, and `ν`, scales by `Measure.addHaarScalarFactor` under a change of additive Haar
-measure, and transforms by the absolute Jacobian determinant of coordinate changes. Consequently,
-checking the condition on any single covering `C¹` atlas and any single additive Haar measure
-suffices.
-
-Measure-theoretic properties (local finiteness, full support, and null-set agreement with
-`TauCeti.Manifold.ae`) are proved in
-`TauCeti.Geometry.Manifold.Measure.PositiveDensity.Properties`, and existence via partitions of
-unity is proved in `TauCeti.Geometry.Manifold.Measure.PositiveDensity.Existence`.
+* Any single covering `C¹` atlas and any single additive Haar measure on the model space suffice
+  to test `TauCeti.IsPositiveDensityMeasure` (`TauCeti.isPositiveDensityMeasure_of_atlas`).
+* Conversely, on a finite-dimensional real `C¹` manifold, every `IsPositiveDensityMeasure` admits
+  a strictly positive continuous coordinate density in every chart `e` of `IsManifold.maximalAtlas`
+  relative to every additive Haar measure (`TauCeti.IsPositiveDensityMeasure.chartWeight`,
+  `TauCeti.isPositiveDensityMeasure_iff_forall_mem_maximalAtlas`).
+* The canonical chart weight `IsPositiveDensityMeasure.chartWeight` (extended by zero outside
+  `(e.extend I).target`) is uniquely determined by `μ`, `e`, and `ν`, scales by
+  `Measure.addHaarScalarFactor` under a change of additive Haar measure, and transforms by the
+  absolute Jacobian determinant under `C¹` coordinate changes
+  (`TauCeti.IsPositiveDensityMeasure.chartWeight_changeChart`).
 
 ## Main definitions
 
-* `TauCeti.IsPositiveContinuousDensity`: predicate for positive continuous density measures.
-* `TauCeti.IsPositiveContinuousDensity.chartWeight`: the canonical strictly positive continuous
-  coordinate weight of a positive continuous density measure in a chart of the maximal atlas,
+* `TauCeti.IsPositiveDensityMeasure.chartWeight`: the canonical strictly positive continuous
+  coordinate weight of a positive continuous density measure in a chart of the `C¹` maximal atlas,
   extended by zero off `(e.extend I).target`.
 
 ## Main results
 
-* `TauCeti.IsPositiveContinuousDensity.chartWeight_eqOn_target_of_map_restrict_eq`,
-  `TauCeti.IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq`: uniqueness of the
+* `TauCeti.isPositiveDensityMeasure_of_atlas`,
+  `TauCeti.IsPositiveDensityMeasure.exists_density_of_mem_maximalAtlas`,
+  `TauCeti.isPositiveDensityMeasure_iff_forall_mem_maximalAtlas`: one covering `C¹` atlas and one
+  additive Haar measure suffice, and every `IsPositiveDensityMeasure` has densities in every chart
+  of the `C¹` maximal atlas.
+* `TauCeti.IsPositiveDensityMeasure.chartWeight_eqOn_target_of_map_restrict_eq`,
+  `TauCeti.IsPositiveDensityMeasure.chartWeight_eq_of_map_restrict_eq`: uniqueness of the
   continuous chart weight on the extended chart target and as a function on the model space.
-* `TauCeti.IsPositiveContinuousDensity.chartWeight_eq_addHaarScalarFactor_mul`: scaling of chart
+* `TauCeti.IsPositiveDensityMeasure.chartWeight_eq_addHaarScalarFactor_mul`: scaling of chart
   weights under a change of additive Haar measure.
-* `TauCeti.IsPositiveContinuousDensity.chartWeight_changeChart`: Jacobian transformation rule for
-  chart weights across overlapping charts of the `C¹` maximal atlas.
-* `TauCeti.isPositiveContinuousDensity_of_atlas`,
-  `TauCeti.isPositiveContinuousDensity_iff_forall_chartAt`: one covering `C¹` atlas and one
-  additive Haar measure suffice to verify `IsPositiveContinuousDensity`.
+* `TauCeti.IsPositiveDensityMeasure.chartWeight_changeChart`,
+  `TauCeti.IsPositiveDensityMeasure.chartWeight_changeChart_modelWithCornersSelf`: Jacobian
+  transformation rule for chart weights across overlapping charts of the `C¹` maximal atlas.
+* `TauCeti.IsPositiveDensityMeasure.measure_eq_zero_iff_measure_extend_image_eq_zero`,
+  `TauCeti.IsPositiveDensityMeasure.isNullSet_of_measure_eq_zero`: maximal-atlas chartwise
+  null-set characterization and non-Lindelöf nullity of `μ`-null sets.
 -/
 
 public section
@@ -66,163 +71,7 @@ noncomputable section
 
 namespace TauCeti
 
-/-! ### Positive continuous density measures -/
-
-section Defs
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MeasurableSpace M]
-
-/-- A Borel measure `μ` on a manifold `M` is a **positive continuous density measure** when, in
-every chart `e` of the `C¹` maximal atlas and relative to every additive Haar measure `ν` on the
-model space, the pushforward `(μ.restrict e.source).map (e.extend I)` has a strictly positive
-continuous real density with respect to `ν.restrict (e.extend I).target`. -/
-def IsPositiveContinuousDensity (μ : Measure M) : Prop :=
-  ∀ e ∈ IsManifold.maximalAtlas I 1 M, ∀ (ν : Measure E) [ν.IsAddHaarMeasure],
-    ∃ w : E → ℝ, ContinuousOn w (e.extend I).target ∧
-      (∀ y ∈ (e.extend I).target, 0 < w y) ∧
-      (μ.restrict e.source).map (e.extend I) =
-        (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y)
-
-theorem isPositiveContinuousDensity_iff {μ : Measure M} :
-    IsPositiveContinuousDensity I μ ↔
-      ∀ e ∈ IsManifold.maximalAtlas I 1 M, ∀ (ν : Measure E) [ν.IsAddHaarMeasure],
-        ∃ w : E → ℝ, ContinuousOn w (e.extend I).target ∧
-          (∀ y ∈ (e.extend I).target, 0 < w y) ∧
-          (μ.restrict e.source).map (e.extend I) =
-            (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
-  Iff.rfl
-
-variable {I}
-
-/-- The coordinate density of a positive continuous density measure `μ` in a chart `e` of the `C¹`
-maximal atlas, relative to an additive Haar measure `ν` on the model space, extended by zero
-outside `(e.extend I).target`. When `E` is finite-dimensional with `BorelSpace E`, it is uniquely
-determined by `μ`, `e`, and `ν`; see
-`IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq`. -/
-def IsPositiveContinuousDensity.chartWeight {μ : Measure M}
-    (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] : E → ℝ :=
-  (e.extend I).target.indicator (hμ e he ν).choose
-
-/-- Off `(e.extend I).target`, the canonical chart weight vanishes. -/
-theorem IsPositiveContinuousDensity.chartWeight_eq_zero_of_notMem {μ : Measure M}
-    (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
-    {y : E} (hy : y ∉ (e.extend I).target) :
-    hμ.chartWeight he ν y = 0 :=
-  indicator_of_notMem hy _
-
-theorem IsPositiveContinuousDensity.continuousOn_chartWeight {μ : Measure M}
-    (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] :
-    ContinuousOn (hμ.chartWeight he ν) (e.extend I).target :=
-  (hμ e he ν).choose_spec.1.congr fun _ hy ↦ indicator_of_mem hy _
-
-theorem IsPositiveContinuousDensity.chartWeight_pos {μ : Measure M}
-    (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
-    {y : E} (hy : y ∈ (e.extend I).target) :
-    0 < hμ.chartWeight he ν y := by
-  rw [chartWeight, indicator_of_mem hy]
-  exact (hμ e he ν).choose_spec.2.1 y hy
-
-theorem IsPositiveContinuousDensity.map_restrict_eq_withDensity_chartWeight
-    [OpensMeasurableSpace E] {μ : Measure M}
-    (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] :
-    (μ.restrict e.source).map (e.extend I) =
-      (ν.restrict (e.extend I).target).withDensity fun y ↦
-        ENNReal.ofReal (hμ.chartWeight he ν y) := by
-  refine (hμ e he ν).choose_spec.2.2.trans (withDensity_congr_ae ?_)
-  filter_upwards [ae_restrict_mem (e.measurableSet_extend_target I)] with y hy
-  rw [chartWeight, indicator_of_mem hy]
-
-/-- Uniqueness of the continuous chart weight on `(e.extend I).target`: any continuous nonnegative
-function on `(e.extend I).target` presenting `(μ.restrict e.source).map (e.extend I)` against `ν`
-agrees with `hμ.chartWeight he ν` on `(e.extend I).target`. -/
-theorem IsPositiveContinuousDensity.chartWeight_eqOn_target_of_map_restrict_eq
-    [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ)
-    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
-    (ν : Measure E) [ν.IsAddHaarMeasure] {w : E → ℝ}
-    (hw : ContinuousOn w (e.extend I).target) (hw0 : ∀ y ∈ (e.extend I).target, 0 ≤ w y)
-    (hmap : (μ.restrict e.source).map (e.extend I) =
-      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y)) :
-    EqOn (hμ.chartWeight he ν) w (e.extend I).target := by
-  have heq :
-      (ν.restrict (e.extend I).target).withDensity
-          (fun y ↦ ENNReal.ofReal (hμ.chartWeight he ν y)) =
-        (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
-    (hμ.map_restrict_eq_withDensity_chartWeight he ν).symm.trans hmap
-  rw [e.extend_target] at heq hw hw0 ⊢
-  exact I.eqOn_of_withDensity_ofReal_eq e.open_target
-    (by simpa only [e.extend_target] using hμ.continuousOn_chartWeight he ν) hw
-    (fun y hy ↦ (hμ.chartWeight_pos he ν (by simpa only [e.extend_target] using hy)).le) hw0 heq
-
-/-- Function-level uniqueness of the continuous chart weight: any continuous nonnegative function
-on `(e.extend I).target` that vanishes off `(e.extend I).target` and presents
-`(μ.restrict e.source).map (e.extend I)` against `ν` equals `hμ.chartWeight he ν`. -/
-theorem IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq
-    [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ)
-    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
-    (ν : Measure E) [ν.IsAddHaarMeasure] {w : E → ℝ}
-    (hw : ContinuousOn w (e.extend I).target) (hw0 : ∀ y ∈ (e.extend I).target, 0 ≤ w y)
-    (hw_out : ∀ y ∉ (e.extend I).target, w y = 0)
-    (hmap : (μ.restrict e.source).map (e.extend I) =
-      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y)) :
-    hμ.chartWeight he ν = w := by
-  ext y
-  by_cases hy : y ∈ (e.extend I).target
-  · exact hμ.chartWeight_eqOn_target_of_map_restrict_eq he ν hw hw0 hmap hy
-  · rw [hμ.chartWeight_eq_zero_of_notMem he ν hy, hw_out y hy]
-
-/-- Changing the reference additive Haar measure from `ν₁` to `ν₂` multiplies the chart weight by
-`Measure.addHaarScalarFactor ν₁ ν₂`. -/
-theorem IsPositiveContinuousDensity.chartWeight_eq_addHaarScalarFactor_mul
-    [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ)
-    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
-    (ν₁ ν₂ : Measure E) [ν₁.IsAddHaarMeasure] [ν₂.IsAddHaarMeasure] :
-    hμ.chartWeight he ν₂ =
-      fun y ↦ (Measure.addHaarScalarFactor ν₁ ν₂ : ℝ) * hμ.chartWeight he ν₁ y := by
-  have hmap : (μ.restrict e.source).map (e.extend I) =
-      (ν₂.restrict (e.extend I).target).withDensity fun z ↦
-        ENNReal.ofReal ((Measure.addHaarScalarFactor ν₁ ν₂ : ℝ) * hμ.chartWeight he ν₁ z) := by
-    rw [hμ.map_restrict_eq_withDensity_chartWeight he ν₁, ← restrict_withDensity',
-      Measure.withDensity_eq_withDensity_addHaarScalarFactor_mul ν₁ ν₂, restrict_withDensity']
-    refine congrArg (ν₂.restrict (e.extend I).target).withDensity (funext fun z ↦ ?_)
-    rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
-  exact hμ.chartWeight_eq_of_map_restrict_eq he ν₂
-    (continuousOn_const.mul (hμ.continuousOn_chartWeight he ν₁))
-    (fun z hz ↦ mul_nonneg (Measure.addHaarScalarFactor ν₁ ν₂).coe_nonneg
-      (hμ.chartWeight_pos he ν₁ hz).le)
-    (fun z hz ↦ by rw [hμ.chartWeight_eq_zero_of_notMem he ν₁ hz, mul_zero])
-    hmap
-
-/-- Integration in coordinates against a positive continuous density measure over a measurable
-subset of a chart source. No measurability of `f` is required. -/
-theorem IsPositiveContinuousDensity.setLIntegral_of_subset [BorelSpace E] [BorelSpace M]
-    {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
-    {s : Set M} (hs : MeasurableSet s) (hsub : s ⊆ e.source) (f : M → ℝ≥0∞) :
-    ∫⁻ x in s, f x ∂μ =
-      ∫⁻ y in e.extend I '' s,
-        ENNReal.ofReal (hμ.chartWeight he ν y) * f ((e.extend I).symm y) ∂ν :=
-  e.setLIntegral_eq_of_map_restrict_eq I (hμ.continuousOn_chartWeight he ν)
-    (hμ.map_restrict_eq_withDensity_chartWeight he ν) hs hsub f
-
-/-- Measuring a measurable subset of a chart source in coordinates. -/
-theorem IsPositiveContinuousDensity.measure_apply_of_subset [BorelSpace E] [BorelSpace M]
-    {μ : Measure M} (hμ : IsPositiveContinuousDensity I μ) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
-    {s : Set M} (hs : MeasurableSet s) (hsub : s ⊆ e.source) :
-    μ s = ∫⁻ y in e.extend I '' s, ENNReal.ofReal (hμ.chartWeight he ν y) ∂ν := by
-  simpa only [mul_one, setLIntegral_one] using
-    hμ.setLIntegral_of_subset he ν hs hsub (fun _ ↦ 1)
-
-end Defs
-
-/-! ### Jacobian transformation rule and one-atlas sufficiency -/
+/-! ### One-atlas sufficiency and maximal-atlas densities -/
 
 section Atlas
 
@@ -231,44 +80,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [MeasurableSpace M] [BorelSpace M]
-
-/-- **Jacobian change-of-variables rule for chart weights.** On the overlap of two charts `e, e'`
-of the `C¹` maximal atlas, the weight in `e` equals the absolute Jacobian determinant of the
-transition `e' ∘ e⁻¹` times the weight in `e'`. -/
-theorem IsPositiveContinuousDensity.chartWeight_changeChart {μ : Measure M}
-    (hμ : IsPositiveContinuousDensity I μ) {e e' : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
-    (ν : Measure E) [ν.IsAddHaarMeasure]
-    {y : E} (hy : y ∈ (I.extendCoordChange e e').source) :
-    hμ.chartWeight he ν y =
-      |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det| *
-        hμ.chartWeight he' ν (I.extendCoordChange e e' y) :=
-  I.eqOn_abs_det_mul_of_map_restrict_eq he he'
-    (hμ.continuousOn_chartWeight he ν) (hμ.continuousOn_chartWeight he' ν)
-    (fun _ hz ↦ (hμ.chartWeight_pos he ν hz).le)
-    (fun _ hz ↦ (hμ.chartWeight_pos he' ν hz).le)
-    (hμ.map_restrict_eq_withDensity_chartWeight he ν)
-    (hμ.map_restrict_eq_withDensity_chartWeight he' ν) hy
-
-/-- Boundaryless specialization of the Jacobian transformation law for chart weights. -/
-theorem IsPositiveContinuousDensity.chartWeight_changeChart_modelWithCornersSelf
-    {N : Type*} [TopologicalSpace N] [ChartedSpace E N]
-    [MeasurableSpace N] [BorelSpace N] {μ : Measure N}
-    (hμ : IsPositiveContinuousDensity 𝓘(ℝ, E) μ) {e e' : OpenPartialHomeomorph N E}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 N)
-    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 N)
-    (ν : Measure E) [ν.IsAddHaarMeasure] {y : E} (hy : y ∈ (e.symm.trans e').source) :
-    hμ.chartWeight he ν y =
-      |(fderiv ℝ (e' ∘ e.symm) y).det| * hμ.chartWeight he' ν (e' (e.symm y)) := by
-  have hy' : y ∈ (𝓘(ℝ, E).extendCoordChange e e').source := by
-    rw [ModelWithCorners.extendCoordChange_source]
-    simpa only [modelWithCornersSelf_coe, image_id] using hy
-  have hfun : ⇑(𝓘(ℝ, E).extendCoordChange e e') = e' ∘ e.symm := by
-    ext z
-    simp [ModelWithCorners.extendCoordChange]
-  have h := hμ.chartWeight_changeChart he he' ν hy'
-  rw [hfun, modelWithCornersSelf_coe, range_id, fderivWithin_univ] at h
-  exact h
 
 /-- Overlap compatibility of chart weights pulled back from an atlas to a chart `e`. -/
 private theorem atlasPullbackWeight_eq {μ : Measure M} {ν : Measure E} [ν.IsAddHaarMeasure]
@@ -311,42 +122,6 @@ private theorem atlasPullbackWeight_eq {μ : Measure M} {ν : Measure E} [ν.IsA
   rw [hΦi, hΦj, htr, hΦij, ← hyx, hchain]
   ring
 
-/-- Local pushforward verification on a measurable subset of one chart overlap. -/
-private theorem atlasPullback_map_piece {μ : Measure M} {ν : Measure E} [ν.IsAddHaarMeasure]
-    {e e' : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
-    {w' w0 : E → ℝ} (hw' : ContinuousOn w' (e'.extend I).target)
-    (hmap' : (μ.restrict e'.source).map (e'.extend I) =
-      (ν.restrict (e'.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w' y))
-    (hw0_eq : EqOn w0 (fun y ↦ |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det| *
-      w' (I.extendCoordChange e e' y)) (I.extendCoordChange e e').source)
-    {A : Set E} (hA : MeasurableSet A) (hAsub : A ⊆ (I.extendCoordChange e e').source) :
-    ((μ.restrict e.source).map (e.extend I)) A = ∫⁻ y in A, ENNReal.ofReal (w0 y) ∂ν := by
-  rw [e.map_restrict_extend_apply I μ hA]
-  set s := e.extend I ⁻¹' A ∩ e.source
-  have hs_meas : MeasurableSet s := e.measurableSet_preimage_extend_inter I hA
-  have hs_e' : s ⊆ e'.source := by
-    rintro x ⟨hxA, hxe⟩
-    have hxe' : x ∈ (e.extend I).source := by rwa [e.extend_source]
-    have h2 : (e.extend I).symm (e.extend I x) ∈ (e'.extend I).source := (hAsub hxA).2
-    rwa [(e.extend I).left_inv hxe', e'.extend_source] at h2
-  have him : e'.extend I '' s = I.extendCoordChange e e' '' A := by
-    ext z
-    refine ⟨fun ⟨x, ⟨hxA, hxe⟩, hxz⟩ ↦ ?_, fun ⟨y, hyA, hyz⟩ ↦ ?_⟩
-    · have hxe' : x ∈ (e.extend I).source := by rwa [e.extend_source]
-      exact ⟨e.extend I x, hxA, by
-        simpa only [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
-          (e.extend I).left_inv hxe'] using hxz⟩
-    · have hyT : y ∈ (e.extend I).target := (hAsub hyA).1
-      refine ⟨(e.extend I).symm y,
-        ⟨by rw [mem_preimage, (e.extend I).right_inv hyT]; exact hyA, ?_⟩, hyz⟩
-      simpa only [← e.extend_source (I := I)] using (e.extend I).map_target hyT
-  have h1 := e'.setLIntegral_eq_of_map_restrict_eq I hw' hmap' hs_meas hs_e' (fun _ ↦ 1)
-  simp only [mul_one, setLIntegral_one] at h1
-  rw [h1, him, ν.setLIntegral_extendCoordChange (I := I) he he' hA hAsub]
-  exact setLIntegral_congr_fun hA fun y hy ↦ by
-    rw [hw0_eq (hAsub hy), ENNReal.ofReal_mul (abs_nonneg _)]
-
 omit [ChartedSpace H M] in
 /-- Glue local pushforward identities on a covering of `(e.extend I).target` by chart overlaps. -/
 private theorem atlasPullback_map_eq {μ : Measure M} {ν : Measure E}
@@ -386,11 +161,9 @@ private theorem atlasPullback_map_eq {μ : Measure M} {ν : Measure E}
   exact tsum_congr fun n ↦
     hpiece (f n) (hd_meas n) (inter_subset_right.trans (disjointed_subset U n))
 
-/-- **One-atlas sufficiency.** To verify that `μ` is a positive continuous density measure, it
-suffices that `μ` has a strictly positive continuous density against a single additive Haar measure
-in each chart of some covering `C¹` atlas. Neither the atlas nor the manifold need be countable or
-Lindelöf. -/
-theorem isPositiveContinuousDensity_of_atlas {μ : Measure M}
+/-- Pulling positive continuous chart densities from any covering `C¹` atlas to an arbitrary
+chart of the maximal atlas and an arbitrary additive Haar measure. -/
+private theorem exists_density_mem_maximalAtlas_of_atlas {μ : Measure M}
     (ν : Measure E) [ν.IsAddHaarMeasure]
     {ι : Type*} {φ : ι → OpenPartialHomeomorph M H}
     (hφ : ∀ i, φ i ∈ IsManifold.maximalAtlas I 1 M)
@@ -398,11 +171,15 @@ theorem isPositiveContinuousDensity_of_atlas {μ : Measure M}
     (h : ∀ i, ∃ w : E → ℝ, ContinuousOn w ((φ i).extend I).target ∧
       (∀ y ∈ ((φ i).extend I).target, 0 < w y) ∧
       (μ.restrict (φ i).source).map ((φ i).extend I) =
-        (ν.restrict ((φ i).extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y)) :
-    IsPositiveContinuousDensity I μ := by
+        (ν.restrict ((φ i).extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y))
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
+    (ν' : Measure E) [ν'.IsAddHaarMeasure] :
+    ∃ w : E → ℝ, ContinuousOn w (e.extend I).target ∧
+      (∀ y ∈ (e.extend I).target, 0 < w y) ∧
+      (μ.restrict e.source).map (e.extend I) =
+        (ν'.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y) := by
   classical
   choose w hw_cont hw_pos hw_map using h
-  intro e he ν' _
   have hcov_e : ∀ y ∈ (e.extend I).target, ∃ i, y ∈ (I.extendCoordChange e (φ i)).source := by
     intro y hy
     have hxe : (e.extend I).symm y ∈ e.source := by
@@ -434,8 +211,13 @@ theorem isPositiveContinuousDensity_of_atlas {μ : Measure M}
     rw [hw0_eq i hyi]
     exact mul_pos (I.abs_det_fderivWithin_extendCoordChange_pos he (hφ i) hyi)
       (hw_pos i _ ((I.extendCoordChange e (φ i)).map_source hyi).1)
-  have hmap_nu := atlasPullback_map_eq (I := I) (μ := μ) (ν := ν) hcov_e fun i _ hA hAsub ↦
-    atlasPullback_map_piece he (hφ i) (hw_cont i) (hw_map i) (hw0_eq i) hA hAsub
+  have hmap_nu : (μ.restrict e.source).map (e.extend I) =
+      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w0 y) :=
+    atlasPullback_map_eq (I := I) (μ := μ) (ν := ν) hcov_e fun i A hA hAsub ↦ by
+      rw [e.map_restrict_extend_apply_of_subset_extendCoordChange_source (φ i) I he (hφ i)
+        (hw_cont i) (hw_map i) hA hAsub]
+      exact setLIntegral_congr_fun hA fun y hy ↦ by
+        rw [hw0_eq i (hAsub hy), ENNReal.ofReal_mul (abs_nonneg _)]
   refine ⟨fun y ↦ (Measure.addHaarScalarFactor ν ν' : ℝ) * w0 y,
     continuousOn_const.mul hw0_cont,
     fun y hy ↦ mul_pos (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure ν ν') (hw0_pos y hy),
@@ -445,20 +227,292 @@ theorem isPositiveContinuousDensity_of_atlas {μ : Measure M}
   refine congrArg (ν'.restrict (e.extend I).target).withDensity (funext fun y ↦ ?_)
   rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
 
-/-- A Borel measure is a positive continuous density measure iff it has a strictly positive
-continuous density against a fixed additive Haar measure in every preferred extended chart. -/
-theorem isPositiveContinuousDensity_iff_forall_chartAt [IsManifold I 1 M] {μ : Measure M}
-    (ν : Measure E) [ν.IsAddHaarMeasure] :
-    IsPositiveContinuousDensity I μ ↔
-      ∀ x : M, ∃ w : E → ℝ, ContinuousOn w (extChartAt I x).target ∧
-        (∀ y ∈ (extChartAt I x).target, 0 < w y) ∧
-        (μ.restrict (chartAt H x).source).map (extChartAt I x) =
-          (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
-  ⟨fun hμ x ↦ hμ (chartAt H x) (IsManifold.chart_mem_maximalAtlas x) ν,
-    isPositiveContinuousDensity_of_atlas (I := I) ν
-      (φ := fun x : M ↦ chartAt H x) (fun x ↦ IsManifold.chart_mem_maximalAtlas x)
-      (iUnion_eq_univ_iff.2 fun x ↦ ⟨x, mem_chart_source H x⟩)⟩
+/-- **One-atlas sufficiency.** To verify that `μ` is a positive continuous density measure, it
+suffices that `μ` has a strictly positive continuous density against a single additive Haar measure
+in each chart of some covering `C¹` atlas. Neither the atlas nor the manifold need be countable or
+Lindelöf. -/
+theorem isPositiveDensityMeasure_of_atlas [IsManifold I 1 M] {μ : Measure M}
+    (ν : Measure E) [ν.IsAddHaarMeasure]
+    {ι : Type*} {φ : ι → OpenPartialHomeomorph M H}
+    (hφ : ∀ i, φ i ∈ IsManifold.maximalAtlas I 1 M)
+    (hcover : ⋃ i, (φ i).source = univ)
+    (h : ∀ i, ∃ w : E → ℝ, ContinuousOn w ((φ i).extend I).target ∧
+      (∀ y ∈ ((φ i).extend I).target, 0 < w y) ∧
+      (μ.restrict (φ i).source).map ((φ i).extend I) =
+        (ν.restrict ((φ i).extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y)) :
+    IsPositiveDensityMeasure I μ := by
+  refine (isPositiveDensityMeasure_iff_of_isAddHaarMeasure ν).2 fun x ↦ ?_
+  simpa only [extChartAt, (chartAt H x).extend_source] using
+    exists_density_mem_maximalAtlas_of_atlas ν hφ hcover h (IsManifold.chart_mem_maximalAtlas x) ν
+
+/-- A positive continuous density measure admits a strictly positive continuous coordinate density
+in **every** chart of the `C¹` maximal atlas and relative to every additive Haar measure. -/
+theorem IsPositiveDensityMeasure.exists_density_of_mem_maximalAtlas [IsManifold I 1 M]
+    {μ : Measure M} (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] :
+    ∃ w : E → ℝ, ContinuousOn w (e.extend I).target ∧
+      (∀ y ∈ (e.extend I).target, 0 < w y) ∧
+      (μ.restrict e.source).map (e.extend I) =
+        (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y) := by
+  let ν₀ : Measure E := (Module.finBasis ℝ E).addHaar
+  exact exists_density_mem_maximalAtlas_of_atlas ν₀ (φ := fun x : M ↦ chartAt H x)
+    (fun x ↦ IsManifold.chart_mem_maximalAtlas x)
+    (iUnion_eq_univ_iff.2 fun x ↦ ⟨x, mem_chart_source H x⟩)
+    (fun x ↦ by
+      simpa only [extChartAt, (chartAt H x).extend_source] using hμ.exists_density x ν₀) he ν
+
+/-- A Borel measure on a finite-dimensional `C¹` manifold is a positive continuous density measure
+iff it has strictly positive continuous densities in every chart of the `C¹` maximal atlas. -/
+theorem isPositiveDensityMeasure_iff_forall_mem_maximalAtlas [IsManifold I 1 M] {μ : Measure M} :
+    IsPositiveDensityMeasure I μ ↔
+      ∀ e ∈ IsManifold.maximalAtlas I 1 M, ∀ (ν : Measure E) [ν.IsAddHaarMeasure],
+        ∃ w : E → ℝ, ContinuousOn w (e.extend I).target ∧
+          (∀ y ∈ (e.extend I).target, 0 < w y) ∧
+          (μ.restrict e.source).map (e.extend I) =
+            (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
+  ⟨fun hμ _ he ν _ ↦ hμ.exists_density_of_mem_maximalAtlas he ν, fun h ↦
+    (isPositiveDensityMeasure_iff_of_isAddHaarMeasure (Module.finBasis ℝ E).addHaar).2 fun x ↦ by
+      simpa only [extChartAt, (chartAt H x).extend_source] using
+        h (chartAt H x) (IsManifold.chart_mem_maximalAtlas x) ((Module.finBasis ℝ E).addHaar)⟩
 
 end Atlas
+
+/-! ### Canonical chart weights and Jacobian transformation rule -/
+
+section ChartWeight
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [MeasurableSpace M] [BorelSpace M]
+
+/-- The coordinate density of a positive continuous density measure `μ` in a chart `e` of the `C¹`
+maximal atlas, relative to an additive Haar measure `ν` on the model space, extended by zero
+outside `(e.extend I).target`. It is uniquely determined by `μ`, `e`, and `ν`; see
+`IsPositiveDensityMeasure.chartWeight_eq_of_map_restrict_eq`. -/
+def IsPositiveDensityMeasure.chartWeight {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] : E → ℝ :=
+  (e.extend I).target.indicator (hμ.exists_density_of_mem_maximalAtlas he ν).choose
+
+/-- Off `(e.extend I).target`, the canonical chart weight vanishes. -/
+theorem IsPositiveDensityMeasure.chartWeight_eq_zero_of_notMem {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
+    {y : E} (hy : y ∉ (e.extend I).target) :
+    hμ.chartWeight he ν y = 0 :=
+  indicator_of_notMem hy _
+
+theorem IsPositiveDensityMeasure.continuousOn_chartWeight {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] :
+    ContinuousOn (hμ.chartWeight he ν) (e.extend I).target :=
+  (hμ.exists_density_of_mem_maximalAtlas he ν).choose_spec.1.congr fun _ hy ↦
+    indicator_of_mem hy _
+
+theorem IsPositiveDensityMeasure.chartWeight_pos {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
+    {y : E} (hy : y ∈ (e.extend I).target) :
+    0 < hμ.chartWeight he ν y := by
+  rw [chartWeight, indicator_of_mem hy]
+  exact (hμ.exists_density_of_mem_maximalAtlas he ν).choose_spec.2.1 y hy
+
+theorem IsPositiveDensityMeasure.map_restrict_eq_withDensity_chartWeight {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] :
+    (μ.restrict e.source).map (e.extend I) =
+      (ν.restrict (e.extend I).target).withDensity fun y ↦
+        ENNReal.ofReal (hμ.chartWeight he ν y) := by
+  refine (hμ.exists_density_of_mem_maximalAtlas he ν).choose_spec.2.2.trans
+    (withDensity_congr_ae ?_)
+  filter_upwards [ae_restrict_mem (e.measurableSet_extend_target I)] with y hy
+  rw [chartWeight, indicator_of_mem hy]
+
+/-- Uniqueness of the continuous chart weight on `(e.extend I).target`: any continuous nonnegative
+function on `(e.extend I).target` presenting `(μ.restrict e.source).map (e.extend I)` against `ν`
+agrees with `hμ.chartWeight he ν` on `(e.extend I).target`. -/
+theorem IsPositiveDensityMeasure.chartWeight_eqOn_target_of_map_restrict_eq {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ)
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
+    (ν : Measure E) [ν.IsAddHaarMeasure] {w : E → ℝ}
+    (hw : ContinuousOn w (e.extend I).target) (hw0 : ∀ y ∈ (e.extend I).target, 0 ≤ w y)
+    (hmap : (μ.restrict e.source).map (e.extend I) =
+      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y)) :
+    EqOn (hμ.chartWeight he ν) w (e.extend I).target := by
+  have heq :
+      (ν.restrict (e.extend I).target).withDensity
+          (fun y ↦ ENNReal.ofReal (hμ.chartWeight he ν y)) =
+        (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
+    (hμ.map_restrict_eq_withDensity_chartWeight he ν).symm.trans hmap
+  rw [e.extend_target] at heq hw hw0 ⊢
+  exact I.eqOn_of_withDensity_ofReal_eq e.open_target
+    (by simpa only [e.extend_target] using hμ.continuousOn_chartWeight he ν) hw
+    (fun y hy ↦ (hμ.chartWeight_pos he ν (by simpa only [e.extend_target] using hy)).le) hw0 heq
+
+/-- Function-level uniqueness of the continuous chart weight: any continuous nonnegative function
+on `(e.extend I).target` that vanishes off `(e.extend I).target` and presents
+`(μ.restrict e.source).map (e.extend I)` against `ν` equals `hμ.chartWeight he ν`. -/
+theorem IsPositiveDensityMeasure.chartWeight_eq_of_map_restrict_eq {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ)
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
+    (ν : Measure E) [ν.IsAddHaarMeasure] {w : E → ℝ}
+    (hw : ContinuousOn w (e.extend I).target) (hw0 : ∀ y ∈ (e.extend I).target, 0 ≤ w y)
+    (hw_out : ∀ y ∉ (e.extend I).target, w y = 0)
+    (hmap : (μ.restrict e.source).map (e.extend I) =
+      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y)) :
+    hμ.chartWeight he ν = w := by
+  ext y
+  by_cases hy : y ∈ (e.extend I).target
+  · exact hμ.chartWeight_eqOn_target_of_map_restrict_eq he ν hw hw0 hmap hy
+  · rw [hμ.chartWeight_eq_zero_of_notMem he ν hy, hw_out y hy]
+
+/-- Changing the reference additive Haar measure from `ν₁` to `ν₂` multiplies the chart weight by
+`Measure.addHaarScalarFactor ν₁ ν₂`. -/
+theorem IsPositiveDensityMeasure.chartWeight_eq_addHaarScalarFactor_mul {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ)
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 1 M)
+    (ν₁ ν₂ : Measure E) [ν₁.IsAddHaarMeasure] [ν₂.IsAddHaarMeasure] :
+    hμ.chartWeight he ν₂ =
+      fun y ↦ (Measure.addHaarScalarFactor ν₁ ν₂ : ℝ) * hμ.chartWeight he ν₁ y := by
+  have hmap : (μ.restrict e.source).map (e.extend I) =
+      (ν₂.restrict (e.extend I).target).withDensity fun z ↦
+        ENNReal.ofReal ((Measure.addHaarScalarFactor ν₁ ν₂ : ℝ) * hμ.chartWeight he ν₁ z) := by
+    rw [hμ.map_restrict_eq_withDensity_chartWeight he ν₁, ← restrict_withDensity',
+      Measure.withDensity_eq_withDensity_addHaarScalarFactor_mul ν₁ ν₂, restrict_withDensity']
+    refine congrArg (ν₂.restrict (e.extend I).target).withDensity (funext fun z ↦ ?_)
+    rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
+  exact hμ.chartWeight_eq_of_map_restrict_eq he ν₂
+    (continuousOn_const.mul (hμ.continuousOn_chartWeight he ν₁))
+    (fun z hz ↦ mul_nonneg (Measure.addHaarScalarFactor ν₁ ν₂).coe_nonneg
+      (hμ.chartWeight_pos he ν₁ hz).le)
+    (fun z hz ↦ by rw [hμ.chartWeight_eq_zero_of_notMem he ν₁ hz, mul_zero])
+    hmap
+
+/-- Integration in coordinates against a positive continuous density measure over a measurable
+subset of a chart source. No measurability of `f` is required. -/
+theorem IsPositiveDensityMeasure.setLIntegral_of_subset {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
+    {s : Set M} (hs : MeasurableSet s) (hsub : s ⊆ e.source) (f : M → ℝ≥0∞) :
+    ∫⁻ x in s, f x ∂μ =
+      ∫⁻ y in e.extend I '' s,
+        ENNReal.ofReal (hμ.chartWeight he ν y) * f ((e.extend I).symm y) ∂ν :=
+  e.setLIntegral_eq_of_map_restrict_eq I (hμ.continuousOn_chartWeight he ν)
+    (hμ.map_restrict_eq_withDensity_chartWeight he ν) hs hsub f
+
+/-- Measuring a measurable subset of a chart source in coordinates. -/
+theorem IsPositiveDensityMeasure.measure_apply_of_subset {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
+    {s : Set M} (hs : MeasurableSet s) (hsub : s ⊆ e.source) :
+    μ s = ∫⁻ y in e.extend I '' s, ENNReal.ofReal (hμ.chartWeight he ν y) ∂ν := by
+  simpa only [mul_one, setLIntegral_one] using
+    hμ.setLIntegral_of_subset he ν hs hsub (fun _ ↦ 1)
+
+/-- **Jacobian change-of-variables rule for chart weights.** On the overlap of two charts `e, e'`
+of the `C¹` maximal atlas, the weight in `e` equals the absolute Jacobian determinant of the
+transition `e' ∘ e⁻¹` times the weight in `e'`. -/
+theorem IsPositiveDensityMeasure.chartWeight_changeChart {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e e' : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
+    (ν : Measure E) [ν.IsAddHaarMeasure]
+    {y : E} (hy : y ∈ (I.extendCoordChange e e').source) :
+    hμ.chartWeight he ν y =
+      |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det| *
+        hμ.chartWeight he' ν (I.extendCoordChange e e' y) :=
+  I.eqOn_abs_det_mul_of_map_restrict_eq he he'
+    (hμ.continuousOn_chartWeight he ν) (hμ.continuousOn_chartWeight he' ν)
+    (fun _ hz ↦ (hμ.chartWeight_pos he ν hz).le)
+    (fun _ hz ↦ (hμ.chartWeight_pos he' ν hz).le)
+    (hμ.map_restrict_eq_withDensity_chartWeight he ν)
+    (hμ.map_restrict_eq_withDensity_chartWeight he' ν) hy
+
+/-- Boundaryless specialization of the Jacobian transformation law for chart weights. -/
+theorem IsPositiveDensityMeasure.chartWeight_changeChart_modelWithCornersSelf
+    {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
+    [MeasurableSpace N] [BorelSpace N] {μ : Measure N}
+    (hμ : IsPositiveDensityMeasure 𝓘(ℝ, E) μ) {e e' : OpenPartialHomeomorph N E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 N)
+    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 N)
+    (ν : Measure E) [ν.IsAddHaarMeasure] {y : E} (hy : y ∈ (e.symm.trans e').source) :
+    hμ.chartWeight he ν y =
+      |(fderiv ℝ (e' ∘ e.symm) y).det| * hμ.chartWeight he' ν (e' (e.symm y)) := by
+  have hy' : y ∈ (𝓘(ℝ, E).extendCoordChange e e').source := by
+    rw [ModelWithCorners.extendCoordChange_source]
+    simpa only [modelWithCornersSelf_coe, image_id] using hy
+  have hfun : ⇑(𝓘(ℝ, E).extendCoordChange e e') = e' ∘ e.symm := by
+    ext z
+    simp [ModelWithCorners.extendCoordChange]
+  have h := hμ.chartWeight_changeChart he he' ν hy'
+  rw [hfun, modelWithCornersSelf_coe, range_id, fderivWithin_univ] at h
+  exact h
+
+private theorem measure_eq_zero_iff_measure_extend_image_eq_zero_of_measurableSet {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
+    {s : Set M} (hs : MeasurableSet s) (hsub : s ⊆ e.source) :
+    μ s = 0 ↔ ν (e.extend I '' s) = 0 := by
+  have hmeas := e.measurableSet_image_extend I hs hsub
+  have hsubT : e.extend I '' s ⊆ (e.extend I).target :=
+    (image_mono (by simpa only [e.extend_source] using hsub)).trans
+      (e.extend I).image_source_eq_target.subset
+  rw [hμ.measure_apply_of_subset he ν hs hsub]
+  constructor
+  · intro hz
+    have hae := (lintegral_eq_zero_iff' ((ENNReal.continuous_ofReal.comp_continuousOn
+      ((hμ.continuousOn_chartWeight he ν).mono hsubT)).aemeasurable hmeas)).1 hz
+    have hfalse : ∀ᵐ _ ∂ν.restrict (e.extend I '' s), False := by
+      filter_upwards [ae_restrict_mem hmeas, hae] with y hy hy0
+      exact (ENNReal.ofReal_pos.2 (hμ.chartWeight_pos he ν (hsubT hy))).ne' hy0
+    simpa only [not_false_eq_true, ofPred_true, Measure.restrict_apply_univ] using ae_iff.1 hfalse
+  · intro hz
+    rw [Measure.restrict_zero_set hz, lintegral_zero_measure]
+
+/-- On the source of any chart of the `C¹` maximal atlas, an arbitrary (not necessarily
+measurable) subset has `μ`-measure zero iff its coordinate image has additive Haar measure zero. -/
+theorem IsPositiveDensityMeasure.measure_eq_zero_iff_measure_extend_image_eq_zero
+    {μ : Measure M} (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
+    {s : Set M} (hsub : s ⊆ e.source) :
+    μ s = 0 ↔ ν (e.extend I '' s) = 0 := by
+  constructor
+  · intro hz
+    set t := toMeasurable μ s ∩ e.source
+    have hst : s ⊆ t := fun y hy ↦ ⟨subset_toMeasurable μ s hy, hsub hy⟩
+    have htm : MeasurableSet t :=
+      (measurableSet_toMeasurable μ s).inter e.open_source.measurableSet
+    have ht0 : μ t = 0 := measure_mono_null inter_subset_left (by rwa [measure_toMeasurable])
+    exact measure_mono_null (image_mono hst)
+      ((measure_eq_zero_iff_measure_extend_image_eq_zero_of_measurableSet
+        hμ he ν htm inter_subset_right).1 ht0)
+  · intro hz
+    set A := toMeasurable ν (e.extend I '' s)
+    set t : Set M := e.extend I ⁻¹' A ∩ e.source
+    have htm : MeasurableSet t :=
+      e.measurableSet_preimage_extend_inter I (measurableSet_toMeasurable _ _)
+    have hst : s ⊆ t := fun y hy ↦
+      ⟨subset_toMeasurable ν _ (mem_image_of_mem _ hy), hsub hy⟩
+    have hAt : e.extend I '' t ⊆ A := by
+      rintro _ ⟨z, ⟨hzA, _⟩, rfl⟩
+      exact hzA
+    refine measure_mono_null hst
+      ((measure_eq_zero_iff_measure_extend_image_eq_zero_of_measurableSet
+        hμ he ν htm inter_subset_right).2 ?_)
+    exact measure_mono_null hAt (by rwa [measure_toMeasurable])
+
+omit [IsManifold I 1 M] [FiniteDimensional ℝ E] in
+/-- Every `μ`-null set of a positive continuous density measure is chartwise null. No Lindelöf
+assumption on `M` is needed for this direction. -/
+theorem IsPositiveDensityMeasure.isNullSet_of_measure_eq_zero
+    {μ : Measure M} (hμ : IsPositiveDensityMeasure I μ) {s : Set M} (hs : μ s = 0) :
+    IsNullSet I s := by
+  rw [isNullSet_iff]
+  intro x ν _
+  exact (hμ.measure_eq_zero_iff_image_of_subset inter_subset_right ν).1
+    (measure_mono_null inter_subset_left hs)
+
+end ChartWeight
 
 end TauCeti

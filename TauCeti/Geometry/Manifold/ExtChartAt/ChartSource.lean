@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+public import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Extended charts of an intrinsic chart source

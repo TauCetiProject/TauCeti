@@ -12,7 +12,7 @@ import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Integral
 import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.Integration
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity

@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Order.CompactlyGenerated.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
+public import Mathlib.RingTheory.Finiteness.Nilpotent
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Restricted root spaces and maximal abelian subspaces of `𝔭`
@@ -40,10 +42,15 @@ in a maximal abelian subspace of `𝔭`, by Zorn's lemma.
 ## Main results
 
 * `Submodule.lie_mem_restrictedRootSpace`: `[𝔤_λ, 𝔤_μ] ⊆ 𝔤_{λ + μ}`.
+* `Submodule.pow_ad_apply_mem_restrictedRootSpace`: `(ad x)^k 𝔤_ν ⊆ 𝔤_{ν + kμ}` for
+  `x ∈ 𝔤_μ`.
 * `Submodule.killingForm_eq_zero_of_mem_restrictedRootSpace`: `B(𝔤_λ, 𝔤_μ) = 0` unless
   `λ + μ = 0`.
 * `Submodule.iSupIndep_restrictedRootSpace`, `Submodule.finite_restrictedRoots`: the restricted
   root spaces are independent, and there are finitely many restricted roots.
+* `Submodule.isNilpotent_ad_of_mem_restrictedRootSpace`: if the restricted root spaces span a
+  Noetherian Lie algebra over a domain of characteristic zero, then `ad x` is nilpotent for `x` in
+  the restricted root space of a nonzero functional.
 * `Submodule.exists_dual_eq_of_iInf_eigenspace_ne_bot`: a nonzero joint eigenspace of the
   operators `ad H`, `H ∈ 𝔞`, has a linear eigenvalue function.
 * `LieEquiv.map_restrictedRootSpace`: `θ 𝔤_λ = 𝔤_{-λ}` for `𝔞 ⊆ 𝔭`, so that
@@ -57,8 +64,16 @@ in a maximal abelian subspace of `𝔭`, by Zorn's lemma.
   centralizer in `𝔭`.
 * `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_sup`: `𝔤_0 = 𝔪 + 𝔞` with
   `𝔪 = 𝔤_0 ∩ 𝔨`.
+* `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_iff`: `𝔤_0 = 𝔞` exactly when
+  `𝔪 = 0`.
 * `LieEquiv.IsMaximalAbelianInP.map`: the image of a maximal abelian subspace of `𝔭` under an
   isomorphism `e` is maximal abelian in the `𝔭` of `e ∘ θ ∘ e⁻¹`.
+* `LieEquiv.isMaximalAbelianInP_of_ker_ad_inf_cartanP_le`: an abelian subspace of `𝔭`
+  containing the centralizer `Z_𝔭(H)` of one of its elements `H` is maximal abelian.
+* `LieEquiv.IsMaximalAbelianInP.eq_of_ker_ad_inf_cartanP_le`: a maximal abelian subspace `𝔟` of
+  `𝔭` containing `H` lies in, hence equals, any maximal abelian `𝔞 ⊇ Z_𝔭(H)`.
+* `LieEquiv.IsMaximalAbelianInP.map_eq_of_apply_mem`: an isomorphism carrying `H'` with
+  `Z_𝔭(H') ⊆ 𝔞'` into a maximal abelian subspace `𝔞` carries `𝔞'` onto `𝔞`.
 
 ## References
 
@@ -121,6 +136,19 @@ theorem lie_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpace μ)
   simp only [LinearMap.add_apply]
   exact TauCeti.lie_mem_iInf_eigenspace_ad (H := ((↑) : 𝔞 → L)) hx hy
 
+/-- The powers of `ad x` for `x ∈ 𝔤_μ` carry `𝔤_ν` into `𝔤_{ν + kμ}`. Analogue of Mathlib's
+`LieAlgebra.toEnd_pow_apply_mem` for root spaces of a Cartan subalgebra. -/
+theorem pow_ad_apply_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpace μ) (k : ℕ)
+    (hy : y ∈ 𝔞.restrictedRootSpace ν) :
+    ((ad R L x) ^ k) y ∈ 𝔞.restrictedRootSpace (ν + k • μ) := by
+  induction k with
+  | zero => simpa using hy
+  | succ k ih =>
+    rw [pow_succ', mul_apply_eq_comp, ad_apply]
+    convert lie_mem_restrictedRootSpace hx ih using 2
+    rw [succ_nsmul]
+    abel
+
 /-- The Killing form pairs `𝔤_λ` and `𝔤_μ` trivially unless `λ + μ = 0`. -/
 theorem killingForm_eq_zero_of_mem_restrictedRootSpace [NoZeroDivisors R]
     (hx : x ∈ 𝔞.restrictedRootSpace μ) (hy : y ∈ 𝔞.restrictedRootSpace ν) (h : μ + ν ≠ 0) :
@@ -162,6 +190,34 @@ theorem exists_dual_eq_of_iInf_eigenspace_ne_bot [IsDomain R] [IsTorsionFree R L
 theorem finite_restrictedRoots [IsDomain R] [IsTorsionFree R L] [IsNoetherian R L] :
     𝔞.restrictedRoots.Finite :=
   (finite_ne_bot_of_iSupIndep iSupIndep_restrictedRootSpace).subset fun _ hμ ↦ hμ.2
+
+/-- **`ad x` is nilpotent on a nonzero restricted root space.** If the restricted root spaces of
+`𝔞` span a Noetherian Lie algebra over a domain of characteristic zero, and `x ∈ 𝔤_μ` with
+`μ ≠ 0`, then `ad x` is nilpotent: `(ad x)^k` carries `𝔤_ν` into `𝔤_{ν + kμ}`, and only finitely
+many restricted root spaces are nonzero. Adapted from Mathlib's
+`LieModule.isNilpotent_toEnd_of_mem_rootSpace` for root spaces of a Cartan subalgebra. -/
+theorem isNilpotent_ad_of_mem_restrictedRootSpace [IsDomain R] [CharZero R] [IsTorsionFree R L]
+    [IsNoetherian R L] (hspan : ⨆ ν : Dual R 𝔞, 𝔞.restrictedRootSpace ν = ⊤) (hμ : μ ≠ 0)
+    (hx : x ∈ 𝔞.restrictedRootSpace μ) : IsNilpotent (ad R L x) := by
+  have hfin : {ν : Dual R 𝔞 | 𝔞.restrictedRootSpace ν ≠ ⊥}.Finite :=
+    finite_ne_bot_of_iSupIndep iSupIndep_restrictedRootSpace
+  obtain ⟨H, hH⟩ := not_forall.mp fun h ↦ hμ (LinearMap.ext h)
+  have hone (ν : Dual R 𝔞) {z : L} (hz : z ∈ 𝔞.restrictedRootSpace ν) :
+      ∃ k, ((ad R L x) ^ k) z = 0 := by
+    have hinj : Function.Injective fun k : ℕ ↦ ν + k • μ := fun k l hkl ↦ by
+      have h := LinearMap.congr_fun (add_left_cancel hkl) H
+      simp only [LinearMap.smul_apply, nsmul_eq_mul] at h
+      exact_mod_cast mul_right_cancel₀ hH h
+    obtain ⟨k, hk⟩ : ∃ k : ℕ, 𝔞.restrictedRootSpace (ν + k • μ) = ⊥ := by
+      by_contra! h
+      exact Set.infinite_of_injective_forall_mem hinj h hfin
+    exact ⟨k, (Submodule.eq_bot_iff _).mp hk _ (pow_ad_apply_mem_restrictedRootSpace hx k hz)⟩
+  refine End.isNilpotent_iff_of_finite.mpr fun y ↦ ?_
+  have hy : y ∈ ⨆ ν : Dual R 𝔞, 𝔞.restrictedRootSpace ν := hspan ▸ mem_top
+  refine iSup_induction _ (motive := fun y ↦ ∃ k, ((ad R L x) ^ k) y = 0) hy hone
+    ⟨0, map_zero _⟩ fun z w ⟨a, ha⟩ ⟨b, hb⟩ ↦ ⟨max a b, ?_⟩
+  rw [map_add, End.pow_map_zero_of_le (le_max_left a b) ha,
+    End.pow_map_zero_of_le (le_max_right a b) hb, add_zero]
 
 /-- The zero subspace has the whole Lie algebra as its only restricted root space. -/
 @[simp]
@@ -276,7 +332,8 @@ theorem restrictedRootSpace_zero_inf_cartanP (h𝔞 : θ.IsMaximalAbelianInP �
 /-- The centralizer `𝔤_0` of a maximal abelian subspace `𝔞` of `𝔭` is the sum of `𝔞` and
 `𝔪 = 𝔤_0 ∩ 𝔨`, for an involution when `2` is a unit. This states only the sum; that it is
 direct, as `𝔞 ⊆ 𝔭` and `𝔨` and `𝔭` are complementary
-(`LieEquiv.isCompl_fixedSubalgebra_cartanP`), is not proved here. -/
+(`LieEquiv.isCompl_fixedSubalgebra_cartanP`), is not stated as a lemma. For `𝔤_0 = 𝔞` exactly
+when `𝔪 = 0`, see `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_iff`. -/
 theorem restrictedRootSpace_zero_eq_sup (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ)
     (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
     𝔞.restrictedRootSpace 0 =
@@ -296,6 +353,21 @@ theorem restrictedRootSpace_zero_eq_sup (h2 : IsUnit (2 : R)) (hθ : Function.In
   · rw [← h𝔞.restrictedRootSpace_zero_inf_cartanP]
     refine ⟨smul_mem _ _ (sub_mem hx hθx), smul_mem _ _ (mem_cartanP.mpr ?_)⟩
     rw [map_sub, hθ x, neg_sub]
+
+/-- **`𝔤_0 = 𝔞` exactly when `𝔪 = 0`**: the centralizer of a maximal abelian subspace `𝔞` of
+`𝔭` is `𝔞` itself exactly when `𝔪 = 𝔤_0 ∩ 𝔨` vanishes. -/
+theorem restrictedRootSpace_zero_eq_iff (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ)
+    (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
+    𝔞.restrictedRootSpace 0 = 𝔞 ↔
+      𝔞.restrictedRootSpace 0 ⊓ θ.toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
+  constructor
+  · intro h
+    rw [h, eq_bot_iff]
+    refine le_trans (inf_le_inf_right _ h𝔞.le_cartanP) ?_
+    rw [inf_comm]
+    exact (θ.isCompl_fixedSubalgebra_cartanP h2 hθ).disjoint.le_bot
+  · intro h
+    rw [h𝔞.restrictedRootSpace_zero_eq_sup h2 hθ, h, bot_sup_eq]
 
 variable {L' : Type*} [LieRing L'] [LieAlgebra R L'] in
 /-- The image under `e` of a maximal abelian subspace of the `-1`-eigenspace of `θ` is a maximal
@@ -320,6 +392,52 @@ theorem map (h𝔞 : θ.IsMaximalAbelianInP 𝔞) (e : L ≃ₗ⁅R⁆ L') :
     simpa [f, ← LieEquiv.map_lie] using this
 
 end IsMaximalAbelianInP
+
+/-! ### Centralizers of elements and maximal abelian subspaces of `𝔭` -/
+
+section Centralizer
+
+variable {𝔟 : Submodule R L} {H : L}
+
+/-- An abelian subspace of `𝔭` lies in the centralizer in `𝔭` of each of its elements. -/
+private theorem le_ker_ad_inf_cartanP (h𝔟 : 𝔟 ≤ θ.cartanP) (hab : ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0)
+    (hH : H ∈ 𝔟) : 𝔟 ≤ LinearMap.ker (ad R L H) ⊓ θ.cartanP :=
+  fun _ hx ↦ ⟨LinearMap.mem_ker.mpr (hab H hH _ hx), h𝔟 hx⟩
+
+/-- An abelian subspace `𝔞` of `𝔭` that contains the centralizer `Z_𝔭(H)` of one of its elements
+`H` is maximal abelian in `𝔭`. -/
+theorem isMaximalAbelianInP_of_ker_ad_inf_cartanP_le (h𝔞 : 𝔞 ≤ θ.cartanP)
+    (hab : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) (hH𝔞 : H ∈ 𝔞)
+    (hH : LinearMap.ker (ad R L H) ⊓ θ.cartanP ≤ 𝔞) : θ.IsMaximalAbelianInP 𝔞 :=
+  isMaximalAbelianInP_iff.mpr ⟨⟨h𝔞, hab⟩, fun _ h𝔟 h𝔞𝔟 ↦
+    (le_ker_ad_inf_cartanP h𝔟.1 h𝔟.2 (h𝔞𝔟 hH𝔞)).trans hH⟩
+
+/-- **Uniqueness of the maximal abelian subspace through `H`.** If a maximal abelian subspace `𝔞`
+of `𝔭` contains the centralizer `Z_𝔭(H)`, then every maximal abelian subspace of `𝔭` containing
+`H` equals `𝔞`. -/
+theorem IsMaximalAbelianInP.eq_of_ker_ad_inf_cartanP_le (h𝔞 : θ.IsMaximalAbelianInP 𝔞)
+    (h𝔟 : θ.IsMaximalAbelianInP 𝔟) (hH𝔟 : H ∈ 𝔟)
+    (hH : LinearMap.ker (ad R L H) ⊓ θ.cartanP ≤ 𝔞) : 𝔟 = 𝔞 := by
+  have h𝔟𝔞 : 𝔟 ≤ 𝔞 :=
+    (le_ker_ad_inf_cartanP h𝔟.le_cartanP (fun _ hx _ hy ↦ h𝔟.lie_eq_zero hx hy) hH𝔟).trans hH
+  exact le_antisymm h𝔟𝔞 ((isMaximalAbelianInP_iff.mp h𝔟).2
+    ⟨h𝔞.le_cartanP, fun _ hx _ hy ↦ h𝔞.lie_eq_zero hx hy⟩ h𝔟𝔞)
+
+variable {L' : Type*} [LieRing L'] [LieAlgebra R L'] in
+/-- **Conjugating maximal abelian subspaces through a regular element.** Let `𝔞` be a maximal
+abelian subspace of `𝔭` and `H` an element whose centralizer `Z_𝔭(H)` lies in `𝔞`. If an
+isomorphism `e` carries `H` into a maximal abelian subspace `𝔟` of the `-1`-eigenspace of
+`e ∘ θ ∘ e⁻¹`, then `e` carries `𝔞` onto `𝔟`. For an automorphism `e` commuting with `θ` this
+says that `e 𝔞 = 𝔟` as soon as `e H ∈ 𝔟`. -/
+theorem IsMaximalAbelianInP.map_eq_of_apply_mem (h𝔞 : θ.IsMaximalAbelianInP 𝔞)
+    (hH : LinearMap.ker (ad R L H) ⊓ θ.cartanP ≤ 𝔞) (e : L ≃ₗ⁅R⁆ L') {𝔟 : Submodule R L'}
+    (h𝔟 : (e.conj θ).IsMaximalAbelianInP 𝔟) (he : e H ∈ 𝔟) :
+    𝔞.map (e.toLinearEquiv : L →ₗ[R] L') = 𝔟 := by
+  refine ((h𝔞.map e).eq_of_ker_ad_inf_cartanP_le h𝔟 he ?_).symm
+  rw [e.ker_ad_apply, cartanP_conj, ← map_inf _ e.toLinearEquiv.injective]
+  exact map_mono hH
+
+end Centralizer
 
 /-- The zero subspace is maximal abelian in `𝔭` exactly when `𝔭 = 0`. -/
 theorem isMaximalAbelianInP_bot_iff : θ.IsMaximalAbelianInP ⊥ ↔ θ.cartanP = ⊥ := by

@@ -15,6 +15,7 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.CategoryTheory.Adjunction.Additive
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 public import Mathlib.RingTheory.Finiteness.Cardinality
+import TauCeti.Algebra.Module.Projective.LinearMap
 
 /-!
 # Exactness and finite generation under coextension of scalars
@@ -122,11 +123,8 @@ theorem isFG_coextendScalars [Module.Finite k R]
           algebraMap k R c • ModuleCat.CoextendScalars.equiv f.toRingHom M x s
         exact (congrArg (ModuleCat.CoextendScalars.equiv f.toRingHom M x) hs.symm).trans
           (map_smul _ _ _) }
-  -- `S` is a direct summand of some `R^n`, so `Hom_R(S, M)` is a quotient of `Hom_R(R^n, M)`,
-  -- which is finitely generated over `k` because `M` is.
-  obtain ⟨n, π, σ, _, -, hσ⟩ := Module.Finite.exists_comp_eq_id_of_projective R S'
-  have : Module.Finite k (S' →ₗ[R] M) := .of_surjective (LinearMap.lcomp k M σ) fun ψ ↦
-    ⟨ψ ∘ₗ π, by rw [LinearMap.lcomp_apply', LinearMap.comp_assoc, hσ, LinearMap.comp_id]⟩
+  -- `Hom_R(S, M)` is finitely generated over `k` because `S` is finitely generated and projective
+  -- over `R` and `M` is finitely generated over `k` (`Module.Finite.linearMap_of_projective`).
   have : Module.Finite k X := .equiv e.symm
   exact .of_restrictScalars_finite k S X
 

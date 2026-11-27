@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
 public import Mathlib.Topology.Compactness.Paracompact
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
 import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -19,18 +19,18 @@ import TauCeti.Geometry.Manifold.MFDeriv.Chart.Det
 # Existence of positive continuous density measures on manifolds
 
 Every Hausdorff paracompact finite-dimensional real `C¹` manifold `M` (possibly with boundary or
-corners) admits a positive continuous density measure
-(`TauCeti.exists_isPositiveContinuousDensity`), built by summing chart-localized additive Haar
-measures (`OpenPartialHomeomorph.localChartMeasure`) weighted by a continuous partition of unity
-subordinate to the preferred charts. In particular, every Hausdorff Lindelöf `C¹` manifold admits
-one (`TauCeti.exists_isPositiveContinuousDensity_of_lindelof`).
+corners) admits a positive continuous density measure (`TauCeti.exists_isPositiveDensityMeasure`),
+built by summing chart-localized additive Haar measures (`OpenPartialHomeomorph.localChartMeasure`)
+weighted by a continuous partition of unity subordinate to the preferred charts. In particular,
+every Hausdorff Lindelöf `C¹` manifold admits one
+(`TauCeti.exists_isPositiveDensityMeasure_of_lindelof`).
 
 ## Main results
 
-* `TauCeti.exists_isPositiveContinuousDensity`: existence of a positive continuous density measure
-  on every Hausdorff paracompact `C¹` manifold via a partition of unity.
-* `TauCeti.exists_isPositiveContinuousDensity_of_lindelof`: existence on every Hausdorff Lindelöf
-  `C¹` manifold.
+* `TauCeti.exists_isPositiveDensityMeasure`: existence of a positive continuous density measure on
+  every Hausdorff paracompact `C¹` manifold via a partition of unity.
+* `TauCeti.exists_isPositiveDensityMeasure_of_lindelof`: existence on every Hausdorff Lindelöf `C¹`
+  manifold.
 -/
 
 public section
@@ -193,7 +193,7 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
     (ρ : PartitionOfUnity M M univ) (hρ : ρ.IsSubordinate fun x : M ↦ (chartAt H x).source)
     (x₀ : M) :
     (((Measure.sum fun i : M ↦ (chartAt H i).localChartMeasure I ν (ρ i)).restrict
-        (chartAt H x₀).source).map (extChartAt I x₀)) =
+        (extChartAt I x₀).source).map (extChartAt I x₀)) =
       (ν.restrict (extChartAt I x₀).target).withDensity
         fun y ↦ ENNReal.ofReal (∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y) := by
   classical
@@ -203,6 +203,7 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
   have hT₀ : MeasurableSet (extChartAt I x₀).target := (chartAt H x₀).measurableSet_extend_target I
   ext A hA
   have hpre := (chartAt H x₀).measurableSet_preimage_extend_inter I hA
+  rw [extChartAt_source]
   conv_lhs => rw [extChartAt]
   rw [(chartAt H x₀).map_restrict_extend_apply I _ hA, Measure.sum_apply _ hpre,
     withDensity_apply _ hA, Measure.restrict_restrict hA]
@@ -235,15 +236,15 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
 /-- **Existence of a positive continuous density measure.** Every Hausdorff paracompact
 finite-dimensional `C¹` manifold (possibly with boundary or corners) admits a positive continuous
 density measure, built from a continuous partition of unity subordinate to the preferred charts. -/
-theorem exists_isPositiveContinuousDensity [T2Space M] [ParacompactSpace M] :
-    ∃ μ : Measure M, IsPositiveContinuousDensity I μ := by
+theorem exists_isPositiveDensityMeasure [T2Space M] [ParacompactSpace M] :
+    ∃ μ : Measure M, IsPositiveDensityMeasure I μ := by
   have : NormalSpace M := NormalSpace.of_paracompactSpace_r1Space
   obtain ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate (X := M) isClosed_univ
     (fun x : M ↦ (chartAt H x).source) (fun x ↦ (chartAt H x).open_source)
     fun x _ ↦ mem_iUnion.2 ⟨x, mem_chart_source H x⟩
   let ν : Measure E := (Module.finBasis ℝ E).addHaar
   refine ⟨Measure.sum fun i : M ↦ (chartAt H i).localChartMeasure I ν (ρ i),
-    (isPositiveContinuousDensity_iff_forall_chartAt (I := I) ν).2 fun x₀ ↦
+    (isPositiveDensityMeasure_iff_of_isAddHaarMeasure ν).2 fun x₀ ↦
       ⟨fun y ↦ ∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y,
         continuousOn_finsum_partitionSummand (I := I) ρ hρ x₀,
         fun _ hy ↦ finsum_partitionSummand_pos (I := I) ρ hρ x₀ hy,
@@ -251,15 +252,15 @@ theorem exists_isPositiveContinuousDensity [T2Space M] [ParacompactSpace M] :
 
 /-- Every Hausdorff Lindelöf finite-dimensional `C¹` manifold admits a positive continuous density
 measure. -/
-theorem exists_isPositiveContinuousDensity_of_lindelof [T2Space M] [LindelofSpace M] :
-    ∃ μ : Measure M, IsPositiveContinuousDensity I μ := by
+theorem exists_isPositiveDensityMeasure_of_lindelof [T2Space M] [LindelofSpace M] :
+    ∃ μ : Measure M, IsPositiveDensityMeasure I μ := by
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   have : SecondCountableTopology H := I.secondCountableTopology
   have : SecondCountableTopology M := ChartedSpace.secondCountable_of_lindelof H M
   have : SigmaCompactSpace M := sigmaCompactSpace_of_locallyCompact_secondCountable
   have : ParacompactSpace M := paracompact_of_locallyCompact_sigmaCompact
-  exact exists_isPositiveContinuousDensity (I := I)
+  exact exists_isPositiveDensityMeasure (I := I)
 
 end Existence
 

@@ -17,8 +17,8 @@ the Jacobian determinant with a continuous function supported in the target char
 
 ## Main results
 
-* `ModelWithCorners.fderivWithin_extendCoordChange_eq_source`: `fderivWithin` over `Set.range I`
-  agrees with `fderivWithin` over the overlap source.
+* `ModelWithCorners.fderivWithin_extendCoordChange_range_eq_fderivWithin_source`:
+  `fderivWithin` over `Set.range I` agrees with `fderivWithin` over the overlap source.
 * `ModelWithCorners.continuousOn_abs_det_fderivWithin_extendCoordChange`: continuity of the
   absolute Jacobian determinant on the overlap source.
 * `ModelWithCorners.abs_det_fderivWithin_extendCoordChange_pos`: strict positivity of the absolute
@@ -36,7 +36,7 @@ open scoped Manifold Topology
 
 /-- On the source of an extended coordinate change, the `fderivWithin` over `Set.range I` agrees
 with the `fderivWithin` over the overlap source. -/
-theorem ModelWithCorners.fderivWithin_extendCoordChange_eq_source
+theorem ModelWithCorners.fderivWithin_extendCoordChange_range_eq_fderivWithin_source
     {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
@@ -73,7 +73,8 @@ theorem continuousOn_abs_det_fderivWithin_extendCoordChange
       I.uniqueDiffOn_extendCoordChange_source le_rfl
   have hdet : ContinuousOn (fun y ↦ |(fderivWithin ℝ Φ Φ.source y).det|) Φ.source :=
     (continuous_abs.comp ContinuousLinearMap.continuous_det).comp_continuousOn hcont
-  exact hdet.congr fun y hy ↦ by rw [I.fderivWithin_extendCoordChange_eq_source hy]
+  exact hdet.congr fun y hy ↦ by
+    rw [I.fderivWithin_extendCoordChange_range_eq_fderivWithin_source hy]
 
 /-- The absolute Jacobian determinant of a `C¹` extended coordinate change is strictly
 positive at every point of its source. -/
@@ -82,7 +83,7 @@ theorem abs_det_fderivWithin_extendCoordChange_pos
     (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
     {y : E} (hy : y ∈ (I.extendCoordChange e e').source) :
     0 < |(fderivWithin ℝ (I.extendCoordChange e e') (Set.range I) y).det| := by
-  rw [I.fderivWithin_extendCoordChange_eq_source hy, abs_pos]
+  rw [I.fderivWithin_extendCoordChange_range_eq_fderivWithin_source hy, abs_pos]
   obtain ⟨A, hA⟩ := I.isInvertible_fderivWithin_extendCoordChange one_ne_zero he he' hy
   rw [← hA]
   exact A.toLinearEquiv.isUnit_det'.ne_zero

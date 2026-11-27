@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.RestrictScalars
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
@@ -78,7 +78,6 @@ private theorem hasWeakFDerivOn_comp_chart_transition
     rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_source, PartialEquiv.symm_source,
       φ.extend_source]; exact hW.trans interior_subset
   refine ((hU.comp_contDiffOn_diffeo ((J.contDiffOn_extendCoordChange hφ' hφ).mono hsrc)
-    ((J.extendCoordChange φ' φ).injOn.mono hsrc)
     (fun w hw ↦ J.det_fderiv_extendCoordChange_ne_zero one_ne_zero hφ' hφ (hW hw))
     hmaps).congr_ae ?_).congr_ae_deriv ?_
   · filter_upwards [ae_restrict_mem W.isOpen.measurableSet] with w hw

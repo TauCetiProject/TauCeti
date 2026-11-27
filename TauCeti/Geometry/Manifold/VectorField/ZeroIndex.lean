@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorField.Chart.Derivative
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.VectorBundle.ZeroSection
 

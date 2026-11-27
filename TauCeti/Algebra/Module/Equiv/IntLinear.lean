@@ -22,10 +22,18 @@ Composing with Mathlib's `MulAutMultiplicative` gives the multiplicative form
 abelian group written multiplicatively, such as `Multiplicative (Fin n → ℤ)`, with its group of
 `ℤ`-linear automorphisms, and from there with the invertible integer matrices.
 
+Likewise, an additive homomorphism between commutative additive groups is `ℤ`-linear for any
+`ℤ`-module structures on them (`map_intCast_smul`), giving `(A →ₗ[ℤ] B) ≃+ (A →+ B)`. Unlike
+Mathlib's `addMonoidHomLequivInt`, which is stated for the canonical structure
+`AddCommGroup.toIntModule`, this applies to `ℤ`-modules whose structure is not definitionally the
+canonical one, such as objects of `ModuleCat ℤ` built as quotients.
+
 ## Main definitions
 
 * `TauCeti.addAutEquivIntLinearEquiv`: `AddAut M ≃+ Additive (M ≃ₗ[ℤ] M)`.
 * `TauCeti.mulAutMultiplicativeEquivIntLinearEquiv`: `MulAut (Multiplicative M) ≃* (M ≃ₗ[ℤ] M)`.
+* `TauCeti.intLinearMapAddEquivAddMonoidHom`: `(A →ₗ[ℤ] B) ≃+ (A →+ B)` for arbitrary `ℤ`-module
+  structures.
 -/
 
 public section
@@ -74,5 +82,36 @@ theorem mulAutMultiplicativeEquivIntLinearEquiv_symm_apply_apply {M : Type*} [Ad
     (f : M ≃ₗ[ℤ] M) (x : Multiplicative M) :
     (mulAutMultiplicativeEquivIntLinearEquiv M).symm f x = ofAdd (f x.toAdd) :=
   (rfl)
+
+section LinearMap
+
+variable {A B : Type*} [AddCommGroup A] [AddCommGroup B] [Module ℤ A] [Module ℤ B]
+
+/-- The `ℤ`-linear maps `A →ₗ[ℤ] B` are the additive homomorphisms `A →+ B`, for arbitrary
+`ℤ`-module structures on `A` and `B`, not only the canonical `AddCommGroup.toIntModule`. -/
+def intLinearMapAddEquivAddMonoidHom : (A →ₗ[ℤ] B) ≃+ (A →+ B) where
+  toFun f := f.toAddMonoidHom
+  invFun f :=
+    { toFun := f
+      map_add' := map_add f
+      map_smul' n x := by
+        simpa only [Int.cast_id, RingHom.id_apply] using map_intCast_smul f ℤ ℤ n x }
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+/-- The additive homomorphism attached to a `ℤ`-linear map `f` acts as `f` does. -/
+@[simp]
+theorem intLinearMapAddEquivAddMonoidHom_apply_apply (f : A →ₗ[ℤ] B) (x : A) :
+    intLinearMapAddEquivAddMonoidHom f x = f x :=
+  (rfl)
+
+/-- The `ℤ`-linear map attached to an additive homomorphism `f` acts as `f` does. -/
+@[simp]
+theorem intLinearMapAddEquivAddMonoidHom_symm_apply_apply (f : A →+ B) (x : A) :
+    intLinearMapAddEquivAddMonoidHom.symm f x = f x :=
+  (rfl)
+
+end LinearMap
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic

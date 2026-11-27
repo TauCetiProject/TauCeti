@@ -9,7 +9,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Prod.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 public import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Calculus.Bilinear
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
+
 /-!
 # Products of continuous families of metrics
 

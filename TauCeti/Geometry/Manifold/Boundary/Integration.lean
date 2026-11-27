@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
-public import TauCeti.Geometry.Manifold.Measure.Basic
+public import TauCeti.Geometry.Manifold.Measure
+
 /-!
 # Boundary restriction and null sets on manifolds
 

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Density.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.CompactSupport
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic

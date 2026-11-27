@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Topology.LocallyFinite.Basic
-public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!

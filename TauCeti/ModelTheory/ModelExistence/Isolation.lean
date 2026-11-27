@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Infinitary.FirstOrderImage
 public import TauCeti.ModelTheory.ModelExistence.CountableModel
 public import TauCeti.ModelTheory.ModelExistence.Types
+public import TauCeti.ModelTheory.Semantics
 
 /-!
 # Isolation of partial types over an `L_{ω₁ω}` theory
@@ -25,10 +26,16 @@ model of a countable theory, and in every structure whose `L_{ω₁ω}` theory t
 Conversely, in a structure realizing only countably many complete `n`-types, each realized complete
 type is isolated over the theory of the structure.
 
+For a first-order theory and a first-order partial type, isolation by a first-order formula is
+`Theory.IsolatesFO`, read in Mathlib's first-order semantics. It is the hypothesis of the
+first-order omitting types theorem, and it agrees with isolation in the first-order image fragment.
+
 ## Main definitions
 
 * `FirstOrder.Language.Theoryω.IsolatesIn`: a partial type is isolated over a theory in a
   fragment.
+* `FirstOrder.Language.Theory.IsolatesFO`: a first-order partial type is isolated modulo a
+  first-order theory by a first-order formula.
 
 ## Main results
 
@@ -43,9 +50,13 @@ type is isolated over the theory of the structure.
 * `FirstOrder.Language.Theoryω.isolatesIn_top_infinitaryType`: if a structure realizes only
   countably many complete `n`-types, the complete type of each of its `n`-tuples is isolated over
   its `L_{ω₁ω}` theory.
+* `FirstOrder.Language.Theory.isolatesFO_empty_iff` and
+  `FirstOrder.Language.Theory.not_isolatesFO_singleton_bot`: the empty type is isolated exactly
+  over the satisfiable theories, and `{⊥}` over none.
+* `FirstOrder.Language.Theory.IsolatesFO.not_omitsFOType`: a structure realizes every first-order
+  partial type isolated modulo a theory that models every sentence true in the structure.
 * `FirstOrder.Language.Theoryω.isolatesIn_firstOrder_iff`: in the first-order image fragment,
-  isolation of a first-order partial type over a first-order theory is isolation by a first-order
-  formula in the sense of Mathlib's `Theory.IsSatisfiable` and `Theory.ModelsBoundedFormula`.
+  isolation of a first-order partial type over a first-order theory is `Theory.IsolatesFO`.
 
 ## References
 
@@ -63,6 +74,73 @@ namespace FirstOrder
 namespace Language
 
 variable {L : Language.{u, v}}
+
+namespace Theory
+
+variable {T : L.Theory} {n : ℕ} {p q : Set (L.BoundedFormula Empty n)}
+
+/-- A first-order partial type `p` in `n` bound positions is **isolated modulo the first-order
+theory `T`** when some first-order formula `φ` with `n` bound positions is consistent with `T`, in
+that `T` together with `φ.exs` is satisfiable, and implies every formula of `p` modulo `T`: `T`
+models `(φ.imp ψ).alls` for every `ψ ∈ p`. Satisfiability and modelhood are Mathlib's
+`Theory.IsSatisfiable` and `Theory.ModelsBoundedFormula`. -/
+def IsolatesFO (T : L.Theory) (p : Set (L.BoundedFormula Empty n)) : Prop :=
+  ∃ φ : L.BoundedFormula Empty n, (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls
+
+/-- Unfolding lemma for `Theory.IsolatesFO`. -/
+theorem isolatesFO_iff :
+    T.IsolatesFO p ↔ ∃ φ : L.BoundedFormula Empty n,
+      (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls :=
+  Iff.rfl
+
+/-- A formula isolating a first-order partial type isolates each of its subsets. -/
+theorem IsolatesFO.subset (h : T.IsolatesFO p) (hqp : q ⊆ p) : T.IsolatesFO q :=
+  let ⟨φ, hs, hp⟩ := h
+  ⟨φ, hs, fun ψ hψ => hp ψ (hqp hψ)⟩
+
+/-- Only a satisfiable theory isolates a first-order partial type. -/
+theorem IsolatesFO.isSatisfiable (h : T.IsolatesFO p) : T.IsSatisfiable :=
+  let ⟨_, hs, _⟩ := h
+  hs.mono (Set.subset_insert _ _)
+
+/-- The empty partial type is isolated, by `⊤`, exactly over the satisfiable theories. -/
+@[simp]
+theorem isolatesFO_empty_iff :
+    T.IsolatesFO (∅ : Set (L.BoundedFormula Empty n)) ↔ T.IsSatisfiable := by
+  refine ⟨IsolatesFO.isSatisfiable, fun ⟨M⟩ => ⟨⊤, ?_, fun _ h => h.elim⟩⟩
+  have : M ⊨ insert (⊤ : L.BoundedFormula Empty n).exs T :=
+    Theory.model_insert_iff.2
+      ⟨(Sentence.realize_exs _).2
+        ⟨fun _ => Classical.arbitrary M, BoundedFormula.realize_top.2 trivial⟩, M.is_model⟩
+  exact Model.isSatisfiable M
+
+/-- No theory isolates the partial type `{⊥}`. -/
+theorem not_isolatesFO_singleton_bot : ¬T.IsolatesFO ({⊥} : Set (L.BoundedFormula Empty n)) := by
+  rintro ⟨φ, ⟨M⟩, hp⟩
+  obtain ⟨hMφ, hMT⟩ := Theory.model_insert_iff.1 M.is_model
+  obtain ⟨a, ha⟩ := (Sentence.realize_exs φ).1 hMφ
+  exact BoundedFormula.realize_bot.1 (BoundedFormula.realize_imp.1
+    ((Sentence.realize_alls _).1 ((hp ⊥ rfl).realize_sentence M) a) ha)
+
+/-- **Isolated types are realized in structures whose theory `T` models.** If `T` models every
+sentence true in `N`, for instance when `T` is the complete theory of `N`, then `N` realizes every
+first-order partial type isolated modulo `T`. The structure `N` may be empty, in any universe. -/
+theorem IsolatesFO.not_omitsFOType {N : Type w} [L.Structure N] (h : T.IsolatesFO p)
+    (hN : ∀ σ : L.Sentence, N ⊨ σ → T ⊨ᵇ σ) : ¬OmitsFOType N p := by
+  obtain ⟨φ, ⟨M⟩, hp⟩ := h
+  obtain ⟨hMφ, hMT⟩ := Theory.model_insert_iff.1 M.is_model
+  -- every sentence true in the model `M` of `T` is true in `N`
+  have hMN (σ : L.Sentence) (hσ : M ⊨ σ) : N ⊨ σ := by
+    by_contra hσN
+    exact (Sentence.realize_not M).1
+      ((hN σ.not ((Sentence.realize_not N).2 hσN)).realize_sentence M) hσ
+  obtain ⟨a, ha⟩ := (Sentence.realize_exs φ).1 (hMN _ hMφ)
+  intro hNp
+  obtain ⟨ψ, hψ, hψa⟩ := omitsFOType_iff.1 hNp a
+  exact hψa (BoundedFormula.realize_imp.1
+    ((Sentence.realize_alls _).1 (hMN _ ((hp ψ hψ).realize_sentence M)) a) ha)
+
+end Theory
 
 namespace Theoryω
 
@@ -158,16 +236,13 @@ theorem isolatesIn_top_infinitaryType {M : Type w} [L.Structure M] [Nonempty M]
     exact hψ
 
 /-- **Isolation in the first-order image.** A first-order partial type is isolated over a
-first-order theory in the first-order image fragment exactly when some first-order formula `φ`
-isolates it modulo the theory in Mathlib's sense: the theory together with the existential closure
-of `φ` is satisfiable, and the theory models the universal closure of `φ → ψ` for every `ψ` in the
-type. -/
+first-order theory in the first-order image fragment exactly when it is isolated modulo the theory
+by a first-order formula, in the sense of `Theory.IsolatesFO`. -/
+@[simp]
 theorem isolatesIn_firstOrder_iff {T : L.Theory} {p : Set (L.BoundedFormula Empty n)} :
     IsolatesIn (Fragment.firstOrder L) (BoundedFormula.toOmega '' T)
-        (BoundedFormula.toOmega '' p) ↔
-      ∃ φ : L.BoundedFormula Empty n,
-        (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls := by
-  simp only [isolatesIn_iff, Set.forall_mem_image]
+        (BoundedFormula.toOmega '' p) ↔ T.IsolatesFO p := by
+  simp only [isolatesIn_iff, Theory.isolatesFO_iff, Set.forall_mem_image]
   constructor
   · rintro ⟨_, hφ, hsat, hent⟩
     obtain ⟨φ, rfl⟩ := Fragment.mem_firstOrder_iff.1 hφ

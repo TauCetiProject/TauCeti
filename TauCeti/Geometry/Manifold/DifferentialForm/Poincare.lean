@@ -12,7 +12,8 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Vertical
 import Mathlib.Geometry.Manifold.BumpFunction
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
+
 /-!
 # The Poincaré lemma on manifolds
 

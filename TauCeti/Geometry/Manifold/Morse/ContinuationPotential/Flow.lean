@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.ContinuationPotential.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import TauCeti.Dynamics.Flow.Lyapunov
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.IntegralCurve.Prod
 import TauCeti.Topology.Order.OrderClosed

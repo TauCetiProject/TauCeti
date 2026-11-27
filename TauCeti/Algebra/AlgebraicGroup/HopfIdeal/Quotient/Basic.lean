@@ -69,6 +69,8 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
 * `TauCeti.CommHopfAlgCat.quotientIsoOfIso`: the specialization to an ambient isomorphism.
 * `TauCeti.CommHopfAlgCat.comapOfSurjective_inv_hom`: pulling a Hopf ideal back along the inverse
   of an isomorphism and then along the isomorphism recovers it.
+* `TauCeti.CommHopfAlgCat.comapOfSurjective_inv_eq_map_hom`: pulling a Hopf ideal back along the
+  inverse of an isomorphism is pushing it forward along the isomorphism.
 * `CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso`: the quotient by the kernel of a surjective
   morphism is its target.
 * `CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq`: the quotient by a Hopf ideal equal to
@@ -357,6 +359,14 @@ theorem comapOfSurjective_inv_hom (e : H ≅ K) (I : HopfIdeal R H) :
   simp only [HopfIdeal.comapOfSurjective_comapOfSurjective, ← _root_.CommHopfAlgCat.hom_comp,
     e.hom_inv_id, hom_id_eq_bialgHom_id, HopfIdeal.comapOfSurjective_id]
 
+/-- Pulling a Hopf ideal back along the inverse of an isomorphism of commutative Hopf algebras is
+pushing it forward along the isomorphism. -/
+theorem comapOfSurjective_inv_eq_map_hom (e : H ≅ K) (I : HopfIdeal R H) :
+    I.comapOfSurjective e.inv.hom (ConcreteCategory.bijective_of_isIso e.inv).2 =
+      I.map e.hom.hom := by
+  conv_rhs => rw [← comapOfSurjective_inv_hom e I]
+  exact (HopfIdeal.map_comapOfSurjective _ _ _).symm
+
 end TauCeti.CommHopfAlgCat
 
 end CommHopfAlgebras
@@ -381,9 +391,7 @@ theorem comapOfSurjective_eq_of_hom_le_of_inv_le (e : H ≅ H) (I : HopfIdeal R 
   rw [mem_comapOfSurjective]
   apply hinv
   rw [mem_comapOfSurjective]
-  have hcancel := congrArg (fun f : H ⟶ H => f.hom x) e.hom_inv_id
-  rw [_root_.CommHopfAlgCat.comp_apply] at hcancel
-  simpa only [_root_.CommHopfAlgCat.id_apply] using hcancel.symm ▸ hx
+  rwa [_root_.CommHopfAlgCat.inv_hom_apply]
 
 end TauCeti.HopfIdeal
 

@@ -24,6 +24,8 @@ constant `(1 - cos δ) / 2 = sin (δ / 2) ^ 2` for `t ≥ 0`
 `Re z ≤ c ‖z‖`, `c < 1`, around the negative real axis,
 `(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`, and in multiplicative form
 `(1 - max c (-1)) / 2 * (1 + ‖z‖ t) ≤ ‖1 - z t‖` (`Complex.mul_one_add_le_norm_one_sub_mul`).
+On a half plane `Re z ≤ r₀` with `Q ≥ 4 r₀` or `‖z‖ ≥ 8 r₀`, a real `Q ≥ 0` satisfies
+`(Q + ‖z‖) / 4 ≤ ‖Q - z‖` (`Complex.add_norm_div_four_le_norm_ofReal_sub`).
 These inequalities control reciprocal kernels in sectorial and Stieltjes integrals and resolvent
 symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, as does every
 point of an exterior sector `{z : ℂ | r < ‖z‖ ∧ |arg z| < θ}` with `0 ≤ r` and `θ ≤ π`
@@ -108,6 +110,34 @@ theorem mul_add_norm_le_norm_ofReal_sub {z : ℂ} {c t : ℝ} (ht : 0 ≤ t) (hz
       rw [norm_neg, neg_re]
       nlinarith [mul_le_mul_of_nonneg_right (le_max_left c (-1)) (norm_nonneg z)])
   rwa [norm_neg, neg_add_eq_sub, add_comm ‖z‖ t] at h
+
+/-- **The half plane estimate.** For a real `Q ≥ 0` and `z` in the half plane `Re z ≤ r₀`, the
+difference `Q - z` satisfies `(Q + ‖z‖) / 4 ≤ ‖Q - z‖`, provided `Q ≥ 4 r₀` or `‖z‖ ≥ 8 r₀`. For
+`r₀ > 0` the half plane contains a neighbourhood of the closed negative real axis, `0` included,
+unlike the sectors of `Complex.mul_add_norm_le_norm_ofReal_sub`. -/
+theorem add_norm_div_four_le_norm_ofReal_sub {Q r₀ : ℝ} {z : ℂ} (hQ : 0 ≤ Q)
+    (hz : z.re ≤ r₀) (h : 4 * r₀ ≤ Q ∨ 8 * r₀ ≤ ‖z‖) :
+    (Q + ‖z‖) / 4 ≤ ‖(Q : ℂ) - z‖ := by
+  rcases le_or_gt (4 * r₀) Q with hQ4 | hQ4
+  · -- Then `Re (Q - z) ≥ Q / 2 + |Re z|`, and `‖Q - z‖ ≥ |Im z|`.
+    have hre := Complex.re_le_norm ((Q : ℂ) - z)
+    have him := Complex.abs_im_le_norm ((Q : ℂ) - z)
+    rw [Complex.sub_re, Complex.ofReal_re] at hre
+    rw [Complex.sub_im, Complex.ofReal_im, zero_sub, abs_neg] at him
+    have hz' := Complex.norm_le_abs_re_add_abs_im z
+    have : Q / 2 + |z.re| ≤ Q - z.re := by
+      rcases le_or_gt z.re 0 with h0 | h0
+      · rw [abs_of_nonpos h0]
+        linarith
+      · rw [abs_of_pos h0]
+        linarith
+    linarith [norm_nonneg z]
+  · -- Then `‖z‖ ≥ 8 r₀ > 2 Q`.
+    have h8 : 8 * r₀ ≤ ‖z‖ := h.resolve_left (not_le.2 hQ4)
+    have : ‖z‖ - Q ≤ ‖(Q : ℂ) - z‖ := by
+      have := norm_sub_norm_le z (Q : ℂ)
+      rwa [norm_sub_rev, Complex.norm_real, Real.norm_of_nonneg hQ] at this
+    linarith
 
 /-- On the sector `Re r ≤ c ‖r‖`, the numbers `1 - r t` with a nonnegative real `t` satisfy
 `(1 - max c (-1)) / 2 * (1 + ‖r‖ t) ≤ ‖1 - r t‖`, which keeps them away from `0` for `c < 1`. -/

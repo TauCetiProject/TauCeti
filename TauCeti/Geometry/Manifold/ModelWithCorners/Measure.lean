@@ -25,8 +25,8 @@ presenting the same weighted Haar measure on `I.symm ⁻¹' U ∩ Set.range I` a
 
 ## Main results
 
-* `ModelWithCorners.isOpenPosMeasure_comap_range_inter`: pulling an additive Haar measure back to
-  a relatively open subset of `Set.range I` yields an open-positive measure.
+* `ModelWithCorners.isOpenPosMeasure_comap_preimage_inter_range`: pulling an additive Haar
+  measure back to a relatively open subset of `Set.range I` yields an open-positive measure.
 * `ModelWithCorners.eqOn_of_withDensity_ofReal_eq`: continuous nonnegative real densities presenting
   the same weighted Haar measure on a relatively open subset of `Set.range I` agree pointwise there.
 -/
@@ -43,7 +43,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Pulling an additive Haar measure back to a relatively open subset of `range I` yields a
 measure positive on nonempty relatively open subsets. -/
-theorem isOpenPosMeasure_comap_range_inter (I : ModelWithCorners ℝ E H)
+theorem isOpenPosMeasure_comap_preimage_inter_range (I : ModelWithCorners ℝ E H)
     [MeasurableSpace E] [BorelSpace E] (ν : Measure E) [ν.IsAddHaarMeasure]
     {U : Set H} (hU : IsOpen U) :
     (ν.comap (Subtype.val : (I.symm ⁻¹' U ∩ range I : Set E) → E)).IsOpenPosMeasure := by
@@ -80,7 +80,7 @@ theorem eqOn_of_withDensity_ofReal_eq (I : ModelWithCorners ℝ E H) [FiniteDime
     (hU.preimage I.continuous_symm).measurableSet.inter I.isClosed_range.measurableSet
   have hval : MeasurableEmbedding (Subtype.val : V → E) := .subtypeVal hV
   have : (ν.comap (Subtype.val : V → E)).IsOpenPosMeasure :=
-    I.isOpenPosMeasure_comap_range_inter ν hU
+    I.isOpenPosMeasure_comap_preimage_inter_range ν hU
   have hcomap (w : E → ℝ) :
       ((ν.restrict V).withDensity (fun y ↦ ENNReal.ofReal (w y))).comap (Subtype.val : V → E) =
         (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w y.val) := by

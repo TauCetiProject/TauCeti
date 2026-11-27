@@ -8,7 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-import TauCeti.Geometry.Manifold.ExtChartAt.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
+
 /-!
 # Composing a metric on `M × ℝ` with a map of the time coordinate
 

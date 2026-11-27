@@ -19,9 +19,10 @@ satisfies a telescoping identity, `x * S + y ^ m = S * y + x ^ m`. In a ring it 
 intertwines `x` and `y` up to the error `x ^ m - y ^ m`, so `S` is an exact intertwiner
 `x * S = S * y` as soon as `x ^ m = y ^ m`.
 
-The file also records the second-order expansions of `(1 + x) ^ r` and of the geometric sum
-`∑_{i < r} (1 + x) ^ i` in a noncommutative ring, and that in a commutative semiring a perturbation
-`a + e' b` of `a` raises to the same powers as `a` after multiplying by an `e` with `e e' = 0`.
+The file also records the second- and third-order expansions of `(1 + x) ^ r` and the
+second-order expansion of the geometric sum `∑_{i < r} (1 + x) ^ i` in a noncommutative ring, and
+that in a commutative semiring a perturbation `a + e' b` of `a` raises to the same powers as `a`
+after multiplying by an `e` with `e e' = 0`.
 
 In a ring without zero divisors and for `x ≠ 1`, the `x`-integer `[n]_x = ∑_{i < n} x ^ i` vanishes
 exactly when `x ^ n = 1`, because `[n]_x * (x - 1) = x ^ n - 1`. Hence a product of `x`-integers,
@@ -33,6 +34,8 @@ exactly when `x ^ d ≠ 1` for each of its indices `d`.
 * `TauCeti.mul_geom_sum₂_add_pow`: `x * S + y ^ m = S * y + x ^ m` in any semiring.
 * `TauCeti.exists_one_add_pow_eq_and_geom_sum_eq`: `(1 + x) ^ r = 1 + r x + x² v` and
   `∑_{i < r} (1 + x) ^ i = r + C(r, 2) x + x² w` for some `v` and `w`.
+* `TauCeti.exists_one_add_pow_eq_add_pow_four_mul`: the third-order expansion
+  `(1 + x) ^ r = 1 + r x + C(r, 2) x² + C(r, 3) x³ + x⁴ v` for some `v`.
 * `TauCeti.mul_add_mul_pow_of_mul_eq_zero`: if `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`.
 * `TauCeti.geom_sum_eq_zero_iff_pow_eq_one`: for `x ≠ 1` without zero divisors,
   `∑_{i < n} x ^ i = 0 ↔ x ^ n = 1`.
@@ -96,6 +99,25 @@ theorem exists_one_add_pow_eq_and_geom_sum_eq {A : Type*} [Ring A] (x : A) (r : 
       push_cast
       simp only [mul_add, add_mul]
       abel
+
+/-- The binomial expansion of `(1 + x) ^ r` to third order in a noncommutative semiring:
+`(1 + x) ^ r = 1 + r x + C(r, 2) x² + C(r, 3) x³ + x⁴ v` for some `v`. -/
+theorem exists_one_add_pow_eq_add_pow_four_mul {A : Type*} [Semiring A] (x : A) (r : ℕ) :
+    ∃ v : A, (1 + x) ^ r =
+      1 + r * x + (r.choose 2 : ℕ) * x ^ 2 + (r.choose 3 : ℕ) * x ^ 3 + x ^ 4 * v := by
+  induction r with
+  | zero => exact ⟨0, by simp⟩
+  | succ r ih =>
+    obtain ⟨v, hv⟩ := ih
+    refine ⟨(r.choose 3 : ℕ) + v + v * x, ?_⟩
+    rw [pow_succ, hv, Nat.choose_succ_succ', Nat.choose_succ_succ', Nat.choose_one_right]
+    have hc : ∀ (c : ℕ) (k : ℕ), (c : A) * x ^ k * x = (c : A) * x ^ (k + 1) := fun c k ↦ by
+      rw [mul_assoc, ← pow_succ]
+    have h3 : ((r.choose 3 : ℕ) : A) * x ^ 4 = x ^ 4 * (r.choose 3 : ℕ) := Nat.cast_comm _ _
+    push_cast
+    simp only [mul_add, add_mul, mul_one, one_mul, hc, ← mul_assoc, h3, Nat.reduceAdd]
+    rw [show (r : A) * x * x = r * x ^ 2 by rw [mul_assoc, ← sq]]
+    abel
 
 /-- If `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`, as every term of the expansion of
 `(a + e' b) ^ k` other than `a ^ k` is a multiple of `e'`. For instance, `ε (a + ε b) ^ k = ε a ^ k`
