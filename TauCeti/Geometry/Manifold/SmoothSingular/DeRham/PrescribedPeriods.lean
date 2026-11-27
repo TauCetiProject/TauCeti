@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham.Equiv
 public import TauCeti.Geometry.Manifold.SmoothSingular.Period
 import Mathlib.Algebra.Category.Grp.Injective
 import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.Algebra.Module.Equiv.IntLinear
 import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.IntegralComparison
 
 /-!
@@ -112,12 +113,8 @@ theorem exists_smoothHomologyPeriodHom_eq
   -- Work with `g` as a morphism of modules `f` out of the homology object.
   obtain ⟨f, hf⟩ : ∃ f : ((smoothSingularSubcomplex I M : SSet).chainComplex
       (ModuleCat.of ℤ ℤ)).homology p ⟶ ModuleCat.of ℤ ℝ, ∀ x, f x = g x :=
-    ⟨ModuleCat.ofHom
-      { toFun := g
-        map_add' := map_add g
-        -- `g` is additive, so linear for any `ℤ`-module structures, which agree with `zsmul`.
-        map_smul' := fun n x ↦ (congrArg g (int_smul_eq_zsmul _ n x)).trans
-          ((map_zsmul g n x).trans (int_smul_eq_zsmul _ n (g x)).symm) }, fun _ ↦ rfl⟩
+    ⟨ModuleCat.ofHom (intLinearMapAddEquivAddMonoidHom.symm g),
+      intLinearMapAddEquivAddMonoidHom_symm_apply_apply g⟩
   have : Injective (ModuleCat.of ℤ ℝ) := by
     have := (Module.Baer.of_divisible ℝ).injective
     exact Module.injective_object_of_injective_module ℤ ℝ
@@ -135,23 +132,16 @@ theorem exists_smoothHomologyPeriodHom_eq
     (cochainValuesEquiv ℤ (ModuleCat.of ℤ ℝ) (smoothSingularSubcomplex I M : SSet) p).symm
       (cochainValuesEquiv ℝ (ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M : SSet) p x)) hη
   simp only [map_sub, cochainValuesEquiv_symm_cochainValuesEquiv_integrationCochain] at hz
-  rw [cochainValuesEquiv_symm_cochainValuesEquiv_d_comp] at hz
+  -- The integral coefficient object `ModuleCat.of ℤ (ModuleCat.of ℝ ℝ)` of the transport lemma is
+  -- `ModuleCat.of ℤ ℝ` by definition, so it is chained with `trans` rather than rewritten.
+  replace hz := hz.trans (cochainValuesEquiv_symm_cochainValuesEquiv_d_comp ℝ (ModuleCat.of ℝ ℝ)
+    (smoothSingularSubcomplex I M : SSet) p _ η)
   -- On integral cycles the coboundary vanishes, and the values of `b` give `f`.
   refine HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ fun z ↦ ?_
   rw [LinearMap.toAddMonoidHom_coe, ← hf, smoothHomologyPeriodHom_homologyπ
     (φ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.property),
     eq_add_of_sub_eq hz]
-  have h1 := ConcreteCategory.congr_hom hbf z
-  have h0 : (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).d p
-      ((ComplexShape.up ℕ).prev p)).hom
-        ((((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles p).hom
-          z) = 0 := by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, HomologicalComplex.iCycles_d,
-      ModuleCat.hom_zero, LinearMap.zero_apply]
-  rw [ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.hom_comp, LinearMap.comp_apply, h0,
-    map_zero, zero_add]
-  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h1
-  exact h1
+  simpa [HomologicalComplex.iCycles_d_apply] using ConcreteCategory.congr_hom hbf z
 
 /-- **De Rham's theorem on periods.** On a Hausdorff `σ`-compact smooth manifold `M` modelled on a
 finite-dimensional real model with corners, every homomorphism `g : H_p(M; ℤ) → ℝ` is the period

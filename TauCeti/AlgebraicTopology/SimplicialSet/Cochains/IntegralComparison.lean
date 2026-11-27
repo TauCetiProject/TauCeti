@@ -19,12 +19,11 @@ noncommutative rings, without flatness or projectivity. We use `TauCeti.cochainV
 to identify the two complexes rather than choosing chain representatives.
 
 Simplicial sets and modules are small, so the regular integral coefficient object can be
-used without lifting. The scalar ring of the two cochain complexes is `ℤ`. For cochains with
-values in a `k`-module `V`, transporting simplex values from `ModuleCat.of k V` to
-`ModuleCat.of ℤ V` commutes with the coboundary
-(`TauCeti.cochainValuesEquiv_symm_cochainValuesEquiv_d_comp`). When `V` is an injective abelian
-group, every morphism `H_p(K; ℤ) ⟶ V` is the evaluation on integral cycles of a cocycle over `k`
-(`TauCeti.exists_cocycle_iCycles_comp_eq`).
+used without lifting. The scalar ring of the two cochain complexes is `ℤ`. Transporting simplex
+values from `M` to `ModuleCat.of ℤ M` commutes with the coboundary
+(`TauCeti.cochainValuesEquiv_symm_cochainValuesEquiv_d_comp`). For a `k`-module `V` which is an
+injective abelian group, every morphism `H_p(K; ℤ) ⟶ V` is the evaluation on integral cycles of a
+cocycle over `k` (`TauCeti.exists_cocycle_iCycles_comp_eq`).
 
 ## References
 
@@ -42,6 +41,23 @@ namespace TauCeti
 
 variable (k : Type) [Ring k] (M : ModuleCat.{0} k) (K : SSet.{0})
 
+/-- Transporting simplex values from cochains over `k` to integral cochains commutes with the
+coboundary: the integral cochain with the values of `φ ∘ d` is `d` followed by the integral cochain
+with the values of `φ`. -/
+lemma cochainValuesEquiv_symm_cochainValuesEquiv_d_comp (i j : ℕ)
+    (φ : (K.chainComplex (ModuleCat.of k k)).X j ⟶ M) :
+    (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K i).symm
+        (cochainValuesEquiv k M K i ((K.chainComplex (ModuleCat.of k k)).d i j ≫ φ)) =
+      (K.chainComplex (ModuleCat.of ℤ ℤ)).d i j ≫
+        (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K j).symm (cochainValuesEquiv k M K j φ) := by
+  by_cases hij : (ComplexShape.down ℕ).Rel i j
+  · obtain rfl : i = j + 1 := hij.symm
+    apply (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K (j + 1)).injective
+    funext σ
+    simp only [cochainValuesEquiv_d, LinearEquiv.apply_symm_apply]
+  · rw [(K.chainComplex _).shape i j hij, (K.chainComplex _).shape i j hij, zero_comp, zero_comp,
+      map_zero, map_zero]
+
 /-- Simplicial cochains over `k` with values in `M` agree with integral cochains with values
 in the underlying abelian group of `M`. The comparison preserves simplex values. -/
 def simplicialCochainComplexIntegralIso :
@@ -49,24 +65,12 @@ def simplicialCochainComplexIntegralIso :
       (K.chainComplex (ModuleCat.of ℤ ℤ)).linearYonedaObj ℤ (ModuleCat.of ℤ M) :=
   HomologicalComplex.Hom.isoOfComponents
     (fun n ↦ ((cochainValuesEquiv k M K n).trans
-      (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K n).symm).toModuleIso) fun i j hij ↦ by
-    have h : i + 1 = j := hij
-    subst j
-    have comm (φ : (K.chainComplex (ModuleCat.of k k)).X i ⟶ M) :
-        (K.chainComplex (ModuleCat.of ℤ ℤ)).d (i + 1) i ≫
-            (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K i).symm
-              (cochainValuesEquiv k M K i φ) =
-          (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K (i + 1)).symm
-            (cochainValuesEquiv k M K (i + 1)
-              ((K.chainComplex (ModuleCat.of k k)).d (i + 1) i ≫ φ)) := by
-      apply (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K (i + 1)).injective
-      funext σ
-      simp only [cochainValuesEquiv_d, LinearEquiv.apply_symm_apply]
+      (cochainValuesEquiv ℤ (ModuleCat.of ℤ M) K n).symm).toModuleIso) fun i j _ ↦ by
     ext φ
     rw [ModuleCat.comp_apply, ModuleCat.comp_apply,
       TauCeti.ChainComplex.linearYonedaObj_d_apply,
       TauCeti.ChainComplex.linearYonedaObj_d_apply]
-    exact comm φ
+    exact (cochainValuesEquiv_symm_cochainValuesEquiv_d_comp k M K j i φ).symm
 
 /-- The degreewise integral comparison extends the simplex values integrally. -/
 lemma simplicialCochainComplexIntegralIso_hom_f_apply (n : ℕ)
@@ -158,27 +162,6 @@ section Values
 
 variable (V : Type) [AddCommGroup V] [Module k V]
 
-/-- Transporting simplex values from cochains over `k` to integral cochains commutes with the
-coboundary: the integral cochain with the values of `φ ∘ d` is `d` followed by the integral cochain
-with the values of `φ`. Unlike the components of `TauCeti.simplicialCochainComplexIntegralIso`,
-this is stated for morphisms into `ModuleCat.of k V` and `ModuleCat.of ℤ V`, the coefficient
-objects of cochains with values in a module `V` over `k` and over `ℤ`. -/
-lemma cochainValuesEquiv_symm_cochainValuesEquiv_d_comp (i j : ℕ)
-    (φ : (K.chainComplex (ModuleCat.of k k)).X j ⟶ ModuleCat.of k V) :
-    (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K i).symm
-        (cochainValuesEquiv k (ModuleCat.of k V) K i
-          ((K.chainComplex (ModuleCat.of k k)).d i j ≫ φ)) =
-      (K.chainComplex (ModuleCat.of ℤ ℤ)).d i j ≫
-        (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K j).symm
-          (cochainValuesEquiv k (ModuleCat.of k V) K j φ) := by
-  by_cases hij : (ComplexShape.down ℕ).Rel i j
-  · obtain rfl : i = j + 1 := hij.symm
-    apply (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K (j + 1)).injective
-    funext σ
-    simp only [cochainValuesEquiv_d, LinearEquiv.apply_symm_apply]
-  · rw [(K.chainComplex _).shape i j hij, (K.chainComplex _).shape i j hij, zero_comp, zero_comp,
-      map_zero, map_zero]
-
 /-- For a `k`-module `V` which is an injective abelian group, every morphism
 `f : H_p(K; ℤ) ⟶ V` is the evaluation on integral cycles of a cocycle `b` over `k`: the integral
 cochain with the simplex values of `b` restricts on the cycles to `f`. This is the surjectivity of
@@ -212,7 +195,7 @@ lemma exists_cocycle_iCycles_comp_eq [Injective (ModuleCat.of ℤ V)] (p : ℕ)
   refine ⟨(cochainValuesEquiv k (ModuleCat.of k V) K p).symm
     (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K p a), ?_, ?_⟩
   · rw [CochainComplex.next ℕ p]
-    have h := cochainValuesEquiv_symm_cochainValuesEquiv_d_comp k K V (p + 1) p
+    have h := cochainValuesEquiv_symm_cochainValuesEquiv_d_comp k (ModuleCat.of k V) K (p + 1) p
       ((cochainValuesEquiv k (ModuleCat.of k V) K p).symm
         (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K p a))
     rw [LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply, hda,
