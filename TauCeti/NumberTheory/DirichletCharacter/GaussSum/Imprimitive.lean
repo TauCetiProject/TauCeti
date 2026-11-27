@@ -8,7 +8,9 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
+import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Data.ZMod.Count
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
 # Gauss sums of imprimitive Dirichlet characters
@@ -42,57 +44,7 @@ open scoped ArithmeticFunction.Moebius
 
 namespace DirichletCharacter
 
-/-- The Möbius sum over the divisors `d` of `r` with `d ∣ k` is the indicator of `gcd(k, r) = 1`.
--/
-private lemma sum_filter_dvd_moebius {r : ℕ} (hr : r ≠ 0) (k : ℕ) :
-    ∑ d ∈ r.divisors with d ∣ k, (μ d : ℂ) = if k.Coprime r then 1 else 0 := by
-  have hfilter : {d ∈ r.divisors | d ∣ k} = (k.gcd r).divisors := by
-    ext d
-    simp only [mem_filter, Nat.mem_divisors, Nat.dvd_gcd_iff, ne_eq, Nat.gcd_eq_zero_iff]
-    tauto
-  have h := congrArg (fun g : ArithmeticFunction ℤ ↦ (g (k.gcd r) : ℂ))
-    ArithmeticFunction.moebius_mul_coe_zeta
-  simp only [ArithmeticFunction.coe_mul_zeta_apply, ArithmeticFunction.one_apply,
-    Int.cast_sum] at h
-  rw [hfilter, h]
-  by_cases hk : k.gcd r = 1
-  · rw [ite_eq_left hk, ite_eq_left (Nat.coprime_iff_gcd_eq_one.mpr hk), Int.cast_one]
-  · rw [ite_eq_right hk, ite_eq_right (mt Nat.coprime_iff_gcd_eq_one.mp hk), Int.cast_zero]
-
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-
-/-- A Dirichlet character is its primitive character times the indicator of
-`gcd(a, N / f) = 1`, where `f` is the conductor. -/
-private lemma apply_eq_primitiveCharacter_mul_ite (a : ZMod N) :
-    χ a = χ.primitiveCharacter (a.val : ZMod χ.conductor) *
-      if a.val.Coprime (N / χ.conductor) then 1 else 0 := by
-  have hN : χ.conductor * (N / χ.conductor) = N := Nat.mul_div_cancel' χ.conductor_dvd_level
-  by_cases ha : IsUnit a
-  · have hcop : a.val.Coprime N := by
-      rwa [← ZMod.isUnit_iff_coprime, ZMod.natCast_zmod_val]
-    rw [ite_eq_left (hcop.coprime_dvd_right (Nat.div_dvd_of_dvd χ.conductor_dvd_level)), mul_one]
-    conv_lhs => rw [← χ.changeLevel_primitiveCharacter, ← ha.unit_spec]
-    rw [changeLevel_eq_cast_of_dvd, IsUnit.unit_spec, ZMod.cast_eq_val]
-  · rw [χ.map_nonunit ha]
-    split_ifs with hr
-    · rw [mul_one, eq_comm]
-      refine MulChar.map_nonunit _ fun hu ↦ ha ?_
-      have hf : a.val.Coprime χ.conductor := (ZMod.isUnit_iff_coprime _ _).mp hu
-      have hcop := Nat.Coprime.mul_right hf hr
-      rw [hN] at hcop
-      rwa [← ZMod.natCast_zmod_val a, ZMod.isUnit_iff_coprime]
-    · rw [mul_zero]
-
-/-- The standard additive character modulo `N` at `d k` is the one modulo `N / d` at `k`. -/
-private lemma stdAddChar_natCast_mul {d : ℕ} (hd : d ∣ N) [NeZero (N / d)] (k : ℕ) :
-    ZMod.stdAddChar ((d * k : ℕ) : ZMod N) = ZMod.stdAddChar ((k : ℕ) : ZMod (N / d)) := by
-  have hd0 : (d : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd
-    (h ▸ hd))
-  rw [← Int.cast_natCast, ← Int.cast_natCast (R := ZMod (N / d)), ZMod.stdAddChar_coe,
-    ZMod.stdAddChar_coe, Nat.cast_div hd hd0]
-  congr 1
-  push_cast
-  field_simp
 
 /-- The terms of `τ(χ)` at the multiples of a divisor `d` of `N / f` sum to
 `χ^∗(d) ∑_{b mod N / d} χ^∗(b) e(b / (N / d))`. -/
@@ -104,6 +56,14 @@ private lemma sum_ite_dvd_val_eq {d : ℕ} (hd : d ∣ N / χ.conductor) [NeZero
           ZMod.stdAddChar b := by
   have hdN : d ∣ N := hd.trans (Nat.div_dvd_of_dvd χ.conductor_dvd_level)
   have hNd : N / (N / d) = d := Nat.div_div_self hdN (NeZero.ne N)
+  have : NeZero d := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hdN))⟩
+  -- The standard character modulo `N = (N / d) d` at `d k` is the one modulo `N / d` at `k`.
+  have hstd {M : ℕ} [NeZero M] (hM : M = N / d * d) (k : ℕ) :
+      ZMod.stdAddChar ((d * k : ℕ) : ZMod M) = ZMod.stdAddChar ((k : ℕ) : ZMod (N / d)) := by
+    subst hM
+    have h := ZMod.stdAddChar_intCast_natCast_mul (m := N / d) (n := d) (k : ℤ)
+    push_cast at h ⊢
+    exact h
   have h := ZMod.sum_ite_dvd_val (m := N / d) (n := N) (Nat.div_dvd_of_dvd hdN)
     (fun k ↦ χ.primitiveCharacter ((d * k : ℕ) : ZMod χ.conductor) *
       ZMod.stdAddChar ((d * k : ℕ) : ZMod N))
@@ -115,7 +75,8 @@ private lemma sum_ite_dvd_val_eq {d : ℕ} (hd : d ∣ N / χ.conductor) [NeZero
     · rfl
   · rw [mul_sum]
     refine sum_congr rfl fun b _ ↦ ?_
-    rw [stdAddChar_natCast_mul hdN, ZMod.natCast_zmod_val, Nat.cast_mul, map_mul, mul_assoc]
+    rw [hstd (Nat.div_mul_cancel hdN).symm, ZMod.natCast_zmod_val, Nat.cast_mul, map_mul,
+      mul_assoc]
 
 /-- The inner sum `∑_{b mod N / d} χ^∗(b) e(b / (N / d))` is `τ(χ^∗)` for `d = N / f` and `0` for
 the other divisors `d` of `N / f`. -/
@@ -166,7 +127,11 @@ theorem gaussSum_eq_moebius_mul :
           (χ.primitiveCharacter (a.val : ZMod χ.conductor) * ZMod.stdAddChar a) else 0 := by
         rw [gaussSum]
         refine sum_congr rfl fun a _ ↦ ?_
-        rw [apply_eq_primitiveCharacter_mul_ite, ← sum_filter_dvd_moebius hr, sum_filter, mul_sum,
+        have hχ : χ a = χ.primitiveCharacter (a.val : ZMod χ.conductor) *
+            if a.val.Coprime (N / χ.conductor) then 1 else 0 := by
+          rw [mul_ite, mul_one, mul_zero, ← natCast_eq_ite_coprime_primitiveCharacter,
+            ZMod.natCast_zmod_val]
+        rw [hχ, ← ArithmeticFunction.sum_divisors_filter_dvd_moebius hr, sum_filter, mul_sum,
           sum_mul]
         refine sum_congr rfl fun d _ ↦ ?_
         split_ifs <;> ring
@@ -185,6 +150,7 @@ theorem gaussSum_eq_moebius_mul :
         rw [sum_ite_eq', ite_eq_left (Nat.mem_divisors_self _ hr), mul_assoc]
 
 /-- The Gauss sum of the principal character modulo `N` is `μ(N)`. -/
+@[simp]
 theorem gaussSum_one : gaussSum (1 : DirichletCharacter ℂ N) ZMod.stdAddChar = μ N := by
   -- A character of level `1` is `1` everywhere, and its Gauss sum is `1`.
   have key {c : ℕ} [NeZero c] (hc : c = 1) (ψ : DirichletCharacter ℂ c) (x : ZMod c) :
