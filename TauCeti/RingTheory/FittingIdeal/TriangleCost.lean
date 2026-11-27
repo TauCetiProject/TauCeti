@@ -9,9 +9,9 @@ public import Mathlib.Algebra.MvPolynomial.Basic
 public import TauCeti.Algebra.Module.FunctionModule
 public import TauCeti.RingTheory.FittingIdeal.Length
 import Mathlib.Algebra.MvPolynomial.Eval
-import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
 import TauCeti.RingTheory.FittingIdeal.Span
 import TauCeti.RingTheory.Length
+import TauCeti.RingTheory.MatlisDuality.PrincipalIdealRing
 
 /-!
 # Fitting ideals of modules with a triangle cost
@@ -154,7 +154,7 @@ private theorem C_mul_X_mem_colon (hp : p ≠ 0) {A : Set G}
   have key : Φ (C • (z (τ j) - z (τ' j))) ∈ Nj := by
     by_contra hx
     set Wj := (Nj.restrictScalars O).comap Φ
-    obtain ⟨Ψ, hΨ⟩ := exists_linearMap_quotient_span_singleton_apply_ne_zero hp
+    obtain ⟨Ψ, hΨ⟩ := TauCeti.exists_linearMap_quotient_span_singleton_apply_ne_zero hp
       (smul_quotient_comap_eq_zero fun v ↦ hN (hpN v)) (x := Wj.mkQ (C • (z (τ j) - z (τ' j)))) (by
         rw [ne_eq, mkQ_apply, Quotient.mk_eq_zero]
         simpa [Wj] using hx)

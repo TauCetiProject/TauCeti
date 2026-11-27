@@ -28,7 +28,7 @@ and `N` contains cocycle relations, these functions are cocycles with values in 
 definition uses no structure on `G`, so it stands in for a module of cocycles over any group.
 
 Over a principal ideal domain, when `p ≠ 0` kills `V ⧸ Φ⁻¹(N)`, duality with values in `O ⧸ (p)`
-(`IsDiscreteValuationRing.length_linearMap_quotient_span_singleton_right`) turns the module of
+(`TauCeti.length_linearMap_quotient_span_singleton_right`) turns the module of
 functions into a measure of the relations. If `N ⊆ O^ι` and the `Φ (z (gen i))` are congruent to
 the standard basis vectors modulo `N`, the classes of the `z (gen i)` span `V ⧸ Φ⁻¹(N)`
 (`Submodule.span_range_mkQ_comap_eq_top`), so the module of functions has the length of
@@ -36,7 +36,7 @@ the standard basis vectors modulo `N`, the classes of the `z (gen i)` span `V �
 then bounded by a length modulo `C`-torsion. For any `A ⊆ G`, the image in `F ⧸ N` of the
 relations `Φ (z a)`, `a ∈ A`, is no longer than the quotient of the module of functions by its
 members vanishing on `A`, because linear maps to `O ⧸ (p)` extend
-(`IsDiscreteValuationRing.exists_linearMap_quotient_span_singleton_comp_eq`).
+(`TauCeti.exists_linearMap_quotient_span_singleton_comp_eq`).
 
 ## Main definitions
 
@@ -203,7 +203,7 @@ theorem length_functionModule [Finite ι] [IsDomain O] [IsPrincipalIdealRing O] 
   calc length O (N.functionModule Φ z p) = length O (V ⧸ W →ₗ[O] O ⧸ Ideal.span {p}) :=
         (LinearEquiv.ofBijective _ ⟨hinj, toFunctionModule_surjective⟩).length_eq.symm
     _ = length O (V ⧸ W) :=
-        length_linearMap_quotient_span_singleton_right hp (smul_quotient_comap_eq_zero hpN)
+        TauCeti.length_linearMap_quotient_span_singleton_right hp (smul_quotient_comap_eq_zero hpN)
     _ = length O ((ι → O) ⧸ N) := (LinearEquiv.ofBijective _ ⟨hinj', hsurj⟩).length_eq
 
 /-- If `Φ (z (gen i)) ≡ e_i` and `Φ (p • v) ≡ 0` modulo a submodule `N ⊆ O^ι` over a discrete
@@ -251,8 +251,9 @@ theorem length_map_mkQ_span_image_le {N : Submodule R F} {Φ : V →ₗ[O] F} {z
     simp only [QA, map_span, Set.image_image, mkQ_apply, mapQ_apply]
   -- Restriction to `QA` is onto the dual of `QA`, and kills what vanishes on `A`.
   let ρ := LinearMap.lcomp O (O ⧸ Ideal.span {p}) QA.subtype
-  have hρ : Function.Surjective ρ := fun θ ↦ exists_linearMap_quotient_span_singleton_comp_eq hp
-    (smul_quotient_comap_eq_zero hpN) QA.injective_subtype θ
+  have hρ : Function.Surjective ρ := fun θ ↦
+    TauCeti.exists_linearMap_quotient_span_singleton_comp_eq hp (smul_quotient_comap_eq_zero hpN)
+      QA.injective_subtype θ
   let ψ := ((pi A fun _ ↦ ⊥).comap Z.subtype).mkQ ∘ₗ N.toFunctionModule Φ z p
   have hψ : Function.Surjective ψ := (mkQ_surjective _).comp toFunctionModule_surjective
   have hker : LinearMap.ker ψ ≤ LinearMap.ker ρ := fun Ψ hΨ ↦ by
@@ -265,7 +266,7 @@ theorem length_map_mkQ_span_image_le {N : Submodule R F} {Φ : V →ₗ[O] F} {z
   calc length O ((span O (Φ '' (z '' A))).map (N.restrictScalars O).mkQ)
       ≤ length O QA := hmap ▸ length_le_of_surjective _ (LinearMap.submoduleMap_surjective _ _)
     _ = length O (QA →ₗ[O] O ⧸ Ideal.span {p}) :=
-        (length_linearMap_quotient_span_singleton_right hp
+        (TauCeti.length_linearMap_quotient_span_singleton_right hp
           fun x ↦ Subtype.ext (smul_quotient_comap_eq_zero hpN x)).symm
     _ = length O (LinearMap.range ρ) := by rw [LinearMap.range_eq_top.2 hρ, length_top]
     _ ≤ length O ((V ⧸ W →ₗ[O] O ⧸ Ideal.span {p}) ⧸ LinearMap.ker ψ) :=
