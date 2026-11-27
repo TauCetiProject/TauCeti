@@ -28,6 +28,12 @@ transform `w ↦ i (1 + w) / (1 - w)` maps the radius of the unit disc ending at
 are the nontangential limits of `F`. The point `ζ` is `e^{iθ}` for `θ = π + 2 arctan x`
 (`TauCeti.exp_pi_add_two_mul_arctan_mul_I`), and `θ ↦ tan ((θ - π) / 2)` is differentiable on
 `(0, 2π)`, so these angles form a set of positive measure when the points `x` do.
+
+## References
+
+* J. B. Garnett, *Bounded Analytic Functions*, revised 1st ed., Springer (2007), Chapter II.
+* F. Riesz and M. Riesz, *Über die Randwerte einer analytischen Funktion*, Quatrième Congrès des
+  Mathématiciens Scandinaves, Stockholm (1916), 27–44.
 -/
 
 public section
