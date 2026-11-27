@@ -36,12 +36,17 @@ a positive gap has finite rank.
   `s' ≤ s ≤ t ≤ t'`, since the long map factors through the short one; the one-sided forms are
   `TauCeti.rankInv_le_rankInv_left` and `TauCeti.rankInv_le_rankInv_right`.
 * `TauCeti.rankInv_self`: on the diagonal the rank invariant is the rank of `V_t`.
-* `TauCeti.rankInv_congr`: the rank invariant is invariant under isomorphism of modules.
+* `CategoryTheory.Iso.rankInv_congr`, `CategoryTheory.Iso.isPFD_congr`,
+  `CategoryTheory.Iso.isQTame_congr`: the three notions are invariant under isomorphism of
+  persistence modules.
 * `TauCeti.IsPFD.isQTame`: over a ring with the strong rank condition (for instance a field),
   every pointwise finite-dimensional module is `q`-tame.
 
-This is §1.1 of the TopologicalDataAnalysis roadmap, which states these definitions over a field;
-they are stated here over any ring, and the field case is a specialization.
+The rank invariant records, for each pair of scales `s ≤ t`, how many features present at `s`
+survive to `t`; persistence diagrams are built from it. `q`-tameness is the finiteness condition
+under which Chazal–de Silva–Glisse–Oudot define the persistence diagram of a module.
+
+The definitions are stated over any ring; the usual setting is a field, which is a special case.
 -/
 
 public section
@@ -103,9 +108,10 @@ theorem rankInv_of_lt (V : PersistenceModule R) (h : t < s) : rankInv V s t = 0 
 /-- On the diagonal, the rank invariant is the rank of `V_t`. -/
 @[simp]
 theorem rankInv_self (V : PersistenceModule R) (t : ℝ) :
-    rankInv V t t = Cardinal.toENat (Module.rank R (V.obj t)) := by
-  rw [rankInv_of_le V le_rfl, Subsingleton.elim (homOfLE _) (𝟙 t), V.map_id,
-    ModuleCat.hom_id, LinearMap.rank, LinearMap.range_id, rank_top]
+    rankInv V t t = Cardinal.toENat (Module.rank R (V.obj t)) :=
+  -- the structure map `V_t → V_t` is the identity, so its range is all of `V_t`
+  (rankInv_of_le V le_rfl).trans <| congrArg _ <|
+    rank_range_of_surjective _ fun x => ⟨x, by simp⟩
 
 /-- The rank invariant is at most the rank of the source module. -/
 theorem rankInv_le_rank_obj_left (V : PersistenceModule R) (s t : ℝ) :
@@ -145,6 +151,27 @@ theorem rankInv_le_rankInv (V : PersistenceModule R) (hs : s' ≤ s) (hst : s �
     (ht : t ≤ t') : rankInv V s' t' ≤ rankInv V s t :=
   (rankInv_le_rankInv_left V hs (hst.trans ht)).trans (rankInv_le_rankInv_right V hst ht)
 
+/-- Over a ring with the strong rank condition, every rank invariant of a pointwise
+finite-dimensional module is finite, on and off the diagonal. -/
+theorem IsPFD.rankInv_lt_top [StrongRankCondition R] (hV : IsPFD V) (s t : ℝ) :
+    rankInv V s t < ⊤ := by
+  have := hV s
+  exact (rankInv_le_rank_obj_left V s t).trans_lt
+    (Cardinal.toENat_lt_top.2 (Module.rank_lt_aleph0 R (V.obj s)))
+
+/-- Over a ring with the strong rank condition (for instance a field), every pointwise
+finite-dimensional persistence module is `q`-tame. -/
+theorem IsPFD.isQTame [StrongRankCondition R] (hV : IsPFD V) : IsQTame V :=
+  fun s t _ => hV.rankInv_lt_top s t
+
+end TauCeti
+
+namespace CategoryTheory.Iso
+
+open TauCeti
+
+variable {R : Type*} [Ring R] {V W : PersistenceModule R}
+
 /-- Isomorphic persistence modules have the same rank invariant. -/
 theorem rankInv_congr (e : V ≅ W) (s t : ℝ) : rankInv V s t = rankInv W s t := by
   -- each structure map of `W` is a structure map of `V` composed with isomorphisms
@@ -167,19 +194,6 @@ theorem isPFD_congr (e : V ≅ W) : IsPFD V ↔ IsPFD W :=
 
 /-- `q`-tameness is invariant under isomorphism. -/
 theorem isQTame_congr (e : V ≅ W) : IsQTame V ↔ IsQTame W := by
-  simp only [isQTame_iff, rankInv_congr e]
+  simp only [isQTame_iff, e.rankInv_congr]
 
-/-- Over a ring with the strong rank condition, every rank invariant of a pointwise
-finite-dimensional module is finite, on and off the diagonal. -/
-theorem IsPFD.rankInv_lt_top [StrongRankCondition R] (hV : IsPFD V) (s t : ℝ) :
-    rankInv V s t < ⊤ := by
-  have := hV s
-  exact (rankInv_le_rank_obj_left V s t).trans_lt
-    (Cardinal.toENat_lt_top.2 (Module.rank_lt_aleph0 R (V.obj s)))
-
-/-- Over a ring with the strong rank condition (for instance a field), every pointwise
-finite-dimensional persistence module is `q`-tame. -/
-theorem IsPFD.isQTame [StrongRankCondition R] (hV : IsPFD V) : IsQTame V :=
-  fun s t _ => hV.rankInv_lt_top s t
-
-end TauCeti
+end CategoryTheory.Iso
