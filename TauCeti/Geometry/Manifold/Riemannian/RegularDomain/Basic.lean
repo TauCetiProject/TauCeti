@@ -19,7 +19,9 @@ with a smooth Riemannian metric, and let `a` be a regular value of a smooth func
 The sublevel `D = {f ≤ a}` is a smooth manifold with boundary for Tau Ceti's atlas
 `TauCeti.scalarRegularSublevelChartedSpace`, and its inclusion `j : D → N` is smooth with
 invertible differential at every point, boundary points included. This file equips `D` with the
-metric `g_D = j^* g` pulled back along `j` (`TauCeti.scalarRegularSublevelMetric`) and proves:
+metric `g_D = j^* g` pulled back along `j` (`TauCeti.scalarRegularSublevelMetric`), a smooth
+Riemannian bundle structure (`TauCeti.isContMDiffRiemannianBundle_scalarRegularSublevel`), and
+proves:
 
 * `j` is a local Riemannian isometry `(D, g_D) → (N, g)`
   (`TauCeti.isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel`); Tau Ceti's naturality
@@ -95,6 +97,21 @@ theorem scalarRegularSublevelMetric_inner (x : {x | f x ≤ a})
   letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
   haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
   ContMDiffRiemannianMetric.pullback_ofIsContMDiffRiemannianBundle_inner _ _ _ x v w
+
+/-- The metric of the regular sublevel `D = {f ≤ a}` pulled back along the inclusion
+(`TauCeti.scalarRegularSublevelMetric`) is smooth. -/
+theorem isContMDiffRiemannianBundle_scalarRegularSublevel :
+    letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+    haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
+    letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+      ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
+    IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) ∞ (EuclideanSpace ℝ (Fin (n + 1)))
+      (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+  letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+  haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
+  letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+    ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
+  Bundle.instIsContMDiffRiemannianBundle (scalarRegularSublevelMetric hf hreg hn)
 
 /-- **The inclusion of a regular sublevel is a local Riemannian isometry** for the pulled-back
 metric `TauCeti.scalarRegularSublevelMetric`: it is smooth, its differential is invertible at

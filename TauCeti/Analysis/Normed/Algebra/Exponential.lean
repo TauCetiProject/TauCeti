@@ -50,6 +50,7 @@ Baker--Campbell--Hausdorff expansion.
 * `NormedSpace.hasFDerivAt_exp_of_continuousSMul`: `exp` has Fréchet derivative `exp x • 1` at
   every point in a complete commutative normed algebra over a characteristic-zero normed field with
   `[ContinuousSMul ℚ 𝕜]`.
+* `NormedSpace.exp_add_real_smul_one`: `exp (a + c • 1) = Real.exp c • exp a` for real `c`.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
@@ -182,6 +183,14 @@ theorem hasFDerivAt_exp_of_continuousSMul (x : A) :
   _root_.hasFDerivAt_exp_of_mem_ball (mem_eball_expSeries_radius 𝕜 x)
 
 end ContinuousSMul
+
+/-- Adding a real scalar multiple of the unit scales the exponential by the real exponential:
+`exp (a + c • 1) = Real.exp c • exp a`. -/
+theorem exp_add_real_smul_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+    (a : A) (c : ℝ) : exp (a + c • (1 : A)) = Real.exp c • exp a := by
+  let +nondep : NormedAlgebra ℚ A := .restrictScalars ℚ ℝ A
+  rw [exp_add_of_commute ((Commute.one_right a).smul_right c), exp_real_smul_one, mul_smul_comm,
+    mul_one]
 
 end NormedSpace
 

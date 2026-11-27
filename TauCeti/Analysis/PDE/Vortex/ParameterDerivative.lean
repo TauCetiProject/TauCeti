@@ -1406,22 +1406,22 @@ theorem
     ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [ContinuousLinearMap.comp_apply] using h
 
-/-- Along a family of coefficients `C²` at `p₀`, whose value at `p₀` is the class of a smooth plane
-vortex with the degree-`m` end framing, the adjoints `(ι ∘ Q p)†` of the orthogonal right inverses,
-read as operators on `L²(ℂ; ℝ⁴)`, are `C²` at `p₀`. -/
+/-- Along a family of coefficients `Cⁿ` at `p₀`, whose value at `p₀` is the class of a smooth plane
+vortex with the degree-`m` end framing, the orthogonal right inverses `Q p` and their adjoints
+`(ι ∘ Q p)†`, read as operators on `L²(ℂ; ℝ⁴)`, are `Cⁿ` at `p₀`. -/
 theorem contDiffAt_adjoint_orthogonalRightInverse {m : ℕ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
     {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X} (hax : a p₀ =ᵐ[μ⊤] x)
-    (ha : ContDiffAt ℝ 2 a p₀) :
-    ContDiffAt ℝ 2 (fun p ↦ orthogonalRightInverse sobolevFieldValues
+    {n : WithTop ℕ∞} (ha : ContDiffAt ℝ n a p₀) :
+    ContDiffAt ℝ n (fun p ↦ orthogonalRightInverse sobolevFieldValues
         (sobolevGaugeFixedOperator (a p))) p₀ ∧
-      ContDiffAt ℝ 2 (fun p ↦ ContinuousLinearMap.adjoint (sobolevFieldValues ∘L
+      ContDiffAt ℝ n (fun p ↦ ContinuousLinearMap.adjoint (sobolevFieldValues ∘L
         orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p)))) p₀ := by
-  obtain ⟨hT, hsurj, -, hT2, -⟩ :=
-    isFredholm_and_contDiffAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
-  have hQ2 := (hT.contDiffAt_orthogonalRightInverse sobolevFieldValues_injective hsurj).comp p₀ hT2
+  obtain ⟨hT, hsurj⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
+  have hQ2 := (hT.contDiffAt_orthogonalRightInverse sobolevFieldValues_injective hsurj).comp p₀
+    (contDiff_sobolevGaugeFixedOperator.contDiffAt.comp p₀ ha)
   -- The adjoints are the image of `Q` under the real-linear map `R ↦ (ι ∘ R)†`.
   refine ⟨hQ2, ?_⟩
   simpa only [Function.comp_def, ContinuousLinearMap.comp_apply, compL_apply,

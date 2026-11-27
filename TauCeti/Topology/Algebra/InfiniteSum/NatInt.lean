@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 public import TauCeti.Topology.Algebra.InfiniteSum.Constructions
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Reindexing infinite sums between the integers and natural numbers
@@ -18,7 +20,9 @@ lemma for an integer-indexed family whose support is bounded below, with reindex
 the tails `∑_{m > n} f m` of a family indexed by the natural numbers, with the splitting of a
 summable integer-indexed family into its residue classes modulo `M`, and with the grouping of an
 integer-indexed sum, or of a product or sum indexed by the natural numbers, into blocks of `M`
-consecutive terms.
+consecutive terms. It also turns convergent series over `ℕ` into limits of the partial sums
+`∑_{a < j ≤ 0} f j` and `∑_{0 < j ≤ b} f j` of an integer-indexed family, and combines these into
+the two-sided partial sums `∑_{a < j ≤ b} f j`.
 
 ## Main results
 
@@ -38,6 +42,12 @@ consecutive terms.
 * `HasProd.prod_fin_mul_add_nat`, `HasSum.sum_fin_mul_add_nat`: the grouping of
   `HasSum.sum_fin_mul_add` into blocks `qM + r`, `r < M`, for a product or sum over the natural
   numbers.
+* `HasSum.tendsto_sum_Ioc_atBot`, `HasSum.tendsto_sum_Ioc_atTop`: if `∑ₖ f (-k)`, respectively
+  `∑ₖ f (k + 1)`, converges over `k ∈ ℕ`, then the partial sums `∑_{a < j ≤ 0} f j` converge as
+  `a → -∞`, respectively `∑_{0 < j ≤ b} f j` as `b → ∞`, to the same sum.
+* `Filter.Tendsto.sum_Ioc_prod_atBot_atTop`: if the partial sums `∑_{a < j ≤ 0} f j` and
+  `∑_{0 < j ≤ b} f j` converge, then so do the two-sided partial sums `∑_{a < j ≤ b} f j`, as
+  `a → -∞` and `b → ∞`, to the sum of the two limits.
 -/
 
 public section
@@ -155,3 +165,47 @@ theorem HasSum.sum_zmod_val_sub {E : Type*} [AddCommMonoid E] [TopologicalSpace 
   refine Finset.sum_congr rfl fun r _ ↦ ?_
   rw [ZMod.val_cast_of_lt r.isLt]
   rw [sub_eq_neg_add, neg_mul, mul_comm]
+
+section PartialSums
+
+open Filter Topology
+
+variable {M : Type*} [AddCommMonoid M] [TopologicalSpace M] {f : ℤ → M}
+
+/-- **Partial sums over the nonpositive integers.** If `∑ₖ f (-k)` converges to `w` over
+`k ∈ ℕ`, then the partial sums `∑_{a < j ≤ 0} f j` converge to `w` as `a → -∞`. -/
+theorem HasSum.tendsto_sum_Ioc_atBot {w : M} (hf : HasSum (fun k : ℕ ↦ f (-k)) w) :
+    Tendsto (fun a : ℤ ↦ ∑ j ∈ Finset.Ioc a 0, f j) atBot (𝓝 w) := by
+  have htoNat : Tendsto (fun a : ℤ ↦ (-a).toNat) atBot atTop :=
+    tendsto_atTop.2 fun N ↦ (eventually_le_atBot (-(N : ℤ))).mono fun a ha ↦ by omega
+  refine (hf.tendsto_sum_nat.comp htoNat).congr' ?_
+  filter_upwards [eventually_le_atBot (0 : ℤ)] with a ha
+  obtain ⟨n, rfl⟩ : ∃ n : ℕ, a = -n := ⟨(-a).toNat, by omega⟩
+  simp [Finset.sum_Ioc_neg_zero_eq_sum_range]
+
+/-- **Partial sums over the positive integers.** If `∑ₖ f (k + 1)` converges to `w` over
+`k ∈ ℕ`, then the partial sums `∑_{0 < j ≤ b} f j` converge to `w` as `b → ∞`. -/
+theorem HasSum.tendsto_sum_Ioc_atTop {w : M} (hf : HasSum (fun k : ℕ ↦ f (k + 1)) w) :
+    Tendsto (fun b : ℤ ↦ ∑ j ∈ Finset.Ioc 0 b, f j) atTop (𝓝 w) := by
+  have htoNat : Tendsto (fun b : ℤ ↦ b.toNat) atTop atTop :=
+    tendsto_atTop.2 fun N ↦ (eventually_ge_atTop (N : ℤ)).mono fun b hb ↦ by omega
+  refine (hf.tendsto_sum_nat.comp htoNat).congr' ?_
+  filter_upwards [eventually_ge_atTop (0 : ℤ)] with b hb
+  obtain ⟨n, rfl⟩ : ∃ n : ℕ, b = n := ⟨b.toNat, by omega⟩
+  simp [Finset.sum_Ioc_zero_natCast_eq_sum_range]
+
+/-- **Two-sided partial sums over the integers.** If the partial sums `∑_{a < j ≤ 0} f j`
+converge to `v` as `a → -∞` and the partial sums `∑_{0 < j ≤ b} f j` converge to `w` as
+`b → ∞`, then the partial sums `∑_{a < j ≤ b} f j` converge to `v + w` as `a → -∞` and
+`b → ∞`. -/
+theorem Filter.Tendsto.sum_Ioc_prod_atBot_atTop [ContinuousAdd M] {v w : M}
+    (hlow : Tendsto (fun a : ℤ ↦ ∑ j ∈ Finset.Ioc a 0, f j) atBot (𝓝 v))
+    (hhigh : Tendsto (fun b : ℤ ↦ ∑ j ∈ Finset.Ioc 0 b, f j) atTop (𝓝 w)) :
+    Tendsto (fun ab : ℤ × ℤ ↦ ∑ j ∈ Finset.Ioc ab.1 ab.2, f j) (atBot ×ˢ atTop) (𝓝 (v + w)) := by
+  refine ((hlow.comp tendsto_fst).add (hhigh.comp tendsto_snd)).congr' ?_
+  filter_upwards [tendsto_fst.eventually (eventually_le_atBot (0 : ℤ)),
+    tendsto_snd.eventually (eventually_ge_atTop (0 : ℤ))] with ab ha hb
+  rw [Function.comp_apply, Function.comp_apply, ← Finset.sum_union
+    (Finset.Ioc_disjoint_Ioc_of_le le_rfl), Finset.Ioc_union_Ioc_eq_Ioc ha hb]
+
+end PartialSums
