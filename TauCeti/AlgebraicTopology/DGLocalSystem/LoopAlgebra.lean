@@ -11,7 +11,7 @@ public import TauCeti.Topology.PathSpace.Moore
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
@@ -57,8 +57,13 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainToGroupAlgebra_loopChainMap`: naturality in based maps.
 * `TauCeti.loopChainToGroupAlgebra_cubicalChainPoint`: it sends the point chain of a loop to the
   basis element of its class.
+* `TauCeti.loopChainToGroupAlgebra_cubicalChainSumMap`: on the push-forward of the chains of a
+  space along a map into the Moore loops, it is the sum of the classes of the images of the points
+  of the `0`-chain, weighted by their coefficients.
 * `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
   sees the component of dimension zero, and it is surjective.
+* `TauCeti.exists_cubicalChainDifferential_eq_mul_sub_one_of_isUnit`: a chain of degree zero
+  whose image in the group ring is a unit is invertible up to homotopy.
 * `TauCeti.augmentation_loopChainToGroupAlgebra`: it is compatible with the augmentations.
 * `TauCeti.loopChainToGroupAlgebra_koszulTwist`: it is invariant under the Koszul sign twists.
 * `TauCeti.groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom`: the basis element of the
@@ -387,6 +392,25 @@ theorem loopChainToGroupAlgebra_loopChainMap {B' : Type u} [TopologicalSpace B']
     exact loopChainToGroupAlgebraComponent_map f hf n y
   | add x y hx hy => simp only [map_add, hx, hy]
 
+/-- **The degree-zero ring map on a push-forward into the Moore loops.** Push chains of a space `Z`
+forward along `e : Z → Ω_b B` and truncate: the `0`-chain `∑ r_z [z]` of `Z`, read as a finitely
+supported function by `NormalizedCubicalChain.zeroEquiv`, goes to `∑ r_z [e z]`, the classes in
+`π₁(B, b)` of the loops `e z` weighted by the coefficients; the chains of positive dimension of `Z`
+do not contribute. -/
+theorem loopChainToGroupAlgebra_cubicalChainSumMap {Z : Type*} [TopologicalSpace Z]
+    (e : C(Z, MooreLoopSpace B b)) (a : normalizedCubicalChainAlgebra Z R) :
+    loopChainToGroupAlgebra B b R (cubicalChainSumMap R e a) =
+      (NormalizedCubicalChain.zeroEquiv Z R (a 0)).sum fun z r ↦
+        MonoidAlgebra.single (MooreLoopSpace.fundamentalGroupHom b (e z)) r := by
+  rw [loopChainToGroupAlgebra_apply, cubicalChainSumMap_apply]
+  induction a 0 using NormalizedCubicalChain.induction_on with
+  | zero => simp
+  | add a₁ a₂ h₁ h₂ => simp [h₁, h₂, Finsupp.sum_add_index']
+  | smul r a h => simp [h, Finsupp.sum_smul_index', Finsupp.smul_sum]
+  | ofCube σ =>
+    rw [SingularCube.eq_point σ]
+    simp
+
 variable (B b R) in
 /-- **The degree-zero truncation as a morphism of DG algebras**: `loopChainToGroupAlgebra` from
 `C_*(Ω_b B; R)` to the group ring `R[π₁(B, b)]`, trivially graded with the zero differential.  It
@@ -408,6 +432,46 @@ def loopChainToGroupAlgebraDGAlgHom :
 theorem loopChainToGroupAlgebraDGAlgHom_apply (a : loopChainAlgebra B b R) :
     loopChainToGroupAlgebraDGAlgHom B b R a = loopChainToGroupAlgebra B b R a :=
   (rfl)
+
+/-- **A chain of degree zero whose image in the group ring is a unit is invertible up to
+homotopy.** If `a ∈ C_0(Ω_b B; R)` goes to a unit of `R[π₁(B, b)]`, there is a cycle `μ` of degree
+zero such that `a μ - 1` and `μ a - 1` are boundaries of elements of cohomological degree `-1`, the
+chains of dimension one. The point chain of a single loop is an example; it is not invertible in
+`C_*(Ω_b B; R)` itself when the loop has positive length, since lengths add under the Pontryagin
+product and the unit is the constant loop of length zero. -/
+theorem exists_cubicalChainDifferential_eq_mul_sub_one_of_isUnit {a : loopChainAlgebra B b R}
+    (ha : a ∈ cubicalChainGrading (MooreLoopSpace B b) R 0)
+    (hu : IsUnit (loopChainToGroupAlgebra B b R a)) :
+    ∃ μ ∈ cubicalChainGrading (MooreLoopSpace B b) R 0,
+      cubicalChainDifferential (MooreLoopSpace B b) R μ = 0 ∧
+      (∃ k ∈ cubicalChainGrading (MooreLoopSpace B b) R (-1),
+        cubicalChainDifferential (MooreLoopSpace B b) R k = a * μ - 1) ∧
+      ∃ k ∈ cubicalChainGrading (MooreLoopSpace B b) R (-1),
+        cubicalChainDifferential (MooreLoopSpace B b) R k = μ * a - 1 := by
+  obtain ⟨y, rfl⟩ := exists_cubicalChainLof_eq ha 0 (by simp)
+  rw [loopChainToGroupAlgebra_lof_zero] at hu
+  obtain ⟨z, hz⟩ := loopZeroChainToGroupAlgebra_surjective (X := B) (x := b) (R := R)
+    ↑hu.unit⁻¹
+  -- A chain of dimension zero whose image in the group ring is `1` differs from `1` by a
+  -- boundary.
+  have hbd : ∀ w : NormalizedCubicalChain (MooreLoopSpace B b) R 0,
+      loopZeroChainToGroupAlgebra B b R w = 1 →
+      ∃ k ∈ cubicalChainGrading (MooreLoopSpace B b) R (-1),
+        cubicalChainDifferential (MooreLoopSpace B b) R k =
+          cubicalChainLof (MooreLoopSpace B b) R 0 w - 1 := fun w hw ↦ by
+    obtain ⟨c, hc⟩ := (loopZeroChainToGroupAlgebra_eq_zero_iff
+      (w - NormalizedCubicalChain.one (MooreLoopSpace B b) R)).1
+        (by rw [map_sub, hw, loopZeroChainToGroupAlgebra_one, sub_self])
+    refine ⟨cubicalChainLof (MooreLoopSpace B b) R 1 c,
+      by simpa using cubicalChainLof_mem (MooreLoopSpace B b) R c, ?_⟩
+    rw [cubicalChainDifferential_lof_succ, hc, map_sub, cubicalChainLof_one]
+  refine ⟨cubicalChainLof (MooreLoopSpace B b) R 0 z,
+    by simpa using cubicalChainLof_mem (MooreLoopSpace B b) R z,
+    cubicalChainDifferential_lof_zero (MooreLoopSpace B b) R z, ?_, ?_⟩
+  · rw [cubicalChainLof_mul]
+    exact hbd _ (by rw [loopZeroChainToGroupAlgebra_mul, hz, IsUnit.mul_val_inv])
+  · rw [cubicalChainLof_mul]
+    exact hbd _ (by rw [loopZeroChainToGroupAlgebra_mul, hz, IsUnit.val_inv_mul])
 
 end DegreeZero
 
@@ -503,6 +567,32 @@ theorem groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom (γ : MooreLoop
     (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ))
   simpa only [loopZeroChainToGroupAlgebra_ofCube, SingularCube.point_apply,
     ← MonoidAlgebra.of_apply, ← cubicalChainPoint_def] using h
+
+variable {B b R} in
+/-- **The group ring in the cohomology of the loop chains is natural.** For a based map
+`f : (B, b) → (B', b')`, the map that `C_*(Ωf)` induces on cohomology restricts on the group ring
+`R[π₁(B, b)]` to the map of group rings induced by `f` on fundamental groups. -/
+@[simp]
+theorem cohomologyMap_loopChainMap_groupAlgebraToLoopChainCohomology {B' : Type u}
+    [TopologicalSpace B'] {b' : B'} (f : C(B, B')) (hf : f b = b')
+    (a : MonoidAlgebra R (FundamentalGroup B b)) :
+    (loopChainMap R f hf).cohomologyMap (groupAlgebraToLoopChainCohomology B b R a) =
+      groupAlgebraToLoopChainCohomology B' b' R
+        (MonoidAlgebra.mapDomainAlgHom R R (FundamentalGroup.mapOfEq f hf) a) := by
+  -- Both sides are algebra maps in `a`, so it suffices to compare them on the classes of loops.
+  suffices h : (loopChainMap R f hf).cohomologyMap.toAlgHom.comp
+      (groupAlgebraToLoopChainCohomology B b R) = (groupAlgebraToLoopChainCohomology B' b' R).comp
+        (MonoidAlgebra.mapDomainAlgHom R R (FundamentalGroup.mapOfEq f hf)) from
+    AlgHom.congr_fun h a
+  ext g
+  obtain ⟨γ, rfl⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b g
+  simp only [AlgHom.comp_apply, MonoidAlgebra.mapDomainAlgHom_apply,
+    MonoidAlgebra.mapDomain_single, ← MooreLoopSpace.fundamentalGroupHom_map]
+  -- Fold both basis elements back into `of` to evaluate on the classes of loops.
+  simp only [← MonoidAlgebra.of_apply, groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom]
+  -- On the class of the point chain of `γ`, `C_*(Ωf)` gives the point chain of `Ωf γ`.
+  refine (DGAlgHom.cohomologyMap_mk _ _).trans (congrArg _ (Subtype.ext ?_))
+  exact (DGAlgHom.cyclesMap_apply_coe _ _).trans (loopChainMap_cubicalChainPoint R f hf γ)
 
 /-- `groupAlgebraToLoopChainCohomology` lands in degree zero: the group ring is `H₀(Ω_b B; R)`. -/
 theorem groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero

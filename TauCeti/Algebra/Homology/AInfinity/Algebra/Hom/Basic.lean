@@ -16,8 +16,9 @@ A morphism of uncurved nonunital `A∞` algebras `A ⟶ B` is a degree-zero coal
 `b_B ∘ F = F ∘ b_A`.  A coalgebra morphism of reduced tensor coalgebras is determined by its
 suspended Taylor components `Tᶜ(sA) ⟶ sB`, and every family of such components arises from
 exactly one coalgebra morphism
-(`TauCeti.ReducedTensorWords.coalgHomEquivTaylor`).  This coalgebra morphism is therefore the
-stored datum, and the Taylor components are derived from it.
+(`LinearMap.IsConilpotent.coalgHomEquiv` for `Δ = TauCeti.ReducedTensorWords.deconcatenation`).
+This coalgebra morphism is therefore the stored datum, and the Taylor components are derived from
+it.
 
 The bar-differential equation is equivalent to its projection onto single letters, the suspended
 component equation `taylor_B ∘ F = f ∘ b_A` for the Taylor components `f` of `F`
@@ -50,6 +51,9 @@ zero and is a chain map for the unary operations.
   maps, minus `letter`, on the words of length at most `e + 1`.
 * `TauCeti.AInfinityHom.linearPart_m_one`: the linear part is a chain map.
 * `TauCeti.AInfinityHom.linearPart_mem`: the linear part preserves degrees.
+* `TauCeti.AInfinityHom.barMap_apply_eq_self_of_mem_filtration` and
+  `TauCeti.AInfinityHom.taylor_comp_apply_of_mem_filtration_of_taylor_eq_letter`: an `A∞` morphism
+  whose Taylor components equal `letter` up to length `n` acts as the identity on `filtration n`.
 
 ## References
 
@@ -335,6 +339,27 @@ theorem taylor_apply_eq_letter_of_linearPart_eq_id {AA' : AInfinityAlgebra R A}
   intro z hz
   rw [← sub_eq_zero, ← LinearMap.sub_apply]
   exact ReducedTensorWords.apply_eq_zero_of_mem_filtration_one R A h z hz
+
+/-- If the Taylor components of `f` agree with `letter` on the words of length at most `n`, then
+`f.barMap` is the identity on those words. -/
+theorem barMap_apply_eq_self_of_mem_filtration {AA' : AInfinityAlgebra R A}
+    {f : AInfinityHom AA AA'} {n : ℕ}
+    (hf : ∀ w ∈ ReducedTensorWords.filtration R A n,
+      f.taylor w = ReducedTensorWords.letter R A w)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    f.barMap z = z :=
+  f.isCoalgHom_barMap.apply_eq_of_mem_filtration (ReducedTensorWords.isCoalgHom_id A)
+    (fun w hw ↦ by rw [← LinearMap.comp_apply, ← taylor_def, hf w hw, LinearMap.id_apply]) hz
+
+/-- Composing on the right with a morphism whose Taylor components equal `letter` up to length `n`
+leaves the Taylor components unchanged on the words of length at most `n`. -/
+theorem taylor_comp_apply_of_mem_filtration_of_taylor_eq_letter {AA' : AInfinityAlgebra R A}
+    (g : AInfinityHom AA' BB) {f : AInfinityHom AA AA'} {n : ℕ}
+    (hf : ∀ w ∈ ReducedTensorWords.filtration R A n,
+      f.taylor w = ReducedTensorWords.letter R A w)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    (g.comp f).taylor z = g.taylor z := by
+  rw [taylor_comp, LinearMap.comp_apply, barMap_apply_eq_self_of_mem_filtration hf hz]
 
 end AInfinityHom
 

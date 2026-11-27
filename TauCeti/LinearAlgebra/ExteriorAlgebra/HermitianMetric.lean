@@ -128,6 +128,21 @@ theorem sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (B : M →ₛₗ[
   rw [sesqExteriorAlgebra_coe_right B s ⟨t, ht⟩,
     TauCeti.exteriorPower.proj_eq_zero_of_mem_of_ne hpq hs, map_zero, LinearMap.zero_apply]
 
+/-- Two `σ`-sesquilinear forms on `ExteriorAlgebra R M` that agree on all homogeneous pairs
+`⋀[R]^p M × ⋀[R]^q M` are equal. -/
+private theorem sesqForm_ext_exteriorPower
+    {F G : _root_.ExteriorAlgebra R M →ₛₗ[σ] _root_.ExteriorAlgebra R M →ₗ[R] R}
+    (h : ∀ {p q : ℕ} (x : ⋀[R]^p M) (y : ⋀[R]^q M), F x y = G x y) : F = G := by
+  refine LinearMap.ext fun s ↦ LinearMap.ext fun t ↦ ?_
+  induction s using DirectSum.Decomposition.inductionOn fun p ↦ ⋀[R]^p M with
+  | zero => simp
+  | add s₁ s₂ hs₁ hs₂ => simp [hs₁, hs₂]
+  | @homogeneous p s =>
+    induction t using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[R]^q M with
+    | zero => simp
+    | add t₁ t₂ ht₁ ht₂ => simp [ht₁, ht₂]
+    | @homogeneous q t => exact h s t
+
 /-- A `σ`-sesquilinear form on `ExteriorAlgebra R M` equals `B.sesqExteriorAlgebra` if and only if
 it restricts to `B.sesqExteriorPower n` on each homogeneous exterior power `⋀[R]^n M` and makes
 distinct exterior powers orthogonal. -/
@@ -139,20 +154,10 @@ theorem eq_sesqExteriorAlgebra_iff {B : M →ₛₗ[σ] M →ₗ[R] R}
   refine ⟨by rintro rfl; exact ⟨fun _ _ _ ↦ sesqExteriorAlgebra_coe_coe B _ _,
       fun hpq x y ↦ B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq x.property
         y.property⟩,
-    fun ⟨hsame, hne⟩ ↦ ?_⟩
-  refine LinearMap.ext fun s ↦ LinearMap.ext fun t ↦ ?_
-  induction s using DirectSum.Decomposition.inductionOn fun p ↦ ⋀[R]^p M with
-  | zero => simp
-  | add s₁ s₂ hs₁ hs₂ => simp [hs₁, hs₂]
-  | @homogeneous p s =>
-    induction t using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[R]^q M with
-    | zero => simp
-    | add t₁ t₂ ht₁ ht₂ => simp [ht₁, ht₂]
-    | @homogeneous q t =>
-      rcases eq_or_ne p q with rfl | hpq
-      · rw [hsame, sesqExteriorAlgebra_coe_coe]
-      · rw [hne hpq,
-          B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq s.property t.property]
+    fun ⟨hsame, hne⟩ ↦ sesqForm_ext_exteriorPower fun {p q} s t ↦ ?_⟩
+  rcases eq_or_ne p q with rfl | hpq
+  · rw [hsame, sesqExteriorAlgebra_coe_coe]
+  · rw [hne hpq, B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq s.property t.property]
 
 /-- **Gram-determinant formula on the exterior algebra**: in every degree `n` (including `n = 0`),
 `B.sesqExteriorAlgebra` evaluates on pure wedges to `det (B (v i) (w j))`. -/
@@ -204,21 +209,49 @@ theorem sesqExteriorAlgebra_map_map {B : M →ₛₗ[σ] M →ₗ[R] R} {B' : M'
 then `B.sesqExteriorAlgebra` is `σ`-Hermitian. -/
 theorem IsSymm.sesqExteriorAlgebra {B : M →ₛₗ[σ] M →ₗ[R] R} (hσ : Function.Involutive σ)
     (hB : B.IsSymm) : B.sesqExteriorAlgebra.IsSymm := by
-  refine isSymm_def.mpr fun s t ↦ ?_
-  induction s using DirectSum.Decomposition.inductionOn fun p ↦ ⋀[R]^p M with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | @homogeneous p s =>
-    induction t using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[R]^q M with
-    | zero => simp
-    | add x y hx hy => simp [hx, hy]
-    | @homogeneous q t =>
-      rcases eq_or_ne p q with rfl | hpq
-      · simp only [sesqExteriorAlgebra_coe_coe]
-        exact (hB.sesqExteriorPower hσ p).eq s t
-      · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq s.property t.property,
-          B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq.symm t.property s.property,
-          map_zero]
+  let F : _root_.ExteriorAlgebra R M →ₛₗ[σ] _root_.ExteriorAlgebra R M →ₗ[R] R :=
+    { toFun s :=
+        { toFun t := σ (B.sesqExteriorAlgebra t s)
+          map_add' t₁ t₂ := by simp
+          map_smul' r t := by simp [hσ r] }
+      map_add' s₁ s₂ := LinearMap.ext fun t ↦ by simp
+      map_smul' r s := LinearMap.ext fun t ↦ by simp }
+  have hF : F = B.sesqExteriorAlgebra := by
+    refine eq_sesqExteriorAlgebra_iff.mpr ⟨fun n x y ↦ ?_, fun hpq x y ↦ ?_⟩
+    · simp [F, (hB.sesqExteriorPower hσ n).eq]
+    · simp [F, B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq.symm y.property
+        x.property]
+  exact isSymm_def.mpr fun s t ↦ LinearMap.congr_fun₂ hF t s
+
+private theorem ι_mul_ιMulti (x : M) (p : ℕ) (u : Fin p → M) :
+    _root_.ExteriorAlgebra.ι R x * _root_.ExteriorAlgebra.ιMulti R p u =
+      _root_.ExteriorAlgebra.ιMulti R (p + 1) (Matrix.vecCons x u) := by
+  rw [_root_.ExteriorAlgebra.ιMulti_succ_apply]
+  rfl
+
+private theorem sesqExteriorAlgebra_ιMulti_contractLeft_eq_zero (B : M →ₛₗ[σ] M →ₗ[R] R)
+    (f : Module.Dual R M) {p q : ℕ} (hpq : p + 1 ≠ q) (u : Fin p → M) (v : Fin q → M) :
+    B.sesqExteriorAlgebra (_root_.ExteriorAlgebra.ιMulti R p u)
+      (contractLeft (Q := (0 : QuadraticForm R M)) f (_root_.ExteriorAlgebra.ιMulti R q v)) =
+        0 := by
+  rcases q with _ | q
+  · rw [contractLeft_eq_zero_of_mem_exteriorPower_zero f
+      (_root_.ExteriorAlgebra.ιMulti_range R 0 ⟨v, rfl⟩), map_zero]
+  · exact B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (by omega)
+      (_root_.ExteriorAlgebra.ιMulti_range R p ⟨u, rfl⟩)
+      (contractLeft_mem_exteriorPower f (_root_.ExteriorAlgebra.ιMulti_range R (q + 1) ⟨v, rfl⟩))
+
+private theorem sesqExteriorAlgebra_contractLeft_ιMulti_eq_zero (B : M →ₛₗ[σ] M →ₗ[R] R)
+    (f : Module.Dual R M) {p q : ℕ} (hpq : p ≠ q + 1) (u : Fin p → M) (v : Fin q → M) :
+    B.sesqExteriorAlgebra
+      (contractLeft (Q := (0 : QuadraticForm R M)) f (_root_.ExteriorAlgebra.ιMulti R p u))
+      (_root_.ExteriorAlgebra.ιMulti R q v) = 0 := by
+  rcases p with _ | p
+  · rw [contractLeft_eq_zero_of_mem_exteriorPower_zero f
+      (_root_.ExteriorAlgebra.ιMulti_range R 0 ⟨u, rfl⟩), map_zero, LinearMap.zero_apply]
+  · exact B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (by omega)
+      (contractLeft_mem_exteriorPower f (_root_.ExteriorAlgebra.ιMulti_range R (p + 1) ⟨u, rfl⟩))
+      (_root_.ExteriorAlgebra.ιMulti_range R q ⟨v, rfl⟩)
 
 /-- **Basis-free creation–annihilation adjointness**: exterior multiplication by `x` is adjoint to
 contraction by `B x` with respect to `B.sesqExteriorAlgebra`, with no basis or finiteness
@@ -231,33 +264,20 @@ theorem sesqExteriorAlgebra_ι_mul_left (B : M →ₛₗ[σ] M →ₗ[R] R) (x :
       B.sesqExteriorAlgebra.compl₂ (contractLeft (Q := (0 : QuadraticForm R M)) (B x)) := by
     refine LinearMap.ext_on_range (_root_.ExteriorAlgebra.ιMulti_span R M) fun ⟨p, u⟩ ↦ ?_
     refine LinearMap.ext_on_range (_root_.ExteriorAlgebra.ιMulti_span R M) fun ⟨q, v⟩ ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply]
-    rw [← LinearMap.compAlternatingMap_apply (LinearMap.mulLeft R (_root_.ExteriorAlgebra.ι R x)),
-      ← _root_.ExteriorAlgebra.ιMulti_succ_curryLeft, AlternatingMap.curryLeft_apply_apply]
-    rcases q with _ | q
-    · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (Nat.succ_ne_zero p)
+    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, LinearMap.mulLeft_apply, ι_mul_ιMulti]
+    rcases eq_or_ne (p + 1) q with rfl | hpq
+    · rw [sesqExteriorAlgebra_ιMulti_ιMulti, Matrix.det_succ_row_zero, contractLeft_ιMulti, map_sum]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      have hsub : (Matrix.of fun i k : Fin (p + 1) ↦
+          B (Matrix.vecCons x u i) (v k)).submatrix Fin.succ j.succAbove =
+            Matrix.of fun i k ↦ B (u i) (j.removeNth v k) := by
+        ext i k; simp [Fin.removeNth_apply]
+      rw [map_smul, sesqExteriorAlgebra_ιMulti_ιMulti, smul_eq_mul, hsub]
+      simp only [Matrix.of_apply, Matrix.cons_val_zero]
+    · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq
           (_root_.ExteriorAlgebra.ιMulti_range R (p + 1) ⟨_, rfl⟩)
-          (_root_.ExteriorAlgebra.ιMulti_range R 0 ⟨v, rfl⟩),
-        contractLeft_eq_zero_of_mem_exteriorPower_zero (B x)
-          (_root_.ExteriorAlgebra.ιMulti_range R 0 ⟨v, rfl⟩), map_zero]
-    · rcases eq_or_ne p q with rfl | hpq
-      · rw [sesqExteriorAlgebra_ιMulti_ιMulti, Matrix.det_succ_row_zero, contractLeft_ιMulti,
-          map_sum]
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        have hsub : (Matrix.of fun i k : Fin (p + 1) ↦
-            B (Matrix.vecCons x u i) (v k)).submatrix Fin.succ j.succAbove =
-              Matrix.of fun i k ↦ B (u i) (j.removeNth v k) := by
-          ext i k
-          simp [Fin.removeNth_apply]
-        rw [map_smul, sesqExteriorAlgebra_ιMulti_ιMulti, smul_eq_mul, hsub]
-        simp only [Matrix.of_apply, Matrix.cons_val_zero]
-      · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (by omega)
-            (_root_.ExteriorAlgebra.ιMulti_range R (p + 1) ⟨_, rfl⟩)
-            (_root_.ExteriorAlgebra.ιMulti_range R (q + 1) ⟨v, rfl⟩),
-          B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq
-            (_root_.ExteriorAlgebra.ιMulti_range R p ⟨u, rfl⟩)
-            (contractLeft_mem_exteriorPower (B x)
-              (_root_.ExteriorAlgebra.ιMulti_range R (q + 1) ⟨v, rfl⟩))]
+          (_root_.ExteriorAlgebra.ιMulti_range R q ⟨v, rfl⟩),
+        sesqExteriorAlgebra_ιMulti_contractLeft_eq_zero B (B x) hpq u v]
   exact LinearMap.congr_fun₂ key s t
 
 /-- **Basis-free right creation–annihilation adjointness**: when `B` is `σ`-Hermitian,
@@ -270,33 +290,22 @@ theorem sesqExteriorAlgebra_ι_mul_right {B : M →ₛₗ[σ] M →ₗ[R] R} (hB
       B.sesqExteriorAlgebra.comp (contractLeft (Q := (0 : QuadraticForm R M)) (B x)) := by
     refine LinearMap.ext_on_range (_root_.ExteriorAlgebra.ιMulti_span R M) fun ⟨p, u⟩ ↦ ?_
     refine LinearMap.ext_on_range (_root_.ExteriorAlgebra.ιMulti_span R M) fun ⟨q, v⟩ ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply]
-    rw [← LinearMap.compAlternatingMap_apply (LinearMap.mulLeft R (_root_.ExteriorAlgebra.ι R x)),
-      ← _root_.ExteriorAlgebra.ιMulti_succ_curryLeft, AlternatingMap.curryLeft_apply_apply]
-    rcases p with _ | p
-    · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (Nat.zero_ne_add_one q)
-          (_root_.ExteriorAlgebra.ιMulti_range R 0 ⟨u, rfl⟩)
+    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, LinearMap.mulLeft_apply, ι_mul_ιMulti]
+    rcases eq_or_ne p (q + 1) with rfl | hpq
+    · rw [sesqExteriorAlgebra_ιMulti_ιMulti, Matrix.det_succ_column_zero, contractLeft_ιMulti,
+        map_sum, LinearMap.sum_apply]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      have hsub : (Matrix.of fun j k : Fin (q + 1) ↦
+          B (u j) (Matrix.vecCons x v k)).submatrix i.succAbove Fin.succ =
+            Matrix.of fun j k ↦ B (i.removeNth u j) (v k) := by
+        ext j k; simp [Fin.removeNth_apply]
+      rw [map_smulₛₗ, LinearMap.smul_apply, sesqExteriorAlgebra_ιMulti_ιMulti, smul_eq_mul,
+        map_mul, map_pow, map_neg, map_one, hB.eq x (u i), hsub]
+      simp only [Matrix.of_apply, Matrix.cons_val_zero]
+    · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq
+          (_root_.ExteriorAlgebra.ιMulti_range R p ⟨u, rfl⟩)
           (_root_.ExteriorAlgebra.ιMulti_range R (q + 1) ⟨_, rfl⟩),
-        contractLeft_eq_zero_of_mem_exteriorPower_zero (B x)
-          (_root_.ExteriorAlgebra.ιMulti_range R 0 ⟨u, rfl⟩), map_zero, LinearMap.zero_apply]
-    · rcases eq_or_ne p q with rfl | hpq
-      · rw [sesqExteriorAlgebra_ιMulti_ιMulti, Matrix.det_succ_column_zero, contractLeft_ιMulti,
-          map_sum, LinearMap.sum_apply]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        have hsub : (Matrix.of fun j k : Fin (p + 1) ↦
-            B (u j) (Matrix.vecCons x v k)).submatrix i.succAbove Fin.succ =
-              Matrix.of fun j k ↦ B (i.removeNth u j) (v k) := by
-          ext j k; simp [Fin.removeNth_apply]
-        rw [map_smulₛₗ, LinearMap.smul_apply, sesqExteriorAlgebra_ιMulti_ιMulti, smul_eq_mul,
-          map_mul, map_pow, map_neg, map_one, hB.eq x (u i), hsub]
-        simp only [Matrix.of_apply, Matrix.cons_val_zero]
-      · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne (by omega)
-            (_root_.ExteriorAlgebra.ιMulti_range R (p + 1) ⟨u, rfl⟩)
-            (_root_.ExteriorAlgebra.ιMulti_range R (q + 1) ⟨_, rfl⟩),
-          B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq
-            (contractLeft_mem_exteriorPower (B x)
-              (_root_.ExteriorAlgebra.ιMulti_range R (p + 1) ⟨u, rfl⟩))
-            (_root_.ExteriorAlgebra.ιMulti_range R q ⟨v, rfl⟩)]
+        sesqExteriorAlgebra_contractLeft_ιMulti_eq_zero B (B x) hpq u v]
   exact LinearMap.congr_fun₂ key s t
 
 /-- **Basis-free degree-scaling adjointness**: the degree scaling by `r : Rˣ` on the left is adjoint
@@ -305,19 +314,16 @@ theorem sesqExteriorAlgebra_degreeScaling_left (B : M →ₛₗ[σ] M →ₗ[R] 
     (s t : _root_.ExteriorAlgebra R M) :
     B.sesqExteriorAlgebra (degreeScaling r s) t =
       B.sesqExteriorAlgebra s (degreeScaling (Units.map σ.toMonoidHom r) t) := by
-  induction s using DirectSum.Decomposition.inductionOn fun p ↦ ⋀[R]^p M with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | @homogeneous p s =>
-    induction t using DirectSum.Decomposition.inductionOn fun q ↦ ⋀[R]^q M with
-    | zero => simp
-    | add x y hx hy => simp [hx, hy]
-    | @homogeneous q t =>
-      rw [degreeScaling_of_mem_exteriorPower r s.property,
-        degreeScaling_of_mem_exteriorPower (Units.map σ.toMonoidHom r) t.property]
-      rcases eq_or_ne p q with rfl | hpq
-      · simp
-      · simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq s.property t.property]
+  have h : B.sesqExteriorAlgebra.comp (degreeScaling r).toLinearMap =
+      B.sesqExteriorAlgebra.compl₂ (degreeScaling (Units.map σ.toMonoidHom r)).toLinearMap := by
+    refine sesqForm_ext_exteriorPower fun {p q} x y ↦ ?_
+    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, AlgEquiv.toLinearMap_apply,
+      degreeScaling_of_mem_exteriorPower _ x.property,
+      degreeScaling_of_mem_exteriorPower _ y.property]
+    rcases eq_or_ne p q with rfl | hpq
+    · simp
+    · simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq x.property y.property]
+  exact LinearMap.congr_fun₂ h s t
 
 /-- **Basis-free degree-scaling rescaling**: on `s ∈ ⋀[R]^p M`, `B.sesqExteriorAlgebra` rescales
 under `degreeScaling r` in both arguments by `(σ r * r) ^ p`. -/
@@ -380,3 +386,19 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_one (σ : R →+* R) :
     simp [hne]
 
 end Module.Basis
+
+namespace ExteriorAlgebra
+
+/-- **The Gram-determinant formula for the wedge-basis coordinate form**: on decomposable wedges of
+every degree `p`, `toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra 1` evaluates to the Gram
+determinant of `toLinearMapₛₗ₂ σ b b 1`. -/
+theorem toLinearMapₛₗ₂_ιMulti_ιMulti {R M I : Type*} [CommRing R] {σ : R →+* R}
+    [AddCommGroup M] [Module R M] [Fintype I] [LinearOrder I]
+    (b : _root_.Module.Basis I R M) (p : ℕ) (x y : Fin p → M) :
+    toLinearMapₛₗ₂ σ b.ExteriorAlgebra b.ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) R)
+        (_root_.ExteriorAlgebra.ιMulti R p x) (_root_.ExteriorAlgebra.ιMulti R p y) =
+      (Matrix.of fun i j ↦
+        toLinearMapₛₗ₂ σ b b (1 : Matrix I I R) (x i) (y j)).det := by
+  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_one σ, LinearMap.sesqExteriorAlgebra_ιMulti_ιMulti]
+
+end ExteriorAlgebra

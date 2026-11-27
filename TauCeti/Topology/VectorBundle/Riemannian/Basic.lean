@@ -40,12 +40,19 @@ continuous reference inner products on the fibres.
 * `Bundle.Trivialization.continuousAt_norm_symmL`: in a continuous Riemannian bundle, the fiber
   norm of `e.symmL ℝ (b x) (w x)` is continuous at `x₀` when `b` and `w` are continuous at `x₀`
   and `b x₀ ∈ e.baseSet`.
+* `Bundle.Trivialization.continuousOn_innerSL_comp_symmL`: the covectors `⟪η x, ·⟫` of a
+  section continuous on a subset of the base set of a trivialization, read in it, are continuous
+  there.
 * `IsOpen.norm_lt_bundle`: the vectors of norm less than `r` over an open set form an open subset
   of the total space.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
   subset of the total space.
 * `IsCompact.norm_le_bundle_of_continuous`: the same for a continuous fiber norm with locally
   bounded trivializations.
+* `Bundle.RiemannianMetric.ext`: bare Riemannian metrics are equal when their fibrewise inner
+  products agree.
+* `Bundle.RiemannianMetric.inner_riemannianBundle`: the inner product induced by
+  `[RiemannianBundle]` is `RiemannianBundle.g.inner`.
 * `Bundle.RiemannianMetric.isSymm_toBilinForm_inner`: the inner product of a Riemannian metric
   on a fiber is a symmetric bilinear form.
 * `Bundle.RiemannianMetric.inner_self_nonneg`: the diagonal values `g(v, v)` of a metric are
@@ -106,6 +113,22 @@ theorem Bundle.Trivialization.continuousAt_norm_symmL (e : Trivialization F (π 
     simp [e.symmL_apply hx]
   exact (TauCeti.continuous_norm_bundle F E).continuousAt.comp hsec
 
+/-- **Pairing with a continuous section in a trivialization.** For a section `η` of a continuous
+Riemannian bundle with finite-dimensional model fiber, continuous on a subset `s` of the base set
+of a trivialization `e`, the covectors `⟪η x, ·⟫` read in `e`, `x ↦ ⟪η x, ·⟫ ∘L e.symmL ℝ x`,
+depend continuously on `x ∈ s`. -/
+theorem Bundle.Trivialization.continuousOn_innerSL_comp_symmL [FiniteDimensional ℝ F]
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {η : ∀ x, E x} {s : Set B}
+    (hs : s ⊆ e.baseSet) (hη : ContinuousOn (fun x ↦ TotalSpace.mk' F x (η x)) s) :
+    ContinuousOn (fun x ↦ innerSL ℝ (η x) ∘L e.symmL ℝ x) s := by
+  refine continuousOn_clm_apply.2 fun v ↦ ?_
+  -- The section `x ↦ e.symm x v` is continuous on `s`.
+  have hv : ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.symm x v)) s :=
+    (e.continuousOn_symm.mono (prod_mono hs subset_rfl)).comp
+      (continuousOn_id.prodMk continuousOn_const) fun x hx ↦ ⟨hx, mem_univ v⟩
+  refine (hη.inner_bundle hv).congr fun x hx ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, e.symmL_apply (hs hx)]
+
 /-- In a continuous Riemannian bundle, the vectors of norm less than `r` lying over an open subset
 of the base form an open subset of the total space. -/
 theorem IsOpen.norm_lt_bundle {U : Set B} (hU : IsOpen U) (r : ℝ) :
@@ -154,10 +177,12 @@ theorem IsCompact.norm_le_bundle_of_continuous
         exact mem_closedBall_zero_iff.2 <| h.trans <|
           (mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
             (mul_le_mul_of_nonneg_left hzr (abs_nonneg C))
+  -- `hv` is about the second coordinate of `e`, which is `(e z).2` by definition.
   replace hv : Tendsto (fun z ↦ (e z).2) (𝒰 : Filter (TotalSpace F E)) (𝓝 v) := hv
   -- So the vectors converge to the vector with coordinates `(x, v)`.
   have hsource : e.source ∈ 𝒰 := mem_of_superset hU fun z hz ↦ e.mem_source.2 hz.1
   have he : Tendsto e 𝒰 (𝓝 (x, v)) :=
+    -- A pair is determined by its components; the second components agree by `rfl`.
     (hx.prodMk_nhds hv).congr' (mem_of_superset hsource fun z hz ↦
       show (z.proj, (e z).2) = e z from Prod.ext (e.coe_fst hz).symm rfl)
   have hlim : (𝒰 : Filter (TotalSpace F E)) ≤ 𝓝 (e.toOpenPartialHomeomorph.symm (x, v)) :=
@@ -188,6 +213,24 @@ namespace Bundle.RiemannianMetric
 
 variable {B : Type*} {E : B → Type*} [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)]
+
+/-- Bare Riemannian metrics are equal when all their fibrewise inner products agree. -/
+@[ext]
+theorem ext {g h : RiemannianMetric E} (heq : ∀ b v w, g.inner b v w = h.inner b v w) :
+    g = h := by
+  cases g
+  cases h
+  congr 1
+  funext b
+  ext v w
+  exact heq b v w
+
+/-- The inner product induced by `[RiemannianBundle E]` is given by `RiemannianBundle.g.inner`. -/
+theorem inner_riemannianBundle [RiemannianBundle E]
+    [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)]
+    (b : B) (v w : E b) :
+    Inner.inner ℝ v w = (RiemannianBundle.g (E := E)).inner b v w :=
+  rfl
 
 /-- The inner product of a Riemannian metric on a fiber is a symmetric bilinear form. -/
 theorem isSymm_toBilinForm_inner (g : RiemannianMetric E) (b : B) :

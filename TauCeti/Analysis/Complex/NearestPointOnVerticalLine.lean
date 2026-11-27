@@ -18,12 +18,12 @@ import TauCeti.Topology.MetricSpace.Pseudo.NearestPoint
 Let `Z ⊆ ℂ` be closed and discrete in the half-plane `θ < re s`, in the sense
 `Zᶜ ∈ Filter.codiscreteWithin {s | θ < s.re}`: every point of the half-plane has a neighbourhood
 meeting `Z` in finitely many points (`codiscreteWithin_iff_locallyFiniteComplementWithin`). Let
-every point of `Z` have real part `< σ`, and let some point of `Z` have real part `> θ`. Then a
+every point of `Z` have real part `≤ σ`, and let some point of `Z` have real part `> θ`. Then a
 ball of radius `r ≤ σ - θ` about a point of the vertical line `re s = σ` meets `Z` in a single
 point, in one of two forms:
 
-* (A) the ball about a point `σ + γ i` meets `Z` in a single point `ρ`, and the ball of the same
-  radius about the real point `σ` does not meet `Z`; or
+* (A) the ball about a point `σ + γ i` meets `Z` in a single point `ρ ≠ σ + γ i`, and the ball of
+  the same radius about the real point `σ` does not meet `Z`; or
 * (B) `Z` has a real point `β > θ` of largest real part, and the ball about `σ` meets `Z` in `β`
   alone.
 
@@ -39,7 +39,8 @@ ball meets no point of `Z`, put `D = a`; otherwise let `w₀` be the point of `Z
 point of `Z` (`ρ₁` itself when the ball is empty) is closer than `D` to the line `re s = σ`,
 moving along the line to its height gives (A): the height `γ` is chosen off the finitely many
 heights at which two distinct points of `Z` in a closed ball about `σ + (im ρ₁) i` are
-equidistant from `σ + γ i` (`TauCeti.subsingleton_setOfPred_dist_eq_dist`). Otherwise `w₀` is real
+equidistant from `σ + γ i` (`TauCeti.subsingleton_setOfPred_dist_eq_dist`), and off the heights
+of these points, so that the centre `σ + γ i` is not itself in `Z`. Otherwise `w₀` is real
 and of largest real part, which is (B). Each closed ball used lies in the half-plane
 (`Complex.closedBall_subset_setOfPred_lt_re`), so it meets `Z` in finitely many points
 (`IsCompact.finite_inter_of_compl_mem_codiscreteWithin`, the local finiteness of `Z`).
@@ -121,17 +122,17 @@ private theorem exists_real_ball_inter_eq_singleton {Z : Set ℂ} {θ σ : ℝ}
   obtain ⟨R, hR, hRθ⟩ := exists_between hθ
   obtain ⟨r, hr, hrR, hball⟩ := exists_ball_inter_eq_singleton_of_finite
     (finite_closedBall_inter hZ (c := σ) (R := R) (by rw [ofReal_re]; linarith)) hw₀ hR
-    fun w hw h ↦ (hreal w hw h).trans hw₀β.symm
+    fun w hw h ↦ (hreal w hw.2 h).trans hw₀β.symm
   exact ⟨β, hw₀β ▸ hw₀, by linarith, fun ρ hρ ↦ by linarith [hre ρ hρ], r, by linarith,
     by linarith, hw₀β ▸ hball⟩
 
-/-- Case (A) of the dichotomy. Let every point of `Z` have real part `< σ`, let no point of `Z`
+/-- Case (A) of the dichotomy. Let every point of `Z` have real part `≤ σ`, let no point of `Z`
 lie at distance `< D` from `σ`, with `D < σ - θ`, and let `ρ₁ ∈ Z` satisfy `σ - ρ₁.re < D`. Then
 some point `σ + γ i` of the line `re s = σ` has a unique nearest point `ρ` in `Z`, with
 `0 < dist (σ + γ i) ρ`, isolated by a ball of radius `r ≤ σ - θ` that `Z` meets in `ρ` alone; the
 ball of radius `r` about `σ` does not meet `Z`. -/
 private theorem exists_ball_inter_eq_singleton_of_re_lt {Z : Set ℂ} {θ σ D : ℝ}
-    (hZ : Zᶜ ∈ codiscreteWithin {s : ℂ | θ < s.re}) (hσ : ∀ ρ ∈ Z, ρ.re < σ) {ρ₁ : ℂ}
+    (hZ : Zᶜ ∈ codiscreteWithin {s : ℂ | θ < s.re}) (hσ : ∀ ρ ∈ Z, ρ.re ≤ σ) {ρ₁ : ℂ}
     (hρ₁ : ρ₁ ∈ Z) (hD₁ : σ - ρ₁.re < D) (hDθ : D < σ - θ)
     (hD : ∀ w ∈ Z, D ≤ dist (σ : ℂ) w) :
     ∃ γ : ℝ, ∃ ρ ∈ Z, ∃ r, 0 < dist ((σ : ℂ) + γ * I) ρ ∧ dist ((σ : ℂ) + γ * I) ρ < r ∧
@@ -147,17 +148,19 @@ private theorem exists_ball_inter_eq_singleton_of_re_lt {Z : Set ℂ} {θ σ D :
   have hρ₁c : dist ((σ : ℂ) + ρ₁.im * I) ρ₁ = σ - ρ₁.re := by
     -- `σ + (im ρ₁) i - ρ₁` is the nonnegative real number `σ - re ρ₁`
     have hdiff : (σ : ℂ) + ρ₁.im * I - ρ₁ = ((σ - ρ₁.re : ℝ) : ℂ) := Complex.ext (by simp) (by simp)
-    rw [dist_eq, hdiff, Complex.norm_of_nonneg (sub_nonneg.2 (hσ ρ₁ hρ₁).le)]
+    rw [dist_eq, hdiff, Complex.norm_of_nonneg (sub_nonneg.2 (hσ ρ₁ hρ₁))]
   have hF₁ : ρ₁ ∈ F := hFdef ▸ ⟨mem_closedBall'.2 (by linarith), hρ₁⟩
-  -- the heights at which two points of `F` are equidistant
-  have hB : (⋃ p ∈ F, ⋃ q ∈ F,
-      {γ : ℝ | p ≠ q ∧ dist ((σ : ℂ) + γ * I) p = dist ((σ : ℂ) + γ * I) q}).Finite :=
-    hF.biUnion fun p hp ↦ hF.biUnion fun q hq ↦ by
+  -- the heights at which two points of `F` are equidistant, and the heights of the points of `F`;
+  -- two distinct points with real parts `≤ σ` are mirror images in the line only if both lie on it
+  have hB : ((⋃ p ∈ F, ⋃ q ∈ F,
+      {γ : ℝ | p ≠ q ∧ dist ((σ : ℂ) + γ * I) p = dist ((σ : ℂ) + γ * I) q}) ∪ im '' F).Finite :=
+    (hF.biUnion fun p hp ↦ hF.biUnion fun q hq ↦ by
       by_cases hpq : p = q
       · simp [hpq]
       · rw [hFdef] at hp hq
-        exact (subsingleton_setOfPred_dist_eq_dist hpq
-          (Or.inl (by linarith [hσ p hp.2, hσ q hq.2]))).finite.subset fun γ h ↦ h.2
+        refine (subsingleton_setOfPred_dist_eq_dist hpq (not_and_or.1 fun h ↦ hpq ?_)).finite.subset
+          fun γ h ↦ h.2
+        exact Complex.ext (by linarith [hσ p hp.2, hσ q hq.2, h.1]) h.2).union (hF.image im)
   obtain ⟨γ, hγ, hγB⟩ := ((Ioo_infinite (by linarith : ρ₁.im - ε < ρ₁.im + ε)).sdiff hB).nonempty
   -- name the centre `z = σ + γ i`; `subst` restores it before the final `exact`
   obtain ⟨z, hz⟩ : ∃ z : ℂ, z = σ + γ * I := ⟨_, rfl⟩
@@ -176,16 +179,16 @@ private theorem exists_ball_inter_eq_singleton_of_re_lt {Z : Set ℂ} {θ σ D :
     (finite_closedBall_inter hZ (c := z) (R := D) (by rw [hz, hre]; linarith)) hρZ
     (by linarith) fun w hw h ↦ by
       have hwF : w ∈ F :=
-        hFdef ▸ ⟨mem_closedBall'.2 ((dist_triangle _ z w).trans (by linarith)), hw⟩
+        hFdef ▸ ⟨mem_closedBall'.2 ((dist_triangle _ z w).trans (by linarith)), hw.2⟩
       by_contra hne
-      exact hγB (mem_biUnion hwF (mem_biUnion hρ ⟨hne, hz ▸ le_antisymm h (hmin w hwF)⟩))
-  have hpos : 0 < dist z ρ := by linarith [re_sub_re_le_dist z ρ, hσ ρ hρZ, hz ▸ hre γ]
+      exact hγB (Or.inl (mem_biUnion hwF (mem_biUnion hρ ⟨hne, hz ▸ le_antisymm h (hmin w hwF)⟩)))
+  have hpos : 0 < dist z ρ := dist_pos.2 fun h ↦ hγB (Or.inr ⟨ρ, hρ, by rw [← h, hz]; simp⟩)
   subst hz
   exact ⟨γ, ρ, hρZ, r, hpos, hr, by linarith, hball,
     eq_empty_of_forall_notMem fun w hw ↦ by linarith [mem_ball'.1 hw.1, hD w hw.2]⟩
 
 /-- **Choosing the expansion point.** Let `Z ⊆ ℂ` be closed and discrete in the half-plane
-`θ < re s` (`Zᶜ ∈ codiscreteWithin {s | θ < s.re}`), let every point of `Z` have real part `< σ`,
+`θ < re s` (`Zᶜ ∈ codiscreteWithin {s | θ < s.re}`), let every point of `Z` have real part `≤ σ`,
 and let some point of `Z` have real part `> θ`. Then either
 * (A) there are a real `γ`, a point `ρ ∈ Z` and a radius `r ≤ σ - θ` with
   `0 < dist (σ + γ i) ρ < r`, such that the ball of radius `r` about `σ + γ i` meets `Z` in `ρ`
@@ -194,10 +197,11 @@ and let some point of `Z` have real part `> θ`. Then either
   `r` with `σ - β < r ≤ σ - θ` such that the ball of radius `r` about `σ` meets `Z` in `β`
   alone.
 
-The conjuncts `0 < dist (σ + γ i) ρ` of (A) (a consequence of `ρ.re < σ`) and `θ < β` of (B) (a
-consequence of `σ - β < r ≤ σ - θ`) follow from the others and are stated for convenience. -/
+Points of `Z` may lie on the line `re s = σ`; in (A) the centre `σ + γ i` is still not in `Z`
+(`0 < dist (σ + γ i) ρ`). The conjunct `θ < β` of (B) follows from `σ - β < r ≤ σ - θ` and is
+stated for convenience. -/
 theorem exists_ball_inter_eq_singleton_or_exists_real_ball_inter_eq_singleton {Z : Set ℂ}
-    {θ σ : ℝ} (hZ : Zᶜ ∈ codiscreteWithin {s : ℂ | θ < s.re}) (hσ : ∀ ρ ∈ Z, ρ.re < σ)
+    {θ σ : ℝ} (hZ : Zᶜ ∈ codiscreteWithin {s : ℂ | θ < s.re}) (hσ : ∀ ρ ∈ Z, ρ.re ≤ σ)
     (hθ : ∃ ρ ∈ Z, θ < ρ.re) :
     (∃ γ : ℝ, ∃ ρ ∈ Z, ∃ r, 0 < dist ((σ : ℂ) + γ * I) ρ ∧ dist ((σ : ℂ) + γ * I) ρ < r ∧
       r ≤ σ - θ ∧ ball ((σ : ℂ) + γ * I) r ∩ Z = {ρ} ∧ ball (σ : ℂ) r ∩ Z = ∅) ∨

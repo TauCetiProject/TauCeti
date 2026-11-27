@@ -23,7 +23,7 @@ These formulas compare poles of a Laurent series and its powers.
 
 public section
 
-open scoped LaurentSeries
+open scoped LaurentSeries PowerSeries
 
 namespace LaurentSeries
 
@@ -64,6 +64,17 @@ end LaurentSeries
 namespace TauCeti
 
 open _root_.HahnSeries
+
+/-- A Laurent series with order at least `a` factors as `Xᵃ` times a power series. -/
+theorem LaurentSeries.exists_single_mul_of_le_orderTop {R : Type*} [Semiring R] {a : ℤ}
+    {f : R⸨X⸩} (hf : (a : WithTop ℤ) ≤ f.orderTop) :
+    ∃ p : R⟦X⟧, single a 1 * (p : R⸨X⸩) = f := by
+  refine ⟨PowerSeries.mk fun n ↦ f.coeff (a + n), ?_⟩
+  ext n
+  rw [coeff_single_mul, one_mul, PowerSeries.coeff_coe]
+  split_ifs with hn
+  · exact (le_orderTop_iff_forall.mp hf n (by exact_mod_cast sub_neg.mp hn)).symm
+  · simp [Int.natAbs_of_nonneg (le_of_not_gt hn)]
 
 variable {k : Type*} [Semiring k] [NoZeroDivisors k] {n : ℕ}
 

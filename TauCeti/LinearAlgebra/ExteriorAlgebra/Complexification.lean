@@ -78,28 +78,6 @@ theorem sesqComplexification_sesqExteriorAlgebra_subtype_baseChange (B : BilinFo
     (B := B.sesqExteriorPower n) (B' := B.sesqExteriorAlgebra)
     (B.sesqExteriorAlgebra_coe_coe) x y
 
-/-- **Distinct complexified exterior powers are orthogonal**: for `p ≠ q`, the subspaces
-`(⋀[ℝ]^p V).baseChange ℂ` and `(⋀[ℝ]^q V).baseChange ℂ` of `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V` are
-orthogonal with respect to `B.sesqExteriorAlgebra.sesqComplexification`. -/
-theorem sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
-    (B : BilinForm ℝ V) {p q : ℕ} (hpq : p ≠ q) {x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V}
-    (hx : x ∈ (⋀[ℝ]^p V).baseChange ℂ) (hy : y ∈ (⋀[ℝ]^q V).baseChange ℂ) :
-    sesqComplexification B.sesqExteriorAlgebra x y = 0 := by
-  rw [Submodule.baseChange_eq_span] at hx hy
-  induction hx using Submodule.span_induction with
-  | mem _ hu =>
-    obtain ⟨u, hu, rfl⟩ := hu
-    induction hy using Submodule.span_induction with
-    | mem _ hv =>
-      obtain ⟨v, hv, rfl⟩ := hv
-      simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq hu hv]
-    | zero => simp
-    | add _ _ _ _ hv₁ hv₂ => simp [TensorProduct.mk_apply] at hv₁ hv₂ ⊢; simp [hv₁, hv₂]
-    | smul c _ _ hv => simp [TensorProduct.mk_apply] at hv ⊢; simp [hv]
-  | zero => simp
-  | add _ _ _ _ hu₁ hu₂ => simp [hu₁, hu₂]
-  | smul c _ _ hu => simp [hu]
-
 /-- **Distinct complexified exterior powers are orthogonal** (on `subtype.baseChange` images): for
 `p ≠ q`, `(⋀[ℝ]^p V).subtype.baseChange ℂ x` and `(⋀[ℝ]^q V).subtype.baseChange ℂ y` are
 orthogonal with respect to `B.sesqExteriorAlgebra.sesqComplexification`. -/
@@ -108,13 +86,27 @@ theorem sesqComplexification_sesqExteriorAlgebra_subtype_baseChange_eq_zero_of_n
     (x : ℂ ⊗[ℝ] ⋀[ℝ]^p V) (y : ℂ ⊗[ℝ] ⋀[ℝ]^q V) :
     sesqComplexification B.sesqExteriorAlgebra
         ((⋀[ℝ]^p V).subtype.baseChange ℂ x) ((⋀[ℝ]^q V).subtype.baseChange ℂ y) = 0 := by
-  have hmem {k : ℕ} (z : ℂ ⊗[ℝ] ⋀[ℝ]^k V) :
-      (⋀[ℝ]^k V).subtype.baseChange ℂ z ∈ (⋀[ℝ]^k V).baseChange ℂ := by
-    have h : LinearMap.range ((⋀[ℝ]^k V).subtype.baseChange ℂ) = (⋀[ℝ]^k V).baseChange ℂ := by
-      rw [← LinearMap.baseChange_range, Submodule.range_subtype]
-    exact h ▸ LinearMap.mem_range_self _ z
-  exact B.sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne hpq
-    (hmem x) (hmem y)
+  induction x using TensorProduct.inductionOn with
+  | tmul c u =>
+    induction y using TensorProduct.inductionOn with
+    | tmul d v =>
+      simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq u.property v.property]
+    | add y₁ y₂ hy₁ hy₂ => rw [map_add, map_add, hy₁, hy₂, add_zero]
+  | add x₁ x₂ hx₁ hx₂ => rw [map_add, map_add, LinearMap.add_apply, hx₁, hx₂, add_zero]
+
+/-- **Distinct complexified exterior powers are orthogonal**: for `p ≠ q`, the subspaces
+`(⋀[ℝ]^p V).baseChange ℂ` and `(⋀[ℝ]^q V).baseChange ℂ` of `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V` are
+orthogonal with respect to `B.sesqExteriorAlgebra.sesqComplexification`. -/
+theorem sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
+    (B : BilinForm ℝ V) {p q : ℕ} (hpq : p ≠ q) {x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V}
+    (hx : x ∈ (⋀[ℝ]^p V).baseChange ℂ) (hy : y ∈ (⋀[ℝ]^q V).baseChange ℂ) :
+    sesqComplexification B.sesqExteriorAlgebra x y = 0 := by
+  have hrange (k : ℕ) :
+      LinearMap.range ((⋀[ℝ]^k V).subtype.baseChange ℂ) = (⋀[ℝ]^k V).baseChange ℂ := by
+    rw [← LinearMap.baseChange_range, Submodule.range_subtype]
+  obtain ⟨u, rfl⟩ := (hrange p).symm ▸ hx
+  obtain ⟨v, rfl⟩ := (hrange q).symm ▸ hy
+  exact B.sesqComplexification_sesqExteriorAlgebra_subtype_baseChange_eq_zero_of_ne hpq u v
 
 /-- **Complexification commutes with exterior Gram forms on the exterior algebra**: under
 `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`, `B.sesqComplexification.sesqExteriorAlgebra` on

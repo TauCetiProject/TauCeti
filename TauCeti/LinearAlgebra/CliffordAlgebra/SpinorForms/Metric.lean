@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ExteriorAlgebra.HermitianMetric
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Tensor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.SpinorForms.Basic
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 
 /-!
 # Metric comparison for complexified exterior forms and spinor modules

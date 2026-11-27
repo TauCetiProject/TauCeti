@@ -67,6 +67,19 @@ theorem rowLen_rect (d m i : ℕ) : (rect d m).rowLen i = if i < d then m else 0
 theorem colLen_rect (d m j : ℕ) : (rect d m).colLen j = if j < m then d else 0 := by
   rw [← rowLen_transpose, transpose_rect, rowLen_rect]
 
+/-- **A Young diagram fits in the `d × m` rectangle** exactly when it has at most `d` rows and its
+first row has at most `m` cells. -/
+theorem le_rect_iff {μ : YoungDiagram} {d m : ℕ} :
+    μ ≤ rect d m ↔ μ.colLen 0 ≤ d ∧ μ.rowLen 0 ≤ m := by
+  refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨hd, hm⟩ c hc => ?_⟩
+  · by_contra! hlt
+    exact (mem_rect.mp (h (mem_iff_lt_colLen.mpr hlt))).1.false
+  · by_contra! hlt
+    exact (mem_rect.mp (h (mem_iff_lt_rowLen.mpr hlt))).2.false
+  · have hrow := mem_iff_lt_rowLen.mp hc
+    exact mem_rect.mpr ⟨(lt_colLen_zero_of_mem hc).trans_le hd,
+      (hrow.trans_le (μ.rowLen_anti 0 c.1 c.1.zero_le)).trans_le hm⟩
+
 end YoungDiagram
 
 namespace TauCeti.BoundedSSYT

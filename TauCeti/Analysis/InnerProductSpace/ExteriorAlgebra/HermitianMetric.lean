@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Complexification
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.SesquilinearForm
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
