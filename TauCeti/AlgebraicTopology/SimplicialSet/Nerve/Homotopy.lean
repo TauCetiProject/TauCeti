@@ -56,6 +56,8 @@ lemma mapNerveCylinderObj_def {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) {n : Si
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
   rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def, ← Functor.whiskeringLeft_obj_map,
     nerve.map_mk₁]
+  -- `evaluationUncurried` on `(σ, (K.mapComposableArrows _ ≫ _))` and on `((σ ⋙ K), _)` agree
+  -- definitionally on both objects and morphisms.
   exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 
 @[simp] lemma whiskerRight_mapNerveCylinderObj {F₀ F₁ : B ⥤ C} (η : F₀ ⟶ F₁) (G : C ⥤ D)

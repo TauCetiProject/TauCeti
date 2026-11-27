@@ -123,6 +123,8 @@ lemma opIso_hom_app_nerveEquiv_symm (x : Cᵒᵖ) :
 lemma opIso_hom_naturality {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D) :
     nerveMap F.op ≫ (opIso D).hom = (opIso C).hom ≫ SSet.opFunctor.map (nerveMap F) := by
   ext ⟨m⟩ G : 4; induction m using SimplexCategory.rec with | _ m =>
+  -- `F.op` followed by `opIso` and `opObjEquiv` agrees definitionally on objects and morphisms
+  -- with applying `F` after `opIso` and `opObjEquiv`.
   exact (nerve D).opObjEquiv.injective <| Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 
 end CategoryTheory.nerve

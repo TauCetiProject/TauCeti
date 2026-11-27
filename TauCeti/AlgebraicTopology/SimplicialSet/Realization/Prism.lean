@@ -504,6 +504,17 @@ lemma prism_zero_dim (s : StdSimplex ℝ (Fin 1)) (t : I) :
   · simp [clamp_one, TauCeti.prefixSum_zero, htot,
       max_eq_left (sub_le_self (1 : ℝ) t.property.1), max_eq_right (sub_nonneg.2 t.property.2)]
 
+/-- Rewrapping the two factors of a simplex of `Δ[p] ⊗ Δ[1]` in another universe leaves its vertex
+coordinates unchanged: both `prodStdSimplex.objEquiv` and `stdSimplex.objEquiv` act definitionally
+as the underlying `Fin (n + 1) → Fin (p + 1) × Fin 2` map across universes. -/
+private lemma prodStdSimplex_objEquiv_symm_eq.{v} {p n : ℕ}
+    (x : (Δ[p] ⊗ Δ[1] : SSet.{v}) _⦋n⦌) :
+    ⇑(prodStdSimplex.objEquiv.{u}
+        (stdSimplex.objEquiv.symm (stdSimplex.objEquiv x.1),
+          stdSimplex.objEquiv.symm (stdSimplex.objEquiv x.2))) =
+      ⇑(prodStdSimplex.objEquiv.{v} x) :=
+  rfl
+
 /-- For any `(s, t)` in `Δᵖ × I`, a single pair `α : ⦋n⦌ ⟶ ⦋p⦌`, `β : ⦋n⦌ ⟶ ⦋1⦌` and weights `w`
 represent `prism p (s, t)` simultaneously in two universes `u` and `v`. -/
 lemma exists_prism_eq_toTopObjMk.{v} (p : ℕ) (s : StdSimplex ℝ (Fin (p + 1))) (t : I) :
@@ -515,7 +526,8 @@ lemma exists_prism_eq_toTopObjMk.{v} (p : ℕ) (s : StdSimplex ℝ (Fin (p + 1))
   obtain ⟨k, hk⟩ := exists_mem_piece (s, t); let x₀ := (nonDegenerateEquiv.{0} k).val
   refine ⟨p + 1, stdSimplex.objEquiv x₀.1, stdSimplex.objEquiv x₀.2,
     pieceWeights.{0} k (s, t) hk, ?_, ?_⟩ <;>
-  · refine prism_eq _ _ (by convert map_pieceWeights.{0} k (s, t) hk using 2; ext i : 1; rfl)
+  · refine prism_eq _ _ ?_
+    rw [prodStdSimplex_objEquiv_symm_eq, map_pieceWeights.{0} k (s, t) hk]
 
 end prodStdSimplex₁
 
@@ -688,12 +700,12 @@ lemma Homotopy.toTop_postcomp_apply {Z : SSet.{u}} {f g : X ⟶ Y} (H : Homotopy
 
 lemma Homotopy.toTop_toTopPoint {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (v : X _⦋0⦌) :
     H.toTop (t, toTopPoint v) =
-      toTopObjMk (H.h.app (op ⦋1⦌) (verticalEdge v)) (StdSimplex.homeomorphI.symm t) := by
+      toTopObjMk (H.h.app (Opposite.op ⦋1⦌) (verticalEdge v)) (StdSimplex.homeomorphI.symm t) := by
   rw [Homotopy.toTop_apply, toTopCylinder_toTopPoint, toTop_map_toTopObjMk]
 
 lemma Homotopy.toTop_toTopObjMk_zero {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (v : X _⦋0⦌)
     (w : StdSimplex ℝ (Fin 1)) : H.toTop (t, toTopObjMk v w) =
-      toTopObjMk (H.h.app (op ⦋1⦌) (verticalEdge v)) (StdSimplex.homeomorphI.symm t) := by
+      toTopObjMk (H.h.app (Opposite.op ⦋1⦌) (verticalEdge v)) (StdSimplex.homeomorphI.symm t) := by
   rw [Homotopy.toTop_apply, toTopCylinder_toTopObjMk_zero, toTop_map_toTopObjMk]
 
 private lemma contractibleSpace_toTop_of_topHomotopy (x : X _⦋0⦌)
