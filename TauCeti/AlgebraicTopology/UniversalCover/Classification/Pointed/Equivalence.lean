@@ -141,9 +141,6 @@ theorem subgroupFunctor_obj (c : PointedConnectedCover x₀) :
     (subgroupFunctor x₀).obj c = c.subgroup :=
   (rfl)
 
-instance : (subgroupFunctor x₀).Faithful where
-  map_injective _ := Subsingleton.elim _ _
-
 /-- The lifting criterion: nested recovered subgroups give a map of pointed covers. -/
 instance [LocallyPathConnectedSpace X] : (subgroupFunctor x₀).Full where
   map_surjective {c d} f := by
