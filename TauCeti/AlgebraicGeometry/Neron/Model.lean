@@ -43,6 +43,7 @@ to a Néron model using the group law.
 * `Model.homEquiv`: the bijection between `S`-morphisms `Y ⟶ M.model` and morphisms
   `(Over.pullback j).obj Y ⟶ A`, for a test object `Y`.
 * `Model.extend`: the unique extension of a generic morphism from a test object.
+* `Model.genericι`: the morphism from the marked fibre to the total space of the model.
 * `Model.ofLE`: a model for a class of test morphisms, regarded as a model for a smaller class.
 * `WeakNeronModel.ofNeronModel`: a Néron model, regarded as a weak Néron model.
 * `Model.ofIsTerminal`: the base `S` is the model of a terminal object of `Over η`.
@@ -117,6 +118,27 @@ attribute [instance] smooth isSeparated quasiCompact
 
 variable {P Q : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop} {j : η ⟶ S} {A B : Over η} (M : Model P j A)
 
+/-- The morphism from the marked fibre to the total space of the model. -/
+def genericι : A.left ⟶ M.model.left :=
+  M.genericIso.inv.left ≫ pullback.fst M.model.hom j
+
+/-- The marking followed by the map to the total space is the base change projection. -/
+@[reassoc (attr := simp)]
+theorem genericIso_hom_left_genericι :
+    M.genericIso.hom.left ≫ M.genericι = pullback.fst M.model.hom j := by
+  simp [genericι]
+
+/-- The marked fibre sits over the given base morphism. -/
+@[reassoc (attr := simp)]
+theorem genericι_toBase : M.genericι ≫ M.model.hom = A.hom ≫ j := by
+  rw [genericι, Category.assoc, pullback.condition, ← Category.assoc]
+  exact congrArg (· ≫ j) (Over.w M.genericIso.inv)
+
+/-- The square determined by the marking is cartesian. -/
+theorem isPullback_genericι : IsPullback M.genericι A.hom M.model.hom j :=
+  .of_iso_pullback ⟨M.genericι_toBase⟩ ((Over.forget η).mapIso M.genericIso.symm) rfl
+    (Over.w M.genericIso.inv)
+
 /-- Two `S`-morphisms from a test object into a model are equal as soon as their marked
 restrictions to `A` are. -/
 theorem hom_ext {Y : Over S} (hY : P Y.hom) {f g : Y ⟶ M.model}
@@ -158,6 +180,30 @@ theorem map_extend {Y : Over S} (hY : P Y.hom) (f : (Over.pullback j).obj Y ⟶ 
 theorem map_extend_eq_comp_inv {Y : Over S} (hY : P Y.hom) (f : (Over.pullback j).obj Y ⟶ A) :
     (Over.pullback j).map (M.extend Y hY f) = f ≫ M.genericIso.inv := by
   simp [← cancel_mono M.genericIso.hom]
+
+/-- Every section of the marked fibre extends uniquely to a section of the model when the
+base itself belongs to the test class. -/
+theorem existsUnique_section (hP : P (𝟙 S)) (x : Over.mk (𝟙 η) ⟶ A) :
+    ∃! s : Over.mk (𝟙 S) ⟶ M.model, j ≫ s.left = x.left ≫ M.genericι := by
+  let T := Over.mk (𝟙 S)
+  let q : (Over.pullback j).obj T ⟶ Over.mk (𝟙 η) :=
+    Over.homMk (pullback.snd (𝟙 S) j) (by simp [T])
+  let s := M.extend T hP (q ≫ x)
+  have hs := M.map_extend_eq_comp_inv hP (q ≫ x)
+  -- Identify the base change of the identity test scheme with the marked base.
+  have h := congrArg (fun f ↦ pullback.lift j (𝟙 η) (by simp : j ≫ 𝟙 S = 𝟙 η ≫ j) ≫
+    f.left ≫ pullback.fst M.model.hom j) hs
+  have hs' : j ≫ s.left = x.left ≫ M.genericι := by
+    simpa [s, genericι, T, q, Over.pullback_map_left] using h
+  refine ⟨s, hs', fun s' h' ↦ ?_⟩
+  apply M.mappingProperty.hom_ext hP
+  apply Over.OverMorphism.ext
+  apply pullback.hom_ext
+  · have hf : pullback.fst (𝟙 S) j = pullback.snd _ _ ≫ j := by
+      simpa using pullback.condition (f := 𝟙 S) (g := j)
+    simpa only [Over.pullback_map_left, pullback.lift_fst, Over.mk_hom, hf, Category.assoc] using
+      congrArg (pullback.snd (𝟙 S) j ≫ ·) (h'.trans hs'.symm)
+  · simp
 
 /-- A morphism into a model is the extension of `f` if and only if its marked restriction is
 `f`. -/
