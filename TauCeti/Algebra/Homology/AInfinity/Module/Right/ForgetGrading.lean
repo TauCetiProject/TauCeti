@@ -20,11 +20,11 @@ homology works instead over `𝔽₂` with algebras which carry no `ℤ`-grading
 modules are the ungraded `A∞` modules `TauCeti.UngradedAInfinityRightModule`, whose relations
 have no signs. This file compares the two: over a ring of characteristic two, a `ℤ`-graded right
 `A∞` module over a nonunital DG algebra `(A, d)` is an ungraded `A∞` module over `(A, d)` with the
-same operations (`TauCeti.AInfinityRightModule.toUngraded`), the differential `d` being an
-ungraded differential by `TauCeti.IsNonUnitalDGAlgebra.isUngradedDGAlgebra`. So every `ℤ`-graded
-module over a `ℤ`-graded DG algebra over `𝔽₂` is a module of the ungraded theory, and the box
-tensor products and twisted differentials of
-`TauCeti.LowDimTopology.Bordered.TypeA.Basic` apply to it.
+same operations (`TauCeti.AInfinityRightModule.toUngradedAInfinityRightModule`), the
+differential `d` being an ungraded differential by
+`TauCeti.IsNonUnitalDGAlgebra.isUngradedDGAlgebra`. So every `ℤ`-graded module over a `ℤ`-graded
+DG algebra over `𝔽₂` is a module of the ungraded theory, and the box tensor products and twisted
+differentials of `TauCeti.LowDimTopology.Bordered.TypeA.Basic` apply to it.
 
 The comparison is the unsuspended module Stasheff equation `TauCeti.AInfinityRightModule.stasheff`.
 Its signs are powers of `-1`, hence `1` in characteristic two, and over a DG algebra only the
@@ -36,26 +36,26 @@ homogeneous inputs only, but the ungraded relation is multilinear in the algebra
 in the module input, so it holds everywhere, since homogeneous elements span.
 
 Forgetting the grading preserves strict units
-(`TauCeti.AInfinityRightModule.StrictUnit.isStrictlyUnital_toUngraded`), and sends the regular
-module of a DG algebra to the differential module of the algebra over itself
-(`TauCeti.IsNonUnitalDGAlgebra.toUngraded_toRightModule`): its operations are the differential and
-the right multiplication.
+(`TauCeti.AInfinityRightModule.StrictUnit.isStrictlyUnital_toUngradedAInfinityRightModule`), and
+sends the regular module of a DG algebra to the differential module of the algebra over itself
+(`TauCeti.IsNonUnitalDGAlgebra.toUngradedAInfinityRightModule_toRightModule`): its operations are
+the differential and the right multiplication.
 
 ## Main definitions
 
 * `TauCeti.AInfinityRightModule.ungradedAct`: the operations `m_{n+1}` of a right `A∞` module as
   multilinear maps in the algebra inputs with values in the endomorphisms of the module.
-* `TauCeti.AInfinityRightModule.toUngraded`: in characteristic two, a right `A∞` module over a
-  nonunital DG algebra as an ungraded `A∞` module.
+* `TauCeti.AInfinityRightModule.toUngradedAInfinityRightModule`: in characteristic two, a right
+  `A∞` module over a nonunital DG algebra as an ungraded `A∞` module.
 
 ## Main results
 
 * `TauCeti.AInfinityRightModule.stasheffSum_eq_ungradedStasheff`: in characteristic two, the
   unsuspended module Stasheff expression over a DG algebra is the ungraded `A∞` relation.
-* `TauCeti.AInfinityRightModule.StrictUnit.isStrictlyUnital_toUngraded`: a strict unit of the
-  graded module makes the ungraded module strictly unital.
-* `TauCeti.IsNonUnitalDGAlgebra.toUngraded_toRightModule`: the regular module of a DG algebra
-  forgets to the algebra as a differential module over itself.
+* `TauCeti.AInfinityRightModule.StrictUnit.isStrictlyUnital_toUngradedAInfinityRightModule`: a
+  strict unit of the graded module makes the ungraded module strictly unital.
+* `TauCeti.IsNonUnitalDGAlgebra.toUngradedAInfinityRightModule_toRightModule`: the regular module
+  of a DG algebra forgets to the algebra as a differential module over itself.
 
 ## References
 
@@ -222,11 +222,12 @@ theorem stasheffSum_eq_ungradedStasheff [CharP R 2] (n : ℕ) (x : M) (e : ℤ) 
 /-- **Forgetting the grading of a right `A∞` module in characteristic two.** Over a ring of
 characteristic two, a `ℤ`-graded right `A∞` module over a nonunital DG algebra `(A, d)` is an
 ungraded `A∞` module over `(A, d)` with the same operations: `m_{n+1}(x, a₁, …, aₙ)` is
-`MM.m (n + 1) x a` (`TauCeti.AInfinityRightModule.toUngraded_act`). Its relations are the
-unsuspended module Stasheff equations, whose signs disappear in characteristic two
+`MM.m (n + 1) x a` (`TauCeti.AInfinityRightModule.toUngradedAInfinityRightModule_act`). Its
+relations are the unsuspended module Stasheff equations, whose signs disappear in characteristic two
 (`TauCeti.AInfinityRightModule.stasheffSum_eq_ungradedStasheff`); they hold on homogeneous inputs,
 hence on all inputs by multilinearity. -/
-noncomputable def toUngraded [CharP R 2] : UngradedAInfinityRightModule d M where
+noncomputable def toUngradedAInfinityRightModule [CharP R 2] :
+    UngradedAInfinityRightModule d M where
   act := MM.ungradedAct
   stasheff n a x := by
     -- The relation, as a multilinear map in the algebra inputs.
@@ -269,16 +270,17 @@ noncomputable def toUngraded [CharP R 2] : UngradedAInfinityRightModule d M wher
 /-- The operation `m_{n+1}` of the ungraded module is the operation `m_{n+1}` of the graded
 module. -/
 @[simp]
-theorem toUngraded_act [CharP R 2] (n : ℕ) (a : Fin n → A) (x : M) :
-    (MM.toUngraded).act n a x = MM.m (n + 1) x a :=
+theorem toUngradedAInfinityRightModule_act [CharP R 2] (n : ℕ) (a : Fin n → A) (x : M) :
+    (MM.toUngradedAInfinityRightModule).act n a x = MM.m (n + 1) x a :=
   (rfl)
 
 variable {MM} in
 /-- **Forgetting the grading preserves strict units.** If `e` is a strict unit of a right `A∞`
 module over a DG algebra, the ungraded module is strictly unital for `e`: its operations `m_{n+1}`,
 `n ≥ 2`, vanish when one of the algebra inputs is `e`. -/
-theorem StrictUnit.isStrictlyUnital_toUngraded [CharP R 2] {e : A} (he : MM.StrictUnit e) :
-    (MM.toUngraded).IsStrictlyUnital fun _ : Unit => e :=
+theorem StrictUnit.isStrictlyUnital_toUngradedAInfinityRightModule [CharP R 2] {e : A}
+    (he : MM.StrictUnit e) :
+    (MM.toUngradedAInfinityRightModule).IsStrictlyUnital fun _ : Unit => e :=
   (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun n hn a i _ hi =>
     LinearMap.ext fun x => he.m_eq_zero_of_eq_unit (by omega) x a hi
 
@@ -295,11 +297,11 @@ variable {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜] [DirectSum.Deco
 itself.** In characteristic two, the ungraded module of the regular right `A∞` module of a
 nonunital DG algebra `(A, d)` is `A` with `m₁ = d`, `m₂(x, a) = x * a` and no higher operations:
 the differential module of the ungraded DG algebra `(A, d)` over itself. -/
-theorem toUngraded_toRightModule [CharP R 2] (h : IsNonUnitalDGAlgebra 𝒜 d) :
-    h.toAInfinityAlgebra.toRightModule.toUngraded =
+theorem toUngradedAInfinityRightModule_toRightModule [CharP R 2] (h : IsNonUnitalDGAlgebra 𝒜 d) :
+    h.toAInfinityAlgebra.toRightModule.toUngradedAInfinityRightModule =
       h.isUngradedDGAlgebra.isUngradedDGRightModule.toUngradedAInfinityRightModule := by
   ext n a x
-  rw [AInfinityRightModule.toUngraded_act, AInfinityAlgebra.m_toRightModule]
+  rw [AInfinityRightModule.toUngradedAInfinityRightModule_act, AInfinityAlgebra.m_toRightModule]
   match n with
   | 0 =>
     rw [IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_zero,
