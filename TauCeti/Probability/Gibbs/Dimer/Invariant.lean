@@ -17,7 +17,7 @@ through graph automorphisms, and let `Γ` act on configurations by `(g • ω)(e
 (Mathlib's `arrowAction`; here any action on `G.edgeSet → Bool` given by this formula). For a
 positive weight `w`, the invariant dimer Gibbs measures `𝒢_inv` (`SimpleGraph.dimerGibbsInvariant`)
 are the `Γ`-invariant probability measures on configurations that are dimer Gibbs
-(`SimpleGraph.IsDimerGibbs`).
+(`SimpleGraph.IsDimerGibbs`). They form a convex set (`SimpleGraph.convex_dimerGibbsInvariant`).
 
 **The face property** (`SimpleGraph.isExtreme_dimerGibbsInvariant`). If every finite set of edges
 can be moved off every finite set of edges by `Γ` (for instance when `Γ` is infinite and acts
@@ -69,6 +69,17 @@ theorem mem_dimerGibbsInvariant_iff {Γ : Type*} [SMul Γ (G.edgeSet → Bool)]
     μ ∈ G.dimerGibbsInvariant Γ w ↔
       μ ∈ invariantMeasuresOfMeasureUnivEq Γ (G.edgeSet → Bool) 1 ∧ G.IsDimerGibbs w μ :=
   Iff.rfl
+
+/-- The invariant dimer Gibbs measures form a convex set. -/
+theorem convex_dimerGibbsInvariant {Γ : Type*} [SMul Γ (G.edgeSet → Bool)]
+    {w : G.edgeSet → ℝ} : Convex ℝ≥0∞ (G.dimerGibbsInvariant Γ w) := by
+  rintro μ ⟨hμ, hμG⟩ ν ⟨hν, hνG⟩ a b ha hb hab
+  obtain ⟨_, hμ0, hμc⟩ := isDimerGibbs_iff.1 hμG
+  obtain ⟨_, hν0, hνc⟩ := isDimerGibbs_iff.1 hνG
+  refine ⟨convex_invariantMeasuresOfMeasureUnivEq hμ hν ha hb hab, isDimerGibbs_iff.2
+    ⟨⟨by simp [hab]⟩, by simp [hμ0, hν0], fun F E ω ω' hω hω' hF hE => ?_⟩⟩
+  simp only [add_apply, smul_apply, smul_eq_mul, mul_add, mul_left_comm _ a, mul_left_comm _ b,
+    hμc F E ω ω' hω hω' hF hE, hνc F E ω ω' hω hω' hF hE]
 
 variable [G.LocallyFinite] [Countable G.edgeSet] {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
 
