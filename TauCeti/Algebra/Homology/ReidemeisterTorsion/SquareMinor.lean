@@ -116,6 +116,14 @@ square minor `squareMinor c hn i j h`, whose images under `d : Cⱼ → Cᵢ` ar
 def squareMinorLift (i j : ι) (h : p j = q i) (r : Fin (q i)) : C.X j :=
   c j (Fin.cast (hn j).symm (Fin.natAdd (q j) (Fin.cast h.symm r)))
 
+/-- The lift `squareMinorLift c hn i j h r` is the vector of `c j` indexing the `r`-th column of
+the square minor `squareMinor c hn i j h`. -/
+@[simp]
+theorem squareMinorLift_apply (i j : ι) (h : p j = q i) (r : Fin (q i)) :
+    squareMinorLift c hn i j h r =
+      c j (Fin.cast (hn j).symm (Fin.natAdd (q j) (Fin.cast h.symm r))) :=
+  (rfl)
+
 /-- The splitting of the basis indices of `C.X i` into the first `q i` and the last `p i`. -/
 private def splitEquiv (i : ι) : Fin (q i) ⊕ Fin (p i) ≃ Fin (n i) :=
   finSumFinEquiv.trans (finCongr (hn i).symm)
@@ -147,9 +155,9 @@ private theorem det_minorFamily (i j : ι) (h : p j = q i) :
           (fun k ↦ splitEquiv hn i (.inr k))
           (fun r ↦ splitEquiv hn j (.inr (Fin.cast h.symm r)))) 1 := by
     ext (r | k) (r' | k')
-    · simp [Basis.toMatrix_apply, minorFamily, squareMinorLift, splitEquiv_inl, splitEquiv_inr]
+    · simp [Basis.toMatrix_apply, minorFamily, splitEquiv_inl, splitEquiv_inr]
     · simp [Basis.toMatrix_apply, minorFamily]
-    · simp [Basis.toMatrix_apply, minorFamily, squareMinorLift, LinearMap.toMatrix_apply,
+    · simp [Basis.toMatrix_apply, minorFamily, LinearMap.toMatrix_apply,
         splitEquiv_inr]
     · simp [Basis.toMatrix_apply, minorFamily, Finsupp.single_apply, Matrix.one_apply, eq_comm]
   rw [this, Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, mul_one]
@@ -177,7 +185,7 @@ theorem torsionBracket_eq_det_squareMinor {i j k : ι} (hi : cs.prev j = i) (hk 
         Fin.ext (by simp [splitEquiv_inr])
       rw [Function.comp_apply, Function.comp_apply, this, Fin.append_right,
         Equiv.symm_apply_apply]
-      simp [minorFamily, squareMinorLift, splitEquiv_inr]
+      simp [minorFamily, splitEquiv_inr]
   rw [torsionBracket_eq_det_append c _ _ _ _ _ _ _ hn', hfam, ← Basis.det_reindex,
     det_minorFamily]
 
@@ -212,7 +220,7 @@ private theorem d_eq_sum {i j k : ι} {h₁ : p i = q j} (h₂ : p j = q k)
     (C.d j k).hom x = ∑ m : Fin (p j), (minorBasis hA).repr x (.inr m) •
       minorFamily c hn k j h₂ (.inl (Fin.cast h₂ m)) := by
   conv_lhs => rw [← (minorBasis hA).sum_repr x]
-  simp [Fintype.sum_sum_type, coe_minorBasis, minorFamily, squareMinorLift, splitEquiv_inr,
+  simp [Fintype.sum_sum_type, coe_minorBasis, minorFamily, splitEquiv_inr,
     d_comp_d_apply]
 
 /-- If the square minors of the differentials `Cᵢ → Cⱼ` into and `Cⱼ → Cₖ` out of degree `j` are
