@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Univ
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
@@ -57,7 +58,9 @@ for the subspace topology, already for `n = 1`.
 
 Each characteristic coefficient is continuous over a commutative topological ring
 (`Matrix.continuous_charpoly_coeff`). The proof uses Mathlib's universal characteristic polynomial
-`Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
+`Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries;
+so is each coefficient of the reversed characteristic polynomial `det (1 - X A)`
+(`Matrix.continuous_charpolyRev_coeff`).
 Hence two continuous maps `ρ ρ' : Γ → Mₙ(A)` into a Hausdorff topological ring whose
 characteristic polynomials agree on a dense subset of `Γ` have the same characteristic polynomial
 everywhere (`Matrix.charpoly_eq_of_dense`). In size two the characteristic polynomial is
@@ -71,8 +74,15 @@ In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗�
 both partial traces of a continuously varying matrix on a product index.
 
 A matrix-valued function converges exactly when each of its entries does
-(`Matrix.tendsto_iff_tendsto_apply`). The matrices with nonnegative diagonal form a closed set
-(`Matrix.isClosed_setOfPred_nonneg_diag`).
+(`Matrix.tendsto_iff_tendsto_apply`), and exactly when its products with all column vectors do
+(`Matrix.tendsto_iff_forall_tendsto_mulVec`). In particular, pointwise convergence of
+sesquilinear forms gives convergence of their Gram matrices in any pair of finite bases
+(`LinearMap.tendsto_toMatrix₂`). Square matrices tending to the identity are eventually invertible
+(`Matrix.eventually_det_ne_zero_of_tendsto_one`). The matrices with nonnegative diagonal form a
+closed set (`Matrix.isClosed_setOfPred_nonneg_diag`).
+
+The matrices whose entries all lie in a dense set are dense (`Dense.matrix`), the dense
+counterpart of Mathlib's `IsOpen.matrix`.
 
 `Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
 Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α` is a
@@ -296,6 +306,16 @@ theorem continuous_charpoly_coeff (k : ℕ) :
     rfl
   simpa only [MvPolynomial.eval, charpoly.univ_coeff_eval₂Hom, hmatrix] using h
 
+/-- Every coefficient of the reversed characteristic polynomial `det (1 - X A)` is continuous for
+the entrywise matrix topology. -/
+@[continuity, fun_prop]
+theorem continuous_charpolyRev_coeff (k : ℕ) :
+    Continuous (fun A : Matrix n n R => A.charpolyRev.coeff k) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
+  simp_rw [← reverse_charpoly, Polynomial.coeff_reverse, charpoly_natDegree_eq_dim]
+  exact continuous_charpoly_coeff _
+
 /-- **Recognition on a dense subset.** Two continuous matrix-valued maps `ρ ρ' : Γ → Mₙ(A)` into a
 Hausdorff topological ring whose characteristic polynomials agree on a dense subset of `Γ` have
 the same characteristic polynomial at every point. -/
@@ -406,6 +426,25 @@ theorem tendsto_iff_tendsto_apply {α m n R : Type*} [TopologicalSpace R] {l : F
     Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) :=
   tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
 
+open Filter Topology in
+/-- A matrix-valued function converges exactly when its products with every column vector do. -/
+theorem tendsto_iff_forall_tendsto_mulVec {α m n R : Type*} [Fintype n] [NonAssocSemiring R]
+    [TopologicalSpace R] [IsTopologicalSemiring R] {l : Filter α} {M : α → Matrix m n R}
+    {D : Matrix m n R} :
+    Tendsto M l (𝓝 D) ↔ ∀ v, Tendsto (fun x ↦ M x *ᵥ v) l (𝓝 (D *ᵥ v)) := by
+  classical
+  refine ⟨fun h v ↦ ((continuous_id.matrix_mulVec continuous_const).tendsto D).comp h,
+    fun h ↦ tendsto_iff_tendsto_apply.2 fun i j ↦ ?_⟩
+  simpa [mulVec_single_one] using tendsto_pi_nhds.1 (h (Pi.single j 1)) i
+
+open Filter Topology in
+/-- Square matrices tending to the identity along a filter eventually have nonzero determinant. -/
+theorem eventually_det_ne_zero_of_tendsto_one {α n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [T1Space R] [Nontrivial R]
+    {l : Filter α} {M : α → Matrix n n R} (hM : Tendsto M l (𝓝 1)) :
+    ∀ᶠ x in l, (M x).det ≠ 0 :=
+  (((continuous_id.matrix_det).tendsto 1).comp hM).eventually_ne (by simp)
+
 /-- The matrices with nonnegative diagonal form a closed set. -/
 theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]
     [OrderClosedTopology R] : IsClosed {M : Matrix n n R | ∀ i, 0 ≤ M i i} := by
@@ -413,3 +452,27 @@ theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero 
   exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
 
 end Matrix
+
+namespace LinearMap
+
+open Filter Topology in
+/-- Pointwise convergence of sesquilinear forms gives convergence of their Gram matrices in any
+pair of finite bases. -/
+theorem tendsto_toMatrix₂ {R M₁ M₂ N₂ n m α : Type*} [CommSemiring R] [AddCommMonoid M₁]
+    [Module R M₁] [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid N₂] [Module R N₂]
+    [TopologicalSpace N₂] {σ₁ σ₂ : R →+* R} [Fintype n] [Fintype m] [DecidableEq n]
+    [DecidableEq m] (b₁ : Module.Basis n R M₁) (b₂ : Module.Basis m R M₂) {l : Filter α}
+    {B : α → M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] N₂} {B₀ : M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] N₂}
+    (hB : ∀ u v, Tendsto (fun a ↦ B a u v) l (𝓝 (B₀ u v))) :
+    Tendsto (fun a ↦ toMatrix₂ b₁ b₂ (B a)) l (𝓝 (toMatrix₂ b₁ b₂ B₀)) :=
+  Matrix.tendsto_iff_tendsto_apply.2 fun i j ↦ by
+    simpa only [toMatrix₂_apply] using hB (b₁ i) (b₂ j)
+
+end LinearMap
+
+/-- The matrices whose entries all lie in a dense set `S` form a dense set. -/
+theorem Dense.matrix {m n R : Type*} [TopologicalSpace R] {S : Set R} (hS : Dense S) :
+    Dense (S.matrix : Set (Matrix m n R)) := by
+  rw [Set.matrix_eq_pi]
+  exact (dense_pi Set.univ fun _ _ ↦ dense_pi Set.univ fun _ _ ↦ hS).preimage
+    Matrix.ofHomeomorph.symm.isOpenMap

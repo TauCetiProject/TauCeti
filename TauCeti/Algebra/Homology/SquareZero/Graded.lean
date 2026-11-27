@@ -44,7 +44,9 @@ Likewise, if the two composites `μ' (μ a b) c` and `ν' a (ν b c)` of product
 coboundary on cocycles, then the induced products on cohomology are associative
 (`LinearMap.cohomologyProduct_assoc`), and if `μ a b - (-1)^(i j) μ' b a` is a coboundary on
 cocycles of degrees `i` and `j`, then they are graded commutative
-(`LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`).
+(`LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`). Two products which agree
+up to coboundaries on cocycles induce the same product on cohomology
+(`LinearMap.cohomologyProduct_eq_of_sub_mem_coboundaries`).
 
 ## Main definitions
 
@@ -77,6 +79,7 @@ cocycles of degrees `i` and `j`, then they are graded commutative
   homotopy invariance of the induced maps.
 * `LinearMap.leftInverse_cohomologyMap`: a left inverse up to coboundaries on cocycles induces a
   left inverse on cohomology.
+* `LinearMap.bijective_cohomologyMap`: a homotopy equivalence induces bijections on cohomology.
 * `LinearMap.cohomologyMap_cohomologyProduct`: maps intertwining two products up to coboundaries
   intertwine the products on cohomology.
 * `LinearMap.cohomologyMap_cohomologyProduct_of_leftInverse`: one-sided inverses of maps
@@ -86,6 +89,8 @@ cocycles of degrees `i` and `j`, then they are graded commutative
 * `LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`: products which commute
   up to the Koszul sign and coboundaries on cocycles induce graded-commutative products on
   cohomology.
+* `LinearMap.cohomologyProduct_eq_of_sub_mem_coboundaries`: products which agree up to
+  coboundaries on cocycles induce the same product on cohomology.
 -/
 
 public section
@@ -408,6 +413,12 @@ theorem cohomologyEquiv_symm_apply (x : D₀.cohomology G₀ i) :
     (cohomologyEquiv f g hfdeg hfD hgdeg hgD hgf hfg).symm x = cohomologyMap g hgdeg hgD i x :=
   (rfl)
 
+include hgdeg hgD hgf hfg in
+/-- The map induced on degree-`i` cohomology by a homotopy equivalence is bijective. -/
+theorem bijective_cohomologyMap :
+    Function.Bijective (cohomologyMap (G₁ := G₁) (G₀ := G₀) f hfdeg hfD i) :=
+  (cohomologyEquiv f g hfdeg hfD hgdeg hgD hgf hfg).bijective
+
 end Equiv
 
 section Naturality
@@ -562,5 +573,36 @@ theorem cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct {i j k : ℤ}
   exact hcomm a.property b.property
 
 end Commutativity
+
+section Agreement
+
+variable {R M₁ M₂ M₀ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₀] [Module R M₀]
+  {D₁ : M₁ →ₗ[R] M₁} {D₂ : M₂ →ₗ[R] M₂} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₂ : ℤ → Submodule R M₂} {G₀ : ℤ → Submodule R M₀}
+  {μ μ' : M₁ →ₗ[R] M₂ →ₗ[R] M₀} {ε ε' : ℤ}
+  {hμdeg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ a b ∈ G₀ (i + j + ε)}
+  {hμL : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (μ a b) = μ (D₁ a) b + negOnePowCast R i • μ a (D₂ b)}
+  {hμ'deg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ' a b ∈ G₀ (i + j + ε')}
+  {hμ'L : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (μ' a b) = μ' (D₁ a) b + negOnePowCast R i • μ' a (D₂ b)}
+
+/-- **Products agreeing up to coboundaries induce the same product on cohomology.** Let `μ` and
+`μ'` be products between the same modules inducing products on cohomology. If `μ a b - μ' a b` is
+a coboundary for all cocycles `a` and `b` of degrees `i` and `j`, then the induced products
+`H^i × H^j → H^k` are equal. -/
+theorem cohomologyProduct_eq_of_sub_mem_coboundaries {i j k : ℤ} (hk : i + j + ε = k)
+    (hk' : i + j + ε' = k)
+    (hsub : ∀ {a : M₁} {b : M₂}, a ∈ D₁.cocycles G₁ i → b ∈ D₂.cocycles G₂ j →
+      μ a b - μ' a b ∈ D₀.coboundaries G₀ k) :
+    cohomologyProduct μ hμdeg hμL hk = cohomologyProduct μ' hμ'deg hμ'L hk' := by
+  refine LinearMap.ext fun x => LinearMap.ext fun y => ?_
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  rw [cohomologyProduct_mk, cohomologyProduct_mk, cohomology_mk_eq_mk_iff]
+  exact hsub a.property b.property
+
+end Agreement
 
 end LinearMap

@@ -37,6 +37,9 @@ open locus, which is proved in
   in its image exactly when `det A` is the `n`-th power of a unit.
 * `Matrix.ProjectiveSpecialLinearGroup.range_toProjectivization`: over an algebraically closed
   field the image is the locus of lines of invertible matrices.
+* `Matrix.ProjectiveSpecialLinearGroup.toProjectivization_mul_of_eq_mk`,
+  `Matrix.ProjectiveSpecialLinearGroup.toProjectivization_inv_of_eq_mk`: products and inverses
+  are computed on any representing matrices, the inverse through the adjugate.
 -/
 
 public section
@@ -146,6 +149,39 @@ theorem range_toProjectivization [IsAlgClosed K] :
   · intro h
     obtain ⟨c, hc⟩ := IsAlgClosed.exists_pow_nat_eq A.det (Fintype.card_pos (α := n))
     exact ⟨Units.mk0 c (by rintro rfl; exact h (by rw [← hc, zero_pow Fintype.card_ne_zero])), hc⟩
+
+/-- If `g` and `h` are the lines of `A` and `B`, then `g * h` is the line of `A * B`: the matrices
+representing `g` and `h` in `SL(n, K)` are nonzero multiples of `A` and `B`. -/
+theorem toProjectivization_mul_of_eq_mk {g h : ProjectiveSpecialLinearGroup n K}
+    {A B : Matrix n n K} {hA : A ≠ 0} {hB : B ≠ 0}
+    (hg : toProjectivization n K g = .mk K A hA) (hh : toProjectivization n K h = .mk K B hB) :
+    ∃ hAB : A * B ≠ 0, toProjectivization n K (g * h) = .mk K (A * B) hAB := by
+  induction g using QuotientGroup.induction_on with | H A' => ?_
+  induction h using QuotientGroup.induction_on with | H B' => ?_
+  obtain ⟨a, ha⟩ := (Projectivization.mk_eq_mk_iff' K _ _ _ _).1 hg
+  obtain ⟨b, hb⟩ := (Projectivization.mk_eq_mk_iff' K _ _ _ _).1 hh
+  have hprod : ((A' * B' : SpecialLinearGroup n K) : Matrix n n K) = (a * b) • (A * B) := by
+    rw [SpecialLinearGroup.coe_mul, ← ha, ← hb, smul_mul_smul_comm]
+  have hAB : A * B ≠ 0 := fun h ↦ (A' * B').coe_ne_zero (by rw [hprod, h, smul_zero])
+  refine ⟨hAB, ?_⟩
+  rw [← QuotientGroup.mk_mul, toProjectivization_mk]
+  exact (Projectivization.mk_eq_mk_iff' K _ _ _ _).2 ⟨a * b, hprod.symm⟩
+
+/-- If `g` is the line of `A`, then `g⁻¹` is the line of the adjugate of `A`: the inverse of a
+matrix of determinant one is its adjugate, and the adjugate of a multiple of `A` is a multiple of
+the adjugate of `A`. -/
+theorem toProjectivization_inv_of_eq_mk {g : ProjectiveSpecialLinearGroup n K} {A : Matrix n n K}
+    {hA : A ≠ 0} (hg : toProjectivization n K g = .mk K A hA) :
+    ∃ hA' : A.adjugate ≠ 0, toProjectivization n K g⁻¹ = .mk K A.adjugate hA' := by
+  induction g using QuotientGroup.induction_on with | H A' => ?_
+  obtain ⟨a, ha⟩ := (Projectivization.mk_eq_mk_iff' K _ _ _ _).1 hg
+  have hinv : ((A'⁻¹ : SpecialLinearGroup n K) : Matrix n n K) =
+      a ^ (Fintype.card n - 1) • A.adjugate := by
+    rw [SpecialLinearGroup.coe_inv, ← ha, adjugate_smul]
+  have hA' : A.adjugate ≠ 0 := fun h ↦ A'⁻¹.coe_ne_zero (by rw [hinv, h, smul_zero])
+  refine ⟨hA', ?_⟩
+  rw [← QuotientGroup.mk_inv, toProjectivization_mk]
+  exact (Projectivization.mk_eq_mk_iff' K _ _ _ _).2 ⟨_, hinv.symm⟩
 
 end Field
 

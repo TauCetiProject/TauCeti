@@ -29,6 +29,10 @@ Higher derivatives of the inverses are then recovered from the Faà di Bruno for
 derivative of the inverse (`TauCeti.TendstoContDiffAt.symm`); this is the argument by which
 inversion is continuous in `C^n` topologies.
 
+The regularity `n : ℕ∞` may be `∞`: the common source is chosen from the first derivatives
+alone, and the inverses then converge in `C^n`
+(`TauCeti.TendstoContDiffAt.symm_of_approximatesLinearOn`).
+
 ## Main declarations
 
 * `TauCeti.TendstoContDiffAt.symm`: if partial homeomorphisms converge in `C^n` and their
@@ -38,6 +42,8 @@ inversion is continuous in `C^n` topologies.
   continuously.
 * `TauCeti.exists_openPartialHomeomorph_tendstoContDiffAt_symm`: the inverse function theorem
   with a common domain and `C^n` convergence of the local inverses.
+* `TauCeti.TendstoContDiffAt.symm_of_approximatesLinearOn`: `C^n` convergence (for `n : ℕ∞`) of
+  the inverses of a family approximating one linear equivalence on a common source.
 -/
 
 public section
@@ -50,7 +56,7 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {ι : Type*} {l : Filter ι} {n : ℕ}
+  {ι : Type*} {l : Filter ι} {n : ℕ∞}
 
 /-- **`C^n` convergence of inverses.** Let `e i` be partial homeomorphisms converging in `C^n`
 to `e₀` at `e₀⁻¹ (y₀)`, with `e i` and its inverse `C^n` near the relevant points. If the
@@ -67,7 +73,7 @@ theorem TendstoContDiffAt.symm [CompleteSpace E] {e : ι → OpenPartialHomeomor
       (l ×ˢ 𝓝 (e₀.symm y₀)) :=
     tendsto_fst.prodMk hsymm
   -- The composite `(e i)⁻¹ ∘ e i` is the identity near the moving point `(e i)⁻¹ y`.
-  have hcomp (k : ℕ) (hk : k ≤ n) : Tendsto (fun p : ι × F ↦
+  have hcomp (k : ℕ) (hk : (k : ℕ∞) ≤ n) : Tendsto (fun p : ι × F ↦
       (ftaylorSeries 𝕜 (e p.1).symm p.2).taylorComp
         (ftaylorSeries 𝕜 (e p.1) ((e p.1).symm p.2)) k) (l ×ˢ 𝓝 y₀)
       (𝓝 ((ftaylorSeries 𝕜 e₀.symm y₀).taylorComp (ftaylorSeries 𝕜 e₀ (e₀.symm y₀)) k)) := by
@@ -80,7 +86,7 @@ theorem TendstoContDiffAt.symm [CompleteSpace E] {e : ι → OpenPartialHomeomor
   -- The derivatives of the inverses are the inverses of the derivatives.
   have hA (hn : 1 ≤ n) : Tendsto (fun p : ι × F ↦ fderiv 𝕜 (e p.1).symm p.2) (l ×ˢ 𝓝 y₀)
       (𝓝 (fderiv 𝕜 e₀.symm y₀)) := by
-    have hn' : ((n : ℕ) : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
+    have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
     have h₁ := e₀.fderiv_comp_fderiv_symm hy₀ (hd₀.differentiableAt hn')
       (hds₀.differentiableAt hn')
     have h₂ := e₀.fderiv_symm_comp_fderiv hy₀ (hd₀.differentiableAt hn')
@@ -102,15 +108,15 @@ theorem TendstoContDiffAt.symm [CompleteSpace E] {e : ι → OpenPartialHomeomor
     rcases Nat.eq_zero_or_pos k with rfl | hk0
     · exact (tendstoContDiffAt_zero_iff (f := fun i ↦ ⇑(e i).symm) (f₀ := e₀.symm).2
         hsymm).tendsto_iteratedFDeriv le_rfl
-    have hn : 1 ≤ n := hk0.trans_le hk
-    have hn' : ((n : ℕ) : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
+    have hn : 1 ≤ n := (show (1 : ℕ∞) ≤ k by exact_mod_cast hk0).trans hk
+    have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
     -- Recover the `k`-th inverse coefficient from the lower ones and the identity composite.
     refine Filter.Tendsto.of_taylorComp (q := fun p : ι × F ↦ ftaylorSeries 𝕜 (e p.1).symm p.2)
       (p := fun p : ι × F ↦ ftaylorSeries 𝕜 (e p.1) ((e p.1).symm p.2))
       (q₀ := ftaylorSeries 𝕜 e₀.symm y₀) (p₀ := ftaylorSeries 𝕜 e₀ (e₀.symm y₀))
       (A := fun p : ι × F ↦ fderiv 𝕜 (e p.1).symm p.2) (A₀ := fderiv 𝕜 e₀.symm y₀) hk0
-      (fun j _ hj ↦ ih j hj (hj.le.trans hk))
-      (fun j _ hj ↦ (he.tendsto_iteratedFDeriv (hj.trans hk)).comp hlim)
+      (fun j _ hj ↦ ih j hj ((Nat.cast_le.2 hj.le).trans hk))
+      (fun j _ hj ↦ (he.tendsto_iteratedFDeriv ((Nat.cast_le.2 hj).trans hk)).comp hlim)
       (hcomp k hk) (hA hn) ?_ ?_
     · filter_upwards [hd] with p hp
       simpa only [ftaylorSeries, continuousMultilinearCurryFin1_iteratedFDeriv_one] using
@@ -160,7 +166,7 @@ section Existence
 variable {𝕜 : Type*} [RCLike 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {ι : Type*} {l : Filter ι} {n : ℕ}
+  {ι : Type*} {l : Filter ι} {n : ℕ∞}
 
 omit [CompleteSpace E] in
 /-- If `Φ i → Φ₀` in `C^n` at `x₀ ∈ s`, with `1 ≤ n`, the maps `C^n` on the open set `s`, and
@@ -175,7 +181,7 @@ private theorem exists_ball_approximatesLinearOn {Φ : ι → E → F} {Φ₀ : 
     ∃ c : ℝ≥0, (Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) ∧ ∃ r > 0, ball x₀ r ⊆ s ∧
       ApproximatesLinearOn Φ₀ (L : E →L[𝕜] F) (ball x₀ r) c ∧
       ∀ᶠ i in l, ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c := by
-  have hn' : ((n : ℕ) : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
+  have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
   set c : ℝ≥0 := ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2
   -- The constant `c` is admissible, and every map near `L` is within `c` of it.
   obtain ⟨hc, hnear⟩ : (Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) ∧
@@ -213,12 +219,43 @@ private theorem exists_ball_approximatesLinearOn {Φ : ι → E → F} {Φ₀ : 
   filter_upwards [hΦ, hpa] with i h1 h2
   exact happrox (Φ i) h1 fun x hx ↦ hpab h2 (hrb x hx).1.1
 
+/-- **`C^n` convergence of the inverses of a family with a common source.** Let `e₀` be `C^n` with
+`C^n` inverse, and let eventually all `e i` approximate one continuous linear equivalence `L` on
+the source of `e₀`, with one constant `c` below `‖L⁻¹‖⁻¹`, have that source, be `C^n` with `C^n`
+inverses, and have targets containing a neighbourhood `T` of a point `y ∈ e₀.target`. If
+`e i → e₀` in `C^n` at `e₀⁻¹ (y)`, then `(e i)⁻¹ → e₀⁻¹` in `C^n` at `y`. -/
+theorem TendstoContDiffAt.symm_of_approximatesLinearOn
+    {e : ι → OpenPartialHomeomorph E F} {e₀ : OpenPartialHomeomorph E F} {L : E ≃L[𝕜] F}
+    {c : ℝ≥0} {T : Set F} {y : F} (hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹)
+    (h₀ : ContDiffOn 𝕜 n e₀ e₀.source) (hs₀ : ContDiffOn 𝕜 n e₀.symm e₀.target)
+    (he : ∀ᶠ i in l, ApproximatesLinearOn (e i) (L : E →L[𝕜] F) e₀.source c ∧
+      (e i).source = e₀.source ∧ T ⊆ (e i).target ∧ ContDiffOn 𝕜 n (e i) (e i).source ∧
+      ContDiffOn 𝕜 n (e i).symm (e i).target)
+    (hconv : TendstoContDiffAt 𝕜 n (fun i ↦ ⇑(e i)) e₀ l (e₀.symm y)) (hT : T ∈ 𝓝 y)
+    (hy : y ∈ e₀.target) :
+    TendstoContDiffAt 𝕜 n (fun i ↦ ⇑(e i).symm) e₀.symm l y := by
+  have hyt := hy
+  have hev : ∀ᶠ p in l ×ˢ 𝓝 y, (ApproximatesLinearOn (e p.1) (L : E →L[𝕜] F) e₀.source c ∧
+      (e p.1).source = e₀.source ∧ T ⊆ (e p.1).target ∧ ContDiffOn 𝕜 n (e p.1) (e p.1).source ∧
+      ContDiffOn 𝕜 n (e p.1).symm (e p.1).target) ∧ p.2 ∈ T :=
+    (tendsto_fst.eventually he).and (tendsto_snd.eventually hT)
+  refine hconv.symm hyt (tendsto_symm_of_approximatesLinearOn hc
+    (he.mono fun i ⟨hia, hes, _⟩ ↦ ⟨hia, hes.subset⟩) subset_rfl hyt
+    (hev.mono fun p ⟨⟨_, _, hiT, _⟩, hpT⟩ ↦ hiT hpT)
+    (by simpa only [e₀.right_inv hyt] using hconv.tendsto))
+    (hev.mono fun p hp ↦ ?_) (h₀.contDiffAt (e₀.open_source.mem_nhds (e₀.map_target hyt)))
+    (hs₀.contDiffAt (e₀.open_target.mem_nhds hyt))
+  obtain ⟨⟨-, -, hiT, hic, hics⟩, hpT⟩ := hp
+  have hpt := hiT hpT
+  exact ⟨hpt, hic.contDiffAt ((e p.1).open_source.mem_nhds ((e p.1).map_target hpt)),
+    hics.contDiffAt ((e p.1).open_target.mem_nhds hpt)⟩
+
 /-- **The inverse function theorem for a converging family.** Let `Φ i → Φ₀` in `C^n` at every
-point of an open set `s`, with `1 ≤ n`, the maps `Φ i` eventually `C^n` on `s`, and `D Φ₀`
-invertible at `x₀ ∈ s`. Then `Φ₀` and, eventually along `l`, all the `Φ i` restrict to partial
-homeomorphisms with one common source inside `s`, whose targets contain a common open
-neighbourhood `T` of `Φ₀ (x₀)` and whose inverses are `C^n` on their targets. On `T` the inverses
-converge to the inverse of `Φ₀` in `C^n`. -/
+point of an open set `s`, for `n : ℕ∞` (possibly `∞`) with `1 ≤ n`, with `Φ₀` and eventually all
+`Φ i` of class `C^n` on `s`, and let `D Φ₀` be invertible at `x₀ ∈ s`. Then `Φ₀` and, eventually
+along `l`, all the `Φ i` restrict to partial homeomorphisms with one common source inside `s`,
+whose targets contain a common open neighbourhood `T` of `Φ₀ (x₀)` and whose inverses are `C^n` on
+their targets. On `T` the inverses converge to the inverse of `Φ₀` in `C^n`. -/
 theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F} {Φ₀ : E → F}
     {s : Set E} {x₀ : E} (hs : IsOpen s) (hx₀ : x₀ ∈ s) (hn : 1 ≤ n)
     (hΦ : ∀ᶠ i in l, ContDiffOn 𝕜 n (Φ i) s) (hΦ₀ : ContDiffOn 𝕜 n Φ₀ s)
@@ -235,70 +272,47 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
   obtain ⟨c, hc, r, hr, hrs, h₀a, hΦa⟩ :=
     exists_ball_approximatesLinearOn hs hx₀ hn hΦ hΦ₀ (hconv x₀ hx₀) hL
   set e₀ := h₀a.toOpenPartialHomeomorph Φ₀ (ball x₀ r) hc isOpen_ball with he₀_def
-  have h₀c : ContDiffOn 𝕜 n e₀.symm e₀.target :=
-    h₀a.contDiffOn_toOpenPartialHomeomorph_symm hc isOpen_ball (hΦ₀.mono hrs)
   have he₀c : ⇑e₀ = Φ₀ := by rw [he₀_def, ApproximatesLinearOn.toOpenPartialHomeomorph_coe]
   have he₀s : e₀.source = ball x₀ r := by
     rw [he₀_def, ApproximatesLinearOn.toOpenPartialHomeomorph_source]
-  have hrs₀ : e₀.source ⊆ s := he₀s ▸ hrs
   let e : ι → OpenPartialHomeomorph E F := fun i ↦
     if h : ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c then
       h.toOpenPartialHomeomorph (Φ i) (ball x₀ r) hc isOpen_ball else e₀
   -- A common radius `ρ` of target balls around `Φ₀ x₀`.
   obtain ⟨ρ, hρ, hρT⟩ := exists_ball_subset_toOpenPartialHomeomorph_target hr hc (Φ₀ x₀)
-  have hΦx₀ : Tendsto (fun i ↦ Φ i x₀) l (𝓝 (Φ₀ x₀)) :=
-    (hconv x₀ hx₀).tendsto.comp (tendsto_id.prodMk tendsto_const_nhds)
   have hgood : ∀ᶠ i in l, ContDiffOn 𝕜 n (Φ i) s ∧
       ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c ∧ dist (Φ i x₀) (Φ₀ x₀) < ρ := by
-    filter_upwards [hΦ, hΦa, hΦx₀.eventually (ball_mem_nhds _ hρ)] with i h1 h2 h3
+    filter_upwards [hΦ, hΦa, ((hconv x₀ hx₀).tendsto.comp
+      (tendsto_id.prodMk tendsto_const_nhds)).eventually (ball_mem_nhds _ hρ)] with i h1 h2 h3
     exact ⟨h1, h2, h3⟩
-  -- Properties of the good members of the family.
-  have hgood' : ∀ i, ContDiffOn 𝕜 n (Φ i) s ∧
-      ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c ∧ dist (Φ i x₀) (Φ₀ x₀) < ρ →
-      ApproximatesLinearOn (e i) (L : E →L[𝕜] F) (ball x₀ r) c ∧ ⇑(e i) = Φ i ∧
-        (e i).source = ball x₀ r ∧ ContDiffOn 𝕜 n (e i).symm (e i).target ∧
-        ball (Φ₀ x₀) ρ ⊆ (e i).target := by
-    rintro i ⟨h1, hia, h3⟩
+  -- The good members of the family restrict to the wanted partial homeomorphisms.
+  have hgood' : ∀ᶠ i in l, ContDiffOn 𝕜 n (Φ i) s ∧
+      ApproximatesLinearOn (e i) (L : E →L[𝕜] F) e₀.source c ∧ ⇑(e i) = Φ i ∧
+      (e i).source = e₀.source ∧ ContDiffOn 𝕜 n (e i).symm (e i).target ∧
+      ball (Φ₀ x₀) ρ ⊆ (e i).target := by
+    filter_upwards [hgood] with i ⟨h1, hia, h3⟩
     have hei : e i = hia.toOpenPartialHomeomorph (Φ i) (ball x₀ r) hc isOpen_ball := by
       simp [e, hia]
     have hec : ⇑(e i) = Φ i := by rw [hei, ApproximatesLinearOn.toOpenPartialHomeomorph_coe]
-    refine ⟨hec ▸ hia, hec, ?_,
+    refine ⟨h1, he₀s ▸ hec ▸ hia, hec, ?_,
       hei ▸ hia.contDiffOn_toOpenPartialHomeomorph_symm hc isOpen_ball (h1.mono hrs),
       hei ▸ hρT (Φ i) hia h3⟩
-    rw [hei, ApproximatesLinearOn.toOpenPartialHomeomorph_source]
+    rw [hei, ApproximatesLinearOn.toOpenPartialHomeomorph_source, he₀s]
   have hT₀ : ball (Φ₀ x₀) ρ ⊆ e₀.target := hρT Φ₀ h₀a (by simpa using hρ)
+  have h₀c : ContDiffOn 𝕜 n e₀.symm e₀.target :=
+    h₀a.contDiffOn_toOpenPartialHomeomorph_symm hc isOpen_ball (hΦ₀.mono hrs)
   refine ⟨e₀, e, ball (Φ₀ x₀) ρ, isOpen_ball, mem_ball_self hρ, he₀c, he₀s ▸ mem_ball_self hr,
-    hrs₀, hT₀, h₀c, ?_, fun y hy ↦ ?_⟩
-  · filter_upwards [hgood] with i hi
-    obtain ⟨-, hec, hes, hic, hiT⟩ := hgood' i hi
-    exact ⟨hec, hes.trans he₀s.symm, hiT, hic⟩
-  have hyt := hT₀ hy
-  have hconv' : TendstoContDiffAt 𝕜 n (fun i ↦ ⇑(e i)) e₀ l (e₀.symm y) := by
-    rw [he₀c]
-    refine (hconv _ (hrs₀ (e₀.map_target hyt))).congr ?_
-    filter_upwards [hgood] with i hi
-    exact (hgood' i hi).2.1.symm
-  -- Order zero: the inverses converge continuously, by the uniform antilipschitz bound.
-  have hsymm : Tendsto (fun p : ι × F ↦ (e p.1).symm p.2) (l ×ˢ 𝓝 y) (𝓝 (e₀.symm y)) := by
-    refine tendsto_symm_of_approximatesLinearOn hc ?_ he₀s.subset hyt ?_ ?_
-    · filter_upwards [hgood] with i hi
-      obtain ⟨hia, -, hes, -⟩ := hgood' i hi
-      exact ⟨hia, hes.subset⟩
-    · filter_upwards [tendsto_fst.eventually hgood,
-        tendsto_snd.eventually (isOpen_ball.mem_nhds hy)] with p hp hpT
-      exact (hgood' p.1 hp).2.2.2.2 hpT
-    · simpa only [e₀.right_inv hyt] using hconv'.tendsto
-  refine hconv'.symm hyt hsymm ?_ ?_ ?_
-  · filter_upwards [tendsto_fst.eventually hgood,
-      tendsto_snd.eventually (isOpen_ball.mem_nhds hy)] with p hp hpT
-    obtain ⟨-, hec, hes, hic, hiT⟩ := hgood' p.1 hp
-    have hpt := hiT hpT
-    refine ⟨hpt, ?_, hic.contDiffAt ((e p.1).open_target.mem_nhds hpt)⟩
-    rw [hec]
-    exact hp.1.contDiffAt (hs.mem_nhds (hrs (hes ▸ (e p.1).map_target hpt)))
+    he₀s ▸ hrs, hT₀, h₀c, ?_, fun y hy ↦ ?_⟩
+  · filter_upwards [hgood'] with i ⟨_, _, hec, hes, hic, hiT⟩
+    exact ⟨hec, hes, hiT, hic⟩
+  refine TendstoContDiffAt.symm_of_approximatesLinearOn hc (he₀c ▸ hΦ₀.mono (he₀s ▸ hrs)) h₀c ?_
+    ?_ (isOpen_ball.mem_nhds hy) (hT₀ hy)
+  · filter_upwards [hgood'] with i ⟨h1, hia, hec, hes, hic, hiT⟩
+    exact ⟨hia, hes, hiT, hec ▸ h1.mono (hes ▸ he₀s ▸ hrs), hic⟩
   · rw [he₀c]
-    exact hΦ₀.contDiffAt (hs.mem_nhds (hrs₀ (e₀.map_target hyt)))
-  · exact h₀c.contDiffAt (e₀.open_target.mem_nhds hyt)
+    refine (hconv _ (hrs (he₀s ▸ e₀.map_target (hT₀ hy)))).congr ?_
+    filter_upwards [hgood'] with i ⟨_, _, hec, _⟩
+    exact hec.symm
 
 end Existence
 

@@ -30,7 +30,8 @@ the acting group: an action of `G` on `α` and the action of the subgroup
 * `Equiv.map_permCongrHom_le_alternatingGroup_iff`: transport preserves evenness.
 * `Equiv.conj_eq_permCongrHom`: conjugation by a permutation is transport along that
   permutation.
-* `Equiv.isPretransitive_map_permCongrHom_iff`: transport preserves transitivity.
+* `Equiv.isPretransitive_map_permCongrHom_iff`: transport preserves transitivity, and
+  `Equiv.isPretransitive_map_conj_iff`: so does conjugation.
 * `Equiv.map_inf_alternatingGroup_permCongrHom`: transport preserves the even part of a subgroup.
 * `Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff`: transport preserves
   transitivity of the even part of a subgroup.
@@ -66,6 +67,13 @@ theorem isPretransitive_map_permCongrHom_iff (e : α ≃ β) (G : Subgroup (Perm
     IsPretransitive (G.map e.permCongrHom.toMonoidHom) β ↔ IsPretransitive G α :=
   (isPretransitive_congr (e.permCongrHom.subgroupMap G).surjective
     (f := permCongrHomMulActionHom e G) e.bijective).symm
+
+/-- Conjugation in the symmetric group preserves transitivity. -/
+@[simp]
+theorem isPretransitive_map_conj_iff (τ : Perm α) (G : Subgroup (Perm α)) :
+    IsPretransitive (G.map (MulAut.conj τ : Perm α →* Perm α)) α ↔ IsPretransitive G α := by
+  rw [conj_eq_permCongrHom]
+  exact isPretransitive_map_permCongrHom_iff τ G
 
 /-- Transport along an equivalence preserves primitivity. -/
 theorem isPreprimitive_map_permCongrHom_iff (e : α ≃ β) (G : Subgroup (Perm α)) :

@@ -28,10 +28,12 @@ norm at most `1`. On a finitely supported probability `s : Convexity.StdSimplex 
 `bcfPairing ℝ α ℝ (s.toLp 1)` is a positive normalized functional of norm at most `1` evaluating
 `f` to `s.weights.sum fun x r ↦ r * f x`.
 
-When `α` carries the discrete topology and `𝕜` is `ℝ` or `ℂ`, `toLpInfty` is surjective (`lpBCFₗᵢ`)
-and `lp.dualEquiv` identifies `ℓ∞(α, 𝕜)` with the strong dual of `ℓ¹(α, 𝕜)`, giving the isometric
-identification `lp.bcfDualEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)` whose
-inverse evaluates a functional on the unit coordinate vectors `lp.single 1 x 1`.
+When `α` carries the discrete topology, `lp.bcfPairing` gives the isometric identification
+`lp.bcfCLMEquiv : (α →ᵇ E) ≃ₗᵢ[𝕜] (lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] E)` for any complete normed
+`𝕜`-space `E`, and specializing `E = 𝕜` gives
+`lp.bcfDualEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)`; the inverse evaluates
+an operator on the unit coordinate vectors `lp.single 1 x 1`. Over `ℝ` or `ℂ`, this agrees with
+`lp.dualEquiv` composed with `toLpInfty` (`lp.dualEquiv_toLpInfty_eq_bcfDualEquiv`).
 
 ## Main definitions
 
@@ -40,8 +42,10 @@ inverse evaluates a functional on the unit coordinate vectors `lp.single 1 x 1`.
 * `lp.bcfPairing`: for a complete normed space `E` over a nontrivially normed field `𝕜`, the
   continuous bilinear pairing `lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] (α →ᵇ E) →L[𝕜] E` given by
   `∑' x, u x • f x`.
-* `lp.bcfDualEquiv`: on a discrete space over `RCLike 𝕜`, the linear isometry equivalence
-  `(α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)`.
+* `lp.bcfCLMEquiv`: on a discrete space over a nontrivially normed field `𝕜` and a complete normed
+  `𝕜`-space `E`, the linear isometry equivalence `(α →ᵇ E) ≃ₗᵢ[𝕜] (lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] E)`.
+* `lp.bcfDualEquiv`: on a discrete space over a complete nontrivially normed field `𝕜`, the linear
+  isometry equivalence `(α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)`.
 -/
 
 public section
@@ -237,40 +241,102 @@ theorem dualEquiv_toLpInfty {𝕜 α : Type*} [RCLike 𝕜] [TopologicalSpace α
   ext u
   simp [dualEquiv_apply, bcfPairing_apply, mul_comm]
 
+section DiscreteCLM
+
+variable (𝕜 α E : Type*) [NontriviallyNormedField 𝕜]
+  [TopologicalSpace α] [DiscreteTopology α]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+
+/-- On a discrete space over a nontrivially normed field `𝕜`, bounded functions `α →ᵇ E` into a
+complete normed `𝕜`-space `E` identify isometrically with continuous linear maps
+`lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] E` via `bcfPairing`. -/
+def bcfCLMEquiv : (α →ᵇ E) ≃ₗᵢ[𝕜] (lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] E) where
+  toFun f := (bcfPairing 𝕜 α E).flip f
+  invFun T := by
+    classical
+    exact BoundedContinuousFunction.ofNormedAddCommGroupDiscrete
+      (fun x ↦ T (lp.single 1 x 1)) ‖T‖ T.norm_apply_lp_single_le
+  map_add' _ _ := map_add _ _ _
+  map_smul' _ _ := map_smul _ _ _
+  left_inv f := by
+    classical
+    ext x
+    simp
+  right_inv T := by
+    classical
+    ext u
+    simpa [bcfPairing_apply] using (T.hasSum_smul_lp_single ENNReal.one_ne_top u).tsum_eq
+  norm_map' f := by
+    classical
+    refine le_antisymm ?_ ?_
+    · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun u ↦ ?_
+      simpa [mul_comm] using norm_bcfPairing_apply_apply_le u f
+    · refine (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ ?_
+      simpa using ((bcfPairing 𝕜 α E).flip f).norm_apply_lp_single_le x
+
+variable {𝕜 α E}
+
+/-- Forward evaluation of `bcfCLMEquiv` agrees with `bcfPairing`. -/
+@[simp]
+theorem bcfCLMEquiv_apply (f : α →ᵇ E) (u : lp (fun _ : α ↦ 𝕜) 1) :
+    bcfCLMEquiv 𝕜 α E f u = bcfPairing 𝕜 α E u f := by
+  rfl
+
+/-- The inverse of `bcfCLMEquiv` evaluates a continuous linear map on the unit coordinate vectors
+`lp.single 1 x 1`. -/
+@[simp]
+theorem bcfCLMEquiv_symm_apply [DecidableEq α]
+    (T : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] E) (x : α) :
+    (bcfCLMEquiv 𝕜 α E).symm T x = T (lp.single 1 x 1) := by
+  have h := congrArg (fun g : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] E ↦
+    g (lp.single 1 x 1)) ((bcfCLMEquiv 𝕜 α E).apply_symm_apply T)
+  rwa [bcfCLMEquiv_apply, bcfPairing_single, one_smul] at h
+
+/-- Pairing `u` with `(bcfCLMEquiv 𝕜 α E).symm T` evaluates `T` at `u`. -/
+@[simp]
+theorem bcfPairing_bcfCLMEquiv_symm (u : lp (fun _ : α ↦ 𝕜) 1)
+    (T : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] E) :
+    bcfPairing 𝕜 α E u ((bcfCLMEquiv 𝕜 α E).symm T) = T u := by
+  rw [← bcfCLMEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+
+end DiscreteCLM
+
 section DiscreteDual
 
-variable (𝕜 α : Type*) [RCLike 𝕜] [TopologicalSpace α] [DiscreteTopology α]
+variable (𝕜 α : Type*) [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [TopologicalSpace α] [DiscreteTopology α]
 
-/-- On a discrete space over `RCLike 𝕜`, bounded functions `α →ᵇ 𝕜` identify isometrically with
-the strong dual of `ℓ¹(α, 𝕜)` via `bcfPairing`. -/
+/-- On a discrete space over a complete nontrivially normed field `𝕜`, bounded functions `α →ᵇ 𝕜`
+identify isometrically with the strong dual of `ℓ¹(α, 𝕜)` via `bcfPairing`. -/
 def bcfDualEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1) :=
-  (lpBCFₗᵢ 𝕜 𝕜).symm.trans (dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top)
+  bcfCLMEquiv 𝕜 α 𝕜
 
 variable {𝕜 α}
 
 /-- Forward evaluation of `bcfDualEquiv` agrees with `bcfPairing`. -/
 @[simp]
 theorem bcfDualEquiv_apply (f : α →ᵇ 𝕜) (u : lp (fun _ : α ↦ 𝕜) 1) :
-    bcfDualEquiv 𝕜 α f u = bcfPairing 𝕜 α 𝕜 u f := by
-  simp only [bcfDualEquiv, LinearIsometryEquiv.trans_apply, dualEquiv_apply, coe_lpBCFₗᵢ_symm,
-    bcfPairing_apply, smul_eq_mul, mul_comm]
+    bcfDualEquiv 𝕜 α f u = bcfPairing 𝕜 α 𝕜 u f :=
+  bcfCLMEquiv_apply f u
 
 /-- The inverse of `bcfDualEquiv` evaluates a functional on the unit coordinate vectors
 `lp.single 1 x 1`. -/
 @[simp]
 theorem bcfDualEquiv_symm_apply [DecidableEq α]
     (φ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) (x : α) :
-    (bcfDualEquiv 𝕜 α).symm φ x = φ (lp.single 1 x 1) := by
-  simp [bcfDualEquiv, coe_lpBCFₗᵢ]
+    (bcfDualEquiv 𝕜 α).symm φ x = φ (lp.single 1 x 1) :=
+  bcfCLMEquiv_symm_apply φ x
 
+/-- Pairing `u` with `(bcfDualEquiv 𝕜 α).symm φ` evaluates `φ` at `u`. -/
 @[simp]
 theorem bcfPairing_bcfDualEquiv_symm (u : lp (fun _ : α ↦ 𝕜) 1)
     (φ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) :
-    bcfPairing 𝕜 α 𝕜 u ((bcfDualEquiv 𝕜 α).symm φ) = φ u := by
-  rw [← bcfDualEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+    bcfPairing 𝕜 α 𝕜 u ((bcfDualEquiv 𝕜 α).symm φ) = φ u :=
+  bcfPairing_bcfCLMEquiv_symm u φ
 
 /-- On a discrete space, `lp.dualEquiv` applied to `f.toLpInfty 𝕜` equals `bcfDualEquiv 𝕜 α f`. -/
-theorem dualEquiv_toLpInfty_eq_bcfDualEquiv (f : α →ᵇ 𝕜) :
+theorem dualEquiv_toLpInfty_eq_bcfDualEquiv {𝕜 α : Type*} [RCLike 𝕜] [TopologicalSpace α]
+    [DiscreteTopology α] (f : α →ᵇ 𝕜) :
     dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top (BoundedContinuousFunction.toLpInfty 𝕜 f) =
       bcfDualEquiv 𝕜 α f := by
   ext u

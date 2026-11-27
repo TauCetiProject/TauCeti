@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Etale.Pi
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Functoriality
 import TauCeti.Algebra.Algebra.Pi
 
@@ -27,6 +28,8 @@ stated for a finite monoid.
 ## Main declarations
 
 * `TauCeti.ConstantGroup.coordinateRing`: the Hopf algebra of functions on a finite group.
+* `TauCeti.ConstantGroup.finiteTypeCoordinateHopfAlgebra`: the same Hopf algebra, bundled as a
+  finite-type Hopf algebra.
 * `TauCeti.ConstantGroup.functionAlgEquiv`: its canonical equivalence with `G → R`.
 * `TauCeti.ConstantGroup.eval`: evaluation at a group element as an algebra homomorphism.
 * `TauCeti.ConstantGroup.delta`: the indicator function of a group element.
@@ -214,6 +217,11 @@ end Monoid
 section Group
 
 variable [Group G]
+
+/-- The coordinate Hopf algebra of the constant group `G` over `R`, as a finite-type Hopf
+algebra. -/
+noncomputable abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat.{u, max u v} R :=
+  FiniteTypeCommHopfAlgCat.of R (coordinateRing R G)
 
 /-- The antipode of the coordinate ring sends a function `f` to `g ↦ f (g⁻¹)`. -/
 theorem antipode_apply (f : coordinateRing R G) (g : G) :
