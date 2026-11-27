@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import TauCeti.Analysis.ODE.DysonSeries
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
@@ -25,7 +26,10 @@ with `S_Φ(t) = Φ(t)⁻¹ (S(t) Φ(t) - Φ'(t))` (`TauCeti.trivializedCoeff`), 
 differentiable at `t` and `Φ t` is invertible, `Φ t` intertwines `ζ' - S_Φ(t) ζ` with `ξ' - S_t ξ`;
 `trivializedCoeff Φ S` is `C^n` for complete `F`, `C^(n+1)` invertible `Φ` and `C^n` `S` (in
 particular continuous for `C¹` `Φ` and continuous `S`), inherits `T`-periodicity, and sends
-`S_t - δ • K_t` to `S_Φ(t) - δ • K₀`. Adapts
+`S_t - δ • K_t` to `S_Φ(t) - δ • K₀`. The propagator of `ζ' = S_Φ(t) ζ` is that of
+`ξ' = S_t ξ` read in the frame (`TauCeti.dysonSeriesLeft_trivializedCoeff_apply`), so for a frame
+with `Φ d = Φ 0` the two return maps at time `d` are conjugate and `1` minus either has the same
+determinant (`TauCeti.det_one_sub_dysonSeriesLeft_trivializedCoeff`). Adapts
 `TauCeti.frameConnection`
 (`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`).
 
@@ -122,5 +126,52 @@ theorem trivializedCoeff_sub_smul {Φ : ℝ → F →L[ℝ] V} {S K : ℝ → V 
   ext v
   simp only [trivializedCoeff_apply, sub_apply, smul_apply, hK, sub_right_comm _ (δ • Φ t (K₀ v)),
     map_sub, map_smul, hΦ.inverse_apply_self]
+
+section Propagator
+
+variable [CompleteSpace F] [CompleteSpace V]
+
+/-- **The propagator in a frame.** For a `C¹` frame `Φ` with invertible values and a continuous
+coefficient `S`, the propagator of the trivialized equation `ζ' = S_Φ(t) ζ` is that of
+`ξ' = S_t ξ` read in the frame: `Ψ_Φ(t) v = Φ(t)⁻¹ (Ψ(t) (Φ(0) v))`. -/
+theorem dysonSeriesLeft_trivializedCoeff_apply {Φ : ℝ → F →L[ℝ] V} {S : ℝ → V →L[ℝ] V}
+    (hΦ : ContDiff ℝ 1 Φ) (hinv : ∀ t, (Φ t).IsInvertible) (hS : Continuous S) (t : ℝ) (v : F) :
+    dysonSeriesLeft (trivializedCoeff Φ S) t v =
+      (Φ t).inverse (dysonSeriesLeft S t (Φ 0 v)) := by
+  have hΦd := hΦ.differentiable one_ne_zero
+  have hΨd : Differentiable ℝ fun t ↦ (Φ t).inverse :=
+    ((hΦ.clm_inverse hinv).differentiable one_ne_zero)
+  -- `ζ(r) = Φ(r)⁻¹ (Ψ(r) (Φ(0) v))` solves the trivialized equation, since `Φ ζ` solves `ξ' = S ξ`.
+  set ζ : ℝ → F := fun r ↦ (Φ r).inverse (dysonSeriesLeft S r (Φ 0 v))
+  have hζd : Differentiable ℝ ζ := hΨd.clm_apply fun r ↦
+    (hasDerivAt_dysonSeriesLeft_apply hS (Φ 0 v) r).differentiableAt
+  have hζ (r : ℝ) : HasDerivAt ζ (trivializedCoeff Φ S r (ζ r)) r := by
+    refine (hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff (hΦd r) (hinv r) (hζd r)).1 ?_
+    simp only [ζ, (hinv _).self_apply_inverse]
+    exact hasDerivAt_dysonSeriesLeft_apply hS (Φ 0 v) r
+  have h0 : ζ 0 = v := by simp [ζ, dysonSeriesLeft_zero, (hinv 0).inverse_apply_self]
+  have h := (eq_dysonSeriesLeft_apply (continuous_trivializedCoeff hΦ hinv hS) hζ t).symm
+  rwa [h0] at h
+
+/-- **The return map in a frame.** For a `C¹` frame `Φ` with invertible values and `Φ d = Φ 0`,
+and a continuous coefficient `S`, the return map at time `d` of the trivialized equation
+`ζ' = S_Φ(t) ζ` is conjugate by `Φ 0` to that of `ξ' = S_t ξ`, so `1` minus either has the same
+determinant. -/
+theorem det_one_sub_dysonSeriesLeft_trivializedCoeff {Φ : ℝ → F →L[ℝ] V} {S : ℝ → V →L[ℝ] V}
+    (hΦ : ContDiff ℝ 1 Φ) (hinv : ∀ t, (Φ t).IsInvertible) (hS : Continuous S) {d : ℝ}
+    (hd : Φ d = Φ 0) :
+    LinearMap.det ((1 - dysonSeriesLeft (trivializedCoeff Φ S) d : F →L[ℝ] F) : F →ₗ[ℝ] F) =
+      LinearMap.det ((1 - dysonSeriesLeft S d : V →L[ℝ] V) : V →ₗ[ℝ] V) := by
+  obtain ⟨e, he⟩ := hinv 0
+  have h : ((1 - dysonSeriesLeft (trivializedCoeff Φ S) d : F →L[ℝ] F) : F →ₗ[ℝ] F) =
+      (e.symm.toLinearEquiv : V →ₗ[ℝ] F) ∘ₗ ((1 - dysonSeriesLeft S d : V →L[ℝ] V) : V →ₗ[ℝ] V) ∘ₗ
+        (e.symm.toLinearEquiv.symm : F →ₗ[ℝ] V) := by
+    refine LinearMap.ext fun v ↦ ?_
+    have hinv' : (Φ d).inverse = (e.symm : V →L[ℝ] F) := by
+      rw [hd, ← he, ContinuousLinearMap.inverse_equiv]
+    simp [dysonSeriesLeft_trivializedCoeff_apply hΦ hinv hS, hinv', ← he]
+  rw [h, LinearMap.det_conj]
+
+end Propagator
 
 end TauCeti

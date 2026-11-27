@@ -8,13 +8,13 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.RingTheory.Radical.NatInt
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.DirichletCharacter.IntervalSum
 import Mathlib.Analysis.Normed.Group.Int
 import Mathlib.Data.Int.CardIntervalMod
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.ZMod.Units
 import TauCeti.NumberTheory.ArithmeticFunction.Moebius
-import TauCeti.NumberTheory.DirichletCharacter.Conductor
 
 /-!
 # Interval sums of induced Dirichlet characters
@@ -63,16 +63,13 @@ character, with coefficients `μ(d) χ(d)` over the divisors of the product of t
 The endpoints are divided using integer floor division, including for negative endpoints. -/
 theorem intervalSum_changeLevel_eq_sum_divisors {R : Type*} [CommRing R] {c q : ℕ} [NeZero q]
     (χ : DirichletCharacter R c) (hcq : c ∣ q) (M : ℤ) (H : ℕ) :
-    let r := radical q / (radical q).gcd c
     (changeLevel hcq χ).intervalSum M H =
-      ∑ d ∈ r.divisors, (μ d : R) * χ d * ∑ k ∈ Ioc (M / d) ((M + H) / d), χ k := by
-  intro r
-  have hsq : Squarefree r := squarefree_radical.squarefree_of_dvd
-    (Nat.div_dvd_of_dvd (Nat.gcd_dvd_left _ _))
+      ∑ d ∈ (radical q / (radical q).gcd c).divisors,
+        (μ d : R) * χ d * ∑ k ∈ Ioc (M / d) ((M + H) / d), χ k := by
   rw [intervalSum_def]
   simp_rw [χ.changeLevel_intCast_eq_ite_coprime hcq]
-  rw [← sum_filter,
-    ArithmeticFunction.sum_filter_natAbs_coprime_eq_sum_divisors_smul _ _ hsq.ne_zero]
+  rw [← sum_filter, ArithmeticFunction.sum_filter_natAbs_coprime_eq_sum_divisors_smul _ _ (by
+    simp [Nat.div_ne_zero_iff_of_dvd (Nat.gcd_dvd_left _ _), Nat.gcd_ne_zero_left radical_ne_zero])]
   refine sum_congr rfl fun d hd ↦ ?_
   have hdpos : 0 < (d : ℤ) := by exact_mod_cast Nat.pos_of_mem_divisors hd
   rw [Int.Ioc_filter_dvd_eq _ _ hdpos, sum_map]
@@ -87,19 +84,10 @@ theorem maxIntervalSum_changeLevel_le {F : Type*} [NormedField F] {c q : ℕ} [N
     (changeLevel hcq χ).maxIntervalSum ≤
       2 ^ ω (radical q / (radical q).gcd c) * χ.maxIntervalSum := by
   let r := radical q / (radical q).gcd c
-  have hsq : Squarefree r := squarefree_radical.squarefree_of_dvd
-    (Nat.div_dvd_of_dvd (Nat.gcd_dvd_left _ _))
   refine (maxIntervalSum_le_iff (changeLevel_eq_one_iff hcq |>.not.mpr hχ)).mpr fun M H ↦ ?_
   rw [χ.intervalSum_changeLevel_eq_sum_divisors hcq]
-  have hcard : r.divisors.card = 2 ^ ω r := by
-    rw [Nat.card_divisors hsq.ne_zero, ArithmeticFunction.cardDistinctFactors_eq_card_primeFactors]
-    calc
-      _ = ∏ _ ∈ r.primeFactors, 2 := prod_congr rfl fun p hp ↦ by
-        rw [Nat.factorization_eq_one_of_squarefree hsq (Nat.prime_of_mem_primeFactors hp)
-          (Nat.dvd_of_mem_primeFactors hp)]
-      _ = _ := by simp
   calc
-    _ ≤ ∑ _ ∈ r.divisors, χ.maxIntervalSum := by
+    _ ≤ ∑ d ∈ r.divisors, (μ d : ℝ) ^ 2 * χ.maxIntervalSum := by
       apply (norm_sum_le _ _).trans
       refine sum_le_sum fun d hd ↦ ?_
       have hdpos : 0 < (d : ℤ) := by exact_mod_cast Nat.pos_of_mem_divisors hd
@@ -113,25 +101,28 @@ theorem maxIntervalSum_changeLevel_le {F : Type*} [NormedField F] {c q : ℕ} [N
       rw [hsum, mul_assoc, ← zsmul_eq_mul]
       refine (norm_zsmul_le _ _).trans ?_
       rw [norm_mul]
+      have hμ : ‖μ d‖ = (μ d : ℝ) ^ 2 := by
+        rw [Int.norm_eq_abs]
+        exact_mod_cast ArithmeticFunction.abs_moebius.trans ArithmeticFunction.moebius_sq.symm
+      rw [hμ]
       calc
-        _ ≤ 1 * (1 * χ.maxIntervalSum) := by
+        _ ≤ (μ d : ℝ) ^ 2 * (1 * χ.maxIntervalSum) := by
           gcongr
-          · rw [Int.norm_eq_abs]
-            exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := d)
           · exact χ.norm_le_one _
           · exact norm_intervalSum_le_maxIntervalSum hχ _ _
-        _ = _ := by simp
-    _ = _ := by simp [hcard, nsmul_eq_mul, r]
+        _ = _ := by rw [one_mul]
+    _ = _ := by
+      rw [← sum_mul, ArithmeticFunction.sum_divisors_moebius_sq]
+      simp [r, Nat.div_ne_zero_iff_of_dvd (Nat.gcd_dvd_left _ _),
+        Nat.gcd_ne_zero_left radical_ne_zero]
 
 /-- Reduction to the conductor: the maximal interval sum of a nonprincipal character is at
 most the inducing primitive character's maximal interval sum times `2^ω(r)`, where `r` is the
 product of primes of the level not dividing the conductor. -/
-theorem maxIntervalSum_le_primitiveCharacter {F : Type*} [NormedField F] {q : ℕ} [NeZero q]
-    (χ : DirichletCharacter F q) (hχ : χ ≠ 1) :
-    let _ : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
-    let r := radical q / (radical q).gcd χ.conductor
-    χ.maxIntervalSum ≤ 2 ^ ω r * χ.primitiveCharacter.maxIntervalSum := by
-  intro _
+theorem maxIntervalSum_le_pow_mul_maxIntervalSum_primitiveCharacter
+    {F : Type*} [NormedField F] {q : ℕ} [NeZero q] (χ : DirichletCharacter F q) (hχ : χ ≠ 1) :
+    χ.maxIntervalSum ≤
+      2 ^ ω (radical q / (radical q).gcd χ.conductor) * χ.primitiveCharacter.maxIntervalSum := by
   simpa only [changeLevel_primitiveCharacter] using
     χ.primitiveCharacter.maxIntervalSum_changeLevel_le χ.conductor_dvd_level
       (mt χ.primitiveCharacter_eq_one_iff.mp hχ)
