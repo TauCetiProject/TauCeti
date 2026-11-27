@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.AlgebraicClosure
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Embeddings
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 
 /-!
 # Tests of place-constant functions with the conjugation relation
@@ -109,9 +110,7 @@ theorem exists_not_two_nsmul_eq_of_mod_four_eq_one (p : ℕ) [Fact p.Prime] (h :
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {4} ℚ K
   have := IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) K (by norm_num)
   have hcard : Nat.card Gal(K/ℚ) = 2 := by
-    rw [IsGalois.card_aut_eq_finrank, IsCyclotomicExtension.finrank (n := 4) K
-      (Polynomial.cyclotomic.irreducible_rat (by norm_num))]
-    decide
+    rw [IsGalois.card_aut_eq_finrank, TauCeti.finrank_eq_two_of_isCyclotomicExtension_four]
   refine ⟨fun τ ↦ if τ = RingHom.id K then 1 else 0, fun τ ↦ if τ = RingHom.id K then Q₁ else Q₂,
     fun c hc τ ↦ ?_, fun τ ↦ ?_, fun τ τ' hττ' ↦ ?_, by simp, fun τ ↦ ?_⟩
   · have hc1 : (c : K →+* K) ≠ RingHom.id K := fun h1 ↦ ne_one_of_mem_complexConjugations hc
