@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.MeanCurvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.AlongMap
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Immersion geometry under ambient isometries
@@ -77,15 +78,6 @@ namespace IsLocalRiemannianIsometry
 
 section Splitting
 
-omit [FiniteDimensional ℝ F] [FiniteDimensional ℝ F'] in
-/-- The range of the differential of `Φ ∘ f` is the image under `dΦ` of the range of `df`. -/
-theorem range_mfderiv_comp (hΦ : IsLocalRiemannianIsometry J J' Φ)
-    (hf : MDifferentiableAt I J f x) :
-    LinearMap.range (mfderiv I J' (Φ ∘ f) x).toLinearMap =
-      (LinearMap.range (mfderiv I J f x).toLinearMap).map
-        (mfderiv J J' Φ (f x) : TangentSpace J (f x) →ₗ[ℝ] TangentSpace J' (Φ (f x))) := by
-  rw [mfderiv_comp x (hΦ.mdifferentiableAt (f x)) hf]
-  exact LinearMap.range_comp _ _
 
 /-- `dΦ` commutes with the orthogonal projections onto the tangent spaces `range df_x` and
 `range d(Φ ∘ f)_x`. -/
@@ -94,7 +86,7 @@ theorem mfderiv_starProjection_range (hΦ : IsLocalRiemannianIsometry J J' Φ)
     mfderiv J J' Φ (f x) ((LinearMap.range (mfderiv I J f x).toLinearMap).starProjection w) =
       (LinearMap.range (mfderiv I J' (Φ ∘ f) x).toLinearMap).starProjection
         (mfderiv J J' Φ (f x) w) := by
-  rw [hΦ.range_mfderiv_comp hf]
+  rw [range_mfderiv_comp (hΦ.mdifferentiableAt (f x)) hf]
   exact ((mfderiv J J' Φ (f x)).toLinearMap.isometryOfInner
     (hΦ.inner_mfderiv _)).map_starProjection' _ w
 
@@ -145,15 +137,10 @@ theorem mfderiv_immersionSecondFundamentalForm (hΦ : IsLocalRiemannianIsometry 
     filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf] with y hy
     rw [mfderiv_comp y (hΦ.mdifferentiableAt (f y)) (hy.mdifferentiableAt (by simp)),
       ContinuousLinearMap.comp_apply]
-  -- The field `df Y` along `f` has a differentiable coordinate reading at `x`.
-  have hcoord : MDifferentiableAt I 𝓘(ℝ, F)
-      (sectionCoord ℝ (F := F) f (fun y ↦ mfderiv I J f y (Y y)) (f x)) x := by
-    have h := hf.contMDiffAt_tangentMap (X := (Y x : TangentBundle I M)) (m := 1) (by norm_num)
-    exact mdifferentiableAt_sectionCoord f _ ((h.mdifferentiableAt one_ne_zero).comp x hY)
-      (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f x))
   rw [immersionSecondFundamentalForm_def, immersionSecondFundamentalForm_def,
     cov'.alongMap_congr (Φ ∘ f) _ hfield, hΦ.mfderiv_starProjection_orthogonalNormalSpace hfd,
-    hΦ.mfderiv_alongMap_of_isLeviCivitaConnection hcov hcov' hfd hcoord]
+    hΦ.mfderiv_alongMap_of_isLeviCivitaConnection hcov hcov' hfd
+      (hf.mdifferentiableAt_sectionCoord_mfderiv_of_mdifferentiableAt le_rfl hY)]
 
 omit [IsManifold I 2 M] in
 /-- **The shape operator under ambient isometries.** For a field `ν` along `f` with a

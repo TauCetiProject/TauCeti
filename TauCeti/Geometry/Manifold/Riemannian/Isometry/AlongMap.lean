@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Metric
+public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Tangent
 
 /-!
 # Covariant differentiation along maps under local Riemannian isometries
@@ -25,9 +26,6 @@ submanifold geometry of an immersion `γ` into `M` to that of `f ∘ γ`.
 
 ## Main results
 
-* `ContMDiffAt.mdifferentiableAt_sectionCoord_mfderiv_comp`: the differential of a map which is
-  `C²` at the base point carries a tangent field along `γ`, differentiable in local coordinates,
-  to such a tangent field along `f ∘ γ`.
 * `TauCeti.IsLocalRiemannianIsometry.mfderiv_alongMap_of_isLeviCivitaConnection`:
   **naturality of covariant differentiation along maps** under local Riemannian isometries, for
   any Levi-Civita connections on `M` and `N`.
@@ -61,40 +59,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {HP : Type*} [TopologicalSpace HP] {K : ModelWithCorners ℝ G HP}
   {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
 
-/-! ### Transport of fields along maps by a differential -/
-
-section Transport
-
-variable [IsManifold I 2 M] [IsManifold J 2 N] {f : M → N} {n : WithTop ℕ∞}
-
-/-- The differential of a map `f` which is `C^n` at `γ t`, with `2 ≤ n`, carries a tangent field
-along `γ` whose coordinate reading is differentiable at `t` to a tangent field along `f ∘ γ` whose
-coordinate reading is differentiable at `t`. -/
-theorem _root_.ContMDiffAt.mdifferentiableAt_sectionCoord_mfderiv_comp {γ : P → M}
-    {V : ∀ p, TangentSpace I (γ p)} {t : P}
-    (hf : ContMDiffAt I J n f (γ t)) (hn : 2 ≤ n) (hγ : MDifferentiableAt K I γ t)
-    (hV : MDifferentiableAt K 𝓘(ℝ, E) (sectionCoord ℝ (F := E) γ V (γ t)) t) :
-    MDifferentiableAt K 𝓘(ℝ, F)
-      (sectionCoord ℝ (F := F) (f ∘ γ) (fun p ↦ mfderiv I J f (γ p) (V p)) (f (γ t))) t := by
-  have htotal : MDifferentiableAt K I.tangent (fun p ↦ TotalSpace.mk' E (γ p) (V p)) t :=
-    (mdifferentiableAt_sectionCoord_iff γ V hγ
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))).1 hV
-  have htangent : MDifferentiableAt I.tangent J.tangent (tangentMap I J f)
-      (TotalSpace.mk' E (γ t) (V t)) :=
-    (hf.contMDiffAt_tangentMap (X := TotalSpace.mk' E (γ t) (V t)) (m := 1)
-      (by rwa [one_add_one_eq_two])).mdifferentiableAt one_ne_zero
-  have hmap : tangentMap I J f ∘ (fun p ↦ TotalSpace.mk' E (γ p) (V p)) =
-      fun p ↦ TotalSpace.mk' F (f (γ p)) (mfderiv I J f (γ p) (V p)) := by
-    funext p
-    exact TotalSpace.ext tangentMap_proj (heq_of_eq tangentMap_snd)
-  have htransport : MDifferentiableAt K J.tangent
-      (fun p ↦ TotalSpace.mk' F (f (γ p)) (mfderiv I J f (γ p) (V p))) t := by
-    simpa only [hmap] using htangent.comp t htotal
-  exact mdifferentiableAt_sectionCoord (f ∘ γ) (fun p ↦ mfderiv I J f (γ p) (V p)) htransport
-    (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
-
-end Transport
-
 /-! ### Naturality of covariant differentiation along maps -/
 
 namespace IsLocalRiemannianIsometry
@@ -112,12 +76,7 @@ Let `f : M → N` be a local Riemannian isometry and `∇ᴹ`, `∇ᴺ` Levi-Civ
 `γ : P → M` differentiable at `t` and a tangent field `V` along `γ` whose coordinate reading is
 differentiable at `t`, the differential of `f` carries the covariant derivative of `V` along `γ`
 to the covariant derivative of the transported field `df V` along `f ∘ γ`:
-`df (∇ᴹ_v V) = ∇ᴺ_v (df V)` for every `v ∈ T_tP`.
-
-The proof pairs both sides with a differentiable vector field `Y` on `N`. The pairings
-`⟪V, f^* Y⟫` and `⟪df V, Y⟫` along `γ` are the same function, the metric product rule along maps
-differentiates it on both sides, and the remaining terms agree by the naturality of the
-Levi-Civita connection on the pulled-back field `f^* Y`. -/
+`df (∇ᴹ_v V) = ∇ᴺ_v (df V)` for every `v ∈ T_tP`. -/
 theorem mfderiv_alongMap_of_isLeviCivitaConnection (hf : IsLocalRiemannianIsometry I J f)
     {covM : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
     {covN : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)}
@@ -130,7 +89,10 @@ theorem mfderiv_alongMap_of_isLeviCivitaConnection (hf : IsLocalRiemannianIsomet
   have hfγ : MDifferentiableAt K J (f ∘ γ) t := (hf.mdifferentiableAt (γ t)).comp t hγ
   have hfV : MDifferentiableAt K 𝓘(ℝ, F)
       (sectionCoord ℝ (F := F) (f ∘ γ) (fun p ↦ mfderiv I J f (γ p) (V p)) (f (γ t))) t :=
-    hf.contMDiff.contMDiffAt.mdifferentiableAt_sectionCoord_mfderiv_comp (by simp) hγ hV
+    hf.contMDiff.contMDiffAt.mdifferentiableAt_sectionCoord_mfderiv (by simp) hγ hV
+  -- Pair both sides with a differentiable vector field `Y` on `N`: the pairings `⟪V, f^* Y⟫` and
+  -- `⟪df V, Y⟫` along `γ` agree, the metric product rule along maps differentiates them, and the
+  -- remaining terms agree by the naturality of the Levi-Civita connection on `f^* Y`.
   refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (f (γ t)) ?_
   ext Y hY
   dsimp only
@@ -162,8 +124,7 @@ theorem mfderiv_alongMap_of_isLeviCivitaConnection (hf : IsLocalRiemannianIsomet
       mfderiv_comp t (hf.mdifferentiableAt (γ t)) hγ, ContinuousLinearMap.comp_apply]
   have hleft : inner ℝ (mfderiv I J f (γ t) (covM.alongMap K γ V t v)) (Y (f (γ t))) =
       inner ℝ (covM.alongMap K γ V t v) (X (γ t)) := by
-    rw [← hf.inner_mfderiv (γ t), hXY]
-    rfl
+    rw [← hf.inner_mfderiv (γ t), hXY, Function.comp_apply]
   simp only [ContinuousLinearMap.comp_apply, Function.comp_apply] at hsource htarget hsecond hXY ⊢
   rw [hleft]
   linarith
