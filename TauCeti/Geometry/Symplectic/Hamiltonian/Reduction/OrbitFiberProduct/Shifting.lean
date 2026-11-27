@@ -57,6 +57,8 @@ of `σ`, as the second component of the section is constant.
 
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.prod_neg_coadjointOrbitForm`: `Ψ` is a
   coadjoint-equivariant moment map of `M × O⁻`.
+* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingReducedSpaceDiffeomorph_quotientMk`:
+  `Φ` is the descent of the orbit projection `q_W`, `Φ [z] = q_W z`.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingReducedSpaceDiffeomorph_mk`,
   `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.shiftingReducedSpaceDiffeomorph_symm_mk`: the
   formulas `Φ [(x, g G_c)] = [g⁻¹ • x]` and `Φ⁻¹ [z] = [(z, G_c)]`.
@@ -307,8 +309,33 @@ def shiftingReducedSpaceDiffeomorph :
       (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀ d₀)
     Quotient.mk_surjective (h.isSubmersion_zeroLevelProj hreg hn d hn₀) (funext fun _ ↦ rfl)
 
-/-- The shifting diffeomorphism sends the orbit of `(x, g G_c)` to the orbit of `g⁻¹ • x`. -/
+/-- **The shifting diffeomorphism is the descent of the orbit projection** `q_W`: it sends the
+orbit of a zero `z` of the shifting map to `q_W z`, reading `z` as a point of the orbit fibre
+product `W_O` (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductProj`). -/
 @[simp]
+theorem shiftingReducedSpaceDiffeomorph_quotientMk
+    (z : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
+    haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+    haveI := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
+    letI := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
+      (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀ d₀
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    h.shiftingReducedSpaceDiffeomorph hreg hn d hn₀ d₀ (Quotient.mk _ z) =
+      h.orbitFiberProductProj c (finBasis ℝ (GroupLieAlgebra I G))
+        ⟨z.val, (components_eq_orbitMap_iff_apply_eq _).2 (sub_eq_zero.1
+          ((h.prod_neg_coadjointOrbitForm c).mem_levelSubMulAction.1 z.property))⟩ := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
+  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+    (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀
+  let _ := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
+    (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀ d₀
+  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
+  -- The underlying bijection computes on orbits by `Quotient.congrRight` and
+  -- `Setoid.quotientKerEquivOfSurjective`, both of which send `[z]` to `zeroLevelProj z`.
+  exact Equiv.diffeomorphOfSubmersions_apply _ _ _ _ _ _
+
+/-- The shifting diffeomorphism sends the orbit of `(x, g G_c)` to the orbit of `g⁻¹ • x`. -/
 theorem shiftingReducedSpaceDiffeomorph_mk (x : M) (g : G)
     (hp : (x, (g : G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)) ∈
       (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
@@ -319,18 +346,9 @@ theorem shiftingReducedSpaceDiffeomorph_mk (x : M) (g : G)
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
     h.shiftingReducedSpaceDiffeomorph hreg hn d hn₀ d₀ (Quotient.mk _ ⟨(x, g), hp⟩) =
       Quotient.mk _ ⟨g⁻¹ • x, h.mem_levelSubMulAction.2 (h.apply_eq_orbitMap_iff.1
-        (sub_eq_zero.1 ((h.prod_neg_coadjointOrbitForm c).mem_levelSubMulAction.1 hp)))⟩ := by
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
-  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
-    (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀
-  let _ := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
-    (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀ d₀
-  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
-  -- The underlying bijection computes on orbits by `Quotient.congrRight` and
-  -- `Setoid.quotientKerEquivOfSurjective`, both of which send `[z]` to `zeroLevelProj z`.
-  exact (Equiv.diffeomorphOfSubmersions_apply _ _ _ _ _ _).trans
-    (h.orbitFiberProductProj_eq _ ⟨_, h.mem_orbitFiberProduct ⟨_, hp⟩⟩ rfl)
+        (sub_eq_zero.1 ((h.prod_neg_coadjointOrbitForm c).mem_levelSubMulAction.1 hp)))⟩ :=
+  (h.shiftingReducedSpaceDiffeomorph_quotientMk hreg hn d hn₀ d₀ _).trans
+    (h.orbitFiberProductProj_mk _ _ _ _)
 
 /-- The inverse of the shifting diffeomorphism sends the orbit of `z` to the orbit of
 `(z, G_c)`. -/
