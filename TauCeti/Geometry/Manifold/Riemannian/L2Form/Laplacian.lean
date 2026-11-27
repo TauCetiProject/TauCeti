@@ -168,9 +168,9 @@ theorem toL2Form_mem_graph_hodgeLaplacian (o : Manifold.Orientation I M (Fin m))
   · rw [← map_add]
     congr 1
     ext1
-    rw [compactlySupportedForms.coe_hodgeLaplacian,
+    simp only [compactlySupportedForms.coe_hodgeLaplacian,
       SmoothForm.hodgeLaplacian_add_one_add_one o hkl' hkl, Submodule.coe_add, coe_mextDerivₗ,
-      coe_codifferential, coe_codifferential, coe_mextDerivₗ]
+      coe_codifferential]
     exact add_comm _ _
 
 /-- On an oriented boundaryless Riemannian manifold, the class of a compactly supported smooth

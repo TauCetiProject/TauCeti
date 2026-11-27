@@ -39,8 +39,9 @@ These are the consequences of the compactness property in Arnold, Falk and Winth
 §3.1.3.
 
 The **Laplacian** of the pair is `LinearPMap.hodgeLaplacian d₀ d₁ = d₀†† d₀† + d₁† d₁`, on its
-maximal domain; for the `L²` de Rham complex it is the Hodge Laplacian `d d* + d* d`. When `d₀†` is
-densely defined, that is when `d₀` is closable, it is self-adjoint, with
+maximal domain; for the `L²` de Rham complex it is the Hodge Laplacian `d d* + d* d`. When `d₀` is
+densely defined and closable, `d₁` is closed and densely defined, and `range d₀ ≤ ker d₁`, it is
+self-adjoint, with
 `⟪Δ x, x⟫ = ‖d₀† x‖² + ‖d₁ x‖²`, and its kernel is the harmonic space. Self-adjointness comes from
 the surjectivity of `Δ + 1`: along `F = (ker d₀†)ᗮ ⊕ ker d₀†` the two terms of the Laplacian act on
 different summands, `(ker d₀†)ᗮ = closure (range d₀)` lies in `ker d₁`, and on each summand
@@ -387,7 +388,7 @@ variable [CompleteSpace E] [CompleteSpace F] {d₀ : E →ₗ.[𝕜] F} {d₁ : 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
 variable (d₀ d₁) in
-/-- The **Laplacian** `d₀ d₀† + d₁† d₁` of a pair of composable partial linear maps
+/-- The **Laplacian** `d₀†† d₀† + d₁† d₁` of a pair of composable partial linear maps
 `d₀ : E →ₗ.[𝕜] F` and `d₁ : F →ₗ.[𝕜] G`, on its maximal domain: the vectors `x` of
 `dom d₀† ∩ dom d₁` with `d₀† x ∈ dom d₀††` and `d₁ x ∈ dom d₁†`. Its first term is `d₀†† d₀†`, and
 `d₀††` is the closure of `d₀` when `d₀` is closable and densely defined. For the `L²` de Rham
@@ -456,9 +457,8 @@ theorem inner_hodgeLaplacian_self (hd₀' : Dense (d₀†.domain : Set F))
     ⟪hodgeLaplacian d₀ d₁ x, (x : F)⟫ =
       ((‖d₀† ⟨x, domain_hodgeLaplacian_le_domain_adjoint x.property⟩‖ ^ 2 +
         ‖d₁ ⟨x, domain_hodgeLaplacian_le_domain x.property⟩‖ ^ 2 : ℝ) : 𝕜) := by
-  rw [inner_hodgeLaplacian hd₀' hd₁ x (domain_hodgeLaplacian_le_domain_adjoint x.property)
-    (domain_hodgeLaplacian_le_domain x.property), inner_self_eq_norm_sq_to_K,
-    inner_self_eq_norm_sq_to_K, RCLike.ofReal_add, RCLike.ofReal_pow, RCLike.ofReal_pow]
+  simp [inner_hodgeLaplacian hd₀' hd₁ x (domain_hodgeLaplacian_le_domain_adjoint x.property)
+    (domain_hodgeLaplacian_le_domain x.property), inner_self_eq_norm_sq_to_K]
 
 /-- **The kernel of the Laplacian is the harmonic space** `ker d₁ ⊓ ker d₀†`. -/
 theorem ker_hodgeLaplacian (hd₀' : Dense (d₀†.domain : Set F)) (hd₁ : Dense (d₁.domain : Set F)) :
@@ -469,9 +469,8 @@ theorem ker_hodgeLaplacian (hd₀' : Dense (d₀†.domain : Set F)) (hd₁ : De
     intro hx
     obtain ⟨y, rfl, hy⟩ := mem_ker_iff.1 hx
     have h := inner_hodgeLaplacian_self hd₀' hd₁ y
-    rw [hy, inner_zero_left, eq_comm, RCLike.ofReal_eq_zero,
-      add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _), sq_eq_zero_iff, sq_eq_zero_iff,
-      norm_eq_zero, norm_eq_zero] at h
+    rw [hy, inner_zero_left, eq_comm, RCLike.ofReal_eq_zero] at h
+    simp only [add_eq_zero_iff_of_nonneg, sq_nonneg, sq_eq_zero_iff, norm_eq_zero] at h
     exact mem_harmonicSpace_iff.2 ⟨coe_mem_ker_iff.2 h.2, coe_mem_ker_iff.2 h.1⟩
   · rw [mem_harmonicSpace_iff, ← ker_adjointComp hd₀', ← ker_adjointComp hd₁]
     simp only [mem_ker_iff_mem_graph, hodgeLaplacian_def, mem_graph_add_iff]
