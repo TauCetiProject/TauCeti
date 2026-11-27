@@ -45,8 +45,9 @@ For a sequence `(ρ₁, …, ρₙ)` of sets of chords, the index uses
   group.
 * `TauCeti.StrandDiagram.sum_strandBoundary`: the class of a diagram is the sum of the classes of
   its strands.
-* `TauCeti.StrandDiagram.linking_strandBoundary_nonneg`: `L` of two strands, taken in the order
-  of their starting points, is nonnegative.
+* `TauCeti.StrandDiagram.linking_strandBoundary_of_lt`,
+  `TauCeti.StrandDiagram.linking_strandBoundary_nonneg`: the value of `L` of two strands, taken in
+  the order of their starting points, which is nonnegative.
 * `TauCeti.StrandDiagram.grading_maslov_eq`: the Maslov component of `gr(φ)` is
   `-|ρ| / 2 - ∑_{a < b} |L(ρ_a, ρ_b)|`.
 
@@ -125,6 +126,17 @@ theorem strandBoundary_def (φ : StrandDiagram α) (a : α) :
     φ.strandBoundary a = Pi.single (φ.endpoint a) 1 - Pi.single a 1 :=
   (rfl)
 
+omit [Fintype α] in
+/-- The class of a strand vanishes exactly when the strand is horizontal. -/
+theorem strandBoundary_eq_zero_iff {φ : StrandDiagram α} {a : α} :
+    φ.strandBoundary a = 0 ↔ φ.endpoint a = a := by
+  rw [strandBoundary_def, sub_eq_zero, Pi.single_left_inj one_ne_zero]
+
+/-- No strand starts at a point outside the source, so its class is zero. -/
+theorem strandBoundary_of_notMem_source {φ : StrandDiagram α} {a : α} (ha : a ∉ φ.source) :
+    φ.strandBoundary a = 0 :=
+  strandBoundary_eq_zero_iff.2 (endpoint_of_notMem_source ha)
+
 /-- **The class of a diagram is the sum of the classes of its strands.** -/
 theorem sum_strandBoundary (φ : StrandDiagram α) :
     ∑ a ∈ φ.source, φ.strandBoundary a = φ.boundary := by
@@ -142,32 +154,35 @@ theorem sum_strandBoundary (φ : StrandDiagram α) :
 
 variable {φ : StrandDiagram α} {a b : α}
 
+/-- Strands starting at distinct points `a < b` of the source end at distinct points. -/
+private theorem endpoint_ne_of_lt (ha : a ∈ φ.source) (hb : b ∈ φ.source) (hab : a < b) :
+    φ.endpoint a ≠ φ.endpoint b :=
+  fun h ↦ hab.ne (φ.endpoint_injOn ha hb h)
+
 /-- The multiplicity of the class of the strand from `a` at its own starting point is `1/2`,
 unless the strand is horizontal. -/
-private theorem pointMultiplicity_strandBoundary_self (ha : a ∈ φ.source) :
+theorem pointMultiplicity_strandBoundary_self (ha : a ∈ φ.source) :
     pointMultiplicity a (φ.strandBoundary a) = if φ.endpoint a ≠ a then 1 / 2 else 0 := by
-  have h := le_getD ha
-  rw [← endpoint_def] at h
+  have h := le_endpoint ha
   rw [strandBoundary_def, pointMultiplicity_single_sub_single]
   simp only [ne_eq, ite_not]
   split_ifs <;> first | order | norm_num
 
 /-- The class of a strand starting above `a` has multiplicity zero at `a`. -/
-private theorem pointMultiplicity_strandBoundary_of_lt (hb : b ∈ φ.source) (hab : a < b) :
+theorem pointMultiplicity_strandBoundary_of_lt (hb : b ∈ φ.source) (hab : a < b) :
     pointMultiplicity a (φ.strandBoundary b) = 0 := by
-  have h := le_getD hb
-  rw [← endpoint_def] at h
+  have h := le_endpoint hb
   rw [strandBoundary_def, pointMultiplicity_single_sub_single]
   split_ifs <;> first | order | norm_num
 
 /-- The form `L` of the strands starting at `a < b`: `m(ρ_b, φ a)`, which is `0` for disjoint or
 nested strands, `1/2` for abutting ones and `1` for interleaved ones. -/
-private theorem linking_strandBoundary_of_lt (ha : a ∈ φ.source) (hb : b ∈ φ.source)
+theorem linking_strandBoundary_of_lt (ha : a ∈ φ.source) (hb : b ∈ φ.source)
     (hab : a < b) :
     linking (φ.strandBoundary a) (φ.strandBoundary b) =
       (if b < φ.endpoint a then 1 else 0) - (if φ.endpoint b < φ.endpoint a then 1 else 0) +
         (if φ.endpoint a = b then 1 else 0) / 2 := by
-  have hne : φ.endpoint a ≠ φ.endpoint b := fun h ↦ hab.ne (φ.endpoint_injOn ha hb h)
+  have hne : φ.endpoint a ≠ φ.endpoint b := endpoint_ne_of_lt ha hb hab
   rw [strandBoundary_def φ a, linking_single_sub_single,
     pointMultiplicity_strandBoundary_of_lt hb hab, strandBoundary_def,
     pointMultiplicity_single_sub_single]
@@ -177,8 +192,7 @@ private theorem linking_strandBoundary_of_lt (ha : a ∈ φ.source) (hb : b ∈ 
 points. -/
 theorem linking_strandBoundary_nonneg (ha : a ∈ φ.source) (hb : b ∈ φ.source) (hab : a < b) :
     0 ≤ linking (φ.strandBoundary a) (φ.strandBoundary b) := by
-  have h := le_getD hb
-  rw [← endpoint_def] at h
+  have h := le_endpoint hb
   rw [linking_strandBoundary_of_lt ha hb hab]
   split_ifs <;> first | order | norm_num
 
@@ -188,10 +202,8 @@ private theorem inversion_sub_pointMultiplicity_eq (ha : a ∈ φ.source) (hb : 
     (hab : a < b) :
     (if (a, b) ∈ φ.inversions then 1 else 0) - pointMultiplicity b (φ.strandBoundary a) =
       -linking (φ.strandBoundary a) (φ.strandBoundary b) := by
-  have h₁ := le_getD ha
-  have h₂ := le_getD hb
-  rw [← endpoint_def] at h₁ h₂
-  have hne : φ.endpoint a ≠ φ.endpoint b := fun h ↦ hab.ne (φ.endpoint_injOn ha hb h)
+  have h₂ := le_endpoint hb
+  have hne : φ.endpoint a ≠ φ.endpoint b := endpoint_ne_of_lt ha hb hab
   have hinv : (a, b) ∈ φ.inversions ↔ φ.endpoint b < φ.endpoint a := by
     rw [mem_inversions_iff_of_mem (endpoint_mem ha) (endpoint_mem hb)]
     exact and_iff_right hab
