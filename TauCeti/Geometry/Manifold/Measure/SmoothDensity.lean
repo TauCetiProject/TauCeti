@@ -51,6 +51,8 @@ nonempty open sets.
 ## Main results
 
 * `TauCeti.hasSmoothPositiveDensity_iff`: unfolding the definition.
+* `TauCeti.HasSmoothPositiveDensity.exists_integral_real_eq`: the same chart formula for
+  real-valued functions.
 * `TauCeti.hasSmoothPositiveDensity_volume`: the measure `volume` on a finite-dimensional real
   normed space, when it is an additive Haar measure, has a smooth positive density for the maximal
   atlas.
@@ -103,6 +105,22 @@ theorem hasSmoothPositiveDensity_iff {μ : Measure M} :
           ∀ f : M → ℂ, Continuous f → HasCompactSupport f → tsupport f ⊆ e.source →
             ∫ x, f x ∂μ = ∫ y in e.target, (ρ y : ℂ) * f (e.symm y) :=
   Iff.rfl
+
+/-- The chart formula of `TauCeti.HasSmoothPositiveDensity` for real-valued functions: in every
+chart `e` of the maximal atlas there is a smooth positive density `ρ` with
+`∫ f dμ = ∫_{e.target} ρ(y) f(e⁻¹ y) dy` for every continuous real function `f` with compact
+support in the chart source. -/
+theorem HasSmoothPositiveDensity.exists_integral_real_eq {μ : Measure M}
+    (hμ : HasSmoothPositiveDensity E μ) {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
+    ∃ ρ : E → ℝ, ContDiffOn ℝ ∞ ρ e.target ∧ (∀ y ∈ e.target, 0 < ρ y) ∧
+      ∀ f : M → ℝ, Continuous f → HasCompactSupport f → tsupport f ⊆ e.source →
+        ∫ x, f x ∂μ = ∫ y in e.target, ρ y * f (e.symm y) := by
+  obtain ⟨ρ, hρ, hρpos, hint⟩ := hasSmoothPositiveDensity_iff.1 hμ e he
+  refine ⟨ρ, hρ, hρpos, fun f hf hfc hfs ↦ ?_⟩
+  have h := hint (fun x ↦ (f x : ℂ)) (by fun_prop) (hfc.comp_left Complex.ofReal_zero)
+    ((tsupport_comp_subset Complex.ofReal_zero f).trans hfs)
+  exact_mod_cast h
 
 /-- **Lebesgue measure has a smooth positive density.** In a chart `e` of the maximal atlas of a
 finite-dimensional real normed space `E`, the density of `volume` (assumed to be an additive Haar

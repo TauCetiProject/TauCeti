@@ -145,7 +145,7 @@ theorem weightBasis_repr_symPower_torusHom (z : Circle) (w : Sym[ℂ]^d(Fin 2 �
     (i : Fin (d + 1)) :
     (weightBasis d).repr (symPower d (torusHom z) w) i
       = (z : ℂ) ^ weight d i * (weightBasis d).repr w i :=
-  (weightBasis d).repr_apply_of_apply_basis (symPower_torusHom_weightBasis d z) w i
+  (weightBasis d).repr_apply_eq_mul_of_apply_eq_smul _ (symPower_torusHom_weightBasis d z) w i
 
 /-! ### A torus element with pairwise distinct powers -/
 
