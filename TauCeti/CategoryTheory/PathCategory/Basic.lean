@@ -79,6 +79,8 @@ theorem map_eq_mapPath {O₁ : Type u₁} [Q₁ : Quiver.{h₁} O₁]
   have h : F = Cat.freeMap φ := by
     apply Paths.ext_functor (F := F) (G := Cat.freeMap φ) rfl
     intro a b f
+    -- The object maps agree definitionally, so both eqToHom transports are identities.
+    -- Conversion reduces these path identities and Cat.freeMap on a singleton to hmap.
     convert! hmap f using 1
   exact eq_of_heq (Functor.hcongr_hom h p)
 
