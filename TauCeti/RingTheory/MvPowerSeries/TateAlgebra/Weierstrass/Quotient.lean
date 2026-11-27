@@ -19,14 +19,14 @@ remainder coordinates directly on the multivariable quotient.
 
 ## Main results
 
-* `MvPowerSeries.restrictedOptionQuotientEquiv`: the quotient comparison after separating
+* `TauCeti.MvPowerSeries.restrictedOptionQuotientEquiv`: the quotient comparison after separating
   a variable.
-* `MvPowerSeries.restrictedOptionQuotientPowerBasis`: the basis of powers of
+* `TauCeti.MvPowerSeries.restrictedOptionQuotientPowerBasis`: the basis of powers of
   the class of `X none`.
-* `MvPowerSeries.restrictedOptionQuotientRemainderEquiv`: the remainder coordinates from
+* `TauCeti.MvPowerSeries.restrictedOptionQuotientRemainderEquiv`: the remainder coordinates from
   `TauCeti.PowerSeries.IsMulDistinguished.quotientRemainderEquiv`.
-* `MvPowerSeries.finite_of_isTorsionBy_restrictedOption`: finite modules killed by the divisor
-  are finite over the coefficient algebra.
+* `TauCeti.MvPowerSeries.finite_of_isTorsionBy_restrictedOption`: finite modules killed by the
+  divisor are finite over the coefficient algebra.
 
 ## References
 
@@ -37,9 +37,10 @@ public section
 
 noncomputable section
 
-namespace MvPowerSeries
+namespace TauCeti.MvPowerSeries
 
-open TauCeti.PowerSeries (IsMulDistinguished)
+open _root_.MvPowerSeries
+open _root_.TauCeti.PowerSeries (IsMulDistinguished)
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
   {c : Option σ → ℝ} [∀ i, Fact (0 < c i)]
@@ -92,8 +93,7 @@ theorem restrictedOptionQuotientPowerBasis_gen
     (restrictedOptionQuotientPowerBasis hg).gen =
       Ideal.Quotient.mk (Ideal.span {g}) ⟨X none, isRestricted_X c none⟩ := by
   apply (restrictedOptionQuotientEquiv g).injective
-  unfold restrictedOptionQuotientPowerBasis
-  simp only [PowerBasis.map, AlgEquiv.apply_symm_apply,
+  simp only [restrictedOptionQuotientPowerBasis, PowerBasis.map_gen, AlgEquiv.apply_symm_apply,
     restrictedOptionQuotientEquiv_mk, IsMulDistinguished.quotientPowerBasis_gen]
   congr 1
   apply Subtype.ext
@@ -106,7 +106,7 @@ theorem restrictedOptionQuotientPowerBasis_dim
     {g : Flat} {s : ℕ}
     (hg : IsMulDistinguished (c none) s (restrictedOptionEquiv g : Iter).val) :
     (restrictedOptionQuotientPowerBasis hg).dim = s := by
-  unfold restrictedOptionQuotientPowerBasis
+  rw [restrictedOptionQuotientPowerBasis, PowerBasis.map_dim]
   exact hg.quotientPowerBasis_dim (R := Inner) (c := c none) (g := restrictedOptionEquiv g) Fact.out
 
 /-- A class modulo a multiplicatively distinguished series of degree `s` is represented uniquely by
@@ -172,4 +172,4 @@ theorem finite_of_isTorsionBy_restrictedOption
     .of_basis (restrictedOptionQuotientPowerBasis hg).basis
   exact Module.IsTorsionBy.finite_of_finite_quotient (A := Inner) hM
 
-end MvPowerSeries
+end TauCeti.MvPowerSeries
