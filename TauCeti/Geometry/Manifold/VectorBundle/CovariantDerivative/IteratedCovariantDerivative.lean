@@ -308,9 +308,8 @@ theorem sectionPrincipalSymbol_totalCovariantDerivativeLinearMap (hx : I.IsInter
   obtain ⟨A, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I)
     (F := ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ E) F)
     (V := fun x ↦ ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ TangentSpace I x) (V x)) ∞ x a
-  rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_mvfderiv_of_order_one,
-    totalCovariantDerivativeLinearMap_apply, totalCovariantDerivativeLinearMap_apply, sub_apply,
-    smul_apply, totalCovariantDerivative_smul_apply, add_sub_cancel_left]
+  rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_mvfderiv_of_order_one]
+  simp [totalCovariantDerivative_smul_apply, -totalCovariantDerivative_apply]
 
 /-- **The principal symbol of the `j`-th covariant derivative** is the `j`-th tensor power of the
 covector: `σ(∇ʲ)(ξ) v = ξ ⊗ ⋯ ⊗ ξ ⊗ v`, the multilinear map `(u₁, …, u_j) ↦ ξ(u₁) ⋯ ξ(u_j) v`. In
@@ -326,9 +325,7 @@ theorem sectionPrincipalSymbol_iteratedCovariantDerivativeLinearMap (hx : I.IsIn
     obtain ⟨σ, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) (V := V) ∞ x v
     ext u
     rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_mvfderiv]
-    simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply,
-      ContinuousMultilinearMap.mkPiRing_apply, Finset.univ_eq_empty, Finset.prod_empty, one_smul]
-    simp
+    simp [-mvfderiv_apply_eq_mfderiv_apply]
   | succ j ih =>
     have h := sectionPrincipalSymbol_comp hx
       ⟨_, totalCovariantDerivativeLinearMap_mem_differentialOperators_one covT cov j⟩
