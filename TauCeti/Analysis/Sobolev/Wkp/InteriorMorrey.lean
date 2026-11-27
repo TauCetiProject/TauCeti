@@ -72,6 +72,10 @@ derivative is the sum of their `(1 - n / p)`-Hölder continuous coordinates.
   closure in `Ω`.
 * `TauCeti.Wkp.continuousOn_preciseRepresentative`: the precise representative of
   `u ∈ W^{2,p}(Ω)`, `n < 2 p`, is continuous on `Ω`.
+* `TauCeti.Wkp.le_preciseRepresentative_of_ae_le`,
+  `TauCeti.Wkp.preciseRepresentative_le_of_ae_le`: an almost-everywhere comparison between `u`
+  and a continuous function on an open subset of `Ω` holds at every point for the precise
+  representative.
 * `TauCeti.Wkp.abs_preciseRepresentative_le`: an almost-everywhere bound `|u| ≤ M` on an open
   subset of `Ω` holds at every point for the precise representative.
 * `TauCeti.Wkp.preciseRepresentative_nonneg`: an almost-everywhere nonnegativity `0 ≤ u` on an
@@ -204,19 +208,44 @@ theorem Wkp.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
   exact (((W1p.continuousOn_preciseRepresentative hq w).congr heq.symm).continuousAt
     (V.isOpen.mem_nhds hxV)).continuousWithinAt
 
+/-- **Pointwise lower comparison for the continuous representative.** If `n < 2 p`, where `n` is the
+dimension, `g` is continuous on an open set `U ⊆ Ω`, and `g ≤ u` almost everywhere on `U` for
+`u ∈ W^{2,p}(Ω)`, then `g ≤ u*` at every point of `U`. -/
+theorem Wkp.le_preciseRepresentative_of_ae_le (hp : (finrank ℝ E : ℝ≥0∞) < 2 * p)
+    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {g : E → ℝ}
+    (hg : ContinuousOn g U) (hle : ∀ᵐ x ∂mu.restrict U, g x ≤ Wkp.value 2 u x)
+    {x : E} (hx : x ∈ U) : g x ≤ preciseRepresentative mu (Wkp.value 2 u) x := by
+  refine hg.le_of_ae_le (μ := mu) hU ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ)
+    ?_ x hx
+  filter_upwards [hle, ae_restrict_of_ae_restrict_of_subset hUΩ
+    (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
+  rwa [← hyū]
+
+/-- **Pointwise upper comparison for the continuous representative.** If `n < 2 p`, where `n` is the
+dimension, `g` is continuous on an open set `U ⊆ Ω`, and `u ≤ g` almost everywhere on `U` for
+`u ∈ W^{2,p}(Ω)`, then `u* ≤ g` at every point of `U`. -/
+theorem Wkp.preciseRepresentative_le_of_ae_le (hp : (finrank ℝ E : ℝ≥0∞) < 2 * p)
+    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {g : E → ℝ}
+    (hg : ContinuousOn g U) (hle : ∀ᵐ x ∂mu.restrict U, Wkp.value 2 u x ≤ g x)
+    {x : E} (hx : x ∈ U) : preciseRepresentative mu (Wkp.value 2 u) x ≤ g x := by
+  refine ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ).le_of_ae_le (μ := mu) hU hg
+    ?_ x hx
+  filter_upwards [hle, ae_restrict_of_ae_restrict_of_subset hUΩ
+    (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
+  rwa [← hyū]
+
 /-- **Pointwise bounds on the continuous representative.** If `n < 2 p`, where `n` is the
 dimension, and `u ∈ W^{2,p}(Ω)` satisfies `|u| ≤ M` almost everywhere on an open set `U ⊆ Ω`, then
 its precise representative is bounded by `M` in absolute value at every point of `U`. -/
 theorem Wkp.abs_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0∞) < 2 * p)
     (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {M : ℝ}
     (hM : ∀ᵐ x ∂mu.restrict U, |Wkp.value 2 u x| ≤ M) {x : E} (hx : x ∈ U) :
-    |preciseRepresentative mu (Wkp.value 2 u) x| ≤ M := by
-  have hcU : ContinuousOn (preciseRepresentative mu (Wkp.value 2 u)) U :=
-    (Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ
-  refine hcU.abs.le_of_ae_le (μ := mu) hU continuousOn_const ?_ x hx
-  filter_upwards [hM, ae_restrict_of_ae_restrict_of_subset hUΩ
-    (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
-  rwa [← hyū]
+    |preciseRepresentative mu (Wkp.value 2 u) x| ≤ M :=
+  abs_le.2
+    ⟨Wkp.le_preciseRepresentative_of_ae_le hp u hU hUΩ continuousOn_const
+        (hM.mono fun _ hy => (abs_le.1 hy).1) hx,
+      Wkp.preciseRepresentative_le_of_ae_le hp u hU hUΩ continuousOn_const
+        (hM.mono fun _ hy => (abs_le.1 hy).2) hx⟩
 
 /-- **Pointwise nonnegativity of the continuous representative.** If `n < 2 p`, where `n` is the
 dimension, and `u ∈ W^{2,p}(Ω)` is nonnegative almost everywhere on an open set `U ⊆ Ω`, then its
@@ -224,13 +253,8 @@ precise representative is nonnegative at every point of `U`. -/
 theorem Wkp.preciseRepresentative_nonneg (hp : (finrank ℝ E : ℝ≥0∞) < 2 * p)
     (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega)
     (hnn : ∀ᵐ x ∂mu.restrict U, 0 ≤ Wkp.value 2 u x) {x : E} (hx : x ∈ U) :
-    0 ≤ preciseRepresentative mu (Wkp.value 2 u) x := by
-  have hcU : ContinuousOn (preciseRepresentative mu (Wkp.value 2 u)) U :=
-    (Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ
-  refine continuousOn_const.le_of_ae_le (μ := mu) hU hcU ?_ x hx
-  filter_upwards [hnn, ae_restrict_of_ae_restrict_of_subset hUΩ
-    (Wkp.ae_eq_preciseRepresentative 2 u)] with y hy hyū
-  rwa [← hyū]
+    0 ≤ preciseRepresentative mu (Wkp.value 2 u) x :=
+  Wkp.le_preciseRepresentative_of_ae_le hp u hU hUΩ continuousOn_const hnn hx
 
 /-- Hölder continuity on a compact set transfers from a `W^{1,q}(V)` function to an element of
 `W^{2,p}(Ω)` agreeing with it almost everywhere on an open `V ⊇ K`. -/

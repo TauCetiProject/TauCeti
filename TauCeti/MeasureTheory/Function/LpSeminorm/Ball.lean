@@ -391,7 +391,7 @@ theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal
           (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))).toReal) := by
   have hp0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
   have hpos : 0 < mu (ball x₀ r) := isOpen_ball.measure_pos mu (nonempty_ball.2 hr)
-  obtain ⟨w, hw, hle⟩ := hf.exists_mem_measure_rpow_mul_enorm_le_eLpNorm hp0 ENNReal.ofReal_ne_top
+  obtain ⟨w, hw, hle⟩ := exists_mem_measure_rpow_mul_enorm_le_eLpNorm f hp0 ENNReal.ofReal_ne_top
     hpos.ne' measure_ball_lt_top.ne
   have hreal := ENNReal.toReal_mono hf.eLpNorm_ne_top hle
   rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hp.le, toReal_eNorm,

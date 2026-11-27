@@ -19,11 +19,11 @@ the non-quantitative Markov inequality `MeasureTheory.MemLp.meas_ge_lt_top'` sta
 superlevel sets of `f` itself, as Mathlib's `MeasureTheory.Integrable.measure_gt_lt_top` does
 for `p = 1`.
 
-On a nonzero finite measure space, every `f ∈ Lᵖ` with `0 < p < ∞` satisfies
+On a nonzero finite measure space, every function `f` and `0 < p < ∞` satisfy
 `(μ univ) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_p` on a set of positive measure
-(`MeasureTheory.MemLp.frequently_measure_univ_rpow_mul_enorm_le_eLpNorm`), and in particular at
+(`MeasureTheory.frequently_measure_univ_rpow_mul_enorm_le_eLpNorm`), and in particular at
 some point of any set of positive finite measure
-(`MeasureTheory.MemLp.exists_mem_measure_rpow_mul_enorm_le_eLpNorm`).
+(`MeasureTheory.exists_mem_measure_rpow_mul_enorm_le_eLpNorm`).
 -/
 
 public section
@@ -46,32 +46,38 @@ section PointSelection
 
 variable {α ε : Type*} [MeasurableSpace α] {μ : Measure α} [TopologicalSpace ε] [ContinuousENorm ε]
 
-/-- **Chebyshev point selection in `Lᵖ`.** On a nonzero finite measure space, a function in `Lᵖ` for
-`0 < p < ∞` satisfies `(μ Set.univ) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(μ)}` on a set of positive measure
+/-- **Chebyshev point selection in `Lᵖ`.** On a nonzero finite measure space, every function `f`
+and `0 < p < ∞` satisfy `(μ Set.univ) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(μ)}` on a set of positive measure
 (in particular, at some point). -/
-theorem MemLp.frequently_measure_univ_rpow_mul_enorm_le_eLpNorm {f : α → ε} {p : ℝ≥0∞}
-    (hf : MemLp f p μ) (hp0 : p ≠ 0) (hp : p ≠ ∞) (hμ0 : μ ≠ 0) (hμ : μ Set.univ ≠ ∞) :
+theorem frequently_measure_univ_rpow_mul_enorm_le_eLpNorm (f : α → ε) {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hμ0 : μ ≠ 0) (hμ : μ Set.univ ≠ ∞) :
     ∃ᵐ x ∂μ, (μ Set.univ) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p μ := by
-  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  have hμ0' : μ Set.univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ0
-  have : IsFiniteMeasure μ := ⟨hμ.lt_top⟩
-  have hpos := measure_le_laverage_pos hμ0 (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
-  rw [laverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hpos
-  refine frequently_ae_iff.2 fun h0 ↦ hpos.ne' (measure_mono_null (fun x hx ↦ ?_) h0)
-  exact (ENNReal.rpow_inv_mul_le_iff_rpow_le_div hpr hμ0' hμ).2 hx
+  by_cases hf : AEStronglyMeasurable f μ
+  · have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+    have hμ0' : μ Set.univ ≠ 0 := mt Measure.measure_univ_eq_zero.1 hμ0
+    have : IsFiniteMeasure μ := ⟨hμ.lt_top⟩
+    have hpos := measure_le_laverage_pos hμ0 (hf.eNorm.pow_const p.toReal)
+    rw [laverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf] at hpos
+    refine frequently_ae_iff.2 fun h0 ↦ hpos.ne' (measure_mono_null (fun x hx ↦ ?_) h0)
+    exact (ENNReal.rpow_inv_mul_le_iff_rpow_le_div hpr hμ0' hμ).2 hx
+  · have : (ae μ).NeBot := ae_neBot.2 hμ0
+    rw [eLpNorm_of_not_aestronglyMeasurable hf]
+    exact .of_forall fun _ ↦ le_top
 
-/-- **Chebyshev point selection on a set in `Lᵖ`.** On a set `s` of positive finite measure, a
-function in `Lᵖ(μ.restrict s)` for `0 < p < ∞` satisfies `(μ s) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(s)}`
-at some point `x ∈ s`. -/
-theorem MemLp.exists_mem_measure_rpow_mul_enorm_le_eLpNorm {f : α → ε} {p : ℝ≥0∞} {s : Set α}
-    (hf : MemLp f p (μ.restrict s)) (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    (hμ0 : μ s ≠ 0) (hμ : μ s ≠ ∞) :
+/-- **Chebyshev point selection on a set in `Lᵖ`.** On a set `s` of positive finite measure, every
+function `f` and `0 < p < ∞` satisfy `(μ s) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(s)}` at some point
+`x ∈ s`. -/
+theorem exists_mem_measure_rpow_mul_enorm_le_eLpNorm (f : α → ε) {p : ℝ≥0∞} {s : Set α}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hμ0 : μ s ≠ 0) (hμ : μ s ≠ ∞) :
     ∃ x ∈ s, (μ s) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p (μ.restrict s) := by
-  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  obtain ⟨x, hxs, hx⟩ := exists_le_setLAverage hμ0 hμ
-    (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
-  rw [setLAverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hx
-  exact ⟨x, hxs, (ENNReal.rpow_inv_mul_le_iff_rpow_le_div hpr hμ0 hμ).2 hx⟩
+  by_cases hf : AEStronglyMeasurable f (μ.restrict s)
+  · have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+    obtain ⟨x, hxs, hx⟩ := exists_le_setLAverage hμ0 hμ (hf.eNorm.pow_const p.toReal)
+    rw [setLAverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf] at hx
+    exact ⟨x, hxs, (ENNReal.rpow_inv_mul_le_iff_rpow_le_div hpr hμ0 hμ).2 hx⟩
+  · obtain ⟨x, hx⟩ := nonempty_of_measure_ne_zero hμ0
+    rw [eLpNorm_of_not_aestronglyMeasurable hf]
+    exact ⟨x, hx, le_top⟩
 
 end PointSelection
 

@@ -34,8 +34,8 @@ Caffarelli–Cabré, Theorem 4.3).
 * **At the centre of a ball.** Let `u ≥ 0` solve the equation in `B(c, R)` and put `δ = R / 4`.
   The local maximum principle on `B(c, δ)`, at the exponent `p` of the weak Harnack inequality,
   bounds `u(c)` by `δ^(-n/p) ‖u‖_{Lᵖ(B(c, δ))}` and `δ ‖f‖ₙ / λ`. The weak Harnack inequality on
-  `B(c, R)` at `θ = 1 / 4` bounds `δ^(-n/p) ‖u‖_{Lᵖ(B(c, δ))}` by `C₀ (u(y) + R ‖f‖ₙ / λ)` for
-  every `y ∈ B(c, R / 4)`. Thus `u(c) ≤ C (u(y) + R ‖f‖ₙ / λ)` whenever `‖y - c‖ < R / 4`.
+  `B(c, R)` at `θ = 1 / 4` bounds `δ^(-n/p) ‖u‖_{Lᵖ(B(c, δ))}` by `C_w (u(y) + R ‖f‖ₙ / λ)` for
+  every `y ∈ B(c, R / 4)`. Thus `u(c) ≤ C₀ (u(y) + R ‖f‖ₙ / λ)` whenever `‖y - c‖ < R / 4`.
 * **Chaining.** For `z ∈ B(x₀, r)`, the ball `B(z, r)` lies in `B(x₀, 2 r)`, so the previous step
   applies with `R = r` and gives `u(z) ≤ C₀ (u(w) + r ‖f‖ₙ / λ)` for points `z, w` of `B(x₀, r)`
   at distance at most `r / 5`. Two points of `B(x₀, r)` are at distance less than
