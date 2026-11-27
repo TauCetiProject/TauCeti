@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
+public import TauCeti.Analysis.Normed.Order.OrderUnit
 import TauCeti.Algebra.Order.Ring.Abs
-import TauCeti.Analysis.Normed.Order.OrderUnit
 
 /-!
 # Positive linear functionals dominated by a unit
@@ -35,7 +36,14 @@ automatic continuity for positive maps between C⋆-algebras.
 
 These are the real-valued cases, with target `ℝ` and order unit `1`, of the bounds
 `TauCeti.IsOrderUnitNorm.norm_map_le` and `TauCeti.IsOrderUnitNorm.opNorm_eq_norm_apply` for
-positive maps into an order-unit space, and are derived from them.
+positive maps into an order-unit space, and are derived from them. For order-unit spaces, positive
+linear maps upgrade to `E →P[ℝ] F` (`TauCeti.IsOrderUnitNorm.toPositiveContinuousLinearMap`), and a
+continuous linear functional is monotone iff `‖φ‖ = φ e`
+(`TauCeti.IsOrderUnitNorm.monotone_iff_opNorm_eq_apply_unit`).
+
+## Main definitions
+
+* `TauCeti.IsOrderUnitNorm.toPositiveContinuousLinearMap`: upgrade `E →ₚ[ℝ] F` to `E →P[ℝ] F`.
 
 ## Main results
 
@@ -48,6 +56,8 @@ positive maps into an order-unit space, and are derived from them.
   operator norm `ψ u` when `‖u‖ ≤ 1`.
 * `LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm`: conversely, a linear functional with
   `|ψ f| ≤ ψ u * ‖f‖` is nonnegative at every `f` with `‖‖f‖ • u - f‖ ≤ ‖f‖`.
+* `TauCeti.IsOrderUnitNorm.monotone_iff_opNorm_eq_apply_unit`: a continuous real-linear functional
+  on an order-unit space is monotone iff `‖φ‖ = φ e`.
 -/
 
 public section
@@ -134,3 +144,34 @@ theorem apply_nonneg_of_abs_apply_le_mul_norm {F : Type*} [FunLike F E ℝ]
   nlinarith [mul_le_mul_of_nonneg_left hf hu]
 
 end LinearMapClass
+
+namespace TauCeti.IsOrderUnitNorm
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E] {e : E}
+
+/-- Upgrade a positive linear map `E →ₚ[ℝ] F` between order-unit spaces to a positive continuous
+linear map `E →P[ℝ] F`. -/
+def toPositiveContinuousLinearMap {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+    [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (T : E →ₚ[ℝ] F) : E →P[ℝ] F :=
+  PositiveContinuousLinearMap.mk T
+    (hf.continuous_of_monotone he.le_norm_smul T (OrderHomClass.mono T))
+
+/-- Evaluating `toPositiveContinuousLinearMap` agrees with the underlying positive linear map. -/
+@[simp]
+theorem toPositiveContinuousLinearMap_apply {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (T : E →ₚ[ℝ] F) (a : E) :
+    he.toPositiveContinuousLinearMap hf T a = T a :=
+  (rfl)
+
+/-- A continuous real-linear functional on an order-unit space is monotone iff `‖φ‖ = φ e`. -/
+theorem monotone_iff_opNorm_eq_apply_unit [IsOrderedAddMonoid E] (he : IsOrderUnitNorm e)
+    (φ : E →L[ℝ] ℝ) : Monotone φ ↔ ‖φ‖ = φ e := by
+  refine ⟨fun h => φ.opNorm_eq_apply_of_monotone h he.le_norm_smul he.norm_eq_one.le, fun h => ?_⟩
+  refine (monotone_iff_map_nonneg φ).mpr fun a ha =>
+    LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm φ
+      (fun g => by simpa [Real.norm_eq_abs, h] using φ.le_opNorm g)
+      (he.nonneg_iff_norm_smul_sub_le.mp ha)
+
+end TauCeti.IsOrderUnitNorm

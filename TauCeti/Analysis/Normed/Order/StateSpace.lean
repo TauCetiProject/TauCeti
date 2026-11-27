@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import TauCeti.Analysis.Normed.Order.OrderUnit
+public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Convex.Cone.PositiveDual
-import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 
 /-!
 # States of an order-unit space
@@ -43,7 +43,6 @@ C⋆-algebra, normalized by the norm rather than by a unit, is `TauCeti.stateSpa
 * `TauCeti.OrderUnit.stateSpace e`: the monotone functionals in `WeakDual ℝ E` with `φ e = 1`.
 * `TauCeti.OrderUnit.stateSpaceEquivPositiveContinuousLinearMap`: bijection between `stateSpace e`
   and `{ω : E →P[ℝ] ℝ // ω e = 1}`.
-* `TauCeti.IsOrderUnitNorm.toPositiveContinuousLinearMap`: upgrade `E →ₚ[ℝ] F` to `E →P[ℝ] F`.
 
 ## Main results
 
@@ -57,9 +56,8 @@ C⋆-algebra, normalized by the norm rather than by a unit, is `TauCeti.stateSpa
   monotone continuous linear maps; in particular they restrict to subspaces containing `e`.
 * `TauCeti.OrderUnit.toWeakDual_inv_smul_mem_stateSpace`: a monotone functional `g` with
   `0 < g e` normalizes to a state.
-* `TauCeti.IsOrderUnitNorm.monotone_iff_opNorm_eq_apply_unit`,
-  `TauCeti.IsOrderUnitNorm.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one`: `φ` is monotone iff
-  `‖φ‖ = φ e`, and a state iff `‖φ‖ = φ e = 1`.
+* `TauCeti.IsOrderUnitNorm.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one`: `φ` is a state iff
+  `‖φ‖ = φ e = 1`.
 * `TauCeti.IsOrderUnitNorm.stateSpace_nonempty`: existence of states.
 * `TauCeti.IsOrderUnitNorm.exists_extension_mem_stateSpace`: extension of states from subspaces
   containing `e`.
@@ -246,22 +244,6 @@ theorem isCompact_stateSpace (h : IsOrderUnitNorm e) : IsCompact (OrderUnit.stat
 theorem compactSpace_stateSpace (h : IsOrderUnitNorm e) : CompactSpace (OrderUnit.stateSpace e) :=
   isCompact_iff_compactSpace.mp h.isCompact_stateSpace
 
-/-- Upgrade a positive linear map `E →ₚ[ℝ] F` between order-unit spaces to a positive continuous
-linear map `E →P[ℝ] F`. -/
-def toPositiveContinuousLinearMap {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
-    [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
-    (hf : IsOrderUnitNorm f) (T : E →ₚ[ℝ] F) : E →P[ℝ] F :=
-  PositiveContinuousLinearMap.mk T
-    (hf.continuous_of_monotone he.le_norm_smul T (OrderHomClass.mono T))
-
-/-- Evaluating `toPositiveContinuousLinearMap` agrees with the underlying positive linear map. -/
-@[simp]
-theorem toPositiveContinuousLinearMap_apply {F : Type*} [SeminormedAddCommGroup F]
-    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
-    (hf : IsOrderUnitNorm f) (T : E →ₚ[ℝ] F) (a : E) :
-    he.toPositiveContinuousLinearMap hf T a = T a :=
-  (rfl)
-
 /-- States correspond to normalized positive linear functionals `E →ₚ[ℝ] ℝ`, via automatic
 continuity. -/
 theorem mem_stateSpace_iff_exists_positiveLinearMap (he : IsOrderUnitNorm e)
@@ -278,15 +260,6 @@ theorem mem_stateSpace_iff_exists_positiveLinearMap (he : IsOrderUnitNorm e)
   exact ⟨ω, hφ.2, DFunLike.ext _ _ fun a => by simp [hω_apply]⟩
 
 variable [IsOrderedAddMonoid E]
-
-/-- A continuous real-linear functional on an order-unit space is monotone iff `‖φ‖ = φ e`. -/
-theorem monotone_iff_opNorm_eq_apply_unit (he : IsOrderUnitNorm e) (φ : E →L[ℝ] ℝ) :
-    Monotone φ ↔ ‖φ‖ = φ e := by
-  refine ⟨fun h => φ.opNorm_eq_apply_of_monotone h he.le_norm_smul he.norm_eq_one.le, fun h => ?_⟩
-  refine (monotone_iff_map_nonneg φ).mpr fun a ha =>
-    LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm φ
-      (fun g => by simpa [Real.norm_eq_abs, h] using φ.le_opNorm g)
-      (he.nonneg_iff_norm_smul_sub_le.mp ha)
 
 /-- A continuous linear functional on an order-unit space is a state exactly when
 `‖φ‖ = φ e = 1`; positivity is then automatic. -/
