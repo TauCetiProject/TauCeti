@@ -85,14 +85,17 @@ The patching theorem
 puts it together from estimates of `D_u^*` on the ends, against the weight `w`, and the `L²`
 estimate of the adjoint on compact parts of the domain
 (`exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add`), with
-the same cutoffs as for `D_u`. The estimate for the datum
-`TauCeti.Floer.puncturedSpherePerturbation c a H Hout` is
+the same cutoffs as for `D_u`. The estimate for any Floer data that far out on the ends are the
+datum `TauCeti.Floer.puncturedSpherePerturbation c a H Hout` is
 `exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_add_of_movingEnds`.
-Its end estimates, from `TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.EndEstimate`,
-carry the Jacobian weights `|p - c i|²` of the input end charts and `|p|²` of the output end
-chart, at a point `p` of the plane, so the weight `w` is required to dominate them far out on the
-ends. For a conformal weight `ρ` with `ρ(p) |p - c i|² ≤ K` and `ρ(p) |p|² ≤ K` far out on the
-respective ends, `w = K ρ⁻¹` is such a weight.
+Its end estimates come from those of that datum in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.EndEstimate`, since the formal adjoint
+on a covector field depends on the data only over its support
+(`floerLinearizationAdjoint_congr_data_of_tsupport`). They carry the Jacobian weights `|p - c i|²`
+of the input end charts and `|p|²` of the output end chart, at a point `p` of the plane, so the
+weight `w` is required to dominate them far out on the ends. For a conformal weight `ρ` with
+`ρ(p) |p - c i|² ≤ K` and `ρ(p) |p|² ≤ K` far out on the respective ends, `w = K ρ⁻¹` is such a
+weight.
 
 The patching (the cutoffs, the end and core pieces and their estimates, and the patching at one
 height) follows the proof for the pair of pants of
@@ -1228,34 +1231,56 @@ theorem
   simp only [movingEndChart, movingEndsTruncation] at h
   linarith
 
+/-- **Transferring an end estimate of the formal adjoint.** Let `η` be a covector field supported
+in a set `S` on which the Floer perturbations `(K_s, K_t)` agree with `(K_s⁰, K_t⁰)` and the weight
+`g ≥ 0` is at most the weight `w`. Then a bound by `C ∫ g ‖D^* η‖²` for the formal adjoint `D^*`
+of `(J, K_s⁰, K_t⁰)` is a bound by `max C 0 ∫ w ‖D^* η‖²` for that of `(J, K_s, K_t)`, provided the
+latter integrand is integrable: the formal adjoint on `η` depends on the data only over the support
+of `η`. -/
+private theorem le_max_mul_integral_floerLinearizationAdjoint_of_subset (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt Ks₀ Kt₀ : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} {g w : ℝ × ℝ → ℝ} {X C : ℝ}
+    (h : X ≤ C * ∫ z, g z * ‖ω.floerLinearizationAdjoint J Ks₀ Kt₀ u η z‖ ^ 2)
+    {S : Set (ℝ × ℝ)} (hηS : tsupport η ⊆ S) (hK : ∀ z ∈ S, Ks z = Ks₀ z ∧ Kt z = Kt₀ z)
+    (hg : ∀ z, 0 ≤ g z) (hgw : ∀ z ∈ S, g z ≤ w z)
+    (hwi : Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) :
+    X ≤ max C 0 * ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
+  rw [← ω.floerLinearizationAdjoint_congr_data_of_tsupport u η
+    fun z hz ↦ ⟨EventuallyEq.rfl, hK z (hηS hz)⟩] at h
+  exact h.trans (ω.mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le hg
+    (fun z hz ↦ hgw z (hηS hz)) hwi C)
+
 /-- **The semi-Fredholm estimate of the formal adjoint on a sphere with moving input ends.** Let
 the discs `‖w - c i‖ < ‖a i‖ / 2` of the input ends be pairwise disjoint and lie in the disc
 `‖w‖ ≤ 2 exp (2π)`, with nonzero scales, and let the Hamiltonians `H i` and `Hout` be jointly `C²`
 of period one. For each input end `i`, let `x i` be an orbit of `H i` starting at a nondegenerate
 fixed point of its time-one map and let `J_e i` be a `C²` family of almost complex structures
 compatible along `x i`; for the output end, let `x_out` and `J_out` be the same data for the
-Hamiltonian `H'(t, y) = -Hout(-t, y)` of the output end read in its positive end chart. Let `J`
-be `J_e i (t)` beyond `s = 2` in the chart `ψ_i = realChart (z ↦ c i + a i φ₀(z))` of each input
-end and `J_out (t)` beyond `s = 2` in the positive end chart `φ'_∞` of the output end. Let `u`
-and `J` along `u` be `C¹` on the sphere minus the centers `c i`, with `J` compatible along `u`
-there, let `u` be `C²` and solve the Floer equation of the datum
-`TauCeti.Floer.puncturedSpherePerturbation c a H Hout` beyond `s = 2` on each end, and let its loops
-in the end charts converge uniformly to the orbits while the slice defects tend uniformly to zero.
-Let `w ≥ 0` be a weight that is continuous and positive on the sphere minus the centers and is at
-least the Jacobian weights of the end charts far out on the ends, up to the factor `4π²`:
-`|p - c i|² ≤ w(p)` at the points `p = ψ_i(ζ)` with `ζ.1 > 2`, and `|p|² ≤ w(p)` at the points
-`p = φ'_∞(ζ)` with `ζ.1 > 2`. Then there are `C ≥ 0` and `T ≥ 2` such that every `C²` covector
-field `η` with compact support in the sphere minus the centers satisfies
+Hamiltonian `H'(t, y) = -Hout(-t, y)` of the output end read in its positive end chart. Let
+`(J, K_s, K_t)` be Floer data on the sphere minus the centers `c i`, with `K_s`, `K_t` `C²` along
+`u`, which beyond `s = 2` in the chart `ψ_i = realChart (z ↦ c i + a i φ₀(z))` of each input end
+and in the positive end chart `φ'_∞` of the output end are cylindrical, `J = J_e i (t)` and
+`J = J_out (t)`, with perturbation the datum `TauCeti.Floer.puncturedSpherePerturbation c a H Hout`.
+Let `u` and `J` along `u` be `C¹` on the sphere minus the centers, with `J` compatible along `u`
+there, let `u` be `C²` and solve the Floer equation of `(J, K_s, K_t)` beyond `s = 2` on each end,
+and let its loops in the end charts converge uniformly to the orbits while the slice defects tend
+uniformly to zero. Let `w ≥ 0` be a weight that is continuous and positive on the sphere minus the
+centers and is at least the Jacobian weights of the end charts far out on the ends, up to the
+factor `4π²`: `|p - c i|² ≤ w(p)` at the points `p = ψ_i(ζ)` with `ζ.1 > 2`, and `|p|² ≤ w(p)` at
+the points `p = φ'_∞(ζ)` with `ζ.1 > 2`. Then there are `C ≥ 0` and `T ≥ 2` such that every `C²`
+covector field `η` with compact support in the sphere minus the centers satisfies
 
 `∑_i ∫_{(T, ∞) × [0, 1]} (‖∂s η'_i‖² + ‖∂t η'_i‖² + ‖η'_i‖²)`
 `  + ∫_{(T, ∞) × [0, 1]} (‖∂s η'_∞‖² + ‖∂t η'_∞‖² + ‖η'_∞‖²)`
 `  + ∫_{Σ_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ w ‖D_u^* η‖² + ∫_{Σ_{T + 1}} ‖η‖²)`
 
-for the formal adjoint `D_u^*` of the linearized Floer operator of these data, whose kernel is the
-cokernel of `D_u`. Here `η'_i` and `η'_∞` are `η` read in the charts `ψ_i` and `φ'_∞` as
-`(0, 1)`-forms (`TauCeti.Floer.covectorPullback`), and `Σ_T` is the truncation
-`TauCeti.ThricePuncturedSphere.puncturedSphereTruncation c a T`. This is the counterpart for the
-formal adjoint of the semi-Fredholm estimate of `D_u`,
+for the formal adjoint `D_u^*` of the linearized Floer operator of the data `(J, K_s, K_t)`, whose
+kernel is the cokernel of `D_u`. Here `η'_i` and `η'_∞` are `η` read in the charts `ψ_i` and `φ'_∞`
+as `(0, 1)`-forms (`TauCeti.Floer.covectorPullback`), and `Σ_T` is the truncation
+`TauCeti.ThricePuncturedSphere.puncturedSphereTruncation c a T`. The datum
+`TauCeti.Floer.puncturedSpherePerturbation c a H Hout` itself is the case `K_s`, `K_t` equal to
+its components everywhere. This is the counterpart for the formal adjoint of the semi-Fredholm
+estimate of `D_u`,
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds`
 -/
 theorem
@@ -1282,9 +1307,27 @@ theorem
     (hJoutx : ∀ t, ω.Compatible (Jout t (xout t))) {J : ℝ × ℝ → V → AlmostComplexStructure V}
     (hJeq : ∀ i (ζ : ℝ × ℝ), 2 < ζ.1 →
       J (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) = Je i ζ.2)
-    (hJoutq : ∀ ζ : ℝ × ℝ, 2 < ζ.1 → J (positiveEndChart inf ζ) = Jout ζ.2) {u : ℝ × ℝ → V}
+    (hJoutq : ∀ ζ : ℝ × ℝ, 2 < ζ.1 → J (positiveEndChart inf ζ) = Jout ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ i (ζ : ℝ × ℝ), 2 < ζ.1 →
+      Ks (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) = (fun y ↦
+          puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm
+            (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ)) y 1) ∧
+        Kt (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) = fun y ↦
+          puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm
+            (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ)) y Complex.I)
+    (hKout : ∀ ζ : ℝ × ℝ, 2 < ζ.1 →
+      Ks (positiveEndChart inf ζ) = (fun y ↦ puncturedSpherePerturbation c a H Hout
+          (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) y 1) ∧
+        Kt (positiveEndChart inf ζ) = fun y ↦ puncturedSpherePerturbation c a H Hout
+          (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) y Complex.I)
+    {u : ℝ × ℝ → V}
     (hJ : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
+      ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
+      ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → ContDiffAt ℝ 1 u z)
     (hu₂ : ∀ i (ζ : ℝ × ℝ), 2 < ζ.1 →
       ContDiffAt ℝ 2 u (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ))
@@ -1294,17 +1337,11 @@ theorem
     (hF : ∀ i (ζ : ℝ × ℝ), 2 < ζ.1 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ)
         (u (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ)))
-      (ω.perturbedFDeriv
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-          Complex.I) u
+      (ω.perturbedFDeriv Ks Kt u
         (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) : ℝ × ℝ →ₗ[ℝ] V))
     (hFout : ∀ ζ : ℝ × ℝ, 2 < ζ.1 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J (positiveEndChart inf ζ) (u (positiveEndChart inf ζ)))
-      (ω.perturbedFDeriv
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-          Complex.I) u (positiveEndChart inf ζ) : ℝ × ℝ →ₗ[ℝ] V))
+      (ω.perturbedFDeriv Ks Kt u (positiveEndChart inf ζ) : ℝ × ℝ →ₗ[ℝ] V))
     (hux : ∀ i, TendstoUniformlyOn
       (fun s t ↦ u (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) (s, t))) (x i)
       atTop (Icc 0 1))
@@ -1334,59 +1371,61 @@ theorem
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T,
           sobolevDensity η z ≤
         C * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-            Complex.I) u η z‖ ^ 2) +
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a (T + 1),
             ‖η z‖ ^ 2) := by
+  -- The components of the datum of the moving input ends, which `Ks`, `Kt` are on the ends.
+  let Ks₀ : ℝ × ℝ → V → ℝ := fun z y ↦
+    puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) y 1
+  let Kt₀ : ℝ × ℝ → V → ℝ := fun z y ↦
+    puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) y Complex.I
   -- Beyond `s = 0` an input end avoids every center.
   have hin (i : ι) (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm
-      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
-    rw [equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
+      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j :=
+    equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i) hζ j
   have hinf (ζ : ℝ × ℝ) (hζ : 1 < ζ.1) (j : ι) :
       Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j :=
     equivRealProdCLM_symm_positiveEndChart_inf_ne
       (fun i ↦ (le_add_of_nonneg_right (by positivity)).trans (hout i)) hζ j
-  have hKs (z : ℝ × ℝ) (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) :=
-    contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz (u z) 1
-  have hKt (z : ℝ × ℝ) (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) :=
-    contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz (u z) Complex.I
   -- The `w`-weighted norm of `D_u^* η` is finite for `η` supported in the sphere.
   have hwi {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
       (hηU : tsupport η ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) :=
     ω.integrable_mul_norm_floerLinearizationAdjoint_sq (isOpen_movingEndsDomain c)
       (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu hwc
       (hη.of_le one_le_two) subset_rfl hηc hηU
+  -- The end estimates of the datum of the moving input ends are end estimates of `(Ks, Kt)`.
   choose C R hR hend using fun i ↦
     exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_inputEnd
       ω hH hHs hHout hHouts ha hsep hout i (hX i) (hx i) (hnd i) (hJe i) (hJex i) (hJeq i)
       (fun ζ hζ ↦ hJ _ (hin i ζ (by linarith))) (hu₂ i) (fun ζ hζ ↦ hc _ (hin i ζ (by linarith)))
-      (hF i) (hux i) (hδ i)
+      (fun ζ hζ ↦ by
+        rw [← ω.perturbedFDeriv_congr (Ks' := Ks₀) (Kt' := Kt₀) u (hK i ζ hζ).1 (hK i ζ hζ).2]
+        exact hF i ζ hζ) (hux i) (hδ i)
   obtain ⟨Cout, Rout, hRout, hendOut⟩ :=
     exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_outputEnd
       ω hH hHs hHout hHouts ha hout hXout hxout hndout hJout hJoutx hJoutq
       (fun ζ hζ ↦ hJ _ (hinf ζ (by linarith))) hu₂out (fun ζ hζ ↦ hc _ (hinf ζ (by linarith)))
-      hFout huxout hδout
+      (fun ζ hζ ↦ by
+        rw [← ω.perturbedFDeriv_congr (Ks' := Ks₀) (Kt' := Kt₀) u (hKout ζ hζ).1 (hKout ζ hζ).2]
+        exact hFout ζ hζ) huxout hδout
   refine
    exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_of_movingEnds_of_ends
     ω ha hsep hout hJ hKs hKt hu hc hw hwc hwU (C := fun i ↦ max (C i) 0) (R := R)
     (fun i η hη hηc hηR ↦ ?_) (Cout := max Cout 0) (Rout := Rout) fun η hη hηc hηR ↦ ?_
-  · -- Far out on the input end `i`, the Jacobian weight `|w - c i|²` is at most `w`.
-    refine (hend i hη hηc hηR).trans (mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le
-      ω (fun _ ↦ sq_nonneg _) (fun z hz ↦ ?_) (hwi hη hηc fun z hz ↦ ?_) _)
-    · obtain ⟨ζ, hζ, rfl⟩ := hηR hz
-      exact hwin i ζ ((hR i).trans hζ.1)
-    · obtain ⟨ζ, hζ, rfl⟩ := hηR hz
-      exact hin i ζ (by linarith [hR i, hζ.1.out])
-  · -- Far out on the output end, the Jacobian weight `|w|²` is at most `w`.
-    refine (hendOut hη hηc hηR).trans (mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le
-      ω (fun _ ↦ sq_nonneg _) (fun z hz ↦ ?_) (hwi hη hηc fun z hz ↦ ?_) _)
-    · obtain ⟨ζ, hζ, rfl⟩ := hηR hz
-      exact hwout ζ (hRout.trans hζ.1)
-    · obtain ⟨ζ, hζ, rfl⟩ := hηR hz
-      exact hinf ζ (by linarith [hζ.1.out])
+  · -- Far out on the input end `i`, `(Ks, Kt)` is the datum, and the Jacobian weight
+    -- `|w - c i|²` is at most `w`.
+    refine le_max_mul_integral_floerLinearizationAdjoint_of_subset ω (hend i hη hηc hηR) hηR
+      (fun _ ⟨ζ, hζ, h⟩ ↦ h ▸ hK i ζ (by linarith [hR i, hζ.1.out])) (fun _ ↦ sq_nonneg _)
+      (fun _ ⟨ζ, hζ, h⟩ ↦ h ▸ hwin i ζ ((hR i).trans hζ.1)) (hwi hη hηc fun z hz ↦ ?_)
+    obtain ⟨ζ, hζ, rfl⟩ := hηR hz
+    exact hin i ζ (by linarith [hR i, hζ.1.out])
+  · -- Far out on the output end, `(Ks, Kt)` is the datum, and the Jacobian weight `|w|²` is at
+    -- most `w`.
+    refine le_max_mul_integral_floerLinearizationAdjoint_of_subset ω (hendOut hη hηc hηR) hηR
+      (fun _ ⟨ζ, hζ, h⟩ ↦ h ▸ hKout ζ (by linarith [hRout, hζ.1.out])) (fun _ ↦ sq_nonneg _)
+      (fun _ ⟨ζ, hζ, h⟩ ↦ h ▸ hwout ζ (hRout.trans hζ.1)) (hwi hη hηc fun z hz ↦ ?_)
+    obtain ⟨ζ, hζ, rfl⟩ := hηR hz
+    exact hinf ζ (by linarith [hζ.1.out])
 
 end TauCeti.SymplecticForm
 
