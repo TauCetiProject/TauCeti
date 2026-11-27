@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup.Cayley
-public import TauCeti.MeasureTheory.Measure.Haar.SkewAdjoint
+public import TauCeti.MeasureTheory.Measure.Haar.Matrix.SkewAdjoint
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.MeasureTheory.Measure.Haar.ZeroLocus
@@ -93,6 +94,20 @@ namespace unitaryGroupOf
 
 variable {A : Matrix n n ℂ} {S : skewAdjoint.submodule ℝ (Matrix n n ℂ)}
 
+/-- The Cayley chart with values in the unitary group is measurable. -/
+theorem measurable_cayleyChartUnitary [MeasurableSpace (unitaryGroupOf A)]
+    [BorelSpace (unitaryGroupOf A)] (hA : A.IsHermitian) (hA' : IsUnit A) :
+    Measurable (cayleyChartUnitary A) := by
+  classical
+  have h : cayleyChartUnitary A = (cayleyChartSource A).piecewise (cayleyChartUnitary A) 1 := by
+    ext1 S
+    by_cases hS : S ∈ cayleyChartSource A
+    · simp [hS]
+    · simp [hS]
+  rw [h]
+  exact (continuousOn_cayleyChartUnitary hA hA').measurable_piecewise continuousOn_const
+    isOpen_cayleyChartSource.measurableSet
+
 /-- The **Cayley density** `|det (1 - A⁻¹ S / 2)|^(-2 n)` of the skew-Hermitian `S`, where
 `n` is the size of the matrices. It is the determinant of the logarithmic derivative of the
 Cayley chart (`Matrix.unitaryGroupOf.det_codRestrict_mulLeft_comp_fderiv_cayleyChart`), and it
@@ -108,6 +123,7 @@ theorem cayleyDensity_def (A : Matrix n n ℂ) (S : skewAdjoint.submodule ℝ (M
   (rfl)
 
 /-- The Cayley density vanishes off the source of the chart. -/
+@[simp]
 theorem cayleyDensity_of_notMem (hS : S ∉ cayleyChartSource A) : cayleyDensity A S = 0 := by
   have hn : Nonempty n := by
     by_contra h
@@ -146,16 +162,19 @@ private theorem det_one_sub_neg (hA : A.IsHermitian) (S : skewAdjoint.submodule 
   rw [← Matrix.smul_mul, det_one_add_mul_comm, Matrix.mul_smul]
 
 /-- The source of the Cayley chart is invariant under `S ↦ -S`. -/
+@[simp]
 theorem neg_mem_cayleyChartSource (hA : A.IsHermitian) :
     -S ∈ cayleyChartSource A ↔ S ∈ cayleyChartSource A := by
   simp only [mem_cayleyChartSource, isUnit_iff_isUnit_det, det_one_sub_neg hA, isUnit_star]
 
 /-- The Cayley density is invariant under `S ↦ -S`. -/
+@[simp]
 theorem cayleyDensity_neg (hA : A.IsHermitian) (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     cayleyDensity A (-S) = cayleyDensity A S := by
   rw [cayleyDensity_def, cayleyDensity_def, det_one_sub_neg hA, Complex.star_def, normSq_conj]
 
 /-- The Cayley chart sends `-S` to the inverse of its value at `S`. -/
+@[simp]
 theorem cayleyChartUnitary_neg (hA : A.IsHermitian) (hA' : IsUnit A)
     (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     cayleyChartUnitary A (-S) = (cayleyChartUnitary A S)⁻¹ := by
@@ -387,8 +406,14 @@ private theorem measure_setOf_not_isUnit_one_add_mul_cayleyChart (hA : A.IsHermi
       rwa [isUnit_iff_isUnit_det, isUnit_iff_ne_zero, not_not] at hS'
     simp only [mem_ofPred_eq, ← key, det_mul, h0, zero_mul]
   · -- `S = i s A` gives `(1 + a) + (a - 1) X = (1 - i s / 2) + (1 + i s / 2) a`.
+    have hfinite := finite_setOf_det_smul_add_eq_zero
+      ((a : Matrix n n ℂ) - 1) (1 + (a : Matrix n n ℂ)) ⟨-1, by
+        have h : (-1 : ℂ) • ((a : Matrix n n ℂ) - 1) + (1 + (a : Matrix n n ℂ)) =
+            (2 : ℂ) • (1 : Matrix n n ℂ) := by module
+        rw [h, det_smul, det_one, mul_one]
+        exact pow_ne_zero _ (by norm_num)⟩
     obtain ⟨s, -, hs⟩ := Set.infinite_univ.exists_notMem_finite
-      ((finite_setOf_det_smul_one_add_smul_eq_zero (a : Matrix n n ℂ)).preimage
+      (hfinite.preimage
         (f := fun s : ℝ ↦ I * s / 2) (fun x _ y _ h ↦ by simpa using h))
     simp only [mem_preimage, mem_ofPred_eq] at hs
     have hmem : (I * s) • A ∈ skewAdjoint.submodule ℝ (Matrix n n ℂ) := by

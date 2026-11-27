@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Matrix.Normed
-public import Mathlib.Analysis.Matrix.MeasurableSpace
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.Analysis.Normed.Algebra.CayleyChart
 public import TauCeti.LinearAlgebra.Matrix.Hermitian.Congruence
@@ -403,6 +401,7 @@ theorem cayleyChartUnitary_zero (A : Matrix n n ℂ) : cayleyChartUnitary A 0 = 
   simp [cayleyChartUnitary]
 
 /-- On the source of the chart, `Matrix.unitaryGroupOf.cayleyChartUnitary` is the Cayley chart. -/
+@[simp]
 theorem coe_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A)
     (hS : S ∈ cayleyChartSource A) :
     (((cayleyChartUnitary A S : unitaryGroupOf A) : GL n ℂ) : Matrix n n ℂ) = cayleyChart A S := by
@@ -419,6 +418,7 @@ theorem cayleyChartUnitary_eq_cayleyChartEquiv (hA : A.IsHermitian) (hA' : IsUni
   unitaryGroupOf.ext <| by rw [coe_cayleyChartUnitary hA hA' hS, coe_cayleyChartEquiv_apply]
 
 /-- Off the source of the chart, `Matrix.unitaryGroupOf.cayleyChartUnitary` is `1`. -/
+@[simp]
 theorem cayleyChartUnitary_of_notMem (hS : S ∉ cayleyChartSource A) :
     cayleyChartUnitary A S = 1 := by
   cases isEmpty_or_nonempty n
@@ -441,20 +441,6 @@ theorem continuousOn_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A) :
     rw [val_inv_of_mem_unitaryGroupOf hA' (cayleyChartUnitary A S).property,
       coe_cayleyChartUnitary hA hA' S.property, Pi.mul_apply, Pi.mul_apply, Pi.star_apply,
       domRestrict_apply]
-
-/-- The Cayley chart with values in the unitary group is measurable. -/
-theorem measurable_cayleyChartUnitary [MeasurableSpace (unitaryGroupOf A)]
-    [BorelSpace (unitaryGroupOf A)] (hA : A.IsHermitian) (hA' : IsUnit A) :
-    Measurable (cayleyChartUnitary A) := by
-  classical
-  have h : cayleyChartUnitary A = (cayleyChartSource A).piecewise (cayleyChartUnitary A) 1 := by
-    ext1 S
-    by_cases hS : S ∈ cayleyChartSource A
-    · simp [hS]
-    · simp [hS, cayleyChartUnitary_of_notMem hS]
-  rw [h]
-  exact (continuousOn_cayleyChartUnitary hA hA').measurable_piecewise continuousOn_const
-    isOpen_cayleyChartSource.measurableSet
 
 /-- The inverse `g ↦ -2 A c(g)` of the Cayley chart, extended to all matrices `g` by taking the
 skew-adjoint part. -/
@@ -508,9 +494,10 @@ theorem cayleyChartInv_cayleyChart (hA' : IsUnit A) {S}
   exact LinearMap.congr_fun (skewAdjointPart_comp_subtype_skewAdjoint ℝ
     (A := Matrix n n ℂ)) S
 
-/-- The chart undoes its inverse on the elements `g` of the unitary group with `1 + g`
-invertible. -/
-theorem cayleyChartUnitary_cayleyChartInv (hA : A.IsHermitian) (hA' : IsUnit A)
+/-- The inverse chart maps a unitary matrix with `1 + g` invertible into the source of the
+chart, and the chart recovers that matrix. -/
+theorem cayleyChartInv_mem_and_cayleyChartUnitary_cayleyChartInv
+    (hA : A.IsHermitian) (hA' : IsUnit A)
     (g : unitaryGroupOf A)
     (hg : IsUnit (1 + ((g : GL n ℂ) : Matrix n n ℂ))) :
     cayleyChartInv A ((g : GL n ℂ) : Matrix n n ℂ) ∈ cayleyChartSource A ∧
@@ -527,7 +514,7 @@ theorem cayleyChart_cayleyChartInv (hA : A.IsHermitian) (hA' : IsUnit A)
     (g : unitaryGroupOf A) (hg : IsUnit (1 + ((g : GL n ℂ) : Matrix n n ℂ))) :
     cayleyChart A (cayleyChartInv A ((g : GL n ℂ) : Matrix n n ℂ)) =
       ((g : GL n ℂ) : Matrix n n ℂ) := by
-  obtain ⟨hmem, heq⟩ := cayleyChartUnitary_cayleyChartInv hA hA' g hg
+  obtain ⟨hmem, heq⟩ := cayleyChartInv_mem_and_cayleyChartUnitary_cayleyChartInv hA hA' g hg
   rw [← coe_cayleyChartUnitary hA hA' hmem, heq]
 
 /-- The inverse Cayley chart is continuous where `1 + g` is invertible. -/
@@ -554,7 +541,8 @@ theorem isOpen_image_cayleyChartUnitary (hA : A.IsHermitian) (hA' : IsUnit A)
         cayleyChartInv_cayleyChart hA' (hVs hS)]
       exact ⟨isUnit_one_add_cayleyChart hA hA' (hVs hS), hS⟩
     · rintro ⟨hg, hg'⟩
-      exact ⟨_, hg', (cayleyChartUnitary_cayleyChartInv hA hA' g hg).2⟩
+      exact ⟨_, hg', (cayleyChartInv_mem_and_cayleyChartUnitary_cayleyChartInv
+        hA hA' g hg).2⟩
   rw [this]
   exact ContinuousOn.isOpen_inter_preimage (continuousOn_cayleyChartInv.comp
     (Units.continuous_val.comp continuous_subtypeVal).continuousOn fun g hg ↦ hg) hW hV

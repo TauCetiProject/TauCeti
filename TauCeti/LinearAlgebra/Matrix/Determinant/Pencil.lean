@@ -30,8 +30,8 @@ a small integral matrix (`TauCeti.LinearAlgebra.Matrix.ReductionKernel`).
 
 ## Main results
 
-* `Matrix.finite_setOf_det_smul_one_add_smul_eq_zero`: the pencil `(1 - z) • 1 + (1 + z) • a`
-  has only finitely many singular parameters if `2 ≠ 0`.
+* `Matrix.finite_setOf_det_smul_add_eq_zero`: a pencil `t • A + B` with a nonsingular member
+  has only finitely many singular parameters.
 * `Polynomial.eval_det_X_add_C`: `det (X • A + B)`, evaluated at `t`, is `det (t • A + B)`.
 * `Submodule.eq_span_singleton_of_mem_of_det_ne_zero`: over a field with more than `n` elements,
   a subspace of `n × n` matrices whose invertible elements are the nonzero multiples of one
@@ -60,25 +60,18 @@ end Polynomial
 namespace Matrix
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [IsDomain R]
-  [NeZero (2 : R)]
 
-/-- Over a domain in which `2 ≠ 0`, only finitely many parameters make the pencil
-`(1 - z) • 1 + (1 + z) • a` singular. At `z = -1` it is the nonsingular scalar matrix `2`. -/
-theorem finite_setOf_det_smul_one_add_smul_eq_zero (a : Matrix n n R) :
-    {z : R | ((1 - z) • (1 : Matrix n n R) + (1 + z) • a).det = 0}.Finite := by
-  let q : Polynomial R := (((1 : Polynomial R) - X) • (1 : Matrix n n (Polynomial R)) +
-    ((1 : Polynomial R) + X) • a.map C).det
-  have hq (z : R) : q.eval z = ((1 - z) • (1 : Matrix n n R) + (1 + z) • a).det := by
-    rw [← coe_evalRingHom, RingHom.map_det]
-    congr 1
-    ext i j
-    by_cases h : i = j <;> simp [h]
-  have hq0 : q ≠ 0 := fun h ↦ by
-    have h1 := hq (-1)
-    rw [h, eval_zero] at h1
-    simp only [sub_neg_eq_add, one_add_one_eq_two, add_neg_cancel, zero_smul, add_zero,
-      det_smul, det_one, mul_one] at h1
-    exact pow_ne_zero _ (NeZero.ne (2 : R)) h1.symm
+/-- A matrix pencil over a domain has only finitely many singular parameters if it has a
+nonsingular member. -/
+theorem finite_setOf_det_smul_add_eq_zero (A B : Matrix n n R)
+    (h : ∃ t₀ : R, (t₀ • A + B).det ≠ 0) :
+    {t : R | (t • A + B).det = 0}.Finite := by
+  let q : Polynomial R := ((X : R[X]) • A.map C + B.map C).det
+  have hq (t : R) : q.eval t = (t • A + B).det := eval_det_X_add_C A B t
+  have hq0 : q ≠ 0 := by
+    obtain ⟨t₀, ht₀⟩ := h
+    intro hzero
+    exact ht₀ (by rw [← hq, hzero, eval_zero])
   simpa only [Polynomial.IsRoot.def, hq] using finite_setOfPred_isRoot hq0
 
 end Matrix
