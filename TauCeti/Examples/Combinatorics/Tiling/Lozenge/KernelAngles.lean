@@ -15,7 +15,7 @@ import TauCeti.Examples.Combinatorics.Tiling.Lozenge.CharacteristicFunction
 For `w = (1, 1, 1)` the triangle with sides `w₁, w₂, w₃` is equilateral, so every angle `θ_k` is
 `π/3`:
 
-* `G(0) = 1/3`, so each lozenge type has density `1/3`;
+* `G(0) = 1/3`;
 * `G(−e₂) = G(e₁) = 1/3`;
 * along the row `d₂ = −1`, `G((1, −1)) = −√3 / (2π)`;
 * `G((0, −2)) = √3 / (2π) − 1/3`, from the three-term identity at `d = (0, −1)`.
@@ -44,7 +44,7 @@ private theorem integrableOn_one_one_one :
       (Set.Ioc 0 (2 * π) ×ˢ Set.Ioc 0 (2 * π)) :=
   LozengeCharFun.isLiquidWeights_one_one_one.integrableOn_inv_lozengeCharFun
 
-/-- For uniform weights `G(0) = 1/3`: each lozenge type has density `1/3`. -/
+/-- For uniform weights `G(0) = 1/3`. -/
 theorem lozengeKernel_one_one_one_zero : lozengeKernel 1 1 1 0 = 1 / 3 := by
   have h := mul_lozengeKernel_zero one_pos one_pos one_pos integrableOn_one_one_one
   rw [lozengeTriangleAngle_one_one_one, ofReal_one, one_mul] at h

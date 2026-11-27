@@ -182,15 +182,10 @@ theorem lt_iff_lt_cos_arccos {x t : ℝ} (ht : t ∈ Icc (-1) 1) (hne : t ≠ co
 clamped to `[-1, 1]`. -/
 theorem lt_iff_cos_arccos_lt {x t : ℝ} (ht : t ∈ Icc (-1) 1) (hne : t ≠ cos (arccos x)) :
     x < t ↔ cos (arccos x) < t := by
-  rcases lt_or_ge x (-1) with h | h
-  · rw [arccos_of_le_neg_one h.le, cos_pi] at hne ⊢
-    have := lt_of_le_of_ne ht.1 (Ne.symm hne)
-    constructor <;> intro <;> linarith
-  rcases le_or_gt x 1 with h' | h'
-  · rw [cos_arccos h h']
-  · rw [arccos_of_one_le h'.le, cos_zero] at hne ⊢
-    have := lt_of_le_of_ne ht.2 hne
-    constructor <;> intro <;> linarith [ht.2]
+  have htx : t ≠ x := by
+    rintro rfl
+    exact hne (cos_arccos ht.1 ht.2).symm
+  rw [← not_le, ← not_le, htx.le_iff_lt, hne.le_iff_lt, lt_iff_lt_cos_arccos ht hne]
 
 /-- **The cosine has no interior minimum on `[-π, π]`.** If `k < cos a` and `k < cos b`, with
 `-π ≤ a` and `b ≤ π`, then `k < cos θ` for every `θ ∈ [a, b]`.

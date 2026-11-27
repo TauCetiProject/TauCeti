@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.InverseKernel
 import TauCeti.Analysis.Fourier.InvAddMulExp
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 
@@ -49,7 +50,7 @@ By Fubini (`TauCeti.lozengeKernel_eq_integral_integral`,
 (`Complex.sq_norm_ofReal_add_mul_exp`), the condition `|a| < w₁` says `cos θ < cos θ₀`, that
 is `θ ∈ (θ₀, 2π − θ₀)` (`Real.cos_lt_cos_iff_mem_Ioo`), an arc of length `2θ₁`, and the
 boundary case `cos θ = cos θ₀` is a null set (`Real.volume_setOf_cos_eq`;
-`TauCeti.setIntegral_Ioc_eq_mul_intervalIntegral_arc`). Hence
+`TauCeti.setIntegral_Ioc_eq_intervalIntegral_arc`). Hence
 `w₁ G_w((m, −1)) = (2π)⁻¹ ∫_{θ₀}^{2π−θ₀} e^{imθ} dθ` (`TauCeti.mul_lozengeKernel_row`). The column
 `d = (1, m)` is the same with `θ` integrated first (`TauCeti.mul_lozengeKernel_column`). The value
 at `d = 0` follows from the three-term identity `w₃ G_w(0) + w₂ G_w(e₁) + w₁ G_w(−e₂) = 1`
@@ -59,6 +60,8 @@ at `d = 0` follows from the three-term identity `w₃ G_w(0) + w₂ G_w(e₁) + 
 
 * V. Gorin, *Lectures on random lozenge tilings*, Cambridge Stud. Adv. Math. 193 (2021),
   Theorem 6.1.
+* R. Kenyon, *Lectures on dimers*, IAS/Park City Math. Ser. 16 (2009),
+  Section 6.1.
 -/
 
 public section
@@ -295,8 +298,9 @@ theorem mul_lozengeKernel_row (h₁ : 0 < w₁) (h₂ : 0 < w₂) (h₃ : 0 < w�
       (2 * π : ℂ)⁻¹ * ∫ θ in lozengeZeroAngleFst w₁ w₂ w₃..2 * π - lozengeZeroAngleFst w₁ w₂ w₃,
         exp (m * θ * I) := by
   rw [lozengeKernel_eq_integral_integral hP,
-    setIntegral_Ioc_eq_mul_intervalIntegral_arc (lozengeZeroAngleFst_mem_Icc w₁ w₂ w₃) m
-      (2 * π / w₁) fun θ hθ => integral_lozengeKernel_integrand_row h₁ h₂ h₃ m hθ, real_smul]
+    setIntegral_Ioc_eq_intervalIntegral_arc (lozengeZeroAngleFst_mem_Icc w₁ w₂ w₃)
+      fun θ hθ => integral_lozengeKernel_integrand_row h₁ h₂ h₃ m hθ,
+    intervalIntegral.integral_mul_const, real_smul]
   have h1 : (w₁ : ℂ) ≠ 0 := ofReal_ne_zero.2 h₁.ne'
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
   set X := ∫ θ in lozengeZeroAngleFst w₁ w₂ w₃..2 * π - lozengeZeroAngleFst w₁ w₂ w₃,
@@ -316,8 +320,9 @@ theorem mul_lozengeKernel_column (h₁ : 0 < w₁) (h₂ : 0 < w₂) (h₃ : 0 <
       (2 * π : ℂ)⁻¹ * ∫ φ in lozengeZeroAngleSnd w₁ w₂ w₃..2 * π - lozengeZeroAngleSnd w₁ w₂ w₃,
         exp (m * φ * I) := by
   rw [lozengeKernel_eq_integral_integral_swap hP,
-    setIntegral_Ioc_eq_mul_intervalIntegral_arc (lozengeZeroAngleSnd_mem_Icc w₁ w₂ w₃) m
-      (2 * π / w₂) fun φ hφ => integral_lozengeKernel_integrand_column h₁ h₂ h₃ m hφ, real_smul]
+    setIntegral_Ioc_eq_intervalIntegral_arc (lozengeZeroAngleSnd_mem_Icc w₁ w₂ w₃)
+      fun φ hφ => integral_lozengeKernel_integrand_column h₁ h₂ h₃ m hφ,
+    intervalIntegral.integral_mul_const, real_smul]
   have h2 : (w₂ : ℂ) ≠ 0 := ofReal_ne_zero.2 h₂.ne'
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
   set X := ∫ φ in lozengeZeroAngleSnd w₁ w₂ w₃..2 * π - lozengeZeroAngleSnd w₁ w₂ w₃,

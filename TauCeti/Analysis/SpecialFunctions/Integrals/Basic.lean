@@ -77,9 +77,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `TauCeti.inv_mul_integral_cexp_zero_mul_mul_I_arc`:
   the normalised arc integral `(2π)⁻¹ ∫_α^{2π−α} e^{imθ} dθ` is
   `(−1)^m sin(m (π − α)) / (π m)` for `m ≠ 0` and `(π − α) / π` for `m = 0`.
-* `TauCeti.setIntegral_Ioc_eq_mul_intervalIntegral_arc`: for `α ∈ [0, π]`, a function on
-  `(0, 2π]` equal to `e^{imθ} c` where `cos θ < cos α` and to `0` where `cos θ > cos α`
-  integrates to `c ∫_α^{2π−α} e^{imθ} dθ`, the level set `cos θ = cos α` being null.
+* `TauCeti.setIntegral_Ioc_eq_intervalIntegral_arc`: for `α ∈ [0, π]`, a function on
+  `(0, 2π]` equal to `g θ` where `cos θ < cos α` and to `0` where `cos θ > cos α`
+  integrates to `∫_α^{2π−α} g θ dθ`, the level set `cos θ = cos α` being null.
 * `TauCeti.setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I`:
   `∫∫_{(0,2π]²} exp ((d₁ θ + d₂ φ) i)` is `4π²` for `d = 0` in `ℤ²` and `0` otherwise, the
   orthogonality of the characters of the torus.
@@ -464,23 +464,21 @@ theorem inv_mul_integral_cexp_intCast_mul_mul_I_arc (α : ℝ) {m : ℤ} (hm : m
 
 open Complex Set in
 open scoped Real in
-/-- An integrand over `(0, 2π]` that equals `e^{imθ} c` where `cos θ < cos α` and `0` where
-`cos θ > cos α` integrates to `c ∫_α^{2π−α} e^{imθ} dθ`, for `α ∈ [0, π]`. -/
-theorem setIntegral_Ioc_eq_mul_intervalIntegral_arc {α : ℝ} (hα : α ∈ Icc 0 π) (m : ℤ) (c : ℂ)
-    {f : ℝ → ℂ}
-    (hf : ∀ θ, Real.cos θ ≠ Real.cos α →
-      f θ = if Real.cos θ < Real.cos α then exp (m * θ * I) * c else 0) :
-    ∫ θ in Ioc 0 (2 * π), f θ = c * ∫ θ in α..2 * π - α, exp (m * θ * I) := by
+/-- An integrand over `(0, 2π]` that equals `g θ` where `cos θ < cos α` and `0` where
+`cos θ > cos α` integrates to `∫_α^{2π−α} g θ dθ`, for `α ∈ [0, π]`. -/
+theorem setIntegral_Ioc_eq_intervalIntegral_arc {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {α : ℝ} (hα : α ∈ Icc 0 π) {f g : ℝ → E}
+    (hf : ∀ θ, Real.cos θ ≠ Real.cos α → f θ = if Real.cos θ < Real.cos α then g θ else 0) :
+    ∫ θ in Ioc 0 (2 * π), f θ = ∫ θ in α..2 * π - α, g θ := by
   have hae : ∀ᵐ θ : ℝ, Real.cos θ ≠ Real.cos α :=
     MeasureTheory.measure_eq_zero_iff_ae_notMem.1 (Real.volume_setOf_cos_eq (Real.cos α))
   have hsub : Ioo α (2 * π - α) ⊆ Ioc 0 (2 * π) := fun x hx =>
     ⟨by linarith [hα.1, hx.1], by linarith [hα.1, hx.2]⟩
-  rw [MeasureTheory.setIntegral_congr_ae measurableSet_Ioc (g := (Ioo α (2 * π - α)).indicator
-      fun θ => exp (m * θ * I) * c) (hae.mono fun θ hθ hmem => ?_),
+  rw [MeasureTheory.setIntegral_congr_ae measurableSet_Ioc (g := (Ioo α (2 * π - α)).indicator g)
+      (hae.mono fun θ hθ hmem => ?_),
     MeasureTheory.setIntegral_indicator measurableSet_Ioo, inter_eq_right.2 hsub,
     ← MeasureTheory.integral_Ioc_eq_integral_Ioo,
-    ← intervalIntegral.integral_of_le (by linarith [hα.2]), intervalIntegral.integral_mul_const,
-    mul_comm]
+    ← intervalIntegral.integral_of_le (by linarith [hα.2])]
   replace hmem := Ioc_subset_Icc_self hmem
   rw [hf θ hθ]
   rcases em (θ ∈ Ioo α (2 * π - α)) with h | h
