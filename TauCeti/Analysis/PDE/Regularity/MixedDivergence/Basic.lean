@@ -171,10 +171,16 @@ theorem matrixBilinearForm_skewBlock (a : Matrix ι ι ℝ) (b : E) (x y : E') :
       matrixBilinearForm a (horizontal x) (horizontal y) +
         ⟪horizontal x, b⟫_ℝ * vertical y - vertical x * ⟪b, horizontal y⟫_ℝ +
         vertical x * vertical y := by
+  have h₁ : (∑ i, x (Sum.inl i) * (b i * y (Sum.inr ()))) =
+      ∑ i, b i * x (Sum.inl i) * y (Sum.inr ()) :=
+    Finset.sum_congr rfl fun i _ ↦ by ring
+  have h₂ : (∑ i, x (Sum.inr ()) * (b i * y (Sum.inl i))) =
+      ∑ i, x (Sum.inr ()) * (y (Sum.inl i) * b i) :=
+    Finset.sum_congr rfl fun i _ ↦ by ring
   simp [matrixBilinearForm_apply, skewBlock, Matrix.fromBlocks, Matrix.mulVec, dotProduct,
-    Fintype.sum_sum_type, mul_add, Finset.sum_add_distrib, Finset.mul_sum,
-    PiLp.inner_apply, vertical_apply, mul_comm, mul_left_comm, mul_assoc, sub_eq_add_neg]
-  ring
+    Fintype.sum_sum_type, mul_add, Finset.sum_add_distrib, Finset.mul_sum, Finset.sum_mul,
+    PiLp.inner_apply, vertical_apply]
+  linear_combination h₁ - h₂
 
 /-- The two off-diagonal terms cancel in the quadratic form of the lifted matrix. -/
 theorem matrixBilinearForm_skewBlock_self (a : Matrix ι ι ℝ) (b : E) (v : E') :
