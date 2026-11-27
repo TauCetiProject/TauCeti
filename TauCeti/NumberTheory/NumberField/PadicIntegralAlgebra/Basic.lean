@@ -64,6 +64,8 @@ statement about the generic fibre: integrally, at a ramified prime, `O_p` does n
 For `r : ℕ` the **principal unit group** `H_r ≤ O_pˣ` consists of the units `u` with
 `u ≡ 1 (mod p ^ r O_p)`; it is the kernel of reduction of units modulo `p ^ r`. The groups `H_r`
 decrease with `r`, start at `H_0 = O_pˣ`, are open of finite index, and meet in the identity.
+Being compact, they form a basis of neighbourhoods of `1`; in particular `u ^ p ^ n → 1` for every
+`u ∈ H_1`.
 
 ## Main definitions
 
@@ -90,6 +92,10 @@ decrease with `r`, start at `H_0 = O_pˣ`, are open of finite index, and meet in
 * `TauCeti.NumberField.PadicIntegralAlgebra.isOpen_principalUnits` and the `FiniteIndex`
   instance: each `H_r` is an open subgroup of finite index.
 * `TauCeti.NumberField.PadicIntegralAlgebra.iInf_principalUnits`: the `H_r` meet in `1`.
+* `TauCeti.NumberField.PadicIntegralAlgebra.hasBasis_nhds_one_principalUnits`: the `H_r` form a
+  basis of neighbourhoods of `1` in `O_pˣ`.
+* `TauCeti.NumberField.PadicIntegralAlgebra.tendsto_pow_prime_pow_of_mem_principalUnits`:
+  `u ^ p ^ n → 1` for `u ∈ H_1`.
 
 ## References
 
@@ -101,7 +107,8 @@ decrease with `r`, start at `H_0 = O_pˣ`, are open of finite index, and meet in
 
 public section
 
-open scoped TensorProduct NumberField
+open Filter
+open scoped TensorProduct NumberField Topology
 
 namespace TauCeti.NumberField
 
@@ -374,6 +381,39 @@ theorem iInf_principalUnits : ⨅ r, principalUnits K p r = ⊥ := by
   intro r
   rw [← restrictScalars_span_pow, Submodule.restrictScalars_mem]
   exact Ideal.mem_principalUnitGroup.mp (Subgroup.mem_iInf.mp hu r)
+
+/-- Each principal unit group `H_r` is compact, being an open, hence closed, subgroup of the
+compact group `O_pˣ`. -/
+theorem isCompact_principalUnits (r : ℕ) :
+    IsCompact (principalUnits K p r : Set (PadicIntegralAlgebra K p)ˣ) :=
+  (Subgroup.isClosed_of_isOpen _ (isOpen_principalUnits K p r)).isCompact
+
+/-- The principal unit groups `H_r` form a basis of neighbourhoods of `1` in `O_pˣ`. -/
+theorem hasBasis_nhds_one_principalUnits :
+    (𝓝 (1 : (PadicIntegralAlgebra K p)ˣ)).HasBasis (fun _ ↦ True)
+      fun r ↦ (principalUnits K p r : Set (PadicIntegralAlgebra K p)ˣ) := by
+  refine ⟨fun U ↦ ⟨fun hU ↦ ?_, fun ⟨r, _, hr⟩ ↦
+    Filter.mem_of_superset ((isOpen_principalUnits K p r).mem_nhds (one_mem _)) hr⟩⟩
+  have hdir : Directed (· ⊇ ·) fun r ↦ (principalUnits K p r : Set (PadicIntegralAlgebra K p)ˣ) :=
+    fun i j ↦ ⟨max i j, principalUnits_antitone K p (le_max_left i j),
+      principalUnits_antitone K p (le_max_right i j)⟩
+  have hinter : ⋂ r, (principalUnits K p r : Set (PadicIntegralAlgebra K p)ˣ) = {1} := by
+    rw [← Subgroup.coe_iInf, iInf_principalUnits, Subgroup.coe_bot]
+  obtain ⟨r, hr⟩ := exists_subset_nhds_of_isCompact hdir (isCompact_principalUnits K p)
+    (by rwa [hinter, nhdsSet_singleton])
+  exact ⟨r, trivial, hr⟩
+
+variable {K p} in
+/-- The `p`-power powers of a principal unit `u ∈ H_1` tend to `1`: `u ^ p ^ n ∈ H_(n + 1)`. -/
+theorem tendsto_pow_prime_pow_of_mem_principalUnits {u : (PadicIntegralAlgebra K p)ˣ}
+    (hu : u ∈ principalUnits K p 1) : Tendsto (fun n ↦ u ^ p ^ n) atTop (𝓝 1) := by
+  refine (hasBasis_nhds_one_principalUnits K p).tendsto_right_iff.mpr fun r _ ↦ ?_
+  filter_upwards [eventually_ge_atTop r] with n hn
+  rw [principalUnits, pow_one] at hu
+  have h : u ^ p ^ n ∈ principalUnits K p (n + 1) := by
+    rw [principalUnits]
+    exact Ideal.pow_pow_mem_principalUnitGroup_pow (Ideal.mem_span_singleton_self _) hu n
+  exact principalUnits_antitone K p (by omega : r ≤ n + 1) h
 
 end PrincipalUnits
 
