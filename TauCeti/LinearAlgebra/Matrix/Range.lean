@@ -23,9 +23,10 @@ import TauCeti.Data.Matrix.Mul
 A matrix `L'` factors as `L * G` whenever each of its columns belongs to the range of
 matrix-vector multiplication by `L`. The column index type of `L'` need not be finite. Over an
 `S`-algebra, if the columns of `L'` lie in the `S`-span of those of `L`, the factor `G` can be taken
-over `S`. Over a field, a matrix with independent columns has a left inverse. We also
-give a criterion, splitting off the top row, for the column range of a matrix to be a given
-submodule.
+over `S`; for a subalgebra `S` and `L` with a left inverse, two matrices whose columns span the
+same `S`-submodule then differ by an invertible matrix over `S`. Over a field, a matrix with
+independent columns has a left inverse. We also give a criterion, splitting off the top row, for
+the column range of a matrix to be a given submodule.
 
 Over an arbitrary semiring `R` (not necessarily commutative), this file also collects the basic
 properties of row ranges `LinearMap.range M.vecMulLinear` and right-module column ranges
@@ -74,6 +75,13 @@ vanishing on the range is a dot product with such a `z`.
 * `Matrix.exists_mul_eq_of_range_le`: construct the right factor from column preimages.
 * `Matrix.exists_mul_map_eq_of_span_le`: if the columns of `C` lie in the `S`-span of those of
   `B`, then `C = B U` with `U` over `S`.
+* `Matrix.mem_span_col_iff`, `Matrix.mem_span_col_one_iff` and
+  `Matrix.GeneralLinearGroup.mem_span_col_iff_mulVec_inv_mem`: membership in the `S`-span of the
+  columns of a matrix, of the identity matrix, and of an invertible matrix `w`, where it means that
+  `w⁻¹ x` has entries in `S`, for a subalgebra `S`.
+* `Matrix.exists_eq_mul_map_of_span_col_eq` and
+  `Matrix.GeneralLinearGroup.exists_eq_mul_map_of_span_col_eq`: a left-invertible matrix is
+  determined up to `GL(S)` on the right by the `S`-span of its columns.
 * `Matrix.exists_mul_eq_one_of_linearIndependent_col`,
   `Matrix.exists_mul_map_mul_eq_one_of_linearIndependent_col`: over a field, a matrix with
   independent columns has a left inverse, and so does its product with an invertible matrix over
@@ -152,6 +160,82 @@ theorem exists_mul_map_eq_of_span_le {S A : Type*} [CommSemiring S] [CommSemirin
   simp only [Finset.sum_apply, Pi.smul_apply, col_apply] at this
   simp only [Algebra.smul_def] at this
   simp only [Matrix.mul_apply, map_apply, of_apply, ← this, mul_comm]
+
+section SubalgebraSpan
+
+variable {T A : Type*} [CommSemiring T] [CommSemiring A] [Algebra T A] {S : Subalgebra T A}
+  {o : Type*}
+
+/-- A vector lies in the `S`-span of the columns of a matrix `M` exactly when it is `M y` for a
+vector `y` with entries in `S`. -/
+theorem mem_span_col_iff [Fintype o] {M : Matrix m o A} {x : m → A} :
+    x ∈ Submodule.span S (Set.range M.col) ↔ ∃ y : o → A, (∀ j, y j ∈ S) ∧ M *ᵥ y = x := by
+  rw [Submodule.mem_span_range_iff_exists_fun]
+  constructor
+  · rintro ⟨c, rfl⟩
+    refine ⟨fun j ↦ c j, fun j ↦ (c j).property, funext fun i ↦ ?_⟩
+    simp [mulVec, dotProduct, Finset.sum_apply, Subalgebra.smul_def, mul_comm]
+  · rintro ⟨y, hy, rfl⟩
+    refine ⟨fun j ↦ ⟨y j, hy j⟩, funext fun i ↦ ?_⟩
+    simp [mulVec, dotProduct, Finset.sum_apply, Subalgebra.smul_def, mul_comm]
+
+/-- `x` lies in the `S`-span of the columns of `w ∈ GL_n(A)` exactly when `w⁻¹ x` has entries
+in `S`. -/
+theorem GeneralLinearGroup.mem_span_col_iff_mulVec_inv_mem [Fintype o] [DecidableEq o]
+    (w : GL o A) {x : o → A} :
+    x ∈ Submodule.span S (Set.range (w : Matrix o o A).col) ↔
+      ∀ i, (((w⁻¹ : GL o A) : Matrix o o A) *ᵥ x) i ∈ S := by
+  rw [mem_span_col_iff]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    rwa [mulVec_mulVec, Units.inv_mul, one_mulVec]
+  · intro h
+    exact ⟨_, h, by rw [mulVec_mulVec, Units.mul_inv, one_mulVec]⟩
+
+/-- The `S`-span of the columns of the identity matrix is `Sⁿ`. -/
+@[simp]
+theorem mem_span_col_one_iff [Finite o] [DecidableEq o] {x : o → A} :
+    x ∈ Submodule.span S (Set.range (1 : Matrix o o A).col) ↔ ∀ i, x i ∈ S := by
+  have := Fintype.ofFinite o
+  simpa using GeneralLinearGroup.mem_span_col_iff_mulVec_inv_mem (S := S) (1 : GL o A) (x := x)
+
+end SubalgebraSpan
+
+section SubalgebraSpanRing
+
+variable {T A : Type*} [CommRing T] [CommRing A] [Algebra T A] {S : Subalgebra T A} {o : Type*}
+
+/-- Let `B` be a matrix with a left inverse. If the columns of `B` and of `C` span the same
+`S`-submodule, then `C = B k` for an invertible matrix `k` over `S`. -/
+theorem exists_eq_mul_map_of_span_col_eq [Fintype m] [Fintype o] [DecidableEq o]
+    {B C : Matrix m o A} (hB : ∃ l : Matrix o m A, l * B = 1)
+    (h : Submodule.span S (Set.range B.col) = Submodule.span S (Set.range C.col)) :
+    ∃ k : GL o S, C = B * (GeneralLinearGroup.map S.val.toRingHom k : Matrix o o A) := by
+  obtain ⟨l, hl⟩ := hB
+  obtain ⟨U, hU⟩ := exists_mul_map_eq_of_span_le h.ge
+  obtain ⟨V, hV⟩ := exists_mul_map_eq_of_span_le h.le
+  -- `B U V = B` and `C V U = C`; cancel `B` by `l`, then descend along `S ⊆ A`.
+  have hUV : U * V = 1 := by
+    refine map_injective (f := algebraMap S A) Subtype.val_injective ?_
+    dsimp only
+    rw [Matrix.map_mul, Matrix.map_one _ (map_zero _) (map_one _)]
+    calc U.map (algebraMap S A) * V.map (algebraMap S A)
+      _ = l * (B * U.map (algebraMap S A) * V.map (algebraMap S A)) := by
+        simp only [← Matrix.mul_assoc, hl, Matrix.one_mul]
+      _ = 1 := by rw [hU, hV, hl]
+  exact ⟨⟨U, V, hUV, mul_eq_one_comm.1 hUV⟩, hU.symm⟩
+
+/-- Two invertible matrices whose columns span the same `S`-submodule differ by an invertible
+matrix over `S` on the right. -/
+theorem GeneralLinearGroup.exists_eq_mul_map_of_span_col_eq [Fintype o] [DecidableEq o]
+    {u u' : GL o A}
+    (h : Submodule.span S (Set.range (u : Matrix o o A).col) =
+      Submodule.span S (Set.range (u' : Matrix o o A).col)) :
+    ∃ k : GL o S, u' = u * map S.val.toRingHom k := by
+  obtain ⟨k, hk⟩ := Matrix.exists_eq_mul_map_of_span_col_eq ⟨_, u.inv_mul⟩ h
+  exact ⟨k, Units.ext hk⟩
+
+end SubalgebraSpanRing
 
 section Field
 

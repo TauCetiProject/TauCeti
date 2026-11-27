@@ -54,7 +54,8 @@ approximates `a`.
 
 * `IsDedekindDomain.FiniteAdeleRing.integralAdeles`: the `R`-subalgebra of integral finite adeles,
   with `isOpen_integralAdeles`, `isClosed_integralAdeles`, `isCompact_integralAdeles`, and the
-  instance `compactSpace_integralAdeles`.
+  instance `compactSpace_integralAdeles`; it contains every idempotent finite adele
+  (`mem_integralAdeles_of_isIdempotentElem`).
 * `IsDedekindDomain.FiniteAdeleRing.integralEmbedding`: the continuous embedding of the product of
   the local integer rings into the finite adeles, with range `integralAdeles`.
 * `IsDedekindDomain.FiniteAdeleRing.one_apply`, `add_apply`, `sub_apply`, and `mul_apply`: the
@@ -164,6 +165,13 @@ theorem coe_integralAdeles :
     (integralAdeles R K : Set (FiniteAdeleRing R K)) =
       {a | ∀ v, a v ∈ v.adicCompletionIntegers K} :=
   (rfl)
+
+/-- An idempotent finite adele is integral: each of its components is `0` or `1`. -/
+theorem mem_integralAdeles_of_isIdempotentElem {e : FiniteAdeleRing R K}
+    (he : IsIdempotentElem e) : e ∈ integralAdeles R K := fun v ↦ by
+  have hv : IsIdempotentElem (e v) := by rw [IsIdempotentElem, ← mul_apply, he.eq]
+  rcases IsIdempotentElem.iff_eq_zero_or_one.1 hv with h | h <;> rw [h]
+  exacts [zero_mem _, one_mem _]
 
 /-- The product of the local integer rings embedded continuously in the finite adele ring. Its
 range is the subalgebra `integralAdeles` of finite adeles integral at every finite place. -/
