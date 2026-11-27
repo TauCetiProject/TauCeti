@@ -251,7 +251,7 @@ theorem twistedHatDifferential_circleTimesSphere_zero_eq_zero_iff
 
 /-- Every multiple of `p₁` is a cycle of the twisted hat complex of the genus-one diagram of
 `S¹ × S²`. -/
-theorem twistedHatDifferential_circleTimesSphere_zero_single_one
+theorem twistedHatDifferential_circleTimesSphere_zero_single_one_eq_zero
     (a : MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) :
     (circleTimesSphere 0).twistedHatDifferential circleTimesSphereReferenceDomains ![0, 1, 1]
       (Finsupp.single (circleTimesSphereGenerator 0 1) a) = 0 :=
@@ -600,11 +600,11 @@ theorem circleTimesSphereAugmentedHomologyEquiv_mk_tmul_single_one :
     circleTimesSphereAugmentedHomologyEquiv
         (Submodule.Quotient.mk ⟨1 ⊗ₜ Finsupp.single (circleTimesSphereGenerator 0 1) 1,
           LinearMap.tmul_mem_ker_lTensor _
-            (twistedHatDifferential_circleTimesSphere_zero_single_one 1)⟩) = (0, 1) := by
+            (twistedHatDifferential_circleTimesSphere_zero_single_one_eq_zero 1)⟩) = (0, 1) := by
   have h := circleTimesSphereLTensorHomologyEquiv_mk_tmul
     (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains) ⧸
       Ideal.span {1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) (1 : ZMod 2)}) 1
-    ⟨_, twistedHatDifferential_circleTimesSphere_zero_single_one 1⟩
+    ⟨_, twistedHatDifferential_circleTimesSphere_zero_single_one_eq_zero 1⟩
   simp [circleTimesSphereAugmentedHomologyEquiv, AddEquiv.prodCongr, h]
 
 end Tor
