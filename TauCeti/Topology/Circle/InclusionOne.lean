@@ -66,11 +66,9 @@ theorem notMem_serreFibrations_inclusionOne :
     (e := (⟨1, rfl⟩ : ({1} : Set Circle))) (expLoop.cast (inclusionOne_apply _) rfl)
   let t : I := ⟨1 / 2, by norm_num, by norm_num⟩
   have ht : 2 * Real.pi * t = Real.pi := by simp only [t]; ring
-  have h := congrFun hΓ t
-  rw [Function.comp_apply, inclusionOne_apply, Set.mem_singleton_iff.1 (Γ t).property,
-    Path.cast_coe, expLoop_apply, ht, exp_pi] at h
-  have h1 := congrArg (fun z : Circle ↦ (z : ℂ).re) h
-  norm_num at h1
+  have h : expLoop t = 1 := (congrFun hΓ t).symm.trans (Set.mem_singleton_iff.1 (Γ t).property)
+  rw [expLoop_apply, ht, exp_pi] at h
+  norm_num [Circle.ext_iff] at h
 
 /-- **The inclusion of `1` is not surjective on `π₁`.** The map `π₁({1}) → π₁(S¹, 1)` induced by
 `{1} → S¹` is not surjective, although `π₀` of its fibre over `1` is trivial: its source is
