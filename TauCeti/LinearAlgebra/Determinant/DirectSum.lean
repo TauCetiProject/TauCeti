@@ -68,7 +68,8 @@ the determinant lines of the summands.
 ## Main declarations
 
 * `TauCeti.detLineProdEquiv`: `det U ⊗ det W ≃ det (U × W)`, with its value
-  `TauCeti.coe_detLineProdEquiv_tmul`.
+  `TauCeti.coe_detLineProdEquiv_tmul`, also on arbitrary lifts of the second factor
+  (`TauCeti.coe_detLineProdEquiv_tmul_snd_comp`).
 * `TauCeti.detLineCongr_prodComm_detLineProdEquiv`: exchanging the factors costs
   `(-1) ^ (dim U * dim W)`.
 * `TauCeti.coe_detLineProdEquiv_tmul_eq_mul`: `TauCeti.detLineProdEquiv` is the exterior product
@@ -137,6 +138,17 @@ theorem coe_detLineProdEquiv_tmul (u : Fin (finrank K U) → U) (w : Fin (finran
     LinearMap.snd_surjective u (LinearMap.inr K U W ∘ w)
   rwa [← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.snd_comp_inr, LinearMap.id_coe,
     Function.id_comp] at h
+
+/-- `TauCeti.detLineProdEquiv` sends `(u₁ ∧ ⋯ ∧ uₐ) ⊗ (w₁ ∧ ⋯ ∧ w_c)` to
+`(u₁, 0) ∧ ⋯ ∧ (uₐ, 0) ∧ v₁ ∧ ⋯ ∧ v_c` for any lifts `vᵢ` of the `wᵢ` to `U × W`: the components of
+the `vᵢ` in `U` do not contribute, since `(u₁, 0), …, (uₐ, 0)` already span `U × 0`. -/
+theorem coe_detLineProdEquiv_tmul_snd_comp (u : Fin (finrank K U) → U)
+    (v : Fin (finrank K W) → U × W) :
+    (detLineProdEquiv K U W (exteriorPower.ιMulti K _ u ⊗ₜ
+        exteriorPower.ιMulti K _ (LinearMap.snd K U W ∘ v)) : ExteriorAlgebra K (U × W)) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (LinearMap.inl K U W ∘ u) v) :=
+  coe_detLineShortExactEquiv_tmul LinearMap.inl_injective Function.Exact.inl_snd
+    LinearMap.snd_surjective u v
 
 /-- **Exchanging the factors of a product** multiplies `TauCeti.detLineProdEquiv` by
 `(-1) ^ (dim U * dim W)`: the isomorphism `det (U × W) ≃ det (W × U)` induced by the swap

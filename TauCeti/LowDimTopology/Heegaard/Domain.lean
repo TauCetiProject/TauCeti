@@ -446,6 +446,13 @@ theorem isDomainBetween_withBasepoints {B : Type*} (b : B → Region) {x y : H.G
 theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
   simp
 
+/-- The zero domain connects a generator only to itself. -/
+theorem isDomainBetween_zero_iff {x y : H.Generator} : H.IsDomainBetween x y 0 ↔ x = y := by
+  refine ⟨fun h => H.generatorChain_injective ?_, fun h => h ▸ isDomainBetween_zero x⟩
+  have := h.1
+  rw [map_zero, map_zero] at this
+  exact (sub_eq_zero.mp this.symm).symm
+
 /-- The whole surface connects every generator to itself. -/
 theorem isDomainBetween_one (x : H.Generator) : H.IsDomainBetween x x 1 := by
   simp

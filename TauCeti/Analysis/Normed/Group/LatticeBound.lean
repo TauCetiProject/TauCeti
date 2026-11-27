@@ -45,6 +45,8 @@ in `‖n g‖`, uniformly in `g`, and dominate any additive functional, such as 
 
 * `AddMonoidHom.exists_norm_le_mul_norm_of_injective`: an additive map on a subgroup of an
   integer lattice is bounded by the sup norm.
+* `AddMonoidHom.exists_forall_abs_le_mul_norm_of_injective`: the same with one constant for
+  finitely many real-valued additive maps.
 * `AddMonoidHom.exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le`: the winding estimate.
 * `AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul`: the winding estimate for regions
   of multiplicities `p_i(g) + N aᵢ(g)` and `q_i(g) - N aᵢ(g)` with different base terms, beating
@@ -100,6 +102,19 @@ theorem exists_norm_le_mul_norm_of_injective [SeminormedAddCommGroup F] (f : G �
   rw [mul_right_comm]
   refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
   simpa [Int.norm_eq_abs] using hC j g
+
+/-- **Finitely many functionals on a subgroup of an integer lattice are bounded by the sup
+norm.** If `n : G →+ (κ → ℤ)` is injective and `κ` is finite, there is one constant `C ≥ 0` with
+`|f i g| ≤ C * ‖n g‖` for all `g` and each of finitely many additive maps `f i : G →+ ℝ`. -/
+theorem exists_forall_abs_le_mul_norm_of_injective {ι : Type*} [Finite ι] (f : ι → G →+ ℝ)
+    {n : G →+ (κ → ℤ)} (hn : Function.Injective n) :
+    ∃ C, 0 ≤ C ∧ ∀ i g, |f i g| ≤ C * ‖n g‖ := by
+  have := Fintype.ofFinite ι
+  choose C hC₀ hC using fun i ↦ exists_norm_le_mul_norm_of_injective (f i) hn
+  refine ⟨∑ i, C i, sum_nonneg fun i _ ↦ hC₀ i, fun i g ↦ ?_⟩
+  refine ((Real.norm_eq_abs _).symm.trans_le (hC i g)).trans ?_
+  exact mul_le_mul_of_nonneg_right
+    (single_le_sum (fun i _ ↦ hC₀ i) (mem_univ i)) (norm_nonneg _)
 
 /-- **The winding estimate.** Let `n, b : G →+ (κ → ℤ)` be additive with `n` injective. There is
 a constant `B ≥ 0` such that every `g ≠ 0` has a coordinate `i` at which, for every real `t`,

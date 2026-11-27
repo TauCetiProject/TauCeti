@@ -39,7 +39,11 @@ for the bilinear map `L_n` sending `(a, B)` to the multilinear map `m ↦ L a (B
 
 For a compactly supported `C^N` factor,
 `HasCompactSupport.iteratedFDeriv_convolution_right` computes the `n`-th derivative for `n ≤ N`
-on that factor, without a domination assumption.
+on that factor, without a domination assumption. When the other factor is integrable and the
+compactly supported factor is `C¹`, the `L¹`–`L∞` pairing bounds the derivative of the convolution
+by `‖L‖ * (∫ ‖f‖) * ⨆ ‖D g‖` (or symmetrically with the factors swapped), making the convolution
+globally Lipschitz without any boundedness assumption on the integrable factor or local finiteness
+of the measure.
 
 For a compactly supported `C¹` factor `g`, the file also records the directional form
 `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g` of Mathlib's rule `HasCompactSupport.hasFDerivAt_convolution_right`, in
@@ -64,6 +68,12 @@ kernel allows, hence Lipschitz.
 * `MeasureTheory.iteratedFDeriv_convolution_left_of_dominated`: `D^n (f ⋆ g) = D^n f ⋆ g`.
 * `HasCompactSupport.iteratedFDeriv_convolution_right`: `D^n (f ⋆ g) = f ⋆ D^n g` for
   compactly supported `C^N` `g` and `n ≤ N`.
+* `HasCompactSupport.norm_fderiv_convolution_right_le_of_integrable`,
+  `HasCompactSupport.norm_fderiv_convolution_left_le_of_integrable`: derivative norm bound for the
+  convolution of an integrable function and a compactly supported `C¹` factor.
+* `HasCompactSupport.lipschitzWith_convolution_right_of_integrable`,
+  `HasCompactSupport.lipschitzWith_convolution_left_of_integrable`: corresponding global Lipschitz
+  bounds.
 * `HasCompactSupport.fderiv_convolution_right_apply`: for `g` compactly supported, the
   directional derivative `∂ᵥ (f ⋆ g) = f ⋆ ∂ᵥ g`.
 * `HasCompactSupport.fderiv_convolution_left_apply`: for `f` compactly supported, the
@@ -199,6 +209,57 @@ theorem _root_.HasCompactSupport.iteratedFDeriv_convolution_right (hcg : HasComp
   have hgn : ContDiff 𝕜 1 (iteratedFDeriv 𝕜 n g) :=
     hg.iteratedFDeriv_right (by rw [add_comm]; exact_mod_cast hn)
   exact (hcg.iteratedFDeriv n).hasFDerivAt_convolution_right _ hf hgn x
+
+/-- **Derivative bound for convolution of an integrable function with a compactly supported `C¹`
+kernel.** If `f` is integrable and `g` is `C¹` with compact support, then
+`‖fderiv 𝕜 (f ⋆[L, μ] g) x‖ ≤ ‖L‖ * (∫ y, ‖f y‖ ∂μ) * ⨆ y, ‖fderiv 𝕜 g y‖`. -/
+theorem _root_.HasCompactSupport.norm_fderiv_convolution_right_le_of_integrable
+    (hcg : HasCompactSupport g) (hf : Integrable f μ) (hg : ContDiff 𝕜 1 g) (x : G) :
+    ‖fderiv 𝕜 (f ⋆[L, μ] g) x‖ ≤ ‖L‖ * (∫ y, ‖f y‖ ∂μ) * ⨆ y, ‖fderiv 𝕜 g y‖ := by
+  have hbdd : BddAbove (range fun y ↦ ‖fderiv 𝕜 g y‖) :=
+    (hg.continuous_fderiv one_ne_zero).norm.bddAbove_range_of_hasCompactSupport (hcg.fderiv 𝕜).norm
+  rw [(hcg.hasFDerivAt_convolution_right L hf.locallyIntegrable hg x).fderiv, convolution_def]
+  refine (norm_integral_le_of_norm_le
+    ((hf.norm.const_mul ‖L‖).mul_const (⨆ y, ‖fderiv 𝕜 g y‖))
+    (Eventually.of_forall fun y ↦ ?_)).trans_eq ?_
+  · calc ‖(L.precompR G) (f y) (fderiv 𝕜 g (x - y))‖
+        ≤ ‖L (f y)‖ * ‖fderiv 𝕜 g (x - y)‖ := opNorm_comp_le _ _
+      _ ≤ (‖L‖ * ‖f y‖) * ⨆ z, ‖fderiv 𝕜 g z‖ :=
+          mul_le_mul (L.le_opNorm _) (le_ciSup hbdd _) (norm_nonneg _) (by positivity)
+  · rw [integral_mul_const, integral_const_mul]
+
+/-- **Lipschitz bound for convolution of an integrable function with a compactly supported `C¹`
+kernel.** If `f` is integrable and `g` is `C¹` with compact support, then `f ⋆[L, μ] g` is
+globally Lipschitz with constant `‖L‖ * (∫ y, ‖f y‖ ∂μ) * ⨆ y, ‖fderiv 𝕜 g y‖`. -/
+theorem _root_.HasCompactSupport.lipschitzWith_convolution_right_of_integrable
+    (hcg : HasCompactSupport g) (hf : Integrable f μ) (hg : ContDiff 𝕜 1 g) :
+    LipschitzWith (‖L‖ * (∫ y, ‖f y‖ ∂μ) * ⨆ y, ‖fderiv 𝕜 g y‖).toNNReal (f ⋆[L, μ] g) := by
+  refine lipschitzWith_of_nnNorm_fderiv_le
+    ((hcg.contDiff_convolution_right L hf.locallyIntegrable hg).differentiable one_ne_zero)
+    fun x ↦ ?_
+  rw [← NNReal.coe_le_coe, coe_nnNorm]
+  exact (hcg.norm_fderiv_convolution_right_le_of_integrable L hf hg x).trans
+    (Real.le_coe_toNNReal _)
+
+/-- **Derivative bound for convolution of a compactly supported `C¹` kernel with an integrable
+function.** Symmetric counterpart of
+`HasCompactSupport.norm_fderiv_convolution_right_le_of_integrable`. -/
+theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le_of_integrable [μ.IsNegInvariant]
+    (hcf : HasCompactSupport f) (hf : ContDiff 𝕜 1 f) (hg : Integrable g μ) (x : G) :
+    ‖fderiv 𝕜 (f ⋆[L, μ] g) x‖ ≤ ‖L‖ * (⨆ y, ‖fderiv 𝕜 f y‖) * ∫ y, ‖g y‖ ∂μ := by
+  rw [← convolution_flip]
+  simpa only [opNorm_flip, mul_right_comm] using
+    hcf.norm_fderiv_convolution_right_le_of_integrable L.flip hg hf x
+
+/-- **Lipschitz bound for convolution of a compactly supported `C¹` kernel with an integrable
+function.** Symmetric counterpart of
+`HasCompactSupport.lipschitzWith_convolution_right_of_integrable`. -/
+theorem _root_.HasCompactSupport.lipschitzWith_convolution_left_of_integrable [μ.IsNegInvariant]
+    (hcf : HasCompactSupport f) (hf : ContDiff 𝕜 1 f) (hg : Integrable g μ) :
+    LipschitzWith (‖L‖ * (⨆ y, ‖fderiv 𝕜 f y‖) * ∫ y, ‖g y‖ ∂μ).toNNReal (f ⋆[L, μ] g) := by
+  rw [← convolution_flip]
+  simpa only [opNorm_flip, mul_right_comm] using
+    hcf.lipschitzWith_convolution_right_of_integrable L.flip hg hf
 
 end RCLike
 

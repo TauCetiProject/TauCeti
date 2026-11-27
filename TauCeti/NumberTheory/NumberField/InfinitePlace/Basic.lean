@@ -62,7 +62,8 @@ equivalent to a nonarchimedean absolute value.
   `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`) and
   `NumberField.IsTotallyReal.of_zero_lt_discr` read the signature off the sign of the
   discriminant in low degree, and `NumberField.IsTotallyComplex.of_discr_lt_zero` shows that a
-  quadratic field of negative discriminant is totally complex.
+  quadratic field of negative discriminant is totally complex, with converse
+  `NumberField.IsTotallyComplex.discr_lt_zero`.
 * `NumberField.IsTotallyComplex.of_finrank_le_two_mul_nrComplexPlaces`: a field is totally complex
   as soon as its complex places use up the degree.
 * `NumberField.IsTotallyReal.nontrivial_ringHom_real`: a totally real field of degree greater
@@ -79,6 +80,8 @@ equivalent to a nonarchimedean absolute value.
 * `NumberField.InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or`: the
   embedding of a place and its conjugate restrict to the embedding of the place below and its
   conjugate, in one order or the other.
+* `NumberField.InfinitePlace.mk_eq_mk_iff_of_isUnramified`: embeddings with a common restriction
+  and the same unramified infinite place are equal.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
 * `NumberField.InfinitePlace.not_isEquiv_of_isNonarchimedean`: an infinite place is never
   equivalent to a nonarchimedean absolute value.
@@ -268,6 +271,16 @@ theorem IsTotallyComplex.of_discr_lt_zero (hd : discr K < 0) (hK : Module.finran
   .of_finrank_le_two_mul_nrComplexPlaces <| by
     rw [hK, InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)]
 
+/-- A totally complex number field of degree `2`, an imaginary quadratic field, has negative
+discriminant: the converse of `NumberField.IsTotallyComplex.of_discr_lt_zero`. Its single complex
+place is odd in number, so by Brill's theorem the discriminant is not positive, and it is
+nonzero. -/
+theorem IsTotallyComplex.discr_lt_zero [IsTotallyComplex K] (hK : Module.finrank ℚ K = 2) :
+    discr K < 0 := by
+  have h := (InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr K).not.mp
+    (by simp [InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two hK])
+  exact lt_of_le_of_ne (not_lt.mp h) (discr_ne_zero K)
+
 /-- A totally real number field of degree greater than one has two distinct real embeddings:
 each of its complex embeddings, of which there are as many as the degree, is real. -/
 theorem IsTotallyReal.nontrivial_ringHom_real [IsTotallyReal K]
@@ -324,6 +337,19 @@ theorem InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq
   · refine .inr ⟨?_, h⟩
     rw [← h, ComplexEmbedding.conjugate_comp]
     exact (ComplexEmbedding.involutive_conjugate k _).symm
+
+/-- Two complex embeddings over a common restriction agree if they induce the same infinite
+place and that place is unramified over the base. -/
+theorem InfinitePlace.mk_eq_mk_iff_of_isUnramified {L : Type*} [Field L] [Algebra K L]
+    {φ ψ : L →+* ℂ} (h : φ.comp (algebraMap K L) = ψ.comp (algebraMap K L))
+    (hφ : (mk φ).IsUnramified K) : mk φ = mk ψ ↔ φ = ψ := by
+  refine ⟨fun he ↦ ?_, congrArg mk⟩
+  rcases mk_eq_iff.mp he with he | hc
+  · exact he
+  have hr : ComplexEmbedding.IsReal (φ.comp (algebraMap K L)) := by
+    rw [ComplexEmbedding.isReal_iff, ← ComplexEmbedding.conjugate_comp, hc, h]
+  have hφreal := (isUnramified_mk_iff_isUnmixed.mp hφ) hr
+  exact (ComplexEmbedding.isReal_iff.mp hφreal).symm.trans hc
 
 /-- An infinite place is archimedean: it takes the value `2` at `2`. -/
 theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.val := by

@@ -5,11 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.MeanValue.Quadratic
 public import TauCeti.Analysis.Normed.Operator.QuadraticCorrection.Basic
 public import Mathlib.Analysis.Calculus.ImplicitContDiff
 
 /-!
-# Smooth dependence of the quadratic correction on parameters
+# The quadratic correction for differentiable maps
+
+This file connects the quadratic correction of
+`TauCeti.Analysis.Normed.Operator.QuadraticCorrection.Basic` with differential calculus: the
+correction depends smoothly on parameters, and for a differentiable map `f` the hypotheses of the
+correction are bounds on the derivative of `f`.
+
+## Smooth dependence on parameters
 
 Let `e p + D p x + N p x = 0` be a family of equations parametrized by `p` in a Banach space `P`,
 for an unknown `x` in a Banach space `E`, both over an `RCLike` field `𝕜`, with additive right
@@ -41,6 +49,26 @@ Mathlib's implicit function theorem `ContDiffAt.implicitFunction` then gives a `
 solution, and it agrees with `x` near `p₀` because `x` is continuous
 (`TauCeti.continuousAt_of_eventually_add_add_eq_zero`). For `n = 0` the same continuity theorem,
 applied at every point near `p₀`, shows that `x` is continuous near `p₀`.
+
+## Zeros of a map near an approximate zero
+
+Let `f : E → F` have derivative `f' w` on the closed ball of radius `δ` around `0`, and let `Q` be
+a right inverse of `f' 0` with `‖Q y‖ ≤ C ‖y‖`. Expanding `f` around the approximate zero `0`,
+
+`f x = f 0 + f' 0 x + N x`,  `N x = f x - f 0 - f' 0 x`,
+
+the equation `f x = 0` takes the form `e + D x + N x = 0` with `e = f 0` and `D = f' 0`. If the
+derivative is Lipschitz at `0`, `‖f' w - f' 0‖ ≤ L ‖w‖` on the ball, the quadratic mean value
+inequality `Convex.norm_image_sub_sub_le_of_norm_hasFDerivWithin_sub_le` is exactly the quadratic
+estimate `‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` on the ball. Hence, when `E` is complete,
+`2 C ‖f 0‖ ≤ δ` and `2 C² L ‖f 0‖ < 1`, the map `f` has a zero `x` in the range of `Q` with
+`‖x‖ ≤ 2 C ‖f 0‖`
+(`TauCeti.exists_mem_range_norm_le_apply_eq_zero_of_norm_hasFDerivWithin_sub_le`), and two zeros
+of `f` in the range of `Q` of norm at most `r ≤ δ` coincide when `C L r < 1`
+(`TauCeti.eq_of_apply_eq_zero_of_norm_hasFDerivWithin_sub_le`). The quadratic estimate of `N`
+itself is `TauCeti.norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le`, so every theorem of
+`TauCeti.Analysis.Normed.Operator.QuadraticCorrection.Basic` applies to `f`. This is the Newton
+step of a gluing construction, with the approximate solution translated to the origin.
 
 ## References
 
@@ -193,5 +221,70 @@ theorem contDiff_of_forall_add_add_eq_zero {n : ℕ∞ω} {x : P → E} {r : ℝ
     (fun p _ ↦ hxe p) fun p _ ↦ hT p
 
 end Parametric
+
+section Map
+
+variable {𝕜 : Type*} [RCLike 𝕜] {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FunLike G F E] [AddMonoidHomClass G F E] {Q : G}
+  {f : E → F} {f' : E → E →L[𝕜] F} {C L : ℝ≥0} {δ : ℝ}
+
+/-- The equation `f x = 0` in the form `e + D x + N x = 0` of the quadratic correction, with
+`e = f 0`, `D = f' 0` and `N x = f x - f 0 - f' 0 x`. -/
+private lemma add_add_sub_sub_eq_zero_iff {x : E} :
+    f 0 + f' 0 x + (f x - f 0 - f' 0 x) = 0 ↔ f x = 0 := by
+  rw [show f 0 + f' 0 x + (f x - f 0 - f' 0 x) = f x by abel]
+
+/-- **The quadratic estimate of the remainder of a map.** If `f` has derivative `f' w` within the
+closed ball of radius `δ` around `0` at every point `w` of the ball and `‖f' w - f' 0‖ ≤ L ‖w‖`
+there, then the remainder `N x = f x - f 0 - f' 0 x` satisfies the quadratic estimate
+`‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` on the ball. This is the hypothesis `hN` of the
+theorems of `TauCeti.Analysis.Normed.Operator.QuadraticCorrection.Basic` for `e = f 0` and
+`D = f' 0`. -/
+theorem norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le
+    (hf : ∀ w ∈ closedBall (0 : E) δ, HasFDerivWithinAt f (f' w) (closedBall 0 δ) w)
+    (hf' : ∀ w ∈ closedBall (0 : E) δ, ‖f' w - f' 0‖ ≤ L * ‖w‖) :
+    ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
+      ‖(f x - f 0 - f' 0 x) - (f y - f 0 - f' 0 y)‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖ := by
+  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+  intro x hx y hy
+  have h := (convex_closedBall (0 : E) δ).norm_image_sub_sub_le_of_norm_hasFDerivWithin_sub_le
+    (z := 0) hf (fun w hw ↦ by simpa using hf' w hw) hy hx
+  simp only [sub_zero] at h
+  convert h using 2
+  · rw [map_sub]
+    abel
+  · ring
+
+/-- **A zero of a map near an approximate zero.** Let `f` have derivative `f' w` within the closed
+ball of radius `δ` around `0` at every point `w` of the ball, Lipschitz at `0`:
+`‖f' w - f' 0‖ ≤ L ‖w‖`. Let `Q` be a right inverse of `f' 0` with `‖Q y‖ ≤ C ‖y‖`. If `E` is
+complete, `2 C ‖f 0‖ ≤ δ` and `2 C² L ‖f 0‖ < 1`, then `f` has a zero `x` in the range of `Q` with
+`‖x‖ ≤ 2 C ‖f 0‖`. -/
+theorem exists_mem_range_norm_le_apply_eq_zero_of_norm_hasFDerivWithin_sub_le
+    [CompleteSpace E]
+    (hf : ∀ w ∈ closedBall (0 : E) δ, HasFDerivWithinAt f (f' w) (closedBall 0 δ) w)
+    (hf' : ∀ w ∈ closedBall (0 : E) δ, ‖f' w - f' 0‖ ≤ L * ‖w‖) (hDQ : ∀ y, f' 0 (Q y) = y)
+    (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖) (hδ : 2 * C * ‖f 0‖ ≤ δ) (he : 2 * C ^ 2 * L * ‖f 0‖ < 1) :
+    ∃ x ∈ range Q, ‖x‖ ≤ 2 * C * ‖f 0‖ ∧ f x = 0 := by
+  obtain ⟨x, hxQ, hx, hxe⟩ := exists_mem_range_norm_le_add_add_eq_zero (D := f' 0)
+    (N := fun x ↦ f x - f 0 - f' 0 x) hDQ hQ
+    (norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le hf hf') (by simp) hδ he
+  exact ⟨x, hxQ, hx, add_add_sub_sub_eq_zero_iff.1 hxe⟩
+
+/-- **Uniqueness of the zero of a map near an approximate zero.** Let `f` have derivative `f' w`
+within the closed ball of radius `δ` around `0` at every point `w` of the ball, Lipschitz at `0`:
+`‖f' w - f' 0‖ ≤ L ‖w‖`, and let `Q` be a right inverse of `f' 0` with `‖Q y‖ ≤ C ‖y‖`. Two zeros
+of `f` in the range of `Q`, of norm at most `r ≤ δ`, coincide when `C L r < 1`. -/
+theorem eq_of_apply_eq_zero_of_norm_hasFDerivWithin_sub_le
+    (hf : ∀ w ∈ closedBall (0 : E) δ, HasFDerivWithinAt f (f' w) (closedBall 0 δ) w)
+    (hf' : ∀ w ∈ closedBall (0 : E) δ, ‖f' w - f' 0‖ ≤ L * ‖w‖) (hDQ : ∀ y, f' 0 (Q y) = y)
+    (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖) {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r < 1) {x y : E}
+    (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxf : f x = 0) (hyQ : y ∈ range Q)
+    (hyf : f y = 0) : x = y :=
+  TauCeti.eq_of_add_add_eq_zero (D := f' 0) (N := fun x ↦ f x - f 0 - f' 0 x) hDQ hQ
+    (norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le hf hf') hrδ hr hx hy hxQ
+    (add_add_sub_sub_eq_zero_iff.2 hxf) hyQ (add_add_sub_sub_eq_zero_iff.2 hyf)
+
+end Map
 
 end TauCeti
