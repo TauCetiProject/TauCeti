@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
 public import TauCeti.Algebra.Star.TensorProductLift
 public import TauCeti.Analysis.InnerProductSpace.Operator.VectorFunctional
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
@@ -57,8 +58,12 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
 ## Main declarations
 
 * `TauCeti.spatialTensorLinearMap`: the linear map `B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')`,
-  with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap` and
-  `TauCeti.spatialTensorLinearMap_injective`.
+  with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap`, its right slices
+  `TauCeti.sliceRight_spatialTensorLinearMap` (and
+  `TauCeti.sliceRight_spatialTensorLinearMap_rTensor` for `(π ⊗ 1)(y)`),
+  `TauCeti.spatialTensorLinearMap_injective`, and its invariance under the flip
+  `E ⊗₂ F ≃ F ⊗₂ E` (`TauCeti.spatialTensorLinearMap_comm_apply`,
+  `TauCeti.norm_spatialTensorLinearMap_comm`).
 * `NonUnitalStarAlgHom.spatialTensorHom π ρ`: the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)` of
   representations, with `NonUnitalStarAlgHom.spatialTensorHom_tmul` and
   `NonUnitalStarAlgHom.spatialTensorHom_injective`.
@@ -69,13 +74,17 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
   `NonUnitalStarSubalgebra.spatialNorm_eq_zero_iff`, `NonUnitalStarSubalgebra.spatialNorm_add_le`,
   `NonUnitalStarSubalgebra.spatialNorm_smul`, `NonUnitalStarSubalgebra.spatialNorm_star`,
   `NonUnitalStarSubalgebra.spatialNorm_mul_le`,
-  `NonUnitalStarSubalgebra.spatialNorm_star_mul_self` and
-  `NonUnitalStarSubalgebra.spatialNorm_tmul`.
+  `NonUnitalStarSubalgebra.spatialNorm_star_mul_self`,
+  `NonUnitalStarSubalgebra.spatialNorm_tmul` and the flip invariance
+  `NonUnitalStarSubalgebra.spatialNorm_comm`.
 * `NonUnitalStarSubalgebra.minTensor A B`: the spatial tensor product `A ⊗_min B`, with
   `NonUnitalStarSubalgebra.mem_minTensor_iff`, `NonUnitalStarSubalgebra.isClosed_minTensor`,
   `NonUnitalStarSubalgebra.minTensor_le` and `NonUnitalStarSubalgebra.mapLCompletion_mem_minTensor`.
 * `NonUnitalStarSubalgebra.toMinTensor A B`: the star homomorphism `A ⊗[𝕜] B → A ⊗_min B`, with
-  `NonUnitalStarSubalgebra.norm_toMinTensor` and `NonUnitalStarSubalgebra.denseRange_toMinTensor`.
+  `NonUnitalStarSubalgebra.norm_toMinTensor` and `NonUnitalStarSubalgebra.denseRange_toMinTensor`;
+  continuous maps out of `A ⊗_min B` are determined on the algebraic tensor product
+  (`NonUnitalStarSubalgebra.minTensor_funext`), and continuous linear maps on pure tensors
+  `a ⊗ₜ b` (`NonUnitalStarSubalgebra.minTensor_continuousLinearMap_ext`).
 * `NonUnitalStarSubalgebra.tensorInclusion`, `NonUnitalStarSubalgebra.spatialNorm_tensorInclusion`,
   `NonUnitalStarSubalgebra.minTensor_mono`: functoriality for inclusions.
 
@@ -127,6 +136,27 @@ theorem inner_spatialTensorLinearMap (ξ : E) (ξ' : E') (η : F) (η' : F')
   | tmul a b =>
     simp [UniformSpace.Completion.inner_coe, inner_smul_right]
 
+/-- The right slice of the operator `spatialTensorLinearMap x` at `(η, η')` is the contraction of
+`x` against the vector functional `b ↦ ⟪η', b η⟫` on its second factor. -/
+@[simp]
+theorem sliceRight_spatialTensorLinearMap [CompleteSpace E'] (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F'))
+    (η : F) (η' : F') :
+    sliceRight η η' (spatialTensorLinearMap 𝕜 E F E' F' x) =
+      LinearMap.tensorComponent (vectorFunctional η η' : (F →L[𝕜] F') →L[𝕜] 𝕜).toLinearMap x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul a b => simp
+
+/-- The right slice of `(π ⊗ 1)(y)` at `(g, f)` is `π` applied to the contraction of `y` against
+the vector functional `b ↦ ⟪f, b g⟫` on its second factor. -/
+theorem sliceRight_spatialTensorLinearMap_rTensor {A : Type*} [AddCommGroup A] [Module 𝕜 A]
+    [CompleteSpace E'] (π : A →ₗ[𝕜] E →L[𝕜] E') (y : A ⊗[𝕜] (F →L[𝕜] F')) (g : F) (f : F') :
+    sliceRight g f (spatialTensorLinearMap 𝕜 E F E' F' (π.rTensor _ y)) =
+      π (LinearMap.tensorComponent
+        (vectorFunctional g f : (F →L[𝕜] F') →L[𝕜] 𝕜).toLinearMap y) := by
+  rw [sliceRight_spatialTensorLinearMap, LinearMap.rTensor, LinearMap.tensorComponent_map,
+    LinearMap.comp_id]
+
 /-- **Injectivity of the spatial tensor map** on the full operator spaces. -/
 theorem spatialTensorLinearMap_injective :
     Function.Injective (spatialTensorLinearMap 𝕜 E F E' F') := by
@@ -152,6 +182,35 @@ theorem spatialTensorLinearMap_injective :
     · simp [hi]
     · simpa [map_finsuppSum, Finsupp.sum_apply, Finsupp.single_apply, hi] using this
   simpa using hωi
+
+/-! ### The flip -/
+
+/-- The flip of completed tensor products intertwines `spatialTensorLinearMap` and its flipped
+version. -/
+theorem spatialTensorLinearMap_comm_apply (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F'))
+    (u : Completion (E ⊗[𝕜] F)) :
+    spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x)
+        ((commIsometry 𝕜 E F).completion u) =
+      (commIsometry 𝕜 E' F').completion (spatialTensorLinearMap 𝕜 E F E' F' x u) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => simpa using mapLCompletion_commIsometry_completion a b u
+  | add x y hx hy => simp only [map_add, add_apply, hx, hy]
+
+/-- **Flip invariance**: `‖(b ⊗ a)‖ = ‖(a ⊗ b)‖` for the spatial operator of a tensor and of its
+flip. -/
+theorem norm_spatialTensorLinearMap_comm (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F')) :
+    ‖spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x)‖ =
+      ‖spatialTensorLinearMap 𝕜 E F E' F' x‖ := by
+  -- The flipped operator is the original one conjugated by the flip isometries.
+  have h : spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x) =
+      ((commIsometry 𝕜 E' F').completion : Completion (E' ⊗[𝕜] F') →L[𝕜] _) ∘L
+        spatialTensorLinearMap 𝕜 E F E' F' x ∘L
+          ((commIsometry 𝕜 E F).completion.symm : Completion (F ⊗[𝕜] E) →L[𝕜] _) := by
+    ext v
+    obtain ⟨u, rfl⟩ := (commIsometry 𝕜 E F).completion.surjective v
+    rw [spatialTensorLinearMap_comm_apply]
+    simp only [comp_apply, LinearIsometryEquiv.coe_coe'', LinearIsometryEquiv.symm_apply_apply]
+  rw [h, opNorm_linearIsometryEquiv_comp, opNorm_comp_linearIsometryEquiv]
 
 end TauCeti
 
@@ -315,6 +374,14 @@ theorem spatialNorm_tmul (a : A) (b : B) : spatialNorm A B (a ⊗ₜ b) = ‖a�
   rw [spatialNorm_def, spatialTensorHom_tmul, norm_mapLCompletion, AddSubgroupClass.coe_norm,
     AddSubgroupClass.coe_norm]
 
+/-- **Flip invariance of the spatial norm**: `‖τ(x)‖_min = ‖x‖_min` for the flip
+`τ : A ⊗[𝕜] B ≃ B ⊗[𝕜] A`. -/
+@[simp]
+theorem spatialNorm_comm (x : A ⊗[𝕜] B) :
+    spatialNorm B A (TensorProduct.comm 𝕜 A B x) = spatialNorm A B x := by
+  rw [spatialNorm_def, spatialNorm_def, spatialTensorHom_apply, spatialTensorHom_apply,
+    TensorProduct.map_comm, norm_spatialTensorLinearMap_comm]
+
 /-! ### The spatial tensor product -/
 
 /-- The **spatial tensor product** `A ⊗_min B`: the norm closure in `B(E ⊗₂ F)` of the image of the
@@ -385,6 +452,27 @@ theorem norm_toMinTensor (x : A ⊗[𝕜] B) : ‖toMinTensor A B x‖ = spatial
 theorem denseRange_toMinTensor : DenseRange (toMinTensor A B) := by
   rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
   exact (coe_minTensor A B).subset
+
+variable {A B} in
+/-- Two continuous maps out of the spatial tensor product `A ⊗_min B` that agree on the dense
+algebraic tensor product agree. -/
+theorem minTensor_funext {G : Type*} [TopologicalSpace G] [T2Space G]
+    {f g : minTensor A B → G} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ x, f (toMinTensor A B x) = g (toMinTensor A B x)) : f = g :=
+  (denseRange_toMinTensor A B).equalizer hf hg (funext h)
+
+variable {A B} in
+/-- Two continuous linear maps out of the spatial tensor product agree when they agree on pure
+tensors `a ⊗ₜ b`: these span the algebraic tensor product, which is dense. -/
+@[ext]
+theorem minTensor_continuousLinearMap_ext {G : Type*} [TopologicalSpace G] [AddCommMonoid G]
+    [Module 𝕜 G] [T2Space G] {f g : minTensor A B →L[𝕜] G}
+    (h : ∀ a b, f (toMinTensor A B (a ⊗ₜ b)) = g (toMinTensor A B (a ⊗ₜ b))) : f = g := by
+  refine DFunLike.coe_injective <| (denseRange_toMinTensor A B).equalizer
+    (map_continuous f) (map_continuous g) (funext fun x ↦ ?_)
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => exact h a b
+  | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
 
 /-! ### Functoriality for inclusions -/
 

@@ -83,6 +83,8 @@ take their familiar Hermitian form, because inversion conjugates character value
   (`TauCeti.apply_one_eq_one_of_mem_irreducibleCharacters_of_isMulCommutative`).
 * `TauCeti.mem_irreducibleCharactersOver_of_restrict_eq`: an irreducible character restricting to
   an irreducible character `θ` of a finite subgroup lies over `θ`.
+* `TauCeti.exists_mem_irreducibleCharactersOver`: every irreducible character lies over an
+  irreducible constituent of its restriction to a finite subgroup.
 
 ## Implementation notes
 
@@ -591,6 +593,29 @@ theorem mem_irreducibleCharactersOver_of_restrict_eq {N : Subgroup G} [Finite N]
   refine mem_irreducibleCharactersOver_iff_sum.mpr ⟨hψ, ?_⟩
   simp only [h, sum_mul_inv_self_of_mem_irreducibleCharacters hθ]
   exact NeZero.ne _
+
+variable [CharZero k] {N : Subgroup G} [Finite N]
+
+/-- Every irreducible character lies over some irreducible constituent of its restriction to a
+finite subgroup. -/
+theorem exists_mem_irreducibleCharactersOver {χ : G → k} (hχ : χ ∈ irreducibleCharacters k G) :
+    ∃ θ ∈ irreducibleCharacters k N, χ ∈ irreducibleCharactersOver k N θ := by
+  classical
+  let := Fintype.ofFinite N
+  let : Invertible (Nat.card N : k) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  obtain ⟨d, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hχ
+  let f := ClassFunction.comap N.subtype (ClassFunction.ofCharacter ρ)
+  have h := ClassFunction.apply_eq_sum_characterPairing_mul_character
+    (irreducibleRepresentation k) (pairwise_isEmpty_equiv_irreducibleRepresentation k)
+    (by simp) f 1
+  have hf : (f : N → k) 1 ≠ 0 := by
+    simpa [f, ClassFunction.comap_apply] using apply_one_ne_zero_of_mem_irreducibleCharacters hχ
+  obtain ⟨i, -, hi⟩ := Finset.exists_ne_zero_of_sum_ne_zero (h ▸ hf)
+  refine ⟨_, irreducibleCharacter_mem k i, mem_irreducibleCharactersOver_iff_sum.mpr ⟨hχ, ?_⟩⟩
+  rw [ClassFunction.characterPairing_symm, ClassFunction.characterPairing_apply] at hi
+  simp only [f, ClassFunction.comap_apply, Subgroup.subtype_apply, ClassFunction.ofCharacter_apply,
+    character_irreducibleRepresentation] at hi
+  exact fun hz => hi (by rw [hz, mul_zero, zero_mul])
 
 end Restriction
 

@@ -31,6 +31,8 @@ nontangential limit is also a vertical limit and the filter is nontrivial.
 
 * `TauCeti.nontangentialFilter_hasBasis`: the cones `Γ^α_h(x)`, `0 < h`, form a basis.
 * `TauCeti.nontangentialFilter_mono`: the filter is monotone in the aperture.
+* `TauCeti.nontangentialFilter_le_nhds`, `TauCeti.tendsto_im_nontangentialFilter`: nontangential
+  approach to `x` is approach to `x`, so `Im z → 0`.
 * `TauCeti.tendsto_ray_nontangentialFilter`: straight-line approach inside the cone is
   nontangential; in particular so is vertical approach
   (`TauCeti.tendsto_vertical_nontangentialFilter`).
@@ -92,6 +94,28 @@ theorem nontangentialFilter_hasBasis (α x : ℝ) :
 theorem nontangentialCone_mem_nontangentialFilter (α x : ℝ) {h : ℝ≥0∞} (hh : 0 < h) :
     nontangentialCone α h x ∈ nontangentialFilter α x :=
   (nontangentialFilter_hasBasis α x).mem_of_mem hh
+
+/-- The nontangential filter at `x` is finer than the neighbourhood filter of `x`. -/
+theorem nontangentialFilter_le_nhds (α x : ℝ) : nontangentialFilter α x ≤ 𝓝 (x : ℂ) :=
+  nhdsWithin_le_nhds
+
+/-- Along a nontangential approach to the real axis, `Im z → 0`. -/
+theorem tendsto_im_nontangentialFilter (α x : ℝ) :
+    Tendsto Complex.im (nontangentialFilter α x) (𝓝 0) := by
+  simpa using (continuous_im.tendsto (x : ℂ)).mono_left (nontangentialFilter_le_nhds α x)
+
+/-- Along a nontangential approach to `x`, eventually `Im z > 0` and `|Re z - x| ≤ δ / 2`. -/
+theorem eventually_nontangentialFilter_abs_re_sub_le (α x : ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    ∀ᶠ z in nontangentialFilter α x, 0 < z.im ∧ |z.re - x| ≤ δ / 2 := by
+  have hη : 0 < δ / (2 * (|α| + 1)) := by positivity
+  filter_upwards [nontangentialCone_mem_nontangentialFilter α x (ENNReal.ofReal_pos.2 hη)] with z hz
+  obtain ⟨hz0, hzα, hzη⟩ := mem_nontangentialCone.1 hz
+  have hzη' : z.im < δ / (2 * (|α| + 1)) := (ENNReal.ofReal_lt_ofReal_iff hη).1 hzη
+  refine ⟨hz0, ?_⟩
+  have h1 : α * z.im ≤ (|α| + 1) * z.im := by nlinarith [le_abs_self α]
+  have h2 : (|α| + 1) * z.im ≤ (|α| + 1) * (δ / (2 * (|α| + 1))) := by gcongr
+  have h3 : (|α| + 1) * (δ / (2 * (|α| + 1))) = δ / 2 := by field_simp
+  linarith
 
 /-- The nontangential filter grows with the aperture: a nontangential limit for cones of aperture
 `β` is one for cones of every aperture `α ≤ β`. -/

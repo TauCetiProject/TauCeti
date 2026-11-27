@@ -31,6 +31,8 @@ only a meet, not a join, so the join in `NC(s)` is characterised by its universa
 * `Finpartition.IsNoncrossing P` — the finite partition `P` of `s` is noncrossing.
 * `TauCeti.NoncrossingPartition s` — the noncrossing partitions of `s`, with the refinement order
   inherited from `Finpartition s`.
+* `TauCeti.NoncrossingPartition.restrict σ hB` — the restriction `σ|_B` of a noncrossing
+  partition of `s` to a subset `B ⊆ s`.
 * `TauCeti.NoncrossingPartition.singletonPartEquiv` — the noncrossing partitions of `s` in which
   `i` forms a part on its own correspond to the noncrossing partitions of `s.erase i`.
 
@@ -496,6 +498,40 @@ theorem coe_bot : ((⊥ : NoncrossingPartition s) : Finpartition s) = ⊥ :=
 theorem coe_top : ((⊤ : NoncrossingPartition s) : Finpartition s) = ⊤ :=
   rfl
 
+/-- The restriction `σ|_B` of a noncrossing partition `σ` of `s` to a subset `B` of `s`: its parts
+are the nonempty traces on `B` of the parts of `σ`. -/
+def restrict (σ : NoncrossingPartition s) {B : Finset α} (hB : B ≤ s) : NoncrossingPartition B :=
+  ⟨σ.val.restrict hB, σ.property.restrict hB⟩
+
+@[simp, norm_cast]
+theorem coe_restrict (σ : NoncrossingPartition s) {B : Finset α} (hB : B ≤ s) :
+    ((σ.restrict hB : NoncrossingPartition B) : Finpartition B) =
+      (σ : Finpartition s).restrict hB :=
+  (rfl)
+
+/-- Restriction to a subset is monotone. -/
+theorem restrict_mono {σ τ : NoncrossingPartition s} {B : Finset α} (hB : B ≤ s) (h : σ ≤ τ) :
+    σ.restrict hB ≤ τ.restrict hB := by
+  rw [← Subtype.coe_le_coe, coe_restrict, coe_restrict]
+  exact Finpartition.restrict_mono hB h
+
+/-- The restriction of the partition into one part is the partition into one part. -/
+@[simp]
+theorem restrict_top {B : Finset α} (hB : B ≤ s) : (⊤ : NoncrossingPartition s).restrict hB = ⊤ :=
+  Subtype.ext <| (coe_restrict _ hB).trans (Finpartition.restrict_top hB)
+
+/-- The restriction of the partition into singletons is the partition into singletons. -/
+@[simp]
+theorem restrict_bot {B : Finset α} (hB : B ≤ s) : (⊥ : NoncrossingPartition s).restrict hB = ⊥ :=
+  Subtype.ext <| (coe_restrict _ hB).trans (Finpartition.restrict_bot hB)
+
+/-- The restriction of a noncrossing partition to one of its parts is the partition of that part
+into one part. -/
+@[simp]
+theorem restrict_of_mem_parts (π : NoncrossingPartition s) {B : Finset α}
+    (hB : B ∈ π.val.parts) : π.restrict (π.val.le hB) = ⊤ :=
+  Subtype.ext <| (coe_restrict π _).trans (Finpartition.restrict_of_mem_parts hB)
+
 /-- The noncrossing partitions of `s` form a finite poset with decidable order, hence a locally
 finite order; this makes its incidence algebra, with its zeta and Möbius functions, available. -/
 instance : LocallyFiniteOrder (NoncrossingPartition s) :=
@@ -604,14 +640,15 @@ theorem sup_pairPartition_eq_top_iff {i j : α} (hij : {i, j} ⊆ s) (hle : i �
 noncrossing partitions of `s.erase i`: delete the part `{i}`, or insert it back. -/
 def singletonPartEquiv {i : α} (hi : i ∈ s) :
     {π : NoncrossingPartition s // {i} ∈ π.val.parts} ≃ NoncrossingPartition (s.erase i) where
-  toFun π := ⟨π.val.val.restrict (s.erase_subset i), π.val.property.restrict _⟩
+  toFun π := π.val.restrict (s.erase_subset i)
   invFun τ :=
     ⟨⟨τ.val.extend (singleton_nonempty i).ne_empty (disjoint_singleton_right.2 (s.notMem_erase i))
         (by rw [union_singleton, insert_erase hi]),
       τ.property.extend_singleton _ _ _⟩, mem_insert_self _ _⟩
   left_inv π := Subtype.ext <| Subtype.ext <| Finpartition.ext <| by
-    rw [Finpartition.extend_parts, Finpartition.parts_restrict_erase_of_singleton_mem π.property,
-      insert_erase π.property]
+    dsimp only
+    rw [Finpartition.extend_parts, coe_restrict,
+      Finpartition.parts_restrict_erase_of_singleton_mem π.property, insert_erase π.property]
   right_inv τ := Subtype.ext <| by simp
 
 /-- Deleting the singleton part `{i}` leaves the other parts. -/

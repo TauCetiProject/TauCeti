@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
@@ -51,12 +52,14 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 
 ## Main results
 
+* `Complex.analyticAt_Gamma` — Gamma is analytic away from the nonpositive integers.
 * `Real.measurable_Gamma` — `Real.Gamma` is measurable.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
 * `TauCeti.continuous_Gamma_sum_div_prod` — the finite Gamma quotient is jointly continuous on
   positive parameters.
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
+* `Real.Gamma_add_natCast_eq_ascPochhammer_eval_mul` — `Γ(x + k) = (x)ₖ Γ(x)` off the poles.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
 * `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
@@ -192,6 +195,12 @@ theorem Gamma_add_nat_div_Gamma_eq {n : ℕ} (x : ℝ) (hx : ∀ k : ℕ, x ≠ 
     rw [ascPochhammer_succ_right, Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_X,
       Polynomial.eval_natCast, ← ih, Nat.cast_succ, ← add_assoc, Gamma_add_one hxn]
     ring
+
+/-- `Γ(x + k) = (x)ₖ Γ(x)` for real `x` off the poles of `Γ`; the real counterpart of
+`Complex.Gamma_add_natCast_eq_ascPochhammer_eval_mul`. -/
+theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {x : ℝ} (hx : ∀ m : ℕ, x ≠ -m) (k : ℕ) :
+    Gamma (x + k) = (ascPochhammer ℝ k).eval x * Gamma x := by
+  rw [← Gamma_add_nat_div_Gamma_eq x hx, div_mul_cancel₀ _ (Gamma_ne_zero hx)]
 
 /-- The product `s (s + 1) ⋯ (s + n - 1)` times `Γ s` is `Γ (s + n)`, for positive `s`. -/
 theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
@@ -620,5 +629,15 @@ theorem isEquivalent_factorial_div_ascPochhammer_eval_succ {s : ℂ} (hs : ∀ m
   have hn' : (n : ℂ) ^ s ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr hn))
   simp only [Pi.mul_apply, GammaSeq, ← TauCeti.ascPochhammer_eval_eq_prod_range]
   field_simp
+
+end Complex
+
+namespace Complex
+
+/-- Gamma is analytic away from the nonpositive integers. -/
+@[fun_prop]
+theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
+  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
+  simpa only [Pi.inv_def, inv_inv] using h
 
 end Complex

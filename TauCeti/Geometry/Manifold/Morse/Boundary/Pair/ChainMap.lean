@@ -298,7 +298,7 @@ private theorem closure_pairRecords_subset :
   have hxS' : Tendsto x atTop (𝓝[S] y) := tendsto_nhdsWithin_iff.2 ⟨hx, .of_forall hxS⟩
   -- Where the limit lies on `W^u_{X₀}(p)`, resp. `W^s_{X₁}(r)`, its records are the limits.
   have hup (hy : y ∈ hX₀.flow.unstableSet p) : q.1 = hX₀.upperLevelPoint c₀ y :=
-    tendsto_nhds_unique h₁q ((hX₀.continuousOn_upperLevelPoint hf₀ hc₀ y hy).tendsto.comp
+    tendsto_nhds_unique h₁q ((hX₀.continuousOn_upperLevelPoint hc₀ y hy).tendsto.comp
       (tendsto_nhdsWithin_mono_right inter_subset_left hxS'))
   have hlow (hy : y ∈ hX₁.flow.stableSet r) : q.2.2 = hX₁.lowerLevelPoint c₁ y :=
     tendsto_nhds_unique h₃q ((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁ y hy).tendsto.comp
@@ -355,7 +355,7 @@ private theorem exists_nhds_homeomorph_of_mem_pairRecords {q : M × M × M}
   set S := hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r
   set P := hX₀.pairRecord hX₁ c₀ c₁ '' S
   have hcont : ContinuousOn (hX₀.pairRecord hX₁ c₀ c₁) S :=
-    ((hX₀.continuousOn_upperLevelPoint hf₀ hc₀).mono inter_subset_left).prodMk
+    ((hX₀.continuousOn_upperLevelPoint hc₀).mono inter_subset_left).prodMk
       (continuousOn_id.prodMk ((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono inter_subset_right))
   -- The records of the points of `S` form a copy of `S`.
   have hmemS (w : P) : (w : M × M × M).2.1 ∈ S := by
@@ -422,7 +422,7 @@ private theorem exists_homeomorph_Ico_of_mem_sourceBrokenRecords {w : M × M × 
     filter_upwards [nhdsWithin_le_nhds hev, self_mem_nhdsWithin] with v hv hvR
     obtain ⟨hvS, hv₁, t, ht⟩ := hvR.1.resolve_left hvR.2
     obtain ⟨a', hpa'', hva'⟩ := hX₀.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet
-      hf₀ hvS.1 (ne_of_apply_ne f₀ (hv.trans hc₀).ne)
+      hvS.1 (ne_of_apply_ne f₀ (hv.trans hc₀).ne)
     have hup : hX₀.upperLevelPoint c₀ v.2 = v.1 := by
       rw [hX₀.upperLevelPoint_of_lt hv, hX₀.levelPoint_eq hpa'' hva' (t := -t)
         (by rw [← ht, Flow.map_neg_apply_map, hv₁, ha₁c]), ← ht, Flow.map_neg_apply_map]
@@ -436,7 +436,7 @@ private theorem exists_homeomorph_Ico_of_mem_sourceBrokenRecords {w : M × M × 
     · rw [pairRecord_apply] at hqc ⊢
       have hup := hX₀.upperLevelPoint_of_lt hqc
       refine ⟨Or.inr ⟨hxS, ?_, -Flow.levelCrossingTime hX₀.flow f₀ c₀ x, ?_⟩, rfl⟩ <;> dsimp only
-      · rw [hup, hX₀.apply_levelPoint (hX₀.exists_flow_eq_of_mem_unstableSet hf₀ hxS.1 hc₀ hqc),
+      · rw [hup, hX₀.apply_levelPoint (hX₀.exists_flow_eq_of_mem_unstableSet hxS.1 hc₀ hqc),
           ha₁c]
       · rw [hup, hX₀.levelPoint_def, Flow.map_neg_apply_map]
 
