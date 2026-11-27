@@ -65,20 +65,29 @@ namespace TauCeti
 variable {X : Type*}
 
 /-- The positive return time of `x` to `A` under `T`: the least `n ≥ 1` with `T^[n] x ∈ A`, and
-`∞` if there is no such `n`. This is Mathlib's hitting time of the orbit process after time `1`;
-since `ℕ∞` is `WithTop ℕ`, the `hittingAfter` API applies to it. -/
+`∞` if there is no such `n`. This is Mathlib's hitting time of the orbit process after time `1`
+(`positiveReturnTime_eq_hittingAfter`). The type `ℕ∞` is by definition `WithTop ℕ`, the value
+type of `hittingAfter`, and its order, `1`, `⊤` and casts from `ℕ` are definitionally those of
+`WithTop ℕ`; the lemmas below use this to state the `hittingAfter` API in `ℕ∞`. -/
 noncomputable def positiveReturnTime (T : X → X) (A : Set X) : X → ℕ∞ :=
   hittingAfter (fun n x ↦ T^[n] x) A 1
 
+/-- The positive return time is Mathlib's hitting time of the orbit process after time `1`. -/
+theorem positiveReturnTime_eq_hittingAfter (T : X → X) (A : Set X) :
+    positiveReturnTime T A = hittingAfter (fun n x ↦ T^[n] x) A 1 :=
+  (rfl)
+
 /-- The return time is at most `k` exactly when the orbit visits `A` at some time in `[1, k]`. -/
 theorem positiveReturnTime_le_iff {T : X → X} {A : Set X} {x : X} {k : ℕ} :
-    positiveReturnTime T A x ≤ k ↔ ∃ i ∈ Icc 1 k, T^[i] x ∈ A :=
-  hittingAfter_le_iff
+    positiveReturnTime T A x ≤ k ↔ ∃ i ∈ Icc 1 k, T^[i] x ∈ A := by
+  rw [positiveReturnTime_eq_hittingAfter]
+  exact hittingAfter_le_iff
 
 /-- The return time is `≥ 1`: time `0` does not count as a return. -/
 theorem one_le_positiveReturnTime (T : X → X) (A : Set X) (x : X) :
-    1 ≤ positiveReturnTime T A x :=
-  le_hittingAfter x
+    1 ≤ positiveReturnTime T A x := by
+  rw [positiveReturnTime_eq_hittingAfter]
+  exact le_hittingAfter x
 
 /-- The return time is never `0`. -/
 @[simp]
@@ -94,8 +103,9 @@ theorem lt_positiveReturnTime_iff {T : X → X} {A : Set X} {x : X} {k : ℕ} :
 
 /-- The return time is at most `n ≥ 1` when the orbit visits `A` at time `n`. -/
 theorem positiveReturnTime_le {T : X → X} {A : Set X} {x : X} {n : ℕ} (hn : 0 < n)
-    (hx : T^[n] x ∈ A) : positiveReturnTime T A x ≤ n :=
-  positiveReturnTime_le_iff.2 ⟨n, ⟨Nat.one_le_iff_ne_zero.2 hn.ne', le_rfl⟩, hx⟩
+    (hx : T^[n] x ∈ A) : positiveReturnTime T A x ≤ n := by
+  rw [positiveReturnTime_eq_hittingAfter]
+  exact hittingAfter_le_of_mem (by omega) hx
 
 /-- The return time is `n ≥ 1` exactly when the orbit visits `A` at time `n` and not before. -/
 theorem positiveReturnTime_eq_coe_iff {T : X → X} {A : Set X} {x : X} {n : ℕ} (hn : 0 < n) :
@@ -106,17 +116,16 @@ theorem positiveReturnTime_eq_coe_iff {T : X → X} {A : Set X} {x : X} {n : ℕ
   constructor
   · rintro ⟨⟨j, ⟨hj1, hjm⟩, hj⟩, h⟩
     obtain rfl | hjm := hjm.eq_or_lt
-    · exact ⟨hj, fun i hi him ↦ h i hi (Nat.lt_succ_iff.1 him)⟩
-    · exact absurd hj (h j (Nat.pos_of_ne_zero (Nat.one_le_iff_ne_zero.1 hj1))
-        (Nat.lt_succ_iff.1 hjm))
+    · exact ⟨hj, fun i hi him ↦ h i hi (by omega)⟩
+    · exact absurd hj (h j (by omega) (by omega))
   · rintro ⟨hA, h⟩
-    exact ⟨⟨m + 1, ⟨Nat.le_add_left 1 m, le_rfl⟩, hA⟩,
-      fun i hi him ↦ h i hi (Nat.lt_succ_of_le him)⟩
+    exact ⟨⟨m + 1, ⟨by omega, le_rfl⟩, hA⟩, fun i hi him ↦ h i hi (by omega)⟩
 
 /-- The return time is `∞` exactly when the orbit never returns to `A`. -/
 theorem positiveReturnTime_eq_top_iff {T : X → X} {A : Set X} {x : X} :
-    positiveReturnTime T A x = ⊤ ↔ ∀ n, 0 < n → T^[n] x ∉ A :=
-  hittingAfter_eq_top_iff.trans <| forall_congr' fun n ↦ by
+    positiveReturnTime T A x = ⊤ ↔ ∀ n, 0 < n → T^[n] x ∉ A := by
+  rw [positiveReturnTime_eq_hittingAfter]
+  exact hittingAfter_eq_top_iff.trans <| forall_congr' fun n ↦ by
     rw [Nat.one_le_iff_ne_zero, Nat.pos_iff_ne_zero]
 
 /-- The return time is finite exactly when the orbit returns to `A`. -/
@@ -127,12 +136,10 @@ theorem positiveReturnTime_ne_top_iff {T : X → X} {A : Set X} {x : X} :
 /-- At a finite return time, the orbit is in `A`. -/
 theorem iterate_toNat_positiveReturnTime_mem {T : X → X} {A : Set X} {x : X}
     (h : positiveReturnTime T A x ≠ ⊤) : T^[(positiveReturnTime T A x).toNat] x ∈ A := by
+  have hmem := hittingAfter_mem_set_of_ne_top (u := fun n x ↦ T^[n] x) (s := A) (n := 1) h
+  rw [← positiveReturnTime_eq_hittingAfter] at hmem
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 h
-  rw [← hn, ENat.toNat_natCast]
-  have hn0 : 0 < n := by
-    have := hn ▸ one_le_positiveReturnTime T A x
-    exact_mod_cast this
-  exact ((positiveReturnTime_eq_coe_iff hn0).1 hn.symm).1
+  simpa [← hn] using hmem
 
 /-- For maps `f` and `g` with `g ∘ f = id`, `f^[k]` maps the points of `A` whose return time under
 `f` exceeds `k` onto the points whose backward orbit under `g` visits `A` for the last time `k`
@@ -158,10 +165,11 @@ variable [MeasurableSpace X]
 /-- The positive return time to a measurable set under a measurable map is measurable. It is a
 stopping time for the constant filtration. -/
 theorem measurable_positiveReturnTime {T : X → X} (hT : Measurable T) {A : Set X}
-    (hA : MeasurableSet A) : Measurable (positiveReturnTime T A) := fun s _ ↦
+    (hA : MeasurableSet A) : Measurable (positiveReturnTime T A) := by
+  rw [positiveReturnTime_eq_hittingAfter]
   -- `ℕ∞` carries the discrete measurable structure, `WithTop ℕ` the Borel one: every subset
   -- of the countable type `WithTop ℕ` is Borel.
-  (Adapted.isStoppingTime_hittingAfter (f := Filtration.const ℕ _ le_rfl)
+  exact fun s _ ↦ (Adapted.isStoppingTime_hittingAfter (f := Filtration.const ℕ _ le_rfl)
     (u := fun n x ↦ T^[n] x) (fun i ↦ hT.iterate i) hA (n := 1)).measurable'
     (@Set.Countable.measurableSet (WithTop ℕ) _ _ s s.to_countable)
 
