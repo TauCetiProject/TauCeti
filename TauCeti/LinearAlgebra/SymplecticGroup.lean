@@ -79,11 +79,16 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.transpose_transpose_mul_J_sub_J_mul`: the matrix `Ψᵀ * J - J * Ψ` is symmetric, and
   `Matrix.transpose_J_mul_mul_J_sub_J_mul_J_mul` evaluates it on `J * S` for symmetric `S` as
   `2 • S`. For symplectic `Ψ` it factors as `(Ψ + 1)ᵀ * -(J * (Ψ - 1))`
-  (`Matrix.transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul`), so away from the eigenvalue
-  `-1` its kernel is the space of fixed vectors of `Ψ`
-  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`), and it is singular exactly when `Ψ` has the
-  eigenvalue `1` (`Matrix.det_transpose_mul_J_sub_J_mul_eq_zero_iff`). On every vector its
-  quadratic form is twice that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
+  (`Matrix.transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul`). More generally, for a scalar
+  `c`, the symmetric matrix `Ψᵀ * J - J * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))` factors as
+  `(Ψ + 1 - c • (J * (Ψ - 1)))ᵀ * -(J * (Ψ - 1))`
+  (`Matrix.transpose_mul_J_sub_J_mul_add_smul_eq_transpose_mul_neg_J_mul`), so when the first
+  factor is invertible its kernel is the space of fixed vectors of `Ψ`
+  (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul_add_smul`), and it is singular exactly when `Ψ`
+  has the eigenvalue `1` (`Matrix.det_transpose_mul_J_sub_J_mul_add_smul_eq_zero_iff`). For `c = 0`
+  the condition is that `Ψ` does not have the eigenvalue `-1`. On every vector the quadratic form
+  of `Ψᵀ * J - J * Ψ` is twice that of `-(J * Ψ)`
+  (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
 * `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: if `S` is symmetric and
   `G'ᵀ * J * G + Gᵀ * J * G' = 0`, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
@@ -345,28 +350,54 @@ theorem transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul {Ψ : Matrix (l ⊕
     ← Matrix.mul_assoc, SymplecticGroup.mem_iff'.1 hΨ]
   abel
 
-/-- **The kernel of `Ψᵀ * J - J * Ψ`.** For a symplectic matrix `Ψ` without the eigenvalue `-1`,
-the kernel of the symmetric matrix `Ψᵀ * J - J * Ψ` is the space of fixed vectors of `Ψ`. -/
-theorem ker_mulVecLin_transpose_mul_J_sub_J_mul {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
-    (hΨ : Ψ ∈ symplecticGroup l R) (h : IsUnit (Ψ + 1).det) :
-    LinearMap.ker (Ψᵀ * J l R - J l R * Ψ).mulVecLin = LinearMap.ker (Ψ - 1).mulVecLin := by
-  have hinj : Function.Injective ((Ψ + 1)ᵀ * J l R).mulVec := by
+/-- For any square matrix `Ψ` and scalar `c`, the matrix
+`Ψᵀ * J - J * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))` is symmetric. -/
+theorem transpose_transpose_mul_J_sub_J_mul_add_smul (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) (c : R) :
+    (Ψᵀ * J l R - J l R * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1)))ᵀ =
+      Ψᵀ * J l R - J l R * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1)) := by
+  rw [transpose_add, transpose_transpose_mul_J_sub_J_mul, transpose_smul, transpose_mul,
+    transpose_transpose]
+
+/-- For a symplectic matrix `Ψ` and a scalar `c`, the symmetric matrix
+`Ψᵀ * J - J * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))` factors as
+`(Ψ + 1 - c • (J * (Ψ - 1)))ᵀ * -(J * (Ψ - 1))`. For `c = 0` this is
+`Matrix.transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul`. -/
+theorem transpose_mul_J_sub_J_mul_add_smul_eq_transpose_mul_neg_J_mul
+    {Ψ : Matrix (l ⊕ l) (l ⊕ l) R} (hΨ : Ψ ∈ symplecticGroup l R) (c : R) :
+    Ψᵀ * J l R - J l R * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1)) =
+      (Ψ + 1 - c • (J l R * (Ψ - 1)))ᵀ * -(J l R * (Ψ - 1)) := by
+  have hJJ : J l R * (J l R * (Ψ - 1)) = -(Ψ - 1) := by
+    rw [← Matrix.mul_assoc, J_squared, neg_one_mul]
+  rw [transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ]
+  conv_rhs => rw [transpose_sub, Matrix.sub_mul, transpose_smul, transpose_mul, J_transpose]
+  simp only [Matrix.smul_mul, Matrix.mul_neg, Matrix.neg_mul, Matrix.mul_assoc, hJJ, neg_neg,
+    smul_neg, sub_neg_eq_add]
+
+/-- **The kernel of `Ψᵀ * J - J * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))`.** For a symplectic matrix `Ψ`
+such that `Ψ + 1 - c • (J * (Ψ - 1))` is invertible, the kernel of this symmetric matrix is the
+space of fixed vectors of `Ψ`. For `c = 0` the condition is that `Ψ` does not have the eigenvalue
+`-1`. -/
+theorem ker_mulVecLin_transpose_mul_J_sub_J_mul_add_smul {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hΨ : Ψ ∈ symplecticGroup l R) {c : R} (h : IsUnit (Ψ + 1 - c • (J l R * (Ψ - 1))).det) :
+    LinearMap.ker (Ψᵀ * J l R - J l R * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))).mulVecLin =
+      LinearMap.ker (Ψ - 1).mulVecLin := by
+  have hinj : Function.Injective ((Ψ + 1 - c • (J l R * (Ψ - 1)))ᵀ * J l R).mulVec := by
     refine mulVec_injective_of_det_mem_nonZeroDivisors (IsUnit.mem_nonZeroDivisors ?_)
     rw [det_mul, det_transpose]
     exact h.mul (isUnit_det_J l R)
   ext v
   simp only [LinearMap.mem_ker, mulVecLin_apply, Matrix.mul_neg, ← Matrix.mul_assoc, neg_mulVec,
-    neg_eq_zero, transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ]
+    neg_eq_zero, transpose_mul_J_sub_J_mul_add_smul_eq_transpose_mul_neg_J_mul hΨ]
   rw [← mulVec_mulVec]
   exact ⟨fun hv ↦ hinj (hv.trans (mulVec_zero _).symm), fun hv ↦ by rw [hv, mulVec_zero]⟩
 
-/-- For a symplectic matrix `Ψ` without the eigenvalue `-1`, the symmetric matrix
-`Ψᵀ * J - J * Ψ` is singular exactly when `Ψ` has the eigenvalue `1`: its determinant is that of
-`Ψ - 1` up to a unit. -/
-theorem det_transpose_mul_J_sub_J_mul_eq_zero_iff {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
-    (hΨ : Ψ ∈ symplecticGroup l R) (h : IsUnit (Ψ + 1).det) :
-    (Ψᵀ * J l R - J l R * Ψ).det = 0 ↔ (Ψ - 1).det = 0 := by
-  rw [transpose_mul_J_sub_J_mul_eq_transpose_mul_neg_J_mul hΨ, ← Matrix.mul_neg,
+/-- For a symplectic matrix `Ψ` such that `Ψ + 1 - c • (J * (Ψ - 1))` is invertible, the
+symmetric matrix `Ψᵀ * J - J * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))` is singular exactly when `Ψ` has the
+eigenvalue `1`: its determinant is that of `Ψ - 1` up to a unit. -/
+theorem det_transpose_mul_J_sub_J_mul_add_smul_eq_zero_iff {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hΨ : Ψ ∈ symplecticGroup l R) {c : R} (h : IsUnit (Ψ + 1 - c • (J l R * (Ψ - 1))).det) :
+    (Ψᵀ * J l R - J l R * Ψ + c • ((Ψ - 1)ᵀ * (Ψ - 1))).det = 0 ↔ (Ψ - 1).det = 0 := by
+  rw [transpose_mul_J_sub_J_mul_add_smul_eq_transpose_mul_neg_J_mul hΨ, ← Matrix.mul_neg,
     ← Matrix.mul_assoc, det_mul, det_mul, det_transpose, det_neg, ← mul_assoc,
     ((h.mul (isUnit_det_J l R)).mul (isUnit_neg_one.pow _)).mul_right_eq_zero]
 
