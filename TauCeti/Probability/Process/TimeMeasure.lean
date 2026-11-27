@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -21,7 +22,9 @@ The origin has zero mass. Interval masses, monotonicity in the horizon and restr
 shorter horizons are recorded explicitly for time-product measures used in stochastic
 integration. Integrals for time measure are interval integrals over `(0,T]`
 (`TauCeti.Probability.integral_timeMeasure`), and continuous functions lie in every `Lᵖ` space
-of a finite horizon (`Continuous.memLp_timeMeasure`).
+of a finite horizon (`Continuous.memLp_timeMeasure`). Moving interval-rectangle indicators
+converge almost everywhere under the time-product measure
+(`TauCeti.Probability.tendsto_indicator_Ioc_prod_ae`).
 The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
 longer horizons. Initial-interval indicator classes depend only on their endpoint
 clipped to the horizon; the extension lemmas describe their images. The `L²` inner product of
@@ -31,8 +34,8 @@ shorter horizon (`TauCeti.Probability.inner_timeMeasureExtendLp`).
 
 public section
 
-open MeasureTheory Set
-open scoped NNReal ENNReal InnerProductSpace
+open MeasureTheory Set Filter
+open scoped NNReal ENNReal InnerProductSpace Topology
 
 namespace TauCeti.Probability
 
@@ -138,6 +141,31 @@ theorem timeMeasure_singleton (T t : ℝ≥0) : timeMeasure T {t} = 0 := by
   rw [timeMeasure_apply T (measurableSet_singleton t)]
   exact (Set.subsingleton_singleton.image _ |>.anti
     (Set.image_mono inter_subset_left)).measure_zero _
+
+/-- For any `s`-finite measure `P`, moving the right endpoint of an interval rectangle
+`Ioc a s ×ˢ A` converges pointwise almost everywhere under `(timeMeasure T).prod P` as
+`s → t`, because the boundary slice `{t} ×ˢ univ` is null. -/
+theorem tendsto_indicator_Ioc_prod_ae {Ω E : Type*} {mΩ : MeasurableSpace Ω}
+    [TopologicalSpace E] [Zero E] (P : Measure Ω) [SFinite P] (T a t : ℝ≥0) (A : Set Ω)
+    (f : ℝ≥0 × Ω → E) :
+    ∀ᵐ p ∂((timeMeasure T).prod P),
+      Tendsto (fun s ↦ (Ioc a s ×ˢ A).indicator f p)
+        (𝓝 t) (𝓝 ((Ioc a t ×ˢ A).indicator f p)) := by
+  have hnull : ((timeMeasure T).prod P) ({t} ×ˢ (univ : Set Ω)) = 0 := by
+    rw [Measure.prod_prod, timeMeasure_singleton, zero_mul]
+  filter_upwards [compl_mem_ae_iff.mpr hnull] with p hp
+  by_cases hbase : a < p.fst ∧ p.snd ∈ A
+  · have hne : p.fst ≠ t := fun h ↦ hp ⟨h, mem_univ _⟩
+    rcases hne.lt_or_gt with hlt | hgt
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [Ioi_mem_nhds hlt] with s (hs : p.fst < s)
+      simp [hbase.1, hbase.2, hlt.le, hs.le]
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [Iio_mem_nhds hgt] with s (hs : s < p.fst)
+      simp [hgt.not_ge, hs.not_ge]
+  · refine tendsto_const_nhds.congr fun s ↦ ?_
+    have hnot (u : ℝ≥0) : p ∉ Ioc a u ×ˢ A := fun h ↦ hbase ⟨h.1.1, h.2⟩
+    simp [hnot]
 
 /-- Coercion from `ℝ≥0` to `ℝ` is measure-preserving from `timeMeasure T` to real Lebesgue
 measure restricted to `(0, (T : ℝ)]`. -/

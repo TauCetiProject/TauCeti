@@ -138,31 +138,6 @@ theorem IsFilteredPreBrownianReal.indist_mul_sub_of_isItoIntegral_indicator_Ioc
 
 /-! ### L² continuity, deterministic bridge, and Doob uniform approximation -/
 
-private theorem tendsto_indicator_Ioc_prod_ae (P : Measure Ω) [SFinite P] (T t : ℝ≥0)
-    (f : ℝ≥0 × Ω → ℝ) :
-    ∀ᵐ p ∂((timeMeasure T).prod P),
-      Tendsto (fun s ↦ (Ioc 0 s ×ˢ (univ : Set Ω)).indicator f p)
-        (𝓝 t) (𝓝 ((Ioc 0 t ×ˢ (univ : Set Ω)).indicator f p)) := by
-  have hnull : ((timeMeasure T).prod P) ({t} ×ˢ (univ : Set Ω)) = 0 := by
-    rw [Measure.prod_prod, timeMeasure_singleton, zero_mul]
-  filter_upwards [compl_mem_ae_iff.mpr hnull] with p hp
-  have hne : p.fst ≠ t := fun h ↦ hp ⟨h, mem_univ _⟩
-  rcases hne.lt_or_gt with hlt | hgt
-  · by_cases h0 : 0 < p.fst
-    · have hmem : p ∈ Ioc 0 t ×ˢ (univ : Set Ω) := ⟨⟨h0, hlt.le⟩, mem_univ _⟩
-      refine tendsto_const_nhds.congr' ?_
-      filter_upwards [Ioi_mem_nhds hlt] with s hs
-      have hmem' : p ∈ Ioc 0 s ×ˢ (univ : Set Ω) := ⟨⟨h0, hs.le⟩, mem_univ _⟩
-      simp [hmem, hmem']
-    · have hle : p.fst ≤ 0 := not_lt.mp h0
-      refine tendsto_const_nhds.congr fun s ↦ ?_
-      simp [hle]
-  · have hnot : p ∉ Ioc 0 t ×ˢ (univ : Set Ω) := fun h ↦ hgt.not_ge h.1.2
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [Iio_mem_nhds hgt] with s hs
-    have hnot' : p ∉ Ioc 0 s ×ˢ (univ : Set Ω) := fun h ↦ hs.not_ge h.1.2
-    simp [hnot, hnot']
-
 /-- **L² time continuity of the Itô integral.** Against a pre-Brownian motion, every Itô integral
 of a Brownian-integrable integrand is continuous in `L²(P)` as a function of time. -/
 theorem IsItoIntegral.tendsto_eLpNorm_sub (hI : IsItoIntegral ℱ P W H I)
@@ -210,7 +185,7 @@ theorem IsItoIntegral.tendsto_eLpNorm_sub (hI : IsItoIntegral ℱ P W H I)
         _ ≤ ‖H p.1 p.2‖ₑ + ‖H p.1 p.2‖ₑ :=
           add_le_add (eNorm_indicator_le_eNorm_self _ _) (eNorm_indicator_le_eNorm_self _ _)
         _ = (2 : ℝ≥0) * ‖H p.1 p.2‖ₑ := by rw [ENNReal.coe_ofNat, two_mul])
-    (tendsto_indicator_Ioc_prod_ae P T t (Function.uncurry H))
+    (tendsto_indicator_Ioc_prod_ae P T 0 t univ (Function.uncurry H))
 
 /-- **L² continuity in `Lp ℝ 2 P`.** The `L²` class `t ↦ I t` of an Itô integral of a
 Brownian-integrable integrand varies continuously with `t`. -/

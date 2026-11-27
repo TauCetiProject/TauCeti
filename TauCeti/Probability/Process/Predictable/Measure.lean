@@ -433,10 +433,9 @@ theorem indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   have hdiff : (Ioc 0 b ×ˢ (univ : Set Ω)) \ (Ioc 0 a ×ˢ (univ : Set Ω)) =
       Ioc a b ×ˢ (univ : Set Ω) := by
-    ext ⟨s, ω⟩
-    simp only [Set.mem_sdiff, mem_prod, mem_Ioc, mem_univ, and_true, not_and, not_le]
-    exact ⟨fun ⟨hs, hnot⟩ ↦ ⟨hnot hs.1, hs.2⟩,
-      fun ⟨has, hsb⟩ ↦ ⟨⟨zero_le.trans_lt has, hsb⟩, fun _ ↦ has⟩⟩
+    rw [prod_sdiff_prod, sdiff_self, prod_empty, empty_union,
+      ← (Ioc_inter_Iic 0 b a).trans (congrArg (Ioc 0) (min_eq_right hab)),
+      inter_comm, sdiff_inter_self_eq_sdiff, Ioc_sdiff_Iic, max_eq_right zero_le]
   have hsub : Ioc 0 a ×ˢ (univ : Set Ω) ⊆ Ioc 0 b ×ˢ (univ : Set Ω) :=
     prod_mono_left (Ioc_subset_Ioc_right hab)
   apply Lp.ext

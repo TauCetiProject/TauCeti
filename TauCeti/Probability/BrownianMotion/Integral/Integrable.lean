@@ -144,10 +144,8 @@ theorem BrownianIntegrable.setIntegral_sq_timeMeasure_sub [SFinite P]
       ∫ p in Ioc s t ×ˢ A, H p.fst p.snd ^ 2 ∂ℱ.predictableMeasure P T := by
   have hsT : s ≤ T := hst.trans htT
   have hdiff : Ioc 0 t \ Ioc 0 s = Ioc s t := by
-    ext r
-    simp only [Set.mem_sdiff, mem_Ioc, not_and, not_le]
-    exact ⟨fun ⟨⟨_, hrt⟩, hnot⟩ ↦ ⟨hnot (by positivity), hrt⟩,
-      fun ⟨hsr, hrt⟩ ↦ ⟨⟨zero_le.trans_lt hsr, hrt⟩, fun _ ↦ hsr⟩⟩
+    rw [← (Ioc_inter_Iic 0 t s).trans (congrArg (Ioc 0) (min_eq_right hst)),
+      inter_comm, sdiff_inter_self_eq_sdiff, Ioc_sdiff_Iic, max_eq_right zero_le]
   have hsec : ∀ᵐ ω ∂P,
       ((∫ r, H r ω ^ 2 ∂Probability.timeMeasure t) -
         ∫ r, H r ω ^ 2 ∂Probability.timeMeasure s) =
