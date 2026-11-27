@@ -21,7 +21,11 @@ cokernel are each killed by a nonzero integer. This happens exactly when
 * the kernel of `f` is a nil ideal of bounded exponent: `a ^ p ^ c = 0` for all `a ∈ ker f`, and
 * a uniform `p`-power of every element of `B` comes from `A`: `b ^ p ^ c ∈ f(A)` for all `b ∈ B`
 
-(`WittVector.isoModSerre_isBoundedTorsion_map_iff`). Both conditions are read off Teichmüller
+(`WittVector.isoModSerre_isBoundedTorsion_map_iff`). The kernel condition alone characterizes
+`W(f)` being a monomorphism up to bounded torsion and needs only `A` of characteristic `p`
+(`WittVector.monoModSerre_isBoundedTorsion_map_iff`); the image condition alone characterizes it
+being an epimorphism up to bounded torsion and needs only `B` of characteristic `p`
+(`WittVector.epiModSerre_isBoundedTorsion_map_iff`). Both conditions are read off Teichmüller
 representatives: in characteristic `p`, the Witt vector `[b] * p ^ c = V^c [b ^ p ^ c]` has
 `b ^ p ^ c` as its `c`-th Witt coordinate. In the other direction, `y * p ^ c = V^c (F^c y)` has
 Witt coordinates `0` and `y_n ^ p ^ c`, and a Witt vector lies in the image of `W(f)` exactly when
@@ -32,20 +36,24 @@ statement that `WO_{Y,ℚ} → f_* WO_{X,ℚ}` is an isomorphism in the isogeny 
 quotient by sheaves of bounded torsion, for a finite universal homeomorphism `f : X → Y`. When
 `A ⊆ B` are reduced and `B ^ p ^ e ⊆ A`, the map `W(A) → W(B)` is injective and `p ^ e` kills its
 cokernel. In the other direction, a map `W(A) → W(B)` that is an isomorphism up to bounded torsion
-forces `f` to be injective when `A` is reduced (`WittVector.injective_of_isoModSerre_map`) and
-every element of `B` to have a uniform `p`-power in `A`: this is the algebraic step in the
-converse, that a proper surjective map along which the rational Witt sheaves agree has
-geometrically connected fibres.
+forces `f` to be injective when `A` is reduced (`WittVector.injective_of_monoModSerre_map`, which
+needs only the monomorphism half) and every element of `B` to have a uniform `p`-power in `A`:
+this is the algebraic step in the converse, that a proper surjective map along which the rational
+Witt sheaves agree has geometrically connected fibres.
 
 ## Main results
 
 * `WittVector.forall_mul_p_pow_mem_range_map_iff`: in characteristic `p`, `p ^ c` carries `W(B)`
   into the image of `W(f)` iff `b ^ p ^ c ∈ f(A)` for every `b ∈ B`.
+* `WittVector.monoModSerre_isBoundedTorsion_map_iff`: `W(f)` is a monomorphism up to bounded
+  torsion iff `ker f` is nil of bounded exponent.
+* `WittVector.epiModSerre_isBoundedTorsion_map_iff`: `W(f)` is an epimorphism up to bounded
+  torsion iff a uniform `p`-power of every element of `B` lies in `f(A)`.
 * `WittVector.isoModSerre_isBoundedTorsion_map_iff`: `W(f)` is an isomorphism up to bounded
   torsion iff `ker f` is nil of bounded exponent and a uniform `p`-power of every element of `B`
   lies in `f(A)`.
-* `WittVector.injective_of_isoModSerre_map`: if `A` is reduced and `W(f)` is an isomorphism up to
-  bounded torsion, then `f` is injective.
+* `WittVector.injective_of_monoModSerre_map`: if `A` is reduced and `W(f)` is a monomorphism up
+  to bounded torsion, then `f` is injective.
 
 ## References
 
@@ -81,9 +89,8 @@ theorem forall_mul_p_pow_mem_range_map_iff {f : A →+* B} {c : ℕ} :
     (∀ y : 𝕎 B, y * (p : 𝕎 B) ^ c ∈ (map f).range) ↔ ∀ b, b ^ p ^ c ∈ f.range := by
   refine ⟨fun h b ↦ ?_, fun h y ↦ (mem_range_map_iff f _).mpr fun n ↦ ?_⟩
   · -- The `c`-th Witt coordinate of `[b] * p ^ c` is `b ^ p ^ c`.
-    have := mul_pow_charP_coeff_succ (p := p) (teichmuller p b) (m := 0) (n := c)
-    rw [zero_add, teichmuller_coeff_zero] at this
-    exact this ▸ (mem_range_map_iff f _).mp (h _) c
+    rw [← teichmuller_mul_pow_coeff (p := p)]
+    exact (mem_range_map_iff f _).mp (h _) c
   · -- The Witt coordinates of `y * p ^ c` are `0` below `c` and `y_m ^ p ^ c` in degree `m + c`.
     rcases lt_or_ge n c with hn | hn
     · rw [mul_pow_charP_coeff_zero y hn]
@@ -116,6 +123,43 @@ private theorem surjective_nsmul_ker_map [CharP A p] (f : A →+* B) {m : ℕ} (
     rw [hx, mul_zero]
   · simp only [AddSubgroup.coe_nsmul, nsmul_eq_mul, ← mul_assoc, hu, one_mul]
 
+/-- For a map `f : A →+* B` with `A` of characteristic `p`, the map `W(f)` of abelian groups is a
+monomorphism modulo the Serre class of bounded-torsion groups, that is, its kernel is killed by a
+nonzero integer, exactly when the kernel of `f` is a nil ideal of bounded exponent. -/
+theorem monoModSerre_isBoundedTorsion_map_iff {A B : Type u} [CommRing A] [CommRing B]
+    [CharP A p] (f : A →+* B) :
+    (isBoundedTorsion AddCommGrpCat.{u}).monoModSerre
+        (AddCommGrpCat.ofHom (map (p := p) f).toAddMonoidHom) ↔
+      ∃ c : ℕ, ∀ a ∈ RingHom.ker f, a ^ p ^ c = 0 := by
+  rw [monoModSerre_iff, prop_iff_of_iso (isBoundedTorsion _) (AddCommGrpCat.kernelIsoKer _),
+    AddCommGrpCat.prop_isBoundedTorsion_iff_exists_pow_nsmul_eq_zero hp.out
+      fun m hm ↦ surjective_nsmul_ker_map f (hp.out.coprime_iff_not_dvd.mp hm.symm)]
+  refine exists_congr fun c ↦ ?_
+  rw [← forall_mem_ideal_mul_p_pow_eq_zero_iff, ← ker_map]
+  simp only [AddCommGrpCat.hom_ofHom, Subtype.forall, ← Subtype.val_inj, AddSubgroup.coe_nsmul,
+    ZeroMemClass.coe_zero, AddMonoidHom.mem_ker, RingHom.mem_ker, RingHom.toAddMonoidHom_eq_coe,
+    AddMonoidHom.coe_ofClass, nsmul_eq_mul', Nat.cast_pow]
+
+/-- For a map `f : A →+* B` with `B` of characteristic `p`, the map `W(f)` of abelian groups is an
+epimorphism modulo the Serre class of bounded-torsion groups, that is, its cokernel is killed by a
+nonzero integer, exactly when a uniform `p`-power of every element of `B` lies in the image of
+`f`. -/
+theorem epiModSerre_isBoundedTorsion_map_iff {A B : Type u} [CommRing A] [CommRing B]
+    [CharP B p] (f : A →+* B) :
+    (isBoundedTorsion AddCommGrpCat.{u}).epiModSerre
+        (AddCommGrpCat.ofHom (map (p := p) f).toAddMonoidHom) ↔
+      ∃ c : ℕ, ∀ b, b ^ p ^ c ∈ f.range := by
+  rw [epiModSerre_iff,
+    prop_iff_of_iso (isBoundedTorsion _) (AddCommGrpCat.cokernelIsoQuotient _),
+    AddCommGrpCat.prop_isBoundedTorsion_iff_exists_pow_nsmul_eq_zero hp.out
+      fun m hm ↦ surjective_nsmul_quotient_range_map f (hp.out.coprime_iff_not_dvd.mp hm.symm)]
+  refine exists_congr fun c ↦ ?_
+  rw [← forall_mul_p_pow_mem_range_map_iff]
+  simp only [AddCommGrpCat.hom_ofHom, QuotientAddGroup.mk_surjective.forall,
+    ← QuotientAddGroup.mk_nsmul, QuotientAddGroup.eq_zero_iff, nsmul_eq_mul', Nat.cast_pow,
+    AddMonoidHom.mem_range, RingHom.mem_range, RingHom.toAddMonoidHom_eq_coe,
+    AddMonoidHom.coe_ofClass]
+
 /-- **Witt vectors of a map up to bounded torsion.** For a map `f : A →+* B` of rings of
 characteristic `p`, the map `W(f) : W(A) → W(B)` of abelian groups is an isomorphism modulo the
 Serre class of bounded-torsion groups, that is, its kernel and its cokernel are each killed by a
@@ -126,34 +170,16 @@ theorem isoModSerre_isBoundedTorsion_map_iff {A B : Type u} [CommRing A] [CommRi
     (isBoundedTorsion AddCommGrpCat.{u}).isoModSerre
         (AddCommGrpCat.ofHom (map (p := p) f).toAddMonoidHom) ↔
       (∃ c : ℕ, ∀ a ∈ RingHom.ker f, a ^ p ^ c = 0) ∧ ∃ c : ℕ, ∀ b, b ^ p ^ c ∈ f.range := by
-  rw [isoModSerre_iff, monoModSerre_iff, epiModSerre_iff,
-    prop_iff_of_iso (isBoundedTorsion _) (AddCommGrpCat.kernelIsoKer _),
-    prop_iff_of_iso (isBoundedTorsion _) (AddCommGrpCat.cokernelIsoQuotient _),
-    AddCommGrpCat.prop_isBoundedTorsion_iff_exists_pow_nsmul_eq_zero hp.out
-      fun m hm ↦ surjective_nsmul_ker_map f (hp.out.coprime_iff_not_dvd.mp hm.symm),
-    AddCommGrpCat.prop_isBoundedTorsion_iff_exists_pow_nsmul_eq_zero hp.out
-      fun m hm ↦ surjective_nsmul_quotient_range_map f (hp.out.coprime_iff_not_dvd.mp hm.symm)]
-  refine and_congr ?_ ?_
-  · refine exists_congr fun c ↦ ?_
-    rw [← forall_mem_ideal_mul_p_pow_eq_zero_iff, ← ker_map]
-    simp only [AddCommGrpCat.hom_ofHom, Subtype.forall, ← Subtype.val_inj, AddSubgroup.coe_nsmul,
-      ZeroMemClass.coe_zero, AddMonoidHom.mem_ker, RingHom.mem_ker, RingHom.toAddMonoidHom_eq_coe,
-      AddMonoidHom.coe_ofClass, nsmul_eq_mul', Nat.cast_pow]
-  · refine exists_congr fun c ↦ ?_
-    rw [← forall_mul_p_pow_mem_range_map_iff]
-    simp only [AddCommGrpCat.hom_ofHom, QuotientAddGroup.mk_surjective.forall,
-      ← QuotientAddGroup.mk_nsmul, QuotientAddGroup.eq_zero_iff, nsmul_eq_mul', Nat.cast_pow,
-      AddMonoidHom.mem_range, RingHom.mem_range, RingHom.toAddMonoidHom_eq_coe,
-      AddMonoidHom.coe_ofClass]
+  rw [isoModSerre_iff, monoModSerre_isBoundedTorsion_map_iff, epiModSerre_isBoundedTorsion_map_iff]
 
-/-- If `A` is reduced and `W(f)` is an isomorphism up to bounded torsion, then `f` is injective:
-its kernel is a nil ideal. -/
-theorem injective_of_isoModSerre_map {A B : Type u} [CommRing A] [CommRing B] [CharP A p]
-    [CharP B p] [IsReduced A] {f : A →+* B}
-    (hf : (isBoundedTorsion AddCommGrpCat.{u}).isoModSerre
+/-- If `A` is reduced and `W(f)` is a monomorphism up to bounded torsion, for instance an
+isomorphism up to bounded torsion, then `f` is injective: its kernel is a nil ideal. -/
+theorem injective_of_monoModSerre_map {A B : Type u} [CommRing A] [CommRing B] [CharP A p]
+    [IsReduced A] {f : A →+* B}
+    (hf : (isBoundedTorsion AddCommGrpCat.{u}).monoModSerre
       (AddCommGrpCat.ofHom (map (p := p) f).toAddMonoidHom)) :
     Function.Injective f := by
-  obtain ⟨⟨c, hc⟩, -⟩ := (isoModSerre_isBoundedTorsion_map_iff f).mp hf
+  obtain ⟨c, hc⟩ := (monoModSerre_isBoundedTorsion_map_iff f).mp hf
   exact (injective_iff_map_eq_zero f).mpr fun a ha ↦ IsReduced.eq_zero a ⟨_, hc a ha⟩
 
 end WittVector

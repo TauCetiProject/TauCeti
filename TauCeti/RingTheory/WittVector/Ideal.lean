@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Exponent
-public import Mathlib.RingTheory.WittVector.Domain
-public import Mathlib.RingTheory.WittVector.Teichmuller
+public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
 /-!
@@ -289,9 +288,7 @@ theorem forall_mem_ideal_mul_p_pow_eq_zero_iff {N : Ideal A} {c : ℕ} :
     (∀ x ∈ ideal p N, x * (p : 𝕎 A) ^ c = 0) ↔ ∀ a ∈ N, a ^ p ^ c = 0 := by
   refine ⟨fun h a ha ↦ ?_, fun h _ ↦ mul_p_pow_eq_zero_of_mem_ideal h⟩
   -- The `c`-th Witt coordinate of `[a] * p ^ c` is `a ^ p ^ c`.
-  have := mul_pow_charP_coeff_succ (p := p) (teichmuller p a) (m := 0) (n := c)
-  rwa [zero_add, h _ (teichmuller_mem_ideal_iff.mpr ha), zero_coeff, teichmuller_coeff_zero,
-    eq_comm] at this
+  rw [← teichmuller_mul_pow_coeff, h _ (teichmuller_mem_ideal_iff.mpr ha), zero_coeff]
 
 end CharP
 
