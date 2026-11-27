@@ -9,9 +9,10 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Strong
-import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
@@ -100,7 +101,7 @@ theorem supported_empty : supported R K ∅ = ⊥ := by
 
 /-- The adele that is `z` at the finite place `v` and `0` at every other place, infinite or
 finite, is supported on every set of finite places containing `v`. -/
-private theorem single_mem_supported {S : Set (HeightOneSpectrum R)} {v : HeightOneSpectrum R}
+theorem single_mem_supported {S : Set (HeightOneSpectrum R)} {v : HeightOneSpectrum R}
     (hv : v ∈ S) (z : v.adicCompletion K) :
     ((0, FiniteAdeleRing.single K v z) : AdeleRing R K) ∈ supported R K S :=
   ⟨rfl, fun _ hw ↦ FiniteAdeleRing.single_apply_of_ne (by rintro rfl; exact hw hv) z⟩
@@ -157,6 +158,7 @@ private theorem dense_range_algebraMap_add_supported_singleton (v₀ : HeightOne
   -- A neighbourhood of `a` contains a product of a box around the infinite part and a
   -- neighbourhood of the finite part, which in turn contains a basic congruence neighbourhood.
   obtain ⟨Winf, hWinf, Wf, hWf, hsub⟩ := mem_nhds_prod_iff.1 hW
+  -- `nhds_pi` does not fire through the `InfiniteAdeleRing` type synonym, so state it explicitly.
   rw [show 𝓝 a.1 = Filter.pi fun w ↦ 𝓝 (a.1 w) from nhds_pi] at hWinf
   obtain ⟨Iinf, -, t, ht, hIt⟩ := Filter.mem_pi.1 hWinf
   have hWf0 : (a.2 + ·) ⁻¹' Wf ∈ 𝓝 (0 : FiniteAdeleRing (𝓞 K) K) :=
@@ -179,7 +181,7 @@ private theorem dense_range_algebraMap_add_supported_singleton (v₀ : HeightOne
   refine ⟨_, hsub ⟨hIt fun w _ ↦ ?_, ?_⟩, ⟨_, ⟨x, rfl⟩, _,
     single_mem_supported (Set.mem_singleton v₀) (a.2 v₀ - algebraMap K _ x), rfl⟩⟩
   · convert interior_subset (hxV w (Finset.mem_univ w)) using 1
-    simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply]
+    simp [InfinitePlace.Completion.algebraMap_apply_eq_coe]
   · simpa using hIn _ hb hbI
 
 /-- **Strong approximation omitting finite places.** For a nonempty set `S` of finite places of a
