@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.KrullDimension
+public import TauCeti.Order.KrullDimension
 
 /-!
 # Proper closed subsets of irreducible spaces have smaller Krull dimension
@@ -20,7 +21,12 @@ dimension of `Y` is finite.
 
 The argument only uses that the closure of the image of `Z` is not all of `Y`, so it is stated
 for an inducing map `f : X → Y` with non-dense range. The set-level form concerns a closed subset
-`Z` of an ambient space strictly contained in an irreducible subset `Y`.
+`Z` of an ambient space strictly contained in an irreducible subset `Y`. Irreducibility of `Y` is
+not needed either: for an arbitrary space `Y`, it is enough that the closure of the range of `f`
+contain no irreducible component of `Y`, since the closure of the image of the last member of a
+chain lies in some irreducible component, which then extends the chain. This is the form that
+applies to a nowhere dense closed subset of a reducible scheme, such as the centre of a
+modification.
 
 In the other extreme, an irreducible `T₀` space has Krull dimension zero exactly when it has at
 most one point: in dimension zero the closure of every point is a maximal irreducible closed
@@ -28,6 +34,9 @@ subset, hence the whole space, and in a `T₀` space two points with the same cl
 
 ## Main declarations
 
+* `Topology.IsInducing.topologicalKrullDim_add_one_le_of_forall_not_subset`: if `f : X → Y` is
+  inducing and no irreducible component of `Y` lies in the closure of its range, then
+  `topologicalKrullDim X + 1 ≤ topologicalKrullDim Y`.
 * `Topology.IsInducing.topologicalKrullDim_add_one_le`: if `f : X → Y` is inducing with
   non-dense range and `Y` is irreducible, then `topologicalKrullDim X + 1 ≤ topologicalKrullDim Y`.
 * `Topology.IsInducing.topologicalKrullDim_lt`: the strict inequality for such a map, when the
@@ -55,22 +64,29 @@ namespace Topology.IsInducing
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
+/-- If `f : X → Y` is inducing and the closure of its range contains no irreducible component of
+`Y`, then `topologicalKrullDim X + 1 ≤ topologicalKrullDim Y`: the closure of the image of an
+irreducible closed subset of `X` lies in an irreducible component of `Y`, which is strictly
+larger. -/
+theorem topologicalKrullDim_add_one_le_of_forall_not_subset {f : X → Y} (hf : IsInducing f)
+    (hf' : ∀ C ∈ irreducibleComponents Y, ¬C ⊆ closure (range f)) :
+    topologicalKrullDim X + 1 ≤ topologicalKrullDim Y := by
+  refine Order.krullDim_add_one_le_of_strictMono _
+    (IrreducibleCloseds.map_strictMono_of_isInducing hf) fun T hT ↦ ?_
+  obtain ⟨C, hC, hTC⟩ := exists_mem_irreducibleComponents_subset_of_isIrreducible _
+    (T.map f hf.continuous).isIrreducible
+  have hle : T.map f hf.continuous ≤ ⟨C, hC.1, isClosed_of_mem_irreducibleComponents C hC⟩ := hTC
+  have hCT : C ⊆ closure (f '' T) := hT hle
+  exact hf' C hC (hCT.trans (closure_mono (image_subset_range f T)))
+
 /-- If `f : X → Y` is inducing with non-dense range and `Y` is irreducible, then
 `topologicalKrullDim X + 1 ≤ topologicalKrullDim Y`. -/
 theorem topologicalKrullDim_add_one_le [IrreducibleSpace Y] {f : X → Y} (hf : IsInducing f)
     (hf' : ¬DenseRange f) : topologicalKrullDim X + 1 ≤ topologicalKrullDim Y := by
-  cases isEmpty_or_nonempty (IrreducibleCloseds X)
-  · simp [topologicalKrullDim, krullDim_eq_bot]
-  let top : IrreducibleCloseds Y := ⟨univ, IrreducibleSpace.isIrreducible_univ Y, isClosed_univ⟩
-  have hlt (T : IrreducibleCloseds X) : T.map f hf.continuous < top := by
-    refine lt_of_le_of_ne (subset_univ _) fun h ↦ hf' ?_
-    rw [DenseRange, dense_iff_closure_eq, ← univ_subset_iff]
-    exact (congrArg SetLike.coe h).symm.subset.trans (closure_mono (image_subset_range f T))
-  rw [topologicalKrullDim, ← krullDim_WithTop]
-  refine krullDim_le_of_strictMono
-    (fun T ↦ (T.map (IrreducibleCloseds.map f hf.continuous)).untopD top) ?_
-  exact WithTop.strictMono_iff.mpr
-    ⟨by simpa using IrreducibleCloseds.map_strictMono_of_isInducing hf, by simpa using hlt⟩
+  refine hf.topologicalKrullDim_add_one_le_of_forall_not_subset fun C hC hCf ↦ hf' ?_
+  rw [irreducibleComponents_eq_singleton, mem_singleton_iff] at hC
+  rw [DenseRange, dense_iff_closure_eq, ← univ_subset_iff, ← hC]
+  exact hCf
 
 /-- If `f : X → Y` is inducing with non-dense range, `Y` is irreducible and `X` has finite
 Krull dimension, then `topologicalKrullDim X < topologicalKrullDim Y`. -/

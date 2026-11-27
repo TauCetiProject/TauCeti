@@ -10,7 +10,7 @@ public import Mathlib.Order.KrullDimension
 /-!
 # Krull dimension of products, adjacent intervals and unions of upper sets
 
-Three facts about Krull dimension that hold in every preorder. The height of a pair is at
+Four facts about Krull dimension that hold in every preorder. The height of a pair is at
 most the sum of the heights of its components, so the Krull dimension of a product is at most the
 sum of the Krull dimensions of the factors. In the other direction, for `a ≤ b ≤ c` a strict chain
 in `[a, b]` and one in `[b, c]` concatenate to a strict chain in `[a, c]`, so the Krull dimension of
@@ -24,6 +24,11 @@ prime spectrum the closed sets are upper sets for the inclusion order, so this c
 dimension of a union of two closed subsets, for instance the support of `M ⧸ r s M` as the union
 of the supports of `M ⧸ r M` and `M ⧸ s M`.
 
+Lastly, a strictly monotone map `f : α → β` none of whose values is maximal raises the Krull
+dimension by one: every strict chain of `α` maps to a strict chain of `β` that can be extended
+above its last element. In topology this is the statement that a closed subset containing no
+irreducible component has smaller Krull dimension than the whole space.
+
 ## Main results
 
 * `Order.height_prod_le`: the height of a pair is at most the sum of the heights of its
@@ -33,6 +38,8 @@ of the supports of `M ⧸ r M` and `M ⧸ s M`.
   `a ≤ b ≤ c`.
 * `Order.krullDim_union_of_isUpperSet`: the Krull dimension of a union of two upper sets is the
   larger of their Krull dimensions.
+* `Order.krullDim_add_one_le_of_strictMono`: `dim α + 1 ≤ dim β` for a strictly monotone
+  `f : α → β` taking no maximal value.
 
 ## Implementation notes
 
@@ -130,5 +137,23 @@ theorem krullDim_union_of_isUpperSet {s t : Set α} (hs : IsUpperSet s) (ht : Is
       ⟨p.length, fun i ↦ ⟨p i, hmem hs h i⟩, fun i ↦ p.step i⟩)
   · exact le_max_of_le_right (LTSeries.length_le_krullDim
       ⟨p.length, fun i ↦ ⟨p i, hmem ht h i⟩, fun i ↦ p.step i⟩)
+
+/-- **A strictly monotone map into non-maximal elements raises the Krull dimension by one.** If
+`f : α → β` is strictly monotone and no `f a` is maximal, then `dim α + 1 ≤ dim β`: a strict chain
+in `α` maps to one in `β` whose last element can still be strictly enlarged. -/
+theorem krullDim_add_one_le_of_strictMono (f : α → β) (hf : StrictMono f)
+    (hmax : ∀ a, ¬IsMax (f a)) : krullDim α + 1 ≤ krullDim β := by
+  rcases isEmpty_or_nonempty α with hα | hα
+  · simp [krullDim_eq_bot]
+  have : Nonempty β := ⟨f hα.some⟩
+  rw [krullDim_eq_iSup_height_of_nonempty, krullDim_eq_iSup_height_of_nonempty, ← WithBot.coe_one,
+    ← WithBot.coe_add, WithBot.coe_le_coe, ENat.iSup_add]
+  refine iSup_le fun a ↦ ?_
+  obtain ⟨b, hb⟩ := not_isMax_iff.mp (hmax a)
+  calc height a + 1 ≤ height (f a) + 1 := by
+        gcongr
+        exact height_le_height_apply_of_strictMono f hf a
+    _ ≤ height b := height_add_one_le hb
+    _ ≤ ⨆ b, height b := le_iSup height b
 
 end Order

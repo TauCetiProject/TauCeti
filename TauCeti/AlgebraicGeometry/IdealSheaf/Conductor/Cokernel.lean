@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.SchemeTheoreticSupport
 public import TauCeti.AlgebraicGeometry.Modules.StructureSheafSequence
 public import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
+public import TauCeti.AlgebraicGeometry.Noetherian
 public import TauCeti.Topology.KrullDimension.Irreducible
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 
@@ -31,9 +32,10 @@ pushforward of its pullback to the conductor closed subscheme `V(f.conductor)`
 
 Geometrically, the support of `f.conductor` is contained in the centre `f.centre` outside which `f`
 is an isomorphism (`support_conductor_subset_centre`), with equality when `f` is
-scheme-theoretically dominant (`support_conductor_eq_centre`). For a finite modification of an
-irreducible Noetherian scheme `Y` of Krull dimension at most one, the conductor closed
-subscheme therefore has strictly smaller Krull dimension, hence is an Artinian (and in particular
+scheme-theoretically dominant (`support_conductor_eq_centre`). For a finite modification of a
+Noetherian scheme `Y` of Krull dimension at most one, possibly reducible, the conductor closed
+subscheme therefore has strictly smaller Krull dimension, since its support contains no irreducible
+component of `Y`, hence is an Artinian (and in particular
 affine) scheme (`isArtinianScheme_conductor_subscheme`); when `f` is also scheme-theoretically
 dominant, `f` is an isomorphism if and only if `Γ(Q, ⊤)` vanishes
 (`subsingleton_globalSections_cokernel_unitToPushforwardObjUnit_iff_isIso`).
@@ -52,8 +54,8 @@ dominant, `f` is an isomorphism if and only if `Γ(Q, ⊤)` vanishes
   dimension at most one, `f.conductor.subscheme` is Artinian, and finite over any locally Artinian
   base over which `Y` is locally of finite type.
 * `Hom.subsingleton_globalSections_cokernel_unitToPushforwardObjUnit_iff_isIso`:
-  for a finite scheme-theoretically dominant modification of a Noetherian irreducible
-  scheme of dimension at most one, `Subsingleton Γ(coker(𝒪_Y ⟶ f_* 𝒪_X), ⊤) ↔ IsIso f`.
+  for a finite scheme-theoretically dominant modification of a Noetherian scheme of dimension at
+  most one, `Subsingleton Γ(coker(𝒪_Y ⟶ f_* 𝒪_X), ⊤) ↔ IsIso f`.
 
 ## References
 
@@ -195,29 +197,35 @@ theorem support_conductor_ne_top_of_isModification [Nonempty Y] : f.conductor.su
   intro htop
   exact f.notMem_support_conductor_of_isIso_morphismRestrict hy (htop ▸ trivial)
 
-/-- For a finite modification of an irreducible scheme `Y`, the conductor closed subscheme
+/-- For a finite modification of a locally Noetherian scheme `Y`, the conductor closed subscheme
 has strictly smaller Krull dimension:
-`topologicalKrullDim f.conductor.subscheme + 1 ≤ topologicalKrullDim Y`. -/
-theorem topologicalKrullDim_conductor_subscheme_add_one_le [IrreducibleSpace Y] :
+`topologicalKrullDim f.conductor.subscheme + 1 ≤ topologicalKrullDim Y`. No irreducible component
+of `Y` lies in the support of the conductor: its generic point lies in every dense open of `Y`, in
+particular in one over which `f` is an isomorphism. -/
+theorem topologicalKrullDim_conductor_subscheme_add_one_le [IsLocallyNoetherian Y] :
     topologicalKrullDim f.conductor.subscheme + 1 ≤ topologicalKrullDim Y := by
-  refine f.conductor.subschemeι.isClosedEmbedding.isInducing.topologicalKrullDim_add_one_le
-    fun hdense ↦ f.support_conductor_ne_top_of_isModification ?_
-  apply SetLike.coe_injective
-  rw [TopologicalSpace.Closeds.coe_top, ← f.conductor.range_subschemeι,
-    ← f.conductor.subschemeι.isClosedEmbedding.isClosed_range.closure_eq]
-  exact hdense.closure_range
+  refine Topology.IsInducing.topologicalKrullDim_add_one_le_of_forall_not_subset
+    f.conductor.subschemeι.isClosedEmbedding.isInducing fun C hC hCsub ↦ ?_
+  obtain ⟨U, hU, -, _⟩ := IsModification.exists_isIso_morphismRestrict (f := f)
+  let C' : irreducibleComponents Y := ⟨C, hC⟩
+  let η := genericPoints.ofComponent C'
+  have hηU : (η : Y) ∈ U := U.genericPoints_subset_of_dense hU η.property
+  rw [f.conductor.subschemeι.isClosedEmbedding.isClosed_range.closure_eq,
+    f.conductor.range_subschemeι] at hCsub
+  exact f.notMem_support_conductor_of_isIso_morphismRestrict hηU
+    (hCsub (genericPoints.isGenericPoint_ofComponent C').mem)
 
-/-- For a finite modification of an irreducible scheme of Krull dimension at most one, the
+/-- For a finite modification of a locally Noetherian scheme of Krull dimension at most one, the
 conductor closed subscheme has Krull dimension at most zero. -/
-theorem topologicalKrullDim_conductor_subscheme_le_zero [IrreducibleSpace Y]
+theorem topologicalKrullDim_conductor_subscheme_le_zero [IsLocallyNoetherian Y]
     (hY : topologicalKrullDim Y ≤ 1) :
     topologicalKrullDim f.conductor.subscheme ≤ 0 := by
   have h := f.topologicalKrullDim_conductor_subscheme_add_one_le.trans hY
   exact ENat.WithBot.add_le_add_natCast_right_iff (c := 1).mp (by simpa using h)
 
-/-- For a finite modification of an irreducible locally Noetherian scheme of Krull
-dimension at most one, the conductor closed subscheme is locally Artinian. -/
-theorem isLocallyArtinian_conductor_subscheme [IsLocallyNoetherian Y] [IrreducibleSpace Y]
+/-- For a finite modification of a locally Noetherian scheme of Krull dimension at most one, the
+conductor closed subscheme is locally Artinian. -/
+theorem isLocallyArtinian_conductor_subscheme [IsLocallyNoetherian Y]
     (hY : topologicalKrullDim Y ≤ 1) :
     IsLocallyArtinian f.conductor.subscheme := by
   have : IsLocallyNoetherian f.conductor.subscheme :=
@@ -225,9 +233,9 @@ theorem isLocallyArtinian_conductor_subscheme [IsLocallyNoetherian Y] [Irreducib
   exact .of_topologicalKrullDim_le_zero (f.topologicalKrullDim_conductor_subscheme_le_zero hY)
 
 /-- **The conductor closed subscheme on a one-dimensional scheme is Artinian.** For a finite
-modification of an irreducible Noetherian scheme of Krull dimension at most one, the
-conductor closed subscheme is an Artinian scheme (and therefore finite, discrete, and affine). -/
-theorem isArtinianScheme_conductor_subscheme [IsNoetherian Y] [IrreducibleSpace Y]
+modification of a Noetherian scheme of Krull dimension at most one, the conductor closed subscheme
+is an Artinian scheme (and therefore finite, discrete, and affine). -/
+theorem isArtinianScheme_conductor_subscheme [IsNoetherian Y]
     (hY : topologicalKrullDim Y ≤ 1) :
     IsArtinianScheme f.conductor.subscheme :=
   have := f.isLocallyArtinian_conductor_subscheme hY
@@ -235,11 +243,10 @@ theorem isArtinianScheme_conductor_subscheme [IsNoetherian Y] [IrreducibleSpace 
     QuasiCompact.compactSpace_of_compactSpace f.conductor.subschemeι
   {}
 
-/-- If `Y` is an irreducible Noetherian scheme of dimension at most one and `g : Y ⟶ S` is
-locally of finite type over a locally Artinian base `S` (such as `Spec k` for a field `k`), then
-for any finite modification `f : X ⟶ Y` the conductor closed subscheme of `f` is finite over
-`S`. -/
-theorem isFinite_conductor_subschemeι_comp [IsNoetherian Y] [IrreducibleSpace Y]
+/-- If `Y` is a Noetherian scheme of dimension at most one and `g : Y ⟶ S` is locally of finite
+type over a locally Artinian base `S` (such as `Spec k` for a field `k`), then for any finite
+modification `f : X ⟶ Y` the conductor closed subscheme of `f` is finite over `S`. -/
+theorem isFinite_conductor_subschemeι_comp [IsNoetherian Y]
     (hY : topologicalKrullDim Y ≤ 1) {S : Scheme.{u}} [IsLocallyArtinian S] (g : Y ⟶ S)
     [LocallyOfFiniteType g] :
     IsFinite (f.conductor.subschemeι ≫ g) := by
@@ -250,13 +257,12 @@ theorem isFinite_conductor_subschemeι_comp [IsNoetherian Y] [IrreducibleSpace Y
   exact .of_locallyQuasiFinite _
 
 /-- **Vanishing of the global conductor-cokernel sections detects isomorphisms.** Let `f : X ⟶ Y`
-be a finite scheme-theoretically dominant modification of an irreducible Noetherian scheme
-`Y` of Krull dimension at most one. Because `coker(𝒪_Y ⟶ f_* 𝒪_X)` is pushed forward from the
+be a finite scheme-theoretically dominant modification of a Noetherian scheme `Y` of Krull
+dimension at most one. Because `coker(𝒪_Y ⟶ f_* 𝒪_X)` is pushed forward from the
 affine Artinian scheme `V(f.conductor)`, its global sections vanish if and only if `f` is an
 isomorphism. -/
 theorem subsingleton_globalSections_cokernel_unitToPushforwardObjUnit_iff_isIso
-    [IsSchemeTheoreticallyDominant f] [IsNoetherian Y] [IrreducibleSpace Y]
-    (hY : topologicalKrullDim Y ≤ 1) :
+    [IsSchemeTheoreticallyDominant f] [IsNoetherian Y] (hY : topologicalKrullDim Y ≤ 1) :
     Subsingleton Γ(cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom), ⊤) ↔
       IsIso f := by
   have : (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) :

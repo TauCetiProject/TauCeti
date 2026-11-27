@@ -183,37 +183,14 @@ instance finiteDimensional_cohomology_trivial_of_isCurveOver [X.IsCurveOver k] (
     FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
   obtain ⟨Y, _, _, _, ν, _, _, _, _⟩ := exists_isRegular_isModification_of_isCurveOver k (X := X)
   have := IsCurveOver.isNoetherian k X
-  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
-  have hdim := (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
-  let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
-  let _ : ∀ d, Module k (Cohomology OX d) := cohomologyBaseModule k X OX
   let OY : Y.Modules := SheafOfModules.unit Y.ringCatSheaf
+  let _ : Module k (Cohomology OY n) := cohomologyBaseModule k Y OY n
   have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  have : OY.IsFiniteType := inferInstance
-  have hpush (m : ℕ) : FiniteDimensional k (Cohomology ((pushforward ν).obj OY) m) := by
-    let _ : Module k (Cohomology OY m) := cohomologyBaseModule k Y OY m
-    have := finiteDimensional_cohomology_of_isCurveOver k OY m
-    exact Module.Finite.equiv (ν.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY m).symm
-  let φ : OX ⟶ (pushforward ν).obj OY :=
-    SheafOfModules.unitToPushforwardObjUnit ν.toRingCatSheafHom
-  have : Mono φ := ν.mono_unitToPushforwardObjUnit
-  have hOX : FiniteDimensional k (Cohomology OX n) := by
-    cases n with
-    | zero =>
-      have := hpush 0
-      exact finiteDimensional_cohomology_zero_of_mono k X φ
-    | succ n =>
-      cases n with
-      | zero =>
-        have hS := TauCeti.cokernelSequence_shortExact φ
-        have : FiniteDimensional k (Cohomology (ShortComplex.cokernelSequence φ).X₃ 0) :=
-          ν.moduleFinite_cohomology_cokernel_unitToPushforwardObjUnit k hdim 0
-        have : FiniteDimensional k (Cohomology (ShortComplex.cokernelSequence φ).X₂ 1) := hpush 1
-        exact finiteDimensional_cohomology_X₁ k X hS 0 1 rfl
-      | succ m =>
-        have := subsingleton_cohomology_unit_of_two_le_of_isCurveOver k (X := X) (m + 2) (by omega)
-        infer_instance
-  exact Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X n).symm
+  have : FiniteDimensional k (Cohomology OY n) := finiteDimensional_cohomology_of_isCurveOver k OY n
+  have : FiniteDimensional k (Cohomology (InvertibleSheaf.trivial Y).obj n) :=
+    Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k Y n).symm
+  exact finiteDimensional_cohomology_trivial_of_isModification k
+    (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le ν n
 
 /-- A proper integral scheme over a field `k` of Krull dimension at most one is either a curve
 over `k` or, being a point, finite over `k`. -/
@@ -283,40 +260,10 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
             ⊤) : ℤ) := by
   have : Y.IsCurveOver k := IsCurveOver.of_isModification k f
   have := IsCurveOver.isNoetherian k X
-  have : X.IsSeparated := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
-  have hdim := (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
   have : IsSchemeTheoreticallyDominant f := .of_isDominant f
-  let OX : X.Modules := SheafOfModules.unit X.ringCatSheaf
-  let OY : Y.Modules := SheafOfModules.unit Y.ringCatSheaf
-  let _ : ∀ m, Module k (Cohomology OX m) := cohomologyBaseModule k X OX
-  let _ : ∀ m, Module k (Cohomology OY m) := cohomologyBaseModule k Y OY
-  have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  let φ : OX ⟶ (pushforward f).obj OY :=
-    SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
-  have : Mono φ := f.mono_unitToPushforwardObjUnit
-  have hS := TauCeti.cokernelSequence_shortExact φ
-  let ePush (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY m
-  have hY_eq : eulerCharBelow k Y (InvertibleSheaf.trivial Y).obj 2 =
-      eulerCharBelow k X ((pushforward f).obj OY) 2 := by
-    rw [eulerCharBelow_two, eulerCharBelow_two,
-      (trivialCohomologyBaseLinearEquiv k Y 0).finrank_eq,
-      (trivialCohomologyBaseLinearEquiv k Y 1).finrank_eq,
-      ← (ePush 0).finrank_eq, ← (ePush 1).finrank_eq]
-  have hX_eq : eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 =
-      eulerCharBelow k X OX 2 := by
-    rw [eulerCharBelow_two, eulerCharBelow_two,
-      (trivialCohomologyBaseLinearEquiv k X 0).finrank_eq,
-      (trivialCohomologyBaseLinearEquiv k X 1).finrank_eq]
-  have hpush_fd (m : ℕ) : FiniteDimensional k (Cohomology ((pushforward f).obj OY) m) := by
-    have : FiniteDimensional k (Cohomology OY m) :=
-      Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k Y m)
-    exact Module.Finite.equiv (ePush m).symm
-  have hadd := eulerCharBelow_eq_add k hS 2
-    (fun i _ _ ↦ Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X i))
-    (fun i _ ↦ hpush_fd i)
-    (subsingleton_cohomology_unit_of_two_le_of_isCurveOver k (X := X) 2 le_rfl)
-  exact hY_eq.trans (hadd.trans (congrArg₂ (· + ·) hX_eq.symm
-    (f.eulerCharBelow_cokernel_unitToPushforwardObjUnit k hdim 1)))
+  exact eulerCharBelow_trivial_eq_add_of_isModification k
+    (IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le f
+    (subsingleton_cohomology_trivial_of_two_le_of_isCurveOver k 2 le_rfl)
 
 /-- **Monotonicity of the arithmetic genus under a finite modification.** For any finite
 modification `f : Y ⟶ X` of curves over `k`, the surjection `H¹(X, 𝒪_X) ↠ H¹(Y, 𝒪_Y)` gives
