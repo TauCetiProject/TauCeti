@@ -29,7 +29,8 @@ namespace TauCeti.UniformizedExamples
 /-- The two-state rate matrix `[[-2, 2], [1, -1]]`. -/
 abbrev Q₂ : Matrix (Fin 2) (Fin 2) ℝ := !![-2, 2; 1, -1]
 
-example : Q₂.IsQMatrix :=
+/-- The two-state rate matrix `Q₂` is a Q-matrix. -/
+theorem isQMatrix_Q₂ : Q₂.IsQMatrix :=
   ⟨isMetzler_iff.mpr fun i j hij ↦ by fin_cases i <;> fin_cases j <;> simp_all,
     fun i ↦ by fin_cases i <;> simp [Fin.sum_univ_two]⟩
 
@@ -40,9 +41,7 @@ example : Q₂.uniformized 2 = !![0, 1; 1 / 2, 1 / 2] := by
 /-- At the rate `2`, the largest total jump rate, the uniformized matrix is stochastic. -/
 example : Q₂.uniformized 2 ∈ rowStochastic ℝ (Fin 2) :=
   (uniformized_mem_rowStochastic_iff two_pos).mpr
-    ⟨⟨isMetzler_iff.mpr fun i j hij ↦ by fin_cases i <;> fin_cases j <;> simp_all,
-      fun i ↦ by fin_cases i <;> simp [Fin.sum_univ_two]⟩,
-    fun i ↦ by fin_cases i <;> norm_num⟩
+    ⟨isQMatrix_Q₂, fun i ↦ by fin_cases i <;> norm_num⟩
 
 example : Q₂.uniformized 1 = !![-1, 2; 1, 0] := by
   ext i j

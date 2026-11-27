@@ -28,8 +28,8 @@ This is what makes the exponential `exp (t • B)` of a Metzler matrix entrywise
 The **uniformized matrix** `Matrix.uniformized Q r = 1 + r⁻¹ • Q` at a rate `r > 0` is
 row-stochastic exactly when `Q` is a Q-matrix whose total jump rates `-Q i i` are at most `r`
 (`Matrix.uniformized_mem_rowStochastic_iff`). It is the transition matrix of the discrete chain
-that jumps at the rings of a clock of rate `r`; the exponential `exp (t • Q)` is the average of its
-powers under the Poisson law of mean `r t`, see
+that jumps at the rings of a clock of rate `r`; for `t ≥ 0`, the exponential `exp (t • Q)` is the
+average of its powers under the Poisson law of mean `r t`, see
 `TauCeti/Analysis/Matrix/Exponential/Uniformization.lean`.
 
 ## Main definitions
@@ -296,8 +296,8 @@ theorem uniformized_mem_rowStochastic_iff [Fintype n] [Field R] [LinearOrder R]
   have hr' : 0 < r⁻¹ := inv_pos.mpr hr
   -- A diagonal entry `1 + r⁻¹ * Q i i` is nonnegative exactly when `-Q i i ≤ r`.
   have hdiag (i : n) : 0 ≤ Q.uniformized r i i ↔ -Q i i ≤ r := by
-    rw [uniformized_apply_self, ← mul_nonneg_iff_of_pos_left hr, mul_add, mul_one, ← mul_assoc,
-      mul_inv_cancel₀ hr.ne', one_mul, neg_le_iff_add_nonneg]
+    have h : 1 + r⁻¹ * Q i i = r⁻¹ * (r + Q i i) := by rw [mul_add, inv_mul_cancel₀ hr.ne']
+    rw [uniformized_apply_self, h, mul_nonneg_iff_of_pos_left hr', neg_le_iff_add_nonneg]
   have hoff {i j : n} (hij : i ≠ j) : 0 ≤ Q.uniformized r i j ↔ 0 ≤ Q i j := by
     rw [uniformized_apply_of_ne Q r hij, mul_nonneg_iff_of_pos_left hr']
   -- `(1 + r⁻¹ • Q) *ᵥ 1 = 1 + r⁻¹ • (Q *ᵥ 1)`, so the rows sum to one exactly when those of `Q`

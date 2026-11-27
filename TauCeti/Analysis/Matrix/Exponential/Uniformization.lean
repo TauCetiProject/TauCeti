@@ -31,7 +31,8 @@ The identity is algebraic: `t • Q = (r t) • K - (r t) • 1`, the two terms 
 `exp (-(r t) • 1) = e^(-r t) • 1`, so `exp (t • Q) = e^(-r t) • exp ((r t) • K)`
 (`Matrix.exp_smul_eq_smul_exp_smul_uniformized`); expanding the last exponential into its series
 gives the sum. It holds for every `r ≠ 0` and every real `t`, with no sign condition on `Q`, `r` or
-`t`. For `r = 0` the uniformized matrix is `1` (Lean's `0⁻¹ = 0`) and the identity fails.
+`t`. For `r = 0` the uniformized matrix is `1` (Lean's `0⁻¹ = 0`), the series then sums to `1`,
+and the identity fails in general.
 
 ## Main results
 
@@ -61,19 +62,18 @@ exponential `exp (t • Q)` is `e^(-r t)` times the exponential of `(r t) • K`
 theorem exp_smul_eq_smul_exp_smul_uniformized (Q : Matrix n n ℝ) {r : ℝ} (hr : r ≠ 0) (t : ℝ) :
     exp (t • Q) = Real.exp (-(r * t)) • exp ((r * t) • Q.uniformized r) := by
   have hdecomp : t • Q = (r * t) • Q.uniformized r + (-(r * t)) • (1 : Matrix n n ℝ) := by
-    rw [uniformized_def, smul_add, smul_smul, mul_comm r t, mul_assoc, mul_inv_cancel₀ hr,
-      mul_one, neg_smul, add_neg_cancel_comm]
-  have hcomm : Commute ((r * t) • Q.uniformized r) ((-(r * t)) • (1 : Matrix n n ℝ)) :=
-    (Commute.one_right _).smul_right _
-  -- This typed specialization pins the operator-norm matrix ring instance.
-  have hscalar : exp ((-(r * t)) • (1 : Matrix n n ℝ)) = Real.exp (-(r * t)) • 1 :=
-    exp_real_smul_one _
-  rw [hdecomp, exp_add_of_commute _ _ hcomm, hscalar, mul_smul_comm, mul_one]
+    rw [uniformized_def]
+    match_scalars
+    · field_simp
+    · ring
+  rw [hdecomp]
+  exact exp_add_real_smul_one (A := Matrix n n ℝ) _ _
 
 /-- **Uniformization.** For a real square matrix `Q`, a nonzero rate `r` and a real time `t`, the
 exponential `exp (t • Q)` is the sum of the series `∑ₖ e^(-r t) (r t)ᵏ / k! • Kᵏ` of powers of the
-uniformized matrix `K = 1 + r⁻¹ • Q`. For a Q-matrix and a rate `r > 0` at least every total jump
-rate, `K` is stochastic and the coefficients are the Poisson probabilities of mean `r t`. -/
+uniformized matrix `K = 1 + r⁻¹ • Q`. For a Q-matrix, a rate `r > 0` at least every total jump
+rate and a time `t ≥ 0`, `K` is stochastic and the coefficients are the Poisson probabilities of
+mean `r t`. -/
 theorem hasSum_uniformized_pow (Q : Matrix n n ℝ) {r : ℝ} (hr : r ≠ 0) (t : ℝ) :
     HasSum (fun k : ℕ ↦ (Real.exp (-(r * t)) * (r * t) ^ k / k.factorial) • Q.uniformized r ^ k)
       (exp (t • Q)) := by
