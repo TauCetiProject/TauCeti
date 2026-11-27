@@ -35,10 +35,8 @@ lemma mapHomotopyCategoryPlusCompι_hom_app_naturality (τ : F ⟶ G)
         (τ.mapHomotopyCategory (.up ℤ)).app ((HomotopyCategory.Plus.ι C).obj K) := by
     simp only [ObjectProperty.ι_map, NatTrans.mapHomotopyCategoryPlus,
       ObjectProperty.homMk_hom]
-  simp only [Functor.mapHomotopyCategoryPlusCompι_hom_app]
-  -- Inclusion forgets the boundedness proof, so both comparison components are
-  -- identities on the underlying mapped objects.
-  erw [Category.comp_id, Category.id_comp]
-  exact hτ
+  simpa only [Functor.mapHomotopyCategoryPlusCompι_hom_app, Functor.comp_obj,
+    Functor.mapHomotopyCategoryPlus, ObjectProperty.ι_obj, ObjectProperty.lift_obj_obj,
+    Category.comp_id, Category.id_comp] using hτ
 
 end CategoryTheory.NatTrans
