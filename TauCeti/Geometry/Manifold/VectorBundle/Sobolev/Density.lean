@@ -74,6 +74,7 @@ changes of chart and trivialization
   `W^{k,p}(V)` for every `k` and `1 ≤ p < ∞`.
 * `TauCeti.SobolevSection.denseRange_ofContMDiffSection`: the `Cᵏ` sections are dense.
 * `TauCeti.SobolevSection.denseRange_ofExponentLEL`: lowering the exponent has dense range.
+* `TauCeti.SobolevSection.denseRange_lowerOrdersL`: lowering the order has dense range.
 * `TauCeti.SobolevSection.hasExtensionByZero`: over surfaces, extension by zero holds for `Cⁿ`
   bundles at orders `k ≤ n`; `hasExtensionByZero_of_le_one` is the case
   `k ≤ 1` for `C¹` bundles.
@@ -145,7 +146,8 @@ private theorem exists_mem_range_value_ae {i : Fin A.n} {ψ : M → ℝ}
     rw [funext hG]
     exact ContDiffOn.sum fun j _ ↦ (hf j).smul contDiffOn_const
   obtain ⟨s, hs⟩ : ∃ s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯, ⇑s = fun x ↦ ψ x • A.chartSection i G x :=
-    ⟨⟨_, contMDiff_smul_chartSection hψ hψi hGs⟩, rfl⟩
+    ⟨⟨_, contMDiff_smul_chartSection hψ (A.image i).isOpen
+      (hψi.trans (A.dom_subset_dom_inter_preimage_image i)) hGs⟩, rfl⟩
   have has (i' : Fin A.n) := chartValueL_ofContMDiffSection_ae A μ p k
     (ContMDiffSection.ofLE ENat.LEInfty.out s) i'
   simp only [ContMDiffSection.coe_ofLE, hs] at has
@@ -411,7 +413,8 @@ private theorem mem_closure_smoothSubmodule_of_contMDiffSMulL_eq (hp : p ≠ ⊤
   have hfu (l : Fin (finrank ℝ F)) : (Wkp.value k (u l) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
       fun y ↦ (finBasis ℝ F).repr (f y) l :=
     (hgu l).trans (Eventually.of_forall fun y ↦ by simp only [f]; rw [Basis.repr_sum_self])
-  have ht := contMDiff_smul_chartSection hψ hψi hf
+  have ht := contMDiff_smul_chartSection hψ (A.image i).isOpen
+    (hψi.trans (A.dom_subset_dom_inter_preimage_image i)) hf
   set s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯ := ⟨_, ht.of_le (by exact_mod_cast le_top)⟩
   refine ⟨ofContMDiffSection A μ p k s, ⟨s, ht, rfl⟩, ?_⟩
   -- `χ` fixes the difference between the approximation and `z`, so the difference is controlled
@@ -499,6 +502,19 @@ theorem denseRange_ofExponentLEL {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ 
   refine (denseRange_ofContMDiffSection A μ p k hp).mono ?_
   rintro _ ⟨s, rfl⟩
   exact ⟨ofContMDiffSection A μ q k s, ofExponentLEL_ofContMDiffSection hpq s⟩
+
+variable (A μ p k) in
+/-- **Lowering the order has dense range.** For `1 ≤ p < ∞`, the inclusion
+`W^{k+d,p}(V) → W^{k,p}(V)` (`TauCeti.SectionChartData.lowerOrdersL`) has dense range: its range
+contains the `C^∞` sections. -/
+theorem denseRange_lowerOrdersL (hp : p ≠ ⊤) (d : ℕ) :
+    DenseRange (A.sectionChartData.lowerOrdersL μ p k d) := by
+  refine (denseRange_ofContMDiffSection_comp_ofLE A μ p k hp).mono ?_
+  rintro _ ⟨s, rfl⟩
+  refine ⟨_, (lowerOrdersL_ofContMDiffSection A μ p k d
+    (ContMDiffSection.ofLE ENat.LEInfty.out s)).trans ?_⟩
+  rw [LinearMap.comp_apply]
+  exact congrArg _ (ContMDiffSection.ext fun _ ↦ by simp)
 
 end Unconditional
 

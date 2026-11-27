@@ -40,6 +40,8 @@ the dimension.
   in degrees `Fintype.card ι - k` and `k` are related by `(-1) ^ Fintype.card ι * det A` and `star`.
 * `Matrix.eval_charpolyRev_eq_det_one_sub_smul`: the value of `det (1 - X A)` at `X = t` is
   `det (1 - t A)`; at `X = 1` this is `Matrix.eval_one_charpolyRev`.
+* `Matrix.eval_charpoly_eq_pow_mul_eval_charpolyRev`: if `t s = 1`, then
+  `χ_A (t) = t ^ n det (1 - s A)`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
 * `Matrix.charpolyRev_smul`: `det (1 - X (c A))` is `det (1 - X A)` evaluated at `c X`.
@@ -160,6 +162,14 @@ theorem eval_charpolyRev_eq_det_one_sub_smul (A : Matrix ι ι R) (t : R) :
 @[simp]
 theorem eval_one_charpolyRev (A : Matrix ι ι R) : A.charpolyRev.eval 1 = (1 - A).det := by
   rw [eval_charpolyRev_eq_det_one_sub_smul, one_smul]
+
+/-- **Evaluating the characteristic polynomial through `det (1 - X A)`.** If `t * s = 1`, then
+`det (t - A) = t ^ n det (1 - s A)` in dimension `n = Fintype.card ι`. Over a field this is
+`χ_A (t) = t ^ n det (1 - t⁻¹ A)` for `t ≠ 0`. -/
+theorem eval_charpoly_eq_pow_mul_eval_charpolyRev (A : Matrix ι ι R) {t s : R} (h : t * s = 1) :
+    A.charpoly.eval t = t ^ Fintype.card ι * A.charpolyRev.eval s := by
+  rw [eval_charpoly, eval_charpolyRev_eq_det_one_sub_smul, ← det_smul, smul_sub, smul_smul, h,
+    one_smul, smul_one_eq_diagonal, scalar_apply]
 
 /-- **The Fredholm resolvent of a matrix.** The `m`-th coefficient of the adjugate of `1 - X A`
 is `∑ k ∈ range (m + 1), c k • A ^ (m - k)`, where `c k` is the `k`-th coefficient of
