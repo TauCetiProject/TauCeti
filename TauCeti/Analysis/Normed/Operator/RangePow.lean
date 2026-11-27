@@ -41,12 +41,11 @@ theorem isUnit_restrict_range_pow_of_stable (A : X →L[𝕜] X) (n : ℕ)
   exact LinearMap.bijective_restrict_range_pow_of_stable A.toLinearMap n hk hr h
 
 /-- Let `P` be an idempotent commuting with `g` whose range is the kernel of `g ^ (p + 1)` and
-whose kernel is the range of both `g ^ p` and `g ^ (p + 1)`. Then `g` is invertible on the kernel
-of `P`: the operator `g (1 - P) + P` is invertible. -/
+whose kernel is the range of `g ^ (p + 1)`. Then `g` is invertible on the kernel of `P`: the
+operator `g (1 - P) + P` is invertible. -/
 theorem isUnit_mul_one_sub_add_of_stable {g P : X →L[𝕜] X} {p : ℕ} (hP : IsIdempotentElem P)
     (hgP : Commute g P) (hr : LinearMap.range (P : X →ₗ[𝕜] X) =
       LinearMap.ker ((g : X →ₗ[𝕜] X) ^ (p + 1)))
-    (hk : LinearMap.ker (P : X →ₗ[𝕜] X) = LinearMap.range ((g : X →ₗ[𝕜] X) ^ p))
     (hk' : LinearMap.ker (P : X →ₗ[𝕜] X) = LinearMap.range ((g : X →ₗ[𝕜] X) ^ (p + 1))) :
     IsUnit (g * (1 - P) + P) := by
   have hPP (x : X) : P (P x) = P x := congr($(hP.eq) x)
@@ -67,13 +66,13 @@ theorem isUnit_mul_one_sub_add_of_stable {g P : X →L[𝕜] X} {p : ℕ} (hP : 
       simp [hPP]
     obtain ⟨z, hz⟩ := hy
     set u := ((g : X →ₗ[𝕜] X) ^ p) z
-    have hu : P u = 0 := by
-      have h : u ∈ LinearMap.ker (P : X →ₗ[𝕜] X) := hk ▸ LinearMap.mem_range_self _ z
-      simpa using h
     have hgu : g u = y - P y := by
       rw [← hz, pow_succ', mul_apply_eq_comp, coe_coe]
-    have hPu : P (P y + u) = P y := by rw [map_add, hPP, hu, add_zero]
-    refine ⟨P y + u, ?_⟩
-    simp [hPu, hgu]
+    have hv : P (u - P u) = 0 := by rw [map_sub, hPP, sub_self]
+    have hgv : g (u - P u) = y - P y := by
+      rw [map_sub, ← hPg, hgu, map_sub, hPP, sub_self, sub_zero]
+    have hPv : P (P y + (u - P u)) = P y := by rw [map_add, hPP, hv, add_zero]
+    refine ⟨P y + (u - P u), ?_⟩
+    simp only [happly, hPv, add_sub_cancel_left, hgv, sub_add_cancel]
 
 end ContinuousLinearMap

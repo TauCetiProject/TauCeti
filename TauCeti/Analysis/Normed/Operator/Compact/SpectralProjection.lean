@@ -61,7 +61,7 @@ theorem exists_forall_range_rieszIdempotent_eq_ker_pow (hT : IsCompactOperator T
     simp [g, Algebra.algebraMap_eq_smul_one]
   -- `g` is invertible on the kernel of `P`; multiplying by the involution `P - (1 - P)` flips
   -- the sign of `g (1 - P)`.
-  have hU := ContinuousLinearMap.isUnit_mul_one_sub_add_of_stable hP hgP hr (hPn p le_rfl).2 hk'
+  have hU := ContinuousLinearMap.isUnit_mul_one_sub_add_of_stable hP hgP hr hk'
   have hinv : (P - (1 - P)) * (P - (1 - P)) = 1 := by
     simp [mul_sub, sub_mul, hP.eq]
   have hneg : -g * (1 - P) + P = (g * (1 - P) + P) * (P - (1 - P)) := by

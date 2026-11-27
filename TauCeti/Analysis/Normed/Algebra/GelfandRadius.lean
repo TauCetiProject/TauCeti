@@ -93,7 +93,7 @@ theorem IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse {R : Type*} [Norm
 
 /-- A nilpotent element has Gelfand radius zero: a positive power of it vanishes, and the Gelfand
 radius of `a ^ n` is the `n`-th power of that of `a`. -/
-theorem IsNilpotent.gelfandRadius_eq_zero {R : Type*} [NormedRing R] {a : R}
+theorem IsNilpotent.gelfandRadius_eq_zero {R : Type*} [SeminormedRing R] {a : R}
     (ha : IsNilpotent a) : gelfandRadius a = 0 := by
   obtain ⟨n, hn⟩ := ha
   cases n with
