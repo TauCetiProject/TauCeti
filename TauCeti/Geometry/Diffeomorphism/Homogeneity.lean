@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Topology.ConnectedComponents
 import TauCeti.Geometry.Manifold.Diffeomorph.ClopenSwap
+import TauCeti.Geometry.Manifold.Diffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.Diffeomorph.PointMotion
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 

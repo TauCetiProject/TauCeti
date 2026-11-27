@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus
+public import TauCeti.Geometry.Manifold.Diffeomorph.Interval
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 
@@ -32,6 +33,10 @@ interval times a chart of `M`, an interval chart is a chart of the maximal atlas
 
 ## Main definitions
 
+* `TauCeti.SmoothMappingTorus.intervalCutOpens φ a b`: the open region over the image of `(a,b)`
+  in the circle, without a nonemptiness or interval-length assumption.
+* `TauCeti.SmoothMappingTorus.intervalCutDiffeomorph φ hab`: the bundled comparison from
+  `M × (a,b)` to this cut for an interval of length at most one, including an empty fibre.
 * `TauCeti.SmoothMappingTorus.intervalChart φ a b hab`: for `b ≤ a + 1`, the `C^n` partial
   diffeomorphism from `p⁻¹ [(a, b)]` onto `(a, b) × M` inverse to `(t, x) ↦ [t, x]`.
 
@@ -88,6 +93,19 @@ theorem image_uncurry_mk_Ioo_prod :
     exact ⟨t, ht, (proj_mk φ t x).symm⟩
   · obtain ⟨x, rfl⟩ : z ∈ range (mk φ t) := by rw [range_mk]; exact hz.symm
     exact ⟨(t, x), ⟨ht, mem_univ x⟩, rfl⟩
+
+/-- The open mapping-torus region whose circle coordinate has a representative in `(a,b)`.
+No interval-length, nonemptiness or manifold-regularity assumption is needed for this open set. -/
+def intervalCutOpens (a b : ℝ) : TopologicalSpace.Opens (SmoothMappingTorus φ) :=
+  ⟨proj φ ⁻¹' (((↑) : ℝ → UnitAddCircle) '' Ioo a b),
+    (QuotientAddGroup.isOpenMap_coe _ isOpen_Ioo).preimage (continuous_proj φ)⟩
+
+/-- A point belongs to the interval cut precisely when its circle coordinate has a
+representative in `(a,b)`. -/
+@[simp]
+theorem mem_intervalCutOpens (x : SmoothMappingTorus φ) :
+    x ∈ intervalCutOpens φ a b ↔
+      proj φ x ∈ (((↑) : ℝ → UnitAddCircle) '' Ioo a b) := (Iff.rfl)
 
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] [Nonempty M]
 
@@ -153,6 +171,69 @@ theorem coe_intervalChart_fst {z : SmoothMappingTorus φ}
     ((intervalChart φ a b hab z).1 : UnitAddCircle) = proj φ z := by
   conv_rhs => rw [← mk_intervalChart φ hab hz]
   rw [proj_mk]
+
+omit [Nonempty M] in
+private theorem intervalCutMap_local :
+    IsLocalDiffeomorph (I.prod 𝓘(ℝ)) (𝓘(ℝ).prod I) n
+      (fun p : prodIooOpens M a b ↦ mk φ p.val.2 p.val.1) := fun p ↦
+  (TauCeti.isLocalDiffeomorph_subtype_val (I := I.prod 𝓘(ℝ)) (n := n) p).comp
+    (hg := ((Diffeomorph.prodComm I 𝓘(ℝ) M ℝ n).isLocalDiffeomorph _).comp
+      (hg := isLocalDiffeomorph_uncurry_mk φ _))
+
+omit [Nonempty M] [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] in
+private theorem intervalCutMap_injective (hab : b ≤ a + 1) :
+    Injective (fun p : prodIooOpens M a b ↦ mk φ p.val.2 p.val.1) := by
+  intro p q hpq
+  have hp : (p.val.2, p.val.1) ∈ Ioo a b ×ˢ univ :=
+    ⟨mem_prodIooOpens.1 p.property, trivial⟩
+  have hq : (q.val.2, q.val.1) ∈ Ioo a b ×ˢ univ :=
+    ⟨mem_prodIooOpens.1 q.property, trivial⟩
+  have h := injOn_uncurry_mk_Ioo_prod φ hab hp hq hpq
+  exact Subtype.ext (Prod.ext (congrArg Prod.snd h) (congrArg Prod.fst h))
+
+omit [Nonempty M] [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] in
+private theorem range_intervalCutMap :
+    range (fun p : prodIooOpens M a b ↦ mk φ p.val.2 p.val.1) = intervalCutOpens φ a b := by
+  -- The open cut stores precisely this preimage; only its `Opens` wrapper is unfolded.
+  change range (fun p : prodIooOpens M a b ↦ mk φ p.val.2 p.val.1) =
+    proj φ ⁻¹' (((↑) : ℝ → UnitAddCircle) '' Ioo a b)
+  rw [← image_uncurry_mk_Ioo_prod φ]
+  ext z
+  constructor
+  · rintro ⟨p, rfl⟩
+    exact ⟨(p.val.2, p.val.1), ⟨mem_prodIooOpens.1 p.property, trivial⟩, rfl⟩
+  · rintro ⟨⟨t, x⟩, ⟨ht, -⟩, rfl⟩
+    exact ⟨⟨(x, t), mem_prodIooOpens.2 ht⟩, rfl⟩
+
+omit [Nonempty M] in
+/-- The product cylinder `M × (a,b)` maps diffeomorphically to the native interval cut
+by sending `(x,t)` to the quotient class `[t,x]`. The fibre may be empty. -/
+def intervalCutDiffeomorph :
+    prodIooOpens M a b ≃ₘ^n⟮I.prod 𝓘(ℝ), 𝓘(ℝ).prod I⟯ intervalCutOpens φ a b :=
+  (intervalCutMap_local φ).diffeomorphOfInjectiveOfRangeEq
+    (intervalCutMap_injective φ hab) (range_intervalCutMap φ)
+
+omit [Nonempty M] in
+/-- The bundled interval-cut comparison is the native quotient map on its product cylinder. -/
+@[simp]
+theorem intervalCutDiffeomorph_apply_coe (p : prodIooOpens M a b) :
+    (intervalCutDiffeomorph φ hab p : SmoothMappingTorus φ) = mk φ p.val.2 p.val.1 := by
+  simp only [intervalCutDiffeomorph,
+    IsLocalDiffeomorph.diffeomorphOfInjectiveOfRangeEq_apply_coe]
+
+/-- The inverse bundled comparison reads the interval chart and swaps its real and fibre
+coordinates back to the cylinder order. -/
+@[simp]
+theorem intervalCutDiffeomorph_symm_apply_coe (x : intervalCutOpens φ a b) :
+    ((intervalCutDiffeomorph φ hab).symm x : M × ℝ) =
+      ((intervalChart φ a b hab x).2, (intervalChart φ a b hab x).1) := by
+  let p := (intervalCutDiffeomorph φ hab).symm x
+  have hclass : mk φ p.val.2 p.val.1 = (x : SmoothMappingTorus φ) := by
+    rw [← intervalCutDiffeomorph_apply_coe φ hab p]
+    exact congrArg Subtype.val ((intervalCutDiffeomorph φ hab).apply_symm_apply x)
+  have h := intervalChart_mk φ hab ((mem_prodIooOpens.1 p.property)) p.val.1
+  rw [hclass] at h
+  exact Prod.ext (congrArg Prod.snd h).symm (congrArg Prod.fst h).symm
 
 end SmoothMappingTorus
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ConnectedSum.Independence
-public import TauCeti.Geometry.Manifold.ConnectedSum.Sphere
+public import TauCeti.Geometry.Manifold.ConnectedSum.Sphere.Basic
 public import TauCeti.Geometry.Manifold.ConnectedSum.Topology
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.InnerProductSpace.Reflection

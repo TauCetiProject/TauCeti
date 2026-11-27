@@ -57,8 +57,6 @@ subset of the target manifold.
 * `Diffeomorph.nestedOpen`: for nested open subsets `U ≤ D`, the preimage of `U` in `D` is
   diffeomorphic to `U`. It compares structures on a restriction to `D` followed by a restriction
   to `U` with the direct restriction to `U`.
-* `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
-  it maps onto each other.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
 * `TauCeti.bijective_mfderiv_subtype_val`, `TauCeti.bijective_mfderiv_inclusion`: the inclusions
@@ -348,36 +346,6 @@ theorem nestedOpen_symm_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D) (x 
     (nestedOpen (I := I) (n := n) h).symm x = ⟨⟨x.val, h x.property⟩, x.property⟩ :=
   (rfl)
 
-section Subtype
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {G : Type*} [TopologicalSpace G]
-  {J : ModelWithCorners 𝕜 F G} {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
-  {U : TopologicalSpace.Opens M} {V : TopologicalSpace.Opens N}
-
-/-- A diffeomorphism `g : M ≃ₘ N` restricts to a diffeomorphism between open subsets `U` and `V`
-that it maps onto each other, each carrying the charts Mathlib restricts to it. This is the smooth
-form of Mathlib's `Homeomorph.subtype`. -/
-def subtype (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) : U ≃ₘ^n⟮I, J⟯ V where
-  toEquiv := g.toEquiv.subtypeEquiv h_iff
-  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
-    (g.contMDiff.comp contMDiff_subtypeVal)
-  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
-    (g.symm.contMDiff.comp contMDiff_subtypeVal)
-
-/-- The restriction `Diffeomorph.subtype` evaluates as the diffeomorphism. -/
-@[simp]
-theorem subtype_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) (x : U) :
-    (g.subtype h_iff x : N) = g x :=
-  (rfl)
-
-/-- The inverse of the restriction `Diffeomorph.subtype` evaluates as the inverse
-diffeomorphism. -/
-@[simp]
-theorem subtype_symm_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) (y : V) :
-    ((g.subtype h_iff).symm y : M) = g.symm y :=
-  (rfl)
-
-end Subtype
 
 end Diffeomorph
 

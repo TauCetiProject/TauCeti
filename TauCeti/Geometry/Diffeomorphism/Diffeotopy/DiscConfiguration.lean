@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Configuration
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Disjoint
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.RadialContraction
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Orientation
+public import TauCeti.Geometry.Manifold.Orientation.CoordinateBall
+
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 
 /-!
 # Moving finite ordered configurations of discs
@@ -36,12 +39,22 @@ matched, a sufficiently small shrink of the moved `f i` lies in the image of `g 
 relative disc theorem matches it with the same shrink of `g i`. Undoing the shrink of the `g i`
 finishes.
 
+Independent orthogonal changes of the disc coordinates remove the orientation condition,
+without changing the prescribed closed radius. This normalization step is adapted from the
+formalizations in [frenzymath/PoincareConjecture](https://github.com/frenzymath/PoincareConjecture)
+and [frenzymath/lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions).
+
 ## Main results
 
 * `TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_pairwise_disjoint`: in dimension greater
   than one, two finite ordered configurations of orientation-preserving discs with collars in a
   preconnected open set agree on any compact subset of `E` after a diffeotopy supported in a
   compact subset of that open set.
+* `TauCeti.SmoothEmbedding.exists_diffeomorph_eqOn_comp_linearIsometryEquiv_of_pairwise_disjoint`:
+  for inner-product models on an oriented, preconnected Hausdorff boundaryless manifold, when
+  the model dimension is greater than one, independent orthogonal changes of coordinates remove
+  the orientation condition on the embeddings and match any prescribed closed ball by one
+  ambient diffeomorphism.
 
 ## References
 
@@ -53,7 +66,7 @@ finishes.
 
 public noncomputable section
 
-open Set Function Topology
+open Set Function Metric Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothEmbedding
@@ -179,5 +192,52 @@ theorem exists_diffeotopy_eqOn_of_pairwise_disjoint [T2Space M] [Finite ι]
       transDiffeomorph_apply] at hSfi hLi hSgi
     simp only [comp_apply, Diffeotopy.final_trans, Diffeotopy.final_symm, Diffeomorph.coe_trans,
       hSfi, hLi, ← hSgi, Diffeomorph.symm_apply_apply]
+
+end TauCeti.SmoothEmbedding
+
+namespace TauCeti.SmoothEmbedding
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  {ι κ : Type*} [Fintype κ]
+
+/-- Two finite ordered families of disjoint discs in an oriented, preconnected Hausdorff
+boundaryless manifold, modelled on an inner-product space of dimension greater than one, agree
+on a prescribed closed ball after one ambient diffeomorphism and independent orthogonal changes
+of their coordinates. No orientation condition is imposed on the embeddings. -/
+theorem exists_diffeomorph_eqOn_comp_linearIsometryEquiv_of_pairwise_disjoint
+    [T2Space M] [PreconnectedSpace M] [Finite ι] (hdim : 1 < Module.rank ℝ E)
+    (f g : ι → SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M)
+    (hfd : Pairwise (Disjoint on fun i ↦ range (f i)))
+    (hgd : Pairwise (Disjoint on fun i ↦ range (g i)))
+    (oM : Manifold.Orientation 𝓘(ℝ, E) M κ) (r : ℝ) :
+    ∃ R : ι → E ≃ₗᵢ[ℝ] E, ∃ Φ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M,
+      ∀ i, EqOn (Φ ∘ f i) (g i ∘ R i) (closedBall 0 r) := by
+  classical
+  have : Nontrivial E := rank_pos_iff_nontrivial.mp (lt_trans zero_lt_one hdim)
+  let oE : Manifold.Orientation 𝓘(ℝ, E) E κ :=
+    .model (((Module.finBasisOfFinrankEq ℝ E oM.card_eq.symm).reindex
+      (Fintype.equivFin κ).symm).orientation) oM.card_eq
+  choose Rf hRf using fun i ↦
+    exists_linearIsometryEquiv_isOrientationPreservingAt_zero (f i) (by simp) oE oM
+  choose Rg hRg using fun i ↦
+    exists_linearIsometryEquiv_isOrientationPreservingAt_zero (g i) (by simp) oE oM
+  let F i := (f i).compDiffeomorph ((Rf i).toContinuousLinearEquiv.toContDiffDiffeomorph ∞)
+  let G i := (g i).compDiffeomorph ((Rg i).toContinuousLinearEquiv.toContDiffDiffeomorph ∞)
+  have hF (i) : ⇑(F i) = f i ∘ Rf i := by simp [F]
+  have hG (i) : ⇑(G i) = g i ∘ Rg i := by simp [G]
+  obtain ⟨Ψ, -, -, -, -, hΨ⟩ := exists_diffeotopy_eqOn_of_pairwise_disjoint
+    hdim isOpen_univ isPreconnected_univ F G
+    (by simpa only [F, SmoothEmbedding.range_compDiffeomorph] using hfd)
+    (by simpa only [G, SmoothEmbedding.range_compDiffeomorph] using hgd)
+    (fun _ ↦ subset_univ _) (fun _ ↦ subset_univ _)
+    oE oM (fun i ↦ by rw [hF]; exact hRf i) (fun i ↦ by rw [hG]; exact hRg i)
+    (isCompact_closedBall (0 : E) r)
+  refine ⟨fun i ↦ (Rf i).symm.trans (Rg i), Ψ.final, fun i x hx ↦ ?_⟩
+  have hx' : (Rf i).symm x ∈ closedBall 0 r := by
+    simpa only [mem_closedBall_zero_iff, LinearIsometryEquiv.norm_map] using hx
+  have h := hΨ i hx'
+  simpa only [hF, hG, comp_apply, LinearIsometryEquiv.apply_symm_apply,
+    LinearIsometryEquiv.trans_apply] using h
 
 end TauCeti.SmoothEmbedding
