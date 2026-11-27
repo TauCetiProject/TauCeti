@@ -68,7 +68,7 @@ theorem lpKoopman_trivial (g : G) :
     letI : MulAction G X := MulAction.compHom X (1 : G →* Function.End X)
     lpKoopman ℂ ℂ p μ (fun _ ↦ MeasurePreserving.id μ) g = 1 :=
   letI : MulAction G X := MulAction.compHom X (1 : G →* Function.End X)
-  lpKoopman_eq_one_of_forall_smul_eq (fun _ _ ↦ by simp [MulAction.compHom_smul_def]) g
+  lpKoopman_eq_one_of_forall_smul_eq fun _ ↦ by simp [MulAction.compHom_smul_def]
 
 end Trivial
 
