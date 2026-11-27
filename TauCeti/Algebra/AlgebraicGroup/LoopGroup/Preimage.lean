@@ -78,21 +78,6 @@ namespace TauCeti.HopfAlgebra
 
 variable {k : Type u} [CommRing k] (H : _root_.CommHopfAlgCat.{v} k) (I : HopfIdeal k H)
 
-section EvalZero
-
-variable {R : Type w} [CommRing R] [Algebra k R] {S : Type w'} [CommRing S] [Algebra k S]
-
-/-- **Naturality of reduction modulo `t`.** For `φ : R →ₐ[k] S`, reducing the coefficientwise
-image of a positive loop under `φ` is mapping its reduction along `φ`. -/
-theorem positiveLoopEvalZero_naturality {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
-    (φ : R →ₐ[k] S) (g : WithConv (H →ₐ[k] R⟦X⟧)) :
-    positiveLoopEvalZero k H S (AlgHom.mapValue (PowerSeries.mapAlgHom φ) g) =
-      AlgHom.mapValue φ (positiveLoopEvalZero k H R g) :=
-  WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
-    simp [AlgHom.mapValue_apply, PowerSeries.mapAlgHom_apply]
-
-end EvalZero
-
 section Subgroup
 
 variable (R : Type w) [CommRing R] [Algebra k R]
