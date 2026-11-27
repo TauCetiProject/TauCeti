@@ -30,6 +30,8 @@ public section
 
 namespace TauCeti
 
+section CommRing
+
 variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [CommRing S] [Algebra R S]
   [FaithfulSMul R S] [IsDomain S] [CharZero S]
   {P : RootPairing ι R (κ → R) (κ → R)} (hP : ∀ x y, P.toLinearMap x y = x ⬝ᵥ y)
@@ -44,5 +46,22 @@ theorem HasCartanType.rootPairingBaseChange (h : HasCartanType P b t) :
   refine (hasCartanType_iff _ _).2 ⟨(supportEquivRootPairingBaseChangeBase S P hP b).trans e,
     fun i j ↦ ?_⟩
   exact (cartanMatrix_rootPairingBaseChangeBase S P hP b i j).trans (he _ _)
+
+end CommRing
+
+section Field
+
+variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [Field S] [Algebra R S]
+  [FaithfulSMul R S] {P : RootPairing ι R (κ → R) (κ → R)}
+  (hP : ∀ x y, P.toLinearMap x y = x ⬝ᵥ y) [P.IsCrystallographic] {b : P.Base} {t : DynkinType}
+
+/-- Base change of a dot-product root datum into a field is a root system when its base has
+Cartan type `t` of rank `Fintype.card κ` and its coroots span the cocharacter lattice. -/
+theorem HasCartanType.isRootSystem_rootPairingBaseChange (h : HasCartanType P b t)
+    (hrank : t.rank = Fintype.card κ) (hcor : Submodule.span R (Set.range P.coroot) = ⊤) :
+    (TauCeti.rootPairingBaseChange S P hP).IsRootSystem :=
+  isRootSystem_rootPairingBaseChange_of_card_support S P hP b (h.card_support.trans hrank) hcor
+
+end Field
 
 end TauCeti

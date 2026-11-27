@@ -86,6 +86,10 @@ private def singleParityCheckCoordEquiv (n : ℕ) :
       simp only [AddSubgroupClass.coe_sub, Pi.sub_apply, sum_sub_distrib, sub_eq_zero]
       exact sum_Iic_sum_smul_adjacentDiff R _ k
 
+private lemma singleParityCheckCoordEquiv_apply (n : ℕ)
+    (x : singleParityCheckCode R (Fin (n + 1))) (i : Fin n) :
+    singleParityCheckCoordEquiv R n x i = ∑ j ∈ Iic i.castSucc, (x : Fin (n + 1) → R) j := rfl
+
 private lemma singleParityCheckCoordEquiv_symm_apply (n : ℕ) (y : Fin n → R) :
     (singleParityCheckCoordEquiv R n).symm y =
       ∑ i : Fin n, y i • singleParityCheckAdjacentDiff R n i := rfl
@@ -95,22 +99,16 @@ basis vector is `eᵢ - eᵢ₊₁`, and the `i`-th coordinate of a vector `x` i
 `∑ j ∈ Iic i.castSucc, x j`. -/
 noncomputable def singleParityCheckCodeBasis (n : ℕ) :
     Module.Basis (Fin n) R (singleParityCheckCode R (Fin (n + 1))) :=
-  Module.Basis.ofRepr
-    ((singleParityCheckCoordEquiv R n).trans (Finsupp.linearEquivFunOnFinite R R (Fin n)).symm)
+  Module.Basis.ofEquivFun (singleParityCheckCoordEquiv R n)
 
 /-- The `i`-th vector of `singleParityCheckCodeBasis R n` coerces to `eᵢ - eᵢ₊₁`. -/
 @[simp]
 theorem coe_singleParityCheckCodeBasis_apply (n : ℕ) (i : Fin n) :
     (singleParityCheckCodeBasis R n i : Fin (n + 1) → R) =
       Pi.single i.castSucc 1 - Pi.single i.succ 1 := by
-  have h : singleParityCheckCodeBasis R n i = singleParityCheckAdjacentDiff R n i := by
-    rw [singleParityCheckCodeBasis, Module.Basis.coe_ofRepr]
-    dsimp only
-    rw [LinearEquiv.trans_symm, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
-      singleParityCheckCoordEquiv_symm_apply]
-    simp [Finsupp.single_apply]
-  rw [h]
-  rfl
+  rw [singleParityCheckCodeBasis, congrFun (Module.Basis.coe_ofEquivFun _) i,
+    singleParityCheckCoordEquiv_symm_apply]
+  simp [singleParityCheckAdjacentDiff, Pi.single_apply]
 
 /-- Coordinate evaluation of the `i`-th vector of `singleParityCheckCodeBasis R n`. -/
 theorem coe_singleParityCheckCodeBasis_apply_apply (n : ℕ) (i : Fin n) (j : Fin (n + 1)) :
@@ -124,7 +122,7 @@ theorem coe_singleParityCheckCodeBasis_apply_apply (n : ℕ) (i : Fin n) (j : Fi
 theorem singleParityCheckCodeBasis_repr_apply (n : ℕ)
     (x : singleParityCheckCode R (Fin (n + 1))) (i : Fin n) :
     (singleParityCheckCodeBasis R n).repr x i = ∑ j ∈ Iic i.castSucc, (x : Fin (n + 1) → R) j :=
-  (rfl)
+  (Module.Basis.ofEquivFun_repr_apply _ x i).trans (singleParityCheckCoordEquiv_apply R n x i)
 
 /-- **The partial-sum expansion.** Every tuple `x : Fin (n + 1) → R` with coordinate sum zero is
 the linear combination of the adjacent-difference basis vectors `eₖ - eₖ₊₁` whose coefficients are

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import Mathlib.LinearAlgebra.RootSystem.Chain
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.Matrix.Dual
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Algebra.Pi
 
 /-!
@@ -275,6 +276,28 @@ def supportEquivRootPairingBaseChangeBase :
   pairingIn_rootPairingBaseChange S P hP i j
 
 end Base
+
+section BaseRootSystem
+
+/-- Base change into a field produces a root system when the original pairing has a base whose
+support size equals `Fintype.card κ` and whose coroots span the cocharacter lattice. -/
+theorem isRootSystem_rootPairingBaseChange_of_card_support {ι κ R : Type*} (S : Type*)
+    [Fintype κ] [CommRing R] [Field S] [Algebra R S] [FaithfulSMul R S]
+    (P : RootPairing ι R (κ → R) (κ → R)) (hP : ∀ x y, P.toLinearMap x y = x ⬝ᵥ y)
+    (b : P.Base) (hcard : b.support.card = Fintype.card κ)
+    (hcor : span R (range P.coroot) = ⊤) :
+    (rootPairingBaseChange S P hP).IsRootSystem where
+  span_root_eq_top := top_le_iff.mp <| by
+    have hcard' : Fintype.card (rootPairingBaseChangeBase S P hP b).support =
+        Module.finrank S (κ → S) := by
+      rw [Fintype.card_coe, Module.finrank_fintype_fun_eq_card,
+        support_rootPairingBaseChangeBase, hcard]
+    rw [← (rootPairingBaseChangeBase S P hP b).linearIndepOn_root.span_eq_top_of_card_eq_finrank'
+      hcard']
+    exact Submodule.span_mono fun _ ⟨i, hi⟩ ↦ hi ▸ mem_range_self (i : ι)
+  span_coroot_eq_top := span_range_coroot_rootPairingBaseChange_eq_top S P hP hcor
+
+end BaseRootSystem
 
 /-! ## Root strings -/
 

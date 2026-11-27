@@ -7,8 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.CartanType
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NonSimplyLaced
 
 /-!
@@ -52,23 +52,15 @@ instance instIsReducedTypeBBaseChangeRootSystem (n : ℕ) :
 /-- Over a characteristic-zero field, the roots and coroots of `typeBBaseChangeRootSystem K n`
 span `Fin n → K`. -/
 instance instIsRootSystemTypeBBaseChangeRootSystem (n : ℕ) :
-    (typeBBaseChangeRootSystem K n).IsRootSystem where
-  span_root_eq_top := top_le_iff.mp <| by
-    have hcard : Fintype.card (typeBBaseChangeBase K n).support = Module.finrank K (Fin n → K) := by
-      rw [Fintype.card_coe, Module.finrank_fin_fun, typeBBaseChangeBase,
-        support_rootPairingBaseChangeBase,
-        (hasCartanType_typeBSimplyConnectedRootDatum n).card_support, DynkinType.rank_B]
-    rw [← (typeBBaseChangeBase K n).linearIndepOn_root.span_eq_top_of_card_eq_finrank' hcard]
-    exact Submodule.span_mono fun _ ⟨i, hi⟩ ↦ hi ▸ Set.mem_range_self (i : Fin (2 * n ^ 2))
-  span_coroot_eq_top := span_range_coroot_rootPairingBaseChange_eq_top K _ _
+    (typeBBaseChangeRootSystem K n).IsRootSystem :=
+  (hasCartanType_typeBSimplyConnectedRootDatum n).isRootSystem_rootPairingBaseChange K _
+    (by rw [DynkinType.rank_B, Fintype.card_fin])
     (corootSpan_typeBSimplyConnectedRootDatum_eq_top n)
 
 /-- `typeBBaseChangeBase K n` has Cartan type `B n`. -/
 theorem hasCartanType_typeBBaseChangeBase (n : ℕ) :
-    HasCartanType (typeBBaseChangeRootSystem K n) (typeBBaseChangeBase K n) (.B n) := by
-  obtain ⟨e, he⟩ := (hasCartanType_iff _ _).mp (hasCartanType_typeBSimplyConnectedRootDatum n)
-  exact (hasCartanType_iff _ _).mpr ⟨(supportEquivRootPairingBaseChangeBase K _ _ _).trans e,
-    fun i j ↦ (cartanMatrix_rootPairingBaseChangeBase K _ _ _ i j).trans (he _ _)⟩
+    HasCartanType (typeBBaseChangeRootSystem K n) (typeBBaseChangeBase K n) (.B n) :=
+  (hasCartanType_typeBSimplyConnectedRootDatum n).rootPairingBaseChange K _
 
 /-- The bilinear pairing of `typeBBaseChangeRootSystem K n` is `dotProduct`. -/
 @[simp] theorem toLinearMap_typeBBaseChangeRootSystem (n : ℕ) (x y : Fin n → K) :

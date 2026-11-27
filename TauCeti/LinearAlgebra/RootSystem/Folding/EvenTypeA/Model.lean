@@ -103,6 +103,33 @@ theorem evenTypeABasisVec_dotProduct_evenTypeABasisVec (R : Type*) [CommRing R] 
   simp only [Fin.ext_iff, val_evenTypeALeftIdx, val_rev_evenTypeALeftIdx]
   split_ifs <;> first | (norm_num; done) | (exfalso; omega)
 
+/-- Every long-root combination `±fᵢ ± fⱼ` (`i ≠ j`) has squared length `4`. -/
+theorem evenTypeABasisVec_signed_add_dotProduct_self (R : Type*) [CommRing R] {n : ℕ}
+    {i j : Fin n} (hij : i ≠ j) {x : singleParityCheckCode R (Fin (2 * n + 1))}
+    (hx : x = evenTypeABasisVec R n i + evenTypeABasisVec R n j ∨
+      x = evenTypeABasisVec R n i - evenTypeABasisVec R n j ∨
+      x = -evenTypeABasisVec R n i + evenTypeABasisVec R n j ∨
+      x = -evenTypeABasisVec R n i - evenTypeABasisVec R n j) :
+    (x : Fin (2 * n + 1) → R) ⬝ᵥ (x : Fin (2 * n + 1) → R) = 4 := by
+  rcases hx with rfl | rfl | rfl | rfl <;>
+  · simp only [Submodule.coe_add, Submodule.coe_sub, Submodule.coe_neg, add_dotProduct,
+      dotProduct_add, sub_dotProduct, dotProduct_sub, neg_dotProduct, dotProduct_neg,
+      evenTypeABasisVec_dotProduct_evenTypeABasisVec, hij, hij.symm, ite_true, ite_false]
+    norm_num
+
+/-- Pairing `fᵢ` with a long-root combination `±fᵢ ± fⱼ` (`i ≠ j`) gives `2` or `-2`. -/
+theorem evenTypeABasisVec_dotProduct_signed_add (R : Type*) [CommRing R] {n : ℕ}
+    {i j : Fin n} (hij : i ≠ j) {x : singleParityCheckCode R (Fin (2 * n + 1))}
+    (hx : x = evenTypeABasisVec R n i + evenTypeABasisVec R n j ∨
+      x = evenTypeABasisVec R n i - evenTypeABasisVec R n j ∨
+      x = -evenTypeABasisVec R n i + evenTypeABasisVec R n j ∨
+      x = -evenTypeABasisVec R n i - evenTypeABasisVec R n j) :
+    (evenTypeABasisVec R n i : Fin (2 * n + 1) → R) ⬝ᵥ (x : Fin (2 * n + 1) → R) = 2 ∨
+      (evenTypeABasisVec R n i : Fin (2 * n + 1) → R) ⬝ᵥ (x : Fin (2 * n + 1) → R) = -2 := by
+  rcases hx with rfl | rfl | rfl | rfl <;> [left; left; right; right] <;>
+    simp [dotProduct_add, dotProduct_sub, dotProduct_neg,
+      evenTypeABasisVec_dotProduct_evenTypeABasisVec, hij]
+
 private def evenTypeAFoldAtom (R : Type*) [CommRing R] (n : ℕ) (a : Fin (2 * n + 1)) :
     singleParityCheckCode R (Fin (2 * n + 1)) := typeAZeroSumVec R a a.rev
 
@@ -189,16 +216,15 @@ private lemma evenTypeAFixedLeftEquiv_symm_apply (n : ℕ) (y : Fin n → K) :
 /-- The vectors `fᵢ = eᵢ - e₂ₙ₋ᵢ` (`i : Fin n`) form a `K`-basis of the fixed subspace. -/
 noncomputable def evenTypeAFixedBasis (n : ℕ) :
     Module.Basis (Fin n) K (LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap) :=
-  Module.Basis.ofRepr
-    ((evenTypeAFixedLeftEquiv K n).trans (Finsupp.linearEquivFunOnFinite K K (Fin n)).symm)
+  Module.Basis.ofEquivFun (evenTypeAFixedLeftEquiv K n)
 
 /-- The `i`-th vector of `evenTypeAFixedBasis K n` coerces to `evenTypeABasisVec K n i`. -/
 @[simp] theorem coe_evenTypeAFixedBasis_apply (n : ℕ) (i : Fin n) :
     (evenTypeAFixedBasis K n i : singleParityCheckCode K (Fin (2 * n + 1))) =
       evenTypeABasisVec K n i := by
-  rw [evenTypeAFixedBasis, Module.Basis.coe_ofRepr]; dsimp only
-  rw [LinearEquiv.trans_symm, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
-    evenTypeAFixedLeftEquiv_symm_apply]; simp [Finsupp.single_apply]
+  rw [evenTypeAFixedBasis, congrFun (Module.Basis.coe_ofEquivFun _) i,
+    evenTypeAFixedLeftEquiv_symm_apply]
+  simp [Pi.single_apply]
 
 private lemma orbitSum_typeAZeroSumRevAut_eq (n : ℕ) (p : TypeAIndex (2 * n)) :
     (typeAZeroSumRootPairing K (2 * n)).orbitSum (typeAZeroSumRevAut K (2 * n)) p =
