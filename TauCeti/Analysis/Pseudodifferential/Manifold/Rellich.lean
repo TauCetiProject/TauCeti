@@ -114,12 +114,15 @@ theorem isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwa
     IsCompact (closure ((fun u j ↦ SchwartzMap.toBesselPotentialSpaceCLM r 2
         ((e j).cutoffPushforwardSchwartz (he j) (φ j) (P u))) ''
       {u | ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
-        ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ ≤ B})) :=
+        ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ ≤ B})) := by
+  have := compactSpace_of_forall_sum_cutoffPullback_eq_one he' ψ hψ
   -- The readings of `P u` in `H^{s - m}` are bounded by those of `u` in `H^s`.
-  isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_norm_le he φ
-    (fun _ u ↦ P u) (fun _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
-    (fun j ↦ exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum hP
-      (he j) (φ j) he' ψ hψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s) hrs B
+  refine isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_norm_le he φ
+    (fun _ u ↦ P u) (fun _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) (fun j ↦ ?_) hrs B
+  obtain ⟨_, -, hK⟩ :=
+    IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum
+      (isProperlySupported_of_compactSpace P) (he j) (φ j)
+  exact hK he' ψ (fun x _ ↦ hψ x) m hP 2 ENNReal.one_lt_two ENNReal.ofNat_ne_top s
 
 /-- **Eigenspaces of operators of negative order are finite-dimensional.** If `P` is a classical
 pseudodifferential operator of negative order `m` on the smooth functions of a compact manifold,
