@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
+import TauCeti.AlgebraicGeometry.Restrict
 import Mathlib.AlgebraicGeometry.QuasiAffine
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Tower
@@ -52,6 +53,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.Scheme.stalkFromSpecTopAlgEquiv`: on an affine scheme `Z`, the canonical
   `Γ(Z, ⊤)`-algebra isomorphism between `Localization.AtPrime M` and the stalk at a prime `M` of
   `Γ(Z, ⊤)`.
+* `AlgebraicGeometry.bijective_algebraMap_Spec_top`,
+  `AlgebraicGeometry.Spec_map_algebraMap_Spec_top`: the structure map `R → Γ(Spec R, ⊤)` is
+  bijective, and `Spec` of it is the inclusion of the affine open `⊤`.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_comp_eq_SpecMap`: on an affine open `U` of `X`, a
   morphism `X ⟶ Spec R` restricted along `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map
   `R → Γ(X, U)` it induces.
@@ -212,6 +216,28 @@ theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.
   rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
     IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
 
+/-- The structure map `R → Γ(Spec R, ⊤)` is the inverse of `Γ(Spec R, ⊤) ≅ R`. This is Mathlib's
+`Scheme.ΓSpecIso_inv`, whose right-hand side uses the algebra structure of the structure sheaf
+rather than the one of `Γ(Spec R, ⊤)`, so it does not rewrite the statements below. -/
+private theorem algebraMap_Spec_top {R : CommRingCat.{u}} :
+    algebraMap R Γ(Spec R, ⊤) = (Scheme.ΓSpecIso R).inv.hom := by
+  simp only [IsAffineOpen.algebraMap_Spec_obj, homOfLE_refl, op_id, CategoryTheory.Functor.map_id,
+    Category.comp_id]
+
+/-- The structure map `R → Γ(Spec R, ⊤)` is bijective. -/
+theorem bijective_algebraMap_Spec_top {R : CommRingCat.{u}} :
+    Function.Bijective (algebraMap R Γ(Spec R, ⊤)) := by
+  rw [algebraMap_Spec_top]
+  exact ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv
+
+/-- `Spec Γ(Spec R, ⊤) ⟶ Spec R` induced by `R → Γ(Spec R, ⊤)` is the inclusion of the affine open
+`⊤`. -/
+theorem Spec_map_algebraMap_Spec_top {R : CommRingCat.{u}} :
+    Spec.map (CommRingCat.ofHom (algebraMap R Γ(Spec R, ⊤))) =
+      (isAffineOpen_top (Spec R)).fromSpec := by
+  rw [IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, algebraMap_Spec_top,
+    CommRingCat.ofHom_hom]
+
 /-- Pointwise form of `AlgebraicGeometry.IsAffineOpen.map_fromSpec`: for affine opens `V ≤ U`,
 the point of `Spec Γ(X, U)` induced by restriction from a point `p` of `Spec Γ(X, V)` is the
 same point of `X` as `p`. -/
@@ -302,6 +328,23 @@ lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : 
       _ = k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
         rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
           Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
+
+/-- Over an affine base `Y`, the preimage `f'⁻¹ V` of an affine open `V` of `Y'` is the base change
+of `X` along `Spec Γ(Y', V) ⟶ Spec Γ(Y, ⊤)`. -/
+lemma _root_.CategoryTheory.IsPullback.isPullback_preimage_ι_comp
+    {X Y X' Y' : Scheme.{u}} {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
+    (H : IsPullback g' f' f g) [IsAffine Y] {V : Y'.Opens}
+    (hV : IsAffineOpen V) (hVg : V ≤ g ⁻¹ᵁ ⊤) :
+    IsPullback ((f' ⁻¹ᵁ V).ι ≫ g') (f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom)
+      (f ≫ Y.toSpecΓ) (Spec.map (g.appLE ⊤ V hVg)) := by
+  have : IsIso V.toSpecΓ := inferInstanceAs (IsIso hV.isoSpec.hom)
+  have hB : IsPullback (V.ι ≫ g) V.toSpecΓ Y.toSpecΓ (Spec.map (g.appLE ⊤ V hVg)) := by
+    refine IsPullback.of_vert_isIso ⟨?_⟩
+    rw [Category.assoc, Scheme.toSpecΓ_naturality,
+      ← Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top_assoc, ← Spec.map_comp]
+    -- `g.appLE ⊤ V hVg` is by definition `g.appTop` followed by restriction to `V`.
+    rfl
+  exact ((f'.isPullback_resLE_of_eq V rfl).flip.paste_horiz H).paste_vert hB
 
 /-- Reading a function on an affine open chart `ι : Spec A ⟶ X` as an element of `A` and
 mapping it along `φ : A ⟶ A'` is the same as restricting it to the image `V` of `Spec A'` and
@@ -548,6 +591,33 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
     ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
   obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
   exact Subtype.ext hzw.symm
+
+/-- Let `j : Y ⟶ X` be an open immersion and `U` a quasi-compact and quasi-separated open of `X`,
+for instance an affine open, whose intersection with the image of `j` is the basic open of
+`s ∈ Γ(X, U)`. Then the sections of `Y` over `j⁻¹ U` are the localization `Γ(X, U)_s`, as a
+`Γ(X, U)`-algebra through `j`. -/
+theorem Scheme.Hom.isLocalization_app_of_inf_opensRange_eq {X Y : Scheme.{u}} (j : Y ⟶ X)
+    [IsOpenImmersion j] {U : X.Opens} (hU : IsCompact (U : Set X))
+    (hU' : IsQuasiSeparated (U : Set X)) {s : Γ(X, U)} (h : U ⊓ j.opensRange = X.basicOpen s) :
+    letI := (j.app U).hom.toAlgebra
+    IsLocalization.Away s Γ(Y, j ⁻¹ᵁ U) := by
+  let := (j.app U).hom.toAlgebra
+  have := isLocalization_basicOpen_of_qcqs hU hU' s
+  -- The image `j (j⁻¹ U) = U ∩ j(Y)` is the basic open `D(s)`.
+  have e : j ''ᵁ j ⁻¹ᵁ U = X.basicOpen s := by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, inf_comm, h]
+  -- Transport along `Γ(X, D(s)) = Γ(X, j (j⁻¹ U)) ≅ Γ(Y, j⁻¹ U)`, which is compatible with the
+  -- maps from `Γ(X, U)` by `Scheme.Hom.app_appIso_inv`.
+  have key : X.presheaf.map (homOfLE (X.basicOpen_le s)).op ≫ X.presheaf.map (eqToHom e).op =
+      j.app U ≫ (j.appIso (j ⁻¹ᵁ U)).inv := by
+    rw [j.app_appIso_inv, ← Functor.map_comp]
+    rfl
+  refine IsLocalization.isLocalization_of_algEquiv (.powers s) (AlgEquiv.ofRingEquiv
+    (f := (X.presheaf.mapIso (eqToIso e).op ≪≫ j.appIso (j ⁻¹ᵁ U)).commRingCatIsoToRingEquiv)
+    fun x ↦ ?_)
+  calc _ = (j.appIso (j ⁻¹ᵁ U)).hom ((j.appIso (j ⁻¹ᵁ U)).inv (j.app U x)) :=
+        congrArg (j.appIso (j ⁻¹ᵁ U)).hom congr($(key).hom x)
+    _ = _ := (j.appIso (j ⁻¹ᵁ U)).inv_hom_id_apply _
 
 end AlgebraicGeometry
 

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Finite
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Energy
-import TauCeti.Topology.Order.MonotoneConvergence
+import TauCeti.Topology.Order.Monotone.Convergence
 
 /-!
 # Finite-energy Floer solutions on the plumbed four-punctured sphere

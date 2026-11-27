@@ -11,7 +11,10 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Local.W1p
 import TauCeti.Analysis.Sobolev.Morrey.Exponent
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
+public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # The Sobolev embedding for local Sobolev maps and Morrey for `kp > 2`
@@ -33,7 +36,9 @@ Iterating this, a member of `W^{k,p}_loc(Ω, F)` with `1 ≤ p` and `kp > 2` lie
 exponent supplied by `TauCeti.exists_le_and_inv_sub_inv_le_and_lt_mul`. The order-one Morrey
 embedding of `TauCeti.Analysis.Sobolev.Local.Morrey` then makes the precise representative of `u`
 continuous on `Ω`, and the order-one `L^∞` bound gives the local estimate
-`‖u‖_{L^∞(V)} ≤ C ‖u‖_{W^{k,p}(W)}`. These continuity and `L^∞` results hold for every
+`‖u‖_{L^∞(V)} ≤ C ‖u‖_{W^{k,p}(W)}`. For continuous maps the `L^∞` norm on an open set is the
+supremum, so convergence of continuous maps in `W^{k,p}` on compact subsets of `Ω` is locally
+uniform on `Ω`. These continuity and `L^∞` results hold for every
 `1 ≤ p ≤ ∞` with `kp > 2`; Hölder and higher `C^{m,α}` regularity are not treated here.
 
 The scalar estimate is the interior Sobolev embedding of `TauCeti.W1p`
@@ -46,6 +51,7 @@ estimates follow in a basis of `F`.
 
 * `TauCeti.exists_eLpNorm_le_mul_eLpNormWkp_one`: the local Sobolev inequality
   `‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(W)}`.
+* `TauCeti.exists_eLpNorm_le_mul_eLpNormWkp_one_of_ne_top`: the same with exponents in `ℝ≥0∞`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_one`: the order-one `L^∞` bound for `q > 2`.
 * `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`, and
   `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top`, the same with exponents in `ℝ≥0∞`.
@@ -66,6 +72,8 @@ estimates follow in a basis of `F`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul`: the local `L^∞` bound for
   `kp > 2`.
 * `TauCeti.MemWkpLoc.memLpLoc_top_of_two_lt_mul`: local boundedness of `W^{k,p}_loc` for `kp > 2`.
+* `TauCeti.tendstoLocallyUniformlyOn_of_tendsto_eLpNormWkp_of_two_lt_mul`: for `kp > 2`,
+  convergence of continuous maps in `W^{k,p}` on compact sets is locally uniform.
 
 ## References
 
@@ -179,24 +187,20 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_one {q : ℝ≥0∞} (hq : 2 < q)
 `u ∈ W^{1,q}_loc(Ω, F)` is locally `L^s` on `Ω`. This includes the critical exponent
 `1/s = 1/q - 1/2` for `q < 2`. -/
 theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le (hu : MemWkpLoc q Ω 1 u) (hq : 1 ≤ q)
-    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 2⁻¹) : MemLpLoc s Ω u := by
-  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
-  obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
-  have hKc : closure K = K := hK.isClosed.closure_eq
-  obtain ⟨C, hC⟩ := exists_eLpNorm_le_mul_eLpNormWkp_one (F := F) (W := W) hq hqs hgap
-    (by rwa [hKc]) (by rwa [hKc])
-  exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
-    (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
+    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 2⁻¹) : MemLpLoc s Ω u :=
+  hu.memLpLoc_of_forall_exists_eLpNorm_le fun hVc hVW =>
+    exists_eLpNorm_le_mul_eLpNormWkp_one hq hqs hgap hVc hVW
 
-/-- The local Sobolev embedding `W^{1,r}_loc(Ω, F) ⊂ Lᵗ_loc(Ω, F)` for exponents in `ℝ≥0∞`: if
-`1 ≤ r ≤ t < ∞` and `1/r - 1/t ≤ 1/2`, every `u ∈ W^{1,r}_loc(Ω, F)` is locally `Lᵗ` on `Ω`. -/
-theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : MemWkpLoc r Ω 1 u)
-    (hr : 1 ≤ r) (ht : t ≠ ⊤) (hrt : r ≤ t) (hgap : r⁻¹ - t⁻¹ ≤ 2⁻¹) : MemLpLoc t Ω u := by
+/-- The local Sobolev inequality for exponents in `ℝ≥0∞`: if `1 ≤ r ≤ t < ∞` and
+`1/r - 1/t ≤ 1/2`, and `V` has compact closure inside the open set `W`, there is a constant `C`
+such that every `u : ℂ → F` satisfies `‖u‖_{Lᵗ(V)} ≤ C ‖u‖_{W^{1,r}(W)}`. -/
+theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_ne_top {r t : ℝ≥0∞} (hr : 1 ≤ r) (ht : t ≠ ⊤)
+    (hrt : r ≤ t) (hgap : r⁻¹ - t⁻¹ ≤ 2⁻¹) (hVc : IsCompact (closure V)) (hVW : closure V ⊆ W) :
+    ∃ C : ℝ≥0, ∀ u : ℂ → F, eLpNorm u t (volume.restrict V) ≤ C * eLpNormWkp r W 1 u := by
   have hr_top : r ≠ ⊤ := ne_top_of_le_ne_top ht hrt
   have ht0 : t ≠ 0 := (zero_lt_one.trans_le (hr.trans hrt)).ne'
-  rw [← ENNReal.coe_toNNReal hr_top] at hu
-  rw [← ENNReal.coe_toNNReal ht]
-  refine hu.memLpLoc_of_inv_sub_inv_le ?_ (ENNReal.toNNReal_mono ht hrt) ?_
+  rw [← ENNReal.coe_toNNReal hr_top, ← ENNReal.coe_toNNReal ht]
+  refine exists_eLpNorm_le_mul_eLpNormWkp_one ?_ (ENNReal.toNNReal_mono ht hrt) ?_ hVc hVW
   · rw [← ENNReal.coe_le_coe, ENNReal.coe_toNNReal hr_top]
     exact_mod_cast hr
   · have h := ENNReal.toReal_mono (by finiteness) (tsub_le_iff_right.1 hgap)
@@ -204,6 +208,13 @@ theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : 
       ENNReal.toReal_add, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at h
     simp only [ENNReal.coe_toNNReal_eq_toReal]
     linarith
+
+/-- The local Sobolev embedding `W^{1,r}_loc(Ω, F) ⊂ Lᵗ_loc(Ω, F)` for exponents in `ℝ≥0∞`: if
+`1 ≤ r ≤ t < ∞` and `1/r - 1/t ≤ 1/2`, every `u ∈ W^{1,r}_loc(Ω, F)` is locally `Lᵗ` on `Ω`. -/
+theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : MemWkpLoc r Ω 1 u)
+    (hr : 1 ≤ r) (ht : t ≠ ⊤) (hrt : r ≤ t) (hgap : r⁻¹ - t⁻¹ ≤ 2⁻¹) : MemLpLoc t Ω u :=
+  hu.memLpLoc_of_forall_exists_eLpNorm_le fun hVc hVW =>
+    exists_eLpNorm_le_mul_eLpNormWkp_one_of_ne_top hr ht hrt hgap hVc hVW
 
 /-- **Order lowering.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/2`, then
 `W^{k+1,q}_loc(Ω, F) ⊂ W^{k,s}_loc(Ω, F)`: the function and its weak derivatives through order `k`
@@ -433,5 +444,39 @@ theorem MemWkpLoc.memLpLoc_top_of_two_lt_mul {p : ℝ≥0∞} (hp : 1 ≤ p)
     (hkp : 2 < (k : ℝ≥0∞) * p) (hu : MemWkpLoc p Ω k u) : MemLpLoc ∞ Ω u :=
   (hu.continuousOn_preciseRepresentative_of_two_lt_mul hp hkp).memLpLoc.congr_ae
     (hu.memLpLoc.ae_eq_preciseRepresentative hp).symm
+
+/-- **Morrey for `kp > 2`: convergence in `W^{k,p}` is locally uniform.** Let `1 ≤ p ≤ ∞` with
+`2 < k p`. If maps `uₙ`, eventually continuous on every compact subset of `Ω`, converge in
+`W^{k,p}` on every compact subset of `Ω` to a map `u₀` continuous on `Ω`, then `uₙ → u₀` locally
+uniformly on `Ω`. -/
+theorem tendstoLocallyUniformlyOn_of_tendsto_eLpNormWkp_of_two_lt_mul {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hkp : 2 < (k : ℝ≥0∞) * p) {ι : Type*} {l : Filter ι} {u : ι → ℂ → F} {u₀ : ℂ → F}
+    (huc : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∀ᶠ n in l, ContinuousOn (u n) K)
+    (hu₀c : ContinuousOn u₀ Ω)
+    (hlim : ∀ K ⊆ (Ω : Set ℂ), IsCompact K →
+      Filter.Tendsto (fun n => eLpNormWkp p K k (u n - u₀)) l (nhds 0)) :
+    TendstoLocallyUniformlyOn u u₀ l Ω := by
+  refine (tendstoLocallyUniformlyOn_iff_forall_isCompact Ω.isOpen).2 fun K hKΩ hK => ?_
+  -- Open sets `K ⊆ V`, `closure V ⊆ W'` and `closure W' ⊆ Ω` with compact closures.
+  obtain ⟨V, hKV, hVΩ, hVc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
+  obtain ⟨W', hVW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hVc hVΩ
+  obtain ⟨C, hC⟩ := exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul (F := F) hp hkp hVc hVW
+  have hT : Filter.Tendsto (fun n => (C : ℝ≥0∞) * eLpNormWkp p (closure W') k (u n - u₀)) l
+      (nhds 0) := by
+    simpa using ENNReal.Tendsto.const_mul (hlim _ hWΩ hWc) (Or.inr ENNReal.coe_ne_top)
+  refine EMetric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
+  filter_upwards [huc _ hVΩ hVc, hT.eventually (gt_mem_nhds hε)]
+    with n hnc hn z hz
+  -- At points of the open set `V`, the value is bounded by the `L^∞(V)` norm.
+  have hcont : ContinuousWithinAt (u n - u₀) V z :=
+    ((hnc.mono subset_closure).sub (hu₀c.mono fun y hy => hVΩ (subset_closure hy))) z (hKV hz)
+  rw [edist_comm, eDist_eq_eNorm_sub, ← Pi.sub_apply]
+  calc ‖(u n - u₀) z‖ₑ ≤ eLpNorm (u n - u₀) ∞ (volume.restrict V) :=
+      hcont.eNorm_le_eLpNorm_top_restrict (V.isOpen.mem_nhds (hKV hz))
+    _ ≤ C * eLpNormWkp p W' k (u n - u₀) := hC _
+    _ ≤ C * eLpNormWkp p (closure W') k (u n - u₀) := by
+      gcongr
+      exact eLpNormWkp_mono_set subset_closure
+    _ < ε := hn
 
 end TauCeti

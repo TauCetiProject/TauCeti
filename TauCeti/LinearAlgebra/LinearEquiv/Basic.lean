@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Prod
@@ -30,6 +31,8 @@ coordinate equivalence over a nontrivial target module.
 Every `R`-linear automorphism of a rank-one free `R`-module `ι → R` over a commutative semiring `R`
 is scalar multiplication by a unit (`LinearEquiv.exists_eq_smulOfUnit_of_unique`), specializing over
 `ℤ` to `LinearMap.id` or `-LinearMap.id` (`LinearEquiv.toLinearMap_eq_id_or_neg_of_unique`).
+Conjugating an algebra homomorphism into `Module.End` by `LinearEquiv.conjAlgEquiv` agrees with
+pointwise intertwining (`LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff`).
 Following the identification of equal submodules by an inclusion is the other inclusion,
 `Submodule.subtype_comp_ofEq`.
 -/
@@ -136,6 +139,21 @@ theorem toLinearMap_eq_id_or_neg_of_unique {ι : Type*} [Unique ι] (e : (ι →
   obtain ⟨u, rfl⟩ := e.exists_eq_smulOfUnit_of_unique
   rcases Int.units_eq_one_or u with rfl | rfl <;>
     [left; right] <;> exact LinearMap.ext fun x => by simp [smulOfUnit]
+
+/-- Conjugating an algebra homomorphism `φ` into `Module.End S M₁` along `e : M₁ ≃ₗ[S] M₂` equals
+`ψ` into `Module.End S M₂` exactly when `e` intertwines `φ a` with `ψ a` for every `a`. -/
+theorem conjAlgEquiv_toAlgHom_comp_eq_iff {R S A M₁ M₂ : Type*}
+    [CommSemiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+    [Semiring S] [Module S M₁] [Module S M₂] [SMulCommClass S R M₁] [SMulCommClass S R M₂]
+    [SMul R S] [IsScalarTower R S M₁] [IsScalarTower R S M₂]
+    [Semiring A] [Algebra R A]
+    (e : M₁ ≃ₗ[S] M₂) (φ : A →ₐ[R] Module.End S M₁) (ψ : A →ₐ[R] Module.End S M₂) :
+    (e.conjAlgEquiv R).toAlgHom.comp φ = ψ ↔ ∀ a t, e (φ a t) = ψ a (e t) := by
+  refine ⟨fun h a t ↦ ?_, fun h ↦ AlgHom.ext fun a ↦ LinearMap.ext fun y ↦ ?_⟩
+  · simpa [LinearEquiv.conjAlgEquiv_apply] using
+      congrArg (fun f : A →ₐ[R] Module.End S M₂ ↦ f a (e t)) h
+  · obtain ⟨t, rfl⟩ := e.surjective y
+    simp [LinearEquiv.conjAlgEquiv_apply, h]
 
 end LinearEquiv
 

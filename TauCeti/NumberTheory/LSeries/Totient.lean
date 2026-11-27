@@ -93,4 +93,9 @@ theorem LSeriesHasSum_totient {s : ℂ} (hs : 2 < s.re) :
   refine LSeriesHasSum_iff.mpr ⟨hf, ?_⟩
   exact (eq_div_iff (riemannZeta_ne_zero_of_one_lt_re hs1)).mpr heq
 
+/-- The totient Dirichlet series is `ζ(s - 1) / ζ(s)` on `Re s > 2`. -/
+theorem LSeries_totient {s : ℂ} (hs : 2 < s.re) :
+    _root_.LSeries (fun n ↦ (n.totient : ℂ)) s = riemannZeta (s - 1) / riemannZeta s :=
+  (LSeriesHasSum_totient hs).LSeries_eq
+
 end TauCeti

@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.LinearAlgebra.Complex.Determinant
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -17,7 +19,8 @@ The real linear coordinate interchange is an involution with determinant `-1`, r
 the reversal of orientation. Any `v` has real coordinates in the real basis `u`, `r * u * I`,
 `u ≠ 0`, `r ≠ 0`, of radial and angular directions at the point `r * u`
 (`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
-linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero.
+linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero, and with
+`c ≠ 1` it is different from `1` (`Complex.ofReal_add_mul_I_sub_one_ne_zero`).
 
 In the frame of a nonzero direction `v`, the point `v (s ± h i)` on either side of the line through
 `v s` with direction `v` has imaginary coordinate `±h`
@@ -30,6 +33,12 @@ basis `1, I` as `L 1 • re ⊗ w + L I • im ⊗ w`
 precomposed with multiplication by `c = a + b i`, tested in the Cauchy–Riemann combination with an
 operator `A`, is `D (c * 1) + A D (c * I) = a (D 1 + A D i) + b (D i - A D 1)`
 (`ContinuousLinearMap.apply_mul_one_add_apply_mul_I`).
+
+If two complex numbers `ω₁`, `ω₂` span a parallelogram of nonzero oriented area
+`Im (conj ω₁ ω₂)`, so that they are linearly independent over `ℝ`
+(`TauCeti.linearIndependent_pair_iff_im_conj_mul_ne_zero`), the real coordinates
+`p ↦ p₀ ω₁ + p₁ ω₂` in the basis `ω₁`, `ω₂` are a real-linear equivalence
+`TauCeti.periodCoordEquiv` of `Fin 2 → ℝ` with `ℂ`.
 -/
 
 public section
@@ -98,6 +107,19 @@ theorem linearIndependent_one_zero_I_zero_zero_one :
 theorem ofReal_add_mul_I_ne_zero {c : ℝ} (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
   fun h ↦ hc (by simpa using congrArg Complex.re h)
 
+/-- Subtracting `1` from a point `c + t * I` of a vertical line moves it to the line
+`Re z = c - 1` at the same height. -/
+theorem ofReal_add_mul_I_sub_one (c t : ℝ) : (c : ℂ) + t * I - 1 = ((c - 1 : ℝ) : ℂ) + t * I := by
+  push_cast
+  ring
+
+/-- A point `c + t * I` of the vertical line `Re z = c` is different from `1` as soon as `c ≠ 1`,
+in the form `c + t * I - 1 ≠ 0`. -/
+theorem ofReal_add_mul_I_sub_one_ne_zero {c : ℝ} (hc : c ≠ 1) (t : ℝ) :
+    (c : ℂ) + t * I - 1 ≠ 0 := by
+  rw [ofReal_add_mul_I_sub_one]
+  exact ofReal_add_mul_I_ne_zero (sub_ne_zero.mpr hc) t
+
 /-- The point `h` units off the line `s ↦ v * s` in the direction `v * I` is at distance
 `‖v‖ * |h|` from the line point. -/
 @[simp]
@@ -161,6 +183,39 @@ theorem mul_sub_mul_I_sub_mul_div_im (hv : v ≠ 0) (h : ℝ) :
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg] at this
 
 end LineThrough
+
+section PeriodCoordinates
+
+open Complex ComplexConjugate
+
+variable {ω₁ ω₂ : ℂ}
+
+/-- The real coordinates `p ↦ p₀ ω₁ + p₁ ω₂` in the basis `ω₁`, `ω₂` of `ℂ` over `ℝ`, a
+real-linear equivalence when `ω₁` and `ω₂` are linearly independent. -/
+noncomputable def periodCoordEquiv (hω : (conj ω₁ * ω₂).im ≠ 0) : (Fin 2 → ℝ) ≃L[ℝ] ℂ :=
+  (basisOfLinearIndependentOfCardEqFinrank
+    (linearIndependent_pair_iff_im_conj_mul_ne_zero.2 hω)
+    (by simp)).equivFun.symm.toContinuousLinearEquiv
+
+/-- The coordinates in the basis `ω₁`, `ω₂` send `p` to `p₀ ω₁ + p₁ ω₂`. -/
+@[simp]
+theorem periodCoordEquiv_apply (hω : (conj ω₁ * ω₂).im ≠ 0) (p : Fin 2 → ℝ) :
+    periodCoordEquiv hω p = p 0 * ω₁ + p 1 * ω₂ := by
+  simp [periodCoordEquiv, Module.Basis.equivFun_symm_apply, Fin.sum_univ_two, real_smul]
+
+/-- The coordinates of `ω₁` in the basis `ω₁`, `ω₂` are `(1, 0)`. -/
+@[simp]
+theorem periodCoordEquiv_symm_apply_ω₁ (hω : (conj ω₁ * ω₂).im ≠ 0) :
+    (periodCoordEquiv hω).symm ω₁ = Pi.single 0 1 :=
+  (periodCoordEquiv hω).symm_apply_eq.2 (by simp)
+
+/-- The coordinates of `ω₂` in the basis `ω₁`, `ω₂` are `(0, 1)`. -/
+@[simp]
+theorem periodCoordEquiv_symm_apply_ω₂ (hω : (conj ω₁ * ω₂).im ≠ 0) :
+    (periodCoordEquiv hω).symm ω₂ = Pi.single 1 1 :=
+  (periodCoordEquiv hω).symm_apply_eq.2 (by simp)
+
+end PeriodCoordinates
 
 end TauCeti
 

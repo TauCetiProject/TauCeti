@@ -194,23 +194,15 @@ theorem apply_eq_ncard_smul (K : CompactOpens G) (W : OpenSubgroup G) (hW : IsCo
     μ K = (((↑) : G → G ⧸ (W : Subgroup G)) '' K).ncard • μ (W.toCompactOpens hW) := by
   classical
   have hT := K.isCompact.finite_image_mk W
-  -- `x ∈ q.out • W` exactly when `x` lies in the coset `q`.
-  have hmem (q : G ⧸ (W : Subgroup G)) (x : G) :
-      x ∈ q.out • W.toCompactOpens hW ↔ (x : G ⧸ (W : Subgroup G)) = q := by
-    rw [CompactOpens.mem_smul_iff_inv_smul_mem, OpenSubgroup.mem_toCompactOpens, smul_eq_mul,
-      ← OpenSubgroup.mem_toSubgroup, ← QuotientGroup.eq, QuotientGroup.out_eq', eq_comm]
   have hK : K = hT.toFinset.sup fun q ↦ q.out • W.toCompactOpens hW := by
     refine CompactOpens.ext (Set.ext fun g ↦ ?_)
     simp only [CompactOpens.coe_finsetSup, Set.Finite.mem_toFinset, Set.mem_iUnion, exists_prop,
-      SetLike.mem_coe, hmem, exists_eq_right']
+      SetLike.mem_coe, W.mem_out_smul_toCompactOpens_iff hW, exists_eq_right']
     exact (Subgroup.mk_mem_image_iff_of_forall_mul_mem
       (W := (W : Subgroup G)) (K := (K : Set G)) hKW).symm
-  have hdisj : ((hT.toFinset : Finset (G ⧸ (W : Subgroup G))) : Set (G ⧸ (W : Subgroup G))
-      ).PairwiseDisjoint fun q ↦ ((q.out • W.toCompactOpens hW : CompactOpens G) : Set G) :=
-    fun q _ q' _ hqq' ↦ Set.disjoint_left.2 fun g hg hg' ↦
-      hqq' (((hmem q g).1 hg).symm.trans ((hmem q' g).1 hg'))
   conv_lhs => rw [hK]
-  rw [μ.apply_finsetSup hdisj, Finset.sum_congr rfl fun q _ ↦ μ.apply_smul _ _, Finset.sum_const,
+  rw [μ.apply_finsetSup (W.pairwiseDisjoint_out_smul_toCompactOpens hW _),
+    Finset.sum_congr rfl fun q _ ↦ μ.apply_smul _ _, Finset.sum_const,
     ← Set.ncard_eq_toFinset_card _ hT]
 
 /-- **Index formula.** For compact open subgroups `W ≤ U`, the volume of `U` is `[U : W]` times

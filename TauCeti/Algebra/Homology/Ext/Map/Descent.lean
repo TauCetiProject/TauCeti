@@ -46,13 +46,13 @@ theorem mapExt_one_surjective_of_coproduct [EnoughInjectives C] [EnoughInjective
     Function.Surjective (F.mapExtAddHom.{w, w'} c.pt Y 1) := by
   let hc' := isColimitCofanMkObjOfIsColimit F X c.inj hc
   intro e
-  choose a ha using fun i ↦ hX i ((Ext.coproductAddEquiv₁ hc' (F.obj Y) e) i)
-  obtain ⟨b, hb⟩ := (Ext.coproductAddEquiv₁ hc Y).surjective a
-  refine ⟨b, (Ext.coproductAddEquiv₁ hc' (F.obj Y)).injective ?_⟩
+  choose a ha using fun i ↦ hX i ((Ext.coproductAddEquiv hc' (F.obj Y) 1 e) i)
+  obtain ⟨b, hb⟩ := (Ext.coproductAddEquiv hc Y 1).surjective a
+  refine ⟨b, (Ext.coproductAddEquiv hc' (F.obj Y) 1).injective ?_⟩
   ext i
   have hi := congrFun hb i
-  simp only [Ext.coproductAddEquiv₁_apply] at hi
-  simpa only [Ext.coproductAddEquiv₁_apply, cofan_mk_inj,
+  simp only [Ext.coproductAddEquiv_apply] at hi
+  simpa only [Ext.coproductAddEquiv_apply, cofan_mk_inj,
     mapExtAddHom_apply, ← Ext.mapExactFunctor_mk₀, ← Ext.mapExactFunctor_comp, hi] using ha i
 
 /-- Descent of extensions passes to the quotient in a short exact presentation if Hom from

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 /-!
@@ -25,6 +26,12 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
   `circleMap c R θ` is `e^{iθ}`.
 * `TauCeti.circleMap_mem_setOf_le_norm_sub_le`: a circle of radius `r ∈ [a, b]`, `0 ≤ a`, about
   `z₀` lies in the closed annulus `a ≤ |z - z₀| ≤ b`.
+* `TauCeti.circleMap_mem_closedBall_diff_ball`: the same inclusion, with the annulus written as
+  `closedBall z₀ b \ ball z₀ a`.
+* `TauCeti.mul_abs_sin_le_norm_circleMap_sub`: the point at angle `θ` of the circle of radius `r`
+  about `c` keeps distance at least `r |sin ((θ - arg (w - c)) / 2)|` from any point `w`.
+* `TauCeti.norm_circleMap_sub_rpow_le`: hence, on circles of radius `s ≥ ρ > 0`, a nonpositive
+  power of the distance to `w` is at most `ρ ^ q |sin ((θ - arg (w - c)) / 2)| ^ q`.
 * `TauCeti.circleMap_im`: the imaginary part of `circleMap c r θ` is `c.im + r sin θ`.
 * `TauCeti.im_le_circleMap_im_iff`: for `r > 0` and `θ ∈ (-π, π]`, the point at angle `θ` of the
   circle of radius `r` about `z₀` lies in the closed upper half-plane above `z₀` exactly when
@@ -90,6 +97,36 @@ theorem circleMap_mem_setOf_le_norm_sub_le {z₀ : ℂ} {a b r : ℝ} (ha : 0 �
     (θ : ℝ) : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
   rw [mem_ofPred_eq, norm_circleMap_sub_center z₀ (ha.trans hr.1)]
   exact hr
+
+/-- A circle of radius `r ∈ [a, b]` about `z₀`, with `0 ≤ a`, lies in the closed annulus
+`closedBall z₀ b \ ball z₀ a`. -/
+theorem circleMap_mem_closedBall_diff_ball {z₀ : ℂ} {a b r : ℝ} (ha : 0 ≤ a) (hr : r ∈ Icc a b)
+    (θ : ℝ) : circleMap z₀ r θ ∈ closedBall z₀ b \ ball z₀ a := by
+  have h := circleMap_mem_setOf_le_norm_sub_le (z₀ := z₀) ha hr θ
+  exact ⟨mem_closedBall_iff_norm.2 h.2, fun h' ↦ (mem_ball_iff_norm.1 h').not_ge h.1⟩
+
+/-- The point at angle `θ` of the circle of radius `r` about `c` keeps distance at least
+`r |sin ((θ - arg (w - c)) / 2)|` from any point `w`. This is Mathlib's
+`mul_abs_sin_le_norm_circleMap_zero_sub` moved to the centre `c`. -/
+theorem mul_abs_sin_le_norm_circleMap_sub (c w : ℂ) (r θ : ℝ) :
+    r * |Real.sin ((θ - arg (w - c)) / 2)| ≤ ‖circleMap c r θ - w‖ := by
+  convert mul_abs_sin_le_norm_circleMap_zero_sub r θ (w - c) using 2
+  simp only [circleMap]
+  ring
+
+/-- On a circle of radius `s ≥ ρ > 0` about `c`, a nonpositive power `q` of the distance to a
+point `w` is at most `ρ ^ q |sin ((θ - arg (w - c)) / 2)| ^ q`, uniformly in `s`, at every angle
+`θ` where this sine does not vanish. -/
+theorem norm_circleMap_sub_rpow_le {c w : ℂ} {ρ s q θ : ℝ} (hρ : 0 < ρ) (hρs : ρ ≤ s)
+    (hq : q ≤ 0) (hθ : Real.sin ((θ - arg (w - c)) / 2) ≠ 0) :
+    ‖circleMap c s θ - w‖ ^ q ≤ ρ ^ q * |Real.sin ((θ - arg (w - c)) / 2)| ^ q := by
+  have hs : 0 < s := hρ.trans_le hρs
+  calc ‖circleMap c s θ - w‖ ^ q ≤ (s * |Real.sin ((θ - arg (w - c)) / 2)|) ^ q :=
+        Real.rpow_le_rpow_of_nonpos (mul_pos hs (abs_pos.2 hθ))
+          (mul_abs_sin_le_norm_circleMap_sub c w s θ) hq
+    _ = s ^ q * |Real.sin ((θ - arg (w - c)) / 2)| ^ q := Real.mul_rpow hs.le (abs_nonneg _)
+    _ ≤ ρ ^ q * |Real.sin ((θ - arg (w - c)) / 2)| ^ q :=
+        mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos hρ hρs hq) (by positivity)
 
 /-- The imaginary part of the point at angle `θ` of the circle of radius `r` about `c`. -/
 theorem circleMap_im (c : ℂ) (r θ : ℝ) : (circleMap c r θ).im = c.im + r * Real.sin θ := by

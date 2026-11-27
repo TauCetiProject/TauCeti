@@ -90,8 +90,8 @@ theorem totalSpaceHomEquiv_comp (E : FiniteLocallyFreeSheaf X) {T' T : Over X} (
   simp only [Category.assoc]
   -- The base-change maps of linear functionals are compatible with `Over.w g` and with the
   -- composite `g ≫ q`, and they carry pulled-back evaluation to evaluation.
-  rw [pullbackIhomComparison_app_unit_congr_assoc,
-    ← Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc,
+  rw [pullback_ihomComparison_app_unit_congr_assoc,
+    ← Scheme.Hom.pullback_ihomComparison_app_unit_comp_assoc,
     ← Scheme.Hom.pullback_map_evaluation_comp_pullbackObjUnitIso_hom]
   simp only [Functor.map_comp, Category.assoc, toQuasicoherent_obj_obj]
 
