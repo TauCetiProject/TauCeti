@@ -7,15 +7,15 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
-public import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed
+public import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed.Basic
 
 import TauCeti.Algebra.Polynomial.Taylor
-import TauCeti.RingTheory.Polynomial.UniversalFactorizationRing
+import TauCeti.RingTheory.Polynomial.Resultant.FreeMonic
 
 /-!
 # Universal specialization and Tschirnhaus equivalence for `TauCeti.genericDepressed`
 
-This file complements `TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed` with the
+This file complements `TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed.Basic` with the
 characteristic universal specialization property of `TauCeti.genericDepressed R m` over arbitrary
 `R`-algebras (`Polynomial.Monic.map_genericDepressed_eq_iff`,
 `Polynomial.Monic.map_aeval_genericDepressed`, `TauCeti.map_algHom_genericDepressed_eq_iff`),
@@ -208,7 +208,7 @@ private theorem map_tschirnhausToDepressed_freeMonic (R : Type*) [CommRing R] (m
   have hQdeg : Q.natDegree = m := by
     rw [hQ_eq, natDegree_taylor, (monic_genericDepressed (R := R) (m := m)).natDegree_map,
       natDegree_genericDepressed]
-  exact hQmon.map_aeval_coeff_freeMonic hQdeg
+  exact Polynomial.map_aeval_coeff_freeMonic hQmon hQdeg
 
 /-- The normalized subleading coefficient `m⁻¹ • X ⟨m - 1, _⟩` (negated root barycenter) of
 `Polynomial.freeMonic R m` when `IsUnit (m : R)` (and `0` in the subsingleton case `m = 0`). -/

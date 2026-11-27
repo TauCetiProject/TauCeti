@@ -149,8 +149,8 @@ private theorem laplacian_log_normSq_eventuallyEq_exp {x : ℂ → EuclideanSpac
   have hp : ContDiff ℝ 2 fun w ↦ x w 2 := ((contDiff_piLp 2).1 hx 2).of_le (by simp)
   have hq : ContDiff ℝ 2 fun w ↦ x w 3 := ((contDiff_piLp 2).1 hx 3).of_le (by simp)
   filter_upwards [(isOpen_normSq_ne_zero hx).mem_nhds hy] with w hw
-  rw [laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt hw
-    (Eventually.of_forall hsol), Real.exp_log (normSq_pos_of_ne_zero hw), smul_eq_mul]
+  rw [laplacian_log_normSq_eq_exp hp.contDiffAt hq.contDiffAt (normSq_pos_of_ne_zero hw)
+    (Eventually.of_forall hsol), smul_eq_mul]
   ring
 
 open scoped Nat in

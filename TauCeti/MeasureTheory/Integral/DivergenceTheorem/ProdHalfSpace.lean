@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 
@@ -43,9 +44,7 @@ theorem integral_prod_fderiv_normal {g : WithLp 2 (ℝ × E) → ℝ} (hg : Cont
   refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
   dsimp only
   have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
-    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y)
-        (isClosedMap_prodMk_right y))
+    WithLp.isClosedEmbedding_toLp_prodMk_right 2 y
   have hline : ContDiff ℝ 1 (fun t : ℝ ↦ g (WithLp.toLp 2 (t, y))) :=
     hg.comp (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
       (contDiff_id.prodMk contDiff_const))
@@ -64,9 +63,7 @@ theorem integral_prod_fderiv_tangent {g : WithLp 2 (ℝ × E) → ℝ} (hg : Con
   rw [integral_prod _ (integrable_fderiv_apply_prod hg hgc a _)]
   refine (integral_congr_ae (Eventually.of_forall fun t ↦ ?_)).trans (integral_zero _ _)
   have he : IsClosedEmbedding (fun y : E ↦ WithLp.toLp 2 (t, y)) :=
-    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight t)
-        (isClosedMap_prodMk_left t))
+    WithLp.isClosedEmbedding_toLp_prodMk_left 2 t
   have hslice : ContDiff ℝ 1 (fun y : E ↦ g (WithLp.toLp 2 (t, y))) :=
     hg.comp (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
       (contDiff_const.prodMk contDiff_id))

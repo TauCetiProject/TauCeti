@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Monic.GenericDepressed
-public import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed
+public import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed.Basic
 public import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
 
 import Mathlib.Tactic.LinearCombination
@@ -14,7 +14,7 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Additional properties of the generic depressed discriminant
 
-This file complements `TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed` with algebra
+This file complements `TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed.Basic` with algebra
 specialization (`TauCeti.aeval_depressedDiscr`, `Polynomial.Monic.discr_eq_aeval_depressedDiscr`),
 general monoid-valued weighted homogeneity (`TauCeti.depressedDiscr_mem_smul`), and explicit
 formulas in degrees `0`, `1`, and `4` as well as reductions when `2 = 0` or `3 = 0`.

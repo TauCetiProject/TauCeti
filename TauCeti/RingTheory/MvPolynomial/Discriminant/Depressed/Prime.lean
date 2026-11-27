@@ -24,7 +24,7 @@ When `(m : R)` is invertible, the Tschirnhaus `R`-algebra equivalence
 carries `(Polynomial.freeMonic R m).discr` to `Polynomial.C (TauCeti.depressedDiscr R m)` by
 translation invariance of the discriminant (`TauCeti.tschirnhausAlgEquiv_discr_freeMonic`). Over any
 integral domain `R` with `(2 : R) ≠ 0` and `IsUnit (m : R)`, this gives primality of
-`TauCeti.depressedDiscr R m` for every `m ≥ 2` (`TauCeti.prime_depressedDiscr_of_isUnit`).
+`TauCeti.depressedDiscr R m` for every `m ≥ 2` (`TauCeti.depressedDiscr_prime`).
 
 For `3 ≤ m` over any integral domain `R` with `(2 : R) ≠ 0` and `(m : R) ≠ 0`, specializing to
 `X ^ m - 1` and `X ^ m - X` shows that every constant divisor of `TauCeti.depressedDiscr R m` is a
@@ -44,7 +44,7 @@ when `3 = 0`, and over `ℤ` show sharpness.
 * `TauCeti.tschirnhausAlgEquiv_discr_freeMonic`,
   `TauCeti.prime_depressedDiscr_iff_prime_discr_freeMonic_of_isUnit`: identification of generic
   monic and depressed discriminants when `m` is invertible.
-* `TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_isUnit`,
+* `TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`,
   `TauCeti.prime_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_ne_zero`: every
   constant divisor is a unit for `3 ≤ m` and integral-domain primality of `depressedDiscr`.
 * `TauCeti.prime_depressedDiscr_two_iff`, `TauCeti.not_prime_depressedDiscr_two_of_two_eq_zero`,
@@ -105,19 +105,11 @@ theorem prime_depressedDiscr_iff_of_isUnit {R : Type*} [CommRing R] [IsDomain R]
   (prime_depressedDiscr_iff_prime_discr_freeMonic_of_isUnit hmu).trans
     (prime_discr_freeMonic_iff hm)
 
-/-- **Primality of the generic depressed discriminant over a domain (invertible degree).** If `R` is
-an integral domain in which `2 ≠ 0` and `(m : R)` is a unit, then `TauCeti.depressedDiscr R m` is
-prime in `MvPolynomial (Fin (m - 1)) R` for every `m ≥ 2`. -/
-theorem prime_depressedDiscr_of_isUnit {R : Type*} [CommRing R] [IsDomain R]
-    (h2 : (2 : R) ≠ 0) {m : ℕ} (hm : 2 ≤ m) (hmu : IsUnit (m : R)) :
-    Prime (depressedDiscr R m) :=
-  (prime_depressedDiscr_iff_of_isUnit hm hmu).mpr h2
-
 /-- Over a field `K` of characteristic different from `2` in which `(m : K) ≠ 0`,
 `TauCeti.depressedDiscr K m` is prime in `MvPolynomial (Fin (m - 1)) K` for every `m ≥ 2`. -/
 theorem prime_depressedDiscr_of_ne_zero {K : Type*} [Field K] (h2 : (2 : K) ≠ 0) {m : ℕ}
     (hm : 2 ≤ m) (hm0 : (m : K) ≠ 0) : Prime (depressedDiscr K m) :=
-  prime_depressedDiscr_of_isUnit h2 hm (IsUnit.mk0 _ hm0)
+  depressedDiscr_prime h2 (IsUnit.mk0 _ hm0) hm
 
 /-- A constant divisor of `depressedDiscr R m` divides the discriminant of any monic depressed
 polynomial of degree `m`. -/
@@ -291,7 +283,7 @@ theorem prime_depressedDiscr_of_three_le {R : Type*} [CommRing R] [IsDomain R]
     exact IsLocalization.Away.algebraMap_isUnit (m : R)
   have hprimeM : Prime (MvPolynomial.map (algebraMap R Rₘ) D) := by
     rw [hD, map_depressedDiscr]
-    exact prime_depressedDiscr_of_isUnit h2M (by omega) hmM
+    exact depressedDiscr_prime h2M hmM (by omega)
   have hD0 : D ≠ 0 := fun h0 ↦ hprimeM.ne_zero (by rw [h0, map_zero])
   have hDnu : ¬ IsUnit D :=
     fun hu ↦ hprimeM.not_isUnit (hu.map (MvPolynomial.map (algebraMap R Rₘ)))
@@ -391,7 +383,7 @@ theorem not_prime_depressedDiscr_three_of_three_eq_zero {R : Type*} [CommRing R]
 /-- Over `ℤ`, `depressedDiscr ℤ 2 = -4 X₀` is not prime because `2` is not a unit in `ℤ`
 (witnessing that in degree `m = 2`, unlike `3 ≤ m` in `TauCeti.prime_depressedDiscr_of_three_le`,
 `IsUnit (2 : R)` cannot be weakened to `(2 : R) ≠ 0` in
-`TauCeti.prime_depressedDiscr_of_isUnit`). -/
+`TauCeti.depressedDiscr_prime`). -/
 theorem not_prime_depressedDiscr_int_two : ¬ Prime (depressedDiscr ℤ 2) :=
   fun hp ↦ (Int.isUnit_iff.not.mpr (by decide)) (prime_depressedDiscr_two_iff.mp hp)
 

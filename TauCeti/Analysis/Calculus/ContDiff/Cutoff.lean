@@ -15,7 +15,10 @@ public import Mathlib.Topology.Algebra.Support
 Multiplying a map `u` that is `C^n` on an open set `W` by a scalar cutoff `g` that is `C^n` near
 every point of a set `U` and vanishes near every point of `U` outside `W` gives a map that is
 `C^n` on all of `U` (`TauCeti.contDiffOn_smul_of_eventuallyEq_zero`). This is how a map defined
-on a punctured domain is extended across a puncture by a cutoff vanishing near it. Similarly, if
+on a punctured domain is extended across a puncture by a cutoff vanishing near it. The same holds
+for a map `C^n` only on a set that is not open, on the part of the domain covered by open sets
+where the cutoff vanishes or where the map's domain of smoothness is met
+(`TauCeti.contDiffOn_smul_of_eqOn_zero`). Similarly, if
 no zero of `φ` lies in the closed support of `χ`, the quotient `χ / φ` is as smooth as `χ` and `φ`
 (`ContDiff.mul_inv_of_forall_notMem_tsupport`).
 
@@ -50,6 +53,19 @@ theorem contDiffOn_smul_of_eventuallyEq_zero {U W : Set E} (hW : IsOpen W) {g : 
   · refine (contDiffAt_const (c := (0 : F))).congr_of_eventuallyEq ?_ |>.contDiffWithinAt
     filter_upwards [h z hz hzW] with z' hz'
     rw [hz', zero_smul]
+
+/-- A cut-off map `χ • f` is `C^n` on `t` if `t` is covered by an open set `U` on which the cutoff
+`χ` vanishes and an open set `V` on which `χ` is `C^n` and whose trace on `t` lies in a set on
+which `f` is `C^n`. Unlike `TauCeti.contDiffOn_smul_of_eventuallyEq_zero`, `f` need only be `C^n`
+on a set that is not open, such as a closed slab. -/
+theorem contDiffOn_smul_of_eqOn_zero {χ : E → 𝕜} {f : E → F} {s t U V : Set E}
+    (hχ : ContDiffOn 𝕜 n χ V) (hf : ContDiffOn 𝕜 n f s) (hU : IsOpen U) (hV : IsOpen V)
+    (hχU : Set.EqOn χ 0 U) (htV : t ∩ V ⊆ s) (ht : t ⊆ U ∪ V) :
+    ContDiffOn 𝕜 n (fun z ↦ χ z • f z) t := by
+  refine contDiffOn_of_locally_contDiffOn fun z hz ↦ (ht hz).elim (fun hzU ↦ ?_) fun hzV ↦ ?_
+  · refine ⟨U, hU, hzU, (contDiffOn_const (c := (0 : F))).congr fun w hw ↦ ?_⟩
+    rw [hχU hw.2, Pi.zero_apply, zero_smul]
+  · exact ⟨V, hV, hzV, (hχ.mono Set.inter_subset_right).smul (hf.mono htV)⟩
 
 /-- **Smooth quotients.** If no zero of `φ` lies in the closed support of `χ`, then the quotient
 `χ / φ`, which vanishes near the zeros of `φ`, is as smooth as `χ` and `φ`. -/

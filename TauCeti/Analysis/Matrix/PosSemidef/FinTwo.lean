@@ -111,4 +111,12 @@ theorem PosSemidef.sqrt_fin_two {H : Matrix (Fin 2) (Fin 2) 𝕜} (hH : H.PosSem
       RCLike.ofReal_zero]
   · rw [← mul_inv, Real.mul_self_sqrt hs.le, inv_mul_cancel₀ hs.ne', one_smul]
 
+/-- **The square root of a positive-semidefinite `2 × 2` matrix of determinant one.** If `H` is
+positive semidefinite with trace `t` and determinant `1`, then `√H = (t + 2) ^ (-1 / 2) • (H + 1)`.
+-/
+theorem PosSemidef.sqrt_fin_two_of_det_eq_one {H : Matrix (Fin 2) (Fin 2) 𝕜} (hH : H.PosSemidef)
+    (hdet : H.det = 1) :
+    CFC.sqrt H = (√(RCLike.re H.trace + 2))⁻¹ • (H + 1) := by
+  rw [hH.sqrt_fin_two, hdet, RCLike.one_re, Real.sqrt_one, mul_one, one_smul]
+
 end Matrix

@@ -31,6 +31,8 @@ following Mathlib style.
   fields are measurable.
 * `aestronglyMeasurable_matrixBilinearForm_apply`: the principal part `a(x)(η(x), ξ(x))` on
   measurable vector fields is measurable.
+* `memLp_top_matrixBilinearForm`: a measurable coefficient field bounded by `Λ` gives an
+  essentially bounded field of bilinear forms.
 -/
 
 public section
@@ -126,6 +128,14 @@ lemma aestronglyMeasurable_matrixBilinearForm_apply {a : α → Matrix n n ℝ}
   have hc : Continuous fun q : (EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ) ×
       EuclideanSpace ℝ n × EuclideanSpace ℝ n => q.1 q.2.1 q.2.2 := by fun_prop
   exact hc.comp_aestronglyMeasurable (ha.prodMk (hη.prodMk hξ))
+
+/-- An a.e. strongly measurable coefficient field whose bilinear forms are a.e. bounded by `Λ` gives
+an essentially bounded field of bilinear forms. -/
+lemma memLp_top_matrixBilinearForm {a : α → Matrix n n ℝ} {Lam : ℝ}
+    (ha : AEStronglyMeasurable a μ) (hbd : ∀ᵐ x ∂μ, ‖matrixBilinearForm (a x)‖ ≤ Lam) :
+    MemLp (fun x => matrixBilinearForm (a x)) ⊤ μ :=
+  memLp_top_of_bound (f := fun x => matrixBilinearForm (a x))
+    (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha) Lam hbd
 
 end PDE
 

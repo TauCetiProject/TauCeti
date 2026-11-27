@@ -25,8 +25,6 @@ polynomial of degree `n`), `Polynomial.freePoly R n` is the universal polynomial
   `Polynomial.map_map_freePoly`, `Polynomial.map_freePoly_eq_iff`,
   `Polynomial.map_algHom_freePoly_eq_iff`, `Polynomial.map_aeval_coeff_freePoly`: coefficient,
   degree, base-change, and universal specialization lemmas for `Polynomial.freePoly`.
-* `Polynomial.Monic.map_aeval_coeff_freeMonic`: specializing `Polynomial.freeMonic R n` at the
-  coefficients of a monic polynomial of degree `n` recovers it.
 * `Polynomial.UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_fst` and
   `Polynomial.UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_snd`: composing a point of the
   universal coprime factorization ring with values in `R` with the reduction `R → R ⧸ I` reduces
@@ -130,19 +128,6 @@ theorem map_aeval_coeff_freePoly {S : Type*} [CommSemiring S] [Algebra R S]
   (map_algHom_freePoly_eq_iff R hn _).mpr rfl
 
 end FreePoly
-
-/-- Specializing `Polynomial.freeMonic R n` at the coefficients of a monic polynomial `p : S[X]`
-with `p.natDegree = n` over an `R`-algebra `S` recovers `p`. -/
-theorem Monic.map_aeval_coeff_freeMonic {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    {p : S[X]} {n : ℕ} (hp : p.Monic) (hdeg : p.natDegree = n) :
-    (freeMonic R n).map (MvPolynomial.aeval (R := R) fun i : Fin n ↦ p.coeff i).toRingHom = p := by
-  ext k
-  rw [coeff_map, coeff_freeMonic]
-  split_ifs with hkn hkeq
-  · simp
-  · rw [map_one, hkeq, ← hdeg, hp.coeff_natDegree]
-  · rw [map_zero, eq_comm]
-    exact coeff_eq_zero_of_natDegree_lt (by omega)
 
 end Polynomial
 

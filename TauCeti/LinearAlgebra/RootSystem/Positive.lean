@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.Base
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Height
 import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Positive and negative roots
@@ -44,8 +45,12 @@ positive root is a nonnegative integer combination of the simple coroots.
   predicate and its cardinality as the cardinality of `TauCeti.posRoots`.
 * `TauCeti.ncard_setOf_isPos_and_coroot'_ne_zero_eq_ncard_setOf_coroot'_neg` says the positive
   roots not orthogonal to a weight are as many as the roots pairing negatively with it.
+* `RootPairing.root_reflectionPerm_self` says the root of the self-reflection of `i` is the
+  negative of the root of `i`.
 * `TauCeti.add_mem_posRoots` and `TauCeti.add_mem_negRoots` say each of the two sets is closed
-  under those sums of its members that are again roots, and
+  under those sums of its members that are again roots,
+  `TauCeti.mem_posRoots_and_max_height_lt` says a root `jα + kβ` with `j, k > 0` and `α`, `β`
+  positive is positive and taller than both, and
   `TauCeti.reflectionPerm_self_notMem_posRoots`, `TauCeti.reflectionPerm_self_notMem_negRoots` say
   neither contains a root together with its negative.
 * `TauCeti.eq_of_isPos_of_reflection_eq` says that, in a reduced root pairing, a positive root is
@@ -56,7 +61,10 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.bijOn_reflectionPerm_posRoots_diff_singleton` says a simple reflection permutes the
   positive roots other than its own simple root, and
   `TauCeti.sum_posRootsFinset_erase_comp_reflectionPerm` is the resulting reindexing rule for sums
-  over those roots.
+  over those roots. For a simple root `αᵢ`, a positive root `γ ≠ αᵢ` and `n > 0`,
+  `TauCeti.mem_posRoots_of_root_eq_nsmul_reflectionPerm_self_add` and
+  `TauCeti.ne_of_root_eq_nsmul_reflectionPerm_self_add` say a root `m(-αᵢ) + nγ` is positive and
+  different from `αᵢ`, when `-αᵢ` and `γ` are linearly independent.
 * `TauCeti.mem_support_iff_isPos_and_forall_ne_add` says the simple roots are exactly the
   indecomposable positive roots: those that are not the sum of two positive roots.
 * `RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
@@ -84,11 +92,9 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
   coroot functional takes an integer value on a weight on which the simple ones do.
-* `RootPairing.coroot'_eq_zero_of_forall_mem_support` says a weight killed by the simple coroots
-  is killed by every coroot, `RootPairing.mul_coroot'_eq_of_forall_mem_support` extends scalar
-  proportionality of simple coroot pairings to all coroots, and
-  `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` deduces that the whole Weyl group fixes a weight
-  killed by the simple coroots.
+* `RootPairing.mul_coroot'_eq_of_forall_mem_support` extends scalar proportionality of simple coroot
+  pairings to all coroots, and `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` says a weight killed
+  by the simple coroots is fixed by the whole Weyl group.
 * `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
   at a point of the coweight space where every simple root is nonnegative.
   `TauCeti.toWeightBasis_repr_nonneg_of_mem_posRootCone` says its coordinates in the basis of
@@ -127,6 +133,12 @@ lemma root_neg_index {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R 
     P.root (-i) = -P.root i := by
   let := P.indexNeg
   simp only [indexNeg_neg, root_reflectionPerm, reflection_apply_self]
+
+/-- The root of the self-reflection of `i` is the negative of the root of `i`. -/
+lemma root_reflectionPerm_self {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) (i : ι) :
+    P.root (P.reflectionPerm i i) = -P.root i := by
+  rw [root_reflectionPerm, reflection_apply_self]
 
 end RootPairing
 
@@ -351,6 +363,31 @@ lemma add_mem_posRoots {i j k : ι} (hi : i ∈ posRoots P b) (hj : j ∈ posRoo
     (hk : P.root k = P.root i + P.root j) : k ∈ posRoots P b :=
   RootPairing.Base.IsPos.add hi hj hk
 
+variable {P b} in
+/-- A root `jα + kβ` with `j, k > 0` and `α`, `β` positive is positive, of height larger than
+those of `α` and `β`. -/
+theorem mem_posRoots_and_max_height_lt {α β δ : ι} (hα : α ∈ posRoots P b)
+    (hβ : β ∈ posRoots P b) {j k : ℕ} (hj : 0 < j) (hk : 0 < k)
+    (hδ : P.root δ = j • P.root α + k • P.root β) :
+    δ ∈ posRoots P b ∧ max (b.height α) (b.height β) < b.height δ := by
+  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int α
+  obtain ⟨g, -, -, hg⟩ := b.exists_root_eq_sum_int β
+  have hfg : P.root δ = ∑ l ∈ b.support, ((j : ℤ) * f l + k * g l) • P.root l := by
+    simp only [add_smul, mul_smul, Finset.sum_add_distrib, ← Finset.smul_sum, ← hf, ← hg, hδ,
+      natCast_zsmul]
+  have hheight : b.height δ = j * b.height α + k * b.height β := by
+    simp only [RootPairing.Base.height_eq_sum hf, RootPairing.Base.height_eq_sum hg,
+      RootPairing.Base.height_eq_sum hfg, Finset.sum_add_distrib, Finset.mul_sum]
+  have ha := one_le_height_of_mem_posRoots P b hα
+  have hb := one_le_height_of_mem_posRoots P b hβ
+  have hj' : (1 : ℤ) ≤ j := by exact_mod_cast hj
+  have hk' : (1 : ℤ) ≤ k := by exact_mod_cast hk
+  have hlt : max (b.height α) (b.height β) < b.height δ := by
+    rw [hheight, max_lt_iff]
+    constructor <;> nlinarith [hj', hk', ha, hb]
+  exact ⟨(mem_posRoots P b δ).mpr (b.isPos_iff.mpr
+    ((lt_max_of_lt_left (by omega)).trans hlt)), hlt⟩
+
 /-- The negative roots are closed under addition: a root that is the sum of two negative roots is
 negative. -/
 lemma add_mem_negRoots {i j k : ι} (hi : i ∈ negRoots P b) (hj : j ∈ negRoots P b)
@@ -507,14 +544,6 @@ theorem _root_.RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support {x : 
     exact ⟨z * m, by simp [hm]⟩
 
 omit [CharZero R] in
-/-- **A weight killed by the simple coroots is killed by every coroot**, since every coroot is an
-integer combination of the simple coroots. -/
-theorem _root_.RootPairing.coroot'_eq_zero_of_forall_mem_support {x : M}
-    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 :=
-  LinearMap.eqOn_span (R := ℤ) (f := (P.toLinearMap x).toAddMonoidHom.toIntLinearMap) (g := 0)
-    (by rintro _ ⟨i, hi, rfl⟩; exact hx i hi) (b.coroot_mem_span_int j)
-
-omit [CharZero R] in
 /-- **Scalar proportionality of simple coroot pairings extends to all coroots**, since every
 coroot is an integer combination of the simple coroots. -/
 theorem _root_.RootPairing.mul_coroot'_eq_of_forall_mem_support {𝕜 : Type*} [Ring 𝕜] [Algebra R 𝕜]
@@ -536,16 +565,9 @@ variable {P} in
 coroot (`RootPairing.coroot'_eq_zero_of_forall_mem_support`), so every reflection generating the
 Weyl group fixes it. -/
 theorem smul_eq_self_of_forall_coroot'_eq_zero {x : M} (hx : ∀ i ∈ b.support, P.coroot' i x = 0)
-    (w : P.weylGroup) : w • x = x := by
-  obtain ⟨w, hw⟩ := w
-  induction hw using RootPairing.weylGroup.induction with
-  | mem i =>
-    rw [Subgroup.mk_smul, RootPairing.Equiv.reflection_smul, P.reflection_apply,
-      P.coroot'_eq_zero_of_forall_mem_support b hx i, zero_smul, sub_zero]
-  | one => exact one_smul _ x
-  | mul w₁ w₂ _ _ h₁ h₂ =>
-    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
-    rw [mul_smul, h₂, h₁]
+    (w : P.weylGroup) : w • x = x :=
+  RootPairing.weylGroup_smul_eq_self_of_mem_corootKer
+    (RootPairing.mem_corootKer.mpr (P.coroot'_eq_zero_of_forall_mem_support b hx)) w
 
 omit [CharZero R] in
 variable {P b} in
@@ -863,6 +885,18 @@ theorem mem_support_iff_isPos_and_forall_ne_add {i : ι} :
 
 end Indecomposable
 
+variable {P} in
+/-- A root `m(-αᵢ) + nγ` with `n > 0` is not `αᵢ`, when `-αᵢ` and `γ` are linearly independent. -/
+theorem ne_of_root_eq_nsmul_reflectionPerm_self_add {i γ δ : ι}
+    (hlin : LinearIndependent R ![P.root (P.reflectionPerm i i), P.root γ]) {m n : ℕ} (hn : 0 < n)
+    (hδ : P.root δ = m • P.root (P.reflectionPerm i i) + n • P.root γ) :
+    δ ≠ i := by
+  rintro rfl
+  have h := (LinearIndependent.pair_iff.mp hlin) (m + 1 : R) n (by
+    rw [add_smul, one_smul, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul, add_right_comm, ← hδ,
+      RootPairing.root_reflectionPerm_self, add_neg_cancel])
+  exact hn.ne' (by exact_mod_cast h.2)
+
 variable [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
 
 /-- A simple reflection preserves the set of positive roots other than its own simple root. Both
@@ -876,6 +910,32 @@ lemma reflectionPerm_mem_posRoots_diff_singleton_iff {i : ι} (hi : i ∈ b.supp
       by simpa using reflectionPerm_ne_of_mem_posRoots P b hi hkpos⟩
   refine ⟨fun h ↦ ?_, key j⟩
   simpa only [P.reflectionPerm_self i j] using key _ h
+
+variable {P b} in
+/-- A root `m(-αᵢ) + nγ`, for a simple root `αᵢ`, a positive root `γ ≠ αᵢ` and `n > 0`, is positive
+when `-αᵢ` and `γ` are linearly independent: its reflection in `αᵢ` is `mαᵢ + n sᵢγ`, a positive
+root other than `αᵢ`. -/
+theorem mem_posRoots_of_root_eq_nsmul_reflectionPerm_self_add {i γ δ : ι} (hi : i ∈ b.support)
+    (hγ : γ ∈ posRoots P b \ {i})
+    (hlin : LinearIndependent R ![P.root (P.reflectionPerm i i), P.root γ]) {m n : ℕ} (hn : 0 < n)
+    (hδ : P.root δ = m • P.root (P.reflectionPerm i i) + n • P.root γ) :
+    δ ∈ posRoots P b := by
+  have hγ' := (reflectionPerm_mem_posRoots_diff_singleton_iff P b hi γ).mpr hγ
+  refine ((reflectionPerm_mem_posRoots_diff_singleton_iff P b hi δ).mp ⟨?_, fun h => ?_⟩).1
+  · have hroot : P.root (P.reflectionPerm i δ) =
+        m • P.root i + n • P.root (P.reflectionPerm i γ) := by
+      simp only [RootPairing.root_reflectionPerm, hδ, map_add, map_nsmul,
+        RootPairing.reflection_apply_self, map_neg, neg_neg]
+    rw [mem_posRoots_iff_root_mem_posRootCone, hroot]
+    exact add_mem
+      (nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b (support_subset_posRoots P b hi)) m)
+      (nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b hγ'.1) n)
+  · -- Otherwise `δ = -αᵢ`, and `(m - 1)(-αᵢ) + nγ = 0` contradicts linear independence.
+    rw [← P.reflectionPerm_self i δ, Set.mem_singleton_iff.mp h] at hδ
+    have h0 := (LinearIndependent.pair_iff.mp hlin) ((m : R) - 1) n (by
+      rw [sub_smul, one_smul, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul, sub_add_eq_add_sub,
+        ← hδ, sub_self])
+    exact hn.ne' (by exact_mod_cast h0.2)
 
 /-- A simple reflection permutes the positive roots other than its own simple root. -/
 theorem bijOn_reflectionPerm_posRoots_diff_singleton {i : ι} (hi : i ∈ b.support) :

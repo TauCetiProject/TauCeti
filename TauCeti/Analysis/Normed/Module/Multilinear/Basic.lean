@@ -15,6 +15,9 @@ A continuous multilinear map `D` on `E × F` in `j + l` variables, evaluated on 
 `‖D‖ * ((∏ i, ‖u i‖) * ∏ i, ‖w i‖)`. This is the form in which mixed derivatives in two groups
 of variables are estimated by a full Fréchet derivative.
 
+Evaluation at a fixed `m`, as a continuous linear map on continuous multilinear maps, has
+operator norm at most `∏ i, ‖m i‖`.
+
 Postcomposition with a continuous linear map `g` is Lipschitz on continuous multilinear maps,
 with constant `‖g‖`, and as a continuous linear map it has operator norm at most `‖g‖`.
 
@@ -22,6 +25,8 @@ with constant `‖g‖`, and as a continuous linear map it has operator norm at 
 
 * `ContinuousMultilinearMap.norm_apply_append_prod_le`: the operator-norm bound on
   `Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))`.
+* `ContinuousMultilinearMap.norm_apply_le_prod`: evaluation at `m`, as a continuous linear map on
+  continuous multilinear maps, has operator norm at most `∏ i, ‖m i‖`.
 * `ContinuousLinearMap.norm_compContinuousMultilinearMap_sub_le`: the Lipschitz bound for
   postcomposition with a continuous linear map.
 * `ContinuousLinearMap.norm_compContinuousMultilinearMapL_le`: the operator-norm bound for
@@ -45,6 +50,19 @@ theorem norm_apply_append_prod_le {j l : ℕ} (D : (E × F) [×(j + l)]→L[𝕜
   refine (D.le_opNorm _).trans_eq ?_
   simp only [Fin.prod_univ_add, Fin.append_left, Fin.append_right, Prod.norm_mk, norm_zero,
     norm_nonneg, max_eq_left, max_eq_right]
+
+section Apply
+
+variable {ι : Type*} [Fintype ι] {E : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)]
+  [∀ i, NormedSpace 𝕜 (E i)] {G' : Type*} [SeminormedAddCommGroup G'] [NormedSpace 𝕜 G']
+
+/-- Evaluation of continuous multilinear maps at `m`, as a continuous linear map, has operator norm
+at most `∏ i, ‖m i‖`. -/
+theorem norm_apply_le_prod (m : ∀ i, E i) : ‖apply 𝕜 E G' m‖ ≤ ∏ i, ‖m i‖ :=
+  ContinuousLinearMap.opNorm_le_bound _ (Finset.prod_nonneg fun i _ ↦ norm_nonneg (m i))
+    fun f ↦ (f.le_opNorm m).trans_eq (mul_comm _ _)
+
+end Apply
 
 end ContinuousMultilinearMap
 

@@ -32,6 +32,9 @@ regular coefficient implies regularity (`MvPolynomial.isRegular_of_isRegular_coe
 The coefficient of a single variable `Xᵢ` in a product obeys the Leibniz rule at `0`, as for the
 linear coefficient of a univariate power series (`PowerSeries.coeff_one_mul`).
 
+A linear operator that acts diagonally on the monomials, `X ^ m ↦ w m • X ^ m`, acts on the
+coefficients by the same scalars.
+
 ## Main results
 
 * `MvPolynomial.coeff_sum_linearCombination_X_pow_of_fintype`: the coefficients of a power sum of
@@ -45,6 +48,8 @@ linear coefficient of a univariate power series (`PowerSeries.coeff_one_mul`).
   (or regular).
 * `MvPolynomial.coeff_single_one_mul`: the coefficient of `Xᵢ` in `p * q` is
   `pᵢ q(0) + p(0) qᵢ`.
+* `MvPolynomial.coeff_apply_eq_mul_of_apply_monomial`: an operator multiplying each monomial
+  `X ^ m` by `w m` multiplies the coefficient of `X ^ m` by `w m`.
 -/
 
 public section
@@ -152,5 +157,19 @@ theorem coeff_single_one_mul (i : σ) (p q : MvPolynomial σ R) :
   classical
   rw [coeff_mul, Finsupp.antidiagonal_single, Finset.sum_map]
   simp [Finset.Nat.antidiagonal_succ, constantCoeff_eq, add_comm]
+
+/-- **Coefficients under an operator diagonal on monomials.** If a linear operator `f` multiplies
+each monomial `X ^ m` by a scalar `w m`, then it multiplies the coefficient of `X ^ m` of every
+polynomial by `w m`. -/
+theorem coeff_apply_eq_mul_of_apply_monomial {f : Module.End R (MvPolynomial σ R)}
+    {w : (σ →₀ ℕ) → R} (hf : ∀ m r, f (monomial m r) = w m • monomial m r)
+    (p : MvPolynomial σ R) (m : σ →₀ ℕ) : (f p).coeff m = w m * p.coeff m := by
+  classical
+  conv_lhs => rw [p.as_sum, map_sum]
+  simp only [hf, coeff_sum, smul_monomial, coeff_monomial, smul_eq_mul]
+  rw [Finset.sum_ite_eq']
+  split_ifs with hm
+  · rfl
+  · rw [notMem_support_iff.1 hm, mul_zero]
 
 end MvPolynomial

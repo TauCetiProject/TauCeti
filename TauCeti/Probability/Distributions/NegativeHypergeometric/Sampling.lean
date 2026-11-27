@@ -59,7 +59,7 @@ theorem map_failuresBeforeSuccess_uniformOn_powersetCard {N K r : ℕ}
   apply (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).mp
   rw [← measureReal_def, ← measureReal_def,
     map_measureReal_apply_of_aemeasurable
-      (Finset.aemeasurable_uniformOn_finset _ _) measurableSet_Iic,
+      (Set.aemeasurable_uniformOn _ _) measurableSet_Iic,
     negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail]
   have hcount : μ.map (fun s ↦ #(s ∩ range (k + r))) =
       hypergeometricMeasure N K (min N (k + r)) := by
@@ -67,7 +67,7 @@ theorem map_failuresBeforeSuccess_uniformOn_powersetCard {N K r : ℕ}
     simpa only [card_range, range_inter_range] using
       (range N).map_card_inter_uniformOn_powersetCard (range (k + r)) K
   rw [← hcount, map_measureReal_apply_of_aemeasurable
-    (Finset.aemeasurable_uniformOn_finset _ _) measurableSet_Ici]
+    (Set.aemeasurable_uniformOn _ _) measurableSet_Ici]
   have hinter : ((range N).powersetCard K : Set (Finset ℕ)) ∩
       (fun s : Finset ℕ ↦ s.failuresBeforeSuccess r) ⁻¹' Set.Iic k =
       ((range N).powersetCard K : Set (Finset ℕ)) ∩
@@ -130,7 +130,7 @@ theorem failuresBeforeSuccess_negativeHypergeometricMeasure
   have hstop : HasLaw (fun s : Finset ℕ ↦ s.failuresBeforeSuccess r)
       (TauCeti.Probability.negativeHypergeometricMeasure N K r)
       (uniformOn ((range N).powersetCard K : Set (Finset ℕ))) :=
-    ⟨Finset.aemeasurable_uniformOn_finset _ _,
+    ⟨Set.aemeasurable_uniformOn _ _,
       TauCeti.Probability.map_failuresBeforeSuccess_uniformOn_powersetCard hr hK⟩
   exact hstop.fun_comp hS
 
