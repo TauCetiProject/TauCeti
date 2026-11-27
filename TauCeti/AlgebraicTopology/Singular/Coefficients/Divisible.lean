@@ -41,6 +41,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits AlgebraicTopology
+open scoped MonoidalCategory
 
 universe u
 
@@ -107,10 +108,58 @@ private lemma homotopyEquivalences_zsmul_add_proj {X : Type u} [TopologicalSpace
       (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ)) q
   exact (ChainComplex.quasiIso_iff_of_projective (zsmulAddProjEndo x m)).1 hqi
 
-/-- Left-tensoring `X` with `Y` agrees with right-tensoring `Y` with `X`. -/
-private lemma tensorLeft_obj_eq_tensorRight_obj {C : Type*} [Category C] [MonoidalCategory C]
-    (X Y : C) : (MonoidalCategory.tensorLeft X).obj Y = (MonoidalCategory.tensorRight Y).obj X :=
-  rfl
+/-- Tensoring `zsmulAddProjEndo x m` with a `ULift.{u} ℤ`-module `M'` annihilated by `m` induces
+zero on `(n + 1)`-st homology. -/
+private lemma homologyMap_zsmulAddProjEndo_eq_zero {X : Type u} [TopologicalSpace X] (x : X)
+    (m : ℤ) (M' : ModuleCat.{u} (ULift.{u} ℤ)) (hmM' : ∀ a : M', m • a = 0) (n : ℕ) :
+    HomologicalComplex.homologyMap
+      (((MonoidalCategory.tensorLeft M').mapHomologicalComplex (.down ℕ)).map
+        (zsmulAddProjEndo x m)) (n + 1) = 0 := by
+  let C := (singularChainComplexFunctor (ModuleCat.{u} (ULift.{u} ℤ))).obj
+    (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ))
+  let p : TopCat.of X ⟶ TopCat.of PUnit.{u + 1} := _root_.TopCat.isTerminalPUnit.from (TopCat.of X)
+  let s : TopCat.of PUnit.{u + 1} ⟶ TopCat.of X :=
+    TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} x)
+  let F := MonoidalCategory.tensorLeft M'
+  let FCh := F.mapHomologicalComplex (.down ℕ)
+  -- Multiplication by `m` kills `M'`, hence kills every tensor product `M' ⊗ Y`.
+  have hM0 : m • 𝟙 M' = 0 := by ext a; exact hmM' a
+  have hkill : m • 𝟙 (FCh.obj (C.obj (TopCat.of X))) = 0 := by
+    ext q : 1
+    let Y := (C.obj (TopCat.of X)).X q
+    have hw : m • 𝟙 (M' ⊗ Y) = (m • 𝟙 M') ▷ Y := by
+      rw [← MonoidalCategory.id_whiskerRight, ← MonoidalCategory.curriedTensor_map_app,
+        ← Functor.flip_obj_map, ← Functor.map_zsmul, Functor.flip_obj_map,
+        MonoidalCategory.curriedTensor_map_app]
+    simp [F, FCh, Y, hw, hM0]
+  let H := HomologicalComplex.homologyFunctor (ModuleCat.{u} (ULift.{u} ℤ)) (.down ℕ) (n + 1)
+  have hP : Limits.IsZero (H.obj (FCh.obj (C.obj (TopCat.of PUnit.{u + 1})))) :=
+    (isZero_singularHomologyFunctor_of_contractibleSpace
+      (F.obj (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ))) (TopCat.of PUnit.{u + 1})
+      n.succ_ne_zero).of_iso
+        (H.mapIso ((Functor.singularChainComplexFunctorObjCompMapIso F
+          (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ))).app (TopCat.of PUnit.{u + 1})))
+  have hscalar : H.map (FCh.map (m • 𝟙 (C.obj (TopCat.of X)))) = 0 := by
+    rw [FCh.map_zsmul, FCh.map_id, hkill, H.map_zero]
+  have hpt : H.map (FCh.map ((1 - m) • (C.map p ≫ C.map s))) = 0 := by
+    rw [FCh.map_zsmul, FCh.map_comp, H.map_zsmul, H.map_comp,
+      hP.eq_of_tgt (H.map (FCh.map (C.map p))) 0, Limits.zero_comp, smul_zero]
+  rw [← HomologicalComplex.homologyFunctor_map, zsmulAddProjEndo, FCh.map_add, H.map_add,
+    hscalar, hpt, zero_add]
+
+/-- Vanishing of singular homology with coefficients in the lifted `ℤ`-module
+`ModuleCat.of (ULift.{u} ℤ) M` implies vanishing of singular homology with coefficients in `M`. -/
+private lemma isZero_singularHomology_of_isZero_ulift {X : Type u} [TopologicalSpace X]
+    (M : ModuleCat.{u} ℤ) (k : ℕ)
+    (hM' : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{u} (ULift.{u} ℤ)) k).obj
+      (ModuleCat.of (ULift.{u} ℤ) M)).obj (TopCat.of X))) :
+    Limits.IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) k).obj M).obj (TopCat.of X)) := by
+  let Res := ModuleCat.restrictScalars.{u}
+    ((ULift.ringEquiv : ULift.{u} ℤ ≃+* ℤ).symm : ℤ →+* ULift.{u} ℤ)
+  exact ((Res.isZero_singularHomologyFunctor_iff (ModuleCat.of (ULift.{u} ℤ) M)
+    k (TopCat.of X)).2 hM').of_iso
+    (((singularHomologyFunctor (ModuleCat.{u} ℤ) k).mapIso
+      (ModuleCat.restrictScalarsUliftIso.{u} (R := ℤ) M)).app (TopCat.of X)).symm
 
 /-- If `X` is path-connected and multiplication by `m` is bijective on every positive lifted
 integral singular homology group of `X`, then `H_{n + 1}(X; M) = 0` for every `ℤ`-module `M`
@@ -127,9 +176,6 @@ theorem isZero_singularHomology_of_bijective_zsmul_int {X : Type u} [Topological
   let M' : ModuleCat.{u} (ULift.{u} ℤ) := ModuleCat.of (ULift.{u} ℤ) M
   let C := (singularChainComplexFunctor (ModuleCat.{u} (ULift.{u} ℤ))).obj
     (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ))
-  let p : TopCat.of X ⟶ TopCat.of PUnit.{u + 1} := _root_.TopCat.isTerminalPUnit.from (TopCat.of X)
-  let s : TopCat.of PUnit.{u + 1} ⟶ TopCat.of X :=
-    TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} x)
   let F := MonoidalCategory.tensorLeft M'
   let FCh := F.mapHomologicalComplex (.down ℕ)
   have hqi : QuasiIso (FCh.map (zsmulAddProjEndo x m)) :=
@@ -139,31 +185,11 @@ theorem isZero_singularHomology_of_bijective_zsmul_int {X : Type u} [Topological
           (homotopyEquivalences_zsmul_add_proj x m hX))
   have hiso : IsIso (HomologicalComplex.homologyMap (FCh.map (zsmulAddProjEndo x m)) (n + 1)) :=
     (quasiIsoAt_iff_isIso_homologyMap _ (n + 1)).1 ((quasiIso_iff _).1 hqi (n + 1))
-  -- Multiplication by `m` kills `M'`, hence kills every tensor product `M' ⊗ N`.
-  have hM0 : m • 𝟙 M' = 0 := by ext a; exact hmM a
-  have hkill : m • 𝟙 (FCh.obj (C.obj (TopCat.of X))) = 0 := by
-    ext q : 1
-    let G := MonoidalCategory.tensorRight ((C.obj (TopCat.of X)).X q)
-    rw [HomologicalComplex.zsmul_f_apply, HomologicalComplex.id_f, HomologicalComplex.zero_f,
-      Functor.mapHomologicalComplex_obj_X, tensorLeft_obj_eq_tensorRight_obj,
-      ← G.map_id, ← G.map_zsmul, hM0, G.map_zero]
-  let H := HomologicalComplex.homologyFunctor (ModuleCat.{u} (ULift.{u} ℤ)) (.down ℕ) (n + 1)
-  have hP : Limits.IsZero (H.obj (FCh.obj (C.obj (TopCat.of PUnit.{u + 1})))) :=
-    (isZero_singularHomologyFunctor_of_contractibleSpace
-      (F.obj (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ))) (TopCat.of PUnit.{u + 1})
-      n.succ_ne_zero).of_iso
-        (H.mapIso ((Functor.singularChainComplexFunctorObjCompMapIso F
-          (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ))).app (TopCat.of PUnit.{u + 1})))
-  have hscalar : H.map (FCh.map (m • 𝟙 (C.obj (TopCat.of X)))) = 0 := by
-    rw [FCh.map_zsmul, FCh.map_id, hkill, H.map_zero]
-  have hpt : H.map (FCh.map ((1 - m) • (C.map p ≫ C.map s))) = 0 := by
-    rw [FCh.map_zsmul, FCh.map_comp, H.map_zsmul, H.map_comp,
-      hP.eq_of_tgt (H.map (FCh.map (C.map p))) 0, Limits.zero_comp, smul_zero]
-  have hzero : HomologicalComplex.homologyMap (FCh.map (zsmulAddProjEndo x m)) (n + 1) = 0 := by
-    rw [← HomologicalComplex.homologyFunctor_map, zsmulAddProjEndo, FCh.map_add, H.map_add,
-      hscalar, hpt, zero_add]
+  have hzero : HomologicalComplex.homologyMap (FCh.map (zsmulAddProjEndo x m)) (n + 1) = 0 :=
+    homologyMap_zsmulAddProjEndo_eq_zero x m M' hmM n
   have hFzero : Limits.IsZero ((FCh.obj (C.obj (TopCat.of X))).homology (n + 1)) :=
     Limits.IsZero.of_epi_eq_zero _ hzero
+  let H := HomologicalComplex.homologyFunctor (ModuleCat.{u} (ULift.{u} ℤ)) (.down ℕ) (n + 1)
   have hM'zero : Limits.IsZero (((singularHomologyFunctor (ModuleCat.{u} (ULift.{u} ℤ))
       (n + 1)).obj M').obj (TopCat.of X)) :=
     (hFzero.of_iso
@@ -171,10 +197,6 @@ theorem isZero_singularHomology_of_bijective_zsmul_int {X : Type u} [Topological
         (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ))).app (TopCat.of X))).symm).of_iso
         (((singularHomologyFunctor (ModuleCat.{u} (ULift.{u} ℤ)) (n + 1)).mapIso
           (MonoidalCategory.rightUnitor M')).app (TopCat.of X)).symm
-  let Res := ModuleCat.restrictScalars.{u}
-    ((ULift.ringEquiv : ULift.{u} ℤ ≃+* ℤ).symm : ℤ →+* ULift.{u} ℤ)
-  exact ((Res.isZero_singularHomologyFunctor_iff M' (n + 1) (TopCat.of X)).2 hM'zero).of_iso
-    (((singularHomologyFunctor (ModuleCat.{u} ℤ) (n + 1)).mapIso
-      (ModuleCat.restrictScalarsUliftIso.{u} (R := ℤ) M)).app (TopCat.of X)).symm
+  exact isZero_singularHomology_of_isZero_ulift M (n + 1) hM'zero
 
 end TauCeti
