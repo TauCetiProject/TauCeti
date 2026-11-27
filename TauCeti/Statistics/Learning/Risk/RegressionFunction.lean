@@ -7,9 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
-import Mathlib.Data.Bool.Set
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
-import TauCeti.MeasureTheory.Measure.MapRestrictDensity
+import Mathlib.Probability.Kernel.Disintegration.StandardBorel
 
 /-!
 # Regression functions for binary classification
@@ -22,19 +21,17 @@ marginal.
 
 A finite joint measure admits a regression function, unique almost everywhere for its feature
 marginal. For a finite feature measure and a Markov kernel, the kernel's mass at `true` is a
-regression function for the resulting joint measure.
+regression function for the resulting joint measure. Existence uses Mathlib's conditional kernel
+`MeasureTheory.Measure.condKernel`.
 
 ## References
 
 * L. Devroye, L. Györfi, G. Lugosi, *A Probabilistic Theory of Pattern Recognition* (1996), §2.1.
-* The existence proof uses `TauCeti.MeasureTheory.mapRestrictDensity` for the positive-label slice.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory Set
-open TauCeti.MeasureTheory (integral_mapRestrictDensity_mul mapRestrictDensity
-  mapRestrictDensity_mem_Icc measurable_mapRestrictDensity)
 
 namespace TauCeti
 
@@ -43,6 +40,7 @@ variable {X : Type*} [MeasurableSpace X]
 /-- A version of the conditional probability of label `true` given the feature under a finite
 joint measure. It is measurable, takes values in `[0, 1]`, and integrates against the feature
 marginal over each measurable feature set to give the mass of that set with label `true`. -/
+@[mk_iff]
 structure IsRegressionFunction (P : Measure (X × Bool)) [IsFiniteMeasure P] (η : X → ℝ) : Prop where
   /-- The regression function is measurable. -/
   measurable : Measurable η
@@ -66,16 +64,37 @@ theorem IsRegressionFunction.integrable (hη : IsRegressionFunction P η) :
 theorem IsRegressionFunction.measureReal_prod_false (hη : IsRegressionFunction P η)
     {A : Set X} (hA : MeasurableSet A) :
     P.real (A ×ˢ {false}) = ∫ x in A, (1 - η x) ∂(P.map Prod.fst) := by
-  have hdisj : Disjoint (A ×ˢ ({false} : Set Bool)) (A ×ˢ {true}) :=
-    disjoint_prod.mpr (Or.inr (by simp))
-  have hpartition : (A ×ˢ ({false} : Set Bool)) ∪ (A ×ˢ {true}) = Prod.fst ⁻¹' A := by
-    rw [← prod_union, ← insert_eq, ← Bool.univ_eq, prod_univ]
-  have hmass := measureReal_union (μ := P) hdisj (hA.prod (measurableSet_singleton true))
-  rw [hpartition, hη.measureReal_prod_true hA] at hmass
-  rw [integral_sub (integrable_const _) hη.integrable.integrableOn, setIntegral_const,
-    smul_eq_mul, mul_one]
-  simp only [measureReal_def, Measure.map_apply measurable_fst hA] at hmass ⊢
-  linarith only [hmass]
+  have hfalse : A ×ˢ ({false} : Set Bool) = Prod.fst ⁻¹' A \ (A ×ˢ {true}) := by
+    ext ⟨x, b⟩
+    cases b <;> simp [mem_sdiff]
+  rw [hfalse,
+    measureReal_sdiff (prod_subset_preimage_fst _ _) (hA.prod (measurableSet_singleton _)),
+    hη.measureReal_prod_true hA, integral_sub (integrable_const _) hη.integrable.integrableOn,
+    setIntegral_one_eq_measureReal, map_measureReal_apply measurable_fst hA]
+
+/-- The feature marginal of a label slice is the full marginal weighted by the conditional
+probability of that label. -/
+theorem IsRegressionFunction.map_restrict_prod_eq_withDensity (hη : IsRegressionFunction P η)
+    (b : Bool) :
+    (P.restrict (univ ×ˢ {b})).map Prod.fst =
+      (P.map Prod.fst).withDensity (fun x ↦ ENNReal.ofReal (if b then η x else 1 - η x)) := by
+  ext A hA
+  have hinter : Prod.fst ⁻¹' A ∩ (univ ×ˢ ({b} : Set Bool)) = A ×ˢ {b} := by
+    rw [← prod_univ]
+    simp [prod_inter_prod]
+  rw [Measure.map_apply measurable_fst hA, Measure.restrict_apply (measurable_fst hA), hinter,
+    withDensity_apply _ hA]
+  cases b
+  · have hInt : Integrable (fun x ↦ 1 - η x) (P.map Prod.fst) :=
+      (integrable_const 1).sub hη.integrable
+    simp only [Bool.false_eq_true, ite_false]
+    rw [← ofReal_integral_eq_lintegral_ofReal hInt.integrableOn
+      (ae_of_all _ fun x ↦ sub_nonneg.mpr (hη.mem_Icc x).2), ← hη.measureReal_prod_false hA,
+      ofReal_measureReal]
+  · simp only [ite_true]
+    rw [← ofReal_integral_eq_lintegral_ofReal hη.integrable.integrableOn
+      (ae_of_all _ fun x ↦ (hη.mem_Icc x).1), ← hη.measureReal_prod_true hA,
+      ofReal_measureReal]
 
 /-- A measurable, unit-interval-valued modification on a marginal null set is still a regression
 function. -/
@@ -98,29 +117,6 @@ namespace MeasureTheory.Measure
 
 variable {X : Type*} [MeasurableSpace X]
 
-/-- Every finite joint measure of features and Boolean labels admits a regression function. -/
-theorem exists_isRegressionFunction (P : Measure (X × Bool)) [IsFiniteMeasure P] :
-    ∃ η : X → ℝ, TauCeti.IsRegressionFunction P η := by
-  let s : Set (X × Bool) := univ ×ˢ {true}
-  let μ := P.map Prod.fst
-  let η := mapRestrictDensity Prod.fst P μ s
-  refine ⟨η, measurable_mapRestrictDensity Prod.fst P μ s,
-    mapRestrictDensity_mem_Icc Prod.fst P μ s, fun A hA ↦ ?_⟩
-  have hpre : MeasurableSet ((Prod.fst : X × Bool → X) ⁻¹' A) := measurable_fst hA
-  have hinter : s ∩ (Prod.fst ⁻¹' A) = A ×ˢ ({true} : Set Bool) := by
-    rw [← prod_univ]
-    simp [s, prod_inter_prod]
-  calc
-    P.real (A ×ˢ {true}) = ∫ z in s, A.indicator (1 : X → ℝ) z.1 ∂P := by
-      simp only [← indicator_comp_right Prod.fst, Pi.one_def, Function.comp_apply,
-        setIntegral_indicator hpre, hinter, setIntegral_const, smul_eq_mul, mul_one]
-    _ = ∫ x, η x * A.indicator (1 : X → ℝ) x ∂μ :=
-      (integral_mapRestrictDensity_mul measurable_fst.aemeasurable le_rfl s
-        (measurable_const.indicator hA).aestronglyMeasurable).symm
-    _ = ∫ x in A, η x ∂μ := by
-      rw [← integral_indicator hA]
-      simp only [← indicator_mul_right, Pi.one_apply, mul_one]
-
 /-- For a finite feature measure, a Markov kernel's probability of `true` is a regression function
 of the resulting joint measure. -/
 theorem isRegressionFunction_compProd (μ : Measure X) [IsFiniteMeasure μ] (κ : Kernel X Bool)
@@ -131,5 +127,11 @@ theorem isRegressionFunction_compProd (μ : Measure X) [IsFiniteMeasure μ] (κ 
   rw [hfst, measureReal_def, Measure.compProd_apply_prod hA (measurableSet_singleton true)]
   exact (integral_toReal hm.aemeasurable
     (ae_of_all _ fun x ↦ measure_lt_top (κ x) {true})).symm
+
+/-- Every finite joint measure of features and Boolean labels admits a regression function. -/
+theorem exists_isRegressionFunction (P : Measure (X × Bool)) [IsFiniteMeasure P] :
+    ∃ η : X → ℝ, TauCeti.IsRegressionFunction P η := by
+  refine ⟨fun x ↦ (P.condKernel x).real {true}, ?_⟩
+  simpa only [P.disintegrate P.condKernel] using P.fst.isRegressionFunction_compProd P.condKernel
 
 end MeasureTheory.Measure
