@@ -127,6 +127,12 @@ end Subgroup
 
 namespace AddSubgroup
 
+private def toAddKer {G : Type*} [AddCommGroup G] {N : AddSubgroup G} {U : Type*} [CommGroup U]
+    (ψ : (MonoidHom.compHom' (P := U) N.subtype.toMultiplicative).ker) :
+    (AddMonoidHom.domRestrictHom N (Additive U)).ker :=
+  ⟨ψ.val.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
+    congrArg Additive.ofMul (DFunLike.congr_fun ψ.property (.ofAdd x))⟩
+
 /-- Characters of an abelian group `G` into `U` that vanish on an additive subgroup `N`
 correspond multiplicatively to characters of the quotient `G ⧸ N`, via
 `AddMonoidHom.domRestrictHomKerEquiv`. -/
@@ -134,10 +140,8 @@ def kerCompHomSubtypeMulEquiv {G : Type*} [AddCommGroup G] (N : AddSubgroup G)
     (U : Type*) [CommGroup U] :
     (MonoidHom.compHom' (P := U) N.subtype.toMultiplicative).ker ≃*
       (Multiplicative (G ⧸ N) →* U) where
-  toFun ψ := AddMonoidHom.toMultiplicativeLeft <|
-    AddMonoidHom.domRestrictHomKerEquiv (Additive U) N
-      ⟨ψ.val.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
-        congrArg Additive.ofMul (DFunLike.congr_fun ψ.property (.ofAdd x))⟩
+  toFun ψ := AddMonoidHom.toMultiplicativeLeft
+    (AddMonoidHom.domRestrictHomKerEquiv (Additive U) N (toAddKer ψ))
   invFun η :=
     ⟨((AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).symm
         η.toAdditiveRight).val.toMultiplicativeLeft,
@@ -145,27 +149,15 @@ def kerCompHomSubtypeMulEquiv {G : Type*} [AddCommGroup G] (N : AddSubgroup G)
         simpa using congrArg Additive.toMul <| DFunLike.congr_fun
           ((AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).symm
             η.toAdditiveRight).property x.toAdd⟩
-  left_inv ψ := Subtype.ext <| MonoidHom.ext fun x ↦ by
-    have := (AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).symm_apply_apply
-      ⟨ψ.val.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun y ↦
-        congrArg Additive.ofMul (DFunLike.congr_fun ψ.property (.ofAdd y))⟩
-    exact congrArg Additive.toMul (DFunLike.congr_fun (congrArg Subtype.val this) x.toAdd)
-  right_inv η := MonoidHom.ext fun q ↦ by
-    have := (AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).apply_symm_apply
-      η.toAdditiveRight
-    exact congrArg Additive.toMul (DFunLike.congr_fun this q.toAdd)
+  left_inv ψ := Subtype.ext <| MonoidHom.ext fun x ↦ congrArg Additive.toMul <|
+    DFunLike.congr_fun (congrArg Subtype.val
+      ((AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).symm_apply_apply (toAddKer ψ))) x.toAdd
+  right_inv η := MonoidHom.ext fun q ↦ congrArg Additive.toMul <|
+    DFunLike.congr_fun ((AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).apply_symm_apply
+      η.toAdditiveRight) q.toAdd
   map_mul' ψ₁ ψ₂ := MonoidHom.ext fun q ↦ by
-    have hmap : AddMonoidHom.domRestrictHomKerEquiv (Additive U) N
-          ⟨(ψ₁ * ψ₂).val.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
-            congrArg Additive.ofMul (DFunLike.congr_fun (ψ₁ * ψ₂).property (.ofAdd x))⟩ =
-        AddMonoidHom.domRestrictHomKerEquiv (Additive U) N
-          ⟨ψ₁.val.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
-            congrArg Additive.ofMul (DFunLike.congr_fun ψ₁.property (.ofAdd x))⟩ +
-        AddMonoidHom.domRestrictHomKerEquiv (Additive U) N
-          ⟨ψ₂.val.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
-            congrArg Additive.ofMul (DFunLike.congr_fun ψ₂.property (.ofAdd x))⟩ :=
-      (AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).map_add
-        ⟨ψ₁.val.toAdditiveRight, _⟩ ⟨ψ₂.val.toAdditiveRight, _⟩
+    have hmap := (AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).map_add
+      (toAddKer ψ₁) (toAddKer ψ₂)
     exact congrArg Additive.toMul (DFunLike.congr_fun hmap q.toAdd)
 
 /-- `kerCompHomSubtypeMulEquiv` evaluates on the class of `x : G` as `ψ.val (.ofAdd x)`. -/

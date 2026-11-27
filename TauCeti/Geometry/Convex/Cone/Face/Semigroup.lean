@@ -18,43 +18,27 @@ import TauCeti.Geometry.Convex.Cone.Face.Finite
 /-!
 # Comparison of cone faces and semigroup faces
 
-Faces of an additive monoid `S` are bundled in Mathlib as `SaturatedAddSubmonoid S`, while faces of
-a pointed cone `C : PointedCone R V` are bundled as `C.Face`. This file compares the two face
-lattices:
+Faces of an additive monoid `S` (`SaturatedAddSubmonoid S`) and of a pointed cone `C` (`C.Face`)
+compare as follows:
 
-1. Over any ordered semiring `R`, restricting a face of `C` to `C` itself defines an order
-   embedding `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid`, and pulling back along
-   `i : M →+ V` defines an order embedding `PointedCone.hullFaceOrderEmbedding` into
-   `SaturatedAddSubmonoid S` without any injectivity or finite-generation assumptions.
-2. Over `ℚ`, every saturated additive submonoid of a pointed cone `C : PointedCone ℚ V` spans a
-   face of `C` (`PointedCone.faceOrderIsoSaturatedAddSubmonoid`), and for any injective additive
-   homomorphism `i : M →+ V` into a `ℚ`-module and any additive submonoid `S : AddSubmonoid M`
-   (not necessarily finitely generated), `PointedCone.hullRatFaceOrderIso` upgrades
-   `hullFaceOrderEmbedding` to an order isomorphism
-   `(PointedCone.hull ℚ (i '' S)).Face ≃o SaturatedAddSubmonoid S`.
-3. For a finitely generated submonoid `S` of a free abelian group `L`, Tucker's theorem over `ℤ`
-   exposes every semigroup face `F : SaturatedAddSubmonoid S` by an integral linear functional
-   `m : L →+ ℤ` nonnegative on `S` and vanishing on `S` precisely along `F`
-   (`SaturatedAddSubmonoid.exists_addMonoidHom_nonneg_and_eq_zero_iff`). Consequently, over any
-   strictly ordered commutative ring `R` (such as `ℝ`, `ℚ`, or `ℤ`), whenever `ℤ`-linear
-   functionals on `L` extend along `i : L →+ V` to `Module.Dual R V` — in particular for scalar
-   extension `L → R ⊗[ℤ] L` — cone faces of `PointedCone.hull R (i '' S)` correspond
-   order-isomorphically to semigroup faces of `S` (`PointedCone.hullFaceOrderIsoOfDualExt` and
-   `PointedCone.hullBaseChangeFaceOrderIso`).
+1. Over any ordered semiring `R`, restricting faces of `C` and pulling back along `i : M →+ V`
+   give order embeddings `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid` and
+   `PointedCone.hullFaceOrderEmbedding`.
+2. Over `ℚ`, every face of `C` spans a cone face (`PointedCone.faceOrderIsoSaturatedAddSubmonoid`),
+   yielding `(PointedCone.hull ℚ (i '' S)).Face ≃o SaturatedAddSubmonoid S`
+   (`PointedCone.hullRatFaceOrderIso`) for injective `i` without finite-generation assumptions.
+3. For FG `S` in a free abelian group `L`, Tucker's theorem over `ℤ` exposes every face by an
+   integral functional (`SaturatedAddSubmonoid.exists_addMonoidHom_nonneg_and_eq_zero_iff`), giving
+   `PointedCone.hullFaceOrderIsoOfDualExt` and `PointedCone.hullBaseChangeFaceOrderIso` over any
+   strictly ordered commutative ring `R`.
 
 ## Main declarations
 
-* `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid` and `PointedCone.hullFaceOrderEmbedding`:
-  order embeddings from cone faces to monoid faces over an arbitrary ordered semiring.
-* `PointedCone.faceOrderIsoSaturatedAddSubmonoid` and `PointedCone.hullRatFaceOrderIso`:
-  unconditional order isomorphisms `C.Face ≃o SaturatedAddSubmonoid C` and
-  `(PointedCone.hull ℚ (i '' S)).Face ≃o SaturatedAddSubmonoid S` over `ℚ`.
-* `SaturatedAddSubmonoid.exists_addMonoidHom_nonneg_and_eq_zero_iff` and
-  `SaturatedAddSubmonoid.exists_addMonoidHom_closure_nonneg_and_eq_zero_iff`: integral linear
-  exposure of faces of finitely generated submonoids of free or torsion-free abelian groups.
-* `PointedCone.hullFaceOrderIsoOfDualExt` and `PointedCone.hullBaseChangeFaceOrderIso`: order
-  isomorphism `(PointedCone.hull R (i '' S)).Face ≃o SaturatedAddSubmonoid S` for finitely
-  generated submonoids over any strictly ordered commutative ring `R`.
+* `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid`, `PointedCone.hullFaceOrderEmbedding`
+* `PointedCone.faceOrderIsoSaturatedAddSubmonoid`, `PointedCone.hullRatFaceOrderIso`
+* `SaturatedAddSubmonoid.exists_addMonoidHom_nonneg_and_eq_zero_iff`,
+  `SaturatedAddSubmonoid.exists_addMonoidHom_closure_nonneg_and_eq_zero_iff`
+* `PointedCone.hullFaceOrderIsoOfDualExt`, `PointedCone.hullBaseChangeFaceOrderIso`
 
 ## References
 
