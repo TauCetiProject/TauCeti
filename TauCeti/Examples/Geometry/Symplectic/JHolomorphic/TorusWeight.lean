@@ -211,7 +211,7 @@ theorem mk_sign_det_one_sub_rotation_pow {θ : ℝ} (hθ : ∀ q : ℚ, θ ≠ 2
       (SignType.sign (1 - (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) ^ k).det : ℤ)) = X * mk 1 :=
   mk_sign_det_one_sub_pow_of_forall_pos fun _ hk ↦ det_one_sub_rotation_pow_pos hθ hk
 
-/-- **An elliptic orbit torus has label `(+, 0)`.** For an angle `θ ∉ 2πℚ`, the label read off
+/-- **A rotation by an angle `θ ∉ 2πℚ` gives label `(+, 0)`.** For such `θ`, the label read off
 from the rotation `R_θ` is `(+, 0)`: `det (1 - R_θ) > 0` and `det (1 + R_θ) ≥ 0`. Its local series
 is `f_(+,0) = 1 / (1 - t)`, and by `mk_sign_det_one_sub_rotation_pow` the identity
 `t f' = f ∑_{k ≥ 1} sgn det (1 - R_θ ^ k) t ^ k` of
