@@ -12,8 +12,6 @@ public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Algebra.Group.End
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 import Mathlib.Data.Set.Finite.Basic
-import Mathlib.GroupTheory.Commutator.Basic
-import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Tactic.Group
 import TauCeti.Data.List.Count
 import TauCeti.Data.List.Flatten

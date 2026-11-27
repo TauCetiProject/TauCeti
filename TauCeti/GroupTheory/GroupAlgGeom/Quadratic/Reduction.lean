@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Automorphism
-import Mathlib.Algebra.Group.Subgroup.Finite
 import TauCeti.Algebra.Group.Action.List
 import TauCeti.Data.Finset.Card
 import TauCeti.GroupTheory.GroupAlgGeom.ChangeOfCoordinates
