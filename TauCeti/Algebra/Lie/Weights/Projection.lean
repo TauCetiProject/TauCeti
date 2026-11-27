@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Killing.DualBasis
+public import TauCeti.Algebra.Lie.Weights.Borel
 public import TauCeti.Algebra.Lie.Weights.Diagonalizable
 public import TauCeti.Algebra.Lie.Weights.Killing
 import TauCeti.LinearAlgebra.Projection
@@ -41,6 +42,9 @@ space, which for a root is `1`.
   weight space it projects onto.
 * `TauCeti.sum_killingForm_genWeightSpaceProjection_eq_one`: the opposite projections of a basis and
   its Killing-dual basis pair to `1` in total, at a nonzero weight.
+* `TauCeti.mem_rootSpaceSpan_iff`: an element lies in the span `TauCeti.rootSpaceSpan` of the root
+  spaces of a set `S` of roots exactly when its components along the root-space decomposition
+  vanish outside `S`.
 
 ## Implementation notes
 
@@ -246,5 +250,37 @@ theorem sum_killingForm_genWeightSpaceProjection_eq_one [CharZero K] {ι : Type*
     trace_genWeightSpaceProjection_eq_one H hχ]
 
 end Killing
+
+/-! ### Spans of root spaces -/
+
+section RootSpaceSpan
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+  [LieModule.IsTriangularizable K H L]
+
+/-- **Membership in a span of root spaces, through the root-space decomposition.** An element lies
+in the span of the root spaces of `S` exactly when each of its nonzero components along the
+root-space decomposition is attached to a member of `S`. -/
+theorem mem_rootSpaceSpan_iff {S : Set H.root} {z : L} :
+    z ∈ rootSpaceSpan H S ↔ ∀ χ : Weight K H L, genWeightSpaceProjection K H L χ z ≠ 0 →
+      ∃ k ∈ S, (k : Weight K H L) = χ := by
+  refine ⟨fun hz χ hχ ↦ ?_, fun hz ↦ ?_⟩
+  · -- the projection onto a weight space outside `S` kills every root space of `S`
+    by_contra! hS
+    refine hχ ?_
+    rw [rootSpaceSpan_eq_iSup] at hz
+    refine LieSubmodule.iSup_induction _ (motive := fun z ↦ genWeightSpaceProjection K H L χ z = 0)
+      hz (fun k z hz ↦ genWeightSpaceProjection_apply_of_mem_of_ne (hS k k.property) hz)
+      (map_zero _) (fun z z' hz hz' ↦ by rw [map_add, hz, hz', add_zero])
+  · rw [← sum_genWeightSpaceProjection_apply (K := K) (L := H) z]
+    refine sum_mem fun χ _ ↦ ?_
+    by_cases hχ : genWeightSpaceProjection K H L χ z = 0
+    · rw [hχ]
+      exact zero_mem _
+    obtain ⟨k, hk, rfl⟩ := hz χ hχ
+    exact rootSpace_le_rootSpaceSpan hk (genWeightSpaceProjection_apply_mem _ z)
+
+end RootSpaceSpan
 
 end TauCeti

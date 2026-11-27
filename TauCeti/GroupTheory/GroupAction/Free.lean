@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Data.Set.Finite.Basic
@@ -41,6 +42,11 @@ The map `(g, s) ↦ g • σ s : G × S → X` is injective on a tube `G × U` i
 `s ∈ U` has trivial stabilizer and `s ↦ ⟦σ s⟧ : U → X ⧸ G` is injective. This is the injectivity
 of a quotient chart in the free proper quotient theorem.
 
+## Freeness in stages
+
+For a normal subgroup `H` of `G`, the group `G` acts freely at a point exactly when `H` acts freely
+at it and `G ⧸ H` acts freely at its `H`-orbit.
+
 ## Main results
 
 * `MulAction.eq_empty_of_forall_exists_smul_mem`: the descent principle.
@@ -49,6 +55,8 @@ of a quotient chart in the free proper quotient theorem.
 * `MulAction.selfEquivOrbitsQuotientProd_symm_apply`: the inverse of the orbit decomposition of a
   free action evaluated at `(q, g)` is `g • q.out`.
 * `MulAction.injOn_smul_univ_prod_iff`: injectivity of `(g, s) ↦ g • σ s` on a tube `G × U`.
+* `MulAction.orbitRel.Quotient.stabilizer_mk_eq_bot_of_stabilizer_eq_bot`,
+  `MulAction.orbitRel.Quotient.stabilizer_eq_bot_of_stabilizer_mk_eq_bot`: freeness in stages.
 
 ## References
 
@@ -160,5 +168,33 @@ theorem injOn_smul_univ_prod_iff {S : Type*} {σ : S → X} {U : Set S} :
     have hmem : g'⁻¹ * g ∈ stabilizer G (σ s) := mem_stabilizer_iff.mpr hmove
     rw [hstab s hs, Subgroup.mem_bot, inv_mul_eq_one] at hmem
     rw [hmem]
+
+
+namespace orbitRel.Quotient
+
+variable {H : Subgroup G} [H.Normal] {p : X}
+
+/-- **Freeness descends to the quotient group.** If `G` acts freely at `p`, then `G ⧸ H` acts
+freely at the `H`-orbit of `p`. -/
+@[to_additive /-- **Freeness descends to the quotient group.** If `G` acts freely at `p`, then
+`G ⧸ H` acts freely at the `H`-orbit of `p`. -/]
+theorem stabilizer_mk_eq_bot_of_stabilizer_eq_bot (hp : stabilizer G p = ⊥) :
+    stabilizer (G ⧸ H) (Quotient.mk'' p : orbitRel.Quotient H X) = ⊥ := by
+  rw [Subgroup.stabilizer_quotientGroup_orbitRelQuotient_mk, hp, Subgroup.map_bot]
+
+/-- **Freeness in stages.** If `H` acts freely at `p` and `G ⧸ H` acts freely at the `H`-orbit
+of `p`, then `G` acts freely at `p`. -/
+@[to_additive /-- **Freeness in stages.** If `H` acts freely at `p` and `G ⧸ H` acts freely at
+the `H`-orbit of `p`, then `G` acts freely at `p`. -/]
+theorem stabilizer_eq_bot_of_stabilizer_mk_eq_bot (hH : stabilizer H p = ⊥)
+    (hq : stabilizer (G ⧸ H) (Quotient.mk'' p : orbitRel.Quotient H X) = ⊥) :
+    stabilizer G p = ⊥ := by
+  -- The cosets fixing the `H`-orbit of `p` pull back to `H ⊔ stabilizer G p`, which is `H`.
+  have hle := Subgroup.comap_stabilizer_quotientGroup_orbitRelQuotient_mk H p
+  rw [hq, MonoidHom.comap_bot, QuotientGroup.ker_mk', left_eq_sup] at hle
+  rwa [← stabilizer_subgroupOf, Subgroup.subgroupOf_eq_bot,
+    disjoint_of_le_iff_left_eq_bot hle] at hH
+
+end orbitRel.Quotient
 
 end MulAction

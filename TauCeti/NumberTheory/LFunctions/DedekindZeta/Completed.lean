@@ -406,6 +406,16 @@ theorem toMeromorphicNFOn_mul_completedDedekindZeta_one :
     isUnitFundamentalDomain_unitFundamentalDomain rep hrep, Finset.sum_apply]
   simp [classNumber]
 
+/-- Away from `0` and `1`, the repaired product `s(s - 1) Λ_K(s)` is the pointwise product. -/
+theorem toMeromorphicNFOn_mul_completedDedekindZeta_eq {s : ℂ} (h₀ : s ≠ 0) (h₁ : s ≠ 1) :
+    toMeromorphicNFOn (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ s =
+      s * (s - 1) * completedDedekindZeta K s :=
+  toMeromorphicNFOn_apply_of_analyticAt
+    (fun z ↦ (by fun_prop : AnalyticAt ℂ (fun w : ℂ ↦ w * (w - 1)) z).meromorphicAt.mul
+      (meromorphic_completedDedekindZeta K z))
+    ((by fun_prop : AnalyticAt ℂ (fun w : ℂ ↦ w * (w - 1)) s).mul
+      (analyticAt_completedDedekindZeta K h₀ h₁))
+
 /-! ### Functional equation -/
 
 /-- **The functional equation of the completed Dedekind zeta function**:
