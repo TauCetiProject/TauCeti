@@ -13,13 +13,16 @@ import Mathlib.Data.Nat.Find
 
 Appending a base-`b` digit `e < b` to a positive natural number `n` raises its integer logarithm
 by one: `Nat.log b (b * n + e) = Nat.log b n + 1`. This complements Mathlib's `Nat.log_mul_base`,
-which is the case `e = 0` with the factors in the other order.
+which is the case `e = 0` with the factors in the other order. Repeatedly halving `n ≥ 1` reaches
+a positive value below `K ≥ 2` within `log₂ n` steps.
 
 ## Main results
 
 * `TauCeti.Nat.log_mul_add`: `Nat.log b (b * n + e) = Nat.log b n + 1` for `n ≠ 0` and `e < b`.
 * `Nat.pow_clog_lt_mul_self`: rounding a positive natural number up to a power of `b > 1`
   increases it by a factor strictly less than `b`.
+* `Nat.exists_div_pow_two_lt`: for `n ≥ 1` and `K ≥ 2`, the first halving `n / 2 ^ J` below `K`
+  is positive and has `J ≤ Nat.log 2 n`.
 -/
 
 public section
