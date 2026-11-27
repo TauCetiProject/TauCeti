@@ -248,11 +248,8 @@ theorem IsSomewhereInjective.germFactorsThrough_iff [CompactSpace S] [ConnectedS
     (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (h : IsSomewhereInjective 𝓘(ℝ, ℂ) I u)
     {w w' : S} : GermFactorsThrough u w' u w ↔ w' = w := by
   refine ⟨fun hww' ↦ ?_, fun h ↦ h ▸ .refl u w'⟩
-  have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
   obtain ⟨x, hx⟩ := isSomewhereInjective_iff.1 h
-  -- `u` is not constant: the points near `x` other than `x` have other values.
-  obtain ⟨y, hy⟩ := (eventually_mem_nhdsWithin (a := x) (s := {x}ᶜ)).exists
-  have hne : ∃ x₁ x₂, u x₁ ≠ u x₂ := ⟨y, x, hx.apply_ne hy⟩
+  have hne : ∃ x₁ x₂, u x₁ ≠ u x₂ := h.exists_apply_ne
   -- The class of the injective point `x` is `{x}`, so all classes off `B` have one point.
   have hx1 : {ζ | GermFactorsThrough u x u ζ} = {x} :=
     setOf_germFactorsThrough_eq_singleton_iff.2 fun _ hζ ↦ hx.eq_of_apply_eq hζ.apply_eq.symm
