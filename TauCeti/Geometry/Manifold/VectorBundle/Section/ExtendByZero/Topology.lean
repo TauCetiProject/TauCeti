@@ -319,6 +319,17 @@ theorem tsupport_extendByZeroCLM :
   simpa only [tsupport_def] using
     (tsupport_extendByZero ((ofCompactlySupported I F (c *ᵖ V)).symm s))
 
+/-- Extension by zero of native tests is injective. -/
+theorem extendByZeroCLM_injective :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    Function.Injective (extendByZeroCLM (I := I) (F := F) (V := V) (U := U) :
+      TauCeti.BundleTest I F (c *ᵖ V) → TauCeti.BundleTest I F V) := by
+  intro c s t h
+  obtain ⟨s, rfl⟩ := (ofCompactlySupported I F (c *ᵖ V)).surjective s
+  obtain ⟨t, rfl⟩ := (ofCompactlySupported I F (c *ᵖ V)).surjective t
+  rw [extendByZeroCLM_ofCompactlySupported, extendByZeroCLM_ofCompactlySupported] at h
+  exact congrArg _ (extendByZeroLinearMap_injective ((ofCompactlySupported I F V).injective h))
+
 /-- Extension commutes with multiplication by an ambient smooth scalar function. -/
 theorem extendByZeroCLM_smulLeftCLM :
     let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩

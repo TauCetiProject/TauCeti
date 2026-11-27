@@ -24,7 +24,9 @@ locality and gluing properties of these functionals for an open cover of `M`.
 * **Gluing.** Functionals `T i` on the tests of `V|_{U i}` that are compatible, in the sense that
   `T i s = T j s'` whenever the tests `s` on `U i` and `s'` on `U j` extend by zero to the same
   test of `M`, are the restrictions of a unique functional on the tests of `M`
-  (`TauCeti.BundleTest.existsUnique_restrictDualCLM_eq`).
+  (`TauCeti.BundleTest.existsUnique_restrictDualCLM_eq`). Equivalently, it suffices that the
+  restrictions of `T i` and `T j` to every overlap `U i ⊓ U j` agree
+  (`TauCeti.BundleTest.existsUnique_restrictDualCLM_eq_of_restrictDualToOpenCLM_eq`).
 
 The functionals take values in any locally convex real space `W`. The cover is arbitrary: it need
 not be locally finite or countable, and `M` need not be σ-compact. For distributional sections
@@ -174,6 +176,29 @@ private theorem sum_cutoffRestrictCLM_extendByZeroCLM_eq
 
 variable [IsTopologicalAddGroup W] [ContinuousConstSMul ℝ W]
 
+/-- Functionals agreeing on every overlap `U i ⊓ U j` agree on tests of `U i` and of `U j` that
+extend by zero to the same test of `M`. -/
+private theorem apply_eq_of_restrictDualToOpenCLM_eq
+    (hT : ∀ i j, restrictDualToOpenCLM (I := I) (F := F) (V := V)
+      (inf_le_left : U i ⊓ U j ≤ U i) (T i) =
+        restrictDualToOpenCLM (I := I) (F := F) (V := V) (inf_le_right : U i ⊓ U j ≤ U j) (T j))
+    (i j : ι) (s : BundleTest I F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U i, M)) *ᵖ V))
+    (s' : BundleTest I F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U j, M)) *ᵖ V))
+    (h : extendByZeroCLM (I := I) (F := F) (V := V) s = extendByZeroCLM s') :
+    T i s = T j s' := by
+  -- The common extension is supported in `U i ⊓ U j`, so it extends a test `r` on the overlap.
+  obtain ⟨r, hr⟩ := (mem_range_extendByZeroCLM_iff (U := U i ⊓ U j)
+    (extendByZeroCLM (I := I) (F := F) (V := V) s)).2
+    (subset_inter ((mem_range_extendByZeroCLM_iff (U := U i) _).1 ⟨s, rfl⟩)
+      ((mem_range_extendByZeroCLM_iff (U := U j) _).1 ⟨s', h.symm⟩))
+  rw [ContinuousLinearMap.coe_coe] at hr
+  have hrs : extendByZeroToOpenCLM (I := I) (F := F) (V := V) inf_le_left r = s :=
+    extendByZeroCLM_injective (by rw [extendByZeroCLM_extendByZeroToOpenCLM_apply, hr])
+  have hrs' : extendByZeroToOpenCLM (I := I) (F := F) (V := V) inf_le_right r = s' :=
+    extendByZeroCLM_injective (by rw [extendByZeroCLM_extendByZeroToOpenCLM_apply, hr, h])
+  have h' := DFunLike.congr_fun (hT i j) r
+  rwa [restrictDualToOpenCLM_apply, restrictDualToOpenCLM_apply, hrs, hrs'] at h'
+
 /-- **Locality.** Two functionals on the bundle tests of `M` with the same restrictions to every
 member of an open cover of `M` are equal. -/
 theorem eq_of_forall_restrictDualCLM_eq (hU : ⨆ i, U i = ⊤)
@@ -250,6 +275,18 @@ theorem existsUnique_restrictDualCLM_eq [ContinuousSMul ℝ W] [LocallyConvexSpa
     exact sum_cutoffRestrictCLM_extendByZeroCLM_eq hT (hρU _) ψ (hρ (supp _))
   exact ⟨S, hglue, fun S' hS' ↦
     eq_of_forall_restrictDualCLM_eq hU fun i ↦ (hS' i).trans (hglue i).symm⟩
+
+/-- **Gluing**, overlap form. Let the open sets `U i` cover `M`. Continuous linear functionals
+`T i` on the bundle tests of `V|_{U i}` whose restrictions to every overlap `U i ⊓ U j` agree are
+the restrictions of a unique continuous linear functional on the bundle tests of `M`. -/
+theorem existsUnique_restrictDualCLM_eq_of_restrictDualToOpenCLM_eq [ContinuousSMul ℝ W]
+    [LocallyConvexSpace ℝ W] (hU : ⨆ i, U i = ⊤)
+    (hT : ∀ i j, restrictDualToOpenCLM (I := I) (F := F) (V := V)
+      (inf_le_left : U i ⊓ U j ≤ U i) (T i) =
+        restrictDualToOpenCLM (I := I) (F := F) (V := V) (inf_le_right : U i ⊓ U j ≤ U j) (T j)) :
+    ∃! S : BundleTest I F V →L_c[ℝ] W,
+      ∀ i, restrictDualCLM (I := I) (F := F) (V := V) (U := U i) S = T i :=
+  existsUnique_restrictDualCLM_eq hU (apply_eq_of_restrictDualToOpenCLM_eq hT)
 
 end Gluing
 
